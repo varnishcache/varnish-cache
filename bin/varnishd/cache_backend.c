@@ -479,7 +479,7 @@ vdi_simple_fini(const struct director *d)
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
 
 	VBP_Stop(vs->backend, vs->vrt->probe);
-	VBE_DropRef(vs->backend);
+	VBE_DropRefVcl(vs->backend);
 	free(vs->dir.vcl_name);
 	vs->dir.magic = 0;
 	FREE_OBJ(vs);
