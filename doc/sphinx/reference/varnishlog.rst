@@ -17,8 +17,8 @@ SYNOPSIS
 ========
 
 varnishlog [-a] [-b] [-C] [-c] [-D] [-d] [-I regex] [-i tag] [-k keep] 
-[-n varnish_name] [-o] [-P file] [-r file] [-s num] [-u] [-V] 
-[-w file] [-X regex] [-x tag] [tag regex]
+[-n varnish_name] [-o [tag regex]] [-P file] [-r file] [-s num] [-u] [-V]
+[-w file] [-X regex] [-x tag]
 
 DESCRIPTION
 ===========
