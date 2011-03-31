@@ -303,7 +303,7 @@ static void
 usage(void)
 {
 	fprintf(stderr, "usage: varnishlog "
-	    "%s [-aDoV] [-n varnish_name] [-P file] [-w file]\n", VSL_USAGE);
+	    "%s [-aDV] [-o [tag regex]] [-n varnish_name] [-P file] [-w file]\n", VSL_USAGE);
 	exit(1);
 }
 
@@ -359,6 +359,9 @@ main(int argc, char * const *argv)
 	}
 
 	if (o_flag && w_arg != NULL)
+		usage();
+
+	if ((argc - optind) > 0 && !o_flag)
 		usage();
 
 	if (VSL_Open(vd, 1))
