@@ -297,6 +297,11 @@ ESI_Deliver(struct sess *sp)
 				l_icrc = ved_decode_len(&p);
 				icrc = vbe32dec(p);
 				p += 4;
+				if (sp->wrk->gzip_resp) {
+					sp->wrk->crc = crc32_combine(
+					    sp->wrk->crc, icrc, l_icrc);
+					sp->wrk->l_crc += l_icrc;
+				}
 			}
 			/*
 			 * There is no guarantee that the 'l' bytes are all
@@ -314,9 +319,6 @@ ESI_Deliver(struct sess *sp)
 					 * We have a gzip'ed VEC and delivers
 					 * a gzip'ed ESI response.
 					 */
-					sp->wrk->crc = crc32_combine(
-					    sp->wrk->crc, icrc, l_icrc);
-					sp->wrk->l_crc += l_icrc;
 					WRW_Write(sp->wrk, st->ptr + off, l2);
 				} else if (sp->wrk->gzip_resp) {
 					/*
