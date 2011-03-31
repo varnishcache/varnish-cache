@@ -388,6 +388,8 @@ VGZ_WrwGunzip(struct sess *sp, struct vgz *vg, void *ibuf, ssize_t ibufl,
 			VGZ_Obuf(vg, obuf + *obufp, obufl - *obufp);
 		}
 	} while (!VGZ_IbufEmpty(vg));
+	if (i == VGZ_STUCK)
+		i = VGZ_OK;
 	return (i);
 }
 
