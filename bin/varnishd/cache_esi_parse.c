@@ -188,7 +188,6 @@ vep_error(const struct vep_state *vep, const char *p)
 
 	VSC_main->esi_errors++;
 	l = (intmax_t)(vep->ver_p - vep->hack_p);
-	printf("ERROR at %jd %s\n", l , p);
 	WSP(vep->sp, SLT_ESI_xmlerror, "ERR at %jd %s", l, p);
 
 }
@@ -450,6 +449,17 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 	if (what == DO_ATTR) {
 		Debug("ATTR (%s) (%s)\n", vep->match_hit->match,
 			vsb_data(vep->attr_vsb));
+		if (vep->include_src != NULL) {
+			vep_error(vep,
+			    "ESI 1.0 <esi:include> "
+			    "has multiple src= attributes");
+			vep->state = VEP_TAGERROR;
+			vsb_delete(vep->attr_vsb);
+			vsb_delete(vep->include_src);
+			vep->attr_vsb = NULL;
+			vep->include_src = NULL;
+			return;
+		}
 		XXXAZ(vep->include_src);	/* multiple src= */
 		vep->include_src = vep->attr_vsb;
 		return;
@@ -872,13 +882,13 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 			} else if (p < e) {
 				vep->attr_delim = 0;
 				p++;
+				vep->state = VEP_INTAG;
 				if (vep->attr_vsb != NULL) {
 					vsb_finish(vep->attr_vsb);
 					AN(vep->dostuff);
 					vep->dostuff(vep, DO_ATTR);
 					vep->attr_vsb = NULL;
 				}
-				vep->state = VEP_INTAG;
 			}
 
 		/******************************************************

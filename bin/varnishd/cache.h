@@ -693,6 +693,7 @@ int VGZ_WrwGunzip(struct sess *, struct vgz *, void *ibuf, ssize_t ibufl,
     char *obuf, ssize_t obufl, ssize_t *obufp);
 
 /* Return values */
+#define VGZ_SOCKET	-2
 #define VGZ_ERROR	-1
 #define VGZ_OK		0
 #define VGZ_END		1

@@ -59,11 +59,6 @@ ved_include(struct sess *sp, const char *src, const char *host)
 		return;
 	sp->esi_level++;
 
-	if (WRW_Flush(w)) {
-		vca_close_session(sp, "remote closed");
-		return;
-	}
-
 	(void)WRW_FlushRelease(w);
 
 	obj = sp->obj;
@@ -335,6 +330,12 @@ ESI_Deliver(struct sess *sp)
 					i = VGZ_WrwGunzip(sp, vgz,
 						st->ptr + off, l2,
 						obuf, sizeof obuf, &obufl);
+					if (i == VGZ_SOCKET) {
+						vca_close_session(sp,
+						    "remote closed");
+						p = e;
+						break;
+					}
 					assert (i == VGZ_OK || i == VGZ_END);
 				} else {
 					/*
@@ -381,6 +382,11 @@ ESI_Deliver(struct sess *sp)
 			if (obufl > 0) {
 				WRW_Write(sp->wrk, obuf, obufl);
 				obufl = 0;
+			}
+			if (WRW_Flush(sp->wrk)) {
+				vca_close_session(sp, "remote closed");
+				p = e;
+				break;
 			}
 			Debug("INCL [%s][%s] BEGIN\n", q, p);
 			ved_include(sp, (const char*)q, (const char*)p);
