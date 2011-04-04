@@ -100,7 +100,7 @@ cli_writeres(int fd, const struct cli *cli)
 	assert(cli->result <= 999);	/*lint !e650 const out of range */
 
 	i = snprintf(res, sizeof res,
-	    "%-3d %-8d\n", cli->result, vsb_len(cli->sb));
+	    "%-3d %-8ld\n", cli->result, (long)vsb_len(cli->sb));
 	assert(i == CLI_LINE0_LEN);
 
 	iov[0].iov_base = res;

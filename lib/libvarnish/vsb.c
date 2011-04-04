@@ -24,7 +24,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
-__FBSDID("$FreeBSD: head/sys/kern/subr_sbuf.c 181462 2008-08-09 10:26:21Z des $");
+__FBSDID("$FreeBSD: head/sys/kern/subr_vsb.c 212750 2010-09-16 16:13:12Z mdf $
  */
 
 #include "config.h"
@@ -65,8 +65,13 @@ SVNID("$Id$")
 #define	VSB_CLEARFLAG(s, f)	do { (s)->s_flags &= ~(f); } while (0)
 
 #define	VSB_MINEXTENDSIZE	16		/* Should be power of 2. */
+#ifdef PAGE_SIZE
+#define	VSB_MAXEXTENDSIZE	PAGE_SIZE
+#define	VSB_MAXEXTENDINCR	PAGE_SIZE
+#else
 #define	VSB_MAXEXTENDSIZE	4096
 #define	VSB_MAXEXTENDINCR	4096
+#endif
 
 /*
  * Debugging support
@@ -158,8 +163,9 @@ vsb_newbuf(struct vsb *s, char *buf, int length, int flags)
 {
 
 	memset(s, 0, sizeof(*s));
-	s->s_magic = VSB_MAGIC;
 	s->s_flags = flags;
+	s->s_magic = VSB_MAGIC;
+
 	if (buf != NULL) {
 		KASSERT(length > 0,
 		    ("zero or negative length (%d)", length));
@@ -224,7 +230,7 @@ vsb_clear(struct vsb *s)
  * Effectively truncates the vsb at the new position.
  */
 int
-vsb_setpos(struct vsb *s, int pos)
+vsb_setpos(struct vsb *s, ssize_t pos)
 {
 
 	assert_vsb_integrity(s);
@@ -476,7 +482,7 @@ vsb_data(struct vsb *s)
 /*
  * Return the length of the vsb data.
  */
-int
+ssize_t
 vsb_len(struct vsb *s)
 {
 

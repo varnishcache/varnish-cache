@@ -845,7 +845,7 @@ cmd_http_txreq(CMD_ARGS)
 	if (*av != NULL)
 		vtc_log(hp->vl, 0, "Unknown http txreq spec: %s\n", *av);
 	if (body != NULL)
-		vsb_printf(hp->vsb, "Content-Length: %d%s", strlen(body), nl);
+		vsb_printf(hp->vsb, "Content-Length: %lu%s", strlen(body), nl);
 	vsb_cat(hp->vsb, nl);
 	if (body != NULL) {
 		vsb_cat(hp->vsb, body);
@@ -890,7 +890,7 @@ cmd_http_chunked(CMD_ARGS)
 	AN(av[1]);
 	AZ(av[2]);
 	vsb_clear(hp->vsb);
-	vsb_printf(hp->vsb, "%x%s%s%s", strlen(av[1]), nl, av[1], nl);
+	vsb_printf(hp->vsb, "%lx%s%s%s", strlen(av[1]), nl, av[1], nl);
 	http_write(hp, 4, "chunked");
 }
 
