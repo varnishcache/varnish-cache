@@ -289,8 +289,7 @@ cls_vlu2(void *priv, char * const *av)
 		}
 	} while (0);
 
-	vsb_finish(cli->sb);
-	AZ(vsb_error(cli->sb));
+	AZ(vsb_finish(cli->sb));
 
 	if (cs->after != NULL)
 		cs->after(cli);
@@ -359,8 +358,7 @@ cls_vlu(void *priv, const char *p)
 			vsb_cat(cfd->last_arg, "\n");
 			return (0);
 		}
-		vsb_finish(cfd->last_arg);
-		AZ(vsb_error(cfd->last_arg));
+		AZ(vsb_finish(cfd->last_arg));
 		free(cfd->argv[cfd->last_idx]);
 		cfd->argv[cfd->last_idx] = NULL;
 		free(cfd->argv[cfd->last_idx + 1]);

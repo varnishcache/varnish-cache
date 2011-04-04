@@ -313,8 +313,7 @@ BAN_Insert(struct ban *b)
 	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
 	b->t0 = TIM_real();
 
-	vsb_finish(b->vsb);
-	AZ(vsb_error(b->vsb));
+	AZ(vsb_finish(b->vsb));
 	b->test = strdup(vsb_data(b->vsb));
 	AN(b->test);
 	vsb_delete(b->vsb);

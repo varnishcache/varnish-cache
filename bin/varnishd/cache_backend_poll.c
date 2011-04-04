@@ -322,8 +322,7 @@ vbp_build_req(struct vsb *vsb, const struct vbp_vcl *vcl)
 		vsb_printf(vsb, "Connection: close\r\n");
 		vsb_printf(vsb, "\r\n");
 	}
-	vsb_finish(vsb);
-	AZ(vsb_error(vsb));
+	AZ(vsb_finish(vsb));
 }
 
 /*--------------------------------------------------------------------

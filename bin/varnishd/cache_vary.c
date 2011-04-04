@@ -97,8 +97,7 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 		/* Build a header-matching string out of it */
 		vsb_clear(sbh);
 		vsb_printf(sbh, "%c%.*s:%c", 1 + (q - p), q - p, p, 0);
-		vsb_finish(sbh);
-		AZ(vsb_error(sbh));
+		AZ(vsb_finish(sbh));
 
 		/* Append to vary matching string */
 		vsb_bcat(sb, vsb_data(sbh), vsb_len(sbh));
@@ -131,8 +130,7 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 	vsb_printf(sb, "%c", 0);
 
 	vsb_delete(sbh);
-	vsb_finish(sb);
-	AZ(vsb_error(sb));
+	AZ(vsb_finish(sb));
 	return(sb);
 }
 

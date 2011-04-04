@@ -112,8 +112,7 @@ SMS_Finish(struct object *obj)
 	sto = VTAILQ_FIRST(&obj->store);
 	assert(sto->stevedore == &sms_stevedore);
 	vsb = sto->priv;
-	vsb_finish(vsb);
-	AZ(vsb_error(vsb));
+	AZ(vsb_finish(vsb));
 
 	sto->ptr = (void*)vsb_data(vsb);
 	sto->len = vsb_len(vsb);

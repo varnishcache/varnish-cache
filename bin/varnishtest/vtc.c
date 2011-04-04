@@ -191,7 +191,7 @@ macro_expand(struct vtclog *vl, const char *text)
 		vsb_printf(vsb, "%s", m);
 		text = q + 1;
 	}
-	vsb_finish(vsb);
+	AZ(vsb_finish(vsb));
 	return (vsb);
 }
 

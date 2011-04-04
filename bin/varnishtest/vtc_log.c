@@ -140,8 +140,7 @@ vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...)
 	(void)vsb_vprintf(vl->vsb, fmt, ap);
 	va_end(ap);
 	vsb_putc(vl->vsb, '\n');
-	vsb_finish(vl->vsb);
-	AZ(vsb_error(vl->vsb));
+	AZ(vsb_finish(vl->vsb));
 
 	vtc_log_emit(vl, lvl);
 
@@ -211,8 +210,7 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str, int 
 	}
 	if (!nl)
 		vsb_printf(vl->vsb, "\n");
-	vsb_finish(vl->vsb);
-	AZ(vsb_error(vl->vsb));
+	AZ(vsb_finish(vl->vsb));
 
 	vtc_log_emit(vl, lvl);
 
@@ -266,8 +264,7 @@ vtc_hexdump(struct vtclog *vl, unsigned lvl, const char *pfx, const unsigned cha
 	}
 	if (!nl)
 		vsb_printf(vl->vsb, "\n");
-	vsb_finish(vl->vsb);
-	AZ(vsb_error(vl->vsb));
+	AZ(vsb_finish(vl->vsb));
 
 	vtc_log_emit(vl, lvl);
 

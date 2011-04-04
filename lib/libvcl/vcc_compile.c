@@ -314,8 +314,7 @@ EmitInitFunc(const struct vcc *tl)
 {
 
 	Fc(tl, 0, "\nstatic void\nVGC_Init(struct cli *cli)\n{\n\n");
-	vsb_finish(tl->fi);
-	AZ(vsb_error(tl->fi));
+	AZ(vsb_finish(tl->fi));
 	vsb_cat(tl->fc, vsb_data(tl->fi));
 	Fc(tl, 0, "}\n");
 }
@@ -334,8 +333,7 @@ EmitFiniFunc(const struct vcc *tl)
 	for (u = 0; u < tl->nvmodpriv; u++)
 		Fc(tl, 0, "\tvmod_priv_fini(&vmod_priv_%u);\n", u);
 
-	vsb_finish(tl->ff);
-	AZ(vsb_error(tl->ff));
+	AZ(vsb_finish(tl->ff));
 	vsb_cat(tl->fc, vsb_data(tl->ff));
 	Fc(tl, 0, "}\n");
 }
@@ -678,8 +676,7 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 		Fc(tl, 1, "\nstatic int\n");
 		Fc(tl, 1, "VGC_function_%s (struct sess *sp)\n",
 		    method_tab[i].name);
-		vsb_finish(tl->fm[i]);
-		AZ(vsb_error(tl->fm[i]));
+		AZ(vsb_finish(tl->fm[i]));
 		Fc(tl, 1, "{\n");
 		Fc(tl, 1, "%s", vsb_data(tl->fm[i]));
 		Fc(tl, 1, "}\n");
@@ -694,11 +691,9 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	EmitStruct(tl);
 
 	/* Combine it all in the fh vsb */
-	vsb_finish(tl->fc);
-	AZ(vsb_error(tl->fc));
+	AZ(vsb_finish(tl->fc));
 	vsb_cat(tl->fh, vsb_data(tl->fc));
-	vsb_finish(tl->fh);
-	AZ(vsb_error(tl->fh));
+	AZ(vsb_finish(tl->fh));
 
 	of = strdup(vsb_data(tl->fh));
 	AN(of);

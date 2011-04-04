@@ -229,8 +229,7 @@ cli_check(const struct cli *cli)
 		vsb_clear(cli->sb);
 		return;
 	}
-	vsb_finish(cli->sb);
-	AZ(vsb_error(cli->sb));
+	AZ(vsb_finish(cli->sb));
 	fprintf(stderr, "Error:\n%s\n", vsb_data(cli->sb));
 	exit (2);
 }
@@ -534,8 +533,7 @@ main(int argc, char * const *argv)
 	/* XXX: we can have multiple CLI actions above, is this enough ? */
 	if (cli[0].result != CLIS_OK) {
 		fprintf(stderr, "Parameter errors:\n");
-		vsb_finish(cli[0].sb);
-		AZ(vsb_error(cli[0].sb));
+		AZ(vsb_finish(cli[0].sb));
 		fprintf(stderr, "%s\n", vsb_data(cli[0].sb));
 		exit(1);
 	}
@@ -622,8 +620,7 @@ main(int argc, char * const *argv)
 
 	mgt_SHM_Init(l_arg);
 
-	vsb_finish(vident);
-	AZ(vsb_error(vident));
+	AZ(vsb_finish(vident));
 
 	if (!d_flag && !F_flag)
 		AZ(varnish_daemon(1, 0));

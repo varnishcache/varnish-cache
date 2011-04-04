@@ -449,8 +449,7 @@ mgt_save_panic(void)
 	TIM_format(TIM_real(), time_str);
 	vsb_printf(child_panic, "Last panic at: %s\n", time_str);
 	vsb_cat(child_panic, vsm_head->panicstr);
-	vsb_finish(child_panic);
-	AZ(vsb_error(child_panic));
+	AZ(vsb_finish(child_panic));
 }
 
 static void
@@ -499,8 +498,7 @@ mgt_sigchld(const struct vev *e, int what)
 		exit_status |= 0x80;
 	}
 #endif
-	vsb_finish(vsb);
-	AZ(vsb_error(vsb));
+	AZ(vsb_finish(vsb));
 	REPORT(LOG_INFO, "%s", vsb_data(vsb));
 	vsb_delete(vsb);
 

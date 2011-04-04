@@ -117,8 +117,7 @@ mgt_make_cc_cmd(const char *sf, const char *of)
 	}
 	if (pct)
 		vsb_putc(sb, '%');
-	vsb_finish(sb);
-	AZ(vsb_error(sb));
+	AZ(vsb_finish(sb));
 	return (sb);
 }
 
@@ -148,8 +147,7 @@ run_vcc(void *priv)
 	VCC_VMOD_dir(vcc, mgt_vmod_dir);
 	VCC_Err_Unref(vcc, mgt_vcc_err_unref);
 	csrc = VCC_Compile(vcc, sb, vp->vcl);
-	vsb_finish(sb);
-	AZ(vsb_error(sb));
+	AZ(vsb_finish(sb));
 	if (vsb_len(sb))
 		printf("%s", vsb_data(sb));
 	vsb_delete(sb);
@@ -302,8 +300,7 @@ mgt_VccCompile(struct vsb **sb, const char *b, int C_flag)
 	*sb = vsb_new_auto();
 	XXXAN(*sb);
 	vf = mgt_run_cc(b, *sb, C_flag);
-	vsb_finish(*sb);
-	AZ(vsb_error(*sb));
+	AZ(vsb_finish(*sb));
 	return (vf);
 }
 

@@ -141,8 +141,7 @@ http_write(const struct http *hp, int lvl, const char *pfx)
 {
 	int l;
 
-	vsb_finish(hp->vsb);
-	AZ(vsb_error(hp->vsb));
+	AZ(vsb_finish(hp->vsb));
 	vtc_dump(hp->vl, lvl, pfx, vsb_data(hp->vsb), vsb_len(hp->vsb));
 	l = write(hp->fd, vsb_data(hp->vsb), vsb_len(hp->vsb));
 	if (l != vsb_len(hp->vsb))

@@ -875,7 +875,7 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 				vep->state = VEP_TAGERROR;
 				vep->attr_delim = 0;
 				if (vep->attr_vsb != NULL) {
-					vsb_finish(vep->attr_vsb);
+					AZ(vsb_finish(vep->attr_vsb));
 					vsb_delete(vep->attr_vsb);
 					vep->attr_vsb = NULL;
 				}
@@ -884,7 +884,7 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 				p++;
 				vep->state = VEP_INTAG;
 				if (vep->attr_vsb != NULL) {
-					vsb_finish(vep->attr_vsb);
+					AZ(vsb_finish(vep->attr_vsb));
 					AN(vep->dostuff);
 					vep->dostuff(vep, DO_ATTR);
 					vep->attr_vsb = NULL;
@@ -1056,7 +1056,7 @@ VEP_Finish(const struct sess *sp)
 
 	sp->wrk->vep = NULL;
 
-	vsb_finish(vep->vsb);
+	AZ(vsb_finish(vep->vsb));
 	l = vsb_len(vep->vsb);
 	if (vep->state != VEP_NOTXML && l > 0)
 		return (vep->vsb);
