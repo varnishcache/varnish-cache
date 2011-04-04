@@ -51,6 +51,10 @@ struct vsb {
 	int		 s_flags;	/* flags */
 };
 
+#ifndef __printflike
+#define __printflike(a,b)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
