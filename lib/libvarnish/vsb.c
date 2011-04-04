@@ -44,9 +44,7 @@ SVNID("$Id$")
 #define	KASSERT(e, m)		assert(e)
 #define	SBMALLOC(size)		malloc(size)
 #define	SBFREE(buf)		free(buf)
-#define	min(x,y)		(x < y ? x : y)
 
-// #define bzero(x,y)		memset(x,0,y)
 #define	roundup2(x, y)	(((x)+((y)-1))&(~((y)-1))) /* if y is powers of two */
 
 #define VSB_MAGIC		0x4a82dd8a
@@ -151,9 +149,36 @@ vsb_extend(struct vsb *s, int addlen)
 }
 
 /*
- * Initialize an vsb.
+ * Initialize the internals of an vsb.
  * If buf is non-NULL, it points to a static or already-allocated string
  * big enough to hold at least length characters.
+ */
+static struct vsb *
+vsb_newbuf(struct vsb *s, char *buf, int length, int flags)
+{
+
+	memset(s, 0, sizeof(*s));
+	s->s_magic = VSB_MAGIC;
+	s->s_flags = flags;
+	if (buf != NULL) {
+		KASSERT(length > 0,
+		    ("zero or negative length (%d)", length));
+		s->s_size = length;
+		s->s_buf = buf;
+		return (s);
+	}
+	s->s_size = length;
+	if ((flags & VSB_AUTOEXTEND) != 0)
+		s->s_size = vsb_extendsize(s->s_size);
+	s->s_buf = SBMALLOC(s->s_size);
+	if (s->s_buf == NULL)
+		return (NULL);
+	VSB_SETFLAG(s, VSB_DYNAMIC);
+	return (s);
+}
+
+/*
+ * Initialize an vsb.
  */
 struct vsb *
 vsb_new(struct vsb *s, char *buf, int length, int flags)
@@ -165,33 +190,17 @@ vsb_new(struct vsb *s, char *buf, int length, int flags)
 	    ("%s called with invalid flags", __func__));
 
 	flags &= VSB_USRFLAGMSK;
-	if (s == NULL) {
-		s = SBMALLOC(sizeof(*s));
-		if (s == NULL)
-			return (NULL);
-		bzero(s, sizeof(*s));
-		s->s_flags = flags;
-		VSB_SETFLAG(s, VSB_DYNSTRUCT);
-	} else {
-		bzero(s, sizeof(*s));
-		s->s_flags = flags;
-	}
-		
-	s->s_magic = VSB_MAGIC;
-	s->s_size = length;
-	if (buf != NULL) {
-		s->s_buf = buf;
-		return (s);
-	}
-	if ((flags & VSB_AUTOEXTEND) != 0)
-		s->s_size = vsb_extendsize(s->s_size);
-	s->s_buf = SBMALLOC(s->s_size);
-	if (s->s_buf == NULL) {
-		if (VSB_ISDYNSTRUCT(s))
-			SBFREE(s);
+	if (s != NULL)
+		return (vsb_newbuf(s, buf, length, flags));
+
+	s = SBMALLOC(sizeof(*s));
+	if (s == NULL)
+		return (NULL);
+	if (vsb_newbuf(s, buf, length, flags) == NULL) {
+		SBFREE(s);
 		return (NULL);
 	}
-	VSB_SETFLAG(s, VSB_DYNAMIC);
+	VSB_SETFLAG(s, VSB_DYNSTRUCT);
 	return (s);
 }
 
@@ -238,7 +247,7 @@ vsb_setpos(struct vsb *s, int pos)
  * buffer and marking overflow.
  */
 static void
-vsb_put_byte(int c, struct vsb *s)
+vsb_put_byte(struct vsb *s, char c)
 {
 
 	assert_vsb_integrity(s);
@@ -271,7 +280,7 @@ vsb_bcat(struct vsb *s, const void *buf, size_t len)
 	if (s->s_error != 0)
 		return (-1);
 	for (; str < end; str++) {
-		vsb_put_byte(*str, s);
+		vsb_put_byte(s, *str);
 		if (s->s_error != 0)
 			return (-1);
 	}
@@ -306,7 +315,7 @@ vsb_cat(struct vsb *s, const char *str)
 		return (-1);
 
 	while (*str != '\0') {
-		vsb_put_byte(*str++, s);
+		vsb_put_byte(s, *str++);
 		if (s->s_error != 0)
 			return (-1);
 	}
@@ -395,10 +404,10 @@ vsb_printf(struct vsb *s, const char *fmt, ...)
  * Append a character to an vsb.
  */
 int
-vsb_putc(struct vsb *s, int c)
+vsb_putc(struct vsb *s, char c)
 {
 
-	vsb_put_byte(c, s);
+	vsb_put_byte(s, c);
 	if (s->s_error != 0)
 		return (-1);
 	return (0);
@@ -493,7 +502,7 @@ vsb_delete(struct vsb *s)
 	if (VSB_ISDYNAMIC(s))
 		SBFREE(s->s_buf);
 	isdyn = VSB_ISDYNSTRUCT(s);
-	bzero(s, sizeof(*s));
+	memset(s, 0, sizeof(*s));
 	if (isdyn)
 		SBFREE(s);
 }

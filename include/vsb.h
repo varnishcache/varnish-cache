@@ -72,7 +72,7 @@ int		 vsb_printf(struct vsb *, const char *, ...)
 int		 vsb_vprintf(struct vsb *, const char *, va_list)
 	/* __printflike(2, 0) */;
 #endif
-int		 vsb_putc(struct vsb *, int);
+int		 vsb_putc(struct vsb *, char);
 int		 vsb_trim(struct vsb *);
 int		 vsb_error(const struct vsb *);
 int		 vsb_finish(struct vsb *);
