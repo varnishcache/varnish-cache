@@ -46,6 +46,9 @@ SVNID("$Id$")
 #define	SBFREE(buf)		free(buf)
 #define	min(x,y)		(x < y ? x : y)
 
+// #define bzero(x,y)		memset(x,0,y)
+#define	roundup2(x, y)	(((x)+((y)-1))&(~((y)-1))) /* if y is powers of two */
+
 #define VSB_MAGIC		0x4a82dd8a
 /*
  * Predicates
@@ -53,7 +56,6 @@ SVNID("$Id$")
 #define	VSB_ISDYNAMIC(s)	((s)->s_flags & VSB_DYNAMIC)
 #define	VSB_ISDYNSTRUCT(s)	((s)->s_flags & VSB_DYNSTRUCT)
 #define	VSB_ISFINISHED(s)	((s)->s_flags & VSB_FINISHED)
-#define	VSB_HASOVERFLOWED(s)	((s)->s_flags & VSB_OVERFLOWED)
 #define	VSB_HASROOM(s)		((s)->s_len < (s)->s_size - 1)
 #define	VSB_FREESPACE(s)	((s)->s_size - ((s)->s_len + 1))
 #define	VSB_CANEXTEND(s)	((s)->s_flags & VSB_AUTOEXTEND)
@@ -111,13 +113,14 @@ vsb_extendsize(int size)
 {
 	int newsize;
 
-	newsize = VSB_MINEXTENDSIZE;
-	while (newsize < size) {
-		if (newsize < (int)VSB_MAXEXTENDSIZE)
+	if (size < (int)VSB_MAXEXTENDSIZE) {
+		newsize = VSB_MINEXTENDSIZE;
+		while (newsize < size)
 			newsize *= 2;
-		else
-			newsize += VSB_MAXEXTENDINCR;
+	} else {
+		newsize = roundup2(size, VSB_MAXEXTENDINCR);
 	}
+	KASSERT(newsize >= size, ("%s: %d < %d\n", __func__, newsize, size));
 	return (newsize);
 }
 
@@ -166,17 +169,21 @@ vsb_new(struct vsb *s, char *buf, int length, int flags)
 		s = SBMALLOC(sizeof(*s));
 		if (s == NULL)
 			return (NULL);
-		flags |= VSB_DYNSTRUCT;
+		bzero(s, sizeof(*s));
+		s->s_flags = flags;
+		VSB_SETFLAG(s, VSB_DYNSTRUCT);
+	} else {
+		bzero(s, sizeof(*s));
+		s->s_flags = flags;
 	}
-	memset(s, 0, sizeof *s);
-	s->s_flags = flags;
+		
 	s->s_magic = VSB_MAGIC;
 	s->s_size = length;
-	if (buf) {
+	if (buf != NULL) {
 		s->s_buf = buf;
 		return (s);
 	}
-	if (flags & VSB_AUTOEXTEND)
+	if ((flags & VSB_AUTOEXTEND) != 0)
 		s->s_size = vsb_extendsize(s->s_size);
 	s->s_buf = SBMALLOC(s->s_size);
 	if (s->s_buf == NULL) {
@@ -199,7 +206,7 @@ vsb_clear(struct vsb *s)
 	/* don't care if it's finished or not */
 
 	VSB_CLEARFLAG(s, VSB_FINISHED);
-	VSB_CLEARFLAG(s, VSB_OVERFLOWED);
+	s->s_error = 0;
 	s->s_len = 0;
 }
 
@@ -226,26 +233,47 @@ vsb_setpos(struct vsb *s, int pos)
 }
 
 /*
+ * Append a byte to an vsb.  This is the core function for appending
+ * to an vsb and is the main place that deals with extending the
+ * buffer and marking overflow.
+ */
+static void
+vsb_put_byte(int c, struct vsb *s)
+{
+
+	assert_vsb_integrity(s);
+	assert_vsb_state(s, 0);
+
+	if (s->s_error != 0)
+		return;
+	if (VSB_FREESPACE(s) <= 0) {
+		if (vsb_extend(s, 1) < 0)
+			s->s_error = ENOMEM;
+		if (s->s_error != 0)
+			return;
+	}
+	s->s_buf[s->s_len++] = c;
+}
+
+
+/*
  * Append a byte string to an vsb.
  */
 int
 vsb_bcat(struct vsb *s, const void *buf, size_t len)
 {
 	const char *str = buf;
+	const char *end = str + len;
 
 	assert_vsb_integrity(s);
 	assert_vsb_state(s, 0);
 
-	if (VSB_HASOVERFLOWED(s))
+	if (s->s_error != 0)
 		return (-1);
-	for (; len; len--) {
-		if (!VSB_HASROOM(s) && vsb_extend(s, len) < 0)
-			break;
-		s->s_buf[s->s_len++] = *str++;
-	}
-	if (len) {
-		VSB_SETFLAG(s, VSB_OVERFLOWED);
-		return (-1);
+	for (; str < end; str++) {
+		vsb_put_byte(*str, s);
+		if (s->s_error != 0)
+			return (-1);
 	}
 	return (0);
 }
@@ -274,17 +302,13 @@ vsb_cat(struct vsb *s, const char *str)
 	assert_vsb_integrity(s);
 	assert_vsb_state(s, 0);
 
-	if (VSB_HASOVERFLOWED(s))
+	if (s->s_error != 0)
 		return (-1);
 
-	while (*str) {
-		if (!VSB_HASROOM(s) && vsb_extend(s, strlen(str)) < 0)
-			break;
-		s->s_buf[s->s_len++] = *str++;
-	}
-	if (*str) {
-		VSB_SETFLAG(s, VSB_OVERFLOWED);
-		return (-1);
+	while (*str != '\0') {
+		vsb_put_byte(*str++, s);
+		if (s->s_error != 0)
+			return (-1);
 	}
 	return (0);
 }
@@ -318,7 +342,7 @@ vsb_vprintf(struct vsb *s, const char *fmt, va_list ap)
 	KASSERT(fmt != NULL,
 	    ("%s called with a NULL format string", __func__));
 
-	if (VSB_HASOVERFLOWED(s))
+	if (s->s_error != 0)
 		return (-1);
 
 	do {
@@ -336,16 +360,18 @@ vsb_vprintf(struct vsb *s, const char *fmt, va_list ap)
 	 * terminating nul.
 	 *
 	 * vsnprintf() returns the amount that would have been copied,
-	 * given sufficient space, hence the min() calculation below.
+	 * given sufficient space, so don't over-increment s_len.
 	 */
-	s->s_len += min(len, VSB_FREESPACE(s));
+	if (VSB_FREESPACE(s) < len)
+		len = VSB_FREESPACE(s);
+	s->s_len += len;
 	if (!VSB_HASROOM(s) && !VSB_CANEXTEND(s))
-		VSB_SETFLAG(s, VSB_OVERFLOWED);
+		s->s_error = ENOMEM;
 
 	KASSERT(s->s_len < s->s_size,
 	    ("wrote past end of vsb (%d >= %d)", s->s_len, s->s_size));
 
-	if (VSB_HASOVERFLOWED(s))
+	if (s->s_error != 0)
 		return (-1);
 	return (0);
 }
@@ -362,7 +388,7 @@ vsb_printf(struct vsb *s, const char *fmt, ...)
 	va_start(ap, fmt);
 	result = vsb_vprintf(s, fmt, ap);
 	va_end(ap);
-	return(result);
+	return (result);
 }
 
 /*
@@ -372,17 +398,9 @@ int
 vsb_putc(struct vsb *s, int c)
 {
 
-	assert_vsb_integrity(s);
-	assert_vsb_state(s, 0);
-
-	if (VSB_HASOVERFLOWED(s))
+	vsb_put_byte(c, s);
+	if (s->s_error != 0)
 		return (-1);
-	if (!VSB_HASROOM(s) && vsb_extend(s, 1) < 0) {
-		VSB_SETFLAG(s, VSB_OVERFLOWED);
-		return (-1);
-	}
-	if (c != '\0')
-		s->s_buf[s->s_len++] = (char)c;
 	return (0);
 }
 
@@ -396,23 +414,23 @@ vsb_trim(struct vsb *s)
 	assert_vsb_integrity(s);
 	assert_vsb_state(s, 0);
 
-	if (VSB_HASOVERFLOWED(s))
+	if (s->s_error != 0)
 		return (-1);
 
-	while (s->s_len && isspace(s->s_buf[s->s_len-1]))
+	while (s->s_len > 0 && isspace(s->s_buf[s->s_len-1]))
 		--s->s_len;
 
 	return (0);
 }
 
 /*
- * Check if an vsb overflowed
+ * Check if an vsb has an error.
  */
 int
 vsb_error(const struct vsb *s)
 {
 
-	return (VSB_HASOVERFLOWED(s));
+	return (s->s_error);
 }
 
 /*
@@ -426,8 +444,10 @@ vsb_finish(struct vsb *s)
 	assert_vsb_state(s, 0);
 
 	s->s_buf[s->s_len] = '\0';
-	VSB_CLEARFLAG(s, VSB_OVERFLOWED);
 	VSB_SETFLAG(s, VSB_FINISHED);
+	errno = s->s_error;
+	if (s->s_error)
+		return (-1);
 	return (0);
 }
 
@@ -454,7 +474,7 @@ vsb_len(struct vsb *s)
 	assert_vsb_integrity(s);
 	/* don't care if it's finished or not */
 
-	if (VSB_HASOVERFLOWED(s))
+	if (s->s_error != 0)
 		return (-1);
 	return (s->s_len);
 }
@@ -473,7 +493,7 @@ vsb_delete(struct vsb *s)
 	if (VSB_ISDYNAMIC(s))
 		SBFREE(s->s_buf);
 	isdyn = VSB_ISDYNSTRUCT(s);
-	memset(s, 0, sizeof *s);
+	bzero(s, sizeof(*s));
 	if (isdyn)
 		SBFREE(s);
 }

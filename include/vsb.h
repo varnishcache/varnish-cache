@@ -37,14 +37,14 @@
 struct vsb {
 	unsigned	s_magic;
 	char		*s_buf;		/* storage buffer */
-	size_t		 s_size;	/* size of storage buffer */
-	size_t		 s_len;		/* current length of string */
+	ssize_t		 s_size;	/* size of storage buffer */
+	ssize_t		 s_len;		/* current length of string */
+	int		 s_error;	/* current error code */
 #define	VSB_FIXEDLEN	0x00000000	/* fixed length buffer (default) */
 #define	VSB_AUTOEXTEND	0x00000001	/* automatically extend buffer */
 #define	VSB_USRFLAGMSK 0x0000ffff	/* mask of flags the user may specify */
 #define	VSB_DYNAMIC	0x00010000	/* s_buf must be freed */
 #define	VSB_FINISHED	0x00020000	/* set by vsb_finish() */
-#define	VSB_OVERFLOWED	0x00040000	/* vsb overflowed */
 #define	VSB_DYNSTRUCT	0x00080000	/* vsb must be freed */
 	int		 s_flags;	/* flags */
 };
