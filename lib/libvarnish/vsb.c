@@ -73,7 +73,7 @@ SVNID("$Id$")
  */
 #if !defined(NDEBUG)
 static void
-_vsb_assert_integrity(const char *fun, struct vsb *s)
+_assert_vsb_integrity(const char *fun, struct vsb *s)
 {
 
 	(void)fun;
@@ -89,7 +89,7 @@ _vsb_assert_integrity(const char *fun, struct vsb *s)
 }
 
 static void
-_vsb_assert_state(const char *fun, struct vsb *s, int state)
+_assert_vsb_state(const char *fun, struct vsb *s, int state)
 {
 
 	(void)fun;
@@ -99,11 +99,11 @@ _vsb_assert_state(const char *fun, struct vsb *s, int state)
 	    ("%s called with %sfinished or corrupt vsb", fun,
 	    (state ? "un" : "")));
 }
-#define	vsb_assert_integrity(s) _vsb_assert_integrity(__func__, (s))
-#define	vsb_assert_state(s, i)	 _vsb_assert_state(__func__, (s), (i))
+#define	assert_vsb_integrity(s) _assert_vsb_integrity(__func__, (s))
+#define	assert_vsb_state(s, i)	 _assert_vsb_state(__func__, (s), (i))
 #else
-#define	vsb_assert_integrity(s) do { } while (0)
-#define	vsb_assert_state(s, i)	 do { } while (0)
+#define	assert_vsb_integrity(s) do { } while (0)
+#define	assert_vsb_state(s, i)	 do { } while (0)
 #endif
 
 static int
@@ -195,7 +195,7 @@ void
 vsb_clear(struct vsb *s)
 {
 
-	vsb_assert_integrity(s);
+	assert_vsb_integrity(s);
 	/* don't care if it's finished or not */
 
 	VSB_CLEARFLAG(s, VSB_FINISHED);
@@ -211,8 +211,8 @@ int
 vsb_setpos(struct vsb *s, int pos)
 {
 
-	vsb_assert_integrity(s);
-	vsb_assert_state(s, 0);
+	assert_vsb_integrity(s);
+	assert_vsb_state(s, 0);
 
 	KASSERT(pos >= 0,
 	    ("attempt to seek to a negative position (%d)", pos));
@@ -233,8 +233,8 @@ vsb_bcat(struct vsb *s, const void *buf, size_t len)
 {
 	const char *str = buf;
 
-	vsb_assert_integrity(s);
-	vsb_assert_state(s, 0);
+	assert_vsb_integrity(s);
+	assert_vsb_state(s, 0);
 
 	if (VSB_HASOVERFLOWED(s))
 		return (-1);
@@ -257,8 +257,8 @@ int
 vsb_bcpy(struct vsb *s, const void *buf, size_t len)
 {
 
-	vsb_assert_integrity(s);
-	vsb_assert_state(s, 0);
+	assert_vsb_integrity(s);
+	assert_vsb_state(s, 0);
 
 	vsb_clear(s);
 	return (vsb_bcat(s, buf, len));
@@ -271,8 +271,8 @@ int
 vsb_cat(struct vsb *s, const char *str)
 {
 
-	vsb_assert_integrity(s);
-	vsb_assert_state(s, 0);
+	assert_vsb_integrity(s);
+	assert_vsb_state(s, 0);
 
 	if (VSB_HASOVERFLOWED(s))
 		return (-1);
@@ -296,8 +296,8 @@ int
 vsb_cpy(struct vsb *s, const char *str)
 {
 
-	vsb_assert_integrity(s);
-	vsb_assert_state(s, 0);
+	assert_vsb_integrity(s);
+	assert_vsb_state(s, 0);
 
 	vsb_clear(s);
 	return (vsb_cat(s, str));
@@ -312,8 +312,8 @@ vsb_vprintf(struct vsb *s, const char *fmt, va_list ap)
 	va_list ap_copy;
 	int len;
 
-	vsb_assert_integrity(s);
-	vsb_assert_state(s, 0);
+	assert_vsb_integrity(s);
+	assert_vsb_state(s, 0);
 
 	KASSERT(fmt != NULL,
 	    ("%s called with a NULL format string", __func__));
@@ -372,8 +372,8 @@ int
 vsb_putc(struct vsb *s, int c)
 {
 
-	vsb_assert_integrity(s);
-	vsb_assert_state(s, 0);
+	assert_vsb_integrity(s);
+	assert_vsb_state(s, 0);
 
 	if (VSB_HASOVERFLOWED(s))
 		return (-1);
@@ -393,8 +393,8 @@ int
 vsb_trim(struct vsb *s)
 {
 
-	vsb_assert_integrity(s);
-	vsb_assert_state(s, 0);
+	assert_vsb_integrity(s);
+	assert_vsb_state(s, 0);
 
 	if (VSB_HASOVERFLOWED(s))
 		return (-1);
@@ -422,8 +422,8 @@ void
 vsb_finish(struct vsb *s)
 {
 
-	vsb_assert_integrity(s);
-	vsb_assert_state(s, 0);
+	assert_vsb_integrity(s);
+	assert_vsb_state(s, 0);
 
 	s->s_buf[s->s_len] = '\0';
 	VSB_CLEARFLAG(s, VSB_OVERFLOWED);
@@ -437,8 +437,8 @@ char *
 vsb_data(struct vsb *s)
 {
 
-	vsb_assert_integrity(s);
-	vsb_assert_state(s, VSB_FINISHED);
+	assert_vsb_integrity(s);
+	assert_vsb_state(s, VSB_FINISHED);
 
 	return (s->s_buf);
 }
@@ -450,7 +450,7 @@ int
 vsb_len(struct vsb *s)
 {
 
-	vsb_assert_integrity(s);
+	assert_vsb_integrity(s);
 	/* don't care if it's finished or not */
 
 	if (VSB_HASOVERFLOWED(s))
@@ -466,7 +466,7 @@ vsb_delete(struct vsb *s)
 {
 	int isdyn;
 
-	vsb_assert_integrity(s);
+	assert_vsb_integrity(s);
 	/* don't care if it's finished or not */
 
 	if (VSB_ISDYNAMIC(s))
