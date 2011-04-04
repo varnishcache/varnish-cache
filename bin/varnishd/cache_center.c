@@ -689,7 +689,22 @@ cnt_fetchbody(struct sess *sp)
 
 	sp->obj = STV_NewObject(sp, sp->wrk->storage_hint, l,
 	    &sp->wrk->exp, nhttp);
-	/* XXX: -> 513 */
+	if (sp->obj == NULL) {
+		/*
+		 * Try to salvage the transaction by allocating a
+		 * shortlived object on Transient storage.
+		 */
+		sp->obj = STV_NewObject(sp, TRANSIENT_STORAGE, l,
+		    &sp->wrk->exp, nhttp);
+		sp->wrk->exp.ttl = params->shortlived;
+	}
+	if (sp->obj == NULL) {
+		HSH_Drop(sp);
+		sp->err_code = 503;
+		sp->step = STP_ERROR;
+		VDI_CloseFd(sp);
+		return (0);
+	}
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 
 	sp->wrk->storage_hint = NULL;
