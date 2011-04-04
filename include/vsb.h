@@ -31,6 +31,8 @@
 #ifndef VSB_H_INCLUDED
 #define VSB_H_INCLUDED
 
+#include <sys/types.h>
+
 /*
  * Structure definition
  */
