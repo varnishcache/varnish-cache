@@ -409,7 +409,7 @@ vsb_trim(struct vsb *s)
  * Check if an vsb overflowed
  */
 int
-vsb_overflowed(const struct vsb *s)
+vsb_error(const struct vsb *s)
 {
 
 	return (VSB_HASOVERFLOWED(s));
@@ -418,7 +418,7 @@ vsb_overflowed(const struct vsb *s)
 /*
  * Finish off an vsb.
  */
-void
+int
 vsb_finish(struct vsb *s)
 {
 
@@ -428,6 +428,7 @@ vsb_finish(struct vsb *s)
 	s->s_buf[s->s_len] = '\0';
 	VSB_CLEARFLAG(s, VSB_OVERFLOWED);
 	VSB_SETFLAG(s, VSB_FINISHED);
+	return (0);
 }
 
 /*

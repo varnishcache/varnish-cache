@@ -323,7 +323,7 @@ vbp_build_req(struct vsb *vsb, const struct vbp_vcl *vcl)
 		vsb_printf(vsb, "\r\n");
 	}
 	vsb_finish(vsb);
-	AZ(vsb_overflowed(vsb));
+	AZ(vsb_error(vsb));
 }
 
 /*--------------------------------------------------------------------
@@ -488,7 +488,7 @@ VBP_Start(struct backend *b, const struct vrt_backend_probe *p, const char *host
 		XXXAN(vt);
 		VTAILQ_INIT(&vt->vcls);
 		vt->backend = b;
-		vt->vsb = vsb_newauto();
+		vt->vsb = vsb_new_auto();
 		XXXAN(vt->vsb);
 		b->probe = vt;
 		startthread = 1;

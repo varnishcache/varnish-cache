@@ -142,7 +142,7 @@ http_write(const struct http *hp, int lvl, const char *pfx)
 	int l;
 
 	vsb_finish(hp->vsb);
-	AZ(vsb_overflowed(hp->vsb));
+	AZ(vsb_error(hp->vsb));
 	vtc_dump(hp->vl, lvl, pfx, vsb_data(hp->vsb), vsb_len(hp->vsb));
 	l = write(hp->fd, vsb_data(hp->vsb), vsb_len(hp->vsb));
 	if (l != vsb_len(hp->vsb))
@@ -1073,7 +1073,7 @@ http_process(struct vtclog *vl, const char *spec, int sock, int sfd)
 	hp->fd = sock;
 	hp->timeout = 5000;
 	hp->nrxbuf = 640*1024;
-	hp->vsb = vsb_newauto();
+	hp->vsb = vsb_new_auto();
 	hp->rxbuf = malloc(hp->nrxbuf);		/* XXX */
 	hp->sfd = sfd;
 	hp->vl = vl;

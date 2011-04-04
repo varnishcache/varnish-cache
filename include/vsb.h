@@ -1,5 +1,6 @@
 /*-
- * Copyright (c) 2000 Poul-Henning Kamp and Dag-Erling Smørgrav
+ * Copyright (c) 2000-2008 Poul-Henning Kamp
+ * Copyright (c) 2000-2008 Dag-Erling Coïdan Smørgrav
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -12,19 +13,19 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  *
- * $Id$
- * $FreeBSD: src/sys/sys/vsb.h,v 1.14 2004/07/09 11:35:30 des Exp $
+ *      $FreeBSD: head/sys/sys/sbuf.h 212425 2010-09-10 16:42:16Z mdf $
  */
 
 #ifndef VSB_H_INCLUDED
@@ -55,7 +56,8 @@ extern "C" {
  * API functions
  */
 struct vsb	*vsb_new(struct vsb *, char *, int, int);
-#define vsb_newauto()	vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND)
+#define		 vsb_new_auto()				\
+	vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND)
 void		 vsb_clear(struct vsb *);
 int		 vsb_setpos(struct vsb *, int);
 int		 vsb_bcat(struct vsb *, const void *, size_t);
@@ -63,15 +65,15 @@ int		 vsb_bcpy(struct vsb *, const void *, size_t);
 int		 vsb_cat(struct vsb *, const char *);
 int		 vsb_cpy(struct vsb *, const char *);
 int		 vsb_printf(struct vsb *, const char *, ...)
-    /* __printflike(2, 3) */;
+	/* __printflike(2, 3) */;
 #ifdef va_start
 int		 vsb_vprintf(struct vsb *, const char *, va_list)
-    /* __printflike(2, 0) */;
+	/* __printflike(2, 0) */;
 #endif
 int		 vsb_putc(struct vsb *, int);
 int		 vsb_trim(struct vsb *);
-int		 vsb_overflowed(const struct vsb *);
-void		 vsb_finish(struct vsb *);
+int		 vsb_error(const struct vsb *);
+int		 vsb_finish(struct vsb *);
 char		*vsb_data(struct vsb *);
 int		 vsb_len(struct vsb *);
 int		 vsb_done(const struct vsb *);

@@ -846,7 +846,7 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 				vep->state = VEP_TAGERROR;
 			}
 		} else if (vep->state == VEP_ATTRGETVAL) {
-			vep->attr_vsb = vsb_newauto();
+			vep->attr_vsb = vsb_new_auto();
 			vep->state = VEP_ATTRDELIM;
 		} else if (vep->state == VEP_ATTRDELIM) {
 			AZ(vep->attr_delim);
@@ -1005,7 +1005,7 @@ VEP_Init(const struct sess *sp, vep_callback_t *cb)
 	memset(vep, 0, sizeof *vep);
 	vep->magic = VEP_MAGIC;
 	vep->sp = sp;
-	vep->vsb = vsb_newauto();
+	vep->vsb = vsb_new_auto();
 	AN(vep->vsb);
 
 	if (cb != NULL) {

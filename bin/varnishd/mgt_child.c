@@ -444,13 +444,13 @@ mgt_save_panic(void)
 
 	if (child_panic)
 		vsb_delete(child_panic);
-	child_panic = vsb_newauto();
+	child_panic = vsb_new_auto();
 	XXXAN(child_panic);
 	TIM_format(TIM_real(), time_str);
 	vsb_printf(child_panic, "Last panic at: %s\n", time_str);
 	vsb_cat(child_panic, vsm_head->panicstr);
 	vsb_finish(child_panic);
-	AZ(vsb_overflowed(child_panic));
+	AZ(vsb_error(child_panic));
 }
 
 static void
@@ -482,7 +482,7 @@ mgt_sigchld(const struct vev *e, int what)
 	if (r == 0 || (r == -1 && errno == ECHILD))
 		return (0);
 	assert(r == child_pid);
-	vsb = vsb_newauto();
+	vsb = vsb_new_auto();
 	XXXAN(vsb);
 	vsb_printf(vsb, "Child (%d) %s", r, status ? "died" : "ended");
 	if (!WIFEXITED(status) && WEXITSTATUS(status)) {
@@ -500,7 +500,7 @@ mgt_sigchld(const struct vev *e, int what)
 	}
 #endif
 	vsb_finish(vsb);
-	AZ(vsb_overflowed(vsb));
+	AZ(vsb_error(vsb));
 	REPORT(LOG_INFO, "%s", vsb_data(vsb));
 	vsb_delete(vsb);
 

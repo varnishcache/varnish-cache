@@ -290,7 +290,7 @@ cls_vlu2(void *priv, char * const *av)
 	} while (0);
 
 	vsb_finish(cli->sb);
-	AZ(vsb_overflowed(cli->sb));
+	AZ(vsb_error(cli->sb));
 
 	if (cs->after != NULL)
 		cs->after(cli);
@@ -347,7 +347,7 @@ cls_vlu(void *priv, const char *p)
 		}
 		cfd->argv = av;
 		cfd->last_idx = i - 2;
-		cfd->last_arg = vsb_newauto();
+		cfd->last_arg = vsb_new_auto();
 		AN(cfd->last_arg);
 		return (0);
 	} else {
@@ -360,7 +360,7 @@ cls_vlu(void *priv, const char *p)
 			return (0);
 		}
 		vsb_finish(cfd->last_arg);
-		AZ(vsb_overflowed(cfd->last_arg));
+		AZ(vsb_error(cfd->last_arg));
 		free(cfd->argv[cfd->last_idx]);
 		cfd->argv[cfd->last_idx] = NULL;
 		free(cfd->argv[cfd->last_idx + 1]);
@@ -410,7 +410,7 @@ CLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 	cfd->cli = &cfd->clis;
 	cfd->cli->magic = CLI_MAGIC;
 	cfd->cli->vlu = VLU_New(cfd, cls_vlu, cs->maxlen);
-	cfd->cli->sb = vsb_newauto();
+	cfd->cli->sb = vsb_new_auto();
 	cfd->closefunc = closefunc;
 	cfd->priv = priv;
 	AN(cfd->cli->sb);

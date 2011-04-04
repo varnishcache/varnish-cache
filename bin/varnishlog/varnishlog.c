@@ -127,7 +127,7 @@ h_order(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 		return (0);
 	}
 	if (ob[fd] == NULL) {
-		ob[fd] = vsb_newauto();
+		ob[fd] = vsb_new_auto();
 		assert(ob[fd] != NULL);
 	}
 	if (tag == match_tag &&

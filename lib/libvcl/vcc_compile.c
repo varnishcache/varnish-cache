@@ -315,7 +315,7 @@ EmitInitFunc(const struct vcc *tl)
 
 	Fc(tl, 0, "\nstatic void\nVGC_Init(struct cli *cli)\n{\n\n");
 	vsb_finish(tl->fi);
-	AZ(vsb_overflowed(tl->fi));
+	AZ(vsb_error(tl->fi));
 	vsb_cat(tl->fc, vsb_data(tl->fi));
 	Fc(tl, 0, "}\n");
 }
@@ -335,7 +335,7 @@ EmitFiniFunc(const struct vcc *tl)
 		Fc(tl, 0, "\tvmod_priv_fini(&vmod_priv_%u);\n", u);
 
 	vsb_finish(tl->ff);
-	AZ(vsb_overflowed(tl->ff));
+	AZ(vsb_error(tl->ff));
 	vsb_cat(tl->fc, vsb_data(tl->ff));
 	Fc(tl, 0, "}\n");
 }
@@ -512,24 +512,24 @@ vcc_NewVcc(const struct vcc *tl0)
 	tl->ndirector = 1;
 
 	/* General C code */
-	tl->fc = vsb_newauto();
+	tl->fc = vsb_new_auto();
 	assert(tl->fc != NULL);
 
 	/* Forward decls (.h like) */
-	tl->fh = vsb_newauto();
+	tl->fh = vsb_new_auto();
 	assert(tl->fh != NULL);
 
 	/* Init C code */
-	tl->fi = vsb_newauto();
+	tl->fi = vsb_new_auto();
 	assert(tl->fi != NULL);
 
 	/* Finish C code */
-	tl->ff = vsb_newauto();
+	tl->ff = vsb_new_auto();
 	assert(tl->ff != NULL);
 
 	/* body code of methods */
 	for (i = 0; i < VCL_MET_MAX; i++) {
-		tl->fm[i] = vsb_newauto();
+		tl->fm[i] = vsb_new_auto();
 		assert(tl->fm[i] != NULL);
 	}
 	return (tl);
@@ -679,7 +679,7 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 		Fc(tl, 1, "VGC_function_%s (struct sess *sp)\n",
 		    method_tab[i].name);
 		vsb_finish(tl->fm[i]);
-		AZ(vsb_overflowed(tl->fm[i]));
+		AZ(vsb_error(tl->fm[i]));
 		Fc(tl, 1, "{\n");
 		Fc(tl, 1, "%s", vsb_data(tl->fm[i]));
 		Fc(tl, 1, "}\n");
@@ -695,10 +695,10 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 
 	/* Combine it all in the fh vsb */
 	vsb_finish(tl->fc);
-	AZ(vsb_overflowed(tl->fc));
+	AZ(vsb_error(tl->fc));
 	vsb_cat(tl->fh, vsb_data(tl->fc));
 	vsb_finish(tl->fh);
-	AZ(vsb_overflowed(tl->fh));
+	AZ(vsb_error(tl->fh));
 
 	of = strdup(vsb_data(tl->fh));
 	AN(of);

@@ -75,7 +75,7 @@ BAN_New(void)
 	ALLOC_OBJ(b, BAN_MAGIC);
 	if (b == NULL)
 		return (b);
-	b->vsb = vsb_newauto();
+	b->vsb = vsb_new_auto();
 	if (b->vsb == NULL) {
 		FREE_OBJ(b);
 		return (NULL);
@@ -314,7 +314,7 @@ BAN_Insert(struct ban *b)
 	b->t0 = TIM_real();
 
 	vsb_finish(b->vsb);
-	AZ(vsb_overflowed(b->vsb));
+	AZ(vsb_error(b->vsb));
 	b->test = strdup(vsb_data(b->vsb));
 	AN(b->test);
 	vsb_delete(b->vsb);

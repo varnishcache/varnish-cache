@@ -164,7 +164,7 @@ macro_expand(struct vtclog *vl, const char *text)
 	const char *p, *q;
 	char *m;
 
-	vsb = vsb_newauto();
+	vsb = vsb_new_auto();
 	AN(vsb);
 	while (*text != '\0') {
 		p = strstr(text, "${");

@@ -82,7 +82,7 @@ vtc_logopen(const char *id)
 	ALLOC_OBJ(vl, VTCLOG_MAGIC);
 	AN(vl);
 	vl->id = id;
-	vl->vsb = vsb_newauto();
+	vl->vsb = vsb_new_auto();
 	AZ(pthread_mutex_init(&vl->mtx, NULL));
 	AZ(pthread_setspecific(log_key, vl));
 	return (vl);
@@ -141,7 +141,7 @@ vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...)
 	va_end(ap);
 	vsb_putc(vl->vsb, '\n');
 	vsb_finish(vl->vsb);
-	AZ(vsb_overflowed(vl->vsb));
+	AZ(vsb_error(vl->vsb));
 
 	vtc_log_emit(vl, lvl);
 
@@ -212,7 +212,7 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str, int 
 	if (!nl)
 		vsb_printf(vl->vsb, "\n");
 	vsb_finish(vl->vsb);
-	AZ(vsb_overflowed(vl->vsb));
+	AZ(vsb_error(vl->vsb));
 
 	vtc_log_emit(vl, lvl);
 
@@ -267,7 +267,7 @@ vtc_hexdump(struct vtclog *vl, unsigned lvl, const char *pfx, const unsigned cha
 	if (!nl)
 		vsb_printf(vl->vsb, "\n");
 	vsb_finish(vl->vsb);
-	AZ(vsb_overflowed(vl->vsb));
+	AZ(vsb_error(vl->vsb));
 
 	vtc_log_emit(vl, lvl);
 
