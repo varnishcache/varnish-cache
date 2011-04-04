@@ -488,7 +488,6 @@ cnt_fetch(struct sess *sp)
 	if (i) {
 		sp->handling = VCL_RET_ERROR;
 		sp->err_code = 503;
-		sp->wrk->do_close = 0;
 	} else {
 		/*
 		 * These two headers can be spread over multiple actual headers
@@ -541,6 +540,7 @@ cnt_fetch(struct sess *sp)
 	}
 
 	/* Clean up partial fetch */
+	AZ(sp->vbc);
 
 	if (sp->objcore != NULL) {
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
@@ -729,7 +729,6 @@ cnt_fetchbody(struct sess *sp)
 	/* Use unmodified headers*/
 	i = FetchBody(sp);
 
-	sp->wrk->do_close = 0;
 	sp->wrk->h_content_length = NULL;
 
 	http_Setup(sp->wrk->bereq, NULL);
