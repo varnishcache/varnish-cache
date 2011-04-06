@@ -71,15 +71,15 @@ pan_ws(const struct ws *ws, int indent)
 	vsb_printf(vsp, "%*sid = \"%s\",\n", indent + 2, "", ws->id);
 	vsb_printf(vsp, "%*s{s,f,r,e} = {%p", indent + 2, "", ws->s);
 	if (ws->f > ws->s)
-		vsb_printf(vsp, ",+%ld", ws->f - ws->s);
+		vsb_printf(vsp, ",+%ld", (long) (ws->f - ws->s));
 	else
 		vsb_printf(vsp, ",%p", ws->f);
 	if (ws->r > ws->s)
-		vsb_printf(vsp, ",+%ld", ws->r - ws->s);
+		vsb_printf(vsp, ",+%ld", (long) (ws->r - ws->s));
 	else
 		vsb_printf(vsp, ",%p", ws->r);
 	if (ws->e > ws->s)
-		vsb_printf(vsp, ",+%ld", ws->e - ws->s);
+		vsb_printf(vsp, ",+%ld", (long) (ws->e - ws->s));
 	else
 		vsb_printf(vsp, ",%p", ws->e);
 	vsb_printf(vsp, "},\n");
