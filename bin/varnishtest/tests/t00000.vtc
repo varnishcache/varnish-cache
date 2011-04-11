@@ -1,0 +1,50 @@
+# $Id$
+
+test "Ticket #873"
+
+server s1 {
+	rxreq 
+	txresp -nolen -hdr "Transfer-encoding: chunked"
+	chunked "<1>------------------------<1>\n"
+	sema r1 sync 2
+	chunked "<2>------------------------<2>\n"
+	sema r2 sync 2
+	chunked "<3>------------------------<3>\n"
+	sema r1 sync 2
+	chunked "<4>------------------------<4>\n"
+	sema r2 sync 2
+	chunkedlen 0
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		set beresp.do_stream = true;
+	}
+} -start 
+
+varnish v1 -cliok "param.set diag_bitmap 1"
+
+client c1 {
+	txreq  -hdr "foo: /foo"
+	rxresp -no_obj
+
+	rxchunk
+	expect resp.chunklen == 31
+	sema r1 sync 2
+
+	rxchunk
+	expect resp.chunklen == 31
+	sema r2 sync 2
+
+	rxchunk
+	expect resp.chunklen == 31
+	sema r1 sync 2
+
+	rxchunk
+	expect resp.chunklen == 31
+	sema r2 sync 2
+
+	rxchunk
+	expect resp.chunklen == 0
+	expect resp.bodylen == 124
+} -run

@@ -477,6 +477,8 @@ vfp_gunzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 		i = VGZ_Gunzip(vg, &dp, &dl);
 		assert(i == VGZ_OK || i == VGZ_END);
 		sp->obj->len += dl;
+		if (sp->wrk->do_stream)
+			RES_StreamPoll(sp);
 	}
 	if (i == Z_OK || i == Z_STREAM_END)
 		return (1);
@@ -547,6 +549,8 @@ vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 		i = VGZ_Gzip(vg, &dp, &dl, VGZ_NORMAL);
 		assert(i == Z_OK);
 		sp->obj->len += dl;
+		if (sp->wrk->do_stream)
+			RES_StreamPoll(sp);
 	}
 	return (1);
 }
@@ -623,6 +627,8 @@ vfp_testgzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 		VGZ_Ibuf(vg, st->ptr + st->len, w);
 		st->len += w;
 		sp->obj->len += w;
+		if (sp->wrk->do_stream)
+			RES_StreamPoll(sp);
 
 		while (!VGZ_IbufEmpty(vg)) {
 			VGZ_Obuf(vg, ibuf, sizeof ibuf);

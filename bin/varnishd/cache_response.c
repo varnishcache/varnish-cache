@@ -270,7 +270,7 @@ res_WriteGunzipObj(struct sess *sp)
 	}
 	if (obufl) {
 		(void)WRW_Write(sp->wrk, obuf, obufl);
-		WRW_Flush(sp->wrk);
+		(void)WRW_Flush(sp->wrk);
 	}
 	VGZ_Destroy(&vg);
 	assert(u == sp->obj->len);
@@ -413,19 +413,42 @@ RES_StreamStart(struct sess *sp)
 
 	if (sp->wrk->res_mode & RES_CHUNKED)
 		WRW_Chunked(sp->wrk);
+
+	sp->wrk->stream_next = 0;
+}
+
+void
+RES_StreamPoll(const struct sess *sp)
+{
+	struct storage *st;
+	ssize_t l, l2;
+	void *ptr;
+
+	if (sp->obj->len == sp->wrk->stream_next)
+		return;
+	assert(sp->obj->len > sp->wrk->stream_next);
+	l = 0;
+	VTAILQ_FOREACH(st, &sp->obj->store, list) {
+		if (st->len + l <= sp->wrk->stream_next) {
+			l += st->len;
+			continue;
+		}
+		l2 = st->len + l - sp->wrk->stream_next;
+		ptr = st->ptr + (sp->wrk->stream_next - l);
+		(void)WRW_Write(sp->wrk, ptr, l2);
+		l += st->len;
+		sp->wrk->stream_next += l2;
+	}
+	(void)WRW_Flush(sp->wrk);
 }
 
 void
 RES_StreamEnd(struct sess *sp)
 {
-	ssize_t low, high;
 
 	if (sp->wrk->res_mode & RES_GUNZIP) {
+		INCOMPL();
 		res_WriteGunzipObj(sp);
-	} else {
-		low = 0;
-		high = sp->obj->len - 1;
-		res_WriteDirObj(sp, low, high);
 	}
 	if (sp->wrk->res_mode & RES_CHUNKED &&
 	    !(sp->wrk->res_mode & RES_ESI_CHILD))
