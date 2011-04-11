@@ -664,6 +664,9 @@ cnt_fetchbody(struct sess *sp)
 	else if (sp->wrk->is_gzip)
 		sp->wrk->vfp = &vfp_testgzip;
 
+	if (sp->wrk->do_esi)
+		sp->wrk->do_stream = 0;
+
 	l = http_EstimateWS(sp->wrk->beresp,
 	    pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
 
@@ -1177,10 +1180,12 @@ cnt_recv(struct sess *sp)
 		return (0);
 	}
 
+	/* XXX: do_esi ? */
 	sp->wrk->is_gzip = 0;
 	sp->wrk->is_gunzip = 0;
 	sp->wrk->do_gzip = 0;
 	sp->wrk->do_gunzip = 0;
+	sp->wrk->do_stream = 0;
 
 	if (params->http_gzip_support &&
 	     (recv_handling != VCL_RET_PIPE) &&

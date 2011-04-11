@@ -303,6 +303,7 @@ struct worker {
 	struct vfp		*vfp;
 	struct vgz		*vgz_rx;
 	struct vef_priv		*vef_priv;
+	unsigned		do_stream;
 	unsigned		do_esi;
 	unsigned		do_gzip;
 	unsigned		is_gzip;
