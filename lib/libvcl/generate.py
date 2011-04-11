@@ -312,8 +312,8 @@ sp_variables = (
 	),
 	('beresp.do_stream',
 		'BOOL',
-		( 'miss', 'pass', 'fetch',),
-		( 'miss', 'pass', 'fetch',),
+		( 'fetch',),
+		( 'fetch',),
 		'const struct sess *'
 	),
 	('beresp.do_gzip',
