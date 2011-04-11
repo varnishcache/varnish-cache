@@ -59,11 +59,6 @@ ved_include(struct sess *sp, const char *src, const char *host)
 		return;
 	sp->esi_level++;
 
-	if (WRW_Flush(w)) {
-		vca_close_session(sp, "remote closed");
-		return;
-	}
-
 	(void)WRW_FlushRelease(w);
 
 	obj = sp->obj;
@@ -205,6 +200,7 @@ ved_pretend_gzip(const struct sess *sp, const uint8_t *p, ssize_t l)
 		l -= lx;
 		p += lx;
 	}
+	/* buf2 is local, have to flush */
 	(void)WRW_Flush(sp->wrk);
 }
 
@@ -224,7 +220,7 @@ ESI_Deliver(struct sess *sp)
 	struct storage *st;
 	uint8_t *p, *e, *q, *r;
 	unsigned off;
-	ssize_t l, l_icrc = 0;
+	ssize_t l, l2, l_icrc = 0;
 	uint32_t icrc = 0;
 	uint8_t tailbuf[8 + 5];
 	int isgzip;
@@ -274,7 +270,7 @@ ESI_Deliver(struct sess *sp)
 		VGZ_Ibuf(vgz, gzip_hdr, sizeof gzip_hdr);
 		VGZ_Obuf(vgz, obuf, sizeof obuf);
 		i = VGZ_Gunzip(vgz, &dp, &dl);
-		assert(i == Z_OK || i == Z_STREAM_END);
+		assert(i == VGZ_OK);
 		assert(VGZ_IbufEmpty(vgz));
 		assert(dl == 0);
 
@@ -290,61 +286,91 @@ ESI_Deliver(struct sess *sp)
 		case VEC_V2:
 		case VEC_V8:
 			l = ved_decode_len(&p);
-			r = p;
 			if (isgzip) {
 				assert(*p == VEC_C1 || *p == VEC_C2 ||
 				    *p == VEC_C8);
 				l_icrc = ved_decode_len(&p);
 				icrc = vbe32dec(p);
 				p += 4;
+				if (sp->wrk->gzip_resp) {
+					sp->wrk->crc = crc32_combine(
+					    sp->wrk->crc, icrc, l_icrc);
+					sp->wrk->l_crc += l_icrc;
+				}
 			}
-			if (sp->wrk->gzip_resp && isgzip) {
-				/*
-				 * We have a gzip'ed VEC and delivers a
-				 * gzip'ed ESI response.
-				 */
-				sp->wrk->crc = crc32_combine(
-				    sp->wrk->crc, icrc, l_icrc);
-				sp->wrk->l_crc += l_icrc;
-				WRW_Write(sp->wrk, st->ptr + off, l);
-			} else if (sp->wrk->gzip_resp) {
-				/*
-				 * A gzip'ed ESI response, but the VEC was
-				 * not gzip'ed.
-				 */
-				ved_pretend_gzip(sp, st->ptr + off, l);
-				off += l;
-			} else if (isgzip) {
-				/*
-				 * A gzip'ed VEC, but ungzip'ed ESI response
-				 */
-				AN(vgz);
-				VGZ_Ibuf(vgz, st->ptr + off, l);
-				do {
-					if (obufl == sizeof obuf) {
-						WRW_Write(sp->wrk, obuf, obufl);
-						obufl = 0;
+			/*
+			 * There is no guarantee that the 'l' bytes are all
+			 * in the same storage segment, so loop over storage
+			 * until we have processed them all.
+			 */
+			while (l > 0) {
+				l2 = l;
+				if (l2 > st->len - off)
+					l2 = st->len - off;
+				l -= l2;
+
+				if (sp->wrk->gzip_resp && isgzip) {
+					/*
+					 * We have a gzip'ed VEC and delivers
+					 * a gzip'ed ESI response.
+					 */
+					WRW_Write(sp->wrk, st->ptr + off, l2);
+				} else if (sp->wrk->gzip_resp) {
+					/*
+					 * A gzip'ed ESI response, but the VEC
+					 * was not gzip'ed.
+					 */
+					ved_pretend_gzip(sp, st->ptr + off, l2);
+				} else if (isgzip) {
+					/*
+					 * A gzip'ed VEC, but ungzip'ed ESI
+					 * response
+					 */
+					AN(vgz);
+					i = VGZ_WrwGunzip(sp, vgz,
+						st->ptr + off, l2,
+						obuf, sizeof obuf, &obufl);
+					if (i == VGZ_SOCKET) {
+						vca_close_session(sp,
+						    "remote closed");
+						p = e;
+						break;
 					}
-					VGZ_Obuf(vgz, obuf + obufl,
-					    sizeof obuf - obufl);
-					i = VGZ_Gunzip(vgz, &dp, &dl);
-					assert(i == Z_OK || i == Z_STREAM_END);
-					obufl += dl;
-				} while (!VGZ_IbufEmpty(vgz));
-			} else {
-				/*
-				 * Ungzip'ed VEC, ungzip'ed ESI response
-				 */
-				WRW_Write(sp->wrk, st->ptr + off, l);
+					assert (i == VGZ_OK || i == VGZ_END);
+				} else {
+					/*
+					 * Ungzip'ed VEC, ungzip'ed ESI response
+					 */
+					WRW_Write(sp->wrk, st->ptr + off, l2);
+				}
+				off += l2;
+				if (off == st->len) {
+					st = VTAILQ_NEXT(st, list);
+					off = 0;
+				}
 			}
-			off += l;
 			break;
 		case VEC_S1:
 		case VEC_S2:
 		case VEC_S8:
 			l = ved_decode_len(&p);
 			Debug("SKIP1(%d)\n", (int)l);
-			off += l;
+			/*
+			 * There is no guarantee that the 'l' bytes are all
+			 * in the same storage segment, so loop over storage
+			 * until we have processed them all.
+			 */
+			while (l > 0) {
+				l2 = l;
+				if (l2 > st->len - off)
+					l2 = st->len - off;
+				l -= l2;
+				off += l2;
+				if (off == st->len) {
+					st = VTAILQ_NEXT(st, list);
+					off = 0;
+				}
+			}
 			break;
 		case VEC_INCL:
 			p++;
@@ -356,6 +382,11 @@ ESI_Deliver(struct sess *sp)
 			if (obufl > 0) {
 				WRW_Write(sp->wrk, obuf, obufl);
 				obufl = 0;
+			}
+			if (WRW_Flush(sp->wrk)) {
+				vca_close_session(sp, "remote closed");
+				p = e;
+				break;
 			}
 			Debug("INCL [%s][%s] BEGIN\n", q, p);
 			ved_include(sp, (const char*)q, (const char*)p);

@@ -147,12 +147,13 @@ accumulate(uint32_t * const p)
 }
 
 static void
-update(const struct VSM_data *vd)
+update(const struct VSM_data *vd, int period)
 {
 	struct top *tp, *tp2;
 	int l, len;
 	double t = 0;
 	static time_t last = 0;
+	static unsigned n;
 	time_t now;
 
 	now = time(NULL);
@@ -161,6 +162,8 @@ update(const struct VSM_data *vd)
 	last = now;
 
 	l = 1;
+	if (n < period)
+		n++;
 	AC(erase());
 	AC(mvprintw(0, 0, "%*s", COLS - 1, VSM_Name(vd)));
 	AC(mvprintw(0, 0, "list length %u", ntop));
@@ -175,7 +178,7 @@ update(const struct VSM_data *vd)
 			    len, len, tp->rec_data));
 			t = tp->count;
 		}
-		tp->count *= .999;
+		tp->count += (1.0/3.0 - tp->count) / (double)n;
 		if (tp->count * 10 < t || l > LINES * 10) {
 			VTAILQ_REMOVE(&top_head, tp, list);
 			free(tp->rec_data);
@@ -211,7 +214,7 @@ accumulate_thread(void *arg)
 }
 
 static void
-do_curses(struct VSM_data *vd)
+do_curses(struct VSM_data *vd, int period)
 {
 	pthread_t thr;
 	int i;
@@ -237,7 +240,7 @@ do_curses(struct VSM_data *vd)
 	AC(erase());
 	for (;;) {
 		AZ(pthread_mutex_lock(&mtx));
-		update(vd);
+		update(vd, period);
 		AZ(pthread_mutex_unlock(&mtx));
 
 		timeout(1000);
@@ -310,11 +313,12 @@ main(int argc, char **argv)
 {
 	struct VSM_data *vd;
 	int o, once = 0;
+	float period = 60; /* seconds */
 
 	vd = VSM_New();
 	VSL_Setup(vd);
 
-	while ((o = getopt(argc, argv, VSL_ARGS "1fV")) != -1) {
+	while ((o = getopt(argc, argv, VSL_ARGS "1fVp:")) != -1) {
 		switch (o) {
 		case '1':
 			AN(VSL_Arg(vd, 'd', NULL));
@@ -322,6 +326,14 @@ main(int argc, char **argv)
 			break;
 		case 'f':
 			f_flag = 1;
+			break;
+		case 'p':
+			errno = 0;
+			period = strtol(optarg, NULL, 0);
+			if (errno != 0)  {
+				fprintf(stderr, "Syntax error, %s is not a number", optarg);
+				exit(1);
+			}
 			break;
 		case 'V':
 			varnish_version("varnishtop");
@@ -340,7 +352,7 @@ main(int argc, char **argv)
 		VSL_NonBlocking(vd, 1);
 		do_once(vd);
 	} else {
-		do_curses(vd);
+		do_curses(vd, period);
 	}
 	exit(0);
 }

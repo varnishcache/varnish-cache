@@ -4,6 +4,7 @@ T=/tmp/_$$
 flexelint \
 	-I/usr/include \
 	-I. \
+	-I../.. \
 	-I../../include \
 	../flint.lnt \
 	flint.lnt \

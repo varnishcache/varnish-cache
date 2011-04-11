@@ -89,7 +89,7 @@ mgt_make_cc_cmd(const char *sf, const char *of)
 	int pct;
 	char *p;
 
-	sb = vsb_newauto();
+	sb = vsb_new_auto();
 	XXXAN(sb);
 	for (p = mgt_cc_cmd, pct = 0; *p; ++p) {
 		if (pct) {
@@ -117,8 +117,7 @@ mgt_make_cc_cmd(const char *sf, const char *of)
 	}
 	if (pct)
 		vsb_putc(sb, '%');
-	vsb_finish(sb);
-	AZ(vsb_overflowed(sb));
+	AZ(vsb_finish(sb));
 	return (sb);
 }
 
@@ -142,14 +141,13 @@ run_vcc(void *priv)
 	int fd, i, l;
 
 	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
-	sb = vsb_newauto();
+	sb = vsb_new_auto();
 	XXXAN(sb);
 	VCC_VCL_dir(vcc, mgt_vcl_dir);
 	VCC_VMOD_dir(vcc, mgt_vmod_dir);
 	VCC_Err_Unref(vcc, mgt_vcc_err_unref);
 	csrc = VCC_Compile(vcc, sb, vp->vcl);
-	vsb_finish(sb);
-	AZ(vsb_overflowed(sb));
+	AZ(vsb_finish(sb));
 	if (vsb_len(sb))
 		printf("%s", vsb_data(sb));
 	vsb_delete(sb);
@@ -299,11 +297,10 @@ mgt_VccCompile(struct vsb **sb, const char *b, int C_flag)
 {
 	char *vf;
 
-	*sb = vsb_newauto();
+	*sb = vsb_new_auto();
 	XXXAN(*sb);
 	vf = mgt_run_cc(b, *sb, C_flag);
-	vsb_finish(*sb);
-	AZ(vsb_overflowed(*sb));
+	AZ(vsb_finish(*sb));
 	return (vf);
 }
 

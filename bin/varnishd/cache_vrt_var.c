@@ -197,6 +197,7 @@ VRT_r_##dir##_##onm(const struct sess *sp)				\
 VBERESP(beresp, unsigned, do_esi, do_esi)
 VBERESP(beresp, unsigned, do_gzip, do_gzip)
 VBERESP(beresp, unsigned, do_gunzip, do_gunzip)
+VBERESP(beresp, unsigned, do_stream, do_stream)
 
 /*--------------------------------------------------------------------*/
 

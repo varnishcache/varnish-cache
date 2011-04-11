@@ -1,0 +1,20 @@
+# $Id$
+
+test "Ticket #894"
+
+server s1 {
+	rxreq 
+	txresp -body {<XXX><esi:include src="a" src="b"/><YYY>}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		set beresp.do_esi = true;
+	}
+} -start 
+
+client c1 {
+	txreq  
+	rxresp
+	expect resp.bodylen == 10
+} -run

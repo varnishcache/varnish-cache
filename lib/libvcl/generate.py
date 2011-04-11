@@ -310,6 +310,12 @@ sp_variables = (
 		( 'fetch',),
 		'const struct sess *'
 	),
+	('beresp.do_stream',
+		'BOOL',
+		( 'fetch',),
+		( 'fetch',),
+		'const struct sess *'
+	),
 	('beresp.do_gzip',
 		'BOOL',
 		( 'fetch',),

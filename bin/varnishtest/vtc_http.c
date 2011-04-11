@@ -141,8 +141,7 @@ http_write(const struct http *hp, int lvl, const char *pfx)
 {
 	int l;
 
-	vsb_finish(hp->vsb);
-	AZ(vsb_overflowed(hp->vsb));
+	AZ(vsb_finish(hp->vsb));
 	vtc_dump(hp->vl, lvl, pfx, vsb_data(hp->vsb), vsb_len(hp->vsb));
 	l = write(hp->fd, vsb_data(hp->vsb), vsb_len(hp->vsb));
 	if (l != vsb_len(hp->vsb))
@@ -606,11 +605,14 @@ gzip_body(struct http *hp, const char *txt, char **body, int *bodylen)
 		    i, hp->gzipresidual);
 	*bodylen = vz.total_out;
 	vtc_log(hp->vl, 4, "startbit = %ju %ju/%ju",
-	    vz.start_bit, vz.start_bit >> 3, vz.start_bit & 7);
+	    (uintmax_t)vz.start_bit,
+	    (uintmax_t)vz.start_bit >> 3, (uintmax_t)vz.start_bit & 7);
 	vtc_log(hp->vl, 4, "lastbit = %ju %ju/%ju",
-	    vz.last_bit, vz.last_bit >> 3, vz.last_bit & 7);
+	    (uintmax_t)vz.last_bit,
+	    (uintmax_t)vz.last_bit >> 3, (uintmax_t)vz.last_bit & 7);
 	vtc_log(hp->vl, 4, "stopbit = %ju %ju/%ju",
-	    vz.stop_bit, vz.stop_bit >> 3, vz.stop_bit & 7);
+	    (uintmax_t)vz.stop_bit,
+	    (uintmax_t)vz.stop_bit >> 3, (uintmax_t)vz.stop_bit & 7);
 	assert(Z_OK == deflateEnd(&vz));
 }
 
@@ -843,7 +845,7 @@ cmd_http_txreq(CMD_ARGS)
 	if (*av != NULL)
 		vtc_log(hp->vl, 0, "Unknown http txreq spec: %s\n", *av);
 	if (body != NULL)
-		vsb_printf(hp->vsb, "Content-Length: %d%s", strlen(body), nl);
+		vsb_printf(hp->vsb, "Content-Length: %lu%s", strlen(body), nl);
 	vsb_cat(hp->vsb, nl);
 	if (body != NULL) {
 		vsb_cat(hp->vsb, body);
@@ -888,7 +890,7 @@ cmd_http_chunked(CMD_ARGS)
 	AN(av[1]);
 	AZ(av[2]);
 	vsb_clear(hp->vsb);
-	vsb_printf(hp->vsb, "%x%s%s%s", strlen(av[1]), nl, av[1], nl);
+	vsb_printf(hp->vsb, "%lx%s%s%s", strlen(av[1]), nl, av[1], nl);
 	http_write(hp, 4, "chunked");
 }
 
@@ -1070,7 +1072,7 @@ http_process(struct vtclog *vl, const char *spec, int sock, int sfd)
 	hp->fd = sock;
 	hp->timeout = 5000;
 	hp->nrxbuf = 640*1024;
-	hp->vsb = vsb_newauto();
+	hp->vsb = vsb_new_auto();
 	hp->rxbuf = malloc(hp->nrxbuf);		/* XXX */
 	hp->sfd = sfd;
 	hp->vl = vl;

@@ -75,7 +75,7 @@ BAN_New(void)
 	ALLOC_OBJ(b, BAN_MAGIC);
 	if (b == NULL)
 		return (b);
-	b->vsb = vsb_newauto();
+	b->vsb = vsb_new_auto();
 	if (b->vsb == NULL) {
 		FREE_OBJ(b);
 		return (NULL);
@@ -313,8 +313,7 @@ BAN_Insert(struct ban *b)
 	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
 	b->t0 = TIM_real();
 
-	vsb_finish(b->vsb);
-	AZ(vsb_overflowed(b->vsb));
+	AZ(vsb_finish(b->vsb));
 	b->test = strdup(vsb_data(b->vsb));
 	AN(b->test);
 	vsb_delete(b->vsb);
@@ -434,6 +433,7 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 	CHECK_OBJ_NOTNULL(oc->ban, BAN_MAGIC);
 
 	b0 = ban_start;
+	CHECK_OBJ_NOTNULL(b0, BAN_MAGIC);
 
 	if (b0 == oc->ban)
 		return (0);
@@ -445,6 +445,7 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 	 */
 	tests = 0;
 	for (b = b0; b != oc->ban; b = VTAILQ_NEXT(b, list)) {
+		CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
 		if (b->flags & BAN_F_GONE)
 			continue;
 		if (!has_req && (b->flags & BAN_F_REQ))

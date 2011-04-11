@@ -54,10 +54,10 @@ your hit rate and reduce the load on your servers. ESI looks like this::
   </BODY>
   </HTML>
 
-ESI is processed in vcl_fetch by using the *esi* keyword.::
+ESI is processed in vcl_fetch by setting *do_esi* to true.::
 
   sub vcl_fetch {
       if (req.url == "/test.html") {
-	  esi;  /* Do ESI processing */
+	  set beresp.do_esi = true;  /* Do ESI processing */
       }
   }

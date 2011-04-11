@@ -464,7 +464,7 @@ vcc_ParseHostDef(struct vcc *tl, int serial, const char *vgcname)
 
 	SkipToken(tl, '{');
 
-	vsb = vsb_newauto();
+	vsb = vsb_new_auto();
 	AN(vsb);
 	tl->fb = vsb;
 
@@ -602,8 +602,7 @@ vcc_ParseHostDef(struct vcc *tl, int serial, const char *vgcname)
 	vcc_NextToken(tl);
 
 	tl->fb = NULL;
-	vsb_finish(vsb);
-	AZ(vsb_overflowed(vsb));
+	AZ(vsb_finish(vsb));
 	Fh(tl, 0, "%s", vsb_data(vsb));
 	vsb_delete(vsb);
 

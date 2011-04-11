@@ -1,0 +1,20 @@
+test "Ticket #896, strings over 256 bytes"
+
+server s1 {
+	rxreq 
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+	    if (req.http.host ~ "^(abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij)") {
+		error 500 "not ok";
+		}
+	}
+} -start 
+
+client c1 {
+	txreq  
+	rxresp
+	expect resp.status == 200
+} -run

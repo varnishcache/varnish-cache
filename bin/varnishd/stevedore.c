@@ -53,7 +53,51 @@ static VTAILQ_HEAD(, stevedore)	stevedores =
 static const struct stevedore * volatile stv_next;
 
 static struct stevedore *stv_transient;
-static struct objcore_methods default_oc_methods;
+
+/*---------------------------------------------------------------------
+ * Default objcore methods
+ */
+
+static struct object * __match_proto__(getobj_f)
+default_oc_getobj(struct worker *wrk, struct objcore *oc)
+{
+	struct object *o;
+
+	(void)wrk;
+	if (oc->priv == NULL)
+		return (NULL);
+	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
+	return (o);
+}
+
+static void
+default_oc_freeobj(struct objcore *oc)
+{
+	struct object *o;
+
+	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
+	oc->priv = NULL;
+	oc->methods = NULL;
+
+	STV_Freestore(o);
+	STV_free(o->objstore);
+}
+
+static struct lru *
+default_oc_getlru(const struct objcore *oc)
+{
+	struct object *o;
+
+	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
+	return (o->objstore->stevedore->lru);
+}
+
+static struct objcore_methods default_oc_methods = {
+	.getobj = default_oc_getobj,
+	.freeobj = default_oc_freeobj,
+	.getlru = default_oc_getlru,
+};
+
 
 /*--------------------------------------------------------------------
  */
@@ -305,50 +349,6 @@ STV_Freestore(struct object *o)
 		STV_free(st);
 	}
 }
-
-/*---------------------------------------------------------------------
- * Default objcore methods
- */
-
-static struct object * __match_proto__(getobj_f)
-default_oc_getobj(struct worker *wrk, struct objcore *oc)
-{
-	struct object *o;
-
-	(void)wrk;
-	if (oc->priv == NULL)
-		return (NULL);
-	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
-	return (o);
-}
-
-static void
-default_oc_freeobj(struct objcore *oc)
-{
-	struct object *o;
-
-	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
-	oc->priv = NULL;
-	oc->methods = NULL;
-
-	STV_Freestore(o);
-	STV_free(o->objstore);
-}
-
-static struct lru *
-default_oc_getlru(const struct objcore *oc)
-{
-	struct object *o;
-
-	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
-	return (o->objstore->stevedore->lru);
-}
-
-static struct objcore_methods default_oc_methods = {
-	.getobj = default_oc_getobj,
-	.freeobj = default_oc_freeobj,
-	.getlru = default_oc_getlru,
-};
 
 /*-------------------------------------------------------------------*/
 

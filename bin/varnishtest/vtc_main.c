@@ -271,7 +271,7 @@ start_test(void)
 	memset(jp->buf, 0, jp->bufsiz);
 
 	srandomdev();
-	bprintf(tmpdir, "/tmp/vtc.%d.%08x", getpid(), (unsigned)random());
+	bprintf(tmpdir, "/tmp/vtc.%d.%08x", (int)getpid(), (unsigned)random());
 	AZ(mkdir(tmpdir, 0711));
 
 	tp = VTAILQ_FIRST(&tst_head);

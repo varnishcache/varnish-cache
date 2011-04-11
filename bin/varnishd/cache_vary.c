@@ -75,11 +75,11 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 		return (NULL);
 
 	/* For vary matching string */
-	sb = vsb_newauto();
+	sb = vsb_new_auto();
 	AN(sb);
 
 	/* For header matching strings */
-	sbh = vsb_newauto();
+	sbh = vsb_new_auto();
 	AN(sbh);
 
 	if (*v == ':') {
@@ -96,9 +96,9 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 
 		/* Build a header-matching string out of it */
 		vsb_clear(sbh);
-		vsb_printf(sbh, "%c%.*s:%c", 1 + (q - p), q - p, p, 0);
-		vsb_finish(sbh);
-		AZ(vsb_overflowed(sbh));
+		vsb_printf(sbh, "%c%.*s:%c",
+		    (char)(1 + (q - p)), (int)(q - p), p, 0);
+		AZ(vsb_finish(sbh));
 
 		/* Append to vary matching string */
 		vsb_bcat(sb, vsb_data(sbh), vsb_len(sbh));
@@ -131,8 +131,7 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 	vsb_printf(sb, "%c", 0);
 
 	vsb_delete(sbh);
-	vsb_finish(sb);
-	AZ(vsb_overflowed(sb));
+	AZ(vsb_finish(sb));
 	return(sb);
 }
 

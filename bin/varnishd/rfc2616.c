@@ -112,7 +112,10 @@ RFC2616_Ttl(const struct sess *sp)
 		    http_GetHdrField(hp, H_Cache_Control, "max-age", &p)) &&
 		    p != NULL) {
 
-			max_age = strtoul(p, NULL, 0);
+			if (*p == '-')
+				max_age = 0;
+			else
+				max_age = strtoul(p, NULL, 0);
 			if (http_GetHdr(hp, H_Age, &p)) {
 				age = strtoul(p, NULL, 0);
 				sp->wrk->age = age;

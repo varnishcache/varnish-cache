@@ -85,7 +85,7 @@ static void
 h_order_finish(int fd)
 {
 
-	vsb_finish(ob[fd]);
+	AZ(vsb_finish(ob[fd]));
 	if (vsb_len(ob[fd]) > 1 &&
 	    (match_tag == -1 || flg[fd] & F_MATCH))
 		printf("%s\n", vsb_data(ob[fd]));
@@ -101,7 +101,7 @@ clean_order(void)
 	for (u = 0; u < 65536; u++) {
 		if (ob[u] == NULL)
 			continue;
-		vsb_finish(ob[u]);
+		AZ(vsb_finish(ob[u]));
 		if (vsb_len(ob[u]) > 1 &&
 		    (match_tag == -1 || flg[u] & F_MATCH))
 			printf("%s\n", vsb_data(ob[u]));
@@ -127,7 +127,7 @@ h_order(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 		return (0);
 	}
 	if (ob[fd] == NULL) {
-		ob[fd] = vsb_newauto();
+		ob[fd] = vsb_new_auto();
 		assert(ob[fd] != NULL);
 	}
 	if (tag == match_tag &&
@@ -303,7 +303,7 @@ static void
 usage(void)
 {
 	fprintf(stderr, "usage: varnishlog "
-	    "%s [-aDoV] [-n varnish_name] [-P file] [-w file]\n", VSL_USAGE);
+	    "%s [-aDV] [-o [tag regex]] [-n varnish_name] [-P file] [-w file]\n", VSL_USAGE);
 	exit(1);
 }
 
@@ -359,6 +359,9 @@ main(int argc, char * const *argv)
 	}
 
 	if (o_flag && w_arg != NULL)
+		usage();
+
+	if ((argc - optind) > 0 && !o_flag)
 		usage();
 
 	if (VSL_Open(vd, 1))

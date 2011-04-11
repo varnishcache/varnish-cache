@@ -350,7 +350,7 @@ static int
 vcc_decstr(struct vcc *tl)
 {
 	char *q;
-	unsigned char l;
+	unsigned int l;
 
 	assert(tl->t->tok == CSTR);
 	l = (tl->t->e - tl->t->b) - 2;

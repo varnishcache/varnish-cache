@@ -303,6 +303,7 @@ struct worker {
 	struct vfp		*vfp;
 	struct vgz		*vgz_rx;
 	struct vef_priv		*vef_priv;
+	unsigned		do_stream;
 	unsigned		do_esi;
 	unsigned		do_gzip;
 	unsigned		is_gzip;
@@ -689,6 +690,15 @@ int VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
 int VGZ_Gunzip(struct vgz *, const void **, size_t *len);
 void VGZ_Destroy(struct vgz **);
 void VGZ_UpdateObj(const struct vgz*, struct object *);
+int VGZ_WrwGunzip(struct sess *, struct vgz *, void *ibuf, ssize_t ibufl,
+    char *obuf, ssize_t obufl, ssize_t *obufp);
+
+/* Return values */
+#define VGZ_SOCKET	-2
+#define VGZ_ERROR	-1
+#define VGZ_OK		0
+#define VGZ_END		1
+#define VGZ_STUCK	2
 
 /* cache_http.c */
 unsigned HTTP_estimate(unsigned nhttp);
@@ -846,6 +856,8 @@ void WSL_Flush(struct worker *w, int overflow);
 /* cache_response.c */
 void RES_BuildHttp(struct sess *sp);
 void RES_WriteObj(struct sess *sp);
+void RES_StreamStart(struct sess *sp);
+void RES_StreamEnd(struct sess *sp);
 
 /* cache_vary.c */
 struct vsb *VRY_Create(const struct sess *sp, const struct http *hp);
