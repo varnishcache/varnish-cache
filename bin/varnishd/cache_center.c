@@ -709,6 +709,8 @@ cnt_fetchbody(struct sess *sp)
 
 	if (sp->wrk->do_esi)
 		sp->wrk->do_stream = 0;
+	if (!sp->wantbody)
+		sp->wrk->do_stream = 0;
 
 	l = http_EstimateWS(sp->wrk->beresp,
 	    pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
@@ -841,6 +843,8 @@ cnt_streambody(struct sess *sp)
 {
 	int i;
 
+	RES_StreamStart(sp);
+
 	/* Use unmodified headers*/
 	i = FetchBody(sp);
 
@@ -867,7 +871,16 @@ cnt_streambody(struct sess *sp)
 		HSH_Unbusy(sp);
 	}
 	sp->acct_tmp.fetch++;
-	sp->step = STP_DELIVER;
+	sp->director = NULL;
+	sp->restarts = 0;
+
+	RES_StreamEnd(sp);
+
+	assert(WRW_IsReleased(sp->wrk));
+	assert(sp->wrk->wrw.ciov == sp->wrk->wrw.siov);
+	(void)HSH_Deref(sp->wrk, NULL, &sp->obj);
+	http_Setup(sp->wrk->resp, NULL);
+	sp->step = STP_DONE;
 	return (0);
 }
 
