@@ -640,9 +640,9 @@ vfp_testgzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 			}
 		}
 	}
-	if (i == Z_STREAM_END)
+	if (i == VGZ_OK || i == VGZ_END)
 		return (1);
-	WSP(sp, SLT_FetchError, "Incomplete Gzip data (not STREAM_END)");
+	WSP(sp, SLT_FetchError, "Gunzip trouble (%d)", i);
 	return (-1);
 }
 
