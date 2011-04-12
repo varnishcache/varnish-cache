@@ -170,7 +170,7 @@ RFC2616_Ttl(const struct sess *sp)
 	} 
 
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
-	WSP(sp, SLT_TTL, "%u RFC %g %g %g %g %u %u", sp->xid,
+	WSP(sp, SLT_TTL, "%u RFC %g %.0f %.0f %.0f %u %u", sp->xid,
 	    ttl, sp->wrk->entered, h_date, h_expires, max_age, age);
 
 	return (ttl);
