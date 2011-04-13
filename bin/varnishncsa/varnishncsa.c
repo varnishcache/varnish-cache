@@ -416,17 +416,23 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 	case SLT_RxHeader:
 		if (!lp->active)
 			break;
-		if (isprefix(ptr, "user-agent:", end, &next))
+		if (isprefix(ptr, "user-agent:", end, &next)) {
+			free(lp->df_User_agent);
 			lp->df_User_agent = trimline(next, end);
-		else if (isprefix(ptr, "referer:", end, &next))
+		} else if (isprefix(ptr, "referer:", end, &next)) {
+			free(lp->df_Referer);
 			lp->df_Referer = trimline(next, end);
-		else if (isprefix(ptr, "authorization:", end, &next) &&
-		    isprefix(next, "basic", end, &next))
+		} else if (isprefix(ptr, "authorization:", end, &next) &&
+			   isprefix(next, "basic", end, &next)) {
+			free(lp->df_u);
 			lp->df_u = trimline(next, end);
-		else if (isprefix(ptr, "x-forwarded-for:", end, &next))
+		} else if (isprefix(ptr, "x-forwarded-for:", end, &next)) {
+			free(lp->df_X_Forwarded_For);
 			lp->df_X_Forwarded_For = trimline(next, end);
-		else if (isprefix(ptr, "host:", end, &next))
+		} else if (isprefix(ptr, "host:", end, &next)) {
+			free(lp->df_Host);
 			lp->df_Host = trimline(next, end);
+		}
 		break;
 
 	case SLT_VCL_call:
