@@ -219,6 +219,7 @@ clean_logline(struct logline *lp)
 	freez(lp->df_m);
 	freez(lp->df_s);
 	freez(lp->df_u);
+	freez(lp->df_ttfb);
 #undef freez
 	memset(lp, 0, sizeof *lp);
 }
@@ -471,7 +472,7 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 		char ttfb[64];
 		if (!lp->active)
 			break;
-		if (sscanf(ptr, "%*u %*u.%*u %ld.%*u %*u.%*u %s", &l, ttfb) != 2) {
+		if (lp->df_ttfb != NULL || sscanf(ptr, "%*u %*u.%*u %ld.%*u %*u.%*u %s", &l, ttfb) != 2) {
 			clean_logline(lp);
 			break;
 		}
