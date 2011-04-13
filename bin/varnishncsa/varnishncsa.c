@@ -499,7 +499,7 @@ h_ncsa(void *priv, enum shmlogtag tag, unsigned fd,
 		q = strchr(rubuf, ':');
 		if (q != NULL)
 			*q = '\0';
-		fprintf(fo, "%s ", rubuf);
+		fprintf(fo, "%s ", (rubuf[0] != '\0' ? rubuf : "-"));
 		free(rubuf);
 	} else {
 		fprintf(fo, "- ");
