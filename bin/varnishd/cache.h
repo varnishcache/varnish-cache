@@ -312,6 +312,9 @@ struct worker {
 	unsigned		do_close;
 	char			*h_content_length;
 
+	/* Stream state */
+	ssize_t			stream_next;
+
 	/* ESI stuff */
 	struct vep_state	*vep;
 	int			gzip_resp;
@@ -858,6 +861,7 @@ void RES_BuildHttp(struct sess *sp);
 void RES_WriteObj(struct sess *sp);
 void RES_StreamStart(struct sess *sp);
 void RES_StreamEnd(struct sess *sp);
+void RES_StreamPoll(const struct sess *sp);
 
 /* cache_vary.c */
 struct vsb *VRY_Create(const struct sess *sp, const struct http *hp);

@@ -15,10 +15,14 @@ Naming scheme
 
 		[id]%05d.vtc
 
-	id ~ [a] --> varnishtester(1) tests
+	id ~ [a] --> varnishtest(1) tests
 	id ~ [b] --> Basic functionality tests
 	id ~ [c] --> Complex functionality tests
 	id ~ [e] --> ESI tests
+	id ~ [g] --> GZIP tests
+	id ~ [m] --> VMOD tests
+	id ~ [p] --> Persistent tests
 	id ~ [r] --> Regression tests, same number as ticket
 	id ~ [s] --> Slow tests, expiry, grace etc.
+	id ~ [t] --> sTreaming tests
 	id ~ [v] --> VCL tests: execute VRT functions

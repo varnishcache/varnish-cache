@@ -102,6 +102,8 @@ vfp_nop_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 		st->len += w;
 		sp->obj->len += w;
 		bytes -= w;
+		if (sp->wrk->do_stream)
+			RES_StreamPoll(sp);
 	}
 	return (1);
 }

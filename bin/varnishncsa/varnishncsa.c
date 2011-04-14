@@ -219,6 +219,7 @@ clean_logline(struct logline *lp)
 	freez(lp->df_m);
 	freez(lp->df_s);
 	freez(lp->df_u);
+	freez(lp->df_ttfb);
 #undef freez
 	memset(lp, 0, sizeof *lp);
 }
@@ -415,17 +416,23 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 	case SLT_RxHeader:
 		if (!lp->active)
 			break;
-		if (isprefix(ptr, "user-agent:", end, &next))
+		if (isprefix(ptr, "user-agent:", end, &next)) {
+			free(lp->df_User_agent);
 			lp->df_User_agent = trimline(next, end);
-		else if (isprefix(ptr, "referer:", end, &next))
+		} else if (isprefix(ptr, "referer:", end, &next)) {
+			free(lp->df_Referer);
 			lp->df_Referer = trimline(next, end);
-		else if (isprefix(ptr, "authorization:", end, &next) &&
-		    isprefix(next, "basic", end, &next))
+		} else if (isprefix(ptr, "authorization:", end, &next) &&
+			   isprefix(next, "basic", end, &next)) {
+			free(lp->df_u);
 			lp->df_u = trimline(next, end);
-		else if (isprefix(ptr, "x-forwarded-for:", end, &next))
+		} else if (isprefix(ptr, "x-forwarded-for:", end, &next)) {
+			free(lp->df_X_Forwarded_For);
 			lp->df_X_Forwarded_For = trimline(next, end);
-		else if (isprefix(ptr, "host:", end, &next))
+		} else if (isprefix(ptr, "host:", end, &next)) {
+			free(lp->df_Host);
 			lp->df_Host = trimline(next, end);
+		}
 		break;
 
 	case SLT_VCL_call:
@@ -471,7 +478,7 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 		char ttfb[64];
 		if (!lp->active)
 			break;
-		if (sscanf(ptr, "%*u %*u.%*u %ld.%*u %*u.%*u %s", &l, ttfb) != 2) {
+		if (lp->df_ttfb != NULL || sscanf(ptr, "%*u %*u.%*u %ld.%*u %*u.%*u %s", &l, ttfb) != 2) {
 			clean_logline(lp);
 			break;
 		}
