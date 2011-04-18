@@ -585,7 +585,7 @@ FetchBody(struct sess *sp)
 	if (mklen > 0) {
 		http_Unset(sp->obj->http, H_Content_Length);
 		http_PrintfHeader(sp->wrk, sp->fd, sp->obj->http,
-		    "Content-Length: %u", sp->obj->len);
+		    "Content-Length: %jd", (intmax_t)sp->obj->len);
 	}
 
 	if (cls)
