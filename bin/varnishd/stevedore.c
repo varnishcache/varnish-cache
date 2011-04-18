@@ -171,6 +171,9 @@ stv_alloc(const struct sess *sp, size_t size)
 	}
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
+	if (size > (size_t)(params->fetch_maxchunksize) << 10)
+		size = (size_t)(params->fetch_maxchunksize) << 10;
+
 	for (;;) {
 		/* try to allocate from it */
 		AN(stv->alloc);

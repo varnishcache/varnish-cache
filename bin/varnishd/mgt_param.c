@@ -629,6 +629,13 @@ static const struct parspec input_parspec[] = {
 		"above 128kb a dubious idea.",
 		EXPERIMENTAL,
 		"128", "kilobytes" },
+	{ "fetch_maxchunksize",
+		tweak_uint, &master.fetch_maxchunksize, 64, UINT_MAX / 1024.,
+		"The maximum chunksize we attempt to allocate from storage. "
+		"Making this too large may cause delays and storage "
+		"fragmentation.\n",
+		EXPERIMENTAL,
+		"262144", "kilobytes" },
 #ifdef SENDFILE_WORKS
 	{ "sendfile_threshold",
 		tweak_uint, &master.sendfile_threshold, 0, UINT_MAX,
