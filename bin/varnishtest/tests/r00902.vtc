@@ -1,0 +1,27 @@
+# $Id$
+
+test "Ticket #902 http_CollectHdr() failure on consequitive headers"
+
+server s1 {
+	rxreq 
+	txresp \
+		-hdr "Server: Microsoft-IIS/5.0" \
+		-hdr "Cache-Control: A" \
+		-hdr "Cache-Control: B" \
+		-hdr "Cache-Control: C" \
+		-hdr "Cache-Control: D" \
+		-hdr "Foo: bar" \
+		-bodylen 5
+} -start
+
+varnish v1 -vcl+backend {
+} -start 
+
+varnish v1 -cliok "param.set diag_bitmap 1"
+
+client c1 {
+	txreq  -hdr "foo: /foo"
+	rxresp 
+	expect resp.http.cache-control == "A, B, C, D"
+	expect resp.http.foo == "bar"
+} -run

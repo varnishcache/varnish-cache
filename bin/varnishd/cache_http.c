@@ -189,44 +189,44 @@ http_CollectHdr(struct http *hp, const char *hdr)
 	char *b = NULL, *e = NULL;
 
 	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
-		Tcheck(hp->hd[u]);
-		if (!http_IsHdr(&hp->hd[u], hdr))
-			continue;
-		if (f == 0) {
-			/* Found first header, just record the fact */
-			f = u;
-			continue;
-		}
-		if (b == NULL) {
-			/* Found second header */
-			ml = WS_Reserve(hp->ws, 0);
-			b = hp->ws->f;
-			e = b + ml;
-			x = Tlen(hp->hd[f]);
+		while (u < hp->nhd && http_IsHdr(&hp->hd[u], hdr)) {
+			Tcheck(hp->hd[u]);
+			if (f == 0) {
+				/* Found first header, just record the fact */
+				f = u;
+				break;
+			}
+			if (b == NULL) {
+				/* Found second header, start our collection */
+				ml = WS_Reserve(hp->ws, 0);
+				b = hp->ws->f;
+				e = b + ml;
+				x = Tlen(hp->hd[f]);
+				if (b + x < e) {
+					memcpy(b, hp->hd[f].b, x);
+					b += x;
+				} else
+					b = e;
+			}
+
+			AN(b);
+			AN(e);
+
+			/* Append the Nth header we found */
+			if (b < e)
+				*b++ = ',';
+			x = Tlen(hp->hd[u]) - *hdr;
 			if (b + x < e) {
-				memcpy(b, hp->hd[f].b, x);
+				memcpy(b, hp->hd[u].b + *hdr, x);
 				b += x;
 			} else
 				b = e;
+
+			/* Shift remaining headers up one slot */
+			for (v = u; v < hp->nhd - 1; v++)
+				hp->hd[v] = hp->hd[v + 1];
+			hp->nhd--;
 		}
-
-		AN(b);
-		AN(e);
-
-		/* Append the Nth header we found */
-		if (b < e)
-			*b++ = ',';
-		x = Tlen(hp->hd[u]) - *hdr;
-		if (b + x < e) {
-			memcpy(b, hp->hd[u].b + *hdr, x);
-			b += x;
-		} else
-			b = e;
-
-		/* Shift remaining headers up one slot */
-		for (v = u; v < hp->nhd + 1; v++)
-			hp->hd[v] = hp->hd[v + 1];
-		hp->nhd--;
 
 	}
 	if (b == NULL)
