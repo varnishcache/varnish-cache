@@ -253,7 +253,7 @@ ESI_Deliver(struct sess *sp)
 		if (isgzip && !(sp->wrk->res_mode & RES_GUNZIP)) {
 			assert(sizeof gzip_hdr == 10);
 			/* Send out the gzip header */
-			WRW_Write(sp->wrk, gzip_hdr, 10);
+			(void)WRW_Write(sp->wrk, gzip_hdr, 10);
 			sp->wrk->l_crc = 0;
 			sp->wrk->gzip_resp = 1;
 			sp->wrk->crc = crc32(0L, Z_NULL, 0);
@@ -311,7 +311,7 @@ ESI_Deliver(struct sess *sp)
 					 * We have a gzip'ed VEC and delivers
 					 * a gzip'ed ESI response.
 					 */
-					WRW_Write(sp->wrk, st->ptr + off, l2);
+					(void)WRW_Write(sp->wrk, st->ptr + off, l2);
 				} else if (sp->wrk->gzip_resp) {
 					/*
 					 * A gzip'ed ESI response, but the VEC
@@ -338,7 +338,7 @@ ESI_Deliver(struct sess *sp)
 					/*
 					 * Ungzip'ed VEC, ungzip'ed ESI response
 					 */
-					WRW_Write(sp->wrk, st->ptr + off, l2);
+					(void)WRW_Write(sp->wrk, st->ptr + off, l2);
 				}
 				off += l2;
 				if (off == st->len) {
@@ -377,7 +377,7 @@ ESI_Deliver(struct sess *sp)
 			r = (void*)strchr((const char*)q, '\0');
 			AN(r);
 			if (obufl > 0) {
-				WRW_Write(sp->wrk, obuf, obufl);
+				(void)WRW_Write(sp->wrk, obuf, obufl);
 				obufl = 0;
 			}
 			if (WRW_Flush(sp->wrk)) {
@@ -397,7 +397,7 @@ ESI_Deliver(struct sess *sp)
 	}
 	if (vgz != NULL) {
 		if (obufl > 0)
-			WRW_Write(sp->wrk, obuf, obufl);
+			(void)WRW_Write(sp->wrk, obuf, obufl);
 		VGZ_Destroy(&vgz);
 	}
 	if (sp->wrk->gzip_resp && sp->esi_level == 0) {
@@ -414,7 +414,7 @@ ESI_Deliver(struct sess *sp)
 		/* MOD(2^32) length */
 		vle32enc(tailbuf + 9, sp->wrk->l_crc);
 
-		WRW_Write(sp->wrk, tailbuf, 13);
+		(void)WRW_Write(sp->wrk, tailbuf, 13);
 	}
 	(void)WRW_Flush(sp->wrk);
 }
@@ -454,7 +454,7 @@ ved_deliver_byterange(const struct sess *sp, ssize_t low, ssize_t high)
 //printf("[2-] %jd %jd\n", lx, lx + l);
 		assert(lx >= low && lx + l <= high);
 		if (l != 0)
-			WRW_Write(sp->wrk, p, l);
+			(void)WRW_Write(sp->wrk, p, l);
 		if (lx + st->len > high)
 			return(p[l]);
 		lx += st->len;
@@ -506,7 +506,7 @@ ESI_DeliverChild(const struct sess *sp)
 	 */
 	*dbits = ved_deliver_byterange(sp, start/8, last/8);
 	*dbits &= ~(1U << (last & 7));
-	WRW_Write(sp->wrk, dbits, 1);
+	(void)WRW_Write(sp->wrk, dbits, 1);
 	cc = ved_deliver_byterange(sp, 1 + last/8, stop/8);
 	switch((int)(stop & 7)) {
 	case 0: /* xxxxxxxx */
@@ -550,7 +550,7 @@ ESI_DeliverChild(const struct sess *sp)
 		INCOMPL();
 	}
 	if (lpad > 0)
-		WRW_Write(sp->wrk, dbits + 1, lpad);
+		(void)WRW_Write(sp->wrk, dbits + 1, lpad);
 	st = VTAILQ_LAST(&sp->obj->store, storagehead);
 	assert(st->len > 8);
 

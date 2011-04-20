@@ -203,6 +203,13 @@ WRW_Chunked(struct worker *w)
 	assert(wrw->ciov < wrw->siov);
 }
 
+/*
+ * XXX: It is not worth the complexity to attempt to get the
+ * XXX: end of chunk into the WRW_Flush(), because most of the time
+ * XXX: if not always, that is a no-op anyway, because the calling
+ * XXX: code already called WRW_Flush() to release local storage.
+ */
+
 void
 WRW_EndChunk(struct worker *w)
 {
@@ -214,9 +221,9 @@ WRW_EndChunk(struct worker *w)
 	assert(wrw->ciov < wrw->siov);
 	(void)WRW_Flush(w);
 	wrw->ciov = wrw->siov;
-	(void)WRW_Flush(w);
+	wrw->niov = 0;
 	wrw->cliov = 0;
-	WRW_Write(w, "0\r\n\r\n", -1);
+	(void)WRW_Write(w, "0\r\n\r\n", -1);
 }
 
 

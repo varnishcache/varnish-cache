@@ -378,7 +378,7 @@ VGZ_WrwGunzip(struct sess *sp, struct vgz *vg, void *ibuf, ssize_t ibufl,
 			return (-1);
 		}
 		if (obufl == *obufp || i == VGZ_STUCK) {
-			WRW_Write(sp->wrk, obuf, *obufp);
+			(void)WRW_Write(sp->wrk, obuf, *obufp);
 			if (WRW_Flush(sp->wrk))
 				return (VGZ_SOCKET);
 			*obufp = 0;
