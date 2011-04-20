@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check chunked encoding from backend works"
+varnishtest "Check chunked encoding from backend works"
 
 server s1 {
 	rxreq 

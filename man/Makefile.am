@@ -1,4 +1,4 @@
-# $Id$
+#
 
 dist_man_MANS = vcl.7 varnish-cli.7
 MAINTAINERCLEANFILES = $(dist_man_MANS)

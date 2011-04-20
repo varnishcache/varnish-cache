@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test Backend Polling"
+varnishtest "Test Backend Polling"
 
 server s1 {
 	# Probes 

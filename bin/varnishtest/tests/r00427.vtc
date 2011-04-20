@@ -1,6 +1,4 @@
-# $Id$
-
-test "client close in ESI delivery"
+varnishtest "client close in ESI delivery"
 
 server s1 {
 	rxreq

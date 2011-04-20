@@ -1,6 +1,4 @@
-# $Id$
-
-test "very very very long return header"
+varnishtest "very very very long return header"
 
 server s1 {
 	rxreq

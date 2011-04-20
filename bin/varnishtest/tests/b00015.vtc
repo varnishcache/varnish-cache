@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check synthetic error page caching"
+varnishtest "Check synthetic error page caching"
 
 # First test that an internally generated error is not cached
 

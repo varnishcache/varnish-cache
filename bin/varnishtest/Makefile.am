@@ -1,4 +1,4 @@
-# $Id$
+#
 
 TESTS_PARALLELISM = 3
 check: varnishtest

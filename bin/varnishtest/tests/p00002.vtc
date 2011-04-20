@@ -1,6 +1,4 @@
-# $Id$
-
-test "Ban a persistent object"
+varnishtest "Ban a persistent object"
 
 shell "rm -f ${tmpdir}/_.per[12]"
 

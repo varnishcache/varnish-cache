@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test refcounting backends from director"
+varnishtest "Test refcounting backends from director"
 
 varnish v1  -vcl+backend {
 	backend node1 { .host = "10.0.0.1"; .port = "80"; }

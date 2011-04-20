@@ -26,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * Define the layout of the shared memory log segment.
  *
  * NB: THIS IS NOT A PUBLIC API TO VARNISH!

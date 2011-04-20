@@ -1,6 +1,4 @@
-# $Id$
-
-test "test basic gunzip for client"
+varnishtest "test basic gunzip for client"
 
 server s1 {
 	rxreq

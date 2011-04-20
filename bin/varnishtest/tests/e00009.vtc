@@ -1,6 +1,4 @@
-# $Id$
-
-test "ESI binary detector"
+varnishtest "ESI binary detector"
 
 server s1 {
 	rxreq 

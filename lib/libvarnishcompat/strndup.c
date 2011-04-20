@@ -30,9 +30,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #ifndef HAVE_STRNDUP
 
 #include <stdlib.h>

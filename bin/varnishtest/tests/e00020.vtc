@@ -1,6 +1,4 @@
-# $Id$
-
-test "ESI:remove"
+varnishtest "ESI:remove"
 
 
 server s1 {

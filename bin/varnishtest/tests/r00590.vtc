@@ -1,6 +1,4 @@
-# $Id$
-
-test "Regression test for 590"
+varnishtest "Regression test for 590"
 
 server s1 {
 	rxreq

@@ -1,6 +1,4 @@
-# $Id$
-
-test "Client director"
+varnishtest "Client director"
 
 server s1 {
 	rxreq
@@ -57,5 +55,3 @@ client c1 {
 	expect resp.http.be == s2
 	expect resp.bodylen == 4
 } -run
-
-

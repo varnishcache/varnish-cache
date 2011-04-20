@@ -1,6 +1,4 @@
-# $Id$
-
-test "Content-Length in pass'ed 304 does not trigger body fetch"
+varnishtest "Content-Length in pass'ed 304 does not trigger body fetch"
 
 server s1 {
 	rxreq

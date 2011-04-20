@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check object references"
+varnishtest "Check object references"
 
 shell "rm -f ${tmpdir}/_.per"
 

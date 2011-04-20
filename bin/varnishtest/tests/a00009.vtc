@@ -1,5 +1,3 @@
-# $Id$
-
-test "See that the VCL compiler works"
+varnishtest "See that the VCL compiler works"
 
 shell "cd ${topbuild}/bin/varnishd && ./varnishd -b 127.0.0.1:80 -C -n ${tmpdir} > /dev/null"

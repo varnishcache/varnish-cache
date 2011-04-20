@@ -1,6 +1,4 @@
-# $Id$
-
-test "ESI test with no ESI content"
+varnishtest "ESI test with no ESI content"
 
 
 server s1 {

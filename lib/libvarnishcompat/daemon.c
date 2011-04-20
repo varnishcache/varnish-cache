@@ -31,9 +31,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #ifndef HAVE_DAEMON
 
 #include <errno.h>

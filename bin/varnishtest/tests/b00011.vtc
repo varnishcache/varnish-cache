@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check HTTP/1.0 EOF transmission"
+varnishtest "Check HTTP/1.0 EOF transmission"
 
 server s1 {
 	rxreq 

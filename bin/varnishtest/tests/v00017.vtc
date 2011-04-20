@@ -1,6 +1,4 @@
-# $Id$
-
-test "VCL compiler coverage test: vcc_acl.c"
+varnishtest "VCL compiler coverage test: vcc_acl.c"
 
 varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
@@ -92,4 +90,3 @@ varnish v1 -vcl {
 	}
 	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
-

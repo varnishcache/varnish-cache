@@ -1,6 +1,4 @@
-# $Id$
-
-test "#345, ESI waitinglist trouble"
+varnishtest "#345, ESI waitinglist trouble"
 
 server s1 {
 	rxreq 
@@ -37,4 +35,3 @@ client c1 {
 	rxresp
 	expect resp.bodylen == 4
 } -run
-

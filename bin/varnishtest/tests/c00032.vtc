@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test Rollback"
+varnishtest "Test Rollback"
 
 
 server s1 {

@@ -1,4 +1,4 @@
-# $Id$
+#
 
 ACLOCAL_AMFLAGS = -I m4
 

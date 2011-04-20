@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check that -s malloc works"
+varnishtest "Check that -s malloc works"
 
 server s1 {
 	rxreq 

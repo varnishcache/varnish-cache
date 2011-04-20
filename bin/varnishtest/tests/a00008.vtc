@@ -1,6 +1,4 @@
-# $Id$
-
-test "Sema operations"
+varnishtest "Sema operations"
 
 server s1 {
 	rxreq

@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test switching VCLs"
+varnishtest "Test switching VCLs"
 
 server s1 {
 	rxreq

@@ -1,6 +1,4 @@
-# $Id$
-
-test "using req.ttl to force fetch"
+varnishtest "using req.ttl to force fetch"
 
 server s1 {
 	rxreq

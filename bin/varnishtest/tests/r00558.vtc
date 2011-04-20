@@ -1,6 +1,4 @@
-# $Id$
-
-test "error from vcl_recv{} has no numeric code"
+varnishtest "error from vcl_recv{} has no numeric code"
 
 
 server s1 {

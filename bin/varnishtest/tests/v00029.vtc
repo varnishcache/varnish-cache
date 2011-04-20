@@ -1,6 +1,4 @@
-# $Id$
-
-test "DNS director"
+varnishtest "DNS director"
 
 server s1 {
 	rxreq

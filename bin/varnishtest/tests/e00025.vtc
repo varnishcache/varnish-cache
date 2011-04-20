@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test that esi+gzip correctly bypasses Vary: accept-encoding"
+varnishtest "Test that esi+gzip correctly bypasses Vary: accept-encoding"
 
 server s1 {
 	rxreq 

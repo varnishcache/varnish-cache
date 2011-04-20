@@ -1,6 +1,4 @@
-# $Id
-
-test "Regression #832 IPV6 parse bug"
+varnishtest "Regression #832 IPV6 parse bug"
 
 varnish v1 -vcl {
 	backend default {

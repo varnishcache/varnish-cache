@@ -1,6 +1,4 @@
-# $Id$
-
-test "purging on POST"
+varnishtest "purging on POST"
 
 server s1 {
 	rxreq

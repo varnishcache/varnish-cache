@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check function calls with no action return"
+varnishtest "Check function calls with no action return"
 
 server s1 {
 	rxreq
@@ -26,4 +24,3 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 } -run
-

@@ -1,4 +1,4 @@
-# $Id$
+#
 
 INCLUDES = -I$(top_srcdir)/include @PCRE_CFLAGS@
 

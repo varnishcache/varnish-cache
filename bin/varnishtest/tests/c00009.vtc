@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test restarts"
+varnishtest "Test restarts"
 
 server s1 {
 	rxreq

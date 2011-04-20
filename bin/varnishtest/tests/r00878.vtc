@@ -1,6 +1,4 @@
-#!/bin/sh
-
-test "Loading vmods in subsequent VCLs"
+varnishtest "Loading vmods in subsequent VCLs"
 
 server s1 {
 	rxreq 

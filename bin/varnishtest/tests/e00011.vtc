@@ -1,6 +1,4 @@
-# $Id$
-
-test "Make sure that PASS'ed ESI requests use GET for includes"
+varnishtest "Make sure that PASS'ed ESI requests use GET for includes"
 
 server s1 {
 	rxreq 

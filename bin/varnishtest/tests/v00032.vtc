@@ -1,6 +1,4 @@
-# $Id$
-
-test "Storage related vcl variables"
+varnishtest "Storage related vcl variables"
 
 server s1 {
 	rxreq

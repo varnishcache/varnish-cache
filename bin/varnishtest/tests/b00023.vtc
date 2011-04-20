@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check that the first_byte_timeout works from parameters"
+varnishtest "Check that the first_byte_timeout works from parameters"
 
 feature SO_RCVTIMEO_WORKS
 

@@ -1,6 +1,4 @@
-# $Id$
-
-test "Vary header with extra colon"
+varnishtest "Vary header with extra colon"
 
 server s1 {
 	rxreq
@@ -14,5 +12,3 @@ client c1 {
 	rxresp
 	expect resp.http.vary == ": foo"
 } -run
-
-

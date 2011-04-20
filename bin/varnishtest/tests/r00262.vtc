@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test that inter-request whitespace trimming works"
+varnishtest "Test that inter-request whitespace trimming works"
 
 server s1 {
 	rxreq 

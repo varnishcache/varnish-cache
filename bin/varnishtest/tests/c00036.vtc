@@ -1,6 +1,4 @@
-# $Id$
-
-test "Backend close retry"
+varnishtest "Backend close retry"
 
 server s1 -repeat 1 {
 	rxreq 

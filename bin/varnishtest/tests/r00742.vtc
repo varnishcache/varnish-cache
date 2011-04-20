@@ -1,6 +1,4 @@
-# $Id$
-
-test "% escapes in VCL source and vcl.show"
+varnishtest "% escapes in VCL source and vcl.show"
 
 server s1 {
 	rxreq	

@@ -1,6 +1,4 @@
-# $Id$
-
-test "VCL: test syntax/semantic checks on backend decls. (vcc_backend.c)"
+varnishtest "VCL: test syntax/semantic checks on backend decls. (vcc_backend.c)"
 
 # Missing backend
 varnish v1 -badvcl {
@@ -192,4 +190,3 @@ varnish v1 -badvcl {
 		.probe = { .expected_response = 13; }
 	}
 }
-

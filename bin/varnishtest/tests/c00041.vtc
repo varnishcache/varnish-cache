@@ -1,6 +1,4 @@
-# $Id$
-
-test "test purging from vcl"
+varnishtest "test purging from vcl"
 
 server s1 {
 	rxreq

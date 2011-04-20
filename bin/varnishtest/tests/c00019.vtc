@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check ban counters and duplicate ban elimination"
+varnishtest "Check ban counters and duplicate ban elimination"
 
 server s1 {
 	rxreq

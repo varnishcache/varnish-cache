@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test host header specification"
+varnishtest "Test host header specification"
 
 server s1 {
 	rxreq

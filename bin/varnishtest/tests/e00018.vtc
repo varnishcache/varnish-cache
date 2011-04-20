@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test XML 1.0 entity references"
+varnishtest "Test XML 1.0 entity references"
 
 server s1 {
 	rxreq

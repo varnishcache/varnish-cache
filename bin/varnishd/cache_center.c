@@ -57,9 +57,6 @@ DOT acceptor -> start [style=bold,color=green]
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <stdio.h>
 #include <errno.h>
 #include <math.h>

@@ -1,6 +1,4 @@
-# $Id$
-
-test "Url workspace gets overwritten/reused"
+varnishtest "Url workspace gets overwritten/reused"
 
 server s1 {
 	rxreq

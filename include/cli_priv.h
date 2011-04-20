@@ -26,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * Varnish process internal CLI stuff.
  *
  * XXX: at a latter date we may want to move some to cli.h/libvarnishapi

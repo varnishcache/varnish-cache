@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check that -s works"
+varnishtest "Check that -s works"
 
 server s1 {
 	rxreq 

@@ -1,6 +1,4 @@
-# $Id$
-
-test "test vtc gzip support"
+varnishtest "test vtc gzip support"
 
 server s1 {
 	rxreq

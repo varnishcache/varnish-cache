@@ -1,6 +1,4 @@
-# $Id$
-
-test "ESI parsing errors"
+varnishtest "ESI parsing errors"
 
 server s1 {
 	rxreq 

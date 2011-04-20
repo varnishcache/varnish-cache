@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test round robin director"
+varnishtest "Test round robin director"
 
 server s1 {
 	rxreq

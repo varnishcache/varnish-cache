@@ -29,9 +29,6 @@ __FBSDID("$FreeBSD: head/sys/kern/subr_vsb.c 212750 2010-09-16 16:13:12Z mdf $
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>

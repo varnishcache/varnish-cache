@@ -1,6 +1,4 @@
-# $Id$
-
-test "classic hash code coverage"
+varnishtest "classic hash code coverage"
 
 server s1 {
 	rxreq

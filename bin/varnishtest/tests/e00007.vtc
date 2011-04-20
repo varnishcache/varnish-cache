@@ -1,6 +1,4 @@
-# $Id$
-
-test "ESI spanning storage bits"
+varnishtest "ESI spanning storage bits"
 
 # NB!  The layout of the body in the response is very carefully
 # NB!  tuned to give the desired code coverage.

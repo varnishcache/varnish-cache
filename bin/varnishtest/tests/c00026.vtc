@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test Combination of If-None-Match and If-Modified-Since"
+varnishtest "Test Combination of If-None-Match and If-Modified-Since"
 
 server s1 {
 	rxreq

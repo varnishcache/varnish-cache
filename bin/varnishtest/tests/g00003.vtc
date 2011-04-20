@@ -1,6 +1,4 @@
-# $Id$
-
-test "test gunzip on fetch"
+varnishtest "test gunzip on fetch"
 
 server s1 {
 	rxreq
@@ -51,4 +49,3 @@ client c1 {
 	expect resp.http.content-encoding == "resp.http.content-encoding"
 	expect resp.bodylen == 43
 } -run
-

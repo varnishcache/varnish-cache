@@ -1,4 +1,4 @@
-test "Ticket #896, strings over 256 bytes"
+varnishtest "Ticket #896, strings over 256 bytes"
 
 server s1 {
 	rxreq 

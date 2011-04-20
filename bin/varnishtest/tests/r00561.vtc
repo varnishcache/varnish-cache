@@ -1,6 +1,4 @@
-# $Id$
-
-test "Junk request should not go to vcl_error"
+varnishtest "Junk request should not go to vcl_error"
 
 server s1 {
 	rxreq
@@ -22,4 +20,3 @@ client c1 {
 	txreq 
 	rxresp
 } -run
-

@@ -1,4 +1,4 @@
-# $Id$
+#
 
 SUBDIRS = varnishadm varnishd varnishlog varnishncsa varnishreplay varnishtest
 

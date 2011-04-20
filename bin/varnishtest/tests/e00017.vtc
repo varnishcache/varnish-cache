@@ -1,6 +1,4 @@
-# $Id$
-
-test "Aggressive use of ESI include"
+varnishtest "Aggressive use of ESI include"
 
 
 server s1 {

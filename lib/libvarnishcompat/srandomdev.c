@@ -29,9 +29,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #ifndef HAVE_SRANDOMDEV
 
 #include <sys/time.h>

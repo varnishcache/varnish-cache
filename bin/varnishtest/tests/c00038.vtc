@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test req.hash_ignore_busy in vcl_recv"
+varnishtest "Test req.hash_ignore_busy in vcl_recv"
 
 server s1 {
 	rxreq 

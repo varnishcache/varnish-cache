@@ -1,4 +1,4 @@
-# $Id$
+#
 
 CHANGELOGS = \
 	changes-2.1.0.html \

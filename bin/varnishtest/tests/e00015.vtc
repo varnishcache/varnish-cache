@@ -1,6 +1,4 @@
-# $Id$
-
-test "ESI requests turned off"
+varnishtest "ESI requests turned off"
 
 server s1 {
 	rxreq 

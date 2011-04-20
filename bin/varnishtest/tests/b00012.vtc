@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check pipelining"
+varnishtest "Check pipelining"
 
 server s1 {
 	rxreq 

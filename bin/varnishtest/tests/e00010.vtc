@@ -1,6 +1,4 @@
-# $Id$
-
-test "Ignoring non esi elements"
+varnishtest "Ignoring non esi elements"
 
 server s1 {
 	rxreq 

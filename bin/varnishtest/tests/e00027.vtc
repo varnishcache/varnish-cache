@@ -1,6 +1,4 @@
-# $Id$
-
-test "test HEAD against ESI processing"
+varnishtest "test HEAD against ESI processing"
 
 server s1 {
 	rxreq

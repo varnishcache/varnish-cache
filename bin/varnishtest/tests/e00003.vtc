@@ -1,6 +1,4 @@
-# $Id$
-
-test "ESI include"
+varnishtest "ESI include"
 
 
 server s1 {

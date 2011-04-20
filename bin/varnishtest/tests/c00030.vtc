@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test that saintmode_threshold in VCL"
+varnishtest "Test that saintmode_threshold in VCL"
 
 server s1 {
 	rxreq
@@ -111,4 +109,3 @@ client c1 {
 	expect resp.http.X-Restarts == "0"
 
 } -run
-

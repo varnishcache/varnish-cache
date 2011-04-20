@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test random director"
+varnishtest "Test random director"
 
 server s1 {
 	rxreq

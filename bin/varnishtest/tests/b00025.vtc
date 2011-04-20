@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check that the first_byte_timeout works from backend definition"
+varnishtest "Check that the first_byte_timeout works from backend definition"
 
 feature SO_RCVTIMEO_WORKS
 

@@ -1,6 +1,4 @@
-# $Id$
-
-test "Regression test for ESI/Gzip issues in #861"
+varnishtest "Regression test for ESI/Gzip issues in #861"
 
 server s1 {
 	rxreq

@@ -1,4 +1,3 @@
-/* $Id$ */
 /*	$OpenBSD: strlcat.c,v 1.13 2005/08/08 08:05:37 espie Exp $	*/
 
 /*
@@ -18,9 +17,6 @@
  */
 
 #include "config.h"
-
-#include "svnid.h"
-SVNID("$Id$")
 
 #ifndef HAVE_STRLCAT
 

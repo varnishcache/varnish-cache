@@ -1,4 +1,4 @@
-# $Id$
+#
 
 pkglib_LTLIBRARIES = libvgz.la
 

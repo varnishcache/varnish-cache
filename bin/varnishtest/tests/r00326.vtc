@@ -1,6 +1,4 @@
-# $Id$
-
-test "No zerolength verbatim before <esi:include...>"
+varnishtest "No zerolength verbatim before <esi:include...>"
 
 server s1 {
 	rxreq 

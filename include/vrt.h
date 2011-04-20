@@ -26,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * Runtime support for compiled VCL programs.
  *
  * XXX: When this file is changed, lib/libvcl/generate.py *MUST* be rerun.

@@ -1,6 +1,4 @@
-# $Id$
-
-test "check late pass stalling"
+varnishtest "check late pass stalling"
 
 server s1 {
 	rxreq

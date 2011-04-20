@@ -1,6 +1,4 @@
-# $Id$
-
-test "basic default HTTP transactions"
+varnishtest "basic default HTTP transactions"
 
 server s1 {
 	rxreq

@@ -1,6 +1,4 @@
-# $Id$
-
-test "Deeper test of random director"
+varnishtest "Deeper test of random director"
 
 random
 

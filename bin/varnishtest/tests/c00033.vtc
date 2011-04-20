@@ -1,6 +1,4 @@
-# $Id$
-
-test "Inline C access to purges (could be retired)"
+varnishtest "Inline C access to purges (could be retired)"
 
 server s1 {
 	rxreq
@@ -85,5 +83,3 @@ client c1 {
 	expect resp.bodylen == 6
 
 } -run
-
-

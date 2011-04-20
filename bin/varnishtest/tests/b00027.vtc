@@ -1,6 +1,4 @@
-# $Id$
-
-test "test backend transmission corner cases"
+varnishtest "test backend transmission corner cases"
 
 server s1 {
 	rxreq

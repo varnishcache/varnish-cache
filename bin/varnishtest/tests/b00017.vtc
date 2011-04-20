@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check that we close one error"
+varnishtest "Check that we close one error"
 
 varnish v1 -vcl { 
 	backend foo {

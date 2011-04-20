@@ -1,6 +1,4 @@
-# $Id$
-
-test "Regression test for duplicate content-length in pass"
+varnishtest "Regression test for duplicate content-length in pass"
 
 server s1 {
 	rxreq
@@ -20,5 +18,3 @@ client c1 {
 	rxresp
 	expect resp.http.content-length == "10"
 } -run
-
-
