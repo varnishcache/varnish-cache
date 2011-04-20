@@ -535,8 +535,8 @@ cnt_fetch(struct sess *sp)
 		/*
 		 * Figure out how the fetch is supposed to happen, before the
 		 * headers are adultered by VCL
-		 * NB: Also sets other sp->wrk variables 
-		 */ 
+		 * NB: Also sets other sp->wrk variables
+		 */
 		sp->wrk->body_status = RFC2616_Body(sp);
 
 		sp->err_code = http_GetStatus(sp->wrk->beresp);

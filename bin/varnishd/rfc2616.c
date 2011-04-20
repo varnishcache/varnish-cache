@@ -167,7 +167,7 @@ RFC2616_Ttl(const struct sess *sp)
 			ttl = (int)(h_expires - h_date);
 		}
 
-	} 
+	}
 
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
 	WSP(sp, SLT_TTL, "%u RFC %g %.0f %.0f %.0f %u %u", sp->xid,

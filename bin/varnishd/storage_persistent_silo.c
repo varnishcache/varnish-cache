@@ -433,7 +433,7 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 		if(bad) {
 			EXP_Set_ttl(&o->exp, -1);
 			so->ttl = 0;
-		} 
+		}
 
 		sg->nfixed++;
 		wrk->stats.n_object++;

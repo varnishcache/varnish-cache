@@ -538,7 +538,7 @@ FetchBody(struct sess *sp)
 		INCOMPL();
 	}
 	AZ(sp->wrk->vgz_rx);
-	
+
 	/*
 	 * It is OK for ->end to just leave the last storage segment
 	 * sitting on sp->wrk->storage, we will always call vfp_nop_end()

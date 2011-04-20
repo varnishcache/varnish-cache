@@ -33,7 +33,7 @@
  *	The VSM studying programs only have read-only access to the VSM
  *	so everybody else must use memory barriers, stable storage and
  *	similar tricks to keep the VSM image in sync (long enough) for
- * 	the studying programs.
+ *	the studying programs.
  *
  * Manager process vs child process.
  *	Will only muck about in VSM when child process is not running

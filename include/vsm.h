@@ -92,7 +92,7 @@ vsm_iter_0(void)
 	CHECK_OBJ_NOTNULL(&vsm_head->head, VSM_CHUNK_MAGIC);
 	return (&vsm_head->head);
 }
- 
+
 static inline void
 vsm_iter_n(struct vsm_chunk **pp)
 {

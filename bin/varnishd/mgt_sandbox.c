@@ -106,7 +106,7 @@ mgt_sandbox(void)
 		 */
 		priv_addset(minimal, "net_access");
 
-#define SETPPRIV(which, set)				       		\
+#define SETPPRIV(which, set)						\
 		if (setppriv(PRIV_SET, which, set))			\
 			REPORT0(LOG_ERR,				\
 			    "Waiving privileges failed on " #which)
