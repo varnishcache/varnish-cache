@@ -640,13 +640,14 @@ clear:
 
 static int
 gen_traffic(void *priv, enum vsl_tag tag, unsigned fd,
-    unsigned len, unsigned spec, const char *ptr)
+    unsigned len, unsigned spec, const char *ptr, uint64_t bitmap)
 {
 	struct replay_thread *thr;
 	const char *end;
 	struct message *msg;
 
 	(void)priv;
+	(void)bitmap;
 
 	end = ptr + len;
 

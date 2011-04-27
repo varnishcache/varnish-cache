@@ -195,7 +195,7 @@ accumulate_thread(void *arg)
 
 	for (;;) {
 
-		i = VSL_NextLog(vd, &p);
+		i = VSL_NextLog(vd, &p, NULL);
 		if (i < 0)
 			break;
 		if (i == 0) {
@@ -292,7 +292,7 @@ do_once(struct VSM_data *vd)
 {
 	uint32_t *p;
 
-	while (VSL_NextLog(vd, &p) > 0)
+	while (VSL_NextLog(vd, &p, NULL) > 0)
 		accumulate(p);
 	dump();
 }
@@ -335,6 +335,9 @@ main(int argc, char **argv)
 		case 'V':
 			varnish_version("varnishtop");
 			exit(0);
+		case 'o':
+			fprintf(stderr, "-o is not supported\n");
+			exit(1);
 		default:
 			if (VSL_Arg(vd, o, optarg) > 0)
 				break;

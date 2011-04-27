@@ -214,7 +214,7 @@ int VSL_Open(struct VSM_data *vd, int diag);
 	 *	!= 0 on failure
 	 */
 
-#define VSL_ARGS	"bCcdI:i:k:n:r:s:X:x:"
+#define VSL_ARGS	"bCcdI:i:k:n:r:s:X:x:o:"
 #define VSL_b_USAGE	"[-b]"
 #define VSL_c_USAGE	"[-c]"
 #define VSL_C_USAGE	"[-C]"
@@ -223,6 +223,7 @@ int VSL_Open(struct VSM_data *vd, int diag);
 #define VSL_I_USAGE	"[-I regexp]"
 #define VSL_k_USAGE	"[-k keep]"
 #define VSL_n_USAGE	VSM_n_USAGE
+#define VSL_o_USAGE	"[-o tag:regex]"
 #define VSL_r_USAGE	"[-r file]"
 #define VSL_s_USAGE	"[-s skip]"
 #define VSL_x_USAGE	"[-x tag]"
@@ -232,6 +233,7 @@ int VSL_Open(struct VSM_data *vd, int diag);
 			VSL_I_USAGE " "		\
 			VSL_k_USAGE " "		\
 			VSL_n_USAGE " "		\
+			VSL_o_USAGE " "		\
 			VSL_r_USAGE " "		\
 			VSL_s_USAGE " "		\
 			VSL_X_USAGE " "		\
@@ -247,7 +249,8 @@ int VSL_Arg(struct VSM_data *vd, int arg, const char *opt);
 	 */
 
 typedef int vsl_handler(void *priv, enum vsl_tag tag, unsigned fd,
-    unsigned len, unsigned spec, const char *ptr);
+    unsigned len, unsigned spec, const char *ptr, uint64_t bitmap);
+
 #define VSL_S_CLIENT	(1 << 0)
 #define VSL_S_BACKEND	(1 << 1)
 vsl_handler VSL_H_Print;
@@ -255,7 +258,8 @@ struct VSM_data;
 void VSL_Select(const struct VSM_data *vd, unsigned tag);
 void VSL_NonBlocking(const struct VSM_data *vd, int nb);
 int VSL_Dispatch(struct VSM_data *vd, vsl_handler *func, void *priv);
-int VSL_NextLog(const struct VSM_data *lh, uint32_t **pp);
+int VSL_NextLog(const struct VSM_data *lh, uint32_t **pp, uint64_t *bitmap);
+int VSL_Matched(const struct VSM_data *vd, uint64_t bitmap);
 extern const char *VSL_tags[256];
 
 

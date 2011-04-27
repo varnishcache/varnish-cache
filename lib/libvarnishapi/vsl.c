@@ -85,6 +85,9 @@ VSL_Setup(struct VSM_data *vd)
 	vsl->rbuflen = 256;      /* XXX ?? */
 	vsl->rbuf = malloc(vsl->rbuflen * 4L);
 	assert(vsl->rbuf != NULL);
+
+	vsl->num_matchers = 0;
+	VTAILQ_INIT(&vsl->matchers);
 }
 
 /*--------------------------------------------------------------------*/
@@ -193,7 +196,7 @@ vsl_nextlog(struct vsl *vsl, uint32_t **pp)
 }
 
 int
-VSL_NextLog(const struct VSM_data *vd, uint32_t **pp)
+VSL_NextLog(const struct VSM_data *vd, uint32_t **pp, uint64_t *mb)
 {
 	struct vsl *vsl;
 	uint32_t *p;
@@ -255,6 +258,19 @@ VSL_NextLog(const struct VSM_data *vd, uint32_t **pp)
 			if (i != VRE_ERROR_NOMATCH)
 				continue;
 		}
+		if (mb != NULL) {
+			struct vsl_re_match *vrm;
+			int j = 0;
+			VTAILQ_FOREACH(vrm, &vsl->matchers, next) {
+				if (vrm->tag == t) {
+					i = VRE_exec(vrm->re, VSL_DATA(p),
+						     VSL_LEN(p), 0, 0, NULL, 0);
+					if (i >= 0)
+						*mb |= 1 << j;
+				}
+				j++;
+			}
+		}
 		*pp = p;
 		return (1);
 	}
@@ -269,13 +285,15 @@ VSL_Dispatch(struct VSM_data *vd, vsl_handler *func, void *priv)
 	int i;
 	unsigned u, l, s;
 	uint32_t *p;
+	uint64_t bitmap;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	vsl = vd->vsl;
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 
 	while (1) {
-		i = VSL_NextLog(vd, &p);
+		bitmap = 0;
+		i = VSL_NextLog(vd, &p, &bitmap);
 		if (i == 0 && VSM_ReOpen(vd, 0) == 1)
 			continue;
 		if (i != 1)
@@ -287,7 +305,7 @@ VSL_Dispatch(struct VSM_data *vd, vsl_handler *func, void *priv)
 			s |= VSL_S_BACKEND;
 		if (vbit_test(vsl->vbm_client, u))
 			s |= VSL_S_CLIENT;
-		if (func(priv, VSL_TAG(p), u, l, s, VSL_DATA(p)))
+		if (func(priv, VSL_TAG(p), u, l, s, VSL_DATA(p), bitmap))
 			return (1);
 	}
 }
@@ -296,11 +314,12 @@ VSL_Dispatch(struct VSM_data *vd, vsl_handler *func, void *priv)
 
 int
 VSL_H_Print(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
-    unsigned spec, const char *ptr)
+    unsigned spec, const char *ptr, uint64_t bitmap)
 {
 	FILE *fo = priv;
 	int type;
 
+	(void) bitmap;
 	assert(fo != NULL);
 
 	type = (spec & VSL_S_CLIENT) ? 'c' :
@@ -365,4 +384,16 @@ VSL_Open(struct VSM_data *vd, int diag)
 			vsl->log_ptr = VSL_NEXT(vsl->log_ptr);
 	}
 	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
+int VSL_Matched(const struct VSM_data *vd, uint64_t bitmap)
+{
+	if (vd->vsl->num_matchers > 0) {
+		uint64_t t;
+		t = vd->vsl->num_matchers | (vd->vsl->num_matchers - 1);
+		return (bitmap == t);
+	}
+	return (1);
 }
