@@ -1,6 +1,4 @@
-# $Id$
-
-test "request req and hdr length limits"
+varnishtest "request req and hdr length limits"
 
 server s1 {
 	rxreq
@@ -51,4 +49,3 @@ client c1 {
 	# XXX: that the backend summarily closes on us.  Adding one
 	# XXX: char to the above test, should cause that.
 } -run
-

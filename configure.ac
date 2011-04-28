@@ -1,5 +1,3 @@
-# $Id$
-
 AC_PREREQ(2.59)
 AC_COPYRIGHT([Copyright (c) 2006 Verdens Gang AS
 Copyright (c) 2006-2010 Linpro AS])

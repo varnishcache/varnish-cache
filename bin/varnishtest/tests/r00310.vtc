@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test obj.http.x-cache in vcl_hit"
+varnishtest "Test obj.http.x-cache in vcl_hit"
 
 varnish v1 -badvcl {
 	backend foo { .host = "localhost"; }
@@ -9,5 +7,3 @@ varnish v1 -badvcl {
 		set obj.http.x-cache = "hit";
 	}
 }
-
-

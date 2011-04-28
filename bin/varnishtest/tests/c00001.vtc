@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test VCL regsub()"
+varnishtest "Test VCL regsub()"
 
 server s1 {
 	rxreq 

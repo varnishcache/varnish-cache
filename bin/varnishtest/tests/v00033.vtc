@@ -1,6 +1,4 @@
-# $Id$
-
-test "Stevedore variables and BYTES type test"
+varnishtest "Stevedore variables and BYTES type test"
 
 
 server s1 {

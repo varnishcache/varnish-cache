@@ -1,6 +1,4 @@
-# $Id$
-
-test "VCL: test backend probe syntax"
+varnishtest "VCL: test backend probe syntax"
 
 # Check status definition
 varnish v1 -vcl {

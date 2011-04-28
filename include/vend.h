@@ -26,8 +26,6 @@
  * From:
  * $FreeBSD: head/sys/sys/endian.h 121122 2003-10-15 20:05:57Z obrien $
  *
- * $Id$
- *
  * Endian conversion functions
  */
 

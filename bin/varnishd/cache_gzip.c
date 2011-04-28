@@ -68,9 +68,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include "vsl.h"
 #include "cache.h"
 #include "stevedore.h"

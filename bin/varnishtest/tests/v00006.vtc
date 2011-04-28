@@ -1,6 +1,4 @@
-# $Id$
-
-test "VCL: Test backend retirement"
+varnishtest "VCL: Test backend retirement"
 
 # First do one request to get a work-thread that holds a VCL reference
 

@@ -1,6 +1,4 @@
-# $Id$
-
-test "Regression test for ticket 409"
+varnishtest "Regression test for ticket 409"
 
 server s1 {
 	rxreq

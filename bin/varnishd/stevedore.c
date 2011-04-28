@@ -33,9 +33,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -170,6 +167,9 @@ stv_alloc(const struct sess *sp, size_t size)
 		stv = stv_transient;
 	}
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+
+	if (size > (size_t)(params->fetch_maxchunksize) << 10)
+		size = (size_t)(params->fetch_maxchunksize) << 10;
 
 	for (;;) {
 		/* try to allocate from it */

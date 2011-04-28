@@ -1,6 +1,4 @@
-# $Id$
-
-test "Torture Varnish with start/stop commands"
+varnishtest "Torture Varnish with start/stop commands"
 
 server s1 {
 	rxreq

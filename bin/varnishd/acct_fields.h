@@ -26,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * These are the stats we keep track of per session.  They will be summed,
  * via the sp->wrk->stats into the s_<name> fields in the SHM file.
  * NB: Remember to mark those in vsc_fields.h to be included in struct dstat.

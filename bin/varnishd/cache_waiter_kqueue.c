@@ -33,9 +33,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #if defined(HAVE_KQUEUE)
 
 #include <stdio.h>

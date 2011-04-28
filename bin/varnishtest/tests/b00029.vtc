@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test orderly connection closure"
+varnishtest "Test orderly connection closure"
 
 
 server s1 {

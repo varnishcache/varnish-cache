@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check simple list hasher"
+varnishtest "Check simple list hasher"
 
 server s1 {
 	rxreq 

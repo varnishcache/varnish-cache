@@ -26,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * Public definition of the CLI protocol, part of the published Varnish-API.
  *
  * The overall structure of the protocol is a command-line like

@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check the precedence for timeouts"
+varnishtest "Check the precedence for timeouts"
 
 feature SO_RCVTIMEO_WORKS
 

@@ -1,6 +1,4 @@
-# $Id$
-
-test "ESI with no body in response"
+varnishtest "ESI with no body in response"
 
 server s1 {
 	rxreq 
@@ -19,4 +17,3 @@ client c1 {
 	rxresp
 	expect resp.status == 302
 } -run
-

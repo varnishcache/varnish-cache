@@ -36,8 +36,6 @@
 # size of this structure in bytes, and the definition of the structure
 # as a string, suitable for inclusion in the C-source of the compile VCL
 # program.
-#
-# $Id$
 
 import sys
 import re

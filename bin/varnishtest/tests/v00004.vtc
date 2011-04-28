@@ -1,6 +1,4 @@
-# $Id$
-
-test "VCL: test creation/destruction of backends"
+varnishtest "VCL: test creation/destruction of backends"
 
 varnish v1 -vcl {
 	backend b1 {

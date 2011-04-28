@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test X-Forward-For headers"
+varnishtest "Test X-Forward-For headers"
 
 server s1 {
 	rxreq

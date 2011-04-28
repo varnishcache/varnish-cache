@@ -1,6 +1,4 @@
-# $Id$
-
-test "More VCL coverage"
+varnishtest "More VCL coverage"
 
 server s1 {
 	rxreq

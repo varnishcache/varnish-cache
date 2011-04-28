@@ -1,7 +1,6 @@
 #!/bin/sh
 #
-# $Id$
-#
+# Use this when doing code development
 
 set -ex
 

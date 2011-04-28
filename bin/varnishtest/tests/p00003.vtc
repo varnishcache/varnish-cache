@@ -1,6 +1,4 @@
-# $Id$
-
-test "Ban a persistent object"
+varnishtest "Ban a persistent object"
 
 shell "rm -f ${tmpdir}/_.per"
 
@@ -55,4 +53,3 @@ client c1 {
 varnish v1 -cliok ban.list
 
 varnish v1 -stop
-

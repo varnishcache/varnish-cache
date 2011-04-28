@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check Range forwarding to backend"
+varnishtest "Check Range forwarding to backend"
 
 server s1 {
 	rxreq 

@@ -30,9 +30,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id")
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -73,6 +70,7 @@ struct vep_state {
 	/* parser state */
 	const char		*state;
 	unsigned		startup;
+	unsigned		esi_found;
 
 	unsigned		endtag;
 	unsigned		emptytag;
@@ -658,6 +656,7 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 					vep_mark_verbatim(vep, p);
 				p++;
 				if (*++vep->esicmt_p == '\0') {
+					vep->esi_found = 1;
 					vep->esicmt = NULL;
 					vep->esicmt_p = NULL;
 					/*
@@ -730,6 +729,7 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 			vep->state = VEP_UNTIL;
 		} else if (vep->state == VEP_ESITAG) {
 			vep->in_esi_tag = 1;
+			vep->esi_found = 1;
 			vep_mark_skip(vep, p);
 			vep->match = vep_match_esi;
 			vep->state = VEP_MATCH;
@@ -1058,7 +1058,7 @@ VEP_Finish(const struct sess *sp)
 
 	AZ(vsb_finish(vep->vsb));
 	l = vsb_len(vep->vsb);
-	if (vep->state != VEP_NOTXML && l > 0)
+	if (vep->esi_found && l > 0)
 		return (vep->vsb);
 	vsb_delete(vep->vsb);
 	return (NULL);

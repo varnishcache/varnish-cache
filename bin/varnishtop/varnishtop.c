@@ -32,9 +32,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <ctype.h>
 #include <curses.h>
 #include <errno.h>

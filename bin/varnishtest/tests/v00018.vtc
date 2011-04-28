@@ -1,6 +1,4 @@
-# $Id$
-
-test "VCL compiler coverage test: vcc_action.c"
+varnishtest "VCL compiler coverage test: vcc_action.c"
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }

@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check Expect headers"
+varnishtest "Check Expect headers"
 
 server s1 {
 	rxreq

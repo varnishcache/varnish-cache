@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
  */
 
 #include <errno.h>
@@ -56,10 +55,10 @@ int SUB_run(struct vsb *sb, sub_func_f *func, void *priv, const char *name,
 #define TCP_ADDRBUFSIZE		64
 #define TCP_PORTBUFSIZE		16
 
-#if defined (__SVR4) && defined (__sun)
+#if (defined (__SVR4) && defined (__sun)) || defined (__NetBSD__)
 /*
  * Solaris returns EINVAL if the other end unexepectedly reset the
- * connection.  This is a bug in Solaris.
+ * connection.  This is a bug in Solaris and documented behaviour on NetBSD.
  */
 #define TCP_Check(a) ((a) == 0 || errno == ECONNRESET || errno == ENOTCONN \
     || errno == EINVAL)

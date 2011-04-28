@@ -1,6 +1,4 @@
-# $Id$
-
-test "regexp match and no-match"
+varnishtest "regexp match and no-match"
 
 server s1 {
 	rxreq

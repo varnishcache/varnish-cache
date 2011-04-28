@@ -1,6 +1,4 @@
-# $Id$
-
-test "Illegal HTTP status from backend"
+varnishtest "Illegal HTTP status from backend"
 
 server s1 {
 	rxreq

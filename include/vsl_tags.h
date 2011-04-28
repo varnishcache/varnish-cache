@@ -26,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * Define the tags in the shared memory in a reusable format.
  * Whoever includes this get to define what the SLTM macro does.
  *

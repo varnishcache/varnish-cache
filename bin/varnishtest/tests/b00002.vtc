@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check that a pass transaction works"
+varnishtest "Check that a pass transaction works"
 
 server s1 {
 	rxreq 

@@ -1,8 +1,4 @@
-# Test that we get anything through at all
-#
-# $Id$
-
-test "Does anything get through at all ?"
+varnishtest "Does anything get through at all ?"
 
 server s1 {
 	rxreq 

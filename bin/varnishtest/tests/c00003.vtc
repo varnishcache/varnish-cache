@@ -1,8 +1,4 @@
-# Test that we get anything through at all
-#
-# $Id$
-
-test "Check that we start if at least one listen address works"
+varnishtest "Check that we start if at least one listen address works"
 
 server s1 {
 	rxreq 

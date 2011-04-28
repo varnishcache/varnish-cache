@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check that a pipe transaction works"
+varnishtest "Check that a pipe transaction works"
 
 server s1 -repeat 1 {
 	rxreq 

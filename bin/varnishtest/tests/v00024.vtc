@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test that headers can be compared"
+varnishtest "Test that headers can be compared"
 
 server s1 {
 	rxreq

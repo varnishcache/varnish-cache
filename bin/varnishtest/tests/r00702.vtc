@@ -1,6 +1,4 @@
-# $Id$
-
-test "Range bug"
+varnishtest "Range bug"
 
 server s1 {
 	rxreq
@@ -19,4 +17,3 @@ client c1 {
 	expect resp.status == 206
 	expect resp.bodylen == 50
 } -run
-

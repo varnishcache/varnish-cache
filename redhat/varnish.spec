@@ -20,7 +20,9 @@ Requires(pre): shadow-utils
 Requires(post): /sbin/chkconfig, /usr/bin/uuidgen
 Requires(preun): /sbin/chkconfig
 Requires(preun): /sbin/service
+%if %{undefined suse_version}
 Requires(preun): initscripts
+%endif
 
 # Varnish actually needs gcc installed to work. It uses the C compiler 
 # at runtime to compile the VCL configuration files. This is by design.

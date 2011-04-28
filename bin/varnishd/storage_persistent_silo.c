@@ -34,9 +34,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <math.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -433,7 +430,7 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 		if(bad) {
 			EXP_Set_ttl(&o->exp, -1);
 			so->ttl = 0;
-		} 
+		}
 
 		sg->nfixed++;
 		wrk->stats.n_object++;

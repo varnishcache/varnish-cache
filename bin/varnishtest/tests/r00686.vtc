@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check that cache-control headers are collapsed"
+varnishtest "Check that cache-control headers are collapsed"
 
 server s1 {
 	rxreq

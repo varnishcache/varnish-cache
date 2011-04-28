@@ -26,9 +26,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id: execinfo.c,v 1.3 2004/07/19 05:21:09 sobomax Exp $")
-
 #ifndef HAVE_BACKTRACE
 
 #include "compat/execinfo.h"

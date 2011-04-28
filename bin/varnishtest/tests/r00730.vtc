@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check that HEAD returns Content-Length: if backend provides"
+varnishtest "Check that HEAD returns Content-Length: if backend provides"
 
 server s1 {
 	rxreq
@@ -30,4 +28,3 @@ client c1 {
 	rxresp -no_obj
 	expect resp.http.content-length == 6
 } -run
-

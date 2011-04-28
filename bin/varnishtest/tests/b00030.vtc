@@ -1,8 +1,7 @@
-# $Id$
+varnishtest "Test formatting of timestamps"
+
 # We can't test the value of x-timestamp, but this should fail
 # if we can't set the header at all.
-
-test "Test formatting of timestamps"
 
 server s1 {
 	rxreq

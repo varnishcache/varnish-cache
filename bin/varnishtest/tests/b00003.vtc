@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check that a cache fetch + hit transaction works"
+varnishtest "Check that a cache fetch + hit transaction works"
 
 server s1 {
 	rxreq 

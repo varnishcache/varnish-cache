@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test that we can't recurse restarts forever"
+varnishtest "Test that we can't recurse restarts forever"
 
 varnish v1 -vcl { 
 	backend bad { 
@@ -20,4 +18,3 @@ client c1 {
         rxresp
         expect resp.status == 503
 } -run
-

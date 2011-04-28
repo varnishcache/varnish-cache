@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test simple ACL"
+varnishtest "Test simple ACL"
 
 server s1 {
 	rxreq

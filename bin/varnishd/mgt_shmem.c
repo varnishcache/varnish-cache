@@ -86,9 +86,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>

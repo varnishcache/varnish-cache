@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test Connection header handling"
+varnishtest "Test Connection header handling"
 
 server s1 {
 	rxreq

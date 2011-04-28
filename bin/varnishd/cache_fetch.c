@@ -29,9 +29,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <stdio.h>
 #include <inttypes.h>
 #include <string.h>
@@ -538,7 +535,7 @@ FetchBody(struct sess *sp)
 		INCOMPL();
 	}
 	AZ(sp->wrk->vgz_rx);
-	
+
 	/*
 	 * It is OK for ->end to just leave the last storage segment
 	 * sitting on sp->wrk->storage, we will always call vfp_nop_end()
@@ -585,7 +582,7 @@ FetchBody(struct sess *sp)
 	if (mklen > 0) {
 		http_Unset(sp->obj->http, H_Content_Length);
 		http_PrintfHeader(sp->wrk, sp->fd, sp->obj->http,
-		    "Content-Length: %u", sp->obj->len);
+		    "Content-Length: %jd", (intmax_t)sp->obj->len);
 	}
 
 	if (cls)

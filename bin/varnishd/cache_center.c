@@ -57,9 +57,6 @@ DOT acceptor -> start [style=bold,color=green]
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <stdio.h>
 #include <errno.h>
 #include <math.h>
@@ -325,7 +322,7 @@ cnt_done(struct sess *sp)
 		da = sp->t_end - sp->t_resp;
 		dh = sp->t_req - sp->t_open;
 		/* XXX: Add StatReq == StatSess */
-		WSP(sp, SLT_Length, "%u", sp->acct_req.bodybytes);
+		WSP(sp, SLT_Length, "%ju", (uintmax_t)sp->acct_req.bodybytes);
 		WSL(sp->wrk, SLT_ReqEnd, sp->id, "%u %.9f %.9f %.9f %.9f %.9f",
 		    sp->xid, sp->t_req, sp->t_end, dh, dp, da);
 	}
@@ -535,8 +532,8 @@ cnt_fetch(struct sess *sp)
 		/*
 		 * Figure out how the fetch is supposed to happen, before the
 		 * headers are adultered by VCL
-		 * NB: Also sets other sp->wrk variables 
-		 */ 
+		 * NB: Also sets other sp->wrk variables
+		 */
 		sp->wrk->body_status = RFC2616_Body(sp);
 
 		sp->err_code = http_GetStatus(sp->wrk->beresp);

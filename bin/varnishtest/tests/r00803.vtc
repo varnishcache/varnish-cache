@@ -1,6 +1,4 @@
-# $Id$
-
-test "304 response in pass mode"
+varnishtest "304 response in pass mode"
 
 server s1 {
 	rxreq
@@ -20,5 +18,3 @@ client c1 {
 	rxresp
 	expect resp.status == 304
 } -run
-
-

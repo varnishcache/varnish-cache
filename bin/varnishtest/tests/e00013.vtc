@@ -1,6 +1,4 @@
-# $Id$
-
-test "All white-space object, in multiple storage segments"
+varnishtest "All white-space object, in multiple storage segments"
 
 server s1 {
         rxreq

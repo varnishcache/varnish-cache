@@ -28,9 +28,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
@@ -340,7 +337,7 @@ main(int argc, char * const *argv)
 		switch (ch) {
 		case 'D':
 			if (!parse_D_opt(optarg)) {
-				fprintf(stderr, "Cannot parse D opt '%s'\n", 
+				fprintf(stderr, "Cannot parse D opt '%s'\n",
 					optarg);
 				exit(2);
 			}

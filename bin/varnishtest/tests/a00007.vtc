@@ -1,6 +1,4 @@
-# $Id$
-
-test "TCP reuse"
+varnishtest "TCP reuse"
 
 server s1 {
 	rxreq

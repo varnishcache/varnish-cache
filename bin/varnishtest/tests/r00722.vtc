@@ -1,6 +1,4 @@
-# $Id$
-
-test "Director cleanup fails on vcl.discard"
+varnishtest "Director cleanup fails on vcl.discard"
 
 server s1 {
 	rxreq
@@ -28,4 +26,3 @@ client c1 {
 	txreq
 	rxresp
 } -run
-

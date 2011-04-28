@@ -1,6 +1,4 @@
-# $Id$
-
-test "Ticket #887"
+varnishtest "Ticket #887"
 
 server s1 {
 	rxreq 

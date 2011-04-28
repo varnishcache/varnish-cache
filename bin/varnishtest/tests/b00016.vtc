@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check naming of backends"
+varnishtest "Check naming of backends"
 
 varnish v1 -vcl { 
 	backend foo {

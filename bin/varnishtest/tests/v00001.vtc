@@ -1,6 +1,4 @@
-# $Id$
-
-test "VCL/VRT: url/request/proto/response/status"
+varnishtest "VCL/VRT: url/request/proto/response/status"
 
 
 server s1 {

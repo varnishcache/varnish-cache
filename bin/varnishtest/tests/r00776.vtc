@@ -1,6 +1,4 @@
-# $Id$
-
-test "Edge case of chunked encoding, trimming storage to length."
+varnishtest "Edge case of chunked encoding, trimming storage to length."
 
 server s1 {
 	rxreq

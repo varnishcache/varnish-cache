@@ -1,6 +1,4 @@
-# $Id$
-
-test "ESI commented include"
+varnishtest "ESI commented include"
 
 
 server s1 {

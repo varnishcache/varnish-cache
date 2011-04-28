@@ -28,9 +28,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <poll.h>
 #include <stdio.h>
 #include <poll.h>

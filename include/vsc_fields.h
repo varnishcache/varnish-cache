@@ -26,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: vsc_fields.h 4857 2010-05-25 10:47:20Z phk $
- *
  * 3rd argument marks fields for inclusion in the per worker-thread
  * stats structure.
  */

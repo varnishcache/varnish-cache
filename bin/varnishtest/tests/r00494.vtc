@@ -1,6 +1,4 @@
-# $Id$
-
-test "HTTP continuation lines"
+varnishtest "HTTP continuation lines"
 
 #NB: careful about spaces and tabs in this test.
 
@@ -24,4 +22,3 @@ client c1 {
 	expect resp.http.barf == resp.http.barf
 	expect resp.http.foo == resp.http.foo
 } -run
-

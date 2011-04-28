@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test banning a url"
+varnishtest "Test banning a url"
 
 server s1 {
 	rxreq

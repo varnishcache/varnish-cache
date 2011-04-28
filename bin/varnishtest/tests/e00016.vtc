@@ -1,6 +1,4 @@
-# $Id$
-
-test "ESI request can't be turned off midstream"
+varnishtest "ESI request can't be turned off midstream"
 
 server s1 {
 	rxreq 

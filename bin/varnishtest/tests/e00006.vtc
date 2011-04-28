@@ -1,6 +1,4 @@
-# $Id$
-
-test "ESI include with http://"
+varnishtest "ESI include with http://"
 
 
 server s1 {

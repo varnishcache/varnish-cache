@@ -1,6 +1,4 @@
-# $Id$
-
-test "ESI ability to stitch gzip files together"
+varnishtest "ESI ability to stitch gzip files together"
 
 
 server s1 {

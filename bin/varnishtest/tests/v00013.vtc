@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check obj.hits"
+varnishtest "Check obj.hits"
 
 server s1 {
 	rxreq
@@ -39,4 +37,3 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.foo == 2
 } -run 
-

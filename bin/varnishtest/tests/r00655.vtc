@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test nested /*...*/ comments "
+varnishtest "Test nested /*...*/ comments "
 
 
 varnish v1 -badvcl {

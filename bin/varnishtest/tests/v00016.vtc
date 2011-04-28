@@ -1,6 +1,4 @@
-# $Id$
-
-test "Various VCL compiler coverage tests"
+varnishtest "Various VCL compiler coverage tests"
 
 shell "true > ${tmpdir}/_varnishtest_empty_file"
 

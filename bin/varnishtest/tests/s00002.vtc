@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check grace with sick backends"
+varnishtest "Check grace with sick backends"
 
 server s1 {
 	rxreq

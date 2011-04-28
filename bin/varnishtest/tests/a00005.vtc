@@ -1,6 +1,4 @@
-# $Id$
-
-test "dual shared client HTTP transactions"
+varnishtest "dual shared client HTTP transactions"
 
 server s1 {
 	rxreq

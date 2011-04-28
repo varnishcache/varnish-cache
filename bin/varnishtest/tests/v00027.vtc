@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check that backend named 'default' is the default"
+varnishtest "Check that backend named 'default' is the default"
 
 server s1 {
 	rxreq

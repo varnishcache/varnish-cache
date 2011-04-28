@@ -1,6 +1,4 @@
-# $Id$
-
-test "Regression test for #387: too long chunk header"
+varnishtest "Regression test for #387: too long chunk header"
 
 server s1 {
 	rxreq
@@ -20,4 +18,3 @@ client c1 {
 	rxresp
 	expect resp.status == 503
 } -run
-

@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check -f command line arg"
+varnishtest "Check -f command line arg"
 
 
 server s1 {

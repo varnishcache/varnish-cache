@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check poll acceptor"
+varnishtest "Check poll acceptor"
 
 server s1 {
 	rxreq 

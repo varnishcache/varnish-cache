@@ -26,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * Define the layout of the shared memory log segment.
  *
  * NB: THIS IS NOT A PUBLIC API TO VARNISH!
@@ -92,7 +90,7 @@ vsm_iter_0(void)
 	CHECK_OBJ_NOTNULL(&vsm_head->head, VSM_CHUNK_MAGIC);
 	return (&vsm_head->head);
 }
- 
+
 static inline void
 vsm_iter_n(struct vsm_chunk **pp)
 {

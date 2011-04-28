@@ -1,6 +1,4 @@
-# $Id$
-
-test "simply test that the framework support \0"
+varnishtest "simply test that the framework support \0"
 
 server s1 {
         rxreq
@@ -20,4 +18,3 @@ client c1 -connect ${s1_sock} {
 client c1 -run
 
 server s1 -wait
-

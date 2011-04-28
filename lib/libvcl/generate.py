@@ -29,8 +29,6 @@
 #
 # Generate various .c and .h files for the VCL compiler and the interfaces
 # for it.
-#
-# $Id$
 
 #######################################################################
 # These are our tokens

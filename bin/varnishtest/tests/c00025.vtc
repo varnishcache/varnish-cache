@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test If-None-Match"
+varnishtest "Test If-None-Match"
 
 server s1 {
 	rxreq

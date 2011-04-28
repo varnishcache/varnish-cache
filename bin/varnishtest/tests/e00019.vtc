@@ -1,6 +1,4 @@
-# $Id$
-
-test "Push corners in new ESI parser"
+varnishtest "Push corners in new ESI parser"
 
 server s1 {
 	rxreq 

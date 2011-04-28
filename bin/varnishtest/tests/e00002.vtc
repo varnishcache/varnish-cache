@@ -1,6 +1,4 @@
-# $Id$
-
-test "ESI CDATA"
+varnishtest "ESI CDATA"
 
 
 server s1 {

@@ -1,6 +1,4 @@
-# $Id$
-
-test "bidirectional message bodies"
+varnishtest "bidirectional message bodies"
 
 server s1 {
 	rxreq

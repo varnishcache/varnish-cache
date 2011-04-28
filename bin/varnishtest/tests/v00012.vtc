@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check backend connection limit"
+varnishtest "Check backend connection limit"
 
 server s1 {
 	rxreq

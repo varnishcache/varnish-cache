@@ -1,6 +1,4 @@
-# $Id$
-
-test "Regression test for ticket #306, random director ignoring good backend"
+varnishtest "Regression test for ticket #306, random director ignoring good backend"
 
 server s1 {
 

@@ -29,9 +29,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <sys/types.h>
 #include <sys/time.h>
 
@@ -279,9 +276,9 @@ res_WriteGunzipObj(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 static void
-res_WriteDirObj(struct sess *sp, size_t low, size_t high)
+res_WriteDirObj(struct sess *sp, ssize_t low, ssize_t high)
 {
-	unsigned u = 0;
+	ssize_t u = 0;
 	size_t ptr, off, len;
 	struct storage *st;
 

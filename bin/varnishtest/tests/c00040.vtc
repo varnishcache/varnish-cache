@@ -1,6 +1,4 @@
-# $Id$
-
-test "request resp and hdr length limits"
+varnishtest "request resp and hdr length limits"
 
 server s1 {
 	rxreq
@@ -81,4 +79,3 @@ client c1 {
 	rxresp
 	expect resp.status == 503
 } -run
-

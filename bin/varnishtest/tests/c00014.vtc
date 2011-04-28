@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test parking second request on backend delay, then pass"
+varnishtest "Test parking second request on backend delay, then pass"
 
 server s1 {
 	rxreq

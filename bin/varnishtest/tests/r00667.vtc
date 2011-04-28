@@ -1,6 +1,4 @@
-# $Id$
-
-test "things stuck on busy object"
+varnishtest "things stuck on busy object"
 
 server s1 {
 	rxreq
