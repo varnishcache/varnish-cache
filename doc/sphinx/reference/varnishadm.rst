@@ -9,7 +9,7 @@ Control a running varnish instance
 :Author: Cecilie Fritzvold
 :Author: Per Buer
 :Date:   2010-05-31
-:Version: 0.2
+:Version: 0.3
 :Manual section: 1
 
 SYNOPSIS
@@ -21,7 +21,10 @@ DESCRIPTION
 ===========
 
 The varnishadm utility establishes a CLI connection to varnishd either
-using -n *name* or using the -T and -S arguments. If -n *name* is the location of the secret file and the address:port is looked up in shared memory. If neither is given varnishadm will look for an instance without a given name. 
+using -n *name* or using the -T and -S arguments. If -n *name* is
+given the location of the secret file and the address:port is looked
+up in shared memory. If neither is given varnishadm will look for an
+instance without a given name.
 
 If a command is given, the command and arguments are sent over the CLI
 connection and the result returned on stdout.
@@ -46,10 +49,13 @@ OPTIONS
 -n name
 	Connect to the instance of varnishd with this name.
 
-Available commands and parameters are documented in the varnishd(1)
-manual page.  Additionally, a summary of commands can be obtained by
-issuing the *help* command, and a summary of parameters can be
-obtained by issuing the *param.show* command.
+The syntax and operation of the actual CLI interface is described in
+the varnish-cli(7) manual page. Parameteres are described in
+varnishd(1) manual page.  
+
+Additionally, a summary of commands can be obtained by issuing the
+*help* command, and a summary of parameters can be obtained by issuing
+the *param.show* command.
 
 EXIT STATUS
 ===========
