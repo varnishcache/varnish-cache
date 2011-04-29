@@ -114,6 +114,14 @@ rh_status_q() {
 	rh_status >/dev/null 2>&1
 }
 
+configtest() {
+    if [ -f "$VARNISH_VCL_CONF" ]; then
+        $exec -f "$VARNISH_VCL_CONF" -C -n /tmp > /dev/null && echo "Syntax ok"
+    else
+	echo "VARNISH_VCL_CONF is  unset or does not point to a file"
+    fi
+}
+
 # See how we were called.
 case "$1" in
 	start)
@@ -140,6 +148,9 @@ case "$1" in
 	condrestart|try-restart)
 		rh_status_q || exit 0
 		restart
+		;;
+	configtest)
+		configtest
 		;;
 	*)
 	echo "Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload}"

@@ -53,8 +53,10 @@ OPTIONS
 
 -F          Run in the foreground.
 
--f config   Use the specified VCL configuration file instead of the builtin default.  See vcl(7) for
-            details on VCL syntax.
+-f config   Use the specified VCL configuration file instead of the
+            builtin default.  See vcl(7) for details on VCL
+            syntax. When no configuration is supplied varnishd will
+            not start the cache process.
 
 -g group    Specifies the name of an unprivileged group to which the child process should switch
             before it starts accepting connections.  This is a shortcut for specifying the group
@@ -95,11 +97,14 @@ OPTIONS
 
 -M address:port
             Connect to this port and offer the command line
-            interface. Think of it as a reverse shell.
+            interface. Think of it as a reverse shell. When running with 
+	    -M and there is no backend defined the child process (the cache)
+            will not start initially.
 
 -t ttl      
-   	    Specifies a hard minimum time to live for cached documents.  This is a shortcut for
-            specifying the default_ttl run-time parameter.
+	    Specifies a hard minimum time to live for cached
+            documents.  This is a shortcut for specifying the
+            default_ttl run-time parameter.
 
 -u user     Specifies the name of an unprivileged user to which the child
             process should switch before it starts accepting
