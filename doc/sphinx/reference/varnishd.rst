@@ -776,6 +776,7 @@ waiter
 SEE ALSO
 ========
 
+* varnish-cli(7)
 * varnishlog(1)
 * varnishhist(1)
 * varnishncsa(1)
