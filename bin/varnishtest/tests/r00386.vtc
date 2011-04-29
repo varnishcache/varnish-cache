@@ -1,6 +1,4 @@
-# $Id$
-
-test "#386, failure to insert include"
+varnishtest "#386, failure to insert include"
 
 server s1 {
 	rxreq

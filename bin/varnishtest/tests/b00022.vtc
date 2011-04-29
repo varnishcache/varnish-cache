@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check the between_bytes_timeout behaves from backend definition"
+varnishtest "Check the between_bytes_timeout behaves from backend definition"
 
 feature SO_RCVTIMEO_WORKS
 

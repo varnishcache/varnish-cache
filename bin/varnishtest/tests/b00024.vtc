@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check that the first_byte_timeout works from vcl"
+varnishtest "Check that the first_byte_timeout works from vcl"
 
 feature SO_RCVTIMEO_WORKS
 

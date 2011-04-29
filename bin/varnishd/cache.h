@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
  */
 
 /*
@@ -248,6 +247,18 @@ struct exp {
 
 /*--------------------------------------------------------------------*/
 
+/* WRW related fields */
+struct wrw {
+	int			*wfd;
+	unsigned		werr;	/* valid after WRK_Flush() */
+	struct iovec		*iov;
+	unsigned		siov;
+	unsigned		niov;
+	ssize_t			liov;
+	ssize_t			cliov;
+	unsigned		ciov;	/* Chunked header marker */
+};
+
 struct worker {
 	unsigned		magic;
 #define WORKER_MAGIC		0x6391adcf
@@ -259,17 +270,12 @@ struct worker {
 
 	double			lastused;
 
+	struct wrw		wrw;
+
 	pthread_cond_t		cond;
 
 	VTAILQ_ENTRY(worker)	list;
 	struct workreq		*wrq;
-
-	int			*wfd;
-	unsigned		werr;	/* valid after WRK_Flush() */
-	struct iovec		*iov;
-	unsigned		siov;
-	unsigned		niov;
-	ssize_t			liov;
 
 	struct VCL_conf		*vcl;
 
@@ -296,6 +302,7 @@ struct worker {
 	struct vfp		*vfp;
 	struct vgz		*vgz_rx;
 	struct vef_priv		*vef_priv;
+	unsigned		do_stream;
 	unsigned		do_esi;
 	unsigned		do_gzip;
 	unsigned		is_gzip;
@@ -303,6 +310,9 @@ struct worker {
 	unsigned		is_gunzip;
 	unsigned		do_close;
 	char			*h_content_length;
+
+	/* Stream state */
+	ssize_t			stream_next;
 
 	/* ESI stuff */
 	struct vep_state	*vep;
@@ -682,6 +692,15 @@ int VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
 int VGZ_Gunzip(struct vgz *, const void **, size_t *len);
 void VGZ_Destroy(struct vgz **);
 void VGZ_UpdateObj(const struct vgz*, struct object *);
+int VGZ_WrwGunzip(struct sess *, struct vgz *, void *ibuf, ssize_t ibufl,
+    char *obuf, ssize_t obufl, ssize_t *obufp);
+
+/* Return values */
+#define VGZ_SOCKET	-2
+#define VGZ_ERROR	-1
+#define VGZ_OK		0
+#define VGZ_END		1
+#define VGZ_STUCK	2
 
 /* cache_http.c */
 unsigned HTTP_estimate(unsigned nhttp);
@@ -781,6 +800,9 @@ int WRK_Queue(struct workreq *wrq);
 int WRK_QueueSession(struct sess *sp);
 void WRK_SumStat(struct worker *w);
 
+#define WRW_IsReleased(w)	((w)->wrw.wfd == NULL)
+void WRW_Chunked(struct worker *w);
+void WRW_EndChunk(struct worker *w);
 void WRW_Reserve(struct worker *w, int *fd);
 unsigned WRW_Flush(struct worker *w);
 unsigned WRW_FlushRelease(struct worker *w);
@@ -836,6 +858,9 @@ void WSL_Flush(struct worker *w, int overflow);
 /* cache_response.c */
 void RES_BuildHttp(struct sess *sp);
 void RES_WriteObj(struct sess *sp);
+void RES_StreamStart(struct sess *sp);
+void RES_StreamEnd(struct sess *sp);
+void RES_StreamPoll(const struct sess *sp);
 
 /* cache_vary.c */
 struct vsb *VRY_Create(const struct sess *sp, const struct http *hp);

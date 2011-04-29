@@ -61,18 +61,13 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <ctype.h>
-#include <errno.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
+#include <strings.h>
 #include <unistd.h>
-#include <limits.h>
 
 #include "compat/daemon.h"
 
@@ -112,7 +107,7 @@ static size_t nll;
 
 static int o_flag = 0;
 static int match_tag;
-static vre_t *match_tag_re;
+static const vre_t *match_tag_re;
 
 static const char *format;
 
@@ -221,6 +216,7 @@ clean_logline(struct logline *lp)
 	freez(lp->df_m);
 	freez(lp->df_s);
 	freez(lp->df_u);
+	freez(lp->df_ttfb);
 #undef freez
 	memset(lp, 0, sizeof *lp);
 }
@@ -417,17 +413,23 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 	case SLT_RxHeader:
 		if (!lp->active)
 			break;
-		if (isprefix(ptr, "user-agent:", end, &next))
+		if (isprefix(ptr, "user-agent:", end, &next)) {
+			free(lp->df_User_agent);
 			lp->df_User_agent = trimline(next, end);
-		else if (isprefix(ptr, "referer:", end, &next))
+		} else if (isprefix(ptr, "referer:", end, &next)) {
+			free(lp->df_Referer);
 			lp->df_Referer = trimline(next, end);
-		else if (isprefix(ptr, "authorization:", end, &next) &&
-		    isprefix(next, "basic", end, &next))
+		} else if (isprefix(ptr, "authorization:", end, &next) &&
+			   isprefix(next, "basic", end, &next)) {
+			free(lp->df_u);
 			lp->df_u = trimline(next, end);
-		else if (isprefix(ptr, "x-forwarded-for:", end, &next))
+		} else if (isprefix(ptr, "x-forwarded-for:", end, &next)) {
+			free(lp->df_X_Forwarded_For);
 			lp->df_X_Forwarded_For = trimline(next, end);
-		else if (isprefix(ptr, "host:", end, &next))
+		} else if (isprefix(ptr, "host:", end, &next)) {
+			free(lp->df_Host);
 			lp->df_Host = trimline(next, end);
+		}
 		break;
 
 	case SLT_VCL_call:
@@ -473,7 +475,7 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 		char ttfb[64];
 		if (!lp->active)
 			break;
-		if (sscanf(ptr, "%*u %*u.%*u %ld.%*u %*u.%*u %s", &l, ttfb) != 2) {
+		if (lp->df_ttfb != NULL || sscanf(ptr, "%*u %*u.%*u %ld.%*u %*u.%*u %s", &l, ttfb) != 2) {
 			clean_logline(lp);
 			break;
 		}
@@ -677,6 +679,7 @@ h_ncsa(void *priv, enum vsl_tag tag, unsigned fd,
 				}
 			}
 			/* Fall through if we haven't handled something */
+			/* FALLTHROUGH*/
 		default:
 			fprintf(stderr, "Unknown format character: %c\n", *p);
 			exit(1);

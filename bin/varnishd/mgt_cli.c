@@ -31,9 +31,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <sys/types.h>
 
 #include <stdarg.h>
@@ -420,7 +417,7 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident, mgt_cli_close_f 
 		cli->auth = MCF_AUTH;
 		mcf_banner(cli, NULL, NULL);
 	}
-	vsb_finish(cli->sb);
+	AZ(vsb_finish(cli->sb));
 	(void)cli_writeres(fdo, cli);
 
 
@@ -444,13 +441,12 @@ sock_id(const char *pfx, int fd)
 	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
 	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
 
-	vsb = vsb_newauto();
+	vsb = vsb_new_auto();
 	AN(vsb);
 	TCP_myname(fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
 	TCP_hisname(fd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
 	vsb_printf(vsb, "%s %s %s %s %s", pfx, abuf2, pbuf2, abuf1, pbuf1);
-	vsb_finish(vsb);
-	AZ(vsb_overflowed(vsb));
+	AZ(vsb_finish(vsb));
 	return (vsb);
 }
 
@@ -559,7 +555,7 @@ mgt_cli_telnet(const char *T_arg)
 		exit(2);
 	}
 	good = 0;
-	vsb = vsb_newauto();
+	vsb = vsb_new_auto();
 	XXXAN(vsb);
 	for (i = 0; i < n; ++i) {
 		sock = VSS_listen(ta[i], 10);
@@ -583,8 +579,7 @@ mgt_cli_telnet(const char *T_arg)
 		REPORT(LOG_ERR, "-T %s could not be listened on.", T_arg);
 		exit(2);
 	}
-	vsb_finish(vsb);
-	AZ(vsb_overflowed(vsb));
+	AZ(vsb_finish(vsb));
 	/* Save in shmem */
 	p = VSM_Alloc(vsb_len(vsb) + 1, "Arg", "-T", "");
 	AN(p);

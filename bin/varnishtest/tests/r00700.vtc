@@ -1,6 +1,4 @@
-# $Id$
-
-test "check TAB in 3 header field"
+varnishtest "check TAB in 3 header field"
 
 server s1 {
 	rxreq

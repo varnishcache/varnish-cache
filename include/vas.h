@@ -26,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * assert(), AN() and AZ() are static checks that should not happen.
  *	In general asserts should be cheap, such as checking return
  *	values and similar.

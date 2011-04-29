@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test restart in vcl_error"
+varnishtest "Test restart in vcl_error"
 
 server s1 {
         rxreq 
@@ -38,4 +36,3 @@ client c1 {
         rxresp
         expect resp.status == 200
 } -run
-

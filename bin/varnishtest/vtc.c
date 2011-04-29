@@ -28,9 +28,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -164,7 +161,7 @@ macro_expand(struct vtclog *vl, const char *text)
 	const char *p, *q;
 	char *m;
 
-	vsb = vsb_newauto();
+	vsb = vsb_new_auto();
 	AN(vsb);
 	while (*text != '\0') {
 		p = strstr(text, "${");
@@ -191,7 +188,7 @@ macro_expand(struct vtclog *vl, const char *text)
 		vsb_printf(vsb, "%s", m);
 		text = q + 1;
 	}
-	vsb_finish(vsb);
+	AZ(vsb_finish(vsb));
 	return (vsb);
 }
 
@@ -326,7 +323,7 @@ reset_cmds(const struct cmds *cmd)
  */
 
 static void
-cmd_test(CMD_ARGS)
+cmd_varnishtest(CMD_ARGS)
 {
 
 	(void)priv;
@@ -335,7 +332,7 @@ cmd_test(CMD_ARGS)
 
 	if (av == NULL)
 		return;
-	assert(!strcmp(av[0], "test"));
+	assert(!strcmp(av[0], "varnishtest"));
 
 	vtc_log(vl, 1, "TEST %s", av[1]);
 	AZ(av[2]);
@@ -465,7 +462,7 @@ static const struct cmds cmds[] = {
 	{ "client",	cmd_client },
 	{ "varnish",	cmd_varnish },
 	{ "delay",	cmd_delay },
-	{ "test",	cmd_test },
+	{ "varnishtest",cmd_varnishtest },
 	{ "shell",	cmd_shell },
 	{ "sema",	cmd_sema },
 	{ "random",	cmd_random },

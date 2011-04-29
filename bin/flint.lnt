@@ -9,8 +9,6 @@
 +libh ../../config.h
 -efile(451, ../../config.h)	// No include guard
 
--esym(528, svnid)		// Sym not ref
-
 -efile(451, vsl_tags.h)		// No include guard
 -efile(451, vsc_fields.h)	// No include guard
 

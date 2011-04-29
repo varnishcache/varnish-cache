@@ -1,6 +1,4 @@
-# $Id$
-
-test "test req.can_gzip VCL variable"
+varnishtest "test req.can_gzip VCL variable"
 
 server s1 {
 	rxreq

@@ -1,6 +1,4 @@
-# $Id$
-
-test "Simple expiry test (fully reaped object)"
+varnishtest "Simple expiry test (fully reaped object)"
 
 server s1 {
 	rxreq

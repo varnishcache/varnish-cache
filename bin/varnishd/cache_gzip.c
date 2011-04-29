@@ -68,9 +68,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include "vsl.h"
 #include "cache.h"
 #include "stevedore.h"
@@ -300,13 +297,13 @@ VGZ_Gunzip(struct vgz *vg, const void **pptr, size_t *plen)
 			vg->obuf->len += l;
 	}
 	if (i == Z_OK)
-		return (0);
+		return (VGZ_OK);
 	if (i == Z_STREAM_END)
-		return (1);
+		return (VGZ_END);
 	if (i == Z_BUF_ERROR)
-		return (2);
+		return (VGZ_STUCK);
 printf("INFLATE=%d (%s)\n", i, vg->vz.msg);
-	return (-1);
+	return (VGZ_ERROR);
 }
 
 /*--------------------------------------------------------------------*/
@@ -348,6 +345,49 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, size_t *plen, enum vgz_flag flags)
 	if (i == Z_BUF_ERROR)
 		return (2);
 	return (-1);
+}
+
+/*--------------------------------------------------------------------
+ * Gunzip ibuf into outb, if it runs full, emit it with WRW.
+ * Leave flushing to caller, more data may be coming.
+ */
+
+int
+VGZ_WrwGunzip(struct sess *sp, struct vgz *vg, void *ibuf, ssize_t ibufl,
+    char *obuf, ssize_t obufl, ssize_t *obufp)
+{
+	int i;
+	size_t dl;
+	const void *dp;
+
+	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+	assert(obufl > 16);
+	VGZ_Ibuf(vg, ibuf, ibufl);
+	if (ibufl == 0)
+		return (VGZ_OK);
+	VGZ_Obuf(vg, obuf + *obufp, obufl - *obufp);
+	do {
+		if (obufl == *obufp)
+			i = VGZ_STUCK;
+		else {
+			i = VGZ_Gunzip(vg, &dp, &dl);
+			*obufp += dl;
+		}
+		if (i < VGZ_OK) {
+			/* XXX: VSL ? */
+			return (-1);
+		}
+		if (obufl == *obufp || i == VGZ_STUCK) {
+			(void)WRW_Write(sp->wrk, obuf, *obufp);
+			if (WRW_Flush(sp->wrk))
+				return (VGZ_SOCKET);
+			*obufp = 0;
+			VGZ_Obuf(vg, obuf + *obufp, obufl - *obufp);
+		}
+	} while (!VGZ_IbufEmpty(vg));
+	if (i == VGZ_STUCK)
+		i = VGZ_OK;
+	return (i);
 }
 
 /*--------------------------------------------------------------------*/
@@ -432,8 +472,10 @@ vfp_gunzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 		if (VGZ_ObufStorage(sp, vg))
 			return (-1);
 		i = VGZ_Gunzip(vg, &dp, &dl);
-		assert(i == Z_OK || i == Z_STREAM_END);
+		assert(i == VGZ_OK || i == VGZ_END);
 		sp->obj->len += dl;
+		if (sp->wrk->do_stream)
+			RES_StreamPoll(sp);
 	}
 	if (i == Z_OK || i == Z_STREAM_END)
 		return (1);
@@ -504,6 +546,8 @@ vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 		i = VGZ_Gzip(vg, &dp, &dl, VGZ_NORMAL);
 		assert(i == Z_OK);
 		sp->obj->len += dl;
+		if (sp->wrk->do_stream)
+			RES_StreamPoll(sp);
 	}
 	return (1);
 }
@@ -580,15 +624,22 @@ vfp_testgzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 		VGZ_Ibuf(vg, st->ptr + st->len, w);
 		st->len += w;
 		sp->obj->len += w;
+		if (sp->wrk->do_stream)
+			RES_StreamPoll(sp);
 
 		while (!VGZ_IbufEmpty(vg)) {
 			VGZ_Obuf(vg, ibuf, sizeof ibuf);
 			i = VGZ_Gunzip(vg, &dp, &dl);
-			assert(i == Z_OK || i == Z_STREAM_END);
+			if (i != VGZ_OK && i != VGZ_END) {
+				WSP(sp, SLT_FetchError,
+				    "Invalid Gzip data: %s", vg->vz.msg);
+				return (-1);
+			}
 		}
 	}
-	if (i == Z_OK || i == Z_STREAM_END)
+	if (i == VGZ_OK || i == VGZ_END)
 		return (1);
+	WSP(sp, SLT_FetchError, "Gunzip trouble (%d)", i);
 	return (-1);
 }
 

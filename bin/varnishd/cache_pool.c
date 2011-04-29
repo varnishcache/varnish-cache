@@ -42,9 +42,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <sys/types.h>
 
 #include <errno.h>
@@ -143,8 +140,9 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace,
 	w->bereq = HTTP_create(http0, nhttp);
 	w->beresp = HTTP_create(http1, nhttp);
 	w->resp = HTTP_create(http2, nhttp);
-	w->iov = iov;
-	w->siov = siov;
+	w->wrw.iov = iov;
+	w->wrw.siov = siov;
+	w->wrw.ciov = siov;
 	AZ(pthread_cond_init(&w->cond, NULL));
 
 	WS_Init(w->ws, "wrk", ws, sess_workspace);
@@ -189,7 +187,7 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace,
 		AZ(w->bereq->ws);
 		AZ(w->beresp->ws);
 		AZ(w->resp->ws);
-		AZ(w->wfd);
+		AZ(w->wrw.wfd);
 		AZ(w->storage_hint);
 		assert(w->wlp == w->wlb);
 		w->wrq = NULL;

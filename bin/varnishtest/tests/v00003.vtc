@@ -1,6 +1,4 @@
-# $Id$
-
-test "VCL: test syntax/semantic checks on director decls."
+varnishtest "VCL: test syntax/semantic checks on director decls."
 
 # syntax in inline backend
 varnish v1 -badvcl {

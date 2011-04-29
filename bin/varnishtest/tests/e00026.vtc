@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test esi-include + gzip edgecase with respect to gzip hdr"
+varnishtest "Test esi-include + gzip edgecase with respect to gzip hdr"
 
 server s1 {
 	rxreq

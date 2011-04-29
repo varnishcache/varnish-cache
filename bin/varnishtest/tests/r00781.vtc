@@ -1,6 +1,4 @@
-# $Id$
-
-test "NULL assignment to line1 fields."
+varnishtest "NULL assignment to line1 fields."
 
 server s1 {
 	rxreq

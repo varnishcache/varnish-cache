@@ -29,9 +29,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>

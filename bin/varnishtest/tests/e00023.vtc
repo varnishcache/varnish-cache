@@ -1,6 +1,4 @@
-# $Id$
-
-test "Include gzip'ed and ungzip'ed (ESI) objects in a gzip'ed ESI object"
+varnishtest "Include gzip'ed and ungzip'ed (ESI) objects in a gzip'ed ESI object"
 
 server s1 {
 	rxreq 

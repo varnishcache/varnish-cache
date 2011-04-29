@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check expiry of non-instantiated object"
+varnishtest "Check expiry of non-instantiated object"
 
 shell "rm -f ${tmpdir}/_.per"
 

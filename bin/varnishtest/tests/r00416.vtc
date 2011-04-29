@@ -1,6 +1,4 @@
-# $Id$
-
-test "Regression test for #416: a surplus of HTTP headers"
+varnishtest "Regression test for #416: a surplus of HTTP headers"
 
 server s1 {
 	rxreq

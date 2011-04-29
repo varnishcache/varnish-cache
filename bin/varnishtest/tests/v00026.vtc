@@ -1,6 +1,4 @@
-# $Id$
-
-test "Hash director"
+varnishtest "Hash director"
 
 server s1 {
 	rxreq

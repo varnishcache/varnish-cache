@@ -26,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * This is the central switch-board for backend connections and it is
  * slightly complicated by a number of optimizations.
  *
@@ -143,7 +141,7 @@ struct backend *vdi_get_backend_if_simple(const struct director *d);
 /* cache_backend_cfg.c */
 extern struct lock VBE_mtx;
 void VBE_DropRefConn(struct backend *);
-void VBE_DropRef(struct backend *);
+void VBE_DropRefVcl(struct backend *);
 void VBE_DropRefLocked(struct backend *b);
 
 /* cache_backend_poll.c */

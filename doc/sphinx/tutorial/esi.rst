@@ -47,7 +47,7 @@ For ESI to work you need to activate ESI processing in VCL, like this:::
 
     sub vcl_fetch {
     	if (req.url == "/test.html") {
-           esi;        		     /* Do ESI processing		*/
+           set beresp.do_esi = true; /* Do ESI processing		*/
            set obj.ttl = 24 h; 	     /* Sets the TTL on the HTML above  */
     	} elseif (req.url == "/cgi-bin/date.cgi") {
            set obj.ttl = 1m;         /* Sets a one minute TTL on	*/

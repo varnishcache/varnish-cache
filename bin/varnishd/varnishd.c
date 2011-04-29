@@ -31,9 +31,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <sys/stat.h>
 
 #include <ctype.h>
@@ -90,7 +87,7 @@ build_vident(void)
 {
 	struct utsname uts;
 
-	vident = vsb_newauto();
+	vident = vsb_new_auto();
 	AN(vident);
 	if (!uname(&uts)) {
 		vsb_printf(vident, ",%s", uts.sysname);
@@ -229,8 +226,7 @@ cli_check(const struct cli *cli)
 		vsb_clear(cli->sb);
 		return;
 	}
-	vsb_finish(cli->sb);
-	AZ(vsb_overflowed(cli->sb));
+	AZ(vsb_finish(cli->sb));
 	fprintf(stderr, "Error:\n%s\n", vsb_data(cli->sb));
 	exit (2);
 }
@@ -402,7 +398,7 @@ main(int argc, char * const *argv)
 	SHA256_Test();
 
 	memset(cli, 0, sizeof cli);
-	cli[0].sb = vsb_newauto();
+	cli[0].sb = vsb_new_auto();
 	XXXAN(cli[0].sb);
 	cli[0].result = CLIS_OK;
 
@@ -534,8 +530,7 @@ main(int argc, char * const *argv)
 	/* XXX: we can have multiple CLI actions above, is this enough ? */
 	if (cli[0].result != CLIS_OK) {
 		fprintf(stderr, "Parameter errors:\n");
-		vsb_finish(cli[0].sb);
-		AZ(vsb_overflowed(cli[0].sb));
+		AZ(vsb_finish(cli[0].sb));
 		fprintf(stderr, "%s\n", vsb_data(cli[0].sb));
 		exit(1);
 	}
@@ -550,9 +545,10 @@ main(int argc, char * const *argv)
 		usage();
 	}
 	if (S_arg == NULL && T_arg == NULL && d_flag == 0 && b_arg == NULL &&
-	    f_arg == NULL) {
+	    f_arg == NULL && M_arg == NULL) {
 		fprintf(stderr,
-		    "At least one of -d, -b, -f, -S or -T must be specified\n");
+		    "At least one of -d, -b, -f, -M, -S or -T "
+		    "must be specified\n");
 		usage();
 	}
 
@@ -621,8 +617,7 @@ main(int argc, char * const *argv)
 
 	mgt_SHM_Init(l_arg);
 
-	vsb_finish(vident);
-	AZ(vsb_overflowed(vident));
+	AZ(vsb_finish(vident));
 
 	if (!d_flag && !F_flag)
 		AZ(varnish_daemon(1, 0));

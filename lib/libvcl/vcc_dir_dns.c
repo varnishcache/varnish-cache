@@ -29,9 +29,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <sys/types.h>
 #include <sys/socket.h>
 
@@ -87,7 +84,7 @@ print_backend(struct vcc *tl,
 	bprintf(strip, "%u.%u.%u.%u", ip[3], ip[2], ip[1], ip[0]);
 	tmptok.dec = strip;
 	bprintf(vgcname, "%.*s_%d", PF(tl->t_dir), serial);
-	vsb = vsb_newauto();
+	vsb = vsb_new_auto();
 	AN(vsb);
 	tl->fb = vsb;
 	Fc(tl, 0, "\t{ .host = VGC_backend_%s },\n",vgcname);
@@ -120,7 +117,7 @@ print_backend(struct vcc *tl,
 
 	Fb(tl, 0, "};\n");
 	tl->fb = NULL;
-	vsb_finish(vsb);
+	AZ(vsb_finish(vsb));
 	Fh(tl, 0, "%s", vsb_data(vsb));
 	vsb_delete(vsb);
 	Fi(tl, 0, "\tVRT_init_dir(cli, VCL_conf.director, \"simple\",\n"

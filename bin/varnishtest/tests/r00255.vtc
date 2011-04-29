@@ -1,6 +1,4 @@
-# $Id$
-
-test "Regression test for #255: Segfault on header token separation"
+varnishtest "Regression test for #255: Segfault on header token separation"
 
 server s1 {
 	rxreq 

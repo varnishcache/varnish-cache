@@ -29,9 +29,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <sys/types.h>
 #include <sys/time.h>
 
@@ -125,9 +122,9 @@ res_do_conds(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 static void
-res_dorange(struct sess *sp, const char *r, unsigned *plow, unsigned *phigh)
+res_dorange(struct sess *sp, const char *r, ssize_t *plow, ssize_t *phigh)
 {
-	unsigned low, high, has_low;
+	ssize_t low, high, has_low;
 
 	(void)sp;
 	if (strncmp(r, "bytes=", 6))
@@ -176,11 +173,12 @@ res_dorange(struct sess *sp, const char *r, unsigned *plow, unsigned *phigh)
 		return;
 
 	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
-	    "Content-Range: bytes %u-%u/%u", low, high, sp->obj->len);
+	    "Content-Range: bytes %jd-%jd/%jd",
+	    (intmax_t)low, (intmax_t)high, (intmax_t)sp->obj->len);
 	http_Unset(sp->wrk->resp, H_Content_Length);
 	assert(sp->wrk->res_mode & RES_LEN);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
-	    "Content-Length: %u", 1 + high - low);
+	    "Content-Length: %jd", (intmax_t)(1 + high - low));
 	http_SetResp(sp->wrk->resp, "HTTP/1.1", 206, "Partial Content");
 
 	*plow = low;
@@ -245,16 +243,15 @@ res_WriteGunzipObj(struct sess *sp)
 	struct storage *st;
 	unsigned u = 0;
 	struct vgz *vg;
-	const void *dp;
-	char lenbuf[20];
 	char obuf[params->gzip_stack_buffer];
-	size_t dl;
+	ssize_t obufl = 0;
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	vg = VGZ_NewUngzip(sp, "U D -");
 
+	VGZ_Obuf(vg, obuf, sizeof obuf);
 	VTAILQ_FOREACH(st, &sp->obj->store, list) {
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
@@ -263,23 +260,14 @@ res_WriteGunzipObj(struct sess *sp)
 		sp->acct_tmp.bodybytes += st->len;	/* XXX ? */
 		VSC_main->n_objwrite++;
 
-		VGZ_Ibuf(vg, st->ptr, st->len);
-		do {
-			VGZ_Obuf(vg, obuf, sizeof obuf);
-			i = VGZ_Gunzip(vg, &dp, &dl);
-			if (dl != 0) {
-				if (sp->wrk->res_mode & RES_CHUNKED) {
-					bprintf(lenbuf, "%x\r\n", (unsigned)dl);
-					(void)WRW_Write(sp->wrk, lenbuf, -1);
-				}
-				(void)WRW_Write(sp->wrk, dp, dl);
-				if (sp->wrk->res_mode & RES_CHUNKED)
-					(void)WRW_Write(sp->wrk, "\r\n", -1);
-				if (WRW_Flush(sp->wrk))
-					break;
-			}
-			assert(i >= 0);
-		} while (i == 0);
+		i = VGZ_WrwGunzip(sp, vg,
+		    st->ptr, st->len,
+		    obuf, sizeof obuf, &obufl);
+		/* XXX: error check */
+	}
+	if (obufl) {
+		(void)WRW_Write(sp->wrk, obuf, obufl);
+		(void)WRW_Flush(sp->wrk);
 	}
 	VGZ_Destroy(&vg);
 	assert(u == sp->obj->len);
@@ -288,18 +276,13 @@ res_WriteGunzipObj(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 static void
-res_WriteDirObj(struct sess *sp, char *lenbuf, size_t low, size_t high)
+res_WriteDirObj(struct sess *sp, ssize_t low, ssize_t high)
 {
-	unsigned u = 0;
+	ssize_t u = 0;
 	size_t ptr, off, len;
 	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-
-	if (sp->wrk->res_mode & RES_CHUNKED) {
-		sprintf(lenbuf, "%jx\r\n", (intmax_t)sp->obj->len);
-		(void)WRW_Write(sp->wrk, lenbuf, -1);
-	}
 
 	ptr = 0;
 	VTAILQ_FOREACH(st, &sp->obj->store, list) {
@@ -344,8 +327,6 @@ res_WriteDirObj(struct sess *sp, char *lenbuf, size_t low, size_t high)
 		(void)WRW_Write(sp->wrk, st->ptr + off, len);
 	}
 	assert(u == sp->obj->len);
-	if (sp->wrk->res_mode & RES_CHUNKED)
-		(void)WRW_Write(sp->wrk, "\r\n", -1);
 }
 
 /*--------------------------------------------------------------------*/
@@ -354,8 +335,7 @@ void
 RES_WriteObj(struct sess *sp)
 {
 	char *r;
-	unsigned low, high;
-	char lenbuf[20];
+	ssize_t low, high;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
@@ -384,6 +364,9 @@ RES_WriteObj(struct sess *sp)
 		sp->acct_tmp.hdrbytes +=
 		    http_Write(sp->wrk, sp->wrk->resp, 1);
 
+	if (sp->wrk->res_mode & RES_CHUNKED)
+		WRW_Chunked(sp->wrk);
+
 	if (!sp->wantbody) {
 		/* This was a HEAD request */
 	} else if (sp->obj->len == 0) {
@@ -395,13 +378,78 @@ RES_WriteObj(struct sess *sp)
 	} else if (sp->wrk->res_mode & RES_GUNZIP) {
 		res_WriteGunzipObj(sp);
 	} else {
-		res_WriteDirObj(sp, lenbuf, low, high);
+		res_WriteDirObj(sp, low, high);
 	}
 
 	if (sp->wrk->res_mode & RES_CHUNKED &&
 	    !(sp->wrk->res_mode & RES_ESI_CHILD))
-		(void)WRW_Write(sp->wrk, "0\r\n\r\n", -1);
+		WRW_EndChunk(sp->wrk);
 
+	if (WRW_FlushRelease(sp->wrk))
+		vca_close_session(sp, "remote closed");
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+RES_StreamStart(struct sess *sp)
+{
+
+	AZ(sp->wrk->res_mode & RES_ESI_CHILD);
+	AN(sp->wantbody);
+
+	WRW_Reserve(sp->wrk, &sp->fd);
+	/*
+	 * Always remove C-E if client don't grok it
+	 */
+	if (sp->wrk->res_mode & RES_GUNZIP)
+		http_Unset(sp->wrk->resp, H_Content_Encoding);
+
+	sp->acct_tmp.hdrbytes +=
+	    http_Write(sp->wrk, sp->wrk->resp, 1);
+
+	if (sp->wrk->res_mode & RES_CHUNKED)
+		WRW_Chunked(sp->wrk);
+
+	sp->wrk->stream_next = 0;
+}
+
+void
+RES_StreamPoll(const struct sess *sp)
+{
+	struct storage *st;
+	ssize_t l, l2;
+	void *ptr;
+
+	if (sp->obj->len == sp->wrk->stream_next)
+		return;
+	assert(sp->obj->len > sp->wrk->stream_next);
+	l = 0;
+	VTAILQ_FOREACH(st, &sp->obj->store, list) {
+		if (st->len + l <= sp->wrk->stream_next) {
+			l += st->len;
+			continue;
+		}
+		l2 = st->len + l - sp->wrk->stream_next;
+		ptr = st->ptr + (sp->wrk->stream_next - l);
+		(void)WRW_Write(sp->wrk, ptr, l2);
+		l += st->len;
+		sp->wrk->stream_next += l2;
+	}
+	(void)WRW_Flush(sp->wrk);
+}
+
+void
+RES_StreamEnd(struct sess *sp)
+{
+
+	if (sp->wrk->res_mode & RES_GUNZIP) {
+		INCOMPL();
+		res_WriteGunzipObj(sp);
+	}
+	if (sp->wrk->res_mode & RES_CHUNKED &&
+	    !(sp->wrk->res_mode & RES_ESI_CHILD))
+		WRW_EndChunk(sp->wrk);
 	if (WRW_FlushRelease(sp->wrk))
 		vca_close_session(sp, "remote closed");
 }

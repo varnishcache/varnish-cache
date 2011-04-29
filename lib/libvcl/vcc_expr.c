@@ -31,9 +31,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -253,7 +250,7 @@ vcc_new_expr(void)
 	/* XXX: use TlAlloc() ? */
 	ALLOC_OBJ(e, EXPR_MAGIC);
 	AN(e);
-	e->vsb = vsb_newauto();
+	e->vsb = vsb_new_auto();
 	e->fmt = VOID;
 	return (e);
 }
@@ -269,8 +266,7 @@ vcc_mk_expr(enum var_type fmt, const char *str, ...)
 	va_start(ap, str);
 	vsb_vprintf(e->vsb, str, ap);
 	va_end(ap);
-	vsb_finish(e->vsb);
-	AZ(vsb_overflowed(e->vsb));
+	AZ(vsb_finish(e->vsb));
 	return (e);
 }
 
@@ -345,8 +341,7 @@ vcc_expr_edit(enum var_type fmt, const char *p, struct expr *e1,
 		}
 		p++;
 	}
-	vsb_finish(e->vsb);
-	AZ(vsb_overflowed(e->vsb));
+	AZ(vsb_finish(e->vsb));
 	if (e1 != NULL)
 		e->t1 = e1->t1;
 	else if (e2 != NULL)
@@ -696,8 +691,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		e1->t1 = tl->t;
 		e1->constant = 1;
 		vcc_NextToken(tl);
-		vsb_finish(e1->vsb);
-		AZ(vsb_overflowed(e1->vsb));
+		AZ(vsb_finish(e1->vsb));
 		*e = e1;
 		break;
 	case CNUM:

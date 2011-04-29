@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test fileread for std VMOD"
+varnishtest "Test fileread for std VMOD"
 
 shell {
 	printf "File One" > "${tmpdir}/m00004_file_one"

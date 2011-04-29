@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test CLI help and parameter functions"
+varnishtest "Test CLI help and parameter functions"
 
 varnish v1 -arg "-b ${bad_ip}:9080" 
 

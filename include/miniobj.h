@@ -3,7 +3,6 @@
  *
  * This file is in the public domain.
  *
- * $Id$
  */
 
 #define ALLOC_OBJ(to, type_magic)					\

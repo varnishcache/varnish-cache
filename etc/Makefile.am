@@ -1,4 +1,4 @@
-# $Id$
+#
 
 EXTRA_DIST = zope-plone.vcl
 DISTCLEANFILES = default.vcl

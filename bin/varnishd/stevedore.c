@@ -33,9 +33,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,7 +50,51 @@ static VTAILQ_HEAD(, stevedore)	stevedores =
 static const struct stevedore * volatile stv_next;
 
 static struct stevedore *stv_transient;
-static struct objcore_methods default_oc_methods;
+
+/*---------------------------------------------------------------------
+ * Default objcore methods
+ */
+
+static struct object * __match_proto__(getobj_f)
+default_oc_getobj(struct worker *wrk, struct objcore *oc)
+{
+	struct object *o;
+
+	(void)wrk;
+	if (oc->priv == NULL)
+		return (NULL);
+	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
+	return (o);
+}
+
+static void
+default_oc_freeobj(struct objcore *oc)
+{
+	struct object *o;
+
+	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
+	oc->priv = NULL;
+	oc->methods = NULL;
+
+	STV_Freestore(o);
+	STV_free(o->objstore);
+}
+
+static struct lru *
+default_oc_getlru(const struct objcore *oc)
+{
+	struct object *o;
+
+	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
+	return (o->objstore->stevedore->lru);
+}
+
+static struct objcore_methods default_oc_methods = {
+	.getobj = default_oc_getobj,
+	.freeobj = default_oc_freeobj,
+	.getlru = default_oc_getlru,
+};
+
 
 /*--------------------------------------------------------------------
  */
@@ -127,12 +168,20 @@ stv_alloc(const struct sess *sp, size_t size)
 	}
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
+	if (size > (size_t)(params->fetch_maxchunksize) << 10)
+		size = (size_t)(params->fetch_maxchunksize) << 10;
+
 	for (;;) {
 		/* try to allocate from it */
 		AN(stv->alloc);
 		st = stv->alloc(stv, size);
 		if (st != NULL)
 			break;
+
+		if (size > params->fetch_chunksize) {
+			size >>= 1;
+			continue;
+		}
 
 		/* no luck; try to free some space and keep trying */
 		if (EXP_NukeOne(sp, stv->lru) == -1)
@@ -300,50 +349,6 @@ STV_Freestore(struct object *o)
 		STV_free(st);
 	}
 }
-
-/*---------------------------------------------------------------------
- * Default objcore methods
- */
-
-static struct object * __match_proto__(getobj_f)
-default_oc_getobj(struct worker *wrk, struct objcore *oc)
-{
-	struct object *o;
-
-	(void)wrk;
-	if (oc->priv == NULL)
-		return (NULL);
-	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
-	return (o);
-}
-
-static void
-default_oc_freeobj(struct objcore *oc)
-{
-	struct object *o;
-
-	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
-	oc->priv = NULL;
-	oc->methods = NULL;
-
-	STV_Freestore(o);
-	STV_free(o->objstore);
-}
-
-static struct lru *
-default_oc_getlru(const struct objcore *oc)
-{
-	struct object *o;
-
-	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
-	return (o->objstore->stevedore->lru);
-}
-
-static struct objcore_methods default_oc_methods = {
-	.getobj = default_oc_getobj,
-	.freeobj = default_oc_freeobj,
-	.getlru = default_oc_getlru,
-};
 
 /*-------------------------------------------------------------------*/
 

@@ -35,9 +35,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <stdio.h>
 
 #include <stdlib.h>

@@ -31,9 +31,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <dlfcn.h>
@@ -90,19 +87,20 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm, const char *path)
 
 		x = dlsym(v->hdl, "Vmod_Name");
 		AN(x);
+		/* XXX: check that name is correct */
 
 		x = dlsym(v->hdl, "Vmod_Len");
 		AN(x);
 		i = x;
-		assert(len == *i);
+		v->funclen = *i;
 
 		x = dlsym(v->hdl, "Vmod_Func");
 		AN(x);
-		memcpy(ptr, x, len);
-
 		v->funcs = x;
-		v->funclen = *i;
 	}
+
+	assert(len == v->funclen);
+	memcpy(ptr, v->funcs, v->funclen);
 	v->ref++;
 
 	*hdl = v;

@@ -1,6 +1,4 @@
-# $Id$
-
-test "Change TTL on persistent object"
+varnishtest "Change TTL on persistent object"
 
 shell "rm -f ${tmpdir}/_.per"
 

@@ -29,8 +29,6 @@
 #
 # Generate various .c and .h files for the VCL compiler and the interfaces
 # for it.
-#
-# $Id$
 
 #######################################################################
 # These are our tokens
@@ -305,6 +303,12 @@ sp_variables = (
 		'const struct sess *'
 	),
 	('beresp.do_esi',
+		'BOOL',
+		( 'fetch',),
+		( 'fetch',),
+		'const struct sess *'
+	),
+	('beresp.do_stream',
 		'BOOL',
 		( 'fetch',),
 		( 'fetch',),

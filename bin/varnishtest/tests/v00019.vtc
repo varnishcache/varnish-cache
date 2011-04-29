@@ -1,6 +1,4 @@
-# $Id$
-
-test "VCL compiler coverage test: vcc_token.c"
+varnishtest "VCL compiler coverage test: vcc_token.c"
 
 varnish v1 -badvcl " C{ "
 

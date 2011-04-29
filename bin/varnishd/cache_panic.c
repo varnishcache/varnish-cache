@@ -29,9 +29,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -71,15 +68,15 @@ pan_ws(const struct ws *ws, int indent)
 	vsb_printf(vsp, "%*sid = \"%s\",\n", indent + 2, "", ws->id);
 	vsb_printf(vsp, "%*s{s,f,r,e} = {%p", indent + 2, "", ws->s);
 	if (ws->f > ws->s)
-		vsb_printf(vsp, ",+%d", ws->f - ws->s);
+		vsb_printf(vsp, ",+%ld", (long) (ws->f - ws->s));
 	else
 		vsb_printf(vsp, ",%p", ws->f);
 	if (ws->r > ws->s)
-		vsb_printf(vsp, ",+%d", ws->r - ws->s);
+		vsb_printf(vsp, ",+%ld", (long) (ws->r - ws->s));
 	else
 		vsb_printf(vsp, ",%p", ws->r);
 	if (ws->e > ws->s)
-		vsb_printf(vsp, ",+%d", ws->e - ws->s);
+		vsb_printf(vsp, ",+%ld", (long) (ws->e - ws->s));
 	else
 		vsb_printf(vsp, ",%p", ws->e);
 	vsb_printf(vsp, "},\n");
@@ -166,7 +163,7 @@ pan_object(const struct object *o)
 	vsb_printf(vsp, "    xid = %u,\n", o->xid);
 	pan_ws(o->ws_o, 4);
 	pan_http("obj", o->http, 4);
-	vsb_printf(vsp, "    len = %u,\n", o->len);
+	vsb_printf(vsp, "    len = %lu,\n", o->len);
 	vsb_printf(vsp, "    store = {\n");
 	VTAILQ_FOREACH(st, &o->store, list)
 		pan_storage(st);

@@ -1,6 +1,4 @@
-# $Id$
-
-test "Range headers"
+varnishtest "Range headers"
 
 server s1 {
 	rxreq
@@ -87,4 +85,3 @@ client c1 {
 	expect resp.status == 206
 	expect resp.bodylen == 100
 } -run
-

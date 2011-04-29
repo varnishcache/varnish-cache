@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check lack of response-string"
+varnishtest "Check lack of response-string"
 
 server s1 {
 	rxreq

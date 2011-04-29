@@ -30,9 +30,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id")
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -73,6 +70,7 @@ struct vep_state {
 	/* parser state */
 	const char		*state;
 	unsigned		startup;
+	unsigned		esi_found;
 
 	unsigned		endtag;
 	unsigned		emptytag;
@@ -188,7 +186,6 @@ vep_error(const struct vep_state *vep, const char *p)
 
 	VSC_main->esi_errors++;
 	l = (intmax_t)(vep->ver_p - vep->hack_p);
-	printf("ERROR at %jd %s\n", l , p);
 	WSP(vep->sp, SLT_ESI_xmlerror, "ERR at %jd %s", l, p);
 
 }
@@ -287,8 +284,6 @@ vep_emit_verbatim(const struct vep_state *vep, ssize_t l, ssize_t l_crc)
 		Debug("---> VERBATIM(%jd)\n", (intmax_t)l);
 	}
 	vep_emit_len(vep, l, VEC_V1, VEC_V2, VEC_V8);
-	/* Emit Chunked header */
-	vsb_printf(vep->vsb, "%lx\r\n%c", l, 0);
 	if (vep->dogzip) {
 		vep_emit_len(vep, l_crc, VEC_C1, VEC_C2, VEC_C8);
 		vbe32enc(buf, vep->crc);
@@ -452,6 +447,17 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 	if (what == DO_ATTR) {
 		Debug("ATTR (%s) (%s)\n", vep->match_hit->match,
 			vsb_data(vep->attr_vsb));
+		if (vep->include_src != NULL) {
+			vep_error(vep,
+			    "ESI 1.0 <esi:include> "
+			    "has multiple src= attributes");
+			vep->state = VEP_TAGERROR;
+			vsb_delete(vep->attr_vsb);
+			vsb_delete(vep->include_src);
+			vep->attr_vsb = NULL;
+			vep->include_src = NULL;
+			return;
+		}
 		XXXAZ(vep->include_src);	/* multiple src= */
 		vep->include_src = vep->attr_vsb;
 		return;
@@ -650,6 +656,7 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 					vep_mark_verbatim(vep, p);
 				p++;
 				if (*++vep->esicmt_p == '\0') {
+					vep->esi_found = 1;
 					vep->esicmt = NULL;
 					vep->esicmt_p = NULL;
 					/*
@@ -722,6 +729,7 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 			vep->state = VEP_UNTIL;
 		} else if (vep->state == VEP_ESITAG) {
 			vep->in_esi_tag = 1;
+			vep->esi_found = 1;
 			vep_mark_skip(vep, p);
 			vep->match = vep_match_esi;
 			vep->state = VEP_MATCH;
@@ -838,7 +846,7 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 				vep->state = VEP_TAGERROR;
 			}
 		} else if (vep->state == VEP_ATTRGETVAL) {
-			vep->attr_vsb = vsb_newauto();
+			vep->attr_vsb = vsb_new_auto();
 			vep->state = VEP_ATTRDELIM;
 		} else if (vep->state == VEP_ATTRDELIM) {
 			AZ(vep->attr_delim);
@@ -867,20 +875,20 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 				vep->state = VEP_TAGERROR;
 				vep->attr_delim = 0;
 				if (vep->attr_vsb != NULL) {
-					vsb_finish(vep->attr_vsb);
+					AZ(vsb_finish(vep->attr_vsb));
 					vsb_delete(vep->attr_vsb);
 					vep->attr_vsb = NULL;
 				}
 			} else if (p < e) {
 				vep->attr_delim = 0;
 				p++;
+				vep->state = VEP_INTAG;
 				if (vep->attr_vsb != NULL) {
-					vsb_finish(vep->attr_vsb);
+					AZ(vsb_finish(vep->attr_vsb));
 					AN(vep->dostuff);
 					vep->dostuff(vep, DO_ATTR);
 					vep->attr_vsb = NULL;
 				}
-				vep->state = VEP_INTAG;
 			}
 
 		/******************************************************
@@ -997,7 +1005,7 @@ VEP_Init(const struct sess *sp, vep_callback_t *cb)
 	memset(vep, 0, sizeof *vep);
 	vep->magic = VEP_MAGIC;
 	vep->sp = sp;
-	vep->vsb = vsb_newauto();
+	vep->vsb = vsb_new_auto();
 	AN(vep->vsb);
 
 	if (cb != NULL) {
@@ -1048,9 +1056,9 @@ VEP_Finish(const struct sess *sp)
 
 	sp->wrk->vep = NULL;
 
-	vsb_finish(vep->vsb);
+	AZ(vsb_finish(vep->vsb));
 	l = vsb_len(vep->vsb);
-	if (vep->state != VEP_NOTXML && l > 0)
+	if (vep->esi_found && l > 0)
 		return (vep->vsb);
 	vsb_delete(vep->vsb);
 	return (NULL);

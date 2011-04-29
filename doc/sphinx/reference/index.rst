@@ -7,6 +7,7 @@ The Varnish Reference Manual
 .. toctree::
 
 	vcl.rst
+	varnish-cli.rst
 	varnishadm.rst
 	varnishd.rst
 	varnishhist.rst

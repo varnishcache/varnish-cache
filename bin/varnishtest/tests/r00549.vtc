@@ -1,6 +1,4 @@
-# $Id$
-
-# Regression test for bad backend reply with ctrl char.
+varnishtest "Regression test for bad backend reply with ctrl char."
 
 server s1 {
 	rxreq

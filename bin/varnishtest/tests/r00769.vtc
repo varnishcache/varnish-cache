@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test that set status code is readable again for obj.status and beresp.status"
+varnishtest "Test that set status code is readable again for obj.status and beresp.status"
 
 server s1 {
 	rxreq

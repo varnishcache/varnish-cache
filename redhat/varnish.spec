@@ -20,7 +20,9 @@ Requires(pre): shadow-utils
 Requires(post): /sbin/chkconfig, /usr/bin/uuidgen
 Requires(preun): /sbin/chkconfig
 Requires(preun): /sbin/service
+%if %{undefined suse_version}
 Requires(preun): initscripts
+%endif
 
 # Varnish actually needs gcc installed to work. It uses the C compiler 
 # at runtime to compile the VCL configuration files. This is by design.
@@ -92,8 +94,8 @@ cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
 
 # We have to remove rpath - not allowed in Fedora
 # (This problem only visible on 64 bit arches)
-sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g;
-	s|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
+#sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g;
+#	s|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
 
 %{__make} %{?_smp_mflags}
 

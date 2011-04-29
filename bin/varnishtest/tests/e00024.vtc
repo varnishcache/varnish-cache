@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test all 8 gzip stopbit residuals"
+varnishtest "Test all 8 gzip stopbit residuals"
 
 server s1 {
 	rxreq 

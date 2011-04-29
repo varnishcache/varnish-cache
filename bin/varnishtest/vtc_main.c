@@ -28,9 +28,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
@@ -271,7 +268,7 @@ start_test(void)
 	memset(jp->buf, 0, jp->bufsiz);
 
 	srandomdev();
-	bprintf(tmpdir, "/tmp/vtc.%d.%08x", getpid(), (unsigned)random());
+	bprintf(tmpdir, "/tmp/vtc.%d.%08x", (int)getpid(), (unsigned)random());
 	AZ(mkdir(tmpdir, 0711));
 
 	tp = VTAILQ_FIRST(&tst_head);
@@ -340,7 +337,7 @@ main(int argc, char * const *argv)
 		switch (ch) {
 		case 'D':
 			if (!parse_D_opt(optarg)) {
-				fprintf(stderr, "Cannot parse D opt '%s'\n", 
+				fprintf(stderr, "Cannot parse D opt '%s'\n",
 					optarg);
 				exit(2);
 			}

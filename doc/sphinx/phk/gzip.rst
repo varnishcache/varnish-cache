@@ -62,8 +62,8 @@ ungzip the object during deliver.
 Tuning, tweaking and frobbing
 -----------------------------
 
-In vcl_recv{} you have a chance t modify the clients Accept-Encoding: header
-before anything else happens.
+In vcl_recv{} you have a chance to modify the client's
+Accept-Encoding: header before anything else happens.
 
 In vcl_pass{} the clients Accept-Encoding header is copied to the
 backend request unchanged.

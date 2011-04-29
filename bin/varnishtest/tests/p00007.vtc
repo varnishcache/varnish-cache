@@ -1,6 +1,4 @@
-# $Id$
-
-test "test reload of object spanning incomplete segment"
+varnishtest "test reload of object spanning incomplete segment"
 
 server s1 {
 	rxreq
@@ -69,4 +67,3 @@ client c1 {
 	rxresp
 	expect resp.bodylen == 48
 } -run
-

@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test std.random"
+varnishtest "Test std.random"
 
 # needs random generator
 random
@@ -34,5 +32,3 @@ client c1 {
 	expect resp.http.rnd4 == 99.502
 	expect resp.bodylen == 9
 } -run
-
-

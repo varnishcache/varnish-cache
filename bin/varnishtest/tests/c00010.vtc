@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test pass from hit"
+varnishtest "Test pass from hit"
 
 server s1 {
 	rxreq

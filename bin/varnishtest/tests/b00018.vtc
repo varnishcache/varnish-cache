@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check that error in vcl_fetch works"
+varnishtest "Check that error in vcl_fetch works"
 
 server s1 {
 	rxreq 

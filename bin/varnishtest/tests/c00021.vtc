@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test banning a url with cli:ban"
+varnishtest "Test banning a url with cli:ban"
 
 server s1 {
 	rxreq
@@ -122,5 +120,3 @@ client c1 {
 	expect resp.http.foo == bar8
 	expect resp.bodylen == 8
 } -run
-
-

@@ -1,7 +1,4 @@
-# $Id$
-#
-
-test "check boundary condition on vrt_assemble_string()"
+varnishtest "check boundary condition on vrt_assemble_string()"
 
 feature 64bit
 

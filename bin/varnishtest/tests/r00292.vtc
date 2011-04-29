@@ -1,9 +1,7 @@
-# $Id$
-#
+varnishtest "Header deletion test"
+
 # This test checks that the ->hdf flag which tracks Connection: header
 # deletes tracks the headers properly.
-
-test "Header deletion test"
 
 server s1 {
 	rxreq
@@ -36,4 +34,3 @@ client c1 {
 		-hdr "hdr6: 6"
 	rxresp
 } -run
-

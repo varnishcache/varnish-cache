@@ -1,5 +1,3 @@
-# $Id$
-
-test "Test banning a hash"
+varnishtest "Test banning a hash"
 
 varnish v1 -arg "-b 127.0.0.1:80 -a 127.0.0.1:0" -start -clierr 101 "ban.hash foo"

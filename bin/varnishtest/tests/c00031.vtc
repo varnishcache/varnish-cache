@@ -1,8 +1,4 @@
-# Test that we get anything through at all
-#
-# $Id$
-
-test "Worker thread stack size setting"
+varnishtest "Worker thread stack size setting"
 
 server s1 {
 	rxreq 
@@ -16,4 +12,3 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 } -run
-

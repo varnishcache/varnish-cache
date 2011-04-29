@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check that max_restarts works and that we don't fall over"
+varnishtest "Check that max_restarts works and that we don't fall over"
 
 server s1 {
 	rxreq

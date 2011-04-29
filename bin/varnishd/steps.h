@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
  */
 
 /*lint -save -e525 -e539 */
@@ -41,6 +40,8 @@ STEP(miss,	MISS)
 STEP(hit,	HIT)
 STEP(fetch,	FETCH)
 STEP(fetchbody,	FETCHBODY)
+STEP(streambody,STREAMBODY)
+STEP(prepresp,	PREPRESP)
 STEP(deliver,	DELIVER)
 STEP(error,	ERROR)
 STEP(done,	DONE)

@@ -26,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * Binary Heap API (see: http://en.wikipedia.org/wiki/Binary_heap)
  *
  * XXX: doesn't scale back the array of pointers when items are deleted.

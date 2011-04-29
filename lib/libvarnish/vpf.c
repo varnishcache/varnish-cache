@@ -28,9 +28,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/stat.h>

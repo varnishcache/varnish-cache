@@ -77,9 +77,6 @@ The most common actions to call are these:
 *deliver*
  Deliver the cached object to the client.  Usually called in vcl_fetch. 
 
-*esi*
- ESI-process the fetched document.
-
 Requests, responses and objects
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

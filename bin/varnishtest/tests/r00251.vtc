@@ -1,6 +1,4 @@
-# $Id$
-
-test "Regression test for #251: segfault on regsub on missing http header"
+varnishtest "Regression test for #251: segfault on regsub on missing http header"
 
 server s1 {
 	rxreq 

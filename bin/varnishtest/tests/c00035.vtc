@@ -1,6 +1,4 @@
-# $Id$
-
-test "Dropping polling of a backend"
+varnishtest "Dropping polling of a backend"
 
 server s1 -repeat 1 {
 	rxreq

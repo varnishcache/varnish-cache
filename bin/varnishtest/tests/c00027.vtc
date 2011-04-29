@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test eviction"
+varnishtest "Test eviction"
 
 server s1 {
 	rxreq
@@ -43,4 +41,3 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 } -run
-

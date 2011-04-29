@@ -24,7 +24,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
  * Derived from:
  * $FreeBSD: src/lib/libutil/libutil.h,v 1.44 2007/05/10 15:01:42 des Exp $
  */

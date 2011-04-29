@@ -52,9 +52,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -284,8 +281,7 @@ HSH_Insert(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ(oc->flags & OC_F_BUSY);
 
-	/* XXX: Should this not be ..._HEAD now ? */
-	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
+	VTAILQ_INSERT_HEAD(&oh->objcs, oc, list);
 	/* NB: do not deref objhead the new object inherits our reference */
 	oc->objhead = oh;
 	Lck_Unlock(&oh->mtx);
@@ -449,7 +445,11 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	AN(oc->flags & OC_F_BUSY);
 	oc->refcnt = 1;
 
-	VTAILQ_INSERT_HEAD(&oh->objcs, oc, list);
+	/*
+	 * Busy objects go on the tail, so they will not trip up searches.
+	 * HSH_Unbusy() will move them to the front.
+	 */
+	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
 	oc->objhead = oh;
 	/* NB: do not deref objhead the new object inherits our reference */
 	Lck_Unlock(&oh->mtx);
@@ -603,8 +603,12 @@ HSH_Unbusy(const struct sess *sp)
 		WSP(sp, SLT_Debug,
 		    "Object %u workspace free %u", o->xid, WS_Free(o->ws_o));
 
+	/* XXX: pretouch neighbors on oh->objcs to prevent page-on under mtx */
 	Lck_Lock(&oh->mtx);
 	assert(oh->refcnt > 0);
+	/* XXX: strictly speaking, we should sort in Date: order. */
+	VTAILQ_REMOVE(&oh->objcs, oc, list);
+	VTAILQ_INSERT_HEAD(&oh->objcs, oc, list);
 	oc->flags &= ~OC_F_BUSY;
 	hsh_rush(oh);
 	AN(oc->ban);

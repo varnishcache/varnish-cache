@@ -1,6 +1,4 @@
-# $Id$
-
-test "DNS director bad VCL tests"
+varnishtest "DNS director bad VCL tests"
 
 varnish v1 -badvcl {
        director directorname dns {

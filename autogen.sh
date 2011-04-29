@@ -1,7 +1,5 @@
 #!/bin/sh
 #
-# $Id$
-#
 
 warn() {
 	echo "WARNING: $@" 1>&2

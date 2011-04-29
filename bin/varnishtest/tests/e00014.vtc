@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check <esi: detector"
+varnishtest "Check <esi: detector"
 
 server s1 {
         rxreq

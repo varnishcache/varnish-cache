@@ -1,6 +1,4 @@
-# $Id$
-
-test "HTTP 1.0 backend not getting reused"
+varnishtest "HTTP 1.0 backend not getting reused"
 
 
 server s1 {

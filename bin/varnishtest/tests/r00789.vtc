@@ -1,6 +1,4 @@
-# $Id$
-
-test "pass should not filter Content-Range header"
+varnishtest "pass should not filter Content-Range header"
 
 server s1 {
 	rxreq

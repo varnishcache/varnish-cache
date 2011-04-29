@@ -1,6 +1,4 @@
-# $Id$
-
-test "Wrong calculation of last storage segment length"
+varnishtest "Wrong calculation of last storage segment length"
 
 server s1 {
 	rxreq

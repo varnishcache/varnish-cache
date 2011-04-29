@@ -1,6 +1,4 @@
-# $Id$
-
-test "noidx"
+varnishtest "noidx"
 
 server s1 {
 	rxreq

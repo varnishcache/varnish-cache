@@ -26,8 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id$
- *
  * This file contains the heritage passed when mgt forks cache
  */
 
@@ -118,6 +116,7 @@ struct params {
 
 	/* Fetcher hints */
 	unsigned		fetch_chunksize;
+	unsigned		fetch_maxchunksize;
 
 #ifdef SENDFILE_WORKS
 	/* Sendfile object minimum size */

@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test restart in vcl_deliver"
+varnishtest "Test restart in vcl_deliver"
 
 server s1 {
 	rxreq

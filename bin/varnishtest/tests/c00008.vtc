@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test If-Modified-Since"
+varnishtest "Test If-Modified-Since"
 
 server s1 {
 	rxreq

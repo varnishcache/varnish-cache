@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check the between_bytes_timeout behaves from vcl"
+varnishtest "Check the between_bytes_timeout behaves from vcl"
 
 feature SO_RCVTIMEO_WORKS
 

@@ -32,9 +32,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include "cache.h"
 #include "cache_backend.h"
 
@@ -62,6 +59,7 @@ VDI_CloseFd(struct sess *sp)
 	sp->vbc->backend = NULL;
 	VBE_ReleaseConn(sp->vbc);
 	sp->vbc = NULL;
+	sp->wrk->do_close = 0;
 }
 
 /* Recycle a connection ----------------------------------------------*/
@@ -74,6 +72,7 @@ VDI_RecycleFd(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vbc->backend, BACKEND_MAGIC);
 	assert(sp->vbc->fd >= 0);
+	AZ(sp->wrk->do_close);
 
 	bp = sp->vbc->backend;
 

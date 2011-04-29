@@ -32,9 +32,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -106,7 +103,6 @@ VBE_DropRefLocked(struct backend *b)
 	assert(b->refcount > 0);
 
 	i = --b->refcount;
-	b->vsc->vcls--;
 	Lck_Unlock(&b->mtx);
 	if (i > 0)
 		return;
@@ -125,12 +121,13 @@ VBE_DropRefLocked(struct backend *b)
 }
 
 void
-VBE_DropRef(struct backend *b)
+VBE_DropRefVcl(struct backend *b)
 {
 
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 
 	Lck_Lock(&b->mtx);
+	b->vsc->vcls--;
 	VBE_DropRefLocked(b);
 }
 

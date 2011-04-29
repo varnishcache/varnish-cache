@@ -28,9 +28,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <poll.h>
 #include <stdio.h>
 #include <poll.h>
@@ -69,6 +66,7 @@ struct http {
 	char			*body;
 	unsigned		bodyl;
 	char			bodylen[20];
+	char			chunklen[20];
 
 	char			*req[MAX_HDR];
 	char			*resp[MAX_HDR];
@@ -141,8 +139,7 @@ http_write(const struct http *hp, int lvl, const char *pfx)
 {
 	int l;
 
-	vsb_finish(hp->vsb);
-	AZ(vsb_overflowed(hp->vsb));
+	AZ(vsb_finish(hp->vsb));
 	vtc_dump(hp->vl, lvl, pfx, vsb_data(hp->vsb), vsb_len(hp->vsb));
 	l = write(hp->fd, vsb_data(hp->vsb), vsb_len(hp->vsb));
 	if (l != vsb_len(hp->vsb))
@@ -192,6 +189,8 @@ cmd_var_resolve(struct http *hp, char *spec)
 		return(hp->resp[1]);
 	if (!strcmp(spec, "resp.msg"))
 		return(hp->resp[2]);
+	if (!strcmp(spec, "resp.chunklen"))
+		return(hp->chunklen);
 	if (!strcmp(spec, "resp.bodylen"))
 		return(hp->bodylen);
 	if (!memcmp(spec, "req.http.", 9)) {
@@ -372,6 +371,47 @@ http_rxchar(struct http *hp, int n)
 	assert(i > 0);
 }
 
+static int
+http_rxchunk(struct http *hp)
+{
+	char *q;
+	int l, i;
+
+	l = hp->prxbuf;
+	do
+		http_rxchar(hp, 1);
+	while (hp->rxbuf[hp->prxbuf - 1] != '\n');
+	vtc_dump(hp->vl, 4, "len", hp->rxbuf + l, -1);
+	i = strtoul(hp->rxbuf + l, &q, 16);
+	bprintf(hp->chunklen, "%d", i);
+	if ((q == hp->rxbuf + l) ||
+		(*q != '\0' && !vct_islws(*q))) {
+		vtc_log(hp->vl, 0, "chunked fail %02x @ %d",
+		    *q, q - (hp->rxbuf + l));
+	}
+	assert(q != hp->rxbuf + l);
+	assert(*q == '\0' || vct_islws(*q));
+	hp->prxbuf = l;
+	if (i > 0) {
+		http_rxchar(hp, i);
+		vtc_dump(hp->vl, 4, "chunk",
+		    hp->rxbuf + l, i);
+	}
+	l = hp->prxbuf;
+	http_rxchar(hp, 2);
+	if(!vct_iscrlf(hp->rxbuf[l]))
+		vtc_log(hp->vl, 0,
+		    "Wrong chunk tail[0] = %02x",
+		    hp->rxbuf[l] & 0xff);
+	if(!vct_iscrlf(hp->rxbuf[l + 1]))
+		vtc_log(hp->vl, 0,
+		    "Wrong chunk tail[1] = %02x",
+		    hp->rxbuf[l + 1] & 0xff);
+	hp->prxbuf = l;
+	hp->rxbuf[l] = '\0';
+	return (i);
+}
+
 /**********************************************************************
  * Swallow a HTTP message body
  */
@@ -379,15 +419,13 @@ http_rxchar(struct http *hp, int n)
 static void
 http_swallow_body(struct http *hp, char * const *hh, int body)
 {
-	char *p, *q;
+	char *p;
 	int i, l, ll;
-
 
 	ll = 0;
 	p = http_find_header(hh, "content-length");
 	if (p != NULL) {
 		l = strtoul(p, NULL, 0);
-		hp->body = hp->rxbuf + hp->prxbuf;
 		http_rxchar(hp, l);
 		vtc_dump(hp->vl, 4, "body", hp->body, l);
 		hp->bodyl = l;
@@ -396,44 +434,10 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 	}
 	p = http_find_header(hh, "transfer-encoding");
 	if (p != NULL && !strcmp(p, "chunked")) {
-		hp->body = hp->rxbuf + hp->prxbuf;
-		while (1) {
-			l = hp->prxbuf;
-			do
-				http_rxchar(hp, 1);
-			while (hp->rxbuf[hp->prxbuf - 1] != '\n');
-			vtc_dump(hp->vl, 4, "len", hp->rxbuf + l, -1);
-			i = strtoul(hp->rxbuf + l, &q, 16);
-			if ((q == hp->rxbuf + l) ||
-				(*q != '\0' && !vct_islws(*q))) {
-				vtc_log(hp->vl, 0, "chunked fail %02x @ %d",
-				    *q, q - (hp->rxbuf + l));
-			}
-			assert(q != hp->rxbuf + l);
-			assert(*q == '\0' || vct_islws(*q));
-			hp->prxbuf = l;
-			if (i > 0) {
-				ll += i;
-				http_rxchar(hp, i);
-				vtc_dump(hp->vl, 4, "chunk",
-				    hp->rxbuf + l, i);
-			}
-			l = hp->prxbuf;
-			http_rxchar(hp, 2);
-			if(!vct_iscrlf(hp->rxbuf[l]))
-				vtc_log(hp->vl, 0,
-				    "Wrong chunk tail[0] = %02x",
-				    hp->rxbuf[l] & 0xff);
-			if(!vct_iscrlf(hp->rxbuf[l + 1]))
-				vtc_log(hp->vl, 0,
-				    "Wrong chunk tail[1] = %02x",
-				    hp->rxbuf[l + 1] & 0xff);
-			hp->prxbuf = l;
-			hp->rxbuf[l] = '\0';
-			if (i == 0)
-				break;
-		}
+		while (http_rxchunk(hp) != 0)
+			continue;
 		vtc_dump(hp->vl, 4, "body", hp->body, ll);
+		ll = hp->rxbuf + hp->prxbuf - hp->body;
 		hp->bodyl = ll;
 		sprintf(hp->bodylen, "%d", ll);
 		return;
@@ -506,8 +510,9 @@ cmd_http_rxresp(CMD_ARGS)
 			    "Unknown http rxresp spec: %s\n", *av);
 	http_rxhdr(hp);
 	http_splitheader(hp, 0);
+	hp->body = hp->rxbuf + hp->prxbuf;
 	if (!has_obj)
-		;
+		return;
 	else if (!strcmp(hp->resp[1], "200"))
 		http_swallow_body(hp, hp->resp, 1);
 	else
@@ -606,11 +611,14 @@ gzip_body(struct http *hp, const char *txt, char **body, int *bodylen)
 		    i, hp->gzipresidual);
 	*bodylen = vz.total_out;
 	vtc_log(hp->vl, 4, "startbit = %ju %ju/%ju",
-	    vz.start_bit, vz.start_bit >> 3, vz.start_bit & 7);
+	    (uintmax_t)vz.start_bit,
+	    (uintmax_t)vz.start_bit >> 3, (uintmax_t)vz.start_bit & 7);
 	vtc_log(hp->vl, 4, "lastbit = %ju %ju/%ju",
-	    vz.last_bit, vz.last_bit >> 3, vz.last_bit & 7);
+	    (uintmax_t)vz.last_bit,
+	    (uintmax_t)vz.last_bit >> 3, (uintmax_t)vz.last_bit & 7);
 	vtc_log(hp->vl, 4, "stopbit = %ju %ju/%ju",
-	    vz.stop_bit, vz.stop_bit >> 3, vz.stop_bit & 7);
+	    (uintmax_t)vz.stop_bit,
+	    (uintmax_t)vz.stop_bit >> 3, (uintmax_t)vz.stop_bit & 7);
 	assert(Z_OK == deflateEnd(&vz));
 }
 
@@ -785,6 +793,26 @@ cmd_http_rxbody(CMD_ARGS)
 	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
 }
 
+static void
+cmd_http_rxchunk(CMD_ARGS)
+{
+	struct http *hp;
+	int ll, i;
+
+	(void)cmd;
+	(void)vl;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	ONLY_CLIENT(hp, av);
+
+	i = http_rxchunk(hp);
+	if (i == 0) {
+		ll = hp->rxbuf + hp->prxbuf - hp->body;
+		hp->bodyl = ll;
+		sprintf(hp->bodylen, "%d", ll);
+		vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
+	}
+}
+
 /**********************************************************************
  * Transmit a request
  */
@@ -843,7 +871,7 @@ cmd_http_txreq(CMD_ARGS)
 	if (*av != NULL)
 		vtc_log(hp->vl, 0, "Unknown http txreq spec: %s\n", *av);
 	if (body != NULL)
-		vsb_printf(hp->vsb, "Content-Length: %d%s", strlen(body), nl);
+		vsb_printf(hp->vsb, "Content-Length: %lu%s", strlen(body), nl);
 	vsb_cat(hp->vsb, nl);
 	if (body != NULL) {
 		vsb_cat(hp->vsb, body);
@@ -888,7 +916,7 @@ cmd_http_chunked(CMD_ARGS)
 	AN(av[1]);
 	AZ(av[2]);
 	vsb_clear(hp->vsb);
-	vsb_printf(hp->vsb, "%x%s%s%s", strlen(av[1]), nl, av[1], nl);
+	vsb_printf(hp->vsb, "%lx%s%s%s", strlen(av[1]), nl, av[1], nl);
 	http_write(hp, 4, "chunked");
 }
 
@@ -1041,6 +1069,7 @@ static const struct cmds http_cmds[] = {
 
 	{ "rxreq",		cmd_http_rxreq },
 	{ "rxhdrs",		cmd_http_rxhdrs },
+	{ "rxchunk",		cmd_http_rxchunk },
 	{ "rxbody",		cmd_http_rxbody },
 
 	{ "txresp",		cmd_http_txresp },
@@ -1070,7 +1099,7 @@ http_process(struct vtclog *vl, const char *spec, int sock, int sfd)
 	hp->fd = sock;
 	hp->timeout = 5000;
 	hp->nrxbuf = 640*1024;
-	hp->vsb = vsb_newauto();
+	hp->vsb = vsb_new_auto();
 	hp->rxbuf = malloc(hp->nrxbuf);		/* XXX */
 	hp->sfd = sfd;
 	hp->vl = vl;

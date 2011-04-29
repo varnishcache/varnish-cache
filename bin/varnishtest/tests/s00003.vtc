@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check saint mode with sick pages"
+varnishtest "Check saint mode with sick pages"
 
 server s1 {
 	timeout 10

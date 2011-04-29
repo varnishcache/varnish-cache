@@ -1,4 +1,4 @@
-# $Id$
+#
 
 pkginclude_HEADERS = \
 	vsm.h \
@@ -31,7 +31,6 @@ nobase_noinst_HEADERS = \
 	libvcl.h \
 	miniobj.h \
 	persistent.h \
-	svnid.h \
 	vas.h \
 	vsha256.h \
 	vqueue.h \

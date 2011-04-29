@@ -29,9 +29,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -350,7 +347,7 @@ static int
 vcc_decstr(struct vcc *tl)
 {
 	char *q;
-	unsigned char l;
+	unsigned int l;
 
 	assert(tl->t->tok == CSTR);
 	l = (tl->t->e - tl->t->b) - 2;

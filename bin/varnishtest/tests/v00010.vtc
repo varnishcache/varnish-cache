@@ -1,6 +1,4 @@
-# $Id$
-
-test "VCL: check panic and restart"
+varnishtest "VCL: check panic and restart"
 
 server s1 {
 	rxreq

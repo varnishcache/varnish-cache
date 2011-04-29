@@ -1,8 +1,4 @@
-# Test that we get anything through at all
-#
-# $Id$
-
-test "Check that all thread pools all get started and get minimum threads"
+varnishtest "Check that all thread pools all get started and get minimum threads"
 
 server s1 {
 	rxreq 

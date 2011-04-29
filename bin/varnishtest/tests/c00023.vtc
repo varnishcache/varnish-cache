@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test -h critbit for digest edges"
+varnishtest "Test -h critbit for digest edges"
 
 server s1 {
         rxreq 

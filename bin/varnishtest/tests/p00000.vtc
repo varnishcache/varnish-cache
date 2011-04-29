@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test Basic persistence"
+varnishtest "Test Basic persistence"
 
 server s1 {
 	rxreq 

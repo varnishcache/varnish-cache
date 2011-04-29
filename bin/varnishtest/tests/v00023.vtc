@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test that obj.ttl = 0s prevents subsequent hits"
+varnishtest "Test that obj.ttl = 0s prevents subsequent hits"
 
 server s1 {
 	rxreq

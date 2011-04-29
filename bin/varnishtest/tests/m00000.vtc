@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test std vmod"
+varnishtest "Test std vmod"
 
 server s1 {
 	rxreq 

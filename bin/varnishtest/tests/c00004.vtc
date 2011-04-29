@@ -1,6 +1,4 @@
-# $Id$
-
-test "Test Vary functionality"
+varnishtest "Test Vary functionality"
 
 server s1 {
 	rxreq

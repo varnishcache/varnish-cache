@@ -29,9 +29,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <sys/types.h>
 
 #include <stdio.h>
@@ -112,7 +109,10 @@ RFC2616_Ttl(const struct sess *sp)
 		    http_GetHdrField(hp, H_Cache_Control, "max-age", &p)) &&
 		    p != NULL) {
 
-			max_age = strtoul(p, NULL, 0);
+			if (*p == '-')
+				max_age = 0;
+			else
+				max_age = strtoul(p, NULL, 0);
 			if (http_GetHdr(hp, H_Age, &p)) {
 				age = strtoul(p, NULL, 0);
 				sp->wrk->age = age;
@@ -164,10 +164,10 @@ RFC2616_Ttl(const struct sess *sp)
 			ttl = (int)(h_expires - h_date);
 		}
 
-	} 
+	}
 
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
-	WSP(sp, SLT_TTL, "%u RFC %g %g %g %g %u %u", sp->xid,
+	WSP(sp, SLT_TTL, "%u RFC %g %.0f %.0f %.0f %u %u", sp->xid,
 	    ttl, sp->wrk->entered, h_date, h_expires, max_age, age);
 
 	return (ttl);

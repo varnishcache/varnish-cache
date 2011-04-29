@@ -1,6 +1,4 @@
-# $Id$
-
-test "test vmod_std.collect()"
+varnishtest "test vmod_std.collect()"
 
 server s1 {
 	rxreq

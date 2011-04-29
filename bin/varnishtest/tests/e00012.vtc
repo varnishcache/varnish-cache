@@ -1,6 +1,4 @@
-# $Id$
-
-test "ESI includes for pre HTTP/1.1 cannot used chunked encoding"
+varnishtest "ESI includes for pre HTTP/1.1 cannot used chunked encoding"
 
 server s1 {
         rxreq 

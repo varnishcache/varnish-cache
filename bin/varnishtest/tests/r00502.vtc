@@ -1,6 +1,4 @@
-# $Id$
-
-test "multi element ban"
+varnishtest "multi element ban"
 
 server s1 {
 	rxreq

@@ -1,6 +1,4 @@
-# $Id$
-
-test "Check that Vary headers are stored"
+varnishtest "Check that Vary headers are stored"
 
 shell "rm -f ${tmpdir}/_.per"
 
@@ -54,4 +52,3 @@ client c1 {
 	expect resp.http.foo == "foo2"
 
 } -run
-

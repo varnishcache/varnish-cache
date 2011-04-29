@@ -30,9 +30,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #include <sys/types.h>
 
 #include <stdio.h>
@@ -89,7 +86,7 @@ SMS_Makesynth(struct object *obj)
 
 	sto = calloc(sizeof *sto, 1);
 	XXXAN(sto);
-	vsb = vsb_newauto();
+	vsb = vsb_new_auto();
 	XXXAN(vsb);
 	sto->priv = vsb;
 	sto->len = 0;
@@ -112,8 +109,7 @@ SMS_Finish(struct object *obj)
 	sto = VTAILQ_FIRST(&obj->store);
 	assert(sto->stevedore == &sms_stevedore);
 	vsb = sto->priv;
-	vsb_finish(vsb);
-	AZ(vsb_overflowed(vsb));
+	AZ(vsb_finish(vsb));
 
 	sto->ptr = (void*)vsb_data(vsb);
 	sto->len = vsb_len(vsb);

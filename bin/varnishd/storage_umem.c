@@ -31,9 +31,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
-
 #ifdef HAVE_LIBUMEM
 
 #include <sys/types.h>

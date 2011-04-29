@@ -31,8 +31,6 @@
 
 #include "config.h"
 
-#include "svnid.h"
-SVNID("$Id$")
 #if defined(HAVE_PORT_CREATE)
 
 #include <stdio.h>

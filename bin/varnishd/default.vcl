@@ -26,8 +26,6 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id$
- *
  * The default VCL code.
  *
  * NB! You do NOT need to copy & paste all of these functions into your
