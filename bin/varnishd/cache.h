@@ -247,7 +247,6 @@ struct exp {
 
 /*--------------------------------------------------------------------*/
 
-/* WRW related fields */
 struct wrw {
 	int			*wfd;
 	unsigned		werr;	/* valid after WRK_Flush() */
@@ -259,6 +258,21 @@ struct wrw {
 	unsigned		ciov;	/* Chunked header marker */
 };
 
+/*--------------------------------------------------------------------*/
+
+struct stream_ctx {
+	unsigned		magic;
+#define STREAM_CTX_MAGIC	0x8213728b
+#if 0
+	struct vgz		*vgz;
+	void			*obuf;
+	ssize_t			obuf_len;
+	ssize_t			obuf_ptr;
+#endif
+	ssize_t			stream_next;
+};
+
+/*--------------------------------------------------------------------*/
 struct worker {
 	unsigned		magic;
 #define WORKER_MAGIC		0x6391adcf
@@ -312,7 +326,7 @@ struct worker {
 	char			*h_content_length;
 
 	/* Stream state */
-	ssize_t			stream_next;
+	struct stream_ctx	*sctx;
 
 	/* ESI stuff */
 	struct vep_state	*vep;

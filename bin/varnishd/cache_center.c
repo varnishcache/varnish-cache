@@ -839,6 +839,13 @@ static int
 cnt_streambody(struct sess *sp)
 {
 	int i;
+	struct stream_ctx sctx;
+
+
+	memset(&sctx, 0, sizeof sctx);
+	sctx.magic = STREAM_CTX_MAGIC;
+	AZ(sp->wrk->sctx);
+	sp->wrk->sctx = &sctx;
 
 	RES_StreamStart(sp);
 
@@ -854,6 +861,7 @@ cnt_streambody(struct sess *sp)
 	AN(sp->director);
 
 	if (i) {
+		sp->wrk->sctx = NULL;
 		HSH_Drop(sp);
 		AZ(sp->obj);
 		sp->err_code = 503;
@@ -873,6 +881,7 @@ cnt_streambody(struct sess *sp)
 
 	RES_StreamEnd(sp);
 
+	sp->wrk->sctx = NULL;
 	assert(WRW_IsReleased(sp->wrk));
 	assert(sp->wrk->wrw.ciov == sp->wrk->wrw.siov);
 	(void)HSH_Deref(sp->wrk, NULL, &sp->obj);
