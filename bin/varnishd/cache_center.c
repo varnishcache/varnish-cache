@@ -867,16 +867,7 @@ cnt_streambody(struct sess *sp)
 	AZ(sp->vbc);
 	AN(sp->director);
 
-	if (i) {
-		sp->wrk->sctx = NULL;
-		HSH_Drop(sp);
-		AZ(sp->obj);
-		sp->err_code = 503;
-		sp->step = STP_ERROR;
-		return (0);
-	}
-
-	if (sp->obj->objcore != NULL) {
+	if (!i && sp->obj->objcore != NULL) {
 		EXP_Insert(sp->obj);
 		AN(sp->obj->objcore);
 		AN(sp->obj->objcore->ban);
