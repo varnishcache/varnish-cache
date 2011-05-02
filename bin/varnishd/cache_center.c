@@ -872,6 +872,8 @@ cnt_streambody(struct sess *sp)
 		AN(sp->obj->objcore);
 		AN(sp->obj->objcore->ban);
 		HSH_Unbusy(sp);
+	} else {
+		sp->doclose = "Stream error";
 	}
 	sp->acct_tmp.fetch++;
 	sp->director = NULL;
