@@ -386,10 +386,7 @@ vfp_esi_end(struct sess *sp)
 		VGZ_UpdateObj(vef->vgz, sp->obj);
 		VGZ_Destroy(&vef->vgz);
 		XXXAZ(vef->error);
-		sp->obj->gziped = 1;
 		FREE_OBJ(vef);
-	} else {
-		sp->obj->gziped = 0;
 	}
 	return (0);
 }

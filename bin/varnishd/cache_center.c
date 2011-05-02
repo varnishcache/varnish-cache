@@ -414,6 +414,7 @@ cnt_error(struct sess *sp)
 		EXP_Clr(&w->exp);
 		sp->obj = STV_NewObject(sp, NULL, 1024, &w->exp,
 		     params->http_max_hdr);
+		XXXAN(sp->obj);
 		sp->obj->xid = sp->xid;
 		sp->obj->entered = sp->t_req;
 	} else {
@@ -754,8 +755,8 @@ cnt_fetchbody(struct sess *sp)
 
 	sp->wrk->storage_hint = NULL;
 
-	/* VFP will update as needed */
-	sp->obj->gziped = sp->wrk->is_gzip;
+	if (sp->wrk->do_gzip || (sp->wrk->is_gzip && !sp->wrk->do_gunzip))
+		sp->obj->gziped = 1;
 
 	if (vary != NULL) {
 		sp->obj->vary =
@@ -840,12 +841,19 @@ cnt_streambody(struct sess *sp)
 {
 	int i;
 	struct stream_ctx sctx;
-
+	uint8_t obuf[sp->wrk->res_mode & RES_GUNZIP ?
+	    params->gzip_stack_buffer : 1];
 
 	memset(&sctx, 0, sizeof sctx);
 	sctx.magic = STREAM_CTX_MAGIC;
 	AZ(sp->wrk->sctx);
 	sp->wrk->sctx = &sctx;
+
+	if (sp->wrk->res_mode & RES_GUNZIP) {
+		sctx.vgz = VGZ_NewUngzip(sp, "U S -");
+		sctx.obuf = obuf;
+		sctx.obuf_len = sizeof (obuf);
+	}
 
 	RES_StreamStart(sp);
 
