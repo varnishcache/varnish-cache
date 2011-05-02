@@ -1,0 +1,49 @@
+varnishtest "Test stream/gunzip"
+
+server s1 {
+	rxreq
+	expect req.url == "/bar"
+	txresp -body "foobar"
+
+	rxreq
+	expect req.url == "/bla"
+	expect req.http.accept-encoding == "gzip"
+	txresp -gzipbody blablabla
+
+	rxreq
+	expect req.url == "/foo"
+	txresp -body "snafu"
+
+	rxreq
+	expect req.url == "/barf"
+	expect req.http.accept-encoding == "gzip"
+	txresp -gzipbody Iamoutofnonsensewords
+
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		if (req.url == "/foo") {
+			set beresp.do_gzip = true;
+		}
+		if (req.url == "/barf") {
+			set beresp.do_gunzip = true;
+		}
+		set beresp.do_stream = true;
+	}
+} -start 
+
+client c1 {
+	txreq  -url /bar
+	rxresp 
+	expect resp.bodylen == 6
+	txreq  -url /bla
+	rxresp 
+	expect resp.bodylen == 9
+	txreq  -url /foo
+	rxresp 
+	expect resp.bodylen == 5
+	txreq  -url /barf
+	rxresp 
+	expect resp.bodylen == 21
+} -run

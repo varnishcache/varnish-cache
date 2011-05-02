@@ -569,6 +569,8 @@ vfp_gzip_end(struct sess *sp)
 		i = VGZ_Gzip(vg, &dp, &dl, VGZ_FINISH);
 		sp->obj->len += dl;
 	} while (i != Z_STREAM_END);
+	if (sp->wrk->do_stream)
+		RES_StreamPoll(sp);
 	VGZ_UpdateObj(vg, sp->obj);
 	VGZ_Destroy(&vg);
 	return (0);

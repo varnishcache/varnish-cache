@@ -418,7 +418,7 @@ RES_StreamStart(struct sess *sp)
 }
 
 void
-RES_StreamPoll(const struct sess *sp)
+RES_StreamPoll(struct sess *sp)
 {
 	struct stream_ctx *sctx;
 	struct storage *st;
@@ -438,11 +438,17 @@ RES_StreamPoll(const struct sess *sp)
 		}
 		l2 = st->len + l - sctx->stream_next;
 		ptr = st->ptr + (sctx->stream_next - l);
-		(void)WRW_Write(sp->wrk, ptr, l2);
+		if (sp->wrk->res_mode & RES_GUNZIP) {
+			(void)VGZ_WrwGunzip(sp, sctx->vgz, ptr, l2,
+			    sctx->obuf, sctx->obuf_len, &sctx->obuf_ptr);
+		} else {
+			(void)WRW_Write(sp->wrk, ptr, l2);
+		}
 		l += st->len;
 		sctx->stream_next += l2;
 	}
-	(void)WRW_Flush(sp->wrk);
+	if (!(sp->wrk->res_mode & RES_GUNZIP))
+		(void)WRW_Flush(sp->wrk);
 
 	if (sp->objcore == NULL || (sp->objcore->flags & OC_F_PASS)) {
 		/*
@@ -469,10 +475,8 @@ RES_StreamEnd(struct sess *sp)
 	sctx = sp->wrk->sctx;
 	CHECK_OBJ_NOTNULL(sctx, STREAM_CTX_MAGIC);
 
-	if (sp->wrk->res_mode & RES_GUNZIP) {
-		INCOMPL();
-		res_WriteGunzipObj(sp);
-	}
+	if (sp->wrk->res_mode & RES_GUNZIP && sctx->obuf_ptr > 0)
+		(void)WRW_Write(sp->wrk, sctx->obuf, sctx->obuf_ptr);
 	if (sp->wrk->res_mode & RES_CHUNKED &&
 	    !(sp->wrk->res_mode & RES_ESI_CHILD))
 		WRW_EndChunk(sp->wrk);

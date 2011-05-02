@@ -857,7 +857,6 @@ cnt_streambody(struct sess *sp)
 
 	RES_StreamStart(sp);
 
-	/* Use unmodified headers*/
 	i = FetchBody(sp);
 
 	sp->wrk->h_content_length = NULL;
@@ -888,6 +887,8 @@ cnt_streambody(struct sess *sp)
 	sp->restarts = 0;
 
 	RES_StreamEnd(sp);
+	if (sp->wrk->res_mode & RES_GUNZIP)
+		VGZ_Destroy(&sctx.vgz);
 
 	sp->wrk->sctx = NULL;
 	assert(WRW_IsReleased(sp->wrk));
