@@ -36,6 +36,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "stevedore.h"
 #include "vct.h"
 
 /*--------------------------------------------------------------------*/
@@ -429,7 +430,7 @@ RES_StreamPoll(const struct sess *sp)
 	if (sp->obj->len == sctx->stream_next)
 		return;
 	assert(sp->obj->len > sctx->stream_next);
-	l = 0;
+	l = sctx->stream_front;
 	VTAILQ_FOREACH(st, &sp->obj->store, list) {
 		if (st->len + l <= sctx->stream_next) {
 			l += st->len;
@@ -442,6 +443,22 @@ RES_StreamPoll(const struct sess *sp)
 		sctx->stream_next += l2;
 	}
 	(void)WRW_Flush(sp->wrk);
+
+	if (sp->objcore == NULL || (sp->objcore->flags & OC_F_PASS)) {
+		/*
+		 * This is a pass object, release storage as soon as we
+		 * have delivered it.
+		 */
+		while (1) {
+			st = VTAILQ_FIRST(&sp->obj->store);
+			if (st == NULL ||
+			    sctx->stream_front + st->len > sctx->stream_next)
+				break;
+			VTAILQ_REMOVE(&sp->obj->store, st, list);
+			sctx->stream_front += st->len;
+			STV_free(st);
+		}
+	}
 }
 
 void

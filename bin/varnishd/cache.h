@@ -263,13 +263,18 @@ struct wrw {
 struct stream_ctx {
 	unsigned		magic;
 #define STREAM_CTX_MAGIC	0x8213728b
+
 #if 0
 	struct vgz		*vgz;
 	void			*obuf;
 	ssize_t			obuf_len;
 	ssize_t			obuf_ptr;
 #endif
+	/* Next byte we will take from storage */
 	ssize_t			stream_next;
+
+	/* First byte of storage if we free it as we go (pass) */
+	ssize_t			stream_front;
 };
 
 /*--------------------------------------------------------------------*/
