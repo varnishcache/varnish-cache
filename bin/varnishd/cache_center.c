@@ -785,7 +785,7 @@ cnt_fetchbody(struct sess *sp)
 	if (http_GetHdr(hp, H_Last_Modified, &b))
 		sp->obj->last_modified = TIM_parse(b);
 	else
-		sp->obj->last_modified = sp->wrk->entered;
+		sp->obj->last_modified = floor(sp->wrk->entered);
 
 	assert(WRW_IsReleased(sp->wrk));
 
