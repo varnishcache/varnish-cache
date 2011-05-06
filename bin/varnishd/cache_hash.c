@@ -710,43 +710,6 @@ HSH_Deref(struct worker *w, struct objcore *oc, struct object **oo)
 	return (0);
 }
 
-/*--------------------------------------------------------------------
- * This one is slightly tricky.  This is called from the BAN module
- * to try to wash the object which holds the oldest ban.
- * We compete against HSH_Deref() which comes in the opposite
- * locking order, we need to hold the BAN mutex, to stop the
- * BAN_DestroyObj() call in HSH_Deref(), so that the objhead
- * will not be removed under us.
- * NB: Do not call this function any other way or from any other
- * NB: place in the code.  It will not work for you.
- */
-
-void
-HSH_FindBan(const struct sess *sp, struct objcore **oc)
-{
-	struct objcore *oc1, *oc2;
-	struct objhead *oh;
-
-	oc1 = *oc;
-	CHECK_OBJ_NOTNULL(oc1, OBJCORE_MAGIC);
-	oh = oc1->objhead;
-	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-	if (Lck_Trylock(&oh->mtx)) {
-		*oc = NULL;
-		return;
-	}
-	VTAILQ_FOREACH(oc2, &oh->objcs, list)
-		if (oc1 == oc2)
-			break;
-	if (oc2 != NULL)
-		(void)oc_getobj(sp->wrk, oc2);
-	if (oc2 != NULL)
-		oc2->refcnt++;
-	Lck_Unlock(&oh->mtx);
-	*oc = oc2;
-}
-
-
 void
 HSH_Init(void)
 {

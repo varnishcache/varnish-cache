@@ -421,7 +421,7 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 	struct objcore *oc;
 	struct ban_test *bt;
 	struct ban * volatile b0;
-	unsigned tests;
+	unsigned tests, skipped;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
@@ -441,12 +441,19 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 	 * inspect the list past that ban.
 	 */
 	tests = 0;
+	skipped = 0;
 	for (b = b0; b != oc->ban; b = VTAILQ_NEXT(b, list)) {
 		CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
 		if (b->flags & BAN_F_GONE)
 			continue;
-		if (!has_req && (b->flags & BAN_F_REQ))
-			return (0);
+		if (!has_req && (b->flags & BAN_F_REQ)) {
+			/*
+			 * We cannot test this one, but there might
+			 * be other bans that match, so we soldier on
+			 */
+			skipped++;
+			continue;
+		}
 		VTAILQ_FOREACH(bt, &b->tests, list) {
 			tests++;
 			if (bt->func(bt, o, sp))
@@ -454,6 +461,14 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 		}
 		if (bt == NULL)
 			break;
+	}
+
+	if (b == oc->ban && skipped > 0) {
+		/*
+		 * Not banned, but some tests were skipped, so we cannot know
+		 * for certain that it cannot be, so we just have to give up.
+		 */
+		return (0);
 	}
 
 	Lck_Lock(&ban_mtx);
@@ -487,66 +502,104 @@ int
 BAN_CheckObject(struct object *o, const struct sess *sp)
 {
 
-	return ban_check_object(o, sp, 1);
+	return (ban_check_object(o, sp, 1));
 }
 
 /*--------------------------------------------------------------------
  * Ban tail lurker thread
  */
 
-static void * __match_proto__(bgthread_t)
-ban_lurker(struct sess *sp, void *priv)
+static void
+ban_lurker_work(const struct sess *sp)
 {
 	struct ban *b, *bf;
-	struct objcore *oc;
+	struct objhead *oh;
+	struct objcore *oc, *oc2;
 	struct object *o;
 	int i;
 
+	WSL_Flush(sp->wrk, 0);
+	WRK_SumStat(sp->wrk);
+
+	Lck_Lock(&ban_mtx);
+
+	/* First try to route the last ban */
+	bf = BAN_CheckLast();
+	if (bf != NULL) {
+		Lck_Unlock(&ban_mtx);
+		BAN_Free(bf);
+		return;
+	}
+
+	/* Find the last ban give up, if we have only one */
+	b = VTAILQ_LAST(&ban_head, banhead_s);
+	if (b == ban_start) {
+		Lck_Unlock(&ban_mtx);
+		return;
+	}
+
+	/* Find the first object on it, if any */
+	oc = VTAILQ_FIRST(&b->objcore);
+	if (oc == NULL) {
+		Lck_Unlock(&ban_mtx);
+		return;
+	}
+
+	/* Try to lock the objhead */
+	oh = oc->objhead;
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	if (Lck_Trylock(&oh->mtx)) {
+		Lck_Unlock(&ban_mtx); 
+		return;
+	}
+
+	/*
+	 * See if the objcore is still on the objhead since we race against
+	 * HSH_Deref() which comes in the opposite locking order.
+	 */
+	VTAILQ_FOREACH(oc2, &oh->objcs, list)
+		if (oc == oc2)
+			break;
+	if (oc2 == NULL) {
+		Lck_Unlock(&oh->mtx);
+		Lck_Unlock(&ban_mtx);
+		return;
+	}
+	/*
+	 * Grab a reference to the OC and we can let go of the BAN mutex
+	 */
+	AN(oc->refcnt);
+	oc->refcnt++;
+	Lck_Unlock(&ban_mtx);
+
+	/*
+	 * Get the object and check it against all relevant bans
+	 */
+	o = oc_getobj(sp->wrk, oc);
+	i = ban_check_object(o, sp, 0);
+	Lck_Unlock(&oh->mtx);
+	WSP(sp, SLT_Debug, "lurker: %p %g %d", oc, o->exp.ttl, i);
+	(void)HSH_Deref(sp->wrk, NULL, &o);
+}
+
+static void * __match_proto__(bgthread_t)
+ban_lurker(struct sess *sp, void *priv)
+{
+
 	(void)priv;
 	while (1) {
-		WSL_Flush(sp->wrk, 0);
-		WRK_SumStat(sp->wrk);
 		if (params->ban_lurker_sleep == 0.0) {
-			AZ(sleep(1));
-			continue;
-		}
-		Lck_Lock(&ban_mtx);
-
-		/* First try to route the last ban */
-		bf = BAN_CheckLast();
-		if (bf != NULL) {
-			Lck_Unlock(&ban_mtx);
-			BAN_Free(bf);
-			TIM_sleep(params->ban_lurker_sleep);
-			continue;
-		}
-		/* Then try to poke the first object on the last ban */
-		oc = NULL;
-		while (1) {
-			b = VTAILQ_LAST(&ban_head, banhead_s);
-			if (b == ban_start)
-				break;
-			oc = VTAILQ_FIRST(&b->objcore);
-			if (oc == NULL)
-				break;
-			HSH_FindBan(sp, &oc);
-			break;
-		}
-		Lck_Unlock(&ban_mtx);
-		if (oc == NULL) {
+			/* Lurker is disabled.  */
 			TIM_sleep(1.0);
 			continue;
 		}
-		// AZ(oc->flags & OC_F_PERSISTENT);
-		o = oc_getobj(sp->wrk, oc);
-		i = ban_check_object(o, sp, 0);
-		WSP(sp, SLT_Debug, "lurker: %p %g %d", oc, o->exp.ttl, i);
-		(void)HSH_Deref(sp->wrk, NULL, &o);
 		TIM_sleep(params->ban_lurker_sleep);
+		ban_lurker_work(sp);
+		WSL_Flush(sp->wrk, 0);
+		WRK_SumStat(sp->wrk);
 	}
 	NEEDLESS_RETURN(NULL);
 }
-
 
 /*--------------------------------------------------------------------
  * Release a tail reference
@@ -680,12 +733,14 @@ BAN_Compile(void)
 		av = ParseArgv(b->test, 0);
 		XXXAN(av);
 		XXXAZ(av[0]);
-		for (i = 1; av[i] != NULL; i += 3) {
-			if (i != 1) {
-				AZ(strcmp(av[i], "&&"));
-				i++;
-			}
-			AZ(BAN_AddTest(NULL, b, av[i], av[i + 1], av[i + 2]));
+		XXXAN(av[1]);
+		XXXAN(av[2]);
+		XXXAN(av[3]);
+		AZ(BAN_AddTest(NULL, b, av[1], av[2], av[3]));
+		for (i = 4; av[i] != NULL; i += 4) {
+			AZ(strcmp(av[i], "&&"));
+			AZ(BAN_AddTest(NULL, b,
+			    av[i + 1], av[i + 2], av[i + 3]));
 		}
 	}
 	ban_start = VTAILQ_FIRST(&ban_head);
