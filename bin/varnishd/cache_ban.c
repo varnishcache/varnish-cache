@@ -56,7 +56,7 @@
 
 #include "cache_ban.h"
 
-static VTAILQ_HEAD(banhead,ban)	ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
+static VTAILQ_HEAD(banhead_s,ban) ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
 static struct lock ban_mtx;
 static struct ban *ban_magic;
 static pthread_t ban_thread;
@@ -322,7 +322,7 @@ BAN_Insert(struct ban *b)
 	VSC_main->n_ban++;
 	VSC_main->n_ban_add++;
 
-	be = VTAILQ_LAST(&ban_head, banhead);
+	be = VTAILQ_LAST(&ban_head, banhead_s);
 	if (params->ban_dups && be != b)
 		be->refcount++;
 	else
@@ -380,7 +380,7 @@ BAN_CheckLast(void)
 	struct ban *b;
 
 	Lck_AssertHeld(&ban_mtx);
-	b = VTAILQ_LAST(&ban_head, banhead);
+	b = VTAILQ_LAST(&ban_head, banhead_s);
 	if (b != VTAILQ_FIRST(&ban_head) && b->refcount == 0) {
 		VSC_main->n_ban--;
 		VSC_main->n_ban_retire++;
@@ -523,7 +523,7 @@ ban_lurker(struct sess *sp, void *priv)
 		/* Then try to poke the first object on the last ban */
 		oc = NULL;
 		while (1) {
-			b = VTAILQ_LAST(&ban_head, banhead);
+			b = VTAILQ_LAST(&ban_head, banhead_s);
 			if (b == ban_start)
 				break;
 			oc = VTAILQ_FIRST(&b->objcore);
@@ -574,7 +574,7 @@ BAN_TailRef(void)
 	struct ban *b;
 
 	ASSERT_CLI();
-	b = VTAILQ_LAST(&ban_head, banhead);
+	b = VTAILQ_LAST(&ban_head, banhead_s);
 	AN(b);
 	b->refcount++;
 	return (b);
@@ -760,7 +760,7 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 		/* Attempt to purge last ban entry */
 		Lck_Lock(&ban_mtx);
 		b = BAN_CheckLast();
-		bl = VTAILQ_LAST(&ban_head, banhead);
+		bl = VTAILQ_LAST(&ban_head, banhead_s);
 		if (b == NULL)
 			bl->refcount++;
 		Lck_Unlock(&ban_mtx);
