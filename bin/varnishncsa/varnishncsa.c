@@ -107,7 +107,7 @@ struct VSM_data *vd;
 
 static size_t nll;
 
-static int o_flag = 0;
+static int m_flag = 0;
 
 static const char *format;
 
@@ -516,7 +516,7 @@ h_ncsa(void *priv, enum vsl_tag tag, unsigned fd,
 	if (!lp->complete)
 		return (reopen);
 
-	if (o_flag && !VSL_Matched(vd, lp->bitmap))
+	if (m_flag && !VSL_Matched(vd, lp->bitmap))
 		/* -o is in effect matching rule failed. Don't display */
 		return (reopen);
 
@@ -775,11 +775,8 @@ main(int argc, char *argv[])
 		case 'c':
 			/* XXX: Silently ignored: it's required anyway */
 			break;
-		case 'o':
-			o_flag = 1;
-			if (VSL_Arg(vd, c, optarg) > 0)
-				break;
-			usage();
+		case 'm':
+			m_flag = 1; /* Fall through */
 		default:
 			if (VSL_Arg(vd, c, optarg) > 0)
 				break;

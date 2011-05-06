@@ -214,7 +214,7 @@ int VSL_Open(struct VSM_data *vd, int diag);
 	 *	!= 0 on failure
 	 */
 
-#define VSL_ARGS	"bCcdI:i:k:n:r:s:X:x:o:"
+#define VSL_ARGS	"bCcdI:i:k:n:r:s:X:x:m:"
 #define VSL_b_USAGE	"[-b]"
 #define VSL_c_USAGE	"[-c]"
 #define VSL_C_USAGE	"[-C]"
@@ -222,8 +222,8 @@ int VSL_Open(struct VSM_data *vd, int diag);
 #define VSL_i_USAGE	"[-i tag]"
 #define VSL_I_USAGE	"[-I regexp]"
 #define VSL_k_USAGE	"[-k keep]"
+#define VSL_m_USAGE	"[-m tag:regex]"
 #define VSL_n_USAGE	VSM_n_USAGE
-#define VSL_o_USAGE	"[-o tag:regex]"
 #define VSL_r_USAGE	"[-r file]"
 #define VSL_s_USAGE	"[-s skip]"
 #define VSL_x_USAGE	"[-x tag]"
@@ -232,8 +232,8 @@ int VSL_Open(struct VSM_data *vd, int diag);
 			VSL_i_USAGE " "		\
 			VSL_I_USAGE " "		\
 			VSL_k_USAGE " "		\
+			VSL_m_USAGE " "		\
 			VSL_n_USAGE " "		\
-			VSL_o_USAGE " "		\
 			VSL_r_USAGE " "		\
 			VSL_s_USAGE " "		\
 			VSL_X_USAGE " "		\

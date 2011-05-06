@@ -335,8 +335,8 @@ main(int argc, char **argv)
 		case 'V':
 			varnish_version("varnishtop");
 			exit(0);
-		case 'o':
-			fprintf(stderr, "-o is not supported\n");
+		case 'm':
+			fprintf(stderr, "-m is not supported\n");
 			exit(1);
 		default:
 			if (VSL_Arg(vd, o, optarg) > 0)

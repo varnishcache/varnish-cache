@@ -315,6 +315,8 @@ main(int argc, char * const *argv)
 		case 'w':
 			w_arg = optarg;
 			break;
+		case 'm':
+			o_flag = 1; /* fall through */
 		default:
 			if (VSL_Arg(vd, c, optarg) > 0)
 				break;

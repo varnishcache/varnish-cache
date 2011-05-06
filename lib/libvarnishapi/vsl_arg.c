@@ -163,7 +163,7 @@ name2tag(const char *n)
 }
 
 static int
-vsl_o_arg(const struct VSM_data *vd, const char *opt)
+vsl_m_arg(const struct VSM_data *vd, const char *opt)
 {
 	struct vsl_re_match *m;
 	const char *error;
@@ -264,7 +264,7 @@ VSL_Arg(struct VSM_data *vd, int arg, const char *opt)
 	case 'r': return (vsl_r_arg(vd, opt));
 	case 's': return (vsl_s_arg(vd, opt));
 	case 'I': case 'X': return (vsl_IX_arg(vd, opt, arg));
-	case 'o': return (vsl_o_arg(vd, opt));
+	case 'm': return (vsl_m_arg(vd, opt));
 	case 'C': vd->vsl->regflags = VRE_CASELESS; return (1);
 	default:
 		return (0);
