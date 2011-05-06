@@ -65,7 +65,7 @@ h_order_finish(int fd, struct VSM_data *vd)
 
 	AZ(vsb_finish(ob[fd]));
 	if (vsb_len(ob[fd]) > 1 && VSL_Matched(vd, bitmap[fd])) {
-		printf("%s\n", vsb_data(ob[fd]));
+		printf("%s", vsb_data(ob[fd]));
 	}
 	bitmap[fd] = 0;
 	vsb_clear(ob[fd]);
@@ -274,7 +274,7 @@ int
 main(int argc, char * const *argv)
 {
 	int c;
-	int a_flag = 0, D_flag = 0, o_flag = 0, u_flag = 0;
+	int a_flag = 0, D_flag = 0, O_flag = 0, u_flag = 0, m_flag = 0;
 	const char *P_arg = NULL;
 	const char *w_arg = NULL;
 	struct pidfh *pfh = NULL;
@@ -283,7 +283,7 @@ main(int argc, char * const *argv)
 	vd = VSM_New();
 	VSL_Setup(vd);
 
-	while ((c = getopt(argc, argv, VSL_ARGS "aDP:uVw:")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "aDP:uVw:oO")) != -1) {
 		switch (c) {
 		case 'a':
 			a_flag = 1;
@@ -299,9 +299,10 @@ main(int argc, char * const *argv)
 		case 'D':
 			D_flag = 1;
 			break;
-		case 'o':
-			o_flag = 1;
-			AN(VSL_Arg(vd, c, optarg));
+		case 'o': /* ignored for compatibility with older versions */
+			break;
+		case 'O':
+			O_flag = 1;
 			break;
 		case 'P':
 			P_arg = optarg;
@@ -316,7 +317,7 @@ main(int argc, char * const *argv)
 			w_arg = optarg;
 			break;
 		case 'm':
-			o_flag = 1; /* fall through */
+			m_flag = 1; /* fall through */
 		default:
 			if (VSL_Arg(vd, c, optarg) > 0)
 				break;
@@ -324,10 +325,10 @@ main(int argc, char * const *argv)
 		}
 	}
 
-	if (o_flag && w_arg != NULL)
+	if (O_flag && m_flag)
 		usage();
 
-	if ((argc - optind) > 0 && !o_flag)
+	if ((argc - optind) > 0)
 		usage();
 
 	if (VSL_Open(vd, 1))
@@ -354,7 +355,7 @@ main(int argc, char * const *argv)
 	if (u_flag)
 		setbuf(stdout, NULL);
 
-	if (o_flag)
+	if (!O_flag)
 		do_order(vd);
 
 	while (VSL_Dispatch(vd, VSL_H_Print, stdout) >= 0) {
