@@ -1,7 +1,8 @@
 .. _tutorial-purging:
 
-Purging and banning
--------------------
+=====================
+ Purging and banning
+=====================
 
 One of the most effective way of increasing your hit ratio is to
 increase the time-to-live (ttl) of your objects. But, as you're aware
@@ -14,7 +15,7 @@ bans. First, let me explain the HTTP purges.
 
 
 HTTP Purges
-~~~~~~~~~~~
+===========
 
 An HTTP purge is similar to an HTTP GET request, except that the
 *method* is PURGE. Actually you can call the method whatever you'd
@@ -40,17 +41,15 @@ following VCL in place::
   
   sub vcl_hit {
 	  if (req.request == "PURGE") {
-	          # Note that setting ttl to 0 is magical.
-                  # the object is zapped from cache.
-		  set obj.ttl = 0s;
+	          purge;
 		  error 200 "Purged.";
 	  }
   }
   
   sub vcl_miss {
 	  if (req.request == "PURGE") {
-
-		  error 404 "Not in cache.";
+	          purge;
+		  error 200 "Purged.";
 	  }
   }
 
@@ -60,23 +59,17 @@ its cache. It will either hit an object or miss it and so the
 corresponding subroutine is called. In vcl_hit the object that is
 stored in cache is available and we can set the TTL.
 
-So for vg.no to invalidate their front page they would call out to
-Varnish like this::
+So for example.com to invalidate their front page they would call out
+to Varnish like this::
 
   PURGE / HTTP/1.0
-  Host: vg.no
+  Host: example.com
 
-And Varnish would then discard the front page. If there are several
-variants of the same URL in the cache however, only the matching
-variant will be purged. To purge a gzip variant of the same page the
-request would have to look like this::
-
-  PURGE / HTTP/1.0
-  Host: vg.no
-  Accept-Encoding: gzip
+And Varnish would then discard the front page. This will remove all
+variants as defined by Vary.
 
 Bans
-~~~~
+====
 
 There is another way to invalidate content. Bans. You can think of
 bans as a sort of a filter. You *ban* certain content from being
@@ -84,10 +77,10 @@ served from your cache. You can ban content based on any metadata we
 have.
 
 Support for bans is built into Varnish and available in the CLI
-interface. For VG to ban every png object belonging on vg.no they could
-issue::
+interface. For VG to ban every png object belonging on example.com
+they could issue::
 
-  purge req.http.host == "vg.no" && req.http.url ~ "\.png$"
+  ban req.http.host == "example.com" && req.http.url ~ "\.png$"
 
 Quite powerful, really.
 
@@ -104,7 +97,7 @@ You can also add bans to Varnish via HTTP. Doing so requires a bit of VCL::
 		  if (!client.ip ~ purge) {
 			  error 405 "Not allowed.";
 		  }
-		  purge("req.http.host == " req.http.host 
+		  ban("req.http.host == " req.http.host 
 		        "&& req.url == " req.url);
 
 		  # Throw a synthetic page so the
