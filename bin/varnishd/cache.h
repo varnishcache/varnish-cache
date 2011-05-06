@@ -656,7 +656,7 @@ void BAN_Reload(double t0, unsigned flags, const char *ban);
 struct ban *BAN_TailRef(void);
 void BAN_Compile(void);
 struct ban *BAN_RefBan(struct objcore *oc, double t0, const struct ban *tail);
-void BAN_Deref(struct ban **ban);
+void BAN_TailDeref(struct ban **ban);
 
 /* cache_center.c [CNT] */
 void CNT_Session(struct sess *sp);

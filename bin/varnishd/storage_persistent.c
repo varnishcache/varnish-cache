@@ -303,8 +303,8 @@ smp_thread(struct sess *sp, void *priv)
 			smp_load_seg(sp, sc, sg);
 
 	sc->flags |= SMP_SC_LOADED;
-	BAN_Deref(&sc->tailban);
-	sc->tailban = NULL;
+	BAN_TailDeref(&sc->tailban);
+	AZ(sc->tailban);
 	printf("Silo completely loaded\n");
 	while (1) {
 		(void)sleep (1);
@@ -352,6 +352,11 @@ smp_open(const struct stevedore *st)
 	if (smp_open_segs(sc, &sc->seg1))
 		AZ(smp_open_segs(sc, &sc->seg2));
 
+	/*
+	 * Grap a reference to the tail of the ban list, until the thread
+	 * has loaded all objects, so we can be sure that all of our
+	 * proto-bans survive until then.
+	 */
 	sc->tailban = BAN_TailRef();
 	AN(sc->tailban);
 

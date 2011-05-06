@@ -549,11 +549,11 @@ ban_lurker(struct sess *sp, void *priv)
 
 
 /*--------------------------------------------------------------------
- * Release a reference
+ * Release a tail reference
  */
 
 void
-BAN_Deref(struct ban **bb)
+BAN_TailDeref(struct ban **bb)
 {
 	struct ban *b;
 
