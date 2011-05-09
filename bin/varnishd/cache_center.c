@@ -166,7 +166,8 @@ cnt_prepresp(struct sess *sp)
 
 	sp->wrk->res_mode = 0;
 
-	if (!sp->wrk->do_stream)
+	if (!sp->wrk->do_stream || 
+	    (sp->wrk->h_content_length != NULL && !sp->wrk->do_gunzip))
 		sp->wrk->res_mode |= RES_LEN;
 
 	if (!sp->disable_esi && sp->obj->esidata != NULL) {
