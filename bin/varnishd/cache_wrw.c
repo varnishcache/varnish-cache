@@ -55,6 +55,13 @@
 /*--------------------------------------------------------------------
  */
 
+int
+WRW_Error(const struct worker *w)
+{
+
+	return (w->wrw.werr);
+}
+
 void
 WRW_Reserve(struct worker *w, int *fd)
 {

@@ -714,7 +714,6 @@ int VGZ_WrwGunzip(struct sess *, struct vgz *, void *ibuf, ssize_t ibufl,
     char *obuf, ssize_t obufl, ssize_t *obufp);
 
 /* Return values */
-#define VGZ_SOCKET	-2
 #define VGZ_ERROR	-1
 #define VGZ_OK		0
 #define VGZ_END		1
@@ -819,6 +818,7 @@ int WRK_QueueSession(struct sess *sp);
 void WRK_SumStat(struct worker *w);
 
 #define WRW_IsReleased(w)	((w)->wrw.wfd == NULL)
+int WRW_Error(const struct worker *w);
 void WRW_Chunked(struct worker *w);
 void WRW_EndChunk(struct worker *w);
 void WRW_Reserve(struct worker *w, int *fd);
