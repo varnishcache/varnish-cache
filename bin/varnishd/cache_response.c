@@ -423,7 +423,7 @@ RES_StreamStart(struct sess *sp)
 }
 
 void
-RES_StreamPoll(struct sess *sp)
+RES_StreamPoll(const struct sess *sp)
 {
 	struct stream_ctx *sctx;
 	struct storage *st;

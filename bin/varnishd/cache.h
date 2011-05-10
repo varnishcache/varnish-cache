@@ -710,7 +710,7 @@ int VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
 int VGZ_Gunzip(struct vgz *, const void **, size_t *len);
 void VGZ_Destroy(struct vgz **);
 void VGZ_UpdateObj(const struct vgz*, struct object *);
-int VGZ_WrwGunzip(struct sess *, struct vgz *, void *ibuf, ssize_t ibufl,
+int VGZ_WrwGunzip(const struct sess *, struct vgz *, void *ibuf, ssize_t ibufl,
     char *obuf, ssize_t obufl, ssize_t *obufp);
 
 /* Return values */
@@ -878,7 +878,7 @@ void RES_BuildHttp(struct sess *sp);
 void RES_WriteObj(struct sess *sp);
 void RES_StreamStart(struct sess *sp);
 void RES_StreamEnd(struct sess *sp);
-void RES_StreamPoll(struct sess *sp);
+void RES_StreamPoll(const struct sess *sp);
 
 /* cache_vary.c */
 struct vsb *VRY_Create(const struct sess *sp, const struct http *hp);

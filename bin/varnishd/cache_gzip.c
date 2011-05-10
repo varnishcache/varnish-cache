@@ -353,7 +353,7 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, size_t *plen, enum vgz_flag flags)
  */
 
 int
-VGZ_WrwGunzip(struct sess *sp, struct vgz *vg, void *ibuf, ssize_t ibufl,
+VGZ_WrwGunzip(const struct sess *sp, struct vgz *vg, void *ibuf, ssize_t ibufl,
     char *obuf, ssize_t obufl, ssize_t *obufp)
 {
 	int i;
