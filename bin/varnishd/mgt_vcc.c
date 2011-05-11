@@ -252,7 +252,7 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 	}
 
 	if (C_flag) {
-		csrc = vreadfile(NULL, sf);
+		csrc = vreadfile(NULL, sf, NULL);
 		XXXAN(csrc);
 		(void)fputs(csrc, stdout);
 		free(csrc);
@@ -524,7 +524,7 @@ mcf_config_load(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 
-	vcl = vreadfile(mgt_vcl_dir, av[3]);
+	vcl = vreadfile(mgt_vcl_dir, av[3], NULL);
 	if (vcl == NULL) {
 		cli_out(cli, "Cannot open '%s'", av[3]);
 		cli_result(cli, CLIS_PARAM);

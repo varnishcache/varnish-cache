@@ -553,7 +553,7 @@ main(int argc, char * const *argv)
 	}
 
 	if (f_arg != NULL) {
-		vcl = vreadfile(NULL, f_arg);
+		vcl = vreadfile(NULL, f_arg, NULL);
 		if (vcl == NULL) {
 			fprintf(stderr, "Cannot read '%s': %s\n",
 			    f_arg, strerror(errno));

@@ -151,13 +151,10 @@ vmod_fileread(struct sess *sp, struct vmod_priv *priv, const char *file_name)
 	iter->file_name = strdup(file_name);
 	iter->last_modification = buf.st_mtime;
 
-	iter->contents = malloc(buf.st_size + 1);
+	iter->contents = vreadfd(fd, &iter->file_sz);
 	AN(iter->contents);
-	iter->file_sz = read(fd, iter->contents, buf.st_size);
 	assert(iter->file_sz == buf.st_size);
 	AZ(close(fd));
-
-	iter->contents[iter->file_sz] = '\0';
 
 	VSLIST_INSERT_HEAD(list, iter, next);
 
