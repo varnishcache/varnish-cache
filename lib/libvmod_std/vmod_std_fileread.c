@@ -56,7 +56,7 @@ struct cached_file {
 	char		*file_name;
 	char		*contents;
 	time_t		last_modification;
-	off_t		file_sz;
+	ssize_t		file_sz;
 	VSLIST_ENTRY(cached_file) next;
 };
 
