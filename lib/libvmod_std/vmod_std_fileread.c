@@ -48,119 +48,75 @@
 
 #include "vcc_if.h"
 
-VSLIST_HEAD(cached_file_list, cached_file);
-
-struct cached_file {
-	unsigned	magic;
+struct frfile {
+	unsigned			magic;
 #define CACHED_FILE_MAGIC 0xa8e9d87a
-	char		*file_name;
-	char		*contents;
-	time_t		last_modification;
-	ssize_t		file_sz;
-	VSLIST_ENTRY(cached_file) next;
+	char				*file_name;
+	char				*contents;
+	int				refcount;
+	VTAILQ_ENTRY(frfile)		list;
 };
 
-static void
-free_cached_files(void *file_list)
-{
-	struct cached_file *iter, *tmp;
-	struct cached_file_list *list = file_list;
-	VSLIST_FOREACH_SAFE(iter, list, next, tmp) {
-		CHECK_OBJ(iter, CACHED_FILE_MAGIC);
-		free(iter->file_name);
-		free(iter->contents);
-		FREE_OBJ(iter);
-	}
-	free(file_list);
-}
+static VTAILQ_HEAD(, frfile)		frlist = VTAILQ_HEAD_INITIALIZER(frlist);
+static pthread_mutex_t			frmtx = PTHREAD_MUTEX_INITIALIZER;
 
-static pthread_rwlock_t filelist_lock = PTHREAD_RWLOCK_INITIALIZER;
-static int filelist_update = 0;
+static void
+free_frfile(void *ptr)
+{
+	struct frfile *frf;
+
+	CAST_OBJ_NOTNULL(frf, ptr, CACHED_FILE_MAGIC);
+
+	AZ(pthread_mutex_lock(&frmtx));
+	if (--frf->refcount > 0)
+		frf = NULL;
+	else
+		VTAILQ_REMOVE(&frlist, frf, list);
+	AZ(pthread_mutex_unlock(&frmtx));
+	if (frf != NULL) {
+		free(frf->contents);
+		free(frf->file_name);
+		FREE_OBJ(frf);
+	}
+}
 
 const char *
 vmod_fileread(struct sess *sp, struct vmod_priv *priv, const char *file_name)
 {
-	struct cached_file *iter = NULL;
-	struct stat buf;
-	struct cached_file_list *list;
-	int fd, my_filelist_update;
+	struct frfile *frf;
+	char *s;
 
 	(void)sp;
-
-	AZ(pthread_rwlock_rdlock(&filelist_lock));
-
-	if (priv->free == NULL) {
-		AZ(pthread_rwlock_unlock(&filelist_lock));
-		/*
-		 * Another thread may already have initialized priv
-		 * here, making the repeat check necessary.
-		 */
-		AZ(pthread_rwlock_wrlock(&filelist_lock));
-		if (priv->free == NULL) {
-			priv->free = free_cached_files;
-			priv->priv = malloc(sizeof(struct cached_file_list));
-			AN(priv->priv);
-			list = priv->priv;
-			VSLIST_INIT(list);
-		}
-		AZ(pthread_rwlock_unlock(&filelist_lock));
-		AZ(pthread_rwlock_rdlock(&filelist_lock));
-	} else {
-		list = priv->priv;
-		VSLIST_FOREACH(iter, list, next) {
-			CHECK_OBJ(iter, CACHED_FILE_MAGIC);
-			if (strcmp(iter->file_name, file_name) == 0) {
-				/* This thread was holding a read lock. */
-				AZ(pthread_rwlock_unlock(&filelist_lock));
-				return iter->contents;
-			}
+	AN(priv);
+	if (priv->priv != NULL) {
+		CAST_OBJ_NOTNULL(frf, priv->priv, CACHED_FILE_MAGIC);
+		return (frf->contents);
+	}
+	
+	AZ(pthread_mutex_lock(&frmtx));
+	VTAILQ_FOREACH(frf, &frlist, list) {
+		if (!strcmp(file_name, frf->file_name)) {
+			frf->refcount++;
+			break;
 		}
 	}
+	AZ(pthread_mutex_unlock(&frmtx));
+	if (frf != NULL)
+		return (frf->contents);
 
-	my_filelist_update = filelist_update;
-
-	/* This thread was holding a read lock. */
-	AZ(pthread_rwlock_unlock(&filelist_lock));
-
-	if ((fd = open(file_name, O_RDONLY)) == -1)
-		return "";
-
-	AZ(fstat(fd, &buf));
-
-	AZ(pthread_rwlock_wrlock(&filelist_lock));
-
-	if (my_filelist_update != filelist_update) {
-
-		/*
-		 * Small optimization: search through the linked list again
-		 * only if something has been changed.
-		 */
-		VSLIST_FOREACH(iter, list, next) {
-			CHECK_OBJ(iter, CACHED_FILE_MAGIC);
-			if (strcmp(iter->file_name, file_name) == 0) {
-				/* This thread was holding a write lock. */
-				AZ(pthread_rwlock_unlock(&filelist_lock));
-				return iter->contents;
-			}
-		}
+	s = vreadfile(NULL, file_name, NULL);
+	if (s != NULL) {
+		ALLOC_OBJ(frf, CACHED_FILE_MAGIC);
+		AN(frf);
+		frf->file_name = strdup(file_name);
+		AN(frf->file_name);
+		frf->refcount = 1;
+		frf->contents = s;
+		priv->free = free_frfile;
+		priv->priv = frf;
+		AZ(pthread_mutex_lock(&frmtx));
+		VTAILQ_INSERT_HEAD(&frlist, frf, list);
+		AZ(pthread_mutex_unlock(&frmtx));
 	}
-
-	ALLOC_OBJ(iter, CACHED_FILE_MAGIC);
-	AN(iter);
-
-	iter->file_name = strdup(file_name);
-	iter->last_modification = buf.st_mtime;
-
-	iter->contents = vreadfd(fd, &iter->file_sz);
-	AN(iter->contents);
-	assert(iter->file_sz == buf.st_size);
-	AZ(close(fd));
-
-	VSLIST_INSERT_HEAD(list, iter, next);
-
-	filelist_update++;
-
-	/* This thread was holding a write lock. */
-	AZ(pthread_rwlock_unlock(&filelist_lock));
-	return iter->contents;
+	return (s);
 }
