@@ -192,7 +192,7 @@ STV_FileSize(int fd, const char *size, unsigned *granularity, const char *ctx)
 	if ((size == NULL || *size == '\0') && st.st_size != 0) {
 		/*
 		 * We have no size specification, but an existing file,
-		 * use it's existing size.
+		 * use its existing size.
 		 */
 		l = st.st_size;
 	} else {
