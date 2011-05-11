@@ -3,7 +3,7 @@ AC_COPYRIGHT([Copyright (c) 2006 Verdens Gang AS
 Copyright (c) 2006-2010 Linpro AS
 Copyright (c) 2010-2011 Varnish Software AS])
 AC_REVISION([$Id$])
-AC_INIT([Varnish], [trunk], [varnish-dev@varnish-cache.org])
+AC_INIT([Varnish], [3.0.0-beta1], [varnish-dev@varnish-cache.org])
 AC_CONFIG_SRCDIR(include/varnishapi.h)
 AM_CONFIG_HEADER(config.h)
 
