@@ -44,7 +44,8 @@ all: ${CHANGELOGS}
 endif
 
 EXTRA_DIST = ${CHANGELOGS} ${XML} \
-	changes.css changes-html.xsl
+	changes.css changes-html.xsl \
+	changes.rst changes.html
 
 CLEANFILES = ${CHANGELOGS}
 SUFFIXES = .xml .html
@@ -58,6 +59,17 @@ else
 	@echo "========================================"
 	@false
 endif
+
+changes.html: changes.rst
+if HAVE_RST2HTML
+	${RST2HTML} $? $@
+else
+	@echo "========================================"
+	@echo "You need rst2html installed to make dist"
+	@echo "========================================"
+	@false
+endif
+
 
 ${CHANGELOGS}: changes-html.xsl
 

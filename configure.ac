@@ -56,6 +56,12 @@ if test "x$RST2MAN" = "xno"; then
 fi
 AM_CONDITIONAL(HAVE_RST2MAN,[test "x$RST2MAN" != "xno"])
 
+AC_CHECK_PROGS(RST2HTML, [rst2html rst2html.py], "no")
+if test "x$RST2HTML" = "xno"; then
+   AC_MSG_WARN([rst2html not found – not building changelog])
+fi
+AM_CONDITIONAL(HAVE_RST2HTML,[test "x$RST2HTML" != "xno"])
+
 # Checks for libraries.
 save_LIBS="${LIBS}"
 LIBS=""
