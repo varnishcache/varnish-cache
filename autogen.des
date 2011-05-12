@@ -10,6 +10,7 @@ if [ -f /usr/bin/clang -a "x${CC}" = "x" ] ; then
 	export CC
 fi
 
+rm -f configure
 . ./autogen.sh
 
 # autoconf prior to 2.62 has issues with zsh 4.2 and newer
