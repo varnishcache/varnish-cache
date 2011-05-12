@@ -21,8 +21,6 @@ nobase_noinst_HEADERS = \
 	compat/execinfo.h \
 	compat/setproctitle.h \
 	compat/srandomdev.h \
-	compat/strlcpy.h \
-	compat/strndup.h \
 	flopen.h \
 	http_headers.h \
 	http_response.h \

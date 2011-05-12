@@ -10,6 +10,4 @@ libvarnishcompat_la_SOURCES = \
 	daemon.c \
 	execinfo.c \
 	setproctitle.c \
-	srandomdev.c \
-	strlcpy.c \
-	strndup.c
+	srandomdev.c
