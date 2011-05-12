@@ -52,10 +52,6 @@
 #include <priv.h>
 #endif
 
-#ifndef HAVE_SETPROCTITLE
-#include "compat/setproctitle.h"
-#endif
-
 #ifdef __linux__
 #include <sys/prctl.h>
 #endif

@@ -19,7 +19,6 @@ nobase_noinst_HEADERS = \
 	cli_serve.h \
 	compat/daemon.h \
 	compat/execinfo.h \
-	compat/setproctitle.h \
 	compat/srandomdev.h \
 	flopen.h \
 	http_headers.h \

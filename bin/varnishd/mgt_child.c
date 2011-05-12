@@ -43,10 +43,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#ifndef HAVE_SETPROCTITLE
-#include "compat/setproctitle.h"
-#endif
-
 #include "mgt.h"
 #include "vsm.h"
 #include "heritage.h"
@@ -337,7 +333,9 @@ start_child(struct cli *cli)
 				continue;
 			(void)(close(i) == 0);
 		}
+#ifdef HAVE_SETPROCTITLE
 		setproctitle("Varnish-Chld %s", heritage.name);
+#endif
 
 		(void)signal(SIGINT, SIG_DFL);
 		(void)signal(SIGTERM, SIG_DFL);
@@ -582,7 +580,9 @@ MGT_Run(void)
 	e->name = "mgt_sigchild";
 	AZ(vev_add(mgt_evb, e));
 
+#ifdef HAVE_SETPROCTITLE
 	setproctitle("Varnish-Mgr %s", heritage.name);
+#endif
 
 	memset(&sac, 0, sizeof sac);
 	sac.sa_handler = SIG_IGN;

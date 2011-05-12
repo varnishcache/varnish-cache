@@ -9,5 +9,4 @@ libvarnishcompat_la_LDFLAGS = -avoid-version
 libvarnishcompat_la_SOURCES = \
 	daemon.c \
 	execinfo.c \
-	setproctitle.c \
 	srandomdev.c
