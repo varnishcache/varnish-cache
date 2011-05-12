@@ -50,10 +50,6 @@
 
 #include "compat/daemon.h"
 
-#ifndef HAVE_STRLCPY
-#include "compat/strlcpy.h"
-#endif
-
 #include "vsb.h"
 #include "vev.h"
 #include "vpf.h"
