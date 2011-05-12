@@ -11,6 +11,5 @@ libvarnishcompat_la_SOURCES = \
 	execinfo.c \
 	setproctitle.c \
 	srandomdev.c \
-	strlcat.c \
 	strlcpy.c \
 	strndup.c
