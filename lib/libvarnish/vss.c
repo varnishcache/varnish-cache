@@ -43,10 +43,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#ifndef HAVE_STRNDUP
-#include "compat/strndup.h"
-#endif
-
 #include "libvarnish.h"
 #include "vss.h"
 
@@ -87,8 +83,9 @@ VSS_parse(const char *str, char **addr, char **port)
 		    p == str + 1 ||
 		    (p[1] != '\0' && p[1] != ':'))
 			return (-1);
-		*addr = strndup(str + 1, p - (str + 1));
+		*addr = strdup(str + 1);
 		XXXAN(*addr);
+		(*addr)[p - (str + 1)] = '\0';
 		if (p[1] == ':') {
 			*port = strdup(p + 2);
 			XXXAN(*port);
@@ -103,8 +100,9 @@ VSS_parse(const char *str, char **addr, char **port)
 			XXXAN(*addr);
 		} else {
 			if (p > str) {
-				*addr = strndup(str, p - str);
+				*addr = strdup(str);
 				XXXAN(*addr);
+				(*addr)[p - str] = '\0';
 			}
 			*port = strdup(p + 1);
 			XXXAN(*port);
