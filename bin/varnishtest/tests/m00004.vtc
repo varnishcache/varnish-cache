@@ -13,7 +13,9 @@ server s1 {
 	}
 } -start
 
-varnish v1 -arg "-pvmod_dir=${topbuild}/lib/libvmod_std/.libs/" \
+varnish v1 \
+	-arg "-pvmod_dir=${topbuild}/lib/libvmod_std/.libs/" \
+	-arg "-pthread_pools=1" \
 	-vcl+backend {
 	import std;
 
@@ -29,86 +31,63 @@ varnish v1 -arg "-pvmod_dir=${topbuild}/lib/libvmod_std/.libs/" \
 } -start
 
 client c1 {
-	loop 5 {
-		txreq -url "/one"
-		rxresp
-		expect resp.status == 200
-		expect resp.http.content-length == "4"
-		expect resp.http.foo == "bar"
-		expect resp.http.one == "File One"
+	txreq -url "/one"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.content-length == "4"
+	expect resp.http.foo == "bar"
+	expect resp.http.one == "File One"
+
+	txreq -url "/two"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.content-length == "4"
+	expect resp.http.foo == "bar"
+	expect resp.http.two == "File Two"
+
+	txreq -url "/three"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.content-length == "4"
+	expect resp.http.foo == "bar"
+	expect resp.http.three == "File Three"
+} -run
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_deliver {
+		if (req.url == "/one") {
+			set resp.http.one = std.fileread("${tmpdir}/m00004_file_one");
+		} else if (req.url == "/two") {
+			set resp.http.two = std.fileread("${tmpdir}/m00004_file_two");
+		} else if (req.url == "/three") {
+			set resp.http.three = std.fileread("${tmpdir}/m00004_file_three");
+		}
 	}
+} 
 
-	loop 5 {
-		txreq -url "/two"
-		rxresp
-		expect resp.status == 200
-		expect resp.http.content-length == "4"
-		expect resp.http.foo == "bar"
-		expect resp.http.two == "File Two"
-
-		txreq -url "/three"
-		rxresp
-		expect resp.status == 200
-		expect resp.http.content-length == "4"
-		expect resp.http.foo == "bar"
-		expect resp.http.three == "File Three"
-	}
-}
-
-client c2 {
-	loop 5 {
-		txreq -url "/two"
-		rxresp
-		expect resp.status == 200
-		expect resp.http.content-length == "4"
-		expect resp.http.foo == "bar"
-		expect resp.http.two == "File Two"
-	}
-
-	loop 5 {
-		txreq -url "/one"
-		rxresp
-		expect resp.status == 200
-		expect resp.http.content-length == "4"
-		expect resp.http.foo == "bar"
-		expect resp.http.one == "File One"
-
-		txreq -url "/three"
-		rxresp
-		expect resp.status == 200
-		expect resp.http.content-length == "4"
-		expect resp.http.foo == "bar"
-		expect resp.http.three == "File Three"
-	}
-}
-
-client c3 {
-	loop 5 {
-		txreq -url "/three"
-		rxresp
-		expect resp.status == 200
-		expect resp.http.content-length == "4"
-		expect resp.http.foo == "bar"
-		expect resp.http.three == "File Three"
-	}
-
-	loop 5 {
-		txreq -url "/two"
-		rxresp
-		expect resp.status == 200
-		expect resp.http.content-length == "4"
-		expect resp.http.foo == "bar"
-		expect resp.http.two == "File Two"
-
-		txreq -url "/one"
-		rxresp
-		expect resp.status == 200
-		expect resp.http.content-length == "4"
-		expect resp.http.foo == "bar"
-		expect resp.http.one == "File One"
-	}
-}
+varnish v1 -cli "vcl.list"
+varnish v1 -cli "vcl.use vcl2"
 
 client c1 -run
-client c2 -run
-client c3 -run
+
+varnish v1 -cli "vcl.list"
+varnish v1 -cli "vcl.discard vcl1"
+
+varnish v1 -vcl+backend { }
+
+varnish v1 -cli "vcl.list"
+varnish v1 -cli "vcl.discard vcl2"
+
+
+client c1 {
+	txreq -url "/one"
+	rxresp
+	txreq -url "/two"
+	rxresp
+	txreq -url "/three"
+	rxresp
+} -run
+
+varnish v1 -cli "vcl.list"
