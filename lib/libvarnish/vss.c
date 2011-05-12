@@ -43,9 +43,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#ifndef HAVE_STRLCPY
-#include "compat/strlcpy.h"
-#endif
 #ifndef HAVE_STRNDUP
 #include "compat/strndup.h"
 #endif
