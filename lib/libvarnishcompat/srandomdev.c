@@ -44,7 +44,7 @@ void
 srandomdev(void)
 {
 	struct timeval tv;
-	unsigned int seed;
+	unsigned long seed;
 	int fd;
 
 	if ((fd = open("/dev/urandom", O_RDONLY)) >= 0 ||
