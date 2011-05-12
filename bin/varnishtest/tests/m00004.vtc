@@ -76,10 +76,7 @@ varnish v1 -cli "vcl.list"
 varnish v1 -cli "vcl.discard vcl1"
 
 varnish v1 -vcl+backend { }
-
-varnish v1 -cli "vcl.list"
-varnish v1 -cli "vcl.discard vcl2"
-
+varnish v1 -cli "vcl.use vcl3"
 
 client c1 {
 	txreq -url "/one"
@@ -89,5 +86,10 @@ client c1 {
 	txreq -url "/three"
 	rxresp
 } -run
+
+varnish v1 -cli "vcl.list"
+varnish v1 -cli "vcl.discard vcl2"
+
+client c1 -run
 
 varnish v1 -cli "vcl.list"
