@@ -71,6 +71,7 @@ varnish v1 -cli "vcl.list"
 varnish v1 -cli "vcl.use vcl2"
 
 client c1 -run
+client c1 -run
 
 varnish v1 -cli "vcl.list"
 varnish v1 -cli "vcl.discard vcl1"
