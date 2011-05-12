@@ -549,7 +549,7 @@ ban_lurker_work(const struct sess *sp)
 	oh = oc->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	if (Lck_Trylock(&oh->mtx)) {
-		Lck_Unlock(&ban_mtx); 
+		Lck_Unlock(&ban_mtx);
 		return;
 	}
 

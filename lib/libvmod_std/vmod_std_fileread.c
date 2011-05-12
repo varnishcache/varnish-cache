@@ -87,7 +87,7 @@ vmod_fileread(struct sess *sp, struct vmod_priv *priv, const char *file_name)
 		CAST_OBJ_NOTNULL(frf, priv->priv, CACHED_FILE_MAGIC);
 		return (frf->contents);
 	}
-	
+
 	AZ(pthread_mutex_lock(&frmtx));
 	VTAILQ_FOREACH(frf, &frlist, list) {
 		if (!strcmp(file_name, frf->file_name)) {
