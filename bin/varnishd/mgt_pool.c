@@ -129,7 +129,7 @@ const struct parspec WRK_parspec[] = {
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"500", "threads" },
 	{ "thread_pool_min", tweak_thread_pool_min, NULL, 2, 0,
-		"The minimum number of threads in each pool.\n"
+		"The minimum number of worker threads in each pool.\n"
 		"\n"
 		"Increasing this may help ramp up faster from low load "
 		"situations where threads have expired.\n"
