@@ -89,8 +89,8 @@ TCP_name(const struct sockaddr_storage *addr, unsigned l,
 		 * for the gai_strerror in the bufffer :-(
 		 */
 		printf("getnameinfo = %d %s\n", i, gai_strerror(i));
-		snprintf(abuf, alen, "Conversion");
-		snprintf(pbuf, plen, "Failed");
+		(void)snprintf(abuf, alen, "Conversion");
+		(void)snprintf(pbuf, plen, "Failed");
 		return;
 	}
 	/* XXX dirty hack for v4-to-v6 mapped addresses */
@@ -125,8 +125,8 @@ TCP_hisname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 	if (!getpeername(sock, (void*)&addr_s, &l))
 		TCP_name(&addr_s, l, abuf, alen, pbuf, plen);
 	else {
-		snprintf(abuf, alen, "<none>");
-		snprintf(pbuf, plen, "<none>");
+		(void)snprintf(abuf, alen, "<none>");
+		(void)snprintf(pbuf, plen, "<none>");
 	}
 }
 

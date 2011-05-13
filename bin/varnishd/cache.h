@@ -703,15 +703,15 @@ struct vgz *VGZ_NewUngzip(struct sess *sp, const char *id);
 struct vgz *VGZ_NewGzip(struct sess *sp, const char *id);
 void VGZ_Ibuf(struct vgz *, const void *, ssize_t len);
 int VGZ_IbufEmpty(const struct vgz *vg);
-void VGZ_Obuf(struct vgz *, const void *, ssize_t len);
+void VGZ_Obuf(struct vgz *, void *, ssize_t len);
 int VGZ_ObufFull(const struct vgz *vg);
 int VGZ_ObufStorage(const struct sess *sp, struct vgz *vg);
 int VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
 int VGZ_Gunzip(struct vgz *, const void **, size_t *len);
 void VGZ_Destroy(struct vgz **);
 void VGZ_UpdateObj(const struct vgz*, struct object *);
-int VGZ_WrwGunzip(const struct sess *, struct vgz *, void *ibuf, ssize_t ibufl,
-    char *obuf, ssize_t obufl, ssize_t *obufp);
+int VGZ_WrwGunzip(const struct sess *, struct vgz *, const void *ibuf,
+    ssize_t ibufl, char *obuf, ssize_t obufl, ssize_t *obufp);
 
 /* Return values */
 #define VGZ_ERROR	-1
