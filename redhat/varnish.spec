@@ -6,7 +6,7 @@ License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
 #Source0: http://repo.varnish-cache.org/source/%{name}-%{version}.tar.gz
-Source0: %{name}-3.0-beta1.tar.gz
+Source0: %{name}-3.0.0-beta1.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # To build from git, start with a make dist, see redhat/README.redhat 
 # You will need at least automake autoconf libtool python-docutils
@@ -72,7 +72,7 @@ Documentation files for %name
 
 %prep
 #%setup -q
-%setup -q -n varnish-3.0-beta1
+%setup -q -n varnish-3.0.0-beta1
 
 mkdir examples
 cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
