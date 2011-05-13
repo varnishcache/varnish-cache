@@ -436,7 +436,7 @@ wrk_herdtimer_thread(void *priv)
 
 		/* Scale parameters */
 
-		u = params->wthread_max / nwq;
+		u = params->wthread_max;
 		if (u < params->wthread_min)
 			u = params->wthread_min;
 		nthr_max = u;

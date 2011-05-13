@@ -121,7 +121,7 @@ const struct parspec WRK_parspec[] = {
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"2", "pools" },
 	{ "thread_pool_max", tweak_thread_pool_max, NULL, 1, 0,
-		"The maximum number of worker threads in all pools combined.\n"
+		"The maximum number of worker threads in each pool.\n"
 		"\n"
 		"Do not set this higher than you have to, since excess "
 		"worker threads soak up RAM and CPU and generally just get "
@@ -129,7 +129,7 @@ const struct parspec WRK_parspec[] = {
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"500", "threads" },
 	{ "thread_pool_min", tweak_thread_pool_min, NULL, 2, 0,
-		"The minimum number of threads in each worker pool.\n"
+		"The minimum number of threads in each pool.\n"
 		"\n"
 		"Increasing this may help ramp up faster from low load "
 		"situations where threads have expired.\n"
