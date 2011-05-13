@@ -174,14 +174,14 @@ vsl_m_arg(const struct VSM_data *vd, const char *opt)
 	ALLOC_OBJ(m, VSL_RE_MATCH_MAGIC);
 	AN(m);
 
-	if (! index(opt, ':')) {
+	if (!strchr(opt, ':')) {
 		fprintf(stderr, "No : found in -o option %s\n", opt);
 		return (-1);
 	}
 
 	o = strdup(opt);
 	AN(o);
-	regex = index(o, ':');
+	regex = strchr(o, ':');
 	*regex = '\0';
 	regex++;
 
