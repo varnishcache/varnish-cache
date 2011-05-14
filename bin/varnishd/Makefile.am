@@ -77,7 +77,6 @@ varnishd_SOURCES = \
 noinst_HEADERS = \
 	acct_fields.h \
 	cache.h \
-	cache_ban.h \
 	cache_backend.h \
 	cache_backend_poll.h \
 	cache_esi.h \

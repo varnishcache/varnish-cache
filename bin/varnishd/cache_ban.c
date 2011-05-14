@@ -54,7 +54,41 @@
 #include "hash_slinger.h"
 #include "vre.h"
 
-#include "cache_ban.h"
+struct ban_test;
+
+/* A ban-testing function */
+typedef int ban_cond_f(const struct ban_test *bt, const struct object *o,
+    const struct sess *sp);
+
+/* Each individual test to be performed on a ban */
+struct ban_test {
+	unsigned		magic;
+#define BAN_TEST_MAGIC		0x54feec67
+	VTAILQ_ENTRY(ban_test)	list;
+	ban_cond_f		*func;
+	int			flags;
+#define BAN_T_REGEXP		(1 << 0)
+#define BAN_T_NOT		(1 << 1)
+	vre_t			*re;
+	char			*dst;
+	char			*src;
+};
+
+struct ban {
+	unsigned		magic;
+#define BAN_MAGIC		0x700b08ea
+	VTAILQ_ENTRY(ban)	list;
+	unsigned		refcount;
+	int			flags;
+#define BAN_F_GONE		(1 << 0)
+#define BAN_F_PENDING		(1 << 1)
+#define BAN_F_REQ		(1 << 2)
+	VTAILQ_HEAD(,ban_test)	tests;
+	VTAILQ_HEAD(,objcore)	objcore;
+	double			t0;
+	struct vsb		*vsb;
+	char			*test;
+};
 
 static VTAILQ_HEAD(banhead_s,ban) ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
 static struct lock ban_mtx;
