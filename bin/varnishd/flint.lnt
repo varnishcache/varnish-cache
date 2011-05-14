@@ -76,6 +76,7 @@
 
 -emacro(835, HTTPH)	// Info 835: A zero has been given as left argument to operator '&'
 -emacro(845, HTTPH)	// Info 845: The left argument to operator '&&' is certain to be 0
+-esym(773, PCRE_DATE)	// Expression-like macro '___' not parenthesized
 //////////////
 -efunc(1791, pdiff)	// return last on line
 //////////////
