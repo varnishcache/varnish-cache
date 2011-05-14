@@ -381,16 +381,15 @@ BAN_Insert(struct ban *b)
 	ln = vsb_len(b->vsb);
 	assert(ln >= 0);
 
-	b->spec = malloc(ln + 12L);	/* XXX */
+	b->spec = malloc(ln + 13L);	/* XXX */
 	XXXAN(b->spec);
 
 	t0 = TIM_real();
 	memcpy(b->spec, &t0, sizeof t0);
-
-	vbe32enc(b->spec + 8, ln + 12);
-
-	memcpy(b->spec + 12, vsb_data(b->vsb), ln);
-	ln += 12;
+	b->spec[12] = (b->flags & BAN_F_REQ) ? 1 : 0;
+	memcpy(b->spec + 13, vsb_data(b->vsb), ln);
+	ln += 13;
+	vbe32enc(b->spec + 8, ln);
 
 	vsb_delete(b->vsb);
 	b->vsb = NULL;
@@ -542,6 +541,8 @@ BAN_Reload(const uint8_t *ban, unsigned len)
 	AN(b2->spec);
 	memcpy(b2->spec, ban, len);
 	b2->flags |= gone;
+	if (ban[12])
+		b2->flags |= BAN_F_REQ;
 	if (b == NULL)
 		VTAILQ_INSERT_TAIL(&ban_head, b2, list);
 	else
@@ -581,10 +582,6 @@ BAN_Compile(void)
 
 	ASSERT_CLI();
 
-	/*
-	 * XXX: we need to derive the BAN_F_REQ flag from all the
-	 * XXX: all the loaded bans
-	 */
 	SMP_NewBan(ban_magic->spec, ban_len(ban_magic->spec));
 	ban_start = VTAILQ_FIRST(&ban_head);
 }
@@ -602,7 +599,7 @@ ban_evaluate(const uint8_t *bs, const struct http *objhttp,
 	char *arg1;
 
 	be = bs + ban_len(bs);
-	bs += 12;
+	bs += 13;
 	while (bs < be) {
 		(*tests)++;
 		ban_iter(&bs, &bt);
@@ -895,7 +892,7 @@ ban_render(struct cli *cli, const uint8_t *bs)
 	const uint8_t *be;
 
 	be = bs + ban_len(bs);
-	bs += 12;
+	bs += 13;
 	while (bs < be) {
 		ban_iter(&bs, &bt);
 		switch (bt.arg1) {
