@@ -480,7 +480,6 @@ struct object {
 	struct ws		ws_o[1];
 	unsigned char		*vary;
 
-	double			ban_t;
 	unsigned		response;
 
 	/* XXX: make bitmap */
@@ -649,14 +648,15 @@ int BAN_AddTest(struct cli *, struct ban *, const char *, const char *,
 void BAN_Free(struct ban *b);
 void BAN_Insert(struct ban *b);
 void BAN_Init(void);
-void BAN_NewObj(struct object *o);
+void BAN_NewObjCore(struct objcore *oc);
 void BAN_DestroyObj(struct objcore *oc);
 int BAN_CheckObject(struct object *o, const struct sess *sp);
-void BAN_Reload(double t0, unsigned flags, const char *ban);
+void BAN_Reload(const uint8_t *ban, unsigned len);
 struct ban *BAN_TailRef(void);
 void BAN_Compile(void);
 struct ban *BAN_RefBan(struct objcore *oc, double t0, const struct ban *tail);
 void BAN_TailDeref(struct ban **ban);
+double BAN_Time(const struct ban *ban);
 
 /* cache_center.c [CNT] */
 void CNT_Session(struct sess *sp);
@@ -931,7 +931,7 @@ void SMS_Finish(struct object *obj);
 /* storage_persistent.c */
 void SMP_Init(void);
 void SMP_Ready(void);
-void SMP_NewBan(double t0, const char *ban);
+void SMP_NewBan(const uint8_t *ban, unsigned len);
 
 /*
  * A normal pointer difference is signed, but we never want a negative value

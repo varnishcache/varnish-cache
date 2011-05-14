@@ -257,7 +257,7 @@ STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
 
 		o->objcore = sp->objcore;
 		sp->objcore = NULL;     /* refcnt follows pointer. */
-		BAN_NewObj(o);
+		BAN_NewObjCore(o->objcore);
 
 		o->objcore->methods = &default_oc_methods;
 		o->objcore->priv = o;

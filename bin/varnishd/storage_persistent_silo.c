@@ -463,11 +463,11 @@ smp_oc_updatemeta(struct objcore *oc)
 	if (sg == sg->sc->cur_seg) {
 		/* Lock necessary, we might race close_seg */
 		Lck_Lock(&sg->sc->mtx);
-		so->ban = o->ban_t;
+		so->ban = BAN_Time(oc->ban);
 		so->ttl = mttl;
 		Lck_Unlock(&sg->sc->mtx);
 	} else {
-		so->ban = o->ban_t;
+		so->ban = BAN_Time(oc->ban);
 		so->ttl = mttl;
 	}
 }

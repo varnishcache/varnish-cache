@@ -50,6 +50,7 @@
 #include "vsha256.h"
 #include "cli.h"
 #include "cli_priv.h"
+#include "vend.h"
 
 #include "persistent.h"
 #include "storage_persistent.h"
@@ -67,8 +68,8 @@ static VTAILQ_HEAD(,smp_sc)	silos = VTAILQ_HEAD_INITIALIZER(silos);
  */
 
 static void
-smp_appendban(struct smp_sc *sc, struct smp_signctx *ctx, double t0,
-    uint32_t flags, uint32_t len, const char *ban)
+smp_appendban(struct smp_sc *sc, struct smp_signctx *ctx,
+    uint32_t len, const uint8_t *ban)
 {
 	uint8_t *ptr, *ptr2;
 
@@ -78,14 +79,8 @@ smp_appendban(struct smp_sc *sc, struct smp_signctx *ctx, double t0,
 	memcpy(ptr, "BAN", 4);
 	ptr += 4;
 
-	memcpy(ptr, &t0, sizeof t0);
-	ptr += sizeof t0;
-
-	memcpy(ptr, &flags, sizeof flags);
-	ptr += sizeof flags;
-
-	memcpy(ptr, &len, sizeof len);
-	ptr += sizeof len;
+	vbe32enc(ptr, len);
+	ptr += 4;
 
 	memcpy(ptr, ban, len);
 	ptr += len;
@@ -96,14 +91,13 @@ smp_appendban(struct smp_sc *sc, struct smp_signctx *ctx, double t0,
 /* Trust that cache_ban.c takes care of locking */
 
 void
-SMP_NewBan(double t0, const char *ban)
+SMP_NewBan(const uint8_t *ban, unsigned ln)
 {
 	struct smp_sc *sc;
-	uint32_t l = strlen(ban) + 1;
 
 	VTAILQ_FOREACH(sc, &silos, list) {
-		smp_appendban(sc, &sc->ban1, t0, 0, l, ban);
-		smp_appendban(sc, &sc->ban2, t0, 0, l, ban);
+		smp_appendban(sc, &sc->ban1, ln, ban);
+		smp_appendban(sc, &sc->ban2, ln, ban);
 	}
 }
 
@@ -115,8 +109,7 @@ static int
 smp_open_bans(struct smp_sc *sc, struct smp_signctx *ctx)
 {
 	uint8_t *ptr, *pe;
-	double t0;
-	uint32_t flags, length;
+	uint32_t length;
 	int i, retval = 0;
 
 	ASSERT_CLI();
@@ -134,29 +127,15 @@ smp_open_bans(struct smp_sc *sc, struct smp_signctx *ctx)
 		}
 		ptr += 4;
 
-		memcpy(&t0, ptr, sizeof t0);
-		ptr += sizeof t0;
+		length = vbe32dec(ptr);
+		ptr += 4;
 
-		memcpy(&flags, ptr, sizeof flags);
-		ptr += sizeof flags;
-		if (flags != 0) {
-			retval = 1002;
-			break;
-		}
-
-		memcpy(&length, ptr, sizeof length);
-		ptr += sizeof length;
 		if (ptr + length > pe) {
 			retval = 1003;
 			break;
 		}
 
-		if (ptr[length - 1] != '\0') {
-			retval = 1004;
-			break;
-		}
-
-		BAN_Reload(t0, flags, (const char *)ptr);
+		BAN_Reload(ptr, length);
 
 		ptr += length;
 	}
@@ -523,7 +502,7 @@ smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 	memcpy(so->hash, oc->objhead->digest, DIGEST_LEN);
 	so->ttl = EXP_Grace(NULL, o);
 	so->ptr = (uint8_t*)o - sc->base;
-	so->ban = o->ban_t;
+	so->ban = BAN_Time(oc->ban);
 
 	smp_init_oc(oc, sg, objidx);
 
