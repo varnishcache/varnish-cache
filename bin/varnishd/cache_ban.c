@@ -69,25 +69,19 @@ struct ban {
 	uint8_t			*spec;
 };
 
+struct ban_test {
+	uint8_t			arg1;
+	const char		*arg1_spec;
+	uint8_t			oper;
+	const char		*arg2;
+	const void		*arg2_spec;
+};
+
 static VTAILQ_HEAD(banhead_s,ban) ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
 static struct lock ban_mtx;
 static struct ban *ban_magic;
 static pthread_t ban_thread;
 static struct ban * volatile ban_start;
-
-/*--------------------------------------------------------------------
- * Variables we can purge on
- */
-
-static const struct pvar {
-	const char		*name;
-	unsigned		flag;
-} pvars[] = {
-#define PVAR(a, b, c)	{ (a), (b) },
-#include "ban_vars.h"
-#undef PVAR
-	{ 0, 0}
-};
 
 /*--------------------------------------------------------------------
  * BAN string magic markers
@@ -101,6 +95,21 @@ static const struct pvar {
 #define BAN_ARG_URL	0x18
 #define BAN_ARG_REQHTTP	0x19
 #define BAN_ARG_OBJHTTP	0x1a
+
+/*--------------------------------------------------------------------
+ * Variables we can purge on
+ */
+
+static const struct pvar {
+	const char		*name;
+	unsigned		flag;
+	uint8_t			tag;
+} pvars[] = {
+#define PVAR(a, b, c)	{ (a), (b), (c) },
+#include "ban_vars.h"
+#undef PVAR
+	{ 0, 0, 0}
+};
 
 /*--------------------------------------------------------------------
  * Storage handling of bans
@@ -156,8 +165,8 @@ ban_CheckLast(void)
 }
 
 /*--------------------------------------------------------------------
- * Get & Release a tail reference, used to hold the list stable while
- * persistent storage loads.
+ * Get & Release a tail reference, used to hold the list stable for
+ * traversals etc.
  */
 
 struct ban *
@@ -237,6 +246,26 @@ ban_get_lump(const uint8_t **bs)
 }
 
 /*--------------------------------------------------------------------
+ * Pick a test apart from a spec string
+ */
+
+static void
+ban_iter(const uint8_t **bs, struct ban_test *bt)
+{
+
+	memset(bt, 0, sizeof *bt);
+	bt->arg1 = *(*bs)++;
+	if (bt->arg1 == BAN_ARG_REQHTTP || bt->arg1 == BAN_ARG_OBJHTTP) {
+		bt->arg1_spec = (char *)*bs;
+		(*bs) += (*bs)[0] + 2;
+	}
+	bt->arg2 = ban_get_lump(bs);
+	bt->oper = *(*bs)++;
+	if (bt->oper == BAN_OPER_MATCH || bt->oper == BAN_OPER_NMATCH) 
+		bt->arg2_spec = ban_get_lump(bs);
+}
+
+/*--------------------------------------------------------------------
  * Parse and add a http argument specification
  * Output something which HTTP_GetHdr understands
  */
@@ -303,36 +332,25 @@ BAN_AddTest(struct cli *cli, struct ban *b, const char *a1, const char *a2,
 	if (pv->flag & PVAR_REQ)
 		b->flags |= BAN_F_REQ;
 
-	if (pv->flag == PVAR_REQ) {
-		vsb_putc(b->vsb, BAN_ARG_URL);
-	} else if (pv->flag == (PVAR_REQ|PVAR_HTTP)) {
-		vsb_putc(b->vsb, BAN_ARG_REQHTTP);
+	vsb_putc(b->vsb, pv->tag);
+	if (pv->flag & PVAR_HTTP)
 		ban_parse_http(b, a1 + strlen(pv->name));
-	} else if (pv->flag == PVAR_HTTP) {
-		vsb_putc(b->vsb, BAN_ARG_OBJHTTP);
-		ban_parse_http(b, a1 + strlen(pv->name));
-	} else {
-		INCOMPL();
-	}
 
+	ban_add_lump(b, a3, strlen(a3) + 1);
 	if (!strcmp(a2, "~")) {
 		vsb_putc(b->vsb, BAN_OPER_MATCH);
-		ban_add_lump(b, a3, strlen(a3) + 1);
 		i = ban_parse_regexp(cli, b, a3);
 		if (i)
 			return (i);
 	} else if (!strcmp(a2, "!~")) {
 		vsb_putc(b->vsb, BAN_OPER_NMATCH);
-		ban_add_lump(b, a3, strlen(a3) + 1);
 		i = ban_parse_regexp(cli, b, a3);
 		if (i)
 			return (i);
 	} else if (!strcmp(a2, "==")) {
 		vsb_putc(b->vsb, BAN_OPER_EQ);
-		ban_add_lump(b, a3, strlen(a3) + 1);
 	} else if (!strcmp(a2, "!=")) {
 		vsb_putc(b->vsb, BAN_OPER_NEQ);
-		ban_add_lump(b, a3, strlen(a3) + 1);
 	} else {
 		cli_out(cli,
 		    "expected conditional (~, !~, == or !=) got \"%s\"", a2);
@@ -367,17 +385,15 @@ BAN_Insert(struct ban *b)
 	XXXAN(b->spec);
 
 	t0 = TIM_real();
-	assert(sizeof t0 == 8);
 	memcpy(b->spec, &t0, sizeof t0);
 
 	vbe32enc(b->spec + 8, ln + 12);
 
 	memcpy(b->spec + 12, vsb_data(b->vsb), ln);
+	ln += 12;
 
 	vsb_delete(b->vsb);
 	b->vsb = NULL;
-
-	ln += 12;
 
 	Lck_Lock(&ban_mtx);
 	VTAILQ_INSERT_HEAD(&ban_head, b, list);
@@ -499,29 +515,22 @@ BAN_Reload(const uint8_t *ban, unsigned len)
 {
 	struct ban *b, *b2;
 	int gone = 0;
-	double t0, t1, t2;
-	unsigned ln;
+	double t0, t1, t2 = 9e99;
 
 	ASSERT_CLI();
 
 	t0 = ban_time(ban);
-	ln = ban_len(ban);
-	assert(ln == len);
-
-	t2 = 9e99;
+	assert(len == ban_len(ban));
 	VTAILQ_FOREACH(b, &ban_head, list) {
 		t1 = ban_time(b->spec);
 		assert (t1 < t2);
 		t2 = t1;
-		
-		if (!memcmp(b->spec + 8, ban + 8, ln - 8)) {
-			if (t1 == t0)
-				return;
-			if (t1 > t0)
-				gone |= BAN_F_GONE;
-		}
+		if (t1 == t0)
+			return;
 		if (t1 < t0)
 			break;
+		if (!memcmp(b->spec + 8, ban + 8, len - 8))
+			gone |= BAN_F_GONE;
 	}
 
 	VSC_main->n_ban++;
@@ -529,9 +538,9 @@ BAN_Reload(const uint8_t *ban, unsigned len)
 
 	b2 = BAN_New();
 	AN(b2);
-	b2->spec = malloc(ln);
+	b2->spec = malloc(len);
 	AN(b2->spec);
-	memcpy(b2->spec, ban, ln);
+	memcpy(b2->spec, ban, len);
 	b2->flags |= gone;
 	if (b == NULL)
 		VTAILQ_INSERT_TAIL(&ban_head, b2, list);
@@ -542,14 +551,8 @@ BAN_Reload(const uint8_t *ban, unsigned len)
 	for (b = VTAILQ_NEXT(b2, list); b != NULL; b = VTAILQ_NEXT(b, list)) {
 		if (b->flags & BAN_F_GONE)
 			continue;
-		if (!memcmp(b->spec + 8, ban + 8, ln - 8))
+		if (!memcmp(b->spec + 8, ban + 8, len - 8))
 			b->flags |= BAN_F_GONE;
-	}
-	t2 = 9e99;
-	VTAILQ_FOREACH(b, &ban_head, list) {
-		t1 = ban_time(b->spec);
-		assert (t1 < t2);
-		t2 = t1;
 	}
 }
 
@@ -578,6 +581,10 @@ BAN_Compile(void)
 
 	ASSERT_CLI();
 
+	/*
+	 * XXX: we need to derive the BAN_F_REQ flag from all the
+	 * XXX: all the loaded bans
+	 */
 	SMP_NewBan(ban_magic->spec, ban_len(ban_magic->spec));
 	ban_start = VTAILQ_FIRST(&ban_head);
 }
@@ -590,65 +597,52 @@ static int
 ban_evaluate(const uint8_t *bs, const struct http *objhttp,
     const struct http *reqhttp, unsigned *tests)
 {
+	struct ban_test bt;
 	const uint8_t *be;
-	uint8_t op;
 	char *arg1;
-	const void *arg2;
-	int i;
-
-	(void)objhttp;
-	(void)reqhttp;
 
 	be = bs + ban_len(bs);
 	bs += 12;
 	while (bs < be) {
 		(*tests)++;
+		ban_iter(&bs, &bt);
 		arg1 = NULL;
-		switch (*bs) {
+		switch (bt.arg1) {
 		case BAN_ARG_URL:
 			arg1 = reqhttp->hd[HTTP_HDR_URL].b;
-			bs++;
 			break;
 		case BAN_ARG_REQHTTP:
-			(void)http_GetHdr(reqhttp,
-			    (const char *)(bs + 1), &arg1);
-			bs += bs[1] + 3;
+			(void)http_GetHdr(reqhttp, bt.arg1_spec, &arg1);
 			break;
 		case BAN_ARG_OBJHTTP:
-			(void)http_GetHdr(objhttp,
-			    (const char *)(bs + 1), &arg1);
-			bs += bs[1] + 3;
+			(void)http_GetHdr(objhttp, bt.arg1_spec, &arg1);
 			break;
 		default:
 			INCOMPL();
 		}
-		op = *bs++;
 
-		arg2 = ban_get_lump(&bs);
-
-		if (op == BAN_OPER_EQ) {
-			if (arg1 == NULL || strcmp(arg1, arg2))
+		switch (bt.oper) {
+		case BAN_OPER_EQ:
+			if (arg1 == NULL || strcmp(arg1, bt.arg2))
 				return (0);
-			continue;
-		} else if (op == BAN_OPER_NEQ) {
-			if (arg1 != NULL && !strcmp(arg1, arg2))
+			break;
+		case BAN_OPER_NEQ:
+			if (arg1 != NULL && !strcmp(arg1, bt.arg2))
 				return (0);
-			continue;
-		}
-
-		arg2 = ban_get_lump(&bs);
-
-		if (op == BAN_OPER_MATCH) {
-			i = pcre_exec(arg2, NULL, arg1, strlen(arg1),
-			    0, 0, NULL, 0);
-			if (i < 0)
+			break;
+		case BAN_OPER_MATCH:
+			if (arg1 == NULL ||
+			    pcre_exec(bt.arg2_spec, NULL, arg1, strlen(arg1),
+			    0, 0, NULL, 0) < 0)
 				return (0);
-		} else if (op == BAN_OPER_NMATCH) {
-			i = pcre_exec(arg2, NULL, arg1, strlen(arg1),
-			    0, 0, NULL, 0);
-			if (i >= 0)
+			break;
+		case BAN_OPER_NMATCH:
+			if (arg1 != NULL &&
+			    pcre_exec(bt.arg2_spec, NULL, arg1, strlen(arg1),
+			    0, 0, NULL, 0) >= 0)
 				return (0);
-		} else {
+			break;
+		default:
 			INCOMPL();
 		}
 	}
@@ -897,54 +891,40 @@ ccf_ban_url(struct cli *cli, const char * const *av, void *priv)
 static void
 ban_render(struct cli *cli, const uint8_t *bs)
 {
+	struct ban_test bt;
 	const uint8_t *be;
-	const void *arg2;
-	uint8_t op;
 
 	be = bs + ban_len(bs);
 	bs += 12;
 	while (bs < be) {
-		switch (*bs) {
+		ban_iter(&bs, &bt);
+		switch (bt.arg1) {
 		case BAN_ARG_URL:
 			cli_out(cli, "req.url");
-			bs++;
 			break;
 		case BAN_ARG_REQHTTP:
-			cli_out(cli, "req.http.%.*s", bs[1] - 1, bs + 2);
-			bs += bs[1] + 3;
+			cli_out(cli, "req.http.%.*s",
+			    bt.arg1_spec[0] - 1, bt.arg1_spec + 1);
 			break;
 		case BAN_ARG_OBJHTTP:
-			cli_out(cli, "obj.http.%.*s", bs[1] - 1, bs + 2);
-			bs += bs[1] + 3;
+			cli_out(cli, "obj.http.%.*s",
+			    bt.arg1_spec[0] - 1, bt.arg1_spec + 1);
 			break;
 		default:
 			INCOMPL();
 		}
-		op = *bs++;
-		arg2 = ban_get_lump(&bs);
-		switch (op) {
-		case BAN_OPER_EQ:
-			cli_out(cli, " == ");
-			break;
-		case BAN_OPER_NEQ:
-			cli_out(cli, " != ");
-			break;
-		case BAN_OPER_MATCH:
-			cli_out(cli, " ~ ");
-			(void)ban_get_lump(&bs);
-			break;
-		case BAN_OPER_NMATCH:
-			cli_out(cli, " !~ ");
-			(void)ban_get_lump(&bs);
-			break;
+		switch (bt.oper) {
+		case BAN_OPER_EQ:	cli_out(cli, " == "); break;
+		case BAN_OPER_NEQ:	cli_out(cli, " != "); break;
+		case BAN_OPER_MATCH:	cli_out(cli, " ~ "); break;
+		case BAN_OPER_NMATCH:	cli_out(cli, " !~ "); break;
 		default:
 			INCOMPL();
 		}
-		cli_out(cli, "%s", arg2);
+		cli_out(cli, "%s", bt.arg2);
 		if (bs < be)
 			cli_out(cli, " && ");
 	}
-	cli_out(cli, "\n");
 }
 
 static void
@@ -965,6 +945,7 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 		    bl == b ? b->refcount - 1 : b->refcount,
 		    b->flags & BAN_F_GONE ? "G" : " ");
 		ban_render(cli, b->spec);
+		cli_out(cli, "\n");
 	}
 
 	BAN_TailDeref(&bl);
