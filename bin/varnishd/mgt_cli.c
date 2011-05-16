@@ -404,7 +404,7 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident, mgt_cli_close_f 
 	if (cls == NULL)
 		mgt_cli_init_cls();
 
-	cli = CLS_AddFd(cls, fdi, fdo, closefunc, priv, MCF_NOAUTH);
+	cli = CLS_AddFd(cls, fdi, fdo, closefunc, priv);
 
 	cli->ident = strdup(ident);
 

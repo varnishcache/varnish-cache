@@ -390,8 +390,7 @@ CLS_New(cls_cbc_f *before, cls_cbc_f *after, unsigned maxlen)
 }
 
 struct cli *
-CLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv,
-    unsigned auth)
+CLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 {
 	struct cls_fd *cfd;
 
@@ -407,7 +406,6 @@ CLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv,
 	cfd->cli->magic = CLI_MAGIC;
 	cfd->cli->vlu = VLU_New(cfd, cls_vlu, cs->maxlen);
 	cfd->cli->sb = vsb_new_auto();
-	cfd->cli->auth = auth;
 	cfd->closefunc = closefunc;
 	cfd->priv = priv;
 	AN(cfd->cli->sb);
