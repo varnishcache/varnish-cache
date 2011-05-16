@@ -518,7 +518,7 @@ vcc_Eval_Var(struct vcc *tl, struct expr **e, const struct symbol *sym)
 void
 vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 {
-	const char *p, *q, *r;
+	const char *p, *r;
 	struct expr *e1, *e2;
 	enum var_type fmt;
 	char buf[32];
@@ -529,8 +529,7 @@ vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 	SkipToken(tl, ID);
 	SkipToken(tl, '(');
 	p = sym->args;
-	e2 = vcc_mk_expr(vcc_arg_type(&p), "%s(sp, \v+", sym->cfunc);
-	q = "\v1\n\v2";
+	e2 = vcc_mk_expr(vcc_arg_type(&p), "%s(sp\v+", sym->cfunc);
 	while (*p != '\0') {
 		e1 = NULL;
 		fmt = vcc_arg_type(&p);
@@ -619,8 +618,7 @@ vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 			if (*p != '\0')
 				SkipToken(tl, ',');
 		}
-		e2 = vcc_expr_edit(e2->fmt, q, e2, e1);
-		q = "\v1,\n\v2";
+		e2 = vcc_expr_edit(e2->fmt, "\v1,\n\v2", e2, e1);
 	}
 	SkipToken(tl, ')');
 	e2 = vcc_expr_edit(e2->fmt, "\v1\n)\v-", e2, NULL);
