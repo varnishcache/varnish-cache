@@ -534,7 +534,7 @@ vsb_quote(struct vsb *s, const char *p, int len, int how)
 		len = strlen(p);
 
 	for (q = p; q < p + len; q++) {
-		if (!isgraph(*q) || *q == '"') {
+		if (!isgraph(*q) || *q == '"' || *q == '\\') {
 			quote++;
 			break;
 		}
