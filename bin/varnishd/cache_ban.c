@@ -236,12 +236,12 @@ ban_add_lump(const struct ban *b, const void *p, uint32_t len)
 static const void *
 ban_get_lump(const uint8_t **bs)
 {
-	void *r;
+	const void *r;
 	unsigned ln;
 
 	ln = vbe32dec(*bs);
 	*bs += 4;
-	r = (void*)*bs;
+	r = (const void*)*bs;
 	*bs += ln;
 	return (r);
 }
