@@ -107,7 +107,7 @@ CLI_Run(void)
 
 	add_check = 1;
 
-	AN(CLS_AddFd(cls, heritage.cli_in, heritage.cli_out, NULL, NULL));
+	AN(CLS_AddFd(cls, heritage.cli_in, heritage.cli_out, NULL, NULL, 1));
 
 	do {
 		i = CLS_Poll(cls, -1);

@@ -32,7 +32,7 @@ typedef void cls_cb_f(void *priv);
 typedef void cls_cbc_f(const struct cli*);
 struct cls *CLS_New(cls_cbc_f *before, cls_cbc_f *after, unsigned maxlen);
 struct cli *CLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc,
-    void *priv);
+    void *priv, unsigned auth);
 int CLS_AddFunc(struct cls *cs, unsigned auth, struct cli_proto *clp);
 int CLS_Poll(struct cls *cs, int timeout);
 int CLS_PollFd(struct cls *cs, int fd, int timeout);
