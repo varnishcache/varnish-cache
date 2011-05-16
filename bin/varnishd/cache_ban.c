@@ -257,7 +257,7 @@ ban_iter(const uint8_t **bs, struct ban_test *bt)
 	memset(bt, 0, sizeof *bt);
 	bt->arg1 = *(*bs)++;
 	if (bt->arg1 == BAN_ARG_REQHTTP || bt->arg1 == BAN_ARG_OBJHTTP) {
-		bt->arg1_spec = (char *)*bs;
+		bt->arg1_spec = (const char *)*bs;
 		(*bs) += (*bs)[0] + 2;
 	}
 	bt->arg2 = ban_get_lump(bs);
