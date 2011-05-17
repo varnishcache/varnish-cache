@@ -382,8 +382,10 @@ struct storage {
 	unsigned		len;
 	unsigned		space;
 
+#ifdef SENDFILE_WORKS
 	int			fd;
 	off_t			where;
+#endif
 };
 
 /* Object core structure ---------------------------------------------

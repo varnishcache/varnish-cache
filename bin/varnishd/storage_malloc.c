@@ -95,7 +95,9 @@ sma_alloc(struct stevedore *st, size_t size)
 	}
 	sma->s.len = 0;
 	sma->s.space = size;
+#ifdef SENDFILE_WORKS
 	sma->s.fd = -1;
+#endif
 	sma->s.stevedore = st;
 	sma->s.magic = STORAGE_MAGIC;
 	return (&sma->s);

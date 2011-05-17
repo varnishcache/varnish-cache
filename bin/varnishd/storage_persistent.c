@@ -450,7 +450,9 @@ smp_allocx(struct stevedore *st, size_t min_size, size_t max_size,
 	ss->space = max_size;
 	ss->priv = sc;
 	ss->stevedore = st;
+#ifdef SENDFILE_WORKS
 	ss->fd = sc->fd;
+#endif
 	if (ssg != NULL)
 		*ssg = sg;
 	return (ss);
