@@ -374,6 +374,12 @@ struct workreq {
 struct storage {
 	unsigned		magic;
 #define STORAGE_MAGIC		0x1a4e51c0
+
+#ifdef SENDFILE_WORKS
+	int			fd;
+	off_t			where;
+#endif
+
 	VTAILQ_ENTRY(storage)	list;
 	struct stevedore	*stevedore;
 	void			*priv;
@@ -381,11 +387,6 @@ struct storage {
 	unsigned char		*ptr;
 	unsigned		len;
 	unsigned		space;
-
-#ifdef SENDFILE_WORKS
-	int			fd;
-	off_t			where;
-#endif
 };
 
 /* Object core structure ---------------------------------------------
