@@ -92,6 +92,8 @@ returns =(
 	('fetch',	('error', 'restart', 'hit_for_pass', 'deliver',)),
 	('deliver',	('restart', 'deliver',)),
 	('error',	('restart', 'deliver',)),
+	('init',	('ok',)),
+	('fini',	('ok',)),
 )
 
 #######################################################################
@@ -750,8 +752,8 @@ struct VCL_conf {
 	const char	**srcname;
 	const char	**srcbody;
 
-	vcl_init_f	*init_func;
-	vcl_fini_f	*fini_func;
+	vcl_init_f	*init_vcl;
+	vcl_fini_f	*fini_vcl;
 """)
 
 for i in returns:

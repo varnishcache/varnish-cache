@@ -166,17 +166,22 @@ vsb_newbuf(struct vsb *s, char *buf, int length, int flags)
 {
 
 	memset(s, 0, sizeof(*s));
-	s->s_flags = flags;
 	s->s_magic = VSB_MAGIC;
-
-	if (buf != NULL) {
-		s->s_size = length;
-		s->s_buf = buf;
-		return (s);
-	}
+	s->s_flags = flags;
 	s->s_size = length;
+	s->s_buf = buf;
+
+	if ((s->s_flags & VSB_AUTOEXTEND) == 0) {
+		KASSERT(s->s_size > 1,
+		    ("attempt to create a too small vsb"));
+	}
+
+	if (s->s_buf != NULL)
+		return (s);
+
 	if ((flags & VSB_AUTOEXTEND) != 0)
 		s->s_size = vsb_extendsize(s->s_size);
+
 	s->s_buf = SBMALLOC(s->s_size);
 	if (s->s_buf == NULL)
 		return (NULL);
@@ -243,7 +248,7 @@ vsb_setpos(struct vsb *s, ssize_t pos)
 	    ("attempt to seek to a negative position (%jd)", (intmax_t)pos));
 	KASSERT(pos < s->s_size,
 	    ("attempt to seek past end of vsb (%jd >= %jd)",
-	    (intmax_t)pos, (intmax_t)->s_size));
+	    (intmax_t)pos, (intmax_t)s->s_size));
 
 	if (pos < 0 || pos > s->s_len)
 		return (-1);
