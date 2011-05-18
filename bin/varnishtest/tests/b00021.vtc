@@ -5,13 +5,13 @@ feature SO_RCVTIMEO_WORKS
 server s1 {
 	rxreq
 	send "HTTP/1.1 200 Ok\r\nConnection: close\r\n\r\n"
-	delay 1.5
+	delay 4.0
 	send "Baba\n"
 } -start
 
 varnish v1 -vcl+backend {
 	sub vcl_miss {
-		set bereq.between_bytes_timeout = 1s;
+		set bereq.between_bytes_timeout = 2s;
 	}
 } -start
 
@@ -24,14 +24,22 @@ client c1 {
 server s1 {
 	rxreq
 	send "HTTP/1.1 200 Ok\r\nConnection: close\r\n\r\n"
-	delay 0.5
+	delay 1.0
 	send "Baba\n"
-	delay 0.5
+	delay 1.0
+	send "Baba\n"
+	delay 1.0
+	send "Baba\n"
+	delay 1.0
+	send "Baba\n"
+	delay 1.0
 	send "Baba\n"
 } -start
 
 client c1 {
 	txreq
+	timeout 10
 	rxresp
 	expect resp.status == 200
+	expect resp.bodylen == 25
 } -run
