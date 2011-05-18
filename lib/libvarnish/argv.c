@@ -154,7 +154,7 @@ ParseArgv(const char *s, int *argc, int flag)
 		}
 		if ((flag & ARGV_COMMENT) && *s == '#')
 			break;
-		if (*s == '"') {
+		if (*s == '"' && !(flag & ARGV_NOESC)) {
 			p = ++s;
 			quote = 1;
 		} else {
@@ -179,7 +179,7 @@ ParseArgv(const char *s, int *argc, int flag)
 				s++;
 				continue;
 			}
-			if (*s == '"')
+			if (*s == '"' && !(flag & ARGV_NOESC))
 				break;
 			if (*s == '\0') {
 				argv[0] = err_missing_quote;
@@ -191,7 +191,15 @@ ParseArgv(const char *s, int *argc, int flag)
 			argv = realloc(argv, sizeof (*argv) * (largv += largv));
 			assert(argv != NULL);
 		}
-		argv[nargv++] = BackSlashDecode(p, s);
+		if (flag & ARGV_NOESC) {
+			argv[nargv] = malloc(1 + (s - p));
+			assert(argv[nargv] != NULL);
+			memcpy(argv[nargv], p, s - p);
+			argv[nargv][s - p] = '\0';
+			nargv++;
+		} else {
+			argv[nargv++] = BackSlashDecode(p, s);
+		}
 		if (*s != '\0')
 			s++;
 	}
