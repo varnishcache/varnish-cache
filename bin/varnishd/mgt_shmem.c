@@ -206,7 +206,7 @@ mgt_SHM_Init(const char *l_arg)
 	if (l_arg == NULL)
 		l_arg = "";
 
-	av = ParseArgv(l_arg, ARGV_COMMA);
+	av = ParseArgv(l_arg, NULL, ARGV_COMMA);
 	AN(av);
 	if (av[0] != NULL)
 		ARGV_ERR("\t-l ...: %s", av[0]);

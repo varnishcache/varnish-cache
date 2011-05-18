@@ -185,7 +185,7 @@ tackle_warg(const char *argv)
 	char **av;
 	unsigned int u;
 
-	av = ParseArgv(argv, ARGV_COMMA);
+	av = ParseArgv(argv, NULL, ARGV_COMMA);
 	AN(av);
 
 	if (av[0] != NULL)
