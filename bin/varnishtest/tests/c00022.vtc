@@ -21,7 +21,7 @@ server s1 {
 varnish v1 -vcl+backend { 
 	sub vcl_recv {
 		if (req.request == "PURGE") {
-			ban (req.url == req.url);
+			ban ("req.url == " + req.url);
 			error 410;
 		}
 		if (req.request == "PURGESTR") {
@@ -30,26 +30,6 @@ varnish v1 -vcl+backend {
 		}
 	}
 } -start
-
-# Trigger syntax check 
-varnish v1 -badvcl {
-	backend foo {
-		.host = "127.0.0.1";
-	}
-	sub vcl_recv {
-		ban (req.foo == req.url);
-	}
-}
-
-# Trigger syntax check 
-varnish v1 -badvcl {
-	backend foo {
-		.host = "127.0.0.1";
-	}
-	sub vcl_recv {
-		ban (req.http. == req.url);
-	}
-}
 
 # Fetch into cache
 client c1 {
