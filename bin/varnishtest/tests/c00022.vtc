@@ -93,7 +93,7 @@ client c1 {
 
 # Ban: it
 client c1 {
-	txreq -req PURGESTR -hdr "Ban: obj.http.foo == \"bar6\""
+	txreq -req PURGESTR -hdr "Ban: obj.http.foo == bar6"
 	rxresp
 	expect resp.status == 410
 } -run
@@ -110,10 +110,11 @@ client c1 {
 
 # Ban: something else
 client c1 {
-	txreq -req PURGESTR -hdr "Ban: obj.http.foo == \"bar6\""
+	txreq -req PURGESTR -hdr "Ban: obj.http.foo == bar6"
 	rxresp
 	expect resp.status == 410
 } -run
+
 varnish v1 -cliok "ban.list"
 
 # Still there
@@ -127,7 +128,7 @@ client c1 {
 
 # Header match
 client c1 {
-	txreq -req PURGESTR -hdr "Ban: req.http.foo == \"barcheck\""
+	txreq -req PURGESTR -hdr "Ban: req.http.foo == barcheck"
 	rxresp
 	expect resp.status == 410
 } -run
@@ -143,7 +144,7 @@ client c1 {
 
 # Header match
 client c1 {
-	txreq -req PURGESTR -hdr "Ban: obj.http.foo == \"barcheck\""
+	txreq -req PURGESTR -hdr "Ban: obj.http.foo == barcheck"
 	rxresp
 	expect resp.status == 410
 } -run

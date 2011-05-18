@@ -467,7 +467,7 @@ VRT_ban_string(struct sess *sp, const char *str)
 	int i;
 
 	(void)sp;
-	av = ParseArgv(str, NULL, 0);
+	av = ParseArgv(str, NULL, ARGV_NOESC);
 	if (av[0] != NULL) {
 		/* XXX: report error how ? */
 		FreeArgv(av);
