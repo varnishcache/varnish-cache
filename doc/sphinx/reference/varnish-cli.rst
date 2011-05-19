@@ -106,8 +106,6 @@ ban   *field operator argument* [&& field operator argument [...]]
       examples.
 
 ban.list
-      Display the ban list.
-
       All requests for objects from the cache are matched against
       items on the ban list.  If an object in the cache is older than
       a matching ban list item, it is considered "banned", and will be
@@ -115,6 +113,28 @@ ban.list
 
       When a ban expression is older than all the objects in the
       cache, it is removed from the list.
+
+      ban.list displays the ban list. The output looks something like
+      this (broken into two lines):
+
+      0x7fea4fcb0580 1303835108.618863   131G   req.http.host ~ 
+      www.myhost.com && req.url ~ /some/url
+
+      The first field is the address of the ban. 
+
+      The second is the time of entry into the list, given
+      as a high precision timestamp.
+
+      The third field describes many objects point to this ban. When
+      an object is compared to a ban the object is marked with a
+      reference to the newest ban it was tested against. This isn't
+      really useful unless you're debugging.
+
+      A "G" marks that the ban is "Gone". Meaning it has been marked
+      as a duplicate or it is no longer valid. It stays in the list
+      for effiency reasons.
+
+      Then follows the actual ban it self.
 
 ban.url regexp
       Immediately invalidate all documents whose URL matches the
