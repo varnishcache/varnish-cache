@@ -1,6 +1,11 @@
 #
 
 CHANGELOGS = \
+	changes-2.1.5.html \
+	changes-2.1.4.html \
+	changes-2.1.3.html \
+	changes-2.1.2.html \
+	changes-2.1.1.html \
 	changes-2.1.0.html \
 	changes-2.0.6.html \
 	changes-2.0.5.html \
@@ -15,6 +20,11 @@ CHANGELOGS = \
 	changes-1.0.4.html
 
 XML = \
+	changes-2.1.4-2.1.5.xml \
+	changes-2.1.3-2.1.4.xml \
+	changes-2.1.2-2.1.3.xml \
+	changes-2.1.1-2.1.2.xml \
+	changes-2.1.0-2.1.1.xml \
 	changes-2.0.6-2.1.0.xml \
 	changes-2.0.5-2.0.6.xml \
 	changes-2.0.4-2.0.5.xml \
@@ -34,7 +44,8 @@ all: ${CHANGELOGS}
 endif
 
 EXTRA_DIST = ${CHANGELOGS} ${XML} \
-	changes.css changes-html.xsl
+	changes.css changes-html.xsl \
+	changes.rst changes.html
 
 CLEANFILES = ${CHANGELOGS}
 SUFFIXES = .xml .html
@@ -48,6 +59,17 @@ else
 	@echo "========================================"
 	@false
 endif
+
+changes.html: changes.rst
+if HAVE_RST2HTML
+	${RST2HTML} $? $@
+else
+	@echo "========================================"
+	@echo "You need rst2html installed to make dist"
+	@echo "========================================"
+	@false
+endif
+
 
 ${CHANGELOGS}: changes-html.xsl
 

@@ -140,7 +140,7 @@ ban.url regexp
       Immediately invalidate all documents whose URL matches the
       specified regular expression. Please note that the Host part of
       the URL is ignored, so if you have several virtual hosts all of
-      them will be purged. Use *ban* to specify a complete ban if you
+      them will be banned. Use *ban* to specify a complete ban if you
       need to narrow it down.
 
 quit
@@ -300,16 +300,16 @@ EXAMPLES
 ========
 
 Simple example: All requests where req.url exactly matches the string
-/news are purged from the cache:::
+/news are banned from the cache:::
 
     req.url == "/news"
 
-Example: Purge all documents where the name does not end with ".ogg",
+Example: Ban all documents where the name does not end with ".ogg",
 and where the size of the object is greater than 10 megabytes:::
 
     req.url !~ "\.ogg$" && obj.size > 10MB
 
-Example: Purge all documents where the serving host is "example.com"
+Example: Ban all documents where the serving host is "example.com"
 or "www.example.com", and where the Set-Cookie header received from
 the backend contains "USERID=1663":::
 

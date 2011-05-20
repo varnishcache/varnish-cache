@@ -324,7 +324,6 @@ regsuball(str, regex, sub)
   As regsuball() but this replaces all occurrences.
 
 ban(ban expression)
-  Executes a ban.
 
 ban_url(regex)
   Bans all objects in cache whose URLs match regex.
@@ -526,7 +525,7 @@ Example:::
 
 	# in file "main.vcl"
 	include "backends.vcl";
-	include "purge.vcl";
+	include "ban.vcl";
 
 	# in file "backends.vcl"
 	sub vcl_recv {
@@ -537,11 +536,11 @@ Example:::
 	  }
 	}
 
-	# in file "purge.vcl"
+	# in file "ban.vcl"
 	sub vcl_recv {
 	  if (client.ip ~ admin_network) {
 	    if (req.http.Cache-Control ~ "no-cache") {
-	      purge_url(req.url);
+	      ban_url(req.url);
 	    }
 	  }
 	}
@@ -861,14 +860,15 @@ for object invalidation:::
 
   sub vcl_hit {
     if (req.request == "PURGE") {
-      set obj.ttl = 0s;
+      purge;
       error 200 "Purged.";
     }
   }
 
   sub vcl_miss {
     if (req.request == "PURGE") {
-    error 404 "Not in cache.";
+      purge;
+      error 200 "Purged.";
     }
   }
 

@@ -28,6 +28,16 @@
  *
  */
 
+#include "vqueue.h"
+
+struct vsl_re_match {
+	unsigned			magic;
+#define VSL_RE_MATCH_MAGIC		0x4013151e
+	int				tag;
+	vre_t				*re;
+	VTAILQ_ENTRY(vsl_re_match)	next;
+};
+
 struct vsl {
 	unsigned		magic;
 #define VSL_MAGIC		0x7a31db38
@@ -73,7 +83,10 @@ struct vsl {
 	int			regflags;
 	vre_t			*regincl;
 	vre_t			*regexcl;
+	int			num_matchers;
+	VTAILQ_HEAD(, vsl_re_match) matchers;
 
 	unsigned long		skip;
 	unsigned long		keep;
 };
+

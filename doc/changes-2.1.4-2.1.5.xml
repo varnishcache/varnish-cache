@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE group [
+<!ENTITY mdash "&#8212;">
+]>
+<group from="2.1.4" to="2.1.5">
+  <subsystem>
+    <name>varnishd</name>
+    <change type="bug" ref="801">
+      <para>On pass from vcl_recv, we did not remove the backends Content-Length
+      header before adding our own. This could cause confusion for
+      browsers and has been fixed.</para>
+    </change>
+   
+    <change type="bug" ref="806">
+      <para>Make pass with content-length work again. An issue with regards
+      to 304, Content-Length and pass has been resolved.</para>
+    </change>
+
+    <change type="bug" ref="803">
+      <para>An issue relating to passed requests with If-Modified-Since
+      headers has been fixed. Varnish did not recognize that the
+      304-response did not have a body.</para>
+    </change>
+   
+    <change type="bug">
+      <para>A potential lock-inversion with the ban lurker thread has been
+      resolved.</para>
+    </change>
+
+    <change type="bug">
+      <para>Several build-dependency issues relating to rst2man have been
+      fixed. Varnish should now build from source without rst2man if you
+      are using tar-balls.</para>
+    </change>
+
+    <change type="bug" ref="780">
+      <para>Ensure Varnish reads the expected last CRLF after chunked data
+      from the backend. This allows re-use of the connection.</para>
+    </change>
+
+    <change type="bug">
+      <para>Remove a GNU Make-ism during <code>make dist</code> to make BSD
+      happier.</para>
+    </change>
+
+    <change type="enh">
+      <para>Document the log, set, unset, return and restart statements in
+      the VCL documentation.</para>
+    </change>
+
+    <change type="bug" ref="808">
+      <para>Fix an embarrassingly old bug where Varnish would run out of
+      workspace when requests come in fast over a single connection,
+      typically during synthetic benchmarks.</para>
+    </change>
+
+    <change type="bug" ref="795">
+      <para>Varnish will now allow <code>If-Modified-Since</code> requests
+      to objects without a <code>Last-Modified</code>-header, and instead
+      use the time the object was cached instead.</para>
+    </change>
+
+    <change type="bug" ref="789">
+      <para>Do not filter out <code>Content-Range</code> headers in
+      pass.</para>
+    </change>
+
+    <change type="enh">
+      <para>Require -d, -b, -f, -S or -T when starting Varnishd. In human
+      terms, this means that it is legal to start varnishd without a Vcl or
+      backend, but only if you have a CLI channel of some kind.</para>
+    </change>
+
+    <change type="bug">
+      <para>Don't suppress <code>Cache-Control</code> headers in pass
+      responses.</para>
+    </change>
+
+    <change type="enh">
+      <para>Merge multi-line Cache-Control and Vary header fields. Until
+      now, no browsers have needed this, but Chromium seems to find it
+      necessary to spread its Cache-Control across two lines, and we get to
+      deal with it.</para>
+    </change>
+
+    <change type="bug" ref="812">
+      <para>Make new-purge not touch busy objects. This fixes a potential
+      crash when calling <code>VRT_purge</code>.</para>
+    </change>
+    
+    <change type="enh">
+      <para>If there are everal grace-able objects, pick the least expired
+      one.</para>
+    </change>
+
+    <change type="bug" ref="817">
+      <para>Fix an issue with <code>varnishadm -T :6082</code>
+      shorthand.</para>
+    </change>
+
+    <change type="enh">
+      <para>Add bourn-shell like "here" documents on the CLI. Typical
+      usage:
+      <code>
+      vcl.inline vcl_new &lt;&lt; 42
+      backend foo {...}
+      sub vcl_recv {...}
+      42
+      </code></para>
+    </change>
+
+    <change type="enh">
+      <para>Add CLI version to the CLI-banner, starting with version 1.0 to
+      mark here-documents.</para>
+    </change>
+
+    <change type="bug">
+      <para>Fix a problem with the expiry thread slacking off during high
+      load.</para>
+    </change>
+
+  </subsystem>
+
+  <subsystem>
+    <name>varnishtest</name>
+    <change type="bug" ref="804">
+      <para>Remove no longer existing <code>-L</code> option.</para>
+    </change>
+  </subsystem>
+
+
+</group>

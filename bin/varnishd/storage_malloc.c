@@ -95,7 +95,9 @@ sma_alloc(struct stevedore *st, size_t size)
 	}
 	sma->s.len = 0;
 	sma->s.space = size;
+#ifdef SENDFILE_WORKS
 	sma->s.fd = -1;
+#endif
 	sma->s.stevedore = st;
 	sma->s.magic = STORAGE_MAGIC;
 	return (&sma->s);
@@ -187,6 +189,9 @@ sma_init(struct stevedore *parent, int ac, char * const *av)
 		ARGV_ERR("(-smalloc) size \"%s\": %s\n", av[0], e);
 	if ((u != (uintmax_t)(size_t)u))
 		ARGV_ERR("(-smalloc) size \"%s\": too big\n", av[0]);
+	if (u < 1024*1024)
+		ARGV_ERR("(-smalloc) size \"%s\": too small, "
+			 "did you forget to specify M or G?\n", av[0]);
 
 	printf("SMA.%s: max size %ju MB.\n", parent->ident,
 	    u / (1024 * 1024));

@@ -123,7 +123,7 @@ vsc_sf_arg(const struct VSM_data *vd, const char *opt)
 			vsc->sf_init = 1;
 	}
 
-	av = ParseArgv(opt, ARGV_COMMA);
+	av = ParseArgv(opt, NULL, ARGV_COMMA);
 	AN(av);
 	if (av[0] != NULL) {
 		vd->diag(vd->priv, "Parse error: %s", av[0]);

@@ -166,7 +166,8 @@ cnt_prepresp(struct sess *sp)
 
 	sp->wrk->res_mode = 0;
 
-	if (!sp->wrk->do_stream)
+	if (!sp->wrk->do_stream ||
+	    (sp->wrk->h_content_length != NULL && !sp->wrk->do_gunzip))
 		sp->wrk->res_mode |= RES_LEN;
 
 	if (!sp->disable_esi && sp->obj->esidata != NULL) {
@@ -785,7 +786,7 @@ cnt_fetchbody(struct sess *sp)
 	if (http_GetHdr(hp, H_Last_Modified, &b))
 		sp->obj->last_modified = TIM_parse(b);
 	else
-		sp->obj->last_modified = sp->wrk->entered;
+		sp->obj->last_modified = floor(sp->wrk->entered);
 
 	assert(WRW_IsReleased(sp->wrk));
 

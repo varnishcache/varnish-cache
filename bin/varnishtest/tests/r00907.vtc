@@ -1,0 +1,23 @@
+varnishtest "Ticket #907 200/304 handling with Etags + Last-Modified"
+
+server s1 {
+	rxreq 
+	txresp \
+	       -hdr "ETag: saengei1Ohshicich4iteesu"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_deliver {
+		set resp.http.x-timestamp = now;
+	}
+} -start 
+
+client c1 {
+	txreq -hdr "If-None-Match: saengei1Ohshicich4iteesu"
+	rxresp
+	expect resp.status == 304
+	txreq -hdr "If-None-Match: saengei1Ohshicich4iteesu" \
+	      -hdr "If-Modified-Since: ${date}"
+	rxresp
+	expect resp.status == 304
+} -run

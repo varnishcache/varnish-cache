@@ -91,7 +91,9 @@ SMS_Makesynth(struct object *obj)
 	sto->priv = vsb;
 	sto->len = 0;
 	sto->space = 0;
+#ifdef SENDFILE_WORKS
 	sto->fd = -1;
+#endif
 	sto->stevedore = &sms_stevedore;
 	sto->magic = STORAGE_MAGIC;
 

@@ -374,6 +374,12 @@ struct workreq {
 struct storage {
 	unsigned		magic;
 #define STORAGE_MAGIC		0x1a4e51c0
+
+#ifdef SENDFILE_WORKS
+	int			fd;
+	off_t			where;
+#endif
+
 	VTAILQ_ENTRY(storage)	list;
 	struct stevedore	*stevedore;
 	void			*priv;
@@ -381,9 +387,6 @@ struct storage {
 	unsigned char		*ptr;
 	unsigned		len;
 	unsigned		space;
-
-	int			fd;
-	off_t			where;
 };
 
 /* Object core structure ---------------------------------------------
@@ -480,7 +483,6 @@ struct object {
 	struct ws		ws_o[1];
 	unsigned char		*vary;
 
-	double			ban_t;
 	unsigned		response;
 
 	/* XXX: make bitmap */
@@ -649,14 +651,15 @@ int BAN_AddTest(struct cli *, struct ban *, const char *, const char *,
 void BAN_Free(struct ban *b);
 void BAN_Insert(struct ban *b);
 void BAN_Init(void);
-void BAN_NewObj(struct object *o);
+void BAN_NewObjCore(struct objcore *oc);
 void BAN_DestroyObj(struct objcore *oc);
 int BAN_CheckObject(struct object *o, const struct sess *sp);
-void BAN_Reload(double t0, unsigned flags, const char *ban);
+void BAN_Reload(const uint8_t *ban, unsigned len);
 struct ban *BAN_TailRef(void);
 void BAN_Compile(void);
 struct ban *BAN_RefBan(struct objcore *oc, double t0, const struct ban *tail);
-void BAN_Deref(struct ban **ban);
+void BAN_TailDeref(struct ban **ban);
+double BAN_Time(const struct ban *ban);
 
 /* cache_center.c [CNT] */
 void CNT_Session(struct sess *sp);
@@ -703,18 +706,17 @@ struct vgz *VGZ_NewUngzip(struct sess *sp, const char *id);
 struct vgz *VGZ_NewGzip(struct sess *sp, const char *id);
 void VGZ_Ibuf(struct vgz *, const void *, ssize_t len);
 int VGZ_IbufEmpty(const struct vgz *vg);
-void VGZ_Obuf(struct vgz *, const void *, ssize_t len);
+void VGZ_Obuf(struct vgz *, void *, ssize_t len);
 int VGZ_ObufFull(const struct vgz *vg);
 int VGZ_ObufStorage(const struct sess *sp, struct vgz *vg);
 int VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
 int VGZ_Gunzip(struct vgz *, const void **, size_t *len);
 void VGZ_Destroy(struct vgz **);
 void VGZ_UpdateObj(const struct vgz*, struct object *);
-int VGZ_WrwGunzip(struct sess *, struct vgz *, void *ibuf, ssize_t ibufl,
-    char *obuf, ssize_t obufl, ssize_t *obufp);
+int VGZ_WrwGunzip(const struct sess *, struct vgz *, const void *ibuf,
+    ssize_t ibufl, char *obuf, ssize_t obufl, ssize_t *obufp);
 
 /* Return values */
-#define VGZ_SOCKET	-2
 #define VGZ_ERROR	-1
 #define VGZ_OK		0
 #define VGZ_END		1
@@ -819,6 +821,7 @@ int WRK_QueueSession(struct sess *sp);
 void WRK_SumStat(struct worker *w);
 
 #define WRW_IsReleased(w)	((w)->wrw.wfd == NULL)
+int WRW_Error(const struct worker *w);
 void WRW_Chunked(struct worker *w);
 void WRW_EndChunk(struct worker *w);
 void WRW_Reserve(struct worker *w, int *fd);
@@ -878,7 +881,7 @@ void RES_BuildHttp(struct sess *sp);
 void RES_WriteObj(struct sess *sp);
 void RES_StreamStart(struct sess *sp);
 void RES_StreamEnd(struct sess *sp);
-void RES_StreamPoll(struct sess *sp);
+void RES_StreamPoll(const struct sess *sp);
 
 /* cache_vary.c */
 struct vsb *VRY_Create(const struct sess *sp, const struct http *hp);
@@ -931,7 +934,7 @@ void SMS_Finish(struct object *obj);
 /* storage_persistent.c */
 void SMP_Init(void);
 void SMP_Ready(void);
-void SMP_NewBan(double t0, const char *ban);
+void SMP_NewBan(const uint8_t *ban, unsigned len);
 
 /*
  * A normal pointer difference is signed, but we never want a negative value

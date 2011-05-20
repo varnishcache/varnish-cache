@@ -52,9 +52,6 @@
 #include <math.h>
 
 #include "config.h"
-#ifndef HAVE_STRLCPY
-#include "compat/strlcpy.h"
-#endif
 
 #include "libvarnish.h"
 
@@ -92,8 +89,8 @@ TCP_name(const struct sockaddr_storage *addr, unsigned l,
 		 * for the gai_strerror in the bufffer :-(
 		 */
 		printf("getnameinfo = %d %s\n", i, gai_strerror(i));
-		strlcpy(abuf, "Conversion", alen);
-		strlcpy(pbuf, "Failed", plen);
+		(void)snprintf(abuf, alen, "Conversion");
+		(void)snprintf(pbuf, plen, "Failed");
 		return;
 	}
 	/* XXX dirty hack for v4-to-v6 mapped addresses */
@@ -128,8 +125,8 @@ TCP_hisname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 	if (!getpeername(sock, (void*)&addr_s, &l))
 		TCP_name(&addr_s, l, abuf, alen, pbuf, plen);
 	else {
-		strlcpy(abuf, "<none>", alen);
-		strlcpy(pbuf, "<none>", plen);
+		(void)snprintf(abuf, alen, "<none>");
+		(void)snprintf(pbuf, plen, "<none>");
 	}
 }
 

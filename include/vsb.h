@@ -25,7 +25,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *      $FreeBSD: head/sys/sys/sbuf.h 212425 2010-09-10 16:42:16Z mdf $
+ *      $FreeBSD: head/sys/sys/vsb.h 221993 2011-05-16 16:18:40Z phk $
  */
 
 #ifndef VSB_H_INCLUDED
@@ -76,7 +76,7 @@ int		 vsb_printf(struct vsb *, const char *, ...)
 int		 vsb_vprintf(struct vsb *, const char *, va_list)
 	__printflike(2, 0);
 #endif
-int		 vsb_putc(struct vsb *, char);
+int		 vsb_putc(struct vsb *, int);
 int		 vsb_trim(struct vsb *);
 int		 vsb_error(const struct vsb *);
 int		 vsb_finish(struct vsb *);

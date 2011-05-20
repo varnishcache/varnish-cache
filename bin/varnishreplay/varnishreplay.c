@@ -49,10 +49,6 @@
 #include "varnishapi.h"
 #include "vss.h"
 
-#ifndef HAVE_STRNDUP
-#include "compat/strndup.h"
-#endif
-
 #define freez(x) do { if (x) free(x); x = NULL; } while (0);
 
 static struct vss_addr *addr_info;
@@ -640,13 +636,14 @@ clear:
 
 static int
 gen_traffic(void *priv, enum vsl_tag tag, unsigned fd,
-    unsigned len, unsigned spec, const char *ptr)
+    unsigned len, unsigned spec, const char *ptr, uint64_t bitmap)
 {
 	struct replay_thread *thr;
 	const char *end;
 	struct message *msg;
 
 	(void)priv;
+	(void)bitmap;
 
 	end = ptr + len;
 
@@ -660,7 +657,9 @@ gen_traffic(void *priv, enum vsl_tag tag, unsigned fd,
 	msg = malloc(sizeof (struct message));
 	msg->tag = tag;
 	msg->len = len;
-	msg->ptr = strndup(ptr, len);
+	msg->ptr = malloc(len);
+	AN(msg->ptr);
+	memcpy(msg->ptr, ptr, len);
 	mailbox_put(&thr->mbox, msg);
 
 	return (0);

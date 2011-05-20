@@ -166,7 +166,7 @@ TIM_sleep(double t)
 	(void)nanosleep(&ts, NULL);
 #else
 	if (t >= 1.) {
-		(void)sleep(floor(t);
+		(void)sleep(floor(t));
 		t -= floor(t);
 	}
 	/* XXX: usleep() is not mandated to be thread safe */

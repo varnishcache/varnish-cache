@@ -16,7 +16,7 @@ SYNOPSIS
 ========
 
 varnishncsa [-a] [-b] [-C] [-c] [-D] [-d] [-f] [-F format] [-I regex]
-[-i tag] [-n varnish_name] [-o tag regex] [-P file] [-r file] [-V] [-w file] 
+[-i tag] [-n varnish_name] [-m tag:regex ...] [-P file] [-r file] [-V] [-w file] 
 [-X regex] [-x tag]
 
 
@@ -110,8 +110,8 @@ The following options are available:
 		     How the request was handled, whether it was a
 		     cache hit, miss, pass, pipe or error.
 
--o	    Filter log output to request groups that match a regular
-	    expression on a specified tag.
+-m tag:regex only list records where tag matches regex. Multiple
+            -m options are AND-ed together.
 
 -n          Specifies the name of the varnishd instance to get logs 
 	    from.  If -n is not specified, the host name is used.

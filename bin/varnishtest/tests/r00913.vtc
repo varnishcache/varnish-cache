@@ -1,0 +1,22 @@
+varnishtest "test regsub(NULL)"
+
+server s1 {
+	rxreq
+	expect req.url == "/bar"
+	txresp -body "foobar"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		if (beresp.http.bar ~ "$") {
+			set beresp.http.foo = regsub(beresp.http.bar, "$", "XXX");
+		}
+	}
+} -start
+
+client c1 {
+	txreq  -url /bar
+	rxresp 
+	expect resp.http.content-length == 6
+	expect resp.http.foo == "XXX"
+} -run

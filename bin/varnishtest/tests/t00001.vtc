@@ -36,6 +36,7 @@ varnish v1 -vcl+backend {
 client c1 {
 	txreq  -url /bar
 	rxresp 
+	expect resp.http.content-length == 6
 	expect resp.bodylen == 6
 	txreq  -url /bla
 	rxresp 

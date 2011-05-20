@@ -172,12 +172,13 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	}
 	REPLACE(vcl->name, name);
 	VTAILQ_INSERT_TAIL(&vcl_head, vcl, list);
+	cli_out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
+	vcl->conf->init_vcl(cli);
+	(void)vcl->conf->init_func(NULL);
 	Lck_Lock(&vcl_mtx);
 	if (vcl_active == NULL)
 		vcl_active = vcl;
 	Lck_Unlock(&vcl_mtx);
-	cli_out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
-	vcl->conf->init_func(cli);
 	VSC_main->n_vcl++;
 	VSC_main->n_vcl_avail++;
 	return (0);
@@ -197,7 +198,8 @@ VCL_Nuke(struct vcls *vcl)
 	assert(vcl->conf->discard);
 	assert(vcl->conf->busy == 0);
 	VTAILQ_REMOVE(&vcl_head, vcl, list);
-	vcl->conf->fini_func(NULL);
+	(void)vcl->conf->fini_func(NULL);
+	vcl->conf->fini_vcl(NULL);
 	free(vcl->name);
 	(void)dlclose(vcl->dlh);
 	FREE_OBJ(vcl);

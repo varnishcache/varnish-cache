@@ -77,8 +77,8 @@ vtmpfile(char *template)
 	/* not reached */
 }
 
-static char *
-vreadfd(int fd)
+char *
+vreadfd(int fd, ssize_t *sz)
 {
 	struct stat st;
 	char *f;
@@ -92,11 +92,13 @@ vreadfd(int fd)
 	i = read(fd, f, st.st_size);
 	assert(i == st.st_size);
 	f[i] = '\0';
+	if (sz != NULL)
+		*sz = st.st_size;
 	return (f);
 }
 
 char *
-vreadfile(const char *pfx, const char *fn)
+vreadfile(const char *pfx, const char *fn, ssize_t *sz)
 {
 	int fd, err;
 	char *r;
@@ -111,7 +113,7 @@ vreadfile(const char *pfx, const char *fn)
 		fd = open(fn, O_RDONLY);
 	if (fd < 0)
 		return (NULL);
-	r = vreadfd(fd);
+	r = vreadfd(fd, sz);
 	err = errno;
 	AZ(close(fd));
 	errno = err;

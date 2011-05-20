@@ -235,7 +235,7 @@ VGZ_IbufEmpty(const struct vgz *vg)
 /*--------------------------------------------------------------------*/
 
 void
-VGZ_Obuf(struct vgz *vg, const void *ptr, ssize_t len)
+VGZ_Obuf(struct vgz *vg, void *ptr, ssize_t len)
 {
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
@@ -353,8 +353,8 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, size_t *plen, enum vgz_flag flags)
  */
 
 int
-VGZ_WrwGunzip(struct sess *sp, struct vgz *vg, void *ibuf, ssize_t ibufl,
-    char *obuf, ssize_t obufl, ssize_t *obufp)
+VGZ_WrwGunzip(const struct sess *sp, struct vgz *vg, const void *ibuf,
+    ssize_t ibufl, char *obuf, ssize_t obufl, ssize_t *obufp)
 {
 	int i;
 	size_t dl;
@@ -379,8 +379,7 @@ VGZ_WrwGunzip(struct sess *sp, struct vgz *vg, void *ibuf, ssize_t ibufl,
 		}
 		if (obufl == *obufp || i == VGZ_STUCK) {
 			(void)WRW_Write(sp->wrk, obuf, *obufp);
-			if (WRW_Flush(sp->wrk))
-				return (VGZ_SOCKET);
+			(void)WRW_Flush(sp->wrk);
 			*obufp = 0;
 			VGZ_Obuf(vg, obuf + *obufp, obufl - *obufp);
 		}
@@ -602,7 +601,7 @@ vfp_testgzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	struct vgz *vg;
 	ssize_t l, w;
 	int i = -100;
-	uint8_t	ibuf[params->gzip_stack_buffer];
+	uint8_t	obuf[params->gzip_stack_buffer];
 	size_t dl;
 	const void *dp;
 	struct storage *st;
@@ -628,7 +627,7 @@ vfp_testgzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 			RES_StreamPoll(sp);
 
 		while (!VGZ_IbufEmpty(vg)) {
-			VGZ_Obuf(vg, ibuf, sizeof ibuf);
+			VGZ_Obuf(vg, obuf, sizeof obuf);
 			i = VGZ_Gunzip(vg, &dp, &dl);
 			if (i != VGZ_OK && i != VGZ_END) {
 				WSP(sp, SLT_FetchError,

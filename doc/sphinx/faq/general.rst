@@ -33,11 +33,11 @@ How...
 That depends on pretty much everything.
 
 I think our best current guidance is that you go for a cost-effective
-RAM configuration, something like 1-16GB, and a SSD disk.
+RAM configuration, something like 1-16GB, and an SSD.
 
 Unless you positively know that you will need it, there is
-little point in spendng a fortune on a hand-sewn motherboard
-that can fit several TB in special RAM blocks, rivetet together
+little point in spending a fortune on a hand-sewn motherboard
+that can fit several TB in special RAM blocks, riveted together
 by leftover watch-makers in Switzerland.
 
 On the other hand, if you plot your traffic in Gb/s, you probably
@@ -65,14 +65,14 @@ Refreshing is often called `purging <http://dictionary.reference.com/browse/PURG
 
         From the command line you can write::
 
-                url.purge ^/$
+                ban.url ^/$
 
-        to purge your / document.  As you might see url.purge takes an `regular expression <http://en.wikipedia.org/wiki/Regular_expression>`_
-        as its argument. Hence the ``^`` and ``$`` at the front and end.  If the ``^`` is ommited, all the documents ending in a ``/`` in the cache would be deleted.
+        to ban your / document.  As you might see ban.url takes an `regular expression <http://en.wikipedia.org/wiki/Regular_expression>`_
+        as its argument. Hence the ``^`` and ``$`` at the front and end.  If the ``^`` is omitted, all the documents ending in a ``/`` in the cache would be deleted.
 
         So to delete all the documents in the cache, write::
 
-                url.purge .*
+                ban.url .
 
         at the command line.
 
@@ -96,15 +96,15 @@ At the shell command line, type::
 
 **How can I rewrite URLS before they are sent to the backend?**
 
-You can use the ``regsub()`` function to do this.  Here's an example for zope, to rewrite URL's for the virtualhostmonster::
+You can use the ``regsub()`` function to do this.  Here's an example for zope, to rewrite URLs for the virtualhostmonster::
 
         if (req.http.host ~ "^(www.)?example.com") {
           set req.url = regsub(req.url, "^", "/VirtualHostBase/http/example.com:80/Sites/example.com/VirtualHostRoot");
         }
 
-**I have a site with many hostnames, how do I keep them from multiplying the cache?**
+**I have a site with many host names, how do I keep them from multiplying the cache?**
 
-You can do this by normalizing the ``Host`` header for all your hostnames.  Here's a VCL example::
+You can do this by normalizing the ``Host`` header for all your host names.  Here's a VCL example::
 
         if (req.http.host ~ "^(www.)?example.com") {
           set req.http.host = "example.com";
@@ -120,7 +120,7 @@ You can use the ``bereq`` object for altering requests going to the backend, but
 
 **How do I force the backend to send Vary headers?**
 
-We have anectdotal evidence of non-RFC2616 compliant backends, which support content negotiation, but which do not emit a Vary header, unless the request contains Accept headers.
+We have anecdotal evidence of non-RFC2616 compliant backends, which support content negotiation, but which do not emit a Vary header, unless the request contains Accept headers.
 
 It may be appropriate to send no-op Accept headers to trick the backend into sending us the Vary header.
 
@@ -177,8 +177,8 @@ Where...
 **Can I find varnish for my operating system?**
 
 We know that Varnish has been packaged for Debian, Ubuntu, RHEL,
-Centos, (Open)SuSE, Gentoo and FreeBSD, possibly more.  Check whatever
-packagemanager you use. Or read :ref:`Installing Varnish on your computer <install-doc>`.
+CentOS, (Open)SUSE, Gentoo and FreeBSD, possibly more.  Check whatever
+package manager you use. Or read :ref:`Installing Varnish on your computer <install-doc>`.
 
 Can I...
 ========
@@ -211,7 +211,7 @@ Yes, as long as you give them different TCP ports and different ``-n``
 arguments, you will be fine.
 
 
-**Can I cache multiple vhosts with one Varnish?**
+**Can I cache multiple virtual hosts with one Varnish?**
 
 Yes, that works right out of the box.
 
@@ -228,7 +228,7 @@ Besides, the output is a lot less useful than you might think.
 Not at present, and while we keep an eye on this, there are no
 current plans to add HTTPS support, until we can find a way where
 it adds significant value, relative to running a stand-alone
-HTTPS proxy such as ngnix or pound.
+HTTPS proxy such as nginx or pound.
 
 **Can Varnish load balance between multiple backends?**
 
@@ -259,10 +259,10 @@ There are 2 common reasons for this:
 
 **Why are regular expressions case-sensitive?**
 
-Some HTTP headers, such as ``Host:`` and ``Location:``
-contain FQDN's which by definition is not case-sensitive.  Other
-HTTP headers are case-sensitive, most notably the URLs.  Therefore
-a "one size fits all" solution is not possible.
+Some HTTP headers, such as ``Host:`` and ``Location:`` contain fully
+qualified domain names, which by definition is not case-sensitive.
+Other HTTP headers are case-sensitive, most notably the URLs.
+Therefore a "one size fits all" solution is not possible.
 
 In previous releases, we used the POSIX regular expressions
 supplied with the operating system, and decided, because the
@@ -272,12 +272,12 @@ they should not be case-sensitive.
 From version 2.1.0 and forward, we use PCRE regular expressions,
 where it *is* possible to control case-sensitivity in the
 individual regular expressions, so we decided that it would
-probably confuse people if we made the default case-insentive.
+probably confuse people if we made the default case-insensitive.
 (We promise not to change our minds about this again.)
 
 To make a PCRE regex case insensitive, put ``(?i)`` at the start::
 
-	if (req.http.host ~ "?iexample.com$") {
+	if (req.http.host ~ "(?i)example.com$") {
 		...
 	}
 
@@ -295,7 +295,7 @@ See the `PCRE man pages <http://www.pcre.org/pcre.txt>`_ for more information.
 **Why does the ``Via:`` header say 1.1 in Varnish 2.1.x?**
 
 The number in the ``Via:`` header is the HTTP protocol version
-supported/applied, not the softwares version number.
+supported/applied, not the software's version number.
 
 **Why did you call it *Varnish*?**
 
@@ -336,14 +336,14 @@ Varnish has a feature called **hit for pass**, which is used when Varnish gets a
           * Worker returns object to varnish which turns out to be non-cacheable.
           * Client 2..N are now given the **hit for pass** object instructing them to go to the backend
 
-The **hit for pass** object will stay cached for the duration of it's ttl. This means that subsequent clients requesting /foo will be sent straight to the backend as long as the **hit for pass** object exists.
+The **hit for pass** object will stay cached for the duration of its ttl. This means that subsequent clients requesting /foo will be sent straight to the backend as long as the **hit for pass** object exists.
 The :command:`varnishstat` can tell you how many **hit for pass** objects varnish has served. You can lower the ttl for such an object if you are sure this is needed, using the following logic::
 
         sub vcl_fetch {
           if (!obj.cacheable) {
             # Limit the lifetime of all 'hit for pass' objects to 10 seconds
             obj.ttl = 10s;
-            pass;
+            return(hit_for_pass);
           }
         }
 

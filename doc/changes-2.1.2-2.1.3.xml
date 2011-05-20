@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE group [
+<!ENTITY mdash "&#8212;">
+]>
+<!-- $Id: changes-2.1.2-2.1.3.xml 4672 2010-04-19 10:26:23Z tfheen $ -->
+<group from="2.1.2" to="2.1.3">
+  <subsystem>
+    <name>varnishd</name>
+
+    <change type="enh">
+      <para>Improve scalability of critbit.</para>
+    </change>
+
+    <change type="bug">
+      <para>The critbit hash algorithm has now been tightened to make
+      sure the tree is in a consistent state at all points, and the
+      time we wait for an object to cool off after it is eligible for
+      garbage collection has been tweaked.</para>
+    </change>
+
+    <change type="enh">
+      <para>Add <code>log</code> command to VCL.  This emits
+      a <code>VCL_log</code> entry into the shared memory log.</para>
+    </change>
+
+    <change type="bug">
+      <para>Only emit Length and ReqEnd log entries if we actually
+      have an XID.  This should get rid of some empty log lines in
+      varnishncsa.</para>
+    </change>
+
+    <change type="bug" ref="722">
+      <para>Destroy directors in a predictable fashion, namely reverse
+      of creation order.</para>
+    </change>
+
+    <change type="bug" ref="719">
+      <para>Fix bug when ESI elements spanned storage elements causing
+      a panic.</para>
+    </change>
+
+    <change type="enh">
+      <para>In some cases, the VCL compiler would panic instead of
+      giving sensible messages.  This has now been fixed.</para>
+    </change>
+
+    <change type="bug">
+      <para>Correct an off-by-one error when the requested range
+      exceeds the size of an object.</para>
+    </change>
+
+    <change type="bug">
+      <para>Handle requests for the end of an object correctly.</para>
+    </change>
+
+    <change type="bug" ref="700">
+      <para>Allow tabulator characters in the third field of the
+      first line of HTTP requests</para>
+    </change>
+
+    <change type="bug">
+      <para>On Solaris, if the remote end sends us an RST, all system
+      calls related to that socket will return EINVAL.  We now handle
+      this better.</para>
+    </change>
+  </subsystem>
+  <subsystem>
+    <name>libvarnishapi</name>
+    <change type="bug">
+      <para>The <code>-X</code> parameter didn't work correctly.  This
+      has been fixed.</para>
+    </change>
+  </subsystem>
+
+</group>

@@ -70,7 +70,7 @@ VRT_re_match(const char *s, void *re)
 	int i;
 
 	if (s == NULL)
-		return (0);
+		s = "";
 	AN(re);
 	t = re;
 	i = VRE_exec(t, s, strlen(s), 0, 0, NULL, 0);
@@ -94,7 +94,7 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re,
 
 	AN(re);
 	if (str == NULL)
-		return ("");
+		str = "";
 	t = re;
 	memset(ovector, 0, sizeof(ovector));
 	i = VRE_exec(t, str, strlen(str), 0, 0, ovector, 30);

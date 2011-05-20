@@ -410,6 +410,11 @@ RES_StreamStart(struct sess *sp)
 	if (sp->wrk->res_mode & RES_GUNZIP)
 		http_Unset(sp->wrk->resp, H_Content_Encoding);
 
+	if (!(sp->wrk->res_mode & RES_CHUNKED) &&
+	    sp->wrk->h_content_length != NULL)
+		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
+		    "Content-Length: %s", sp->wrk->h_content_length);
+
 	sp->acct_tmp.hdrbytes +=
 	    http_Write(sp->wrk, sp->wrk->resp, 1);
 
@@ -418,7 +423,7 @@ RES_StreamStart(struct sess *sp)
 }
 
 void
-RES_StreamPoll(struct sess *sp)
+RES_StreamPoll(const struct sess *sp)
 {
 	struct stream_ctx *sctx;
 	struct storage *st;

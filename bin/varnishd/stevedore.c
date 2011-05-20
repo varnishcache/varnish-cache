@@ -257,7 +257,7 @@ STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
 
 		o->objcore = sp->objcore;
 		sp->objcore = NULL;     /* refcnt follows pointer. */
-		BAN_NewObj(o);
+		BAN_NewObjCore(o->objcore);
 
 		o->objcore->methods = &default_oc_methods;
 		o->objcore->priv = o;
@@ -438,9 +438,9 @@ STV_Config(const char *spec)
 	p = strchr(spec, '=');
 	q = strchr(spec, ',');
 	if (p != NULL && (q == NULL || q > p)) {
-		av = ParseArgv(p + 1, ARGV_COMMA);
+		av = ParseArgv(p + 1, NULL, ARGV_COMMA);
 	} else {
-		av = ParseArgv(spec, ARGV_COMMA);
+		av = ParseArgv(spec, NULL, ARGV_COMMA);
 		p = NULL;
 	}
 	AN(av);

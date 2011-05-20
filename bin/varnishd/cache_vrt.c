@@ -71,6 +71,8 @@ void
 VRT_count(const struct sess *sp, unsigned u)
 {
 
+	if (sp == NULL)
+		return;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (params->vcl_trace)
 		WSP(sp, SLT_VCL_trace, "%u %d.%d", u,
@@ -240,6 +242,10 @@ void
 VRT_handling(struct sess *sp, unsigned hand)
 {
 
+	if (sp == NULL) {
+		assert(hand == VCL_RET_OK);
+		return;
+	}
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	assert(hand < VCL_RET_MAX);
 	sp->handling = hand;
@@ -461,7 +467,7 @@ VRT_ban_string(struct sess *sp, const char *str)
 	int i;
 
 	(void)sp;
-	av = ParseArgv(str, 0);
+	av = ParseArgv(str, NULL, ARGV_NOESC);
 	if (av[0] != NULL) {
 		/* XXX: report error how ? */
 		FreeArgv(av);

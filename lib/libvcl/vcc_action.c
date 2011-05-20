@@ -176,84 +176,19 @@ parse_unset(struct vcc *tl)
 
 /*--------------------------------------------------------------------*/
 
-static const struct ban_var {
-	const char	*name;
-	unsigned	flag;
-} ban_var[] = {
-#define PVAR(a, b, c)   { (a), (b) },
-#include "ban_vars.h"
-#undef PVAR
-        { 0, 0 }
-};
-
 static void
 parse_ban(struct vcc *tl)
 {
-	const struct ban_var *pv;
 
 	vcc_NextToken(tl);
 
 	ExpectErr(tl, '(');
 	vcc_NextToken(tl);
 
-	if (tl->t->tok == ID) {
-		Fb(tl, 1, "VRT_ban(sp,\n");
-		tl->indent += INDENT;
-		while (1) {
-			ExpectErr(tl, ID);
-
-			/* Check valididity of ban variable */
-			for (pv = ban_var; pv->name != NULL; pv++) {
-				if (!strncmp(pv->name, tl->t->b,
-				    strlen(pv->name)))
-					break;
-			}
-			if (pv->name == NULL) {
-				vsb_printf(tl->sb, "Unknown ban variable.");
-				vcc_ErrWhere(tl, tl->t);
-				return;
-			}
-			if ((pv->flag & PVAR_HTTP) &&
-			    tl->t->b + strlen(pv->name) >= tl->t->e) {
-				vsb_printf(tl->sb, "Missing header name.");
-				vcc_ErrWhere(tl, tl->t);
-				return;
-			}
-
-			Fb(tl, 1, "  \"%.*s\",\n", PF(tl->t));
-			vcc_NextToken(tl);
-			switch(tl->t->tok) {
-			case '~':
-			case T_NOMATCH:
-			case T_EQ:
-			case T_NEQ:
-				Fb(tl, 1, "  \"%.*s\",\n", PF(tl->t));
-				break;
-			default:
-				vsb_printf(tl->sb,
-				    "Expected ~, !~, == or !=.\n");
-				vcc_ErrWhere(tl, tl->t);
-				return;
-			}
-			vcc_NextToken(tl);
-			Fb(tl, 1, "  ");
-			vcc_Expr(tl, STRING);
-			ERRCHK(tl);
-			Fb(tl, 0, ",\n");
-			if (tl->t->tok == ')')
-				break;
-			ExpectErr(tl, T_CAND);
-			Fb(tl, 1, "\"%.*s\",\n", PF(tl->t));
-			vcc_NextToken(tl);
-		}
-		Fb(tl, 1, "0);\n");
-		tl->indent -= INDENT;
-	} else {
-		Fb(tl, 1, "VRT_ban_string(sp, ");
-		vcc_Expr(tl, STRING);
-		ERRCHK(tl);
-		Fb(tl, 0, ");\n");
-	}
+	Fb(tl, 1, "VRT_ban_string(sp, ");
+	vcc_Expr(tl, STRING);
+	ERRCHK(tl);
+	Fb(tl, 0, ");\n");
 
 	ExpectErr(tl, ')');
 	vcc_NextToken(tl);

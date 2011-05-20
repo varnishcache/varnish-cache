@@ -17,7 +17,7 @@ SYNOPSIS
 ========
 
 varnishlog [-a] [-b] [-C] [-c] [-D] [-d] [-I regex] [-i tag] [-k keep] 
-[-n varnish_name] [-o [tag regex]] [-P file] [-r file] [-s num] [-u] [-V]
+[-n varnish_name] [-o] [-O] [-m tag:regex ...] [-P file] [-r file] [-s num] [-u] [-V]
 [-w file] [-X regex] [-x tag]
 
 DESCRIPTION
@@ -51,11 +51,16 @@ The following options are available:
 
 -k num      Only show the first num log records.
 
+-m tag:regex only list transactions where tag matches regex. Multiple
+            -m options are AND-ed together.  Can not be combined with -O
+
 -n          Specifies the name of the varnishd instance to get logs from.  If -n is not 
 	    specified, the host name is used.
 
--o          Group log entries by request ID.  This has no effect when writing to a 
-	    file using the -w option.
+-o          Ignored for compatibility with earlier versions.
+
+-O          Do not group log entries by request ID.  Can not be
+            combined with -m.
 
 -P file     Write the process's PID to the specified file.
 

@@ -327,7 +327,7 @@ ESI_Deliver(struct sess *sp)
 					i = VGZ_WrwGunzip(sp, vgz,
 						st->ptr + off, l2,
 						obuf, sizeof obuf, &obufl);
-					if (i == VGZ_SOCKET) {
+					if (WRW_Error(sp->wrk)) {
 						vca_close_session(sp,
 						    "remote closed");
 						p = e;

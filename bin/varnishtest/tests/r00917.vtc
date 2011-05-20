@@ -1,0 +1,24 @@
+varnishtest "test here documents for bans"
+
+server s1 {
+	rxreq
+	expect req.url == "/bar"
+	txresp -body "foobar"
+} -start
+
+varnish v1 -vcl+backend { } -start
+
+client c1 {
+	txreq  -url /bar
+	rxresp 
+	expect resp.http.content-length == 6
+} -run
+
+varnish v1 -cliok {ban req.url ~ << foo
+\.bar
+foo
+}
+
+varnish v1 -cliok ban.list
+
+varnish v1 -expect n_ban_add == 2

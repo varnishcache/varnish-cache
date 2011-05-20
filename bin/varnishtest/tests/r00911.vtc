@@ -1,0 +1,20 @@
+varnishtest "vcc_err_unref should also cover subs"
+
+server s1 {
+	rxreq
+	expect req.url == "/bar"
+	txresp -body "foobar"
+} -start
+
+varnish v1 -arg "-p vcc_err_unref=false" -vcl+backend { 
+	sub foobar {
+		set req.http.foobar = "foobar";
+	}
+} -start
+
+client c1 {
+	txreq  -url /bar
+	rxresp 
+	expect resp.http.content-length == 6
+	expect resp.bodylen == 6
+} -run

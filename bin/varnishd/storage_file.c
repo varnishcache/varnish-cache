@@ -487,8 +487,10 @@ smf_alloc(struct stevedore *st, size_t size)
 	smf->s.ptr = smf->ptr;
 	smf->s.len = 0;
 	smf->s.stevedore = st;
+#ifdef SENDFILE_WORKS
 	smf->s.fd = smf->sc->fd;
 	smf->s.where = smf->offset;
+#endif
 	return (&smf->s);
 }
 

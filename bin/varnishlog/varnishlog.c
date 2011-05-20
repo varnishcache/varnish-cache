@@ -51,47 +51,28 @@
 
 static int	b_flag, c_flag;
 
-/* -------------------------------------------------------------------*/
-
-static int
-name2tag(const char *n)
-{
-	int i;
-
-	for (i = 0; i < 256; i++) {
-		if (VSL_tags[i] == NULL)
-			continue;
-		if (!strcasecmp(n, VSL_tags[i]))
-			return (i);
-	}
-	return (-1);
-}
-
 /* Ordering-----------------------------------------------------------*/
 
 static struct vsb	*ob[65536];
 static unsigned char	flg[65536];
 static enum vsl_tag   last[65536];
+static uint64_t       bitmap[65536];
 #define F_INVCL		(1 << 0)
-#define F_MATCH		(1 << 1)
-
-static int		match_tag = -1;
-static const vre_t	*match_re;
 
 static void
-h_order_finish(int fd)
+h_order_finish(int fd, struct VSM_data *vd)
 {
 
 	AZ(vsb_finish(ob[fd]));
-	if (vsb_len(ob[fd]) > 1 &&
-	    (match_tag == -1 || flg[fd] & F_MATCH))
-		printf("%s\n", vsb_data(ob[fd]));
-	flg[fd] &= ~F_MATCH;
+	if (vsb_len(ob[fd]) > 1 && VSL_Matched(vd, bitmap[fd])) {
+		printf("%s", vsb_data(ob[fd]));
+	}
+	bitmap[fd] = 0;
 	vsb_clear(ob[fd]);
 }
 
 static void
-clean_order(void)
+clean_order(struct VSM_data *vd)
 {
 	unsigned u;
 
@@ -99,38 +80,37 @@ clean_order(void)
 		if (ob[u] == NULL)
 			continue;
 		AZ(vsb_finish(ob[u]));
-		if (vsb_len(ob[u]) > 1 &&
-		    (match_tag == -1 || flg[u] & F_MATCH))
+		if (vsb_len(ob[u]) > 1 && VSL_Matched(vd, bitmap[u])) {
 			printf("%s\n", vsb_data(ob[u]));
+		}
 		flg[u] = 0;
+		bitmap[u] = 0;
 		vsb_clear(ob[u]);
 	}
 }
 
 static int
 h_order(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
-    unsigned spec, const char *ptr)
+    unsigned spec, const char *ptr, uint64_t bm)
 {
 	char type;
 
-	(void)priv;
+	struct VSM_data *vd = priv;
+
+	bitmap[fd] |= bm;
 
 	type = (spec & VSL_S_CLIENT) ? 'c' :
 	    (spec & VSL_S_BACKEND) ? 'b' : '-';
 
 	if (!(spec & (VSL_S_CLIENT|VSL_S_BACKEND))) {
 		if (!b_flag && !c_flag)
-			(void)VSL_H_Print(stdout, tag, fd, len, spec, ptr);
+			(void)VSL_H_Print(stdout, tag, fd, len, spec, ptr, bm);
 		return (0);
 	}
 	if (ob[fd] == NULL) {
 		ob[fd] = vsb_new_auto();
 		assert(ob[fd] != NULL);
 	}
-	if (tag == match_tag &&
-	    VRE_exec(match_re, ptr, len, 0, 0, NULL, 0) > 0)
-		flg[fd] |= F_MATCH;
-
 	if ((tag == SLT_BackendOpen || tag == SLT_SessionOpen ||
 		(tag == SLT_ReqStart &&
 		    last[fd] != SLT_SessionOpen &&
@@ -146,7 +126,7 @@ h_order(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 		if (last[fd] != SLT_SessionClose)
 			vsb_printf(ob[fd], "%5d %-12s %c %s\n",
 			    fd, "Interrupted", type, VSL_tags[tag]);
-		h_order_finish(fd);
+		h_order_finish(fd, vd);
 	}
 
 	last[fd] = tag;
@@ -182,7 +162,7 @@ h_order(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 	case SLT_BackendClose:
 	case SLT_BackendReuse:
 	case SLT_StatSess:
-		h_order_finish(fd);
+		h_order_finish(fd, vd);
 		break;
 	default:
 		break;
@@ -191,24 +171,10 @@ h_order(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 }
 
 static void
-do_order(struct VSM_data *vd, int argc, char * const *argv)
+do_order(struct VSM_data *vd)
 {
 	int i;
-	const char *error;
-	int erroroffset;
 
-	if (argc == 2) {
-		match_tag = name2tag(argv[0]);
-		if (match_tag < 0) {
-			fprintf(stderr, "Tag \"%s\" unknown\n", argv[0]);
-			exit(2);
-		}
-		match_re = VRE_compile(argv[1], 0, &error, &erroroffset);
-		if (match_re == NULL) {
-			fprintf(stderr, "Invalid regex: %s\n", error);
-			exit(2);
-		}
-	}
 	if (!b_flag) {
 		VSL_Select(vd, SLT_SessionOpen);
 		VSL_Select(vd, SLT_SessionClose);
@@ -220,15 +186,15 @@ do_order(struct VSM_data *vd, int argc, char * const *argv)
 		VSL_Select(vd, SLT_BackendReuse);
 	}
 	while (1) {
-		i = VSL_Dispatch(vd, h_order, NULL);
+		i = VSL_Dispatch(vd, h_order, vd);
 		if (i == 0) {
-			clean_order();
+			clean_order(vd);
 			AZ(fflush(stdout));
 		}
 		else if (i < 0)
 			break;
 	}
-	clean_order();
+	clean_order(vd);
 }
 
 /*--------------------------------------------------------------------*/
@@ -273,7 +239,7 @@ do_write(const struct VSM_data *vd, const char *w_arg, int a_flag)
 	XXXAN(fd >= 0);
 	(void)signal(SIGHUP, sighup);
 	while (1) {
-		i = VSL_NextLog(vd, &p);
+		i = VSL_NextLog(vd, &p, NULL);
 		if (i < 0)
 			break;
 		if (i > 0) {
@@ -308,7 +274,7 @@ int
 main(int argc, char * const *argv)
 {
 	int c;
-	int a_flag = 0, D_flag = 0, o_flag = 0, u_flag = 0;
+	int a_flag = 0, D_flag = 0, O_flag = 0, u_flag = 0, m_flag = 0;
 	const char *P_arg = NULL;
 	const char *w_arg = NULL;
 	struct pidfh *pfh = NULL;
@@ -317,7 +283,7 @@ main(int argc, char * const *argv)
 	vd = VSM_New();
 	VSL_Setup(vd);
 
-	while ((c = getopt(argc, argv, VSL_ARGS "aDoP:uVw:")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "aDP:uVw:oO")) != -1) {
 		switch (c) {
 		case 'a':
 			a_flag = 1;
@@ -333,8 +299,10 @@ main(int argc, char * const *argv)
 		case 'D':
 			D_flag = 1;
 			break;
-		case 'o':
-			o_flag = 1;
+		case 'o': /* ignored for compatibility with older versions */
+			break;
+		case 'O':
+			O_flag = 1;
 			break;
 		case 'P':
 			P_arg = optarg;
@@ -348,6 +316,8 @@ main(int argc, char * const *argv)
 		case 'w':
 			w_arg = optarg;
 			break;
+		case 'm':
+			m_flag = 1; /* fall through */
 		default:
 			if (VSL_Arg(vd, c, optarg) > 0)
 				break;
@@ -355,10 +325,10 @@ main(int argc, char * const *argv)
 		}
 	}
 
-	if (o_flag && w_arg != NULL)
+	if (O_flag && m_flag)
 		usage();
 
-	if ((argc - optind) > 0 && !o_flag)
+	if ((argc - optind) > 0)
 		usage();
 
 	if (VSL_Open(vd, 1))
@@ -385,8 +355,8 @@ main(int argc, char * const *argv)
 	if (u_flag)
 		setbuf(stdout, NULL);
 
-	if (o_flag)
-		do_order(vd, argc - optind, argv + optind);
+	if (!O_flag)
+		do_order(vd);
 
 	while (VSL_Dispatch(vd, VSL_H_Print, stdout) >= 0) {
 		if (fflush(stdout) != 0) {

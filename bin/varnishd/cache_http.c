@@ -41,10 +41,6 @@
 #include "vct.h"
 #include "cache.h"
 
-#ifndef HAVE_STRLCPY
-#include <compat/strlcpy.h>
-#endif
-
 #define HTTPH(a, b, c, d, e, f, g) char b[] = "*" a ":";
 #include "http_headers.h"
 #undef HTTPH

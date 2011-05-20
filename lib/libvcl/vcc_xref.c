@@ -292,6 +292,10 @@ vcc_checkaction2(struct vcc *tl, const struct symbol *sym)
 		return;
 	vsb_printf(tl->sb, "Function unused\n");
 	vcc_ErrWhere(tl, p->name);
+	if (!tl->err_unref) {
+		vsb_printf(tl->sb, "(That was just a warning)\n");
+		tl->err = 0;
+	}
 }
 
 int
