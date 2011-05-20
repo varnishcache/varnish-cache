@@ -366,8 +366,8 @@ EmitStruct(const struct vcc *tl)
 
 	Fc(tl, 0, "\nconst struct VCL_conf VCL_conf = {\n");
 	Fc(tl, 0, "\t.magic = VCL_CONF_MAGIC,\n");
-	Fc(tl, 0, "\t.init_func = VGC_Init,\n");
-	Fc(tl, 0, "\t.fini_func = VGC_Fini,\n");
+	Fc(tl, 0, "\t.init_vcl = VGC_Init,\n");
+	Fc(tl, 0, "\t.fini_vcl = VGC_Fini,\n");
 	Fc(tl, 0, "\t.ndirector = %d,\n", tl->ndirector);
 	Fc(tl, 0, "\t.director = directors,\n");
 	Fc(tl, 0, "\t.ref = VGC_ref,\n");
@@ -418,7 +418,7 @@ vcc_file_source(const struct vcc *tl, struct vsb *sb, const char *fn)
 	char *f;
 	struct source *sp;
 
-	f = vreadfile(tl->vcl_dir, fn);
+	f = vreadfile(tl->vcl_dir, fn, NULL);
 	if (f == NULL) {
 		vsb_printf(sb, "Cannot read file '%s': %s\n",
 		    fn, strerror(errno));

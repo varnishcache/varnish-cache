@@ -131,7 +131,7 @@ static char err_invalid_backslash[] = "Invalid backslash sequence";
 static char err_missing_quote[] = "Missing '\"'";
 
 char **
-ParseArgv(const char *s, int flag)
+ParseArgv(const char *s, int *argc, int flag)
 {
 	char **argv;
 	const char *p;
@@ -154,7 +154,7 @@ ParseArgv(const char *s, int flag)
 		}
 		if ((flag & ARGV_COMMENT) && *s == '#')
 			break;
-		if (*s == '"') {
+		if (*s == '"' && !(flag & ARGV_NOESC)) {
 			p = ++s;
 			quote = 1;
 		} else {
@@ -162,7 +162,7 @@ ParseArgv(const char *s, int flag)
 			quote = 0;
 		}
 		while (1) {
-			if (*s == '\\') {
+			if (*s == '\\' && !(flag & ARGV_NOESC)) {
 				i = BackSlash(s, NULL);
 				if (i == 0) {
 					argv[0] = err_invalid_backslash;
@@ -179,7 +179,7 @@ ParseArgv(const char *s, int flag)
 				s++;
 				continue;
 			}
-			if (*s == '"')
+			if (*s == '"' && !(flag & ARGV_NOESC))
 				break;
 			if (*s == '\0') {
 				argv[0] = err_missing_quote;
@@ -191,11 +191,21 @@ ParseArgv(const char *s, int flag)
 			argv = realloc(argv, sizeof (*argv) * (largv += largv));
 			assert(argv != NULL);
 		}
-		argv[nargv++] = BackSlashDecode(p, s);
+		if (flag & ARGV_NOESC) {
+			argv[nargv] = malloc(1 + (s - p));
+			assert(argv[nargv] != NULL);
+			memcpy(argv[nargv], p, s - p);
+			argv[nargv][s - p] = '\0';
+			nargv++;
+		} else {
+			argv[nargv++] = BackSlashDecode(p, s);
+		}
 		if (*s != '\0')
 			s++;
 	}
-	argv[nargv++] = NULL;
+	argv[nargv] = NULL;
+	if (argc != NULL)
+		*argc = nargv;
 	return (argv);
 }
 

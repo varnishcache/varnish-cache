@@ -196,7 +196,7 @@ while True:
 
 	while -1 == l.find(")"):
 		l1 = nextline()
-		if l1 == "":	
+		if l1 == "":
 			raise Exception("End Of Input looking for ')'")
 		l = l + l1
 
@@ -229,7 +229,7 @@ while True:
 		elif tq != None:
 			raise Exception(
 			    "Argument type '%s' cannot be qualified with {...}" % at)
-		
+
 		vargs.append(at)
 
 	do_func(fname, rt_type, args, vargs)

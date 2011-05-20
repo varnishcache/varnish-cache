@@ -1,8 +1,9 @@
 AC_PREREQ(2.59)
 AC_COPYRIGHT([Copyright (c) 2006 Verdens Gang AS
-Copyright (c) 2006-2010 Linpro AS])
+Copyright (c) 2006-2010 Linpro AS
+Copyright (c) 2010-2011 Varnish Software AS])
 AC_REVISION([$Id$])
-AC_INIT([Varnish], [trunk], [varnish-dev@varnish-cache.org])
+AC_INIT([Varnish], [3.0.0-beta1], [varnish-dev@varnish-cache.org])
 AC_CONFIG_SRCDIR(include/varnishapi.h)
 AM_CONFIG_HEADER(config.h)
 
@@ -55,6 +56,12 @@ if test "x$RST2MAN" = "xno"; then
    AC_MSG_WARN([rst2man not found – not building man pages])
 fi
 AM_CONDITIONAL(HAVE_RST2MAN,[test "x$RST2MAN" != "xno"])
+
+AC_CHECK_PROGS(RST2HTML, [rst2html rst2html.py], "no")
+if test "x$RST2HTML" = "xno"; then
+   AC_MSG_WARN([rst2html not found – not building changelog])
+fi
+AM_CONDITIONAL(HAVE_RST2HTML,[test "x$RST2HTML" != "xno"])
 
 # Checks for libraries.
 save_LIBS="${LIBS}"
@@ -289,8 +296,6 @@ AC_SUBST(LIBUMEM)
 # are not available
 AC_CHECK_FUNCS([setproctitle])
 AC_CHECK_FUNCS([srandomdev])
-AC_CHECK_FUNCS([strlcat strlcpy])
-AC_CHECK_FUNCS([strndup])
 AC_CHECK_FUNCS([backtrace])
 # white lie - we don't actually test it
 AC_MSG_CHECKING([whether daemon() works])

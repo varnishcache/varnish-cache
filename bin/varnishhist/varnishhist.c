@@ -65,6 +65,7 @@ static unsigned next_hist;
 static unsigned bucket_miss[HIST_BUCKETS];
 static unsigned bucket_hit[HIST_BUCKETS];
 static unsigned char hh[FD_SETSIZE];
+static uint64_t bitmap[FD_SETSIZE];
 
 static double log_ten;
 
@@ -146,12 +147,12 @@ update(struct VSM_data *vd)
 
 static int
 h_hist(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
-    unsigned spec, const char *ptr)
+    unsigned spec, const char *ptr, uint64_t bm)
 {
 	double b;
 	int i, j;
+	struct VSM_data *vd = priv;
 
-	(void)priv;
 	(void)len;
 	(void)spec;
 
@@ -159,12 +160,20 @@ h_hist(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 		/* oops */
 		return (0);
 
+	bitmap[fd] |= bm;
+
 	if (tag == SLT_Hit) {
 		hh[fd] = 1;
 		return (0);
 	}
 	if (tag != SLT_ReqEnd)
 		return (0);
+
+	if (!VSL_Matched(vd, bitmap[fd])) {
+		bitmap[fd] = 0;
+		hh[fd] = 0;
+		return (0);
+	}
 
 	/* determine processing time */
 #if 1
@@ -212,6 +221,7 @@ h_hist(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 		next_hist = 0;
 	}
 	hh[fd] = 0;
+	bitmap[fd] = 0;
 
 	pthread_mutex_unlock(&mtx);
 
@@ -225,7 +235,7 @@ accumulate_thread(void *arg)
 	int i;
 
 	for (;;) {
-		i = VSL_Dispatch(vd, h_hist, NULL);
+		i = VSL_Dispatch(vd, h_hist, vd);
 		if (i < 0)
 			break;
 		if (i == 0)

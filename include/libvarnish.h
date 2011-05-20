@@ -31,6 +31,7 @@
 #include <errno.h>
 #include <time.h>
 #include <stdint.h>
+#include <sys/types.h>
 
 #include "vas.h"
 
@@ -99,7 +100,8 @@ void varnish_version(const char *);
 
 /* from libvarnish/vtmpfile.c */
 int vtmpfile(char *);
-char *vreadfile(const char *pfx, const char *fn);
+char *vreadfile(const char *pfx, const char *fn, ssize_t *sz);
+char *vreadfd(int fd, ssize_t *sz);
 
 const char* vcs_version(void);
 

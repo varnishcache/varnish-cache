@@ -166,7 +166,8 @@ cnt_prepresp(struct sess *sp)
 
 	sp->wrk->res_mode = 0;
 
-	if (!sp->wrk->do_stream)
+	if (!sp->wrk->do_stream ||
+	    (sp->wrk->h_content_length != NULL && !sp->wrk->do_gunzip))
 		sp->wrk->res_mode |= RES_LEN;
 
 	if (!sp->disable_esi && sp->obj->esidata != NULL) {
@@ -414,6 +415,7 @@ cnt_error(struct sess *sp)
 		EXP_Clr(&w->exp);
 		sp->obj = STV_NewObject(sp, NULL, 1024, &w->exp,
 		     params->http_max_hdr);
+		XXXAN(sp->obj);
 		sp->obj->xid = sp->xid;
 		sp->obj->entered = sp->t_req;
 	} else {
@@ -754,8 +756,8 @@ cnt_fetchbody(struct sess *sp)
 
 	sp->wrk->storage_hint = NULL;
 
-	/* VFP will update as needed */
-	sp->obj->gziped = sp->wrk->is_gzip;
+	if (sp->wrk->do_gzip || (sp->wrk->is_gzip && !sp->wrk->do_gunzip))
+		sp->obj->gziped = 1;
 
 	if (vary != NULL) {
 		sp->obj->vary =
@@ -784,7 +786,7 @@ cnt_fetchbody(struct sess *sp)
 	if (http_GetHdr(hp, H_Last_Modified, &b))
 		sp->obj->last_modified = TIM_parse(b);
 	else
-		sp->obj->last_modified = sp->wrk->entered;
+		sp->obj->last_modified = floor(sp->wrk->entered);
 
 	assert(WRW_IsReleased(sp->wrk));
 
@@ -839,10 +841,23 @@ static int
 cnt_streambody(struct sess *sp)
 {
 	int i;
+	struct stream_ctx sctx;
+	uint8_t obuf[sp->wrk->res_mode & RES_GUNZIP ?
+	    params->gzip_stack_buffer : 1];
+
+	memset(&sctx, 0, sizeof sctx);
+	sctx.magic = STREAM_CTX_MAGIC;
+	AZ(sp->wrk->sctx);
+	sp->wrk->sctx = &sctx;
+
+	if (sp->wrk->res_mode & RES_GUNZIP) {
+		sctx.vgz = VGZ_NewUngzip(sp, "U S -");
+		sctx.obuf = obuf;
+		sctx.obuf_len = sizeof (obuf);
+	}
 
 	RES_StreamStart(sp);
 
-	/* Use unmodified headers*/
 	i = FetchBody(sp);
 
 	sp->wrk->h_content_length = NULL;
@@ -853,26 +868,23 @@ cnt_streambody(struct sess *sp)
 	AZ(sp->vbc);
 	AN(sp->director);
 
-	if (i) {
-		HSH_Drop(sp);
-		AZ(sp->obj);
-		sp->err_code = 503;
-		sp->step = STP_ERROR;
-		return (0);
-	}
-
-	if (sp->obj->objcore != NULL) {
+	if (!i && sp->obj->objcore != NULL) {
 		EXP_Insert(sp->obj);
 		AN(sp->obj->objcore);
 		AN(sp->obj->objcore->ban);
 		HSH_Unbusy(sp);
+	} else {
+		sp->doclose = "Stream error";
 	}
 	sp->acct_tmp.fetch++;
 	sp->director = NULL;
 	sp->restarts = 0;
 
 	RES_StreamEnd(sp);
+	if (sp->wrk->res_mode & RES_GUNZIP)
+		VGZ_Destroy(&sctx.vgz);
 
+	sp->wrk->sctx = NULL;
 	assert(WRW_IsReleased(sp->wrk));
 	assert(sp->wrk->wrw.ciov == sp->wrk->wrw.siov);
 	(void)HSH_Deref(sp->wrk, NULL, &sp->obj);

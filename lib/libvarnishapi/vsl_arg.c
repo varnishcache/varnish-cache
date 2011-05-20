@@ -149,6 +149,64 @@ vsl_ix_arg(const struct VSM_data *vd, const char *opt, int arg)
 /*--------------------------------------------------------------------*/
 
 static int
+name2tag(const char *n)
+{
+	int i;
+
+	for (i = 0; i < 256; i++) {
+		if (VSL_tags[i] == NULL)
+			continue;
+		if (!strcasecmp(n, VSL_tags[i]))
+			return (i);
+	}
+	return (-1);
+}
+
+static int
+vsl_m_arg(const struct VSM_data *vd, const char *opt)
+{
+	struct vsl_re_match *m;
+	const char *error;
+	char *o, *regex;
+	int erroroffset;
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	ALLOC_OBJ(m, VSL_RE_MATCH_MAGIC);
+	AN(m);
+
+	if (!strchr(opt, ':')) {
+		fprintf(stderr, "No : found in -o option %s\n", opt);
+		return (-1);
+	}
+
+	o = strdup(opt);
+	AN(o);
+	regex = strchr(o, ':');
+	*regex = '\0';
+	regex++;
+
+	m->tag = name2tag(o);
+	if (m->tag == -1) {
+		fprintf(stderr, "Illegal tag %s specified\n", o);
+		free(o);
+		return (-1);
+	}
+	/* Get tag, regex */
+	m->re = VRE_compile(regex, vd->vsl->regflags, &error, &erroroffset);
+	if (m->re == NULL) {
+		fprintf(stderr, "Illegal regex: %s\n", error);
+		free(o);
+		return (-1);
+	}
+	vd->vsl->num_matchers++;
+	VTAILQ_INSERT_TAIL(&vd->vsl->matchers, m, next);
+	free(o);
+	return (1);
+}
+
+/*--------------------------------------------------------------------*/
+
+static int
 vsl_s_arg(const struct VSM_data *vd, const char *opt)
 {
 	char *end;
@@ -206,6 +264,7 @@ VSL_Arg(struct VSM_data *vd, int arg, const char *opt)
 	case 'r': return (vsl_r_arg(vd, opt));
 	case 's': return (vsl_s_arg(vd, opt));
 	case 'I': case 'X': return (vsl_IX_arg(vd, opt, arg));
+	case 'm': return (vsl_m_arg(vd, opt));
 	case 'C': vd->vsl->regflags = VRE_CASELESS; return (1);
 	default:
 		return (0);

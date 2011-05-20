@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE group [
+<!ENTITY mdash "&#8212;">
+]>
+<group from="2.1.3" to="2.1.4">
+  <subsystem>
+    <name>varnishd</name>
+    <change type="bug">
+      <para>An embarrasing typo in the new binary heap layout caused
+      inflated obj/objcore/objhdr counts and could cause odd problems
+      when the LRU expunge mechanism was invoked.  This has been
+      fixed.</para>
+    </change>
+
+    <change type="enh">
+      <para>We now have updated documentation in the reStructuredText
+      format.  Manual pages and reference documentation are both built
+      from this.</para>
+    </change>
+
+    <change type="enh">
+      <para>We now include a DNS director which uses DNS for choosing
+      which backend to route requests to.  Please see the
+      documentation for more details.</para>
+    </change>
+
+    <change type="bug" ref="758">
+      <para>If you restarted a request, the HTTP header
+      <code>X-Forwarded-For</code> would be updated multiple times.
+      This has been fixed.</para>
+    </change>
+
+    <change type="bug" ref="742">
+      <para>If a VCL contained a % sign, and the <code>vcl.show</code>
+      CLI command was used, varnishd would crash.  This has been
+      fixed.</para>
+    </change>
+
+    <change type="bug" ref="730">
+      <para>When doing a pass operation, we would remove the
+      <code>Content-Length</code>, <code>Age</code> and
+      <code>Proxy-Auth</code> headers.  We are no longer doing
+      this.</para>
+    </change>
+
+    <change type="enh">
+      <para><code>now</code> has a string representation, making it
+      easier to construct <code>Expires</code> headers in VCL.</para>
+    </change>
+
+    <change type="bug" ref="739">
+      <para>In a high traffic environment, we would sometimes reuse a
+      file descriptor before flushing the logs from a worker thread to
+      the shared log buffer.  This would cause confusion in some of
+      the tools.  This has been fixed by explicitly flushing the log
+      when a backend connection is closed.</para>
+    </change>
+
+    <change type="bug" ref="744">
+      <para>If the communication between the management and the child
+      process gets out of sync, we have no way to recover.
+      Previously, <code>varnishd</code> would be confused, but we now
+      just kill the child and restart it.</para>
+    </change>
+
+    <change type="bug" ref="479">
+      <para>If the backend closes the connection on us just as we sent
+      a request to it, we retry the request.  This should solve some
+      interoperability problems with Apache and the mpm-itk multi
+      processing module.</para>
+    </change>
+
+    <change type="enh">
+      <para><code>varnishd</code> now only provides help output the
+      current CLI session is authenticated for.</para>
+    </change>
+
+    <change type="bug" ref="733">
+      <para>If the backend does not tell us which length indication it
+      is using, we now assume the resource ends EOF at.</para>
+    </change>
+
+    <change type="enh">
+      <para>The client director now has a variable
+      <code>client.identity</code> which is used to choose which
+      backend should receive a given request.</para>
+    </change>
+
+    <change type="enh">
+      <para>The Solaris <code>port</code> waiter has been updated, and
+      other portability fixes for Solaris.</para>
+    </change>
+
+    <change type="bug" ref="746">
+      <para>There was a corner case in the close-down processing of pipes, this has now been fixed.</para>
+    </change>
+
+    <change type="bug">
+      <para>Previously, if we stopped polling a backend which was
+      sick, it never got marked as healthy.  This has now been
+      changed.</para>
+    </change>
+
+    <change type="enh">
+      <para>It is now possible to specify ports as part of the <code>.host</code> field in VCL.</para>
+    </change>
+
+    <change type="bug" ref="768">
+      <para>The synthetic counters were not locked properly, and so
+      the <code>sms_</code> counters could underflow.  This has now
+      been fixed.</para>
+    </change>
+
+    <change type="bug" ref="769">
+      <para>The value of <code>obj.status</code> as a string in vcl_error would not be correct in all cases.  This has been fixed.</para>
+    </change>
+
+    <change type="bug" ref="776">
+      <para>Varnish would try to trim storage segments completely
+      filled when using the malloc stevedore and the object was
+      received chunked encoding.  This has been fixed.</para>
+    </change>
+
+    <change type="bug" ref="763">
+      <para>If a buggy backend sends us a <code>Vary</code> header
+      with two colons, we would previously abort.  We now rather fix
+      this up and ignore the extra colon.</para>
+    </change>
+
+    <change type="enh">
+      <para><code>req.hash_always_miss</code> and
+      <code>req.hash_ignore_busy</code> has been added, to make
+      preloading or periodically refreshing content work better.</para>
+    </change>
+
+  </subsystem>
+  <subsystem>
+    <name>varnishncsa</name>
+    <change type="bug">
+      <para><code>varnishncsa</code> would in some cases be confused
+      by ESI requests and output invalid lines.  This has now been
+      fixed.</para>
+    </change>
+  </subsystem>
+
+  <subsystem>
+    <name>varnishlog</name>
+    <change type="enh">
+      <para><code>varnishlog</code> now allows <code>-o</code> and <code>-u</code> together.</para>
+    </change>
+  </subsystem>
+
+  <subsystem>
+    <name>varnishtop</name>
+    <change type="bug">
+      <para><code>varnishtop</code> would crash on 32 bit
+      architectures.  This has been fixed.</para>
+    </change>
+  </subsystem>
+
+  <subsystem>
+    <name>libvarnishapi</name>
+    <change type="bug">
+      <para>Regex inclusion and exclusion had problems with matching
+      particular parts of the string being matched.  This has been
+      fixed.</para>
+    </change>
+  </subsystem>
+
+</group>

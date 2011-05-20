@@ -139,3 +139,11 @@ sub vcl_error {
 "};
     return (deliver);
 }
+
+sub vcl_init {
+	return (ok);
+}
+
+sub vcl_fini {
+	return (ok);
+}

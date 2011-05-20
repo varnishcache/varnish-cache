@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE group [
+<!ENTITY mdash "&#8212;">
+]>
+<!-- $Id: changes-2.0.6-2.1.0.xml 4672 2010-04-19 10:26:23Z tfheen $ -->
+<group from="2.0.6" to="2.1.0">
+  <subsystem>
+    <name>varnishd</name>
+
+    <change type="bug">
+      <para>The changelog in 2.1.0 included syntax errors, causing
+      the generated changelog to be empty.</para>
+    </change>
+
+    <change type="bug">
+      <para>The help text for <code>default_grace</code> was wrongly
+      formatted and included a syntax error.  This has now been fixed.</para>
+    </change>
+
+    <change type="bug">
+      <para><code>varnishd</code> now closes the file descriptor used
+      to read the management secret file (from the <code>-S</code>
+      parameter).</para>
+    </change>
+
+    <change type="bug" ref="669">
+      <para>The child would previously try to close every valid file
+	descriptor, something which could cause problems if the file
+	descriptor ulimit was set too high.  We now keep track of all
+	the file descriptors we open and only close up to that number.
+	</para>
+    </change>
+
+    <change type="bug">
+      <para>ESI was partially broken in 2.1.0 due to a bug in the
+      rollback of session workspace.  This has been fixed.</para>
+    </change>
+
+    <change type="bug">
+      <para>Reject the <code>auth</code>command rather than crash if
+      there is no <code>-S</code> parameter given.</para>
+    </change>
+
+    <change type="enh">
+      <para>Align pointers in allocated objects.  This will in theory
+      make Varnish a tiny bit faster at the expense of slightly more
+      memory usage.</para>
+    </change>
+
+    <change type="bug">
+      <para>Ensure the master process process id is updated in the
+      shared memory log file after we go into the background.</para>
+    </change>
+
+    <change type="bug" id="679">
+      <para><code>HEAD</code> requests would be converted to GET
+      requests too early, which affected <code>pass</code>
+      and <code>pipe</code>.  This has been fixed.</para>
+    </change>
+
+    <change type="bug">
+      <para>Update the documentation to point out that the TTL is no
+      longer taken into account to decide whether an object is
+      cacheable or not.</para>
+    </change>
+
+    <change type="enh">
+      <para>Add support for completely obliterating an object and all
+      variants of it.  Currently, this has to be done using inline C.</para>
+    </change>
+
+    <change type="enh">
+      <para>Add experimental support for the <code>Range</code>
+      header.  This has to be enabled using the parameter
+      http_range_support.</para>
+    </change>
+
+    <change type="bug" id="684">
+      <para>The <code>critbit</code> hasher could get into a deadlock
+      and had a race condition.  Both those have now been fixed.</para>
+    </change>
+
+  </subsystem>
+  <subsystem>
+    <name>varnishsizes</name>
+
+    <change type="enh">
+      <para><code>varnishsizes</code>, which is
+      like <code>varnishhost</code>, but for the length of objects,
+      has been added..</para>
+    </change>
+  </subsystem>
+</group>

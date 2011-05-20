@@ -100,30 +100,16 @@ static struct logline {
 	const char *df_handling;	/* How the request was handled (hit/miss/pass/pipe) */
 	int active;			/* Is log line in an active trans */
 	int complete;			/* Is log line complete */
-	int matched;			/* Did log line match */
+	uint64_t bitmap;		/* Bitmap for regex matches */
 } **ll;
+
+struct VSM_data *vd;
 
 static size_t nll;
 
-static int o_flag = 0;
-static int match_tag;
-static const vre_t *match_tag_re;
+static int m_flag = 0;
 
 static const char *format;
-
-static int
-name2tag(const char *n)
-{
-	int i;
-
-	for (i = 0; i < 256; i++) {
-		if (VSL_tags[i] == NULL)
-			continue;
-		if (!strcasecmp(n, VSL_tags[i]))
-			return (i);
-	}
-	return (-1);
-}
 
 static int
 isprefix(const char *str, const char *prefix, const char *end,
@@ -346,11 +332,6 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 	assert(spec & VSL_S_CLIENT);
 	end = ptr + len;
 
-	/* Do -o matching if specified */
-	if (o_flag && match_tag == tag && lp->active &&
-	   VRE_exec(match_tag_re, ptr, len, 0, 0, NULL, 0) > 0)
-		lp->matched = 1;
-
 	switch (tag) {
 	case SLT_ReqStart:
 		if (lp->active || lp->df_h != NULL) {
@@ -496,7 +477,7 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 
 static int
 h_ncsa(void *priv, enum vsl_tag tag, unsigned fd,
-    unsigned len, unsigned spec, const char *ptr)
+    unsigned len, unsigned spec, const char *ptr, uint64_t bitmap)
 {
 	struct logline *lp;
 	FILE *fo = priv;
@@ -530,10 +511,12 @@ h_ncsa(void *priv, enum vsl_tag tag, unsigned fd,
 		return (reopen);
 	}
 
+	lp->bitmap |= bitmap;
+
 	if (!lp->complete)
 		return (reopen);
 
-	if (o_flag && !lp->matched)
+	if (m_flag && !VSL_Matched(vd, lp->bitmap))
 		/* -o is in effect matching rule failed. Don't display */
 		return (reopen);
 
@@ -738,14 +721,13 @@ main(int argc, char *argv[])
 	const char *P_arg = NULL;
 	const char *w_arg = NULL;
 	struct pidfh *pfh = NULL;
-	struct VSM_data *vd;
 	FILE *of;
 	format = "%h %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-agent}i\"";
 
 	vd = VSM_New();
 	VSL_Setup(vd);
 
-	while ((c = getopt(argc, argv, VSL_ARGS "aDP:Vw:foF:")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "aDP:Vw:fF:")) != -1) {
 		switch (c) {
 		case 'a':
 			a_flag = 1;
@@ -793,9 +775,8 @@ main(int argc, char *argv[])
 		case 'c':
 			/* XXX: Silently ignored: it's required anyway */
 			break;
-		case 'o':
-			o_flag = 1;
-			break;
+		case 'm':
+			m_flag = 1; /* Fall through */
 		default:
 			if (VSL_Arg(vd, c, optarg) > 0)
 				break;
@@ -804,26 +785,6 @@ main(int argc, char *argv[])
 	}
 
 	VSL_Arg(vd, 'c', optarg);
-
-	if (o_flag) {
-		const char *error;
-		int erroroffset;
-
-		if (argc-optind != 2) {
-			fprintf(stderr, "Wrong number of arguments when using -o\n");
-			exit(2);
-		}
-		match_tag = name2tag(argv[optind]);
-		if (match_tag < 0) {
-			fprintf(stderr, "Tag \"%s\" unknown\n", argv[optind]);
-			exit(2);
-		}
-		match_tag_re = VRE_compile(argv[optind + 1], 0, &error, &erroroffset);
-		if (match_tag_re==NULL) {
-			fprintf(stderr, "Invalid regex: %s\n", error);
-			exit(2);
-		}
-	}
 
 	if (VSL_Open(vd, 1))
 		exit(1);

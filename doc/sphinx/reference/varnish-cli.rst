@@ -106,8 +106,6 @@ ban   *field operator argument* [&& field operator argument [...]]
       examples.
 
 ban.list
-      Display the ban list.
-
       All requests for objects from the cache are matched against
       items on the ban list.  If an object in the cache is older than
       a matching ban list item, it is considered "banned", and will be
@@ -116,11 +114,33 @@ ban.list
       When a ban expression is older than all the objects in the
       cache, it is removed from the list.
 
+      ban.list displays the ban list. The output looks something like
+      this (broken into two lines):
+
+      0x7fea4fcb0580 1303835108.618863   131G   req.http.host ~ 
+      www.myhost.com && req.url ~ /some/url
+
+      The first field is the address of the ban. 
+
+      The second is the time of entry into the list, given
+      as a high precision timestamp.
+
+      The third field describes many objects point to this ban. When
+      an object is compared to a ban the object is marked with a
+      reference to the newest ban it was tested against. This isn't
+      really useful unless you're debugging.
+
+      A "G" marks that the ban is "Gone". Meaning it has been marked
+      as a duplicate or it is no longer valid. It stays in the list
+      for effiency reasons.
+
+      Then follows the actual ban it self.
+
 ban.url regexp
       Immediately invalidate all documents whose URL matches the
       specified regular expression. Please note that the Host part of
       the URL is ignored, so if you have several virtual hosts all of
-      them will be purged. Use *ban* to specify a complete ban if you
+      them will be banned. Use *ban* to specify a complete ban if you
       need to narrow it down.
 
 quit
@@ -280,16 +300,16 @@ EXAMPLES
 ========
 
 Simple example: All requests where req.url exactly matches the string
-/news are purged from the cache:::
+/news are banned from the cache:::
 
     req.url == "/news"
 
-Example: Purge all documents where the name does not end with ".ogg",
+Example: Ban all documents where the name does not end with ".ogg",
 and where the size of the object is greater than 10 megabytes:::
 
     req.url !~ "\.ogg$" && obj.size > 10MB
 
-Example: Purge all documents where the serving host is "example.com"
+Example: Ban all documents where the serving host is "example.com"
 or "www.example.com", and where the Set-Cookie header received from
 the backend contains "USERID=1663":::
 

@@ -50,10 +50,6 @@
 
 #include "compat/daemon.h"
 
-#ifndef HAVE_STRLCPY
-#include "compat/strlcpy.h"
-#endif
-
 #include "vsb.h"
 #include "vev.h"
 #include "vpf.h"
@@ -189,7 +185,7 @@ tackle_warg(const char *argv)
 	char **av;
 	unsigned int u;
 
-	av = ParseArgv(argv, ARGV_COMMA);
+	av = ParseArgv(argv, NULL, ARGV_COMMA);
 	AN(av);
 
 	if (av[0] != NULL)
@@ -553,7 +549,7 @@ main(int argc, char * const *argv)
 	}
 
 	if (f_arg != NULL) {
-		vcl = vreadfile(NULL, f_arg);
+		vcl = vreadfile(NULL, f_arg, NULL);
 		if (vcl == NULL) {
 			fprintf(stderr, "Cannot read '%s': %s\n",
 			    f_arg, strerror(errno));

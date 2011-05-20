@@ -36,6 +36,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "stevedore.h"
 #include "vct.h"
 
 /*--------------------------------------------------------------------*/
@@ -394,6 +395,10 @@ RES_WriteObj(struct sess *sp)
 void
 RES_StreamStart(struct sess *sp)
 {
+	struct stream_ctx *sctx;
+
+	sctx = sp->wrk->sctx;
+	CHECK_OBJ_NOTNULL(sctx, STREAM_CTX_MAGIC);
 
 	AZ(sp->wrk->res_mode & RES_ESI_CHILD);
 	AN(sp->wantbody);
@@ -405,48 +410,78 @@ RES_StreamStart(struct sess *sp)
 	if (sp->wrk->res_mode & RES_GUNZIP)
 		http_Unset(sp->wrk->resp, H_Content_Encoding);
 
+	if (!(sp->wrk->res_mode & RES_CHUNKED) &&
+	    sp->wrk->h_content_length != NULL)
+		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
+		    "Content-Length: %s", sp->wrk->h_content_length);
+
 	sp->acct_tmp.hdrbytes +=
 	    http_Write(sp->wrk, sp->wrk->resp, 1);
 
 	if (sp->wrk->res_mode & RES_CHUNKED)
 		WRW_Chunked(sp->wrk);
-
-	sp->wrk->stream_next = 0;
 }
 
 void
 RES_StreamPoll(const struct sess *sp)
 {
+	struct stream_ctx *sctx;
 	struct storage *st;
 	ssize_t l, l2;
 	void *ptr;
 
-	if (sp->obj->len == sp->wrk->stream_next)
+	sctx = sp->wrk->sctx;
+	CHECK_OBJ_NOTNULL(sctx, STREAM_CTX_MAGIC);
+	if (sp->obj->len == sctx->stream_next)
 		return;
-	assert(sp->obj->len > sp->wrk->stream_next);
-	l = 0;
+	assert(sp->obj->len > sctx->stream_next);
+	l = sctx->stream_front;
 	VTAILQ_FOREACH(st, &sp->obj->store, list) {
-		if (st->len + l <= sp->wrk->stream_next) {
+		if (st->len + l <= sctx->stream_next) {
 			l += st->len;
 			continue;
 		}
-		l2 = st->len + l - sp->wrk->stream_next;
-		ptr = st->ptr + (sp->wrk->stream_next - l);
-		(void)WRW_Write(sp->wrk, ptr, l2);
+		l2 = st->len + l - sctx->stream_next;
+		ptr = st->ptr + (sctx->stream_next - l);
+		if (sp->wrk->res_mode & RES_GUNZIP) {
+			(void)VGZ_WrwGunzip(sp, sctx->vgz, ptr, l2,
+			    sctx->obuf, sctx->obuf_len, &sctx->obuf_ptr);
+		} else {
+			(void)WRW_Write(sp->wrk, ptr, l2);
+		}
 		l += st->len;
-		sp->wrk->stream_next += l2;
+		sctx->stream_next += l2;
 	}
-	(void)WRW_Flush(sp->wrk);
+	if (!(sp->wrk->res_mode & RES_GUNZIP))
+		(void)WRW_Flush(sp->wrk);
+
+	if (sp->objcore == NULL || (sp->objcore->flags & OC_F_PASS)) {
+		/*
+		 * This is a pass object, release storage as soon as we
+		 * have delivered it.
+		 */
+		while (1) {
+			st = VTAILQ_FIRST(&sp->obj->store);
+			if (st == NULL ||
+			    sctx->stream_front + st->len > sctx->stream_next)
+				break;
+			VTAILQ_REMOVE(&sp->obj->store, st, list);
+			sctx->stream_front += st->len;
+			STV_free(st);
+		}
+	}
 }
 
 void
 RES_StreamEnd(struct sess *sp)
 {
+	struct stream_ctx *sctx;
 
-	if (sp->wrk->res_mode & RES_GUNZIP) {
-		INCOMPL();
-		res_WriteGunzipObj(sp);
-	}
+	sctx = sp->wrk->sctx;
+	CHECK_OBJ_NOTNULL(sctx, STREAM_CTX_MAGIC);
+
+	if (sp->wrk->res_mode & RES_GUNZIP && sctx->obuf_ptr > 0)
+		(void)WRW_Write(sp->wrk, sctx->obuf, sctx->obuf_ptr);
 	if (sp->wrk->res_mode & RES_CHUNKED &&
 	    !(sp->wrk->res_mode & RES_ESI_CHILD))
 		WRW_EndChunk(sp->wrk);

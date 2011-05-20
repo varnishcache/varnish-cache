@@ -576,7 +576,11 @@ FetchBody(struct sess *sp)
 		uu = 0;
 		VTAILQ_FOREACH(st, &sp->obj->store, list)
 			uu += st->len;
-		assert(uu == sp->obj->len);
+		if (sp->objcore == NULL || (sp->objcore->flags & OC_F_PASS))
+			/* Streaming might have started freeing stuff */
+			assert (uu <= sp->obj->len);
+		else
+			assert(uu == sp->obj->len);
 	}
 
 	if (mklen > 0) {

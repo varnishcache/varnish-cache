@@ -24,7 +24,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
-__FBSDID("$FreeBSD: head/sys/kern/subr_vsb.c 212750 2010-09-16 16:13:12Z mdf $
+__FBSDID("$FreeBSD: head/sys/kern/subr_vsb.c 222004 2011-05-17 06:36:32Z phk $")
  */
 
 #include "config.h"
@@ -62,6 +62,7 @@ __FBSDID("$FreeBSD: head/sys/kern/subr_vsb.c 212750 2010-09-16 16:13:12Z mdf $
 #define	VSB_CLEARFLAG(s, f)	do { (s)->s_flags &= ~(f); } while (0)
 
 #define	VSB_MINEXTENDSIZE	16		/* Should be power of 2. */
+
 #ifdef PAGE_SIZE
 #define	VSB_MAXEXTENDSIZE	PAGE_SIZE
 #define	VSB_MAXEXTENDINCR	PAGE_SIZE
@@ -108,6 +109,12 @@ _assert_vsb_state(const char *fun, struct vsb *s, int state)
 #define	assert_vsb_state(s, i)	 do { } while (0)
 #endif
 
+#ifdef CTASSERT
+CTASSERT(powerof2(VSB_MAXEXTENDSIZE));
+CTASSERT(powerof2(VSB_MAXEXTENDINCR));
+#endif
+
+
 static int
 vsb_extendsize(int size)
 {
@@ -123,7 +130,6 @@ vsb_extendsize(int size)
 	KASSERT(newsize >= size, ("%s: %d < %d\n", __func__, newsize, size));
 	return (newsize);
 }
-
 
 /*
  * Extend an vsb.
@@ -160,19 +166,22 @@ vsb_newbuf(struct vsb *s, char *buf, int length, int flags)
 {
 
 	memset(s, 0, sizeof(*s));
-	s->s_flags = flags;
 	s->s_magic = VSB_MAGIC;
-
-	if (buf != NULL) {
-		KASSERT(length > 0,
-		    ("zero or negative length (%d)", length));
-		s->s_size = length;
-		s->s_buf = buf;
-		return (s);
-	}
+	s->s_flags = flags;
 	s->s_size = length;
+	s->s_buf = buf;
+
+	if ((s->s_flags & VSB_AUTOEXTEND) == 0) {
+		KASSERT(s->s_size > 1,
+		    ("attempt to create a too small vsb"));
+	}
+
+	if (s->s_buf != NULL)
+		return (s);
+
 	if ((flags & VSB_AUTOEXTEND) != 0)
 		s->s_size = vsb_extendsize(s->s_size);
+
 	s->s_buf = SBMALLOC(s->s_size);
 	if (s->s_buf == NULL)
 		return (NULL);
@@ -182,6 +191,8 @@ vsb_newbuf(struct vsb *s, char *buf, int length, int flags)
 
 /*
  * Initialize an vsb.
+ * If buf is non-NULL, it points to a static or already-allocated string
+ * big enough to hold at least length characters.
  */
 struct vsb *
 vsb_new(struct vsb *s, char *buf, int length, int flags)
@@ -234,9 +245,10 @@ vsb_setpos(struct vsb *s, ssize_t pos)
 	assert_vsb_state(s, 0);
 
 	KASSERT(pos >= 0,
-	    ("attempt to seek to a negative position (%d)", pos));
+	    ("attempt to seek to a negative position (%jd)", (intmax_t)pos));
 	KASSERT(pos < s->s_size,
-	    ("attempt to seek past end of vsb (%d >= %d)", pos, s->s_size));
+	    ("attempt to seek past end of vsb (%jd >= %jd)",
+	    (intmax_t)pos, (intmax_t)s->s_size));
 
 	if (pos < 0 || pos > s->s_len)
 		return (-1);
@@ -250,7 +262,7 @@ vsb_setpos(struct vsb *s, ssize_t pos)
  * buffer and marking overflow.
  */
 static void
-vsb_put_byte(struct vsb *s, char c)
+vsb_put_byte(struct vsb *s, int c)
 {
 
 	assert_vsb_integrity(s);
@@ -264,9 +276,8 @@ vsb_put_byte(struct vsb *s, char c)
 		if (s->s_error != 0)
 			return;
 	}
-	s->s_buf[s->s_len++] = c;
+	s->s_buf[s->s_len++] = (char)c;
 }
-
 
 /*
  * Append a byte string to an vsb.
@@ -357,6 +368,17 @@ vsb_vprintf(struct vsb *s, const char *fmt, va_list ap)
 	if (s->s_error != 0)
 		return (-1);
 
+	/*
+	 * For the moment, there is no way to get vsnprintf(3) to hand
+	 * back a character at a time, to push everything into
+	 * vsb_putc_func() as was done for the kernel.
+	 *
+	 * In userspace, while drains are useful, there's generally
+	 * not a problem attempting to malloc(3) on out of space.  So
+	 * expand a userland vsb if there is not enough room for the
+	 * data produced by vsb_[v]printf(3).
+	 */
+
 	do {
 		va_copy(ap_copy, ap);
 		len = vsnprintf(&s->s_buf[s->s_len], VSB_FREESPACE(s) + 1,
@@ -407,7 +429,7 @@ vsb_printf(struct vsb *s, const char *fmt, ...)
  * Append a character to an vsb.
  */
 int
-vsb_putc(struct vsb *s, char c)
+vsb_putc(struct vsb *s, int c)
 {
 
 	vsb_put_byte(s, c);
@@ -534,7 +556,7 @@ vsb_quote(struct vsb *s, const char *p, int len, int how)
 		len = strlen(p);
 
 	for (q = p; q < p + len; q++) {
-		if (!isgraph(*q) || *q == '"') {
+		if (!isgraph(*q) || *q == '"' || *q == '\\') {
 			quote++;
 			break;
 		}

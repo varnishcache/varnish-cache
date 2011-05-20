@@ -156,6 +156,7 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 	int i;
 	char *q;
 	unsigned u;
+	struct vsb *vsb;
 
 	(void)priv;
 	/*
@@ -174,21 +175,22 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 		    "Type 'help' for more info.");
 		return;
 	}
-	AN(cli->cmd);
-	i = write(cli_o, cli->cmd, strlen(cli->cmd));
-	if (i != strlen(cli->cmd)) {
+	vsb = vsb_new_auto();
+	for (i = 1; av[i] != NULL; i++) {
+		vsb_quote(vsb, av[i], strlen(av[i]), 0);
+		vsb_putc(vsb, ' ');
+	}
+	vsb_putc(vsb, '\n');
+	AZ(vsb_finish(vsb));
+	i = write(cli_o, vsb_data(vsb), vsb_len(vsb));
+	if (i != vsb_len(vsb)) {
+		vsb_delete(vsb);
 		cli_result(cli, CLIS_COMMS);
 		cli_out(cli, "CLI communication error");
 		MGT_Child_Cli_Fail();
 		return;
 	}
-	i = write(cli_o, "\n", 1);
-	if (i != 1) {
-		cli_result(cli, CLIS_COMMS);
-		cli_out(cli, "CLI communication error");
-		MGT_Child_Cli_Fail();
-		return;
-	}
+	vsb_delete(vsb);
 	(void)cli_readres(cli_i, &u, &q, params->cli_timeout);
 	cli_result(cli, u);
 	cli_out(cli, "%s", q);

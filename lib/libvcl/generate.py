@@ -92,6 +92,8 @@ returns =(
 	('fetch',	('error', 'restart', 'hit_for_pass', 'deliver',)),
 	('deliver',	('restart', 'deliver',)),
 	('error',	('restart', 'deliver',)),
+	('init',	('ok',)),
+	('fini',	('ok',)),
 )
 
 #######################################################################
@@ -572,7 +574,7 @@ def emit_file(fo, fn):
 	w = 66		# Width of lines, after white space prefix
 	maxlen = 10240	# Max length of string literal
 
-	x = 0 
+	x = 0
 	l = 0
 	fo.write("\n\t/* %s */\n\n" % fn)
 	for c in fc:
@@ -600,7 +602,7 @@ def emit_file(fo, fn):
 			fo.write(d + "\"\n")
 			x = 0
 			continue
-		
+
 		fo.write(d)
 		x += len(d)
 		l += len(d)
@@ -663,7 +665,7 @@ for i in returns:
 	vcls.append(i[0])
 	for j in i[1]:
 		rets[j] = True
-	
+
 #######################################################################
 
 fo = open(buildroot + "/include/vcl_returns.h", "w")
@@ -750,8 +752,8 @@ struct VCL_conf {
 	const char	**srcname;
 	const char	**srcbody;
 
-	vcl_init_f	*init_func;
-	vcl_fini_f	*fini_func;
+	vcl_init_f	*init_vcl;
+	vcl_fini_f	*fini_vcl;
 """)
 
 for i in returns:
@@ -782,7 +784,7 @@ def restrict(fo, spec):
 		n += 1
 		fo.write(p + "VCL_MET_" + j.upper())
 		p = " | "
-		
+
 	fo.write(",\n")
 
 #######################################################################

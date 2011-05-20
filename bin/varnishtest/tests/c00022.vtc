@@ -21,7 +21,7 @@ server s1 {
 varnish v1 -vcl+backend { 
 	sub vcl_recv {
 		if (req.request == "PURGE") {
-			ban (req.url == req.url);
+			ban ("req.url == " + req.url);
 			error 410;
 		}
 		if (req.request == "PURGESTR") {
@@ -30,26 +30,6 @@ varnish v1 -vcl+backend {
 		}
 	}
 } -start
-
-# Trigger syntax check 
-varnish v1 -badvcl {
-	backend foo {
-		.host = "127.0.0.1";
-	}
-	sub vcl_recv {
-		ban (req.foo == req.url);
-	}
-}
-
-# Trigger syntax check 
-varnish v1 -badvcl {
-	backend foo {
-		.host = "127.0.0.1";
-	}
-	sub vcl_recv {
-		ban (req.http. == req.url);
-	}
-}
 
 # Fetch into cache
 client c1 {
@@ -113,7 +93,7 @@ client c1 {
 
 # Ban: it
 client c1 {
-	txreq -req PURGESTR -hdr "Ban: obj.http.foo == \"bar6\""
+	txreq -req PURGESTR -hdr "Ban: obj.http.foo == bar6"
 	rxresp
 	expect resp.status == 410
 } -run
@@ -130,10 +110,11 @@ client c1 {
 
 # Ban: something else
 client c1 {
-	txreq -req PURGESTR -hdr "Ban: obj.http.foo == \"bar6\""
+	txreq -req PURGESTR -hdr "Ban: obj.http.foo == bar6"
 	rxresp
 	expect resp.status == 410
 } -run
+
 varnish v1 -cliok "ban.list"
 
 # Still there
@@ -147,7 +128,7 @@ client c1 {
 
 # Header match
 client c1 {
-	txreq -req PURGESTR -hdr "Ban: req.http.foo == \"barcheck\""
+	txreq -req PURGESTR -hdr "Ban: req.http.foo == barcheck"
 	rxresp
 	expect resp.status == 410
 } -run
@@ -163,7 +144,7 @@ client c1 {
 
 # Header match
 client c1 {
-	txreq -req PURGESTR -hdr "Ban: obj.http.foo == \"barcheck\""
+	txreq -req PURGESTR -hdr "Ban: obj.http.foo == barcheck"
 	rxresp
 	expect resp.status == 410
 } -run

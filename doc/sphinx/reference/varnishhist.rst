@@ -15,8 +15,8 @@ Varnish request histogram
 SYNOPSIS
 ========
 
-varnishhist [-b] [-C] [-c] [-d] [-I regex] [-i tag] [-n varnish_name] 
-[-r file] [-V] [-w delay] [-X regex] [-x tag]
+varnishhist [-b] [-C] [-c] [-d] [-I regex] [-i tag] [-m tag:regex ...] 
+[-n varnish_name] [-r file] [-V] [-w delay] [-X regex] [-x tag]
 
 DESCRIPTION
 ===========
@@ -50,6 +50,9 @@ The following options are available:
 
 -i tag      Include log entries with the specified tag.  If neither 
    	    -I nor -i is specified, all log entries are included.
+
+-m tag:regex only count transactions where tag matches regex. Multiple
+            -m options are AND-ed together.
 
 -n          Specifies the name of the varnishd instance to get logs 
 	    from.  If -n is not specified, the host name is used.

@@ -39,10 +39,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#ifndef HAVE_STRLCPY
-#include "compat/strlcpy.h"
-#endif
-
 #include "libvarnish.h"		/* XXX: for assert() */
 #include "flopen.h"
 #include "vpf.h"

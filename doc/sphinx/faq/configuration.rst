@@ -36,7 +36,9 @@ _only_ pushes bytes back and forth, with no other actions taken.
 
 Since most HTTP clients do pipeline several requests into one
 connection this might give you an undesirable result - as every
-subsequent request will reuse the existing ``pipe``.
+subsequent request will reuse the existing ``pipe``.  Please see `this
+article <http://www.varnish-cache.org/trac/wiki/VCLExamplePipe>` for
+more details and a workaround.
 
 Varnish versions prior to 2.0 does not support handling a request body
 with ``pass`` mode, so in those releases ``pipe`` is required for

@@ -323,7 +323,7 @@ cls_vlu(void *priv, const char *p)
 			return (0);
 		REPLACE(cli->cmd, p);
 
-		av = ParseArgv(p, 0);
+		av = ParseArgv(p, NULL, 0);
 		AN(av);
 		if (av[0] != NULL) {
 			i = cls_vlu2(priv, av);

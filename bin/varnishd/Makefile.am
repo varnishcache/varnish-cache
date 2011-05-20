@@ -77,7 +77,6 @@ varnishd_SOURCES = \
 noinst_HEADERS = \
 	acct_fields.h \
 	cache.h \
-	cache_ban.h \
 	cache_backend.h \
 	cache_backend_poll.h \
 	cache_esi.h \
@@ -95,6 +94,7 @@ noinst_HEADERS = \
 	vparam.h
 
 varnishd_CFLAGS = \
+	@PCRE_CFLAGS@ \
         -DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
 	-DVARNISH_VMOD_DIR='"${pkglibdir}/vmods"' \
 	-DVARNISH_VCL_DIR='"${varnishconfdir}"'
@@ -107,6 +107,7 @@ varnishd_LDADD = \
 	$(top_builddir)/lib/libvcl/libvcl.la \
 	$(top_builddir)/lib/libvgz/libvgz.la \
 	@JEMALLOC_LDADD@ \
+	@PCRE_LIBS@ \
 	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${LIBM} ${LIBUMEM}
 
 EXTRA_DIST = default.vcl
