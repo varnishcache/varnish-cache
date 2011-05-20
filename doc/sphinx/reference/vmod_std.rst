@@ -9,7 +9,7 @@ Varnish Standard Module
 :Author: Per Buer
 :Date:   2011-05-19
 :Version: 1.0
-:Manual section: 1
+:Manual section: 3
 
 
 SYNOPSIS
