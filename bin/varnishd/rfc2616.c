@@ -98,6 +98,7 @@ RFC2616_Ttl(const struct sess *sp)
 	case 300: /* Multiple Choices */
 	case 301: /* Moved Permanently */
 	case 302: /* Moved Temporarily */
+	case 307: /* Temporary Redirect */
 	case 410: /* Gone */
 	case 404: /* Not Found */
 		/*
