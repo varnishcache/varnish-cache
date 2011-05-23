@@ -310,7 +310,7 @@ void vcc_VarVal(struct vcc *tl, const struct var *vp,
 void vcc_ParseImport(struct vcc *tl);
 
 /* vcc_xref.c */
-void vcc_AddDef(struct vcc *tl, const struct token *t, enum symkind type);
+int vcc_AddDef(struct vcc *tl, const struct token *t, enum symkind type);
 void vcc_AddRef(struct vcc *tl, const struct token *t, enum symkind type);
 int vcc_CheckReferences(struct vcc *tl);
 
