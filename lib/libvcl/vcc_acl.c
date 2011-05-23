@@ -465,6 +465,7 @@ void
 vcc_Acl(struct vcc *tl)
 {
 	struct token *an;
+	int i;
 	char acln[1024];
 
 	vcc_NextToken(tl);
@@ -474,7 +475,12 @@ vcc_Acl(struct vcc *tl)
 	an = tl->t;
 	vcc_NextToken(tl);
 
-	vcc_AddDef(tl, an, SYM_ACL);
+	i = vcc_AddDef(tl, an, SYM_ACL);
+	if (i > 1) {
+		vsb_printf(tl->sb, "ACL %.*s redefined\n", PF(an));
+		vcc_ErrWhere(tl, an);
+		return;
+	}
 	bprintf(acln, "%.*s", PF(an));
 
 	SkipToken(tl, '{');

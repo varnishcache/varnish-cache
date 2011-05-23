@@ -412,6 +412,7 @@ void
 vcc_ParseProbe(struct vcc *tl)
 {
 	struct token *t_probe;
+	int i;
 
 	vcc_NextToken(tl);		/* ID: probe */
 
@@ -419,7 +420,11 @@ vcc_ParseProbe(struct vcc *tl)
 	ERRCHK(tl);
 	t_probe = tl->t;
 	vcc_NextToken(tl);
-	vcc_AddDef(tl, t_probe, SYM_PROBE);
+	i = vcc_AddDef(tl, t_probe, SYM_PROBE);
+	if (i > 1) {
+		vsb_printf(tl->sb, "Probe %.*s redefined\n", PF(t_probe));
+		vcc_ErrWhere(tl, t_probe);
+	}
 
 	Fh(tl, 0, "\n#define vgc_probe_%.*s\tvgc_probe__%d\n",
 	    PF(t_probe), tl->nprobe);
@@ -682,6 +687,11 @@ vcc_DefBackend(struct vcc *tl, const struct token *nm)
 
 	sym = VCC_GetSymbolTok(tl, nm, SYM_BACKEND);
 	AN(sym);
+	if (sym->ndef > 0) {
+		vsb_printf(tl->sb, "Backend %.*s redefined\n", PF(tl->t));
+		vcc_ErrWhere(tl, nm);
+		return;
+	} 
 	sym->fmt = BACKEND;
 	sym->eval = vcc_Eval_Backend;
 	sym->ndef++;
@@ -700,6 +710,7 @@ vcc_ParseSimpleDirector(struct vcc *tl)
 	h = TlAlloc(tl, sizeof *h);
 	h->name = tl->t_dir;
 	vcc_DefBackend(tl, tl->t_dir);
+	ERRCHK(tl);
 	sprintf(vgcname, "_%.*s", PF(h->name));
 	h->vgcname = TlAlloc(tl, strlen(vgcname) + 1);
 	strcpy(h->vgcname, vgcname);
@@ -748,6 +759,7 @@ vcc_ParseDirector(struct vcc *tl)
 		vcc_ParseSimpleDirector(tl);
 	} else {
 		vcc_DefBackend(tl, tl->t_dir);
+		ERRCHK(tl);
 		ExpectErr(tl, ID);		/* ID: policy */
 		tl->t_policy = tl->t;
 		vcc_NextToken(tl);

@@ -204,7 +204,7 @@ vcc_Function(struct vcc *tl)
 		assert(m < VCL_MET_MAX);
 		tl->fb = tl->fm[m];
 		if (tl->mprocs[m] == NULL) {
-			vcc_AddDef(tl, tl->t, SYM_SUB);
+			(void)vcc_AddDef(tl, tl->t, SYM_SUB);
 			vcc_AddRef(tl, tl->t, SYM_SUB);
 			tl->mprocs[m] = vcc_AddProc(tl, tl->t);
 		}
