@@ -656,7 +656,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		 * XXX: look for SYM_VAR first for consistency ?
 		 */
 		sym = VCC_FindSymbol(tl, tl->t, SYM_NONE);
-		if (sym == NULL) {
+		if (sym == NULL || sym->eval == NULL) {
 			vsb_printf(tl->sb, "Symbol not found: ");
 			vcc_ErrToken(tl, tl->t);
 			vsb_printf(tl->sb, " (expected type %s):\n",

@@ -1,0 +1,16 @@
+varnishtest "VCC reference bug"
+
+server s1 {
+	rxreq
+	txresp -body "FOO"
+} -start
+
+varnish v1 -badvcl {
+	sub s1 {
+	}
+	sub vcl_fetch {
+	    if (req.backend == s-1){
+		set req.backend = s-1;
+	    }
+	}
+}
