@@ -20,6 +20,7 @@ The Varnish Reference Manual
 	varnishtop.rst
 	shmem.rst
 	vmod.rst
+	vmod_std.rst
 	vsl.rst
 
 .. todo::
