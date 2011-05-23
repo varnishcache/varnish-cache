@@ -454,6 +454,11 @@ http_gzip_support
 
 	Clients that do not support gzip will have their Accept-Encoding header removed. For more information on how gzip is implemented please see the chapter on gzip in the Varnish reference.
 
+        Note: Enabling gzip on a running Varnish instance using ESI can
+        yield content where cached, uncompressed pages have compressed ESI
+        elements. To avoid this, either ban all ESI-related elements before
+        enabling gzip, or restart Varnish.
+
 http_headers
 	- Units: header lines
 	- Default: 64
