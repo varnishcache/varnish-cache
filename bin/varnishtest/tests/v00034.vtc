@@ -1,0 +1,26 @@
+varnishtest "Test sub and backend redefinition"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend { } -start
+
+varnish v1 -badvcl {
+	backend foo { .host = "127.0.0.1"; }
+	sub c1 { }
+	sub c1 { }
+	sub vcl_recv { call c1; }
+}
+
+varnish v1 -badvcl {
+	backend s1 { .host = "127.0.0.1"; }
+	backend s1 { .host = "127.0.0.1"; }
+}
+
+varnish v1 -badvcl {
+	backend s1 { .host = "127.0.0.1"; .probe = p1;}
+	probe p1 { }
+	probe p1 { }
+}

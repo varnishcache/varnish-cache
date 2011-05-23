@@ -194,7 +194,7 @@ vcc_Compound(struct vcc *tl)
 static void
 vcc_Function(struct vcc *tl)
 {
-	int m;
+	int m, i;
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
@@ -204,7 +204,7 @@ vcc_Function(struct vcc *tl)
 		assert(m < VCL_MET_MAX);
 		tl->fb = tl->fm[m];
 		if (tl->mprocs[m] == NULL) {
-			vcc_AddDef(tl, tl->t, SYM_SUB);
+			(void)vcc_AddDef(tl, tl->t, SYM_SUB);
 			vcc_AddRef(tl, tl->t, SYM_SUB);
 			tl->mprocs[m] = vcc_AddProc(tl, tl->t);
 		}
@@ -214,7 +214,13 @@ vcc_Function(struct vcc *tl)
 		Fb(tl, 0, " */\n");
 	} else {
 		tl->fb = tl->fc;
-		vcc_AddDef(tl, tl->t, SYM_SUB);
+		i = vcc_AddDef(tl, tl->t, SYM_SUB);
+		if (i > 1) {
+			vsb_printf(tl->sb,
+			    "Function %.*s redefined\n", PF(tl->t));
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
 		tl->curproc = vcc_AddProc(tl, tl->t);
 		Fh(tl, 0, "static int VGC_function_%.*s (struct sess *sp);\n",
 		    PF(tl->t));
