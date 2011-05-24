@@ -178,7 +178,7 @@ stv_alloc(const struct sess *sp, size_t size)
 		if (st != NULL)
 			break;
 
-		if (size > params->fetch_chunksize) {
+		if (size > params->fetch_chunksize * 1024LL) {
 			size >>= 1;
 			continue;
 		}
