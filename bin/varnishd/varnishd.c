@@ -71,7 +71,7 @@
 #endif
 
 struct heritage		heritage;
-volatile struct params	* volatile params;
+volatile struct params	*params;
 unsigned		d_flag = 0;
 pid_t			mgt_pid;
 struct vev_base		*mgt_evb;
