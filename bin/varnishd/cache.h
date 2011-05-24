@@ -177,7 +177,6 @@ struct http {
 	txt			*hd;
 	unsigned char		*hdf;
 #define HDF_FILTER		(1 << 0)	/* Filtered by Connection */
-#define HDF_COPY		(1 << 1)	/* Copy this field */
 	unsigned		nhd;		/* Next free hd */
 };
 
@@ -683,7 +682,6 @@ void EXP_Set_keep(struct exp *e, double v);
 
 double EXP_Ttl(const struct sess *, const struct object*);
 double EXP_Grace(const struct sess *, const struct object*);
-double EXP_Keep(const struct sess *, const struct object*);
 void EXP_Insert(struct object *o);
 void EXP_Inject(struct objcore *oc, struct lru *lru, double when);
 void EXP_Init(void);
@@ -802,7 +800,6 @@ void Lck_CondWait(pthread_cond_t *cond, struct lock *lck);
 #define Lck_Unlock(a) Lck__Unlock(a, __func__, __FILE__, __LINE__)
 #define Lck_Trylock(a) Lck__Trylock(a, __func__, __FILE__, __LINE__)
 #define Lck_AssertHeld(a) Lck__Assert(a, 1)
-#define Lck_AssertNotHeld(a) Lck__Assert(a, 0)
 
 #define LOCK(nam) extern struct vsc_lck *lck_##nam;
 #include "locks.h"
@@ -816,7 +813,6 @@ void PipeSession(struct sess *sp);
 
 /* cache_pool.c */
 void WRK_Init(void);
-int WRK_Queue(struct workreq *wrq);
 int WRK_QueueSession(struct sess *sp);
 void WRK_SumStat(struct worker *w);
 
@@ -891,7 +887,6 @@ int VRY_Match(const struct sess *sp, const unsigned char *vary);
 void VCL_Init(void);
 void VCL_Refresh(struct VCL_conf **vcc);
 void VCL_Rel(struct VCL_conf **vcc);
-void VCL_Get(struct VCL_conf **vcc);
 void VCL_Poll(void);
 
 #define VCL_MET_MAC(l,u,b) void VCL_##l##_method(struct sess *);

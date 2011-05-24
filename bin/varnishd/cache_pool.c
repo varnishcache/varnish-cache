@@ -239,7 +239,7 @@ wrk_thread(void *priv)
  * Return zero if the request was queued, negative if it wasn't.
  */
 
-int
+static int
 WRK_Queue(struct workreq *wrq)
 {
 	struct worker *w;

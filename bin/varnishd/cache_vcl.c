@@ -67,17 +67,7 @@ static struct vcls		*vcl_active; /* protected by vcl_mtx */
 
 /*--------------------------------------------------------------------*/
 
-void
-VCL_Refresh(struct VCL_conf **vcc)
-{
-	if (*vcc == vcl_active->conf)
-		return;
-	if (*vcc != NULL)
-		VCL_Rel(vcc);	/* XXX: optimize locking */
-	VCL_Get(vcc);
-}
-
-void
+static void
 VCL_Get(struct VCL_conf **vcc)
 {
 	static int once = 0;
@@ -94,6 +84,16 @@ VCL_Get(struct VCL_conf **vcc)
 	AZ((*vcc)->discard);
 	(*vcc)->busy++;
 	Lck_Unlock(&vcl_mtx);
+}
+
+void
+VCL_Refresh(struct VCL_conf **vcc)
+{
+	if (*vcc == vcl_active->conf)
+		return;
+	if (*vcc != NULL)
+		VCL_Rel(vcc);	/* XXX: optimize locking */
+	VCL_Get(vcc);
 }
 
 void
