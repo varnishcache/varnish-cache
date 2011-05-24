@@ -509,13 +509,11 @@ STV_Config(const char *spec)
 void
 STV_Config_Transient(void)
 {
-	const struct stevedore *stv;
 
 	ASSERT_MGT();
-	VTAILQ_FOREACH(stv, &stevedores, list)
-		if (!strcmp(stv->ident, TRANSIENT_STORAGE))
-			return;
-	STV_Config(TRANSIENT_STORAGE "=malloc");
+
+	if (stv_transient == NULL)
+		STV_Config(TRANSIENT_STORAGE "=malloc");
 }
 
 /*--------------------------------------------------------------------*/
@@ -529,6 +527,8 @@ stv_cli_list(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	(void)priv;
 	cli_out(cli, "Storage devices:\n");
+	stv = stv_transient;
+		cli_out(cli, "\tstorage.%s = %s\n", stv->ident, stv->name);
 	VTAILQ_FOREACH(stv, &stevedores, list)
 		cli_out(cli, "\tstorage.%s = %s\n", stv->ident, stv->name);
 }
