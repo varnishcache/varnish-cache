@@ -746,7 +746,6 @@ cnt_fetchbody(struct sess *sp)
 		sp->wrk->exp.ttl = params->shortlived;
 	}
 	if (sp->obj == NULL) {
-		HSH_Drop(sp);
 		sp->err_code = 503;
 		sp->step = STP_ERROR;
 		VDI_CloseFd(sp);
