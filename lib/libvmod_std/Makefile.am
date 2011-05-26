@@ -2,7 +2,7 @@
 
 INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include
 
-dist_man_MANS = vmod_std.7
+dist_man_MANS = vmod_std.3
 
 vmoddir = $(pkglibdir)/vmods
 vmod_LTLIBRARIES = libvmod_std.la
@@ -23,7 +23,7 @@ EXTRA_DIST = vmod.py vmod.vcc
 
 CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h
 
-vmod_std.7: $(top_srcdir)/doc/sphinx/reference/vmod_std.rst
+vmod_std.3: $(top_srcdir)/doc/sphinx/reference/vmod_std.rst
 if HAVE_RST2MAN
 	${RST2MAN} $? $@
 else
