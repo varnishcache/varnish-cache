@@ -55,7 +55,7 @@
  *	%q		Query string
  *	%H		Protocol version
  *
- * TODO:	- Log in any format one wants
+ * TODO:	- Make it possible to grab any request header
  *		- Maybe rotate/compress log
  */
 
