@@ -415,7 +415,12 @@ cnt_error(struct sess *sp)
 		EXP_Clr(&w->exp);
 		sp->obj = STV_NewObject(sp, NULL, 1024, &w->exp,
 		     params->http_max_hdr);
-		XXXAN(sp->obj);
+		if (sp->obj == NULL) {
+			sp->doclose = "Out of objects";
+			sp->step = STP_DONE;
+			return(0);
+		}
+		AN(sp->obj);
 		sp->obj->xid = sp->xid;
 		sp->obj->entered = sp->t_req;
 	} else {
