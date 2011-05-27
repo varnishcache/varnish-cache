@@ -78,12 +78,6 @@
 	"\tList the active bans.",					\
 	0, 0
 
-#define CLI_URL_STATUS							\
-	"url.status",							\
-	"url.status <url>",						\
-	"\tReturns all metadata for the specified URL",			\
-	1, 1
-
 #define CLI_VCL_LOAD							\
 	"vcl.load",							\
 	"vcl.load <configname> <filename>",				\
@@ -132,30 +126,6 @@
 	"\tSet parameter value.",					\
 	2,2
 
-#define CLI_SERVER_FREEZE						\
-	"server.freeze",						\
-	"server.freeze",						\
-	"\tStop the clock, freeze object store.",			\
-	0, 0
-
-#define CLI_SERVER_THAW							\
-	"thaw",								\
-	"thaw",								\
-	"\tRestart the clock, unfreeze object store.",			\
-	0, 0
-
-#define CLI_SERVER_SUSPEND						\
-	"suspend",							\
-	"suspend",							\
-	"\tStop accepting requests.",					\
-	0, 0
-
-#define CLI_SERVER_RESUME						\
-	"resume",							\
-	"resume",							\
-	"\tAccept requests.",						\
-	0, 0
-
 #define CLI_SERVER_STOP							\
 	"stop",								\
 	"stop",								\
@@ -168,41 +138,17 @@
 	"\tStart the Varnish cache process.",				\
 	0, 0
 
-#define CLI_SERVER_RESTART						\
-	"restart",							\
-	"restart",							\
-	"\tRestart the Varnish cache process.",				\
-	0, 0
-
 #define CLI_PING							\
 	"ping",								\
 	"ping [timestamp]",						\
 	"\tKeep connection alive",					\
 	0, 1
 
-#define CLI_STATS							\
-	"stats",							\
-	"stats",							\
-	"\tShow summary statistics",					\
-	0, 0
-
-#define CLI_ZERO							\
-	"zero",								\
-	"zero",								\
-	"\tZero summary statistics",					\
-	0, 0
-
 #define CLI_HELP							\
 	"help",								\
 	"help [command]",						\
 	"\tShow command/protocol help",					\
 	0, 1
-
-#define CLI_VERBOSE							\
-	"verbose",							\
-	"verbose",							\
-	"\tEnable/Disable verbosity",					\
-	0, 0
 
 #define CLI_QUIT							\
 	"quit",								\
@@ -239,9 +185,6 @@
 	"panic.clear",							\
 	"\tClear the last panic, if any.",				\
 	0, 0
-
-#define CLI_HIDDEN(foo, min_arg, max_arg)				\
-	foo, NULL, NULL, min_arg, max_arg,
 
 /*
  * Status/return codes in the CLI protocol
