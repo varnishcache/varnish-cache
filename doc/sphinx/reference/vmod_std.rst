@@ -37,7 +37,7 @@ Return value
 Description
 	Converts the STRING S to upper case.
 Example
-	set beresp.x-scream = std.toupper("yes!");
+	set beresp.http.x-scream = std.toupper("yes!");
 
 tolower
 -------
@@ -48,7 +48,7 @@ Return value
 Description
 	Converts the STRING to lower case.
 Example
-        set beresp.x-nice = std.tolower("VerY");
+        set beresp.http.x-nice = std.tolower("VerY");
 
 set_up_tos
 ----------
@@ -75,7 +75,7 @@ Return value
 Description
 	Returns a random REAL number between *a* and *b*.
 Example
-	set beresp.x-random-number = std.random(1, 100);
+	set beresp.http.x-random-number = std.random(1, 100);
 
 log
 ---
