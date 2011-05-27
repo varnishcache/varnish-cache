@@ -1,0 +1,24 @@
+varnishtest "error object allocation with persistent"
+
+server s1 {
+	rxreq 
+	txresp 
+} -start
+
+shell "rm -f ${tmpdir}/_.per"
+
+varnish v1 \
+	-arg "-pdiag_bitmap=0x20000" \
+	-storage "-spersistent,${tmpdir}/_.per,10m" \
+	-vcl+backend { 
+
+	sub vcl_fetch {
+		error(751);
+	}
+} -start 
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 751
+} -run
