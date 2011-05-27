@@ -171,6 +171,7 @@ rm -rf %{buildroot}
 %{_var}/lib/varnish
 %{_var}/log/varnish
 %{_mandir}/man1/*.1*
+%{_mandir}/man3/*.3*
 %{_mandir}/man7/*.7*
 %doc INSTALL LICENSE README redhat/README.redhat ChangeLog
 %doc examples
