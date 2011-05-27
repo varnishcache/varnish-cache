@@ -71,25 +71,6 @@ static const char	*secret_file;
 /*--------------------------------------------------------------------*/
 
 static void
-mcf_stats(struct cli *cli, const char * const *av, void *priv)
-{
-
-	(void)av;
-	(void)priv;
-
-	AN(VSC_main);
-#define VSC_DO_MAIN
-#define VSC_F(n, t, l, f, d) \
-	if (VSC_main->n != 0) \
-	    cli_out(cli, "%12ju  %s\n", (VSC_main->n), d);
-#include "vsc_fields.h"
-#undef VSC_F
-#undef VSC_DO_MAIN
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
 mcf_banner(struct cli *cli, const char *const *av, void *priv)
 {
 
@@ -115,7 +96,6 @@ static struct cli_proto cli_proto[] = {
 	{ CLI_SERVER_STATUS,	"", mcf_server_status, NULL },
 	{ CLI_SERVER_START,	"", mcf_server_startstop, NULL },
 	{ CLI_SERVER_STOP,	"", mcf_server_startstop, cli_proto },
-	{ CLI_STATS,		"", mcf_stats, NULL },
 	{ CLI_VCL_LOAD,		"", mcf_config_load, NULL },
 	{ CLI_VCL_INLINE,	"", mcf_config_inline, NULL },
 	{ CLI_VCL_USE,		"", mcf_config_use, NULL },

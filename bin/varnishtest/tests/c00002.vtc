@@ -16,5 +16,4 @@ client c1 {
 	expect resp.status == 200
 } -run
 
-varnish v1 -cliok stats
 varnish v1 -expect n_wrk == 8
