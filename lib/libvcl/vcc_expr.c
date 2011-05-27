@@ -454,6 +454,8 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym)
 	SkipToken(tl, '(');
 
 	vcc_expr0(tl, &e2, STRING);
+	if (e2->fmt != STRING) 
+		vcc_expr_tostring(&e2, STRING);
 
 	SkipToken(tl, ',');
 	ExpectErr(tl, CSTR);
@@ -465,6 +467,8 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym)
 
 	SkipToken(tl, ',');
 	vcc_expr0(tl, &e2, STRING);
+	if (e2->fmt != STRING) 
+		vcc_expr_tostring(&e2, STRING);
 	*e = vcc_expr_edit(STRING, "\v1, \v2)", *e, e2);
 	SkipToken(tl, ')');
 }
