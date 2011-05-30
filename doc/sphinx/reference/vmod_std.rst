@@ -127,6 +127,18 @@ Description
 Example
 	set beresp.ttl = std.duration("1w", 3600);
 
+integer
+--------
+Prototype
+	integer(STRING s, INT fallback)
+Return value
+       Int
+Description
+	Converts the string s to an integer.  If it fails to parse the
+	string *fallback* will be used
+Example
+	if (std.integer(beresp.http.x-foo, 0) > 5) { … }
+
 collect
 -------
 Prototype
