@@ -323,7 +323,10 @@ cnt_done(struct sess *sp)
 		da = sp->t_end - sp->t_resp;
 		dh = sp->t_req - sp->t_open;
 		/* XXX: Add StatReq == StatSess */
-		WSP(sp, SLT_Length, "%ju", (uintmax_t)sp->acct_req.bodybytes);
+		/* XXX: Workaround for pipe */
+		if (sp->fd >= 0) {
+			WSP(sp, SLT_Length, "%ju", (uintmax_t)sp->acct_req.bodybytes);
+		}
 		WSL(sp->wrk, SLT_ReqEnd, sp->id, "%u %.9f %.9f %.9f %.9f %.9f",
 		    sp->xid, sp->t_req, sp->t_end, dh, dp, da);
 	}
