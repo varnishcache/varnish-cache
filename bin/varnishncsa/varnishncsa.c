@@ -426,8 +426,10 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 			lp->df_hitmiss = "miss";
 			lp->df_handling = "pass";
 		} else if (strncmp(ptr, "pipe", len) == 0) {
-			lp->df_hitmiss = "miss";
-			lp->df_handling = "pipe";
+			/* Just skip piped requests, since we can't
+			 * print their status code */
+			clean_logline(lp);
+			break;
 		}
 		break;
 
@@ -587,7 +589,7 @@ h_ncsa(void *priv, enum vsl_tag tag, unsigned fd,
 
 		case 's':
 			/* %s */
-			fprintf(fo, "%s", lp->df_s);
+			fprintf(fo, "%s", lp->df_s ? lp->df_s : "");
 			break;
 
 		case 't':
