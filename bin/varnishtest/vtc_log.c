@@ -274,7 +274,7 @@ vtc_hexdump(struct vtclog *vl, unsigned lvl, const char *pfx, const unsigned cha
 /**********************************************************************/
 
 static void
-vtc_log_vas_fail(const char *func, const char *file, int line,
+vtc_log_VAS_Fail(const char *func, const char *file, int line,
     const char *cond, int err, int xxx)
 {
 	struct vtclog *vl;
@@ -293,4 +293,4 @@ vtc_log_vas_fail(const char *func, const char *file, int line,
 	}
 }
 
-vas_f *vas_fail = vtc_log_vas_fail;
+vas_f *VAS_Fail = vtc_log_VAS_Fail;

@@ -364,7 +364,7 @@ void
 PAN_Init(void)
 {
 
-	vas_fail = pan_ic;
+	VAS_Fail = pan_ic;
 	vsp = &vsps;
 	AN(VSB_new(vsp, vsm_head->panicstr, sizeof vsm_head->panicstr,
 	    VSB_FIXEDLEN));

@@ -386,7 +386,7 @@ VRT_panic(const struct sess *sp, const char *str, ...)
 	va_start(ap, str);
 	b = VRT_String(sp->http->ws, "PANIC: ", str, ap);
 	va_end(ap);
-	vas_fail("VCL", "", 0, b, 0, 2);
+	VAS_Fail("VCL", "", 0, b, 0, 2);
 }
 
 /*--------------------------------------------------------------------*/
