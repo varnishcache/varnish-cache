@@ -49,15 +49,6 @@ struct cmds {
 	cmd_f		*cmd;
 };
 
-struct extmacro {
-	VTAILQ_ENTRY(extmacro)	list;
-	char			*name;
-	char			*val;
-};
-
-VTAILQ_HEAD(_extmacro_list, extmacro);
-extern struct _extmacro_list extmacro_list;
-
 void parse_string(char *buf, const struct cmds *cmd, void *priv,
     struct vtclog *vl);
 
@@ -92,3 +83,6 @@ int exec_file(const char *fn, const char *script, const char *tmpdir,
 void macro_def(struct vtclog *vl, const char *instance, const char *name,
     const char *fmt, ...);
 struct vsb *macro_expand(struct vtclog *vl, const char *text);
+
+void extmacro_def(const char *name, const char *fmt, ...);
+const char *extmacro_get(const char *name);
