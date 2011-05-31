@@ -56,9 +56,9 @@ sub_vlu(void *priv, const char *str)
 
 	sp = priv;
 	if (!sp->lines++)
-		vsb_printf(sp->sb, "Message from %s:\n", sp->name);
+		VSB_printf(sp->sb, "Message from %s:\n", sp->name);
 	if (sp->maxlines < 0 || sp->lines <= sp->maxlines)
-		vsb_printf(sp->sb, "%s\n", str);
+		VSB_printf(sp->sb, "%s\n", str);
 	return (0);
 }
 
@@ -77,14 +77,14 @@ SUB_run(struct vsb *sb, sub_func_f *func, void *priv, const char *name,
 	sp.maxlines = maxlines;
 
 	if (pipe(p) < 0) {
-		vsb_printf(sb, "Starting %s: pipe() failed: %s",
+		VSB_printf(sb, "Starting %s: pipe() failed: %s",
 		    name, strerror(errno));
 		return (-1);
 	}
 	assert(p[0] > STDERR_FILENO);
 	assert(p[1] > STDERR_FILENO);
 	if ((pid = fork()) < 0) {
-		vsb_printf(sb, "Starting %s: fork() failed: %s",
+		VSB_printf(sb, "Starting %s: fork() failed: %s",
 		    name, strerror(errno));
 		AZ(close(p[0]));
 		AZ(close(p[1]));
@@ -108,25 +108,25 @@ SUB_run(struct vsb *sb, sub_func_f *func, void *priv, const char *name,
 	AZ(close(p[0]));
 	VLU_Destroy(vlu);
 	if (sp.maxlines >= 0 && sp.lines > sp.maxlines)
-		vsb_printf(sb, "[%d lines truncated]\n",
+		VSB_printf(sb, "[%d lines truncated]\n",
 		    sp.lines - sp.maxlines);
 	do {
 		rv = waitpid(pid, &status, 0);
 		if (rv < 0 && errno != EINTR) {
-			vsb_printf(sb, "Running %s: waitpid() failed: %s\n",
+			VSB_printf(sb, "Running %s: waitpid() failed: %s\n",
 			    name, strerror(errno));
 			return (-1);
 		}
 	} while (rv < 0);
 	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-		vsb_printf(sb, "Running %s failed", name);
+		VSB_printf(sb, "Running %s failed", name);
 		if (WIFEXITED(status))
-			vsb_printf(sb, ", exit %d", WEXITSTATUS(status));
+			VSB_printf(sb, ", exit %d", WEXITSTATUS(status));
 		if (WIFSIGNALED(status))
-			vsb_printf(sb, ", signal %d", WTERMSIG(status));
+			VSB_printf(sb, ", signal %d", WTERMSIG(status));
 		if (WCOREDUMP(status))
-			vsb_printf(sb, ", core dumped");
-		vsb_printf(sb, "\n");
+			VSB_printf(sb, ", core dumped");
+		VSB_printf(sb, "\n");
 		return (-1);
 	}
 	return (0);

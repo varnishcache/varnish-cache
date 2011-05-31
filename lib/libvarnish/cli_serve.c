@@ -224,7 +224,7 @@ cls_dispatch(struct cli *cli, struct cli_proto *clp, char * const * av,
 	}
 
 	cli->result = CLIS_OK;
-	vsb_clear(cli->sb);
+	VSB_clear(cli->sb);
 	cp->func(cli, (const char * const *)av, cp->priv);
 	return (1);
 }
@@ -253,7 +253,7 @@ cls_vlu2(void *priv, char * const *av)
 	cli->cls = cs;
 
 	cli->result = CLIS_UNKNOWN;
-	vsb_clear(cli->sb);
+	VSB_clear(cli->sb);
 	cli_out(cli, "Unknown request.\nType 'help' for more info.\n");
 
 	if (cs->before != NULL)
@@ -286,7 +286,7 @@ cls_vlu2(void *priv, char * const *av)
 		}
 	} while (0);
 
-	AZ(vsb_finish(cli->sb));
+	AZ(VSB_finish(cli->sb));
 
 	if (cs->after != NULL)
 		cs->after(cli);
@@ -343,7 +343,7 @@ cls_vlu(void *priv, const char *p)
 		}
 		cfd->argv = av;
 		cfd->last_idx = i - 2;
-		cfd->last_arg = vsb_new_auto();
+		cfd->last_arg = VSB_new_auto();
 		AN(cfd->last_arg);
 		return (0);
 	} else {
@@ -351,23 +351,23 @@ cls_vlu(void *priv, const char *p)
 		assert(!strcmp(cfd->argv[cfd->last_idx], "<<"));
 		AN(cfd->argv[cfd->last_idx + 1]);
 		if (strcmp(p, cfd->argv[cfd->last_idx + 1])) {
-			vsb_cat(cfd->last_arg, p);
-			vsb_cat(cfd->last_arg, "\n");
+			VSB_cat(cfd->last_arg, p);
+			VSB_cat(cfd->last_arg, "\n");
 			return (0);
 		}
-		AZ(vsb_finish(cfd->last_arg));
+		AZ(VSB_finish(cfd->last_arg));
 		free(cfd->argv[cfd->last_idx]);
 		cfd->argv[cfd->last_idx] = NULL;
 		free(cfd->argv[cfd->last_idx + 1]);
 		cfd->argv[cfd->last_idx + 1] = NULL;
-		cfd->argv[cfd->last_idx] = vsb_data(cfd->last_arg);
+		cfd->argv[cfd->last_idx] = VSB_data(cfd->last_arg);
 		i = cls_vlu2(priv, cfd->argv);
 		cfd->argv[cfd->last_idx] = NULL;
 		FreeArgv(cfd->argv);
 		cfd->argv = NULL;
 		free(cli->cmd);
 		cli->cmd = NULL;
-		vsb_delete(cfd->last_arg);
+		VSB_delete(cfd->last_arg);
 		cfd->last_arg = NULL;
 		cfd->last_idx = 0;
 		return (i);
@@ -405,7 +405,7 @@ CLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 	cfd->cli = &cfd->clis;
 	cfd->cli->magic = CLI_MAGIC;
 	cfd->cli->vlu = VLU_New(cfd, cls_vlu, cs->maxlen);
-	cfd->cli->sb = vsb_new_auto();
+	cfd->cli->sb = VSB_new_auto();
 	cfd->closefunc = closefunc;
 	cfd->priv = priv;
 	AN(cfd->cli->sb);
@@ -424,7 +424,7 @@ cls_close_fd(struct cls *cs, struct cls_fd *cfd)
 	VTAILQ_REMOVE(&cs->fds, cfd, list);
 	cs->nfd--;
 	VLU_Destroy(cfd->cli->vlu);
-	vsb_delete(cfd->cli->sb);
+	VSB_delete(cfd->cli->sb);
 	if (cfd->closefunc == NULL) {
 		(void)close(cfd->fdi);
 		if (cfd->fdo != cfd->fdi)

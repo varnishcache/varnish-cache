@@ -79,7 +79,7 @@ mcf_banner(struct cli *cli, const char *const *av, void *priv)
 	cli_out(cli, "-----------------------------\n");
 	cli_out(cli, "Varnish Cache CLI 1.0\n");
 	cli_out(cli, "-----------------------------\n");
-	cli_out(cli, "%s\n", vsb_data(vident) + 1);
+	cli_out(cli, "%s\n", VSB_data(vident) + 1);
 	cli_out(cli, "\n");
 	cli_out(cli, "Type 'help' for command list.\n");
 	cli_out(cli, "Type 'quit' to close CLI session.\n");
@@ -155,22 +155,22 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 		    "Type 'help' for more info.");
 		return;
 	}
-	vsb = vsb_new_auto();
+	vsb = VSB_new_auto();
 	for (i = 1; av[i] != NULL; i++) {
-		vsb_quote(vsb, av[i], strlen(av[i]), 0);
-		vsb_putc(vsb, ' ');
+		VSB_quote(vsb, av[i], strlen(av[i]), 0);
+		VSB_putc(vsb, ' ');
 	}
-	vsb_putc(vsb, '\n');
-	AZ(vsb_finish(vsb));
-	i = write(cli_o, vsb_data(vsb), vsb_len(vsb));
-	if (i != vsb_len(vsb)) {
-		vsb_delete(vsb);
+	VSB_putc(vsb, '\n');
+	AZ(VSB_finish(vsb));
+	i = write(cli_o, VSB_data(vsb), VSB_len(vsb));
+	if (i != VSB_len(vsb)) {
+		VSB_delete(vsb);
 		cli_result(cli, CLIS_COMMS);
 		cli_out(cli, "CLI communication error");
 		MGT_Child_Cli_Fail();
 		return;
 	}
-	vsb_delete(vsb);
+	VSB_delete(vsb);
 	(void)cli_readres(cli_i, &u, &q, params->cli_timeout);
 	cli_result(cli, u);
 	cli_out(cli, "%s", q);
@@ -327,7 +327,7 @@ mgt_cli_cb_after(const struct cli *cli)
 
 	if (params->syslog_cli_traffic)
 		syslog(LOG_NOTICE, "CLI %s Wr %03u %s",
-		    cli->ident, cli->result, vsb_data(cli->sb));
+		    cli->ident, cli->result, VSB_data(cli->sb));
 }
 
 /*--------------------------------------------------------------------*/
@@ -399,7 +399,7 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident, mgt_cli_close_f 
 		cli->auth = MCF_AUTH;
 		mcf_banner(cli, NULL, NULL);
 	}
-	AZ(vsb_finish(cli->sb));
+	AZ(VSB_finish(cli->sb));
 	(void)cli_writeres(fdo, cli);
 
 
@@ -423,12 +423,12 @@ sock_id(const char *pfx, int fd)
 	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
 	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
 
-	vsb = vsb_new_auto();
+	vsb = VSB_new_auto();
 	AN(vsb);
 	TCP_myname(fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
 	TCP_hisname(fd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
-	vsb_printf(vsb, "%s %s %s %s %s", pfx, abuf2, pbuf2, abuf1, pbuf1);
-	AZ(vsb_finish(vsb));
+	VSB_printf(vsb, "%s %s %s %s %s", pfx, abuf2, pbuf2, abuf1, pbuf1);
+	AZ(VSB_finish(vsb));
 	return (vsb);
 }
 
@@ -482,8 +482,8 @@ telnet_accept(const struct vev *ev, int what)
 	mgt_got_fd(i);
 	tn = telnet_new(i);
 	vsb = sock_id("telnet", i);
-	mgt_cli_setup(i, i, 0, vsb_data(vsb), telnet_close, tn);
-	vsb_delete(vsb);
+	mgt_cli_setup(i, i, 0, VSB_data(vsb), telnet_close, tn);
+	VSB_delete(vsb);
 	return (0);
 }
 
@@ -537,14 +537,14 @@ mgt_cli_telnet(const char *T_arg)
 		exit(2);
 	}
 	good = 0;
-	vsb = vsb_new_auto();
+	vsb = VSB_new_auto();
 	XXXAN(vsb);
 	for (i = 0; i < n; ++i) {
 		sock = VSS_listen(ta[i], 10);
 		if (sock < 0)
 			continue;
 		TCP_myname(sock, abuf, sizeof abuf, pbuf, sizeof pbuf);
-		vsb_printf(vsb, "%s %s\n", abuf, pbuf);
+		VSB_printf(vsb, "%s %s\n", abuf, pbuf);
 		good++;
 		tn = telnet_new(sock);
 		tn->ev = vev_new();
@@ -561,12 +561,12 @@ mgt_cli_telnet(const char *T_arg)
 		REPORT(LOG_ERR, "-T %s could not be listened on.", T_arg);
 		exit(2);
 	}
-	AZ(vsb_finish(vsb));
+	AZ(VSB_finish(vsb));
 	/* Save in shmem */
-	p = VSM_Alloc(vsb_len(vsb) + 1, "Arg", "-T", "");
+	p = VSM_Alloc(VSB_len(vsb) + 1, "Arg", "-T", "");
 	AN(p);
-	strcpy(p, vsb_data(vsb));
-	vsb_delete(vsb);
+	strcpy(p, VSB_data(vsb));
+	VSB_delete(vsb);
 }
 
 /* Reverse CLI ("Master") connections --------------------------------*/
@@ -613,8 +613,8 @@ Marg_poker(const struct vev *e, int what)
 			return (1);
 		}
 		vsb = sock_id("master", M_fd);
-		mgt_cli_setup(M_fd, M_fd, 0, vsb_data(vsb), Marg_closer, NULL);
-		vsb_delete(vsb);
+		mgt_cli_setup(M_fd, M_fd, 0, VSB_data(vsb), Marg_closer, NULL);
+		VSB_delete(vsb);
 		M_poll = 1;
 		return (1);
 	}

@@ -752,7 +752,7 @@ HSH_config(const char *h_arg)
 
 	hp = pick(hsh_choice, av[1], "hash");
 	CHECK_OBJ_NOTNULL(hp, SLINGER_MAGIC);
-	vsb_printf(vident, ",-h%s", av[1]);
+	VSB_printf(vident, ",-h%s", av[1]);
 	heritage.hash = hp;
 	if (hp->init != NULL)
 		hp->init(ac, av + 2);

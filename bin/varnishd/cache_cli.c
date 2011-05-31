@@ -97,7 +97,7 @@ cli_cb_after(const struct cli *cli)
 	ASSERT_CLI();
 	Lck_Unlock(&cli_mtx);
 	VSL(SLT_CLI, 0, "Wr %03u %u %s",
-	    cli->result, vsb_len(cli->sb), vsb_data(cli->sb));
+	    cli->result, VSB_len(cli->sb), VSB_data(cli->sb));
 }
 
 void

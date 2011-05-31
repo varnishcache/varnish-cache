@@ -154,9 +154,9 @@ Fh(const struct vcc *tl, int indent, const char *fmt, ...)
 	va_list ap;
 
 	if (indent)
-		vsb_printf(tl->fh, "%*.*s", tl->hindent, tl->hindent, "");
+		VSB_printf(tl->fh, "%*.*s", tl->hindent, tl->hindent, "");
 	va_start(ap, fmt);
-	vsb_vprintf(tl->fh, fmt, ap);
+	VSB_vprintf(tl->fh, fmt, ap);
 	va_end(ap);
 }
 
@@ -167,9 +167,9 @@ Fb(const struct vcc *tl, int indent, const char *fmt, ...)
 
 	assert(tl->fb != NULL);
 	if (indent)
-		vsb_printf(tl->fb, "%*.*s", tl->indent, tl->indent, "");
+		VSB_printf(tl->fb, "%*.*s", tl->indent, tl->indent, "");
 	va_start(ap, fmt);
-	vsb_vprintf(tl->fb, fmt, ap);
+	VSB_vprintf(tl->fb, fmt, ap);
 	va_end(ap);
 }
 
@@ -179,9 +179,9 @@ Fc(const struct vcc *tl, int indent, const char *fmt, ...)
 	va_list ap;
 
 	if (indent)
-		vsb_printf(tl->fc, "%*.*s", tl->indent, tl->indent, "");
+		VSB_printf(tl->fc, "%*.*s", tl->indent, tl->indent, "");
 	va_start(ap, fmt);
-	vsb_vprintf(tl->fc, fmt, ap);
+	VSB_vprintf(tl->fc, fmt, ap);
 	va_end(ap);
 }
 
@@ -191,9 +191,9 @@ Fi(const struct vcc *tl, int indent, const char *fmt, ...)
 	va_list ap;
 
 	if (indent)
-		vsb_printf(tl->fi, "%*.*s", tl->iindent, tl->iindent, "");
+		VSB_printf(tl->fi, "%*.*s", tl->iindent, tl->iindent, "");
 	va_start(ap, fmt);
-	vsb_vprintf(tl->fi, fmt, ap);
+	VSB_vprintf(tl->fi, fmt, ap);
 	va_end(ap);
 }
 
@@ -203,9 +203,9 @@ Ff(const struct vcc *tl, int indent, const char *fmt, ...)
 	va_list ap;
 
 	if (indent)
-		vsb_printf(tl->ff, "%*.*s", tl->findent, tl->findent, "");
+		VSB_printf(tl->ff, "%*.*s", tl->findent, tl->findent, "");
 	va_start(ap, fmt);
-	vsb_vprintf(tl->ff, fmt, ap);
+	VSB_vprintf(tl->ff, fmt, ap);
 	va_end(ap);
 }
 
@@ -218,30 +218,30 @@ EncString(struct vsb *sb, const char *b, const char *e, int mode)
 	if (e == NULL)
 		e = strchr(b, '\0');
 
-	vsb_cat(sb, "\"");
+	VSB_cat(sb, "\"");
 	for (; b < e; b++) {
 		switch (*b) {
 		case '\\':
 		case '"':
-			vsb_printf(sb, "\\%c", *b);
+			VSB_printf(sb, "\\%c", *b);
 			break;
 		case '\n':
-			vsb_printf(sb, "\\n");
+			VSB_printf(sb, "\\n");
 			if (mode)
-				vsb_printf(sb, "\"\n\t\"");
+				VSB_printf(sb, "\"\n\t\"");
 			break;
-		case '\t': vsb_printf(sb, "\\t"); break;
-		case '\r': vsb_printf(sb, "\\r"); break;
-		case ' ': vsb_printf(sb, " "); break;
+		case '\t': VSB_printf(sb, "\\t"); break;
+		case '\r': VSB_printf(sb, "\\r"); break;
+		case ' ': VSB_printf(sb, " "); break;
 		default:
 			if (isgraph(*b))
-				vsb_printf(sb, "%c", *b);
+				VSB_printf(sb, "%c", *b);
 			else
-				vsb_printf(sb, "\\%03o", *b);
+				VSB_printf(sb, "\\%03o", *b);
 			break;
 		}
 	}
-	vsb_cat(sb, "\"");
+	VSB_cat(sb, "\"");
 }
 
 void
@@ -311,8 +311,8 @@ EmitInitFunc(const struct vcc *tl)
 {
 
 	Fc(tl, 0, "\nstatic void\nVGC_Init(struct cli *cli)\n{\n\n");
-	AZ(vsb_finish(tl->fi));
-	vsb_cat(tl->fc, vsb_data(tl->fi));
+	AZ(VSB_finish(tl->fi));
+	VSB_cat(tl->fc, VSB_data(tl->fi));
 	Fc(tl, 0, "}\n");
 }
 
@@ -330,8 +330,8 @@ EmitFiniFunc(const struct vcc *tl)
 	for (u = 0; u < tl->nvmodpriv; u++)
 		Fc(tl, 0, "\tvmod_priv_fini(&vmod_priv_%u);\n", u);
 
-	AZ(vsb_finish(tl->ff));
-	vsb_cat(tl->fc, vsb_data(tl->ff));
+	AZ(VSB_finish(tl->ff));
+	VSB_cat(tl->fc, VSB_data(tl->ff));
 	Fc(tl, 0, "}\n");
 }
 
@@ -420,7 +420,7 @@ vcc_file_source(const struct vcc *tl, struct vsb *sb, const char *fn)
 
 	f = vreadfile(tl->vcl_dir, fn, NULL);
 	if (f == NULL) {
-		vsb_printf(sb, "Cannot read file '%s': %s\n",
+		VSB_printf(sb, "Cannot read file '%s': %s\n",
 		    fn, strerror(errno));
 		return (NULL);
 	}
@@ -444,7 +444,7 @@ vcc_resolve_includes(struct vcc *tl)
 		t1 = VTAILQ_NEXT(t, list);
 		assert(t1 != NULL);	/* There's always an EOI */
 		if (t1->tok != CSTR) {
-			vsb_printf(tl->sb,
+			VSB_printf(tl->sb,
 			    "include not followed by string constant.\n");
 			vcc_ErrWhere(tl, t1);
 			return;
@@ -452,7 +452,7 @@ vcc_resolve_includes(struct vcc *tl)
 		t2 = VTAILQ_NEXT(t1, list);
 		assert(t2 != NULL);	/* There's always an EOI */
 		if (t2->tok != ';') {
-			vsb_printf(tl->sb,
+			VSB_printf(tl->sb,
 			    "include <string> not followed by semicolon.\n");
 			vcc_ErrWhere(tl, t1);
 			return;
@@ -507,24 +507,24 @@ vcc_NewVcc(const struct vcc *tl0)
 	tl->ndirector = 1;
 
 	/* General C code */
-	tl->fc = vsb_new_auto();
+	tl->fc = VSB_new_auto();
 	assert(tl->fc != NULL);
 
 	/* Forward decls (.h like) */
-	tl->fh = vsb_new_auto();
+	tl->fh = VSB_new_auto();
 	assert(tl->fh != NULL);
 
 	/* Init C code */
-	tl->fi = vsb_new_auto();
+	tl->fi = VSB_new_auto();
 	assert(tl->fi != NULL);
 
 	/* Finish C code */
-	tl->ff = vsb_new_auto();
+	tl->ff = VSB_new_auto();
 	assert(tl->ff != NULL);
 
 	/* body code of methods */
 	for (i = 0; i < VCL_MET_MAX; i++) {
-		tl->fm[i] = vsb_new_auto();
+		tl->fm[i] = VSB_new_auto();
 		assert(tl->fm[i] != NULL);
 	}
 	return (tl);
@@ -558,12 +558,12 @@ vcc_DestroyTokenList(struct vcc *tl, char *ret)
 		FREE_OBJ(sym);
 	}
 
-	vsb_delete(tl->fh);
-	vsb_delete(tl->fc);
-	vsb_delete(tl->fi);
-	vsb_delete(tl->ff);
+	VSB_delete(tl->fh);
+	VSB_delete(tl->fc);
+	VSB_delete(tl->fi);
+	VSB_delete(tl->ff);
 	for (i = 0; i < VCL_MET_MAX; i++)
-		vsb_delete(tl->fm[i]);
+		VSB_delete(tl->fm[i]);
 
 	free(tl);
 	return (ret);
@@ -644,7 +644,7 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 
 	/* Check if we have any backends at all */
 	if (tl->ndirector == 1) {
-		vsb_printf(tl->sb,
+		VSB_printf(tl->sb,
 		    "No backends or directors found in VCL program, "
 		    "at least one is necessary.\n");
 		tl->err = 1;
@@ -673,9 +673,9 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 		Fc(tl, 1, "\nstatic int\n");
 		Fc(tl, 1, "VGC_function_%s (struct sess *sp)\n",
 		    method_tab[i].name);
-		AZ(vsb_finish(tl->fm[i]));
+		AZ(VSB_finish(tl->fm[i]));
 		Fc(tl, 1, "{\n");
-		Fc(tl, 1, "%s", vsb_data(tl->fm[i]));
+		Fc(tl, 1, "%s", VSB_data(tl->fm[i]));
 		Fc(tl, 1, "}\n");
 	}
 
@@ -688,11 +688,11 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	EmitStruct(tl);
 
 	/* Combine it all in the fh vsb */
-	AZ(vsb_finish(tl->fc));
-	vsb_cat(tl->fh, vsb_data(tl->fc));
-	AZ(vsb_finish(tl->fh));
+	AZ(VSB_finish(tl->fc));
+	VSB_cat(tl->fh, VSB_data(tl->fc));
+	AZ(VSB_finish(tl->fh));
 
-	of = strdup(vsb_data(tl->fh));
+	of = strdup(VSB_data(tl->fh));
 	AN(of);
 
 	/* done */

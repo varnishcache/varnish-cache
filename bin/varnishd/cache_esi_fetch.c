@@ -367,14 +367,14 @@ vfp_esi_end(struct sess *sp)
 	vsb = VEP_Finish(sp);
 
 	if (vsb != NULL) {
-		l = vsb_len(vsb);
+		l = VSB_len(vsb);
 		assert(l > 0);
 		/* XXX: This is a huge waste of storage... */
 		sp->obj->esidata = STV_alloc(sp, l);
 		AN(sp->obj->esidata);
-		memcpy(sp->obj->esidata->ptr, vsb_data(vsb), l);
+		memcpy(sp->obj->esidata->ptr, VSB_data(vsb), l);
 		sp->obj->esidata->len = l;
-		vsb_delete(vsb);
+		VSB_delete(vsb);
 	}
 	if (sp->wrk->vgz_rx != NULL)
 		VGZ_Destroy(&sp->wrk->vgz_rx);

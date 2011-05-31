@@ -46,7 +46,7 @@ struct vsb {
 #define	VSB_AUTOEXTEND	0x00000001	/* automatically extend buffer */
 #define	VSB_USRFLAGMSK	0x0000ffff	/* mask of flags the user may specify */
 #define	VSB_DYNAMIC	0x00010000	/* s_buf must be freed */
-#define	VSB_FINISHED	0x00020000	/* set by vsb_finish() */
+#define	VSB_FINISHED	0x00020000	/* set by VSB_finish() */
 #define	VSB_DYNSTRUCT	0x00080000	/* vsb must be freed */
 	int		 s_flags;	/* flags */
 };
@@ -61,31 +61,31 @@ extern "C" {
 /*
  * API functions
  */
-struct vsb	*vsb_new(struct vsb *, char *, int, int);
-#define		 vsb_new_auto()				\
-	vsb_new(NULL, NULL, 0, VSB_AUTOEXTEND)
-void		 vsb_clear(struct vsb *);
-int		 vsb_setpos(struct vsb *, ssize_t);
-int		 vsb_bcat(struct vsb *, const void *, size_t);
-int		 vsb_bcpy(struct vsb *, const void *, size_t);
-int		 vsb_cat(struct vsb *, const char *);
-int		 vsb_cpy(struct vsb *, const char *);
-int		 vsb_printf(struct vsb *, const char *, ...)
+struct vsb	*VSB_new(struct vsb *, char *, int, int);
+#define		 VSB_new_auto()				\
+	VSB_new(NULL, NULL, 0, VSB_AUTOEXTEND)
+void		 VSB_clear(struct vsb *);
+int		 VSB_setpos(struct vsb *, ssize_t);
+int		 VSB_bcat(struct vsb *, const void *, size_t);
+int		 VSB_bcpy(struct vsb *, const void *, size_t);
+int		 VSB_cat(struct vsb *, const char *);
+int		 VSB_cpy(struct vsb *, const char *);
+int		 VSB_printf(struct vsb *, const char *, ...)
 	__printflike(2, 3);
 #ifdef va_start
-int		 vsb_vprintf(struct vsb *, const char *, va_list)
+int		 VSB_vprintf(struct vsb *, const char *, va_list)
 	__printflike(2, 0);
 #endif
-int		 vsb_putc(struct vsb *, int);
-int		 vsb_trim(struct vsb *);
-int		 vsb_error(const struct vsb *);
-int		 vsb_finish(struct vsb *);
-char		*vsb_data(struct vsb *);
-ssize_t		 vsb_len(struct vsb *);
-int		 vsb_done(const struct vsb *);
-void		 vsb_delete(struct vsb *);
-void		 vsb_quote(struct vsb *s, const char *p, int len, int how);
-const char	*vsb_unquote(struct vsb *s, const char *p, int len, int how);
+int		 VSB_putc(struct vsb *, int);
+int		 VSB_trim(struct vsb *);
+int		 VSB_error(const struct vsb *);
+int		 VSB_finish(struct vsb *);
+char		*VSB_data(struct vsb *);
+ssize_t		 VSB_len(struct vsb *);
+int		 VSB_done(const struct vsb *);
+void		 VSB_delete(struct vsb *);
+void		 VSB_quote(struct vsb *s, const char *p, int len, int how);
+const char	*VSB_unquote(struct vsb *s, const char *p, int len, int how);
 #ifdef __cplusplus
 };
 #endif

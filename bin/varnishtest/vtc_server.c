@@ -221,7 +221,7 @@ cmd_server_genvcl(struct vsb *vsb)
 	struct server *s;
 
 	VTAILQ_FOREACH(s, &servers, list) {
-		vsb_printf(vsb,
+		VSB_printf(vsb,
 		    "backend %s { .host = \"%s\"; .port = \"%s\"; }\n",
 		    s->name, s->aaddr, s->aport);
 	}

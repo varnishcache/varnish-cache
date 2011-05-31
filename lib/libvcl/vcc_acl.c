@@ -101,13 +101,13 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 	int i;
 
 	if (fam == PF_INET && ae->mask > 32) {
-		vsb_printf(tl->sb,
+		VSB_printf(tl->sb,
 		    "Too wide mask (%u) for IPv4 address", ae->mask);
 		vcc_ErrWhere(tl, ae->t_mask);
 		return;
 	}
 	if (fam == PF_INET6 && ae->mask > 128) {
-		vsb_printf(tl->sb,
+		VSB_printf(tl->sb,
 		    "Too wide mask (%u) for IPv6 address", ae->mask);
 		vcc_ErrWhere(tl, ae->t_mask);
 		return;
@@ -134,9 +134,9 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 			 */
 			if (aen->not == ae2->not)
 				return;
-			vsb_printf(tl->sb, "Conflicting ACL entries:\n");
+			VSB_printf(tl->sb, "Conflicting ACL entries:\n");
 			vcc_ErrWhere(tl, ae2->t_addr);
-			vsb_printf(tl->sb, "vs:\n");
+			VSB_printf(tl->sb, "vs:\n");
 			vcc_ErrWhere(tl, aen->t_addr);
 			return;
 		}
@@ -173,7 +173,7 @@ vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 	error = getaddrinfo(ae->t_addr->dec, "0", &hint, &res0);
 	if (error) {
 		if (ae->para) {
-			vsb_printf(tl->sb,
+			VSB_printf(tl->sb,
 			    "Warning: %s ignored\n  -- %s\n",
 			    ae->t_addr->dec, gai_strerror(error));
 			Fh(tl, 1, "/* Ignored ACL entry: %s%s",
@@ -185,7 +185,7 @@ vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 			Fh(tl, 1, " * getaddrinfo:  %s */\n",
 			     gai_strerror(error));
 		} else {
-			vsb_printf(tl->sb,
+			VSB_printf(tl->sb,
 			    "DNS lookup(%s): %s\n",
 			    ae->t_addr->dec, gai_strerror(error));
 			vcc_ErrWhere(tl, ae->t_addr);
@@ -217,7 +217,7 @@ vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 			vcc_acl_add_entry(tl, ae, 16, u, res->ai_family);
 			break;
 		default:
-			vsb_printf(tl->sb,
+			VSB_printf(tl->sb,
 			    "Ignoring unknown protocol family (%d) for %.*s\n",
 				res->ai_family, PF(ae->t_addr));
 			continue;
@@ -227,7 +227,7 @@ vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 	freeaddrinfo(res0);
 
 	if (ae->t_mask != NULL && i4 > 0 && i6 > 0) {
-		vsb_printf(tl->sb,
+		VSB_printf(tl->sb,
 		    "Mask (%u) specified, but string resolves to"
 		    " both IPv4 and IPv6 addresses.\n", ae->mask);
 		vcc_ErrWhere(tl, ae->t_mask);
@@ -477,7 +477,7 @@ vcc_Acl(struct vcc *tl)
 
 	i = vcc_AddDef(tl, an, SYM_ACL);
 	if (i > 1) {
-		vsb_printf(tl->sb, "ACL %.*s redefined\n", PF(an));
+		VSB_printf(tl->sb, "ACL %.*s redefined\n", PF(an));
 		vcc_ErrWhere(tl, an);
 		return;
 	}

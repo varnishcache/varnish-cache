@@ -83,7 +83,7 @@ vcc_ParseRoundRobinDirector(struct vcc *tl)
 		}
 		vcc_FieldsOk(tl, fs);
 		if (tl->err) {
-			vsb_printf(tl->sb,
+			VSB_printf(tl->sb,
 			    "\nIn member host specification starting at:\n");
 			vcc_ErrWhere(tl, t_be);
 			return;

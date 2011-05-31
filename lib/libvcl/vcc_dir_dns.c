@@ -84,7 +84,7 @@ print_backend(struct vcc *tl,
 	bprintf(strip, "%u.%u.%u.%u", ip[3], ip[2], ip[1], ip[0]);
 	tmptok.dec = strip;
 	bprintf(vgcname, "%.*s_%d", PF(tl->t_dir), serial);
-	vsb = vsb_new_auto();
+	vsb = VSB_new_auto();
 	AN(vsb);
 	tl->fb = vsb;
 	Fc(tl, 0, "\t{ .host = VGC_backend_%s },\n",vgcname);
@@ -117,9 +117,9 @@ print_backend(struct vcc *tl,
 
 	Fb(tl, 0, "};\n");
 	tl->fb = NULL;
-	AZ(vsb_finish(vsb));
-	Fh(tl, 0, "%s", vsb_data(vsb));
-	vsb_delete(vsb);
+	AZ(VSB_finish(vsb));
+	Fh(tl, 0, "%s", VSB_data(vsb));
+	VSB_delete(vsb);
 	Fi(tl, 0, "\tVRT_init_dir(cli, VCL_conf.director, \"simple\",\n"
 	    "\t    VGC_backend_%s, &vgc_dir_priv_%s);\n", vgcname, vgcname);
 	Ff(tl, 0, "\tVRT_fini_dir(cli, VGCDIR(%s));\n", vgcname);
@@ -151,9 +151,9 @@ vcc_dir_dns_makebackend(struct vcc *tl,
 
 	ip4end = ip4 | ~mask;
 	if (ip4 != (ip4 & mask)) {
-		vsb_printf(tl->sb, "IP and network mask not compatible: ");
+		VSB_printf(tl->sb, "IP and network mask not compatible: ");
 		vcc_ErrToken(tl, tl->t);
-		vsb_printf(tl->sb, " at\n");
+		VSB_printf(tl->sb, " at\n");
 		vcc_ErrWhere(tl, tl->t);
 		ERRCHK(tl);
 	}
@@ -228,10 +228,10 @@ vcc_dir_dns_parse_backend_options(struct vcc *tl)
 			 * not allowed here.
 			 */
 			if (u == UINT_MAX) {
-				vsb_printf(tl->sb,
+				VSB_printf(tl->sb,
 				    "Value outside allowed range: ");
 				vcc_ErrToken(tl, tl->t);
-				vsb_printf(tl->sb, " at\n");
+				VSB_printf(tl->sb, " at\n");
 				vcc_ErrWhere(tl, tl->t);
 			}
 			ERRCHK(tl);
@@ -265,9 +265,9 @@ vcc_dir_dns_parse_list(struct vcc *tl, int *serial)
 		ret = sscanf(tl->t->dec, "%hhu.%hhu.%hhu.%hhu",
 		    &a[0], &a[1], &a[2], &a[3]);
 		if (ret != 4) {
-			vsb_printf(tl->sb, "Incomplete IP supplied: ");
+			VSB_printf(tl->sb, "Incomplete IP supplied: ");
 			vcc_ErrToken(tl, tl->t);
-			vsb_printf(tl->sb, " at\n");
+			VSB_printf(tl->sb, " at\n");
 			vcc_ErrWhere(tl, tl->t);
 			ERRCHK(tl);
 		}
@@ -327,7 +327,7 @@ vcc_ParseDnsDirector(struct vcc *tl)
 			}
 			vcc_FieldsOk(tl, fs);
 			if (tl->err) {
-				vsb_printf(tl->sb, "\nIn member host"
+				VSB_printf(tl->sb, "\nIn member host"
 				    " specification starting at:\n");
 				vcc_ErrWhere(tl, t_be);
 				return;

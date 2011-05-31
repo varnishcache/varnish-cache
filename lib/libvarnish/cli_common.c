@@ -58,7 +58,7 @@ cli_out(struct cli *cli, const char *fmt, ...)
 
 	va_start(ap, fmt);
 	if (cli != NULL)
-		(void)vsb_vprintf(cli->sb, fmt, ap);
+		(void)VSB_vprintf(cli->sb, fmt, ap);
 	else
 		(void)vfprintf(stdout, fmt, ap);
 	va_end(ap);
@@ -69,7 +69,7 @@ void
 cli_quote(struct cli *cli, const char *s)
 {
 
-	vsb_quote(cli->sb, s, -1, 0);
+	VSB_quote(cli->sb, s, -1, 0);
 }
 
 void
@@ -97,14 +97,14 @@ cli_writeres(int fd, const struct cli *cli)
 	assert(cli->result <= 999);	/*lint !e650 const out of range */
 
 	i = snprintf(res, sizeof res,
-	    "%-3d %-8ld\n", cli->result, (long)vsb_len(cli->sb));
+	    "%-3d %-8ld\n", cli->result, (long)VSB_len(cli->sb));
 	assert(i == CLI_LINE0_LEN);
 
 	iov[0].iov_base = res;
 	iov[0].iov_len = CLI_LINE0_LEN;
 
-	iov[1].iov_base = vsb_data(cli->sb);
-	iov[1].iov_len = vsb_len(cli->sb);
+	iov[1].iov_base = VSB_data(cli->sb);
+	iov[1].iov_len = VSB_len(cli->sb);
 
 	iov[2].iov_base = nl;
 	iov[2].iov_len = 1;

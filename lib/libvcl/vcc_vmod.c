@@ -62,16 +62,16 @@ vcc_ParseImport(struct vcc *tl)
 
 	osym = VCC_FindSymbol(tl, mod, SYM_NONE);
 	if (osym != NULL && osym->kind != SYM_VMOD) {
-		vsb_printf(tl->sb, "Module %.*s conflics with other symbol.\n",
+		VSB_printf(tl->sb, "Module %.*s conflics with other symbol.\n",
 		    PF(mod));
 		vcc_ErrWhere2(tl, t1, tl->t);
 		return;
 	}
 	if (osym != NULL) {
-		vsb_printf(tl->sb, "Module %.*s already imported.\n",
+		VSB_printf(tl->sb, "Module %.*s already imported.\n",
 		    PF(mod));
 		vcc_ErrWhere2(tl, t1, tl->t);
-		vsb_printf(tl->sb, "Previous import was here:\n");
+		VSB_printf(tl->sb, "Previous import was here:\n");
 		vcc_ErrWhere2(tl, osym->def_b, osym->def_e);
 		return;
 	}
@@ -85,7 +85,7 @@ vcc_ParseImport(struct vcc *tl)
 
 	if (tl->t->tok == ID) {
 		if (!vcc_IdIs(tl->t, "from")) {
-			vsb_printf(tl->sb, "Expected 'from path...' at ");
+			VSB_printf(tl->sb, "Expected 'from path...' at ");
 			vcc_ErrToken(tl, tl->t);
 			vcc_ErrWhere(tl, tl->t);
 			return;
@@ -112,7 +112,7 @@ vcc_ParseImport(struct vcc *tl)
 
 	hdl = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
 	if (hdl == NULL) {
-		vsb_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n",
+		VSB_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n",
 		    PF(mod), fn, dlerror());
 		vcc_ErrWhere(tl, mod);
 		return;
@@ -120,29 +120,29 @@ vcc_ParseImport(struct vcc *tl)
 
 	modname = dlsym(hdl, "Vmod_Name");
 	if (modname == NULL) {
-		vsb_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n",
+		VSB_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n",
 		    PF(mod), fn, "Symbol Vmod_Name not found");
 		vcc_ErrWhere(tl, mod);
 		return;
 	}
 	if (!vcc_IdIs(mod, modname)) {
-		vsb_printf(tl->sb, "Could not load module %.*s\n\t%s\n",
+		VSB_printf(tl->sb, "Could not load module %.*s\n\t%s\n",
 		    PF(mod), fn);
-		vsb_printf(tl->sb, "\tModule has wrong name: <%s>\n", modname);
+		VSB_printf(tl->sb, "\tModule has wrong name: <%s>\n", modname);
 		vcc_ErrWhere(tl, mod);
 		return;
 	}
 
 	proto = dlsym(hdl, "Vmod_Proto");
 	if (proto == NULL) {
-		vsb_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n",
+		VSB_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n",
 		    PF(mod), fn, "Symbol Vmod_Proto not found");
 		vcc_ErrWhere(tl, mod);
 		return;
 	}
 	spec = dlsym(hdl, "Vmod_Spec");
 	if (spec == NULL) {
-		vsb_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n",
+		VSB_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n",
 		    PF(mod), fn, "Symbol Vmod_Spec not found");
 		vcc_ErrWhere(tl, mod);
 		return;

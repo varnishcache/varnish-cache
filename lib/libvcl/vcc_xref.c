@@ -105,15 +105,15 @@ vcc_checkref(struct vcc *tl, const struct symbol *sym)
 {
 
 	if (sym->ndef == 0 && sym->nref != 0) {
-		vsb_printf(tl->sb, "Undefined %s %.*s, first reference:\n",
+		VSB_printf(tl->sb, "Undefined %s %.*s, first reference:\n",
 		    VCC_SymKind(tl, sym), PF(sym->def_b));
 		vcc_ErrWhere(tl, sym->def_b);
 	} else if (sym->ndef != 0 && sym->nref == 0) {
-		vsb_printf(tl->sb, "Unused %s %.*s, defined:\n",
+		VSB_printf(tl->sb, "Unused %s %.*s, defined:\n",
 		    VCC_SymKind(tl, sym), PF(sym->def_b));
 		vcc_ErrWhere(tl, sym->def_b);
 		if (!tl->err_unref) {
-			vsb_printf(tl->sb, "(That was just a warning)\n");
+			VSB_printf(tl->sb, "(That was just a warning)\n");
 			tl->err = 0;
 		}
 	}
@@ -211,12 +211,12 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 	struct proccall *pc;
 
 	if (!p->exists) {
-		vsb_printf(tl->sb, "Function %.*s does not exist\n",
+		VSB_printf(tl->sb, "Function %.*s does not exist\n",
 		    PF(p->name));
 		return (1);
 	}
 	if (p->active) {
-		vsb_printf(tl->sb, "Function recurses on\n");
+		VSB_printf(tl->sb, "Function recurses on\n");
 		vcc_ErrWhere(tl, p->name);
 		return (1);
 	}
@@ -225,13 +225,13 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 
 #define VCL_RET_MAC(l, U, B)						\
 		if (u & (1 << (VCL_RET_##U))) {				\
-			vsb_printf(tl->sb, "Invalid return \"" #l "\"\n");\
+			VSB_printf(tl->sb, "Invalid return \"" #l "\"\n");\
 			vcc_ErrWhere(tl, p->return_tok[VCL_RET_##U]);	\
 		}
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
 
-		vsb_printf(tl->sb, "\n...in subroutine \"%.*s\"\n",
+		VSB_printf(tl->sb, "\n...in subroutine \"%.*s\"\n",
 		    PF(p->name));
 		vcc_ErrWhere(tl, p->name);
 		return (1);
@@ -239,7 +239,7 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 	p->active = 1;
 	VTAILQ_FOREACH(pc, &p->calls, list) {
 		if (vcc_CheckActionRecurse(tl, pc->p, bitmap)) {
-			vsb_printf(tl->sb, "\n...called from \"%.*s\"\n",
+			VSB_printf(tl->sb, "\n...called from \"%.*s\"\n",
 			    PF(p->name));
 			vcc_ErrWhere(tl, pc->t);
 			return (1);
@@ -266,16 +266,16 @@ vcc_checkaction1(struct vcc *tl, const struct symbol *sym)
 		return;
 	m = method_tab + i;
 	if (vcc_CheckActionRecurse(tl, p, m->ret_bitmap)) {
-		vsb_printf(tl->sb,
+		VSB_printf(tl->sb,
 		    "\n...which is the \"%s\" method\n", m->name);
-		vsb_printf(tl->sb, "Legal returns are:");
+		VSB_printf(tl->sb, "Legal returns are:");
 #define VCL_RET_MAC(l, U, B)						\
 		if (m->ret_bitmap & ((1 << VCL_RET_##U)))	\
-			vsb_printf(tl->sb, " \"%s\"", #l);
+			VSB_printf(tl->sb, " \"%s\"", #l);
 
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
-		vsb_printf(tl->sb, "\n");
+		VSB_printf(tl->sb, "\n");
 		tl->err = 1;
 	}
 
@@ -291,10 +291,10 @@ vcc_checkaction2(struct vcc *tl, const struct symbol *sym)
 
 	if (p->called)
 		return;
-	vsb_printf(tl->sb, "Function unused\n");
+	VSB_printf(tl->sb, "Function unused\n");
 	vcc_ErrWhere(tl, p->name);
 	if (!tl->err_unref) {
-		vsb_printf(tl->sb, "(That was just a warning)\n");
+		VSB_printf(tl->sb, "(That was just a warning)\n");
 		tl->err = 0;
 	}
 }
@@ -332,18 +332,18 @@ vcc_CheckUseRecurse(struct vcc *tl, const struct proc *p,
 
 	pu = vcc_FindIllegalUse(p, m);
 	if (pu != NULL) {
-		vsb_printf(tl->sb,
+		VSB_printf(tl->sb,
 		    "'%.*s': %s from method '%.*s'.\n",
 		    PF(pu->t), pu->use, PF(p->name));
 		vcc_ErrWhere(tl, pu->t);
-		vsb_printf(tl->sb, "\n...in subroutine \"%.*s\"\n",
+		VSB_printf(tl->sb, "\n...in subroutine \"%.*s\"\n",
 		    PF(p->name));
 		vcc_ErrWhere(tl, p->name);
 		return (1);
 	}
 	VTAILQ_FOREACH(pc, &p->calls, list) {
 		if (vcc_CheckUseRecurse(tl, pc->p, m)) {
-			vsb_printf(tl->sb, "\n...called from \"%.*s\"\n",
+			VSB_printf(tl->sb, "\n...called from \"%.*s\"\n",
 			    PF(p->name));
 			vcc_ErrWhere(tl, pc->t);
 			return (1);
@@ -369,15 +369,15 @@ vcc_checkuses(struct vcc *tl, const struct symbol *sym)
 	m = method_tab + i;
 	pu = vcc_FindIllegalUse(p, m);
 	if (pu != NULL) {
-		vsb_printf(tl->sb,
+		VSB_printf(tl->sb,
 		    "'%.*s': %s in method '%.*s'.",
 		    PF(pu->t), pu->use, PF(p->name));
-		vsb_cat(tl->sb, "\nAt: ");
+		VSB_cat(tl->sb, "\nAt: ");
 		vcc_ErrWhere(tl, pu->t);
 		return;
 	}
 	if (vcc_CheckUseRecurse(tl, p, m)) {
-		vsb_printf(tl->sb,
+		VSB_printf(tl->sb,
 		    "\n...which is the \"%s\" method\n", m->name);
 		return;
 	}

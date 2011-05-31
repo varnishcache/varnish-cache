@@ -139,10 +139,10 @@ http_write(const struct http *hp, int lvl, const char *pfx)
 {
 	int l;
 
-	AZ(vsb_finish(hp->vsb));
-	vtc_dump(hp->vl, lvl, pfx, vsb_data(hp->vsb), vsb_len(hp->vsb));
-	l = write(hp->fd, vsb_data(hp->vsb), vsb_len(hp->vsb));
-	if (l != vsb_len(hp->vsb))
+	AZ(VSB_finish(hp->vsb));
+	vtc_dump(hp->vl, lvl, pfx, VSB_data(hp->vsb), VSB_len(hp->vsb));
+	l = write(hp->fd, VSB_data(hp->vsb), VSB_len(hp->vsb));
+	if (l != VSB_len(hp->vsb))
 		vtc_log(hp->vl, 0, "Write failed: %s", strerror(errno));
 }
 
@@ -646,7 +646,7 @@ cmd_http_txresp(CMD_ARGS)
 	assert(!strcmp(av[0], "txresp"));
 	av++;
 
-	vsb_clear(hp->vsb);
+	VSB_clear(hp->vsb);
 
 	/* send a "Content-Length: 0" header unless something else happens */
 	REPLACE(body, "");
@@ -667,13 +667,13 @@ cmd_http_txresp(CMD_ARGS)
 			break;
 	}
 
-	vsb_printf(hp->vsb, "%s %s %s%s", proto, status, msg, nl);
+	VSB_printf(hp->vsb, "%s %s %s%s", proto, status, msg, nl);
 
 	for(; *av != NULL; av++) {
 		if (!strcmp(*av, "-nolen")) {
 			nolen = 1;
 		} else if (!strcmp(*av, "-hdr")) {
-			vsb_printf(hp->vsb, "%s%s", av[1], nl);
+			VSB_printf(hp->vsb, "%s%s", av[1], nl);
 			av++;
 		} else
 			break;
@@ -711,13 +711,13 @@ cmd_http_txresp(CMD_ARGS)
 			assert(body == nullbody);
 			b = synth_body(av[1], 1);
 			gzip_body(hp, b, &body, &bodylen);
-			vsb_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
+			VSB_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
 			// vtc_hexdump(hp->vl, 4, "gzip", (void*)body, bodylen);
 			av++;
 		} else if (!strcmp(*av, "-gzipbody")) {
 			assert(body == nullbody);
 			gzip_body(hp, av[1], &body, &bodylen);
-			vsb_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
+			VSB_printf(hp->vsb, "Content-Encoding: gzip%s", nl);
 			// vtc_hexdump(hp->vl, 4, "gzip", (void*)body, bodylen);
 			av++;
 		} else
@@ -726,10 +726,10 @@ cmd_http_txresp(CMD_ARGS)
 	if (*av != NULL)
 		vtc_log(hp->vl, 0, "Unknown http txresp spec: %s\n", *av);
 	if (body != NULL && !nolen)
-		vsb_printf(hp->vsb, "Content-Length: %d%s", bodylen, nl);
-	vsb_cat(hp->vsb, nl);
+		VSB_printf(hp->vsb, "Content-Length: %d%s", bodylen, nl);
+	VSB_cat(hp->vsb, nl);
 	if (body != NULL)
-		vsb_bcat(hp->vsb, body, bodylen);
+		VSB_bcat(hp->vsb, body, bodylen);
 	http_write(hp, 4, "txresp");
 }
 
@@ -833,7 +833,7 @@ cmd_http_txreq(CMD_ARGS)
 	assert(!strcmp(av[0], "txreq"));
 	av++;
 
-	vsb_clear(hp->vsb);
+	VSB_clear(hp->vsb);
 
 	for(; *av != NULL; av++) {
 		if (!strcmp(*av, "-url")) {
@@ -848,10 +848,10 @@ cmd_http_txreq(CMD_ARGS)
 		} else
 			break;
 	}
-	vsb_printf(hp->vsb, "%s %s %s%s", req, url, proto, nl);
+	VSB_printf(hp->vsb, "%s %s %s%s", req, url, proto, nl);
 	for(; *av != NULL; av++) {
 		if (!strcmp(*av, "-hdr")) {
-			vsb_printf(hp->vsb, "%s%s", av[1], nl);
+			VSB_printf(hp->vsb, "%s%s", av[1], nl);
 			av++;
 		} else
 			break;
@@ -871,12 +871,12 @@ cmd_http_txreq(CMD_ARGS)
 	if (*av != NULL)
 		vtc_log(hp->vl, 0, "Unknown http txreq spec: %s\n", *av);
 	if (body != NULL)
-		vsb_printf(hp->vsb, "Content-Length: %ju%s",
+		VSB_printf(hp->vsb, "Content-Length: %ju%s",
 		    (uintmax_t)strlen(body), nl);
-	vsb_cat(hp->vsb, nl);
+	VSB_cat(hp->vsb, nl);
 	if (body != NULL) {
-		vsb_cat(hp->vsb, body);
-		vsb_cat(hp->vsb, nl);
+		VSB_cat(hp->vsb, body);
+		VSB_cat(hp->vsb, nl);
 	}
 	http_write(hp, 4, "txreq");
 }
@@ -916,8 +916,8 @@ cmd_http_chunked(CMD_ARGS)
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(av[1]);
 	AZ(av[2]);
-	vsb_clear(hp->vsb);
-	vsb_printf(hp->vsb, "%jx%s%s%s",
+	VSB_clear(hp->vsb);
+	VSB_printf(hp->vsb, "%jx%s%s%s",
 	    (uintmax_t)strlen(av[1]), nl, av[1], nl);
 	http_write(hp, 4, "chunked");
 }
@@ -935,24 +935,24 @@ cmd_http_chunkedlen(CMD_ARGS)
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(av[1]);
 	AZ(av[2]);
-	vsb_clear(hp->vsb);
+	VSB_clear(hp->vsb);
 
 	len = atoi(av[1]);
 
 	if (len == 0) {
-		vsb_printf(hp->vsb, "0%s%s", nl, nl);
+		VSB_printf(hp->vsb, "0%s%s", nl, nl);
 	} else {
 		for (u = 0; u < sizeof buf; u++)
 			buf[u] = (u & 7) + '0';
 
-		vsb_printf(hp->vsb, "%x%s", len, nl);
+		VSB_printf(hp->vsb, "%x%s", len, nl);
 		for (u = 0; u < len; u += v) {
 			v = len - u;
 			if (v > sizeof buf)
 				v = sizeof buf;
-			vsb_bcat(hp->vsb, buf, v);
+			VSB_bcat(hp->vsb, buf, v);
 		}
-		vsb_printf(hp->vsb, "%s", nl);
+		VSB_printf(hp->vsb, "%s", nl);
 	}
 	http_write(hp, 4, "chunked");
 }
@@ -1101,7 +1101,7 @@ http_process(struct vtclog *vl, const char *spec, int sock, int sfd)
 	hp->fd = sock;
 	hp->timeout = 5000;
 	hp->nrxbuf = 640*1024;
-	hp->vsb = vsb_new_auto();
+	hp->vsb = VSB_new_auto();
 	hp->rxbuf = malloc(hp->nrxbuf);		/* XXX */
 	hp->sfd = sfd;
 	hp->vl = vl;
@@ -1115,7 +1115,7 @@ http_process(struct vtclog *vl, const char *spec, int sock, int sfd)
 	assert(q > s);
 	AN(s);
 	parse_string(s, http_cmds, hp, vl);
-	vsb_delete(hp->vsb);
+	VSB_delete(hp->vsb);
 	free(hp->rxbuf);
 	free(hp);
 }

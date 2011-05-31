@@ -137,9 +137,9 @@ varnish_new(const char *name)
 	bprintf(buf, "${tmpdir}/%s", name);
 	vsb = macro_expand(v->vl, buf);
 	AN(vsb);
-	v->workdir = strdup(vsb_data(vsb));
+	v->workdir = strdup(VSB_data(vsb));
 	AN(v->workdir);
-	vsb_delete(vsb);
+	VSB_delete(vsb);
 
 	bprintf(buf, "rm -rf %s ; mkdir -p %s ; echo ' %ld' > %s/_S",
 	    v->workdir, v->workdir, random(), v->workdir);
@@ -151,11 +151,11 @@ varnish_new(const char *name)
 	if (*v->name != 'v')
 		vtc_log(v->vl, 0, "Varnish name must start with 'v'");
 
-	v->args = vsb_new_auto();
+	v->args = VSB_new_auto();
 
-	v->storage = vsb_new_auto();
-	vsb_printf(v->storage, "-sfile,%s,10M", v->workdir);
-	AZ(vsb_finish(v->storage));
+	v->storage = VSB_new_auto();
+	VSB_printf(v->storage, "-sfile,%s,10M", v->workdir);
+	AZ(VSB_finish(v->storage));
 
 	v->cli_fd = -1;
 	VTAILQ_INSERT_TAIL(&varnishes, v, list);
@@ -247,28 +247,28 @@ varnish_launch(struct varnish *v)
 	v->cli_fd = VSS_listen(ap[0], 1);
 	TCP_myname(v->cli_fd, abuf, sizeof abuf, pbuf, sizeof pbuf);
 
-	AZ(vsb_finish(v->args));
+	AZ(VSB_finish(v->args));
 	vtc_log(v->vl, 2, "Launch");
-	vsb = vsb_new_auto();
+	vsb = VSB_new_auto();
 	AN(vsb);
-	vsb_printf(vsb, "cd ${topbuild}/bin/varnishd &&");
-	vsb_printf(vsb, " ./varnishd -d -d -n %s", v->workdir);
-	vsb_printf(vsb, " -l 10m,1m,-");
-	vsb_printf(vsb, " -p auto_restart=off");
-	vsb_printf(vsb, " -p syslog_cli_traffic=off");
-	vsb_printf(vsb, " -a '%s'", "127.0.0.1:0");
-	vsb_printf(vsb, " -S %s/_S", v->workdir);
-	vsb_printf(vsb, " -M '%s %s'", abuf, pbuf);
-	vsb_printf(vsb, " -P %s/varnishd.pid", v->workdir);
-	vsb_printf(vsb, " %s", vsb_data(v->storage));
-	vsb_printf(vsb, " %s", vsb_data(v->args));
-	AZ(vsb_finish(vsb));
-	vtc_log(v->vl, 3, "CMD: %s", vsb_data(vsb));
-	vsb1 = macro_expand(v->vl, vsb_data(vsb));
+	VSB_printf(vsb, "cd ${topbuild}/bin/varnishd &&");
+	VSB_printf(vsb, " ./varnishd -d -d -n %s", v->workdir);
+	VSB_printf(vsb, " -l 10m,1m,-");
+	VSB_printf(vsb, " -p auto_restart=off");
+	VSB_printf(vsb, " -p syslog_cli_traffic=off");
+	VSB_printf(vsb, " -a '%s'", "127.0.0.1:0");
+	VSB_printf(vsb, " -S %s/_S", v->workdir);
+	VSB_printf(vsb, " -M '%s %s'", abuf, pbuf);
+	VSB_printf(vsb, " -P %s/varnishd.pid", v->workdir);
+	VSB_printf(vsb, " %s", VSB_data(v->storage));
+	VSB_printf(vsb, " %s", VSB_data(v->args));
+	AZ(VSB_finish(vsb));
+	vtc_log(v->vl, 3, "CMD: %s", VSB_data(vsb));
+	vsb1 = macro_expand(v->vl, VSB_data(vsb));
 	AN(vsb1);
-	vsb_delete(vsb);
+	VSB_delete(vsb);
 	vsb = vsb1;
-	vtc_log(v->vl, 3, "CMD: %s", vsb_data(vsb));
+	vtc_log(v->vl, 3, "CMD: %s", VSB_data(vsb));
 	AZ(pipe(&v->fds[0]));
 	AZ(pipe(&v->fds[2]));
 	v->pid = fork();
@@ -283,7 +283,7 @@ varnish_launch(struct varnish *v)
 		AZ(close(v->fds[3]));
 		for (i = 3; i <getdtablesize(); i++)
 			(void)close(i);
-		AZ(execl("/bin/sh", "/bin/sh", "-c", vsb_data(vsb), NULL));
+		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(vsb), NULL));
 		exit(1);
 	} else {
 		vtc_log(v->vl, 3, "PID: %d", v->pid);
@@ -292,7 +292,7 @@ varnish_launch(struct varnish *v)
 	AZ(close(v->fds[3]));
 	v->fds[0] = v->fds[2];
 	v->fds[2] = v->fds[3] = -1;
-	vsb_delete(vsb);
+	VSB_delete(vsb);
 	AZ(pthread_create(&v->tp, NULL, varnish_thread, v));
 
 	/* Wait for the varnish to call home */
@@ -504,31 +504,31 @@ varnish_vcl(struct varnish *v, const char *vcl, enum cli_status_e expect)
 		varnish_launch(v);
 	if (vtc_error)
 		return;
-	vsb = vsb_new_auto();
+	vsb = VSB_new_auto();
 	AN(vsb);
 
-	vsb_printf(vsb, "vcl.inline vcl%d << %s\n%s\n%s\n",
+	VSB_printf(vsb, "vcl.inline vcl%d << %s\n%s\n%s\n",
 	    ++v->vcl_nbr, NONSENSE, vcl, NONSENSE);
-	AZ(vsb_finish(vsb));
+	AZ(VSB_finish(vsb));
 
-	u = varnish_ask_cli(v, vsb_data(vsb), NULL);
+	u = varnish_ask_cli(v, VSB_data(vsb), NULL);
 	if (u != expect) {
-		vsb_delete(vsb);
+		VSB_delete(vsb);
 		vtc_log(v->vl, 0,
 		    "VCL compilation got %u expected %u",
 		    u, expect);
 		return;
 	}
 	if (u == CLIS_OK) {
-		vsb_clear(vsb);
-		vsb_printf(vsb, "vcl.use vcl%d", v->vcl_nbr);
-		AZ(vsb_finish(vsb));
-		u = varnish_ask_cli(v, vsb_data(vsb), NULL);
+		VSB_clear(vsb);
+		VSB_printf(vsb, "vcl.use vcl%d", v->vcl_nbr);
+		AZ(VSB_finish(vsb));
+		u = varnish_ask_cli(v, VSB_data(vsb), NULL);
 		assert(u == CLIS_OK);
 	} else {
 		vtc_log(v->vl, 2, "VCL compilation failed (as expected)");
 	}
-	vsb_delete(vsb);
+	VSB_delete(vsb);
 }
 
 /**********************************************************************
@@ -545,33 +545,33 @@ varnish_vclbackend(struct varnish *v, const char *vcl)
 		varnish_launch(v);
 	if (vtc_error)
 		return;
-	vsb = vsb_new_auto();
+	vsb = VSB_new_auto();
 	AN(vsb);
 
-	vsb2 = vsb_new_auto();
+	vsb2 = VSB_new_auto();
 	AN(vsb2);
 
 	cmd_server_genvcl(vsb2);
-	AZ(vsb_finish(vsb2));
+	AZ(VSB_finish(vsb2));
 
-	vsb_printf(vsb, "vcl.inline vcl%d << %s\n%s\n%s\n%s\n",
-	    ++v->vcl_nbr, NONSENSE, vsb_data(vsb2), vcl, NONSENSE);
-	AZ(vsb_finish(vsb));
+	VSB_printf(vsb, "vcl.inline vcl%d << %s\n%s\n%s\n%s\n",
+	    ++v->vcl_nbr, NONSENSE, VSB_data(vsb2), vcl, NONSENSE);
+	AZ(VSB_finish(vsb));
 
-	u = varnish_ask_cli(v, vsb_data(vsb), NULL);
+	u = varnish_ask_cli(v, VSB_data(vsb), NULL);
 	if (u != CLIS_OK) {
-		vsb_delete(vsb);
-		vsb_delete(vsb2);
+		VSB_delete(vsb);
+		VSB_delete(vsb2);
 		vtc_log(v->vl, 0, "FAIL VCL does not compile");
 		return;
 	}
-	vsb_clear(vsb);
-	vsb_printf(vsb, "vcl.use vcl%d", v->vcl_nbr);
-	AZ(vsb_finish(vsb));
-	u = varnish_ask_cli(v, vsb_data(vsb), NULL);
+	VSB_clear(vsb);
+	VSB_printf(vsb, "vcl.use vcl%d", v->vcl_nbr);
+	AZ(VSB_finish(vsb));
+	u = varnish_ask_cli(v, VSB_data(vsb), NULL);
 	assert(u == CLIS_OK);
-	vsb_delete(vsb);
-	vsb_delete(vsb2);
+	VSB_delete(vsb);
+	VSB_delete(vsb2);
 }
 
 /**********************************************************************
@@ -700,17 +700,17 @@ cmd_varnish(CMD_ARGS)
 		if (vtc_error)
 			break;
 		if (!strcmp(*av, "-storage")) {
-			vsb_clear(v->storage);
-			vsb_cat(v->storage, av[1]);
-			AZ(vsb_finish(v->storage));
+			VSB_clear(v->storage);
+			VSB_cat(v->storage, av[1]);
+			AZ(VSB_finish(v->storage));
 			av++;
 			continue;
 		}
 		if (!strcmp(*av, "-arg")) {
 			AN(av[1]);
 			AZ(v->pid);
-			vsb_cat(v->args, " ");
-			vsb_cat(v->args, av[1]);
+			VSB_cat(v->args, " ");
+			VSB_cat(v->args, av[1]);
 			av++;
 			continue;
 		}

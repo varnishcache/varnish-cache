@@ -730,7 +730,7 @@ cnt_fetchbody(struct sess *sp)
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
 		vary = VRY_Create(sp, sp->wrk->beresp);
 		if (vary != NULL) {
-			varyl = vsb_len(vary);
+			varyl = VSB_len(vary);
 			assert(varyl > 0);
 			l += varyl;
 		}
@@ -773,8 +773,8 @@ cnt_fetchbody(struct sess *sp)
 		sp->obj->vary =
 		    (void *)WS_Alloc(sp->obj->http->ws, varyl);
 		AN(sp->obj->vary);
-		memcpy(sp->obj->vary, vsb_data(vary), varyl);
-		vsb_delete(vary);
+		memcpy(sp->obj->vary, VSB_data(vary), varyl);
+		VSB_delete(vary);
 	}
 
 	sp->obj->xid = sp->xid;

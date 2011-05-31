@@ -438,19 +438,19 @@ mgt_save_panic(void)
 		return;
 
 	if (child_panic)
-		vsb_delete(child_panic);
-	child_panic = vsb_new_auto();
+		VSB_delete(child_panic);
+	child_panic = VSB_new_auto();
 	XXXAN(child_panic);
 	TIM_format(TIM_real(), time_str);
-	vsb_printf(child_panic, "Last panic at: %s\n", time_str);
-	vsb_cat(child_panic, vsm_head->panicstr);
-	AZ(vsb_finish(child_panic));
+	VSB_printf(child_panic, "Last panic at: %s\n", time_str);
+	VSB_cat(child_panic, vsm_head->panicstr);
+	AZ(VSB_finish(child_panic));
 }
 
 static void
 mgt_clear_panic(void)
 {
-	vsb_delete(child_panic);
+	VSB_delete(child_panic);
 	child_panic = NULL;
 }
 
@@ -476,26 +476,26 @@ mgt_sigchld(const struct vev *e, int what)
 	if (r == 0 || (r == -1 && errno == ECHILD))
 		return (0);
 	assert(r == child_pid);
-	vsb = vsb_new_auto();
+	vsb = VSB_new_auto();
 	XXXAN(vsb);
-	vsb_printf(vsb, "Child (%d) %s", r, status ? "died" : "ended");
+	VSB_printf(vsb, "Child (%d) %s", r, status ? "died" : "ended");
 	if (!WIFEXITED(status) && WEXITSTATUS(status)) {
-		vsb_printf(vsb, " status=%d", WEXITSTATUS(status));
+		VSB_printf(vsb, " status=%d", WEXITSTATUS(status));
 		exit_status |= 0x20;
 	}
 	if (WIFSIGNALED(status)) {
-		vsb_printf(vsb, " signal=%d", WTERMSIG(status));
+		VSB_printf(vsb, " signal=%d", WTERMSIG(status));
 		exit_status |= 0x40;
 	}
 #ifdef WCOREDUMP
 	if (WCOREDUMP(status)) {
-		vsb_printf(vsb, " (core dumped)");
+		VSB_printf(vsb, " (core dumped)");
 		exit_status |= 0x80;
 	}
 #endif
-	AZ(vsb_finish(vsb));
-	REPORT(LOG_INFO, "%s", vsb_data(vsb));
-	vsb_delete(vsb);
+	AZ(VSB_finish(vsb));
+	REPORT(LOG_INFO, "%s", VSB_data(vsb));
+	VSB_delete(vsb);
 
 	mgt_report_panic(r);
 	mgt_save_panic();
@@ -650,7 +650,7 @@ mcf_panic_show(struct cli *cli, const char * const *av, void *priv)
 	  return;
 	}
 
-	cli_out(cli, "%s\n", vsb_data(child_panic));
+	cli_out(cli, "%s\n", VSB_data(child_panic));
 }
 
 void

@@ -63,12 +63,12 @@ static void
 h_order_finish(int fd, struct VSM_data *vd)
 {
 
-	AZ(vsb_finish(ob[fd]));
-	if (vsb_len(ob[fd]) > 1 && VSL_Matched(vd, bitmap[fd])) {
-		printf("%s", vsb_data(ob[fd]));
+	AZ(VSB_finish(ob[fd]));
+	if (VSB_len(ob[fd]) > 1 && VSL_Matched(vd, bitmap[fd])) {
+		printf("%s", VSB_data(ob[fd]));
 	}
 	bitmap[fd] = 0;
-	vsb_clear(ob[fd]);
+	VSB_clear(ob[fd]);
 }
 
 static void
@@ -79,13 +79,13 @@ clean_order(struct VSM_data *vd)
 	for (u = 0; u < 65536; u++) {
 		if (ob[u] == NULL)
 			continue;
-		AZ(vsb_finish(ob[u]));
-		if (vsb_len(ob[u]) > 1 && VSL_Matched(vd, bitmap[u])) {
-			printf("%s\n", vsb_data(ob[u]));
+		AZ(VSB_finish(ob[u]));
+		if (VSB_len(ob[u]) > 1 && VSL_Matched(vd, bitmap[u])) {
+			printf("%s\n", VSB_data(ob[u]));
 		}
 		flg[u] = 0;
 		bitmap[u] = 0;
-		vsb_clear(ob[u]);
+		VSB_clear(ob[u]);
 	}
 }
 
@@ -108,7 +108,7 @@ h_order(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 		return (0);
 	}
 	if (ob[fd] == NULL) {
-		ob[fd] = vsb_new_auto();
+		ob[fd] = VSB_new_auto();
 		assert(ob[fd] != NULL);
 	}
 	if ((tag == SLT_BackendOpen || tag == SLT_SessionOpen ||
@@ -117,14 +117,14 @@ h_order(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 		    last[fd] != SLT_VCL_acl) ||
 		(tag == SLT_BackendXID &&
 		    last[fd] != SLT_BackendOpen)) &&
-	    vsb_len(ob[fd]) != 0) {
+	    VSB_len(ob[fd]) != 0) {
 		/*
 		 * This is the start of a new request, yet we haven't seen
 		 * the end of the previous one.  Spit it out anyway before
 		 * starting on the new one.
 		 */
 		if (last[fd] != SLT_SessionClose)
-			vsb_printf(ob[fd], "%5d %-12s %c %s\n",
+			VSB_printf(ob[fd], "%5d %-12s %c %s\n",
 			    fd, "Interrupted", type, VSL_tags[tag]);
 		h_order_finish(fd, vd);
 	}
@@ -134,17 +134,17 @@ h_order(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 	switch (tag) {
 	case SLT_VCL_call:
 		if (flg[fd] & F_INVCL)
-			vsb_cat(ob[fd], "\n");
+			VSB_cat(ob[fd], "\n");
 		else
 			flg[fd] |= F_INVCL;
-		vsb_printf(ob[fd], "%5d %-12s %c %.*s",
+		VSB_printf(ob[fd], "%5d %-12s %c %.*s",
 		    fd, VSL_tags[tag], type, len, ptr);
 		return (0);
 	case SLT_VCL_trace:
 	case SLT_VCL_return:
 		if (flg[fd] & F_INVCL) {
-			vsb_cat(ob[fd], " ");
-			vsb_bcat(ob[fd], ptr, len);
+			VSB_cat(ob[fd], " ");
+			VSB_bcat(ob[fd], ptr, len);
 			return (0);
 		}
 		break;
@@ -152,10 +152,10 @@ h_order(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 		break;
 	}
 	if (flg[fd] & F_INVCL) {
-		vsb_cat(ob[fd], "\n");
+		VSB_cat(ob[fd], "\n");
 		flg[fd] &= ~F_INVCL;
 	}
-	vsb_printf(ob[fd], "%5d %-12s %c %.*s\n",
+	VSB_printf(ob[fd], "%5d %-12s %c %.*s\n",
 	    fd, VSL_tags[tag], type, len, ptr);
 	switch (tag) {
 	case SLT_ReqEnd:

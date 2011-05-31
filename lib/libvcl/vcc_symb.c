@@ -49,7 +49,7 @@ VCC_SymKind(struct vcc *tl, const struct symbol *s)
 #undef VCC_SYMB
 	default:
 		ErrInternal(tl);
-		vsb_printf(tl->sb, "Symbol Kind 0x%x\n", s->kind);
+		VSB_printf(tl->sb, "Symbol Kind 0x%x\n", s->kind);
 		return("INTERNALERROR");
 	}
 }
@@ -67,7 +67,7 @@ vcc_AddSymbol(struct vcc *tl, const char *nb, int l, enum symkind kind)
 			continue;
 		if (kind != sym->kind)
 			continue;
-		vsb_printf(tl->sb, "Name Collision: <%.*s> <%s>\n",
+		VSB_printf(tl->sb, "Name Collision: <%.*s> <%s>\n",
 		    l, nb, VCC_SymKind(tl, sym));
 		ErrInternal(tl);
 		return (NULL);

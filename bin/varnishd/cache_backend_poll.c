@@ -308,18 +308,18 @@ vbp_build_req(struct vsb *vsb, const struct vbp_vcl *vcl)
 
 	XXXAN(vsb);
 	XXXAN(vcl);
-	vsb_clear(vsb);
+	VSB_clear(vsb);
 	if(vcl->probe.request != NULL) {
-		vsb_cat(vsb, vcl->probe.request);
+		VSB_cat(vsb, vcl->probe.request);
 	} else {
-		vsb_printf(vsb, "GET %s HTTP/1.1\r\n",
+		VSB_printf(vsb, "GET %s HTTP/1.1\r\n",
 		    vcl->probe.url != NULL ?  vcl->probe.url : "/");
 		if (vcl->hosthdr != NULL)
-			vsb_printf(vsb, "Host: %s\r\n", vcl->hosthdr);
-		vsb_printf(vsb, "Connection: close\r\n");
-		vsb_printf(vsb, "\r\n");
+			VSB_printf(vsb, "Host: %s\r\n", vcl->hosthdr);
+		VSB_printf(vsb, "Connection: close\r\n");
+		VSB_printf(vsb, "\r\n");
 	}
-	AZ(vsb_finish(vsb));
+	AZ(VSB_finish(vsb));
 }
 
 /*--------------------------------------------------------------------
@@ -345,8 +345,8 @@ vbp_wrk_poll_backend(void *priv)
 		}
 		Lck_Unlock(&vbp_mtx);
 
-		vt->req = vsb_data(vt->vsb);
-		vt->req_len = vsb_len(vt->vsb);
+		vt->req = VSB_data(vt->vsb);
+		vt->req_len = VSB_len(vt->vsb);
 
 		vbp_start_poke(vt);
 		vbp_poke(vt);
@@ -484,7 +484,7 @@ VBP_Start(struct backend *b, const struct vrt_backend_probe *p, const char *host
 		XXXAN(vt);
 		VTAILQ_INIT(&vt->vcls);
 		vt->backend = b;
-		vt->vsb = vsb_new_auto();
+		vt->vsb = VSB_new_auto();
 		XXXAN(vt->vsb);
 		b->probe = vt;
 		startthread = 1;
@@ -563,7 +563,7 @@ VBP_Stop(struct backend *b, struct vrt_backend_probe const *p)
 
 	VTAILQ_REMOVE(&vbp_list, vt, list);
 	b->probe = NULL;
-	vsb_delete(vt->vsb);
+	VSB_delete(vt->vsb);
 	FREE_OBJ(vt);
 }
 

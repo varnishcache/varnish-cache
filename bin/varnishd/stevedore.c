@@ -458,7 +458,7 @@ STV_Config(const char *spec)
 	AN(stv2);
 
 	/* Append strategy to ident string */
-	vsb_printf(vident, ",-s%s", av[1]);
+	VSB_printf(vident, ",-s%s", av[1]);
 
 	av += 2;
 

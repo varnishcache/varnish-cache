@@ -404,13 +404,13 @@ VRT_synth_page(const struct sess *sp, unsigned flags, const char *str, ...)
 	vsb = SMS_Makesynth(sp->obj);
 	AN(vsb);
 
-	vsb_cat(vsb, str);
+	VSB_cat(vsb, str);
 	va_start(ap, str);
 	p = va_arg(ap, const char *);
 	while (p != vrt_magic_string_end) {
 		if (p == NULL)
 			p = "(null)";
-		vsb_cat(vsb, p);
+		VSB_cat(vsb, p);
 		p = va_arg(ap, const char *);
 	}
 	va_end(ap);

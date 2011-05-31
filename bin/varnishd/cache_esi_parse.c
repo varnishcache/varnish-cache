@@ -251,17 +251,17 @@ vep_emit_len(const struct vep_state *vep, ssize_t l, int m8, int m16, int m64)
 		buf[0] = (uint8_t)m8;
 		buf[1] = (uint8_t)l;
 		assert((ssize_t)buf[1] == l);
-		vsb_bcat(vep->vsb, buf, 2);
+		VSB_bcat(vep->vsb, buf, 2);
 	} else if (l < 65536) {
 		buf[0] = (uint8_t)m16;
 		vbe16enc(buf + 1, (uint16_t)l);
 		assert((ssize_t)vbe16dec(buf + 1) == l);
-		vsb_bcat(vep->vsb, buf, 3);
+		VSB_bcat(vep->vsb, buf, 3);
 	} else {
 		buf[0] = (uint8_t)m64;
 		vbe64enc(buf + 1, l);
 		assert((ssize_t)vbe64dec(buf + 1) == l);
-		vsb_bcat(vep->vsb, buf, 9);
+		VSB_bcat(vep->vsb, buf, 9);
 	}
 }
 
@@ -287,7 +287,7 @@ vep_emit_verbatim(const struct vep_state *vep, ssize_t l, ssize_t l_crc)
 	if (vep->dogzip) {
 		vep_emit_len(vep, l_crc, VEC_C1, VEC_C2, VEC_C8);
 		vbe32enc(buf, vep->crc);
-		vsb_bcat(vep->vsb, buf, sizeof buf);
+		VSB_bcat(vep->vsb, buf, sizeof buf);
 	}
 }
 
@@ -446,14 +446,14 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 	Debug("DO_INCLUDE(%d)\n", what);
 	if (what == DO_ATTR) {
 		Debug("ATTR (%s) (%s)\n", vep->match_hit->match,
-			vsb_data(vep->attr_vsb));
+			VSB_data(vep->attr_vsb));
 		if (vep->include_src != NULL) {
 			vep_error(vep,
 			    "ESI 1.0 <esi:include> "
 			    "has multiple src= attributes");
 			vep->state = VEP_TAGERROR;
-			vsb_delete(vep->attr_vsb);
-			vsb_delete(vep->include_src);
+			VSB_delete(vep->attr_vsb);
+			VSB_delete(vep->include_src);
 			vep->attr_vsb = NULL;
 			vep->include_src = NULL;
 			return;
@@ -483,22 +483,22 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 	 */
 	assert(vep->o_wait == 0 || vep->last_mark == SKIP);
 	/* XXX: what if it contains NUL bytes ?? */
-	p = vsb_data(vep->include_src);
-	l = vsb_len(vep->include_src);
+	p = VSB_data(vep->include_src);
+	l = VSB_len(vep->include_src);
 	h = 0;
 
-	vsb_printf(vep->vsb, "%c", VEC_INCL);
+	VSB_printf(vep->vsb, "%c", VEC_INCL);
 	if (l > 7 && !memcmp(p, "http://", 7)) {
 		h = p + 7;
 		p = strchr(h, '/');
 		AN(p);
 		Debug("HOST <%.*s> PATH <%s>\n", (int)(p-h),h, p);
-		vsb_printf(vep->vsb, "Host: %.*s%c",
+		VSB_printf(vep->vsb, "Host: %.*s%c",
 		    (int)(p-h), h, 0);
 	} else if (*p == '/') {
-		vsb_printf(vep->vsb, "%c", 0);
+		VSB_printf(vep->vsb, "%c", 0);
 	} else {
-		vsb_printf(vep->vsb, "%c", 0);
+		VSB_printf(vep->vsb, "%c", 0);
 		url = vep->sp->wrk->bereq->hd[HTTP_HDR_URL];
 		/* Look for the last / before a '?' */
 		h = NULL;
@@ -510,14 +510,14 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 
 		Debug("INCL:: [%.*s]/[%s]\n",
 		    (int)(h - url.b), url.b, p);
-		vsb_printf(vep->vsb, "%.*s/", (int)(h - url.b), url.b);
+		VSB_printf(vep->vsb, "%.*s/", (int)(h - url.b), url.b);
 	}
-	l -= (p - vsb_data(vep->include_src));
+	l -= (p - VSB_data(vep->include_src));
 	for (q = p; *q != '\0'; ) {
 		if (*q == '&') {
 #define R(w,f,r)							\
 			if (q + w <= p + l && !memcmp(q, f, w)) { \
-				vsb_printf(vep->vsb, "%c", r);	\
+				VSB_printf(vep->vsb, "%c", r);	\
 				q += l;				\
 				continue;			\
 			}
@@ -527,12 +527,12 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 			R(4, "&gt;", '>');
 			R(5, "&amp;", '&');
 		}
-		vsb_printf(vep->vsb, "%c", *q++);
+		VSB_printf(vep->vsb, "%c", *q++);
 	}
 #undef R
-	vsb_printf(vep->vsb, "%c", 0);
+	VSB_printf(vep->vsb, "%c", 0);
 
-	vsb_delete(vep->include_src);
+	VSB_delete(vep->include_src);
 	vep->include_src = NULL;
 }
 
@@ -846,7 +846,7 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 				vep->state = VEP_TAGERROR;
 			}
 		} else if (vep->state == VEP_ATTRGETVAL) {
-			vep->attr_vsb = vsb_new_auto();
+			vep->attr_vsb = VSB_new_auto();
 			vep->state = VEP_ATTRDELIM;
 		} else if (vep->state == VEP_ATTRDELIM) {
 			AZ(vep->attr_delim);
@@ -866,7 +866,7 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 			while (p < e && *p != '>' && *p != vep->attr_delim &&
 			   (vep->attr_delim != ' ' || !vct_issp(*p))) {
 				if (vep->attr_vsb != NULL)
-					vsb_bcat(vep->attr_vsb, p, 1);
+					VSB_bcat(vep->attr_vsb, p, 1);
 				p++;
 			}
 			if (p < e && *p == '>') {
@@ -875,8 +875,8 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 				vep->state = VEP_TAGERROR;
 				vep->attr_delim = 0;
 				if (vep->attr_vsb != NULL) {
-					AZ(vsb_finish(vep->attr_vsb));
-					vsb_delete(vep->attr_vsb);
+					AZ(VSB_finish(vep->attr_vsb));
+					VSB_delete(vep->attr_vsb);
 					vep->attr_vsb = NULL;
 				}
 			} else if (p < e) {
@@ -884,7 +884,7 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 				p++;
 				vep->state = VEP_INTAG;
 				if (vep->attr_vsb != NULL) {
-					AZ(vsb_finish(vep->attr_vsb));
+					AZ(VSB_finish(vep->attr_vsb));
 					AN(vep->dostuff);
 					vep->dostuff(vep, DO_ATTR);
 					vep->attr_vsb = NULL;
@@ -1005,13 +1005,13 @@ VEP_Init(const struct sess *sp, vep_callback_t *cb)
 	memset(vep, 0, sizeof *vep);
 	vep->magic = VEP_MAGIC;
 	vep->sp = sp;
-	vep->vsb = vsb_new_auto();
+	vep->vsb = VSB_new_auto();
 	AN(vep->vsb);
 
 	if (cb != NULL) {
 		vep->dogzip = 1;
 		/* XXX */
-		vsb_printf(vep->vsb, "%c", VEC_GZ);
+		VSB_printf(vep->vsb, "%c", VEC_GZ);
 		vep->cb = cb;
 	} else {
 		vep->cb = vep_default_cb;
@@ -1056,11 +1056,11 @@ VEP_Finish(const struct sess *sp)
 
 	sp->wrk->vep = NULL;
 
-	AZ(vsb_finish(vep->vsb));
-	l = vsb_len(vep->vsb);
+	AZ(VSB_finish(vep->vsb));
+	l = VSB_len(vep->vsb);
 	if (vep->esi_found && l > 0)
 		return (vep->vsb);
-	vsb_delete(vep->vsb);
+	VSB_delete(vep->vsb);
 	return (NULL);
 }
 

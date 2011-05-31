@@ -57,7 +57,7 @@ vcc_regexp(struct vcc *tl)
 	memset(&t, 0, sizeof t);
 	t = VRE_compile(tl->t->dec, 0, &error, &erroroffset);
 	if (t == NULL) {
-		vsb_printf(tl->sb,
+		VSB_printf(tl->sb,
 		    "Regexp compilation error:\n\n%s\n\n", error);
 		vcc_ErrWhere(tl, tl->t);
 		return (NULL);

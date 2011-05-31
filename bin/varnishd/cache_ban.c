@@ -124,7 +124,7 @@ BAN_New(void)
 	ALLOC_OBJ(b, BAN_MAGIC);
 	if (b == NULL)
 		return (b);
-	b->vsb = vsb_new_auto();
+	b->vsb = VSB_new_auto();
 	if (b->vsb == NULL) {
 		FREE_OBJ(b);
 		return (NULL);
@@ -142,7 +142,7 @@ BAN_Free(struct ban *b)
 	assert(VTAILQ_EMPTY(&b->objcore));
 
 	if (b->vsb != NULL)
-		vsb_delete(b->vsb);
+		VSB_delete(b->vsb);
 	if (b->spec != NULL)
 		free(b->spec);
 	FREE_OBJ(b);
@@ -229,8 +229,8 @@ ban_add_lump(const struct ban *b, const void *p, uint32_t len)
 	uint8_t buf[sizeof len];
 
 	vbe32enc(buf, len);
-	vsb_bcat(b->vsb, buf, sizeof buf);
-	vsb_bcat(b->vsb, p, len);
+	VSB_bcat(b->vsb, buf, sizeof buf);
+	VSB_bcat(b->vsb, p, len);
 }
 
 static const void *
@@ -278,10 +278,10 @@ ban_parse_http(const struct ban *b, const char *a1)
 
 	l = strlen(a1) + 1;
 	assert(l <= 127);
-	vsb_putc(b->vsb, (char)l);
-	vsb_cat(b->vsb, a1);
-	vsb_putc(b->vsb, ':');
-	vsb_putc(b->vsb, '\0');
+	VSB_putc(b->vsb, (char)l);
+	VSB_cat(b->vsb, a1);
+	VSB_putc(b->vsb, ':');
+	VSB_putc(b->vsb, '\0');
 }
 
 /*--------------------------------------------------------------------
@@ -333,25 +333,25 @@ BAN_AddTest(struct cli *cli, struct ban *b, const char *a1, const char *a2,
 	if (pv->flag & PVAR_REQ)
 		b->flags |= BAN_F_REQ;
 
-	vsb_putc(b->vsb, pv->tag);
+	VSB_putc(b->vsb, pv->tag);
 	if (pv->flag & PVAR_HTTP)
 		ban_parse_http(b, a1 + strlen(pv->name));
 
 	ban_add_lump(b, a3, strlen(a3) + 1);
 	if (!strcmp(a2, "~")) {
-		vsb_putc(b->vsb, BAN_OPER_MATCH);
+		VSB_putc(b->vsb, BAN_OPER_MATCH);
 		i = ban_parse_regexp(cli, b, a3);
 		if (i)
 			return (i);
 	} else if (!strcmp(a2, "!~")) {
-		vsb_putc(b->vsb, BAN_OPER_NMATCH);
+		VSB_putc(b->vsb, BAN_OPER_NMATCH);
 		i = ban_parse_regexp(cli, b, a3);
 		if (i)
 			return (i);
 	} else if (!strcmp(a2, "==")) {
-		vsb_putc(b->vsb, BAN_OPER_EQ);
+		VSB_putc(b->vsb, BAN_OPER_EQ);
 	} else if (!strcmp(a2, "!=")) {
-		vsb_putc(b->vsb, BAN_OPER_NEQ);
+		VSB_putc(b->vsb, BAN_OPER_NEQ);
 	} else {
 		cli_out(cli,
 		    "expected conditional (~, !~, == or !=) got \"%s\"", a2);
@@ -378,8 +378,8 @@ BAN_Insert(struct ban *b)
 
 	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
 
-	AZ(vsb_finish(b->vsb));
-	ln = vsb_len(b->vsb);
+	AZ(VSB_finish(b->vsb));
+	ln = VSB_len(b->vsb);
 	assert(ln >= 0);
 
 	b->spec = malloc(ln + 13L);	/* XXX */
@@ -388,11 +388,11 @@ BAN_Insert(struct ban *b)
 	t0 = TIM_real();
 	memcpy(b->spec, &t0, sizeof t0);
 	b->spec[12] = (b->flags & BAN_F_REQ) ? 1 : 0;
-	memcpy(b->spec + 13, vsb_data(b->vsb), ln);
+	memcpy(b->spec + 13, VSB_data(b->vsb), ln);
 	ln += 13;
 	vbe32enc(b->spec + 8, ln);
 
-	vsb_delete(b->vsb);
+	VSB_delete(b->vsb);
 	b->vsb = NULL;
 
 	Lck_Lock(&ban_mtx);

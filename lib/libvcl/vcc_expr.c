@@ -79,9 +79,9 @@ vcc_TimeUnit(struct vcc *tl)
 	else if (vcc_IdIs(tl->t, "w"))
 		sc = 60.0 * 60.0 * 24.0 * 7.0;
 	else {
-		vsb_printf(tl->sb, "Unknown time unit ");
+		VSB_printf(tl->sb, "Unknown time unit ");
 		vcc_ErrToken(tl, tl->t);
-		vsb_printf(tl->sb, ".  Legal are 's', 'm', 'h' and 'd'\n");
+		VSB_printf(tl->sb, ".  Legal are 's', 'm', 'h' and 'd'\n");
 		vcc_ErrWhere(tl, tl->t);
 		return (1.0);
 	}
@@ -198,9 +198,9 @@ vcc_ByteVal(struct vcc *tl, double *d)
 	v = vcc_DoubleVal(tl);
 	ERRCHK(tl);
 	if (tl->t->tok != ID) {
-		vsb_printf(tl->sb, "Expected BYTES unit (B, KB, MB...) got ");
+		VSB_printf(tl->sb, "Expected BYTES unit (B, KB, MB...) got ");
 		vcc_ErrToken(tl, tl->t);
-		vsb_printf(tl->sb, "\n");
+		VSB_printf(tl->sb, "\n");
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
@@ -215,9 +215,9 @@ vcc_ByteVal(struct vcc *tl, double *d)
 	else if (vcc_IdIs(tl->t, "TB"))
 		sc = 1024. * 1024. * 1024. * 1024.;
 	else {
-		vsb_printf(tl->sb, "Unknown BYTES unit ");
+		VSB_printf(tl->sb, "Unknown BYTES unit ");
 		vcc_ErrToken(tl, tl->t);
-		vsb_printf(tl->sb,
+		VSB_printf(tl->sb,
 		    ".  Legal are 'B', 'KB', 'MB', 'GB' and 'TB'\n");
 		vcc_ErrWhere(tl, tl->t);
 		return;
@@ -250,7 +250,7 @@ vcc_new_expr(void)
 	/* XXX: use TlAlloc() ? */
 	ALLOC_OBJ(e, EXPR_MAGIC);
 	AN(e);
-	e->vsb = vsb_new_auto();
+	e->vsb = VSB_new_auto();
 	e->fmt = VOID;
 	return (e);
 }
@@ -264,9 +264,9 @@ vcc_mk_expr(enum var_type fmt, const char *str, ...)
 	e = vcc_new_expr();
 	e->fmt = fmt;
 	va_start(ap, str);
-	vsb_vprintf(e->vsb, str, ap);
+	VSB_vprintf(e->vsb, str, ap);
 	va_end(ap);
-	AZ(vsb_finish(e->vsb));
+	AZ(VSB_finish(e->vsb));
 	return (e);
 }
 
@@ -276,7 +276,7 @@ vcc_delete_expr(struct expr *e)
 	if (e == NULL)
 		return;
 	CHECK_OBJ_NOTNULL(e, EXPR_MAGIC);
-	vsb_delete(e->vsb);
+	VSB_delete(e->vsb);
 	FREE_OBJ(e);
 }
 /*--------------------------------------------------------------------
@@ -311,29 +311,29 @@ vcc_expr_edit(enum var_type fmt, const char *p, struct expr *e1,
 	while (*p != '\0') {
 		if (*p == '\n') {
 			if (!nl)
-				vsb_putc(e->vsb, *p);
+				VSB_putc(e->vsb, *p);
 			nl = 1;
 			p++;
 			continue;
 		}
 		nl = 0;
 		if (*p != '\v') {
-			vsb_putc(e->vsb, *p);
+			VSB_putc(e->vsb, *p);
 			p++;
 			continue;
 		}
 		assert(*p == '\v');
 		p++;
 		switch(*p) {
-		case '+': vsb_cat(e->vsb, "\v+"); break;
-		case '-': vsb_cat(e->vsb, "\v-"); break;
+		case '+': VSB_cat(e->vsb, "\v+"); break;
+		case '-': VSB_cat(e->vsb, "\v-"); break;
 		case '1':
 		case '2':
 			if (*p == '1')
-				vsb_cat(e->vsb, vsb_data(e1->vsb));
+				VSB_cat(e->vsb, VSB_data(e1->vsb));
 			else {
 				AN(e2);
-				vsb_cat(e->vsb, vsb_data(e2->vsb));
+				VSB_cat(e->vsb, VSB_data(e2->vsb));
 			}
 			break;
 		default:
@@ -341,7 +341,7 @@ vcc_expr_edit(enum var_type fmt, const char *p, struct expr *e1,
 		}
 		p++;
 	}
-	AZ(vsb_finish(e->vsb));
+	AZ(VSB_finish(e->vsb));
 	if (e1 != NULL)
 		e->t1 = e1->t1;
 	else if (e2 != NULL)
@@ -369,20 +369,20 @@ vcc_expr_fmt(struct vsb *d, int ind, const struct expr *e1)
 	int i;
 
 	for (i = 0; i < ind; i++)
-		vsb_cat(d, " ");
-	p = vsb_data(e1->vsb);
+		VSB_cat(d, " ");
+	p = VSB_data(e1->vsb);
 	while (*p != '\0') {
 		if (*p == '\n') {
-			vsb_putc(d, '\n');
+			VSB_putc(d, '\n');
 			if (p[1] != '\0') {
 				for (i = 0; i < ind; i++)
-					vsb_cat(d, " ");
+					VSB_cat(d, " ");
 			}
 			p++;
 			continue;
 		}
 		if (*p != '\v') {
-			vsb_putc(d, *p);
+			VSB_putc(d, *p);
 			p++;
 			continue;
 		}
@@ -558,10 +558,10 @@ vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 				p += strlen(p) + 1;
 			} while (*p != '\0');
 			if (*p == '\0') {
-				vsb_printf(tl->sb, "Wrong enum value.");
-				vsb_printf(tl->sb, "  Expected one of:\n");
+				VSB_printf(tl->sb, "Wrong enum value.");
+				VSB_printf(tl->sb, "  Expected one of:\n");
 				do {
-					vsb_printf(tl->sb, "\t%s\n", r);
+					VSB_printf(tl->sb, "\t%s\n", r);
 					r += strlen(r) + 1;
 				} while (*r != '\0');
 				vcc_ErrWhere(tl, tl->t);
@@ -580,20 +580,20 @@ vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 			ERRCHK(tl);
 			SkipToken(tl, ID);
 			if (sym == NULL) {
-				vsb_printf(tl->sb, "Symbol not found.\n");
+				VSB_printf(tl->sb, "Symbol not found.\n");
 				vcc_ErrWhere(tl, tl->t);
 				return;
 			}
 			vcc_AddUses(tl, tl->t, sym->r_methods, "Not available");
 			if (sym->kind != SYM_VAR) {
-				vsb_printf(tl->sb, "Wrong kind of symbol.\n");
+				VSB_printf(tl->sb, "Wrong kind of symbol.\n");
 				vcc_ErrWhere(tl, tl->t);
 				return;
 			}
 			AN(sym->var);
 			v = sym->var;
 			if (v->http == NULL) {
-				vsb_printf(tl->sb,
+				VSB_printf(tl->sb,
 				    "Variable not an HTTP header.\n");
 				vcc_ErrWhere(tl, tl->t);
 				return;
@@ -605,10 +605,10 @@ vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 			vcc_expr0(tl, &e1, fmt);
 			ERRCHK(tl);
 			if (e1->fmt != fmt) {
-				vsb_printf(tl->sb, "Wrong argument type.");
-				vsb_printf(tl->sb, "  Expected %s.",
+				VSB_printf(tl->sb, "Wrong argument type.");
+				VSB_printf(tl->sb, "  Expected %s.",
 					vcc_Type(fmt));
-				vsb_printf(tl->sb, "  Got %s.\n",
+				VSB_printf(tl->sb, "  Got %s.\n",
 					vcc_Type(e1->fmt));
 				vcc_ErrWhere2(tl, e1->t1, tl->t);
 				return;
@@ -661,9 +661,9 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		 */
 		sym = VCC_FindSymbol(tl, tl->t, SYM_NONE);
 		if (sym == NULL || sym->eval == NULL) {
-			vsb_printf(tl->sb, "Symbol not found: ");
+			VSB_printf(tl->sb, "Symbol not found: ");
 			vcc_ErrToken(tl, tl->t);
-			vsb_printf(tl->sb, " (expected type %s):\n",
+			VSB_printf(tl->sb, " (expected type %s):\n",
 			    vcc_Type(fmt));
 			vcc_ErrWhere(tl, tl->t);
 			return;
@@ -680,7 +680,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		default:
 			break;
 		}
-		vsb_printf(tl->sb,
+		VSB_printf(tl->sb,
 		    "Symbol type (%s) can not be used in expression.\n",
 		    VCC_SymKind(tl, sym));
 		vcc_ErrWhere(tl, tl->t);
@@ -693,7 +693,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		e1->t1 = tl->t;
 		e1->constant = 1;
 		vcc_NextToken(tl);
-		AZ(vsb_finish(e1->vsb));
+		AZ(VSB_finish(e1->vsb));
 		*e = e1;
 		break;
 	case CNUM:
@@ -722,9 +722,9 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		*e = e1;
 		break;
 	default:
-		vsb_printf(tl->sb, "Unknown token ");
+		VSB_printf(tl->sb, "Unknown token ");
 		vcc_ErrToken(tl, tl->t);
-		vsb_printf(tl->sb, " when looking for %s\n\n", vcc_Type(fmt));
+		VSB_printf(tl->sb, " when looking for %s\n\n", vcc_Type(fmt));
 		vcc_ErrWhere(tl, tl->t);
 		break;
 	}
@@ -755,7 +755,7 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, enum var_type fmt)
 	default:
 		if (tl->t->tok != '*' && tl->t->tok != '/')
 			return;
-		vsb_printf(tl->sb, "Operator %.*s not possible on type %s.\n",
+		VSB_printf(tl->sb, "Operator %.*s not possible on type %s.\n",
 		    PF(tl->t), vcc_Type(f2));
 		vcc_ErrWhere(tl, tl->t);
 		return;
@@ -826,7 +826,7 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 	default:
 		if (tl->t->tok != '+' && tl->t->tok != '-')
 			return;
-		vsb_printf(tl->sb, "Operator %.*s not possible on type %s.\n",
+		VSB_printf(tl->sb, "Operator %.*s not possible on type %s.\n",
 		    PF(tl->t), vcc_Type(f2));
 		vcc_ErrWhere(tl, tl->t);
 		return;
@@ -845,7 +845,7 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 		    (*e)->fmt == BYTES && e2->fmt == BYTES) {
 			/* OK */
 		} else if (e2->fmt != f2) {
-			vsb_printf(tl->sb, "%s %.*s %s not possible.\n",
+			VSB_printf(tl->sb, "%s %.*s %s not possible.\n",
 			    vcc_Type((*e)->fmt), PF(tk), vcc_Type(e2->fmt));
 			vcc_ErrWhere2(tl, tk, tl->t);
 			return;
@@ -922,10 +922,10 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 		vcc_expr_add(tl, &e2, (*e)->fmt);
 		ERRCHK(tl);
 		if (e2->fmt != (*e)->fmt) { /* XXX */
-			vsb_printf(tl->sb, "Comparison of different types: ");
-			vsb_printf(tl->sb, "%s ", vcc_Type((*e)->fmt));
+			VSB_printf(tl->sb, "Comparison of different types: ");
+			VSB_printf(tl->sb, "%s ", vcc_Type((*e)->fmt));
 			vcc_ErrToken(tl, tk);
-			vsb_printf(tl->sb, " %s\n", vcc_Type(e2->fmt));
+			VSB_printf(tl->sb, " %s\n", vcc_Type(e2->fmt));
 			vcc_ErrWhere(tl, tk);
 			return;
 		}
@@ -979,7 +979,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 	case T_GEQ:
 	case '~':
 	case T_NOMATCH:
-		vsb_printf(tl->sb, "Operator %.*s not possible on %s\n",
+		VSB_printf(tl->sb, "Operator %.*s not possible on %s\n",
 		    PF(tl->t), vcc_Type((*e)->fmt));
 		vcc_ErrWhere(tl, tl->t);
 		return;
@@ -1018,8 +1018,8 @@ vcc_expr_not(struct vcc *tl, struct expr **e, enum var_type fmt)
 		*e = vcc_expr_edit(BOOL, "!(\v1)", e2, NULL);
 		return;
 	}
-	vsb_printf(tl->sb, "'!' must be followed by BOOL, found ");
-	vsb_printf(tl->sb, "%s.\n", vcc_Type(e2->fmt));
+	VSB_printf(tl->sb, "'!' must be followed by BOOL, found ");
+	VSB_printf(tl->sb, "%s.\n", vcc_Type(e2->fmt));
 	vcc_ErrWhere2(tl, tk, tl->t);
 }
 
@@ -1047,9 +1047,9 @@ vcc_expr_cand(struct vcc *tl, struct expr **e, enum var_type fmt)
 		vcc_expr_not(tl, &e2, fmt);
 		ERRCHK(tl);
 		if (e2->fmt != BOOL) {
-			vsb_printf(tl->sb,
+			VSB_printf(tl->sb,
 			    "'&&' must be followed by BOOL, found ");
-			vsb_printf(tl->sb, "%s.\n", vcc_Type(e2->fmt));
+			VSB_printf(tl->sb, "%s.\n", vcc_Type(e2->fmt));
 			vcc_ErrWhere2(tl, tk, tl->t);
 			return;
 		}
@@ -1082,9 +1082,9 @@ vcc_expr0(struct vcc *tl, struct expr **e, enum var_type fmt)
 		vcc_expr_cand(tl, &e2, fmt);
 		ERRCHK(tl);
 		if (e2->fmt != BOOL) {
-			vsb_printf(tl->sb,
+			VSB_printf(tl->sb,
 			    "'||' must be followed by BOOL, found ");
-			vsb_printf(tl->sb, "%s.\n", vcc_Type(e2->fmt));
+			VSB_printf(tl->sb, "%s.\n", vcc_Type(e2->fmt));
 			vcc_ErrWhere2(tl, tk, tl->t);
 			return;
 		}
@@ -1114,7 +1114,7 @@ vcc_Expr(struct vcc *tl, enum var_type fmt)
 	if (fmt == STRING || fmt == STRING_LIST)
 		vcc_expr_tostring(&e, fmt);
 	if (!tl->err && fmt != e->fmt)  {
-		vsb_printf(tl->sb, "Expression has type %s, expected %s\n",
+		VSB_printf(tl->sb, "Expression has type %s, expected %s\n",
 		    vcc_Type(e->fmt), vcc_Type(fmt));
 		tl->err = 1;
 	}
@@ -1124,7 +1124,7 @@ vcc_Expr(struct vcc *tl, enum var_type fmt)
 			    "\v+\n\v1,\nvrt_magic_string_end\v-", e, NULL);
 		}
 		vcc_expr_fmt(tl->fb, tl->indent, e);
-		vsb_putc(tl->fb, '\n');
+		VSB_putc(tl->fb, '\n');
 	} else {
 		if (t1 != tl->t)
 			vcc_ErrWhere2(tl, t1, tl->t);
@@ -1147,7 +1147,7 @@ vcc_Expr_Call(struct vcc *tl, const struct symbol *sym)
 	vcc_Eval_Func(tl, &e, sym);
 	if (!tl->err) {
 		vcc_expr_fmt(tl->fb, tl->indent, e);
-		vsb_cat(tl->fb, ";\n");
+		VSB_cat(tl->fb, ";\n");
 	} else if (t1 != tl->t) {
 		vcc_ErrWhere2(tl, t1, tl->t);
 	}

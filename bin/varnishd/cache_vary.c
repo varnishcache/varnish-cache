@@ -72,11 +72,11 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 		return (NULL);
 
 	/* For vary matching string */
-	sb = vsb_new_auto();
+	sb = VSB_new_auto();
 	AN(sb);
 
 	/* For header matching strings */
-	sbh = vsb_new_auto();
+	sbh = VSB_new_auto();
 	AN(sbh);
 
 	if (*v == ':') {
@@ -92,15 +92,15 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 			continue;
 
 		/* Build a header-matching string out of it */
-		vsb_clear(sbh);
-		vsb_printf(sbh, "%c%.*s:%c",
+		VSB_clear(sbh);
+		VSB_printf(sbh, "%c%.*s:%c",
 		    (char)(1 + (q - p)), (int)(q - p), p, 0);
-		AZ(vsb_finish(sbh));
+		AZ(VSB_finish(sbh));
 
 		/* Append to vary matching string */
-		vsb_bcat(sb, vsb_data(sbh), vsb_len(sbh));
+		VSB_bcat(sb, VSB_data(sbh), VSB_len(sbh));
 
-		if (http_GetHdr(sp->http, vsb_data(sbh), &h)) {
+		if (http_GetHdr(sp->http, VSB_data(sbh), &h)) {
 			/* Trim leading and trailing space */
 			while (isspace(*h))
 				h++;
@@ -110,11 +110,11 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 			/* Encode two byte length and contents */
 			l = e - h;
 			assert(!(l & ~0xffff));
-			vsb_printf(sb, "%c%c", (unsigned)l >> 8, l & 0xff);
-			vsb_bcat(sb, h, e - h);
+			VSB_printf(sb, "%c%c", (unsigned)l >> 8, l & 0xff);
+			VSB_bcat(sb, h, e - h);
 		} else {
 			/* Mark as "not present" */
-			vsb_printf(sb, "%c%c", 0xff, 0xff);
+			VSB_printf(sb, "%c%c", 0xff, 0xff);
 		}
 
 		while (isspace(*q))
@@ -125,10 +125,10 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 		p = q;
 	}
 	/* Terminate vary matching string */
-	vsb_printf(sb, "%c", 0);
+	VSB_printf(sb, "%c", 0);
 
-	vsb_delete(sbh);
-	AZ(vsb_finish(sb));
+	VSB_delete(sbh);
+	AZ(VSB_finish(sb));
 	return(sb);
 }
 

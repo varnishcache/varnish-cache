@@ -86,35 +86,35 @@ mgt_make_cc_cmd(const char *sf, const char *of)
 	int pct;
 	char *p;
 
-	sb = vsb_new_auto();
+	sb = VSB_new_auto();
 	XXXAN(sb);
 	for (p = mgt_cc_cmd, pct = 0; *p; ++p) {
 		if (pct) {
 			switch (*p) {
 			case 's':
-				vsb_cat(sb, sf);
+				VSB_cat(sb, sf);
 				break;
 			case 'o':
-				vsb_cat(sb, of);
+				VSB_cat(sb, of);
 				break;
 			case '%':
-				vsb_putc(sb, '%');
+				VSB_putc(sb, '%');
 				break;
 			default:
-				vsb_putc(sb, '%');
-				vsb_putc(sb, *p);
+				VSB_putc(sb, '%');
+				VSB_putc(sb, *p);
 				break;
 			}
 			pct = 0;
 		} else if (*p == '%') {
 			pct = 1;
 		} else {
-			vsb_putc(sb, *p);
+			VSB_putc(sb, *p);
 		}
 	}
 	if (pct)
-		vsb_putc(sb, '%');
-	AZ(vsb_finish(sb));
+		VSB_putc(sb, '%');
+	AZ(VSB_finish(sb));
 	return (sb);
 }
 
@@ -138,16 +138,16 @@ run_vcc(void *priv)
 	int fd, i, l;
 
 	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
-	sb = vsb_new_auto();
+	sb = VSB_new_auto();
 	XXXAN(sb);
 	VCC_VCL_dir(vcc, mgt_vcl_dir);
 	VCC_VMOD_dir(vcc, mgt_vmod_dir);
 	VCC_Err_Unref(vcc, mgt_vcc_err_unref);
 	csrc = VCC_Compile(vcc, sb, vp->vcl);
-	AZ(vsb_finish(sb));
-	if (vsb_len(sb))
-		printf("%s", vsb_data(sb));
-	vsb_delete(sb);
+	AZ(VSB_finish(sb));
+	if (VSB_len(sb))
+		printf("%s", VSB_data(sb));
+	VSB_delete(sb);
 	if (csrc == NULL)
 		exit (1);
 
@@ -236,7 +236,7 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 	/* Create temporary C source file */
 	sfd = vtmpfile(sf);
 	if (sfd < 0) {
-		vsb_printf(sb, "Failed to create %s: %s", sf, strerror(errno));
+		VSB_printf(sb, "Failed to create %s: %s", sf, strerror(errno));
 		return (NULL);
 	}
 	AZ(close(sfd));
@@ -269,10 +269,10 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 	cmdsb = mgt_make_cc_cmd(sf, of);
 
 	/* Run the C-compiler in a sub-shell */
-	i = SUB_run(sb, run_cc, vsb_data(cmdsb), "C-compiler", 10);
+	i = SUB_run(sb, run_cc, VSB_data(cmdsb), "C-compiler", 10);
 
 	(void)unlink(sf);
-	vsb_delete(cmdsb);
+	VSB_delete(cmdsb);
 
 	if (!i)
 		i = SUB_run(sb, run_dlopen, of, "dlopen", 10);
@@ -294,10 +294,10 @@ mgt_VccCompile(struct vsb **sb, const char *b, int C_flag)
 {
 	char *vf;
 
-	*sb = vsb_new_auto();
+	*sb = VSB_new_auto();
 	XXXAN(*sb);
 	vf = mgt_run_cc(b, *sb, C_flag);
-	AZ(vsb_finish(*sb));
+	AZ(VSB_finish(*sb));
 	return (vf);
 }
 
@@ -387,9 +387,9 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, char *vcl, int C_flag)
 
 	vf = mgt_VccCompile(&sb, vcl, C_flag);
 	free(vcl);
-	if (vsb_len(sb) > 0)
-		fprintf(stderr, "%s", vsb_data(sb));
-	vsb_delete(sb);
+	if (VSB_len(sb) > 0)
+		fprintf(stderr, "%s", VSB_data(sb));
+	VSB_delete(sb);
 	if (C_flag) {
 		if (vf != NULL)
 			AZ(unlink(vf));
@@ -488,9 +488,9 @@ mcf_config_inline(struct cli *cli, const char * const *av, void *priv)
 	}
 
 	vf = mgt_VccCompile(&sb, av[3], 0);
-	if (vsb_len(sb) > 0)
-		cli_out(cli, "%s\n", vsb_data(sb));
-	vsb_delete(sb);
+	if (VSB_len(sb) > 0)
+		cli_out(cli, "%s\n", VSB_data(sb));
+	VSB_delete(sb);
 	if (vf == NULL) {
 		cli_out(cli, "VCL compilation failed");
 		cli_result(cli, CLIS_PARAM);
@@ -534,9 +534,9 @@ mcf_config_load(struct cli *cli, const char * const *av, void *priv)
 	vf = mgt_VccCompile(&sb, vcl, 0);
 	free(vcl);
 
-	if (vsb_len(sb) > 0)
-		cli_out(cli, "%s", vsb_data(sb));
-	vsb_delete(sb);
+	if (VSB_len(sb) > 0)
+		cli_out(cli, "%s", VSB_data(sb));
+	VSB_delete(sb);
 	if (vf == NULL) {
 		cli_out(cli, "VCL compilation failed");
 		cli_result(cli, CLIS_PARAM);

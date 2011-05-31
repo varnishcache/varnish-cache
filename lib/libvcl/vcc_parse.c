@@ -163,7 +163,7 @@ vcc_Compound(struct vcc *tl)
 			vcc_NextToken(tl);
 			break;
 		case EOI:
-			vsb_printf(tl->sb,
+			VSB_printf(tl->sb,
 			    "End of input while in compound statement\n");
 			tl->err = 1;
 			return;
@@ -177,7 +177,7 @@ vcc_Compound(struct vcc *tl)
 			/* FALLTHROUGH */
 		default:
 			/* We deliberately do not mention inline C */
-			vsb_printf(tl->sb,
+			VSB_printf(tl->sb,
 			    "Expected an action, 'if', '{' or '}'\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
@@ -216,7 +216,7 @@ vcc_Function(struct vcc *tl)
 		tl->fb = tl->fc;
 		i = vcc_AddDef(tl, tl->t, SYM_SUB);
 		if (i > 1) {
-			vsb_printf(tl->sb,
+			VSB_printf(tl->sb,
 			    "Function %.*s redefined\n", PF(tl->t));
 			vcc_ErrWhere(tl, tl->t);
 			return;
@@ -295,17 +295,17 @@ vcc_Parse(struct vcc *tl)
 			/* FALLTHROUGH */
 		default:
 			/* We deliberately do not mention inline-C */
-			vsb_printf(tl->sb, "Expected one of\n\t");
+			VSB_printf(tl->sb, "Expected one of\n\t");
 			for (tp = toplev; tp->name != NULL; tp++) {
 				if (tp[1].name == NULL)
-					vsb_printf(tl->sb, " or ");
-				vsb_printf(tl->sb, "'%s'", tp->name);
+					VSB_printf(tl->sb, " or ");
+				VSB_printf(tl->sb, "'%s'", tp->name);
 				if (tp[1].name != NULL)
-					vsb_printf(tl->sb, ", ");
+					VSB_printf(tl->sb, ", ");
 			}
-			vsb_printf(tl->sb, "\nFound: ");
+			VSB_printf(tl->sb, "\nFound: ");
 			vcc_ErrToken(tl, tl->t);
-			vsb_printf(tl->sb, " at\n");
+			VSB_printf(tl->sb, " at\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}

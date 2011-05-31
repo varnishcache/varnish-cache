@@ -564,7 +564,7 @@ def emit_vcl_tnames(fo, tokens):
 	fo.write("};\n")
 
 #######################################################################
-# Read a C-source file and spit out code that outputs it with vsb_cat()
+# Read a C-source file and spit out code that outputs it with VSB_cat()
 
 def emit_file(fo, fn):
 	fi = open(fn)
@@ -579,7 +579,7 @@ def emit_file(fo, fn):
 	fo.write("\n\t/* %s */\n\n" % fn)
 	for c in fc:
 		if l == 0:
-			fo.write("\tvsb_cat(sb, \"")
+			fo.write("\tVSB_cat(sb, \"")
 			l += 12
 			x += 12
 		if x == 0:
