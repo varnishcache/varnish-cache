@@ -75,7 +75,7 @@ CLI_AddFuncs(struct cli_proto *p)
 
 	AZ(add_check);
 	Lck_Lock(&cli_mtx);
-	AZ(CLS_AddFunc(cls, 0, p));
+	AZ(VCLS_AddFunc(cls, 0, p));
 	Lck_Unlock(&cli_mtx);
 }
 
@@ -107,10 +107,10 @@ CLI_Run(void)
 
 	add_check = 1;
 
-	AN(CLS_AddFd(cls, heritage.cli_in, heritage.cli_out, NULL, NULL));
+	AN(VCLS_AddFd(cls, heritage.cli_in, heritage.cli_out, NULL, NULL));
 
 	do {
-		i = CLS_Poll(cls, -1);
+		i = VCLS_Poll(cls, -1);
 	} while(i > 0);
 	VSL(SLT_CLI, 0, "EOF on CLI connection, worker stops");
 	VCA_Shutdown();
@@ -157,8 +157,8 @@ ccf_panic(struct cli *cli, const char * const *av, void *priv)
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto master_cmds[] = {
-	{ CLI_PING,		"i", CLS_func_ping },
-	{ CLI_HELP,             "i", CLS_func_help },
+	{ CLI_PING,		"i", VCLS_func_ping },
+	{ CLI_HELP,             "i", VCLS_func_help },
 	{ "debug.sizeof", "debug.sizeof",
 		"\tDump sizeof various data structures\n",
 		0, 0, "d", cli_debug_sizeof },
@@ -179,7 +179,7 @@ CLI_Init(void)
 	Lck_New(&cli_mtx, lck_cli);
 	cli_thread = pthread_self();
 
-	cls = CLS_New(cli_cb_before, cli_cb_after, params->cli_buffer);
+	cls = VCLS_New(cli_cb_before, cli_cb_after, params->cli_buffer);
 	AN(cls);
 
 	CLI_AddFuncs(master_cmds);

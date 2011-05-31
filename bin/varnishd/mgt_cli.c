@@ -305,10 +305,10 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 }
 
 static struct cli_proto cli_auth[] = {
-	{ CLI_HELP,		"", CLS_func_help, NULL },
-	{ CLI_PING,		"", CLS_func_ping },
+	{ CLI_HELP,		"", VCLS_func_help, NULL },
+	{ CLI_PING,		"", VCLS_func_ping },
 	{ CLI_AUTH,		"", mcf_auth, NULL },
-	{ CLI_QUIT,		"", CLS_func_close, NULL},
+	{ CLI_QUIT,		"", VCLS_func_close, NULL},
 	{ NULL }
 };
 
@@ -336,13 +336,13 @@ static void
 mgt_cli_init_cls(void)
 {
 
-	cls = CLS_New(mgt_cli_cb_before, mgt_cli_cb_after, params->cli_buffer);
+	cls = VCLS_New(mgt_cli_cb_before, mgt_cli_cb_after, params->cli_buffer);
 	AN(cls);
-	AZ(CLS_AddFunc(cls, MCF_NOAUTH, cli_auth));
-	AZ(CLS_AddFunc(cls, MCF_AUTH, cli_proto));
-	AZ(CLS_AddFunc(cls, MCF_AUTH, cli_debug));
-	AZ(CLS_AddFunc(cls, MCF_AUTH, cli_stv));
-	AZ(CLS_AddFunc(cls, MCF_AUTH, cli_askchild));
+	AZ(VCLS_AddFunc(cls, MCF_NOAUTH, cli_auth));
+	AZ(VCLS_AddFunc(cls, MCF_AUTH, cli_proto));
+	AZ(VCLS_AddFunc(cls, MCF_AUTH, cli_debug));
+	AZ(VCLS_AddFunc(cls, MCF_AUTH, cli_stv));
+	AZ(VCLS_AddFunc(cls, MCF_AUTH, cli_askchild));
 }
 
 /*--------------------------------------------------------------------
@@ -353,7 +353,7 @@ void
 mgt_cli_close_all(void)
 {
 
-	CLS_Destroy(&cls);
+	VCLS_Destroy(&cls);
 }
 
 /*--------------------------------------------------------------------
@@ -367,7 +367,7 @@ mgt_cli_callback2(const struct vev *e, int what)
 
 	(void)e;
 	(void)what;
-	i = CLS_PollFd(cls, e->fd, 0);
+	i = VCLS_PollFd(cls, e->fd, 0);
 	return (i);
 }
 
@@ -384,7 +384,7 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident, mgt_cli_close_f 
 	if (cls == NULL)
 		mgt_cli_init_cls();
 
-	cli = CLS_AddFd(cls, fdi, fdo, closefunc, priv);
+	cli = VCLS_AddFd(cls, fdi, fdo, closefunc, priv);
 
 	cli->ident = strdup(ident);
 

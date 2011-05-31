@@ -47,7 +47,7 @@
 
 struct vcls {
 	unsigned		magic;
-#define VCLS_MAGIC		0x214188f2
+#define VVCLS_MAGIC		0x214188f2
 	VTAILQ_ENTRY(vcls)	list;
 	char			*name;
 	void			*dlh;
@@ -145,7 +145,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 		return (1);
 	}
 
-	ALLOC_OBJ(vcl, VCLS_MAGIC);
+	ALLOC_OBJ(vcl, VVCLS_MAGIC);
 	XXXAN(vcl);
 
 	vcl->dlh = dlopen(fn, RTLD_NOW | RTLD_LOCAL);

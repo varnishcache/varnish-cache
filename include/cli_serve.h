@@ -30,16 +30,16 @@
 struct cls;
 typedef void cls_cb_f(void *priv);
 typedef void cls_cbc_f(const struct cli*);
-struct cls *CLS_New(cls_cbc_f *before, cls_cbc_f *after, unsigned maxlen);
-struct cli *CLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc,
+struct cls *VCLS_New(cls_cbc_f *before, cls_cbc_f *after, unsigned maxlen);
+struct cli *VCLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc,
     void *priv);
-int CLS_AddFunc(struct cls *cs, unsigned auth, struct cli_proto *clp);
-int CLS_Poll(struct cls *cs, int timeout);
-int CLS_PollFd(struct cls *cs, int fd, int timeout);
-void CLS_Destroy(struct cls **);
+int VCLS_AddFunc(struct cls *cs, unsigned auth, struct cli_proto *clp);
+int VCLS_Poll(struct cls *cs, int timeout);
+int VCLS_PollFd(struct cls *cs, int fd, int timeout);
+void VCLS_Destroy(struct cls **);
 
 /* From libvarnish/cli.c */
-cli_func_t	CLS_func_close;
-cli_func_t	CLS_func_help;
-cli_func_t	CLS_func_ping;
+cli_func_t	VCLS_func_close;
+cli_func_t	VCLS_func_help;
+cli_func_t	VCLS_func_ping;
 
