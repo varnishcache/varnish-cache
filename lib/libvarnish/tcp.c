@@ -151,7 +151,7 @@ VTCP_filter_http(int sock)
 	return (i);
 #elif defined(__linux)
 	int defer = 1;
-	setsockopt(sock, SOL_TCP,VTCP_DEFER_ACCEPT,(char *) &defer, sizeof(int));
+	setsockopt(sock, SOL_TCP,TCP_DEFER_ACCEPT,(char *) &defer, sizeof(int));
 	return (0);
 #else
 	(void)sock;
