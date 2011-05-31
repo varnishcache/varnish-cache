@@ -123,12 +123,12 @@ read_tmo(int fd, char *ptr, unsigned len, double tmo)
 
 	pfd.fd = fd;
 	pfd.events = POLLIN;
-	i = poll(&pfd, 1, (int)(tmo * 1e3));
-	if (i == 0) {
-		errno = ETIMEDOUT;
-		return (-1);
-	}
 	for (j = 0; len > 0; ) {
+		i = poll(&pfd, 1, (int)(tmo * 1e3));
+		if (i == 0) {
+			errno = ETIMEDOUT;
+			return (-1);
+		}
 		i = read(fd, ptr, len);
 		if (i < 0)
 			return (i);
