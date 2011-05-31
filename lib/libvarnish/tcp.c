@@ -58,7 +58,7 @@
 /*--------------------------------------------------------------------*/
 
 int
-TCP_port(const struct sockaddr_storage *addr)
+VTCP_port(const struct sockaddr_storage *addr)
 {
 
 	if (addr->ss_family == AF_INET) {
@@ -76,7 +76,7 @@ TCP_port(const struct sockaddr_storage *addr)
 /*--------------------------------------------------------------------*/
 
 void
-TCP_name(const struct sockaddr_storage *addr, unsigned l,
+VTCP_name(const struct sockaddr_storage *addr, unsigned l,
     char *abuf, unsigned alen, char *pbuf, unsigned plen)
 {
 	int i;
@@ -104,26 +104,26 @@ TCP_name(const struct sockaddr_storage *addr, unsigned l,
 /*--------------------------------------------------------------------*/
 
 void
-TCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
+VTCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 {
 	struct sockaddr_storage addr_s;
 	socklen_t l;
 
 	l = sizeof addr_s;
 	AZ(getsockname(sock, (void *)&addr_s, &l));
-	TCP_name(&addr_s, l, abuf, alen, pbuf, plen);
+	VTCP_name(&addr_s, l, abuf, alen, pbuf, plen);
 }
 /*--------------------------------------------------------------------*/
 
 void
-TCP_hisname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
+VTCP_hisname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 {
 	struct sockaddr_storage addr_s;
 	socklen_t l;
 
 	l = sizeof addr_s;
 	if (!getpeername(sock, (void*)&addr_s, &l))
-		TCP_name(&addr_s, l, abuf, alen, pbuf, plen);
+		VTCP_name(&addr_s, l, abuf, alen, pbuf, plen);
 	else {
 		(void)snprintf(abuf, alen, "<none>");
 		(void)snprintf(pbuf, plen, "<none>");
@@ -133,7 +133,7 @@ TCP_hisname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 /*--------------------------------------------------------------------*/
 
 int
-TCP_filter_http(int sock)
+VTCP_filter_http(int sock)
 {
 #ifdef HAVE_ACCEPT_FILTERS
 	struct accept_filter_arg afa;
@@ -151,7 +151,7 @@ TCP_filter_http(int sock)
 	return (i);
 #elif defined(__linux)
 	int defer = 1;
-	setsockopt(sock, SOL_TCP,TCP_DEFER_ACCEPT,(char *) &defer, sizeof(int));
+	setsockopt(sock, SOL_TCP,VTCP_DEFER_ACCEPT,(char *) &defer, sizeof(int));
 	return (0);
 #else
 	(void)sock;
@@ -169,24 +169,24 @@ TCP_filter_http(int sock)
  */
 
 int
-TCP_blocking(int sock)
+VTCP_blocking(int sock)
 {
 	int i, j;
 
 	i = 0;
 	j = ioctl(sock, FIONBIO, &i);
-	TCP_Assert(j);
+	VTCP_Assert(j);
 	return (j);
 }
 
 int
-TCP_nonblocking(int sock)
+VTCP_nonblocking(int sock)
 {
 	int i, j;
 
 	i = 1;
 	j = ioctl(sock, FIONBIO, &i);
-	TCP_Assert(j);
+	VTCP_Assert(j);
 	return (j);
 }
 
@@ -201,7 +201,7 @@ TCP_nonblocking(int sock)
  */
 
 int
-TCP_connect(int s, const struct sockaddr_storage *name, socklen_t namelen, int msec)
+VTCP_connect(int s, const struct sockaddr_storage *name, socklen_t namelen, int msec)
 {
 	int i, k;
 	socklen_t l;
@@ -211,7 +211,7 @@ TCP_connect(int s, const struct sockaddr_storage *name, socklen_t namelen, int m
 
 	/* Set the socket non-blocking */
 	if (msec > 0)
-		(void)TCP_nonblocking(s);
+		(void)VTCP_nonblocking(s);
 
 	/* Attempt the connect */
 	i = connect(s, (const void *)name, namelen);
@@ -240,7 +240,7 @@ TCP_connect(int s, const struct sockaddr_storage *name, socklen_t namelen, int m
 	if (k)
 		return (-1);
 
-	(void)TCP_blocking(s);
+	(void)VTCP_blocking(s);
 	return (0);
 }
 
@@ -250,18 +250,18 @@ TCP_connect(int s, const struct sockaddr_storage *name, socklen_t namelen, int m
  */
 
 void
-TCP_close(int *s)
+VTCP_close(int *s)
 {
 	int i;
 
 	i = close(*s);
 
-	assert (TCP_Check(i));
+	assert (VTCP_Check(i));
 	*s = -1;
 }
 
 void
-TCP_set_read_timeout(int s, double seconds)
+VTCP_set_read_timeout(int s, double seconds)
 {
 	struct timeval timeout;
 	timeout.tv_sec = (int)floor(seconds);
@@ -278,7 +278,7 @@ TCP_set_read_timeout(int s, double seconds)
  */
 
 int
-TCP_linger(int sock, int linger)
+VTCP_linger(int sock, int linger)
 {
 	struct linger lin;
 	int i;
@@ -286,6 +286,6 @@ TCP_linger(int sock, int linger)
 	memset(&lin, 0, sizeof lin);
 	lin.l_onoff = linger;
 	i = setsockopt(sock, SOL_SOCKET, SO_LINGER, &lin, sizeof lin);
-	TCP_Assert(i);
+	VTCP_Assert(i);
 	return (i);
 }

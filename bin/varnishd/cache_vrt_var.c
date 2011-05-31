@@ -269,7 +269,7 @@ VRT_r_beresp_backend_port(const struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
-	return (TCP_port(sp->vbc->addr));
+	return (VTCP_port(sp->vbc->addr));
 }
 
 const char * __match_proto__()
@@ -446,7 +446,7 @@ VRT_r_server_ip(struct sess *sp)
 
 	if (sp->mysockaddr->ss_family == AF_UNSPEC) {
 		i = getsockname(sp->fd, (void*)sp->mysockaddr, &sp->mysockaddrlen);
-		assert(TCP_Check(i));
+		assert(VTCP_Check(i));
 	}
 
 	return (sp->mysockaddr);
@@ -485,7 +485,7 @@ VRT_r_server_port(struct sess *sp)
 
 	if (sp->mysockaddr->ss_family == AF_UNSPEC)
 		AZ(getsockname(sp->fd, (void*)sp->mysockaddr, &sp->mysockaddrlen));
-	return (TCP_port(sp->mysockaddr));
+	return (VTCP_port(sp->mysockaddr));
 }
 
 /*--------------------------------------------------------------------*/

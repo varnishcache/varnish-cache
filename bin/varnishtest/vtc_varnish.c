@@ -203,7 +203,7 @@ varnish_thread(void *priv)
 	int i;
 
 	CAST_OBJ_NOTNULL(v, priv, VARNISH_MAGIC);
-	(void)TCP_nonblocking(v->fds[0]);
+	(void)VTCP_nonblocking(v->fds[0]);
 	while (1) {
 		fds = &fd;
 		memset(fds, 0, sizeof fds);
@@ -245,7 +245,7 @@ varnish_launch(struct varnish *v)
 	nap = VSS_resolve("127.0.0.1", "0", &ap);
 	AN(nap);
 	v->cli_fd = VSS_listen(ap[0], 1);
-	TCP_myname(v->cli_fd, abuf, sizeof abuf, pbuf, sizeof pbuf);
+	VTCP_myname(v->cli_fd, abuf, sizeof abuf, pbuf, sizeof pbuf);
 
 	AZ(VSB_finish(v->args));
 	vtc_log(v->vl, 2, "Launch");

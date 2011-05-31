@@ -54,7 +54,7 @@ VDI_CloseFd(struct sess *sp)
 	   before the OS reuses the FD */
 	WSL_Flush(sp->wrk, 0);
 
-	TCP_close(&sp->vbc->fd);
+	VTCP_close(&sp->vbc->fd);
 	VBE_DropRefConn(bp);
 	sp->vbc->backend = NULL;
 	VBE_ReleaseConn(sp->vbc);

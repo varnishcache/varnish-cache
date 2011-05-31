@@ -99,13 +99,13 @@ client_thread(void *priv)
 		if (fd < 0)
 			vtc_log(c->vl, 0, "Failed to open %s", VSB_data(vsb));
 		assert(fd >= 0);
-		TCP_blocking(fd);
-		TCP_myname(fd, mabuf, sizeof mabuf, mpbuf, sizeof mpbuf);
+		VTCP_blocking(fd);
+		VTCP_myname(fd, mabuf, sizeof mabuf, mpbuf, sizeof mpbuf);
 		vtc_log(vl, 3, "connected fd %d from %s %s to %s",
 		    fd, mabuf, mpbuf, VSB_data(vsb));
 		http_process(vl, c->spec, fd, -1);
 		vtc_log(vl, 3, "closing fd %d", fd);
-		TCP_close(&fd);
+		VTCP_close(&fd);
 	}
 	vtc_log(vl, 2, "Ending");
 	VSB_delete(vsb);

@@ -420,13 +420,13 @@ sock_id(const char *pfx, int fd)
 {
 	struct vsb *vsb;
 
-	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
-	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
+	char abuf1[VTCP_ADDRBUFSIZE], abuf2[VTCP_ADDRBUFSIZE];
+	char pbuf1[VTCP_PORTBUFSIZE], pbuf2[VTCP_PORTBUFSIZE];
 
 	vsb = VSB_new_auto();
 	AN(vsb);
-	TCP_myname(fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-	TCP_hisname(fd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
+	VTCP_myname(fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
+	VTCP_hisname(fd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
 	VSB_printf(vsb, "%s %s %s %s %s", pfx, abuf2, pbuf2, abuf1, pbuf1);
 	AZ(VSB_finish(vsb));
 	return (vsb);
@@ -528,8 +528,8 @@ mgt_cli_telnet(const char *T_arg)
 	struct telnet *tn;
 	char *p;
 	struct vsb *vsb;
-	char abuf[TCP_ADDRBUFSIZE];
-	char pbuf[TCP_PORTBUFSIZE];
+	char abuf[VTCP_ADDRBUFSIZE];
+	char pbuf[VTCP_PORTBUFSIZE];
 
 	n = VSS_resolve(T_arg, NULL, &ta);
 	if (n == 0) {
@@ -543,7 +543,7 @@ mgt_cli_telnet(const char *T_arg)
 		sock = VSS_listen(ta[i], 10);
 		if (sock < 0)
 			continue;
-		TCP_myname(sock, abuf, sizeof abuf, pbuf, sizeof pbuf);
+		VTCP_myname(sock, abuf, sizeof abuf, pbuf, sizeof pbuf);
 		VSB_printf(vsb, "%s %s\n", abuf, pbuf);
 		good++;
 		tn = telnet_new(sock);

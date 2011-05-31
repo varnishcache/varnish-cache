@@ -415,7 +415,7 @@ FetchHdr(struct sess *sp)
 	if (!http_GetHdr(hp, H_Host, &b))
 		VDI_AddHostHeader(sp);
 
-	(void)TCP_blocking(vc->fd);	/* XXX: we should timeout instead */
+	(void)VTCP_blocking(vc->fd);	/* XXX: we should timeout instead */
 	WRW_Reserve(w, &vc->fd);
 	(void)http_Write(w, hp, 0);	/* XXX: stats ? */
 
@@ -440,7 +440,7 @@ FetchHdr(struct sess *sp)
 	HTC_Init(sp->wrk->htc, sp->wrk->ws, vc->fd, params->http_resp_size,
 	    params->http_resp_hdr_len);
 
-	TCP_set_read_timeout(vc->fd, vc->first_byte_timeout);
+	VTCP_set_read_timeout(vc->fd, vc->first_byte_timeout);
 
 	i = HTC_Rx(sp->wrk->htc);
 
@@ -453,7 +453,7 @@ FetchHdr(struct sess *sp)
 		return (i == -1 ? retry : -1);
 	}
 
-	TCP_set_read_timeout(vc->fd, vc->between_bytes_timeout);
+	VTCP_set_read_timeout(vc->fd, vc->between_bytes_timeout);
 
 	while (i == 0) {
 		i = HTC_Rx(sp->wrk->htc);

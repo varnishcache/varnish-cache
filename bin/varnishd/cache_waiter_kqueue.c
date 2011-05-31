@@ -194,7 +194,7 @@ vca_kqueue_main(void *arg)
 			if (sp->t_open > deadline)
 				break;
 			VTAILQ_REMOVE(&sesshead, sp, list);
-			// XXX: not yet (void)TCP_linger(sp->fd, 0);
+			// XXX: not yet (void)VTCP_linger(sp->fd, 0);
 			vca_close_session(sp, "timeout");
 			SES_Delete(sp);
 		}

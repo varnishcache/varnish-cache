@@ -118,8 +118,8 @@ vbe_TryConnect(const struct sess *sp, int pf, const struct sockaddr_storage *sa,
 {
 	int s, i, tmo;
 	double tmod;
-	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
-	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
+	char abuf1[VTCP_ADDRBUFSIZE], abuf2[VTCP_ADDRBUFSIZE];
+	char pbuf1[VTCP_PORTBUFSIZE], pbuf2[VTCP_PORTBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
@@ -132,15 +132,15 @@ vbe_TryConnect(const struct sess *sp, int pf, const struct sockaddr_storage *sa,
 
 	tmo = (int)(tmod * 1000.0);
 
-	i = TCP_connect(s, sa, salen, tmo);
+	i = VTCP_connect(s, sa, salen, tmo);
 
 	if (i != 0) {
 		AZ(close(s));
 		return (-1);
 	}
 
-	TCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-	TCP_name(sa, salen, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
+	VTCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
+	VTCP_name(sa, salen, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
 	WSL(sp->wrk, SLT_BackendOpen, s, "%s %s %s %s %s",
 	    vs->backend->vcl_name, abuf1, pbuf1, abuf2, pbuf2);
 
@@ -360,7 +360,7 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 		   before the OS reuses the FD */
 		WSL_Flush(sp->wrk, 0);
 
-		TCP_close(&vc->fd);
+		VTCP_close(&vc->fd);
 		VBE_DropRefConn(bp);
 		vc->backend = NULL;
 		VBE_ReleaseConn(vc);

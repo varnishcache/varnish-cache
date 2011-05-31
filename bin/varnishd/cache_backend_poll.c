@@ -114,10 +114,10 @@ vbp_connect(int pf, const struct sockaddr_storage *sa, socklen_t salen, int tmo)
 	if (s < 0)
 		return (s);
 
-	i = TCP_connect(s, sa, salen, tmo);
+	i = VTCP_connect(s, sa, salen, tmo);
 	if (i == 0)
 		return (s);
-	TCP_close(&s);
+	VTCP_close(&s);
 	return (-1);
 }
 
@@ -166,7 +166,7 @@ vbp_poke(struct vbp_target *vt)
 	}
 	if (tmo <= 0) {
 		/* Spent too long time getting it */
-		TCP_close(&s);
+		VTCP_close(&s);
 		return;
 	}
 
@@ -175,7 +175,7 @@ vbp_poke(struct vbp_target *vt)
 	if (i != vt->req_len) {
 		if (i < 0)
 			vt->err_xmit |= 1;
-		TCP_close(&s);
+		VTCP_close(&s);
 		return;
 	}
 	vt->good_xmit |= 1;
@@ -189,7 +189,7 @@ vbp_poke(struct vbp_target *vt)
 		if (tmo > 0)
 			i = poll(pfd, 1, tmo);
 		if (i == 0 || tmo <= 0) {
-			TCP_close(&s);
+			VTCP_close(&s);
 			return;
 		}
 		if (rlen < sizeof vt->resp_buf)
@@ -200,7 +200,7 @@ vbp_poke(struct vbp_target *vt)
 		rlen += i;
 	} while (i > 0);
 
-	TCP_close(&s);
+	VTCP_close(&s);
 
 	if (i < 0) {
 		vt->err_recv |= 1;

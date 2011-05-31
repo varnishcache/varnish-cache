@@ -1029,7 +1029,7 @@ cmd_http_accept(CMD_ARGS)
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AZ(av[1]);
 	assert(hp->sfd >= 0);
-	TCP_close(&hp->fd);
+	VTCP_close(&hp->fd);
 	vtc_log(vl, 4, "Accepting");
 	hp->fd = accept(hp->sfd, NULL, NULL);
 	if (hp->fd < 0)

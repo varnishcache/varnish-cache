@@ -53,36 +53,36 @@ int SUB_run(struct vsb *sb, sub_func_f *func, void *priv, const char *name,
 
 /* from libvarnish/tcp.c */
 /* NI_MAXHOST and NI_MAXSERV are ridiculously long for numeric format */
-#define TCP_ADDRBUFSIZE		64
-#define TCP_PORTBUFSIZE		16
+#define VTCP_ADDRBUFSIZE		64
+#define VTCP_PORTBUFSIZE		16
 
 #if (defined (__SVR4) && defined (__sun)) || defined (__NetBSD__)
 /*
  * Solaris returns EINVAL if the other end unexepectedly reset the
  * connection.  This is a bug in Solaris and documented behaviour on NetBSD.
  */
-#define TCP_Check(a) ((a) == 0 || errno == ECONNRESET || errno == ENOTCONN \
+#define VTCP_Check(a) ((a) == 0 || errno == ECONNRESET || errno == ENOTCONN \
     || errno == EINVAL)
 #else
-#define TCP_Check(a) ((a) == 0 || errno == ECONNRESET || errno == ENOTCONN)
+#define VTCP_Check(a) ((a) == 0 || errno == ECONNRESET || errno == ENOTCONN)
 #endif
 
-#define TCP_Assert(a) assert(TCP_Check(a))
+#define VTCP_Assert(a) assert(VTCP_Check(a))
 
-void TCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen);
-void TCP_hisname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen);
-int TCP_filter_http(int sock);
-int TCP_blocking(int sock);
-int TCP_nonblocking(int sock);
-int TCP_linger(int sock, int linger);
+void VTCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen);
+void VTCP_hisname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen);
+int VTCP_filter_http(int sock);
+int VTCP_blocking(int sock);
+int VTCP_nonblocking(int sock);
+int VTCP_linger(int sock, int linger);
 #ifdef SOL_SOCKET
-int TCP_port(const struct sockaddr_storage *addr);
-void TCP_name(const struct sockaddr_storage *addr, unsigned l, char *abuf,
+int VTCP_port(const struct sockaddr_storage *addr);
+void VTCP_name(const struct sockaddr_storage *addr, unsigned l, char *abuf,
     unsigned alen, char *pbuf, unsigned plen);
-int TCP_connect(int s, const struct sockaddr_storage *name, socklen_t namelen,
+int VTCP_connect(int s, const struct sockaddr_storage *name, socklen_t namelen,
     int msec);
-void TCP_close(int *s);
-void TCP_set_read_timeout(int s, double seconds);
+void VTCP_close(int *s);
+void VTCP_set_read_timeout(int s, double seconds);
 #endif
 
 /* from libvarnish/time.c */

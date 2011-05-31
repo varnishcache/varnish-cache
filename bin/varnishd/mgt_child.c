@@ -241,8 +241,8 @@ open_sockets(void)
 		 * closes before we call accept(2) and nobody else are in
 		 * the listen queue to release us.
 		 */
-		(void)TCP_nonblocking(ls->sock);
-		(void)TCP_filter_http(ls->sock);
+		(void)VTCP_nonblocking(ls->sock);
+		(void)VTCP_filter_http(ls->sock);
 		good++;
 	}
 	if (!good)

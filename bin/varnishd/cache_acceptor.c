@@ -106,7 +106,7 @@ sock_test(int fd)
 	l = sizeof lin;
 	i = getsockopt(fd, SOL_SOCKET, SO_LINGER, &lin, &l);
 	if (i) {
-		TCP_Assert(i);
+		VTCP_Assert(i);
 		return;
 	}
 	assert(l == sizeof lin);
@@ -117,7 +117,7 @@ sock_test(int fd)
 	l = sizeof tv;
 	i = getsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, &l);
 	if (i) {
-		TCP_Assert(i);
+		VTCP_Assert(i);
 		return;
 	}
 	assert(l == sizeof tv);
@@ -133,7 +133,7 @@ sock_test(int fd)
 	l = sizeof tv;
 	i = getsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, &l);
 	if (i) {
-		TCP_Assert(i);
+		VTCP_Assert(i);
 		return;
 	}
 	assert(l == sizeof tv);
@@ -156,16 +156,16 @@ sock_test(int fd)
 void
 VCA_Prep(struct sess *sp)
 {
-	char addr[TCP_ADDRBUFSIZE];
-	char port[TCP_PORTBUFSIZE];
+	char addr[VTCP_ADDRBUFSIZE];
+	char port[VTCP_PORTBUFSIZE];
 
-	TCP_name(sp->sockaddr, sp->sockaddrlen,
+	VTCP_name(sp->sockaddr, sp->sockaddrlen,
 	    addr, sizeof addr, port, sizeof port);
 	sp->addr = WS_Dup(sp->ws, addr);
 	sp->port = WS_Dup(sp->ws, port);
 	if (params->log_local_addr) {
 		AZ(getsockname(sp->fd, (void*)sp->mysockaddr, &sp->mysockaddrlen));
-		TCP_name(sp->mysockaddr, sp->mysockaddrlen,
+		VTCP_name(sp->mysockaddr, sp->mysockaddrlen,
 		    addr, sizeof addr, port, sizeof port);
 		VSL(SLT_SessionOpen, sp->fd, "%s %s %s %s",
 		    sp->addr, sp->port, addr, port);
@@ -177,16 +177,16 @@ VCA_Prep(struct sess *sp)
 	if (need_test)
 		sock_test(sp->fd);
 	if (need_linger)
-		TCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_LINGER,
+		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_LINGER,
 		    &linger, sizeof linger));
 #ifdef SO_SNDTIMEO_WORKS
 	if (need_sndtimeo)
-		TCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO,
+		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO,
 		    &tv_sndtimeo, sizeof tv_sndtimeo));
 #endif
 #ifdef SO_RCVTIMEO_WORKS
 	if (need_rcvtimeo)
-		TCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_RCVTIMEO,
+		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_RCVTIMEO,
 		    &tv_rcvtimeo, sizeof tv_rcvtimeo));
 #endif
 }
@@ -382,7 +382,7 @@ vca_return_session(struct sess *sp)
 	 * Set nonblocking in the worker-thread, before passing to the
 	 * acceptor thread, to reduce syscall density of the latter.
 	 */
-	if (TCP_nonblocking(sp->fd))
+	if (VTCP_nonblocking(sp->fd))
 		vca_close_session(sp, "remote closed");
 	else if (vca_act->pass == NULL)
 		assert(sizeof sp == write(vca_pipes[1], &sp, sizeof sp));
@@ -427,7 +427,7 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (ls->sock < 0)
 			continue;
-		TCP_myname(ls->sock, h, sizeof h, p, sizeof p);
+		VTCP_myname(ls->sock, h, sizeof h, p, sizeof p);
 		cli_out(cli, "%s %s\n", h, p);
 	}
 }
