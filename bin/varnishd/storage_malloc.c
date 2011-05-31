@@ -44,7 +44,7 @@ struct sma_sc {
 #define SMA_SC_MAGIC		0x1ac8a345
 	struct lock		sma_mtx;
 	size_t			sma_max;
-	struct vsc_sma		*stats;
+	struct VSC_C_sma	*stats;
 };
 
 struct sma {

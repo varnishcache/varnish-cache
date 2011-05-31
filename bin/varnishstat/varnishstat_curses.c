@@ -67,7 +67,7 @@ struct pt {
 static VTAILQ_HEAD(, pt) pthead = VTAILQ_HEAD_INITIALIZER(pthead);
 
 static int
-do_curses_cb(void *priv, const struct vsc_point * const sp)
+do_curses_cb(void *priv, const struct VSC_point * const sp)
 {
 	struct pt *pt;
 	char buf[128];
@@ -124,7 +124,7 @@ myexp(double *acc, double val, unsigned *n, unsigned nmax)
 }
 
 void
-do_curses(struct VSM_data *vd, const struct vsc_main *VSC_main,
+do_curses(struct VSM_data *vd, const struct VSC_C_main *VSC_C_main,
     int delay)
 {
 	intmax_t ju;
@@ -168,7 +168,7 @@ do_curses(struct VSM_data *vd, const struct vsc_main *VSC_main,
 			 * Break to outher loop if we need to re-read file.
 			 * Only check if it looks like nothing is happening.
 			 */
-			act = VSC_main->cache_hit + VSC_main->cache_miss + 1;
+			act = VSC_C_main->cache_hit + VSC_C_main->cache_miss + 1;
 			if (act == lact && VSM_ReOpen(vd, 1))
 				break;
 			lact = act;
@@ -177,15 +177,15 @@ do_curses(struct VSM_data *vd, const struct vsc_main *VSC_main,
 			tt = tv.tv_usec * 1e-6 + tv.tv_sec;
 			lt = tt - lt;
 
-			rt = VSC_main->uptime;
+			rt = VSC_C_main->uptime;
 			up = rt;
 
 			AC(mvprintw(0, 0, "%*s", COLS - 1, VSM_Name(vd)));
 			AC(mvprintw(0, 0, "%d+%02d:%02d:%02d", rt / 86400,
 			    (rt % 86400) / 3600, (rt % 3600) / 60, rt % 60));
 
-			hit = VSC_main->cache_hit;
-			miss = VSC_main->cache_miss;
+			hit = VSC_C_main->cache_hit;
+			miss = VSC_C_main->cache_miss;
 			hr = (hit - lhit) / lt;
 			mr = (miss - lmiss) / lt;
 			lhit = hit;

@@ -92,7 +92,7 @@ wrk_sumstat(struct worker *w)
 
 	Lck_AssertHeld(&wstat_mtx);
 #define L0(n)
-#define L1(n) (VSC_main->n += w->stats.n)
+#define L1(n) (VSC_C_main->n += w->stats.n)
 #define VSC_DO_MAIN
 #define VSC_F(n, t, l, f, d) L##l(n);
 #include "vsc_fields.h"
@@ -367,7 +367,7 @@ wrk_addpools(const unsigned pools)
  */
 
 static void
-wrk_decimate_flock(struct wq *qp, double t_idle, struct vsc_main *vs)
+wrk_decimate_flock(struct wq *qp, double t_idle, struct VSC_C_main *vs)
 {
 	struct worker *w = NULL;
 
@@ -409,7 +409,7 @@ wrk_herdtimer_thread(void *priv)
 {
 	volatile unsigned u;
 	double t_idle;
-	struct vsc_main vsm, *vs;
+	struct VSC_C_main vsm, *vs;
 	int errno_is_multi_threaded;
 
 	THR_SetName("wrk_herdtimer");
@@ -452,10 +452,10 @@ wrk_herdtimer_thread(void *priv)
 		for (u = 0; u < nwq; u++)
 			wrk_decimate_flock(wq[u], t_idle, vs);
 
-		VSC_main->n_wrk= vs->n_wrk;
-		VSC_main->n_wrk_lqueue = vs->n_wrk_lqueue;
-		VSC_main->n_wrk_drop = vs->n_wrk_drop;
-		VSC_main->n_wrk_queued = vs->n_wrk_queued;
+		VSC_C_main->n_wrk= vs->n_wrk;
+		VSC_C_main->n_wrk_lqueue = vs->n_wrk_lqueue;
+		VSC_C_main->n_wrk_drop = vs->n_wrk_drop;
+		VSC_C_main->n_wrk_queued = vs->n_wrk_queued;
 
 		TIM_sleep(params->wthread_purge_delay * 1e-3);
 	}
@@ -479,15 +479,15 @@ wrk_breed_flock(struct wq *qp, const pthread_attr_t *tp_attr)
 	    (qp->lqueue > params->wthread_add_threshold && /* more needed */
 	    qp->lqueue > qp->last_lqueue)) {	/* not getting better since last */
 		if (qp->nthr >= nthr_max) {
-			VSC_main->n_wrk_max++;
+			VSC_C_main->n_wrk_max++;
 		} else if (pthread_create(&tp, tp_attr, wrk_thread, qp)) {
 			VSL(SLT_Debug, 0, "Create worker thread failed %d %s",
 			    errno, strerror(errno));
-			VSC_main->n_wrk_failed++;
+			VSC_C_main->n_wrk_failed++;
 			TIM_sleep(params->wthread_fail_delay * 1e-3);
 		} else {
 			AZ(pthread_detach(tp));
-			VSC_main->n_wrk_create++;
+			VSC_C_main->n_wrk_create++;
 			TIM_sleep(params->wthread_add_delay * 1e-3);
 		}
 	}

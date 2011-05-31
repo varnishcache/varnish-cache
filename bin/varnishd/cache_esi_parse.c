@@ -184,7 +184,7 @@ vep_error(const struct vep_state *vep, const char *p)
 {
 	intmax_t l;
 
-	VSC_main->esi_errors++;
+	VSC_C_main->esi_errors++;
 	l = (intmax_t)(vep->ver_p - vep->hack_p);
 	WSP(vep->sp, SLT_ESI_xmlerror, "ERR at %jd %s", l, p);
 
@@ -199,7 +199,7 @@ vep_warn(const struct vep_state *vep, const char *p)
 {
 	intmax_t l;
 
-	VSC_main->esi_warnings++;
+	VSC_C_main->esi_warnings++;
 	l = (intmax_t)(vep->ver_p - vep->hack_p);
 	printf("WARNING at %jd %s\n", l, p);
 	WSP(vep->sp, SLT_ESI_xmlerror, "WARN at %jd %s", l, p);

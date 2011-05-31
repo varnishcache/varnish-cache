@@ -103,7 +103,7 @@ struct vrt_backend;
 struct cli_proto;
 struct ban;
 struct SHA256Context;
-struct vsc_lck;
+struct VSC_C_lck;
 struct waitinglist;
 struct vef_priv;
 
@@ -787,7 +787,7 @@ const struct sess * THR_GetSession(void);
 void Lck__Lock(struct lock *lck, const char *p, const char *f, int l);
 void Lck__Unlock(struct lock *lck, const char *p, const char *f, int l);
 int Lck__Trylock(struct lock *lck, const char *p, const char *f, int l);
-void Lck__New(struct lock *lck, struct vsc_lck *, const char *);
+void Lck__New(struct lock *lck, struct VSC_C_lck *, const char *);
 void Lck__Assert(const struct lock *lck, int held);
 
 /* public interface: */
@@ -801,7 +801,7 @@ void Lck_CondWait(pthread_cond_t *cond, struct lock *lck);
 #define Lck_Trylock(a) Lck__Trylock(a, __func__, __FILE__, __LINE__)
 #define Lck_AssertHeld(a) Lck__Assert(a, 1)
 
-#define LOCK(nam) extern struct vsc_lck *lck_##nam;
+#define LOCK(nam) extern struct VSC_C_lck *lck_##nam;
 #include "locks.h"
 #undef LOCK
 
@@ -846,9 +846,9 @@ void *VSM_Alloc(unsigned size, const char *class, const char *type,
     const char *ident);
 void VSM_Free(const void *ptr);
 #ifdef VSL_ENDMARKER
-void VSL(enum vsl_tag tag, int id, const char *fmt, ...);
-void WSLR(struct worker *w, enum vsl_tag tag, int id, txt t);
-void WSL(struct worker *w, enum vsl_tag tag, int id, const char *fmt, ...);
+void VSL(enum VSL_tag_e tag, int id, const char *fmt, ...);
+void WSLR(struct worker *w, enum VSL_tag_e tag, int id, txt t);
+void WSL(struct worker *w, enum VSL_tag_e tag, int id, const char *fmt, ...);
 void WSL_Flush(struct worker *w, int overflow);
 
 #define DSL(flag, tag, id, ...)					\

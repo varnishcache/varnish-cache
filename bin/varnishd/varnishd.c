@@ -557,7 +557,7 @@ main(int argc, char * const *argv)
 		}
 	}
 
-	if (vin_n_arg(n_arg, &heritage.name, &dirname, NULL) != 0) {
+	if (VIN_N_Arg(n_arg, &heritage.name, &dirname, NULL) != 0) {
 		fprintf(stderr, "Invalid instance name: %s\n",
 		    strerror(errno));
 		exit(1);

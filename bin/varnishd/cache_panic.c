@@ -338,18 +338,18 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	VSB_bcat(vsp, "", 1);	/* NUL termination */
 
 	if (params->diag_bitmap & 0x4000)
-		(void)fputs(vsm_head->panicstr, stderr);
+		(void)fputs(VSM_head->panicstr, stderr);
 
 #ifdef HAVE_ABORT2
 	if (params->diag_bitmap & 0x8000) {
 		void *arg[1];
 		char *p;
 
-		for (p = vsm_head->panicstr; *p; p++)
+		for (p = VSM_head->panicstr; *p; p++)
 			if (*p == '\n')
 				*p = ' ';
-		arg[0] = vsm_head->panicstr;
-		abort2(vsm_head->panicstr, 1, arg);
+		arg[0] = VSM_head->panicstr;
+		abort2(VSM_head->panicstr, 1, arg);
 	}
 #endif
 	if (params->diag_bitmap & 0x1000)
@@ -366,6 +366,6 @@ PAN_Init(void)
 
 	VAS_Fail = pan_ic;
 	vsp = &vsps;
-	AN(VSB_new(vsp, vsm_head->panicstr, sizeof vsm_head->panicstr,
+	AN(VSB_new(vsp, VSM_head->panicstr, sizeof VSM_head->panicstr,
 	    VSB_FIXEDLEN));
 }

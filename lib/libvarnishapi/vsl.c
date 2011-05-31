@@ -93,7 +93,7 @@ VSL_Setup(struct VSM_data *vd)
 /*--------------------------------------------------------------------*/
 
 void
-vsl_delete(struct VSM_data *vd)
+VSL_Delete(struct VSM_data *vd)
 {
 	struct vsl *vsl;
 
@@ -279,7 +279,7 @@ VSL_NextLog(const struct VSM_data *vd, uint32_t **pp, uint64_t *mb)
 /*--------------------------------------------------------------------*/
 
 int
-VSL_Dispatch(struct VSM_data *vd, vsl_handler *func, void *priv)
+VSL_Dispatch(struct VSM_data *vd, VSL_handler_f *func, void *priv)
 {
 	struct vsl *vsl;
 	int i;
@@ -313,7 +313,7 @@ VSL_Dispatch(struct VSM_data *vd, vsl_handler *func, void *priv)
 /*--------------------------------------------------------------------*/
 
 int
-VSL_H_Print(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
+VSL_H_Print(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
     unsigned spec, const char *ptr, uint64_t bitmap)
 {
 	FILE *fo = priv;
@@ -344,15 +344,15 @@ VSL_H_Print(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 /*--------------------------------------------------------------------*/
 
 void
-vsl_open_cb(struct VSM_data *vd)
+VSL_Open_CallBack(struct VSM_data *vd)
 {
 	struct vsl *vsl;
-	struct vsm_chunk *sha;
+	struct VSM_chunk *sha;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	vsl = vd->vsl;
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
-	sha = vsm_find_alloc(vd, VSL_CLASS, "", "");
+	sha = VSM_find_alloc(vd, VSL_CLASS, "", "");
 	assert(sha != NULL);
 
 	vsl->log_start = VSM_PTR(sha);

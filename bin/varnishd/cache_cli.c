@@ -138,7 +138,7 @@ cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
 	SZOF(struct objhead);
 	SZOF(struct sess);
 	SZOF(struct vbc);
-	SZOF(struct vsc_main);
+	SZOF(struct VSC_C_main);
 	SZOF(struct lock);
 }
 

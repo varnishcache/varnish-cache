@@ -584,7 +584,7 @@ struct stat_priv {
 };
 
 static int
-do_stat_cb(void *priv, const struct vsc_point * const pt)
+do_stat_cb(void *priv, const struct VSC_point * const pt)
 {
 	struct stat_priv *sp = priv;
 	const char *p = sp->target;

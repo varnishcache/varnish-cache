@@ -89,7 +89,7 @@ VBE_ReleaseConn(struct vbc *vc)
 	vc->addrlen = 0;
 	vc->recycled = 0;
 	Lck_Lock(&VBE_mtx);
-	VSC_main->n_vbc--;
+	VSC_C_main->n_vbc--;
 	Lck_Unlock(&VBE_mtx);
 	FREE_OBJ(vc);
 }
@@ -226,7 +226,7 @@ vbe_NewConn(void)
 	XXXAN(vc);
 	vc->fd = -1;
 	Lck_Lock(&VBE_mtx);
-	VSC_main->n_vbc++;
+	VSC_C_main->n_vbc++;
 	Lck_Unlock(&VBE_mtx);
 	return (vc);
 }
@@ -346,14 +346,14 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 			break;
 		if (vbe_CheckFd(vc->fd)) {
 			/* XXX locking of stats */
-			VSC_main->backend_reuse += 1;
+			VSC_C_main->backend_reuse += 1;
 			WSP(sp, SLT_Backend, "%d %s %s",
 			    vc->fd, sp->director->vcl_name, bp->vcl_name);
 			vc->vdis = vs;
 			vc->recycled = 1;
 			return (vc);
 		}
-		VSC_main->backend_toolate++;
+		VSC_C_main->backend_toolate++;
 		WSL(sp->wrk, SLT_BackendClose, vc->fd, "%s", bp->vcl_name);
 
 		/* Checkpoint log to flush all info related to this connection
@@ -367,13 +367,13 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 	}
 
 	if (!vbe_Healthy(vs, sp)) {
-		VSC_main->backend_unhealthy++;
+		VSC_C_main->backend_unhealthy++;
 		return (NULL);
 	}
 
 	if (vs->vrt->max_connections > 0 &&
 	    bp->n_conn >= vs->vrt->max_connections) {
-		VSC_main->backend_busy++;
+		VSC_C_main->backend_busy++;
 		return (NULL);
 	}
 
@@ -383,11 +383,11 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 	bes_conn_try(sp, vc, vs);
 	if (vc->fd < 0) {
 		VBE_ReleaseConn(vc);
-		VSC_main->backend_fail++;
+		VSC_C_main->backend_fail++;
 		return (NULL);
 	}
 	vc->backend = bp;
-	VSC_main->backend_conn++;
+	VSC_C_main->backend_conn++;
 	WSP(sp, SLT_Backend, "%d %s %s",
 	    vc->fd, sp->director->vcl_name, bp->vcl_name);
 	vc->vdis = vs;

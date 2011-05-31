@@ -56,7 +56,7 @@ vsl_w0(uint32_t type, uint32_t length)
 /*--------------------------------------------------------------------*/
 
 static inline void
-vsl_hdr(enum vsl_tag tag, uint32_t *p, unsigned len, unsigned id)
+vsl_hdr(enum VSL_tag_e tag, uint32_t *p, unsigned len, unsigned id)
 {
 
 	assert(((uintptr_t)p & 0x3) == 0);
@@ -83,7 +83,7 @@ vsl_wrap(void)
 		*vsl_ptr = VSL_WRAPMARKER;
 		vsl_ptr = vsl_start + 1;
 	}
-	VSC_main->shm_cycles++;
+	VSC_C_main->shm_cycles++;
 }
 
 /*--------------------------------------------------------------------
@@ -97,14 +97,14 @@ vsl_get(unsigned len, unsigned records, unsigned flushes)
 
 	if (pthread_mutex_trylock(&vsl_mtx)) {
 		AZ(pthread_mutex_lock(&vsl_mtx));
-		VSC_main->shm_cont++;
+		VSC_C_main->shm_cont++;
 	}
 	assert(vsl_ptr < vsl_end);
 	assert(((uintptr_t)vsl_ptr & 0x3) == 0);
 
-	VSC_main->shm_writes++;
-	VSC_main->shm_flushes += flushes;
-	VSC_main->shm_records += records;
+	VSC_C_main->shm_writes++;
+	VSC_C_main->shm_flushes += flushes;
+	VSC_C_main->shm_records += records;
 
 	/* Wrap if necessary */
 	if (VSL_END(vsl_ptr, len) >= vsl_end)
@@ -128,7 +128,7 @@ vsl_get(unsigned len, unsigned records, unsigned flushes)
  */
 
 static void
-VSLR(enum vsl_tag tag, int id, const char *b, unsigned len)
+VSLR(enum VSL_tag_e tag, int id, const char *b, unsigned len)
 {
 	uint32_t *p;
 	unsigned mlen;
@@ -148,7 +148,7 @@ VSLR(enum vsl_tag tag, int id, const char *b, unsigned len)
 /*--------------------------------------------------------------------*/
 
 void
-VSL(enum vsl_tag tag, int id, const char *fmt, ...)
+VSL(enum VSL_tag_e tag, int id, const char *fmt, ...)
 {
 	va_list ap;
 	unsigned n, mlen = params->shm_reclen;
@@ -198,7 +198,7 @@ WSL_Flush(struct worker *w, int overflow)
 /*--------------------------------------------------------------------*/
 
 void
-WSLR(struct worker *w, enum vsl_tag tag, int id, txt t)
+WSLR(struct worker *w, enum VSL_tag_e tag, int id, txt t)
 {
 	unsigned l, mlen;
 
@@ -230,7 +230,7 @@ WSLR(struct worker *w, enum vsl_tag tag, int id, txt t)
 /*--------------------------------------------------------------------*/
 
 void
-WSL(struct worker *w, enum vsl_tag tag, int id, const char *fmt, ...)
+WSL(struct worker *w, enum VSL_tag_e tag, int id, const char *fmt, ...)
 {
 	va_list ap;
 	char *p;
@@ -271,7 +271,7 @@ WSL(struct worker *w, enum vsl_tag tag, int id, const char *fmt, ...)
 void
 VSL_Init(void)
 {
-	struct vsm_chunk *vsc;
+	struct VSM_chunk *vsc;
 
 	AZ(pthread_mutex_init(&vsl_mtx, NULL));
 	AZ(pthread_mutex_init(&vsm_mtx, NULL));
@@ -287,10 +287,10 @@ VSL_Init(void)
 	vsl_ptr = vsl_start + 1;
 
 	vsl_wrap();
-	vsm_head->starttime = (intmax_t)TIM_real();
-	vsm_head->panicstr[0] = '\0';
-	memset(VSC_main, 0, sizeof *VSC_main);
-	vsm_head->child_pid = getpid();
+	VSM_head->starttime = (intmax_t)TIM_real();
+	VSM_head->panicstr[0] = '\0';
+	memset(VSC_C_main, 0, sizeof *VSC_C_main);
+	VSM_head->child_pid = getpid();
 }
 
 /*--------------------------------------------------------------------*/

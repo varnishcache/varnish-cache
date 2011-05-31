@@ -51,7 +51,7 @@ struct ilck {
 	pthread_t		owner;
 	VTAILQ_ENTRY(ilck)	list;
 	const char		*w;
-	struct vsc_lck		*stat;
+	struct VSC_C_lck	*stat;
 };
 
 static VTAILQ_HEAD(, ilck)	ilck_head =
@@ -155,7 +155,7 @@ Lck_CondWait(pthread_cond_t *cond, struct lock *lck)
 }
 
 void
-Lck__New(struct lock *lck, struct vsc_lck *st, const char *w)
+Lck__New(struct lock *lck, struct VSC_C_lck *st, const char *w)
 {
 	struct ilck *ilck;
 
@@ -188,7 +188,7 @@ Lck_Delete(struct lock *lck)
 	FREE_OBJ(ilck);
 }
 
-#define LOCK(nam) struct vsc_lck *lck_##nam;
+#define LOCK(nam) struct VSC_C_lck *lck_##nam;
 #include "locks.h"
 #undef LOCK
 
@@ -198,7 +198,7 @@ LCK_Init(void)
 
 	AZ(pthread_mutex_init(&lck_mtx, NULL));
 #define LOCK(nam)						\
-	lck_##nam = VSM_Alloc(sizeof(struct vsc_lck),		\
+	lck_##nam = VSM_Alloc(sizeof(struct VSC_C_lck),		\
 	   VSC_CLASS, VSC_TYPE_LCK, #nam);
 #include "locks.h"
 #undef LOCK

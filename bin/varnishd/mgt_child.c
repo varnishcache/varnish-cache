@@ -424,17 +424,17 @@ static void
 mgt_report_panic(pid_t r)
 {
 
-	if (vsm_head->panicstr[0] == '\0')
+	if (VSM_head->panicstr[0] == '\0')
 		return;
 	REPORT(LOG_ERR, "Child (%jd) Panic message: %s",
-	    (intmax_t)r, vsm_head->panicstr);
+	    (intmax_t)r, VSM_head->panicstr);
 }
 
 static void
 mgt_save_panic(void)
 {
 	char time_str[30];
-	if (vsm_head->panicstr[0] == '\0')
+	if (VSM_head->panicstr[0] == '\0')
 		return;
 
 	if (child_panic)
@@ -443,7 +443,7 @@ mgt_save_panic(void)
 	XXXAN(child_panic);
 	TIM_format(TIM_real(), time_str);
 	VSB_printf(child_panic, "Last panic at: %s\n", time_str);
-	VSB_cat(child_panic, vsm_head->panicstr);
+	VSB_cat(child_panic, VSM_head->panicstr);
 	AZ(VSB_finish(child_panic));
 }
 

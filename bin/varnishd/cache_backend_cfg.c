@@ -69,7 +69,7 @@ VBE_Nuke(struct backend *b)
 	free(b->port);
 	VSM_Free(b->vsc);
 	FREE_OBJ(b);
-	VSC_main->n_backend--;
+	VSC_C_main->n_backend--;
 }
 
 /*--------------------------------------------------------------------
@@ -234,7 +234,7 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	b->healthy = 1;
 
 	VTAILQ_INSERT_TAIL(&backends, b, list);
-	VSC_main->n_backend++;
+	VSC_C_main->n_backend++;
 	return (b);
 }
 

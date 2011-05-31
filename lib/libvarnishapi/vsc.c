@@ -85,7 +85,7 @@ VSC_Setup(struct VSM_data *vd)
 /*--------------------------------------------------------------------*/
 
 void
-vsc_delete(struct VSM_data *vd)
+VSC_Delete(struct VSM_data *vd)
 {
 	struct vsc_sf *sf;
 	struct vsc *vsc;
@@ -219,15 +219,15 @@ VSC_Open(struct VSM_data *vd, int diag)
 
 /*--------------------------------------------------------------------*/
 
-struct vsc_main *
+struct VSC_C_main *
 VSC_Main(struct VSM_data *vd)
 {
-	struct vsm_chunk *sha;
+	struct VSM_chunk *sha;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	CHECK_OBJ_NOTNULL(vd->vsc, VSC_MAGIC);
 
-	sha = vsm_find_alloc(vd, VSC_CLASS, "", "");
+	sha = VSM_find_alloc(vd, VSC_CLASS, "", "");
 	assert(sha != NULL);
 	return (VSM_PTR(sha));
 }
@@ -251,7 +251,7 @@ iter_test(const char *s1, const char *s2, int wc)
 
 static int
 iter_call(const struct vsc *vsc, vsc_iter_f *func, void *priv,
-    const struct vsc_point *const sp)
+    const struct VSC_point *const sp)
 {
 	struct vsc_sf *sf;
 	int good;
@@ -282,11 +282,11 @@ iter_call(const struct vsc *vsc, vsc_iter_f *func, void *priv,
 
 #define VSC_DO(U,l,t)							\
 	static int							\
-	iter_##l(const struct vsc *vsc, struct vsm_chunk *sha,		\
+	iter_##l(const struct vsc *vsc, struct VSM_chunk *sha,		\
 	    vsc_iter_f *func, void *priv)				\
 	{								\
-		struct vsc_##l *st;					\
-		struct vsc_point sp;					\
+		struct VSC_C_##l *st;					\
+		struct VSC_point sp;					\
 		int i;							\
 									\
 		CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);			\
@@ -318,7 +318,7 @@ int
 VSC_Iter(struct VSM_data *vd, vsc_iter_f *func, void *priv)
 {
 	struct vsc *vsc;
-	struct vsm_chunk *sha;
+	struct VSM_chunk *sha;
 	int i;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);

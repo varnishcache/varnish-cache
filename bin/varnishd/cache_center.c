@@ -526,7 +526,7 @@ cnt_fetch(struct sess *sp)
 	 * Do a single retry in that case.
 	 */
 	if (i == 1) {
-		VSC_main->backend_retry++;
+		VSC_C_main->backend_retry++;
 		i = FetchHdr(sp);
 	}
 

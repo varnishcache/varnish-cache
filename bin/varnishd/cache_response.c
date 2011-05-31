@@ -259,7 +259,7 @@ res_WriteGunzipObj(struct sess *sp)
 		u += st->len;
 
 		sp->acct_tmp.bodybytes += st->len;	/* XXX ? */
-		VSC_main->n_objwrite++;
+		VSC_C_main->n_objwrite++;
 
 		i = VGZ_WrwGunzip(sp, vg,
 		    st->ptr, st->len,
@@ -319,12 +319,12 @@ res_WriteDirObj(struct sess *sp, ssize_t low, ssize_t high)
 		 */
 		if (st->fd >= 0 &&
 		    st->len >= params->sendfile_threshold) {
-			VSC_main->n_objsendfile++;
+			VSC_C_main->n_objsendfile++;
 			WRW_Sendfile(sp->wrk, st->fd, st->where + off, len);
 			continue;
 		}
 #endif /* SENDFILE_WORKS */
-		VSC_main->n_objwrite++;
+		VSC_C_main->n_objwrite++;
 		(void)WRW_Write(sp->wrk, st->ptr + off, len);
 	}
 	assert(u == sp->obj->len);

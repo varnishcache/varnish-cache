@@ -77,7 +77,7 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm, const char *path)
 		AN(v);
 
 		VTAILQ_INSERT_TAIL(&vmods, v, list);
-		VSC_main->vmods++;
+		VSC_C_main->vmods++;
 
 		REPLACE(v->nm, nm);
 		REPLACE(v->path, path);
@@ -124,7 +124,7 @@ VRT_Vmod_Fini(void **hdl)
 	free(v->nm);
 	free(v->path);
 	VTAILQ_REMOVE(&vmods, v, list);
-	VSC_main->vmods--;
+	VSC_C_main->vmods--;
 	FREE_OBJ(v);
 }
 

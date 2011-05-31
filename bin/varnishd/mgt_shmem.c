@@ -110,7 +110,7 @@
 #define MAP_NOSYNC 0 /* XXX Linux */
 #endif
 
-struct vsc_main	*VSC_main;
+struct VSC_C_main	*VSC_C_main;
 
 static int vsl_fd = -1;
 
@@ -122,7 +122,7 @@ static int vsl_fd = -1;
 static void
 vsl_n_check(int fd)
 {
-	struct vsm_head slh;
+	struct VSM_head slh;
 	int i;
 	struct stat st;
 
@@ -157,7 +157,7 @@ vsl_n_check(int fd)
 static void
 vsl_buildnew(const char *fn, unsigned size, int fill)
 {
-	struct vsm_head slh;
+	struct VSM_head slh;
 	int i;
 	unsigned u;
 	char buf[64*1024];
@@ -268,26 +268,26 @@ mgt_SHM_Init(const char *l_arg)
 	(void)close(i);
 	vsl_buildnew(VSM_FILENAME, size, fill);
 
-	vsm_head = (void *)mmap(NULL, size,
+	VSM_head = (void *)mmap(NULL, size,
 	    PROT_READ|PROT_WRITE,
 	    MAP_HASSEMAPHORE | MAP_NOSYNC | MAP_SHARED,
 	    vsl_fd, 0);
-	vsm_head->master_pid = getpid();
-	xxxassert(vsm_head != MAP_FAILED);
-	(void)mlock((void*)vsm_head, size);
+	VSM_head->master_pid = getpid();
+	xxxassert(VSM_head != MAP_FAILED);
+	(void)mlock((void*)VSM_head, size);
 
-	memset(&vsm_head->head, 0, sizeof vsm_head->head);
-	vsm_head->head.magic = VSM_CHUNK_MAGIC;
-	vsm_head->head.len =
-	    (uint8_t*)(vsm_head) + size - (uint8_t*)&vsm_head->head;
-	bprintf(vsm_head->head.class, "%s", VSM_CLASS_FREE);
+	memset(&VSM_head->head, 0, sizeof VSM_head->head);
+	VSM_head->head.magic = VSM_CHUNK_MAGIC;
+	VSM_head->head.len =
+	    (uint8_t*)(VSM_head) + size - (uint8_t*)&VSM_head->head;
+	bprintf(VSM_head->head.class, "%s", VSM_CLASS_FREE);
 	VWMB();
 
-	vsm_end = (void*)((uint8_t*)vsm_head + size);
+	vsm_end = (void*)((uint8_t*)VSM_head + size);
 
-	VSC_main = VSM_Alloc(sizeof *VSC_main,
+	VSC_C_main = VSM_Alloc(sizeof *VSC_C_main,
 	    VSC_CLASS, VSC_TYPE_MAIN, "");
-	AN(VSC_main);
+	AN(VSC_C_main);
 
 	pp = VSM_Alloc(sizeof *pp, VSM_CLASS_PARAM, "", "");
 	AN(pp);
@@ -306,8 +306,8 @@ mgt_SHM_Init(const char *l_arg)
 	VWMB();
 
 	do
-		vsm_head->alloc_seq = random();
-	while (vsm_head->alloc_seq == 0);
+		VSM_head->alloc_seq = random();
+	while (VSM_head->alloc_seq == 0);
 
 }
 
@@ -315,5 +315,5 @@ void
 mgt_SHM_Pid(void)
 {
 
-	vsm_head->master_pid = getpid();
+	VSM_head->master_pid = getpid();
 }

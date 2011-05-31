@@ -27,4 +27,4 @@
  *
  */
 
-void do_curses(struct VSM_data *vd, const struct vsc_main *VSC_main, int delay);
+void do_curses(struct VSM_data *vd, const struct VSC_C_main *VSC_C_main, int delay);

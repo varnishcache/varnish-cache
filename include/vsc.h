@@ -40,7 +40,7 @@
 
 #define VSC_F(n, t, l, f, e)	t n;
 
-#define VSC_DO(u,l,t) struct vsc_##l {
+#define VSC_DO(u,l,t) struct VSC_C_##l {
 #define VSC_DONE(u,l,t) };
 
 #include "vsc_all.h"

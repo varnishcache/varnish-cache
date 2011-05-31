@@ -433,7 +433,7 @@ FetchHdr(struct sess *sp)
 	WSL_Flush(w, 0);
 
 	/* XXX is this the right place? */
-	VSC_main->backend_req++;
+	VSC_C_main->backend_req++;
 
 	/* Receive response */
 

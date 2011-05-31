@@ -55,7 +55,7 @@ static int	b_flag, c_flag;
 
 static struct vsb	*ob[65536];
 static unsigned char	flg[65536];
-static enum vsl_tag   last[65536];
+static enum VSL_tag_e   last[65536];
 static uint64_t       bitmap[65536];
 #define F_INVCL		(1 << 0)
 
@@ -90,7 +90,7 @@ clean_order(struct VSM_data *vd)
 }
 
 static int
-h_order(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
+h_order(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
     unsigned spec, const char *ptr, uint64_t bm)
 {
 	char type;

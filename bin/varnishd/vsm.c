@@ -58,16 +58,16 @@
 #include "vmb.h"
 
 /* These two come from beyond (mgt_shmem.c actually) */
-struct vsm_head		*vsm_head;
-const struct vsm_chunk	*vsm_end;
+struct VSM_head		*VSM_head;
+const struct VSM_chunk	*vsm_end;
 
 static unsigned
 vsm_mark(void)
 {
 	unsigned seq;
 
-	seq = vsm_head->alloc_seq;
-	vsm_head->alloc_seq = 0;
+	seq = VSM_head->alloc_seq;
+	VSM_head->alloc_seq = 0;
 	VWMB();
 	return (seq);
 }
@@ -80,8 +80,8 @@ vsm_release(unsigned seq)
 		return;
 	VWMB();
 	do
-		vsm_head->alloc_seq = ++seq;
-	while (vsm_head->alloc_seq == 0);
+		VSM_head->alloc_seq = ++seq;
+	while (VSM_head->alloc_seq == 0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -90,10 +90,10 @@ static void
 vsm_cleanup(void)
 {
 	unsigned now = (unsigned)TIM_mono();
-	struct vsm_chunk *sha, *sha2;
+	struct VSM_chunk *sha, *sha2;
 	unsigned seq;
 
-	CHECK_OBJ_NOTNULL(vsm_head, VSM_HEAD_MAGIC);
+	CHECK_OBJ_NOTNULL(VSM_head, VSM_HEAD_MAGIC);
 	VSM_ITER(sha) {
 		if (strcmp(sha->class, VSM_CLASS_COOL))
 			continue;
@@ -146,10 +146,10 @@ vsm_cleanup(void)
 void *
 VSM__Alloc(unsigned size, const char *class, const char *type, const char *ident)
 {
-	struct vsm_chunk *sha, *sha2;
+	struct VSM_chunk *sha, *sha2;
 	unsigned seq;
 
-	CHECK_OBJ_NOTNULL(vsm_head, VSM_HEAD_MAGIC);
+	CHECK_OBJ_NOTNULL(VSM_head, VSM_HEAD_MAGIC);
 
 	vsm_cleanup();
 
@@ -195,10 +195,10 @@ VSM__Alloc(unsigned size, const char *class, const char *type, const char *ident
 void
 VSM__Free(const void *ptr)
 {
-	struct vsm_chunk *sha;
+	struct VSM_chunk *sha;
 	unsigned seq;
 
-	CHECK_OBJ_NOTNULL(vsm_head, VSM_HEAD_MAGIC);
+	CHECK_OBJ_NOTNULL(VSM_head, VSM_HEAD_MAGIC);
 	VSM_ITER(sha)
 		if (VSM_PTR(sha) == ptr)
 			break;
@@ -216,10 +216,10 @@ VSM__Free(const void *ptr)
 void
 VSM__Clean(void)
 {
-	struct vsm_chunk *sha;
+	struct VSM_chunk *sha;
 	unsigned f, seq;
 
-	CHECK_OBJ_NOTNULL(vsm_head, VSM_HEAD_MAGIC);
+	CHECK_OBJ_NOTNULL(VSM_head, VSM_HEAD_MAGIC);
 	f = 0;
 	seq = vsm_mark();
 	VSM_ITER(sha) {

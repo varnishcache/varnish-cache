@@ -48,9 +48,9 @@ sms_free(struct storage *sto)
 
 	CHECK_OBJ_NOTNULL(sto, STORAGE_MAGIC);
 	Lck_Lock(&sms_mtx);
-	VSC_main->sms_nobj--;
-	VSC_main->sms_nbytes -= sto->len;
-	VSC_main->sms_bfree += sto->len;
+	VSC_C_main->sms_nobj--;
+	VSC_C_main->sms_nbytes -= sto->len;
+	VSC_C_main->sms_bfree += sto->len;
 	Lck_Unlock(&sms_mtx);
 	VSB_delete(sto->priv);
 	free(sto);
@@ -80,8 +80,8 @@ SMS_Makesynth(struct object *obj)
 	obj->len = 0;
 
 	Lck_Lock(&sms_mtx);
-	VSC_main->sms_nreq++;
-	VSC_main->sms_nobj++;
+	VSC_C_main->sms_nreq++;
+	VSC_C_main->sms_nobj++;
 	Lck_Unlock(&sms_mtx);
 
 	sto = calloc(sizeof *sto, 1);
@@ -118,7 +118,7 @@ SMS_Finish(struct object *obj)
 	sto->space = VSB_len(vsb);
 	obj->len = sto->len;
 	Lck_Lock(&sms_mtx);
-	VSC_main->sms_nbytes += sto->len;
-	VSC_main->sms_balloc += sto->len;
+	VSC_C_main->sms_nbytes += sto->len;
+	VSC_C_main->sms_balloc += sto->len;
 	Lck_Unlock(&sms_mtx);
 }

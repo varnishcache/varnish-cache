@@ -43,7 +43,7 @@
  * This structure describes each allocation from the shmlog
  */
 
-struct vsm_chunk {
+struct VSM_chunk {
 #define VSM_CHUNK_MAGIC		0x43907b6e	/* From /dev/random */
 	unsigned		magic;
 	unsigned		len;
@@ -56,7 +56,7 @@ struct vsm_chunk {
 #define VSM_NEXT(sha)		((void*)((uintptr_t)(sha) + (sha)->len))
 #define VSM_PTR(sha)		((void*)((uintptr_t)((sha) + 1)))
 
-struct vsm_head {
+struct VSM_head {
 #define VSM_HEAD_MAGIC		4185512502U	/* From /dev/random */
 	unsigned		magic;
 
@@ -73,7 +73,7 @@ struct vsm_head {
 
 	unsigned		alloc_seq;
 	/* Must be last element */
-	struct vsm_chunk	head;
+	struct VSM_chunk	head;
 };
 
 /*
@@ -82,20 +82,20 @@ struct vsm_head {
  */
 #ifdef CHECK_OBJ_NOTNULL
 
-static inline struct vsm_chunk *
+static inline struct VSM_chunk *
 vsm_iter_0(void)
 {
 
-	CHECK_OBJ_NOTNULL(vsm_head, VSM_HEAD_MAGIC);
-	CHECK_OBJ_NOTNULL(&vsm_head->head, VSM_CHUNK_MAGIC);
-	return (&vsm_head->head);
+	CHECK_OBJ_NOTNULL(VSM_head, VSM_HEAD_MAGIC);
+	CHECK_OBJ_NOTNULL(&VSM_head->head, VSM_CHUNK_MAGIC);
+	return (&VSM_head->head);
 }
 
 static inline void
-vsm_iter_n(struct vsm_chunk **pp)
+vsm_iter_n(struct VSM_chunk **pp)
 {
 
-	CHECK_OBJ_NOTNULL(vsm_head, VSM_HEAD_MAGIC);
+	CHECK_OBJ_NOTNULL(VSM_head, VSM_HEAD_MAGIC);
 	CHECK_OBJ_NOTNULL(*pp, VSM_CHUNK_MAGIC);
 	*pp = VSM_NEXT(*pp);
 	if (*pp >= vsm_end) {

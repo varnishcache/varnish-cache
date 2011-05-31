@@ -156,8 +156,8 @@ ban_CheckLast(void)
 	Lck_AssertHeld(&ban_mtx);
 	b = VTAILQ_LAST(&ban_head, banhead_s);
 	if (b != VTAILQ_FIRST(&ban_head) && b->refcount == 0) {
-		VSC_main->n_ban--;
-		VSC_main->n_ban_retire++;
+		VSC_C_main->n_ban--;
+		VSC_C_main->n_ban_retire++;
 		VTAILQ_REMOVE(&ban_head, b, list);
 	} else {
 		b = NULL;
@@ -398,8 +398,8 @@ BAN_Insert(struct ban *b)
 	Lck_Lock(&ban_mtx);
 	VTAILQ_INSERT_HEAD(&ban_head, b, list);
 	ban_start = b;
-	VSC_main->n_ban++;
-	VSC_main->n_ban_add++;
+	VSC_C_main->n_ban++;
+	VSC_C_main->n_ban_add++;
 
 	be = VTAILQ_LAST(&ban_head, banhead_s);
 	if (params->ban_dups && be != b)
@@ -428,7 +428,7 @@ BAN_Insert(struct ban *b)
 	}
 	Lck_Lock(&ban_mtx);
 	be->refcount--;
-	VSC_main->n_ban_dups += pcount;
+	VSC_C_main->n_ban_dups += pcount;
 	Lck_Unlock(&ban_mtx);
 }
 
@@ -533,8 +533,8 @@ BAN_Reload(const uint8_t *ban, unsigned len)
 			gone |= BAN_F_GONE;
 	}
 
-	VSC_main->n_ban++;
-	VSC_main->n_ban_add++;
+	VSC_C_main->n_ban++;
+	VSC_C_main->n_ban_add++;
 
 	b2 = BAN_New();
 	AN(b2);
@@ -707,8 +707,8 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 		VTAILQ_INSERT_TAIL(&b0->objcore, oc, ban_list);
 		b0->refcount++;
 	}
-	VSC_main->n_ban_obj_test++;
-	VSC_main->n_ban_re_test += tests;
+	VSC_C_main->n_ban_obj_test++;
+	VSC_C_main->n_ban_re_test += tests;
 	Lck_Unlock(&ban_mtx);
 
 	if (b == oc->ban) {	/* not banned */

@@ -232,7 +232,7 @@ vdi_dns_cache_list_add(const struct sess *sp,
 		       struct vdi_dns_hostgroup *new)
 {
 	if (vs->ncachelist >= VDI_DNS_MAX_CACHE) {
-		VSC_main->dir_dns_cache_full++;
+		VSC_C_main->dir_dns_cache_full++;
 		vdi_dns_pop_cache(vs, NULL);
 	}
 	CHECK_OBJ_NOTNULL(new, VDI_DNSDIR_MAGIC);
@@ -275,10 +275,10 @@ vdi_dns_cache_add(const struct sess *sp,
 	REPLACE(new->hostname, hostname);
 
 	error = getaddrinfo(hostname, "80", &hint, &res0);
-	VSC_main->dir_dns_lookups++;
+	VSC_C_main->dir_dns_lookups++;
 	if (error) {
 		vdi_dns_cache_list_add(sp, vs, new);
-		VSC_main->dir_dns_failed++;
+		VSC_C_main->dir_dns_failed++;
 		return (0);
 	}
 
@@ -332,7 +332,7 @@ vdi_dns_walk_cache(const struct sess *sp,
 		ret = vdi_dns_cache_add(sp, vs, hostname, &backend);
 		AZ(pthread_rwlock_unlock(&vs->rwlock));
 	} else
-		VSC_main->dir_dns_hit++;
+		VSC_C_main->dir_dns_hit++;
 
 	/* Bank backend == cached a failure, so to speak */
 	if (backend != NULL)

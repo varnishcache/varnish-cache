@@ -131,7 +131,7 @@ struct backend {
 	unsigned		healthy;
 	VTAILQ_HEAD(, trouble)	troublelist;
 
-	struct vsc_vbe		*vsc;
+	struct VSC_C_vbe	*vsc;
 };
 
 /* cache_backend.c */

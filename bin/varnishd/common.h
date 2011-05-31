@@ -37,7 +37,7 @@ extern pid_t mgt_pid;
 void VCA_tweak_waiter(struct cli *cli, const char *arg);
 
 /* mgt_shmem.c */
-extern struct vsc_main *VSC_main;
+extern struct VSC_C_main *VSC_C_main;
 
 /* varnishd.c */
 struct vsb;
@@ -69,8 +69,8 @@ const void *pick(const struct choice *cp, const char *which, const char *kind);
 #define NEEDLESS_RETURN(foo)	return (foo)
 
 /* vsm.c */
-extern struct vsm_head		*vsm_head;
-extern const struct vsm_chunk	*vsm_end;
+extern struct VSM_head		*VSM_head;
+extern const struct VSM_chunk	*vsm_end;
 
 /*
  * These three should not be called directly, but only through

@@ -90,7 +90,7 @@ isequal(const char *str, const char *reference, const char *end)
  */
 
 struct message {
-	enum vsl_tag tag;
+	enum VSL_tag_e tag;
 	size_t len;
 	char *ptr;
 	VSTAILQ_ENTRY(message) list;
@@ -493,7 +493,7 @@ replay_thread(void *arg)
 	char space[1] = " ", crlf[2] = "\r\n";
 	struct replay_thread *thr = arg;
 	struct message *msg;
-	enum vsl_tag tag;
+	enum VSL_tag_e tag;
 	size_t len;
 	char *ptr;
 	const char *next;
@@ -635,7 +635,7 @@ clear:
 }
 
 static int
-gen_traffic(void *priv, enum vsl_tag tag, unsigned fd,
+gen_traffic(void *priv, enum VSL_tag_e tag, unsigned fd,
     unsigned len, unsigned spec, const char *ptr, uint64_t bitmap)
 {
 	struct replay_thread *thr;

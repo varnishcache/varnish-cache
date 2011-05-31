@@ -56,9 +56,9 @@ struct VSM_data *VSM_New(void);
 	 *	Pointer to usable VSL_data handle.
 	 */
 
-typedef void vsm_diag_f(void *priv, const char *fmt, ...);
+typedef void VSM_diag_f(void *priv, const char *fmt, ...);
 
-void VSM_Diag(struct VSM_data *vd, vsm_diag_f *func, void *priv);
+void VSM_Diag(struct VSM_data *vd, VSM_diag_f *func, void *priv);
 	/*
 	 * Set the diagnostics reporting function.
 	 * Default is fprintf(stderr, ...)
@@ -114,7 +114,7 @@ unsigned VSM_Seq(struct VSM_data *vd);
 	 * Return the allocation sequence number
 	 */
 
-struct vsm_head *VSM_Head(const struct VSM_data *vd);
+struct VSM_head *VSM_Head(const struct VSM_data *vd);
 	/*
 	 * Return the head of the VSM.
 	 */
@@ -133,15 +133,15 @@ void VSM_Close(struct VSM_data *vd);
 	 * Deallocate all storage (including VSC and VSL allocations)
 	 */
 
-struct vsm_chunk *vsm_iter0(struct VSM_data *vd);
-void vsm_itern(const struct VSM_data *vd, struct vsm_chunk **pp);
+struct VSM_chunk *VSM_iter0(struct VSM_data *vd);
+void VSM_itern(const struct VSM_data *vd, struct VSM_chunk **pp);
 
 #define VSM_FOREACH(var, vd) \
-    for((var) = vsm_iter0((vd)); (var) != NULL; vsm_itern((vd), &(var)))
+    for((var) = VSM_iter0((vd)); (var) != NULL; VSM_itern((vd), &(var)))
 
 	/*
 	 * Iterate over all chunks in shared memory
-	 * var = "struct vsm_chunk *"
+	 * var = "struct VSM_chunk *"
 	 * vd = "struct VSM_data"
 	 */
 
@@ -173,12 +173,12 @@ int VSC_Open(struct VSM_data *vd, int diag);
 	 * args and returns as VSM_Open()
 	 */
 
-struct vsc_main *VSC_Main(struct VSM_data *vd);
+struct VSC_C_main *VSC_Main(struct VSM_data *vd);
 	/*
 	 * return Main stats structure
 	 */
 
-struct vsc_point {
+struct VSC_point {
 	const char *class;		/* stat struct type		*/
 	const char *ident;		/* stat struct ident		*/
 	const char *name;		/* field name			*/
@@ -188,7 +188,7 @@ struct vsc_point {
 	const volatile void *ptr;	/* field value			*/
 };
 
-typedef int vsc_iter_f(void *priv, const struct vsc_point *const pt);
+typedef int vsc_iter_f(void *priv, const struct VSC_point *const pt);
 
 int VSC_Iter(struct VSM_data *vd, vsc_iter_f *func, void *priv);
 	/*
@@ -248,16 +248,16 @@ int VSL_Arg(struct VSM_data *vd, int arg, const char *opt);
 	 *	 1 Handled.
 	 */
 
-typedef int vsl_handler(void *priv, enum vsl_tag tag, unsigned fd,
+typedef int VSL_handler_f(void *priv, enum VSL_tag_e tag, unsigned fd,
     unsigned len, unsigned spec, const char *ptr, uint64_t bitmap);
 
 #define VSL_S_CLIENT	(1 << 0)
 #define VSL_S_BACKEND	(1 << 1)
-vsl_handler VSL_H_Print;
+VSL_handler_f VSL_H_Print;
 struct VSM_data;
 void VSL_Select(const struct VSM_data *vd, unsigned tag);
 void VSL_NonBlocking(const struct VSM_data *vd, int nb);
-int VSL_Dispatch(struct VSM_data *vd, vsl_handler *func, void *priv);
+int VSL_Dispatch(struct VSM_data *vd, VSL_handler_f *func, void *priv);
 int VSL_NextLog(const struct VSM_data *lh, uint32_t **pp, uint64_t *bitmap);
 int VSL_Matched(const struct VSM_data *vd, uint64_t bitmap);
 extern const char *VSL_tags[256];

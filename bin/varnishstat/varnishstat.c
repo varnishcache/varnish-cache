@@ -49,7 +49,7 @@
 /*--------------------------------------------------------------------*/
 
 static int
-do_xml_cb(void *priv, const struct vsc_point * const pt)
+do_xml_cb(void *priv, const struct VSC_point * const pt)
 {
 	uint64_t val;
 
@@ -92,7 +92,7 @@ struct once_priv {
 };
 
 static int
-do_once_cb(void *priv, const struct vsc_point * const pt)
+do_once_cb(void *priv, const struct VSC_point * const pt)
 {
 	struct once_priv *op;
 	uint64_t val;
@@ -118,12 +118,12 @@ do_once_cb(void *priv, const struct vsc_point * const pt)
 }
 
 static void
-do_once(struct VSM_data *vd, const struct vsc_main *VSC_main)
+do_once(struct VSM_data *vd, const struct VSC_C_main *VSC_C_main)
 {
 	struct once_priv op;
 
 	memset(&op, 0, sizeof op);
-	op.up = VSC_main->uptime;
+	op.up = VSC_C_main->uptime;
 	op.pad = 18;
 
 	(void)VSC_Iter(vd, do_once_cb, &op);
@@ -132,7 +132,7 @@ do_once(struct VSM_data *vd, const struct vsc_main *VSC_main)
 /*--------------------------------------------------------------------*/
 
 static int
-do_list_cb(void *priv, const struct vsc_point * const pt)
+do_list_cb(void *priv, const struct VSC_point * const pt)
 {
 	int i;
 
@@ -192,7 +192,7 @@ main(int argc, char * const *argv)
 {
 	int c;
 	struct VSM_data *vd;
-	const struct vsc_main *VSC_main;
+	const struct VSC_C_main *VSC_C_main;
 	int delay = 1, once = 0, xml = 0;
 
 	vd = VSM_New();
@@ -227,14 +227,14 @@ main(int argc, char * const *argv)
 	if (VSC_Open(vd, 1))
 		exit(1);
 
-	VSC_main = VSC_Main(vd);
+	VSC_C_main = VSC_Main(vd);
 
 	if (xml)
 		do_xml(vd);
 	else if (once)
-		do_once(vd, VSC_main);
+		do_once(vd, VSC_C_main);
 	else
-		do_curses(vd, VSC_main, delay);
+		do_curses(vd, VSC_C_main, delay);
 
 	exit(0);
 }

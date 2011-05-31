@@ -38,7 +38,7 @@ struct VSM_data {
 	unsigned		magic;
 #define VSM_MAGIC		0x6e3bd69b
 
-	vsm_diag_f		*diag;
+	VSM_diag_f		*diag;
 	void			*priv;
 
 	char			*n_opt;
@@ -48,7 +48,7 @@ struct VSM_data {
 	struct stat		fstat;
 
 	int			vsm_fd;
-	struct vsm_head		*vsm_head;
+	struct VSM_head		*VSM_head;
 	void			*vsm_end;
 	unsigned		alloc_seq;
 
@@ -58,9 +58,9 @@ struct VSM_data {
 	struct vsl		*vsl;
 };
 
-struct vsm_chunk *vsm_find_alloc(struct VSM_data *vd, const char *class,
+struct VSM_chunk *VSM_find_alloc(struct VSM_data *vd, const char *class,
     const char *type, const char *ident);
 
-void vsc_delete(struct VSM_data *vd);
-void vsl_delete(struct VSM_data *vd);
-void vsl_open_cb(struct VSM_data *vd);
+void VSC_Delete(struct VSM_data *vd);
+void VSL_Delete(struct VSM_data *vd);
+void VSL_Open_CallBack(struct VSM_data *vd);

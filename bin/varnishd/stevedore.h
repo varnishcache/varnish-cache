@@ -84,7 +84,7 @@ struct stevedore {
 	void			*priv;
 
 	VTAILQ_ENTRY(stevedore)	list;
-	char			ident[16];	/* XXX: match vsm_chunk.ident */
+	char			ident[16];	/* XXX: match VSM_chunk.ident */
 };
 
 struct object *STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,

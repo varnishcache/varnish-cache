@@ -268,7 +268,7 @@ EXP_Touch(struct objcore *oc)
 	if (oc->timer_idx != BINHEAP_NOIDX) {
 		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 		VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
-		VSC_main->n_lru_moved++;
+		VSC_C_main->n_lru_moved++;
 	}
 	Lck_Unlock(&lru->mtx);
 	return (1);
@@ -382,7 +382,7 @@ exp_timer(struct sess *sp, void *priv)
 		Lck_Unlock(&exp_mtx);
 		Lck_Unlock(&lru->mtx);
 
-		VSC_main->n_expired++;
+		VSC_C_main->n_expired++;
 
 		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
 		(void)HSH_Deref(sp->wrk, oc, NULL);
@@ -420,7 +420,7 @@ EXP_NukeOne(const struct sess *sp, struct lru *lru)
 		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 		binheap_delete(exp_heap, oc->timer_idx);
 		assert(oc->timer_idx == BINHEAP_NOIDX);
-		VSC_main->n_lru_nuked++;
+		VSC_C_main->n_lru_nuked++;
 	}
 	Lck_Unlock(&exp_mtx);
 	Lck_Unlock(&lru->mtx);

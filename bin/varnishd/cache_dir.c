@@ -83,7 +83,7 @@ VDI_RecycleFd(struct sess *sp)
 	 */
 	WSL_Flush(sp->wrk, 0);
 	Lck_Lock(&bp->mtx);
-	VSC_main->backend_recycle++;
+	VSC_C_main->backend_recycle++;
 	VTAILQ_INSERT_HEAD(&bp->connlist, sp->vbc, list);
 	sp->vbc = NULL;
 	VBE_DropRefLocked(bp);
