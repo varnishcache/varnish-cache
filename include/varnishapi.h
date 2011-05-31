@@ -264,7 +264,7 @@ extern const char *VSL_tags[256];
 
 
 /* base64.c */
-void base64_init(void);
-int base64_decode(char *d, unsigned dlen, const char *s);
+void VB64_init(void);
+int VB64_decode(char *d, unsigned dlen, const char *s);
 
 #endif

@@ -15,7 +15,7 @@ static const char b64[] =
 static char i64[256];
 
 void
-base64_init(void)
+VB64_init(void)
 {
 	int i;
 	const char *p;
@@ -28,7 +28,7 @@ base64_init(void)
 }
 
 int
-base64_decode(char *d, unsigned dlen, const char *s)
+VB64_decode(char *d, unsigned dlen, const char *s)
 {
 	unsigned u, v, l;
 	int i;
@@ -78,9 +78,9 @@ main(int argc, char **argv)
 	(void)argc;
 	(void)argv;
 
-	base64_init();
+	VB64_init();
 	l = sizeof buf;
-	base64_decode(buf, &l, test1);
+	VB64_decode(buf, &l, test1);
 	printf("%s\n", buf);
 	return (0);
 }

@@ -608,11 +608,11 @@ h_ncsa(void *priv, enum vsl_tag tag, unsigned fd,
 				char *rubuf;
 				size_t rulen;
 
-				base64_init();
+				VB64_init();
 				rulen = ((strlen(lp->df_u) + 3) * 4) / 3;
 				rubuf = malloc(rulen);
 				assert(rubuf != NULL);
-				base64_decode(rubuf, rulen, lp->df_u);
+				VB64_decode(rubuf, rulen, lp->df_u);
 				q = strchr(rubuf, ':');
 				if (q != NULL)
 					*q = '\0';
