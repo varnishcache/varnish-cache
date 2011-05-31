@@ -1547,7 +1547,7 @@ cli_debug_xid(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 	if (av[2] != NULL)
 		xids = strtoul(av[2], NULL, 0);
-	cli_out(cli, "XID is %u", xids);
+	VCLI_Out(cli, "XID is %u", xids);
 }
 
 /*
@@ -1564,7 +1564,7 @@ cli_debug_srandom(struct cli *cli, const char * const *av, void *priv)
 		seed = strtoul(av[2], NULL, 0);
 	srandom(seed);
 	srand48(random());
-	cli_out(cli, "Random(3) seeded with %lu", seed);
+	VCLI_Out(cli, "Random(3) seeded with %lu", seed);
 }
 
 static struct cli_proto debug_cmds[] = {

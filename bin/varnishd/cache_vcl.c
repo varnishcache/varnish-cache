@@ -141,7 +141,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	ASSERT_CLI();
 	vcl = vcl_find(name);
 	if (vcl != NULL) {
-		cli_out(cli, "Config '%s' already loaded", name);
+		VCLI_Out(cli, "Config '%s' already loaded", name);
 		return (1);
 	}
 
@@ -151,13 +151,13 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	vcl->dlh = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
 
 	if (vcl->dlh == NULL) {
-		cli_out(cli, "dlopen(%s): %s\n", fn, dlerror());
+		VCLI_Out(cli, "dlopen(%s): %s\n", fn, dlerror());
 		FREE_OBJ(vcl);
 		return (1);
 	}
 	cnf = dlsym(vcl->dlh, "VCL_conf");
 	if (cnf == NULL) {
-		cli_out(cli, "Internal error: No VCL_conf symbol\n");
+		VCLI_Out(cli, "Internal error: No VCL_conf symbol\n");
 		(void)dlclose(vcl->dlh);
 		FREE_OBJ(vcl);
 		return (1);
@@ -165,14 +165,14 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	memcpy(vcl->conf, cnf, sizeof *cnf);
 
 	if (vcl->conf->magic != VCL_CONF_MAGIC) {
-		cli_out(cli, "Wrong VCL_CONF_MAGIC\n");
+		VCLI_Out(cli, "Wrong VCL_CONF_MAGIC\n");
 		(void)dlclose(vcl->dlh);
 		FREE_OBJ(vcl);
 		return (1);
 	}
 	REPLACE(vcl->name, name);
 	VTAILQ_INSERT_TAIL(&vcl_head, vcl, list);
-	cli_out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
+	VCLI_Out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
 	vcl->conf->init_vcl(cli);
 	(void)vcl->conf->init_func(NULL);
 	Lck_Lock(&vcl_mtx);
@@ -238,7 +238,7 @@ ccf_config_list(struct cli *cli, const char * const *av, void *priv)
 			flg = "discarded";
 		} else
 			flg = "available";
-		cli_out(cli, "%-10s %6u %s\n",
+		VCLI_Out(cli, "%-10s %6u %s\n",
 		    flg,
 		    vcl->conf->busy,
 		    vcl->name);
@@ -253,7 +253,7 @@ ccf_config_load(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 	ASSERT_CLI();
 	if (VCL_Load(av[3], av[2], cli))
-		cli_result(cli, CLIS_PARAM);
+		VCLI_SetResult(cli, CLIS_PARAM);
 	return;
 }
 
@@ -267,15 +267,15 @@ ccf_config_discard(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 	vcl = vcl_find(av[2]);
 	if (vcl == NULL) {
-		cli_result(cli, CLIS_PARAM);
-		cli_out(cli, "VCL '%s' unknown", av[2]);
+		VCLI_SetResult(cli, CLIS_PARAM);
+		VCLI_Out(cli, "VCL '%s' unknown", av[2]);
 		return;
 	}
 	Lck_Lock(&vcl_mtx);
 	if (vcl == vcl_active) {
 		Lck_Unlock(&vcl_mtx);
-		cli_result(cli, CLIS_PARAM);
-		cli_out(cli, "VCL %s is the active VCL", av[2]);
+		VCLI_SetResult(cli, CLIS_PARAM);
+		VCLI_Out(cli, "VCL %s is the active VCL", av[2]);
 		return;
 	}
 	VSC_C_main->n_vcl_discard++;
@@ -296,8 +296,8 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 	vcl = vcl_find(av[2]);
 	if (vcl == NULL) {
-		cli_out(cli, "No VCL named '%s'", av[2]);
-		cli_result(cli, CLIS_PARAM);
+		VCLI_Out(cli, "No VCL named '%s'", av[2]);
+		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
 	Lck_Lock(&vcl_mtx);

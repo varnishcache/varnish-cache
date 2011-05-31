@@ -80,13 +80,13 @@ tweak_generic_timeout(struct cli *cli, volatile unsigned *dst, const char *arg)
 	if (arg != NULL) {
 		u = strtoul(arg, NULL, 0);
 		if (u == 0) {
-			cli_out(cli, "Timeout must be greater than zero\n");
-			cli_result(cli, CLIS_PARAM);
+			VCLI_Out(cli, "Timeout must be greater than zero\n");
+			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
 		}
 		*dst = u;
 	} else
-		cli_out(cli, "%u", *dst);
+		VCLI_Out(cli, "%u", *dst);
 }
 
 /*--------------------------------------------------------------------*/
@@ -111,22 +111,22 @@ tweak_timeout_double(struct cli *cli, const struct parspec *par,
 	if (arg != NULL) {
 		u = strtod(arg, NULL);
 		if (u < par->min) {
-			cli_out(cli,
+			VCLI_Out(cli,
 			    "Timeout must be greater or equal to %.g\n",
 				 par->min);
-			cli_result(cli, CLIS_PARAM);
+			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
 		}
 		if (u > par->max) {
-			cli_out(cli,
+			VCLI_Out(cli,
 			    "Timeout must be less than or equal to %.g\n",
 				 par->max);
-			cli_result(cli, CLIS_PARAM);
+			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
 		}
 		*dest = u;
 	} else
-		cli_out(cli, "%.6f", *dest);
+		VCLI_Out(cli, "%.6f", *dest);
 }
 
 /*--------------------------------------------------------------------*/
@@ -142,22 +142,22 @@ tweak_generic_double(struct cli *cli, const struct parspec *par,
 	if (arg != NULL) {
 		u = strtod(arg, NULL);
 		if (u < par->min) {
-			cli_out(cli,
+			VCLI_Out(cli,
 			    "Must be greater or equal to %.g\n",
 				 par->min);
-			cli_result(cli, CLIS_PARAM);
+			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
 		}
 		if (u > par->max) {
-			cli_out(cli,
+			VCLI_Out(cli,
 			    "Must be less than or equal to %.g\n",
 				 par->max);
-			cli_result(cli, CLIS_PARAM);
+			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
 		}
 		*dest = u;
 	} else
-		cli_out(cli, "%f", *dest);
+		VCLI_Out(cli, "%f", *dest);
 }
 
 /*--------------------------------------------------------------------*/
@@ -183,12 +183,12 @@ tweak_generic_bool(struct cli *cli, volatile unsigned *dest, const char *arg)
 		else if (!strcasecmp(arg, "true"))
 			*dest = 1;
 		else {
-			cli_out(cli, "use \"on\" or \"off\"\n");
-			cli_result(cli, CLIS_PARAM);
+			VCLI_Out(cli, "use \"on\" or \"off\"\n");
+			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
 		}
 	} else
-		cli_out(cli, *dest ? "on" : "off");
+		VCLI_Out(cli, *dest ? "on" : "off");
 }
 
 /*--------------------------------------------------------------------*/
@@ -216,20 +216,20 @@ tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg,
 		else
 			u = strtoul(arg, NULL, 0);
 		if (u < min) {
-			cli_out(cli, "Must be at least %u\n", min);
-			cli_result(cli, CLIS_PARAM);
+			VCLI_Out(cli, "Must be at least %u\n", min);
+			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
 		}
 		if (u > max) {
-			cli_out(cli, "Must be no more than %u\n", max);
-			cli_result(cli, CLIS_PARAM);
+			VCLI_Out(cli, "Must be no more than %u\n", max);
+			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
 		}
 		*dest = u;
 	} else if (*dest == UINT_MAX) {
-		cli_out(cli, "unlimited", *dest);
+		VCLI_Out(cli, "unlimited", *dest);
 	} else {
-		cli_out(cli, "%u", *dest);
+		VCLI_Out(cli, "%u", *dest);
 	}
 }
 
@@ -269,8 +269,8 @@ tweak_user(struct cli *cli, const struct parspec *par, const char *arg)
 		} else
 			pw = getpwnam(arg);
 		if (pw == NULL) {
-			cli_out(cli, "Unknown user");
-			cli_result(cli, CLIS_PARAM);
+			VCLI_Out(cli, "Unknown user");
+			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
 		}
 		REPLACE(master.user, pw->pw_name);
@@ -283,9 +283,9 @@ tweak_user(struct cli *cli, const struct parspec *par, const char *arg)
 		    gr->gr_gid == pw->pw_gid)
 			REPLACE(master.group, gr->gr_name);
 	} else if (master.user) {
-		cli_out(cli, "%s (%d)", master.user, (int)master.uid);
+		VCLI_Out(cli, "%s (%d)", master.user, (int)master.uid);
 	} else {
-		cli_out(cli, "%d", (int)master.uid);
+		VCLI_Out(cli, "%d", (int)master.uid);
 	}
 }
 
@@ -311,16 +311,16 @@ tweak_group(struct cli *cli, const struct parspec *par, const char *arg)
 		} else
 			gr = getgrnam(arg);
 		if (gr == NULL) {
-			cli_out(cli, "Unknown group");
-			cli_result(cli, CLIS_PARAM);
+			VCLI_Out(cli, "Unknown group");
+			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
 		}
 		REPLACE(master.group, gr->gr_name);
 		master.gid = gr->gr_gid;
 	} else if (master.group) {
-		cli_out(cli, "%s (%d)", master.group, (int)master.gid);
+		VCLI_Out(cli, "%s (%d)", master.group, (int)master.gid);
 	} else {
-		cli_out(cli, "%d", (int)master.gid);
+		VCLI_Out(cli, "%d", (int)master.gid);
 	}
 }
 
@@ -350,25 +350,25 @@ tweak_listen_address(struct cli *cli, const struct parspec *par,
 
 	(void)par;
 	if (arg == NULL) {
-		cli_quote(cli, master.listen_address);
+		VCLI_Quote(cli, master.listen_address);
 		return;
 	}
 
 	av = VAV_Parse(arg, NULL, ARGV_COMMA);
 	if (av == NULL) {
-		cli_out(cli, "Parse error: out of memory");
-		cli_result(cli, CLIS_PARAM);
+		VCLI_Out(cli, "Parse error: out of memory");
+		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
 	if (av[0] != NULL) {
-		cli_out(cli, "Parse error: %s", av[0]);
-		cli_result(cli, CLIS_PARAM);
+		VCLI_Out(cli, "Parse error: %s", av[0]);
+		VCLI_SetResult(cli, CLIS_PARAM);
 		VAV_Free(av);
 		return;
 	}
 	if (av[1] == NULL) {
-		cli_out(cli, "Empty listen address");
-		cli_result(cli, CLIS_PARAM);
+		VCLI_Out(cli, "Empty listen address");
+		VCLI_SetResult(cli, CLIS_PARAM);
 		VAV_Free(av);
 		return;
 	}
@@ -379,9 +379,9 @@ tweak_listen_address(struct cli *cli, const struct parspec *par,
 
 		n = VSS_resolve(av[i], "http", &ta);
 		if (n == 0) {
-			cli_out(cli, "Invalid listen address ");
-			cli_quote(cli, av[i]);
-			cli_result(cli, CLIS_PARAM);
+			VCLI_Out(cli, "Invalid listen address ");
+			VCLI_Quote(cli, av[i]);
+			VCLI_SetResult(cli, CLIS_PARAM);
 			break;
 		}
 		for (j = 0; j < n; ++j) {
@@ -424,7 +424,7 @@ tweak_string(struct cli *cli, const struct parspec *par, const char *arg)
 	AN(p);
 	/* XXX should have tweak_generic_string */
 	if (arg == NULL) {
-		cli_quote(cli, *p);
+		VCLI_Quote(cli, *p);
 	} else {
 		REPLACE(*p, arg);
 	}
@@ -453,7 +453,7 @@ tweak_diag_bitmap(struct cli *cli, const struct parspec *par, const char *arg)
 		u = strtoul(arg, NULL, 0);
 		master.diag_bitmap = u;
 	} else {
-		cli_out(cli, "0x%x", master.diag_bitmap);
+		VCLI_Out(cli, "0x%x", master.diag_bitmap);
 	}
 }
 
@@ -955,7 +955,7 @@ mcf_wrap(struct cli *cli, const char *text)
 				q--;
 			AN(q);
 		}
-		cli_out(cli, "%*s %.*s\n", margin, "", (int)(q - p), p);
+		VCLI_Out(cli, "%*s %.*s\n", margin, "", (int)(q - p), p);
 		p = q;
 		if (*p == ' ' || *p == '\n')
 			p++;
@@ -978,9 +978,9 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 		pp = parspec[i];
 		if (av[2] != NULL && !lfmt && strcmp(pp->name, av[2]))
 			continue;
-		cli_out(cli, "%-*s ", margin, pp->name);
+		VCLI_Out(cli, "%-*s ", margin, pp->name);
 		if (pp->func == NULL) {
-			cli_out(cli, "Not implemented.\n");
+			VCLI_Out(cli, "Not implemented.\n");
 			if (av[2] != NULL && !lfmt)
 				return;
 			else
@@ -988,11 +988,11 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 		}
 		pp->func(cli, pp, NULL);
 		if (pp->units != NULL)
-			cli_out(cli, " [%s]\n", pp->units);
+			VCLI_Out(cli, " [%s]\n", pp->units);
 		else
-			cli_out(cli, "\n");
+			VCLI_Out(cli, "\n");
 		if (av[2] != NULL) {
-			cli_out(cli, "%-*s Default is %s\n",
+			VCLI_Out(cli, "%-*s Default is %s\n",
 			    margin, "", pp->def);
 			mcf_wrap(cli, pp->descr);
 			if (pp->flags & DELAYED_EFFECT)
@@ -1008,12 +1008,12 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 			if (!lfmt)
 				return;
 			else
-				cli_out(cli, "\n");
+				VCLI_Out(cli, "\n");
 		}
 	}
 	if (av[2] != NULL && !lfmt) {
-		cli_result(cli, CLIS_PARAM);
-		cli_out(cli, "Unknown parameter \"%s\".", av[2]);
+		VCLI_SetResult(cli, CLIS_PARAM);
+		VCLI_Out(cli, "Unknown parameter \"%s\".", av[2]);
 	}
 }
 
@@ -1037,20 +1037,20 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 	if (pp != NULL) {
 		pp->func(cli, pp, val);
 		if (cli->result != CLIS_OK) {
-			cli_out(cli, "(attempting to set param %s to %s)\n",
+			VCLI_Out(cli, "(attempting to set param %s to %s)\n",
 			    pp->name, val);
 		} else if (child_pid >= 0 && pp->flags & MUST_RESTART) {
-			cli_out(cli, "Change will take effect"
+			VCLI_Out(cli, "Change will take effect"
 			    " when child is restarted");
 		} else if (pp->flags & MUST_RELOAD) {
-			cli_out(cli, "Change will take effect"
+			VCLI_Out(cli, "Change will take effect"
 			    " when VCL script is reloaded");
 		}
 		MCF_ParamSync();
 		return;
 	}
-	cli_result(cli, CLIS_PARAM);
-	cli_out(cli, "Unknown parameter \"%s\".", param);
+	VCLI_SetResult(cli, CLIS_PARAM);
+	VCLI_Out(cli, "Unknown parameter \"%s\".", param);
 }
 
 
@@ -1111,7 +1111,7 @@ MCF_SetDefaults(struct cli *cli)
 	for (i = 0; i < nparspec; i++) {
 		pp = parspec[i];
 		if (cli != NULL)
-			cli_out(cli,
+			VCLI_Out(cli,
 			    "Set Default for %s = %s\n", pp->name, pp->def);
 		pp->func(cli, pp, pp->def);
 		if (cli != NULL && cli->result != CLIS_OK)

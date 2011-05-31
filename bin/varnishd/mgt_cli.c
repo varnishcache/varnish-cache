@@ -76,16 +76,16 @@ mcf_banner(struct cli *cli, const char *const *av, void *priv)
 
 	(void)av;
 	(void)priv;
-	cli_out(cli, "-----------------------------\n");
-	cli_out(cli, "Varnish Cache CLI 1.0\n");
-	cli_out(cli, "-----------------------------\n");
-	cli_out(cli, "%s\n", VSB_data(vident) + 1);
-	cli_out(cli, "\n");
-	cli_out(cli, "Type 'help' for command list.\n");
-	cli_out(cli, "Type 'quit' to close CLI session.\n");
+	VCLI_Out(cli, "-----------------------------\n");
+	VCLI_Out(cli, "Varnish Cache CLI 1.0\n");
+	VCLI_Out(cli, "-----------------------------\n");
+	VCLI_Out(cli, "%s\n", VSB_data(vident) + 1);
+	VCLI_Out(cli, "\n");
+	VCLI_Out(cli, "Type 'help' for command list.\n");
+	VCLI_Out(cli, "Type 'quit' to close CLI session.\n");
 	if (child_pid < 0)
-		cli_out(cli, "Type 'start' to launch worker process.\n");
-	cli_result(cli, CLIS_OK);
+		VCLI_Out(cli, "Type 'start' to launch worker process.\n");
+	VCLI_SetResult(cli, CLIS_OK);
 }
 
 /*--------------------------------------------------------------------*/
@@ -145,11 +145,11 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 	 */
 	if (cli_o <= 0) {
 		if (!strcmp(av[1], "help")) {
-			cli_out(cli, "No help from child, (not running).\n");
+			VCLI_Out(cli, "No help from child, (not running).\n");
 			return;
 		}
-		cli_result(cli, CLIS_UNKNOWN);
-		cli_out(cli,
+		VCLI_SetResult(cli, CLIS_UNKNOWN);
+		VCLI_Out(cli,
 		    "Unknown request in manager process "
 		    "(child not running).\n"
 		    "Type 'help' for more info.");
@@ -165,15 +165,15 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 	i = write(cli_o, VSB_data(vsb), VSB_len(vsb));
 	if (i != VSB_len(vsb)) {
 		VSB_delete(vsb);
-		cli_result(cli, CLIS_COMMS);
-		cli_out(cli, "CLI communication error");
+		VCLI_SetResult(cli, CLIS_COMMS);
+		VCLI_Out(cli, "CLI communication error");
 		MGT_Child_Cli_Fail();
 		return;
 	}
 	VSB_delete(vsb);
 	(void)VCLI_ReadResult(cli_i, &u, &q, params->cli_timeout);
-	cli_result(cli, u);
-	cli_out(cli, "%s", q);
+	VCLI_SetResult(cli, u);
+	VCLI_Out(cli, "%s", q);
 	free(q);
 }
 
@@ -262,9 +262,9 @@ mgt_cli_challenge(struct cli *cli)
 		cli->challenge[i] = (random() % 26) + 'a';
 	cli->challenge[i++] = '\n';
 	cli->challenge[i] = '\0';
-	cli_out(cli, "%s", cli->challenge);
-	cli_out(cli, "\nAuthentication required.\n");
-	cli_result(cli, CLIS_AUTH);
+	VCLI_Out(cli, "%s", cli->challenge);
+	VCLI_Out(cli, "\nAuthentication required.\n");
+	VCLI_SetResult(cli, CLIS_AUTH);
 }
 
 /*--------------------------------------------------------------------
@@ -280,15 +280,15 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 	AN(av[2]);
 	(void)priv;
 	if (secret_file == NULL) {
-		cli_out(cli, "Secret file not configured\n");
-		cli_result(cli, CLIS_CANT);
+		VCLI_Out(cli, "Secret file not configured\n");
+		VCLI_SetResult(cli, CLIS_CANT);
 		return;
 	}
 	fd = open(secret_file, O_RDONLY);
 	if (fd < 0) {
-		cli_out(cli, "Cannot open secret file (%s)\n",
+		VCLI_Out(cli, "Cannot open secret file (%s)\n",
 		    strerror(errno));
-		cli_result(cli, CLIS_CANT);
+		VCLI_SetResult(cli, CLIS_CANT);
 		return;
 	}
 	mgt_got_fd(fd);
@@ -300,7 +300,7 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 	}
 	cli->auth = MCF_AUTH;
 	memset(cli->challenge, 0, sizeof cli->challenge);
-	cli_result(cli, CLIS_OK);
+	VCLI_SetResult(cli, CLIS_OK);
 	mcf_banner(cli, av, priv);
 }
 

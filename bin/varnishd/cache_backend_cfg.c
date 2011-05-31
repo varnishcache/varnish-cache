@@ -285,7 +285,7 @@ cli_debug_backend(struct cli *cli, const char * const *av, void *priv)
 	ASSERT_CLI();
 	VTAILQ_FOREACH(b, &backends, list) {
 		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-		cli_out(cli, "%p %s(%s,%s,:%s) %d %d\n",
+		VCLI_Out(cli, "%p %s(%s,%s,:%s) %d %d\n",
 		    b, b->vcl_name, b->ipv4_addr, b->ipv6_addr, b->port,
 		    b->refcount, b->n_conn);
 	}

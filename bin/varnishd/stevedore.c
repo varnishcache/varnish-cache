@@ -526,11 +526,11 @@ stv_cli_list(struct cli *cli, const char * const *av, void *priv)
 	ASSERT_MGT();
 	(void)av;
 	(void)priv;
-	cli_out(cli, "Storage devices:\n");
+	VCLI_Out(cli, "Storage devices:\n");
 	stv = stv_transient;
-		cli_out(cli, "\tstorage.%s = %s\n", stv->ident, stv->name);
+		VCLI_Out(cli, "\tstorage.%s = %s\n", stv->ident, stv->name);
 	VTAILQ_FOREACH(stv, &stevedores, list)
-		cli_out(cli, "\tstorage.%s = %s\n", stv->ident, stv->name);
+		VCLI_Out(cli, "\tstorage.%s = %s\n", stv->ident, stv->name);
 }
 
 /*--------------------------------------------------------------------*/

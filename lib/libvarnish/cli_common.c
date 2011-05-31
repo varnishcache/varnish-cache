@@ -52,7 +52,7 @@
 
 /*lint -e{818} cli could be const */
 void
-cli_out(struct cli *cli, const char *fmt, ...)
+VCLI_Out(struct cli *cli, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -66,14 +66,14 @@ cli_out(struct cli *cli, const char *fmt, ...)
 
 /*lint -e{818} cli could be const */
 void
-cli_quote(struct cli *cli, const char *s)
+VCLI_Quote(struct cli *cli, const char *s)
 {
 
 	VSB_quote(cli->sb, s, -1, 0);
 }
 
 void
-cli_result(struct cli *cli, unsigned res)
+VCLI_SetResult(struct cli *cli, unsigned res)
 {
 
 	if (cli != NULL)

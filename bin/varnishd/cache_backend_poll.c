@@ -370,12 +370,12 @@ vbp_bitmap(struct cli *cli, char c, uint64_t map, const char *lbl)
 
 	for (i = 0; i < 64; i++) {
 		if (map & u)
-			cli_out(cli, "%c", c);
+			VCLI_Out(cli, "%c", c);
 		else
-			cli_out(cli, "-");
+			VCLI_Out(cli, "-");
 		map <<= 1;
 	}
-	cli_out(cli, " %s\n", lbl);
+	VCLI_Out(cli, " %s\n", lbl);
 }
 
 /*lint -e{506} constant value boolean */
@@ -384,16 +384,16 @@ static void
 vbp_health_one(struct cli *cli, const struct vbp_target *vt)
 {
 
-	cli_out(cli, "Backend %s is %s\n",
+	VCLI_Out(cli, "Backend %s is %s\n",
 	    vt->backend->vcl_name,
 	    vt->backend->healthy ? "Healthy" : "Sick");
-	cli_out(cli, "Current states  good: %2u threshold: %2u window: %2u\n",
+	VCLI_Out(cli, "Current states  good: %2u threshold: %2u window: %2u\n",
 	    vt->good, vt->probe.threshold, vt->probe.window);
-	cli_out(cli, "Average responsetime of good probes: %.6f\n", vt->avg);
-	cli_out(cli,
+	VCLI_Out(cli, "Average responsetime of good probes: %.6f\n", vt->avg);
+	VCLI_Out(cli,
 	    "Oldest                       "
 	    "                             Newest\n");
-	cli_out(cli,
+	VCLI_Out(cli,
 	    "============================="
 	    "===================================\n");
 

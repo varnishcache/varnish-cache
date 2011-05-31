@@ -482,25 +482,25 @@ mcf_config_inline(struct cli *cli, const char * const *av, void *priv)
 
 	vp = mgt_vcc_byname(av[2]);
 	if (vp != NULL) {
-		cli_out(cli, "Already a VCL program named %s", av[2]);
-		cli_result(cli, CLIS_PARAM);
+		VCLI_Out(cli, "Already a VCL program named %s", av[2]);
+		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
 
 	vf = mgt_VccCompile(&sb, av[3], 0);
 	if (VSB_len(sb) > 0)
-		cli_out(cli, "%s\n", VSB_data(sb));
+		VCLI_Out(cli, "%s\n", VSB_data(sb));
 	VSB_delete(sb);
 	if (vf == NULL) {
-		cli_out(cli, "VCL compilation failed");
-		cli_result(cli, CLIS_PARAM);
+		VCLI_Out(cli, "VCL compilation failed");
+		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
-	cli_out(cli, "VCL compiled.");
+	VCLI_Out(cli, "VCL compiled.");
 	if (child_pid >= 0 &&
 	    mgt_cli_askchild(&status, &p, "vcl.load %s %s\n", av[2], vf)) {
-		cli_result(cli, status);
-		cli_out(cli, "%s", p);
+		VCLI_SetResult(cli, status);
+		VCLI_Out(cli, "%s", p);
 	} else {
 		(void)mgt_vcc_add(av[2], vf);
 	}
@@ -519,15 +519,15 @@ mcf_config_load(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 	vp = mgt_vcc_byname(av[2]);
 	if (vp != NULL) {
-		cli_out(cli, "Already a VCL program named %s", av[2]);
-		cli_result(cli, CLIS_PARAM);
+		VCLI_Out(cli, "Already a VCL program named %s", av[2]);
+		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
 
 	vcl = vreadfile(mgt_vcl_dir, av[3], NULL);
 	if (vcl == NULL) {
-		cli_out(cli, "Cannot open '%s'", av[3]);
-		cli_result(cli, CLIS_PARAM);
+		VCLI_Out(cli, "Cannot open '%s'", av[3]);
+		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
 
@@ -535,18 +535,18 @@ mcf_config_load(struct cli *cli, const char * const *av, void *priv)
 	free(vcl);
 
 	if (VSB_len(sb) > 0)
-		cli_out(cli, "%s", VSB_data(sb));
+		VCLI_Out(cli, "%s", VSB_data(sb));
 	VSB_delete(sb);
 	if (vf == NULL) {
-		cli_out(cli, "VCL compilation failed");
-		cli_result(cli, CLIS_PARAM);
+		VCLI_Out(cli, "VCL compilation failed");
+		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
-	cli_out(cli, "VCL compiled.");
+	VCLI_Out(cli, "VCL compiled.");
 	if (child_pid >= 0 &&
 	    mgt_cli_askchild(&status, &p, "vcl.load %s %s\n", av[2], vf)) {
-		cli_result(cli, status);
-		cli_out(cli, "%s", p);
+		VCLI_SetResult(cli, status);
+		VCLI_Out(cli, "%s", p);
 	} else {
 		(void)mgt_vcc_add(av[2], vf);
 	}
@@ -561,8 +561,8 @@ mcf_find_vcl(struct cli *cli, const char *name)
 	vp = mgt_vcc_byname(name);
 	if (vp != NULL)
 		return (vp);
-	cli_result(cli, CLIS_PARAM);
-	cli_out(cli, "No configuration named %s known.", name);
+	VCLI_SetResult(cli, CLIS_PARAM);
+	VCLI_Out(cli, "No configuration named %s known.", name);
 	return (NULL);
 }
 
@@ -581,8 +581,8 @@ mcf_config_use(struct cli *cli, const char * const *av, void *priv)
 		return;
 	if (child_pid >= 0 &&
 	    mgt_cli_askchild(&status, &p, "vcl.use %s\n", av[2])) {
-		cli_result(cli, status);
-		cli_out(cli, "%s", p);
+		VCLI_SetResult(cli, status);
+		VCLI_Out(cli, "%s", p);
 	} else {
 		vp->active = 2;
 		VTAILQ_FOREACH(vp, &vclhead, list) {
@@ -605,14 +605,14 @@ mcf_config_discard(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 	vp = mcf_find_vcl(cli, av[2]);
 	if (vp != NULL && vp->active) {
-		cli_result(cli, CLIS_PARAM);
-		cli_out(cli, "Cannot discard active VCL program\n");
+		VCLI_SetResult(cli, CLIS_PARAM);
+		VCLI_Out(cli, "Cannot discard active VCL program\n");
 	} else if (vp != NULL) {
 		if (child_pid >= 0 &&
 		    mgt_cli_askchild(&status, &p,
 		    "vcl.discard %s\n", av[2])) {
-			cli_result(cli, status);
-			cli_out(cli, "%s", p);
+			VCLI_SetResult(cli, status);
+			VCLI_Out(cli, "%s", p);
 		} else {
 			AZ(mgt_vcc_delbyname(av[2]));
 		}
@@ -632,8 +632,8 @@ mcf_config_list(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 	if (child_pid >= 0) {
 		if (!mgt_cli_askchild(&status, &p, "vcl.list\n")) {
-			cli_result(cli, status);
-			cli_out(cli, "%s", p);
+			VCLI_SetResult(cli, status);
+			VCLI_Out(cli, "%s", p);
 		}
 		free(p);
 	} else {
@@ -642,7 +642,7 @@ mcf_config_list(struct cli *cli, const char * const *av, void *priv)
 				flg = "active";
 			} else
 				flg = "available";
-			cli_out(cli, "%-10s %6s %s\n",
+			VCLI_Out(cli, "%-10s %6s %s\n",
 			    flg, "N/A", vp->name);
 		}
 	}
@@ -663,18 +663,18 @@ mcf_config_show(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 	if ((vp = mcf_find_vcl(cli, av[2])) != NULL) {
 		if ((dlh = dlopen(vp->fname, RTLD_NOW | RTLD_LOCAL)) == NULL) {
-			cli_out(cli, "failed to load %s: %s\n",
+			VCLI_Out(cli, "failed to load %s: %s\n",
 			    vp->name, dlerror());
-			cli_result(cli, CLIS_CANT);
+			VCLI_SetResult(cli, CLIS_CANT);
 		} else if ((sym = dlsym(dlh, "srcbody")) == NULL) {
-			cli_out(cli, "failed to locate source for %s: %s\n",
+			VCLI_Out(cli, "failed to locate source for %s: %s\n",
 			    vp->name, dlerror());
-			cli_result(cli, CLIS_CANT);
+			VCLI_SetResult(cli, CLIS_CANT);
 			AZ(dlclose(dlh));
 		} else {
 			src = sym;
-			cli_out(cli, "%s", src[0]);
-			/* cli_out(cli, src[1]); */
+			VCLI_Out(cli, "%s", src[0]);
+			/* VCLI_Out(cli, src[1]); */
 			AZ(dlclose(dlh));
 		}
 	}

@@ -309,14 +309,14 @@ dumptree(struct cli *cli, uintptr_t p, int indent)
 		return;
 	if (hcb_is_node(p)) {
 		oh = hcb_l_node(p);
-		cli_out(cli, "%*.*sN %d r%u <%02x%02x%02x...>\n",
+		VCLI_Out(cli, "%*.*sN %d r%u <%02x%02x%02x...>\n",
 		    indent, indent, "", indent / 2, oh->refcnt,
 		    oh->digest[0], oh->digest[1], oh->digest[2]);
 		return;
 	}
 	assert(hcb_is_y(p));
 	y = hcb_l_y(p);
-	cli_out(cli, "%*.*sY c %u p %u b %02x i %d\n",
+	VCLI_Out(cli, "%*.*sY c %u p %u b %02x i %d\n",
 	    indent, indent, "",
 	    y->critbit, y->ptr, y->bitmask, indent / 2);
 	indent += 2;
@@ -330,9 +330,9 @@ hcb_dump(struct cli *cli, const char * const *av, void *priv)
 
 	(void)priv;
 	(void)av;
-	cli_out(cli, "HCB dump:\n");
+	VCLI_Out(cli, "HCB dump:\n");
 	dumptree(cli, hcb_root.origo, 0);
-	cli_out(cli, "Coollist:\n");
+	VCLI_Out(cli, "Coollist:\n");
 }
 
 static struct cli_proto hcb_cmds[] = {

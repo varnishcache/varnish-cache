@@ -139,7 +139,7 @@ ccf_debug_vmod(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 	ASSERT_CLI();
 	VTAILQ_FOREACH(v, &vmods, list)
-		cli_out(cli, "%5d %s (%s)\n", v->ref, v->nm, v->path);
+		VCLI_Out(cli, "%5d %s (%s)\n", v->ref, v->nm, v->path);
 }
 
 static struct cli_proto vcl_cmds[] = {

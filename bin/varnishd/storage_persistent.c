@@ -580,22 +580,22 @@ debug_report_silo(struct cli *cli, const struct smp_sc *sc, int objs)
 	struct smp_seg *sg;
 	struct objcore *oc;
 
-	cli_out(cli, "Silo: %s (%s)\n",
+	VCLI_Out(cli, "Silo: %s (%s)\n",
 	    sc->stevedore->ident, sc->filename);
 	VTAILQ_FOREACH(sg, &sc->segments, list) {
-		cli_out(cli, "  Seg: [0x%jx ... +0x%jx]\n",
+		VCLI_Out(cli, "  Seg: [0x%jx ... +0x%jx]\n",
 		   (uintmax_t)sg->p.offset, (uintmax_t)sg->p.length);
 		if (sg == sc->cur_seg)
-			cli_out(cli,
+			VCLI_Out(cli,
 			   "    Alloc: [0x%jx ... 0x%jx] = 0x%jx free\n",
 			   (uintmax_t)(sc->next_bot),
 			   (uintmax_t)(sc->next_top),
 			   (uintmax_t)(sc->next_top - sc->next_bot));
-		cli_out(cli, "    %u nobj, %u alloc, %u lobjlist, %u fixed\n",
+		VCLI_Out(cli, "    %u nobj, %u alloc, %u lobjlist, %u fixed\n",
 		    sg->nobj, sg->nalloc, sg->p.lobjlist, sg->nfixed);
 		if (objs) {
 			VTAILQ_FOREACH(oc, &sg->lru->lru_head, lru_list)
-				cli_out(cli, "      OC %p\n", oc);
+				VCLI_Out(cli, "      OC %p\n", oc);
 		}
 	}
 }
@@ -616,8 +616,8 @@ debug_persistent(struct cli *cli, const char * const * av, void *priv)
 		if (!strcmp(av[2], sc->stevedore->ident))
 			break;
 	if (sc == NULL) {
-		cli_out(cli, "Silo <%s> not found\n", av[2]);
-		cli_result(cli, CLIS_PARAM);
+		VCLI_Out(cli, "Silo <%s> not found\n", av[2]);
+		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
 	if (av[3] == NULL) {
@@ -631,8 +631,8 @@ debug_persistent(struct cli *cli, const char * const * av, void *priv)
 	} else if (!strcmp(av[3], "dump")) {
 		debug_report_silo(cli, sc, 1);
 	} else {
-		cli_out(cli, "Unknown operation\n");
-		cli_result(cli, CLIS_PARAM);
+		VCLI_Out(cli, "Unknown operation\n");
+		VCLI_SetResult(cli, CLIS_PARAM);
 	}
 	Lck_Unlock(&sc->mtx);
 }

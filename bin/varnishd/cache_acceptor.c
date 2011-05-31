@@ -428,7 +428,7 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 		if (ls->sock < 0)
 			continue;
 		VTCP_myname(ls->sock, h, sizeof h, p, sizeof p);
-		cli_out(cli, "%s %s\n", h, p);
+		VCLI_Out(cli, "%s %s\n", h, p);
 	}
 }
 
@@ -474,15 +474,15 @@ VCA_tweak_waiter(struct cli *cli, const char *arg)
 
 	if (arg == NULL) {
 		if (vca_act == NULL)
-			cli_out(cli, "default");
+			VCLI_Out(cli, "default");
 		else
-			cli_out(cli, "%s", vca_act->name);
+			VCLI_Out(cli, "%s", vca_act->name);
 
-		cli_out(cli, " (");
+		VCLI_Out(cli, " (");
 		for (i = 0; vca_waiters[i] != NULL; i++)
-			cli_out(cli, "%s%s", i == 0 ? "" : ", ",
+			VCLI_Out(cli, "%s%s", i == 0 ? "" : ", ",
 			    vca_waiters[i]->name);
-		cli_out(cli, ")");
+		VCLI_Out(cli, ")");
 		return;
 	}
 	if (!strcmp(arg, "default")) {
@@ -495,6 +495,6 @@ VCA_tweak_waiter(struct cli *cli, const char *arg)
 			return;
 		}
 	}
-	cli_out(cli, "Unknown waiter");
-	cli_result(cli, CLIS_PARAM);
+	VCLI_Out(cli, "Unknown waiter");
+	VCLI_SetResult(cli, CLIS_PARAM);
 }

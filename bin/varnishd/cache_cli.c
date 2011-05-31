@@ -107,7 +107,7 @@ CLI_Run(void)
 
 	add_check = 1;
 
-	AN(VCLS_AddFd(cls, heritage.cli_in, heritage.cli_out, NULL, NULL));
+	AN(VCLS_AddFd(cls, heritage.cli_in, heritage.VCLI_Out, NULL, NULL));
 
 	do {
 		i = VCLS_Poll(cls, -1);
@@ -124,7 +124,7 @@ cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	(void)priv;
 
-#define SZOF(foo)       cli_out(cli, \
+#define SZOF(foo)       VCLI_Out(cli, \
     "sizeof(%s) = %zd = 0x%zx\n", #foo, sizeof(foo), sizeof(foo));
 	SZOF(struct ws);
 	SZOF(struct http);

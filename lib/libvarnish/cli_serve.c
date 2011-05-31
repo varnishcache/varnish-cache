@@ -88,8 +88,8 @@ VCLS_func_close(struct cli *cli, const char *const *av, void *priv)
 
 	(void)av;
 	(void)priv;
-	cli_out(cli, "Closing CLI connection");
-	cli_result(cli, CLIS_CLOSE);
+	VCLI_Out(cli, "Closing CLI connection");
+	VCLI_SetResult(cli, CLIS_CLOSE);
 }
 
 /*--------------------------------------------------------------------*/
@@ -102,7 +102,7 @@ VCLS_func_ping(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 	(void)av;
 	t = time(NULL);
-	cli_out(cli, "PONG %ld 1.0", t);
+	VCLI_Out(cli, "PONG %ld 1.0", t);
 }
 
 /*--------------------------------------------------------------------*/
@@ -133,7 +133,7 @@ VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 				continue;
 			for (cp = cfn->clp; cp->request != NULL; cp++) {
 				if (!strcmp(cp->request, av[2])) {
-					cli_out(cli, "%s\n%s\n",
+					VCLI_Out(cli, "%s\n%s\n",
 					    cp->syntax, cp->help);
 					return;
 				}
@@ -145,8 +145,8 @@ VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 				}
 			}
 		}
-		cli_out(cli, "Unknown request.\nType 'help' for more info.\n");
-		cli_result(cli, CLIS_UNKNOWN);
+		VCLI_Out(cli, "Unknown request.\nType 'help' for more info.\n");
+		VCLI_SetResult(cli, CLIS_UNKNOWN);
 		return;
 	}
 	VTAILQ_FOREACH(cfn, &cs->funcs, list) {
@@ -180,7 +180,7 @@ VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 			if (h && !all)
 				continue;
 			if (cp->syntax != NULL)
-				cli_out(cli, "%s\n", cp->syntax);
+				VCLI_Out(cli, "%s\n", cp->syntax);
 		}
 	}
 }
@@ -206,20 +206,20 @@ cls_dispatch(struct cli *cli, struct cli_proto *clp, char * const * av,
 		return (0);
 
 	if (cp->func == NULL) {
-		cli_out(cli, "Unimplemented\n");
-		cli_result(cli, CLIS_UNIMPL);
+		VCLI_Out(cli, "Unimplemented\n");
+		VCLI_SetResult(cli, CLIS_UNIMPL);
 		return(1);
 	}
 
 	if (ac - 1 < cp->minarg) {
-		cli_out(cli, "Too few parameters\n");
-		cli_result(cli, CLIS_TOOFEW);
+		VCLI_Out(cli, "Too few parameters\n");
+		VCLI_SetResult(cli, CLIS_TOOFEW);
 		return(1);
 	}
 
 	if (ac - 1> cp->maxarg) {
-		cli_out(cli, "Too many parameters\n");
-		cli_result(cli, CLIS_TOOMANY);
+		VCLI_Out(cli, "Too many parameters\n");
+		VCLI_SetResult(cli, CLIS_TOOMANY);
 		return(1);
 	}
 
@@ -254,21 +254,21 @@ cls_vlu2(void *priv, char * const *av)
 
 	cli->result = CLIS_UNKNOWN;
 	VSB_clear(cli->sb);
-	cli_out(cli, "Unknown request.\nType 'help' for more info.\n");
+	VCLI_Out(cli, "Unknown request.\nType 'help' for more info.\n");
 
 	if (cs->before != NULL)
 		cs->before(cli);
 
 	do {
 		if (av[0] != NULL) {
-			cli_out(cli, "Syntax Error: %s\n", av[0]);
-			cli_result(cli, CLIS_SYNTAX);
+			VCLI_Out(cli, "Syntax Error: %s\n", av[0]);
+			VCLI_SetResult(cli, CLIS_SYNTAX);
 			break;
 		}
 
 		if (isupper(av[1][0])) {
-			cli_out(cli, "all commands are in lower-case.\n");
-			cli_result(cli, CLIS_UNKNOWN);
+			VCLI_Out(cli, "all commands are in lower-case.\n");
+			VCLI_SetResult(cli, CLIS_UNKNOWN);
 			break;
 		}
 

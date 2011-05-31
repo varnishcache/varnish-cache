@@ -61,7 +61,7 @@ pid_t		child_pid = -1;
 static struct vbitmap	*fd_map;
 
 static int		child_cli_in = -1;
-static int		child_cli_out = -1;
+static int		child_VCLI_Out = -1;
 static int		child_output = -1;
 
 static enum {
@@ -282,8 +282,8 @@ start_child(struct cli *cli)
 	if (open_sockets() != 0) {
 		child_state = CH_STOPPED;
 		if (cli != NULL) {
-			cli_result(cli, CLIS_CANT);
-			cli_out(cli, "Could not open sockets");
+			VCLI_SetResult(cli, CLIS_CANT);
+			VCLI_Out(cli, "Could not open sockets");
 			return;
 		}
 		REPORT0(LOG_ERR,
@@ -297,12 +297,12 @@ start_child(struct cli *cli)
 	AZ(pipe(cp));
 	heritage.cli_in = cp[0];
 	mgt_child_inherit(heritage.cli_in, "cli_in");
-	child_cli_out = cp[1];
+	child_VCLI_Out = cp[1];
 
 	/* Open pipe for child->mgr CLI */
 	AZ(pipe(cp));
-	heritage.cli_out = cp[1];
-	mgt_child_inherit(heritage.cli_out, "cli_out");
+	heritage.VCLI_Out = cp[1];
+	mgt_child_inherit(heritage.VCLI_Out, "VCLI_Out");
 	child_cli_in = cp[0];
 
 	/*
@@ -354,8 +354,8 @@ start_child(struct cli *cli)
 	mgt_child_inherit(heritage.cli_in, NULL);
 	closex(&heritage.cli_in);
 
-	mgt_child_inherit(heritage.cli_out, NULL);
-	closex(&heritage.cli_out);
+	mgt_child_inherit(heritage.VCLI_Out, NULL);
+	closex(&heritage.VCLI_Out);
 
 	close_sockets();
 
@@ -382,7 +382,7 @@ start_child(struct cli *cli)
 		ev_poker = e;
 	}
 
-	mgt_cli_start_child(child_cli_in, child_cli_out);
+	mgt_cli_start_child(child_cli_in, child_VCLI_Out);
 	child_pid = pid;
 	if (mgt_push_vcls_and_start(&u, &p)) {
 		REPORT(LOG_ERR, "Pushing vcls failed: %s", p);
@@ -414,7 +414,7 @@ mgt_stop_child(void)
 	mgt_cli_stop_child();
 
 	/* We tell the child to die gracefully by closing the CLI */
-	closex(&child_cli_out);
+	closex(&child_VCLI_Out);
 	closex(&child_cli_in);
 }
 
@@ -505,7 +505,7 @@ mgt_sigchld(const struct vev *e, int what)
 	if (child_state == CH_RUNNING) {
 		child_state = CH_DIED;
 		mgt_cli_stop_child();
-		closex(&child_cli_out);
+		closex(&child_VCLI_Out);
 		closex(&child_cli_in);
 	}
 
@@ -619,12 +619,12 @@ mcf_server_startstop(struct cli *cli, const char * const *av, void *priv)
 		if (mgt_has_vcl()) {
 			start_child(cli);
 		} else {
-			cli_result(cli, CLIS_CANT);
-			cli_out(cli, "No VCL available");
+			VCLI_SetResult(cli, CLIS_CANT);
+			VCLI_Out(cli, "No VCL available");
 		}
 	} else {
-		cli_result(cli, CLIS_CANT);
-		cli_out(cli, "Child in state %s", ch_state[child_state]);
+		VCLI_SetResult(cli, CLIS_CANT);
+		VCLI_Out(cli, "Child in state %s", ch_state[child_state]);
 	}
 }
 
@@ -635,7 +635,7 @@ mcf_server_status(struct cli *cli, const char * const *av, void *priv)
 {
 	(void)av;
 	(void)priv;
-	cli_out(cli, "Child in state %s", ch_state[child_state]);
+	VCLI_Out(cli, "Child in state %s", ch_state[child_state]);
 }
 
 void
@@ -645,12 +645,12 @@ mcf_panic_show(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 
 	if (!child_panic) {
-	  cli_result(cli, CLIS_CANT);
-	  cli_out(cli, "Child has not panicked or panic has been cleared");
+	  VCLI_SetResult(cli, CLIS_CANT);
+	  VCLI_Out(cli, "Child has not panicked or panic has been cleared");
 	  return;
 	}
 
-	cli_out(cli, "%s\n", VSB_data(child_panic));
+	VCLI_Out(cli, "%s\n", VSB_data(child_panic));
 }
 
 void
@@ -660,8 +660,8 @@ mcf_panic_clear(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 
 	if (!child_panic) {
-	  cli_result(cli, CLIS_CANT);
-	  cli_out(cli, "No panic to clear");
+	  VCLI_SetResult(cli, CLIS_CANT);
+	  VCLI_Out(cli, "No panic to clear");
 	  return;
 	}
 
