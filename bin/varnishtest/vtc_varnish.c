@@ -251,8 +251,8 @@ varnish_launch(struct varnish *v)
 	vtc_log(v->vl, 2, "Launch");
 	vsb = VSB_new_auto();
 	AN(vsb);
-	VSB_printf(vsb, "cd ${topbuild}/bin/varnishd &&");
-	VSB_printf(vsb, " ./varnishd -d -d -n %s", v->workdir);
+	VSB_printf(vsb, "cd ${pwd} &&");
+	VSB_printf(vsb, " ${varnishd} -d -d -n %s", v->workdir);
 	VSB_printf(vsb, " -l 10m,1m,-");
 	VSB_printf(vsb, " -p auto_restart=off");
 	VSB_printf(vsb, " -p syslog_cli_traffic=off");

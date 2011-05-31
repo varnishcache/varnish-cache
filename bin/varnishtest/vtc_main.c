@@ -97,18 +97,13 @@ static int
 parse_D_opt(char *arg)
 {
 	char *p, *q;
-	struct extmacro *m;
 
 	p = arg;
 	q = strchr(p, '=');
 	if (!q)
 		return (0);
 	*q++ = '\0';
-	m = calloc(sizeof *m, 1);
-	AN(m);
-	REPLACE(m->name, p);
-	REPLACE(m->val, q);
-	VTAILQ_INSERT_TAIL(&extmacro_list, m, list);
+	extmacro_def(p, "%s", q);
 
 	return (1);
 }
@@ -153,6 +148,7 @@ usage(void)
 	fprintf(stderr, "usage: varnishtest [options] file ...\n");
 #define FMT "    %-28s # %s\n"
 	fprintf(stderr, FMT, "-D name=val", "Define macro for use in scripts");
+	fprintf(stderr, FMT, "-i", "Find varnishd in build tree");
 	fprintf(stderr, FMT, "-j jobs", "Run this many tests in parallel");
 	fprintf(stderr, FMT, "-k", "Continue on test failure");
 	fprintf(stderr, FMT, "-l", "Leave /tmp/vtc.* if test fails");
@@ -161,6 +157,9 @@ usage(void)
 	fprintf(stderr, FMT, "-q", "Quiet mode: report only failues");
 	fprintf(stderr, FMT, "-t duration", "Time tests out after this long");
 	fprintf(stderr, FMT, "-v", "Verbose mode: always report test log");
+	fprintf(stderr, "\n");
+	fprintf(stderr, "    Overridable macro definitions:\n");
+	fprintf(stderr, FMT, "varnishd", "Path to varnishd to use [varnishd]");
 	exit(1);
 }
 
@@ -331,9 +330,11 @@ main(int argc, char * const *argv)
 	struct vtc_tst *tp;
 	char *p;
 
+	extmacro_def("varnishd", "varnishd"); /* Default to path lookup */
+
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
-	while ((ch = getopt(argc, argv, "D:j:klLn:qt:v")) != -1) {
+	while ((ch = getopt(argc, argv, "D:ij:klLn:qt:v")) != -1) {
 		switch (ch) {
 		case 'D':
 			if (!parse_D_opt(optarg)) {
@@ -341,6 +342,10 @@ main(int argc, char * const *argv)
 					optarg);
 				exit(2);
 			}
+			break;
+		case 'i':
+			/* Look for varnishd relative to varnishtest */
+			extmacro_def("varnishd", "../varnishd/varnishd");
 			break;
 		case 'j':
 			npar = strtoul(optarg, NULL, 0);

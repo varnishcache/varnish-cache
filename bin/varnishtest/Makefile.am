@@ -2,7 +2,7 @@
 
 TESTS_PARALLELISM = 3
 check: varnishtest
-	./varnishtest -j$(TESTS_PARALLELISM) $(srcdir)/tests/*.vtc
+	./varnishtest -i -j$(TESTS_PARALLELISM) $(srcdir)/tests/*.vtc
 	@echo "==================="
 	@echo "All tests succeeded"
 	@echo "==================="
