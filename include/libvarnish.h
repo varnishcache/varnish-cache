@@ -41,7 +41,7 @@
 
 struct vsb;
 
-#include "argv.h"
+#include "vav.h"
 
 /* from libvarnish/num.c */
 const char *str2bytes(const char *p, uintmax_t *r, uintmax_t rel);

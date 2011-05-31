@@ -10,7 +10,6 @@ pkginclude_HEADERS = \
 	varnishapi.h
 
 nobase_noinst_HEADERS = \
-	argv.h \
 	ban_vars.h \
 	binary_heap.h \
 	cli.h \
@@ -28,6 +27,7 @@ nobase_noinst_HEADERS = \
 	miniobj.h \
 	persistent.h \
 	vas.h \
+	vav.h \
 	vsha256.h \
 	vqueue.h \
 	vpf.h \

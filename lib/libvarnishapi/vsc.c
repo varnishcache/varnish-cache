@@ -35,9 +35,9 @@
 #include <stdlib.h>
 
 #include "vas.h"
+#include "vav.h"
 #include "vsm.h"
 #include "vsc.h"
-#include "argv.h"
 #include "vqueue.h"
 #include "miniobj.h"
 #include "varnishapi.h"
