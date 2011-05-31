@@ -323,11 +323,11 @@ cls_vlu(void *priv, const char *p)
 			return (0);
 		REPLACE(cli->cmd, p);
 
-		av = ParseArgv(p, NULL, 0);
+		av = VAV_Parse(p, NULL, 0);
 		AN(av);
 		if (av[0] != NULL) {
 			i = cls_vlu2(priv, av);
-			FreeArgv(av);
+			VAV_Free(av);
 			free(cli->cmd);
 			cli->cmd = NULL;
 			return (i);
@@ -336,7 +336,7 @@ cls_vlu(void *priv, const char *p)
 			continue;
 		if (i < 3 || cli->auth == 0 || strcmp(av[i - 2], "<<")) {
 			i = cls_vlu2(priv, av);
-			FreeArgv(av);
+			VAV_Free(av);
 			free(cli->cmd);
 			cli->cmd = NULL;
 			return (i);
@@ -363,7 +363,7 @@ cls_vlu(void *priv, const char *p)
 		cfd->argv[cfd->last_idx] = VSB_data(cfd->last_arg);
 		i = cls_vlu2(priv, cfd->argv);
 		cfd->argv[cfd->last_idx] = NULL;
-		FreeArgv(cfd->argv);
+		VAV_Free(cfd->argv);
 		cfd->argv = NULL;
 		free(cli->cmd);
 		cli->cmd = NULL;

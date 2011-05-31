@@ -244,7 +244,7 @@ parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 					if (*p == '"')
 						break;
 					if (*p == '\\') {
-						p += BackSlash(p, q) - 1;
+						p += VAV_BackSlash(p, q) - 1;
 						q++;
 					} else {
 						if (*p == '\n')

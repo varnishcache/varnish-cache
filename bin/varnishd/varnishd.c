@@ -185,7 +185,7 @@ tackle_warg(const char *argv)
 	char **av;
 	unsigned int u;
 
-	av = ParseArgv(argv, NULL, ARGV_COMMA);
+	av = VAV_Parse(argv, NULL, ARGV_COMMA);
 	AN(av);
 
 	if (av[0] != NULL)
@@ -210,7 +210,7 @@ tackle_warg(const char *argv)
 			params->wthread_timeout = u;
 		}
 	}
-	FreeArgv(av);
+	VAV_Free(av);
 }
 
 /*--------------------------------------------------------------------*/

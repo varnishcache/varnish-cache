@@ -354,7 +354,7 @@ tweak_listen_address(struct cli *cli, const struct parspec *par,
 		return;
 	}
 
-	av = ParseArgv(arg, NULL, ARGV_COMMA);
+	av = VAV_Parse(arg, NULL, ARGV_COMMA);
 	if (av == NULL) {
 		cli_out(cli, "Parse error: out of memory");
 		cli_result(cli, CLIS_PARAM);
@@ -363,13 +363,13 @@ tweak_listen_address(struct cli *cli, const struct parspec *par,
 	if (av[0] != NULL) {
 		cli_out(cli, "Parse error: %s", av[0]);
 		cli_result(cli, CLIS_PARAM);
-		FreeArgv(av);
+		VAV_Free(av);
 		return;
 	}
 	if (av[1] == NULL) {
 		cli_out(cli, "Empty listen address");
 		cli_result(cli, CLIS_PARAM);
-		FreeArgv(av);
+		VAV_Free(av);
 		return;
 	}
 	VTAILQ_INIT(&lsh);
@@ -395,7 +395,7 @@ tweak_listen_address(struct cli *cli, const struct parspec *par,
 		}
 		free(ta);
 	}
-	FreeArgv(av);
+	VAV_Free(av);
 	if (cli != NULL && cli->result != CLIS_OK) {
 		clean_listen_sock_head(&lsh);
 		return;

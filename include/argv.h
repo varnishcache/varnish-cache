@@ -28,10 +28,10 @@
  *
  */
 
-void FreeArgv(char **argv);
-char **ParseArgv(const char *s, int *argc, int flag);
-char *BackSlashDecode(const char *s, const char *e);
-int BackSlash(const char *s, char *res);
+void VAV_Free(char **argv);
+char **VAV_Parse(const char *s, int *argc, int flag);
+char *VAV_BackSlashDecode(const char *s, const char *e);
+int VAV_BackSlash(const char *s, char *res);
 #define ARGV_COMMENT	(1 << 0)
 #define ARGV_COMMA	(1 << 1)
 #define ARGV_NOESC	(1 << 2)

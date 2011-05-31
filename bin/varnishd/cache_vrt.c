@@ -467,10 +467,10 @@ VRT_ban_string(struct sess *sp, const char *str)
 	int i;
 
 	(void)sp;
-	av = ParseArgv(str, NULL, ARGV_NOESC);
+	av = VAV_Parse(str, NULL, ARGV_NOESC);
 	if (av[0] != NULL) {
 		/* XXX: report error how ? */
-		FreeArgv(av);
+		VAV_Free(av);
 		return;
 	}
 	b = BAN_New();
@@ -500,7 +500,7 @@ VRT_ban_string(struct sess *sp, const char *str)
 		BAN_Free(b);
 	else
 		BAN_Insert(b);
-	FreeArgv(av);
+	VAV_Free(av);
 }
 
 /*--------------------------------------------------------------------

@@ -206,7 +206,7 @@ mgt_SHM_Init(const char *l_arg)
 	if (l_arg == NULL)
 		l_arg = "";
 
-	av = ParseArgv(l_arg, NULL, ARGV_COMMA);
+	av = VAV_Parse(l_arg, NULL, ARGV_COMMA);
 	AN(av);
 	if (av[0] != NULL)
 		ARGV_ERR("\t-l ...: %s", av[0]);
@@ -253,7 +253,7 @@ mgt_SHM_Init(const char *l_arg)
 	if (*ap != NULL)
 		ARGV_ERR("\t-l ...:  Too many sub-args\n");
 
-	FreeArgv(av);
+	VAV_Free(av);
 
 	size = s1 + s2;
 	ps = getpagesize();

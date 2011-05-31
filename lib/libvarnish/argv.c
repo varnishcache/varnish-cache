@@ -26,13 +26,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * const char **ParseArgv(const char *s, int comment)
+ * const char **VAV_Parse(const char *s, int comment)
  *	Parse a command like line into an argv[]
  *	Index zero contains NULL or an error message
  *	"double quotes" and backslash substitution is handled.
  *
- * void FreeArgv(const char **argv)
- *	Free the result of ParseArgv()
+ * void VAV_Free(const char **argv)
+ *	Free the result of VAV_Parse()
  *
  */
 
@@ -46,7 +46,7 @@
 #include "libvarnish.h"
 
 int
-BackSlash(const char *s, char *res)
+VAV_BackSlash(const char *s, char *res)
 {
 	int r;
 	char c;
@@ -102,7 +102,7 @@ BackSlash(const char *s, char *res)
 }
 
 char *
-BackSlashDecode(const char *s, const char *e)
+VAV_BackSlashDecode(const char *s, const char *e)
 {
 	const char *q;
 	char *p, *r;
@@ -119,7 +119,7 @@ BackSlashDecode(const char *s, const char *e)
 			*r++ = *q++;
 			continue;
 		}
-		i = BackSlash(q, r);
+		i = VAV_BackSlash(q, r);
 		q += i;
 		r++;
 	}
@@ -131,7 +131,7 @@ static char err_invalid_backslash[] = "Invalid backslash sequence";
 static char err_missing_quote[] = "Missing '\"'";
 
 char **
-ParseArgv(const char *s, int *argc, int flag)
+VAV_Parse(const char *s, int *argc, int flag)
 {
 	char **argv;
 	const char *p;
@@ -163,7 +163,7 @@ ParseArgv(const char *s, int *argc, int flag)
 		}
 		while (1) {
 			if (*s == '\\' && !(flag & ARGV_NOESC)) {
-				i = BackSlash(s, NULL);
+				i = VAV_BackSlash(s, NULL);
 				if (i == 0) {
 					argv[0] = err_invalid_backslash;
 					return (argv);
@@ -198,7 +198,7 @@ ParseArgv(const char *s, int *argc, int flag)
 			argv[nargv][s - p] = '\0';
 			nargv++;
 		} else {
-			argv[nargv++] = BackSlashDecode(p, s);
+			argv[nargv++] = VAV_BackSlashDecode(p, s);
 		}
 		if (*s != '\0')
 			s++;
@@ -210,7 +210,7 @@ ParseArgv(const char *s, int *argc, int flag)
 }
 
 void
-FreeArgv(char **argv)
+VAV_Free(char **argv)
 {
 	int i;
 
@@ -224,7 +224,7 @@ FreeArgv(char **argv)
 #include <printf.h>
 
 static void
-PrintArgv(char **argv)
+VAV_Print(char **argv)
 {
 	int i;
 
@@ -241,8 +241,8 @@ Test(const char *str)
 	char **av;
 
 	printf("Test: <%V>\n", str);
-	av = ParseArgv(str, 0);
-	PrintArgv(av);
+	av = VAV_Parse(str, 0);
+	VAV_Print(av);
 }
 
 int

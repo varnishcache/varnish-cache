@@ -738,7 +738,7 @@ HSH_config(const char *h_arg)
 	const struct hash_slinger *hp;
 
 	ASSERT_MGT();
-	av = ParseArgv(h_arg, NULL, ARGV_COMMA);
+	av = VAV_Parse(h_arg, NULL, ARGV_COMMA);
 	AN(av);
 
 	if (av[0] != NULL)

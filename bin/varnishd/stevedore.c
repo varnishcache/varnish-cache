@@ -438,9 +438,9 @@ STV_Config(const char *spec)
 	p = strchr(spec, '=');
 	q = strchr(spec, ',');
 	if (p != NULL && (q == NULL || q > p)) {
-		av = ParseArgv(p + 1, NULL, ARGV_COMMA);
+		av = VAV_Parse(p + 1, NULL, ARGV_COMMA);
 	} else {
-		av = ParseArgv(spec, NULL, ARGV_COMMA);
+		av = VAV_Parse(spec, NULL, ARGV_COMMA);
 		p = NULL;
 	}
 	AN(av);
