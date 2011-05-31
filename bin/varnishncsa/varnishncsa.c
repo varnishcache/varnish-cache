@@ -722,7 +722,7 @@ main(int argc, char *argv[])
 	int a_flag = 0, D_flag = 0, format_flag = 0;
 	const char *P_arg = NULL;
 	const char *w_arg = NULL;
-	struct pidfh *pfh = NULL;
+	struct vpf_fh *pfh = NULL;
 	FILE *of;
 	format = "%h %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-agent}i\"";
 
@@ -791,7 +791,7 @@ main(int argc, char *argv[])
 	if (VSL_Open(vd, 1))
 		exit(1);
 
-	if (P_arg && (pfh = vpf_open(P_arg, 0644, NULL)) == NULL) {
+	if (P_arg && (pfh = VPF_Open(P_arg, 0644, NULL)) == NULL) {
 		perror(P_arg);
 		exit(1);
 	}
@@ -799,12 +799,12 @@ main(int argc, char *argv[])
 	if (D_flag && varnish_daemon(0, 0) == -1) {
 		perror("daemon()");
 		if (pfh != NULL)
-			vpf_remove(pfh);
+			VPF_Remove(pfh);
 		exit(1);
 	}
 
 	if (pfh != NULL)
-		vpf_write(pfh);
+		VPF_Write(pfh);
 
 	if (w_arg) {
 		of = open_log(w_arg, a_flag);

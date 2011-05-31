@@ -277,7 +277,7 @@ main(int argc, char * const *argv)
 	int a_flag = 0, D_flag = 0, O_flag = 0, u_flag = 0, m_flag = 0;
 	const char *P_arg = NULL;
 	const char *w_arg = NULL;
-	struct pidfh *pfh = NULL;
+	struct vpf_fh *pfh = NULL;
 	struct VSM_data *vd;
 
 	vd = VSM_New();
@@ -334,7 +334,7 @@ main(int argc, char * const *argv)
 	if (VSL_Open(vd, 1))
 		exit(1);
 
-	if (P_arg && (pfh = vpf_open(P_arg, 0644, NULL)) == NULL) {
+	if (P_arg && (pfh = VPF_Open(P_arg, 0644, NULL)) == NULL) {
 		perror(P_arg);
 		exit(1);
 	}
@@ -342,12 +342,12 @@ main(int argc, char * const *argv)
 	if (D_flag && varnish_daemon(0, 0) == -1) {
 		perror("daemon()");
 		if (pfh != NULL)
-			vpf_remove(pfh);
+			VPF_Remove(pfh);
 		exit(1);
 	}
 
 	if (pfh != NULL)
-		vpf_write(pfh);
+		VPF_Write(pfh);
 
 	if (w_arg != NULL)
 		do_write(vd, w_arg, a_flag);
@@ -366,6 +366,6 @@ main(int argc, char * const *argv)
 	}
 
 	if (pfh != NULL)
-		vpf_remove(pfh);
+		VPF_Remove(pfh);
 	exit(0);
 }

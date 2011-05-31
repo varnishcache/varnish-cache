@@ -43,17 +43,17 @@
 #include "flopen.h"
 #include "vpf.h"
 
-struct pidfh {
+struct vpf_fh {
 	int	pf_fd;
 	char	pf_path[MAXPATHLEN + 1];
 	dev_t	pf_dev;
 	ino_t	pf_ino;
 };
 
-static int _vpf_remove(struct pidfh *pfh, int freeit);
+static int _VPF_Remove(struct vpf_fh *pfh, int freeit);
 
 static int
-vpf_verify(const struct pidfh *pfh)
+vpf_verify(const struct vpf_fh *pfh)
 {
 	struct stat sb;
 
@@ -93,10 +93,10 @@ vpf_read(const char *path, pid_t *pidptr)
 	return (0);
 }
 
-struct pidfh *
-vpf_open(const char *path, mode_t mode, pid_t *pidptr)
+struct vpf_fh *
+VPF_Open(const char *path, mode_t mode, pid_t *pidptr)
 {
-	struct pidfh *pfh;
+	struct vpf_fh *pfh;
 	struct stat sb;
 	int error, fd, len;
 
@@ -124,8 +124,8 @@ vpf_open(const char *path, mode_t mode, pid_t *pidptr)
 	/*
 	 * Open the PID file and obtain exclusive lock.
 	 * We truncate PID file here only to remove old PID immediatelly,
-	 * PID file will be truncated again in vpf_write(), so
-	 * vpf_write() can be called multiple times.
+	 * PID file will be truncated again in VPF_Write(), so
+	 * VPF_Write() can be called multiple times.
 	 */
 	fd = flopen(pfh->pf_path,
 	    O_WRONLY | O_CREAT | O_TRUNC | O_NONBLOCK, mode);
@@ -139,7 +139,7 @@ vpf_open(const char *path, mode_t mode, pid_t *pidptr)
 		return (NULL);
 	}
 	/*
-	 * Remember file information, so in vpf_write() we are sure we write
+	 * Remember file information, so in VPF_Write() we are sure we write
 	 * to the proper descriptor.
 	 */
 	if (fstat(fd, &sb) == -1) {
@@ -159,7 +159,7 @@ vpf_open(const char *path, mode_t mode, pid_t *pidptr)
 }
 
 int
-vpf_write(struct pidfh *pfh)
+VPF_Write(struct vpf_fh *pfh)
 {
 	char pidstr[16];
 	int error, fd;
@@ -178,11 +178,11 @@ vpf_write(struct pidfh *pfh)
 	fd = pfh->pf_fd;
 
 	/*
-	 * Truncate PID file, so multiple calls of vpf_write() are allowed.
+	 * Truncate PID file, so multiple calls of VPF_Write() are allowed.
 	 */
 	if (ftruncate(fd, 0) == -1) {
 		error = errno;
-		(void)_vpf_remove(pfh, 0);
+		(void)_VPF_Remove(pfh, 0);
 		errno = error;
 		return (-1);
 	}
@@ -191,7 +191,7 @@ vpf_write(struct pidfh *pfh)
 	assert(error < sizeof pidstr);
 	if (pwrite(fd, pidstr, strlen(pidstr), 0) != (ssize_t)strlen(pidstr)) {
 		error = errno;
-		(void)_vpf_remove(pfh, 0);
+		(void)_VPF_Remove(pfh, 0);
 		errno = error;
 		return (-1);
 	}
@@ -200,7 +200,7 @@ vpf_write(struct pidfh *pfh)
 }
 
 int
-vpf_close(struct pidfh *pfh)
+VPF_Close(struct vpf_fh *pfh)
 {
 	int error;
 
@@ -221,7 +221,7 @@ vpf_close(struct pidfh *pfh)
 }
 
 static int
-_vpf_remove(struct pidfh *pfh, int freeit)
+_VPF_Remove(struct vpf_fh *pfh, int freeit)
 {
 	int error;
 
@@ -249,8 +249,8 @@ _vpf_remove(struct pidfh *pfh, int freeit)
 }
 
 int
-vpf_remove(struct pidfh *pfh)
+VPF_Remove(struct vpf_fh *pfh)
 {
 
-	return (_vpf_remove(pfh, 1));
+	return (_VPF_Remove(pfh, 1));
 }

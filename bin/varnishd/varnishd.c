@@ -354,7 +354,7 @@ main(int argc, char * const *argv)
 	const char *T_arg = NULL;
 	char *p, *vcl = NULL;
 	struct cli cli[1];
-	struct pidfh *pfh = NULL;
+	struct vpf_fh *pfh = NULL;
 	char *dirname;
 
 	/*
@@ -590,7 +590,7 @@ main(int argc, char * const *argv)
 	}
 
 	/* XXX: should this be relative to the -n arg ? */
-	if (P_arg && (pfh = vpf_open(P_arg, 0644, NULL)) == NULL) {
+	if (P_arg && (pfh = VPF_Open(P_arg, 0644, NULL)) == NULL) {
 		perror(P_arg);
 		exit(1);
 	}
@@ -620,7 +620,7 @@ main(int argc, char * const *argv)
 
 	mgt_SHM_Pid();
 
-	if (pfh != NULL && vpf_write(pfh))
+	if (pfh != NULL && VPF_Write(pfh))
 		fprintf(stderr, "NOTE: Could not write PID file\n");
 
 	if (d_flag)
@@ -647,6 +647,6 @@ main(int argc, char * const *argv)
 	MGT_Run();
 
 	if (pfh != NULL)
-		(void)vpf_remove(pfh);
+		(void)VPF_Remove(pfh);
 	exit(exit_status);
 }
