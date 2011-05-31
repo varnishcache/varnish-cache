@@ -110,7 +110,7 @@ cli_sock(const char *T_arg, const char *S_arg)
 			AZ(close(sock));
 			return (-1);
 		}
-		VCLI_response(fd, answer, buf);
+		VCLI_AuthResponse(fd, answer, buf);
 		AZ(close(fd));
 		free(answer);
 

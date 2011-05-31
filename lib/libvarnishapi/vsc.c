@@ -250,7 +250,7 @@ iter_test(const char *s1, const char *s2, int wc)
 }
 
 static int
-iter_call(const struct vsc *vsc, vsc_iter_f *func, void *priv,
+iter_call(const struct vsc *vsc, VSC_iter_f *func, void *priv,
     const struct VSC_point *const sp)
 {
 	struct vsc_sf *sf;
@@ -283,7 +283,7 @@ iter_call(const struct vsc *vsc, vsc_iter_f *func, void *priv,
 #define VSC_DO(U,l,t)							\
 	static int							\
 	iter_##l(const struct vsc *vsc, struct VSM_chunk *sha,		\
-	    vsc_iter_f *func, void *priv)				\
+	    VSC_iter_f *func, void *priv)				\
 	{								\
 		struct VSC_C_##l *st;					\
 		struct VSC_point sp;					\
@@ -315,7 +315,7 @@ iter_call(const struct vsc *vsc, vsc_iter_f *func, void *priv,
 #undef VSC_DONE
 
 int
-VSC_Iter(struct VSM_data *vd, vsc_iter_f *func, void *priv)
+VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv)
 {
 	struct vsc *vsc;
 	struct VSM_chunk *sha;

@@ -188,9 +188,9 @@ struct VSC_point {
 	const volatile void *ptr;	/* field value			*/
 };
 
-typedef int vsc_iter_f(void *priv, const struct VSC_point *const pt);
+typedef int VSC_iter_f(void *priv, const struct VSC_point *const pt);
 
-int VSC_Iter(struct VSM_data *vd, vsc_iter_f *func, void *priv);
+int VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv);
 	/*
 	 * Iterate over all statistics counters, calling "func" for
 	 * each counter not suppressed by any "-f" arguments.

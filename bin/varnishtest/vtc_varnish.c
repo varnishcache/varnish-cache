@@ -341,7 +341,7 @@ varnish_launch(struct varnish *v)
 
 	assert(sizeof abuf >= CLI_AUTH_RESPONSE_LEN + 6);
 	strcpy(abuf, "auth ");
-	VCLI_response(nfd, r, abuf + 5);
+	VCLI_AuthResponse(nfd, r, abuf + 5);
 	AZ(close(nfd));
 	free(r);
 	strcat(abuf, "\n");

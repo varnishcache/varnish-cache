@@ -49,5 +49,5 @@ int VCLI_ReadResult(int fd, unsigned *status, char **ptr, double tmo);
 
 #define CLI_AUTH_RESPONSE_LEN		65	/* 64 hex + NUL */
 
-void VCLI_response(int S_fd, const char *challenge,
+void VCLI_AuthResponse(int S_fd, const char *challenge,
     char reponse[CLI_AUTH_RESPONSE_LEN]);

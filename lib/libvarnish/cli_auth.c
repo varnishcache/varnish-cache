@@ -39,7 +39,7 @@
 
 
 void
-VCLI_response(int S_fd, const char *challenge,
+VCLI_AuthResponse(int S_fd, const char *challenge,
     char response[CLI_AUTH_RESPONSE_LEN])
 {
 	SHA256_CTX ctx;

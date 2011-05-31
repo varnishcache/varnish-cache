@@ -292,7 +292,7 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 		return;
 	}
 	mgt_got_fd(fd);
-	VCLI_response(fd, cli->challenge, buf);
+	VCLI_AuthResponse(fd, cli->challenge, buf);
 	AZ(close(fd));
 	if (strcasecmp(buf, av[2])) {
 		mgt_cli_challenge(cli);
