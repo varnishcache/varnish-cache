@@ -49,10 +49,9 @@ vcs_version.c: FORCE
 		  echo ' */' ;\
 		  echo '' ;\
 		  echo "#include <libvarnish.h>" ;\
-		  echo "const char* vcs_version(void)" ;\
+		  echo "const char* VCS_Version(void)" ;\
 		  echo "{" ;\
-		  echo "	const char* VCS_Version = \"$$V\";" ;\
-		  echo "	return VCS_Version;" ;\
+		  echo "	return (\"$$V\");" ;\
 		  echo "}" ;\
 		) > vcs_version.c ; \
 		fi \

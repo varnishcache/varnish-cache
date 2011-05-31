@@ -757,7 +757,7 @@ main(int argc, char *argv[])
 			P_arg = optarg;
 			break;
 		case 'V':
-			varnish_version("varnishncsa");
+			VCS_Message("varnishncsa");
 			exit(0);
 		case 'w':
 			w_arg = optarg;

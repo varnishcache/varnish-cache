@@ -36,10 +36,10 @@
 #include "libvarnish.h"
 
 void
-varnish_version(const char *progname)
+VCS_Message(const char *progname)
 {
 	fprintf(stderr, "%s (%s-%s revision %s)\n", progname,
-		PACKAGE_TARNAME, PACKAGE_VERSION, vcs_version());
+		PACKAGE_TARNAME, PACKAGE_VERSION, VCS_Version());
 	fprintf(stderr,
 	    "Copyright (c) 2006-2009 Linpro AS / Verdens Gang AS\n");
 }

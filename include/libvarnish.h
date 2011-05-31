@@ -96,14 +96,14 @@ struct timespec TIM_timespec(double t);
 struct timeval TIM_timeval(double t);
 
 /* from libvarnish/version.c */
-void varnish_version(const char *);
+void VCS_Message(const char *);
 
 /* from libvarnish/vtmpfile.c */
 int vtmpfile(char *);
 char *vreadfile(const char *pfx, const char *fn, ssize_t *sz);
 char *vreadfd(int fd, ssize_t *sz);
 
-const char* vcs_version(void);
+const char* VCS_Version(void);
 
 /* Safe printf into a fixed-size buffer */
 #define bprintf(buf, fmt, ...)						\

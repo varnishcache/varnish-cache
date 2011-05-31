@@ -333,7 +333,7 @@ main(int argc, char **argv)
 			}
 			break;
 		case 'V':
-			varnish_version("varnishtop");
+			VCS_Message("varnishtop");
 			exit(0);
 		case 'm':
 			fprintf(stderr, "-m is not supported\n");

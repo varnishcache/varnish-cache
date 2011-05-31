@@ -334,7 +334,7 @@ main(int argc, char **argv)
 	while ((o = getopt(argc, argv, VSL_ARGS "Vw:")) != -1) {
 		switch (o) {
 		case 'V':
-			varnish_version("varnishhist");
+			VCS_Message("varnishhist");
 			exit(0);
 		case 'w':
 			delay = atoi(optarg);

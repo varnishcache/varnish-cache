@@ -209,7 +209,7 @@ main(int argc, char * const *argv)
 			list_fields(vd);
 			exit(0);
 		case 'V':
-			varnish_version("varnishstat");
+			VCS_Message("varnishstat");
 			exit(0);
 		case 'w':
 			delay = atoi(optarg);

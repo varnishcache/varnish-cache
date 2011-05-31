@@ -495,7 +495,7 @@ main(int argc, char * const *argv)
 			break;
 		case 'V':
 			/* XXX: we should print the ident here */
-			varnish_version("varnishd");
+			VCS_Message("varnishd");
 			exit(0);
 		case 'x':
 #ifdef DIAGNOSTICS

@@ -311,7 +311,7 @@ main(int argc, char * const *argv)
 			u_flag = 1;
 			break;
 		case 'V':
-			varnish_version("varnishlog");
+			VCS_Message("varnishlog");
 			exit(0);
 		case 'w':
 			w_arg = optarg;
