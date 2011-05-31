@@ -83,7 +83,7 @@ cli_result(struct cli *cli, unsigned res)
 }
 
 int
-cli_writeres(int fd, const struct cli *cli)
+VCLI_WriteResult(int fd, const struct cli *cli)
 {
 	int i, l;
 	struct iovec iov[3];
@@ -142,7 +142,7 @@ read_tmo(int fd, char *ptr, unsigned len, double tmo)
 }
 
 int
-cli_readres(int fd, unsigned *status, char **ptr, double tmo)
+VCLI_ReadResult(int fd, unsigned *status, char **ptr, double tmo)
 {
 	char res[CLI_LINE0_LEN];	/* For NUL */
 	int i, j;

@@ -62,7 +62,7 @@
 #include "mgt_cli.h"
 
 static int		cli_i = -1, cli_o = -1;
-static struct cls	*cls;
+static struct VCLS	*cls;
 static const char	*secret_file;
 
 #define	MCF_NOAUTH	0	/* NB: zero disables here-documents */
@@ -171,7 +171,7 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 	VSB_delete(vsb);
-	(void)cli_readres(cli_i, &u, &q, params->cli_timeout);
+	(void)VCLI_ReadResult(cli_i, &u, &q, params->cli_timeout);
 	cli_result(cli, u);
 	cli_out(cli, "%s", q);
 	free(q);
@@ -220,7 +220,7 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...) {
 		return (CLIS_COMMS);
 	}
 
-	(void)cli_readres(cli_i, &u, resp, params->cli_timeout);
+	(void)VCLI_ReadResult(cli_i, &u, resp, params->cli_timeout);
 	if (status != NULL)
 		*status = u;
 	if (u == CLIS_COMMS)
@@ -292,7 +292,7 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 		return;
 	}
 	mgt_got_fd(fd);
-	CLI_response(fd, cli->challenge, buf);
+	VCLI_response(fd, cli->challenge, buf);
 	AZ(close(fd));
 	if (strcasecmp(buf, av[2])) {
 		mgt_cli_challenge(cli);
@@ -400,7 +400,7 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident, mgt_cli_close_f 
 		mcf_banner(cli, NULL, NULL);
 	}
 	AZ(VSB_finish(cli->sb));
-	(void)cli_writeres(fdo, cli);
+	(void)VCLI_WriteResult(fdo, cli);
 
 
 	ev = vev_new();

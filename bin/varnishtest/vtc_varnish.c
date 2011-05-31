@@ -85,7 +85,7 @@ static VTAILQ_HEAD(, varnish)	varnishes =
  * Ask a question over CLI
  */
 
-static enum cli_status_e
+static enum VCLI_status_e
 varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 {
 	int i;
@@ -99,11 +99,11 @@ varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 		i = write(v->cli_fd, "\n", 1);
 		assert(i == 1);
 	}
-	i = cli_readres(v->cli_fd, &retval, &r, 20.0);
+	i = VCLI_ReadResult(v->cli_fd, &retval, &r, 20.0);
 	if (i != 0) {
 		vtc_log(v->vl, 0, "CLI failed (%s) = %d %u %s",
 		    cmd, i, retval, r);
-		return ((enum cli_status_e)retval);
+		return ((enum VCLI_status_e)retval);
 	}
 	assert(i == 0);
 	vtc_log(v->vl, 3, "CLI RX  %u", retval);
@@ -112,7 +112,7 @@ varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 		*repl = r;
 	else
 		free(r);
-	return ((enum cli_status_e)retval);
+	return ((enum VCLI_status_e)retval);
 }
 
 /**********************************************************************
@@ -235,7 +235,7 @@ varnish_launch(struct varnish *v)
 	struct vss_addr **ap;
 	char abuf[128], pbuf[128];
 	struct pollfd fd[2];
-	enum cli_status_e u;
+	enum VCLI_status_e u;
 	char *r;
 
 	v->vd = VSM_New();
@@ -341,7 +341,7 @@ varnish_launch(struct varnish *v)
 
 	assert(sizeof abuf >= CLI_AUTH_RESPONSE_LEN + 6);
 	strcpy(abuf, "auth ");
-	CLI_response(nfd, r, abuf + 5);
+	VCLI_response(nfd, r, abuf + 5);
 	AZ(close(nfd));
 	free(r);
 	strcat(abuf, "\n");
@@ -364,7 +364,7 @@ varnish_launch(struct varnish *v)
 static void
 varnish_start(struct varnish *v)
 {
-	enum cli_status_e u;
+	enum VCLI_status_e u;
 	char *resp, *h, *p, *q;
 
 	if (v->cli_fd < 0)
@@ -478,7 +478,7 @@ varnish_wait(struct varnish *v)
 static void
 varnish_cli(struct varnish *v, const char *cli, unsigned exp)
 {
-	enum cli_status_e u;
+	enum VCLI_status_e u;
 
 	if (v->cli_fd < 0)
 		varnish_launch(v);
@@ -495,10 +495,10 @@ varnish_cli(struct varnish *v, const char *cli, unsigned exp)
  */
 
 static void
-varnish_vcl(struct varnish *v, const char *vcl, enum cli_status_e expect)
+varnish_vcl(struct varnish *v, const char *vcl, enum VCLI_status_e expect)
 {
 	struct vsb *vsb;
-	enum cli_status_e u;
+	enum VCLI_status_e u;
 
 	if (v->cli_fd < 0)
 		varnish_launch(v);
@@ -539,7 +539,7 @@ static void
 varnish_vclbackend(struct varnish *v, const char *vcl)
 {
 	struct vsb *vsb, *vsb2;
-	enum cli_status_e u;
+	enum VCLI_status_e u;
 
 	if (v->cli_fd < 0)
 		varnish_launch(v);

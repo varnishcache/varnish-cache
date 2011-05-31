@@ -96,7 +96,7 @@ cli_sock(const char *T_arg, const char *S_arg)
 		return (-1);
 	}
 
-	(void)cli_readres(sock, &status, &answer, timeout);
+	(void)VCLI_ReadResult(sock, &status, &answer, timeout);
 	if (status == CLIS_AUTH) {
 		if (S_arg == NULL) {
 			fprintf(stderr, "Authentication required\n");
@@ -110,14 +110,14 @@ cli_sock(const char *T_arg, const char *S_arg)
 			AZ(close(sock));
 			return (-1);
 		}
-		CLI_response(fd, answer, buf);
+		VCLI_response(fd, answer, buf);
 		AZ(close(fd));
 		free(answer);
 
 		cli_write(sock, "auth ");
 		cli_write(sock, buf);
 		cli_write(sock, "\n");
-		(void)cli_readres(sock, &status, &answer, timeout);
+		(void)VCLI_ReadResult(sock, &status, &answer, timeout);
 	}
 	if (status != CLIS_OK) {
 		fprintf(stderr, "Rejected %u\n%s\n", status, answer);
@@ -127,7 +127,7 @@ cli_sock(const char *T_arg, const char *S_arg)
 	free(answer);
 
 	cli_write(sock, "ping\n");
-	(void)cli_readres(sock, &status, &answer, timeout);
+	(void)VCLI_ReadResult(sock, &status, &answer, timeout);
 	if (status != CLIS_OK || strstr(answer, "PONG") == NULL) {
 		fprintf(stderr, "No pong received from server\n");
 		AZ(close(sock));
@@ -154,7 +154,7 @@ do_args(int sock, int argc, char * const *argv)
 	}
 	cli_write(sock, "\n");
 
-	(void)cli_readres(sock, &status, &answer, 2000);
+	(void)VCLI_ReadResult(sock, &status, &answer, 2000);
 
 	/* XXX: AZ() ? */
 	(void)close(sock);
@@ -221,7 +221,7 @@ pass(int sock)
 		if (fds[0].revents & POLLIN) {
 			/* Get rid of the prompt, kinda hackish */
 			u = write(1, "\r           \r", 13);
-			u = cli_readres(fds[0].fd, &status, &answer, timeout);
+			u = VCLI_ReadResult(fds[0].fd, &status, &answer, timeout);
 			if (u) {
 				if (status == CLIS_COMMS)
 					RL_EXIT(0);

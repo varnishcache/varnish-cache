@@ -48,20 +48,20 @@
 #include <libvarnish.h>
 #include <miniobj.h>
 
-struct cls_func {
+struct VCLS_func {
 	unsigned			magic;
 #define VCLS_FUNC_MAGIC			0x7d280c9b
-	VTAILQ_ENTRY(cls_func)		list;
+	VTAILQ_ENTRY(VCLS_func)		list;
 	unsigned			auth;
 	struct cli_proto		*clp;
 };
 
-struct cls_fd {
+struct VCLS_fd {
 	unsigned			magic;
 #define VCLS_FD_MAGIC			0x010dbd1e
-	VTAILQ_ENTRY(cls_fd)		list;
+	VTAILQ_ENTRY(VCLS_fd)		list;
 	int				fdi, fdo;
-	struct cls			*cls;
+	struct VCLS			*cls;
 	struct cli			*cli, clis;
 	cls_cb_f			*closefunc;
 	void				*priv;
@@ -70,12 +70,12 @@ struct cls_fd {
 	char				**argv;
 };
 
-struct cls {
+struct VCLS {
 	unsigned			magic;
 #define VCLS_MAGIC			0x60f044a3
-	VTAILQ_HEAD(,cls_fd)		fds;
+	VTAILQ_HEAD(,VCLS_fd)		fds;
 	unsigned			nfd;
-	VTAILQ_HEAD(,cls_func)		funcs;
+	VTAILQ_HEAD(,VCLS_func)		funcs;
 	cls_cbc_f			*before, *after;
 	unsigned			maxlen;
 };
@@ -111,9 +111,9 @@ void
 VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 {
 	struct cli_proto *cp;
-	struct cls_func *cfn;
+	struct VCLS_func *cfn;
 	unsigned all, debug, u, d, h, i, wc;
-	struct cls *cs;
+	struct VCLS *cs;
 
 	(void)priv;
 	cs = cli->cls;
@@ -236,9 +236,9 @@ cls_dispatch(struct cli *cli, struct cli_proto *clp, char * const * av,
 static int
 cls_vlu2(void *priv, char * const *av)
 {
-	struct cls_fd *cfd;
-	struct cls *cs;
-	struct cls_func *cfn;
+	struct VCLS_fd *cfd;
+	struct VCLS *cs;
+	struct VCLS_func *cfn;
 	struct cli *cli;
 	unsigned na;
 
@@ -293,7 +293,7 @@ cls_vlu2(void *priv, char * const *av)
 
 	cli->cls = NULL;
 
-	if (cli_writeres(cfd->fdo, cli) || cli->result == CLIS_CLOSE)
+	if (VCLI_WriteResult(cfd->fdo, cli) || cli->result == CLIS_CLOSE)
 		return (1);
 
 	return (0);
@@ -302,7 +302,7 @@ cls_vlu2(void *priv, char * const *av)
 static int
 cls_vlu(void *priv, const char *p)
 {
-	struct cls_fd *cfd;
+	struct VCLS_fd *cfd;
 	struct cli *cli;
 	int i;
 	char **av;
@@ -374,10 +374,10 @@ cls_vlu(void *priv, const char *p)
 	}
 }
 
-struct cls *
+struct VCLS *
 VCLS_New(cls_cbc_f *before, cls_cbc_f *after, unsigned maxlen)
 {
-	struct cls *cs;
+	struct VCLS *cs;
 
 	ALLOC_OBJ(cs, VCLS_MAGIC);
 	AN(cs);
@@ -390,9 +390,9 @@ VCLS_New(cls_cbc_f *before, cls_cbc_f *after, unsigned maxlen)
 }
 
 struct cli *
-VCLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
+VCLS_AddFd(struct VCLS *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 {
-	struct cls_fd *cfd;
+	struct VCLS_fd *cfd;
 
 	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
 	assert(fdi >= 0);
@@ -415,7 +415,7 @@ VCLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 }
 
 static void
-cls_close_fd(struct cls *cs, struct cls_fd *cfd)
+cls_close_fd(struct VCLS *cs, struct VCLS_fd *cfd)
 {
 
 	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
@@ -439,9 +439,9 @@ cls_close_fd(struct cls *cs, struct cls_fd *cfd)
 
 
 int
-VCLS_AddFunc(struct cls *cs, unsigned auth, struct cli_proto *clp)
+VCLS_AddFunc(struct VCLS *cs, unsigned auth, struct cli_proto *clp)
 {
-	struct cls_func *cfn;
+	struct VCLS_func *cfn;
 
 	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
 	ALLOC_OBJ(cfn, VCLS_FUNC_MAGIC);
@@ -453,9 +453,9 @@ VCLS_AddFunc(struct cls *cs, unsigned auth, struct cli_proto *clp)
 }
 
 int
-VCLS_PollFd(struct cls *cs, int fd, int timeout)
+VCLS_PollFd(struct VCLS *cs, int fd, int timeout)
 {
-	struct cls_fd *cfd;
+	struct VCLS_fd *cfd;
 	struct pollfd pfd[1];
 	int i, j, k;
 
@@ -492,9 +492,9 @@ VCLS_PollFd(struct cls *cs, int fd, int timeout)
 }
 
 int
-VCLS_Poll(struct cls *cs, int timeout)
+VCLS_Poll(struct VCLS *cs, int timeout)
 {
-	struct cls_fd *cfd, *cfd2;
+	struct VCLS_fd *cfd, *cfd2;
 	int i, j, k;
 
 	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
@@ -535,11 +535,11 @@ VCLS_Poll(struct cls *cs, int timeout)
 }
 
 void
-VCLS_Destroy(struct cls **csp)
+VCLS_Destroy(struct VCLS **csp)
 {
-	struct cls *cs;
-	struct cls_fd *cfd, *cfd2;
-	struct cls_func *cfn;
+	struct VCLS *cs;
+	struct VCLS_fd *cfd, *cfd2;
+	struct VCLS_func *cfn;
 
 	cs = *csp;
 	*csp = NULL;

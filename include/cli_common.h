@@ -29,25 +29,25 @@
  */
 
 struct vlu;
-struct cls;
+struct VCLS;
 
 struct cli {
 	unsigned		magic;
 #define CLI_MAGIC		0x4038d570
 	struct vsb		*sb;
-	enum cli_status_e	result;
+	enum VCLI_status_e	result;
 	char			*cmd;
 	unsigned		auth;
 	char			challenge[34];
 	char			*ident;
 	struct vlu		*vlu;
-	struct cls		*cls;
+	struct VCLS		*cls;
 };
 
-int cli_writeres(int fd, const struct cli *cli);
-int cli_readres(int fd, unsigned *status, char **ptr, double tmo);
+int VCLI_WriteResult(int fd, const struct cli *cli);
+int VCLI_ReadResult(int fd, unsigned *status, char **ptr, double tmo);
 
 #define CLI_AUTH_RESPONSE_LEN		65	/* 64 hex + NUL */
 
-void CLI_response(int S_fd, const char *challenge,
+void VCLI_response(int S_fd, const char *challenge,
     char reponse[CLI_AUTH_RESPONSE_LEN]);

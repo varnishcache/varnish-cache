@@ -190,7 +190,7 @@
  * Status/return codes in the CLI protocol
  */
 
-enum cli_status_e {
+enum VCLI_status_e {
 	CLIS_SYNTAX	= 100,
 	CLIS_UNKNOWN	= 101,
 	CLIS_UNIMPL	= 102,
