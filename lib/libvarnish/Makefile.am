@@ -37,7 +37,7 @@ BUILT_SOURCES = vcs_version.h
 MAINTAINERCLEANFILES = vcs_version.h
 vcs_version.h: FORCE
 	if [ -d "$(top_srcdir)/.git" ]; then \
-		V="$$(git describe --always)" \
+		V="$$(git show -s --pretty=format:%h)" \
 		H="$$(head -n 1 vcs_version.h 2>/dev/null || true)"; \
 		if [ "/* $$V */" != "$$H" ]; then \
 		( \
