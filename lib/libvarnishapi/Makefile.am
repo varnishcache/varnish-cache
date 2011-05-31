@@ -16,13 +16,11 @@ libvarnishapi_la_SOURCES = \
 	../libvarnish/version.c \
 	../libvarnish/cli_common.c \
 	../libvarnish/cli_auth.c \
-	../libvarnish/tcp.c \
 	../libvarnish/vin.c \
 	../libvarnish/vmb.c \
 	../libvarnish/vre.c \
 	../libvarnish/vsb.c \
 	../libvarnish/vsha256.c \
-	../libvarnish/vss.c \
 	base64.c \
 	vsm.c \
 	vsl_arg.c \
@@ -32,4 +30,4 @@ libvarnishapi_la_SOURCES = \
 libvarnishapi_la_CFLAGS = \
 	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"'
 
-libvarnishapi_la_LIBADD = @PCRE_LIBS@ ${LIBM}
+libvarnishapi_la_LIBADD = @PCRE_LIBS@
