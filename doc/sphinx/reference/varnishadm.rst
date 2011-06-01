@@ -84,6 +84,4 @@ COPYRIGHT
 This document is licensed under the same licence as Varnish
 itself. See LICENCE for details.
 
-* Copyright (c) 2007-2008 Linpro AS
-* Copyright (c) 2008-2010 Redpill Linpro AS
-* Copyright (c) 2010 Varnish Software AS
+* Copyright (c) 2007-2011 Varnish Software AS

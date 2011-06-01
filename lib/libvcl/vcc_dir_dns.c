@@ -1,6 +1,5 @@
 /*-
- * Copyright (c) 2009 Redpill Linpro AS
- * Copyright (c) 2010 Varnish Software AS
+ * Copyright (c) 2009-2010 Varnish Software AS
  * All rights reserved.
  *
  * Author: Kristian Lyngstol <kristian@bohemians.org>

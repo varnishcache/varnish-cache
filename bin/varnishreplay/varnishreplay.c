@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2010 Linpro AS
+ * Copyright (c) 2010 Varnish Software AS
  * All rights reserved.
  *
  * Author: Cecilie Fritzvold <cecilihf@linpro.no>

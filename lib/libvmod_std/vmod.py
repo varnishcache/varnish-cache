@@ -1,6 +1,6 @@
 #!/usr/local/bin/python
 #-
-# Copyright (c) 2010 Linpro AS
+# Copyright (c) 2010-2011 Varnish Software AS
 # All rights reserved.
 #
 # Author: Poul-Henning Kamp <phk@phk.freebsd.dk>

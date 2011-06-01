@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2007-2010 Linpro AS
+ * Copyright (c) 2007-2010 Varnish Software AS
  * All rights reserved.
  *
  * Author: Dag-Erling Smørgrav <des@des.no>

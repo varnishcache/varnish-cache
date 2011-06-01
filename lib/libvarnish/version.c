@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2009 Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Dag-Erling Smørgrav <des@des.no>
@@ -40,6 +40,6 @@ VCS_Message(const char *progname)
 {
 	fprintf(stderr, "%s (%s-%s revision %s)\n", progname,
 		PACKAGE_TARNAME, PACKAGE_VERSION, VCS_Version());
-	fprintf(stderr,
-	    "Copyright (c) 2006-2009 Linpro AS / Verdens Gang AS\n");
+	fprintf(stderr, "Copyright (c) 2006 Verdens Gang AS\n");
+	fprintf(stderr, "Copyright (c) 2006-2011 Varnish Software AS\n");
 }

@@ -881,7 +881,7 @@ HISTORY
 =======
 
 The VCL language was developed by Poul-Henning Kamp in cooperation
-with Verdens Gang AS, Linpro AS and Varnish Software.  This manual
+with Verdens Gang AS, Varnish Software AS and Varnish Software.  This manual
 page was written by Dag-Erling Smørgrav and later edited by
 Poul-Henning Kamp and Per Buer.
 
@@ -892,6 +892,4 @@ This document is licensed under the same licence as Varnish
 itself. See LICENCE for details.
 
 * Copyright (c) 2006 Verdens Gang AS
-* Copyright (c) 2006-2008 Linpro AS
-* Copyright (c) 2008-2010 Redpill Linpro AS
-* Copyright (c) 2010 Varnish Software AS
+* Copyright (c) 2006-2011 Varnish Software AS

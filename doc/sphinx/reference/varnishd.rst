@@ -787,7 +787,7 @@ HISTORY
 =======
 
 The varnishd daemon was developed by Poul-Henning Kamp in cooperation
-with Verdens Gang AS, Linpro AS and Varnish Software.
+with Verdens Gang AS, Varnish Software AS and Varnish Software.
 
 This manual page was written by Dag-Erling Smørgrav with updates by
 Stig Sandbeck Mathisen ⟨ssm@debian.org⟩
@@ -799,6 +799,4 @@ COPYRIGHT
 This document is licensed under the same licence as Varnish
 itself. See LICENCE for details.
 
-* Copyright (c) 2007-2008 Linpro AS
-* Copyright (c) 2008-2010 Redpill Linpro AS
-* Copyright (c) 2010 Varnish Software AS
+* Copyright (c) 2007-2011 Varnish Software AS

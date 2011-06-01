@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2007-2010 Redpill Linpro AS
+ * Copyright (c) 2007-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Dag-Erling Smørgav <des@des.no>

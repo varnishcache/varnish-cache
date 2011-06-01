@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2000-2008 Poul-Henning Kamp
+ * Copyright (c) 2000-2011 Poul-Henning Kamp
  * Copyright (c) 2000-2008 Dag-Erling Coïdan Smørgrav
  * All rights reserved.
  *
