@@ -1,0 +1,26 @@
+varnishtest "stream test"
+
+
+server s1 {
+	rxreq
+	txresp -bodylen 400
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_fetch {
+		set beresp.do_stream = true;
+	}
+
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 400
+	txreq
+	rxresp
+	expect resp.bodylen == 400
+} -run
+
+

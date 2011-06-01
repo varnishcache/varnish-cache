@@ -455,7 +455,8 @@ RES_StreamPoll(const struct sess *sp)
 	if (!(sp->wrk->res_mode & RES_GUNZIP))
 		(void)WRW_Flush(sp->wrk);
 
-	if (sp->objcore == NULL || (sp->objcore->flags & OC_F_PASS)) {
+	if (sp->obj->objcore == NULL ||
+	    (sp->obj->objcore->flags & OC_F_PASS)) {
 		/*
 		 * This is a pass object, release storage as soon as we
 		 * have delivered it.
