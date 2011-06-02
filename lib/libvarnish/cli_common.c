@@ -118,13 +118,17 @@ VCLI_WriteResult(int fd, const struct cli *cli)
 static int
 read_tmo(int fd, char *ptr, unsigned len, double tmo)
 {
-	int i, j;
+	int i, j, to;
 	struct pollfd pfd;
 
+	if (tmo > 0) 
+		to = tmo * 1e3;
+	else
+		to = -1;
 	pfd.fd = fd;
 	pfd.events = POLLIN;
 	for (j = 0; len > 0; ) {
-		i = poll(&pfd, 1, (int)(tmo * 1e3));
+		i = poll(&pfd, 1, to);
 		if (i == 0) {
 			errno = ETIMEDOUT;
 			return (-1);
