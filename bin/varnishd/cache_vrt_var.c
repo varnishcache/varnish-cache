@@ -40,6 +40,9 @@
 #include "cache_backend.h"
 #include "hash_slinger.h"
 
+#define ILLEGAL_R(sess, obj, field)                                         \
+WSP(sess, SLT_VCL_error, "%s does not exist (reading field %s)", obj, field)
+
 static char vrt_hostname[255] = "";
 
 /*--------------------------------------------------------------------*/
@@ -61,7 +64,7 @@ vrt_do_string(struct worker *w, int fd, const struct http *hp, int fld,
 	va_end(ap);
 }
 
-#define VRT_DO_HDR(obj, hdr, http, fld)				\
+#define VRT_DO_HDR_l(obj, hdr, cont, http, fld)			\
 void								\
 VRT_l_##obj##_##hdr(const struct sess *sp, const char *p, ...)	\
 {								\
@@ -69,53 +72,74 @@ VRT_l_##obj##_##hdr(const struct sess *sp, const char *p, ...)	\
 								\
 	va_start(ap, p);					\
 	vrt_do_string(sp->wrk, sp->fd,				\
-	    http, fld, #obj "." #hdr, p, ap);			\
+	    cont->http, fld, #obj "." #hdr, p, ap);		\
 	va_end(ap);						\
-}								\
-								\
+}
+
+#define VRT_DO_HDR_r(obj, hdr, cont, http, fld, nullable)	\
 const char *							\
 VRT_r_##obj##_##hdr(const struct sess *sp)			\
 {								\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	CHECK_OBJ_NOTNULL(http, HTTP_MAGIC);			\
-	return (http->hd[fld].b);				\
-}
+        if (!nullable || cont != NULL) {			\
+            CHECK_OBJ_NOTNULL(cont->http, HTTP_MAGIC);		\
+            return (cont->http->hd[fld].b);			\
+        }							\
+        ILLEGAL_R(sp, #obj, #hdr);				\
+        return(NULL);                                           \
+}                                                               \
 
-VRT_DO_HDR(req,   request,	sp->http,		HTTP_HDR_REQ)
-VRT_DO_HDR(req,   url,		sp->http,		HTTP_HDR_URL)
-VRT_DO_HDR(req,   proto,	sp->http,		HTTP_HDR_PROTO)
-VRT_DO_HDR(bereq, request,	sp->wrk->bereq,		HTTP_HDR_REQ)
-VRT_DO_HDR(bereq, url,		sp->wrk->bereq,		HTTP_HDR_URL)
-VRT_DO_HDR(bereq, proto,	sp->wrk->bereq,		HTTP_HDR_PROTO)
-VRT_DO_HDR(obj,   proto,	sp->obj->http,		HTTP_HDR_PROTO)
-VRT_DO_HDR(obj,   response,	sp->obj->http,		HTTP_HDR_RESPONSE)
-VRT_DO_HDR(resp,  proto,	sp->wrk->resp,		HTTP_HDR_PROTO)
-VRT_DO_HDR(resp,  response,	sp->wrk->resp,		HTTP_HDR_RESPONSE)
-VRT_DO_HDR(beresp,  proto,	sp->wrk->beresp,	HTTP_HDR_PROTO)
-VRT_DO_HDR(beresp,  response,	sp->wrk->beresp,	HTTP_HDR_RESPONSE)
+#define VRT_DO_HDR(obj, hdr, cont, http, fld, nullable)		\
+VRT_DO_HDR_l(obj, hdr, cont, http, fld)				\
+VRT_DO_HDR_r(obj, hdr, cont, http, fld, nullable)		\
+
+VRT_DO_HDR(req,         request,    sp,             http,	HTTP_HDR_REQ,	    0)
+VRT_DO_HDR(req,         url,        sp,             http,	HTTP_HDR_URL,	    0)
+VRT_DO_HDR(req,         proto,      sp,             http,	HTTP_HDR_PROTO,	    0)
+VRT_DO_HDR(bereq,       request,    sp->wrk,        bereq,	HTTP_HDR_REQ,	    0)
+VRT_DO_HDR(bereq,       url,        sp->wrk,        bereq,	HTTP_HDR_URL,	    0)
+VRT_DO_HDR(bereq,       proto,      sp->wrk,        bereq,	HTTP_HDR_PROTO,	    0)
+VRT_DO_HDR(obj,         proto,      sp->obj,        http,	HTTP_HDR_PROTO,	    0)
+VRT_DO_HDR(obj,         response,   sp->obj,        http,	HTTP_HDR_RESPONSE,  0)
+VRT_DO_HDR(resp,        proto,      sp->wrk,        resp,	HTTP_HDR_PROTO,	    0)
+VRT_DO_HDR(resp,        response,   sp->wrk,        resp,	HTTP_HDR_RESPONSE,  0)
+VRT_DO_HDR(beresp,      proto,      sp->wrk,        beresp,	HTTP_HDR_PROTO,	    0)
+VRT_DO_HDR(beresp,      response,   sp->wrk,        beresp,	HTTP_HDR_RESPONSE,  0)
+VRT_DO_HDR_r(stale_obj,   proto,      sp->stale_obj,  http,	HTTP_HDR_PROTO,	    1)
+VRT_DO_HDR_r(stale_obj,   response,   sp->stale_obj,  http,	HTTP_HDR_RESPONSE,  1)
 
 /*--------------------------------------------------------------------*/
 
-#define VRT_DO_STATUS(obj, http)				\
+#define VRT_DO_STATUS_l(obj, cont, http)			\
 void								\
 VRT_l_##obj##_status(const struct sess *sp, int num)		\
 {								\
 								\
 	assert(num >= 100 && num <= 999);			\
-	http->status = num;					\
-}								\
-								\
+	cont->http->status = num;				\
+}
+
+#define VRT_DO_STATUS_r(obj, cont, http, nullable)		\
 int								\
 VRT_r_##obj##_status(const struct sess *sp)			\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	return(http->status);					\
+        if (nullable && cont == NULL) {				\
+            ILLEGAL_R(sp, #obj, "status");			\
+            return (503);                                       \
+        }                                                       \
+	return(cont->http->status);				\
 }
 
-VRT_DO_STATUS(obj, sp->obj->http)
-VRT_DO_STATUS(beresp, sp->wrk->beresp)
-VRT_DO_STATUS(resp, sp->wrk->resp)
+#define VRT_DO_STATUS(obj, cont, http, nullable)		\
+VRT_DO_STATUS_l(obj, cont, http)				\
+VRT_DO_STATUS_r(obj, cont, http, nullable)			\
+
+VRT_DO_STATUS(obj,          sp->obj,        http,	0)
+VRT_DO_STATUS(beresp,       sp->wrk,        beresp,	0)
+VRT_DO_STATUS(resp,	    sp->wrk,        resp,	0)
+VRT_DO_STATUS_r(stale_obj,  sp->stale_obj,  http,	1)
 
 /*--------------------------------------------------------------------*/
 
@@ -362,34 +386,45 @@ VRT_r_req_restarts(const struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
-#define VRT_DO_EXP(which, exp, fld, extra)			\
-								\
-void __match_proto__()						\
-VRT_l_##which##_##fld(struct sess *sp, double a)		\
-{								\
-								\
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	EXP_Set_##fld(&exp, a);					\
-	extra;							\
-}								\
-								\
-double __match_proto__()					\
-VRT_r_##which##_##fld(struct sess *sp)				\
-{								\
-								\
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	return(EXP_Get_##fld(&exp));				\
+#define VRT_DO_EXP_l(which, cont, fld, extra)			    \
+void __match_proto__()						    \
+VRT_l_##which##_##fld(struct sess *sp, double a)		    \
+{								    \
+								    \
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			    \
+	EXP_Set_##fld(&cont->exp, a);				    \
+	extra;							    \
 }
 
-VRT_DO_EXP(req, sp->exp, ttl, )
-VRT_DO_EXP(req, sp->exp, grace, )
-VRT_DO_EXP(req, sp->exp, keep, )
-VRT_DO_EXP(obj, sp->obj->exp, grace, EXP_Rearm(sp->obj))
-VRT_DO_EXP(obj, sp->obj->exp, ttl, EXP_Rearm(sp->obj))
-VRT_DO_EXP(obj, sp->obj->exp, keep, EXP_Rearm(sp->obj))
-VRT_DO_EXP(beresp, sp->wrk->exp, grace, )
-VRT_DO_EXP(beresp, sp->wrk->exp, ttl, )
-VRT_DO_EXP(beresp, sp->wrk->exp, keep, )
+#define VRT_DO_EXP_r(which, cont, fld, nullable)		    \
+double __match_proto__()					    \
+VRT_r_##which##_##fld(struct sess *sp)				    \
+{								    \
+								    \
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			    \
+	if (nullable && cont == NULL) {				    \
+	    ILLEGAL_R(sp, #which, #fld);			    \
+	    return (-1);					    \
+	}							    \
+	return(EXP_Get_##fld(&cont->exp));			    \
+}
+
+#define VRT_DO_EXP(which, cont, fld, nullable, extra)		    \
+VRT_DO_EXP_l(which, cont, fld, extra)				    \
+VRT_DO_EXP_r(which, cont, fld, nullable)			    \
+
+VRT_DO_EXP(req, sp, ttl, 0, )
+VRT_DO_EXP(req, sp, grace, 0, )
+VRT_DO_EXP(req, sp, keep, 0, )
+VRT_DO_EXP(obj, sp->obj, grace, 0, EXP_Rearm(sp->obj))
+VRT_DO_EXP(obj, sp->obj, ttl, 0, EXP_Rearm(sp->obj))
+VRT_DO_EXP(obj, sp->obj, keep, 0, EXP_Rearm(sp->obj))
+VRT_DO_EXP(beresp, sp->wrk, grace, 0, )
+VRT_DO_EXP(beresp, sp->wrk, ttl, 0, )
+VRT_DO_EXP(beresp, sp->wrk, keep, 0, )
+VRT_DO_EXP_r(stale_obj, sp->stale_obj, grace, 1)
+VRT_DO_EXP_r(stale_obj, sp->stale_obj, ttl, 1)
+VRT_DO_EXP_r(stale_obj, sp->stale_obj, keep, 1)
 
 /*--------------------------------------------------------------------
  * req.xid
@@ -490,6 +525,8 @@ VRT_r_server_port(struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
+/* XXX: uplex/GS: a nice macro would eliminate the repetition here ... */
+
 int
 VRT_r_obj_hits(const struct sess *sp)
 {
@@ -497,6 +534,19 @@ VRT_r_obj_hits(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
 	return (sp->obj->hits);
+}
+
+int
+VRT_r_stale_obj_hits(const struct sess *sp)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+        if (sp->stale_obj == NULL) {
+            ILLEGAL_R(sp, "stale_obj", "hits");
+            return (0);
+        }
+	CHECK_OBJ(sp->stale_obj, OBJECT_MAGIC);	/* XXX */
+	return (sp->stale_obj->hits);
 }
 
 double
@@ -508,6 +558,19 @@ VRT_r_obj_lastuse(const struct sess *sp)
 	return (TIM_real() - sp->obj->last_use);
 }
 
+double
+VRT_r_stale_obj_lastuse(const struct sess *sp)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+        if (sp->stale_obj == NULL) {
+            ILLEGAL_R(sp, "stale_obj", "lastuse");
+            return (0);
+        }
+	CHECK_OBJ(sp->stale_obj, OBJECT_MAGIC);	/* XXX */
+	return (TIM_real() - sp->stale_obj->last_use);
+}
+
 unsigned
 VRT_r_req_backend_healthy(const struct sess *sp)
 {
@@ -516,3 +579,9 @@ VRT_r_req_backend_healthy(const struct sess *sp)
 	return (VDI_Healthy(sp->director, sp));
 }
 
+unsigned
+VRT_r_stale_obj(const struct sess *sp)
+{
+        CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+        return (sp->stale_obj != NULL);
+}

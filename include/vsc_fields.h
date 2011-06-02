@@ -155,6 +155,8 @@ VSC_F(vmods,		uint64_t, 0, 'i', "Loaded VMODs")
 VSC_F(n_gzip,			uint64_t, 0, 'a', "Gzip operations")
 VSC_F(n_gunzip,			uint64_t, 0, 'a', "Gunzip operations")
 
+VSC_F(cond_not_validated,	uint64_t, 1, 'a', "Non-validating responses")
+
 #endif
 
 /**********************************************************************/

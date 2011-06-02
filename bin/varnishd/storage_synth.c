@@ -67,6 +67,7 @@ static struct stevedore sms_stevedore = {
 	.magic	=	STEVEDORE_MAGIC,
 	.name	=	"synth",
 	.free	=	sms_free,
+        .dup    =       default_dup,
 };
 
 struct vsb *

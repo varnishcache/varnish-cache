@@ -424,6 +424,66 @@ sp_variables = (
 		( ),
 		'const struct sess *'
 	),
+	('stale_obj',
+		'BOOL',
+ 		( 'error', 'miss', 'fetch',),
+		( ),
+		'const struct sess *'
+	),
+	('stale_obj.proto',
+		'STRING',
+ 		( 'error', 'miss', 'fetch',),
+		( ),
+		'const struct sess *'
+	),
+	('stale_obj.status',
+		'INT',
+ 		( 'error', 'miss', 'fetch',),
+		( ),
+		'const struct sess *'
+	),
+	('stale_obj.response',
+		'STRING',
+ 		( 'error', 'miss', 'fetch',),
+		( ),
+		'const struct sess *'
+	),
+	('stale_obj.hits',
+		'INT',
+ 		( 'error', 'miss', 'fetch',),
+		( ),
+		'const struct sess *'
+	),
+	('stale_obj.http.',
+		'HDR_STALE_OBJ',
+ 		( 'error', 'miss', 'fetch',),
+		( ),		# XXX ?
+		'const struct sess *'
+	),
+	('stale_obj.ttl',
+		'DURATION',
+ 		( 'error', 'miss', 'fetch',),
+		( ),
+		'struct sess *'
+	),
+	('stale_obj.grace',
+		'DURATION',
+ 		( 'error', 'miss', 'fetch',),
+		( ),
+		'struct sess *'
+	),
+	('stale_obj.lastuse',
+		'DURATION',
+ 		( 'error', 'miss', 'fetch',),
+		( ),
+		'const struct sess *'
+	),
+	('stale_obj.keep',
+		'DURATION',
+ 		( 'error', 'miss', 'fetch',),
+		( ),
+		'struct sess *'
+	),
 	('resp.proto',
 		'STRING',
 		( 'deliver',),

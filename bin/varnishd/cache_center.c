@@ -558,6 +558,7 @@ cnt_fetch(struct sess *sp)
 		sp->wrk->age = 0;
 		EXP_Clr(&sp->wrk->exp);
 		sp->wrk->exp.ttl = RFC2616_Ttl(sp);
+		sp->wrk->exp.keep = params->default_keep;
 
 		/* pass from vclrecv{} has negative TTL */
 		if (sp->objcore == NULL)
@@ -638,7 +639,7 @@ cnt_fetchbody(struct sess *sp)
 	int i;
 	struct http *hp, *hp2;
 	char *b;
-	unsigned l, nhttp;
+	unsigned l, nhttp, stale_nhttp;
 	struct vsb *vary = NULL;
 	int varyl = 0, pass;
 
@@ -724,6 +725,10 @@ cnt_fetchbody(struct sess *sp)
 
 	l = http_EstimateWS(sp->wrk->beresp,
 	    pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
+        if (sp->stale_obj) {
+            l += http_EstimateWS(sp->stale_obj->http, 0, &stale_nhttp);
+            nhttp += stale_nhttp;
+        }
 
 	/* Create Vary instructions */
 	if (sp->objcore != NULL) {
@@ -763,6 +768,7 @@ cnt_fetchbody(struct sess *sp)
 		return (0);
 	}
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+        sp->obj->exp.keep = sp->wrk->exp.keep;
 
 	sp->wrk->storage_hint = NULL;
 
@@ -789,11 +795,29 @@ cnt_fetchbody(struct sess *sp)
 
 	hp2->logtag = HTTP_Obj;
 	http_CopyResp(hp2, hp);
-	http_FilterFields(sp->wrk, sp->fd, hp2, hp,
-	    pass ? HTTPH_R_PASS : HTTPH_A_INS);
-	http_CopyHome(sp->wrk, sp->fd, hp2);
+        
+        http_FilterFields(sp->wrk, sp->fd, hp2, hp,
+            	pass ? HTTPH_R_PASS : HTTPH_A_INS);
 
-	if (http_GetHdr(hp, H_Last_Modified, &b))
+        /*
+	 * If we found a candidate for conditional backend request, attempt it
+         * now. If backend responds with 304, http_Check304() merges stale_obj
+         * into sp->obj, any other response is handled as usual. In either case,
+         * the stale_obj is no longer needed in the cache, so discard it.
+         */
+        if (sp->stale_obj) {
+            http_Check304(sp);
+            if (sp->wrk->beresp->status == 304)
+                assert(sp->obj->http->status == 200);
+	    EXP_Clr(&sp->stale_obj->exp);
+	    EXP_Rearm(sp->stale_obj);
+	    HSH_Deref(sp->wrk, NULL, &sp->stale_obj);
+	    AZ(sp->stale_obj);
+        }
+        http_CopyHome(sp->wrk, sp->fd, hp2);
+
+	if (http_GetHdr(hp, H_Last_Modified, &b)
+            || http_GetHdr(sp->obj->http, H_Last_Modified, &b))
 		sp->obj->last_modified = TIM_parse(b);
 	else
 		sp->obj->last_modified = floor(sp->wrk->entered);
@@ -1065,6 +1089,8 @@ cnt_lookup(struct sess *sp)
 		sp->wrk->stats.cache_hitpass++;
 		WSP(sp, SLT_HitPass, "%u", sp->obj->xid);
 		(void)HSH_Deref(sp->wrk, NULL, &sp->obj);
+                if (sp->stale_obj != NULL)
+                    (void)HSH_Deref(sp->wrk, NULL, &sp->stale_obj);
 		sp->objcore = NULL;
 		sp->step = STP_PASS;
 		return (0);
@@ -1125,6 +1151,13 @@ cnt_miss(struct sess *sp)
 	sp->wrk->connect_timeout = 0;
 	sp->wrk->first_byte_timeout = 0;
 	sp->wrk->between_bytes_timeout = 0;
+
+        /* If a candidate for a conditional backend request was found,
+         * add If-Modified-Since and/or If-None-Match to the bereq.
+         */
+        if (sp->stale_obj)
+                http_CheckRefresh(sp);
+
 	VCL_miss_method(sp);
 	switch(sp->handling) {
 	case VCL_RET_ERROR:

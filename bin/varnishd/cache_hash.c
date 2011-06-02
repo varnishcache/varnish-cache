@@ -300,13 +300,16 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	struct objcore *oc;
 	struct objcore *busy_oc, *grace_oc;
 	struct object *o;
-	double grace_ttl;
+	struct object *stale_o;       /* for freshness check */
+	double grace_ttl, stale_ttl;
+        char *p;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
 	AN(hash);
+        AZ(sp->stale_obj);
 	w = sp->wrk;
 
 	HSH_Prealloc(sp);
@@ -334,7 +337,9 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	assert(oh->refcnt > 0);
 	busy_oc = NULL;
 	grace_oc = NULL;
+	stale_o = NULL;       /* for freshness check */
 	grace_ttl = NAN;
+        stale_ttl = NAN;
 	VTAILQ_FOREACH(oc, &oh->objcs, list) {
 		/* Must be at least our own ref + the objcore we examine */
 		assert(oh->refcnt > 1);
@@ -350,7 +355,8 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		o = oc_getobj(sp->wrk, oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
-		if (o->exp.ttl <= 0.)
+		if (o->exp.ttl <= 0. && o->exp.grace <= 0.
+		    && o->exp.keep <= 0.)
 			continue;
 		if (BAN_CheckObject(o, sp))
 			continue;
@@ -372,6 +378,24 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 				grace_ttl = o->entered + o->exp.ttl;
 			}
 		}
+
+		/* At this point we know:
+		 * - o's TTL has elapsed
+		 * - o is not busy or banned,
+                 * - o is not a Vary match.
+                 * The object may be used for a conditional backend request if
+                 * - the keep time has not elapsed, and
+                 * - it has a Last-Modified and/or an ETag header.
+                 * If there are several, use the least expired one.
+                 */
+               if (EXP_Keep(sp, o) >= sp->t_req
+                   && (http_GetHdr(o->http, H_Last_Modified, &p)
+                       || http_GetHdr(o->http, H_ETag, &p)))
+                   if (stale_o == NULL || stale_ttl < o->entered + o->exp.ttl) {
+                       stale_o = o;
+                       stale_ttl = o->entered + o->exp.ttl;
+                   }
+
 	}
 
 	/*
@@ -438,6 +462,18 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		Lck_Unlock(&oh->mtx);
 		return (NULL);
 	}
+
+        /* If we're not serving a valid or graced object and we saved stale_o,
+	 * it is a candidate for the conditional backend request. */
+        AZ(oc && !sp->hash_always_miss);
+        AZ(busy_oc);
+        if (stale_o != NULL) {
+                AZ(stale_o->objcore->flags & OC_F_BUSY);
+		CHECK_OBJ_NOTNULL(stale_o->objcore, OBJCORE_MAGIC);
+                Lck_AssertHeld(&oh->mtx);
+                stale_o->objcore->refcnt++;
+                sp->stale_obj = stale_o;
+        }
 
 	/* Insert (precreated) objcore in objecthead */
 	oc = w->nobjcore;

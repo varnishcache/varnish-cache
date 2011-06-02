@@ -163,6 +163,7 @@ const struct stevedore smu_stevedore = {
 	.alloc	=	smu_alloc,
 	.free	=	smu_free,
 	.trim	=	smu_trim,
+        .dup    =       default_dup,
 };
 
 #endif /* HAVE_UMEM_H */
