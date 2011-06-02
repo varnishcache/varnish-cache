@@ -191,7 +191,8 @@ stv_alloc(const struct sess *sp, size_t size)
 		if (++fail == 50)	/* XXX Param */
 			break;
 	}
-	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+	if (st != NULL)
+		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	return (st);
 }
 
