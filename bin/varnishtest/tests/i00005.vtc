@@ -1,0 +1,147 @@
+# $Id$
+
+test "Verify interactions of ttl, keep, grace and bans"
+
+## Banned objects are not used for conditional requests
+
+server s1 {
+        rxreq
+        expect req.url == "/foo"
+        txresp -status 200 \
+    	    -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+            -body "The quick brown fox jumps over the lazy dog."
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since != "Thu, 26 Jun 2008 12:00:01 GMT"
+        txresp -status 200 -body "The quick brown fox jumps over the lazy dog."
+} -start
+
+varnish v1 -vcl+backend {
+        sub vcl_fetch {
+        set beresp.grace = 0s;
+        set beresp.ttl = 1s;
+        set beresp.keep = 1m;
+        }
+} -start
+
+client c1 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.status == 200
+        expect resp.bodylen == 44
+}
+
+client c1 -run
+
+delay 1.1
+
+varnish v1 -cli "ban.url \"/foo\""
+
+client c1 -run
+
+varnish v1 -expect fetch_304 == 0
+varnish v1 -expect cond_not_validated == 0
+
+server s1 -wait
+varnish v1 -stop
+
+## If keep is set to non-zero, but then ttl is set to 0,
+## then the object is not used for conditional requests
+
+server s1 -start
+
+varnish v1 -vcl {
+    backend s2 {
+            .host = "${s1_addr}"; .port = "${s1_port}";
+    }
+
+    sub vcl_fetch {
+        set beresp.keep = 1m;
+        set beresp.ttl = 0s;
+    }
+} -start
+
+client c1 -run
+
+client c1 -run
+
+varnish v1 -expect fetch_304 == 0
+varnish v1 -expect cond_not_validated == 0
+
+server s1 -wait
+varnish v1 -stop
+
+## If ttl is set to 0 but keep is then set to non-zero,
+## then the object is used for conditional requests
+## First test using beresp in vcl_fetch()
+
+server s2 {
+        rxreq
+        expect req.url == "/foo"
+        txresp -status 200 \
+    	    -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+            -body "The quick brown fox jumps over the lazy dog."
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since == "Thu, 26 Jun 2008 12:00:01 GMT"
+        txresp -status 304
+} -start
+
+varnish v1 -vcl {
+    backend s2 {
+            .host = "${s2_addr}"; .port = "${s2_port}";
+    }
+
+    # NB: return(deliver) necessary here, because default vcl_fetch() returns
+    # hit_for_pass if beresp.ttl <= 0
+    sub vcl_fetch {
+        set beresp.ttl = 0s;
+        set beresp.keep = 1m;
+        return (deliver);
+    }
+} -start
+
+client c2 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.status == 200
+        expect resp.bodylen == 44
+} -run
+
+delay 0.5
+
+client c2 -run
+
+varnish v1 -expect fetch_304 == 1
+varnish v1 -expect cond_not_validated == 0
+
+server s2 -wait
+varnish v1 -stop
+
+## Verify using obj.ttl in vcl_hit()
+
+server s2 -start
+
+varnish v1 -vcl {
+    backend s2 {
+            .host = "${s2_addr}"; .port = "${s2_port}";
+    }
+
+    sub vcl_hit {
+        set obj.ttl = 0s;
+        set obj.keep = 1m;
+    }
+} -start
+
+client c1 -run
+
+client c1 -run
+
+delay 0.5
+
+client c1 -run
+
+varnish v1 -expect fetch_304 == 1
+varnish v1 -expect cond_not_validated == 0

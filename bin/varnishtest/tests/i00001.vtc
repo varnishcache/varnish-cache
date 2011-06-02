@@ -1,0 +1,271 @@
+# $Id$
+
+test "Test basic conditional requests to backends"
+
+## By default (default_keep = default_grace), cond. requests happen during grace
+
+server s1 {
+        rxreq
+        expect req.url == "/foo"
+        txresp -status 200 \
+    	    -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+            -hdr "ETag: foo" \
+            -body "123456"
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since == "Thu, 26 Jun 2008 12:00:01 GMT"
+        expect req.http.If-None-Match == "foo"
+        txresp -status 304
+} -start
+
+varnish v1 -vcl+backend {
+        sub vcl_fetch {
+            set beresp.ttl = 0.5s;
+        }
+} -start
+
+client c1 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.status == 200
+        expect resp.http.content-length == 6
+        expect resp.bodylen == 6
+        expect resp.http.Age == 0
+} -run
+
+delay 0.6
+
+client c1 -run
+
+varnish v1 -expect fetch_304 == 1
+varnish v1 -expect cond_not_validated == 0
+
+server s1 -wait
+varnish v1 -stop
+
+## With keep > 0, using both If-Modified-Since and If-None-Match
+
+server s1 {
+        rxreq
+        expect req.url == "/foo"
+        txresp -status 200 \
+    	    -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+            -hdr "ETag: foo" \
+            -body "123456"
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since == "Thu, 26 Jun 2008 12:00:01 GMT"
+        expect req.http.If-None-Match == "foo"
+        txresp -status 304
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since == "Thu, 26 Jun 2008 12:00:01 GMT"
+        expect req.http.If-None-Match == "foo"
+        txresp -status 200 \
+            -hdr "Last-Modified: Wed, 27 Jun 2008 12:00:01 GMT" \
+            -hdr "ETag: foo" \
+            -body "ABCDEF"
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since == "Wed, 27 Jun 2008 12:00:01 GMT"
+        expect req.http.If-None-Match == "foo"
+        txresp -status 304
+
+} -start
+
+varnish v1 -vcl {
+        backend s1 {
+                .host = "${s1_addr}"; .port = "${s1_port}";
+        }
+
+        sub vcl_fetch {
+            set beresp.http.X-Original-Keep = beresp.keep;
+            set beresp.grace = 0s;
+            set beresp.ttl = 1s;
+            set beresp.keep = 1m;
+        }
+} -start
+
+client c1 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.status == 200
+        expect resp.http.ETag == "foo"
+        expect resp.http.content-length == 6
+        expect resp.bodylen == 6
+        expect resp.http.Age == 0
+        expect resp.http.X-Original-Keep == 10.000
+}
+
+client c1 -run
+
+delay 1.1
+
+client c1 -run
+
+delay 1.1
+
+client c1 -run
+
+delay 1.1
+
+client c1 -run
+
+varnish v1 -expect fetch_304 == 2
+varnish v1 -expect cond_not_validated == 1
+
+server s1 -wait
+varnish v1 -stop
+
+## Just If-Modified-Since
+
+server s1 {
+        rxreq
+        expect req.url == "/foo"
+        txresp -status 200 \
+    	    -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+            -body "123456"
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since == "Thu, 26 Jun 2008 12:00:01 GMT"
+        txresp -status 304
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since == "Thu, 26 Jun 2008 12:00:01 GMT"
+        txresp -status 200 \
+            -hdr "Last-Modified: Wed, 27 Jun 2008 12:00:01 GMT" \
+            -body "ABCDEF"
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since == "Wed, 27 Jun 2008 12:00:01 GMT"
+        txresp -status 304
+
+} -start
+
+varnish v1 -vcl {
+        backend s1 {
+                .host = "${s1_addr}"; .port = "${s1_port}";
+        }
+        sub vcl_fetch {
+            set beresp.http.X-Original-Keep = beresp.keep;
+            set beresp.grace = 0s;
+            set beresp.ttl = 1s;
+            set beresp.keep = 1m;
+        }
+} -start
+
+client c1 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.status == 200
+        expect resp.http.content-length == 6
+        expect resp.bodylen == 6
+        expect resp.http.Age == 0
+        expect resp.http.X-Original-Keep == 10.000
+}
+
+client c1 -run
+
+delay 1.1
+
+client c1 -run
+
+delay 1.1
+
+client c1 -run
+
+delay 1.1
+
+client c1 -run
+
+varnish v1 -expect fetch_304 == 2
+varnish v1 -expect cond_not_validated == 1
+
+server s1 -wait
+varnish v1 -stop
+
+## Just If-None-Match
+
+server s1 {
+        rxreq
+        expect req.url == "/foo"
+        txresp -status 200 \
+    	    -hdr "ETag: foo" \
+            -body "123456"
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-None-Match == "foo"
+        txresp -status 304
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-None-Match == "foo"
+        txresp -status 200 \
+            -hdr "ETag: bar" \
+            -body "ABCDEF"
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-None-Match == "bar"
+        txresp -status 304
+
+} -start
+
+varnish v1 -vcl {
+        backend s1 {
+                .host = "${s1_addr}"; .port = "${s1_port}";
+        }
+        sub vcl_fetch {
+            set beresp.http.X-Original-Keep = beresp.keep;
+            set beresp.grace = 0s;
+            set beresp.ttl = 1s;
+            set beresp.keep = 1m;
+        }
+} -start
+
+client c1 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.status == 200
+        expect resp.http.ETag == "foo"
+        expect resp.http.content-length == 6
+        expect resp.bodylen == 6
+        expect resp.http.Age == 0
+        expect resp.http.X-Original-Keep == 10.000
+}
+
+client c2 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.status == 200
+        expect resp.http.ETag == "bar"
+        expect resp.http.content-length == 6
+        expect resp.bodylen == 6
+        expect resp.http.Age == 0
+        expect resp.http.X-Original-Keep == 10.000
+}
+
+client c1 -run
+
+delay 1.1
+
+client c1 -run
+
+delay 1.1
+
+client c2 -run
+
+delay 1.1
+
+client c2 -run
+
+varnish v1 -expect fetch_304 == 2
+varnish v1 -expect cond_not_validated == 1
