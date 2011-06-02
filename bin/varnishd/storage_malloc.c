@@ -221,4 +221,5 @@ const struct stevedore sma_stevedore = {
 	.trim	=	sma_trim,
 	.var_free_space =	sma_free_space,
 	.var_used_space =	sma_used_space,
+        .dup    =       default_dup,
 };

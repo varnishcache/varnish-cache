@@ -39,6 +39,7 @@ struct stv_objsecrets;
 typedef void storage_init_f(struct stevedore *, int ac, char * const *av);
 typedef void storage_open_f(const struct stevedore *);
 typedef struct storage *storage_alloc_f(struct stevedore *, size_t size);
+typedef void storage_dup_f(const struct sess *sp, struct object *src, struct object *target);
 typedef void storage_trim_f(struct storage *, size_t size);
 typedef void storage_free_f(struct storage *);
 typedef struct object *storage_allocobj_f(struct stevedore *, struct sess *sp,
@@ -70,6 +71,7 @@ struct stevedore {
 	storage_open_f		*open;		/* called by cache process */
 	storage_alloc_f		*alloc;		/* --//-- */
 	storage_trim_f		*trim;		/* --//-- */
+        storage_dup_f           *dup;           /* --//-- */
 	storage_free_f		*free;		/* --//-- */
 	storage_close_f		*close;		/* --//-- */
 	storage_allocobj_f	*allocobj;	/* --//-- */
@@ -93,6 +95,7 @@ struct object *STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
 struct object *STV_NewObject(struct sess *sp, const char *hint, unsigned len,
     struct exp *, unsigned nhttp);
 struct storage *STV_alloc(const struct sess *sp, size_t size);
+void STV_dup(const struct sess *sp, struct object *src, struct object *target);
 void STV_trim(struct storage *st, size_t size);
 void STV_free(struct storage *st);
 void STV_open(void);
@@ -117,3 +120,6 @@ extern const struct stevedore smp_stevedore;
 #ifdef HAVE_LIBUMEM
 extern const struct stevedore smu_stevedore;
 #endif
+
+/* Default dup method */
+void default_dup(const struct sess *sp, struct object *src, struct object *target);
