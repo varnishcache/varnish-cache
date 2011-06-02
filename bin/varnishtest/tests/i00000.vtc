@@ -1,0 +1,498 @@
+# $Id$
+
+test "VCL compiler coverage test: conditional refresh extension"
+
+## stale_obj is r/o in miss, fetch and error, illegal everywhere else
+
+varnish v1 -vcl {
+        backend b { .host = "127.0.0.1"; }
+        sub vcl_miss { if (stale_obj) { return(pass); } }
+}
+
+varnish v1 -badvcl {
+        backend b { .host = "127.0.0.1"; }
+        sub vcl_miss { set stale_obj = true; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { if (stale_obj.proto ~ "foo") { return(pass); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { set stale_obj.proto = "foo"; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { if (stale_obj.status == 200) { return(pass); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { set stale_obj.status = 200; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { if (stale_obj.response ~ "foo") { return(pass); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { set stale_obj.response = "foo"; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { if (stale_obj.hits > 100) { return(pass); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { set stale_obj.hits = 100; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { if (stale_obj.http.Foo ~ "foo") { return(pass); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { set stale_obj.http.Foo = "foo"; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { if (stale_obj.ttl > 1m) { return(pass); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { set stale_obj.ttl = 1m; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { if (stale_obj.grace > 1m) { return(pass); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { set stale_obj.grace = 1m; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { if (stale_obj.lastuse > 1m) { return(pass); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { set stale_obj.lastuse = 1m; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { if (stale_obj.keep > 1m) { return(pass); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { set stale_obj.keep = 1m; }
+}
+
+varnish v1 -vcl {
+        backend b { .host = "127.0.0.1"; }
+        sub vcl_fetch { if (stale_obj) { return(deliver); } }
+}
+
+varnish v1 -badvcl {
+        backend b { .host = "127.0.0.1"; }
+        sub vcl_fetch { set stale_obj = true; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { if (stale_obj.proto ~ "foo") { return(deliver); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { set stale_obj.proto = "foo"; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { if (stale_obj.status == 200) { return(deliver); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { set stale_obj.status = 200; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { if (stale_obj.response ~ "foo") { return(deliver); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { set stale_obj.response = "foo"; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { if (stale_obj.hits > 100) { return(deliver); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { set stale_obj.hits = 100; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { if (stale_obj.http.Foo ~ "foo") { return(deliver); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { set stale_obj.http.Foo = "foo"; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { if (stale_obj.ttl > 1m) { return(deliver); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { set stale_obj.ttl = 1m; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { if (stale_obj.grace > 1m) { return(deliver); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { set stale_obj.grace = 1m; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { if (stale_obj.lastuse > 1m) { return(deliver); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { set stale_obj.lastuse = 1m; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { if (stale_obj.keep > 1m) { return(deliver); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { set stale_obj.keep = 1m; }
+}
+
+varnish v1 -vcl {
+        backend b { .host = "127.0.0.1"; }
+        sub vcl_error { if (stale_obj) { return(deliver); } }
+}
+
+varnish v1 -badvcl {
+        backend b { .host = "127.0.0.1"; }
+        sub vcl_error { set stale_obj = true; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_error { if (stale_obj.proto ~ "foo") { return(deliver); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_error { set stale_obj.proto = "foo"; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_error { if (stale_obj.status == 200) { return(deliver); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_error { set stale_obj.status = 200; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_error { if (stale_obj.response ~ "foo") { return(deliver); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_error { set stale_obj.response = "foo"; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_error { if (stale_obj.hits > 100) { return(deliver); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_error { set stale_obj.hits = 100; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_error { if (stale_obj.http.Foo ~ "foo") { return(deliver); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_error { set stale_obj.http.Foo = "foo"; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_error { if (stale_obj.ttl > 1m) { return(deliver); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_error { set stale_obj.ttl = 1m; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_error { if (stale_obj.grace > 1m) { return(deliver); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_error { set stale_obj.grace = 1m; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_error { if (stale_obj.lastuse > 1m) { return(deliver); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_error { set stale_obj.lastuse = 1m; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_error { if (stale_obj.keep > 1m) { return(deliver); } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_error { set stale_obj.keep = 1m; }
+}
+
+## keep is r/w for req everywhere
+##  r/w for beresp in fetch
+##  r/w for obj in hit and error (like ttl and grace)
+##  r/o for stale_obj in fetch, miss and error (already tested)
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv { set req.keep = 1s; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv { if (req.keep > 1s) { set req.keep = 1s; } }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_pipe { set req.keep = 1s; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_pipe { if (req.keep > 1s) { set req.keep = 1s; } }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_pass { set req.keep = 1s; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_pass { if (req.keep > 1s) { set req.keep = 1s; } }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_hash { set req.keep = 1s; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_hash { if (req.keep > 1s) { set req.keep = 1s; } }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { set req.keep = 1s; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { if (req.keep > 1s) { set req.keep = 1s; } }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_hit { set req.keep = 1s; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_hit { if (req.keep > 1s) { set req.keep = 1s; } }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { set req.keep = 1s; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { if (req.keep > 1s) { set req.keep = 1s; } }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_deliver { set req.keep = 1s; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_deliver { if (req.keep > 1s) { set req.keep = 1s; } }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_error { set req.keep = 1s; }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_error { if (req.keep > 1s) { set req.keep = 1s; } }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { if (beresp.keep > 1s) { set req.keep = 1s; } }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { set beresp.keep = 1s; }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { if (obj.keep > 1s) { set req.keep = 1s; } }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_hit { set obj.keep = 1s; }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { if (obj.keep > 1s) { set req.keep = 1s; } }
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_error { if (obj.keep > 1s) { set req.keep = 1s; } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_miss { set obj.keep = 1s; }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch { set obj.keep = 1s; }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv { if (obj.keep > 1s) { set req.keep = 1s; } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv { set obj.keep = 1s; }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_pipe { if (obj.keep > 1s) { set req.keep = 1s; } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_pipe { set obj.keep = 1s; }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_pass { if (obj.keep > 1s) { set req.keep = 1s; } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_pass { set obj.keep = 1s; }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_hash { if (obj.keep > 1s) { set req.keep = 1s; } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_hash { set obj.keep = 1s; }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_deliver { if (obj.keep > 1s) { set req.keep = 1s; } }
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_deliver { set obj.keep = 1s; }
+}
+
+varnish v1 -cliok "param.show default_keep"
+
+varnish v1 -cliok "param.set default_keep 30s"
+
+## XXX: This is not caught as an error
+#varnish v1 -clierr 106 "param.set default_keep foo"
+

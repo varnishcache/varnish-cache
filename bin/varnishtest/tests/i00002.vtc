@@ -1,0 +1,108 @@
+# $Id$
+
+test "handling stale_obj in vcl_miss() and vcl_fetch()"
+
+server s1 {
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.X-VT-Stale == "false"
+        expect req.http.X-VT-Stale-Status == 503
+        expect req.http.X-VT-Stale-Hits == 0
+        expect req.http.X-VT-Stale-TTL == -1.000
+        expect req.http.X-VT-Stale-Grace == -1.000
+        expect req.http.X-VT-Stale-Last-Use == 0.000
+        expect req.http.X-VT-Stale-Keep == -1.000
+        txresp -status 200 \
+    	    -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+            -body "1234567890"
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since == "Thu, 26 Jun 2008 12:00:01 GMT"
+        expect req.http.X-VT-Stale == "true"
+        expect req.http.X-VT-Stale-Proto == "HTTP/1.1"
+        expect req.http.X-VT-Stale-Status == 200
+        expect req.http.X-VT-Stale-Response == "Ok"
+        expect req.http.X-VT-Stale-Last-Modified == "Thu, 26 Jun 2008 12:00:01 GMT"
+        expect req.http.X-VT-Stale-TTL == 0.500
+        expect req.http.X-VT-Stale-Grace == 0.500
+        expect req.http.X-VT-Stale-Last-Use != 0.000
+        expect req.http.X-VT-Stale-Keep == 1.000
+        txresp -status 304
+} -start
+
+varnish v1 -vcl+backend {
+        sub vcl_fetch {
+            set beresp.grace = 0.5s;
+            set beresp.ttl = 0.5s;
+            set beresp.keep = 1s;
+
+            if (stale_obj) {
+                set beresp.http.X-VT-Stale = "true";
+            }
+            else {
+                set beresp.http.X-VT-Stale = "false";
+            }
+            set beresp.http.X-VT-Stale-Proto = stale_obj.proto;
+            set beresp.http.X-VT-Stale-Status = stale_obj.status;
+            set beresp.http.X-VT-Stale-Response = stale_obj.response;
+            set beresp.http.X-VT-Stale-Hits = stale_obj.hits;
+            set beresp.http.X-VT-Stale-Last-Modified = stale_obj.http.Last-Modified;
+            set beresp.http.X-VT-Stale-TTL = stale_obj.ttl;
+            set beresp.http.X-VT-Stale-Grace = stale_obj.grace;
+            set beresp.http.X-VT-Stale-Last-Use = stale_obj.lastuse;
+            set beresp.http.X-VT-Stale-Keep = stale_obj.keep;
+        }
+
+        sub vcl_miss {
+            if (stale_obj) {
+                set bereq.http.X-VT-Stale = "true";
+            }
+            else {
+                set bereq.http.X-VT-Stale = "false";
+            }
+            set bereq.http.X-VT-Stale-Proto = stale_obj.proto;
+            set bereq.http.X-VT-Stale-Status = stale_obj.status;
+            set bereq.http.X-VT-Stale-Response = stale_obj.response;
+            set bereq.http.X-VT-Stale-Hits = stale_obj.hits;
+            set bereq.http.X-VT-Stale-Last-Modified = stale_obj.http.Last-Modified;
+            set bereq.http.X-VT-Stale-TTL = stale_obj.ttl;
+            set bereq.http.X-VT-Stale-Grace = stale_obj.grace;
+            set bereq.http.X-VT-Stale-Last-Use = stale_obj.lastuse;
+            set bereq.http.X-VT-Stale-Keep = stale_obj.keep;
+        }
+} -start
+
+client c1 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.status == 200
+        expect resp.http.content-length == 10
+        expect resp.http.X-VT-Stale == "false"
+        expect resp.http.X-VT-Stale-Status == 503
+        expect resp.http.X-VT-Stale-Hits == 0
+        expect resp.http.X-VT-Stale-TTL == -1.000
+        expect resp.http.X-VT-Stale-Grace == -1.000
+        expect resp.http.X-VT-Stale-Last-Use == 0.000
+        expect resp.http.X-VT-Stale-Keep == -1.000
+} -run
+
+delay 1.1
+
+client c1 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.status == 200
+        expect resp.bodylen == 10
+        expect resp.http.Content-Length == 10
+        expect resp.http.X-VT-Stale == "true"
+        expect resp.http.X-VT-Stale-Proto == "HTTP/1.1"
+        expect resp.http.X-VT-Stale-Status == 200
+        expect resp.http.X-VT-Stale-Response == "Ok"
+        expect resp.http.X-VT-Stale-Hits == 0
+        expect resp.http.X-VT-Stale-Last-Modified == "Thu, 26 Jun 2008 12:00:01 GMT"
+        expect resp.http.X-VT-Stale-TTL == 0.500
+        expect resp.http.X-VT-Stale-Grace == 0.500
+        expect resp.http.X-VT-Stale-Last-Use != 0.000
+        expect resp.http.X-VT-Stale-Keep == 1.000
+} -run
