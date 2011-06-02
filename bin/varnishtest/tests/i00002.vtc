@@ -1,6 +1,10 @@
 # $Id$
 
+<<<<<<< HEAD
 varnishtest "handling stale_obj in vcl_miss() and vcl_fetch()"
+=======
+test "handling stale_obj in vcl_miss() and vcl_fetch()"
+>>>>>>> Merged conditional backend request feature
 
 server s1 {
         rxreq

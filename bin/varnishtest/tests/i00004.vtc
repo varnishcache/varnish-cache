@@ -1,6 +1,10 @@
 # $Id$
 
+<<<<<<< HEAD
 varnishtest "Verify the semantics of keep (timeout for conditional requests)"
+=======
+test "Verify the semantics of keep (timeout for conditional requests)"
+>>>>>>> Merged conditional backend request feature
 
 server s1 {
         rxreq
