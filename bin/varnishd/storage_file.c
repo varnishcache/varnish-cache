@@ -551,6 +551,7 @@ const struct stevedore smf_stevedore = {
 	.alloc	=	smf_alloc,
 	.trim	=	smf_trim,
 	.free	=	smf_free,
+        .dup    =       default_dup,
 };
 
 #ifdef INCLUDE_TEST_DRIVER

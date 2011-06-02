@@ -370,6 +370,30 @@ STV_trim(struct storage *st, size_t size)
 		st->stevedore->trim(st, size);
 }
 
+/*
+ * Duplicate the object storage (HTML body) from src into target, using a
+ * stevedore-specific dup method for src's stevedore.
+ *
+ * Currently, every method just copies storage from one object to the other,
+ * but this method of encapsulation opens the path to future techniques of
+ * sharing storage together with reference counting.
+ */
+void
+STV_dup(const struct sess *sp, struct object *src, struct object *target)
+{
+        struct stevedore *stv;
+
+        CHECK_OBJ_NOTNULL(src, OBJECT_MAGIC);
+        CHECK_OBJ_NOTNULL(target, OBJECT_MAGIC);
+        CHECK_OBJ_NOTNULL(src->objstore, STORAGE_MAGIC);
+        CHECK_OBJ_NOTNULL(src->objstore->stevedore, STEVEDORE_MAGIC);
+
+        stv = src->objstore->stevedore;
+        AN(stv->dup);
+        
+        stv->dup(sp, src, target);
+}
+
 void
 STV_free(struct storage *st)
 {
@@ -586,3 +610,24 @@ VRT_Stv_##nm(const char *nm)			\
 
 #include "vrt_stv_var.h"
 #undef VRTSTVVAR
+
+/*
+ * Default object store dup just copies the storage.
+ */
+void
+default_dup(const struct sess *sp, struct object *src, struct object *target)
+{
+        struct storage *st, *st2;
+        unsigned cl;
+
+        VTAILQ_FOREACH(st2, &src->store, list) {
+		cl = st2->len;
+		st = STV_alloc(sp, cl);
+		XXXAN(st);
+                assert(st->space >= cl);
+		VTAILQ_INSERT_TAIL(&target->store, st, list);
+		st->len = cl;
+		target->len += cl;
+		memcpy(st->ptr, st2->ptr, cl);
+	}
+}

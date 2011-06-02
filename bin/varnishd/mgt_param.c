@@ -582,13 +582,13 @@ static const struct parspec input_parspec[] = {
 		"10", "seconds" },
 	{ "default_keep", tweak_timeout_double, &master.default_keep,
 		0, UINT_MAX,
-		"Default keep period.  We will keep a useless object "
+		"Default keep period.  We will keep a stale object "
 		"around this long, making it available for conditional "
 		"backend fetches.  "
 		"That means that the object will be removed from the "
-		"cache at the end of ttl+grace+keep.",
+		"cache at the end of ttl+max(grace,keep).",
 		DELAYED_EFFECT,
-		"0", "seconds" },
+		"10", "seconds" },
 	{ "sess_timeout", tweak_timeout, &master.sess_timeout, 0, 0,
 		"Idle timeout for persistent sessions. "
 		"If a HTTP request has not been received in this many "
