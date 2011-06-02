@@ -1,0 +1,129 @@
+# $Id$
+
+test "Passes through responses to backend conditionals to the client if status != 304 or 200"
+
+# Testing a sample from each of the Nxx status codes
+
+server s1 {
+        rxreq
+        expect req.url == "/foo"
+        txresp -status 200 \
+    	    -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+            -body "Varnish has poked you"
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since == "Thu, 26 Jun 2008 12:00:01 GMT"
+        txresp -status 304
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since == "Thu, 26 Jun 2008 12:00:01 GMT"
+        txresp -status 201 -msg "Created" \
+    	    -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+            -body "Varnish has poked you"
+
+        # 3xx responses typically do not include Last-Modified or a body
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since == "Thu, 26 Jun 2008 12:00:01 GMT"
+        txresp -status 301 -msg "Moved Permanently"
+
+        # Restore a cached object with Last-Modified
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since != "Thu, 26 Jun 2008 12:00:01 GMT"
+        txresp -status 200 \
+    	    -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+            -body "Varnish has poked you"
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since == "Thu, 26 Jun 2008 12:00:01 GMT"
+        txresp -status 400 -msg "Bad Request" \
+            -body "Varnish has poked you"
+
+        # Restore a cached object with Last-Modified
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since != "Thu, 26 Jun 2008 12:00:01 GMT"
+        txresp -status 200 \
+    	    -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+            -body "Varnish has poked you"
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since == "Thu, 26 Jun 2008 12:00:01 GMT"
+        txresp -status 500 -msg "Internal Server Error" \
+            -body "Varnish has poked you"
+} -start
+
+varnish v1 -vcl+backend {
+        sub vcl_fetch {
+            set beresp.ttl = 1s;
+            set beresp.grace = 0s;
+            set beresp.keep = 1s;
+        }
+} -start
+
+client c1 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.status == 200
+        expect resp.bodylen == 21
+} -run
+
+delay 1.1
+
+client c1 -run
+
+delay 1.1
+
+client c2 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.status == 201
+        expect resp.msg == "Created"
+        expect resp.http.Last-Modified == "Thu, 26 Jun 2008 12:00:01 GMT"
+        expect resp.bodylen == 21
+} -run
+
+delay 1.1
+
+client c2 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.status == 301
+        expect resp.msg == "Moved Permanently"
+}  -run
+
+delay 1.1
+
+client c1 -run
+
+delay 1.1
+
+client c2 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.status == 400
+        expect resp.msg == "Bad Request"
+        expect resp.bodylen == 21
+}  -run
+
+delay 1.1
+
+client c1 -run
+
+delay 1.1
+
+client c2 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.status == 500
+        expect resp.msg == "Internal Server Error"
+        expect resp.bodylen == 21
+}  -run
+
+varnish v1 -expect fetch_304 == 1
+varnish v1 -expect cond_not_validated == 4

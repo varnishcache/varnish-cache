@@ -1,0 +1,156 @@
+# $Id$
+
+test "Verify effects of ttl, keep and grace on expiration"
+
+## Verify that an object's lifetime in the cache is
+## obj.ttl + max(obj.grace, obj.keep)
+## First with grace < keep
+
+server s1 {
+        rxreq
+        expect req.url == "/foo"
+        txresp -status 200 \
+    	    -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+            -body "fred garply waldo xyzzy"
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since == "Thu, 26 Jun 2008 12:00:01 GMT"
+        txresp -status 304
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since != "Thu, 26 Jun 2008 12:00:01 GMT"
+        txresp -status 200 -body "fred garply waldo xyzzy"
+} -start
+
+varnish v1 -vcl+backend {
+        sub vcl_fetch {
+            set beresp.ttl = 0.5s;
+            set beresp.grace = 0.5s;
+            set beresp.keep = 1s;
+        }
+} -start
+
+client c1 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.status == 200
+        expect resp.bodylen == 23
+} -run
+
+delay 1.1
+
+client c2 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.status == 200
+        expect resp.bodylen == 23
+        expect resp.msg == "Ok Not Modified"
+} -run
+
+delay 1.6
+
+client c3 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.msg == "Ok"
+} -run
+
+varnish v1 -expect fetch_304 == 1
+varnish v1 -expect cond_not_validated == 0
+
+server s1 -wait
+varnish v1 -stop
+
+## Now with keep < grace
+
+server s1 {
+        rxreq
+        expect req.url == "/foo"
+        txresp -status 200 \
+    	    -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+            -body "fred garply waldo xyzzy"
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since == "Thu, 26 Jun 2008 12:00:01 GMT"
+        txresp -status 304
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since != "Thu, 26 Jun 2008 12:00:01 GMT"
+        txresp -status 200 -body "fred garply waldo xyzzy"
+} -start
+
+varnish v1 -vcl+backend {
+        sub vcl_fetch {
+            set beresp.ttl = 1s;
+            set beresp.grace = 1s;
+            set beresp.keep = 0.5s;
+        }
+} -start
+
+client c1 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.status == 200
+        expect resp.bodylen == 23
+} -run
+
+delay 1.1
+
+client c2 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.status == 200
+        expect resp.bodylen == 23
+        expect resp.msg == "Ok Not Modified"
+} -run
+
+delay 1.6
+
+client c3 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.msg == "Ok"
+} -run
+
+varnish v1 -expect fetch_304 == 1
+varnish v1 -expect cond_not_validated == 0
+
+server s1 -wait
+varnish v1 -stop
+
+## Verify that req.keep sets an upper bound in the session
+
+server s1 -start
+
+varnish v1 -vcl {
+    backend s1 {
+            .host = "${s1_addr}"; .port = "${s1_port}";
+    }
+
+        sub vcl_recv {
+            set req.keep = 1s;
+        }
+
+        sub vcl_fetch {
+            set beresp.ttl = 1s;
+            set beresp.grace = 0s;
+            set beresp.keep = 2s;
+        }
+} -start
+
+client c1 -run
+
+delay 1.1
+
+client c2 -run
+
+delay 2.1
+
+client c3 -run
+
+varnish v1 -expect fetch_304 == 1
+varnish v1 -expect cond_not_validated == 0
