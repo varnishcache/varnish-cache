@@ -391,6 +391,7 @@ VRT_r_req_restarts(const struct sess *sp)
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 #define VRT_DO_EXP(which, exp, fld, offset, extra)		\
 								\
 void __match_proto__()						\
@@ -443,6 +444,8 @@ VRT_DO_EXP(beresp, sp->wrk->exp, keep, 0,
 =======
 =======
 >>>>>>> Merged conditional backend request feature
+=======
+>>>>>>> Merged conditional backend request feature
 #define VRT_DO_EXP_l(which, cont, fld, extra)			    \
 void __match_proto__()						    \
 VRT_l_##which##_##fld(struct sess *sp, double a)		    \
@@ -475,10 +478,14 @@ VRT_DO_EXP(req, sp, grace, 0, )
 VRT_DO_EXP(req, sp, keep, 0, )
 VRT_DO_EXP(obj, sp->obj, grace, 0, EXP_Rearm(sp->obj))
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> Merged conditional backend request feature
 VRT_DO_EXP(obj, sp->obj, ttl, 0, EXP_Rearm(sp->obj))
 VRT_DO_EXP(obj, sp->obj, keep, 0, EXP_Rearm(sp->obj))
 VRT_DO_EXP(beresp, sp->wrk, grace, 0, )
 VRT_DO_EXP(beresp, sp->wrk, ttl, 0, )
+<<<<<<< HEAD
 =======
 VRT_DO_EXP(obj, sp->obj, ttl, 0,
 	   EXP_Rearm(sp->obj);
@@ -488,11 +495,16 @@ VRT_DO_EXP(beresp, sp->wrk, grace, 0, )
 VRT_DO_EXP(beresp, sp->wrk, ttl, 0,
 	   WSP(sp, SLT_TTL, "%u VCL %.0f %.0f", sp->xid, a, sp->t_req))
 >>>>>>> Merged conditional backend request feature
+=======
+>>>>>>> Merged conditional backend request feature
 VRT_DO_EXP(beresp, sp->wrk, keep, 0, )
 VRT_DO_EXP_r(stale_obj, sp->stale_obj, grace, 1)
 VRT_DO_EXP_r(stale_obj, sp->stale_obj, ttl, 1)
 VRT_DO_EXP_r(stale_obj, sp->stale_obj, keep, 1)
 <<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> Merged conditional backend request feature
+=======
 >>>>>>> Merged conditional backend request feature
 =======
 >>>>>>> Merged conditional backend request feature

@@ -665,8 +665,12 @@ cnt_fetchbody(struct sess *sp)
 	char *b;
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	uint16_t nhttp;
 	unsigned l;
+=======
+	unsigned l, nhttp, stale_nhttp;
+>>>>>>> Merged conditional backend request feature
 =======
 	unsigned l, nhttp, stale_nhttp;
 >>>>>>> Merged conditional backend request feature
