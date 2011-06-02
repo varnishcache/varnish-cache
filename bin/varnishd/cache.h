@@ -594,6 +594,7 @@ struct sess {
 	struct objcore		*objcore;
 	struct VCL_conf		*vcl;
 
+	struct object		*stale_obj;
 	/* The busy objhead we sleep on */
 	struct objhead		*hash_objhead;
 
@@ -751,6 +752,12 @@ void http_SetResp(struct http *to, const char *proto, uint16_t status,
 void http_FilterFields(struct worker *w, int fd, struct http *to,
     const struct http *fm, unsigned how);
 void http_FilterHeader(const struct sess *sp, unsigned how);
+
+/* Check if a refresh should be done */
+void http_CheckRefresh(struct sess *sp);
+/* Check if we got 304 response */
+void http_Check304(struct sess *sp);
+
 void http_PutProtocol(struct worker *w, int fd, const struct http *to,
     const char *protocol);
 void http_PutStatus(struct http *to, uint16_t status);

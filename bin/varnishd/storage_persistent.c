@@ -567,6 +567,7 @@ const struct stevedore smp_stevedore = {
 	.allocobj =	smp_allocobj,
 	.free	=	smp_free,
 	.trim	=	smp_trim,
+        .dup    =       default_dup,
 };
 
 /*--------------------------------------------------------------------
