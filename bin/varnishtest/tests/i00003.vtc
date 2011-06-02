@@ -1,0 +1,146 @@
+# $Id$
+
+test "Test some anticipated use cases for conditional backend requests"
+
+## In vcl_miss(), it is possible to veto a conditional request by removing any
+## If-Modified-Since or If-None-Match header.
+
+server s1 {
+        rxreq
+        expect req.url == "/foo"
+        txresp -status 200 \
+    	    -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+            -hdr "ETag: foo" \
+            -body "abcdefghijklmonpqrstuvwxyz"
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since != "Thu, 26 Jun 2008 12:00:01 GMT"
+        expect req.http.If-None-Match != "foo"
+        txresp -status 200 -body "abcdefghijklmonpqrstuvwxyz"
+} -start
+
+varnish v1 -vcl+backend {
+        sub vcl_fetch {
+            set beresp.grace = 0s;
+            set beresp.ttl = 1s;
+            set beresp.keep = 1m;
+        }
+
+        sub vcl_miss {
+            unset bereq.http.If-Modified-Since;
+            unset bereq.http.If-None-Match;
+        }
+} -start
+
+client c1 {
+        txreq -url "/foo"
+        rxresp
+        expect resp.status == 200
+        expect resp.http.content-length == 26
+}
+
+client c1 -run
+
+delay 1.1
+
+client c1 -run
+
+varnish v1 -expect fetch_304 == 0
+varnish v1 -expect cond_not_validated == 0
+
+server s1 -wait
+varnish v1 -stop
+
+## Verify that if a client sends a conditional request to Varnish, then Varnish
+## can return a 304 response to the client after it got 304 from the backend
+
+server s2 {
+        rxreq
+        expect req.url == "/foo"
+        txresp -status 200 \
+    	    -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+            -body "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since == "Thu, 26 Jun 2008 12:00:01 GMT"
+        txresp -status 304
+} -start
+
+varnish v1 -vcl {
+        backend s2 {
+                .host = "${s2_addr}"; .port = "${s2_port}";
+        }
+
+        sub vcl_fetch {
+            set beresp.grace = 0s;
+            set beresp.ttl = 1s;
+            set beresp.keep = 1m;
+        }
+} -start
+
+client c2 {
+        txreq -url "/foo" \
+            -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:01 GMT"
+        rxresp
+        expect resp.status == 304
+}
+
+client c1 -run
+
+delay 1.1
+
+client c2 -run
+
+varnish v1 -expect fetch_304 == 1
+varnish v1 -expect cond_not_validated == 0
+
+server s2 -wait
+varnish v1 -stop
+
+##
+## If stale_obj has a gzipped body, make sure it interacts correctly with clients
+##
+
+server s2 {
+        rxreq
+        expect req.http.accept-encoding == "gzip"
+        txresp -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" -gzipbody FOO
+
+        rxreq
+        expect req.http.If-Modified-Since == "Thu, 26 Jun 2008 12:00:01 GMT"
+        txresp -status 304
+} -start
+
+varnish v1 -cliok "param.set http_gzip_support true" -vcl {
+        backend s2 {
+                .host = "${s2_addr}"; .port = "${s2_port}";
+        }
+
+        sub vcl_fetch {
+            set beresp.grace = 0s;
+            set beresp.ttl = 1s;
+            set beresp.keep = 1m;
+        }
+} -start
+
+client c1 {
+        txreq -hdr "Accept-encoding: gzip;q=0.1"
+        rxresp
+        expect resp.http.content-encoding == "gzip"
+        gunzip
+        expect resp.bodylen == "3"
+} -run
+
+delay 1.1
+
+client c2 {
+        txreq
+        rxresp
+        expect resp.bodylen == "3"
+        expect resp.http.content-encoding != "gzip"
+} -run
+
+varnish v1 -expect fetch_304 == 1
+varnish v1 -expect cond_not_validated == 0
