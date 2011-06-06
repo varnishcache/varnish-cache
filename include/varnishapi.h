@@ -262,9 +262,4 @@ int VSL_NextLog(const struct VSM_data *lh, uint32_t **pp, uint64_t *bitmap);
 int VSL_Matched(const struct VSM_data *vd, uint64_t bitmap);
 extern const char *VSL_tags[256];
 
-
-/* base64.c */
-void VB64_init(void);
-int VB64_decode(char *d, unsigned dlen, const char *s);
-
 #endif
