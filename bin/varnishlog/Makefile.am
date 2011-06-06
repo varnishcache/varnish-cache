@@ -9,6 +9,7 @@ dist_man_MANS = varnishlog.1
 varnishlog_SOURCES = \
 	varnishlog.c \
 	$(top_builddir)/lib/libvarnish/flopen.c \
+	$(top_builddir)/lib/libvarnish/version.c \
 	$(top_builddir)/lib/libvarnish/vpf.c
 
 varnishlog_LDADD = \
