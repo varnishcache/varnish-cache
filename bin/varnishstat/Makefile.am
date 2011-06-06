@@ -11,6 +11,7 @@ varnishstat_SOURCES = \
 	\
 	varnishstat.c \
 	varnishstat_curses.c \
+	$(top_builddir)/lib/libvarnish/assert.c \
 	$(top_builddir)/lib/libvarnish/version.c
 
 varnishstat_LDADD = \

@@ -10,6 +10,7 @@ varnishncsa_SOURCES = \
 	varnishncsa.c \
 	base64.c \
 	base64.h \
+	$(top_builddir)/lib/libvarnish/assert.c \
 	$(top_builddir)/lib/libvarnish/flopen.c \
 	$(top_builddir)/lib/libvarnish/version.c \
 	$(top_builddir)/lib/libvarnish/vpf.c
