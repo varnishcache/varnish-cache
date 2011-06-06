@@ -441,6 +441,10 @@ AC_SUBST(VARNISH_STATE_DIR)
 # Default configuration directory.
 varnishconfdir='${sysconfdir}/varnish'
 AC_SUBST(varnishconfdir)
+
+# Check for linker script support
+gl_LD_VERSION_SCRIPT
+
 # Now that we're done using the compiler to look for functions and
 # libraries, set CFLAGS to what we want them to be for our own code
 
