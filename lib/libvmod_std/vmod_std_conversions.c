@@ -30,8 +30,6 @@
 #include <ctype.h>
 #include <math.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <limits.h>
 
 #include "../../bin/varnishd/cache.h"
 
