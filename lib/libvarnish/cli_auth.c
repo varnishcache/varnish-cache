@@ -32,8 +32,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "cli.h"
-#include "cli_common.h"
+#include "vcli.h"
 #include "libvarnish.h"
 #include "vsha256.h"
 

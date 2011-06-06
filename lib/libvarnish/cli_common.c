@@ -46,7 +46,7 @@
 
 #include "libvarnish.h"
 
-#include "cli.h"
+#include "vcli.h"
 #include "cli_priv.h"
 #include "cli_common.h"
 

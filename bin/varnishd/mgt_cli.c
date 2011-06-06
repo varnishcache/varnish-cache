@@ -47,7 +47,7 @@
 #endif
 
 #include "cli_priv.h"
-#include "cli.h"
+#include "vcli.h"
 #include "vsb.h"
 #include "cli_common.h"
 #include "cli_serve.h"

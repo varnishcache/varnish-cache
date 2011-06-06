@@ -46,7 +46,7 @@
 #include "mgt.h"
 #include "vsm.h"
 #include "heritage.h"
-#include "cli.h"
+#include "vcli.h"
 #include "cli_priv.h"
 #include "mgt_cli.h"
 #include "vev.h"

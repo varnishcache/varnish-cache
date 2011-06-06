@@ -41,7 +41,7 @@
 #include <editline/readline.h>
 #endif
 
-#include "cli.h"
+#include "vcli.h"
 #include "cli_common.h"
 #include "libvarnish.h"
 #include "varnishapi.h"

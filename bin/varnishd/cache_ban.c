@@ -51,7 +51,7 @@
 
 #include <pcre.h>
 
-#include "cli.h"
+#include "vcli.h"
 #include "vend.h"
 #include "cli_priv.h"
 #include "cache.h"

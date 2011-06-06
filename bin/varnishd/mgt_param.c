@@ -40,7 +40,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "cli.h"
+#include "vcli.h"
 #include "cli_priv.h"
 #include "cli_common.h"
 #include "mgt.h"

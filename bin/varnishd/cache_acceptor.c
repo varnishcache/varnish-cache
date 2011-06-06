@@ -41,7 +41,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include "cli.h"
+#include "vcli.h"
 #include "cli_priv.h"
 #include "cache.h"
 #include "cache_waiter.h"

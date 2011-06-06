@@ -39,7 +39,7 @@
 #include <stdlib.h>
 #include <dlfcn.h>
 
-#include "cli.h"
+#include "vcli.h"
 #include "cli_priv.h"
 #include "vcl.h"
 #include "cache.h"

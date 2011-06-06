@@ -46,7 +46,7 @@
 #include "miniobj.h"
 #include "libvarnish.h"
 #include "varnishapi.h"
-#include "cli.h"
+#include "vcli.h"
 #include "cli_common.h"
 #include "vss.h"
 #include "vsb.h"
