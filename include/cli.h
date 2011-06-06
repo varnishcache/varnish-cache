@@ -206,3 +206,5 @@ enum VCLI_status_e {
 
 /* Length of first line of response */
 #define CLI_LINE0_LEN	13
+#define CLI_AUTH_RESPONSE_LEN		64	/* 64 hex + NUL */
+

@@ -275,7 +275,7 @@ static void
 mcf_auth(struct cli *cli, const char *const *av, void *priv)
 {
 	int fd;
-	char buf[CLI_AUTH_RESPONSE_LEN];
+	char buf[CLI_AUTH_RESPONSE_LEN + 1];
 
 	AN(av[2]);
 	(void)priv;
