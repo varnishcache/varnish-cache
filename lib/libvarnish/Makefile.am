@@ -33,9 +33,8 @@ libvarnish_la_SOURCES = \
 libvarnish_la_CFLAGS = -DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"'
 libvarnish_la_LIBADD = ${RT_LIBS} ${NET_LIBS} ${LIBM} @PCRE_LIBS@
 
-version.o: vcs_version.h
-
-DISTCLEANFILES = vcs_version.h
+BUILT_SOURCES = vcs_version.h
+MAINTAINERCLEANFILES = vcs_version.h
 vcs_version.h: FORCE
 	if [ -d "$(top_srcdir)/.git" ]; then \
 		V="$$(git describe --always)" \
