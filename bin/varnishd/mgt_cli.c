@@ -400,7 +400,7 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident, mgt_cli_close_f 
 		mcf_banner(cli, NULL, NULL);
 	}
 	AZ(VSB_finish(cli->sb));
-	(void)VCLI_WriteResult(fdo, cli);
+	(void)VCLI_WriteResult(fdo, cli->result, VSB_data(cli->sb));
 
 
 	ev = vev_new();

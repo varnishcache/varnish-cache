@@ -293,7 +293,8 @@ cls_vlu2(void *priv, char * const *av)
 
 	cli->cls = NULL;
 
-	if (VCLI_WriteResult(cfd->fdo, cli) || cli->result == CLIS_CLOSE)
+	if (VCLI_WriteResult(cfd->fdo, cli->result, VSB_data(cli->sb)) ||
+	    cli->result == CLIS_CLOSE)
 		return (1);
 
 	return (0);
