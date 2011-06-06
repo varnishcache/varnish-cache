@@ -77,6 +77,7 @@
 #include "vsl.h"
 #include "vre.h"
 #include "varnishapi.h"
+#include "base64.h"
 
 static volatile sig_atomic_t reopen;
 
