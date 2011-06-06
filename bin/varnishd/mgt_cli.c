@@ -47,7 +47,7 @@
 #endif
 
 #include "cli_priv.h"
-#include "cli.h"
+#include "vcli.h"
 #include "vsb.h"
 #include "cli_common.h"
 #include "cli_serve.h"
@@ -275,7 +275,7 @@ static void
 mcf_auth(struct cli *cli, const char *const *av, void *priv)
 {
 	int fd;
-	char buf[CLI_AUTH_RESPONSE_LEN];
+	char buf[CLI_AUTH_RESPONSE_LEN + 1];
 
 	AN(av[2]);
 	(void)priv;
@@ -400,7 +400,7 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident, mgt_cli_close_f 
 		mcf_banner(cli, NULL, NULL);
 	}
 	AZ(VSB_finish(cli->sb));
-	(void)VCLI_WriteResult(fdo, cli);
+	(void)VCLI_WriteResult(fdo, cli->result, VSB_data(cli->sb));
 
 
 	ev = vev_new();

@@ -8,6 +8,7 @@
 
 #include <sys/types.h>
 #include "varnishapi.h"
+#include "base64.h"
 
 static const char b64[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

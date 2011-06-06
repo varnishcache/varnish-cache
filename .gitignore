@@ -22,6 +22,7 @@ Makefile.in
 /config.status
 /config.sub
 /configure
+/configure.lineno
 /depcomp
 /install-sh
 /libtool
@@ -45,7 +46,7 @@ TAGS
 /include/vcl_returns.h
 /include/vrt_obj.h
 /include/vrt_stv_var.h
-/lib/libvarnish/vcs_version.c
+/lib/libvarnish/vcs_version.h
 /lib/libvcl/vcc_fixed_token.c
 /lib/libvcl/vcc_obj.c
 /lib/libvcl/vcc_token_defs.h
@@ -54,6 +55,7 @@ TAGS
 
 # Man-files and binaries
 /man/vcl.7
+/man/varnish-cli.7
 /bin/varnishadm/varnishadm
 /bin/varnishadm/varnishadm.1
 /bin/varnishd/varnishd
@@ -74,7 +76,9 @@ TAGS
 /bin/varnishtest/varnishtest.1
 /bin/varnishtop/varnishtop
 /bin/varnishtop/varnishtop.1
+/lib/libvmod_std/vmod_std.3
 
 # Doc-stuff generated from xml
 /doc/*.html
 /doc/sphinx/=build/
+/doc/sphinx/conf.py

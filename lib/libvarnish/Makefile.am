@@ -14,7 +14,7 @@ libvarnish_la_SOURCES = \
 	cli_serve.c \
 	flopen.c \
 	num.c \
-	vcs_version.c \
+	vcs_version.h \
 	time.c \
 	tcp.c \
 	vct.c \
@@ -33,11 +33,12 @@ libvarnish_la_SOURCES = \
 libvarnish_la_CFLAGS = -DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"'
 libvarnish_la_LIBADD = ${RT_LIBS} ${NET_LIBS} ${LIBM} @PCRE_LIBS@
 
-DISTCLEANFILES = vcs_version.c
-vcs_version.c: FORCE
+BUILT_SOURCES = vcs_version.h
+MAINTAINERCLEANFILES = vcs_version.h
+vcs_version.h: FORCE
 	if [ -d "$(top_srcdir)/.git" ]; then \
-		V="$$(git describe --always)" \
-		H="$$(head -n 1 vcs_version.c 2>/dev/null || true)"; \
+		V="$$(git show -s --pretty=format:%h)" \
+		H="$$(head -n 1 vcs_version.h 2>/dev/null || true)"; \
 		if [ "/* $$V */" != "$$H" ]; then \
 		( \
 		  echo "/* $$V */" ;\
@@ -48,12 +49,8 @@ vcs_version.c: FORCE
 		  echo ' *'  ;\
 		  echo ' */' ;\
 		  echo '' ;\
-		  echo "#include <libvarnish.h>" ;\
-		  echo "const char* VCS_Version(void)" ;\
-		  echo "{" ;\
-		  echo "	return (\"$$V\");" ;\
-		  echo "}" ;\
-		) > vcs_version.c ; \
+		  echo "#define VCS_Version \"$$V\"" \
+		) > vcs_version.h ; \
 		fi \
 	fi
 FORCE:

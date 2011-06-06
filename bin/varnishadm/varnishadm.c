@@ -41,7 +41,7 @@
 #include <editline/readline.h>
 #endif
 
-#include "cli.h"
+#include "vcli.h"
 #include "cli_common.h"
 #include "libvarnish.h"
 #include "varnishapi.h"
@@ -88,7 +88,7 @@ cli_sock(const char *T_arg, const char *S_arg)
 	int sock;
 	unsigned status;
 	char *answer = NULL;
-	char buf[CLI_AUTH_RESPONSE_LEN];
+	char buf[CLI_AUTH_RESPONSE_LEN + 1];
 
 	sock = VSS_open(T_arg, timeout);
 	if (sock < 0) {

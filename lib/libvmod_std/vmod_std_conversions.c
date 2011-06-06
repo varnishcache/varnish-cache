@@ -30,8 +30,6 @@
 #include <ctype.h>
 #include <math.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <limits.h>
 
 #include "../../bin/varnishd/cache.h"
 
@@ -108,9 +106,6 @@ vmod_integer(struct sess *sp, const char *p, int i)
 	e = NULL;
 
 	r = strtol(p, &e, 0);
-
-	if (!isfinite(r))
-		return (i);
 
 	if (e == NULL)
 		return (i);

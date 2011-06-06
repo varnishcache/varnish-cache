@@ -48,7 +48,7 @@
 #include "stevedore.h"
 #include "hash_slinger.h"
 #include "vsha256.h"
-#include "cli.h"
+#include "vcli.h"
 #include "cli_priv.h"
 #include "vend.h"
 

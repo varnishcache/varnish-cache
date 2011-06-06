@@ -12,7 +12,7 @@ libvarnishapi_la_SOURCES = \
 	\
 	../libvarnish/assert.c \
 	../libvarnish/argv.c \
-	../libvarnish/vcs_version.c \
+	../libvarnish/vcs_version.h \
 	../libvarnish/version.c \
 	../libvarnish/cli_common.c \
 	../libvarnish/cli_auth.c \
@@ -21,13 +21,19 @@ libvarnishapi_la_SOURCES = \
 	../libvarnish/vre.c \
 	../libvarnish/vsb.c \
 	../libvarnish/vsha256.c \
-	base64.c \
 	vsm.c \
 	vsl_arg.c \
 	vsl.c \
-	vsc.c
+	vsc.c \
+	libvarnishapi.map
 
 libvarnishapi_la_CFLAGS = \
 	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"'
 
 libvarnishapi_la_LIBADD = @PCRE_LIBS@
+
+if HAVE_LD_VERSION_SCRIPT
+libvarnishapi_la_LDFLAGS += -Wl,--version-script=$(srcdir)/libvarnishapi.map
+else
+libvarnishapi_la_LDFLAGS += -export-symbols-regex '^V'
+endif

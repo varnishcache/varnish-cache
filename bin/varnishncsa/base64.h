@@ -3,7 +3,7 @@
  * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
- * Author: Dag-Erling Smørgrav <des@des.no>
+ * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,21 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Display a standardized version message.
  */
 
-#include "config.h"
-
-#include <stdio.h>
-
-#include "libvarnish.h"
-#include "vcs_version.h"
-
-void
-VCS_Message(const char *progname)
-{
-	fprintf(stderr, "%s (%s-%s revision %s)\n", progname,
-		PACKAGE_TARNAME, PACKAGE_VERSION, VCS_Version);
-	fprintf(stderr, "Copyright (c) 2006 Verdens Gang AS\n");
-	fprintf(stderr, "Copyright (c) 2006-2011 Varnish Software AS\n");
-}
+void VB64_init(void);
+int VB64_decode(char *d, unsigned dlen, const char *s);

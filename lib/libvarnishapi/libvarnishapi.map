@@ -1,9 +1,8 @@
 /*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2011 Varnish Software AS
  * All rights reserved.
  *
- * Author: Dag-Erling Smørgrav <des@des.no>
+ * Author: Tollef Fog Heen <tfheen@varnish-software.com> 
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -25,22 +24,47 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * Display a standardized version message.
  */
 
-#include "config.h"
+LIBVARNISHAPI_1.0 {
+  global:
+	# Functions
+	VSM_New;
+	VSM_Diag;
+	VSM_n_Arg;
+	VSM_Name;
+	VSM_Delete;
+	VSM_Open;
+	VSM_ReOpen;
+	VSM_Seq;
+	VSM_Head;
+	VSM_Find_Chunk;
+	VSM_Close;
+	VSM_iter0;
+	VSM_intern;
+	
+	VSC_Setup;
+	VSC_Arg;
+	VSC_Open;
+	VSC_Main;
+	VSC_Iter;
 
-#include <stdio.h>
+	VSL_Setup;
+	VSL_Open;
+	VSL_Arg;
+	VSL_H_Print;
+	VSL_Select;
+	VSL_NonBlocking;
+	VSL_Dispatch;
+	VSL_NextLog;
+	VSL_Matched;
 
-#include "libvarnish.h"
-#include "vcs_version.h"
+	VCLI_WriteResult;
+	VCLI_ReadResult;
+	VCLI_AuthResponse;
 
-void
-VCS_Message(const char *progname)
-{
-	fprintf(stderr, "%s (%s-%s revision %s)\n", progname,
-		PACKAGE_TARNAME, PACKAGE_VERSION, VCS_Version);
-	fprintf(stderr, "Copyright (c) 2006 Verdens Gang AS\n");
-	fprintf(stderr, "Copyright (c) 2006-2011 Varnish Software AS\n");
-}
+	# Variables
+	VSL_tags;
+  local:
+	*;
+};

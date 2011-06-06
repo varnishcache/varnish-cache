@@ -46,7 +46,7 @@
 
 #include "libvarnish.h"
 
-#include "cli.h"
+#include "vcli.h"
 #include "cli_priv.h"
 #include "cli_common.h"
 
@@ -83,7 +83,7 @@ VCLI_SetResult(struct cli *cli, unsigned res)
 }
 
 int
-VCLI_WriteResult(int fd, const struct cli *cli)
+VCLI_WriteResult(int fd, unsigned status, const char *result)
 {
 	int i, l;
 	struct iovec iov[3];
@@ -93,18 +93,18 @@ VCLI_WriteResult(int fd, const struct cli *cli)
 					 * any misformats by snprintf
 					 */
 
-	assert(cli->result >= 100);
-	assert(cli->result <= 999);	/*lint !e650 const out of range */
+	assert(status >= 100);
+	assert(status <= 999);		/*lint !e650 const out of range */
 
 	i = snprintf(res, sizeof res,
-	    "%-3d %-8ld\n", cli->result, (long)VSB_len(cli->sb));
+	    "%-3d %-8jd\n", status, (intmax_t)strlen(result));
 	assert(i == CLI_LINE0_LEN);
 
 	iov[0].iov_base = res;
 	iov[0].iov_len = CLI_LINE0_LEN;
 
-	iov[1].iov_base = VSB_data(cli->sb);
-	iov[1].iov_len = VSB_len(cli->sb);
+	iov[1].iov_base = (void*)(uintptr_t)result;	/* TRUST ME */
+	iov[1].iov_len = strlen(result);
 
 	iov[2].iov_base = nl;
 	iov[2].iov_len = 1;
@@ -118,13 +118,17 @@ VCLI_WriteResult(int fd, const struct cli *cli)
 static int
 read_tmo(int fd, char *ptr, unsigned len, double tmo)
 {
-	int i, j;
+	int i, j, to;
 	struct pollfd pfd;
 
+	if (tmo > 0) 
+		to = tmo * 1e3;
+	else
+		to = -1;
 	pfd.fd = fd;
 	pfd.events = POLLIN;
 	for (j = 0; len > 0; ) {
-		i = poll(&pfd, 1, (int)(tmo * 1e3));
+		i = poll(&pfd, 1, to);
 		if (i == 0) {
 			errno = ETIMEDOUT;
 			return (-1);

@@ -55,7 +55,7 @@
 #include "vpf.h"
 #include "vsha256.h"
 
-#include "cli.h"
+#include "vcli.h"
 #include "cli_priv.h"
 #include "cli_common.h"
 

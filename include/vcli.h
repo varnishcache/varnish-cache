@@ -206,3 +206,12 @@ enum VCLI_status_e {
 
 /* Length of first line of response */
 #define CLI_LINE0_LEN	13
+#define CLI_AUTH_RESPONSE_LEN		64	/* 64 hex + NUL */
+
+#if !defined(VCLI_PROTOCOL_ONLY)
+/* Convenience functions exported in libvarnishapi */
+int VCLI_WriteResult(int fd, unsigned status, const char *result);
+int VCLI_ReadResult(int fd, unsigned *status, char **ptr, double tmo);
+void VCLI_AuthResponse(int S_fd, const char *challenge,
+    char reponse[CLI_AUTH_RESPONSE_LEN + 1]);
+#endif
