@@ -11,6 +11,7 @@ varnishlog_SOURCES = \
 	$(top_builddir)/lib/libvarnish/assert.c \
 	$(top_builddir)/lib/libvarnish/flopen.c \
 	$(top_builddir)/lib/libvarnish/version.c \
+	$(top_builddir)/lib/libvarnish/vsb.c \
 	$(top_builddir)/lib/libvarnish/vpf.c
 
 varnishlog_LDADD = \
