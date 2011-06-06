@@ -109,9 +109,6 @@ vmod_integer(struct sess *sp, const char *p, int i)
 
 	r = strtol(p, &e, 0);
 
-	if (!isfinite(r))
-		return (i);
-
 	if (e == NULL)
 		return (i);
 
