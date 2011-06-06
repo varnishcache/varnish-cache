@@ -45,7 +45,7 @@ TAGS
 /include/vcl_returns.h
 /include/vrt_obj.h
 /include/vrt_stv_var.h
-/lib/libvarnish/vcs_version.c
+/lib/libvarnish/vcs_version.h
 /lib/libvcl/vcc_fixed_token.c
 /lib/libvcl/vcc_obj.c
 /lib/libvcl/vcc_token_defs.h

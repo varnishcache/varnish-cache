@@ -34,12 +34,13 @@
 #include <stdio.h>
 
 #include "libvarnish.h"
+#include "vcs_version.h"
 
 void
 VCS_Message(const char *progname)
 {
 	fprintf(stderr, "%s (%s-%s revision %s)\n", progname,
-		PACKAGE_TARNAME, PACKAGE_VERSION, VCS_Version());
+		PACKAGE_TARNAME, PACKAGE_VERSION, VCS_Version);
 	fprintf(stderr, "Copyright (c) 2006 Verdens Gang AS\n");
 	fprintf(stderr, "Copyright (c) 2006-2011 Varnish Software AS\n");
 }
