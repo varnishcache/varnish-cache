@@ -70,10 +70,6 @@ void http_FilterMissingFields(struct worker *w, int fd, struct http *to,
     const struct http *fm);
 
 static enum VSL_tag_e
-
-void http_FilterMissingFields(struct worker *w, int fd, struct http *to,
-    const struct http *fm);
-
 http2shmlog(const struct http *hp, int t)
 {
 
