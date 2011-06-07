@@ -193,6 +193,18 @@ vsl_buildnew(const char *fn, unsigned size, int fill)
 	AZ(ftruncate(vsl_fd, (off_t)size));
 }
 
+/*--------------------------------------------------------------------
+ * Exit handler that clears the owning pid from the SHMLOG
+ */
+
+static
+void
+mgt_shm_atexit(void)
+{
+	if (getpid() == VSM_head->master_pid)
+		VSM_head->master_pid = 0;
+}
+
 void
 mgt_SHM_Init(const char *l_arg)
 {
@@ -273,6 +285,7 @@ mgt_SHM_Init(const char *l_arg)
 	    MAP_HASSEMAPHORE | MAP_NOSYNC | MAP_SHARED,
 	    vsl_fd, 0);
 	VSM_head->master_pid = getpid();
+	AZ(atexit(mgt_shm_atexit));
 	xxxassert(VSM_head != MAP_FAILED);
 	(void)mlock((void*)VSM_head, size);
 
