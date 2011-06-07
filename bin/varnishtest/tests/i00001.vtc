@@ -1,6 +1,6 @@
 # $Id$
 
-test "Test basic conditional requests to backends"
+varnishtest "Test basic conditional requests to backends"
 
 ## By default (default_keep = default_grace), cond. requests happen during grace
 

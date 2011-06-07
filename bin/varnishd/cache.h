@@ -683,6 +683,7 @@ void EXP_Set_keep(struct exp *e, double v);
 
 double EXP_Ttl(const struct sess *, const struct object*);
 double EXP_Grace(const struct sess *, const struct object*);
+double EXP_Keep(const struct sess *, const struct object*);
 void EXP_Insert(struct object *o);
 void EXP_Inject(struct objcore *oc, struct lru *lru, double when);
 void EXP_Init(void);

@@ -1,6 +1,6 @@
 # $Id$
 
-test "Verify the semantics of keep (timeout for conditional requests)"
+varnishtest "Verify the semantics of keep (timeout for conditional requests)"
 
 server s1 {
         rxreq

@@ -1,6 +1,6 @@
 # $Id$
 
-test "handling stale_obj in vcl_miss() and vcl_fetch()"
+varnishtest "handling stale_obj in vcl_miss() and vcl_fetch()"
 
 server s1 {
         rxreq

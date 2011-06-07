@@ -1,6 +1,6 @@
 # $Id$
 
-test "VCL compiler coverage test: conditional refresh extension"
+varnishtest "VCL compiler coverage test: conditional refresh extension"
 
 ## stale_obj is r/o in miss, fetch and error, illegal everywhere else
 

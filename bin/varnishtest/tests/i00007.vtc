@@ -1,6 +1,6 @@
 # $Id$
 
-test "Passes through responses to backend conditionals to the client if status != 304 or 200"
+varnishtest "Passes through responses to backend conditionals to the client if status != 304 or 200"
 
 # Testing a sample from each of the Nxx status codes
 
