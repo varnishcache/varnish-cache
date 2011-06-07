@@ -1,10 +1,14 @@
 # $Id$
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 varnishtest "Verify interactions of ttl, keep, grace and bans"
 =======
 test "Verify interactions of ttl, keep, grace and bans"
 >>>>>>> Merged conditional backend request feature
+=======
+varnishtest "Verify interactions of ttl, keep, grace and bans"
+>>>>>>> Merge conditional backend requests with current trunk
 
 ## Banned objects are not used for conditional requests
 
