@@ -3,6 +3,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 varnishtest "Passes through responses to backend conditionals to the client if status != 304 or 200"
 =======
 test "Passes through responses to backend conditionals to the client if status != 304 or 200"
@@ -13,6 +14,9 @@ varnishtest "Passes through responses to backend conditionals to the client if s
 =======
 test "Passes through responses to backend conditionals to the client if status != 304 or 200"
 >>>>>>> Merged conditional backend request feature
+=======
+varnishtest "Passes through responses to backend conditionals to the client if status != 304 or 200"
+>>>>>>> Merge conditional backend requests with current trunk
 
 # Testing a sample from each of the Nxx status codes
 

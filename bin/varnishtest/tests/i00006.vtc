@@ -3,6 +3,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 varnishtest "Verify effects of ttl, keep and grace on expiration"
 =======
 test "Verify effects of ttl, keep and grace on expiration"
@@ -13,6 +14,9 @@ varnishtest "Verify effects of ttl, keep and grace on expiration"
 =======
 test "Verify effects of ttl, keep and grace on expiration"
 >>>>>>> Merged conditional backend request feature
+=======
+varnishtest "Verify effects of ttl, keep and grace on expiration"
+>>>>>>> Merge conditional backend requests with current trunk
 
 ## Verify that an object's lifetime in the cache is
 ## obj.ttl + max(obj.grace, obj.keep)

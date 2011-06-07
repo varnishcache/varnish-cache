@@ -3,6 +3,7 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 varnishtest "Test basic conditional requests to backends"
 =======
 test "Test basic conditional requests to backends"
@@ -13,6 +14,9 @@ varnishtest "Test basic conditional requests to backends"
 =======
 test "Test basic conditional requests to backends"
 >>>>>>> Merged conditional backend request feature
+=======
+varnishtest "Test basic conditional requests to backends"
+>>>>>>> Merge conditional backend requests with current trunk
 
 ## By default (default_keep = default_grace), cond. requests happen during grace
 
