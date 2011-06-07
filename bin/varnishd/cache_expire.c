@@ -111,7 +111,7 @@ EXP_ACCESS(keep, 0.,)
  * adjusted for defaults and by per-session limits.
  */
 
-static double
+double
 EXP_Keep(const struct sess *sp, const struct object *o)
 {
 	double r;

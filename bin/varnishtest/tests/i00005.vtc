@@ -1,6 +1,6 @@
 # $Id$
 
-test "Verify interactions of ttl, keep, grace and bans"
+varnishtest "Verify interactions of ttl, keep, grace and bans"
 
 ## Banned objects are not used for conditional requests
 

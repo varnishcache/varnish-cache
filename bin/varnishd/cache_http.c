@@ -66,11 +66,10 @@ static const enum VSL_tag_e logmtx[][HTTP_HDR_FIRST + 1] = {
 };
 /*lint -restore */
 
-static enum VSL_tag_e
-
 void http_FilterMissingFields(struct worker *w, int fd, struct http *to,
     const struct http *fm);
 
+static enum VSL_tag_e
 http2shmlog(const struct http *hp, int t)
 {
 
