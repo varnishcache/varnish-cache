@@ -1,6 +1,6 @@
 # $Id$
 
-test "Test some anticipated use cases for conditional backend requests"
+varnishtest "Test some anticipated use cases for conditional backend requests"
 
 ## In vcl_miss(), it is possible to veto a conditional request by removing any
 ## If-Modified-Since or If-None-Match header.
