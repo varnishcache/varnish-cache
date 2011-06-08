@@ -365,6 +365,9 @@ RES_WriteObj(struct sess *sp)
 		sp->acct_tmp.hdrbytes +=
 		    http_Write(sp->wrk, sp->wrk->resp, 1);
 
+	if (!sp->wantbody)
+		sp->wrk->res_mode &= ~RES_CHUNKED;
+
 	if (sp->wrk->res_mode & RES_CHUNKED)
 		WRW_Chunked(sp->wrk);
 
