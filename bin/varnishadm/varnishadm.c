@@ -349,16 +349,14 @@ main(int argc, char * const *argv)
 			usage();
 		}
 		sock = n_arg_sock(n_arg);
-		if (sock < 0)
-			exit(2);
 	} else if (T_arg == NULL) {
 		sock = n_arg_sock("");
-		if (sock < 0)
-			exit(2);
 	} else {
 		assert(T_arg != NULL);
 		sock = cli_sock(T_arg, S_arg);
 	}
+	if (sock < 0)
+		exit(2);
 
 	if (argc > 0)
 		do_args(sock, argc, argv);
