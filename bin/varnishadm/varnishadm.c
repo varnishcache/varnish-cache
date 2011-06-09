@@ -274,7 +274,7 @@ usage(void)
 static int
 n_arg_sock(const char *n_arg)
 {
-	char *T_arg = NULL;
+	char *T_arg = NULL, *T_start = NULL;
 	char *S_arg = NULL;
 	struct VSM_data *vsd;
 	char *p;
@@ -292,7 +292,7 @@ n_arg_sock(const char *n_arg)
 			fprintf(stderr, "No -T arg in shared memory\n");
 			return (-1);
 		}
-		T_arg = strdup(p);
+		T_start = T_arg = strdup(p);
 	}
 	if (S_arg == NULL) {
 		p = VSM_Find_Chunk(vsd, "Arg", "-S", "", NULL);
@@ -309,7 +309,7 @@ n_arg_sock(const char *n_arg)
 			break;
 		T_arg = p + 1;
 	}
-	free(T_arg);
+	free(T_start);
 	free(S_arg);
 	return (sock);
 }
