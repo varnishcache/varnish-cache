@@ -41,6 +41,22 @@
 #include "libvarnish.h"
 
 int
+seed_random(void)
+{
+	int fd;
+	unsigned seed;
+
+	fd = open("/dev/urandom", O_RDONLY);
+	if (fd == -1)
+		return (1);
+	if (read(fd, &seed, sizeof seed) != sizeof seed)
+		return (1);
+	(void)close(fd);
+	srandom(seed);
+	return (0);
+}
+
+int
 vtmpfile(char *template)
 {
 	char *b, *e, *p;
