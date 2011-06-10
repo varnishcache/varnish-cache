@@ -364,6 +364,8 @@ main(int argc, char * const *argv)
 	for (o = getdtablesize(); o > STDERR_FILENO; o--)
 		(void)close(o);
 
+	AZ(seed_random());
+
 	mgt_got_fd(STDERR_FILENO);
 
 	setbuf(stdout, NULL);

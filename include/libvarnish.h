@@ -99,6 +99,7 @@ struct timeval TIM_timeval(double t);
 void VCS_Message(const char *);
 
 /* from libvarnish/vtmpfile.c */
+int seed_random(void);
 int vtmpfile(char *);
 char *vreadfile(const char *pfx, const char *fn, ssize_t *sz);
 char *vreadfd(int fd, ssize_t *sz);
