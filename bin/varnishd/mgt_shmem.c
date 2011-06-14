@@ -101,6 +101,7 @@
 #include "heritage.h"
 #include "vmb.h"
 #include "vsm.h"
+#include "flopen.h"
 
 #ifndef MAP_HASSEMAPHORE
 #define MAP_HASSEMAPHORE 0 /* XXX Linux */
@@ -125,11 +126,24 @@ vsl_n_check(int fd)
 	struct VSM_head slh;
 	int i;
 	struct stat st;
+	pid_t pid;
 
 	AZ(fstat(fd, &st));
 	if (!S_ISREG(st.st_mode))
 		ARGV_ERR("\tshmlog: Not a file\n");
 
+	/* Test if the SHMFILE is locked by other Varnish */
+	if (fltest(fd, &pid) > 0) {
+		fprintf(stderr,
+			"SHMFILE locked by running varnishd master (pid=%jd)\n",
+			(intmax_t)pid);
+		fprintf(stderr,
+			"(Use unique -n arguments if you want multiple "
+			"instances)\n");
+		exit(2);
+	}
+
+	/* Read owning pid from SHMFILE */
 	memset(&slh, 0, sizeof slh);	/* XXX: for flexelint */
 	i = read(fd, &slh, sizeof slh);
 	if (i != sizeof slh)
@@ -138,15 +152,11 @@ vsl_n_check(int fd)
 		return;
 	if (slh.hdrsize != sizeof slh)
 		return;
-
 	if (slh.master_pid != 0 && !kill(slh.master_pid, 0)) {
-		fprintf(stderr,
-		    "SHMFILE owned by running varnishd master (pid=%jd)\n",
-		    (intmax_t)slh.master_pid);
-		fprintf(stderr,
-		    "(Use unique -n arguments if you want multiple "
-		    "instances.)\n");
-		exit(2);
+		fprintf(stderr, 
+			"WARNING: Taking over SHMFILE marked as owned by "
+			"running process (pid=%jd)\n",
+			(intmax_t)slh.master_pid);
 	}
 }
 
@@ -161,15 +171,20 @@ vsl_buildnew(const char *fn, unsigned size, int fill)
 	int i;
 	unsigned u;
 	char buf[64*1024];
+	int flags;
 
 	(void)unlink(fn);
-	vsl_fd = open(fn, O_RDWR | O_CREAT | O_EXCL, 0644);
+	vsl_fd = flopen(fn, O_RDWR | O_CREAT | O_EXCL | O_NONBLOCK, 0644);
 	if (vsl_fd < 0) {
 		fprintf(stderr, "Could not create %s: %s\n",
 		    fn, strerror(errno));
 		exit (1);
 	}
-
+	flags = fcntl(vsl_fd, F_GETFL);
+	assert(flags != -1);
+	flags &= ~O_NONBLOCK;
+	AZ(fcntl(vsl_fd, F_SETFL, flags));
+	
 	memset(&slh, 0, sizeof slh);
 	slh.magic = VSM_HEAD_MAGIC;
 	slh.hdrsize = sizeof slh;
@@ -277,7 +292,6 @@ mgt_SHM_Init(const char *l_arg)
 		vsl_n_check(i);
 		(void)close(i);
 	}
-	(void)close(i);
 	vsl_buildnew(VSM_FILENAME, size, fill);
 
 	VSM_head = (void *)mmap(NULL, size,
