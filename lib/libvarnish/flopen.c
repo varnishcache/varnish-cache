@@ -107,3 +107,27 @@ flopen(const char *path, int flags, ...)
 		return (fd);
 	}
 }
+
+/* Tests if the given fd is locked through flopen
+ * If pid is non-NULL, stores the pid of the process holding the lock there
+ * Returns 1 if the file is locked
+ * Returns 0 if the file is unlocked
+ * Returns -1 on error (and errno)
+ */
+int
+fltest(int fd, pid_t *pid)
+{
+	struct flock lock;
+
+	memset(&lock, 0, sizeof lock);
+	lock.l_type = F_WRLCK;
+	lock.l_whence = SEEK_SET;
+
+	if (fcntl(fd, F_GETLK, &lock) == -1)
+		return (-1);
+	if (lock.l_type == F_UNLCK)
+		return (0);
+	if (pid != NULL)
+		*pid = lock.l_pid;
+	return (1);
+}
