@@ -292,7 +292,8 @@ static int
 ban_parse_regexp(struct cli *cli, const struct ban *b, const char *a3)
 {
 	const char *error;
-	int erroroffset, rc, sz;
+	int erroroffset, rc;
+	size_t sz;
 	pcre *re;
 
 	re = pcre_compile(a3, 0, &error, &erroroffset, NULL);
