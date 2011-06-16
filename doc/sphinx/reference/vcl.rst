@@ -652,7 +652,7 @@ beresp.do_esi
   to true to parse the object for ESI directives.
 
 beresp.do_gzip
-  Boolean. Gzip the object before storing it. Defaults to true. 
+  Boolean. Gzip the object before storing it. Defaults to false.
 
 beresp.do_gunzip
   Boolean. Unzip the object before storing it in the cache.  Defaults
