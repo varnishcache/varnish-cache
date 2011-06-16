@@ -98,107 +98,110 @@ returns =(
 
 #######################################################################
 # Variables available in sessions
+#
+# 'all' means all methods
+# 'proc' means all methods but 'init' and 'fini'
 
 sp_variables = (
 	('client.ip',
 		'IP',
-		( 'all',),
+		( 'proc',),
 		( ),
 		'const struct sess *'
 	),
 	('client.identity',
 		'STRING',
-		( 'all',),
-		( 'all',),
+		( 'proc',),
+		( 'proc',),
 		'struct sess *'
 	),
 	('server.ip',
 		'IP',
-		( 'all',),
+		( 'proc',),
 		( ),
 		'struct sess *'
 	),
 	('server.hostname',
 		'STRING',
-		( 'all',),
+		( 'proc',),
 		( ),
 		'struct sess *'
 	),
 	('server.identity',
 		'STRING',
-		( 'all',),
+		( 'proc',),
 		( ),
 		'struct sess *'
 	),
 	('server.port',
 		'INT',
-		( 'all',),
+		( 'proc',),
 		( ),
 		'struct sess *'
 	),
 	('req.request',
 		'STRING',
-		( 'all',),
-		( 'all',),
+		( 'proc',),
+		( 'proc',),
 		'const struct sess *'
 	),
 	('req.url',
 		'STRING',
-		( 'all',),
-		( 'all',),
+		( 'proc',),
+		( 'proc',),
 		'const struct sess *'
 	),
 	('req.proto',
 		'STRING',
-		( 'all',),
-		( 'all',),
+		( 'proc',),
+		( 'proc',),
 		'const struct sess *'
 	),
 	('req.http.',
 		'HDR_REQ',
-		( 'all',),
-		( 'all',),
+		( 'proc',),
+		( 'proc',),
 		'const struct sess *'
 	),
 	('req.backend',
 		'BACKEND',
-		( 'all',),
-		( 'all',),
+		( 'proc',),
+		( 'proc',),
 		'struct sess *'
 	),
 	('req.restarts',
 		'INT',
-		( 'all',),
+		( 'proc',),
 		( ),
 		'const struct sess *'
 	),
 	('req.esi_level',
 		'INT',
-		( 'all',),
+		( 'proc',),
 		( ),
 		'const struct sess *'
 	),
 	('req.ttl',
 		'DURATION',
-		( 'all',),
-		( 'all',),
+		( 'proc',),
+		( 'proc',),
 		'struct sess *'
 	),
 	('req.grace',
 		'DURATION',
-		( 'all',),
-		( 'all',),
+		( 'proc',),
+		( 'proc',),
 		'struct sess *'
 	),
 	('req.keep',
 		'DURATION',
-		( 'all',),
-		( 'all',),
+		( 'proc',),
+		( 'proc',),
 		'struct sess *'
 	),
 	('req.xid',
 		'STRING',
-		( 'all',),
+		( 'proc',),
 		( ),
 		'struct sess *'
 	),
@@ -210,13 +213,13 @@ sp_variables = (
 	),
 	('req.can_gzip',
 		'BOOL',
-		( 'all',),
+		( 'proc',),
 		( ),
 		'struct sess *'
 	),
 	('req.backend.healthy',
 		'BOOL',
-		( 'all',),
+		( 'proc',),
 		( ),
 		'const struct sess *'
 	),
@@ -773,6 +776,11 @@ def restrict(fo, spec):
 		return
 	if spec[0] == 'all':
 		spec = vcls
+	if spec[0] == 'proc':
+		spec = list()
+		for i in vcls:
+			if i != "init" and i != "fini":
+				spec.append(i)
 	p = ""
 	n = 0
 	for j in spec:
