@@ -14,7 +14,7 @@
 
 ///////////////////////////////////////////////////////////////////////
 // assert() support, common to libvarnish and libvarnishapi
--sem(vas_fail, r_no)
+-sem(VAS_Fail, r_no)
 -emacro(506, assert)    // constant value boolean
 -emacro(827, assert)    // loop not reachable
 -emacro(774, assert)    // booelan always true
@@ -55,18 +55,18 @@
 ///////////////////////////////////////////////////////////////////////
 // VSB
 
--esym(759, vsb_*)	// header decl could be moved
--esym(765, vsb_*)	// exten could be made static
--esym(714, vsb_*)	// symb not ref
--sem(vsb_new, @p == (1p ? 1p : malloc(1)))
--sem(vsb_delete, custodial(1))
+-esym(759, VSB_*)	// header decl could be moved
+-esym(765, VSB_*)	// exten could be made static
+-esym(714, VSB_*)	// symb not ref
+-sem(VSB_new, @p == (1p ? 1p : malloc(1)))
+-sem(VSB_delete, custodial(1))
 
--esym(534, vsb_cat)	// Ignore retval
--esym(534, vsb_bcat)
--esym(534, vsb_putc)
--esym(534, vsb_printf)
--esym(534, vsb_vprintf)
--esym(534, vsb_putc)
+-esym(534, VSB_cat)	// Ignore retval
+-esym(534, VSB_bcat)
+-esym(534, VSB_putc)
+-esym(534, VSB_printf)
+-esym(534, VSB_vprintf)
+-esym(534, VSB_putc)
 
 ///////////////////////////////////////////////////////////////////////
 // System library/POSIX related

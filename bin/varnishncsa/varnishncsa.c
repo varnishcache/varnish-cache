@@ -1,7 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2009 Linpro AS
- * Copyright (c) 2010 Varnish Software AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Anders Berg <andersb@vgnett.no>
@@ -55,7 +54,7 @@
  *	%q		Query string
  *	%H		Protocol version
  *
- * TODO:	- Log in any format one wants
+ * TODO:	- Make it possible to grab any request header
  *		- Maybe rotate/compress log
  */
 
@@ -78,6 +77,7 @@
 #include "vsl.h"
 #include "vre.h"
 #include "varnishapi.h"
+#include "base64.h"
 
 static volatile sig_atomic_t reopen;
 
@@ -208,7 +208,7 @@ clean_logline(struct logline *lp)
 }
 
 static int
-collect_backend(struct logline *lp, enum vsl_tag tag, unsigned spec,
+collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
     const char *ptr, unsigned len)
 {
 	const char *end, *next;
@@ -322,7 +322,7 @@ collect_backend(struct logline *lp, enum vsl_tag tag, unsigned spec,
 }
 
 static int
-collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
+collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
     const char *ptr, unsigned len)
 {
 	const char *end, *next;
@@ -426,8 +426,10 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 			lp->df_hitmiss = "miss";
 			lp->df_handling = "pass";
 		} else if (strncmp(ptr, "pipe", len) == 0) {
-			lp->df_hitmiss = "miss";
-			lp->df_handling = "pipe";
+			/* Just skip piped requests, since we can't
+			 * print their status code */
+			clean_logline(lp);
+			break;
 		}
 		break;
 
@@ -476,7 +478,7 @@ collect_client(struct logline *lp, enum vsl_tag tag, unsigned spec,
 }
 
 static int
-h_ncsa(void *priv, enum vsl_tag tag, unsigned fd,
+h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
     unsigned len, unsigned spec, const char *ptr, uint64_t bitmap)
 {
 	struct logline *lp;
@@ -587,7 +589,7 @@ h_ncsa(void *priv, enum vsl_tag tag, unsigned fd,
 
 		case 's':
 			/* %s */
-			fprintf(fo, "%s", lp->df_s);
+			fprintf(fo, "%s", lp->df_s ? lp->df_s : "");
 			break;
 
 		case 't':
@@ -606,11 +608,11 @@ h_ncsa(void *priv, enum vsl_tag tag, unsigned fd,
 				char *rubuf;
 				size_t rulen;
 
-				base64_init();
+				VB64_init();
 				rulen = ((strlen(lp->df_u) + 3) * 4) / 3;
 				rubuf = malloc(rulen);
 				assert(rubuf != NULL);
-				base64_decode(rubuf, rulen, lp->df_u);
+				VB64_decode(rubuf, rulen, lp->df_u);
 				q = strchr(rubuf, ':');
 				if (q != NULL)
 					*q = '\0';
@@ -720,7 +722,7 @@ main(int argc, char *argv[])
 	int a_flag = 0, D_flag = 0, format_flag = 0;
 	const char *P_arg = NULL;
 	const char *w_arg = NULL;
-	struct pidfh *pfh = NULL;
+	struct vpf_fh *pfh = NULL;
 	FILE *of;
 	format = "%h %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-agent}i\"";
 
@@ -755,7 +757,7 @@ main(int argc, char *argv[])
 			P_arg = optarg;
 			break;
 		case 'V':
-			varnish_version("varnishncsa");
+			VCS_Message("varnishncsa");
 			exit(0);
 		case 'w':
 			w_arg = optarg;
@@ -789,7 +791,7 @@ main(int argc, char *argv[])
 	if (VSL_Open(vd, 1))
 		exit(1);
 
-	if (P_arg && (pfh = vpf_open(P_arg, 0644, NULL)) == NULL) {
+	if (P_arg && (pfh = VPF_Open(P_arg, 0644, NULL)) == NULL) {
 		perror(P_arg);
 		exit(1);
 	}
@@ -797,12 +799,12 @@ main(int argc, char *argv[])
 	if (D_flag && varnish_daemon(0, 0) == -1) {
 		perror("daemon()");
 		if (pfh != NULL)
-			vpf_remove(pfh);
+			VPF_Remove(pfh);
 		exit(1);
 	}
 
 	if (pfh != NULL)
-		vpf_write(pfh);
+		VPF_Write(pfh);
 
 	if (w_arg) {
 		of = open_log(w_arg, a_flag);

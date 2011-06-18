@@ -97,12 +97,12 @@ You can also add bans to Varnish via HTTP. Doing so requires a bit of VCL::
 		  if (!client.ip ~ purge) {
 			  error 405 "Not allowed.";
 		  }
-		  ban("req.http.host == " req.http.host 
-		        "&& req.url == " req.url);
+		  ban("req.http.host == " + req.http.host +
+		        "&& req.url == " + req.url);
 
 		  # Throw a synthetic page so the
                   # request won't go to the backend.
-		  error 200 "Ban added"
+		  error 200 "Ban added";
 	  }
   }
 

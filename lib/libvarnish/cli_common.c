@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -46,19 +46,19 @@
 
 #include "libvarnish.h"
 
-#include "cli.h"
+#include "vcli.h"
 #include "cli_priv.h"
 #include "cli_common.h"
 
 /*lint -e{818} cli could be const */
 void
-cli_out(struct cli *cli, const char *fmt, ...)
+VCLI_Out(struct cli *cli, const char *fmt, ...)
 {
 	va_list ap;
 
 	va_start(ap, fmt);
 	if (cli != NULL)
-		(void)vsb_vprintf(cli->sb, fmt, ap);
+		(void)VSB_vprintf(cli->sb, fmt, ap);
 	else
 		(void)vfprintf(stdout, fmt, ap);
 	va_end(ap);
@@ -66,14 +66,14 @@ cli_out(struct cli *cli, const char *fmt, ...)
 
 /*lint -e{818} cli could be const */
 void
-cli_quote(struct cli *cli, const char *s)
+VCLI_Quote(struct cli *cli, const char *s)
 {
 
-	vsb_quote(cli->sb, s, -1, 0);
+	VSB_quote(cli->sb, s, -1, 0);
 }
 
 void
-cli_result(struct cli *cli, unsigned res)
+VCLI_SetResult(struct cli *cli, unsigned res)
 {
 
 	if (cli != NULL)
@@ -83,7 +83,7 @@ cli_result(struct cli *cli, unsigned res)
 }
 
 int
-cli_writeres(int fd, const struct cli *cli)
+VCLI_WriteResult(int fd, unsigned status, const char *result)
 {
 	int i, l;
 	struct iovec iov[3];
@@ -93,18 +93,18 @@ cli_writeres(int fd, const struct cli *cli)
 					 * any misformats by snprintf
 					 */
 
-	assert(cli->result >= 100);
-	assert(cli->result <= 999);	/*lint !e650 const out of range */
+	assert(status >= 100);
+	assert(status <= 999);		/*lint !e650 const out of range */
 
 	i = snprintf(res, sizeof res,
-	    "%-3d %-8ld\n", cli->result, (long)vsb_len(cli->sb));
+	    "%-3d %-8jd\n", status, (intmax_t)strlen(result));
 	assert(i == CLI_LINE0_LEN);
 
 	iov[0].iov_base = res;
 	iov[0].iov_len = CLI_LINE0_LEN;
 
-	iov[1].iov_base = vsb_data(cli->sb);
-	iov[1].iov_len = vsb_len(cli->sb);
+	iov[1].iov_base = (void*)(uintptr_t)result;	/* TRUST ME */
+	iov[1].iov_len = strlen(result);
 
 	iov[2].iov_base = nl;
 	iov[2].iov_len = 1;
@@ -118,17 +118,21 @@ cli_writeres(int fd, const struct cli *cli)
 static int
 read_tmo(int fd, char *ptr, unsigned len, double tmo)
 {
-	int i, j;
+	int i, j, to;
 	struct pollfd pfd;
 
+	if (tmo > 0) 
+		to = tmo * 1e3;
+	else
+		to = -1;
 	pfd.fd = fd;
 	pfd.events = POLLIN;
-	i = poll(&pfd, 1, (int)(tmo * 1e3));
-	if (i == 0) {
-		errno = ETIMEDOUT;
-		return (-1);
-	}
 	for (j = 0; len > 0; ) {
+		i = poll(&pfd, 1, to);
+		if (i == 0) {
+			errno = ETIMEDOUT;
+			return (-1);
+		}
 		i = read(fd, ptr, len);
 		if (i < 0)
 			return (i);
@@ -142,7 +146,7 @@ read_tmo(int fd, char *ptr, unsigned len, double tmo)
 }
 
 int
-cli_readres(int fd, unsigned *status, char **ptr, double tmo)
+VCLI_ReadResult(int fd, unsigned *status, char **ptr, double tmo)
 {
 	char res[CLI_LINE0_LEN];	/* For NUL */
 	int i, j;

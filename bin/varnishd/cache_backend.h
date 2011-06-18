@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Linpro AS
+ * Copyright (c) 2006-2010 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -131,7 +131,7 @@ struct backend {
 	unsigned		healthy;
 	VTAILQ_HEAD(, trouble)	troublelist;
 
-	struct vsc_vbe		*vsc;
+	struct VSC_C_vbe	*vsc;
 };
 
 /* cache_backend.c */

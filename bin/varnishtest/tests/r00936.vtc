@@ -1,0 +1,15 @@
+varnishtest "synthetic is only allowed in error"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -badvcl {
+	backend foo { .host = "127.0.0.1"; }
+
+	sub vcl_recv {
+		synthetic "HELLOO"; return (error);
+	}
+}
+

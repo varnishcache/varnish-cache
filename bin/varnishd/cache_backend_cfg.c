@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Linpro AS
+ * Copyright (c) 2006-2010 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -69,7 +69,7 @@ VBE_Nuke(struct backend *b)
 	free(b->port);
 	VSM_Free(b->vsc);
 	FREE_OBJ(b);
-	VSC_main->n_backend--;
+	VSC_C_main->n_backend--;
 }
 
 /*--------------------------------------------------------------------
@@ -234,7 +234,7 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	b->healthy = 1;
 
 	VTAILQ_INSERT_TAIL(&backends, b, list);
-	VSC_main->n_backend++;
+	VSC_C_main->n_backend++;
 	return (b);
 }
 
@@ -285,7 +285,7 @@ cli_debug_backend(struct cli *cli, const char * const *av, void *priv)
 	ASSERT_CLI();
 	VTAILQ_FOREACH(b, &backends, list) {
 		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-		cli_out(cli, "%p %s(%s,%s,:%s) %d %d\n",
+		VCLI_Out(cli, "%p %s(%s,%s,:%s) %d %d\n",
 		    b, b->vcl_name, b->ipv4_addr, b->ipv6_addr, b->port,
 		    b->refcount, b->n_conn);
 	}

@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Redpill Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -41,27 +41,27 @@
 #include <vqueue.h>
 #include <vsb.h>
 #include <vlu.h>
-#include <cli.h>
+#include <vcli.h>
 #include <cli_priv.h>
 #include <cli_common.h>
 #include <cli_serve.h>
 #include <libvarnish.h>
 #include <miniobj.h>
 
-struct cls_func {
+struct VCLS_func {
 	unsigned			magic;
-#define CLS_FUNC_MAGIC			0x7d280c9b
-	VTAILQ_ENTRY(cls_func)		list;
+#define VCLS_FUNC_MAGIC			0x7d280c9b
+	VTAILQ_ENTRY(VCLS_func)		list;
 	unsigned			auth;
 	struct cli_proto		*clp;
 };
 
-struct cls_fd {
+struct VCLS_fd {
 	unsigned			magic;
-#define CLS_FD_MAGIC			0x010dbd1e
-	VTAILQ_ENTRY(cls_fd)		list;
+#define VCLS_FD_MAGIC			0x010dbd1e
+	VTAILQ_ENTRY(VCLS_fd)		list;
 	int				fdi, fdo;
-	struct cls			*cls;
+	struct VCLS			*cls;
 	struct cli			*cli, clis;
 	cls_cb_f			*closefunc;
 	void				*priv;
@@ -70,12 +70,12 @@ struct cls_fd {
 	char				**argv;
 };
 
-struct cls {
+struct VCLS {
 	unsigned			magic;
-#define CLS_MAGIC			0x60f044a3
-	VTAILQ_HEAD(,cls_fd)		fds;
+#define VCLS_MAGIC			0x60f044a3
+	VTAILQ_HEAD(,VCLS_fd)		fds;
 	unsigned			nfd;
-	VTAILQ_HEAD(,cls_func)		funcs;
+	VTAILQ_HEAD(,VCLS_func)		funcs;
 	cls_cbc_f			*before, *after;
 	unsigned			maxlen;
 };
@@ -83,41 +83,41 @@ struct cls {
 /*--------------------------------------------------------------------*/
 
 void
-CLS_func_close(struct cli *cli, const char *const *av, void *priv)
+VCLS_func_close(struct cli *cli, const char *const *av, void *priv)
 {
 
 	(void)av;
 	(void)priv;
-	cli_out(cli, "Closing CLI connection");
-	cli_result(cli, CLIS_CLOSE);
+	VCLI_Out(cli, "Closing CLI connection");
+	VCLI_SetResult(cli, CLIS_CLOSE);
 }
 
 /*--------------------------------------------------------------------*/
 
 void
-CLS_func_ping(struct cli *cli, const char * const *av, void *priv)
+VCLS_func_ping(struct cli *cli, const char * const *av, void *priv)
 {
 	time_t t;
 
 	(void)priv;
 	(void)av;
 	t = time(NULL);
-	cli_out(cli, "PONG %ld 1.0", t);
+	VCLI_Out(cli, "PONG %ld 1.0", t);
 }
 
 /*--------------------------------------------------------------------*/
 
 void
-CLS_func_help(struct cli *cli, const char * const *av, void *priv)
+VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 {
 	struct cli_proto *cp;
-	struct cls_func *cfn;
+	struct VCLS_func *cfn;
 	unsigned all, debug, u, d, h, i, wc;
-	struct cls *cs;
+	struct VCLS *cs;
 
 	(void)priv;
 	cs = cli->cls;
-	CHECK_OBJ_NOTNULL(cs, CLS_MAGIC);
+	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
 
 	if (av[2] == NULL) {
 		all = debug = 0;
@@ -133,7 +133,7 @@ CLS_func_help(struct cli *cli, const char * const *av, void *priv)
 				continue;
 			for (cp = cfn->clp; cp->request != NULL; cp++) {
 				if (!strcmp(cp->request, av[2])) {
-					cli_out(cli, "%s\n%s\n",
+					VCLI_Out(cli, "%s\n%s\n",
 					    cp->syntax, cp->help);
 					return;
 				}
@@ -145,8 +145,8 @@ CLS_func_help(struct cli *cli, const char * const *av, void *priv)
 				}
 			}
 		}
-		cli_out(cli, "Unknown request.\nType 'help' for more info.\n");
-		cli_result(cli, CLIS_UNKNOWN);
+		VCLI_Out(cli, "Unknown request.\nType 'help' for more info.\n");
+		VCLI_SetResult(cli, CLIS_UNKNOWN);
 		return;
 	}
 	VTAILQ_FOREACH(cfn, &cs->funcs, list) {
@@ -180,7 +180,7 @@ CLS_func_help(struct cli *cli, const char * const *av, void *priv)
 			if (h && !all)
 				continue;
 			if (cp->syntax != NULL)
-				cli_out(cli, "%s\n", cp->syntax);
+				VCLI_Out(cli, "%s\n", cp->syntax);
 		}
 	}
 }
@@ -206,25 +206,25 @@ cls_dispatch(struct cli *cli, struct cli_proto *clp, char * const * av,
 		return (0);
 
 	if (cp->func == NULL) {
-		cli_out(cli, "Unimplemented\n");
-		cli_result(cli, CLIS_UNIMPL);
+		VCLI_Out(cli, "Unimplemented\n");
+		VCLI_SetResult(cli, CLIS_UNIMPL);
 		return(1);
 	}
 
 	if (ac - 1 < cp->minarg) {
-		cli_out(cli, "Too few parameters\n");
-		cli_result(cli, CLIS_TOOFEW);
+		VCLI_Out(cli, "Too few parameters\n");
+		VCLI_SetResult(cli, CLIS_TOOFEW);
 		return(1);
 	}
 
 	if (ac - 1> cp->maxarg) {
-		cli_out(cli, "Too many parameters\n");
-		cli_result(cli, CLIS_TOOMANY);
+		VCLI_Out(cli, "Too many parameters\n");
+		VCLI_SetResult(cli, CLIS_TOOMANY);
 		return(1);
 	}
 
 	cli->result = CLIS_OK;
-	vsb_clear(cli->sb);
+	VSB_clear(cli->sb);
 	cp->func(cli, (const char * const *)av, cp->priv);
 	return (1);
 }
@@ -236,15 +236,15 @@ cls_dispatch(struct cli *cli, struct cli_proto *clp, char * const * av,
 static int
 cls_vlu2(void *priv, char * const *av)
 {
-	struct cls_fd *cfd;
-	struct cls *cs;
-	struct cls_func *cfn;
+	struct VCLS_fd *cfd;
+	struct VCLS *cs;
+	struct VCLS_func *cfn;
 	struct cli *cli;
 	unsigned na;
 
-	CAST_OBJ_NOTNULL(cfd, priv, CLS_FD_MAGIC);
+	CAST_OBJ_NOTNULL(cfd, priv, VCLS_FD_MAGIC);
 	cs = cfd->cls;
-	CHECK_OBJ_NOTNULL(cs, CLS_MAGIC);
+	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
 
 	cli = cfd->cli;
 	CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
@@ -253,22 +253,22 @@ cls_vlu2(void *priv, char * const *av)
 	cli->cls = cs;
 
 	cli->result = CLIS_UNKNOWN;
-	vsb_clear(cli->sb);
-	cli_out(cli, "Unknown request.\nType 'help' for more info.\n");
+	VSB_clear(cli->sb);
+	VCLI_Out(cli, "Unknown request.\nType 'help' for more info.\n");
 
 	if (cs->before != NULL)
 		cs->before(cli);
 
 	do {
 		if (av[0] != NULL) {
-			cli_out(cli, "Syntax Error: %s\n", av[0]);
-			cli_result(cli, CLIS_SYNTAX);
+			VCLI_Out(cli, "Syntax Error: %s\n", av[0]);
+			VCLI_SetResult(cli, CLIS_SYNTAX);
 			break;
 		}
 
 		if (isupper(av[1][0])) {
-			cli_out(cli, "all commands are in lower-case.\n");
-			cli_result(cli, CLIS_UNKNOWN);
+			VCLI_Out(cli, "all commands are in lower-case.\n");
+			VCLI_SetResult(cli, CLIS_UNKNOWN);
 			break;
 		}
 
@@ -286,14 +286,15 @@ cls_vlu2(void *priv, char * const *av)
 		}
 	} while (0);
 
-	AZ(vsb_finish(cli->sb));
+	AZ(VSB_finish(cli->sb));
 
 	if (cs->after != NULL)
 		cs->after(cli);
 
 	cli->cls = NULL;
 
-	if (cli_writeres(cfd->fdo, cli) || cli->result == CLIS_CLOSE)
+	if (VCLI_WriteResult(cfd->fdo, cli->result, VSB_data(cli->sb)) ||
+	    cli->result == CLIS_CLOSE)
 		return (1);
 
 	return (0);
@@ -302,12 +303,12 @@ cls_vlu2(void *priv, char * const *av)
 static int
 cls_vlu(void *priv, const char *p)
 {
-	struct cls_fd *cfd;
+	struct VCLS_fd *cfd;
 	struct cli *cli;
 	int i;
 	char **av;
 
-	CAST_OBJ_NOTNULL(cfd, priv, CLS_FD_MAGIC);
+	CAST_OBJ_NOTNULL(cfd, priv, VCLS_FD_MAGIC);
 
 	cli = cfd->cli;
 	CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
@@ -323,11 +324,11 @@ cls_vlu(void *priv, const char *p)
 			return (0);
 		REPLACE(cli->cmd, p);
 
-		av = ParseArgv(p, NULL, 0);
+		av = VAV_Parse(p, NULL, 0);
 		AN(av);
 		if (av[0] != NULL) {
 			i = cls_vlu2(priv, av);
-			FreeArgv(av);
+			VAV_Free(av);
 			free(cli->cmd);
 			cli->cmd = NULL;
 			return (i);
@@ -336,14 +337,14 @@ cls_vlu(void *priv, const char *p)
 			continue;
 		if (i < 3 || cli->auth == 0 || strcmp(av[i - 2], "<<")) {
 			i = cls_vlu2(priv, av);
-			FreeArgv(av);
+			VAV_Free(av);
 			free(cli->cmd);
 			cli->cmd = NULL;
 			return (i);
 		}
 		cfd->argv = av;
 		cfd->last_idx = i - 2;
-		cfd->last_arg = vsb_new_auto();
+		cfd->last_arg = VSB_new_auto();
 		AN(cfd->last_arg);
 		return (0);
 	} else {
@@ -351,35 +352,35 @@ cls_vlu(void *priv, const char *p)
 		assert(!strcmp(cfd->argv[cfd->last_idx], "<<"));
 		AN(cfd->argv[cfd->last_idx + 1]);
 		if (strcmp(p, cfd->argv[cfd->last_idx + 1])) {
-			vsb_cat(cfd->last_arg, p);
-			vsb_cat(cfd->last_arg, "\n");
+			VSB_cat(cfd->last_arg, p);
+			VSB_cat(cfd->last_arg, "\n");
 			return (0);
 		}
-		AZ(vsb_finish(cfd->last_arg));
+		AZ(VSB_finish(cfd->last_arg));
 		free(cfd->argv[cfd->last_idx]);
 		cfd->argv[cfd->last_idx] = NULL;
 		free(cfd->argv[cfd->last_idx + 1]);
 		cfd->argv[cfd->last_idx + 1] = NULL;
-		cfd->argv[cfd->last_idx] = vsb_data(cfd->last_arg);
+		cfd->argv[cfd->last_idx] = VSB_data(cfd->last_arg);
 		i = cls_vlu2(priv, cfd->argv);
 		cfd->argv[cfd->last_idx] = NULL;
-		FreeArgv(cfd->argv);
+		VAV_Free(cfd->argv);
 		cfd->argv = NULL;
 		free(cli->cmd);
 		cli->cmd = NULL;
-		vsb_delete(cfd->last_arg);
+		VSB_delete(cfd->last_arg);
 		cfd->last_arg = NULL;
 		cfd->last_idx = 0;
 		return (i);
 	}
 }
 
-struct cls *
-CLS_New(cls_cbc_f *before, cls_cbc_f *after, unsigned maxlen)
+struct VCLS *
+VCLS_New(cls_cbc_f *before, cls_cbc_f *after, unsigned maxlen)
 {
-	struct cls *cs;
+	struct VCLS *cs;
 
-	ALLOC_OBJ(cs, CLS_MAGIC);
+	ALLOC_OBJ(cs, VCLS_MAGIC);
 	AN(cs);
 	VTAILQ_INIT(&cs->fds);
 	VTAILQ_INIT(&cs->funcs);
@@ -390,14 +391,14 @@ CLS_New(cls_cbc_f *before, cls_cbc_f *after, unsigned maxlen)
 }
 
 struct cli *
-CLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
+VCLS_AddFd(struct VCLS *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 {
-	struct cls_fd *cfd;
+	struct VCLS_fd *cfd;
 
-	CHECK_OBJ_NOTNULL(cs, CLS_MAGIC);
+	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
 	assert(fdi >= 0);
 	assert(fdo >= 0);
-	ALLOC_OBJ(cfd, CLS_FD_MAGIC);
+	ALLOC_OBJ(cfd, VCLS_FD_MAGIC);
 	AN(cfd);
 	cfd->cls = cs;
 	cfd->fdi = fdi;
@@ -405,7 +406,7 @@ CLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 	cfd->cli = &cfd->clis;
 	cfd->cli->magic = CLI_MAGIC;
 	cfd->cli->vlu = VLU_New(cfd, cls_vlu, cs->maxlen);
-	cfd->cli->sb = vsb_new_auto();
+	cfd->cli->sb = VSB_new_auto();
 	cfd->closefunc = closefunc;
 	cfd->priv = priv;
 	AN(cfd->cli->sb);
@@ -415,16 +416,16 @@ CLS_AddFd(struct cls *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 }
 
 static void
-cls_close_fd(struct cls *cs, struct cls_fd *cfd)
+cls_close_fd(struct VCLS *cs, struct VCLS_fd *cfd)
 {
 
-	CHECK_OBJ_NOTNULL(cs, CLS_MAGIC);
-	CHECK_OBJ_NOTNULL(cfd, CLS_FD_MAGIC);
+	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
+	CHECK_OBJ_NOTNULL(cfd, VCLS_FD_MAGIC);
 
 	VTAILQ_REMOVE(&cs->fds, cfd, list);
 	cs->nfd--;
 	VLU_Destroy(cfd->cli->vlu);
-	vsb_delete(cfd->cli->sb);
+	VSB_delete(cfd->cli->sb);
 	if (cfd->closefunc == NULL) {
 		(void)close(cfd->fdi);
 		if (cfd->fdo != cfd->fdi)
@@ -439,12 +440,12 @@ cls_close_fd(struct cls *cs, struct cls_fd *cfd)
 
 
 int
-CLS_AddFunc(struct cls *cs, unsigned auth, struct cli_proto *clp)
+VCLS_AddFunc(struct VCLS *cs, unsigned auth, struct cli_proto *clp)
 {
-	struct cls_func *cfn;
+	struct VCLS_func *cfn;
 
-	CHECK_OBJ_NOTNULL(cs, CLS_MAGIC);
-	ALLOC_OBJ(cfn, CLS_FUNC_MAGIC);
+	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
+	ALLOC_OBJ(cfn, VCLS_FUNC_MAGIC);
 	AN(cfn);
 	cfn->clp = clp;
 	cfn->auth = auth;
@@ -453,13 +454,13 @@ CLS_AddFunc(struct cls *cs, unsigned auth, struct cli_proto *clp)
 }
 
 int
-CLS_PollFd(struct cls *cs, int fd, int timeout)
+VCLS_PollFd(struct VCLS *cs, int fd, int timeout)
 {
-	struct cls_fd *cfd;
+	struct VCLS_fd *cfd;
 	struct pollfd pfd[1];
 	int i, j, k;
 
-	CHECK_OBJ_NOTNULL(cs, CLS_MAGIC);
+	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
 	if (cs->nfd == 0) {
 		errno = 0;
 		return (-1);
@@ -477,7 +478,7 @@ CLS_PollFd(struct cls *cs, int fd, int timeout)
 		break;
 	}
 	assert(i == 1);
-	CHECK_OBJ_NOTNULL(cfd, CLS_FD_MAGIC);
+	CHECK_OBJ_NOTNULL(cfd, VCLS_FD_MAGIC);
 
 	j = poll(pfd, 1, timeout);
 	if (j <= 0)
@@ -492,12 +493,12 @@ CLS_PollFd(struct cls *cs, int fd, int timeout)
 }
 
 int
-CLS_Poll(struct cls *cs, int timeout)
+VCLS_Poll(struct VCLS *cs, int timeout)
 {
-	struct cls_fd *cfd, *cfd2;
+	struct VCLS_fd *cfd, *cfd2;
 	int i, j, k;
 
-	CHECK_OBJ_NOTNULL(cs, CLS_MAGIC);
+	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
 	if (cs->nfd == 0) {
 		errno = 0;
 		return (-1);
@@ -535,15 +536,15 @@ CLS_Poll(struct cls *cs, int timeout)
 }
 
 void
-CLS_Destroy(struct cls **csp)
+VCLS_Destroy(struct VCLS **csp)
 {
-	struct cls *cs;
-	struct cls_fd *cfd, *cfd2;
-	struct cls_func *cfn;
+	struct VCLS *cs;
+	struct VCLS_fd *cfd, *cfd2;
+	struct VCLS_func *cfn;
 
 	cs = *csp;
 	*csp = NULL;
-	CHECK_OBJ_NOTNULL(cs, CLS_MAGIC);
+	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
 	VTAILQ_FOREACH_SAFE(cfd, &cs->fds, list, cfd2)
 		cls_close_fd(cs, cfd);
 

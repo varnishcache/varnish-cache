@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2009 Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Dag-Erling Smørgrav <des@des.no>
@@ -39,6 +39,22 @@
 #include <sys/stat.h>
 
 #include "libvarnish.h"
+
+int
+seed_random(void)
+{
+	int fd;
+	unsigned seed;
+
+	fd = open("/dev/urandom", O_RDONLY);
+	if (fd == -1)
+		return (1);
+	if (read(fd, &seed, sizeof seed) != sizeof seed)
+		return (1);
+	(void)close(fd);
+	srandom(seed);
+	return (0);
+}
 
 int
 vtmpfile(char *template)

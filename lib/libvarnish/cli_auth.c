@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2010 Linpro AS
+ * Copyright (c) 2010-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -32,21 +32,20 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "cli.h"
-#include "cli_common.h"
+#include "vcli.h"
 #include "libvarnish.h"
 #include "vsha256.h"
 
 
 void
-CLI_response(int S_fd, const char *challenge,
-    char response[CLI_AUTH_RESPONSE_LEN])
+VCLI_AuthResponse(int S_fd, const char *challenge,
+    char response[CLI_AUTH_RESPONSE_LEN + 1])
 {
 	SHA256_CTX ctx;
 	uint8_t buf[BUFSIZ];
 	int i;
 
-	assert(CLI_AUTH_RESPONSE_LEN == (SHA256_LEN * 2 + 1));
+	assert(CLI_AUTH_RESPONSE_LEN == (SHA256_LEN * 2));
 
 	SHA256_Init(&ctx);
 	SHA256_Update(&ctx, challenge, 32);

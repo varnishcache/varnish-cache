@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Redpill Linpro AS
+ * Copyright (c) 2006-2010 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -54,7 +54,7 @@ VDI_CloseFd(struct sess *sp)
 	   before the OS reuses the FD */
 	WSL_Flush(sp->wrk, 0);
 
-	TCP_close(&sp->vbc->fd);
+	VTCP_close(&sp->vbc->fd);
 	VBE_DropRefConn(bp);
 	sp->vbc->backend = NULL;
 	VBE_ReleaseConn(sp->vbc);
@@ -83,7 +83,7 @@ VDI_RecycleFd(struct sess *sp)
 	 */
 	WSL_Flush(sp->wrk, 0);
 	Lck_Lock(&bp->mtx);
-	VSC_main->backend_recycle++;
+	VSC_C_main->backend_recycle++;
 	VTAILQ_INSERT_HEAD(&bp->connlist, sp->vbc, list);
 	sp->vbc = NULL;
 	VBE_DropRefLocked(bp);

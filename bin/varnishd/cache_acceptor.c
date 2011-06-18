@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Redpill Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -41,7 +41,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include "cli.h"
+#include "vcli.h"
 #include "cli_priv.h"
 #include "cache.h"
 #include "cache_waiter.h"
@@ -106,7 +106,7 @@ sock_test(int fd)
 	l = sizeof lin;
 	i = getsockopt(fd, SOL_SOCKET, SO_LINGER, &lin, &l);
 	if (i) {
-		TCP_Assert(i);
+		VTCP_Assert(i);
 		return;
 	}
 	assert(l == sizeof lin);
@@ -117,7 +117,7 @@ sock_test(int fd)
 	l = sizeof tv;
 	i = getsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, &l);
 	if (i) {
-		TCP_Assert(i);
+		VTCP_Assert(i);
 		return;
 	}
 	assert(l == sizeof tv);
@@ -133,7 +133,7 @@ sock_test(int fd)
 	l = sizeof tv;
 	i = getsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, &l);
 	if (i) {
-		TCP_Assert(i);
+		VTCP_Assert(i);
 		return;
 	}
 	assert(l == sizeof tv);
@@ -156,16 +156,16 @@ sock_test(int fd)
 void
 VCA_Prep(struct sess *sp)
 {
-	char addr[TCP_ADDRBUFSIZE];
-	char port[TCP_PORTBUFSIZE];
+	char addr[VTCP_ADDRBUFSIZE];
+	char port[VTCP_PORTBUFSIZE];
 
-	TCP_name(sp->sockaddr, sp->sockaddrlen,
+	VTCP_name(sp->sockaddr, sp->sockaddrlen,
 	    addr, sizeof addr, port, sizeof port);
 	sp->addr = WS_Dup(sp->ws, addr);
 	sp->port = WS_Dup(sp->ws, port);
 	if (params->log_local_addr) {
 		AZ(getsockname(sp->fd, (void*)sp->mysockaddr, &sp->mysockaddrlen));
-		TCP_name(sp->mysockaddr, sp->mysockaddrlen,
+		VTCP_name(sp->mysockaddr, sp->mysockaddrlen,
 		    addr, sizeof addr, port, sizeof port);
 		VSL(SLT_SessionOpen, sp->fd, "%s %s %s %s",
 		    sp->addr, sp->port, addr, port);
@@ -177,16 +177,16 @@ VCA_Prep(struct sess *sp)
 	if (need_test)
 		sock_test(sp->fd);
 	if (need_linger)
-		TCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_LINGER,
+		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_LINGER,
 		    &linger, sizeof linger));
 #ifdef SO_SNDTIMEO_WORKS
 	if (need_sndtimeo)
-		TCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO,
+		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO,
 		    &tv_sndtimeo, sizeof tv_sndtimeo));
 #endif
 #ifdef SO_RCVTIMEO_WORKS
 	if (need_rcvtimeo)
-		TCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_RCVTIMEO,
+		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_RCVTIMEO,
 		    &tv_rcvtimeo, sizeof tv_rcvtimeo));
 #endif
 }
@@ -270,19 +270,19 @@ vca_acct(void *arg)
 			TIM_sleep(pace);
 		i = poll(pfd, heritage.nsocks, 1000);
 		now = TIM_real();
-		VSC_main->uptime = (uint64_t)(now - t0);
+		VSC_C_main->uptime = (uint64_t)(now - t0);
 		u = 0;
 		VTAILQ_FOREACH(ls, &heritage.socks, list) {
 			if (ls->sock < 0)
 				continue;
 			if (pfd[u++].revents == 0)
 				continue;
-			VSC_main->client_conn++;
+			VSC_C_main->client_conn++;
 			l = sizeof addr_s;
 			addr = (void*)&addr_s;
 			i = accept(ls->sock, addr, &l);
 			if (i < 0) {
-				VSC_main->accept_fail++;
+				VSC_C_main->accept_fail++;
 				switch (errno) {
 				case EAGAIN:
 				case ECONNABORTED:
@@ -305,7 +305,7 @@ vca_acct(void *arg)
 			sp = SES_New();
 			if (sp == NULL) {
 				AZ(close(i));
-				VSC_main->client_drop++;
+				VSC_C_main->client_drop++;
 				pace += params->acceptor_sleep_incr;
 				continue;
 			}
@@ -320,7 +320,7 @@ vca_acct(void *arg)
 
 			sp->step = STP_FIRST;
 			if (WRK_QueueSession(sp)) {
-				VSC_main->client_drop++;
+				VSC_C_main->client_drop++;
 				pace += params->acceptor_sleep_incr;
 			} else {
 				pace *= params->acceptor_sleep_decay;
@@ -348,7 +348,7 @@ vca_handover(struct sess *sp, int status)
 	case 1:
 		sp->step = STP_START;
 		if (WRK_QueueSession(sp))
-			VSC_main->client_drop_late++;
+			VSC_C_main->client_drop_late++;
 		break;
 	default:
 		INCOMPL();
@@ -382,7 +382,7 @@ vca_return_session(struct sess *sp)
 	 * Set nonblocking in the worker-thread, before passing to the
 	 * acceptor thread, to reduce syscall density of the latter.
 	 */
-	if (TCP_nonblocking(sp->fd))
+	if (VTCP_nonblocking(sp->fd))
 		vca_close_session(sp, "remote closed");
 	else if (vca_act->pass == NULL)
 		assert(sizeof sp == write(vca_pipes[1], &sp, sizeof sp));
@@ -427,8 +427,8 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (ls->sock < 0)
 			continue;
-		TCP_myname(ls->sock, h, sizeof h, p, sizeof p);
-		cli_out(cli, "%s %s\n", h, p);
+		VTCP_myname(ls->sock, h, sizeof h, p, sizeof p);
+		VCLI_Out(cli, "%s %s\n", h, p);
 	}
 }
 
@@ -474,15 +474,15 @@ VCA_tweak_waiter(struct cli *cli, const char *arg)
 
 	if (arg == NULL) {
 		if (vca_act == NULL)
-			cli_out(cli, "default");
+			VCLI_Out(cli, "default");
 		else
-			cli_out(cli, "%s", vca_act->name);
+			VCLI_Out(cli, "%s", vca_act->name);
 
-		cli_out(cli, " (");
+		VCLI_Out(cli, " (");
 		for (i = 0; vca_waiters[i] != NULL; i++)
-			cli_out(cli, "%s%s", i == 0 ? "" : ", ",
+			VCLI_Out(cli, "%s%s", i == 0 ? "" : ", ",
 			    vca_waiters[i]->name);
-		cli_out(cli, ")");
+		VCLI_Out(cli, ")");
 		return;
 	}
 	if (!strcmp(arg, "default")) {
@@ -495,6 +495,6 @@ VCA_tweak_waiter(struct cli *cli, const char *arg)
 			return;
 		}
 	}
-	cli_out(cli, "Unknown waiter");
-	cli_result(cli, CLIS_PARAM);
+	VCLI_Out(cli, "Unknown waiter");
+	VCLI_SetResult(cli, CLIS_PARAM);
 }

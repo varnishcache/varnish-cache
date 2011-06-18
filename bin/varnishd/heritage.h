@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -44,7 +44,7 @@ struct heritage {
 
 	/* Two pipe(2)'s for CLI connection between cache and mgt.  */
 	int				cli_in;
-	int				cli_out;
+	int				VCLI_Out;
 
 	/* File descriptor for stdout/stderr */
 	int				std_fd;
@@ -214,7 +214,7 @@ struct params {
  * We declare this a volatile pointer, so that reads of parameters
  * become atomic, leaving the CLI thread lattitude to change the values
  */
-extern volatile struct params * volatile params;
+extern volatile struct params * params;
 extern struct heritage heritage;
 
 void child_main(void);

@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2010 Linpro AS
+ * Copyright (c) 2010-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@FreeBSD.org>
@@ -82,6 +82,36 @@ vmod_duration(struct sess *sp, const char *p, double d)
 
 	if (*e != '\0')
 		return (d);
+
+	return (r);
+}
+
+int __match_proto__()
+vmod_integer(struct sess *sp, const char *p, int i)
+{
+	char *e;
+	int r;
+
+	(void)sp;
+
+	if (p == NULL)
+		return (i);
+
+	while(isspace(*p))
+		p++;
+
+	if (*p != '+' && *p != '-' && !isdigit(*p))
+		return (i);
+
+	e = NULL;
+
+	r = strtol(p, &e, 0);
+
+	if (e == NULL)
+		return (i);
+
+	if (*e != '\0')
+		return (i);
 
 	return (r);
 }

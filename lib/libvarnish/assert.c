@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2009 Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -38,7 +38,7 @@
 #include "libvarnish.h"
 
 static void
-vas_fail_default(const char *func, const char *file, int line,
+VAS_Fail_default(const char *func, const char *file, int line,
     const char *cond, int err, int xxx)
 {
 
@@ -59,4 +59,4 @@ vas_fail_default(const char *func, const char *file, int line,
 	abort();
 }
 
-vas_f *vas_fail = vas_fail_default;
+vas_f *VAS_Fail = VAS_Fail_default;

@@ -161,7 +161,7 @@ VGZ_NewUngzip(struct sess *sp, const char *id)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	vg = vgz_alloc_vgz(sp, id);
 	vg->dir = VGZ_UN;
-	VSC_main->n_gunzip++;
+	VSC_C_main->n_gunzip++;
 
 	/*
 	 * Max memory usage according to zonf.h:
@@ -182,7 +182,7 @@ VGZ_NewGzip(struct sess *sp, const char *id)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	vg = vgz_alloc_vgz(sp, id);
 	vg->dir = VGZ_GZ;
-	VSC_main->n_gzip++;
+	VSC_C_main->n_gzip++;
 
 	/*
 	 * From zconf.h:

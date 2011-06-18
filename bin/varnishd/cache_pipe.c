@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Linpro AS
+ * Copyright (c) 2006-2010 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -75,7 +75,7 @@ PipeSession(struct sess *sp)
 	if (sp->vbc == NULL)
 		return;
 	vc = sp->vbc;
-	(void)TCP_blocking(vc->fd);
+	(void)VTCP_blocking(vc->fd);
 
 	WRW_Reserve(w, &vc->fd);
 	sp->acct_req.hdrbytes += http_Write(w, sp->wrk->bereq, 0);
@@ -96,11 +96,11 @@ PipeSession(struct sess *sp)
 
 	memset(fds, 0, sizeof fds);
 
-	// XXX: not yet (void)TCP_linger(vc->fd, 0);
+	// XXX: not yet (void)VTCP_linger(vc->fd, 0);
 	fds[0].fd = vc->fd;
 	fds[0].events = POLLIN | POLLERR;
 
-	// XXX: not yet (void)TCP_linger(sp->fd, 0);
+	// XXX: not yet (void)VTCP_linger(sp->fd, 0);
 	fds[1].fd = sp->fd;
 	fds[1].events = POLLIN | POLLERR;
 

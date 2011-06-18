@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2009 Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -32,5 +32,5 @@
 #define VIN_H_INCLUDED
 
 /* This function lives in both libvarnish and libvarnishapi */
-int vin_n_arg(const char *n_arg, char **name, char **dir, char **vsl);
+int VIN_N_Arg(const char *n_arg, char **name, char **dir, char **vsl);
 #endif

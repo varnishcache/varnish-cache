@@ -189,7 +189,8 @@ HISTORY
 =======
 
 The varnishtest program was developed by Poul-Henning Kamp
-⟨phk@phk.freebsd.dk⟩ in cooperation with Linpro AS. This manual page
+⟨phk@phk.freebsd.dk⟩ in cooperation with Varnish Software AS.
+This manual page
 was written by Stig Sandbeck Mathisen ⟨ssm@linpro.no⟩ using examples
 by Poul-Henning Kamp ⟨phk@phk.freebsd.dk⟩.
 
@@ -199,5 +200,4 @@ COPYRIGHT
 This document is licensed under the same licence as Varnish
 itself. See LICENCE for details.
 
-* Copyright (c) 2007-2008 Linpro AS
-* Copyright (c) 2010 Varnish Software AS
+* Copyright (c) 2007-2008 Varnish Software AS

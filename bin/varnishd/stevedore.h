@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -84,7 +84,7 @@ struct stevedore {
 	void			*priv;
 
 	VTAILQ_ENTRY(stevedore)	list;
-	char			ident[16];	/* XXX: match vsm_chunk.ident */
+	char			ident[16];	/* XXX: match VSM_chunk.ident */
 };
 
 struct object *STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,

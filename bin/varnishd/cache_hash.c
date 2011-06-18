@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Redpill Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -486,7 +486,7 @@ hsh_rush(struct objhead *oh)
 			 * We could not schedule the session, leave the
 			 * rest on the busy list.
 			 */
-			VSC_main->client_drop_late++;
+			VSC_C_main->client_drop_late++;
 			break;
 		}
 	}
@@ -738,7 +738,7 @@ HSH_config(const char *h_arg)
 	const struct hash_slinger *hp;
 
 	ASSERT_MGT();
-	av = ParseArgv(h_arg, NULL, ARGV_COMMA);
+	av = VAV_Parse(h_arg, NULL, ARGV_COMMA);
 	AN(av);
 
 	if (av[0] != NULL)
@@ -752,7 +752,7 @@ HSH_config(const char *h_arg)
 
 	hp = pick(hsh_choice, av[1], "hash");
 	CHECK_OBJ_NOTNULL(hp, SLINGER_MAGIC);
-	vsb_printf(vident, ",-h%s", av[1]);
+	VSB_printf(vident, ",-h%s", av[1]);
 	heritage.hash = hp;
 	if (hp->init != NULL)
 		hp->init(ac, av + 2);

@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Linpro AS
+ * Copyright (c) 2006-2010 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -386,7 +386,7 @@ VRT_panic(const struct sess *sp, const char *str, ...)
 	va_start(ap, str);
 	b = VRT_String(sp->http->ws, "PANIC: ", str, ap);
 	va_end(ap);
-	vas_fail("VCL", "", 0, b, 0, 2);
+	VAS_Fail("VCL", "", 0, b, 0, 2);
 }
 
 /*--------------------------------------------------------------------*/
@@ -404,13 +404,13 @@ VRT_synth_page(const struct sess *sp, unsigned flags, const char *str, ...)
 	vsb = SMS_Makesynth(sp->obj);
 	AN(vsb);
 
-	vsb_cat(vsb, str);
+	VSB_cat(vsb, str);
 	va_start(ap, str);
 	p = va_arg(ap, const char *);
 	while (p != vrt_magic_string_end) {
 		if (p == NULL)
 			p = "(null)";
-		vsb_cat(vsb, p);
+		VSB_cat(vsb, p);
 		p = va_arg(ap, const char *);
 	}
 	va_end(ap);
@@ -467,10 +467,10 @@ VRT_ban_string(struct sess *sp, const char *str)
 	int i;
 
 	(void)sp;
-	av = ParseArgv(str, NULL, ARGV_NOESC);
+	av = VAV_Parse(str, NULL, ARGV_NOESC);
 	if (av[0] != NULL) {
 		/* XXX: report error how ? */
-		FreeArgv(av);
+		VAV_Free(av);
 		return;
 	}
 	b = BAN_New();
@@ -500,7 +500,7 @@ VRT_ban_string(struct sess *sp, const char *str)
 		BAN_Free(b);
 	else
 		BAN_Insert(b);
-	FreeArgv(av);
+	VAV_Free(av);
 }
 
 /*--------------------------------------------------------------------

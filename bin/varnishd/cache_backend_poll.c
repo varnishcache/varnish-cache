@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Linpro AS
+ * Copyright (c) 2006-2010 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -114,10 +114,10 @@ vbp_connect(int pf, const struct sockaddr_storage *sa, socklen_t salen, int tmo)
 	if (s < 0)
 		return (s);
 
-	i = TCP_connect(s, sa, salen, tmo);
+	i = VTCP_connect(s, sa, salen, tmo);
 	if (i == 0)
 		return (s);
-	TCP_close(&s);
+	VTCP_close(&s);
 	return (-1);
 }
 
@@ -166,7 +166,7 @@ vbp_poke(struct vbp_target *vt)
 	}
 	if (tmo <= 0) {
 		/* Spent too long time getting it */
-		TCP_close(&s);
+		VTCP_close(&s);
 		return;
 	}
 
@@ -175,7 +175,7 @@ vbp_poke(struct vbp_target *vt)
 	if (i != vt->req_len) {
 		if (i < 0)
 			vt->err_xmit |= 1;
-		TCP_close(&s);
+		VTCP_close(&s);
 		return;
 	}
 	vt->good_xmit |= 1;
@@ -189,7 +189,7 @@ vbp_poke(struct vbp_target *vt)
 		if (tmo > 0)
 			i = poll(pfd, 1, tmo);
 		if (i == 0 || tmo <= 0) {
-			TCP_close(&s);
+			VTCP_close(&s);
 			return;
 		}
 		if (rlen < sizeof vt->resp_buf)
@@ -200,7 +200,7 @@ vbp_poke(struct vbp_target *vt)
 		rlen += i;
 	} while (i > 0);
 
-	TCP_close(&s);
+	VTCP_close(&s);
 
 	if (i < 0) {
 		vt->err_recv |= 1;
@@ -308,18 +308,18 @@ vbp_build_req(struct vsb *vsb, const struct vbp_vcl *vcl)
 
 	XXXAN(vsb);
 	XXXAN(vcl);
-	vsb_clear(vsb);
+	VSB_clear(vsb);
 	if(vcl->probe.request != NULL) {
-		vsb_cat(vsb, vcl->probe.request);
+		VSB_cat(vsb, vcl->probe.request);
 	} else {
-		vsb_printf(vsb, "GET %s HTTP/1.1\r\n",
+		VSB_printf(vsb, "GET %s HTTP/1.1\r\n",
 		    vcl->probe.url != NULL ?  vcl->probe.url : "/");
 		if (vcl->hosthdr != NULL)
-			vsb_printf(vsb, "Host: %s\r\n", vcl->hosthdr);
-		vsb_printf(vsb, "Connection: close\r\n");
-		vsb_printf(vsb, "\r\n");
+			VSB_printf(vsb, "Host: %s\r\n", vcl->hosthdr);
+		VSB_printf(vsb, "Connection: close\r\n");
+		VSB_printf(vsb, "\r\n");
 	}
-	AZ(vsb_finish(vsb));
+	AZ(VSB_finish(vsb));
 }
 
 /*--------------------------------------------------------------------
@@ -345,8 +345,8 @@ vbp_wrk_poll_backend(void *priv)
 		}
 		Lck_Unlock(&vbp_mtx);
 
-		vt->req = vsb_data(vt->vsb);
-		vt->req_len = vsb_len(vt->vsb);
+		vt->req = VSB_data(vt->vsb);
+		vt->req_len = VSB_len(vt->vsb);
 
 		vbp_start_poke(vt);
 		vbp_poke(vt);
@@ -370,12 +370,12 @@ vbp_bitmap(struct cli *cli, char c, uint64_t map, const char *lbl)
 
 	for (i = 0; i < 64; i++) {
 		if (map & u)
-			cli_out(cli, "%c", c);
+			VCLI_Out(cli, "%c", c);
 		else
-			cli_out(cli, "-");
+			VCLI_Out(cli, "-");
 		map <<= 1;
 	}
-	cli_out(cli, " %s\n", lbl);
+	VCLI_Out(cli, " %s\n", lbl);
 }
 
 /*lint -e{506} constant value boolean */
@@ -384,16 +384,16 @@ static void
 vbp_health_one(struct cli *cli, const struct vbp_target *vt)
 {
 
-	cli_out(cli, "Backend %s is %s\n",
+	VCLI_Out(cli, "Backend %s is %s\n",
 	    vt->backend->vcl_name,
 	    vt->backend->healthy ? "Healthy" : "Sick");
-	cli_out(cli, "Current states  good: %2u threshold: %2u window: %2u\n",
+	VCLI_Out(cli, "Current states  good: %2u threshold: %2u window: %2u\n",
 	    vt->good, vt->probe.threshold, vt->probe.window);
-	cli_out(cli, "Average responsetime of good probes: %.6f\n", vt->avg);
-	cli_out(cli,
+	VCLI_Out(cli, "Average responsetime of good probes: %.6f\n", vt->avg);
+	VCLI_Out(cli,
 	    "Oldest                       "
 	    "                             Newest\n");
-	cli_out(cli,
+	VCLI_Out(cli,
 	    "============================="
 	    "===================================\n");
 
@@ -484,7 +484,7 @@ VBP_Start(struct backend *b, const struct vrt_backend_probe *p, const char *host
 		XXXAN(vt);
 		VTAILQ_INIT(&vt->vcls);
 		vt->backend = b;
-		vt->vsb = vsb_new_auto();
+		vt->vsb = VSB_new_auto();
 		XXXAN(vt->vsb);
 		b->probe = vt;
 		startthread = 1;
@@ -563,7 +563,7 @@ VBP_Stop(struct backend *b, struct vrt_backend_probe const *p)
 
 	VTAILQ_REMOVE(&vbp_list, vt, list);
 	b->probe = NULL;
-	vsb_delete(vt->vsb);
+	VSB_delete(vt->vsb);
 	FREE_OBJ(vt);
 }
 

@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Redpill Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -103,7 +103,7 @@ struct vrt_backend;
 struct cli_proto;
 struct ban;
 struct SHA256Context;
-struct vsc_lck;
+struct VSC_C_lck;
 struct waitinglist;
 struct vef_priv;
 
@@ -177,7 +177,6 @@ struct http {
 	txt			*hd;
 	unsigned char		*hdf;
 #define HDF_FILTER		(1 << 0)	/* Filtered by Connection */
-#define HDF_COPY		(1 << 1)	/* Copy this field */
 	unsigned		nhd;		/* Next free hd */
 };
 
@@ -683,7 +682,6 @@ void EXP_Set_keep(struct exp *e, double v);
 
 double EXP_Ttl(const struct sess *, const struct object*);
 double EXP_Grace(const struct sess *, const struct object*);
-double EXP_Keep(const struct sess *, const struct object*);
 void EXP_Insert(struct object *o);
 void EXP_Inject(struct objcore *oc, struct lru *lru, double when);
 void EXP_Init(void);
@@ -789,7 +787,7 @@ const struct sess * THR_GetSession(void);
 void Lck__Lock(struct lock *lck, const char *p, const char *f, int l);
 void Lck__Unlock(struct lock *lck, const char *p, const char *f, int l);
 int Lck__Trylock(struct lock *lck, const char *p, const char *f, int l);
-void Lck__New(struct lock *lck, struct vsc_lck *, const char *);
+void Lck__New(struct lock *lck, struct VSC_C_lck *, const char *);
 void Lck__Assert(const struct lock *lck, int held);
 
 /* public interface: */
@@ -802,9 +800,8 @@ void Lck_CondWait(pthread_cond_t *cond, struct lock *lck);
 #define Lck_Unlock(a) Lck__Unlock(a, __func__, __FILE__, __LINE__)
 #define Lck_Trylock(a) Lck__Trylock(a, __func__, __FILE__, __LINE__)
 #define Lck_AssertHeld(a) Lck__Assert(a, 1)
-#define Lck_AssertNotHeld(a) Lck__Assert(a, 0)
 
-#define LOCK(nam) extern struct vsc_lck *lck_##nam;
+#define LOCK(nam) extern struct VSC_C_lck *lck_##nam;
 #include "locks.h"
 #undef LOCK
 
@@ -816,7 +813,6 @@ void PipeSession(struct sess *sp);
 
 /* cache_pool.c */
 void WRK_Init(void);
-int WRK_Queue(struct workreq *wrq);
 int WRK_QueueSession(struct sess *sp);
 void WRK_SumStat(struct worker *w);
 
@@ -850,9 +846,9 @@ void *VSM_Alloc(unsigned size, const char *class, const char *type,
     const char *ident);
 void VSM_Free(const void *ptr);
 #ifdef VSL_ENDMARKER
-void VSL(enum vsl_tag tag, int id, const char *fmt, ...);
-void WSLR(struct worker *w, enum vsl_tag tag, int id, txt t);
-void WSL(struct worker *w, enum vsl_tag tag, int id, const char *fmt, ...);
+void VSL(enum VSL_tag_e tag, int id, const char *fmt, ...);
+void WSLR(struct worker *w, enum VSL_tag_e tag, int id, txt t);
+void WSL(struct worker *w, enum VSL_tag_e tag, int id, const char *fmt, ...);
 void WSL_Flush(struct worker *w, int overflow);
 
 #define DSL(flag, tag, id, ...)					\
@@ -891,7 +887,6 @@ int VRY_Match(const struct sess *sp, const unsigned char *vary);
 void VCL_Init(void);
 void VCL_Refresh(struct VCL_conf **vcc);
 void VCL_Rel(struct VCL_conf **vcc);
-void VCL_Get(struct VCL_conf **vcc);
 void VCL_Poll(void);
 
 #define VCL_MET_MAC(l,u,b) void VCL_##l##_method(struct sess *);

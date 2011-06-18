@@ -1,9 +1,8 @@
 AC_PREREQ(2.59)
 AC_COPYRIGHT([Copyright (c) 2006 Verdens Gang AS
-Copyright (c) 2006-2010 Linpro AS
-Copyright (c) 2010-2011 Varnish Software AS])
+Copyright (c) 2006-2011 Varnish Software AS])
 AC_REVISION([$Id$])
-AC_INIT([Varnish], [3.0.0-beta1], [varnish-dev@varnish-cache.org])
+AC_INIT([Varnish], [3.0.0-beta2], [varnish-dev@varnish-cache.org])
 AC_CONFIG_SRCDIR(include/varnishapi.h)
 AM_CONFIG_HEADER(config.h)
 
@@ -442,6 +441,10 @@ AC_SUBST(VARNISH_STATE_DIR)
 # Default configuration directory.
 varnishconfdir='${sysconfdir}/varnish'
 AC_SUBST(varnishconfdir)
+
+# Check for linker script support
+gl_LD_VERSION_SCRIPT
+
 # Now that we're done using the compiler to look for functions and
 # libraries, set CFLAGS to what we want them to be for our own code
 

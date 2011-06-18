@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2008-2010 Redpill Linpro AS
+/*-
+ * Copyright (c) 2008-2010 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -103,9 +103,9 @@ server_thread(void *priv)
 		http_process(vl, s->spec, fd, s->sock);
 		vtc_log(vl, 3, "shutting fd %d", fd);
 		j = shutdown(fd, SHUT_WR);
-		if (!TCP_Check(j))
+		if (!VTCP_Check(j))
 			vtc_log(vl, 0, "Shutdown failed: %s", strerror(errno));
-		TCP_close(&fd);
+		VTCP_close(&fd);
 	}
 	vtc_log(vl, 2, "Ending");
 	return (NULL);
@@ -176,7 +176,7 @@ server_start(struct server *s)
 			    s->listen, naddr);
 		s->sock = VSS_listen(s->vss_addr[0], s->depth);
 		assert(s->sock >= 0);
-		TCP_myname(s->sock, s->aaddr, sizeof s->aaddr,
+		VTCP_myname(s->sock, s->aaddr, sizeof s->aaddr,
 		    s->aport, sizeof s->aport);
 		macro_def(s->vl, s->name, "addr", "%s", s->aaddr);
 		macro_def(s->vl, s->name, "port", "%s", s->aport);
@@ -206,7 +206,7 @@ server_wait(struct server *s)
 		vtc_log(s->vl, 0, "Server returned \"%p\"",
 		    (char *)res);
 	s->tp = 0;
-	TCP_close(&s->sock);
+	VTCP_close(&s->sock);
 	s->sock = -1;
 	s->run = 0;
 }
@@ -221,7 +221,7 @@ cmd_server_genvcl(struct vsb *vsb)
 	struct server *s;
 
 	VTAILQ_FOREACH(s, &servers, list) {
-		vsb_printf(vsb,
+		VSB_printf(vsb,
 		    "backend %s { .host = \"%s\"; .port = \"%s\"; }\n",
 		    s->name, s->aaddr, s->aport);
 	}

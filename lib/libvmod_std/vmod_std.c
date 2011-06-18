@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2010 Linpro AS
+ * Copyright (c) 2010-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@FreeBSD.org>
@@ -40,7 +40,7 @@ void __match_proto__()
 vmod_set_ip_tos(struct sess *sp, int tos)
 {
 
-	TCP_Assert(setsockopt(sp->fd, IPPROTO_IP, IP_TOS, &tos, sizeof(tos)));
+	VTCP_Assert(setsockopt(sp->fd, IPPROTO_IP, IP_TOS, &tos, sizeof(tos)));
 }
 
 static const char * __match_proto__()

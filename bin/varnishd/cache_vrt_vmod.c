@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -77,7 +77,7 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm, const char *path)
 		AN(v);
 
 		VTAILQ_INSERT_TAIL(&vmods, v, list);
-		VSC_main->vmods++;
+		VSC_C_main->vmods++;
 
 		REPLACE(v->nm, nm);
 		REPLACE(v->path, path);
@@ -124,7 +124,7 @@ VRT_Vmod_Fini(void **hdl)
 	free(v->nm);
 	free(v->path);
 	VTAILQ_REMOVE(&vmods, v, list);
-	VSC_main->vmods--;
+	VSC_C_main->vmods--;
 	FREE_OBJ(v);
 }
 
@@ -139,7 +139,7 @@ ccf_debug_vmod(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 	ASSERT_CLI();
 	VTAILQ_FOREACH(v, &vmods, list)
-		cli_out(cli, "%5d %s (%s)\n", v->ref, v->nm, v->path);
+		VCLI_Out(cli, "%5d %s (%s)\n", v->ref, v->nm, v->path);
 }
 
 static struct cli_proto vcl_cmds[] = {

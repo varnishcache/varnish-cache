@@ -126,6 +126,7 @@ EXTRA_DIST = \
 	reference/varnish-cli.rst \
 	reference/vcl.rst \
 	reference/vmod.rst \
+	reference/vmod_std.rst \
 	tutorial/advanced_backend_servers.rst \
 	tutorial/advanced_topics.rst \
 	tutorial/backend_servers.rst \
