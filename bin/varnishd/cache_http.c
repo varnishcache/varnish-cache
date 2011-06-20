@@ -420,7 +420,7 @@ http_DoConnection(const struct http *hp)
 	unsigned u;
 
 	if (!http_GetHdr(hp, H_Connection, &p)) {
-		if (hp->protover < 1.1)
+		if (hp->protover < 11)
 			return ("not HTTP/1.1");
 		return (NULL);
 	}
@@ -640,11 +640,11 @@ http_ProtoVer(struct http *hp)
 {
 
 	if (!strcasecmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.0"))
-		hp->protover = 1.0;
+		hp->protover = 10;
 	else if (!strcasecmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.1"))
-		hp->protover = 1.1;
+		hp->protover = 11;
 	else
-		hp->protover = 0.9;
+		hp->protover = 9;
 }
 
 

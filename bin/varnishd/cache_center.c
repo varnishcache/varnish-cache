@@ -200,7 +200,7 @@ cnt_prepresp(struct sess *sp)
 			sp->wrk->res_mode |= RES_LEN;
 		else if (!sp->wantbody) {
 			/* Nothing */
-		} else if (sp->http->protover >= 1.1) {
+		} else if (sp->http->protover >= 11) {
 			sp->wrk->res_mode |= RES_CHUNKED;
 		} else {
 			sp->wrk->res_mode |= RES_EOF;
