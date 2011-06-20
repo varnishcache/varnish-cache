@@ -166,18 +166,17 @@ struct http {
 	unsigned		magic;
 #define HTTP_MAGIC		0x6428b5c9
 
-	struct ws		*ws;
-
-	unsigned char		conds;		/* If-* headers present */
 	enum httpwhence		logtag;
-	int			status;
-	uint8_t			protover;
 
-	unsigned		shd;		/* Size of hd space */
+	struct ws		*ws;
 	txt			*hd;
 	unsigned char		*hdf;
 #define HDF_FILTER		(1 << 0)	/* Filtered by Connection */
-	unsigned		nhd;		/* Next free hd */
+	uint16_t		shd;		/* Size of hd space */
+	uint16_t		nhd;		/* Next free hd */
+	uint16_t		status;
+	uint8_t			protover;
+	uint8_t 		conds;		/* If-* headers present */
 };
 
 /*--------------------------------------------------------------------
