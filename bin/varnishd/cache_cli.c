@@ -38,6 +38,7 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -124,7 +125,7 @@ cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 
 #define SZOF(foo)       VCLI_Out(cli, \
-    "sizeof(%s) = %zd = 0x%zx\n", #foo, sizeof(foo), sizeof(foo));
+    "sizeof(%s) = %zd = 0x%zx\n", #foo, sizeof(foo), sizeof(foo))
 	SZOF(struct ws);
 	SZOF(struct http);
 	SZOF(struct http_conn);
@@ -139,6 +140,63 @@ cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
 	SZOF(struct vbc);
 	SZOF(struct VSC_C_main);
 	SZOF(struct lock);
+#define OFOF(foo, bar)	{ foo __foo; VCLI_Out(cli, \
+    "%-30s = 0x%4zx @ 0x%4zx\n", \
+	#foo "." #bar, sizeof(__foo.bar), offsetof(foo, bar)); }
+#if 0
+	OFOF(struct objhead, magic);
+	OFOF(struct objhead, refcnt);
+	OFOF(struct objhead, mtx);
+	OFOF(struct objhead, objcs);
+	OFOF(struct objhead, digest);
+	OFOF(struct objhead, waitinglist);
+	OFOF(struct objhead, _u);
+#endif
+#if 0
+	OFOF(struct http, magic);
+	OFOF(struct http, logtag);
+	OFOF(struct http, ws);
+	OFOF(struct http, hd);
+	OFOF(struct http, hdf);
+	OFOF(struct http, shd);
+	OFOF(struct http, nhd);
+	OFOF(struct http, status);
+	OFOF(struct http, protover);
+	OFOF(struct http, conds);
+#endif
+#if 0
+	OFOF(struct storage, magic);
+	OFOF(struct storage, fd);
+	OFOF(struct storage, where);
+	OFOF(struct storage, list);
+	OFOF(struct storage, stevedore);
+	OFOF(struct storage, priv);
+	OFOF(struct storage, ptr);
+	OFOF(struct storage, len);
+	OFOF(struct storage, space);
+#endif
+	OFOF(struct object, magic);
+	OFOF(struct object, xid);
+	OFOF(struct object, objstore);
+	OFOF(struct object, objcore);
+	OFOF(struct object, ws_o);
+	OFOF(struct object, vary);
+	OFOF(struct object, hits);
+	OFOF(struct object, response);
+	OFOF(struct object, gziped);
+	OFOF(struct object, gzip_start);
+	OFOF(struct object, gzip_last);
+	OFOF(struct object, gzip_stop);
+	OFOF(struct object, len);
+	OFOF(struct object, age);
+	OFOF(struct object, entered);
+	OFOF(struct object, exp);
+	OFOF(struct object, last_modified);
+	OFOF(struct object, last_lru);
+	OFOF(struct object, http);
+	OFOF(struct object, store);
+	OFOF(struct object, esidata);
+	OFOF(struct object, last_use);
 }
 
 /*--------------------------------------------------------------------*/
