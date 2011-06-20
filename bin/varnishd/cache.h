@@ -171,7 +171,7 @@ struct http {
 	unsigned char		conds;		/* If-* headers present */
 	enum httpwhence		logtag;
 	int			status;
-	double			protover;
+	uint8_t			protover;
 
 	unsigned		shd;		/* Size of hd space */
 	txt			*hd;
