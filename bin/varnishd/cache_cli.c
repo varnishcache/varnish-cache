@@ -175,6 +175,7 @@ cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
 	OFOF(struct storage, len);
 	OFOF(struct storage, space);
 #endif
+#if 0
 	OFOF(struct object, magic);
 	OFOF(struct object, xid);
 	OFOF(struct object, objstore);
@@ -197,6 +198,7 @@ cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
 	OFOF(struct object, store);
 	OFOF(struct object, esidata);
 	OFOF(struct object, last_use);
+#endif
 }
 
 /*--------------------------------------------------------------------*/
