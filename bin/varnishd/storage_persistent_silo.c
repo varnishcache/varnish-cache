@@ -308,15 +308,13 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
  */
 
 static struct smp_object *
-smp_find_so(const struct smp_seg *sg, const struct objcore *oc)
+smp_find_so(const struct smp_seg *sg, unsigned priv2)
 {
 	struct smp_object *so;
-	unsigned smp_idx;
 
-	smp_idx = oc->priv2;
-	assert(smp_idx > 0);
-	assert(smp_idx <= sg->p.lobjlist);
-	so = &sg->objs[sg->p.lobjlist - smp_idx];
+	assert(priv2 > 0);
+	assert(priv2 <= sg->p.lobjlist);
+	so = &sg->objs[sg->p.lobjlist - priv2];
 	return (so);
 }
 
@@ -390,7 +388,7 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 		AZ(oc->flags & OC_F_NEEDFIXUP);
 
 	CAST_OBJ_NOTNULL(sg, oc->priv, SMP_SEG_MAGIC);
-	so = smp_find_so(sg, oc);
+	so = smp_find_so(sg, oc->priv2);
 
 	o = (void*)(sg->sc->base + so->ptr);
 	/*
@@ -456,7 +454,7 @@ smp_oc_updatemeta(struct objcore *oc)
 
 	CAST_OBJ_NOTNULL(sg, oc->priv, SMP_SEG_MAGIC);
 	CHECK_OBJ_NOTNULL(sg->sc, SMP_SC_MAGIC);
-	so = smp_find_so(sg, oc);
+	so = smp_find_so(sg, oc->priv2);
 
 	mttl = EXP_Grace(NULL, o);
 
@@ -481,7 +479,7 @@ smp_oc_freeobj(struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	CAST_OBJ_NOTNULL(sg, oc->priv, SMP_SEG_MAGIC);
-	so = smp_find_so(sg, oc);
+	so = smp_find_so(sg, oc->priv2);
 
 	Lck_Lock(&sg->sc->mtx);
 	so->ttl = 0;
