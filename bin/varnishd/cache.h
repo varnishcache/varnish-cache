@@ -143,12 +143,12 @@ enum step {
 struct ws {
 	unsigned		magic;
 #define WS_MAGIC		0x35fac554
+	unsigned		overflow;	/* workspace overflowed */
 	const char		*id;		/* identity */
 	char			*s;		/* (S)tart of buffer */
 	char			*f;		/* (F)ree pointer */
 	char			*r;		/* (R)eserved length */
 	char			*e;		/* (E)nd of buffer */
-	int			overflow;	/* workspace overflowed */
 };
 
 /*--------------------------------------------------------------------
@@ -479,12 +479,13 @@ struct object {
 	struct objcore		*objcore;
 
 	struct ws		ws_o[1];
-	unsigned char		*vary;
 
-	unsigned		response;
+	uint8_t 		*vary;
+	unsigned		hits;
+	uint16_t		response;
 
 	/* XXX: make bitmap */
-	unsigned		gziped;
+	uint8_t			gziped;
 	/* Bit positions in the gzip stream */
 	ssize_t			gzip_start;
 	ssize_t			gzip_last;
@@ -507,7 +508,6 @@ struct object {
 
 	double			last_use;
 
-	int			hits;
 };
 
 /* -------------------------------------------------------------------*/
@@ -566,7 +566,7 @@ struct sess {
 	unsigned		handling;
 	unsigned char		sendbody;
 	unsigned char		wantbody;
-	int			err_code;
+	uint16_t		err_code;
 	const char		*err_reason;
 
 	VTAILQ_ENTRY(sess)	list;
