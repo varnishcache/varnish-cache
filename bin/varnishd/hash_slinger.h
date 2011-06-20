@@ -75,8 +75,8 @@ struct objhead {
 	unsigned		magic;
 #define OBJHEAD_MAGIC		0x1b96615d
 
-	struct lock		mtx;
 	int			refcnt;
+	struct lock		mtx;
 	VTAILQ_HEAD(,objcore)	objcs;
 	unsigned char		digest[DIGEST_LEN];
 	struct waitinglist	*waitinglist;
