@@ -41,13 +41,13 @@
  * The vary matching string has the following format:
  *
  * Sequence of: {
+ *	<msb>			\   Length of header contents.
+ *	<lsb>			/
  *	<length of header + 1>	\
  *	<header>		 \  Same format as argument to http_GetHdr()
  *	':'			 /
  *	'\0'			/
- *	<msb>			\   Length of header contents.
- *	<lsb>			/
- *      <header>		    Only present if length != 0xffff
+ *      <header>		>   Only present if length != 0xffff
  * }
  *      '\0'
  */
@@ -97,9 +97,6 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 		    (char)(1 + (q - p)), (int)(q - p), p, 0);
 		AZ(VSB_finish(sbh));
 
-		/* Append to vary matching string */
-		VSB_bcat(sb, VSB_data(sbh), VSB_len(sbh));
-
 		if (http_GetHdr(sp->http, VSB_data(sbh), &h)) {
 			/* Trim leading and trailing space */
 			while (isspace(*h))
@@ -110,12 +107,15 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 			/* Encode two byte length and contents */
 			l = e - h;
 			assert(!(l & ~0xffff));
-			VSB_printf(sb, "%c%c", (unsigned)l >> 8, l & 0xff);
-			VSB_bcat(sb, h, e - h);
 		} else {
-			/* Mark as "not present" */
-			VSB_printf(sb, "%c%c", 0xff, 0xff);
+			e = h;
+			l = 0xffff;
 		}
+		VSB_printf(sb, "%c%c", (unsigned)l >> 8, l & 0xff);
+		/* Append to vary matching string */
+		VSB_bcat(sb, VSB_data(sbh), VSB_len(sbh));
+		if (e != h)
+			VSB_bcat(sb, h, e - h);
 
 		while (isspace(*q))
 			q++;
@@ -125,7 +125,7 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 		p = q;
 	}
 	/* Terminate vary matching string */
-	VSB_printf(sb, "%c", 0);
+	VSB_printf(sb, "%c%c%c", 0xff, 0xff, 0);
 
 	VSB_delete(sbh);
 	AZ(VSB_finish(sb));
@@ -133,12 +133,16 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 }
 
 int
-VRY_Match(const struct sess *sp, const unsigned char *vary)
+VRY_Match(const struct sess *sp, const uint8_t *vary)
 {
 	char *h, *e;
 	int i, l, lh;
 
-	while (*vary) {
+	while (1) {
+		l = vary[0] * 256 + vary[1];
+		vary += 2;
+		if (!*vary)
+			break;
 
 		if (params->http_gzip_support &&
 		    !strcasecmp(H_Accept_Encoding, (const char*)vary)) {
@@ -152,8 +156,6 @@ VRY_Match(const struct sess *sp, const unsigned char *vary)
 			 *  setting of http_gzip_support.
 			 */
 			vary += *vary + 2;
-			l = vary[0] * 256 + vary[1];
-			vary += 2;
 			if (l != 0xffff)
 				vary += l;
 			continue;
@@ -161,10 +163,6 @@ VRY_Match(const struct sess *sp, const unsigned char *vary)
 		/* Look for header */
 		i = http_GetHdr(sp->http, (const char*)vary, &h);
 		vary += *vary + 2;
-
-		/* Expected length of header (or 0xffff) */
-		l = vary[0] * 256 + vary[1];
-		vary += 2;
 
 		/* Fail if we have the header, but shouldn't */
 		if (i && l == 0xffff)
