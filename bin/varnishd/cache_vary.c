@@ -54,11 +54,11 @@
 
 #include "config.h"
 
-#include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
 
 #include "cache.h"
+#include "vct.h"
 
 struct vsb *
 VRY_Create(const struct sess *sp, const struct http *hp)
@@ -86,9 +86,9 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 	for (p = v; *p; p++) {
 
 		/* Find next header-name */
-		if (isspace(*p))
+		if (vct_issp(*p))
 			continue;
-		for (q = p; *q && !isspace(*q) && *q != ','; q++)
+		for (q = p; *q && !vct_issp(*q) && *q != ','; q++)
 			continue;
 
 		/* Build a header-matching string out of it */
@@ -98,11 +98,10 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 		AZ(VSB_finish(sbh));
 
 		if (http_GetHdr(sp->http, VSB_data(sbh), &h)) {
-			/* Trim leading and trailing space */
-			while (isspace(*h))
-				h++;
+			AZ(vct_issp(*h));
+			/* Trim trailing space */
 			e = strchr(h, '\0');
-			while (e > h && isspace(e[-1]))
+			while (e > h && vct_issp(e[-1]))
 				e--;
 			/* Encode two byte length and contents */
 			l = e - h;
@@ -117,7 +116,7 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 		if (e != h)
 			VSB_bcat(sb, h, e - h);
 
-		while (isspace(*q))
+		while (vct_issp(*q))
 			q++;
 		if (*q == '\0')
 			break;
@@ -175,11 +174,9 @@ VRY_Match(const struct sess *sp, const uint8_t *vary)
 		if (!i)
 			continue;
 
-		/* Trim leading & trailing space */
-		while (isspace(*h))
-			h++;
+		/* Trim trailing space */
 		e = strchr(h, '\0');
-		while (e > h && isspace(e[-1]))
+		while (e > h && vct_issp(e[-1]))
 			e--;
 
 		/* Fail if wrong length */
