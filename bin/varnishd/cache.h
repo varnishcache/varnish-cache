@@ -298,7 +298,11 @@ struct worker {
 	uint32_t		*wlb, *wlp, *wle;
 	unsigned		wlr;
 
+	/* Lookup stuff */
 	struct SHA256Context	*sha256ctx;
+	uint8_t			*vary_b;
+	uint8_t			*vary_l;
+	uint8_t			*vary_e;
 
 	struct http_conn	htc[1];
 	struct ws		ws[1];
@@ -880,7 +884,7 @@ void RES_StreamPoll(const struct sess *sp);
 
 /* cache_vary.c */
 struct vsb *VRY_Create(const struct sess *sp, const struct http *hp);
-int VRY_Match(const struct sess *sp, const unsigned char *vary);
+int VRY_Match(const struct sess *sp, const uint8_t *vary);
 
 /* cache_vcl.c */
 void VCL_Init(void);

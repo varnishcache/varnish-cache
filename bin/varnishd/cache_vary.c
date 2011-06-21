@@ -58,6 +58,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "vend.h"
 #include "vct.h"
 
 struct vsb *
@@ -131,63 +132,112 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 	return(sb);
 }
 
+/*
+ * Find length of a vary entry
+ */
+static unsigned
+vry_len(const uint8_t *p)
+{
+	unsigned l = vbe16dec(p);
+
+	return (2 + p[2] + 2 + (l == 0xffff ? 0 : l));
+}
+
+/*
+ * Compare two vary entries
+ */
+static int
+vry_cmp(const uint8_t * const *v1, uint8_t * const *v2)
+{
+	unsigned retval = 0;
+
+	if (!memcmp(*v1, *v2, vry_len(*v1))) {
+		/* Same same */
+		retval = 0;
+	} else if (memcmp((*v1) + 2, (*v2) + 2, (*v1)[2] + 2)) {
+		/* Different header */
+		retval = 1;
+	} else if (params->http_gzip_support &&
+	    !strcasecmp(H_Accept_Encoding, (const char*)((*v1)+2))) {
+		/*
+		 * If we do gzip processing, we do not vary on Accept-Encoding,
+		 * because we want everybody to get the gzip'ed object, and
+		 * varnish will gunzip as necessary.  We implement the skip at
+		 * check time, rather than create time, so that object in
+		 * persistent storage can be used with either setting of
+		 * http_gzip_support.
+		 */
+		retval = 0;
+	} else {
+		/* Same header, different content */
+		retval = 2;
+	}
+	return (retval);
+}
+
 int
 VRY_Match(const struct sess *sp, const uint8_t *vary)
 {
+	uint8_t *vsp = sp->wrk->vary_b;
 	char *h, *e;
-	int i, l, lh;
+	unsigned lh, ln;
+	int i, retval = 1, oflo = 0;
 
-	while (1) {
-		l = vary[0] * 256 + vary[1];
-		vary += 2;
-		if (!*vary)
-			break;
+	AN(vsp);
+	while (vary[2]) {
+		i = vry_cmp(&vary, &vsp);
+		if (i == 1) {
+			/* Build a new entry */
 
-		if (params->http_gzip_support &&
-		    !strcasecmp(H_Accept_Encoding, (const char*)vary)) {
-			/*
-			 * If we do gzip processing, we do not vary on
-			 * Accept-Encoding, because we want everybody to
-			 * get the gzip'ed object, and varnish will gunzip
-			 * as necessary.  We implement the skip at check
-			 * time, rather than create time, so that object
-			 * in persistent storage can be used with either
-			 *  setting of http_gzip_support.
-			 */
-			vary += *vary + 2;
-			if (l != 0xffff)
-				vary += l;
-			continue;
+			i = http_GetHdr(sp->http, (const char*)(vary+2), &h);
+			if (i) {
+				/* Trim trailing space */
+				e = strchr(h, '\0');
+				while (e > h && vct_issp(e[-1]))
+					e--;
+				lh = e - h;
+				assert(lh < 0xffff);
+			} else {
+				e = h = NULL;
+				lh = 0xffff;
+			}
+
+			/* Length of the entire new vary entry */
+			ln = 2 + vary[2] + 2 + (lh == 0xffff ? 0 : lh);
+			if (vsp + ln >= sp->wrk->vary_e) {
+				vsp = sp->wrk->vary_b;
+				oflo = 1;
+			}
+
+			/* We MUST have space for one entry */
+			assert(vsp + ln < sp->wrk->vary_e);
+
+			vbe16enc(vsp, (uint16_t)lh);
+			memcpy(vsp + 2, vary + 2, vary[2] + 2);
+			if (h != NULL && e != NULL)
+				memcpy(vsp + 2 + vsp[2] + 2, h, e - h);
+
+			i = vry_cmp(&vary, &vsp);
+			assert(i != 1);	/* hdr must be the same now */
 		}
-		/* Look for header */
-		i = http_GetHdr(sp->http, (const char*)vary, &h);
-		vary += *vary + 2;
-
-		/* Fail if we have the header, but shouldn't */
-		if (i && l == 0xffff)
-			return (0);
-		/* or if we don't when we should */
-		if (l != 0xffff && !i)
-			return (0);
-
-		/* Nothing to match */
-		if (!i)
-			continue;
-
-		/* Trim trailing space */
-		e = strchr(h, '\0');
-		while (e > h && vct_issp(e[-1]))
-			e--;
-
-		/* Fail if wrong length */
-		lh = e - h;
-		if (lh != l)
-			return (0);
-
-		/* or if wrong contents */
-		if (memcmp(h, vary, l))
-			return (0);
-		vary += l;
+		if (i != 0) 
+			retval = 0;
+		vsp += vry_len(vsp);
+		vary += vry_len(vary);
 	}
-	return (1);
+	if (vsp + 3 > sp->wrk->vary_e)
+		oflo = 1;
+
+	if (oflo) {
+		/* XXX: Should log this */
+		vsp = sp->wrk->vary_b;
+	}
+	vsp[0] = 0xff;
+	vsp[1] = 0xff;
+	vsp[2] = 0;
+	if (oflo) 
+		sp->wrk->vary_l = NULL;
+	else
+		sp->wrk->vary_l = vsp + 3;
+	return (retval);
 }
