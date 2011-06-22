@@ -300,9 +300,6 @@ struct worker {
 
 	/* Lookup stuff */
 	struct SHA256Context	*sha256ctx;
-	uint8_t			*vary_b;
-	uint8_t			*vary_l;
-	uint8_t			*vary_e;
 
 	struct http_conn	htc[1];
 	struct ws		ws[1];
@@ -553,6 +550,11 @@ struct sess {
 	char			*ws_req;	/* WS above request data */
 
 	unsigned char		digest[DIGEST_LEN];
+
+	/* Built Vary string */
+	uint8_t			*vary_b;
+	uint8_t			*vary_l;
+	uint8_t			*vary_e;
 
 	struct http_conn	htc[1];
 
@@ -884,7 +886,7 @@ void RES_StreamPoll(const struct sess *sp);
 
 /* cache_vary.c */
 struct vsb *VRY_Create(const struct sess *sp, const struct http *hp);
-int VRY_Match(const struct sess *sp, const uint8_t *vary);
+int VRY_Match(struct sess *sp, const uint8_t *vary);
 
 /* cache_vcl.c */
 void VCL_Init(void);
