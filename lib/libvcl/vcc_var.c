@@ -121,29 +121,3 @@ vcc_FindVar(struct vcc *tl, const struct token *t, int wr_access,
 	vcc_ErrWhere(tl, t);
 	return (NULL);
 }
-
-/*--------------------------------------------------------------------*/
-
-void
-vcc_VarVal(struct vcc *tl, const struct var *vp, const struct token *vt)
-{
-	double d;
-
-	if (vp->fmt == TIME) {
-		vcc_TimeVal(tl, &d);
-		ERRCHK(tl);
-		Fb(tl, 0, "%g", d);
-	} else if (vp->fmt == DURATION) {
-		vcc_RTimeVal(tl, &d);
-		ERRCHK(tl);
-		Fb(tl, 0, "%g", d);
-	} else if (vp->fmt == INT) {
-		Fb(tl, 0, "%u", vcc_UintVal(tl));
-	} else {
-		AN(vt);
-		VSB_printf(tl->sb,
-		    "Variable has incompatible type.\n");
-		vcc_ErrWhere(tl, vt);
-		return;
-	}
-}
