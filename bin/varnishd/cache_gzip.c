@@ -202,8 +202,8 @@ VGZ_NewGzip(struct sess *sp, const char *id)
 	i = deflateInit2(&vg->vz,
 	    params->gzip_level,		/* Level */
 	    Z_DEFLATED,			/* Method */
-	    16 + 8,			/* Window bits (16=gzip + 15) */
-	    1,				/* memLevel */
+	    16 + params->gzip_window,	/* Window bits (16=gzip + 15) */
+	    params->gzip_memlevel,	/* memLevel */
 	    Z_DEFAULT_STRATEGY);
 	if (i != Z_OK)
 		printf("deflateInit2() = %d\n", i);
