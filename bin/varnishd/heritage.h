@@ -204,6 +204,8 @@ struct params {
 	unsigned		gzip_stack_buffer;
 	unsigned		gzip_tmp_space;
 	unsigned		gzip_level;
+	unsigned		gzip_window;
+	unsigned		gzip_memlevel;
 
 	double			critbit_cooloff;
 
