@@ -72,9 +72,6 @@ available where.
 
 VCL has if tests, but no loops.
 
-You may log arbitrary strings to the shared memory log with the
-keyword *log*.
-
 The contents of another VCL file may be inserted at any point in the
 code by using the *include* keyword followed by the name of the other
 file as a quoted string.
@@ -236,7 +233,8 @@ us to consider the backend healthy.  .initial is how many of the
 probes are considered good when Varnish starts - defaults to the same
 amount as the threshold.
 
-A backend with a probe can be defined like this:::
+A backend with a probe can be defined like this, together with the
+backend or director:::
 
   backend www {
     .host = "www.example.com";
@@ -250,18 +248,34 @@ A backend with a probe can be defined like this:::
     }
   }
 
-It is also possible to specify the raw HTTP request::
+Or it can be defined separately and then referenced:::
+
+  probe healthcheck {
+     .url = "/status.cgi";
+     .interval = 60s;     
+     .timeout = 0.3 s;
+     .window = 8;
+     .threshold = 3;
+     .initial = 3;
+  }	
 
   backend www {
     .host = "www.example.com";
     .port = "http";
-    .probe = {
+    .probe = healthcheck;
+  }
+
+If you have many backends this can simplify the config a lot.
+
+
+It is also possible to specify the raw HTTP request::
+
+  probe rawprobe {
       # NB: \r\n automatically inserted after each string!
       .request =
         "GET / HTTP/1.1"
         "Host: www.foo.bar"
         "Connection: close";
-    }
   }
 
 ACLs
@@ -819,9 +833,11 @@ based on the request URL:::
   default_ttl run-time parameter, as that only affects document for
   which the backend did not specify a TTL:::
   
+  import std; # needed for std.log
+
   sub vcl_fetch {
     if (beresp.ttl < 120s) {
-      log "Adjusting TTL";
+      std.log "Adjusting TTL";
       set beresp.ttl = 120s;
     }
   }
@@ -876,6 +892,7 @@ SEE ALSO
 ========
 
 * varnishd(1)
+* vmod_std(7)
 
 HISTORY
 =======
