@@ -211,44 +211,6 @@ Emit_Sockaddr(struct vcc *tl, const struct token *t_host, const char *port)
 }
 
 /*--------------------------------------------------------------------
- * When a new VCL is loaded, it is likely to contain backend declarations
- * identical to other loaded VCL programs, and we want to reuse the state
- * of those in order to not have to relearn statistics, DNS etc.
- *
- * This function emits a space separated text-string of the tokens which
- * define a given backend which can be used to determine "identical backend"
- * in that context.
- */
-
-void
-vcc_EmitBeIdent(const struct vcc *tl, struct vsb *v,
-    int serial, const struct token *first, const struct token *last)
-{
-
-	assert(first != last);
-	VSB_printf(v, "\t.ident =");
-	if (serial >= 0) {
-		VSB_printf(v, "\n\t    \"%.*s %.*s [%d] \"",
-		    PF(tl->t_policy), PF(tl->t_dir), serial);
-	} else {
-		VSB_printf(v, "\n\t    \"%.*s %.*s \"",
-		    PF(tl->t_policy), PF(tl->t_dir));
-	}
-	while (1) {
-		if (first->dec != NULL)
-			VSB_printf(v, "\n\t    \"\\\"\" %.*s \"\\\" \"",
-			    PF(first));
-		else
-			VSB_printf(v, "\n\t    \"%.*s \"", PF(first));
-		if (first == last)
-			break;
-		first = VTAILQ_NEXT(first, list);
-		AN(first);
-	}
-	VSB_printf(v, ",\n");
-}
-
-/*--------------------------------------------------------------------
  * Parse a backend probe specification
  */
 

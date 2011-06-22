@@ -104,8 +104,6 @@ int vtmpfile(char *);
 char *vreadfile(const char *pfx, const char *fn, ssize_t *sz);
 char *vreadfd(int fd, ssize_t *sz);
 
-const char* VCS_Version(void);
-
 /* Safe printf into a fixed-size buffer */
 #define bprintf(buf, fmt, ...)						\
 	do {								\
