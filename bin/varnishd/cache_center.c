@@ -1028,12 +1028,27 @@ cnt_lookup(struct sess *sp)
 	struct objcore *oc;
 	struct object *o;
 	struct objhead *oh;
+	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
 
+	wrk = sp->wrk;
+	AZ(wrk->vary_b);
+	AZ(wrk->vary_l);
+	AZ(wrk->vary_e);
+	(void)WS_Reserve(wrk->ws, 0);
+	wrk->vary_b = (void*)wrk->ws->f;
+	wrk->vary_e = (void*)wrk->ws->r;
+	wrk->vary_b[2] = '\0';
+
 	oc = HSH_Lookup(sp, &oh);
+
+	WS_Release(wrk->ws, 0);
+	wrk->vary_b = NULL;
+	wrk->vary_l = NULL;
+	wrk->vary_e = NULL;
 
 	if (oc == NULL) {
 		/*
