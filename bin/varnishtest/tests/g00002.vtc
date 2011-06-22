@@ -11,7 +11,10 @@ server s1 {
 	txresp -body {<H1><esi:include src="/foo"/></H1>}
 } -start
 
-varnish v1 -cliok "param.set http_gzip_support true" -vcl+backend {
+varnish v1 \
+	-cliok "param.set http_gzip_support true" \
+	-cliok "param.set gzip_memlevel 1" \
+	-vcl+backend {
 
 	sub vcl_fetch {
 		set beresp.do_esi = true;
