@@ -330,13 +330,6 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	}
 
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-	AZ(sp->wrk->vary_b);
-	AZ(sp->wrk->vary_l);
-	AZ(sp->wrk->vary_e);
-	WS_Reserve(sp->wrk->ws, 0);
-	sp->wrk->vary_b = (void*)sp->wrk->ws->f;
-	sp->wrk->vary_e = (void*)sp->wrk->ws->r;
-	sp->wrk->vary_b[2] = '\0';
 	Lck_Lock(&oh->mtx);
 	assert(oh->refcnt > 0);
 	busy_oc = NULL;
@@ -380,11 +373,6 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 			}
 		}
 	}
-
-	WS_ReleaseP(sp->wrk->ws, (void*)sp->wrk->vary_b);
-	sp->wrk->vary_b = NULL;
-	sp->wrk->vary_l = NULL;
-	sp->wrk->vary_e = NULL;
 
 	/*
 	 * If we have seen a busy object or the backend is unhealthy, and
