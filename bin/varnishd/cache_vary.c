@@ -176,9 +176,9 @@ vry_cmp(const uint8_t * const *v1, uint8_t * const *v2)
 }
 
 int
-VRY_Match(const struct sess *sp, const uint8_t *vary)
+VRY_Match(struct sess *sp, const uint8_t *vary)
 {
-	uint8_t *vsp = sp->wrk->vary_b;
+	uint8_t *vsp = sp->vary_b;
 	char *h, *e;
 	unsigned lh, ln;
 	int i, retval = 1, oflo = 0;
@@ -204,8 +204,8 @@ VRY_Match(const struct sess *sp, const uint8_t *vary)
 
 			/* Length of the entire new vary entry */
 			ln = 2 + vary[2] + 2 + (lh == 0xffff ? 0 : lh);
-			if (vsp + ln >= sp->wrk->vary_e) {
-				vsp = sp->wrk->vary_b;
+			if (vsp + ln >= sp->vary_e) {
+				vsp = sp->vary_b;
 				oflo = 1;
 			}
 
@@ -213,7 +213,7 @@ VRY_Match(const struct sess *sp, const uint8_t *vary)
 			 * We MUST have space for one entry and the end marker
 			 * after it, which prevents old junk from confusing us
 			 */
-			assert(vsp + ln + 2 < sp->wrk->vary_e);
+			assert(vsp + ln + 2 < sp->vary_e);
 
 			vbe16enc(vsp, (uint16_t)lh);
 			memcpy(vsp + 2, vary + 2, vary[2] + 2);
@@ -231,19 +231,19 @@ VRY_Match(const struct sess *sp, const uint8_t *vary)
 		vsp += vry_len(vsp);
 		vary += vry_len(vary);
 	}
-	if (vsp + 3 > sp->wrk->vary_e)
+	if (vsp + 3 > sp->vary_e)
 		oflo = 1;
 
 	if (oflo) {
 		/* XXX: Should log this */
-		vsp = sp->wrk->vary_b;
+		vsp = sp->vary_b;
 	}
 	vsp[0] = 0xff;
 	vsp[1] = 0xff;
 	vsp[2] = 0;
 	if (oflo) 
-		sp->wrk->vary_l = NULL;
+		sp->vary_l = NULL;
 	else
-		sp->wrk->vary_l = vsp + 3;
+		sp->vary_l = vsp + 3;
 	return (retval);
 }
