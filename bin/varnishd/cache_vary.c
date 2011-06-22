@@ -209,13 +209,19 @@ VRY_Match(const struct sess *sp, const uint8_t *vary)
 				oflo = 1;
 			}
 
-			/* We MUST have space for one entry */
-			assert(vsp + ln < sp->wrk->vary_e);
+			/*
+			 * We MUST have space for one entry and the end marker
+			 * after it, which prevents old junk from confusing us
+			 */
+			assert(vsp + ln + 2 < sp->wrk->vary_e);
 
 			vbe16enc(vsp, (uint16_t)lh);
 			memcpy(vsp + 2, vary + 2, vary[2] + 2);
-			if (h != NULL && e != NULL)
+			if (h != NULL && e != NULL) {
 				memcpy(vsp + 2 + vsp[2] + 2, h, e - h);
+				vsp[2 + vary[2] + 2 + (e - h) + 2] = '\0';
+			} else
+				vsp[2 + vary[2] + 2 + 2] = '\0';
 
 			i = vry_cmp(&vary, &vsp);
 			assert(i != 1);	/* hdr must be the same now */
