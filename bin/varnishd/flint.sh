@@ -20,4 +20,6 @@ if [ -f _.fl.old ] ; then
 	diff -u _.fl.old _.fl
 fi
 
-mv _.fl _.fl.old
+if [ "x$1" = "x-ok" ] ; then
+	mv _.fl _.fl.old
+fi
