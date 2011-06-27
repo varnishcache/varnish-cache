@@ -434,6 +434,7 @@ oc_getobj(struct worker *wrk, struct objcore *oc)
 {
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AZ(oc->flags & OC_F_BUSY);
 	AN(oc->methods);
 	AN(oc->methods->getobj);
 	return (oc->methods->getobj(wrk, oc));
