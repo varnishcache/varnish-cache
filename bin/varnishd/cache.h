@@ -97,6 +97,7 @@ struct director;
 struct object;
 struct objhead;
 struct objcore;
+struct busyobj;
 struct storage;
 struct workreq;
 struct vrt_backend;
@@ -281,6 +282,7 @@ struct worker {
 	struct objhead		*nobjhead;
 	struct objcore		*nobjcore;
 	struct waitinglist	*nwaitinglist;
+	struct busyobj		*nbusyobj;
 	void			*nhashpriv;
 	struct dstat		stats;
 
@@ -416,6 +418,7 @@ struct objcore {
 	void			*priv;
 	unsigned		priv2;
 	struct objhead		*objhead;
+	struct busyobj		*busyobj;
 	double			timer_when;
 	unsigned		flags;
 #define OC_F_BUSY		(1<<1)
@@ -470,7 +473,16 @@ oc_getlru(const struct objcore *oc)
 	return (oc->methods->getlru(oc));
 }
 
+/* Busy Object structure ---------------------------------------------*/
+
+struct busyobj {
+	unsigned		magic;
+#define BUSYOBJ_MAGIC		0x23b95567
+	uint8_t			*vary;
+};
+
 /* Object structure --------------------------------------------------*/
+
 VTAILQ_HEAD(storagehead, storage);
 
 struct object {
