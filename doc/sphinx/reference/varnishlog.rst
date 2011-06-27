@@ -149,7 +149,7 @@ The following command line simply copies all log entries to a log file:::
 
 The following command line reads that same log file and displays requests for the front page:::
 
-    $ varnishlog -r /var/log/varnish.log -c -o RxURL '^/$'
+    $ varnishlog -r /var/log/varnish.log -c -m 'RxURL:^/$'
 
 SEE ALSO
 ========
