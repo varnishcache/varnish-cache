@@ -594,7 +594,6 @@ HSH_Unbusy(const struct sess *sp)
 
 	AssertObjBusy(o);
 	AN(oc->ban);
-	assert(oc_getobj(sp->wrk, oc) == o);
 	assert(oc->refcnt > 0);
 	assert(oh->refcnt > 0);
 	if (o->ws_o->overflow)
@@ -613,6 +612,7 @@ HSH_Unbusy(const struct sess *sp)
 	hsh_rush(oh);
 	AN(oc->ban);
 	Lck_Unlock(&oh->mtx);
+	assert(oc_getobj(sp->wrk, oc) == o);
 }
 
 void
