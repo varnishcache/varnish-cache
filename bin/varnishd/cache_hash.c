@@ -111,6 +111,11 @@ HSH_Prealloc(const struct sess *sp)
 	}
 	CHECK_OBJ_NOTNULL(w->nwaitinglist, WAITINGLIST_MAGIC);
 
+	if (w->nbusyobj == NULL) {
+		ALLOC_OBJ(w->nbusyobj, BUSYOBJ_MAGIC);
+		XXXAN(w->nbusyobj);
+	}
+
 	if (hash->prep != NULL)
 		hash->prep(sp);
 }
@@ -342,8 +347,15 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		assert(oc->objhead == oh);
 
 		if (oc->flags & OC_F_BUSY) {
-			if (!sp->hash_ignore_busy)
-				busy_oc = oc;
+			CHECK_OBJ_NOTNULL(oc->busyobj, BUSYOBJ_MAGIC);
+			if (sp->hash_ignore_busy)
+				continue;
+
+			if (oc->busyobj->vary != NULL &&
+			    !VRY_Match(sp, oc->busyobj->vary))
+				continue;
+
+			busy_oc = oc;
 			continue;
 		}
 
@@ -444,6 +456,10 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	w->nobjcore = NULL;
 	AN(oc->flags & OC_F_BUSY);
 	oc->refcnt = 1;
+
+	w->nbusyobj->vary = sp->vary_b;
+	oc->busyobj = w->nbusyobj;
+	w->nbusyobj = NULL;
 
 	/*
 	 * Busy objects go on the tail, so they will not trip up searches.
@@ -609,6 +625,9 @@ HSH_Unbusy(const struct sess *sp)
 	VTAILQ_REMOVE(&oh->objcs, oc, list);
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, list);
 	oc->flags &= ~OC_F_BUSY;
+	AZ(sp->wrk->nbusyobj);
+	sp->wrk->nbusyobj = oc->busyobj;
+	oc->busyobj = NULL;
 	hsh_rush(oh);
 	AN(oc->ban);
 	Lck_Unlock(&oh->mtx);
