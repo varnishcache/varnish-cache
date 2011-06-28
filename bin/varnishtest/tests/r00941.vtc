@@ -1,0 +1,24 @@
+varnishtest "beresp.ttl set in vcl takes effect"
+
+server s1 {
+	rxreq
+	txresp -hdr "Cache-control: max-age=1" -body "FOO"
+	rxreq
+	txresp -body "FOOBAR"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		set beresp.ttl = 1000s;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 3
+	delay 2
+	txreq
+	rxresp
+	expect resp.bodylen == 3
+} -run
