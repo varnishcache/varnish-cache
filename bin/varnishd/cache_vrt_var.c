@@ -385,10 +385,13 @@ VRT_DO_EXP(req, sp->exp, ttl, )
 VRT_DO_EXP(req, sp->exp, grace, )
 VRT_DO_EXP(req, sp->exp, keep, )
 VRT_DO_EXP(obj, sp->obj->exp, grace, EXP_Rearm(sp->obj))
-VRT_DO_EXP(obj, sp->obj->exp, ttl, EXP_Rearm(sp->obj))
+VRT_DO_EXP(obj, sp->obj->exp, ttl,
+	   EXP_Rearm(sp->obj);
+	   WSP(sp, SLT_TTL, "%u VCL %.0f %.0f", sp->obj->xid, a, sp->t_req))
 VRT_DO_EXP(obj, sp->obj->exp, keep, EXP_Rearm(sp->obj))
 VRT_DO_EXP(beresp, sp->wrk->exp, grace, )
-VRT_DO_EXP(beresp, sp->wrk->exp, ttl, )
+VRT_DO_EXP(beresp, sp->wrk->exp, ttl,
+	   WSP(sp, SLT_TTL, "%u VCL %.0f %.0f", sp->xid, a, sp->t_req))
 VRT_DO_EXP(beresp, sp->wrk->exp, keep, )
 
 /*--------------------------------------------------------------------
