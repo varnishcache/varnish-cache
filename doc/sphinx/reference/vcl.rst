@@ -681,15 +681,6 @@ beresp.status
 beresp.response
   The HTTP status message returned by the server.
 
-beresp.cacheable
-  True if the request resulted in a cacheable response. A response is
-  considered cacheable if HTTP status code is 200, 203, 300, 301, 302,
-  404 or 410 and pass wasn't called in vcl_recv. If however, both the
-  TTL and the grace time for the response are 0 beresp.cacheable will
-  be 0.
-  
-  beresp.cacheable is writable.
-
 beresp.ttl
   The object's remaining time to live, in seconds. beresp.ttl is writable.
 
@@ -705,10 +696,6 @@ obj.status
 
 obj.response
   The HTTP status message returned by the server.
-
-obj.cacheable
-  True if the object had beresp.cacheable. Unless you've forced delivery
-  in your VCL obj.cacheable will always be true.
 
 obj.ttl
   The object's remaining time to live, in seconds. obj.ttl is writable.
