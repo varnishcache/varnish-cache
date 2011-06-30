@@ -30,11 +30,11 @@
 #ifndef VPF_H_INCLUDED
 #define VPF_H_INCLUDED
 
-struct pidfh;
+struct vpf_fh;
 
-struct pidfh *vpf_open(const char *path, mode_t mode, pid_t *pidptr);
-int vpf_write(struct pidfh *pfh);
-int vpf_close(struct pidfh *pfh);
-int vpf_remove(struct pidfh *pfh);
+struct vpf_fh *VPF_Open(const char *path, mode_t mode, pid_t *pidptr);
+int VPF_Write(struct vpf_fh *pfh);
+int VPF_Close(struct vpf_fh *pfh);
+int VPF_Remove(struct vpf_fh *pfh);
 
 #endif

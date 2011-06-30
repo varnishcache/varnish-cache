@@ -1,0 +1,53 @@
+varnishtest "test vmod_std.integer conversion"
+
+server s1 {
+	rxreq
+	expect req.url == "/1"
+	txresp -bodylen 1
+
+} -start
+
+varnish v1 -vcl+backend {
+	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
+
+	sub vcl_deliver {
+		set resp.http.biggerthanzero = (std.integer(req.http.foo,0) > 0);
+		set resp.http.smallerthanzero = (std.integer(req.http.foo,0) < 0);
+		set resp.http.iszero = (std.integer(req.http.foo,0) == 0);
+		set resp.http.converted = std.integer(req.http.foo,0);
+	}
+} -start
+
+client c1 {
+	txreq -url "/1"  -hdr "foo: 1"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.biggerthanzero == true
+	expect resp.http.smallerthanzero == false
+	expect resp.http.iszero == false
+	expect resp.http.converted == 1
+	
+	txreq -url "/1"  -hdr "foo: -1"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.biggerthanzero == false
+	expect resp.http.smallerthanzero == true
+	expect resp.http.iszero == false
+	expect resp.http.converted == -1
+
+	txreq -url "/1"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.biggerthanzero == false
+	expect resp.http.smallerthanzero == false
+	expect resp.http.iszero == true
+	expect resp.http.converted == 0
+
+	txreq -url "/1"  -hdr "foo: bar"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.biggerthanzero == false
+	expect resp.http.smallerthanzero == false
+	expect resp.http.iszero == true
+	expect resp.http.converted == 0
+} -run

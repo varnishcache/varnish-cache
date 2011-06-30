@@ -1,7 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Redpill Linpro AS
- * Copyright (c) 2011 Varnish Software AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -39,12 +38,13 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <poll.h>
 
-#include "cli.h"
+#include "vcli.h"
 #include "cli_priv.h"
 #include "cli_common.h"
 #include "cli_serve.h"
@@ -55,7 +55,7 @@
 pthread_t		cli_thread;
 static struct lock	cli_mtx;
 static int		add_check;
-static struct cls	*cls;
+static struct VCLS	*cls;
 
 /*
  * The CLI commandlist is split in three:
@@ -75,7 +75,7 @@ CLI_AddFuncs(struct cli_proto *p)
 
 	AZ(add_check);
 	Lck_Lock(&cli_mtx);
-	AZ(CLS_AddFunc(cls, 0, p));
+	AZ(VCLS_AddFunc(cls, 0, p));
 	Lck_Unlock(&cli_mtx);
 }
 
@@ -97,7 +97,7 @@ cli_cb_after(const struct cli *cli)
 	ASSERT_CLI();
 	Lck_Unlock(&cli_mtx);
 	VSL(SLT_CLI, 0, "Wr %03u %u %s",
-	    cli->result, vsb_len(cli->sb), vsb_data(cli->sb));
+	    cli->result, VSB_len(cli->sb), VSB_data(cli->sb));
 }
 
 void
@@ -107,10 +107,10 @@ CLI_Run(void)
 
 	add_check = 1;
 
-	AN(CLS_AddFd(cls, heritage.cli_in, heritage.cli_out, NULL, NULL));
+	AN(VCLS_AddFd(cls, heritage.cli_in, heritage.VCLI_Out, NULL, NULL));
 
 	do {
-		i = CLS_Poll(cls, -1);
+		i = VCLS_Poll(cls, -1);
 	} while(i > 0);
 	VSL(SLT_CLI, 0, "EOF on CLI connection, worker stops");
 	VCA_Shutdown();
@@ -124,8 +124,8 @@ cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	(void)priv;
 
-#define SZOF(foo)       cli_out(cli, \
-    "sizeof(%s) = %zd = 0x%zx\n", #foo, sizeof(foo), sizeof(foo));
+#define SZOF(foo)       VCLI_Out(cli, \
+    "sizeof(%s) = %zd = 0x%zx\n", #foo, sizeof(foo), sizeof(foo))
 	SZOF(struct ws);
 	SZOF(struct http);
 	SZOF(struct http_conn);
@@ -138,8 +138,67 @@ cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
 	SZOF(struct objhead);
 	SZOF(struct sess);
 	SZOF(struct vbc);
-	SZOF(struct vsc_main);
+	SZOF(struct VSC_C_main);
 	SZOF(struct lock);
+#define OFOF(foo, bar)	{ foo __foo; VCLI_Out(cli, \
+    "%-30s = 0x%4zx @ 0x%4zx\n", \
+	#foo "." #bar, sizeof(__foo.bar), offsetof(foo, bar)); }
+#if 0
+	OFOF(struct objhead, magic);
+	OFOF(struct objhead, refcnt);
+	OFOF(struct objhead, mtx);
+	OFOF(struct objhead, objcs);
+	OFOF(struct objhead, digest);
+	OFOF(struct objhead, waitinglist);
+	OFOF(struct objhead, _u);
+#endif
+#if 0
+	OFOF(struct http, magic);
+	OFOF(struct http, logtag);
+	OFOF(struct http, ws);
+	OFOF(struct http, hd);
+	OFOF(struct http, hdf);
+	OFOF(struct http, shd);
+	OFOF(struct http, nhd);
+	OFOF(struct http, status);
+	OFOF(struct http, protover);
+	OFOF(struct http, conds);
+#endif
+#if 0
+	OFOF(struct storage, magic);
+	OFOF(struct storage, fd);
+	OFOF(struct storage, where);
+	OFOF(struct storage, list);
+	OFOF(struct storage, stevedore);
+	OFOF(struct storage, priv);
+	OFOF(struct storage, ptr);
+	OFOF(struct storage, len);
+	OFOF(struct storage, space);
+#endif
+#if 0
+	OFOF(struct object, magic);
+	OFOF(struct object, xid);
+	OFOF(struct object, objstore);
+	OFOF(struct object, objcore);
+	OFOF(struct object, ws_o);
+	OFOF(struct object, vary);
+	OFOF(struct object, hits);
+	OFOF(struct object, response);
+	OFOF(struct object, gziped);
+	OFOF(struct object, gzip_start);
+	OFOF(struct object, gzip_last);
+	OFOF(struct object, gzip_stop);
+	OFOF(struct object, len);
+	OFOF(struct object, age);
+	OFOF(struct object, entered);
+	OFOF(struct object, exp);
+	OFOF(struct object, last_modified);
+	OFOF(struct object, last_lru);
+	OFOF(struct object, http);
+	OFOF(struct object, store);
+	OFOF(struct object, esidata);
+	OFOF(struct object, last_use);
+#endif
 }
 
 /*--------------------------------------------------------------------*/
@@ -157,8 +216,8 @@ ccf_panic(struct cli *cli, const char * const *av, void *priv)
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto master_cmds[] = {
-	{ CLI_PING,		"i", CLS_func_ping },
-	{ CLI_HELP,             "i", CLS_func_help },
+	{ CLI_PING,		"i", VCLS_func_ping },
+	{ CLI_HELP,             "i", VCLS_func_help },
 	{ "debug.sizeof", "debug.sizeof",
 		"\tDump sizeof various data structures\n",
 		0, 0, "d", cli_debug_sizeof },
@@ -179,7 +238,7 @@ CLI_Init(void)
 	Lck_New(&cli_mtx, lck_cli);
 	cli_thread = pthread_self();
 
-	cls = CLS_New(cli_cb_before, cli_cb_after, params->cli_buffer);
+	cls = VCLS_New(cli_cb_before, cli_cb_after, params->cli_buffer);
 	AN(cls);
 
 	CLI_AddFuncs(master_cmds);

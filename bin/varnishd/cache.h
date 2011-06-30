@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Redpill Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -97,13 +97,14 @@ struct director;
 struct object;
 struct objhead;
 struct objcore;
+struct busyobj;
 struct storage;
 struct workreq;
 struct vrt_backend;
 struct cli_proto;
 struct ban;
 struct SHA256Context;
-struct vsc_lck;
+struct VSC_C_lck;
 struct waitinglist;
 struct vef_priv;
 
@@ -143,12 +144,12 @@ enum step {
 struct ws {
 	unsigned		magic;
 #define WS_MAGIC		0x35fac554
+	unsigned		overflow;	/* workspace overflowed */
 	const char		*id;		/* identity */
 	char			*s;		/* (S)tart of buffer */
 	char			*f;		/* (F)ree pointer */
 	char			*r;		/* (R)eserved length */
 	char			*e;		/* (E)nd of buffer */
-	int			overflow;	/* workspace overflowed */
 };
 
 /*--------------------------------------------------------------------
@@ -166,18 +167,17 @@ struct http {
 	unsigned		magic;
 #define HTTP_MAGIC		0x6428b5c9
 
-	struct ws		*ws;
-
-	unsigned char		conds;		/* If-* headers present */
 	enum httpwhence		logtag;
-	int			status;
-	double			protover;
 
-	unsigned		shd;		/* Size of hd space */
+	struct ws		*ws;
 	txt			*hd;
 	unsigned char		*hdf;
 #define HDF_FILTER		(1 << 0)	/* Filtered by Connection */
-	unsigned		nhd;		/* Next free hd */
+	uint16_t		shd;		/* Size of hd space */
+	uint16_t		nhd;		/* Next free hd */
+	uint16_t		status;
+	uint8_t			protover;
+	uint8_t 		conds;		/* If-* headers present */
 };
 
 /*--------------------------------------------------------------------
@@ -282,6 +282,7 @@ struct worker {
 	struct objhead		*nobjhead;
 	struct objcore		*nobjcore;
 	struct waitinglist	*nwaitinglist;
+	struct busyobj		*nbusyobj;
 	void			*nhashpriv;
 	struct dstat		stats;
 
@@ -299,6 +300,7 @@ struct worker {
 	uint32_t		*wlb, *wlp, *wle;
 	unsigned		wlr;
 
+	/* Lookup stuff */
 	struct SHA256Context	*sha256ctx;
 
 	struct http_conn	htc[1];
@@ -416,6 +418,7 @@ struct objcore {
 	void			*priv;
 	unsigned		priv2;
 	struct objhead		*objhead;
+	struct busyobj		*busyobj;
 	double			timer_when;
 	unsigned		flags;
 #define OC_F_BUSY		(1<<1)
@@ -434,6 +437,7 @@ oc_getobj(struct worker *wrk, struct objcore *oc)
 {
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AZ(oc->flags & OC_F_BUSY);
 	AN(oc->methods);
 	AN(oc->methods->getobj);
 	return (oc->methods->getobj(wrk, oc));
@@ -469,7 +473,16 @@ oc_getlru(const struct objcore *oc)
 	return (oc->methods->getlru(oc));
 }
 
+/* Busy Object structure ---------------------------------------------*/
+
+struct busyobj {
+	unsigned		magic;
+#define BUSYOBJ_MAGIC		0x23b95567
+	uint8_t			*vary;
+};
+
 /* Object structure --------------------------------------------------*/
+
 VTAILQ_HEAD(storagehead, storage);
 
 struct object {
@@ -480,12 +493,13 @@ struct object {
 	struct objcore		*objcore;
 
 	struct ws		ws_o[1];
-	unsigned char		*vary;
 
-	unsigned		response;
+	uint8_t 		*vary;
+	unsigned		hits;
+	uint16_t		response;
 
 	/* XXX: make bitmap */
-	unsigned		gziped;
+	uint8_t			gziped;
 	/* Bit positions in the gzip stream */
 	ssize_t			gzip_start;
 	ssize_t			gzip_last;
@@ -508,7 +522,6 @@ struct object {
 
 	double			last_use;
 
-	int			hits;
 };
 
 /* -------------------------------------------------------------------*/
@@ -551,6 +564,11 @@ struct sess {
 
 	unsigned char		digest[DIGEST_LEN];
 
+	/* Built Vary string */
+	uint8_t			*vary_b;
+	uint8_t			*vary_l;
+	uint8_t			*vary_e;
+
 	struct http_conn	htc[1];
 
 	/* Timestamps, all on TIM_real() timescale */
@@ -567,7 +585,7 @@ struct sess {
 	unsigned		handling;
 	unsigned char		sendbody;
 	unsigned char		wantbody;
-	int			err_code;
+	uint16_t		err_code;
 	const char		*err_reason;
 
 	VTAILQ_ENTRY(sess)	list;
@@ -787,7 +805,7 @@ const struct sess * THR_GetSession(void);
 void Lck__Lock(struct lock *lck, const char *p, const char *f, int l);
 void Lck__Unlock(struct lock *lck, const char *p, const char *f, int l);
 int Lck__Trylock(struct lock *lck, const char *p, const char *f, int l);
-void Lck__New(struct lock *lck, struct vsc_lck *, const char *);
+void Lck__New(struct lock *lck, struct VSC_C_lck *, const char *);
 void Lck__Assert(const struct lock *lck, int held);
 
 /* public interface: */
@@ -801,7 +819,7 @@ void Lck_CondWait(pthread_cond_t *cond, struct lock *lck);
 #define Lck_Trylock(a) Lck__Trylock(a, __func__, __FILE__, __LINE__)
 #define Lck_AssertHeld(a) Lck__Assert(a, 1)
 
-#define LOCK(nam) extern struct vsc_lck *lck_##nam;
+#define LOCK(nam) extern struct VSC_C_lck *lck_##nam;
 #include "locks.h"
 #undef LOCK
 
@@ -846,9 +864,9 @@ void *VSM_Alloc(unsigned size, const char *class, const char *type,
     const char *ident);
 void VSM_Free(const void *ptr);
 #ifdef VSL_ENDMARKER
-void VSL(enum vsl_tag tag, int id, const char *fmt, ...);
-void WSLR(struct worker *w, enum vsl_tag tag, int id, txt t);
-void WSL(struct worker *w, enum vsl_tag tag, int id, const char *fmt, ...);
+void VSL(enum VSL_tag_e tag, int id, const char *fmt, ...);
+void WSLR(struct worker *w, enum VSL_tag_e tag, int id, txt t);
+void WSL(struct worker *w, enum VSL_tag_e tag, int id, const char *fmt, ...);
 void WSL_Flush(struct worker *w, int overflow);
 
 #define DSL(flag, tag, id, ...)					\
@@ -881,7 +899,7 @@ void RES_StreamPoll(const struct sess *sp);
 
 /* cache_vary.c */
 struct vsb *VRY_Create(const struct sess *sp, const struct http *hp);
-int VRY_Match(const struct sess *sp, const unsigned char *vary);
+int VRY_Match(struct sess *sp, const uint8_t *vary);
 
 /* cache_vcl.c */
 void VCL_Init(void);

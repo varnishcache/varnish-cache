@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Redpill Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -89,7 +89,7 @@ VBE_ReleaseConn(struct vbc *vc)
 	vc->addrlen = 0;
 	vc->recycled = 0;
 	Lck_Lock(&VBE_mtx);
-	VSC_main->n_vbc--;
+	VSC_C_main->n_vbc--;
 	Lck_Unlock(&VBE_mtx);
 	FREE_OBJ(vc);
 }
@@ -118,8 +118,8 @@ vbe_TryConnect(const struct sess *sp, int pf, const struct sockaddr_storage *sa,
 {
 	int s, i, tmo;
 	double tmod;
-	char abuf1[TCP_ADDRBUFSIZE], abuf2[TCP_ADDRBUFSIZE];
-	char pbuf1[TCP_PORTBUFSIZE], pbuf2[TCP_PORTBUFSIZE];
+	char abuf1[VTCP_ADDRBUFSIZE], abuf2[VTCP_ADDRBUFSIZE];
+	char pbuf1[VTCP_PORTBUFSIZE], pbuf2[VTCP_PORTBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
@@ -132,15 +132,15 @@ vbe_TryConnect(const struct sess *sp, int pf, const struct sockaddr_storage *sa,
 
 	tmo = (int)(tmod * 1000.0);
 
-	i = TCP_connect(s, sa, salen, tmo);
+	i = VTCP_connect(s, sa, salen, tmo);
 
 	if (i != 0) {
 		AZ(close(s));
 		return (-1);
 	}
 
-	TCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-	TCP_name(sa, salen, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
+	VTCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
+	VTCP_name(sa, salen, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
 	WSL(sp->wrk, SLT_BackendOpen, s, "%s %s %s %s %s",
 	    vs->backend->vcl_name, abuf1, pbuf1, abuf2, pbuf2);
 
@@ -226,7 +226,7 @@ vbe_NewConn(void)
 	XXXAN(vc);
 	vc->fd = -1;
 	Lck_Lock(&VBE_mtx);
-	VSC_main->n_vbc++;
+	VSC_C_main->n_vbc++;
 	Lck_Unlock(&VBE_mtx);
 	return (vc);
 }
@@ -346,34 +346,34 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 			break;
 		if (vbe_CheckFd(vc->fd)) {
 			/* XXX locking of stats */
-			VSC_main->backend_reuse += 1;
+			VSC_C_main->backend_reuse += 1;
 			WSP(sp, SLT_Backend, "%d %s %s",
 			    vc->fd, sp->director->vcl_name, bp->vcl_name);
 			vc->vdis = vs;
 			vc->recycled = 1;
 			return (vc);
 		}
-		VSC_main->backend_toolate++;
+		VSC_C_main->backend_toolate++;
 		WSL(sp->wrk, SLT_BackendClose, vc->fd, "%s", bp->vcl_name);
 
 		/* Checkpoint log to flush all info related to this connection
 		   before the OS reuses the FD */
 		WSL_Flush(sp->wrk, 0);
 
-		TCP_close(&vc->fd);
+		VTCP_close(&vc->fd);
 		VBE_DropRefConn(bp);
 		vc->backend = NULL;
 		VBE_ReleaseConn(vc);
 	}
 
 	if (!vbe_Healthy(vs, sp)) {
-		VSC_main->backend_unhealthy++;
+		VSC_C_main->backend_unhealthy++;
 		return (NULL);
 	}
 
 	if (vs->vrt->max_connections > 0 &&
 	    bp->n_conn >= vs->vrt->max_connections) {
-		VSC_main->backend_busy++;
+		VSC_C_main->backend_busy++;
 		return (NULL);
 	}
 
@@ -383,11 +383,11 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 	bes_conn_try(sp, vc, vs);
 	if (vc->fd < 0) {
 		VBE_ReleaseConn(vc);
-		VSC_main->backend_fail++;
+		VSC_C_main->backend_fail++;
 		return (NULL);
 	}
 	vc->backend = bp;
-	VSC_main->backend_conn++;
+	VSC_C_main->backend_conn++;
 	WSP(sp, SLT_Backend, "%d %s %s",
 	    vc->fd, sp->director->vcl_name, bp->vcl_name);
 	vc->vdis = vs;

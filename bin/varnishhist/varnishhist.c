@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Linpro AS
+ * Copyright (c) 2006-2010 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -146,7 +146,7 @@ update(struct VSM_data *vd)
 }
 
 static int
-h_hist(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
+h_hist(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
     unsigned spec, const char *ptr, uint64_t bm)
 {
 	double b;
@@ -334,7 +334,7 @@ main(int argc, char **argv)
 	while ((o = getopt(argc, argv, VSL_ARGS "Vw:")) != -1) {
 		switch (o) {
 		case 'V':
-			varnish_version("varnishhist");
+			VCS_Message("varnishhist");
 			exit(0);
 		case 'w':
 			delay = atoi(optarg);

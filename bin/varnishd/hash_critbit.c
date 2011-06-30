@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2008-2010 Linpro AS
+ * Copyright (c) 2008-2010 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -309,14 +309,14 @@ dumptree(struct cli *cli, uintptr_t p, int indent)
 		return;
 	if (hcb_is_node(p)) {
 		oh = hcb_l_node(p);
-		cli_out(cli, "%*.*sN %d r%u <%02x%02x%02x...>\n",
+		VCLI_Out(cli, "%*.*sN %d r%u <%02x%02x%02x...>\n",
 		    indent, indent, "", indent / 2, oh->refcnt,
 		    oh->digest[0], oh->digest[1], oh->digest[2]);
 		return;
 	}
 	assert(hcb_is_y(p));
 	y = hcb_l_y(p);
-	cli_out(cli, "%*.*sY c %u p %u b %02x i %d\n",
+	VCLI_Out(cli, "%*.*sY c %u p %u b %02x i %d\n",
 	    indent, indent, "",
 	    y->critbit, y->ptr, y->bitmask, indent / 2);
 	indent += 2;
@@ -330,9 +330,9 @@ hcb_dump(struct cli *cli, const char * const *av, void *priv)
 
 	(void)priv;
 	(void)av;
-	cli_out(cli, "HCB dump:\n");
+	VCLI_Out(cli, "HCB dump:\n");
 	dumptree(cli, hcb_root.origo, 0);
-	cli_out(cli, "Coollist:\n");
+	VCLI_Out(cli, "Coollist:\n");
 }
 
 static struct cli_proto hcb_cmds[] = {
@@ -429,19 +429,19 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 		if (with_lock) {
 			CAST_OBJ_NOTNULL(y, sp->wrk->nhashpriv, HCB_Y_MAGIC);
 			Lck_Lock(&hcb_mtx);
-			VSC_main->hcb_lock++;
+			VSC_C_main->hcb_lock++;
 			assert(noh->refcnt == 1);
 			oh = hcb_insert(sp->wrk, &hcb_root, noh, 1);
 			Lck_Unlock(&hcb_mtx);
 		} else {
-			VSC_main->hcb_nolock++;
+			VSC_C_main->hcb_nolock++;
 			oh = hcb_insert(sp->wrk, &hcb_root, noh, 0);
 		}
 
 		if (oh != NULL && oh == noh) {
 			/* Assert that we only muck with the tree with a lock */
 			assert(with_lock);
-			VSC_main->hcb_insert++;
+			VSC_C_main->hcb_insert++;
 			assert(oh->refcnt > 0);
 			return (oh);
 		}

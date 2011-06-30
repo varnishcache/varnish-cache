@@ -37,7 +37,7 @@ Return value
 Description
 	Converts the STRING S to upper case.
 Example
-	set beresp.x-scream = std.toupper("yes!");
+	set beresp.http.x-scream = std.toupper("yes!");
 
 tolower
 -------
@@ -48,7 +48,7 @@ Return value
 Description
 	Converts the STRING to lower case.
 Example
-        set beresp.x-nice = std.tolower("VerY");
+        set beresp.http.x-nice = std.tolower("VerY");
 
 set_up_tos
 ----------
@@ -75,7 +75,7 @@ Return value
 Description
 	Returns a random REAL number between *a* and *b*.
 Example
-	set beresp.x-random-number = std.random(1, 100);
+	set beresp.http.x-random-number = std.random(1, 100);
 
 log
 ---
@@ -126,6 +126,18 @@ Description
 	will be used
 Example
 	set beresp.ttl = std.duration("1w", 3600);
+
+integer
+--------
+Prototype
+	integer(STRING s, INT fallback)
+Return value
+       Int
+Description
+	Converts the string s to an integer.  If it fails to parse the
+	string *fallback* will be used
+Example
+	if (std.integer(beresp.http.x-foo, 0) > 5) { … }
 
 collect
 -------

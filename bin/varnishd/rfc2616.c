@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -186,7 +186,7 @@ RFC2616_Body(const struct sess *sp)
 
 	hp = sp->wrk->beresp;
 
-	if (hp->protover < 1.1 && !http_HdrIs(hp, H_Connection, "keep-alive"))
+	if (hp->protover < 11 && !http_HdrIs(hp, H_Connection, "keep-alive"))
 		sp->wrk->do_close = 1;
 	else if (http_HdrIs(hp, H_Connection, "close"))
 		sp->wrk->do_close = 1;
@@ -262,7 +262,7 @@ RFC2616_Body(const struct sess *sp)
 		return (BS_EOF);
 	}
 
-	if (hp->protover < 1.1) {
+	if (hp->protover < 11) {
 		/*
 		 * With no Connection header, assume EOF.
 		 */

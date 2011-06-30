@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Redpill Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -57,14 +57,14 @@
 	LOGMTX2(ax, HTTP_HDR_FIRST,	Header),	\
 	}
 
-static const enum vsl_tag logmtx[][HTTP_HDR_FIRST + 1] = {
+static const enum VSL_tag_e logmtx[][HTTP_HDR_FIRST + 1] = {
 	[HTTP_Rx] = LOGMTX1(Rx),
 	[HTTP_Tx] = LOGMTX1(Tx),
 	[HTTP_Obj] = LOGMTX1(Obj)
 };
 /*lint -restore */
 
-static enum vsl_tag
+static enum VSL_tag_e
 http2shmlog(const struct http *hp, int t)
 {
 
@@ -420,7 +420,7 @@ http_DoConnection(const struct http *hp)
 	unsigned u;
 
 	if (!http_GetHdr(hp, H_Connection, &p)) {
-		if (hp->protover < 1.1)
+		if (hp->protover < 11)
 			return ("not HTTP/1.1");
 		return (NULL);
 	}
@@ -520,7 +520,7 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p,
 		}
 
 		if (q - p > htc->maxhdr) {
-			VSC_main->losthdr++;
+			VSC_C_main->losthdr++;
 			WSL(w, SLT_LostHeader, fd, "%.*s", q - p, p);
 			return (400);
 		}
@@ -545,7 +545,7 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p,
 			WSLH(w, fd, hp, hp->nhd);
 			hp->nhd++;
 		} else {
-			VSC_main->losthdr++;
+			VSC_C_main->losthdr++;
 			WSL(w, SLT_LostHeader, fd, "%.*s", q - p, p);
 			return (400);
 		}
@@ -640,11 +640,11 @@ http_ProtoVer(struct http *hp)
 {
 
 	if (!strcasecmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.0"))
-		hp->protover = 1.0;
+		hp->protover = 10;
 	else if (!strcasecmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.1"))
-		hp->protover = 1.1;
+		hp->protover = 11;
 	else
-		hp->protover = 0.9;
+		hp->protover = 9;
 }
 
 
@@ -787,7 +787,7 @@ http_copyheader(struct worker *w, int fd, struct http *to,
 		to->hdf[to->nhd] = 0;
 		to->nhd++;
 	} else  {
-		VSC_main->losthdr++;
+		VSC_C_main->losthdr++;
 		WSLR(w, SLT_LostHeader, fd, fm->hd[n]);
 	}
 }
@@ -896,7 +896,7 @@ http_CopyHome(struct worker *w, int fd, const struct http *hp)
 			hp->hd[u].e = p + l;
 		} else {
 			/* XXX This leaves a slot empty */
-			VSC_main->losthdr++;
+			VSC_C_main->losthdr++;
 			WSLR(w, SLT_LostHeader, fd, hp->hd[u]);
 			hp->hd[u].b = NULL;
 			hp->hd[u].e = NULL;
@@ -924,7 +924,7 @@ http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr)
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	if (to->nhd >= to->shd) {
-		VSC_main->losthdr++;
+		VSC_C_main->losthdr++;
 		WSL(w, SLT_LostHeader, fd, "%s", hdr);
 		return;
 	}
@@ -993,7 +993,7 @@ http_PrintfHeader(struct worker *w, int fd, struct http *to,
 	n = vsnprintf(to->ws->f, l, fmt, ap);
 	va_end(ap);
 	if (n + 1 >= l || to->nhd >= to->shd) {
-		VSC_main->losthdr++;
+		VSC_C_main->losthdr++;
 		WSL(w, SLT_LostHeader, fd, "%s", to->ws->f);
 		WS_Release(to->ws, 0);
 	} else {

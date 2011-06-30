@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2007-2010 Redpill Linpro AS
+ * Copyright (c) 2007-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Dag-Erling Smørgav <des@des.no>
@@ -191,7 +191,8 @@ stv_alloc(const struct sess *sp, size_t size)
 		if (++fail == 50)	/* XXX Param */
 			break;
 	}
-	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+	if (st != NULL)
+		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	return (st);
 }
 
@@ -438,9 +439,9 @@ STV_Config(const char *spec)
 	p = strchr(spec, '=');
 	q = strchr(spec, ',');
 	if (p != NULL && (q == NULL || q > p)) {
-		av = ParseArgv(p + 1, NULL, ARGV_COMMA);
+		av = VAV_Parse(p + 1, NULL, ARGV_COMMA);
 	} else {
-		av = ParseArgv(spec, NULL, ARGV_COMMA);
+		av = VAV_Parse(spec, NULL, ARGV_COMMA);
 		p = NULL;
 	}
 	AN(av);
@@ -458,7 +459,7 @@ STV_Config(const char *spec)
 	AN(stv2);
 
 	/* Append strategy to ident string */
-	vsb_printf(vident, ",-s%s", av[1]);
+	VSB_printf(vident, ",-s%s", av[1]);
 
 	av += 2;
 
@@ -526,11 +527,11 @@ stv_cli_list(struct cli *cli, const char * const *av, void *priv)
 	ASSERT_MGT();
 	(void)av;
 	(void)priv;
-	cli_out(cli, "Storage devices:\n");
+	VCLI_Out(cli, "Storage devices:\n");
 	stv = stv_transient;
-		cli_out(cli, "\tstorage.%s = %s\n", stv->ident, stv->name);
+		VCLI_Out(cli, "\tstorage.%s = %s\n", stv->ident, stv->name);
 	VTAILQ_FOREACH(stv, &stevedores, list)
-		cli_out(cli, "\tstorage.%s = %s\n", stv->ident, stv->name);
+		VCLI_Out(cli, "\tstorage.%s = %s\n", stv->ident, stv->name);
 }
 
 /*--------------------------------------------------------------------*/

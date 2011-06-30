@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2006-2009 Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -41,24 +41,25 @@
  * The vary matching string has the following format:
  *
  * Sequence of: {
+ *	<msb>			\   Length of header contents.
+ *	<lsb>			/
  *	<length of header + 1>	\
  *	<header>		 \  Same format as argument to http_GetHdr()
  *	':'			 /
  *	'\0'			/
- *	<msb>			\   Length of header contents.
- *	<lsb>			/
- *      <header>		    Only present if length != 0xffff
+ *      <header>		>   Only present if length != 0xffff
  * }
  *      '\0'
  */
 
 #include "config.h"
 
-#include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
 
 #include "cache.h"
+#include "vend.h"
+#include "vct.h"
 
 struct vsb *
 VRY_Create(const struct sess *sp, const struct http *hp)
@@ -72,11 +73,11 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 		return (NULL);
 
 	/* For vary matching string */
-	sb = vsb_new_auto();
+	sb = VSB_new_auto();
 	AN(sb);
 
 	/* For header matching strings */
-	sbh = vsb_new_auto();
+	sbh = VSB_new_auto();
 	AN(sbh);
 
 	if (*v == ':') {
@@ -86,38 +87,37 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 	for (p = v; *p; p++) {
 
 		/* Find next header-name */
-		if (isspace(*p))
+		if (vct_issp(*p))
 			continue;
-		for (q = p; *q && !isspace(*q) && *q != ','; q++)
+		for (q = p; *q && !vct_issp(*q) && *q != ','; q++)
 			continue;
 
 		/* Build a header-matching string out of it */
-		vsb_clear(sbh);
-		vsb_printf(sbh, "%c%.*s:%c",
+		VSB_clear(sbh);
+		VSB_printf(sbh, "%c%.*s:%c",
 		    (char)(1 + (q - p)), (int)(q - p), p, 0);
-		AZ(vsb_finish(sbh));
+		AZ(VSB_finish(sbh));
 
-		/* Append to vary matching string */
-		vsb_bcat(sb, vsb_data(sbh), vsb_len(sbh));
-
-		if (http_GetHdr(sp->http, vsb_data(sbh), &h)) {
-			/* Trim leading and trailing space */
-			while (isspace(*h))
-				h++;
+		if (http_GetHdr(sp->http, VSB_data(sbh), &h)) {
+			AZ(vct_issp(*h));
+			/* Trim trailing space */
 			e = strchr(h, '\0');
-			while (e > h && isspace(e[-1]))
+			while (e > h && vct_issp(e[-1]))
 				e--;
 			/* Encode two byte length and contents */
 			l = e - h;
 			assert(!(l & ~0xffff));
-			vsb_printf(sb, "%c%c", (unsigned)l >> 8, l & 0xff);
-			vsb_bcat(sb, h, e - h);
 		} else {
-			/* Mark as "not present" */
-			vsb_printf(sb, "%c%c", 0xff, 0xff);
+			e = h;
+			l = 0xffff;
 		}
+		VSB_printf(sb, "%c%c", (unsigned)l >> 8, l & 0xff);
+		/* Append to vary matching string */
+		VSB_bcat(sb, VSB_data(sbh), VSB_len(sbh));
+		if (e != h)
+			VSB_bcat(sb, h, e - h);
 
-		while (isspace(*q))
+		while (vct_issp(*q))
 			q++;
 		if (*q == '\0')
 			break;
@@ -125,74 +125,125 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 		p = q;
 	}
 	/* Terminate vary matching string */
-	vsb_printf(sb, "%c", 0);
+	VSB_printf(sb, "%c%c%c", 0xff, 0xff, 0);
 
-	vsb_delete(sbh);
-	AZ(vsb_finish(sb));
+	VSB_delete(sbh);
+	AZ(VSB_finish(sb));
 	return(sb);
 }
 
-int
-VRY_Match(const struct sess *sp, const unsigned char *vary)
+/*
+ * Find length of a vary entry
+ */
+static unsigned
+vry_len(const uint8_t *p)
 {
-	char *h, *e;
-	int i, l, lh;
+	unsigned l = vbe16dec(p);
 
-	while (*vary) {
+	return (2 + p[2] + 2 + (l == 0xffff ? 0 : l));
+}
 
-		if (params->http_gzip_support &&
-		    !strcasecmp(H_Accept_Encoding, (const char*)vary)) {
-			/*
-			 * If we do gzip processing, we do not vary on
-			 * Accept-Encoding, because we want everybody to
-			 * get the gzip'ed object, and varnish will gunzip
-			 * as necessary.  We implement the skip at check
-			 * time, rather than create time, so that object
-			 * in persistent storage can be used with either
-			 *  setting of http_gzip_support.
-			 */
-			vary += *vary + 2;
-			l = vary[0] * 256 + vary[1];
-			vary += 2;
-			if (l != 0xffff)
-				vary += l;
-			continue;
-		}
-		/* Look for header */
-		i = http_GetHdr(sp->http, (const char*)vary, &h);
-		vary += *vary + 2;
+/*
+ * Compare two vary entries
+ */
+static int
+vry_cmp(const uint8_t * const *v1, uint8_t * const *v2)
+{
+	unsigned retval = 0;
 
-		/* Expected length of header (or 0xffff) */
-		l = vary[0] * 256 + vary[1];
-		vary += 2;
-
-		/* Fail if we have the header, but shouldn't */
-		if (i && l == 0xffff)
-			return (0);
-		/* or if we don't when we should */
-		if (l != 0xffff && !i)
-			return (0);
-
-		/* Nothing to match */
-		if (!i)
-			continue;
-
-		/* Trim leading & trailing space */
-		while (isspace(*h))
-			h++;
-		e = strchr(h, '\0');
-		while (e > h && isspace(e[-1]))
-			e--;
-
-		/* Fail if wrong length */
-		lh = e - h;
-		if (lh != l)
-			return (0);
-
-		/* or if wrong contents */
-		if (memcmp(h, vary, l))
-			return (0);
-		vary += l;
+	if (!memcmp(*v1, *v2, vry_len(*v1))) {
+		/* Same same */
+		retval = 0;
+	} else if (memcmp((*v1) + 2, (*v2) + 2, (*v1)[2] + 2)) {
+		/* Different header */
+		retval = 1;
+	} else if (params->http_gzip_support &&
+	    !strcasecmp(H_Accept_Encoding, (const char*)((*v1)+2))) {
+		/*
+		 * If we do gzip processing, we do not vary on Accept-Encoding,
+		 * because we want everybody to get the gzip'ed object, and
+		 * varnish will gunzip as necessary.  We implement the skip at
+		 * check time, rather than create time, so that object in
+		 * persistent storage can be used with either setting of
+		 * http_gzip_support.
+		 */
+		retval = 0;
+	} else {
+		/* Same header, different content */
+		retval = 2;
 	}
-	return (1);
+	return (retval);
+}
+
+int
+VRY_Match(struct sess *sp, const uint8_t *vary)
+{
+	uint8_t *vsp = sp->vary_b;
+	char *h, *e;
+	unsigned lh, ln;
+	int i, retval = 1, oflo = 0;
+
+	AN(vsp);
+	while (vary[2]) {
+		i = vry_cmp(&vary, &vsp);
+		if (i == 1) {
+			/* Build a new entry */
+
+			i = http_GetHdr(sp->http, (const char*)(vary+2), &h);
+			if (i) {
+				/* Trim trailing space */
+				e = strchr(h, '\0');
+				while (e > h && vct_issp(e[-1]))
+					e--;
+				lh = e - h;
+				assert(lh < 0xffff);
+			} else {
+				e = h = NULL;
+				lh = 0xffff;
+			}
+
+			/* Length of the entire new vary entry */
+			ln = 2 + vary[2] + 2 + (lh == 0xffff ? 0 : lh);
+			if (vsp + ln >= sp->vary_e) {
+				vsp = sp->vary_b;
+				oflo = 1;
+			}
+
+			/*
+			 * We MUST have space for one entry and the end marker
+			 * after it, which prevents old junk from confusing us
+			 */
+			assert(vsp + ln + 2 < sp->vary_e);
+
+			vbe16enc(vsp, (uint16_t)lh);
+			memcpy(vsp + 2, vary + 2, vary[2] + 2);
+			if (h != NULL && e != NULL) {
+				memcpy(vsp + 2 + vsp[2] + 2, h, e - h);
+				vsp[2 + vary[2] + 2 + (e - h) + 2] = '\0';
+			} else
+				vsp[2 + vary[2] + 2 + 2] = '\0';
+
+			i = vry_cmp(&vary, &vsp);
+			assert(i != 1);	/* hdr must be the same now */
+		}
+		if (i != 0) 
+			retval = 0;
+		vsp += vry_len(vsp);
+		vary += vry_len(vary);
+	}
+	if (vsp + 3 > sp->vary_e)
+		oflo = 1;
+
+	if (oflo) {
+		/* XXX: Should log this */
+		vsp = sp->vary_b;
+	}
+	vsp[0] = 0xff;
+	vsp[1] = 0xff;
+	vsp[2] = 0;
+	if (oflo) 
+		sp->vary_l = NULL;
+	else
+		sp->vary_l = vsp + 3;
+	return (retval);
 }

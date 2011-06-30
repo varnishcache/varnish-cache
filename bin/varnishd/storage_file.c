@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Linpro AS
+ * Copyright (c) 2006-2010 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -90,7 +90,7 @@ struct smf_sc {
 	unsigned		magic;
 #define SMF_SC_MAGIC		0x52962ee7
 	struct lock		mtx;
-	struct vsc_smf		*stats;
+	struct VSC_C_smf	*stats;
 
 	const char		*filename;
 	int			fd;

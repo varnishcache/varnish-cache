@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Redpill Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -200,7 +200,7 @@ cnt_prepresp(struct sess *sp)
 			sp->wrk->res_mode |= RES_LEN;
 		else if (!sp->wantbody) {
 			/* Nothing */
-		} else if (sp->http->protover >= 1.1) {
+		} else if (sp->http->protover >= 11) {
 			sp->wrk->res_mode |= RES_CHUNKED;
 		} else {
 			sp->wrk->res_mode |= RES_EOF;
@@ -323,7 +323,10 @@ cnt_done(struct sess *sp)
 		da = sp->t_end - sp->t_resp;
 		dh = sp->t_req - sp->t_open;
 		/* XXX: Add StatReq == StatSess */
-		WSP(sp, SLT_Length, "%ju", (uintmax_t)sp->acct_req.bodybytes);
+		/* XXX: Workaround for pipe */
+		if (sp->fd >= 0) {
+			WSP(sp, SLT_Length, "%ju", (uintmax_t)sp->acct_req.bodybytes);
+		}
 		WSL(sp->wrk, SLT_ReqEnd, sp->id, "%u %.9f %.9f %.9f %.9f %.9f",
 		    sp->xid, sp->t_req, sp->t_end, dh, dp, da);
 	}
@@ -347,7 +350,7 @@ cnt_done(struct sess *sp)
 		 * This is an orderly close of the connection; ditch nolinger
 		 * before we close, to get queued data transmitted.
 		 */
-		// XXX: not yet (void)TCP_linger(sp->fd, 0);
+		// XXX: not yet (void)VTCP_linger(sp->fd, 0);
 		vca_close_session(sp, sp->doclose);
 	}
 
@@ -415,7 +418,15 @@ cnt_error(struct sess *sp)
 		EXP_Clr(&w->exp);
 		sp->obj = STV_NewObject(sp, NULL, 1024, &w->exp,
 		     params->http_max_hdr);
-		XXXAN(sp->obj);
+		if (sp->obj == NULL) 
+			sp->obj = STV_NewObject(sp, TRANSIENT_STORAGE,
+			    1024, &w->exp, params->http_max_hdr);
+		if (sp->obj == NULL) {
+			sp->doclose = "Out of objects";
+			sp->step = STP_DONE;
+			return(0);
+		}
+		AN(sp->obj);
 		sp->obj->xid = sp->xid;
 		sp->obj->entered = sp->t_req;
 	} else {
@@ -515,7 +526,7 @@ cnt_fetch(struct sess *sp)
 	 * Do a single retry in that case.
 	 */
 	if (i == 1) {
-		VSC_main->backend_retry++;
+		VSC_C_main->backend_retry++;
 		i = FetchHdr(sp);
 	}
 
@@ -719,7 +730,7 @@ cnt_fetchbody(struct sess *sp)
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
 		vary = VRY_Create(sp, sp->wrk->beresp);
 		if (vary != NULL) {
-			varyl = vsb_len(vary);
+			varyl = VSB_len(vary);
 			assert(varyl > 0);
 			l += varyl;
 		}
@@ -762,8 +773,8 @@ cnt_fetchbody(struct sess *sp)
 		sp->obj->vary =
 		    (void *)WS_Alloc(sp->obj->http->ws, varyl);
 		AN(sp->obj->vary);
-		memcpy(sp->obj->vary, vsb_data(vary), varyl);
-		vsb_delete(vary);
+		memcpy(sp->obj->vary, VSB_data(vary), varyl);
+		VSB_delete(vary);
 	}
 
 	sp->obj->xid = sp->xid;
@@ -1021,6 +1032,16 @@ cnt_lookup(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
+	if (sp->hash_objhead == NULL) {
+		/* Not a waiting list return */
+		AZ(sp->vary_b);
+		AZ(sp->vary_l);
+		AZ(sp->vary_e);
+		(void)WS_Reserve(sp->ws, 0);
+		sp->vary_b = (void*)sp->ws->f;
+		sp->vary_e = (void*)sp->ws->r;
+		sp->vary_b[2] = '\0';
+	}
 
 	oc = HSH_Lookup(sp, &oh);
 
@@ -1034,12 +1055,21 @@ cnt_lookup(struct sess *sp)
 		return (1);
 	}
 
+
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
 	/* If we inserted a new object it's a miss */
 	if (oc->flags & OC_F_BUSY) {
 		sp->wrk->stats.cache_miss++;
+
+		if (sp->vary_l != NULL)
+			WS_ReleaseP(sp->ws, (void*)sp->vary_l);
+		else
+			WS_Release(sp->ws, 0);
+		sp->vary_b = NULL;
+		sp->vary_l = NULL;
+		sp->vary_e = NULL;
 
 		sp->objcore = oc;
 		sp->step = STP_MISS;
@@ -1049,6 +1079,11 @@ cnt_lookup(struct sess *sp)
 	o = oc_getobj(sp->wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	sp->obj = o;
+
+	WS_Release(sp->ws, 0);
+	sp->vary_b = NULL;
+	sp->vary_l = NULL;
+	sp->vary_e = NULL;
 
 	if (oc->flags & OC_F_PASS) {
 		sp->wrk->stats.cache_hitpass++;
@@ -1486,7 +1521,7 @@ CNT_Session(struct sess *sp)
 	 * do the syscall in the worker thread.
 	 */
 	if (sp->step == STP_FIRST || sp->step == STP_START)
-		(void)TCP_blocking(sp->fd);
+		(void)VTCP_blocking(sp->fd);
 
 	/*
 	 * NB: Once done is set, we can no longer touch sp!
@@ -1536,7 +1571,7 @@ cli_debug_xid(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 	if (av[2] != NULL)
 		xids = strtoul(av[2], NULL, 0);
-	cli_out(cli, "XID is %u", xids);
+	VCLI_Out(cli, "XID is %u", xids);
 }
 
 /*
@@ -1553,7 +1588,7 @@ cli_debug_srandom(struct cli *cli, const char * const *av, void *priv)
 		seed = strtoul(av[2], NULL, 0);
 	srandom(seed);
 	srand48(random());
-	cli_out(cli, "Random(3) seeded with %lu", seed);
+	VCLI_Out(cli, "Random(3) seeded with %lu", seed);
 }
 
 static struct cli_proto debug_cmds[] = {

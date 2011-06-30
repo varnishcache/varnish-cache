@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -51,7 +51,7 @@
 
 #include <pcre.h>
 
-#include "cli.h"
+#include "vcli.h"
 #include "vend.h"
 #include "cli_priv.h"
 #include "cache.h"
@@ -124,7 +124,7 @@ BAN_New(void)
 	ALLOC_OBJ(b, BAN_MAGIC);
 	if (b == NULL)
 		return (b);
-	b->vsb = vsb_new_auto();
+	b->vsb = VSB_new_auto();
 	if (b->vsb == NULL) {
 		FREE_OBJ(b);
 		return (NULL);
@@ -142,7 +142,7 @@ BAN_Free(struct ban *b)
 	assert(VTAILQ_EMPTY(&b->objcore));
 
 	if (b->vsb != NULL)
-		vsb_delete(b->vsb);
+		VSB_delete(b->vsb);
 	if (b->spec != NULL)
 		free(b->spec);
 	FREE_OBJ(b);
@@ -156,8 +156,8 @@ ban_CheckLast(void)
 	Lck_AssertHeld(&ban_mtx);
 	b = VTAILQ_LAST(&ban_head, banhead_s);
 	if (b != VTAILQ_FIRST(&ban_head) && b->refcount == 0) {
-		VSC_main->n_ban--;
-		VSC_main->n_ban_retire++;
+		VSC_C_main->n_ban--;
+		VSC_C_main->n_ban_retire++;
 		VTAILQ_REMOVE(&ban_head, b, list);
 	} else {
 		b = NULL;
@@ -229,8 +229,8 @@ ban_add_lump(const struct ban *b, const void *p, uint32_t len)
 	uint8_t buf[sizeof len];
 
 	vbe32enc(buf, len);
-	vsb_bcat(b->vsb, buf, sizeof buf);
-	vsb_bcat(b->vsb, p, len);
+	VSB_bcat(b->vsb, buf, sizeof buf);
+	VSB_bcat(b->vsb, p, len);
 }
 
 static const void *
@@ -278,10 +278,10 @@ ban_parse_http(const struct ban *b, const char *a1)
 
 	l = strlen(a1) + 1;
 	assert(l <= 127);
-	vsb_putc(b->vsb, (char)l);
-	vsb_cat(b->vsb, a1);
-	vsb_putc(b->vsb, ':');
-	vsb_putc(b->vsb, '\0');
+	VSB_putc(b->vsb, (char)l);
+	VSB_cat(b->vsb, a1);
+	VSB_putc(b->vsb, ':');
+	VSB_putc(b->vsb, '\0');
 }
 
 /*--------------------------------------------------------------------
@@ -292,14 +292,15 @@ static int
 ban_parse_regexp(struct cli *cli, const struct ban *b, const char *a3)
 {
 	const char *error;
-	int erroroffset, rc, sz;
+	int erroroffset, rc;
+	size_t sz;
 	pcre *re;
 
 	re = pcre_compile(a3, 0, &error, &erroroffset, NULL);
 	if (re == NULL) {
 		VSL(SLT_Debug, 0, "REGEX: <%s>", error);
-		cli_out(cli, "%s", error);
-		cli_result(cli, CLIS_PARAM);
+		VCLI_Out(cli, "%s", error);
+		VCLI_SetResult(cli, CLIS_PARAM);
 		return (-1);
 	}
 	rc = pcre_fullinfo(re, NULL, PCRE_INFO_SIZE, &sz);
@@ -325,37 +326,37 @@ BAN_AddTest(struct cli *cli, struct ban *b, const char *a1, const char *a2,
 		if (!strncmp(a1, pv->name, strlen(pv->name)))
 			break;
 	if (pv->name == NULL) {
-		cli_out(cli, "unknown or unsupported field \"%s\"", a1);
-		cli_result(cli, CLIS_PARAM);
+		VCLI_Out(cli, "unknown or unsupported field \"%s\"", a1);
+		VCLI_SetResult(cli, CLIS_PARAM);
 		return (-1);
 	}
 
 	if (pv->flag & PVAR_REQ)
 		b->flags |= BAN_F_REQ;
 
-	vsb_putc(b->vsb, pv->tag);
+	VSB_putc(b->vsb, pv->tag);
 	if (pv->flag & PVAR_HTTP)
 		ban_parse_http(b, a1 + strlen(pv->name));
 
 	ban_add_lump(b, a3, strlen(a3) + 1);
 	if (!strcmp(a2, "~")) {
-		vsb_putc(b->vsb, BAN_OPER_MATCH);
+		VSB_putc(b->vsb, BAN_OPER_MATCH);
 		i = ban_parse_regexp(cli, b, a3);
 		if (i)
 			return (i);
 	} else if (!strcmp(a2, "!~")) {
-		vsb_putc(b->vsb, BAN_OPER_NMATCH);
+		VSB_putc(b->vsb, BAN_OPER_NMATCH);
 		i = ban_parse_regexp(cli, b, a3);
 		if (i)
 			return (i);
 	} else if (!strcmp(a2, "==")) {
-		vsb_putc(b->vsb, BAN_OPER_EQ);
+		VSB_putc(b->vsb, BAN_OPER_EQ);
 	} else if (!strcmp(a2, "!=")) {
-		vsb_putc(b->vsb, BAN_OPER_NEQ);
+		VSB_putc(b->vsb, BAN_OPER_NEQ);
 	} else {
-		cli_out(cli,
+		VCLI_Out(cli,
 		    "expected conditional (~, !~, == or !=) got \"%s\"", a2);
-		cli_result(cli, CLIS_PARAM);
+		VCLI_SetResult(cli, CLIS_PARAM);
 		return (-1);
 	}
 	return (0);
@@ -378,8 +379,8 @@ BAN_Insert(struct ban *b)
 
 	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
 
-	AZ(vsb_finish(b->vsb));
-	ln = vsb_len(b->vsb);
+	AZ(VSB_finish(b->vsb));
+	ln = VSB_len(b->vsb);
 	assert(ln >= 0);
 
 	b->spec = malloc(ln + 13L);	/* XXX */
@@ -388,18 +389,18 @@ BAN_Insert(struct ban *b)
 	t0 = TIM_real();
 	memcpy(b->spec, &t0, sizeof t0);
 	b->spec[12] = (b->flags & BAN_F_REQ) ? 1 : 0;
-	memcpy(b->spec + 13, vsb_data(b->vsb), ln);
+	memcpy(b->spec + 13, VSB_data(b->vsb), ln);
 	ln += 13;
 	vbe32enc(b->spec + 8, ln);
 
-	vsb_delete(b->vsb);
+	VSB_delete(b->vsb);
 	b->vsb = NULL;
 
 	Lck_Lock(&ban_mtx);
 	VTAILQ_INSERT_HEAD(&ban_head, b, list);
 	ban_start = b;
-	VSC_main->n_ban++;
-	VSC_main->n_ban_add++;
+	VSC_C_main->n_ban++;
+	VSC_C_main->n_ban_add++;
 
 	be = VTAILQ_LAST(&ban_head, banhead_s);
 	if (params->ban_dups && be != b)
@@ -428,7 +429,7 @@ BAN_Insert(struct ban *b)
 	}
 	Lck_Lock(&ban_mtx);
 	be->refcount--;
-	VSC_main->n_ban_dups += pcount;
+	VSC_C_main->n_ban_dups += pcount;
 	Lck_Unlock(&ban_mtx);
 }
 
@@ -533,8 +534,8 @@ BAN_Reload(const uint8_t *ban, unsigned len)
 			gone |= BAN_F_GONE;
 	}
 
-	VSC_main->n_ban++;
-	VSC_main->n_ban_add++;
+	VSC_C_main->n_ban++;
+	VSC_C_main->n_ban_add++;
 
 	b2 = BAN_New();
 	AN(b2);
@@ -707,8 +708,8 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 		VTAILQ_INSERT_TAIL(&b0->objcore, oc, ban_list);
 		b0->refcount++;
 	}
-	VSC_main->n_ban_obj_test++;
-	VSC_main->n_ban_re_test += tests;
+	VSC_C_main->n_ban_obj_test++;
+	VSC_C_main->n_ban_re_test += tests;
 	Lck_Unlock(&ban_mtx);
 
 	if (b == oc->ban) {	/* not banned */
@@ -845,22 +846,22 @@ ccf_ban(struct cli *cli, const char * const *av, void *priv)
 	for (narg = 0; av[narg + 2] != NULL; narg++)
 		continue;
 	if ((narg % 4) != 3) {
-		cli_out(cli, "Wrong number of arguments");
-		cli_result(cli, CLIS_PARAM);
+		VCLI_Out(cli, "Wrong number of arguments");
+		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
 	for (i = 3; i < narg; i += 4) {
 		if (strcmp(av[i + 2], "&&")) {
-			cli_out(cli, "Found \"%s\" expected &&", av[i + 2]);
-			cli_result(cli, CLIS_PARAM);
+			VCLI_Out(cli, "Found \"%s\" expected &&", av[i + 2]);
+			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
 		}
 	}
 
 	b = BAN_New();
 	if (b == NULL) {
-		cli_out(cli, "Out of Memory");
-		cli_result(cli, CLIS_CANT);
+		VCLI_Out(cli, "Out of Memory");
+		VCLI_SetResult(cli, CLIS_CANT);
 		return;
 	}
 	for (i = 0; i < narg; i += 4)
@@ -898,30 +899,30 @@ ban_render(struct cli *cli, const uint8_t *bs)
 		ban_iter(&bs, &bt);
 		switch (bt.arg1) {
 		case BAN_ARG_URL:
-			cli_out(cli, "req.url");
+			VCLI_Out(cli, "req.url");
 			break;
 		case BAN_ARG_REQHTTP:
-			cli_out(cli, "req.http.%.*s",
+			VCLI_Out(cli, "req.http.%.*s",
 			    bt.arg1_spec[0] - 1, bt.arg1_spec + 1);
 			break;
 		case BAN_ARG_OBJHTTP:
-			cli_out(cli, "obj.http.%.*s",
+			VCLI_Out(cli, "obj.http.%.*s",
 			    bt.arg1_spec[0] - 1, bt.arg1_spec + 1);
 			break;
 		default:
 			INCOMPL();
 		}
 		switch (bt.oper) {
-		case BAN_OPER_EQ:	cli_out(cli, " == "); break;
-		case BAN_OPER_NEQ:	cli_out(cli, " != "); break;
-		case BAN_OPER_MATCH:	cli_out(cli, " ~ "); break;
-		case BAN_OPER_NMATCH:	cli_out(cli, " !~ "); break;
+		case BAN_OPER_EQ:	VCLI_Out(cli, " == "); break;
+		case BAN_OPER_NEQ:	VCLI_Out(cli, " != "); break;
+		case BAN_OPER_MATCH:	VCLI_Out(cli, " ~ "); break;
+		case BAN_OPER_NMATCH:	VCLI_Out(cli, " !~ "); break;
 		default:
 			INCOMPL();
 		}
-		cli_out(cli, "%s", bt.arg2);
+		VCLI_Out(cli, "%s", bt.arg2);
 		if (bs < be)
-			cli_out(cli, " && ");
+			VCLI_Out(cli, " && ");
 	}
 }
 
@@ -939,11 +940,11 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 	VTAILQ_FOREACH(b, &ban_head, list) {
 		if (b == bl)
 			break;
-		cli_out(cli, "%p %10.6f %5u%s\t", b, ban_time(b->spec),
+		VCLI_Out(cli, "%p %10.6f %5u%s\t", b, ban_time(b->spec),
 		    bl == b ? b->refcount - 1 : b->refcount,
 		    b->flags & BAN_F_GONE ? "G" : " ");
 		ban_render(cli, b->spec);
-		cli_out(cli, "\n");
+		VCLI_Out(cli, "\n");
 	}
 
 	BAN_TailDeref(&bl);

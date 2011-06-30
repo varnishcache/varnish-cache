@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -55,7 +55,7 @@ static int	b_flag, c_flag;
 
 static struct vsb	*ob[65536];
 static unsigned char	flg[65536];
-static enum vsl_tag   last[65536];
+static enum VSL_tag_e   last[65536];
 static uint64_t       bitmap[65536];
 #define F_INVCL		(1 << 0)
 
@@ -63,12 +63,12 @@ static void
 h_order_finish(int fd, struct VSM_data *vd)
 {
 
-	AZ(vsb_finish(ob[fd]));
-	if (vsb_len(ob[fd]) > 1 && VSL_Matched(vd, bitmap[fd])) {
-		printf("%s", vsb_data(ob[fd]));
+	AZ(VSB_finish(ob[fd]));
+	if (VSB_len(ob[fd]) > 1 && VSL_Matched(vd, bitmap[fd])) {
+		printf("%s", VSB_data(ob[fd]));
 	}
 	bitmap[fd] = 0;
-	vsb_clear(ob[fd]);
+	VSB_clear(ob[fd]);
 }
 
 static void
@@ -79,18 +79,18 @@ clean_order(struct VSM_data *vd)
 	for (u = 0; u < 65536; u++) {
 		if (ob[u] == NULL)
 			continue;
-		AZ(vsb_finish(ob[u]));
-		if (vsb_len(ob[u]) > 1 && VSL_Matched(vd, bitmap[u])) {
-			printf("%s\n", vsb_data(ob[u]));
+		AZ(VSB_finish(ob[u]));
+		if (VSB_len(ob[u]) > 1 && VSL_Matched(vd, bitmap[u])) {
+			printf("%s\n", VSB_data(ob[u]));
 		}
 		flg[u] = 0;
 		bitmap[u] = 0;
-		vsb_clear(ob[u]);
+		VSB_clear(ob[u]);
 	}
 }
 
 static int
-h_order(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
+h_order(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
     unsigned spec, const char *ptr, uint64_t bm)
 {
 	char type;
@@ -108,7 +108,7 @@ h_order(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 		return (0);
 	}
 	if (ob[fd] == NULL) {
-		ob[fd] = vsb_new_auto();
+		ob[fd] = VSB_new_auto();
 		assert(ob[fd] != NULL);
 	}
 	if ((tag == SLT_BackendOpen || tag == SLT_SessionOpen ||
@@ -117,14 +117,14 @@ h_order(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 		    last[fd] != SLT_VCL_acl) ||
 		(tag == SLT_BackendXID &&
 		    last[fd] != SLT_BackendOpen)) &&
-	    vsb_len(ob[fd]) != 0) {
+	    VSB_len(ob[fd]) != 0) {
 		/*
 		 * This is the start of a new request, yet we haven't seen
 		 * the end of the previous one.  Spit it out anyway before
 		 * starting on the new one.
 		 */
 		if (last[fd] != SLT_SessionClose)
-			vsb_printf(ob[fd], "%5d %-12s %c %s\n",
+			VSB_printf(ob[fd], "%5d %-12s %c %s\n",
 			    fd, "Interrupted", type, VSL_tags[tag]);
 		h_order_finish(fd, vd);
 	}
@@ -134,17 +134,17 @@ h_order(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 	switch (tag) {
 	case SLT_VCL_call:
 		if (flg[fd] & F_INVCL)
-			vsb_cat(ob[fd], "\n");
+			VSB_cat(ob[fd], "\n");
 		else
 			flg[fd] |= F_INVCL;
-		vsb_printf(ob[fd], "%5d %-12s %c %.*s",
+		VSB_printf(ob[fd], "%5d %-12s %c %.*s",
 		    fd, VSL_tags[tag], type, len, ptr);
 		return (0);
 	case SLT_VCL_trace:
 	case SLT_VCL_return:
 		if (flg[fd] & F_INVCL) {
-			vsb_cat(ob[fd], " ");
-			vsb_bcat(ob[fd], ptr, len);
+			VSB_cat(ob[fd], " ");
+			VSB_bcat(ob[fd], ptr, len);
 			return (0);
 		}
 		break;
@@ -152,10 +152,10 @@ h_order(void *priv, enum vsl_tag tag, unsigned fd, unsigned len,
 		break;
 	}
 	if (flg[fd] & F_INVCL) {
-		vsb_cat(ob[fd], "\n");
+		VSB_cat(ob[fd], "\n");
 		flg[fd] &= ~F_INVCL;
 	}
-	vsb_printf(ob[fd], "%5d %-12s %c %.*s\n",
+	VSB_printf(ob[fd], "%5d %-12s %c %.*s\n",
 	    fd, VSL_tags[tag], type, len, ptr);
 	switch (tag) {
 	case SLT_ReqEnd:
@@ -277,7 +277,7 @@ main(int argc, char * const *argv)
 	int a_flag = 0, D_flag = 0, O_flag = 0, u_flag = 0, m_flag = 0;
 	const char *P_arg = NULL;
 	const char *w_arg = NULL;
-	struct pidfh *pfh = NULL;
+	struct vpf_fh *pfh = NULL;
 	struct VSM_data *vd;
 
 	vd = VSM_New();
@@ -311,7 +311,7 @@ main(int argc, char * const *argv)
 			u_flag = 1;
 			break;
 		case 'V':
-			varnish_version("varnishlog");
+			VCS_Message("varnishlog");
 			exit(0);
 		case 'w':
 			w_arg = optarg;
@@ -334,7 +334,7 @@ main(int argc, char * const *argv)
 	if (VSL_Open(vd, 1))
 		exit(1);
 
-	if (P_arg && (pfh = vpf_open(P_arg, 0644, NULL)) == NULL) {
+	if (P_arg && (pfh = VPF_Open(P_arg, 0644, NULL)) == NULL) {
 		perror(P_arg);
 		exit(1);
 	}
@@ -342,12 +342,12 @@ main(int argc, char * const *argv)
 	if (D_flag && varnish_daemon(0, 0) == -1) {
 		perror("daemon()");
 		if (pfh != NULL)
-			vpf_remove(pfh);
+			VPF_Remove(pfh);
 		exit(1);
 	}
 
 	if (pfh != NULL)
-		vpf_write(pfh);
+		VPF_Write(pfh);
 
 	if (w_arg != NULL)
 		do_write(vd, w_arg, a_flag);
@@ -366,6 +366,6 @@ main(int argc, char * const *argv)
 	}
 
 	if (pfh != NULL)
-		vpf_remove(pfh);
+		VPF_Remove(pfh);
 	exit(0);
 }

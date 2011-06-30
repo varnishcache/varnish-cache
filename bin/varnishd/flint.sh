@@ -1,5 +1,11 @@
 #!/bin/sh
 
+if [ "x$1" = "x-ok" -a -f _.fl ] ; then
+	echo "Saved as reference"
+	mv _.fl _.fl.old
+	exit 0
+fi
+
 flexelint \
 	../flint.lnt \
 	flint.lnt \
@@ -20,4 +26,7 @@ if [ -f _.fl.old ] ; then
 	diff -u _.fl.old _.fl
 fi
 
-mv _.fl _.fl.old
+if [ "x$1" = "x-ok" ] ; then
+	echo "Saved as reference"
+	mv _.fl _.fl.old
+fi

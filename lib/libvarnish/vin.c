@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2007-2010 Linpro AS
+ * Copyright (c) 2007-2010 Varnish Software AS
  * All rights reserved.
  *
  * Author: Dag-Erling Smørgrav <des@des.no>
@@ -41,7 +41,7 @@
 #include "vin.h"
 
 int
-vin_n_arg(const char *n_arg, char **name, char **dir, char **vsl)
+VIN_N_Arg(const char *n_arg, char **name, char **dir, char **vsl)
 {
 	char nm[PATH_MAX];
 	char dn[PATH_MAX];

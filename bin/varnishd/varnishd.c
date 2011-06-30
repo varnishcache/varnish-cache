@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Redpill Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -55,7 +55,7 @@
 #include "vpf.h"
 #include "vsha256.h"
 
-#include "cli.h"
+#include "vcli.h"
 #include "cli_priv.h"
 #include "cli_common.h"
 
@@ -71,7 +71,7 @@
 #endif
 
 struct heritage		heritage;
-volatile struct params	* volatile params;
+volatile struct params	*params;
 unsigned		d_flag = 0;
 pid_t			mgt_pid;
 struct vev_base		*mgt_evb;
@@ -83,12 +83,12 @@ build_vident(void)
 {
 	struct utsname uts;
 
-	vident = vsb_new_auto();
+	vident = VSB_new_auto();
 	AN(vident);
 	if (!uname(&uts)) {
-		vsb_printf(vident, ",%s", uts.sysname);
-		vsb_printf(vident, ",%s", uts.release);
-		vsb_printf(vident, ",%s", uts.machine);
+		VSB_printf(vident, ",%s", uts.sysname);
+		VSB_printf(vident, ",%s", uts.release);
+		VSB_printf(vident, ",%s", uts.machine);
 	}
 }
 
@@ -185,7 +185,7 @@ tackle_warg(const char *argv)
 	char **av;
 	unsigned int u;
 
-	av = ParseArgv(argv, NULL, ARGV_COMMA);
+	av = VAV_Parse(argv, NULL, ARGV_COMMA);
 	AN(av);
 
 	if (av[0] != NULL)
@@ -210,7 +210,7 @@ tackle_warg(const char *argv)
 			params->wthread_timeout = u;
 		}
 	}
-	FreeArgv(av);
+	VAV_Free(av);
 }
 
 /*--------------------------------------------------------------------*/
@@ -219,11 +219,11 @@ static void
 cli_check(const struct cli *cli)
 {
 	if (cli->result == CLIS_OK) {
-		vsb_clear(cli->sb);
+		VSB_clear(cli->sb);
 		return;
 	}
-	AZ(vsb_finish(cli->sb));
-	fprintf(stderr, "Error:\n%s\n", vsb_data(cli->sb));
+	AZ(VSB_finish(cli->sb));
+	fprintf(stderr, "Error:\n%s\n", VSB_data(cli->sb));
 	exit (2);
 }
 
@@ -262,7 +262,7 @@ Symbol_Lookup(struct vsb *vsb, void *ptr)
 	}
 	if (s0 == NULL)
 		return (-1);
-	vsb_printf(vsb, "%p: %s+%jx", ptr, s0->n, (uintmax_t)pp - s0->a);
+	VSB_printf(vsb, "%p: %s+%jx", ptr, s0->n, (uintmax_t)pp - s0->a);
 	return (0);
 }
 
@@ -354,7 +354,7 @@ main(int argc, char * const *argv)
 	const char *T_arg = NULL;
 	char *p, *vcl = NULL;
 	struct cli cli[1];
-	struct pidfh *pfh = NULL;
+	struct vpf_fh *pfh = NULL;
 	char *dirname;
 
 	/*
@@ -363,6 +363,8 @@ main(int argc, char * const *argv)
 	 */
 	for (o = getdtablesize(); o > STDERR_FILENO; o--)
 		(void)close(o);
+
+	AZ(seed_random());
 
 	mgt_got_fd(STDERR_FILENO);
 
@@ -394,7 +396,7 @@ main(int argc, char * const *argv)
 	SHA256_Test();
 
 	memset(cli, 0, sizeof cli);
-	cli[0].sb = vsb_new_auto();
+	cli[0].sb = VSB_new_auto();
 	XXXAN(cli[0].sb);
 	cli[0].result = CLIS_OK;
 
@@ -495,7 +497,7 @@ main(int argc, char * const *argv)
 			break;
 		case 'V':
 			/* XXX: we should print the ident here */
-			varnish_version("varnishd");
+			VCS_Message("varnishd");
 			exit(0);
 		case 'x':
 #ifdef DIAGNOSTICS
@@ -526,8 +528,8 @@ main(int argc, char * const *argv)
 	/* XXX: we can have multiple CLI actions above, is this enough ? */
 	if (cli[0].result != CLIS_OK) {
 		fprintf(stderr, "Parameter errors:\n");
-		AZ(vsb_finish(cli[0].sb));
-		fprintf(stderr, "%s\n", vsb_data(cli[0].sb));
+		AZ(VSB_finish(cli[0].sb));
+		fprintf(stderr, "%s\n", VSB_data(cli[0].sb));
 		exit(1);
 	}
 
@@ -557,7 +559,7 @@ main(int argc, char * const *argv)
 		}
 	}
 
-	if (vin_n_arg(n_arg, &heritage.name, &dirname, NULL) != 0) {
+	if (VIN_N_Arg(n_arg, &heritage.name, &dirname, NULL) != 0) {
 		fprintf(stderr, "Invalid instance name: %s\n",
 		    strerror(errno));
 		exit(1);
@@ -590,7 +592,7 @@ main(int argc, char * const *argv)
 	}
 
 	/* XXX: should this be relative to the -n arg ? */
-	if (P_arg && (pfh = vpf_open(P_arg, 0644, NULL)) == NULL) {
+	if (P_arg && (pfh = VPF_Open(P_arg, 0644, NULL)) == NULL) {
 		perror(P_arg);
 		exit(1);
 	}
@@ -613,19 +615,19 @@ main(int argc, char * const *argv)
 
 	mgt_SHM_Init(l_arg);
 
-	AZ(vsb_finish(vident));
+	AZ(VSB_finish(vident));
 
 	if (!d_flag && !F_flag)
 		AZ(varnish_daemon(1, 0));
 
 	mgt_SHM_Pid();
 
-	if (pfh != NULL && vpf_write(pfh))
+	if (pfh != NULL && VPF_Write(pfh))
 		fprintf(stderr, "NOTE: Could not write PID file\n");
 
 	if (d_flag)
-		fprintf(stderr, "Platform: %s\n", vsb_data(vident) + 1);
-	syslog(LOG_NOTICE, "Platform: %s\n", vsb_data(vident) + 1);
+		fprintf(stderr, "Platform: %s\n", VSB_data(vident) + 1);
+	syslog(LOG_NOTICE, "Platform: %s\n", VSB_data(vident) + 1);
 
 	/* Do this again after debugstunt and daemon has run */
 	mgt_pid = getpid();
@@ -647,6 +649,6 @@ main(int argc, char * const *argv)
 	MGT_Run();
 
 	if (pfh != NULL)
-		(void)vpf_remove(pfh);
+		(void)VPF_Remove(pfh);
 	exit(exit_status);
 }

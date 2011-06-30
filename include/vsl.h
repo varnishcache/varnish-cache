@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Linpro AS
+ * Copyright (c) 2006-2010 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -65,7 +65,7 @@
  * The identifiers in shmlogtag are "SLT_" + XML tag.  A script may be run
  * on this file to extract the table rather than handcode it
  */
-enum vsl_tag {
+enum VSL_tag_e {
 #define SLTM(foo)	SLT_##foo,
 #include "vsl_tags.h"
 #undef SLTM

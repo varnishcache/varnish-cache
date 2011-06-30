@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Linpro AS
+ * Copyright (c) 2006-2010 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -210,8 +210,6 @@ void vcc_IsField(struct vcc *tl, struct token **t, struct fld_spec *fs);
 void vcc_FieldsOk(struct vcc *tl, const struct fld_spec *fs);
 
 void Emit_Sockaddr(struct vcc *tl, const struct token *t_host, const char *port);
-void vcc_EmitBeIdent(const struct vcc *tl, struct vsb *v,
-	 int serial, const struct token *first, const struct token *last);
 
 /* vcc_compile.c */
 extern struct method method_tab[];
@@ -245,7 +243,6 @@ parsedirector_f vcc_ParseRoundRobinDirector;
 void vcc_RTimeVal(struct vcc *tl, double *);
 void vcc_TimeVal(struct vcc *tl, double *);
 unsigned vcc_UintVal(struct vcc *tl);
-double vcc_DoubleVal(struct vcc *tl);
 void vcc_Expr(struct vcc *tl, enum var_type typ);
 void vcc_Expr_Call(struct vcc *tl, const struct symbol *sym);
 void vcc_Expr_Init(struct vcc *tl);
@@ -267,8 +264,6 @@ sym_wildcard_t vcc_Stv_Wildcard;
 
 /* vcc_string.c */
 char *vcc_regexp(struct vcc *tl);
-int vcc_StringVal(struct vcc *tl);
-void vcc_ExpectedStringval(struct vcc *tl);
 
 /* vcc_symb.c */
 struct symbol *VCC_AddSymbolStr(struct vcc *tl, const char *name, enum symkind);
@@ -303,8 +298,6 @@ void vcc_AddToken(struct vcc *tl, unsigned tok, const char *b,
 sym_wildcard_t vcc_Var_Wildcard;
 const struct var *vcc_FindVar(struct vcc *tl, const struct token *t,
     int wr_access, const char *use);
-void vcc_VarVal(struct vcc *tl, const struct var *vp,
-    const struct token *vt);
 
 /* vcc_vmod.c */
 void vcc_ParseImport(struct vcc *tl);

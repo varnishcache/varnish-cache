@@ -26,6 +26,8 @@ varnish v1 -arg "-p sess_workspace=131072 -p thread_pool_stack=262144" -vcl+back
 varnish v1 -cliok "param.set esi_syntax 0xc"
 varnish v1 -cliok "param.set http_gzip_support true"
 varnish v1 -cliok "param.set gzip_tmp_space 1"
+varnish v1 -cliok "param.set gzip_window 8"
+varnish v1 -cliok "param.set gzip_memlevel 1"
 
 client c1 {
 	txreq  -hdr "Accept-Encoding: gzip"

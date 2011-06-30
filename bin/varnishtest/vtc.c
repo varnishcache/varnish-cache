@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2008-2010 Redpill Linpro AS
+/*-
+ * Copyright (c) 2008-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -60,6 +60,7 @@ volatile sig_atomic_t	vtc_error;	/* Error encountered */
 int			vtc_stop;	/* Stops current test without error */
 pthread_t		vtc_thread;
 static struct vtclog	*vltop;
+int			in_tree = 0;	/* Are we running in-tree */
 
 /**********************************************************************
  * Macro facility
@@ -72,8 +73,6 @@ struct macro {
 };
 
 static VTAILQ_HEAD(,macro) macro_list = VTAILQ_HEAD_INITIALIZER(macro_list);
-
-struct _extmacro_list extmacro_list = VTAILQ_HEAD_INITIALIZER(extmacro_list);
 
 static pthread_mutex_t		macro_mtx;
 
@@ -161,18 +160,18 @@ macro_expand(struct vtclog *vl, const char *text)
 	const char *p, *q;
 	char *m;
 
-	vsb = vsb_new_auto();
+	vsb = VSB_new_auto();
 	AN(vsb);
 	while (*text != '\0') {
 		p = strstr(text, "${");
 		if (p == NULL) {
-			vsb_cat(vsb, text);
+			VSB_cat(vsb, text);
 			break;
 		}
-		vsb_bcat(vsb, text, p - text);
+		VSB_bcat(vsb, text, p - text);
 		q = strchr(p, '}');
 		if (q == NULL) {
-			vsb_cat(vsb, text);
+			VSB_cat(vsb, text);
 			break;
 		}
 		assert(p[0] == '$');
@@ -181,15 +180,74 @@ macro_expand(struct vtclog *vl, const char *text)
 		p += 2;
 		m = macro_get(p, q);
 		if (m == NULL) {
-			vsb_delete(vsb);
+			VSB_delete(vsb);
 			vtc_log(vl, 0, "Macro ${%s} not found", p);
 			return (NULL);
 		}
-		vsb_printf(vsb, "%s", m);
+		VSB_printf(vsb, "%s", m);
 		text = q + 1;
 	}
-	AZ(vsb_finish(vsb));
+	AZ(VSB_finish(vsb));
 	return (vsb);
+}
+
+/* extmacro is a list of macro's that are defined from the
+   command line and are applied to the macro list of each test
+   instance. No locking is required as they are set before any tests
+   are started.
+*/
+
+struct extmacro {
+	VTAILQ_ENTRY(extmacro)	list;
+	char			*name;
+	char			*val;
+};
+
+static VTAILQ_HEAD(, extmacro) extmacro_list =
+	VTAILQ_HEAD_INITIALIZER(extmacro_list);
+
+void
+extmacro_def(const char *name, const char *fmt, ...)
+{
+	char buf[256];
+	struct extmacro *m;
+	va_list ap;
+
+	VTAILQ_FOREACH(m, &extmacro_list, list)
+		if (!strcmp(name, m->name))
+			break;
+	if (m == NULL && fmt != NULL) {
+		m = calloc(sizeof *m, 1);
+		AN(m);
+		REPLACE(m->name, name);
+		VTAILQ_INSERT_TAIL(&extmacro_list, m, list);
+	}
+	if (fmt != NULL) {
+		AN(m);
+		va_start(ap, fmt);
+		free(m->val);
+		vbprintf(buf, fmt, ap);
+		va_end(ap);
+		m->val = strdup(buf);
+		AN(m->val);
+	} else if (m != NULL) {
+		VTAILQ_REMOVE(&extmacro_list, m, list);
+		free(m->name);
+		free(m->val);
+		free(m);
+	}
+}
+
+const char *
+extmacro_get(const char *name)
+{
+	struct extmacro *m;
+
+	VTAILQ_FOREACH(m, &extmacro_list, list)
+		if (!strcmp(name, m->name))
+			return (m->val);
+
+	return (NULL);
 }
 
 /**********************************************************************
@@ -244,7 +302,7 @@ parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 					if (*p == '"')
 						break;
 					if (*p == '\\') {
-						p += BackSlash(p, q) - 1;
+						p += VAV_BackSlash(p, q) - 1;
 						q++;
 					} else {
 						if (*p == '\n')
@@ -288,7 +346,7 @@ parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 			token_exp[tn] = macro_expand(vl, token_s[tn]);
 			if (vtc_error)
 				return;
-			token_s[tn] = vsb_data(token_exp[tn]);
+			token_s[tn] = VSB_data(token_exp[tn]);
 			token_e[tn] = strchr(token_s[tn], '\0');
 		}
 
@@ -476,7 +534,6 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 {
 	unsigned old_err;
 	char *cwd, *p;
-	char topbuild[BUFSIZ];
 	FILE *f;
 	struct extmacro *m;
 
@@ -491,14 +548,10 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	VTAILQ_FOREACH(m, &extmacro_list, list)
 		macro_def(vltop, NULL, m->name, m->val);
 
-	/* We are still in bin/varnishtest at this point */
+	/* Other macro definitions */
 	cwd = getcwd(NULL, PATH_MAX);
-	bprintf(topbuild, "%s/%s", cwd, TOP_BUILDDIR);
-	macro_def(vltop, NULL, "topbuild", topbuild);
-
-	AN(getcwd(topbuild, sizeof topbuild));
-	macro_def(vltop, NULL, "pwd", topbuild);
-
+	macro_def(vltop, NULL, "pwd", cwd);
+	macro_def(vltop, NULL, "topbuild", "%s/%s", cwd, TOP_BUILDDIR);
 	macro_def(vltop, NULL, "bad_ip", "10.255.255.255");
 
 	/* Move into our tmpdir */

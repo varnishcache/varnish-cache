@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -46,7 +46,7 @@
 #include "mgt.h"
 #include "vsm.h"
 #include "heritage.h"
-#include "cli.h"
+#include "vcli.h"
 #include "cli_priv.h"
 #include "mgt_cli.h"
 #include "vev.h"
@@ -61,7 +61,7 @@ pid_t		child_pid = -1;
 static struct vbitmap	*fd_map;
 
 static int		child_cli_in = -1;
-static int		child_cli_out = -1;
+static int		child_VCLI_Out = -1;
 static int		child_output = -1;
 
 static enum {
@@ -241,8 +241,8 @@ open_sockets(void)
 		 * closes before we call accept(2) and nobody else are in
 		 * the listen queue to release us.
 		 */
-		(void)TCP_nonblocking(ls->sock);
-		(void)TCP_filter_http(ls->sock);
+		(void)VTCP_nonblocking(ls->sock);
+		(void)VTCP_filter_http(ls->sock);
 		good++;
 	}
 	if (!good)
@@ -282,8 +282,8 @@ start_child(struct cli *cli)
 	if (open_sockets() != 0) {
 		child_state = CH_STOPPED;
 		if (cli != NULL) {
-			cli_result(cli, CLIS_CANT);
-			cli_out(cli, "Could not open sockets");
+			VCLI_SetResult(cli, CLIS_CANT);
+			VCLI_Out(cli, "Could not open sockets");
 			return;
 		}
 		REPORT0(LOG_ERR,
@@ -297,12 +297,12 @@ start_child(struct cli *cli)
 	AZ(pipe(cp));
 	heritage.cli_in = cp[0];
 	mgt_child_inherit(heritage.cli_in, "cli_in");
-	child_cli_out = cp[1];
+	child_VCLI_Out = cp[1];
 
 	/* Open pipe for child->mgr CLI */
 	AZ(pipe(cp));
-	heritage.cli_out = cp[1];
-	mgt_child_inherit(heritage.cli_out, "cli_out");
+	heritage.VCLI_Out = cp[1];
+	mgt_child_inherit(heritage.VCLI_Out, "VCLI_Out");
 	child_cli_in = cp[0];
 
 	/*
@@ -354,8 +354,8 @@ start_child(struct cli *cli)
 	mgt_child_inherit(heritage.cli_in, NULL);
 	closex(&heritage.cli_in);
 
-	mgt_child_inherit(heritage.cli_out, NULL);
-	closex(&heritage.cli_out);
+	mgt_child_inherit(heritage.VCLI_Out, NULL);
+	closex(&heritage.VCLI_Out);
 
 	close_sockets();
 
@@ -382,7 +382,7 @@ start_child(struct cli *cli)
 		ev_poker = e;
 	}
 
-	mgt_cli_start_child(child_cli_in, child_cli_out);
+	mgt_cli_start_child(child_cli_in, child_VCLI_Out);
 	child_pid = pid;
 	if (mgt_push_vcls_and_start(&u, &p)) {
 		REPORT(LOG_ERR, "Pushing vcls failed: %s", p);
@@ -414,7 +414,7 @@ mgt_stop_child(void)
 	mgt_cli_stop_child();
 
 	/* We tell the child to die gracefully by closing the CLI */
-	closex(&child_cli_out);
+	closex(&child_VCLI_Out);
 	closex(&child_cli_in);
 }
 
@@ -424,33 +424,33 @@ static void
 mgt_report_panic(pid_t r)
 {
 
-	if (vsm_head->panicstr[0] == '\0')
+	if (VSM_head->panicstr[0] == '\0')
 		return;
 	REPORT(LOG_ERR, "Child (%jd) Panic message: %s",
-	    (intmax_t)r, vsm_head->panicstr);
+	    (intmax_t)r, VSM_head->panicstr);
 }
 
 static void
 mgt_save_panic(void)
 {
 	char time_str[30];
-	if (vsm_head->panicstr[0] == '\0')
+	if (VSM_head->panicstr[0] == '\0')
 		return;
 
 	if (child_panic)
-		vsb_delete(child_panic);
-	child_panic = vsb_new_auto();
+		VSB_delete(child_panic);
+	child_panic = VSB_new_auto();
 	XXXAN(child_panic);
 	TIM_format(TIM_real(), time_str);
-	vsb_printf(child_panic, "Last panic at: %s\n", time_str);
-	vsb_cat(child_panic, vsm_head->panicstr);
-	AZ(vsb_finish(child_panic));
+	VSB_printf(child_panic, "Last panic at: %s\n", time_str);
+	VSB_cat(child_panic, VSM_head->panicstr);
+	AZ(VSB_finish(child_panic));
 }
 
 static void
 mgt_clear_panic(void)
 {
-	vsb_delete(child_panic);
+	VSB_delete(child_panic);
 	child_panic = NULL;
 }
 
@@ -476,26 +476,26 @@ mgt_sigchld(const struct vev *e, int what)
 	if (r == 0 || (r == -1 && errno == ECHILD))
 		return (0);
 	assert(r == child_pid);
-	vsb = vsb_new_auto();
+	vsb = VSB_new_auto();
 	XXXAN(vsb);
-	vsb_printf(vsb, "Child (%d) %s", r, status ? "died" : "ended");
+	VSB_printf(vsb, "Child (%d) %s", r, status ? "died" : "ended");
 	if (!WIFEXITED(status) && WEXITSTATUS(status)) {
-		vsb_printf(vsb, " status=%d", WEXITSTATUS(status));
+		VSB_printf(vsb, " status=%d", WEXITSTATUS(status));
 		exit_status |= 0x20;
 	}
 	if (WIFSIGNALED(status)) {
-		vsb_printf(vsb, " signal=%d", WTERMSIG(status));
+		VSB_printf(vsb, " signal=%d", WTERMSIG(status));
 		exit_status |= 0x40;
 	}
 #ifdef WCOREDUMP
 	if (WCOREDUMP(status)) {
-		vsb_printf(vsb, " (core dumped)");
+		VSB_printf(vsb, " (core dumped)");
 		exit_status |= 0x80;
 	}
 #endif
-	AZ(vsb_finish(vsb));
-	REPORT(LOG_INFO, "%s", vsb_data(vsb));
-	vsb_delete(vsb);
+	AZ(VSB_finish(vsb));
+	REPORT(LOG_INFO, "%s", VSB_data(vsb));
+	VSB_delete(vsb);
 
 	mgt_report_panic(r);
 	mgt_save_panic();
@@ -505,7 +505,7 @@ mgt_sigchld(const struct vev *e, int what)
 	if (child_state == CH_RUNNING) {
 		child_state = CH_DIED;
 		mgt_cli_stop_child();
-		closex(&child_cli_out);
+		closex(&child_VCLI_Out);
 		closex(&child_cli_in);
 	}
 
@@ -619,12 +619,12 @@ mcf_server_startstop(struct cli *cli, const char * const *av, void *priv)
 		if (mgt_has_vcl()) {
 			start_child(cli);
 		} else {
-			cli_result(cli, CLIS_CANT);
-			cli_out(cli, "No VCL available");
+			VCLI_SetResult(cli, CLIS_CANT);
+			VCLI_Out(cli, "No VCL available");
 		}
 	} else {
-		cli_result(cli, CLIS_CANT);
-		cli_out(cli, "Child in state %s", ch_state[child_state]);
+		VCLI_SetResult(cli, CLIS_CANT);
+		VCLI_Out(cli, "Child in state %s", ch_state[child_state]);
 	}
 }
 
@@ -635,7 +635,7 @@ mcf_server_status(struct cli *cli, const char * const *av, void *priv)
 {
 	(void)av;
 	(void)priv;
-	cli_out(cli, "Child in state %s", ch_state[child_state]);
+	VCLI_Out(cli, "Child in state %s", ch_state[child_state]);
 }
 
 void
@@ -645,12 +645,12 @@ mcf_panic_show(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 
 	if (!child_panic) {
-	  cli_result(cli, CLIS_CANT);
-	  cli_out(cli, "Child has not panicked or panic has been cleared");
+	  VCLI_SetResult(cli, CLIS_CANT);
+	  VCLI_Out(cli, "Child has not panicked or panic has been cleared");
 	  return;
 	}
 
-	cli_out(cli, "%s\n", vsb_data(child_panic));
+	VCLI_Out(cli, "%s\n", VSB_data(child_panic));
 }
 
 void
@@ -660,8 +660,8 @@ mcf_panic_clear(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 
 	if (!child_panic) {
-	  cli_result(cli, CLIS_CANT);
-	  cli_out(cli, "No panic to clear");
+	  VCLI_SetResult(cli, CLIS_CANT);
+	  VCLI_Out(cli, "No panic to clear");
 	  return;
 	}
 

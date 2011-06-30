@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Redpill Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -101,6 +101,7 @@
 #include "heritage.h"
 #include "vmb.h"
 #include "vsm.h"
+#include "flopen.h"
 
 #ifndef MAP_HASSEMAPHORE
 #define MAP_HASSEMAPHORE 0 /* XXX Linux */
@@ -110,7 +111,7 @@
 #define MAP_NOSYNC 0 /* XXX Linux */
 #endif
 
-struct vsc_main	*VSC_main;
+struct VSC_C_main	*VSC_C_main;
 
 static int vsl_fd = -1;
 
@@ -122,14 +123,27 @@ static int vsl_fd = -1;
 static void
 vsl_n_check(int fd)
 {
-	struct vsm_head slh;
+	struct VSM_head slh;
 	int i;
 	struct stat st;
+	pid_t pid;
 
 	AZ(fstat(fd, &st));
 	if (!S_ISREG(st.st_mode))
 		ARGV_ERR("\tshmlog: Not a file\n");
 
+	/* Test if the SHMFILE is locked by other Varnish */
+	if (fltest(fd, &pid) > 0) {
+		fprintf(stderr,
+			"SHMFILE locked by running varnishd master (pid=%jd)\n",
+			(intmax_t)pid);
+		fprintf(stderr,
+			"(Use unique -n arguments if you want multiple "
+			"instances)\n");
+		exit(2);
+	}
+
+	/* Read owning pid from SHMFILE */
 	memset(&slh, 0, sizeof slh);	/* XXX: for flexelint */
 	i = read(fd, &slh, sizeof slh);
 	if (i != sizeof slh)
@@ -138,15 +152,11 @@ vsl_n_check(int fd)
 		return;
 	if (slh.hdrsize != sizeof slh)
 		return;
-
 	if (slh.master_pid != 0 && !kill(slh.master_pid, 0)) {
-		fprintf(stderr,
-		    "SHMFILE owned by running varnishd master (pid=%jd)\n",
-		    (intmax_t)slh.master_pid);
-		fprintf(stderr,
-		    "(Use unique -n arguments if you want multiple "
-		    "instances.)\n");
-		exit(2);
+		fprintf(stderr, 
+			"WARNING: Taking over SHMFILE marked as owned by "
+			"running process (pid=%jd)\n",
+			(intmax_t)slh.master_pid);
 	}
 }
 
@@ -157,19 +167,24 @@ vsl_n_check(int fd)
 static void
 vsl_buildnew(const char *fn, unsigned size, int fill)
 {
-	struct vsm_head slh;
+	struct VSM_head slh;
 	int i;
 	unsigned u;
 	char buf[64*1024];
+	int flags;
 
 	(void)unlink(fn);
-	vsl_fd = open(fn, O_RDWR | O_CREAT | O_EXCL, 0644);
+	vsl_fd = flopen(fn, O_RDWR | O_CREAT | O_EXCL | O_NONBLOCK, 0644);
 	if (vsl_fd < 0) {
 		fprintf(stderr, "Could not create %s: %s\n",
 		    fn, strerror(errno));
 		exit (1);
 	}
-
+	flags = fcntl(vsl_fd, F_GETFL);
+	assert(flags != -1);
+	flags &= ~O_NONBLOCK;
+	AZ(fcntl(vsl_fd, F_SETFL, flags));
+	
 	memset(&slh, 0, sizeof slh);
 	slh.magic = VSM_HEAD_MAGIC;
 	slh.hdrsize = sizeof slh;
@@ -193,6 +208,18 @@ vsl_buildnew(const char *fn, unsigned size, int fill)
 	AZ(ftruncate(vsl_fd, (off_t)size));
 }
 
+/*--------------------------------------------------------------------
+ * Exit handler that clears the owning pid from the SHMLOG
+ */
+
+static
+void
+mgt_shm_atexit(void)
+{
+	if (getpid() == VSM_head->master_pid)
+		VSM_head->master_pid = 0;
+}
+
 void
 mgt_SHM_Init(const char *l_arg)
 {
@@ -206,7 +233,7 @@ mgt_SHM_Init(const char *l_arg)
 	if (l_arg == NULL)
 		l_arg = "";
 
-	av = ParseArgv(l_arg, NULL, ARGV_COMMA);
+	av = VAV_Parse(l_arg, NULL, ARGV_COMMA);
 	AN(av);
 	if (av[0] != NULL)
 		ARGV_ERR("\t-l ...: %s", av[0]);
@@ -253,7 +280,7 @@ mgt_SHM_Init(const char *l_arg)
 	if (*ap != NULL)
 		ARGV_ERR("\t-l ...:  Too many sub-args\n");
 
-	FreeArgv(av);
+	VAV_Free(av);
 
 	size = s1 + s2;
 	ps = getpagesize();
@@ -265,29 +292,29 @@ mgt_SHM_Init(const char *l_arg)
 		vsl_n_check(i);
 		(void)close(i);
 	}
-	(void)close(i);
 	vsl_buildnew(VSM_FILENAME, size, fill);
 
-	vsm_head = (void *)mmap(NULL, size,
+	VSM_head = (void *)mmap(NULL, size,
 	    PROT_READ|PROT_WRITE,
 	    MAP_HASSEMAPHORE | MAP_NOSYNC | MAP_SHARED,
 	    vsl_fd, 0);
-	vsm_head->master_pid = getpid();
-	xxxassert(vsm_head != MAP_FAILED);
-	(void)mlock((void*)vsm_head, size);
+	VSM_head->master_pid = getpid();
+	AZ(atexit(mgt_shm_atexit));
+	xxxassert(VSM_head != MAP_FAILED);
+	(void)mlock((void*)VSM_head, size);
 
-	memset(&vsm_head->head, 0, sizeof vsm_head->head);
-	vsm_head->head.magic = VSM_CHUNK_MAGIC;
-	vsm_head->head.len =
-	    (uint8_t*)(vsm_head) + size - (uint8_t*)&vsm_head->head;
-	bprintf(vsm_head->head.class, "%s", VSM_CLASS_FREE);
+	memset(&VSM_head->head, 0, sizeof VSM_head->head);
+	VSM_head->head.magic = VSM_CHUNK_MAGIC;
+	VSM_head->head.len =
+	    (uint8_t*)(VSM_head) + size - (uint8_t*)&VSM_head->head;
+	bprintf(VSM_head->head.class, "%s", VSM_CLASS_FREE);
 	VWMB();
 
-	vsm_end = (void*)((uint8_t*)vsm_head + size);
+	vsm_end = (void*)((uint8_t*)VSM_head + size);
 
-	VSC_main = VSM_Alloc(sizeof *VSC_main,
+	VSC_C_main = VSM_Alloc(sizeof *VSC_C_main,
 	    VSC_CLASS, VSC_TYPE_MAIN, "");
-	AN(VSC_main);
+	AN(VSC_C_main);
 
 	pp = VSM_Alloc(sizeof *pp, VSM_CLASS_PARAM, "", "");
 	AN(pp);
@@ -306,8 +333,8 @@ mgt_SHM_Init(const char *l_arg)
 	VWMB();
 
 	do
-		vsm_head->alloc_seq = random();
-	while (vsm_head->alloc_seq == 0);
+		VSM_head->alloc_seq = random();
+	while (VSM_head->alloc_seq == 0);
 
 }
 
@@ -315,5 +342,5 @@ void
 mgt_SHM_Pid(void)
 {
 
-	vsm_head->master_pid = getpid();
+	VSM_head->master_pid = getpid();
 }

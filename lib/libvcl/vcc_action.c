@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -164,7 +164,7 @@ parse_unset(struct vcc *tl)
 	ERRCHK(tl);
 	assert(vp != NULL);
 	if (vp->fmt != STRING || vp->http == NULL) {
-		vsb_printf(tl->sb,
+		VSB_printf(tl->sb,
 		    "Only http header variables can be unset.\n");
 		vcc_ErrWhere(tl, tl->t);
 		return;
@@ -218,7 +218,7 @@ static void
 parse_new_syntax(struct vcc *tl)
 {
 
-	vsb_printf(tl->sb, "Please change \"%.*s\" to \"return(%.*s)\".\n",
+	VSB_printf(tl->sb, "Please change \"%.*s\" to \"return(%.*s)\".\n",
 	    PF(tl->t), PF(tl->t));
 	vcc_ErrWhere(tl, tl->t);
 }
@@ -274,7 +274,7 @@ parse_return(struct vcc *tl)
 #include "vcl_returns.h"
 #undef VCL_RET_MAC
 	if (!retval) {
-		vsb_printf(tl->sb, "Expected return action name.\n");
+		VSB_printf(tl->sb, "Expected return action name.\n");
 		vcc_ErrWhere(tl, tl->t);
 		ERRCHK(tl);
 	}
@@ -342,7 +342,7 @@ static struct action_table {
 	{ "return",		parse_return },
 	{ "rollback",		parse_rollback },
 	{ "set",		parse_set },
-	{ "synthetic",		parse_synthetic },
+	{ "synthetic",		parse_synthetic, VCL_MET_ERROR },
 	{ "unset",		parse_unset },
 	{ "purge",		parse_purge, VCL_MET_MISS | VCL_MET_HIT },
 	{ NULL,			NULL }

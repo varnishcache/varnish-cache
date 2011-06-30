@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Redpill Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -110,6 +110,11 @@ HSH_Prealloc(const struct sess *sp)
 		w->stats.n_waitinglist++;
 	}
 	CHECK_OBJ_NOTNULL(w->nwaitinglist, WAITINGLIST_MAGIC);
+
+	if (w->nbusyobj == NULL) {
+		ALLOC_OBJ(w->nbusyobj, BUSYOBJ_MAGIC);
+		XXXAN(w->nbusyobj);
+	}
 
 	if (hash->prep != NULL)
 		hash->prep(sp);
@@ -342,8 +347,15 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		assert(oc->objhead == oh);
 
 		if (oc->flags & OC_F_BUSY) {
-			if (!sp->hash_ignore_busy)
-				busy_oc = oc;
+			CHECK_OBJ_NOTNULL(oc->busyobj, BUSYOBJ_MAGIC);
+			if (sp->hash_ignore_busy)
+				continue;
+
+			if (oc->busyobj->vary != NULL &&
+			    !VRY_Match(sp, oc->busyobj->vary))
+				continue;
+
+			busy_oc = oc;
 			continue;
 		}
 
@@ -445,6 +457,10 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	AN(oc->flags & OC_F_BUSY);
 	oc->refcnt = 1;
 
+	w->nbusyobj->vary = sp->vary_b;
+	oc->busyobj = w->nbusyobj;
+	w->nbusyobj = NULL;
+
 	/*
 	 * Busy objects go on the tail, so they will not trip up searches.
 	 * HSH_Unbusy() will move them to the front.
@@ -486,7 +502,7 @@ hsh_rush(struct objhead *oh)
 			 * We could not schedule the session, leave the
 			 * rest on the busy list.
 			 */
-			VSC_main->client_drop_late++;
+			VSC_C_main->client_drop_late++;
 			break;
 		}
 	}
@@ -594,7 +610,6 @@ HSH_Unbusy(const struct sess *sp)
 
 	AssertObjBusy(o);
 	AN(oc->ban);
-	assert(oc_getobj(sp->wrk, oc) == o);
 	assert(oc->refcnt > 0);
 	assert(oh->refcnt > 0);
 	if (o->ws_o->overflow)
@@ -610,9 +625,13 @@ HSH_Unbusy(const struct sess *sp)
 	VTAILQ_REMOVE(&oh->objcs, oc, list);
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, list);
 	oc->flags &= ~OC_F_BUSY;
+	AZ(sp->wrk->nbusyobj);
+	sp->wrk->nbusyobj = oc->busyobj;
+	oc->busyobj = NULL;
 	hsh_rush(oh);
 	AN(oc->ban);
 	Lck_Unlock(&oh->mtx);
+	assert(oc_getobj(sp->wrk, oc) == o);
 }
 
 void
@@ -738,7 +757,7 @@ HSH_config(const char *h_arg)
 	const struct hash_slinger *hp;
 
 	ASSERT_MGT();
-	av = ParseArgv(h_arg, NULL, ARGV_COMMA);
+	av = VAV_Parse(h_arg, NULL, ARGV_COMMA);
 	AN(av);
 
 	if (av[0] != NULL)
@@ -752,7 +771,7 @@ HSH_config(const char *h_arg)
 
 	hp = pick(hsh_choice, av[1], "hash");
 	CHECK_OBJ_NOTNULL(hp, SLINGER_MAGIC);
-	vsb_printf(vident, ",-h%s", av[1]);
+	VSB_printf(vident, ",-h%s", av[1]);
 	heritage.hash = hp;
 	if (hp->init != NULL)
 		hp->init(ac, av + 2);

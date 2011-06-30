@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Linpro AS
+ * Copyright (c) 2006-2010 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -75,8 +75,8 @@ struct objhead {
 	unsigned		magic;
 #define OBJHEAD_MAGIC		0x1b96615d
 
-	struct lock		mtx;
 	int			refcnt;
+	struct lock		mtx;
 	VTAILQ_HEAD(,objcore)	objcs;
 	unsigned char		digest[DIGEST_LEN];
 	struct waitinglist	*waitinglist;

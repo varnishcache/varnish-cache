@@ -3,6 +3,7 @@
 pkginclude_HEADERS = \
 	vsm.h \
 	vsl.h \
+	vcli.h \
 	vsl_tags.h \
 	vsc_fields.h \
 	vsc_all.h \
@@ -10,10 +11,8 @@ pkginclude_HEADERS = \
 	varnishapi.h
 
 nobase_noinst_HEADERS = \
-	argv.h \
 	ban_vars.h \
 	binary_heap.h \
-	cli.h \
 	cli_common.h \
 	cli_priv.h \
 	cli_serve.h \
@@ -28,6 +27,7 @@ nobase_noinst_HEADERS = \
 	miniobj.h \
 	persistent.h \
 	vas.h \
+	vav.h \
 	vsha256.h \
 	vqueue.h \
 	vpf.h \

@@ -72,9 +72,6 @@ available where.
 
 VCL has if tests, but no loops.
 
-You may log arbitrary strings to the shared memory log with the
-keyword *log*.
-
 The contents of another VCL file may be inserted at any point in the
 code by using the *include* keyword followed by the name of the other
 file as a quoted string.
@@ -236,7 +233,8 @@ us to consider the backend healthy.  .initial is how many of the
 probes are considered good when Varnish starts - defaults to the same
 amount as the threshold.
 
-A backend with a probe can be defined like this:::
+A backend with a probe can be defined like this, together with the
+backend or director:::
 
   backend www {
     .host = "www.example.com";
@@ -250,18 +248,34 @@ A backend with a probe can be defined like this:::
     }
   }
 
-It is also possible to specify the raw HTTP request::
+Or it can be defined separately and then referenced:::
+
+  probe healthcheck {
+     .url = "/status.cgi";
+     .interval = 60s;     
+     .timeout = 0.3 s;
+     .window = 8;
+     .threshold = 3;
+     .initial = 3;
+  }	
 
   backend www {
     .host = "www.example.com";
     .port = "http";
-    .probe = {
+    .probe = healthcheck;
+  }
+
+If you have many backends this can simplify the config a lot.
+
+
+It is also possible to specify the raw HTTP request::
+
+  probe rawprobe {
       # NB: \r\n automatically inserted after each string!
       .request =
         "GET / HTTP/1.1"
         "Host: www.foo.bar"
         "Connection: close";
-    }
   }
 
 ACLs
@@ -658,7 +672,7 @@ beresp.do_esi
   to true to parse the object for ESI directives.
 
 beresp.do_gzip
-  Boolean. Gzip the object before storing it. Defaults to true. 
+  Boolean. Gzip the object before storing it. Defaults to false.
 
 beresp.do_gunzip
   Boolean. Unzip the object before storing it in the cache.  Defaults
@@ -672,15 +686,6 @@ beresp.status
 
 beresp.response
   The HTTP status message returned by the server.
-
-beresp.cacheable
-  True if the request resulted in a cacheable response. A response is
-  considered cacheable if HTTP status code is 200, 203, 300, 301, 302,
-  404 or 410 and pass wasn't called in vcl_recv. If however, both the
-  TTL and the grace time for the response are 0 beresp.cacheable will
-  be 0.
-  
-  beresp.cacheable is writable.
 
 beresp.ttl
   The object's remaining time to live, in seconds. beresp.ttl is writable.
@@ -697,10 +702,6 @@ obj.status
 
 obj.response
   The HTTP status message returned by the server.
-
-obj.cacheable
-  True if the object had beresp.cacheable. Unless you've forced delivery
-  in your VCL obj.cacheable will always be true.
 
 obj.ttl
   The object's remaining time to live, in seconds. obj.ttl is writable.
@@ -825,9 +826,11 @@ based on the request URL:::
   default_ttl run-time parameter, as that only affects document for
   which the backend did not specify a TTL:::
   
+  import std; # needed for std.log
+
   sub vcl_fetch {
     if (beresp.ttl < 120s) {
-      log "Adjusting TTL";
+      std.log "Adjusting TTL";
       set beresp.ttl = 120s;
     }
   }
@@ -882,14 +885,15 @@ SEE ALSO
 ========
 
 * varnishd(1)
+* vmod_std(7)
 
 HISTORY
 =======
 
-The VCL language was developed by Poul-Henning Kamp in cooperation
-with Verdens Gang AS, Linpro AS and Varnish Software.  This manual
-page was written by Dag-Erling Smørgrav and later edited by
-Poul-Henning Kamp and Per Buer.
+VCL was developed by Poul-Henning Kamp in cooperation with Verdens
+Gang AS, Redpill Linpro and Varnish Software.  This manual page was
+written by Dag-Erling Smørgrav and later edited by Poul-Henning Kamp
+and Per Buer.
 
 COPYRIGHT
 =========
@@ -898,6 +902,4 @@ This document is licensed under the same licence as Varnish
 itself. See LICENCE for details.
 
 * Copyright (c) 2006 Verdens Gang AS
-* Copyright (c) 2006-2008 Linpro AS
-* Copyright (c) 2008-2010 Redpill Linpro AS
-* Copyright (c) 2010 Varnish Software AS
+* Copyright (c) 2006-2011 Varnish Software AS

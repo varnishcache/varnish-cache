@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Linpro AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -42,7 +42,7 @@
 
 typedef void vas_f(const char *, const char *, int, const char *, int, int);
 
-extern vas_f *vas_fail;
+extern vas_f *VAS_Fail;
 
 #ifdef WITHOUT_ASSERTS
 #define assert(e)	((void)(e))
@@ -50,14 +50,14 @@ extern vas_f *vas_fail;
 #define assert(e)							\
 do {									\
 	if (!(e))							\
-		vas_fail(__func__, __FILE__, __LINE__, #e, errno, 0);	\
+		VAS_Fail(__func__, __FILE__, __LINE__, #e, errno, 0);	\
 } while (0)
 #endif
 
 #define xxxassert(e)							\
 do {									\
 	if (!(e))							\
-		vas_fail(__func__, __FILE__, __LINE__, #e, errno, 1);	\
+		VAS_Fail(__func__, __FILE__, __LINE__, #e, errno, 1);	\
 } while (0)
 
 /* Assert zero return value */
@@ -68,7 +68,7 @@ do {									\
 #define diagnostic(foo)	assert(foo)
 #define WRONG(expl)							\
 do {									\
-	vas_fail(__func__, __FILE__, __LINE__, expl, errno, 3);		\
+	VAS_Fail(__func__, __FILE__, __LINE__, expl, errno, 3);		\
 	abort();							\
 } while (0)
 

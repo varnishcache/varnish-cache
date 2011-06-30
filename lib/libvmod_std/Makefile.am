@@ -7,7 +7,7 @@ dist_man_MANS = vmod_std.3
 vmoddir = $(pkglibdir)/vmods
 vmod_LTLIBRARIES = libvmod_std.la
 
-libvmod_std_la_LDFLAGS = -avoid-version
+libvmod_std_la_LDFLAGS = -module -export-dynamic -avoid-version
 
 libvmod_std_la_SOURCES = \
 	vcc_if.c \

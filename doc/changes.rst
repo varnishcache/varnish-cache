@@ -1,3 +1,54 @@
+=====================================
+Changes from 3.0 beta 1 to 3.0 beta 2
+=====================================
+
+Varnishd
+--------
+
+- thread_pool_min and thread_pool_max now each refer to the number of
+  threads per pool, rather than being inconsistent as they were
+  before.
+
+- 307 Temporary redirect is now considered cacheable.  `Bug #908`_.
+
+- The `stats` command has been removed from the CLI interface.  With
+  the new counters, it would mean implementing more and more of
+  varnishstat in the master CLI process and the CLI is
+  single-threaded so we do not want to do this work there in the first
+  place.  Use varnishstat instead.
+
+.. _bug #908: http://varnish-cache.org/trac/ticket/908
+
+VCL
+---
+
+- VCL now treats null arguments (unset headers for instance) as empty
+  strings.  `Bug #913`_.
+
+- VCL now has vcl_init and vcl_fini functions that are called when a
+  given VCL has been loaded and unloaded.
+
+- There is no longer any interpolation of the right hand side in bans
+  where the ban is a single string.  This was confusing and you now
+  have to make sure bits are inside or outside string context as
+  appropriate.
+
+- Varnish is now stricter in enforcing no duplication of probes,
+  backends and ACLs.
+
+.. _bug #913: http://varnish-cache.org/trac/ticket/913
+
+varnishncsa
+-----------
+
+- varnishncsa now ignores piped requests, since we have no way of
+  knowing their return status.
+
+VMODs
+-----
+
+- The std module now has proper documentation, including a manual page
+
 ================================
 Changes from 2.1.5 to 3.0 beta 1
 ================================
