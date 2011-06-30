@@ -463,11 +463,11 @@ vbp_new_vcl(const struct vrt_backend_probe *p, const char *hosthdr)
 }
 
 /*--------------------------------------------------------------------
- * Start/Stop called from cache_backend.c
+ * Insert/Remove/Use called from cache_backend.c
  */
 
 void
-VBP_Start(struct backend *b, const struct vrt_backend_probe *p, const char *hosthdr)
+VBP_Insert(struct backend *b, const struct vrt_backend_probe *p, const char *hosthdr)
 {
 	struct vbp_target *vt;
 	struct vbp_vcl *vcl;
@@ -475,9 +475,7 @@ VBP_Start(struct backend *b, const struct vrt_backend_probe *p, const char *host
 	unsigned u;
 
 	ASSERT_CLI();
-
-	if (p == NULL)
-		return;
+	AN(p);
 
 	if (b->probe == NULL) {
 		ALLOC_OBJ(vt, VBP_TARGET_MAGIC);
@@ -493,21 +491,12 @@ VBP_Start(struct backend *b, const struct vrt_backend_probe *p, const char *host
 		vt = b->probe;
 	}
 
-	VTAILQ_FOREACH(vcl, &vt->vcls, list) {
-		if (vcl->probep != p)
-			continue;
-
-		AZ(startthread);
-		Lck_Lock(&vbp_mtx);
-		VTAILQ_REMOVE(&vt->vcls, vcl, list);
-		VTAILQ_INSERT_HEAD(&vt->vcls, vcl, list);
-		Lck_Unlock(&vbp_mtx);
-		return;
-	}
+	VTAILQ_FOREACH(vcl, &vt->vcls, list) 
+		assert (vcl->probep != p);
 
 	vcl = vbp_new_vcl(p, hosthdr);
 	Lck_Lock(&vbp_mtx);
-	VTAILQ_INSERT_HEAD(&vt->vcls, vcl, list);
+	VTAILQ_INSERT_TAIL(&vt->vcls, vcl, list);
 	Lck_Unlock(&vbp_mtx);
 
 	if (startthread) {
@@ -521,21 +510,42 @@ VBP_Start(struct backend *b, const struct vrt_backend_probe *p, const char *host
 }
 
 void
-VBP_Stop(struct backend *b, struct vrt_backend_probe const *p)
+VBP_Use(struct backend *b, const struct vrt_backend_probe *p)
+{
+	struct vbp_target *vt;
+	struct vbp_vcl *vcl;
+
+	ASSERT_CLI();
+	AN(p);
+	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+	AN(b->probe);
+	vt = b->probe;
+
+	VTAILQ_FOREACH(vcl, &vt->vcls, list) {
+		if (vcl->probep != p)
+			continue;
+
+		Lck_Lock(&vbp_mtx);
+		VTAILQ_REMOVE(&vt->vcls, vcl, list);
+		VTAILQ_INSERT_HEAD(&vt->vcls, vcl, list);
+		Lck_Unlock(&vbp_mtx);
+		return;
+	}
+}
+
+void
+VBP_Remove(struct backend *b, struct vrt_backend_probe const *p)
 {
 	struct vbp_target *vt;
 	struct vbp_vcl *vcl;
 	void *ret;
 
 	ASSERT_CLI();
-
-	if (p == NULL)
-		return;
-
+	AN(p);
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-
 	AN(b->probe);
 	vt = b->probe;
+
 	VTAILQ_FOREACH(vcl, &vt->vcls, list)
 		if (vcl->probep == p)
 			break;
