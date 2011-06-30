@@ -430,7 +430,7 @@ VBE_UseHealth(const struct director *vdi)
 	CAST_OBJ_NOTNULL(vs, vdi->priv, VDI_SIMPLE_MAGIC);
 	if (vs->vrt->probe == NULL)
 		return;
-	VBP_Start(vs->backend, vs->vrt->probe, vs->vrt->hosthdr);
+	VBP_Use(vs->backend, vs->vrt->probe);
 }
 
 /*--------------------------------------------------------------------
@@ -475,7 +475,8 @@ vdi_simple_fini(const struct director *d)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
 
-	VBP_Stop(vs->backend, vs->vrt->probe);
+	if (vs->vrt->probe != NULL)
+		VBP_Remove(vs->backend, vs->vrt->probe);
 	VBE_DropRefVcl(vs->backend);
 	free(vs->dir.vcl_name);
 	vs->dir.magic = 0;
@@ -506,8 +507,8 @@ VRT_init_dir_simple(struct cli *cli, struct director **bp, int idx,
 	vs->vrt = t;
 
 	vs->backend = VBE_AddBackend(cli, t);
-	if (vs->backend->probe == NULL)
-		VBP_Start(vs->backend, vs->vrt->probe, vs->vrt->hosthdr);
+	if (vs->vrt->probe != NULL)
+		VBP_Insert(vs->backend, vs->vrt->probe, vs->vrt->hosthdr);
 
 	bp[idx] = &vs->dir;
 }
