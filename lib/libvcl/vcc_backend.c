@@ -83,7 +83,7 @@ emit_sockaddr(struct vcc *tl, void *sa, unsigned sal)
 	AN(sal);
 	assert(sal < 256);
 	Fh(tl, 0, "\nstatic const unsigned char sockaddr%u[%d] = {\n",
-	    tl->nsockaddr, sal + 1);
+	    tl->unique, sal + 1);
 	Fh(tl, 0, "    %3u, /* Length */\n",  sal);
 	u = sa;
 	for (len = 0; len <sal; len++) {
@@ -96,7 +96,7 @@ emit_sockaddr(struct vcc *tl, void *sa, unsigned sal)
 			Fh(tl, 0, "\n");
 	}
 	Fh(tl, 0, "\n};\n");
-	return (tl->nsockaddr++);
+	return (tl->unique++);
 }
 
 /*--------------------------------------------------------------------

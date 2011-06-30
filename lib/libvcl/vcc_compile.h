@@ -162,8 +162,7 @@ struct vcc {
 	struct token		*t_dir;
 	struct token		*t_policy;
 
-	unsigned		recnt;
-	unsigned		nsockaddr;
+	unsigned		unique;
 	unsigned		nvmodpriv;
 
 	unsigned		err_unref;

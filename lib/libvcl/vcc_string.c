@@ -63,7 +63,7 @@ vcc_regexp(struct vcc *tl)
 		return (NULL);
 	}
 	VRE_free(&t);
-	sprintf(buf, "VGC_re_%u", tl->recnt++);
+	sprintf(buf, "VGC_re_%u", tl->unique++);
 	p = TlAlloc(tl, strlen(buf) + 1);
 	strcpy(p, buf);
 

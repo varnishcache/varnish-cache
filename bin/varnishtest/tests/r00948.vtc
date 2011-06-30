@@ -1,0 +1,30 @@
+varnishtest "anon acl numbering"
+
+
+server s1 {
+	rxreq
+	expect req.http.foo1 == "Match"
+	expect req.http.foo2 == "Match"
+	txresp -bodylen 40
+} -start
+
+varnish v1 -vcl+backend {
+
+sub vcl_recv {
+	if (client.ip == "${s1_addr}" || client.ip == "${bad_ip}") {
+		set req.http.foo1 = "Match";
+	}
+	if (client.ip == "${bad_ip}" || client.ip == "${s1_addr}") {
+		set req.http.foo2 = "Match";
+	}
+}
+
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 40
+} -run
+
+
