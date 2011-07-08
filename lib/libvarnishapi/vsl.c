@@ -184,7 +184,7 @@ vsl_nextlog(struct vsl *vsl, uint32_t **pp)
 			if (vsl->flags & F_NON_BLOCKING)
 				return (-1);
 			w += SLEEP_USEC;
-			AZ(usleep(SLEEP_USEC));
+			assert(usleep(SLEEP_USEC) == 0 || errno == EINTR);
 			continue;
 		}
 		*pp = (void*)(uintptr_t)vsl->log_ptr; /* Loose volatile */
