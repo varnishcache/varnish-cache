@@ -265,6 +265,7 @@ res_WriteGunzipObj(struct sess *sp)
 		    st->ptr, st->len,
 		    obuf, sizeof obuf, &obufl);
 		/* XXX: error check */
+		(void)i;
 	}
 	if (obufl) {
 		(void)WRW_Write(sp->wrk, obuf, obufl);
