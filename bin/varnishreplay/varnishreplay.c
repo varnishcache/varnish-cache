@@ -494,7 +494,6 @@ replay_thread(void *arg)
 	struct replay_thread *thr = arg;
 	struct message *msg;
 	enum VSL_tag_e tag;
-	size_t len;
 	char *ptr;
 	const char *next;
 
@@ -504,7 +503,6 @@ replay_thread(void *arg)
 
 	while ((msg = mailbox_get(&thr->mbox)) != NULL) {
 		tag = msg->tag;
-		len = msg->len;
 		ptr = msg->ptr;
 
 		thread_log(2, 0, "%s(%s)", VSL_tags[tag], msg->ptr);
@@ -639,13 +637,10 @@ gen_traffic(void *priv, enum VSL_tag_e tag, unsigned fd,
     unsigned len, unsigned spec, const char *ptr, uint64_t bitmap)
 {
 	struct replay_thread *thr;
-	const char *end;
 	struct message *msg;
 
 	(void)priv;
 	(void)bitmap;
-
-	end = ptr + len;
 
 	if (fd == 0 || !(spec & VSL_S_CLIENT))
 		return (0);
