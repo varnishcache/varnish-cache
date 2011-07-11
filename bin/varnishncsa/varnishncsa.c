@@ -546,7 +546,7 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 
 		case 'b':
 			/* %b */
-			fprintf(fo, "%s", lp->df_b ? lp->df_b : "-");
+			fprintf(fo, "%s", lp->df_b ? lp->df_b : "0");
 			break;
 
 		case 'H':
