@@ -654,11 +654,11 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 					p += 9+15;
 					break;
 				} else if (strncmp(what, "hitmiss}x", 9) == 0) {
-					fprintf(fo, "%s", lp->df_hitmiss);
+					fprintf(fo, "%s", (lp->df_hitmiss ? lp->df_hitmiss : "-"));
 					p += 9+8;
 					break;
 				} else if (strncmp(what, "handling}x", 10) == 0) {
-					fprintf(fo, "%s", lp->df_handling);
+					fprintf(fo, "%s", (lp->df_handling ? lp->df_handling : "-"));
 					p += 9+9;
 					break;
 				}
