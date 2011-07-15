@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
 
 #include <sys/stat.h>
 
@@ -47,8 +48,12 @@ seed_random(void)
 	unsigned seed;
 
 	fd = open("/dev/urandom", O_RDONLY);
-	if (fd == -1)
-		return (1);
+	if (fd == -1) {
+		/* urandom not available, fall back to something
+		 * weaker */
+		srandom(time(NULL));
+		return (0);
+	}
 	if (read(fd, &seed, sizeof seed) != sizeof seed)
 		return (1);
 	(void)close(fd);
