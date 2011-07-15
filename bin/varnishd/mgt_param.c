@@ -522,7 +522,7 @@ static const struct parspec input_parspec[] = {
 		"Maximum length of any HTTP client request header we will "
 		"allow.  The limit is inclusive its continuation lines.\n",
 		0,
-		"2048", "bytes" },
+		"4096", "bytes" },
 	{ "http_req_size", tweak_uint, &master.http_req_size,
 		256, UINT_MAX,
 		"Maximum number of bytes of HTTP client request we will deal "
@@ -538,7 +538,7 @@ static const struct parspec input_parspec[] = {
 		"Maximum length of any HTTP backend response header we will "
 		"allow.  The limit is inclusive its continuation lines.\n",
 		0,
-		"2048", "bytes" },
+		"4096", "bytes" },
 	{ "http_resp_size", tweak_uint, &master.http_resp_size,
 		256, UINT_MAX,
 		"Maximum number of bytes of HTTP backend resonse we will deal "
