@@ -103,7 +103,8 @@ static struct logline {
 	int active;			/* Is log line in an active trans */
 	int complete;			/* Is log line complete */
 	uint64_t bitmap;		/* Bitmap for regex matches */
-	VTAILQ_HEAD(, hdr) headers;
+	VTAILQ_HEAD(, hdr) req_headers; /* Request headers */
+	VTAILQ_HEAD(, hdr) resp_headers; /* Response headers */
 } **ll;
 
 struct VSM_data *vd;
@@ -190,10 +191,23 @@ trimline(const char *str, const char *end)
 }
 
 static char *
-get_header(struct logline *l, const char *name)
+req_header(struct logline *l, const char *name)
 {
 	struct hdr *h;
-	VTAILQ_FOREACH(h, &l->headers, list) {
+	VTAILQ_FOREACH(h, &l->req_headers, list) {
+		if (strcasecmp(h->key, name) == 0) {
+			return h->value;
+			break;
+		}
+	}
+	return NULL;
+}
+
+static char *
+resp_header(struct logline *l, const char *name)
+{
+	struct hdr *h;
+	VTAILQ_FOREACH(h, &l->resp_headers, list) {
 		if (strcasecmp(h->key, name) == 0) {
 			return h->value;
 			break;
@@ -216,8 +230,14 @@ clean_logline(struct logline *lp)
 	freez(lp->df_s);
 	freez(lp->df_u);
 	freez(lp->df_ttfb);
-	VTAILQ_FOREACH_SAFE(h, &lp->headers, list, h2) {
-		VTAILQ_REMOVE(&lp->headers, h, list);
+	VTAILQ_FOREACH_SAFE(h, &lp->req_headers, list, h2) {
+		VTAILQ_REMOVE(&lp->req_headers, h, list);
+		freez(h->key);
+		freez(h->value);
+		freez(h);
+	}
+	VTAILQ_FOREACH_SAFE(h, &lp->resp_headers, list, h2) {
+		VTAILQ_REMOVE(&lp->resp_headers, h, list);
 		freez(h->key);
 		freez(h->value);
 		freez(h);
@@ -326,7 +346,7 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			l = strlen(split);
 			h->key = trimline(ptr, split-1);
 			h->value = trimline(split+1, split+l-1);
-			VTAILQ_INSERT_HEAD(&lp->headers, h, list);
+			VTAILQ_INSERT_HEAD(&lp->req_headers, h, list);
 		}
 		break;
 
@@ -415,10 +435,12 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			lp->df_s = trimline(ptr, end);
 		break;
 
+	case SLT_TxHeader:
 	case SLT_RxHeader:
 		if (!lp->active)
 			break;
-		if (isprefix(ptr, "authorization:", end, &next) &&
+		if (tag == SLT_RxHeader &&
+		    isprefix(ptr, "authorization:", end, &next) &&
 		    isprefix(next, "basic", end, &next)) {
 			free(lp->df_u);
 			lp->df_u = trimline(next, end);
@@ -431,7 +453,10 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			AN(split);
 			h->key = trimline(ptr, split);
 			h->value = trimline(split+1, end);
-			VTAILQ_INSERT_HEAD(&lp->headers, h, list);
+			if (tag == SLT_RxHeader)
+				VTAILQ_INSERT_HEAD(&lp->req_headers, h, list);
+			else
+				VTAILQ_INSERT_HEAD(&lp->resp_headers, h, list);
 		}
 		break;
 
@@ -601,10 +626,10 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 			 */
 			VSB_cat(os, lp->df_m);
 			VSB_putc(os, ' ');
-			if (get_header(lp, "Host")) {
-				if (strncmp(get_header(lp, "Host"), "http://", 7) != 0)
+			if (req_header(lp, "Host")) {
+				if (strncmp(req_header(lp, "Host"), "http://", 7) != 0)
 					VSB_cat(os, "http://");
-				VSB_cat(os, get_header(lp, "Host"));
+				VSB_cat(os, req_header(lp, "Host"));
 			}
 			VSB_cat(os, lp->df_U);
 			VSB_cat(os, lp->df_q ? lp->df_q : "");
@@ -659,11 +684,17 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 				tmp++;
 				type = *tmp;
 				memcpy(fname, p+1, tmp-p-2);
+				fname[tmp-p-2] = 0;
 			}
 
 			switch (type) {
 			case 'i':
-				h = get_header(lp, fname);
+				h = req_header(lp, fname);
+				VSB_cat(os, h ? h : "-");
+				p = tmp;
+				break;
+			case 'o':
+				h = resp_header(lp, fname);
 				VSB_cat(os, h ? h : "-");
 				p = tmp;
 				break;
