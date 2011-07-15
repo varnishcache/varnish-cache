@@ -594,7 +594,7 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 
 		case 'b':
 			/* %b */
-			VSB_cat(os, lp->df_b ? lp->df_b : "0");
+			VSB_cat(os, lp->df_b ? lp->df_b : "-");
 			break;
 
 		case 'H':
