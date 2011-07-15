@@ -54,8 +54,7 @@
  *	%q		Query string
  *	%H		Protocol version
  *
- * TODO:	- Make it possible to grab any request header
- *		- Maybe rotate/compress log
+ * TODO:		- Maybe rotate/compress log
  */
 
 #include "config.h"
@@ -72,6 +71,7 @@
 
 #include "vsb.h"
 #include "vpf.h"
+#include "vqueue.h"
 
 #include "libvarnish.h"
 #include "vsl.h"
@@ -81,14 +81,16 @@
 
 static volatile sig_atomic_t reopen;
 
+struct hdr {
+	char *key;
+	char *value;
+	VTAILQ_ENTRY(hdr) list;
+};
+
 static struct logline {
 	char *df_H;			/* %H, Protocol version */
-	char *df_Host;			/* %{Host}i */
-	char *df_Referer;		/* %{Referer}i */
 	char *df_U;			/* %U, URL path */
 	char *df_q;			/* %q, query string */
-	char *df_User_agent;		/* %{User-agent}i */
-	char *df_X_Forwarded_For;	/* %{X-Forwarded-For}i */
 	char *df_b;			/* %b, Bytes */
 	char *df_h;			/* %h (host name / IP adress)*/
 	char *df_m;			/* %m, Request method*/
@@ -101,6 +103,7 @@ static struct logline {
 	int active;			/* Is log line in an active trans */
 	int complete;			/* Is log line complete */
 	uint64_t bitmap;		/* Bitmap for regex matches */
+	VTAILQ_HEAD(, hdr) headers;
 } **ll;
 
 struct VSM_data *vd;
@@ -186,23 +189,39 @@ trimline(const char *str, const char *end)
 	return (p);
 }
 
+static char *
+get_header(struct logline *l, const char *name)
+{
+	struct hdr *h;
+	VTAILQ_FOREACH(h, &l->headers, list) {
+		if (strcasecmp(h->key, name) == 0) {
+			return h->value;
+			break;
+		}
+	}
+	return NULL;
+}
+
 static void
 clean_logline(struct logline *lp)
 {
+	struct hdr *h, *h2;
 #define freez(x) do { if (x) free(x); x = NULL; } while (0);
 	freez(lp->df_H);
-	freez(lp->df_Host);
-	freez(lp->df_Referer);
 	freez(lp->df_U);
 	freez(lp->df_q);
-	freez(lp->df_User_agent);
-	freez(lp->df_X_Forwarded_For);
 	freez(lp->df_b);
 	freez(lp->df_h);
 	freez(lp->df_m);
 	freez(lp->df_s);
 	freez(lp->df_u);
 	freez(lp->df_ttfb);
+	VTAILQ_FOREACH_SAFE(h, &lp->headers, list, h2) {
+		VTAILQ_REMOVE(&lp->headers, h, list);
+		freez(h->key);
+		freez(h->value);
+		freez(h);
+	}
 #undef freez
 	memset(lp, 0, sizeof *lp);
 }
@@ -293,17 +312,22 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 	case SLT_TxHeader:
 		if (!lp->active)
 			break;
-		if (isprefix(ptr, "user-agent:", end, &next))
-			lp->df_User_agent = trimline(next, end);
-		else if (isprefix(ptr, "referer:", end, &next))
-			lp->df_Referer = trimline(next, end);
-		else if (isprefix(ptr, "authorization:", end, &next) &&
-		    isprefix(next, "basic", end, &next))
+		if (isprefix(ptr, "authorization:", end, &next) &&
+		    isprefix(next, "basic", end, &next)) {
 			lp->df_u = trimline(next, end);
-		else if (isprefix(ptr, "x-forwarded-for:", end, &next))
-			lp->df_X_Forwarded_For = trimline(next, end);
-		else if (isprefix(ptr, "host:", end, &next))
-			lp->df_Host = trimline(next, end);
+		} else {
+			struct hdr *h;
+			const char *split;
+			size_t l;
+			h = malloc(sizeof(struct hdr));
+			AN(h);
+			split = strchr(ptr, ':');
+			AN(split);
+			l = strlen(split);
+			h->key = trimline(ptr, split-1);
+			h->value = trimline(split+1, split+l-1);
+			VTAILQ_INSERT_HEAD(&lp->headers, h, list);
+		}
 		break;
 
 	case SLT_BackendReuse:
@@ -394,22 +418,20 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 	case SLT_RxHeader:
 		if (!lp->active)
 			break;
-		if (isprefix(ptr, "user-agent:", end, &next)) {
-			free(lp->df_User_agent);
-			lp->df_User_agent = trimline(next, end);
-		} else if (isprefix(ptr, "referer:", end, &next)) {
-			free(lp->df_Referer);
-			lp->df_Referer = trimline(next, end);
-		} else if (isprefix(ptr, "authorization:", end, &next) &&
-			   isprefix(next, "basic", end, &next)) {
+		if (isprefix(ptr, "authorization:", end, &next) &&
+		    isprefix(next, "basic", end, &next)) {
 			free(lp->df_u);
 			lp->df_u = trimline(next, end);
-		} else if (isprefix(ptr, "x-forwarded-for:", end, &next)) {
-			free(lp->df_X_Forwarded_For);
-			lp->df_X_Forwarded_For = trimline(next, end);
-		} else if (isprefix(ptr, "host:", end, &next)) {
-			free(lp->df_Host);
-			lp->df_Host = trimline(next, end);
+		} else {
+			struct hdr *h;
+			const char *split;
+			h = malloc(sizeof(struct hdr));
+			AN(h);
+			split = strchr(ptr, ':');
+			AN(split);
+			h->key = trimline(ptr, split);
+			h->value = trimline(split+1, end);
+			VTAILQ_INSERT_HEAD(&lp->headers, h, list);
 		}
 		break;
 
@@ -579,10 +601,10 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 			 */
 			VSB_cat(os, lp->df_m);
 			VSB_putc(os, ' ');
-			if (lp->df_Host) {
-				if (strncmp(lp->df_Host, "http://", 7) != 0)
+			if (get_header(lp, "Host")) {
+				if (strncmp(get_header(lp, "Host"), "http://", 7) != 0)
 					VSB_cat(os, "http://");
-				VSB_cat(os, lp->df_Host);
+				VSB_cat(os, get_header(lp, "Host"));
 			}
 			VSB_cat(os, lp->df_U);
 			VSB_cat(os, lp->df_q ? lp->df_q : "");
@@ -626,42 +648,44 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 			}
 			break;
 
-		case '{':
-			if (strncmp(p, "{Referer}i", 10) == 0) {
-				VSB_cat(os, lp->df_Referer ? lp->df_Referer : "-");
-				p += 9;
+		case '{': {
+			const char *h, *tmp;
+			char fname[100], type;
+			tmp = p;
+			type = 0;
+			while (*tmp != '\0' && *tmp != '}')
+				tmp++;
+			if (*tmp == '}') {
+				tmp++;
+				type = *tmp;
+				memcpy(fname, p+1, tmp-p-2);
+			}
+
+			switch (type) {
+			case 'i':
+				h = get_header(lp, fname);
+				VSB_cat(os, h ? h : "-");
+				p = tmp;
 				break;
-			} else if (strncmp(p, "{Host}i", 7) == 0) {
-				VSB_cat(os, lp->df_Host ? lp->df_Host : "-");
-				p += 6;
-				break;
-			} else if (strncmp(p, "{X-Forwarded-For}i", 18) == 0) {
-				/* %{Referer}i */
-				VSB_cat(os, lp->df_X_Forwarded_For ? lp->df_X_Forwarded_For : "-");
-				p += 17;
-				break;
-			} else if (strncmp(p, "{User-agent}i", 13) == 0) {
-				/* %{User-agent}i */
-				VSB_cat(os, lp->df_User_agent ? lp->df_User_agent : "-");
-				p += 12;
-				break;
-			} else if (strncmp(p, "{Varnish:", 9) == 0) {
-				/* Scan for what we're looking for */
-				const char *what = p+9;
-				if (strncmp(what, "time_firstbyte}x", 16) == 0) {
+			case 'x':
+				if (strcmp(fname, "Varnish:time_firstbyte") == 0) {
 					VSB_cat(os, lp->df_ttfb);
-					p += 9+15;
-					break;
-				} else if (strncmp(what, "hitmiss}x", 9) == 0) {
+					p = tmp;
+				} else if (strcmp(fname, "Varnish:hitmiss") == 0) {
 					VSB_cat(os, (lp->df_hitmiss ? lp->df_hitmiss : "-"));
-					p += 9+8;
+					p = tmp;
 					break;
-				} else if (strncmp(what, "handling}x", 10) == 0) {
+				} else if (strcmp(fname, "handling") == 0) {
 					VSB_cat(os, (lp->df_handling ? lp->df_handling : "-"));
-					p += 9+9;
+					p = tmp;
 					break;
 				}
+			default:
+				fprintf(stderr, "Unknown format starting at: %s\n", --p);
+				exit(1);
 			}
+			break;
+		}
 			/* Fall through if we haven't handled something */
 			/* FALLTHROUGH*/
 		default:

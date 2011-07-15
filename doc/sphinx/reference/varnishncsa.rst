@@ -68,8 +68,7 @@ The following options are available:
 	         Remote host
 
 	      %{X}i
-	         The contents of header line X.  Supported headers are
-	         *Referer*, *Host*, *X-Forwarded-For* and *User-agent*.
+	         The contents of header line X.
 
 	      %l
 	         Remote logname (always '-')
