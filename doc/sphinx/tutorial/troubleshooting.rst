@@ -80,13 +80,13 @@ give you a clue. Since varnishlog logs so much data it might be hard
 to track the entries down. You can set varnishlog to log all your 503
 errors by issuing the following command:::
 
-   $ varnishlog -c -o TxStatus 503
+   $ varnishlog -c -m TxStatus:503
 
 If the error happened just a short time ago the transaction might still
 be in the shared memory log segment. To get varnishlog to process the
 whole shared memory log just add the -d option:::
 
-   $ varnishlog -d -c -o TxStatus 503
+   $ varnishlog -d -c -m TxStatus:503
 
 Please see the varnishlog man page for elaborations on further
 filtering capabilities and explanation of the various options.
