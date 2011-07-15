@@ -81,10 +81,6 @@ The following options are available:
 
 -x tag      Exclude log entries with the specified tag.
 
-If the -o option was specified, an additional tag and regex may be
-specified to select only requests which generated a log entry with the
-given tag whose contents match the given regex.
-
 TAGS
 ====
 The following log entry tags are currently defined:
