@@ -79,6 +79,9 @@ The following options are available:
 	      %q
 	         The query string, if no query string exists, an empty string.
 
+	      %{X}o
+	         The contents of response header line X.
+
 	      %r
 	         The first line of the request
 
