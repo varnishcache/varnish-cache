@@ -68,7 +68,7 @@ The following options are available:
 	         Remote host
 
 	      %{X}i
-	         The contents of header line X.
+	         The contents of request header line X.
 
 	      %l
 	         Remote logname (always '-')
