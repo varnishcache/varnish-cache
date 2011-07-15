@@ -485,6 +485,7 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 	FILE *fo = priv;
 	char *q, tbuf[64];
 	const char *p;
+	struct vsb *os;
 
 	if (fd >= nll) {
 		struct logline **newll = ll;
@@ -533,12 +534,12 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 	/* We have a complete data set - log a line */
 
 	fo = priv;
+	os = VSB_new_auto();
 
 	for (p = format; *p != '\0'; p++) {
 
-
 		if (*p != '%') {
-			fprintf(fo, "%c", *p);
+			VSB_putc(os, *p);
 			continue;
 		}
 		p++;
@@ -546,29 +547,29 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 
 		case 'b':
 			/* %b */
-			fprintf(fo, "%s", lp->df_b ? lp->df_b : "0");
+			VSB_cat(os, lp->df_b ? lp->df_b : "0");
 			break;
 
 		case 'H':
-			fprintf(fo, "%s", lp->df_H);
+			VSB_cat(os, lp->df_H);
 			break;
 
 		case 'h':
 			if (!lp->df_h && spec & VSL_S_BACKEND)
-				fprintf(fo, "127.0.0.1");
+				VSB_cat(os, "127.0.0.1");
 			else
-				fprintf(fo, "%s", lp->df_h ? lp->df_h : "-");
+				VSB_cat(os, lp->df_h ? lp->df_h : "-");
 			break;
 		case 'l':
-			fprintf(fo, "-");
+			VSB_putc(os, '-');
 			break;
 
 		case 'm':
-			fprintf(fo, "%s", lp->df_m);
+			VSB_cat(os, lp->df_m);
 			break;
 
 		case 'q':
-			fprintf(fo, "%s", lp->df_q ? lp->df_q : "");
+			VSB_cat(os, lp->df_q ? lp->df_q : "");
 			break;
 
 		case 'r':
@@ -576,30 +577,32 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 			 * Fake "%r".  This would be a lot easier if Varnish
 			 * normalized the request URL.
 			 */
-			fprintf(fo, "%s ", lp->df_m);
+			VSB_cat(os, lp->df_m);
+			VSB_putc(os, ' ');
 			if (lp->df_Host) {
 				if (strncmp(lp->df_Host, "http://", 7) != 0)
-					fprintf(fo, "http://");
-				fprintf(fo, "%s", lp->df_Host);
+					VSB_cat(os, "http://");
+				VSB_cat(os, lp->df_Host);
 			}
-			fprintf(fo, "%s", lp->df_U);
-			fprintf(fo, "%s ", lp->df_q ? lp->df_q : "");
-			fprintf(fo, "%s", lp->df_H);
+			VSB_cat(os, lp->df_U);
+			VSB_cat(os, lp->df_q ? lp->df_q : "");
+			VSB_putc(os, ' ');
+			VSB_cat(os, lp->df_H);
 			break;
 
 		case 's':
 			/* %s */
-			fprintf(fo, "%s", lp->df_s ? lp->df_s : "");
+			VSB_cat(os, lp->df_s ? lp->df_s : "");
 			break;
 
 		case 't':
 			/* %t */
 			strftime(tbuf, sizeof tbuf, "[%d/%b/%Y:%T %z]", &lp->df_t);
-			fprintf(fo, "%s", tbuf);
+			VSB_cat(os, tbuf);
 			break;
 
 		case 'U':
-			fprintf(fo, "%s", lp->df_U);
+			VSB_cat(os, lp->df_U);
 			break;
 
 		case 'u':
@@ -616,49 +619,45 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 				q = strchr(rubuf, ':');
 				if (q != NULL)
 					*q = '\0';
-				fprintf(fo, "%s", rubuf);
+				VSB_cat(os, rubuf);
 				free(rubuf);
 			} else {
-				fprintf(fo, "-");
+				VSB_putc(os, '-');
 			}
 			break;
 
 		case '{':
 			if (strncmp(p, "{Referer}i", 10) == 0) {
-				fprintf(fo, "%s",
-					lp->df_Referer ? lp->df_Referer : "-");
+				VSB_cat(os, lp->df_Referer ? lp->df_Referer : "-");
 				p += 9;
 				break;
 			} else if (strncmp(p, "{Host}i", 7) == 0) {
-				fprintf(fo, "%s",
-					lp->df_Host ? lp->df_Host : "-");
+				VSB_cat(os, lp->df_Host ? lp->df_Host : "-");
 				p += 6;
 				break;
 			} else if (strncmp(p, "{X-Forwarded-For}i", 18) == 0) {
 				/* %{Referer}i */
-				fprintf(fo, "%s",
-					lp->df_X_Forwarded_For ? lp->df_X_Forwarded_For : "-");
+				VSB_cat(os, lp->df_X_Forwarded_For ? lp->df_X_Forwarded_For : "-");
 				p += 17;
 				break;
 			} else if (strncmp(p, "{User-agent}i", 13) == 0) {
 				/* %{User-agent}i */
-				fprintf(fo, "%s",
-					lp->df_User_agent ? lp->df_User_agent : "-");
+				VSB_cat(os, lp->df_User_agent ? lp->df_User_agent : "-");
 				p += 12;
 				break;
 			} else if (strncmp(p, "{Varnish:", 9) == 0) {
 				/* Scan for what we're looking for */
 				const char *what = p+9;
 				if (strncmp(what, "time_firstbyte}x", 16) == 0) {
-					fprintf(fo, "%s", lp->df_ttfb);
+					VSB_cat(os, lp->df_ttfb);
 					p += 9+15;
 					break;
 				} else if (strncmp(what, "hitmiss}x", 9) == 0) {
-					fprintf(fo, "%s", (lp->df_hitmiss ? lp->df_hitmiss : "-"));
+					VSB_cat(os, (lp->df_hitmiss ? lp->df_hitmiss : "-"));
 					p += 9+8;
 					break;
 				} else if (strncmp(what, "handling}x", 10) == 0) {
-					fprintf(fo, "%s", (lp->df_handling ? lp->df_handling : "-"));
+					VSB_cat(os, (lp->df_handling ? lp->df_handling : "-"));
 					p += 9+9;
 					break;
 				}
@@ -670,14 +669,16 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 			exit(1);
 		}
 	}
-	fprintf(fo, "\n");
+	VSB_putc(os, '\n');
 
 	/* flush the stream */
+	VSB_finish(os);
+	fprintf(fo, "%s", VSB_data(os));
 	fflush(fo);
 
 	/* clean up */
 	clean_logline(lp);
-
+	VSB_delete(os);
 	return (reopen);
 }
 
