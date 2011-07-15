@@ -665,7 +665,7 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 			/* Fall through if we haven't handled something */
 			/* FALLTHROUGH*/
 		default:
-			fprintf(stderr, "Unknown format character: %c\n", *p);
+			fprintf(stderr, "Unknown format starting at: %s\n", --p);
 			exit(1);
 		}
 	}
