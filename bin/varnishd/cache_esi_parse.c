@@ -518,7 +518,7 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 #define R(w,f,r)							\
 			if (q + w <= p + l && !memcmp(q, f, w)) { \
 				VSB_printf(vep->vsb, "%c", r);	\
-				q += l;				\
+				q += w;				\
 				continue;			\
 			}
 			R(6, "&apos;", '\'');

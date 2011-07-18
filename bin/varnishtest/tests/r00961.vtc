@@ -1,0 +1,49 @@
+varnishtest "Test XML 1.0 entity references"
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -body {
+		<esi:include src="t&amp;t"/>
+		<esi:include src="t&lt;t"/>
+		<esi:include src="t&gt;t"/>
+		<esi:include src="t&apos;t"/>
+		<esi:include src="t&quot;t"/>
+	}
+
+	rxreq
+	expect req.url == "/t&t"
+	txresp -body "1"
+
+	rxreq
+	expect req.url == "/t<t"
+	txresp -body "22"
+
+	rxreq
+	expect req.url == "/t>t"
+	txresp -body "333"
+
+	rxreq
+	expect req.url == {/t't}
+	txresp -body "4444"
+
+	rxreq
+	expect req.url == {/t"t}
+	txresp -body "55555"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (pass);
+	}
+	sub vcl_fetch {
+		set beresp.do_esi = true;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 32
+} -run
