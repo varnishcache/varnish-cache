@@ -522,7 +522,7 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p,
 		if (q - p > htc->maxhdr) {
 			VSC_C_main->losthdr++;
 			WSL(w, SLT_LostHeader, fd, "%.*s", q - p, p);
-			return (400);
+			return (413);
 		}
 
 		/* Empty header = end of headers */
@@ -547,7 +547,7 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p,
 		} else {
 			VSC_C_main->losthdr++;
 			WSL(w, SLT_LostHeader, fd, "%.*s", q - p, p);
-			return (400);
+			return (413);
 		}
 	}
 	return (0);
@@ -598,7 +598,7 @@ http_splitline(struct worker *w, int fd, struct http *hp,
 	hp->hd[h2].e = p;
 
 	if (!Tlen(hp->hd[h2]))
-		return (400);
+		return (413);
 
 	/* Skip SP */
 	for (; vct_issp(*p); p++) {
