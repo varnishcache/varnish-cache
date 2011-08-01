@@ -110,7 +110,7 @@ EOF
 
 tail -n +11 etc/default.vcl >> redhat/default.vcl
 
-%if 0%{?fedora}%{?rhel} == 0 || 0%{?rhel} <= 4 && 0%{?fedora} <= 8
+%if 0%{?fedora}%{?rhel} != 0 && 0%{?rhel} <= 4 && 0%{?fedora} <= 8
 	# Old style daemon function
 	sed -i 's,--pidfile \$pidfile,,g;
 		s,status -p \$pidfile,status,g;
