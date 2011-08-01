@@ -417,7 +417,7 @@ VRT_DO_EXP(req, sp, ttl, 0, )
 VRT_DO_EXP(req, sp, grace, 0, )
 VRT_DO_EXP(req, sp, keep, 0, )
 VRT_DO_EXP(obj, sp->obj, grace, 0, EXP_Rearm(sp->obj))
-RT_DO_EXP(obj, sp->obj, ttl, 0,
+VRT_DO_EXP(obj, sp->obj, ttl, 0,
 	   EXP_Rearm(sp->obj);
 	   WSP(sp, SLT_TTL, "%u VCL %.0f %.0f", sp->obj->xid, a, sp->t_req))
 VRT_DO_EXP(obj, sp->obj, keep, 0, EXP_Rearm(sp->obj))
