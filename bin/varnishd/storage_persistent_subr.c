@@ -67,7 +67,7 @@ smp_def_sign(const struct smp_sc *sc, struct smp_signctx *ctx,
 	AZ(off & 7);			/* Alignment */
 	assert(strlen(id) < sizeof ctx->ss->ident);
 
-	memset(ctx, 0, sizeof ctx);
+	memset(ctx, 0, sizeof *ctx);
 	ctx->ss = (void*)(sc->base + off);
 	ctx->unique = sc->unique;
 	ctx->id = id;
