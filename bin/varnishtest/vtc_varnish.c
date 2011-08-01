@@ -206,7 +206,7 @@ varnish_thread(void *priv)
 	(void)VTCP_nonblocking(v->fds[0]);
 	while (1) {
 		fds = &fd;
-		memset(fds, 0, sizeof fds);
+		memset(fds, 0, sizeof *fds);
 		fds->fd = v->fds[0];
 		fds->events = POLLIN;
 		i = poll(fds, 1, 1000);
