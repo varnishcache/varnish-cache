@@ -375,9 +375,11 @@ VSL_Open(struct VSM_data *vd, int diag)
 	vsl = vd->vsl;
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 
-	i = VSM_Open(vd, diag);
-	if (i)
-		return (i);
+	if (vsl->r_fd == -1) {
+		i = VSM_Open(vd, diag);
+		if (i)
+			return (i);
+	}
 
 	if (!vsl->d_opt && vsl->r_fd == -1) {
 		while (*vsl->log_ptr != VSL_ENDMARKER)
