@@ -165,7 +165,7 @@ vsl_nextlog(struct vsl *vsl, uint32_t **pp)
 			vsl->rbuflen = l;
 		}
 		i = read(vsl->r_fd, vsl->rbuf + 2, l * 4L - 8L);
-		if (i != l)
+		if (i != (l * 4L - 8L))
 			return (-1);
 		*pp = vsl->rbuf;
 		return (1);
