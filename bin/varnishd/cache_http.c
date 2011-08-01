@@ -911,9 +911,11 @@ http_ClrHeader(struct http *to)
 {
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	/* XXX: don't to->f = to->v;  it would kill pipelining */
 	to->nhd = HTTP_HDR_FIRST;
-	memset(to->hd, 0, sizeof to->hd);
+	to->status = 0;
+	to->protover = 0;
+	to->conds = 0;
+	memset(to->hd, 0, sizeof *to->hd * to->shd);
 }
 
 /*--------------------------------------------------------------------*/
