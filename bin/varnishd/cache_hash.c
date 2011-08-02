@@ -718,6 +718,16 @@ HSH_Deref(struct worker *w, struct objcore *oc, struct object **oo)
 	BAN_DestroyObj(oc);
 	AZ(oc->ban);
 
+	if (oc->flags & OC_F_BUSY) {
+		CHECK_OBJ_NOTNULL(oc->busyobj, BUSYOBJ_MAGIC);
+		if (w->nbusyobj == NULL)
+			w->nbusyobj = oc->busyobj;
+		else
+			FREE_OBJ(oc->busyobj);
+		oc->busyobj = NULL;
+	}
+	AZ(oc->busyobj);
+
 	if (oc->methods != NULL) {
 		oc_freeobj(oc);
 		w->stats.n_object--;
