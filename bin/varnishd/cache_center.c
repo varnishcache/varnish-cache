@@ -756,6 +756,8 @@ cnt_fetchbody(struct sess *sp)
 		    &sp->wrk->exp, nhttp);
 		if (sp->wrk->exp.ttl > params->shortlived)
 			sp->wrk->exp.ttl = params->shortlived;
+		sp->wrk->exp.grace = 0.0;
+		sp->wrk->exp.keep = 0.0;
 	}
 	if (sp->obj == NULL) {
 		sp->err_code = 503;
