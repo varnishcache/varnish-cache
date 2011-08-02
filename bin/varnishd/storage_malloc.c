@@ -44,6 +44,7 @@ struct sma_sc {
 #define SMA_SC_MAGIC		0x1ac8a345
 	struct lock		sma_mtx;
 	size_t			sma_max;
+	size_t			sma_alloc;
 	struct VSC_C_sma	*stats;
 };
 
@@ -59,14 +60,16 @@ static struct storage *
 sma_alloc(struct stevedore *st, size_t size)
 {
 	struct sma_sc *sma_sc;
-	struct sma *sma;
+	struct sma *sma = NULL;
+	void *p;
 
 	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
 	Lck_Lock(&sma_sc->sma_mtx);
 	sma_sc->stats->nreq++;
-	if (sma_sc->stats->nbytes + size > sma_sc->sma_max)
+	if (sma_sc->sma_alloc + size > sma_sc->sma_max)
 		size = 0;
 	else {
+		sma_sc->sma_alloc += size;
 		sma_sc->stats->nobj++;
 		sma_sc->stats->nbytes += size;
 		sma_sc->stats->balloc += size;
@@ -82,17 +85,26 @@ sma_alloc(struct stevedore *st, size_t size)
 	 * performance-wise it would be a catastropy with chunksized
 	 * allocations growing another full page, just to accomodate the sma.
 	 */
-	ALLOC_OBJ(sma, SMA_MAGIC);
-	if (sma == NULL)
-		return (NULL);		/* XXX: stats suffer */
+
+	p = malloc(size);
+	if (p != NULL) {
+		ALLOC_OBJ(sma, SMA_MAGIC);
+		if (sma != NULL)
+			sma->s.ptr = p;
+		else
+			free(p);
+	}
+	if (sma == NULL) {
+		Lck_Lock(&sma_sc->sma_mtx);
+		sma_sc->stats->nobj--;
+		sma_sc->stats->nbytes -= size;
+		sma_sc->stats->balloc -= size;
+		Lck_Unlock(&sma_sc->sma_mtx);
+		return (NULL);
+	}
 	sma->sc = sma_sc;
 	sma->sz = size;
 	sma->s.priv = sma;
-	sma->s.ptr = malloc(size);
-	if (sma->s.ptr == NULL) {
-		free(sma);
-		return (NULL);		/* XXX: stats suffer */
-	}
 	sma->s.len = 0;
 	sma->s.space = size;
 #ifdef SENDFILE_WORKS
@@ -114,6 +126,7 @@ sma_free(struct storage *s)
 	sma_sc = sma->sc;
 	assert(sma->sz == sma->s.space);
 	Lck_Lock(&sma_sc->sma_mtx);
+	sma_sc->sma_alloc -= sma->sz;
 	sma_sc->stats->nobj--;
 	sma_sc->stats->nbytes -= sma->sz;
 	sma_sc->stats->bfree += sma->sz;
@@ -152,7 +165,7 @@ sma_used_space(const struct stevedore *st)
 	struct sma_sc *sma_sc;
 
 	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
-	return (sma_sc->stats->nbytes);
+	return (sma_sc->sma_alloc);
 }
 
 static double
@@ -161,7 +174,7 @@ sma_free_space(const struct stevedore *st)
 	struct sma_sc *sma_sc;
 
 	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
-	return (sma_sc->sma_max - sma_sc->stats->nbytes);
+	return (sma_sc->sma_max - sma_sc->sma_alloc);
 }
 
 static void
@@ -193,10 +206,7 @@ sma_init(struct stevedore *parent, int ac, char * const *av)
 		ARGV_ERR("(-smalloc) size \"%s\": too small, "
 			 "did you forget to specify M or G?\n", av[0]);
 
-	printf("SMA.%s: max size %ju MB.\n", parent->ident,
-	    u / (1024 * 1024));
 	sc->sma_max = u;
-
 }
 
 static void
