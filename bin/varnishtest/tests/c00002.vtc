@@ -5,7 +5,7 @@ server s1 {
 	txresp -hdr "Connection: close" -body "012345\n"
 } -start
 
-varnish v1 -arg "-p thread_pool_min=2 -p thread_pool_max=8 -p thread_pools=4 -p thread_pool_purge_delay=10" 
+varnish v1 -arg "-p thread_pool_min=2 -p thread_pool_max=8 -p thread_pools=4 -p thread_pool_purge_delay=100 -p thread_pool_timeout=1 -p thread_pool_add_delay=100"
 
 varnish v1 -vcl+backend {} -start
 
