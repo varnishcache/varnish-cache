@@ -1155,6 +1155,7 @@ cnt_miss(struct sess *sp)
 	case VCL_RET_ERROR:
 		AZ(HSH_Deref(sp->wrk, sp->objcore, NULL));
 		sp->objcore = NULL;
+		http_Setup(sp->wrk->bereq, NULL);
 		sp->step = STP_ERROR;
 		return (0);
 	case VCL_RET_PASS:
@@ -1223,6 +1224,7 @@ cnt_pass(struct sess *sp)
 	sp->wrk->between_bytes_timeout = 0;
 	VCL_pass_method(sp);
 	if (sp->handling == VCL_RET_ERROR) {
+		http_Setup(sp->wrk->bereq, NULL);
 		sp->step = STP_ERROR;
 		return (0);
 	}
