@@ -144,6 +144,10 @@ HSH_Cleanup(struct worker *w)
 		free(w->nhashpriv);
 		w->nhashpriv = NULL;
 	}
+	if (w->nbusyobj != NULL) {
+		FREE_OBJ(w->nbusyobj);
+		w->nbusyobj = NULL;
+	}
 }
 
 void
