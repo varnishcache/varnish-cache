@@ -754,7 +754,8 @@ cnt_fetchbody(struct sess *sp)
 		 */
 		sp->obj = STV_NewObject(sp, TRANSIENT_STORAGE, l,
 		    &sp->wrk->exp, nhttp);
-		sp->wrk->exp.ttl = params->shortlived;
+		if (sp->wrk->exp.ttl > params->shortlived)
+			sp->wrk->exp.ttl = params->shortlived;
 	}
 	if (sp->obj == NULL) {
 		sp->err_code = 503;
