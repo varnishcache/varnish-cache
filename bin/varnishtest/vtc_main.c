@@ -154,7 +154,7 @@ usage(void)
 	fprintf(stderr, FMT, "-l", "Leave /tmp/vtc.* if test fails");
 	fprintf(stderr, FMT, "-L", "Always leave /tmp/vtc.*");
 	fprintf(stderr, FMT, "-n iterations", "Run tests this many times");
-	fprintf(stderr, FMT, "-q", "Quiet mode: report only failues");
+	fprintf(stderr, FMT, "-q", "Quiet mode: report only failures");
 	fprintf(stderr, FMT, "-t duration", "Time tests out after this long");
 	fprintf(stderr, FMT, "-v", "Verbose mode: always report test log");
 	fprintf(stderr, "\n");
