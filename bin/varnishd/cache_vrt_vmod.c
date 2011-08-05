@@ -83,7 +83,11 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm, const char *path)
 		REPLACE(v->path, path);
 
 		v->hdl = dlopen(v->path, RTLD_NOW | RTLD_LOCAL);
-		AN(v->hdl);
+		if (! v->hdl) {
+			char buf[1024];
+			sprintf(buf, "dlopen failed (child process lacks permission?): %.512s", dlerror());
+			VAS_Fail(__func__, __FILE__, __LINE__, buf, 0, 0);
+		}
 
 		x = dlsym(v->hdl, "Vmod_Name");
 		AN(x);
