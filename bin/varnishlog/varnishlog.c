@@ -97,6 +97,10 @@ h_order(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
 
 	struct VSM_data *vd = priv;
 
+	/* XXX: Just ignore any fd not inside the bitmap */
+	if (fd >= sizeof bitmap / sizeof bitmap[0])
+		return (0);
+
 	bitmap[fd] |= bm;
 
 	type = (spec & VSL_S_CLIENT) ? 'c' :
