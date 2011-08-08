@@ -173,20 +173,30 @@ vsl_nextlog(struct vsl *vsl, uint32_t **pp)
 	for (w = 0; w < TIMEOUT_USEC;) {
 		t = *vsl->log_ptr;
 
-		if (t == VSL_WRAPMARKER ||
-		    (t == VSL_ENDMARKER && vsl->last_seq != vsl->log_start[0])) {
+		if (t == VSL_WRAPMARKER) {
+			/* Wrap around not possible at front */
+			assert(vsl->log_ptr != vsl->log_start + 1);
 			vsl->log_ptr = vsl->log_start + 1;
-			vsl->last_seq = vsl->log_start[0];
 			VRMB();
 			continue;
-		}
+		} 
 		if (t == VSL_ENDMARKER) {
+			if (vsl->log_ptr != vsl->log_start + 1 &&
+		    	    vsl->last_seq != vsl->log_start[0]) {
+				/* ENDMARKER not at front and seq wrapped */
+				vsl->log_ptr = vsl->log_start + 1;
+				VRMB();
+				continue;
+			}
 			if (vsl->flags & F_NON_BLOCKING)
 				return (-1);
 			w += SLEEP_USEC;
 			assert(usleep(SLEEP_USEC) == 0 || errno == EINTR);
 			continue;
 		}
+		if (vsl->log_ptr == vsl->log_start + 1)
+			vsl->last_seq = vsl->log_start[0];
+
 		*pp = (void*)(uintptr_t)vsl->log_ptr; /* Loose volatile */
 		vsl->log_ptr = VSL_NEXT(vsl->log_ptr);
 		return (1);
