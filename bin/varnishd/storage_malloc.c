@@ -65,14 +65,17 @@ sma_alloc(struct stevedore *st, size_t size)
 
 	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
 	Lck_Lock(&sma_sc->sma_mtx);
-	sma_sc->stats->nreq++;
-	if (sma_sc->sma_alloc + size > sma_sc->sma_max)
+	sma_sc->stats->c_req++;
+	if (sma_sc->sma_alloc + size > sma_sc->sma_max) {
 		size = 0;
-	else {
+		sma_sc->stats->c_fail += size;
+	} else {
 		sma_sc->sma_alloc += size;
-		sma_sc->stats->nobj++;
-		sma_sc->stats->nbytes += size;
-		sma_sc->stats->balloc += size;
+		sma_sc->stats->c_bytes += size;
+		sma_sc->stats->g_alloc++;
+		sma_sc->stats->g_bytes += size;
+		if (sma_sc->sma_max != SIZE_MAX)
+			sma_sc->stats->g_space -= size;
 	}
 	Lck_Unlock(&sma_sc->sma_mtx);
 
@@ -96,9 +99,16 @@ sma_alloc(struct stevedore *st, size_t size)
 	}
 	if (sma == NULL) {
 		Lck_Lock(&sma_sc->sma_mtx);
-		sma_sc->stats->nobj--;
-		sma_sc->stats->nbytes -= size;
-		sma_sc->stats->balloc -= size;
+		/*
+		 * XXX: Not nice to have counters go backwards, but we do
+		 * XXX: Not want to pick up the lock twice just for stats.
+		 */
+		sma_sc->stats->c_fail++;
+		sma_sc->stats->c_bytes -= size;
+		sma_sc->stats->g_alloc--;
+		sma_sc->stats->g_bytes -= size;
+		if (sma_sc->sma_max != SIZE_MAX)
+			sma_sc->stats->g_space += size;
 		Lck_Unlock(&sma_sc->sma_mtx);
 		return (NULL);
 	}
@@ -127,9 +137,11 @@ sma_free(struct storage *s)
 	assert(sma->sz == sma->s.space);
 	Lck_Lock(&sma_sc->sma_mtx);
 	sma_sc->sma_alloc -= sma->sz;
-	sma_sc->stats->nobj--;
-	sma_sc->stats->nbytes -= sma->sz;
-	sma_sc->stats->bfree += sma->sz;
+	sma_sc->stats->g_alloc--;
+	sma_sc->stats->g_bytes -= sma->sz;
+	sma_sc->stats->c_freed += sma->sz;
+	if (sma_sc->sma_max != SIZE_MAX)
+		sma_sc->stats->g_space += sma->sz;
 	Lck_Unlock(&sma_sc->sma_mtx);
 	free(sma->s.ptr);
 	free(sma);
@@ -150,8 +162,10 @@ sma_trim(struct storage *s, size_t size)
 	assert(size < sma->sz);
 	if ((p = realloc(sma->s.ptr, size)) != NULL) {
 		Lck_Lock(&sma_sc->sma_mtx);
-		sma_sc->stats->nbytes -= (sma->sz - size);
-		sma_sc->stats->bfree += sma->sz - size;
+		sma_sc->stats->g_bytes -= (sma->sz - size);
+		sma_sc->stats->c_freed += sma->sz - size;
+		if (sma_sc->sma_max != SIZE_MAX)
+			sma_sc->stats->g_space += sma->sz - size;
 		sma->sz = size;
 		Lck_Unlock(&sma_sc->sma_mtx);
 		sma->s.ptr = p;
@@ -219,6 +233,8 @@ sma_open(const struct stevedore *st)
 	sma_sc->stats = VSM_Alloc(sizeof *sma_sc->stats,
 	    VSC_CLASS, VSC_TYPE_SMA, st->ident);
 	memset(sma_sc->stats, 0, sizeof *sma_sc->stats);
+	if (sma_sc->sma_max != SIZE_MAX)
+		sma_sc->stats->g_space = sma_sc->sma_max;
 }
 
 const struct stevedore sma_stevedore = {
