@@ -28,6 +28,13 @@
  *
  * 3rd argument marks fields for inclusion in the per worker-thread
  * stats structure.
+ *
+ * XXX: We need a much more consistent naming of these fields, this has
+ * XXX: turned into a major mess, causing trouble already for backends.
+ * XXX:
+ * XXX: Please converge on:
+ * XXX:		c_* counter	(total bytes ever allocated from sma)
+ * XXX:		g_* gauge	(presently allocated bytes from sma)
  */
 
 /**********************************************************************/
@@ -173,11 +180,13 @@ VSC_F(colls,		uint64_t, 0, 'a', "Collisions")
  */
 
 #if defined(VSC_DO_SMA) || defined (VSC_DO_SMF)
-VSC_F(nreq,		uint64_t, 0, 'a', "Allocator requests")
-VSC_F(nobj,		uint64_t, 0, 'i', "Outstanding allocations")
-VSC_F(nbytes,		uint64_t, 0, 'i', "Outstanding bytes")
-VSC_F(balloc,		uint64_t, 0, 'i', "Bytes allocated")
-VSC_F(bfree,		uint64_t, 0, 'i', "Bytes free")
+VSC_F(c_req,		uint64_t, 0, 'a', "Allocator requests")
+VSC_F(c_fail,		uint64_t, 0, 'a', "Allocator failures")
+VSC_F(c_bytes,		uint64_t, 0, 'a', "Bytes allocated")
+VSC_F(c_freed,		uint64_t, 0, 'a', "Bytes freed")
+VSC_F(g_alloc,		uint64_t, 0, 'i', "Allocations outstanding")
+VSC_F(g_bytes,		uint64_t, 0, 'i', "Bytes outstanding")
+VSC_F(g_space,		uint64_t, 0, 'i', "Bytes available")
 #endif
 
 
@@ -190,9 +199,9 @@ VSC_F(bfree,		uint64_t, 0, 'i', "Bytes free")
 /**********************************************************************/
 
 #ifdef VSC_DO_SMF
-VSC_F(n_smf,		uint64_t, 0, 'i', "N struct smf")
-VSC_F(n_smf_frag,		uint64_t, 0, 'i', "N small free smf")
-VSC_F(n_smf_large,		uint64_t, 0, 'i', "N large free smf")
+VSC_F(g_smf,			uint64_t, 0, 'i', "N struct smf")
+VSC_F(g_smf_frag,		uint64_t, 0, 'i', "N small free smf")
+VSC_F(g_smf_large,		uint64_t, 0, 'i', "N large free smf")
 #endif
 
 /**********************************************************************/
