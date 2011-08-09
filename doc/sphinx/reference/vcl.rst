@@ -112,8 +112,8 @@ These can be set in the declaration like this:::
   }
 
 To mark a backend as unhealthy after number of items have been added
-to it's saintmode list .saintmode_threshold can be set to the maximum
-list size. Setting a value of 0 disables saintmode checking entirely
+to its saintmode list ``.saintmode_threshold`` can be set to the maximum
+list size. Setting a value of 0 disables saint mode checking entirely
 for that backend.  The value in the backend declaration overrides the
 parameter.
 
