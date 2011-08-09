@@ -102,6 +102,7 @@ EXTRA_DIST = \
 	installation/index.rst \
 	installation/install.rst \
 	installation/prerequisites.rst \
+	installation/upgrade.rst \
 	phk/autocrap.rst \
 	phk/backends.rst \
 	phk/barriers.rst \
