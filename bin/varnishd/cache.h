@@ -889,7 +889,7 @@ void WSL_Flush(struct worker *w, int overflow);
 #endif
 
 /* cache_response.c */
-void RES_BuildHttp(struct sess *sp);
+void RES_BuildHttp(const struct sess *sp);
 void RES_WriteObj(struct sess *sp);
 void RES_StreamStart(struct sess *sp);
 void RES_StreamEnd(struct sess *sp);
