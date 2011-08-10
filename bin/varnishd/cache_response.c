@@ -42,51 +42,6 @@
 /*--------------------------------------------------------------------*/
 
 static void
-res_do_304(struct sess *sp)
-{
-	char lm[64];
-	char *p;
-
-	assert(sp->obj->response == 200);
-	http_ClrHeader(sp->wrk->resp);
-	sp->wrk->resp->logtag = HTTP_Tx;
-	http_SetResp(sp->wrk->resp, "HTTP/1.1", 304, "Not Modified");
-	TIM_format(sp->t_req, lm);
-	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Date: %s", lm);
-	http_SetHeader(sp->wrk, sp->fd, sp->wrk->resp, "Via: 1.1 varnish");
-	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
-	    "X-Varnish: %u", sp->xid);
-	if (sp->obj->last_modified) {
-		TIM_format(sp->obj->last_modified, lm);
-		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
-		    "Last-Modified: %s", lm);
-	}
-
-	/* http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3.5 */
-	if (http_GetHdr(sp->obj->http, H_Cache_Control, &p))
-		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
-		    "Cache-Control: %s", p);
-	if (http_GetHdr(sp->obj->http, H_Content_Location, &p))
-		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
-		    "Content-Location: %s", p);
-	if (http_GetHdr(sp->obj->http, H_ETag, &p))
-		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
-		    "ETag: %s", p);
-	if (http_GetHdr(sp->obj->http, H_Expires, &p))
-		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
-		    "Expires: %s", p);
-	if (http_GetHdr(sp->obj->http, H_Vary, &p))
-		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
-		    "Vary: %s", p);
-
-	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Connection: %s",
-	    sp->doclose ? "close" : "keep-alive");
-	sp->wantbody = 0;
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
 res_dorange(const struct sess *sp, const char *r, ssize_t *plow, ssize_t *phigh)
 {
 	ssize_t low, high, has_low;
@@ -153,16 +108,12 @@ res_dorange(const struct sess *sp, const char *r, ssize_t *plow, ssize_t *phigh)
 /*--------------------------------------------------------------------*/
 
 void
-RES_BuildHttp(struct sess *sp)
+RES_BuildHttp(const struct sess *sp)
 {
 	char time_str[30];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	if (sp->obj->response == 200 && sp->http->conds && RFC2616_Do_Cond(sp)) {
-		res_do_304(sp);
-		return;
-	}
 
 	http_ClrHeader(sp->wrk->resp);
 	sp->wrk->resp->logtag = HTTP_Tx;
@@ -297,7 +248,10 @@ res_WriteDirObj(struct sess *sp, ssize_t low, ssize_t high)
 	assert(u == sp->obj->len);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Deliver an object.
+ * Attempt optimizations like 304 and 206 here.
+ */
 
 void
 RES_WriteObj(struct sess *sp)
@@ -308,6 +262,15 @@ RES_WriteObj(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	WRW_Reserve(sp->wrk, &sp->fd);
+
+	if (sp->obj->response == 200 &&
+	    sp->http->conds &&
+	    RFC2616_Do_Cond(sp)) {
+		sp->wantbody = 0;
+		http_SetResp(sp->wrk->resp, "HTTP/1.1", 304, "Not Modified");
+		http_Unset(sp->wrk->resp, H_Content_Length);
+		http_Unset(sp->wrk->resp, H_Transfer_Encoding);
+	}
 
 	/*
 	 * If nothing special planned, we can attempt Range support
@@ -339,7 +302,7 @@ RES_WriteObj(struct sess *sp)
 		WRW_Chunked(sp->wrk);
 
 	if (!sp->wantbody) {
-		/* This was a HEAD request */
+		/* This was a HEAD or conditional request */
 	} else if (sp->obj->len == 0) {
 		/* Nothing to do here */
 	} else if (sp->wrk->res_mode & RES_ESI) {
