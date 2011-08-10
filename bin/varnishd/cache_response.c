@@ -86,45 +86,8 @@ res_do_304(struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
-static int
-res_do_conds(struct sess *sp)
-{
-	char *p, *e;
-	double ims;
-	int do_cond = 0;
-
-	/* RFC 2616 13.3.4 states we need to match both ETag
-	   and If-Modified-Since if present*/
-
-	if (http_GetHdr(sp->http, H_If_Modified_Since, &p) ) {
-		if (!sp->obj->last_modified)
-			return (0);
-		ims = TIM_parse(p);
-		if (ims > sp->t_req)	/* [RFC2616 14.25] */
-			return (0);
-		if (sp->obj->last_modified > ims)
-			return (0);
-		do_cond = 1;
-	}
-
-	if (http_GetHdr(sp->http, H_If_None_Match, &p) &&
-	    http_GetHdr(sp->obj->http, H_ETag, &e)) {
-		if (strcmp(p,e) != 0)
-			return (0);
-		do_cond = 1;
-	}
-
-	if (do_cond == 1) {
-		res_do_304(sp);
-		return (1);
-	}
-	return (0);
-}
-
-/*--------------------------------------------------------------------*/
-
 static void
-res_dorange(struct sess *sp, const char *r, ssize_t *plow, ssize_t *phigh)
+res_dorange(const struct sess *sp, const char *r, ssize_t *plow, ssize_t *phigh)
 {
 	ssize_t low, high, has_low;
 
@@ -196,8 +159,10 @@ RES_BuildHttp(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	if (sp->obj->response == 200 && sp->http->conds && res_do_conds(sp))
+	if (sp->obj->response == 200 && sp->http->conds && RFC2616_Do_Cond(sp)) {
+		res_do_304(sp);
 		return;
+	}
 
 	http_ClrHeader(sp->wrk->resp);
 	sp->wrk->resp->logtag = HTTP_Tx;

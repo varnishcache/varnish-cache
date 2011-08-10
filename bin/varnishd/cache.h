@@ -937,6 +937,7 @@ unsigned WS_Free(const struct ws *ws);
 double RFC2616_Ttl(const struct sess *sp);
 enum body_status RFC2616_Body(const struct sess *sp);
 unsigned RFC2616_Req_Gzip(const struct sess *sp);
+int RFC2616_Do_Cond(const struct sess *sp);
 
 /* storage_synth.c */
 struct vsb *SMS_Makesynth(struct object *obj);
