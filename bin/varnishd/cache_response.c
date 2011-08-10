@@ -47,6 +47,7 @@ res_do_304(struct sess *sp)
 	char lm[64];
 	char *p;
 
+	assert(sp->obj->response == 200);
 	http_ClrHeader(sp->wrk->resp);
 	sp->wrk->resp->logtag = HTTP_Tx;
 	http_SetResp(sp->wrk->resp, "HTTP/1.1", 304, "Not Modified");
@@ -127,7 +128,7 @@ res_dorange(struct sess *sp, const char *r, ssize_t *plow, ssize_t *phigh)
 {
 	ssize_t low, high, has_low;
 
-	(void)sp;
+	assert(sp->obj->response == 200);
 	if (strncmp(r, "bytes=", 6))
 		return;
 	r += 6;
