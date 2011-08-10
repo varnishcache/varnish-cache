@@ -800,6 +800,16 @@ cnt_fetchbody(struct sess *sp)
 
 	assert(WRW_IsReleased(sp->wrk));
 
+	/*
+	 * If we can deliver a 304 reply, we don't bother streaming.
+	 * Notice that vcl_deliver{} could still nuke the headers
+	 * that allow the 304, in which case we return 200 non-stream.
+	 */
+	if (sp->obj->response == 200 &&
+	    sp->http->conds &&
+	    RFC2616_Do_Cond(sp))
+		sp->wrk->do_stream = 0;
+
 	if (sp->wrk->do_stream) {
 		sp->step = STP_PREPRESP;
 		return (0);
