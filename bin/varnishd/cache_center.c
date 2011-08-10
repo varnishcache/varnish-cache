@@ -428,7 +428,7 @@ cnt_error(struct sess *sp)
 		}
 		AN(sp->obj);
 		sp->obj->xid = sp->xid;
-		sp->obj->entered = sp->t_req;
+		sp->obj->exp.entered = sp->t_req;
 	} else {
 		/* XXX: Null the headers ? */
 	}
@@ -554,9 +554,8 @@ cnt_fetch(struct sess *sp)
 		/*
 		 * What does RFC2616 think about TTL ?
 		 */
-		sp->wrk->entered = TIM_real();
-		sp->wrk->age = 0;
 		EXP_Clr(&sp->wrk->exp);
+		sp->wrk->exp.entered = TIM_real();
 		sp->wrk->exp.ttl = RFC2616_Ttl(sp);
 
 		/* pass from vclrecv{} has negative TTL */
@@ -782,8 +781,6 @@ cnt_fetchbody(struct sess *sp)
 
 	sp->obj->xid = sp->xid;
 	sp->obj->response = sp->err_code;
-	sp->obj->age = sp->wrk->age;
-	sp->obj->entered = sp->wrk->entered;
 	WS_Assert(sp->obj->ws_o);
 
 	/* Filter into object */
@@ -799,7 +796,7 @@ cnt_fetchbody(struct sess *sp)
 	if (http_GetHdr(hp, H_Last_Modified, &b))
 		sp->obj->last_modified = TIM_parse(b);
 	else
-		sp->obj->last_modified = floor(sp->wrk->entered);
+		sp->obj->last_modified = floor(sp->wrk->exp.entered);
 
 	assert(WRW_IsReleased(sp->wrk));
 

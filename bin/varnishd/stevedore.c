@@ -36,7 +36,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 #include "cache.h"
 #include "stevedore.h"
@@ -248,7 +247,6 @@ STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
 
 	http_Setup(o->http, o->ws_o);
 	o->http->magic = HTTP_MAGIC;
-	o->entered = NAN;
 	o->exp = *soc->exp;
 	VTAILQ_INIT(&o->store);
 	sp->wrk->stats.n_object++;

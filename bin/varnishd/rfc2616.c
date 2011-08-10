@@ -76,7 +76,7 @@ RFC2616_Ttl(const struct sess *sp)
 
 	hp = sp->wrk->beresp;
 
-	assert(sp->wrk->entered != 0.0 && !isnan(sp->wrk->entered));
+	assert(sp->wrk->exp.entered != 0.0 && !isnan(sp->wrk->exp.entered));
 	/* If all else fails, cache using default ttl */
 	ttl = params->default_ttl;
 
@@ -116,7 +116,7 @@ RFC2616_Ttl(const struct sess *sp)
 				max_age = strtoul(p, NULL, 0);
 			if (http_GetHdr(hp, H_Age, &p)) {
 				age = strtoul(p, NULL, 0);
-				sp->wrk->age = age;
+				sp->wrk->exp.age = age;
 			}
 
 			if (age > max_age)
@@ -145,16 +145,16 @@ RFC2616_Ttl(const struct sess *sp)
 		}
 
 		if (h_date == 0 ||
-		    fabs(h_date - sp->wrk->entered) < params->clock_skew) {
+		    fabs(h_date - sp->wrk->exp.entered) < params->clock_skew) {
 			/*
 			 * If we have no Date: header or if it is
 			 * sufficiently close to our clock we will
 			 * trust Expires: relative to our own clock.
 			 */
-			if (h_expires < sp->wrk->entered)
+			if (h_expires < sp->wrk->exp.entered)
 				ttl = 0;
 			else
-				ttl = h_expires - sp->wrk->entered;
+				ttl = h_expires - sp->wrk->exp.entered;
 			break;
 		} else {
 			/*
@@ -168,8 +168,10 @@ RFC2616_Ttl(const struct sess *sp)
 	}
 
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
-	WSP(sp, SLT_TTL, "%u RFC %g %.0f %.0f %.0f %u %u", sp->xid,
-	    ttl, sp->wrk->entered, h_date, h_expires, max_age, age);
+	WSP(sp, SLT_TTL,
+	    "%u RFC %.0f %.0f %.0f %.0f %.0f %.0f %.0f %u %u",
+	    sp->xid, ttl, -1. -1., sp->wrk->exp.entered, sp->wrk->exp.age,
+	     h_date, h_expires, max_age);
 
 	return (ttl);
 }

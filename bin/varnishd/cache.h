@@ -242,6 +242,8 @@ struct exp {
 	double			ttl;
 	double			grace;
 	double			keep;
+	double			age;
+	double			entered;
 };
 
 /*--------------------------------------------------------------------*/
@@ -309,8 +311,6 @@ struct worker {
 	struct http		*beresp;
 	struct http		*resp;
 
-	double			age;
-	double			entered;
 	struct exp		exp;
 
 	/* This is only here so VRT can find it */
@@ -507,8 +507,6 @@ struct object {
 
 	ssize_t			len;
 
-	double			age;
-	double			entered;
 	struct exp		exp;
 
 	double			last_modified;

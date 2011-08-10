@@ -360,15 +360,20 @@ VRT_r_req_restarts(const struct sess *sp)
 	return (sp->restarts);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * NB: TTL is relative to when object was created, whereas grace and
+ * keep are relative to ttl.
+ */
 
-#define VRT_DO_EXP(which, exp, fld, extra)			\
+#define VRT_DO_EXP(which, exp, fld, offset, extra)		\
 								\
 void __match_proto__()						\
 VRT_l_##which##_##fld(struct sess *sp, double a)		\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
+	if (a > 0.)						\
+		a += offset;					\
 	EXP_Set_##fld(&exp, a);					\
 	extra;							\
 }								\
@@ -378,21 +383,37 @@ VRT_r_##which##_##fld(struct sess *sp)				\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	return(EXP_Get_##fld(&exp));				\
+	return(EXP_Get_##fld(&exp) - offset);			\
 }
 
-VRT_DO_EXP(req, sp->exp, ttl, )
-VRT_DO_EXP(req, sp->exp, grace, )
-VRT_DO_EXP(req, sp->exp, keep, )
-VRT_DO_EXP(obj, sp->obj->exp, grace, EXP_Rearm(sp->obj))
-VRT_DO_EXP(obj, sp->obj->exp, ttl,
-	   EXP_Rearm(sp->obj);
-	   WSP(sp, SLT_TTL, "%u VCL %.0f %.0f", sp->obj->xid, a, sp->t_req))
-VRT_DO_EXP(obj, sp->obj->exp, keep, EXP_Rearm(sp->obj))
-VRT_DO_EXP(beresp, sp->wrk->exp, grace, )
-VRT_DO_EXP(beresp, sp->wrk->exp, ttl,
-	   WSP(sp, SLT_TTL, "%u VCL %.0f %.0f", sp->xid, a, sp->t_req))
-VRT_DO_EXP(beresp, sp->wrk->exp, keep, )
+static void
+vrt_wsp_exp(const struct sess *sp, unsigned xid, const struct exp *e)
+{
+	WSP(sp, SLT_TTL, "%u VCL %.0f %.0f %.0f %.0f %.0f",
+	    xid, e->ttl - (sp->t_req - e->entered), e->grace, e->keep,
+	    sp->t_req, e->age + (sp->t_req - e->entered));
+}
+
+VRT_DO_EXP(req, sp->exp, ttl, 0, )
+VRT_DO_EXP(req, sp->exp, grace, 0, )
+VRT_DO_EXP(req, sp->exp, keep, 0, )
+
+VRT_DO_EXP(obj, sp->obj->exp, grace, 0,
+   EXP_Rearm(sp->obj);
+   vrt_wsp_exp(sp, sp->obj->xid, &sp->obj->exp);)
+VRT_DO_EXP(obj, sp->obj->exp, ttl, (sp->t_req - sp->obj->exp.entered),
+   EXP_Rearm(sp->obj);
+   vrt_wsp_exp(sp, sp->obj->xid, &sp->obj->exp);)
+VRT_DO_EXP(obj, sp->obj->exp, keep, 0,
+   EXP_Rearm(sp->obj);
+   vrt_wsp_exp(sp, sp->obj->xid, &sp->obj->exp);)
+
+VRT_DO_EXP(beresp, sp->wrk->exp, grace, 0,
+   vrt_wsp_exp(sp, sp->xid, &sp->wrk->exp);)
+VRT_DO_EXP(beresp, sp->wrk->exp, ttl, 0,
+   vrt_wsp_exp(sp, sp->xid, &sp->wrk->exp);)
+VRT_DO_EXP(beresp, sp->wrk->exp, keep, 0,
+   vrt_wsp_exp(sp, sp->xid, &sp->wrk->exp);)
 
 /*--------------------------------------------------------------------
  * req.xid
