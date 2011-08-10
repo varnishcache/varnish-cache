@@ -67,8 +67,8 @@ sma_alloc(struct stevedore *st, size_t size)
 	Lck_Lock(&sma_sc->sma_mtx);
 	sma_sc->stats->c_req++;
 	if (sma_sc->sma_alloc + size > sma_sc->sma_max) {
-		size = 0;
 		sma_sc->stats->c_fail += size;
+		size = 0;
 	} else {
 		sma_sc->sma_alloc += size;
 		sma_sc->stats->c_bytes += size;
