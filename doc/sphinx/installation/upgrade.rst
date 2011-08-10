@@ -57,7 +57,7 @@ becomes
 ``beresp.cacheable`` is gone
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``beresp.cacheable`` is gone, and can be replaced with ``beresp.ttl > 0``
+``beresp.cacheable`` is gone, and can be replaced with ``beresp.ttl > 0s``
 
 returns are now done with the ``return()`` function
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
