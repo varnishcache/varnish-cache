@@ -89,6 +89,16 @@ RFC2616_Ttl(const struct sess *sp)
 	 * We do not support ranges yet, so 206 is out.
 	 */
 
+	if (http_GetHdr(hp, H_Age, &p)) {
+		age = strtoul(p, NULL, 0);
+		sp->wrk->exp.age = age;
+	}
+	if (http_GetHdr(hp, H_Expires, &p))
+		h_expires = TIM_parse(p);
+
+	if (http_GetHdr(hp, H_Date, &p))
+		h_date = TIM_parse(p);
+
 	switch (sp->err_code) {
 	default:
 		sp->wrk->exp.ttl = -1.;
@@ -114,10 +124,6 @@ RFC2616_Ttl(const struct sess *sp)
 				max_age = 0;
 			else
 				max_age = strtoul(p, NULL, 0);
-			if (http_GetHdr(hp, H_Age, &p)) {
-				age = strtoul(p, NULL, 0);
-				sp->wrk->exp.age = age;
-			}
 
 			if (age > max_age)
 				ttl = 0;
@@ -126,17 +132,10 @@ RFC2616_Ttl(const struct sess *sp)
 			break;
 		}
 
-		/* Next look for absolute specifications from backend */
-
-		if (http_GetHdr(hp, H_Expires, &p))
-			h_expires = TIM_parse(p);
-
 		/* No expire header, fall back to default */
 		if (h_expires == 0)
 			break;
 
-		if (http_GetHdr(hp, H_Date, &p))
-			h_date = TIM_parse(p);
 
 		/* If backend told us it is expired already, don't cache. */
 		if (h_expires < h_date) {
@@ -169,8 +168,8 @@ RFC2616_Ttl(const struct sess *sp)
 
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
 	WSP(sp, SLT_TTL,
-	    "%u RFC %.0f %.0f %.0f %.0f %.0f %.0f %.0f %u %u",
-	    sp->xid, ttl, -1. -1., sp->wrk->exp.entered, sp->wrk->exp.age,
+	    "%u RFC %.0f %.0f %.0f %.0f %.0f %.0f %.0f %u",
+	    sp->xid, ttl, -1., -1., sp->wrk->exp.entered, sp->wrk->exp.age,
 	     h_date, h_expires, max_age);
 
 	return (ttl);
