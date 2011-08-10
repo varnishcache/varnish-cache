@@ -78,13 +78,24 @@ becomes
 ``req.hash`` is replaced with ``hash_data()``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You no longer append to the hash with +=, so
+You no longer append to the hash with ``+=``, so
 
 	set req.hash += req.url;
 
 becomes
 
 	hash_data(req.url);
+
+``esi`` is replaced with ``beresp.do_esi``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You no longer enable ESI with ``esi``, so
+
+	esi;
+
+in ``vcl_fetch`` becomes
+
+	set beresp.do_esi = true;
 
 ``pass`` in ``vcl_fetch`` renamed to ``hit_for_pass``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
