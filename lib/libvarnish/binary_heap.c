@@ -37,6 +37,7 @@
 
 #include <unistd.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #include "binary_heap.h"
 #include "libvarnish.h"
@@ -97,6 +98,7 @@ parent(const struct binheap *bh, unsigned u)
 	unsigned po;
 	unsigned v;
 
+	assert(u != UINT_MAX);
 	po = u & bh->page_mask;
 
 	if (u < bh->page_size || po > 3) {
@@ -114,6 +116,7 @@ parent(const struct binheap *bh, unsigned u)
 static void
 child(const struct binheap *bh, unsigned u, unsigned *a, unsigned *b)
 {
+	uintmax_t uu;
 
 	if (u > bh->page_mask && (u & (bh->page_mask - 1)) == 0) {
 		/* First two elements are magical except on the first page */
@@ -123,16 +126,32 @@ child(const struct binheap *bh, unsigned u, unsigned *a, unsigned *b)
 		*a = (u & ~bh->page_mask) >> 1;
 		*a |= u & (bh->page_mask >> 1);
 		*a += 1;
-		*a <<= bh->page_shift;
-		*b = *a + 1;
+		uu = (uintmax_t)*a << bh->page_shift;
+		*a = uu;
+		if (*a == uu) {
+			*b = *a + 1;
+		} else {
+			/*
+			 * An unsigned is not big enough: clamp instead
+			 * of truncating.  We do not support adding
+			 * more than UINT_MAX elements anyway, so this
+			 * is without consequence.
+			 */
+			*a = UINT_MAX;
+			*b = UINT_MAX;
+		}
 	} else {
 		/* The rest is as usual, only inside the page */
 		*a = u + (u & bh->page_mask);
 		*b = *a + 1;
 	}
 #ifdef PARANOIA
-	assert(parent(bh, *a) == u);
-	assert(parent(bh, *b) == u);
+	assert(*a > 0);
+	assert(*b > 0);
+	if (*a != UINT_MAX) {
+		assert(parent(bh, *a) == u);
+		assert(parent(bh, *b) == u);
+	}
 #endif
 }
 
@@ -215,12 +234,12 @@ binheap_new(void *priv, binheap_cmp_t *cmp_f, binheap_update_t *update_f)
 static void
 binheap_update(const struct binheap *bh, unsigned u)
 {
+	assert(bh != NULL);
 	assert(bh->magic == BINHEAP_MAGIC);
 	assert(u < bh->next);
 	assert(A(bh, u) != NULL);
-	if (bh->update == NULL)
-		return;
-	bh->update(bh->priv, A(bh, u), u);
+	if (bh->update != NULL)
+		bh->update(bh->priv, A(bh, u), u);
 }
 
 static void
@@ -228,9 +247,12 @@ binhead_swap(const struct binheap *bh, unsigned u, unsigned v)
 {
 	void *p;
 
+	assert(bh != NULL);
 	assert(bh->magic == BINHEAP_MAGIC);
 	assert(u < bh->next);
+	assert(A(bh, u) != NULL);
 	assert(v < bh->next);
+	assert(A(bh, v) != NULL);
 	p = A(bh, u);
 	A(bh, u) = A(bh, v);
 	A(bh, v) = p;
@@ -243,9 +265,17 @@ binheap_trickleup(const struct binheap *bh, unsigned u)
 {
 	unsigned v;
 
-	assert(bh->magic == BINHEAP_MAGIC);
+	assert(bh != NULL); assert(bh->magic == BINHEAP_MAGIC);
+	assert(u < bh->next);
+	assert(A(bh, u) != NULL);
+
 	while (u > ROOT_IDX) {
+		assert(u < bh->next);
+		assert(A(bh, u) != NULL);
 		v = parent(bh, u);
+		assert(v < u);
+		assert(v < bh->next);
+		assert(A(bh, v) != NULL);
 		if (!bh->cmp(bh->priv, A(bh, u), A(bh, v)))
 			break;
 		binhead_swap(bh, u, v);
@@ -254,20 +284,37 @@ binheap_trickleup(const struct binheap *bh, unsigned u)
 	return (u);
 }
 
-static void
+static unsigned
 binheap_trickledown(const struct binheap *bh, unsigned u)
 {
 	unsigned v1, v2;
 
+	assert(bh != NULL);
 	assert(bh->magic == BINHEAP_MAGIC);
+	assert(u < bh->next);
+	assert(A(bh, u) != NULL);
+
 	while (1) {
+		assert(u < bh->next);
+		assert(A(bh, u) != NULL);
 		child(bh, u, &v1, &v2);
+		assert(v1 > 0);
+		assert(v2 > 0);
+		assert(v1 <= v2);
+
 		if (v1 >= bh->next)
-			return;
-		if (v2 < bh->next && bh->cmp(bh->priv, A(bh, v2), A(bh, v1)))
-			v1 = v2;
+			return (u);
+
+		assert(A(bh, v1) != NULL);
+		if (v1 != v2 && v2 < bh->next) {
+			assert(A(bh, v2) != NULL);
+			if (bh->cmp(bh->priv, A(bh, v2), A(bh, v1)))
+				v1 = v2;
+		}
+		assert(v1 < bh->next);
+		assert(A(bh, v1) != NULL);
 		if (bh->cmp(bh->priv, A(bh, u), A(bh, v1)))
-			return;
+			return (u);
 		binhead_swap(bh, u, v1);
 		u = v1;
 	}
@@ -283,10 +330,13 @@ binheap_insert(struct binheap *bh, void *p)
 	assert(bh->length >= bh->next);
 	if (bh->length == bh->next)
 		binheap_addrow(bh);
+	assert(bh->length > bh->next);
 	u = bh->next++;
 	A(bh, u) = p;
 	binheap_update(bh, u);
 	(void)binheap_trickleup(bh, u);
+	assert(u < bh->next);
+	assert(A(bh, u) != NULL);
 }
 
 
@@ -332,11 +382,11 @@ binheap_root(const struct binheap *bh)
  * N{height}-1 upward trickles.
  *
  * When we fill the hole with the tail object, the worst case is
- * that it trickles all the way down to become the tail object
- * again.
- * In other words worst case is N{height} downward trickles.
- * But there is a pretty decent chance that it does not make
- * it all the way down.
+ * that it trickles all the way up to of this half-tree, or down
+ * to become the tail object again.
+ *
+ * In other words worst case is N{height} up or downward trickles.
+ * But there is a decent chance that it does not make it all the way.
  */
 
 void
@@ -358,7 +408,13 @@ binheap_delete(struct binheap *bh, unsigned idx)
 	A(bh, bh->next) = NULL;
 	binheap_update(bh, idx);
 	idx = binheap_trickleup(bh, idx);
-	binheap_trickledown(bh, idx);
+	assert(idx < bh->next);
+	assert(idx > 0);
+	assert(A(bh, idx) != NULL);
+	idx = binheap_trickledown(bh, idx);
+	assert(idx < bh->next);
+	assert(idx > 0);
+	assert(A(bh, idx) != NULL);
 
 	/*
 	 * We keep a hysteresis of one full row before we start to
@@ -387,7 +443,13 @@ binheap_reorder(const struct binheap *bh, unsigned idx)
 	assert(idx > 0);
 	assert(A(bh, idx) != NULL);
 	idx = binheap_trickleup(bh, idx);
-	binheap_trickledown(bh, idx);
+	assert(idx < bh->next);
+	assert(idx > 0);
+	assert(A(bh, idx) != NULL);
+	idx = binheap_trickledown(bh, idx);
+	assert(idx < bh->next);
+	assert(idx > 0);
+	assert(A(bh, idx) != NULL);
 }
 
 #ifdef TEST_DRIVER
@@ -416,7 +478,7 @@ struct foo {
 
 #if 1
 #define M 31011091	/* Number of operations */
-#define N 10313102	/* Number of items */
+#define N 17313102	/* Number of items */
 #else
 #define M 3401		/* Number of operations */
 #define N 1131		/* Number of items */
@@ -472,6 +534,11 @@ main(int argc, char **argv)
 		srandom(u);
 	}
 	bh = binheap_new(NULL, cmp, update);
+	for (n = 2; n; n += n) {
+		child(bh, n - 1, &u, &v);
+		child(bh, n, &u, &v);
+		child(bh, n + 1, &u, &v);
+	}
 
 	while (1) {
 		/* First insert our N elements */
@@ -530,10 +597,15 @@ main(int argc, char **argv)
 			if (ff[v] != NULL) {
 				CHECK_OBJ_NOTNULL(ff[v], FOO_MAGIC);
 				assert(ff[v]->idx != 0);
-				binheap_delete(bh, ff[v]->idx);
-				assert(ff[v]->idx == 0);
-				FREE_OBJ(ff[v]);
-				ff[v] = NULL;
+				if (ff[v]->key & 1) {
+					binheap_delete(bh, ff[v]->idx);
+					assert(ff[v]->idx == BINHEAP_NOIDX);
+					FREE_OBJ(ff[v]);
+					ff[v] = NULL;
+				} else {
+					ff[v]->key = random() % R;
+					binheap_reorder(bh, ff[v]->idx);
+				}
 			} else {
 				ALLOC_OBJ(ff[v], FOO_MAGIC);
 				assert(ff[v] != NULL);
