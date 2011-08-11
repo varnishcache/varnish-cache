@@ -28,8 +28,9 @@
  *
  * Implementation of a binary heap API
  *
- * We use a malloc(3)/realloc(3) array to store the pointers using the
- * classical FORTRAN strategy.
+ * See also:
+ *	http://portal.acm.org/citation.cfm?doid=1785414.1785434
+ *	(or: http://queue.acm.org/detail.cfm?id=1814327)
  */
 
 #include "config.h"
@@ -392,25 +393,45 @@ binheap_reorder(const struct binheap *bh, unsigned idx)
 #ifdef TEST_DRIVER
 /* Test driver -------------------------------------------------------*/
 #include <stdio.h>
+#include <miniobj.h>
+
+static void
+vasfail(const char *func, const char *file, int line,
+    const char *cond, int err, int xxx)
+{
+	fprintf(stderr, "PANIC: %s %s %d %s %d %d\n",
+		func, file, line, cond, err, xxx);
+	abort();
+}
+
+vas_f *VAS_Fail = vasfail;
 
 struct foo {
+	unsigned	magic;
+#define FOO_MAGIC	0x23239823
 	unsigned	idx;
 	unsigned	key;
+	unsigned	n;
 };
 
+#if 1
 #define M 31011091	/* Number of operations */
-#define N 10313102		/* Number of items */
+#define N 10313102	/* Number of items */
+#else
+#define M 3401		/* Number of operations */
+#define N 1131		/* Number of items */
+#endif
 #define R -1		/* Random modulus */
 
-struct foo ff[N];
+struct foo *ff[N];
 
 static int
 cmp(void *priv, void *a, void *b)
 {
 	struct foo *fa, *fb;
 
-	fa = a;
-	fb = b;
+	CAST_OBJ_NOTNULL(fa, a, FOO_MAGIC);
+	CAST_OBJ_NOTNULL(fb, b, FOO_MAGIC);
 	return (fa->key < fb->key);
 }
 
@@ -419,12 +440,12 @@ update(void *priv, void *a, unsigned u)
 {
 	struct foo *fa;
 
-	fa = a;
+	CAST_OBJ_NOTNULL(fa, a, FOO_MAGIC);
 	fa->idx = u;
 }
 
 void
-chk(struct binheap *bh)
+chk2(struct binheap *bh)
 {
 	unsigned u, v;
 	struct foo *fa, *fb;
@@ -441,7 +462,7 @@ int
 main(int argc, char **argv)
 {
 	struct binheap *bh;
-	unsigned u, v, lr;
+	unsigned u, v, lr, n;
 	struct foo *fp;
 
 	if (0) {
@@ -452,58 +473,80 @@ main(int argc, char **argv)
 	}
 	bh = binheap_new(NULL, cmp, update);
 
-	/* First insert our N elements */
-	for (u = 0; u < N; u++) {
-		lr = random() % R;
-		ff[u].key = lr;
-		binheap_insert(bh, &ff[u]);
+	while (1) {
+		/* First insert our N elements */
+		for (u = 0; u < N; u++) {
+			lr = random() % R;
+			ALLOC_OBJ(ff[u], FOO_MAGIC);
+			assert(ff[u] != NULL);
+			ff[u]->key = lr;
+			ff[u]->n = u;
+			binheap_insert(bh, ff[u]);
 
-		fp = binheap_root(bh);
-		assert(fp->idx == 1);
-		assert(fp->key <= lr);
-	}
-	fprintf(stderr, "%d inserts OK\n", N);
-	/* For M cycles, pick the root, insert new */
-	for (u = 0; u < M; u++) {
-		fp = binheap_root(bh);
-		assert(fp->idx == 1);
-
-		/* It cannot possibly be larger than the last value we added */
-		assert(fp->key <= lr);
-		binheap_delete(bh, fp->idx);
-
-		lr = random() % R;
-		fp->key = lr;
-		binheap_insert(bh, fp);
-	}
-	fprintf(stderr, "%d replacements OK\n", M);
-	/* The remove everything */
-	lr = 0;
-	for (u = 0; u < N; u++) {
-		fp = binheap_root(bh);
-		assert(fp->idx == 1);
-		assert(fp->key >= lr);
-		lr = fp->key;
-		binheap_delete(bh, fp->idx);
-	}
-	fprintf(stderr, "%d removes OK\n", N);
-
-	for (u = 0; u < M; u++) {
-		v = random() % N;
-		if (ff[v].idx > 0) {
-			assert(ff[v].idx != 0);
-			binheap_delete(bh, ff[v].idx);
-			assert(ff[v].idx == 0);
-		} else {
-			assert(ff[v].idx == 0);
-			ff[v].key = random() % R;
-			binheap_insert(bh, &ff[v]);
-			assert(ff[v].idx != 0);
+			fp = binheap_root(bh);
+			assert(fp->idx == 1);
+			assert(fp->key <= lr);
 		}
-		if (0)
-			chk(bh);
+		fprintf(stderr, "%d inserts OK\n", N);
+		/* For M cycles, pick the root, insert new */
+		for (u = 0; u < M; u++) {
+			fp = binheap_root(bh);
+			CHECK_OBJ_NOTNULL(fp, FOO_MAGIC);
+			assert(fp->idx == 1);
+
+			/* It cannot possibly be larger than the last value we added */
+			assert(fp->key <= lr);
+			binheap_delete(bh, fp->idx);
+			
+			
+			n = fp->n;
+			ALLOC_OBJ(ff[n], FOO_MAGIC);
+			assert(ff[n] != NULL);
+			FREE_OBJ(fp);
+			fp = ff[n];
+			fp->n = n;
+
+			lr = random() % R;
+			fp->key = lr;
+			binheap_insert(bh, fp);
+		}
+		fprintf(stderr, "%d replacements OK\n", M);
+		/* The remove everything */
+		lr = 0;
+		for (u = 0; u < N; u++) {
+			fp = binheap_root(bh);
+			CHECK_OBJ_NOTNULL(fp, FOO_MAGIC);
+			assert(fp->idx == 1);
+			assert(fp->key >= lr);
+			lr = fp->key;
+			binheap_delete(bh, fp->idx);
+			ff[fp->n] = NULL;
+			FREE_OBJ(fp);
+		}
+		fprintf(stderr, "%d removes OK\n", N);
+
+		for (u = 0; u < M; u++) {
+			v = random() % N;
+			if (ff[v] != NULL) {
+				CHECK_OBJ_NOTNULL(ff[v], FOO_MAGIC);
+				assert(ff[v]->idx != 0);
+				binheap_delete(bh, ff[v]->idx);
+				assert(ff[v]->idx == 0);
+				FREE_OBJ(ff[v]);
+				ff[v] = NULL;
+			} else {
+				ALLOC_OBJ(ff[v], FOO_MAGIC);
+				assert(ff[v] != NULL);
+				ff[v]->key = random() % R;
+				binheap_insert(bh, ff[v]);
+				CHECK_OBJ_NOTNULL(ff[v], FOO_MAGIC);
+				assert(ff[v]->idx != 0);
+			}
+			if (0)
+				chk2(bh);
+		}
+		fprintf(stderr, "%d updates OK\n", M);
 	}
-	fprintf(stderr, "%d updates OK\n", M);
 	return (0);
 }
 #endif
