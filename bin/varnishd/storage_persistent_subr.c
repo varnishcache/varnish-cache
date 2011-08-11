@@ -238,26 +238,27 @@ smp_valid_silo(struct smp_sc *sc)
 
 	assert(strlen(SMP_IDENT_STRING) < sizeof si->ident);
 
-	if (smp_chk_sign(&sc->idn))
-		return (1);
+	i = smp_chk_sign(&sc->idn);
+	if (i)
+		return (i);
 
 	si = sc->ident;
 	if (strcmp(si->ident, SMP_IDENT_STRING))
-		return (2);
+		return (12);
 	if (si->byte_order != 0x12345678)
-		return (3);
+		return (13);
 	if (si->size != sizeof *si)
-		return (4);
+		return (14);
 	if (si->major_version != 2)
-		return (5);
+		return (15);
 	if (si->mediasize != sc->mediasize)
-		return (7);
+		return (17);
 	if (si->granularity != sc->granularity)
-		return (8);
+		return (18);
 	if (si->align < sizeof(void*))
-		return (9);
+		return (19);
 	if (!PWR2(si->align))
-		return (10);
+		return (20);
 	sc->align = si->align;
 	sc->unique = si->unique;
 
