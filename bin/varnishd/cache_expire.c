@@ -182,6 +182,8 @@ exp_insert(struct objcore *oc, struct lru *lru)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
+	Lck_AssertHeld(&lru->mtx);
+	Lck_AssertHeld(&exp_mtx);
 	assert(oc->timer_idx == BINHEAP_NOIDX);
 	binheap_insert(exp_heap, oc);
 	assert(oc->timer_idx != BINHEAP_NOIDX);
