@@ -510,7 +510,7 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *p, const char *hos
 }
 
 void
-VBP_Use(struct backend *b, const struct vrt_backend_probe *p)
+VBP_Use(const struct backend *b, const struct vrt_backend_probe *p)
 {
 	struct vbp_target *vt;
 	struct vbp_vcl *vcl;
