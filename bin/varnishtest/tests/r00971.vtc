@@ -9,6 +9,9 @@ varnish v1 -vcl+backend {
 
 	director foo dns {
 		{ .backend = { .host = "127.0.0.1";} }
+		.list = {
+			"192.168.0.0"/24;
+		}
 	}
 
 	sub vcl_recv {
