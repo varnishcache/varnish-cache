@@ -1,0 +1,46 @@
+
+varnishtest "Test proper fallbacks of client director"
+
+server s1 {
+	rxreq
+	txresp -status 200
+	accept
+	rxreq
+	txresp -status 200
+} -start
+
+varnish v1 -vcl+backend {
+	director foo client{
+		.retries = 5;
+		{ .backend = { .host = "${bad_ip}"; .port = "9090"; } .weight = 1; }
+		{ .backend = s1; .weight = 1;}
+	}
+	director bar client{
+		.retries = 1;
+		{ .backend = { .host = "${bad_ip}"; .port = "9090"; } .weight = 1; }
+		{ .backend = s1; .weight = 1;}
+	}
+	sub vcl_recv {
+		if (req.url ~ "/one") {
+			set req.backend = foo;
+		} else {
+			set req.backend = bar;
+		}
+		# Carefully chosen seed that'll give us bad backend on
+		# first try and good on second.
+		set client.identity = "1.4";
+		return (pass);
+	}
+} -start
+
+client c1 {
+	txreq -url "/one"
+	rxresp
+	expect resp.status == 200
+
+	txreq -url "/two"
+	rxresp
+	expect resp.status == 503
+} -run
+
+varnish v1 -expect backend_fail == 2
