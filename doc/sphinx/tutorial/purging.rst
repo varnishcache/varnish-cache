@@ -89,9 +89,18 @@ they could issue::
 Quite powerful, really.
 
 Bans are checked when we hit an object in the cache, but before we
-deliver it. *An object is only checked against newer bans*. If you have
-a lot of objects with long TTL in your cache you should be aware of a
-potential performance impact of having many bans.
+deliver it. *An object is only checked against newer bans*. 
+
+Bans that only match against beresp.* are also processed by a
+background worker threads called the *ban lurker*. The ban lurker will
+walk the heap and try to match objects and will evict the matching
+objects. How aggressive the ban lurker is can be controlled by the
+parameter ban_lurker_sleep. 
+
+Bans that are older then the oldest objects in the cache are discarded
+without evaluation.  If you have a lot of objects with long TTL, that
+are seldom accessed you might accumulate a lot of bans. This might
+impact CPU usage and thereby performance.
 
 You can also add bans to Varnish via HTTP. Doing so requires a bit of VCL::
 
