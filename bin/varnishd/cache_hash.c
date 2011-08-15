@@ -490,8 +490,6 @@ hsh_rush(struct objhead *oh)
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_AssertHeld(&oh->mtx);
 	wl = oh->waitinglist;
-	if (wl == NULL)
-		return;
 	CHECK_OBJ_NOTNULL(wl, WAITINGLIST_MAGIC);
 	for (u = 0; u < params->rush_exponent; u++) {
 		sp = VTAILQ_FIRST(&wl->list);
@@ -632,7 +630,8 @@ HSH_Unbusy(const struct sess *sp)
 	AZ(sp->wrk->nbusyobj);
 	sp->wrk->nbusyobj = oc->busyobj;
 	oc->busyobj = NULL;
-	hsh_rush(oh);
+	if (oh->waitinglist != NULL)
+		hsh_rush(oh);
 	AN(oc->ban);
 	Lck_Unlock(&oh->mtx);
 	assert(oc_getobj(sp->wrk, oc) == o);
@@ -709,7 +708,7 @@ HSH_Deref(struct worker *w, struct objcore *oc, struct object **oo)
 		/* Must have an object */
 		AN(oc->methods);
 	}
-	if (oc->flags & OC_F_BUSY)
+	if (oh->waitinglist != NULL)
 		hsh_rush(oh);
 	Lck_Unlock(&oh->mtx);
 	if (r != 0)
