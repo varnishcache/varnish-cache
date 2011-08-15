@@ -118,7 +118,7 @@ HTTP_estimate(unsigned nhttp)
 }
 
 struct http *
-HTTP_create(void *p, unsigned nhttp)
+HTTP_create(void *p, uint16_t nhttp)
 {
 	struct http *hp;
 
@@ -135,7 +135,7 @@ HTTP_create(void *p, unsigned nhttp)
 void
 http_Setup(struct http *hp, struct ws *ws)
 {
-	unsigned shd;
+	uint16_t shd;
 	txt *hd;
 	unsigned char *hdf;
 
@@ -425,6 +425,7 @@ http_DoConnection(const struct http *hp)
 		return (NULL);
 	}
 	ret = NULL;
+	AN(p);
 	for (; *p; p++) {
 		if (vct_issp(*p))
 			continue;
@@ -463,7 +464,7 @@ http_HdrIs(const struct http *hp, const char *hdr, const char *val)
 
 /*--------------------------------------------------------------------*/
 
-int
+uint16_t
 http_GetStatus(const struct http *hp)
 {
 
@@ -483,7 +484,7 @@ http_GetReq(const struct http *hp)
  * Detect conditionals (headers which start with '^[Ii][Ff]-')
  */
 
-static int
+static uint16_t
 http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p,
     const struct http_conn *htc)
 {
@@ -557,7 +558,7 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p,
  * Deal with first line of HTTP protocol message.
  */
 
-static int
+static uint16_t
 http_splitline(struct worker *w, int fd, struct http *hp,
     const struct http_conn *htc, int h1, int h2, int h3)
 {
@@ -577,7 +578,7 @@ http_splitline(struct worker *w, int fd, struct http *hp,
 	q = p;
 	for (; !vct_issp(*p); p++) {
 		if (vct_isctl(*p))
-			return (-1);
+			return (400);
 	}
 	hp->hd[h1].b = q;
 	hp->hd[h1].e = p;
@@ -585,14 +586,14 @@ http_splitline(struct worker *w, int fd, struct http *hp,
 	/* Skip SP */
 	for (; vct_issp(*p); p++) {
 		if (vct_isctl(*p))
-			return (-1);
+			return (400);
 	}
 
 	/* Second field cannot contain LWS or CTL */
 	q = p;
 	for (; !vct_islws(*p); p++) {
 		if (vct_isctl(*p))
-			return (-1);
+			return (400);
 	}
 	hp->hd[h2].b = q;
 	hp->hd[h2].e = p;
@@ -603,7 +604,7 @@ http_splitline(struct worker *w, int fd, struct http *hp,
 	/* Skip SP */
 	for (; vct_issp(*p); p++) {
 		if (vct_isctl(*p))
-			return (-1);
+			return (400);
 	}
 
 	/* Third field is optional and cannot contain CTL */
@@ -611,7 +612,7 @@ http_splitline(struct worker *w, int fd, struct http *hp,
 	if (!vct_iscrlf(*p)) {
 		for (; !vct_iscrlf(*p); p++)
 			if (!vct_issep(*p) && vct_isctl(*p))
-				return (-1);
+				return (400);
 	}
 	hp->hd[h3].b = q;
 	hp->hd[h3].e = p;
@@ -650,12 +651,12 @@ http_ProtoVer(struct http *hp)
 
 /*--------------------------------------------------------------------*/
 
-int
+uint16_t
 http_DissectRequest(struct sess *sp)
 {
 	struct http_conn *htc;
 	struct http *hp;
-	int i;
+	uint16_t retval;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	htc = sp->htc;
@@ -665,23 +666,26 @@ http_DissectRequest(struct sess *sp)
 
 	hp->logtag = HTTP_Rx;
 
-	i = http_splitline(sp->wrk, sp->fd, hp, htc,
+	retval = http_splitline(sp->wrk, sp->fd, hp, htc,
 	    HTTP_HDR_REQ, HTTP_HDR_URL, HTTP_HDR_PROTO);
-	if (i != 0) {
+	if (retval != 0) {
 		WSPR(sp, SLT_HttpGarbage, htc->rxbuf);
-		return (i);
+		return (retval);
 	}
 	http_ProtoVer(hp);
-	return (i);
+	return (retval);
 }
 
 /*--------------------------------------------------------------------*/
 
-int
+uint16_t
 http_DissectResponse(struct worker *w, const struct http_conn *htc,
     struct http *hp)
 {
-	int i = 0;
+	int j;
+	uint16_t retval = 0;
+	char *p;
+
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
@@ -689,23 +693,33 @@ http_DissectResponse(struct worker *w, const struct http_conn *htc,
 
 	if (http_splitline(w, htc->fd, hp, htc,
 	    HTTP_HDR_PROTO, HTTP_HDR_STATUS, HTTP_HDR_RESPONSE))
-		i = 503;
+		retval = 503;
 
-	if (i == 0 && memcmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.", 7))
-		i = 503;
+	if (retval == 0 && memcmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.", 7))
+		retval = 503;
 
-	if (i == 0 && Tlen(hp->hd[HTTP_HDR_STATUS]) != 3)
-		i = 503;
+	if (retval == 0 && Tlen(hp->hd[HTTP_HDR_STATUS]) != 3)
+		retval = 503;
 
-	if (i == 0) {
-		hp->status = strtoul(hp->hd[HTTP_HDR_STATUS].b, NULL, 10);
-		if (hp->status < 100 || hp->status > 999)
-			i = 503;
+	if (retval == 0) {
+		hp->status = 0;
+		p = hp->hd[HTTP_HDR_STATUS].b;
+		for (j = 100; j != 0; j /= 10) {
+			if (!vct_isdigit(*p)) {
+				retval = 503;
+				break;
+			}
+			hp->status += (uint16_t)(j * (*p - '0'));
+			p++;
+		}
+		if (*p != '\0')
+			retval = 503;
 	}
 
-	if (i != 0) {
+	if (retval != 0) {
 		WSLR(w, SLT_HttpGarbage, htc->fd, htc->rxbuf);
-		hp->status = i;
+		assert(retval >= 100 && retval <= 999);
+		hp->status = retval;
 	} else {
 		http_ProtoVer(hp);
 	}
@@ -718,7 +732,7 @@ http_DissectResponse(struct worker *w, const struct http_conn *htc,
 		hp->hd[HTTP_HDR_RESPONSE].e =
 		    strchr(hp->hd[HTTP_HDR_RESPONSE].b, '\0');
 	}
-	return (i);
+	return (retval);
 }
 
 /*--------------------------------------------------------------------*/
@@ -763,12 +777,13 @@ http_CopyResp(struct http *to, const struct http *fm)
 }
 
 void
-http_SetResp(struct http *to, const char *proto, int status,
+http_SetResp(struct http *to, const char *proto, uint16_t status,
     const char *response)
 {
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	http_SetH(to, HTTP_HDR_PROTO, proto);
+	assert(status >= 100 && status <= 999);
 	to->status = status;
 	http_SetH(to, HTTP_HDR_RESPONSE, response);
 }
@@ -798,7 +813,7 @@ http_copyheader(struct worker *w, int fd, struct http *to,
  */
 
 unsigned
-http_EstimateWS(const struct http *fm, unsigned how, unsigned *nhd)
+http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd)
 {
 	unsigned u, l;
 
@@ -967,10 +982,10 @@ http_PutProtocol(struct worker *w, int fd, const struct http *to,
 }
 
 void
-http_PutStatus(struct http *to, int status)
+http_PutStatus(struct http *to, uint16_t status)
 {
 
-	assert(status >= 0 && status <= 999);
+	assert(status >= 100 && status <= 999);
 	to->status = status;
 }
 
@@ -1011,7 +1026,7 @@ http_PrintfHeader(struct worker *w, int fd, struct http *to,
 void
 http_Unset(struct http *hp, const char *hdr)
 {
-	unsigned u, v;
+	uint16_t u, v;
 
 	for (v = u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
 		if (hp->hd[u].b == NULL)

@@ -417,10 +417,10 @@ cnt_error(struct sess *sp)
 		/* XXX: 1024 is a pure guess */
 		EXP_Clr(&w->exp);
 		sp->obj = STV_NewObject(sp, NULL, 1024, &w->exp,
-		     params->http_max_hdr);
+		     (uint16_t)params->http_max_hdr);
 		if (sp->obj == NULL) 
 			sp->obj = STV_NewObject(sp, TRANSIENT_STORAGE,
-			    1024, &w->exp, params->http_max_hdr);
+			    1024, &w->exp, (uint16_t)params->http_max_hdr);
 		if (sp->obj == NULL) {
 			sp->doclose = "Out of objects";
 			sp->step = STP_DONE;
@@ -637,7 +637,8 @@ cnt_fetchbody(struct sess *sp)
 	int i;
 	struct http *hp, *hp2;
 	char *b;
-	unsigned l, nhttp;
+	uint16_t nhttp;
+	unsigned l;
 	struct vsb *vary = NULL;
 	int varyl = 0, pass;
 
@@ -1411,7 +1412,7 @@ DOT start -> recv [style=bold,color=green]
 static int
 cnt_start(struct sess *sp)
 {
-	int done;
+	uint16_t done;
 	char *p;
 	const char *r = "HTTP/1.1 100 Continue\r\n\r\n";
 
@@ -1439,7 +1440,7 @@ cnt_start(struct sess *sp)
 	done = http_DissectRequest(sp);
 
 	/* If we could not even parse the request, just close */
-	if (done < 0) {
+	if (done == 400) {
 		sp->step = STP_DONE;
 		vca_close_session(sp, "junk");
 		return (0);

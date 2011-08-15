@@ -101,8 +101,8 @@ ses_sm_alloc(void)
 {
 	struct sessmem *sm;
 	unsigned char *p, *q;
-	volatile unsigned nws;
-	volatile unsigned nhttp;
+	unsigned nws;
+	uint16_t nhttp;
 	unsigned l, hl;
 
 	if (VSC_C_main->n_sess_mem >= params->max_sess)
@@ -113,7 +113,7 @@ ses_sm_alloc(void)
 	 * view of the value.
 	 */
 	nws = params->sess_workspace;
-	nhttp = params->http_max_hdr;
+	nhttp = (uint16_t)params->http_max_hdr;
 	hl = HTTP_estimate(nhttp);
 	l = sizeof *sm + nws + 2 * hl;
 	p = malloc(l);

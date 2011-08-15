@@ -116,7 +116,7 @@ WRK_SumStat(struct worker *w)
 
 static void *
 wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace,
-    unsigned nhttp, unsigned http_space, unsigned siov)
+    uint16_t nhttp, unsigned http_space, unsigned siov)
 {
 	struct worker *w, ww;
 	uint32_t wlog[shm_workspace / 4];
@@ -218,12 +218,13 @@ static void *
 wrk_thread(void *priv)
 {
 	struct wq *qp;
-	unsigned nhttp;
+	uint16_t nhttp;
 	unsigned siov;
 
 	CAST_OBJ_NOTNULL(qp, priv, WQ_MAGIC);
+	assert(params->http_max_hdr <= 65535);
 	/* We need to snapshot these two for consistency */
-	nhttp = params->http_max_hdr;
+	nhttp = (uint16_t)params->http_max_hdr;
 	siov = nhttp * 2;
 	if (siov > IOV_MAX)
 		siov = IOV_MAX;
