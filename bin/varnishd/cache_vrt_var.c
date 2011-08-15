@@ -102,7 +102,7 @@ VRT_l_##obj##_status(const struct sess *sp, int num)		\
 {								\
 								\
 	assert(num >= 100 && num <= 999);			\
-	http->status = num;					\
+	http->status = (uint16_t)num;				\
 }								\
 								\
 int								\

@@ -549,7 +549,7 @@ static const struct parspec input_parspec[] = {
 		"how much of that the request is allowed to take up.",
 		0,
 		"32768", "bytes" },
-	{ "http_max_hdr", tweak_uint, &master.http_max_hdr, 32, UINT_MAX,
+	{ "http_max_hdr", tweak_uint, &master.http_max_hdr, 32, 65535,
 		"Maximum number of HTTP headers we will deal with in "
 		"client request or backend reponses.  "
 		"Note that the first line occupies five header fields.\n"

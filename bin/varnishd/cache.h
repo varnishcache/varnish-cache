@@ -739,21 +739,21 @@ int VGZ_WrwGunzip(const struct sess *, struct vgz *, const void *ibuf,
 /* cache_http.c */
 unsigned HTTP_estimate(unsigned nhttp);
 void HTTP_Copy(struct http *to, const struct http * const fm);
-struct http *HTTP_create(void *p, unsigned nhttp);
+struct http *HTTP_create(void *p, uint16_t nhttp);
 const char *http_StatusMessage(unsigned);
-unsigned http_EstimateWS(const struct http *fm, unsigned how, unsigned *nhd);
+unsigned http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd);
 void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
 unsigned http_Write(struct worker *w, const struct http *hp, int resp);
 void http_CopyResp(struct http *to, const struct http *fm);
-void http_SetResp(struct http *to, const char *proto, int status,
+void http_SetResp(struct http *to, const char *proto, uint16_t status,
     const char *response);
 void http_FilterFields(struct worker *w, int fd, struct http *to,
     const struct http *fm, unsigned how);
 void http_FilterHeader(const struct sess *sp, unsigned how);
 void http_PutProtocol(struct worker *w, int fd, const struct http *to,
     const char *protocol);
-void http_PutStatus(struct http *to, int status);
+void http_PutStatus(struct http *to, uint16_t status);
 void http_PutResponse(struct worker *w, int fd, const struct http *to,
     const char *response);
 void http_PrintfHeader(struct worker *w, int fd, struct http *to,
@@ -768,11 +768,11 @@ int http_GetHdrData(const struct http *hp, const char *hdr,
 int http_GetHdrField(const struct http *hp, const char *hdr,
     const char *field, char **ptr);
 double http_GetHdrQ(const struct http *hp, const char *hdr, const char *field);
-int http_GetStatus(const struct http *hp);
+uint16_t http_GetStatus(const struct http *hp);
 const char *http_GetReq(const struct http *hp);
 int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
-int http_DissectRequest(struct sess *sp);
-int http_DissectResponse(struct worker *w, const struct http_conn *htc,
+uint16_t http_DissectRequest(struct sess *sp);
+uint16_t http_DissectResponse(struct worker *w, const struct http_conn *htc,
     struct http *sp);
 const char *http_DoConnection(const struct http *hp);
 void http_CopyHome(struct worker *w, int fd, const struct http *hp);
