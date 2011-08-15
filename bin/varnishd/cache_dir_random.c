@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Varnish Software AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -26,17 +26,22 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * This code is shared between the random and hash directors, because they
- * share the same properties and most of the same selection logic.
+ * This code is shared between the random, client and hash directors, because
+ * they share the same properties and most of the same selection logic.
  *
- * The random director picks a backend on random, according to weight,
- * from the healty subset of backends.
+ * The random director picks a backend on random.
  *
- * The hash director first tries to locate the "canonical" backend from
- * the full set, according to weight, and if it is healthy selects it.
- * If the canonical backend is not healthy, we pick a backend according
- * to weight from the healthy subset. That way only traffic to unhealthy
- * backends gets redistributed.
+ * The hash director picks based on the hash from vcl_hash{}
+ *
+ * The client director picks based on client identity or IP-address
+ *
+ * In all cases, the choice is by weight of the healthy subset of
+ * configured backends.
+ *
+ * Failures to get a connection are retried, here all three policies
+ * fall back to a deterministically random choice, by weight in the
+ * healthy subset.
+ *
  */
 
 #include "config.h"
@@ -46,6 +51,7 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -77,114 +83,117 @@ struct vdi_random {
 	unsigned		nhosts;
 };
 
+/*
+ * Applies sha256 using the given context and input/length, and returns
+ * a double in the range [0...1[ based on the hash.
+ */
+static double
+vdi_random_sha(const char *input, ssize_t len)
+{
+	struct SHA256Context ctx;
+	uint8_t sign[SHA256_LEN];
+
+	AN(input);
+	SHA256_Init(&ctx);
+	SHA256_Update(&ctx, input, len);
+	SHA256_Final(sign, &ctx);
+	return (vle32dec(sign) / exp2(32));
+}
+
+/*
+ * Sets up the initial seed for picking a backend according to policy.
+ */
+static double
+vdi_random_init_seed(const struct vdi_random *vs, const struct sess *sp)
+{
+	const char *p;
+	double retval;
+
+	switch (vs->criteria) {
+	case c_client:
+		if (sp->client_identity != NULL)
+			p = sp->client_identity;
+		else
+			p = sp->addr;
+		retval = vdi_random_sha(p, strlen(p));
+		break;
+	case c_hash:
+		AN(sp->digest);
+		retval = vle32dec(sp->digest) / exp2(32);
+		break;
+	case c_random:
+	default:
+		retval = random() / exp2(31);
+		break;
+	}
+	return (retval);
+}
+
+/*
+ * Find the healthy backend corresponding to the weight r [0...1[
+ */
+static struct vbc *
+vdi_random_pick_one(struct sess *sp, const struct vdi_random *vs, double r)
+{
+	double w[vs->nhosts];
+	int i;
+	double s1;
+
+	assert(r >= 0.0 && r < 1.0);
+
+	memset(w, 0, sizeof w);
+	/* Sum up the weights of healty backends */
+	s1 = 0.0;
+	for (i = 0; i < vs->nhosts; i++) {
+		if (VDI_Healthy(vs->hosts[i].backend, sp))
+			w[i] = vs->hosts[i].weight;
+		s1 += w[i];
+	}
+
+	if (s1 == 0.0)
+		return (NULL);
+
+	r *= s1;
+	s1 = 0.0;
+	for (i = 0; i < vs->nhosts; i++)  {
+		s1 += w[i];
+		if (r < s1)
+			return(VDI_GetFd(vs->hosts[i].backend, sp));
+	}
+	return (NULL);
+}
+
+/*
+ * Try the specified number of times to get a backend.
+ * First one according to policy, after that, deterministically
+ * random by rehashing the key.
+ */
 static struct vbc *
 vdi_random_getfd(const struct director *d, struct sess *sp)
 {
-	int i, k;
+	int k;
 	struct vdi_random *vs;
-	double r, s1;
-	unsigned u = 0;
+	double r;
 	struct vbc *vbe;
-	struct director *d2;
-	struct SHA256Context ctx;
-	uint8_t sign[SHA256_LEN], *hp = NULL;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_RANDOM_MAGIC);
 
-	if (vs->criteria == c_client) {
-		/*
-		 * Hash the client IP# ascii representation, rather than
-		 * rely on the raw IP# being a good hash distributor, since
-		 * experience shows this not to be the case.
-		 * We do not hash the port number, to make everybody behind
-		 * a given NAT gateway fetch from the same backend.
-		 */
-		SHA256_Init(&ctx);
-		AN(sp->addr);
-		if (sp->client_identity != NULL)
-			SHA256_Update(&ctx, sp->client_identity,
-			    strlen(sp->client_identity));
-		else
-			SHA256_Update(&ctx, sp->addr, strlen(sp->addr));
-		SHA256_Final(sign, &ctx);
-		hp = sign;
-	}
-	if (vs->criteria == c_hash) {
-		/*
-		 * Reuse the hash-string, the objective here is to fetch the
-		 * same object on the same backend all the time
-		 */
-		hp = sp->digest;
-	}
+	r = vdi_random_init_seed(vs, sp);
 
-	/*
-	 * If we are hashing, first try to hit our "canonical backend"
-	 * If that fails, we fall through, and select a weighted backend
-	 * amongst the healthy set.
-	 */
-	if (vs->criteria != c_random) {
-		AN(hp);
-		u = vle32dec(hp);
-		r = u / 4294967296.0;
-		assert(r >= 0.0 && r < 1.0);
-		r *= vs->tot_weight;
-		s1 = 0.0;
-		for (i = 0; i < vs->nhosts; i++)  {
-			s1 += vs->hosts[i].weight;
-			if (r >= s1)
-				continue;
-			d2 = vs->hosts[i].backend;
-			if (!VDI_Healthy(d2, sp))
-				break;
-			vbe = VDI_GetFd(d2, sp);
-			if (vbe != NULL)
-				return (vbe);
-			break;
-		}
-	}
-
-	for (k = 0; k < vs->retries; ) {
-		/* Sum up the weights of healty backends */
-		s1 = 0.0;
-		for (i = 0; i < vs->nhosts; i++) {
-			d2 = vs->hosts[i].backend;
-			/* XXX: cache result of healty to avoid double work */
-			if (VDI_Healthy(d2, sp))
-				s1 += vs->hosts[i].weight;
-		}
-
-		if (s1 == 0.0)
-			return (NULL);
-
-		if (vs->criteria != c_random) {
-			r = u / 4294967296.0;
-		} else {
-			/* Pick a random threshold in that interval */
-			r = random() / 2147483648.0;	/* 2^31 */
-		}
-		assert(r >= 0.0 && r < 1.0);
-		r *= s1;
-
-		s1 = 0.0;
-		for (i = 0; i < vs->nhosts; i++)  {
-			d2 = vs->hosts[i].backend;
-			if (!VDI_Healthy(d2, sp))
-				continue;
-			s1 += vs->hosts[i].weight;
-			if (r >= s1)
-				continue;
-			vbe = VDI_GetFd(d2, sp);
-			if (vbe != NULL)
-				return (vbe);
-			break;
-		}
-		k++;
+	for (k = 0; k < vs->retries; k++) {
+		vbe = vdi_random_pick_one(sp, vs, r);
+		if (vbe != NULL)
+			return (vbe);
+		r = vdi_random_sha((void *)&r, sizeof(r));
 	}
 	return (NULL);
 }
 
+/*
+ * Healthy if just a single backend is...
+ */
 static unsigned
 vdi_random_healthy(const struct director *d, const struct sess *sp)
 {
