@@ -208,6 +208,10 @@ file[,path[,size[,granularity]]]
 persistence[XXX]
       New, shiny, better.
 
+Transient[,size]
+      Storage for transient (short lived) objects. By default this is
+      unlimited. This storage backend behaves just like the malloc backend and takes the same options.
+
 
 Management Interface
 --------------------
