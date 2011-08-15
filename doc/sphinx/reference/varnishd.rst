@@ -207,8 +207,32 @@ file[,path[,size[,granularity]]]
 
       The default size is the VM page size.  The size should be reduced if you have many small objects.
 
-persistence[XXX]
-      New, shiny, better.
+persistent,path,size {experimental}
+
+      Persistent storage. Varnish will store objects in a file in a
+      manner that will secure the survival of *most* of the objects in
+      the event of a planned or unplanned shutdown of Varnish.
+
+      The path parameter specifies the path to the backing file. If
+      the file doesn't exist Varnish will create it.
+
+      The size parameter specifies the size of the backing file.  The
+      size is assumed to be in bytes, unless followed by one of the
+      following suffixes:
+
+      K, k    The size is expressed in kibibytes.
+
+      M, m    The size is expressed in mebibytes.
+
+      G, g    The size is expressed in gibibytes.
+
+      T, t    The size is expressed in tebibytes.
+
+      Varnish will split the file into logical *silos* and write to
+      the silos in the manner of a circular buffer. Only one silo will
+      be kept open at any given point in time. Full silos are
+      *sealed*. When Varnish starts after a shutdown it will discard
+      the content of any silo that isn't sealed.
 
 Transient Storage
 -----------------
