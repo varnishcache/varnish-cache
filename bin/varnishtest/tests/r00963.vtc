@@ -1,0 +1,45 @@
+varnishtest "Test hsh_rush"
+
+server s1 {
+	rxreq
+	sema r1 sync 5
+	txresp -bodylen 10
+} -start
+
+varnish v1 -vcl+backend {
+} -start
+
+varnish v1 -cliok "param.set rush_exponent 2"
+
+client c1 {
+	txreq
+	sema r1 sync 5
+	rxresp
+	expect resp.bodylen == 10
+} -start
+
+client c2 {
+	txreq
+	sema r1 sync 5
+	rxresp
+	expect resp.bodylen == 10
+} -start
+
+client c3 {
+	txreq
+	sema r1 sync 5
+	rxresp
+	expect resp.bodylen == 10
+} -start
+
+client c4 {
+	txreq
+	sema r1 sync 5
+	rxresp
+	expect resp.bodylen == 10
+} -start
+
+client c1 -wait
+client c2 -wait
+client c3 -wait
+client c4 -wait
