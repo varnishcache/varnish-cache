@@ -89,7 +89,7 @@ they could issue::
 Quite powerful, really.
 
 Bans are checked when we hit an object in the cache, but before we
-deliver it. An object is only checked against newer bans. If you have
+deliver it. *An object is only checked against newer bans*. If you have
 a lot of objects with long TTL in your cache you should be aware of a
 potential performance impact of having many bans.
 
