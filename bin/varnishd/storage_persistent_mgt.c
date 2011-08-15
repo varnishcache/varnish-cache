@@ -164,7 +164,7 @@ smp_mgt_init(struct stevedore *parent, int ac, char * const *av)
 	i = read(sc->fd, &sgn, sizeof sgn);
 	assert(i == sizeof sgn);
 	if (!strcmp(sgn.ident, "SILO"))
-		target = (void*)sgn.mapped;
+		target = (void*)(uintptr_t)sgn.mapped;
 	else
 		target = NULL;
 
