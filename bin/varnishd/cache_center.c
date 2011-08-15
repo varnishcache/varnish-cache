@@ -417,10 +417,10 @@ cnt_error(struct sess *sp)
 		/* XXX: 1024 is a pure guess */
 		EXP_Clr(&w->exp);
 		sp->obj = STV_NewObject(sp, NULL, 1024, &w->exp,
-		     params->http_max_hdr);
+		     (uint16_t)params->http_max_hdr);
 		if (sp->obj == NULL) 
 			sp->obj = STV_NewObject(sp, TRANSIENT_STORAGE,
-			    1024, &w->exp, params->http_max_hdr);
+			    1024, &w->exp, (uint16_t)params->http_max_hdr);
 		if (sp->obj == NULL) {
 			sp->doclose = "Out of objects";
 			sp->step = STP_DONE;
@@ -428,7 +428,7 @@ cnt_error(struct sess *sp)
 		}
 		AN(sp->obj);
 		sp->obj->xid = sp->xid;
-		sp->obj->entered = sp->t_req;
+		sp->obj->exp.entered = sp->t_req;
 	} else {
 		/* XXX: Null the headers ? */
 	}
@@ -554,9 +554,8 @@ cnt_fetch(struct sess *sp)
 		/*
 		 * What does RFC2616 think about TTL ?
 		 */
-		sp->wrk->entered = TIM_real();
-		sp->wrk->age = 0;
 		EXP_Clr(&sp->wrk->exp);
+		sp->wrk->exp.entered = TIM_real();
 		sp->wrk->exp.ttl = RFC2616_Ttl(sp);
 
 		/* pass from vclrecv{} has negative TTL */
@@ -638,7 +637,8 @@ cnt_fetchbody(struct sess *sp)
 	int i;
 	struct http *hp, *hp2;
 	char *b;
-	unsigned l, nhttp;
+	uint16_t nhttp;
+	unsigned l;
 	struct vsb *vary = NULL;
 	int varyl = 0, pass;
 
@@ -782,8 +782,6 @@ cnt_fetchbody(struct sess *sp)
 
 	sp->obj->xid = sp->xid;
 	sp->obj->response = sp->err_code;
-	sp->obj->age = sp->wrk->age;
-	sp->obj->entered = sp->wrk->entered;
 	WS_Assert(sp->obj->ws_o);
 
 	/* Filter into object */
@@ -799,9 +797,19 @@ cnt_fetchbody(struct sess *sp)
 	if (http_GetHdr(hp, H_Last_Modified, &b))
 		sp->obj->last_modified = TIM_parse(b);
 	else
-		sp->obj->last_modified = floor(sp->wrk->entered);
+		sp->obj->last_modified = floor(sp->wrk->exp.entered);
 
 	assert(WRW_IsReleased(sp->wrk));
+
+	/*
+	 * If we can deliver a 304 reply, we don't bother streaming.
+	 * Notice that vcl_deliver{} could still nuke the headers
+	 * that allow the 304, in which case we return 200 non-stream.
+	 */
+	if (sp->obj->response == 200 &&
+	    sp->http->conds &&
+	    RFC2616_Do_Cond(sp))
+		sp->wrk->do_stream = 0;
 
 	if (sp->wrk->do_stream) {
 		sp->step = STP_PREPRESP;
@@ -1404,7 +1412,7 @@ DOT start -> recv [style=bold,color=green]
 static int
 cnt_start(struct sess *sp)
 {
-	int done;
+	uint16_t done;
 	char *p;
 	const char *r = "HTTP/1.1 100 Continue\r\n\r\n";
 
@@ -1432,7 +1440,7 @@ cnt_start(struct sess *sp)
 	done = http_DissectRequest(sp);
 
 	/* If we could not even parse the request, just close */
-	if (done < 0) {
+	if (done == 400) {
 		sp->step = STP_DONE;
 		vca_close_session(sp, "junk");
 		return (0);

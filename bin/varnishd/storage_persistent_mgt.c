@@ -120,6 +120,8 @@ void
 smp_mgt_init(struct stevedore *parent, int ac, char * const *av)
 {
 	struct smp_sc		*sc;
+	struct smp_sign		sgn;
+	void *target;
 	int i;
 
 	ASSERT_MGT();
@@ -158,7 +160,15 @@ smp_mgt_init(struct stevedore *parent, int ac, char * const *av)
 
 	AZ(ftruncate(sc->fd, sc->mediasize));
 
-	sc->base = mmap(NULL, sc->mediasize, PROT_READ|PROT_WRITE,
+	/* Try to determine correct mmap address */
+	i = read(sc->fd, &sgn, sizeof sgn);
+	assert(i == sizeof sgn);
+	if (!strcmp(sgn.ident, "SILO"))
+		target = (void*)sgn.mapped;
+	else
+		target = NULL;
+
+	sc->base = mmap(target, sc->mediasize, PROT_READ|PROT_WRITE,
 	    MAP_NOCORE | MAP_NOSYNC | MAP_SHARED, sc->fd, 0);
 
 	if (sc->base == MAP_FAILED)
@@ -169,8 +179,11 @@ smp_mgt_init(struct stevedore *parent, int ac, char * const *av)
 	sc->ident = SIGN_DATA(&sc->idn);
 
 	i = smp_valid_silo(sc);
-	if (i)
+	if (i) {
+		printf("Warning SILO (%s) not reloaded (reason=%d)\n",
+		    sc->filename, i);
 		smp_newsilo(sc);
+	}
 	AZ(smp_valid_silo(sc));
 
 	smp_metrics(sc);

@@ -284,7 +284,7 @@ ban_dups
 
 ban_lurker_sleep
 	- Units: s
-	- Default: 0.1
+	- Default: 0.01
 
 	How long time does the ban lurker thread sleeps between successful attempts to push the last item up the ban  list.  It always sleeps a second when nothing can be done.
 	A value of zero disables the ban lurker.
@@ -295,15 +295,8 @@ between_bytes_timeout
 
 	Default timeout between bytes when receiving data from backend. We only wait for this many seconds between bytes before giving up. A value of 0 means it will never time out. VCL can override this default value for each backend request and backend request. This parameter does not apply to pipe.
 
-cache_vbcs
-	- Units: bool
-	- Default: off
-	- Flags: experimental
-
-	Cache vbc's or rely on malloc, that's the question.
-
 cc_command
-	- Default: exec gcc -std=gnu99 -DDIAGNOSTICS -pthread -fpic -shared -Wl,-x -o %o %s
+	- Default: exec gcc -std=gnu99  -pthread -fpic -shared -Wl,-x -o %o %s
 	- Flags: must_reload
 
 	Command used for compiling the C source code to a dlopen(3) loadable object.  Any occurrence of %s in the string will be replaced with the source file name, and %o will be replaced with the output file name.
@@ -330,14 +323,14 @@ clock_skew
 
 connect_timeout
 	- Units: s
-	- Default: 0.4
+	- Default: 0.7
 
 	Default connection timeout for backend connections. We only try to connect to the backend for this many seconds before giving up. VCL can override this default value for each backend and backend request.
 
 critbit_cooloff
 	- Units: s
 	- Default: 180.0
-	- Flags: experimental
+	- Flags: 
 
 	How long time the critbit hasher keeps deleted objheads on the cooloff list.
 
@@ -348,6 +341,13 @@ default_grace
 
 	Default grace period.  We will deliver an object this long after it has expired, provided another thread is attempting to get a new copy.
 	Objects already cached will not be affected by changes made until they are fetched from the backend again.
+
+default_keep
+	- Units: seconds
+	- Default: 0
+	- Flags: delayed
+
+	Default keep period.  We will keep a useless object around this long, making it available for conditional backend fetches.  That means that the object will be removed from the cache at the end of ttl+grace+keep.
 
 default_ttl
 	- Units: seconds
@@ -379,12 +379,6 @@ diag_bitmap
 	  0x80000000 - do edge-detection on digest.
 	Use 0x notation and do the bitor in your head :-)
 
-err_ttl
-	- Units: seconds
-	- Default: 0
-
-	The TTL assigned to the synthesized error pages
-
 esi_syntax
 	- Units: bitmap
 	- Default: 0
@@ -401,7 +395,7 @@ expiry_sleep
 	- Units: seconds
 	- Default: 1
 
-	How long the expiry thread sleeps when there is nothing for it to do.  Reduce if your expiry thread gets behind.
+	How long the expiry thread sleeps when there is nothing for it to do.
 
 fetch_chunksize
 	- Units: kilobytes
@@ -410,6 +404,13 @@ fetch_chunksize
 
 	The default chunksize used by fetcher. This should be bigger than the majority of objects with short TTLs.
 	Internal limits in the storage_file module makes increases above 128kb a dubious idea.
+
+fetch_maxchunksize
+	- Units: kilobytes
+	- Default: 262144
+	- Flags: experimental
+
+	The maximum chunksize we attempt to allocate from storage. Making this too large may cause delays and storage fragmentation.
 
 first_byte_timeout
 	- Units: s
@@ -427,6 +428,12 @@ gzip_level
 	- Default: 6
 
 	Gzip compression level: 0=debug, 1=fast, 9=best
+
+gzip_memlevel
+	- Default: 8
+
+	Gzip memory level 1=slow/least, 9=fast/most compression.
+	Memory impact is 1=1k, 2=2k, ... 9=256k.
 
 gzip_stack_buffer
 	- Units: Bytes
@@ -447,6 +454,12 @@ gzip_tmp_space
 	  2 - thread workspace
 	If you have much gzip/gunzip activity, it may be an advantage to use workspace for these allocations to reduce malloc activity.  Be aware that gzip needs 256+KB and gunzip needs 32+KB of workspace (64+KB if ESI processing).
 
+gzip_window
+	- Default: 15
+
+	Gzip window size 8=least, 15=most compression.
+	Memory impact is 8=1k, 9=2k, ... 15=128k.
+
 http_gzip_support
 	- Units: bool
 	- Default: on
@@ -458,24 +471,45 @@ http_gzip_support
 
 	Clients that do not support gzip will have their Accept-Encoding header removed. For more information on how gzip is implemented please see the chapter on gzip in the Varnish reference.
 
-        Note: Enabling gzip on a running Varnish instance using ESI can
-        yield content where cached, uncompressed pages have compressed ESI
-        elements. To avoid this, either ban all ESI-related elements before
-        enabling gzip, or restart Varnish.
-
-http_headers
+http_max_hdr
 	- Units: header lines
 	- Default: 64
 
-	Maximum number of HTTP headers we will deal with.
-	This space is preallocated in sessions and workthreads only objects allocate only space for the headers they store.
+	Maximum number of HTTP headers we will deal with in client request or backend reponses.  Note that the first line occupies five header fields.
+	This paramter does not influence storage consumption, objects allocate exact space for the headers they store.
 
 http_range_support
 	- Units: bool
-	- Default: off
+	- Default: on
 	- Flags: experimental
 
 	Enable support for HTTP Range headers.
+
+http_req_hdr_len
+	- Units: bytes
+	- Default: 4096
+
+	Maximum length of any HTTP client request header we will allow.  The limit is inclusive its continuation lines.
+
+http_req_size
+	- Units: bytes
+	- Default: 32768
+
+	Maximum number of bytes of HTTP client request we will deal with.  This is a limit on all bytes up to the double blank line which ends the HTTP request.
+	The memory for the request is allocated from the session workspace (param: sess_workspace) and this parameter limits how much of that the request is allowed to take up.
+
+http_resp_hdr_len
+	- Units: bytes
+	- Default: 4096
+
+	Maximum length of any HTTP backend response header we will allow.  The limit is inclusive its continuation lines.
+
+http_resp_size
+	- Units: bytes
+	- Default: 32768
+
+	Maximum number of bytes of HTTP backend resonse we will deal with.  This is a limit on all bytes up to the double blank line which ends the HTTP request.
+	The memory for the request is allocated from the worker workspace (param: sess_workspace) and this parameter limits how much of that the request is allowed to take up.
 
 listen_address
 	- Default: :80
@@ -493,9 +527,9 @@ listen_depth
 
 log_hashstring
 	- Units: bool
-	- Default: off
+	- Default: on
 
-	Log the hash string to shared memory log.
+	Log the hash string components to shared memory log.
 
 log_local_address
 	- Units: bool
@@ -511,8 +545,8 @@ lru_interval
 	Grace period before object moves on LRU list.
 	Objects are only moved to the front of the LRU list if they have not been moved there already inside this timeout period.  This reduces the amount of lock operations necessary for LRU list access.
 
-max_esi_includes
-	- Units: includes
+max_esi_depth
+	- Units: levels
 	- Default: 5
 
 	Maximum depth of esi:include processing.
@@ -570,10 +604,11 @@ saintmode_threshold
 
 send_timeout
 	- Units: seconds
-	- Default: 600
+	- Default: 60
 	- Flags: delayed
 
-	Send timeout for client connections. If no data has been sent to the client in this many seconds, the session is closed.
+	Send timeout for client connections. If the HTTP response hasn't been transmitted in this many
+	seconds the session is closed. 
 	See setsockopt(2) under SO_SNDTIMEO for more information.
 
 sess_timeout
@@ -636,8 +671,7 @@ syslog_cli_traffic
 
 thread_pool_add_delay
 	- Units: milliseconds
-	- Default: 20
-	- Flags: experimental
+	- Default: 2
 
 	Wait at least this long between creating threads.
 
@@ -675,7 +709,7 @@ thread_pool_max
 	- Default: 500
 	- Flags: delayed, experimental
 
-	The maximum number of worker threads in all pools combined.
+	The maximum number of worker threads in each pool.
 
 	Do not set this higher than you have to, since excess worker threads soak up RAM and CPU and generally just get in the way of getting work done.
 
@@ -684,7 +718,7 @@ thread_pool_min
 	- Default: 5
 	- Flags: delayed, experimental
 
-	The minimum number of threads in each worker pool.
+	The minimum number of worker threads in each pool.
 
 	Increasing this may help ramp up faster from low load situations where threads have expired.
 
@@ -719,6 +753,13 @@ thread_pool_timeout
 	Threads in excess of thread_pool_min, which have been idle for at least this long are candidates for purging.
 
 	Minimum is 1 second.
+
+thread_pool_workspace
+	- Units: bytes
+	- Default: 65536
+	- Flags: delayed
+
+	Bytes of HTTP protocol workspace allocated for worker threads. This space must be big enough for the backend request and responses, and response to the client plus any other memory needs in the VCL code.Minimum is 1024 bytes.
 
 thread_pools
 	- Units: pools

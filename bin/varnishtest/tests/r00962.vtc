@@ -1,0 +1,47 @@
+varnishtest "Test address remapping"
+
+server s1 {
+	rxreq 
+	txresp 
+} -start
+
+shell "rm -f ${tmpdir}/_.per?"
+
+varnish v1 \
+	-arg "-pdiag_bitmap=0x20000" \
+	-storage "-spersistent,${tmpdir}/_.per1,10m -spersistent,${tmpdir}/_.per2,10m" \
+	-vcl+backend { 
+	sub vcl_fetch {
+		set beresp.storage = "s0";
+	}
+} -start 
+
+varnish v1 -stop
+
+varnish v1 -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1001"
+} -run
+
+varnish v1 -cliok "storage.list"
+varnish v1 -cliok "debug.persistent s0 dump"
+varnish v1 -cliok "debug.persistent s0 sync"
+varnish v1 -stop
+
+varnish v2 \
+	-arg "-pdiag_bitmap=0x20000" \
+	-storage "-spersistent,${tmpdir}/_.per2,10m -spersistent,${tmpdir}/_.per1,10m" \
+	-vcl+backend { } -start 
+
+client c1 -connect ${v2_sock} {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1001"
+} -run
+
+# shell "rm -f /tmp/__v1/_.per"

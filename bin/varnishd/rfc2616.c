@@ -76,7 +76,7 @@ RFC2616_Ttl(const struct sess *sp)
 
 	hp = sp->wrk->beresp;
 
-	assert(sp->wrk->entered != 0.0 && !isnan(sp->wrk->entered));
+	assert(sp->wrk->exp.entered != 0.0 && !isnan(sp->wrk->exp.entered));
 	/* If all else fails, cache using default ttl */
 	ttl = params->default_ttl;
 
@@ -88,6 +88,16 @@ RFC2616_Ttl(const struct sess *sp)
 	 * Initial cacheability determination per [RFC2616, 13.4]
 	 * We do not support ranges yet, so 206 is out.
 	 */
+
+	if (http_GetHdr(hp, H_Age, &p)) {
+		age = strtoul(p, NULL, 0);
+		sp->wrk->exp.age = age;
+	}
+	if (http_GetHdr(hp, H_Expires, &p))
+		h_expires = TIM_parse(p);
+
+	if (http_GetHdr(hp, H_Date, &p))
+		h_date = TIM_parse(p);
 
 	switch (sp->err_code) {
 	default:
@@ -114,10 +124,6 @@ RFC2616_Ttl(const struct sess *sp)
 				max_age = 0;
 			else
 				max_age = strtoul(p, NULL, 0);
-			if (http_GetHdr(hp, H_Age, &p)) {
-				age = strtoul(p, NULL, 0);
-				sp->wrk->age = age;
-			}
 
 			if (age > max_age)
 				ttl = 0;
@@ -126,17 +132,10 @@ RFC2616_Ttl(const struct sess *sp)
 			break;
 		}
 
-		/* Next look for absolute specifications from backend */
-
-		if (http_GetHdr(hp, H_Expires, &p))
-			h_expires = TIM_parse(p);
-
 		/* No expire header, fall back to default */
 		if (h_expires == 0)
 			break;
 
-		if (http_GetHdr(hp, H_Date, &p))
-			h_date = TIM_parse(p);
 
 		/* If backend told us it is expired already, don't cache. */
 		if (h_expires < h_date) {
@@ -145,16 +144,16 @@ RFC2616_Ttl(const struct sess *sp)
 		}
 
 		if (h_date == 0 ||
-		    fabs(h_date - sp->wrk->entered) < params->clock_skew) {
+		    fabs(h_date - sp->wrk->exp.entered) < params->clock_skew) {
 			/*
 			 * If we have no Date: header or if it is
 			 * sufficiently close to our clock we will
 			 * trust Expires: relative to our own clock.
 			 */
-			if (h_expires < sp->wrk->entered)
+			if (h_expires < sp->wrk->exp.entered)
 				ttl = 0;
 			else
-				ttl = h_expires - sp->wrk->entered;
+				ttl = h_expires - sp->wrk->exp.entered;
 			break;
 		} else {
 			/*
@@ -168,8 +167,10 @@ RFC2616_Ttl(const struct sess *sp)
 	}
 
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
-	WSP(sp, SLT_TTL, "%u RFC %g %.0f %.0f %.0f %u %u", sp->xid,
-	    ttl, sp->wrk->entered, h_date, h_expires, max_age, age);
+	WSP(sp, SLT_TTL,
+	    "%u RFC %.0f %.0f %.0f %.0f %.0f %.0f %.0f %u",
+	    sp->xid, ttl, -1., -1., sp->wrk->exp.entered, sp->wrk->exp.age,
+	     h_date, h_expires, max_age);
 
 	return (ttl);
 }
@@ -304,4 +305,37 @@ RFC2616_Req_Gzip(const struct sess *sp)
 
 	/* Bad client, no gzip. */
 	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
+int
+RFC2616_Do_Cond(const struct sess *sp)
+{
+	char *p, *e;
+	double ims;
+	int do_cond = 0;
+
+	/* RFC 2616 13.3.4 states we need to match both ETag
+	   and If-Modified-Since if present*/
+
+	if (http_GetHdr(sp->http, H_If_Modified_Since, &p) ) {
+		if (!sp->obj->last_modified)
+			return (0);
+		ims = TIM_parse(p);
+		if (ims > sp->t_req)	/* [RFC2616 14.25] */
+			return (0);
+		if (sp->obj->last_modified > ims)
+			return (0);
+		do_cond = 1;
+	}
+
+	if (http_GetHdr(sp->http, H_If_None_Match, &p) &&
+	    http_GetHdr(sp->obj->http, H_ETag, &e)) {
+		if (strcmp(p,e) != 0)
+			return (0);
+		do_cond = 1;
+	}
+
+	return (do_cond);
 }

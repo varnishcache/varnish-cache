@@ -36,7 +36,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 #include "cache.h"
 #include "stevedore.h"
@@ -152,20 +151,15 @@ static struct storage *
 stv_alloc(const struct sess *sp, size_t size)
 {
 	struct storage *st;
-	struct stevedore *stv = NULL;
+	struct stevedore *stv;
 	unsigned fail = 0;
 
 	/*
-	 * Always try the stevedore which allocated the object in order to
-	 * not needlessly split an object across multiple stevedores.
+	 * Always use the stevedore which allocated the object in order to
+	 * keep an object inside the same stevedore.
 	 */
-	if (sp->obj != NULL) {
-		CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-		stv = sp->obj->objstore->stevedore;
-	} else {
-		INCOMPL();
-		stv = stv_transient;
-	}
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	stv = sp->obj->objstore->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
 	if (size > (size_t)(params->fetch_maxchunksize) << 10)
@@ -205,7 +199,7 @@ stv_alloc(const struct sess *sp, size_t size)
 struct stv_objsecrets {
 	unsigned	magic;
 #define STV_OBJ_SECRETES_MAGIC	0x78c87247
-	unsigned	nhttp;
+	uint16_t	nhttp;
 	unsigned	lhttp;
 	unsigned	wsl;
 	struct exp	*exp;
@@ -248,7 +242,6 @@ STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
 
 	http_Setup(o->http, o->ws_o);
 	o->http->magic = HTTP_MAGIC;
-	o->entered = NAN;
 	o->exp = *soc->exp;
 	VTAILQ_INIT(&o->store);
 	sp->wrk->stats.n_object++;
@@ -301,7 +294,7 @@ stv_default_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 
 struct object *
 STV_NewObject(struct sess *sp, const char *hint, unsigned wsl, struct exp *ep,
-    unsigned nhttp)
+    uint16_t nhttp)
 {
 	struct object *o;
 	struct stevedore *stv;

@@ -34,8 +34,8 @@ statistics
 bans 
      Bans are filters that are applied to keep Varnish from serving
      stale content. When you issue a ban Varnish will not serve any
-     *banned* object from cache, but rather re-fetch it from it's back
-     end servers.
+     *banned* object from cache, but rather re-fetch it from its
+     backend servers.
 
 process management
      You can stop and start the cache (child) process though the

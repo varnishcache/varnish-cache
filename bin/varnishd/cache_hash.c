@@ -383,9 +383,9 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		 */
 		if (EXP_Grace(sp, o) >= sp->t_req) {
 			if (grace_oc == NULL ||
-			    grace_ttl < o->entered + o->exp.ttl) {
+			    grace_ttl < o->exp.entered + o->exp.ttl) {
 				grace_oc = oc;
-				grace_ttl = o->entered + o->exp.ttl;
+				grace_ttl = o->exp.entered + o->exp.ttl;
 			}
 		}
 	}

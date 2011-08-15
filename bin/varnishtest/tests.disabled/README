@@ -1,0 +1,5 @@
+Tests in this directory are not executed automatically on 'make check'.
+
+The main reason for a test to live here is when the underlying problem
+isn't fixed yet, but a test case exists. This avoids breaking the rest of
+the 'make check' tests while a fix is being produced.
