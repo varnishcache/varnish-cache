@@ -199,7 +199,7 @@ stv_alloc(const struct sess *sp, size_t size)
 struct stv_objsecrets {
 	unsigned	magic;
 #define STV_OBJ_SECRETES_MAGIC	0x78c87247
-	unsigned	nhttp;
+	uint16_t	nhttp;
 	unsigned	lhttp;
 	unsigned	wsl;
 	struct exp	*exp;
@@ -294,7 +294,7 @@ stv_default_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 
 struct object *
 STV_NewObject(struct sess *sp, const char *hint, unsigned wsl, struct exp *ep,
-    unsigned nhttp)
+    uint16_t nhttp)
 {
 	struct object *o;
 	struct stevedore *stv;

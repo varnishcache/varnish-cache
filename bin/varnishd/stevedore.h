@@ -91,7 +91,7 @@ struct object *STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
     const struct stv_objsecrets *soc);
 
 struct object *STV_NewObject(struct sess *sp, const char *hint, unsigned len,
-    struct exp *, unsigned nhttp);
+    struct exp *, uint16_t nhttp);
 struct storage *STV_alloc(const struct sess *sp, size_t size);
 void STV_trim(struct storage *st, size_t size);
 void STV_free(struct storage *st);
