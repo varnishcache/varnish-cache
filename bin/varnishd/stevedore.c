@@ -151,20 +151,15 @@ static struct storage *
 stv_alloc(const struct sess *sp, size_t size)
 {
 	struct storage *st;
-	struct stevedore *stv = NULL;
+	struct stevedore *stv;
 	unsigned fail = 0;
 
 	/*
-	 * Always try the stevedore which allocated the object in order to
-	 * not needlessly split an object across multiple stevedores.
+	 * Always use the stevedore which allocated the object in order to
+	 * keep an object inside the same stevedore.
 	 */
-	if (sp->obj != NULL) {
-		CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-		stv = sp->obj->objstore->stevedore;
-	} else {
-		INCOMPL();
-		stv = stv_transient;
-	}
+	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
+	stv = sp->obj->objstore->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
 	if (size > (size_t)(params->fetch_maxchunksize) << 10)
