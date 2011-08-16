@@ -112,3 +112,5 @@ Changes to behaviour
 ====================
 
 Varnish will return an error when headers are too large instead of just ignoring them. If the limits are too low, Varnish will return HTTP 413. You can change the limits by increasing http_req_hdr_len and http_req_size.
+
+thread_pool_max is now per thread pool, while it was a total across all pools in 2.1. If you had this set in 2.1, you should adjust it for 3.0.
