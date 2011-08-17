@@ -485,8 +485,12 @@ vcl_fetch
   error code [reason]
     Return the specified error code to the client and abandon the request.
 
-  pass
-    Switch to pass mode.  Control will eventually pass to vcl_pass.
+  hit_for_pass
+    Pass in fetch. This will create a hit_for_pass object. Note that
+    the TTL for the hit_for_pass object will be set to what the
+    current value of beresp.ttl. Control will be handled to
+    vcl_deliver on the current request, but subsequent requests will
+    go directly to vcl_pass based on the hit_for_pass object.
 
   restart
     Restart the transaction. Increases the restart counter. If the number 
