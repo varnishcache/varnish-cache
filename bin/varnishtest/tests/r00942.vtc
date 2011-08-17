@@ -1,0 +1,38 @@
+varnishtest "#942 junk after gzip from backend"
+
+server s1 {
+	rxreq
+	txresp -nolen \
+		-hdr "Content-Encoding: gzip" \
+		-hdr "Transfer-Encoding: Chunked"
+	send "14\r\n"
+		# An empty gzip file:
+		sendhex "1f8b"
+		sendhex "08"
+		sendhex "00"
+		sendhex "00000000"
+		sendhex "00"
+		sendhex "03"
+		sendhex "0300"
+		sendhex "00000000"
+		sendhex "00000000"
+	send "\r\n"
+
+	chunked "FOOBAR"
+
+	chunkedlen 0
+
+} -start
+
+varnish v1 \
+	-arg {-p diag_bitmap=0x00010000} \
+	-vcl+backend {} 
+
+varnish v1 -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
