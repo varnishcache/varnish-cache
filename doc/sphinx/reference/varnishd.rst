@@ -87,9 +87,11 @@ OPTIONS
 
 -S file     Path to a file containing a secret used for authorizing access to the management port.
 
--s type[,options]
+-s [name=]type[,options]
             Use the specified storage backend.  See Storage Types for a list of supported storage
-            types.  This option can be used multiple times to specify multiple storage files.
+            types.  This option can be used multiple times to specify multiple storage files. You
+ 	    can name the different backends. Varnish will then reference that backend with the 
+	    given name in logs, statistics, etc.
 
 -T address[:port]
             Offer a management interface on the specified address and port.  See Management
@@ -208,6 +210,12 @@ file[,path[,size[,granularity]]]
 persistence[XXX]
       New, shiny, better.
 
+Transient Storage
+-----------------
+      
+      If you name any of your storage backend "Transient" it will be
+      used for transient (short lived) objects. By default Varnish
+      would use an unlimited malloc backend for this.
 
 Management Interface
 --------------------
