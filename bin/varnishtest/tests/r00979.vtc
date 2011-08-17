@@ -1,0 +1,29 @@
+varnishtest "r00979.vtc Test restart when do_stream in vcl_deliver"
+
+server s1 {
+	rxreq
+	txresp -status 200 -body "1"
+	expect_close
+
+	accept
+	rxreq
+	txresp -status 200 -body "11"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		set beresp.do_stream = true;
+	}
+	sub vcl_deliver {
+		if (req.restarts == 0) {
+			return (restart);
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 2
+} -run
