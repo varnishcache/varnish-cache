@@ -21,7 +21,7 @@ String concatenation did not have an operator previously, but this has now been 
 becomes
 
 	import std;
-	std.log "log something";
+	std.log("log something");
 
 You only need to import std once.
 
