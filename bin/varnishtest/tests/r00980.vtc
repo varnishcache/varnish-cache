@@ -1,0 +1,29 @@
+varnishtest "r00980 test gzip on fetch with content_length and do_stream"
+
+server s1 {
+	rxreq
+	expect req.url == "/foobar"
+	expect req.http.accept-encoding == "gzip"
+	txresp -bodylen 43
+} -start
+
+varnish v1 -cliok "param.set http_gzip_support true" -vcl+backend {
+
+	sub vcl_fetch {
+		set beresp.do_gzip = true;
+		set beresp.do_stream = true;
+	}
+} -start
+
+client c1 {
+	txreq -url /foobar -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.http.content-encoding == "gzip"
+	gunzip
+	expect resp.bodylen == 43
+
+	txreq -url /foobar 
+	rxresp
+	expect resp.http.content-encoding == "resp.http.content-encoding"
+	expect resp.bodylen == 43
+} -run
