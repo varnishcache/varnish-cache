@@ -834,7 +834,7 @@ based on the request URL:::
 
   sub vcl_fetch {
     if (beresp.ttl < 120s) {
-      std.log "Adjusting TTL";
+      std.log("Adjusting TTL");
       set beresp.ttl = 120s;
     }
   }
