@@ -718,7 +718,7 @@ cnt_fetchbody(struct sess *sp)
 	else if (sp->wrk->is_gzip)
 		sp->wrk->vfp = &vfp_testgzip;
 
-	if (sp->wrk->do_esi)
+	if (sp->wrk->do_esi || sp->esi_level > 0)
 		sp->wrk->do_stream = 0;
 	if (!sp->wantbody)
 		sp->wrk->do_stream = 0;
