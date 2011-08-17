@@ -233,6 +233,7 @@ cnt_prepresp(struct sess *sp)
 		AZ(sp->obj);
 		sp->restarts++;
 		sp->director = NULL;
+		sp->wrk->h_content_length = NULL;
 		http_Setup(sp->wrk->bereq, NULL);
 		http_Setup(sp->wrk->beresp, NULL);
 		http_Setup(sp->wrk->resp, NULL);
