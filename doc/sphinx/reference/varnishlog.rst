@@ -52,7 +52,8 @@ The following options are available:
 -k num      Only show the first num log records.
 
 -m tag:regex only list transactions where tag matches regex. Multiple
-            -m options are AND-ed together.  
+            -m options are AND-ed together. Can not be combined with 
+	    -O.
 
 -n          Specifies the name of the varnishd instance to get logs from.  If
 	    -n is not specified, the host name is used.
