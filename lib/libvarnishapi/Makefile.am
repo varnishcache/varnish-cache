@@ -12,7 +12,7 @@ libvarnishapi_la_SOURCES = \
 	\
 	../libvarnish/assert.c \
 	../libvarnish/argv.c \
-	../libvarnish/vcs_version.h \
+	../../include/vcs_version.h \
 	../libvarnish/version.c \
 	../libvarnish/cli_common.c \
 	../libvarnish/cli_auth.c \
