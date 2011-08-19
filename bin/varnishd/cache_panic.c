@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #ifndef HAVE_EXECINFO_H
 #include "compat/execinfo.h"
@@ -56,6 +57,7 @@
  */
 
 static struct vsb vsps, *vsp;
+pthread_mutex_t panicstr_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 /*--------------------------------------------------------------------*/
 
@@ -294,6 +296,9 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	const char *q;
 	const struct sess *sp;
 
+	AZ(pthread_mutex_lock(&panicstr_mtx)); /* Won't be released,
+						  we're going to die
+						  anyway */
 	switch(xxx) {
 	case 3:
 		VSB_printf(vsp,
