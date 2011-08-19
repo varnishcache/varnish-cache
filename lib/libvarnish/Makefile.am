@@ -14,7 +14,6 @@ libvarnish_la_SOURCES = \
 	cli_serve.c \
 	flopen.c \
 	num.c \
-	vcs_version.h \
 	time.c \
 	tcp.c \
 	vct.c \
@@ -32,28 +31,6 @@ libvarnish_la_SOURCES = \
 
 libvarnish_la_CFLAGS = -DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"'
 libvarnish_la_LIBADD = ${RT_LIBS} ${NET_LIBS} ${LIBM} @PCRE_LIBS@
-
-BUILT_SOURCES = vcs_version.h
-MAINTAINERCLEANFILES = vcs_version.h
-vcs_version.h: FORCE
-	if [ -d "$(top_srcdir)/.git" ]; then \
-		V="$$(git show -s --pretty=format:%h)" \
-		H="$$(head -n 1 vcs_version.h 2>/dev/null || true)"; \
-		if [ "/* $$V */" != "$$H" ]; then \
-		( \
-		  echo "/* $$V */" ;\
-		  echo '/*' ;\
-		  echo ' * NB:  This file is machine generated, DO NOT EDIT!' ;\
-		  echo ' *' ;\
-		  echo ' * Run make to regenerate' ;\
-		  echo ' *'  ;\
-		  echo ' */' ;\
-		  echo '' ;\
-		  echo "#define VCS_Version \"$$V\"" \
-		) > vcs_version.h ; \
-		fi \
-	fi
-FORCE:
 
 if ENABLE_TESTS
 TESTS = num_c_test

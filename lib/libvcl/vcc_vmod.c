@@ -37,6 +37,7 @@
 #include "vcc_priv.h"
 #include "vcc_compile.h"
 #include "libvarnish.h"
+#include "vmod_abi.h"
 
 void
 vcc_ParseImport(struct vcc *tl)
@@ -46,6 +47,7 @@ vcc_ParseImport(struct vcc *tl)
 	struct token *mod, *t1;
 	const char *modname;
 	const char *proto;
+	const char *abi;
 	const char **spec;
 	struct symbol *sym;
 	const struct symbol *osym;
@@ -129,6 +131,16 @@ vcc_ParseImport(struct vcc *tl)
 		VSB_printf(tl->sb, "Could not load module %.*s\n\t%s\n",
 		    PF(mod), fn);
 		VSB_printf(tl->sb, "\tModule has wrong name: <%s>\n", modname);
+		vcc_ErrWhere(tl, mod);
+		return;
+	}
+
+	abi = dlsym(hdl, "Vmod_Varnish_ABI");
+	if (abi == NULL || strcmp(abi, VMOD_ABI_Version) != 0) {
+		VSB_printf(tl->sb, "Could not load module %.*s\n\t%s\n",
+		    PF(mod), fn);
+		VSB_printf(tl->sb, "\tABI mismatch, expected <%s>, got <%s>\n",
+			   VMOD_ABI_Version, abi);
 		vcc_ErrWhere(tl, mod);
 		return;
 	}
