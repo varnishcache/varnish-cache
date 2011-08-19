@@ -1,3 +1,106 @@
+==================================
+Changes from 3.0.0 to 3.0.1 beta 1
+==================================
+
+Varnishd
+--------
+
+- Avoid sending an empty end-chunk when sending bodyless responsed.
+
+- `http_resp_hdr_len` and `http_req_hdr_len` were set to too low
+  values leading to clients receiving `HTTP 400 Bad Request` errors.
+  The limit has been increased and the error code is now `HTTP 413
+  Request entity too large`.
+
+- Objects with grace or keep set were mistakenly considered as
+  candidates for the transient storage.  They now have their grace and
+  keep limited to limit the memory usage of the transient stevedore.
+
+- If a request was restarted from `vcl_miss` or `vcl_pass` it would
+  crash.  This has been fixed.  `Bug #965`_.
+
+- Only the first few clients waiting for an object from the backend
+  would be woken up when object arrived and this lead to some clients
+  getting stuck for a long time.  This has now been fixed. `Bug #963`_.
+
+- The `hash` and `client` directors would mistakenly retry fetching an
+  object from the same backend unless health probes were enabled.
+  This has been fixed and it will now retry a different backend.
+
+.. _bug #965: http://varnish-cache.org/trac/ticket/965
+.. _bug #963: http://varnish-cache.org/trac/ticket/963
+
+VCL
+---
+
+- Request specific variables such as `client.*` and `server.*` are now
+  correctly marked as not available in `vcl_init` and `vcl_fini`.
+
+- The VCL compiler would fault if two IP comparisons were done on the
+  same line.  This now works correctly.  `Bug #948`_.
+
+.. _bug #948: http://varnish-cache.org/trac/ticket/948
+
+varnishncsa
+-----------
+
+- Add support for logging arbitrary request and response headers.
+
+- Fix crashes if `hitmiss` and `handling` have not yet been set.
+
+- Avoid printing partial log lines if there is an error in a format
+  string.
+
+- Report user specified format string errors better.
+
+varnishlog
+----------
+
+- `varnishlog -r` now works correctly again and no longer opens the
+  shared log file of the running Varnish.
+
+Other
+-----
+
+- Various documentation updates.
+
+- Minor compilation fixes for newer compilers.
+
+- A bug in the ESI entity replacement parser has been fixed.  `Bug
+  #961`_.
+
+- The ABI of vmods are now checked.  This will require a rebuild of
+  all vmods against the new version of Varnish.
+
+.. _bug #961: http://varnish-cache.org/trac/ticket/961
+
+================================
+Changes from 3.0 beta 2 to 3.0.0
+================================
+
+Varnishd
+--------
+
+- Avoid sending an empty end-chunk when sending bodyless responsed.
+
+VCL
+---
+
+- The `synthetic` keyword has now been properly marked as only
+  available in `vcl_deliver`.  `Bug #936`_.
+
+.. _bug #936: http://varnish-cache.org/trac/ticket/936
+
+varnishadm
+----------
+
+- Fix crash if the secret file was unreadable.  `Bug #935`_.
+
+- Always exit if `varnishadm` can't connect to the backend for any
+  reason.
+
+.. _bug #935: http://varnish-cache.org/trac/ticket/935
+
 =====================================
 Changes from 3.0 beta 1 to 3.0 beta 2
 =====================================
