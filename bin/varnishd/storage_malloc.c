@@ -202,6 +202,7 @@ sma_init(struct stevedore *parent, int ac, char * const *av)
 	ALLOC_OBJ(sc, SMA_SC_MAGIC);
 	AN(sc);
 	sc->sma_max = SIZE_MAX;
+	assert(sc->sma_max == SIZE_MAX);
 	parent->priv = sc;
 
 	AZ(av[ac]);
