@@ -1143,7 +1143,7 @@ http_process(struct vtclog *vl, const char *spec, int sock, int sfd)
 	AN(hp);
 	hp->fd = sock;
 	hp->timeout = 5000;
-	hp->nrxbuf = 640*1024;
+	hp->nrxbuf = 2048*1024;
 	hp->vsb = VSB_new_auto();
 	hp->rxbuf = malloc(hp->nrxbuf);		/* XXX */
 	hp->sfd = sfd;
