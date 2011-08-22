@@ -123,17 +123,22 @@ LRU_Free(struct lru *lru)
  */
 
 static struct stevedore *
-stv_pick_stevedore(const char *hint)
+stv_pick_stevedore(const struct sess *sp, const char **hint)
 {
 	struct stevedore *stv;
 
-	if (hint != NULL && *hint != '\0') {
+	AN(hint);
+	if (*hint != NULL && **hint != '\0') {
 		VTAILQ_FOREACH(stv, &stevedores, list) {
-			if (!strcmp(stv->ident, hint))
+			if (!strcmp(stv->ident, *hint))
 				return (stv);
 		}
-		if (!strcmp(TRANSIENT_STORAGE, hint))
+		if (!strcmp(TRANSIENT_STORAGE, *hint))
 			return (stv_transient);
+
+		/* Hint was not valid, nuke it */
+		WSP(sp, SLT_Debug, "Storage hint not usable");
+		*hint = NULL;
 	}
 	/* pick a stevedore and bump the head along */
 	stv = VTAILQ_NEXT(stv_next, list);
@@ -182,7 +187,7 @@ stv_alloc(const struct sess *sp, size_t size)
 			break;
 
 		/* Enough is enough: try another if we have one */
-		if (++fail == 50)	/* XXX Param */
+		if (++fail >= params->nuke_limit)
 			break;
 	}
 	if (st != NULL)
@@ -297,9 +302,10 @@ STV_NewObject(struct sess *sp, const char *hint, unsigned wsl, struct exp *ep,
     uint16_t nhttp)
 {
 	struct object *o;
-	struct stevedore *stv;
+	struct stevedore *stv, *stv0;
 	unsigned lhttp, ltot;
 	struct stv_objsecrets soc;
+	int i;
 
 	assert(wsl > 0);
 	wsl = PRNDUP(wsl);
@@ -316,9 +322,25 @@ STV_NewObject(struct sess *sp, const char *hint, unsigned wsl, struct exp *ep,
 
 	ltot = sizeof *o + wsl + lhttp;
 
-	stv = stv_pick_stevedore(hint);
+	stv = stv0 = stv_pick_stevedore(sp, &hint);
 	AN(stv->allocobj);
 	o = stv->allocobj(stv, sp, ltot, &soc);
+	if (o == NULL && hint == NULL) {
+		do {
+			stv = stv_pick_stevedore(sp, &hint);
+			AN(stv->allocobj);
+			o = stv->allocobj(stv, sp, ltot, &soc);
+		} while (o == NULL && stv != stv0);
+	}
+	if (o == NULL) {
+		/* no luck; try to free some space and keep trying */
+		for (i = 0; o == NULL && i < params->nuke_limit; i++) {
+			if (EXP_NukeOne(sp, stv->lru) == -1)
+				break;
+			o = stv->allocobj(stv, sp, ltot, &soc);
+		}
+	}
+
 	if (o == NULL)
 		return (NULL);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
