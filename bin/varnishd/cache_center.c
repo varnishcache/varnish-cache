@@ -424,6 +424,10 @@ cnt_error(struct sess *sp)
 			    1024, &w->exp, (uint16_t)params->http_max_hdr);
 		if (sp->obj == NULL) {
 			sp->doclose = "Out of objects";
+			sp->director = NULL;
+			sp->wrk->h_content_length = NULL;
+			http_Setup(sp->wrk->beresp, NULL);
+			http_Setup(sp->wrk->bereq, NULL);
 			sp->step = STP_DONE;
 			return(0);
 		}
