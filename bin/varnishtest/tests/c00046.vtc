@@ -1,0 +1,64 @@
+varnishtest	"Object/LRU/Stevedores with hinting and body alloc failures"
+
+server s1 {
+	rxreq
+	txresp -bodylen 1000000
+	rxreq
+	txresp -bodylen 1000001
+	rxreq
+	txresp -bodylen 1000002
+} -start
+
+varnish v1 -storage "-smalloc,1m -smalloc,1m, -smalloc,1m" -vcl+backend {
+	sub vcl_fetch {
+		set beresp.storage = "s0";
+	}
+} -start
+
+
+client c1 {
+	txreq -url /foo
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 1000000
+} -run
+
+varnish v1 -expect SMA.Transient.g_bytes == 0
+varnish v1 -expect SMA.s0.g_bytes > 1000000
+varnish v1 -expect SMA.s0.g_space < 100000
+varnish v1 -expect SMA.s1.g_bytes == 0
+varnish v1 -expect SMA.s1.g_space > 1000000
+varnish v1 -expect SMA.s2.g_bytes == 0
+varnish v1 -expect SMA.s2.g_space > 1000000 
+
+client c1 {
+	txreq -url /bar
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 1000001
+} -run
+
+varnish v1 -expect n_lru_nuked == 1
+varnish v1 -expect SMA.Transient.g_bytes == 0
+varnish v1 -expect SMA.s0.g_bytes > 1000000
+varnish v1 -expect SMA.s0.g_space < 100000
+varnish v1 -expect SMA.s1.g_bytes == 0
+varnish v1 -expect SMA.s1.g_space > 1000000
+varnish v1 -expect SMA.s2.g_bytes == 0
+varnish v1 -expect SMA.s2.g_space > 1000000 
+
+client c1 {
+	txreq -url /foo
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 1000002
+} -run
+
+varnish v1 -expect n_lru_nuked == 2
+varnish v1 -expect SMA.Transient.g_bytes == 0
+varnish v1 -expect SMA.s0.g_bytes > 1000000
+varnish v1 -expect SMA.s0.g_space < 100000
+varnish v1 -expect SMA.s1.g_bytes == 0
+varnish v1 -expect SMA.s1.g_space > 1000000
+varnish v1 -expect SMA.s2.g_bytes == 0
+varnish v1 -expect SMA.s2.g_space > 1000000 
