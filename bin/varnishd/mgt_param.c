@@ -617,6 +617,12 @@ static const struct parspec input_parspec[] = {
 		"Restart child process automatically if it dies.\n",
 		0,
 		"on", "bool" },
+	{ "nuke_limit",
+		tweak_uint, &master.nuke_limit, 0, UINT_MAX,
+		"Maximum number of objects we attempt to nuke in order"
+		"to make space for a object body.",
+		EXPERIMENTAL,
+		"10", "allocations" },
 	{ "fetch_chunksize",
 		tweak_uint, &master.fetch_chunksize, 4, UINT_MAX / 1024.,
 		"The default chunksize used by fetcher. "
@@ -1161,7 +1167,8 @@ MCF_DumpRst(void)
 		printf("%s\n", pp->name);
 		if (pp->units != NULL && *pp->units != '\0')
 			printf("\t- Units: %s\n", pp->units);
-		printf("\t- Default: %s\n", strcmp(pp->def,MAGIC_INIT_STRING) == 0 ? "magic" : pp->def);
+		printf("\t- Default: %s\n",
+		    strcmp(pp->def,MAGIC_INIT_STRING) == 0 ? "magic" : pp->def);
 		/*
 		 * XXX: we should mark the params with one/two flags
 		 * XXX: that say if ->min/->max are valid, so we
@@ -1198,7 +1205,10 @@ MCF_DumpRst(void)
 			} else if (*p == '\n') {
 				printf("\n\t");
 			} else if (*p == ':' && p[1] == '\n') {
-				/* Start of definition list, use RSTs code mode for this */
+				/*
+				 * Start of definition list,
+				 * use RSTs code mode for this
+				 */
 				printf("::\n");
 			} else {
 				printf("%c", *p);

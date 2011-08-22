@@ -117,6 +117,7 @@ struct params {
 	/* Fetcher hints */
 	unsigned		fetch_chunksize;
 	unsigned		fetch_maxchunksize;
+	unsigned		nuke_limit;
 
 #ifdef SENDFILE_WORKS
 	/* Sendfile object minimum size */
