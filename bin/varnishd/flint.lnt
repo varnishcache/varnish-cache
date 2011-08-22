@@ -61,6 +61,9 @@
 -esym(714, Vmod_Proto)
 -esym(765, Vmod_Spec)
 -esym(714, Vmod_Spec)
+-esym(765, Vmod_Varnish_ABI)
+-esym(714, Vmod_Varnish_ABI)
+
 
 //-sem (pthread_mutex_lock, thread_lock)
 -sem (pthread_mutex_trylock, thread_lock)
