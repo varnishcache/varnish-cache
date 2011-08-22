@@ -288,7 +288,7 @@ VSL_Init(void)
 
 	vsl_wrap();
 	VSM_head->starttime = (intmax_t)TIM_real();
-	VSM_head->panicstr[0] = '\0';
+	memset(VSM_head->panicstr, '\0', sizeof *VSM_head->panicstr);
 	memset(VSC_C_main, 0, sizeof *VSC_C_main);
 	VSM_head->child_pid = getpid();
 }
