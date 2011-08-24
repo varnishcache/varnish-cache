@@ -1005,8 +1005,8 @@ AssertObjBusy(const struct object *o)
 }
 
 static inline void
-AssertObjPassOrBusy(const struct object *o)
+AssertObjCorePassOrBusy(const struct objcore *oc)
 {
-	if (o->objcore != NULL)
-		AN (o->objcore->flags & OC_F_BUSY);
+	if (oc != NULL)
+		AN (oc->flags & OC_F_BUSY);
 }

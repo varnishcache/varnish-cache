@@ -496,7 +496,7 @@ FetchBody(struct sess *sp)
 		sp->wrk->vfp = &vfp_nop;
 
 	AN(sp->director);
-	AssertObjPassOrBusy(sp->obj);
+	AssertObjCorePassOrBusy(sp->obj->objcore);
 
 	AZ(sp->wrk->vgz_rx);
 	AZ(VTAILQ_FIRST(&sp->obj->store));

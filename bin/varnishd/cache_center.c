@@ -578,6 +578,7 @@ cnt_fetch(struct sess *sp)
 			sp->step = STP_FETCHBODY;
 			return (0);
 		case VCL_RET_DELIVER:
+			AssertObjCorePassOrBusy(sp->objcore);
 			sp->step = STP_FETCHBODY;
 			return (0);
 		default:
@@ -817,6 +818,7 @@ cnt_fetchbody(struct sess *sp)
 		sp->wrk->do_stream = 0;
 
 	if (sp->wrk->do_stream) {
+		AssertObjCorePassOrBusy(sp->obj->objcore);
 		sp->step = STP_PREPRESP;
 		return (0);
 	}
