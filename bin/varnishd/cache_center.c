@@ -310,6 +310,13 @@ cnt_done(struct sess *sp)
 	sp->director = NULL;
 	sp->restarts = 0;
 
+	sp->wrk->do_esi = 0;
+	sp->wrk->do_gunzip = 0;
+	sp->wrk->do_gzip = 0;
+	sp->wrk->do_stream = 0;
+	sp->wrk->is_gunzip = 0;
+	sp->wrk->is_gzip = 0;
+
 	if (sp->vcl != NULL && sp->esi_level == 0) {
 		if (sp->wrk->vcl != NULL)
 			VCL_Rel(&sp->wrk->vcl);
@@ -416,6 +423,13 @@ cnt_error(struct sess *sp)
 	char date[40];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+
+	sp->wrk->do_esi = 0;
+	sp->wrk->is_gzip = 0;
+	sp->wrk->is_gunzip = 0;
+	sp->wrk->do_gzip = 0;
+	sp->wrk->do_gunzip = 0;
+	sp->wrk->do_stream = 0;
 
 	w = sp->wrk;
 	if (sp->obj == NULL) {
@@ -572,7 +586,7 @@ cnt_fetch(struct sess *sp)
 		if (sp->objcore == NULL)
 			sp->wrk->exp.ttl = -1.;
 
-		sp->wrk->do_esi = 0;
+		AZ(sp->wrk->do_esi);
 
 		VCL_fetch_method(sp);
 
@@ -988,6 +1002,8 @@ cnt_hit(struct sess *sp)
 
 	assert(!(sp->obj->objcore->flags & OC_F_PASS));
 
+	AZ(sp->wrk->do_stream);
+
 	VCL_hit_method(sp);
 
 	if (sp->handling == VCL_RET_DELIVER) {
@@ -1360,7 +1376,8 @@ cnt_recv(struct sess *sp)
 		return (0);
 	}
 
-	/* XXX: do_esi ? */
+	/* Zap these, in case we came here through restart */
+	sp->wrk->do_esi = 0;
 	sp->wrk->is_gzip = 0;
 	sp->wrk->is_gunzip = 0;
 	sp->wrk->do_gzip = 0;
@@ -1541,6 +1558,13 @@ CNT_Session(struct sess *sp)
 	    sp->step == STP_LOOKUP ||
 	    sp->step == STP_RECV);
 
+	AZ(w->do_stream);
+	AZ(w->is_gzip);
+	AZ(w->do_gzip);
+	AZ(w->is_gunzip);
+	AZ(w->do_gunzip);
+	AZ(w->do_esi);
+
 	/*
 	 * Whenever we come in from the acceptor we need to set blocking
 	 * mode, but there is no point in setting it when we come from
@@ -1582,6 +1606,12 @@ CNT_Session(struct sess *sp)
 		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
 	}
 	WSL_Flush(w, 0);
+	AZ(w->do_stream);
+	AZ(w->is_gzip);
+	AZ(w->do_gzip);
+	AZ(w->is_gunzip);
+	AZ(w->do_gunzip);
+	AZ(w->do_esi);
 	assert(WRW_IsReleased(w));
 }
 
