@@ -164,6 +164,9 @@ cnt_prepresp(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
+	if (sp->wrk->do_stream)
+		AssertObjCorePassOrBusy(sp->obj->objcore);
+
 	sp->wrk->res_mode = 0;
 
 	if ((sp->wrk->h_content_length != NULL || !sp->wrk->do_stream) &&
@@ -242,10 +245,12 @@ cnt_prepresp(struct sess *sp)
 	default:
 		WRONG("Illegal action in vcl_deliver{}");
 	}
-	if (sp->wrk->do_stream)
+	if (sp->wrk->do_stream) {
+		AssertObjCorePassOrBusy(sp->obj->objcore);
 		sp->step = STP_STREAMBODY;
-	else
+	} else {
 		sp->step = STP_DELIVER;
+	}
 	return (0);
 }
 
@@ -817,8 +822,9 @@ cnt_fetchbody(struct sess *sp)
 	    RFC2616_Do_Cond(sp))
 		sp->wrk->do_stream = 0;
 
+	AssertObjCorePassOrBusy(sp->obj->objcore);
+
 	if (sp->wrk->do_stream) {
-		AssertObjCorePassOrBusy(sp->obj->objcore);
 		sp->step = STP_PREPRESP;
 		return (0);
 	}
@@ -885,6 +891,8 @@ cnt_streambody(struct sess *sp)
 	}
 
 	RES_StreamStart(sp);
+
+	AssertObjCorePassOrBusy(sp->obj->objcore);
 
 	i = FetchBody(sp);
 
