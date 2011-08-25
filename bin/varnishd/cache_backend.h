@@ -156,4 +156,5 @@ dir_init_f VRT_init_dir_dns;
 dir_init_f VRT_init_dir_hash;
 dir_init_f VRT_init_dir_random;
 dir_init_f VRT_init_dir_round_robin;
+dir_init_f VRT_init_dir_fallback;
 dir_init_f VRT_init_dir_client;

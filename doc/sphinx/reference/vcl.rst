@@ -221,6 +221,22 @@ The above example will append "internal.example.net" to the incoming Host
 header supplied by the client, before looking it up. All settings are
 optional.
 
+The fallback director
+~~~~~~~~~~~~~~~~~~~~~
+
+The fallback director will pick the first backend that is healthy. It 
+considers them in the order in which they are listed in its definition.
+
+The fallback director does not take any options.
+
+An example of a fallback director::
+
+  director b3 fallback {
+    { .backend = www1; }
+    { .backend = www2; } // will only be used if www1 is unhealthy.
+    { .backend = www3; } // will only be used if both www1 and www2
+                         // are unhealthy.
+  }
 
 Backend probes
 --------------

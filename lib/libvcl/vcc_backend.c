@@ -695,6 +695,7 @@ static const struct dirlist {
 	{ "random",		vcc_ParseRandomDirector },
 	{ "client",		vcc_ParseRandomDirector },
 	{ "round-robin",	vcc_ParseRoundRobinDirector },
+	{ "fallback",		vcc_ParseRoundRobinDirector },
 	{ "dns",		vcc_ParseDnsDirector },
 	{ NULL,		NULL }
 };
