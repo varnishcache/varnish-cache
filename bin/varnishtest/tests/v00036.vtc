@@ -1,0 +1,131 @@
+varnishtest "Test fallback director"
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -body "slash"
+} -start
+
+server s2 {
+	rxreq
+	expect req.url == "/"
+	txresp -body "slash"
+} -start
+
+server s3 {
+	rxreq
+	expect req.url == "/foo"
+	txresp -hdr "Foo: 3" -body "foobar"
+} -start
+
+varnish v1 -vcl {
+
+	probe p1 {
+		.url = "/";
+		.timeout = 1s;
+		.interval = 1s;
+		.window = 4;
+		.threshold = 3;
+		.initial = 0;
+	}
+	probe p2 {
+		.url = "/";
+		.timeout = 1s;
+		.interval = 1s;
+		.window = 3;
+		.threshold = 2;
+		.initial = 0;
+	}
+
+	backend b1 {
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
+		.max_connections = 1;
+		.probe = p1;
+	}
+	backend b2 {
+		.host = "${s2_addr}";
+		.port = "${s2_port}";
+		.max_connections = 1;
+		.probe = p2;
+	}
+	backend b3 {
+		.host = "${s3_addr}";
+		.port = "${s3_port}";
+	}
+	director f1 fallback {
+		{ .backend = b1; }
+		{ .backend = b2; }
+		{ .backend = b3; }
+	}
+
+	sub vcl_recv {
+		set req.backend = f1;
+		return(pass);
+	}
+} -start
+
+# s1 & s2 have both had 1 probe, so both are unhealthy
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.http.foo == "3"
+} -run
+
+# setup for probe #2
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -body "slash"
+} -start
+
+server s2 {
+	rxreq
+	expect req.url == "/"
+	txresp -body "slash"
+} -start
+
+# if we muck with a running server, the test will wait until it's done,
+# which will be after probe #2 completes. b2 will then be healthy.
+
+server s2 {
+	rxreq
+	expect req.url == "/foo"
+	txresp -hdr "Foo: 2" -body "foobar"
+} -start
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.http.foo == "2"
+} -run
+
+# setup for probe #3
+
+server s1 {
+        rxreq
+        expect req.url == "/"
+        txresp -body "slash"
+} -start
+
+server s2 {
+        rxreq
+        expect req.url == "/"
+        txresp -body "slash"
+} -start
+
+# after probe #3 b1 should be healthy.
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	txresp -hdr "Foo: 1" -body "foobar"
+} -start
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.http.foo == "1"
+} -run

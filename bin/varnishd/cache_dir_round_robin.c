@@ -47,10 +47,13 @@ struct vdi_round_robin_host {
 	struct director			*backend;
 };
 
+enum mode_e { m_round_robin, m_fallback };
+
 struct vdi_round_robin {
 	unsigned			magic;
 #define VDI_ROUND_ROBIN_MAGIC		0x2114a178
 	struct director			dir;
+	enum mode_e			mode;
 	struct vdi_round_robin_host	*hosts;
 	unsigned			nhosts;
 	unsigned			next_host;
@@ -68,9 +71,17 @@ vdi_round_robin_getfd(const struct director *d, struct sess *sp)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_ROUND_ROBIN_MAGIC);
 
+	/* 
+	 * In fallback mode we ignore the next_host and always grab the 
+	 * first healthy backend we can find.
+	 */
 	for (i = 0; i < vs->nhosts; i++) {
-		backend = vs->hosts[vs->next_host].backend;
-		vs->next_host = (vs->next_host + 1) % vs->nhosts;
+		if (vs->mode == m_round_robin) {
+			backend = vs->hosts[vs->next_host].backend;
+			vs->next_host = (vs->next_host + 1) % vs->nhosts;
+		} else /* m_fallback */ {
+			backend = vs->hosts[i].backend;
+		}
 		if (!VDI_Healthy(backend, sp))
 			continue;
 		vbe = VDI_GetFd(backend, sp);
@@ -114,9 +125,9 @@ vdi_round_robin_fini(const struct director *d)
 	FREE_OBJ(vs);
 }
 
-void
-VRT_init_dir_round_robin(struct cli *cli, struct director **bp, int idx,
-    const void *priv)
+static void
+vrt_init_dir(struct cli *cli, struct director **bp, int idx,
+    const void *priv, enum mode_e mode)
 {
 	const struct vrt_dir_round_robin *t;
 	struct vdi_round_robin *vs;
@@ -141,6 +152,7 @@ VRT_init_dir_round_robin(struct cli *cli, struct director **bp, int idx,
 	vs->dir.fini = vdi_round_robin_fini;
 	vs->dir.healthy = vdi_round_robin_healthy;
 
+	vs->mode = mode;
 	vh = vs->hosts;
 	te = t->members;
 	for (i = 0; i < t->nmember; i++, vh++, te++) {
@@ -152,3 +164,18 @@ VRT_init_dir_round_robin(struct cli *cli, struct director **bp, int idx,
 
 	bp[idx] = &vs->dir;
 }
+
+void
+VRT_init_dir_round_robin(struct cli *cli, struct director **bp, int idx,
+    const void *priv)
+{
+	vrt_init_dir(cli, bp, idx, priv, m_round_robin);
+}
+
+void
+VRT_init_dir_fallback(struct cli *cli, struct director **bp, int idx,
+    const void *priv)
+{
+	vrt_init_dir(cli, bp, idx, priv, m_fallback);
+}
+

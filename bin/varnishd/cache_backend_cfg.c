@@ -256,6 +256,8 @@ VRT_init_dir(struct cli *cli, struct director **dir, const char *name,
 		VRT_init_dir_dns(cli, dir, idx, priv);
 	else if (!strcmp(name, "round-robin"))
 		VRT_init_dir_round_robin(cli, dir, idx, priv);
+	else if (!strcmp(name, "fallback"))
+		VRT_init_dir_fallback(cli, dir, idx, priv);
 	else if (!strcmp(name, "client"))
 		VRT_init_dir_client(cli, dir, idx, priv);
 	else
