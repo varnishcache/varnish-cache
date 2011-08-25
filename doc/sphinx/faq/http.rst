@@ -16,10 +16,10 @@ To add a HTTP header, unless you want to add something about the client/request,
 
         sub vcl_fetch {
           # Add a unique header containing the cache servers IP address:
-          remove obj.http.X-Varnish-IP;
-          set    obj.http.X-Varnish-IP = server.ip;
+          remove beresp.http.X-Varnish-IP;
+          set    beresp.http.X-Varnish-IP = server.ip;
           # Another header:
-          set    obj.http.Foo = "bar";
+          set    beresp.http.Foo = "bar";
         }
 
 **How can I log the client IP address on the backend?**
