@@ -9,6 +9,8 @@ Changes to VCL
 
 In most cases you need to update your VCL since there has been some changes to the syntax.
 
+string concatenation operator
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 String concatenation did not have an operator previously, but this has now been changed to ``+``.
 
 ``log`` moved to the std vmod
