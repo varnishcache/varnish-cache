@@ -1,0 +1,97 @@
+varnishtest "Status other than 200,203,300,301,302,307,410 and 404 should not be cached"
+
+server s1 {
+	rxreq
+	txresp -status 500
+	rxreq
+	txresp -status 200 -body "11"
+	rxreq
+	txresp -status 200 -body "ban"
+	rxreq
+	txresp -status 503
+	rxreq
+	txresp -status 200 -body "11"
+	rxreq
+	txresp -status 200 -body "ban"
+	rxreq
+	txresp -status 502
+	rxreq
+	txresp -status 200 -body "11"
+	rxreq
+	txresp -status 200 -body "ban"
+	rxreq
+	txresp -status 405
+	rxreq
+	txresp -status 200 -body "11"
+	rxreq
+	txresp -status 200 -body "ban"
+	rxreq
+	txresp -status 200 -body "11"
+} -start
+
+varnish v1 -arg "-t 300" -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/ban") {
+			ban("req.url ~ /");
+		}
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 500
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 2
+	txreq -url "/ban"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 3
+
+	txreq -url "/"
+	rxresp
+	expect resp.status == 503
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 2
+	txreq -url "/ban"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 3
+
+	txreq -url "/"
+	rxresp
+	expect resp.status == 502
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 2
+	txreq -url "/ban"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 3
+
+	txreq -url "/"
+	rxresp
+	expect resp.status == 405
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 2
+	txreq -url "/ban"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 3
+
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 2
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 2
+} -run

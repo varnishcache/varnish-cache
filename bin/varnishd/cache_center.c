@@ -580,7 +580,7 @@ cnt_fetch(struct sess *sp)
 		 */
 		EXP_Clr(&sp->wrk->exp);
 		sp->wrk->exp.entered = TIM_real();
-		sp->wrk->exp.ttl = RFC2616_Ttl(sp);
+		RFC2616_Ttl(sp);
 
 		/* pass from vclrecv{} has negative TTL */
 		if (sp->objcore == NULL)
