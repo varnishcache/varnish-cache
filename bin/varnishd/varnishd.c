@@ -418,6 +418,9 @@ main(int argc, char * const *argv)
 		MCF_ParamSet(cli, "http_resp_size", "8192");
 		cli_check(cli);
 
+		MCF_ParamSet(cli, "http_req_size", "12288");
+		cli_check(cli);
+
 		MCF_ParamSet(cli, "thread_pool_stack", "32bit");
 		cli_check(cli);
 
