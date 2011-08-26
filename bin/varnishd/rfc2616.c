@@ -65,10 +65,9 @@
  *
  */
 
-double
+void
 RFC2616_Ttl(const struct sess *sp)
 {
-	double ttl;
 	unsigned max_age, age;
 	double h_date, h_expires;
 	char *p;
@@ -78,7 +77,7 @@ RFC2616_Ttl(const struct sess *sp)
 
 	assert(sp->wrk->exp.entered != 0.0 && !isnan(sp->wrk->exp.entered));
 	/* If all else fails, cache using default ttl */
-	ttl = params->default_ttl;
+	sp->wrk->exp.ttl = params->default_ttl;
 
 	max_age = age = 0;
 	h_expires = 0;
@@ -126,9 +125,9 @@ RFC2616_Ttl(const struct sess *sp)
 				max_age = strtoul(p, NULL, 0);
 
 			if (age > max_age)
-				ttl = 0;
+				sp->wrk->exp.ttl = 0;
 			else
-				ttl = max_age - age;
+				sp->wrk->exp.ttl = max_age - age;
 			break;
 		}
 
@@ -139,7 +138,7 @@ RFC2616_Ttl(const struct sess *sp)
 
 		/* If backend told us it is expired already, don't cache. */
 		if (h_expires < h_date) {
-			ttl = 0;
+			sp->wrk->exp.ttl = 0;
 			break;
 		}
 
@@ -151,9 +150,10 @@ RFC2616_Ttl(const struct sess *sp)
 			 * trust Expires: relative to our own clock.
 			 */
 			if (h_expires < sp->wrk->exp.entered)
-				ttl = 0;
+				sp->wrk->exp.ttl = 0;
 			else
-				ttl = h_expires - sp->wrk->exp.entered;
+				sp->wrk->exp.ttl = h_expires -
+				    sp->wrk->exp.entered;
 			break;
 		} else {
 			/*
@@ -161,7 +161,7 @@ RFC2616_Ttl(const struct sess *sp)
 			 * derive a relative time from the two headers.
 			 * (the negative ttl case is caught above)
 			 */
-			ttl = (int)(h_expires - h_date);
+			sp->wrk->exp.ttl = (int)(h_expires - h_date);
 		}
 
 	}
@@ -169,10 +169,8 @@ RFC2616_Ttl(const struct sess *sp)
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
 	WSP(sp, SLT_TTL,
 	    "%u RFC %.0f %.0f %.0f %.0f %.0f %.0f %.0f %u",
-	    sp->xid, ttl, -1., -1., sp->wrk->exp.entered, sp->wrk->exp.age,
-	     h_date, h_expires, max_age);
-
-	return (ttl);
+	    sp->xid, sp->wrk->exp.ttl, -1., -1., sp->wrk->exp.entered,
+	    sp->wrk->exp.age, h_date, h_expires, max_age);
 }
 
 /*--------------------------------------------------------------------

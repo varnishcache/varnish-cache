@@ -934,7 +934,7 @@ char *WS_Snapshot(struct ws *ws);
 unsigned WS_Free(const struct ws *ws);
 
 /* rfc2616.c */
-double RFC2616_Ttl(const struct sess *sp);
+void RFC2616_Ttl(const struct sess *sp);
 enum body_status RFC2616_Body(const struct sess *sp);
 unsigned RFC2616_Req_Gzip(const struct sess *sp);
 int RFC2616_Do_Cond(const struct sess *sp);
