@@ -709,6 +709,7 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 				if (strcmp(fname, "Varnish:time_firstbyte") == 0) {
 					VSB_cat(os, lp->df_ttfb);
 					p = tmp;
+					break;
 				} else if (strcmp(fname, "Varnish:hitmiss") == 0) {
 					VSB_cat(os, (lp->df_hitmiss ? lp->df_hitmiss : "-"));
 					p = tmp;
