@@ -177,7 +177,7 @@ struct http {
 	uint16_t		nhd;		/* Next free hd */
 	uint16_t		status;
 	uint8_t			protover;
-	uint8_t 		conds;		/* If-* headers present */
+	uint8_t			conds;		/* If-* headers present */
 };
 
 /*--------------------------------------------------------------------
@@ -494,7 +494,7 @@ struct object {
 
 	struct ws		ws_o[1];
 
-	uint8_t 		*vary;
+	uint8_t			*vary;
 	unsigned		hits;
 	uint16_t		response;
 

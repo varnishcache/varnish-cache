@@ -153,7 +153,7 @@ vsl_n_check(int fd)
 	if (slh.hdrsize != sizeof slh)
 		return;
 	if (slh.master_pid != 0 && !kill(slh.master_pid, 0)) {
-		fprintf(stderr, 
+		fprintf(stderr,
 			"WARNING: Taking over SHMFILE marked as owned by "
 			"running process (pid=%jd)\n",
 			(intmax_t)slh.master_pid);
@@ -184,7 +184,7 @@ vsl_buildnew(const char *fn, unsigned size, int fill)
 	assert(flags != -1);
 	flags &= ~O_NONBLOCK;
 	AZ(fcntl(vsl_fd, F_SETFL, flags));
-	
+
 	memset(&slh, 0, sizeof slh);
 	slh.magic = VSM_HEAD_MAGIC;
 	slh.hdrsize = sizeof slh;

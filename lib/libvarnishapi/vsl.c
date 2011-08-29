@@ -179,10 +179,10 @@ vsl_nextlog(struct vsl *vsl, uint32_t **pp)
 			vsl->log_ptr = vsl->log_start + 1;
 			VRMB();
 			continue;
-		} 
+		}
 		if (t == VSL_ENDMARKER) {
 			if (vsl->log_ptr != vsl->log_start + 1 &&
-		    	    vsl->last_seq != vsl->log_start[0]) {
+			    vsl->last_seq != vsl->log_start[0]) {
 				/* ENDMARKER not at front and seq wrapped */
 				vsl->log_ptr = vsl->log_start + 1;
 				VRMB();
