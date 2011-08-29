@@ -438,7 +438,7 @@ cnt_error(struct sess *sp)
 		EXP_Clr(&w->exp);
 		sp->obj = STV_NewObject(sp, NULL, 1024, &w->exp,
 		     (uint16_t)params->http_max_hdr);
-		if (sp->obj == NULL) 
+		if (sp->obj == NULL)
 			sp->obj = STV_NewObject(sp, TRANSIENT_STORAGE,
 			    1024, &w->exp, (uint16_t)params->http_max_hdr);
 		if (sp->obj == NULL) {

@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Varnish Software AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -491,7 +491,7 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *p, const char *hos
 		vt = b->probe;
 	}
 
-	VTAILQ_FOREACH(vcl, &vt->vcls, list) 
+	VTAILQ_FOREACH(vcl, &vt->vcls, list)
 		assert (vcl->probep != p);
 
 	vcl = vbp_new_vcl(p, hosthdr);

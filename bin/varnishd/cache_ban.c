@@ -262,7 +262,7 @@ ban_iter(const uint8_t **bs, struct ban_test *bt)
 	}
 	bt->arg2 = ban_get_lump(bs);
 	bt->oper = *(*bs)++;
-	if (bt->oper == BAN_OPER_MATCH || bt->oper == BAN_OPER_NMATCH) 
+	if (bt->oper == BAN_OPER_MATCH || bt->oper == BAN_OPER_NMATCH)
 		bt->arg2_spec = ban_get_lump(bs);
 }
 

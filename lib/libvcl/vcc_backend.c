@@ -653,7 +653,7 @@ vcc_DefBackend(struct vcc *tl, const struct token *nm)
 		VSB_printf(tl->sb, "Backend %.*s redefined\n", PF(tl->t));
 		vcc_ErrWhere(tl, nm);
 		return;
-	} 
+	}
 	sym->fmt = BACKEND;
 	sym->eval = vcc_Eval_Backend;
 	sym->ndef++;

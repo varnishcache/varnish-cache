@@ -226,7 +226,7 @@ VRY_Match(struct sess *sp, const uint8_t *vary)
 			i = vry_cmp(&vary, &vsp);
 			assert(i != 1);	/* hdr must be the same now */
 		}
-		if (i != 0) 
+		if (i != 0)
 			retval = 0;
 		vsp += vry_len(vsp);
 		vary += vry_len(vary);
@@ -241,7 +241,7 @@ VRY_Match(struct sess *sp, const uint8_t *vary)
 	vsp[0] = 0xff;
 	vsp[1] = 0xff;
 	vsp[2] = 0;
-	if (oflo) 
+	if (oflo)
 		sp->vary_l = NULL;
 	else
 		sp->vary_l = vsp + 3;

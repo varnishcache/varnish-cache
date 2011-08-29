@@ -121,7 +121,7 @@ read_tmo(int fd, char *ptr, unsigned len, double tmo)
 	int i, j, to;
 	struct pollfd pfd;
 
-	if (tmo > 0) 
+	if (tmo > 0)
 		to = tmo * 1e3;
 	else
 		to = -1;

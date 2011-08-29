@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2008-2010 Varnish Software AS
+ * Copyright (c) 2008-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Petter Knudsen <petter@linpro.no>
@@ -71,8 +71,8 @@ vdi_round_robin_getfd(const struct director *d, struct sess *sp)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_ROUND_ROBIN_MAGIC);
 
-	/* 
-	 * In fallback mode we ignore the next_host and always grab the 
+	/*
+	 * In fallback mode we ignore the next_host and always grab the
 	 * first healthy backend we can find.
 	 */
 	for (i = 0; i < vs->nhosts; i++) {

@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Varnish Software AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -561,11 +561,13 @@ main(int argc, char **argv)
 			CHECK_OBJ_NOTNULL(fp, FOO_MAGIC);
 			assert(fp->idx == 1);
 
-			/* It cannot possibly be larger than the last value we added */
+			/*
+			 * It cannot possibly be larger than the last
+			 * value we added
+			 */
 			assert(fp->key <= lr);
 			binheap_delete(bh, fp->idx);
-			
-			
+
 			n = fp->n;
 			ALLOC_OBJ(ff[n], FOO_MAGIC);
 			assert(ff[n] != NULL);
