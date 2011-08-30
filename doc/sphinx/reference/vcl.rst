@@ -62,7 +62,9 @@ depending on context one of
 * error
 * fetch
 * hash
+* hit_for_pass
 * lookup
+* ok
 * pass
 * pipe
 * restart
@@ -382,6 +384,15 @@ decide how the request should be handled.  Each subroutine terminates
 by calling one of a small number of keywords which indicates the
 desired outcome.
 
+vcl_init
+  Called when VCL is loaded, before any requests pass through it.
+  Typically used to initialize VMODs.
+
+  return() values:
+
+  ok
+    Normal return, VCL continues loading.
+
 vcl_recv
   Called at the beginning of a request, after the complete request has
   been received and parsed.  Its purpose is to decide whether or not
@@ -544,6 +555,16 @@ vcl_error
     Restart the transaction. Increases the restart counter. If the number 
     of restarts is higher than *max_restarts* varnish emits a guru meditation 
     error.
+
+vcl_fini
+  Called when VCL is discarded only after all requests have exited the VCL.
+  Typically used to clean up VMODs.
+
+  return() values:
+
+  ok
+    Normal return, VCL will be discarded.
+
 
 If one of these subroutines is left undefined or terminates without
 reaching a handling decision, control will be handed over to the
