@@ -624,6 +624,13 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 			 * Fake "%r".  This would be a lot easier if Varnish
 			 * normalized the request URL.
 			 */
+			if (!lp->df_m ||
+			    !req_header(lp, "Host") ||
+			    !lp->df_U ||
+			    !lp->df_H) {
+				clean_logline(lp);
+				return (reopen);
+			}
 			VSB_cat(os, lp->df_m);
 			VSB_putc(os, ' ');
 			if (req_header(lp, "Host")) {
