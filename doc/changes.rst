@@ -1,6 +1,37 @@
-==================================
-Changes from 3.0.0 to 3.0.1 beta 1
-==================================
+================================
+Changes from 3.0.1 rc 1 to 3.0.1
+================================
+
+Varnishd
+--------
+
+- Fix crash in streaming code.
+
+- Add `fallback` director, as a variant of the `round-robin`
+  director.
+
+- The parameter `http_req_size` has been reduced on 32 bit machines.
+
+VCL
+---
+
+- Disallow error in the `vcl_init` and `vcl_fini` VCL functions.
+
+varnishncsa
+-----------
+
+- Fixed crash when using `-X`.
+
+- Fix error when the time to first byte was in the format string.
+
+Other
+-----
+
+- Documentation updates
+
+================================
+Changes from 3.0.0 to 3.0.1 rc 1
+================================
 
 Varnishd
 --------
