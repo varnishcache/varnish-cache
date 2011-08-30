@@ -192,18 +192,19 @@ vsm_open(struct VSM_data *vd, int diag)
 	}
 	vd->vsm_end = (uint8_t *)vd->VSM_head + slh.shm_size;
 
-	for (j = 0; j < 20 && slh.alloc_seq == 0; j++)
+	for (j = 0; j < 20 && vd->VSM_head->alloc_seq == 0; j++)
 		(void)usleep(50000);
-	if (slh.alloc_seq == 0) {
+	if (vd->VSM_head->alloc_seq == 0) {
 		if (diag)
 			vd->diag(vd->priv, "File not initialized %s\n",
 			    vd->fname);
 		assert(0 == munmap((void*)vd->VSM_head, slh.shm_size));
 		AZ(close(vd->vsm_fd));
 		vd->vsm_fd = -1;
+		vd->VSM_head = NULL;
 		return (1);
 	}
-	vd->alloc_seq = slh.alloc_seq;
+	vd->alloc_seq = vd->VSM_head->alloc_seq;
 
 	if (vd->vsl != NULL)
 		VSL_Open_CallBack(vd);
