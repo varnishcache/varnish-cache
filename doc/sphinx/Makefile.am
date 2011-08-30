@@ -117,6 +117,7 @@ EXTRA_DIST = \
 	phk/vcl_expr.rst \
 	reference/index.rst \
 	reference/shmem.rst \
+	reference/params.rst \
 	reference/varnishadm.rst \
 	reference/varnish-cli.rst \
 	reference/varnishd.rst \
