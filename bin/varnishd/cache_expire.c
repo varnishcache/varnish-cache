@@ -338,6 +338,7 @@ exp_timer(struct sess *sp, void *priv)
 	struct objcore *oc;
 	struct lru *lru;
 	double t;
+	struct object *o;
 
 	(void)priv;
 	t = TIM_real();
@@ -401,6 +402,9 @@ exp_timer(struct sess *sp, void *priv)
 		VSC_C_main->n_expired++;
 
 		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
+		o = oc_getobj(sp->wrk, oc);
+		WSL(sp->wrk, SLT_ExpKill, 0, "%u %.0f",
+		    o->xid, EXP_Ttl(NULL, o) - t);
 		(void)HSH_Deref(sp->wrk, oc, NULL);
 	}
 	NEEDLESS_RETURN(NULL);
