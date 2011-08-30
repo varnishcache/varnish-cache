@@ -188,6 +188,9 @@ vsm_open(struct VSM_data *vd, int diag)
 		if (diag)
 			vd->diag(vd->priv, "Cannot mmap %s: %s\n",
 			    vd->fname, strerror(errno));
+		AZ(close(vd->vsm_fd));
+		vd->vsm_fd = -1;
+		vd->VSM_head = NULL;
 		return (1);
 	}
 	vd->vsm_end = (uint8_t *)vd->VSM_head + slh.shm_size;
