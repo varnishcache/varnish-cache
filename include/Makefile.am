@@ -60,6 +60,7 @@ vcs_version.h: FORCE
 		H="$$(head -n 1 vcs_version.h 2>/dev/null || true)"; \
 		if [ "/* $$V */" != "$$H" ]; then \
 		( \
+		  echo "/* $$V */" ;\
 		  echo '/*' ;\
 		  echo ' * NB:  This file is machine generated, DO NOT EDIT!' ;\
 		  echo ' *' ;\
