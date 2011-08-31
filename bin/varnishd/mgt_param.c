@@ -1153,8 +1153,6 @@ MCF_ParamInit(struct cli *cli)
 
 /*--------------------------------------------------------------------*/
 
-#ifdef DIAGNOSTICS
-
 void
 MCF_DumpRst(void)
 {
@@ -1218,4 +1216,3 @@ MCF_DumpRst(void)
 	}
 	printf("\n");
 }
-#endif /* DIAGNOSTICS */

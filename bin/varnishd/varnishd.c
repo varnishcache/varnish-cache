@@ -503,12 +503,10 @@ main(int argc, char * const *argv)
 			VCS_Message("varnishd");
 			exit(0);
 		case 'x':
-#ifdef DIAGNOSTICS
 			if (!strcmp(optarg, "dumprst")) {
 				MCF_DumpRst();
 				exit (0);
 			}
-#endif /* DIAGNOSTICS */
 			usage();
 			break;
 		case 'w':
