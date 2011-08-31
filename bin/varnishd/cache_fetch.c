@@ -504,6 +504,12 @@ FetchBody(struct sess *sp)
         if (sp->wrk->beresp->status != 304)
         	AZ(VTAILQ_FIRST(&sp->obj->store));
 
+        /* If we've freshened from another object and got a "Not Modified"
+         * response, then we have already duped the other object's body.
+         */
+        if (sp->wrk->beresp->status != 304)
+        	AZ(VTAILQ_FIRST(&sp->obj->store));
+
 	AZ(sp->wrk->vgz_rx);
 	switch (sp->wrk->body_status) {
 	case BS_NONE:
