@@ -1,0 +1,12 @@
+varnishtest "Real relational comparisons"
+
+varnish v1 -vcl {
+	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
+
+	backend foo { .host = "${bad_ip}"; }
+	sub vcl_recv {
+		if (std.random(0,5) < 1.0) {
+			return (pipe);
+		}
+	}
+}
