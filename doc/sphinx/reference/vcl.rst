@@ -148,58 +148,69 @@ Configuring a director may look like this:::
     }
   } 
 
+The family of random directors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are three directors that share the same logic, called the random
+director, client director and hash director. They each distribute traffic
+among the backends assigned to it using a random distribution seeded with
+either the client identity, a random number or the cache hash (typically
+url). Beyond the initial seed, they act the same.
+
+Each backend requires a .weight option which sets the amount of traffic
+each backend will get compared to the others. Equal weight means equal
+traffic. A backend with lower weight than an other will get proportionally
+less traffic.
+
+The director has an optional .retries option which defaults to the number
+of backends the director has. The director will attempt .retries times to
+find a healthy backend if the first attempt fails. Each attempt re-uses the
+previous seed in an iterative manner. For the random director this detail
+is of no importance as it will give different results each time. For the
+hash and client director, this means the same URL or the same client will
+fail to the same server consistently.
+
 The random director
-~~~~~~~~~~~~~~~~~~~
+...................
 
-The random director takes one per director option .retries.  This
-specifies how many tries it will use to find a working backend.  The
-default is the same as the number of backends defined for the
-director.
+This uses a random number to seed the backend selection.
 
-There is also a per-backend option: weight which defines the portion
-of traffic to send to the particular backend.
+The client director
+...................
+
+The client director picks a backend based on the clients
+*identity*. You can set the VCL variable *client.identity* to identify
+the client by picking up the value of a session cookie or similar.
+
+The hash director
+.................
+
+The hash director will pick a backend based on the URL hash
+value.
+
+This is useful is you are using Varnish to load balance in front of
+other Varnish caches or other web accelerators as objects won't be
+duplicated across caches.
+
+It will use the value of req.hash, just as the normal cache-lookup methods.
+
 
 The round-robin director
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 The round-robin director does not take any options.
 
+It will use the first backend for the first request, the second backend for
+the second request and so on, and start from the top again when it gets to
+the end.
 
-The client director
-~~~~~~~~~~~~~~~~~~~
-
-The client director picks a backend based on the clients
-*identity*. You can set the VCL variable *client.identity* to identify
-the client by picking up the value of a session cookie or similar.
-
-Note: from 2.1.0 to 2.1.3 *client.identity* isn't available and the
-director will use automatically set the idenity based on client.ip In
-2.1.4 and onwards you can set client.identity to any string available.
-
-The client director takes one option - *retries* which set the number
-of retries the director should take in order to find a healthy
-backend.
-
-
-
-The hash director
-~~~~~~~~~~~~~~~~~
-
-The hash director will pick a backend based on the URL hash
-value. 
-
-This is useful is you are using Varnish to load balance in front of
-other Varnish caches or other web accelerators as objects won't be
-duplicated across caches.
-
-The client director takes one option - *retries* which set the number
-of retries the director should take in order to find a healthy
-backend.
+If a backend is unhealthy or Varnish fails to connect, it will be skipped.
+The round-robin director will try all the backends once before giving up.
 
 The DNS director
 ~~~~~~~~~~~~~~~~
 
-The DNS director can use backends in three different ways. Either like the
+The DNS director can use backends in two different ways. Either like the
 random or round-robin director or using .list::
 
   director directorname dns {
@@ -216,12 +227,21 @@ random or round-robin director or using .list::
 
 This will specify 384 backends, all using port 80 and a connection timeout
 of 0.4s. Options must come before the list of IPs in the .list statement.
+The .list-method does not support IPv6. It is not a white-list, it is an
+actual list of backends that will be created internally in Varnish - the
+larger subnet the more overhead.
 
 The .ttl defines the cache duration of the DNS lookups.
 
 The above example will append "internal.example.net" to the incoming Host
 header supplied by the client, before looking it up. All settings are
 optional.
+
+Health checks are not thoroughly supported.
+
+DNS round robin balancing is supported. If a hostname resolves to multiple
+backends, the director will divide the traffic between all of them in a
+round-robin manner.
 
 The fallback director
 ~~~~~~~~~~~~~~~~~~~~~
