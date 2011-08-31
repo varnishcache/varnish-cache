@@ -407,9 +407,10 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
                if (EXP_Keep(sp, o) >= sp->t_req
                    && (http_GetHdr(o->http, H_Last_Modified, &p)
                        || http_GetHdr(o->http, H_ETag, &p)))
-                   if (stale_o == NULL || stale_ttl < o->entered + o->exp.ttl) {
-                       stale_o = o;
-                       stale_ttl = o->entered + o->exp.ttl;
+                   if (stale_o == NULL ||
+		       stale_ttl < o->exp.entered + o->exp.ttl) {
+			   stale_o = o;
+			   stale_ttl = o->exp.entered + o->exp.ttl;
                    }
 
 	}

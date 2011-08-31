@@ -1,22 +1,6 @@
 # $Id$
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 varnishtest "Verify the semantics of keep (timeout for conditional requests)"
-=======
-test "Verify the semantics of keep (timeout for conditional requests)"
->>>>>>> Merged conditional backend request feature
-=======
-varnishtest "Verify the semantics of keep (timeout for conditional requests)"
->>>>>>> Merge conditional backend requests with current trunk
-=======
-test "Verify the semantics of keep (timeout for conditional requests)"
->>>>>>> Merged conditional backend request feature
-=======
-varnishtest "Verify the semantics of keep (timeout for conditional requests)"
->>>>>>> Merge conditional backend requests with current trunk
 
 server s1 {
         rxreq

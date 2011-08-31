@@ -116,7 +116,7 @@ VRT_l_##obj##_status(const struct sess *sp, int num)		\
 {								\
 								\
 	assert(num >= 100 && num <= 999);			\
-	cont->http->status = (unint16_t) num;			\
+	cont->http->status = (uint16_t) num;			\
 }
 
 #define VRT_DO_STATUS_r(obj, cont, http, nullable)		\
@@ -389,74 +389,19 @@ VRT_r_req_restarts(const struct sess *sp)
  * keep are relative to ttl.
  */
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-#define VRT_DO_EXP(which, exp, fld, offset, extra)		\
-								\
-void __match_proto__()						\
-VRT_l_##which##_##fld(struct sess *sp, double a)		\
-{								\
-								\
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	if (a > 0.)						\
-		a += offset;					\
-	EXP_Set_##fld(&exp, a);					\
-	extra;							\
-}								\
-								\
-double __match_proto__()					\
-VRT_r_##which##_##fld(struct sess *sp)				\
-{								\
-								\
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	return(EXP_Get_##fld(&exp) - offset);			\
-}
-
-static void
-vrt_wsp_exp(const struct sess *sp, unsigned xid, const struct exp *e)
-{
-	WSP(sp, SLT_TTL, "%u VCL %.0f %.0f %.0f %.0f %.0f",
-	    xid, e->ttl - (sp->t_req - e->entered), e->grace, e->keep,
-	    sp->t_req, e->age + (sp->t_req - e->entered));
-}
-
-VRT_DO_EXP(req, sp->exp, ttl, 0, )
-VRT_DO_EXP(req, sp->exp, grace, 0, )
-VRT_DO_EXP(req, sp->exp, keep, 0, )
-
-VRT_DO_EXP(obj, sp->obj->exp, grace, 0,
-   EXP_Rearm(sp->obj);
-   vrt_wsp_exp(sp, sp->obj->xid, &sp->obj->exp);)
-VRT_DO_EXP(obj, sp->obj->exp, ttl, (sp->t_req - sp->obj->exp.entered),
-   EXP_Rearm(sp->obj);
-   vrt_wsp_exp(sp, sp->obj->xid, &sp->obj->exp);)
-VRT_DO_EXP(obj, sp->obj->exp, keep, 0,
-   EXP_Rearm(sp->obj);
-   vrt_wsp_exp(sp, sp->obj->xid, &sp->obj->exp);)
-
-VRT_DO_EXP(beresp, sp->wrk->exp, grace, 0,
-   vrt_wsp_exp(sp, sp->xid, &sp->wrk->exp);)
-VRT_DO_EXP(beresp, sp->wrk->exp, ttl, 0,
-   vrt_wsp_exp(sp, sp->xid, &sp->wrk->exp);)
-VRT_DO_EXP(beresp, sp->wrk->exp, keep, 0,
-   vrt_wsp_exp(sp, sp->xid, &sp->wrk->exp);)
-=======
-=======
->>>>>>> Merged conditional backend request feature
-=======
->>>>>>> Merged conditional backend request feature
-#define VRT_DO_EXP_l(which, cont, fld, extra)			    \
+#define VRT_DO_EXP_l(which, cont, fld, offset, extra)		    \
 void __match_proto__()						    \
 VRT_l_##which##_##fld(struct sess *sp, double a)		    \
 {								    \
 								    \
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			    \
+	if (a > 0.)						    \
+		a += offset;					    \
 	EXP_Set_##fld(&cont->exp, a);				    \
 	extra;							    \
 }
 
-#define VRT_DO_EXP_r(which, cont, fld, nullable)		    \
+#define VRT_DO_EXP_r(which, cont, fld, offset, nullable)	    \
 double __match_proto__()					    \
 VRT_r_##which##_##fld(struct sess *sp)				    \
 {								    \
@@ -466,58 +411,45 @@ VRT_r_##which##_##fld(struct sess *sp)				    \
 	    ILLEGAL_R(sp, #which, #fld);			    \
 	    return (-1);					    \
 	}							    \
-	return(EXP_Get_##fld(&cont->exp));			    \
+	return(EXP_Get_##fld(&cont->exp) - offset);		    \
 }
 
-#define VRT_DO_EXP(which, cont, fld, nullable, extra)		    \
-VRT_DO_EXP_l(which, cont, fld, extra)				    \
-VRT_DO_EXP_r(which, cont, fld, nullable)			    \
+#define VRT_DO_EXP(which, cont, fld, offset, nullable, extra)	    \
+VRT_DO_EXP_l(which, cont, fld, offset, extra)  		            \
+VRT_DO_EXP_r(which, cont, fld, offset, nullable)
 
-VRT_DO_EXP(req, sp, ttl, 0, )
-VRT_DO_EXP(req, sp, grace, 0, )
-VRT_DO_EXP(req, sp, keep, 0, )
-VRT_DO_EXP(obj, sp->obj, grace, 0, EXP_Rearm(sp->obj))
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> Merged conditional backend request feature
-VRT_DO_EXP(obj, sp->obj, ttl, 0, EXP_Rearm(sp->obj))
-VRT_DO_EXP(obj, sp->obj, keep, 0, EXP_Rearm(sp->obj))
-VRT_DO_EXP(beresp, sp->wrk, grace, 0, )
-VRT_DO_EXP(beresp, sp->wrk, ttl, 0, )
-<<<<<<< HEAD
-=======
-VRT_DO_EXP(obj, sp->obj, ttl, 0,
-	   EXP_Rearm(sp->obj);
-	   WSP(sp, SLT_TTL, "%u VCL %.0f %.0f", sp->obj->xid, a, sp->t_req))
-VRT_DO_EXP(obj, sp->obj, keep, 0, EXP_Rearm(sp->obj))
-VRT_DO_EXP(beresp, sp->wrk, grace, 0, )
-VRT_DO_EXP(beresp, sp->wrk, ttl, 0,
-	   WSP(sp, SLT_TTL, "%u VCL %.0f %.0f", sp->xid, a, sp->t_req))
->>>>>>> Merged conditional backend request feature
-=======
->>>>>>> Merged conditional backend request feature
-=======
-RT_DO_EXP(obj, sp->obj, ttl, 0,
-	   EXP_Rearm(sp->obj);
-	   WSP(sp, SLT_TTL, "%u VCL %.0f %.0f", sp->obj->xid, a, sp->t_req))
-VRT_DO_EXP(obj, sp->obj, keep, 0, EXP_Rearm(sp->obj))
-VRT_DO_EXP(beresp, sp->wrk, grace, 0, )
-VRT_DO_EXP(beresp, sp->wrk, ttl, 0,
-	   WSP(sp, SLT_TTL, "%u VCL %.0f %.0f", sp->xid, a, sp->t_req))
->>>>>>> Merged conditional backend request feature
-VRT_DO_EXP(beresp, sp->wrk, keep, 0, )
-VRT_DO_EXP_r(stale_obj, sp->stale_obj, grace, 1)
-VRT_DO_EXP_r(stale_obj, sp->stale_obj, ttl, 1)
-VRT_DO_EXP_r(stale_obj, sp->stale_obj, keep, 1)
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> Merged conditional backend request feature
-=======
->>>>>>> Merged conditional backend request feature
-=======
->>>>>>> Merged conditional backend request feature
+static void
+vrt_wsp_exp(const struct sess *sp, unsigned xid, const struct exp *e)
+{
+	WSP(sp, SLT_TTL, "%u VCL %.0f %.0f %.0f %.0f %.0f",
+	    xid, e->ttl - (sp->t_req - e->entered), e->grace, e->keep,
+	    sp->t_req, e->age + (sp->t_req - e->entered));
+}
+
+VRT_DO_EXP(req, sp, ttl, 0, 0, )
+VRT_DO_EXP(req, sp, grace, 0, 0, )
+VRT_DO_EXP(req, sp, keep, 0, 0, )
+
+VRT_DO_EXP(obj, sp->obj, grace, 0, 0,
+   EXP_Rearm(sp->obj);
+   vrt_wsp_exp(sp, sp->obj->xid, &sp->obj->exp);)
+VRT_DO_EXP(obj, sp->obj, ttl, (sp->t_req - sp->obj->exp.entered), 0,
+   EXP_Rearm(sp->obj);
+   vrt_wsp_exp(sp, sp->obj->xid, &sp->obj->exp);)
+VRT_DO_EXP(obj, sp->obj, keep, 0, 0,
+   EXP_Rearm(sp->obj);
+   vrt_wsp_exp(sp, sp->obj->xid, &sp->obj->exp);)
+
+VRT_DO_EXP(beresp, sp->wrk, grace, 0, 0,
+   vrt_wsp_exp(sp, sp->xid, &sp->wrk->exp);)
+VRT_DO_EXP(beresp, sp->wrk, ttl, 0, 0,
+   vrt_wsp_exp(sp, sp->xid, &sp->wrk->exp);)
+VRT_DO_EXP(beresp, sp->wrk, keep, 0, 0,
+   vrt_wsp_exp(sp, sp->xid, &sp->wrk->exp);)
+    
+VRT_DO_EXP_r(stale_obj, sp->stale_obj, grace, 0, 1)
+VRT_DO_EXP_r(stale_obj, sp->stale_obj, ttl, 0, 1)
+VRT_DO_EXP_r(stale_obj, sp->stale_obj, keep, 0, 1)
 
 /*--------------------------------------------------------------------
  * req.xid

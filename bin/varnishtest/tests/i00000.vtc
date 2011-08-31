@@ -1,22 +1,6 @@
 # $Id$
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 varnishtest "VCL compiler coverage test: conditional refresh extension"
-=======
-test "VCL compiler coverage test: conditional refresh extension"
->>>>>>> Merged conditional backend request feature
-=======
-varnishtest "VCL compiler coverage test: conditional refresh extension"
->>>>>>> Merge conditional backend requests with current trunk
-=======
-test "VCL compiler coverage test: conditional refresh extension"
->>>>>>> Merged conditional backend request feature
-=======
-varnishtest "VCL compiler coverage test: conditional refresh extension"
->>>>>>> Merge conditional backend requests with current trunk
 
 ## stale_obj is r/o in miss, fetch and error, illegal everywhere else
 

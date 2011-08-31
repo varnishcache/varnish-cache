@@ -663,20 +663,8 @@ cnt_fetchbody(struct sess *sp)
 	int i;
 	struct http *hp, *hp2;
 	char *b;
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-	uint16_t nhttp;
+	uint16_t nhttp, stale_nhttp;
 	unsigned l;
-=======
-	unsigned l, nhttp, stale_nhttp;
->>>>>>> Merged conditional backend request feature
-=======
-	unsigned l, nhttp, stale_nhttp;
->>>>>>> Merged conditional backend request feature
-=======
-	unsigned l, nhttp, stale_nhttp;
->>>>>>> Merged conditional backend request feature
 	struct vsb *vary = NULL;
 	int varyl = 0, pass;
 
