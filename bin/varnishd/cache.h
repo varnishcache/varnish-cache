@@ -898,6 +898,7 @@ void RES_StreamPoll(const struct sess *sp);
 /* cache_vary.c */
 struct vsb *VRY_Create(const struct sess *sp, const struct http *hp);
 int VRY_Match(struct sess *sp, const uint8_t *vary);
+void VRY_Validate(const uint8_t *vary);
 
 /* cache_vcl.c */
 void VCL_Init(void);
