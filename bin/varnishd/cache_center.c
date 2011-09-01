@@ -870,7 +870,7 @@ cnt_fetchbody(struct sess *sp)
 		AN(sp->obj->objcore->ban);
 		HSH_Unbusy(sp);
 	}
-	sp->acct_tmp.fetch++;
+	sp->wrk->acct_tmp.fetch++;
 	sp->step = STP_PREPRESP;
 	return (0);
 }
@@ -927,7 +927,7 @@ cnt_streambody(struct sess *sp)
 	} else {
 		sp->doclose = "Stream error";
 	}
-	sp->acct_tmp.fetch++;
+	sp->wrk->acct_tmp.fetch++;
 	sp->director = NULL;
 	sp->restarts = 0;
 
@@ -969,7 +969,7 @@ cnt_first(struct sess *sp)
 	HTC_Init(sp->htc, sp->ws, sp->fd, params->http_req_size,
 	    params->http_req_hdr_len);
 	sp->wrk->lastused = sp->t_open;
-	sp->acct_tmp.sess++;
+	sp->wrk->acct_tmp.sess++;
 
 	sp->step = STP_WAIT;
 	return (0);
@@ -1277,7 +1277,7 @@ cnt_pass(struct sess *sp)
 		return (0);
 	}
 	assert(sp->handling == VCL_RET_PASS);
-	sp->acct_tmp.pass++;
+	sp->wrk->acct_tmp.pass++;
 	sp->sendbody = 1;
 	sp->step = STP_FETCH;
 	return (0);
@@ -1315,7 +1315,7 @@ cnt_pipe(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
-	sp->acct_tmp.pipe++;
+	sp->wrk->acct_tmp.pipe++;
 	WS_Reset(sp->wrk->ws, NULL);
 	http_Setup(sp->wrk->bereq, sp->wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_PIPE);
@@ -1464,7 +1464,7 @@ cnt_start(struct sess *sp)
 	sp->wrk->stats.client_req++;
 	sp->t_req = TIM_real();
 	sp->wrk->lastused = sp->t_req;
-	sp->acct_tmp.req++;
+	sp->wrk->acct_tmp.req++;
 
 	/* Assign XID and log */
 	sp->xid = ++xids;				/* XXX not locked */
@@ -1619,6 +1619,9 @@ CNT_Session(struct sess *sp)
 	AZ(w->is_gunzip);
 	AZ(w->do_gunzip);
 	AZ(w->do_esi);
+#define ACCT(foo)	AZ(w->acct_tmp.foo);
+#include "acct_fields.h"
+#undef ACCT
 	assert(WRW_IsReleased(w));
 }
 
