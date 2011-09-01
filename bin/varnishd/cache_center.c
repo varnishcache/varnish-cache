@@ -1080,10 +1080,12 @@ cnt_lookup(struct sess *sp)
 		AZ(sp->vary_l);
 		AZ(sp->vary_e);
 		(void)WS_Reserve(sp->ws, 0);
-		sp->vary_b = (void*)sp->ws->f;
-		sp->vary_e = (void*)sp->ws->r;
-		sp->vary_b[2] = '\0';
+	} else {
+		AN(sp->ws->r);
 	}
+	sp->vary_b = (void*)sp->ws->f;
+	sp->vary_e = (void*)sp->ws->r;
+	sp->vary_b[2] = '\0';
 
 	oc = HSH_Lookup(sp, &oh);
 
