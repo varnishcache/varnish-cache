@@ -175,7 +175,6 @@ res_WriteGunzipObj(struct sess *sp)
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 		u += st->len;
 
-		sp->acct_tmp.bodybytes += st->len;	/* XXX ? */
 		VSC_C_main->n_objwrite++;
 
 		i = VGZ_WrwGunzip(sp, vg,
@@ -195,7 +194,7 @@ res_WriteGunzipObj(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 static void
-res_WriteDirObj(struct sess *sp, ssize_t low, ssize_t high)
+res_WriteDirObj(const struct sess *sp, ssize_t low, ssize_t high)
 {
 	ssize_t u = 0;
 	size_t ptr, off, len;
@@ -227,7 +226,7 @@ res_WriteDirObj(struct sess *sp, ssize_t low, ssize_t high)
 
 		ptr += len;
 
-		sp->acct_tmp.bodybytes += len;
+		sp->wrk->acct_tmp.bodybytes += len;
 #ifdef SENDFILE_WORKS
 		/*
 		 * XXX: the overhead of setting up sendfile is not
@@ -292,7 +291,7 @@ RES_WriteObj(struct sess *sp)
 	 * Send HTTP protocol header, unless interior ESI object
 	 */
 	if (!(sp->wrk->res_mode & RES_ESI_CHILD))
-		sp->acct_tmp.hdrbytes +=
+		sp->wrk->acct_tmp.hdrbytes +=
 		    http_Write(sp->wrk, sp->wrk->resp, 1);
 
 	if (!sp->wantbody)
@@ -348,7 +347,7 @@ RES_StreamStart(struct sess *sp)
 		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
 		    "Content-Length: %s", sp->wrk->h_content_length);
 
-	sp->acct_tmp.hdrbytes +=
+	sp->wrk->acct_tmp.hdrbytes +=
 	    http_Write(sp->wrk, sp->wrk->resp, 1);
 
 	if (sp->wrk->res_mode & RES_CHUNKED)

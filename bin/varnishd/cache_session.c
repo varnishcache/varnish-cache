@@ -80,7 +80,7 @@ static struct lock		stat_mtx;
 void
 SES_Charge(struct sess *sp)
 {
-	struct acct *a = &sp->acct_tmp;
+	struct acct *a = &sp->wrk->acct_tmp;
 
 #define ACCT(foo)				\
 	sp->wrk->stats.s_##foo += a->foo;	\

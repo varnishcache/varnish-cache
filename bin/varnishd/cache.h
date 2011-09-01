@@ -353,6 +353,8 @@ struct worker {
 #define RES_ESI_CHILD		(1<<5)
 #define RES_GUNZIP		(1<<6)
 
+	/* Temporary accounting */
+	struct acct		acct_tmp;
 };
 
 /* Work Request for worker thread ------------------------------------*/
@@ -601,7 +603,6 @@ struct sess {
 	struct sessmem		*mem;
 
 	struct workreq		workreq;
-	struct acct		acct_tmp;
 	struct acct		acct_req;
 	struct acct		acct_ses;
 
