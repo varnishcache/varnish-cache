@@ -802,6 +802,7 @@ cnt_fetchbody(struct sess *sp)
 		    (void *)WS_Alloc(sp->obj->http->ws, varyl);
 		AN(sp->obj->vary);
 		memcpy(sp->obj->vary, VSB_data(vary), varyl);
+		VRY_Validate(sp->obj->vary);
 		VSB_delete(vary);
 	}
 
@@ -1107,10 +1108,14 @@ cnt_lookup(struct sess *sp)
 	if (oc->flags & OC_F_BUSY) {
 		sp->wrk->stats.cache_miss++;
 
-		if (sp->vary_l != NULL)
+		if (sp->vary_l != NULL) {
+			assert(oc->busyobj->vary == sp->vary_b);
+			VRY_Validate(oc->busyobj->vary);
 			WS_ReleaseP(sp->ws, (void*)sp->vary_l);
-		else
-			WS_Release(sp->ws, 0);
+		} else {
+			AZ(oc->busyobj->vary);
+			WS_Release(sp->ws, 0); 
+		}
 		sp->vary_b = NULL;
 		sp->vary_l = NULL;
 		sp->vary_e = NULL;

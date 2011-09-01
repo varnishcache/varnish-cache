@@ -247,3 +247,13 @@ VRY_Match(struct sess *sp, const uint8_t *vary)
 		sp->vary_l = vsp + 3;
 	return (retval);
 }
+
+void
+VRY_Validate(const uint8_t *vary)
+{
+
+	while (vary[2] != 0) {
+		assert(strlen((const char*)vary+3) == vary[2]);
+		vary += vry_len(vary);
+	}
+}
