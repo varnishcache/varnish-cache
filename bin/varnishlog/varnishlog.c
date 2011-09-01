@@ -46,7 +46,6 @@
 
 #include "libvarnish.h"
 #include "vsl.h"
-#include "vre.h"
 #include "varnishapi.h"
 
 static int	b_flag, c_flag;
@@ -60,7 +59,7 @@ static uint64_t       bitmap[65536];
 #define F_INVCL		(1 << 0)
 
 static void
-h_order_finish(int fd, struct VSM_data *vd)
+h_order_finish(int fd, const struct VSM_data *vd)
 {
 
 	AZ(VSB_finish(ob[fd]));
@@ -72,7 +71,7 @@ h_order_finish(int fd, struct VSM_data *vd)
 }
 
 static void
-clean_order(struct VSM_data *vd)
+clean_order(const struct VSM_data *vd)
 {
 	unsigned u;
 
@@ -321,7 +320,8 @@ main(int argc, char * const *argv)
 			w_arg = optarg;
 			break;
 		case 'm':
-			m_flag = 1; /* fall through */
+			m_flag = 1;
+			/* FALLTHROUGH */
 		default:
 			if (VSL_Arg(vd, c, optarg) > 0)
 				break;

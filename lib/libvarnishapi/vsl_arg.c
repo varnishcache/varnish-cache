@@ -41,7 +41,6 @@
 #include <unistd.h>
 
 #include "vas.h"
-#include "vin.h"
 #include "vre.h"
 #include "vbm.h"
 #include "miniobj.h"
@@ -49,6 +48,34 @@
 
 #include "vsm_api.h"
 #include "vsl_api.h"
+
+/*--------------------------------------------------------------------
+ * Look up a tag
+ *   0..255	tag number
+ *   -1		no tag matches
+ *   -2		multiple tags match
+ */
+
+int
+VSL_Name2Tag(const char *name, int l)
+{
+	int i, n;
+
+	if (l == -1)
+		l = strlen(name);
+	n = -1;
+	for (i = 0; i < 256; i++) {
+		if (VSL_tags[i] != NULL &&
+		    !strncasecmp(name, VSL_tags[i], l)) {
+			if (n == -1)
+				n = i;
+			else
+				n = -2;
+		}
+	}
+	return (n);
+}
+
 
 /*--------------------------------------------------------------------*/
 
@@ -99,8 +126,8 @@ vsl_IX_arg(const struct VSM_data *vd, const char *opt, int arg)
 static int
 vsl_ix_arg(const struct VSM_data *vd, const char *opt, int arg)
 {
-	int i, j, l;
-	const char *b, *e, *p, *q;
+	int i, l;
+	const char *b, *e;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	/* If first option is 'i', set all bits for supression */
@@ -120,24 +147,17 @@ vsl_ix_arg(const struct VSM_data *vd, const char *opt, int arg)
 			e++;
 		while (isspace(b[l - 1]))
 			l--;
-		for (i = 0; i < 256; i++) {
-			if (VSL_tags[i] == NULL)
-				continue;
-			p = VSL_tags[i];
-			q = b;
-			for (j = 0; j < l; j++)
-				if (tolower(*q++) != tolower(*p++))
-					break;
-			if (j != l || *p != '\0')
-				continue;
-
+		i = VSL_Name2Tag(b, l);
+		if (i >= 0) {
 			if (arg == 'x')
 				vbit_set(vd->vsl->vbm_supress, i);
 			else
 				vbit_clr(vd->vsl->vbm_supress, i);
-			break;
-		}
-		if (i == 256) {
+		} else if (i == -2) {
+			fprintf(stderr,
+			    "\"%*.*s\" matches multiple tags\n", l, l, b);
+			return (-1);
+		} else {
 			fprintf(stderr,
 			    "Could not match \"%*.*s\" to any tag\n", l, l, b);
 			return (-1);
@@ -148,19 +168,6 @@ vsl_ix_arg(const struct VSM_data *vd, const char *opt, int arg)
 
 /*--------------------------------------------------------------------*/
 
-static int
-name2tag(const char *n)
-{
-	int i;
-
-	for (i = 0; i < 256; i++) {
-		if (VSL_tags[i] == NULL)
-			continue;
-		if (!strcasecmp(n, VSL_tags[i]))
-			return (i);
-	}
-	return (-1);
-}
 
 static int
 vsl_m_arg(const struct VSM_data *vd, const char *opt)
@@ -171,8 +178,6 @@ vsl_m_arg(const struct VSM_data *vd, const char *opt)
 	int erroroffset;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	ALLOC_OBJ(m, VSL_RE_MATCH_MAGIC);
-	AN(m);
 
 	if (!strchr(opt, ':')) {
 		fprintf(stderr, "No : found in -o option %s\n", opt);
@@ -185,10 +190,13 @@ vsl_m_arg(const struct VSM_data *vd, const char *opt)
 	*regex = '\0';
 	regex++;
 
-	m->tag = name2tag(o);
-	if (m->tag == -1) {
+	ALLOC_OBJ(m, VSL_RE_MATCH_MAGIC);
+	AN(m);
+	m->tag = VSL_Name2Tag(o, -1);
+	if (m->tag < 0) {
 		fprintf(stderr, "Illegal tag %s specified\n", o);
 		free(o);
+		FREE_OBJ(m);
 		return (-1);
 	}
 	/* Get tag, regex */
@@ -196,6 +204,7 @@ vsl_m_arg(const struct VSM_data *vd, const char *opt)
 	if (m->re == NULL) {
 		fprintf(stderr, "Illegal regex: %s\n", error);
 		free(o);
+		FREE_OBJ(m);
 		return (-1);
 	}
 	vd->vsl->num_matchers++;

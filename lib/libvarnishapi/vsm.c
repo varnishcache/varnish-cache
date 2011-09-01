@@ -224,7 +224,7 @@ VSM_Open(struct VSM_data *vd, int diag)
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AZ(vd->VSM_head);
 	if (!vd->n_opt)
-		VSM_n_Arg(vd, "");
+		(void)VSM_n_Arg(vd, "");
 	return (vsm_open(vd, diag));
 }
 
@@ -331,7 +331,7 @@ VSM_iter0(struct VSM_data *vd)
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	vd->alloc_seq = vd->VSM_head->alloc_seq;
 	while (vd->alloc_seq == 0) {
-		usleep(50000);
+		(void)usleep(50000);
 		vd->alloc_seq = vd->VSM_head->alloc_seq;
 	}
 	CHECK_OBJ_NOTNULL(&vd->VSM_head->head, VSM_CHUNK_MAGIC);
@@ -358,7 +358,7 @@ VSM_itern(const struct VSM_data *vd, struct VSM_chunk **pp)
 
 /*--------------------------------------------------------------------*/
 unsigned
-VSM_Seq(struct VSM_data *vd)
+VSM_Seq(const struct VSM_data *vd)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);

@@ -206,7 +206,7 @@ vsl_nextlog(struct vsl *vsl, uint32_t **pp)
 }
 
 int
-VSL_NextLog(const struct VSM_data *vd, uint32_t **pp, uint64_t *mb)
+VSL_NextLog(const struct VSM_data *vd, uint32_t **pp, uint64_t *bits)
 {
 	struct vsl *vsl;
 	uint32_t *p;
@@ -268,7 +268,7 @@ VSL_NextLog(const struct VSM_data *vd, uint32_t **pp, uint64_t *mb)
 			if (i != VRE_ERROR_NOMATCH)
 				continue;
 		}
-		if (mb != NULL) {
+		if (bits != NULL) {
 			struct vsl_re_match *vrm;
 			int j = 0;
 			VTAILQ_FOREACH(vrm, &vsl->matchers, next) {
@@ -276,7 +276,7 @@ VSL_NextLog(const struct VSM_data *vd, uint32_t **pp, uint64_t *mb)
 					i = VRE_exec(vrm->re, VSL_DATA(p),
 						     VSL_LEN(p), 0, 0, NULL, 0);
 					if (i >= 0)
-						*mb |= 1 << j;
+						*bits |= (uintmax_t)1 << j;
 				}
 				j++;
 			}
