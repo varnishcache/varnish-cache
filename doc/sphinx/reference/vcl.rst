@@ -532,12 +532,18 @@ vcl_fetch
   error code [reason]
     Return the specified error code to the client and abandon the request.
 
-  hit_for_pass
-    Pass in fetch. This will create a hit_for_pass object. Note that
-    the TTL for the hit_for_pass object will be set to what the
-    current value of beresp.ttl. Control will be handled to
-    vcl_deliver on the current request, but subsequent requests will
-    go directly to vcl_pass based on the hit_for_pass object.
+  hit_for_pass 
+    Pass in fetch. Passes the object without caching it. This will
+    create a socalled hit_for_pass object which has the side effect
+    that the decision not to cache will be cached. This is to allow
+    would-be uncachable requests to be passed to the backend at the
+    same time. The same logic is not necessary in vcl_recv because
+    this happens before any potential queueing for an object takes
+    place.  Note that the TTL for the hit_for_pass object will be set
+    to what the current value of beresp.ttl is. Control will be
+    handled to vcl_deliver on the current request, but subsequent
+    requests will go directly to vcl_pass based on the hit_for_pass
+    object.
 
   restart
     Restart the transaction. Increases the restart counter. If the number 
