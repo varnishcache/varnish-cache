@@ -250,7 +250,7 @@ static int
 collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
     const char *ptr, unsigned len)
 {
-	const char *end, *next;
+	const char *end, *next, *split;
 
 	assert(spec & VSL_S_BACKEND);
 	end = ptr + len;
@@ -330,18 +330,19 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		break;
 
 	case SLT_TxHeader:
+		split = strchr(ptr, ':');
 		if (!lp->active)
+			break;
+		if (split == NULL)
 			break;
 		if (isprefix(ptr, "authorization:", end, &next) &&
 		    isprefix(next, "basic", end, &next)) {
 			lp->df_u = trimline(next, end);
 		} else {
 			struct hdr *h;
-			const char *split;
 			size_t l;
 			h = malloc(sizeof(struct hdr));
 			AN(h);
-			split = strchr(ptr, ':');
 			AN(split);
 			l = strlen(split);
 			h->key = trimline(ptr, split-1);
@@ -369,7 +370,7 @@ static int
 collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
     const char *ptr, unsigned len)
 {
-	const char *end, *next;
+	const char *end, *next, *split;
 	long l;
 	time_t t;
 
@@ -437,7 +438,10 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 
 	case SLT_TxHeader:
 	case SLT_RxHeader:
+		split = strchr(ptr, ':');
 		if (!lp->active)
+			break;
+		if (split == NULL)
 			break;
 		if (tag == SLT_RxHeader &&
 		    isprefix(ptr, "authorization:", end, &next) &&
@@ -446,10 +450,8 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			lp->df_u = trimline(next, end);
 		} else {
 			struct hdr *h;
-			const char *split;
 			h = malloc(sizeof(struct hdr));
 			AN(h);
-			split = strchr(ptr, ':');
 			AN(split);
 			h->key = trimline(ptr, split);
 			h->value = trimline(split+1, end);
