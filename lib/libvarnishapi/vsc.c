@@ -330,7 +330,7 @@ VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv)
 		CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);
 		if (strcmp(sha->class, VSC_CLASS))
 			continue;
-
+		/*lint -save -e525 -e539 */
 #define VSC_F(a,b,c,d,e)
 #define VSC_DONE(a,b,c)
 #define VSC_DO(U,l,t)						\
@@ -343,6 +343,7 @@ VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv)
 #undef VSC_F
 #undef VSC_DO
 #undef VSC_DONE
+		/*lint -restore */
 		break;
 	}
 	return (i);

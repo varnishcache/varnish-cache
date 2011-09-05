@@ -1,4 +1,5 @@
-
+-efile(451, "../../include/vsc_all.h")
+-e835   // A zero has been given as ___ argument to operator '___'  (<<)
 -e712	// 14      Info    712     Loss of precision (___) (___ to ___)
 -e747	// 16      Info    747     Significant prototype coercion (___) ___ to ___
 
@@ -17,3 +18,4 @@
 -e788	// enum constant '___' not used within defaulted switch
 -e641	// Converting enum '___' to '___'
 
+-esym(785,VSL_tags);	// Sparse array

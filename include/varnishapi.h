@@ -109,7 +109,7 @@ int VSM_ReOpen(struct VSM_data *vd, int diag);
 	 *	-1 failure to reopen.
 	 */
 
-unsigned VSM_Seq(struct VSM_data *vd);
+unsigned VSM_Seq(const struct VSM_data *vd);
 	/*
 	 * Return the allocation sequence number
 	 */
@@ -260,6 +260,7 @@ void VSL_NonBlocking(const struct VSM_data *vd, int nb);
 int VSL_Dispatch(struct VSM_data *vd, VSL_handler_f *func, void *priv);
 int VSL_NextLog(const struct VSM_data *lh, uint32_t **pp, uint64_t *bitmap);
 int VSL_Matched(const struct VSM_data *vd, uint64_t bitmap);
+int VSL_Name2Tag(const char *name, int l);
 extern const char *VSL_tags[256];
 
 #endif
