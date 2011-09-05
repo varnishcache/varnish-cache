@@ -39,6 +39,12 @@ In addition to the C-like assignment (=), comparison (==, !=) and
 boolean (!, && and \|\|) operators, VCL supports both regular
 expression and ACL matching using the ~ and the !~ operators.
 
+Basic strings are enclosed in " ... " and uses URL-style %-escapes.
+
+Long strings are enclosed in {" ... "} and do not have an escape
+character. They may contain any character including ", newline and
+other control characters except for the NUL (0x00) character.
+
 Unlike C and Perl, the backslash (\) character has no special meaning
 in strings in VCL, so it can be freely used in regular expressions
 without doubling.
@@ -54,6 +60,15 @@ suffix.
 You can use the *set* keyword to arbitrary HTTP headers. You can
 remove headers with the *remove* or *unset* keywords, which are
 synonym.
+
+You can use the *rollback* keyword to revert any changes to req at
+any time.
+
+The *synthetic* keyword is used to produce a synthetic response
+body in vcl_error. It takes a single string as argument.
+
+You can force a crash of the client process with the *panic* keyword.
+*panic* takes a string as argument.
 
 The ``return(action)`` keyword terminates the subroutine. *action* can be,
 depending on context one of
