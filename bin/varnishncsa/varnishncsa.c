@@ -330,9 +330,9 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		break;
 
 	case SLT_TxHeader:
-		split = strchr(ptr, ':');
 		if (!lp->active)
 			break;
+		split = strchr(ptr, ':');
 		if (split == NULL)
 			break;
 		if (isprefix(ptr, "authorization:", end, &next) &&
@@ -438,9 +438,9 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 
 	case SLT_TxHeader:
 	case SLT_RxHeader:
-		split = strchr(ptr, ':');
 		if (!lp->active)
 			break;
+		split = strchr(ptr, ':');
 		if (split == NULL)
 			break;
 		if (tag == SLT_RxHeader &&
