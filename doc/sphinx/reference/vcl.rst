@@ -39,11 +39,11 @@ In addition to the C-like assignment (=), comparison (==, !=) and
 boolean (!, && and \|\|) operators, VCL supports both regular
 expression and ACL matching using the ~ and the !~ operators.
 
-Basic strings are enclosed in " ... " and uses URL-style %-escapes.
+Basic strings are enclosed in " ... ", and may not contain newlines.
 
-Long strings are enclosed in {" ... "} and do not have an escape
-character. They may contain any character including ", newline and
-other control characters except for the NUL (0x00) character.
+Long strings are enclosed in {" ... "}. They may contain any
+character including ", newline and other control characters except
+for the NUL (0x00) character.
 
 Unlike C and Perl, the backslash (\) character has no special meaning
 in strings in VCL, so it can be freely used in regular expressions
