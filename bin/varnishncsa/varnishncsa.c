@@ -31,7 +31,7 @@
  * Obtain log data from the shared memory log, order it by session ID, and
  * display it in Apache / NCSA combined log format:
  *
- *	%h %l %u %t "%r" %>s %b "%{Referer}i" "%{User-agent}i"
+ *	%h %l %u %t "%r" %s %b "%{Referer}i" "%{User-agent}i"
  *
  * where the fields are defined as follows:
  *
