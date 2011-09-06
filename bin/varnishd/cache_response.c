@@ -276,9 +276,13 @@ RES_WriteObj(struct sess *sp)
 	 */
 	low = 0;
 	high = sp->obj->len - 1;
-	if (!(sp->wrk->res_mode & (RES_ESI|RES_ESI_CHILD|RES_GUNZIP)) &&
-	    params->http_range_support && sp->obj->response == 200 &&
-	    sp->wantbody && http_GetHdr(sp->http, H_Range, &r))
+	if (
+	    sp->wantbody &&
+	    (sp->wrk->res_mode & RES_LEN) &&
+	    !(sp->wrk->res_mode & (RES_ESI|RES_ESI_CHILD|RES_GUNZIP)) &&
+	    params->http_range_support &&
+	    sp->obj->response == 200 &&
+	    http_GetHdr(sp->http, H_Range, &r))
 		res_dorange(sp, r, &low, &high);
 
 	/*
