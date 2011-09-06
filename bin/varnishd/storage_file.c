@@ -116,7 +116,7 @@ smf_initfile(struct stevedore *st, struct smf_sc *sc, const char *size)
 	/* XXX: force block allocation here or in open ? */
 }
 
-static const char default_size[] = "50%";
+static const char default_size[] = "100M";
 static const char default_filename[] = ".";
 
 static void
