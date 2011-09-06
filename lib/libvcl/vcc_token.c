@@ -492,7 +492,7 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 			continue;
 		}
 
-		/* Match strings, with \\ and \" escapes */
+		/* Match strings */
 		if (*p == '"') {
 			for (q = p + 1; q < sp->e; q++) {
 				if (*q == '"') {

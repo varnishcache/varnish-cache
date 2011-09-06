@@ -13,6 +13,10 @@ string concatenation operator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 String concatenation did not have an operator previously, but this has now been changed to ``+``.
 
+no more %-escapes in strings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To simplify strings, the %-encoding has been removed. If you need non-printable characters, you need to use inline C.
+
 ``log`` moved to the std vmod
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
