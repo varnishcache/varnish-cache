@@ -52,7 +52,7 @@ The following options are available:
 -F format   Specify the log format used. If no format is specified the  
    	    default log format is used. Currently it is:
 
-            %h %l %u %t "%r" %>s %b "%{Referer}i" "%{User-agent}i"
+            %h %l %u %t "%r" %s %b "%{Referer}i" "%{User-agent}i"
 
 	    Supported formatters are:
 
