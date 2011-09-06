@@ -716,7 +716,7 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 					VSB_cat(os, (lp->df_hitmiss ? lp->df_hitmiss : "-"));
 					p = tmp;
 					break;
-				} else if (strcmp(fname, "handling") == 0) {
+				} else if (strcmp(fname, "Varnish:handling") == 0) {
 					VSB_cat(os, (lp->df_handling ? lp->df_handling : "-"));
 					p = tmp;
 					break;
