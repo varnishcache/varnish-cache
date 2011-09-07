@@ -310,9 +310,10 @@ static void
 EmitInitFunc(const struct vcc *tl)
 {
 
-	Fc(tl, 0, "\nstatic void\nVGC_Init(struct cli *cli)\n{\n\n");
+	Fc(tl, 0, "\nstatic int\nVGC_Init(struct cli *cli)\n{\n\n");
 	AZ(VSB_finish(tl->fi));
 	VSB_cat(tl->fc, VSB_data(tl->fi));
+	Fc(tl, 0, "\treturn(0);\n");
 	Fc(tl, 0, "}\n");
 }
 
@@ -321,7 +322,7 @@ EmitFiniFunc(const struct vcc *tl)
 {
 	unsigned u;
 
-	Fc(tl, 0, "\nstatic void\nVGC_Fini(struct cli *cli)\n{\n\n");
+	Fc(tl, 0, "\nstatic int\nVGC_Fini(struct cli *cli)\n{\n\n");
 
 	/*
 	 * We do this here, so we are sure they happen before any
@@ -332,6 +333,7 @@ EmitFiniFunc(const struct vcc *tl)
 
 	AZ(VSB_finish(tl->ff));
 	VSB_cat(tl->fc, VSB_data(tl->ff));
+	Fc(tl, 0, "\treturn(0);\n");
 	Fc(tl, 0, "}\n");
 }
 

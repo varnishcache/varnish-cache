@@ -170,10 +170,15 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 		FREE_OBJ(vcl);
 		return (1);
 	}
+	if (vcl->conf->init_vcl(cli)) {
+		VCLI_Out(cli, "VCL \"%s\" Failed to initialize", name);
+		(void)dlclose(vcl->dlh);
+		FREE_OBJ(vcl);
+		return (1);
+	}
 	REPLACE(vcl->name, name);
-	VTAILQ_INSERT_TAIL(&vcl_head, vcl, list);
 	VCLI_Out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
-	vcl->conf->init_vcl(cli);
+	VTAILQ_INSERT_TAIL(&vcl_head, vcl, list);
 	(void)vcl->conf->init_func(NULL);
 	Lck_Lock(&vcl_mtx);
 	if (vcl_active == NULL)

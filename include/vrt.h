@@ -183,8 +183,8 @@ void VRT_init_dir(struct cli *, struct director **, const char *name,
 void VRT_fini_dir(struct cli *, struct director *);
 
 /* VMOD/Modules related */
-void VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
-    const char *path);
+int VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
+    const char *path, struct cli *cli);
 void VRT_Vmod_Fini(void **hdl);
 
 struct vmod_priv;

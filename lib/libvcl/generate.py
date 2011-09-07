@@ -712,7 +712,7 @@ fo.write("""
 struct sess;
 struct cli;
 
-typedef void vcl_init_f(struct cli *);
+typedef int vcl_init_f(struct cli *);
 typedef void vcl_fini_f(struct cli *);
 typedef int vcl_func_f(struct sess *sp);
 """)
