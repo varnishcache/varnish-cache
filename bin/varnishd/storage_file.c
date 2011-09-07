@@ -104,12 +104,9 @@ struct smf_sc {
 /*--------------------------------------------------------------------*/
 
 static void
-smf_initfile(struct stevedore *st, struct smf_sc *sc, const char *size)
+smf_initfile(struct smf_sc *sc, const char *size)
 {
 	sc->filesize = STV_FileSize(sc->fd, size, &sc->pagesize, "-sfile");
-
-	printf("SMF.%s: filename: %s size %ju MB.\n",
-	      st->ident, sc->filename, sc->filesize / (1024 * 1024));
 
 	AZ(ftruncate(sc->fd, (off_t)sc->filesize));
 
@@ -162,7 +159,7 @@ smf_init(struct stevedore *parent, int ac, char * const *av)
 	(void)STV_GetFile(fn, &sc->fd, &sc->filename, "-sfile");
 
 	mgt_child_inherit(sc->fd, "storage_file");
-	smf_initfile(parent, sc, size);
+	smf_initfile(sc, size);
 }
 
 /*--------------------------------------------------------------------
