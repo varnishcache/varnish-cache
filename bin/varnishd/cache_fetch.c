@@ -543,8 +543,9 @@ FetchBody(struct sess *sp)
 	 */
 	AZ(vfp_nop_end(sp));
 
-	WSL(sp->wrk, SLT_Fetch_Body, sp->vbc->fd, "%u %d %u",
-	    sp->wrk->body_status, cls, mklen);
+	WSL(sp->wrk, SLT_Fetch_Body, sp->vbc->fd, "%u(%s) %d %u",
+	    sp->wrk->body_status, body_status(sp->wrk->body_status),
+	    cls, mklen);
 
 	if (sp->wrk->body_status == BS_ERROR) {
 		VDI_CloseFd(sp);

@@ -66,13 +66,22 @@
 #include "vsl.h"
 
 enum body_status {
-	BS_NONE,
-	BS_ZERO,
-	BS_ERROR,
-	BS_CHUNKED,
-	BS_LENGTH,
-	BS_EOF
+#define BODYSTATUS(U,l)	BS_##U,
+#include "body_status.h"
+#undef BODYSTATUS
 };
+
+static inline const char *
+body_status(enum body_status e)
+{
+	switch(e) {
+#define BODYSTATUS(U,l)	case BS_##U: return (#l);
+#include "body_status.h"
+#undef BODYSTATUS
+	default:
+		return ("?");
+	}
+}
 
 /*
  * NB: HDR_STATUS is only used in cache_http.c, everybody else uses the
