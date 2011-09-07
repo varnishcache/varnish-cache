@@ -203,6 +203,7 @@ struct http_conn {
 	struct ws		*ws;
 	txt			rxbuf;
 	txt			pipeline;
+	const char		*error;
 };
 
 /*--------------------------------------------------------------------*/
