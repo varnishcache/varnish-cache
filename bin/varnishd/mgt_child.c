@@ -595,8 +595,10 @@ MGT_Run(void)
 		REPORT0(LOG_ERR, "No VCL loaded yet");
 	else if (!d_flag) {
 		start_child(NULL);
-		if (child_state == CH_STOPPED)
-			exit(2);
+		if (child_state == CH_STOPPED) {
+			exit_status = 2;
+			return;
+		}
 	}
 
 	i = vev_schedule(mgt_evb);
