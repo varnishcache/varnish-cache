@@ -469,8 +469,10 @@ vfp_gunzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 			bytes -= w;
 		}
 
-		if (VGZ_ObufStorage(sp, vg))
+		if (VGZ_ObufStorage(sp, vg)) {
+			htc->error = "Could not get storage";
 			return (-1);
+		}
 		i = VGZ_Gunzip(vg, &dp, &dl);
 		assert(i == VGZ_OK || i == VGZ_END);
 		sp->obj->len += dl;
@@ -479,6 +481,8 @@ vfp_gunzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	}
 	if (i == Z_OK || i == Z_STREAM_END)
 		return (1);
+	htc->error = "See other message";
+	WSP(sp, SLT_FetchError, "Gunzip trouble (%d)", i);
 	return (-1);
 }
 
@@ -540,8 +544,10 @@ vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 			VGZ_Ibuf(vg, ibuf, w);
 			bytes -= w;
 		}
-		if (VGZ_ObufStorage(sp, vg))
+		if (VGZ_ObufStorage(sp, vg)) {
+			htc->error = "Could not get storage";
 			return (-1);
+		}
 		i = VGZ_Gzip(vg, &dp, &dl, VGZ_NORMAL);
 		assert(i == Z_OK);
 		sp->obj->len += dl;
@@ -612,8 +618,10 @@ vfp_testgzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	AZ(vg->vz.avail_in);
 	while (bytes > 0) {
 		st = FetchStorage(sp, 0);
-		if (st == NULL)
+		if (st == NULL) {
+			htc->error = "Could not get storage";
 			return (-1);
+		}
 		l = st->space - st->len;
 		if (l > bytes)
 			l = bytes;
@@ -631,10 +639,11 @@ vfp_testgzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 			VGZ_Obuf(vg, obuf, sizeof obuf);
 			i = VGZ_Gunzip(vg, &dp, &dl);
 			if (i == VGZ_END && !VGZ_IbufEmpty(vg)) {
-				WSP(sp, SLT_FetchError, "Junk after gzip data");
+				htc->error = "Junk after gzip data";
 				return (-1);
 			}
 			if (i != VGZ_OK && i != VGZ_END) {
+				htc->error = "See other message";
 				WSP(sp, SLT_FetchError,
 				    "Invalid Gzip data: %s", vg->vz.msg);
 				return (-1);
@@ -643,6 +652,7 @@ vfp_testgzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	}
 	if (i == VGZ_OK || i == VGZ_END)
 		return (1);
+	htc->error = "See other message";
 	WSP(sp, SLT_FetchError, "Gunzip trouble (%d)", i);
 	return (-1);
 }
@@ -665,5 +675,3 @@ struct vfp vfp_testgzip = {
         .bytes  =       vfp_testgzip_bytes,
         .end    =       vfp_testgzip_end,
 };
-
-
