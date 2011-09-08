@@ -56,6 +56,7 @@ struct vmod {
 	void			*hdl;
 	const void		*funcs;
 	int			funclen;
+	const void		*idptr;
 };
 
 static VTAILQ_HEAD(,vmod)	vmods = VTAILQ_HEAD_INITIALIZER(vmods);
@@ -65,12 +66,12 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
     const char *path, struct cli *cli)
 {
 	struct vmod *v;
-	void *x, *y, *z;
+	void *x, *y, *z, *w;
 
 	ASSERT_CLI();
 
 	VTAILQ_FOREACH(v, &vmods, list)
-		if (!strcmp(v->nm, nm))
+		if (!strcmp(v->nm, nm))	// Also path, len ?
 			break;
 	if (v == NULL) {
 		ALLOC_OBJ(v, VMOD_MAGIC);
@@ -88,7 +89,8 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
 		x = dlsym(v->hdl, "Vmod_Name");
 		y = dlsym(v->hdl, "Vmod_Len");
 		z = dlsym(v->hdl, "Vmod_Func");
-		if (x == NULL || y == NULL || z == NULL) {
+		w = dlsym(v->hdl, "Vmod_Id");
+		if (x == NULL || y == NULL || z == NULL || w == NULL) {
 			VCLI_Out(cli, "Loading VMOD %s from %s:\n", nm, path);
 			VCLI_Out(cli, "VMOD symbols not found\n");
 			VCLI_Out(cli, "Check relative pathnames.\n");
@@ -99,6 +101,7 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
 		AN(x);
 		AN(y);
 		AN(z);
+		AN(w);
 		if (strcmp(x, nm)) {
 			VCLI_Out(cli, "Loading VMOD %s from %s:\n", nm, path);
 			VCLI_Out(cli, "File contain wrong VMOD (\"%s\")\n", x);
@@ -116,6 +119,7 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
 
 		VSC_C_main->vmods++;
 		VTAILQ_INSERT_TAIL(&vmods, v, list);
+		v->idptr = w;
 	}
 
 	assert(len == v->funclen);
