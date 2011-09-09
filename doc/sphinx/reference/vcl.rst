@@ -280,12 +280,36 @@ Backend probes
 
 Backends can be probed to see whether they should be considered
 healthy or not.  The return status can also be checked by using
-req.backend.healthy .window is how many of the latest polls we
-examine, while .threshold is how many of those must have succeeded for
-us to consider the backend healthy.  .initial is how many of the
-probes are considered good when Varnish starts - defaults to the same
-amount as the threshold. .expected_response is the expected backend
-HTTP response code.
+req.backend.healthy.
+
+Probes take the following parameters:
+
+.url
+  Specify a URL to request from the backend.
+  Defaults to "/".
+.request
+  Specify a full HTTP request using multiple strings.
+  .request will have \r\n automatically inserted after every string.
+  If specified, .request will take precedence over .url.
+.window
+  How many of the latest polls we examine to determine backend health.
+  Defaults to 8.
+.threshold 
+  How many of the polls in .window must have succeeded for us to consider
+  the backend healthy.
+  Defaults to 3.
+.initial
+  How many of the probes are considered good when Varnish starts.
+  Defaults to the same amount as the threshold.
+.expected_response
+  The expected backend HTTP response code.
+  Defaults to 200.
+.interval
+  Defines how often the probe should check the backend.
+  Default is every 5 seconds.
+.timeout
+  How fast each probe times out.
+  Default is 2 seconds.
 
 A backend with a probe can be defined like this, together with the
 backend or director:::
