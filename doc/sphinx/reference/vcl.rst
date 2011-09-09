@@ -284,7 +284,8 @@ req.backend.healthy .window is how many of the latest polls we
 examine, while .threshold is how many of those must have succeeded for
 us to consider the backend healthy.  .initial is how many of the
 probes are considered good when Varnish starts - defaults to the same
-amount as the threshold.
+amount as the threshold. .expected_response is the expected backend
+HTTP response code.
 
 A backend with a probe can be defined like this, together with the
 backend or director:::
@@ -310,6 +311,7 @@ Or it can be defined separately and then referenced:::
      .window = 8;
      .threshold = 3;
      .initial = 3;
+     .expected_response = 200;
   }	
 
   backend www {
