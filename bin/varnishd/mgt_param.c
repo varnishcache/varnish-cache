@@ -622,7 +622,7 @@ static const struct parspec input_parspec[] = {
 		"Maximum number of objects we attempt to nuke in order"
 		"to make space for a object body.",
 		EXPERIMENTAL,
-		"10", "allocations" },
+		"50", "allocations" },
 	{ "fetch_chunksize",
 		tweak_uint, &master.fetch_chunksize, 4, UINT_MAX / 1024.,
 		"The default chunksize used by fetcher. "
