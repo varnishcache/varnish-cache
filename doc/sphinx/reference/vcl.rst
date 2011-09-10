@@ -288,8 +288,8 @@ Probes take the following parameters:
   Specify a URL to request from the backend.
   Defaults to "/".
 .request
-  Specify a full HTTP request using multiple strings.
-  .request will have \r\n automatically inserted after every string.
+  Specify a full HTTP request using multiple strings. .request will
+  have \\r\\n automatically inserted after every string.
   If specified, .request will take precedence over .url.
 .window
   How many of the latest polls we examine to determine backend health.
