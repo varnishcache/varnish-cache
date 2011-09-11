@@ -687,6 +687,9 @@ The following variables are available while processing a request:
 client.ip
   The client's IP address.
 
+client.identity
+  Identification of the client, used to load balance in the client director.
+
 server.hostname
   The host name of the server.
 
@@ -732,6 +735,21 @@ req.hash_ignore_busy
 
 req.can_gzip
   Does the client accept the gzip transfer encoding.
+
+req.restarts
+  A count of how many times this request has been restarted.
+
+req.esi
+  True if the request is an ESI request.
+
+req.esi_level
+  A count of how many levels of ESI requests we're currently at.
+
+req.grace
+  Set to a period to enable grace.
+
+req.xid
+  Unique ID of this request.
 
 The following variables are available while preparing a backend
 request (either for a cache miss or for pass or pipe mode):
@@ -792,6 +810,25 @@ beresp.response
 beresp.ttl
   The object's remaining time to live, in seconds. beresp.ttl is writable.
 
+beresp.grace
+  Set to a period to enable grace.
+
+beresp.saintmode
+  Set to a period to enable saint mode.
+
+beresp.backend.name
+  Name of the backend this response was fetched from.
+
+beresp.backend.ip
+  IP of the backend this response was fetched from.
+
+beresp.backend.port
+  Port of the backend this response was fetched from.
+
+beresp.storage
+  Set to force Varnish to save this object to a particular storage
+  backend.
+
 After the object is entered into the cache, the following (mostly
 read-only) variables are available when the object has been located in
 cache, typically in vcl_hit and vcl_deliver.
@@ -815,6 +852,12 @@ obj.lastuse
 obj.hits
   The approximate number of times the object has been delivered. A value 
   of 0 indicates a cache miss.
+
+obj.grace
+  The object's grace period in seconds. obj.grace is writable.
+
+obj.http.header
+  The corresponding HTTP header.
 
 The following variables are available while determining the hash key
 of an object:
@@ -1000,8 +1043,8 @@ and Per Buer.
 COPYRIGHT
 =========
 
-This document is licensed under the same licence as Varnish
-itself. See LICENCE for details.
+This document is licensed under the same license as Varnish
+itself. See LICENSE for details.
 
 * Copyright (c) 2006 Verdens Gang AS
 * Copyright (c) 2006-2011 Varnish Software AS
