@@ -88,6 +88,7 @@ HTC_Init(struct http_conn *htc, struct ws *ws, int fd, unsigned maxbytes,
 	htc->fd = fd;
 	htc->maxbytes = maxbytes;
 	htc->maxhdr = maxhdr;
+	htc->error = "No error recorded";
 
 	(void)WS_Reserve(htc->ws, htc->maxbytes);
 	htc->rxbuf.b = ws->f;
@@ -109,6 +110,7 @@ HTC_Reinit(struct http_conn *htc)
 	unsigned l;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	htc->error = "No error recorded";
 	(void)WS_Reserve(htc->ws, htc->maxbytes);
 	htc->rxbuf.b = htc->ws->f;
 	htc->rxbuf.e = htc->ws->f;
@@ -201,7 +203,10 @@ HTC_Read(struct http_conn *htc, void *d, size_t len)
 	if (len == 0)
 		return (l);
 	i = read(htc->fd, p, len);
-	if (i < 0)
+	if (i < 0) {
+		htc->error = strerror(errno);
 		return (i);
+	} else if (i == 0)
+		htc->error = "Remote closed connection";
 	return (i + l);
 }

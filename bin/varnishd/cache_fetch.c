@@ -88,8 +88,10 @@ vfp_nop_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 
 	while (bytes > 0) {
 		st = FetchStorage(sp, 0);
-		if (st == NULL)
+		if (st == NULL) {
+			htc->error = "Could not get storage";
 			return (-1);
+		}
 		l = st->space - st->len;
 		if (l > bytes)
 			l = bytes;
@@ -202,7 +204,7 @@ fetch_straight(struct sess *sp, struct http_conn *htc, const char *b)
 	assert(sp->wrk->body_status == BS_LENGTH);
 	cl = fetch_number(b, 10);
 	if (cl < 0) {
-		WSP(sp, SLT_FetchError, "straight length syntax");
+		WSP(sp, SLT_FetchError, "straight length field bogus");
 		return (-1);
 	}
 	/*
@@ -217,7 +219,7 @@ fetch_straight(struct sess *sp, struct http_conn *htc, const char *b)
 	i = sp->wrk->vfp->bytes(sp, htc, cl);
 	if (i <= 0) {
 		WSP(sp, SLT_FetchError, "straight read_error: %d %d (%s)",
-		    i, errno, strerror(errno));
+		    i, errno, htc->error);
 		return (-1);
 	}
 	return (0);
@@ -230,7 +232,7 @@ fetch_straight(struct sess *sp, struct http_conn *htc, const char *b)
 		if (i != 1) {					\
 			WSP(sp, SLT_FetchError,			\
 			    "chunked read_error: %d (%s)",	\
-			    errno, strerror(errno));		\
+			    errno, htc->error);			\
 			return (-1);				\
 		}						\
 	} while (0)
@@ -315,7 +317,7 @@ fetch_eof(struct sess *sp, struct http_conn *htc)
 	i = sp->wrk->vfp->bytes(sp, htc, SSIZE_MAX);
 	if (i < 0) {
 		WSP(sp, SLT_FetchError, "eof read_error: %d (%s)",
-		    errno, strerror(errno));
+		    errno, htc->error);
 		return (-1);
 	}
 	return (0);
@@ -396,7 +398,7 @@ FetchHdr(struct sess *sp)
 		AN(sp->objcore->flags & OC_F_BUSY);
 	}
 
-	hp = sp->wrk->bereq;
+	hp = w->bereq;
 
 	sp->vbc = VDI_GetFd(NULL, sp);
 	if (sp->vbc == NULL) {
@@ -437,16 +439,16 @@ FetchHdr(struct sess *sp)
 
 	/* Receive response */
 
-	HTC_Init(sp->wrk->htc, sp->wrk->ws, vc->fd, params->http_resp_size,
+	HTC_Init(w->htc, w->ws, vc->fd, params->http_resp_size,
 	    params->http_resp_hdr_len);
 
 	VTCP_set_read_timeout(vc->fd, vc->first_byte_timeout);
 
-	i = HTC_Rx(sp->wrk->htc);
+	i = HTC_Rx(w->htc);
 
 	if (i < 0) {
 		WSP(sp, SLT_FetchError, "http first read error: %d %d (%s)",
-		    i, errno, strerror(errno));
+		    i, errno, w->htc->error);
 		VDI_CloseFd(sp);
 		/* XXX: other cleanup ? */
 		/* Retryable if we never received anything */
@@ -456,20 +458,20 @@ FetchHdr(struct sess *sp)
 	VTCP_set_read_timeout(vc->fd, vc->between_bytes_timeout);
 
 	while (i == 0) {
-		i = HTC_Rx(sp->wrk->htc);
+		i = HTC_Rx(w->htc);
 		if (i < 0) {
 			WSP(sp, SLT_FetchError,
 			    "http first read error: %d %d (%s)",
-			    i, errno, strerror(errno));
+			    i, errno, w->htc->error);
 			VDI_CloseFd(sp);
 			/* XXX: other cleanup ? */
 			return (-1);
 		}
 	}
 
-	hp = sp->wrk->beresp;
+	hp = w->beresp;
 
-	if (http_DissectResponse(sp->wrk, sp->wrk->htc, hp)) {
+	if (http_DissectResponse(w, w->htc, hp)) {
 		WSP(sp, SLT_FetchError, "http format error");
 		VDI_CloseFd(sp);
 		/* XXX: other cleanup ? */
@@ -485,22 +487,24 @@ FetchBody(struct sess *sp)
 {
 	int cls;
 	struct storage *st;
+	struct worker *w;
 	int mklen;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	w = sp->wrk;
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj->http, HTTP_MAGIC);
 
-	if (sp->wrk->vfp == NULL)
-		sp->wrk->vfp = &vfp_nop;
+	if (w->vfp == NULL)
+		w->vfp = &vfp_nop;
 
 	AN(sp->director);
 	AssertObjCorePassOrBusy(sp->obj->objcore);
 
-	AZ(sp->wrk->vgz_rx);
+	AZ(w->vgz_rx);
 	AZ(VTAILQ_FIRST(&sp->obj->store));
-	switch (sp->wrk->body_status) {
+	switch (w->body_status) {
 	case BS_NONE:
 		cls = 0;
 		mklen = 0;
@@ -510,20 +514,20 @@ FetchBody(struct sess *sp)
 		mklen = 1;
 		break;
 	case BS_LENGTH:
-		cls = fetch_straight(sp, sp->wrk->htc,
-		    sp->wrk->h_content_length);
+		cls = fetch_straight(sp, w->htc,
+		    w->h_content_length);
 		mklen = 1;
-		XXXAZ(sp->wrk->vfp->end(sp));
+		XXXAZ(w->vfp->end(sp));
 		break;
 	case BS_CHUNKED:
-		cls = fetch_chunked(sp, sp->wrk->htc);
+		cls = fetch_chunked(sp, w->htc);
 		mklen = 1;
-		XXXAZ(sp->wrk->vfp->end(sp));
+		XXXAZ(w->vfp->end(sp));
 		break;
 	case BS_EOF:
-		cls = fetch_eof(sp, sp->wrk->htc);
+		cls = fetch_eof(sp, w->htc);
 		mklen = 1;
-		XXXAZ(sp->wrk->vfp->end(sp));
+		XXXAZ(w->vfp->end(sp));
 		break;
 	case BS_ERROR:
 		cls = 1;
@@ -534,25 +538,26 @@ FetchBody(struct sess *sp)
 		mklen = 0;
 		INCOMPL();
 	}
-	AZ(sp->wrk->vgz_rx);
+	AZ(w->vgz_rx);
 
 	/*
 	 * It is OK for ->end to just leave the last storage segment
-	 * sitting on sp->wrk->storage, we will always call vfp_nop_end()
+	 * sitting on w->storage, we will always call vfp_nop_end()
 	 * to get it trimmed or thrown out if empty.
 	 */
 	AZ(vfp_nop_end(sp));
 
-	WSL(sp->wrk, SLT_Fetch_Body, sp->vbc->fd, "%u %d %u",
-	    sp->wrk->body_status, cls, mklen);
+	WSL(w, SLT_Fetch_Body, sp->vbc->fd, "%u(%s) cls %d mklen %u",
+	    w->body_status, body_status(w->body_status),
+	    cls, mklen);
 
-	if (sp->wrk->body_status == BS_ERROR) {
+	if (w->body_status == BS_ERROR) {
 		VDI_CloseFd(sp);
 		return (__LINE__);
 	}
 
 	if (cls < 0) {
-		sp->wrk->stats.fetch_failed++;
+		w->stats.fetch_failed++;
 		/* XXX: Wouldn't this store automatically be released ? */
 		while (!VTAILQ_EMPTY(&sp->obj->store)) {
 			st = VTAILQ_FIRST(&sp->obj->store);
@@ -564,10 +569,10 @@ FetchBody(struct sess *sp)
 		return (__LINE__);
 	}
 
-	if (cls == 0 && sp->wrk->do_close)
+	if (cls == 0 && w->do_close)
 		cls = 1;
 
-	WSL(sp->wrk, SLT_Length, sp->vbc->fd, "%u", sp->obj->len);
+	WSL(w, SLT_Length, sp->vbc->fd, "%u", sp->obj->len);
 
 	{
 	/* Sanity check fetch methods accounting */
@@ -585,7 +590,7 @@ FetchBody(struct sess *sp)
 
 	if (mklen > 0) {
 		http_Unset(sp->obj->http, H_Content_Length);
-		http_PrintfHeader(sp->wrk, sp->fd, sp->obj->http,
+		http_PrintfHeader(w, sp->fd, sp->obj->http,
 		    "Content-Length: %jd", (intmax_t)sp->obj->len);
 	}
 

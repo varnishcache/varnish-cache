@@ -308,5 +308,9 @@ fc.write("\n");
 fc.write('const char * const Vmod_Spec[] = {\n' + slist + '\t0\n};\n')
 
 fc.write('const char Vmod_Varnish_ABI[] = VMOD_ABI_Version;\n')
+
+fh.write('extern const void * const Vmod_Id;\n')
+fc.write('const void * const Vmod_Id = &Vmod_Id;\n')
+
 fc.write("\n")
 

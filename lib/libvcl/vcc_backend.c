@@ -305,8 +305,9 @@ vcc_ParseProbeSpec(struct vcc *tl)
 			status = vcc_UintVal(tl);
 			if (status < 100 || status > 999) {
 				VSB_printf(tl->sb,
-				    "Must specify .status with exactly three "
-				    " digits (100 <= x <= 999)\n");
+				    "Must specify .expected_response with "
+				    "exactly three digits "
+				    "(100 <= x <= 999)\n");
 				vcc_ErrWhere(tl, tl->t);
 				return;
 			}

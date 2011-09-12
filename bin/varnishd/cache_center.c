@@ -413,6 +413,8 @@ DOT	]
 DOT	ERROR -> vcl_error
 DOT	vcl_error-> prepresp [label=deliver]
 DOT }
+DOT vcl_error-> rsterr [label="restart",color=purple]
+DOT rsterr [label="RESTART",shape=plaintext]
  */
 
 static int

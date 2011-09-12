@@ -1,0 +1,13 @@
+varnishtest "bug 1014, Invalid C-L header with gzip"
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Content-Encoding: gzip" -hdr "Content-Length:"
+} -start
+
+varnish v1 -vcl+backend { } -start
+
+client c1 {
+	txreq
+	rxresp
+} -run

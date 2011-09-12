@@ -108,6 +108,7 @@ STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx)
 		if (fd < 0)
 			ARGV_ERR("(%s) \"%s\" mkstemp(%s) failed (%s)\n",
 			    ctx, fn, buf, strerror(errno));
+		AZ(unlink(buf));
 		*fnp = strdup(buf);
 		AN(*fnp);
 		retval = 2;
