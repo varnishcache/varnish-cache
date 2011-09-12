@@ -87,7 +87,7 @@ cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
 # Remove "--disable static" if you want to build static libraries 
 # jemalloc is not compatible with Red Hat's ppc64 RHEL kernel :-(
 %ifarch ppc64 ppc
-	%configure --disable-static --localstatedir=/var/lib --disable-jemalloc
+	%configure --disable-static --localstatedir=/var/lib --without-jemalloc
 %else
 	%configure --disable-static --localstatedir=/var/lib
 %endif
