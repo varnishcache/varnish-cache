@@ -202,19 +202,14 @@ fetch_straight(struct sess *sp, struct http_conn *htc, const char *b)
 	ssize_t cl;
 
 	assert(sp->wrk->body_status == BS_LENGTH);
+
 	cl = fetch_number(b, 10);
+	sp->wrk->vfp->begin(sp, cl > 0 ? cl : 0);
 	if (cl < 0) {
 		WSP(sp, SLT_FetchError, "straight length field bogus");
 		return (-1);
-	}
-	/*
-	 * XXX: we shouldn't need this if we have cl==0
-	 * XXX: but we must also conditionalize the vfp->end()
-	 */
-	sp->wrk->vfp->begin(sp, cl);
-	if (cl == 0)
+	} else if (cl == 0)
 		return (0);
-
 
 	i = sp->wrk->vfp->bytes(sp, htc, cl);
 	if (i <= 0) {
