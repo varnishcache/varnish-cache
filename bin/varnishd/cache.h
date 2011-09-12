@@ -218,7 +218,7 @@ struct acct {
 /*--------------------------------------------------------------------*/
 
 #define L0(n)
-#define L1(n)			int n;
+#define L1(n)			uint64_t n;
 #define VSC_F(n, t, l, f, e)	L##l(n)
 #define VSC_DO_MAIN
 struct dstat {
