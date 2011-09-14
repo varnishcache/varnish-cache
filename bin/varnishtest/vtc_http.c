@@ -586,7 +586,7 @@ cmd_http_gunzip_body(CMD_ARGS)
  */
 
 static void
-gzip_body(struct http *hp, const char *txt, char **body, int *bodylen)
+gzip_body(const struct http *hp, const char *txt, char **body, int *bodylen)
 {
 	int l, i;
 	z_stream vz;
