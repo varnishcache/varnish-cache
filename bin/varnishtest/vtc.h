@@ -85,4 +85,3 @@ void macro_def(struct vtclog *vl, const char *instance, const char *name,
 struct vsb *macro_expand(struct vtclog *vl, const char *text);
 
 void extmacro_def(const char *name, const char *fmt, ...);
-const char *extmacro_get(const char *name);
