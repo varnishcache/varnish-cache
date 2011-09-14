@@ -47,7 +47,6 @@
 #include "libvarnish.h"
 #include "varnishapi.h"
 #include "vcli.h"
-#include "cli_common.h"
 #include "vss.h"
 #include "vsb.h"
 
@@ -58,7 +57,6 @@ struct varnish {
 #define VARNISH_MAGIC		0x208cd8e3
 	char			*name;
 	struct vtclog		*vl;
-	struct vtclog		*vl1;
 	VTAILQ_ENTRY(varnish)	list;
 
 	struct vsb		*storage;
@@ -68,15 +66,21 @@ struct varnish {
 	pid_t			pid;
 
 	pthread_t		tp;
+	pthread_t		tp_vsl;
 
 	int			cli_fd;
 	int			vcl_nbr;
 	char			*workdir;
 
-	struct VSM_data		*vd;
+	struct VSM_data		*vd;		/* vsc use */
+
+	unsigned		vsl_tag_count[256];
+	unsigned		vsl_sleep;
 };
 
 #define NONSENSE	"%XJEIFLH|)Xspa8P"
+
+#define VSL_SLEEP_USEC	(50*1000)
 
 static VTAILQ_HEAD(, varnish)	varnishes =
     VTAILQ_HEAD_INITIALIZER(varnishes);
@@ -116,6 +120,57 @@ varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 }
 
 /**********************************************************************
+ * Varnishlog gatherer + thread
+ */
+
+static int
+h_addlog(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
+    unsigned spec, const char *ptr, uint64_t bitmap)
+{
+	struct varnish *v;
+	int type;
+
+	(void) bitmap;
+
+	type = (spec & VSL_S_CLIENT) ? 'c' :
+	    (spec & VSL_S_BACKEND) ? 'b' : '-';
+	CAST_OBJ_NOTNULL(v, priv, VARNISH_MAGIC);
+
+	v->vsl_tag_count[tag]++;
+
+	vtc_log(v->vl, 4, "vsl| %5u %-12s %c %.*s", fd,
+	    VSL_tags[tag], type, len, ptr);
+	v->vsl_sleep = 100;
+	return (0);
+}
+
+static void *
+varnishlog_thread(void *priv)
+{
+	struct varnish *v;
+	struct VSM_data	*vsl;
+
+	CAST_OBJ_NOTNULL(v, priv, VARNISH_MAGIC);
+	vsl = VSM_New();
+	VSL_Setup(vsl);
+	(void)VSL_Arg(vsl, 'n', v->workdir);
+	VSL_NonBlocking(vsl, 1);
+	while (v->pid  && VSL_Open(vsl, 0) != 0) {
+		assert(usleep(VSL_SLEEP_USEC) == 0 || errno == EINTR);
+	}
+	while (v->pid) {
+		if (VSL_Dispatch(vsl, h_addlog, v) < 0) {
+			assert(usleep(v->vsl_sleep) == 0 || errno == EINTR);
+			v->vsl_sleep += v->vsl_sleep;
+			if (v->vsl_sleep > VSL_SLEEP_USEC)
+				v->vsl_sleep = VSL_SLEEP_USEC;
+		}
+	}
+	VSM_Delete(vsl);
+	return (NULL);
+}
+
+/**********************************************************************
  * Allocate and initialize a varnish
  */
 
@@ -144,9 +199,6 @@ varnish_new(const char *name)
 	bprintf(buf, "rm -rf %s ; mkdir -p %s ; echo ' %ld' > %s/_S",
 	    v->workdir, v->workdir, random(), v->workdir);
 	AZ(system(buf));
-
-	v->vl1 = vtc_logopen(name);
-	AN(v->vl1);
 
 	if (*v->name != 'v')
 		vtc_log(v->vl, 0, "Varnish name must start with 'v'");
@@ -218,7 +270,7 @@ varnish_thread(void *priv)
 		if (i <= 0)
 			break;
 		buf[i] = '\0';
-		vtc_dump(v->vl1, 3, "debug", buf, -1);
+		vtc_dump(v->vl, 3, "debug", buf, -1);
 	}
 	return (NULL);
 }
@@ -294,6 +346,7 @@ varnish_launch(struct varnish *v)
 	v->fds[2] = v->fds[3] = -1;
 	VSB_delete(vsb);
 	AZ(pthread_create(&v->tp, NULL, varnish_thread, v));
+	AZ(pthread_create(&v->tp_vsl, NULL, varnishlog_thread, v));
 
 	/* Wait for the varnish to call home */
 	fd[0].fd = v->cli_fd;
@@ -458,7 +511,9 @@ varnish_wait(struct varnish *v)
 	AZ(pthread_join(v->tp, &p));
 	AZ(close(v->fds[0]));
 	r = wait4(v->pid, &status, 0, NULL);
+	v->pid = 0;
 	vtc_log(v->vl, 2, "R %d Status: %04x", r, status);
+	AZ(pthread_join(v->tp_vsl, &p));
 	if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
 		return;
 #ifdef WCOREDUMP
