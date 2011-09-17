@@ -62,6 +62,13 @@ static void *waiter_priv;
 
 VTAILQ_HEAD(workerhead, worker);
 
+struct poolsock {
+	unsigned			magic;
+#define POOLSOCK_MAGIC			0x1b0a2d38
+	VTAILQ_ENTRY(poolsock)		list;
+	int				sock;
+};
+
 /* Number of work requests queued in excess of worker threads available */
 
 struct pool {
@@ -70,6 +77,7 @@ struct pool {
 	struct lock		mtx;
 	struct workerhead	idle;
 	VTAILQ_HEAD(, sess)	queue;
+	VTAILQ_HEAD(, poolsock)	socks;
 	unsigned		nthr;
 	unsigned		lqueue;
 	unsigned		last_lqueue;
@@ -237,6 +245,29 @@ Pool_QueueSession(struct sess *sp)
  * Add (more) thread pools
  */
 
+static struct pool *
+pool_mkpool(void)
+{
+	struct pool *pp;
+	struct listen_sock *ls;
+	struct poolsock *ps;
+
+	ALLOC_OBJ(pp, POOL_MAGIC);
+	XXXAN(pp);
+	Lck_New(&pp->mtx, lck_wq);
+	VTAILQ_INIT(&pp->queue);
+	VTAILQ_INIT(&pp->idle);
+	VTAILQ_INIT(&pp->socks);
+
+	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+		ALLOC_OBJ(ps, POOLSOCK_MAGIC);
+		XXXAN(ps);
+		ps->sock = ls->sock;
+		VTAILQ_INSERT_TAIL(&pp->socks, ps, list);
+	}
+	return (pp);
+}
+
 static void
 wrk_addpools(const unsigned pools)
 {
@@ -251,12 +282,8 @@ wrk_addpools(const unsigned pools)
 	owq = wq;
 	wq = pwq;
 	for (u = nwq; u < pools; u++) {
-		wq[u] = calloc(sizeof *wq[0], 1);
+		wq[u] = pool_mkpool();
 		XXXAN(wq[u]);
-		wq[u]->magic = POOL_MAGIC;
-		Lck_New(&wq[u]->mtx, lck_wq);
-		VTAILQ_INIT(&wq[u]->queue);
-		VTAILQ_INIT(&wq[u]->idle);
 	}
 	(void)owq;	/* XXX: avoid race, leak it. */
 	nwq = pools;
