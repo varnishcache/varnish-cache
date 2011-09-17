@@ -131,7 +131,6 @@ cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
 	SZOF(struct http_conn);
 	SZOF(struct acct);
 	SZOF(struct worker);
-	SZOF(struct workreq);
 	SZOF(struct storage);
 	SZOF(struct object);
 	SZOF(struct objcore);
