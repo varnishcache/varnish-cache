@@ -511,7 +511,7 @@ WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func, void *priv)
 /*--------------------------------------------------------------------*/
 
 void
-WRK2_Init(void)
+Pool_Init(void)
 {
 	pthread_t tp;
 

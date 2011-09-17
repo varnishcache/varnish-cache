@@ -156,5 +156,4 @@ void
 WRK_Init(void)
 {
 	Lck_New(&wstat_mtx, lck_wstat);
-	WRK2_Init();
 }

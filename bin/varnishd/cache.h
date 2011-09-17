@@ -839,8 +839,7 @@ void PAN_Init(void);
 void PipeSession(struct sess *sp);
 
 /* cache_pool.c */
-void WRK_Init(void);
-void WRK2_Init(void);
+void Pool_Init(void);
 int WRK_QueueSession(struct sess *sp);
 void WRK_SumStat(struct worker *w);
 int WRK_TrySumStat(struct worker *w);
@@ -937,6 +936,7 @@ void VMOD_Init(void);
 
 /* cache_wrk.c */
 
+void WRK_Init(void);
 void *WRK_thread(void *priv);
 
 /* cache_ws.c */

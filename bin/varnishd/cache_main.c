@@ -116,6 +116,7 @@ child_main(void)
 	VBE_Init();
 	VBP_Init();
 	WRK_Init();
+	Pool_Init();
 
 	EXP_Init();
 	HSH_Init();
