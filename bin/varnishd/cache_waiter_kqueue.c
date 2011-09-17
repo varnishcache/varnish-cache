@@ -205,7 +205,7 @@ vwk_thread(void *priv)
 /*--------------------------------------------------------------------*/
 
 static void
-vca_kqueue_pass(void *priv, const struct sess *sp)
+vwk_pass(void *priv, const struct sess *sp)
 {
 	struct vwk *vwk;
 
@@ -216,7 +216,7 @@ vca_kqueue_pass(void *priv, const struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 static void *
-vca_kqueue_init(void)
+vwk_init(void)
 {
 	int i;
 	struct vwk *vwk;
@@ -241,8 +241,8 @@ vca_kqueue_init(void)
 
 struct waiter waiter_kqueue = {
 	.name =		"kqueue",
-	.init =		vca_kqueue_init,
-	.pass =		vca_kqueue_pass,
+	.init =		vwk_init,
+	.pass =		vwk_pass,
 };
 
 #endif /* defined(HAVE_KQUEUE) */
