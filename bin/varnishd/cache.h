@@ -108,6 +108,7 @@ struct objhead;
 struct objcore;
 struct busyobj;
 struct storage;
+struct sesspool;
 struct vrt_backend;
 struct cli_proto;
 struct ban;
@@ -849,7 +850,7 @@ void WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len);
 
 /* cache_session.c [SES] */
 void SES_Init(void);
-struct sess *SES_New(void);
+struct sess *SES_New(struct sesspool *pp);
 struct sess *SES_Alloc(void);
 void SES_Close(struct sess *sp, const char *reason);
 void SES_Delete(struct sess *sp, const char *reason);

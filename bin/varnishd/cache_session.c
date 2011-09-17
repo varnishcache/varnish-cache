@@ -26,16 +26,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Session and Client management.
+ * Session management
  *
- * XXX: The two-list session management is actually not a good idea
- * XXX: come to think of it, because we want the sessions reused in
- * XXX: Most Recently Used order.
- * XXX: Another and maybe more interesting option would be to cache
- * XXX: free sessions in the worker threads and postpone session
- * XXX: allocation until then.  This does not quite implment MRU order
- * XXX: but it does save some locking, although not that much because
- * XXX: we still have to do the source-addr lookup.
  */
 
 #include "config.h"
@@ -56,6 +48,7 @@ struct sessmem {
 	unsigned		magic;
 #define SESSMEM_MAGIC		0x555859c5
 
+	struct sesspool		*pool;
 	struct sess		sess;
 	unsigned		workspace;
 	void			*wsp;
@@ -64,13 +57,16 @@ struct sessmem {
 	struct sockaddr_storage	sockaddr[2];
 };
 
-static VTAILQ_HEAD(,sessmem)	ses_free_mem[2] = {
-    VTAILQ_HEAD_INITIALIZER(ses_free_mem[0]),
-    VTAILQ_HEAD_INITIALIZER(ses_free_mem[1]),
+struct sesspool {
+	unsigned		magic;
+#define SESSPOOL_MAGIC		0xd916e202
+	VTAILQ_HEAD(,sessmem)	freelist;
+	struct lock		mtx;
+	unsigned		nsess;
+	unsigned		maxsess;
 };
 
-static unsigned ses_qp;
-static struct lock		ses_mem_mtx;
+static struct sesspool *sesspool;
 
 /*--------------------------------------------------------------------*/
 
@@ -106,8 +102,6 @@ ses_sm_alloc(void)
 	uint16_t nhttp;
 	unsigned l, hl;
 
-	if (VSC_C_main->n_sess_mem >= params->max_sess)
-		return (NULL);
 	/*
 	 * It is not necessary to lock these, but we need to
 	 * cache them locally, to make sure we get a consistent
@@ -115,6 +109,7 @@ ses_sm_alloc(void)
 	 */
 	nws = params->sess_workspace;
 	nhttp = (uint16_t)params->http_max_hdr;
+
 	hl = HTTP_estimate(nhttp);
 	l = sizeof *sm + nws + 2 * hl;
 	p = malloc(l);
@@ -122,6 +117,7 @@ ses_sm_alloc(void)
 		return (NULL);
 	q = p + l;
 
+	/* XXX Stats */
 	Lck_Lock(&stat_mtx);
 	VSC_C_main->n_sess_mem++;
 	Lck_Unlock(&stat_mtx);
@@ -153,7 +149,6 @@ ses_setup(struct sessmem *sm)
 {
 	struct sess *sp;
 
-
 	CHECK_OBJ_NOTNULL(sm, SESSMEM_MAGIC);
 	sp = &sm->sess;
 	memset(sp, 0, sizeof *sp);
@@ -184,39 +179,38 @@ ses_setup(struct sessmem *sm)
  */
 
 struct sess *
-SES_New(void)
+SES_New(struct sesspool *pp)
 {
 	struct sessmem *sm;
 	struct sess *sp;
+	int do_alloc = 0;
 
-	assert(pthread_self() == VCA_thread);
-	assert(ses_qp <= 1);
-	sm = VTAILQ_FIRST(&ses_free_mem[ses_qp]);
-	if (sm == NULL) {
-		/*
-		 * If that queue is empty, flip queues holding the lock
-		 * and try the new unlocked queue.
-		 */
-		Lck_Lock(&ses_mem_mtx);
-		ses_qp = 1 - ses_qp;
-		Lck_Unlock(&ses_mem_mtx);
-		sm = VTAILQ_FIRST(&ses_free_mem[ses_qp]);
-	}
+	if (pp == NULL)
+		pp = sesspool;
+	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
+
+	Lck_Lock(&pp->mtx);
+	sm = VTAILQ_FIRST(&pp->freelist);
 	if (sm != NULL) {
-		VTAILQ_REMOVE(&ses_free_mem[ses_qp], sm, list);
-		sp = &sm->sess;
-		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	} else {
-		sm = ses_sm_alloc();
-		if (sm == NULL)
-			return (NULL);
-		ses_setup(sm);
-		sp = &sm->sess;
-		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+		VTAILQ_REMOVE(&pp->freelist, sm, list);
+	} else if (pp->nsess < pp->maxsess) {
+		pp->nsess++;
+		do_alloc = 1;
 	}
-
+	Lck_Unlock(&pp->mtx);
+	if (do_alloc) {
+		sm = ses_sm_alloc();
+		if (sm != NULL) {
+			sm->pool = pp;
+			ses_setup(sm);
+		}
+	}
+	if (sm == NULL)
+		return (NULL);
+	sp = &sm->sess;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	/* XXX Stats */
 	VSC_C_main->n_sess++;		/* XXX: locking  ? */
-
 	return (sp);
 }
 
@@ -292,10 +286,14 @@ SES_Delete(struct sess *sp, const char *reason)
 	struct acct *b = &sp->acct_ses;
 	struct sessmem *sm;
 	static char noaddr[] = "-";
+	struct sesspool *pp;
+
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	sm = sp->mem;
 	CHECK_OBJ_NOTNULL(sm, SESSMEM_MAGIC);
+	pp = sm->pool;
+	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 
 	if (reason != NULL)
 		SES_Close(sp, reason);
@@ -314,28 +312,21 @@ SES_Delete(struct sess *sp, const char *reason)
 	    sp->addr, sp->port, sp->t_end - b->first,
 	    b->sess, b->req, b->pipe, b->pass,
 	    b->fetch, b->hdrbytes, b->bodybytes);
+
 	if (sm->workspace != params->sess_workspace) {
 		Lck_Lock(&stat_mtx);
 		VSC_C_main->n_sess_mem--;
 		Lck_Unlock(&stat_mtx);
 		free(sm);
+		Lck_Lock(&pp->mtx);
+		sesspool->nsess--;
+		Lck_Unlock(&pp->mtx);
 	} else {
 		/* Clean and prepare for reuse */
 		ses_setup(sm);
-		Lck_Lock(&ses_mem_mtx);
-		VTAILQ_INSERT_HEAD(&ses_free_mem[1 - ses_qp], sm, list);
-		Lck_Unlock(&ses_mem_mtx);
-	}
-
-	/* Try to precreate some ses-mem so the acceptor will not have to */
-	if (VSC_C_main->n_sess_mem < VSC_C_main->n_sess + 10) {
-		sm = ses_sm_alloc();
-		if (sm != NULL) {
-			ses_setup(sm);
-			Lck_Lock(&ses_mem_mtx);
-			VTAILQ_INSERT_HEAD(&ses_free_mem[1 - ses_qp], sm, list);
-			Lck_Unlock(&ses_mem_mtx);
-		}
+		Lck_Lock(&pp->mtx);
+		VTAILQ_INSERT_HEAD(&sesspool->freelist, sm, list);
+		Lck_Unlock(&pp->mtx);
 	}
 }
 
@@ -345,6 +336,10 @@ void
 SES_Init()
 {
 
+	ALLOC_OBJ(sesspool, SESSPOOL_MAGIC);
+	VTAILQ_INIT(&sesspool->freelist);
+	Lck_New(&sesspool->mtx, lck_sessmem);
+	sesspool->maxsess = params->max_sess;
+
 	Lck_New(&stat_mtx, lck_stat);
-	Lck_New(&ses_mem_mtx, lck_sessmem);
 }

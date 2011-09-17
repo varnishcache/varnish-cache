@@ -316,7 +316,7 @@ vca_acct(void *arg)
 			i = VCA_Accept(ls->sock, &l, &addr_s);
 			if (i < 0) 
 				continue;
-			sp = SES_New();
+			sp = SES_New(NULL);
 			if (sp == NULL) {
 				AZ(close(i));
 				VSC_C_main->client_drop++;
