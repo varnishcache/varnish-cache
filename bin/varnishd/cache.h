@@ -840,8 +840,11 @@ void PipeSession(struct sess *sp);
 
 /* cache_pool.c */
 void WRK_Init(void);
+void WRK2_Init(void);
 int WRK_QueueSession(struct sess *sp);
 void WRK_SumStat(struct worker *w);
+int WRK_TrySumStat(struct worker *w);
+void WRK_thread_real(void *priv, struct worker *w);
 
 #define WRW_IsReleased(w)	((w)->wrw.wfd == NULL)
 int WRW_Error(const struct worker *w);
@@ -931,6 +934,10 @@ void ESI_DeliverChild(const struct sess *);
 
 /* cache_vrt_vmod.c */
 void VMOD_Init(void);
+
+/* cache_wrk.c */
+
+void *WRK_thread(void *priv);
 
 /* cache_ws.c */
 

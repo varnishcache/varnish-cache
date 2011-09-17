@@ -82,73 +82,16 @@ static unsigned			nthr_max;
 
 static pthread_cond_t		herder_cond;
 static struct lock		herder_mtx;
-static struct lock		wstat_mtx;
 
 /*--------------------------------------------------------------------*/
-
-static void
-wrk_sumstat(struct worker *w)
-{
-
-	Lck_AssertHeld(&wstat_mtx);
-#define L0(n)
-#define L1(n) (VSC_C_main->n += w->stats.n)
-#define VSC_DO_MAIN
-#define VSC_F(n, t, l, f, d) L##l(n);
-#include "vsc_fields.h"
-#undef VSC_F
-#undef VSC_DO_MAIN
-#undef L0
-#undef L1
-	memset(&w->stats, 0, sizeof w->stats);
-}
 
 void
-WRK_SumStat(struct worker *w)
+WRK_thread_real(void *priv, struct worker *w)
 {
-
-	Lck_Lock(&wstat_mtx);
-	wrk_sumstat(w);
-	Lck_Unlock(&wstat_mtx);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void *
-wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace,
-    uint16_t nhttp, unsigned http_space, unsigned siov)
-{
-	struct worker *w, ww;
-	uint32_t wlog[shm_workspace / 4];
-	/* XXX: can we trust these to be properly aligned ? */
-	unsigned char ws[sess_workspace];
-	unsigned char http0[http_space];
-	unsigned char http1[http_space];
-	unsigned char http2[http_space];
-	struct iovec iov[siov];
-	struct SHA256Context sha256;
+	struct wq *qp;
 	int stats_clean;
 
-	THR_SetName("cache-worker");
-	w = &ww;
-	memset(w, 0, sizeof *w);
-	w->magic = WORKER_MAGIC;
-	w->lastused = NAN;
-	w->wlb = w->wlp = wlog;
-	w->wle = wlog + (sizeof wlog) / 4;
-	w->sha256ctx = &sha256;
-	w->bereq = HTTP_create(http0, nhttp);
-	w->beresp = HTTP_create(http1, nhttp);
-	w->resp = HTTP_create(http2, nhttp);
-	w->wrw.iov = iov;
-	w->wrw.siov = siov;
-	w->wrw.ciov = siov;
-	AZ(pthread_cond_init(&w->cond, NULL));
-
-	WS_Init(w->ws, "wrk", ws, sess_workspace);
-
-	VSL(SLT_WorkThread, 0, "%p start", w);
-
+	CAST_OBJ_NOTNULL(qp, priv, WQ_MAGIC);
 	Lck_Lock(&qp->mtx);
 	qp->nthr++;
 	stats_clean = 1;
@@ -195,43 +138,11 @@ wrk_thread_real(struct wq *qp, unsigned shm_workspace, unsigned sess_workspace,
 			if (w->vcl != NULL)
 				VCL_Rel(&w->vcl);
 		}
-		if (!Lck_Trylock(&wstat_mtx)) {
-			wrk_sumstat(w);
-			Lck_Unlock(&wstat_mtx);
-			stats_clean = 1;
-		}
+		stats_clean = WRK_TrySumStat(w);
 		Lck_Lock(&qp->mtx);
 	}
 	qp->nthr--;
 	Lck_Unlock(&qp->mtx);
-
-	VSL(SLT_WorkThread, 0, "%p end", w);
-	if (w->vcl != NULL)
-		VCL_Rel(&w->vcl);
-	AZ(pthread_cond_destroy(&w->cond));
-	HSH_Cleanup(w);
-	WRK_SumStat(w);
-	return (NULL);
-}
-
-static void *
-wrk_thread(void *priv)
-{
-	struct wq *qp;
-	uint16_t nhttp;
-	unsigned siov;
-
-	CAST_OBJ_NOTNULL(qp, priv, WQ_MAGIC);
-	assert(params->http_max_hdr <= 65535);
-	/* We need to snapshot these two for consistency */
-	nhttp = (uint16_t)params->http_max_hdr;
-	siov = nhttp * 2;
-	if (siov > IOV_MAX)
-		siov = IOV_MAX;
-	return (wrk_thread_real(qp,
-	    params->shm_workspace,
-	    params->wthread_workspace,
-	    nhttp, HTTP_estimate(nhttp), siov));
 }
 
 /*--------------------------------------------------------------------
@@ -481,7 +392,7 @@ wrk_breed_flock(struct wq *qp, const pthread_attr_t *tp_attr)
 	    qp->lqueue > qp->last_lqueue)) {	/* not getting better since last */
 		if (qp->nthr >= nthr_max) {
 			VSC_C_main->n_wrk_max++;
-		} else if (pthread_create(&tp, tp_attr, wrk_thread, qp)) {
+		} else if (pthread_create(&tp, tp_attr, WRK_thread, qp)) {
 			VSL(SLT_Debug, 0, "Create worker thread failed %d %s",
 			    errno, strerror(errno));
 			VSC_C_main->n_wrk_failed++;
@@ -600,13 +511,12 @@ WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func, void *priv)
 /*--------------------------------------------------------------------*/
 
 void
-WRK_Init(void)
+WRK2_Init(void)
 {
 	pthread_t tp;
 
 	AZ(pthread_cond_init(&herder_cond, NULL));
 	Lck_New(&herder_mtx, lck_herder);
-	Lck_New(&wstat_mtx, lck_wstat);
 
 	wrk_addpools(params->wthread_pools);
 	AZ(pthread_create(&tp, NULL, wrk_herdtimer_thread, NULL));

@@ -48,6 +48,7 @@ varnishd_SOURCES = \
 	cache_vrt_re.c \
 	cache_vrt_var.c \
 	cache_vrt_vmod.c \
+	cache_wrk.c \
 	cache_wrw.c \
 	cache_ws.c \
 	hash_classic.c \
