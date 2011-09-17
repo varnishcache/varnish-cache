@@ -840,10 +840,8 @@ void PipeSession(struct sess *sp);
 
 /* cache_pool.c */
 void Pool_Init(void);
-int WRK_QueueSession(struct sess *sp);
-void WRK_SumStat(struct worker *w);
-int WRK_TrySumStat(struct worker *w);
-void WRK_thread_real(void *priv, struct worker *w);
+int Pool_QueueSession(struct sess *sp);
+void Pool_Work_Thread(void *priv, struct worker *w);
 
 #define WRW_IsReleased(w)	((w)->wrw.wfd == NULL)
 int WRW_Error(const struct worker *w);
@@ -858,9 +856,6 @@ unsigned WRW_WriteH(struct worker *w, const txt *hh, const char *suf);
 void WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len);
 #endif  /* SENDFILE_WORKS */
 
-typedef void *bgthread_t(struct sess *, void *priv);
-void WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func,
-    void *priv);
 
 /* cache_session.c [SES] */
 void SES_Init(void);
@@ -937,7 +932,12 @@ void VMOD_Init(void);
 /* cache_wrk.c */
 
 void WRK_Init(void);
+int WRK_TrySumStat(struct worker *w);
+void WRK_SumStat(struct worker *w);
 void *WRK_thread(void *priv);
+typedef void *bgthread_t(struct sess *, void *priv);
+void WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func,
+    void *priv);
 
 /* cache_ws.c */
 

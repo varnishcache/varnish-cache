@@ -56,7 +56,6 @@
 #include "cache.h"
 #include "stevedore.h"
 #include "hash_slinger.h"
-#include "vsha256.h"
 
 VTAILQ_HEAD(workerhead, worker);
 
@@ -86,7 +85,7 @@ static struct lock		herder_mtx;
 /*--------------------------------------------------------------------*/
 
 void
-WRK_thread_real(void *priv, struct worker *w)
+Pool_Work_Thread(void *priv, struct worker *w)
 {
 	struct wq *qp;
 	int stats_clean;
@@ -217,7 +216,7 @@ wrk_do_cnt_sess(struct worker *w, void *priv)
 /*--------------------------------------------------------------------*/
 
 int
-WRK_QueueSession(struct sess *sp)
+Pool_QueueSession(struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AZ(sp->wrk);
@@ -454,58 +453,6 @@ wrk_herder_thread(void *priv)
 		}
 	}
 	NEEDLESS_RETURN(NULL);
-}
-
-/*--------------------------------------------------------------------
- * Create and starte a back-ground thread which as its own worker and
- * session data structures;
- */
-
-struct bgthread {
-	unsigned	magic;
-#define BGTHREAD_MAGIC	0x23b5152b
-	const char	*name;
-	bgthread_t	*func;
-	void		*priv;
-};
-
-static void *
-wrk_bgthread(void *arg)
-{
-	struct bgthread *bt;
-	struct worker ww;
-	struct sess *sp;
-	uint32_t logbuf[1024];	/* XXX:  size ? */
-
-	CAST_OBJ_NOTNULL(bt, arg, BGTHREAD_MAGIC);
-	THR_SetName(bt->name);
-	sp = SES_Alloc();
-	XXXAN(sp);
-	memset(&ww, 0, sizeof ww);
-	sp->wrk = &ww;
-	ww.magic = WORKER_MAGIC;
-	ww.wlp = ww.wlb = logbuf;
-	ww.wle = logbuf + (sizeof logbuf) / 4;
-
-	(void)bt->func(sp, bt->priv);
-
-	WRONG("BgThread terminated");
-
-	NEEDLESS_RETURN(NULL);
-}
-
-void
-WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func, void *priv)
-{
-	struct bgthread *bt;
-
-	ALLOC_OBJ(bt, BGTHREAD_MAGIC);
-	AN(bt);
-
-	bt->name = name;
-	bt->func = func;
-	bt->priv = priv;
-	AZ(pthread_create(thr, NULL, wrk_bgthread, bt));
 }
 
 /*--------------------------------------------------------------------*/

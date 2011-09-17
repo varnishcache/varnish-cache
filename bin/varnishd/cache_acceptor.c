@@ -319,7 +319,7 @@ vca_acct(void *arg)
 			sp->sockaddrlen = l;
 
 			sp->step = STP_FIRST;
-			if (WRK_QueueSession(sp)) {
+			if (Pool_QueueSession(sp)) {
 				VSC_C_main->client_drop++;
 				pace += params->acceptor_sleep_incr;
 			} else {
@@ -347,7 +347,7 @@ vca_handover(struct sess *sp, int status)
 		break;
 	case 1:
 		sp->step = STP_START;
-		if (WRK_QueueSession(sp))
+		if (Pool_QueueSession(sp))
 			VSC_C_main->client_drop_late++;
 		break;
 	default:
