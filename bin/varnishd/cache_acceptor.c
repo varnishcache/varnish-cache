@@ -40,9 +40,6 @@
 #include "vcli.h"
 #include "cli_priv.h"
 #include "cache.h"
-#include "cache_waiter.h"
-
-static void *waiter_priv;
 
 pthread_t		VCA_thread;
 static struct timeval	tv_sndtimeo;
@@ -298,25 +295,6 @@ vca_acct(void *arg)
 
 /*--------------------------------------------------------------------*/
 
-void
-vca_return_session(struct sess *sp)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	AZ(sp->obj);
-	AZ(sp->vcl);
-	assert(sp->fd >= 0);
-	/*
-	 * Set nonblocking in the worker-thread, before passing to the
-	 * acceptor thread, to reduce syscall density of the latter.
-	 */
-	if (VTCP_nonblocking(sp->fd))
-		SES_Close(sp, "remote closed");
-	waiter->pass(waiter_priv, sp);
-}
-
-/*--------------------------------------------------------------------*/
-
 static void
 ccf_start(struct cli *cli, const char * const *av, void *priv)
 {
@@ -325,14 +303,7 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	(void)priv;
 
-	AN(waiter);
-	AN(waiter->name);
-	AN(waiter->init);
-	AN(waiter->pass);
-
-	waiter_priv = waiter->init();
 	AZ(pthread_create(&VCA_thread, NULL, vca_acct, NULL));
-	VSL(SLT_Debug, 0, "Acceptor is %s", waiter->name);
 }
 
 /*--------------------------------------------------------------------*/

@@ -54,8 +54,11 @@
 #include "vcl.h"
 #include "cli_priv.h"
 #include "cache.h"
+#include "cache_waiter.h"
 #include "stevedore.h"
 #include "hash_slinger.h"
+
+static void *waiter_priv;
 
 VTAILQ_HEAD(workerhead, worker);
 
@@ -454,6 +457,27 @@ wrk_herder_thread(void *priv)
 	NEEDLESS_RETURN(NULL);
 }
 
+/*--------------------------------------------------------------------
+ * Wait for another request
+ */
+
+void
+Pool_Wait(struct sess *sp)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	AZ(sp->obj);
+	AZ(sp->vcl);
+	assert(sp->fd >= 0);
+	/*
+	 * Set nonblocking in the worker-thread, before passing to the
+	 * acceptor thread, to reduce syscall density of the latter.
+	 */
+	if (VTCP_nonblocking(sp->fd))
+		SES_Close(sp, "remote closed");
+	waiter->pass(waiter_priv, sp);
+}
+
 /*--------------------------------------------------------------------*/
 
 void
@@ -463,6 +487,8 @@ Pool_Init(void)
 
 	AZ(pthread_cond_init(&herder_cond, NULL));
 	Lck_New(&herder_mtx, lck_herder);
+
+	waiter_priv = waiter->init();
 
 	wrk_addpools(params->wthread_pools);
 	AZ(pthread_create(&tp, NULL, wrk_herdtimer_thread, NULL));

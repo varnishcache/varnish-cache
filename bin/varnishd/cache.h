@@ -645,7 +645,6 @@ struct vbc {
 /* Prototypes etc ----------------------------------------------------*/
 
 /* cache_acceptor.c */
-void vca_return_session(struct sess *sp);
 void VCA_Prep(struct sess *sp);
 void VCA_Init(void);
 void VCA_Shutdown(void);
@@ -840,6 +839,7 @@ void PipeSession(struct sess *sp);
 void Pool_Init(void);
 int Pool_QueueSession(struct sess *sp);
 void Pool_Work_Thread(void *priv, struct worker *w);
+void Pool_Wait(struct sess *sp);
 
 #define WRW_IsReleased(w)	((w)->wrw.wfd == NULL)
 int WRW_Error(const struct worker *w);

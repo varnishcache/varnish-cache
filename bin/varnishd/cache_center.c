@@ -108,7 +108,7 @@ cnt_wait(struct sess *sp)
 		sp->wrk->stats.sess_herd++;
 		SES_Charge(sp);
 		sp->wrk = NULL;
-		vca_return_session(sp);
+		Pool_Wait(sp);
 		return (1);
 	}
 	if (i == 1) {
@@ -398,7 +398,7 @@ cnt_done(struct sess *sp)
 	}
 	sp->wrk->stats.sess_herd++;
 	sp->wrk = NULL;
-	vca_return_session(sp);
+	Pool_Wait(sp);
 	return (1);
 }
 

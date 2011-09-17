@@ -53,11 +53,12 @@ extern const struct waiter waiter_kqueue;
 extern const struct waiter waiter_ports;
 #endif
 
-extern const struct waiter waiter_poll;
 
 /* cache_session.c */
 void SES_Handle(struct sess *sp, int status);
 
+/* cache_waiter.c */
+extern const struct waiter waiter_poll;
 const char *WAIT_GetName(void);
 void WAIT_tweak_waiter(struct cli *cli, const char *arg);
 void WAIT_Init(void);
