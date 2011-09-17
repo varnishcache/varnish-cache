@@ -80,24 +80,23 @@ vws_port_ev(struct vws *vws, port_event_t *ev) {
 		assert(sp->fd >= 0);
 		AZ(sp->obj);
 		VTAILQ_INSERT_TAIL(&vws->sesshead, sp, list);
-		vws_add(vw, sp->fd, sp);
+		vws_add(vws, sp->fd, sp);
 	} else {
 		int i;
 		assert(ev->portev_source == PORT_SOURCE_FD);
 		CAST_OBJ_NOTNULL(sp, ev->portev_user, SESS_MAGIC);
 		assert(sp->fd >= 0);
 		if(ev->portev_events & POLLERR) {
-			vws_del(vws->sp->fd);
+			vws_del(vws, sp->fd);
 			VTAILQ_REMOVE(&vws->sesshead, sp, list);
-			vca_close_session(sp, "EOF");
-			SES_Delete(sp);
+			SES_Delete(sp, "EOF");
 			return;
 		}
 		i = HTC_Rx(sp->htc);
 
 		if (i == 0) {
 			/* incomplete header, wait for more data */
-			vws_add(sp->fd, sp);
+			vws_add(vws, sp->fd, sp);
 			return;
 		}
 
@@ -113,11 +112,11 @@ vws_port_ev(struct vws *vws, port_event_t *ev) {
 		 *
 		 * Ref: http://opensolaris.org/jive/thread.jspa?threadID=129476&tstart=0
 		 */
-		vws_del(vws->sp->fd);
+		vws_del(vws, sp->fd);
 		VTAILQ_REMOVE(&vws->sesshead, sp, list);
 
-		/* vca_handover will also handle errors */
-		vca_handover(sp, i);
+		/* SES_Handle will also handle errors */
+		SES_Handle(sp, i);
 	}
 	return;
 }
@@ -128,7 +127,7 @@ vws_thread(void *priv)
 	struct sess *sp;
 	struct vws *vws;
 
-	CAST_OBJ_NOTNULL(vwp, priv, VWP_MAGIC);
+	CAST_OBJ_NOTNULL(vws, priv, VWS_MAGIC);
 	/*
 	 * timeouts:
 	 *
@@ -219,8 +218,7 @@ vws_thread(void *priv)
 			if(sp->fd != -1) {
 				vws_del(vws, sp->fd);
 			}
-			vca_close_session(sp, "timeout");
-			SES_Delete(sp);
+			SES_Delete(sp, "timeout");
 		}
 
 		/*
@@ -271,7 +269,7 @@ vws_init(void)
 	ALLOC_OBJ(vws, VWS_MAGIC);
 	AN(vws);
 	VTAILQ_INIT(&vws->sesshead);
-	AZ(pthread_create(&vws_ports_thread, NULL, vws_thread, vws));
+	AZ(pthread_create(&vws->ports_thread, NULL, vws_thread, vws));
 	return (vws);
 }
 

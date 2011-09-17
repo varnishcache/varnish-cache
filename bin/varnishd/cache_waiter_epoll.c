@@ -138,19 +138,16 @@ vwe_eev(struct vwe *vwe, const struct epoll_event *ep)
 				return;	/* more needed */
 			}
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			vca_handover(sp, i);
+			SES_Handle(sp, i);
 		} else if (ep->events & EPOLLERR) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			vca_close_session(sp, "ERR");
-			SES_Delete(sp);
+			SES_Delete(sp, "ERR");
 		} else if (ep->events & EPOLLHUP) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			vca_close_session(sp, "HUP");
-			SES_Delete(sp);
+			SES_Delete(sp, "HUP");
 		} else if (ep->events & EPOLLRDHUP) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			vca_close_session(sp, "RHUP");
-			SES_Delete(sp);
+			SES_Delete(sp, "RHUP");
 		}
 	}
 }
@@ -202,8 +199,7 @@ vwe_thread(void *priv)
 				break;
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
 			// XXX: not yet VTCP_linger(sp->fd, 0);
-			vca_close_session(sp, "timeout");
-			SES_Delete(sp);
+			SES_Delete(sp, "timeout");
 		}
 	}
 	return NULL;

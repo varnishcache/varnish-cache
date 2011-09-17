@@ -646,7 +646,6 @@ struct vbc {
 
 /* cache_acceptor.c */
 void vca_return_session(struct sess *sp);
-void vca_close_session(struct sess *sp, const char *why);
 void VCA_Prep(struct sess *sp);
 void VCA_Init(void);
 void VCA_Shutdown(void);
@@ -861,7 +860,8 @@ void WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len);
 void SES_Init(void);
 struct sess *SES_New(void);
 struct sess *SES_Alloc(void);
-void SES_Delete(struct sess *sp);
+void SES_Close(struct sess *sp, const char *reason);
+void SES_Delete(struct sess *sp, const char *reason);
 void SES_Charge(struct sess *sp);
 
 /* cache_shmlog.c */

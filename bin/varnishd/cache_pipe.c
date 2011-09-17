@@ -87,7 +87,7 @@ PipeSession(struct sess *sp)
 	i = WRW_FlushRelease(w);
 
 	if (i) {
-		vca_close_session(sp, "pipe");
+		SES_Close(sp, "pipe");
 		VDI_CloseFd(sp);
 		return;
 	}
@@ -127,6 +127,6 @@ PipeSession(struct sess *sp)
 			fds[1].fd = -1;
 		}
 	}
-	vca_close_session(sp, "pipe");
+	SES_Close(sp, "pipe");
 	VDI_CloseFd(sp);
 }

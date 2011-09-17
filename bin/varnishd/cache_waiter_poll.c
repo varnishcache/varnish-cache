@@ -165,14 +165,13 @@ vwp_main(void *priv)
 					VTAILQ_INSERT_HEAD(&vwp->sesshead, sp, list);
 				} else {
 					vwp_unpoll(vwp, fd);
-					vca_handover(sp, i);
+					SES_Handle(sp, i);
 				}
 			} else if (sp->t_open <= deadline) {
 				VTAILQ_REMOVE(&vwp->sesshead, sp, list);
 				vwp_unpoll(vwp, fd);
 				// XXX: not yet (void)VTCP_linger(sp->fd, 0);
-				vca_close_session(sp, "timeout");
-				SES_Delete(sp);
+				SES_Delete(sp, "timeout");
 			}
 		}
 		if (v && vwp->pollfd[vwp->pipes[0]].revents) {

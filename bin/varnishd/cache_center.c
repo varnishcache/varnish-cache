@@ -116,14 +116,14 @@ cnt_wait(struct sess *sp)
 		return (0);
 	}
 	if (i == -2) {
-		vca_close_session(sp, "overflow");
+		SES_Close(sp, "overflow");
 		return (0);
 	}
 	if (i == -1 && Tlen(sp->htc->rxbuf) == 0 &&
 	    (errno == 0 || errno == ECONNRESET))
-		vca_close_session(sp, "EOF");
+		SES_Close(sp, "EOF");
 	else
-		vca_close_session(sp, "error");
+		SES_Close(sp, "error");
 	sp->step = STP_DONE;
 	return (0);
 }
@@ -364,13 +364,13 @@ cnt_done(struct sess *sp)
 		 * before we close, to get queued data transmitted.
 		 */
 		// XXX: not yet (void)VTCP_linger(sp->fd, 0);
-		vca_close_session(sp, sp->doclose);
+		SES_Close(sp, sp->doclose);
 	}
 
 	if (sp->fd < 0) {
 		sp->wrk->stats.sess_closed++;
 		sp->wrk = NULL;
-		SES_Delete(sp);
+		SES_Delete(sp, NULL);
 		return (1);
 	}
 
@@ -1483,7 +1483,7 @@ cnt_start(struct sess *sp)
 	/* If we could not even parse the request, just close */
 	if (done == 400) {
 		sp->step = STP_DONE;
-		vca_close_session(sp, "junk");
+		SES_Close(sp, "junk");
 		return (0);
 	}
 

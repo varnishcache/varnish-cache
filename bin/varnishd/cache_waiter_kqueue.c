@@ -125,12 +125,11 @@ vwk_kev(struct vwk *vwk, const struct kevent *kp)
 			return;	/* more needed */
 		}
 		VTAILQ_REMOVE(&vwk->sesshead, sp, list);
-		vca_handover(sp, i);
+		SES_Handle(sp, i);
 		return;
 	} else if (kp->flags & EV_EOF) {
 		VTAILQ_REMOVE(&vwk->sesshead, sp, list);
-		vca_close_session(sp, "EOF");
-		SES_Delete(sp);
+		SES_Delete(sp, "EOF");
 		return;
 	} else {
 		VSL(SLT_Debug, sp->id, "KQ: sp %p kev data %lu flags 0x%x%s",
@@ -196,8 +195,7 @@ vwk_thread(void *priv)
 				break;
 			VTAILQ_REMOVE(&vwk->sesshead, sp, list);
 			// XXX: not yet (void)VTCP_linger(sp->fd, 0);
-			vca_close_session(sp, "timeout");
-			SES_Delete(sp);
+			SES_Delete(sp, "timeout");
 		}
 	}
 }

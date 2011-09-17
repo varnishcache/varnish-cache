@@ -232,7 +232,6 @@ Pool_QueueSession(struct sess *sp)
 	 * XXX: sleep whichever thread got us here
 	 */
 	sp->t_end = TIM_real();
-	vca_close_session(sp, "dropped");
 	if (sp->vcl != NULL) {
 		/*
 		 * A session parked on a busy object can come here
@@ -240,7 +239,7 @@ Pool_QueueSession(struct sess *sp)
 		 */
 		VCL_Rel(&sp->vcl);
 	}
-	SES_Delete(sp);
+	SES_Delete(sp, "dropped");
 	return (1);
 }
 

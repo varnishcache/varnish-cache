@@ -557,7 +557,6 @@ const struct stevedore smf_stevedore = {
 #ifdef INCLUDE_TEST_DRIVER
 
 void vca_flush(struct sess *sp) {}
-void vca_close_session(struct sess *sp, const char *why) {}
 
 #define N	100
 #define M	(128*1024)

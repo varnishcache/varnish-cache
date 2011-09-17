@@ -48,6 +48,7 @@
 
 #include "cache.h"
 #include "cache_backend.h"
+#include "cache_waiter.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -238,12 +239,55 @@ SES_Alloc(void)
 }
 
 /*--------------------------------------------------------------------
- * Recycle a session.  If the workspace has changed, deleted it,
+ * Handle a session (from waiter)
+ *
+ * Status: see HTC_Rx()
+ */
+
+void
+SES_Handle(struct sess *sp, int status)
+{
+
+	switch (status) {
+	case -2:
+		SES_Delete(sp, "blast");
+		break;
+	case -1:
+		SES_Delete(sp, "no request");
+		break;
+	case 1:
+		sp->step = STP_START;
+		if (Pool_QueueSession(sp))
+			VSC_C_main->client_drop_late++;
+		break;
+	default:
+		WRONG("Unexpected return from HTC_Rx()");
+	}
+}
+
+/*--------------------------------------------------------------------
+ * Close a sessions connection.
+ */
+
+void
+SES_Close(struct sess *sp, const char *reason)
+{
+	int i;
+
+	assert(sp->fd >= 0);
+	VSL(SLT_SessionClose, sp->id, "%s", reason);
+	i = close(sp->fd);
+	assert(i == 0 || errno != EBADF); /* XXX EINVAL seen */
+	sp->fd = -1;
+}
+
+/*--------------------------------------------------------------------
+ * (Close &) Recycle a session.  If the workspace has changed, deleted it,
  * otherwise wash it, and put it up for adoption.
  */
 
 void
-SES_Delete(struct sess *sp)
+SES_Delete(struct sess *sp, const char *reason)
 {
 	struct acct *b = &sp->acct_ses;
 	struct sessmem *sm;
@@ -252,6 +296,10 @@ SES_Delete(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	sm = sp->mem;
 	CHECK_OBJ_NOTNULL(sm, SESSMEM_MAGIC);
+
+	if (reason != NULL)
+		SES_Close(sp, reason);
+	assert(sp->fd < 0);
 
 	AZ(sp->obj);
 	AZ(sp->vcl);

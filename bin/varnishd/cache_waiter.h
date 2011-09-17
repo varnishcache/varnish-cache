@@ -53,5 +53,6 @@ extern struct waiter waiter_poll;
 extern struct waiter waiter_ports;
 #endif
 
-/* vca_acceptor.c */
-void vca_handover(struct sess *sp, int bad);
+/* cache_session.c */
+void SES_Handle(struct sess *sp, int status);
+

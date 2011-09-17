@@ -330,45 +330,8 @@ vca_acct(void *arg)
 	NEEDLESS_RETURN(NULL);
 }
 
-/*--------------------------------------------------------------------*/
-
-void
-vca_handover(struct sess *sp, int status)
-{
-
-	switch (status) {
-	case -2:
-		vca_close_session(sp, "blast");
-		SES_Delete(sp);
-		break;
-	case -1:
-		vca_close_session(sp, "no request");
-		SES_Delete(sp);
-		break;
-	case 1:
-		sp->step = STP_START;
-		if (Pool_QueueSession(sp))
-			VSC_C_main->client_drop_late++;
-		break;
-	default:
-		INCOMPL();
-	}
-}
 
 /*--------------------------------------------------------------------*/
-
-void
-vca_close_session(struct sess *sp, const char *why)
-{
-	int i;
-
-	VSL(SLT_SessionClose, sp->id, "%s", why);
-	if (sp->fd >= 0) {
-		i = close(sp->fd);
-		assert(i == 0 || errno != EBADF);	/* XXX EINVAL seen */
-	}
-	sp->fd = -1;
-}
 
 void
 vca_return_session(struct sess *sp)
@@ -383,7 +346,7 @@ vca_return_session(struct sess *sp)
 	 * acceptor thread, to reduce syscall density of the latter.
 	 */
 	if (VTCP_nonblocking(sp->fd))
-		vca_close_session(sp, "remote closed");
+		SES_Close(sp, "remote closed");
 	vca_act->pass(waiter_priv, sp);
 }
 
