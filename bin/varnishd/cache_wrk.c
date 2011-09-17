@@ -175,6 +175,7 @@ wrk_thread_real(void *priv, unsigned shm_workspace, unsigned sess_workspace,
 	VSL(SLT_WorkThread, 0, "%p start", w);
 
 	Pool_Work_Thread(priv, w);
+	AZ(w->pool);
 
 	VSL(SLT_WorkThread, 0, "%p end", w);
 	if (w->vcl != NULL)

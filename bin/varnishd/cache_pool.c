@@ -64,9 +64,9 @@ VTAILQ_HEAD(workerhead, worker);
 
 /* Number of work requests queued in excess of worker threads available */
 
-struct wq {
+struct pool {
 	unsigned		magic;
-#define WQ_MAGIC		0x606658fa
+#define POOL_MAGIC		0x606658fa
 	struct lock		mtx;
 	struct workerhead	idle;
 	VTAILQ_HEAD(, workreq)	queue;
@@ -77,7 +77,7 @@ struct wq {
 	uintmax_t		nqueue;
 };
 
-static struct wq		**wq;
+static struct pool		**wq;
 static unsigned			nwq;
 static unsigned			queue_max;
 static unsigned			nthr_max;
@@ -90,10 +90,11 @@ static struct lock		herder_mtx;
 void
 Pool_Work_Thread(void *priv, struct worker *w)
 {
-	struct wq *qp;
+	struct pool *qp;
 	int stats_clean;
 
-	CAST_OBJ_NOTNULL(qp, priv, WQ_MAGIC);
+	CAST_OBJ_NOTNULL(qp, priv, POOL_MAGIC);
+	w->pool = qp;
 	Lck_Lock(&qp->mtx);
 	qp->nthr++;
 	stats_clean = 1;
@@ -145,6 +146,7 @@ Pool_Work_Thread(void *priv, struct worker *w)
 	}
 	qp->nthr--;
 	Lck_Unlock(&qp->mtx);
+	w->pool = NULL;
 }
 
 /*--------------------------------------------------------------------
@@ -157,7 +159,7 @@ static int
 WRK_Queue(struct workreq *wrq)
 {
 	struct worker *w;
-	struct wq *qp;
+	struct pool *qp;
 	static unsigned nq = 0;
 	unsigned onq;
 
@@ -253,7 +255,7 @@ Pool_QueueSession(struct sess *sp)
 static void
 wrk_addpools(const unsigned pools)
 {
-	struct wq **pwq, **owq;
+	struct pool **pwq, **owq;
 	unsigned u;
 
 	pwq = calloc(sizeof *pwq, pools);
@@ -266,7 +268,7 @@ wrk_addpools(const unsigned pools)
 	for (u = nwq; u < pools; u++) {
 		wq[u] = calloc(sizeof *wq[0], 1);
 		XXXAN(wq[u]);
-		wq[u]->magic = WQ_MAGIC;
+		wq[u]->magic = POOL_MAGIC;
 		Lck_New(&wq[u]->mtx, lck_wq);
 		VTAILQ_INIT(&wq[u]->queue);
 		VTAILQ_INIT(&wq[u]->idle);
@@ -280,7 +282,7 @@ wrk_addpools(const unsigned pools)
  */
 
 static void
-wrk_decimate_flock(struct wq *qp, double t_idle, struct VSC_C_main *vs)
+wrk_decimate_flock(struct pool *qp, double t_idle, struct VSC_C_main *vs)
 {
 	struct worker *w = NULL;
 
@@ -380,7 +382,7 @@ wrk_herdtimer_thread(void *priv)
  */
 
 static void
-wrk_breed_flock(struct wq *qp, const pthread_attr_t *tp_attr)
+wrk_breed_flock(struct pool *qp, const pthread_attr_t *tp_attr)
 {
 	pthread_t tp;
 

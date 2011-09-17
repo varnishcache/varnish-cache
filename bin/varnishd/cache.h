@@ -116,6 +116,7 @@ struct SHA256Context;
 struct VSC_C_lck;
 struct waitinglist;
 struct vef_priv;
+struct pool;
 
 #define DIGEST_LEN		32
 
@@ -291,6 +292,7 @@ struct stream_ctx {
 struct worker {
 	unsigned		magic;
 #define WORKER_MAGIC		0x6391adcf
+	struct pool		*pool;
 	struct objhead		*nobjhead;
 	struct objcore		*nobjcore;
 	struct waitinglist	*nwaitinglist;
