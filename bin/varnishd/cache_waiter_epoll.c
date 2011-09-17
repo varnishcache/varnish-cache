@@ -222,7 +222,7 @@ vca_sess_timeout_ticker(void *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-vca_epoll_pass(void *priv, hhstruct sess *sp)
+vca_epoll_pass(void *priv, const struct sess *sp)
 {
 
 	(void)priv;

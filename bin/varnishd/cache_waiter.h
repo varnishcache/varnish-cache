@@ -31,7 +31,7 @@
 struct sess;
 
 typedef void* waiter_init_f(void);
-typedef void waiter_pass_f(void *priv, struct sess *);
+typedef void waiter_pass_f(void *priv, const struct sess *);
 
 extern int vca_pipes[2];
 

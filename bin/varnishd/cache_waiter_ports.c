@@ -246,7 +246,7 @@ vca_main(void *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-vca_ports_pass(void *priv, struct sess *sp)
+vca_ports_pass(void *priv, const struct sess *sp)
 {
 	int r;
 

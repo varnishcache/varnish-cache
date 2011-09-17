@@ -201,7 +201,7 @@ vwp_main(void *priv)
 /*--------------------------------------------------------------------*/
 
 static void
-vwp_poll_pass(void *priv, struct sess *sp)
+vwp_poll_pass(void *priv, const struct sess *sp)
 {
 	struct vwp *vwp;
 
