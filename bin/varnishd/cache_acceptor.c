@@ -153,6 +153,85 @@ VCA_Prep(struct sess *sp)
 #endif
 }
 
+/*--------------------------------------------------------------------
+ * If accept(2)'ing fails, we pace ourselves to relive any resource
+ * shortage if possible.
+ */
+
+static double vca_pace = 0.0;
+static struct lock pace_mtx;
+
+static void
+vca_pace_check(void)
+{
+	double p;
+
+	if (vca_pace == 0.0) 
+		return;
+	Lck_Lock(&pace_mtx);
+	p = vca_pace;
+	Lck_Unlock(&pace_mtx);
+	if (p > 0.0)
+		TIM_sleep(p);
+}
+
+static void
+vca_pace_bad(void)
+{
+	Lck_Lock(&pace_mtx);
+	vca_pace += params->acceptor_sleep_incr;
+	if (vca_pace > params->acceptor_sleep_max)
+		vca_pace = params->acceptor_sleep_max;
+	Lck_Unlock(&pace_mtx);
+}
+
+static void
+vca_pace_good(void)
+{
+
+	if (vca_pace == 0.0) 
+		return;
+	Lck_Lock(&pace_mtx);
+	vca_pace *= params->acceptor_sleep_decay;
+	if (vca_pace < params->acceptor_sleep_incr)
+		vca_pace = 0.0;
+	Lck_Unlock(&pace_mtx);
+}
+
+/*--------------------------------------------------------------------
+ * Accept on a listen socket, and handle error returns.
+ */
+
+int
+VCA_Accept(int sock, socklen_t *slp, struct sockaddr_storage *sap)
+{
+	int i;
+
+	vca_pace_check();
+
+	*slp = sizeof *sap;
+	i = accept(sock, (void*)sap, slp);
+
+	if (i < 0) {
+		VSC_C_main->accept_fail++;
+		switch (errno) {
+		case EAGAIN:
+		case ECONNABORTED:
+			break;
+		case EMFILE:
+			VSL(SLT_Debug, sock, "Too many open files");
+			vca_pace_bad();
+			break;
+		default:
+			VSL(SLT_Debug, sock, "Accept failed: %s",
+			    strerror(errno));
+			vca_pace_bad();
+			break;
+		}
+	}
+	return (i);
+}
+
 /*--------------------------------------------------------------------*/
 
 static void *
@@ -172,7 +251,7 @@ vca_acct(void *arg)
 	struct pollfd *pfd;
 	struct listen_sock *ls;
 	unsigned u;
-	double t0, now, pace;
+	double t0, now;
 
 	THR_SetName("cache-acceptor");
 	(void)arg;
@@ -192,7 +271,6 @@ vca_acct(void *arg)
 	}
 
 	need_test = 1;
-	pace = 0;
 	t0 = TIM_real();
 	while (1) {
 #ifdef SO_SNDTIMEO_WORKS
@@ -223,13 +301,6 @@ vca_acct(void *arg)
 			}
 		}
 #endif
-		/* Bound the pacing delay by parameter */
-		if (pace > params->acceptor_sleep_max)
-			pace = params->acceptor_sleep_max;
-		if (pace < params->acceptor_sleep_incr)
-			pace = 0.0;
-		if (pace > 0.0)
-			TIM_sleep(pace);
 		i = poll(pfd, heritage.nsocks, 1000);
 		now = TIM_real();
 		VSC_C_main->uptime = (uint64_t)(now - t0);
@@ -242,33 +313,14 @@ vca_acct(void *arg)
 			VSC_C_main->client_conn++;
 			l = sizeof addr_s;
 			addr = (void*)&addr_s;
-			i = accept(ls->sock, addr, &l);
-			if (i < 0) {
-				VSC_C_main->accept_fail++;
-				switch (errno) {
-				case EAGAIN:
-				case ECONNABORTED:
-					break;
-				case EMFILE:
-					VSL(SLT_Debug, ls->sock,
-					    "Too many open files "
-					    "when accept(2)ing. Sleeping.");
-					pace += params->acceptor_sleep_incr;
-					break;
-				default:
-					VSL(SLT_Debug, ls->sock,
-					    "Accept failed: %s",
-					    strerror(errno));
-					pace += params->acceptor_sleep_incr;
-					break;
-				}
+			i = VCA_Accept(ls->sock, &l, &addr_s);
+			if (i < 0) 
 				continue;
-			}
 			sp = SES_New();
 			if (sp == NULL) {
 				AZ(close(i));
 				VSC_C_main->client_drop++;
-				pace += params->acceptor_sleep_incr;
+				vca_pace_bad();
 				continue;
 			}
 			sp->fd = i;
@@ -283,9 +335,9 @@ vca_acct(void *arg)
 			sp->step = STP_FIRST;
 			if (Pool_QueueSession(sp)) {
 				VSC_C_main->client_drop++;
-				pace += params->acceptor_sleep_incr;
+				vca_pace_bad();
 			} else {
-				pace *= params->acceptor_sleep_decay;
+				vca_pace_good();
 			}
 		}
 	}
@@ -341,6 +393,7 @@ VCA_Init(void)
 {
 
 	CLI_AddFuncs(vca_cmds);
+	Lck_New(&pace_mtx, lck_vcapace);
 }
 
 void

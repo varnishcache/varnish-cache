@@ -299,7 +299,12 @@ struct worker {
 	void			*nhashpriv;
 	struct dstat		stats;
 
+	/* Pool stuff */
 	double			lastused;
+
+	/* Accept stuff */
+	struct sockaddr_storage	acceptaddr;
+	int			acceptsock;
 
 	struct wrw		wrw;
 
@@ -634,6 +639,7 @@ struct vbc {
 void VCA_Prep(struct sess *sp);
 void VCA_Init(void);
 void VCA_Shutdown(void);
+int VCA_Accept(int sock, socklen_t *slp, struct sockaddr_storage *sap);
 extern pthread_t VCA_thread;
 
 /* cache_backend.c */
