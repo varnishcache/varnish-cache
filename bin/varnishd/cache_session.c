@@ -319,27 +319,36 @@ SES_Delete(struct sess *sp, const char *reason)
 		Lck_Unlock(&stat_mtx);
 		free(sm);
 		Lck_Lock(&pp->mtx);
-		sesspool->nsess--;
+		pp->nsess--;
 		Lck_Unlock(&pp->mtx);
 	} else {
 		/* Clean and prepare for reuse */
 		ses_setup(sm);
 		Lck_Lock(&pp->mtx);
-		VTAILQ_INSERT_HEAD(&sesspool->freelist, sm, list);
+		VTAILQ_INSERT_HEAD(&pp->freelist, sm, list);
 		Lck_Unlock(&pp->mtx);
 	}
 }
 
 /*--------------------------------------------------------------------*/
 
+static struct sesspool *
+SES_NewPool(unsigned maxsess)
+{
+	struct sesspool *sp;
+
+	ALLOC_OBJ(sp, SESSPOOL_MAGIC);
+	VTAILQ_INIT(&sp->freelist);
+	Lck_New(&sp->mtx, lck_sessmem);
+	sp->maxsess = maxsess;
+	return (sp);
+}
+
+
 void
 SES_Init()
 {
 
-	ALLOC_OBJ(sesspool, SESSPOOL_MAGIC);
-	VTAILQ_INIT(&sesspool->freelist);
-	Lck_New(&sesspool->mtx, lck_sessmem);
-	sesspool->maxsess = params->max_sess;
-
+	sesspool = SES_NewPool(params->max_sess);
 	Lck_New(&stat_mtx, lck_stat);
 }
