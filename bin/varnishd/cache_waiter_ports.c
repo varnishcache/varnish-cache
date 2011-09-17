@@ -275,7 +275,7 @@ vws_init(void)
 
 /*--------------------------------------------------------------------*/
 
-struct waiter waiter_ports = {
+const struct waiter waiter_ports = {
 	.name =		"ports",
 	.init =		vws_init,
 	.pass =		vws_pass

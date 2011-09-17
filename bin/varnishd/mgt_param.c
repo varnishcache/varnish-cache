@@ -48,6 +48,7 @@
 
 #include "heritage.h"
 #include "vparam.h"
+#include "cache_waiter.h"
 
 #include "vss.h"
 
@@ -438,7 +439,7 @@ tweak_waiter(struct cli *cli, const struct parspec *par, const char *arg)
 
 	/* XXX should have tweak_generic_string */
 	(void)par;
-	VCA_tweak_waiter(cli, arg);
+	WAIT_tweak_waiter(cli, arg);
 }
 
 /*--------------------------------------------------------------------*/

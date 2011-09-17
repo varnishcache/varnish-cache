@@ -30,14 +30,10 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <errno.h>
 #include <poll.h>
-#include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
 
-#include <sys/uio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 
@@ -46,42 +42,11 @@
 #include "cache.h"
 #include "cache_waiter.h"
 
-static struct waiter * const vca_waiters[] = {
-#if defined(HAVE_KQUEUE)
-	&waiter_kqueue,
-#endif
-#if defined(HAVE_EPOLL_CTL)
-	&waiter_epoll,
-#endif
-#if defined(HAVE_PORT_CREATE)
-	&waiter_ports,
-#endif
-	&waiter_poll,
-	NULL,
-};
-
-static struct waiter const *vca_act;
-
 static void *waiter_priv;
 
 pthread_t		VCA_thread;
 static struct timeval	tv_sndtimeo;
 static struct timeval	tv_rcvtimeo;
-
-/*--------------------------------------------------------------------
- * Report waiter name to panics
- */
-
-const char *
-VCA_waiter_name(void)
-{
-
-	if (vca_act != NULL)
-		return (vca_act->name);
-	else
-		return ("no_waiter");
-}
-
 
 /*--------------------------------------------------------------------
  * We want to get out of any kind of trouble-hit TCP connections as fast
@@ -347,7 +312,7 @@ vca_return_session(struct sess *sp)
 	 */
 	if (VTCP_nonblocking(sp->fd))
 		SES_Close(sp, "remote closed");
-	vca_act->pass(waiter_priv, sp);
+	waiter->pass(waiter_priv, sp);
 }
 
 /*--------------------------------------------------------------------*/
@@ -360,17 +325,14 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	(void)priv;
 
-	if (vca_act == NULL)
-		vca_act = vca_waiters[0];
+	AN(waiter);
+	AN(waiter->name);
+	AN(waiter->init);
+	AN(waiter->pass);
 
-	AN(vca_act);
-	AN(vca_act->name);
-	AN(vca_act->init);
-	AN(vca_act->pass);
-
-	waiter_priv = vca_act->init();
+	waiter_priv = waiter->init();
 	AZ(pthread_create(&VCA_thread, NULL, vca_acct, NULL));
-	VSL(SLT_Debug, 0, "Acceptor is %s", vca_act->name);
+	VSL(SLT_Debug, 0, "Acceptor is %s", waiter->name);
 }
 
 /*--------------------------------------------------------------------*/
@@ -423,38 +385,4 @@ VCA_Shutdown(void)
 		ls->sock = -1;
 		(void)close(i);
 	}
-}
-
-void
-VCA_tweak_waiter(struct cli *cli, const char *arg)
-{
-	int i;
-
-	 ASSERT_MGT();
-
-	if (arg == NULL) {
-		if (vca_act == NULL)
-			VCLI_Out(cli, "default");
-		else
-			VCLI_Out(cli, "%s", vca_act->name);
-
-		VCLI_Out(cli, " (");
-		for (i = 0; vca_waiters[i] != NULL; i++)
-			VCLI_Out(cli, "%s%s", i == 0 ? "" : ", ",
-			    vca_waiters[i]->name);
-		VCLI_Out(cli, ")");
-		return;
-	}
-	if (!strcmp(arg, "default")) {
-		vca_act = NULL;
-		return;
-	}
-	for (i = 0; vca_waiters[i]; i++) {
-		if (!strcmp(arg, vca_waiters[i]->name)) {
-			vca_act = vca_waiters[i];
-			return;
-		}
-	}
-	VCLI_Out(cli, "Unknown waiter");
-	VCLI_SetResult(cli, CLIS_PARAM);
 }

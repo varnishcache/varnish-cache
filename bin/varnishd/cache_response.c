@@ -322,7 +322,7 @@ RES_WriteObj(struct sess *sp)
 	    !(sp->wrk->res_mode & RES_ESI_CHILD))
 		WRW_EndChunk(sp->wrk);
 
-	if (WRW_FlushRelease(sp->wrk))
+	if (WRW_FlushRelease(sp->wrk) && sp->fd >= 0)
 		SES_Close(sp, "remote closed");
 }
 

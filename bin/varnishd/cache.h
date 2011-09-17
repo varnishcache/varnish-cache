@@ -649,7 +649,6 @@ void vca_return_session(struct sess *sp);
 void VCA_Prep(struct sess *sp);
 void VCA_Init(void);
 void VCA_Shutdown(void);
-const char *VCA_waiter_name(void);
 extern pthread_t VCA_thread;
 
 /* cache_backend.c */

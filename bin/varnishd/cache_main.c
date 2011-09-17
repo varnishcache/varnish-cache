@@ -37,6 +37,7 @@
 #include "cache.h"
 #include "stevedore.h"
 #include "hash_slinger.h"
+#include "cache_waiter.h"
 
 /*--------------------------------------------------------------------
  * Per thread storage for the session currently being processed by
@@ -103,6 +104,7 @@ child_main(void)
 
 	LCK_Init();	/* Second, locking */
 
+	WAIT_Init();
 	PAN_Init();
 	CLI_Init();
 	Fetch_Init();

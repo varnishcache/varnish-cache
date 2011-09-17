@@ -237,7 +237,7 @@ vwk_init(void)
 
 /*--------------------------------------------------------------------*/
 
-struct waiter waiter_kqueue = {
+const struct waiter waiter_kqueue = {
 	.name =		"kqueue",
 	.init =		vwk_init,
 	.pass =		vwk_pass,

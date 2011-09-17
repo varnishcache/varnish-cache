@@ -227,7 +227,7 @@ vwp_poll_init(void)
 
 /*--------------------------------------------------------------------*/
 
-struct waiter waiter_poll = {
+const struct waiter waiter_poll = {
 	.name =		"poll",
 	.init =		vwp_poll_init,
 	.pass =		vwp_poll_pass,
