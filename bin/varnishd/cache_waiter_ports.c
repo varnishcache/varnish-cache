@@ -47,44 +47,48 @@
 #include "cache_waiter.h"
 
 #define MAX_EVENTS 256
-static pthread_t vca_ports_thread;
-int solaris_dport = -1;
 
-static VTAILQ_HEAD(,sess) sesshead = VTAILQ_HEAD_INITIALIZER(sesshead);
+struct vws {
+	unsigned		magic;
+#define VWS_MAGIC		0x0b771473
+	pthread_t		ports_thread;
+	int			dport;
+	VTAILQ_HEAD(,sess)	sesshead;
+};
 
 static inline void
-vca_add(int fd, void *data)
+vws_add(struct vws *vws, int fd, void *data)
 {
 	/*
 	 * POLLIN should be all we need here
 	 *
 	 */
-	AZ(port_associate(solaris_dport, PORT_SOURCE_FD, fd, POLLIN, data));
+	AZ(port_associate(vws->dport, PORT_SOURCE_FD, fd, POLLIN, data));
 }
 
 static inline void
-vca_del(int fd)
+vws_del(struct vws *vws, int fd)
 {
-	port_dissociate(solaris_dport, PORT_SOURCE_FD, fd);
+	port_dissociate(vws->dport, PORT_SOURCE_FD, fd);
 }
 
 static inline void
-vca_port_ev(port_event_t *ev) {
+vws_port_ev(struct vws *vws, port_event_t *ev) {
 	struct sess *sp;
 	if(ev->portev_source == PORT_SOURCE_USER) {
 		CAST_OBJ_NOTNULL(sp, ev->portev_user, SESS_MAGIC);
 		assert(sp->fd >= 0);
 		AZ(sp->obj);
-		VTAILQ_INSERT_TAIL(&sesshead, sp, list);
-		vca_add(sp->fd, sp);
+		VTAILQ_INSERT_TAIL(&vws->sesshead, sp, list);
+		vws_add(vw, sp->fd, sp);
 	} else {
 		int i;
 		assert(ev->portev_source == PORT_SOURCE_FD);
 		CAST_OBJ_NOTNULL(sp, ev->portev_user, SESS_MAGIC);
 		assert(sp->fd >= 0);
 		if(ev->portev_events & POLLERR) {
-			vca_del(sp->fd);
-			VTAILQ_REMOVE(&sesshead, sp, list);
+			vws_del(vws->sp->fd);
+			VTAILQ_REMOVE(&vws->sesshead, sp, list);
 			vca_close_session(sp, "EOF");
 			SES_Delete(sp);
 			return;
@@ -93,7 +97,7 @@ vca_port_ev(port_event_t *ev) {
 
 		if (i == 0) {
 			/* incomplete header, wait for more data */
-			vca_add(sp->fd, sp);
+			vws_add(sp->fd, sp);
 			return;
 		}
 
@@ -109,8 +113,8 @@ vca_port_ev(port_event_t *ev) {
 		 *
 		 * Ref: http://opensolaris.org/jive/thread.jspa?threadID=129476&tstart=0
 		 */
-		vca_del(sp->fd);
-		VTAILQ_REMOVE(&sesshead, sp, list);
+		vws_del(vws->sp->fd);
+		VTAILQ_REMOVE(&vws->sesshead, sp, list);
 
 		/* vca_handover will also handle errors */
 		vca_handover(sp, i);
@@ -119,10 +123,12 @@ vca_port_ev(port_event_t *ev) {
 }
 
 static void *
-vca_main(void *arg)
+vws_thread(void *priv)
 {
 	struct sess *sp;
+	struct vws *vws;
 
+	CAST_OBJ_NOTNULL(vwp, priv, VWP_MAGIC);
 	/*
 	 * timeouts:
 	 *
@@ -147,13 +153,12 @@ vca_main(void *arg)
 	static struct timespec max_ts = {1L, 0L};		/* 1 second */
 	static double	       max_t  = 1.0;			/* 1 second */
 
+	/* XXX: These should probably go in vws ? */
 	struct timespec ts;
 	struct timespec *timeout;
 
-	(void)arg;
-
-	solaris_dport = port_create();
-	assert(solaris_dport >= 0);
+	vws->dport = port_create();
+	assert(vws->dport >= 0);
 
 	timeout = &max_ts;
 
@@ -184,14 +189,13 @@ vca_main(void *arg)
 		 *
 		 */
 
-		ret = port_getn(solaris_dport, ev, MAX_EVENTS, &nevents, timeout);
+		ret = port_getn(vws->dport, ev, MAX_EVENTS, &nevents, timeout);
 
 		if (ret < 0)
 			assert((errno == EINTR) || (errno == ETIME));
 
-		for (ei=0; ei<nevents; ei++) {
-			vca_port_ev(ev + ei);
-		}
+		for (ei = 0; ei < nevents; ei++)
+			vws_port_ev(vws, ev + ei);
 
 		/* check for timeouts */
 		now = TIM_real();
@@ -205,15 +209,15 @@ vca_main(void *arg)
 		 */
 
 		for (;;) {
-			sp = VTAILQ_FIRST(&sesshead);
+			sp = VTAILQ_FIRST(&vws->sesshead);
 			if (sp == NULL)
 				break;
 			if (sp->t_open > deadline) {
 				break;
 			}
-			VTAILQ_REMOVE(&sesshead, sp, list);
+			VTAILQ_REMOVE(&vws->sesshead, sp, list);
 			if(sp->fd != -1) {
-				vca_del(sp->fd);
+				vws_del(vws, sp->fd);
 			}
 			vca_close_session(sp, "timeout");
 			SES_Delete(sp);
@@ -246,12 +250,13 @@ vca_main(void *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-vca_ports_pass(void *priv, const struct sess *sp)
+vws_pass(void *priv, const struct sess *sp)
 {
 	int r;
+	struct vws *vws;
 
-	(void)priv;
-	while((r = port_send(solaris_dport, 0, sp)) == -1 &&
+	CAST_OBJ_NOTNULL(vws, priv, VWS_MAGIC);
+	while((r = port_send(vws->dport, 0, TRUST_ME(sp))) == -1 &&
 		errno == EAGAIN);
 	AZ(r);
 }
@@ -259,19 +264,23 @@ vca_ports_pass(void *priv, const struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 static void *
-vca_ports_init(void)
+vws_init(void)
 {
+	struct vws *vws;
 
-	AZ(pthread_create(&vca_ports_thread, NULL, vca_main, NULL));
-	return (NULL);
+	ALLOC_OBJ(vws, VWS_MAGIC);
+	AN(vws);
+	VTAILQ_INIT(&vws->sesshead);
+	AZ(pthread_create(&vws_ports_thread, NULL, vws_thread, vws));
+	return (vws);
 }
 
 /*--------------------------------------------------------------------*/
 
 struct waiter waiter_ports = {
 	.name =		"ports",
-	.init =		vca_ports_init,
-	.pass =		vca_ports_pass
+	.init =		vws_init,
+	.pass =		vws_pass
 };
 
 #endif /* defined(HAVE_PORT_CREATE) */
