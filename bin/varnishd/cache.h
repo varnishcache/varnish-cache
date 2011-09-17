@@ -108,7 +108,6 @@ struct objhead;
 struct objcore;
 struct busyobj;
 struct storage;
-struct workreq;
 struct vrt_backend;
 struct cli_proto;
 struct ban;
@@ -307,7 +306,7 @@ struct worker {
 	pthread_cond_t		cond;
 
 	VTAILQ_ENTRY(worker)	list;
-	struct workreq		*wrq;
+	struct sess		*sp;
 
 	struct VCL_conf		*vcl;
 
@@ -367,21 +366,6 @@ struct worker {
 
 	/* Temporary accounting */
 	struct acct		acct_tmp;
-};
-
-/* Work Request for worker thread ------------------------------------*/
-
-/*
- * This is a worker-function.
- * XXX: typesafety is probably not worth fighting for
- */
-
-typedef void workfunc(struct worker *, void *priv);
-
-struct workreq {
-	VTAILQ_ENTRY(workreq)	list;
-	workfunc		*func;
-	void			*priv;
 };
 
 /* Storage -----------------------------------------------------------*/
@@ -614,7 +598,7 @@ struct sess {
 	/* Various internal stuff */
 	struct sessmem		*mem;
 
-	struct workreq		workreq;
+	VTAILQ_ENTRY(sess)	poollist;
 	struct acct		acct_req;
 	struct acct		acct_ses;
 

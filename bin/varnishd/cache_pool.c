@@ -69,7 +69,7 @@ struct pool {
 #define POOL_MAGIC		0x606658fa
 	struct lock		mtx;
 	struct workerhead	idle;
-	VTAILQ_HEAD(, workreq)	queue;
+	VTAILQ_HEAD(, sess)	queue;
 	unsigned		nthr;
 	unsigned		lqueue;
 	unsigned		last_lqueue;
@@ -105,9 +105,9 @@ Pool_Work_Thread(void *priv, struct worker *w)
 		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 
 		/* Process queued requests, if any */
-		w->wrq = VTAILQ_FIRST(&qp->queue);
-		if (w->wrq != NULL) {
-			VTAILQ_REMOVE(&qp->queue, w->wrq, list);
+		w->sp = VTAILQ_FIRST(&qp->queue);
+		if (w->sp != NULL) {
+			VTAILQ_REMOVE(&qp->queue, w->sp, poollist);
 			qp->lqueue--;
 		} else {
 			if (isnan(w->lastused))
@@ -117,17 +117,21 @@ Pool_Work_Thread(void *priv, struct worker *w)
 				WRK_SumStat(w);
 			Lck_CondWait(&w->cond, &qp->mtx);
 		}
-		if (w->wrq == NULL)
+		if (w->sp == NULL)
 			break;
 		Lck_Unlock(&qp->mtx);
 		stats_clean = 0;
-		AN(w->wrq);
-		AN(w->wrq->func);
 		w->lastused = NAN;
 		WS_Reset(w->ws, NULL);
 		w->storage_hint = NULL;
 
-		w->wrq->func(w, w->wrq->priv);
+		AZ(w->sp->wrk);
+		THR_SetSession(w->sp);
+		w->sp->wrk = w;
+		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
+		CNT_Session(w->sp);
+		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
+		THR_SetSession(NULL);
 
 		WS_Assert(w->ws);
 		AZ(w->bereq->ws);
@@ -136,7 +140,7 @@ Pool_Work_Thread(void *priv, struct worker *w)
 		AZ(w->wrw.wfd);
 		AZ(w->storage_hint);
 		assert(w->wlp == w->wlb);
-		w->wrq = NULL;
+		w->sp = NULL;
 		if (params->diag_bitmap & 0x00040000) {
 			if (w->vcl != NULL)
 				VCL_Rel(&w->vcl);
@@ -156,7 +160,7 @@ Pool_Work_Thread(void *priv, struct worker *w)
  */
 
 static int
-WRK_Queue(struct workreq *wrq)
+WRK_Queue(struct sess *sp)
 {
 	struct worker *w;
 	struct pool *qp;
@@ -181,7 +185,7 @@ WRK_Queue(struct workreq *wrq)
 	if (w != NULL) {
 		VTAILQ_REMOVE(&qp->idle, w, list);
 		Lck_Unlock(&qp->mtx);
-		w->wrq = wrq;
+		w->sp = sp;
 		AZ(pthread_cond_signal(&w->cond));
 		return (0);
 	}
@@ -193,7 +197,7 @@ WRK_Queue(struct workreq *wrq)
 		return (-1);
 	}
 
-	VTAILQ_INSERT_TAIL(&qp->queue, wrq, list);
+	VTAILQ_INSERT_TAIL(&qp->queue, sp, poollist);
 	qp->nqueue++;
 	qp->lqueue++;
 	Lck_Unlock(&qp->mtx);
@@ -203,31 +207,12 @@ WRK_Queue(struct workreq *wrq)
 
 /*--------------------------------------------------------------------*/
 
-static void
-wrk_do_cnt_sess(struct worker *w, void *priv)
-{
-	struct sess *sess;
-
-	CAST_OBJ_NOTNULL(sess, priv, SESS_MAGIC);
-	AZ(sess->wrk);
-	THR_SetSession(sess);
-	sess->wrk = w;
-	CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
-	CNT_Session(sess);
-	CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
-	THR_SetSession(NULL);
-}
-
-/*--------------------------------------------------------------------*/
-
 int
 Pool_QueueSession(struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AZ(sp->wrk);
-	sp->workreq.func = wrk_do_cnt_sess;
-	sp->workreq.priv = sp;
-	if (WRK_Queue(&sp->workreq) == 0)
+	if (WRK_Queue(sp) == 0)
 		return (0);
 
 	/*
@@ -303,7 +288,7 @@ wrk_decimate_flock(struct pool *qp, double t_idle, struct VSC_C_main *vs)
 
 	/* And give it a kiss on the cheek... */
 	if (w != NULL) {
-		AZ(w->wrq);
+		AZ(w->sp);
 		AZ(pthread_cond_signal(&w->cond));
 		TIM_sleep(params->wthread_purge_delay * 1e-3);
 	}
