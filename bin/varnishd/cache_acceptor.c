@@ -95,8 +95,6 @@ static const struct linger linger = {
 
 static unsigned char	need_sndtimeo, need_rcvtimeo, need_linger, need_test;
 
-int vca_pipes[2] = { -1, -1 };
-
 static void
 sock_test(int fd)
 {
@@ -407,7 +405,6 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 	AN(vca_act->init);
 	AN(vca_act->pass);
 
-	AZ(pipe(vca_pipes)); 	/* XXX */
 	waiter_priv = vca_act->init();
 	AZ(pthread_create(&VCA_thread, NULL, vca_acct, NULL));
 	VSL(SLT_Debug, 0, "Acceptor is %s", vca_act->name);
