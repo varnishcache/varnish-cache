@@ -191,16 +191,29 @@ vca_main(void *arg)
 }
 
 /*--------------------------------------------------------------------*/
-
 static void
+vca_poll_pass(void *priv, struct sess *sp)
+{
+
+	(void)priv;
+	assert(sizeof sp == write(vca_pipes[1], &sp, sizeof sp));
+}
+
+/*--------------------------------------------------------------------*/
+
+static void *
 vca_poll_init(void)
 {
 
 	vca_pollspace(256);
 	AZ(pthread_create(&vca_poll_thread, NULL, vca_main, NULL));
+	return (NULL);
 }
+
+/*--------------------------------------------------------------------*/
 
 struct waiter waiter_poll = {
 	.name =		"poll",
 	.init =		vca_poll_init,
+	.pass =		vca_poll_pass,
 };

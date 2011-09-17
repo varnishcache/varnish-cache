@@ -243,10 +243,14 @@ vca_main(void *arg)
 	}
 }
 
+/*--------------------------------------------------------------------*/
+
 static void
-vca_ports_pass(struct sess *sp)
+vca_ports_pass(void *priv, struct sess *sp)
 {
 	int r;
+
+	(void)priv;
 	while((r = port_send(solaris_dport, 0, sp)) == -1 &&
 		errno == EAGAIN);
 	AZ(r);
@@ -254,12 +258,15 @@ vca_ports_pass(struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
-static void
+static void *
 vca_ports_init(void)
 {
 
 	AZ(pthread_create(&vca_ports_thread, NULL, vca_main, NULL));
+	return (NULL);
 }
+
+/*--------------------------------------------------------------------*/
 
 struct waiter waiter_ports = {
 	.name =		"ports",

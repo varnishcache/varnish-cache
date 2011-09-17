@@ -62,6 +62,8 @@ static struct waiter * const vca_waiters[] = {
 
 static struct waiter const *vca_act;
 
+static void *waiter_priv;
+
 pthread_t		VCA_thread;
 static struct timeval	tv_sndtimeo;
 static struct timeval	tv_rcvtimeo;
@@ -384,10 +386,7 @@ vca_return_session(struct sess *sp)
 	 */
 	if (VTCP_nonblocking(sp->fd))
 		vca_close_session(sp, "remote closed");
-	else if (vca_act->pass == NULL)
-		assert(sizeof sp == write(vca_pipes[1], &sp, sizeof sp));
-	else
-		vca_act->pass(sp);
+	vca_act->pass(waiter_priv, sp);
 }
 
 /*--------------------------------------------------------------------*/
@@ -405,10 +404,11 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 
 	AN(vca_act);
 	AN(vca_act->name);
+	AN(vca_act->init);
+	AN(vca_act->pass);
 
-	if (vca_act->pass == NULL)
-		AZ(pipe(vca_pipes));
-	vca_act->init();
+	AZ(pipe(vca_pipes)); 	/* XXX */
+	waiter_priv = vca_act->init();
 	AZ(pthread_create(&VCA_thread, NULL, vca_acct, NULL));
 	VSL(SLT_Debug, 0, "Acceptor is %s", vca_act->name);
 }

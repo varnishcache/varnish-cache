@@ -204,6 +204,16 @@ vca_kqueue_main(void *arg)
 /*--------------------------------------------------------------------*/
 
 static void
+vca_kqueue_pass(void *priv, struct sess *sp)
+{
+
+	(void)priv;
+	assert(sizeof sp == write(vca_pipes[1], &sp, sizeof sp));
+}
+
+/*--------------------------------------------------------------------*/
+
+static void *
 vca_kqueue_init(void)
 {
 	int i;
@@ -215,11 +225,15 @@ vca_kqueue_init(void)
 	assert(i != -1);
 
 	AZ(pthread_create(&vca_kqueue_thread, NULL, vca_kqueue_main, NULL));
+	return (NULL);
 }
+
+/*--------------------------------------------------------------------*/
 
 struct waiter waiter_kqueue = {
 	.name =		"kqueue",
 	.init =		vca_kqueue_init,
+	.pass =		vca_kqueue_pass,
 };
 
 #endif /* defined(HAVE_KQUEUE) */

@@ -222,6 +222,16 @@ vca_sess_timeout_ticker(void *arg)
 /*--------------------------------------------------------------------*/
 
 static void
+vca_epoll_pass(void *priv, hhstruct sess *sp)
+{
+
+	(void)priv;
+	assert(sizeof sp == write(vca_pipes[1], &sp, sizeof sp));
+}
+
+/*--------------------------------------------------------------------*/
+
+static void *
 vca_epoll_init(void)
 {
 	int i;
@@ -242,11 +252,15 @@ vca_epoll_init(void)
 	AZ(pthread_create(&vca_epoll_timeout_thread,
 	    NULL, vca_sess_timeout_ticker, NULL));
 	AZ(pthread_create(&vca_epoll_thread, NULL, vca_main, NULL));
+	return(NULL);
 }
+
+/*--------------------------------------------------------------------*/
 
 struct waiter waiter_epoll = {
 	.name =		"epoll",
 	.init =		vca_epoll_init,
+	.pass =		vca_epoll_pass,
 };
 
 #endif /* defined(HAVE_EPOLL_CTL) */
