@@ -295,7 +295,7 @@ iter_call(const struct vsc *vsc, VSC_iter_f *func, void *priv,
 		sp.class = t;						\
 		sp.ident = sha->ident;
 
-#define VSC_F(nn,tt,ll,ff,dd)						\
+#define VSC_F(nn,tt,ll,ff,dd,ee)					\
 		sp.name = #nn;						\
 		sp.fmt = #tt;						\
 		sp.flag = ff;						\
@@ -331,7 +331,7 @@ VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv)
 		if (strcmp(sha->class, VSC_CLASS))
 			continue;
 		/*lint -save -e525 -e539 */
-#define VSC_F(a,b,c,d,e)
+#define VSC_F(n,t,l,f,d,e)
 #define VSC_DONE(a,b,c)
 #define VSC_DO(U,l,t)						\
 		if (!strcmp(sha->type, t)) {			\

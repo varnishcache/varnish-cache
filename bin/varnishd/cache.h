@@ -220,7 +220,7 @@ struct acct {
 
 #define L0(n)
 #define L1(n)			uint64_t n;
-#define VSC_F(n, t, l, f, e)	L##l(n)
+#define VSC_F(n, t, l, f, e,d)	L##l(n)
 #define VSC_DO_MAIN
 struct dstat {
 #include "vsc_fields.h"
