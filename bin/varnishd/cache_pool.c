@@ -74,6 +74,7 @@ struct poolsock {
 struct pool {
 	unsigned		magic;
 #define POOL_MAGIC		0x606658fa
+	VTAILQ_ENTRY(pool)	list;
 	struct lock		mtx;
 	struct workerhead	idle;
 	VTAILQ_HEAD(, sess)	queue;
@@ -86,10 +87,12 @@ struct pool {
 	struct sesspool		*sesspool;
 };
 
-static struct pool		**wq;
-static unsigned			nwq;
+static VTAILQ_HEAD(,pool)	pools = VTAILQ_HEAD_INITIALIZER(pools);
+
 static unsigned			queue_max;
 static unsigned			nthr_max;
+
+static unsigned			nwq;
 
 static pthread_cond_t		herder_cond;
 static struct lock		herder_mtx;
@@ -349,28 +352,21 @@ pool_mkpool(void)
 		ps->lsock = ls;
 		VTAILQ_INSERT_TAIL(&pp->socks, ps, list);
 	}
+	VTAILQ_INSERT_TAIL(&pools, pp, list);
 	return (pp);
 }
 
 static void
-wrk_addpools(const unsigned pools)
+wrk_addpools(const unsigned npools)
 {
-	struct pool **pwq, **owq;
+	struct pool *pp;
 	unsigned u;
 
-	pwq = calloc(sizeof *pwq, pools);
-	if (pwq == NULL)
-		return;
-	if (wq != NULL)
-		memcpy(pwq, wq, sizeof *pwq * nwq);
-	owq = wq;
-	wq = pwq;
-	for (u = nwq; u < pools; u++) {
-		wq[u] = pool_mkpool();
-		XXXAN(wq[u]);
+	for (u = nwq; u < npools; u++) {
+		pp = pool_mkpool();
+		XXXAN(pp);
 	}
-	(void)owq;	/* XXX: avoid race, leak it. */
-	nwq = pools;
+	nwq = npools;
 }
 
 /*--------------------------------------------------------------------
@@ -422,6 +418,7 @@ wrk_herdtimer_thread(void *priv)
 	double t_idle;
 	struct VSC_C_main vsm, *vs;
 	int errno_is_multi_threaded;
+	struct pool *pp;
 
 	THR_SetName("wrk_herdtimer");
 
@@ -460,8 +457,8 @@ wrk_herdtimer_thread(void *priv)
 		vs->n_wrk_queued = 0;
 
 		t_idle = TIM_real() - params->wthread_timeout;
-		for (u = 0; u < nwq; u++)
-			wrk_decimate_flock(wq[u], t_idle, vs);
+		VTAILQ_FOREACH(pp, &pools, list)
+			wrk_decimate_flock(pp, t_idle, vs);
 
 		VSC_C_main->n_wrk= vs->n_wrk;
 		VSC_C_main->n_wrk_lqueue = vs->n_wrk_lqueue;
@@ -521,8 +518,8 @@ wrk_breed_flock(struct pool *qp, const pthread_attr_t *tp_attr)
 static void *
 wrk_herder_thread(void *priv)
 {
-	unsigned u, w;
 	pthread_attr_t tp_attr;
+	struct pool *pp, *pp2;
 
 	/* Set the stacksize for worker threads */
 	AZ(pthread_attr_init(&tp_attr));
@@ -530,19 +527,19 @@ wrk_herder_thread(void *priv)
 	THR_SetName("wrk_herder");
 	(void)priv;
 	while (1) {
-		for (u = 0 ; u < nwq; u++) {
+		VTAILQ_FOREACH(pp, &pools, list) {
 			if (params->wthread_stacksize != UINT_MAX)
 				AZ(pthread_attr_setstacksize(&tp_attr,
 				    params->wthread_stacksize));
 
-			wrk_breed_flock(wq[u], &tp_attr);
+			wrk_breed_flock(pp, &tp_attr);
 
 			/*
 			 * Make sure all pools have their minimum complement
 			 */
-			for (w = 0 ; w < nwq; w++)
-				while (wq[w]->nthr < params->wthread_min)
-					wrk_breed_flock(wq[w], &tp_attr);
+			VTAILQ_FOREACH(pp2, &pools, list)
+				while (pp2->nthr < params->wthread_min)
+					wrk_breed_flock(pp2, &tp_attr);
 			/*
 			 * We cannot avoid getting a mutex, so we have a
 			 * bogo mutex just for POSIX_STUPIDITY
