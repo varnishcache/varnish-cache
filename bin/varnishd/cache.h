@@ -305,7 +305,9 @@ struct worker {
 
 	/* Accept stuff */
 	struct sockaddr_storage	acceptaddr;
+	socklen_t		acceptaddrlen;
 	int			acceptsock;
+	struct listen_sock	*acceptlsock;
 
 	struct wrw		wrw;
 
@@ -641,7 +643,7 @@ void VCA_Prep(struct sess *sp);
 void VCA_Init(void);
 void VCA_Shutdown(void);
 int VCA_Accept(int sock, socklen_t *slp, struct sockaddr_storage *sap);
-extern pthread_t VCA_thread;
+void VCA_SetupSess(struct worker *w);
 
 /* cache_backend.c */
 void VBE_UseHealth(const struct director *vdi);
@@ -849,12 +851,13 @@ void WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len);
 
 
 /* cache_session.c [SES] */
-void SES_Init(void);
-struct sess *SES_New(struct sesspool *pp);
+struct sess *SES_New(struct worker *wrk, struct sesspool *pp);
 struct sess *SES_Alloc(void);
 void SES_Close(struct sess *sp, const char *reason);
 void SES_Delete(struct sess *sp, const char *reason);
 void SES_Charge(struct sess *sp);
+struct sesspool *SES_NewPool(void);
+
 
 /* cache_shmlog.c */
 void VSL_Init(void);

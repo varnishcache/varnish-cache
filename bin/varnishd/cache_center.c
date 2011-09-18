@@ -369,7 +369,6 @@ cnt_done(struct sess *sp)
 
 	if (sp->fd < 0) {
 		sp->wrk->stats.sess_closed++;
-		sp->wrk = NULL;
 		SES_Delete(sp, NULL);
 		return (1);
 	}

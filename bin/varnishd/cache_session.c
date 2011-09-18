@@ -28,6 +28,9 @@
  *
  * Session management
  *
+ * This is a little bit of a mixed back, containing both memory management
+ * and various state-change functions.
+ *
  */
 
 #include "config.h"
@@ -39,7 +42,6 @@
 #include <sys/socket.h>
 
 #include "cache.h"
-#include "cache_backend.h"
 #include "cache_waiter.h"
 
 /*--------------------------------------------------------------------*/
@@ -63,16 +65,12 @@ struct sesspool {
 	VTAILQ_HEAD(,sessmem)	freelist;
 	struct lock		mtx;
 	unsigned		nsess;
-	unsigned		maxsess;
+	unsigned		dly_free_cnt;
 };
 
-static struct sesspool *sesspool;
-
-/*--------------------------------------------------------------------*/
-
-static struct lock		stat_mtx;
-
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Charge statistics from worker to request and session.
+ */
 
 void
 SES_Charge(struct sess *sp)
@@ -112,15 +110,11 @@ ses_sm_alloc(void)
 
 	hl = HTTP_estimate(nhttp);
 	l = sizeof *sm + nws + 2 * hl;
+	VSC_C_main->g_sessmem_size = l;
 	p = malloc(l);
 	if (p == NULL)
 		return (NULL);
 	q = p + l;
-
-	/* XXX Stats */
-	Lck_Lock(&stat_mtx);
-	VSC_C_main->n_sess_mem++;
-	Lck_Unlock(&stat_mtx);
 
 	/* Don't waste time zeroing the workspace */
 	memset(p, 0, l - nws);
@@ -179,38 +173,42 @@ ses_setup(struct sessmem *sm)
  */
 
 struct sess *
-SES_New(struct sesspool *pp)
+SES_New(struct worker *wrk, struct sesspool *pp)
 {
 	struct sessmem *sm;
 	struct sess *sp;
-	int do_alloc = 0;
+	int do_alloc;
 
-	if (pp == NULL)
-		pp = sesspool;
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 
+	do_alloc = 0;
 	Lck_Lock(&pp->mtx);
 	sm = VTAILQ_FIRST(&pp->freelist);
 	if (sm != NULL) {
 		VTAILQ_REMOVE(&pp->freelist, sm, list);
-	} else if (pp->nsess < pp->maxsess) {
+	} else if (pp->nsess < params->max_sess) {
 		pp->nsess++;
 		do_alloc = 1;
 	}
+	wrk->stats.c_sessmem_free += pp->dly_free_cnt;
+	pp->dly_free_cnt = 0;
 	Lck_Unlock(&pp->mtx);
 	if (do_alloc) {
 		sm = ses_sm_alloc();
 		if (sm != NULL) {
+			wrk->stats.c_sessmem_alloc++;
 			sm->pool = pp;
 			ses_setup(sm);
+		} else {
+			wrk->stats.c_sessmem_fail++;
 		}
+	} else if (sm == NULL) {
+		wrk->stats.c_sessmem_limit++;
 	}
 	if (sm == NULL)
 		return (NULL);
 	sp = &sm->sess;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	/* XXX Stats */
-	VSC_C_main->n_sess++;		/* XXX: locking  ? */
 	return (sp);
 }
 
@@ -251,8 +249,7 @@ SES_Handle(struct sess *sp, int status)
 		break;
 	case 1:
 		sp->step = STP_START;
-		if (Pool_QueueSession(sp))
-			VSC_C_main->client_drop_late++;
+		(void)Pool_QueueSession(sp);
 		break;
 	default:
 		WRONG("Unexpected return from HTC_Rx()");
@@ -276,16 +273,21 @@ SES_Close(struct sess *sp, const char *reason)
 }
 
 /*--------------------------------------------------------------------
- * (Close &) Recycle a session.  If the workspace has changed, deleted it,
- * otherwise wash it, and put it up for adoption.
+ * (Close &) Free or Recycle a session.
+ *
+ * If the workspace has changed, deleted it, otherwise wash it, and put
+ * it up for adoption.
+ *
+ * XXX: We should also check nhttp
  */
 
 void
 SES_Delete(struct sess *sp, const char *reason)
 {
-	struct acct *b = &sp->acct_ses;
+	struct acct *b;
 	struct sessmem *sm;
 	static char noaddr[] = "-";
+	struct worker *wrk;
 	struct sesspool *pp;
 
 
@@ -294,6 +296,9 @@ SES_Delete(struct sess *sp, const char *reason)
 	CHECK_OBJ_NOTNULL(sm, SESSMEM_MAGIC);
 	pp = sm->pool;
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
+	wrk = sp->wrk;
+	CHECK_OBJ_ORNULL(wrk, WORKER_MAGIC);
+
 
 	if (reason != NULL)
 		SES_Close(sp, reason);
@@ -301,54 +306,55 @@ SES_Delete(struct sess *sp, const char *reason)
 
 	AZ(sp->obj);
 	AZ(sp->vcl);
-	VSC_C_main->n_sess--;			/* XXX: locking ? */
-	assert(!isnan(b->first));
-	assert(!isnan(sp->t_end));
 	if (sp->addr == NULL)
 		sp->addr = noaddr;
 	if (sp->port == NULL)
 		sp->port = noaddr;
+
+	b = &sp->acct_ses;
+	assert(!isnan(b->first));
+	assert(!isnan(sp->t_end));
+
 	VSL(SLT_StatSess, sp->id, "%s %s %.0f %ju %ju %ju %ju %ju %ju %ju",
 	    sp->addr, sp->port, sp->t_end - b->first,
 	    b->sess, b->req, b->pipe, b->pass,
 	    b->fetch, b->hdrbytes, b->bodybytes);
 
-	if (sm->workspace != params->sess_workspace) {
-		Lck_Lock(&stat_mtx);
-		VSC_C_main->n_sess_mem--;
-		Lck_Unlock(&stat_mtx);
+	if (sm->workspace != params->sess_workspace ||
+	    pp->nsess > params->max_sess) {
 		free(sm);
 		Lck_Lock(&pp->mtx);
+		if (wrk != NULL)
+			wrk->stats.c_sessmem_free++;
+		else
+			pp->dly_free_cnt++;
 		pp->nsess--;
 		Lck_Unlock(&pp->mtx);
 	} else {
 		/* Clean and prepare for reuse */
 		ses_setup(sm);
 		Lck_Lock(&pp->mtx);
+		if (wrk != NULL) {
+			wrk->stats.c_sessmem_free += pp->dly_free_cnt;
+			pp->dly_free_cnt = 0;
+		}
 		VTAILQ_INSERT_HEAD(&pp->freelist, sm, list);
 		Lck_Unlock(&pp->mtx);
 	}
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Create a new pool to allocate from
+ */
 
-static struct sesspool *
-SES_NewPool(unsigned maxsess)
+struct sesspool *
+SES_NewPool(void)
 {
 	struct sesspool *sp;
 
 	ALLOC_OBJ(sp, SESSPOOL_MAGIC);
+	AN(sp);
 	VTAILQ_INIT(&sp->freelist);
 	Lck_New(&sp->mtx, lck_sessmem);
-	sp->maxsess = maxsess;
 	return (sp);
-}
-
-
-void
-SES_Init()
-{
-
-	sesspool = SES_NewPool(params->max_sess);
-	Lck_New(&stat_mtx, lck_stat);
 }

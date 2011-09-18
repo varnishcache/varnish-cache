@@ -66,6 +66,7 @@ struct poolsock {
 	unsigned			magic;
 #define POOLSOCK_MAGIC			0x1b0a2d38
 	VTAILQ_ENTRY(poolsock)		list;
+	struct listen_sock		*lsock;
 	int				sock;
 };
 
@@ -83,6 +84,7 @@ struct pool {
 	unsigned		last_lqueue;
 	uintmax_t		ndrop;
 	uintmax_t		nqueue;
+	struct sesspool		*sesspool;
 };
 
 static struct pool		**wq;
@@ -95,11 +97,46 @@ static struct lock		herder_mtx;
 
 /*--------------------------------------------------------------------*/
 
+static void
+pool_accept(struct pool *pp, struct worker *w, const struct poolsock *ps)
+{
+	struct worker *w2;
+
+	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(ps, POOLSOCK_MAGIC);
+
+	assert(ps->sock >= 0);
+	Lck_AssertHeld(&pp->mtx);
+	Lck_Unlock(&pp->mtx);
+	while (1) {
+		w->acceptsock =
+		    VCA_Accept(ps->sock, &w->acceptaddrlen, &w->acceptaddr);
+		if (w->acceptsock == -1)
+			continue;
+		w->acceptlsock = ps->lsock;
+		Lck_Lock(&pp->mtx);
+		if (VTAILQ_EMPTY(&pp->idle))
+			return;
+		w2 = VTAILQ_FIRST(&pp->idle);
+		VTAILQ_REMOVE(&pp->idle, w2, list);
+		Lck_Unlock(&pp->mtx);
+		w2->acceptaddr = w->acceptaddr;
+		w2->acceptaddrlen = w->acceptaddrlen;
+		w2->acceptsock = w->acceptsock;
+		w2->acceptlsock = w->acceptlsock;
+		AZ(pthread_cond_signal(&w2->cond));
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
 void
 Pool_Work_Thread(void *priv, struct worker *w)
 {
 	struct pool *qp;
 	int stats_clean;
+	struct poolsock *ps;
 
 	CAST_OBJ_NOTNULL(qp, priv, POOL_MAGIC);
 	w->pool = qp;
@@ -107,6 +144,9 @@ Pool_Work_Thread(void *priv, struct worker *w)
 	qp->nthr++;
 	stats_clean = 1;
 	while (1) {
+
+		Lck_AssertHeld(&qp->mtx);
+
 		CHECK_OBJ_NOTNULL(w->bereq, HTTP_MAGIC);
 		CHECK_OBJ_NOTNULL(w->beresp, HTTP_MAGIC);
 		CHECK_OBJ_NOTNULL(w->resp, HTTP_MAGIC);
@@ -117,17 +157,29 @@ Pool_Work_Thread(void *priv, struct worker *w)
 		if (w->sp != NULL) {
 			VTAILQ_REMOVE(&qp->queue, w->sp, poollist);
 			qp->lqueue--;
-		} else {
+		} else if (VTAILQ_EMPTY(&qp->socks)) {
 			if (isnan(w->lastused))
 				w->lastused = TIM_real();
 			VTAILQ_INSERT_HEAD(&qp->idle, w, list);
 			if (!stats_clean)
 				WRK_SumStat(w);
 			Lck_CondWait(&w->cond, &qp->mtx);
+		} else {
+			ps = VTAILQ_FIRST(&qp->socks);
+			VTAILQ_REMOVE(&qp->socks, ps, list);
+			pool_accept(qp, w, ps);
+			Lck_AssertHeld(&qp->mtx);
+			VTAILQ_INSERT_TAIL(&qp->socks, ps, list);
 		}
-		if (w->sp == NULL)
+		if (w->sp == NULL && w->acceptsock == -1)
 			break;
 		Lck_Unlock(&qp->mtx);
+		if (w->sp == NULL) {
+			w->sp = SES_New(w, qp->sesspool);
+			VCA_SetupSess(w);
+		}
+		AN(w->sp);
+		assert(w->acceptsock == -1);
 		stats_clean = 0;
 		w->lastused = NAN;
 		WS_Reset(w->ws, NULL);
@@ -221,7 +273,9 @@ Pool_QueueSession(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AZ(sp->wrk);
 	if (WRK_Queue(sp) == 0)
-		return (0);
+		return(0);
+
+	VSC_C_main->client_drop_late++;
 
 	/*
 	 * Couldn't queue it -- kill it.
@@ -258,11 +312,16 @@ pool_mkpool(void)
 	VTAILQ_INIT(&pp->queue);
 	VTAILQ_INIT(&pp->idle);
 	VTAILQ_INIT(&pp->socks);
+	pp->sesspool = SES_NewPool();
+	AN(pp->sesspool);
 
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+		if (ls->sock < 0)
+			continue;
 		ALLOC_OBJ(ps, POOLSOCK_MAGIC);
 		XXXAN(ps);
 		ps->sock = ls->sock;
+		ps->lsock = ls;
 		VTAILQ_INSERT_TAIL(&pp->socks, ps, list);
 	}
 	return (pp);

@@ -113,7 +113,6 @@ child_main(void)
 	VCL_Init();
 
 	HTTP_Init();
-	SES_Init();
 
 	VBE_Init();
 	VBP_Init();

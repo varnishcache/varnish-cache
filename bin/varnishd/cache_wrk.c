@@ -165,6 +165,7 @@ wrk_thread_real(void *priv, unsigned shm_workspace, unsigned sess_workspace,
 	w->bereq = HTTP_create(http0, nhttp);
 	w->beresp = HTTP_create(http1, nhttp);
 	w->resp = HTTP_create(http2, nhttp);
+	w->acceptsock = -1;
 	w->wrw.iov = iov;
 	w->wrw.siov = siov;
 	w->wrw.ciov = siov;

@@ -33,6 +33,7 @@
 #include <errno.h>
 #include <poll.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -41,7 +42,7 @@
 #include "cli_priv.h"
 #include "cache.h"
 
-pthread_t		VCA_thread;
+static pthread_t	VCA_thread;
 static struct timeval	tv_sndtimeo;
 static struct timeval	tv_rcvtimeo;
 
@@ -178,6 +179,7 @@ vca_pace_check(void)
 static void
 vca_pace_bad(void)
 {
+
 	Lck_Lock(&pace_mtx);
 	vca_pace += params->acceptor_sleep_incr;
 	if (vca_pace > params->acceptor_sleep_max)
@@ -202,12 +204,18 @@ vca_pace_good(void)
  * Accept on a listen socket, and handle error returns.
  */
 
+static int hack_ready;
+
 int
 VCA_Accept(int sock, socklen_t *slp, struct sockaddr_storage *sap)
 {
 	int i;
 
+	assert(sock >= 0);
 	vca_pace_check();
+
+	while(!hack_ready)
+		(void)usleep(100*1000);
 
 	*slp = sizeof *sap;
 	i = accept(sock, (void*)sap, slp);
@@ -234,45 +242,67 @@ VCA_Accept(int sock, socklen_t *slp, struct sockaddr_storage *sap)
 
 /*--------------------------------------------------------------------*/
 
+void
+VCA_SetupSess(struct worker *w)
+{
+	struct sess *sp;
+
+	sp = w->sp;
+	if (sp == NULL) {
+		AZ(close(w->acceptsock));
+		w->acceptsock = -1;
+		VSC_C_main->client_drop++;
+		/* XXX: 50x Reply ? */
+		vca_pace_bad();
+		INCOMPL();
+	}
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	sp->fd = w->acceptsock;
+	sp->id = w->acceptsock;
+	w->acceptsock = -1;
+	sp->t_open = TIM_real();
+	sp->t_end = sp->t_end;
+	sp->mylsock = w->acceptlsock;
+	assert(w->acceptaddrlen <= sp->sockaddrlen);
+	memcpy(sp->sockaddr, &w->acceptaddr, w->acceptaddrlen);
+	sp->sockaddrlen = w->acceptaddrlen;
+	sp->step = STP_FIRST;
+	vca_pace_good();
+	w->sp = sp;
+	w->stats.client_conn++;
+}
+
+/*--------------------------------------------------------------------*/
+
 static void *
 vca_acct(void *arg)
 {
-	struct sess *sp;
-	socklen_t l;
-	struct sockaddr_storage addr_s;
-	struct sockaddr *addr;
 #ifdef SO_RCVTIMEO_WORKS
 	double sess_timeout = 0;
 #endif
 #ifdef SO_SNDTIMEO_WORKS
 	double send_timeout = 0;
 #endif
-	int i;
-	struct pollfd *pfd;
 	struct listen_sock *ls;
-	unsigned u;
 	double t0, now;
 
 	THR_SetName("cache-acceptor");
 	(void)arg;
 
-	/* Set up the poll argument */
-	pfd = calloc(sizeof *pfd, heritage.nsocks);
-	AN(pfd);
-	i = 0;
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (ls->sock < 0)
 			continue;
 		AZ(listen(ls->sock, params->listen_depth));
 		AZ(setsockopt(ls->sock, SOL_SOCKET, SO_LINGER,
 		    &linger, sizeof linger));
-		pfd[i].events = POLLIN;
-		pfd[i++].fd = ls->sock;
 	}
+
+	hack_ready = 1;
 
 	need_test = 1;
 	t0 = TIM_real();
 	while (1) {
+		(void)sleep(1);
 #ifdef SO_SNDTIMEO_WORKS
 		if (params->send_timeout != send_timeout) {
 			need_test = 1;
@@ -301,45 +331,8 @@ vca_acct(void *arg)
 			}
 		}
 #endif
-		i = poll(pfd, heritage.nsocks, 1000);
 		now = TIM_real();
 		VSC_C_main->uptime = (uint64_t)(now - t0);
-		u = 0;
-		VTAILQ_FOREACH(ls, &heritage.socks, list) {
-			if (ls->sock < 0)
-				continue;
-			if (pfd[u++].revents == 0)
-				continue;
-			VSC_C_main->client_conn++;
-			l = sizeof addr_s;
-			addr = (void*)&addr_s;
-			i = VCA_Accept(ls->sock, &l, &addr_s);
-			if (i < 0) 
-				continue;
-			sp = SES_New(NULL);
-			if (sp == NULL) {
-				AZ(close(i));
-				VSC_C_main->client_drop++;
-				vca_pace_bad();
-				continue;
-			}
-			sp->fd = i;
-			sp->id = i;
-			sp->t_open = now;
-			sp->t_end = now;
-			sp->mylsock = ls;
-			assert(l < sp->sockaddrlen);
-			memcpy(sp->sockaddr, addr, l);
-			sp->sockaddrlen = l;
-
-			sp->step = STP_FIRST;
-			if (Pool_QueueSession(sp)) {
-				VSC_C_main->client_drop++;
-				vca_pace_bad();
-			} else {
-				vca_pace_good();
-			}
-		}
 	}
 	NEEDLESS_RETURN(NULL);
 }

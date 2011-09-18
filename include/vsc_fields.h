@@ -41,7 +41,7 @@
 
 #ifdef VSC_DO_MAIN
 
-VSC_F(client_conn,		uint64_t, 0, 'a', "Client connections accepted")
+VSC_F(client_conn,		uint64_t, 1, 'a', "Client connections accepted")
 VSC_F(client_drop,		uint64_t, 0, 'a',
 					"Connection dropped, no sess/wrk")
 VSC_F(client_req,		uint64_t, 1, 'a', "Client requests received")
@@ -72,6 +72,12 @@ VSC_F(fetch_1xx,		uint64_t, 1, 'a', "Fetch no body (1xx)")
 VSC_F(fetch_204,		uint64_t, 1, 'a', "Fetch no body (204)")
 VSC_F(fetch_304,		uint64_t, 1, 'a', "Fetch no body (304)")
 
+/* Sessmem cache_session.c */
+VSC_F(g_sessmem_size,		uint64_t, 1, 'i', "Session mem size")
+VSC_F(c_sessmem_alloc,		uint64_t, 1, 'a', "Session mem allocated")
+VSC_F(c_sessmem_free,		uint64_t, 1, 'a', "Session mem freed")
+VSC_F(c_sessmem_fail,		uint64_t, 1, 'a', "Session mem alloc failed")
+VSC_F(c_sessmem_limit,		uint64_t, 1, 'a', "Session mem alloc limited")
 
 VSC_F(n_sess_mem,		uint64_t, 0, 'i', "N struct sess_mem")
 VSC_F(n_sess,			uint64_t, 0, 'i', "N struct sess")

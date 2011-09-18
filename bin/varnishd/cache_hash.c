@@ -509,7 +509,6 @@ hsh_rush(struct objhead *oh)
 			 * We could not schedule the session, leave the
 			 * rest on the busy list.
 			 */
-			VSC_C_main->client_drop_late++;
 			break;
 		}
 	}
