@@ -139,6 +139,68 @@ VSC_F(sessmem_limit,		uint64_t, 1, 'c',
 	"Count of session memory allocations blocked by limit (max_sess)."
 )
 
+/*---------------------------------------------------------------------
+ * Pools, threads, and sessions
+ *    see: cache_pool.c
+ *
+ */
+
+VSC_F(pools,			uint64_t, 1, 'g',
+    "Number of thread pools",
+	"Number of thread pools.  See also param wthread_pools."
+	"  NB: Presently pools cannot be removed once created."
+)
+
+VSC_F(threads,			uint64_t, 1, 'g',
+    "Total number of threads",
+	"Number of threads in all pools."
+	"  See also params thread_pools, thread_pool_min & thread_pool_max."
+)
+
+VSC_F(threads_limited,		uint64_t, 1, 'c',
+    "Threads hit max",
+	"Number of times more threads were needed, but limit was reached"
+	" in a thread pool."
+	"  See also param thread_pool_max."
+)
+
+VSC_F(threads_created,		uint64_t, 1, 'c',
+    "Threads created",
+	"Total number of threads created in all pools."
+)
+
+VSC_F(threads_destroyed,	uint64_t, 1, 'c',
+    "Threads destoryed",
+	"Total number of threads destroyed in all pools."
+)
+
+VSC_F(threads_failed,		uint64_t, 1, 'c',
+    "Thread creation failed",
+	"Number of times creating a thread failed."
+	"  See VSL::Debug for diagnostics."
+	"  See also param thread_fail_delay."
+)
+
+VSC_F(thread_queue_len,		uint64_t, 1, 'g',
+    "Length of session queue",
+	"Length of session queue waiting for threads."
+	"  NB: Only updates once per second."
+	"  See also param queue_max."
+)
+
+VSC_F(sess_queued,		uint64_t, 1, 'c',
+    "Sessions queued for thread",
+	"Number of times session was queued waiting for a thread."
+	"  See also param queue_max."
+)
+
+VSC_F(sess_dropped,		uint64_t, 1, 'c',
+    "Sessions dropped for thread",
+	"Number of times session was dropped because the queue were too"
+	" long already."
+	"  See also param queue_max."
+)
+
 /*---------------------------------------------------------------------*/
 
 VSC_F(n_sess_mem,		uint64_t, 0, 'i', "N struct sess_mem", "")
@@ -150,14 +212,7 @@ VSC_F(n_objecthead,		uint64_t, 1, 'i', "N struct objecthead", "")
 VSC_F(n_waitinglist,		uint64_t, 1, 'i', "N struct waitinglist", "")
 
 VSC_F(n_vbc,		uint64_t, 0, 'i', "N struct vbc", "")
-VSC_F(n_wrk,		uint64_t, 0, 'i', "N worker threads", "")
-VSC_F(n_wrk_create,	uint64_t, 0, 'a', "N worker threads created", "")
-VSC_F(n_wrk_failed,	uint64_t, 0, 'a',
-					"N worker threads not created", "")
-VSC_F(n_wrk_max,		uint64_t, 0, 'a', "N worker threads limited", "")
-VSC_F(n_wrk_lqueue,		uint64_t, 0, 'a', "work request queue length", "")
-VSC_F(n_wrk_queued,		uint64_t, 0, 'a', "N queued work requests", "")
-VSC_F(n_wrk_drop,		uint64_t, 0, 'a', "N dropped work requests", "")
+
 VSC_F(n_backend,		uint64_t, 0, 'i', "N backends", "")
 
 VSC_F(n_expired,		uint64_t, 0, 'i', "N expired objects", "")
