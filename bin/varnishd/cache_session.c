@@ -51,11 +51,14 @@ struct sessmem {
 #define SESSMEM_MAGIC		0x555859c5
 
 	struct sesspool		*pool;
-	struct sess		sess;
+
 	unsigned		workspace;
+	uint16_t		nhttp;
 	void			*wsp;
 	struct http		*http[2];
 	VTAILQ_ENTRY(sessmem)	list;
+
+	struct sess		sess;
 };
 
 struct sesspool {
@@ -120,14 +123,20 @@ ses_sm_alloc(void)
 
 	sm = (void*)p;
 	p += sizeof *sm;
+
 	sm->magic = SESSMEM_MAGIC;
 	sm->workspace = nws;
+	sm->nhttp = nhttp;
+
 	sm->http[0] = HTTP_create(p, nhttp);
 	p += hl;
+
 	sm->http[1] = HTTP_create(p, nhttp);
 	p += hl;
+
 	sm->wsp = p;
 	p += nws;
+
 	assert(p == q);
 
 	return (sm);
@@ -318,6 +327,7 @@ SES_Delete(struct sess *sp, const char *reason)
 	    b->fetch, b->hdrbytes, b->bodybytes);
 
 	if (sm->workspace != params->sess_workspace ||
+	    sm->nhttp != (uint16_t)params->http_max_hdr ||
 	    pp->nsess > params->max_sess) {
 		free(sm);
 		Lck_Lock(&pp->mtx);
@@ -341,7 +351,7 @@ SES_Delete(struct sess *sp, const char *reason)
 }
 
 /*--------------------------------------------------------------------
- * Create a new pool to allocate from
+ * Create and delete pools
  */
 
 struct sesspool *
@@ -354,4 +364,26 @@ SES_NewPool(void)
 	VTAILQ_INIT(&sp->freelist);
 	Lck_New(&sp->mtx, lck_sessmem);
 	return (sp);
+}
+
+void
+SES_DeletePool(struct sesspool *sp, struct worker *wrk)
+{
+	struct sessmem *sm;
+
+	CHECK_OBJ_NOTNULL(sp, SESSPOOL_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	Lck_Lock(&sp->mtx);
+	while (!VTAILQ_EMPTY(&sp->freelist)) {
+		sm = VTAILQ_FIRST(&sp->freelist);
+		CHECK_OBJ_NOTNULL(sm, SESSMEM_MAGIC);
+		VTAILQ_REMOVE(&sp->freelist, sm, list);
+		FREE_OBJ(sm);
+		wrk->stats.sessmem_free++;
+		sp->nsess--;
+	}
+	AZ(sp->nsess);
+	Lck_Unlock(&sp->mtx);
+	Lck_Delete(&sp->mtx);
+	FREE_OBJ(sp);
 }

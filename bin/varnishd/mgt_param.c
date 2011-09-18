@@ -777,7 +777,7 @@ static const struct parspec input_parspec[] = {
 		"off", "bool" },
 	{ "session_max", tweak_uint,
 		&master.max_sess, 1000, UINT_MAX,
-		"Maximum number of sessions we will allocate "
+		"Maximum number of sessions we will allocate from one pool "
 		"before just dropping connections.\n"
 		"This is mostly an anti-DoS measure, and setting it plenty "
 		"high should not hurt, as long as you have the memory for "

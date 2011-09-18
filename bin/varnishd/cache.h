@@ -849,7 +849,6 @@ unsigned WRW_WriteH(struct worker *w, const txt *hh, const char *suf);
 void WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len);
 #endif  /* SENDFILE_WORKS */
 
-
 /* cache_session.c [SES] */
 struct sess *SES_New(struct worker *wrk, struct sesspool *pp);
 struct sess *SES_Alloc(void);
@@ -857,7 +856,7 @@ void SES_Close(struct sess *sp, const char *reason);
 void SES_Delete(struct sess *sp, const char *reason);
 void SES_Charge(struct sess *sp);
 struct sesspool *SES_NewPool(void);
-
+void SES_DeletePool(struct sesspool *sp, struct worker *wrk);
 
 /* cache_shmlog.c */
 void VSL_Init(void);
