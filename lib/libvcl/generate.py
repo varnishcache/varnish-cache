@@ -107,7 +107,7 @@ sp_variables = (
 		'IP',
 		( 'proc',),
 		( ),
-		'const struct sess *'
+		'struct sess *'
 	),
 	('client.identity',
 		'STRING',

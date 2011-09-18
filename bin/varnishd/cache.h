@@ -548,8 +548,8 @@ struct sess {
 
 	socklen_t		sockaddrlen;
 	socklen_t		mysockaddrlen;
-	struct sockaddr_storage	*sockaddr;
-	struct sockaddr_storage	*mysockaddr;
+	struct sockaddr_storage	sockaddr;
+	struct sockaddr_storage	mysockaddr;
 	struct listen_sock	*mylsock;
 
 	/* formatted ascii client address */

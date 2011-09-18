@@ -56,7 +56,6 @@ struct sessmem {
 	void			*wsp;
 	struct http		*http[2];
 	VTAILQ_ENTRY(sessmem)	list;
-	struct sockaddr_storage	sockaddr[2];
 };
 
 struct sesspool {
@@ -152,11 +151,9 @@ ses_setup(struct sessmem *sm)
 
 	sp->magic = SESS_MAGIC;
 	sp->mem = sm;
-	sp->sockaddr = (void*)(&sm->sockaddr[0]);
-	sp->sockaddrlen = sizeof(sm->sockaddr[0]);
-	sp->mysockaddr = (void*)(&sm->sockaddr[1]);
-	sp->mysockaddrlen = sizeof(sm->sockaddr[1]);
-	sp->sockaddr->ss_family = sp->mysockaddr->ss_family = PF_UNSPEC;
+	sp->sockaddrlen = sizeof(sp->sockaddr);
+	sp->mysockaddrlen = sizeof(sp->mysockaddr);
+	sp->sockaddr.ss_family = sp->mysockaddr.ss_family = PF_UNSPEC;
 	sp->t_open = NAN;
 	sp->t_req = NAN;
 	sp->t_resp = NAN;

@@ -122,13 +122,13 @@ VCA_Prep(struct sess *sp)
 	char addr[VTCP_ADDRBUFSIZE];
 	char port[VTCP_PORTBUFSIZE];
 
-	VTCP_name(sp->sockaddr, sp->sockaddrlen,
+	VTCP_name(&sp->sockaddr, sp->sockaddrlen,
 	    addr, sizeof addr, port, sizeof port);
 	sp->addr = WS_Dup(sp->ws, addr);
 	sp->port = WS_Dup(sp->ws, port);
 	if (params->log_local_addr) {
-		AZ(getsockname(sp->fd, (void*)sp->mysockaddr, &sp->mysockaddrlen));
-		VTCP_name(sp->mysockaddr, sp->mysockaddrlen,
+		AZ(getsockname(sp->fd, (void*)&sp->mysockaddr, &sp->mysockaddrlen));
+		VTCP_name(&sp->mysockaddr, sp->mysockaddrlen,
 		    addr, sizeof addr, port, sizeof port);
 		VSL(SLT_SessionOpen, sp->fd, "%s %s %s %s",
 		    sp->addr, sp->port, addr, port);
@@ -264,7 +264,7 @@ VCA_SetupSess(struct worker *w)
 	sp->t_end = sp->t_end;
 	sp->mylsock = w->acceptlsock;
 	assert(w->acceptaddrlen <= sp->sockaddrlen);
-	memcpy(sp->sockaddr, &w->acceptaddr, w->acceptaddrlen);
+	memcpy(&sp->sockaddr, &w->acceptaddr, w->acceptaddrlen);
 	sp->sockaddrlen = w->acceptaddrlen;
 	sp->step = STP_FIRST;
 	vca_pace_good();
