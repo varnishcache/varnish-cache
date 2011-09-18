@@ -26,15 +26,31 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * 3rd argument marks fields for inclusion in the per worker-thread
- * stats structure.
+ * Definition of all shared memory statistics below.
  *
- * XXX: We need a much more consistent naming of these fields, this has
- * XXX: turned into a major mess, causing trouble already for backends.
- * XXX:
- * XXX: Please converge on:
- * XXX:		c_* counter	(total bytes ever allocated from sma, "")
- * XXX:		g_* gauge	(presently allocated bytes from sma, "")
+ * Fields (n, t, l, f, e, d):
+ *    n - Name:		Field name, in C-source and stats programs
+ *    t - Type:		C-type, uint64_t, unless marked in 'f'
+ *    l - Local:	Local counter in worker thread.
+ *    f - Format: 	Semantics of the value in this field
+ *				'a' - Accumulator (deprecated, use 'c')
+ *				'b' - Bitmap
+ *				'c' - Counter, never decreases.
+ *				'g' - Gauge, goes up and down
+ *				'i' - Integer (deprecated, use 'g')
+ *    e - Explantion:	Short explanation of field (for screen use)
+ *    d - Description:	Long explanation of field (for doc use)
+ *	
+ * -----------------------
+ * NB: Cleanup in progress
+ * -----------------------
+ *
+ * Insufficient attention has caused this to become a swamp of conflicting
+ * conventions, shorthands and general mumbo-jumbo.  I'm trying to clean
+ * it up as I go over the code in other business.
+ *
+ * Please see the sessmem section for how it should look.
+ *
  */
 
 /**********************************************************************/
@@ -77,27 +93,27 @@ VSC_F(fetch_304,		uint64_t, 1, 'a', "Fetch no body (304)", "")
  *    see: cache_session.c
  */
 
-VSC_F(g_sessmem_size,		uint64_t, 1, 'i',
+VSC_F(sessmem_size,		uint64_t, 1, 'g',
     "Session mem size",
 	"Bytes of memory allocated for last allocated session."
 )
 
-VSC_F(c_sessmem_alloc,		uint64_t, 1, 'a',
+VSC_F(sessmem_alloc,		uint64_t, 1, 'c',
     "Session mem allocated",
 	"Count of all allocations of session memory."
 )
 
-VSC_F(c_sessmem_free,		uint64_t, 1, 'a',
+VSC_F(sessmem_free,		uint64_t, 1, 'c',
     "Session mem freed",
 	"Count of all frees of session memory."
 )
 
-VSC_F(c_sessmem_fail,		uint64_t, 1, 'a',
+VSC_F(sessmem_fail,		uint64_t, 1, 'c',
     "Session mem alloc failed",
 	"Count of session memory allocation failures."
 )
 
-VSC_F(c_sessmem_limit,		uint64_t, 1, 'a',
+VSC_F(sessmem_limit,		uint64_t, 1, 'c',
     "Session mem alloc limited",
 	"Count of session memory allocations blocked by limit (max_sess)."
 )

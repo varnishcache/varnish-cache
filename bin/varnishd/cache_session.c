@@ -110,7 +110,7 @@ ses_sm_alloc(void)
 
 	hl = HTTP_estimate(nhttp);
 	l = sizeof *sm + nws + 2 * hl;
-	VSC_C_main->g_sessmem_size = l;
+	VSC_C_main->sessmem_size = l;
 	p = malloc(l);
 	if (p == NULL)
 		return (NULL);
@@ -190,20 +190,20 @@ SES_New(struct worker *wrk, struct sesspool *pp)
 		pp->nsess++;
 		do_alloc = 1;
 	}
-	wrk->stats.c_sessmem_free += pp->dly_free_cnt;
+	wrk->stats.sessmem_free += pp->dly_free_cnt;
 	pp->dly_free_cnt = 0;
 	Lck_Unlock(&pp->mtx);
 	if (do_alloc) {
 		sm = ses_sm_alloc();
 		if (sm != NULL) {
-			wrk->stats.c_sessmem_alloc++;
+			wrk->stats.sessmem_alloc++;
 			sm->pool = pp;
 			ses_setup(sm);
 		} else {
-			wrk->stats.c_sessmem_fail++;
+			wrk->stats.sessmem_fail++;
 		}
 	} else if (sm == NULL) {
-		wrk->stats.c_sessmem_limit++;
+		wrk->stats.sessmem_limit++;
 	}
 	if (sm == NULL)
 		return (NULL);
@@ -325,7 +325,7 @@ SES_Delete(struct sess *sp, const char *reason)
 		free(sm);
 		Lck_Lock(&pp->mtx);
 		if (wrk != NULL)
-			wrk->stats.c_sessmem_free++;
+			wrk->stats.sessmem_free++;
 		else
 			pp->dly_free_cnt++;
 		pp->nsess--;
@@ -335,7 +335,7 @@ SES_Delete(struct sess *sp, const char *reason)
 		ses_setup(sm);
 		Lck_Lock(&pp->mtx);
 		if (wrk != NULL) {
-			wrk->stats.c_sessmem_free += pp->dly_free_cnt;
+			wrk->stats.sessmem_free += pp->dly_free_cnt;
 			pp->dly_free_cnt = 0;
 		}
 		VTAILQ_INSERT_HEAD(&pp->freelist, sm, list);

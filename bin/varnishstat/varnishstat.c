@@ -110,7 +110,7 @@ do_once_cb(void *priv, const struct VSC_point * const pt)
 	if (i > op->pad)
 		op->pad = i + 1;
 	printf("%*.*s", op->pad - i, op->pad - i, "");
-	if (pt->flag == 'a')
+	if (pt->flag == 'a' || pt->flag == 'c')
 		printf("%12ju %12.2f %s\n", val, val / op->up, pt->desc);
 	else
 		printf("%12ju %12s %s\n", val, ".  ", pt->desc);
