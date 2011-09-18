@@ -167,7 +167,7 @@ vca_pace_check(void)
 {
 	double p;
 
-	if (vca_pace == 0.0) 
+	if (vca_pace == 0.0)
 		return;
 	Lck_Lock(&pace_mtx);
 	p = vca_pace;
@@ -191,7 +191,7 @@ static void
 vca_pace_good(void)
 {
 
-	if (vca_pace == 0.0) 
+	if (vca_pace == 0.0)
 		return;
 	Lck_Lock(&pace_mtx);
 	vca_pace *= params->acceptor_sleep_decay;
@@ -207,37 +207,62 @@ vca_pace_good(void)
 static int hack_ready;
 
 int
-VCA_Accept(int sock, socklen_t *slp, struct sockaddr_storage *sap)
+VCA_Accept(struct listen_sock *ls, struct wrk_accept *wa)
 {
 	int i;
 
-	assert(sock >= 0);
+	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
+	assert(ls->sock >= 0);
 	vca_pace_check();
 
 	while(!hack_ready)
 		(void)usleep(100*1000);
 
-	*slp = sizeof *sap;
-	i = accept(sock, (void*)sap, slp);
+	wa->acceptaddrlen = sizeof wa->acceptaddr;
+	i = accept(ls->sock, (void*)&wa->acceptaddr, &wa->acceptaddrlen);
 
 	if (i < 0) {
-		VSC_C_main->accept_fail++;
 		switch (errno) {
-		case EAGAIN:
 		case ECONNABORTED:
 			break;
 		case EMFILE:
-			VSL(SLT_Debug, sock, "Too many open files");
+			VSL(SLT_Debug, ls->sock, "Too many open files");
 			vca_pace_bad();
 			break;
 		default:
-			VSL(SLT_Debug, sock, "Accept failed: %s",
+			VSL(SLT_Debug, ls->sock, "Accept failed: %s",
 			    strerror(errno));
 			vca_pace_bad();
 			break;
 		}
 	}
+	wa->acceptlsock = ls;
+	wa->acceptsock = i;
 	return (i);
+}
+
+/*--------------------------------------------------------------------
+ * Fail a session
+ *
+ * This happens if we accept the socket, but cannot get a session
+ * structure.
+ *
+ * We consider this a DoS situation (false positive:  Extremely popular
+ * busy objects) and silently close the connection with minimum effort
+ * and fuzz, rather than try to send an intelligent message back.
+ */
+
+void
+VCA_FailSess(struct worker *w)
+{
+	struct wrk_accept *wa;
+
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	CAST_OBJ_NOTNULL(wa, (void*)w->ws->f, WRK_ACCEPT_MAGIC);
+	AZ(w->sp);
+	AZ(close(wa->acceptsock));
+	w->stats.sess_drop++;
+	vca_pace_bad();
 }
 
 /*--------------------------------------------------------------------*/
@@ -246,30 +271,25 @@ void
 VCA_SetupSess(struct worker *w)
 {
 	struct sess *sp;
+	struct wrk_accept *wa;
 
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	CAST_OBJ_NOTNULL(wa, (void*)w->ws->f, WRK_ACCEPT_MAGIC);
 	sp = w->sp;
-	if (sp == NULL) {
-		AZ(close(w->acceptsock));
-		w->acceptsock = -1;
-		VSC_C_main->client_drop++;
-		/* XXX: 50x Reply ? */
-		vca_pace_bad();
-		INCOMPL();
-	}
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	sp->fd = w->acceptsock;
-	sp->id = w->acceptsock;
-	w->acceptsock = -1;
+	sp->fd = wa->acceptsock;
+	sp->id = wa->acceptsock;
+	wa->acceptsock = -1;
 	sp->t_open = TIM_real();
 	sp->t_end = sp->t_end;
-	sp->mylsock = w->acceptlsock;
-	assert(w->acceptaddrlen <= sp->sockaddrlen);
-	memcpy(&sp->sockaddr, &w->acceptaddr, w->acceptaddrlen);
-	sp->sockaddrlen = w->acceptaddrlen;
+	sp->mylsock = wa->acceptlsock;
+	CHECK_OBJ_NOTNULL(sp->mylsock, LISTEN_SOCK_MAGIC);
+	assert(wa->acceptaddrlen <= sp->sockaddrlen);
+	memcpy(&sp->sockaddr, &wa->acceptaddr, wa->acceptaddrlen);
+	sp->sockaddrlen = wa->acceptaddrlen;
 	sp->step = STP_FIRST;
 	vca_pace_good();
-	w->sp = sp;
-	w->stats.client_conn++;
+	w->stats.sess_conn++;
 }
 
 /*--------------------------------------------------------------------*/

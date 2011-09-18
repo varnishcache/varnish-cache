@@ -67,7 +67,6 @@ struct poolsock {
 #define POOLSOCK_MAGIC			0x1b0a2d38
 	VTAILQ_ENTRY(poolsock)		list;
 	struct listen_sock		*lsock;
-	int				sock;
 };
 
 /* Number of work requests queued in excess of worker threads available */
@@ -95,121 +94,163 @@ static unsigned			nthr_max;
 static pthread_cond_t		herder_cond;
 static struct lock		herder_mtx;
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Nobody is accepting on this socket, so we do.
+ *
+ * As long as we can stick the accepted connection to another thread
+ * we do so, otherwise we return and handle it ourselves.
+ *
+ * Notice calling convention:  Called locked and returns locked, but
+ * works lock in the meantime.
+ *
+ * We store data about the accept in reserved workspace, it is only used
+ * for a brief moment and it takes up around 144 bytes.
+ */
 
 static void
 pool_accept(struct pool *pp, struct worker *w, const struct poolsock *ps)
 {
 	struct worker *w2;
+	struct wrk_accept *wa, *wa2;
 
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(ps, POOLSOCK_MAGIC);
 
-	assert(ps->sock >= 0);
+	CHECK_OBJ_NOTNULL(ps->lsock, LISTEN_SOCK_MAGIC);
 	Lck_AssertHeld(&pp->mtx);
 	Lck_Unlock(&pp->mtx);
+	assert(sizeof *wa == WS_Reserve(w->ws, sizeof *wa));
+	wa = (void*)w->ws->f;
 	while (1) {
-		w->acceptsock =
-		    VCA_Accept(ps->sock, &w->acceptaddrlen, &w->acceptaddr);
-		if (w->acceptsock == -1)
+		memset(wa, 0, sizeof *wa);
+		wa->magic = WRK_ACCEPT_MAGIC;
+
+		if (VCA_Accept(ps->lsock, wa) < 0) {
+			w->stats.sess_fail++;
+			/* We're going to pace in vca anyway... */
+			(void)WRK_TrySumStat(w);
 			continue;
-		w->acceptlsock = ps->lsock;
+		}
+
 		Lck_Lock(&pp->mtx);
 		if (VTAILQ_EMPTY(&pp->idle))
 			return;
 		w2 = VTAILQ_FIRST(&pp->idle);
 		VTAILQ_REMOVE(&pp->idle, w2, list);
 		Lck_Unlock(&pp->mtx);
-		w2->acceptaddr = w->acceptaddr;
-		w2->acceptaddrlen = w->acceptaddrlen;
-		w2->acceptsock = w->acceptsock;
-		w2->acceptlsock = w->acceptlsock;
+		assert(sizeof *wa2 == WS_Reserve(w2->ws, sizeof *wa2));
+		wa2 = (void*)w2->ws->f;
+		memcpy(wa2, wa, sizeof *wa);
 		AZ(pthread_cond_signal(&w2->cond));
 	}
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * This is the work function for worker threads in the pool.
+ */
 
 void
 Pool_Work_Thread(void *priv, struct worker *w)
 {
-	struct pool *qp;
+	struct pool *pp;
 	int stats_clean;
 	struct poolsock *ps;
 
-	CAST_OBJ_NOTNULL(qp, priv, POOL_MAGIC);
-	w->pool = qp;
-	Lck_Lock(&qp->mtx);
-	qp->nthr++;
+	CAST_OBJ_NOTNULL(pp, priv, POOL_MAGIC);
+	w->pool = pp;
+	Lck_Lock(&pp->mtx);
+	pp->nthr++;
 	stats_clean = 1;
 	while (1) {
 
-		Lck_AssertHeld(&qp->mtx);
+		Lck_AssertHeld(&pp->mtx);
 
+		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 		CHECK_OBJ_NOTNULL(w->bereq, HTTP_MAGIC);
 		CHECK_OBJ_NOTNULL(w->beresp, HTTP_MAGIC);
 		CHECK_OBJ_NOTNULL(w->resp, HTTP_MAGIC);
-		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 
-		/* Process queued requests, if any */
-		w->sp = VTAILQ_FIRST(&qp->queue);
+		WS_Reset(w->ws, NULL);
+
+		w->sp = VTAILQ_FIRST(&pp->queue);
 		if (w->sp != NULL) {
-			VTAILQ_REMOVE(&qp->queue, w->sp, poollist);
-			qp->lqueue--;
-		} else if (VTAILQ_EMPTY(&qp->socks)) {
+			/* Process queued requests, if any */
+			assert(pp->lqueue > 0);
+			VTAILQ_REMOVE(&pp->queue, w->sp, poollist);
+			pp->lqueue--;
+		} else if (!VTAILQ_EMPTY(&pp->socks)) {
+			/* Accept on a socket */
+			ps = VTAILQ_FIRST(&pp->socks);
+			VTAILQ_REMOVE(&pp->socks, ps, list);
+			pool_accept(pp, w, ps);
+			Lck_AssertHeld(&pp->mtx);
+			VTAILQ_INSERT_TAIL(&pp->socks, ps, list);
+		} else if (VTAILQ_EMPTY(&pp->socks)) {
+			/* Nothing to do: To sleep, perchance to dream ... */
 			if (isnan(w->lastused))
 				w->lastused = TIM_real();
-			VTAILQ_INSERT_HEAD(&qp->idle, w, list);
+			VTAILQ_INSERT_HEAD(&pp->idle, w, list);
 			if (!stats_clean)
 				WRK_SumStat(w);
-			Lck_CondWait(&w->cond, &qp->mtx);
-		} else {
-			ps = VTAILQ_FIRST(&qp->socks);
-			VTAILQ_REMOVE(&qp->socks, ps, list);
-			pool_accept(qp, w, ps);
-			Lck_AssertHeld(&qp->mtx);
-			VTAILQ_INSERT_TAIL(&qp->socks, ps, list);
+			Lck_CondWait(&w->cond, &pp->mtx);
 		}
-		if (w->sp == NULL && w->acceptsock == -1)
+
+		/*
+		 * If we got neither session or accepted a socket, we were
+		 * woken up to die to cull the herd.
+		 */
+		if (w->sp == NULL && w->ws->r == NULL)
 			break;
-		Lck_Unlock(&qp->mtx);
+
+		Lck_Unlock(&pp->mtx);
+
 		if (w->sp == NULL) {
-			w->sp = SES_New(w, qp->sesspool);
-			VCA_SetupSess(w);
+			/* Turn accepted socket into a session */
+			assert(w->ws->r != NULL);
+			w->sp = SES_New(w, pp->sesspool);
+			if (w->sp == NULL)
+				VCA_FailSess(w);
+			else
+				VCA_SetupSess(w);
+			WS_Release(w->ws, 0);
 		}
-		AN(w->sp);
-		assert(w->acceptsock == -1);
-		stats_clean = 0;
-		w->lastused = NAN;
-		WS_Reset(w->ws, NULL);
-		w->storage_hint = NULL;
+		assert(w->ws->r == NULL);
 
-		AZ(w->sp->wrk);
-		THR_SetSession(w->sp);
-		w->sp->wrk = w;
-		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
-		CNT_Session(w->sp);
-		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
-		THR_SetSession(NULL);
+		if (w->sp != NULL) {
+			CHECK_OBJ_NOTNULL(w->sp, SESS_MAGIC);
 
-		WS_Assert(w->ws);
-		AZ(w->bereq->ws);
-		AZ(w->beresp->ws);
-		AZ(w->resp->ws);
-		AZ(w->wrw.wfd);
-		AZ(w->storage_hint);
-		assert(w->wlp == w->wlb);
-		w->sp = NULL;
-		if (params->diag_bitmap & 0x00040000) {
-			if (w->vcl != NULL)
-				VCL_Rel(&w->vcl);
+			stats_clean = 0;
+			w->lastused = NAN;
+			w->storage_hint = NULL;
+
+			AZ(w->sp->wrk);
+			THR_SetSession(w->sp);
+			w->sp->wrk = w;
+			CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
+			CNT_Session(w->sp);
+			CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
+			THR_SetSession(NULL);
+			w->sp = NULL;
+
+			WS_Assert(w->ws);
+			AZ(w->bereq->ws);
+			AZ(w->beresp->ws);
+			AZ(w->resp->ws);
+			AZ(w->wrw.wfd);
+			AZ(w->storage_hint);
+			assert(w->wlp == w->wlb);
+			if (params->diag_bitmap & 0x00040000) {
+				if (w->vcl != NULL)
+					VCL_Rel(&w->vcl);
+			}
 		}
 		stats_clean = WRK_TrySumStat(w);
-		Lck_Lock(&qp->mtx);
+		Lck_Lock(&pp->mtx);
 	}
-	qp->nthr--;
-	Lck_Unlock(&qp->mtx);
+	assert(pp->nthr > 0);
+	pp->nthr--;
+	Lck_Unlock(&pp->mtx);
 	w->pool = NULL;
 }
 
@@ -320,7 +361,6 @@ pool_mkpool(void)
 			continue;
 		ALLOC_OBJ(ps, POOLSOCK_MAGIC);
 		XXXAN(ps);
-		ps->sock = ls->sock;
 		ps->lsock = ls;
 		VTAILQ_INSERT_TAIL(&pp->socks, ps, list);
 	}

@@ -148,7 +148,7 @@ client c1 {
 
 varnish v1 -cliok "hcb.dump"
 
-varnish v1 -expect client_conn == 2
+varnish v1 -expect sess_conn == 2
 varnish v1 -expect cache_hit == 9
 varnish v1 -expect cache_miss == 9
 varnish v1 -expect client_req == 18

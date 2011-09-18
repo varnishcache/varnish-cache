@@ -289,6 +289,20 @@ struct stream_ctx {
 };
 
 /*--------------------------------------------------------------------*/
+
+struct wrk_accept {
+	unsigned		magic;
+#define WRK_ACCEPT_MAGIC	0x8c4b4d59
+
+	/* Accept stuff */
+	struct sockaddr_storage	acceptaddr;
+	socklen_t		acceptaddrlen;
+	int			acceptsock;
+	struct listen_sock	*acceptlsock;
+};
+
+/*--------------------------------------------------------------------*/
+
 struct worker {
 	unsigned		magic;
 #define WORKER_MAGIC		0x6391adcf
@@ -302,12 +316,6 @@ struct worker {
 
 	/* Pool stuff */
 	double			lastused;
-
-	/* Accept stuff */
-	struct sockaddr_storage	acceptaddr;
-	socklen_t		acceptaddrlen;
-	int			acceptsock;
-	struct listen_sock	*acceptlsock;
 
 	struct wrw		wrw;
 
@@ -642,8 +650,9 @@ struct vbc {
 void VCA_Prep(struct sess *sp);
 void VCA_Init(void);
 void VCA_Shutdown(void);
-int VCA_Accept(int sock, socklen_t *slp, struct sockaddr_storage *sap);
+int VCA_Accept(struct listen_sock *ls, struct wrk_accept *wa);
 void VCA_SetupSess(struct worker *w);
+void VCA_FailSess(struct worker *w);
 
 /* cache_backend.c */
 void VBE_UseHealth(const struct director *vdi);

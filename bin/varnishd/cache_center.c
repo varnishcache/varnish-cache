@@ -1115,7 +1115,7 @@ cnt_lookup(struct sess *sp)
 			WS_ReleaseP(sp->ws, (void*)sp->vary_l);
 		} else {
 			AZ(oc->busyobj->vary);
-			WS_Release(sp->ws, 0); 
+			WS_Release(sp->ws, 0);
 		}
 		sp->vary_b = NULL;
 		sp->vary_l = NULL;

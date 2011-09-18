@@ -79,7 +79,7 @@ WRK_SumStat(struct worker *w)
 int
 WRK_TrySumStat(struct worker *w)
 {
-	if (Lck_Trylock(&wstat_mtx)) 
+	if (Lck_Trylock(&wstat_mtx))
 		return (0);
 	wrk_sumstat(w);
 	Lck_Unlock(&wstat_mtx);
@@ -165,7 +165,6 @@ wrk_thread_real(void *priv, unsigned shm_workspace, unsigned sess_workspace,
 	w->bereq = HTTP_create(http0, nhttp);
 	w->beresp = HTTP_create(http1, nhttp);
 	w->resp = HTTP_create(http2, nhttp);
-	w->acceptsock = -1;
 	w->wrw.iov = iov;
 	w->wrw.siov = siov;
 	w->wrw.ciov = siov;

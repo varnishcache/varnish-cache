@@ -52,9 +52,9 @@
 struct vwk {
 	unsigned		magic;
 #define VWK_MAGIC		0x1cc2acc2
-	pthread_t 		thread;
+	pthread_t		thread;
 	int			pipes[2];
-	int 			kq;
+	int			kq;
 	struct kevent		ki[NKEV];
 	unsigned		nki;
 	VTAILQ_HEAD(,sess)	sesshead;

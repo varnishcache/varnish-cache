@@ -32,7 +32,7 @@
  *    n - Name:		Field name, in C-source and stats programs
  *    t - Type:		C-type, uint64_t, unless marked in 'f'
  *    l - Local:	Local counter in worker thread.
- *    f - Format: 	Semantics of the value in this field
+ *    f - Format:	Semantics of the value in this field
  *				'a' - Accumulator (deprecated, use 'c')
  *				'b' - Bitmap
  *				'c' - Counter, never decreases.
@@ -40,7 +40,7 @@
  *				'i' - Integer (deprecated, use 'g')
  *    e - Explantion:	Short explanation of field (for screen use)
  *    d - Description:	Long explanation of field (for doc use)
- *	
+ *
  * -----------------------
  * NB: Cleanup in progress
  * -----------------------
@@ -57,9 +57,30 @@
 
 #ifdef VSC_DO_MAIN
 
-VSC_F(client_conn,		uint64_t, 1, 'a', "Client connections accepted", "")
-VSC_F(client_drop,		uint64_t, 0, 'a',
-					"Connection dropped, no sess/wrk", "")
+/*---------------------------------------------------------------------
+ * Sessions
+ *    see: cache_acceptor.c and cache_pool.c
+ */
+
+VSC_F(sess_conn,		uint64_t, 1, 'c',
+    "Sessions accepted",
+	"Count of sessions succesfully accepted"
+)
+VSC_F(sess_drop,		uint64_t, 1, 'c',
+    "Sessions dropped",
+	"Count of sessions silently dropped due to lack of session memory."
+	"  See parameter 'max_sess'."
+)
+
+VSC_F(sess_fail,		uint64_t, 1, 'c',
+    "Session accept failures",
+	"Count of failures to accept TCP connection."
+	"  Either the client changed its mind, or the kernel ran out of"
+	" some resource like filedescriptors."
+)
+
+/*---------------------------------------------------------------------*/
+
 VSC_F(client_req,		uint64_t, 1, 'a', "Client requests received", "")
 
 VSC_F(cache_hit,		uint64_t, 1, 'a', "Cache hits", "")
@@ -195,7 +216,6 @@ VSC_F(hcb_insert,		uint64_t, 0, 'a', "HCB Inserts", "")
 
 VSC_F(esi_errors,		uint64_t, 0, 'a', "ESI parse errors (unlock)", "")
 VSC_F(esi_warnings,		uint64_t, 0, 'a', "ESI parse warnings (unlock)", "")
-VSC_F(accept_fail,		uint64_t, 0, 'a', "Accept failures", "")
 VSC_F(client_drop_late,	uint64_t, 0, 'a', "Connection dropped late", "")
 VSC_F(uptime,		uint64_t, 0, 'a', "Client uptime", "")
 
