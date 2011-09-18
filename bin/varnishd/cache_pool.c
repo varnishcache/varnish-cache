@@ -261,47 +261,33 @@ Pool_Work_Thread(void *priv, struct worker *w)
  */
 
 static int
-WRK_Queue(struct sess *sp)
+WRK_Queue(struct pool *pp, struct sess *sp)
 {
 	struct worker *w;
-	struct pool *qp;
-	static unsigned nq = 0;
-	unsigned onq;
 
-	/*
-	 * Select which pool we issue to
-	 * XXX: better alg ?
-	 * XXX: per CPU ?
-	 */
-	onq = nq + 1;
-	if (onq >= nwq)
-		onq = 0;
-	qp = wq[onq];
-	nq = onq;
-
-	Lck_Lock(&qp->mtx);
+	Lck_Lock(&pp->mtx);
 
 	/* If there are idle threads, we tickle the first one into action */
-	w = VTAILQ_FIRST(&qp->idle);
+	w = VTAILQ_FIRST(&pp->idle);
 	if (w != NULL) {
-		VTAILQ_REMOVE(&qp->idle, w, list);
-		Lck_Unlock(&qp->mtx);
+		VTAILQ_REMOVE(&pp->idle, w, list);
+		Lck_Unlock(&pp->mtx);
 		w->sp = sp;
 		AZ(pthread_cond_signal(&w->cond));
 		return (0);
 	}
 
 	/* If we have too much in the queue already, refuse. */
-	if (qp->lqueue > queue_max) {
-		qp->ndrop++;
-		Lck_Unlock(&qp->mtx);
+	if (pp->lqueue > queue_max) {
+		pp->ndrop++;
+		Lck_Unlock(&pp->mtx);
 		return (-1);
 	}
 
-	VTAILQ_INSERT_TAIL(&qp->queue, sp, poollist);
-	qp->nqueue++;
-	qp->lqueue++;
-	Lck_Unlock(&qp->mtx);
+	VTAILQ_INSERT_TAIL(&pp->queue, sp, poollist);
+	pp->nqueue++;
+	pp->lqueue++;
+	Lck_Unlock(&pp->mtx);
 	AZ(pthread_cond_signal(&herder_cond));
 	return (0);
 }
@@ -309,11 +295,11 @@ WRK_Queue(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 int
-Pool_QueueSession(struct sess *sp)
+Pool_Schedule(struct pool *pp, struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AZ(sp->wrk);
-	if (WRK_Queue(sp) == 0)
+	if (WRK_Queue(pp, sp) == 0)
 		return(0);
 
 	VSC_C_main->client_drop_late++;
@@ -332,7 +318,6 @@ Pool_QueueSession(struct sess *sp)
 		 */
 		VCL_Rel(&sp->vcl);
 	}
-	SES_Delete(sp, "dropped");
 	return (1);
 }
 
@@ -353,7 +338,7 @@ pool_mkpool(void)
 	VTAILQ_INIT(&pp->queue);
 	VTAILQ_INIT(&pp->idle);
 	VTAILQ_INIT(&pp->socks);
-	pp->sesspool = SES_NewPool();
+	pp->sesspool = SES_NewPool(pp);
 	AN(pp->sesspool);
 
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {

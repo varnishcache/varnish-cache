@@ -841,9 +841,9 @@ void PipeSession(struct sess *sp);
 
 /* cache_pool.c */
 void Pool_Init(void);
-int Pool_QueueSession(struct sess *sp);
 void Pool_Work_Thread(void *priv, struct worker *w);
 void Pool_Wait(struct sess *sp);
+int Pool_Schedule(struct pool *pp, struct sess *sp);
 
 #define WRW_IsReleased(w)	((w)->wrw.wfd == NULL)
 int WRW_Error(const struct worker *w);
@@ -864,8 +864,10 @@ struct sess *SES_Alloc(void);
 void SES_Close(struct sess *sp, const char *reason);
 void SES_Delete(struct sess *sp, const char *reason);
 void SES_Charge(struct sess *sp);
-struct sesspool *SES_NewPool(void);
+struct sesspool *SES_NewPool(struct pool *pp);
 void SES_DeletePool(struct sesspool *sp, struct worker *wrk);
+int SES_Schedule(struct sess *sp);
+
 
 /* cache_shmlog.c */
 void VSL_Init(void);

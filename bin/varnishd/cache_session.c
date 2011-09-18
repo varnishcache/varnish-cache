@@ -64,6 +64,7 @@ struct sessmem {
 struct sesspool {
 	unsigned		magic;
 #define SESSPOOL_MAGIC		0xd916e202
+	struct pool		*pool;
 	VTAILQ_HEAD(,sessmem)	freelist;
 	struct lock		mtx;
 	unsigned		nsess;
@@ -237,6 +238,35 @@ SES_Alloc(void)
 }
 
 /*--------------------------------------------------------------------
+ * Schedule a session back on a work-thread from its pool
+ */
+
+int
+SES_Schedule(struct sess *sp)
+{
+	struct sessmem *sm;
+	struct sesspool *pp;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+
+	AZ(sp->wrk);
+
+	sm = sp->mem;
+	CHECK_OBJ_NOTNULL(sm, SESSMEM_MAGIC);
+
+	pp = sm->pool;
+	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
+
+	AN(pp->pool);
+
+	if (Pool_Schedule(pp->pool, sp)) {
+		SES_Delete(sp, "dropped");
+		return (1);
+	}
+	return (0);
+}
+
+/*--------------------------------------------------------------------
  * Handle a session (from waiter)
  *
  * Status: see HTC_Rx()
@@ -255,7 +285,7 @@ SES_Handle(struct sess *sp, int status)
 		break;
 	case 1:
 		sp->step = STP_START;
-		(void)Pool_QueueSession(sp);
+		(void)SES_Schedule(sp);
 		break;
 	default:
 		WRONG("Unexpected return from HTC_Rx()");
@@ -355,12 +385,13 @@ SES_Delete(struct sess *sp, const char *reason)
  */
 
 struct sesspool *
-SES_NewPool(void)
+SES_NewPool(struct pool *pp)
 {
 	struct sesspool *sp;
 
 	ALLOC_OBJ(sp, SESSPOOL_MAGIC);
 	AN(sp);
+	sp->pool = pp;
 	VTAILQ_INIT(&sp->freelist);
 	Lck_New(&sp->mtx, lck_sessmem);
 	return (sp);

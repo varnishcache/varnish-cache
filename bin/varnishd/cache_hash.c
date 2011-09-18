@@ -504,7 +504,7 @@ hsh_rush(struct objhead *oh)
 		AZ(sp->wrk);
 		VTAILQ_REMOVE(&wl->list, sp, list);
 		DSL(0x20, SLT_Debug, sp->id, "off waiting list");
-		if (Pool_QueueSession(sp)) {
+		if (SES_Schedule(sp)) {
 			/*
 			 * We could not schedule the session, leave the
 			 * rest on the busy list.
