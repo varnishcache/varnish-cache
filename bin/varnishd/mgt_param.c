@@ -333,10 +333,11 @@ clean_listen_sock_head(struct listen_sock_head *lsh)
 	struct listen_sock *ls, *ls2;
 
 	VTAILQ_FOREACH_SAFE(ls, lsh, list, ls2) {
+		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
 		VTAILQ_REMOVE(lsh, ls, list);
 		free(ls->name);
 		free(ls->addr);
-		free(ls);
+		FREE_OBJ(ls);
 	}
 }
 
@@ -386,7 +387,7 @@ tweak_listen_address(struct cli *cli, const struct parspec *par,
 			break;
 		}
 		for (j = 0; j < n; ++j) {
-			ls = calloc(sizeof *ls, 1);
+			ALLOC_OBJ(ls, LISTEN_SOCK_MAGIC);
 			AN(ls);
 			ls->sock = -1;
 			ls->addr = ta[j];
@@ -410,6 +411,7 @@ tweak_listen_address(struct cli *cli, const struct parspec *par,
 	while (!VTAILQ_EMPTY(&lsh)) {
 		ls = VTAILQ_FIRST(&lsh);
 		VTAILQ_REMOVE(&lsh, ls, list);
+		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
 		VTAILQ_INSERT_TAIL(&heritage.socks, ls, list);
 		heritage.nsocks++;
 	}
