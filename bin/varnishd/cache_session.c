@@ -80,9 +80,10 @@ SES_Charge(struct sess *sp)
 {
 	struct acct *a = &sp->wrk->acct_tmp;
 
+	sp->req_bodybytes += a->bodybytes;
+
 #define ACCT(foo)				\
 	sp->wrk->stats.s_##foo += a->foo;	\
-	sp->acct_req.foo += a->foo;		\
 	sp->acct_ses.foo += a->foo;		\
 	a->foo = 0;
 #include "acct_fields.h"

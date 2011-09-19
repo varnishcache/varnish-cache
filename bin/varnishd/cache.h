@@ -218,9 +218,9 @@ struct acct {
 
 /*--------------------------------------------------------------------*/
 
-#define L0(n)
-#define L1(n)			uint64_t n;
-#define VSC_F(n, t, l, f, e,d)	L##l(n)
+#define L0(t, n)
+#define L1(t, n)		t n;
+#define VSC_F(n, t, l, f, e,d)	L##l(t, n)
 #define VSC_DO_MAIN
 struct dstat {
 #include "vsc_fields.h"
@@ -615,7 +615,7 @@ struct sess {
 	struct sessmem		*mem;
 
 	VTAILQ_ENTRY(sess)	poollist;
-	struct acct		acct_req;
+	uint64_t		req_bodybytes;
 	struct acct		acct_ses;
 
 #if defined(HAVE_EPOLL_CTL)

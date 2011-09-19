@@ -338,7 +338,8 @@ cnt_done(struct sess *sp)
 		/* XXX: Add StatReq == StatSess */
 		/* XXX: Workaround for pipe */
 		if (sp->fd >= 0) {
-			WSP(sp, SLT_Length, "%ju", (uintmax_t)sp->acct_req.bodybytes);
+			WSP(sp, SLT_Length, "%ju",
+			    (uintmax_t)sp->req_bodybytes);
 		}
 		WSL(sp->wrk, SLT_ReqEnd, sp->id, "%u %.9f %.9f %.9f %.9f %.9f",
 		    sp->xid, sp->t_req, sp->t_end, dh, dp, da);
@@ -352,7 +353,7 @@ cnt_done(struct sess *sp)
 	if (sp->esi_level > 0)
 		return (1);
 
-	memset(&sp->acct_req, 0, sizeof sp->acct_req);
+	sp->req_bodybytes = 0;
 
 	sp->t_req = NAN;
 	sp->hash_always_miss = 0;
