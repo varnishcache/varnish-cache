@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Worker thread stuff unrealted to the worker thread pools.
+ * Worker thread stuff unrelated to the worker thread pools.
  */
 
 #include "config.h"

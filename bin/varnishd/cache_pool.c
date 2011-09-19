@@ -259,7 +259,7 @@ Pool_Work_Thread(void *priv, struct worker *w)
  */
 
 static int
-WRK_Queue(struct pool *pp, struct sess *sp)
+pool_queue(struct pool *pp, struct sess *sp)
 {
 	struct worker *w;
 
@@ -297,7 +297,7 @@ Pool_Schedule(struct pool *pp, struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AZ(sp->wrk);
-	if (WRK_Queue(pp, sp) == 0)
+	if (pool_queue(pp, sp) == 0)
 		return(0);
 
 	VSC_C_main->client_drop_late++;
@@ -345,7 +345,7 @@ Pool_Wait(struct sess *sp)
  */
 
 static void
-wrk_breed_flock(struct pool *qp, const pthread_attr_t *tp_attr)
+pool_breed(struct pool *qp, const pthread_attr_t *tp_attr)
 {
 	pthread_t tp;
 
@@ -418,7 +418,7 @@ pool_herder(void *priv)
 			AZ(pthread_attr_init(&tp_attr));
 		}
 
-		wrk_breed_flock(pp, &tp_attr);
+		pool_breed(pp, &tp_attr);
 		
 		if (pp->nthr < params->wthread_min)
 			continue;
@@ -466,6 +466,7 @@ pool_herder(void *priv)
 			AZ(pthread_cond_signal(&w->cond));
 		}
 	}
+	NEEDLESS_RETURN(NULL);
 }
 
 /*--------------------------------------------------------------------
@@ -543,6 +544,7 @@ pool_poolherder(void *priv)
 			u += pp->lqueue;
 		VSC_C_main->thread_queue_len = u;
 	}
+	NEEDLESS_RETURN(NULL);
 }
 
 /*--------------------------------------------------------------------*/
@@ -555,5 +557,3 @@ Pool_Init(void)
 	Lck_New(&pool_mtx, lck_wq);
 	AZ(pthread_create(&thr_pool_herder, NULL, pool_poolherder, NULL));
 }
-
-/*--------------------------------------------------------------------*/
