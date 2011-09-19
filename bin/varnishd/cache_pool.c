@@ -71,6 +71,7 @@ clock_gettime(int foo, struct timespec *ts)
 {
 	struct timeval tv;
 
+	(void)foo;
 	gettimeofday(&tv, NULL);
 	ts->tv_sec = tv.tv_sec;
 	ts->tv_nsec = tv.tv_usec * 1000;
