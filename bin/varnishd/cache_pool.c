@@ -58,6 +58,10 @@
 #include "stevedore.h"
 #include "hash_slinger.h"
 
+#ifndef CLOCK_MONOTONIC
+#define CLOCK_MONOTONIC CLOCK_REALTIME		/* OS/X is silly */
+#endif
+
 static void *waiter_priv;
 
 VTAILQ_HEAD(workerhead, worker);
