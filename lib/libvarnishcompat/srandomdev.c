@@ -40,6 +40,22 @@
 
 #include "compat/srandomdev.h"
 
+static int
+trydev(const char *fn, unsigned long *seed)
+{
+	int fd;
+	ssize_t sz;
+
+	fd = open(fn, O_RDONLY);
+	if (fd < 0)
+		return (-1);
+	sz = read(fd, seed, sizeof *seed);
+	(void)close(fd);
+	if (sz != sizeof *seed)
+		return (-1);
+	return (0);
+}
+
 void
 srandomdev(void)
 {
@@ -47,13 +63,11 @@ srandomdev(void)
 	unsigned long seed;
 	int fd;
 
-	if ((fd = open("/dev/urandom", O_RDONLY)) >= 0 ||
-	    (fd = open("/dev/random", O_RDONLY)) >= 0) {
-		read(fd, &seed, sizeof seed);
-		close(fd);
-	} else {
-		gettimeofday(&tv, NULL);
-		seed = (getpid() << 16) ^ tv.tv_sec ^ tv.tv_usec;
+	if (trydev("/dev/urandom", &seed)) {
+		if (trydev("/dev/random", &seed)) {
+			gettimeofday(&tv, NULL);
+			seed = (getpid() << 16) ^ tv.tv_sec ^ tv.tv_usec;
+		}
 	}
 	srandom(seed);
 }
