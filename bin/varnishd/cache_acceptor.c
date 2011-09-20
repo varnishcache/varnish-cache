@@ -212,7 +212,6 @@ VCA_Accept(struct listen_sock *ls, struct wrk_accept *wa)
 	int i;
 
 	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
-	assert(ls->sock >= 0);
 	vca_pace_check();
 
 	while(!hack_ready)

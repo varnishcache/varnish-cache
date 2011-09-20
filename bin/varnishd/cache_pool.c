@@ -137,7 +137,7 @@ static pthread_t		thr_pool_herder;
  * for a brief moment and it takes up around 144 bytes.
  */
 
-static void
+static int
 pool_accept(struct pool *pp, struct worker *w, const struct poolsock *ps)
 {
 	struct worker *w2;
@@ -156,6 +156,11 @@ pool_accept(struct pool *pp, struct worker *w, const struct poolsock *ps)
 		memset(wa, 0, sizeof *wa);
 		wa->magic = WRK_ACCEPT_MAGIC;
 
+		if (ps->lsock->sock < 0) {
+			/* Socket Shutdown */
+			Lck_Lock(&pp->mtx);
+			return (-1);
+		}
 		if (VCA_Accept(ps->lsock, wa) < 0) {
 			w->stats.sess_fail++;
 			/* We're going to pace in vca anyway... */
@@ -165,7 +170,7 @@ pool_accept(struct pool *pp, struct worker *w, const struct poolsock *ps)
 
 		Lck_Lock(&pp->mtx);
 		if (VTAILQ_EMPTY(&pp->idle))
-			return;
+			return (0);
 		w2 = VTAILQ_FIRST(&pp->idle);
 		VTAILQ_REMOVE(&pp->idle, w2, list);
 		Lck_Unlock(&pp->mtx);
@@ -184,7 +189,7 @@ void
 Pool_Work_Thread(void *priv, struct worker *w)
 {
 	struct pool *pp;
-	int stats_clean;
+	int stats_clean, i;
 	struct poolsock *ps;
 
 	CAST_OBJ_NOTNULL(pp, priv, POOL_MAGIC);
@@ -212,8 +217,13 @@ Pool_Work_Thread(void *priv, struct worker *w)
 			/* Accept on a socket */
 			ps = VTAILQ_FIRST(&pp->socks);
 			VTAILQ_REMOVE(&pp->socks, ps, list);
-			pool_accept(pp, w, ps);
+			i = pool_accept(pp, w, ps);
 			Lck_AssertHeld(&pp->mtx);
+			if (i < 0) {
+				/* Socket Shutdown */
+				FREE_OBJ(ps);
+				continue;
+			}
 			VTAILQ_INSERT_TAIL(&pp->socks, ps, list);
 		} else if (VTAILQ_EMPTY(&pp->socks)) {
 			/* Nothing to do: To sleep, perchance to dream ... */
