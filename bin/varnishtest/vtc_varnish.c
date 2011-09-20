@@ -353,7 +353,15 @@ varnish_launch(struct varnish *v)
 	fd[0].events = POLLIN;
 	fd[1].fd = v->fds[0];
 	fd[1].events = POLLHUP;
+#ifdef __APPLE__
+	/*
+	 * OSX cannot poll a pipe for POLLHUP only, poll just returns
+	 * zero with no revents.
+	 */
+	i = poll(fd, 1, 10000);
+#else
 	i = poll(fd, 2, 10000);
+#endif
 	vtc_log(v->vl, 4, "CLIPOLL %d 0x%x 0x%x",
 	    i, fd[0].revents, fd[1].revents);
 	if (i == 0) {
