@@ -62,8 +62,9 @@ client c1 {
 	expect resp.status == 200
 } -run
 
+sema r1 sync 2
+
 client c2 {
-	sema r1 sync 2
 	txreq -url "/"
 	rxresp
 	expect resp.http.foo == "bar"
