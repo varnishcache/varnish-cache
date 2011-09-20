@@ -14,8 +14,8 @@
 
 # Default backend is the Zope CMS
 backend default {
-	set backend.host = "127.0.0.1";
-	set backend.port = "9673";
+	.host = "127.0.0.1";
+	.port = "9673";
 }
 
 acl purge {
@@ -29,10 +29,10 @@ sub vcl_recv {
 	# requests for unknown hosts
         if (req.http.host ~ "(www.)?example.com") {
                 set req.http.host = "example.com";
-                set req.url = "/VirtualHostBase/http/example.com:80/example.com/VirtualHostRoot" req.url;
+                set req.url = "/VirtualHostBase/http/example.com:80/example.com/VirtualHostRoot" + req.url;
         } elsif (req.http.host ~ "(www.)?example.org") {
                 set req.http.host = "example.org";
-                set req.url = "/VirtualHostBase/http/example.org:80/example.org/VirtualHostRoot" req.url;
+                set req.url = "/VirtualHostBase/http/example.org:80/example.org/VirtualHostRoot" + req.url;
         } else {
                 error 404 "Unknown virtual host.";
         }
@@ -42,7 +42,7 @@ sub vcl_recv {
 
                 # POST - Logins and edits
                 if (req.request == "POST") {
-                        pass;
+                        return(pass);
                 }
                 
                 # PURGE - The CacheFu product can invalidate updated URLs
@@ -50,7 +50,7 @@ sub vcl_recv {
                         if (!client.ip ~ purge) {
                                 error 405 "Not allowed.";
                         }
-                        lookup;
+                        return(lookup);
                 }
         }
 
@@ -60,9 +60,9 @@ sub vcl_recv {
 		# Force lookup of specific urls unlikely to need protection
 		if (req.url ~ "\.(js|css)") {
                         remove req.http.cookie;
-                        lookup;
+                        return(lookup);
                 }
-                pass;
+                return(pass);
         }
 
         # The default vcl_recv is used from here.
@@ -71,13 +71,14 @@ sub vcl_recv {
 # Do the PURGE thing
 sub vcl_hit {
         if (req.request == "PURGE") {
-                set obj.ttl = 0s;
+                purge;
                 error 200 "Purged";
         }
 }
 sub vcl_miss {
         if (req.request == "PURGE") {
-                error 404 "Not in cache";
+                purge;
+                error 200 "Purged";
         }
 }
 
@@ -85,7 +86,7 @@ sub vcl_miss {
 # from Zope by using the CacheFu product
 
 sub vcl_fetch {
-        if (obj.ttl < 3600s) {
-                set obj.ttl = 3600s;
+        if (beresp.ttl < 3600s) {
+                set beresp.ttl = 3600s;
         }
 }
