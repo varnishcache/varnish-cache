@@ -66,6 +66,7 @@
  * on this file to extract the table rather than handcode it
  */
 enum VSL_tag_e {
+	SLT_Bogus = 0,
 #define SLTM(foo)	SLT_##foo,
 #include "vsl_tags.h"
 #undef SLTM

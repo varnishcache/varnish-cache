@@ -173,6 +173,11 @@ vsl_nextlog(struct vsl *vsl, uint32_t **pp)
 	for (w = 0; w < TIMEOUT_USEC;) {
 		t = *vsl->log_ptr;
 
+		if (t == 0) {
+			/* Zero-initialized VSL */
+			VRMB();
+			continue;
+		}
 		if (t == VSL_WRAPMARKER) {
 			/* Wrap around not possible at front */
 			assert(vsl->log_ptr != vsl->log_start + 1);
