@@ -222,6 +222,7 @@ Pool_Work_Thread(void *priv, struct worker *w)
 			if (i < 0) {
 				/* Socket Shutdown */
 				FREE_OBJ(ps);
+				WS_Release(w->ws, 0);
 				continue;
 			}
 			VTAILQ_INSERT_TAIL(&pp->socks, ps, list);
