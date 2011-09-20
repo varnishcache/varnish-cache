@@ -281,7 +281,7 @@ VCA_SetupSess(struct worker *w)
 	sp->id = wa->acceptsock;
 	wa->acceptsock = -1;
 	sp->t_open = TIM_real();
-	sp->t_end = sp->t_end;
+	sp->t_end = sp->t_open;
 	sp->mylsock = wa->acceptlsock;
 	CHECK_OBJ_NOTNULL(sp->mylsock, LISTEN_SOCK_MAGIC);
 	assert(wa->acceptaddrlen <= sp->sockaddrlen);
