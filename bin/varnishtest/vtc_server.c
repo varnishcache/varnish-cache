@@ -100,7 +100,7 @@ server_thread(void *priv)
 		if (fd < 0)
 			vtc_log(vl, 0, "Accepted failed: %s", strerror(errno));
 		vtc_log(vl, 3, "accepted fd %d", fd);
-		http_process(vl, s->spec, fd, s->sock);
+		fd = http_process(vl, s->spec, fd, &s->sock);
 		vtc_log(vl, 3, "shutting fd %d", fd);
 		j = shutdown(fd, SHUT_WR);
 		if (!VTCP_Check(j))

@@ -54,7 +54,7 @@ struct http {
 	unsigned		magic;
 #define HTTP_MAGIC		0x2f02169c
 	int			fd;
-	int			sfd;
+	int			*sfd;
 	int			timeout;
 	struct vtclog		*vl;
 
@@ -77,14 +77,14 @@ struct http {
 
 #define ONLY_CLIENT(hp, av)						\
 	do {								\
-		if (hp->sfd >= 0)					\
+		if (hp->sfd != NULL)					\
 			vtc_log(hp->vl, 0,				\
 			    "\"%s\" only possible in client", av[0]);	\
 	} while (0)
 
 #define ONLY_SERVER(hp, av)						\
 	do {								\
-		if (hp->sfd < 0)					\
+		if (hp->sfd == NULL)					\
 			vtc_log(hp->vl, 0,				\
 			    "\"%s\" only possible in server", av[0]);	\
 	} while (0)
@@ -344,19 +344,22 @@ http_rxchar_eof(struct http *hp, int n)
 		pfd[0].revents = 0;
 		i = poll(pfd, 1, hp->timeout);
 		if (i < 0)
-			vtc_log(hp->vl, 0, "HTTP rx timeout (%u ms)",
-			    hp->timeout);
+			vtc_log(hp->vl, 0, "HTTP rx timeout (fd:%d %u ms)",
+			    hp->fd, hp->timeout);
 		if (i < 0)
-			vtc_log(hp->vl, 0, "HTTP rx failed (poll: %s)",
-			    strerror(errno));
+			vtc_log(hp->vl, 0, "HTTP rx failed (fd:%d poll: %s)",
+			    hp->fd, strerror(errno));
 		assert(i > 0);
+		if (pfd[0].revents & ~POLLIN)
+			vtc_log(hp->vl, 4, "HTTP rx poll (fd:%d revents: %x)",
+			    hp->fd, pfd[0].revents);
 		assert(hp->prxbuf + n < hp->nrxbuf);
 		i = read(hp->fd, hp->rxbuf + hp->prxbuf, n);
 		if (i == 0)
 			return (i);
 		if (i <= 0)
-			vtc_log(hp->vl, 0, "HTTP rx failed (read: %s)",
-			    strerror(errno));
+			vtc_log(hp->vl, 0, "HTTP rx failed (fd:%d read: %s)",
+			    hp->fd, strerror(errno));
 		hp->prxbuf += i;
 		hp->rxbuf[hp->prxbuf] = '\0';
 		n -= i;
@@ -1036,7 +1039,7 @@ cmd_http_expect_close(CMD_ARGS)
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AZ(av[1]);
-	assert(hp->sfd >= 0);
+	assert(hp->sfd != NULL);
 
 	vtc_log(vl, 4, "Expecting close (fd = %d)", hp->fd);
 	while (1) {
@@ -1074,10 +1077,11 @@ cmd_http_accept(CMD_ARGS)
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AZ(av[1]);
+	assert(hp->sfd != NULL);
 	assert(hp->sfd >= 0);
 	VTCP_close(&hp->fd);
 	vtc_log(vl, 4, "Accepting");
-	hp->fd = accept(hp->sfd, NULL, NULL);
+	hp->fd = accept(*hp->sfd, NULL, NULL);
 	if (hp->fd < 0)
 		vtc_log(vl, 0, "Accepted failed: %s", strerror(errno));
 	vtc_log(vl, 3, "Accepted socket fd is %d", hp->fd);
@@ -1136,11 +1140,12 @@ static const struct cmds http_cmds[] = {
 	{ NULL,			NULL }
 };
 
-void
-http_process(struct vtclog *vl, const char *spec, int sock, int sfd)
+int
+http_process(struct vtclog *vl, const char *spec, int sock, int *sfd)
 {
 	struct http *hp;
 	char *s, *q;
+	int retval;
 
 	(void)sfd;
 	ALLOC_OBJ(hp, HTTP_MAGIC);
@@ -1162,9 +1167,11 @@ http_process(struct vtclog *vl, const char *spec, int sock, int sfd)
 	assert(q > s);
 	AN(s);
 	parse_string(s, http_cmds, hp, vl);
+	retval = hp->fd;
 	VSB_delete(hp->vsb);
 	free(hp->rxbuf);
 	free(hp);
+	return (retval);
 }
 
 /**********************************************************************
