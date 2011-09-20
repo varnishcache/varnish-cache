@@ -1,5 +1,8 @@
 varnishtest "Test address remapping"
 
+# VM-remapping is to random on OSX
+feature	not-OSX
+
 server s1 {
 	rxreq 
 	txresp 

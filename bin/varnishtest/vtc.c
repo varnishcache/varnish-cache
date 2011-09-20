@@ -492,7 +492,13 @@ cmd_feature(CMD_ARGS)
 		if (sizeof(void*) == 8 && !strcmp(av[i], "64bit"))
 			continue;
 
-		vtc_log(vl, 1, "SKIPPING test, missing feature %s", av[i]);
+		if (!strcmp(av[i], "!OSX")) {
+#if !defined(__APPLE__) || !defined(__MACH__)
+			continue;
+#endif
+		}
+
+		vtc_log(vl, 1, "SKIPPING test, missing feature: %s", av[i]);
 		vtc_stop = 1;
 		return;
 	}
