@@ -122,7 +122,7 @@ vwp_unpoll(struct vwp *vwp, int fd)
 static void *
 vwp_main(void *priv)
 {
-	int v;
+	int v, v2;
 	struct vwp *vwp;
 	struct sess *ss[NEEV], *sp, *sp2;
 	double deadline;
@@ -143,8 +143,9 @@ vwp_main(void *priv)
 		v = poll(vwp->pollfd, vwp->hpoll + 1, 100);
 		assert(v >= 0);
 		deadline = TIM_real() - params->sess_timeout;
+		v2 = v;
 		VTAILQ_FOREACH_SAFE(sp, &vwp->sesshead, list, sp2) {
-			if (v == 0)
+			if (v != 0 && v2 == 0)
 				break;
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 			fd = sp->fd;
@@ -153,7 +154,7 @@ vwp_main(void *priv)
 			assert(fd < vwp->npoll);
 			assert(vwp->pollfd[fd].fd == fd);
 			if (vwp->pollfd[fd].revents) {
-				v--;
+				v2--;
 				i = HTC_Rx(sp->htc);
 				if (vwp->pollfd[fd].revents != POLLIN)
 					VSL(SLT_Debug, fd, "Poll: %x / %d",
@@ -174,14 +175,14 @@ vwp_main(void *priv)
 				SES_Delete(sp, "timeout");
 			}
 		}
-		if (v && vwp->pollfd[vwp->pipes[0]].revents) {
+		if (v2 && vwp->pollfd[vwp->pipes[0]].revents) {
 
 			if (vwp->pollfd[vwp->pipes[0]].revents != POLLIN)
 				VSL(SLT_Debug, 0, "pipe.revents= 0x%x",
 				    vwp->pollfd[vwp->pipes[0]].revents);
 			assert(vwp->pollfd[vwp->pipes[0]].revents == POLLIN);
 			vwp->pollfd[vwp->pipes[0]].revents = 0;
-			v--;
+			v2--;
 			i = read(vwp->pipes[0], ss, sizeof ss);
 			assert(i >= 0);
 			assert(((unsigned)i % sizeof ss[0]) == 0);
@@ -192,7 +193,7 @@ vwp_main(void *priv)
 				vwp_poll(vwp, ss[j]->fd);
 			}
 		}
-		assert(v == 0);
+		assert(v2 == 0);
 	}
 	NEEDLESS_RETURN(NULL);
 }
