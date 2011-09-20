@@ -32,6 +32,12 @@ varnish v1 -cliok "debug.persistent s0 dump"
 varnish v1 -cliok "debug.persistent s0 sync"
 varnish v1 -stop
 
+server s1 {
+	rxreq 
+	txresp -status 400 -msg "Persistent Object Not Found"
+} -start
+
+
 varnish v2 \
 	-arg "-pdiag_bitmap=0x20000" \
 	-storage "-spersistent,${tmpdir}/_.per2,10m -spersistent,${tmpdir}/_.per1,10m" \
@@ -40,6 +46,7 @@ varnish v2 \
 client c1 -connect ${v2_sock} {
 	txreq -url "/"
 	rxresp
+	expect resp.msg != "Persistent Object Not Found"
 	expect resp.status == 200
 	expect resp.http.X-Varnish == "1001"
 } -run
