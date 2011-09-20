@@ -899,8 +899,9 @@ cmd_http_send(CMD_ARGS)
 	AZ(av[2]);
 	vtc_dump(hp->vl, 4, "send", av[1], -1);
 	i = write(hp->fd, av[1], strlen(av[1]));
-	assert(i == strlen(av[1]));
-
+	if (i != strlen(av[1]))
+		vtc_log(hp->vl, 0, "Write error in http_send(): %s",
+		    strerror(errno));
 }
 
 /**********************************************************************

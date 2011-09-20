@@ -349,6 +349,7 @@ varnish_launch(struct varnish *v)
 	AZ(pthread_create(&v->tp_vsl, NULL, varnishlog_thread, v));
 
 	/* Wait for the varnish to call home */
+	memset(fd, 0, sizeof fd);
 	fd[0].fd = v->cli_fd;
 	fd[0].events = POLLIN;
 	fd[1].fd = v->fds[0];
