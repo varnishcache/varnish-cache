@@ -145,7 +145,7 @@ usage(void)
 	fprintf(stderr, FMT, "", "  shl: space for SHL records [80m]");
 	fprintf(stderr, FMT, "", "  free: space for other allocations [1m]");
 	fprintf(stderr, FMT, "", "  fill: prefill new file [+]");
-	fprintf(stderr, FMT, "-M address:port", "CLI-master to connect to.");
+	fprintf(stderr, FMT, "-M address:port", "Reverse CLI destination.");
 	fprintf(stderr, FMT, "-n dir", "varnishd working directory");
 	fprintf(stderr, FMT, "-P file", "PID file");
 	fprintf(stderr, FMT, "-p param=value", "set parameter");
