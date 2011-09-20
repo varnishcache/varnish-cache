@@ -132,7 +132,7 @@ server_new(const char *name)
 	bprintf(s->listen, "127.0.0.1:%d", 0);
 	AZ(VSS_parse(s->listen, &s->addr, &s->port));
 	s->repeat = 1;
-	s->depth = 1;
+	s->depth = 10;
 	s->sock = -1;
 	VTAILQ_INSERT_TAIL(&servers, s, list);
 	return (s);
