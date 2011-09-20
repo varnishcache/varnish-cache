@@ -115,7 +115,7 @@ vca_unpoll(int fd)
 static void *
 vca_main(void *arg)
 {
-	int v;
+	int v, v2;
 	struct sess *ss[NEEV], *sp, *sp2;
 	double deadline;
 	int i, j, fd;
@@ -135,8 +135,10 @@ vca_main(void *arg)
 		v = poll(pollfd, hpoll + 1, 100);
 		assert(v >= 0);
 		deadline = TIM_real() - params->sess_timeout;
+		v2 = v;
 		VTAILQ_FOREACH_SAFE(sp, &sesshead, list, sp2) {
 			if (v == 0)
+			if (v != 0 && v2 == 0)
 				break;
 			CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 			fd = sp->fd;
@@ -145,7 +147,7 @@ vca_main(void *arg)
 			assert(fd < npoll);
 			assert(pollfd[fd].fd == fd);
 			if (pollfd[fd].revents) {
-				v--;
+				v2--;
 				i = HTC_Rx(sp->htc);
 				if (pollfd[fd].revents != POLLIN)
 					VSL(SLT_Debug, fd, "Poll: %x / %d",
@@ -167,14 +169,14 @@ vca_main(void *arg)
 				SES_Delete(sp);
 			}
 		}
-		if (v && pollfd[vca_pipes[0]].revents) {
+		if (v2 && pollfd[vca_pipes[0]].revents) {
 
 			if (pollfd[vca_pipes[0]].revents != POLLIN)
 				VSL(SLT_Debug, 0, "pipe.revents= 0x%x",
 				    pollfd[vca_pipes[0]].revents);
 			assert(pollfd[vca_pipes[0]].revents == POLLIN);
 			pollfd[vca_pipes[0]].revents = 0;
-			v--;
+			v2--;
 			i = read(vca_pipes[0], ss, sizeof ss);
 			assert(i >= 0);
 			assert(((unsigned)i % sizeof ss[0]) == 0);
@@ -185,7 +187,7 @@ vca_main(void *arg)
 				vca_poll(ss[j]->fd);
 			}
 		}
-		assert(v == 0);
+		assert(v2 == 0);
 	}
 	NEEDLESS_RETURN(NULL);
 }
