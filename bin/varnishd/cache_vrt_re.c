@@ -59,8 +59,11 @@ VRT_re_init(void **rep, const char *re)
 void
 VRT_re_fini(void *rep)
 {
+	vre_t *vv;
+
+	vv = rep;
 	if (rep != NULL)
-		VRE_free((vre_t**)&rep);
+		VRE_free(&vv);
 }
 
 int
