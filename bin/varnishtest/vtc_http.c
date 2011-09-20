@@ -343,7 +343,10 @@ http_rxchar_eof(struct http *hp, int n)
 		pfd[0].events = POLLIN;
 		pfd[0].revents = 0;
 		i = poll(pfd, 1, hp->timeout);
-		if (i <= 0)
+		if (i < 0)
+			vtc_log(hp->vl, 0, "HTTP rx timeout (%u ms)",
+			    hp->timeout);
+		if (i < 0)
 			vtc_log(hp->vl, 0, "HTTP rx failed (poll: %s)",
 			    strerror(errno));
 		assert(i > 0);
@@ -1143,7 +1146,7 @@ http_process(struct vtclog *vl, const char *spec, int sock, int sfd)
 	ALLOC_OBJ(hp, HTTP_MAGIC);
 	AN(hp);
 	hp->fd = sock;
-	hp->timeout = 5000;
+	hp->timeout = 15000;
 	hp->nrxbuf = 2048*1024;
 	hp->vsb = VSB_new_auto();
 	hp->rxbuf = malloc(hp->nrxbuf);		/* XXX */
