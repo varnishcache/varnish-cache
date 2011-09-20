@@ -109,7 +109,7 @@ smp_metrics(struct smp_sc *sc)
 	 */
 	sc->free_reserve = sc->aim_segl * 10;
 
-	fprintf(stderr, "free_reserve = %ju\n", sc->free_reserve);
+	fprintf(stderr, "free_reserve = %ju\n", (uintmax_t)sc->free_reserve);
 }
 
 /*--------------------------------------------------------------------
