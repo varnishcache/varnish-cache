@@ -61,7 +61,6 @@ srandomdev(void)
 {
 	struct timeval tv;
 	unsigned long seed;
-	int fd;
 
 	if (trydev("/dev/urandom", &seed)) {
 		if (trydev("/dev/random", &seed)) {
