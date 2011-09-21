@@ -30,56 +30,21 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <errno.h>
 #include <poll.h>
-#include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <stdio.h>
 
-#include <sys/uio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 
 #include "vcli.h"
 #include "cli_priv.h"
 #include "cache.h"
-#include "cache_waiter.h"
 
-static struct waiter * const vca_waiters[] = {
-#if defined(HAVE_KQUEUE)
-	&waiter_kqueue,
-#endif
-#if defined(HAVE_EPOLL_CTL)
-	&waiter_epoll,
-#endif
-#if defined(HAVE_PORT_CREATE)
-	&waiter_ports,
-#endif
-	&waiter_poll,
-	NULL,
-};
-
-static struct waiter const *vca_act;
-
-pthread_t		VCA_thread;
+static pthread_t	VCA_thread;
 static struct timeval	tv_sndtimeo;
 static struct timeval	tv_rcvtimeo;
-
-/*--------------------------------------------------------------------
- * Report waiter name to panics
- */
-
-const char *
-VCA_waiter_name(void)
-{
-
-	if (vca_act != NULL)
-		return (vca_act->name);
-	else
-		return ("no_waiter");
-}
-
 
 /*--------------------------------------------------------------------
  * We want to get out of any kind of trouble-hit TCP connections as fast
@@ -92,8 +57,6 @@ static const struct linger linger = {
 };
 
 static unsigned char	need_sndtimeo, need_rcvtimeo, need_linger, need_test;
-
-int vca_pipes[2] = { -1, -1 };
 
 static void
 sock_test(int fd)
@@ -159,13 +122,13 @@ VCA_Prep(struct sess *sp)
 	char addr[VTCP_ADDRBUFSIZE];
 	char port[VTCP_PORTBUFSIZE];
 
-	VTCP_name(sp->sockaddr, sp->sockaddrlen,
+	VTCP_name(&sp->sockaddr, sp->sockaddrlen,
 	    addr, sizeof addr, port, sizeof port);
 	sp->addr = WS_Dup(sp->ws, addr);
 	sp->port = WS_Dup(sp->ws, port);
 	if (params->log_local_addr) {
-		AZ(getsockname(sp->fd, (void*)sp->mysockaddr, &sp->mysockaddrlen));
-		VTCP_name(sp->mysockaddr, sp->mysockaddrlen,
+		AZ(getsockname(sp->fd, (void*)&sp->mysockaddr, &sp->mysockaddrlen));
+		VTCP_name(&sp->mysockaddr, sp->mysockaddrlen,
 		    addr, sizeof addr, port, sizeof port);
 		VSL(SLT_SessionOpen, sp->fd, "%s %s %s %s",
 		    sp->addr, sp->port, addr, port);
@@ -191,48 +154,174 @@ VCA_Prep(struct sess *sp)
 #endif
 }
 
+/*--------------------------------------------------------------------
+ * If accept(2)'ing fails, we pace ourselves to relive any resource
+ * shortage if possible.
+ */
+
+static double vca_pace = 0.0;
+static struct lock pace_mtx;
+
+static void
+vca_pace_check(void)
+{
+	double p;
+
+	if (vca_pace == 0.0)
+		return;
+	Lck_Lock(&pace_mtx);
+	p = vca_pace;
+	Lck_Unlock(&pace_mtx);
+	if (p > 0.0)
+		TIM_sleep(p);
+}
+
+static void
+vca_pace_bad(void)
+{
+
+	Lck_Lock(&pace_mtx);
+	vca_pace += params->acceptor_sleep_incr;
+	if (vca_pace > params->acceptor_sleep_max)
+		vca_pace = params->acceptor_sleep_max;
+	Lck_Unlock(&pace_mtx);
+}
+
+static void
+vca_pace_good(void)
+{
+
+	if (vca_pace == 0.0)
+		return;
+	Lck_Lock(&pace_mtx);
+	vca_pace *= params->acceptor_sleep_decay;
+	if (vca_pace < params->acceptor_sleep_incr)
+		vca_pace = 0.0;
+	Lck_Unlock(&pace_mtx);
+}
+
+/*--------------------------------------------------------------------
+ * Accept on a listen socket, and handle error returns.
+ */
+
+static int hack_ready;
+
+int
+VCA_Accept(struct listen_sock *ls, struct wrk_accept *wa)
+{
+	int i;
+
+	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
+	vca_pace_check();
+
+	while(!hack_ready)
+		(void)usleep(100*1000);
+
+	wa->acceptaddrlen = sizeof wa->acceptaddr;
+	i = accept(ls->sock, (void*)&wa->acceptaddr, &wa->acceptaddrlen);
+
+	if (i < 0) {
+		switch (errno) {
+		case ECONNABORTED:
+			break;
+		case EMFILE:
+			VSL(SLT_Debug, ls->sock, "Too many open files");
+			vca_pace_bad();
+			break;
+		default:
+			VSL(SLT_Debug, ls->sock, "Accept failed: %s",
+			    strerror(errno));
+			vca_pace_bad();
+			break;
+		}
+	}
+	wa->acceptlsock = ls;
+	wa->acceptsock = i;
+	return (i);
+}
+
+/*--------------------------------------------------------------------
+ * Fail a session
+ *
+ * This happens if we accept the socket, but cannot get a session
+ * structure.
+ *
+ * We consider this a DoS situation (false positive:  Extremely popular
+ * busy objects) and silently close the connection with minimum effort
+ * and fuzz, rather than try to send an intelligent message back.
+ */
+
+void
+VCA_FailSess(struct worker *w)
+{
+	struct wrk_accept *wa;
+
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	CAST_OBJ_NOTNULL(wa, (void*)w->ws->f, WRK_ACCEPT_MAGIC);
+	AZ(w->sp);
+	AZ(close(wa->acceptsock));
+	w->stats.sess_drop++;
+	vca_pace_bad();
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VCA_SetupSess(struct worker *w)
+{
+	struct sess *sp;
+	struct wrk_accept *wa;
+
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	CAST_OBJ_NOTNULL(wa, (void*)w->ws->f, WRK_ACCEPT_MAGIC);
+	sp = w->sp;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	sp->fd = wa->acceptsock;
+	sp->id = wa->acceptsock;
+	wa->acceptsock = -1;
+	sp->t_open = TIM_real();
+	sp->t_end = sp->t_open;
+	sp->mylsock = wa->acceptlsock;
+	CHECK_OBJ_NOTNULL(sp->mylsock, LISTEN_SOCK_MAGIC);
+	assert(wa->acceptaddrlen <= sp->sockaddrlen);
+	memcpy(&sp->sockaddr, &wa->acceptaddr, wa->acceptaddrlen);
+	sp->sockaddrlen = wa->acceptaddrlen;
+	sp->step = STP_FIRST;
+	vca_pace_good();
+	w->stats.sess_conn++;
+}
+
 /*--------------------------------------------------------------------*/
 
 static void *
 vca_acct(void *arg)
 {
-	struct sess *sp;
-	socklen_t l;
-	struct sockaddr_storage addr_s;
-	struct sockaddr *addr;
 #ifdef SO_RCVTIMEO_WORKS
 	double sess_timeout = 0;
 #endif
 #ifdef SO_SNDTIMEO_WORKS
 	double send_timeout = 0;
 #endif
-	int i;
-	struct pollfd *pfd;
 	struct listen_sock *ls;
-	unsigned u;
-	double t0, now, pace;
+	double t0, now;
 
 	THR_SetName("cache-acceptor");
 	(void)arg;
 
-	/* Set up the poll argument */
-	pfd = calloc(sizeof *pfd, heritage.nsocks);
-	AN(pfd);
-	i = 0;
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (ls->sock < 0)
 			continue;
 		AZ(listen(ls->sock, params->listen_depth));
 		AZ(setsockopt(ls->sock, SOL_SOCKET, SO_LINGER,
 		    &linger, sizeof linger));
-		pfd[i].events = POLLIN;
-		pfd[i++].fd = ls->sock;
 	}
 
+	hack_ready = 1;
+
 	need_test = 1;
-	pace = 0;
 	t0 = TIM_real();
 	while (1) {
+		(void)sleep(1);
 #ifdef SO_SNDTIMEO_WORKS
 		if (params->send_timeout != send_timeout) {
 			need_test = 1;
@@ -261,134 +350,12 @@ vca_acct(void *arg)
 			}
 		}
 #endif
-		/* Bound the pacing delay by parameter */
-		if (pace > params->acceptor_sleep_max)
-			pace = params->acceptor_sleep_max;
-		if (pace < params->acceptor_sleep_incr)
-			pace = 0.0;
-		if (pace > 0.0)
-			TIM_sleep(pace);
-		i = poll(pfd, heritage.nsocks, 1000);
 		now = TIM_real();
 		VSC_C_main->uptime = (uint64_t)(now - t0);
-		u = 0;
-		VTAILQ_FOREACH(ls, &heritage.socks, list) {
-			if (ls->sock < 0)
-				continue;
-			if (pfd[u++].revents == 0)
-				continue;
-			VSC_C_main->client_conn++;
-			l = sizeof addr_s;
-			addr = (void*)&addr_s;
-			i = accept(ls->sock, addr, &l);
-			if (i < 0) {
-				VSC_C_main->accept_fail++;
-				switch (errno) {
-				case EAGAIN:
-				case ECONNABORTED:
-					break;
-				case EMFILE:
-					VSL(SLT_Debug, ls->sock,
-					    "Too many open files "
-					    "when accept(2)ing. Sleeping.");
-					pace += params->acceptor_sleep_incr;
-					break;
-				default:
-					VSL(SLT_Debug, ls->sock,
-					    "Accept failed: %s",
-					    strerror(errno));
-					pace += params->acceptor_sleep_incr;
-					break;
-				}
-				continue;
-			}
-			sp = SES_New();
-			if (sp == NULL) {
-				AZ(close(i));
-				VSC_C_main->client_drop++;
-				pace += params->acceptor_sleep_incr;
-				continue;
-			}
-			sp->fd = i;
-			sp->id = i;
-			sp->t_open = now;
-			sp->t_end = now;
-			sp->mylsock = ls;
-			assert(l < sp->sockaddrlen);
-			memcpy(sp->sockaddr, addr, l);
-			sp->sockaddrlen = l;
-
-			sp->step = STP_FIRST;
-			if (WRK_QueueSession(sp)) {
-				VSC_C_main->client_drop++;
-				pace += params->acceptor_sleep_incr;
-			} else {
-				pace *= params->acceptor_sleep_decay;
-			}
-		}
 	}
 	NEEDLESS_RETURN(NULL);
 }
 
-/*--------------------------------------------------------------------*/
-
-void
-vca_handover(struct sess *sp, int status)
-{
-
-	switch (status) {
-	case -2:
-		vca_close_session(sp, "blast");
-		SES_Delete(sp);
-		break;
-	case -1:
-		vca_close_session(sp, "no request");
-		SES_Delete(sp);
-		break;
-	case 1:
-		sp->step = STP_START;
-		if (WRK_QueueSession(sp))
-			VSC_C_main->client_drop_late++;
-		break;
-	default:
-		INCOMPL();
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-vca_close_session(struct sess *sp, const char *why)
-{
-	int i;
-
-	VSL(SLT_SessionClose, sp->id, "%s", why);
-	if (sp->fd >= 0) {
-		i = close(sp->fd);
-		assert(i == 0 || errno != EBADF);	/* XXX EINVAL seen */
-	}
-	sp->fd = -1;
-}
-
-void
-vca_return_session(struct sess *sp)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	AZ(sp->obj);
-	AZ(sp->vcl);
-	assert(sp->fd >= 0);
-	/*
-	 * Set nonblocking in the worker-thread, before passing to the
-	 * acceptor thread, to reduce syscall density of the latter.
-	 */
-	if (VTCP_nonblocking(sp->fd))
-		vca_close_session(sp, "remote closed");
-	else if (vca_act->pass == NULL)
-		assert(sizeof sp == write(vca_pipes[1], &sp, sizeof sp));
-	else
-		vca_act->pass(sp);
-}
 
 /*--------------------------------------------------------------------*/
 
@@ -400,17 +367,7 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	(void)priv;
 
-	if (vca_act == NULL)
-		vca_act = vca_waiters[0];
-
-	AN(vca_act);
-	AN(vca_act->name);
-
-	if (vca_act->pass == NULL)
-		AZ(pipe(vca_pipes));
-	vca_act->init();
 	AZ(pthread_create(&VCA_thread, NULL, vca_acct, NULL));
-	VSL(SLT_Debug, 0, "Acceptor is %s", vca_act->name);
 }
 
 /*--------------------------------------------------------------------*/
@@ -448,6 +405,7 @@ VCA_Init(void)
 {
 
 	CLI_AddFuncs(vca_cmds);
+	Lck_New(&pace_mtx, lck_vcapace);
 }
 
 void
@@ -463,38 +421,4 @@ VCA_Shutdown(void)
 		ls->sock = -1;
 		(void)close(i);
 	}
-}
-
-void
-VCA_tweak_waiter(struct cli *cli, const char *arg)
-{
-	int i;
-
-	 ASSERT_MGT();
-
-	if (arg == NULL) {
-		if (vca_act == NULL)
-			VCLI_Out(cli, "default");
-		else
-			VCLI_Out(cli, "%s", vca_act->name);
-
-		VCLI_Out(cli, " (");
-		for (i = 0; vca_waiters[i] != NULL; i++)
-			VCLI_Out(cli, "%s%s", i == 0 ? "" : ", ",
-			    vca_waiters[i]->name);
-		VCLI_Out(cli, ")");
-		return;
-	}
-	if (!strcmp(arg, "default")) {
-		vca_act = NULL;
-		return;
-	}
-	for (i = 0; vca_waiters[i]; i++) {
-		if (!strcmp(arg, vca_waiters[i]->name)) {
-			vca_act = vca_waiters[i];
-			return;
-		}
-	}
-	VCLI_Out(cli, "Unknown waiter");
-	VCLI_SetResult(cli, CLIS_PARAM);
 }

@@ -139,19 +139,26 @@ Lck__Assert(const struct lock *lck, int held)
 		    !pthread_equal(ilck->owner, pthread_self()));
 }
 
-void __match_proto__()
-Lck_CondWait(pthread_cond_t *cond, struct lock *lck)
+int __match_proto__()
+Lck_CondWait(pthread_cond_t *cond, struct lock *lck, struct timespec *ts)
 {
 	struct ilck *ilck;
+	int retval = 0;
 
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	AN(ilck->held);
 	assert(pthread_equal(ilck->owner, pthread_self()));
 	ilck->held = 0;
-	AZ(pthread_cond_wait(cond, &ilck->mtx));
+	if (ts == NULL) {
+		AZ(pthread_cond_wait(cond, &ilck->mtx));
+	} else {
+		retval = pthread_cond_timedwait(cond, &ilck->mtx, ts);
+		assert(retval == 0 || retval == ETIMEDOUT);
+	}
 	AZ(ilck->held);
 	ilck->held = 1;
 	ilck->owner = pthread_self();
+	return (retval);
 }
 
 void

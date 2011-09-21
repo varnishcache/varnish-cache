@@ -87,6 +87,7 @@ AC_SUBST(CURSES_LIBS)
 if test "$have_curses" = no; then
 	AC_MSG_WARN([curses not found; some tools will not be built])
 fi
+AC_CHECK_HEADERS([ncurses/curses.h curses.h])
 AM_CONDITIONAL([HAVE_CURSES], [test x$have_curses = xyes])
 
 save_LIBS="${LIBS}"
@@ -332,7 +333,7 @@ AC_ARG_ENABLE(kqueue,
 
 if test "$enable_kqueue" = yes; then
 	case $target in
-	*-*-freebsd* | *-*-darwin9* | *-*-netbsd* )
+	*-*-freebsd* | *-*-darwin9* | *-*-darwin11* | *-*-netbsd* )
 		AC_CHECK_FUNCS([kqueue])
 		;;
 	*-*-bsd*)

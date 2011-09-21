@@ -78,16 +78,16 @@ PipeSession(struct sess *sp)
 	(void)VTCP_blocking(vc->fd);
 
 	WRW_Reserve(w, &vc->fd);
-	sp->acct_req.hdrbytes += http_Write(w, sp->wrk->bereq, 0);
+	sp->wrk->acct_tmp.hdrbytes += http_Write(w, sp->wrk->bereq, 0);
 
 	if (sp->htc->pipeline.b != NULL)
-		sp->acct_req.bodybytes +=
+		sp->wrk->acct_tmp.bodybytes +=
 		    WRW_Write(w, sp->htc->pipeline.b, Tlen(sp->htc->pipeline));
 
 	i = WRW_FlushRelease(w);
 
 	if (i) {
-		vca_close_session(sp, "pipe");
+		SES_Close(sp, "pipe");
 		VDI_CloseFd(sp);
 		return;
 	}
@@ -127,6 +127,6 @@ PipeSession(struct sess *sp)
 			fds[1].fd = -1;
 		}
 	}
-	vca_close_session(sp, "pipe");
+	SES_Close(sp, "pipe");
 	VDI_CloseFd(sp);
 }

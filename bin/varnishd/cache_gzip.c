@@ -600,6 +600,7 @@ vfp_testgzip_begin(struct sess *sp, size_t estimate)
 {
 	(void)estimate;
 	sp->wrk->vgz_rx = VGZ_NewUngzip(sp, "u F -");
+	CHECK_OBJ_NOTNULL(sp->wrk->vgz_rx, VGZ_MAGIC);
 }
 
 static int __match_proto__()

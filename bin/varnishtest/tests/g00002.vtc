@@ -47,11 +47,4 @@ client c1 {
 	rxresp
 	expect resp.http.content-encoding == "resp.http.content-encoding"
 	expect resp.bodylen == 4109
-
-	# See varnish can deliver gzip'ed ESI (NOTYET)
-	#txreq -url /bar -hdr "Accept-Encoding: gzip"
-	#rxresp
-	# expect resp.http.content-encoding == "gzip"
-	#gunzip
-	#expect resp.bodylen == 4109
 } -run

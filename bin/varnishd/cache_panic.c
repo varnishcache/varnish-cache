@@ -44,6 +44,7 @@
 #include "cache.h"
 #include "vsm.h"
 #include "cache_backend.h"
+#include "cache_waiter.h"
 #include "vcl.h"
 #include "libvcl.h"
 
@@ -341,7 +342,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 		VSB_printf(vsp, "thread = (%s)\n", q);
 
 	VSB_printf(vsp, "ident = %s,%s\n",
-	    VSB_data(vident) + 1, VCA_waiter_name());
+	    VSB_data(vident) + 1, WAIT_GetName());
 
 	pan_backtrace();
 

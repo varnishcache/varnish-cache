@@ -53,17 +53,18 @@ varnish v1 -vcl {
 	}
 } -start
 
+sema r1 sync 2
 
 client c1 {
-	sema r1 sync 2
 	txreq -url "/"
 	rxresp
 	expect resp.http.foo == "bar"
 	expect resp.status == 200
 } -run
 
+sema r1 sync 2
+
 client c2 {
-	sema r1 sync 2
 	txreq -url "/"
 	rxresp
 	expect resp.http.foo == "bar"

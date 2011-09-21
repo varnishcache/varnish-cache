@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2009 Varnish Software AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -28,37 +28,82 @@
  *
  */
 
-struct sess;
+#include "config.h"
 
-typedef void* waiter_init_f(void);
-typedef void waiter_pass_f(void *priv, const struct sess *);
+#include "vcli.h"
+#include "cli_priv.h"
+#include "cache.h"
+#include "cache_waiter.h"
 
-struct waiter {
-	const char		*name;
-	waiter_init_f		*init;
-	waiter_pass_f		*pass;
+static const struct waiter * const vca_waiters[] = {
+    #if defined(HAVE_KQUEUE)
+	&waiter_kqueue,
+    #endif
+    #if defined(HAVE_EPOLL_CTL)
+	&waiter_epoll,
+    #endif
+    #if defined(HAVE_PORT_CREATE)
+	&waiter_ports,
+    #endif
+	&waiter_poll,
+	NULL,
 };
 
-extern struct waiter const * waiter;
+struct waiter const * waiter;
 
-#if defined(HAVE_EPOLL_CTL)
-extern const struct waiter waiter_epoll;
-#endif
+const char *
+WAIT_GetName(void)
+{
 
-#if defined(HAVE_KQUEUE)
-extern const struct waiter waiter_kqueue;
-#endif
+	if (waiter != NULL)
+		return (waiter->name);
+	else
+		return ("no_waiter");
+}
 
-#if defined(HAVE_PORT_CREATE)
-extern const struct waiter waiter_ports;
-#endif
+void
+WAIT_tweak_waiter(struct cli *cli, const char *arg)
+{
+	int i;
 
+	ASSERT_MGT();
 
-/* cache_session.c */
-void SES_Handle(struct sess *sp, int status);
+	if (arg == NULL) {
+		if (waiter == NULL)
+			VCLI_Out(cli, "default");
+		else
+			VCLI_Out(cli, "%s", waiter->name);
 
-/* cache_waiter.c */
-extern const struct waiter waiter_poll;
-const char *WAIT_GetName(void);
-void WAIT_tweak_waiter(struct cli *cli, const char *arg);
-void WAIT_Init(void);
+		VCLI_Out(cli, " (");
+		for (i = 0; vca_waiters[i] != NULL; i++)
+			VCLI_Out(cli, "%s%s", i == 0 ? "" : ", ",
+			    vca_waiters[i]->name);
+		VCLI_Out(cli, ")");
+		return;
+	}
+	if (!strcmp(arg, "default")) {
+		waiter = NULL;
+		return;
+	}
+	for (i = 0; vca_waiters[i]; i++) {
+		if (!strcmp(arg, vca_waiters[i]->name)) {
+			waiter = vca_waiters[i];
+			return;
+		}
+	}
+	VCLI_Out(cli, "Unknown waiter");
+	VCLI_SetResult(cli, CLIS_PARAM);
+}
+
+void
+WAIT_Init(void)
+{
+
+	if (waiter == NULL)
+		waiter = vca_waiters[0];
+
+	AN(waiter);
+	AN(waiter->name);
+	AN(waiter->init);
+	AN(waiter->pass);
+}

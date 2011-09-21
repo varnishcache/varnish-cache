@@ -335,8 +335,7 @@ ESI_Deliver(struct sess *sp)
 						st->ptr + off, l2,
 						obuf, sizeof obuf, &obufl);
 					if (WRW_Error(sp->wrk)) {
-						vca_close_session(sp,
-						    "remote closed");
+						SES_Close(sp, "remote closed");
 						p = e;
 						break;
 					}
@@ -388,7 +387,7 @@ ESI_Deliver(struct sess *sp)
 				obufl = 0;
 			}
 			if (WRW_Flush(sp->wrk)) {
-				vca_close_session(sp, "remote closed");
+				SES_Close(sp, "remote closed");
 				p = e;
 				break;
 			}

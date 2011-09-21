@@ -108,7 +108,7 @@ cnt_wait(struct sess *sp)
 		sp->wrk->stats.sess_herd++;
 		SES_Charge(sp);
 		sp->wrk = NULL;
-		vca_return_session(sp);
+		Pool_Wait(sp);
 		return (1);
 	}
 	if (i == 1) {
@@ -116,14 +116,14 @@ cnt_wait(struct sess *sp)
 		return (0);
 	}
 	if (i == -2) {
-		vca_close_session(sp, "overflow");
+		SES_Close(sp, "overflow");
 		return (0);
 	}
 	if (i == -1 && Tlen(sp->htc->rxbuf) == 0 &&
 	    (errno == 0 || errno == ECONNRESET))
-		vca_close_session(sp, "EOF");
+		SES_Close(sp, "EOF");
 	else
-		vca_close_session(sp, "error");
+		SES_Close(sp, "error");
 	sp->step = STP_DONE;
 	return (0);
 }
@@ -338,7 +338,8 @@ cnt_done(struct sess *sp)
 		/* XXX: Add StatReq == StatSess */
 		/* XXX: Workaround for pipe */
 		if (sp->fd >= 0) {
-			WSP(sp, SLT_Length, "%ju", (uintmax_t)sp->acct_req.bodybytes);
+			WSP(sp, SLT_Length, "%ju",
+			    (uintmax_t)sp->req_bodybytes);
 		}
 		WSL(sp->wrk, SLT_ReqEnd, sp->id, "%u %.9f %.9f %.9f %.9f %.9f",
 		    sp->xid, sp->t_req, sp->t_end, dh, dp, da);
@@ -352,7 +353,7 @@ cnt_done(struct sess *sp)
 	if (sp->esi_level > 0)
 		return (1);
 
-	memset(&sp->acct_req, 0, sizeof sp->acct_req);
+	sp->req_bodybytes = 0;
 
 	sp->t_req = NAN;
 	sp->hash_always_miss = 0;
@@ -364,13 +365,12 @@ cnt_done(struct sess *sp)
 		 * before we close, to get queued data transmitted.
 		 */
 		// XXX: not yet (void)VTCP_linger(sp->fd, 0);
-		vca_close_session(sp, sp->doclose);
+		SES_Close(sp, sp->doclose);
 	}
 
 	if (sp->fd < 0) {
 		sp->wrk->stats.sess_closed++;
-		sp->wrk = NULL;
-		SES_Delete(sp);
+		SES_Delete(sp, NULL);
 		return (1);
 	}
 
@@ -398,7 +398,7 @@ cnt_done(struct sess *sp)
 	}
 	sp->wrk->stats.sess_herd++;
 	sp->wrk = NULL;
-	vca_return_session(sp);
+	Pool_Wait(sp);
 	return (1);
 }
 
@@ -1116,7 +1116,7 @@ cnt_lookup(struct sess *sp)
 			WS_ReleaseP(sp->ws, (void*)sp->vary_l);
 		} else {
 			AZ(oc->busyobj->vary);
-			WS_Release(sp->ws, 0); 
+			WS_Release(sp->ws, 0);
 		}
 		sp->vary_b = NULL;
 		sp->vary_l = NULL;
@@ -1483,7 +1483,7 @@ cnt_start(struct sess *sp)
 	/* If we could not even parse the request, just close */
 	if (done == 400) {
 		sp->step = STP_DONE;
-		vca_close_session(sp, "junk");
+		SES_Close(sp, "junk");
 		return (0);
 	}
 

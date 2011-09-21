@@ -24,7 +24,7 @@ client c2 {
 # Give varnish a chance to update stats
 delay .1
 
-varnish v1 -expect client_conn == 2
+varnish v1 -expect sess_conn == 2
 varnish v1 -expect cache_hit == 1
 varnish v1 -expect cache_miss == 1
 varnish v1 -expect client_req == 2

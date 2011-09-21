@@ -64,7 +64,7 @@ extern pthread_t	vtc_thread;
 
 void init_sema(void);
 
-void http_process(struct vtclog *vl, const char *spec, int sock, int sfd);
+int http_process(struct vtclog *vl, const char *spec, int sock, int *sfd);
 
 void cmd_server_genvcl(struct vsb *vsb);
 
@@ -85,4 +85,3 @@ void macro_def(struct vtclog *vl, const char *instance, const char *name,
 struct vsb *macro_expand(struct vtclog *vl, const char *text);
 
 void extmacro_def(const char *name, const char *fmt, ...);
-const char *extmacro_get(const char *name);

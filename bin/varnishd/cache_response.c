@@ -322,8 +322,8 @@ RES_WriteObj(struct sess *sp)
 	    !(sp->wrk->res_mode & RES_ESI_CHILD))
 		WRW_EndChunk(sp->wrk);
 
-	if (WRW_FlushRelease(sp->wrk))
-		vca_close_session(sp, "remote closed");
+	if (WRW_FlushRelease(sp->wrk) && sp->fd >= 0)
+		SES_Close(sp, "remote closed");
 }
 
 /*--------------------------------------------------------------------*/
@@ -423,5 +423,5 @@ RES_StreamEnd(struct sess *sp)
 	    !(sp->wrk->res_mode & RES_ESI_CHILD))
 		WRW_EndChunk(sp->wrk);
 	if (WRW_FlushRelease(sp->wrk))
-		vca_close_session(sp, "remote closed");
+		SES_Close(sp, "remote closed");
 }

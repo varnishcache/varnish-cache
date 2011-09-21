@@ -457,10 +457,10 @@ REQ_BOOL(hash_always_miss)
 /*--------------------------------------------------------------------*/
 
 struct sockaddr_storage *
-VRT_r_client_ip(const struct sess *sp)
+VRT_r_client_ip(struct sess *sp)
 {
 
-	return (sp->sockaddr);
+	return (&sp->sockaddr);
 }
 
 struct sockaddr_storage *
@@ -468,12 +468,13 @@ VRT_r_server_ip(struct sess *sp)
 {
 	int i;
 
-	if (sp->mysockaddr->ss_family == AF_UNSPEC) {
-		i = getsockname(sp->fd, (void*)sp->mysockaddr, &sp->mysockaddrlen);
+	if (sp->mysockaddr.ss_family == AF_UNSPEC) {
+		i = getsockname(sp->fd,
+		    (void*)&sp->mysockaddr, &sp->mysockaddrlen);
 		assert(VTCP_Check(i));
 	}
 
-	return (sp->mysockaddr);
+	return (&sp->mysockaddr);
 }
 
 const char*
@@ -506,10 +507,14 @@ VRT_r_server_hostname(struct sess *sp)
 int
 VRT_r_server_port(struct sess *sp)
 {
+	int i;
 
-	if (sp->mysockaddr->ss_family == AF_UNSPEC)
-		AZ(getsockname(sp->fd, (void*)sp->mysockaddr, &sp->mysockaddrlen));
-	return (VTCP_port(sp->mysockaddr));
+	if (sp->mysockaddr.ss_family == AF_UNSPEC) {
+		i = getsockname(sp->fd,
+		    (void*)&sp->mysockaddr, &sp->mysockaddrlen);
+		assert(VTCP_Check(i));
+	}
+	return (VTCP_port(&sp->mysockaddr));
 }
 
 /*--------------------------------------------------------------------*/

@@ -11,10 +11,6 @@ dist_man_MANS = varnishd.1
 
 varnishd_SOURCES = \
 	cache_acceptor.c \
-	cache_waiter_epoll.c \
-	cache_waiter_kqueue.c \
-	cache_waiter_poll.c \
-	cache_waiter_ports.c \
 	cache_backend.c \
 	cache_backend_cfg.c \
 	cache_backend_poll.c \
@@ -22,20 +18,20 @@ varnishd_SOURCES = \
 	cache_center.c \
 	cache_cli.c \
 	cache_dir.c \
-	cache_dir_random.c \
 	cache_dir_dns.c \
+	cache_dir_random.c \
 	cache_dir_round_robin.c \
+	cache_esi_deliver.c \
 	cache_esi_fetch.c \
 	cache_esi_parse.c \
-	cache_esi_deliver.c \
 	cache_expire.c \
 	cache_fetch.c \
 	cache_gzip.c \
 	cache_hash.c \
 	cache_http.c \
 	cache_httpconn.c \
-	cache_main.c \
 	cache_lck.c \
+	cache_main.c \
 	cache_panic.c \
 	cache_pipe.c \
 	cache_pool.c \
@@ -48,6 +44,12 @@ varnishd_SOURCES = \
 	cache_vrt_re.c \
 	cache_vrt_var.c \
 	cache_vrt_vmod.c \
+	cache_waiter.c \
+	cache_waiter_epoll.c \
+	cache_waiter_kqueue.c \
+	cache_waiter_poll.c \
+	cache_waiter_ports.c \
+	cache_wrk.c \
 	cache_wrw.c \
 	cache_ws.c \
 	hash_classic.c \
@@ -62,6 +64,7 @@ varnishd_SOURCES = \
 	mgt_vcc.c \
 	rfc2616.c \
 	stevedore.c \
+	stevedore_utils.c \
 	storage_file.c \
 	storage_malloc.c \
 	storage_persistent.c \
@@ -70,12 +73,12 @@ varnishd_SOURCES = \
 	storage_persistent_subr.c \
 	storage_synth.c \
 	storage_umem.c \
-	stevedore_utils.c \
 	varnishd.c \
 	vsm.c
 
 noinst_HEADERS = \
 	acct_fields.h \
+	body_status.h \
 	cache.h \
 	cache_backend.h \
 	cache_backend_poll.h \

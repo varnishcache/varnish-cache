@@ -48,6 +48,7 @@
 
 #include "heritage.h"
 #include "vparam.h"
+#include "cache_waiter.h"
 
 #include "vss.h"
 
@@ -332,10 +333,11 @@ clean_listen_sock_head(struct listen_sock_head *lsh)
 	struct listen_sock *ls, *ls2;
 
 	VTAILQ_FOREACH_SAFE(ls, lsh, list, ls2) {
+		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
 		VTAILQ_REMOVE(lsh, ls, list);
 		free(ls->name);
 		free(ls->addr);
-		free(ls);
+		FREE_OBJ(ls);
 	}
 }
 
@@ -385,7 +387,7 @@ tweak_listen_address(struct cli *cli, const struct parspec *par,
 			break;
 		}
 		for (j = 0; j < n; ++j) {
-			ls = calloc(sizeof *ls, 1);
+			ALLOC_OBJ(ls, LISTEN_SOCK_MAGIC);
 			AN(ls);
 			ls->sock = -1;
 			ls->addr = ta[j];
@@ -409,6 +411,7 @@ tweak_listen_address(struct cli *cli, const struct parspec *par,
 	while (!VTAILQ_EMPTY(&lsh)) {
 		ls = VTAILQ_FIRST(&lsh);
 		VTAILQ_REMOVE(&lsh, ls, list);
+		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
 		VTAILQ_INSERT_TAIL(&heritage.socks, ls, list);
 		heritage.nsocks++;
 	}
@@ -438,7 +441,7 @@ tweak_waiter(struct cli *cli, const struct parspec *par, const char *arg)
 
 	/* XXX should have tweak_generic_string */
 	(void)par;
-	VCA_tweak_waiter(cli, arg);
+	WAIT_tweak_waiter(cli, arg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -522,7 +525,7 @@ static const struct parspec input_parspec[] = {
 		"Maximum length of any HTTP client request header we will "
 		"allow.  The limit is inclusive its continuation lines.\n",
 		0,
-		"4096", "bytes" },
+		"8192", "bytes" },
 	{ "http_req_size", tweak_uint, &master.http_req_size,
 		256, UINT_MAX,
 		"Maximum number of bytes of HTTP client request we will deal "
@@ -538,7 +541,7 @@ static const struct parspec input_parspec[] = {
 		"Maximum length of any HTTP backend response header we will "
 		"allow.  The limit is inclusive its continuation lines.\n",
 		0,
-		"4096", "bytes" },
+		"8192", "bytes" },
 	{ "http_resp_size", tweak_uint, &master.http_resp_size,
 		256, UINT_MAX,
 		"Maximum number of bytes of HTTP backend resonse we will deal "
@@ -776,7 +779,7 @@ static const struct parspec input_parspec[] = {
 		"off", "bool" },
 	{ "session_max", tweak_uint,
 		&master.max_sess, 1000, UINT_MAX,
-		"Maximum number of sessions we will allocate "
+		"Maximum number of sessions we will allocate from one pool "
 		"before just dropping connections.\n"
 		"This is mostly an anti-DoS measure, and setting it plenty "
 		"high should not hurt, as long as you have the memory for "

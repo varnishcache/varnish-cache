@@ -34,7 +34,11 @@
 
 #include <sys/time.h>
 
+#ifdef HAVE_NCURSES_CURSES_H
+#include <ncurses/curses.h>
+#elif HAVE_CURSES_H
 #include <curses.h>
+#endif
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
@@ -59,7 +63,7 @@ struct pt {
 	VTAILQ_ENTRY(pt)	next;
 	const volatile uint64_t	*ptr;
 	uint64_t		ref;
-	int			type;
+	int			flag;
 	char			seen;
 	char			*name;
 };
@@ -81,7 +85,7 @@ do_curses_cb(void *priv, const struct VSC_point * const sp)
 
 	pt->ptr = sp->ptr;
 	pt->ref = *pt->ptr;
-	pt->type = sp->flag;
+	pt->flag = sp->flag;
 
 	*buf = '\0';
 	if (strcmp(sp->class, "")) {
@@ -210,13 +214,13 @@ do_curses(struct VSM_data *vd, const struct VSC_C_main *VSC_C_main,
 				line++;
 				if (line >= LINES)
 					break;
-				if (pt->type == 'a') {
+				if (pt->flag == 'a' || pt->flag == 'c') {
 					AC(mvprintw(line, 0,
 					    "%12ju %12.2f %12.2f %s\n",
 					    ju, (ju - (intmax_t)pt->ref)/lt,
 					    ju / up, pt->name));
 					pt->ref = ju;
-				} else if (pt->type == 'b') {
+				} else if (pt->flag == 'b') {
 					AC(mvprintw(line, 0, "  %010.10jx <",
 					    (ju >> 24) & 0xffffffffffLL));
 					for (ch = 0x800000; ch; ch >>= 1)

@@ -108,7 +108,7 @@ struct objhead;
 struct objcore;
 struct busyobj;
 struct storage;
-struct workreq;
+struct sesspool;
 struct vrt_backend;
 struct cli_proto;
 struct ban;
@@ -116,6 +116,7 @@ struct SHA256Context;
 struct VSC_C_lck;
 struct waitinglist;
 struct vef_priv;
+struct pool;
 
 #define DIGEST_LEN		32
 
@@ -217,9 +218,9 @@ struct acct {
 
 /*--------------------------------------------------------------------*/
 
-#define L0(n)
-#define L1(n)			int n;
-#define VSC_F(n, t, l, f, e)	L##l(n)
+#define L0(t, n)
+#define L1(t, n)		t n;
+#define VSC_F(n, t, l, f, e,d)	L##l(t, n)
 #define VSC_DO_MAIN
 struct dstat {
 #include "vsc_fields.h"
@@ -288,9 +289,24 @@ struct stream_ctx {
 };
 
 /*--------------------------------------------------------------------*/
+
+struct wrk_accept {
+	unsigned		magic;
+#define WRK_ACCEPT_MAGIC	0x8c4b4d59
+
+	/* Accept stuff */
+	struct sockaddr_storage	acceptaddr;
+	socklen_t		acceptaddrlen;
+	int			acceptsock;
+	struct listen_sock	*acceptlsock;
+};
+
+/*--------------------------------------------------------------------*/
+
 struct worker {
 	unsigned		magic;
 #define WORKER_MAGIC		0x6391adcf
+	struct pool		*pool;
 	struct objhead		*nobjhead;
 	struct objcore		*nobjcore;
 	struct waitinglist	*nwaitinglist;
@@ -298,6 +314,7 @@ struct worker {
 	void			*nhashpriv;
 	struct dstat		stats;
 
+	/* Pool stuff */
 	double			lastused;
 
 	struct wrw		wrw;
@@ -305,7 +322,7 @@ struct worker {
 	pthread_cond_t		cond;
 
 	VTAILQ_ENTRY(worker)	list;
-	struct workreq		*wrq;
+	struct sess		*sp;
 
 	struct VCL_conf		*vcl;
 
@@ -365,21 +382,6 @@ struct worker {
 
 	/* Temporary accounting */
 	struct acct		acct_tmp;
-};
-
-/* Work Request for worker thread ------------------------------------*/
-
-/*
- * This is a worker-function.
- * XXX: typesafety is probably not worth fighting for
- */
-
-typedef void workfunc(struct worker *, void *priv);
-
-struct workreq {
-	VTAILQ_ENTRY(workreq)	list;
-	workfunc		*func;
-	void			*priv;
 };
 
 /* Storage -----------------------------------------------------------*/
@@ -554,8 +556,8 @@ struct sess {
 
 	socklen_t		sockaddrlen;
 	socklen_t		mysockaddrlen;
-	struct sockaddr_storage	*sockaddr;
-	struct sockaddr_storage	*mysockaddr;
+	struct sockaddr_storage	sockaddr;
+	struct sockaddr_storage	mysockaddr;
 	struct listen_sock	*mylsock;
 
 	/* formatted ascii client address */
@@ -612,8 +614,8 @@ struct sess {
 	/* Various internal stuff */
 	struct sessmem		*mem;
 
-	struct workreq		workreq;
-	struct acct		acct_req;
+	VTAILQ_ENTRY(sess)	poollist;
+	uint64_t		req_bodybytes;
 	struct acct		acct_ses;
 
 #if defined(HAVE_EPOLL_CTL)
@@ -645,13 +647,12 @@ struct vbc {
 /* Prototypes etc ----------------------------------------------------*/
 
 /* cache_acceptor.c */
-void vca_return_session(struct sess *sp);
-void vca_close_session(struct sess *sp, const char *why);
 void VCA_Prep(struct sess *sp);
 void VCA_Init(void);
 void VCA_Shutdown(void);
-const char *VCA_waiter_name(void);
-extern pthread_t VCA_thread;
+int VCA_Accept(struct listen_sock *ls, struct wrk_accept *wa);
+void VCA_SetupSess(struct worker *w);
+void VCA_FailSess(struct worker *w);
 
 /* cache_backend.c */
 void VBE_UseHealth(const struct director *vdi);
@@ -820,7 +821,7 @@ void Lck__Assert(const struct lock *lck, int held);
 /* public interface: */
 void LCK_Init(void);
 void Lck_Delete(struct lock *lck);
-void Lck_CondWait(pthread_cond_t *cond, struct lock *lck);
+int Lck_CondWait(pthread_cond_t *cond, struct lock *lck, struct timespec *ts);
 
 #define Lck_New(a, b) Lck__New(a, b, #b)
 #define Lck_Lock(a) Lck__Lock(a, __func__, __FILE__, __LINE__)
@@ -839,9 +840,10 @@ void PAN_Init(void);
 void PipeSession(struct sess *sp);
 
 /* cache_pool.c */
-void WRK_Init(void);
-int WRK_QueueSession(struct sess *sp);
-void WRK_SumStat(struct worker *w);
+void Pool_Init(void);
+void Pool_Work_Thread(void *priv, struct worker *w);
+void Pool_Wait(struct sess *sp);
+int Pool_Schedule(struct pool *pp, struct sess *sp);
 
 #define WRW_IsReleased(w)	((w)->wrw.wfd == NULL)
 int WRW_Error(const struct worker *w);
@@ -856,16 +858,16 @@ unsigned WRW_WriteH(struct worker *w, const txt *hh, const char *suf);
 void WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len);
 #endif  /* SENDFILE_WORKS */
 
-typedef void *bgthread_t(struct sess *, void *priv);
-void WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func,
-    void *priv);
-
 /* cache_session.c [SES] */
-void SES_Init(void);
-struct sess *SES_New(void);
+struct sess *SES_New(struct worker *wrk, struct sesspool *pp);
 struct sess *SES_Alloc(void);
-void SES_Delete(struct sess *sp);
+void SES_Close(struct sess *sp, const char *reason);
+void SES_Delete(struct sess *sp, const char *reason);
 void SES_Charge(struct sess *sp);
+struct sesspool *SES_NewPool(struct pool *pp);
+void SES_DeletePool(struct sesspool *sp, struct worker *wrk);
+int SES_Schedule(struct sess *sp);
+
 
 /* cache_shmlog.c */
 void VSL_Init(void);
@@ -931,6 +933,16 @@ void ESI_DeliverChild(const struct sess *);
 
 /* cache_vrt_vmod.c */
 void VMOD_Init(void);
+
+/* cache_wrk.c */
+
+void WRK_Init(void);
+int WRK_TrySumStat(struct worker *w);
+void WRK_SumStat(struct worker *w);
+void *WRK_thread(void *priv);
+typedef void *bgthread_t(struct sess *, void *priv);
+void WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func,
+    void *priv);
 
 /* cache_ws.c */
 

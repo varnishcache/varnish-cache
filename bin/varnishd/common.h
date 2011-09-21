@@ -33,9 +33,6 @@ struct cli;
 extern pid_t mgt_pid;
 #define ASSERT_MGT() do { assert(getpid() == mgt_pid);} while (0)
 
-/* cache_acceptor.c */
-void VCA_tweak_waiter(struct cli *cli, const char *arg);
-
 /* mgt_shmem.c */
 extern struct VSC_C_main *VSC_C_main;
 

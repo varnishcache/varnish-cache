@@ -60,7 +60,6 @@ volatile sig_atomic_t	vtc_error;	/* Error encountered */
 int			vtc_stop;	/* Stops current test without error */
 pthread_t		vtc_thread;
 static struct vtclog	*vltop;
-int			in_tree = 0;	/* Are we running in-tree */
 
 /**********************************************************************
  * Macro facility
@@ -236,18 +235,6 @@ extmacro_def(const char *name, const char *fmt, ...)
 		free(m->val);
 		free(m);
 	}
-}
-
-const char *
-extmacro_get(const char *name)
-{
-	struct extmacro *m;
-
-	VTAILQ_FOREACH(m, &extmacro_list, list)
-		if (!strcmp(name, m->name))
-			return (m->val);
-
-	return (NULL);
 }
 
 /**********************************************************************
@@ -505,7 +492,13 @@ cmd_feature(CMD_ARGS)
 		if (sizeof(void*) == 8 && !strcmp(av[i], "64bit"))
 			continue;
 
-		vtc_log(vl, 1, "SKIPPING test, missing feature %s", av[i]);
+		if (!strcmp(av[i], "!OSX")) {
+#if !defined(__APPLE__) || !defined(__MACH__)
+			continue;
+#endif
+		}
+
+		vtc_log(vl, 1, "SKIPPING test, missing feature: %s", av[i]);
 		vtc_stop = 1;
 		return;
 	}

@@ -81,7 +81,7 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
 		if (v->hdl == NULL) {
 			VCLI_Out(cli, "Loading VMOD %s from %s:\n", nm, path);
 			VCLI_Out(cli, "dlopen() failed: %s\n", dlerror());
-			VCLI_Out(cli, "Check child process permissions.\n"); 
+			VCLI_Out(cli, "Check child process permissions.\n");
 			FREE_OBJ(v);
 			return (1);
 		}

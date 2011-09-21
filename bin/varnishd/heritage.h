@@ -32,6 +32,8 @@
 #include <pthread.h>
 
 struct listen_sock {
+	unsigned			magic;
+#define LISTEN_SOCK_MAGIC		0x999e4b57
 	VTAILQ_ENTRY(listen_sock)	list;
 	int				sock;
 	char				*name;

@@ -192,6 +192,14 @@ vsl_nextlog(struct vsl *vsl, uint32_t **pp)
 				return (-1);
 			w += SLEEP_USEC;
 			assert(usleep(SLEEP_USEC) == 0 || errno == EINTR);
+			VRMB();
+			continue;
+		}
+		if (t == 0) {
+			/* Zero-initialized VSL */
+			w += SLEEP_USEC;
+			assert(usleep(SLEEP_USEC) == 0 || errno == EINTR);
+			VRMB();
 			continue;
 		}
 		if (vsl->log_ptr == vsl->log_start + 1)

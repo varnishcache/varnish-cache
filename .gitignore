@@ -54,8 +54,10 @@ TAGS
 /lib/libvmod_std/vcc_if.h
 
 # Man-files and binaries
+/man/vsc2rst
 /man/vcl.7
 /man/varnish-cli.7
+/man/varnish-counters.7
 /bin/varnishadm/varnishadm
 /bin/varnishadm/varnishadm.1
 /bin/varnishd/varnishd

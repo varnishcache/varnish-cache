@@ -22,3 +22,4 @@
 -e737	// [45]  Loss of sign in promotion from int to unsigned
 -e713	// Loss of precision (assignment) (unsigned long long to long long)
 -e574	// Signed-unsigned mix with relational
+-e835	//  A zero has been given as ___ argument to operator '___'  (<<)
