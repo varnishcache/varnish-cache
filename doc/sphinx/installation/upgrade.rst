@@ -42,7 +42,7 @@ becomes
 
 	ban("req.url = " + req.url);
 
-``purge`` does not take any arguments anymore, but can be used in vcl_hit or vcl_miss to purge the item from the cache, where you would reduce ttl to 0 in Varnish 2.1.
+``purge`` does not take any arguments anymore, but can be used in vcl_hit or vcl_miss to purge the item from the cache, where you would reduce ttl to 0 in Varnish 2.1::
 
 	sub vcl_hit {
 	  if (req.request == "PURGE") {
@@ -51,7 +51,7 @@ becomes
 	  }
 	}
 
-becomes
+becomes::
 
 	sub vcl_hit {
 	  if (req.request == "PURGE") {
@@ -68,13 +68,13 @@ becomes
 returns are now done with the ``return()`` function
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``pass``, ``pipe``, ``lookup``, ``deliver``, ``fetch``, ``hash``, ``pipe`` and ``restart`` are no longer keywords, but arguments to ``return()``, so
+``pass``, ``pipe``, ``lookup``, ``deliver``, ``fetch``, ``hash``, ``pipe`` and ``restart`` are no longer keywords, but arguments to ``return()``, so::
 
 	sub vcl_pass {
 	  pass;
 	}
 
-becomes
+becomes::
 
 	sub vcl_pass {
 	  return(pass);

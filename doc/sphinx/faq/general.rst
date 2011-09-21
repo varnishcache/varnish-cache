@@ -337,7 +337,7 @@ Varnish has a feature called **hit for pass**, which is used when Varnish gets a
           * Client 2..N are now given the **hit for pass** object instructing them to go to the backend
 
 The **hit for pass** object will stay cached for the duration of its ttl. This means that subsequent clients requesting /foo will be sent straight to the backend as long as the **hit for pass** object exists.
-The :command:`varnishstat` can tell you how many **hit for pass** objects varnish has served. The default vcl will set ttl for a hit_for_pass object to 120s. But you can override this, using the following logic:
+The :command:`varnishstat` can tell you how many **hit for pass** objects varnish has served. The default vcl will set ttl for a hit_for_pass object to 120s. But you can override this, using the following logic::
 
         sub vcl_fetch {
           if (!obj.cacheable) {
