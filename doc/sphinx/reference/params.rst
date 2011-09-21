@@ -128,6 +128,7 @@ diag_bitmap
 	  0x00020000 - synchronous start of persistence.
 	  0x00040000 - release VCL early.
 	  0x80000000 - do edge-detection on digest.
+
 	Use 0x notation and do the bitor in your head :-)
 
 esi_syntax
@@ -140,6 +141,7 @@ esi_syntax
 	  0x00000002 - Ignore non-esi elements
 	  0x00000004 - Emit parsing debug records
 	  0x00000008 - Force-split parser input (debugging)
+
 	Use 0x notation and do the bitor in your head :-)
 
 expiry_sleep
@@ -203,6 +205,7 @@ gzip_tmp_space
 	  0 - malloc
 	  1 - session workspace
 	  2 - thread workspace
+
 	If you have much gzip/gunzip activity, it may be an advantage to use workspace for these allocations to reduce malloc activity.  Be aware that gzip needs 256+KB and gunzip needs 32+KB of workspace (64+KB if ESI processing).
 
 gzip_window
@@ -216,7 +219,7 @@ http_gzip_support
 	- Default: on
 	- Flags: experimental
 
-	Enable gzip support. When enabled Varnish will compress uncompressed objects before they are stored in the cache. If a client does not support gzip encoding Varnish will uncompress compressed objects on demand. Varnish will also rewrite the Accept-Encoding header of clients indicating support for gzip to::
+	Enable gzip support. When enabled Varnish will compress uncompressed objects before they are stored in the cache. If a client does not support gzip encoding Varnish will uncompress compressed objects on demand. Varnish will also rewrite the Accept-Encoding header of clients indicating support for gzip to:
 
 	Accept-Encoding: gzip
 
