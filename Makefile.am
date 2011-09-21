@@ -11,6 +11,15 @@ pkgconfig_DATA = varnishapi.pc
 
 EXTRA_DIST = LICENSE autogen.sh varnishapi.pc.in
 
+DISTCHECK_CONFIGURE_FLAGS = \
+    --enable-developer-warnings \
+    --enable-debugging-symbols \
+    --enable-dependency-tracking \
+    --enable-diagnostics \
+    --enable-extra-developer-warnings \
+    --enable-tests \
+    --enable-werror
+
 install-data-local:
 	$(install_sh) -d -m 0755 $(DESTDIR)$(localstatedir)/varnish
 
