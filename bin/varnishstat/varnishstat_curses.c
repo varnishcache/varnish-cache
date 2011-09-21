@@ -34,7 +34,11 @@
 
 #include <sys/time.h>
 
+#ifdef HAVE_NCURSES_CURSES_H
+#include <ncurses/curses.h>
+#elif HAVE_CURSES_H
 #include <curses.h>
+#endif
 #include <errno.h>
 #include <signal.h>
 #include <stdio.h>
