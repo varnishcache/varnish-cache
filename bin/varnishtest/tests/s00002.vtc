@@ -53,9 +53,9 @@ varnish v1 -vcl {
 	}
 } -start
 
+sema r1 sync 2
 
 client c1 {
-	sema r1 sync 2
 	txreq -url "/"
 	rxresp
 	expect resp.http.foo == "bar"
