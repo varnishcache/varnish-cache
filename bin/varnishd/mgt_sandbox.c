@@ -98,6 +98,7 @@ mgt_sandbox(void)
 		 * silently ignore any errors if it doesn't exist
 		 */
 		priv_addset(minimal, "net_access");
+		priv_addset(minimal, "file_read");
 
 #define SETPPRIV(which, set)						\
 		if (setppriv(PRIV_SET, which, set))			\
