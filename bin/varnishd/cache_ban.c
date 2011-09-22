@@ -286,6 +286,8 @@ ban_parse_http(const struct ban *b, const char *a1)
 
 /*--------------------------------------------------------------------
  * Parse and add a ban test specification
+ *
+ * XXX: This should vector through VRE.
  */
 
 static int
