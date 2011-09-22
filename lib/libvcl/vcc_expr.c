@@ -941,7 +941,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 		re = vcc_regexp(tl);
 		ERRCHK(tl);
 		vcc_NextToken(tl);
-		bprintf(buf, "%sVRT_re_match(\v1, %s)", not, re);
+		bprintf(buf, "%sVRT_re_match(sp, \v1, %s)", not, re);
 		*e = vcc_expr_edit(BOOL, buf, *e, NULL);
 		return;
 	}
