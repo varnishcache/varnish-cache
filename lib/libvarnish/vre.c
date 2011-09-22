@@ -38,41 +38,47 @@ struct vre {
 	pcre *re;
 };
 
-vre_t *VRE_compile(const char *pattern, int options,
-		    const char **errptr, int *erroffset) {
+vre_t *
+VRE_compile(const char *pattern, int options,
+		    const char **errptr, int *erroffset)
+{
 	vre_t *v;
 	*errptr = NULL; *erroffset = 0;
 
 	ALLOC_OBJ(v, VRE_MAGIC);
-	AN(v);
+	if (v == NULL)
+		return (NULL);
 	v->re = pcre_compile(pattern, options, errptr, erroffset, NULL);
 	if (v->re == NULL) {
 		VRE_free(&v);
-		return NULL;
+		return (NULL);
 	}
-	return v;
+	return (v);
 }
 
-int VRE_exec(const vre_t *code, const char *subject, int length,
-	     int startoffset, int options, int *ovector, int ovecsize) {
+int
+VRE_exec(const vre_t *code, const char *subject, int length,
+    int startoffset, int options, int *ovector, int ovecsize)
+{
 	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
 	int ov[30];
+
 	if (ovector == NULL) {
 		ovector = ov;
 		ovecsize = sizeof(ov)/sizeof(ov[0]);
 	}
 
-	return pcre_exec(code->re, NULL, subject, length,
-			 startoffset, options, ovector, ovecsize);
+	return (pcre_exec(code->re, NULL, subject, length,
+	    startoffset, options, ovector, ovecsize));
 }
 
-void VRE_free(vre_t **vv) {
-
+void
+VRE_free(vre_t **vv)
+{
 	vre_t *v = *vv;
 
 	*vv = NULL;
 	CHECK_OBJ(v, VRE_MAGIC);
 	pcre_free(v->re);
-	v->magic = 0;
 	FREE_OBJ(v);
 }
