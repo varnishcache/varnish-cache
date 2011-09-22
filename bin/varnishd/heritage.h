@@ -30,6 +30,7 @@
  */
 
 #include <pthread.h>
+#include "vre.h"
 
 struct listen_sock {
 	VTAILQ_ENTRY(listen_sock)	list;
@@ -211,6 +212,8 @@ struct params {
 	double			critbit_cooloff;
 
 	double			shortlived;
+
+	struct vre_limits	vre_limits;
 };
 
 /*
