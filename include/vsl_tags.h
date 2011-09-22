@@ -95,6 +95,9 @@ SLTM(ESI_xmlerror)
 SLTM(Hash)
 
 SLTM(Backend_health)
+
+SLTM(VCL_Debug)
 SLTM(VCL_Log)
+SLTM(VCL_Error)
 
 SLTM(Gzip)
