@@ -266,13 +266,13 @@ VSL_NextLog(const struct VSM_data *vd, uint32_t **pp, uint64_t *bits)
 			continue;
 		if (vsl->regincl != NULL) {
 			i = VRE_exec(vsl->regincl, VSL_DATA(p), VSL_LEN(p),
-			    0, 0, NULL, 0);
+			    0, 0, NULL, 0, NULL);
 			if (i == VRE_ERROR_NOMATCH)
 				continue;
 		}
 		if (vsl->regexcl != NULL) {
 			i = VRE_exec(vsl->regexcl, VSL_DATA(p), VSL_LEN(p),
-			    0, 0, NULL, 0);
+			    0, 0, NULL, 0, NULL);
 			if (i != VRE_ERROR_NOMATCH)
 				continue;
 		}
@@ -282,7 +282,7 @@ VSL_NextLog(const struct VSM_data *vd, uint32_t **pp, uint64_t *bits)
 			VTAILQ_FOREACH(vrm, &vsl->matchers, next) {
 				if (vrm->tag == t) {
 					i = VRE_exec(vrm->re, VSL_DATA(p),
-						     VSL_LEN(p), 0, 0, NULL, 0);
+					    VSL_LEN(p), 0, 0, NULL, 0, NULL);
 					if (i >= 0)
 						*bits |= (uintmax_t)1 << j;
 				}

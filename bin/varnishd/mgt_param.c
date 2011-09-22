@@ -951,6 +951,24 @@ static const struct parspec input_parspec[] = {
 		"Unreferenced VCL objects result in error.\n",
 		0,
 		"on", "bool" },
+
+
+	{ "pcre_match_limit", tweak_uint,
+		&master.vre_limits.match,
+		1, UINT_MAX,
+		"The limit for the  number of internal matching function"
+		" calls in a pcre_exec() execution.",
+		0,
+		"10000", ""},
+
+	{ "pcre_match_limit_recursion", tweak_uint,
+		&master.vre_limits.match_recursion,
+		1, UINT_MAX,
+		"The limit for the  number of internal matching function"
+		" recursions in a pcre_exec() execution.",
+		0,
+		"10000", ""},
+
 	{ NULL, NULL, NULL }
 };
 

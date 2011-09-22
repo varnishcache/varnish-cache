@@ -27,6 +27,7 @@
  */
 
 #include <pcre.h>
+#include <string.h>
 
 #include "libvarnish.h"
 #include "miniobj.h"
@@ -58,17 +59,27 @@ VRE_compile(const char *pattern, int options,
 
 int
 VRE_exec(const vre_t *code, const char *subject, int length,
-    int startoffset, int options, int *ovector, int ovecsize)
+    int startoffset, int options, int *ovector, int ovecsize,
+    const volatile struct vre_limits *lim)
 {
 	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
 	int ov[30];
+	pcre_extra extra;
 
 	if (ovector == NULL) {
 		ovector = ov;
 		ovecsize = sizeof(ov)/sizeof(ov[0]);
 	}
 
-	return (pcre_exec(code->re, NULL, subject, length,
+	memset(&extra, 0, sizeof extra);
+	if (lim != NULL) {
+		extra.match_limit = lim->match;
+		extra.flags |= PCRE_EXTRA_MATCH_LIMIT;
+		extra.match_limit_recursion = lim->match_recursion;
+		extra.flags |= PCRE_EXTRA_MATCH_LIMIT_RECURSION;
+	}
+
+	return (pcre_exec(code->re, &extra, subject, length,
 	    startoffset, options, ovector, ovecsize));
 }
 

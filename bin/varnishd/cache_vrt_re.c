@@ -76,7 +76,7 @@ VRT_re_match(const struct sess *sp, const char *s, void *re)
 		s = "";
 	AN(re);
 	t = re;
-	i = VRE_exec(t, s, strlen(s), 0, 0, NULL, 0);
+	i = VRE_exec(t, s, strlen(s), 0, 0, NULL, 0, &params->vre_limits);
 	if (i >= 0)
 		return (1);
 	if (i < VRE_ERROR_NOMATCH )
@@ -101,7 +101,8 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re,
 		str = "";
 	t = re;
 	memset(ovector, 0, sizeof(ovector));
-	i = VRE_exec(t, str, strlen(str), 0, 0, ovector, 30);
+	i = VRE_exec(t, str, strlen(str), 0, 0, ovector, 30,
+	    &params->vre_limits);
 
 	/* If it didn't match, we can return the original string */
 	if (i == VRE_ERROR_NOMATCH)
@@ -139,7 +140,8 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re,
 		if (!all)
 			break;
 		memset(&ovector, 0, sizeof(ovector));
-		i = VRE_exec(t, str, strlen(str), 0, 0, ovector, 30);
+		i = VRE_exec(t, str, strlen(str), 0, 0, ovector, 30,
+		    &params->vre_limits);
 		if (i < VRE_ERROR_NOMATCH ) {
 			WSP(sp, SLT_VCL_Error,
 			    "Regexp matching returned %d", i);
