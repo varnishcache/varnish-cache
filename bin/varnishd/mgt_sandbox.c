@@ -48,10 +48,6 @@
 #include <syslog.h>
 #include <unistd.h>
 
-#ifdef HAVE_PRIV_H
-#include <priv.h>
-#endif
-
 #ifdef __linux__
 #include <sys/prctl.h>
 #endif
@@ -66,6 +62,10 @@
 void
 mgt_sandbox(void)
 {
+
+#ifdef HAVE_SETPPRIV
+	mgt_sandbox_solaris_init();
+#endif
 
 	if (geteuid() == 0) {
 		XXXAZ(setgid(params->gid));
@@ -84,35 +84,7 @@ mgt_sandbox(void)
 #endif
 
 #ifdef HAVE_SETPPRIV
-	priv_set_t *empty, *minimal;
-
-	if (!(empty = priv_allocset()) ||
-	    !(minimal = priv_allocset())) {
-		REPORT0(LOG_ERR, "priv_allocset_failed");
-	} else {
-		priv_emptyset(empty);
-		priv_emptyset(minimal);
-
-		/*
-		 * new privilege,
-		 * silently ignore any errors if it doesn't exist
-		 */
-		priv_addset(minimal, "net_access");
-		priv_addset(minimal, "file_read");
-
-#define SETPPRIV(which, set)						\
-		if (setppriv(PRIV_SET, which, set))			\
-			REPORT0(LOG_ERR,				\
-			    "Waiving privileges failed on " #which)
-
-		/* need to set I after P to avoid SNOCD being set */
-		SETPPRIV(PRIV_LIMIT, minimal);
-		SETPPRIV(PRIV_PERMITTED, minimal); /* implies PRIV_EFFECTIVE */
-		SETPPRIV(PRIV_INHERITABLE, empty);
-
-		priv_freeset(empty);
-		priv_freeset(minimal);
-	}
+	mgt_sandbox_solaris_fini();
 #endif
 
 }

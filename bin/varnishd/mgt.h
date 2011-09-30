@@ -71,6 +71,12 @@ void MCF_DumpRst(void);
 /* mgt_sandbox.c */
 void mgt_sandbox(void);
 
+/* mgt_sandbox_solaris.c */
+#ifdef HAVE_SETPPRIV
+void mgt_sandbox_solaris_init(void)
+void mgt_sandbox_solaris_fini(void)
+#endif
+
 /* mgt_shmem.c */
 void mgt_SHM_Init(const char *arg);
 void mgt_SHM_Pid(void);
