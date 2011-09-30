@@ -4,12 +4,46 @@ server s1 {
 	rxreq
 	expect req.url == "/"
 	txresp -body "slash"
+	accept
+
+	sema r1 sync 3
+
+	rxreq
+	expect req.url == "/"
+	txresp -body "slash"
+	accept
+
+	rxreq
+	expect req.url == "/"
+	txresp -body "slash"
+
+	sema r3 sync 2
+	accept
+
+	rxreq
+	expect req.url == "/foo"
+	txresp -hdr "Foo: 1" -body "foobar"
+
 } -start
 
 server s2 {
 	rxreq
 	expect req.url == "/"
 	txresp -body "slash"
+	accept
+
+	sema r1 sync 3
+
+	rxreq
+	expect req.url == "/"
+	txresp -body "slash"
+
+	sema r2 sync 2
+	accept
+
+	rxreq
+	expect req.url == "/foo"
+	txresp -hdr "Foo: 2" -body "foobar"
 } -start
 
 server s3 {
@@ -65,66 +99,23 @@ varnish v1 -vcl {
 	}
 } -start
 
-# s1 & s2 have both had 1 probe, so both are unhealthy
 
 client c1 {
+	# s1 & s2 are both sick, expect response from s3
 	txreq -url "/foo"
 	rxresp
 	expect resp.http.foo == "3"
-} -run
 
-# setup for probe #2
+	sema r1 sync 3
 
-server s1 {
-	rxreq
-	expect req.url == "/"
-	txresp -body "slash"
-} -start
-
-server s2 {
-	rxreq
-	expect req.url == "/"
-	txresp -body "slash"
-} -start
-
-# if we muck with a running server, the test will wait until it's done,
-# which will be after probe #2 completes. b2 will then be healthy.
-
-server s2 {
-	rxreq
-	expect req.url == "/foo"
-	txresp -hdr "Foo: 2" -body "foobar"
-} -start
-
-client c1 {
+	# wait for s2 to become healthy
+	sema r2 sync 2
 	txreq -url "/foo"
 	rxresp
 	expect resp.http.foo == "2"
-} -run
 
-# setup for probe #3
-
-server s1 {
-        rxreq
-        expect req.url == "/"
-        txresp -body "slash"
-} -start
-
-server s2 {
-        rxreq
-        expect req.url == "/"
-        txresp -body "slash"
-} -start
-
-# after probe #3 b1 should be healthy.
-
-server s1 {
-	rxreq
-	expect req.url == "/foo"
-	txresp -hdr "Foo: 1" -body "foobar"
-} -start
-
-client c1 {
+	# wait for s1 to become healthy
+	sema r3 sync 2
 	txreq -url "/foo"
 	rxresp
 	expect resp.http.foo == "1"
