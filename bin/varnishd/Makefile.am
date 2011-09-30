@@ -60,6 +60,7 @@ varnishd_SOURCES = \
 	mgt_param.c \
 	mgt_pool.c \
 	mgt_sandbox.c \
+	mgt_sandbox_solaris.c \
 	mgt_shmem.c \
 	mgt_vcc.c \
 	rfc2616.c \
