@@ -1059,6 +1059,25 @@ cmd_http_expect_close(CMD_ARGS)
 }
 
 /**********************************************************************
+ * close a new connection  (server only)
+ */
+
+static void
+cmd_http_close(CMD_ARGS)
+{
+	struct http *hp;
+
+	(void)cmd;
+	(void)vl;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	AZ(av[1]);
+	assert(hp->sfd != NULL);
+	assert(*hp->sfd >= 0);
+	VTCP_close(&hp->fd);
+	vtc_log(vl, 4, "Closed");
+}
+
+/**********************************************************************
  * close and accept a new connection  (server only)
  */
 
@@ -1073,7 +1092,8 @@ cmd_http_accept(CMD_ARGS)
 	AZ(av[1]);
 	assert(hp->sfd != NULL);
 	assert(*hp->sfd >= 0);
-	VTCP_close(&hp->fd);
+	if (hp->fd >= 0)
+		VTCP_close(&hp->fd);
 	vtc_log(vl, 4, "Accepting");
 	hp->fd = accept(*hp->sfd, NULL, NULL);
 	if (hp->fd < 0)
@@ -1129,6 +1149,7 @@ static const struct cmds http_cmds[] = {
 	{ "delay",		cmd_delay },
 	{ "sema",		cmd_sema },
 	{ "expect_close",	cmd_http_expect_close },
+	{ "close",		cmd_http_close },
 	{ "accept",		cmd_http_accept },
 	{ "loop",		cmd_http_loop },
 	{ NULL,			NULL }
