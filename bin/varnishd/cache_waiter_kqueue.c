@@ -80,7 +80,7 @@ vwk_kq_sess(struct vwk *vwk, struct sess *sp, short arm)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	assert(sp->fd >= 0);
-	DSL(0x04, SLT_Debug, sp->fd, "KQ: EV_SET sp %p arm %x", sp, arm);
+	DSL(0x04, SLT_Debug, sp->vsl_id, "KQ: EV_SET sp %p arm %x", sp, arm);
 	EV_SET(&vwk->ki[vwk->nki], sp->fd, EVFILT_READ, arm, 0, 0, sp);
 	if (++vwk->nki == NKEV)
 		vwk_kq_flush(vwk);
@@ -112,12 +112,12 @@ vwk_kev(struct vwk *vwk, const struct kevent *kp)
 		return;
 	}
 	CAST_OBJ_NOTNULL(sp, kp->udata, SESS_MAGIC);
-	DSL(0x04, SLT_Debug, sp->id, "KQ: sp %p kev data %lu flags 0x%x%s",
+	DSL(0x04, SLT_Debug, sp->vsl_id, "KQ: sp %p kev data %lu flags 0x%x%s",
 	    sp, (unsigned long)kp->data, kp->flags,
 	    (kp->flags & EV_EOF) ? " EOF" : "");
 
-	assert(sp->id == kp->ident);
-	assert(sp->fd == sp->id);
+	assert((sp->vsl_id & VSL_IDENTMASK) == kp->ident);
+	assert((sp->vsl_id & VSL_IDENTMASK) == sp->fd);
 	if (kp->data > 0) {
 		i = HTC_Rx(sp->htc);
 		if (i == 0) {
@@ -132,7 +132,7 @@ vwk_kev(struct vwk *vwk, const struct kevent *kp)
 		SES_Delete(sp, "EOF");
 		return;
 	} else {
-		VSL(SLT_Debug, sp->id, "KQ: sp %p kev data %lu flags 0x%x%s",
+		VSL(SLT_Debug, sp->vsl_id, "KQ: sp %p kev data %lu flags 0x%x%s",
 		    sp, (unsigned long)kp->data, kp->flags,
 		    (kp->flags & EV_EOF) ? " EOF" : "");
 	}

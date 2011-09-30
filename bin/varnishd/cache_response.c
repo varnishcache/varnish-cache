@@ -296,7 +296,7 @@ RES_WriteObj(struct sess *sp)
 	 */
 	if (!(sp->wrk->res_mode & RES_ESI_CHILD))
 		sp->wrk->acct_tmp.hdrbytes +=
-		    http_Write(sp->wrk, sp->wrk->resp, 1);
+		    http_Write(sp->wrk, sp->vsl_id, sp->wrk->resp, 1);
 
 	if (!sp->wantbody)
 		sp->wrk->res_mode &= ~RES_CHUNKED;
@@ -352,7 +352,7 @@ RES_StreamStart(struct sess *sp)
 		    "Content-Length: %s", sp->wrk->h_content_length);
 
 	sp->wrk->acct_tmp.hdrbytes +=
-	    http_Write(sp->wrk, sp->wrk->resp, 1);
+	    http_Write(sp->wrk, sp->vsl_id, sp->wrk->resp, 1);
 
 	if (sp->wrk->res_mode & RES_CHUNKED)
 		WRW_Chunked(sp->wrk);

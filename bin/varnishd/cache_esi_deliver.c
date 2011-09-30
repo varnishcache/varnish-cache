@@ -105,7 +105,7 @@ ved_include(struct sess *sp, const char *src, const char *host)
 			break;
 		AZ(sp->wrk);
 		WSL_Flush(w, 0);
-		DSL(0x20, SLT_Debug, sp->id, "loop waiting for ESI");
+		DSL(0x20, SLT_Debug, sp->vsl_id, "loop waiting for ESI");
 		(void)usleep(10000);
 	}
 	sp->xid = sxid;

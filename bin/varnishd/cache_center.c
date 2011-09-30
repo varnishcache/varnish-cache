@@ -341,7 +341,7 @@ cnt_done(struct sess *sp)
 			WSP(sp, SLT_Length, "%ju",
 			    (uintmax_t)sp->req_bodybytes);
 		}
-		WSL(sp->wrk, SLT_ReqEnd, sp->id, "%u %.9f %.9f %.9f %.9f %.9f",
+		WSP(sp, SLT_ReqEnd, "%u %.9f %.9f %.9f %.9f %.9f",
 		    sp->xid, sp->t_req, sp->t_end, dh, dp, da);
 	}
 	sp->xid = 0;
@@ -818,9 +818,9 @@ cnt_fetchbody(struct sess *sp)
 
 	hp2->logtag = HTTP_Obj;
 	http_CopyResp(hp2, hp);
-	http_FilterFields(sp->wrk, sp->fd, hp2, hp,
+	http_FilterFields(sp->wrk, sp->vsl_id, hp2, hp,
 	    pass ? HTTPH_R_PASS : HTTPH_A_INS);
-	http_CopyHome(sp->wrk, sp->fd, hp2);
+	http_CopyHome(sp->wrk, sp->vsl_id, hp2);
 
 	if (http_GetHdr(hp, H_Last_Modified, &b))
 		sp->obj->last_modified = TIM_parse(b);
@@ -968,7 +968,7 @@ cnt_first(struct sess *sp)
 	sp->ws_ses = WS_Snapshot(sp->ws);
 
 	/* Receive a HTTP protocol request */
-	HTC_Init(sp->htc, sp->ws, sp->fd, params->http_req_size,
+	HTC_Init(sp->htc, sp->ws, sp->fd, sp->vsl_id, params->http_req_size,
 	    params->http_req_hdr_len);
 	sp->wrk->lastused = sp->t_open;
 	sp->wrk->acct_tmp.sess++;
@@ -1537,12 +1537,11 @@ static void
 cnt_diag(struct sess *sp, const char *state)
 {
 	if (sp->wrk != NULL) {
-		WSL(sp->wrk, SLT_Debug, sp->id,
-		    "thr %p STP_%s sp %p obj %p vcl %p",
+		WSP(sp, SLT_Debug, "thr %p STP_%s sp %p obj %p vcl %p",
 		    pthread_self(), state, sp, sp->obj, sp->vcl);
 		WSL_Flush(sp->wrk, 0);
 	} else {
-		VSL(SLT_Debug, sp->id,
+		VSL(SLT_Debug, sp->vsl_id,
 		    "thr %p STP_%s sp %p obj %p vcl %p",
 		    pthread_self(), state, sp, sp->obj, sp->vcl);
 	}

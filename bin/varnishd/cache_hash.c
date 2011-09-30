@@ -503,7 +503,7 @@ hsh_rush(struct objhead *oh)
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 		AZ(sp->wrk);
 		VTAILQ_REMOVE(&wl->list, sp, list);
-		DSL(0x20, SLT_Debug, sp->id, "off waiting list");
+		DSL(0x20, SLT_Debug, sp->vsl_id, "off waiting list");
 		if (SES_Schedule(sp)) {
 			/*
 			 * We could not schedule the session, leave the

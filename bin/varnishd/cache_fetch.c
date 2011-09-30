@@ -414,7 +414,7 @@ FetchHdr(struct sess *sp)
 
 	(void)VTCP_blocking(vc->fd);	/* XXX: we should timeout instead */
 	WRW_Reserve(w, &vc->fd);
-	(void)http_Write(w, hp, 0);	/* XXX: stats ? */
+	(void)http_Write(w, vc->vsl_id, hp, 0);	/* XXX: stats ? */
 
 	/* Deal with any message-body the request might have */
 	i = FetchReqBody(sp);
@@ -434,7 +434,7 @@ FetchHdr(struct sess *sp)
 
 	/* Receive response */
 
-	HTC_Init(w->htc, w->ws, vc->fd, params->http_resp_size,
+	HTC_Init(w->htc, w->ws, vc->fd, vc->vsl_id, params->http_resp_size,
 	    params->http_resp_hdr_len);
 
 	VTCP_set_read_timeout(vc->fd, vc->first_byte_timeout);

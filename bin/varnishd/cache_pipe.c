@@ -78,7 +78,8 @@ PipeSession(struct sess *sp)
 	(void)VTCP_blocking(vc->fd);
 
 	WRW_Reserve(w, &vc->fd);
-	sp->wrk->acct_tmp.hdrbytes += http_Write(w, sp->wrk->bereq, 0);
+	sp->wrk->acct_tmp.hdrbytes +=
+	    http_Write(w, sp->vsl_id, sp->wrk->bereq, 0);
 
 	if (sp->htc->pipeline.b != NULL)
 		sp->wrk->acct_tmp.bodybytes +=

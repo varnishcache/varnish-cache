@@ -77,10 +77,11 @@ http2shmlog(const struct http *hp, int t)
 }
 
 static void
-WSLH(struct worker *w, int fd, const struct http *hp, unsigned hdr)
+WSLH(struct worker *w, int vsl_id, const struct http *hp, unsigned hdr)
 {
 
-	WSLR(w, http2shmlog(hp, hdr), fd, hp->hd[hdr]);
+	AN(vsl_id & (VSL_CLIENTMARKER|VSL_BACKENDMARKER));
+	WSLR(w, http2shmlog(hp, hdr), vsl_id, hp->hd[hdr]);
 }
 
 /*--------------------------------------------------------------------*/
@@ -485,7 +486,7 @@ http_GetReq(const struct http *hp)
  */
 
 static uint16_t
-http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p,
+http_dissect_hdrs(struct worker *w, struct http *hp, int vsl_id, char *p,
     const struct http_conn *htc)
 {
 	char *q, *r;
@@ -522,7 +523,7 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p,
 
 		if (q - p > htc->maxhdr) {
 			VSC_C_main->losthdr++;
-			WSL(w, SLT_LostHeader, fd, "%.*s",
+			WSL(w, SLT_LostHeader, vsl_id, "%.*s",
 			    q - p > 20 ? 20 : q - p, p);
 			return (413);
 		}
@@ -544,11 +545,11 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p,
 			hp->hdf[hp->nhd] = 0;
 			hp->hd[hp->nhd].b = p;
 			hp->hd[hp->nhd].e = q;
-			WSLH(w, fd, hp, hp->nhd);
+			WSLH(w, vsl_id, hp, hp->nhd);
 			hp->nhd++;
 		} else {
 			VSC_C_main->losthdr++;
-			WSL(w, SLT_LostHeader, fd, "%.*s",
+			WSL(w, SLT_LostHeader, vsl_id, "%.*s",
 			    q - p > 20 ? 20 : q - p, p);
 			return (413);
 		}
@@ -561,7 +562,7 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p,
  */
 
 static uint16_t
-http_splitline(struct worker *w, int fd, struct http *hp,
+http_splitline(struct worker *w, int vsl_id, struct http *hp,
     const struct http_conn *htc, int h1, int h2, int h3)
 {
 	char *p, *q;
@@ -623,17 +624,17 @@ http_splitline(struct worker *w, int fd, struct http *hp,
 	p += vct_skipcrlf(p);
 
 	*hp->hd[h1].e = '\0';
-	WSLH(w, fd, hp, h1);
+	WSLH(w, vsl_id, hp, h1);
 
 	*hp->hd[h2].e = '\0';
-	WSLH(w, fd, hp, h2);
+	WSLH(w, vsl_id, hp, h2);
 
 	if (hp->hd[h3].e != NULL) {
 		*hp->hd[h3].e = '\0';
-		WSLH(w, fd, hp, h3);
+		WSLH(w, vsl_id, hp, h3);
 	}
 
-	return (http_dissect_hdrs(w, hp, fd, p, htc));
+	return (http_dissect_hdrs(w, hp, vsl_id, p, htc));
 }
 
 /*--------------------------------------------------------------------*/
@@ -668,7 +669,7 @@ http_DissectRequest(struct sess *sp)
 
 	hp->logtag = HTTP_Rx;
 
-	retval = http_splitline(sp->wrk, sp->fd, hp, htc,
+	retval = http_splitline(sp->wrk, sp->vsl_id, hp, htc,
 	    HTTP_HDR_REQ, HTTP_HDR_URL, HTTP_HDR_PROTO);
 	if (retval != 0) {
 		WSPR(sp, SLT_HttpGarbage, htc->rxbuf);
@@ -693,7 +694,7 @@ http_DissectResponse(struct worker *w, const struct http_conn *htc,
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	hp->logtag = HTTP_Rx;
 
-	if (http_splitline(w, htc->fd, hp, htc,
+	if (http_splitline(w, htc->vsl_id, hp, htc,
 	    HTTP_HDR_PROTO, HTTP_HDR_STATUS, HTTP_HDR_RESPONSE))
 		retval = 503;
 
@@ -719,7 +720,7 @@ http_DissectResponse(struct worker *w, const struct http_conn *htc,
 	}
 
 	if (retval != 0) {
-		WSLR(w, SLT_HttpGarbage, htc->fd, htc->rxbuf);
+		WSLR(w, SLT_HttpGarbage, htc->vsl_id, htc->rxbuf);
 		assert(retval >= 100 && retval <= 999);
 		hp->status = retval;
 	} else {
@@ -791,7 +792,7 @@ http_SetResp(struct http *to, const char *proto, uint16_t status,
 }
 
 static void
-http_copyheader(struct worker *w, int fd, struct http *to,
+http_copyheader(struct worker *w, int vsl_id, struct http *to,
     const struct http *fm, unsigned n)
 {
 
@@ -805,7 +806,7 @@ http_copyheader(struct worker *w, int fd, struct http *to,
 		to->nhd++;
 	} else  {
 		VSC_C_main->losthdr++;
-		WSLR(w, SLT_LostHeader, fd, fm->hd[n]);
+		WSLR(w, SLT_LostHeader, vsl_id, fm->hd[n]);
 	}
 }
 
@@ -842,7 +843,7 @@ http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd)
 /*--------------------------------------------------------------------*/
 
 void
-http_FilterFields(struct worker *w, int fd, struct http *to,
+http_FilterFields(struct worker *w, int vsl_id, struct http *to,
     const struct http *fm, unsigned how)
 {
 	unsigned u;
@@ -861,7 +862,7 @@ http_FilterFields(struct worker *w, int fd, struct http *to,
 			continue;
 #include "http_headers.h"
 #undef HTTPH
-		http_copyheader(w, fd, to, fm, u);
+		http_copyheader(w, vsl_id, to, fm, u);
 	}
 }
 
@@ -882,8 +883,8 @@ http_FilterHeader(const struct sess *sp, unsigned how)
 		http_SetH(hp, HTTP_HDR_PROTO, "HTTP/1.1");
 	else
 		http_copyh(hp, sp->http, HTTP_HDR_PROTO);
-	http_FilterFields(sp->wrk, sp->fd, hp, sp->http, how);
-	http_PrintfHeader(sp->wrk, sp->fd, hp, "X-Varnish: %u", sp->xid);
+	http_FilterFields(sp->wrk, sp->vsl_id, hp, sp->http, how);
+	http_PrintfHeader(sp->wrk, sp->vsl_id, hp, "X-Varnish: %u", sp->xid);
 }
 
 /*--------------------------------------------------------------------
@@ -892,7 +893,7 @@ http_FilterHeader(const struct sess *sp, unsigned how)
  */
 
 void
-http_CopyHome(struct worker *w, int fd, const struct http *hp)
+http_CopyHome(struct worker *w, int vsl_id, const struct http *hp)
 {
 	unsigned u, l;
 	char *p;
@@ -901,20 +902,20 @@ http_CopyHome(struct worker *w, int fd, const struct http *hp)
 		if (hp->hd[u].b == NULL)
 			continue;
 		if (hp->hd[u].b >= hp->ws->s && hp->hd[u].e <= hp->ws->e) {
-			WSLH(w, fd, hp, u);
+			WSLH(w, vsl_id, hp, u);
 			continue;
 		}
 		l = Tlen(hp->hd[u]);
 		p = WS_Alloc(hp->ws, l + 1);
 		if (p != NULL) {
-			WSLH(w, fd, hp, u);
+			WSLH(w, vsl_id, hp, u);
 			memcpy(p, hp->hd[u].b, l + 1L);
 			hp->hd[u].b = p;
 			hp->hd[u].e = p + l;
 		} else {
 			/* XXX This leaves a slot empty */
 			VSC_C_main->losthdr++;
-			WSLR(w, SLT_LostHeader, fd, hp->hd[u]);
+			WSLR(w, SLT_LostHeader, vsl_id, hp->hd[u]);
 			hp->hd[u].b = NULL;
 			hp->hd[u].e = NULL;
 		}
@@ -938,13 +939,13 @@ http_ClrHeader(struct http *to)
 /*--------------------------------------------------------------------*/
 
 void
-http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr)
+http_SetHeader(struct worker *w, int vsl_id, struct http *to, const char *hdr)
 {
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	if (to->nhd >= to->shd) {
 		VSC_C_main->losthdr++;
-		WSL(w, SLT_LostHeader, fd, "%s", hdr);
+		WSL(w, SLT_LostHeader, vsl_id, "%s", hdr);
 		return;
 	}
 	http_SetH(to, to->nhd++, hdr);
@@ -953,7 +954,7 @@ http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr)
 /*--------------------------------------------------------------------*/
 
 static void
-http_PutField(struct worker *w, int fd, const struct http *to, int field,
+http_PutField(struct worker *w, int vsl_id, const struct http *to, int field,
     const char *string)
 {
 	char *p;
@@ -963,7 +964,7 @@ http_PutField(struct worker *w, int fd, const struct http *to, int field,
 	l = strlen(string);
 	p = WS_Alloc(to->ws, l + 1);
 	if (p == NULL) {
-		WSL(w, SLT_LostHeader, fd, "%s", string);
+		WSL(w, SLT_LostHeader, vsl_id, "%s", string);
 		to->hd[field].b = NULL;
 		to->hd[field].e = NULL;
 		to->hdf[field] = 0;
@@ -976,11 +977,11 @@ http_PutField(struct worker *w, int fd, const struct http *to, int field,
 }
 
 void
-http_PutProtocol(struct worker *w, int fd, const struct http *to,
+http_PutProtocol(struct worker *w, int vsl_id, const struct http *to,
     const char *protocol)
 {
 
-	http_PutField(w, fd, to, HTTP_HDR_PROTO, protocol);
+	http_PutField(w, vsl_id, to, HTTP_HDR_PROTO, protocol);
 }
 
 void
@@ -992,15 +993,15 @@ http_PutStatus(struct http *to, uint16_t status)
 }
 
 void
-http_PutResponse(struct worker *w, int fd, const struct http *to,
+http_PutResponse(struct worker *w, int vsl_id, const struct http *to,
     const char *response)
 {
 
-	http_PutField(w, fd, to, HTTP_HDR_RESPONSE, response);
+	http_PutField(w, vsl_id, to, HTTP_HDR_RESPONSE, response);
 }
 
 void
-http_PrintfHeader(struct worker *w, int fd, struct http *to,
+http_PrintfHeader(struct worker *w, int vsl_id, struct http *to,
     const char *fmt, ...)
 {
 	va_list ap;
@@ -1013,7 +1014,7 @@ http_PrintfHeader(struct worker *w, int fd, struct http *to,
 	va_end(ap);
 	if (n + 1 >= l || to->nhd >= to->shd) {
 		VSC_C_main->losthdr++;
-		WSL(w, SLT_LostHeader, fd, "%s", to->ws->f);
+		WSL(w, SLT_LostHeader, vsl_id, "%s", to->ws->f);
 		WS_Release(to->ws, 0);
 	} else {
 		to->hd[to->nhd].b = to->ws->f;
@@ -1063,14 +1064,13 @@ HTTP_Copy(struct http *to, const struct http * const fm)
 /*--------------------------------------------------------------------*/
 
 unsigned
-http_Write(struct worker *w, const struct http *hp, int resp)
+http_Write(struct worker *w, unsigned vsl_id, const struct http *hp, int resp)
 {
 	unsigned u, l;
-	int fd = *(w->wrw.wfd);
 
 	if (resp) {
 		l = WRW_WriteH(w, &hp->hd[HTTP_HDR_PROTO], " ");
-		WSLH(w, fd, hp, HTTP_HDR_PROTO);
+		WSLH(w, vsl_id, hp, HTTP_HDR_PROTO);
 
 		hp->hd[HTTP_HDR_STATUS].b = WS_Alloc(w->ws, 4);
 		AN(hp->hd[HTTP_HDR_STATUS].b);
@@ -1079,18 +1079,18 @@ http_Write(struct worker *w, const struct http *hp, int resp)
 		hp->hd[HTTP_HDR_STATUS].e = hp->hd[HTTP_HDR_STATUS].b + 3;
 
 		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_STATUS], " ");
-		WSLH(w, fd, hp, HTTP_HDR_STATUS);
+		WSLH(w, vsl_id, hp, HTTP_HDR_STATUS);
 
 		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_RESPONSE], "\r\n");
-		WSLH(w, fd, hp, HTTP_HDR_RESPONSE);
+		WSLH(w, vsl_id, hp, HTTP_HDR_RESPONSE);
 	} else {
 		AN(hp->hd[HTTP_HDR_URL].b);
 		l = WRW_WriteH(w, &hp->hd[HTTP_HDR_REQ], " ");
-		WSLH(w, fd, hp, HTTP_HDR_REQ);
+		WSLH(w, vsl_id, hp, HTTP_HDR_REQ);
 		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_URL], " ");
-		WSLH(w, fd, hp, HTTP_HDR_URL);
+		WSLH(w, vsl_id, hp, HTTP_HDR_URL);
 		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_PROTO], "\r\n");
-		WSLH(w, fd, hp, HTTP_HDR_PROTO);
+		WSLH(w, vsl_id, hp, HTTP_HDR_PROTO);
 	}
 	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
 		if (hp->hd[u].b == NULL)
@@ -1098,7 +1098,7 @@ http_Write(struct worker *w, const struct http *hp, int resp)
 		AN(hp->hd[u].b);
 		AN(hp->hd[u].e);
 		l += WRW_WriteH(w, &hp->hd[u], "\r\n");
-		WSLH(w, fd, hp, u);
+		WSLH(w, vsl_id, hp, u);
 	}
 	l += WRW_Write(w, "\r\n", -1);
 	return (l);

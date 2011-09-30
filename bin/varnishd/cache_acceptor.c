@@ -277,7 +277,7 @@ VCA_SetupSess(struct worker *w)
 	sp = w->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	sp->fd = wa->acceptsock;
-	sp->id = wa->acceptsock;
+	sp->vsl_id = wa->acceptsock | VSL_CLIENTMARKER ;
 	wa->acceptsock = -1;
 	sp->t_open = TIM_real();
 	sp->t_end = sp->t_open;

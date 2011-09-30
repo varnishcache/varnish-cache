@@ -199,6 +199,7 @@ struct http_conn {
 #define HTTP_CONN_MAGIC		0x3e19edd1
 
 	int			fd;
+	unsigned		vsl_id;
 	unsigned		maxbytes;
 	unsigned		maxhdr;
 	struct ws		*ws;
@@ -542,7 +543,7 @@ struct sess {
 	unsigned		magic;
 #define SESS_MAGIC		0x2c2f9c5a
 	int			fd;
-	int			id;
+	unsigned		vsl_id;
 	unsigned		xid;
 
 	int			restarts;
@@ -632,6 +633,7 @@ struct vbc {
 	VTAILQ_ENTRY(vbc)	list;
 	struct backend		*backend;
 	struct vdi_simple	*vdis;
+	unsigned		vsl_id;
 	int			fd;
 
 	struct sockaddr_storage	*addr;
@@ -756,7 +758,8 @@ const char *http_StatusMessage(unsigned);
 unsigned http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd);
 void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
-unsigned http_Write(struct worker *w, const struct http *hp, int resp);
+unsigned http_Write(struct worker *w, unsigned vsl_id, const struct http *hp,
+    int resp);
 void http_CopyResp(struct http *to, const struct http *fm);
 void http_SetResp(struct http *to, const char *proto, uint16_t status,
     const char *response);
@@ -792,8 +795,8 @@ void http_Unset(struct http *hp, const char *hdr);
 void http_CollectHdr(struct http *hp, const char *hdr);
 
 /* cache_httpconn.c */
-void HTC_Init(struct http_conn *htc, struct ws *ws, int fd, unsigned maxbytes,
-    unsigned maxhdr);
+void HTC_Init(struct http_conn *htc, struct ws *ws, int fd, unsigned vsl_id,
+    unsigned maxbytes, unsigned maxhdr);
 int HTC_Reinit(struct http_conn *htc);
 int HTC_Rx(struct http_conn *htc);
 ssize_t HTC_Read(struct http_conn *htc, void *d, size_t len);
@@ -887,10 +890,10 @@ void WSL_Flush(struct worker *w, int overflow);
 	} while (0)
 
 #define WSP(sess, tag, ...)					\
-	WSL((sess)->wrk, tag, (sess)->fd, __VA_ARGS__)
+	WSL((sess)->wrk, tag, (sess)->vsl_id, __VA_ARGS__)
 
 #define WSPR(sess, tag, txt)					\
-	WSLR((sess)->wrk, tag, (sess)->fd, txt)
+	WSLR((sess)->wrk, tag, (sess)->vsl_id, txt)
 
 #define INCOMPL() do {							\
 	VSL(SLT_Debug, 0, "INCOMPLETE AT: %s(%d)", __func__, __LINE__); \

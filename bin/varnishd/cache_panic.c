@@ -216,7 +216,8 @@ pan_sess(const struct sess *sp)
 
 	VSB_printf(vsp, "sp = %p {\n", sp);
 	VSB_printf(vsp,
-	    "  fd = %d, id = %d, xid = %u,\n", sp->fd, sp->id, sp->xid);
+	    "  fd = %d, id = %d, xid = %u,\n",
+	    sp->fd, sp->vsl_id & VSL_IDENTMASK, sp->xid);
 	VSB_printf(vsp, "  client = %s %s,\n",
 	    sp->addr ? sp->addr : "?.?.?.?",
 	    sp->port ? sp->port : "?");

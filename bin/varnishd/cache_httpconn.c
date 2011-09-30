@@ -79,13 +79,14 @@ htc_header_complete(txt *t)
 /*--------------------------------------------------------------------*/
 
 void
-HTC_Init(struct http_conn *htc, struct ws *ws, int fd, unsigned maxbytes,
-    unsigned maxhdr)
+HTC_Init(struct http_conn *htc, struct ws *ws, int fd, unsigned vsl_id,
+    unsigned maxbytes, unsigned maxhdr)
 {
 
 	htc->magic = HTTP_CONN_MAGIC;
 	htc->ws = ws;
 	htc->fd = fd;
+	htc->vsl_id = vsl_id;
 	htc->maxbytes = maxbytes;
 	htc->maxhdr = maxhdr;
 	htc->error = "No error recorded";
