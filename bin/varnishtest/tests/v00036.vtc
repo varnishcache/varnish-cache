@@ -4,22 +4,25 @@ server s1 {
 	rxreq
 	expect req.url == "/"
 	txresp -body "slash"
-	accept
+	close
 
 	sema r1 sync 3
 
-	rxreq
-	expect req.url == "/"
-	txresp -body "slash"
 	accept
-
 	rxreq
 	expect req.url == "/"
 	txresp -body "slash"
+	close
+
+	accept
+	rxreq
+	expect req.url == "/"
+	txresp -body "slash"
+	close
 
 	sema r3 sync 2
-	accept
 
+	accept
 	rxreq
 	expect req.url == "/foo"
 	txresp -hdr "Foo: 1" -body "foobar"
@@ -30,17 +33,19 @@ server s2 {
 	rxreq
 	expect req.url == "/"
 	txresp -body "slash"
-	accept
+	close
 
 	sema r1 sync 3
 
+	accept
 	rxreq
 	expect req.url == "/"
 	txresp -body "slash"
+	close
 
 	sema r2 sync 2
-	accept
 
+	accept
 	rxreq
 	expect req.url == "/foo"
 	txresp -hdr "Foo: 2" -body "foobar"
