@@ -763,17 +763,18 @@ unsigned http_Write(struct worker *w, unsigned vsl_id, const struct http *hp,
 void http_CopyResp(struct http *to, const struct http *fm);
 void http_SetResp(struct http *to, const char *proto, uint16_t status,
     const char *response);
-void http_FilterFields(struct worker *w, int fd, struct http *to,
+void http_FilterFields(struct worker *w, unsigned vsl_id, struct http *to,
     const struct http *fm, unsigned how);
 void http_FilterHeader(const struct sess *sp, unsigned how);
-void http_PutProtocol(struct worker *w, int fd, const struct http *to,
+void http_PutProtocol(struct worker *w, unsigned vsl_id, const struct http *to,
     const char *protocol);
 void http_PutStatus(struct http *to, uint16_t status);
-void http_PutResponse(struct worker *w, int fd, const struct http *to,
+void http_PutResponse(struct worker *w, unsigned vsl_id, const struct http *to,
     const char *response);
-void http_PrintfHeader(struct worker *w, int fd, struct http *to,
+void http_PrintfHeader(struct worker *w, unsigned vsl_id, struct http *to,
     const char *fmt, ...);
-void http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr);
+void http_SetHeader(struct worker *w, unsigned vsl_id, struct http *to,
+    const char *hdr);
 void http_SetH(const struct http *to, unsigned n, const char *fm);
 void http_ForceGet(const struct http *to);
 void http_Setup(struct http *ht, struct ws *ws);
@@ -790,7 +791,7 @@ uint16_t http_DissectRequest(struct sess *sp);
 uint16_t http_DissectResponse(struct worker *w, const struct http_conn *htc,
     struct http *sp);
 const char *http_DoConnection(const struct http *hp);
-void http_CopyHome(struct worker *w, int fd, const struct http *hp);
+void http_CopyHome(struct worker *w, unsigned vsl_id, const struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
 void http_CollectHdr(struct http *hp, const char *hdr);
 

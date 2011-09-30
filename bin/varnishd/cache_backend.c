@@ -70,7 +70,7 @@ VDI_AddHostHeader(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->wrk->bereq, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vbc->vdis, VDI_SIMPLE_MAGIC);
-	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->bereq,
+	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->bereq,
 	    "Host: %s", sp->vbc->vdis->vrt->hosthdr);
 }
 
@@ -357,7 +357,7 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 			return (vc);
 		}
 		VSC_C_main->backend_toolate++;
-		WSL(sp->wrk, SLT_BackendClose, vc->fd, "%s", bp->vcl_name);
+		WSL(sp->wrk, SLT_BackendClose, vc->vsl_id, "%s", bp->vcl_name);
 
 		/* Checkpoint log to flush all info related to this connection
 		   before the OS reuses the FD */

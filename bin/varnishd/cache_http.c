@@ -77,7 +77,7 @@ http2shmlog(const struct http *hp, int t)
 }
 
 static void
-WSLH(struct worker *w, int vsl_id, const struct http *hp, unsigned hdr)
+WSLH(struct worker *w, unsigned vsl_id, const struct http *hp, unsigned hdr)
 {
 
 	AN(vsl_id & (VSL_CLIENTMARKER|VSL_BACKENDMARKER));
@@ -486,7 +486,7 @@ http_GetReq(const struct http *hp)
  */
 
 static uint16_t
-http_dissect_hdrs(struct worker *w, struct http *hp, int vsl_id, char *p,
+http_dissect_hdrs(struct worker *w, struct http *hp, unsigned vsl_id, char *p,
     const struct http_conn *htc)
 {
 	char *q, *r;
@@ -562,7 +562,7 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int vsl_id, char *p,
  */
 
 static uint16_t
-http_splitline(struct worker *w, int vsl_id, struct http *hp,
+http_splitline(struct worker *w, unsigned vsl_id, struct http *hp,
     const struct http_conn *htc, int h1, int h2, int h3)
 {
 	char *p, *q;
@@ -792,7 +792,7 @@ http_SetResp(struct http *to, const char *proto, uint16_t status,
 }
 
 static void
-http_copyheader(struct worker *w, int vsl_id, struct http *to,
+http_copyheader(struct worker *w, unsigned vsl_id, struct http *to,
     const struct http *fm, unsigned n)
 {
 
@@ -843,7 +843,7 @@ http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd)
 /*--------------------------------------------------------------------*/
 
 void
-http_FilterFields(struct worker *w, int vsl_id, struct http *to,
+http_FilterFields(struct worker *w, unsigned vsl_id, struct http *to,
     const struct http *fm, unsigned how)
 {
 	unsigned u;
@@ -893,7 +893,7 @@ http_FilterHeader(const struct sess *sp, unsigned how)
  */
 
 void
-http_CopyHome(struct worker *w, int vsl_id, const struct http *hp)
+http_CopyHome(struct worker *w, unsigned vsl_id, const struct http *hp)
 {
 	unsigned u, l;
 	char *p;
@@ -939,7 +939,8 @@ http_ClrHeader(struct http *to)
 /*--------------------------------------------------------------------*/
 
 void
-http_SetHeader(struct worker *w, int vsl_id, struct http *to, const char *hdr)
+http_SetHeader(struct worker *w, unsigned vsl_id, struct http *to,
+    const char *hdr)
 {
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
@@ -954,8 +955,8 @@ http_SetHeader(struct worker *w, int vsl_id, struct http *to, const char *hdr)
 /*--------------------------------------------------------------------*/
 
 static void
-http_PutField(struct worker *w, int vsl_id, const struct http *to, int field,
-    const char *string)
+http_PutField(struct worker *w, unsigned vsl_id, const struct http *to,
+    int field, const char *string)
 {
 	char *p;
 	unsigned l;
@@ -977,7 +978,7 @@ http_PutField(struct worker *w, int vsl_id, const struct http *to, int field,
 }
 
 void
-http_PutProtocol(struct worker *w, int vsl_id, const struct http *to,
+http_PutProtocol(struct worker *w, unsigned vsl_id, const struct http *to,
     const char *protocol)
 {
 
@@ -993,7 +994,7 @@ http_PutStatus(struct http *to, uint16_t status)
 }
 
 void
-http_PutResponse(struct worker *w, int vsl_id, const struct http *to,
+http_PutResponse(struct worker *w, unsigned vsl_id, const struct http *to,
     const char *response)
 {
 
@@ -1001,7 +1002,7 @@ http_PutResponse(struct worker *w, int vsl_id, const struct http *to,
 }
 
 void
-http_PrintfHeader(struct worker *w, int vsl_id, struct http *to,
+http_PrintfHeader(struct worker *w, unsigned vsl_id, struct http *to,
     const char *fmt, ...)
 {
 	va_list ap;

@@ -86,7 +86,7 @@ VRT_count(const struct sess *sp, unsigned u)
 void
 VRT_acl_log(const struct sess *sp, const char *msg)
 {
-	WSL(sp->wrk, SLT_VCL_acl, sp->fd, msg);
+	WSP(sp, SLT_VCL_acl, msg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -232,7 +232,7 @@ VRT_SetHdr(const struct sess *sp , enum gethdr_e where, const char *hdr,
 			WSP(sp, SLT_LostHeader, "%s", hdr + 1);
 		} else {
 			http_Unset(hp, hdr);
-			http_SetHeader(sp->wrk, sp->fd, hp, b);
+			http_SetHeader(sp->wrk, sp->vsl_id, hp, b);
 		}
 	}
 	va_end(ap);
@@ -418,7 +418,7 @@ VRT_synth_page(const struct sess *sp, unsigned flags, const char *str, ...)
 	va_end(ap);
 	SMS_Finish(sp->obj);
 	http_Unset(sp->obj->http, H_Content_Length);
-	http_PrintfHeader(sp->wrk, sp->fd, sp->obj->http,
+	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->obj->http,
 	    "Content-Length: %d", sp->obj->len);
 }
 

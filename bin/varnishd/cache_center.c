@@ -104,7 +104,7 @@ cnt_wait(struct sess *sp)
 			i = HTC_Rx(sp->htc);
 	}
 	if (i == 0) {
-		WSL(sp->wrk, SLT_Debug, sp->fd, "herding");
+		WSP(sp, SLT_Debug, "herding");
 		sp->wrk->stats.sess_herd++;
 		SES_Charge(sp);
 		sp->wrk = NULL;
@@ -464,16 +464,16 @@ cnt_error(struct sess *sp)
 	if (sp->err_code < 100 || sp->err_code > 999)
 		sp->err_code = 501;
 
-	http_PutProtocol(w, sp->fd, h, "HTTP/1.1");
+	http_PutProtocol(w, sp->vsl_id, h, "HTTP/1.1");
 	http_PutStatus(h, sp->err_code);
 	TIM_format(TIM_real(), date);
-	http_PrintfHeader(w, sp->fd, h, "Date: %s", date);
-	http_PrintfHeader(w, sp->fd, h, "Server: Varnish");
+	http_PrintfHeader(w, sp->vsl_id, h, "Date: %s", date);
+	http_PrintfHeader(w, sp->vsl_id, h, "Server: Varnish");
 
 	if (sp->err_reason != NULL)
-		http_PutResponse(w, sp->fd, h, sp->err_reason);
+		http_PutResponse(w, sp->vsl_id, h, sp->err_reason);
 	else
-		http_PutResponse(w, sp->fd, h,
+		http_PutResponse(w, sp->vsl_id, h,
 		    http_StatusMessage(sp->err_code));
 	VCL_error_method(sp);
 
@@ -728,7 +728,7 @@ cnt_fetchbody(struct sess *sp)
 
 	/* If we do gzip, add the C-E header */
 	if (sp->wrk->do_gzip)
-		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->beresp,
+		http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->beresp,
 		    "Content-Encoding: %s", "gzip");
 
 	/* But we can't do both at the same time */
@@ -1194,7 +1194,7 @@ cnt_miss(struct sess *sp)
 		 * the minority of clients which don't.
 		 */
 		http_Unset(sp->wrk->bereq, H_Accept_Encoding);
-		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->bereq,
+		http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->bereq,
 		    "Accept-Encoding: gzip");
 	}
 	sp->wrk->connect_timeout = 0;
@@ -1398,7 +1398,7 @@ cnt_recv(struct sess *sp)
 	     (recv_handling != VCL_RET_PASS)) {
 		if (RFC2616_Req_Gzip(sp)) {
 			http_Unset(sp->http, H_Accept_Encoding);
-			http_PrintfHeader(sp->wrk, sp->fd, sp->http,
+			http_PrintfHeader(sp->wrk, sp->vsl_id, sp->http,
 			    "Accept-Encoding: gzip");
 		} else {
 			http_Unset(sp->http, H_Accept_Encoding);

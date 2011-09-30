@@ -63,8 +63,7 @@ vfp_nop_begin(struct sess *sp, size_t estimate)
 
 	if (fetchfrag > 0) {
 		estimate = fetchfrag;
-		WSL(sp->wrk, SLT_Debug, sp->fd,
-		    "Fetch %d byte segments:", fetchfrag);
+		WSP(sp, SLT_Debug, "Fetch %d byte segments:", fetchfrag);
 	}
 	if (estimate > 0)
 		(void)FetchStorage(sp, estimate);
@@ -355,7 +354,7 @@ FetchReqBody(struct sess *sp)
 	}
 	if (http_GetHdr(sp->http, H_Transfer_Encoding, NULL)) {
 		/* XXX: Handle chunked encoding. */
-		WSL(sp->wrk, SLT_Debug, sp->fd, "Transfer-Encoding in request");
+		WSP(sp, SLT_Debug, "Transfer-Encoding in request");
 		return (1);
 	}
 	return (0);
@@ -542,7 +541,7 @@ FetchBody(struct sess *sp)
 	 */
 	AZ(vfp_nop_end(sp));
 
-	WSL(w, SLT_Fetch_Body, sp->vbc->fd, "%u(%s) cls %d mklen %u",
+	WSL(w, SLT_Fetch_Body, sp->vbc->vsl_id, "%u(%s) cls %d mklen %u",
 	    w->body_status, body_status(w->body_status),
 	    cls, mklen);
 
@@ -567,7 +566,7 @@ FetchBody(struct sess *sp)
 	if (cls == 0 && w->do_close)
 		cls = 1;
 
-	WSL(w, SLT_Length, sp->vbc->fd, "%u", sp->obj->len);
+	WSL(w, SLT_Length, sp->vbc->vsl_id, "%u", sp->obj->len);
 
 	{
 	/* Sanity check fetch methods accounting */
@@ -585,7 +584,7 @@ FetchBody(struct sess *sp)
 
 	if (mklen > 0) {
 		http_Unset(sp->obj->http, H_Content_Length);
-		http_PrintfHeader(w, sp->fd, sp->obj->http,
+		http_PrintfHeader(w, sp->vsl_id, sp->obj->http,
 		    "Content-Length: %jd", (intmax_t)sp->obj->len);
 	}
 
