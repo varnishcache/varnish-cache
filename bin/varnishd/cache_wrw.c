@@ -179,14 +179,16 @@ WRW_Write(struct worker *w, const void *ptr, int len)
 		return (0);
 	if (len == -1)
 		len = strlen(ptr);
-	if (wrw->niov == wrw->siov + (wrw->ciov < wrw->siov ? 1 : 0))
+	if (wrw->niov >= wrw->siov - (wrw->ciov < wrw->siov ? 1 : 0))
 		(void)WRW_Flush(w);
 	wrw->iov[wrw->niov].iov_base = TRUST_ME(ptr);
 	wrw->iov[wrw->niov].iov_len = len;
 	wrw->liov += len;
-	if (wrw->ciov < wrw->siov)
-		wrw->cliov += len;
 	wrw->niov++;
+	if (wrw->ciov < wrw->siov) {
+		assert(wrw->niov < wrw->siov);
+		wrw->cliov += len;
+	}
 	return (len);
 }
 
@@ -208,6 +210,7 @@ WRW_Chunked(struct worker *w)
 	wrw->ciov = wrw->niov++;
 	wrw->cliov = 0;
 	assert(wrw->ciov < wrw->siov);
+	assert(wrw->niov < wrw->siov);
 }
 
 /*
