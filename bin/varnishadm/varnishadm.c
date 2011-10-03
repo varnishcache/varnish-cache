@@ -135,7 +135,6 @@ cli_sock(const char *T_arg, const char *S_arg)
 	}
 	free(answer);
 
-	fprintf(stderr, "CLI connected to %s\n", T_arg);
 	return (sock);
 }
 
