@@ -70,7 +70,7 @@ VARNISH_ADMIN_LISTEN_PORT=6082
 VARNISH_SECRET_FILE=/etc/varnish/secret
 #
 # # The minimum number of worker threads to start
-VARNISH_MIN_THREADS=1
+VARNISH_MIN_THREADS=50
 #
 # # The Maximum number of worker threads to start
 VARNISH_MAX_THREADS=1000
