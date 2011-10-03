@@ -81,19 +81,53 @@ VSC_F(sess_fail,		uint64_t, 1, 'c',
 
 /*---------------------------------------------------------------------*/
 
-VSC_F(client_req,		uint64_t, 1, 'a', "Client requests received", "")
+VSC_F(client_req,		uint64_t, 1, 'a', 
+      "Client requests received", 
+      "")
 
-VSC_F(cache_hit,		uint64_t, 1, 'a', "Cache hits", "")
-VSC_F(cache_hitpass,	uint64_t, 1, 'a', "Cache hits for pass", "")
-VSC_F(cache_miss,		uint64_t, 1, 'a', "Cache misses", "")
+VSC_F(cache_hit,		uint64_t, 1, 'a', 
+      "Cache hits", 
+      "Count of cache hits. "
+      "  A cache hit indicates that an object has been delivered to a"
+      "  client without fetching it from a backend server."
+)
 
-VSC_F(backend_conn,	uint64_t, 0, 'a', "Backend conn. success", "")
-VSC_F(backend_unhealthy,	uint64_t, 0, 'a', "Backend conn. not attempted", "")
+VSC_F(cache_hitpass,	uint64_t, 1, 'a', 
+      "Cache hits for pass", 
+      "Count of hits for pass"
+      "  A cache hit for pass indicates that Varnish is going to"
+      "  pass the request to the backend and this decision has been "
+      "  cached in it self. This counts how many times the cached "
+      "  decision is being used."
+)
+VSC_F(cache_miss,		uint64_t, 1, 'a', 
+      "Cache misses", 
+      "Count of misses"
+      "  A cache miss indicates the object was fetched from the"
+      "  backend before delivering it to the backend.")
+
+VSC_F(backend_conn,	uint64_t, 0, 'a', 
+      "Backend conn. success", 
+      "")
+
+VSC_F(backend_unhealthy,	uint64_t, 0, 'a', 
+      "Backend conn. not attempted", 
+      ""
+)
 VSC_F(backend_busy,	uint64_t, 0, 'a', "Backend conn. too many", "")
 VSC_F(backend_fail,	uint64_t, 0, 'a', "Backend conn. failures", "")
-VSC_F(backend_reuse,	uint64_t, 0, 'a', "Backend conn. reuses", "")
+VSC_F(backend_reuse,	uint64_t, 0, 'a', 
+      "Backend conn. reuses", 
+      "Count of backend connection reuses"
+      "  This counter is increased whenever we reuse a recycled connection.")
 VSC_F(backend_toolate,	uint64_t, 0, 'a', "Backend conn. was closed", "")
-VSC_F(backend_recycle,	uint64_t, 0, 'a', "Backend conn. recycles", "")
+VSC_F(backend_recycle,	uint64_t, 0, 'a', 
+      "Backend conn. recycles", 
+      "Count of backend connection recycles"
+      "  This counter is increased whenever we have a keep-alive"
+      "  connection that is put back into the pool of connections."
+      "  It has not yet been used, but it might be, unless the backend"
+      "  closes it.")
 VSC_F(backend_retry,	uint64_t, 0, 'a', "Backend conn. retry", "")
 
 VSC_F(fetch_head,		uint64_t, 1, 'a', "Fetch head", "")
@@ -221,8 +255,13 @@ VSC_F(n_lru_moved,		uint64_t, 0, 'i', "N LRU moved objects", "")
 
 VSC_F(losthdr,		uint64_t, 0, 'a', "HTTP header overflows", "")
 
-VSC_F(n_objsendfile,	uint64_t, 0, 'a', "Objects sent with sendfile", "")
-VSC_F(n_objwrite,		uint64_t, 0, 'a', "Objects sent with write", "")
+VSC_F(n_objsendfile,	uint64_t, 0, 'a', "Objects sent with sendfile", 
+      "The number of objects sent with the sendfile system call. If enabled "
+      "sendfile will be used on object larger than a certain size.")
+VSC_F(n_objwrite,		uint64_t, 0, 'a', "Objects sent with write", 
+      "The number of objects sent with regular write calls."
+      "Writes are used when the objects are too small for sendfile "
+      "or if the sendfile call has been disabled")
 VSC_F(n_objoverflow,	uint64_t, 1, 'a',
 					"Objects overflowing workspace", "")
 
