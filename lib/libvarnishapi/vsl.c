@@ -215,7 +215,6 @@ VSL_NextLog(const struct VSM_data *vd, uint32_t **pp, uint64_t *bits)
 	struct vsl *vsl;
 	uint32_t *p;
 	unsigned char t;
-	unsigned u;
 	int i;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -226,7 +225,6 @@ VSL_NextLog(const struct VSM_data *vd, uint32_t **pp, uint64_t *bits)
 		i = vsl_nextlog(vsl, &p);
 		if (i != 1)
 			return (i);
-		u = VSL_ID(p);
 		t = VSL_TAG(p);
 		if (vsl->skip) {
 			--vsl->skip;
