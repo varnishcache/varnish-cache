@@ -5,6 +5,8 @@ server s1 {
 	txresp -hdr "Foo: bar" -body "abcdef\n"
 	rxreq
 	txresp -hdr "Panic: please" -body "012345\n"
+	close
+
 	sema r1 sync 2
 	accept
 	rxreq
@@ -33,10 +35,10 @@ client c1 {
 	rxresp
 	txreq -url "/foo"
 	# Don't expect answer, the server crashed.
-	sema r1 sync 2
 } -run
 
-delay 2.5
+varnish v1 -wait-running
+sema r1 sync 2
 
 client c1 {
 	txreq -url "/"

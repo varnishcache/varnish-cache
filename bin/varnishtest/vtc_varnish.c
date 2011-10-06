@@ -120,6 +120,30 @@ varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 }
 
 /**********************************************************************
+ *
+ */
+
+static void
+wait_running(const struct varnish *v)
+{
+	char *r;
+	enum VCLI_status_e st;
+
+	while (1) {
+		st = varnish_ask_cli(v, "status", &r);
+		if (st != CLIS_OK)
+			vtc_log(v->vl, 0,
+			    "CLI status command failed: %u %s", st, r);
+		if (!strcmp(r, "Child in state running")) {
+			free(r);
+			break;
+		}
+		free(r);
+		(void)usleep(200000);
+	}
+}
+
+/**********************************************************************
  * Varnishlog gatherer + thread
  */
 
@@ -439,6 +463,7 @@ varnish_start(struct varnish *v)
 		return;
 	if (u != CLIS_OK)
 		vtc_log(v->vl, 0, "CLI start command failed: %u %s", u, resp);
+	wait_running(v);
 	free(resp);
 	u = varnish_ask_cli(v, "debug.xid 1000", &resp);
 	if (vtc_error)
@@ -821,6 +846,10 @@ cmd_varnish(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-stop")) {
 			varnish_stop(v);
+			continue;
+		}
+		if (!strcmp(*av, "-wait-running")) {
+			wait_running(v);
 			continue;
 		}
 		if (!strcmp(*av, "-wait")) {
