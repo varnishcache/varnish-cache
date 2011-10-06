@@ -1,11 +1,15 @@
+%define v_rc
+%define vd_rc %{?v_rc:-%{?v_rc}}
+
 Summary: High-performance HTTP accelerator
 Name: varnish
-Version: 3.0.0
-Release: 0.20110715%{?dist}
+Version: 3.1.0
+Release: 0.20111006%{?v_rc}%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
 #Source0: http://repo.varnish-cache.org/source/%{name}-%{version}.tar.gz
+#Source0: %{name}-%{version}%{?vd_rc}.tar.gz
 Source0: %{name}-trunk.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # To build from git, start with a make dist, see redhat/README.redhat 
@@ -71,7 +75,7 @@ Documentation files for %name
 #Varnish Cache is a high-performance HTTP accelerator
 
 %prep
-#%setup -q
+#%setup -q -n varnish-%{version}%{?vd_rc}
 %setup -q -n varnish-trunk
 
 mkdir examples
