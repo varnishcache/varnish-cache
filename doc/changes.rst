@@ -1,4 +1,64 @@
 ================================
+Changes from 3.0.1 to 3.0.2 rc 1
+================================
+
+Varnishd
+--------
+
+- Only log the first 20 bytes of extra headers to prevent overflows.
+
+- Fix crasher bug which sometimes happened if responses are queued and
+  the backend sends us Vary. `Bug #994`_.
+
+- Log correct size of compressed when uncompressing them for clients
+  that do not support compression. `Bug #996`_.
+
+- Only send Range responses if we are going to send a body. `Bug #1007`_.
+
+- When varnishd creates a storage file, also unlink it to avoid
+  leaking disk space over time.  `Bug #1008`_.
+
+- The default size of the `-s file` parameter has been changed to
+  100MB instead of 50% of the available disk space.
+
+- The limit on the number of objects we remove from the cache to make
+  room for a new one was mistakenly lowered to 10 in 3.0.1.  This has
+  been raised back to 50.  `Bug #1012`_.
+
+- `http_req_size` and `http_resp_size` have been increased to 8192
+  bytes.  This better matches what other HTTPds have.   `Bug #1016`_.
+
+.. _bug #994: http://varnish-cache.org/trac/ticket/994
+.. _bug #992: http://varnish-cache.org/trac/ticket/992
+.. _bug #1007: http://varnish-cache.org/trac/ticket/1007
+.. _bug #1008: http://varnish-cache.org/trac/ticket/1008
+.. _bug #1012: http://varnish-cache.org/trac/ticket/1012
+.. _bug #1012: http://varnish-cache.org/trac/ticket/1016
+
+VCL
+---
+
+- Allow relational comparisons of floating point types.
+
+- Make it possible for vmods to fail loading and so cause the VCL
+  loading to fail.
+
+varnishncsa
+-----------
+
+- Fixed crash when client was sending illegal HTTP headers.
+
+- `%{Varnish:handling}` in format strings was broken, this has been
+  fixed.
+
+Other
+-----
+
+- Documentation updates
+
+- Some Solaris portability updates.
+
+================================
 Changes from 3.0.1 rc 1 to 3.0.1
 ================================
 
