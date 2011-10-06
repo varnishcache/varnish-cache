@@ -5,7 +5,7 @@ Welcome to Varnish's documentation!
 ===================================
 
 Varnish is a state of the art web accelerator. Its mission is to sit
-in front of a web server an cache the content. It makes your web site
+in front of a web server and to cache the content. It makes your web site
 go fast.
 
 We suggest you start by reading the installation guide
