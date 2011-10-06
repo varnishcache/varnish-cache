@@ -479,7 +479,7 @@ mgt_sigchld(const struct vev *e, int what)
 	vsb = VSB_new_auto();
 	XXXAN(vsb);
 	VSB_printf(vsb, "Child (%d) %s", r, status ? "died" : "ended");
-	if (!WIFEXITED(status) && WEXITSTATUS(status)) {
+	if (WIFEXITED(status) && WEXITSTATUS(status)) {
 		VSB_printf(vsb, " status=%d", WEXITSTATUS(status));
 		exit_status |= 0x20;
 	}
