@@ -124,12 +124,37 @@ varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
  */
 
 static void
+wait_stopped(const struct varnish *v)
+{
+	char *r;
+	enum VCLI_status_e st;
+
+	while (1) {
+		vtc_log(v->vl, 3, "wait-stopped");
+		st = varnish_ask_cli(v, "status", &r);
+		if (st != CLIS_OK)
+			vtc_log(v->vl, 0,
+			    "CLI status command failed: %u %s", st, r);
+		if (!strcmp(r, "Child in state stopped")) {
+			free(r);
+			break;
+		}
+		free(r);
+		(void)usleep(200000);
+	}
+}
+/**********************************************************************
+ *
+ */
+
+static void
 wait_running(const struct varnish *v)
 {
 	char *r;
 	enum VCLI_status_e st;
 
 	while (1) {
+		vtc_log(v->vl, 3, "wait-running");
 		st = varnish_ask_cli(v, "status", &r);
 		if (st != CLIS_OK)
 			vtc_log(v->vl, 0,
@@ -838,6 +863,10 @@ cmd_varnish(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-stop")) {
 			varnish_stop(v);
+			continue;
+		}
+		if (!strcmp(*av, "-wait-stopped")) {
+			wait_stopped(v);
 			continue;
 		}
 		if (!strcmp(*av, "-wait-running")) {
