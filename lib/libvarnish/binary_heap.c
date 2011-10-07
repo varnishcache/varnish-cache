@@ -455,7 +455,7 @@ binheap_reorder(const struct binheap *bh, unsigned idx)
 #ifdef TEST_DRIVER
 /* Test driver -------------------------------------------------------*/
 #include <stdio.h>
-#include <miniobj.h>
+#include "miniobj.h"
 
 static void
 vasfail(const char *func, const char *file, int line,

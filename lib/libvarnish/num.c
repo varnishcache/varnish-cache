@@ -35,7 +35,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include <libvarnish.h>
+#include "libvarnish.h"
 
 static const char err_miss_num[] = "Missing number";
 static const char err_invalid_num[] = "Invalid number";
