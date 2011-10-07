@@ -38,6 +38,26 @@
  * We make the "&&" mandatory from the start, leaving the syntax space
  * for latter handling of "||" as well.
  *
+ * Bans are compiled into bytestrings as follows:
+ *	8 bytes	- double: timestamp		XXX: Byteorder ?
+ *	4 bytes - be32: length
+ *	1 byte - flags: 0x01: BAN_F_REQ
+ *	N tests
+ * A test have this form:
+ *	1 byte - arg (see ban_vars.h col 3 "BAN_ARG_XXX")
+ *	(n bytes) - http header name, canonical encoding
+ *	lump - comparison arg
+ *	1 byte - operation (BAN_OPER_)
+ *	(lump) - compiled regexp
+ * A lump is:
+ *	4 bytes - be32: length
+ * 	n bytes - content
+ *
+ * In a perfect world, we should vector through VRE to get to PCRE,
+ * but since we rely on PCRE's ability to encode the regexp into a
+ * byte string, that would be a little bit artificial, so this is
+ * the exception that confirmes the rule.
+ *
  */
 
 #include "config.h"
@@ -286,8 +306,6 @@ ban_parse_http(const struct ban *b, const char *a1)
 
 /*--------------------------------------------------------------------
  * Parse and add a ban test specification
- *
- * XXX: This should vector through VRE.
  */
 
 static int
