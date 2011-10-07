@@ -653,3 +653,7 @@ main(int argc, char * const *argv)
 		(void)VPF_Remove(pfh);
 	exit(exit_status);
 }
+
+#if defined(PTHREAD_CANCELED) || defined(PTHREAD_MUTEX_DEFAULT)
+#error "Keep pthreads out of in manager process"
+#endif

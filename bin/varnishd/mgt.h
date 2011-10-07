@@ -108,3 +108,7 @@ extern unsigned mgt_vcc_err_unref;
 #define VSM_Free(a)		VSM__Free(a)
 #define VSM_Clean()		VSM__Clean()
 
+
+#if defined(PTHREAD_CANCELED) || defined(PTHREAD_MUTEX_DEFAULT)
+#error "Keep pthreads out of in manager process"
+#endif
