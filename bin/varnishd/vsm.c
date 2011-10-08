@@ -51,8 +51,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "miniobj.h"
-#include "libvarnish.h"
 #include "common.h"
 #include "vsm.h"
 #include "vmb.h"

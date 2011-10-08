@@ -40,13 +40,13 @@
 
 #ifdef SENDFILE_WORKS
 #if defined(__FreeBSD__) || defined(__DragonFly__)
-#include <sys/socket.h>
+   // We're fine
 #elif defined(__linux__)
-#include <sys/sendfile.h>
+#  include <sys/sendfile.h>
 #elif defined(__sun)
-#include <sys/sendfile.h>
+#  include <sys/sendfile.h>
 #else
-#error Unknown sendfile() implementation
+#  error Unknown sendfile() implementation
 #endif
 #endif /* SENDFILE_WORKS */
 

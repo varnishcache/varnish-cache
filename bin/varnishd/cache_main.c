@@ -30,11 +30,10 @@
 #include "config.h"
 
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
-#include <signal.h>
 
 #include "cache.h"
+
 #include "stevedore.h"
 #include "hash_slinger.h"
 #include "cache_waiter.h"

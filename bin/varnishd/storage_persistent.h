@@ -33,14 +33,6 @@
  * XXX: Do we ever free the LRU-lists ?
  */
 
-#ifndef MAP_NOCORE
-#define MAP_NOCORE 0 /* XXX Linux */
-#endif
-
-#ifndef MAP_NOSYNC
-#define MAP_NOSYNC 0 /* XXX Linux */
-#endif
-
 #define ASSERT_SILO_THREAD(sc) \
     do {assert(pthread_self() == (sc)->thread);} while (0)
 

@@ -36,8 +36,6 @@
 
 #include <stdio.h>
 #include <syslog.h>
-#include <unistd.h>
-#include <string.h>
 
 #ifdef HAVE_PRIV_H
 #include <priv.h>

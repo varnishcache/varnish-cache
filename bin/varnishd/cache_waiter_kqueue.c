@@ -35,13 +35,10 @@
 
 #if defined(HAVE_KQUEUE)
 
-#include <stdio.h>
-#include <string.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
-
 #include <sys/event.h>
 
 #include "cache.h"

@@ -46,9 +46,7 @@
 #include <string.h>
 #include <limits.h>
 #include <unistd.h>
-#include <sys/types.h>
 
-#include "cli_priv.h"
 #include "mgt.h"
 
 #include "vparam.h"

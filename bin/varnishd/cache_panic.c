@@ -29,19 +29,17 @@
 
 #include "config.h"
 
-#include <signal.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <pthread.h>
 
 #ifndef HAVE_EXECINFO_H
 #include "compat/execinfo.h"
 #else
 #include <execinfo.h>
 #endif
+
 #include "cache.h"
+
 #include "vsm.h"
 #include "cache_backend.h"
 #include "cache_waiter.h"

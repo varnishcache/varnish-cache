@@ -34,15 +34,13 @@
 #include "config.h"
 
 #include <stdio.h>
-#include <unistd.h>
-#include <string.h>
 #include <stdlib.h>
 #include <dlfcn.h>
 
+#include "cache.h"
 #include "vcli.h"
 #include "cli_priv.h"
 #include "vcl.h"
-#include "cache.h"
 #include "libvcl.h"
 
 struct vcls {

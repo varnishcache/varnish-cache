@@ -34,8 +34,6 @@
  */
 #define VARNISH_CACHE_CHILD	1
 
-#include <sys/time.h>
-#include <sys/uio.h>
 #include <sys/socket.h>
 
 #include <pthread.h>
@@ -52,15 +50,9 @@
 #include <sys/epoll.h>
 #endif
 
-#include "vqueue.h"
-
-#include "vsb.h"
-
-#include "libvarnish.h"
-
 #include "common.h"
+
 #include "heritage.h"
-#include "miniobj.h"
 
 #include "vsc.h"
 #include "vsl.h"
@@ -99,6 +91,7 @@ enum {
 	HTTP_HDR_FIRST,
 };
 
+struct iovec;
 struct cli;
 struct vsb;
 struct sess;

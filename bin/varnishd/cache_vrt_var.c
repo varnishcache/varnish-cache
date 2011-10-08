@@ -31,12 +31,12 @@
 #include "config.h"
 
 #include <stdio.h>
-#include <stdarg.h>
 #include <stdlib.h>
+
+#include "cache.h"
 
 #include "vrt.h"
 #include "vrt_obj.h"
-#include "cache.h"
 #include "cache_backend.h"
 #include "hash_slinger.h"
 

@@ -35,21 +35,17 @@
 
 #if defined(HAVE_EPOLL_CTL)
 
-#include <stdio.h>
-#include <string.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
-#include <unistd.h>
-
 #include <sys/epoll.h>
+
+#include "cache.h"
+#include "cache_waiter.h"
 
 #ifndef EPOLLRDHUP
 #  define EPOLLRDHUP 0
 #endif
-
-#include "cache.h"
-#include "cache_waiter.h"
 
 #define NEEV	100
 

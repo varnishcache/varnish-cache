@@ -28,6 +28,11 @@
  *
  */
 
+#include "libvarnish.h"
+#include "vsb.h"
+#include "vqueue.h"
+#include "miniobj.h"
+
 struct cli;
 
 extern pid_t mgt_pid;

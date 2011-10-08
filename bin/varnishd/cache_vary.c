@@ -54,10 +54,8 @@
 
 #include "config.h"
 
-#include <string.h>
-#include <stdlib.h>
-
 #include "cache.h"
+
 #include "vend.h"
 #include "vct.h"
 

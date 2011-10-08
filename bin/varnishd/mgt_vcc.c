@@ -31,9 +31,6 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-#include <sys/wait.h>
-
 #include <dlfcn.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -45,13 +42,9 @@
 
 #include "libvcl.h"
 #include "vcli.h"
-#include "cli_priv.h"
-#include "cli_common.h"
-
-#include "mgt_cli.h"
-#include "heritage.h"
-
 #include "vcl.h"
+#include "cli_priv.h"
+#include "mgt_cli.h"
 
 struct vclprog {
 	VTAILQ_ENTRY(vclprog)	list;

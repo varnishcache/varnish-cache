@@ -30,8 +30,6 @@
 #include "config.h"
 
 #include <stdio.h>
-#include <unistd.h>
-#include <stdarg.h>
 
 #include "cache.h"
 #include "vmb.h"
