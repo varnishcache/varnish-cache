@@ -1,6 +1,11 @@
 #
 
 pkginclude_HEADERS = \
+	tbl/acct_fields.h \
+	tbl/backend_poll.h \
+	tbl/body_status.h \
+	tbl/locks.h \
+	tbl/steps.h \
 	tbl/vsc_all.h \
 	tbl/vsc_fields.h \
 	tbl/vsl_tags.h \

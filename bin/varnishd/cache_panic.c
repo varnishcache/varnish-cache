@@ -223,7 +223,7 @@ pan_sess(const struct sess *sp)
 	    sp->port ? sp->port : "?");
 	switch (sp->step) {
 #define STEP(l, u) case STP_##u: stp = "STP_" #u; break;
-#include "steps.h"
+#include "tbl/steps.h"
 #undef STEP
 		default: stp = NULL;
 	}

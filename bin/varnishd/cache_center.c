@@ -1605,7 +1605,7 @@ CNT_Session(struct sess *sp)
 				cnt_diag(sp, #u); \
 			done = cnt_##l(sp); \
 		        break;
-#include "steps.h"
+#include "tbl/steps.h"
 #undef STEP
 		default:
 			WRONG("State engine misfire");
@@ -1621,7 +1621,7 @@ CNT_Session(struct sess *sp)
 	AZ(w->do_gunzip);
 	AZ(w->do_esi);
 #define ACCT(foo)	AZ(w->acct_tmp.foo);
-#include "acct_fields.h"
+#include "tbl/acct_fields.h"
 #undef ACCT
 	assert(WRW_IsReleased(w));
 }

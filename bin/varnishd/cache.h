@@ -67,7 +67,7 @@
 
 enum body_status {
 #define BODYSTATUS(U,l)	BS_##U,
-#include "body_status.h"
+#include "tbl/body_status.h"
 #undef BODYSTATUS
 };
 
@@ -76,7 +76,7 @@ body_status(enum body_status e)
 {
 	switch(e) {
 #define BODYSTATUS(U,l)	case BS_##U: return (#l);
-#include "body_status.h"
+#include "tbl/body_status.h"
 #undef BODYSTATUS
 	default:
 		return ("?");
@@ -143,7 +143,7 @@ typedef struct {
 
 enum step {
 #define STEP(l, u)	STP_##u,
-#include "steps.h"
+#include "tbl/steps.h"
 #undef STEP
 };
 
@@ -213,7 +213,7 @@ struct http_conn {
 struct acct {
 	double			first;
 #define ACCT(foo)	uint64_t	foo;
-#include "acct_fields.h"
+#include "tbl/acct_fields.h"
 #undef ACCT
 };
 
@@ -834,7 +834,7 @@ int Lck_CondWait(pthread_cond_t *cond, struct lock *lck, struct timespec *ts);
 #define Lck_AssertHeld(a) Lck__Assert(a, 1)
 
 #define LOCK(nam) extern struct VSC_C_lck *lck_##nam;
-#include "locks.h"
+#include "tbl/locks.h"
 #undef LOCK
 
 /* cache_panic.c */

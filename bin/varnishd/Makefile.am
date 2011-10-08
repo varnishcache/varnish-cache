@@ -78,21 +78,16 @@ varnishd_SOURCES = \
 	vsm.c
 
 noinst_HEADERS = \
-	acct_fields.h \
-	body_status.h \
 	cache.h \
 	cache_backend.h \
-	cache_backend_poll.h \
 	cache_esi.h \
 	cache_waiter.h \
 	common.h \
 	default_vcl.h \
 	hash_slinger.h \
 	heritage.h \
-	locks.h \
 	mgt.h \
 	mgt_cli.h \
-	steps.h \
 	stevedore.h \
 	storage_persistent.h \
 	vparam.h
