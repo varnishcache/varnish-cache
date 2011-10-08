@@ -32,11 +32,7 @@
 #include "config.h"
 
 #include <stdio.h>
-#include <unistd.h>
-#include <string.h>
 #include <poll.h>
-#include <stdlib.h>
-#include <sys/socket.h>
 
 #include "cache.h"
 

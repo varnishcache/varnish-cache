@@ -49,11 +49,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
-#include <unistd.h>
 
-#include "vcl.h"
-#include "cli_priv.h"
 #include "cache.h"
 #include "cache_waiter.h"
 #include "stevedore.h"

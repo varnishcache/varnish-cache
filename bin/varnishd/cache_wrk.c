@@ -31,17 +31,11 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-
-#include <errno.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 
 #include "vcl.h"
-#include "cli_priv.h"
 #include "cache.h"
 #include "hash_slinger.h"
 #include "vsha256.h"

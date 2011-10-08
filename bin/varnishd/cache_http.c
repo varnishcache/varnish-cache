@@ -31,7 +31,6 @@
 
 #include "config.h"
 
-#include <errno.h>
 #include <unistd.h>
 #include <stdarg.h>
 #include <stdio.h>

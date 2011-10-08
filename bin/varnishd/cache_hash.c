@@ -56,9 +56,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include <limits.h>
-#include <sys/types.h>
-#include <fcntl.h>
 
 #include "cache.h"
 #include "stevedore.h"

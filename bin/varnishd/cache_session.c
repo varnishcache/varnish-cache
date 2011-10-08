@@ -36,10 +36,7 @@
 #include "config.h"
 
 #include <stdlib.h>
-#include <string.h>
 #include <math.h>
-#include <sys/uio.h>
-#include <sys/socket.h>
 
 #include "cache.h"
 #include "cache_waiter.h"

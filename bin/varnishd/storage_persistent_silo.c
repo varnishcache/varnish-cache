@@ -34,11 +34,8 @@
 
 #include "config.h"
 
-#include <math.h>
 #include <stdio.h>
-#include <stdint.h>
 #include <stdlib.h>
-#include <sys/mman.h>
 
 #include "cache.h"
 #include "stevedore.h"

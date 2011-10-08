@@ -38,7 +38,6 @@
 #include "vend.h"
 #include "vct.h"
 #include "vgz.h"
-#include "stevedore.h"
 
 //#define Debug(fmt, ...) printf(fmt, __VA_ARGS__)
 #define Debug(fmt, ...) /**/

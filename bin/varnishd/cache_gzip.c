@@ -68,9 +68,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "vsl.h"
 #include "cache.h"
-#include "stevedore.h"
 
 #include "vgz.h"
 

@@ -31,8 +31,6 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-
 #include <stdarg.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -51,7 +49,6 @@
 #include "cli_common.h"
 #include "cli_serve.h"
 #include "vev.h"
-#include "vsc.h"
 #include "vlu.h"
 #include "vss.h"
 

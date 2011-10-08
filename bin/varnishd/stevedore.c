@@ -35,11 +35,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "cache.h"
 #include "stevedore.h"
-#include "hash_slinger.h"
 #include "cli_priv.h"
 #include "vrt_obj.h"
 

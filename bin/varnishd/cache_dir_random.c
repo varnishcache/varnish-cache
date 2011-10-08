@@ -46,15 +46,8 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-#include <sys/socket.h>
-
-#include <stdio.h>
-#include <errno.h>
 #include <math.h>
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 
 #include "cache.h"
 #include "cache_backend.h"

@@ -36,9 +36,6 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <poll.h>
-#include <signal.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -63,11 +60,6 @@
 #include "mgt.h"
 #include "hash_slinger.h"
 #include "stevedore.h"
-
-/* INFTIM indicates an infinite timeout for poll(2) */
-#ifndef INFTIM
-#define INFTIM -1
-#endif
 
 struct heritage		heritage;
 volatile struct params	*params;
