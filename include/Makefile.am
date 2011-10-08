@@ -11,7 +11,7 @@ pkginclude_HEADERS = \
 	vsm.h
 
 nobase_noinst_HEADERS = \
-	ban_vars.h \
+	tbl/ban_vars.h \
 	binary_heap.h \
 	cli_common.h \
 	cli_priv.h \
@@ -20,8 +20,8 @@ nobase_noinst_HEADERS = \
 	compat/execinfo.h \
 	compat/srandomdev.h \
 	flopen.h \
-	http_headers.h \
-	http_response.h \
+	tbl/http_headers.h \
+	tbl/http_response.h \
 	libvarnish.h \
 	libvcl.h \
 	miniobj.h \
@@ -98,7 +98,9 @@ vmod_abi.h: vcs_version.h
 	fi ; \
 	echo "#define VMOD_ABI_Version \"@PACKAGE_STRING@ $$GITID\"" > vmod_abi.h
 
-CLEANFILES = vcl_returns.h \
+CLEANFILES = \
+	tbl/vcl_returns.h \
+	tbl/vrt_stv_var.h \
 	vcl.h \
 	vrt_obj.h \
 	vmod_abi.h

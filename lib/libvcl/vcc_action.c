@@ -269,7 +269,7 @@ parse_return(struct vcc *tl)
 			retval = 1;					\
 		}							\
 	} while (0);
-#include "vcl_returns.h"
+#include "tbl/vcl_returns.h"
 #undef VCL_RET_MAC
 	if (!retval) {
 		VSB_printf(tl->sb, "Expected return action name.\n");
@@ -330,7 +330,7 @@ static struct action_table {
 
 #define VCL_RET_MAC(l, U, B)						\
 	{ #l,			parse_new_syntax },
-#include "vcl_returns.h"
+#include "tbl/vcl_returns.h"
 #undef VCL_RET_MAC
 
 	/* Keep list sorted from here */

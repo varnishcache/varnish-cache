@@ -331,7 +331,7 @@ VCL_##func##_method(struct sess *sp)					\
 	assert(!((1U << sp->handling) & ~bitmap));			\
 }
 
-#include "vcl_returns.h"
+#include "tbl/vcl_returns.h"
 #undef VCL_MET_MAC
 
 /*--------------------------------------------------------------------*/

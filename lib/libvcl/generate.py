@@ -671,7 +671,7 @@ for i in returns:
 
 #######################################################################
 
-fo = open(buildroot + "/include/vcl_returns.h", "w")
+fo = open(buildroot + "/include/tbl/vcl_returns.h", "w")
 
 file_header(fo)
 
@@ -891,7 +891,7 @@ fo.close()
 
 #######################################################################
 
-fo = open(buildroot + "/include/vrt_stv_var.h", "w")
+fo = open(buildroot + "/include/tbl/vrt_stv_var.h", "w")
 
 file_header(fo)
 

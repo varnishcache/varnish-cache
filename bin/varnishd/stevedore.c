@@ -597,5 +597,5 @@ VRT_Stv_##nm(const char *nm)			\
 	return (stv->var_##nm(stv));		\
 }
 
-#include "vrt_stv_var.h"
+#include "tbl/vrt_stv_var.h"
 #undef VRTSTVVAR

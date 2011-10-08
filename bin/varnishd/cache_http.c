@@ -41,7 +41,7 @@
 #include "cache.h"
 
 #define HTTPH(a, b, c, d, e, f, g) char b[] = "*" a ":";
-#include "http_headers.h"
+#include "tbl/http_headers.h"
 #undef HTTPH
 
 /*lint -save -e773 not () */
@@ -91,7 +91,7 @@ static struct http_msg {
 	const char	*txt;
 } http_msg[] = {
 #define HTTP_RESP(n, t)	{ n, t},
-#include "http_response.h"
+#include "tbl/http_response.h"
 	{ 0, NULL }
 };
 
@@ -830,7 +830,7 @@ http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd)
 #define HTTPH(a, b, c, d, e, f, g) \
 		if (((e) & how) && http_IsHdr(&fm->hd[u], (b))) \
 			continue;
-#include "http_headers.h"
+#include "tbl/http_headers.h"
 #undef HTTPH
 		l += PRNDUP(Tlen(fm->hd[u]) + 1);
 		(*nhd)++;
@@ -859,7 +859,7 @@ http_FilterFields(struct worker *w, unsigned vsl_id, struct http *to,
 #define HTTPH(a, b, c, d, e, f, g) \
 		if (((e) & how) && http_IsHdr(&fm->hd[u], (b))) \
 			continue;
-#include "http_headers.h"
+#include "tbl/http_headers.h"
 #undef HTTPH
 		http_copyheader(w, vsl_id, to, fm, u);
 	}
@@ -1111,6 +1111,6 @@ HTTP_Init(void)
 {
 
 #define HTTPH(a, b, c, d, e, f, g) b[0] = (char)strlen(b + 1);
-#include "http_headers.h"
+#include "tbl/http_headers.h"
 #undef HTTPH
 }

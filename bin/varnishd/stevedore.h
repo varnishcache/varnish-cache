@@ -47,7 +47,7 @@ typedef void storage_close_f(const struct stevedore *);
 
 /* Prototypes for VCL variable responders */
 #define VRTSTVTYPE(ct) typedef ct storage_var_##ct(const struct stevedore *);
-#include "vrt_stv_var.h"
+#include "tbl/vrt_stv_var.h"
 #undef VRTSTVTYPE
 
 /*--------------------------------------------------------------------*/
@@ -77,7 +77,7 @@ struct stevedore {
 	struct lru		*lru;
 
 #define VRTSTVVAR(nm, vtype, ctype, dval) storage_var_##ctype *var_##nm;
-#include "vrt_stv_var.h"
+#include "tbl/vrt_stv_var.h"
 #undef VRTSTVVAR
 
 	/* private fields */

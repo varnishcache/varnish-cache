@@ -804,7 +804,7 @@ ssize_t HTC_Read(struct http_conn *htc, void *d, size_t len);
 int HTC_Complete(struct http_conn *htc);
 
 #define HTTPH(a, b, c, d, e, f, g) extern char b[];
-#include "http_headers.h"
+#include "tbl/http_headers.h"
 #undef HTTPH
 
 /* cache_main.c */
@@ -924,7 +924,7 @@ void VCL_Rel(struct VCL_conf **vcc);
 void VCL_Poll(void);
 
 #define VCL_MET_MAC(l,u,b) void VCL_##l##_method(struct sess *);
-#include "vcl_returns.h"
+#include "tbl/vcl_returns.h"
 #undef VCL_MET_MAC
 
 /* cache_vrt.c */

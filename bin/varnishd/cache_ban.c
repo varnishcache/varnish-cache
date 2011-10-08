@@ -127,7 +127,7 @@ static const struct pvar {
 	uint8_t			tag;
 } pvars[] = {
 #define PVAR(a, b, c)	{ (a), (b), (c) },
-#include "ban_vars.h"
+#include "tbl/ban_vars.h"
 #undef PVAR
 	{ 0, 0, 0}
 };
