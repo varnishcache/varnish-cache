@@ -43,9 +43,9 @@ TAGS
 
 # Various auto-generated code snippets
 /include/vcl.h
-/include/vcl_returns.h
+/include/tbl/vcl_returns.h
 /include/vrt_obj.h
-/include/vrt_stv_var.h
+/include/tbl/vrt_stv_var.h
 /include/vcs_version.h
 /lib/libvcl/vcc_fixed_token.c
 /lib/libvcl/vcc_obj.c

@@ -16,7 +16,6 @@ pkginclude_HEADERS = \
 	vsm.h
 
 nobase_noinst_HEADERS = \
-	tbl/ban_vars.h \
 	binary_heap.h \
 	cli_common.h \
 	cli_priv.h \
@@ -25,36 +24,37 @@ nobase_noinst_HEADERS = \
 	compat/execinfo.h \
 	compat/srandomdev.h \
 	flopen.h \
-	tbl/http_headers.h \
-	tbl/http_response.h \
 	libvarnish.h \
 	libvcl.h \
 	miniobj.h \
 	persistent.h \
+	tbl/ban_vars.h \
+	tbl/http_headers.h \
+	tbl/http_response.h \
+	tbl/vcl_returns.h \
+	tbl/vrt_stv_var.h \
 	vas.h \
 	vav.h \
-	vsha256.h \
-	vqueue.h \
-	vpf.h \
-	vsb.h \
+	vbm.h \
 	vcl.h \
-	vcl_returns.h \
 	vcs_version.h \
 	vct.h \
 	vend.h \
 	vev.h \
 	vin.h \
 	vlu.h \
-	vbm.h \
 	vmb.h \
 	vmod_abi.h \
+	vpf.h \
+	vqueue.h \
 	vre.h \
 	vrt.h \
 	vrt_obj.h \
-	vrt_stv_var.h \
+	vsb.h \
+	vsha256.h \
 	vss.h
 
-vrt_stv_var.h vcl_returns.h vcl.h vrt_obj.h: $(top_srcdir)/lib/libvcl/generate.py $(top_srcdir)/include/vrt.h
+tbl/vrt_stv_var.h tbl/vcl_returns.h vcl.h vrt_obj.h: $(top_srcdir)/lib/libvcl/generate.py $(top_srcdir)/include/vrt.h
 	@PYTHON@ $(top_srcdir)/lib/libvcl/generate.py $(top_srcdir) $(top_builddir)
 
 BUILT_SOURCES = vcs_version.h vmod_abi.h
