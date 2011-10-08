@@ -42,17 +42,13 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-
 #include <errno.h>
-#include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "cache.h"
+
 #include "cache_waiter.h"
-#include "stevedore.h"
 #include "hash_slinger.h"
 
 /*--------------------------------------------------------------------

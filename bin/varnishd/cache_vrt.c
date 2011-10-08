@@ -31,22 +31,19 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-#include <sys/socket.h>
-
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
 #include <stdio.h>
-#include <math.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
 
+#include "cache.h"
+
 #include "vrt.h"
 #include "vrt_obj.h"
 #include "vcl.h"
-#include "cache.h"
 #include "hash_slinger.h"
 #include "cache_backend.h"
 

@@ -31,11 +31,9 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
 
-#include "vcl.h"
 #include "cache.h"
 #include "hash_slinger.h"
 #include "vsha256.h"

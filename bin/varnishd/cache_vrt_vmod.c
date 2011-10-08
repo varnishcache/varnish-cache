@@ -31,13 +31,13 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <dlfcn.h>
 
+#include "cache.h"
+
 #include "cli_priv.h"
 #include "vrt.h"
-#include "cache.h"
 
 /*--------------------------------------------------------------------
  * Modules stuff

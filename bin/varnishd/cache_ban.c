@@ -62,19 +62,16 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <stdint.h>
 
 #include <pcre.h>
 
+#include "cache.h"
+
 #include "vcli.h"
 #include "vend.h"
 #include "cli_priv.h"
-#include "cache.h"
 #include "hash_slinger.h"
 
 struct ban {

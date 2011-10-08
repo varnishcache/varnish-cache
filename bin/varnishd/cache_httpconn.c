@@ -31,13 +31,12 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <ctype.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "cache.h"
+
+#include "vct.h"
 
 /*--------------------------------------------------------------------
  * Check if we have a complete HTTP request or response yet
@@ -55,7 +54,7 @@ htc_header_complete(txt *t)
 	Tcheck(*t);
 	assert(*t->e == '\0');
 	/* Skip any leading white space */
-	for (p = t->b ; isspace(*p); p++)
+	for (p = t->b ; vct_issp(*p); p++)
 		continue;
 	if (*p == '\0') {
 		t->e = t->b;

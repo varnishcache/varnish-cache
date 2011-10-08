@@ -36,14 +36,14 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <stddef.h>			// offsetof
+
+#include "cache.h"
 
 #include "vcli.h"
 #include "cli_priv.h"
 #include "cli_common.h"
 #include "cli_serve.h"
-#include "cache.h"
 #include "hash_slinger.h"		// objhead
 
 pthread_t		cli_thread;

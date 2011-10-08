@@ -31,12 +31,11 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "cache.h"
+
 #include "stevedore.h"
 
 struct sma_sc {

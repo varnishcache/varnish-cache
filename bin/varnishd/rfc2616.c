@@ -29,13 +29,10 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <stdlib.h>
-#include <limits.h>
 #include <math.h>
 
 #include "cache.h"
-#include "vrt.h"
 
 /*--------------------------------------------------------------------
  * TTL and Age calculation in Varnish

@@ -30,14 +30,11 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "cache.h"
+
 #include "stevedore.h"
-#include "hash_slinger.h"
 
 static struct lock		sms_mtx;
 

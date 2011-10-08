@@ -31,14 +31,13 @@
 
 #include "config.h"
 
-#include <unistd.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
-#include "vct.h"
 #include "cache.h"
+
+#include "vct.h"
 
 #define HTTPH(a, b, c, d, e, f, g) char b[] = "*" a ":";
 #include "tbl/http_headers.h"

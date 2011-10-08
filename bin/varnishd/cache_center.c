@@ -62,16 +62,15 @@ DOT acceptor -> start [style=bold,color=green]
 #include <math.h>
 #include <poll.h>
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 
 #ifndef HAVE_SRANDOMDEV
 #include "compat/srandomdev.h"
 #endif
 
+#include "cache.h"
+
 #include "vcl.h"
 #include "cli_priv.h"
-#include "cache.h"
 #include "hash_slinger.h"
 #include "stevedore.h"
 #include "vsha256.h"

@@ -34,10 +34,10 @@
 #include <ctype.h>
 #include <stdlib.h>
 
+#include "cache.h"
+
 #include "vrt.h"
 #include "vre.h"
-#include "vcl.h"
-#include "cache.h"
 
 void
 VRT_re_init(void **rep, const char *re)

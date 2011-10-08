@@ -40,7 +40,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
-#include <time.h>
 #include <unistd.h>
 
 #include <sys/utsname.h>
@@ -52,7 +51,6 @@
 #include "vsha256.h"
 
 #include "vcli.h"
-#include "cli_priv.h"
 #include "cli_common.h"
 
 #include "vin.h"

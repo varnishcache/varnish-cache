@@ -29,9 +29,6 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-#include <sys/stat.h>
-
 #include <grp.h>
 #include <limits.h>
 #include <pwd.h>

@@ -30,11 +30,10 @@
 
 #include "config.h"
 
-#include <errno.h>
+#include "cache.h"
 
 #include "vcli.h"
 #include "cli_priv.h"
-#include "cache.h"
 
 static pthread_t	VCA_thread;
 static struct timeval	tv_sndtimeo;

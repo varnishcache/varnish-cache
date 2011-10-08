@@ -39,7 +39,6 @@
 #include <signal.h>
 #include <syslog.h>
 #include <errno.h>
-#include <poll.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
