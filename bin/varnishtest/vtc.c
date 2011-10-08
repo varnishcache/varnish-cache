@@ -31,20 +31,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <signal.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "libvarnish.h"
-#include "vev.h"
-
 #include "vtc.h"
+
+#include "libvarnish.h"
+
 
 #ifndef HAVE_SRANDOMDEV
 #include "compat/srandomdev.h"

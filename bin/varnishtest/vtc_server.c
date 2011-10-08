@@ -31,7 +31,6 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
 
 #include <sys/types.h>
@@ -39,8 +38,8 @@
 
 #include "vtc.h"
 
-#include "vss.h"
 #include "libvarnish.h"
+#include "vss.h"
 
 struct server {
 	unsigned		magic;

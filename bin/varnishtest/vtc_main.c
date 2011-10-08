@@ -31,8 +31,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
-#include <signal.h>
-#include <stdarg.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/mman.h>
@@ -40,10 +38,10 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#include "vtc.h"
+
 #include "libvarnish.h"
 #include "vev.h"
-
-#include "vtc.h"
 
 #ifndef HAVE_SRANDOMDEV
 #include "compat/srandomdev.h"

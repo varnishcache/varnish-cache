@@ -30,15 +30,12 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <fcntl.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <stdarg.h>
 
-#include "libvarnish.h"
-#include "vas.h"
-
 #include "vtc.h"
+
+#include "libvarnish.h"
 
 static pthread_mutex_t	vtclog_mtx;
 static char		*vtclog_buf;
