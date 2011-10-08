@@ -37,8 +37,6 @@
 #include <string.h>
 #include <math.h>
 
-#include "vsb.h"
-
 #include "vcc_priv.h"
 #include "vcc_compile.h"
 #include "libvarnish.h"

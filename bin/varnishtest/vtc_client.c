@@ -38,9 +38,6 @@
 
 #include "vtc.h"
 
-#include "vsb.h"
-#include "vqueue.h"
-#include "miniobj.h"
 #include "vss.h"
 #include "libvarnish.h"
 

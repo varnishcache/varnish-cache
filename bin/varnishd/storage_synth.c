@@ -36,7 +36,6 @@
 #include <stdlib.h>
 
 #include "cache.h"
-#include "vsb.h"
 #include "stevedore.h"
 #include "hash_slinger.h"
 

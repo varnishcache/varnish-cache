@@ -41,8 +41,6 @@
 
 #include "libvarnish.h"
 #include "vct.h"
-#include "miniobj.h"
-#include "vsb.h"
 
 #include "vtc.h"
 

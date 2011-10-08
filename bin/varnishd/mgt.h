@@ -33,6 +33,7 @@
 #include "vqueue.h"
 
 #include "common.h"
+#include "vsb.h"
 #include "miniobj.h"
 
 #include "libvarnish.h"

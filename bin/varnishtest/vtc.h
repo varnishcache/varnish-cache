@@ -33,7 +33,10 @@
 #ifdef HAVE_PTHREAD_NP_H
 #include <pthread_np.h>
 #endif
+
 #include "vqueue.h"
+#include "vsb.h"
+#include "miniobj.h"
 
 struct vsb;
 struct vtclog;

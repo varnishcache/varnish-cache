@@ -62,10 +62,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "vqueue.h"
-
-#include "vsb.h"
-
 #include "vcc_priv.h"
 #include "vcc_compile.h"
 

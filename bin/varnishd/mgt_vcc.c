@@ -41,14 +41,13 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "vsb.h"
+#include "mgt.h"
 
 #include "libvcl.h"
 #include "vcli.h"
 #include "cli_priv.h"
 #include "cli_common.h"
 
-#include "mgt.h"
 #include "mgt_cli.h"
 #include "heritage.h"
 

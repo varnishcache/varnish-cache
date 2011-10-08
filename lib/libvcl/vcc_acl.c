@@ -38,7 +38,6 @@
 #include <netdb.h>
 #include <netinet/in.h>
 
-#include "vsb.h"
 #include "vrt.h"
 
 #include "vcc_priv.h"

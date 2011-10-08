@@ -51,7 +51,6 @@
 #include "mgt_cli.h"
 #include "vev.h"
 #include "vlu.h"
-#include "vsb.h"
 #include "vss.h"
 #include "vbm.h"
 

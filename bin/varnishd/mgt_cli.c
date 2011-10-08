@@ -48,7 +48,6 @@
 
 #include "cli_priv.h"
 #include "vcli.h"
-#include "vsb.h"
 #include "cli_common.h"
 #include "cli_serve.h"
 #include "vev.h"

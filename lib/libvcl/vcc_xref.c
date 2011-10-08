@@ -41,8 +41,6 @@
 
 #include <stdio.h>
 
-#include "vsb.h"
-
 #include "libvarnish.h"
 #include "vcc_priv.h"
 #include "vcc_compile.h"

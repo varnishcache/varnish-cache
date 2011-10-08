@@ -31,6 +31,7 @@
 #include "vqueue.h"
 
 #include "miniobj.h"
+#include "vsb.h"
 #include "vcl.h"
 
 #define INDENT		2

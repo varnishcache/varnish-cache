@@ -49,7 +49,6 @@
 #include "cli_common.h"
 #include "cli_serve.h"
 #include "cache.h"
-#include "vsb.h"
 #include "hash_slinger.h"
 
 pthread_t		cli_thread;

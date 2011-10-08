@@ -50,7 +50,6 @@
 
 #include "compat/daemon.h"
 
-#include "vsb.h"
 #include "vev.h"
 #include "vpf.h"
 #include "vsha256.h"

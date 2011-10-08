@@ -42,13 +42,10 @@
 #include <sys/wait.h>
 #include <sys/socket.h>
 
-#include "vqueue.h"
-#include "miniobj.h"
 #include "libvarnish.h"
 #include "varnishapi.h"
 #include "vcli.h"
 #include "vss.h"
-#include "vsb.h"
 
 #include "vtc.h"
 

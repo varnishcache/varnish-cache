@@ -34,10 +34,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "vqueue.h"
-
-#include "vsb.h"
-
 #include "libvarnish.h"
 #include "vcc_priv.h"
 #include "vcc_compile.h"

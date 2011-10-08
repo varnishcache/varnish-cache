@@ -42,9 +42,6 @@
 
 #include "libvarnish.h"
 #include "vev.h"
-#include "vsb.h"
-#include "vqueue.h"
-#include "miniobj.h"
 
 #include "vtc.h"
 

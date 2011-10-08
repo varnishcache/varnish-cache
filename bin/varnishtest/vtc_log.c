@@ -36,8 +36,6 @@
 #include <stdarg.h>
 
 #include "libvarnish.h"
-#include "vsb.h"
-#include "miniobj.h"
 #include "vas.h"
 
 #include "vtc.h"
