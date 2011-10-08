@@ -53,7 +53,7 @@
 
 const char *VSL_tags[256] = {
 #define SLTM(foo)       [SLT_##foo] = #foo,
-#include "vsl_tags.h"
+#include "tbl/vsl_tags.h"
 #undef SLTM
 };
 

@@ -309,7 +309,7 @@ iter_call(const struct vsc *vsc, VSC_iter_f *func, void *priv,
 		return (0);						\
 	}
 
-#include "vsc_all.h"
+#include "tbl/vsc_all.h"
 #undef VSC_DO
 #undef VSC_F
 #undef VSC_DONE
@@ -339,7 +339,7 @@ VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv)
 			if (!i)					\
 				continue;			\
 		}
-#include "vsc_all.h"
+#include "tbl/vsc_all.h"
 #undef VSC_F
 #undef VSC_DO
 #undef VSC_DONE

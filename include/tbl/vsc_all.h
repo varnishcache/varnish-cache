@@ -31,30 +31,30 @@
 
 VSC_DO(LCK, lck, VSC_TYPE_LCK)
 #define VSC_DO_LCK
-#include "vsc_fields.h"
+#include "tbl/vsc_fields.h"
 #undef VSC_DO_LCK
 VSC_DONE(LCK, lck, VSC_TYPE_LCK)
 
 VSC_DO(MAIN, main, VSC_TYPE_MAIN)
 #define VSC_DO_MAIN
-#include "vsc_fields.h"
+#include "tbl/vsc_fields.h"
 #undef VSC_DO_MAIN
 VSC_DONE(MAIN, main, VSC_TYPE_MAIN)
 
 VSC_DO(SMA, sma, VSC_TYPE_SMA)
 #define VSC_DO_SMA
-#include "vsc_fields.h"
+#include "tbl/vsc_fields.h"
 #undef VSC_DO_SMA
 VSC_DONE(SMA, sma, VSC_TYPE_SMA)
 
 VSC_DO(SMF, smf, VSC_TYPE_SMF)
 #define VSC_DO_SMF
-#include "vsc_fields.h"
+#include "tbl/vsc_fields.h"
 #undef VSC_DO_SMF
 VSC_DONE(SMF, smf, VSC_TYPE_SMF)
 
 VSC_DO(VBE, vbe, VSC_TYPE_VBE)
 #define VSC_DO_VBE
-#include "vsc_fields.h"
+#include "tbl/vsc_fields.h"
 #undef VSC_DO_VBE
 VSC_DONE(VBE, vbe, VSC_TYPE_VBE)

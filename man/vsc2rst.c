@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 	P("=============");
 	P("");
 #define VSC_DO_MAIN
-#include "vsc_fields.h"
+#include "tbl/vsc_fields.h"
 #undef VSC_DO_MAIN
 
 	P("");
@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 	P("=============");
 	P("");
 #define VSC_DO_LCK
-#include "vsc_fields.h"
+#include "tbl/vsc_fields.h"
 #undef VSC_DO_LCK
 
 	P("");
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 	P("===========================");
 	P("");
 #define VSC_DO_SMA
-#include "vsc_fields.h"
+#include "tbl/vsc_fields.h"
 #undef  VSC_DO_SMA
 
 	P("");
@@ -51,7 +51,7 @@ int main(int argc, char **argv)
 	P("=========================");
 	P("");
 #define VSC_DO_SMF
-#include "vsc_fields.h"
+#include "tbl/vsc_fields.h"
 #undef VSC_DO_SMF
 
 	P("");
@@ -59,7 +59,7 @@ int main(int argc, char **argv)
 	P("====================");
 	P("");
 #define VSC_DO_VBE
-#include "vsc_fields.h"
+#include "tbl/vsc_fields.h"
 #undef VSC_DO_VBE
 
 	return 0;

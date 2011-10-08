@@ -224,7 +224,7 @@ struct acct {
 #define VSC_F(n, t, l, f, e,d)	L##l(t, n)
 #define VSC_DO_MAIN
 struct dstat {
-#include "vsc_fields.h"
+#include "tbl/vsc_fields.h"
 };
 #undef VSC_F
 #undef VSC_DO_MAIN

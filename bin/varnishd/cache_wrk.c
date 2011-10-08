@@ -53,7 +53,7 @@ wrk_sumstat(struct worker *w)
 #define L1(n) (VSC_C_main->n += w->stats.n)
 #define VSC_DO_MAIN
 #define VSC_F(n, t, l, f, d, e) L##l(n);
-#include "vsc_fields.h"
+#include "tbl/vsc_fields.h"
 #undef VSC_F
 #undef VSC_DO_MAIN
 #undef L0

@@ -1,0 +1,4 @@
+The include files in this directory are special, they are used to
+define sets of objects using macros, such that a list of all such
+objects can be compiled into the code by including these files with
+a properly defined macro.

@@ -1,14 +1,14 @@
 #
 
 pkginclude_HEADERS = \
-	vsm.h \
-	vsl.h \
+	tbl/vsc_all.h \
+	tbl/vsc_fields.h \
+	tbl/vsl_tags.h \
+	varnishapi.h \
 	vcli.h \
-	vsl_tags.h \
-	vsc_fields.h \
-	vsc_all.h \
 	vsc.h \
-	varnishapi.h
+	vsl.h \
+	vsm.h
 
 nobase_noinst_HEADERS = \
 	ban_vars.h \

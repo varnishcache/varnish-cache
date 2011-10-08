@@ -74,7 +74,7 @@
 enum VSL_tag_e {
 	SLT_Bogus = 0,
 #define SLTM(foo)	SLT_##foo,
-#include "vsl_tags.h"
+#include "tbl/vsl_tags.h"
 #undef SLTM
 	SLT_Reserved = 255
 };

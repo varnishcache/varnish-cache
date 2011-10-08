@@ -43,7 +43,7 @@
 #define VSC_DO(u,l,t) struct VSC_C_##l {
 #define VSC_DONE(u,l,t) };
 
-#include "vsc_all.h"
+#include "tbl/vsc_all.h"
 
 #undef VSC_DO
 #undef VSC_F
