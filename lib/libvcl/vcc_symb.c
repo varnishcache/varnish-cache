@@ -32,9 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "vcc_priv.h"
 #include "vcc_compile.h"
-#include "libvarnish.h"
 
 /*--------------------------------------------------------------------*/
 

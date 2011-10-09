@@ -60,10 +60,7 @@
 #include <string.h>
 
 #include "vcc_compile.h"
-#include "vcc_priv.h"
-
 #include "libvcl.h"
-#include "libvarnish.h"
 
 struct method method_tab[] = {
 #define VCL_MET_MAC(l,U,m)	{ "vcl_"#l, m, VCL_MET_##U },

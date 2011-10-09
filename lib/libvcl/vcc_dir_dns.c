@@ -33,8 +33,6 @@
 #include <limits.h>
 
 #include "vcc_compile.h"
-#include "vcc_priv.h"
-#include "libvarnish.h"
 
 /*--------------------------------------------------------------------
  * Parse directors

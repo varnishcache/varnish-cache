@@ -34,9 +34,7 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "vcc_priv.h"
 #include "vcc_compile.h"
-#include "libvarnish.h"
 
 /*--------------------------------------------------------------------
  * Helper functions to complain about duplicate and missing fields

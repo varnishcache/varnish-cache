@@ -32,9 +32,7 @@
 #include <dlfcn.h>
 #include <string.h>
 
-#include "vcc_priv.h"
 #include "vcc_compile.h"
-#include "libvarnish.h"
 #include "vmod_abi.h"
 
 void

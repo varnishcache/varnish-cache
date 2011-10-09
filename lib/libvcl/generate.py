@@ -866,8 +866,7 @@ fo.write("""
 #include <stdio.h>
 #include <ctype.h>
 #include "config.h"
-#include "vcc_priv.h"
-#include "vsb.h"
+#include "vcc_compile.h"
 """)
 
 emit_vcl_fixed_token(fo, tokens)

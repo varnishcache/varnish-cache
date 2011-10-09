@@ -37,9 +37,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "vcc_priv.h"
 #include "vcc_compile.h"
-#include "libvarnish.h"
 
 static const char *
 vcc_Type(enum var_type fmt)

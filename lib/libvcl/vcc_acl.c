@@ -40,8 +40,6 @@
 
 #include "vcc_compile.h"
 #include "vrt.h"
-#include "vcc_priv.h"
-#include "libvarnish.h"
 
 struct acl_e {
 	VTAILQ_ENTRY(acl_e)	list;

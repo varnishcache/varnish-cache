@@ -33,6 +33,20 @@
 #include "miniobj.h"
 #include "vsb.h"
 #include "vcl.h"
+#include "libvarnish.h"
+
+#include "vcc_token_defs.h"
+
+struct vsb;
+
+#define isident1(c) (isalpha(c))
+#define isident(c) (isalpha(c) || isdigit(c) || (c) == '_' || (c) == '-')
+#define isvar(c) (isident(c) || (c) == '.')
+unsigned vcl_fixed_token(const char *p, const char **q);
+extern const char * const vcl_tnames[256];
+void vcl_output_lang_h(struct vsb *sb);
+
+#define PF(t)	(int)((t)->e - (t)->b), (t)->b
 
 #define INDENT		2
 

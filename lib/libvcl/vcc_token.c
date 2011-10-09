@@ -34,8 +34,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "libvarnish.h"
-#include "vcc_priv.h"
 #include "vcc_compile.h"
 
 /*--------------------------------------------------------------------*/
