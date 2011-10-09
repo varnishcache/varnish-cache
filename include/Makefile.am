@@ -3,9 +3,15 @@
 pkginclude_HEADERS = \
 	tbl/acct_fields.h \
 	tbl/backend_poll.h \
+	tbl/ban_vars.h \
 	tbl/body_status.h \
+	tbl/http_headers.h \
+	tbl/http_response.h \
 	tbl/locks.h \
 	tbl/steps.h \
+	tbl/vcc_types.h \
+	tbl/vcl_returns.h \
+	tbl/vrt_stv_var.h \
 	tbl/vsc_all.h \
 	tbl/vsc_fields.h \
 	tbl/vsl_tags.h \
@@ -28,11 +34,6 @@ nobase_noinst_HEADERS = \
 	libvcl.h \
 	miniobj.h \
 	persistent.h \
-	tbl/ban_vars.h \
-	tbl/http_headers.h \
-	tbl/http_response.h \
-	tbl/vcl_returns.h \
-	tbl/vrt_stv_var.h \
 	vas.h \
 	vav.h \
 	vbm.h \

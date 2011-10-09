@@ -52,18 +52,15 @@
 
 #include "config.h"
 
-#include <sys/stat.h>
-
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
-#include "vcc_priv.h"
 #include "vcc_compile.h"
+#include "vcc_priv.h"
 
 #include "libvcl.h"
 #include "libvarnish.h"

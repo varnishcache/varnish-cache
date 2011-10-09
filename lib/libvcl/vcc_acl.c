@@ -30,7 +30,6 @@
 #include "config.h"
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
 #include <sys/types.h>
@@ -38,10 +37,10 @@
 #include <netdb.h>
 #include <netinet/in.h>
 
-#include "vrt.h"
 
-#include "vcc_priv.h"
 #include "vcc_compile.h"
+#include "vrt.h"
+#include "vcc_priv.h"
 #include "libvarnish.h"
 
 struct acl_e {

@@ -28,16 +28,12 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-#include <sys/socket.h>
-
 #include <stdio.h>
-#include <stdarg.h>
 #include <string.h>
 #include <limits.h>
 
-#include "vcc_priv.h"
 #include "vcc_compile.h"
+#include "vcc_priv.h"
 #include "libvarnish.h"
 
 /*--------------------------------------------------------------------

@@ -44,7 +44,7 @@ struct symbol;
 
 enum var_type {
 #define VCC_TYPE(foo)		foo,
-#include "vcc_types.h"
+#include "tbl/vcc_types.h"
 #undef VCC_TYPE
 };
 
