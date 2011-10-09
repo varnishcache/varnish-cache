@@ -30,6 +30,7 @@
 #include "config.h"
 
 #include "vapi/vsm.h"
+#include "vapi/vsm_int.h"
 #include "vapi/vsl.h"
 
 #include <sys/types.h>
@@ -41,7 +42,6 @@
 #include <unistd.h>
 
 #include "vas.h"
-#include "vsm.h"
 #include "vre.h"
 #include "vbm.h"
 #include "miniobj.h"

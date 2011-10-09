@@ -101,7 +101,7 @@
 #include "mgt.h"
 #include "heritage.h"
 #include "vmb.h"
-#include "vsm.h"
+#include "vapi/vsm_int.h"
 #include "vav.h"
 #include "vnum.h"
 #include "flopen.h"

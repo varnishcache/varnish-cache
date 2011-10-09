@@ -31,13 +31,12 @@
  * NB: THIS IS NOT A PUBLIC API TO VARNISH!
  */
 
-#ifndef VSM_H_INCLUDED
-#define VSM_H_INCLUDED
+#ifndef VSM_INT_H_INCLUDED
+#define VSM_INT_H_INCLUDED
 
 #define VSM_FILENAME		"_.vsm"
 
-#include <time.h>
-#include <sys/types.h>
+#include <stdint.h>
 
 /*
  * This structure describes each allocation from the shmlog
@@ -62,9 +61,9 @@ struct VSM_head {
 
 	unsigned		hdrsize;
 
-	time_t			starttime;
-	pid_t			master_pid;
-	pid_t			child_pid;
+	uint64_t		starttime;
+	int64_t			master_pid;
+	int64_t			child_pid;
 
 	unsigned		shm_size;
 
@@ -107,6 +106,10 @@ vsm_iter_n(struct VSM_chunk **pp)
 
 #define VSM_ITER(vd) for ((vd) = vsm_iter_0(); (vd) != NULL; vsm_iter_n(&vd))
 
+#else
+
+#define VSM_ITER(vd) while (YOU_NEED_MINIOBJ_TO_USE_VSM_ITER)
+
 #endif /* CHECK_OBJ_NOTNULL */
 
-#endif
+#endif /* VSM_INT_H_INCLUDED */

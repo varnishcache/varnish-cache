@@ -43,7 +43,7 @@
 #include <sys/wait.h>
 
 #include "mgt.h"
-#include "vsm.h"
+#include "vapi/vsm_int.h"
 #include "heritage.h"
 #include "vcli.h"
 #include "cli_priv.h"

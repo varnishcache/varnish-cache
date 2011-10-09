@@ -16,12 +16,12 @@ pkginclude_HEADERS = \
 	tbl/vsc_fields.h \
 	tbl/vsl_tags.h \
 	vapi/vsm.h \
+	vapi/vsm_int.h \
 	vapi/vsc.h \
 	vapi/vsc_int.h \
 	vapi/vsl.h \
 	vapi/vsl_int.h \
-	vcli.h \
-	vsm.h
+	vcli.h
 
 nobase_noinst_HEADERS = \
 	binary_heap.h \

@@ -55,7 +55,7 @@
 #include "common.h"
 
 #include "vmb.h"
-#include "vsm.h"
+#include "vapi/vsm_int.h"
 #include "vtim.h"
 
 /* These two come from beyond (mgt_shmem.c actually) */

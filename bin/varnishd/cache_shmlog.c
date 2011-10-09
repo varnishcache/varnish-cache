@@ -29,11 +29,13 @@
 
 #include "config.h"
 
+
 #include <stdio.h>
 
 #include "cache.h"
+
+#include "vapi/vsm_int.h"
 #include "vmb.h"
-#include "vsm.h"
 #include "vtim.h"
 
 /* These cannot be struct lock, which depends on vsm/vsl working */

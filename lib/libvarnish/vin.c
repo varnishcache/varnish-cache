@@ -30,6 +30,8 @@
 
 #include "config.h"
 
+#include "vapi/vsm_int.h"
+
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
@@ -39,7 +41,6 @@
 #include "vas.h"
 #include "vdef.h"
 #include "vin.h"
-#include "vsm.h"
 
 int
 VIN_N_Arg(const char *n_arg, char **name, char **dir, char **vsl)

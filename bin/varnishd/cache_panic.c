@@ -29,6 +29,8 @@
 
 #include "config.h"
 
+#include "vapi/vsm_int.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -40,7 +42,6 @@
 
 #include "cache.h"
 
-#include "vsm.h"
 #include "cache_backend.h"
 #include "cache_waiter.h"
 #include "vcl.h"
