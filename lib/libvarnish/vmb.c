@@ -28,7 +28,6 @@
 
 #include <pthread.h>
 #include <unistd.h>
-#include "libvarnish.h"
 #include "vmb.h"
 
 #ifdef VMB_NEEDS_PTHREAD_WORKAROUND_THIS_IS_BAD_FOR_PERFORMANCE

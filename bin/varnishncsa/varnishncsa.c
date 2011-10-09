@@ -74,12 +74,12 @@
 #include "compat/daemon.h"
 
 #include "vas.h"
-#include "vsb.h"
+#include "vcs.h"
 #include "vpf.h"
 #include "vqueue.h"
-
-#include "libvarnish.h"
 #include "vre.h"
+#include "vsb.h"
+
 #include "base64.h"
 
 static volatile sig_atomic_t reopen;

@@ -35,8 +35,6 @@
 
 #include "vtc.h"
 
-#include "libvarnish.h"
-
 struct sema {
 	unsigned		magic;
 #define SEMA_MAGIC		0x29b64317

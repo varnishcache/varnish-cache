@@ -39,7 +39,6 @@
 
 #include "vss.h"
 #include "vtcp.h"
-#include "libvarnish.h"
 
 struct client {
 	unsigned		magic;

@@ -38,10 +38,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "vtc.h"
-
-#include "libvarnish.h"
 #include "vev.h"
+#include "vtc.h"
 #include "vtim.h"
 
 #ifndef HAVE_SRANDOMDEV

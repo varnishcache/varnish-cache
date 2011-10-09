@@ -29,7 +29,6 @@
 #include <pcre.h>
 #include <string.h>
 
-#include "libvarnish.h"
 #include "miniobj.h"
 #include "vas.h"
 #include "vre.h"

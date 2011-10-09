@@ -30,11 +30,10 @@
 
 #include <stdint.h>
 
-#include "libvarnish.h"
-#include "vas.h"
-
 #include "miniobj.h"
+#include "vas.h"
 #include "vcl.h"
+#include "vdef.h"
 #include "vqueue.h"
 #include "vsb.h"
 

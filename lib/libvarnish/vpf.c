@@ -40,7 +40,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "libvarnish.h"		/* XXX: for assert() */
 #include "flopen.h"
 #include "vas.h"
 #include "vpf.h"

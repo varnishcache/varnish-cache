@@ -32,7 +32,6 @@ nobase_noinst_HEADERS = \
 	compat/execinfo.h \
 	compat/srandomdev.h \
 	flopen.h \
-	libvarnish.h \
 	libvcl.h \
 	miniobj.h \
 	persistent.h \
@@ -41,7 +40,9 @@ nobase_noinst_HEADERS = \
 	vbm.h \
 	vcl.h \
 	vcs_version.h \
+	vcs.h \
 	vct.h \
+	vdef.h \
 	vend.h \
 	vev.h \
 	vfil.h \

@@ -44,11 +44,10 @@
 
 #include "compat/daemon.h"
 
-#include "vsb.h"
-#include "vpf.h"
-
 #include "vas.h"
-#include "libvarnish.h"
+#include "vcs.h"
+#include "vpf.h"
+#include "vsb.h"
 
 static int	b_flag, c_flag;
 

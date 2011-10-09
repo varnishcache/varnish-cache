@@ -34,8 +34,6 @@
 #include <stdarg.h>
 
 #include "vtc.h"
-
-#include "libvarnish.h"
 #include "vtim.h"
 
 static pthread_mutex_t	vtclog_mtx;

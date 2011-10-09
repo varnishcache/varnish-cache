@@ -41,7 +41,6 @@
 
 #include "vav.h"
 #include "vtim.h"
-#include "libvarnish.h"
 
 
 #ifndef HAVE_SRANDOMDEV

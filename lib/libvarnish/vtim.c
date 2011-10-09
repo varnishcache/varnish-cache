@@ -56,7 +56,6 @@
 
 #include "vas.h"
 #include "vtim.h"
-//#include "libvarnish.h"
 
 /*
  * Note on Solaris: for some reason, clock_gettime(CLOCK_MONOTONIC, &ts) is not

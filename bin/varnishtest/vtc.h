@@ -36,6 +36,7 @@
 
 #include "miniobj.h"
 #include "vas.h"
+#include "vdef.h"
 #include "vqueue.h"
 #include "vsb.h"
 

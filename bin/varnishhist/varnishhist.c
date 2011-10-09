@@ -49,7 +49,7 @@
 #include <unistd.h>
 
 #include "vas.h"
-#include "libvarnish.h"
+#include "vcs.h"
 
 #define HIST_N 2000 /* how far back we remember */
 #define HIST_LOW -6 /* low end of log range */

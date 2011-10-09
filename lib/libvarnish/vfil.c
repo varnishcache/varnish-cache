@@ -40,8 +40,8 @@
 #include <sys/stat.h>
 
 #include "vas.h"
+#include "vdef.h"
 #include "vfil.h"
-#include "libvarnish.h"
 
 int
 VFIL_tmpfile(char *template)

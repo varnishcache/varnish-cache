@@ -46,10 +46,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "vqueue.h"
-
 #include "vas.h"
-#include "libvarnish.h"
+#include "vcs.h"
+#include "vqueue.h"
 #include "vss.h"
 
 #define freez(x) do { if (x) free(x); x = NULL; } while (0);

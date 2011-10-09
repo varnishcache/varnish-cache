@@ -37,13 +37,9 @@
 #include <sys/socket.h>
 
 #include "vct.h"
-
-#include "libvarnish.h"
-
+#include "vgz.h"
 #include "vtc.h"
 #include "vtcp.h"
-
-#include "vgz.h"
 
 #define MAX_HDR		50
 

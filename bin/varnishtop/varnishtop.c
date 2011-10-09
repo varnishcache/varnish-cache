@@ -46,12 +46,10 @@
 #include <unistd.h>
 #include <limits.h>
 
-#include "vqueue.h"
-
-#include "vsb.h"
-
 #include "vas.h"
-#include "libvarnish.h"
+#include "vcs.h"
+#include "vqueue.h"
+#include "vsb.h"
 
 #if 0
 #define AC(x) assert((x) != ERR)

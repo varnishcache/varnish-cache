@@ -28,9 +28,6 @@
  *
  */
 
-/* from libvarnish/version.c */
-void VCS_Message(const char *);
-
 /* Safe printf into a fixed-size buffer */
 #define bprintf(buf, fmt, ...)						\
 	do {								\

@@ -36,11 +36,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include "vss.h"
 #include "vtc.h"
 #include "vtcp.h"
-
-#include "libvarnish.h"
-#include "vss.h"
 
 struct server {
 	unsigned		magic;

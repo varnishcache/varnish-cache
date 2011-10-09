@@ -37,9 +37,9 @@
 #include <unistd.h>
 
 #include "vas.h"
-#include "vsm.h"
+#include "vdef.h"
 #include "vin.h"
-#include "libvarnish.h"
+#include "vsm.h"
 
 int
 VIN_N_Arg(const char *n_arg, char **name, char **dir, char **vsl)
