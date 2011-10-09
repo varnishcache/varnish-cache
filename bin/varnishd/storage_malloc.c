@@ -37,6 +37,7 @@
 #include "cache.h"
 
 #include "stevedore.h"
+#include "vnum.h"
 
 struct sma_sc {
 	unsigned		magic;
@@ -216,7 +217,7 @@ sma_init(struct stevedore *parent, int ac, char * const *av)
 	if (ac == 0 || *av[0] == '\0')
 		 return;
 
-	e = str2bytes(av[0], &u, 0);
+	e = VNUM_2bytes(av[0], &u, 0);
 	if (e != NULL)
 		ARGV_ERR("(-smalloc) size \"%s\": %s\n", av[0], e);
 	if ((u != (uintmax_t)(size_t)u))

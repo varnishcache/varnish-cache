@@ -53,6 +53,7 @@
 
 #include "mgt.h"
 #include "stevedore.h"
+#include "vnum.h"
 
 #ifndef O_LARGEFILE
 #define O_LARGEFILE	0
@@ -197,7 +198,7 @@ STV_FileSize(int fd, const char *size, unsigned *granularity, const char *ctx)
 		l = st.st_size;
 	} else {
 		AN(size);
-		q = str2bytes(size, &l, fssize);
+		q = VNUM_2bytes(size, &l, fssize);
 
 		if (q != NULL)
 			ARGV_ERR("(%s) size \"%s\": %s\n", size, ctx, q);

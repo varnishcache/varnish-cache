@@ -35,7 +35,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "libvarnish.h"
+#include "vnum.h"
 
 static const char err_miss_num[] = "Missing number";
 static const char err_invalid_num[] = "Invalid number";
@@ -43,7 +43,7 @@ static const char err_abs_req[] = "Absolute number required";
 static const char err_invalid_suff[] = "Invalid suffix";
 
 const char *
-str2bytes(const char *p, uintmax_t *r, uintmax_t rel)
+VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 {
 	double fval;
 	char *end;
@@ -178,13 +178,13 @@ main(int argc, char *argv[])
 
 	(void)argc;
 	for (ec = 0, tc = test_cases; tc->str; ++tc) {
-		e = str2bytes(tc->str, &val, tc->rel);
+		e = VNUM_2bytes(tc->str, &val, tc->rel);
 		if (e != tc->err) {
-			printf("%s: str2bytes(\"%s\", %ju) (%s) != (%s)\n",
+			printf("%s: VNUM_2bytes(\"%s\", %ju) (%s) != (%s)\n",
 			    *argv, tc->str, tc->rel, tc->err, e);
 			++ec;
 		} else if (e == NULL && val != tc->val) {
-			printf("%s: str2bytes(\"%s\", %ju) %ju != %ju (%s)\n",
+			printf("%s: VNUM_2bytes(\"%s\", %ju) %ju != %ju (%s)\n",
 			    *argv, tc->str, tc->rel, val, tc->val, e);
 			++ec;
 		}

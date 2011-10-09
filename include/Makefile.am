@@ -48,6 +48,7 @@ nobase_noinst_HEADERS = \
 	vlu.h \
 	vmb.h \
 	vmod_abi.h \
+	vnum.h \
 	vpf.h \
 	vqueue.h \
 	vre.h \

@@ -103,6 +103,7 @@
 #include "vmb.h"
 #include "vsm.h"
 #include "vav.h"
+#include "vnum.h"
 #include "flopen.h"
 
 #ifndef MAP_HASSEMAPHORE
@@ -244,7 +245,7 @@ mgt_SHM_Init(const char *l_arg)
 
 	/* Size of SHMLOG */
 	if (*ap != NULL && **ap != '\0') {
-		q = str2bytes(*ap, &s1, 0);
+		q = VNUM_2bytes(*ap, &s1, 0);
 		if (q != NULL)
 			ARGV_ERR("\t-l[1] ...:  %s\n", q);
 	} else {
@@ -255,7 +256,7 @@ mgt_SHM_Init(const char *l_arg)
 
 	/* Size of space for other stuff */
 	if (*ap != NULL && **ap != '\0') {
-		q = str2bytes(*ap, &s2, 0);
+		q = VNUM_2bytes(*ap, &s2, 0);
 		if (q != NULL)
 			ARGV_ERR("\t-l[2] ...:  %s\n", q);
 	} else {

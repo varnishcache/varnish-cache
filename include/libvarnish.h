@@ -38,9 +38,6 @@
 
 struct vsb;
 
-/* from libvarnish/num.c */
-const char *str2bytes(const char *p, uintmax_t *r, uintmax_t rel);
-
 /* from libvarnish/version.c */
 void VCS_Message(const char *);
 
