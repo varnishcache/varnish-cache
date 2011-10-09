@@ -44,6 +44,7 @@
 #include <unistd.h>
 
 #include "libvarnish.h"
+#include "vtcp.h"
 #include "vss.h"
 
 /* lightweight addrinfo */

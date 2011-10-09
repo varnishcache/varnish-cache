@@ -52,6 +52,7 @@
 #include "vlu.h"
 #include "vss.h"
 #include "vbm.h"
+#include "vtcp.h"
 
 pid_t		child_pid = -1;
 

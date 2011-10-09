@@ -41,6 +41,7 @@
 #include "libvarnish.h"
 
 #include "vtc.h"
+#include "vtcp.h"
 
 #include "vgz.h"
 

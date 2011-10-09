@@ -39,6 +39,7 @@
 
 #include "cache_backend.h"
 #include "vrt.h"
+#include "vtcp.h"
 
 /*--------------------------------------------------------------------
  * The "simple" director really isn't, since thats where all the actual

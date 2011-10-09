@@ -51,8 +51,7 @@
 #include <unistd.h>
 #include <math.h>
 
-#include "config.h"
-
+#include "vtcp.h"
 #include "libvarnish.h"
 
 /*--------------------------------------------------------------------*/

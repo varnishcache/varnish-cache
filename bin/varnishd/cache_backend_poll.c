@@ -45,6 +45,7 @@
 #include "cli_priv.h"
 #include "cache.h"
 #include "vrt.h"
+#include "vtcp.h"
 #include "cache_backend.h"
 
 /* Default averaging rate, we want something pretty responsive */

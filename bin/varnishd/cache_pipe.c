@@ -35,6 +35,7 @@
 #include <poll.h>
 
 #include "cache.h"
+#include "vtcp.h"
 
 static int
 rdf(int fd0, int fd1)

@@ -38,6 +38,7 @@
 #include "stevedore.h"
 #include "cli_priv.h"
 #include "vct.h"
+#include "vtcp.h"
 
 static unsigned fetchfrag;
 

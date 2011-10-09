@@ -33,6 +33,7 @@
 #include "cache.h"
 
 #include "vcli.h"
+#include "vtcp.h"
 #include "cli_priv.h"
 
 static pthread_t	VCA_thread;

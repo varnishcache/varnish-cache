@@ -32,6 +32,7 @@
 #include <syslog.h>
 #include <netinet/in.h>
 #include "vrt.h"
+#include "vtcp.h"
 #include "../../bin/varnishd/cache.h"
 
 #include "vcc_if.h"

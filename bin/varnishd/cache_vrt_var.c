@@ -36,6 +36,7 @@
 #include "cache.h"
 
 #include "vrt.h"
+#include "vtcp.h"
 #include "vrt_obj.h"
 #include "cache_backend.h"
 #include "hash_slinger.h"

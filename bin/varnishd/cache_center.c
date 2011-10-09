@@ -70,6 +70,7 @@ DOT acceptor -> start [style=bold,color=green]
 #include "cache.h"
 
 #include "vcl.h"
+#include "vtcp.h"
 #include "cli_priv.h"
 #include "hash_slinger.h"
 #include "stevedore.h"

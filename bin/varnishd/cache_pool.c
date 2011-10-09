@@ -50,6 +50,7 @@
 
 #include "cache_waiter.h"
 #include "hash_slinger.h"
+#include "vtcp.h"
 
 /*--------------------------------------------------------------------
  * MAC OS/X is incredibly moronic when it comes to time and such...

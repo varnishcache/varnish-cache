@@ -37,6 +37,7 @@
 #include <sys/socket.h>
 
 #include "vtc.h"
+#include "vtcp.h"
 
 #include "libvarnish.h"
 #include "vss.h"
