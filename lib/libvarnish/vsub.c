@@ -38,11 +38,12 @@
 
 #include <sys/wait.h>
 
-#include "vsb.h"
+#include "vas.h"
 #include "vlu.h"
-#include "libvarnish.h"
+#include "vsb.h"
+#include "vsub.h"
 
-struct sub_priv {
+struct vsub_priv {
 	const char	*name;
 	struct vsb	*sb;
 	int		lines;
@@ -50,9 +51,9 @@ struct sub_priv {
 };
 
 static int
-sub_vlu(void *priv, const char *str)
+vsub_vlu(void *priv, const char *str)
 {
-	struct sub_priv *sp;
+	struct vsub_priv *sp;
 
 	sp = priv;
 	if (!sp->lines++)
@@ -63,13 +64,13 @@ sub_vlu(void *priv, const char *str)
 }
 
 int
-SUB_run(struct vsb *sb, sub_func_f *func, void *priv, const char *name,
+VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
     int maxlines)
 {
 	int rv, p[2], sfd, status;
 	pid_t pid;
 	struct vlu *vlu;
-	struct sub_priv sp;
+	struct vsub_priv sp;
 
 	sp.sb = sb;
 	sp.name = name;
@@ -102,7 +103,7 @@ SUB_run(struct vsb *sb, sub_func_f *func, void *priv, const char *name,
 		_exit(1);
 	}
 	AZ(close(p[1]));
-	vlu = VLU_New(&sp, sub_vlu, 0);
+	vlu = VLU_New(&sp, vsub_vlu, 0);
 	while (!VLU_Fd(p[0], vlu))
 		continue;
 	AZ(close(p[0]));

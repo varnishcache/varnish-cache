@@ -8,7 +8,7 @@ libvarnish_la_SOURCES = \
 	vav.c \
 	vas.c \
 	binary_heap.c \
-	subproc.c \
+	vsub.c \
 	cli_auth.c \
 	cli_common.c \
 	cli_serve.c \

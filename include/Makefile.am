@@ -54,6 +54,7 @@ nobase_noinst_HEADERS = \
 	vrt.h \
 	vrt_obj.h \
 	vsb.h \
+	vsub.h \
 	vsha256.h \
 	vss.h \
 	vtcp.h

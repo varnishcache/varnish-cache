@@ -42,6 +42,7 @@
 
 #include "libvcl.h"
 #include "vcli.h"
+#include "vsub.h"
 #include "vcl.h"
 #include "cli_priv.h"
 #include "mgt_cli.h"
@@ -238,7 +239,7 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 	vp.magic = VCC_PRIV_MAGIC;
 	vp.sf = sf;
 	vp.vcl = vcl;
-	if (SUB_run(sb, run_vcc, &vp, "VCC-compiler", -1)) {
+	if (VSUB_run(sb, run_vcc, &vp, "VCC-compiler", -1)) {
 		(void)unlink(sf);
 		return (NULL);
 	}
@@ -261,13 +262,13 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 	cmdsb = mgt_make_cc_cmd(sf, of);
 
 	/* Run the C-compiler in a sub-shell */
-	i = SUB_run(sb, run_cc, VSB_data(cmdsb), "C-compiler", 10);
+	i = VSUB_run(sb, run_cc, VSB_data(cmdsb), "C-compiler", 10);
 
 	(void)unlink(sf);
 	VSB_delete(cmdsb);
 
 	if (!i)
-		i = SUB_run(sb, run_dlopen, of, "dlopen", 10);
+		i = VSUB_run(sb, run_dlopen, of, "dlopen", 10);
 
 	if (i) {
 		(void)unlink(of);
