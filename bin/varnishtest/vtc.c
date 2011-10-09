@@ -39,6 +39,7 @@
 
 #include "vtc.h"
 
+#include "vav.h"
 #include "libvarnish.h"
 
 

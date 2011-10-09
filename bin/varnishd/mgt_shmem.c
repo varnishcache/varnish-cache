@@ -102,6 +102,7 @@
 #include "heritage.h"
 #include "vmb.h"
 #include "vsm.h"
+#include "vav.h"
 #include "flopen.h"
 
 #ifndef MAP_HASSEMAPHORE

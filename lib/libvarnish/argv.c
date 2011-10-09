@@ -43,7 +43,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "libvarnish.h"
+#include "vas.h"
+#include "vav.h"
 
 int
 VAV_BackSlash(const char *s, char *res)

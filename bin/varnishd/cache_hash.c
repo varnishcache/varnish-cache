@@ -61,6 +61,7 @@
 #include "stevedore.h"
 #include "hash_slinger.h"
 #include "vsha256.h"
+#include "vav.h"
 #include "cache_backend.h"
 
 static const struct hash_slinger *hash;

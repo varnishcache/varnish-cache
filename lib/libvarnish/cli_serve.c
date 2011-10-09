@@ -41,6 +41,7 @@
 
 #include "vqueue.h"
 #include "vsb.h"
+#include "vav.h"
 #include "vlu.h"
 #include "vcli.h"
 #include "cli_priv.h"

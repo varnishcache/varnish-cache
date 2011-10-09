@@ -41,6 +41,7 @@
 
 #include "vrt.h"
 #include "vrt_obj.h"
+#include "vav.h"
 #include "vcl.h"
 #include "hash_slinger.h"
 #include "cache_backend.h"

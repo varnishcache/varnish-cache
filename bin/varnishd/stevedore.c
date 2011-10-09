@@ -38,6 +38,7 @@
 
 #include "cache.h"
 #include "stevedore.h"
+#include "vav.h"
 #include "cli_priv.h"
 #include "vrt_obj.h"
 

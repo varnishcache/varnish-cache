@@ -47,6 +47,7 @@
 #include "vparam.h"
 #include "cache_waiter.h"
 
+#include "vav.h"
 #include "vss.h"
 
 #define MAGIC_INIT_STRING	"\001"

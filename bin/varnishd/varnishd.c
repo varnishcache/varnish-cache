@@ -53,6 +53,7 @@
 #include "vcli.h"
 #include "cli_common.h"
 
+#include "vav.h"
 #include "vin.h"
 #include "heritage.h"
 #include "mgt.h"
