@@ -16,6 +16,7 @@ pkginclude_HEADERS = \
 	tbl/vsc_fields.h \
 	tbl/vsl_tags.h \
 	vapi/vsm.h \
+	vapi/vsc.h \
 	varnishapi.h \
 	vcli.h \
 	vsc.h \
