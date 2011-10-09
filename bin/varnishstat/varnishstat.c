@@ -32,6 +32,9 @@
 
 #include "config.h"
 
+#include "vapi/vsm.h"
+#include "vapi/vsc.h"
+
 #include <sys/time.h>
 
 #include <errno.h>
@@ -42,8 +45,6 @@
 #include <unistd.h>
 
 #include "libvarnish.h"
-#include "vsc.h"
-#include "varnishapi.h"
 #include "varnishstat.h"
 
 /*--------------------------------------------------------------------*/

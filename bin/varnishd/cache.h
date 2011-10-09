@@ -34,6 +34,9 @@
  */
 #define VARNISH_CACHE_CHILD	1
 
+#include "vapi/vsc_int.h"
+#include "vapi/vsl_int.h"
+
 #include <sys/socket.h>
 
 #include <pthread.h>
@@ -53,9 +56,6 @@
 #include "common.h"
 
 #include "heritage.h"
-
-#include "vsc.h"
-#include "vsl.h"
 
 enum body_status {
 #define BODYSTATUS(U,l)	BS_##U,

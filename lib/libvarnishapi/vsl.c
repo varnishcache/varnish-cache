@@ -29,6 +29,9 @@
 
 #include "config.h"
 
+#include "vapi/vsm.h"
+#include "vapi/vsl.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -39,11 +42,9 @@
 
 #include "vas.h"
 #include "vsm.h"
-#include "vsl.h"
 #include "vre.h"
 #include "vbm.h"
 #include "miniobj.h"
-#include "varnishapi.h"
 
 #include "vsm_api.h"
 #include "vsl_api.h"

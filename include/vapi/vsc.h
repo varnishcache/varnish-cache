@@ -31,6 +31,8 @@
 #ifndef VAPI_VSC_H_INCLUDED
 #define VAPI_VSC_H_INCLUDED
 
+#include "vapi/vsc_int.h"
+
 /*---------------------------------------------------------------------
  * VSC level access functions
  */

@@ -29,6 +29,9 @@
 
 #include "config.h"
 
+#include "vapi/vsm.h"
+#include "vapi/vsl.h"
+
 #include <fcntl.h>
 #include <poll.h>
 #include <stdio.h>
@@ -44,7 +47,6 @@
 #include "vcli.h"
 #include "cli_common.h"
 #include "libvarnish.h"
-#include "varnishapi.h"
 #include "vss.h"
 
 #ifdef HAVE_LIBEDIT

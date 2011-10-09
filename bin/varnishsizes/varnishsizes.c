@@ -32,6 +32,9 @@
 
 #include "config.h"
 
+#include "vapi/vsm.h"
+#include "vapi/vsl.h"
+
 #include <sys/types.h>
 #include <curses.h>
 #include <errno.h>
@@ -46,8 +49,6 @@
 #include <unistd.h>
 
 #include "libvarnish.h"
-#include "vsl.h"
-#include "varnishapi.h"
 
 #define HIST_N 2000 /* how far back we remember */
 #define HIST_LOW 1 /* low end of log range */

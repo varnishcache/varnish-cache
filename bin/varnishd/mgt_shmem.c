@@ -86,6 +86,9 @@
 
 #include "config.h"
 
+#include "vapi/vsl_int.h"
+#include "vapi/vsc_int.h"
+
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -95,8 +98,6 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 
-#include "vsc.h"
-#include "vsl.h"
 #include "mgt.h"
 #include "heritage.h"
 #include "vmb.h"

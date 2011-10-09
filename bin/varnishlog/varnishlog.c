@@ -31,6 +31,9 @@
 
 #include "config.h"
 
+#include "vapi/vsm.h"
+#include "vapi/vsl.h"
+
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -45,8 +48,6 @@
 #include "vpf.h"
 
 #include "libvarnish.h"
-#include "vsl.h"
-#include "varnishapi.h"
 
 static int	b_flag, c_flag;
 

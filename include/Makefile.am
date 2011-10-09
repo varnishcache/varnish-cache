@@ -17,10 +17,10 @@ pkginclude_HEADERS = \
 	tbl/vsl_tags.h \
 	vapi/vsm.h \
 	vapi/vsc.h \
-	varnishapi.h \
+	vapi/vsc_int.h \
+	vapi/vsl.h \
+	vapi/vsl_int.h \
 	vcli.h \
-	vsc.h \
-	vsl.h \
 	vsm.h
 
 nobase_noinst_HEADERS = \

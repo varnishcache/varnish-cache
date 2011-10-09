@@ -31,8 +31,6 @@
 #ifndef VAPI_VSM_H_INCLUDED
 #define VAPI_VSM_H_INCLUDED
 
-// #include <stdint.h>
-
 /*---------------------------------------------------------------------
  * VSM level access functions
  */

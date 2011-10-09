@@ -28,6 +28,9 @@
 
 #include "config.h"
 
+#include "vapi/vsm.h"
+#include "vapi/vsl.h"
+
 #include <sys/types.h>
 #include <sys/signal.h>
 #include <sys/uio.h>
@@ -46,7 +49,6 @@
 #include "vqueue.h"
 
 #include "libvarnish.h"
-#include "varnishapi.h"
 #include "vss.h"
 
 #define freez(x) do { if (x) free(x); x = NULL; } while (0);

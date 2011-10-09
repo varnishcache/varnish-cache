@@ -32,6 +32,9 @@
 
 #include "config.h"
 
+#include "vapi/vsm.h"
+#include "vapi/vsl.h"
+
 #include <ctype.h>
 #include <curses.h>
 #include <errno.h>
@@ -48,8 +51,6 @@
 #include "vsb.h"
 
 #include "libvarnish.h"
-#include "vsl.h"
-#include "varnishapi.h"
 
 #if 0
 #define AC(x) assert((x) != ERR)

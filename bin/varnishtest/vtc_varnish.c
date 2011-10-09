@@ -28,6 +28,10 @@
 
 #include "config.h"
 
+#include "vapi/vsm.h"
+#include "vapi/vsc.h"
+#include "vapi/vsl.h"
+
 #include <stdio.h>
 
 #include <fcntl.h>
@@ -44,7 +48,6 @@
 #include "vtc.h"
 
 #include "libvarnish.h"
-#include "varnishapi.h"
 
 #include "vcli.h"
 #include "vss.h"

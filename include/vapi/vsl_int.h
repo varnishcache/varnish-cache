@@ -31,8 +31,8 @@
  * NB: THIS IS NOT A PUBLIC API TO VARNISH!
  */
 
-#ifndef SHMLOG_H_INCLUDED
-#define SHMLOG_H_INCLUDED
+#ifndef VAPI_VSL_FMT_H_INCLUDED
+#define VAPI_VSL_FMT_H_INCLUDED
 
 #define VSL_CLASS		"Log"
 
@@ -79,4 +79,4 @@ enum VSL_tag_e {
 	SLT_Reserved = 255
 };
 
-#endif
+#endif /* VAPI_VSL_FMT_H_INCLUDED */

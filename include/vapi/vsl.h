@@ -28,21 +28,12 @@
  *
  */
 
-#ifndef VARNISHAPI_H_INCLUDED
-#define VARNISHAPI_H_INCLUDED
-
-#include <vapi/vsm.h>
-#include <vapi/vsc.h>
+#ifndef VAPI_VSL_H_INCLUDED
+#define VAPI_VSL_H_INCLUDED
 
 #include <stdint.h>
 
-#include "vsl.h"
-
-/*
- * Various notes:
- *	All malloc failures will result in assert tripping.
- *	API use failures will trip assert.
- */
+#include "vapi/vsl_int.h"
 
 /*---------------------------------------------------------------------
  * VSL level access functions
@@ -111,4 +102,4 @@ int VSL_Matched(const struct VSM_data *vd, uint64_t bitmap);
 int VSL_Name2Tag(const char *name, int l);
 extern const char *VSL_tags[256];
 
-#endif
+#endif /* VAPI_VSL_H_INCLUDED */

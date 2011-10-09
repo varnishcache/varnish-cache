@@ -32,6 +32,9 @@
 
 #include "config.h"
 
+#include "vapi/vsm.h"
+#include "vapi/vsc.h"
+
 #include <sys/time.h>
 
 #ifdef HAVE_NCURSES_CURSES_H
@@ -48,9 +51,7 @@
 #include <unistd.h>
 
 #include "libvarnish.h"
-#include "vsc.h"
 #include "vqueue.h"
-#include "varnishapi.h"
 #include "varnishstat.h"
 
 #if 0

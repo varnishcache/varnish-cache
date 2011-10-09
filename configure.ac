@@ -3,7 +3,7 @@ AC_COPYRIGHT([Copyright (c) 2006 Verdens Gang AS
 Copyright (c) 2006-2011 Varnish Software AS])
 AC_REVISION([$Id$])
 AC_INIT([Varnish], [trunk], [varnish-dev@varnish-cache.org])
-AC_CONFIG_SRCDIR(include/varnishapi.h)
+AC_CONFIG_SRCDIR(include/miniobj.h)
 AM_CONFIG_HEADER(config.h)
 
 # save command line CFLAGS for use in VCC_CC (to pass through things like -m64)

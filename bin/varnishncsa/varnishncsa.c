@@ -59,6 +59,9 @@
 
 #include "config.h"
 
+#include "vapi/vsm.h"
+#include "vapi/vsl.h"
+
 #include <ctype.h>
 #include <signal.h>
 #include <stdio.h>
@@ -74,9 +77,7 @@
 #include "vqueue.h"
 
 #include "libvarnish.h"
-#include "vsl.h"
 #include "vre.h"
-#include "varnishapi.h"
 #include "base64.h"
 
 static volatile sig_atomic_t reopen;
