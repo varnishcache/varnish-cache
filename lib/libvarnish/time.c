@@ -116,10 +116,10 @@ static const char *fmts[] = {
 	NULL
 };
 
-time_t
+double
 TIM_parse(const char *p)
 {
-	time_t t;
+	double t;
 	struct tm tm;
 	const char **r;
 

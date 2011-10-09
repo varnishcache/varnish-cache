@@ -58,6 +58,8 @@
 #ifndef CLOCK_MONOTONIC
 #define CLOCK_MONOTONIC	0
 
+#include <sys/time.h>
+
 static int
 clock_gettime(int foo, struct timespec *ts)
 {

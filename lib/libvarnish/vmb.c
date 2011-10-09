@@ -27,6 +27,7 @@
  */
 
 #include <pthread.h>
+#include <unistd.h>
 #include "libvarnish.h"
 #include "vmb.h"
 

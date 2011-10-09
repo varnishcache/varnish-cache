@@ -28,10 +28,7 @@
  *
  */
 
-#include <errno.h>
-#include <time.h>
 #include <stdint.h>
-#include <sys/types.h>
 
 #include "vas.h"
 
@@ -88,7 +85,7 @@ void VTCP_set_read_timeout(int s, double seconds);
 /* from libvarnish/time.c */
 #define TIM_FORMAT_SIZE 30
 void TIM_format(double t, char *p);
-time_t TIM_parse(const char *p);
+double TIM_parse(const char *p);
 double TIM_mono(void);
 double TIM_real(void);
 void TIM_sleep(double t);

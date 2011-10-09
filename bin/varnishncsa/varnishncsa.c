@@ -69,6 +69,7 @@
 #include <string.h>
 #include <strings.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "compat/daemon.h"
 
