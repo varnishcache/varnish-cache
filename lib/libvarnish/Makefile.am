@@ -5,8 +5,8 @@ pkglib_LTLIBRARIES = libvarnish.la
 libvarnish_la_LDFLAGS = -avoid-version
 
 libvarnish_la_SOURCES = \
-	argv.c \
-	assert.c \
+	vav.c \
+	vas.c \
 	binary_heap.c \
 	subproc.c \
 	cli_auth.c \
@@ -15,7 +15,7 @@ libvarnish_la_SOURCES = \
 	flopen.c \
 	num.c \
 	time.c \
-	tcp.c \
+	vtcp.c \
 	vct.c \
 	version.c \
 	vev.c \

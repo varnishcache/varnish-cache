@@ -8,8 +8,8 @@ dist_man_MANS = varnishreplay.1
 
 varnishreplay_SOURCES = \
 	varnishreplay.c \
-	$(top_builddir)/lib/libvarnish/assert.c \
-	$(top_builddir)/lib/libvarnish/tcp.c \
+	$(top_builddir)/lib/libvarnish/vas.c \
+	$(top_builddir)/lib/libvarnish/vtcp.c \
 	$(top_builddir)/lib/libvarnish/vss.c
 
 varnishreplay_LDADD = \
