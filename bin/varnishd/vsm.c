@@ -47,13 +47,15 @@
 
 #include "config.h"
 
-#include <unistd.h>
-#include <string.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "common.h"
-#include "vsm.h"
+
 #include "vmb.h"
+#include "vsm.h"
 #include "vtim.h"
 
 /* These two come from beyond (mgt_shmem.c actually) */
