@@ -28,14 +28,21 @@
  *
  */
 
-#include "vqueue.h"
+#include <stdint.h>
+
+#include "libvarnish.h"
+#include "vas.h"
 
 #include "miniobj.h"
-#include "vsb.h"
 #include "vcl.h"
-#include "libvarnish.h"
+#include "vqueue.h"
+#include "vsb.h"
 
 #include "vcc_token_defs.h"
+
+#ifndef NULL
+#define NULL ((void*)0)
+#endif
 
 struct vsb;
 

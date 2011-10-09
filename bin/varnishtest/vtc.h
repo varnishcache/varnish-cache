@@ -34,11 +34,11 @@
 #include <pthread_np.h>
 #endif
 
+#include "miniobj.h"
+#include "vas.h"
 #include "vqueue.h"
 #include "vsb.h"
-#include "miniobj.h"
 
-struct vsb;
 struct vtclog;
 struct cmds;
 

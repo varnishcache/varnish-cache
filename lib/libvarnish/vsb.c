@@ -35,7 +35,7 @@ __FBSDID("$FreeBSD: head/sys/kern/subr_vsb.c 222004 2011-05-17 06:36:32Z phk $")
 #include <stdlib.h>
 #include <string.h>
 
-#include "libvarnish.h"
+#include "vas.h"
 #include "vsb.h"
 
 #define	KASSERT(e, m)		assert(e)

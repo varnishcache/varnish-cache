@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "libvarnish.h"
+#include "vas.h"
 #include "vlu.h"
 #include "miniobj.h"
 

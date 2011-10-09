@@ -50,6 +50,7 @@
 
 #include "vsb.h"
 
+#include "vas.h"
 #include "libvarnish.h"
 
 #if 0

@@ -47,6 +47,7 @@
 #include "vsb.h"
 #include "vpf.h"
 
+#include "vas.h"
 #include "libvarnish.h"
 
 static int	b_flag, c_flag;

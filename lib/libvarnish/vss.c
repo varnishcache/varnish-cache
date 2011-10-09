@@ -43,7 +43,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "libvarnish.h"
+#include "vas.h"
 #include "vtcp.h"
 #include "vss.h"
 

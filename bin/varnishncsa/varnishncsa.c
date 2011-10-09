@@ -73,6 +73,7 @@
 
 #include "compat/daemon.h"
 
+#include "vas.h"
 #include "vsb.h"
 #include "vpf.h"
 #include "vqueue.h"

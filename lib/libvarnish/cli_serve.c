@@ -39,6 +39,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "vas.h"
 #include "vqueue.h"
 #include "vsb.h"
 #include "vav.h"
@@ -47,7 +48,6 @@
 #include "cli_priv.h"
 #include "cli_common.h"
 #include "cli_serve.h"
-#include "libvarnish.h"
 #include "miniobj.h"
 
 struct VCLS_func {

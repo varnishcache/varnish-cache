@@ -35,12 +35,13 @@
 
 #include "config.h"
 
-#include <unistd.h>
-#include <stdlib.h>
 #include <limits.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #include "binary_heap.h"
-#include "libvarnish.h"
+#include "vas.h"
 
 /* Parameters --------------------------------------------------------*/
 

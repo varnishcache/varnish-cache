@@ -35,7 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "libvarnish.h"
+#include "vas.h"
 
 static void
 VAS_Fail_default(const char *func, const char *file, int line,

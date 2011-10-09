@@ -1,5 +1,6 @@
 /*-
- * Copyright (c) 2010-2011 Varnish Software AS
+ * Copyright (c) 2006 Verdens Gang AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -27,7 +28,7 @@
  *
  */
 
-#include "vas.h"
-#include "libvarnish.h"
+#include <stdint.h>
 
-void do_curses(struct VSM_data *vd, const struct VSC_C_main *VSC_C_main, int delay);
+/* from libvarnish/vnum.c */
+const char *VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel);

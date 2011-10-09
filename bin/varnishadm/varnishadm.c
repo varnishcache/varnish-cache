@@ -46,7 +46,7 @@
 
 #include "vcli.h"
 #include "cli_common.h"
-#include "libvarnish.h"
+#include "vas.h"
 #include "vss.h"
 
 #ifdef HAVE_LIBEDIT

@@ -34,6 +34,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,6 +42,7 @@
 
 #include "libvarnish.h"		/* XXX: for assert() */
 #include "flopen.h"
+#include "vas.h"
 #include "vpf.h"
 
 struct vpf_fh {

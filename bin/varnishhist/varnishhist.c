@@ -48,6 +48,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "vas.h"
 #include "libvarnish.h"
 
 #define HIST_N 2000 /* how far back we remember */

@@ -50,7 +50,6 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "libvarnish.h"
 #include "vqueue.h"
 #include "varnishstat.h"
 

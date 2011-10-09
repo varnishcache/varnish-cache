@@ -42,7 +42,7 @@
 #define VBIG_ENDIAN	_BIG_ENDIAN
 #endif
 
-#include "libvarnish.h"
+#include "vas.h"
 #include "vsha256.h"
 #include "vend.h"
 

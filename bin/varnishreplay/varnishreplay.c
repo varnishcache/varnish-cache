@@ -48,6 +48,7 @@
 
 #include "vqueue.h"
 
+#include "vas.h"
 #include "libvarnish.h"
 #include "vss.h"
 

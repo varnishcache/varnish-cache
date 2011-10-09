@@ -36,6 +36,7 @@
 #include <poll.h>
 #include <signal.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -44,7 +45,7 @@
 
 #include "vsb.h"
 
-#include "libvarnish.h"
+#include "vas.h"
 
 #include "vcli.h"
 #include "cli_priv.h"

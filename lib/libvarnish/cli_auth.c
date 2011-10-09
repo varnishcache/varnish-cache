@@ -32,10 +32,9 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "vas.h"
 #include "vcli.h"
-#include "libvarnish.h"
 #include "vsha256.h"
-
 
 void
 VCLI_AuthResponse(int S_fd, const char *challenge,

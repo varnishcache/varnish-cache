@@ -38,7 +38,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-#include "libvarnish.h"
+#include "vas.h"
 #include "vtim.h"
 #include "vev.h"
 #include "miniobj.h"

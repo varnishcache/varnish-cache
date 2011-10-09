@@ -31,6 +31,7 @@
 
 #include "libvarnish.h"
 #include "miniobj.h"
+#include "vas.h"
 #include "vre.h"
 
 struct vre {

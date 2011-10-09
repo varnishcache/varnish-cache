@@ -28,16 +28,6 @@
  *
  */
 
-#include <stdint.h>
-
-#include "vas.h"
-
-#ifndef NULL
-#define NULL ((void*)0)
-#endif
-
-struct vsb;
-
 /* from libvarnish/version.c */
 void VCS_Message(const char *);
 
@@ -54,3 +44,4 @@ void VCS_Message(const char *);
 		assert(vsnprintf(buf, sizeof buf, fmt, ap)		\
 		    < sizeof buf);					\
 	} while (0)
+
