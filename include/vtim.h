@@ -28,38 +28,12 @@
  *
  */
 
-#include <stdint.h>
-
-#include "vas.h"
-
-#ifndef NULL
-#define NULL ((void*)0)
-#endif
-
-struct vsb;
-
-/* from libvarnish/num.c */
-const char *str2bytes(const char *p, uintmax_t *r, uintmax_t rel);
-
-/* from libvarnish/version.c */
-void VCS_Message(const char *);
-
-/* from libvarnish/vtmpfile.c */
-int seed_random(void);
-int vtmpfile(char *);
-char *vreadfile(const char *pfx, const char *fn, ssize_t *sz);
-char *vreadfd(int fd, ssize_t *sz);
-
-/* Safe printf into a fixed-size buffer */
-#define bprintf(buf, fmt, ...)						\
-	do {								\
-		assert(snprintf(buf, sizeof buf, fmt, __VA_ARGS__)	\
-		    < sizeof buf);					\
-	} while (0)
-
-/* Safe printf into a fixed-size buffer */
-#define vbprintf(buf, fmt, ap)						\
-	do {								\
-		assert(vsnprintf(buf, sizeof buf, fmt, ap)		\
-		    < sizeof buf);					\
-	} while (0)
+/* from libvarnish/vtim.c */
+#define VTIM_FORMAT_SIZE 30
+void VTIM_format(double t, char *p);
+double VTIM_parse(const char *p);
+double VTIM_mono(void);
+double VTIM_real(void);
+void VTIM_sleep(double t);
+struct timespec VTIM_timespec(double t);
+struct timeval VTIM_timeval(double t);

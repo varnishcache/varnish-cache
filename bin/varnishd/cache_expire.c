@@ -57,6 +57,7 @@
 #include "cache.h"
 #include "hash_slinger.h"
 #include "stevedore.h"
+#include "vtim.h"
 
 static pthread_t exp_thread;
 static struct binheap *exp_heap;
@@ -337,14 +338,14 @@ exp_timer(struct sess *sp, void *priv)
 	struct object *o;
 
 	(void)priv;
-	t = TIM_real();
+	t = VTIM_real();
 	oc = NULL;
 	while (1) {
 		if (oc == NULL) {
 			WSL_Flush(sp->wrk, 0);
 			WRK_SumStat(sp->wrk);
-			TIM_sleep(params->expiry_sleep);
-			t = TIM_real();
+			VTIM_sleep(params->expiry_sleep);
+			t = VTIM_real();
 		}
 
 		Lck_Lock(&exp_mtx);
@@ -360,7 +361,7 @@ exp_timer(struct sess *sp, void *priv)
 		 * got out of date, refresh it and check again.
 		 */
 		if (oc->timer_when > t)
-			t = TIM_real();
+			t = VTIM_real();
 		if (oc->timer_when > t) {
 			Lck_Unlock(&exp_mtx);
 			oc = NULL;

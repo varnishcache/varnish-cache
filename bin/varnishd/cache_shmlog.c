@@ -34,6 +34,7 @@
 #include "cache.h"
 #include "vmb.h"
 #include "vsm.h"
+#include "vtim.h"
 
 /* These cannot be struct lock, which depends on vsm/vsl working */
 static pthread_mutex_t vsl_mtx;
@@ -285,7 +286,7 @@ VSL_Init(void)
 	vsl_ptr = vsl_start + 1;
 
 	vsl_wrap();
-	VSM_head->starttime = (intmax_t)TIM_real();
+	VSM_head->starttime = (intmax_t)VTIM_real();
 	memset(VSM_head->panicstr, '\0', sizeof *VSM_head->panicstr);
 	memset(VSC_C_main, 0, sizeof *VSC_C_main);
 	VSM_head->child_pid = getpid();

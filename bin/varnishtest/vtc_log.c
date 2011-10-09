@@ -36,6 +36,7 @@
 #include "vtc.h"
 
 #include "libvarnish.h"
+#include "vtim.h"
 
 static pthread_mutex_t	vtclog_mtx;
 static char		*vtclog_buf;
@@ -58,7 +59,7 @@ void
 vtc_loginit(char *buf, unsigned buflen)
 {
 
-	t0 = TIM_mono();
+	t0 = VTIM_mono();
 	vtclog_buf = buf;
 	vtclog_left = buflen;
 	AZ(pthread_mutex_init(&vtclog_mtx, NULL));
@@ -126,7 +127,7 @@ vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...)
 	double tx;
 
 	CHECK_OBJ_NOTNULL(vl, VTCLOG_MAGIC);
-	tx = TIM_mono() - t0;
+	tx = VTIM_mono() - t0;
 	AZ(pthread_mutex_lock(&vl->mtx));
 	assert(lvl < NLEAD);
 	VSB_clear(vl->vsb);
@@ -162,7 +163,7 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str, int 
 	double tx;
 
 	CHECK_OBJ_NOTNULL(vl, VTCLOG_MAGIC);
-	tx = TIM_mono() - t0;
+	tx = VTIM_mono() - t0;
 	assert(lvl < NLEAD);
 	AZ(pthread_mutex_lock(&vl->mtx));
 	VSB_clear(vl->vsb);
@@ -225,7 +226,7 @@ vtc_hexdump(struct vtclog *vl, unsigned lvl, const char *pfx, const unsigned cha
 	double tx;
 
 	CHECK_OBJ_NOTNULL(vl, VTCLOG_MAGIC);
-	tx = TIM_mono() - t0;
+	tx = VTIM_mono() - t0;
 	assert(len >= 0);
 	assert(lvl < NLEAD);
 	AZ(pthread_mutex_lock(&vl->mtx));

@@ -43,6 +43,7 @@
 
 #include "cache.h"
 #include "cache_waiter.h"
+#include "vtim.h"
 
 #define MAX_EVENTS 256
 
@@ -195,7 +196,7 @@ vws_thread(void *priv)
 			vws_port_ev(vws, ev + ei);
 
 		/* check for timeouts */
-		now = TIM_real();
+		now = VTIM_real();
 		deadline = now - params->sess_timeout;
 
 		/*
@@ -234,7 +235,7 @@ vws_thread(void *priv)
 			} else if (tmo > max_t) {
 				timeout = &max_ts;
 			} else {
-				ts = TIM_timespec(tmo);
+				ts = VTIM_timespec(tmo);
 				timeout = &ts;
 			}
 		} else {

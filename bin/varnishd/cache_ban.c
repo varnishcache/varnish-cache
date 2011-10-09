@@ -70,6 +70,7 @@
 
 #include "vcli.h"
 #include "vend.h"
+#include "vtim.h"
 #include "cli_priv.h"
 #include "hash_slinger.h"
 
@@ -402,7 +403,7 @@ BAN_Insert(struct ban *b)
 	b->spec = malloc(ln + 13L);	/* XXX */
 	XXXAN(b->spec);
 
-	t0 = TIM_real();
+	t0 = VTIM_real();
 	memcpy(b->spec, &t0, sizeof t0);
 	b->spec[12] = (b->flags & BAN_F_REQ) ? 1 : 0;
 	memcpy(b->spec + 13, VSB_data(b->vsb), ln);
@@ -835,10 +836,10 @@ ban_lurker(struct sess *sp, void *priv)
 	while (1) {
 		if (params->ban_lurker_sleep == 0.0) {
 			/* Lurker is disabled.  */
-			TIM_sleep(1.0);
+			VTIM_sleep(1.0);
 			continue;
 		}
-		TIM_sleep(params->ban_lurker_sleep);
+		VTIM_sleep(params->ban_lurker_sleep);
 		ban_lurker_work(sp);
 		WSL_Flush(sp->wrk, 0);
 		WRK_SumStat(sp->wrk);

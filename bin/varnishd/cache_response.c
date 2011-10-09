@@ -38,6 +38,7 @@
 #include "cache.h"
 #include "stevedore.h"
 #include "vct.h"
+#include "vtim.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -133,7 +134,7 @@ RES_BuildHttp(const struct sess *sp)
 		http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,
 		    "Transfer-Encoding: chunked");
 
-	TIM_format(TIM_real(), time_str);
+	VTIM_format(VTIM_real(), time_str);
 	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp, "Date: %s", time_str);
 
 	if (sp->xid != sp->obj->xid)

@@ -71,6 +71,7 @@ DOT acceptor -> start [style=bold,color=green]
 
 #include "vcl.h"
 #include "vtcp.h"
+#include "vtim.h"
 #include "cli_priv.h"
 #include "hash_slinger.h"
 #include "stevedore.h"
@@ -211,7 +212,7 @@ cnt_prepresp(struct sess *sp)
 		}
 	}
 
-	sp->t_resp = TIM_real();
+	sp->t_resp = VTIM_real();
 	if (sp->obj->objcore != NULL) {
 		if ((sp->t_resp - sp->obj->last_lru) > params->lru_timeout &&
 		    EXP_Touch(sp->obj->objcore))
@@ -326,7 +327,7 @@ cnt_done(struct sess *sp)
 
 	SES_Charge(sp);
 
-	sp->t_end = TIM_real();
+	sp->t_end = VTIM_real();
 	sp->wrk->lastused = sp->t_end;
 	if (sp->xid == 0) {
 		sp->t_req = sp->t_end;
@@ -466,7 +467,7 @@ cnt_error(struct sess *sp)
 
 	http_PutProtocol(w, sp->vsl_id, h, "HTTP/1.1");
 	http_PutStatus(h, sp->err_code);
-	TIM_format(TIM_real(), date);
+	VTIM_format(VTIM_real(), date);
 	http_PrintfHeader(w, sp->vsl_id, h, "Date: %s", date);
 	http_PrintfHeader(w, sp->vsl_id, h, "Server: Varnish");
 
@@ -581,7 +582,7 @@ cnt_fetch(struct sess *sp)
 		 * What does RFC2616 think about TTL ?
 		 */
 		EXP_Clr(&sp->wrk->exp);
-		sp->wrk->exp.entered = TIM_real();
+		sp->wrk->exp.entered = VTIM_real();
 		RFC2616_Ttl(sp);
 
 		/* pass from vclrecv{} has negative TTL */
@@ -823,7 +824,7 @@ cnt_fetchbody(struct sess *sp)
 	http_CopyHome(sp->wrk, sp->vsl_id, hp2);
 
 	if (http_GetHdr(hp, H_Last_Modified, &b))
-		sp->obj->last_modified = TIM_parse(b);
+		sp->obj->last_modified = VTIM_parse(b);
 	else
 		sp->obj->last_modified = floor(sp->wrk->exp.entered);
 
@@ -1464,7 +1465,7 @@ cnt_start(struct sess *sp)
 
 	/* Update stats of various sorts */
 	sp->wrk->stats.client_req++;
-	sp->t_req = TIM_real();
+	sp->t_req = VTIM_real();
 	sp->wrk->lastused = sp->t_req;
 	sp->wrk->acct_tmp.req++;
 

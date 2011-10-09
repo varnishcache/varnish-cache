@@ -53,6 +53,7 @@
 #include "vss.h"
 #include "vbm.h"
 #include "vtcp.h"
+#include "vtim.h"
 
 pid_t		child_pid = -1;
 
@@ -439,7 +440,7 @@ mgt_save_panic(void)
 		VSB_delete(child_panic);
 	child_panic = VSB_new_auto();
 	XXXAN(child_panic);
-	TIM_format(TIM_real(), time_str);
+	VTIM_format(VTIM_real(), time_str);
 	VSB_printf(child_panic, "Last panic at: %s\n", time_str);
 	VSB_cat(child_panic, VSM_head->panicstr);
 	AZ(VSB_finish(child_panic));

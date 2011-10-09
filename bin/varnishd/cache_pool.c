@@ -51,6 +51,7 @@
 #include "cache_waiter.h"
 #include "hash_slinger.h"
 #include "vtcp.h"
+#include "vtim.h"
 
 /*--------------------------------------------------------------------
  * MAC OS/X is incredibly moronic when it comes to time and such...
@@ -224,7 +225,7 @@ Pool_Work_Thread(void *priv, struct worker *w)
 		} else if (VTAILQ_EMPTY(&pp->socks)) {
 			/* Nothing to do: To sleep, perchance to dream ... */
 			if (isnan(w->lastused))
-				w->lastused = TIM_real();
+				w->lastused = VTIM_real();
 			VTAILQ_INSERT_HEAD(&pp->idle, w, list);
 			if (!stats_clean)
 				WRK_SumStat(w);
@@ -343,7 +344,7 @@ Pool_Schedule(struct pool *pp, struct sess *sp)
 	 * XXX: a notice might be polite, but would potentially
 	 * XXX: sleep whichever thread got us here
 	 */
-	sp->t_end = TIM_real();
+	sp->t_end = VTIM_real();
 	if (sp->vcl != NULL) {
 		/*
 		 * A session parked on a busy object can come here
@@ -401,10 +402,10 @@ pool_breed(struct pool *qp, const pthread_attr_t *tp_attr)
 			Lck_Lock(&pool_mtx);
 			VSC_C_main->threads_limited++;
 			Lck_Unlock(&pool_mtx);
-			TIM_sleep(params->wthread_fail_delay * 1e-3);
+			VTIM_sleep(params->wthread_fail_delay * 1e-3);
 		} else {
 			AZ(pthread_detach(tp));
-			TIM_sleep(params->wthread_add_delay * 1e-3);
+			VTIM_sleep(params->wthread_add_delay * 1e-3);
 			qp->nthr++;
 			Lck_Lock(&pool_mtx);
 			VSC_C_main->threads++;
@@ -476,7 +477,7 @@ pool_herder(void *priv)
 		if (pp->nthr <= params->wthread_min) 
 			continue;
 
-		t_idle = TIM_real() - params->wthread_timeout;
+		t_idle = VTIM_real() - params->wthread_timeout;
 
 		Lck_Lock(&pp->mtx);
 		VSC_C_main->sess_queued += pp->nqueued;

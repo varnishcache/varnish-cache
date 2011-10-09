@@ -37,6 +37,7 @@
 
 #include "vrt.h"
 #include "vtcp.h"
+#include "vtim.h"
 #include "vrt_obj.h"
 #include "cache_backend.h"
 #include "hash_slinger.h"
@@ -535,7 +536,7 @@ VRT_r_obj_lastuse(const struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	return (TIM_real() - sp->obj->last_use);
+	return (VTIM_real() - sp->obj->last_use);
 }
 
 unsigned

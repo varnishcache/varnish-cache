@@ -55,6 +55,7 @@
 
 #include "vav.h"
 #include "vin.h"
+#include "vtim.h"
 #include "heritage.h"
 #include "mgt.h"
 #include "hash_slinger.h"
@@ -376,9 +377,9 @@ main(int argc, char * const *argv)
 	 */
 	AZ(setenv("TZ", "UTC", 1));
 	tzset();
-	assert(TIM_parse("Sun, 06 Nov 1994 08:49:37 GMT") == 784111777);
-	assert(TIM_parse("Sunday, 06-Nov-94 08:49:37 GMT") == 784111777);
-	assert(TIM_parse("Sun Nov  6 08:49:37 1994") == 784111777);
+	assert(VTIM_parse("Sun, 06 Nov 1994 08:49:37 GMT") == 784111777);
+	assert(VTIM_parse("Sunday, 06-Nov-94 08:49:37 GMT") == 784111777);
+	assert(VTIM_parse("Sun Nov  6 08:49:37 1994") == 784111777);
 
 	/*
 	 * Check that our SHA256 works

@@ -43,6 +43,7 @@
 #include "vrt_obj.h"
 #include "vav.h"
 #include "vcl.h"
+#include "vtim.h"
 #include "hash_slinger.h"
 #include "cache_backend.h"
 
@@ -276,7 +277,7 @@ VRT_r_now(const struct sess *sp)
 {
 
 	(void)sp;
-	return (TIM_real());
+	return (VTIM_real());
 }
 
 /*--------------------------------------------------------------------*/
@@ -339,8 +340,8 @@ VRT_time_string(const struct sess *sp, double t)
 {
 	char *p;
 
-	AN(p = WS_Alloc(sp->http->ws, TIM_FORMAT_SIZE));
-	TIM_format(t, p);
+	AN(p = WS_Alloc(sp->http->ws, VTIM_FORMAT_SIZE));
+	VTIM_format(t, p);
 	return p;
 }
 

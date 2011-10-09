@@ -36,6 +36,7 @@
 #include "cache.h"
 
 #include "cache_waiter.h"
+#include "vtim.h"
 
 #define NEEV	128
 
@@ -139,7 +140,7 @@ vwp_main(void *priv)
 		assert(vwp->pollfd[vwp->pipes[1]].fd == -1);
 		v = poll(vwp->pollfd, vwp->hpoll + 1, 100);
 		assert(v >= 0);
-		deadline = TIM_real() - params->sess_timeout;
+		deadline = VTIM_real() - params->sess_timeout;
 		v2 = v;
 		VTAILQ_FOREACH_SAFE(sp, &vwp->sesshead, list, sp2) {
 			if (v != 0 && v2 == 0)

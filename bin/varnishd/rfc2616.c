@@ -33,6 +33,7 @@
 #include <math.h>
 
 #include "cache.h"
+#include "vtim.h"
 
 /*--------------------------------------------------------------------
  * TTL and Age calculation in Varnish
@@ -88,10 +89,10 @@ RFC2616_Ttl(const struct sess *sp)
 		sp->wrk->exp.age = age;
 	}
 	if (http_GetHdr(hp, H_Expires, &p))
-		h_expires = TIM_parse(p);
+		h_expires = VTIM_parse(p);
 
 	if (http_GetHdr(hp, H_Date, &p))
-		h_date = TIM_parse(p);
+		h_date = VTIM_parse(p);
 
 	switch (sp->err_code) {
 	default:
@@ -315,7 +316,7 @@ RFC2616_Do_Cond(const struct sess *sp)
 	if (http_GetHdr(sp->http, H_If_Modified_Since, &p) ) {
 		if (!sp->obj->last_modified)
 			return (0);
-		ims = TIM_parse(p);
+		ims = VTIM_parse(p);
 		if (ims > sp->t_req)	/* [RFC2616 14.25] */
 			return (0);
 		if (sp->obj->last_modified > ims)

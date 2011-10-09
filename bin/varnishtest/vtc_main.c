@@ -42,6 +42,7 @@
 
 #include "libvarnish.h"
 #include "vev.h"
+#include "vtim.h"
 
 #ifndef HAVE_SRANDOMDEV
 #include "compat/srandomdev.h"
@@ -193,7 +194,7 @@ tst_cb(const struct vev *ve, int what)
 		njob--;
 		px = wait4(jp->child, &stx, 0, NULL);
 		assert(px == jp->child);
-		t = TIM_mono() - jp->t0;
+		t = VTIM_mono() - jp->t0;
 		AZ(close(ve->fd));
 
 		if (stx && vtc_verbosity)
@@ -283,7 +284,7 @@ start_test(void)
 	AZ(pipe(p));
 	assert(p[0] > STDERR_FILENO);
 	assert(p[1] > STDERR_FILENO);
-	jp->t0 = TIM_mono();
+	jp->t0 = VTIM_mono();
 	jp->child = fork();
 	assert(jp->child >= 0);
 	if (jp->child == 0) {

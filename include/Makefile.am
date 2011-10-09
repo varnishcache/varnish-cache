@@ -57,7 +57,8 @@ nobase_noinst_HEADERS = \
 	vsub.h \
 	vsha256.h \
 	vss.h \
-	vtcp.h
+	vtcp.h \
+	vtim.h
 
 tbl/vrt_stv_var.h tbl/vcl_returns.h vcl.h vrt_obj.h: $(top_srcdir)/lib/libvcl/generate.py $(top_srcdir)/include/vrt.h
 	mkdir -p tbl

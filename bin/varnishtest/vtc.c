@@ -40,6 +40,7 @@
 #include "vtc.h"
 
 #include "vav.h"
+#include "vtim.h"
 #include "libvarnish.h"
 
 
@@ -129,10 +130,10 @@ macro_get(const char *b, const char *e)
 	l = e - b;
 
 	if (l == 4 && !memcmp(b, "date", l)) {
-		double t = TIM_real();
+		double t = VTIM_real();
 		retval = malloc(64);
 		AN(retval);
-		TIM_format(t, retval);
+		VTIM_format(t, retval);
 		return (retval);
 	}
 
@@ -415,7 +416,7 @@ cmd_delay(CMD_ARGS)
 	AZ(av[2]);
 	f = strtod(av[1], NULL);
 	vtc_log(vl, 3, "delaying %g second(s)", f);
-	TIM_sleep(f);
+	VTIM_sleep(f);
 }
 
 /**********************************************************************

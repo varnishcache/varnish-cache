@@ -34,6 +34,7 @@
 
 #include "vcli.h"
 #include "vtcp.h"
+#include "vtim.h"
 #include "cli_priv.h"
 
 static pthread_t	VCA_thread;
@@ -167,7 +168,7 @@ vca_pace_check(void)
 	p = vca_pace;
 	Lck_Unlock(&pace_mtx);
 	if (p > 0.0)
-		TIM_sleep(p);
+		VTIM_sleep(p);
 }
 
 static void
@@ -273,7 +274,7 @@ VCA_SetupSess(struct worker *w)
 	sp->fd = wa->acceptsock;
 	sp->vsl_id = wa->acceptsock | VSL_CLIENTMARKER ;
 	wa->acceptsock = -1;
-	sp->t_open = TIM_real();
+	sp->t_open = VTIM_real();
 	sp->t_end = sp->t_open;
 	sp->mylsock = wa->acceptlsock;
 	CHECK_OBJ_NOTNULL(sp->mylsock, LISTEN_SOCK_MAGIC);
@@ -313,14 +314,14 @@ vca_acct(void *arg)
 	hack_ready = 1;
 
 	need_test = 1;
-	t0 = TIM_real();
+	t0 = VTIM_real();
 	while (1) {
 		(void)sleep(1);
 #ifdef SO_SNDTIMEO_WORKS
 		if (params->send_timeout != send_timeout) {
 			need_test = 1;
 			send_timeout = params->send_timeout;
-			tv_sndtimeo = TIM_timeval(send_timeout);
+			tv_sndtimeo = VTIM_timeval(send_timeout);
 			VTAILQ_FOREACH(ls, &heritage.socks, list) {
 				if (ls->sock < 0)
 					continue;
@@ -334,7 +335,7 @@ vca_acct(void *arg)
 		if (params->sess_timeout != sess_timeout) {
 			need_test = 1;
 			sess_timeout = params->sess_timeout;
-			tv_rcvtimeo = TIM_timeval(sess_timeout);
+			tv_rcvtimeo = VTIM_timeval(sess_timeout);
 			VTAILQ_FOREACH(ls, &heritage.socks, list) {
 				if (ls->sock < 0)
 					continue;
@@ -344,7 +345,7 @@ vca_acct(void *arg)
 			}
 		}
 #endif
-		now = TIM_real();
+		now = VTIM_real();
 		VSC_C_main->uptime = (uint64_t)(now - t0);
 	}
 	NEEDLESS_RETURN(NULL);
