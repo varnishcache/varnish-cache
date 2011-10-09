@@ -44,6 +44,7 @@ nobase_noinst_HEADERS = \
 	vct.h \
 	vend.h \
 	vev.h \
+	vfil.h \
 	vin.h \
 	vlu.h \
 	vmb.h \

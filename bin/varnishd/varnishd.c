@@ -55,11 +55,16 @@
 
 #include "vav.h"
 #include "vin.h"
+#include "vfil.h"
 #include "vtim.h"
 #include "heritage.h"
 #include "mgt.h"
 #include "hash_slinger.h"
 #include "stevedore.h"
+
+#ifndef HAVE_SRANDOMDEV
+#include "compat/srandomdev.h"
+#endif
 
 struct heritage		heritage;
 volatile struct params	*params;
@@ -355,7 +360,7 @@ main(int argc, char * const *argv)
 	for (o = getdtablesize(); o > STDERR_FILENO; o--)
 		(void)close(o);
 
-	AZ(seed_random());
+	srandomdev();
 
 	mgt_got_fd(STDERR_FILENO);
 
@@ -543,7 +548,7 @@ main(int argc, char * const *argv)
 	}
 
 	if (f_arg != NULL) {
-		vcl = vreadfile(NULL, f_arg, NULL);
+		vcl = VFIL_readfile(NULL, f_arg, NULL);
 		if (vcl == NULL) {
 			fprintf(stderr, "Cannot read '%s': %s\n",
 			    f_arg, strerror(errno));

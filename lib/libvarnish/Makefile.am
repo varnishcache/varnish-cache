@@ -19,6 +19,7 @@ libvarnish_la_SOURCES = \
 	vct.c \
 	version.c \
 	vev.c \
+	vfil.c \
 	vin.c \
 	vlu.c \
 	vmb.c \
@@ -26,8 +27,7 @@ libvarnish_la_SOURCES = \
 	vre.c \
 	vsb.c \
 	vsha256.c \
-	vss.c \
-	vtmpfile.c
+	vss.c
 
 libvarnish_la_CFLAGS = -DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"'
 libvarnish_la_LIBADD = ${RT_LIBS} ${NET_LIBS} ${LIBM} @PCRE_LIBS@

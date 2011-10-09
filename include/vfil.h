@@ -28,29 +28,8 @@
  *
  */
 
-#include <stdint.h>
-
-#include "vas.h"
-
-#ifndef NULL
-#define NULL ((void*)0)
-#endif
-
-struct vsb;
-
-/* from libvarnish/version.c */
-void VCS_Message(const char *);
-
-/* Safe printf into a fixed-size buffer */
-#define bprintf(buf, fmt, ...)						\
-	do {								\
-		assert(snprintf(buf, sizeof buf, fmt, __VA_ARGS__)	\
-		    < sizeof buf);					\
-	} while (0)
-
-/* Safe printf into a fixed-size buffer */
-#define vbprintf(buf, fmt, ap)						\
-	do {								\
-		assert(vsnprintf(buf, sizeof buf, fmt, ap)		\
-		    < sizeof buf);					\
-	} while (0)
+/* from libvarnish/vfil.c */
+int seed_random(void);
+int VFIL_tmpfile(char *);
+char *VFIL_readfile(const char *pfx, const char *fn, ssize_t *sz);
+char *VFIL_readfd(int fd, ssize_t *sz);

@@ -61,6 +61,7 @@
 
 #include "vcc_compile.h"
 #include "libvcl.h"
+#include "vfil.h"
 
 struct method method_tab[] = {
 #define VCL_MET_MAC(l,U,m)	{ "vcl_"#l, m, VCL_MET_##U },
@@ -409,7 +410,7 @@ vcc_file_source(const struct vcc *tl, struct vsb *sb, const char *fn)
 	char *f;
 	struct source *sp;
 
-	f = vreadfile(tl->vcl_dir, fn, NULL);
+	f = VFIL_readfile(tl->vcl_dir, fn, NULL);
 	if (f == NULL) {
 		VSB_printf(sb, "Cannot read file '%s': %s\n",
 		    fn, strerror(errno));

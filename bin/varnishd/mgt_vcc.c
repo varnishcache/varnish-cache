@@ -44,6 +44,7 @@
 #include "vcli.h"
 #include "vsub.h"
 #include "vcl.h"
+#include "vfil.h"
 #include "cli_priv.h"
 #include "mgt_cli.h"
 
@@ -227,7 +228,7 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 	struct vcc_priv vp;
 
 	/* Create temporary C source file */
-	sfd = vtmpfile(sf);
+	sfd = VFIL_tmpfile(sf);
 	if (sfd < 0) {
 		VSB_printf(sb, "Failed to create %s: %s", sf, strerror(errno));
 		return (NULL);
@@ -245,7 +246,7 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 	}
 
 	if (C_flag) {
-		csrc = vreadfile(NULL, sf, NULL);
+		csrc = VFIL_readfile(NULL, sf, NULL);
 		XXXAN(csrc);
 		(void)fputs(csrc, stdout);
 		free(csrc);
@@ -517,7 +518,7 @@ mcf_config_load(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 
-	vcl = vreadfile(mgt_vcl_dir, av[3], NULL);
+	vcl = VFIL_readfile(mgt_vcl_dir, av[3], NULL);
 	if (vcl == NULL) {
 		VCLI_Out(cli, "Cannot open '%s'", av[3]);
 		VCLI_SetResult(cli, CLIS_PARAM);

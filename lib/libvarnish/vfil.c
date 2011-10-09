@@ -39,30 +39,12 @@
 
 #include <sys/stat.h>
 
+#include "vas.h"
+#include "vfil.h"
 #include "libvarnish.h"
 
 int
-seed_random(void)
-{
-	int fd;
-	unsigned seed;
-
-	fd = open("/dev/urandom", O_RDONLY);
-	if (fd == -1) {
-		/* urandom not available, fall back to something
-		 * weaker */
-		srandom(time(NULL));
-		return (0);
-	}
-	if (read(fd, &seed, sizeof seed) != sizeof seed)
-		return (1);
-	(void)close(fd);
-	srandom(seed);
-	return (0);
-}
-
-int
-vtmpfile(char *template)
+VFIL_tmpfile(char *template)
 {
 	char *b, *e, *p;
 	int fd;
@@ -99,7 +81,7 @@ vtmpfile(char *template)
 }
 
 char *
-vreadfd(int fd, ssize_t *sz)
+VFIL_readfd(int fd, ssize_t *sz)
 {
 	struct stat st;
 	char *f;
@@ -119,7 +101,7 @@ vreadfd(int fd, ssize_t *sz)
 }
 
 char *
-vreadfile(const char *pfx, const char *fn, ssize_t *sz)
+VFIL_readfile(const char *pfx, const char *fn, ssize_t *sz)
 {
 	int fd, err;
 	char *r;
@@ -134,7 +116,7 @@ vreadfile(const char *pfx, const char *fn, ssize_t *sz)
 		fd = open(fn, O_RDONLY);
 	if (fd < 0)
 		return (NULL);
-	r = vreadfd(fd, sz);
+	r = VFIL_readfd(fd, sz);
 	err = errno;
 	AZ(close(fd));
 	errno = err;
