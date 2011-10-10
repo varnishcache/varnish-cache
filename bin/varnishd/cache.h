@@ -255,7 +255,7 @@ struct exp {
 
 struct wrw {
 	int			*wfd;
-	unsigned		werr;	/* valid after WRK_Flush() */
+	unsigned		werr;	/* valid after WRW_Flush() */
 	struct iovec		*iov;
 	unsigned		siov;
 	unsigned		niov;

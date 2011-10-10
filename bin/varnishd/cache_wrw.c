@@ -264,7 +264,7 @@ WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 	} while (0);
 #elif defined(__linux__)
 	do {
-		if (WRK_Flush(w) == 0 &&
+		if (WRW_Flush(w) == 0 &&
 		    sendfile(*wrw->wfd, fd, &off, len) != len)
 			wrw->werr++;
 	} while (0);
@@ -293,7 +293,7 @@ WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 	} while (0);
 #elif defined(__sun) && defined(HAVE_SENDFILE)
 	do {
-		if (WRK_Flush(w) == 0 &&
+		if (WRW_Flush(w) == 0 &&
 		    sendfile(*wrw->wfd, fd, &off, len) != len)
 			wrw->werr++;
 	} while (0);
