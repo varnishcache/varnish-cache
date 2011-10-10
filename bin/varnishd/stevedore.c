@@ -37,9 +37,11 @@
 #include <stdlib.h>
 
 #include "cache.h"
+
+#include "cli_priv.h"
 #include "stevedore.h"
 #include "vav.h"
-#include "cli_priv.h"
+#include "vrt.h"
 #include "vrt_obj.h"
 
 static VTAILQ_HEAD(, stevedore)	stevedores =
@@ -559,8 +561,6 @@ struct cli_proto cli_stv[] = {
 /*--------------------------------------------------------------------
  * VRT functions for stevedores
  */
-
-#include "vrt.h"
 
 static const struct stevedore *
 stv_find(const char *nm)

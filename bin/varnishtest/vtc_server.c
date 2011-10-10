@@ -28,16 +28,17 @@
 
 #include "config.h"
 
-#include <stdio.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include "vss.h"
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "vtc.h"
+
+#include "vss.h"
 #include "vtcp.h"
 
 struct server {

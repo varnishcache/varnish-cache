@@ -29,20 +29,22 @@
 
 #include "config.h"
 
-#include "vapi/vsm.h"
-#include "vapi/vsm_int.h"
-#include "vapi/vsc.h"
-
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <string.h>
-#include <stdlib.h>
 
+#include <errno.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "miniobj.h"
 #include "vas.h"
+
+#include "vapi/vsc.h"
+#include "vapi/vsm.h"
+#include "vapi/vsm_int.h"
 #include "vav.h"
 #include "vqueue.h"
-#include "miniobj.h"
-
 #include "vsm_api.h"
 
 struct vsc_sf {

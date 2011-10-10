@@ -43,13 +43,11 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "vsb.h"
-
-#include "vas.h"
-
 #include "vcli.h"
-#include "cli_priv.h"
 #include "cli_common.h"
+#include "cli_priv.h"
+#include "vas.h"
+#include "vsb.h"
 
 /*lint -e{818} cli could be const */
 void

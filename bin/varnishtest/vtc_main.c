@@ -28,18 +28,22 @@
 
 #include "config.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "vev.h"
+#include <fcntl.h>
+#include <poll.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "vtc.h"
+
+#include "vev.h"
+#include "vqueue.h"
 #include "vtim.h"
 
 #ifndef HAVE_SRANDOMDEV

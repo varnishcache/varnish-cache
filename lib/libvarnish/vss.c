@@ -44,8 +44,8 @@
 #include <unistd.h>
 
 #include "vas.h"
-#include "vtcp.h"
 #include "vss.h"
+#include "vtcp.h"
 
 /* lightweight addrinfo */
 struct vss_addr {

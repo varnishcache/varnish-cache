@@ -31,25 +31,24 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
+#ifdef HAVE_SYS_FILIO_H
+#  include <sys/filio.h>
+#endif
 
 #include <netinet/in.h>
-
 #ifdef __linux
-#include <netinet/tcp.h>
+#  include <netinet/tcp.h>
 #endif
 
 #include <errno.h>
-#include <sys/ioctl.h>
-#ifdef HAVE_SYS_FILIO_H
-#include <sys/filio.h>
-#endif
+#include <math.h>
 #include <netdb.h>
 #include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <math.h>
 
 #include "vas.h"
 #include "vtcp.h"

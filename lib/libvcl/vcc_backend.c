@@ -59,6 +59,7 @@
 #include <string.h>
 
 #include "vcc_compile.h"
+
 #include "vss.h"
 
 struct host {
@@ -98,8 +99,6 @@ emit_sockaddr(struct vcc *tl, void *sa, unsigned sal)
  * initialized data structure, so we encode it as a byte-string
  * and put it in an official sockaddr when we load the VCL.
  */
-
-#include <stdio.h>
 
 void
 Emit_Sockaddr(struct vcc *tl, const struct token *t_host, const char *port)

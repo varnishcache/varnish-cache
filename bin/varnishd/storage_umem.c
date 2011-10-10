@@ -37,11 +37,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <umem.h>
 
-#include "config.h"
 #include "cache.h"
+
 #include "stevedore.h"
 
 static size_t			smu_max = SIZE_MAX;

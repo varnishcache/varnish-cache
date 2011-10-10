@@ -33,15 +33,16 @@
 
 #if defined(HAVE_PORT_CREATE)
 
-#include <stdio.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <math.h>
-
-#include <port.h>
 #include <sys/time.h>
 
+#include <errno.h>
+#include <math.h>
+#include <port.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "cache.h"
+
 #include "cache_waiter.h"
 #include "vtim.h"
 

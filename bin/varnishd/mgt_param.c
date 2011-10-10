@@ -37,17 +37,16 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "vcli.h"
-#include "cli_priv.h"
-#include "cli_common.h"
 #include "mgt.h"
-#include "mgt_cli.h"
 
-#include "heritage.h"
-#include "vparam.h"
+#include "vcli.h"
 #include "cache_waiter.h"
-
+#include "cli_common.h"
+#include "cli_priv.h"
+#include "heritage.h"
+#include "mgt_cli.h"
 #include "vav.h"
+#include "vparam.h"
 #include "vss.h"
 
 #define MAGIC_INIT_STRING	"\001"

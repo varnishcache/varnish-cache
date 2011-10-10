@@ -48,11 +48,13 @@
 
 #include <sys/time.h>
 
+#include <errno.h>
+#include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-#include <math.h>
 
 #include "vas.h"
 #include "vtim.h"
@@ -199,8 +201,6 @@ VTIM_timespec(double t)
 
 
 #ifdef TEST_DRIVER
-
-#include <stdlib.h>
 
 /*
  * Compile with:

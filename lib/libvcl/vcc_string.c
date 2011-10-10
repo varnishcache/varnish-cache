@@ -34,8 +34,8 @@
 
 #include "vcc_compile.h"
 
-#include "vrt.h"
 #include "vre.h"
+#include "vrt.h"
 
 /*--------------------------------------------------------------------*/
 

@@ -53,8 +53,9 @@
 
 #include <math.h>
 
-#include "binary_heap.h"
 #include "cache.h"
+
+#include "binary_heap.h"
 #include "hash_slinger.h"
 #include "stevedore.h"
 #include "vtim.h"

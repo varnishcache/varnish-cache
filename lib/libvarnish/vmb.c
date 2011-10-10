@@ -26,8 +26,11 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
+
 #include <pthread.h>
 #include <unistd.h>
+
 #include "vas.h"
 #include "vmb.h"
 

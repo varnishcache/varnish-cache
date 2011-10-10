@@ -29,20 +29,22 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <errno.h>
 #include <poll.h>
-#include <time.h>
-#include <signal.h>
-#include <string.h>
-#include <stdlib.h>
 #include <pthread.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
-#include "vas.h"
-#include "vtim.h"
-#include "vev.h"
 #include "miniobj.h"
+#include "vas.h"
+
 #include "binary_heap.h"
+#include "vqueue.h"
+#include "vev.h"
+#include "vtim.h"
 
 #undef DEBUG_EVENTS
 

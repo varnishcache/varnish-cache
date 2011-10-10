@@ -34,9 +34,9 @@
 
 #include "cache.h"
 
-#include "stevedore.h"
-#include "hash_slinger.h"
 #include "cache_waiter.h"
+#include "hash_slinger.h"
+#include "stevedore.h"
 
 /*--------------------------------------------------------------------
  * Per thread storage for the session currently being processed by

@@ -31,9 +31,9 @@
 #ifndef VAPI_VSL_H_INCLUDED
 #define VAPI_VSL_H_INCLUDED
 
-#include <stdint.h>
-
 #include "vapi/vsl_int.h"
+
+struct VSM_data;
 
 /*---------------------------------------------------------------------
  * VSL level access functions

@@ -42,15 +42,15 @@
 
 #include "config.h"
 
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
-#include <limits.h>
 #include <unistd.h>
 
 #include "mgt.h"
 
-#include "vparam.h"
 #include "heritage.h"
+#include "vparam.h"
 
 /*--------------------------------------------------------------------*/
 

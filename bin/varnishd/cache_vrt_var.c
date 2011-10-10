@@ -35,12 +35,12 @@
 
 #include "cache.h"
 
-#include "vrt.h"
-#include "vtcp.h"
-#include "vtim.h"
-#include "vrt_obj.h"
 #include "cache_backend.h"
 #include "hash_slinger.h"
+#include "vrt.h"
+#include "vrt_obj.h"
+#include "vtcp.h"
+#include "vtim.h"
 
 static char vrt_hostname[255] = "";
 

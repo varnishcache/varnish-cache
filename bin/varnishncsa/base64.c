@@ -6,11 +6,13 @@
 
 #include "config.h"
 
-#include "vapi/vsm.h"
-#include "vapi/vsl.h"
-
 #include <sys/types.h>
+
+#include <stdio.h>		// for test-prog
+
 #include "base64.h"
+#include "vapi/vsl.h"
+#include "vapi/vsm.h"
 
 static const char b64[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -62,7 +64,6 @@ VB64_decode(char *d, unsigned dlen, const char *s)
 }
 
 #ifdef TEST_DRIVER
-#include <stdio.h>
 
 const char *test1 =
 "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlz"

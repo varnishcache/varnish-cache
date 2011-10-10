@@ -57,25 +57,25 @@ DOT acceptor -> start [style=bold,color=green]
 
 #include "config.h"
 
-#include <stdio.h>
 #include <errno.h>
 #include <math.h>
 #include <poll.h>
+#include <stdio.h>
 #include <stdlib.h>
+
+#include "cache.h"
+
+#include "cli_priv.h"
+#include "hash_slinger.h"
+#include "stevedore.h"
+#include "vcl.h"
+#include "vsha256.h"
+#include "vtcp.h"
+#include "vtim.h"
 
 #ifndef HAVE_SRANDOMDEV
 #include "compat/srandomdev.h"
 #endif
-
-#include "cache.h"
-
-#include "vcl.h"
-#include "vtcp.h"
-#include "vtim.h"
-#include "cli_priv.h"
-#include "hash_slinger.h"
-#include "stevedore.h"
-#include "vsha256.h"
 
 static unsigned xids;
 

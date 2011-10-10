@@ -32,10 +32,8 @@
 
 #include "config.h"
 
-#include "vapi/vsm.h"
-#include "vapi/vsl.h"
-
 #include <sys/types.h>
+
 #include <curses.h>
 #include <errno.h>
 #include <limits.h>
@@ -48,6 +46,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "vapi/vsl.h"
+#include "vapi/vsm.h"
 #include "vas.h"
 #include "vcs.h"
 

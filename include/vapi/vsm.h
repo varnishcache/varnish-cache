@@ -31,6 +31,9 @@
 #ifndef VAPI_VSM_H_INCLUDED
 #define VAPI_VSM_H_INCLUDED
 
+struct VSM_head;
+struct VSM_data;
+
 /*---------------------------------------------------------------------
  * VSM level access functions
  */

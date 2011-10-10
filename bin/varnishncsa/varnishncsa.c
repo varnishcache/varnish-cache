@@ -59,20 +59,19 @@
 
 #include "config.h"
 
-#include "vapi/vsm.h"
-#include "vapi/vsl.h"
-
 #include <ctype.h>
+#include <errno.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <unistd.h>
 #include <time.h>
+#include <unistd.h>
 
-#include "compat/daemon.h"
-
+#include "base64.h"
+#include "vapi/vsl.h"
+#include "vapi/vsm.h"
 #include "vas.h"
 #include "vcs.h"
 #include "vpf.h"
@@ -80,7 +79,7 @@
 #include "vre.h"
 #include "vsb.h"
 
-#include "base64.h"
+#include "compat/daemon.h"
 
 static volatile sig_atomic_t reopen;
 

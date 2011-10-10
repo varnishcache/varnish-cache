@@ -28,8 +28,6 @@
  *
  */
 
-#include <stdint.h>
-
 #define VSC_CLASS          "Stat"
 
 #define VSC_TYPE_MAIN		""

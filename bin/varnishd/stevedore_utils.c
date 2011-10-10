@@ -31,27 +31,26 @@
 
 #include "config.h"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#ifdef HAVE_SYS_MOUNT_H
+#  include <sys/mount.h>
+#endif
+#ifdef HAVE_SYS_STATVFS_H
+#  include <sys/statvfs.h>
+#endif
+#ifdef HAVE_SYS_VFS_H
+#  include <sys/vfs.h>
+#endif
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-
-#ifdef HAVE_SYS_MOUNT_H
-#include <sys/mount.h>
-#endif
-
-#ifdef HAVE_SYS_STATVFS_H
-#include <sys/statvfs.h>
-#endif
-
-#ifdef HAVE_SYS_VFS_H
-#include <sys/vfs.h>
-#endif
 
 #include "mgt.h"
+
 #include "stevedore.h"
 #include "vnum.h"
 

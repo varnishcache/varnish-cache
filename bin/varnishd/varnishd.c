@@ -32,6 +32,7 @@
 #include "config.h"
 
 #include <sys/stat.h>
+#include <sys/utsname.h>
 
 #include <ctype.h>
 #include <errno.h>
@@ -43,25 +44,22 @@
 #include <time.h>
 #include <unistd.h>
 
-#include <sys/utsname.h>
-
-#include "compat/daemon.h"
-
-#include "vev.h"
-#include "vpf.h"
-#include "vsha256.h"
+#include "mgt.h"
 
 #include "vcli.h"
 #include "cli_common.h"
-
-#include "vav.h"
-#include "vin.h"
-#include "vfil.h"
-#include "vtim.h"
-#include "heritage.h"
-#include "mgt.h"
 #include "hash_slinger.h"
+#include "heritage.h"
 #include "stevedore.h"
+#include "vav.h"
+#include "vev.h"
+#include "vfil.h"
+#include "vin.h"
+#include "vpf.h"
+#include "vsha256.h"
+#include "vtim.h"
+
+#include "compat/daemon.h"
 
 #ifndef HAVE_SRANDOMDEV
 #include "compat/srandomdev.h"

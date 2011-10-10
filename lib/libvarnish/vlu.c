@@ -29,13 +29,16 @@
 
 #include "config.h"
 
+#include <errno.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
-#include "vas.h"
-#include "vlu.h"
+
 #include "miniobj.h"
+#include "vas.h"
+
+#include "vlu.h"
 
 struct vlu {
 	unsigned	magic;

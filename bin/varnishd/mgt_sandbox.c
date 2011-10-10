@@ -44,15 +44,16 @@
 
 #include "config.h"
 
-#include <stdio.h>
-#include <syslog.h>
-#include <unistd.h>
-
 #ifdef __linux__
 #include <sys/prctl.h>
 #endif
 
+#include <stdio.h>
+#include <syslog.h>
+#include <unistd.h>
+
 #include "mgt.h"
+
 #include "heritage.h"
 
 /*--------------------------------------------------------------------*/

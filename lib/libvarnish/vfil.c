@@ -29,15 +29,15 @@
 
 #include "config.h"
 
+#include <sys/stat.h>
+
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <time.h>
-
-#include <sys/stat.h>
+#include <unistd.h>
 
 #include "vas.h"
 #include "vdef.h"

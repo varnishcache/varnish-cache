@@ -27,7 +27,13 @@
  *
  */
 
+#include <stdint.h>
+
+#include "vapi/vsm.h"
+#include "vapi/vsc.h"
+
 #include "vas.h"
 #include "vcs.h"
+
 
 void do_curses(struct VSM_data *vd, const struct VSC_C_main *VSC_C_main, int delay);

@@ -28,12 +28,13 @@
 
 #include "config.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "vtc.h"
+
 #include "vtim.h"
 
 static pthread_mutex_t	vtclog_mtx;

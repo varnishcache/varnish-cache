@@ -28,15 +28,16 @@
  * A Crit Bit tree based hash
  */
 
-#undef PHK
+// #define PHK
 
 #include "config.h"
 
 #include <stdlib.h>
 
 #include "cache.h"
-#include "hash_slinger.h"
+
 #include "cli_priv.h"
+#include "hash_slinger.h"
 #include "vmb.h"
 #include "vtim.h"
 

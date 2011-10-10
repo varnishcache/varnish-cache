@@ -34,15 +34,15 @@
 
 #ifdef HAVE_SETPPRIV
 
-#include <stdio.h>
-#include <syslog.h>
-#include <string.h>
-
 #ifdef HAVE_PRIV_H
 #include <priv.h>
 #endif
+#include <stdio.h>
+#include <string.h>
+#include <syslog.h>
 
 #include "mgt.h"
+
 #include "heritage.h"
 
 /*--------------------------------------------------------------------

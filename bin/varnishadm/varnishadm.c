@@ -29,23 +29,25 @@
 
 #include "config.h"
 
-#include "vapi/vsm.h"
-#include "vapi/vsl.h"
-
-#include <fcntl.h>
-#include <poll.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
 #include <sys/socket.h>
 
 #ifdef HAVE_LIBEDIT
 #include <editline/readline.h>
 #endif
 
+#include <errno.h>
+#include <fcntl.h>
+#include <poll.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "vcli.h"
 #include "cli_common.h"
+#include "vapi/vsl.h"
+#include "vapi/vsm.h"
 #include "vas.h"
 #include "vss.h"
 

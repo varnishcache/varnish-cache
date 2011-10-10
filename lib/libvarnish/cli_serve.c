@@ -32,23 +32,25 @@
 #include "config.h"
 
 #include <ctype.h>
+#include <errno.h>
 #include <poll.h>
-#include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 
+#include "miniobj.h"
 #include "vas.h"
-#include "vqueue.h"
-#include "vsb.h"
+
+#include "vcli.h"
+#include "cli_common.h"
+#include "cli_priv.h"
+#include "cli_serve.h"
 #include "vav.h"
 #include "vlu.h"
-#include "vcli.h"
-#include "cli_priv.h"
-#include "cli_common.h"
-#include "cli_serve.h"
-#include "miniobj.h"
+#include "vqueue.h"
+#include "vsb.h"
 
 struct VCLS_func {
 	unsigned			magic;

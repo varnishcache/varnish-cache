@@ -26,11 +26,15 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
+
+#include <errno.h>
 #include <pcre.h>
 #include <string.h>
 
 #include "miniobj.h"
 #include "vas.h"
+
 #include "vre.h"
 
 struct vre {

@@ -35,12 +35,14 @@
 
 #if defined(HAVE_EPOLL_CTL)
 
+#include <sys/epoll.h>
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
-#include <sys/epoll.h>
 
 #include "cache.h"
+
 #include "cache_waiter.h"
 #include "vtim.h"
 

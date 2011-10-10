@@ -30,8 +30,8 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "vcc_compile.h"

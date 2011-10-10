@@ -54,12 +54,13 @@
 
 #include <ctype.h>
 #include <errno.h>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "vcc_compile.h"
+
 #include "libvcl.h"
 #include "vfil.h"
 

@@ -31,10 +31,11 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <poll.h>
+#include <stdio.h>
 
 #include "cache.h"
+
 #include "vtcp.h"
 #include "vtim.h"
 

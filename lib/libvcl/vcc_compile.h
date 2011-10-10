@@ -28,6 +28,10 @@
  *
  */
 
+#include <sys/types.h>
+
+#include <errno.h>
+#include <stdio.h>
 #include <stdint.h>
 
 #include "miniobj.h"
@@ -36,6 +40,7 @@
 #include "vdef.h"
 #include "vqueue.h"
 #include "vsb.h"
+
 
 #include "vcc_token_defs.h"
 

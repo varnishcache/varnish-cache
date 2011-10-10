@@ -28,9 +28,6 @@
 
 #include "config.h"
 
-#include "vapi/vsm.h"
-#include "vapi/vsl.h"
-
 #include <sys/types.h>
 #include <sys/signal.h>
 #include <sys/uio.h>
@@ -39,13 +36,15 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
-#include <stdarg.h>
 #include <signal.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
+#include "vapi/vsl.h"
+#include "vapi/vsm.h"
 #include "vas.h"
 #include "vcs.h"
 #include "vqueue.h"

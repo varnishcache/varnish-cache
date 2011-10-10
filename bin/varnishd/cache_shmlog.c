@@ -29,7 +29,6 @@
 
 #include "config.h"
 
-
 #include <stdio.h>
 
 #include "cache.h"

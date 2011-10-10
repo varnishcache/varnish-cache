@@ -50,10 +50,11 @@
 #include <stdlib.h>
 
 #include "cache.h"
+
 #include "cache_backend.h"
+#include "vend.h"
 #include "vrt.h"
 #include "vsha256.h"
-#include "vend.h"
 
 /*--------------------------------------------------------------------*/
 

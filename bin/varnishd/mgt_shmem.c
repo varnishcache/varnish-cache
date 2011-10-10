@@ -86,25 +86,27 @@
 
 #include "config.h"
 
-#include "vapi/vsl_int.h"
-#include "vapi/vsc_int.h"
-
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 
+#include <fcntl.h>
+#include <signal.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "mgt.h"
+
+#include "flopen.h"
 #include "heritage.h"
-#include "vmb.h"
+#include "vapi/vsc_int.h"
+#include "vapi/vsl_int.h"
 #include "vapi/vsm_int.h"
 #include "vav.h"
+#include "vmb.h"
 #include "vnum.h"
-#include "flopen.h"
 
 #ifndef MAP_HASSEMAPHORE
 #define MAP_HASSEMAPHORE 0 /* XXX Linux */

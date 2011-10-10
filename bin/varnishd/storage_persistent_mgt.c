@@ -35,12 +35,14 @@
 
 #include "config.h"
 
+#include <sys/mman.h>
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/mman.h>
 
 #include "cache.h"
+
 #include "stevedore.h"
 #include "vsha256.h"
 

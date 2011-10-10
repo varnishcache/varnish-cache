@@ -62,17 +62,16 @@
 
 #include "config.h"
 
-#include <stdio.h>
-
 #include <pcre.h>
+#include <stdio.h>
 
 #include "cache.h"
 
+#include "cli_priv.h"
+#include "hash_slinger.h"
 #include "vcli.h"
 #include "vend.h"
 #include "vtim.h"
-#include "cli_priv.h"
-#include "hash_slinger.h"
 
 struct ban {
 	unsigned		magic;

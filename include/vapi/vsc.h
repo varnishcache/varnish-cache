@@ -33,6 +33,8 @@
 
 #include "vapi/vsc_int.h"
 
+struct VSM_data;
+
 /*---------------------------------------------------------------------
  * VSC level access functions
  */

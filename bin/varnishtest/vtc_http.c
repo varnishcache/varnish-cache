@@ -28,17 +28,18 @@
 
 #include "config.h"
 
-#include <string.h>
-#include <stdio.h>
-#include <poll.h>
-#include <stdlib.h>
-
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <poll.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "vtc.h"
+
 #include "vct.h"
 #include "vgz.h"
-#include "vtc.h"
 #include "vtcp.h"
 
 #define MAX_HDR		50

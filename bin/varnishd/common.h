@@ -28,6 +28,11 @@
  *
  */
 
+#include <errno.h>
+#include <stdint.h>
+
+#include <sys/types.h>
+
 #include "miniobj.h"
 #include "vas.h"
 #include "vcs.h"
@@ -73,8 +78,8 @@ const void *pick(const struct choice *cp, const char *which, const char *kind);
 #define NEEDLESS_RETURN(foo)	return (foo)
 
 /* vsm.c */
-extern struct VSM_head		*VSM_head;
-extern const struct VSM_chunk	*vsm_end;
+// extern struct VSM_head		*VSM_head;
+// extern const struct VSM_chunk	*vsm_end;
 
 /*
  * These three should not be called directly, but only through

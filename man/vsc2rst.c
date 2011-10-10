@@ -1,3 +1,5 @@
+/* XXX: Copyright ?? */
+#include "config.h"
 
 #include <stdio.h>
 

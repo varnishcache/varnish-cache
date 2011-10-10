@@ -29,14 +29,15 @@
 
 #include "config.h"
 
-#include <stdio.h>
-#include <inttypes.h>
-#include <stdlib.h>
 #include <fcntl.h>
+#include <inttypes.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "cache.h"
-#include "stevedore.h"
+
 #include "cli_priv.h"
+#include "stevedore.h"
 #include "vct.h"
 #include "vtcp.h"
 

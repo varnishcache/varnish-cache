@@ -41,8 +41,8 @@
 #include "cache.h"
 
 #include "vcli.h"
-#include "cli_priv.h"
 #include "cli_common.h"
+#include "cli_priv.h"
 #include "cli_serve.h"
 #include "hash_slinger.h"		// objhead
 

@@ -29,26 +29,27 @@
 
 #include "config.h"
 
-#include "vapi/vsm.h"
-#include "vapi/vsm_int.h"
-#include "vapi/vsl.h"
-
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
+#include <errno.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "vas.h"
-#include "vre.h"
-#include "vbm.h"
 #include "miniobj.h"
+#include "vas.h"
 
-#include "vsm_api.h"
-#include "vsl_api.h"
+#include "vapi/vsl.h"
+#include "vapi/vsm.h"
+#include "vapi/vsm_int.h"
+#include "vbm.h"
 #include "vmb.h"
+#include "vre.h"
+#include "vsl_api.h"
+#include "vsm_api.h"
 
 /*--------------------------------------------------------------------*/
 

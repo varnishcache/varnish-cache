@@ -28,7 +28,5 @@
  *
  */
 
-#include <stdint.h>
-
 /* from libvarnish/vnum.c */
 const char *VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel);

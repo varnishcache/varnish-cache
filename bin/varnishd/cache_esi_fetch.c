@@ -33,9 +33,10 @@
 #include <stdlib.h>
 
 #include "cache.h"
+
 #include "cache_esi.h"
-#include "vct.h"
 #include "stevedore.h"
+#include "vct.h"
 
 /*---------------------------------------------------------------------
  * Read some bytes.

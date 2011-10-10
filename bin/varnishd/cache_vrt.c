@@ -39,13 +39,13 @@
 
 #include "cache.h"
 
-#include "vrt.h"
-#include "vrt_obj.h"
+#include "cache_backend.h"
+#include "hash_slinger.h"
 #include "vav.h"
 #include "vcl.h"
+#include "vrt.h"
+#include "vrt_obj.h"
 #include "vtim.h"
-#include "hash_slinger.h"
-#include "cache_backend.h"
 
 const void * const vrt_magic_string_end = &vrt_magic_string_end;
 

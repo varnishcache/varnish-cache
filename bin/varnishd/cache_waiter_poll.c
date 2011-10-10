@@ -30,8 +30,8 @@
 
 #include "config.h"
 
-#include <stdlib.h>
 #include <poll.h>
+#include <stdlib.h>
 
 #include "cache.h"
 

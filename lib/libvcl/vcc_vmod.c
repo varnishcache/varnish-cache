@@ -28,11 +28,12 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <dlfcn.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "vcc_compile.h"
+
 #include "vmod_abi.h"
 
 void

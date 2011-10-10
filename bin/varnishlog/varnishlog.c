@@ -31,9 +31,6 @@
 
 #include "config.h"
 
-#include "vapi/vsm.h"
-#include "vapi/vsl.h"
-
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -42,12 +39,14 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "compat/daemon.h"
-
+#include "vapi/vsl.h"
+#include "vapi/vsm.h"
 #include "vas.h"
 #include "vcs.h"
 #include "vpf.h"
 #include "vsb.h"
+
+#include "compat/daemon.h"
 
 static int	b_flag, c_flag;
 

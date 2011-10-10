@@ -34,6 +34,8 @@
  */
 #define VARNISH_CACHE_CHILD	1
 
+#include "common.h"
+
 #include "vapi/vsc_int.h"
 #include "vapi/vsl_int.h"
 
@@ -53,7 +55,6 @@
 #include <sys/epoll.h>
 #endif
 
-#include "common.h"
 
 #include "heritage.h"
 

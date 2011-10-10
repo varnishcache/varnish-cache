@@ -28,8 +28,6 @@
  *
  */
 
-#include <stdint.h>
-
 /* from libvarnish/vct.c */
 
 #define VCT_SP			(1<<0)

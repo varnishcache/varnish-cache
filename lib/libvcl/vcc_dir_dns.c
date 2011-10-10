@@ -28,9 +28,9 @@
 
 #include "config.h"
 
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
-#include <limits.h>
 
 #include "vcc_compile.h"
 

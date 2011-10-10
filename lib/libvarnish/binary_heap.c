@@ -35,12 +35,15 @@
 
 #include "config.h"
 
+#include <errno.h>
 #include <limits.h>
 #include <stdint.h>
+#include <stdio.h>		// for testcase
 #include <stdlib.h>
 #include <unistd.h>
 
 #include "binary_heap.h"
+#include "miniobj.h"		// for testcase
 #include "vas.h"
 
 /* Parameters --------------------------------------------------------*/
@@ -455,8 +458,6 @@ binheap_reorder(const struct binheap *bh, unsigned idx)
 
 #ifdef TEST_DRIVER
 /* Test driver -------------------------------------------------------*/
-#include <stdio.h>
-#include "miniobj.h"
 
 static void
 vasfail(const char *func, const char *file, int line,

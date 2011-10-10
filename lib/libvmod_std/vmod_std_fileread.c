@@ -37,12 +37,18 @@
  * XXX: underlying file has been updated.
  */
 
+#include "config.h"
+
+#include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include "vrt.h"
+
 #include "../../bin/varnishd/cache.h"
 
-#include "vcc_if.h"
+#include "vrt.h"
 #include "vfil.h"
+
+#include "vcc_if.h"
 
 struct frfile {
 	unsigned			magic;

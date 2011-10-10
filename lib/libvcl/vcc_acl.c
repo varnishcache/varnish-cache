@@ -29,16 +29,18 @@
 
 #include "config.h"
 
-#include <stdio.h>
-#include <stddef.h>
-#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netdb.h>
+
 #include <netinet/in.h>
 
+#include <netdb.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "vcc_compile.h"
+
 #include "vrt.h"
 
 struct acl_e {

@@ -33,15 +33,16 @@
 
 #include "config.h"
 
+#include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <dlfcn.h>
 
 #include "cache.h"
-#include "vcli.h"
+
 #include "cli_priv.h"
-#include "vcl.h"
 #include "libvcl.h"
+#include "vcl.h"
+#include "vcli.h"
 
 struct vcls {
 	unsigned		magic;

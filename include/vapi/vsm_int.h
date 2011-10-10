@@ -36,8 +36,6 @@
 
 #define VSM_FILENAME		"_.vsm"
 
-#include <stdint.h>
-
 /*
  * This structure describes each allocation from the shmlog
  */
@@ -80,6 +78,9 @@ struct VSM_head {
  * able to use the VSM_ITER() macro.
  */
 #ifdef CHECK_OBJ_NOTNULL
+
+extern struct VSM_head *VSM_head;
+extern const struct VSM_chunk *vsm_end;
 
 static inline struct VSM_chunk *
 vsm_iter_0(void)

@@ -31,8 +31,8 @@
 
 #include "config.h"
 
-#include <stdlib.h>
 #include <dlfcn.h>
+#include <stdlib.h>
 
 #include "cache.h"
 

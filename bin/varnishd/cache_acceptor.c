@@ -32,10 +32,10 @@
 
 #include "cache.h"
 
+#include "cli_priv.h"
 #include "vcli.h"
 #include "vtcp.h"
 #include "vtim.h"
-#include "cli_priv.h"
 
 static pthread_t	VCA_thread;
 static struct timeval	tv_sndtimeo;

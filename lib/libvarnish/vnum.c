@@ -31,10 +31,11 @@
 #include "config.h"
 
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 
+#include "vas.h"
 #include "vnum.h"
 
 static const char err_miss_num[] = "Missing number";
@@ -112,10 +113,6 @@ VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 
 #ifdef NUM_C_TEST
 /* Compile with: "cc -o foo -DNUM_C_TEST -I../.. -I../../include num.c -lm" */
-#include "vas.h"
-#include <math.h>
-#include <stdio.h>
-#include <string.h>
 
 struct test_case {
 	const char *str;

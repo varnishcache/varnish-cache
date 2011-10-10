@@ -36,8 +36,8 @@
 
 #include "cache.h"
 
-#include "vrt.h"
 #include "vre.h"
+#include "vrt.h"
 
 void
 VRT_re_init(void **rep, const char *re)

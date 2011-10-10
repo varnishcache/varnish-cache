@@ -31,12 +31,14 @@
 
 #include "config.h"
 
+#include <sys/types.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 
 #include "cache.h"
+
 #include "hash_slinger.h"
 
 /*--------------------------------------------------------------------*/

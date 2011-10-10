@@ -28,26 +28,25 @@
 
 #include "config.h"
 
-#include "vapi/vsm.h"
-#include "vapi/vsc.h"
-#include "vapi/vsl.h"
-
-#include <stdio.h>
-
-#include <fcntl.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <poll.h>
-#include <inttypes.h>
-
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
 
+#include <fcntl.h>
+#include <inttypes.h>
+#include <poll.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include "vtc.h"
+
+#include "vapi/vsc.h"
+#include "vapi/vsl.h"
+#include "vapi/vsm.h"
 #include "vcli.h"
 #include "vss.h"
-#include "vtc.h"
 #include "vtcp.h"
 
 struct varnish {

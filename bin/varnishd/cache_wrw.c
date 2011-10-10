@@ -34,21 +34,21 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <sys/types.h>
+#ifdef SENDFILE_WORKS
+#  if defined(__FreeBSD__) || defined(__DragonFly__)
+#    include <sys/socket.h>
+#  elif defined(__linux__)
+#    include <sys/sendfile.h>
+#  elif defined(__sun)
+#    include <sys/sendfile.h>
+#  else
+#     error Unknown sendfile() implementation
+#  endif
+#endif /* SENDFILE_WORKS */
 #include <sys/uio.h>
 
-#ifdef SENDFILE_WORKS
-#if defined(__FreeBSD__) || defined(__DragonFly__)
-   // We're fine
-#elif defined(__linux__)
-#  include <sys/sendfile.h>
-#elif defined(__sun)
-#  include <sys/sendfile.h>
-#else
-#  error Unknown sendfile() implementation
-#endif
-#endif /* SENDFILE_WORKS */
+#include <stdio.h>
 
 #include "cache.h"
 

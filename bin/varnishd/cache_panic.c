@@ -29,23 +29,23 @@
 
 #include "config.h"
 
-#include "vapi/vsm_int.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-
 #ifndef HAVE_EXECINFO_H
 #include "compat/execinfo.h"
 #else
 #include <execinfo.h>
 #endif
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "cache.h"
+
+#include "vapi/vsm_int.h"
 
 #include "cache_backend.h"
 #include "cache_waiter.h"
-#include "vcl.h"
 #include "libvcl.h"
+#include "vcl.h"
 
 /*
  * The panic string is constructed in memory, then copied to the

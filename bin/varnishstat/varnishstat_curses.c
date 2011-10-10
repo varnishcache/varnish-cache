@@ -32,15 +32,16 @@
 
 #include "config.h"
 
-#include "vapi/vsm.h"
-#include "vapi/vsc.h"
-
 #include <sys/time.h>
 
 #ifdef HAVE_NCURSES_CURSES_H
-#include <ncurses/curses.h>
-#elif HAVE_CURSES_H
-#include <curses.h>
+#  include <ncurses/curses.h>
+#endif
+
+#ifndef HAVE_NCURSES_CURSES_H
+#  ifdef HAVE_CURSES_H
+#    include <curses.h>
+#  endif
 #endif
 #include <errno.h>
 #include <signal.h>
@@ -50,8 +51,11 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "vqueue.h"
 #include "varnishstat.h"
+
+#include "vapi/vsc.h"
+#include "vapi/vsm.h"
+#include "vqueue.h"
 
 #if 0
 #define AC(x) assert((x) != ERR)

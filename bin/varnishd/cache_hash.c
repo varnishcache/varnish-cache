@@ -52,17 +52,18 @@
 
 #include "config.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <string.h>
 
 #include "cache.h"
-#include "stevedore.h"
-#include "hash_slinger.h"
-#include "vsha256.h"
-#include "vav.h"
+
 #include "cache_backend.h"
+#include "hash_slinger.h"
+#include "stevedore.h"
+#include "vav.h"
+#include "vsha256.h"
 
 static const struct hash_slinger *hash;
 
