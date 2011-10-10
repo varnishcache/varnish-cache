@@ -47,12 +47,12 @@
 
 #include "cli_priv.h"
 #include "hash_slinger.h"
-#include "persistent.h"
 #include "stevedore.h"
 #include "vcli.h"
 #include "vend.h"
 #include "vsha256.h"
 
+#include "persistent.h"
 #include "storage_persistent.h"
 
 /*--------------------------------------------------------------------*/

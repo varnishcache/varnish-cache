@@ -28,7 +28,6 @@ nobase_noinst_HEADERS = \
 	binary_heap.h \
 	cli_common.h \
 	cli_priv.h \
-	cli_serve.h \
 	compat/daemon.h \
 	compat/execinfo.h \
 	compat/srandomdev.h \
@@ -40,6 +39,7 @@ nobase_noinst_HEADERS = \
 	vav.h \
 	vbm.h \
 	vcl.h \
+	vcli_serve.h \
 	vcs_version.h \
 	vcs.h \
 	vct.h \
