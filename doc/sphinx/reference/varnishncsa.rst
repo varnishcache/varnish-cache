@@ -62,10 +62,12 @@ The following options are available:
    	         bytes are sent.
 
 	      %H 
-	         The request protocol
+	         The request protocol. Defaults to HTTP/1.0 if not
+                 known.
 
               %h
-	         Remote host
+	         Remote host. Defaults to '-' if not known.
+                 Defaults to 127.0.0.1 for backend requests.
 
 	      %{X}i
 	         The contents of request header line X.
@@ -74,16 +76,18 @@ The following options are available:
 	         Remote logname (always '-')
 
 	      %m
-	         Request method
+	         Request method. Defaults to '-' if not known.
 
 	      %q
-	         The query string, if no query string exists, an empty string.
+	         The query string, if no query string exists, an
+                 empty string.
 
 	      %{X}o
 	         The contents of response header line X.
 
 	      %r
-	         The first line of the request
+	         The first line of the request. Synthesized from other
+                 fields, so it may not be the request verbatim.
 
 	      %s
 	         Status sent to the client
@@ -93,7 +97,8 @@ The following options are available:
 	         format.
 
 	      %U
-	         The request URL without any query string.
+	         The request URL without any query string. Defaults to
+                 '-' if not known.
 
 	      %u
 	         Remote user from auth
