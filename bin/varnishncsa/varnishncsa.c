@@ -600,7 +600,7 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 			break;
 
 		case 'H':
-			VSB_cat(os, lp->df_H);
+			VSB_cat(os, lp->df_H ? lp->df_H : "HTTP/1.0");
 			break;
 
 		case 'h':
@@ -614,7 +614,7 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 			break;
 
 		case 'm':
-			VSB_cat(os, lp->df_m);
+			VSB_cat(os, lp->df_m ? lp->df_m : "-");
 			break;
 
 		case 'q':
@@ -626,24 +626,19 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 			 * Fake "%r".  This would be a lot easier if Varnish
 			 * normalized the request URL.
 			 */
-			if (!lp->df_m ||
-			    !req_header(lp, "Host") ||
-			    !lp->df_U ||
-			    !lp->df_H) {
-				clean_logline(lp);
-				return (reopen);
-			}
-			VSB_cat(os, lp->df_m);
+			VSB_cat(os, lp->df_m ? lp->df_m : "-");
 			VSB_putc(os, ' ');
 			if (req_header(lp, "Host")) {
 				if (strncmp(req_header(lp, "Host"), "http://", 7) != 0)
 					VSB_cat(os, "http://");
 				VSB_cat(os, req_header(lp, "Host"));
+			} else {
+				VSB_cat(os, "http://localhost");
 			}
-			VSB_cat(os, lp->df_U);
+			VSB_cat(os, lp->df_U ? lp->df_U : "-");
 			VSB_cat(os, lp->df_q ? lp->df_q : "");
 			VSB_putc(os, ' ');
-			VSB_cat(os, lp->df_H);
+			VSB_cat(os, lp->df_H ? lp->df_H : "HTTP/1.0");
 			break;
 
 		case 's':
@@ -658,7 +653,7 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 			break;
 
 		case 'U':
-			VSB_cat(os, lp->df_U);
+			VSB_cat(os, lp->df_U ? lp->df_U : "-");
 			break;
 
 		case 'u':
