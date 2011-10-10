@@ -9,7 +9,6 @@ libvcl_la_LDFLAGS = -avoid-version
 libvcl_la_SOURCES = \
 	vcc_compile.h \
 	vcc_token_defs.h \
-	symbol_kind.h \
 	\
 	vcc_acl.c \
 	vcc_action.c \

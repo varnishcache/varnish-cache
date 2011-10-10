@@ -99,7 +99,7 @@ struct token {
 
 enum symkind {
 #define VCC_SYMB(uu, ll, dd)	SYM_##uu,
-#include "symbol_kind.h"
+#include "tbl/symbol_kind.h"
 #undef VCC_SYMB
 };
 

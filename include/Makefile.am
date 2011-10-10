@@ -9,6 +9,7 @@ pkginclude_HEADERS = \
 	tbl/http_response.h \
 	tbl/locks.h \
 	tbl/steps.h \
+	tbl/symbol_kind.h \
 	tbl/vcc_types.h \
 	tbl/vcl_returns.h \
 	tbl/vrt_stv_var.h \
