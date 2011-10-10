@@ -11,8 +11,6 @@
 #include <stdio.h>		// for test-prog
 
 #include "base64.h"
-#include "vapi/vsl.h"
-#include "vapi/vsm.h"
 
 static const char b64[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
