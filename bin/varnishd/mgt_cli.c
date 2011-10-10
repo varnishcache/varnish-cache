@@ -44,16 +44,17 @@
 
 #include "mgt.h"
 
-#include "vcli.h"
-#include "cli_common.h"
-#include "cli_priv.h"
 #include "heritage.h"
-#include "mgt_cli.h"
+#include "vcli.h"
+#include "vcli_common.h"
+#include "vcli_priv.h"
 #include "vcli_serve.h"
 #include "vev.h"
 #include "vlu.h"
 #include "vss.h"
 #include "vtcp.h"
+
+#include "mgt_cli.h"
 
 #ifndef HAVE_SRANDOMDEV
 #include "compat/srandomdev.h"

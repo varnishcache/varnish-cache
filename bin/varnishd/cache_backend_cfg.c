@@ -38,7 +38,7 @@
 #include "cache.h"
 
 #include "cache_backend.h"
-#include "cli_priv.h"
+#include "vcli_priv.h"
 #include "vrt.h"
 
 struct lock VBE_mtx;

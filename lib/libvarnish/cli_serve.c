@@ -43,10 +43,10 @@
 #include "miniobj.h"
 #include "vas.h"
 
-#include "vcli.h"
-#include "cli_common.h"
-#include "cli_priv.h"
 #include "vav.h"
+#include "vcli.h"
+#include "vcli_common.h"
+#include "vcli_priv.h"
 #include "vcli_serve.h"
 #include "vlu.h"
 #include "vqueue.h"

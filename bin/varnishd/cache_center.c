@@ -65,10 +65,10 @@ DOT acceptor -> start [style=bold,color=green]
 
 #include "cache.h"
 
-#include "cli_priv.h"
 #include "hash_slinger.h"
 #include "stevedore.h"
 #include "vcl.h"
+#include "vcli_priv.h"
 #include "vsha256.h"
 #include "vtcp.h"
 #include "vtim.h"

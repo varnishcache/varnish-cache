@@ -46,17 +46,18 @@
 
 #include "mgt.h"
 
-#include "cli_priv.h"
 #include "heritage.h"
-#include "mgt_cli.h"
 #include "vapi/vsm_int.h"
 #include "vbm.h"
 #include "vcli.h"
+#include "vcli_priv.h"
 #include "vev.h"
 #include "vlu.h"
 #include "vss.h"
 #include "vtcp.h"
 #include "vtim.h"
+
+#include "mgt_cli.h"
 
 pid_t		child_pid = -1;
 

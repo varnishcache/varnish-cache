@@ -67,9 +67,9 @@
 
 #include "cache.h"
 
-#include "cli_priv.h"
 #include "hash_slinger.h"
 #include "vcli.h"
+#include "vcli_priv.h"
 #include "vend.h"
 #include "vtim.h"
 

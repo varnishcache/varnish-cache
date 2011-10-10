@@ -40,10 +40,10 @@
 
 #include "cache.h"
 
-#include "vcli.h"
-#include "cli_common.h"
-#include "cli_priv.h"
 #include "hash_slinger.h"		// objhead
+#include "vcli.h"
+#include "vcli_common.h"
+#include "vcli_priv.h"
 #include "vcli_serve.h"
 
 pthread_t		cli_thread;

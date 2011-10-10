@@ -39,15 +39,16 @@
 
 #include "mgt.h"
 
-#include "vcli.h"
 #include "cache_waiter.h"
-#include "cli_common.h"
-#include "cli_priv.h"
 #include "heritage.h"
-#include "mgt_cli.h"
 #include "vav.h"
+#include "vcli.h"
+#include "vcli_common.h"
+#include "vcli_priv.h"
 #include "vparam.h"
 #include "vss.h"
+
+#include "mgt_cli.h"
 
 #define MAGIC_INIT_STRING	"\001"
 struct params master;

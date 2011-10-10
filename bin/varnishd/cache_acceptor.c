@@ -32,8 +32,8 @@
 
 #include "cache.h"
 
-#include "cli_priv.h"
 #include "vcli.h"
+#include "vcli_priv.h"
 #include "vtcp.h"
 #include "vtim.h"
 

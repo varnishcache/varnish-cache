@@ -33,8 +33,8 @@
 #include "cache.h"
 
 #include "cache_waiter.h"
-#include "cli_priv.h"
 #include "vcli.h"
+#include "vcli_priv.h"
 
 static const struct waiter * const vca_waiters[] = {
     #if defined(HAVE_KQUEUE)

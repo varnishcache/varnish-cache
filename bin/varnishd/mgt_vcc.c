@@ -40,13 +40,14 @@
 
 #include "mgt.h"
 
-#include "cli_priv.h"
 #include "libvcl.h"
-#include "mgt_cli.h"
 #include "vcl.h"
 #include "vcli.h"
+#include "vcli_priv.h"
 #include "vfil.h"
 #include "vsub.h"
+
+#include "mgt_cli.h"
 
 struct vclprog {
 	VTAILQ_ENTRY(vclprog)	list;

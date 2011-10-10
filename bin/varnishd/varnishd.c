@@ -46,12 +46,12 @@
 
 #include "mgt.h"
 
-#include "vcli.h"
-#include "cli_common.h"
 #include "hash_slinger.h"
 #include "heritage.h"
 #include "stevedore.h"
 #include "vav.h"
+#include "vcli.h"
+#include "vcli_common.h"
 #include "vev.h"
 #include "vfil.h"
 #include "vin.h"

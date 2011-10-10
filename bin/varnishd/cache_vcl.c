@@ -39,10 +39,10 @@
 
 #include "cache.h"
 
-#include "cli_priv.h"
 #include "libvcl.h"
 #include "vcl.h"
 #include "vcli.h"
+#include "vcli_priv.h"
 
 struct vcls {
 	unsigned		magic;
