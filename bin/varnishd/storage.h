@@ -26,15 +26,15 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * This defines the backend interface between the stevedore and the
+ * pluggable storage implementations.
+ *
  */
 
-struct stevedore;
-struct exp;
-struct sess;
-struct iovec;
-struct object;
-struct objcore;
 struct stv_objsecrets;
+struct stevedore;
+struct sess;
+struct lru;
 
 typedef void storage_init_f(struct stevedore *, int ac, char * const *av);
 typedef void storage_open_f(const struct stevedore *);
@@ -49,15 +49,6 @@ typedef void storage_close_f(const struct stevedore *);
 #define VRTSTVTYPE(ct) typedef ct storage_var_##ct(const struct stevedore *);
 #include "tbl/vrt_stv_var.h"
 #undef VRTSTVTYPE
-
-/*--------------------------------------------------------------------*/
-
-struct lru {
-	unsigned		magic;
-#define LRU_MAGIC		0x3fec7bb0
-	VTAILQ_HEAD(,objcore)	lru_head;
-	struct lock		mtx;
-};
 
 /*--------------------------------------------------------------------*/
 
@@ -87,30 +78,17 @@ struct stevedore {
 	char			ident[16];	/* XXX: match VSM_chunk.ident */
 };
 
+/*--------------------------------------------------------------------*/
+int STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx);
+uintmax_t STV_FileSize(int fd, const char *size, unsigned *granularity,
+    const char *ctx);
 struct object *STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
     const struct stv_objsecrets *soc);
-
-struct object *STV_NewObject(struct sess *sp, const char *hint, unsigned len,
-    struct exp *, uint16_t nhttp);
-struct storage *STV_alloc(const struct sess *sp, size_t size);
-void STV_trim(struct storage *st, size_t size);
-void STV_free(struct storage *st);
-void STV_open(void);
-void STV_close(void);
-void STV_Config(const char *spec);
-void STV_Config_Transient(void);
-void STV_Freestore(struct object *o);
 
 struct lru *LRU_Alloc(void);
 void LRU_Free(struct lru *lru);
 
-int STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx);
-uintmax_t STV_FileSize(int fd, const char *size, unsigned *granularity,
-    const char *ctx);
-
-/* Synthetic Storage */
-void SMS_Init(void);
-
+/*--------------------------------------------------------------------*/
 extern const struct stevedore sma_stevedore;
 extern const struct stevedore smf_stevedore;
 extern const struct stevedore smp_stevedore;

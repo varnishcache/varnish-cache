@@ -36,7 +36,6 @@
 
 #include "cache.h"
 
-#include "stevedore.h"
 #include "vcli_priv.h"
 #include "vct.h"
 #include "vtcp.h"

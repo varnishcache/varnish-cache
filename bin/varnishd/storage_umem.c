@@ -40,8 +40,7 @@
 #include <umem.h>
 
 #include "cache.h"
-
-#include "stevedore.h"
+#include "storage.h"
 
 static size_t			smu_max = SIZE_MAX;
 static MTX			smu_mtx;

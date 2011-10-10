@@ -57,7 +57,6 @@ DOT acceptor -> start [style=bold,color=green]
 
 #include "config.h"
 
-#include <errno.h>
 #include <math.h>
 #include <poll.h>
 #include <stdio.h>
@@ -66,7 +65,6 @@ DOT acceptor -> start [style=bold,color=green]
 #include "cache.h"
 
 #include "hash_slinger.h"
-#include "stevedore.h"
 #include "vcl.h"
 #include "vcli_priv.h"
 #include "vsha256.h"

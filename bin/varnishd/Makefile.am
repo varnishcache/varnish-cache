@@ -88,7 +88,7 @@ noinst_HEADERS = \
 	heritage.h \
 	mgt.h \
 	mgt_cli.h \
-	stevedore.h \
+	storage.h \
 	storage_persistent.h \
 	vparam.h
 

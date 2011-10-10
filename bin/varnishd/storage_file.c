@@ -37,8 +37,8 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "storage.h"
 
-#include "stevedore.h"
 #include "vnum.h"
 
 #ifndef MAP_NOCORE

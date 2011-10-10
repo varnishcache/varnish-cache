@@ -61,7 +61,6 @@
 
 #include "cache_backend.h"
 #include "hash_slinger.h"
-#include "stevedore.h"
 #include "vav.h"
 #include "vsha256.h"
 

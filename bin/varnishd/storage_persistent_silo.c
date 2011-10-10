@@ -38,9 +38,9 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "storage.h"
 
 #include "hash_slinger.h"
-#include "stevedore.h"
 #include "vsha256.h"
 #include "vtim.h"
 

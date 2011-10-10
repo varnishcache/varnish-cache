@@ -51,7 +51,7 @@
 
 #include "mgt.h"
 
-#include "stevedore.h"
+#include "storage.h"
 #include "vnum.h"
 
 #ifndef O_LARGEFILE

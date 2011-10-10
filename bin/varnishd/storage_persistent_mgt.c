@@ -42,8 +42,8 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "storage.h"
 
-#include "stevedore.h"
 #include "vsha256.h"
 
 #include "persistent.h"

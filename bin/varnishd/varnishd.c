@@ -35,7 +35,6 @@
 #include <sys/utsname.h>
 
 #include <ctype.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,7 +47,6 @@
 
 #include "hash_slinger.h"
 #include "heritage.h"
-#include "stevedore.h"
 #include "vav.h"
 #include "vcli.h"
 #include "vcli_common.h"

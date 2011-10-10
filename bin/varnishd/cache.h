@@ -46,7 +46,6 @@
 #include <pthread_np.h>
 #endif
 #include <stdarg.h>
-#include <stdint.h>
 #include <string.h>
 #include <limits.h>
 #include <unistd.h>
@@ -94,6 +93,7 @@ enum {
 
 struct iovec;
 struct cli;
+struct exp;
 struct vsb;
 struct sess;
 struct director;
@@ -377,6 +377,15 @@ struct worker {
 
 	/* Temporary accounting */
 	struct acct		acct_tmp;
+};
+
+/* LRU ---------------------------------------------------------------*/
+
+struct lru {
+	unsigned		magic;
+#define LRU_MAGIC		0x3fec7bb0
+	VTAILQ_HEAD(,objcore)	lru_head;
+	struct lock		mtx;
 };
 
 /* Storage -----------------------------------------------------------*/
@@ -961,9 +970,20 @@ enum body_status RFC2616_Body(const struct sess *sp);
 unsigned RFC2616_Req_Gzip(const struct sess *sp);
 int RFC2616_Do_Cond(const struct sess *sp);
 
+/* stevedore.c */
+struct object *STV_NewObject(struct sess *sp, const char *hint, unsigned len,
+    struct exp *, uint16_t nhttp);
+struct storage *STV_alloc(const struct sess *sp, size_t size);
+void STV_trim(struct storage *st, size_t size);
+void STV_free(struct storage *st);
+void STV_open(void);
+void STV_close(void);
+void STV_Freestore(struct object *o);
+
 /* storage_synth.c */
 struct vsb *SMS_Makesynth(struct object *obj);
 void SMS_Finish(struct object *obj);
+void SMS_Init(void);
 
 /* storage_persistent.c */
 void SMP_Init(void);

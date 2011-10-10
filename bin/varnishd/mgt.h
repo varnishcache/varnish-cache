@@ -86,6 +86,7 @@ extern const char *mgt_vcl_dir;
 extern const char *mgt_vmod_dir;
 extern unsigned mgt_vcc_err_unref;
 
+
 #define REPORT0(pri, fmt)				\
 	do {						\
 		fprintf(stderr, fmt "\n");		\

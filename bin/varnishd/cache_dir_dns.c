@@ -31,7 +31,6 @@
 
 #include <netinet/in.h>
 
-#include <errno.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>

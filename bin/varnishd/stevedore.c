@@ -38,7 +38,7 @@
 
 #include "cache.h"
 
-#include "stevedore.h"
+#include "storage.h"
 #include "vav.h"
 #include "vcli_priv.h"
 #include "vrt.h"

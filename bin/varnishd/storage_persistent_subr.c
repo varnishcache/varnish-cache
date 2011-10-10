@@ -42,6 +42,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "storage.h"
 
 #include "vsha256.h"
 

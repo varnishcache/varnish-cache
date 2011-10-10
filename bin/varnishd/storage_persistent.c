@@ -44,9 +44,9 @@
 #include <string.h>
 
 #include "cache.h"
+#include "storage.h"
 
 #include "hash_slinger.h"
-#include "stevedore.h"
 #include "vcli.h"
 #include "vcli_priv.h"
 #include "vend.h"

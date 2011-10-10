@@ -37,7 +37,6 @@
 
 #include <sys/epoll.h>
 
-#include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
 

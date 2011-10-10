@@ -77,6 +77,10 @@ const void *pick(const struct choice *cp, const char *which, const char *kind);
 
 #define NEEDLESS_RETURN(foo)	return (foo)
 
+/* stevedore.c */
+void STV_Config(const char *spec);
+void STV_Config_Transient(void);
+
 /* vsm.c */
 // extern struct VSM_head		*VSM_head;
 // extern const struct VSM_chunk	*vsm_end;
