@@ -58,7 +58,6 @@
 
 #include "cache.h"
 
-#include "cache_backend.h"
 #include "hash_slinger.h"
 #include "vav.h"
 #include "vsha256.h"
@@ -311,7 +310,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
+	AN(sp->director);
 	AN(hash);
 	w = sp->wrk;
 
