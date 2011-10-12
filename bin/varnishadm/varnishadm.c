@@ -32,6 +32,7 @@
 #include <sys/socket.h>
 
 #ifdef HAVE_LIBEDIT
+#include <stdio.h>
 #include <editline/readline.h>
 #endif
 
