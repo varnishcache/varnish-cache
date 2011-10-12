@@ -36,6 +36,7 @@
 
 #include "cache.h"
 
+#include "cache_backend.h"
 #include "vtcp.h"
 #include "vtim.h"
 
