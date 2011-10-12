@@ -33,7 +33,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
-#include "storage.h"
+#include "storage/storage.h"
 
 
 static struct lock		sms_mtx;

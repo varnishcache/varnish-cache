@@ -42,12 +42,12 @@
 #include <stdlib.h>
 
 #include "cache.h"
-#include "storage.h"
+#include "storage/storage.h"
 
 #include "vsha256.h"
 
 #include "persistent.h"
-#include "storage_persistent.h"
+#include "storage/storage_persistent.h"
 
 #ifndef MAP_NOCORE
 #define MAP_NOCORE 0 /* XXX Linux */

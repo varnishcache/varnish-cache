@@ -38,14 +38,14 @@
 #include <stdlib.h>
 
 #include "cache.h"
-#include "storage.h"
+#include "storage/storage.h"
 
 #include "hash_slinger.h"
 #include "vsha256.h"
 #include "vtim.h"
 
 #include "persistent.h"
-#include "storage_persistent.h"
+#include "storage/storage_persistent.h"
 
 /*--------------------------------------------------------------------
  * Write the segmentlist back to the silo.

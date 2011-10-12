@@ -51,7 +51,7 @@
 
 #include "mgt.h"
 
-#include "storage.h"
+#include "storage/storage.h"
 #include "vnum.h"
 
 #ifndef O_LARGEFILE

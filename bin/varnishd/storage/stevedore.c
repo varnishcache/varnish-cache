@@ -38,7 +38,7 @@
 
 #include "cache.h"
 
-#include "storage.h"
+#include "storage/storage.h"
 #include "vav.h"
 #include "vcli_priv.h"
 #include "vrt.h"

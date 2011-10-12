@@ -44,7 +44,7 @@
 #include <string.h>
 
 #include "cache.h"
-#include "storage.h"
+#include "storage/storage.h"
 
 #include "hash_slinger.h"
 #include "vcli.h"
@@ -53,7 +53,7 @@
 #include "vsha256.h"
 
 #include "persistent.h"
-#include "storage_persistent.h"
+#include "storage/storage_persistent.h"
 
 /*--------------------------------------------------------------------*/
 

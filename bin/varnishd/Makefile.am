@@ -64,16 +64,16 @@ varnishd_SOURCES = \
 	mgt_shmem.c \
 	mgt_vcc.c \
 	rfc2616.c \
-	stevedore.c \
-	stevedore_utils.c \
-	storage_file.c \
-	storage_malloc.c \
-	storage_persistent.c \
-	storage_persistent_mgt.c \
-	storage_persistent_silo.c \
-	storage_persistent_subr.c \
-	storage_synth.c \
-	storage_umem.c \
+	storage/stevedore.c \
+	storage/stevedore_utils.c \
+	storage/storage_file.c \
+	storage/storage_malloc.c \
+	storage/storage_persistent.c \
+	storage/storage_persistent_mgt.c \
+	storage/storage_persistent_silo.c \
+	storage/storage_persistent_subr.c \
+	storage/storage_synth.c \
+	storage/storage_umem.c \
 	varnishd.c \
 	vsm.c
 
@@ -88,8 +88,8 @@ noinst_HEADERS = \
 	heritage.h \
 	mgt.h \
 	mgt_cli.h \
-	storage.h \
-	storage_persistent.h \
+	storage/storage.h \
+	storage/storage_persistent.h \
 	vparam.h
 
 varnishd_CFLAGS = \
