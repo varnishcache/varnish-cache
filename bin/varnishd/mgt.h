@@ -70,6 +70,7 @@ void mgt_sandbox(void);
 #ifdef HAVE_SETPPRIV
 void mgt_sandbox_solaris_init(void);
 void mgt_sandbox_solaris_fini(void);
+void mgt_sandbox_solaris_privsep(void);
 #endif
 
 /* mgt_shmem.c */

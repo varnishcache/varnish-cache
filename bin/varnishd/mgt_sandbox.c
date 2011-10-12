@@ -63,17 +63,17 @@
 void
 mgt_sandbox(void)
 {
-
 #ifdef HAVE_SETPPRIV
 	mgt_sandbox_solaris_init();
-#endif
-
+	mgt_sandbox_solaris_privsep();
+#else
 	if (geteuid() == 0) {
 		XXXAZ(setgid(params->gid));
 		XXXAZ(setuid(params->uid));
 	} else {
 		REPORT0(LOG_INFO, "Not running as root, no priv-sep");
 	}
+#endif
 
 	/* On Linux >= 2.4, you need to set the dumpable flag
 	   to get core dumps after you have done a setuid. */
