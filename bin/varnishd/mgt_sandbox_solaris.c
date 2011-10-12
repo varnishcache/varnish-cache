@@ -42,6 +42,10 @@
 #ifdef HAVE_PRIV_H
 #include <priv.h>
 #endif
+#include <stdio.h>
+#include <string.h>
+#include <syslog.h>
+#include <unistd.h>
 
 #include "mgt.h"
 #include "heritage.h"
@@ -152,6 +156,20 @@ mgt_sandbox_solaris_init(void)
 	setppriv(PRIV_ON, PRIV_INHERITABLE, priv_all);
 
 	priv_freeset(priv_all);
+}
+
+void
+mgt_sandbox_solaris_privsep(void)
+{
+	if (priv_ineffect(PRIV_PROC_SETID)) {
+                if (getgid() != params->gid)
+                        XXXAZ(setgid(params->gid));
+                if (getuid() != params->uid)
+                        XXXAZ(setuid(params->uid));
+        } else {
+                REPORT(LOG_INFO, "Privilege %s missing, will not change uid/gid",
+		    PRIV_PROC_SETID);
+        }
 }
 
 /* 
