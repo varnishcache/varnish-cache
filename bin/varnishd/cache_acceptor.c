@@ -376,6 +376,16 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 	(void)cli;
 	(void)av;
 	(void)priv;
+
+	/*
+	 * This CLI command is primarily used by varnishtest.  Don't
+	 * respond until liste(2) has been called, in order to avoid
+	 * a race where varnishtest::client would attempt to connect(2)
+	 * before listen(2) has been called.
+	 */
+	while(!hack_ready)
+		(void)usleep(100*1000);
+
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (ls->sock < 0)
 			continue;
