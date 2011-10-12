@@ -36,7 +36,7 @@
 
 #include "cache.h"
 
-#include "hash_slinger.h"
+#include "hash/hash_slinger.h"
 #include "vcli_priv.h"
 #include "vmb.h"
 #include "vtim.h"

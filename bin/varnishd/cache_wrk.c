@@ -36,7 +36,7 @@
 
 #include "cache.h"
 
-#include "hash_slinger.h"
+#include "hash/hash_slinger.h"
 #include "vsha256.h"
 
 static struct lock		wstat_mtx;

@@ -48,7 +48,6 @@
 #include "cache.h"
 
 #include "waiter/cache_waiter.h"
-#include "hash_slinger.h"
 #include "vtcp.h"
 #include "vtim.h"
 
@@ -262,9 +261,7 @@ Pool_Work_Thread(void *priv, struct worker *w)
 			AZ(w->sp->wrk);
 			THR_SetSession(w->sp);
 			w->sp->wrk = w;
-			CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
 			CNT_Session(w->sp);
-			CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
 			THR_SetSession(NULL);
 			w->sp = NULL;
 

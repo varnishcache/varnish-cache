@@ -40,7 +40,7 @@
 #include "cache.h"
 #include "storage/storage.h"
 
-#include "hash_slinger.h"
+#include "hash/hash_slinger.h"
 #include "vsha256.h"
 #include "vtim.h"
 

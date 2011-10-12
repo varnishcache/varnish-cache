@@ -41,7 +41,7 @@
 #include "cache.h"
 
 #include "cache_backend.h"		// struct vbc
-#include "hash_slinger.h"		// objhead
+#include "hash/hash_slinger.h"		// struct objhead
 #include "vcli.h"
 #include "vcli_common.h"
 #include "vcli_priv.h"

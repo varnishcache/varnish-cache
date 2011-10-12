@@ -56,7 +56,7 @@
 #include "cache.h"
 
 #include "binary_heap.h"
-#include "hash_slinger.h"
+#include "hash/hash_slinger.h"
 #include "vtim.h"
 
 static pthread_t exp_thread;
