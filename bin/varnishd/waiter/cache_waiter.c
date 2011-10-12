@@ -32,7 +32,7 @@
 
 #include "cache.h"
 
-#include "cache_waiter.h"
+#include "waiter/cache_waiter.h"
 #include "vcli.h"
 #include "vcli_priv.h"
 

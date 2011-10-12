@@ -44,11 +44,11 @@ varnishd_SOURCES = \
 	cache_vrt_re.c \
 	cache_vrt_var.c \
 	cache_vrt_vmod.c \
-	cache_waiter.c \
-	cache_waiter_epoll.c \
-	cache_waiter_kqueue.c \
-	cache_waiter_poll.c \
-	cache_waiter_ports.c \
+	waiter/cache_waiter.c \
+	waiter/cache_waiter_epoll.c \
+	waiter/cache_waiter_kqueue.c \
+	waiter/cache_waiter_poll.c \
+	waiter/cache_waiter_ports.c \
 	cache_wrk.c \
 	cache_wrw.c \
 	cache_ws.c \
@@ -81,7 +81,7 @@ noinst_HEADERS = \
 	cache.h \
 	cache_backend.h \
 	cache_esi.h \
-	cache_waiter.h \
+	waiter/cache_waiter.h \
 	common.h \
 	default_vcl.h \
 	hash_slinger.h \

@@ -34,7 +34,7 @@
 
 #include "cache.h"
 
-#include "cache_waiter.h"
+#include "waiter/cache_waiter.h"
 #include "hash_slinger.h"
 
 /*--------------------------------------------------------------------
