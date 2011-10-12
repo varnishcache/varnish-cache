@@ -28,6 +28,7 @@
 
 #include "config.h"
 
+#include <errno.h>
 #include <pthread.h>
 #include <unistd.h>
 
