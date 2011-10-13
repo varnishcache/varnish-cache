@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# varnishncsa Control the Varnish NSCA logging daemon
+# varnishncsa Control the Varnish NCSA logging daemon
 #
 # chkconfig: - 90 10
 # description: Varnish Cache logging daemon
@@ -15,7 +15,7 @@
 # Default-Start:
 # Default-Stop:
 # Short-Description: start and stop varnishncsa
-# Description: Varnish Cache NSCA logging daemon
+# Description: Varnish Cache NCSA logging daemon
 ### END INIT INFO
 
 # Source function library.

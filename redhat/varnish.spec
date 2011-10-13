@@ -372,7 +372,7 @@ fi
 - Whitespace changes to make rpmlint more happy
 
 * Fri Sep 12 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.9.20080912svn3184
-- Added varnisnsca init script (Colin Hill)
+- Added varnisncsa init script (Colin Hill)
 - Corrected varnishlog init script (Colin Hill)
 
 * Tue Sep 09 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.8.beta1
