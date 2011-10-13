@@ -38,7 +38,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "mgt.h"
+#include "mgt/mgt.h"
 
 #include "libvcl.h"
 #include "vcl.h"

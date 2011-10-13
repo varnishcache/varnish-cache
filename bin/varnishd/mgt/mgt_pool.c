@@ -47,7 +47,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "mgt.h"
+#include "mgt/mgt.h"
 
 #include "heritage.h"
 #include "vparam.h"

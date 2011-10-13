@@ -43,7 +43,7 @@
 #include <syslog.h>
 #include <unistd.h>
 
-#include "mgt.h"
+#include "mgt/mgt.h"
 
 #include "heritage.h"
 #include "vapi/vsm_int.h"

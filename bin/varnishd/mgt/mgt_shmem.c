@@ -97,7 +97,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "mgt.h"
+#include "mgt/mgt.h"
 
 #include "flopen.h"
 #include "heritage.h"

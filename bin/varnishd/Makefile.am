@@ -55,14 +55,14 @@ varnishd_SOURCES = \
 	hash/hash_classic.c \
 	hash/hash_critbit.c \
 	hash/hash_simple_list.c \
-	mgt_child.c \
-	mgt_cli.c \
-	mgt_param.c \
-	mgt_pool.c \
-	mgt_sandbox.c \
-	mgt_sandbox_solaris.c \
-	mgt_shmem.c \
-	mgt_vcc.c \
+	mgt/mgt_child.c \
+	mgt/mgt_cli.c \
+	mgt/mgt_param.c \
+	mgt/mgt_pool.c \
+	mgt/mgt_sandbox.c \
+	mgt/mgt_sandbox_solaris.c \
+	mgt/mgt_shmem.c \
+	mgt/mgt_vcc.c \
 	rfc2616.c \
 	storage/stevedore.c \
 	storage/stevedore_utils.c \
@@ -86,8 +86,8 @@ noinst_HEADERS = \
 	default_vcl.h \
 	hash/hash_slinger.h \
 	heritage.h \
-	mgt.h \
-	mgt_cli.h \
+	mgt/mgt.h \
+	mgt/mgt_cli.h \
 	storage/storage.h \
 	storage/storage_persistent.h \
 	vparam.h
@@ -128,7 +128,7 @@ default_vcl.h:	default.vcl Makefile
 	    -e 's/^/ "/' $(srcdir)/default.vcl >> $@
 
 # Explicitly record dependency
-mgt_vcc.c:	default_vcl.h
+mgt/mgt_vcc.c:	default_vcl.h
 
 varnishd.1: $(top_srcdir)/doc/sphinx/reference/varnishd.rst
 if HAVE_RST2MAN

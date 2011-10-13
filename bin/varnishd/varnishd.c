@@ -43,7 +43,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "mgt.h"
+#include "mgt/mgt.h"
 
 #include "hash/hash_slinger.h"
 #include "heritage.h"
