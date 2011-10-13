@@ -265,7 +265,13 @@ VTCP_set_read_timeout(int s, double seconds)
 	timeout.tv_sec = (int)floor(seconds);
 	timeout.tv_usec = (int)(1e6 * (seconds - timeout.tv_sec));
 #ifdef SO_RCVTIMEO_WORKS
-	AZ(setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout));
+	/* 
+	 * Solaris bug (present at least in snv_151 and older): If this fails
+	 * with EINVAL, the socket is half-closed (SS_CANTSENDMORE) and the
+	 * timeout does not get set. Needs to be fixed in Solaris, there is
+	 * nothing we can do about this.
+	 */
+	VTCP_Assert(setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout));
 #else
 	(void)s;
 #endif
