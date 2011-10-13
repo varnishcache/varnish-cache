@@ -1575,14 +1575,21 @@ CNT_Session(struct sess *sp)
 	AZ(w->do_esi);
 
 	/*
-	 * Whenever we come in from the acceptor we need to set blocking
-	 * mode, but there is no point in setting it when we come from
+	 * Whenever we come in from the acceptor or waiter, we need to set
+	 * blocking mode, but there is no point in setting it when we come from
 	 * ESI or when a parked sessions returns.
-	 * It would be simpler to do this in the acceptor, but we'd rather
-	 * do the syscall in the worker thread.
+	 * It would be simpler to do this in the acceptor or waiter, but we'd
+	 * rather do the syscall in the worker thread.
+	 * On systems which return errors for ioctl, we close early
 	 */
-	if (sp->step == STP_FIRST || sp->step == STP_START)
-		(void)VTCP_blocking(sp->fd);
+	if ((sp->step == STP_FIRST || sp->step == STP_START) &&
+	    VTCP_blocking(sp->fd)) {
+		if (errno == ECONNRESET)
+			vca_close_session(sp, "remote closed");
+		else
+			vca_close_session(sp, "error");
+		sp->step = STP_DONE;
+	}
 
 	/*
 	 * NB: Once done is set, we can no longer touch sp!
