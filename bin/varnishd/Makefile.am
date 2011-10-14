@@ -115,7 +115,7 @@ DISTCLEANFILES = default_vcl.h
 #
 # Turn the default.vcl file into a C-string we can include in the program.
 #
-default_vcl.h:	default.vcl Makefile
+default_vcl.h:	default.vcl
 	echo '/*' > $@
 	echo ' * NB:  This file is machine generated, DO NOT EDIT!' >> $@
 	echo ' *' >> $@
