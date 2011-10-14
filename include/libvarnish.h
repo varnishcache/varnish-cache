@@ -56,16 +56,24 @@ int SUB_run(struct vsb *sb, sub_func_f *func, void *priv, const char *name,
 #define VTCP_ADDRBUFSIZE		64
 #define VTCP_PORTBUFSIZE		16
 
+static inline int
+VTCP_Check(int a)
+{
+	if (a == 0)
+		return (1);
+	if (errno == ECONNRESET || errno == ENOTCONN)
+		return (1);
 #if (defined (__SVR4) && defined (__sun)) || defined (__NetBSD__)
-/*
- * Solaris returns EINVAL if the other end unexepectedly reset the
- * connection.  This is a bug in Solaris and documented behaviour on NetBSD.
- */
-#define VTCP_Check(a) ((a) == 0 || errno == ECONNRESET || errno == ENOTCONN \
-    || errno == EINVAL)
-#else
-#define VTCP_Check(a) ((a) == 0 || errno == ECONNRESET || errno == ENOTCONN)
+	/*
+	 * Solaris returns EINVAL if the other end unexepectedly reset the
+	 * connection.
+	 * This is a bug in Solaris and documented behaviour on NetBSD.
+	 */
+	if (errno == EINVAL || errno == ETIMEDOUT)
+		return (1);
 #endif
+	return (0);
+}
 
 #define VTCP_Assert(a) assert(VTCP_Check(a))
 
