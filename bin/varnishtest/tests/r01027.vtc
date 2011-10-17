@@ -1,0 +1,8 @@
+varnishtest "Test if you can error in vcl_deliver"
+
+varnish v1 -badvcl {
+	sub vcl_deliver {
+		error 201 "ok";
+	}
+}
+
