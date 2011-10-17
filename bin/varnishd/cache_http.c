@@ -979,6 +979,9 @@ http_PutProtocol(struct worker *w, unsigned vsl_id, const struct http *to,
 {
 
 	http_PutField(w, vsl_id, to, HTTP_HDR_PROTO, protocol);
+	if (to->hd[HTTP_HDR_PROTO].b == NULL)
+		http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
+	Tcheck(to->hd[HTTP_HDR_PROTO]);
 }
 
 void
@@ -995,6 +998,10 @@ http_PutResponse(struct worker *w, unsigned vsl_id, const struct http *to,
 {
 
 	http_PutField(w, vsl_id, to, HTTP_HDR_RESPONSE, response);
+	if (to->hd[HTTP_HDR_RESPONSE].b == NULL)
+		http_SetH(to, HTTP_HDR_RESPONSE, "Lost Response");
+	Tcheck(to->hd[HTTP_HDR_RESPONSE]);
+
 }
 
 void
