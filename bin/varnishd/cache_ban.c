@@ -738,7 +738,7 @@ BAN_CheckObject(struct object *o, const struct sess *sp)
  * Ban tail lurker thread
  */
 
-static void
+static int
 ban_lurker_work(const struct sess *sp)
 {
 	struct ban *b, *bf;
@@ -757,21 +757,21 @@ ban_lurker_work(const struct sess *sp)
 	if (bf != NULL) {
 		Lck_Unlock(&ban_mtx);
 		BAN_Free(bf);
-		return;
+		return (0);
 	}
 
 	/* Find the last ban give up, if we have only one */
 	b = VTAILQ_LAST(&ban_head, banhead_s);
 	if (b == ban_start) {
 		Lck_Unlock(&ban_mtx);
-		return;
+		return (0);
 	}
 
 	/* Find the first object on it, if any */
 	oc = VTAILQ_FIRST(&b->objcore);
 	if (oc == NULL) {
 		Lck_Unlock(&ban_mtx);
-		return;
+		return (0);
 	}
 
 	/* Try to lock the objhead */
@@ -779,7 +779,7 @@ ban_lurker_work(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	if (Lck_Trylock(&oh->mtx)) {
 		Lck_Unlock(&ban_mtx);
-		return;
+		return (0);
 	}
 
 	/*
@@ -792,7 +792,7 @@ ban_lurker_work(const struct sess *sp)
 	if (oc2 == NULL) {
 		Lck_Unlock(&oh->mtx);
 		Lck_Unlock(&ban_mtx);
-		return;
+		return (0);
 	}
 	/*
 	 * Grab a reference to the OC and we can let go of the BAN mutex
@@ -809,12 +809,13 @@ ban_lurker_work(const struct sess *sp)
 	Lck_Unlock(&oh->mtx);
 	WSP(sp, SLT_Debug, "lurker: %p %g %d", oc, o->exp.ttl, i);
 	(void)HSH_Deref(sp->wrk, NULL, &o);
+	return (i);
 }
 
 static void * __match_proto__(bgthread_t)
 ban_lurker(struct sess *sp, void *priv)
 {
-
+	int i = 0;
 	(void)priv;
 	while (1) {
 		if (params->ban_lurker_sleep == 0.0) {
@@ -822,8 +823,11 @@ ban_lurker(struct sess *sp, void *priv)
 			TIM_sleep(1.0);
 			continue;
 		}
-		TIM_sleep(params->ban_lurker_sleep);
-		ban_lurker_work(sp);
+		if (i != 0)
+			TIM_sleep(params->ban_lurker_sleep);
+		else
+			TIM_sleep(1.0);
+		i = ban_lurker_work(sp);
 		WSL_Flush(sp->wrk, 0);
 		WRK_SumStat(sp->wrk);
 	}
