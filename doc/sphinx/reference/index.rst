@@ -21,6 +21,7 @@ The Varnish Reference Manual
 	shmem.rst
 	vmod.rst
 	vmod_std.rst
+	purging_banning.rst
 	vsl.rst
 
 .. todo::
