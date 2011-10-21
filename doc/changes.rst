@@ -1,4 +1,34 @@
 ================================
+Changes from 3.0.2 rc 1 to 3.0.2
+================================
+
+Varnishd
+--------
+
+- Make the size of the synthetic object workspace equal to
+  `http_resp_size` and add workaround to avoid a crash when setting
+  too long response strings for synthetic objects.
+
+- Ensure the ban lurker always sleeps the advertised 1 second when it
+  does not have anything to do.
+
+- Remove error from `vcl_deliver`.  Previously this would assert while
+  it will now give a syntax error.
+
+varnishncsa
+-----------
+
+- Add default values for some fields when logging incomplete records
+  and document the default values.
+
+Other
+-----
+
+- Documentation updates
+
+- Some Solaris portability updates.
+
+================================
 Changes from 3.0.1 to 3.0.2 rc 1
 ================================
 
