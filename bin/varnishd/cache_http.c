@@ -1001,7 +1001,6 @@ http_PutResponse(struct worker *w, unsigned vsl_id, const struct http *to,
 	if (to->hd[HTTP_HDR_RESPONSE].b == NULL)
 		http_SetH(to, HTTP_HDR_RESPONSE, "Lost Response");
 	Tcheck(to->hd[HTTP_HDR_RESPONSE]);
-
 }
 
 void
