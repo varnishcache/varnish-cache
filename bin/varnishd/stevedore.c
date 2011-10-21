@@ -183,7 +183,7 @@ stv_alloc(const struct sess *sp, size_t size)
 		}
 
 		/* no luck; try to free some space and keep trying */
-		if (EXP_NukeOne(sp, stv->lru) == -1)
+		if (EXP_NukeOne(sp->wrk, stv->lru) == -1)
 			break;
 
 		/* Enough is enough: try another if we have one */
@@ -335,7 +335,7 @@ STV_NewObject(struct sess *sp, const char *hint, unsigned wsl, struct exp *ep,
 	if (o == NULL) {
 		/* no luck; try to free some space and keep trying */
 		for (i = 0; o == NULL && i < params->nuke_limit; i++) {
-			if (EXP_NukeOne(sp, stv->lru) == -1)
+			if (EXP_NukeOne(sp->wrk, stv->lru) == -1)
 				break;
 			o = stv->allocobj(stv, sp, ltot, &soc);
 		}

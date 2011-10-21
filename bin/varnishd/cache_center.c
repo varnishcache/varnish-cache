@@ -441,8 +441,8 @@ cnt_error(struct sess *sp)
 		     &w->exp, (uint16_t)params->http_max_hdr);
 		if (sp->obj == NULL)
 			sp->obj = STV_NewObject(sp, TRANSIENT_STORAGE,
-			     params->http_resp_size , &w->exp,
-			     (uint16_t)params->http_max_hdr);
+			    params->http_resp_size, &w->exp,
+			    (uint16_t)params->http_max_hdr);
 		if (sp->obj == NULL) {
 			sp->doclose = "Out of objects";
 			sp->director = NULL;
