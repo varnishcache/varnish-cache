@@ -10,8 +10,8 @@ of, in this twitterific day of age serving content that is outdated is
 bad for business.
 
 The solution is to notify Varnish when there is fresh content
-available. This can be done through two mechanisms. HTTP purging and
-bans. First, let me explain the HTTP purges. 
+available. This can be done through three mechanisms. HTTP purging,
+banning and forced cache misses. First, let me explain the HTTP purges. 
 
 
 HTTP Purges
@@ -61,7 +61,9 @@ As you can see we have used to new VCL subroutines, vcl_hit and
 vcl_miss. When we call lookup Varnish will try to lookup the object in
 its cache. It will either hit an object or miss it and so the
 corresponding subroutine is called. In vcl_hit the object that is
-stored in cache is available and we can set the TTL.
+stored in cache is available and we can set the TTL. The purge in
+vcl_miss is necessary to purge all variants in the cases where you hit an
+object, but miss a particular variant.
 
 So for example.com to invalidate their front page they would call out
 to Varnish like this::
@@ -75,14 +77,16 @@ variants as defined by Vary.
 Bans
 ====
 
-There is another way to invalidate content. Bans. You can think of
-bans as a sort of a filter. You *ban* certain content from being
-served from your cache. You can ban content based on any metadata we
-have.
+There is another way to invalidate content: Bans. You can think of
+bans as a sort of a filter on objects already in the cache. You *ban*
+certain content from being served from your cache. You can ban
+content based on any metadata we have.
+A ban will only work on objects already in the cache, it does not
+prevent new content from entering the cache or being served.
 
 Support for bans is built into Varnish and available in the CLI
-interface. For VG to ban every png object belonging on example.com
-they could issue::
+interface. To ban every png object belonging on example.com, issue
+the following command::
 
   ban req.http.host == "example.com" && req.http.url ~ "\.png$"
 
@@ -91,13 +95,14 @@ Quite powerful, really.
 Bans are checked when we hit an object in the cache, but before we
 deliver it. *An object is only checked against newer bans*. 
 
-Bans that only match against beresp.* are also processed by a
-background worker threads called the *ban lurker*. The ban lurker will
-walk the heap and try to match objects and will evict the matching
-objects. How aggressive the ban lurker is can be controlled by the
-parameter ban_lurker_sleep. 
+Bans that only match against obj.* are also processed by a background
+worker threads called the *ban lurker*. The ban lurker will walk the
+heap and try to match objects and will evict the matching objects. How
+aggressive the ban lurker is can be controlled by the parameter
+ban_lurker_sleep. The ban lurker can be disabled by setting
+ban_lurker_sleep to 0.
 
-Bans that are older then the oldest objects in the cache are discarded
+Bans that are older than the oldest objects in the cache are discarded
 without evaluation.  If you have a lot of objects with long TTL, that
 are seldom accessed you might accumulate a lot of bans. This might
 impact CPU usage and thereby performance.
@@ -122,3 +127,49 @@ You can also add bans to Varnish via HTTP. Doing so requires a bit of VCL::
 This VCL sniplet enables Varnish to handle an HTTP BAN method, adding a
 ban on the URL, including the host part.
 
+The ban lurker can help you keep the ban list at a manageable size, so
+we recommend that you avoid using req.* in your bans, as the request
+object is not available in the ban lurker thread.
+
+You can use the following template to write ban lurker friendly bans::
+
+  sub vcl_fetch {
+    set obj.http.x-url = req.url;
+  }
+
+  sub vcl_deliver {
+    unset resp.http.x-url; # Optional
+  }
+
+  sub vcl_recv {
+    if (req.request == "PURGE") {
+      if (client.ip !~ purge) {
+        error 401 "Not allowed";
+      }
+      ban("obj.http.x-url ~ " req.url); # Assumes req.url is a regex. This might be a bit too simple
+    }
+  }
+
+To inspect the current ban list, issue the ban.list command in CLI. This
+will produce a status of all current bans::
+
+  0xb75096d0 1318329475.377475    10      obj.http.x-url ~ test
+  0xb7509610 1318329470.785875    20G     obj.http.x-url ~ test
+
+The ban list contains the ID of the ban, the timestamp when the ban
+entered the ban list. A count of the objects that has reached this point
+in the ban list, optionally postfixed with a 'G' for "Gone", if the ban
+is no longer valid.  Finally, the ban expression is listed. The ban can
+be marked as Gone if it is a duplicate ban, but is still kept in the list
+for optimization purposes.
+
+Forcing a cache miss
+====================
+
+The final way to invalidate an object is a method that allows you to
+refresh an object by forcing a hash miss for a single request. If you set
+req.hash_always_miss to true, varnish will miss the current object in the
+cache, thus forcing a fetch from the backend. This can in turn add the
+freshly fetched object to the cache, thus overriding the current one. The
+old object will stay in the cache until ttl expires or it is evicted by
+some other means.
