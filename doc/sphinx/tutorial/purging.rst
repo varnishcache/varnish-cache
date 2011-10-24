@@ -134,7 +134,7 @@ object is not available in the ban lurker thread.
 You can use the following template to write ban lurker friendly bans::
 
   sub vcl_fetch {
-    set obj.http.x-url = req.url;
+    set beresp.http.x-url = req.url;
   }
 
   sub vcl_deliver {
