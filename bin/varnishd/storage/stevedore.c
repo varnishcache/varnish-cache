@@ -154,7 +154,7 @@ stv_pick_stevedore(const struct sess *sp, const char **hint)
 /*-------------------------------------------------------------------*/
 
 static struct storage *
-stv_alloc(const struct sess *sp, size_t size)
+stv_alloc(struct worker *w, const struct object *obj, size_t size)
 {
 	struct storage *st;
 	struct stevedore *stv;
@@ -164,8 +164,9 @@ stv_alloc(const struct sess *sp, size_t size)
 	 * Always use the stevedore which allocated the object in order to
 	 * keep an object inside the same stevedore.
 	 */
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	stv = sp->obj->objstore->stevedore;
+	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	stv = obj->objstore->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
 	if (size > (size_t)(params->fetch_maxchunksize) << 10)
@@ -184,7 +185,7 @@ stv_alloc(const struct sess *sp, size_t size)
 		}
 
 		/* no luck; try to free some space and keep trying */
-		if (EXP_NukeOne(sp->wrk, stv->lru) == -1)
+		if (EXP_NukeOne(w, stv->lru) == -1)
 			break;
 
 		/* Enough is enough: try another if we have one */
@@ -370,10 +371,10 @@ STV_Freestore(struct object *o)
 /*-------------------------------------------------------------------*/
 
 struct storage *
-STV_alloc(const struct sess *sp, size_t size)
+STV_alloc(struct worker *w, const struct object *obj, size_t size)
 {
 
-	return (stv_alloc(sp, size));
+	return (stv_alloc(w, obj, size));
 }
 
 void

@@ -368,7 +368,7 @@ vfp_esi_end(struct sess *sp)
 		l = VSB_len(vsb);
 		assert(l > 0);
 		/* XXX: This is a huge waste of storage... */
-		sp->obj->esidata = STV_alloc(sp, l);
+		sp->obj->esidata = STV_alloc(sp->wrk, sp->obj, l);
 		XXXAN(sp->obj->esidata);
 		memcpy(sp->obj->esidata->ptr, VSB_data(vsb), l);
 		sp->obj->esidata->len = l;

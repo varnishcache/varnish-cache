@@ -950,7 +950,8 @@ int RFC2616_Do_Cond(const struct sess *sp);
 /* stevedore.c */
 struct object *STV_NewObject(struct sess *sp, const char *hint, unsigned len,
     struct exp *, uint16_t nhttp);
-struct storage *STV_alloc(const struct sess *sp, size_t size);
+struct storage *STV_alloc(struct worker *w, const struct object *obj,
+    size_t size);
 void STV_trim(struct storage *st, size_t size);
 void STV_free(struct storage *st);
 void STV_open(void);

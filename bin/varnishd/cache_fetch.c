@@ -159,7 +159,7 @@ FetchStorage(const struct sess *sp, ssize_t sz)
 		l = sz;
 	if (l == 0)
 		l = params->fetch_chunksize * 1024LL;
-	st = STV_alloc(sp, l);
+	st = STV_alloc(sp->wrk, sp->obj, l);
 	if (st == NULL) {
 		errno = ENOMEM;
 		return (NULL);
