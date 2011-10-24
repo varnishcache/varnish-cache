@@ -339,6 +339,7 @@ struct worker {
 
 	/* Fetch stuff */
 	struct vbc		*vbc;
+	struct object		*fetch_obj;
 	enum body_status	body_status;
 	struct vfp		*vfp;
 	struct vgz		*vgz_rx;
@@ -700,7 +701,7 @@ int EXP_Touch(struct objcore *oc);
 int EXP_NukeOne(struct worker *w, struct lru *lru);
 
 /* cache_fetch.c */
-struct storage *FetchStorage(const struct sess *sp, ssize_t sz);
+struct storage *FetchStorage(struct worker *w, ssize_t sz);
 int FetchHdr(struct sess *sp);
 int FetchBody(struct sess *sp, struct object *obj);
 int FetchReqBody(struct sess *sp);
@@ -950,8 +951,7 @@ int RFC2616_Do_Cond(const struct sess *sp);
 /* stevedore.c */
 struct object *STV_NewObject(struct sess *sp, const char *hint, unsigned len,
     struct exp *, uint16_t nhttp);
-struct storage *STV_alloc(struct worker *w, const struct object *obj,
-    size_t size);
+struct storage *STV_alloc(struct worker *w, size_t size);
 void STV_trim(struct storage *st, size_t size);
 void STV_free(struct storage *st);
 void STV_open(void);

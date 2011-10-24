@@ -371,10 +371,10 @@ STV_Freestore(struct object *o)
 /*-------------------------------------------------------------------*/
 
 struct storage *
-STV_alloc(struct worker *w, const struct object *obj, size_t size)
+STV_alloc(struct worker *w, size_t size)
 {
 
-	return (stv_alloc(w, obj, size));
+	return (stv_alloc(w, w->fetch_obj, size));
 }
 
 void

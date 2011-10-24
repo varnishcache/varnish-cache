@@ -66,7 +66,7 @@ vfp_nop_begin(struct sess *sp, size_t estimate)
 		WSP(sp, SLT_Debug, "Fetch %d byte segments:", fetchfrag);
 	}
 	if (estimate > 0)
-		(void)FetchStorage(sp, estimate);
+		(void)FetchStorage(sp->wrk, estimate);
 }
 
 /*--------------------------------------------------------------------
@@ -86,7 +86,7 @@ vfp_nop_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	struct storage *st;
 
 	while (bytes > 0) {
-		st = FetchStorage(sp, 0);
+		st = FetchStorage(sp->wrk, 0);
 		if (st == NULL) {
 			htc->error = "Could not get storage";
 			return (-1);
@@ -145,12 +145,15 @@ static struct vfp vfp_nop = {
  */
 
 struct storage *
-FetchStorage(const struct sess *sp, ssize_t sz)
+FetchStorage(struct worker *w, ssize_t sz)
 {
 	ssize_t l;
 	struct storage *st;
+	struct object *obj;
 
-	st = VTAILQ_LAST(&sp->obj->store, storagehead);
+	obj = w->fetch_obj;
+	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
+	st = VTAILQ_LAST(&obj->store, storagehead);
 	if (st != NULL && st->len < st->space)
 		return (st);
 
@@ -159,13 +162,13 @@ FetchStorage(const struct sess *sp, ssize_t sz)
 		l = sz;
 	if (l == 0)
 		l = params->fetch_chunksize * 1024LL;
-	st = STV_alloc(sp->wrk, sp->obj, l);
+	st = STV_alloc(w, l);
 	if (st == NULL) {
 		errno = ENOMEM;
 		return (NULL);
 	}
 	AZ(st->len);
-	VTAILQ_INSERT_TAIL(&sp->obj->store, st, list);
+	VTAILQ_INSERT_TAIL(&obj->store, st, list);
 	return (st);
 }
 
@@ -487,6 +490,7 @@ FetchBody(struct sess *sp, struct object *obj)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	w = sp->wrk;
+	AZ(w->fetch_obj);
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(obj->http, HTTP_MAGIC);
 
@@ -498,6 +502,9 @@ FetchBody(struct sess *sp, struct object *obj)
 
 	AZ(w->vgz_rx);
 	AZ(VTAILQ_FIRST(&obj->store));
+
+	w->fetch_obj = obj;
+
 	switch (w->body_status) {
 	case BS_NONE:
 		cls = 0;
@@ -540,6 +547,8 @@ FetchBody(struct sess *sp, struct object *obj)
 	 * to get it trimmed or thrown out if empty.
 	 */
 	AZ(vfp_nop_end(sp));
+
+	w->fetch_obj = NULL;
 
 	WSL(w, SLT_Fetch_Body, w->vbc->vsl_id, "%u(%s) cls %d mklen %u",
 	    w->body_status, body_status(w->body_status),

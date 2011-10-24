@@ -71,7 +71,7 @@ vfp_esi_bytes_uu(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	while (bytes > 0) {
-		st = FetchStorage(sp, 0);
+		st = FetchStorage(sp->wrk, 0);
 		if (st == NULL)
 			return (-1);
 		w = vef_read(htc,
@@ -368,7 +368,7 @@ vfp_esi_end(struct sess *sp)
 		l = VSB_len(vsb);
 		assert(l > 0);
 		/* XXX: This is a huge waste of storage... */
-		sp->obj->esidata = STV_alloc(sp->wrk, sp->obj, l);
+		sp->obj->esidata = STV_alloc(sp->wrk, l);
 		XXXAN(sp->obj->esidata);
 		memcpy(sp->obj->esidata->ptr, VSB_data(vsb), l);
 		sp->obj->esidata->len = l;
