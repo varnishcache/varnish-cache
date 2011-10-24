@@ -35,6 +35,7 @@
 
 #include "cache.h"
 
+#include "cache_backend.h"		// XXX: w->vbc for WSLB
 #include "cache_esi.h"
 #include "vct.h"
 #include "vend.h"
@@ -60,7 +61,7 @@ struct vep_state {
 #define VEP_MAGIC		0x55cb9b82
 	struct vsb		*vsb;
 
-	const struct sess	*sp;
+	struct worker		*wrk;
 	int			dogzip;
 	vep_callback_t		*cb;
 
@@ -186,7 +187,7 @@ vep_error(const struct vep_state *vep, const char *p)
 
 	VSC_C_main->esi_errors++;
 	l = (intmax_t)(vep->ver_p - vep->hack_p);
-	WSP(vep->sp, SLT_ESI_xmlerror, "ERR at %jd %s", l, p);
+	WSLB(vep->wrk, SLT_ESI_xmlerror, "ERR at %jd %s", l, p);
 
 }
 
@@ -202,7 +203,7 @@ vep_warn(const struct vep_state *vep, const char *p)
 	VSC_C_main->esi_warnings++;
 	l = (intmax_t)(vep->ver_p - vep->hack_p);
 	printf("WARNING at %jd %s\n", l, p);
-	WSP(vep->sp, SLT_ESI_xmlerror, "WARN at %jd %s", l, p);
+	WSLB(vep->wrk, SLT_ESI_xmlerror, "WARN at %jd %s", l, p);
 
 }
 
@@ -328,7 +329,7 @@ vep_mark_common(struct vep_state *vep, const char *p, enum vep_mark mark)
 	 */
 
 	if (vep->last_mark != mark && (vep->o_wait > 0 || vep->startup)) {
-		lcb = vep->cb(vep->sp, 0,
+		lcb = vep->cb(vep->wrk, 0,
 		    mark == VERBATIM ? VGZ_RESET : VGZ_ALIGN);
 		if (lcb - vep->o_last > 0)
 			vep_emit_common(vep, lcb - vep->o_last, vep->last_mark);
@@ -338,7 +339,7 @@ vep_mark_common(struct vep_state *vep, const char *p, enum vep_mark mark)
 
 	/* Transfer pending bytes CRC into active mode CRC */
 	if (vep->o_pending) {
-		(void)vep->cb(vep->sp, vep->o_pending, VGZ_NORMAL);
+		(void)vep->cb(vep->wrk, vep->o_pending, VGZ_NORMAL);
 		if (vep->o_crc == 0) {
 			vep->crc = vep->crcp;
 			vep->o_crc = vep->o_pending;
@@ -362,7 +363,7 @@ vep_mark_common(struct vep_state *vep, const char *p, enum vep_mark mark)
 
 	vep->o_wait += l;
 	vep->last_mark = mark;
-	(void)vep->cb(vep->sp, l, VGZ_NORMAL);
+	(void)vep->cb(vep->wrk, l, VGZ_NORMAL);
 }
 
 static void
@@ -499,7 +500,7 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 		VSB_printf(vep->vsb, "%c", 0);
 	} else {
 		VSB_printf(vep->vsb, "%c", 0);
-		url = vep->sp->wrk->bereq->hd[HTTP_HDR_URL];
+		url = vep->wrk->bereq->hd[HTTP_HDR_URL];
 		/* Look for the last / before a '?' */
 		h = NULL;
 		for (q = url.b; q < url.e && *q != '?'; q++)
@@ -548,15 +549,15 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
  */
 
 void
-VEP_parse(const struct sess *sp, const char *p, size_t l)
+VEP_Parse(const struct worker *w, const char *p, size_t l)
 {
 	struct vep_state *vep;
 	const char *e;
 	struct vep_match *vm;
 	int i;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	vep = sp->wrk->vep;
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	vep = w->vep;
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 	assert(l > 0);
 
@@ -601,7 +602,7 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 				p++;
 				vep->state = VEP_STARTTAG;
 			} else if (p < e) {
-				WSP(vep->sp, SLT_ESI_xmlerror,
+				WSLB(vep->wrk, SLT_ESI_xmlerror,
 				    "No ESI processing, first char not '<'");
 				vep->state = VEP_NOTXML;
 			}
@@ -978,33 +979,34 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 /*---------------------------------------------------------------------
  */
 
-static ssize_t
-vep_default_cb(const struct sess *sp, ssize_t l, enum vgz_flag flg)
+static ssize_t __match_proto__()
+vep_default_cb(struct worker *w, ssize_t l, enum vgz_flag flg)
 {
 
 	(void)flg;
-	AN(sp->wrk->vep);
-	sp->wrk->vep->cb_x += l;
-Debug("CB(%jd,%d) = %jd\n", (intmax_t)l, flg, (intmax_t)sp->wrk->vep->cb_x);
-	return (sp->wrk->vep->cb_x);
+	AN(w->vep);
+	w->vep->cb_x += l;
+Debug("CB(%jd,%d) = %jd\n", (intmax_t)l, flg, (intmax_t)w->vep->cb_x);
+	return (w->vep->cb_x);
 }
 
 /*---------------------------------------------------------------------
  */
 
 void
-VEP_Init(const struct sess *sp, vep_callback_t *cb)
+VEP_Init(struct worker *w, vep_callback_t *cb)
 {
 	struct vep_state *vep;
 
-	AZ(sp->wrk->vep);
-	sp->wrk->vep = (void*)WS_Alloc(sp->wrk->ws, sizeof *vep);
-	AN(sp->wrk->vep);
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	AZ(w->vep);
+	w->vep = (void*)WS_Alloc(w->ws, sizeof *vep);
+	AN(w->vep);
 
-	vep = sp->wrk->vep;
+	vep = w->vep;
 	memset(vep, 0, sizeof *vep);
 	vep->magic = VEP_MAGIC;
-	vep->sp = sp;
+	vep->wrk = w;
 	vep->vsb = VSB_new_auto();
 	AN(vep->vsb);
 
@@ -1037,24 +1039,24 @@ VEP_Init(const struct sess *sp, vep_callback_t *cb)
  */
 
 struct vsb *
-VEP_Finish(const struct sess *sp)
+VEP_Finish(struct worker *w)
 {
 	struct vep_state *vep;
 	ssize_t l, lcb;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	vep = sp->wrk->vep;
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	vep = w->vep;
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 
 	if (vep->o_pending)
 		vep_mark_common(vep, vep->ver_p, vep->last_mark);
 	if (vep->o_wait > 0) {
-		lcb = vep->cb(vep->sp, 0, VGZ_ALIGN);
+		lcb = vep->cb(vep->wrk, 0, VGZ_ALIGN);
 		vep_emit_common(vep, lcb - vep->o_last, vep->last_mark);
 	}
-	(void)vep->cb(vep->sp, 0, VGZ_FINISH);
+	(void)vep->cb(vep->wrk, 0, VGZ_FINISH);
 
-	sp->wrk->vep = NULL;
+	w->vep = NULL;
 
 	AZ(VSB_finish(vep->vsb));
 	l = VSB_len(vep->vsb);

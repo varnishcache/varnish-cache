@@ -717,7 +717,7 @@ void VGZ_Ibuf(struct vgz *, const void *, ssize_t len);
 int VGZ_IbufEmpty(const struct vgz *vg);
 void VGZ_Obuf(struct vgz *, void *, ssize_t len);
 int VGZ_ObufFull(const struct vgz *vg);
-int VGZ_ObufStorage(const struct sess *sp, struct vgz *vg);
+int VGZ_ObufStorage(struct worker *w, struct vgz *vg);
 int VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
 int VGZ_Gunzip(struct vgz *, const void **, size_t *len);
 void VGZ_Destroy(struct vgz **);
@@ -863,6 +863,13 @@ void VSM_Free(const void *ptr);
 void VSL(enum VSL_tag_e tag, int id, const char *fmt, ...);
 void WSLR(struct worker *w, enum VSL_tag_e tag, int id, txt t);
 void WSL(struct worker *w, enum VSL_tag_e tag, int id, const char *fmt, ...);
+#define WSLB(w, tag, ...) 						\
+	do {								\
+		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);			\
+		CHECK_OBJ_NOTNULL(w->vbc, VBC_MAGIC);			\
+		WSL(w, tag, (w)->vbc->vsl_id, __VA_ARGS__);	\
+	} while (0)
+
 void WSL_Flush(struct worker *w, int overflow);
 
 #define DSL(flag, tag, id, ...)					\

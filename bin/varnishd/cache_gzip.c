@@ -255,11 +255,11 @@ VGZ_ObufFull(const struct vgz *vg)
  */
 
 int
-VGZ_ObufStorage(const struct sess *sp, struct vgz *vg)
+VGZ_ObufStorage(struct worker *w, struct vgz *vg)
 {
 	struct storage *st;
 
-	st = FetchStorage(sp->wrk, 0);
+	st = FetchStorage(w, 0);
 	if (st == NULL)
 		return (-1);
 
@@ -466,7 +466,7 @@ vfp_gunzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 			bytes -= w;
 		}
 
-		if (VGZ_ObufStorage(sp, vg)) {
+		if (VGZ_ObufStorage(sp->wrk, vg)) {
 			htc->error = "Could not get storage";
 			return (-1);
 		}
@@ -541,7 +541,7 @@ vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 			VGZ_Ibuf(vg, ibuf, w);
 			bytes -= w;
 		}
-		if (VGZ_ObufStorage(sp, vg)) {
+		if (VGZ_ObufStorage(sp->wrk, vg)) {
 			htc->error = "Could not get storage";
 			return (-1);
 		}
@@ -567,7 +567,7 @@ vfp_gzip_end(struct sess *sp)
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	do {
 		VGZ_Ibuf(vg, "", 0);
-		if (VGZ_ObufStorage(sp, vg))
+		if (VGZ_ObufStorage(sp->wrk, vg))
 			return (-1);
 		i = VGZ_Gzip(vg, &dp, &dl, VGZ_FINISH);
 		sp->obj->len += dl;
