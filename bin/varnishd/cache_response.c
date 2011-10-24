@@ -172,7 +172,7 @@ res_WriteGunzipObj(const struct sess *sp)
 
 		VSC_C_main->n_objwrite++;
 
-		i = VGZ_WrwGunzip(sp, vg,
+		i = VGZ_WrwGunzip(sp->wrk, vg,
 		    st->ptr, st->len,
 		    obuf, sizeof obuf, &obufl);
 		/* XXX: error check */
@@ -354,50 +354,52 @@ RES_StreamStart(struct sess *sp)
 }
 
 void
-RES_StreamPoll(const struct sess *sp)
+RES_StreamPoll(struct worker *w)
 {
 	struct stream_ctx *sctx;
 	struct storage *st;
 	ssize_t l, l2;
 	void *ptr;
 
-	sctx = sp->wrk->sctx;
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(w->fetch_obj, OBJECT_MAGIC);
+	sctx = w->sctx;
 	CHECK_OBJ_NOTNULL(sctx, STREAM_CTX_MAGIC);
-	if (sp->obj->len == sctx->stream_next)
+	if (w->fetch_obj->len == sctx->stream_next)
 		return;
-	assert(sp->obj->len > sctx->stream_next);
+	assert(w->fetch_obj->len > sctx->stream_next);
 	l = sctx->stream_front;
-	VTAILQ_FOREACH(st, &sp->obj->store, list) {
+	VTAILQ_FOREACH(st, &w->fetch_obj->store, list) {
 		if (st->len + l <= sctx->stream_next) {
 			l += st->len;
 			continue;
 		}
 		l2 = st->len + l - sctx->stream_next;
 		ptr = st->ptr + (sctx->stream_next - l);
-		if (sp->wrk->res_mode & RES_GUNZIP) {
-			(void)VGZ_WrwGunzip(sp, sctx->vgz, ptr, l2,
+		if (w->res_mode & RES_GUNZIP) {
+			(void)VGZ_WrwGunzip(w, sctx->vgz, ptr, l2,
 			    sctx->obuf, sctx->obuf_len, &sctx->obuf_ptr);
 		} else {
-			(void)WRW_Write(sp->wrk, ptr, l2);
+			(void)WRW_Write(w, ptr, l2);
 		}
 		l += st->len;
 		sctx->stream_next += l2;
 	}
-	if (!(sp->wrk->res_mode & RES_GUNZIP))
-		(void)WRW_Flush(sp->wrk);
+	if (!(w->res_mode & RES_GUNZIP))
+		(void)WRW_Flush(w);
 
-	if (sp->obj->objcore == NULL ||
-	    (sp->obj->objcore->flags & OC_F_PASS)) {
+	if (w->fetch_obj->objcore == NULL ||
+	    (w->fetch_obj->objcore->flags & OC_F_PASS)) {
 		/*
 		 * This is a pass object, release storage as soon as we
 		 * have delivered it.
 		 */
 		while (1) {
-			st = VTAILQ_FIRST(&sp->obj->store);
+			st = VTAILQ_FIRST(&w->fetch_obj->store);
 			if (st == NULL ||
 			    sctx->stream_front + st->len > sctx->stream_next)
 				break;
-			VTAILQ_REMOVE(&sp->obj->store, st, list);
+			VTAILQ_REMOVE(&w->fetch_obj->store, st, list);
 			sctx->stream_front += st->len;
 			STV_free(st);
 		}

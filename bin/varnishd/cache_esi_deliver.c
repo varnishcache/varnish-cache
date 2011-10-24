@@ -330,7 +330,7 @@ ESI_Deliver(struct sess *sp)
 					 * response
 					 */
 					AN(vgz);
-					i = VGZ_WrwGunzip(sp, vgz,
+					i = VGZ_WrwGunzip(sp->wrk, vgz,
 						st->ptr + off, l2,
 						obuf, sizeof obuf, &obufl);
 					if (WRW_Error(sp->wrk)) {

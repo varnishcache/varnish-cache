@@ -350,7 +350,7 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, size_t *plen, enum vgz_flag flags)
  */
 
 int
-VGZ_WrwGunzip(const struct sess *sp, struct vgz *vg, const void *ibuf,
+VGZ_WrwGunzip(struct worker *w, struct vgz *vg, const void *ibuf,
     ssize_t ibufl, char *obuf, ssize_t obufl, ssize_t *obufp)
 {
 	int i;
@@ -375,9 +375,9 @@ VGZ_WrwGunzip(const struct sess *sp, struct vgz *vg, const void *ibuf,
 			return (-1);
 		}
 		if (obufl == *obufp || i == VGZ_STUCK) {
-			sp->wrk->acct_tmp.bodybytes += *obufp;
-			(void)WRW_Write(sp->wrk, obuf, *obufp);
-			(void)WRW_Flush(sp->wrk);
+			w->acct_tmp.bodybytes += *obufp;
+			(void)WRW_Write(w, obuf, *obufp);
+			(void)WRW_Flush(w);
 			*obufp = 0;
 			VGZ_Obuf(vg, obuf + *obufp, obufl - *obufp);
 		}
@@ -474,7 +474,7 @@ vfp_gunzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 		assert(i == VGZ_OK || i == VGZ_END);
 		sp->obj->len += dl;
 		if (sp->wrk->do_stream)
-			RES_StreamPoll(sp);
+			RES_StreamPoll(sp->wrk);
 	}
 	if (i == Z_OK || i == Z_STREAM_END)
 		return (1);
@@ -549,7 +549,7 @@ vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 		assert(i == Z_OK);
 		sp->obj->len += dl;
 		if (sp->wrk->do_stream)
-			RES_StreamPoll(sp);
+			RES_StreamPoll(sp->wrk);
 	}
 	return (1);
 }
@@ -573,7 +573,7 @@ vfp_gzip_end(struct sess *sp)
 		sp->obj->len += dl;
 	} while (i != Z_STREAM_END);
 	if (sp->wrk->do_stream)
-		RES_StreamPoll(sp);
+		RES_StreamPoll(sp->wrk);
 	VGZ_UpdateObj(vg, sp->obj);
 	VGZ_Destroy(&vg);
 	return (0);
@@ -631,7 +631,7 @@ vfp_testgzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 		st->len += w;
 		sp->obj->len += w;
 		if (sp->wrk->do_stream)
-			RES_StreamPoll(sp);
+			RES_StreamPoll(sp->wrk);
 
 		while (!VGZ_IbufEmpty(vg)) {
 			VGZ_Obuf(vg, obuf, sizeof obuf);
