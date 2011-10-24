@@ -846,7 +846,7 @@ cnt_fetchbody(struct sess *sp)
 	}
 
 	/* Use unmodified headers*/
-	i = FetchBody(sp);
+	i = FetchBody(sp, sp->obj);
 
 	sp->wrk->h_content_length = NULL;
 
@@ -910,7 +910,7 @@ cnt_streambody(struct sess *sp)
 
 	AssertObjCorePassOrBusy(sp->obj->objcore);
 
-	i = FetchBody(sp);
+	i = FetchBody(sp, sp->obj);
 
 	sp->wrk->h_content_length = NULL;
 

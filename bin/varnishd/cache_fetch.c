@@ -477,7 +477,7 @@ FetchHdr(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 int
-FetchBody(struct sess *sp)
+FetchBody(struct sess *sp, struct object *obj)
 {
 	int cls;
 	struct storage *st;
@@ -487,17 +487,17 @@ FetchBody(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	w = sp->wrk;
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj->http, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(obj->http, HTTP_MAGIC);
 
 	if (w->vfp == NULL)
 		w->vfp = &vfp_nop;
 
 	AN(sp->director);
-	AssertObjCorePassOrBusy(sp->obj->objcore);
+	AssertObjCorePassOrBusy(obj->objcore);
 
 	AZ(w->vgz_rx);
-	AZ(VTAILQ_FIRST(&sp->obj->store));
+	AZ(VTAILQ_FIRST(&obj->store));
 	switch (w->body_status) {
 	case BS_NONE:
 		cls = 0;
@@ -541,57 +541,57 @@ FetchBody(struct sess *sp)
 	 */
 	AZ(vfp_nop_end(sp));
 
-	WSL(w, SLT_Fetch_Body, sp->wrk->vbc->vsl_id, "%u(%s) cls %d mklen %u",
+	WSL(w, SLT_Fetch_Body, w->vbc->vsl_id, "%u(%s) cls %d mklen %u",
 	    w->body_status, body_status(w->body_status),
 	    cls, mklen);
 
 	if (w->body_status == BS_ERROR) {
-		VDI_CloseFd(sp->wrk);
+		VDI_CloseFd(w);
 		return (__LINE__);
 	}
 
 	if (cls < 0) {
 		w->stats.fetch_failed++;
 		/* XXX: Wouldn't this store automatically be released ? */
-		while (!VTAILQ_EMPTY(&sp->obj->store)) {
-			st = VTAILQ_FIRST(&sp->obj->store);
-			VTAILQ_REMOVE(&sp->obj->store, st, list);
+		while (!VTAILQ_EMPTY(&obj->store)) {
+			st = VTAILQ_FIRST(&obj->store);
+			VTAILQ_REMOVE(&obj->store, st, list);
 			STV_free(st);
 		}
-		VDI_CloseFd(sp->wrk);
-		sp->obj->len = 0;
+		VDI_CloseFd(w);
+		obj->len = 0;
 		return (__LINE__);
 	}
 
 	if (cls == 0 && w->do_close)
 		cls = 1;
 
-	WSL(w, SLT_Length, sp->wrk->vbc->vsl_id, "%u", sp->obj->len);
+	WSL(w, SLT_Length, w->vbc->vsl_id, "%u", obj->len);
 
 	{
 	/* Sanity check fetch methods accounting */
 		ssize_t uu;
 
 		uu = 0;
-		VTAILQ_FOREACH(st, &sp->obj->store, list)
+		VTAILQ_FOREACH(st, &obj->store, list)
 			uu += st->len;
 		if (sp->objcore == NULL || (sp->objcore->flags & OC_F_PASS))
 			/* Streaming might have started freeing stuff */
-			assert (uu <= sp->obj->len);
+			assert (uu <= obj->len);
 		else
-			assert(uu == sp->obj->len);
+			assert(uu == obj->len);
 	}
 
 	if (mklen > 0) {
-		http_Unset(sp->obj->http, H_Content_Length);
-		http_PrintfHeader(w, sp->vsl_id, sp->obj->http,
-		    "Content-Length: %jd", (intmax_t)sp->obj->len);
+		http_Unset(obj->http, H_Content_Length);
+		http_PrintfHeader(w, sp->vsl_id, obj->http,
+		    "Content-Length: %jd", (intmax_t)obj->len);
 	}
 
 	if (cls)
-		VDI_CloseFd(sp->wrk);
+		VDI_CloseFd(w);
 	else
-		VDI_RecycleFd(sp->wrk);
+		VDI_RecycleFd(w);
 
 	return (0);
 }
