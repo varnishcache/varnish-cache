@@ -110,6 +110,7 @@ struct vef_priv;
 struct vrt_backend;
 struct vsb;
 struct waitinglist;
+struct worker;
 
 #define DIGEST_LEN		32
 
@@ -226,9 +227,9 @@ struct dstat {
 
 /* Fetch processors --------------------------------------------------*/
 
-typedef void vfp_begin_f(struct sess *, size_t );
-typedef int vfp_bytes_f(struct sess *, struct http_conn *, ssize_t);
-typedef int vfp_end_f(struct sess *sp);
+typedef void vfp_begin_f(struct worker *, size_t );
+typedef int vfp_bytes_f(struct worker *, struct http_conn *, ssize_t);
+typedef int vfp_end_f(struct worker *);
 
 struct vfp {
 	vfp_begin_f	*begin;
@@ -703,7 +704,7 @@ int EXP_NukeOne(struct worker *w, struct lru *lru);
 /* cache_fetch.c */
 struct storage *FetchStorage(struct worker *w, ssize_t sz);
 int FetchHdr(struct sess *sp);
-int FetchBody(struct sess *sp, struct object *obj);
+int FetchBody(const struct sess *sp, struct object *obj);
 int FetchReqBody(struct sess *sp);
 void Fetch_Init(void);
 

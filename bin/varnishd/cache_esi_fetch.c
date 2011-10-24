@@ -34,6 +34,7 @@
 
 #include "cache.h"
 
+#include "cache_backend.h"		// for w->vbc
 #include "cache_esi.h"
 
 /*---------------------------------------------------------------------
@@ -62,26 +63,26 @@ vef_read(struct http_conn *htc, void *buf, ssize_t buflen, ssize_t bytes)
  * We receive a ungzip'ed object, and want to store it ungzip'ed.
  */
 
-static int __match_proto__()
-vfp_esi_bytes_uu(struct sess *sp, struct http_conn *htc, ssize_t bytes)
+static int
+vfp_esi_bytes_uu(struct worker *w, struct http_conn *htc, ssize_t bytes)
 {
-	ssize_t w;
+	ssize_t wl;
 	struct storage *st;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 
 	while (bytes > 0) {
-		st = FetchStorage(sp->wrk, 0);
+		st = FetchStorage(w, 0);
 		if (st == NULL)
 			return (-1);
-		w = vef_read(htc,
+		wl = vef_read(htc,
 		    st->ptr + st->len, st->space - st->len, bytes);
-		if (w <= 0)
-			return (w);
-		VEP_Parse(sp->wrk, (const char *)st->ptr + st->len, w);
-		st->len += w;
-		sp->obj->len += w;
-		bytes -= w;
+		if (wl <= 0)
+			return (wl);
+		VEP_Parse(w, (const char *)st->ptr + st->len, wl);
+		st->len += wl;
+		w->fetch_obj->len += wl;
+		bytes -= wl;
 	}
 	return (1);
 }
@@ -90,33 +91,33 @@ vfp_esi_bytes_uu(struct sess *sp, struct http_conn *htc, ssize_t bytes)
  * We receive a gzip'ed object, and want to store it ungzip'ed.
  */
 
-static int __match_proto__()
-vfp_esi_bytes_gu(struct sess *sp, struct http_conn *htc, ssize_t bytes)
+static int
+vfp_esi_bytes_gu(struct worker *w, struct http_conn *htc, ssize_t bytes)
 {
 	struct vgz *vg;
-	ssize_t w;
+	ssize_t wl;
 	uint8_t	ibuf[params->gzip_stack_buffer];
 	int i;
 	size_t dl;
 	const void *dp;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	vg = sp->wrk->vgz_rx;
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	vg = w->vgz_rx;
 
 	while (bytes > 0) {
 		if (VGZ_IbufEmpty(vg) && bytes > 0) {
-			w = vef_read(htc, ibuf, sizeof ibuf, bytes);
-			if (w <= 0)
-				return (w);
-			VGZ_Ibuf(vg, ibuf, w);
-			bytes -= w;
+			wl = vef_read(htc, ibuf, sizeof ibuf, bytes);
+			if (wl <= 0)
+				return (wl);
+			VGZ_Ibuf(vg, ibuf, wl);
+			bytes -= wl;
 		}
-		if (VGZ_ObufStorage(sp->wrk, vg))
+		if (VGZ_ObufStorage(w, vg))
 			return (-1);
 		i = VGZ_Gunzip(vg, &dp, &dl);
 		xxxassert(i == VGZ_OK || i == VGZ_END);
-		VEP_Parse(sp->wrk, dp, dl);
-		sp->obj->len += dl;
+		VEP_Parse(w, dp, dl);
+		w->fetch_obj->len += dl;
 	}
 	return (1);
 }
@@ -202,34 +203,34 @@ vfp_vep_callback(struct worker *w, ssize_t l, enum vgz_flag flg)
 	return (vef->tot);
 }
 
-static int __match_proto__()
-vfp_esi_bytes_ug(struct sess *sp, struct http_conn *htc, ssize_t bytes)
+static int
+vfp_esi_bytes_ug(const struct worker *w, struct http_conn *htc, ssize_t bytes)
 {
-	ssize_t w;
+	ssize_t wl;
 	char ibuf[params->gzip_stack_buffer];
 	struct vef_priv *vef;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	vef = sp->wrk->vef_priv;
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	vef = w->vef_priv;
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 
 	while (bytes > 0) {
-		w = vef_read(htc, ibuf, sizeof ibuf, bytes);
-		if (w <= 0)
-			return (w);
-		bytes -= w;
+		wl = vef_read(htc, ibuf, sizeof ibuf, bytes);
+		if (wl <= 0)
+			return (wl);
+		bytes -= wl;
 		vef->bufp = ibuf;
-		VEP_Parse(sp->wrk, ibuf, w);
-		assert(vef->bufp >= ibuf && vef->bufp <= ibuf + w);
+		VEP_Parse(w, ibuf, wl);
+		assert(vef->bufp >= ibuf && vef->bufp <= ibuf + wl);
 		if (vef->error) {
 			errno = vef->error;
 			return (-1);
 		}
-		if (vef->bufp < ibuf + w) {
-			w = (ibuf + w) - vef->bufp;
-			assert(w + vef->npend < sizeof vef->pending);
-			memmove(vef->pending + vef->npend, vef->bufp, w);
-			vef->npend += w;
+		if (vef->bufp < ibuf + wl) {
+			wl = (ibuf + wl) - vef->bufp;
+			assert(wl + vef->npend < sizeof vef->pending);
+			memmove(vef->pending + vef->npend, vef->bufp, wl);
+			vef->npend += wl;
 		}
 	}
 	return (1);
@@ -239,10 +240,10 @@ vfp_esi_bytes_ug(struct sess *sp, struct http_conn *htc, ssize_t bytes)
  * We receive a gzip'ed object, and want to store it gzip'ed.
  */
 
-static int __match_proto__()
-vfp_esi_bytes_gg(struct sess *sp, struct http_conn *htc, size_t bytes)
+static int 
+vfp_esi_bytes_gg(const struct worker *w, struct http_conn *htc, size_t bytes)
 {
-	ssize_t w;
+	ssize_t wl;
 	char ibuf[params->gzip_stack_buffer];
 	char ibuf2[params->gzip_stack_buffer];
 	struct vef_priv *vef;
@@ -250,28 +251,28 @@ vfp_esi_bytes_gg(struct sess *sp, struct http_conn *htc, size_t bytes)
 	const void *dp;
 	int i;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	vef = sp->wrk->vef_priv;
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	vef = w->vef_priv;
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 	assert(sizeof ibuf >= 1024);
 	ibuf2[0] = 0; /* For Flexelint */
 
 	while (bytes > 0) {
-		w = vef_read(htc, ibuf, sizeof ibuf, bytes);
-		if (w <= 0)
-			return (w);
-		bytes -= w;
+		wl = vef_read(htc, ibuf, sizeof ibuf, bytes);
+		if (wl <= 0)
+			return (wl);
+		bytes -= wl;
 
 		vef->bufp = ibuf;
-		VGZ_Ibuf(sp->wrk->vgz_rx, ibuf, w);
+		VGZ_Ibuf(w->vgz_rx, ibuf, wl);
 		do {
-			VGZ_Obuf(sp->wrk->vgz_rx, ibuf2, sizeof ibuf2);
-			i = VGZ_Gunzip(sp->wrk->vgz_rx, &dp, &dl);
+			VGZ_Obuf(w->vgz_rx, ibuf2, sizeof ibuf2);
+			i = VGZ_Gunzip(w->vgz_rx, &dp, &dl);
 			/* XXX: check i */
 			assert(i >= VGZ_OK);
 			vef->bufp = ibuf2;
 			if (dl > 0)
-				VEP_Parse(sp->wrk, ibuf2, dl);
+				VEP_Parse(w, ibuf2, dl);
 			if (vef->error) {
 				errno = vef->error;
 				return (-1);
@@ -283,7 +284,7 @@ vfp_esi_bytes_gg(struct sess *sp, struct http_conn *htc, size_t bytes)
 				    vef->bufp, dl);
 				vef->npend += dl;
 			}
-		} while (!VGZ_IbufEmpty(sp->wrk->vgz_rx));
+		} while (!VGZ_IbufEmpty(w->vgz_rx));
 	}
 	return (1);
 }
@@ -292,96 +293,96 @@ vfp_esi_bytes_gg(struct sess *sp, struct http_conn *htc, size_t bytes)
 /*---------------------------------------------------------------------*/
 
 static void __match_proto__()
-vfp_esi_begin(struct sess *sp, size_t estimate)
+vfp_esi_begin(struct worker *w, size_t estimate)
 {
 	struct vef_priv *vef;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	/* XXX: snapshot WS's ? We'll need the space */
 
-	AZ(sp->wrk->vgz_rx);
-	if (sp->wrk->is_gzip && sp->wrk->do_gunzip) {
-		sp->wrk->vgz_rx = VGZ_NewUngzip(sp->wrk, sp->vsl_id, "U F E");
-		VEP_Init(sp->wrk, NULL);
-	} else if (sp->wrk->is_gunzip && sp->wrk->do_gzip) {
+	AZ(w->vgz_rx);
+	if (w->is_gzip && w->do_gunzip) {
+		w->vgz_rx = VGZ_NewUngzip(w, w->vbc->vsl_id, "U F E");
+		VEP_Init(w, NULL);
+	} else if (w->is_gunzip && w->do_gzip) {
 		ALLOC_OBJ(vef, VEF_MAGIC);
 		AN(vef);
 		//vef = (void*)WS_Alloc(sp->ws, sizeof *vef);
 		//memset(vef, 0, sizeof *vef);
 		//vef->magic = VEF_MAGIC;
-		vef->vgz = VGZ_NewGzip(sp->wrk, sp->vsl_id, "G F E");
-		AZ(sp->wrk->vef_priv);
-		sp->wrk->vef_priv = vef;
-		VEP_Init(sp->wrk, vfp_vep_callback);
-	} else if (sp->wrk->is_gzip) {
-		sp->wrk->vgz_rx = VGZ_NewUngzip(sp->wrk, sp->vsl_id, "U F E");
+		vef->vgz = VGZ_NewGzip(w, w->vbc->vsl_id, "G F E");
+		AZ(w->vef_priv);
+		w->vef_priv = vef;
+		VEP_Init(w, vfp_vep_callback);
+	} else if (w->is_gzip) {
+		w->vgz_rx = VGZ_NewUngzip(w, w->vbc->vsl_id, "U F E");
 		ALLOC_OBJ(vef, VEF_MAGIC);
 		AN(vef);
 		//vef = (void*)WS_Alloc(sp->ws, sizeof *vef);
 		//memset(vef, 0, sizeof *vef);
 		//vef->magic = VEF_MAGIC;
-		vef->vgz = VGZ_NewGzip(sp->wrk, sp->vsl_id, "G F E");
-		AZ(sp->wrk->vef_priv);
-		sp->wrk->vef_priv = vef;
-		VEP_Init(sp->wrk, vfp_vep_callback);
+		vef->vgz = VGZ_NewGzip(w, w->vbc->vsl_id, "G F E");
+		AZ(w->vef_priv);
+		w->vef_priv = vef;
+		VEP_Init(w, vfp_vep_callback);
 	} else {
-		AZ(sp->wrk->vef_priv);
-		VEP_Init(sp->wrk, NULL);
+		AZ(w->vef_priv);
+		VEP_Init(w, NULL);
 	}
 
 	(void)estimate;
-	AN(sp->wrk->vep);
+	AN(w->vep);
 }
 
 static int __match_proto__()
-vfp_esi_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
+vfp_esi_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 {
 	int i;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	AN(sp->wrk->vep);
-	if (sp->wrk->is_gzip && sp->wrk->do_gunzip)
-		i = vfp_esi_bytes_gu(sp, htc, bytes);
-	else if (sp->wrk->is_gunzip && sp->wrk->do_gzip)
-		i = vfp_esi_bytes_ug(sp, htc, bytes);
-	else if (sp->wrk->is_gzip)
-		i = vfp_esi_bytes_gg(sp, htc, bytes);
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	AN(w->vep);
+	if (w->is_gzip && w->do_gunzip)
+		i = vfp_esi_bytes_gu(w, htc, bytes);
+	else if (w->is_gunzip && w->do_gzip)
+		i = vfp_esi_bytes_ug(w, htc, bytes);
+	else if (w->is_gzip)
+		i = vfp_esi_bytes_gg(w, htc, bytes);
 	else
-		i = vfp_esi_bytes_uu(sp, htc, bytes);
-	AN(sp->wrk->vep);
+		i = vfp_esi_bytes_uu(w, htc, bytes);
+	AN(w->vep);
 	return (i);
 }
 
 static int __match_proto__()
-vfp_esi_end(struct sess *sp)
+vfp_esi_end(struct worker *w)
 {
 	struct vsb *vsb;
 	struct vef_priv *vef;
 	ssize_t l;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	AN(sp->wrk->vep);
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	AN(w->vep);
 
-	vsb = VEP_Finish(sp->wrk);
+	vsb = VEP_Finish(w);
 
 	if (vsb != NULL) {
 		l = VSB_len(vsb);
 		assert(l > 0);
 		/* XXX: This is a huge waste of storage... */
-		sp->obj->esidata = STV_alloc(sp->wrk, l);
-		XXXAN(sp->obj->esidata);
-		memcpy(sp->obj->esidata->ptr, VSB_data(vsb), l);
-		sp->obj->esidata->len = l;
+		w->fetch_obj->esidata = STV_alloc(w, l);
+		XXXAN(w->fetch_obj->esidata);
+		memcpy(w->fetch_obj->esidata->ptr, VSB_data(vsb), l);
+		w->fetch_obj->esidata->len = l;
 		VSB_delete(vsb);
 	}
-	if (sp->wrk->vgz_rx != NULL)
-		VGZ_Destroy(&sp->wrk->vgz_rx);
+	if (w->vgz_rx != NULL)
+		VGZ_Destroy(&w->vgz_rx);
 
-	if (sp->wrk->vef_priv != NULL) {
-		vef = sp->wrk->vef_priv;
+	if (w->vef_priv != NULL) {
+		vef = w->vef_priv;
 		CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
-		sp->wrk->vef_priv = NULL;
-		VGZ_UpdateObj(vef->vgz, sp->obj);
+		w->vef_priv = NULL;
+		VGZ_UpdateObj(vef->vgz, w->fetch_obj);
 		VGZ_Destroy(&vef->vgz);
 		XXXAZ(vef->error);
 		FREE_OBJ(vef);
