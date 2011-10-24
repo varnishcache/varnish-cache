@@ -882,7 +882,6 @@ static const struct parspec input_parspec[] = {
 	{ "gzip_tmp_space", tweak_uint, &master.gzip_tmp_space, 0, 2,
 		"Where temporary space for gzip/gunzip is allocated:\n"
 		"  0 - malloc\n"
-		"  1 - session workspace\n"
 		"  2 - thread workspace\n"
 		"If you have much gzip/gunzip activity, it may be an"
 		" advantage to use workspace for these allocations to reduce"

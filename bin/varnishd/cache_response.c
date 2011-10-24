@@ -151,7 +151,7 @@ RES_BuildHttp(const struct sess *sp)
  */
 
 static void
-res_WriteGunzipObj(struct sess *sp)
+res_WriteGunzipObj(const struct sess *sp)
 {
 	struct storage *st;
 	unsigned u = 0;
@@ -162,7 +162,7 @@ res_WriteGunzipObj(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	vg = VGZ_NewUngzip(sp, "U D -");
+	vg = VGZ_NewUngzip(sp->wrk, sp->vsl_id, "U D -");
 
 	VGZ_Obuf(vg, obuf, sizeof obuf);
 	VTAILQ_FOREACH(st, &sp->obj->store, list) {

@@ -901,7 +901,7 @@ cnt_streambody(struct sess *sp)
 	sp->wrk->sctx = &sctx;
 
 	if (sp->wrk->res_mode & RES_GUNZIP) {
-		sctx.vgz = VGZ_NewUngzip(sp, "U S -");
+		sctx.vgz = VGZ_NewUngzip(sp->wrk, sp->vsl_id, "U S -");
 		sctx.obuf = obuf;
 		sctx.obuf_len = sizeof (obuf);
 	}

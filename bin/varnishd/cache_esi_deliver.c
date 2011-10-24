@@ -267,7 +267,7 @@ ESI_Deliver(struct sess *sp)
 	}
 
 	if (isgzip && !sp->wrk->gzip_resp) {
-		vgz = VGZ_NewUngzip(sp, "U D E");
+		vgz = VGZ_NewUngzip(sp->wrk, sp->vsl_id, "U D E");
 
 		/* Feed a gzip header to gunzip to make it happy */
 		VGZ_Ibuf(vgz, gzip_hdr, sizeof gzip_hdr);

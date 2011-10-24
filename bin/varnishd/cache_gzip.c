@@ -77,7 +77,8 @@ struct vgz {
 	unsigned		magic;
 #define VGZ_MAGIC		0x162df0cb
 	enum {VGZ_GZ,VGZ_UN}	dir;
-	struct sess		*sess;
+	struct worker		*wrk;
+	int			vsl_id;
 	const char		*id;
 	struct ws		*tmp;
 	char			*tmp_snapshot;
@@ -113,11 +114,13 @@ vgz_free(voidpf opaque, voidpf address)
  */
 
 static struct vgz *
-vgz_alloc_vgz(struct sess *sp, const char *id)
+vgz_alloc_vgz(struct worker *wrk, int vsl_id, const char *id)
 {
 	struct vgz *vg;
-	struct ws *ws = sp->wrk->ws;
+	struct ws *ws;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	ws = wrk->ws;
 	WS_Assert(ws);
 	// XXX: we restore workspace in esi:include
 	// vg = (void*)WS_Alloc(ws, sizeof *vg);
@@ -125,22 +128,17 @@ vgz_alloc_vgz(struct sess *sp, const char *id)
 	AN(vg);
 	memset(vg, 0, sizeof *vg);
 	vg->magic = VGZ_MAGIC;
-	vg->sess = sp;
+	vg->wrk = wrk;
+	vg->vsl_id = vsl_id;
 	vg->id = id;
 
 	switch (params->gzip_tmp_space) {
 	case 0:
+	case 1:
 		/* malloc, the default */
 		break;
-	case 1:
-		vg->tmp = sp->ws;
-		vg->tmp_snapshot = WS_Snapshot(vg->tmp);
-		vg->vz.zalloc = vgz_alloc;
-		vg->vz.zfree = vgz_free;
-		vg->vz.opaque = vg;
-		break;
 	case 2:
-		vg->tmp = sp->wrk->ws;
+		vg->tmp = wrk->ws;
 		vg->tmp_snapshot = WS_Snapshot(vg->tmp);
 		vg->vz.zalloc = vgz_alloc;
 		vg->vz.zfree = vgz_free;
@@ -153,12 +151,12 @@ vgz_alloc_vgz(struct sess *sp, const char *id)
 }
 
 struct vgz *
-VGZ_NewUngzip(struct sess *sp, const char *id)
+VGZ_NewUngzip(struct worker *wrk, int vsl_id, const char *id)
 {
 	struct vgz *vg;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	vg = vgz_alloc_vgz(sp, id);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	vg = vgz_alloc_vgz(wrk, vsl_id, id);
 	vg->dir = VGZ_UN;
 	VSC_C_main->n_gunzip++;
 
@@ -173,13 +171,13 @@ VGZ_NewUngzip(struct sess *sp, const char *id)
 }
 
 struct vgz *
-VGZ_NewGzip(struct sess *sp, const char *id)
+VGZ_NewGzip(struct worker *wrk, int vsl_id, const char *id)
 {
 	struct vgz *vg;
 	int i;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	vg = vgz_alloc_vgz(sp, id);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	vg = vgz_alloc_vgz(wrk, vsl_id, id);
 	vg->dir = VGZ_GZ;
 	VSC_C_main->n_gzip++;
 
@@ -413,7 +411,7 @@ VGZ_Destroy(struct vgz **vgp)
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	*vgp = NULL;
 
-	WSP(vg->sess, SLT_Gzip, "%s %jd %jd %jd %jd %jd",
+	WSL(vg->wrk, SLT_Gzip, vg->vsl_id, "%s %jd %jd %jd %jd %jd",
 	    vg->id,
 	    (intmax_t)vg->vz.total_in,
 	    (intmax_t)vg->vz.total_out,
@@ -440,7 +438,7 @@ vfp_gunzip_begin(struct sess *sp, size_t estimate)
 {
 	(void)estimate;
 	AZ(sp->wrk->vgz_rx);
-	sp->wrk->vgz_rx = VGZ_NewUngzip(sp, "U F -");
+	sp->wrk->vgz_rx = VGZ_NewUngzip(sp->wrk, sp->vsl_id, "U F -");
 }
 
 static int __match_proto__()
@@ -516,7 +514,7 @@ vfp_gzip_begin(struct sess *sp, size_t estimate)
 	(void)estimate;
 
 	AZ(sp->wrk->vgz_rx);
-	sp->wrk->vgz_rx = VGZ_NewGzip(sp, "G F -");
+	sp->wrk->vgz_rx = VGZ_NewGzip(sp->wrk, sp->vsl_id, "G F -");
 }
 
 static int __match_proto__()
@@ -598,7 +596,7 @@ static void __match_proto__()
 vfp_testgzip_begin(struct sess *sp, size_t estimate)
 {
 	(void)estimate;
-	sp->wrk->vgz_rx = VGZ_NewUngzip(sp, "u F -");
+	sp->wrk->vgz_rx = VGZ_NewUngzip(sp->wrk, sp->vsl_id, "u F -");
 	CHECK_OBJ_NOTNULL(sp->wrk->vgz_rx, VGZ_MAGIC);
 }
 
