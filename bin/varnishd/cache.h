@@ -704,7 +704,7 @@ int EXP_NukeOne(struct worker *w, struct lru *lru);
 /* cache_fetch.c */
 struct storage *FetchStorage(struct worker *w, ssize_t sz);
 int FetchHdr(struct sess *sp);
-int FetchBody(const struct sess *sp, struct object *obj);
+int FetchBody(struct worker *w, struct object *obj);
 int FetchReqBody(struct sess *sp);
 void Fetch_Init(void);
 

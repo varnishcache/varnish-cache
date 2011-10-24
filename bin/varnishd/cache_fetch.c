@@ -198,24 +198,24 @@ fetch_number(const char *nbr, int radix)
 /*--------------------------------------------------------------------*/
 
 static int
-fetch_straight(const struct sess *sp, struct http_conn *htc, const char *b)
+fetch_straight(struct worker *w, struct http_conn *htc, const char *b)
 {
 	int i;
 	ssize_t cl;
 
-	assert(sp->wrk->body_status == BS_LENGTH);
+	assert(w->body_status == BS_LENGTH);
 
 	cl = fetch_number(b, 10);
-	sp->wrk->vfp->begin(sp->wrk, cl > 0 ? cl : 0);
+	w->vfp->begin(w, cl > 0 ? cl : 0);
 	if (cl < 0) {
-		WSP(sp, SLT_FetchError, "straight length field bogus");
+		WSLB(w, SLT_FetchError, "straight length field bogus");
 		return (-1);
 	} else if (cl == 0)
 		return (0);
 
-	i = sp->wrk->vfp->bytes(sp->wrk, htc, cl);
+	i = w->vfp->bytes(w, htc, cl);
 	if (i <= 0) {
-		WSP(sp, SLT_FetchError, "straight read_error: %d %d (%s)",
+		WSLB(w, SLT_FetchError, "straight read_error: %d %d (%s)",
 		    i, errno, htc->error);
 		return (-1);
 	}
@@ -227,7 +227,7 @@ fetch_straight(const struct sess *sp, struct http_conn *htc, const char *b)
 
 #define CERR() do {						\
 		if (i != 1) {					\
-			WSP(sp, SLT_FetchError,			\
+			WSLB(w, SLT_FetchError,			\
 			    "chunked read_error: %d (%s)",	\
 			    errno, htc->error);			\
 			return (-1);				\
@@ -235,15 +235,15 @@ fetch_straight(const struct sess *sp, struct http_conn *htc, const char *b)
 	} while (0)
 
 static int
-fetch_chunked(const struct sess *sp, struct http_conn *htc)
+fetch_chunked(struct worker *w, struct http_conn *htc)
 {
 	int i;
 	char buf[20];		/* XXX: 20 is arbitrary */
 	unsigned u;
 	ssize_t cl;
 
-	sp->wrk->vfp->begin(sp->wrk, 0);
-	assert(sp->wrk->body_status == BS_CHUNKED);
+	w->vfp->begin(w, 0);
+	assert(w->body_status == BS_CHUNKED);
 	do {
 		/* Skip leading whitespace */
 		do {
@@ -262,7 +262,7 @@ fetch_chunked(const struct sess *sp, struct http_conn *htc)
 		}
 
 		if (u >= sizeof buf) {
-			WSP(sp, SLT_FetchError,	"chunked header too long");
+			WSLB(w, SLT_FetchError,	"chunked header too long");
 			return (-1);
 		}
 
@@ -273,17 +273,17 @@ fetch_chunked(const struct sess *sp, struct http_conn *htc)
 		}
 
 		if (buf[u] != '\n') {
-			WSP(sp, SLT_FetchError,	"chunked header char syntax");
+			WSLB(w, SLT_FetchError,	"chunked header char syntax");
 			return (-1);
 		}
 		buf[u] = '\0';
 
 		cl = fetch_number(buf, 16);
 		if (cl < 0) {
-			WSP(sp, SLT_FetchError,	"chunked header nbr syntax");
+			WSLB(w, SLT_FetchError,	"chunked header nbr syntax");
 			return (-1);
 		} else if (cl > 0) {
-			i = sp->wrk->vfp->bytes(sp->wrk, htc, cl);
+			i = w->vfp->bytes(w, htc, cl);
 			CERR();
 		}
 		i = HTC_Read(htc, buf, 1);
@@ -293,7 +293,7 @@ fetch_chunked(const struct sess *sp, struct http_conn *htc)
 			CERR();
 		}
 		if (buf[0] != '\n') {
-			WSP(sp, SLT_FetchError,	"chunked tail syntax");
+			WSLB(w, SLT_FetchError,	"chunked tail syntax");
 			return (-1);
 		}
 	} while (cl > 0);
@@ -305,15 +305,15 @@ fetch_chunked(const struct sess *sp, struct http_conn *htc)
 /*--------------------------------------------------------------------*/
 
 static int
-fetch_eof(const struct sess *sp, struct http_conn *htc)
+fetch_eof(struct worker *w, struct http_conn *htc)
 {
 	int i;
 
-	assert(sp->wrk->body_status == BS_EOF);
-	sp->wrk->vfp->begin(sp->wrk, 0);
-	i = sp->wrk->vfp->bytes(sp->wrk, htc, SSIZE_MAX);
+	assert(w->body_status == BS_EOF);
+	w->vfp->begin(w, 0);
+	i = w->vfp->bytes(w, htc, SSIZE_MAX);
 	if (i < 0) {
-		WSP(sp, SLT_FetchError, "eof read_error: %d (%s)",
+		WSLB(w, SLT_FetchError, "eof read_error: %d (%s)",
 		    errno, htc->error);
 		return (-1);
 	}
@@ -480,24 +480,21 @@ FetchHdr(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 int
-FetchBody(const struct sess *sp, struct object *obj)
+FetchBody(struct worker *w, struct object *obj)
 {
 	int cls;
 	struct storage *st;
-	struct worker *w;
 	int mklen;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	w = sp->wrk;
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	AZ(w->fetch_obj);
+	CHECK_OBJ_NOTNULL(w->vbc, VBC_MAGIC);
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(obj->http, HTTP_MAGIC);
 
 	if (w->vfp == NULL)
 		w->vfp = &vfp_nop;
 
-	AN(sp->director);
 	AssertObjCorePassOrBusy(obj->objcore);
 
 	AZ(w->vgz_rx);
@@ -515,20 +512,20 @@ FetchBody(const struct sess *sp, struct object *obj)
 		mklen = 1;
 		break;
 	case BS_LENGTH:
-		cls = fetch_straight(sp, w->htc,
+		cls = fetch_straight(w, w->htc,
 		    w->h_content_length);
 		mklen = 1;
-		XXXAZ(w->vfp->end(sp->wrk));
+		XXXAZ(w->vfp->end(w));
 		break;
 	case BS_CHUNKED:
-		cls = fetch_chunked(sp, w->htc);
+		cls = fetch_chunked(w, w->htc);
 		mklen = 1;
-		XXXAZ(w->vfp->end(sp->wrk));
+		XXXAZ(w->vfp->end(w));
 		break;
 	case BS_EOF:
-		cls = fetch_eof(sp, w->htc);
+		cls = fetch_eof(w, w->htc);
 		mklen = 1;
-		XXXAZ(w->vfp->end(sp->wrk));
+		XXXAZ(w->vfp->end(w));
 		break;
 	case BS_ERROR:
 		cls = 1;
@@ -546,11 +543,11 @@ FetchBody(const struct sess *sp, struct object *obj)
 	 * sitting on w->storage, we will always call vfp_nop_end()
 	 * to get it trimmed or thrown out if empty.
 	 */
-	AZ(vfp_nop_end(sp->wrk));
+	AZ(vfp_nop_end(w));
 
 	w->fetch_obj = NULL;
 
-	WSL(w, SLT_Fetch_Body, w->vbc->vsl_id, "%u(%s) cls %d mklen %u",
+	WSLB(w, SLT_Fetch_Body, "%u(%s) cls %d mklen %u",
 	    w->body_status, body_status(w->body_status),
 	    cls, mklen);
 
@@ -575,7 +572,7 @@ FetchBody(const struct sess *sp, struct object *obj)
 	if (cls == 0 && w->do_close)
 		cls = 1;
 
-	WSL(w, SLT_Length, w->vbc->vsl_id, "%u", obj->len);
+	WSLB(w, SLT_Length, "%u", obj->len);
 
 	{
 	/* Sanity check fetch methods accounting */
@@ -584,7 +581,7 @@ FetchBody(const struct sess *sp, struct object *obj)
 		uu = 0;
 		VTAILQ_FOREACH(st, &obj->store, list)
 			uu += st->len;
-		if (sp->objcore == NULL || (sp->objcore->flags & OC_F_PASS))
+		if (w->do_stream)
 			/* Streaming might have started freeing stuff */
 			assert (uu <= obj->len);
 		else
@@ -593,7 +590,7 @@ FetchBody(const struct sess *sp, struct object *obj)
 
 	if (mklen > 0) {
 		http_Unset(obj->http, H_Content_Length);
-		http_PrintfHeader(w, sp->vsl_id, obj->http,
+		http_PrintfHeader(w, w->vbc->vsl_id, obj->http,
 		    "Content-Length: %jd", (intmax_t)obj->len);
 	}
 
