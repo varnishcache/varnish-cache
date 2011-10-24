@@ -394,12 +394,12 @@ FetchHdr(struct sess *sp)
 
 	hp = w->bereq;
 
-	sp->vbc = VDI_GetFd(NULL, sp);
-	if (sp->vbc == NULL) {
+	sp->wrk->vbc = VDI_GetFd(NULL, sp);
+	if (sp->wrk->vbc == NULL) {
 		WSP(sp, SLT_FetchError, "no backend connection");
 		return (-1);
 	}
-	vc = sp->vbc;
+	vc = sp->wrk->vbc;
 	if (vc->recycled)
 		retry = 1;
 
@@ -420,7 +420,7 @@ FetchHdr(struct sess *sp)
 	if (WRW_FlushRelease(w) || i > 0) {
 		WSP(sp, SLT_FetchError, "backend write error: %d (%s)",
 		    errno, strerror(errno));
-		VDI_CloseFd(sp);
+		VDI_CloseFd(sp->wrk);
 		/* XXX: other cleanup ? */
 		return (retry);
 	}
@@ -443,7 +443,7 @@ FetchHdr(struct sess *sp)
 	if (i < 0) {
 		WSP(sp, SLT_FetchError, "http first read error: %d %d (%s)",
 		    i, errno, w->htc->error);
-		VDI_CloseFd(sp);
+		VDI_CloseFd(sp->wrk);
 		/* XXX: other cleanup ? */
 		/* Retryable if we never received anything */
 		return (i == -1 ? retry : -1);
@@ -457,7 +457,7 @@ FetchHdr(struct sess *sp)
 			WSP(sp, SLT_FetchError,
 			    "http first read error: %d %d (%s)",
 			    i, errno, w->htc->error);
-			VDI_CloseFd(sp);
+			VDI_CloseFd(sp->wrk);
 			/* XXX: other cleanup ? */
 			return (-1);
 		}
@@ -467,7 +467,7 @@ FetchHdr(struct sess *sp)
 
 	if (http_DissectResponse(w, w->htc, hp)) {
 		WSP(sp, SLT_FetchError, "http format error");
-		VDI_CloseFd(sp);
+		VDI_CloseFd(sp->wrk);
 		/* XXX: other cleanup ? */
 		return (-1);
 	}
@@ -541,12 +541,12 @@ FetchBody(struct sess *sp)
 	 */
 	AZ(vfp_nop_end(sp));
 
-	WSL(w, SLT_Fetch_Body, sp->vbc->vsl_id, "%u(%s) cls %d mklen %u",
+	WSL(w, SLT_Fetch_Body, sp->wrk->vbc->vsl_id, "%u(%s) cls %d mklen %u",
 	    w->body_status, body_status(w->body_status),
 	    cls, mklen);
 
 	if (w->body_status == BS_ERROR) {
-		VDI_CloseFd(sp);
+		VDI_CloseFd(sp->wrk);
 		return (__LINE__);
 	}
 
@@ -558,7 +558,7 @@ FetchBody(struct sess *sp)
 			VTAILQ_REMOVE(&sp->obj->store, st, list);
 			STV_free(st);
 		}
-		VDI_CloseFd(sp);
+		VDI_CloseFd(sp->wrk);
 		sp->obj->len = 0;
 		return (__LINE__);
 	}
@@ -566,7 +566,7 @@ FetchBody(struct sess *sp)
 	if (cls == 0 && w->do_close)
 		cls = 1;
 
-	WSL(w, SLT_Length, sp->vbc->vsl_id, "%u", sp->obj->len);
+	WSL(w, SLT_Length, sp->wrk->vbc->vsl_id, "%u", sp->obj->len);
 
 	{
 	/* Sanity check fetch methods accounting */
@@ -589,9 +589,9 @@ FetchBody(struct sess *sp)
 	}
 
 	if (cls)
-		VDI_CloseFd(sp);
+		VDI_CloseFd(sp->wrk);
 	else
-		VDI_RecycleFd(sp);
+		VDI_RecycleFd(sp->wrk);
 
 	return (0);
 }

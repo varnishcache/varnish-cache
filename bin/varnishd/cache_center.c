@@ -227,7 +227,7 @@ cnt_prepresp(struct sess *sp)
 		if (sp->restarts >= params->max_restarts)
 			break;
 		if (sp->wrk->do_stream) {
-			VDI_CloseFd(sp);
+			VDI_CloseFd(sp->wrk);
 			HSH_Drop(sp);
 		} else {
 			(void)HSH_Deref(sp->wrk, NULL, &sp->obj);
@@ -305,7 +305,7 @@ cnt_done(struct sess *sp)
 	CHECK_OBJ_ORNULL(sp->vcl, VCL_CONF_MAGIC);
 
 	AZ(sp->obj);
-	AZ(sp->vbc);
+	AZ(sp->wrk->vbc);
 	sp->director = NULL;
 	sp->restarts = 0;
 
@@ -537,7 +537,7 @@ cnt_fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
 	AN(sp->director);
-	AZ(sp->vbc);
+	AZ(sp->wrk->vbc);
 	AZ(sp->wrk->h_content_length);
 	AZ(sp->wrk->do_close);
 	AZ(sp->wrk->storage_hint);
@@ -606,11 +606,11 @@ cnt_fetch(struct sess *sp)
 		}
 
 		/* We are not going to fetch the body, Close the connection */
-		VDI_CloseFd(sp);
+		VDI_CloseFd(sp->wrk);
 	}
 
 	/* Clean up partial fetch */
-	AZ(sp->vbc);
+	AZ(sp->wrk->vbc);
 
 	if (sp->objcore != NULL) {
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
@@ -788,7 +788,7 @@ cnt_fetchbody(struct sess *sp)
 	if (sp->obj == NULL) {
 		sp->err_code = 503;
 		sp->step = STP_ERROR;
-		VDI_CloseFd(sp);
+		VDI_CloseFd(sp->wrk);
 		return (0);
 	}
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
@@ -854,7 +854,7 @@ cnt_fetchbody(struct sess *sp)
 	http_Setup(sp->wrk->beresp, NULL);
 	sp->wrk->vfp = NULL;
 	assert(WRW_IsReleased(sp->wrk));
-	AZ(sp->vbc);
+	AZ(sp->wrk->vbc);
 	AN(sp->director);
 
 	if (i) {
@@ -917,7 +917,7 @@ cnt_streambody(struct sess *sp)
 	http_Setup(sp->wrk->bereq, NULL);
 	http_Setup(sp->wrk->beresp, NULL);
 	sp->wrk->vfp = NULL;
-	AZ(sp->vbc);
+	AZ(sp->wrk->vbc);
 	AN(sp->director);
 
 	if (!i && sp->obj->objcore != NULL) {

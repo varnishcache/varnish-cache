@@ -338,6 +338,7 @@ struct worker {
 	const char		*storage_hint;
 
 	/* Fetch stuff */
+	struct vbc		*vbc;
 	enum body_status	body_status;
 	struct vfp		*vfp;
 	struct vgz		*vgz_rx;
@@ -606,7 +607,6 @@ struct sess {
 	VTAILQ_ENTRY(sess)	list;
 
 	struct director		*director;
-	struct vbc		*vbc;
 	struct object		*obj;
 	struct objcore		*objcore;
 	struct VCL_conf		*vcl;
@@ -641,8 +641,8 @@ void VBE_UseHealth(const struct director *vdi);
 
 struct vbc *VDI_GetFd(const struct director *, struct sess *sp);
 int VDI_Healthy(const struct director *, const struct sess *sp);
-void VDI_CloseFd(struct sess *sp);
-void VDI_RecycleFd(struct sess *sp);
+void VDI_CloseFd(struct worker *wrk);
+void VDI_RecycleFd(struct worker *wrk);
 void VDI_AddHostHeader(const struct sess *sp);
 void VBE_Poll(void);
 

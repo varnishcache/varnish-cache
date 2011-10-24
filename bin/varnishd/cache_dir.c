@@ -40,54 +40,54 @@
 /* Close a connection ------------------------------------------------*/
 
 void
-VDI_CloseFd(struct sess *sp)
+VDI_CloseFd(struct worker *wrk)
 {
 	struct backend *bp;
 
-	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vbc->backend, BACKEND_MAGIC);
-	assert(sp->vbc->fd >= 0);
+	CHECK_OBJ_NOTNULL(wrk->vbc, VBC_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk->vbc->backend, BACKEND_MAGIC);
+	assert(wrk->vbc->fd >= 0);
 
-	bp = sp->vbc->backend;
+	bp = wrk->vbc->backend;
 
-	WSL(sp->wrk, SLT_BackendClose, sp->vbc->vsl_id, "%s", bp->vcl_name);
+	WSL(wrk, SLT_BackendClose, wrk->vbc->vsl_id, "%s", bp->vcl_name);
 
 	/* Checkpoint log to flush all info related to this connection
 	   before the OS reuses the FD */
-	WSL_Flush(sp->wrk, 0);
+	WSL_Flush(wrk, 0);
 
-	VTCP_close(&sp->vbc->fd);
+	VTCP_close(&wrk->vbc->fd);
 	VBE_DropRefConn(bp);
-	sp->vbc->backend = NULL;
-	VBE_ReleaseConn(sp->vbc);
-	sp->vbc = NULL;
-	sp->wrk->do_close = 0;
+	wrk->vbc->backend = NULL;
+	VBE_ReleaseConn(wrk->vbc);
+	wrk->vbc = NULL;
+	wrk->do_close = 0;
 }
 
 /* Recycle a connection ----------------------------------------------*/
 
 void
-VDI_RecycleFd(struct sess *sp)
+VDI_RecycleFd(struct worker *wrk)
 {
 	struct backend *bp;
 
-	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vbc->backend, BACKEND_MAGIC);
-	assert(sp->vbc->fd >= 0);
-	AZ(sp->wrk->do_close);
+	CHECK_OBJ_NOTNULL(wrk->vbc, VBC_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk->vbc->backend, BACKEND_MAGIC);
+	assert(wrk->vbc->fd >= 0);
+	AZ(wrk->do_close);
 
-	bp = sp->vbc->backend;
+	bp = wrk->vbc->backend;
 
-	WSL(sp->wrk, SLT_BackendReuse, sp->vbc->vsl_id, "%s", bp->vcl_name);
+	WSL(wrk, SLT_BackendReuse, wrk->vbc->vsl_id, "%s", bp->vcl_name);
 	/*
 	 * Flush the shmlog, so that another session reusing this backend
 	 * will log chronologically later than our use of it.
 	 */
-	WSL_Flush(sp->wrk, 0);
+	WSL_Flush(wrk, 0);
 	Lck_Lock(&bp->mtx);
 	VSC_C_main->backend_recycle++;
-	VTAILQ_INSERT_HEAD(&bp->connlist, sp->vbc, list);
-	sp->vbc = NULL;
+	VTAILQ_INSERT_HEAD(&bp->connlist, wrk->vbc, list);
+	wrk->vbc = NULL;
 	VBE_DropRefLocked(bp);
 }
 
