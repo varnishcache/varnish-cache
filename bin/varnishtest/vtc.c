@@ -530,6 +530,8 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	FILE *f;
 	struct extmacro *m;
 
+	signal(SIGPIPE, SIG_IGN);
+
 	vtc_loginit(logbuf, loglen);
 	vltop = vtc_logopen("top");
 	AN(vltop);
