@@ -73,6 +73,8 @@ struct http {
 
 	int			gziplevel;
 	int			gzipresidual;
+
+	int			fatal;
 };
 
 #define ONLY_CLIENT(hp, av)						\
@@ -143,7 +145,7 @@ http_write(const struct http *hp, int lvl, const char *pfx)
 	vtc_dump(hp->vl, lvl, pfx, VSB_data(hp->vsb), VSB_len(hp->vsb));
 	l = write(hp->fd, VSB_data(hp->vsb), VSB_len(hp->vsb));
 	if (l != VSB_len(hp->vsb))
-		vtc_log(hp->vl, 0, "Write failed: (%d vs %d) %s",
+		vtc_log(hp->vl, hp->fatal, "Write failed: (%d vs %d) %s",
 		    l, VSB_len(hp->vsb), strerror(errno));
 }
 
@@ -345,10 +347,12 @@ http_rxchar(struct http *hp, int n, int eof)
 		pfd[0].revents = 0;
 		i = poll(pfd, 1, hp->timeout);
 		if (i == 0)
-			vtc_log(hp->vl, 0, "HTTP rx timeout (fd:%d %u ms)",
+			vtc_log(hp->vl, hp->fatal,
+			    "HTTP rx timeout (fd:%d %u ms)",
 			    hp->fd, hp->timeout);
 		if (i < 0)
-			vtc_log(hp->vl, 0, "HTTP rx failed (fd:%d poll: %s)",
+			vtc_log(hp->vl, hp->fatal,
+			    "HTTP rx failed (fd:%d poll: %s)",
 			    hp->fd, strerror(errno));
 		assert(i > 0);
 		assert(hp->prxbuf + n < hp->nrxbuf);
@@ -360,10 +364,12 @@ http_rxchar(struct http *hp, int n, int eof)
 		if (i == 0 && eof)
 			return (i);
 		if (i == 0)
-			vtc_log(hp->vl, 0, "HTTP rx EOF (fd:%d read: %s)",
+			vtc_log(hp->vl, hp->fatal,
+			    "HTTP rx EOF (fd:%d read: %s)",
 			    hp->fd, strerror(errno));
 		if (i < 0)
-			vtc_log(hp->vl, 0, "HTTP rx failed (fd:%d read: %s)",
+			vtc_log(hp->vl, hp->fatal,
+			    "HTTP rx failed (fd:%d read: %s)",
 			    hp->fd, strerror(errno));
 		hp->prxbuf += i;
 		hp->rxbuf[hp->prxbuf] = '\0';
@@ -387,7 +393,7 @@ http_rxchunk(struct http *hp)
 	bprintf(hp->chunklen, "%d", i);
 	if ((q == hp->rxbuf + l) ||
 		(*q != '\0' && !vct_islws(*q))) {
-		vtc_log(hp->vl, 0, "chunked fail %02x @ %d",
+		vtc_log(hp->vl, hp->fatal, "chunked fail %02x @ %d",
 		    *q, q - (hp->rxbuf + l));
 	}
 	assert(q != hp->rxbuf + l);
@@ -401,11 +407,11 @@ http_rxchunk(struct http *hp)
 	l = hp->prxbuf;
 	(void)http_rxchar(hp, 2, 0);
 	if(!vct_iscrlf(hp->rxbuf[l]))
-		vtc_log(hp->vl, 0,
+		vtc_log(hp->vl, hp->fatal,
 		    "Wrong chunk tail[0] = %02x",
 		    hp->rxbuf[l] & 0xff);
 	if(!vct_iscrlf(hp->rxbuf[l + 1]))
-		vtc_log(hp->vl, 0,
+		vtc_log(hp->vl, hp->fatal,
 		    "Wrong chunk tail[1] = %02x",
 		    hp->rxbuf[l + 1] & 0xff);
 	hp->prxbuf = l;
@@ -547,7 +553,8 @@ cmd_http_gunzip_body(CMD_ARGS)
 	memset(&vz, 0, sizeof vz);
 
 	if (hp->body[0] != (char)0x1f || hp->body[1] != (char)0x8b)
-		vtc_log(hp->vl, 0, "Gunzip error: Body lacks gzip magics");
+		vtc_log(hp->vl, hp->fatal,
+		    "Gunzip error: Body lacks gzip magics");
 	vz.next_in = TRUST_ME(hp->body);
 	vz.avail_in = hp->bodyl;
 
@@ -576,7 +583,8 @@ cmd_http_gunzip_body(CMD_ARGS)
 	    (uintmax_t)vz.stop_bit,
 	    (uintmax_t)vz.stop_bit >> 3, (uintmax_t)vz.stop_bit & 7);
 	if (i != Z_STREAM_END)
-		vtc_log(hp->vl, 0, "Gunzip error = %d (%s) in:%jd out:%jd",
+		vtc_log(hp->vl, hp->fatal,
+		    "Gunzip error = %d (%s) in:%jd out:%jd",
 		    i, vz.msg, (intmax_t)vz.total_in, (intmax_t)vz.total_out);
 	assert(Z_OK == inflateEnd(&vz));
 }
@@ -608,7 +616,8 @@ gzip_body(const struct http *hp, const char *txt, char **body, int *bodylen)
 	assert(Z_STREAM_END == deflate(&vz, Z_FINISH));
 	i = vz.stop_bit & 7;
 	if (hp->gzipresidual >= 0 && hp->gzipresidual != i)
-		vtc_log(hp->vl, 0, "Wrong gzip residual got %d wanted %d",
+		vtc_log(hp->vl, hp->fatal,
+		    "Wrong gzip residual got %d wanted %d",
 		    i, hp->gzipresidual);
 	*bodylen = vz.total_out;
 	vtc_log(hp->vl, 4, "startbit = %ju %ju/%ju",
@@ -900,7 +909,7 @@ cmd_http_send(CMD_ARGS)
 	vtc_dump(hp->vl, 4, "send", av[1], -1);
 	i = write(hp->fd, av[1], strlen(av[1]));
 	if (i != strlen(av[1]))
-		vtc_log(hp->vl, 0, "Write error in http_send(): %s",
+		vtc_log(hp->vl, hp->fatal, "Write error in http_send(): %s",
 		    strerror(errno));
 }
 
@@ -1042,9 +1051,9 @@ cmd_http_expect_close(CMD_ARGS)
 		fds[0].revents = 0;
 		i = poll(fds, 1, 1000);
 		if (i == 0)
-			vtc_log(vl, 0, "Expected close: timeout");
+			vtc_log(vl, hp->fatal, "Expected close: timeout");
 		if (i != 1 || !(fds[0].revents & POLLIN))
-			vtc_log(vl, 0,
+			vtc_log(vl, hp->fatal,
 			    "Expected close: poll = %d, revents = 0x%x",
 			    i, fds[0].revents);
 		i = read(hp->fd, &c, 1);
@@ -1052,7 +1061,7 @@ cmd_http_expect_close(CMD_ARGS)
 			break;
 		if (i == 1 && vct_islws(c))
 			continue;
-		vtc_log(vl, 0,
+		vtc_log(vl, hp->fatal,
 		    "Expecting close: read = %d, c = 0x%02x", i, c);
 	}
 	vtc_log(vl, 4, "fd=%d EOF, as expected", hp->fd);
@@ -1097,7 +1106,7 @@ cmd_http_accept(CMD_ARGS)
 	vtc_log(vl, 4, "Accepting");
 	hp->fd = accept(*hp->sfd, NULL, NULL);
 	if (hp->fd < 0)
-		vtc_log(vl, 0, "Accepted failed: %s", strerror(errno));
+		vtc_log(vl, hp->fatal, "Accepted failed: %s", strerror(errno));
 	vtc_log(vl, 3, "Accepted socket fd is %d", hp->fd);
 }
 
@@ -1122,6 +1131,26 @@ cmd_http_loop(CMD_ARGS)
 		s = strdup(av[2]);
 		AN(s);
 		parse_string(s, cmd, hp, vl);
+	}
+}
+
+/**********************************************************************
+ * Control fatality
+ */
+
+static void
+cmd_http_fatal(CMD_ARGS)
+{
+	struct http *hp;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+
+	AZ(av[1]);
+	if (!strcmp(av[0], "fatal"))
+		hp->fatal = 0;
+	else if (!strcmp(av[0], "non-fatal"))
+		hp->fatal = -1;
+	else {
+		vtc_log(vl, 0, "XXX: fatal %s", cmd->name);
 	}
 }
 
@@ -1152,6 +1181,8 @@ static const struct cmds http_cmds[] = {
 	{ "close",		cmd_http_close },
 	{ "accept",		cmd_http_accept },
 	{ "loop",		cmd_http_loop },
+	{ "fatal",		cmd_http_fatal },
+	{ "non-fatal",		cmd_http_fatal },
 	{ NULL,			NULL }
 };
 

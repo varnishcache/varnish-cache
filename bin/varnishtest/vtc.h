@@ -71,10 +71,10 @@ void cmd_server_genvcl(struct vsb *vsb);
 void vtc_loginit(char *buf, unsigned buflen);
 struct vtclog *vtc_logopen(const char *id);
 void vtc_logclose(struct vtclog *vl);
-void vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...);
-void vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx,
+void vtc_log(struct vtclog *vl, int lvl, const char *fmt, ...);
+void vtc_dump(struct vtclog *vl, int lvl, const char *pfx,
     const char *str, int len);
-void vtc_hexdump(struct vtclog *vl, unsigned lvl, const char *pfx,
+void vtc_hexdump(struct vtclog *vl, int lvl, const char *pfx,
     const unsigned char *str, int len);
 
 int exec_file(const char *fn, const char *script, const char *tmpdir,
