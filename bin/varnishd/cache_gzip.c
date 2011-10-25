@@ -577,7 +577,7 @@ vfp_gzip_end(struct worker *w)
 			if (VGZ_ObufStorage(w, vg))
 				return (-1);
 			i = VGZ_Gzip(vg, &dp, &dl, VGZ_FINISH);
-		w->fetch_obj->len += dl;
+			w->fetch_obj->len += dl;
 		} while (i != Z_STREAM_END);
 		if (w->do_stream)
 			RES_StreamPoll(w);
