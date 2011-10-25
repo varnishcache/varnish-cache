@@ -125,7 +125,7 @@ RES_BuildHttp(const struct sess *sp)
 	}
 
 	if (sp->wrk->res_mode & RES_CHUNKED)
-		http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,
+		http_SetHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,
 		    "Transfer-Encoding: chunked");
 
 	VTIM_format(VTIM_real(), time_str);

@@ -46,7 +46,8 @@ ved_include(struct sess *sp, const char *src, const char *host)
 {
 	struct object *obj;
 	struct worker *w;
-	char *ws_wm;
+	char *sp_ws_wm;
+	char *wrk_ws_wm;
 	unsigned sxid, res_mode;
 
 	w = sp->wrk;
@@ -65,7 +66,8 @@ ved_include(struct sess *sp, const char *src, const char *host)
 	HTTP_Copy(sp->http, sp->http0);
 
 	/* Take a workspace snapshot */
-	ws_wm = WS_Snapshot(sp->ws);
+	sp_ws_wm = WS_Snapshot(sp->ws);
+	wrk_ws_wm = WS_Snapshot(w->ws);
 
 	http_SetH(sp->http, HTTP_HDR_URL, src);
 	if (host != NULL && *host != '\0')  {
@@ -115,7 +117,8 @@ ved_include(struct sess *sp, const char *src, const char *host)
 	sp->wrk->res_mode = res_mode;
 
 	/* Reset the workspace */
-	WS_Reset(sp->ws, ws_wm);
+	WS_Reset(sp->ws, sp_ws_wm);
+	WS_Reset(w->ws, wrk_ws_wm);
 
 	WRW_Reserve(sp->wrk, &sp->fd);
 	if (sp->wrk->res_mode & RES_CHUNKED)

@@ -467,7 +467,7 @@ cnt_error(struct sess *sp)
 	http_PutStatus(h, sp->err_code);
 	VTIM_format(VTIM_real(), date);
 	http_PrintfHeader(w, sp->vsl_id, h, "Date: %s", date);
-	http_PrintfHeader(w, sp->vsl_id, h, "Server: Varnish");
+	http_SetHeader(w, sp->vsl_id, h, "Server: Varnish");
 
 	if (sp->err_reason != NULL)
 		http_PutResponse(w, sp->vsl_id, h, sp->err_reason);
@@ -727,8 +727,8 @@ cnt_fetchbody(struct sess *sp)
 
 	/* If we do gzip, add the C-E header */
 	if (sp->wrk->do_gzip)
-		http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->beresp,
-		    "Content-Encoding: %s", "gzip");
+		http_SetHeader(sp->wrk, sp->vsl_id, sp->wrk->beresp,
+		    "Content-Encoding: gzip");
 
 	/* But we can't do both at the same time */
 	assert(sp->wrk->do_gzip == 0 || sp->wrk->do_gunzip == 0);
@@ -1193,7 +1193,7 @@ cnt_miss(struct sess *sp)
 		 * the minority of clients which don't.
 		 */
 		http_Unset(sp->wrk->bereq, H_Accept_Encoding);
-		http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->bereq,
+		http_SetHeader(sp->wrk, sp->vsl_id, sp->wrk->bereq,
 		    "Accept-Encoding: gzip");
 	}
 	sp->wrk->connect_timeout = 0;
@@ -1397,7 +1397,7 @@ cnt_recv(struct sess *sp)
 	     (recv_handling != VCL_RET_PASS)) {
 		if (RFC2616_Req_Gzip(sp)) {
 			http_Unset(sp->http, H_Accept_Encoding);
-			http_PrintfHeader(sp->wrk, sp->vsl_id, sp->http,
+			http_SetHeader(sp->wrk, sp->vsl_id, sp->http,
 			    "Accept-Encoding: gzip");
 		} else {
 			http_Unset(sp->http, H_Accept_Encoding);
