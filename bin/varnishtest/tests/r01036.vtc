@@ -1,0 +1,22 @@
+varnishtest "Test case for #1036"
+
+server s1 {
+	rxreq
+	# Send a bodylen of 1,5M, which will exceed cache space of 1M
+	non-fatal
+	txresp -bodylen 1572864
+} -start
+
+varnish v1 -arg "-smalloc,1M" -arg "-pgzip_level=0" -vcl+backend {
+	sub vcl_fetch {
+		set beresp.do_gzip = true;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == "503"
+} -run
+
+
