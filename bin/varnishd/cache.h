@@ -712,8 +712,8 @@ void Fetch_Init(void);
 struct vgz;
 
 enum vgz_flag { VGZ_NORMAL, VGZ_ALIGN, VGZ_RESET, VGZ_FINISH };
-struct vgz *VGZ_NewUngzip(struct worker *wrk, int vsl_id, const char *id);
-struct vgz *VGZ_NewGzip(struct worker *wrk, int vsl_id, const char *id);
+struct vgz *VGZ_NewUngzip(struct worker *wrk, const char *id);
+struct vgz *VGZ_NewGzip(struct worker *wrk, const char *id);
 void VGZ_Ibuf(struct vgz *, const void *, ssize_t len);
 int VGZ_IbufEmpty(const struct vgz *vg);
 void VGZ_Obuf(struct vgz *, void *, ssize_t len);
@@ -721,7 +721,7 @@ int VGZ_ObufFull(const struct vgz *vg);
 int VGZ_ObufStorage(struct worker *w, struct vgz *vg);
 int VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
 int VGZ_Gunzip(struct vgz *, const void **, size_t *len);
-void VGZ_Destroy(struct vgz **);
+void VGZ_Destroy(struct vgz **, int vsl_id);
 void VGZ_UpdateObj(const struct vgz*, struct object *);
 int VGZ_WrwGunzip(struct worker *w, struct vgz *, const void *ibuf,
     ssize_t ibufl, char *obuf, ssize_t obufl, ssize_t *obufp);
@@ -864,12 +864,7 @@ void VSM_Free(const void *ptr);
 void VSL(enum VSL_tag_e tag, int id, const char *fmt, ...);
 void WSLR(struct worker *w, enum VSL_tag_e tag, int id, txt t);
 void WSL(struct worker *w, enum VSL_tag_e tag, int id, const char *fmt, ...);
-#define WSLB(w, tag, ...) 						\
-	do {								\
-		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);			\
-		CHECK_OBJ_NOTNULL(w->vbc, VBC_MAGIC);			\
-		WSL(w, tag, (w)->vbc->vsl_id, __VA_ARGS__);	\
-	} while (0)
+void WSLB(struct worker *w, enum VSL_tag_e tag, const char *fmt, ...);
 
 void WSL_Flush(struct worker *w, int overflow);
 

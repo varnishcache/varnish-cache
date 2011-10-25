@@ -71,7 +71,6 @@
 
 #include "cache.h"
 
-#include "cache_backend.h"	// for w->vbc
 #include "vgz.h"
 
 struct vgz {
@@ -79,7 +78,6 @@ struct vgz {
 #define VGZ_MAGIC		0x162df0cb
 	enum {VGZ_GZ,VGZ_UN}	dir;
 	struct worker		*wrk;
-	int			vsl_id;
 	const char		*id;
 	struct ws		*tmp;
 	char			*tmp_snapshot;
@@ -116,7 +114,7 @@ vgz_free(voidpf opaque, voidpf address)
  */
 
 static struct vgz *
-vgz_alloc_vgz(struct worker *wrk, int vsl_id, const char *id)
+vgz_alloc_vgz(struct worker *wrk, const char *id)
 {
 	struct vgz *vg;
 	struct ws *ws;
@@ -131,7 +129,6 @@ vgz_alloc_vgz(struct worker *wrk, int vsl_id, const char *id)
 	memset(vg, 0, sizeof *vg);
 	vg->magic = VGZ_MAGIC;
 	vg->wrk = wrk;
-	vg->vsl_id = vsl_id;
 	vg->id = id;
 
 	switch (params->gzip_tmp_space) {
@@ -153,12 +150,12 @@ vgz_alloc_vgz(struct worker *wrk, int vsl_id, const char *id)
 }
 
 struct vgz *
-VGZ_NewUngzip(struct worker *wrk, int vsl_id, const char *id)
+VGZ_NewUngzip(struct worker *wrk, const char *id)
 {
 	struct vgz *vg;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	vg = vgz_alloc_vgz(wrk, vsl_id, id);
+	vg = vgz_alloc_vgz(wrk, id);
 	vg->dir = VGZ_UN;
 	VSC_C_main->n_gunzip++;
 
@@ -173,13 +170,13 @@ VGZ_NewUngzip(struct worker *wrk, int vsl_id, const char *id)
 }
 
 struct vgz *
-VGZ_NewGzip(struct worker *wrk, int vsl_id, const char *id)
+VGZ_NewGzip(struct worker *wrk, const char *id)
 {
 	struct vgz *vg;
 	int i;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	vg = vgz_alloc_vgz(wrk, vsl_id, id);
+	vg = vgz_alloc_vgz(wrk, id);
 	vg->dir = VGZ_GZ;
 	VSC_C_main->n_gzip++;
 
@@ -404,10 +401,12 @@ VGZ_UpdateObj(const struct vgz *vg, struct object *obj)
 	obj->gzip_stop	= vg->vz.stop_bit;
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Passing a vsl_id of -1 means "use w->vbc->vsl_id"
+ */
 
 void
-VGZ_Destroy(struct vgz **vgp)
+VGZ_Destroy(struct vgz **vgp, int vsl_id)
 {
 	struct vgz *vg;
 	const char *err;
@@ -416,13 +415,22 @@ VGZ_Destroy(struct vgz **vgp)
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	*vgp = NULL;
 
-	WSL(vg->wrk, SLT_Gzip, vg->vsl_id, "%s %jd %jd %jd %jd %jd",
-	    vg->id,
-	    (intmax_t)vg->vz.total_in,
-	    (intmax_t)vg->vz.total_out,
-	    (intmax_t)vg->vz.start_bit,
-	    (intmax_t)vg->vz.last_bit,
-	    (intmax_t)vg->vz.stop_bit);
+	if (vsl_id < 0)
+		WSLB(vg->wrk, SLT_Gzip, "%s %jd %jd %jd %jd %jd",
+		    vg->id,
+		    (intmax_t)vg->vz.total_in,
+		    (intmax_t)vg->vz.total_out,
+		    (intmax_t)vg->vz.start_bit,
+		    (intmax_t)vg->vz.last_bit,
+		    (intmax_t)vg->vz.stop_bit);
+	else
+		WSL(vg->wrk, SLT_Gzip, vsl_id, "%s %jd %jd %jd %jd %jd",
+		    vg->id,
+		    (intmax_t)vg->vz.total_in,
+		    (intmax_t)vg->vz.total_out,
+		    (intmax_t)vg->vz.start_bit,
+		    (intmax_t)vg->vz.last_bit,
+		    (intmax_t)vg->vz.stop_bit);
 	err = vg->error;
 	if (vg->tmp != NULL)
 		WS_Reset(vg->tmp, vg->tmp_snapshot);
@@ -444,7 +452,7 @@ vfp_gunzip_begin(struct worker *w, size_t estimate)
 {
 	(void)estimate;
 	AZ(w->vgz_rx);
-	w->vgz_rx = VGZ_NewUngzip(w, w->vbc->vsl_id, "U F -");
+	w->vgz_rx = VGZ_NewUngzip(w, "U F -");
 }
 
 static int __match_proto__()
@@ -497,7 +505,7 @@ vfp_gunzip_end(struct worker *w)
 	vg = w->vgz_rx;
 	w->vgz_rx = NULL;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-	VGZ_Destroy(&vg);
+	VGZ_Destroy(&vg, -1);
 	return (0);
 }
 
@@ -520,7 +528,7 @@ vfp_gzip_begin(struct worker *w, size_t estimate)
 	(void)estimate;
 
 	AZ(w->vgz_rx);
-	w->vgz_rx = VGZ_NewGzip(w, w->vbc->vsl_id, "G F -");
+	w->vgz_rx = VGZ_NewGzip(w, "G F -");
 }
 
 static int __match_proto__()
@@ -583,7 +591,7 @@ vfp_gzip_end(struct worker *w)
 			RES_StreamPoll(w);
 		VGZ_UpdateObj(vg, w->fetch_obj);
 	}
-	VGZ_Destroy(&vg);
+	VGZ_Destroy(&vg, -1);
 	return (0);
 }
 
@@ -604,7 +612,7 @@ static void __match_proto__()
 vfp_testgzip_begin(struct worker *w, size_t estimate)
 {
 	(void)estimate;
-	w->vgz_rx = VGZ_NewUngzip(w, w->vbc->vsl_id, "u F -");
+	w->vgz_rx = VGZ_NewUngzip(w, "u F -");
 	CHECK_OBJ_NOTNULL(w->vgz_rx, VGZ_MAGIC);
 }
 
@@ -673,7 +681,7 @@ vfp_testgzip_end(struct worker *w)
 	w->vgz_rx = NULL;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	VGZ_UpdateObj(vg, w->fetch_obj);
-	VGZ_Destroy(&vg);
+	VGZ_Destroy(&vg, -1);
 	return (0);
 }
 

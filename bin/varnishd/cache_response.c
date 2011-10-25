@@ -162,7 +162,7 @@ res_WriteGunzipObj(const struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	vg = VGZ_NewUngzip(sp->wrk, sp->vsl_id, "U D -");
+	vg = VGZ_NewUngzip(sp->wrk, "U D -");
 
 	VGZ_Obuf(vg, obuf, sizeof obuf);
 	VTAILQ_FOREACH(st, &sp->obj->store, list) {
@@ -182,7 +182,7 @@ res_WriteGunzipObj(const struct sess *sp)
 		(void)WRW_Write(sp->wrk, obuf, obufl);
 		(void)WRW_Flush(sp->wrk);
 	}
-	VGZ_Destroy(&vg);
+	VGZ_Destroy(&vg, sp->vsl_id);
 	assert(u == sp->obj->len);
 }
 

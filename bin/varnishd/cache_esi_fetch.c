@@ -34,7 +34,6 @@
 
 #include "cache.h"
 
-#include "cache_backend.h"		// for w->vbc
 #include "cache_esi.h"
 
 /*---------------------------------------------------------------------
@@ -302,7 +301,7 @@ vfp_esi_begin(struct worker *w, size_t estimate)
 
 	AZ(w->vgz_rx);
 	if (w->is_gzip && w->do_gunzip) {
-		w->vgz_rx = VGZ_NewUngzip(w, w->vbc->vsl_id, "U F E");
+		w->vgz_rx = VGZ_NewUngzip(w, "U F E");
 		VEP_Init(w, NULL);
 	} else if (w->is_gunzip && w->do_gzip) {
 		ALLOC_OBJ(vef, VEF_MAGIC);
@@ -310,18 +309,18 @@ vfp_esi_begin(struct worker *w, size_t estimate)
 		//vef = (void*)WS_Alloc(sp->ws, sizeof *vef);
 		//memset(vef, 0, sizeof *vef);
 		//vef->magic = VEF_MAGIC;
-		vef->vgz = VGZ_NewGzip(w, w->vbc->vsl_id, "G F E");
+		vef->vgz = VGZ_NewGzip(w, "G F E");
 		AZ(w->vef_priv);
 		w->vef_priv = vef;
 		VEP_Init(w, vfp_vep_callback);
 	} else if (w->is_gzip) {
-		w->vgz_rx = VGZ_NewUngzip(w, w->vbc->vsl_id, "U F E");
+		w->vgz_rx = VGZ_NewUngzip(w, "U F E");
 		ALLOC_OBJ(vef, VEF_MAGIC);
 		AN(vef);
 		//vef = (void*)WS_Alloc(sp->ws, sizeof *vef);
 		//memset(vef, 0, sizeof *vef);
 		//vef->magic = VEF_MAGIC;
-		vef->vgz = VGZ_NewGzip(w, w->vbc->vsl_id, "G F E");
+		vef->vgz = VGZ_NewGzip(w, "G F E");
 		AZ(w->vef_priv);
 		w->vef_priv = vef;
 		VEP_Init(w, vfp_vep_callback);
@@ -376,14 +375,14 @@ vfp_esi_end(struct worker *w)
 		VSB_delete(vsb);
 	}
 	if (w->vgz_rx != NULL)
-		VGZ_Destroy(&w->vgz_rx);
+		VGZ_Destroy(&w->vgz_rx, -1);
 
 	if (w->vef_priv != NULL) {
 		vef = w->vef_priv;
 		CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 		w->vef_priv = NULL;
 		VGZ_UpdateObj(vef->vgz, w->fetch_obj);
-		VGZ_Destroy(&vef->vgz);
+		VGZ_Destroy(&vef->vgz,  -1);
 		XXXAZ(vef->error);
 		FREE_OBJ(vef);
 	}

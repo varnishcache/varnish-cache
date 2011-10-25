@@ -901,7 +901,7 @@ cnt_streambody(struct sess *sp)
 	sp->wrk->sctx = &sctx;
 
 	if (sp->wrk->res_mode & RES_GUNZIP) {
-		sctx.vgz = VGZ_NewUngzip(sp->wrk, sp->vsl_id, "U S -");
+		sctx.vgz = VGZ_NewUngzip(sp->wrk, "U S -");
 		sctx.obuf = obuf;
 		sctx.obuf_len = sizeof (obuf);
 	}
@@ -934,7 +934,7 @@ cnt_streambody(struct sess *sp)
 
 	RES_StreamEnd(sp);
 	if (sp->wrk->res_mode & RES_GUNZIP)
-		VGZ_Destroy(&sctx.vgz);
+		VGZ_Destroy(&sctx.vgz, sp->vsl_id);
 
 	sp->wrk->sctx = NULL;
 	assert(WRW_IsReleased(sp->wrk));
