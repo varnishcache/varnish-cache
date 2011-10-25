@@ -82,6 +82,7 @@ struct vgz {
 	const char		*id;
 	struct ws		*tmp;
 	char			*tmp_snapshot;
+	const char		*error;
 
 	struct storage		*obuf;
 
@@ -263,8 +264,10 @@ VGZ_ObufStorage(const struct sess *sp, struct vgz *vg)
 	struct storage *st;
 
 	st = FetchStorage(sp, 0);
-	if (st == NULL)
+	if (st == NULL) {
+		vg->error = "Could not get ObufStorage";
 		return (-1);
+	}
 
 	vg->obuf = st;
 	VGZ_Obuf(vg, st->ptr + st->len, st->space - st->len);
@@ -409,6 +412,7 @@ void
 VGZ_Destroy(struct vgz **vgp)
 {
 	struct vgz *vg;
+	const char *err;
 
 	vg = *vgp;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
@@ -421,12 +425,13 @@ VGZ_Destroy(struct vgz **vgp)
 	    (intmax_t)vg->vz.start_bit,
 	    (intmax_t)vg->vz.last_bit,
 	    (intmax_t)vg->vz.stop_bit);
+	err = vg->error;
 	if (vg->tmp != NULL)
 		WS_Reset(vg->tmp, vg->tmp_snapshot);
 	if (vg->dir == VGZ_GZ)
-		AZ(deflateEnd(&vg->vz));
+		assert(deflateEnd(&vg->vz) == 0 || err != NULL);
 	else
-		AZ(inflateEnd(&vg->vz));
+		assert(inflateEnd(&vg->vz) == 0 || err != NULL);
 	FREE_OBJ(vg);
 }
 
@@ -566,18 +571,21 @@ vfp_gzip_end(struct sess *sp)
 	int i;
 
 	vg = sp->wrk->vgz_rx;
-	sp->wrk->vgz_rx = NULL;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-	do {
-		VGZ_Ibuf(vg, "", 0);
-		if (VGZ_ObufStorage(sp, vg))
-			return (-1);
-		i = VGZ_Gzip(vg, &dp, &dl, VGZ_FINISH);
-		sp->obj->len += dl;
-	} while (i != Z_STREAM_END);
-	if (sp->wrk->do_stream)
-		RES_StreamPoll(sp);
-	VGZ_UpdateObj(vg, sp->obj);
+	sp->wrk->vgz_rx = NULL;
+
+	if (vg->error == NULL) {
+		do {
+			VGZ_Ibuf(vg, "", 0);
+			if (VGZ_ObufStorage(sp, vg))
+				return (-1);
+			i = VGZ_Gzip(vg, &dp, &dl, VGZ_FINISH);
+			sp->obj->len += dl;
+		} while (i != Z_STREAM_END);
+		if (sp->wrk->do_stream)
+			RES_StreamPoll(sp);
+		VGZ_UpdateObj(vg, sp->obj);
+	}
 	VGZ_Destroy(&vg);
 	return (0);
 }
@@ -621,6 +629,7 @@ vfp_testgzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 		st = FetchStorage(sp, 0);
 		if (st == NULL) {
 			htc->error = "Could not get storage";
+			vg->error = htc->error;
 			return (-1);
 		}
 		l = st->space - st->len;
