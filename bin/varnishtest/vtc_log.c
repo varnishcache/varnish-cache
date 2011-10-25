@@ -132,7 +132,7 @@ vtc_log(struct vtclog *vl, int lvl, const char *fmt, ...)
 	tx = VTIM_mono() - t0;
 	AZ(pthread_mutex_lock(&vl->mtx));
 	vl->act = 1;
-	assert(lvl < NLEAD);
+	assert(lvl < (int)NLEAD);
 	VSB_clear(vl->vsb);
 	VSB_printf(vl->vsb, "%s %-4s %4.1f ",
 	    lead[lvl < 0 ? 1: lvl], vl->id, tx);
@@ -170,8 +170,8 @@ vtc_dump(struct vtclog *vl, int lvl, const char *pfx, const char *str, int len)
 
 	CHECK_OBJ_NOTNULL(vl, VTCLOG_MAGIC);
 	tx = VTIM_mono() - t0;
-	assert(lvl < NLEAD);
 	assert(lvl >= 0);
+	assert(lvl < NLEAD);
 	AZ(pthread_mutex_lock(&vl->mtx));
 	vl->act = 1;
 	VSB_clear(vl->vsb);
@@ -237,8 +237,8 @@ vtc_hexdump(struct vtclog *vl, int lvl, const char *pfx, const unsigned char *st
 	CHECK_OBJ_NOTNULL(vl, VTCLOG_MAGIC);
 	tx = VTIM_mono() - t0;
 	assert(len >= 0);
-	assert(lvl < NLEAD);
 	assert(lvl >= 0);
+	assert(lvl < NLEAD);
 	AZ(pthread_mutex_lock(&vl->mtx));
 	vl->act = 1;
 	VSB_clear(vl->vsb);
