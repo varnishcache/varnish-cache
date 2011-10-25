@@ -32,6 +32,7 @@
 #include <sys/wait.h>
 
 #include <ctype.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -525,6 +526,8 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	char *cwd, *p;
 	FILE *f;
 	struct extmacro *m;
+
+	signal(SIGPIPE, SIG_IGN);
 
 	vtc_loginit(logbuf, loglen);
 	vltop = vtc_logopen("top");
