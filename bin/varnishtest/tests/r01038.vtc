@@ -1,0 +1,62 @@
+varnishtest "ticket 1038 regression test"
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Transfer-encoding: chunked"
+	chunked {<HTML>}
+
+
+	chunked {<esi:include src="xxx0.htm"/>}
+	chunked {<esi:include src="xxx1.htm"/>}
+	chunked {<esi:include src="xxx2.htm"/>}
+	chunked {<esi:include src="xxx3.htm"/>}
+	chunked {<esi:include src="xxx4.htm"/>}
+	chunked {<esi:include src="xxx5.htm"/>}
+	chunked {<esi:include src="xxx6.htm"/>}
+	chunked {<esi:include src="xxx7.htm"/>}
+	chunked {<esi:include src="xxx8.htm"/>}
+	chunkedlen 0
+	rxreq
+	expect req.url == "/xxx0.htm"
+	txresp -body "foo0"
+	rxreq
+	expect req.url == "/xxx1.htm"
+	txresp -body "foo1"
+	rxreq
+	expect req.url == "/xxx2.htm"
+	txresp -body "foo2"
+	rxreq
+	expect req.url == "/xxx3.htm"
+	txresp -body "foo3"
+	rxreq
+	expect req.url == "/xxx4.htm"
+	txresp -body "foo4"
+	rxreq
+	expect req.url == "/xxx5.htm"
+	txresp -body "foo5"
+	rxreq
+	expect req.url == "/xxx6.htm"
+	txresp -body "foo6"
+	rxreq
+	expect req.url == "/xxx7.htm"
+	txresp -body "foo7"
+	rxreq
+	expect req.url == "/xxx8.htm"
+	txresp -body "foo8"
+} -start
+
+varnish v1 -arg "-p thread_pool_workspace=1024" -vcl+backend {
+	sub vcl_fetch {
+		set beresp.do_esi = true;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	txreq
+	rxresp
+} -run
+
+varnish v1 -expect losthdr == 0
+
