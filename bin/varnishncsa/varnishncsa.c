@@ -490,23 +490,19 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 	case SLT_VCL_Log:
 		if(!lp->active)
 			break;
- 		//lp->log1 = trimline(ptr, end);
 
-		// Extract key, value from logline.
 		split = strchr(ptr, ':');
 		if (split == NULL)
 			break;
 
 		struct hdr *h;
 		h = malloc(sizeof(struct hdr));
-		// XXX: what is this AN() business? probably important. :)
 		AN(h);
 		AN(split);
 
 		h->key = trimline(ptr, split);
 		h->value = trimline(split+1, end);
 
-		// put onto the linked list that is log entries.
 		VTAILQ_INSERT_HEAD(&lp->vcl_log, h, list);
 		break;
 
