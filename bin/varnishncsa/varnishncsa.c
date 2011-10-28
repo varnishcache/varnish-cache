@@ -105,6 +105,8 @@ static struct logline {
 	uint64_t bitmap;		/* Bitmap for regex matches */
 	VTAILQ_HEAD(, hdr) req_headers; /* Request headers */
 	VTAILQ_HEAD(, hdr) resp_headers; /* Response headers */
+	char *log1;			/* How the request was handled (hit/miss/pass/pipe) */
+//	VTAILQ_HEAD(, hdr) vcl_log;     /* vcl.log() entries */
 } **ll;
 
 struct VSM_data *vd;
@@ -215,6 +217,23 @@ resp_header(struct logline *l, const char *name)
 	}
 	return NULL;
 }
+
+static char *
+vcl_log(struct logline *l, const char *name)
+{
+	struct hdr *h;
+	// JEJE
+	VTAILQ_FOREACH(h, &l->resp_headers, list) {
+		if (strcasecmp(h->key, name) == 0) {
+			return h->value;
+			break;
+		}
+	}
+	return NULL;
+}
+
+
+
 
 static void
 clean_logline(struct logline *lp)
@@ -462,6 +481,28 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		}
 		break;
 
+	case SLT_VCL_Log:
+		if(!lp->active)
+			break;
+ 		lp->log1 = trimline(ptr, end);
+/*
+		if (strncmp(ptr, "hit", len) == 0) {
+			lp->df_hitmiss = "hit";
+			lp->df_handling = "hit";
+		} else if (strncmp(ptr, "miss", len) == 0) {
+			lp->df_hitmiss = "miss";
+			lp->df_handling = "miss";
+		} else if (strncmp(ptr, "pass", len) == 0) {
+			lp->df_hitmiss = "miss";
+			lp->df_handling = "pass";
+		} else if (strncmp(ptr, "pipe", len) == 0) {
+			clean_logline(lp);
+			break;
+		}
+*/
+		break;
+
+
 	case SLT_VCL_call:
 		if(!lp->active)
 			break;
@@ -690,6 +731,7 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 				memcpy(fname, p+1, tmp-p-2);
 				fname[tmp-p-2] = 0;
 			}
+//			printf("fname is: %s", fname);
 
 			switch (type) {
 			case 'i':
@@ -715,7 +757,12 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 					VSB_cat(os, (lp->df_handling ? lp->df_handling : "-"));
 					p = tmp;
 					break;
+				} else if (strcmp(fname, "Varnish:vcllog") == 0) {
+					VSB_cat(os, (lp->log1 ? lp->log1 : "-"));
+					p = tmp;
+					break;
 				}
+
 			default:
 				fprintf(stderr, "Unknown format starting at: %s\n", --p);
 				exit(1);
