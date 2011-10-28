@@ -105,8 +105,7 @@ static struct logline {
 	uint64_t bitmap;		/* Bitmap for regex matches */
 	VTAILQ_HEAD(, hdr) req_headers; /* Request headers */
 	VTAILQ_HEAD(, hdr) resp_headers; /* Response headers */
-	char *log1;			/* How the request was handled (hit/miss/pass/pipe) */
-//	VTAILQ_HEAD(, hdr) vcl_log;     /* vcl.log() entries */
+	VTAILQ_HEAD(, hdr) vcl_log;     /* VLC_Log entries */
 } **ll;
 
 struct VSM_data *vd;
@@ -222,8 +221,7 @@ static char *
 vcl_log(struct logline *l, const char *name)
 {
 	struct hdr *h;
-	// JEJE
-	VTAILQ_FOREACH(h, &l->resp_headers, list) {
+	VTAILQ_FOREACH(h, &l->vcl_log, list) {
 		if (strcasecmp(h->key, name) == 0) {
 			return h->value;
 			break;
@@ -261,6 +259,14 @@ clean_logline(struct logline *lp)
 		freez(h->value);
 		freez(h);
 	}
+	VTAILQ_FOREACH_SAFE(h, &lp->vcl_log, list, h2) {
+		VTAILQ_REMOVE(&lp->vcl_log, h, list);
+		freez(h->key);
+		freez(h->value);
+		freez(h);
+	}
+
+
 #undef freez
 	memset(lp, 0, sizeof *lp);
 }
@@ -484,22 +490,24 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 	case SLT_VCL_Log:
 		if(!lp->active)
 			break;
- 		lp->log1 = trimline(ptr, end);
-/*
-		if (strncmp(ptr, "hit", len) == 0) {
-			lp->df_hitmiss = "hit";
-			lp->df_handling = "hit";
-		} else if (strncmp(ptr, "miss", len) == 0) {
-			lp->df_hitmiss = "miss";
-			lp->df_handling = "miss";
-		} else if (strncmp(ptr, "pass", len) == 0) {
-			lp->df_hitmiss = "miss";
-			lp->df_handling = "pass";
-		} else if (strncmp(ptr, "pipe", len) == 0) {
-			clean_logline(lp);
+ 		//lp->log1 = trimline(ptr, end);
+
+		// Extract key, value from logline.
+		split = strchr(ptr, ':');
+		if (split == NULL)
 			break;
-		}
-*/
+
+		struct hdr *h;
+		h = malloc(sizeof(struct hdr));
+		// XXX: what is this AN() business? probably important. :)
+		AN(h);
+		AN(split);
+
+		h->key = trimline(ptr, split);
+		h->value = trimline(split+1, end);
+
+		// put onto the linked list that is log entries.
+		VTAILQ_INSERT_HEAD(&lp->vcl_log, h, list);
 		break;
 
 
