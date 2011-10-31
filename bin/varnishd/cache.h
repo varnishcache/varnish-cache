@@ -199,7 +199,6 @@ struct http_conn {
 	struct ws		*ws;
 	txt			rxbuf;
 	txt			pipeline;
-	const char		*error;
 };
 
 /*--------------------------------------------------------------------*/
@@ -785,7 +784,7 @@ void HTC_Init(struct http_conn *htc, struct ws *ws, int fd, unsigned vsl_id,
     unsigned maxbytes, unsigned maxhdr);
 int HTC_Reinit(struct http_conn *htc);
 int HTC_Rx(struct http_conn *htc);
-ssize_t HTC_Read(struct http_conn *htc, void *d, size_t len);
+ssize_t HTC_Read(struct worker *w, struct http_conn *htc, void *d, size_t len);
 int HTC_Complete(struct http_conn *htc);
 
 #define HTTPH(a, b, c, d, e, f, g) extern char b[];

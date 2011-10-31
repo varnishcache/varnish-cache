@@ -480,17 +480,15 @@ vfp_gunzip_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 			l = sizeof ibuf;
 			if (l > bytes)
 				l = bytes;
-			wl = HTC_Read(htc, ibuf, l);
-			if (wl < 0)
-				return(FetchError(w, htc->error));
-			if (wl == 0)
+			wl = HTC_Read(w, htc, ibuf, l);
+			if (wl <= 0)
 				return (wl);
 			VGZ_Ibuf(vg, ibuf, wl);
 			bytes -= wl;
 		}
 
 		if (VGZ_ObufStorage(w, vg)) 
-			return(FetchError(w, "Could not get storage"));
+			return(-1);
 		i = VGZ_Gunzip(vg, &dp, &dl);
 		if (i != VGZ_OK && i != VGZ_END) 
 			return(FetchError(w, "Gunzip data error"));
@@ -560,16 +558,14 @@ vfp_gzip_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 			l = sizeof ibuf;
 			if (l > bytes)
 				l = bytes;
-			wl = HTC_Read(htc, ibuf, l);
-			if (wl < 0)
-				return(FetchError(w, htc->error));
-			if (wl == 0)
+			wl = HTC_Read(w, htc, ibuf, l);
+			if (wl <= 0)
 				return (wl);
 			VGZ_Ibuf(vg, ibuf, wl);
 			bytes -= wl;
 		}
 		if (VGZ_ObufStorage(w, vg)) 
-			return(FetchError(w, "Could not get storage"));
+			return(-1);
 		i = VGZ_Gzip(vg, &dp, &dl, VGZ_NORMAL);
 		assert(i == Z_OK);
 		w->fetch_obj->len += dl;
@@ -597,7 +593,7 @@ vfp_gzip_end(struct worker *w)
 	do {
 		VGZ_Ibuf(vg, "", 0);
 		if (VGZ_ObufStorage(w, vg))
-			return(FetchError(w, "Could not get storage"));
+			return(-1);
 		i = VGZ_Gzip(vg, &dp, &dl, VGZ_FINISH);
 		w->fetch_obj->len += dl;
 	} while (i != Z_STREAM_END);
@@ -648,14 +644,12 @@ vfp_testgzip_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 	while (bytes > 0) {
 		st = FetchStorage(w, 0);
 		if (st == NULL)
-			return(FetchError(w, "Could not get storage"));
+			return(-1);
 		l = st->space - st->len;
 		if (l > bytes)
 			l = bytes;
-		wl = HTC_Read(htc, st->ptr + st->len, l);
-		if (wl < 0)
-			return(FetchError(w, htc->error));
-		if (wl == 0)
+		wl = HTC_Read(w, htc, st->ptr + st->len, l);
+		if (wl <= 0)
 			return (wl);
 		bytes -= wl;
 		VGZ_Ibuf(vg, st->ptr + st->len, wl);
