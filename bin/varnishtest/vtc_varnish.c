@@ -316,7 +316,7 @@ varnish_thread(void *priv)
 		if (i <= 0)
 			break;
 		buf[i] = '\0';
-		vtc_dump(v->vl, 3, "debug", buf, -1);
+		vtc_dump(v->vl, 3, "debug", buf, -2);
 	}
 	return (NULL);
 }
