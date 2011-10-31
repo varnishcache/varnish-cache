@@ -182,7 +182,7 @@ res_WriteGunzipObj(const struct sess *sp)
 		(void)WRW_Write(sp->wrk, obuf, obufl);
 		(void)WRW_Flush(sp->wrk);
 	}
-	VGZ_Destroy(&vg, sp->vsl_id);
+	(void)VGZ_Destroy(&vg, sp->vsl_id);
 	assert(u == sp->obj->len);
 }
 

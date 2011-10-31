@@ -934,7 +934,7 @@ cnt_streambody(struct sess *sp)
 
 	RES_StreamEnd(sp);
 	if (sp->wrk->res_mode & RES_GUNZIP)
-		VGZ_Destroy(&sctx.vgz, sp->vsl_id);
+		(void)VGZ_Destroy(&sctx.vgz, sp->vsl_id);
 
 	sp->wrk->sctx = NULL;
 	assert(WRW_IsReleased(sp->wrk));
