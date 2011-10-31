@@ -95,11 +95,6 @@ static void __match_proto__()
 vfp_nop_begin(struct sess *sp, size_t estimate)
 {
 
-	if (fetchfrag > 0) {
-		estimate = fetchfrag;
-		WSL(sp->wrk, SLT_Debug, sp->fd,
-		    "Fetch %d byte segments:", fetchfrag);
-	}
 	if (estimate > 0)
 		(void)FetchStorage(sp, estimate);
 }
