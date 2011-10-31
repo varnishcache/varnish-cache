@@ -45,11 +45,6 @@ CC="$PTHREAD_CC"
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
-AC_CHECK_PROGS(XSLTPROC, [xsltproc], "no")
-if test "x$XSLTPROC" = "xno"; then
-   AC_MSG_WARN([xsltproc not found – not building documentation])
-fi
-AM_CONDITIONAL(HAVE_XSLTPROC,[test "x$XSLTPROC" != "xno"])
 AC_ARG_WITH([rst2man],
                AS_HELP_STRING([--with-rst2man=PATH],
                               [Location of rst2man (auto)]),
