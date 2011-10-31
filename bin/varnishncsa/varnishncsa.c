@@ -629,6 +629,14 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 
 	for (p = format; *p != '\0'; p++) {
 
+		/* allow the most essential escape sequences in format. */
+		if (*p == '\\') {
+			p++;
+			if (*p == 't') VSB_putc(os, '\t');
+			if (*p == 'n') VSB_putc(os, '\n');
+			continue;
+		}
+
 		if (*p != '%') {
 			VSB_putc(os, *p);
 			continue;
