@@ -248,9 +248,9 @@ fetch_straight(struct worker *w, struct http_conn *htc, ssize_t cl)
 
 /*--------------------------------------------------------------------
  * Read a chunked HTTP object.
+ *
  * XXX: Reading one byte at a time is pretty pessimal.
  */
- 
 
 static int
 fetch_chunked(struct worker *w, struct http_conn *htc)
@@ -264,17 +264,18 @@ fetch_chunked(struct worker *w, struct http_conn *htc)
 	do {
 		/* Skip leading whitespace */
 		do {
-			i = HTC_Read(w, htc, buf, 1);
-			if (i <= 0)
-				return (i);
+			if (HTC_Read(w, htc, buf, 1) <= 0)
+				return (-1);
 		} while (vct_islws(buf[0]));
+
+		if (!vct_ishex(buf[0]))
+			return (FetchError(w,"chunked header non-hex"));
 
 		/* Collect hex digits, skipping leading zeros */
 		for (u = 1; u < sizeof buf; u++) {
 			do {
-				i = HTC_Read(w, htc, buf + u, 1);
-				if (i <= 0)
-					return (i);
+				if (HTC_Read(w, htc, buf + u, 1) <= 0)
+					return (-1);
 			} while (u == 1 && buf[0] == '0' && buf[u] == '0');
 			if (!vct_ishex(buf[u]))
 				break;
@@ -284,39 +285,31 @@ fetch_chunked(struct worker *w, struct http_conn *htc)
 			return (FetchError(w,"chunked header too long"));
 
 		/* Skip trailing white space */
-		while(vct_islws(buf[u]) && buf[u] != '\n') {
-			i = HTC_Read(w, htc, buf + u, 1);
-			if (i <= 0)
-				return (i);
-		}
+		while(vct_islws(buf[u]) && buf[u] != '\n')
+			if (HTC_Read(w, htc, buf + u, 1) <= 0)
+				return (-1);
 
 		if (buf[u] != '\n') 
 			return (FetchError(w,"chunked header no NL"));
-		buf[u] = '\0';
 
+		buf[u] = '\0';
 		cl = fetch_number(buf, 16);
-		if (cl < 0) {
+		if (cl < 0)
 			return (FetchError(w,"chunked header number syntax"));
-		} else if (cl > 0) {
-			i = w->vfp->bytes(w, htc, cl);
-			if (i <= 0)
-				return (-1);
-		}
+
+		if (cl > 0 && w->vfp->bytes(w, htc, cl) <= 0)
+			return (-1);
+
 		i = HTC_Read(w, htc, buf, 1);
 		if (i <= 0)
 			return (-1);
-		if (buf[0] == '\r') {
-			i = HTC_Read(w, htc, buf, 1);
-			if (i <= 0)
-				return (-1);
-		}
+		if (buf[0] == '\r' && HTC_Read(w, htc, buf, 1) <= 0)
+			return (-1);
 		if (buf[0] != '\n')
 			return (FetchError(w,"chunked tail no NL"));
 	} while (cl > 0);
 	return (0);
 }
-
-#undef CERR
 
 /*--------------------------------------------------------------------*/
 
