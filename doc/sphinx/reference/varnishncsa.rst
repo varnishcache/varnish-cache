@@ -54,6 +54,8 @@ The following options are available:
 
             %h %l %u %t "%r" %s %b "%{Referer}i" "%{User-agent}i"
 
+	    Escape sequences \\n and \\t are supported.
+
 	    Supported formatters are:
 
 	      %b 
