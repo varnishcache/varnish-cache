@@ -9,10 +9,10 @@ question answered conclusively long time ago, but once you try to
 be efficient, things get hairy fast.
 
 One of the features of Varnish we are very fundamental about, is the
-ability to have multiple VCL's loaded at the same time, and to switch
+ability to have multiple VCLs loaded at the same time, and to switch
 between them instantly and seamlessly.
 
-So Imagine you have 1000 backends in your VCL, not an unreasonable
+So imagine you have 1000 backends in your VCL, not an unreasonable
 number, each configured with health-polling.
 
 Now you fiddle your vcl_recv{} a bit and load the VCL again, but
@@ -25,7 +25,7 @@ be up to date the instant we switch to the other VCL.
 This basically means that either all VCLs poll all their backends,
 or they must share, somehow.
 
-We can dismiss the all VCL's poll all their backends scenario,
+We can dismiss the all VCLs poll all their backends scenario,
 because it scales truly horribly, and would pummel backends with
 probes if people forget to vcl.discard their old dusty VCLs.
 
@@ -39,7 +39,7 @@ It would be truly stupid to close 100 ready and usable connections to
 a backend, and open 100 other, just because we switch to a different
 VCL that has an identical backend definition.
 
-But what is an identical backend definition in this context ?
+But what is an identical backend definition in this context?
 
 It is important to remember that we are not talking physical
 backends:  For instance, there is nothing preventing a VCL for
@@ -48,7 +48,7 @@ backends.
 
 The most obvious thing to do, is to use the VCL name of the backend
 as identifier, but that is not enough.  We can have two different
-VCL's where backend "b1" points at two different physical machines,
+VCLs where backend "b1" points at two different physical machines,
 for instance when we migrate or upgrade the backend.
 
 The identity of the state than can be shared is therefore the triplet:
@@ -78,11 +78,11 @@ is a wildcard-ish scheme, where you can write things like::
 
 	b1()				# All backends named b1
 
-	b1(127.0.0.1)			# All b1's on Ipv4 lookback
+	b1(127.0.0.1)			# All b1s on IPv4 lookback
 
-	b1(:8080)			# All b1's on port 8080, (IPv4 or IPv6)
+	b1(:8080)			# All b1s on port 8080, (IPv4 or IPv6)
 
-	b1(192.168.60.1,192.168.60.2)	# All b1's on one of those addresses.
+	b1(192.168.60.1,192.168.60.2)	# All b1s on one of those addresses.
 
 (Input very much welcome)
 
@@ -112,7 +112,7 @@ the backend gets retired anyway.
 We should either park a thread on each backend, or have a poller thread
 which throws jobs into the work-pool as the backends needs polled.
 
-The patternmatching is confined to CLI and possibly libvarnishapi
+The pattern matching is confined to CLI and possibly libvarnishapi
 
 I think this will work,
 
