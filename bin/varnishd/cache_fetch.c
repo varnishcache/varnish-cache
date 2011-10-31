@@ -91,10 +91,6 @@ static void __match_proto__()
 vfp_nop_begin(struct worker *w, size_t estimate)
 {
 
-	if (fetchfrag > 0) {
-		estimate = fetchfrag;
-		WSLB(w, SLT_Debug, "Fetch %d byte segments:", fetchfrag);
-	}
 	if (estimate > 0)
 		(void)FetchStorage(w, estimate);
 }
