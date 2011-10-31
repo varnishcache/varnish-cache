@@ -169,7 +169,7 @@ vtc_log(struct vtclog *vl, int lvl, const char *fmt, ...)
 void
 vtc_dump(struct vtclog *vl, int lvl, const char *pfx, const char *str, int len)
 {
-	int nl = 1;
+	int nl = 1, olen;
 	unsigned l;
 	double tx;
 
@@ -186,10 +186,11 @@ vtc_dump(struct vtclog *vl, int lvl, const char *pfx, const char *str, int len)
 		VSB_printf(vl->vsb, "%s %-4s %4.1f %s(null)\n",
 		    lead[lvl], vl->id, tx, pfx);
 	else {
-		if (len == -1)
+		olen = len;
+		if (len < 0)
 			len = strlen(str);
 		for (l = 0; l < len; l++, str++) {
-			if (l > 512) {
+			if (l > 512 && olen != -2) {
 				VSB_printf(vl->vsb, "...");
 				break;
 			}
