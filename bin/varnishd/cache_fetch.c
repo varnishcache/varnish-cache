@@ -198,15 +198,12 @@ fetch_number(const char *nbr, int radix)
 /*--------------------------------------------------------------------*/
 
 static int
-fetch_straight(struct worker *w, struct http_conn *htc, const char *b)
+fetch_straight(struct worker *w, struct http_conn *htc, ssize_t cl)
 {
 	int i;
-	ssize_t cl;
 
 	assert(w->body_status == BS_LENGTH);
 
-	cl = fetch_number(b, 10);
-	w->vfp->begin(w, cl > 0 ? cl : 0);
 	if (cl < 0) {
 		WSLB(w, SLT_FetchError, "straight length field bogus");
 		return (-1);
@@ -242,7 +239,6 @@ fetch_chunked(struct worker *w, struct http_conn *htc)
 	unsigned u;
 	ssize_t cl;
 
-	w->vfp->begin(w, 0);
 	assert(w->body_status == BS_CHUNKED);
 	do {
 		/* Skip leading whitespace */
@@ -310,7 +306,6 @@ fetch_eof(struct worker *w, struct http_conn *htc)
 	int i;
 
 	assert(w->body_status == BS_EOF);
-	w->vfp->begin(w, 0);
 	i = w->vfp->bytes(w, htc, SSIZE_MAX);
 	if (i < 0) {
 		WSLB(w, SLT_FetchError, "eof read_error: %d (%s)",
@@ -485,6 +480,7 @@ FetchBody(struct worker *w, struct object *obj)
 	int cls;
 	struct storage *st;
 	int mklen;
+	ssize_t cl;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	AZ(w->fetch_obj);
@@ -502,6 +498,8 @@ FetchBody(struct worker *w, struct object *obj)
 
 	w->fetch_obj = obj;
 
+	/* XXX: pick up estimate from objdr ? */
+	cl = 0;
 	switch (w->body_status) {
 	case BS_NONE:
 		cls = 0;
@@ -512,20 +510,26 @@ FetchBody(struct worker *w, struct object *obj)
 		mklen = 1;
 		break;
 	case BS_LENGTH:
-		cls = fetch_straight(w, w->htc,
-		    w->h_content_length);
+		cl = fetch_number( w->h_content_length, 10);
+		w->vfp->begin(w, cl > 0 ? cl : 0);
+		cls = fetch_straight(w, w->htc, cl);
 		mklen = 1;
-		XXXAZ(w->vfp->end(w));
+		if (w->vfp->end(w))
+			cls = -1;
 		break;
 	case BS_CHUNKED:
+		w->vfp->begin(w, cl);
 		cls = fetch_chunked(w, w->htc);
 		mklen = 1;
-		XXXAZ(w->vfp->end(w));
+		if (w->vfp->end(w))
+			cls = -1;
 		break;
 	case BS_EOF:
+		w->vfp->begin(w, cl);
 		cls = fetch_eof(w, w->htc);
 		mklen = 1;
-		XXXAZ(w->vfp->end(w));
+		if (w->vfp->end(w))
+			cls = -1;
 		break;
 	case BS_ERROR:
 		cls = 1;
