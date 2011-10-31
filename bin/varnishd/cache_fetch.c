@@ -251,9 +251,9 @@ fetch_straight(struct sess *sp, struct http_conn *htc, ssize_t cl)
 
 /*--------------------------------------------------------------------
  * Read a chunked HTTP object.
+ *
  * XXX: Reading one byte at a time is pretty pessimal.
  */
- 
 
 static int
 fetch_chunked(struct sess *sp, struct http_conn *htc)
@@ -267,17 +267,18 @@ fetch_chunked(struct sess *sp, struct http_conn *htc)
 	do {
 		/* Skip leading whitespace */
 		do {
-			i = HTC_Read(sp->wrk, htc, buf, 1);
-			if (i <= 0)
-				return (i);
+			if (HTC_Read(sp->wrk, htc, buf, 1) <= 0)
+				return (-1);
 		} while (vct_islws(buf[0]));
+
+		if (!vct_ishex(buf[0]))
+			return (FetchError(sp,"chunked header non-hex"));
 
 		/* Collect hex digits, skipping leading zeros */
 		for (u = 1; u < sizeof buf; u++) {
 			do {
-				i = HTC_Read(sp->wrk, htc, buf + u, 1);
-				if (i <= 0)
-					return (i);
+				if (HTC_Read(sp->wrk, htc, buf + u, 1) <= 0)
+					return (-1);
 			} while (u == 1 && buf[0] == '0' && buf[u] == '0');
 			if (!vct_ishex(buf[u]))
 				break;
@@ -288,40 +289,31 @@ fetch_chunked(struct sess *sp, struct http_conn *htc)
 		}
 
 		/* Skip trailing white space */
-		while(vct_islws(buf[u]) && buf[u] != '\n') {
-			i = HTC_Read(sp->wrk, htc, buf + u, 1);
-			if (i <= 0)
-				return (i);
-		}
-
-		if (buf[u] != '\n') {
-			return (FetchError(sp,"chunked header no NL"));
-		}
-		buf[u] = '\0';
-
-		cl = fetch_number(buf, 16);
-		if (cl < 0) {
-			return (FetchError(sp,"chunked header number syntax"));
-		} else if (cl > 0) {
-			i = sp->wrk->vfp->bytes(sp, htc, cl);
-			if (i <= 0)
+		while(vct_islws(buf[u]) && buf[u] != '\n')
+			if (HTC_Read(sp->wrk, htc, buf + u, 1) <= 0)
 				return (-1);
-		}
+
+		if (buf[u] != '\n') 
+			return (FetchError(sp,"chunked header no NL"));
+
+		buf[u] = '\0';
+		cl = fetch_number(buf, 16);
+		if (cl < 0)
+			return (FetchError(sp,"chunked header number syntax"));
+
+		if (cl > 0 && sp->wrk->vfp->bytes(sp, htc, cl) <= 0)
+			return (-1);
+
 		i = HTC_Read(sp->wrk, htc, buf, 1);
 		if (i <= 0)
 			return (-1);
-		if (buf[0] == '\r') {
-			i = HTC_Read(sp->wrk, htc, buf, 1);
-			if (i <= 0)
-				return (-1);
-		}
+		if (buf[0] == '\r' && HTC_Read(sp->wrk, htc, buf, 1) <= 0)
+			return (-1);
 		if (buf[0] != '\n')
 			return (FetchError(sp,"chunked tail no NL"));
 	} while (cl > 0);
 	return (0);
 }
-
-#undef CERR
 
 /*--------------------------------------------------------------------*/
 
