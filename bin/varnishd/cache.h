@@ -331,6 +331,7 @@ struct worker {
 	struct vfp		*vfp;
 	struct vgz		*vgz_rx;
 	struct vef_priv		*vef_priv;
+	unsigned		fetch_failed;
 	unsigned		do_stream;
 	unsigned		do_esi;
 	unsigned		do_gzip;
@@ -718,6 +719,8 @@ int EXP_NukeOne(struct worker *w, struct lru *lru);
 
 /* cache_fetch.c */
 struct storage *FetchStorage(const struct sess *sp, ssize_t sz);
+int FetchError(struct sess *sp, const char *error);
+int FetchError2(struct sess *sp, const char *error, const char *more);
 int FetchHdr(struct sess *sp);
 int FetchBody(struct sess *sp);
 int FetchReqBody(struct sess *sp);
@@ -736,7 +739,7 @@ int VGZ_ObufFull(const struct vgz *vg);
 int VGZ_ObufStorage(const struct sess *sp, struct vgz *vg);
 int VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
 int VGZ_Gunzip(struct vgz *, const void **, size_t *len);
-void VGZ_Destroy(struct vgz **);
+int VGZ_Destroy(struct vgz **);
 void VGZ_UpdateObj(const struct vgz*, struct object *);
 int VGZ_WrwGunzip(const struct sess *, struct vgz *, const void *ibuf,
     ssize_t ibufl, char *obuf, ssize_t obufl, ssize_t *obufp);

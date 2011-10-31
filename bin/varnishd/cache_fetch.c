@@ -43,6 +43,40 @@
 static unsigned fetchfrag;
 
 /*--------------------------------------------------------------------
+ * We want to issue the first error we encounter on fetching and
+ * supress the rest.  This function does that.
+ *
+ * Other code is allowed to look at w->fetch_failed to bail out
+ *
+ * For convenience, always return -1
+ */
+
+int
+FetchError2(struct sess *sp, const char *error, const char *more)
+{
+	struct worker *w;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	w = sp->wrk;
+
+	if (!w->fetch_failed) {
+		if (more == NULL)
+			WSP(sp, SLT_FetchError, "%s", error);
+		else
+			WSP(sp, SLT_FetchError, "%s: %s", error, more);
+	}
+	w->fetch_failed = 1;
+	return (-1);
+}
+
+int
+FetchError(struct sess *sp, const char *error)
+{
+	return(FetchError2(sp, error, NULL));
+}
+
+/*--------------------------------------------------------------------
  * VFP_NOP
  *
  * This fetch-processor does nothing but store the object.
@@ -75,7 +109,8 @@ vfp_nop_begin(struct sess *sp, size_t estimate)
  *
  * Process (up to) 'bytes' from the socket.
  *
- * Return -1 on error
+ * Return -1 on error, issue FetchError()
+ *	will not be called again, once error happens.
  * Return 0 on EOF on socket even if bytes not reached.
  * Return 1 when 'bytes' have been processed.
  */
@@ -86,17 +121,18 @@ vfp_nop_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	ssize_t l, w;
 	struct storage *st;
 
+	AZ(sp->wrk->fetch_failed);
 	while (bytes > 0) {
 		st = FetchStorage(sp, 0);
-		if (st == NULL) {
-			htc->error = "Could not get storage";
-			return (-1);
-		}
+		if (st == NULL)
+			return(FetchError(sp, "Could not get storage"));
 		l = st->space - st->len;
 		if (l > bytes)
 			l = bytes;
 		w = HTC_Read(htc, st->ptr + st->len, l);
-		if (w <= 0)
+		if (w < 0)
+			return(FetchError(sp, htc->error));
+		if (w == 0)
 			return (w);
 		st->len += w;
 		sp->obj->len += w;
@@ -203,16 +239,13 @@ fetch_straight(struct sess *sp, struct http_conn *htc, ssize_t cl)
 	assert(sp->wrk->body_status == BS_LENGTH);
 
 	if (cl < 0) {
-		WSP(sp, SLT_FetchError, "straight length field bogus");
-		return (-1);
+		return (FetchError(sp, "straight length field bogus"));
 	} else if (cl == 0)
 		return (0);
 
 	i = sp->wrk->vfp->bytes(sp, htc, cl);
 	if (i <= 0) {
-		WSP(sp, SLT_FetchError, "straight read_error: %d %d (%s)",
-		    i, errno, htc->error);
-		return (-1);
+		return (FetchError(sp, "straight insufficient bytes"));
 	}
 	return (0);
 }
@@ -256,8 +289,7 @@ fetch_chunked(struct sess *sp, struct http_conn *htc)
 		}
 
 		if (u >= sizeof buf) {
-			WSP(sp, SLT_FetchError,	"chunked header too long");
-			return (-1);
+			return (FetchError(sp,"chunked header too long"));
 		}
 
 		/* Skip trailing white space */
@@ -267,15 +299,13 @@ fetch_chunked(struct sess *sp, struct http_conn *htc)
 		}
 
 		if (buf[u] != '\n') {
-			WSP(sp, SLT_FetchError,	"chunked header char syntax");
-			return (-1);
+			return (FetchError(sp,"chunked header no NL"));
 		}
 		buf[u] = '\0';
 
 		cl = fetch_number(buf, 16);
 		if (cl < 0) {
-			WSP(sp, SLT_FetchError,	"chunked header nbr syntax");
-			return (-1);
+			return (FetchError(sp,"chunked header number syntax"));
 		} else if (cl > 0) {
 			i = sp->wrk->vfp->bytes(sp, htc, cl);
 			CERR();
@@ -286,10 +316,8 @@ fetch_chunked(struct sess *sp, struct http_conn *htc)
 			i = HTC_Read(htc, buf, 1);
 			CERR();
 		}
-		if (buf[0] != '\n') {
-			WSP(sp, SLT_FetchError,	"chunked tail syntax");
-			return (-1);
-		}
+		if (buf[0] != '\n')
+			return (FetchError(sp,"chunked tail no NL"));
 	} while (cl > 0);
 	return (0);
 }
@@ -305,11 +333,8 @@ fetch_eof(struct sess *sp, struct http_conn *htc)
 
 	assert(sp->wrk->body_status == BS_EOF);
 	i = sp->wrk->vfp->bytes(sp, htc, SSIZE_MAX);
-	if (i < 0) {
-		WSP(sp, SLT_FetchError, "eof read_error: %d (%s)",
-		    errno, htc->error);
+	if (i < 0) 
 		return (-1);
-	}
 	return (0);
 }
 
@@ -498,6 +523,7 @@ FetchBody(struct sess *sp)
 
 	/* XXX: pick up estimate from objdr ? */
 	cl = 0;
+	w->fetch_failed = 0;
 	switch (w->body_status) {
 	case BS_NONE:
 		cls = 0;
@@ -568,6 +594,7 @@ FetchBody(struct sess *sp)
 		sp->obj->len = 0;
 		return (__LINE__);
 	}
+	AZ(w->fetch_failed);
 
 	if (cls == 0 && w->do_close)
 		cls = 1;

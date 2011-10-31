@@ -1,0 +1,43 @@
+varnishtest "truncated gzip from backend"
+
+server s1 -repeat 2 {
+	rxreq
+	txresp -nolen \
+		-hdr "Content-Encoding: gzip" \
+		-hdr "Transfer-Encoding: Chunked"
+	send "18\r\n"
+		# A truncate gzip file
+		sendhex "1f8b"
+		sendhex "08"
+		sendhex "00"
+		sendhex "f5 64 ae 4e  02 03 f3 cd cf 53 f0 4f"
+		sendhex "2e 51 30 36 54 30 b0 b4"
+	send "\r\n"
+	chunkedlen 0
+
+} -start
+
+varnish v1 \
+	-arg {-p diag_bitmap=0x00010000} \
+	-vcl+backend {
+	sub vcl_fetch {
+		if (req.url == "/gunzip") {
+			set beresp.do_gunzip = true;
+		} 
+	}
+} 
+
+varnish v1 -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
+client c1 {
+	txreq -url /gunzip
+	rxresp
+	expect resp.status == 503
+} -run
+

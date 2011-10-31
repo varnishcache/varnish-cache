@@ -408,7 +408,7 @@ ESI_Deliver(struct sess *sp)
 	if (vgz != NULL) {
 		if (obufl > 0)
 			(void)WRW_Write(sp->wrk, obuf, obufl);
-		VGZ_Destroy(&vgz);
+		(void)VGZ_Destroy(&vgz);
 	}
 	if (sp->wrk->gzip_resp && sp->esi_level == 0) {
 		/* Emit a gzip literal block with finish bit set */
