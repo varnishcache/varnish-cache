@@ -105,6 +105,7 @@ static struct logline {
 	uint64_t bitmap;		/* Bitmap for regex matches */
 	VTAILQ_HEAD(, hdr) req_headers; /* Request headers */
 	VTAILQ_HEAD(, hdr) resp_headers; /* Response headers */
+	VTAILQ_HEAD(, hdr) vcl_log;     /* VLC_Log entries */
 } **ll;
 
 struct VSM_data *vd;
@@ -216,6 +217,19 @@ resp_header(struct logline *l, const char *name)
 	return NULL;
 }
 
+static char *
+vcl_log(struct logline *l, const char *name)
+{
+	struct hdr *h;
+	VTAILQ_FOREACH(h, &l->vcl_log, list) {
+		if (strcasecmp(h->key, name) == 0) {
+			return h->value;
+			break;
+		}
+	}
+	return NULL;
+}
+
 static void
 clean_logline(struct logline *lp)
 {
@@ -238,6 +252,12 @@ clean_logline(struct logline *lp)
 	}
 	VTAILQ_FOREACH_SAFE(h, &lp->resp_headers, list, h2) {
 		VTAILQ_REMOVE(&lp->resp_headers, h, list);
+		freez(h->key);
+		freez(h->value);
+		freez(h);
+	}
+	VTAILQ_FOREACH_SAFE(h, &lp->vcl_log, list, h2) {
+		VTAILQ_REMOVE(&lp->vcl_log, h, list);
 		freez(h->key);
 		freez(h->value);
 		freez(h);
@@ -460,6 +480,25 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			else
 				VTAILQ_INSERT_HEAD(&lp->resp_headers, h, list);
 		}
+		break;
+
+	case SLT_VCL_Log:
+		if(!lp->active)
+			break;
+
+		split = strchr(ptr, ':');
+		if (split == NULL)
+			break;
+
+		struct hdr *h;
+		h = malloc(sizeof(struct hdr));
+		AN(h);
+		AN(split);
+
+		h->key = trimline(ptr, split);
+		h->value = trimline(split+1, end);
+
+		VTAILQ_INSERT_HEAD(&lp->vcl_log, h, list);
 		break;
 
 	case SLT_VCL_call:
@@ -713,6 +752,14 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 					break;
 				} else if (strcmp(fname, "Varnish:handling") == 0) {
 					VSB_cat(os, (lp->df_handling ? lp->df_handling : "-"));
+					p = tmp;
+					break;
+				} else if (strncmp(fname, "VCL_Log:", 8) == 0) {
+					// support pulling entries logged with std.log() into output.
+					// Format: %{VCL_Log:keyname}x
+					// Logging: std.log("keyname:value")
+					h = vcl_log(lp, fname+8);
+					VSB_cat(os, h ? h : "-");
 					p = tmp;
 					break;
 				}
