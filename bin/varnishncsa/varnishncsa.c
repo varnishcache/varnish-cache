@@ -766,14 +766,13 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 			case 'L': {
 					char *delim;
 					char keyword[MAX_VCLLOG_KEYLENGTH];
-					char *startpos;
 
 					// Extract "key" from fname
 					delim = strchr(fname, ':');
 					if (delim == NULL) {
 					    break;
 					}
-					startpos = strncpy(keyword, delim+1, MAX_VCLLOG_KEYLENGTH);
+					strncpy(keyword, delim+1, MAX_VCLLOG_KEYLENGTH);
 					
 					h = vcl_log(lp, keyword); 
 					VSB_cat(os, h ? h : "-");
