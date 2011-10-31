@@ -57,6 +57,8 @@
  * TODO:		- Maybe rotate/compress log
  */
 
+#define MAX_VCLLOG_KEYLENGTH 100
+
 #include "config.h"
 
 #include <ctype.h>
@@ -726,9 +728,6 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 			const char *h, *tmp;
 			char fname[100], type;
 
-			// maybe
-			const char *key2;
-
 			tmp = p;
 			type = 0;
 			while (*tmp != '\0' && *tmp != '}')
@@ -739,7 +738,6 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 				memcpy(fname, p+1, tmp-p-2);
 				fname[tmp-p-2] = 0;
 			}
-//			printf("fname is: %s", fname);
 
 			switch (type) {
 			case 'i':
@@ -765,53 +763,27 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 					VSB_cat(os, (lp->df_handling ? lp->df_handling : "-"));
 					p = tmp;
 					break;
-//				} else if (strcmp(fname, "Varnish:vcllog") == 0) {
-//					VSB_cat(os, (lp->log1 ? lp->log1 : "-"));
-//					p = tmp;
-//					break;
 				}
-			case 'l':
-                                // std.log("Foo: bar")
-                                // %{Foo}l 
-			        printf("case l was hit with fname: %s\n", fname);
-				// Extract "Foo" from fname
-				char *delim;
-			        char keyword[100];
-				char *kwptr;
-				char *startpos;
+			case 'L': {
+					char *delim;
+					char keyword[MAX_VCLLOG_KEYLENGTH];
+					char *startpos;
 
-				// keyword = "init";
-
-                                delim = strchr(fname, ':');
-				printf(": found at %d\n", delim - fname);
-				// startpos = delim - fname;
-
-				// buffer overflow all the way.
-				startpos = strncpy(keyword, delim+1, sizeof keyword);
-				printf("meh");
-				printf("startpos is: %d\n", startpos);
-
-				printf("rest is: %s\n", delim+1); // startpos);
-				printf("keyword is: %s\n", keyword);
-
-				//keyword = delim + 1;
-
-//				printf("split2: %d\n", *split2);
-
- //                               key2 = trimline(fname, split2);
-				//&&printf("key: %s\n", key2);
-                                //keyword = strcpy("bar"; // trimline(fname+1, split);
-				//keyword = "foo";
-
-                                //strcpy(key2, "bar"); // trimline(fname+1, split);
-                                h = vcl_log(lp, keyword); 
-                                VSB_cat(os, h ? h : "-");
-                                p = tmp;
-                                break;
-///////
+					// Extract "key" from fname
+					delim = strchr(fname, ':');
+					if (delim == NULL) {
+					    break;
+					}
+					startpos = strncpy(keyword, delim+1, MAX_VCLLOG_KEYLENGTH);
+					
+					h = vcl_log(lp, keyword); 
+					VSB_cat(os, h ? h : "-");
+					p = tmp;
+					break;
+				}
 
 			default:
-				fprintf(stderr, "Unknown format starting at: %s\n", --p);
+				fprintf(stderr, "Unknown extended format starting at: %s\n", --p);
 				exit(1);
 			}
 			break;
@@ -821,8 +793,8 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 		default:
 			fprintf(stderr, "Unknown format starting at: %s\n", --p);
 			exit(1);
-		}
-	}
+		} // switch
+	} // for 
 	VSB_putc(os, '\n');
 
 	/* flush the stream */
