@@ -196,15 +196,12 @@ fetch_number(const char *nbr, int radix)
 /*--------------------------------------------------------------------*/
 
 static int
-fetch_straight(struct sess *sp, struct http_conn *htc, const char *b)
+fetch_straight(struct sess *sp, struct http_conn *htc, ssize_t cl)
 {
 	int i;
-	ssize_t cl;
 
 	assert(sp->wrk->body_status == BS_LENGTH);
 
-	cl = fetch_number(b, 10);
-	sp->wrk->vfp->begin(sp, cl > 0 ? cl : 0);
 	if (cl < 0) {
 		WSP(sp, SLT_FetchError, "straight length field bogus");
 		return (-1);
@@ -240,7 +237,6 @@ fetch_chunked(struct sess *sp, struct http_conn *htc)
 	unsigned u;
 	ssize_t cl;
 
-	sp->wrk->vfp->begin(sp, 0);
 	assert(sp->wrk->body_status == BS_CHUNKED);
 	do {
 		/* Skip leading whitespace */
@@ -308,7 +304,6 @@ fetch_eof(struct sess *sp, struct http_conn *htc)
 	int i;
 
 	assert(sp->wrk->body_status == BS_EOF);
-	sp->wrk->vfp->begin(sp, 0);
 	i = sp->wrk->vfp->bytes(sp, htc, SSIZE_MAX);
 	if (i < 0) {
 		WSP(sp, SLT_FetchError, "eof read_error: %d (%s)",
@@ -484,6 +479,7 @@ FetchBody(struct sess *sp)
 	struct storage *st;
 	struct worker *w;
 	int mklen;
+	ssize_t cl;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
@@ -499,6 +495,9 @@ FetchBody(struct sess *sp)
 
 	AZ(w->vgz_rx);
 	AZ(VTAILQ_FIRST(&sp->obj->store));
+
+	/* XXX: pick up estimate from objdr ? */
+	cl = 0;
 	switch (w->body_status) {
 	case BS_NONE:
 		cls = 0;
@@ -509,20 +508,26 @@ FetchBody(struct sess *sp)
 		mklen = 1;
 		break;
 	case BS_LENGTH:
-		cls = fetch_straight(sp, w->htc,
-		    w->h_content_length);
+		cl = fetch_number(sp->wrk->h_content_length, 10);
+		w->vfp->begin(sp, cl > 0 ? cl : 0);
+		cls = fetch_straight(sp, w->htc, cl);
 		mklen = 1;
-		XXXAZ(w->vfp->end(sp));
+		if (w->vfp->end(sp))
+			cls = -1;
 		break;
 	case BS_CHUNKED:
+		w->vfp->begin(sp, cl);
 		cls = fetch_chunked(sp, w->htc);
 		mklen = 1;
-		XXXAZ(w->vfp->end(sp));
+		if (w->vfp->end(sp))
+			cls = -1;
 		break;
 	case BS_EOF:
+		w->vfp->begin(sp, cl);
 		cls = fetch_eof(sp, w->htc);
 		mklen = 1;
-		XXXAZ(w->vfp->end(sp));
+		if (w->vfp->end(sp))
+			cls = -1;
 		break;
 	case BS_ERROR:
 		cls = 1;
