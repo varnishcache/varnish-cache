@@ -52,7 +52,7 @@ static unsigned fetchfrag;
  */
 
 int
-FetchError2(struct sess *sp, const char *error, const char *more)
+FetchError2(const struct sess *sp, const char *error, const char *more)
 {
 	struct worker *w;
 
@@ -71,7 +71,7 @@ FetchError2(struct sess *sp, const char *error, const char *more)
 }
 
 int
-FetchError(struct sess *sp, const char *error)
+FetchError(const struct sess *sp, const char *error)
 {
 	return(FetchError2(sp, error, NULL));
 }
@@ -125,15 +125,13 @@ vfp_nop_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	while (bytes > 0) {
 		st = FetchStorage(sp, 0);
 		if (st == NULL)
-			return(FetchError(sp, "Could not get storage"));
+			return(-1);
 		l = st->space - st->len;
 		if (l > bytes)
 			l = bytes;
-		w = HTC_Read(htc, st->ptr + st->len, l);
-		if (w < 0)
-			return(FetchError(sp, htc->error));
-		if (w == 0)
-			return (w);
+		w = HTC_Read(sp->wrk, htc, st->ptr + st->len, l);
+		if (w <= 0)
+			return(w);
 		st->len += w;
 		sp->obj->len += w;
 		bytes -= w;
@@ -178,7 +176,8 @@ static struct vfp vfp_nop = {
 };
 
 /*--------------------------------------------------------------------
- * Fetch Storage
+ * Fetch Storage to put object into.
+ *
  */
 
 struct storage *
@@ -198,7 +197,7 @@ FetchStorage(const struct sess *sp, ssize_t sz)
 		l = params->fetch_chunksize * 1024LL;
 	st = STV_alloc(sp, l);
 	if (st == NULL) {
-		errno = ENOMEM;
+		(void)FetchError(sp, "Could not get storage");
 		return (NULL);
 	}
 	AZ(st->len);
@@ -250,17 +249,11 @@ fetch_straight(struct sess *sp, struct http_conn *htc, ssize_t cl)
 	return (0);
 }
 
-/*--------------------------------------------------------------------*/
-/* XXX: Cleanup.  It must be possible somehow :-( */
-
-#define CERR() do {						\
-		if (i != 1) {					\
-			WSP(sp, SLT_FetchError,			\
-			    "chunked read_error: %d (%s)",	\
-			    errno, htc->error);			\
-			return (-1);				\
-		}						\
-	} while (0)
+/*--------------------------------------------------------------------
+ * Read a chunked HTTP object.
+ * XXX: Reading one byte at a time is pretty pessimal.
+ */
+ 
 
 static int
 fetch_chunked(struct sess *sp, struct http_conn *htc)
@@ -274,15 +267,17 @@ fetch_chunked(struct sess *sp, struct http_conn *htc)
 	do {
 		/* Skip leading whitespace */
 		do {
-			i = HTC_Read(htc, buf, 1);
-			CERR();
+			i = HTC_Read(sp->wrk, htc, buf, 1);
+			if (i <= 0)
+				return (i);
 		} while (vct_islws(buf[0]));
 
 		/* Collect hex digits, skipping leading zeros */
 		for (u = 1; u < sizeof buf; u++) {
 			do {
-				i = HTC_Read(htc, buf + u, 1);
-				CERR();
+				i = HTC_Read(sp->wrk, htc, buf + u, 1);
+				if (i <= 0)
+					return (i);
 			} while (u == 1 && buf[0] == '0' && buf[u] == '0');
 			if (!vct_ishex(buf[u]))
 				break;
@@ -294,8 +289,9 @@ fetch_chunked(struct sess *sp, struct http_conn *htc)
 
 		/* Skip trailing white space */
 		while(vct_islws(buf[u]) && buf[u] != '\n') {
-			i = HTC_Read(htc, buf + u, 1);
-			CERR();
+			i = HTC_Read(sp->wrk, htc, buf + u, 1);
+			if (i <= 0)
+				return (i);
 		}
 
 		if (buf[u] != '\n') {
@@ -308,13 +304,16 @@ fetch_chunked(struct sess *sp, struct http_conn *htc)
 			return (FetchError(sp,"chunked header number syntax"));
 		} else if (cl > 0) {
 			i = sp->wrk->vfp->bytes(sp, htc, cl);
-			CERR();
+			if (i <= 0)
+				return (-1);
 		}
-		i = HTC_Read(htc, buf, 1);
-		CERR();
+		i = HTC_Read(sp->wrk, htc, buf, 1);
+		if (i <= 0)
+			return (-1);
 		if (buf[0] == '\r') {
-			i = HTC_Read(htc, buf, 1);
-			CERR();
+			i = HTC_Read(sp->wrk, htc, buf, 1);
+			if (i <= 0)
+				return (-1);
 		}
 		if (buf[0] != '\n')
 			return (FetchError(sp,"chunked tail no NL"));
@@ -362,7 +361,7 @@ FetchReqBody(struct sess *sp)
 				rdcnt = sizeof buf;
 			else
 				rdcnt = content_length;
-			rdcnt = HTC_Read(sp->htc, buf, rdcnt);
+			rdcnt = HTC_Read(sp->wrk, sp->htc, buf, rdcnt);
 			if (rdcnt <= 0)
 				return (1);
 			content_length -= rdcnt;
@@ -463,7 +462,7 @@ FetchHdr(struct sess *sp)
 
 	if (i < 0) {
 		WSP(sp, SLT_FetchError, "http first read error: %d %d (%s)",
-		    i, errno, w->htc->error);
+		    i, errno, strerror(errno));
 		VDI_CloseFd(sp);
 		/* XXX: other cleanup ? */
 		/* Retryable if we never received anything */
@@ -477,7 +476,7 @@ FetchHdr(struct sess *sp)
 		if (i < 0) {
 			WSP(sp, SLT_FetchError,
 			    "http first read error: %d %d (%s)",
-			    i, errno, w->htc->error);
+			    i, errno, strerror(errno));
 			VDI_CloseFd(sp);
 			/* XXX: other cleanup ? */
 			return (-1);

@@ -46,7 +46,8 @@
  */
 
 static ssize_t
-vef_read(struct http_conn *htc, void *buf, ssize_t buflen, ssize_t bytes)
+vef_read(struct worker *w, struct http_conn *htc, void *buf, ssize_t buflen,
+    ssize_t bytes)
 {
 	ssize_t d;
 
@@ -57,7 +58,7 @@ vef_read(struct http_conn *htc, void *buf, ssize_t buflen, ssize_t bytes)
 		if (d < bytes)
 			bytes = d;
 	}
-	return (HTC_Read(htc, buf, bytes));
+	return (HTC_Read(w, htc, buf, bytes));
 }
 
 /*---------------------------------------------------------------------
@@ -76,7 +77,7 @@ vfp_esi_bytes_uu(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 		st = FetchStorage(sp, 0);
 		if (st == NULL)
 			return (-1);
-		w = vef_read(htc,
+		w = vef_read(sp->wrk, htc,
 		    st->ptr + st->len, st->space - st->len, bytes);
 		if (w <= 0)
 			return (w);
@@ -107,14 +108,14 @@ vfp_esi_bytes_gu(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 
 	while (bytes > 0) {
 		if (VGZ_IbufEmpty(vg) && bytes > 0) {
-			w = vef_read(htc, ibuf, sizeof ibuf, bytes);
+			w = vef_read(sp->wrk, htc, ibuf, sizeof ibuf, bytes);
 			if (w <= 0)
 				return (w);
 			VGZ_Ibuf(vg, ibuf, w);
 			bytes -= w;
 		}
 		if (VGZ_ObufStorage(sp, vg))
-			return(FetchError(sp, "Could not get storage"));
+			return(-1);
 		i = VGZ_Gunzip(vg, &dp, &dl);
 		xxxassert(i == VGZ_OK || i == VGZ_END);
 		VEP_parse(sp, dp, dl);
@@ -182,7 +183,7 @@ vfp_vep_callback(const struct sess *sp, ssize_t l, enum vgz_flag flg)
 		}
 		do {
 			if (VGZ_ObufStorage(sp, vef->vgz)) {
-				vef->error = errno;
+				vef->error = ENOMEM;
 				vef->tot += l;
 				return (vef->tot);
 			}
@@ -216,7 +217,7 @@ vfp_esi_bytes_ug(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 
 	while (bytes > 0) {
-		w = vef_read(htc, ibuf, sizeof ibuf, bytes);
+		w = vef_read(sp->wrk, htc, ibuf, sizeof ibuf, bytes);
 		if (w <= 0)
 			return (w);
 		bytes -= w;
@@ -259,7 +260,7 @@ vfp_esi_bytes_gg(struct sess *sp, struct http_conn *htc, size_t bytes)
 	ibuf2[0] = 0; /* For Flexelint */
 
 	while (bytes > 0) {
-		w = vef_read(htc, ibuf, sizeof ibuf, bytes);
+		w = vef_read(sp->wrk, htc, ibuf, sizeof ibuf, bytes);
 		if (w <= 0)
 			return (w);
 		bytes -= w;
@@ -336,6 +337,7 @@ vfp_esi_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AZ(sp->wrk->fetch_failed);
 	AN(sp->wrk->vep);
+	assert(sp->wrk->htc == htc);
 	if (sp->wrk->is_gzip && sp->wrk->do_gunzip)
 		i = vfp_esi_bytes_gu(sp, htc, bytes);
 	else if (sp->wrk->is_gunzip && sp->wrk->do_gzip)

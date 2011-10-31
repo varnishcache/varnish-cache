@@ -203,7 +203,6 @@ struct http_conn {
 	struct ws		*ws;
 	txt			rxbuf;
 	txt			pipeline;
-	const char		*error;
 };
 
 /*--------------------------------------------------------------------*/
@@ -719,8 +718,8 @@ int EXP_NukeOne(struct worker *w, struct lru *lru);
 
 /* cache_fetch.c */
 struct storage *FetchStorage(const struct sess *sp, ssize_t sz);
-int FetchError(struct sess *sp, const char *error);
-int FetchError2(struct sess *sp, const char *error, const char *more);
+int FetchError(const struct sess *sp, const char *error);
+int FetchError2(const struct sess *sp, const char *error, const char *more);
 int FetchHdr(struct sess *sp);
 int FetchBody(struct sess *sp);
 int FetchReqBody(struct sess *sp);
@@ -798,7 +797,7 @@ void HTC_Init(struct http_conn *htc, struct ws *ws, int fd, unsigned maxbytes,
     unsigned maxhdr);
 int HTC_Reinit(struct http_conn *htc);
 int HTC_Rx(struct http_conn *htc);
-ssize_t HTC_Read(struct http_conn *htc, void *d, size_t len);
+ssize_t HTC_Read(struct worker *w, struct http_conn *htc, void *d, size_t len);
 int HTC_Complete(struct http_conn *htc);
 
 #define HTTPH(a, b, c, d, e, f, g) extern char b[];
