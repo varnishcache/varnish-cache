@@ -727,7 +727,6 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 		case '{': {
 			const char *h, *tmp;
 			char fname[100], type;
-
 			tmp = p;
 			type = 0;
 			while (*tmp != '\0' && *tmp != '}')
