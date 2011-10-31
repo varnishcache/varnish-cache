@@ -54,6 +54,8 @@ The following options are available:
 
             %h %l %u %t "%r" %s %b "%{Referer}i" "%{User-agent}i"
 
+	    Escape sequences \\n and \\t are supported.
+
 	    Supported formatters are:
 
 	      %b 
@@ -116,6 +118,10 @@ The following options are available:
 		   Varnish:handling
 		     How the request was handled, whether it was a
 		     cache hit, miss, pass, pipe or error.
+	
+		   VCL_Log:key
+		     Output value set by std.log("key=value") in VCL.
+		     
 
 -m tag:regex only list records where tag matches regex. Multiple
             -m options are AND-ed together.
