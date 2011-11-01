@@ -1,0 +1,33 @@
+varnishtest "Test VCL regsuball()"
+
+server s1 {
+	rxreq 
+	txresp \
+		-hdr "foo: barbar" \
+		-hdr "bar: bbbar"
+} -start
+
+varnish v1 -vcl+backend { 
+	sub vcl_fetch {
+		set beresp.http.baz1 = regsuball(beresp.http.foo, "barb", "zz");
+		set beresp.http.baz2 = regsuball(beresp.http.foo, "ar", "zz");
+		set beresp.http.baz3 = regsuball(beresp.http.foo, "^", "baz");
+		set beresp.http.baz4 = regsuball(beresp.http.foo, "^[;]*", "baz");
+		set beresp.http.baz5 = regsuball(beresp.http.bar, "^b*", "b");
+		set beresp.http.baz6 = regsuball(beresp.http.foo, "^b*", "z");
+		set beresp.http.baz7 = regsuball(beresp.http.foo, "ping", "pong");
+	}
+} -start 
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.baz1 == "zzar"
+	expect resp.http.baz2 == "bzzbzz"
+	expect resp.http.baz3 == "bazbarbar"
+	expect resp.http.baz4 == "bazbarbar"
+	expect resp.http.baz5 == "bar"
+	expect resp.http.baz6 == "zarbar"
+	expect resp.http.baz7 == "barbar"
+} -run
