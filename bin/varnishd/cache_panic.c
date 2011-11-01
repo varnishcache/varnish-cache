@@ -96,7 +96,7 @@ pan_vbc(const struct vbc *vbc)
 	be = vbc->backend;
 
 	VSB_printf(vsp, "  backend = %p fd = %d {\n", be, vbc->fd);
-	VSB_printf(vsp, "    vcl_name = \"%s\",\n", be->vcl_name);
+	VSB_printf(vsp, "    display_name = \"%s\",\n", be->display_name);
 	VSB_printf(vsp, "  },\n");
 }
 

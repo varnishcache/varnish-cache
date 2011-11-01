@@ -50,7 +50,7 @@ VDI_CloseFd(struct worker *wrk)
 
 	bp = wrk->vbc->backend;
 
-	WSL(wrk, SLT_BackendClose, wrk->vbc->vsl_id, "%s", bp->vcl_name);
+	WSL(wrk, SLT_BackendClose, wrk->vbc->vsl_id, "%s", bp->display_name);
 
 	/* Checkpoint log to flush all info related to this connection
 	   before the OS reuses the FD */
@@ -78,7 +78,7 @@ VDI_RecycleFd(struct worker *wrk)
 
 	bp = wrk->vbc->backend;
 
-	WSL(wrk, SLT_BackendReuse, wrk->vbc->vsl_id, "%s", bp->vcl_name);
+	WSL(wrk, SLT_BackendReuse, wrk->vbc->vsl_id, "%s", bp->display_name);
 	/*
 	 * Flush the shmlog, so that another session reusing this backend
 	 * will log chronologically later than our use of it.

@@ -213,6 +213,7 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	 * so we cannot simply reference the VCL's copy of things.
 	 */
 	REPLACE(b->vcl_name, vb->vcl_name);
+	REPLACE(b->display_name, buf);
 	REPLACE(b->ipv4_addr, vb->ipv4_addr);
 	REPLACE(b->ipv6_addr, vb->ipv6_addr);
 	REPLACE(b->port, vb->port);
@@ -283,9 +284,9 @@ cli_debug_backend(struct cli *cli, const char * const *av, void *priv)
 	ASSERT_CLI();
 	VTAILQ_FOREACH(b, &backends, list) {
 		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-		VCLI_Out(cli, "%p %s(%s,%s,:%s) %d %d\n",
-		    b, b->vcl_name, b->ipv4_addr, b->ipv6_addr, b->port,
-		    b->refcount, b->n_conn);
+		VCLI_Out(cli, "%p %s %d %d\n",
+			 b, b->display_name,
+			 b->refcount, b->n_conn);
 	}
 }
 

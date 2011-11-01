@@ -143,8 +143,8 @@ bes_conn_try(const struct sess *sp, struct vbc *vc, const struct vdi_simple *vs)
 {
 	int s;
 	struct backend *bp = vs->backend;
-	char abuf1[VTCP_ADDRBUFSIZE], abuf2[VTCP_ADDRBUFSIZE];
-	char pbuf1[VTCP_PORTBUFSIZE], pbuf2[VTCP_PORTBUFSIZE];
+	char abuf1[VTCP_ADDRBUFSIZE];
+	char pbuf1[VTCP_PORTBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
 
@@ -185,10 +185,8 @@ bes_conn_try(const struct sess *sp, struct vbc *vc, const struct vdi_simple *vs)
 	} else {
 		vc->vsl_id = s | VSL_BACKENDMARKER;
 		VTCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-		VTCP_name(vc->addr, vc->addrlen,
-		    abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
-		WSL(sp->wrk, SLT_BackendOpen, vc->vsl_id, "%s %s %s %s %s",
-		    vs->backend->vcl_name, abuf1, pbuf1, abuf2, pbuf2);
+		WSL(sp->wrk, SLT_BackendOpen, vc->vsl_id, "%s %s %s ",
+		    vs->backend->display_name, abuf1, pbuf1);
 	}
 
 }
@@ -347,13 +345,13 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 			/* XXX locking of stats */
 			VSC_C_main->backend_reuse += 1;
 			WSP(sp, SLT_Backend, "%d %s %s",
-			    vc->fd, sp->director->vcl_name, bp->vcl_name);
+			    vc->fd, sp->director->vcl_name, bp->display_name);
 			vc->vdis = vs;
 			vc->recycled = 1;
 			return (vc);
 		}
 		VSC_C_main->backend_toolate++;
-		WSL(sp->wrk, SLT_BackendClose, vc->vsl_id, "%s", bp->vcl_name);
+		WSL(sp->wrk, SLT_BackendClose, vc->vsl_id, "%s", bp->display_name);
 
 		/* Checkpoint log to flush all info related to this connection
 		   before the OS reuses the FD */
@@ -388,7 +386,7 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 	vc->backend = bp;
 	VSC_C_main->backend_conn++;
 	WSP(sp, SLT_Backend, "%d %s %s",
-	    vc->fd, sp->director->vcl_name, bp->vcl_name);
+	    vc->fd, sp->director->vcl_name, bp->display_name);
 	vc->vdis = vs;
 	return (vc);
 }

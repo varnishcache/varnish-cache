@@ -115,6 +115,7 @@ struct backend {
 	struct lock		mtx;
 
 	char			*vcl_name;
+	char			*display_name;
 	char			*ipv4_addr;
 	char			*ipv6_addr;
 	char			*port;
