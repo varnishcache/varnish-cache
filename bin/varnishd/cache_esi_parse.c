@@ -801,7 +801,7 @@ VEP_parse(const struct sess *sp, const char *p, size_t l)
 				vep->state = VEP_ATTR;
 			} else if (p < e) {
 				vep_error(vep,
-				    "XML 1.0 Illegal attribute tart char");
+				    "XML 1.0 Illegal attribute start char");
 				vep->state = VEP_TAGERROR;
 			}
 		} else if (vep->state == VEP_TAGERROR) {

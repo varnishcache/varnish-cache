@@ -1,0 +1,34 @@
+varnishtest "#1029"
+
+server s1 {
+	rxreq
+	expect req.url == "/bar"
+	txresp -gzipbody {[bar]}
+
+	rxreq
+	expect req.url == "/foo"
+	txresp -body {<h1>FOO<esi:include src="/bar"/>BARF</h1>}
+
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		set beresp.do_esi = true;
+		if (req.url == "/foo") {
+			set beresp.ttl = 0s;
+		} else {
+			set beresp.ttl = 10m;
+		}
+	}
+} -start
+
+client c1 {
+	txreq -url "/bar" -hdr "Accept-Encoding: gzip"
+	rxresp
+	gunzip
+	expect resp.bodylen == 5
+
+	txreq -url "/foo" -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.bodylen == 21
+} -run
