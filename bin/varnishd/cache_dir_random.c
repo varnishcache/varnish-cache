@@ -91,7 +91,7 @@ vdi_random_sha(const char *input, ssize_t len)
 	SHA256_Init(&ctx);
 	SHA256_Update(&ctx, input, len);
 	SHA256_Final(sign, &ctx);
-	return (vle32dec(sign) / exp2(32));
+	return (scalbn(vle32dec(sign), -32));
 }
 
 /*
@@ -113,11 +113,11 @@ vdi_random_init_seed(const struct vdi_random *vs, const struct sess *sp)
 		break;
 	case c_hash:
 		AN(sp->digest);
-		retval = vle32dec(sp->digest) / exp2(32);
+		retval = scalbn(vle32dec(sp->digest), -32);
 		break;
 	case c_random:
 	default:
-		retval = random() / exp2(31);
+		retval = scalbn(random(), -31);
 		break;
 	}
 	return (retval);
