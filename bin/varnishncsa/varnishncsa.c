@@ -57,8 +57,6 @@
  * TODO:		- Maybe rotate/compress log
  */
 
-#define MAX_VCLLOG_KEYLENGTH 100
-
 #include "config.h"
 
 #include <ctype.h>
@@ -107,7 +105,6 @@ static struct logline {
 	uint64_t bitmap;		/* Bitmap for regex matches */
 	VTAILQ_HEAD(, hdr) req_headers; /* Request headers */
 	VTAILQ_HEAD(, hdr) resp_headers; /* Response headers */
-	VTAILQ_HEAD(, hdr) vcl_log;     /* VLC_Log entries */
 } **ll;
 
 struct VSM_data *vd;
@@ -219,22 +216,6 @@ resp_header(struct logline *l, const char *name)
 	return NULL;
 }
 
-static char *
-vcl_log(struct logline *l, const char *name)
-{
-	struct hdr *h;
-	VTAILQ_FOREACH(h, &l->vcl_log, list) {
-		if (strcasecmp(h->key, name) == 0) {
-			return h->value;
-			break;
-		}
-	}
-	return NULL;
-}
-
-
-
-
 static void
 clean_logline(struct logline *lp)
 {
@@ -261,14 +242,6 @@ clean_logline(struct logline *lp)
 		freez(h->value);
 		freez(h);
 	}
-	VTAILQ_FOREACH_SAFE(h, &lp->vcl_log, list, h2) {
-		VTAILQ_REMOVE(&lp->vcl_log, h, list);
-		freez(h->key);
-		freez(h->value);
-		freez(h);
-	}
-
-
 #undef freez
 	memset(lp, 0, sizeof *lp);
 }
@@ -488,26 +461,6 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 				VTAILQ_INSERT_HEAD(&lp->resp_headers, h, list);
 		}
 		break;
-
-	case SLT_VCL_Log:
-		if(!lp->active)
-			break;
-
-		split = strchr(ptr, ':');
-		if (split == NULL)
-			break;
-
-		struct hdr *h;
-		h = malloc(sizeof(struct hdr));
-		AN(h);
-		AN(split);
-
-		h->key = trimline(ptr, split);
-		h->value = trimline(split+1, end);
-
-		VTAILQ_INSERT_HEAD(&lp->vcl_log, h, list);
-		break;
-
 
 	case SLT_VCL_call:
 		if(!lp->active)
@@ -763,25 +716,8 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 					p = tmp;
 					break;
 				}
-			case 'L': {
-					char *delim;
-					char keyword[MAX_VCLLOG_KEYLENGTH];
-
-					// Extract "key" from fname
-					delim = strchr(fname, ':');
-					if (delim == NULL) {
-					    break;
-					}
-					strncpy(keyword, delim+1, MAX_VCLLOG_KEYLENGTH);
-					
-					h = vcl_log(lp, keyword); 
-					VSB_cat(os, h ? h : "-");
-					p = tmp;
-					break;
-				}
-
 			default:
-				fprintf(stderr, "Unknown extended format starting at: %s\n", --p);
+				fprintf(stderr, "Unknown format starting at: %s\n", --p);
 				exit(1);
 			}
 			break;
@@ -791,8 +727,8 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 		default:
 			fprintf(stderr, "Unknown format starting at: %s\n", --p);
 			exit(1);
-		} // switch
-	} // for 
+		}
+	}
 	VSB_putc(os, '\n');
 
 	/* flush the stream */
