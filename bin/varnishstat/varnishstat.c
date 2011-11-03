@@ -82,67 +82,12 @@ do_xml(struct VSM_data *vd)
 	printf("</varnishstat>\n");
 }
 
-
-/*--------------------------------------------------------------------*/
-
-struct json_priv {
-	int first;
-};
-
-static int
-do_json_cb(void *priv, const struct VSC_point * const pt)
-{
-	uint64_t val;
-	struct json_priv *jp;
-	jp = priv;
-
-	assert(!strcmp(pt->fmt, "uint64_t"));
-	val = *(const volatile uint64_t*)pt->ptr;
-
-	if (jp->first ) jp->first = 0; else printf(",\n");
-	printf("\t\"%s\": {", pt->name);
-	if (strcmp(pt->class, ""))
-		printf("\t\t\"type\": \"%s\",\n", pt->class);
-	if (strcmp(pt->ident, ""))
-		printf("\t\t\"ident\": \"%s\",\n", pt->ident);
-	printf("\"value\": %ju, ", val);
-
-	printf("\"flag\": \"%c\",", pt->flag);
-	printf("\"description\": \"%s\"", pt->desc);
-	printf("}"); // closes name section.
-	if (jp->first) printf("\n");
-	return (0);
-}
-
-static void
-do_json(struct VSM_data *vd)
-{
-	/// TODO: support jsonp?
-	char time_stamp[20];
-	time_t now;
-
-	struct json_priv jp;
-
-	memset(&jp, 0, sizeof jp);
-	jp.first = 1;
-
-	printf("{\n"); 
-	now = time(NULL);
-
-	(void)strftime(time_stamp, 20, "%Y-%m-%dT%H:%M:%S", localtime(&now));
-	printf("\t\"timestamp\": \"%s\",\n", time_stamp);
-	(void)VSC_Iter(vd, do_json_cb, &jp);
-	printf("\n}");
-}
-
-
 /*--------------------------------------------------------------------*/
 
 struct once_priv {
 	double	up;
 	int pad;
 };
-
 
 static int
 do_once_cb(void *priv, const struct VSC_point * const pt)
@@ -246,12 +191,12 @@ main(int argc, char * const *argv)
 	int c;
 	struct VSM_data *vd;
 	const struct VSC_C_main *VSC_C_main;
-	int delay = 1, once = 0, xml = 0, json = 0;
+	int delay = 1, once = 0, xml = 0;
 
 	vd = VSM_New();
 	VSC_Setup(vd);
 
-	while ((c = getopt(argc, argv, VSC_ARGS "1f:lVw:xj")) != -1) {
+	while ((c = getopt(argc, argv, VSC_ARGS "1f:lVw:x")) != -1) {
 		switch (c) {
 		case '1':
 			once = 1;
@@ -270,9 +215,6 @@ main(int argc, char * const *argv)
 		case 'x':
 			xml = 1;
 			break;
-		case 'j':
-			json = 1;
-			break;
 		default:
 			if (VSC_Arg(vd, c, optarg) > 0)
 				break;
@@ -287,8 +229,6 @@ main(int argc, char * const *argv)
 
 	if (xml)
 		do_xml(vd);
-	else if (json)
-		do_json(vd);
 	else if (once)
 		do_once(vd, VSC_C_main);
 	else
