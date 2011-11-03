@@ -28,21 +28,17 @@
 
 #include "config.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "vtc.h"
 
-#include "vsb.h"
-#include "vqueue.h"
-#include "miniobj.h"
 #include "vss.h"
-#include "libvarnish.h"
+#include "vtcp.h"
 
 struct client {
 	unsigned		magic;

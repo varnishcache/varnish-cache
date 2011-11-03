@@ -39,11 +39,10 @@
 #define	VEC_S8	(0x60 + 8)
 #define	VEC_INCL	'I'
 
-typedef ssize_t vep_callback_t(const struct sess *sp,
-    ssize_t l, enum vgz_flag flg);
+typedef ssize_t vep_callback_t(struct worker *w, ssize_t l, enum vgz_flag flg);
 
-void VEP_Init(const struct sess *sp, vep_callback_t *cb);
-void VEP_parse(const struct sess *sp, const char *p, size_t l);
-struct vsb *VEP_Finish(const struct sess *sp);
+void VEP_Init(struct worker *w, vep_callback_t *cb);
+void VEP_Parse(const struct worker *w, const char *p, size_t l);
+struct vsb *VEP_Finish(struct worker *w);
 
 

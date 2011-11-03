@@ -37,9 +37,16 @@
  * XXX: underlying file has been updated.
  */
 
+#include "config.h"
+
+#include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include "vrt.h"
+
 #include "../../bin/varnishd/cache.h"
+
+#include "vrt.h"
+#include "vfil.h"
 
 #include "vcc_if.h"
 
@@ -102,7 +109,7 @@ vmod_fileread(struct sess *sp, struct vmod_priv *priv, const char *file_name)
 		return (frf->contents);
 	}
 
-	s = vreadfile(NULL, file_name, NULL);
+	s = VFIL_readfile(NULL, file_name, NULL);
 	if (s != NULL) {
 		ALLOC_OBJ(frf, CACHED_FILE_MAGIC);
 		AN(frf);

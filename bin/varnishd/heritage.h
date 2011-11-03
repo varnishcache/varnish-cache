@@ -29,7 +29,7 @@
  * This file contains the heritage passed when mgt forks cache
  */
 
-#include <pthread.h>
+#include "vre.h"
 
 struct listen_sock {
 	unsigned			magic;
@@ -213,6 +213,8 @@ struct params {
 	double			critbit_cooloff;
 
 	double			shortlived;
+
+	struct vre_limits	vre_limits;
 };
 
 /*

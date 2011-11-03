@@ -31,14 +31,14 @@
 
 #include "config.h"
 
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
 #include <poll.h>
-#include <stdlib.h>
-#include <sys/socket.h>
+#include <stdio.h>
 
 #include "cache.h"
+
+#include "cache_backend.h"
+#include "vtcp.h"
+#include "vtim.h"
 
 static int
 rdf(int fd0, int fd1)
@@ -71,14 +71,15 @@ PipeSession(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	w = sp->wrk;
 
-	sp->vbc = VDI_GetFd(NULL, sp);
-	if (sp->vbc == NULL)
+	sp->wrk->vbc = VDI_GetFd(NULL, sp);
+	if (sp->wrk->vbc == NULL)
 		return;
-	vc = sp->vbc;
+	vc = sp->wrk->vbc;
 	(void)VTCP_blocking(vc->fd);
 
 	WRW_Reserve(w, &vc->fd);
-	sp->wrk->acct_tmp.hdrbytes += http_Write(w, sp->wrk->bereq, 0);
+	sp->wrk->acct_tmp.hdrbytes +=
+	    http_Write(w, sp->vsl_id, sp->wrk->bereq, 0);
 
 	if (sp->htc->pipeline.b != NULL)
 		sp->wrk->acct_tmp.bodybytes +=
@@ -88,11 +89,11 @@ PipeSession(struct sess *sp)
 
 	if (i) {
 		SES_Close(sp, "pipe");
-		VDI_CloseFd(sp);
+		VDI_CloseFd(sp->wrk);
 		return;
 	}
 
-	sp->t_resp = TIM_real();
+	sp->t_resp = VTIM_real();
 
 	memset(fds, 0, sizeof fds);
 
@@ -128,5 +129,5 @@ PipeSession(struct sess *sp)
 		}
 	}
 	SES_Close(sp, "pipe");
-	VDI_CloseFd(sp);
+	VDI_CloseFd(sp->wrk);
 }

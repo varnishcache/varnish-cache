@@ -29,24 +29,23 @@
 
 #include "config.h"
 
-#include <signal.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <pthread.h>
-
 #ifndef HAVE_EXECINFO_H
 #include "compat/execinfo.h"
 #else
 #include <execinfo.h>
 #endif
+
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "cache.h"
-#include "vsm.h"
+
+#include "vapi/vsm_int.h"
+
 #include "cache_backend.h"
-#include "cache_waiter.h"
-#include "vcl.h"
+#include "waiter/cache_waiter.h"
 #include "libvcl.h"
+#include "vcl.h"
 
 /*
  * The panic string is constructed in memory, then copied to the
@@ -97,7 +96,7 @@ pan_vbc(const struct vbc *vbc)
 	be = vbc->backend;
 
 	VSB_printf(vsp, "  backend = %p fd = %d {\n", be, vbc->fd);
-	VSB_printf(vsp, "    vcl_name = \"%s\",\n", be->vcl_name);
+	VSB_printf(vsp, "    display_name = \"%s\",\n", be->display_name);
 	VSB_printf(vsp, "  },\n");
 }
 
@@ -216,13 +215,14 @@ pan_sess(const struct sess *sp)
 
 	VSB_printf(vsp, "sp = %p {\n", sp);
 	VSB_printf(vsp,
-	    "  fd = %d, id = %d, xid = %u,\n", sp->fd, sp->id, sp->xid);
+	    "  fd = %d, id = %d, xid = %u,\n",
+	    sp->fd, sp->vsl_id & VSL_IDENTMASK, sp->xid);
 	VSB_printf(vsp, "  client = %s %s,\n",
 	    sp->addr ? sp->addr : "?.?.?.?",
 	    sp->port ? sp->port : "?");
 	switch (sp->step) {
 #define STEP(l, u) case STP_##u: stp = "STP_" #u; break;
-#include "steps.h"
+#include "tbl/steps.h"
 #undef STEP
 		default: stp = NULL;
 	}
@@ -263,8 +263,8 @@ pan_sess(const struct sess *sp)
 	if (VALID_OBJ(sp->vcl, VCL_CONF_MAGIC))
 		pan_vcl(sp->vcl);
 
-	if (VALID_OBJ(sp->vbc, BACKEND_MAGIC))
-		pan_vbc(sp->vbc);
+	if (VALID_OBJ(sp->wrk->vbc, BACKEND_MAGIC))
+		pan_vbc(sp->wrk->vbc);
 
 	if (VALID_OBJ(sp->obj, OBJECT_MAGIC))
 		pan_object(sp->obj);

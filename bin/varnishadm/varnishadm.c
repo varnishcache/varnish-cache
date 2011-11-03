@@ -29,22 +29,26 @@
 
 #include "config.h"
 
-#include <fcntl.h>
-#include <poll.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
 #include <sys/socket.h>
 
 #ifdef HAVE_LIBEDIT
+#include <stdio.h>
 #include <editline/readline.h>
 #endif
 
+#include <errno.h>
+#include <fcntl.h>
+#include <poll.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include "vapi/vsl.h"
+#include "vapi/vsm.h"
+#include "vas.h"
 #include "vcli.h"
-#include "cli_common.h"
-#include "libvarnish.h"
-#include "varnishapi.h"
 #include "vss.h"
 
 #ifdef HAVE_LIBEDIT
@@ -135,7 +139,6 @@ cli_sock(const char *T_arg, const char *S_arg)
 	}
 	free(answer);
 
-	fprintf(stderr, "CLI connected to %s\n", T_arg);
 	return (sock);
 }
 

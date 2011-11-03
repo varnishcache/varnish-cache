@@ -32,14 +32,7 @@
 
 #include "config.h"
 
-#include <stdio.h>
-#include <string.h>
-
-#include "vsb.h"
-
-#include "vcc_priv.h"
 #include "vcc_compile.h"
-#include "libvarnish.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -271,7 +264,7 @@ parse_return(struct vcc *tl)
 			retval = 1;					\
 		}							\
 	} while (0);
-#include "vcl_returns.h"
+#include "tbl/vcl_returns.h"
 #undef VCL_RET_MAC
 	if (!retval) {
 		VSB_printf(tl->sb, "Expected return action name.\n");
@@ -327,12 +320,12 @@ static struct action_table {
 } action_table[] = {
 	{ "error",		parse_error,
 	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH |
-            VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH | VCL_MET_DELIVER
+            VCL_MET_MISS | VCL_MET_HIT | VCL_MET_FETCH
 	},
 
 #define VCL_RET_MAC(l, U, B)						\
 	{ #l,			parse_new_syntax },
-#include "vcl_returns.h"
+#include "tbl/vcl_returns.h"
 #undef VCL_RET_MAC
 
 	/* Keep list sorted from here */

@@ -34,8 +34,11 @@
  */
 #define VARNISH_CACHE_CHILD	1
 
-#include <sys/time.h>
-#include <sys/uio.h>
+#include "common.h"
+
+#include "vapi/vsc_int.h"
+#include "vapi/vsl_int.h"
+
 #include <sys/socket.h>
 
 #include <pthread.h>
@@ -43,7 +46,6 @@
 #include <pthread_np.h>
 #endif
 #include <stdarg.h>
-#include <stdint.h>
 #include <string.h>
 #include <limits.h>
 #include <unistd.h>
@@ -52,22 +54,12 @@
 #include <sys/epoll.h>
 #endif
 
-#include "vqueue.h"
 
-#include "vsb.h"
-
-#include "libvarnish.h"
-
-#include "common.h"
 #include "heritage.h"
-#include "miniobj.h"
-
-#include "vsc.h"
-#include "vsl.h"
 
 enum body_status {
 #define BODYSTATUS(U,l)	BS_##U,
-#include "body_status.h"
+#include "tbl/body_status.h"
 #undef BODYSTATUS
 };
 
@@ -76,7 +68,7 @@ body_status(enum body_status e)
 {
 	switch(e) {
 #define BODYSTATUS(U,l)	case BS_##U: return (#l);
-#include "body_status.h"
+#include "tbl/body_status.h"
 #undef BODYSTATUS
 	default:
 		return ("?");
@@ -99,24 +91,26 @@ enum {
 	HTTP_HDR_FIRST,
 };
 
-struct cli;
-struct vsb;
-struct sess;
-struct director;
-struct object;
-struct objhead;
-struct objcore;
-struct busyobj;
-struct storage;
-struct sesspool;
-struct vrt_backend;
-struct cli_proto;
-struct ban;
 struct SHA256Context;
 struct VSC_C_lck;
-struct waitinglist;
-struct vef_priv;
+struct ban;
+struct busyobj;
+struct cli;
+struct cli_proto;
+struct director;
+struct iovec;
+struct objcore;
+struct object;
+struct objhead;
 struct pool;
+struct sess;
+struct sesspool;
+struct vbc;
+struct vef_priv;
+struct vrt_backend;
+struct vsb;
+struct waitinglist;
+struct worker;
 
 #define DIGEST_LEN		32
 
@@ -143,7 +137,7 @@ typedef struct {
 
 enum step {
 #define STEP(l, u)	STP_##u,
-#include "steps.h"
+#include "tbl/steps.h"
 #undef STEP
 };
 
@@ -199,12 +193,12 @@ struct http_conn {
 #define HTTP_CONN_MAGIC		0x3e19edd1
 
 	int			fd;
+	unsigned		vsl_id;
 	unsigned		maxbytes;
 	unsigned		maxhdr;
 	struct ws		*ws;
 	txt			rxbuf;
 	txt			pipeline;
-	const char		*error;
 };
 
 /*--------------------------------------------------------------------*/
@@ -212,7 +206,7 @@ struct http_conn {
 struct acct {
 	double			first;
 #define ACCT(foo)	uint64_t	foo;
-#include "acct_fields.h"
+#include "tbl/acct_fields.h"
 #undef ACCT
 };
 
@@ -223,7 +217,7 @@ struct acct {
 #define VSC_F(n, t, l, f, e,d)	L##l(t, n)
 #define VSC_DO_MAIN
 struct dstat {
-#include "vsc_fields.h"
+#include "tbl/vsc_fields.h"
 };
 #undef VSC_F
 #undef VSC_DO_MAIN
@@ -232,9 +226,9 @@ struct dstat {
 
 /* Fetch processors --------------------------------------------------*/
 
-typedef void vfp_begin_f(struct sess *, size_t );
-typedef int vfp_bytes_f(struct sess *, struct http_conn *, ssize_t);
-typedef int vfp_end_f(struct sess *sp);
+typedef void vfp_begin_f(struct worker *, size_t );
+typedef int vfp_bytes_f(struct worker *, struct http_conn *, ssize_t);
+typedef int vfp_end_f(struct worker *);
 
 struct vfp {
 	vfp_begin_f	*begin;
@@ -261,7 +255,7 @@ struct exp {
 
 struct wrw {
 	int			*wfd;
-	unsigned		werr;	/* valid after WRK_Flush() */
+	unsigned		werr;	/* valid after WRW_Flush() */
 	struct iovec		*iov;
 	unsigned		siov;
 	unsigned		niov;
@@ -344,10 +338,13 @@ struct worker {
 	const char		*storage_hint;
 
 	/* Fetch stuff */
+	struct vbc		*vbc;
+	struct object		*fetch_obj;
 	enum body_status	body_status;
 	struct vfp		*vfp;
 	struct vgz		*vgz_rx;
 	struct vef_priv		*vef_priv;
+	unsigned		fetch_failed;
 	unsigned		do_stream;
 	unsigned		do_esi;
 	unsigned		do_gzip;
@@ -382,6 +379,15 @@ struct worker {
 
 	/* Temporary accounting */
 	struct acct		acct_tmp;
+};
+
+/* LRU ---------------------------------------------------------------*/
+
+struct lru {
+	unsigned		magic;
+#define LRU_MAGIC		0x3fec7bb0
+	VTAILQ_HEAD(,objcore)	lru_head;
+	struct lock		mtx;
 };
 
 /* Storage -----------------------------------------------------------*/
@@ -542,7 +548,7 @@ struct sess {
 	unsigned		magic;
 #define SESS_MAGIC		0x2c2f9c5a
 	int			fd;
-	int			id;
+	unsigned		vsl_id;
 	unsigned		xid;
 
 	int			restarts;
@@ -603,7 +609,6 @@ struct sess {
 	VTAILQ_ENTRY(sess)	list;
 
 	struct director		*director;
-	struct vbc		*vbc;
 	struct object		*obj;
 	struct objcore		*objcore;
 	struct VCL_conf		*vcl;
@@ -623,27 +628,6 @@ struct sess {
 #endif
 };
 
-/* -------------------------------------------------------------------*/
-
-/* Backend connection */
-struct vbc {
-	unsigned		magic;
-#define VBC_MAGIC		0x0c5e6592
-	VTAILQ_ENTRY(vbc)	list;
-	struct backend		*backend;
-	struct vdi_simple	*vdis;
-	int			fd;
-
-	struct sockaddr_storage	*addr;
-	socklen_t		addrlen;
-
-	uint8_t			recycled;
-
-	/* Timeouts */
-	double			first_byte_timeout;
-	double			between_bytes_timeout;
-};
-
 /* Prototypes etc ----------------------------------------------------*/
 
 /* cache_acceptor.c */
@@ -659,8 +643,8 @@ void VBE_UseHealth(const struct director *vdi);
 
 struct vbc *VDI_GetFd(const struct director *, struct sess *sp);
 int VDI_Healthy(const struct director *, const struct sess *sp);
-void VDI_CloseFd(struct sess *sp);
-void VDI_RecycleFd(struct sess *sp);
+void VDI_CloseFd(struct worker *wrk);
+void VDI_RecycleFd(struct worker *wrk);
 void VDI_AddHostHeader(const struct sess *sp);
 void VBE_Poll(void);
 
@@ -715,12 +699,14 @@ void EXP_Inject(struct objcore *oc, struct lru *lru, double when);
 void EXP_Init(void);
 void EXP_Rearm(const struct object *o);
 int EXP_Touch(struct objcore *oc);
-int EXP_NukeOne(const struct sess *sp, struct lru *lru);
+int EXP_NukeOne(struct worker *w, struct lru *lru);
 
 /* cache_fetch.c */
-struct storage *FetchStorage(const struct sess *sp, ssize_t sz);
+struct storage *FetchStorage(struct worker *w, ssize_t sz);
+int FetchError(struct worker *w, const char *error);
+int FetchError2(struct worker *w, const char *error, const char *more);
 int FetchHdr(struct sess *sp);
-int FetchBody(struct sess *sp);
+int FetchBody(struct worker *w, struct object *obj);
 int FetchReqBody(struct sess *sp);
 void Fetch_Init(void);
 
@@ -728,18 +714,18 @@ void Fetch_Init(void);
 struct vgz;
 
 enum vgz_flag { VGZ_NORMAL, VGZ_ALIGN, VGZ_RESET, VGZ_FINISH };
-struct vgz *VGZ_NewUngzip(struct sess *sp, const char *id);
-struct vgz *VGZ_NewGzip(struct sess *sp, const char *id);
+struct vgz *VGZ_NewUngzip(struct worker *wrk, const char *id);
+struct vgz *VGZ_NewGzip(struct worker *wrk, const char *id);
 void VGZ_Ibuf(struct vgz *, const void *, ssize_t len);
 int VGZ_IbufEmpty(const struct vgz *vg);
 void VGZ_Obuf(struct vgz *, void *, ssize_t len);
 int VGZ_ObufFull(const struct vgz *vg);
-int VGZ_ObufStorage(const struct sess *sp, struct vgz *vg);
+int VGZ_ObufStorage(struct worker *w, struct vgz *vg);
 int VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
 int VGZ_Gunzip(struct vgz *, const void **, size_t *len);
-void VGZ_Destroy(struct vgz **);
+int VGZ_Destroy(struct vgz **, int vsl_id);
 void VGZ_UpdateObj(const struct vgz*, struct object *);
-int VGZ_WrwGunzip(const struct sess *, struct vgz *, const void *ibuf,
+int VGZ_WrwGunzip(struct worker *w, struct vgz *, const void *ibuf,
     ssize_t ibufl, char *obuf, ssize_t obufl, ssize_t *obufp);
 
 /* Return values */
@@ -756,21 +742,23 @@ const char *http_StatusMessage(unsigned);
 unsigned http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd);
 void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
-unsigned http_Write(struct worker *w, const struct http *hp, int resp);
+unsigned http_Write(struct worker *w, unsigned vsl_id, const struct http *hp,
+    int resp);
 void http_CopyResp(struct http *to, const struct http *fm);
 void http_SetResp(struct http *to, const char *proto, uint16_t status,
     const char *response);
-void http_FilterFields(struct worker *w, int fd, struct http *to,
+void http_FilterFields(struct worker *w, unsigned vsl_id, struct http *to,
     const struct http *fm, unsigned how);
 void http_FilterHeader(const struct sess *sp, unsigned how);
-void http_PutProtocol(struct worker *w, int fd, const struct http *to,
+void http_PutProtocol(struct worker *w, unsigned vsl_id, const struct http *to,
     const char *protocol);
 void http_PutStatus(struct http *to, uint16_t status);
-void http_PutResponse(struct worker *w, int fd, const struct http *to,
+void http_PutResponse(struct worker *w, unsigned vsl_id, const struct http *to,
     const char *response);
-void http_PrintfHeader(struct worker *w, int fd, struct http *to,
+void http_PrintfHeader(struct worker *w, unsigned vsl_id, struct http *to,
     const char *fmt, ...);
-void http_SetHeader(struct worker *w, int fd, struct http *to, const char *hdr);
+void http_SetHeader(struct worker *w, unsigned vsl_id, struct http *to,
+    const char *hdr);
 void http_SetH(const struct http *to, unsigned n, const char *fm);
 void http_ForceGet(const struct http *to);
 void http_Setup(struct http *ht, struct ws *ws);
@@ -787,20 +775,20 @@ uint16_t http_DissectRequest(struct sess *sp);
 uint16_t http_DissectResponse(struct worker *w, const struct http_conn *htc,
     struct http *sp);
 const char *http_DoConnection(const struct http *hp);
-void http_CopyHome(struct worker *w, int fd, const struct http *hp);
+void http_CopyHome(struct worker *w, unsigned vsl_id, const struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
 void http_CollectHdr(struct http *hp, const char *hdr);
 
 /* cache_httpconn.c */
-void HTC_Init(struct http_conn *htc, struct ws *ws, int fd, unsigned maxbytes,
-    unsigned maxhdr);
+void HTC_Init(struct http_conn *htc, struct ws *ws, int fd, unsigned vsl_id,
+    unsigned maxbytes, unsigned maxhdr);
 int HTC_Reinit(struct http_conn *htc);
 int HTC_Rx(struct http_conn *htc);
-ssize_t HTC_Read(struct http_conn *htc, void *d, size_t len);
+ssize_t HTC_Read(struct worker *w, struct http_conn *htc, void *d, size_t len);
 int HTC_Complete(struct http_conn *htc);
 
 #define HTTPH(a, b, c, d, e, f, g) extern char b[];
-#include "http_headers.h"
+#include "tbl/http_headers.h"
 #undef HTTPH
 
 /* cache_main.c */
@@ -830,7 +818,7 @@ int Lck_CondWait(pthread_cond_t *cond, struct lock *lck, struct timespec *ts);
 #define Lck_AssertHeld(a) Lck__Assert(a, 1)
 
 #define LOCK(nam) extern struct VSC_C_lck *lck_##nam;
-#include "locks.h"
+#include "tbl/locks.h"
 #undef LOCK
 
 /* cache_panic.c */
@@ -878,6 +866,8 @@ void VSM_Free(const void *ptr);
 void VSL(enum VSL_tag_e tag, int id, const char *fmt, ...);
 void WSLR(struct worker *w, enum VSL_tag_e tag, int id, txt t);
 void WSL(struct worker *w, enum VSL_tag_e tag, int id, const char *fmt, ...);
+void WSLB(struct worker *w, enum VSL_tag_e tag, const char *fmt, ...);
+
 void WSL_Flush(struct worker *w, int overflow);
 
 #define DSL(flag, tag, id, ...)					\
@@ -887,10 +877,10 @@ void WSL_Flush(struct worker *w, int overflow);
 	} while (0)
 
 #define WSP(sess, tag, ...)					\
-	WSL((sess)->wrk, tag, (sess)->fd, __VA_ARGS__)
+	WSL((sess)->wrk, tag, (sess)->vsl_id, __VA_ARGS__)
 
 #define WSPR(sess, tag, txt)					\
-	WSLR((sess)->wrk, tag, (sess)->fd, txt)
+	WSLR((sess)->wrk, tag, (sess)->vsl_id, txt)
 
 #define INCOMPL() do {							\
 	VSL(SLT_Debug, 0, "INCOMPLETE AT: %s(%d)", __func__, __LINE__); \
@@ -906,7 +896,7 @@ void RES_BuildHttp(const struct sess *sp);
 void RES_WriteObj(struct sess *sp);
 void RES_StreamStart(struct sess *sp);
 void RES_StreamEnd(struct sess *sp);
-void RES_StreamPoll(const struct sess *sp);
+void RES_StreamPoll(struct worker *);
 
 /* cache_vary.c */
 struct vsb *VRY_Create(const struct sess *sp, const struct http *hp);
@@ -920,7 +910,7 @@ void VCL_Rel(struct VCL_conf **vcc);
 void VCL_Poll(void);
 
 #define VCL_MET_MAC(l,u,b) void VCL_##l##_method(struct sess *);
-#include "vcl_returns.h"
+#include "tbl/vcl_returns.h"
 #undef VCL_MET_MAC
 
 /* cache_vrt.c */
@@ -963,9 +953,20 @@ enum body_status RFC2616_Body(const struct sess *sp);
 unsigned RFC2616_Req_Gzip(const struct sess *sp);
 int RFC2616_Do_Cond(const struct sess *sp);
 
+/* stevedore.c */
+struct object *STV_NewObject(struct sess *sp, const char *hint, unsigned len,
+    struct exp *, uint16_t nhttp);
+struct storage *STV_alloc(struct worker *w, size_t size);
+void STV_trim(struct storage *st, size_t size);
+void STV_free(struct storage *st);
+void STV_open(void);
+void STV_close(void);
+void STV_Freestore(struct object *o);
+
 /* storage_synth.c */
 struct vsb *SMS_Makesynth(struct object *obj);
 void SMS_Finish(struct object *obj);
+void SMS_Init(void);
 
 /* storage_persistent.c */
 void SMP_Init(void);

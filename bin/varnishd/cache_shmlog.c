@@ -30,12 +30,14 @@
 #include "config.h"
 
 #include <stdio.h>
-#include <unistd.h>
-#include <stdarg.h>
 
 #include "cache.h"
+
+#include "cache_backend.h"	// For w->vbc
+
+#include "vapi/vsm_int.h"
 #include "vmb.h"
-#include "vsm.h"
+#include "vtim.h"
 
 /* These cannot be struct lock, which depends on vsm/vsl working */
 static pthread_mutex_t vsl_mtx;
@@ -229,16 +231,14 @@ WSLR(struct worker *w, enum VSL_tag_e tag, int id, txt t)
 
 /*--------------------------------------------------------------------*/
 
-void
-WSL(struct worker *w, enum VSL_tag_e tag, int id, const char *fmt, ...)
+static void
+wsl(struct worker *w, enum VSL_tag_e tag, int id, const char *fmt, va_list ap)
 {
-	va_list ap;
 	char *p;
 	unsigned n, mlen;
 	txt t;
 
 	AN(fmt);
-	va_start(ap, fmt);
 	mlen = params->shm_reclen;
 
 	if (strchr(fmt, '%') == NULL) {
@@ -261,9 +261,38 @@ WSL(struct worker *w, enum VSL_tag_e tag, int id, const char *fmt, ...)
 		assert(w->wlp < w->wle);
 		w->wlr++;
 	}
-	va_end(ap);
 	if (params->diag_bitmap & 0x10000)
 		WSL_Flush(w, 0);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+WSL(struct worker *w, enum VSL_tag_e tag, int id, const char *fmt, ...)
+{
+	va_list ap;
+
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	AN(fmt);
+	va_start(ap, fmt);
+	wsl(w, tag, id, fmt, ap);
+	va_end(ap);
+}
+
+
+/*--------------------------------------------------------------------*/
+
+void
+WSLB(struct worker *w, enum VSL_tag_e tag, const char *fmt, ...)
+{
+	va_list ap;
+
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(w->vbc, VBC_MAGIC);
+	AN(fmt);
+	va_start(ap, fmt);
+	wsl(w, tag, w->vbc->vsl_id, fmt, ap);
+	va_end(ap);
 }
 
 /*--------------------------------------------------------------------*/
@@ -287,7 +316,7 @@ VSL_Init(void)
 	vsl_ptr = vsl_start + 1;
 
 	vsl_wrap();
-	VSM_head->starttime = (intmax_t)TIM_real();
+	VSM_head->starttime = (intmax_t)VTIM_real();
 	memset(VSM_head->panicstr, '\0', sizeof *VSM_head->panicstr);
 	memset(VSC_C_main, 0, sizeof *VSC_C_main);
 	VSM_head->child_pid = getpid();

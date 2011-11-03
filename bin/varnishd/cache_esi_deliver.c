@@ -30,15 +30,14 @@
 
 #include "config.h"
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "cache.h"
+
 #include "cache_esi.h"
 #include "vend.h"
-#include "vct.h"
 #include "vgz.h"
-#include "stevedore.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -47,7 +46,8 @@ ved_include(struct sess *sp, const char *src, const char *host)
 {
 	struct object *obj;
 	struct worker *w;
-	char *ws_wm;
+	char *sp_ws_wm;
+	char *wrk_ws_wm;
 	unsigned sxid, res_mode;
 
 	w = sp->wrk;
@@ -66,13 +66,14 @@ ved_include(struct sess *sp, const char *src, const char *host)
 	HTTP_Copy(sp->http, sp->http0);
 
 	/* Take a workspace snapshot */
-	ws_wm = WS_Snapshot(sp->ws);
+	sp_ws_wm = WS_Snapshot(sp->ws);
+	wrk_ws_wm = WS_Snapshot(w->ws);
 
 	http_SetH(sp->http, HTTP_HDR_URL, src);
 	if (host != NULL && *host != '\0')  {
 		http_Unset(sp->http, H_Host);
 		http_Unset(sp->http, H_If_Modified_Since);
-		http_SetHeader(w, sp->fd, sp->http, host);
+		http_SetHeader(w, sp->vsl_id, sp->http, host);
 	}
 	/*
 	 * XXX: We should decide if we should cache the director
@@ -105,7 +106,7 @@ ved_include(struct sess *sp, const char *src, const char *host)
 			break;
 		AZ(sp->wrk);
 		WSL_Flush(w, 0);
-		DSL(0x20, SLT_Debug, sp->id, "loop waiting for ESI");
+		DSL(0x20, SLT_Debug, sp->vsl_id, "loop waiting for ESI");
 		(void)usleep(10000);
 	}
 	sp->xid = sxid;
@@ -116,7 +117,8 @@ ved_include(struct sess *sp, const char *src, const char *host)
 	sp->wrk->res_mode = res_mode;
 
 	/* Reset the workspace */
-	WS_Reset(sp->ws, ws_wm);
+	WS_Reset(sp->ws, sp_ws_wm);
+	WS_Reset(w->ws, wrk_ws_wm);
 
 	WRW_Reserve(sp->wrk, &sp->fd);
 	if (sp->wrk->res_mode & RES_CHUNKED)
@@ -268,7 +270,7 @@ ESI_Deliver(struct sess *sp)
 	}
 
 	if (isgzip && !sp->wrk->gzip_resp) {
-		vgz = VGZ_NewUngzip(sp, "U D E");
+		vgz = VGZ_NewUngzip(sp->wrk, "U D E");
 
 		/* Feed a gzip header to gunzip to make it happy */
 		VGZ_Ibuf(vgz, gzip_hdr, sizeof gzip_hdr);
@@ -331,7 +333,7 @@ ESI_Deliver(struct sess *sp)
 					 * response
 					 */
 					AN(vgz);
-					i = VGZ_WrwGunzip(sp, vgz,
+					i = VGZ_WrwGunzip(sp->wrk, vgz,
 						st->ptr + off, l2,
 						obuf, sizeof obuf, &obufl);
 					if (WRW_Error(sp->wrk)) {
@@ -404,7 +406,7 @@ ESI_Deliver(struct sess *sp)
 	if (vgz != NULL) {
 		if (obufl > 0)
 			(void)WRW_Write(sp->wrk, obuf, obufl);
-		VGZ_Destroy(&vgz);
+		(void)VGZ_Destroy(&vgz, sp->vsl_id);
 	}
 	if (sp->wrk->gzip_resp && sp->esi_level == 0) {
 		/* Emit a gzip literal block with finish bit set */

@@ -36,21 +36,16 @@
 
 #include "config.h"
 
-#include <stdio.h>
-#include <errno.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <poll.h>
+#include <stddef.h>			// offsetof
 
-#include "vcli.h"
-#include "cli_priv.h"
-#include "cli_common.h"
-#include "cli_serve.h"
 #include "cache.h"
-#include "vsb.h"
-#include "hash_slinger.h"
+
+#include "cache_backend.h"		// struct vbc
+#include "hash/hash_slinger.h"		// struct objhead
+#include "vcli.h"
+#include "vcli_common.h"
+#include "vcli_priv.h"
+#include "vcli_serve.h"
 
 pthread_t		cli_thread;
 static struct lock	cli_mtx;

@@ -31,14 +31,14 @@
 #include "config.h"
 
 #include <stdio.h>
-#include <stdarg.h>
 #include <stdlib.h>
 
-#include "vrt.h"
-#include "vrt_obj.h"
 #include "cache.h"
+
 #include "cache_backend.h"
-#include "hash_slinger.h"
+#include "vrt_obj.h"
+#include "vtcp.h"
+#include "vtim.h"
 
 static char vrt_hostname[255] = "";
 
@@ -130,14 +130,16 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 	struct trouble *new;
 	struct trouble *tr;
 	struct trouble *tr2;
+	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	if (!sp->vbc)
+	wrk = sp->wrk;
+	if (!wrk->vbc)
 		return;
-	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
-	if (!sp->vbc->backend)
+	CHECK_OBJ_NOTNULL(wrk->vbc, VBC_MAGIC);
+	if (!wrk->vbc->backend)
 		return;
-	CHECK_OBJ_NOTNULL(sp->vbc->backend, BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk->vbc->backend, BACKEND_MAGIC);
 	if (!sp->objcore)
 		return;
 	CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
@@ -156,8 +158,8 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 	 * timeout at a later date (ie: sort by which entry will time out
 	 * from the list
 	 */
-	Lck_Lock(&sp->vbc->backend->mtx);
-	VTAILQ_FOREACH_SAFE(tr, &sp->vbc->backend->troublelist, list, tr2) {
+	Lck_Lock(&wrk->vbc->backend->mtx);
+	VTAILQ_FOREACH_SAFE(tr, &wrk->vbc->backend->troublelist, list, tr2) {
 		if (tr->timeout < new->timeout) {
 			VTAILQ_INSERT_BEFORE(tr, new, list);
 			new = NULL;
@@ -169,9 +171,9 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 	 * items have a longer timeout.
 	 */
 	if (new)
-		VTAILQ_INSERT_TAIL(&sp->vbc->backend->troublelist, new, list);
+		VTAILQ_INSERT_TAIL(&wrk->vbc->backend->troublelist, new, list);
 
-	Lck_Unlock(&sp->vbc->backend->mtx);
+	Lck_Unlock(&wrk->vbc->backend->mtx);
 }
 
 /*--------------------------------------------------------------------*/
@@ -250,8 +252,8 @@ VRT_r_beresp_backend_name(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
-	return(sp->vbc->backend->vcl_name);
+	CHECK_OBJ_NOTNULL(sp->wrk->vbc, VBC_MAGIC);
+	return(sp->wrk->vbc->backend->vcl_name);
 }
 
 struct sockaddr_storage *
@@ -259,8 +261,8 @@ VRT_r_beresp_backend_ip(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
-	return(sp->vbc->addr);
+	CHECK_OBJ_NOTNULL(sp->wrk->vbc, VBC_MAGIC);
+	return(sp->wrk->vbc->addr);
 }
 
 int
@@ -268,8 +270,8 @@ VRT_r_beresp_backend_port(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
-	return (VTCP_port(sp->vbc->addr));
+	CHECK_OBJ_NOTNULL(sp->wrk->vbc, VBC_MAGIC);
+	return (VTCP_port(sp->wrk->vbc->addr));
 }
 
 const char * __match_proto__()
@@ -534,7 +536,7 @@ VRT_r_obj_lastuse(const struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	return (TIM_real() - sp->obj->last_use);
+	return (VTIM_real() - sp->obj->last_use);
 }
 
 unsigned

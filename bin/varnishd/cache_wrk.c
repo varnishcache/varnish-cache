@@ -31,19 +31,12 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-
-#include <errno.h>
-#include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 
-#include "vcl.h"
-#include "cli_priv.h"
 #include "cache.h"
-#include "hash_slinger.h"
+
+#include "hash/hash_slinger.h"
 #include "vsha256.h"
 
 static struct lock		wstat_mtx;
@@ -59,7 +52,7 @@ wrk_sumstat(struct worker *w)
 #define L1(n) (VSC_C_main->n += w->stats.n)
 #define VSC_DO_MAIN
 #define VSC_F(n, t, l, f, d, e) L##l(n);
-#include "vsc_fields.h"
+#include "tbl/vsc_fields.h"
 #undef VSC_F
 #undef VSC_DO_MAIN
 #undef L0

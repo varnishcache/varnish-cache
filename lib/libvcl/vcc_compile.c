@@ -52,29 +52,21 @@
 
 #include "config.h"
 
-#include <sys/stat.h>
-
 #include <ctype.h>
 #include <errno.h>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
-#include "vqueue.h"
-
-#include "vsb.h"
-
-#include "vcc_priv.h"
 #include "vcc_compile.h"
 
 #include "libvcl.h"
-#include "libvarnish.h"
+#include "vfil.h"
 
 struct method method_tab[] = {
 #define VCL_MET_MAC(l,U,m)	{ "vcl_"#l, m, VCL_MET_##U },
-#include "vcl_returns.h"
+#include "tbl/vcl_returns.h"
 #undef VCL_MET_MAC
 	{ NULL, 0U, 0}
 };
@@ -378,7 +370,7 @@ EmitStruct(const struct vcc *tl)
 	Fc(tl, 0, "\t.srcbody = srcbody,\n");
 #define VCL_MET_MAC(l,u,b) \
 	Fc(tl, 0, "\t." #l "_func = VGC_function_vcl_" #l ",\n");
-#include "vcl_returns.h"
+#include "tbl/vcl_returns.h"
 #undef VCL_MET_MAC
 	Fc(tl, 0, "};\n");
 }
@@ -419,7 +411,7 @@ vcc_file_source(const struct vcc *tl, struct vsb *sb, const char *fn)
 	char *f;
 	struct source *sp;
 
-	f = vreadfile(tl->vcl_dir, fn, NULL);
+	f = VFIL_readfile(tl->vcl_dir, fn, NULL);
 	if (f == NULL) {
 		VSB_printf(sb, "Cannot read file '%s': %s\n",
 		    fn, strerror(errno));
@@ -726,7 +718,7 @@ VCC_Return_Name(unsigned method)
 
 	switch (method) {
 #define VCL_RET_MAC(l, U, B) case VCL_RET_##U: return(#l);
-#include "vcl_returns.h"
+#include "tbl/vcl_returns.h"
 #undef VCL_RET_MAC
 	default:
 		return (NULL);

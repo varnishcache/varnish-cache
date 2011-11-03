@@ -32,12 +32,14 @@
 
 #include <errno.h>
 #include <limits.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "libvarnish.h"
-#include "vsm.h"
+#include "vapi/vsm_int.h"
+#include "vas.h"
+#include "vdef.h"
 #include "vin.h"
 
 int

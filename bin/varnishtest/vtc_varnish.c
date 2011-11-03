@@ -28,29 +28,26 @@
 
 #include "config.h"
 
-#include <stdio.h>
-
-#include <fcntl.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <signal.h>
-#include <poll.h>
-#include <inttypes.h>
-
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
 
-#include "vqueue.h"
-#include "miniobj.h"
-#include "libvarnish.h"
-#include "varnishapi.h"
-#include "vcli.h"
-#include "vss.h"
-#include "vsb.h"
+#include <fcntl.h>
+#include <inttypes.h>
+#include <poll.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "vtc.h"
+
+#include "vapi/vsc.h"
+#include "vapi/vsl.h"
+#include "vapi/vsm.h"
+#include "vcli.h"
+#include "vss.h"
+#include "vtcp.h"
 
 struct varnish {
 	unsigned		magic;
@@ -117,6 +114,55 @@ varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 	else
 		free(r);
 	return ((enum VCLI_status_e)retval);
+}
+
+/**********************************************************************
+ *
+ */
+
+static void
+wait_stopped(const struct varnish *v)
+{
+	char *r;
+	enum VCLI_status_e st;
+
+	while (1) {
+		vtc_log(v->vl, 3, "wait-stopped");
+		st = varnish_ask_cli(v, "status", &r);
+		if (st != CLIS_OK)
+			vtc_log(v->vl, 0,
+			    "CLI status command failed: %u %s", st, r);
+		if (!strcmp(r, "Child in state stopped")) {
+			free(r);
+			break;
+		}
+		free(r);
+		(void)usleep(200000);
+	}
+}
+/**********************************************************************
+ *
+ */
+
+static void
+wait_running(const struct varnish *v)
+{
+	char *r;
+	enum VCLI_status_e st;
+
+	while (1) {
+		vtc_log(v->vl, 3, "wait-running");
+		st = varnish_ask_cli(v, "status", &r);
+		if (st != CLIS_OK)
+			vtc_log(v->vl, 0,
+			    "CLI status command failed: %u %s", st, r);
+		if (!strcmp(r, "Child in state running")) {
+			free(r);
+			break;
+		}
+		free(r);
+		(void)usleep(200000);
+	}
 }
 
 /**********************************************************************
@@ -270,7 +316,7 @@ varnish_thread(void *priv)
 		if (i <= 0)
 			break;
 		buf[i] = '\0';
-		vtc_dump(v->vl, 3, "debug", buf, -1);
+		vtc_dump(v->vl, 3, "debug", buf, -2);
 	}
 	return (NULL);
 }
@@ -439,6 +485,7 @@ varnish_start(struct varnish *v)
 		return;
 	if (u != CLIS_OK)
 		vtc_log(v->vl, 0, "CLI start command failed: %u %s", u, resp);
+	wait_running(v);
 	free(resp);
 	u = varnish_ask_cli(v, "debug.xid 1000", &resp);
 	if (vtc_error)
@@ -821,6 +868,14 @@ cmd_varnish(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-stop")) {
 			varnish_stop(v);
+			continue;
+		}
+		if (!strcmp(*av, "-wait-stopped")) {
+			wait_stopped(v);
+			continue;
+		}
+		if (!strcmp(*av, "-wait-running")) {
+			wait_running(v);
 			continue;
 		}
 		if (!strcmp(*av, "-wait")) {

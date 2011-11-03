@@ -33,6 +33,7 @@
 #include "config.h"
 
 #include <sys/types.h>
+
 #include <curses.h>
 #include <errno.h>
 #include <limits.h>
@@ -40,14 +41,15 @@
 #include <pthread.h>
 #include <regex.h>
 #include <signal.h>
-#include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "libvarnish.h"
-#include "vsl.h"
-#include "varnishapi.h"
+#include "vapi/vsl.h"
+#include "vapi/vsm.h"
+#include "vas.h"
+#include "vcs.h"
 
 #define HIST_N 2000 /* how far back we remember */
 #define HIST_LOW -6 /* low end of log range */

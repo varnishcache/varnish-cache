@@ -1,0 +1,64 @@
+varnishtest "Test ban_lurker_sleep vs failed ban lurker"
+
+# The idea here is that the ban lurker should always wait 1 second when it
+# can't proceed, as per documentation and original intent. The
+# ban_lurker_sleep should not affect sleep-times when the lurker fails.
+
+server s1 {
+	rxreq
+	txresp -status 200
+
+	rxreq
+	txresp -status 200
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.request == "BAN") {
+			ban("obj.http.url ~ /");
+			error 201 "banned";
+		}
+		return (lookup);
+	}
+	sub vcl_fetch {
+		set beresp.http.url = req.url;
+	}
+} -start
+
+varnish v1 -cliok "param.set ban_lurker_sleep 0.01"
+varnish v1 -expect n_ban_obj_test == 0
+
+delay 0.01
+client c1 {
+	txreq -req GET
+	rxresp
+	expect resp.status == 200
+
+	txreq -req BAN
+	rxresp
+	expect resp.status == 201
+} -run
+
+delay 0.1
+varnish v1 -expect n_ban_obj_test == 0
+
+delay 1.0
+varnish v1 -expect n_ban_obj_test == 1
+
+varnish v1 -cliok "param.set ban_lurker_sleep 5.01"
+
+client c2 {
+	txreq -req GET
+	rxresp
+	expect resp.status == 200
+
+	txreq -req BAN
+	rxresp
+	expect resp.status == 201
+} -run
+
+delay 0.1
+varnish v1 -expect n_ban_obj_test == 1
+
+delay 1.1
+varnish v1 -expect n_ban_obj_test == 2

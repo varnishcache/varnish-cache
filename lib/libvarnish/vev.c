@@ -29,19 +29,22 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <errno.h>
 #include <poll.h>
-#include <time.h>
-#include <signal.h>
-#include <string.h>
-#include <stdlib.h>
 #include <pthread.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
-#include "libvarnish.h"
-#include "vev.h"
 #include "miniobj.h"
+#include "vas.h"
+
 #include "binary_heap.h"
+#include "vqueue.h"
+#include "vev.h"
+#include "vtim.h"
 
 #undef DEBUG_EVENTS
 
@@ -278,7 +281,7 @@ vev_add(struct vev_base *evb, struct vev *e)
 	e->magic = VEV_MAGIC;	/* before binheap_insert() */
 
 	if (e->timeout != 0.0) {
-		e->__when += TIM_mono() + e->timeout;
+		e->__when += VTIM_mono() + e->timeout;
 		binheap_insert(evb->binheap, e);
 		assert(e->__binheap_idx > 0);
 		DBG(evb, "... bidx = %d\n", e->__binheap_idx);
@@ -455,7 +458,7 @@ vev_schedule_one(struct vev_base *evb)
 	if (e != NULL) {
 		CHECK_OBJ_NOTNULL(e, VEV_MAGIC);
 		assert(e->__binheap_idx == 1);
-		t = TIM_mono();
+		t = VTIM_mono();
 		if (e->__when <= t)
 			return (vev_sched_timeout(evb, e, t));
 		tmo = (int)((e->__when - t) * 1e3);
@@ -478,7 +481,7 @@ vev_schedule_one(struct vev_base *evb)
 		return (vev_sched_signal(evb));
 	if (i == 0) {
 		assert(e != NULL);
-		t = TIM_mono();
+		t = VTIM_mono();
 		if (e->__when <= t)
 			return (vev_sched_timeout(evb, e, t));
 	}

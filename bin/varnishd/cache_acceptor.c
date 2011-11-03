@@ -30,17 +30,12 @@
 
 #include "config.h"
 
-#include <errno.h>
-#include <poll.h>
-#include <stdlib.h>
-#include <stdio.h>
-
-#include <sys/types.h>
-#include <sys/socket.h>
+#include "cache.h"
 
 #include "vcli.h"
-#include "cli_priv.h"
-#include "cache.h"
+#include "vcli_priv.h"
+#include "vtcp.h"
+#include "vtim.h"
 
 static pthread_t	VCA_thread;
 static struct timeval	tv_sndtimeo;
@@ -130,10 +125,10 @@ VCA_Prep(struct sess *sp)
 		AZ(getsockname(sp->fd, (void*)&sp->mysockaddr, &sp->mysockaddrlen));
 		VTCP_name(&sp->mysockaddr, sp->mysockaddrlen,
 		    addr, sizeof addr, port, sizeof port);
-		VSL(SLT_SessionOpen, sp->fd, "%s %s %s %s",
+		WSP(sp, SLT_SessionOpen, "%s %s %s %s",
 		    sp->addr, sp->port, addr, port);
 	} else {
-		VSL(SLT_SessionOpen, sp->fd, "%s %s %s",
+		WSP(sp, SLT_SessionOpen, "%s %s %s",
 		    sp->addr, sp->port, sp->mylsock->name);
 	}
 	sp->acct_ses.first = sp->t_open;
@@ -173,7 +168,7 @@ vca_pace_check(void)
 	p = vca_pace;
 	Lck_Unlock(&pace_mtx);
 	if (p > 0.0)
-		TIM_sleep(p);
+		VTIM_sleep(p);
 }
 
 static void
@@ -277,9 +272,9 @@ VCA_SetupSess(struct worker *w)
 	sp = w->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	sp->fd = wa->acceptsock;
-	sp->id = wa->acceptsock;
+	sp->vsl_id = wa->acceptsock | VSL_CLIENTMARKER ;
 	wa->acceptsock = -1;
-	sp->t_open = TIM_real();
+	sp->t_open = VTIM_real();
 	sp->t_end = sp->t_open;
 	sp->mylsock = wa->acceptlsock;
 	CHECK_OBJ_NOTNULL(sp->mylsock, LISTEN_SOCK_MAGIC);
@@ -319,14 +314,14 @@ vca_acct(void *arg)
 	hack_ready = 1;
 
 	need_test = 1;
-	t0 = TIM_real();
+	t0 = VTIM_real();
 	while (1) {
 		(void)sleep(1);
 #ifdef SO_SNDTIMEO_WORKS
 		if (params->send_timeout != send_timeout) {
 			need_test = 1;
 			send_timeout = params->send_timeout;
-			tv_sndtimeo = TIM_timeval(send_timeout);
+			tv_sndtimeo = VTIM_timeval(send_timeout);
 			VTAILQ_FOREACH(ls, &heritage.socks, list) {
 				if (ls->sock < 0)
 					continue;
@@ -340,7 +335,7 @@ vca_acct(void *arg)
 		if (params->sess_timeout != sess_timeout) {
 			need_test = 1;
 			sess_timeout = params->sess_timeout;
-			tv_rcvtimeo = TIM_timeval(sess_timeout);
+			tv_rcvtimeo = VTIM_timeval(sess_timeout);
 			VTAILQ_FOREACH(ls, &heritage.socks, list) {
 				if (ls->sock < 0)
 					continue;
@@ -350,7 +345,7 @@ vca_acct(void *arg)
 			}
 		}
 #endif
-		now = TIM_real();
+		now = VTIM_real();
 		VSC_C_main->uptime = (uint64_t)(now - t0);
 	}
 	NEEDLESS_RETURN(NULL);
@@ -381,6 +376,16 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 	(void)cli;
 	(void)av;
 	(void)priv;
+
+	/*
+	 * This CLI command is primarily used by varnishtest.  Don't
+	 * respond until liste(2) has been called, in order to avoid
+	 * a race where varnishtest::client would attempt to connect(2)
+	 * before listen(2) has been called.
+	 */
+	while(!hack_ready)
+		(void)usleep(100*1000);
+
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (ls->sock < 0)
 			continue;

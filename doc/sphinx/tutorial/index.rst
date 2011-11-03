@@ -26,6 +26,7 @@ separate topic. Good luck.
 	vary
 	purging
 	esi
+	virtualised
 	advanced_backend_servers
         handling_misbehaving_servers
         advanced_topics

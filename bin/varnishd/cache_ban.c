@@ -38,24 +38,40 @@
  * We make the "&&" mandatory from the start, leaving the syntax space
  * for latter handling of "||" as well.
  *
+ * Bans are compiled into bytestrings as follows:
+ *	8 bytes	- double: timestamp		XXX: Byteorder ?
+ *	4 bytes - be32: length
+ *	1 byte - flags: 0x01: BAN_F_REQ
+ *	N tests
+ * A test have this form:
+ *	1 byte - arg (see ban_vars.h col 3 "BAN_ARG_XXX")
+ *	(n bytes) - http header name, canonical encoding
+ *	lump - comparison arg
+ *	1 byte - operation (BAN_OPER_)
+ *	(lump) - compiled regexp
+ * A lump is:
+ *	4 bytes - be32: length
+ * 	n bytes - content
+ *
+ * In a perfect world, we should vector through VRE to get to PCRE,
+ * but since we rely on PCRE's ability to encode the regexp into a
+ * byte string, that would be a little bit artificial, so this is
+ * the exception that confirmes the rule.
+ *
  */
 
 #include "config.h"
 
-#include <sys/types.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
-
 #include <pcre.h>
+#include <stdio.h>
 
-#include "vcli.h"
-#include "vend.h"
-#include "cli_priv.h"
 #include "cache.h"
-#include "hash_slinger.h"
+
+#include "hash/hash_slinger.h"
+#include "vcli.h"
+#include "vcli_priv.h"
+#include "vend.h"
+#include "vtim.h"
 
 struct ban {
 	unsigned		magic;
@@ -107,7 +123,7 @@ static const struct pvar {
 	uint8_t			tag;
 } pvars[] = {
 #define PVAR(a, b, c)	{ (a), (b), (c) },
-#include "ban_vars.h"
+#include "tbl/ban_vars.h"
 #undef PVAR
 	{ 0, 0, 0}
 };
@@ -386,7 +402,7 @@ BAN_Insert(struct ban *b)
 	b->spec = malloc(ln + 13L);	/* XXX */
 	XXXAN(b->spec);
 
-	t0 = TIM_real();
+	t0 = VTIM_real();
 	memcpy(b->spec, &t0, sizeof t0);
 	b->spec[12] = (b->flags & BAN_F_REQ) ? 1 : 0;
 	memcpy(b->spec + 13, VSB_data(b->vsb), ln);
@@ -738,7 +754,7 @@ BAN_CheckObject(struct object *o, const struct sess *sp)
  * Ban tail lurker thread
  */
 
-static void
+static int
 ban_lurker_work(const struct sess *sp)
 {
 	struct ban *b, *bf;
@@ -757,21 +773,21 @@ ban_lurker_work(const struct sess *sp)
 	if (bf != NULL) {
 		Lck_Unlock(&ban_mtx);
 		BAN_Free(bf);
-		return;
+		return (0);
 	}
 
 	/* Find the last ban give up, if we have only one */
 	b = VTAILQ_LAST(&ban_head, banhead_s);
 	if (b == ban_start) {
 		Lck_Unlock(&ban_mtx);
-		return;
+		return (0);
 	}
 
 	/* Find the first object on it, if any */
 	oc = VTAILQ_FIRST(&b->objcore);
 	if (oc == NULL) {
 		Lck_Unlock(&ban_mtx);
-		return;
+		return (0);
 	}
 
 	/* Try to lock the objhead */
@@ -779,7 +795,7 @@ ban_lurker_work(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	if (Lck_Trylock(&oh->mtx)) {
 		Lck_Unlock(&ban_mtx);
-		return;
+		return (0);
 	}
 
 	/*
@@ -792,7 +808,7 @@ ban_lurker_work(const struct sess *sp)
 	if (oc2 == NULL) {
 		Lck_Unlock(&oh->mtx);
 		Lck_Unlock(&ban_mtx);
-		return;
+		return (0);
 	}
 	/*
 	 * Grab a reference to the OC and we can let go of the BAN mutex
@@ -809,21 +825,25 @@ ban_lurker_work(const struct sess *sp)
 	Lck_Unlock(&oh->mtx);
 	WSP(sp, SLT_Debug, "lurker: %p %g %d", oc, o->exp.ttl, i);
 	(void)HSH_Deref(sp->wrk, NULL, &o);
+	return (i);
 }
 
 static void * __match_proto__(bgthread_t)
 ban_lurker(struct sess *sp, void *priv)
 {
-
+	int i = 0;
 	(void)priv;
 	while (1) {
 		if (params->ban_lurker_sleep == 0.0) {
 			/* Lurker is disabled.  */
-			TIM_sleep(1.0);
+			VTIM_sleep(1.0);
 			continue;
 		}
-		TIM_sleep(params->ban_lurker_sleep);
-		ban_lurker_work(sp);
+		if (i != 0)
+			VTIM_sleep(params->ban_lurker_sleep);
+		else
+			VTIM_sleep(1.0);
+		i = ban_lurker_work(sp);
 		WSL_Flush(sp->wrk, 0);
 		WRK_SumStat(sp->wrk);
 	}

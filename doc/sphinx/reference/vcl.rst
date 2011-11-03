@@ -746,7 +746,9 @@ req.restarts
   A count of how many times this request has been restarted.
 
 req.esi
-  True if the request is an ESI request.
+  Boolean. Set to false to disable ESI processing regardless of any
+  value in beresp.do_esi. Defaults to true. This variable is subject
+  to change in future versions, you should avoid using it.
 
 req.esi_level
   A count of how many levels of ESI requests we're currently at.
@@ -794,8 +796,9 @@ beresp.do_stream
   as it is delivered so only client can access the object.
 
 beresp.do_esi
-  Boolean. ESI-process the object after fetching it. Defaults to false. Set it
-  to true to parse the object for ESI directives.
+  Boolean. ESI-process the object after fetching it. Defaults to
+  false. Set it to true to parse the object for ESI directives. Will
+  only be honored if req.esi is true.
 
 beresp.do_gzip
   Boolean. Gzip the object before storing it. Defaults to false.

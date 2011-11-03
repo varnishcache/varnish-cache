@@ -42,22 +42,14 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-
-#include <errno.h>
-#include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <unistd.h>
 
-#include "vcl.h"
-#include "cli_priv.h"
 #include "cache.h"
-#include "cache_waiter.h"
-#include "stevedore.h"
-#include "hash_slinger.h"
+
+#include "waiter/cache_waiter.h"
+#include "vtcp.h"
+#include "vtim.h"
 
 /*--------------------------------------------------------------------
  * MAC OS/X is incredibly moronic when it comes to time and such...
@@ -65,6 +57,8 @@
 
 #ifndef CLOCK_MONOTONIC
 #define CLOCK_MONOTONIC	0
+
+#include <sys/time.h>
 
 static int
 clock_gettime(int foo, struct timespec *ts)
@@ -229,7 +223,7 @@ Pool_Work_Thread(void *priv, struct worker *w)
 		} else if (VTAILQ_EMPTY(&pp->socks)) {
 			/* Nothing to do: To sleep, perchance to dream ... */
 			if (isnan(w->lastused))
-				w->lastused = TIM_real();
+				w->lastused = VTIM_real();
 			VTAILQ_INSERT_HEAD(&pp->idle, w, list);
 			if (!stats_clean)
 				WRK_SumStat(w);
@@ -267,9 +261,7 @@ Pool_Work_Thread(void *priv, struct worker *w)
 			AZ(w->sp->wrk);
 			THR_SetSession(w->sp);
 			w->sp->wrk = w;
-			CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
 			CNT_Session(w->sp);
-			CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
 			THR_SetSession(NULL);
 			w->sp = NULL;
 
@@ -348,7 +340,7 @@ Pool_Schedule(struct pool *pp, struct sess *sp)
 	 * XXX: a notice might be polite, but would potentially
 	 * XXX: sleep whichever thread got us here
 	 */
-	sp->t_end = TIM_real();
+	sp->t_end = VTIM_real();
 	if (sp->vcl != NULL) {
 		/*
 		 * A session parked on a busy object can come here
@@ -406,10 +398,10 @@ pool_breed(struct pool *qp, const pthread_attr_t *tp_attr)
 			Lck_Lock(&pool_mtx);
 			VSC_C_main->threads_limited++;
 			Lck_Unlock(&pool_mtx);
-			TIM_sleep(params->wthread_fail_delay * 1e-3);
+			VTIM_sleep(params->wthread_fail_delay * 1e-3);
 		} else {
 			AZ(pthread_detach(tp));
-			TIM_sleep(params->wthread_add_delay * 1e-3);
+			VTIM_sleep(params->wthread_add_delay * 1e-3);
 			qp->nthr++;
 			Lck_Lock(&pool_mtx);
 			VSC_C_main->threads++;
@@ -481,7 +473,7 @@ pool_herder(void *priv)
 		if (pp->nthr <= params->wthread_min) 
 			continue;
 
-		t_idle = TIM_real() - params->wthread_timeout;
+		t_idle = VTIM_real() - params->wthread_timeout;
 
 		Lck_Lock(&pp->mtx);
 		VSC_C_main->sess_queued += pp->nqueued;

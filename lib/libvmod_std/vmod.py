@@ -278,6 +278,8 @@ fh.write("\n");
 fh.write(plist)
 
 
+fc.write('#include "config.h"\n')
+fc.write('\n')
 fc.write('#include "vrt.h"\n')
 fc.write('#include "vcc_if.h"\n')
 fc.write('#include "vmod_abi.h"\n')

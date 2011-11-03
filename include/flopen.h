@@ -31,8 +31,6 @@
 #ifndef FLOPEN_H_INCLUDED
 #define FLOPEN_H_INCLUDED
 
-#include <sys/types.h>
-
 int flopen(const char *, int, ...);
 int fltest(int fd, pid_t *pid);
 

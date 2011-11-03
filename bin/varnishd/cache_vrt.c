@@ -31,24 +31,21 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-#include <sys/socket.h>
-
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
 #include <stdio.h>
-#include <math.h>
-#include <string.h>
 #include <stdlib.h>
-#include <stdarg.h>
 
+#include "cache.h"
+
+#include "cache_backend.h"
+#include "hash/hash_slinger.h"
+#include "vav.h"
+#include "vcl.h"
 #include "vrt.h"
 #include "vrt_obj.h"
-#include "vcl.h"
-#include "cache.h"
-#include "hash_slinger.h"
-#include "cache_backend.h"
+#include "vtim.h"
 
 const void * const vrt_magic_string_end = &vrt_magic_string_end;
 
@@ -86,7 +83,7 @@ VRT_count(const struct sess *sp, unsigned u)
 void
 VRT_acl_log(const struct sess *sp, const char *msg)
 {
-	WSL(sp->wrk, SLT_VCL_acl, sp->fd, msg);
+	WSP(sp, SLT_VCL_acl, msg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -232,7 +229,7 @@ VRT_SetHdr(const struct sess *sp , enum gethdr_e where, const char *hdr,
 			WSP(sp, SLT_LostHeader, "%s", hdr + 1);
 		} else {
 			http_Unset(hp, hdr);
-			http_SetHeader(sp->wrk, sp->fd, hp, b);
+			http_SetHeader(sp->wrk, sp->vsl_id, hp, b);
 		}
 	}
 	va_end(ap);
@@ -280,7 +277,7 @@ VRT_r_now(const struct sess *sp)
 {
 
 	(void)sp;
-	return (TIM_real());
+	return (VTIM_real());
 }
 
 /*--------------------------------------------------------------------*/
@@ -343,8 +340,8 @@ VRT_time_string(const struct sess *sp, double t)
 {
 	char *p;
 
-	AN(p = WS_Alloc(sp->http->ws, TIM_FORMAT_SIZE));
-	TIM_format(t, p);
+	AN(p = WS_Alloc(sp->http->ws, VTIM_FORMAT_SIZE));
+	VTIM_format(t, p);
 	return p;
 }
 
@@ -418,7 +415,7 @@ VRT_synth_page(const struct sess *sp, unsigned flags, const char *str, ...)
 	va_end(ap);
 	SMS_Finish(sp->obj);
 	http_Unset(sp->obj->http, H_Content_Length);
-	http_PrintfHeader(sp->wrk, sp->fd, sp->obj->http,
+	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->obj->http,
 	    "Content-Length: %d", sp->obj->len);
 }
 

@@ -20,11 +20,11 @@ To simplify strings, the %-encoding has been removed. If you need non-printable 
 ``log`` moved to the std vmod
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``log`` has moved to the std vmod:
+``log`` has moved to the std vmod::
 
 	log "log something";
 
-becomes
+becomes::
 
 	import std;
 	std.log("log something");
@@ -34,11 +34,11 @@ You only need to import std once.
 purges are now called bans
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``purge()`` and ``purge_url()`` are now respectively ``ban()`` and ``ban_url()``, so you should replace all occurences:
+``purge()`` and ``purge_url()`` are now respectively ``ban()`` and ``ban_url()``, so you should replace all occurences::
 
 	purge("req.url = " req.url);
 
-becomes
+becomes::
 
 	ban("req.url = " + req.url);
 
@@ -84,22 +84,22 @@ becomes::
 ``req.hash`` is replaced with ``hash_data()``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You no longer append to the hash with ``+=``, so
+You no longer append to the hash with ``+=``, so::
 
 	set req.hash += req.url;
 
-becomes
+becomes::
 
 	hash_data(req.url);
 
 ``esi`` is replaced with ``beresp.do_esi``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You no longer enable ESI with ``esi``, so
+You no longer enable ESI with ``esi``, so::
 
 	esi;
 
-in ``vcl_fetch`` becomes
+in ``vcl_fetch`` becomes::
 
 	set beresp.do_esi = true;
 

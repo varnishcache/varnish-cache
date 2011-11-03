@@ -60,24 +60,27 @@
 #include "config.h"
 
 #include <ctype.h>
+#include <errno.h>
 #include <signal.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <time.h>
 #include <unistd.h>
 
-#include "compat/daemon.h"
-
-#include "vsb.h"
+#include "base64.h"
+#include "vapi/vsl.h"
+#include "vapi/vsm.h"
+#include "vas.h"
+#include "vcs.h"
 #include "vpf.h"
 #include "vqueue.h"
-
-#include "libvarnish.h"
-#include "vsl.h"
 #include "vre.h"
-#include "varnishapi.h"
-#include "base64.h"
+#include "vsb.h"
+
+#include "compat/daemon.h"
 
 static volatile sig_atomic_t reopen;
 
@@ -105,6 +108,7 @@ static struct logline {
 	uint64_t bitmap;		/* Bitmap for regex matches */
 	VTAILQ_HEAD(, hdr) req_headers; /* Request headers */
 	VTAILQ_HEAD(, hdr) resp_headers; /* Response headers */
+	VTAILQ_HEAD(, hdr) vcl_log;     /* VLC_Log entries */
 } **ll;
 
 struct VSM_data *vd;
@@ -216,6 +220,19 @@ resp_header(struct logline *l, const char *name)
 	return NULL;
 }
 
+static char *
+vcl_log(struct logline *l, const char *name)
+{
+	struct hdr *h;
+	VTAILQ_FOREACH(h, &l->vcl_log, list) {
+		if (strcasecmp(h->key, name) == 0) {
+			return h->value;
+			break;
+		}
+	}
+	return NULL;
+}
+
 static void
 clean_logline(struct logline *lp)
 {
@@ -238,6 +255,12 @@ clean_logline(struct logline *lp)
 	}
 	VTAILQ_FOREACH_SAFE(h, &lp->resp_headers, list, h2) {
 		VTAILQ_REMOVE(&lp->resp_headers, h, list);
+		freez(h->key);
+		freez(h->value);
+		freez(h);
+	}
+	VTAILQ_FOREACH_SAFE(h, &lp->vcl_log, list, h2) {
+		VTAILQ_REMOVE(&lp->vcl_log, h, list);
 		freez(h->key);
 		freez(h->value);
 		freez(h);
@@ -462,6 +485,25 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		}
 		break;
 
+	case SLT_VCL_Log:
+		if(!lp->active)
+			break;
+
+		split = strchr(ptr, ':');
+		if (split == NULL)
+			break;
+
+		struct hdr *h;
+		h = malloc(sizeof(struct hdr));
+		AN(h);
+		AN(split);
+
+		h->key = trimline(ptr, split);
+		h->value = trimline(split+1, end);
+
+		VTAILQ_INSERT_HEAD(&lp->vcl_log, h, list);
+		break;
+
 	case SLT_VCL_call:
 		if(!lp->active)
 			break;
@@ -587,6 +629,14 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 
 	for (p = format; *p != '\0'; p++) {
 
+		/* allow the most essential escape sequences in format. */
+		if (*p == '\\') {
+			p++;
+			if (*p == 't') VSB_putc(os, '\t');
+			if (*p == 'n') VSB_putc(os, '\n');
+			continue;
+		}
+
 		if (*p != '%') {
 			VSB_putc(os, *p);
 			continue;
@@ -600,7 +650,7 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 			break;
 
 		case 'H':
-			VSB_cat(os, lp->df_H);
+			VSB_cat(os, lp->df_H ? lp->df_H : "HTTP/1.0");
 			break;
 
 		case 'h':
@@ -614,7 +664,7 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 			break;
 
 		case 'm':
-			VSB_cat(os, lp->df_m);
+			VSB_cat(os, lp->df_m ? lp->df_m : "-");
 			break;
 
 		case 'q':
@@ -626,24 +676,19 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 			 * Fake "%r".  This would be a lot easier if Varnish
 			 * normalized the request URL.
 			 */
-			if (!lp->df_m ||
-			    !req_header(lp, "Host") ||
-			    !lp->df_U ||
-			    !lp->df_H) {
-				clean_logline(lp);
-				return (reopen);
-			}
-			VSB_cat(os, lp->df_m);
+			VSB_cat(os, lp->df_m ? lp->df_m : "-");
 			VSB_putc(os, ' ');
 			if (req_header(lp, "Host")) {
 				if (strncmp(req_header(lp, "Host"), "http://", 7) != 0)
 					VSB_cat(os, "http://");
 				VSB_cat(os, req_header(lp, "Host"));
+			} else {
+				VSB_cat(os, "http://localhost");
 			}
-			VSB_cat(os, lp->df_U);
+			VSB_cat(os, lp->df_U ? lp->df_U : "-");
 			VSB_cat(os, lp->df_q ? lp->df_q : "");
 			VSB_putc(os, ' ');
-			VSB_cat(os, lp->df_H);
+			VSB_cat(os, lp->df_H ? lp->df_H : "HTTP/1.0");
 			break;
 
 		case 's':
@@ -658,7 +703,7 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 			break;
 
 		case 'U':
-			VSB_cat(os, lp->df_U);
+			VSB_cat(os, lp->df_U ? lp->df_U : "-");
 			break;
 
 		case 'u':
@@ -718,6 +763,14 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 					break;
 				} else if (strcmp(fname, "Varnish:handling") == 0) {
 					VSB_cat(os, (lp->df_handling ? lp->df_handling : "-"));
+					p = tmp;
+					break;
+				} else if (strncmp(fname, "VCL_Log:", 8) == 0) {
+					// support pulling entries logged with std.log() into output.
+					// Format: %{VCL_Log:keyname}x
+					// Logging: std.log("keyname:value")
+					h = vcl_log(lp, fname+8);
+					VSB_cat(os, h ? h : "-");
 					p = tmp;
 					break;
 				}

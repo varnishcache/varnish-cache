@@ -29,19 +29,14 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-#include <sys/socket.h>
-
-#include <errno.h>
-#include <stdlib.h>
-#include <string.h>
-#include <netdb.h>
-#include <unistd.h>
-
-#include <stdio.h>
 #include <netinet/in.h>
 
+#include <netdb.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "cache.h"
+
 #include "cache_backend.h"
 #include "vrt.h"
 

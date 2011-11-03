@@ -28,26 +28,23 @@
 
 #include "config.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "libvarnish.h"
-#include "vev.h"
-#include "vsb.h"
-#include "vqueue.h"
-#include "miniobj.h"
+#include <ctype.h>
+#include <signal.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "vtc.h"
+
+#include "vav.h"
+#include "vtim.h"
+
 
 #ifndef HAVE_SRANDOMDEV
 #include "compat/srandomdev.h"
@@ -135,10 +132,10 @@ macro_get(const char *b, const char *e)
 	l = e - b;
 
 	if (l == 4 && !memcmp(b, "date", l)) {
-		double t = TIM_real();
+		double t = VTIM_real();
 		retval = malloc(64);
 		AN(retval);
-		TIM_format(t, retval);
+		VTIM_format(t, retval);
 		return (retval);
 	}
 
@@ -421,7 +418,7 @@ cmd_delay(CMD_ARGS)
 	AZ(av[2]);
 	f = strtod(av[1], NULL);
 	vtc_log(vl, 3, "delaying %g second(s)", f);
-	TIM_sleep(f);
+	VTIM_sleep(f);
 }
 
 /**********************************************************************
@@ -529,6 +526,8 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	char *cwd, *p;
 	FILE *f;
 	struct extmacro *m;
+
+	signal(SIGPIPE, SIG_IGN);
 
 	vtc_loginit(logbuf, loglen);
 	vltop = vtc_logopen("top");

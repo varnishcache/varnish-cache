@@ -32,13 +32,10 @@
 #include "config.h"
 
 #include <sys/stat.h>
+#include <sys/utsname.h>
 
 #include <ctype.h>
-#include <errno.h>
 #include <fcntl.h>
-#include <poll.h>
-#include <signal.h>
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,28 +43,24 @@
 #include <time.h>
 #include <unistd.h>
 
-#include <sys/utsname.h>
+#include "mgt/mgt.h"
+
+#include "hash/hash_slinger.h"
+#include "heritage.h"
+#include "vav.h"
+#include "vcli.h"
+#include "vcli_common.h"
+#include "vev.h"
+#include "vfil.h"
+#include "vin.h"
+#include "vpf.h"
+#include "vsha256.h"
+#include "vtim.h"
 
 #include "compat/daemon.h"
 
-#include "vsb.h"
-#include "vev.h"
-#include "vpf.h"
-#include "vsha256.h"
-
-#include "vcli.h"
-#include "cli_priv.h"
-#include "cli_common.h"
-
-#include "vin.h"
-#include "heritage.h"
-#include "mgt.h"
-#include "hash_slinger.h"
-#include "stevedore.h"
-
-/* INFTIM indicates an infinite timeout for poll(2) */
-#ifndef INFTIM
-#define INFTIM -1
+#ifndef HAVE_SRANDOMDEV
+#include "compat/srandomdev.h"
 #endif
 
 struct heritage		heritage;
@@ -364,7 +357,7 @@ main(int argc, char * const *argv)
 	for (o = getdtablesize(); o > STDERR_FILENO; o--)
 		(void)close(o);
 
-	AZ(seed_random());
+	srandomdev();
 
 	mgt_got_fd(STDERR_FILENO);
 
@@ -386,9 +379,9 @@ main(int argc, char * const *argv)
 	 */
 	AZ(setenv("TZ", "UTC", 1));
 	tzset();
-	assert(TIM_parse("Sun, 06 Nov 1994 08:49:37 GMT") == 784111777);
-	assert(TIM_parse("Sunday, 06-Nov-94 08:49:37 GMT") == 784111777);
-	assert(TIM_parse("Sun Nov  6 08:49:37 1994") == 784111777);
+	assert(VTIM_parse("Sun, 06 Nov 1994 08:49:37 GMT") == 784111777);
+	assert(VTIM_parse("Sunday, 06-Nov-94 08:49:37 GMT") == 784111777);
+	assert(VTIM_parse("Sun Nov  6 08:49:37 1994") == 784111777);
 
 	/*
 	 * Check that our SHA256 works
@@ -552,7 +545,7 @@ main(int argc, char * const *argv)
 	}
 
 	if (f_arg != NULL) {
-		vcl = vreadfile(NULL, f_arg, NULL);
+		vcl = VFIL_readfile(NULL, f_arg, NULL);
 		if (vcl == NULL) {
 			fprintf(stderr, "Cannot read '%s': %s\n",
 			    f_arg, strerror(errno));
@@ -653,3 +646,7 @@ main(int argc, char * const *argv)
 		(void)VPF_Remove(pfh);
 	exit(exit_status);
 }
+
+#if defined(PTHREAD_CANCELED) || defined(PTHREAD_MUTEX_DEFAULT)
+#error "Keep pthreads out of in manager process"
+#endif

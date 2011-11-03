@@ -34,19 +34,20 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "compat/daemon.h"
-
-#include "vsb.h"
+#include "vapi/vsl.h"
+#include "vapi/vsm.h"
+#include "vas.h"
+#include "vcs.h"
 #include "vpf.h"
+#include "vsb.h"
 
-#include "libvarnish.h"
-#include "vsl.h"
-#include "varnishapi.h"
+#include "compat/daemon.h"
 
 static int	b_flag, c_flag;
 

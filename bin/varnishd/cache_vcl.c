@@ -33,17 +33,15 @@
 
 #include "config.h"
 
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
 #include <dlfcn.h>
+#include <stdlib.h>
 
-#include "vcli.h"
-#include "cli_priv.h"
-#include "vcl.h"
 #include "cache.h"
+
 #include "libvcl.h"
+#include "vcl.h"
+#include "vcli.h"
+#include "vcli_priv.h"
 
 struct vcls {
 	unsigned		magic;
@@ -331,7 +329,7 @@ VCL_##func##_method(struct sess *sp)					\
 	assert(!((1U << sp->handling) & ~bitmap));			\
 }
 
-#include "vcl_returns.h"
+#include "tbl/vcl_returns.h"
 #undef VCL_MET_MAC
 
 /*--------------------------------------------------------------------*/

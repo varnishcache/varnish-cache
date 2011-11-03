@@ -115,6 +115,7 @@ struct backend {
 	struct lock		mtx;
 
 	char			*vcl_name;
+	char			*display_name;
 	char			*ipv4_addr;
 	char			*ipv6_addr;
 	char			*port;
@@ -132,6 +133,28 @@ struct backend {
 	VTAILQ_HEAD(, trouble)	troublelist;
 
 	struct VSC_C_vbe	*vsc;
+};
+
+/* -------------------------------------------------------------------*/
+
+/* Backend connection */
+struct vbc {
+	unsigned		magic;
+#define VBC_MAGIC		0x0c5e6592
+	VTAILQ_ENTRY(vbc)	list;
+	struct backend		*backend;
+	struct vdi_simple	*vdis;
+	unsigned		vsl_id;
+	int			fd;
+
+	struct sockaddr_storage	*addr;
+	socklen_t		addrlen;
+
+	uint8_t			recycled;
+
+	/* Timeouts */
+	double			first_byte_timeout;
+	double			between_bytes_timeout;
 };
 
 /* cache_backend.c */

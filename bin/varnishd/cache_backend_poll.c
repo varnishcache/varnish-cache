@@ -37,19 +37,18 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <math.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 #include <poll.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#include <sys/socket.h>
-
-#include "cli_priv.h"
 #include "cache.h"
-#include "vrt.h"
+
 #include "cache_backend.h"
+#include "vcli_priv.h"
+#include "vrt.h"
+#include "vtcp.h"
+#include "vtim.h"
 
 /* Default averaging rate, we want something pretty responsive */
 #define AVG_RATE			4
@@ -82,7 +81,7 @@ struct vbp_target {
 
 	/* Collected statistics */
 #define BITMAP(n, c, t, b)	uint64_t	n;
-#include "cache_backend_poll.h"
+#include "tbl/backend_poll.h"
 #undef BITMAP
 
 	double				last;
@@ -134,28 +133,28 @@ vbp_poke(struct vbp_target *vt)
 	bp = vt->backend;
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 
-	t_start = t_now = TIM_real();
+	t_start = t_now = VTIM_real();
 	t_end = t_start + vt->probe.timeout;
 	tmo = (int)round((t_end - t_now) * 1e3);
 
 	s = -1;
 	if (params->prefer_ipv6 && bp->ipv6 != NULL) {
 		s = vbp_connect(PF_INET6, bp->ipv6, bp->ipv6len, tmo);
-		t_now = TIM_real();
+		t_now = VTIM_real();
 		tmo = (int)round((t_end - t_now) * 1e3);
 		if (s >= 0)
 			vt->good_ipv6 |= 1;
 	}
 	if (tmo > 0 && s < 0 && bp->ipv4 != NULL) {
 		s = vbp_connect(PF_INET, bp->ipv4, bp->ipv4len, tmo);
-		t_now = TIM_real();
+		t_now = VTIM_real();
 		tmo = (int)round((t_end - t_now) * 1e3);
 		if (s >= 0)
 			vt->good_ipv4 |= 1;
 	}
 	if (tmo > 0 && s < 0 && bp->ipv6 != NULL) {
 		s = vbp_connect(PF_INET6, bp->ipv6, bp->ipv6len, tmo);
-		t_now = TIM_real();
+		t_now = VTIM_real();
 		tmo = (int)round((t_end - t_now) * 1e3);
 		if (s >= 0)
 			vt->good_ipv6 |= 1;
@@ -211,7 +210,7 @@ vbp_poke(struct vbp_target *vt)
 		return;
 
 	/* So we have a good receive ... */
-	t_now = TIM_real();
+	t_now = VTIM_real();
 	vt->last = t_now - t_start;
 	vt->good_recv |= 1;
 
@@ -240,7 +239,7 @@ vbp_start_poke(struct vbp_target *vt)
 	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
 
 #define BITMAP(n, c, t, b)	vt->n <<= 1;
-#include "cache_backend_poll.h"
+#include "tbl/backend_poll.h"
 #undef BITMAP
 
 	vt->last = 0;
@@ -266,7 +265,7 @@ vbp_has_poked(struct vbp_target *vt)
 
 	i = 0;
 #define BITMAP(n, c, t, b)	bits[i++] = (vt->n & 1) ? c : '-';
-#include "cache_backend_poll.h"
+#include "tbl/backend_poll.h"
 #undef BITMAP
 	bits[i] = '\0';
 
@@ -353,7 +352,7 @@ vbp_wrk_poll_backend(void *priv)
 		vbp_has_poked(vt);
 
 		if (!vt->stop)
-			TIM_sleep(vt->probe.interval);
+			VTIM_sleep(vt->probe.interval);
 	}
 	return (NULL);
 }
@@ -400,7 +399,7 @@ vbp_health_one(struct cli *cli, const struct vbp_target *vt)
 #define BITMAP(n, c, t, b)					\
 		if ((vt->n != 0) || (b))			\
 			vbp_bitmap(cli, (c), vt->n, (t));
-#include "cache_backend_poll.h"
+#include "tbl/backend_poll.h"
 #undef BITMAP
 }
 

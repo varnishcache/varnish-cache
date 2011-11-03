@@ -32,18 +32,14 @@
 
 #include "config.h"
 
-#include <limits.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 #include <poll.h>
-
-#include <sys/socket.h>
+#include <stdlib.h>
 
 #include "cache.h"
+
 #include "cache_backend.h"
 #include "vrt.h"
+#include "vtcp.h"
 
 /*--------------------------------------------------------------------
  * The "simple" director really isn't, since thats where all the actual
@@ -68,10 +64,10 @@ VDI_AddHostHeader(const struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk->bereq, HTTP_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vbc, VBC_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vbc->vdis, VDI_SIMPLE_MAGIC);
-	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->bereq,
-	    "Host: %s", sp->vbc->vdis->vrt->hosthdr);
+	CHECK_OBJ_NOTNULL(sp->wrk->vbc, VBC_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk->vbc->vdis, VDI_SIMPLE_MAGIC);
+	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->bereq,
+	    "Host: %s", sp->wrk->vbc->vdis->vrt->hosthdr);
 }
 
 /*--------------------------------------------------------------------*/
@@ -118,8 +114,6 @@ vbe_TryConnect(const struct sess *sp, int pf, const struct sockaddr_storage *sa,
 {
 	int s, i, tmo;
 	double tmod;
-	char abuf1[VTCP_ADDRBUFSIZE], abuf2[VTCP_ADDRBUFSIZE];
-	char pbuf1[VTCP_PORTBUFSIZE], pbuf2[VTCP_PORTBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
@@ -139,11 +133,6 @@ vbe_TryConnect(const struct sess *sp, int pf, const struct sockaddr_storage *sa,
 		return (-1);
 	}
 
-	VTCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-	VTCP_name(sa, salen, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
-	WSL(sp->wrk, SLT_BackendOpen, s, "%s %s %s %s %s",
-	    vs->backend->vcl_name, abuf1, pbuf1, abuf2, pbuf2);
-
 	return (s);
 }
 
@@ -154,6 +143,8 @@ bes_conn_try(const struct sess *sp, struct vbc *vc, const struct vdi_simple *vs)
 {
 	int s;
 	struct backend *bp = vs->backend;
+	char abuf1[VTCP_ADDRBUFSIZE];
+	char pbuf1[VTCP_PORTBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
 
@@ -191,7 +182,13 @@ bes_conn_try(const struct sess *sp, struct vbc *vc, const struct vdi_simple *vs)
 		Lck_Unlock(&bp->mtx);
 		vc->addr = NULL;
 		vc->addrlen = 0;
+	} else {
+		vc->vsl_id = s | VSL_BACKENDMARKER;
+		VTCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
+		WSL(sp->wrk, SLT_BackendOpen, vc->vsl_id, "%s %s %s ",
+		    vs->backend->display_name, abuf1, pbuf1);
 	}
+
 }
 
 /*--------------------------------------------------------------------
@@ -348,13 +345,13 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 			/* XXX locking of stats */
 			VSC_C_main->backend_reuse += 1;
 			WSP(sp, SLT_Backend, "%d %s %s",
-			    vc->fd, sp->director->vcl_name, bp->vcl_name);
+			    vc->fd, sp->director->vcl_name, bp->display_name);
 			vc->vdis = vs;
 			vc->recycled = 1;
 			return (vc);
 		}
 		VSC_C_main->backend_toolate++;
-		WSL(sp->wrk, SLT_BackendClose, vc->fd, "%s", bp->vcl_name);
+		WSL(sp->wrk, SLT_BackendClose, vc->vsl_id, "%s", bp->display_name);
 
 		/* Checkpoint log to flush all info related to this connection
 		   before the OS reuses the FD */
@@ -389,7 +386,7 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 	vc->backend = bp;
 	VSC_C_main->backend_conn++;
 	WSP(sp, SLT_Backend, "%d %s %s",
-	    vc->fd, sp->director->vcl_name, bp->vcl_name);
+	    vc->fd, sp->director->vcl_name, bp->display_name);
 	vc->vdis = vs;
 	return (vc);
 }

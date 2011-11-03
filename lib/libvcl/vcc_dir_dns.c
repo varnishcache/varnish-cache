@@ -28,19 +28,11 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-#include <sys/socket.h>
-
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
 #include <limits.h>
+#include <stdio.h>
+#include <string.h>
 
-#include "vsb.h"
-
-#include "vcc_priv.h"
 #include "vcc_compile.h"
-#include "libvarnish.h"
 
 /*--------------------------------------------------------------------
  * Parse directors

@@ -57,24 +57,23 @@ DOT acceptor -> start [style=bold,color=green]
 
 #include "config.h"
 
-#include <stdio.h>
-#include <errno.h>
 #include <math.h>
 #include <poll.h>
+#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
+
+#include "cache.h"
+
+#include "hash/hash_slinger.h"
+#include "vcl.h"
+#include "vcli_priv.h"
+#include "vsha256.h"
+#include "vtcp.h"
+#include "vtim.h"
 
 #ifndef HAVE_SRANDOMDEV
 #include "compat/srandomdev.h"
 #endif
-
-#include "vcl.h"
-#include "cli_priv.h"
-#include "cache.h"
-#include "hash_slinger.h"
-#include "stevedore.h"
-#include "vsha256.h"
 
 static unsigned xids;
 
@@ -104,7 +103,7 @@ cnt_wait(struct sess *sp)
 			i = HTC_Rx(sp->htc);
 	}
 	if (i == 0) {
-		WSL(sp->wrk, SLT_Debug, sp->fd, "herding");
+		WSP(sp, SLT_Debug, "herding");
 		sp->wrk->stats.sess_herd++;
 		SES_Charge(sp);
 		sp->wrk = NULL;
@@ -211,7 +210,7 @@ cnt_prepresp(struct sess *sp)
 		}
 	}
 
-	sp->t_resp = TIM_real();
+	sp->t_resp = VTIM_real();
 	if (sp->obj->objcore != NULL) {
 		if ((sp->t_resp - sp->obj->last_lru) > params->lru_timeout &&
 		    EXP_Touch(sp->obj->objcore))
@@ -228,7 +227,7 @@ cnt_prepresp(struct sess *sp)
 		if (sp->restarts >= params->max_restarts)
 			break;
 		if (sp->wrk->do_stream) {
-			VDI_CloseFd(sp);
+			VDI_CloseFd(sp->wrk);
 			HSH_Drop(sp);
 		} else {
 			(void)HSH_Deref(sp->wrk, NULL, &sp->obj);
@@ -306,7 +305,7 @@ cnt_done(struct sess *sp)
 	CHECK_OBJ_ORNULL(sp->vcl, VCL_CONF_MAGIC);
 
 	AZ(sp->obj);
-	AZ(sp->vbc);
+	AZ(sp->wrk->vbc);
 	sp->director = NULL;
 	sp->restarts = 0;
 
@@ -326,7 +325,7 @@ cnt_done(struct sess *sp)
 
 	SES_Charge(sp);
 
-	sp->t_end = TIM_real();
+	sp->t_end = VTIM_real();
 	sp->wrk->lastused = sp->t_end;
 	if (sp->xid == 0) {
 		sp->t_req = sp->t_end;
@@ -341,7 +340,7 @@ cnt_done(struct sess *sp)
 			WSP(sp, SLT_Length, "%ju",
 			    (uintmax_t)sp->req_bodybytes);
 		}
-		WSL(sp->wrk, SLT_ReqEnd, sp->id, "%u %.9f %.9f %.9f %.9f %.9f",
+		WSP(sp, SLT_ReqEnd, "%u %.9f %.9f %.9f %.9f %.9f",
 		    sp->xid, sp->t_req, sp->t_end, dh, dp, da);
 	}
 	sp->xid = 0;
@@ -436,13 +435,13 @@ cnt_error(struct sess *sp)
 	w = sp->wrk;
 	if (sp->obj == NULL) {
 		HSH_Prealloc(sp);
-		/* XXX: 1024 is a pure guess */
 		EXP_Clr(&w->exp);
-		sp->obj = STV_NewObject(sp, NULL, 1024, &w->exp,
-		     (uint16_t)params->http_max_hdr);
+		sp->obj = STV_NewObject(sp, NULL, params->http_resp_size,
+		     &w->exp, (uint16_t)params->http_max_hdr);
 		if (sp->obj == NULL)
 			sp->obj = STV_NewObject(sp, TRANSIENT_STORAGE,
-			    1024, &w->exp, (uint16_t)params->http_max_hdr);
+			    params->http_resp_size, &w->exp,
+			    (uint16_t)params->http_max_hdr);
 		if (sp->obj == NULL) {
 			sp->doclose = "Out of objects";
 			sp->director = NULL;
@@ -464,16 +463,16 @@ cnt_error(struct sess *sp)
 	if (sp->err_code < 100 || sp->err_code > 999)
 		sp->err_code = 501;
 
-	http_PutProtocol(w, sp->fd, h, "HTTP/1.1");
+	http_PutProtocol(w, sp->vsl_id, h, "HTTP/1.1");
 	http_PutStatus(h, sp->err_code);
-	TIM_format(TIM_real(), date);
-	http_PrintfHeader(w, sp->fd, h, "Date: %s", date);
-	http_PrintfHeader(w, sp->fd, h, "Server: Varnish");
+	VTIM_format(VTIM_real(), date);
+	http_PrintfHeader(w, sp->vsl_id, h, "Date: %s", date);
+	http_SetHeader(w, sp->vsl_id, h, "Server: Varnish");
 
 	if (sp->err_reason != NULL)
-		http_PutResponse(w, sp->fd, h, sp->err_reason);
+		http_PutResponse(w, sp->vsl_id, h, sp->err_reason);
 	else
-		http_PutResponse(w, sp->fd, h,
+		http_PutResponse(w, sp->vsl_id, h,
 		    http_StatusMessage(sp->err_code));
 	VCL_error_method(sp);
 
@@ -538,7 +537,7 @@ cnt_fetch(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
 	AN(sp->director);
-	AZ(sp->vbc);
+	AZ(sp->wrk->vbc);
 	AZ(sp->wrk->h_content_length);
 	AZ(sp->wrk->do_close);
 	AZ(sp->wrk->storage_hint);
@@ -581,7 +580,7 @@ cnt_fetch(struct sess *sp)
 		 * What does RFC2616 think about TTL ?
 		 */
 		EXP_Clr(&sp->wrk->exp);
-		sp->wrk->exp.entered = TIM_real();
+		sp->wrk->exp.entered = VTIM_real();
 		RFC2616_Ttl(sp);
 
 		/* pass from vclrecv{} has negative TTL */
@@ -607,11 +606,11 @@ cnt_fetch(struct sess *sp)
 		}
 
 		/* We are not going to fetch the body, Close the connection */
-		VDI_CloseFd(sp);
+		VDI_CloseFd(sp->wrk);
 	}
 
 	/* Clean up partial fetch */
-	AZ(sp->vbc);
+	AZ(sp->wrk->vbc);
 
 	if (sp->objcore != NULL) {
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
@@ -728,8 +727,8 @@ cnt_fetchbody(struct sess *sp)
 
 	/* If we do gzip, add the C-E header */
 	if (sp->wrk->do_gzip)
-		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->beresp,
-		    "Content-Encoding: %s", "gzip");
+		http_SetHeader(sp->wrk, sp->vsl_id, sp->wrk->beresp,
+		    "Content-Encoding: gzip");
 
 	/* But we can't do both at the same time */
 	assert(sp->wrk->do_gzip == 0 || sp->wrk->do_gunzip == 0);
@@ -789,7 +788,7 @@ cnt_fetchbody(struct sess *sp)
 	if (sp->obj == NULL) {
 		sp->err_code = 503;
 		sp->step = STP_ERROR;
-		VDI_CloseFd(sp);
+		VDI_CloseFd(sp->wrk);
 		return (0);
 	}
 	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
@@ -818,12 +817,12 @@ cnt_fetchbody(struct sess *sp)
 
 	hp2->logtag = HTTP_Obj;
 	http_CopyResp(hp2, hp);
-	http_FilterFields(sp->wrk, sp->fd, hp2, hp,
+	http_FilterFields(sp->wrk, sp->vsl_id, hp2, hp,
 	    pass ? HTTPH_R_PASS : HTTPH_A_INS);
-	http_CopyHome(sp->wrk, sp->fd, hp2);
+	http_CopyHome(sp->wrk, sp->vsl_id, hp2);
 
 	if (http_GetHdr(hp, H_Last_Modified, &b))
-		sp->obj->last_modified = TIM_parse(b);
+		sp->obj->last_modified = VTIM_parse(b);
 	else
 		sp->obj->last_modified = floor(sp->wrk->exp.entered);
 
@@ -847,7 +846,7 @@ cnt_fetchbody(struct sess *sp)
 	}
 
 	/* Use unmodified headers*/
-	i = FetchBody(sp);
+	i = FetchBody(sp->wrk, sp->obj);
 
 	sp->wrk->h_content_length = NULL;
 
@@ -855,7 +854,7 @@ cnt_fetchbody(struct sess *sp)
 	http_Setup(sp->wrk->beresp, NULL);
 	sp->wrk->vfp = NULL;
 	assert(WRW_IsReleased(sp->wrk));
-	AZ(sp->vbc);
+	AZ(sp->wrk->vbc);
 	AN(sp->director);
 
 	if (i) {
@@ -902,7 +901,7 @@ cnt_streambody(struct sess *sp)
 	sp->wrk->sctx = &sctx;
 
 	if (sp->wrk->res_mode & RES_GUNZIP) {
-		sctx.vgz = VGZ_NewUngzip(sp, "U S -");
+		sctx.vgz = VGZ_NewUngzip(sp->wrk, "U S -");
 		sctx.obuf = obuf;
 		sctx.obuf_len = sizeof (obuf);
 	}
@@ -911,14 +910,14 @@ cnt_streambody(struct sess *sp)
 
 	AssertObjCorePassOrBusy(sp->obj->objcore);
 
-	i = FetchBody(sp);
+	i = FetchBody(sp->wrk, sp->obj);
 
 	sp->wrk->h_content_length = NULL;
 
 	http_Setup(sp->wrk->bereq, NULL);
 	http_Setup(sp->wrk->beresp, NULL);
 	sp->wrk->vfp = NULL;
-	AZ(sp->vbc);
+	AZ(sp->wrk->vbc);
 	AN(sp->director);
 
 	if (!i && sp->obj->objcore != NULL) {
@@ -935,7 +934,7 @@ cnt_streambody(struct sess *sp)
 
 	RES_StreamEnd(sp);
 	if (sp->wrk->res_mode & RES_GUNZIP)
-		VGZ_Destroy(&sctx.vgz);
+		(void)VGZ_Destroy(&sctx.vgz, sp->vsl_id);
 
 	sp->wrk->sctx = NULL;
 	assert(WRW_IsReleased(sp->wrk));
@@ -968,7 +967,7 @@ cnt_first(struct sess *sp)
 	sp->ws_ses = WS_Snapshot(sp->ws);
 
 	/* Receive a HTTP protocol request */
-	HTC_Init(sp->htc, sp->ws, sp->fd, params->http_req_size,
+	HTC_Init(sp->htc, sp->ws, sp->fd, sp->vsl_id, params->http_req_size,
 	    params->http_req_hdr_len);
 	sp->wrk->lastused = sp->t_open;
 	sp->wrk->acct_tmp.sess++;
@@ -1194,7 +1193,7 @@ cnt_miss(struct sess *sp)
 		 * the minority of clients which don't.
 		 */
 		http_Unset(sp->wrk->bereq, H_Accept_Encoding);
-		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->bereq,
+		http_SetHeader(sp->wrk, sp->vsl_id, sp->wrk->bereq,
 		    "Accept-Encoding: gzip");
 	}
 	sp->wrk->connect_timeout = 0;
@@ -1398,7 +1397,7 @@ cnt_recv(struct sess *sp)
 	     (recv_handling != VCL_RET_PASS)) {
 		if (RFC2616_Req_Gzip(sp)) {
 			http_Unset(sp->http, H_Accept_Encoding);
-			http_PrintfHeader(sp->wrk, sp->fd, sp->http,
+			http_SetHeader(sp->wrk, sp->vsl_id, sp->http,
 			    "Accept-Encoding: gzip");
 		} else {
 			http_Unset(sp->http, H_Accept_Encoding);
@@ -1464,7 +1463,7 @@ cnt_start(struct sess *sp)
 
 	/* Update stats of various sorts */
 	sp->wrk->stats.client_req++;
-	sp->t_req = TIM_real();
+	sp->t_req = VTIM_real();
 	sp->wrk->lastused = sp->t_req;
 	sp->wrk->acct_tmp.req++;
 
@@ -1537,12 +1536,11 @@ static void
 cnt_diag(struct sess *sp, const char *state)
 {
 	if (sp->wrk != NULL) {
-		WSL(sp->wrk, SLT_Debug, sp->id,
-		    "thr %p STP_%s sp %p obj %p vcl %p",
+		WSP(sp, SLT_Debug, "thr %p STP_%s sp %p obj %p vcl %p",
 		    pthread_self(), state, sp, sp->obj, sp->vcl);
 		WSL_Flush(sp->wrk, 0);
 	} else {
-		VSL(SLT_Debug, sp->id,
+		VSL(SLT_Debug, sp->vsl_id,
 		    "thr %p STP_%s sp %p obj %p vcl %p",
 		    pthread_self(), state, sp, sp->obj, sp->vcl);
 	}
@@ -1575,14 +1573,21 @@ CNT_Session(struct sess *sp)
 	AZ(w->do_esi);
 
 	/*
-	 * Whenever we come in from the acceptor we need to set blocking
-	 * mode, but there is no point in setting it when we come from
+	 * Whenever we come in from the acceptor or waiter, we need to set
+	 * blocking mode, but there is no point in setting it when we come from
 	 * ESI or when a parked sessions returns.
-	 * It would be simpler to do this in the acceptor, but we'd rather
-	 * do the syscall in the worker thread.
+	 * It would be simpler to do this in the acceptor or waiter, but we'd
+	 * rather do the syscall in the worker thread.
+	 * On systems which return errors for ioctl, we close early
 	 */
-	if (sp->step == STP_FIRST || sp->step == STP_START)
-		(void)VTCP_blocking(sp->fd);
+	if ((sp->step == STP_FIRST || sp->step == STP_START) &&
+	    VTCP_blocking(sp->fd)) {
+		if (errno == ECONNRESET)
+			SES_Close(sp, "remote closed");
+		else
+			SES_Close(sp, "error");
+		sp->step = STP_DONE;
+	}
 
 	/*
 	 * NB: Once done is set, we can no longer touch sp!
@@ -1606,7 +1611,7 @@ CNT_Session(struct sess *sp)
 				cnt_diag(sp, #u); \
 			done = cnt_##l(sp); \
 		        break;
-#include "steps.h"
+#include "tbl/steps.h"
 #undef STEP
 		default:
 			WRONG("State engine misfire");
@@ -1622,7 +1627,7 @@ CNT_Session(struct sess *sp)
 	AZ(w->do_gunzip);
 	AZ(w->do_esi);
 #define ACCT(foo)	AZ(w->acct_tmp.foo);
-#include "acct_fields.h"
+#include "tbl/acct_fields.h"
 #undef ACCT
 	assert(WRW_IsReleased(w));
 }

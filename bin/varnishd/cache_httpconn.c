@@ -27,17 +27,24 @@
  * SUCH DAMAGE.
  *
  * HTTP protocol requests
+ *
+ * The trouble with the "until magic sequence" design of HTTP protocol messages
+ * is that either you have to read a single character at a time, which is
+ * inefficient, or you risk reading too much, and pre-read some of the object,
+ * or even the next pipelined request, which follows the one you want.
+ *
+ * HTC reads a HTTP protocol header into a workspace, subject to limits,
+ * and stops when we see the magic marker (double [CR]NL), and if we overshoot,
+ * it keeps track of the "pipelined" data.
+ *
+ * We use this both for client and backend connections.
  */
 
 #include "config.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <string.h>
-#include <unistd.h>
-
 #include "cache.h"
+
+#include "vct.h"
 
 /*--------------------------------------------------------------------
  * Check if we have a complete HTTP request or response yet
@@ -55,9 +62,10 @@ htc_header_complete(txt *t)
 	Tcheck(*t);
 	assert(*t->e == '\0');
 	/* Skip any leading white space */
-	for (p = t->b ; isspace(*p); p++)
+	for (p = t->b ; vct_issp(*p); p++)
 		continue;
-	if (*p == '\0') {
+	if (p == t->e) {
+		/* All white space */
 		t->e = t->b;
 		*t->e = '\0';
 		return (0);
@@ -79,16 +87,16 @@ htc_header_complete(txt *t)
 /*--------------------------------------------------------------------*/
 
 void
-HTC_Init(struct http_conn *htc, struct ws *ws, int fd, unsigned maxbytes,
-    unsigned maxhdr)
+HTC_Init(struct http_conn *htc, struct ws *ws, int fd, unsigned vsl_id,
+    unsigned maxbytes, unsigned maxhdr)
 {
 
 	htc->magic = HTTP_CONN_MAGIC;
 	htc->ws = ws;
 	htc->fd = fd;
+	htc->vsl_id = vsl_id;
 	htc->maxbytes = maxbytes;
 	htc->maxhdr = maxhdr;
-	htc->error = "No error recorded";
 
 	(void)WS_Reserve(htc->ws, htc->maxbytes);
 	htc->rxbuf.b = ws->f;
@@ -110,7 +118,6 @@ HTC_Reinit(struct http_conn *htc)
 	unsigned l;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	htc->error = "No error recorded";
 	(void)WS_Reserve(htc->ws, htc->maxbytes);
 	htc->rxbuf.b = htc->ws->f;
 	htc->rxbuf.e = htc->ws->f;
@@ -126,7 +133,7 @@ HTC_Reinit(struct http_conn *htc)
 }
 
 /*--------------------------------------------------------------------
- *
+ * Return 1 if we have a complete HTTP procol header
  */
 
 int
@@ -140,6 +147,8 @@ HTC_Complete(struct http_conn *htc)
 	if (i == 0)
 		return (0);
 	WS_ReleaseP(htc->ws, htc->rxbuf.e);
+	AZ(htc->pipeline.b);
+	AZ(htc->pipeline.e);
 	if (htc->rxbuf.b + i < htc->rxbuf.e) {
 		htc->pipeline.b = htc->rxbuf.b + i;
 		htc->pipeline.e = htc->rxbuf.e;
@@ -171,6 +180,10 @@ HTC_Rx(struct http_conn *htc)
 	}
 	i = read(htc->fd, htc->rxbuf.e, i);
 	if (i <= 0) {
+		/*
+		 * We wouldn't come here if we had a complete HTTP header
+		 * so consequently an EOF can not be OK
+		 */
 		WS_ReleaseP(htc->ws, htc->rxbuf.b);
 		return (-1);
 	}
@@ -179,16 +192,21 @@ HTC_Rx(struct http_conn *htc)
 	return (HTC_Complete(htc));
 }
 
+/*--------------------------------------------------------------------
+ * Read up to len bytes, returning pipelined data first.
+ */
+
 ssize_t
-HTC_Read(struct http_conn *htc, void *d, size_t len)
+HTC_Read(struct worker *w, struct http_conn *htc, void *d, size_t len)
 {
 	size_t l;
 	unsigned char *p;
 	ssize_t i;
 
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	l = 0;
 	p = d;
-	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	if (htc->pipeline.b) {
 		l = Tlen(htc->pipeline);
 		if (l > len)
@@ -204,9 +222,8 @@ HTC_Read(struct http_conn *htc, void *d, size_t len)
 		return (l);
 	i = read(htc->fd, p, len);
 	if (i < 0) {
-		htc->error = strerror(errno);
+		WSL(w, SLT_FetchError, htc->vsl_id, "%s", strerror(errno));
 		return (i);
-	} else if (i == 0)
-		htc->error = "Remote closed connection";
+	}
 	return (i + l);
 }

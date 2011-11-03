@@ -44,56 +44,52 @@ varnishd_SOURCES = \
 	cache_vrt_re.c \
 	cache_vrt_var.c \
 	cache_vrt_vmod.c \
-	cache_waiter.c \
-	cache_waiter_epoll.c \
-	cache_waiter_kqueue.c \
-	cache_waiter_poll.c \
-	cache_waiter_ports.c \
+	waiter/cache_waiter.c \
+	waiter/cache_waiter_epoll.c \
+	waiter/cache_waiter_kqueue.c \
+	waiter/cache_waiter_poll.c \
+	waiter/cache_waiter_ports.c \
 	cache_wrk.c \
 	cache_wrw.c \
 	cache_ws.c \
-	hash_classic.c \
-	hash_critbit.c \
-	hash_simple_list.c \
-	mgt_child.c \
-	mgt_cli.c \
-	mgt_param.c \
-	mgt_pool.c \
-	mgt_sandbox.c \
-	mgt_shmem.c \
-	mgt_vcc.c \
+	hash/hash_classic.c \
+	hash/hash_critbit.c \
+	hash/hash_simple_list.c \
+	mgt/mgt_child.c \
+	mgt/mgt_cli.c \
+	mgt/mgt_param.c \
+	mgt/mgt_pool.c \
+	mgt/mgt_sandbox.c \
+	mgt/mgt_sandbox_solaris.c \
+	mgt/mgt_shmem.c \
+	mgt/mgt_vcc.c \
 	rfc2616.c \
-	stevedore.c \
-	stevedore_utils.c \
-	storage_file.c \
-	storage_malloc.c \
-	storage_persistent.c \
-	storage_persistent_mgt.c \
-	storage_persistent_silo.c \
-	storage_persistent_subr.c \
-	storage_synth.c \
-	storage_umem.c \
+	storage/stevedore.c \
+	storage/stevedore_utils.c \
+	storage/storage_file.c \
+	storage/storage_malloc.c \
+	storage/storage_persistent.c \
+	storage/storage_persistent_mgt.c \
+	storage/storage_persistent_silo.c \
+	storage/storage_persistent_subr.c \
+	storage/storage_synth.c \
+	storage/storage_umem.c \
 	varnishd.c \
 	vsm.c
 
 noinst_HEADERS = \
-	acct_fields.h \
-	body_status.h \
 	cache.h \
 	cache_backend.h \
-	cache_backend_poll.h \
 	cache_esi.h \
-	cache_waiter.h \
+	waiter/cache_waiter.h \
 	common.h \
 	default_vcl.h \
-	hash_slinger.h \
+	hash/hash_slinger.h \
 	heritage.h \
-	locks.h \
-	mgt.h \
-	mgt_cli.h \
-	steps.h \
-	stevedore.h \
-	storage_persistent.h \
+	mgt/mgt.h \
+	mgt/mgt_cli.h \
+	storage/storage.h \
+	storage/storage_persistent.h \
 	vparam.h
 
 varnishd_CFLAGS = \
@@ -119,7 +115,7 @@ DISTCLEANFILES = default_vcl.h
 #
 # Turn the default.vcl file into a C-string we can include in the program.
 #
-default_vcl.h:	default.vcl Makefile
+default_vcl.h:	default.vcl
 	echo '/*' > $@
 	echo ' * NB:  This file is machine generated, DO NOT EDIT!' >> $@
 	echo ' *' >> $@
@@ -132,7 +128,7 @@ default_vcl.h:	default.vcl Makefile
 	    -e 's/^/ "/' $(srcdir)/default.vcl >> $@
 
 # Explicitly record dependency
-mgt_vcc.c:	default_vcl.h
+mgt/mgt_vcc.c:	default_vcl.h
 
 varnishd.1: $(top_srcdir)/doc/sphinx/reference/varnishd.rst
 if HAVE_RST2MAN

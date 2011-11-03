@@ -27,9 +27,21 @@
  *
  * Regular expression support
  *
+ * We wrap PCRE in VRE to make to make it feasible to use something else
+ * without hunting down stuff through out the Varnish source code.
+ *
  */
 
+#ifndef VRE_H_INCLUDED
+#define VRE_H_INCLUDED
+
 struct vre;
+
+struct vre_limits {
+	unsigned	match;
+	unsigned	match_recursion;
+};
+
 typedef struct vre vre_t;
 
 /* This maps to PCRE error codes */
@@ -37,7 +49,12 @@ typedef struct vre vre_t;
 
 /* And those to PCRE options */
 #define VRE_CASELESS           0x00000001
+#define VRE_NOTEMPTY_ATSTART   0x10000000
 
 vre_t *VRE_compile(const char *, int, const char **, int *);
-int VRE_exec(const vre_t *, const char *, int, int, int, int *, int);
+int VRE_exec(const vre_t *code, const char *subject, int length,
+    int startoffset, int options, int *ovector, int ovecsize,
+    const volatile struct vre_limits *lim);
 void VRE_free(vre_t **);
+
+#endif /* VRE_H_INCLUDED */

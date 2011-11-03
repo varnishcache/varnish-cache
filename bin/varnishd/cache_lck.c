@@ -35,8 +35,6 @@
 
 #include "config.h"
 
-#include <stdio.h>
-
 #include <stdlib.h>
 
 #include "cache.h"
@@ -196,7 +194,7 @@ Lck_Delete(struct lock *lck)
 }
 
 #define LOCK(nam) struct VSC_C_lck *lck_##nam;
-#include "locks.h"
+#include "tbl/locks.h"
 #undef LOCK
 
 void
@@ -207,6 +205,6 @@ LCK_Init(void)
 #define LOCK(nam)						\
 	lck_##nam = VSM_Alloc(sizeof(struct VSC_C_lck),		\
 	   VSC_CLASS, VSC_TYPE_LCK, #nam);
-#include "locks.h"
+#include "tbl/locks.h"
 #undef LOCK
 }

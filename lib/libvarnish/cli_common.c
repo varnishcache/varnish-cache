@@ -36,19 +36,18 @@
 #include <poll.h>
 #include <signal.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
 
-#include "vsb.h"
-
-#include "libvarnish.h"
-
+#include "vas.h"
 #include "vcli.h"
-#include "cli_priv.h"
-#include "cli_common.h"
+#include "vcli_common.h"
+#include "vcli_priv.h"
+#include "vsb.h"
 
 /*lint -e{818} cli could be const */
 void

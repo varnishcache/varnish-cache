@@ -29,24 +29,25 @@
 
 #include "config.h"
 
-#include <sys/types.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
 #include <errno.h>
 #include <fcntl.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "vas.h"
-#include "vin.h"
-#include "vsm.h"
-#include "vbm.h"
 #include "miniobj.h"
-#include "varnishapi.h"
+#include "vas.h"
 
+#include "vapi/vsm.h"
+#include "vapi/vsm_int.h"
+#include "vbm.h"
+#include "vin.h"
 #include "vsm_api.h"
 
 #ifndef MAP_HASSEMAPHORE

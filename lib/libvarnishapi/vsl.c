@@ -29,31 +29,33 @@
 
 #include "config.h"
 
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
+#include <errno.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "vas.h"
-#include "vsm.h"
-#include "vsl.h"
-#include "vre.h"
-#include "vbm.h"
 #include "miniobj.h"
-#include "varnishapi.h"
+#include "vas.h"
 
-#include "vsm_api.h"
-#include "vsl_api.h"
+#include "vapi/vsl.h"
+#include "vapi/vsm.h"
+#include "vapi/vsm_int.h"
+#include "vbm.h"
 #include "vmb.h"
+#include "vre.h"
+#include "vsl_api.h"
+#include "vsm_api.h"
 
 /*--------------------------------------------------------------------*/
 
 const char *VSL_tags[256] = {
 #define SLTM(foo)       [SLT_##foo] = #foo,
-#include "vsl_tags.h"
+#include "tbl/vsl_tags.h"
 #undef SLTM
 };
 
@@ -75,8 +77,6 @@ VSL_Setup(struct VSM_data *vd)
 	vsl->regflags = 0;
 
 	/* XXX: Allocate only if log access */
-	vsl->vbm_client = vbit_init(4096);
-	vsl->vbm_backend = vbit_init(4096);
 	vsl->vbm_supress = vbit_init(256);
 	vsl->vbm_select = vbit_init(256);
 
@@ -102,8 +102,6 @@ VSL_Delete(struct VSM_data *vd)
 	vd->vsl = NULL;
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 
-	vbit_destroy(vsl->vbm_client);
-	vbit_destroy(vsl->vbm_backend);
 	vbit_destroy(vsl->vbm_supress);
 	vbit_destroy(vsl->vbm_select);
 	free(vsl->rbuf);
@@ -219,7 +217,6 @@ VSL_NextLog(const struct VSM_data *vd, uint32_t **pp, uint64_t *bits)
 	struct vsl *vsl;
 	uint32_t *p;
 	unsigned char t;
-	unsigned u;
 	int i;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -230,22 +227,7 @@ VSL_NextLog(const struct VSM_data *vd, uint32_t **pp, uint64_t *bits)
 		i = vsl_nextlog(vsl, &p);
 		if (i != 1)
 			return (i);
-		u = VSL_ID(p);
 		t = VSL_TAG(p);
-		switch(t) {
-		case SLT_SessionOpen:
-		case SLT_ReqStart:
-			vbit_set(vsl->vbm_client, u);
-			vbit_clr(vsl->vbm_backend, u);
-			break;
-		case SLT_BackendOpen:
-		case SLT_BackendXID:
-			vbit_clr(vsl->vbm_client, u);
-			vbit_set(vsl->vbm_backend, u);
-			break;
-		default:
-			break;
-		}
 		if (vsl->skip) {
 			--vsl->skip;
 			continue;
@@ -260,19 +242,19 @@ VSL_NextLog(const struct VSM_data *vd, uint32_t **pp, uint64_t *bits)
 		}
 		if (vbit_test(vsl->vbm_supress, t))
 			continue;
-		if (vsl->b_opt && !vbit_test(vsl->vbm_backend, u))
+		if (vsl->b_opt && !VSL_BACKEND(p))
 			continue;
-		if (vsl->c_opt && !vbit_test(vsl->vbm_client, u))
+		if (vsl->c_opt && !VSL_CLIENT(p))
 			continue;
 		if (vsl->regincl != NULL) {
 			i = VRE_exec(vsl->regincl, VSL_DATA(p), VSL_LEN(p),
-			    0, 0, NULL, 0);
+			    0, 0, NULL, 0, NULL);
 			if (i == VRE_ERROR_NOMATCH)
 				continue;
 		}
 		if (vsl->regexcl != NULL) {
 			i = VRE_exec(vsl->regexcl, VSL_DATA(p), VSL_LEN(p),
-			    0, 0, NULL, 0);
+			    0, 0, NULL, 0, NULL);
 			if (i != VRE_ERROR_NOMATCH)
 				continue;
 		}
@@ -282,7 +264,7 @@ VSL_NextLog(const struct VSM_data *vd, uint32_t **pp, uint64_t *bits)
 			VTAILQ_FOREACH(vrm, &vsl->matchers, next) {
 				if (vrm->tag == t) {
 					i = VRE_exec(vrm->re, VSL_DATA(p),
-						     VSL_LEN(p), 0, 0, NULL, 0);
+					    VSL_LEN(p), 0, 0, NULL, 0, NULL);
 					if (i >= 0)
 						*bits |= (uintmax_t)1 << j;
 				}
@@ -319,10 +301,10 @@ VSL_Dispatch(struct VSM_data *vd, VSL_handler_f *func, void *priv)
 		u = VSL_ID(p);
 		l = VSL_LEN(p);
 		s = 0;
-		if (vbit_test(vsl->vbm_backend, u))
-			s |= VSL_S_BACKEND;
-		if (vbit_test(vsl->vbm_client, u))
+		if (VSL_CLIENT(p))
 			s |= VSL_S_CLIENT;
+		if (VSL_BACKEND(p))
+			s |= VSL_S_BACKEND;
 		if (func(priv, VSL_TAG(p), u, l, s, VSL_DATA(p), bitmap))
 			return (1);
 	}

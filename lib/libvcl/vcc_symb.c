@@ -32,11 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "vsb.h"
-
-#include "vcc_priv.h"
 #include "vcc_compile.h"
-#include "libvarnish.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -45,7 +41,7 @@ VCC_SymKind(struct vcc *tl, const struct symbol *s)
 {
 	switch(s->kind) {
 #define VCC_SYMB(uu, ll, dd)	case SYM_##uu: return(dd);
-#include "symbol_kind.h"
+#include "tbl/symbol_kind.h"
 #undef VCC_SYMB
 	default:
 		ErrInternal(tl);

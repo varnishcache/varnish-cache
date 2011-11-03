@@ -26,10 +26,15 @@
  * SUCH DAMAGE.
  */
 
-#include <pcre.h>
+#include "config.h"
 
-#include "libvarnish.h"
+#include <errno.h>
+#include <pcre.h>
+#include <string.h>
+
 #include "miniobj.h"
+#include "vas.h"
+
 #include "vre.h"
 
 struct vre {
@@ -38,41 +43,57 @@ struct vre {
 	pcre *re;
 };
 
-vre_t *VRE_compile(const char *pattern, int options,
-		    const char **errptr, int *erroffset) {
+vre_t *
+VRE_compile(const char *pattern, int options,
+		    const char **errptr, int *erroffset)
+{
 	vre_t *v;
 	*errptr = NULL; *erroffset = 0;
 
 	ALLOC_OBJ(v, VRE_MAGIC);
-	AN(v);
+	if (v == NULL)
+		return (NULL);
 	v->re = pcre_compile(pattern, options, errptr, erroffset, NULL);
 	if (v->re == NULL) {
 		VRE_free(&v);
-		return NULL;
+		return (NULL);
 	}
-	return v;
+	return (v);
 }
 
-int VRE_exec(const vre_t *code, const char *subject, int length,
-	     int startoffset, int options, int *ovector, int ovecsize) {
+int
+VRE_exec(const vre_t *code, const char *subject, int length,
+    int startoffset, int options, int *ovector, int ovecsize,
+    const volatile struct vre_limits *lim)
+{
 	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
 	int ov[30];
+	pcre_extra extra;
+
 	if (ovector == NULL) {
 		ovector = ov;
 		ovecsize = sizeof(ov)/sizeof(ov[0]);
 	}
 
-	return pcre_exec(code->re, NULL, subject, length,
-			 startoffset, options, ovector, ovecsize);
+	memset(&extra, 0, sizeof extra);
+	if (lim != NULL) {
+		extra.match_limit = lim->match;
+		extra.flags |= PCRE_EXTRA_MATCH_LIMIT;
+		extra.match_limit_recursion = lim->match_recursion;
+		extra.flags |= PCRE_EXTRA_MATCH_LIMIT_RECURSION;
+	}
+
+	return (pcre_exec(code->re, &extra, subject, length,
+	    startoffset, options, ovector, ovecsize));
 }
 
-void VRE_free(vre_t **vv) {
-
+void
+VRE_free(vre_t **vv)
+{
 	vre_t *v = *vv;
 
 	*vv = NULL;
 	CHECK_OBJ(v, VRE_MAGIC);
 	pcre_free(v->re);
-	v->magic = 0;
 	FREE_OBJ(v);
 }

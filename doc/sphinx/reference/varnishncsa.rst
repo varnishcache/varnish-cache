@@ -54,6 +54,8 @@ The following options are available:
 
             %h %l %u %t "%r" %s %b "%{Referer}i" "%{User-agent}i"
 
+	    Escape sequences \\n and \\t are supported.
+
 	    Supported formatters are:
 
 	      %b 
@@ -62,10 +64,12 @@ The following options are available:
    	         bytes are sent.
 
 	      %H 
-	         The request protocol
+	         The request protocol. Defaults to HTTP/1.0 if not
+                 known.
 
               %h
-	         Remote host
+	         Remote host. Defaults to '-' if not known.
+                 Defaults to 127.0.0.1 for backend requests.
 
 	      %{X}i
 	         The contents of request header line X.
@@ -74,16 +78,18 @@ The following options are available:
 	         Remote logname (always '-')
 
 	      %m
-	         Request method
+	         Request method. Defaults to '-' if not known.
 
 	      %q
-	         The query string, if no query string exists, an empty string.
+	         The query string, if no query string exists, an
+                 empty string.
 
 	      %{X}o
 	         The contents of response header line X.
 
 	      %r
-	         The first line of the request
+	         The first line of the request. Synthesized from other
+                 fields, so it may not be the request verbatim.
 
 	      %s
 	         Status sent to the client
@@ -93,7 +99,8 @@ The following options are available:
 	         format.
 
 	      %U
-	         The request URL without any query string.
+	         The request URL without any query string. Defaults to
+                 '-' if not known.
 
 	      %u
 	         Remote user from auth
@@ -111,6 +118,10 @@ The following options are available:
 		   Varnish:handling
 		     How the request was handled, whether it was a
 		     cache hit, miss, pass, pipe or error.
+	
+		   VCL_Log:key
+		     Output value set by std.log("key=value") in VCL.
+		     
 
 -m tag:regex only list records where tag matches regex. Multiple
             -m options are AND-ed together.

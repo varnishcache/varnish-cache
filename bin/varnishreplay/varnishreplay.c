@@ -36,17 +36,19 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
-#include <stdarg.h>
 #include <signal.h>
+#include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
+#include "vapi/vsl.h"
+#include "vapi/vsm.h"
+#include "vas.h"
+#include "vcs.h"
 #include "vqueue.h"
-
-#include "libvarnish.h"
-#include "varnishapi.h"
 #include "vss.h"
 
 #define freez(x) do { if (x) free(x); x = NULL; } while (0);

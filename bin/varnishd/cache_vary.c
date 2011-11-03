@@ -54,12 +54,10 @@
 
 #include "config.h"
 
-#include <string.h>
-#include <stdlib.h>
-
 #include "cache.h"
-#include "vend.h"
+
 #include "vct.h"
+#include "vend.h"
 
 struct vsb *
 VRY_Create(const struct sess *sp, const struct http *hp)

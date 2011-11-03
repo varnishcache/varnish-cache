@@ -30,17 +30,6 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-#include <sys/uio.h>
-
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
-#include "vcl.h"
-#include "cli_priv.h"
 #include "cache.h"
 
 void

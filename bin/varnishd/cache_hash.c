@@ -52,19 +52,15 @@
 
 #include "config.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
-#include <string.h>
-#include <limits.h>
-#include <sys/types.h>
-#include <fcntl.h>
 
 #include "cache.h"
-#include "stevedore.h"
-#include "hash_slinger.h"
+
+#include "hash/hash_slinger.h"
+#include "vav.h"
 #include "vsha256.h"
-#include "cache_backend.h"
 
 static const struct hash_slinger *hash;
 
@@ -314,7 +310,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
+	AN(sp->director);
 	AN(hash);
 	w = sp->wrk;
 
@@ -503,7 +499,7 @@ hsh_rush(struct objhead *oh)
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 		AZ(sp->wrk);
 		VTAILQ_REMOVE(&wl->list, sp, list);
-		DSL(0x20, SLT_Debug, sp->id, "off waiting list");
+		DSL(0x20, SLT_Debug, sp->vsl_id, "off waiting list");
 		if (SES_Schedule(sp)) {
 			/*
 			 * We could not schedule the session, leave the

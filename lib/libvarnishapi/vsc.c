@@ -31,17 +31,20 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <string.h>
+
+#include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "vas.h"
-#include "vav.h"
-#include "vsm.h"
-#include "vsc.h"
-#include "vqueue.h"
 #include "miniobj.h"
-#include "varnishapi.h"
+#include "vas.h"
 
+#include "vapi/vsc.h"
+#include "vapi/vsm.h"
+#include "vapi/vsm_int.h"
+#include "vav.h"
+#include "vqueue.h"
 #include "vsm_api.h"
 
 struct vsc_sf {
@@ -309,7 +312,7 @@ iter_call(const struct vsc *vsc, VSC_iter_f *func, void *priv,
 		return (0);						\
 	}
 
-#include "vsc_all.h"
+#include "tbl/vsc_all.h"
 #undef VSC_DO
 #undef VSC_F
 #undef VSC_DONE
@@ -339,7 +342,7 @@ VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv)
 			if (!i)					\
 				continue;			\
 		}
-#include "vsc_all.h"
+#include "tbl/vsc_all.h"
 #undef VSC_F
 #undef VSC_DO
 #undef VSC_DONE

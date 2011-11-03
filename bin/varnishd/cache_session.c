@@ -35,14 +35,12 @@
 
 #include "config.h"
 
-#include <stdlib.h>
-#include <string.h>
 #include <math.h>
-#include <sys/uio.h>
-#include <sys/socket.h>
+#include <stdlib.h>
 
 #include "cache.h"
-#include "cache_waiter.h"
+
+#include "waiter/cache_waiter.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -86,7 +84,7 @@ SES_Charge(struct sess *sp)
 	sp->wrk->stats.s_##foo += a->foo;	\
 	sp->acct_ses.foo += a->foo;		\
 	a->foo = 0;
-#include "acct_fields.h"
+#include "tbl/acct_fields.h"
 #undef ACCT
 }
 
@@ -303,7 +301,7 @@ SES_Close(struct sess *sp, const char *reason)
 	int i;
 
 	assert(sp->fd >= 0);
-	VSL(SLT_SessionClose, sp->id, "%s", reason);
+	VSL(SLT_SessionClose, sp->vsl_id, "%s", reason);
 	i = close(sp->fd);
 	assert(i == 0 || errno != EBADF); /* XXX EINVAL seen */
 	sp->fd = -1;
@@ -352,7 +350,7 @@ SES_Delete(struct sess *sp, const char *reason)
 	assert(!isnan(b->first));
 	assert(!isnan(sp->t_end));
 
-	VSL(SLT_StatSess, sp->id, "%s %s %.0f %ju %ju %ju %ju %ju %ju %ju",
+	VSL(SLT_StatSess, sp->vsl_id, "%s %s %.0f %ju %ju %ju %ju %ju %ju %ju",
 	    sp->addr, sp->port, sp->t_end - b->first,
 	    b->sess, b->req, b->pipe, b->pass,
 	    b->fetch, b->hdrbytes, b->bodybytes);

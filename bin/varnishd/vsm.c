@@ -47,15 +47,16 @@
 
 #include "config.h"
 
-#include <unistd.h>
-#include <string.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
-#include "miniobj.h"
-#include "libvarnish.h"
 #include "common.h"
-#include "vsm.h"
+
+#include "vapi/vsm_int.h"
 #include "vmb.h"
+#include "vtim.h"
 
 /* These two come from beyond (mgt_shmem.c actually) */
 struct VSM_head		*VSM_head;
@@ -89,7 +90,7 @@ vsm_release(unsigned seq)
 static void
 vsm_cleanup(void)
 {
-	unsigned now = (unsigned)TIM_mono();
+	unsigned now = (unsigned)VTIM_mono();
 	struct VSM_chunk *sha, *sha2;
 	unsigned seq;
 
@@ -205,7 +206,7 @@ VSM__Free(const void *ptr)
 	AN(sha);
 	seq = vsm_mark();
 	bprintf(sha->class, "%s", VSM_CLASS_COOL);
-	sha->state = (unsigned)TIM_mono();
+	sha->state = (unsigned)VTIM_mono();
 	vsm_release(seq);
 }
 

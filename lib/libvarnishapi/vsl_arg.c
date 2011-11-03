@@ -35,19 +35,21 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "vas.h"
-#include "vre.h"
-#include "vbm.h"
 #include "miniobj.h"
-#include "varnishapi.h"
+#include "vas.h"
 
-#include "vsm_api.h"
+#include "vapi/vsl.h"
+#include "vapi/vsm.h"
+#include "vbm.h"
+#include "vre.h"
 #include "vsl_api.h"
+#include "vsm_api.h"
 
 /*--------------------------------------------------------------------
  * Look up a tag

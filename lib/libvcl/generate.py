@@ -671,7 +671,7 @@ for i in returns:
 
 #######################################################################
 
-fo = open(buildroot + "/include/vcl_returns.h", "w")
+fo = open(buildroot + "/include/tbl/vcl_returns.h", "w")
 
 file_header(fo)
 
@@ -805,7 +805,9 @@ file_header(fo)
 
 fo.write("""
 #include "config.h"
+
 #include <stdio.h>
+
 #include "vcc_compile.h"
 
 const struct var vcc_vars[] = {
@@ -863,11 +865,11 @@ file_header(fo)
 fo.write("""
 
 #include "config.h"
-#include <stdio.h>
+
 #include <ctype.h>
-#include "config.h"
-#include "vcc_priv.h"
-#include "vsb.h"
+#include <stdio.h>
+
+#include "vcc_compile.h"
 """)
 
 emit_vcl_fixed_token(fo, tokens)
@@ -891,7 +893,7 @@ fo.close()
 
 #######################################################################
 
-fo = open(buildroot + "/include/vrt_stv_var.h", "w")
+fo = open(buildroot + "/include/tbl/vrt_stv_var.h", "w")
 
 file_header(fo)
 

@@ -41,10 +41,8 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "libvarnish.h"
-#include "vsc.h"
-#include "varnishapi.h"
 #include "varnishstat.h"
+
 
 /*--------------------------------------------------------------------*/
 

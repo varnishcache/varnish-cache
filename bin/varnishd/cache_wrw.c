@@ -34,21 +34,21 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <sys/types.h>
+#ifdef SENDFILE_WORKS
+#  if defined(__FreeBSD__) || defined(__DragonFly__)
+#    include <sys/socket.h>
+#  elif defined(__linux__)
+#    include <sys/sendfile.h>
+#  elif defined(__sun)
+#    include <sys/sendfile.h>
+#  else
+#     error Unknown sendfile() implementation
+#  endif
+#endif /* SENDFILE_WORKS */
 #include <sys/uio.h>
 
-#ifdef SENDFILE_WORKS
-#if defined(__FreeBSD__) || defined(__DragonFly__)
-#include <sys/socket.h>
-#elif defined(__linux__)
-#include <sys/sendfile.h>
-#elif defined(__sun)
-#include <sys/sendfile.h>
-#else
-#error Unknown sendfile() implementation
-#endif
-#endif /* SENDFILE_WORKS */
+#include <stdio.h>
 
 #include "cache.h"
 
@@ -179,14 +179,16 @@ WRW_Write(struct worker *w, const void *ptr, int len)
 		return (0);
 	if (len == -1)
 		len = strlen(ptr);
-	if (wrw->niov == wrw->siov + (wrw->ciov < wrw->siov ? 1 : 0))
+	if (wrw->niov >= wrw->siov - (wrw->ciov < wrw->siov ? 1 : 0))
 		(void)WRW_Flush(w);
 	wrw->iov[wrw->niov].iov_base = TRUST_ME(ptr);
 	wrw->iov[wrw->niov].iov_len = len;
 	wrw->liov += len;
-	if (wrw->ciov < wrw->siov)
-		wrw->cliov += len;
 	wrw->niov++;
+	if (wrw->ciov < wrw->siov) {
+		assert(wrw->niov < wrw->siov);
+		wrw->cliov += len;
+	}
 	return (len);
 }
 
@@ -208,6 +210,7 @@ WRW_Chunked(struct worker *w)
 	wrw->ciov = wrw->niov++;
 	wrw->cliov = 0;
 	assert(wrw->ciov < wrw->siov);
+	assert(wrw->niov < wrw->siov);
 }
 
 /*
@@ -261,7 +264,7 @@ WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 	} while (0);
 #elif defined(__linux__)
 	do {
-		if (WRK_Flush(w) == 0 &&
+		if (WRW_Flush(w) == 0 &&
 		    sendfile(*wrw->wfd, fd, &off, len) != len)
 			wrw->werr++;
 	} while (0);
@@ -290,7 +293,7 @@ WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 	} while (0);
 #elif defined(__sun) && defined(HAVE_SENDFILE)
 	do {
-		if (WRK_Flush(w) == 0 &&
+		if (WRW_Flush(w) == 0 &&
 		    sendfile(*wrw->wfd, fd, &off, len) != len)
 			wrw->werr++;
 	} while (0);
