@@ -25,6 +25,7 @@ separate topic. Good luck.
 	cookies
 	vary
 	purging
+	compression
 	esi
 	virtualised
 	advanced_backend_servers
