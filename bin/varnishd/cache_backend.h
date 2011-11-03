@@ -106,6 +106,12 @@ struct trouble {
  * An instance of a backend from a VCL program.
  */
 
+enum health_status {
+	healthy,
+	sick,
+	from_probe
+};
+
 struct backend {
 	unsigned		magic;
 #define BACKEND_MAGIC		0x64c4c7c6
@@ -129,6 +135,7 @@ struct backend {
 
 	struct vbp_target	*probe;
 	unsigned		healthy;
+	enum health_status	admin_health;
 	VTAILQ_HEAD(, trouble)	troublelist;
 
 	struct VSC_C_vbe	*vsc;

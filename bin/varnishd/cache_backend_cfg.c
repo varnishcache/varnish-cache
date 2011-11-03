@@ -41,6 +41,7 @@
 #include <sys/socket.h>
 
 #include "cache.h"
+#include "vcli.h"
 #include "vrt.h"
 #include "cache_backend.h"
 #include "cli_priv.h"
@@ -232,6 +233,7 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	assert(b->ipv4 != NULL || b->ipv6 != NULL);
 
 	b->healthy = 1;
+	b->admin_health = from_probe;
 
 	VTAILQ_INSERT_TAIL(&backends, b, list);
 	VSC_C_main->n_backend++;
@@ -277,25 +279,166 @@ VRT_fini_dir(struct cli *cli, struct director *b)
 
 /*--------------------------------------------------------------------*/
 
-static void
-cli_debug_backend(struct cli *cli, const char * const *av, void *priv)
+static int
+backend_find(const char *matcher, struct backend **r, int n)
 {
 	struct backend *b;
+	char *vcl_name;
+	char *s;
+	char *match_ip = NULL;
+	char *match_port = NULL;
+	int found = 0;
+
+	s = strchr(matcher, '(');
+
+	if (s == NULL) {
+		/* Simple match, max one hit */
+		VTAILQ_FOREACH(b, &backends, list) {
+			CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+			if (strcmp(b->vcl_name, matcher) == 0) {
+				if (r && found < n)
+					r[found] = b;
+				found++;
+			}
+		}
+		return found;
+	}
+
+	vcl_name = strndup(matcher, s - matcher);
+	AN(vcl_name);
+	s++;
+	while (*s != ')') {
+		if (*s == ':') {
+			/* Port */
+			s++;
+			match_port = s;
+			if (!(s = strchr(match_port, ','))) {
+				s = strchr(match_port, ')');
+			}
+			XXXAN(s);
+			match_port = strndup(match_port, s - match_port);
+			AN(match_port);
+			if (*s == ',')
+				s++;
+		} else {
+			/* IP */
+			match_ip = s;
+			if (!(s = strchr(match_ip, ','))) {
+				s = strchr(match_ip, ')');
+			}
+			XXXAN(s);
+			match_ip = strndup(match_ip, s - match_ip);
+			AN(match_ip);
+			if (*s == ',')
+				s++;
+		}
+	}
+	VTAILQ_FOREACH(b, &backends, list) {
+		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+		if (match_port && strcmp(b->port, match_port) != 0)
+			continue;
+		if (match_ip &&
+		    (strcmp(b->ipv4_addr, match_ip) != 0) &&
+		    (strcmp(b->ipv6_addr, match_ip) != 0))
+			continue;
+		if (strcmp(b->vcl_name, vcl_name) == 0) {
+			if (r && found < n)
+				r[found] = b;
+			found++;
+		}
+	}
+	return found;
+}
+
+static void
+cli_backend_list(struct cli *cli, const char * const *av, void *priv)
+{
+	struct backend *b;
+	const char *ah;
 
 	(void)av;
 	(void)priv;
 	ASSERT_CLI();
+	VCLI_Out(cli, "%-30s %10s %15s %15s", "Backend name",
+		 "Conns", "Probed healthy", "Admin health");
 	VTAILQ_FOREACH(b, &backends, list) {
+		char buf[128];
 		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+
+		bprintf(buf, "%s(%s,%s,%s)",
+			b->vcl_name,
+			b->ipv4_addr == NULL ? "" : b->ipv4_addr,
+			b->ipv6_addr == NULL ? "" : b->ipv6_addr, b->port);
+		if (b->admin_health == from_probe) {
+			ah = "Auto";
+		} else if (b->admin_health == sick) {
+			ah = "Sick";
+		} else {
+			ah = "Healthy";
+		}
 		VCLI_Out(cli, "%p %s(%s,%s,:%s) %d %d\n",
 		    b, b->vcl_name, b->ipv4_addr, b->ipv6_addr, b->port,
 		    b->refcount, b->n_conn);
+		VCLI_Out(cli, "\n%-30s %10d %15s %15s",
+			 buf,
+			 b->refcount,
+			 (b ->healthy ? "Yes" : "No"),
+			 ah);
 	}
 }
 
-static struct cli_proto debug_cmds[] = {
-	{ "debug.backend", "debug.backend",
-	    "\tExamine Backend internals\n", 0, 0, "d", cli_debug_backend },
+static void
+cli_backend_set_health(struct cli *cli, const char * const *av, void *priv)
+{
+	struct backend **b;
+	enum health_status state;
+	int n;
+	const char *wstate;
+
+	(void)av;
+	(void)priv;
+	ASSERT_CLI();
+	wstate = av[3];
+	if (strcmp(wstate, "healthy") == 0) {
+		state = healthy;
+	} else if (strcmp(wstate, "sick") == 0) {
+		state = sick;
+	} else if (strcmp(wstate, "auto") == 0) {
+		state = from_probe;
+	} else {
+		VCLI_Out(cli, "Invalid state %s", wstate);
+		VCLI_SetResult(cli, CLIS_CANT);
+		return;
+	}
+	n = backend_find(av[2], NULL, 0);
+	if (n == 0) {
+		VCLI_Out(cli, "No matching backends");
+		VCLI_SetResult(cli, CLIS_CANT);
+		return;
+	}
+
+	b = calloc(n, sizeof(struct backend *));
+	AN(b);
+	n = backend_find(av[2], b, n);
+
+	VCLI_Out(cli, "Set state to %s for the following backends:", wstate);
+	for (int i = 0; i < n; i++) {
+		char buf[128];
+		bprintf(buf, "%s(%s,%s,%s)",
+			b[i]->vcl_name,
+			b[i]->ipv4_addr == NULL ? "" : b[i]->ipv4_addr,
+			b[i]->ipv6_addr == NULL ? "" : b[i]->ipv6_addr, b[i]->port);
+
+		b[i]->admin_health = state;
+		VCLI_Out(cli, "\n\t%s", buf);
+	}
+}
+
+static struct cli_proto backend_cmds[] = {
+	{ "backend.list", "backend.list",
+	    "\tList all backends\n", 0, 0, "d", cli_backend_list },
+	{ "backend.set_health", "backend.set_health matcher state",
+	    "\tShow a backend\n", 2, 2, "d", cli_backend_set_health },
 	{ NULL }
 };
 
@@ -306,5 +449,5 @@ VBE_Init(void)
 {
 
 	Lck_New(&VBE_mtx, lck_vbe);
-	CLI_AddFuncs(debug_cmds);
+	CLI_AddFuncs(backend_cmds);
 }
