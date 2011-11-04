@@ -68,3 +68,10 @@ LIBVARNISHAPI_1.0 {
   local:
 	*;
 };
+
+LIBVARNISHAPI_1.1 {
+  global:
+	# Functions:
+	VSL_Name2Tag;
+	# Variables:
+} LIBVARNISHAPI_1.0;
