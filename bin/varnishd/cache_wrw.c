@@ -133,6 +133,14 @@ WRW_Flush(struct worker *w)
 			*/
 			size_t used = 0;
 
+			if (TIM_real() - w->sp->t_resp > params->send_timeout) {
+				WSL(w, SLT_Debug, *wrw->wfd,
+				    "Hit total send timeout, wrote = %ld/%ld; not retrying",
+				    i, wrw->liov);
+				i = -1;
+				break;
+			}
+
 			WSL(w, SLT_Debug, *wrw->wfd,
 			    "Hit send timeout, wrote = %ld/%ld; retrying",
 			    i, wrw->liov);

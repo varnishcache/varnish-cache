@@ -612,6 +612,13 @@ static const struct parspec input_parspec[] = {
                 "seconds the session is closed. \n"
 		"See setsockopt(2) under SO_SNDTIMEO for more information.",
 		DELAYED_EFFECT,
+		"600", "seconds" },
+	{ "idle_send_timeout", tweak_timeout, &master.idle_send_timeout, 0, 0,
+		"Time to wait with no data sent. "
+		"If no data has been transmitted in this many\n"
+                "seconds the session is closed. \n"
+		"See setsockopt(2) under SO_SNDTIMEO for more information.",
+		DELAYED_EFFECT,
 		"60", "seconds" },
 	{ "auto_restart", tweak_bool, &master.auto_restart, 0, 0,
 		"Restart child process automatically if it dies.\n",
