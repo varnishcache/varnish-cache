@@ -112,6 +112,7 @@ struct params {
 	unsigned		sess_timeout;
 	unsigned		pipe_timeout;
 	unsigned		send_timeout;
+	unsigned		idle_send_timeout;
 
 	/* Management hints */
 	unsigned		auto_restart;

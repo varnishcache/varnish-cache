@@ -51,6 +51,7 @@
 #include <stdio.h>
 
 #include "cache.h"
+#include "vtim.h"
 
 /*--------------------------------------------------------------------
  */
@@ -132,6 +133,14 @@ WRW_Flush(struct worker *w)
 			 counter to prevent slowlaris attacks
 			*/
 			size_t used = 0;
+
+			if (VTIM_real() - w->sp->t_resp > params->send_timeout) {
+				WSL(w, SLT_Debug, *wrw->wfd,
+				    "Hit total send timeout, wrote = %ld/%ld; not retrying",
+				    i, wrw->liov);
+				i = -1;
+				break;
+			}
 
 			WSL(w, SLT_Debug, *wrw->wfd,
 			    "Hit send timeout, wrote = %ld/%ld; retrying",

@@ -318,9 +318,9 @@ vca_acct(void *arg)
 	while (1) {
 		(void)sleep(1);
 #ifdef SO_SNDTIMEO_WORKS
-		if (params->send_timeout != send_timeout) {
+		if (params->idle_send_timeout != send_timeout) {
 			need_test = 1;
-			send_timeout = params->send_timeout;
+			send_timeout = params->idle_send_timeout;
 			tv_sndtimeo = VTIM_timeval(send_timeout);
 			VTAILQ_FOREACH(ls, &heritage.socks, list) {
 				if (ls->sock < 0)
