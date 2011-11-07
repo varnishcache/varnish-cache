@@ -61,4 +61,5 @@ varnish v1 -clierr 106 "backend.set_health s2 auto"
 varnish v1 -cliok "backend.list (foo)"
 varnish v1 -clierr 300 "backend.list ("
 varnish v1 -clierr 300 {backend.list " ( : ) -"}
+varnish v1 -cliok {backend.list "a ( b : c )"}
 
