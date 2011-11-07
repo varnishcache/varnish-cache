@@ -90,8 +90,6 @@ do_json_cb(void *priv, const struct VSC_point * const pt)
 {
 	uint64_t val;
 	int *jp;
-	char jsonkey[255];
-	char jsontmp[255];
 
 	jp = priv;
 
@@ -99,18 +97,14 @@ do_json_cb(void *priv, const struct VSC_point * const pt)
 	val = *(const volatile uint64_t*)pt->ptr;
 
 	if (*jp) *jp = 0; else printf(",\n");
-	jsonkey[0] = '\0';
 
+	printf("\t\"");
 	/* build the JSON key name.  */
-	if (strcmp(pt->ident, "")  && strcmp(pt->class, ""))  sprintf(jsonkey, "%s.%s", pt->class, pt->ident);
-	if (strcmp(pt->ident, "")  && !strcmp(pt->class, "")) sprintf(jsonkey, "%s", pt->ident);
-	if (!strcmp(pt->ident, "") && strcmp(pt->class, ""))  sprintf(jsonkey, "%s", pt->class);
-
-	strcpy(jsontmp, jsonkey);
-	if (strcmp(jsonkey, "")) sprintf(jsonkey, "%s.%s", jsontmp, pt->name);
-	else strcpy(jsonkey, pt->name);
-
-	printf("\t\"%s\": {", jsonkey);
+	if (pt->class[0])
+		printf("%s.", pt->class);
+	if (pt->ident[0])
+		printf("%s.", pt->ident);
+	printf("%s\": {", pt->name);
 
 	if (strcmp(pt->class, "")) printf("\"type\": \"%s\", ",  pt->class);
 	if (strcmp(pt->ident, "")) printf("\"ident\": \"%s\", ", pt->ident);
