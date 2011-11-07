@@ -70,8 +70,6 @@ TAGS
 /bin/varnishncsa/varnishncsa.1
 /bin/varnishreplay/varnishreplay
 /bin/varnishreplay/varnishreplay.1
-/bin/varnishsizes/varnishsizes
-/bin/varnishsizes/varnishsizes.1
 /bin/varnishstat/varnishstat
 /bin/varnishstat/varnishstat.1
 /bin/varnishtest/varnishtest
