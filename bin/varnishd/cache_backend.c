@@ -256,10 +256,10 @@ vbe_Healthy(const struct vdi_simple *vs, const struct sess *sp)
 	backend = vs->backend;
 	CHECK_OBJ_NOTNULL(backend, BACKEND_MAGIC);
 
-	if (backend->admin_health == from_probe && !backend->healthy)
+	if (backend->admin_health == ah_probe && !backend->healthy)
 		return (0);
 
-	if (backend->admin_health == sick)
+	if (backend->admin_health == ah_sick)
 		return (0);
 
 	/* VRT/VCC sets threshold to UINT_MAX to mark that it's not
@@ -270,7 +270,7 @@ vbe_Healthy(const struct vdi_simple *vs, const struct sess *sp)
 	else
 		threshold = vs->vrt->saintmode_threshold;
 
-	if (backend->admin_health == healthy)
+	if (backend->admin_health == ah_healthy)
 		threshold = UINT_MAX;
 
 	/* Saintmode is disabled */

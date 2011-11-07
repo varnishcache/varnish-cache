@@ -106,10 +106,11 @@ struct trouble {
  * An instance of a backend from a VCL program.
  */
 
-enum health_status {
-	healthy,
-	sick,
-	from_probe
+enum admin_health {
+	ah_invalid = 0,
+	ah_healthy,
+	ah_sick,
+	ah_probe
 };
 
 struct backend {
@@ -136,7 +137,7 @@ struct backend {
 
 	struct vbp_target	*probe;
 	unsigned		healthy;
-	enum health_status	admin_health;
+	enum admin_health	admin_health;
 	VTAILQ_HEAD(, trouble)	troublelist;
 
 	struct VSC_C_vbe	*vsc;
@@ -178,6 +179,7 @@ void VBE_DropRefLocked(struct backend *b);
 void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p, const char *hosthdr);
 void VBP_Remove(struct backend *b, struct vrt_backend_probe const *p);
 void VBP_Use(const struct backend *b, const struct vrt_backend_probe const *p);
+void VBP_Summary(struct cli *cli, const struct vbp_target *vt);
 
 /* Init functions for directors */
 typedef void dir_init_f(struct cli *, struct director **, int , const void*);
