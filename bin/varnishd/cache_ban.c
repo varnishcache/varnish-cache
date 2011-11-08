@@ -81,6 +81,7 @@ struct ban {
 	unsigned		flags;
 #define BAN_F_GONE		(1 << 0)
 #define BAN_F_REQ		(1 << 2)
+#define BAN_F_LURK		(3 << 3)	/* ban-lurker-color */
 	VTAILQ_HEAD(,objcore)	objcore;
 	struct vsb		*vsb;
 	uint8_t			*spec;
@@ -162,23 +163,6 @@ BAN_Free(struct ban *b)
 	if (b->spec != NULL)
 		free(b->spec);
 	FREE_OBJ(b);
-}
-
-static struct ban *
-ban_CheckLast(void)
-{
-	struct ban *b;
-
-	Lck_AssertHeld(&ban_mtx);
-	b = VTAILQ_LAST(&ban_head, banhead_s);
-	if (b != VTAILQ_FIRST(&ban_head) && b->refcount == 0) {
-		VSC_C_main->n_ban--;
-		VSC_C_main->n_ban_retire++;
-		VTAILQ_REMOVE(&ban_head, b, list);
-	} else {
-		b = NULL;
-	}
-	return (b);
 }
 
 /*--------------------------------------------------------------------
@@ -473,7 +457,6 @@ BAN_NewObjCore(struct objcore *oc)
 void
 BAN_DestroyObj(struct objcore *oc)
 {
-	struct ban *b;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	if (oc->ban == NULL)
@@ -484,12 +467,7 @@ BAN_DestroyObj(struct objcore *oc)
 	oc->ban->refcount--;
 	VTAILQ_REMOVE(&oc->ban->objcore, oc, ban_list);
 	oc->ban = NULL;
-
-	/* Attempt to purge last ban entry */
-	b = ban_CheckLast();
 	Lck_Unlock(&ban_mtx);
-	if (b != NULL)
-		BAN_Free(b);
 }
 
 /*--------------------------------------------------------------------
@@ -750,6 +728,23 @@ BAN_CheckObject(struct object *o, const struct sess *sp)
 	return (ban_check_object(o, sp, 1));
 }
 
+static struct ban *
+ban_CheckLast(void)
+{
+	struct ban *b;
+
+	Lck_AssertHeld(&ban_mtx);
+	b = VTAILQ_LAST(&ban_head, banhead_s);
+	if (b != VTAILQ_FIRST(&ban_head) && b->refcount == 0) {
+		VSC_C_main->n_ban--;
+		VSC_C_main->n_ban_retire++;
+		VTAILQ_REMOVE(&ban_head, b, list);
+	} else {
+		b = NULL;
+	}
+	return (b);
+}
+
 /*--------------------------------------------------------------------
  * Ban tail lurker thread
  */
@@ -762,9 +757,6 @@ ban_lurker_work(const struct sess *sp)
 	struct objcore *oc, *oc2;
 	struct object *o;
 	int i;
-
-	WSL_Flush(sp->wrk, 0);
-	WRK_SumStat(sp->wrk);
 
 	Lck_Lock(&ban_mtx);
 
@@ -831,21 +823,34 @@ ban_lurker_work(const struct sess *sp)
 static void * __match_proto__(bgthread_t)
 ban_lurker(struct sess *sp, void *priv)
 {
+	struct ban *bf;
+
 	int i = 0;
 	(void)priv;
 	while (1) {
-		if (params->ban_lurker_sleep == 0.0) {
-			/* Lurker is disabled.  */
-			VTIM_sleep(1.0);
-			continue;
+
+		while (params->ban_lurker_sleep == 0.0) {
+			/*
+			 * Ban-lurker is disabled:
+			 * Clean the last ban, if possible, and sleep
+			 */
+			Lck_Lock(&ban_mtx);
+			bf = ban_CheckLast();
+			Lck_Unlock(&ban_mtx);
+			if (bf != NULL)
+				BAN_Free(bf);
+			else
+				VTIM_sleep(1.0);
 		}
+
+		i = ban_lurker_work(sp);
+		WSL_Flush(sp->wrk, 0);
+		WRK_SumStat(sp->wrk);
+
 		if (i != 0)
 			VTIM_sleep(params->ban_lurker_sleep);
 		else
 			VTIM_sleep(1.0);
-		i = ban_lurker_work(sp);
-		WSL_Flush(sp->wrk, 0);
-		WRK_SumStat(sp->wrk);
 	}
 	NEEDLESS_RETURN(NULL);
 }
@@ -957,10 +962,11 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 	/* Get a reference so we are safe to traverse the list */
 	bl = BAN_TailRef();
 
+	VCLI_Out(cli, "Present bans:\n");
 	VTAILQ_FOREACH(b, &ban_head, list) {
 		if (b == bl)
 			break;
-		VCLI_Out(cli, "%p %10.6f %5u%s\t", b, ban_time(b->spec),
+		VCLI_Out(cli, "%10.6f %5u%s\t", ban_time(b->spec),
 		    bl == b ? b->refcount - 1 : b->refcount,
 		    b->flags & BAN_F_GONE ? "G" : " ");
 		ban_render(cli, b->spec);
