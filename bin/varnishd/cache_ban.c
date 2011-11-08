@@ -102,6 +102,7 @@ static struct lock ban_mtx;
 static struct ban *ban_magic;
 static pthread_t ban_thread;
 static struct ban * volatile ban_start;
+static bgthread_t ban_lurker;
 
 /*--------------------------------------------------------------------
  * BAN string magic markers
@@ -583,6 +584,7 @@ BAN_Compile(void)
 
 	SMP_NewBan(ban_magic->spec, ban_len(ban_magic->spec));
 	ban_start = VTAILQ_FIRST(&ban_head);
+	WRK_BgThread(&ban_thread, "ban-lurker", ban_lurker, NULL);
 }
 
 /*--------------------------------------------------------------------
@@ -1090,5 +1092,4 @@ BAN_Init(void)
 	ban_magic->flags |= BAN_F_GONE;
 	VSC_C_main->n_ban_gone++;
 	BAN_Insert(ban_magic);
-	WRK_BgThread(&ban_thread, "ban-lurker", ban_lurker, NULL);
 }
