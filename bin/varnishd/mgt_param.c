@@ -833,6 +833,7 @@ static const struct parspec input_parspec[] = {
 		"  0x00010000 - synchronize shmlog.\n"
 		"  0x00020000 - synchronous start of persistence.\n"
 		"  0x00040000 - release VCL early.\n"
+		"  0x00080000 - ban-lurker debugging.\n"
 		"  0x80000000 - do edge-detection on digest.\n"
 		"Use 0x notation and do the bitor in your head :-)\n",
 		0,
