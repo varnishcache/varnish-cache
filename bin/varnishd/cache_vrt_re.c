@@ -148,6 +148,7 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re,
 		i = VRE_exec(t, str, len, 0, options, ovector, 30,
 		    &params->vre_limits);
 		if (i < VRE_ERROR_NOMATCH ) {
+			WS_Release(sp->http->ws, 0);
 			WSP(sp, SLT_VCL_error,
 			    "Regexp matching returned %d", i);
 			return(str);
