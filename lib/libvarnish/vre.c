@@ -39,6 +39,19 @@ struct vre {
 	pcre *re;
 };
 
+/*
+ * We don't want to spread or even expose the majority of PCRE options
+ * so we establish our own options and implement hard linkage to PCRE
+ * here.
+ */
+const unsigned VRE_CASELESS = PCRE_CASELESS;
+const unsigned VRE_NOTEMPTY_ATSTART =
+#ifdef PCRE_NOTEMPTY_ATSTART
+	PCRE_NOTEMPTY_ATSTART;
+#else
+	0;
+#endif
+
 vre_t *
 VRE_compile(const char *pattern, int options,
 		    const char **errptr, int *erroffset)
