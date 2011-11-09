@@ -41,6 +41,10 @@
  *    e - Explantion:	Short explanation of field (for screen use)
  *    d - Description:	Long explanation of field (for doc use)
  *
+ * Please describe Gauge variables as "Number of..." to indicate that
+ * this is a snapshot, and Counter variables as "Count of" to indicate
+ * accumulative count.
+ *
  * -----------------------
  * NB: Cleanup in progress
  * -----------------------
@@ -297,13 +301,49 @@ VSC_F(n_vcl,		uint64_t, 0, 'a', "N vcl total", "")
 VSC_F(n_vcl_avail,		uint64_t, 0, 'a', "N vcl available", "")
 VSC_F(n_vcl_discard,	uint64_t, 0, 'a', "N vcl discarded", "")
 
-VSC_F(n_ban,			uint64_t, 0, 'i', "N total active bans", "")
-VSC_F(n_ban_gone,		uint64_t, 0, 'i', "N total gone bans", "")
-VSC_F(n_ban_add,		uint64_t, 0, 'a', "N new bans added", "")
-VSC_F(n_ban_retire,		uint64_t, 0, 'a', "N old bans deleted", "")
-VSC_F(n_ban_obj_test,		uint64_t, 0, 'a', "N objects tested", "")
-VSC_F(n_ban_re_test,		uint64_t, 0, 'a', "N regexps tested against", "")
-VSC_F(n_ban_dups,		uint64_t, 0, 'a', "N duplicate bans removed", "")
+/**********************************************************************/
+
+VSC_F(bans,			uint64_t, 0, 'g',
+   "Count of bans",
+	"Number of all bans in system, including bans superseded"
+	" by newer bans and bans already checked by the ban-lurker."
+)
+VSC_F(bans_gone,		uint64_t, 0, 'g',
+    "Number of bans marked 'gone'",
+	"Number of bans which are no longer active, either because they"
+	" got checked by the ban-lurker or superseded by newer identical bans."
+)
+VSC_F(bans_req,			uint64_t, 0, 'g',
+    "Number of bans using req.*",
+	"Number of bans which use req.* variables.  These bans can not"
+	" be washed by the ban-lurker."
+)
+VSC_F(bans_added,		uint64_t, 0, 'c',
+    "Bans added",
+	"Counter of bans added to ban list."
+)
+VSC_F(bans_deleted,		uint64_t, 0, 'c',
+    "Bans deleted",
+	"Counter of bans deleted from ban list."
+)
+
+VSC_F(bans_tested,		uint64_t, 0, 'c',
+    "Bans tested against objects",
+	"Count of how many bans and objects have been tested against"
+	" each other."
+)
+VSC_F(bans_tests_tested,	uint64_t, 0, 'c',
+    "Ban tests tested against objects",
+	"Count of how many tests and objects have been tested against"
+	" each other.  'ban req.url == foo && req.http.host == bar'"
+	" counts as one in 'bans_tested' and as two in 'bans_tests_tested'"
+)
+VSC_F(bans_dups,		uint64_t, 0, 'c',
+    "Bans superseded by other bans",
+	"Count of bans replaced by later identical bans."
+)
+
+/**********************************************************************/
 
 VSC_F(hcb_nolock,		uint64_t, 0, 'a', "HCB Lookups without lock", "")
 VSC_F(hcb_lock,		uint64_t, 0, 'a', "HCB Lookups with lock", "")

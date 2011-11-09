@@ -376,7 +376,6 @@ void
 BAN_Insert(struct ban *b)
 {
 	struct ban  *bi, *be;
-	unsigned pcount;
 	ssize_t ln;
 	double t0;
 
@@ -402,8 +401,10 @@ BAN_Insert(struct ban *b)
 	Lck_Lock(&ban_mtx);
 	VTAILQ_INSERT_HEAD(&ban_head, b, list);
 	ban_start = b;
-	VSC_C_main->n_ban++;
-	VSC_C_main->n_ban_add++;
+	VSC_C_main->bans++;
+	VSC_C_main->bans_added++;
+	if (b->flags & BAN_F_REQ)
+		VSC_C_main->bans_req++;
 
 	be = VTAILQ_LAST(&ban_head, banhead_s);
 	if (params->ban_dups && be != b)
@@ -419,7 +420,6 @@ BAN_Insert(struct ban *b)
 
 	/* Hunt down duplicates, and mark them as gone */
 	bi = b;
-	pcount = 0;
 	Lck_Lock(&ban_mtx);
 	while(bi != be) {
 		bi = VTAILQ_NEXT(bi, list);
@@ -429,11 +429,10 @@ BAN_Insert(struct ban *b)
 		if (memcmp(b->spec + 8, bi->spec + 8, ln - 8))
 			continue;
 		bi->flags |= BAN_F_GONE;
-		VSC_C_main->n_ban_gone++;
-		pcount++;
+		VSC_C_main->bans_gone++;
+		VSC_C_main->bans_dups++;
 	}
 	be->refcount--;
-	VSC_C_main->n_ban_dups += pcount;
 	Lck_Unlock(&ban_mtx);
 }
 
@@ -520,20 +519,28 @@ BAN_Reload(const uint8_t *ban, unsigned len)
 
 	t0 = ban_time(ban);
 	assert(len == ban_len(ban));
+
+	Lck_Lock(&ban_mtx);
+
 	VTAILQ_FOREACH(b, &ban_head, list) {
 		t1 = ban_time(b->spec);
 		assert (t1 < t2);
 		t2 = t1;
-		if (t1 == t0)
+		if (t1 == t0) {
+			Lck_Unlock(&ban_mtx);
 			return;
+		}
 		if (t1 < t0)
 			break;
-		if (!memcmp(b->spec + 8, ban + 8, len - 8))
+		if (!memcmp(b->spec + 8, ban + 8, len - 8)) {
 			gone |= BAN_F_GONE;
+			VSC_C_main->bans_dups++;
+			VSC_C_main->bans_gone++;
+		}
 	}
 
-	VSC_C_main->n_ban++;
-	VSC_C_main->n_ban_add++;
+	VSC_C_main->bans++;
+	VSC_C_main->bans_added++;
 
 	b2 = BAN_New();
 	AN(b2);
@@ -552,9 +559,13 @@ BAN_Reload(const uint8_t *ban, unsigned len)
 	for (b = VTAILQ_NEXT(b2, list); b != NULL; b = VTAILQ_NEXT(b, list)) {
 		if (b->flags & BAN_F_GONE)
 			continue;
-		if (!memcmp(b->spec + 8, ban + 8, len - 8))
+		if (!memcmp(b->spec + 8, ban + 8, len - 8)) {
 			b->flags |= BAN_F_GONE;
+			VSC_C_main->bans_dups++;
+			VSC_C_main->bans_gone++;
+		}
 	}
+	Lck_Unlock(&ban_mtx);
 }
 
 /*--------------------------------------------------------------------
@@ -705,8 +716,8 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 	}
 
 	Lck_Lock(&ban_mtx);
-	VSC_C_main->n_ban_obj_test++;
-	VSC_C_main->n_ban_re_test += tests;
+	VSC_C_main->bans_tested++;
+	VSC_C_main->bans_tests_tested += tests;
 
 	if (b == oc->ban && skipped > 0) {
 		AZ(has_req);
@@ -758,9 +769,11 @@ ban_CheckLast(void)
 	b = VTAILQ_LAST(&ban_head, banhead_s);
 	if (b != VTAILQ_FIRST(&ban_head) && b->refcount == 0) {
 		if (b->flags & BAN_F_GONE)
-			VSC_C_main->n_ban_gone--;
-		VSC_C_main->n_ban--;
-		VSC_C_main->n_ban_retire++;
+			VSC_C_main->bans_gone--;
+		if (b->flags & BAN_F_REQ)
+			VSC_C_main->bans_req--;
+		VSC_C_main->bans--;
+		VSC_C_main->bans_deleted++;
 		VTAILQ_REMOVE(&ban_head, b, list);
 	} else {
 		b = NULL;
@@ -888,7 +901,7 @@ ban_lurker_work(const struct sess *sp, unsigned pass)
 		if (!(b->flags & BAN_F_REQ)) {
 			if (!(b->flags & BAN_F_GONE)) {
 				b->flags |= BAN_F_GONE;
-				VSC_C_main->n_ban_gone++;
+				VSC_C_main->bans_gone++;
 			}
 			if (params->diag_bitmap & 0x80000)
 				VSL(SLT_Debug, 0, "lurker BAN %f now gone",
@@ -1090,6 +1103,6 @@ BAN_Init(void)
 	ban_magic = BAN_New();
 	AN(ban_magic);
 	ban_magic->flags |= BAN_F_GONE;
-	VSC_C_main->n_ban_gone++;
+	VSC_C_main->bans_gone++;
 	BAN_Insert(ban_magic);
 }

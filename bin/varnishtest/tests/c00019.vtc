@@ -16,7 +16,7 @@ varnish v1 -vcl+backend {} -start
 varnish v1 -cliok "ban.url FOO"
 
 # There is one "magic" ban from boot
-varnish v1 -expect n_ban_add == 2
+varnish v1 -expect bans_added == 2
 varnish v1 -cliok "ban.list"
 
 # Our fetch is not affected by the ban
@@ -31,12 +31,12 @@ client c1 {
 } -run
 
 varnish v1 -cliok "ban.list"
-varnish v1 -expect n_ban_obj_test == 0
-varnish v1 -expect n_ban_re_test == 0
+varnish v1 -expect bans_tested == 0
+varnish v1 -expect bans_tests_tested == 0
 
 # Add another ban
 varnish v1 -cliok "ban.url FOO"
-varnish v1 -expect n_ban_add == 3
+varnish v1 -expect bans_added == 3
 varnish v1 -cliok "ban.list"
 
 # The cached object will be band, and a new
@@ -47,8 +47,8 @@ client c1 {
 	expect resp.http.foo == 2
 } -run
 
-varnish v1 -expect n_ban_obj_test == 1
-varnish v1 -expect n_ban_re_test == 1
+varnish v1 -expect bans_tested == 1
+varnish v1 -expect bans_tests_tested == 1
 varnish v1 -cliok "ban.list"
 
 # Fetch the cached copy, just for grins
@@ -62,15 +62,15 @@ client c1 {
 # Now add another two bans, Kilroy should not be hit
 varnish v1 -cliok "ban.url KILROY"
 varnish v1 -cliok "ban.url FOO"
-varnish v1 -expect n_ban_add == 5
+varnish v1 -expect bans_added == 5
 
 # Enable dup removal of bans
 varnish v1 -cliok "param.set ban_dups on"
 
 # This should incapacitate the two previous FOO bans.
 varnish v1 -cliok "ban.url FOO"
-varnish v1 -expect n_ban_add == 6
-varnish v1 -expect n_ban_dups == 3
+varnish v1 -expect bans_added == 6
+varnish v1 -expect bans_dups == 3
 varnish v1 -cliok "ban.list"
 
 # And we should get a fresh object from backend
@@ -81,8 +81,8 @@ client c1 {
 } -run
 
 # With only two objects having ever been compared
-varnish v1 -expect n_ban_obj_test == 2
-varnish v1 -expect n_ban_re_test == 2
+varnish v1 -expect bans_tested == 2
+varnish v1 -expect bans_tests_tested == 2
 varnish v1 -cliok "ban.list"
 
 # Test a bogus regexp

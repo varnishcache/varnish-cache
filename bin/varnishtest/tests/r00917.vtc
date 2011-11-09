@@ -21,4 +21,4 @@ foo
 
 varnish v1 -cliok ban.list
 
-varnish v1 -expect n_ban_add == 2
+varnish v1 -expect bans_added == 2
