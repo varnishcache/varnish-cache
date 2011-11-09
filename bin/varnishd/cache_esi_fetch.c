@@ -240,7 +240,7 @@ vfp_esi_bytes_ug(struct worker *w, struct http_conn *htc, ssize_t bytes)
  * We receive a gzip'ed object, and want to store it gzip'ed.
  */
 
-static int 
+static int
 vfp_esi_bytes_gg(struct worker *w, struct http_conn *htc, size_t bytes)
 {
 	ssize_t wl;
@@ -391,7 +391,7 @@ vfp_esi_end(struct worker *w)
 		w->vef_priv = NULL;
 		VGZ_UpdateObj(vef->vgz, w->fetch_obj);
 		if (VGZ_Destroy(&vef->vgz,  -1) != VGZ_END)
-			retval = FetchError(w, 
+			retval = FetchError(w,
 			    "ESI+Gzip Failed at the very end");
 		FREE_OBJ(vef);
 	}

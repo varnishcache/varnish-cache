@@ -51,7 +51,7 @@
  *	(lump) - compiled regexp
  * A lump is:
  *	4 bytes - be32: length
- * 	n bytes - content
+ *	n bytes - content
  *
  * In a perfect world, we should vector through VRE to get to PCRE,
  * but since we rely on PCRE's ability to encode the regexp into a

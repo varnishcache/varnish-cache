@@ -257,7 +257,7 @@ VGZ_ObufStorage(struct worker *w, struct vgz *vg)
 	struct storage *st;
 
 	st = FetchStorage(w, 0);
-	if (st == NULL) 
+	if (st == NULL)
 		return (-1);
 
 	vg->obuf = st;
@@ -487,10 +487,10 @@ vfp_gunzip_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 			bytes -= wl;
 		}
 
-		if (VGZ_ObufStorage(w, vg)) 
+		if (VGZ_ObufStorage(w, vg))
 			return(-1);
 		i = VGZ_Gunzip(vg, &dp, &dl);
-		if (i != VGZ_OK && i != VGZ_END) 
+		if (i != VGZ_OK && i != VGZ_END)
 			return(FetchError(w, "Gunzip data error"));
 		w->fetch_obj->len += dl;
 		if (w->do_stream)
@@ -564,7 +564,7 @@ vfp_gzip_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 			VGZ_Ibuf(vg, ibuf, wl);
 			bytes -= wl;
 		}
-		if (VGZ_ObufStorage(w, vg)) 
+		if (VGZ_ObufStorage(w, vg))
 			return(-1);
 		i = VGZ_Gzip(vg, &dp, &dl, VGZ_NORMAL);
 		assert(i == Z_OK);
@@ -661,7 +661,7 @@ vfp_testgzip_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 		while (!VGZ_IbufEmpty(vg)) {
 			VGZ_Obuf(vg, obuf, sizeof obuf);
 			i = VGZ_Gunzip(vg, &dp, &dl);
-			if (i == VGZ_END && !VGZ_IbufEmpty(vg)) 
+			if (i == VGZ_END && !VGZ_IbufEmpty(vg))
 				return(FetchError(w, "Junk after gzip data"));
 			if (i != VGZ_OK && i != VGZ_END)
 				return(FetchError2(w,

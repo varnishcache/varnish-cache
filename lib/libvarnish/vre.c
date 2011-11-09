@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2006-2009 Varnish Software AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Tollef Fog Heen <tfheen@redpill-linpro.com>

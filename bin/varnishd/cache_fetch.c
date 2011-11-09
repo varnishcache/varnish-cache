@@ -277,7 +277,7 @@ fetch_chunked(struct worker *w, struct http_conn *htc)
 				break;
 		}
 
-		if (u >= sizeof buf) 
+		if (u >= sizeof buf)
 			return (FetchError(w,"chunked header too long"));
 
 		/* Skip trailing white space */
@@ -285,7 +285,7 @@ fetch_chunked(struct worker *w, struct http_conn *htc)
 			if (HTC_Read(w, htc, buf + u, 1) <= 0)
 				return (-1);
 
-		if (buf[u] != '\n') 
+		if (buf[u] != '\n')
 			return (FetchError(w,"chunked header no NL"));
 
 		buf[u] = '\0';
@@ -316,7 +316,7 @@ fetch_eof(struct worker *w, struct http_conn *htc)
 
 	assert(w->body_status == BS_EOF);
 	i = w->vfp->bytes(w, htc, SSIZE_MAX);
-	if (i < 0) 
+	if (i < 0)
 		return (-1);
 	return (0);
 }

@@ -311,6 +311,6 @@ main(int argc, char * const *argv)
 		printf("\n");
 
 		sleep(delay);
-	} 
+	}
 	exit(0);
 }

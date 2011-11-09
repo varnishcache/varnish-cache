@@ -451,13 +451,13 @@ pool_herder(void *priv)
 		}
 
 		pool_breed(pp, &tp_attr);
-		
+
 		if (pp->nthr < params->wthread_min)
 			continue;
 
 		AZ(clock_gettime(CLOCK_MONOTONIC, &ts));
 		ts.tv_sec += params->wthread_purge_delay / 1000;
-		ts.tv_nsec += 
+		ts.tv_nsec +=
 		    (params->wthread_purge_delay % 1000) * 1000000;
 		if (ts.tv_nsec >= 1000000000) {
 			ts.tv_sec++;
@@ -470,7 +470,7 @@ pool_herder(void *priv)
 		if (!i)
 			continue;
 
-		if (pp->nthr <= params->wthread_min) 
+		if (pp->nthr <= params->wthread_min)
 			continue;
 
 		t_idle = VTIM_real() - params->wthread_timeout;
@@ -480,7 +480,7 @@ pool_herder(void *priv)
 		VSC_C_main->sess_dropped += pp->ndropped;
 		pp->nqueued = pp->ndropped = 0;
 		w = VTAILQ_LAST(&pp->idle, workerhead);
-		if (w != NULL &&  
+		if (w != NULL &&
 		    (w->lastused < t_idle || pp->nthr > params->wthread_max)) {
 			VTAILQ_REMOVE(&pp->idle, w, list);
 		} else
@@ -567,12 +567,12 @@ pool_poolherder(void *priv)
 				VSC_C_main->pools++;
 				nwq++;
 				continue;
-			} 
+			}
 		}
 		/* XXX: remove pools */
 		(void)sleep(1);
 		u = 0;
-		VTAILQ_FOREACH(pp, &pools, list) 
+		VTAILQ_FOREACH(pp, &pools, list)
 			u += pp->lqueue;
 		VSC_C_main->thread_queue_len = u;
 	}
