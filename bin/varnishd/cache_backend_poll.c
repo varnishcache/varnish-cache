@@ -138,7 +138,7 @@ vbp_poke(struct vbp_target *vt)
 	tmo = (int)round((t_end - t_now) * 1e3);
 
 	s = -1;
-	if (params->prefer_ipv6 && bp->ipv6 != NULL) {
+	if (cache_param->prefer_ipv6 && bp->ipv6 != NULL) {
 		s = vbp_connect(PF_INET6, bp->ipv6, bp->ipv6len, tmo);
 		t_now = VTIM_real();
 		tmo = (int)round((t_end - t_now) * 1e3);

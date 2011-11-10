@@ -52,7 +52,7 @@ ved_include(struct sess *sp, const char *src, const char *host)
 
 	w = sp->wrk;
 
-	if (sp->esi_level >= params->max_esi_depth)
+	if (sp->esi_level >= cache_param->max_esi_depth)
 		return;
 	sp->esi_level++;
 
@@ -231,7 +231,7 @@ ESI_Deliver(struct sess *sp)
 	uint8_t tailbuf[8 + 5];
 	int isgzip;
 	struct vgz *vgz = NULL;
-	char obuf[params->gzip_stack_buffer];
+	char obuf[cache_param->gzip_stack_buffer];
 	ssize_t obufl = 0;
 	size_t dl;
 	const void *dp;

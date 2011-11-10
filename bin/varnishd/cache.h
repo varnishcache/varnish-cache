@@ -873,7 +873,7 @@ void WSL_Flush(struct worker *w, int overflow);
 
 #define DSL(flag, tag, id, ...)					\
 	do {							\
-		if (params->diag_bitmap & (flag))		\
+		if (cache_param->diag_bitmap & (flag))		\
 			VSL((tag), (id), __VA_ARGS__);		\
 	} while (0)
 

@@ -235,7 +235,7 @@ CLI_Init(void)
 	Lck_New(&cli_mtx, lck_cli);
 	cli_thread = pthread_self();
 
-	cls = VCLS_New(cli_cb_before, cli_cb_after, params->cli_buffer);
+	cls = VCLS_New(cli_cb_before, cli_cb_after, cache_param->cli_buffer);
 	AN(cls);
 
 	CLI_AddFuncs(master_cmds);

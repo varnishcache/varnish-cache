@@ -169,7 +169,7 @@ HSH_AddString(const struct sess *sp, const char *str)
 	SHA256_Update(sp->wrk->sha256ctx, str, l);
 	SHA256_Update(sp->wrk->sha256ctx, "#", 1);
 
-	if (params->log_hash)
+	if (cache_param->log_hash)
 		WSP(sp, SLT_Hash, "%s", str);
 }
 
@@ -267,7 +267,7 @@ HSH_Insert(const struct sess *sp)
 	w = sp->wrk;
 
 	HSH_Prealloc(sp);
-	if (params->diag_bitmap & 0x80000000)
+	if (cache_param->diag_bitmap & 0x80000000)
 		hsh_testmagic(sp->wrk->nobjhead->digest);
 
 	AZ(sp->hash_objhead);
@@ -316,7 +316,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 
 	HSH_Prealloc(sp);
 	memcpy(sp->wrk->nobjhead->digest, sp->digest, sizeof sp->digest);
-	if (params->diag_bitmap & 0x80000000)
+	if (cache_param->diag_bitmap & 0x80000000)
 		hsh_testmagic(sp->wrk->nobjhead->digest);
 
 	if (sp->hash_objhead != NULL) {
@@ -436,7 +436,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 			}
 			VTAILQ_INSERT_TAIL(&oh->waitinglist->list, sp, list);
 		}
-		if (params->diag_bitmap & 0x20)
+		if (cache_param->diag_bitmap & 0x20)
 			WSP(sp, SLT_Debug,
 				"on waiting list <%p>", oh);
 		SES_Charge(sp);
@@ -492,7 +492,7 @@ hsh_rush(struct objhead *oh)
 	Lck_AssertHeld(&oh->mtx);
 	wl = oh->waitinglist;
 	CHECK_OBJ_NOTNULL(wl, WAITINGLIST_MAGIC);
-	for (u = 0; u < params->rush_exponent; u++) {
+	for (u = 0; u < cache_param->rush_exponent; u++) {
 		sp = VTAILQ_FIRST(&wl->list);
 		if (sp == NULL)
 			break;
@@ -616,7 +616,7 @@ HSH_Unbusy(const struct sess *sp)
 	assert(oh->refcnt > 0);
 	if (o->ws_o->overflow)
 		sp->wrk->stats.n_objoverflow++;
-	if (params->diag_bitmap & 0x40)
+	if (cache_param->diag_bitmap & 0x40)
 		WSP(sp, SLT_Debug,
 		    "Object %u workspace free %u", o->xid, WS_Free(o->ws_o));
 

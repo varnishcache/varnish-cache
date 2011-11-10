@@ -407,7 +407,7 @@ BAN_Insert(struct ban *b)
 		VSC_C_main->bans_req++;
 
 	be = VTAILQ_LAST(&ban_head, banhead_s);
-	if (params->ban_dups && be != b)
+	if (cache_param->ban_dups && be != b)
 		be->refcount++;
 	else
 		be = NULL;
@@ -825,13 +825,13 @@ ban_lurker_work(const struct sess *sp, unsigned pass)
 		b->flags &= ~BAN_F_LURK;
 		b->flags |= pass;
 	}
-	if (params->diag_bitmap & 0x80000)
+	if (cache_param->diag_bitmap & 0x80000)
 		VSL(SLT_Debug, 0, "lurker: %d actionable bans", i);
 	if (i == 0)
 		return (0);
 
 	VTAILQ_FOREACH_REVERSE(b, &ban_head, banhead_s, list) {
-		if (params->diag_bitmap & 0x80000)
+		if (cache_param->diag_bitmap & 0x80000)
 			VSL(SLT_Debug, 0, "lurker doing %f %d",
 			    ban_time(b->spec), b->refcount);
 		while (1) {
@@ -840,7 +840,7 @@ ban_lurker_work(const struct sess *sp, unsigned pass)
 			if (oc == NULL)
 				break;
 			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-			if (params->diag_bitmap & 0x80000)
+			if (cache_param->diag_bitmap & 0x80000)
 				VSL(SLT_Debug, 0, "test: %p %d %d",
 				    oc, oc->flags & OC_F_LURK, pass);
 			if ((oc->flags & OC_F_LURK) == pass)
@@ -849,7 +849,7 @@ ban_lurker_work(const struct sess *sp, unsigned pass)
 			CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 			if (Lck_Trylock(&oh->mtx)) {
 				Lck_Unlock(&ban_mtx);
-				VTIM_sleep(params->ban_lurker_sleep);
+				VTIM_sleep(cache_param->ban_lurker_sleep);
 				continue;
 			}
 			/*
@@ -863,7 +863,7 @@ ban_lurker_work(const struct sess *sp, unsigned pass)
 			if (oc2 == NULL) {
 				Lck_Unlock(&oh->mtx);
 				Lck_Unlock(&ban_mtx);
-				VTIM_sleep(params->ban_lurker_sleep);
+				VTIM_sleep(cache_param->ban_lurker_sleep);
 				continue;
 			}
 			/*
@@ -879,7 +879,7 @@ ban_lurker_work(const struct sess *sp, unsigned pass)
 			 */
 			o = oc_getobj(sp->wrk, oc);
 			i = ban_check_object(o, sp, 0);
-			if (params->diag_bitmap & 0x80000)
+			if (cache_param->diag_bitmap & 0x80000)
 				VSL(SLT_Debug, 0, "lurker got: %p %d",
 				    oc, i);
 			if (i == -1) {
@@ -891,11 +891,11 @@ ban_lurker_work(const struct sess *sp, unsigned pass)
 				Lck_Unlock(&ban_mtx);
 			}
 			Lck_Unlock(&oh->mtx);
-			if (params->diag_bitmap & 0x80000)
+			if (cache_param->diag_bitmap & 0x80000)
 				VSL(SLT_Debug, 0, "lurker done: %p %d %d",
 				    oc, oc->flags & OC_F_LURK, pass);
 			(void)HSH_Deref(sp->wrk, NULL, &o);
-			VTIM_sleep(params->ban_lurker_sleep);
+			VTIM_sleep(cache_param->ban_lurker_sleep);
 		}
 		Lck_AssertHeld(&ban_mtx);
 		if (!(b->flags & BAN_F_REQ)) {
@@ -903,12 +903,12 @@ ban_lurker_work(const struct sess *sp, unsigned pass)
 				b->flags |= BAN_F_GONE;
 				VSC_C_main->bans_gone++;
 			}
-			if (params->diag_bitmap & 0x80000)
+			if (cache_param->diag_bitmap & 0x80000)
 				VSL(SLT_Debug, 0, "lurker BAN %f now gone",
 				    ban_time(b->spec));
 		}
 		Lck_Unlock(&ban_mtx);
-		VTIM_sleep(params->ban_lurker_sleep);
+		VTIM_sleep(cache_param->ban_lurker_sleep);
 		if (b == b0)
 			break;
 	}
@@ -925,7 +925,7 @@ ban_lurker(struct sess *sp, void *priv)
 	(void)priv;
 	while (1) {
 
-		while (params->ban_lurker_sleep == 0.0) {
+		while (cache_param->ban_lurker_sleep == 0.0) {
 			/*
 			 * Ban-lurker is disabled:
 			 * Clean the last ban, if possible, and sleep
@@ -947,7 +947,7 @@ ban_lurker(struct sess *sp, void *priv)
 			pass &= BAN_F_LURK;
 			if (pass == 0)
 				pass += (1 << LURK_SHIFT);
-			VTIM_sleep(params->ban_lurker_sleep);
+			VTIM_sleep(cache_param->ban_lurker_sleep);
 		} else {
 			VTIM_sleep(1.0);
 		}
@@ -1064,14 +1064,14 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 
 	VCLI_Out(cli, "Present bans:\n");
 	VTAILQ_FOREACH(b, &ban_head, list) {
-		if (b == bl && !(params->diag_bitmap & 0x80000))
+		if (b == bl && !(cache_param->diag_bitmap & 0x80000))
 			break;
 		VCLI_Out(cli, "%10.6f %5u%s\t", ban_time(b->spec),
 		    bl == b ? b->refcount - 1 : b->refcount,
 		    b->flags & BAN_F_GONE ? "G" : " ");
 		ban_render(cli, b->spec);
 		VCLI_Out(cli, "\n");
-		if (params->diag_bitmap & 0x80000) {
+		if (cache_param->diag_bitmap & 0x80000) {
 			Lck_Lock(&ban_mtx);
 			struct objcore *oc;
 			VTAILQ_FOREACH(oc, &b->objcore, ban_list)

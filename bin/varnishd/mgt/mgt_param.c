@@ -1074,8 +1074,8 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 	}
 	pp->func(cli, pp, val);
 
-	if (cli->result == CLIS_OK && params != NULL)
-		*params = mgt_param;
+	if (cli->result == CLIS_OK && cache_param != NULL)
+		*cache_param = mgt_param;
 
 	if (cli->result != CLIS_OK) {
 		VCLI_Out(cli, "(attempting to set param %s to %s)\n",

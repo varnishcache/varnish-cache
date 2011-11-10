@@ -121,7 +121,7 @@ VCA_Prep(struct sess *sp)
 	    addr, sizeof addr, port, sizeof port);
 	sp->addr = WS_Dup(sp->ws, addr);
 	sp->port = WS_Dup(sp->ws, port);
-	if (params->log_local_addr) {
+	if (cache_param->log_local_addr) {
 		AZ(getsockname(sp->fd, (void*)&sp->mysockaddr, &sp->mysockaddrlen));
 		VTCP_name(&sp->mysockaddr, sp->mysockaddrlen,
 		    addr, sizeof addr, port, sizeof port);
@@ -176,9 +176,9 @@ vca_pace_bad(void)
 {
 
 	Lck_Lock(&pace_mtx);
-	vca_pace += params->acceptor_sleep_incr;
-	if (vca_pace > params->acceptor_sleep_max)
-		vca_pace = params->acceptor_sleep_max;
+	vca_pace += cache_param->acceptor_sleep_incr;
+	if (vca_pace > cache_param->acceptor_sleep_max)
+		vca_pace = cache_param->acceptor_sleep_max;
 	Lck_Unlock(&pace_mtx);
 }
 
@@ -189,8 +189,8 @@ vca_pace_good(void)
 	if (vca_pace == 0.0)
 		return;
 	Lck_Lock(&pace_mtx);
-	vca_pace *= params->acceptor_sleep_decay;
-	if (vca_pace < params->acceptor_sleep_incr)
+	vca_pace *= cache_param->acceptor_sleep_decay;
+	if (vca_pace < cache_param->acceptor_sleep_incr)
 		vca_pace = 0.0;
 	Lck_Unlock(&pace_mtx);
 }
@@ -306,7 +306,7 @@ vca_acct(void *arg)
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (ls->sock < 0)
 			continue;
-		AZ(listen(ls->sock, params->listen_depth));
+		AZ(listen(ls->sock, cache_param->listen_depth));
 		AZ(setsockopt(ls->sock, SOL_SOCKET, SO_LINGER,
 		    &linger, sizeof linger));
 	}
@@ -318,9 +318,9 @@ vca_acct(void *arg)
 	while (1) {
 		(void)sleep(1);
 #ifdef SO_SNDTIMEO_WORKS
-		if (params->idle_send_timeout != send_timeout) {
+		if (cache_param->idle_send_timeout != send_timeout) {
 			need_test = 1;
-			send_timeout = params->idle_send_timeout;
+			send_timeout = cache_param->idle_send_timeout;
 			tv_sndtimeo = VTIM_timeval(send_timeout);
 			VTAILQ_FOREACH(ls, &heritage.socks, list) {
 				if (ls->sock < 0)
@@ -332,9 +332,9 @@ vca_acct(void *arg)
 		}
 #endif
 #ifdef SO_RCVTIMEO_WORKS
-		if (params->sess_timeout != sess_timeout) {
+		if (cache_param->sess_timeout != sess_timeout) {
 			need_test = 1;
-			sess_timeout = params->sess_timeout;
+			sess_timeout = cache_param->sess_timeout;
 			tv_rcvtimeo = VTIM_timeval(sess_timeout);
 			VTAILQ_FOREACH(ls, &heritage.socks, list) {
 				if (ls->sock < 0)

@@ -321,9 +321,9 @@ mgt_SHM_Init(const char *l_arg)
 	AN(VSC_C_main);
 
 	/* XXX: We need to zero params if we dealloc/clean/wash */
-	params = VSM_Alloc(sizeof *params, VSM_CLASS_PARAM, "", "");
-	AN(params);
-	*params = mgt_param;
+	cache_param = VSM_Alloc(sizeof *cache_param, VSM_CLASS_PARAM, "", "");
+	AN(cache_param);
+	*cache_param = mgt_param;
 
 	vsl_log_start = VSM_Alloc(s1, VSL_CLASS, "", "");
 	AN(vsl_log_start);

@@ -315,7 +315,7 @@ start_child(struct cli *cli)
 	heritage.std_fd = cp[1];
 	child_output = cp[0];
 
-	AN(params);
+	AN(cache_param);
 	if ((pid = fork()) < 0) {
 		perror("Could not fork child");
 		exit(1);

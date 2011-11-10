@@ -118,7 +118,7 @@ RES_BuildHttp(const struct sess *sp)
 
 	if (!(sp->wrk->res_mode & RES_LEN)) {
 		http_Unset(sp->wrk->resp, H_Content_Length);
-	} else if (params->http_range_support) {
+	} else if (cache_param->http_range_support) {
 		/* We only accept ranges if we know the length */
 		http_SetHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,
 		    "Accept-Ranges: bytes");
@@ -156,7 +156,7 @@ res_WriteGunzipObj(const struct sess *sp)
 	struct storage *st;
 	unsigned u = 0;
 	struct vgz *vg;
-	char obuf[params->gzip_stack_buffer];
+	char obuf[cache_param->gzip_stack_buffer];
 	ssize_t obufl = 0;
 	int i;
 
@@ -230,7 +230,7 @@ res_WriteDirObj(const struct sess *sp, ssize_t low, ssize_t high)
 		 * XXX: Should use getpagesize() ?
 		 */
 		if (st->fd >= 0 &&
-		    st->len >= params->sendfile_threshold) {
+		    st->len >= cache_param->sendfile_threshold) {
 			VSC_C_main->n_objsendfile++;
 			WRW_Sendfile(sp->wrk, st->fd, st->where + off, len);
 			continue;
@@ -275,7 +275,7 @@ RES_WriteObj(struct sess *sp)
 	    sp->wantbody &&
 	    (sp->wrk->res_mode & RES_LEN) &&
 	    !(sp->wrk->res_mode & (RES_ESI|RES_ESI_CHILD|RES_GUNZIP)) &&
-	    params->http_range_support &&
+	    cache_param->http_range_support &&
 	    sp->obj->response == 200 &&
 	    http_GetHdr(sp->http, H_Range, &r))
 		res_dorange(sp, r, &low, &high);
