@@ -144,7 +144,7 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re,
 		if (!all)
 			break;
 		memset(&ovector, 0, sizeof(ovector));
-		options |= VRE_NOTEMPTY_ATSTART;
+		options |= VRE_NOTEMPTY;
 		i = VRE_exec(t, str, len, 0, options, ovector, 30,
 		    &params->vre_limits);
 		if (i < VRE_ERROR_NOMATCH ) {
