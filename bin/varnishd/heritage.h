@@ -46,7 +46,7 @@ struct heritage {
 
 	/* Two pipe(2)'s for CLI connection between cache and mgt.  */
 	int				cli_in;
-	int				VCLI_Out;
+	int				cli_out;
 
 	/* File descriptor for stdout/stderr */
 	int				std_fd;

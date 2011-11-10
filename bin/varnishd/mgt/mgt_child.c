@@ -303,8 +303,8 @@ start_child(struct cli *cli)
 
 	/* Open pipe for child->mgr CLI */
 	AZ(pipe(cp));
-	heritage.VCLI_Out = cp[1];
-	mgt_child_inherit(heritage.VCLI_Out, "VCLI_Out");
+	heritage.cli_out = cp[1];
+	mgt_child_inherit(heritage.cli_out, "cli_out");
 	child_cli_in = cp[0];
 
 	/*
@@ -356,8 +356,8 @@ start_child(struct cli *cli)
 	mgt_child_inherit(heritage.cli_in, NULL);
 	closex(&heritage.cli_in);
 
-	mgt_child_inherit(heritage.VCLI_Out, NULL);
-	closex(&heritage.VCLI_Out);
+	mgt_child_inherit(heritage.cli_out, NULL);
+	closex(&heritage.cli_out);
 
 	close_sockets();
 

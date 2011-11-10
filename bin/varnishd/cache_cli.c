@@ -102,7 +102,7 @@ CLI_Run(void)
 
 	add_check = 1;
 
-	AN(VCLS_AddFd(cls, heritage.cli_in, heritage.VCLI_Out, NULL, NULL));
+	AN(VCLS_AddFd(cls, heritage.cli_in, heritage.cli_out, NULL, NULL));
 
 	do {
 		i = VCLS_Poll(cls, -1);
