@@ -346,7 +346,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 
 	pan_backtrace();
 
-	if (!(params->diag_bitmap & 0x2000)) {
+	if (!(cache_param->diag_bitmap & 0x2000)) {
 		sp = THR_GetSession();
 		if (sp != NULL)
 			pan_sess(sp);
@@ -354,11 +354,11 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	VSB_printf(vsp, "\n");
 	VSB_bcat(vsp, "", 1);	/* NUL termination */
 
-	if (params->diag_bitmap & 0x4000)
+	if (cache_param->diag_bitmap & 0x4000)
 		(void)fputs(VSM_head->panicstr, stderr);
 
 #ifdef HAVE_ABORT2
-	if (params->diag_bitmap & 0x8000) {
+	if (cache_param->diag_bitmap & 0x8000) {
 		void *arg[1];
 		char *p;
 
@@ -369,7 +369,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 		abort2(VSM_head->panicstr, 1, arg);
 	}
 #endif
-	if (params->diag_bitmap & 0x1000)
+	if (cache_param->diag_bitmap & 0x1000)
 		exit(4);
 	else
 		abort();

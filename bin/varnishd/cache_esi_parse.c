@@ -269,7 +269,7 @@ static void
 vep_emit_skip(const struct vep_state *vep, ssize_t l)
 {
 
-	if (params->esi_syntax & 0x20) {
+	if (cache_param->esi_syntax & 0x20) {
 		Debug("---> SKIP(%jd)\n", (intmax_t)l);
 	}
 	vep_emit_len(vep, l, VEC_S1, VEC_S2, VEC_S8);
@@ -280,7 +280,7 @@ vep_emit_verbatim(const struct vep_state *vep, ssize_t l, ssize_t l_crc)
 {
 	uint8_t buf[4];
 
-	if (params->esi_syntax & 0x20) {
+	if (cache_param->esi_syntax & 0x20) {
 		Debug("---> VERBATIM(%jd)\n", (intmax_t)l);
 	}
 	vep_emit_len(vep, l, VEC_V1, VEC_V2, VEC_V8);
@@ -585,7 +585,7 @@ VEP_Parse(const struct worker *w, const char *p, size_t l)
 		 */
 
 		if (vep->state == VEP_START) {
-			if (params->esi_syntax & 0x1)
+			if (cache_param->esi_syntax & 0x1)
 				vep->state = VEP_NEXTTAG;
 			else
 				vep->state = VEP_TESTXML;
@@ -618,7 +618,7 @@ VEP_Parse(const struct worker *w, const char *p, size_t l)
 		 */
 
 		} else if (vep->state == VEP_NOTMYTAG) {
-			if (params->esi_syntax & 0x2) {
+			if (cache_param->esi_syntax & 0x2) {
 				p++;
 				vep->state = VEP_NEXTTAG;
 			} else {

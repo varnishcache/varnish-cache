@@ -37,6 +37,8 @@
 #include "waiter/cache_waiter.h"
 #include "hash/hash_slinger.h"
 
+volatile struct params	*cache_param;
+
 /*--------------------------------------------------------------------
  * Per thread storage for the session currently being processed by
  * the thread.  This is used for panic messages.
@@ -118,7 +120,7 @@ child_main(void)
 	Pool_Init();
 
 	EXP_Init();
-	HSH_Init();
+	HSH_Init(heritage.hash);
 	BAN_Init();
 
 	VCA_Init();
@@ -132,7 +134,7 @@ child_main(void)
 	BAN_Compile();
 
 	/* Wait for persistent storage to load if asked to */
-	if (params->diag_bitmap & 0x00020000)
+	if (cache_param->diag_bitmap & 0x00020000)
 		SMP_Ready();
 
 	CLI_Run();

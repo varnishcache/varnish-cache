@@ -102,7 +102,7 @@ CLI_Run(void)
 
 	add_check = 1;
 
-	AN(VCLS_AddFd(cls, heritage.cli_in, heritage.VCLI_Out, NULL, NULL));
+	AN(VCLS_AddFd(cls, heritage.cli_in, heritage.cli_out, NULL, NULL));
 
 	do {
 		i = VCLS_Poll(cls, -1);
@@ -235,7 +235,7 @@ CLI_Init(void)
 	Lck_New(&cli_mtx, lck_cli);
 	cli_thread = pthread_self();
 
-	cls = VCLS_New(cli_cb_before, cli_cb_after, params->cli_buffer);
+	cls = VCLS_New(cli_cb_before, cli_cb_after, cache_param->cli_buffer);
 	AN(cls);
 
 	CLI_AddFuncs(master_cmds);

@@ -54,6 +54,7 @@ varnishd_SOURCES = \
 	cache_ws.c \
 	hash/hash_classic.c \
 	hash/hash_critbit.c \
+	hash/hash_mgt.c \
 	hash/hash_simple_list.c \
 	mgt/mgt_child.c \
 	mgt/mgt_cli.c \

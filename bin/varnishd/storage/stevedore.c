@@ -169,8 +169,8 @@ stv_alloc(struct worker *w, const struct object *obj, size_t size)
 	stv = obj->objstore->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
-	if (size > (size_t)(params->fetch_maxchunksize) << 10)
-		size = (size_t)(params->fetch_maxchunksize) << 10;
+	if (size > (size_t)(cache_param->fetch_maxchunksize) << 10)
+		size = (size_t)(cache_param->fetch_maxchunksize) << 10;
 
 	for (;;) {
 		/* try to allocate from it */
@@ -179,7 +179,7 @@ stv_alloc(struct worker *w, const struct object *obj, size_t size)
 		if (st != NULL)
 			break;
 
-		if (size > params->fetch_chunksize * 1024LL) {
+		if (size > cache_param->fetch_chunksize * 1024LL) {
 			size >>= 1;
 			continue;
 		}
@@ -189,7 +189,7 @@ stv_alloc(struct worker *w, const struct object *obj, size_t size)
 			break;
 
 		/* Enough is enough: try another if we have one */
-		if (++fail >= params->nuke_limit)
+		if (++fail >= cache_param->nuke_limit)
 			break;
 	}
 	if (st != NULL)
@@ -336,7 +336,7 @@ STV_NewObject(struct sess *sp, const char *hint, unsigned wsl, struct exp *ep,
 	}
 	if (o == NULL) {
 		/* no luck; try to free some space and keep trying */
-		for (i = 0; o == NULL && i < params->nuke_limit; i++) {
+		for (i = 0; o == NULL && i < cache_param->nuke_limit; i++) {
 			if (EXP_NukeOne(sp->wrk, stv->lru) == -1)
 				break;
 			o = stv->allocobj(stv, sp, ltot, &soc);

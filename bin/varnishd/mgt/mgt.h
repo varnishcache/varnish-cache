@@ -58,10 +58,11 @@ void mgt_cli_secret(const char *S_arg);
 void mgt_cli_close_all(void);
 
 /* mgt_param.c */
-void MCF_ParamSync(void);
 void MCF_ParamInit(struct cli *);
 void MCF_ParamSet(struct cli *, const char *param, const char *val);
 void MCF_DumpRst(void);
+extern struct params mgt_param;
+
 
 /* mgt_sandbox.c */
 void mgt_sandbox(void);

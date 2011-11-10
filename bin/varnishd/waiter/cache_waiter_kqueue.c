@@ -186,7 +186,7 @@ vwk_thread(void *priv)
 		 * would not know we meant "the old fd of this number".
 		 */
 		vwk_kq_flush(vwk);
-		deadline = VTIM_real() - params->sess_timeout;
+		deadline = VTIM_real() - cache_param->sess_timeout;
 		for (;;) {
 			sp = VTAILQ_FIRST(&vwk->sesshead);
 			if (sp == NULL)

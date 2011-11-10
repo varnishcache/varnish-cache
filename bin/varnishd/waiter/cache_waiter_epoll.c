@@ -188,7 +188,7 @@ vwe_thread(void *priv)
 			continue;
 
 		/* check for timeouts */
-		deadline = VTIM_real() - params->sess_timeout;
+		deadline = VTIM_real() - cache_param->sess_timeout;
 		for (;;) {
 			sp = VTAILQ_FIRST(&vwe->sesshead);
 			if (sp == NULL)

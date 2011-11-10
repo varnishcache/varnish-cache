@@ -197,7 +197,7 @@ vws_thread(void *priv)
 
 		/* check for timeouts */
 		now = VTIM_real();
-		deadline = now - params->sess_timeout;
+		deadline = now - cache_param->sess_timeout;
 
 		/*
 		 * This loop assumes that the oldest sessions are always at the
@@ -225,7 +225,7 @@ vws_thread(void *priv)
 		 */
 
 		if (sp) {
-			double tmo = (sp->t_open + params->sess_timeout) - now;
+			double tmo = (sp->t_open + cache_param->sess_timeout) - now;
 
 			/* we should have removed all sps whose timeout has passed */
 			assert(tmo > 0.0);

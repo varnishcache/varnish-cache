@@ -64,7 +64,7 @@ Lck__Lock(struct lock *lck, const char *p, const char *f, int l)
 	int r;
 
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
-	if (!(params->diag_bitmap & 0x18)) {
+	if (!(cache_param->diag_bitmap & 0x18)) {
 		AZ(pthread_mutex_lock(&ilck->mtx));
 		AZ(ilck->held);
 		ilck->stat->locks++;
@@ -76,11 +76,11 @@ Lck__Lock(struct lock *lck, const char *p, const char *f, int l)
 	assert(r == 0 || r == EBUSY);
 	if (r) {
 		ilck->stat->colls++;
-		if (params->diag_bitmap & 0x8)
+		if (cache_param->diag_bitmap & 0x8)
 			VSL(SLT_Debug, 0, "MTX_CONTEST(%s,%s,%d,%s)",
 			    p, f, l, ilck->w);
 		AZ(pthread_mutex_lock(&ilck->mtx));
-	} else if (params->diag_bitmap & 0x8) {
+	} else if (cache_param->diag_bitmap & 0x8) {
 		VSL(SLT_Debug, 0, "MTX_LOCK(%s,%s,%d,%s)", p, f, l, ilck->w);
 	}
 	AZ(ilck->held);
@@ -99,7 +99,7 @@ Lck__Unlock(struct lock *lck, const char *p, const char *f, int l)
 	AN(ilck->held);
 	ilck->held = 0;
 	AZ(pthread_mutex_unlock(&ilck->mtx));
-	if (params->diag_bitmap & 0x8)
+	if (cache_param->diag_bitmap & 0x8)
 		VSL(SLT_Debug, 0, "MTX_UNLOCK(%s,%s,%d,%s)", p, f, l, ilck->w);
 }
 
@@ -112,7 +112,7 @@ Lck__Trylock(struct lock *lck, const char *p, const char *f, int l)
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	r = pthread_mutex_trylock(&ilck->mtx);
 	assert(r == 0 || r == EBUSY);
-	if (params->diag_bitmap & 0x8)
+	if (cache_param->diag_bitmap & 0x8)
 		VSL(SLT_Debug, 0,
 		    "MTX_TRYLOCK(%s,%s,%d,%s) = %d", p, f, l, ilck->w);
 	if (r == 0) {

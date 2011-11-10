@@ -185,15 +185,15 @@ WRK_thread(void *priv)
 	uint16_t nhttp;
 	unsigned siov;
 
-	assert(params->http_max_hdr <= 65535);
+	assert(cache_param->http_max_hdr <= 65535);
 	/* We need to snapshot these two for consistency */
-	nhttp = (uint16_t)params->http_max_hdr;
+	nhttp = (uint16_t)cache_param->http_max_hdr;
 	siov = nhttp * 2;
 	if (siov > IOV_MAX)
 		siov = IOV_MAX;
 	return (wrk_thread_real(priv,
-	    params->shm_workspace,
-	    params->wthread_workspace,
+	    cache_param->shm_workspace,
+	    cache_param->wthread_workspace,
 	    nhttp, HTTP_estimate(nhttp), siov));
 }
 

@@ -135,7 +135,7 @@ VSLR(enum VSL_tag_e tag, int id, const char *b, unsigned len)
 	uint32_t *p;
 	unsigned mlen;
 
-	mlen = params->shm_reclen;
+	mlen = cache_param->shm_reclen;
 
 	/* Truncate */
 	if (len > mlen)
@@ -153,7 +153,7 @@ void
 VSL(enum VSL_tag_e tag, int id, const char *fmt, ...)
 {
 	va_list ap;
-	unsigned n, mlen = params->shm_reclen;
+	unsigned n, mlen = cache_param->shm_reclen;
 	char buf[mlen];
 
 	/*
@@ -205,7 +205,7 @@ WSLR(struct worker *w, enum VSL_tag_e tag, int id, txt t)
 	unsigned l, mlen;
 
 	Tcheck(t);
-	mlen = params->shm_reclen;
+	mlen = cache_param->shm_reclen;
 
 	/* Truncate */
 	l = Tlen(t);
@@ -225,7 +225,7 @@ WSLR(struct worker *w, enum VSL_tag_e tag, int id, txt t)
 	w->wlp = VSL_END(w->wlp, l);
 	assert(w->wlp < w->wle);
 	w->wlr++;
-	if (params->diag_bitmap & 0x10000)
+	if (cache_param->diag_bitmap & 0x10000)
 		WSL_Flush(w, 0);
 }
 
@@ -239,7 +239,7 @@ wsl(struct worker *w, enum VSL_tag_e tag, int id, const char *fmt, va_list ap)
 	txt t;
 
 	AN(fmt);
-	mlen = params->shm_reclen;
+	mlen = cache_param->shm_reclen;
 
 	if (strchr(fmt, '%') == NULL) {
 		t.b = TRUST_ME(fmt);
@@ -261,7 +261,7 @@ wsl(struct worker *w, enum VSL_tag_e tag, int id, const char *fmt, va_list ap)
 		assert(w->wlp < w->wle);
 		w->wlr++;
 	}
-	if (params->diag_bitmap & 0x10000)
+	if (cache_param->diag_bitmap & 0x10000)
 		WSL_Flush(w, 0);
 }
 

@@ -96,7 +96,7 @@ VBE_ReleaseConn(struct vbc *vc)
 		if (dst == 0.0)			\
 			dst = be->tmx;		\
 		if (dst == 0.0)			\
-			dst = params->tmx;	\
+			dst = cache_param->tmx;	\
 	} while (0)
 
 /*--------------------------------------------------------------------
@@ -158,7 +158,7 @@ bes_conn_try(const struct sess *sp, struct vbc *vc, const struct vdi_simple *vs)
 
 	/* release lock during stuff that can take a long time */
 
-	if (params->prefer_ipv6 && bp->ipv6 != NULL) {
+	if (cache_param->prefer_ipv6 && bp->ipv6 != NULL) {
 		s = vbe_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len, vs);
 		vc->addr = bp->ipv6;
 		vc->addrlen = bp->ipv6len;
@@ -168,7 +168,7 @@ bes_conn_try(const struct sess *sp, struct vbc *vc, const struct vdi_simple *vs)
 		vc->addr = bp->ipv4;
 		vc->addrlen = bp->ipv4len;
 	}
-	if (s == -1 && !params->prefer_ipv6 && bp->ipv6 != NULL) {
+	if (s == -1 && !cache_param->prefer_ipv6 && bp->ipv6 != NULL) {
 		s = vbe_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len, vs);
 		vc->addr = bp->ipv6;
 		vc->addrlen = bp->ipv6len;
@@ -232,7 +232,7 @@ vbe_NewConn(void)
  * It evaluates if a backend is healthy _for_a_specific_object_.
  * That means that it relies on sp->objcore->objhead. This is mainly for
  * saint-mode, but also takes backend->healthy into account. If
- * params->saintmode_threshold is 0, this is basically just a test of
+ * cache_param->saintmode_threshold is 0, this is basically just a test of
  * backend->healthy.
  *
  * The threshold has to be evaluated _after_ the timeout check, otherwise
@@ -266,7 +266,7 @@ vbe_Healthy(const struct vdi_simple *vs, const struct sess *sp)
 	 * specified by VCL (thus use param).
 	 */
 	if (vs->vrt->saintmode_threshold == UINT_MAX)
-		threshold = params->saintmode_threshold;
+		threshold = cache_param->saintmode_threshold;
 	else
 		threshold = vs->vrt->saintmode_threshold;
 

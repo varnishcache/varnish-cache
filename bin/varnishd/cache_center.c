@@ -94,11 +94,11 @@ cnt_wait(struct sess *sp)
 	assert(sp->xid == 0);
 
 	i = HTC_Complete(sp->htc);
-	if (i == 0 && params->session_linger > 0) {
+	if (i == 0 && cache_param->session_linger > 0) {
 		pfd[0].fd = sp->fd;
 		pfd[0].events = POLLIN;
 		pfd[0].revents = 0;
-		i = poll(pfd, 1, params->session_linger);
+		i = poll(pfd, 1, cache_param->session_linger);
 		if (i)
 			i = HTC_Rx(sp->htc);
 	}
@@ -183,7 +183,7 @@ cnt_prepresp(struct sess *sp)
 		sp->wrk->res_mode |= RES_ESI_CHILD;
 	}
 
-	if (params->http_gzip_support && sp->obj->gziped &&
+	if (cache_param->http_gzip_support && sp->obj->gziped &&
 	    !RFC2616_Req_Gzip(sp)) {
 		/*
 		 * We don't know what it uncompresses to
@@ -212,7 +212,7 @@ cnt_prepresp(struct sess *sp)
 
 	sp->t_resp = VTIM_real();
 	if (sp->obj->objcore != NULL) {
-		if ((sp->t_resp - sp->obj->last_lru) > params->lru_timeout &&
+		if ((sp->t_resp - sp->obj->last_lru) > cache_param->lru_timeout &&
 		    EXP_Touch(sp->obj->objcore))
 			sp->obj->last_lru = sp->t_resp;
 		sp->obj->last_use = sp->t_resp;	/* XXX: locking ? */
@@ -224,7 +224,7 @@ cnt_prepresp(struct sess *sp)
 	case VCL_RET_DELIVER:
 		break;
 	case VCL_RET_RESTART:
-		if (sp->restarts >= params->max_restarts)
+		if (sp->restarts >= cache_param->max_restarts)
 			break;
 		if (sp->wrk->do_stream) {
 			VDI_CloseFd(sp->wrk);
@@ -373,7 +373,7 @@ cnt_done(struct sess *sp)
 		return (1);
 	}
 
-	if (sp->wrk->stats.client_req >= params->wthread_stats_rate)
+	if (sp->wrk->stats.client_req >= cache_param->wthread_stats_rate)
 		WRK_SumStat(sp->wrk);
 	/* Reset the workspace to the session-watermark */
 	WS_Reset(sp->ws, sp->ws_ses);
@@ -390,7 +390,7 @@ cnt_done(struct sess *sp)
 		sp->step = STP_WAIT;
 		return (0);
 	}
-	if (params->session_linger > 0) {
+	if (cache_param->session_linger > 0) {
 		sp->wrk->stats.sess_linger++;
 		sp->step = STP_WAIT;
 		return (0);
@@ -436,12 +436,12 @@ cnt_error(struct sess *sp)
 	if (sp->obj == NULL) {
 		HSH_Prealloc(sp);
 		EXP_Clr(&w->exp);
-		sp->obj = STV_NewObject(sp, NULL, params->http_resp_size,
-		     &w->exp, (uint16_t)params->http_max_hdr);
+		sp->obj = STV_NewObject(sp, NULL, cache_param->http_resp_size,
+		     &w->exp, (uint16_t)cache_param->http_max_hdr);
 		if (sp->obj == NULL)
 			sp->obj = STV_NewObject(sp, TRANSIENT_STORAGE,
-			    params->http_resp_size, &w->exp,
-			    (uint16_t)params->http_max_hdr);
+			    cache_param->http_resp_size, &w->exp,
+			    (uint16_t)cache_param->http_max_hdr);
 		if (sp->obj == NULL) {
 			sp->doclose = "Out of objects";
 			sp->director = NULL;
@@ -477,7 +477,7 @@ cnt_error(struct sess *sp)
 	VCL_error_method(sp);
 
 	if (sp->handling == VCL_RET_RESTART &&
-	    sp->restarts <  params->max_restarts) {
+	    sp->restarts <  cache_param->max_restarts) {
 		HSH_Drop(sp);
 		sp->director = NULL;
 		sp->restarts++;
@@ -701,7 +701,7 @@ cnt_fetchbody(struct sess *sp)
 	AZ(sp->wrk->vfp);
 
 	/* We do nothing unless the param is set */
-	if (!params->http_gzip_support)
+	if (!cache_param->http_gzip_support)
 		sp->wrk->do_gzip = sp->wrk->do_gunzip = 0;
 
 	sp->wrk->is_gzip =
@@ -768,7 +768,7 @@ cnt_fetchbody(struct sess *sp)
 	 */
 	l += strlen("Content-Length: XxxXxxXxxXxxXxxXxx") + sizeof(void *);
 
-	if (sp->wrk->exp.ttl < params->shortlived || sp->objcore == NULL)
+	if (sp->wrk->exp.ttl < cache_param->shortlived || sp->objcore == NULL)
 		sp->wrk->storage_hint = TRANSIENT_STORAGE;
 
 	sp->obj = STV_NewObject(sp, sp->wrk->storage_hint, l,
@@ -780,8 +780,8 @@ cnt_fetchbody(struct sess *sp)
 		 */
 		sp->obj = STV_NewObject(sp, TRANSIENT_STORAGE, l,
 		    &sp->wrk->exp, nhttp);
-		if (sp->wrk->exp.ttl > params->shortlived)
-			sp->wrk->exp.ttl = params->shortlived;
+		if (sp->wrk->exp.ttl > cache_param->shortlived)
+			sp->wrk->exp.ttl = cache_param->shortlived;
 		sp->wrk->exp.grace = 0.0;
 		sp->wrk->exp.keep = 0.0;
 	}
@@ -893,7 +893,7 @@ cnt_streambody(struct sess *sp)
 	int i;
 	struct stream_ctx sctx;
 	uint8_t obuf[sp->wrk->res_mode & RES_GUNZIP ?
-	    params->gzip_stack_buffer : 1];
+	    cache_param->gzip_stack_buffer : 1];
 
 	memset(&sctx, 0, sizeof sctx);
 	sctx.magic = STREAM_CTX_MAGIC;
@@ -967,8 +967,8 @@ cnt_first(struct sess *sp)
 	sp->ws_ses = WS_Snapshot(sp->ws);
 
 	/* Receive a HTTP protocol request */
-	HTC_Init(sp->htc, sp->ws, sp->fd, sp->vsl_id, params->http_req_size,
-	    params->http_req_hdr_len);
+	HTC_Init(sp->htc, sp->ws, sp->fd, sp->vsl_id, cache_param->http_req_size,
+	    cache_param->http_req_hdr_len);
 	sp->wrk->lastused = sp->t_open;
 	sp->wrk->acct_tmp.sess++;
 
@@ -1186,7 +1186,7 @@ cnt_miss(struct sess *sp)
 	http_Setup(sp->wrk->bereq, sp->wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_FETCH);
 	http_ForceGet(sp->wrk->bereq);
-	if (params->http_gzip_support) {
+	if (cache_param->http_gzip_support) {
 		/*
 		 * We always ask the backend for gzip, even if the
 		 * client doesn't grok it.  We will uncompress for
@@ -1377,7 +1377,7 @@ cnt_recv(struct sess *sp)
 	VCL_recv_method(sp);
 	recv_handling = sp->handling;
 
-	if (sp->restarts >= params->max_restarts) {
+	if (sp->restarts >= cache_param->max_restarts) {
 		if (sp->err_code == 0)
 			sp->err_code = 503;
 		sp->step = STP_ERROR;
@@ -1392,7 +1392,7 @@ cnt_recv(struct sess *sp)
 	sp->wrk->do_gunzip = 0;
 	sp->wrk->do_stream = 0;
 
-	if (params->http_gzip_support &&
+	if (cache_param->http_gzip_support &&
 	     (recv_handling != VCL_RET_PIPE) &&
 	     (recv_handling != VCL_RET_PASS)) {
 		if (RFC2616_Req_Gzip(sp)) {
@@ -1607,7 +1607,7 @@ CNT_Session(struct sess *sp)
 		switch (sp->step) {
 #define STEP(l,u) \
 		    case STP_##u: \
-			if (params->diag_bitmap & 0x01) \
+			if (cache_param->diag_bitmap & 0x01) \
 				cnt_diag(sp, #u); \
 			done = cnt_##l(sp); \
 		        break;

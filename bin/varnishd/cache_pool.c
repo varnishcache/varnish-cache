@@ -272,7 +272,7 @@ Pool_Work_Thread(void *priv, struct worker *w)
 			AZ(w->wrw.wfd);
 			AZ(w->storage_hint);
 			assert(w->wlp == w->wlb);
-			if (params->diag_bitmap & 0x00040000) {
+			if (cache_param->diag_bitmap & 0x00040000) {
 				if (w->vcl != NULL)
 					VCL_Rel(&w->vcl);
 			}
@@ -308,7 +308,7 @@ pool_queue(struct pool *pp, struct sess *sp)
 	}
 
 	/* If we have too much in the queue already, refuse. */
-	if (pp->lqueue > (params->queue_max * pp->nthr) / 100) {
+	if (pp->lqueue > (cache_param->queue_max * pp->nthr) / 100) {
 		pp->ndropped++;
 		Lck_Unlock(&pp->mtx);
 		return (-1);
@@ -385,10 +385,10 @@ pool_breed(struct pool *qp, const pthread_attr_t *tp_attr)
 	 * If we need more threads, and have space, create
 	 * one more thread.
 	 */
-	if (qp->nthr < params->wthread_min ||	/* Not enough threads yet */
-	    (qp->lqueue > params->wthread_add_threshold && /* more needed */
+	if (qp->nthr < cache_param->wthread_min ||	/* Not enough threads yet */
+	    (qp->lqueue > cache_param->wthread_add_threshold && /* more needed */
 	    qp->lqueue > qp->last_lqueue)) {	/* not getting better since last */
-		if (qp->nthr > params->wthread_max) {
+		if (qp->nthr > cache_param->wthread_max) {
 			Lck_Lock(&pool_mtx);
 			VSC_C_main->threads_limited++;
 			Lck_Unlock(&pool_mtx);
@@ -398,10 +398,10 @@ pool_breed(struct pool *qp, const pthread_attr_t *tp_attr)
 			Lck_Lock(&pool_mtx);
 			VSC_C_main->threads_limited++;
 			Lck_Unlock(&pool_mtx);
-			VTIM_sleep(params->wthread_fail_delay * 1e-3);
+			VTIM_sleep(cache_param->wthread_fail_delay * 1e-3);
 		} else {
 			AZ(pthread_detach(tp));
-			VTIM_sleep(params->wthread_add_delay * 1e-3);
+			VTIM_sleep(cache_param->wthread_add_delay * 1e-3);
 			qp->nthr++;
 			Lck_Lock(&pool_mtx);
 			VSC_C_main->threads++;
@@ -442,9 +442,9 @@ pool_herder(void *priv)
 
 	while (1) {
 		/* Set the stacksize for worker threads we create */
-		if (params->wthread_stacksize != UINT_MAX)
+		if (cache_param->wthread_stacksize != UINT_MAX)
 			AZ(pthread_attr_setstacksize(&tp_attr,
-			    params->wthread_stacksize));
+			    cache_param->wthread_stacksize));
 		else {
 			AZ(pthread_attr_destroy(&tp_attr));
 			AZ(pthread_attr_init(&tp_attr));
@@ -452,13 +452,13 @@ pool_herder(void *priv)
 
 		pool_breed(pp, &tp_attr);
 
-		if (pp->nthr < params->wthread_min)
+		if (pp->nthr < cache_param->wthread_min)
 			continue;
 
 		AZ(clock_gettime(CLOCK_MONOTONIC, &ts));
-		ts.tv_sec += params->wthread_purge_delay / 1000;
+		ts.tv_sec += cache_param->wthread_purge_delay / 1000;
 		ts.tv_nsec +=
-		    (params->wthread_purge_delay % 1000) * 1000000;
+		    (cache_param->wthread_purge_delay % 1000) * 1000000;
 		if (ts.tv_nsec >= 1000000000) {
 			ts.tv_sec++;
 			ts.tv_nsec -= 1000000000;
@@ -470,10 +470,10 @@ pool_herder(void *priv)
 		if (!i)
 			continue;
 
-		if (pp->nthr <= params->wthread_min)
+		if (pp->nthr <= cache_param->wthread_min)
 			continue;
 
-		t_idle = VTIM_real() - params->wthread_timeout;
+		t_idle = VTIM_real() - cache_param->wthread_timeout;
 
 		Lck_Lock(&pp->mtx);
 		VSC_C_main->sess_queued += pp->nqueued;
@@ -481,7 +481,7 @@ pool_herder(void *priv)
 		pp->nqueued = pp->ndropped = 0;
 		w = VTAILQ_LAST(&pp->idle, workerhead);
 		if (w != NULL &&
-		    (w->lastused < t_idle || pp->nthr > params->wthread_max)) {
+		    (w->lastused < t_idle || pp->nthr > cache_param->wthread_max)) {
 			VTAILQ_REMOVE(&pp->idle, w, list);
 		} else
 			w = NULL;
@@ -560,7 +560,7 @@ pool_poolherder(void *priv)
 
 	nwq = 0;
 	while (1) {
-		if (nwq < params->wthread_pools) {
+		if (nwq < cache_param->wthread_pools) {
 			pp = pool_mkpool();
 			if (pp != NULL) {
 				VTAILQ_INSERT_TAIL(&pools, pp, list);
