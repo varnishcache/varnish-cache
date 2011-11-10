@@ -200,7 +200,7 @@ vwe_thread(void *priv)
 			SES_Delete(sp, "timeout");
 		}
 	}
-	return NULL;
+	return (NULL);
 }
 
 /*--------------------------------------------------------------------*/
@@ -219,7 +219,7 @@ vwe_sess_timeout_ticker(void *priv)
 		assert(write(vwe->timer_pipes[1], &ticker, 1));
 		VTIM_sleep(100 * 1e-3);
 	}
-	return NULL;
+	return (NULL);
 }
 
 /*--------------------------------------------------------------------*/

@@ -61,11 +61,11 @@ VTCP_port(const struct sockaddr_storage *addr)
 
 	if (addr->ss_family == AF_INET) {
 		const struct sockaddr_in *ain = (const void *)addr;
-		return ntohs((ain->sin_port));
+		return (ntohs((ain->sin_port)));
 	}
 	if (addr->ss_family == AF_INET6) {
 		const struct sockaddr_in6 *ain = (const void *)addr;
-		return ntohs((ain->sin6_port));
+		return (ntohs((ain->sin6_port)));
 	}
 	return (-1);
 }

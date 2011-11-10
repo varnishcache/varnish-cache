@@ -342,7 +342,7 @@ VRT_time_string(const struct sess *sp, double t)
 
 	AN(p = WS_Alloc(sp->http->ws, VTIM_FORMAT_SIZE));
 	VTIM_format(t, p);
-	return p;
+	return (p);
 }
 
 const char *

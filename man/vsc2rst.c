@@ -64,6 +64,6 @@ int main(int argc, char **argv)
 #include "tbl/vsc_fields.h"
 #undef VSC_DO_VBE
 
-	return 0;
+	return (0);
 }
 

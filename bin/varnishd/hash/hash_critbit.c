@@ -57,7 +57,7 @@ static unsigned char hcb_bittbl[256];
 static unsigned char
 hcb_bits(unsigned char x, unsigned char y)
 {
-	return hcb_bittbl[x ^ y];
+	return (hcb_bittbl[x ^ y]);
 }
 
 static void

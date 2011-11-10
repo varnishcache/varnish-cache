@@ -485,9 +485,9 @@ VRT_r_server_identity(struct sess *sp)
 	(void)sp;
 
 	if (heritage.identity[0] != '\0')
-		return heritage.identity;
+		return (heritage.identity);
 	else
-		return heritage.name;
+		return (heritage.name);
 }
 
 
