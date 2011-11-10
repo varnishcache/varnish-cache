@@ -49,7 +49,7 @@ typedef struct vre vre_t;
 
 /* And those to PCRE options */
 extern const unsigned VRE_CASELESS;
-extern const unsigned VRE_NOTEMPTY_ATSTART;
+extern const unsigned VRE_NOTEMPTY;
 
 vre_t *VRE_compile(const char *, int, const char **, int *);
 int VRE_exec(const vre_t *code, const char *subject, int length,
