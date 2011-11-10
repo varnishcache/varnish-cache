@@ -214,7 +214,7 @@ MGT_Child_Cli_Fail(void)
 		return;
 	REPORT(LOG_ERR, "Child (%jd) not responding to CLI, killing it.",
 	    (intmax_t)child_pid);
-	if (params->diag_bitmap & 0x1000)
+	if (mgt_param.diag_bitmap & 0x1000)
 		(void)kill(child_pid, SIGKILL);
 	else
 		(void)kill(child_pid, SIGQUIT);
@@ -315,7 +315,7 @@ start_child(struct cli *cli)
 	heritage.std_fd = cp[1];
 	child_output = cp[0];
 
-	MCF_ParamSync();
+	AN(params);
 	if ((pid = fork()) < 0) {
 		perror("Could not fork child");
 		exit(1);
@@ -374,10 +374,10 @@ start_child(struct cli *cli)
 	AZ(vev_add(mgt_evb, e));
 	ev_listen = e;
 	AZ(ev_poker);
-	if (params->ping_interval > 0) {
+	if (mgt_param.ping_interval > 0) {
 		e = vev_new();
 		XXXAN(e);
-		e->timeout = params->ping_interval;
+		e->timeout = mgt_param.ping_interval;
 		e->callback = child_poker;
 		e->name = "child poker";
 		AZ(vev_add(mgt_evb, e));
@@ -522,7 +522,7 @@ mgt_sigchld(const struct vev *e, int what)
 
 	REPORT0(LOG_DEBUG, "Child cleanup complete");
 
-	if (child_state == CH_DIED && params->auto_restart)
+	if (child_state == CH_DIED && mgt_param.auto_restart)
 		start_child(NULL);
 	else if (child_state == CH_DIED) {
 		child_state = CH_STOPPED;

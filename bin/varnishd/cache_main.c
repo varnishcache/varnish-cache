@@ -37,6 +37,8 @@
 #include "waiter/cache_waiter.h"
 #include "hash/hash_slinger.h"
 
+volatile struct params	*params;
+
 /*--------------------------------------------------------------------
  * Per thread storage for the session currently being processed by
  * the thread.  This is used for panic messages.

@@ -229,7 +229,6 @@ void
 mgt_SHM_Init(const char *l_arg)
 {
 	int i, fill;
-	struct params *pp;
 	const char *q;
 	uintmax_t size, s1, s2, ps;
 	char **av, **ap;
@@ -321,10 +320,10 @@ mgt_SHM_Init(const char *l_arg)
 	    VSC_CLASS, VSC_TYPE_MAIN, "");
 	AN(VSC_C_main);
 
-	pp = VSM_Alloc(sizeof *pp, VSM_CLASS_PARAM, "", "");
-	AN(pp);
-	*pp = *params;
-	params = pp;
+	/* XXX: We need to zero params if we dealloc/clean/wash */
+	params = VSM_Alloc(sizeof *params, VSM_CLASS_PARAM, "", "");
+	AN(params);
+	*params = mgt_param;
 
 	vsl_log_start = VSM_Alloc(s1, VSL_CLASS, "", "");
 	AN(vsl_log_start);
