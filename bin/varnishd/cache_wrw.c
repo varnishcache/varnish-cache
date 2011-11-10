@@ -134,7 +134,7 @@ WRW_Flush(struct worker *w)
 			*/
 			size_t used = 0;
 
-			if (VTIM_real() - w->sp->t_resp > params->send_timeout) {
+			if (VTIM_real() - w->sp->t_resp > cache_param->send_timeout) {
 				WSL(w, SLT_Debug, *wrw->wfd,
 				    "Hit total send timeout, wrote = %ld/%ld; not retrying",
 				    i, wrw->liov);
@@ -309,7 +309,7 @@ WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len)
 	} while (0);
 #elif defined(__sun) && defined(HAVE_SENDFILEV)
 	do {
-		sendfilevec_t svvec[params->http_headers * 2 + 1];
+		sendfilevec_t svvec[cache_param->http_headers * 2 + 1];
 		size_t xferred = 0, expected = 0;
 		int i;
 		for (i = 0; i < wrw->niov; i++) {

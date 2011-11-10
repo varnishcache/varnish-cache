@@ -107,8 +107,8 @@ ses_sm_alloc(void)
 	 * cache them locally, to make sure we get a consistent
 	 * view of the value.
 	 */
-	nws = params->sess_workspace;
-	nhttp = (uint16_t)params->http_max_hdr;
+	nws = cache_param->sess_workspace;
+	nhttp = (uint16_t)cache_param->http_max_hdr;
 
 	hl = HTTP_estimate(nhttp);
 	l = sizeof *sm + nws + 2 * hl;
@@ -192,7 +192,7 @@ SES_New(struct worker *wrk, struct sesspool *pp)
 	sm = VTAILQ_FIRST(&pp->freelist);
 	if (sm != NULL) {
 		VTAILQ_REMOVE(&pp->freelist, sm, list);
-	} else if (pp->nsess < params->max_sess) {
+	} else if (pp->nsess < cache_param->max_sess) {
 		pp->nsess++;
 		do_alloc = 1;
 	}
@@ -355,9 +355,9 @@ SES_Delete(struct sess *sp, const char *reason)
 	    b->sess, b->req, b->pipe, b->pass,
 	    b->fetch, b->hdrbytes, b->bodybytes);
 
-	if (sm->workspace != params->sess_workspace ||
-	    sm->nhttp != (uint16_t)params->http_max_hdr ||
-	    pp->nsess > params->max_sess) {
+	if (sm->workspace != cache_param->sess_workspace ||
+	    sm->nhttp != (uint16_t)cache_param->http_max_hdr ||
+	    pp->nsess > cache_param->max_sess) {
 		free(sm);
 		Lck_Lock(&pp->mtx);
 		if (wrk != NULL)

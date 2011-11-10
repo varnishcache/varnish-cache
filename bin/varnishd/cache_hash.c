@@ -59,7 +59,6 @@
 #include "cache.h"
 
 #include "hash/hash_slinger.h"
-#include "vav.h"
 #include "vsha256.h"
 
 static const struct hash_slinger *hash;
@@ -169,7 +168,7 @@ HSH_AddString(const struct sess *sp, const char *str)
 	SHA256_Update(sp->wrk->sha256ctx, str, l);
 	SHA256_Update(sp->wrk->sha256ctx, "#", 1);
 
-	if (params->log_hash)
+	if (cache_param->log_hash)
 		WSP(sp, SLT_Hash, "%s", str);
 }
 
@@ -267,7 +266,7 @@ HSH_Insert(const struct sess *sp)
 	w = sp->wrk;
 
 	HSH_Prealloc(sp);
-	if (params->diag_bitmap & 0x80000000)
+	if (cache_param->diag_bitmap & 0x80000000)
 		hsh_testmagic(sp->wrk->nobjhead->digest);
 
 	AZ(sp->hash_objhead);
@@ -316,7 +315,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 
 	HSH_Prealloc(sp);
 	memcpy(sp->wrk->nobjhead->digest, sp->digest, sizeof sp->digest);
-	if (params->diag_bitmap & 0x80000000)
+	if (cache_param->diag_bitmap & 0x80000000)
 		hsh_testmagic(sp->wrk->nobjhead->digest);
 
 	if (sp->hash_objhead != NULL) {
@@ -436,7 +435,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 			}
 			VTAILQ_INSERT_TAIL(&oh->waitinglist->list, sp, list);
 		}
-		if (params->diag_bitmap & 0x20)
+		if (cache_param->diag_bitmap & 0x20)
 			WSP(sp, SLT_Debug,
 				"on waiting list <%p>", oh);
 		SES_Charge(sp);
@@ -492,7 +491,7 @@ hsh_rush(struct objhead *oh)
 	Lck_AssertHeld(&oh->mtx);
 	wl = oh->waitinglist;
 	CHECK_OBJ_NOTNULL(wl, WAITINGLIST_MAGIC);
-	for (u = 0; u < params->rush_exponent; u++) {
+	for (u = 0; u < cache_param->rush_exponent; u++) {
 		sp = VTAILQ_FIRST(&wl->list);
 		if (sp == NULL)
 			break;
@@ -616,7 +615,7 @@ HSH_Unbusy(const struct sess *sp)
 	assert(oh->refcnt > 0);
 	if (o->ws_o->overflow)
 		sp->wrk->stats.n_objoverflow++;
-	if (params->diag_bitmap & 0x40)
+	if (cache_param->diag_bitmap & 0x40)
 		WSP(sp, SLT_Debug,
 		    "Object %u workspace free %u", o->xid, WS_Free(o->ws_o));
 
@@ -743,53 +742,11 @@ HSH_Deref(struct worker *w, struct objcore *oc, struct object **oo)
 }
 
 void
-HSH_Init(void)
+HSH_Init(const struct hash_slinger *slinger)
 {
 
 	assert(DIGEST_LEN == SHA256_LEN);	/* avoid #include pollution */
-	hash = heritage.hash;
+	hash = slinger;
 	if (hash->start != NULL)
 		hash->start();
 }
-
-static const struct choice hsh_choice[] = {
-	{ "classic",		&hcl_slinger },
-	{ "simple",		&hsl_slinger },
-	{ "simple_list",	&hsl_slinger },	/* backwards compat */
-	{ "critbit",		&hcb_slinger },
-	{ NULL,			NULL }
-};
-
-/*--------------------------------------------------------------------*/
-
-void
-HSH_config(const char *h_arg)
-{
-	char **av;
-	int ac;
-	const struct hash_slinger *hp;
-
-	ASSERT_MGT();
-	av = VAV_Parse(h_arg, NULL, ARGV_COMMA);
-	AN(av);
-
-	if (av[0] != NULL)
-		ARGV_ERR("%s\n", av[0]);
-
-	if (av[1] == NULL)
-		ARGV_ERR("-h argument is empty\n");
-
-	for (ac = 0; av[ac + 2] != NULL; ac++)
-		continue;
-
-	hp = pick(hsh_choice, av[1], "hash");
-	CHECK_OBJ_NOTNULL(hp, SLINGER_MAGIC);
-	VSB_printf(vident, ",-h%s", av[1]);
-	heritage.hash = hp;
-	if (hp->init != NULL)
-		hp->init(ac, av + 2);
-	else if (ac > 0)
-		ARGV_ERR("Hash method \"%s\" takes no arguments\n",
-		    hp->name);
-}
-

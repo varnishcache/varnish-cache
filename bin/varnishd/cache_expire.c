@@ -113,7 +113,7 @@ EXP_Keep(const struct sess *sp, const struct object *o)
 {
 	double r;
 
-	r = (double)params->default_keep;
+	r = (double)cache_param->default_keep;
 	if (o->exp.keep > 0.)
 		r = o->exp.keep;
 	if (sp != NULL && sp->exp.keep > 0. && sp->exp.keep < r)
@@ -126,7 +126,7 @@ EXP_Grace(const struct sess *sp, const struct object *o)
 {
 	double r;
 
-	r = (double)params->default_grace;
+	r = (double)cache_param->default_grace;
 	if (o->exp.grace >= 0.)
 		r = o->exp.grace;
 	if (sp != NULL && sp->exp.grace > 0. && sp->exp.grace < r)
@@ -344,7 +344,7 @@ exp_timer(struct sess *sp, void *priv)
 		if (oc == NULL) {
 			WSL_Flush(sp->wrk, 0);
 			WRK_SumStat(sp->wrk);
-			VTIM_sleep(params->expiry_sleep);
+			VTIM_sleep(cache_param->expiry_sleep);
 			t = VTIM_real();
 		}
 

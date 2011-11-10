@@ -74,7 +74,7 @@ RFC2616_Ttl(const struct sess *sp)
 
 	assert(sp->wrk->exp.entered != 0.0 && !isnan(sp->wrk->exp.entered));
 	/* If all else fails, cache using default ttl */
-	sp->wrk->exp.ttl = params->default_ttl;
+	sp->wrk->exp.ttl = cache_param->default_ttl;
 
 	max_age = age = 0;
 	h_expires = 0;
@@ -140,7 +140,7 @@ RFC2616_Ttl(const struct sess *sp)
 		}
 
 		if (h_date == 0 ||
-		    fabs(h_date - sp->wrk->exp.entered) < params->clock_skew) {
+		    fabs(h_date - sp->wrk->exp.entered) < cache_param->clock_skew) {
 			/*
 			 * If we have no Date: header or if it is
 			 * sufficiently close to our clock we will

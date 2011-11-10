@@ -158,10 +158,10 @@ void
 mgt_sandbox_solaris_privsep(void)
 {
 	if (priv_ineffect(PRIV_PROC_SETID)) {
-                if (getgid() != params->gid)
-                        XXXAZ(setgid(params->gid));
-                if (getuid() != params->uid)
-                        XXXAZ(setuid(params->uid));
+                if (getgid() != mgt_param.gid)
+                        XXXAZ(setgid(mgt_param.gid));
+                if (getuid() != mgt_param.uid)
+                        XXXAZ(setuid(mgt_param.uid));
         } else {
                 REPORT(LOG_INFO, "Privilege %s missing, will not change uid/gid",
 		    PRIV_PROC_SETID);

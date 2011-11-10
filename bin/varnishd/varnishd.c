@@ -64,7 +64,6 @@
 #endif
 
 struct heritage		heritage;
-volatile struct params	*params;
 unsigned		d_flag = 0;
 pid_t			mgt_pid;
 struct vev_base		*mgt_evb;
@@ -190,17 +189,17 @@ tackle_warg(const char *argv)
 	u = arg_ul(av[1]);
 	if (u < 1)
 		usage();
-	params->wthread_max = params->wthread_min = u;
+	mgt_param.wthread_max = mgt_param.wthread_min = u;
 
 	if (av[2] != NULL) {
 		u = arg_ul(av[2]);
-		if (u < params->wthread_min)
+		if (u < mgt_param.wthread_min)
 			usage();
-		params->wthread_max = u;
+		mgt_param.wthread_max = u;
 
 		if (av[3] != NULL) {
 			u = arg_ul(av[3]);
-			params->wthread_timeout = u;
+			mgt_param.wthread_timeout = u;
 		}
 	}
 	VAV_Free(av);

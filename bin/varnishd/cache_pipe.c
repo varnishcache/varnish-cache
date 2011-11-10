@@ -108,7 +108,7 @@ PipeSession(struct sess *sp)
 	while (fds[0].fd > -1 || fds[1].fd > -1) {
 		fds[0].revents = 0;
 		fds[1].revents = 0;
-		i = poll(fds, 2, params->pipe_timeout * 1000);
+		i = poll(fds, 2, cache_param->pipe_timeout * 1000);
 		if (i < 1)
 			break;
 		if (fds[0].revents && rdf(vc->fd, sp->fd)) {

@@ -71,7 +71,7 @@ VRT_re_match(const struct sess *sp, const char *s, void *re)
 		s = "";
 	AN(re);
 	t = re;
-	i = VRE_exec(t, s, strlen(s), 0, 0, NULL, 0, &params->vre_limits);
+	i = VRE_exec(t, s, strlen(s), 0, 0, NULL, 0, &cache_param->vre_limits);
 	if (i >= 0)
 		return (1);
 	if (i < VRE_ERROR_NOMATCH )
@@ -100,7 +100,7 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re,
 	memset(ovector, 0, sizeof(ovector));
 	len = strlen(str);
 	i = VRE_exec(t, str, len, 0, options, ovector, 30,
-	    &params->vre_limits);
+	    &cache_param->vre_limits);
 
 	/* If it didn't match, we can return the original string */
 	if (i == VRE_ERROR_NOMATCH)
@@ -141,7 +141,7 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re,
 		memset(&ovector, 0, sizeof(ovector));
 		options |= VRE_NOTEMPTY_ATSTART;
 		i = VRE_exec(t, str, len, 0, options, ovector, 30,
-		    &params->vre_limits);
+		    &cache_param->vre_limits);
 		if (i < VRE_ERROR_NOMATCH ) {
 			WS_Release(sp->http->ws, 0);
 			WSP(sp, SLT_VCL_Error,

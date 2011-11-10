@@ -46,7 +46,7 @@ struct heritage {
 
 	/* Two pipe(2)'s for CLI connection between cache and mgt.  */
 	int				cli_in;
-	int				VCLI_Out;
+	int				cli_out;
 
 	/* File descriptor for stdout/stderr */
 	int				std_fd;
@@ -222,7 +222,7 @@ struct params {
  * We declare this a volatile pointer, so that reads of parameters
  * become atomic, leaving the CLI thread lattitude to change the values
  */
-extern volatile struct params * params;
+extern volatile struct params * cache_param;
 extern struct heritage heritage;
 
 void child_main(void);

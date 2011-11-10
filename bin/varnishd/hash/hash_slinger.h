@@ -57,7 +57,7 @@ struct objcore *HSH_Lookup(struct sess *sp, struct objhead **poh);
 void HSH_Unbusy(const struct sess *sp);
 void HSH_Ref(struct objcore *o);
 void HSH_Drop(struct sess *sp);
-void HSH_Init(void);
+void HSH_Init(const struct hash_slinger *slinger);
 void HSH_AddString(const struct sess *sp, const char *str);
 struct objcore *HSH_Insert(const struct sess *sp);
 void HSH_Purge(const struct sess *, struct objhead *, double ttl, double grace);

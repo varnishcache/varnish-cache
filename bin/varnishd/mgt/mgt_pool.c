@@ -59,8 +59,8 @@ tweak_thread_pool_min(struct cli *cli, const struct parspec *par,
     const char *arg)
 {
 
-	tweak_generic_uint(cli, &master.wthread_min, arg,
-	    (unsigned)par->min, master.wthread_max);
+	tweak_generic_uint(cli, &mgt_param.wthread_min, arg,
+	    (unsigned)par->min, mgt_param.wthread_max);
 }
 
 /*--------------------------------------------------------------------
@@ -86,7 +86,7 @@ tweak_stack_size(struct cli *cli, const struct parspec *par,
 		arg = buf;
 	}
 
-	tweak_generic_uint(cli, &master.wthread_stacksize, arg,
+	tweak_generic_uint(cli, &mgt_param.wthread_stacksize, arg,
 	    low, (uint)par->max);
 }
 
@@ -98,14 +98,14 @@ tweak_thread_pool_max(struct cli *cli, const struct parspec *par,
 {
 
 	(void)par;
-	tweak_generic_uint(cli, &master.wthread_max, arg,
-	    master.wthread_min, UINT_MAX);
+	tweak_generic_uint(cli, &mgt_param.wthread_max, arg,
+	    mgt_param.wthread_min, UINT_MAX);
 }
 
 /*--------------------------------------------------------------------*/
 
 const struct parspec WRK_parspec[] = {
-	{ "thread_pools", tweak_uint, &master.wthread_pools, 1, UINT_MAX,
+	{ "thread_pools", tweak_uint, &mgt_param.wthread_pools, 1, UINT_MAX,
 		"Number of worker thread pools.\n"
 		"\n"
 		"Increasing number of worker pools decreases lock "
@@ -135,7 +135,7 @@ const struct parspec WRK_parspec[] = {
 		"Minimum is 2 threads.",
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"5", "threads" },
-	{ "thread_pool_timeout", tweak_timeout, &master.wthread_timeout, 1, 0,
+	{ "thread_pool_timeout", tweak_timeout, &mgt_param.wthread_timeout, 1, 0,
 		"Thread idle threshold.\n"
 		"\n"
 		"Threads in excess of thread_pool_min, which have been idle "
@@ -145,7 +145,7 @@ const struct parspec WRK_parspec[] = {
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"300", "seconds" },
 	{ "thread_pool_purge_delay",
-		tweak_timeout, &master.wthread_purge_delay, 100, 0,
+		tweak_timeout, &mgt_param.wthread_purge_delay, 100, 0,
 		"Wait this long between purging threads.\n"
 		"\n"
 		"This controls the decay of thread pools when idle(-ish).\n"
@@ -154,7 +154,7 @@ const struct parspec WRK_parspec[] = {
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"1000", "milliseconds" },
 	{ "thread_pool_add_threshold",
-		tweak_uint, &master.wthread_add_threshold, 0, UINT_MAX,
+		tweak_uint, &mgt_param.wthread_add_threshold, 0, UINT_MAX,
 		"Overflow threshold for worker thread creation.\n"
 		"\n"
 		"Setting this too low, will result in excess worker threads, "
@@ -164,7 +164,7 @@ const struct parspec WRK_parspec[] = {
 		EXPERIMENTAL,
 		"2", "requests" },
 	{ "thread_pool_add_delay",
-		tweak_timeout, &master.wthread_add_delay, 0, UINT_MAX,
+		tweak_timeout, &mgt_param.wthread_add_delay, 0, UINT_MAX,
 		"Wait at least this long between creating threads.\n"
 		"\n"
 		"Setting this too long results in insuffient worker threads.\n"
@@ -174,7 +174,7 @@ const struct parspec WRK_parspec[] = {
 		0,
 		"2", "milliseconds" },
 	{ "thread_pool_fail_delay",
-		tweak_timeout, &master.wthread_fail_delay, 100, UINT_MAX,
+		tweak_timeout, &mgt_param.wthread_fail_delay, 100, UINT_MAX,
 		"Wait at least this long after a failed thread creation "
 		"before trying to create another thread.\n"
 		"\n"
@@ -192,7 +192,7 @@ const struct parspec WRK_parspec[] = {
 		EXPERIMENTAL,
 		"200", "milliseconds" },
 	{ "thread_stats_rate",
-		tweak_uint, &master.wthread_stats_rate, 0, UINT_MAX,
+		tweak_uint, &mgt_param.wthread_stats_rate, 0, UINT_MAX,
 		"Worker threads accumulate statistics, and dump these into "
 		"the global stats counters if the lock is free when they "
 		"finish a request.\n"
@@ -201,14 +201,14 @@ const struct parspec WRK_parspec[] = {
 		"its accumulated stats into the global counters.\n",
 		EXPERIMENTAL,
 		"10", "requests" },
-	{ "queue_max", tweak_uint, &master.queue_max, 0, UINT_MAX,
+	{ "queue_max", tweak_uint, &mgt_param.queue_max, 0, UINT_MAX,
 		"Percentage permitted queue length.\n"
 		"\n"
 		"This sets the ratio of queued requests to worker threads, "
 		"above which sessions will be dropped instead of queued.\n",
 		EXPERIMENTAL,
 		"100", "%" },
-	{ "rush_exponent", tweak_uint, &master.rush_exponent, 2, UINT_MAX,
+	{ "rush_exponent", tweak_uint, &mgt_param.rush_exponent, 2, UINT_MAX,
 		"How many parked request we start for each completed "
 		"request on the object.\n"
 		"NB: Even with the implict delay of delivery, "
@@ -217,13 +217,13 @@ const struct parspec WRK_parspec[] = {
 		EXPERIMENTAL,
 		"3", "requests per request" },
 	{ "thread_pool_stack",
-		tweak_stack_size, &master.wthread_stacksize, 0, UINT_MAX,
+		tweak_stack_size, &mgt_param.wthread_stacksize, 0, UINT_MAX,
 		"Worker thread stack size.\n"
 		"On 32bit systems you may need to tweak this down to fit "
 		"many threads into the limited address space.\n",
 		EXPERIMENTAL,
 		"-1", "bytes" },
-	{ "thread_pool_workspace", tweak_uint, &master.wthread_workspace,
+	{ "thread_pool_workspace", tweak_uint, &mgt_param.wthread_workspace,
 		1024, UINT_MAX,
 		"Bytes of HTTP protocol workspace allocated for worker "
 		"threads. "

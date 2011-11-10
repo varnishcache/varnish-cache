@@ -28,32 +28,57 @@
  *
  */
 
-struct parspec;
+#include "config.h"
 
-typedef void tweak_t(struct cli *, const struct parspec *, const char *arg);
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
-struct parspec {
-	const char	*name;
-	tweak_t		*func;
-	volatile void	*priv;
-	double		min;
-	double		max;
-	const char	*descr;
-	int		 flags;
-#define DELAYED_EFFECT	(1<<0)
-#define EXPERIMENTAL	(1<<1)
-#define MUST_RESTART	(1<<2)
-#define MUST_RELOAD	(1<<3)
-#define WIZARD		(1<<4)
-	const char	*def;
-	const char	*units;
+#include "mgt/mgt.h"
+#include "heritage.h"
+
+#include "hash/hash_slinger.h"
+#include "vav.h"
+
+static const struct choice hsh_choice[] = {
+	{ "classic",		&hcl_slinger },
+	{ "simple",		&hsl_slinger },
+	{ "simple_list",	&hsl_slinger },	/* backwards compat */
+	{ "critbit",		&hcb_slinger },
+	{ NULL,			NULL }
 };
 
-void tweak_generic_uint(struct cli *cli,
-    volatile unsigned *dest, const char *arg, unsigned min, unsigned max);
-void tweak_uint(struct cli *cli, const struct parspec *par, const char *arg);
-void tweak_timeout(struct cli *cli,
-    const struct parspec *par, const char *arg);
+/*--------------------------------------------------------------------*/
 
-/* mgt_pool.c */
-extern const struct parspec WRK_parspec[];
+void
+HSH_config(const char *h_arg)
+{
+	char **av;
+	int ac;
+	const struct hash_slinger *hp;
+
+	ASSERT_MGT();
+	av = VAV_Parse(h_arg, NULL, ARGV_COMMA);
+	AN(av);
+
+	if (av[0] != NULL)
+		ARGV_ERR("%s\n", av[0]);
+
+	if (av[1] == NULL)
+		ARGV_ERR("-h argument is empty\n");
+
+	for (ac = 0; av[ac + 2] != NULL; ac++)
+		continue;
+
+	hp = pick(hsh_choice, av[1], "hash");
+	CHECK_OBJ_NOTNULL(hp, SLINGER_MAGIC);
+	VSB_printf(vident, ",-h%s", av[1]);
+	heritage.hash = hp;
+	if (hp->init != NULL)
+		hp->init(ac, av + 2);
+	else if (ac > 0)
+		ARGV_ERR("Hash method \"%s\" takes no arguments\n",
+		    hp->name);
+}
+

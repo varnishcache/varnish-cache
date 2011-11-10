@@ -369,7 +369,7 @@ hcb_cleaner(void *priv)
 		VTAILQ_CONCAT(&dead_h, &cool_h, hoh_list);
 		Lck_Unlock(&hcb_mtx);
 		WRK_SumStat(&ww);
-		VTIM_sleep(params->critbit_cooloff);
+		VTIM_sleep(cache_param->critbit_cooloff);
 	}
 	NEEDLESS_RETURN(NULL);
 }

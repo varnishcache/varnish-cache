@@ -131,7 +131,7 @@ vgz_alloc_vgz(struct worker *wrk, const char *id)
 	vg->wrk = wrk;
 	vg->id = id;
 
-	switch (params->gzip_tmp_space) {
+	switch (cache_param->gzip_tmp_space) {
 	case 0:
 	case 1:
 		/* malloc, the default */
@@ -196,10 +196,10 @@ VGZ_NewGzip(struct worker *wrk, const char *id)
 	 * XXX: too many worker threads grow the stacks.
 	 */
 	i = deflateInit2(&vg->vz,
-	    params->gzip_level,		/* Level */
+	    cache_param->gzip_level,		/* Level */
 	    Z_DEFLATED,			/* Method */
-	    16 + params->gzip_window,	/* Window bits (16=gzip + 15) */
-	    params->gzip_memlevel,	/* memLevel */
+	    16 + cache_param->gzip_window,	/* Window bits (16=gzip + 15) */
+	    cache_param->gzip_memlevel,	/* memLevel */
 	    Z_DEFAULT_STRATEGY);
 	assert(Z_OK == i);
 	return (vg);
@@ -467,7 +467,7 @@ vfp_gunzip_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 	struct vgz *vg;
 	ssize_t l, wl;
 	int i = -100;
-	uint8_t	ibuf[params->gzip_stack_buffer];
+	uint8_t	ibuf[cache_param->gzip_stack_buffer];
 	size_t dl;
 	const void *dp;
 
@@ -545,7 +545,7 @@ vfp_gzip_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 	struct vgz *vg;
 	ssize_t l, wl;
 	int i = -100;
-	uint8_t ibuf[params->gzip_stack_buffer];
+	uint8_t ibuf[cache_param->gzip_stack_buffer];
 	size_t dl;
 	const void *dp;
 
@@ -632,7 +632,7 @@ vfp_testgzip_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 	struct vgz *vg;
 	ssize_t l, wl;
 	int i = -100;
-	uint8_t	obuf[params->gzip_stack_buffer];
+	uint8_t	obuf[cache_param->gzip_stack_buffer];
 	size_t dl;
 	const void *dp;
 	struct storage *st;
