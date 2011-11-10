@@ -640,8 +640,11 @@ default code.
 
 Multiple subroutines
 ~~~~~~~~~~~~~~~~~~~~
-If multiple subroutines with the same name are defined, they are
-concatenated in the order in which the appear in the source.
+If multiple subroutines with the the name of one of the builtin
+ones are defined, they are concatenated in the order in which they
+appear in the source.
+The default versions distributed with Varnish will be implicitly
+concatenated as a last resort at the end.
 
 Example:::
 
@@ -666,8 +669,6 @@ Example:::
 	    }
 	  }
 	}
-
-The builtin default subroutines are implicitly appended in this way.
 
 Variables
 ~~~~~~~~~
