@@ -182,7 +182,7 @@ vsl_m_arg(const struct VSM_data *vd, const char *opt)
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 
 	if (!strchr(opt, ':')) {
-		fprintf(stderr, "No : found in -o option %s\n", opt);
+		fprintf(stderr, "No : found in -m option %s\n", opt);
 		return (-1);
 	}
 
