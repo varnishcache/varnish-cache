@@ -59,7 +59,6 @@
 #include "cache.h"
 
 #include "hash/hash_slinger.h"
-#include "vav.h"
 #include "vsha256.h"
 
 static const struct hash_slinger *hash;
@@ -743,53 +742,11 @@ HSH_Deref(struct worker *w, struct objcore *oc, struct object **oo)
 }
 
 void
-HSH_Init(void)
+HSH_Init(const struct hash_slinger *slinger)
 {
 
 	assert(DIGEST_LEN == SHA256_LEN);	/* avoid #include pollution */
-	hash = heritage.hash;
+	hash = slinger;
 	if (hash->start != NULL)
 		hash->start();
 }
-
-static const struct choice hsh_choice[] = {
-	{ "classic",		&hcl_slinger },
-	{ "simple",		&hsl_slinger },
-	{ "simple_list",	&hsl_slinger },	/* backwards compat */
-	{ "critbit",		&hcb_slinger },
-	{ NULL,			NULL }
-};
-
-/*--------------------------------------------------------------------*/
-
-void
-HSH_config(const char *h_arg)
-{
-	char **av;
-	int ac;
-	const struct hash_slinger *hp;
-
-	ASSERT_MGT();
-	av = VAV_Parse(h_arg, NULL, ARGV_COMMA);
-	AN(av);
-
-	if (av[0] != NULL)
-		ARGV_ERR("%s\n", av[0]);
-
-	if (av[1] == NULL)
-		ARGV_ERR("-h argument is empty\n");
-
-	for (ac = 0; av[ac + 2] != NULL; ac++)
-		continue;
-
-	hp = pick(hsh_choice, av[1], "hash");
-	CHECK_OBJ_NOTNULL(hp, SLINGER_MAGIC);
-	VSB_printf(vident, ",-h%s", av[1]);
-	heritage.hash = hp;
-	if (hp->init != NULL)
-		hp->init(ac, av + 2);
-	else if (ac > 0)
-		ARGV_ERR("Hash method \"%s\" takes no arguments\n",
-		    hp->name);
-}
-

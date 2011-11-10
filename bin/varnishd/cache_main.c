@@ -120,7 +120,7 @@ child_main(void)
 	Pool_Init();
 
 	EXP_Init();
-	HSH_Init();
+	HSH_Init(heritage.hash);
 	BAN_Init();
 
 	VCA_Init();
