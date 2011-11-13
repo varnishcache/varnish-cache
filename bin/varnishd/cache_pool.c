@@ -571,6 +571,8 @@ pool_poolherder(void *priv)
 			}
 		}
 		/* XXX: remove pools */
+		if (0)
+			SES_DeletePool(NULL, NULL);
 		(void)sleep(1);
 		u = 0;
 		VTAILQ_FOREACH(pp, &pools, list)
