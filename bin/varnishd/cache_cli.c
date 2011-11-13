@@ -39,7 +39,7 @@
 #include <stddef.h>			// offsetof
 
 #include "cache.h"
-#include "heritage.h"
+#include "common/heritage.h"
 
 #include "cache_backend.h"		// struct vbc
 #include "hash/hash_slinger.h"		// struct objhead

@@ -34,7 +34,7 @@
  */
 #define VARNISH_CACHE_CHILD	1
 
-#include "common.h"
+#include "common/common.h"
 
 #include "vapi/vsc_int.h"
 #include "vapi/vsl_int.h"
@@ -55,7 +55,7 @@
 #endif
 
 
-#include "params.h"
+#include "common/params.h"
 
 enum body_status {
 #define BODYSTATUS(U,l)	BS_##U,

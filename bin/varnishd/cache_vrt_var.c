@@ -34,7 +34,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
-#include "heritage.h"
+#include "common/heritage.h"
 
 #include "cache_backend.h"
 #include "vrt_obj.h"

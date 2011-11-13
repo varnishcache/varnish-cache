@@ -38,8 +38,8 @@
 #include <unistd.h>
 
 #include "mgt/mgt.h"
-#include "heritage.h"
-#include "params.h"
+#include "common/heritage.h"
+#include "common/params.h"
 
 #include "mgt/mgt_param.h"
 #include "waiter/cache_waiter.h"

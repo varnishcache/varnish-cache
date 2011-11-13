@@ -43,8 +43,8 @@
 #include <unistd.h>
 
 #include "mgt/mgt.h"
-#include "heritage.h"
-#include "params.h"
+#include "common/heritage.h"
+#include "common/params.h"
 
 #include "vcli.h"
 #include "vcli_common.h"

@@ -16,6 +16,7 @@ flexelint \
 	-I/usr/local/include \
 	-DVARNISH_STATE_DIR=\"foo\" \
 	*.c \
+	common/*.c \
 	storage/*.c \
 	waiter/*.c \
 	hash/*.c \

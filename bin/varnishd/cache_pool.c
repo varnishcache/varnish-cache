@@ -46,7 +46,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
-#include "heritage.h"
+#include "common/heritage.h"
 
 #include "waiter/cache_waiter.h"
 #include "vtcp.h"

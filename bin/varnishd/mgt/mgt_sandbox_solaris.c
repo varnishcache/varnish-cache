@@ -44,7 +44,7 @@
 
 #include "mgt/mgt.h"
 
-#include "heritage.h"
+#include "common/heritage.h"
 
 /*--------------------------------------------------------------------
  * SOLARIS PRIVILEGES: Note on use of symbolic PRIV_* constants

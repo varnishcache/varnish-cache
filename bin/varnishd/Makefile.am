@@ -45,14 +45,10 @@ varnishd_SOURCES = \
 	cache_vrt_re.c \
 	cache_vrt_var.c \
 	cache_vrt_vmod.c \
-	waiter/cache_waiter.c \
-	waiter/cache_waiter_epoll.c \
-	waiter/cache_waiter_kqueue.c \
-	waiter/cache_waiter_poll.c \
-	waiter/cache_waiter_ports.c \
 	cache_wrk.c \
 	cache_wrw.c \
 	cache_ws.c \
+	common/common_vsm.c \
 	hash/hash_classic.c \
 	hash/hash_critbit.c \
 	hash/hash_mgt.c \
@@ -76,23 +72,27 @@ varnishd_SOURCES = \
 	storage/storage_persistent_subr.c \
 	storage/storage_synth.c \
 	storage/storage_umem.c \
-	vsm.c
+	waiter/cache_waiter.c \
+	waiter/cache_waiter_epoll.c \
+	waiter/cache_waiter_kqueue.c \
+	waiter/cache_waiter_poll.c \
+	waiter/cache_waiter_ports.c 
 
 noinst_HEADERS = \
 	cache.h \
 	cache_backend.h \
 	cache_esi.h \
-	waiter/cache_waiter.h \
-	common.h \
+	common/common.h \
+	common/heritage.h \
+	common/params.h \
 	default_vcl.h \
 	hash/hash_slinger.h \
-	heritage.h \
 	mgt/mgt.h \
 	mgt/mgt_cli.h \
 	mgt/mgt_param.h \
-	params.h \
 	storage/storage.h \
-	storage/storage_persistent.h
+	storage/storage_persistent.h \
+	waiter/cache_waiter.h
 
 varnishd_CFLAGS = \
 	@PCRE_CFLAGS@ \
