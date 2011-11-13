@@ -1,5 +1,7 @@
 varnishtest "Test VCL regsuball()"
 
+feature VRE_NOTEMPTY_ATSTART
+
 server s1 {
 	rxreq 
 	txresp \

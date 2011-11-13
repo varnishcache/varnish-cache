@@ -43,6 +43,7 @@
 #include "vtc.h"
 
 #include "vav.h"
+#include "vre.h"
 #include "vtim.h"
 
 
@@ -494,6 +495,9 @@ cmd_feature(CMD_ARGS)
 			continue;
 #endif
 		}
+		if (!strcmp(av[i], "VRE_NOTEMPTY_ATSTART") &&
+		    VRE_NOTEMPTY_ATSTART)
+			continue;
 
 		vtc_log(vl, 1, "SKIPPING test, missing feature: %s", av[i]);
 		vtc_stop = 1;
