@@ -38,7 +38,6 @@
 
 #include "cache.h"
 
-#include "libvcl.h"
 #include "vcl.h"
 #include "vcli.h"
 #include "vcli_priv.h"
@@ -62,6 +61,21 @@ static VTAILQ_HEAD(, vcls)	vcl_head =
 
 static struct lock		vcl_mtx;
 static struct vcls		*vcl_active; /* protected by vcl_mtx */
+
+/*--------------------------------------------------------------------*/
+
+const char *
+VCL_Return_Name(unsigned method)
+{
+
+	switch (method) {
+#define VCL_RET_MAC(l, U, B) case VCL_RET_##U: return(#l);
+#include "tbl/vcl_returns.h"
+#undef VCL_RET_MAC
+	default:
+		return (NULL);
+	}
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -323,7 +337,7 @@ VCL_##func##_method(struct sess *sp)					\
 	sp->cur_method = VCL_MET_ ## upper;				\
 	WSP(sp, SLT_VCL_call, "%s", #func);				\
 	(void)sp->vcl->func##_func(sp);					\
-	WSP(sp, SLT_VCL_return, "%s", VCC_Return_Name(sp->handling));	\
+	WSP(sp, SLT_VCL_return, "%s", VCL_Return_Name(sp->handling));	\
 	sp->cur_method = 0;						\
 	assert((1U << sp->handling) & bitmap);				\
 	assert(!((1U << sp->handling) & ~bitmap));			\

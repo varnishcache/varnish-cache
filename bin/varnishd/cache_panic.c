@@ -44,7 +44,6 @@
 
 #include "cache_backend.h"
 #include "waiter/cache_waiter.h"
-#include "libvcl.h"
 #include "vcl.h"
 
 /*
@@ -226,7 +225,7 @@ pan_sess(const struct sess *sp)
 #undef STEP
 		default: stp = NULL;
 	}
-	hand = VCC_Return_Name(sp->handling);
+	hand = VCL_Return_Name(sp->handling);
 	if (stp != NULL)
 		VSB_printf(vsp, "  step = %s,\n", stp);
 	else

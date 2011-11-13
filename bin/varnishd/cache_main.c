@@ -33,6 +33,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "heritage.h"
 
 #include "waiter/cache_waiter.h"
 #include "hash/hash_slinger.h"

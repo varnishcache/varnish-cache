@@ -38,9 +38,10 @@
 #include <unistd.h>
 
 #include "mgt/mgt.h"
+#include "heritage.h"
+#include "params.h"
 
 #include "waiter/cache_waiter.h"
-#include "heritage.h"
 #include "vav.h"
 #include "vcli.h"
 #include "vcli_common.h"

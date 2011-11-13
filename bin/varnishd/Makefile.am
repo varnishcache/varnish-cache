@@ -89,6 +89,7 @@ noinst_HEADERS = \
 	heritage.h \
 	mgt/mgt.h \
 	mgt/mgt_cli.h \
+	params.h \
 	storage/storage.h \
 	storage/storage_persistent.h \
 	vparam.h

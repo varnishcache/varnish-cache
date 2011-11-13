@@ -710,21 +710,6 @@ VCC_Compile(const struct vcc *tl, struct vsb *sb, const char *b)
 	return (r);
 }
 
-/*--------------------------------------------------------------------*/
-
-const char *
-VCC_Return_Name(unsigned method)
-{
-
-	switch (method) {
-#define VCL_RET_MAC(l, U, B) case VCL_RET_##U: return(#l);
-#include "tbl/vcl_returns.h"
-#undef VCL_RET_MAC
-	default:
-		return (NULL);
-	}
-}
-
 /*--------------------------------------------------------------------
  * Allocate a compiler instance
  */

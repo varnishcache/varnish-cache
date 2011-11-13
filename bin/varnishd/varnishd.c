@@ -44,9 +44,10 @@
 #include <unistd.h>
 
 #include "mgt/mgt.h"
+#include "heritage.h"
+#include "params.h"
 
 #include "hash/hash_slinger.h"
-#include "heritage.h"
 #include "vav.h"
 #include "vcli.h"
 #include "vcli_common.h"

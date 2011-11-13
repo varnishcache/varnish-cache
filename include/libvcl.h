@@ -37,4 +37,3 @@ void VCC_VMOD_dir(struct vcc *, const char *str);
 void VCC_Err_Unref(struct vcc *tl, unsigned u);
 
 char *VCC_Compile(const struct vcc *, struct vsb *sb, const char *b);
-const char *VCC_Return_Name(unsigned action);

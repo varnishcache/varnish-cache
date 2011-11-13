@@ -98,9 +98,10 @@
 #include <unistd.h>
 
 #include "mgt/mgt.h"
+#include "heritage.h"
+#include "params.h"
 
 #include "flopen.h"
-#include "heritage.h"
 #include "vapi/vsc_int.h"
 #include "vapi/vsl_int.h"
 #include "vapi/vsm_int.h"
