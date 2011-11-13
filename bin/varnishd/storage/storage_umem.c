@@ -39,7 +39,7 @@
 #include <stdlib.h>
 #include <umem.h>
 
-#include "cache.h"
+#include "cache/cache.h"
 #include "storage/storage.h"
 
 static size_t			smu_max = SIZE_MAX;

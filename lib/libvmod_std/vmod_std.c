@@ -39,7 +39,7 @@
 #include "vrt.h"
 #include "vtcp.h"
 
-#include "../../bin/varnishd/cache.h"
+#include "cache/cache.h"
 
 #include "vcc_if.h"
 

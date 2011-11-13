@@ -30,7 +30,7 @@
 
 #include "config.h"
 
-#include "cache.h"
+#include "cache/cache.h"
 
 #include "waiter/cache_waiter.h"
 #include "vcli.h"
