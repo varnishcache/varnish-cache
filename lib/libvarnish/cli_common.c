@@ -121,7 +121,7 @@ read_tmo(int fd, char *ptr, unsigned len, double tmo)
 	struct pollfd pfd;
 
 	if (tmo > 0)
-		to = tmo * 1e3;
+		to = (int)(tmo * 1e3);
 	else
 		to = -1;
 	pfd.fd = fd;
@@ -150,44 +150,56 @@ VCLI_ReadResult(int fd, unsigned *status, char **ptr, double tmo)
 	char res[CLI_LINE0_LEN];	/* For NUL */
 	int i, j;
 	unsigned u, v, s;
-	char *p;
+	char *p = NULL;
+	const char *err = "CLI communication error (hdr)";
 
 	if (status == NULL)
 		status = &s;
 	if (ptr != NULL)
 		*ptr = NULL;
-	i = read_tmo(fd, res, CLI_LINE0_LEN, tmo);
-	if (i != CLI_LINE0_LEN) {
-		*status = CLIS_COMMS;
-		if (ptr != NULL)
-			*ptr = strdup("CLI communication error (hdr)");
-		if (i != 0)
-			return (i);
-		return (*status);
-	}
-	assert(i == CLI_LINE0_LEN);
-	assert(res[3] == ' ');
-	assert(res[CLI_LINE0_LEN - 1] == '\n');
-	res[CLI_LINE0_LEN - 1] = '\0';
-	j = sscanf(res, "%u %u\n", &u, &v);
-	assert(j == 2);
-	*status = u;
-	p = malloc(v + 1L);
-	assert(p != NULL);
-	i = read_tmo(fd, p, v + 1, tmo);
-	if (i < 0) {
-		*status = CLIS_COMMS;
+	do {
+		i = read_tmo(fd, res, CLI_LINE0_LEN, tmo);
+		if (i != CLI_LINE0_LEN)
+			break;
+
+		if (res[3] != ' ')
+			break;
+
+		if (res[CLI_LINE0_LEN - 1] != '\n')
+			break;
+
+		res[CLI_LINE0_LEN - 1] = '\0';
+		j = sscanf(res, "%u %u\n", &u, &v);
+		if (j != 2)
+			break;
+
+		err = "CLI communication error (body)";
+
+		*status = u;
+		p = malloc(v + 1L);
+		if (p == NULL)
+			break;
+
+		i = read_tmo(fd, p, v + 1, tmo);
+		if (i < 0)
+			break;
+		if (i != v + 1)
+			break;
+		if (p[v] != '\n')
+			break;
+		
+		p[v] = '\0';
+		if (ptr == NULL)
+			free(p);
+		else
+			*ptr = p;
+		return (0);
+	} while(0);
+
+	if (p != NULL)
 		free(p);
-		if (ptr != NULL)
-			*ptr = strdup("CLI communication error (body)");
-		return (i);
-	}
-	assert(i == v + 1);
-	assert(p[v] == '\n');
-	p[v] = '\0';
-	if (ptr == NULL)
-		free(p);
-	else
-		*ptr = p;
-	return (0);
+	*status = CLIS_COMMS;
+	if (ptr != NULL)
+		*ptr = strdup(err);
+	return (*status);
 }
