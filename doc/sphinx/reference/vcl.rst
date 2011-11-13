@@ -976,10 +976,10 @@ based on the request URL:::
     }
   }
 
-  The following snippet demonstrates how to force a minimum TTL for
-  all documents.  Note that this is not the same as setting the
-  default_ttl run-time parameter, as that only affects document for
-  which the backend did not specify a TTL:::
+The following snippet demonstrates how to force a minimum TTL for
+all documents.  Note that this is not the same as setting the
+default_ttl run-time parameter, as that only affects document for
+which the backend did not specify a TTL:::
   
   import std; # needed for std.log
 
