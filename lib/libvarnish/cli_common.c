@@ -87,6 +87,7 @@ VCLI_WriteResult(int fd, unsigned status, const char *result)
 	int i, l;
 	struct iovec iov[3];
 	char nl[2] = "\n";
+	size_t len;
 	char res[CLI_LINE0_LEN + 2];	/*
 					 * NUL + one more so we can catch
 					 * any misformats by snprintf
@@ -95,15 +96,18 @@ VCLI_WriteResult(int fd, unsigned status, const char *result)
 	assert(status >= 100);
 	assert(status <= 999);		/*lint !e650 const out of range */
 
+	len = strlen(result);
+
 	i = snprintf(res, sizeof res,
-	    "%-3d %-8jd\n", status, (intmax_t)strlen(result));
+	    "%-3d %-8zd\n", status, len);
 	assert(i == CLI_LINE0_LEN);
+	assert(strtoul(res + 3, NULL, 10) == len);
 
 	iov[0].iov_base = res;
 	iov[0].iov_len = CLI_LINE0_LEN;
 
 	iov[1].iov_base = (void*)(uintptr_t)result;	/* TRUST ME */
-	iov[1].iov_len = strlen(result);
+	iov[1].iov_len = len;
 
 	iov[2].iov_base = nl;
 	iov[2].iov_len = 1;
