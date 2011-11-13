@@ -172,7 +172,8 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 	VSB_delete(vsb);
-	(void)VCLI_ReadResult(cli_i, &u, &q, params->cli_timeout);
+	if (VCLI_ReadResult(cli_i, &u, &q, params->cli_timeout))
+		MGT_Child_Cli_Fail();
 	VCLI_SetResult(cli, u);
 	VCLI_Out(cli, "%s", q);
 	free(q);
@@ -221,11 +222,10 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...) {
 		return (CLIS_COMMS);
 	}
 
-	(void)VCLI_ReadResult(cli_i, &u, resp, params->cli_timeout);
+	if (VCLI_ReadResult(cli_i, &u, resp, params->cli_timeout))
+		MGT_Child_Cli_Fail();
 	if (status != NULL)
 		*status = u;
-	if (u == CLIS_COMMS)
-		MGT_Child_Cli_Fail();
 	return (u == CLIS_OK ? 0 : u);
 }
 
