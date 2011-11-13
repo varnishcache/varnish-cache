@@ -35,7 +35,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "vas.h"
 #include "vnum.h"
 
 static const char err_miss_num[] = "Missing number";
