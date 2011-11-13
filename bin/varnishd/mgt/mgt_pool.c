@@ -51,7 +51,7 @@
 #include "heritage.h"
 #include "params.h"
 
-#include "vparam.h"
+#include "mgt/mgt_param.h"
 
 /*--------------------------------------------------------------------*/
 

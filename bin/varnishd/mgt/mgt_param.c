@@ -41,12 +41,12 @@
 #include "heritage.h"
 #include "params.h"
 
+#include "mgt/mgt_param.h"
 #include "waiter/cache_waiter.h"
 #include "vav.h"
 #include "vcli.h"
 #include "vcli_common.h"
 #include "vcli_priv.h"
-#include "vparam.h"
 #include "vss.h"
 
 #include "mgt_cli.h"

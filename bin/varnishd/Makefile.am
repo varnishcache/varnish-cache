@@ -36,6 +36,7 @@ varnishd_SOURCES = \
 	cache_pipe.c \
 	cache_pool.c \
 	cache_response.c \
+	cache_rfc2616.c \
 	cache_session.c \
 	cache_shmlog.c \
 	cache_vary.c \
@@ -65,7 +66,6 @@ varnishd_SOURCES = \
 	mgt/mgt_sandbox_solaris.c \
 	mgt/mgt_shmem.c \
 	mgt/mgt_vcc.c \
-	rfc2616.c \
 	storage/stevedore.c \
 	storage/stevedore_utils.c \
 	storage/storage_file.c \
@@ -89,10 +89,10 @@ noinst_HEADERS = \
 	heritage.h \
 	mgt/mgt.h \
 	mgt/mgt_cli.h \
+	mgt/mgt_param.h \
 	params.h \
 	storage/storage.h \
-	storage/storage_persistent.h \
-	vparam.h
+	storage/storage_persistent.h
 
 varnishd_CFLAGS = \
 	@PCRE_CFLAGS@ \
