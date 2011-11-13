@@ -58,6 +58,7 @@ varnishd_SOURCES = \
 	hash/hash_simple_list.c \
 	mgt/mgt_child.c \
 	mgt/mgt_cli.c \
+	mgt/mgt_main.c \
 	mgt/mgt_param.c \
 	mgt/mgt_pool.c \
 	mgt/mgt_sandbox.c \
@@ -75,7 +76,6 @@ varnishd_SOURCES = \
 	storage/storage_persistent_subr.c \
 	storage/storage_synth.c \
 	storage/storage_umem.c \
-	varnishd.c \
 	vsm.c
 
 noinst_HEADERS = \
