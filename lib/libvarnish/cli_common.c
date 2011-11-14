@@ -43,6 +43,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "miniobj.h"
 #include "vas.h"
 #include "vcli.h"
 #include "vcli_common.h"
@@ -56,10 +57,15 @@ VCLI_Out(struct cli *cli, const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	if (cli != NULL)
-		(void)VSB_vprintf(cli->sb, fmt, ap);
-	else
+	if (cli != NULL) {
+		CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
+		if (VSB_len(cli->sb) < *cli->limit)
+			(void)VSB_vprintf(cli->sb, fmt, ap);
+		else if (cli->result == CLIS_OK)
+			cli->result = CLIS_TRUNCATED;
+	} else {
 		(void)vfprintf(stdout, fmt, ap);
+	}
 	va_end(ap);
 }
 
@@ -68,6 +74,7 @@ void
 VCLI_Quote(struct cli *cli, const char *s)
 {
 
+	CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
 	VSB_quote(cli->sb, s, -1, 0);
 }
 
@@ -75,10 +82,13 @@ void
 VCLI_SetResult(struct cli *cli, unsigned res)
 {
 
-	if (cli != NULL)
-		cli->result = res;	/*lint !e64 type mismatch */
-	else
+	if (cli != NULL) {
+		CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
+		if (cli->result != CLIS_TRUNCATED || res != CLIS_OK)
+			cli->result = res;	/*lint !e64 type mismatch */
+	} else {
 		printf("CLI result = %u\n", res);
+	}
 }
 
 int

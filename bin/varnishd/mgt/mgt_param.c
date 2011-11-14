@@ -673,6 +673,19 @@ static const struct parspec input_parspec[] = {
 		"Listen queue depth.",
 		MUST_RESTART,
 		"1024", "connections" },
+	{ "cli_buffer", tweak_uint, &mgt_param.cli_buffer, 4096, UINT_MAX,
+		"Size of buffer for CLI command input."
+		"\nYou may need to increase this if you have big VCL files "
+		"and use the vcl.inline CLI command.\n"
+		"NB: Must be specified with -p to have effect.\n",
+		0,
+		"8192", "bytes" },
+	{ "cli_limit", tweak_uint, &mgt_param.cli_limit, 128, 99999999,
+		"Maximum size of CLI response.  If the response exceeds"
+		" this limit, the reponse code will be 201 instead of"
+		" 200 and the last line will indicate the truncation.",
+		0,
+		"4096", "bytes" },
 	{ "cli_timeout", tweak_timeout, &mgt_param.cli_timeout, 0, 0,
 		"Timeout for the childs replies to CLI requests from "
 		"the mgt_param.",
@@ -805,13 +818,6 @@ static const struct parspec input_parspec[] = {
 		"more sessions take a detour around the waiter.",
 		EXPERIMENTAL,
 		"50", "ms" },
-	{ "cli_buffer", tweak_uint, &mgt_param.cli_buffer, 4096, UINT_MAX,
-		"Size of buffer for CLI input."
-		"\nYou may need to increase this if you have big VCL files "
-		"and use the vcl.inline CLI command.\n"
-		"NB: Must be specified with -p to have effect.\n",
-		0,
-		"8192", "bytes" },
 	{ "log_hashstring", tweak_bool, &mgt_param.log_hash, 0, 0,
 		"Log the hash string components to shared memory log.\n",
 		0,

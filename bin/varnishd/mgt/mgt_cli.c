@@ -336,7 +336,8 @@ static void
 mgt_cli_init_cls(void)
 {
 
-	cls = VCLS_New(mgt_cli_cb_before, mgt_cli_cb_after, mgt_param.cli_buffer);
+	cls = VCLS_New(mgt_cli_cb_before, mgt_cli_cb_after,
+	    &mgt_param.cli_buffer, &mgt_param.cli_limit);
 	AN(cls);
 	AZ(VCLS_AddFunc(cls, MCF_NOAUTH, cli_auth));
 	AZ(VCLS_AddFunc(cls, MCF_AUTH, cli_proto));

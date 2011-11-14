@@ -107,6 +107,7 @@ struct params {
 
 	/* CLI related */
 	unsigned		cli_timeout;
+	unsigned		cli_limit;
 	unsigned		ping_interval;
 
 	/* LRU list ordering interval */
