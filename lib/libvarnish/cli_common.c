@@ -70,6 +70,17 @@ VCLI_Out(struct cli *cli, const char *fmt, ...)
 }
 
 /*lint -e{818} cli could be const */
+int
+VCLI_Overflow(struct cli *cli)
+{
+	CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
+	if (cli->result == CLIS_TRUNCATED ||
+	    VSB_len(cli->sb) >= *cli->limit)
+		return (1);
+	return (0);
+}
+
+/*lint -e{818} cli could be const */
 void
 VCLI_Quote(struct cli *cli, const char *s)
 {

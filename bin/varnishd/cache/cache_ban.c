@@ -1071,6 +1071,8 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 		    b->flags & BAN_F_GONE ? "G" : " ");
 		ban_render(cli, b->spec);
 		VCLI_Out(cli, "\n");
+		if (VCLI_Overflow(cli))
+			break;
 		if (cache_param->diag_bitmap & 0x80000) {
 			Lck_Lock(&ban_mtx);
 			struct objcore *oc;
