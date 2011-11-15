@@ -424,21 +424,14 @@ mgt_stop_child(void)
 /*--------------------------------------------------------------------*/
 
 static void
-mgt_report_panic(pid_t r)
+mgt_handle_panicstr(pid_t r)
 {
+	char time_str[30];
 
 	if (VSM_head->panicstr[0] == '\0')
 		return;
 	REPORT(LOG_ERR, "Child (%jd) Panic message: %s",
 	    (intmax_t)r, VSM_head->panicstr);
-}
-
-static void
-mgt_save_panic(void)
-{
-	char time_str[30];
-	if (VSM_head->panicstr[0] == '\0')
-		return;
 
 	if (child_panic)
 		VSB_delete(child_panic);
@@ -500,8 +493,7 @@ mgt_sigchld(const struct vev *e, int what)
 	REPORT(LOG_INFO, "%s", VSB_data(vsb));
 	VSB_delete(vsb);
 
-	mgt_report_panic(r);
-	mgt_save_panic();
+	mgt_handle_panicstr(r);
 
 	child_pid = -1;
 
