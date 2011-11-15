@@ -50,6 +50,8 @@ typedef void storage_close_f(const struct stevedore *);
 #include "tbl/vrt_stv_var.h"
 #undef VRTSTVTYPE
 
+extern storage_allocobj_f stv_default_allocobj;
+
 /*--------------------------------------------------------------------*/
 
 struct stevedore {
@@ -77,6 +79,11 @@ struct stevedore {
 	VTAILQ_ENTRY(stevedore)	list;
 	char			ident[16];	/* XXX: match VSM_chunk.ident */
 };
+
+VTAILQ_HEAD(stevedore_head, stevedore);
+
+extern struct stevedore_head stv_stevedores;
+extern struct stevedore *stv_transient;
 
 /*--------------------------------------------------------------------*/
 int STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx);

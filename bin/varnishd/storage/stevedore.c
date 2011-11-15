@@ -39,17 +39,11 @@
 #include "cache/cache.h"
 
 #include "storage/storage.h"
-#include "vav.h"
 #include "vcli_priv.h"
 #include "vrt.h"
 #include "vrt_obj.h"
 
-static VTAILQ_HEAD(, stevedore)	stevedores =
-    VTAILQ_HEAD_INITIALIZER(stevedores);
-
 static const struct stevedore * volatile stv_next;
-
-static struct stevedore *stv_transient;
 
 /*---------------------------------------------------------------------
  * Default objcore methods
@@ -130,7 +124,7 @@ stv_pick_stevedore(const struct sess *sp, const char **hint)
 
 	AN(hint);
 	if (*hint != NULL && **hint != '\0') {
-		VTAILQ_FOREACH(stv, &stevedores, list) {
+		VTAILQ_FOREACH(stv, &stv_stevedores, list) {
 			if (!strcmp(stv->ident, *hint))
 				return (stv);
 		}
@@ -144,7 +138,7 @@ stv_pick_stevedore(const struct sess *sp, const char **hint)
 	/* pick a stevedore and bump the head along */
 	stv = VTAILQ_NEXT(stv_next, list);
 	if (stv == NULL)
-		stv = VTAILQ_FIRST(&stevedores);
+		stv = VTAILQ_FIRST(&stv_stevedores);
 	AN(stv);
 	AN(stv->name);
 	stv_next = stv;
@@ -271,7 +265,7 @@ STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
  * implement persistent storage can rely on.
  */
 
-static struct object *
+struct object *
 stv_default_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
     const struct stv_objsecrets *soc)
 {
@@ -402,7 +396,7 @@ STV_open(void)
 {
 	struct stevedore *stv;
 
-	VTAILQ_FOREACH(stv, &stevedores, list) {
+	VTAILQ_FOREACH(stv, &stv_stevedores, list) {
 		stv->lru = LRU_Alloc();
 		if (stv->open != NULL)
 			stv->open(stv);
@@ -412,6 +406,7 @@ STV_open(void)
 		stv->lru = LRU_Alloc();
 		stv->open(stv);
 	}
+	stv_next = VTAILQ_FIRST(&stv_stevedores);
 }
 
 void
@@ -419,119 +414,12 @@ STV_close(void)
 {
 	struct stevedore *stv;
 
-	VTAILQ_FOREACH(stv, &stevedores, list)
+	VTAILQ_FOREACH(stv, &stv_stevedores, list)
 		if (stv->close != NULL)
 			stv->close(stv);
 	stv = stv_transient;
 	if (stv->close != NULL)
 		stv->close(stv);
-}
-
-/*--------------------------------------------------------------------
- * Parse a stevedore argument on the form:
- *	[ name '=' ] strategy [ ',' arg ] *
- */
-
-static const struct choice STV_choice[] = {
-	{ "file",	&smf_stevedore },
-	{ "malloc",	&sma_stevedore },
-	{ "persistent",	&smp_stevedore },
-#ifdef HAVE_LIBUMEM
-	{ "umem",	&smu_stevedore },
-#endif
-	{ NULL,		NULL }
-};
-
-void
-STV_Config(const char *spec)
-{
-	char **av;
-	const char *p, *q;
-	struct stevedore *stv;
-	const struct stevedore *stv2;
-	int ac, l;
-	static unsigned seq = 0;
-
-	ASSERT_MGT();
-	p = strchr(spec, '=');
-	q = strchr(spec, ',');
-	if (p != NULL && (q == NULL || q > p)) {
-		av = VAV_Parse(p + 1, NULL, ARGV_COMMA);
-	} else {
-		av = VAV_Parse(spec, NULL, ARGV_COMMA);
-		p = NULL;
-	}
-	AN(av);
-
-	if (av[0] != NULL)
-		ARGV_ERR("%s\n", av[0]);
-
-	if (av[1] == NULL)
-		ARGV_ERR("-s argument lacks strategy {malloc, file, ...}\n");
-
-	for (ac = 0; av[ac + 2] != NULL; ac++)
-		continue;
-
-	stv2 = pick(STV_choice, av[1], "storage");
-	AN(stv2);
-
-	/* Append strategy to ident string */
-	VSB_printf(vident, ",-s%s", av[1]);
-
-	av += 2;
-
-	CHECK_OBJ_NOTNULL(stv2, STEVEDORE_MAGIC);
-	ALLOC_OBJ(stv, STEVEDORE_MAGIC);
-	AN(stv);
-
-	*stv = *stv2;
-	AN(stv->name);
-	AN(stv->alloc);
-	if (stv->allocobj == NULL)
-		stv->allocobj = stv_default_allocobj;
-
-	if (p == NULL)
-		bprintf(stv->ident, "s%u", seq++);
-	else {
-		l = p - spec;
-		if (l > sizeof stv->ident - 1)
-			l = sizeof stv->ident - 1;
-		bprintf(stv->ident, "%.*s", l, spec);
-	}
-
-	VTAILQ_FOREACH(stv2, &stevedores, list) {
-		if (strcmp(stv2->ident, stv->ident))
-			continue;
-		ARGV_ERR("(-s%s=%s) already defined once\n",
-		    stv->ident, stv->name);
-	}
-
-	if (stv->init != NULL)
-		stv->init(stv, ac, av);
-	else if (ac != 0)
-		ARGV_ERR("(-s%s) too many arguments\n", stv->name);
-
-	if (!strcmp(stv->ident, TRANSIENT_STORAGE)) {
-		stv->transient = 1;
-		AZ(stv_transient);
-		stv_transient = stv;
-	} else {
-		VTAILQ_INSERT_TAIL(&stevedores, stv, list);
-		if (!stv_next)
-			stv_next = VTAILQ_FIRST(&stevedores);
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-STV_Config_Transient(void)
-{
-
-	ASSERT_MGT();
-
-	if (stv_transient == NULL)
-		STV_Config(TRANSIENT_STORAGE "=malloc");
 }
 
 /*--------------------------------------------------------------------*/
@@ -547,7 +435,7 @@ stv_cli_list(struct cli *cli, const char * const *av, void *priv)
 	VCLI_Out(cli, "Storage devices:\n");
 	stv = stv_transient;
 		VCLI_Out(cli, "\tstorage.%s = %s\n", stv->ident, stv->name);
-	VTAILQ_FOREACH(stv, &stevedores, list)
+	VTAILQ_FOREACH(stv, &stv_stevedores, list)
 		VCLI_Out(cli, "\tstorage.%s = %s\n", stv->ident, stv->name);
 }
 
@@ -568,7 +456,7 @@ stv_find(const char *nm)
 {
 	const struct stevedore *stv;
 
-	VTAILQ_FOREACH(stv, &stevedores, list)
+	VTAILQ_FOREACH(stv, &stv_stevedores, list)
 		if (!strcmp(stv->ident, nm))
 			return (stv);
 	if (!strcmp(TRANSIENT_STORAGE, nm))

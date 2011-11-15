@@ -42,6 +42,9 @@
 
 struct cli;
 
+/* Name of transient storage */
+#define TRANSIENT_STORAGE	"Transient"
+
 extern pid_t mgt_pid;
 #define ASSERT_MGT() do { assert(getpid() == mgt_pid);} while (0)
 
@@ -67,13 +70,6 @@ void mgt_child_inherit(int fd, const char *what);
 		fprintf(stderr, "Error: " __VA_ARGS__);		\
 		exit(2);					\
 	} while (0);
-
-/* A tiny helper for choosing hash/storage modules */
-struct choice {
-	const char      *name;
-	const void	*ptr;
-};
-const void *pick(const struct choice *cp, const char *which, const char *kind);
 
 #define NEEDLESS_RETURN(foo)	return (foo)
 

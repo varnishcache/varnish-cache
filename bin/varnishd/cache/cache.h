@@ -114,9 +114,6 @@ struct worker;
 
 #define DIGEST_LEN		32
 
-/* Name of transient storage */
-#define TRANSIENT_STORAGE	"Transient"
-
 /*--------------------------------------------------------------------
  * Pointer aligment magic
  */
