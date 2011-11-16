@@ -73,9 +73,6 @@ void mgt_child_inherit(int fd, const char *what);
 
 #define NEEDLESS_RETURN(foo)	return (foo)
 
-/* stevedore.c */
-void STV_Config(const char *spec);
-void STV_Config_Transient(void);
 
 /* vsm.c */
 // extern struct VSM_head		*VSM_head;

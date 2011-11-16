@@ -84,6 +84,10 @@ void mgt_sandbox_solaris_privsep(void);
 void mgt_SHM_Init(const char *arg);
 void mgt_SHM_Pid(void);
 
+/* stevedore_mgt.c */
+void STV_Config(const char *spec);
+void STV_Config_Transient(void);
+
 /* mgt_vcc.c */
 void mgt_vcc_init(void);
 int mgt_vcc_default(const char *bflag, const char *f_arg, char *vcl, int Cflag);
