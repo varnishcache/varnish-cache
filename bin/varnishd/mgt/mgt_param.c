@@ -843,9 +843,6 @@ static const struct parspec input_parspec[] = {
 		"  0x00001000 - do not core-dump child process.\n"
 		"  0x00002000 - only short panic message.\n"
 		"  0x00004000 - panic to stderr.\n"
-#ifdef HAVE_ABORT2
-		"  0x00008000 - panic to abort2().\n"
-#endif
 		"  0x00010000 - synchronize shmlog.\n"
 		"  0x00020000 - synchronous start of persistence.\n"
 		"  0x00040000 - release VCL early.\n"

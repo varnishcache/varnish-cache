@@ -50,6 +50,9 @@ extern pid_t mgt_pid;
 
 /* mgt_shmem.c */
 extern struct VSC_C_main *VSC_C_main;
+#define PAN_CLASS "Panic"
+extern char *PAN_panicstr;
+extern unsigned PAN_panicstr_len;
 
 /* varnishd.c */
 struct vsb;

@@ -40,8 +40,6 @@
 
 #include "cache.h"
 
-#include "vapi/vsm_int.h"
-
 #include "cache_backend.h"
 #include "waiter/cache_waiter.h"
 #include "vcl.h"
@@ -57,6 +55,10 @@
 
 static struct vsb vsps, *vsp;
 static pthread_mutex_t panicstr_mtx = PTHREAD_MUTEX_INITIALIZER;
+
+/* Initialized in mgt_shmem.c, points into VSM */
+char *PAN_panicstr;
+unsigned PAN_panicstr_len;
 
 /*--------------------------------------------------------------------*/
 
@@ -354,20 +356,8 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	VSB_bcat(vsp, "", 1);	/* NUL termination */
 
 	if (cache_param->diag_bitmap & 0x4000)
-		(void)fputs(VSM_head->panicstr, stderr);
+		(void)fputs(PAN_panicstr, stderr);
 
-#ifdef HAVE_ABORT2
-	if (cache_param->diag_bitmap & 0x8000) {
-		void *arg[1];
-		char *p;
-
-		for (p = VSM_head->panicstr; *p; p++)
-			if (*p == '\n')
-				*p = ' ';
-		arg[0] = VSM_head->panicstr;
-		abort2(VSM_head->panicstr, 1, arg);
-	}
-#endif
 	if (cache_param->diag_bitmap & 0x1000)
 		exit(4);
 	else
@@ -382,6 +372,8 @@ PAN_Init(void)
 
 	VAS_Fail = pan_ic;
 	vsp = &vsps;
-	AN(VSB_new(vsp, VSM_head->panicstr, sizeof VSM_head->panicstr,
+	AN(PAN_panicstr);
+	AN(PAN_panicstr_len);
+	AN(VSB_new(vsp, PAN_panicstr, PAN_panicstr_len,
 	    VSB_FIXEDLEN));
 }

@@ -331,6 +331,12 @@ mgt_SHM_Init(const char *l_arg)
 	vsl_log_start[1] = VSL_ENDMARKER;
 	VWMB();
 
+	PAN_panicstr_len = 64 * 1024;
+	PAN_panicstr = VSM_Alloc(PAN_panicstr_len, PAN_CLASS, "", "");
+	AN(PAN_panicstr);
+	/* XXX: shouldn't VSM_Alloc zero ? */
+	memset(PAN_panicstr, '\0', PAN_panicstr_len);
+
 	do
 		*vsl_log_start = random() & 0xffff;
 	while (*vsl_log_start == 0);

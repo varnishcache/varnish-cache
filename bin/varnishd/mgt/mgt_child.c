@@ -47,7 +47,6 @@
 #include "common/heritage.h"
 #include "common/params.h"
 
-#include "vapi/vsm_int.h"
 #include "vbm.h"
 #include "vcli.h"
 #include "vcli_priv.h"
@@ -428,10 +427,10 @@ mgt_handle_panicstr(pid_t r)
 {
 	char time_str[30];
 
-	if (VSM_head->panicstr[0] == '\0')
+	if (PAN_panicstr[0] == '\0')
 		return;
 	REPORT(LOG_ERR, "Child (%jd) Panic message: %s",
-	    (intmax_t)r, VSM_head->panicstr);
+	    (intmax_t)r, PAN_panicstr);
 
 	if (child_panic)
 		VSB_delete(child_panic);
@@ -439,7 +438,7 @@ mgt_handle_panicstr(pid_t r)
 	XXXAN(child_panic);
 	VTIM_format(VTIM_real(), time_str);
 	VSB_printf(child_panic, "Last panic at: %s\n", time_str);
-	VSB_cat(child_panic, VSM_head->panicstr);
+	VSB_cat(child_panic, PAN_panicstr);
 	AZ(VSB_finish(child_panic));
 }
 

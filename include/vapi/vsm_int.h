@@ -65,9 +65,6 @@ struct VSM_head {
 
 	unsigned		shm_size;
 
-	/* Panic message buffer */
-	char			panicstr[64 * 1024];
-
 	unsigned		alloc_seq;
 	/* Must be last element */
 	struct VSM_chunk	head;
