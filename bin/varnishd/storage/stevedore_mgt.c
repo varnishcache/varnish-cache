@@ -42,12 +42,37 @@
 
 #include "storage/storage.h"
 #include "vav.h"
+#include "vcli_priv.h"
 
 struct stevedore_head stv_stevedores =
     VTAILQ_HEAD_INITIALIZER(stv_stevedores);
 
 struct stevedore *stv_transient;
 
+/*--------------------------------------------------------------------*/
+
+static void
+stv_cli_list(struct cli *cli, const char * const *av, void *priv)
+{
+	struct stevedore *stv;
+
+	ASSERT_MGT();
+	(void)av;
+	(void)priv;
+	VCLI_Out(cli, "Storage devices:\n");
+	stv = stv_transient;
+		VCLI_Out(cli, "\tstorage.%s = %s\n", stv->ident, stv->name);
+	VTAILQ_FOREACH(stv, &stv_stevedores, list)
+		VCLI_Out(cli, "\tstorage.%s = %s\n", stv->ident, stv->name);
+}
+
+/*--------------------------------------------------------------------*/
+
+struct cli_proto cli_stv[] = {
+	{ "storage.list", "storage.list", "List storage devices\n",
+	    0, 0, "", stv_cli_list },
+	{ NULL}
+};
 /*--------------------------------------------------------------------
  * Parse a stevedore argument on the form:
  *	[ name '=' ] strategy [ ',' arg ] *

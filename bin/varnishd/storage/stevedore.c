@@ -39,7 +39,6 @@
 #include "cache/cache.h"
 
 #include "storage/storage.h"
-#include "vcli_priv.h"
 #include "vrt.h"
 #include "vrt_obj.h"
 
@@ -422,30 +421,6 @@ STV_close(void)
 		stv->close(stv);
 }
 
-/*--------------------------------------------------------------------*/
-
-static void
-stv_cli_list(struct cli *cli, const char * const *av, void *priv)
-{
-	struct stevedore *stv;
-
-	ASSERT_MGT();
-	(void)av;
-	(void)priv;
-	VCLI_Out(cli, "Storage devices:\n");
-	stv = stv_transient;
-		VCLI_Out(cli, "\tstorage.%s = %s\n", stv->ident, stv->name);
-	VTAILQ_FOREACH(stv, &stv_stevedores, list)
-		VCLI_Out(cli, "\tstorage.%s = %s\n", stv->ident, stv->name);
-}
-
-/*--------------------------------------------------------------------*/
-
-struct cli_proto cli_stv[] = {
-	{ "storage.list", "storage.list", "List storage devices\n",
-	    0, 0, "", stv_cli_list },
-	{ NULL}
-};
 
 /*--------------------------------------------------------------------
  * VRT functions for stevedores
