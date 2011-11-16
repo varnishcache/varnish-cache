@@ -114,15 +114,6 @@ struct worker;
 
 #define DIGEST_LEN		32
 
-/*--------------------------------------------------------------------
- * Pointer aligment magic
- */
-
-#define PALGN		(sizeof(void *) - 1)
-#define PAOK(p)		(((uintptr_t)(p) & PALGN) == 0)
-#define PRNDDN(p)	((uintptr_t)(p) & ~PALGN)
-#define PRNDUP(p)	(((uintptr_t)(p) + PALGN) & ~PALGN)
-
 /*--------------------------------------------------------------------*/
 
 typedef struct {
@@ -137,6 +128,9 @@ enum step {
 #include "tbl/steps.h"
 #undef STEP
 };
+
+/*--------------------------------------------------------------------*/
+struct lock { void *priv; };	// Opaque
 
 /*--------------------------------------------------------------------
  * Workspace structure for quick memory allocation.
