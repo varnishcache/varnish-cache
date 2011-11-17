@@ -74,7 +74,7 @@ varnishd_SOURCES = \
 	storage/storage_persistent_subr.c \
 	storage/storage_synth.c \
 	storage/storage_umem.c \
-	waiter/cache_waiter.c \
+	waiter/waiter_common.c \
 	waiter/cache_waiter_epoll.c \
 	waiter/cache_waiter_kqueue.c \
 	waiter/cache_waiter_poll.c \
