@@ -29,8 +29,11 @@
  */
 
 #include "config.h"
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
 
-#include "cache/cache.h"
+#include "common/common.h"
 
 #include "waiter/cache_waiter.h"
 #include "vcli.h"
