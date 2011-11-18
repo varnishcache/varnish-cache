@@ -853,7 +853,7 @@ int SES_Schedule(struct sess *sp);
 void VSL_Init(void);
 void *VSM_Alloc(unsigned size, const char *class, const char *type,
     const char *ident);
-void VSM_Free(const void *ptr);
+void VSM_Free(void *ptr);
 #ifdef VSL_ENDMARKER
 void VSL(enum VSL_tag_e tag, int id, const char *fmt, ...);
 void WSLR(struct worker *w, enum VSL_tag_e tag, int id, txt t);

@@ -27,28 +27,35 @@
  *
  * VSM stuff common to manager and child.
  *
- * We have three potential conflicts we need to lock against here:
+ * We have three potential conflicts we need to deal with:
  *
  * VSM-studying programs (varnishstat...) vs. everybody else
  *	The VSM studying programs only have read-only access to the VSM
  *	so everybody else must use memory barriers, stable storage and
  *	similar tricks to keep the VSM image in sync (long enough) for
  *	the studying programs.
+ *	It can not be prevented, and may indeed in some cases be
+ *	desirable for such programs to write to VSM, for instance to
+ *	zero counters.
+ *	Varnishd should never trust the integrity of VSM content.
  *
  * Manager process vs child process.
- *	Will only muck about in VSM when child process is not running
- *	Responsible for cleaning up any mess left behind by dying child.
+ *	The manager will create a fresh VSM for each child process launch
+ *	and not muck about with VSM while the child runs.  If the child
+ *	crashes, the panicstring will be evacuated and the VSM possibly
+ *	saved for debugging, and a new VSM created before the child is
+ *	started again.
  *
  * Child process threads
  *	Pthread locking necessary.
  *
- * XXX: not all of this is in place yet.
  */
 
 #include "config.h"
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -58,181 +65,267 @@
 #include "vmb.h"
 #include "vtim.h"
 
-/* These two come from beyond (mgt_shmem.c actually) */
-struct VSM_head		*VSM_head;
-const struct VSM_chunk	*vsm_end;
+/*--------------------------------------------------------------------*/
 
-static unsigned
-vsm_mark(void)
-{
-	unsigned seq;
+struct vsm_range {
+	unsigned 			magic;
+#define VSM_RANGE_MAGIC			0x8d30f14
+	VTAILQ_ENTRY(vsm_range)		list;
+	unsigned			off; 
+	unsigned			len;
+	double				cool;
+	struct VSM_chunk		*chunk;
+	void				*ptr;
+};
 
-	seq = VSM_head->alloc_seq;
-	VSM_head->alloc_seq = 0;
-	VWMB();
-	return (seq);
-}
+struct vsm_sc {
+	unsigned 			magic;
+#define VSM_SC_MAGIC			0x8b83270d
+	char				*b;
+	unsigned			len;
+	struct VSM_head			*head;
+	VTAILQ_HEAD(,vsm_range)		r_used;
+	VTAILQ_HEAD(,vsm_range)		r_cooling;
+	VTAILQ_HEAD(,vsm_range)		r_free;
+	VTAILQ_HEAD(,vsm_range)		r_bogus;
+};
+
+/*--------------------------------------------------------------------
+ * The free list is sorted by size, which means that collapsing ranges
+ * on free becomes a multi-pass operation.
+ */
 
 static void
-vsm_release(unsigned seq)
+vsm_common_insert_free(struct vsm_sc *sc, struct vsm_range *vr)
 {
+	struct vsm_range *vr2;
 
-	if (seq == 0)
-		return;
-	VWMB();
-	do
-		VSM_head->alloc_seq = ++seq;
-	while (VSM_head->alloc_seq == 0);
-}
+	CHECK_OBJ_NOTNULL(sc, VSM_SC_MAGIC);
+	CHECK_OBJ_NOTNULL(vr, VSM_RANGE_MAGIC);
 
-/*--------------------------------------------------------------------*/
-
-static void
-vsm_cleanup(void)
-{
-	unsigned now = (unsigned)VTIM_mono();
-	struct VSM_chunk *sha, *sha2;
-	unsigned seq;
-
-	CHECK_OBJ_NOTNULL(VSM_head, VSM_HEAD_MAGIC);
-	VSM_ITER(sha) {
-		if (strcmp(sha->class, VSM_CLASS_COOL))
-			continue;
-		if (sha->state + VSM_COOL_TIME < now)
-			break;
-	}
-	if (sha == NULL)
-		return;
-	seq = vsm_mark();
-	/* First pass, free, and collapse with next if applicable */
-	VSM_ITER(sha) {
-		if (strcmp(sha->class, VSM_CLASS_COOL))
-			continue;
-		if (sha->state + VSM_COOL_TIME >= now)
-			continue;
-
-		bprintf(sha->class, "%s", VSM_CLASS_FREE);
-		bprintf(sha->type, "%s", "");
-		bprintf(sha->ident, "%s", "");
-		sha2 = VSM_NEXT(sha);
-		assert(sha2 <= vsm_end);
-		if (sha2 == vsm_end)
-			break;
-		CHECK_OBJ_NOTNULL(sha2, VSM_CHUNK_MAGIC);
-		if (!strcmp(sha2->class, VSM_CLASS_FREE)) {
-			sha->len += sha2->len;
-			memset(sha2, 0, sizeof *sha2);
+	/* First try to see if we can collapse anything */
+	VTAILQ_FOREACH(vr2, &sc->r_free, list) {
+		if (vr2->off == vr->off + vr->len) {
+			vr2->off = vr->off;
+			vr2->len += vr->len;
+			FREE_OBJ(vr);
+			VTAILQ_REMOVE(&sc->r_free, vr2, list);
+			vsm_common_insert_free(sc, vr2);
+			return;
 		}
-		sha->state = 0;
-	}
-	/* Second pass, collaps with prev if applicable */
-	VSM_ITER(sha) {
-		if (strcmp(sha->class, VSM_CLASS_FREE))
-			continue;
-		sha2 = VSM_NEXT(sha);
-		assert(sha2 <= vsm_end);
-		if (sha2 == vsm_end)
-			break;
-		CHECK_OBJ_NOTNULL(sha2, VSM_CHUNK_MAGIC);
-		if (!strcmp(sha2->class, VSM_CLASS_FREE)) {
-			sha->len += sha2->len;
-			memset(sha2, 0, sizeof *sha2);
+		if (vr->off == vr2->off + vr2->len) {
+			vr2->len += vr->len;
+			FREE_OBJ(vr);
+			VTAILQ_REMOVE(&sc->r_free, vr2, list);
+			vsm_common_insert_free(sc, vr2);
+			return;
 		}
 	}
-	vsm_release(seq);
-}
-
-/*--------------------------------------------------------------------*/
-
-void *
-VSM__Alloc(unsigned size, const char *class, const char *type, const char *ident)
-{
-	struct VSM_chunk *sha, *sha2;
-	unsigned seq;
-
-	CHECK_OBJ_NOTNULL(VSM_head, VSM_HEAD_MAGIC);
-
-	vsm_cleanup();
-
-	/* Round up to pointersize */
-	size = RUP2(size, sizeof(void*));
-
-	size += sizeof *sha;		/* Make space for the header */
-
-	VSM_ITER(sha) {
-		CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);
-
-		if (strcmp(sha->class, VSM_CLASS_FREE))
-			continue;
-
-		if (size > sha->len)
-			continue;
-
-		/* Mark as inconsistent while we write string fields */
-		seq = vsm_mark();
-
-		if (size + sizeof (*sha) < sha->len) {
-			sha2 = (void*)((uintptr_t)sha + size);
-
-			memset(sha2, 0, sizeof *sha2);
-			sha2->magic = VSM_CHUNK_MAGIC;
-			sha2->len = sha->len - size;
-			bprintf(sha2->class, "%s", VSM_CLASS_FREE);
-			sha->len = size;
+	/* Insert in size order */
+	VTAILQ_FOREACH(vr2, &sc->r_free, list) {
+		if (vr2->len > vr->len) {
+			VTAILQ_INSERT_BEFORE(vr2, vr, list);
+			return;
 		}
-
-		bprintf(sha->class, "%s", class);
-		bprintf(sha->type, "%s", type);
-		bprintf(sha->ident, "%s", ident);
-
-		vsm_release(seq);
-		return (VSM_PTR(sha));
 	}
-	return (NULL);
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-VSM__Free(const void *ptr)
-{
-	struct VSM_chunk *sha;
-	unsigned seq;
-
-	CHECK_OBJ_NOTNULL(VSM_head, VSM_HEAD_MAGIC);
-	VSM_ITER(sha)
-		if (VSM_PTR(sha) == ptr)
-			break;
-	AN(sha);
-	seq = vsm_mark();
-	bprintf(sha->class, "%s", VSM_CLASS_COOL);
-	sha->state = (unsigned)VTIM_mono();
-	vsm_release(seq);
+	/* At tail, if everything in the list is smaller */
+	VTAILQ_INSERT_TAIL(&sc->r_free, vr, list);
 }
 
 /*--------------------------------------------------------------------
- * Free all allocations after the mark (ie: allocated by child).
+ * Initialize a new VSM segment
+ */
+
+struct vsm_sc *
+VSM_common_new(void *p, unsigned l)
+{
+	struct vsm_sc *sc;
+	struct vsm_range *vr;
+
+	assert(PAOK(sizeof(struct VSM_chunk)));
+	assert(PAOK(p));
+	ALLOC_OBJ(sc, VSM_SC_MAGIC);
+	AN(sc);
+	VTAILQ_INIT(&sc->r_used);
+	VTAILQ_INIT(&sc->r_cooling);
+	VTAILQ_INIT(&sc->r_free);
+	VTAILQ_INIT(&sc->r_bogus);
+	sc->b = p;
+	sc->len = l;
+
+	sc->head = (void *)sc->b;
+	memset(TRUST_ME(sc->head), 0, sizeof *sc->head);
+	sc->head->magic = VSM_HEAD_MAGIC;
+	sc->head->hdrsize = sizeof *sc->head;
+	sc->head->shm_size = l;
+
+	ALLOC_OBJ(vr, VSM_RANGE_MAGIC);
+	AN(vr);
+	vr->off = PRNDUP(sizeof(*sc->head));
+	vr->len = l - vr->off;
+	VTAILQ_INSERT_TAIL(&sc->r_free, vr, list);
+	return (sc);
+}
+
+/*--------------------------------------------------------------------
+ * Allocate a chunk from VSM
+ */
+
+void *
+VSM_common_alloc(struct vsm_sc *sc, unsigned size,
+    const char *class, const char *type, const char *ident)
+{
+	struct vsm_range *vr, *vr2, *vr3;
+	double now = VTIM_real();
+	unsigned l1, l2;
+
+	CHECK_OBJ_NOTNULL(sc, VSM_SC_MAGIC);
+	AN(size);
+
+	/* XXX: silent truncation instead of assert ? */
+	AN(class);
+	assert(strlen(class) < sizeof(vr->chunk->class));
+	AN(type);
+	assert(strlen(type) < sizeof(vr->chunk->type));
+	AN(ident);
+	assert(strlen(ident) < sizeof(vr->chunk->ident));
+
+	/* Move cooled off stuff to free list */
+	VTAILQ_FOREACH_SAFE(vr, &sc->r_cooling, list, vr2) {
+		if (vr->cool > now)
+			break;
+		VTAILQ_REMOVE(&sc->r_cooling, vr, list);
+		vsm_common_insert_free(sc, vr);
+	}
+
+	size = PRNDUP(size);
+	l1 = size + sizeof(struct VSM_chunk);
+	l2 = size + 2 * sizeof(struct VSM_chunk);
+
+	/* Find space in free-list */
+	VTAILQ_FOREACH_SAFE(vr, &sc->r_free, list, vr2) {
+		if (vr->len < l1)
+			continue;
+		if (vr->len <= l2) {
+			VTAILQ_REMOVE(&sc->r_free, vr, list);
+		} else {
+			ALLOC_OBJ(vr3, VSM_RANGE_MAGIC);
+			AN(vr3);
+			vr3->off = vr->off;
+			vr3->len = l1;
+			vr->off += l1;
+			vr->len -= l1;
+			VTAILQ_REMOVE(&sc->r_free, vr, list);
+			vsm_common_insert_free(sc, vr);
+			vr = vr3;
+		}
+		break;
+	}
+
+	if (vr == NULL) {
+		/*
+		 * No space in VSM, return malloc'd space
+		 */
+		ALLOC_OBJ(vr, VSM_RANGE_MAGIC);
+		AN(vr);
+		vr->ptr = malloc(size);
+		AN(vr->ptr);
+		VTAILQ_INSERT_TAIL(&sc->r_bogus, vr, list);
+		/* XXX: log + stats */
+		return (vr->ptr);
+	}
+
+	/* XXX: stats ? */
+
+	/* Zero the entire allocation, to avoid garbage confusing readers */
+	memset(TRUST_ME(sc->b + vr->off), 0, vr->len);
+
+	vr->chunk = (void *)(sc->b + vr->off);
+	vr->ptr = (vr->chunk + 1);
+
+	vr->chunk->magic = VSM_CHUNK_MAGIC;
+	strcpy(TRUST_ME(vr->chunk->class), class);
+	strcpy(TRUST_ME(vr->chunk->type), type);
+	strcpy(TRUST_ME(vr->chunk->ident), ident);
+	VWMB();
+
+	vr3 = VTAILQ_FIRST(&sc->r_used);
+	VTAILQ_INSERT_HEAD(&sc->r_used, vr, list);
+
+	if (vr3 != NULL) {	
+		AZ(vr3->chunk->next);
+		vr3->chunk->next = vr->off;
+	} else {
+		sc->head->first = vr->off;
+	}
+	VWMB();
+	return (vr->ptr);
+}
+
+/*--------------------------------------------------------------------
+ * Free a chunk
  */
 
 void
-VSM__Clean(void)
+VSM_common_free(struct vsm_sc *sc, void *ptr)
 {
-	struct VSM_chunk *sha;
-	unsigned f, seq;
+	struct vsm_range *vr, *vr2;
 
-	CHECK_OBJ_NOTNULL(VSM_head, VSM_HEAD_MAGIC);
-	f = 0;
-	seq = vsm_mark();
-	VSM_ITER(sha) {
-		if (f == 0 && !strcmp(sha->class, VSM_CLASS_MARK)) {
-			f = 1;
+	CHECK_OBJ_NOTNULL(sc, VSM_SC_MAGIC);
+	AN(ptr);
+
+	/* Look in used list, move to cooling list */
+	VTAILQ_FOREACH(vr, &sc->r_used, list) {
+		if (vr->ptr != ptr)
 			continue;
-		}
-		if (f == 0)
-			continue;
-		if (strcmp(sha->class, VSM_CLASS_FREE) &&
-		    strcmp(sha->class, VSM_CLASS_COOL))
-			VSM__Free(VSM_PTR(sha));
+		/* XXX: stats ? */
+		vr2 = VTAILQ_NEXT(vr, list);
+		VTAILQ_REMOVE(&sc->r_used, vr, list);
+		VTAILQ_INSERT_TAIL(&sc->r_cooling, vr, list);
+		vr->cool = VTIM_real() + 60;	/* XXX: param ? */
+		if (vr2 != NULL)
+			vr2->chunk->next = vr->chunk->next;
+		else
+			sc->head->first = vr->chunk->next;
+		VWMB();
+		vr->chunk->len = 0;
+		VWMB();
+		return;
 	}
-	vsm_release(seq);
+	/* Look in bogus list, free */
+	VTAILQ_FOREACH(vr, &sc->r_bogus, list) {
+		if (vr->ptr == ptr) {
+			VTAILQ_REMOVE(&sc->r_bogus, vr, list);
+			FREE_OBJ(vr);
+			/* XXX: stats ? */
+			free(TRUST_ME(ptr));
+			return;
+		}
+	}
+	/* Panic */
+	assert(ptr == "Bogus pointer freed");
+}
+
+/*--------------------------------------------------------------------
+ * Delete a VSM segment
+ */
+
+void
+VSM_common_delete(struct vsm_sc *sc)
+{
+	struct vsm_range *vr, *vr2;
+
+	CHECK_OBJ_NOTNULL(sc, VSM_SC_MAGIC);
+	VTAILQ_FOREACH_SAFE(vr, &sc->r_free, list, vr2)
+		FREE_OBJ(vr);
+	VTAILQ_FOREACH_SAFE(vr, &sc->r_used, list, vr2)
+		FREE_OBJ(vr);
+	VTAILQ_FOREACH_SAFE(vr, &sc->r_cooling, list, vr2)
+		FREE_OBJ(vr);
+	VTAILQ_FOREACH_SAFE(vr, &sc->r_bogus, list, vr2) {
+		free(TRUST_ME(vr->ptr));
+		FREE_OBJ(vr);
+	}
+	sc->head->magic = 0;
+	FREE_OBJ(sc);
 }

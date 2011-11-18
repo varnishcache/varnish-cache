@@ -30,8 +30,10 @@
 #include "config.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "cache.h"
+#include "common/heritage.h"
 
 #include "cache_backend.h"	// For w->vbc
 
@@ -300,25 +302,32 @@ WSLB(struct worker *w, enum VSL_tag_e tag, const char *fmt, ...)
 void
 VSL_Init(void)
 {
-	struct VSM_chunk *vsc;
+	uint32_t *vsl_log_start;
 
 	AZ(pthread_mutex_init(&vsl_mtx, NULL));
 	AZ(pthread_mutex_init(&vsm_mtx, NULL));
 
-	VSM__Clean();
+	vsl_log_start = VSM_Alloc(cache_param->vsl_space, VSL_CLASS, "", "");
+	AN(vsl_log_start);
+	vsl_log_start[1] = VSL_ENDMARKER;
+	VWMB();
+	do
+		*vsl_log_start = random() & 0xffff;
+	while (*vsl_log_start == 0);
+	VWMB();
 
-	VSM_ITER(vsc)
-		if (!strcmp(vsc->class, VSL_CLASS))
-			break;
-	AN(vsc);
-	vsl_start = VSM_PTR(vsc);
-	vsl_end = VSM_NEXT(vsc);
+	vsl_start = vsl_log_start;
+	vsl_end = vsl_start + cache_param->vsl_space;
 	vsl_ptr = vsl_start + 1;
 
+	VSC_C_main = VSM_Alloc(sizeof *VSC_C_main,
+	    VSC_CLASS, VSC_TYPE_MAIN, "");
+	AN(VSC_C_main);
+
 	vsl_wrap();
-	VSM_head->starttime = (intmax_t)VTIM_real();
+	// VSM_head->starttime = (intmax_t)VTIM_real();
 	memset(VSC_C_main, 0, sizeof *VSC_C_main);
-	VSM_head->child_pid = getpid();
+	// VSM_head->child_pid = getpid();
 }
 
 /*--------------------------------------------------------------------*/
@@ -327,19 +336,19 @@ void *
 VSM_Alloc(unsigned size, const char *class, const char *type,
     const char *ident)
 {
-	void *p;
+	volatile void *p;
 
 	AZ(pthread_mutex_lock(&vsm_mtx));
-	p = VSM__Alloc(size, class, type, ident);
+	p = VSM_common_alloc(heritage.vsm, size, class, type, ident);
 	AZ(pthread_mutex_unlock(&vsm_mtx));
-	return (p);
+	return (TRUST_ME(p));
 }
 
 void
-VSM_Free(const void *ptr)
+VSM_Free(void *ptr)
 {
 
 	AZ(pthread_mutex_lock(&vsm_mtx));
-	VSM__Free(ptr);
+	VSM_common_free(heritage.vsm, ptr);
 	AZ(pthread_mutex_unlock(&vsm_mtx));
 }

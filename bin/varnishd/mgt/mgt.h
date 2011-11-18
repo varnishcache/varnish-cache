@@ -110,9 +110,8 @@ extern unsigned mgt_vcc_err_unref;
 		syslog(pri, fmt, __VA_ARGS__);		\
 	} while (0)
 
-#define VSM_Alloc(a, b, c, d)	VSM__Alloc(a,b,c,d)
-#define VSM_Free(a)		VSM__Free(a)
-#define VSM_Clean()		VSM__Clean()
+#define VSM_Alloc(a, b, c, d)	VSM_common_alloc(heritage.vsm, a,b,c,d)
+#define VSM_Free(a)		VSM_common_free(heritage.vsm, a)
 
 #if defined(PTHREAD_CANCELED) || defined(PTHREAD_MUTEX_DEFAULT)
 #error "Keep pthreads out of in manager process"

@@ -41,10 +41,11 @@
  */
 
 struct VSM_chunk {
-#define VSM_CHUNK_MAGIC		0x43907b6e	/* From /dev/random */
+#define VSM_CHUNK_MAGIC		0xa15712e5	/* From /dev/random */
 	unsigned		magic;
-	unsigned		len;
-	unsigned		state;
+	unsigned		len;		/* Incl VSM_chunk */
+	unsigned		next;		/* Offset in shmem */
+	unsigned		state;		/* XXX remove */
 	char			class[8];
 	char			type[8];
 	char			ident[64];
@@ -54,10 +55,11 @@ struct VSM_chunk {
 #define VSM_PTR(sha)		((void*)((uintptr_t)((sha) + 1)))
 
 struct VSM_head {
-#define VSM_HEAD_MAGIC		4185512502U	/* From /dev/random */
+#define VSM_HEAD_MAGIC		0xe75f7e91	/* From /dev/random */
 	unsigned		magic;
 
 	unsigned		hdrsize;
+	unsigned		first;		/* Offset, first chunk */
 
 	uint64_t		starttime;
 	int64_t			master_pid;

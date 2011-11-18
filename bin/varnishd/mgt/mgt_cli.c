@@ -493,15 +493,15 @@ mgt_cli_secret(const char *S_arg)
 {
 	int i, fd;
 	char buf[BUFSIZ];
-	char *p;
+	volatile char *p;
 
 	/* Save in shmem */
 	i = strlen(S_arg);
 	p = VSM_Alloc(i + 1, "Arg", "-S", "");
 	AN(p);
-	strcpy(p, S_arg);
+	memcpy(TRUST_ME(p), S_arg, i + 1);
 
-	srandomdev();
+	srandomdev();			/* XXX: why here ??? */
 	fd = open(S_arg, O_RDONLY);
 	if (fd < 0) {
 		fprintf(stderr, "Can not open secret-file \"%s\"\n", S_arg);
@@ -527,7 +527,7 @@ mgt_cli_telnet(const char *T_arg)
 	struct vss_addr **ta;
 	int i, n, sock, good;
 	struct telnet *tn;
-	char *p;
+	volatile char *p;
 	struct vsb *vsb;
 	char abuf[VTCP_ADDRBUFSIZE];
 	char pbuf[VTCP_PORTBUFSIZE];
@@ -566,7 +566,7 @@ mgt_cli_telnet(const char *T_arg)
 	/* Save in shmem */
 	p = VSM_Alloc(VSB_len(vsb) + 1, "Arg", "-T", "");
 	AN(p);
-	strcpy(p, VSB_data(vsb));
+	memcpy(TRUST_ME(p), VSB_data(vsb), VSB_len(vsb) + 1);
 	VSB_delete(vsb);
 }
 

@@ -74,6 +74,13 @@ void mgt_child_inherit(int fd, const char *what);
 
 
 /* vsm.c */
+struct vsm_sc;
+struct vsm_sc *VSM_common_new(void *ptr, unsigned len);
+void *VSM_common_alloc(struct vsm_sc *sc, unsigned size,
+    const char *class, const char *type, const char *ident);
+void VSM_common_free(struct vsm_sc *sc, void *ptr);
+void VSM_common_delete(struct vsm_sc *sc);
+
 // extern struct VSM_head		*VSM_head;
 // extern const struct VSM_chunk	*vsm_end;
 

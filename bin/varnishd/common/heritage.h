@@ -29,6 +29,8 @@
  * This file contains the heritage passed when mgt forks cache
  */
 
+struct vsm_sc;
+
 struct listen_sock {
 	unsigned			magic;
 #define LISTEN_SOCK_MAGIC		0x999e4b57
@@ -55,6 +57,8 @@ struct heritage {
 
 	/* Hash method */
 	const struct hash_slinger	*hash;
+
+	struct vsm_sc			*vsm;
 
 	char				*name;
 	char                            identity[1024];
