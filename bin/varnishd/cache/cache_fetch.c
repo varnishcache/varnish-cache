@@ -188,7 +188,7 @@ FetchStorage(struct worker *w, ssize_t sz)
 	if (l == 0)
 		l = sz;
 	if (l == 0)
-		l = cache_param->fetch_chunksize * 1024LL;
+		l = cache_param->fetch_chunksize;
 	st = STV_alloc(w, l);
 	if (st == NULL) {
 		(void)FetchError(w, "Could not get storage");

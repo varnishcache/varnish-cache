@@ -31,6 +31,7 @@
 
 #include <grp.h>
 #include <limits.h>
+#include <math.h>
 #include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,6 +48,7 @@
 #include "vcli.h"
 #include "vcli_common.h"
 #include "vcli_priv.h"
+#include "vnum.h"
 #include "vss.h"
 
 #include "mgt_cli.h"
@@ -242,6 +244,97 @@ tweak_uint(struct cli *cli, const struct parspec *par, const char *arg)
 
 	dest = par->priv;
 	tweak_generic_uint(cli, dest, arg, (uint)par->min, (uint)par->max);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+fmt_bytes(struct cli *cli, ssize_t t)
+{
+	const char *p;
+
+	if (t & 0xff) {
+		VCLI_Out(cli, "%zub", t);
+		return;
+	}
+	for (p = "kMGTPEZY"; *p; p++) {
+		if (t & 0x300) {
+			VCLI_Out(cli, "%.2f%c", t / 1024.0, *p);
+			return;
+		}
+		t /= 1024;
+		if (t & 0x0ff) {
+			VCLI_Out(cli, "%zu%c", t, *p);
+			return;
+		}
+	}
+	VCLI_Out(cli, "(bogus number)");
+}
+
+static void
+tweak_generic_bytes(struct cli *cli, volatile ssize_t *dest, const char *arg,
+    double min, double max)
+{
+	uintmax_t r;
+	const char *p;
+
+	if (arg != NULL) {
+		p = VNUM_2bytes(arg, &r, 0);
+		if (p != NULL) {
+			VCLI_Out(cli, "Could not convert to bytes.\n");
+			VCLI_Out(cli, "%s\n", p);
+			VCLI_Out(cli,
+			    "  Try something like '80k' or '120M'\n");
+			VCLI_SetResult(cli, CLIS_PARAM);
+			return;
+		}
+		if ((uintmax_t)((ssize_t)r) != r || r > max) {
+			VCLI_Out(cli, "Must be no more than ");
+			fmt_bytes(cli, (ssize_t)max);
+			VCLI_Out(cli, "\n");
+			VCLI_SetResult(cli, CLIS_PARAM);
+			return;
+		}
+		if (r < min) {
+			VCLI_Out(cli, "Must be at least ");
+			fmt_bytes(cli, (ssize_t)min);
+			VCLI_Out(cli, "\n");
+			VCLI_SetResult(cli, CLIS_PARAM);
+			return;
+		}
+		*dest = r;
+	} else {
+		fmt_bytes(cli, *dest);
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+tweak_bytes(struct cli *cli, const struct parspec *par, const char *arg)
+{
+	volatile ssize_t *dest;
+
+	assert(par->min >= 0);
+	dest = par->priv;
+	tweak_generic_bytes(cli, dest, arg, par->min, par->max);
+}
+
+
+/*--------------------------------------------------------------------*/
+
+static void
+tweak_bytes_u(struct cli *cli, const struct parspec *par, const char *arg)
+{
+	volatile unsigned *d1;
+	volatile ssize_t dest;
+
+	assert(par->max <= UINT_MAX);
+	assert(par->min >= 0);
+	d1 = par->priv;
+	dest = *d1;
+	tweak_generic_bytes(cli, &dest, arg, par->min, par->max);
+	*d1 = dest;
 }
 
 /*--------------------------------------------------------------------
@@ -511,21 +604,23 @@ static const struct parspec input_parspec[] = {
 		"flush of the cache use \"ban.url .\"",
 		0,
 		"120", "seconds" },
-	{ "sess_workspace", tweak_uint, &mgt_param.sess_workspace, 1024, UINT_MAX,
+	{ "sess_workspace",
+		tweak_bytes_u, &mgt_param.sess_workspace, 1024, UINT_MAX,
 		"Bytes of HTTP protocol workspace allocated for sessions. "
 		"This space must be big enough for the entire HTTP protocol "
 		"header and any edits done to it in the VCL code.\n"
 		"Minimum is 1024 bytes.",
 		DELAYED_EFFECT,
-		"65536",
-		"bytes" },
-	{ "http_req_hdr_len", tweak_uint, &mgt_param.http_req_hdr_len,
+		"64k", "bytes" },
+	{ "http_req_hdr_len",
+		tweak_bytes_u, &mgt_param.http_req_hdr_len,
 		40, UINT_MAX,
 		"Maximum length of any HTTP client request header we will "
 		"allow.  The limit is inclusive its continuation lines.\n",
 		0,
-		"8192", "bytes" },
-	{ "http_req_size", tweak_uint, &mgt_param.http_req_size,
+		"8k", "bytes" },
+	{ "http_req_size",
+		tweak_bytes_u, &mgt_param.http_req_size,
 		256, UINT_MAX,
 		"Maximum number of bytes of HTTP client request we will deal "
 		"with.  This is a limit on all bytes up to the double blank "
@@ -534,14 +629,16 @@ static const struct parspec input_parspec[] = {
 		"workspace (param: sess_workspace) and this parameter limits "
 		"how much of that the request is allowed to take up.",
 		0,
-		"32768", "bytes" },
-	{ "http_resp_hdr_len", tweak_uint, &mgt_param.http_resp_hdr_len,
+		"32k", "bytes" },
+	{ "http_resp_hdr_len",
+		tweak_bytes_u, &mgt_param.http_resp_hdr_len,
 		40, UINT_MAX,
 		"Maximum length of any HTTP backend response header we will "
 		"allow.  The limit is inclusive its continuation lines.\n",
 		0,
-		"8192", "bytes" },
-	{ "http_resp_size", tweak_uint, &mgt_param.http_resp_size,
+		"8k", "bytes" },
+	{ "http_resp_size",
+		tweak_bytes_u, &mgt_param.http_resp_size,
 		256, UINT_MAX,
 		"Maximum number of bytes of HTTP backend resonse we will deal "
 		"with.  This is a limit on all bytes up to the double blank "
@@ -550,7 +647,7 @@ static const struct parspec input_parspec[] = {
 		"workspace (param: sess_workspace) and this parameter limits "
 		"how much of that the request is allowed to take up.",
 		0,
-		"32768", "bytes" },
+		"32k", "bytes" },
 	{ "http_max_hdr", tweak_uint, &mgt_param.http_max_hdr, 32, 65535,
 		"Maximum number of HTTP headers we will deal with in "
 		"client request or backend reponses.  "
@@ -559,7 +656,8 @@ static const struct parspec input_parspec[] = {
 		"objects allocate exact space for the headers they store.\n",
 		0,
 		"64", "header lines" },
-	{ "shm_workspace", tweak_uint, &mgt_param.shm_workspace, 4096, UINT_MAX,
+	{ "shm_workspace",
+		tweak_bytes_u, &mgt_param.shm_workspace, 4096, UINT_MAX,
 		"Bytes of shmlog workspace allocated for worker threads. "
 		"If too big, it wastes some ram, if too small it causes "
 		"needless flushes of the SHM workspace.\n"
@@ -567,8 +665,9 @@ static const struct parspec input_parspec[] = {
 		"\"SHM flushes due to overflow\".\n"
 		"Minimum is 4096 bytes.",
 		DELAYED_EFFECT,
-		"8192", "bytes" },
-	{ "shm_reclen", tweak_uint, &mgt_param.shm_reclen, 16, 65535,
+		"8k", "bytes" },
+	{ "shm_reclen",
+		tweak_bytes_u, &mgt_param.shm_reclen, 16, 65535,
 		"Maximum number of bytes in SHM log record.\n"
 		"Maximum is 65535 bytes.",
 		0,
@@ -633,27 +732,29 @@ static const struct parspec input_parspec[] = {
 		EXPERIMENTAL,
 		"50", "allocations" },
 	{ "fetch_chunksize",
-		tweak_uint, &mgt_param.fetch_chunksize, 4, UINT_MAX / 1024.,
+		tweak_bytes_u,
+		    &mgt_param.fetch_chunksize, 4 * 1024, UINT_MAX,
 		"The default chunksize used by fetcher. "
 		"This should be bigger than the majority of objects with "
 		"short TTLs.\n"
 		"Internal limits in the storage_file module makes increases "
 		"above 128kb a dubious idea.",
 		EXPERIMENTAL,
-		"128", "kilobytes" },
+		"128k", "bytes" },
 	{ "fetch_maxchunksize",
-		tweak_uint, &mgt_param.fetch_maxchunksize, 64, UINT_MAX / 1024.,
+		tweak_bytes_u,
+		    &mgt_param.fetch_maxchunksize, 64 * 1024, UINT_MAX,
 		"The maximum chunksize we attempt to allocate from storage. "
 		"Making this too large may cause delays and storage "
 		"fragmentation.\n",
 		EXPERIMENTAL,
-		"262144", "kilobytes" },
+		"256m", "bytes" },
 #ifdef SENDFILE_WORKS
 	{ "sendfile_threshold",
-		tweak_uint, &mgt_param.sendfile_threshold, 0, UINT_MAX,
+		tweak_bytes, &mgt_param.sendfile_threshold, 0, HUGE_VAL,
 		"The minimum size of objects transmitted with sendfile.",
 		EXPERIMENTAL,
-		"-1", "bytes" },
+		"1E", "bytes" },
 #endif /* SENDFILE_WORKS */
 	{ "vcl_trace", tweak_bool,  &mgt_param.vcl_trace, 0, 0,
 		"Trace VCL execution in the shmlog.\n"
@@ -673,19 +774,21 @@ static const struct parspec input_parspec[] = {
 		"Listen queue depth.",
 		MUST_RESTART,
 		"1024", "connections" },
-	{ "cli_buffer", tweak_uint, &mgt_param.cli_buffer, 4096, UINT_MAX,
+	{ "cli_buffer",
+		tweak_bytes_u, &mgt_param.cli_buffer, 4096, UINT_MAX,
 		"Size of buffer for CLI command input."
 		"\nYou may need to increase this if you have big VCL files "
 		"and use the vcl.inline CLI command.\n"
 		"NB: Must be specified with -p to have effect.\n",
 		0,
-		"8192", "bytes" },
-	{ "cli_limit", tweak_uint, &mgt_param.cli_limit, 128, 99999999,
+		"8k", "bytes" },
+	{ "cli_limit",
+		tweak_bytes_u, &mgt_param.cli_limit, 128, 99999999,
 		"Maximum size of CLI response.  If the response exceeds"
 		" this limit, the reponse code will be 201 instead of"
 		" 200 and the last line will indicate the truncation.",
 		0,
-		"4096", "bytes" },
+		"4k", "bytes" },
 	{ "cli_timeout", tweak_timeout, &mgt_param.cli_timeout, 0, 0,
 		"Timeout for the childs replies to CLI requests from "
 		"the mgt_param.",
@@ -918,7 +1021,8 @@ static const struct parspec input_parspec[] = {
 		"Memory impact is 1=1k, 2=2k, ... 9=256k.",
 		0,
 		"8", ""},
-	{ "gzip_stack_buffer", tweak_uint, &mgt_param.gzip_stack_buffer,
+	{ "gzip_stack_buffer",
+		tweak_bytes_u, &mgt_param.gzip_stack_buffer,
 	        2048, UINT_MAX,
 		"Size of stack buffer used for gzip processing.\n"
 		"The stack buffers are used for in-transit data,"
@@ -927,7 +1031,7 @@ static const struct parspec input_parspec[] = {
 		" writes to sockets etc, making it too big is probably"
 		" just a waste of memory.",
 		EXPERIMENTAL,
-		"32768", "Bytes" },
+		"32k", "bytes" },
 	{ "shortlived", tweak_timeout_double,
 		&mgt_param.shortlived, 0, UINT_MAX,
 		"Objects created with TTL shorter than this are always "

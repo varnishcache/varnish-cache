@@ -162,8 +162,8 @@ stv_alloc(struct worker *w, const struct object *obj, size_t size)
 	stv = obj->objstore->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
-	if (size > (size_t)(cache_param->fetch_maxchunksize) << 10)
-		size = (size_t)(cache_param->fetch_maxchunksize) << 10;
+	if (size > cache_param->fetch_maxchunksize)
+		size = cache_param->fetch_maxchunksize;
 
 	for (;;) {
 		/* try to allocate from it */
@@ -172,7 +172,7 @@ stv_alloc(struct worker *w, const struct object *obj, size_t size)
 		if (st != NULL)
 			break;
 
-		if (size > cache_param->fetch_chunksize * 1024LL) {
+		if (size > cache_param->fetch_chunksize) {
 			size >>= 1;
 			continue;
 		}

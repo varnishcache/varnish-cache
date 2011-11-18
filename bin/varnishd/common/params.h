@@ -87,13 +87,13 @@ struct params {
 	unsigned		auto_restart;
 
 	/* Fetcher hints */
-	unsigned		fetch_chunksize;
-	unsigned		fetch_maxchunksize;
+	ssize_t			fetch_chunksize;
+	ssize_t			fetch_maxchunksize;
 	unsigned		nuke_limit;
 
 #ifdef SENDFILE_WORKS
 	/* Sendfile object minimum size */
-	unsigned		sendfile_threshold;
+	ssize_t			sendfile_threshold;
 #endif
 
 	/* VCL traces */

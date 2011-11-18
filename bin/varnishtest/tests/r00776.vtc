@@ -8,7 +8,7 @@ server s1 {
 } -start
 
 varnish v1 \
-	-arg "-p fetch_chunksize=4" \
+	-arg "-p fetch_chunksize=4k" \
 	-arg "-s malloc,1m" -vcl+backend { } -start
 
 client c1 {
