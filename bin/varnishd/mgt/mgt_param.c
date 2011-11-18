@@ -1085,6 +1085,26 @@ static const struct parspec input_parspec[] = {
 		0,
 		"10000", ""},
 
+	{ "vsl_space", tweak_bytes,
+		&mgt_param.vsl_space, 1024*1024, HUGE_VAL,
+		"The amount of space to allocate for the VSL fifo buffer"
+		" in the VSM memory segment."
+		"  If you make this too small, varnish{ncsa|log} etc will"
+		" not be able to keep up."
+		"  Making it too large just costs memory resources.",
+		MUST_RESTART,
+		"80M", "bytes"},
+
+	{ "vsm_space", tweak_bytes,
+		&mgt_param.vsm_space, 1024*1024, HUGE_VAL,
+		"The amount of space to allocate for stats counters"
+		" in the VSM memory segment."
+		"  If you make this too small, some counters will be"
+		" invisible."
+		"  Making it too large just costs memory resources.",
+		MUST_RESTART,
+		"1M", "bytes"},
+
 	{ NULL, NULL, NULL }
 };
 

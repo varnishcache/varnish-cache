@@ -81,7 +81,7 @@ void mgt_sandbox_solaris_privsep(void);
 #endif
 
 /* mgt_shmem.c */
-void mgt_SHM_Init(const char *arg);
+void mgt_SHM_Init(void);
 void mgt_SHM_Pid(void);
 
 /* stevedore_mgt.c */

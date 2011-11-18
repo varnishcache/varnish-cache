@@ -336,7 +336,6 @@ main(int argc, char * const *argv)
 	const char *b_arg = NULL;
 	const char *f_arg = NULL;
 	const char *i_arg = NULL;
-	const char *l_arg = NULL;	/* default in mgt_shmem.c */
 	const char *h_arg = "critbit";
 	const char *M_arg = NULL;
 	const char *n_arg = NULL;
@@ -349,6 +348,7 @@ main(int argc, char * const *argv)
 	struct cli cli[1];
 	struct vpf_fh *pfh = NULL;
 	char *dirname;
+	char **av;
 	unsigned clilim;
 
 	/*
@@ -459,7 +459,19 @@ main(int argc, char * const *argv)
 			i_arg = optarg;
 			break;
 		case 'l':
-			l_arg = optarg;
+			av = VAV_Parse(optarg, NULL, ARGV_COMMA);
+			AN(av);
+			if (av[0] != NULL)
+				ARGV_ERR("\t-l ...: %s", av[0]);
+			if (av[1] != NULL) {
+				MCF_ParamSet(cli, "vsl_space", av[1]);
+				cli_check(cli);
+			}
+			if (av[1] != NULL && av[2] != NULL) {
+				MCF_ParamSet(cli, "vsm_space", av[2]);
+				cli_check(cli);
+			}
+			VAV_Free(av);
 			break;
 		case 'M':
 			M_arg = optarg;
@@ -611,7 +623,7 @@ main(int argc, char * const *argv)
 
 	HSH_config(h_arg);
 
-	mgt_SHM_Init(l_arg);
+	mgt_SHM_Init();
 
 	AZ(VSB_finish(vident));
 

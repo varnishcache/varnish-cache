@@ -186,6 +186,10 @@ struct params {
 	double			shortlived;
 
 	struct vre_limits	vre_limits;
+
+	/* VSM dimensions */
+	ssize_t			vsm_space;
+	ssize_t			vsl_space;
 };
 
 /*

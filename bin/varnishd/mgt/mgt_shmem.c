@@ -105,9 +105,7 @@
 #include "vapi/vsc_int.h"
 #include "vapi/vsl_int.h"
 #include "vapi/vsm_int.h"
-#include "vav.h"
 #include "vmb.h"
-#include "vnum.h"
 
 #ifndef MAP_HASSEMAPHORE
 #define MAP_HASSEMAPHORE 0 /* XXX Linux */
@@ -227,67 +225,15 @@ mgt_shm_atexit(void)
 }
 
 void
-mgt_SHM_Init(const char *l_arg)
+mgt_SHM_Init(void)
 {
 	int i, fill;
-	const char *q;
-	uintmax_t size, s1, s2, ps;
-	char **av, **ap;
+	uintmax_t size, ps;
 	uint32_t *vsl_log_start;
 
-	if (l_arg == NULL)
-		l_arg = "";
+	fill = 1;
 
-	av = VAV_Parse(l_arg, NULL, ARGV_COMMA);
-	AN(av);
-	if (av[0] != NULL)
-		ARGV_ERR("\t-l ...: %s", av[0]);
-
-	ap = av + 1;
-
-	/* Size of SHMLOG */
-	if (*ap != NULL && **ap != '\0') {
-		q = VNUM_2bytes(*ap, &s1, 0);
-		if (q != NULL)
-			ARGV_ERR("\t-l[1] ...:  %s\n", q);
-	} else {
-		s1 = 80 * 1024 * 1024;
-	}
-	if (*ap != NULL)
-		ap++;
-
-	/* Size of space for other stuff */
-	if (*ap != NULL && **ap != '\0') {
-		q = VNUM_2bytes(*ap, &s2, 0);
-		if (q != NULL)
-			ARGV_ERR("\t-l[2] ...:  %s\n", q);
-	} else {
-		s2 = 1024 * 1024;
-	}
-	if (*ap != NULL)
-		ap++;
-
-	/* Fill or not ? */
-	if (*ap != NULL) {
-		if (**ap == '\0')
-			fill = 1;
-		else if (!strcmp(*ap, "-"))
-			fill = 0;
-		else if (!strcmp(*ap, "+"))
-			fill = 1;
-		else
-			ARGV_ERR("\t-l[3] ...:  Must be \"-\" or \"+\"\n");
-		ap++;
-	} else {
-		fill = 1;
-	}
-
-	if (*ap != NULL)
-		ARGV_ERR("\t-l ...:  Too many sub-args\n");
-
-	VAV_Free(av);
-
-	size = s1 + s2;
+	size = mgt_param.vsl_space + mgt_param.vsm_space;
 	ps = getpagesize();
 	size += ps - 1;
 	size &= ~(ps - 1);
@@ -326,7 +272,7 @@ mgt_SHM_Init(const char *l_arg)
 	AN(cache_param);
 	*cache_param = mgt_param;
 
-	vsl_log_start = VSM_Alloc(s1, VSL_CLASS, "", "");
+	vsl_log_start = VSM_Alloc(mgt_param.vsl_space, VSL_CLASS, "", "");
 	AN(vsl_log_start);
 	vsl_log_start[1] = VSL_ENDMARKER;
 	VWMB();
