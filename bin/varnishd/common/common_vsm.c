@@ -137,7 +137,7 @@ VSM_common_new(void *p, ssize_t l)
 	sc->head = (void *)sc->b;
 	/* This should not be necessary, but just in case...*/
 	memset(sc->head, 0, sizeof *sc->head);
-	sc->head->magic = VSM_HEAD_MAGIC;
+	memcpy(sc->head->marker, VSM_HEAD_MARKER, sizeof sc->head->marker);
 	sc->head->hdrsize = sizeof *sc->head;
 	sc->head->shm_size = l;
 	sc->head->alloc_seq = random() | 1;
@@ -145,8 +145,8 @@ VSM_common_new(void *p, ssize_t l)
 
 	ALLOC_OBJ(vr, VSM_RANGE_MAGIC);
 	AN(vr);
-	vr->off = PRNDUP(sizeof(*sc->head));
-	vr->len = l - vr->off;
+	vr->off = RUP2(sizeof(*sc->head), 16);
+	vr->len = RDN2(l - vr->off, 16);
 	VTAILQ_INSERT_TAIL(&sc->r_free, vr, list);
 	return (sc);
 }
@@ -182,9 +182,8 @@ VSM_common_alloc(struct vsm_sc *sc, ssize_t size,
 		vsm_common_insert_free(sc, vr);
 	}
 
-	size = PRNDUP(size);
-	l1 = size + sizeof(struct VSM_chunk);
-	l2 = size + 2 * sizeof(struct VSM_chunk);
+	l1 = RUP2(size + sizeof(struct VSM_chunk), 16);
+	l2 = RUP2(size + 2 * sizeof(struct VSM_chunk), 16);
 
 	/* Find space in free-list */
 	VTAILQ_FOREACH_SAFE(vr, &sc->r_free, list, vr2) {
@@ -227,7 +226,8 @@ VSM_common_alloc(struct vsm_sc *sc, ssize_t size,
 	vr->chunk = (void *)(sc->b + vr->off);
 	vr->ptr = (vr->chunk + 1);
 
-	vr->chunk->magic = VSM_CHUNK_MAGIC;
+	memcpy(vr->chunk->marker, VSM_CHUNK_MARKER, sizeof vr->chunk->marker);
+	vr->chunk->len = vr->len;
 	strcpy(vr->chunk->class, class);
 	strcpy(vr->chunk->type, type);
 	strcpy(vr->chunk->ident, ident);

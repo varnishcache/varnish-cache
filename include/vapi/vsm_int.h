@@ -98,8 +98,8 @@
 #define VSM_FILENAME		"_.vsm"
 
 struct VSM_chunk {
-#define VSM_CHUNK_MAGIC		0xa15712e5	/* From /dev/random */
-	unsigned		magic;
+#define VSM_CHUNK_MARKER	"VSMCHUNK"
+	char			marker[8];
 	ssize_t			len;		/* Incl VSM_chunk */
 	ssize_t			next;		/* Offset in shmem */
 	char			class[8];
@@ -108,8 +108,8 @@ struct VSM_chunk {
 };
 
 struct VSM_head {
-#define VSM_HEAD_MAGIC		0xe75f7e91	/* From /dev/random */
-	unsigned		magic;
+#define VSM_HEAD_MARKER		"VSMHEAD0"	/* Incr. as version# *
+	char			marker[8];
 	ssize_t			hdrsize;
 	ssize_t			shm_size;
 	ssize_t			first;		/* Offset, first chunk */
