@@ -49,7 +49,6 @@ extern pid_t mgt_pid;
 #define ASSERT_MGT() do { assert(getpid() == mgt_pid);} while (0)
 
 /* mgt_shmem.c */
-extern struct VSC_C_main *VSC_C_main;
 #define PAN_CLASS "Panic"
 extern char *PAN_panicstr;
 extern unsigned PAN_panicstr_len;

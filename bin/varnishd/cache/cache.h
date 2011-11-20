@@ -850,6 +850,7 @@ int SES_Schedule(struct sess *sp);
 
 
 /* cache_shmlog.c */
+extern struct VSC_C_main *VSC_C_main;
 void VSL_Init(void);
 void *VSM_Alloc(unsigned size, const char *class, const char *type,
     const char *ident);

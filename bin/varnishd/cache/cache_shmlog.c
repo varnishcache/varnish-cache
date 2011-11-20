@@ -47,6 +47,8 @@ static uint32_t			*vsl_start;
 static const uint32_t		*vsl_end;
 static uint32_t			*vsl_ptr;
 
+struct VSC_C_main       *VSC_C_main;
+
 static inline uint32_t
 vsl_w0(uint32_t type, uint32_t length)
 {

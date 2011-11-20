@@ -57,8 +57,6 @@
 #define MAP_NOSYNC 0 /* XXX Linux */
 #endif
 
-struct VSC_C_main	*VSC_C_main;
-
 static int vsm_fd = -1;
 
 /*--------------------------------------------------------------------
