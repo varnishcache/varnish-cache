@@ -60,6 +60,8 @@ struct heritage {
 
 	struct vsm_sc			*vsm;
 
+	struct params			*param;
+
 	char				*name;
 	char                            identity[1024];
 };

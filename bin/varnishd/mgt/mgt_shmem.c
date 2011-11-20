@@ -210,9 +210,10 @@ mgt_SHM_Init(void)
 
 	AZ(atexit(mgt_shm_atexit));
 
-	cache_param = VSM_Alloc(sizeof *cache_param, VSM_CLASS_PARAM, "", "");
-	AN(cache_param);
-	*cache_param = mgt_param;
+	heritage.param =
+	    VSM_Alloc(sizeof *heritage.param, VSM_CLASS_PARAM, "", "");
+	AN(heritage.param);
+	*heritage.param = mgt_param;
 
 	PAN_panicstr_len = 64 * 1024;
 	PAN_panicstr = VSM_Alloc(PAN_panicstr_len, PAN_CLASS, "", "");

@@ -193,9 +193,3 @@ struct params {
 	ssize_t			vsm_space;
 	ssize_t			vsl_space;
 };
-
-/*
- * We declare this a volatile pointer, so that reads of parameters
- * become atomic, leaving the CLI thread lattitude to change the values
- */
-extern volatile struct params * cache_param;

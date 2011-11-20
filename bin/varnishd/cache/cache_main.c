@@ -96,6 +96,8 @@ child_main(void)
 	setbuf(stderr, NULL);
 	printf("Child starts\n");
 
+	cache_param = heritage.param;
+
 	AZ(pthread_key_create(&sp_key, NULL));
 	AZ(pthread_key_create(&name_key, NULL));
 
