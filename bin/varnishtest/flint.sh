@@ -9,4 +9,5 @@ flexelint \
 	-I../.. \
 	../flint.lnt \
 	flint.lnt \
-	*.c 
+	*.c \
+	../../lib/libvarnishapi/*.c

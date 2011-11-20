@@ -66,7 +66,7 @@ int VSC_Open(struct VSM_data *vd, int diag);
 	 * args and returns as VSM_Open()
 	 */
 
-struct VSC_C_main *VSC_Main(struct VSM_data *vd);
+struct VSC_C_main *VSC_Main(const struct VSM_data *vd);
 	/*
 	 * return Main stats structure
 	 * returns NULL until child has been started.
@@ -84,7 +84,7 @@ struct VSC_point {
 
 typedef int VSC_iter_f(void *priv, const struct VSC_point *const pt);
 
-int VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv);
+int VSC_Iter(const struct VSM_data *vd, VSC_iter_f *func, void *priv);
 	/*
 	 * Iterate over all statistics counters, calling "func" for
 	 * each counter not suppressed by any "-f" arguments.

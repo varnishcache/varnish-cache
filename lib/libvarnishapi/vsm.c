@@ -46,7 +46,6 @@
 
 #include "vapi/vsm.h"
 #include "vapi/vsm_int.h"
-#include "vbm.h"
 #include "vin.h"
 #include "vsm_api.h"
 
@@ -288,7 +287,7 @@ VSM_Head(const struct VSM_data *vd)
 /*--------------------------------------------------------------------*/
 
 void
-VSM__iter0(struct VSM_data *vd, struct VSM_fantom *vf)
+VSM__iter0(const struct VSM_data *vd, struct VSM_fantom *vf)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -296,7 +295,7 @@ VSM__iter0(struct VSM_data *vd, struct VSM_fantom *vf)
 }
 
 int
-VSM__itern(struct VSM_data *vd, struct VSM_fantom *vf)
+VSM__itern(const struct VSM_data *vd, struct VSM_fantom *vf)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -327,7 +326,7 @@ VSM__itern(struct VSM_data *vd, struct VSM_fantom *vf)
 /*--------------------------------------------------------------------*/
 
 int
-VSM_StillValid(struct VSM_data *vd, struct VSM_fantom *vf)
+VSM_StillValid(const struct VSM_data *vd, struct VSM_fantom *vf)
 {
 	struct VSM_fantom f2;
 
@@ -346,8 +345,8 @@ VSM_StillValid(struct VSM_data *vd, struct VSM_fantom *vf)
 }
 
 int
-VSM_Get(struct VSM_data *vd, struct VSM_fantom *vf, const char *class,
-    const char *type, const char *ident)
+VSM_Get(const struct VSM_data *vd, struct VSM_fantom *vf,
+    const char *class, const char *type, const char *ident)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -367,8 +366,8 @@ VSM_Get(struct VSM_data *vd, struct VSM_fantom *vf, const char *class,
 /*--------------------------------------------------------------------*/
 
 void *
-VSM_Find_Chunk(struct VSM_data *vd, const char *class, const char *type,
-    const char *ident, unsigned *lenp)
+VSM_Find_Chunk(const struct VSM_data *vd, const char *class,
+    const char *type, const char *ident, unsigned *lenp)
 {
 	struct VSM_fantom vf;
 

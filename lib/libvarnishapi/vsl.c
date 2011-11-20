@@ -294,7 +294,7 @@ VSL_Dispatch(struct VSM_data *vd, VSL_handler_f *func, void *priv)
 			s |= VSL_S_CLIENT;
 		if (VSL_BACKEND(p))
 			s |= VSL_S_BACKEND;
-		if (func(priv, VSL_TAG(p), u, l, s, VSL_DATA(p), bitmap))
+		if (func(priv, (enum VSL_tag_e)VSL_TAG(p), u, l, s, VSL_DATA(p), bitmap))
 			return (1);
 	}
 }
@@ -326,7 +326,8 @@ VSL_H_Print(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
 		fprintf(fo, "\"\n");
 		return (0);
 	}
-	fprintf(fo, "%5u %-12s %c %.*s\n", fd, VSL_tags[tag], type, len, ptr);
+	fprintf(fo, "%5u %-12s %c %.*s\n",
+	    fd, VSL_tags[tag], type, (int)len, ptr);
 	return (0);
 }
 

@@ -222,7 +222,7 @@ VSC_Open(struct VSM_data *vd, int diag)
 /*--------------------------------------------------------------------*/
 
 struct VSC_C_main *
-VSC_Main(struct VSM_data *vd)
+VSC_Main(const struct VSM_data *vd)
 {
 	struct VSM_fantom vf;
 
@@ -316,7 +316,7 @@ iter_call(const struct vsc *vsc, VSC_iter_f *func, void *priv,
 #undef VSC_DONE
 
 int
-VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv)
+VSC_Iter(const struct VSM_data *vd, VSC_iter_f *func, void *priv)
 {
 	struct vsc *vsc;
 	struct VSM_fantom vf;

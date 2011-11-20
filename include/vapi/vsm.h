@@ -126,8 +126,8 @@ struct VSM_head *VSM_Head(const struct VSM_data *vd);
 	 * Return the head of the VSM.
 	 */
 
-void VSM__iter0(struct VSM_data *vd, struct VSM_fantom *vf);
-int VSM__itern(struct VSM_data *vd, struct VSM_fantom *vf);
+void VSM__iter0(const struct VSM_data *vd, struct VSM_fantom *vf);
+int VSM__itern(const struct VSM_data *vd, struct VSM_fantom *vf);
 
 #define VSM_FOREACH_SAFE(vf, vd) \
     for(VSM__iter0((vd), (vf)); VSM__itern((vd), (vf));)
@@ -137,7 +137,7 @@ int VSM__itern(struct VSM_data *vd, struct VSM_fantom *vf);
 	 * vd = "struct VSM_data *"
 	 */
 
-int VSM_StillValid(struct VSM_data *vd, struct VSM_fantom *vf);
+int VSM_StillValid(const struct VSM_data *vd, struct VSM_fantom *vf);
 	/*
 	 * Return:
 	 *	0: fantom is invalid now.
@@ -145,8 +145,8 @@ int VSM_StillValid(struct VSM_data *vd, struct VSM_fantom *vf);
 	 *	2: a fantom with same dimensions exist, check class/type/ident
 	 */
 
-int VSM_Get(struct VSM_data *vd, struct VSM_fantom *vf, const char *class,
-    const char *type, const char *ident);
+int VSM_Get(const struct VSM_data *vd, struct VSM_fantom *vf,
+    const char *class, const char *type, const char *ident);
 	/*
 	 * Find a chunk, produce fantom for it.
 	 * Returns zero on failure.
@@ -166,7 +166,7 @@ void VSM_Close(struct VSM_data *vd);
  */
 
 /* OBSOLETE: Will disappear from Varnish 4.x */
-void *VSM_Find_Chunk(struct VSM_data *vd, const char *class,
+void *VSM_Find_Chunk(const struct VSM_data *vd, const char *class,
     const char *type, const char *ident, unsigned *lenp);
 	/*
 	 * Find a given chunk in the shared memory.
