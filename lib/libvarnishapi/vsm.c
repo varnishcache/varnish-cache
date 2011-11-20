@@ -297,19 +297,25 @@ VSM__iter0(const struct VSM_data *vd, struct VSM_fantom *vf)
 int
 VSM__itern(const struct VSM_data *vd, struct VSM_fantom *vf)
 {
+	void *p;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	if (vf->priv != 0) {
+	if (vd->head->alloc_seq == 0)
+		return (0);	/* abandonned VSM */
+	else if (vf->priv != 0) {
 		if (vf->priv != vd->head->alloc_seq)
 			return (0);
 		if (vf->chunk->len == 0)
 			return (0);
 		if (vf->chunk->next == 0)
 			return (0);
-		vf->chunk = (void*)(vd->b + vf->chunk->next);
+		p = (void*)(vd->b + vf->chunk->next);
+		assert(p != vf->chunk);
+		vf->chunk = p;
 	} else if (vd->head->first == 0) {
 		return (0);
 	} else {
+		AZ(vf->chunk);
 		vf->chunk = (void*)(vd->b + vd->head->first);
 	}
 	if (memcmp(vf->chunk->marker, VSM_CHUNK_MARKER,
@@ -318,8 +324,13 @@ VSM__itern(const struct VSM_data *vd, struct VSM_fantom *vf)
 	vf->priv = vd->head->alloc_seq;
 	vf->b = (void*)(vf->chunk + 1);
 	vf->e = (char*)vf->b + vf->chunk->len;
+
+	if (vd->priv == 0)
+		return (0);	/* abandonned VSM */
 	if (vf->b == vf->e)
-		return (0);
+		return (0);	/* freed chunk */
+	AN(vf->priv);
+	AN(vf->chunk);
 	return (1);
 }
 
@@ -331,6 +342,8 @@ VSM_StillValid(const struct VSM_data *vd, struct VSM_fantom *vf)
 	struct VSM_fantom f2;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	if (vf == NULL)
+		return (vd->head->alloc_seq ? 1 : 0);
 	if (vf->priv == vd->head->alloc_seq)
 		return (1);
 	VSM_FOREACH_SAFE(&f2, vd) {

@@ -326,6 +326,8 @@ VSC_Iter(const struct VSM_data *vd, VSC_iter_f *func, void *priv)
 	vsc = vd->vsc;
 	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 	i = 0;
+	if (!VSM_StillValid(vd, NULL))
+		return (-1);
 	VSM_FOREACH_SAFE(&vf, vd) {
 		if (strcmp(vf.chunk->class, VSC_CLASS))
 			continue;

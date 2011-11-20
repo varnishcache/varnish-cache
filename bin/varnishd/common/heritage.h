@@ -67,7 +67,6 @@ struct heritage {
 
 	char				*panic_str;
 	ssize_t				panic_str_len;
-	
 };
 
 extern struct heritage heritage;

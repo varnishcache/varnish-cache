@@ -200,17 +200,12 @@ varnishlog_thread(void *priv)
 	vsl = VSM_New();
 	VSL_Setup(vsl);
 	(void)VSL_Arg(vsl, 'n', v->workdir);
-	VSL_NonBlocking(vsl, 1);
 	while (v->pid  && VSL_Open(vsl, 0) != 0) {
 		assert(usleep(VSL_SLEEP_USEC) == 0 || errno == EINTR);
 	}
 	while (v->pid) {
-		if (VSL_Dispatch(vsl, h_addlog, v) < 0) {
-			assert(usleep(v->vsl_sleep) == 0 || errno == EINTR);
-			v->vsl_sleep += v->vsl_sleep;
-			if (v->vsl_sleep > VSL_SLEEP_USEC)
-				v->vsl_sleep = VSL_SLEEP_USEC;
-		}
+		if (VSL_Dispatch(vsl, h_addlog, v) <= 0)
+			break;
 	}
 	VSM_Delete(vsl);
 	return (NULL);
@@ -732,7 +727,7 @@ varnish_expect(const struct varnish *v, char * const *av) {
 	uint64_t ref;
 	int good;
 	char *p;
-	int i;
+	int i, j;
 	struct stat_priv sp;
 
 	good = -1;
@@ -742,9 +737,20 @@ varnish_expect(const struct varnish *v, char * const *av) {
 	ref = 0;
 	for (i = 0; i < 10; i++, (void)usleep(100000)) {
 
-		good = -1;
-		if (!VSC_Iter(v->vd, do_stat_cb, &sp))
-			continue;
+		good = VSC_Iter(v->vd, do_stat_cb, &sp);
+		if (good < 0) {
+			VSM_Close(v->vd);
+			j = VSM_Open(v->vd, 0);
+			if (j == 0)
+				continue;
+			do {
+				(void)usleep(100000);
+				j = VSM_Open(v->vd, 0);
+				i++;
+			} while(i < 10 && j < 0);
+			if (j < 0)
+				break;
+		}
 		good = 0;
 
 		ref = strtoumax(av[2], &p, 0);

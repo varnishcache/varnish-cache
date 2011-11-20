@@ -51,6 +51,8 @@
 #include "vsl_api.h"
 #include "vsm_api.h"
 
+static void VSL_Close(struct VSM_data *vd);
+
 /*--------------------------------------------------------------------*/
 
 const char *VSL_tags[256] = {
@@ -128,20 +130,30 @@ VSL_NonBlocking(const struct VSM_data *vd, int nb)
 		vsl->flags &= ~F_NON_BLOCKING;
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Return the next log record, if there is one
+ *
+ * Return:
+ *	<0: error
+ *	0: no record
+ *	>0: record available at pp
+ */
 
 static int
 vsl_nextlog(struct vsl *vsl, uint32_t **pp)
 {
-	unsigned w, l;
+	unsigned l;
 	uint32_t t;
 	int i;
 
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 
+	*pp = NULL;
 	if (vsl->r_fd != -1) {
 		assert(vsl->rbuflen >= 8);
 		i = read(vsl->r_fd, vsl->rbuf, 8);
+		if (i == 0)
+			return (0);
 		if (i != 8)
 			return (-1);
 		l = 2 + VSL_WORDS(VSL_LEN(vsl->rbuf));
@@ -157,38 +169,36 @@ vsl_nextlog(struct vsl *vsl, uint32_t **pp)
 		*pp = vsl->rbuf;
 		return (1);
 	}
-	for (w = 0; w < TIMEOUT_USEC;) {
+	while (1) {
+		if (vsl->log_ptr == NULL)
+			return (0);
+		assert(vsl->log_ptr >= vsl->log_start + 1);
+		assert(vsl->log_ptr < vsl->log_end);
 		t = *vsl->log_ptr;
 
 		if (t == VSL_WRAPMARKER) {
 			/* Wrap around not possible at front */
-			assert(vsl->log_ptr != vsl->log_start + 1);
+			if (vsl->log_ptr == vsl->log_start + 1)
+				return (-1);
 			vsl->log_ptr = vsl->log_start + 1;
-			VRMB();
 			continue;
 		}
+
 		if (t == VSL_ENDMARKER) {
 			if (vsl->log_ptr != vsl->log_start + 1 &&
 			    vsl->last_seq != vsl->log_start[0]) {
 				/* ENDMARKER not at front and seq wrapped */
 				vsl->log_ptr = vsl->log_start + 1;
-				VRMB();
 				continue;
 			}
-			if (vsl->flags & F_NON_BLOCKING)
-				return (-1);
-			w += SLEEP_USEC;
-			assert(usleep(SLEEP_USEC) == 0 || errno == EINTR);
-			VRMB();
-			continue;
+			return (0);
 		}
+
 		if (t == 0) {
-			/* Zero-initialized VSL */
-			w += SLEEP_USEC;
-			assert(usleep(SLEEP_USEC) == 0 || errno == EINTR);
-			VRMB();
-			continue;
+			/* Uninitialized VSL */
+			return (0);
 		}
+
 		if (vsl->log_ptr == vsl->log_start + 1)
 			vsl->last_seq = vsl->log_start[0];
 
@@ -196,8 +206,6 @@ vsl_nextlog(struct vsl *vsl, uint32_t **pp)
 		vsl->log_ptr = VSL_NEXT(vsl->log_ptr);
 		return (1);
 	}
-	*pp = NULL;
-	return (0);
 }
 
 int
@@ -214,7 +222,7 @@ VSL_NextLog(const struct VSM_data *vd, uint32_t **pp, uint64_t *bits)
 
 	while (1) {
 		i = vsl_nextlog(vsl, &p);
-		if (i != 1)
+		if (i <= 0)
 			return (i);
 		t = VSL_TAG(p);
 		if (vsl->skip) {
@@ -275,17 +283,37 @@ VSL_Dispatch(struct VSM_data *vd, VSL_handler_f *func, void *priv)
 	unsigned u, l, s;
 	uint32_t *p;
 	uint64_t bitmap;
+	int tmo;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	vsl = vd->vsl;
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 
+	tmo = 0;
 	while (1) {
 		bitmap = 0;
 		i = VSL_NextLog(vd, &p, &bitmap);
-		if (i == 0 && VSM_ReOpen(vd, 0) == 1)
+		if (i == 0) {
+			if (vsl->r_fd != -1)
+				return(0);
+			if (vsl->flags & F_NON_BLOCKING)
+				return (0);
+			if (VSM_StillValid(vd, &vsl->vf) != 1) {
+				VSL_Close(vd);
+				if (VSL_Open(vd, 0))
+					return (-1);
+				AN(vsl->log_ptr);
+				assert(vsl->log_ptr >= vsl->log_start + 1);
+				assert(vsl->log_ptr < vsl->log_end);
+				continue;
+			}
+			tmo += SLEEP_USEC;
+			if (tmo > TIMEOUT_USEC)
+				return (0);
+			(void)usleep(SLEEP_USEC);
 			continue;
-		if (i != 1)
+		}
+		if (i <= 0)
 			return (i);
 		u = VSL_ID(p);
 		l = VSL_LEN(p);
@@ -294,7 +322,8 @@ VSL_Dispatch(struct VSM_data *vd, VSL_handler_f *func, void *priv)
 			s |= VSL_S_CLIENT;
 		if (VSL_BACKEND(p))
 			s |= VSL_S_BACKEND;
-		if (func(priv, (enum VSL_tag_e)VSL_TAG(p), u, l, s, VSL_DATA(p), bitmap))
+		if (func(priv, (enum VSL_tag_e)VSL_TAG(p),
+		    u, l, s, VSL_DATA(p), bitmap))
 			return (1);
 	}
 }
@@ -329,6 +358,23 @@ VSL_H_Print(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
 	fprintf(fo, "%5u %-12s %c %.*s\n",
 	    fd, VSL_tags[tag], type, (int)len, ptr);
 	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+VSL_Close(struct VSM_data *vd)
+{
+	struct vsl *vsl;
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	vsl = vd->vsl;
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+
+	VSM_Close(vd);
+	vsl->log_start = NULL;
+	vsl->log_end = NULL;
+	vsl->log_ptr = NULL;
 }
 
 /*--------------------------------------------------------------------*/
