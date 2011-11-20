@@ -64,6 +64,10 @@ struct heritage {
 
 	char				*name;
 	char                            identity[1024];
+
+	char				*panic_str;
+	ssize_t				panic_str_len;
+	
 };
 
 extern struct heritage heritage;

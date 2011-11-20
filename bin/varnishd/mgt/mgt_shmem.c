@@ -215,7 +215,8 @@ mgt_SHM_Init(void)
 	AN(heritage.param);
 	*heritage.param = mgt_param;
 
-	PAN_panicstr_len = 64 * 1024;
-	PAN_panicstr = VSM_Alloc(PAN_panicstr_len, PAN_CLASS, "", "");
-	AN(PAN_panicstr);
+	heritage.panic_str_len = 64 * 1024;
+	heritage.panic_str =
+	    VSM_Alloc(heritage.panic_str_len, PAN_CLASS, "", "");
+	AN(heritage.panic_str);
 }

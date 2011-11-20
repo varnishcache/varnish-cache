@@ -39,6 +39,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "common/heritage.h"
 
 #include "cache_backend.h"
 #include "waiter/cache_waiter.h"
@@ -53,12 +54,8 @@
  * (gdb) printf "%s", panicstr
  */
 
-static struct vsb vsps, *vsp;
+static struct vsb pan_vsp_storage, *pan_vsp;
 static pthread_mutex_t panicstr_mtx = PTHREAD_MUTEX_INITIALIZER;
-
-/* Initialized in mgt_shmem.c, points into VSM */
-char *PAN_panicstr;
-unsigned PAN_panicstr_len;
 
 /*--------------------------------------------------------------------*/
 
@@ -66,24 +63,24 @@ static void
 pan_ws(const struct ws *ws, int indent)
 {
 
-	VSB_printf(vsp, "%*sws = %p { %s\n", indent, "",
+	VSB_printf(pan_vsp, "%*sws = %p { %s\n", indent, "",
 	    ws, ws->overflow ? "overflow" : "");
-	VSB_printf(vsp, "%*sid = \"%s\",\n", indent + 2, "", ws->id);
-	VSB_printf(vsp, "%*s{s,f,r,e} = {%p", indent + 2, "", ws->s);
+	VSB_printf(pan_vsp, "%*sid = \"%s\",\n", indent + 2, "", ws->id);
+	VSB_printf(pan_vsp, "%*s{s,f,r,e} = {%p", indent + 2, "", ws->s);
 	if (ws->f > ws->s)
-		VSB_printf(vsp, ",+%ld", (long) (ws->f - ws->s));
+		VSB_printf(pan_vsp, ",+%ld", (long) (ws->f - ws->s));
 	else
-		VSB_printf(vsp, ",%p", ws->f);
+		VSB_printf(pan_vsp, ",%p", ws->f);
 	if (ws->r > ws->s)
-		VSB_printf(vsp, ",+%ld", (long) (ws->r - ws->s));
+		VSB_printf(pan_vsp, ",+%ld", (long) (ws->r - ws->s));
 	else
-		VSB_printf(vsp, ",%p", ws->r);
+		VSB_printf(pan_vsp, ",%p", ws->r);
 	if (ws->e > ws->s)
-		VSB_printf(vsp, ",+%ld", (long) (ws->e - ws->s));
+		VSB_printf(pan_vsp, ",+%ld", (long) (ws->e - ws->s));
 	else
-		VSB_printf(vsp, ",%p", ws->e);
-	VSB_printf(vsp, "},\n");
-	VSB_printf(vsp, "%*s},\n", indent, "" );
+		VSB_printf(pan_vsp, ",%p", ws->e);
+	VSB_printf(pan_vsp, "},\n");
+	VSB_printf(pan_vsp, "%*s},\n", indent, "" );
 }
 
 /*--------------------------------------------------------------------*/
@@ -96,9 +93,9 @@ pan_vbc(const struct vbc *vbc)
 
 	be = vbc->backend;
 
-	VSB_printf(vsp, "  backend = %p fd = %d {\n", be, vbc->fd);
-	VSB_printf(vsp, "    display_name = \"%s\",\n", be->display_name);
-	VSB_printf(vsp, "  },\n");
+	VSB_printf(pan_vsp, "  backend = %p fd = %d {\n", be, vbc->fd);
+	VSB_printf(pan_vsp, "    display_name = \"%s\",\n", be->display_name);
+	VSB_printf(pan_vsp, "  },\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -111,24 +108,26 @@ pan_storage(const struct storage *st)
 #define MAX_BYTES (4*16)
 #define show(ch) (((ch) > 31 && (ch) < 127) ? (ch) : '.')
 
-	VSB_printf(vsp, "      %u {\n", st->len);
+	VSB_printf(pan_vsp, "      %u {\n", st->len);
 	for (i = 0; i < MAX_BYTES && i < st->len; i += 16) {
-		VSB_printf(vsp, "        ");
+		VSB_printf(pan_vsp, "        ");
 		for (j = 0; j < 16; ++j) {
 			if (i + j < st->len)
-				VSB_printf(vsp, "%02x ", st->ptr[i + j]);
+				VSB_printf(pan_vsp, "%02x ", st->ptr[i + j]);
 			else
-				VSB_printf(vsp, "   ");
+				VSB_printf(pan_vsp, "   ");
 		}
-		VSB_printf(vsp, "|");
+		VSB_printf(pan_vsp, "|");
 		for (j = 0; j < 16; ++j)
 			if (i + j < st->len)
-				VSB_printf(vsp, "%c", show(st->ptr[i + j]));
-		VSB_printf(vsp, "|\n");
+				VSB_printf(pan_vsp,
+				    "%c", show(st->ptr[i + j]));
+		VSB_printf(pan_vsp, "|\n");
 	}
 	if (st->len > MAX_BYTES)
-		VSB_printf(vsp, "        [%u more]\n", st->len - MAX_BYTES);
-	VSB_printf(vsp, "      },\n");
+		VSB_printf(pan_vsp,
+		    "        [%u more]\n", st->len - MAX_BYTES);
+	VSB_printf(pan_vsp, "      },\n");
 
 #undef show
 #undef MAX_BYTES
@@ -141,17 +140,17 @@ pan_http(const char *id, const struct http *h, int indent)
 {
 	int i;
 
-	VSB_printf(vsp, "%*shttp[%s] = {\n", indent, "", id);
-	VSB_printf(vsp, "%*sws = %p[%s]\n", indent + 2, "",
+	VSB_printf(pan_vsp, "%*shttp[%s] = {\n", indent, "", id);
+	VSB_printf(pan_vsp, "%*sws = %p[%s]\n", indent + 2, "",
 	    h->ws, h->ws ? h->ws->id : "");
 	for (i = 0; i < h->nhd; ++i) {
 		if (h->hd[i].b == NULL && h->hd[i].e == NULL)
 			continue;
-		VSB_printf(vsp, "%*s\"%.*s\",\n", indent + 4, "",
+		VSB_printf(pan_vsp, "%*s\"%.*s\",\n", indent + 4, "",
 		    (int)(h->hd[i].e - h->hd[i].b),
 		    h->hd[i].b);
 	}
-	VSB_printf(vsp, "%*s},\n", indent, "");
+	VSB_printf(pan_vsp, "%*s},\n", indent, "");
 }
 
 
@@ -162,16 +161,16 @@ pan_object(const struct object *o)
 {
 	const struct storage *st;
 
-	VSB_printf(vsp, "  obj = %p {\n", o);
-	VSB_printf(vsp, "    xid = %u,\n", o->xid);
+	VSB_printf(pan_vsp, "  obj = %p {\n", o);
+	VSB_printf(pan_vsp, "    xid = %u,\n", o->xid);
 	pan_ws(o->ws_o, 4);
 	pan_http("obj", o->http, 4);
-	VSB_printf(vsp, "    len = %jd,\n", (intmax_t)o->len);
-	VSB_printf(vsp, "    store = {\n");
+	VSB_printf(pan_vsp, "    len = %jd,\n", (intmax_t)o->len);
+	VSB_printf(pan_vsp, "    store = {\n");
 	VTAILQ_FOREACH(st, &o->store, list)
 		pan_storage(st);
-	VSB_printf(vsp, "    },\n");
-	VSB_printf(vsp, "  },\n");
+	VSB_printf(pan_vsp, "    },\n");
+	VSB_printf(pan_vsp, "  },\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -181,12 +180,12 @@ pan_vcl(const struct VCL_conf *vcl)
 {
 	int i;
 
-	VSB_printf(vsp, "    vcl = {\n");
-	VSB_printf(vsp, "      srcname = {\n");
+	VSB_printf(pan_vsp, "    vcl = {\n");
+	VSB_printf(pan_vsp, "      srcname = {\n");
 	for (i = 0; i < vcl->nsrc; ++i)
-		VSB_printf(vsp, "        \"%s\",\n", vcl->srcname[i]);
-	VSB_printf(vsp, "      },\n");
-	VSB_printf(vsp, "    },\n");
+		VSB_printf(pan_vsp, "        \"%s\",\n", vcl->srcname[i]);
+	VSB_printf(pan_vsp, "      },\n");
+	VSB_printf(pan_vsp, "    },\n");
 }
 
 
@@ -196,7 +195,7 @@ static void
 pan_wrk(const struct worker *wrk)
 {
 
-	VSB_printf(vsp, "  worker = %p {\n", wrk);
+	VSB_printf(pan_vsp, "  worker = %p {\n", wrk);
 	pan_ws(wrk->ws, 4);
 	if (wrk->bereq->ws != NULL)
 		pan_http("bereq", wrk->bereq, 4);
@@ -204,7 +203,7 @@ pan_wrk(const struct worker *wrk)
 		pan_http("beresp", wrk->beresp, 4);
 	if (wrk->resp->ws != NULL)
 		pan_http("resp", wrk->resp, 4);
-	VSB_printf(vsp, "    },\n");
+	VSB_printf(pan_vsp, "    },\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -214,11 +213,11 @@ pan_sess(const struct sess *sp)
 {
 	const char *stp, *hand;
 
-	VSB_printf(vsp, "sp = %p {\n", sp);
-	VSB_printf(vsp,
+	VSB_printf(pan_vsp, "sp = %p {\n", sp);
+	VSB_printf(pan_vsp,
 	    "  fd = %d, id = %d, xid = %u,\n",
 	    sp->fd, sp->vsl_id & VSL_IDENTMASK, sp->xid);
-	VSB_printf(vsp, "  client = %s %s,\n",
+	VSB_printf(pan_vsp, "  client = %s %s,\n",
 	    sp->addr ? sp->addr : "?.?.?.?",
 	    sp->port ? sp->port : "?");
 	switch (sp->step) {
@@ -229,31 +228,31 @@ pan_sess(const struct sess *sp)
 	}
 	hand = VCL_Return_Name(sp->handling);
 	if (stp != NULL)
-		VSB_printf(vsp, "  step = %s,\n", stp);
+		VSB_printf(pan_vsp, "  step = %s,\n", stp);
 	else
-		VSB_printf(vsp, "  step = 0x%x,\n", sp->step);
+		VSB_printf(pan_vsp, "  step = 0x%x,\n", sp->step);
 	if (hand != NULL)
-		VSB_printf(vsp, "  handling = %s,\n", hand);
+		VSB_printf(pan_vsp, "  handling = %s,\n", hand);
 	else
-		VSB_printf(vsp, "  handling = 0x%x,\n", sp->handling);
+		VSB_printf(pan_vsp, "  handling = 0x%x,\n", sp->handling);
 	if (sp->err_code)
-		VSB_printf(vsp,
+		VSB_printf(pan_vsp,
 		    "  err_code = %d, err_reason = %s,\n", sp->err_code,
 		    sp->err_reason ? sp->err_reason : "(null)");
 
-	VSB_printf(vsp, "  restarts = %d, esi_level = %d\n",
+	VSB_printf(pan_vsp, "  restarts = %d, esi_level = %d\n",
 	    sp->restarts, sp->esi_level);
 
-	VSB_printf(vsp, "  flags = ");
-	if (sp->wrk->do_stream)	VSB_printf(vsp, " do_stream");
-	if (sp->wrk->do_gzip)	VSB_printf(vsp, " do_gzip");
-	if (sp->wrk->do_gunzip)	VSB_printf(vsp, " do_gunzip");
-	if (sp->wrk->do_esi)	VSB_printf(vsp, " do_esi");
-	if (sp->wrk->do_close)	VSB_printf(vsp, " do_close");
-	if (sp->wrk->is_gzip)	VSB_printf(vsp, " is_gzip");
-	if (sp->wrk->is_gunzip)	VSB_printf(vsp, " is_gunzip");
-	VSB_printf(vsp, "\n");
-	VSB_printf(vsp, "  bodystatus = %d\n", sp->wrk->body_status);
+	VSB_printf(pan_vsp, "  flags = ");
+	if (sp->wrk->do_stream)	VSB_printf(pan_vsp, " do_stream");
+	if (sp->wrk->do_gzip)	VSB_printf(pan_vsp, " do_gzip");
+	if (sp->wrk->do_gunzip)	VSB_printf(pan_vsp, " do_gunzip");
+	if (sp->wrk->do_esi)	VSB_printf(pan_vsp, " do_esi");
+	if (sp->wrk->do_close)	VSB_printf(pan_vsp, " do_close");
+	if (sp->wrk->is_gzip)	VSB_printf(pan_vsp, " is_gzip");
+	if (sp->wrk->is_gunzip)	VSB_printf(pan_vsp, " is_gunzip");
+	VSB_printf(pan_vsp, "\n");
+	VSB_printf(pan_vsp, "  bodystatus = %d\n", sp->wrk->body_status);
 
 	pan_ws(sp->ws, 2);
 	pan_http("req", sp->http, 2);
@@ -270,7 +269,7 @@ pan_sess(const struct sess *sp)
 	if (VALID_OBJ(sp->obj, OBJECT_MAGIC))
 		pan_object(sp->obj);
 
-	VSB_printf(vsp, "},\n");
+	VSB_printf(pan_vsp, "},\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -285,18 +284,19 @@ pan_backtrace(void)
 	size = backtrace (array, 10);
 	if (size == 0)
 		return;
-	VSB_printf(vsp, "Backtrace:\n");
+	VSB_printf(pan_vsp, "Backtrace:\n");
 	for (i = 0; i < size; i++) {
-		VSB_printf (vsp, "  ");
-		if (Symbol_Lookup(vsp, array[i]) < 0) {
+		VSB_printf (pan_vsp, "  ");
+		if (Symbol_Lookup(pan_vsp, array[i]) < 0) {
 			char **strings;
 			strings = backtrace_symbols(&array[i], 1);
 			if (strings != NULL && strings[0] != NULL)
-				VSB_printf(vsp, "%p: %s", array[i], strings[0]);
+				VSB_printf(pan_vsp,
+				     "%p: %s", array[i], strings[0]);
 			else
-				VSB_printf(vsp, "%p: (?)", array[i]);
+				VSB_printf(pan_vsp, "%p: (?)", array[i]);
 		}
-		VSB_printf (vsp, "\n");
+		VSB_printf (pan_vsp, "\n");
 	}
 }
 
@@ -314,35 +314,35 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 						  anyway */
 	switch(xxx) {
 	case 3:
-		VSB_printf(vsp,
+		VSB_printf(pan_vsp,
 		    "Wrong turn at %s:%d:\n%s\n", file, line, cond);
 		break;
 	case 2:
-		VSB_printf(vsp,
+		VSB_printf(pan_vsp,
 		    "Panic from VCL:\n  %s\n", cond);
 		break;
 	case 1:
-		VSB_printf(vsp,
+		VSB_printf(pan_vsp,
 		    "Missing errorhandling code in %s(), %s line %d:\n"
 		    "  Condition(%s) not true.",
 		    func, file, line, cond);
 		break;
 	default:
 	case 0:
-		VSB_printf(vsp,
+		VSB_printf(pan_vsp,
 		    "Assert error in %s(), %s line %d:\n"
 		    "  Condition(%s) not true.\n",
 		    func, file, line, cond);
 		break;
 	}
 	if (err)
-		VSB_printf(vsp, "errno = %d (%s)\n", err, strerror(err));
+		VSB_printf(pan_vsp, "errno = %d (%s)\n", err, strerror(err));
 
 	q = THR_GetName();
 	if (q != NULL)
-		VSB_printf(vsp, "thread = (%s)\n", q);
+		VSB_printf(pan_vsp, "thread = (%s)\n", q);
 
-	VSB_printf(vsp, "ident = %s,%s\n",
+	VSB_printf(pan_vsp, "ident = %s,%s\n",
 	    VSB_data(vident) + 1, WAIT_GetName());
 
 	pan_backtrace();
@@ -352,11 +352,11 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 		if (sp != NULL)
 			pan_sess(sp);
 	}
-	VSB_printf(vsp, "\n");
-	VSB_bcat(vsp, "", 1);	/* NUL termination */
+	VSB_printf(pan_vsp, "\n");
+	VSB_bcat(pan_vsp, "", 1);	/* NUL termination */
 
 	if (cache_param->diag_bitmap & 0x4000)
-		(void)fputs(PAN_panicstr, stderr);
+		(void)fputs(heritage.panic_str, stderr);
 
 	if (cache_param->diag_bitmap & 0x1000)
 		exit(4);
@@ -371,9 +371,9 @@ PAN_Init(void)
 {
 
 	VAS_Fail = pan_ic;
-	vsp = &vsps;
-	AN(PAN_panicstr);
-	AN(PAN_panicstr_len);
-	AN(VSB_new(vsp, PAN_panicstr, PAN_panicstr_len,
+	pan_vsp = &pan_vsp_storage;
+	AN(heritage.panic_str);
+	AN(heritage.panic_str_len);
+	AN(VSB_new(pan_vsp, heritage.panic_str, heritage.panic_str_len,
 	    VSB_FIXEDLEN));
 }

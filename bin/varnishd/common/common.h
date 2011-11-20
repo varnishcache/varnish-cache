@@ -50,8 +50,6 @@ extern pid_t mgt_pid;
 
 /* mgt_shmem.c */
 #define PAN_CLASS "Panic"
-extern char *PAN_panicstr;
-extern unsigned PAN_panicstr_len;
 
 /* varnishd.c */
 extern struct vsb *vident;		// XXX: -> heritage ?

@@ -427,10 +427,10 @@ mgt_handle_panicstr(pid_t r)
 {
 	char time_str[30];
 
-	if (PAN_panicstr[0] == '\0')
+	if (heritage.panic_str[0] == '\0')
 		return;
 	REPORT(LOG_ERR, "Child (%jd) Panic message: %s",
-	    (intmax_t)r, PAN_panicstr);
+	    (intmax_t)r, heritage.panic_str);
 
 	if (child_panic)
 		VSB_delete(child_panic);
@@ -438,7 +438,7 @@ mgt_handle_panicstr(pid_t r)
 	XXXAN(child_panic);
 	VTIM_format(VTIM_real(), time_str);
 	VSB_printf(child_panic, "Last panic at: %s\n", time_str);
-	VSB_cat(child_panic, PAN_panicstr);
+	VSB_cat(child_panic, heritage.panic_str);
 	AZ(VSB_finish(child_panic));
 }
 
