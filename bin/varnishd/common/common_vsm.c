@@ -49,10 +49,10 @@
 /*--------------------------------------------------------------------*/
 
 struct vsm_range {
-	unsigned 			magic;
+	unsigned			magic;
 #define VSM_RANGE_MAGIC			0x8d30f14
 	VTAILQ_ENTRY(vsm_range)		list;
-	ssize_t				off; 
+	ssize_t				off;
 	ssize_t				len;
 	double				cool;
 	struct VSM_chunk		*chunk;
@@ -60,7 +60,7 @@ struct vsm_range {
 };
 
 struct vsm_sc {
-	unsigned 			magic;
+	unsigned			magic;
 #define VSM_SC_MAGIC			0x8b83270d
 	char				*b;
 	ssize_t				len;
@@ -236,7 +236,7 @@ VSM_common_alloc(struct vsm_sc *sc, ssize_t size,
 	vr3 = VTAILQ_FIRST(&sc->r_used);
 	VTAILQ_INSERT_HEAD(&sc->r_used, vr, list);
 
-	if (vr3 != NULL) {	
+	if (vr3 != NULL) {
 		AZ(vr3->chunk->next);
 		vr3->chunk->next = vr->off;
 	} else {

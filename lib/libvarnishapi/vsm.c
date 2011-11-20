@@ -141,7 +141,7 @@ VSM_Delete(struct VSM_data *vd)
  *
  * Return:
  *	0 = sucess
- * 	<0 = failure
+ *	<0 = failure
  *
  */
 

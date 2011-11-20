@@ -212,7 +212,7 @@ VCLI_ReadResult(int fd, unsigned *status, char **ptr, double tmo)
 			break;
 		if (p[v] != '\n')
 			break;
-		
+
 		p[v] = '\0';
 		if (ptr == NULL)
 			free(p);

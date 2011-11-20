@@ -292,7 +292,7 @@ iter_call(const struct vsc *vsc, VSC_iter_f *func, void *priv,
 		int i;							\
 									\
 		CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);			\
-		st = vf->b; 						\
+		st = vf->b;						\
 		sp.class = t;						\
 		sp.ident = vf->chunk->ident;
 

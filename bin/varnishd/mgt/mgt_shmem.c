@@ -26,62 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
- * TODO:
- *
- * There is a risk that the child process might corrupt the VSM segment
- * and we should capture that event and recover gracefully.
- *
- * A possible state diagram could be:
- *
- *	[manager start]
- *		|
- *		v
- *      Open old VSM,
- *	check pid	--------> exit/fail (-n message)
- *		|
- *		+<----------------------+
- *		|			^
- *		v			|
- *	Create new VSM			|
- *		|			|
- *		v			|
- *	Init header			|
- *	Alloc VSL			|
- *	Alloc VSC:Main			|
- *	Alloc Args etc.			|
- *		|			|
- *		+<--------------+	|
- *		|		^	|
- *		v		|	|
- *	start worker		|	|
- *		|		|	|
- *		|		|	+<---- worker crash
- *		v		|	^
- *	Reset VSL ptr.		|	|
- *	Reset VSC counters	|	|
- *		|		|	|
- *		+<------+	|	|
- *		|	^	|	|
- *		v	|	|	|
- *	alloc dynamics	|	|	|
- *	free dynamics	|	|	|
- *		|	|	|	|
- *		v	|	|	|
- *		+------>+	|	|
- *		|		|	|
- *		v		|	|
- *	stop worker		|	|
- *		|		|	|
- *		v		|	|
- *	Check consist---------- | ----->+
- *		|		|
- *		v		|
- *	Free dynamics		|
- *		|		|
- *		v		|
- *		+-------------->+
- *
  */
 
 #include "config.h"
@@ -241,7 +185,7 @@ mgt_SHM_Init(void)
 	bprintf(fnbuf, "%s.%jd", VSM_FILENAME, (intmax_t)getpid());
 
 	vsm_fd = vsm_zerofile(fnbuf, size);
-	if (vsm_fd < 0) 
+	if (vsm_fd < 0)
 		exit(1);
 
 	p = (void *)mmap(NULL, size,
