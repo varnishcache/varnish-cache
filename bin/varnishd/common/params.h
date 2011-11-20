@@ -31,6 +31,8 @@
 
 #include "vre.h"
 
+#define VSM_CLASS_PARAM		"Params"
+
 struct params {
 
 	/* Unprivileged user / group */

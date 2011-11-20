@@ -27,27 +27,8 @@
  *
  * VSM stuff common to manager and child.
  *
- * We have three potential conflicts we need to deal with:
- *
- * VSM-studying programs (varnishstat...) vs. everybody else
- *	The VSM studying programs only have read-only access to the VSM
- *	so everybody else must use memory barriers, stable storage and
- *	similar tricks to keep the VSM image in sync (long enough) for
- *	the studying programs.
- *	It can not be prevented, and may indeed in some cases be
- *	desirable for such programs to write to VSM, for instance to
- *	zero counters.
- *	Varnishd should never trust the integrity of VSM content.
- *
- * Manager process vs child process.
- *	The manager will create a fresh VSM for each child process launch
- *	and not muck about with VSM while the child runs.  If the child
- *	crashes, the panicstring will be evacuated and the VSM possibly
- *	saved for debugging, and a new VSM created before the child is
- *	started again.
- *
- * Child process threads
- *	Pthread locking necessary.
+ * Please see comments in <vapi/vsm_int.h> for details of protocols and
+ * data consistency.
  *
  */
 
@@ -71,8 +52,8 @@ struct vsm_range {
 	unsigned 			magic;
 #define VSM_RANGE_MAGIC			0x8d30f14
 	VTAILQ_ENTRY(vsm_range)		list;
-	unsigned			off; 
-	unsigned			len;
+	ssize_t				off; 
+	ssize_t				len;
 	double				cool;
 	struct VSM_chunk		*chunk;
 	void				*ptr;
@@ -82,7 +63,7 @@ struct vsm_sc {
 	unsigned 			magic;
 #define VSM_SC_MAGIC			0x8b83270d
 	char				*b;
-	unsigned			len;
+	ssize_t				len;
 	struct VSM_head			*head;
 	VTAILQ_HEAD(,vsm_range)		r_used;
 	VTAILQ_HEAD(,vsm_range)		r_cooling;
@@ -137,7 +118,7 @@ vsm_common_insert_free(struct vsm_sc *sc, struct vsm_range *vr)
  */
 
 struct vsm_sc *
-VSM_common_new(void *p, unsigned l)
+VSM_common_new(void *p, ssize_t l)
 {
 	struct vsm_sc *sc;
 	struct vsm_range *vr;
@@ -154,10 +135,13 @@ VSM_common_new(void *p, unsigned l)
 	sc->len = l;
 
 	sc->head = (void *)sc->b;
-	memset(TRUST_ME(sc->head), 0, sizeof *sc->head);
+	/* This should not be necessary, but just in case...*/
+	memset(sc->head, 0, sizeof *sc->head);
 	sc->head->magic = VSM_HEAD_MAGIC;
 	sc->head->hdrsize = sizeof *sc->head;
 	sc->head->shm_size = l;
+	sc->head->alloc_seq = random() | 1;
+	VWMB();
 
 	ALLOC_OBJ(vr, VSM_RANGE_MAGIC);
 	AN(vr);
@@ -172,7 +156,7 @@ VSM_common_new(void *p, unsigned l)
  */
 
 void *
-VSM_common_alloc(struct vsm_sc *sc, unsigned size,
+VSM_common_alloc(struct vsm_sc *sc, ssize_t size,
     const char *class, const char *type, const char *ident)
 {
 	struct vsm_range *vr, *vr2, *vr3;
@@ -238,15 +222,15 @@ VSM_common_alloc(struct vsm_sc *sc, unsigned size,
 	/* XXX: stats ? */
 
 	/* Zero the entire allocation, to avoid garbage confusing readers */
-	memset(TRUST_ME(sc->b + vr->off), 0, vr->len);
+	memset(sc->b + vr->off, 0, vr->len);
 
 	vr->chunk = (void *)(sc->b + vr->off);
 	vr->ptr = (vr->chunk + 1);
 
 	vr->chunk->magic = VSM_CHUNK_MAGIC;
-	strcpy(TRUST_ME(vr->chunk->class), class);
-	strcpy(TRUST_ME(vr->chunk->type), type);
-	strcpy(TRUST_ME(vr->chunk->ident), ident);
+	strcpy(vr->chunk->class, class);
+	strcpy(vr->chunk->type, type);
+	strcpy(vr->chunk->ident, ident);
 	VWMB();
 
 	vr3 = VTAILQ_FIRST(&sc->r_used);
@@ -258,6 +242,7 @@ VSM_common_alloc(struct vsm_sc *sc, unsigned size,
 	} else {
 		sc->head->first = vr->off;
 	}
+	sc->head->alloc_seq += 2;
 	VWMB();
 	return (vr->ptr);
 }
@@ -289,6 +274,7 @@ VSM_common_free(struct vsm_sc *sc, void *ptr)
 			sc->head->first = vr->chunk->next;
 		VWMB();
 		vr->chunk->len = 0;
+		sc->head->alloc_seq += 2;
 		VWMB();
 		return;
 	}
@@ -298,7 +284,7 @@ VSM_common_free(struct vsm_sc *sc, void *ptr)
 			VTAILQ_REMOVE(&sc->r_bogus, vr, list);
 			FREE_OBJ(vr);
 			/* XXX: stats ? */
-			free(TRUST_ME(ptr));
+			free(ptr);
 			return;
 		}
 	}
@@ -311,9 +297,14 @@ VSM_common_free(struct vsm_sc *sc, void *ptr)
  */
 
 void
-VSM_common_delete(struct vsm_sc *sc)
+VSM_common_delete(struct vsm_sc **scp)
 {
 	struct vsm_range *vr, *vr2;
+	struct vsm_sc *sc;
+
+	AN(scp);
+	sc =*scp;
+	*scp = NULL;
 
 	CHECK_OBJ_NOTNULL(sc, VSM_SC_MAGIC);
 	VTAILQ_FOREACH_SAFE(vr, &sc->r_free, list, vr2)
@@ -323,9 +314,10 @@ VSM_common_delete(struct vsm_sc *sc)
 	VTAILQ_FOREACH_SAFE(vr, &sc->r_cooling, list, vr2)
 		FREE_OBJ(vr);
 	VTAILQ_FOREACH_SAFE(vr, &sc->r_bogus, list, vr2) {
-		free(TRUST_ME(vr->ptr));
+		free(vr->ptr);
 		FREE_OBJ(vr);
 	}
-	sc->head->magic = 0;
+	sc->head->alloc_seq = 0;
+	VWMB();
 	FREE_OBJ(sc);
 }

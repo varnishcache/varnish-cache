@@ -75,30 +75,11 @@ void mgt_child_inherit(int fd, const char *what);
 
 /* vsm.c */
 struct vsm_sc;
-struct vsm_sc *VSM_common_new(void *ptr, unsigned len);
-void *VSM_common_alloc(struct vsm_sc *sc, unsigned size,
+struct vsm_sc *VSM_common_new(void *ptr, ssize_t len);
+void *VSM_common_alloc(struct vsm_sc *sc, ssize_t size,
     const char *class, const char *type, const char *ident);
 void VSM_common_free(struct vsm_sc *sc, void *ptr);
-void VSM_common_delete(struct vsm_sc *sc);
-
-// extern struct VSM_head		*VSM_head;
-// extern const struct VSM_chunk	*vsm_end;
-
-/*
- * These three should not be called directly, but only through
- * proper vectors in mgt.h/cache.h, hence the __
- */
-void *VSM__Alloc(unsigned size, const char *class, const char *type,
-    const char *ident);
-void VSM__Free(const void *ptr);
-void VSM__Clean(void);
-
-/* These classes are opaque to other programs, so we define the here */
-#define VSM_CLASS_FREE	"Free"
-#define VSM_CLASS_COOL	"Cool"
-#define VSM_CLASS_PARAM	"Params"
-#define VSM_CLASS_MARK	"MgrCld"
-#define VSM_COOL_TIME	5
+void VSM_common_delete(struct vsm_sc **sc);
 
 /*---------------------------------------------------------------------
  * Generic power-2 rounding macros

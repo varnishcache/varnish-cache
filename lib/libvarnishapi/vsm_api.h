@@ -44,13 +44,12 @@ struct VSM_data {
 	char			*n_opt;
 	char			*fname;
 
-
 	struct stat		fstat;
 
 	int			vsm_fd;
 	struct VSM_head		*VSM_head;
 	void			*vsm_end;
-	unsigned		alloc_seq;
+	unsigned		my_alloc_seq;
 
 	/* Stuff relating the stats fields start here */
 

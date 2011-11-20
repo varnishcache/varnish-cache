@@ -37,9 +37,7 @@
 
 #include "cache_backend.h"	// For w->vbc
 
-#include "vapi/vsm_int.h"
 #include "vmb.h"
-#include "vtim.h"
 
 /* These cannot be struct lock, which depends on vsm/vsl working */
 static pthread_mutex_t vsl_mtx;

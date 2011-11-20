@@ -32,7 +32,15 @@
 #define VAPI_VSM_H_INCLUDED
 
 struct VSM_head;
+struct VSM_chunk;
 struct VSM_data;
+
+struct VSM_fantom {
+	struct VSM_chunk	*chunk;
+	void			*b;
+	void			*e;
+	uintptr_t		priv;
+};
 
 /*---------------------------------------------------------------------
  * VSM level access functions
@@ -46,6 +54,7 @@ struct VSM_data *VSM_New(void);
 	 * referencing the same or different shared memory files.
 	 * Returns:
 	 *	Pointer to usable VSL_data handle.
+	 *	NULL: malloc failed.
 	 */
 
 typedef void VSM_diag_f(void *priv, const char *fmt, ...);
@@ -66,7 +75,7 @@ int VSM_n_Arg(struct VSM_data *vd, const char *n_arg);
 	 * and VSC_Arg() functions.
 	 * Returns:
 	 *	 1 on success
-	 *	 -1 on failure, with diagnostic on stderr.
+	 *	 -1 on failure, with diagnostic.
 	 */
 
 const char *VSM_Name(const struct VSM_data *vd);

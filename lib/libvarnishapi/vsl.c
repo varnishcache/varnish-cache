@@ -390,7 +390,8 @@ VSL_Open(struct VSM_data *vd, int diag)
 
 /*--------------------------------------------------------------------*/
 
-int VSL_Matched(const struct VSM_data *vd, uint64_t bitmap)
+int
+VSL_Matched(const struct VSM_data *vd, uint64_t bitmap)
 {
 	if (vd->vsl->num_matchers > 0) {
 		uint64_t t;

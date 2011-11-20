@@ -82,7 +82,6 @@ void mgt_sandbox_solaris_privsep(void);
 
 /* mgt_shmem.c */
 void mgt_SHM_Init(void);
-void mgt_SHM_Pid(void);
 
 /* stevedore_mgt.c */
 void STV_Config(const char *spec);
