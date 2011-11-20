@@ -293,6 +293,9 @@ void
 mgt_shm_atexit(void)
 {
 
+	/* Do not let VCC kill our VSM */
+	if (getpid() != mgt_pid)
+		return;
 	if (heritage.vsm != NULL)
 		VSM_common_delete(&heritage.vsm);
 }
