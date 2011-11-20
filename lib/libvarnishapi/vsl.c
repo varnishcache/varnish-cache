@@ -67,25 +67,14 @@ VSL_Setup(struct VSM_data *vd)
 	struct vsl *vsl;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	AZ(vd->vsc);
 	AZ(vd->vsl);
-	ALLOC_OBJ(vsl, VSL_MAGIC);
-	AN(vsl);
-
-	vd->vsl = vsl;
-
+	ALLOC_OBJ(vd->vsl, VSL_MAGIC);
+	AN(vd->vsl);
+	vsl = vd->vsl;
 	vsl->regflags = 0;
-
-	/* XXX: Allocate only if log access */
 	vsl->vbm_supress = vbit_init(256);
 	vsl->vbm_select = vbit_init(256);
-
 	vsl->r_fd = -1;
-	/* XXX: Allocate only if -r option given ? */
-	vsl->rbuflen = 256;      /* XXX ?? */
-	vsl->rbuf = malloc(vsl->rbuflen * 4L);
-	assert(vsl->rbuf != NULL);
-
 	vsl->num_matchers = 0;
 	VTAILQ_INIT(&vsl->matchers);
 }
@@ -343,28 +332,6 @@ VSL_H_Print(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
 
 /*--------------------------------------------------------------------*/
 
-void
-VSL_Open_CallBack(struct VSM_data *vd)
-{
-	struct vsl *vsl;
-	struct VSM_chunk *sha;
-
-	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	vsl = vd->vsl;
-	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
-	sha = VSM_find_alloc(vd, VSL_CLASS, "", "");
-	assert(sha != NULL);
-
-	vsl->log_start = VSM_PTR(sha);
-	vsl->log_end = VSM_NEXT(sha);
-	vsl->log_ptr = vsl->log_start + 1;
-
-	vsl->last_seq = vsl->log_start[0];
-	VRMB();
-}
-
-/*--------------------------------------------------------------------*/
-
 int
 VSL_Open(struct VSM_data *vd, int diag)
 {
@@ -379,11 +346,21 @@ VSL_Open(struct VSM_data *vd, int diag)
 		i = VSM_Open(vd, diag);
 		if (i)
 			return (i);
-	}
-
-	if (!vsl->d_opt && vsl->r_fd == -1) {
-		while (*vsl->log_ptr != VSL_ENDMARKER)
-			vsl->log_ptr = VSL_NEXT(vsl->log_ptr);
+		if (!VSM_Get(vd, &vsl->vf, VSL_CLASS, NULL, NULL)) {
+			VSM_Close(vd);
+			if (diag)
+				vd->diag(vd->priv,
+				    "No VSL chunk found "
+				    " (child not started ?)\n");
+			return (1);
+		}
+		vsl->log_start = vsl->vf.b;
+		vsl->log_end = vsl->vf.e;
+		vsl->log_ptr = vsl->log_start + 1;
+		if (!vsl->d_opt) {
+			while (*vsl->log_ptr != VSL_ENDMARKER)
+				vsl->log_ptr = VSL_NEXT(vsl->log_ptr);
+		}
 	}
 	return (0);
 }

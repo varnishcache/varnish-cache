@@ -26,6 +26,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * This is the public API for the VSM/VSC/VSL access.
+ *
  */
 
 #ifndef VAPI_VSM_H_INCLUDED
@@ -35,10 +37,14 @@ struct VSM_head;
 struct VSM_chunk;
 struct VSM_data;
 
+/*
+ * This structure is used to reference a VSM chunk
+ */
+
 struct VSM_fantom {
 	struct VSM_chunk	*chunk;
-	void			*b;
-	void			*e;
+	void			*b;		/* first byte of payload */
+	void			*e;		/* first byte past payload */
 	uintptr_t		priv;
 };
 
@@ -120,12 +126,31 @@ struct VSM_head *VSM_Head(const struct VSM_data *vd);
 	 * Return the head of the VSM.
 	 */
 
-void *VSM_Find_Chunk(struct VSM_data *vd, const char *class,
-    const char *type, const char *ident, unsigned *lenp);
+void VSM__iter0(struct VSM_data *vd, struct VSM_fantom *vf);
+int VSM__itern(struct VSM_data *vd, struct VSM_fantom *vf);
+
+#define VSM_FOREACH_SAFE(vf, vd) \
+    for(VSM__iter0((vd), (vf)); VSM__itern((vd), (vf));)
 	/*
-	 * Find a given chunk in the shared memory.
-	 * Returns pointer or NULL.
-	 * Lenp, if non-NULL, is set to length of chunk.
+	 * Iterate over all chunks in shared memory
+	 * vf = "struct VSM_fantom *"
+	 * vd = "struct VSM_data *"
+	 */
+
+int VSM_StillValid(struct VSM_data *vd, struct VSM_fantom *vf);
+	/*
+	 * Return:
+	 *	0: fantom is invalid now.
+	 *	1: fantom is still the same.
+	 *	2: a fantom with same dimensions exist, check class/type/ident
+	 */
+
+int VSM_Get(struct VSM_data *vd, struct VSM_fantom *vf, const char *class,
+    const char *type, const char *ident);
+	/*
+	 * Find a chunk, produce fantom for it.
+	 * Returns zero on failure.
+	 * class is mandatory, type and ident optional.
 	 */
 
 void VSM_Close(struct VSM_data *vd);
@@ -134,9 +159,28 @@ void VSM_Close(struct VSM_data *vd);
 	 * Deallocate all storage (including VSC and VSL allocations)
 	 */
 
-struct VSM_chunk *VSM_iter0(struct VSM_data *vd);
-void VSM_itern(const struct VSM_data *vd, struct VSM_chunk **pp);
+/**********************************************************************
+ * These are old API functions which are less safe because there is
+ * fantom protecting the chunks worked on.
+ * They will g
+ */
 
+/* OBSOLETE: Will disappear from Varnish 4.x */
+void *VSM_Find_Chunk(struct VSM_data *vd, const char *class,
+    const char *type, const char *ident, unsigned *lenp);
+	/*
+	 * Find a given chunk in the shared memory.
+	 * Returns pointer or NULL.
+	 * Lenp, if non-NULL, is set to length of chunk.
+	 */
+
+/* OBSOLETE: Will disappear from Varnish 4.x */
+struct VSM_chunk *VSM_iter0(struct VSM_data *vd);
+
+/* OBSOLETE: Will disappear from Varnish 4.x */
+void VSM_itern(struct VSM_data *vd, struct VSM_chunk **pp);
+
+/* OBSOLETE: Will disappear from Varnish 4.x */
 #define VSM_FOREACH(var, vd) \
     for((var) = VSM_iter0((vd)); (var) != NULL; VSM_itern((vd), &(var)))
 

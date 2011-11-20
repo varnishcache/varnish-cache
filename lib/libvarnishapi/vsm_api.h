@@ -28,10 +28,6 @@
  *
  */
 
-/* Parameters */
-#define			SLEEP_USEC	(50*1000)
-#define			TIMEOUT_USEC	(5*1000*1000)
-
 struct vsc;
 
 struct VSM_data {
@@ -47,9 +43,12 @@ struct VSM_data {
 	struct stat		fstat;
 
 	int			vsm_fd;
-	struct VSM_head		*VSM_head;
-	void			*vsm_end;
-	unsigned		my_alloc_seq;
+	struct VSM_head		*head;
+	char			*b;
+	char			*e;
+
+	/* Stuff for backwards compat */
+	struct VSM_fantom	compat_vf;
 
 	/* Stuff relating the stats fields start here */
 
@@ -62,4 +61,3 @@ struct VSM_chunk *VSM_find_alloc(struct VSM_data *vd, const char *class,
 
 void VSC_Delete(struct VSM_data *vd);
 void VSL_Delete(struct VSM_data *vd);
-void VSL_Open_CallBack(struct VSM_data *vd);

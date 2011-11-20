@@ -289,6 +289,7 @@ main(int argc, char * const *argv)
 		exit(1);
 
 	VSC_C_main = VSC_Main(vd);
+	AN(VSC_C_main);
 
 	if (!(xml || json || once)) {
 		do_curses(vd, VSC_C_main, delay);

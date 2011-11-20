@@ -42,11 +42,14 @@ struct VSM_data;
 void VSC_Setup(struct VSM_data *vd);
 	/*
 	 * Setup vd for use with VSC functions.
+	 * Must be called once before any other VSC function is called
 	 */
 
 #define VSC_ARGS	"f:n:"
 #define VSC_n_USAGE	VSM_n_USAGE
-#define VSC_USAGE	VSC_N_USAGE
+#define VSC_f_USAGE	"[-f field_name,...]"
+#define VSC_USAGE	VSC_n_USAGE \
+			VSC_f_USAGE
 
 int VSC_Arg(struct VSM_data *vd, int arg, const char *opt);
 	/*
@@ -66,6 +69,7 @@ int VSC_Open(struct VSM_data *vd, int diag);
 struct VSC_C_main *VSC_Main(struct VSM_data *vd);
 	/*
 	 * return Main stats structure
+	 * returns NULL until child has been started.
 	 */
 
 struct VSC_point {

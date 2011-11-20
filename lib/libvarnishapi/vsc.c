@@ -79,7 +79,6 @@ VSC_Setup(struct VSM_data *vd)
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AZ(vd->vsc);
-	AZ(vd->vsl);
 	ALLOC_OBJ(vd->vsc, VSC_MAGIC);
 	AN(vd->vsc);
 	VTAILQ_INIT(&vd->vsc->sf_list);
@@ -225,14 +224,14 @@ VSC_Open(struct VSM_data *vd, int diag)
 struct VSC_C_main *
 VSC_Main(struct VSM_data *vd)
 {
-	struct VSM_chunk *sha;
+	struct VSM_fantom vf;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	CHECK_OBJ_NOTNULL(vd->vsc, VSC_MAGIC);
 
-	sha = VSM_find_alloc(vd, VSC_CLASS, "", "");
-	assert(sha != NULL);
-	return (VSM_PTR(sha));
+	if (!VSM_Get(vd, &vf, VSC_CLASS, "", ""))
+		return (NULL);
+	return ((void*)vf.b);
 }
 
 /*--------------------------------------------------------------------
@@ -285,7 +284,7 @@ iter_call(const struct vsc *vsc, VSC_iter_f *func, void *priv,
 
 #define VSC_DO(U,l,t)							\
 	static int							\
-	iter_##l(const struct vsc *vsc, struct VSM_chunk *sha,		\
+	iter_##l(const struct vsc *vsc, struct VSM_fantom *vf,		\
 	    VSC_iter_f *func, void *priv)				\
 	{								\
 		struct VSC_C_##l *st;					\
@@ -293,10 +292,9 @@ iter_call(const struct vsc *vsc, VSC_iter_f *func, void *priv,
 		int i;							\
 									\
 		CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);			\
-		CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);		\
-		st = VSM_PTR(sha);					\
+		st = vf->b; 						\
 		sp.class = t;						\
-		sp.ident = sha->ident;
+		sp.ident = vf->chunk->ident;
 
 #define VSC_F(nn,tt,ll,ff,dd,ee)					\
 		sp.name = #nn;						\
@@ -321,24 +319,22 @@ int
 VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv)
 {
 	struct vsc *vsc;
-	struct VSM_chunk *sha;
+	struct VSM_fantom vf;
 	int i;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	vsc = vd->vsc;
 	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
-
 	i = 0;
-	VSM_FOREACH(sha, vd) {
-		CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);
-		if (strcmp(sha->class, VSC_CLASS))
+	VSM_FOREACH_SAFE(&vf, vd) {
+		if (strcmp(vf.chunk->class, VSC_CLASS))
 			continue;
 		/*lint -save -e525 -e539 */
 #define VSC_F(n,t,l,f,d,e)
 #define VSC_DONE(a,b,c)
 #define VSC_DO(U,l,t)						\
-		if (!strcmp(sha->type, t)) {			\
-			i = iter_##l(vsc, sha, func, priv);	\
+		if (!strcmp(vf.chunk->type, t)) {		\
+			i = iter_##l(vsc, &vf, func, priv);	\
 			if (!i)					\
 				continue;			\
 		}

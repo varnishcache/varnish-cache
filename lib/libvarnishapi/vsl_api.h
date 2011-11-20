@@ -30,6 +30,10 @@
 
 #include "vqueue.h"
 
+#define	SLEEP_USEC			(50*1000)
+#define	TIMEOUT_USEC			(5*1000*1000)
+
+
 struct vsl_re_match {
 	unsigned			magic;
 #define VSL_RE_MATCH_MAGIC		0x4013151e
@@ -41,6 +45,8 @@ struct vsl_re_match {
 struct vsl {
 	unsigned		magic;
 #define VSL_MAGIC		0x7a31db38
+
+	struct VSM_fantom	vf;
 
 	/* Stuff relating the log records below here */
 

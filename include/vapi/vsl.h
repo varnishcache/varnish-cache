@@ -42,11 +42,12 @@ struct VSM_data;
 void VSL_Setup(struct VSM_data *vd);
 	/*
 	 * Setup vd for use with VSL functions.
+	 * Must be called once before any other VSL function is called.
 	 */
 
 int VSL_Open(struct VSM_data *vd, int diag);
 	/*
-	 * Attempt to open and map the shared memory file.
+	 * Attempt to open the VSM (unless -r given)
 	 * If diag is non-zero, diagnostics are emitted.
 	 * Returns:
 	 *	0 on success
