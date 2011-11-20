@@ -84,6 +84,10 @@ void mgt_sandbox_solaris_privsep(void);
 void mgt_SHM_Init(void);
 void mgt_SHM_static_alloc(const void *, ssize_t size,
     const char *class, const char *type, const char *ident);
+void mgt_SHM_Create(void);
+void mgt_SHM_Destroy(int keep);
+void mgt_SHM_Size_Adjust(void);
+
 
 /* stevedore_mgt.c */
 void STV_Config(const char *spec);

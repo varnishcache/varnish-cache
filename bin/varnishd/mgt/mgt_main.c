@@ -652,6 +652,9 @@ main(int argc, char * const *argv)
 	if (T_arg != NULL)
 		mgt_cli_telnet(T_arg);
 
+	/* Instantiate VSM */
+	mgt_SHM_Create();
+
 	MGT_Run();
 
 	if (pfh != NULL)

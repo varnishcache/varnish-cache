@@ -315,6 +315,9 @@ start_child(struct cli *cli)
 	heritage.std_fd = cp[1];
 	child_output = cp[0];
 
+	AN(heritage.vsm);
+	mgt_SHM_Size_Adjust();
+	AN(heritage.vsm);
 	AN(heritage.param);
 	if ((pid = fork()) < 0) {
 		perror("Could not fork child");
@@ -427,8 +430,7 @@ mgt_handle_panicstr(pid_t r)
 {
 	char time_str[30];
 
-	if (heritage.panic_str[0] == '\0')
-		return;
+	AN(heritage.panic_str[0]);
 	REPORT(LOG_ERR, "Child (%jd) Panic message: %s",
 	    (intmax_t)r, heritage.panic_str);
 
@@ -492,7 +494,13 @@ mgt_sigchld(const struct vev *e, int what)
 	REPORT(LOG_INFO, "%s", VSB_data(vsb));
 	VSB_delete(vsb);
 
-	mgt_handle_panicstr(r);
+	if (heritage.panic_str[0] != '\0') {
+		mgt_handle_panicstr(r);
+		mgt_SHM_Destroy(1);
+	} else {
+		mgt_SHM_Destroy(0);
+	}
+	mgt_SHM_Create();
 
 	child_pid = -1;
 

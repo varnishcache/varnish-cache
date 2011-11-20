@@ -317,7 +317,10 @@ VSM_common_delete(struct vsm_sc **scp)
 		free(vr->ptr);
 		FREE_OBJ(vr);
 	}
+
+	/* Mark VSM as abandoned */
 	sc->head->alloc_seq = 0;
+
 	VWMB();
 	FREE_OBJ(sc);
 }

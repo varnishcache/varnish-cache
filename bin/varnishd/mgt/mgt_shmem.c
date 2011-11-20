@@ -59,6 +59,9 @@
 
 #define PAN_CLASS "Panic"
 
+static void *mgt_vsm_p;
+static ssize_t mgt_vsm_l;
+
 /*--------------------------------------------------------------------
  * Use a bogo-VSM to hold master-copies of the VSM chunks the master
  * publishes, such as -S & -T arguments.
@@ -174,20 +177,31 @@ vsm_zerofile(const char *fn, ssize_t size)
 }
 
 /*--------------------------------------------------------------------
+ * Create a VSM instance
  */
 
-static void
-mgt_SHM_Setup(void)
+static size_t
+mgt_shm_size(void)
 {
-	uintmax_t size, ps;
-	void *p;
-	char fnbuf[64];
-	int vsm_fd;
+	size_t size, ps;
 
 	size = mgt_param.vsl_space + mgt_param.vsm_space;
 	ps = getpagesize();
 	size += ps - 1;
-	size &= ~(ps - 1);
+	size &= ~(ps - 1U);
+	return (size);
+}
+
+void
+mgt_SHM_Create(void)
+{
+	size_t size;
+	void *p;
+	char fnbuf[64];
+	int vsm_fd;
+
+	AZ(heritage.vsm);
+	size = mgt_shm_size();
 
 	bprintf(fnbuf, "%s.%jd", VSM_FILENAME, (intmax_t)getpid());
 
@@ -207,10 +221,25 @@ mgt_SHM_Setup(void)
 		exit (-1);
 	}
 
+	mgt_vsm_p = p;
+	mgt_vsm_l = size;
+
 	/* This may or may not work */
 	(void)mlock(p, size);
 
 	heritage.vsm = VSM_common_new(p, size);
+
+	VSM_common_copy(heritage.vsm, static_vsm);
+
+	heritage.param = VSM_common_alloc(heritage.vsm,
+	    sizeof *heritage.param, VSM_CLASS_PARAM, "", "");
+	AN(heritage.param);
+	*heritage.param = mgt_param;
+
+	heritage.panic_str_len = 64 * 1024;
+	heritage.panic_str = VSM_common_alloc(heritage.vsm,
+	    heritage.panic_str_len, PAN_CLASS, "", "");
+	AN(heritage.panic_str);
 
 	if (rename(fnbuf, VSM_FILENAME)) {
 		fprintf(stderr, "Rename failed %s -> %s: %s\n",
@@ -218,6 +247,41 @@ mgt_SHM_Setup(void)
 		(void)unlink(fnbuf);
 		exit (-1);
 	}
+}
+
+/*--------------------------------------------------------------------
+ * Destroy a VSM instance
+ */
+
+void
+mgt_SHM_Destroy(int keep)
+{
+
+	AN(heritage.vsm);
+	if (keep)
+		(void)rename(VSM_FILENAME, VSM_FILENAME ".keep");
+	heritage.panic_str = NULL;
+	heritage.panic_str_len = 0;
+	heritage.param = NULL;
+	VSM_common_delete(&heritage.vsm);
+	AZ(munmap(mgt_vsm_p, mgt_vsm_l));
+	mgt_vsm_p = NULL;
+	mgt_vsm_l = 0;
+}
+
+/*--------------------------------------------------------------------
+ * Destroy and recreate VSM if its size should change
+ */
+
+void
+mgt_SHM_Size_Adjust(void)
+{
+
+	AN(heritage.vsm);
+	if (mgt_vsm_l == mgt_shm_size())
+		return;
+	mgt_SHM_Destroy(0);
+	mgt_SHM_Create();
 }
 
 /*--------------------------------------------------------------------
@@ -233,6 +297,10 @@ mgt_shm_atexit(void)
 		VSM_common_delete(&heritage.vsm);
 }
 
+/*--------------------------------------------------------------------
+ * Initialize VSM subsystem
+ */
+
 void
 mgt_SHM_Init(void)
 {
@@ -243,21 +311,9 @@ mgt_SHM_Init(void)
 	if (i)
 		exit(i);
 
+	/* Create our static VSM instance */
 	static_vsm = VSM_common_new(static_vsm_buf, sizeof static_vsm_buf);
 
-	mgt_SHM_Setup();
-
+	/* Setup atexit handler */
 	AZ(atexit(mgt_shm_atexit));
-
-	VSM_common_copy(heritage.vsm, static_vsm);
-
-	heritage.param = VSM_common_alloc(heritage.vsm,
-	    sizeof *heritage.param, VSM_CLASS_PARAM, "", "");
-	AN(heritage.param);
-	*heritage.param = mgt_param;
-
-	heritage.panic_str_len = 64 * 1024;
-	heritage.panic_str = VSM_common_alloc(heritage.vsm,
-	    heritage.panic_str_len, PAN_CLASS, "", "");
-	AN(heritage.panic_str);
 }
