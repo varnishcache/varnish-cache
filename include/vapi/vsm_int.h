@@ -108,7 +108,7 @@ struct VSM_chunk {
 };
 
 struct VSM_head {
-#define VSM_HEAD_MARKER		"VSMHEAD0"	/* Incr. as version# *
+#define VSM_HEAD_MARKER		"VSMHEAD0"	/* Incr. as version# */
 	char			marker[8];
 	ssize_t			hdrsize;
 	ssize_t			shm_size;
