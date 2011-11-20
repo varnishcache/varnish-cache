@@ -82,6 +82,8 @@ void mgt_sandbox_solaris_privsep(void);
 
 /* mgt_shmem.c */
 void mgt_SHM_Init(void);
+void mgt_SHM_static_alloc(const void *, ssize_t size,
+    const char *class, const char *type, const char *ident);
 
 /* stevedore_mgt.c */
 void STV_Config(const char *spec);
@@ -108,9 +110,6 @@ extern unsigned mgt_vcc_err_unref;
 		fprintf(stderr, fmt "\n", __VA_ARGS__);	\
 		syslog(pri, fmt, __VA_ARGS__);		\
 	} while (0)
-
-#define VSM_Alloc(a, b, c, d)	VSM_common_alloc(heritage.vsm, a,b,c,d)
-#define VSM_Free(a)		VSM_common_free(heritage.vsm, a)
 
 #if defined(PTHREAD_CANCELED) || defined(PTHREAD_MUTEX_DEFAULT)
 #error "Keep pthreads out of in manager process"

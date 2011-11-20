@@ -43,7 +43,6 @@
 #include <unistd.h>
 
 #include "mgt/mgt.h"
-#include "common/heritage.h"
 #include "common/params.h"
 
 #include "vcli.h"
@@ -493,13 +492,9 @@ mgt_cli_secret(const char *S_arg)
 {
 	int i, fd;
 	char buf[BUFSIZ];
-	char *p;
 
 	/* Save in shmem */
-	i = strlen(S_arg);
-	p = VSM_Alloc(i + 1L, "Arg", "-S", "");
-	AN(p);
-	memcpy(p, S_arg, i + 1L);
+	mgt_SHM_static_alloc(S_arg, strlen(S_arg) + 1L, "Arg", "-S", "");
 
 	srandomdev();			/* XXX: why here ??? */
 	fd = open(S_arg, O_RDONLY);
@@ -527,7 +522,6 @@ mgt_cli_telnet(const char *T_arg)
 	struct vss_addr **ta;
 	int i, n, sock, good;
 	struct telnet *tn;
-	char *p;
 	struct vsb *vsb;
 	char abuf[VTCP_ADDRBUFSIZE];
 	char pbuf[VTCP_PORTBUFSIZE];
@@ -564,9 +558,7 @@ mgt_cli_telnet(const char *T_arg)
 	}
 	AZ(VSB_finish(vsb));
 	/* Save in shmem */
-	p = VSM_Alloc(VSB_len(vsb) + 1, "Arg", "-T", "");
-	AN(p);
-	memcpy(p, VSB_data(vsb), VSB_len(vsb) + 1);
+	mgt_SHM_static_alloc(VSB_data(vsb), VSB_len(vsb) + 1, "Arg", "-T", "");
 	VSB_delete(vsb);
 }
 

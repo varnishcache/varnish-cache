@@ -57,7 +57,31 @@
 #define MAP_NOSYNC 0 /* XXX Linux */
 #endif
 
-static int vsm_fd = -1;
+#define PAN_CLASS "Panic"
+
+/*--------------------------------------------------------------------
+ * Use a bogo-VSM to hold master-copies of the VSM chunks the master
+ * publishes, such as -S & -T arguments.
+ */
+
+static struct vsm_sc *static_vsm;
+static char static_vsm_buf[1024];
+
+void
+mgt_SHM_static_alloc(const void *ptr, ssize_t size,
+    const char *class, const char *type, const char *ident)
+{
+	void *p;
+
+	p = VSM_common_alloc(static_vsm, size, class, type, ident);
+	AN(p);
+	memcpy(p, ptr, size);
+	if (heritage.vsm != NULL) {
+		p = VSM_common_alloc(heritage.vsm, size, class, type, ident);
+		AN(p);
+		memcpy(p, ptr, size);
+	}
+}
 
 /*--------------------------------------------------------------------
  * Check that we are not started with the same -n argument as an already
@@ -150,35 +174,20 @@ vsm_zerofile(const char *fn, ssize_t size)
 }
 
 /*--------------------------------------------------------------------
- * Exit handler that clears the owning pid from the SHMLOG
  */
 
-static
-void
-mgt_shm_atexit(void)
+static void
+mgt_SHM_Setup(void)
 {
-
-	if (heritage.vsm != NULL)
-		VSM_common_delete(&heritage.vsm);
-}
-
-void
-mgt_SHM_Init(void)
-{
-	int i;
 	uintmax_t size, ps;
 	void *p;
 	char fnbuf[64];
+	int vsm_fd;
 
 	size = mgt_param.vsl_space + mgt_param.vsm_space;
 	ps = getpagesize();
 	size += ps - 1;
 	size &= ~(ps - 1);
-
-	/* Collision check with already running varnishd */
-	i = vsm_n_check();
-	if (i)
-		exit(i);
 
 	bprintf(fnbuf, "%s.%jd", VSM_FILENAME, (intmax_t)getpid());
 
@@ -190,6 +199,8 @@ mgt_SHM_Init(void)
 	    PROT_READ|PROT_WRITE,
 	    MAP_HASSEMAPHORE | MAP_NOSYNC | MAP_SHARED,
 	    vsm_fd, 0);
+
+	AZ(close(vsm_fd));
 
 	if (p == MAP_FAILED) {
 		fprintf(stderr, "Mmap error %s: %s\n", fnbuf, strerror(errno));
@@ -207,16 +218,46 @@ mgt_SHM_Init(void)
 		(void)unlink(fnbuf);
 		exit (-1);
 	}
+}
+
+/*--------------------------------------------------------------------
+ * Exit handler that clears the owning pid from the SHMLOG
+ */
+
+static
+void
+mgt_shm_atexit(void)
+{
+
+	if (heritage.vsm != NULL)
+		VSM_common_delete(&heritage.vsm);
+}
+
+void
+mgt_SHM_Init(void)
+{
+	int i;
+
+	/* Collision check with already running varnishd */
+	i = vsm_n_check();
+	if (i)
+		exit(i);
+
+	static_vsm = VSM_common_new(static_vsm_buf, sizeof static_vsm_buf);
+
+	mgt_SHM_Setup();
 
 	AZ(atexit(mgt_shm_atexit));
 
-	heritage.param =
-	    VSM_Alloc(sizeof *heritage.param, VSM_CLASS_PARAM, "", "");
+	VSM_common_copy(heritage.vsm, static_vsm);
+
+	heritage.param = VSM_common_alloc(heritage.vsm,
+	    sizeof *heritage.param, VSM_CLASS_PARAM, "", "");
 	AN(heritage.param);
 	*heritage.param = mgt_param;
 
 	heritage.panic_str_len = 64 * 1024;
-	heritage.panic_str =
-	    VSM_Alloc(heritage.panic_str_len, PAN_CLASS, "", "");
+	heritage.panic_str = VSM_common_alloc(heritage.vsm,
+	    heritage.panic_str_len, PAN_CLASS, "", "");
 	AN(heritage.panic_str);
 }

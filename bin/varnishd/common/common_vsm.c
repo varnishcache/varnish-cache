@@ -321,3 +321,23 @@ VSM_common_delete(struct vsm_sc **scp)
 	VWMB();
 	FREE_OBJ(sc);
 }
+
+/*--------------------------------------------------------------------
+ * Copy one VSM to another
+ */
+
+void
+VSM_common_copy(struct vsm_sc *to, const struct vsm_sc *from)
+{
+	struct vsm_range *vr;
+	void *p;
+
+	CHECK_OBJ_NOTNULL(to, VSM_SC_MAGIC);
+	CHECK_OBJ_NOTNULL(from, VSM_SC_MAGIC);
+	VTAILQ_FOREACH(vr, &from->r_used, list) {
+		p = VSM_common_alloc(to, vr->chunk->len,
+		    vr->chunk->class, vr->chunk->type, vr->chunk->ident);
+		AN(p);
+		memcpy(p, vr->chunk + 1, vr->chunk->len);
+	}
+}

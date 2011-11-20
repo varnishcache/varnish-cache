@@ -48,9 +48,6 @@ struct cli;
 extern pid_t mgt_pid;
 #define ASSERT_MGT() do { assert(getpid() == mgt_pid);} while (0)
 
-/* mgt_shmem.c */
-#define PAN_CLASS "Panic"
-
 /* varnishd.c */
 extern struct vsb *vident;		// XXX: -> heritage ?
 int Symbol_Lookup(struct vsb *vsb, void *ptr);
@@ -77,6 +74,7 @@ void *VSM_common_alloc(struct vsm_sc *sc, ssize_t size,
     const char *class, const char *type, const char *ident);
 void VSM_common_free(struct vsm_sc *sc, void *ptr);
 void VSM_common_delete(struct vsm_sc **sc);
+void VSM_common_copy(struct vsm_sc *to, const struct vsm_sc *from);
 
 /*---------------------------------------------------------------------
  * Generic power-2 rounding macros
