@@ -153,7 +153,7 @@ vsl_nextlog(struct vsl *vsl, uint32_t **pp)
 		assert(vsl->rbuflen >= 8);
 		i = read(vsl->r_fd, vsl->rbuf, 8);
 		if (i == 0)
-			return (0);
+			return (-1);
 		if (i != 8)
 			return (-1);
 		l = 2 + VSL_WORDS(VSL_LEN(vsl->rbuf));
