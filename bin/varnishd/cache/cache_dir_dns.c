@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2009-2010 Varnish Software AS
+ * Copyright (c) 2009-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Kristian Lyngstol <kristian@redpill-linpro.com>
