@@ -289,7 +289,7 @@ VSM_common_free(struct vsm_sc *sc, void *ptr)
 		}
 	}
 	/* Panic */
-	assert(ptr == "Bogus pointer freed");
+	assert(ptr == NULL);
 }
 
 /*--------------------------------------------------------------------
