@@ -93,6 +93,10 @@ vsl_r_arg(const struct VSM_data *vd, const char *opt)
 	if (vd->vsl->r_fd < 0) {
 		perror(opt);
 		return (-1);
+	} else if (vd->vsl->rbuflen == 0) {
+		vd->vsl->rbuf = malloc(1024);
+		AN(vd->vsl->rbuf);
+		vd->vsl->rbuflen = 1024;
 	}
 	return (1);
 }
