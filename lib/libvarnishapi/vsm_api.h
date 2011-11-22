@@ -29,13 +29,13 @@
  */
 
 struct vsc;
+struct vsb;
 
 struct VSM_data {
 	unsigned		magic;
 #define VSM_MAGIC		0x6e3bd69b
 
-	VSM_diag_f		*diag;
-	void			*priv;
+	struct vsb		*diag;
 
 	char			*n_opt;
 	char			*fname;
