@@ -75,7 +75,7 @@ VSM_New(void)
 
 /*--------------------------------------------------------------------*/
 
-static int
+int
 vsm_diag(struct VSM_data *vd, const char *fmt, ...)
 {
 	va_list ap;

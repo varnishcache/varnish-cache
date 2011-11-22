@@ -83,7 +83,7 @@ int VSM_n_Arg(struct VSM_data *vd, const char *n_arg);
 	 * Can also be, and normally is done through VSC_Arg()/VSL_Arg().
 	 * Returns:
 	 *	 1 on success
-	 *	 <0 on failure, use VSM_Error() to get diagnostics.
+	 *	 <0 on failure, VSM_Error() returns diagnostic string
 	 */
 
 const char *VSM_Name(const struct VSM_data *vd);
@@ -97,7 +97,7 @@ int VSM_Open(struct VSM_data *vd);
 	 * If diag is non-zero, diagnostics are emitted.
 	 * Returns:
 	 *	0 on success
-	 *	<0 on failure, use VSM_Error() to get diagnostics.
+	 *	<0 on failure, VSM_Error() returns diagnostic string
 	 */
 
 int VSM_Abandonned(const struct VSM_data *vd);

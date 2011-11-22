@@ -67,7 +67,6 @@ struct vsl {
 
 	unsigned		flags;
 #define F_SEEN_IX		(1 << 0)
-#define F_NON_BLOCKING		(1 << 1)
 
 	/*
 	 * Bit map of programatically selected tags, that cannot be suppressed.
@@ -88,4 +87,6 @@ struct vsl {
 	unsigned long		skip;
 	unsigned long		keep;
 };
+
+struct vsl *vsl_Setup(struct VSM_data *vd);
 

@@ -47,14 +47,10 @@ struct VSM_data {
 	char			*b;
 	char			*e;
 
-	/* Stuff for backwards compat */
-	struct VSM_fantom	compat_vf;
-
-	/* Stuff relating the stats fields start here */
-
 	struct vsc		*vsc;
 	struct vsl		*vsl;
 };
 
+int vsm_diag(struct VSM_data *vd, const char *fmt, ...);
 void VSC_Delete(struct VSM_data *vd);
 void VSL_Delete(struct VSM_data *vd);
