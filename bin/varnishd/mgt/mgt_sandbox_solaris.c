@@ -45,6 +45,7 @@
 #include "mgt/mgt.h"
 
 #include "common/heritage.h"
+#include "common/params.h"
 
 /*--------------------------------------------------------------------
  * SOLARIS PRIVILEGES: Note on use of symbolic PRIV_* constants
