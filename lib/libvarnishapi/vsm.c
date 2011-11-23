@@ -113,7 +113,7 @@ VSM_n_Arg(struct VSM_data *vd, const char *opt)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	AN(vd->n_opt);
+	AN(opt);
 
 	REPLACE(vd->n_opt, opt);
 	if (VIN_N_Arg(vd->n_opt, NULL, NULL, &vd->fname))
