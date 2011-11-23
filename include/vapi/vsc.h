@@ -88,13 +88,13 @@ int VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv);
 	 * Iterate over all statistics counters, calling "func" for
 	 * each counter not suppressed by any "-f" arguments.
 	 *
- 	 * Func is called with pt == NULL, whenever VSM allocations
+	 * Func is called with pt == NULL, whenever VSM allocations
 	 * change (child restart, allocations/deallocations)
 	 *
 	 * Returns:
-	 * 	!=0:	func returned non-zero
+	 *	!=0:	func returned non-zero
 	 *	-1:	No VSC's available
-	 *	0: 	Done
+	 *	0:	Done
 	 */
 
 /**********************************************************************

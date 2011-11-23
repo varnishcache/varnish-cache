@@ -50,8 +50,9 @@
 struct vsc_pt {
 	unsigned		magic;
 #define VSC_PT_MAGIC		0xa4ff159a
-	struct VSC_point	point;
 	VTAILQ_ENTRY(vsc_pt)	list;
+	struct VSM_fantom	vf;
+	struct VSC_point	point;
 };
 
 struct vsc_sf {
@@ -101,15 +102,10 @@ static void
 vsc_delete_pts(struct vsc *vsc)
 {
 	struct vsc_pt *pt;
-	struct VSM_fantom *vf = NULL;
 
 	while(!VTAILQ_EMPTY(&vsc->pt_list)) {
 		pt = VTAILQ_FIRST(&vsc->pt_list);
 		VTAILQ_REMOVE(&vsc->pt_list, pt, list);
-		if (pt->point.vf != vf) {
-			vf = pt->point.vf;
-			free(vf);
-		}
 		FREE_OBJ(pt);
 	}
 }
@@ -243,129 +239,13 @@ VSC_Main(struct VSM_data *vd)
 	return ((void*)vsc->main_fantom.b);
 }
 
-#if 0
-/*--------------------------------------------------------------------
- * -1 -> unknown stats encountered.
- */
-
-static inline int
-iter_test(const char *s1, const char *s2, int wc)
-{
-
-	if (s1 == NULL)
-		return (0);
-	if (!wc)
-		return (strcmp(s1, s2));
-	for (; *s1 != '\0' && *s1 == *s2; s1++, s2++)
-		continue;
-	return (*s1 != '\0');
-}
-
-static int
-iter_call(const struct vsc *vsc, VSC_iter_f *func, void *priv,
-    const struct VSC_point *const sp)
-{
-	struct vsc_sf *sf;
-	struct vsc_pt *pt;
-	int good;
-
-	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
-
-	ALLOC_OBJ(pt, VSC_PT_MAGIC);
-	AN(pt);
-
-	if (VTAILQ_EMPTY(&vsc->sf_list)) {
-		VTAILQ_INSERT_TAIL(&vsc->pt_list, pt, list);
-		return (func(priv, sp));
-	}
-
-	good = 0;
-	VTAILQ_FOREACH(sf, &vsc->sf_list, list) {
-		if (iter_test(sf->class, sp->class, sf->flags & VSC_SF_CL_WC))
-			continue;
-		if (iter_test(sf->ident, sp->ident, sf->flags & VSC_SF_ID_WC))
-			continue;
-		if (iter_test(sf->name, sp->desc->name, sf->flags & VSC_SF_NM_WC))
-			continue;
-		if (sf->flags & VSC_SF_EXCL)
-			good = 0;
-		else
-			good = 1;
-	}
-	if (!good)
-		return (0);
-	return (func(priv, sp));
-}
-
-#define VSC_DO(U,l,t)							\
-	static void							\
-	iter_##l(const struct vsc *vsc, struct VSM_fantom *vf,		\
-	    const struct VSC_desc *descs)				\
-	{								\
-		struct VSC_C_##l *st;					\
-		struct VSM_fantom *vf2;					\
-		int i;							\
-									\
-		CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);			\
-		st = vf->b;						\
-		sp.class = t;						\
-		sp.ident = vf->chunk->ident;				\
-		sp.desc = descs++;					\
-		vf2 = malloc(sizeof *vf2);				\
-		AN(vf2);						\
-		memcpy(vf2, vf, sizeof *vf2);
-
-#define VSC_F(nn,tt,ll,ff,dd,ee)					\
-		sp.ptr = &st->nn;					\
-		sp.vf = vf2;						\
-		i = iter_call(vsc, &sp);				\
-		if (i)							\
-			return(i);
-
-#define VSC_DONE(U,l,t)							\
-		return (0);						\
-	}
-
-#include "tbl/vsc_all.h"
-#undef VSC_DO
-#undef VSC_F
-#undef VSC_DONE
-
-static void
-vsc_build_pt_list(struct VSM_data *vd)
-{
-	struct vsc *vsc = vsc_setup(vd);
-	struct VSM_fantom vf;
-
-	vsc_delete_pts(vsc *vsc);
-
-	VSM_FOREACH_SAFE(&vf, vd) {
-		if (strcmp(vf.chunk->class, VSC_CLASS))
-			continue;
-		/*lint -save -e525 -e539 */
-#define VSC_F(n,t,l,f,d,e)
-#define VSC_DONE(a,b,c)
-#define VSC_DO(U,l,t)						\
-		if (!strcmp(vf.chunk->type, t))			\
-			iter_##l(vsc, &vf, VSC_desc_##l);
-#include "tbl/vsc_all.h"
-#undef VSC_F
-#undef VSC_DO
-#undef VSC_DONE
-		/*lint -restore */
-		break;
-	}
-	return (i);
-}
-#endif
-
 /*--------------------------------------------------------------------
  */
 
 static void
 vsc_add_pt(struct vsc *vsc, const char *class, const char *ident,
     const struct VSC_desc *desc, const volatile void *ptr,
-    struct VSM_fantom *vf)
+    const struct VSM_fantom *vf)
 {
 	struct vsc_pt *pt;
 
@@ -375,7 +255,8 @@ vsc_add_pt(struct vsc *vsc, const char *class, const char *ident,
 	pt->point.ident = ident;
 	pt->point.desc = desc;
 	pt->point.ptr = ptr;
-	pt->point.vf = vf;
+	pt->point.vf = &pt->vf;
+	pt->vf = *vf;
 	VTAILQ_INSERT_TAIL(&vsc->pt_list, pt, list);
 }
 
@@ -385,18 +266,14 @@ vsc_add_pt(struct vsc *vsc, const char *class, const char *ident,
 	    const struct VSC_desc *descs)				\
 	{								\
 		struct VSC_C_##l *st;					\
-		struct VSM_fantom *vf2;					\
 		const char *class = t;					\
 									\
 		CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);			\
 		st = vf->b;						\
-		vf2 = malloc(sizeof *vf2);				\
-		AN(vf2);						\
-		memcpy(vf2, vf, sizeof *vf2);
 
 #define VSC_F(nn,tt,ll,ff,dd,ee)					\
 		vsc_add_pt(vsc, class, vf->chunk->ident, descs++,	\
-		    &st->nn, vf2);
+		    &st->nn, vf);
 
 #define VSC_DONE(U,l,t)							\
 	}
@@ -408,6 +285,8 @@ vsc_add_pt(struct vsc *vsc, const char *class, const char *ident,
 
 /*--------------------------------------------------------------------
  */
+
+#include <stdio.h>
 
 static void
 vsc_build_pt_list(struct VSM_data *vd)
@@ -432,8 +311,57 @@ vsc_build_pt_list(struct VSM_data *vd)
 #undef VSC_DONE
 		/*lint -restore */
 	}
+}
 
-	/* XXX: filter pt list */
+/*--------------------------------------------------------------------
+ */
+
+static inline int
+iter_test(const char *s1, const char *s2, int wc)
+{
+
+	if (s1 == NULL)
+		return (0);
+	if (!wc)
+		return (strcmp(s1, s2));
+	for (; *s1 != '\0' && *s1 == *s2; s1++, s2++)
+		continue;
+	return (*s1 != '\0');
+}
+
+static void
+vsc_filter_pt_list(struct VSM_data *vd)
+{
+	struct vsc *vsc = vsc_setup(vd);
+	struct vsc_sf *sf;
+	struct vsc_pt *pt, *pt2;
+	VTAILQ_HEAD(, vsc_pt)	pt_list;
+
+	if (VTAILQ_EMPTY(&vsc->sf_list))
+		return;
+
+	VTAILQ_INIT(&pt_list);
+	VTAILQ_FOREACH(sf, &vsc->sf_list, list) {
+		VTAILQ_FOREACH_SAFE(pt, &vsc->pt_list, list, pt2) {
+			if (iter_test(sf->class, pt->point.class,
+			    sf->flags & VSC_SF_CL_WC))
+				continue;
+			if (iter_test(sf->ident, pt->point.ident,
+			    sf->flags & VSC_SF_ID_WC))
+				continue;
+			if (iter_test(sf->name, pt->point.desc->name,
+			    sf->flags & VSC_SF_NM_WC))
+				continue;
+			VTAILQ_REMOVE(&vsc->pt_list, pt, list);
+			if (sf->flags & VSC_SF_EXCL) {
+				FREE_OBJ(pt);
+			} else {
+				VTAILQ_INSERT_TAIL(&pt_list, pt, list);
+			}
+		}
+	}
+	vsc_delete_pts(vsc);
+	VTAILQ_CONCAT(&vsc->pt_list, &pt_list, list);
 }
 
 /*--------------------------------------------------------------------
@@ -456,8 +384,10 @@ VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv)
 			}
 		}
 		AN(vd->head);
-		func(priv, NULL);
+		/* Tell app that list will be nuked */
+		(void)func(priv, NULL);
 		vsc_build_pt_list(vd);
+		vsc_filter_pt_list(vd);
 	}
 	AN(vd->head);
 	VTAILQ_FOREACH(pt, &vsc->pt_list, list) {

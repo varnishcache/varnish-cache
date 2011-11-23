@@ -198,11 +198,7 @@ varnishlog_thread(void *priv)
 
 	CAST_OBJ_NOTNULL(v, priv, VARNISH_MAGIC);
 	vsl = VSM_New();
-	VSL_Setup(vsl);
 	(void)VSL_Arg(vsl, 'n', v->workdir);
-	while (v->pid  && VSL_Open(vsl, 0) != 0) {
-		assert(usleep(VSL_SLEEP_USEC) == 0 || errno == EINTR);
-	}
 	while (v->pid) {
 		if (VSL_Dispatch(vsl, h_addlog, v) <= 0)
 			break;
@@ -332,7 +328,6 @@ varnish_launch(struct varnish *v)
 	char *r;
 
 	v->vd = VSM_New();
-	VSC_Setup(v->vd);
 
 	/* Create listener socket */
 	nap = VSS_resolve("127.0.0.1", "0", &ap);
@@ -457,7 +452,7 @@ varnish_launch(struct varnish *v)
 	free(r);
 
 	(void)VSL_Arg(v->vd, 'n', v->workdir);
-	AZ(VSC_Open(v->vd, 1));
+	AZ(VSM_Open(v->vd));
 }
 
 /**********************************************************************
@@ -696,6 +691,8 @@ do_stat_cb(void *priv, const struct VSC_point * const pt)
 	const char *p = sp->target;
 	int i;
 
+	if (pt == NULL)
+		return(0);
 	if (strcmp(pt->class, "")) {
 		i = strlen(pt->class);
 		if (memcmp(pt->class, p, i))
@@ -714,10 +711,10 @@ do_stat_cb(void *priv, const struct VSC_point * const pt)
 			return (0);
 		p++;
 	}
-	if (strcmp(pt->name, p))
+	if (strcmp(pt->desc->name, p))
 		return (0);
 
-	assert(!strcmp(pt->fmt, "uint64_t"));
+	assert(!strcmp(pt->desc->fmt, "uint64_t"));
 	sp->val = *(const volatile uint64_t*)pt->ptr;
 	return (1);
 }
@@ -740,12 +737,12 @@ varnish_expect(const struct varnish *v, char * const *av) {
 		good = VSC_Iter(v->vd, do_stat_cb, &sp);
 		if (good < 0) {
 			VSM_Close(v->vd);
-			j = VSM_Open(v->vd, 0);
+			j = VSM_Open(v->vd);
 			if (j == 0)
 				continue;
 			do {
 				(void)usleep(100000);
-				j = VSM_Open(v->vd, 0);
+				j = VSM_Open(v->vd);
 				i++;
 			} while(i < 10 && j < 0);
 			if (j < 0)

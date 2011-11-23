@@ -86,6 +86,7 @@ vsm_diag(struct VSM_data *vd, const char *fmt, ...)
 	if (vd->diag == NULL)
 		vd->diag = VSB_new_auto();
 	AN(vd->diag);
+	VSB_clear(vd->diag);
 	va_start(ap, fmt);
 	VSB_vprintf(vd->diag, fmt, ap);
 	va_end(ap);
@@ -328,6 +329,8 @@ VSM_StillValid(const struct VSM_data *vd, struct VSM_fantom *vf)
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AN(vf);
+	if (!vd->head)
+		return (0);
 	if (!vd->head->alloc_seq)
 		return (0);
 	if (vf->priv == vd->head->alloc_seq)

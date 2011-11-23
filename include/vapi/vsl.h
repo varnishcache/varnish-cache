@@ -36,7 +36,7 @@
  *	VSL_Arg(vd, "r", "/some/file");
  * and once VSL_Dispatch()/VSL_NextSLT() will indicate EOF by returning -2.
  * Another file can then be opened with VSL_Arg() and processed.
- * 
+ *
  */
 
 #ifndef VAPI_VSL_H_INCLUDED

@@ -296,7 +296,7 @@ VSL_NextSLT(struct VSM_data *vd, uint32_t **pp, uint64_t *bits)
 				if (vrm->tag == t) {
 					i = VRE_exec(vrm->re, VSL_DATA(p),
 					    VSL_LEN(p), 0, 0, NULL, 0, NULL);
-					if (i >= 0) 	/* XXX ?? */
+					if (i >= 0)	/* XXX ?? */
 						*bits |= (uintmax_t)1 << j;
 				}
 				j++;

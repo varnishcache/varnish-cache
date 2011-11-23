@@ -160,10 +160,10 @@ vsl_ix_arg(struct VSM_data *vd, const char *opt, int arg)
 			else
 				vbit_clr(vsl->vbm_supress, i);
 		} else if (i == -2) {
-			return (vsm_diag(vd, 
+			return (vsm_diag(vd,
 			    "\"%*.*s\" matches multiple tags\n", l, l, b));
 		} else {
-			return (vsm_diag(vd, 
+			return (vsm_diag(vd,
 			    "Could not match \"%*.*s\" to any tag\n", l, l, b));
 		}
 	}
@@ -243,10 +243,10 @@ vsl_k_arg(struct VSM_data *vd, const char *opt)
 	char *end;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	if (*opt == '\0') 
+	if (*opt == '\0')
 		return (vsm_diag(vd, "number required for -k\n"));
 	vsl->keep = strtoul(opt, &end, 10);
-	if (*end != '\0') 
+	if (*end != '\0')
 		return (vsm_diag(vd, "invalid number for -k\n"));
 	return (1);
 }

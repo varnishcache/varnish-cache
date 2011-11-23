@@ -846,7 +846,6 @@ main(int argc, char *argv[])
 	format = "%h %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-agent}i\"";
 
 	vd = VSM_New();
-	VSL_Setup(vd);
 
 	while ((c = getopt(argc, argv, VSL_ARGS "aDP:Vw:fF:")) != -1) {
 		switch (c) {
@@ -907,8 +906,10 @@ main(int argc, char *argv[])
 
 	VSL_Arg(vd, 'c', optarg);
 
-	if (VSL_Open(vd, 1))
-		exit(1);
+	if (VSM_Open(vd)) {
+		fprintf(stderr, "%s\n", VSM_Error(vd));
+		return (-1);
+	}
 
 	if (P_arg && (pfh = VPF_Open(P_arg, 0644, NULL)) == NULL) {
 		perror(P_arg);

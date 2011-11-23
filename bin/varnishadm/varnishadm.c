@@ -282,25 +282,27 @@ n_arg_sock(const char *n_arg)
 	struct VSM_data *vsd;
 	char *p;
 	int sock;
+	struct VSM_fantom vt;
 
 	vsd = VSM_New();
 	assert(VSL_Arg(vsd, 'n', n_arg));
-	if (VSM_Open(vsd, 1)) {
-		fprintf(stderr, "Could not open shared memory\n");
+	if (VSM_Open(vsd)) {
+		fprintf(stderr, "%s\n", VSM_Error(vsd));
 		return (-1);
 	}
 	if (T_arg == NULL) {
-		p = VSM_Find_Chunk(vsd, "Arg", "-T", "", NULL);
-		if (p == NULL)  {
+		if (VSM_Get(vsd, &vt, "Arg", "-T", "")) {
 			fprintf(stderr, "No -T arg in shared memory\n");
 			return (-1);
 		}
-		T_start = T_arg = strdup(p);
+		T_start = T_arg = strdup(vt.b);
 	}
 	if (S_arg == NULL) {
-		p = VSM_Find_Chunk(vsd, "Arg", "-S", "", NULL);
-		if (p != NULL)
-			S_arg = strdup(p);
+		if (VSM_Get(vsd, &vt, "Arg", "-S", "")) {
+			fprintf(stderr, "No -S arg in shared memory\n");
+			return (-1);
+		}
+		S_arg = strdup(vt.b);
 	}
 	sock = -1;
 	while (*T_arg) {
