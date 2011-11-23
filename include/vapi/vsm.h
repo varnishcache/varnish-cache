@@ -100,16 +100,16 @@ int VSM_Open(struct VSM_data *vd);
 	 *	<0 on failure, VSM_Error() returns diagnostic string
 	 */
 
-int VSM_Abandonned(const struct VSM_data *vd);
+int VSM_Abandoned(const struct VSM_data *vd);
 	/*
-	 * Find out if the VSM file has been abandonned or closed and should
+	 * Find out if the VSM file has been abandoned or closed and should
 	 * be reopened.  This function calls stat(2) and should only be
 	 * used when lack of activity or invalidation of fantoms indicate
 	 * abandonment.
 	 *
 	 * Returns:
 	 *	0  No reopen needed.
-	 *	1  VSM abandonned.
+	 *	1  VSM abandoned.
 	 */
 
 void VSM_Close(struct VSM_data *vd);
@@ -132,7 +132,7 @@ int VSM__itern(const struct VSM_data *vd, struct VSM_fantom *vf);
 int VSM_StillValid(const struct VSM_data *vd, struct VSM_fantom *vf);
 	/*
 	 * This is a cheap syscall-less check to see if the fantom is still
-	 * valid.  Further checking with VSM_Abandonned() may be a good
+	 * valid.  Further checking with VSM_Abandoned() may be a good
 	 * idea.
 	 *
 	 * Return:

@@ -245,7 +245,7 @@ VSM_Close(struct VSM_data *vd)
 /*--------------------------------------------------------------------*/
 
 int
-VSM_Abandonned(const struct VSM_data *vd)
+VSM_Abandoned(const struct VSM_data *vd)
 {
 	struct stat st;
 
@@ -287,7 +287,7 @@ VSM__itern(const struct VSM_data *vd, struct VSM_fantom *vf)
 	AN(vf);
 
 	if (vd->head->alloc_seq == 0)
-		return (0);	/* abandonned VSM */
+		return (0);	/* abandoned VSM */
 	else if (vf->priv != 0) {
 		if (vf->priv != vd->head->alloc_seq)
 			return (0);
@@ -312,7 +312,7 @@ VSM__itern(const struct VSM_data *vd, struct VSM_fantom *vf)
 	vf->e = (char*)vf->b + vf->chunk->len;
 
 	if (vf->priv == 0)
-		return (0);	/* abandonned VSM */
+		return (0);	/* abandoned VSM */
 	if (vf->b == vf->e)
 		return (0);	/* freed chunk */
 	AN(vf->priv);

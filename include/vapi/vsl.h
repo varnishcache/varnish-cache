@@ -121,7 +121,7 @@ int VSL_Dispatch(struct VSM_data *vd, VSL_handler_f *func, void *priv);
 	 * Return values:
 	 *	!=0:	Non-zero return value from func()
 	 *	0:	no VSL records.
-	 *	-1:	VSL chunk was abandonned.
+	 *	-1:	VSL chunk was abandoned.
 	 *	-2:	End of file (-r) / -k arg exhausted / "done"
 	 */
 
@@ -132,7 +132,7 @@ int VSL_NextSLT(struct VSM_data *lh, uint32_t **pp, uint64_t *bitmap);
 	 * Return values:
 	 *	1:	Valid VSL record at *pp
 	 *	0:	no VSL records
-	 *	-1:	VSL cunkwas abandonned
+	 *	-1:	VSL chunk was abandoned
 	 *	-2:	End of file (-r) / -k arg exhausted / "done"
 	 */
 

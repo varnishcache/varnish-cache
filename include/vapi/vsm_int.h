@@ -50,7 +50,7 @@
  *	When manager abandons VSM file, alloc_seq is set to zero, which
  *	never happens in any other circumstances.
  *
- *	If a manager is started and finds and old abandonned VSM segment
+ *	If a manager is started and finds and old abandoned VSM segment
  *	it will zero the alloc_seq in it, before replacing the file.
  *
  * Subscribers will have to monitor two things to make sure they have
