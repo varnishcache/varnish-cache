@@ -206,12 +206,10 @@ struct acct {
 #define L0(t, n)
 #define L1(t, n)		t n;
 #define VSC_F(n, t, l, f, e,d)	L##l(t, n)
-#define VSC_DO_MAIN
 struct dstat {
-#include "tbl/vsc_fields.h"
+#include "tbl/vsc_f_main.h"
 };
 #undef VSC_F
-#undef VSC_DO_MAIN
 #undef L0
 #undef L1
 
