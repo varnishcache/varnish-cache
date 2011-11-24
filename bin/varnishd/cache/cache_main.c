@@ -103,7 +103,7 @@ child_main(void)
 
 	THR_SetName("cache-main");
 
-	VSL_Init();	/* First, LCK needs it. */
+	VSM_Init();	/* First, LCK needs it. */
 
 	LCK_Init();	/* Second, locking */
 

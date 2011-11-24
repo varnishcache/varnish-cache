@@ -37,7 +37,7 @@
  * In particular we want the readers to seamlessly jump from one VSM instance
  * to another when the child restarts.
  *
- * The VSM life-cycle there is:
+ * The VSM segment life-cycle is:
  *
  *	Manager creates VSM file under temp name
  *
@@ -54,7 +54,7 @@
  *	it will zero the alloc_seq in it, before replacing the file.
  *
  * Subscribers will have to monitor two things to make sure they have
- * the current VSM instance:  The alloc_seq field and the inode number
+ * the current VSM instance:  The alloc_seq field and the dev+inode
  * of the path-name.  The former check is by far the cheaper and the
  * latter check should only be employed when lack of activity in the
  * VSM segment raises suspicion that something has happened.

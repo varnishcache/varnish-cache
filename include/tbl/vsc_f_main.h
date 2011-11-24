@@ -359,3 +359,38 @@ VSC_F(vmods,		uint64_t, 0, 'i', "Loaded VMODs", "")
 
 VSC_F(n_gzip,			uint64_t, 0, 'a', "Gzip operations", "")
 VSC_F(n_gunzip,			uint64_t, 0, 'a', "Gunzip operations", "")
+
+/**********************************************************************/
+
+VSC_F(vsm_free,			uint64_t, 0, 'g',
+    "Free VSM space",
+	"Number of bytes free in the shared memory used to communicate"
+	" with tools like varnishstat, varnishlog etc."
+)
+
+VSC_F(vsm_used,			uint64_t, 0, 'g',
+    "Used VSM space",
+	"Number of bytes used in the shared memory used to communicate"
+	" with tools like varnishstat, varnishlog etc."
+)
+
+VSC_F(vsm_cooling,		uint64_t, 0, 'g',
+    "Cooling VSM space",
+	"Number of bytes which will soon (max 1 minute) be freed"
+	" in the shared memory used to communicate"
+	" with tools like varnishstat, varnishlog etc."
+)
+
+VSC_F(vsm_overflow,		uint64_t, 0, 'g',
+    "Overflow VSM space",
+	"Number of bytes which does not fit"
+	" in the shared memory used to communicate"
+	" with tools like varnishstat, varnishlog etc."
+)
+
+VSC_F(vsm_overflowed,		uint64_t, 0, 'c',
+    "Overflowed VSM space",
+	"Total number of bytes which did not fit"
+	" in the shared memory used to communicate"
+	" with tools like varnishstat, varnishlog etc."
+)

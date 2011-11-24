@@ -38,6 +38,7 @@
 #include "cache_backend.h"	// For w->vbc
 
 #include "vmb.h"
+#include "vtim.h"
 
 /* These cannot be struct lock, which depends on vsm/vsl working */
 static pthread_mutex_t vsl_mtx;
@@ -299,10 +300,26 @@ WSLB(struct worker *w, enum VSL_tag_e tag, const char *fmt, ...)
 
 /*--------------------------------------------------------------------*/
 
+static void *
+vsm_cleaner(void *priv)
+{
+	(void)priv;
+	THR_SetName("vsm_cleaner");
+	while (1) {
+		AZ(pthread_mutex_lock(&vsm_mtx));
+		VSM_common_cleaner(heritage.vsm, VSC_C_main);
+		AZ(pthread_mutex_unlock(&vsm_mtx));
+		VTIM_sleep(1.1);
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
 void
-VSL_Init(void)
+VSM_Init(void)
 {
 	uint32_t *vsl_log_start;
+	pthread_t tp;
 
 	AZ(pthread_mutex_init(&vsl_mtx, NULL));
 	AZ(pthread_mutex_init(&vsm_mtx, NULL));
@@ -328,6 +345,8 @@ VSL_Init(void)
 	// VSM_head->starttime = (intmax_t)VTIM_real();
 	memset(VSC_C_main, 0, sizeof *VSC_C_main);
 	// VSM_head->child_pid = getpid();
+
+	AZ(pthread_create(&tp, NULL, vsm_cleaner, NULL));
 }
 
 /*--------------------------------------------------------------------*/
