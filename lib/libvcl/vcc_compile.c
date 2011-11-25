@@ -444,13 +444,13 @@ vcc_resolve_includes(struct vcc *tl)
 		}
 		t2 = VTAILQ_NEXT(t1, list);
 		assert(t2 != NULL);	/* There's always an EOI */
+
 		if (t2->tok != ';') {
 			VSB_printf(tl->sb,
 			    "include <string> not followed by semicolon.\n");
 			vcc_ErrWhere(tl, t1);
 			return;
 		}
-		assert(t2 != NULL);
 
 		sp = vcc_file_source(tl, tl->sb, t1->dec);
 		if (sp == NULL) {
