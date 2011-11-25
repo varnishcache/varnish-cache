@@ -124,9 +124,11 @@ vsl_open(struct VSM_data *vd)
 	int i;
 
 	assert(vsl->r_fd < 0);
-	i = VSM_Open(vd);
-	if (i)
-		return (i);
+	if (vd->head == NULL) {
+		i = VSM_Open(vd);
+		if (i)
+			return (i);
+	}
 	if (!VSM_Get(vd, &vsl->vf, VSL_CLASS, NULL, NULL)) {
 		VSM_Close(vd);
 		return (vsm_diag(vd, "No VSL chunk found "
@@ -254,10 +256,11 @@ VSL_NextSLT(struct VSM_data *vd, uint32_t **pp, uint64_t *bits)
 		i = vsl_nextslt(vd, &p);
 		if (i < 0)
 			return (i);
-		if (i == 0 && (vsl->d_opt || vsl->r_fd >= 0))
-			return (i);
-		if (i == 0 && !VSM_StillValid(vd, &vsl->vf)) {
-			vsl_close(vd);
+		if (i == 0) {
+			if (vsl->d_opt || vsl->r_fd >= 0)
+				return (i);
+			if (!VSM_StillValid(vd, &vsl->vf))
+				vsl_close(vd);
 			return (i);
 		}
 
