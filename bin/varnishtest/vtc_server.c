@@ -28,22 +28,18 @@
 
 #include "config.h"
 
-#include <stdio.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "vtc.h"
 
-#include "vqueue.h"
-#include "miniobj.h"
-#include "vsb.h"
 #include "vss.h"
-#include "libvarnish.h"
+#include "vtcp.h"
 
 struct server {
 	unsigned		magic;
@@ -100,7 +96,7 @@ server_thread(void *priv)
 		if (fd < 0)
 			vtc_log(vl, 0, "Accepted failed: %s", strerror(errno));
 		vtc_log(vl, 3, "accepted fd %d", fd);
-		http_process(vl, s->spec, fd, s->sock);
+		fd = http_process(vl, s->spec, fd, &s->sock);
 		vtc_log(vl, 3, "shutting fd %d", fd);
 		j = shutdown(fd, SHUT_WR);
 		if (!VTCP_Check(j))
@@ -132,7 +128,7 @@ server_new(const char *name)
 	bprintf(s->listen, "127.0.0.1:%d", 0);
 	AZ(VSS_parse(s->listen, &s->addr, &s->port));
 	s->repeat = 1;
-	s->depth = 1;
+	s->depth = 10;
 	s->sock = -1;
 	VTAILQ_INSERT_TAIL(&servers, s, list);
 	return (s);

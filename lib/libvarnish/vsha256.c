@@ -28,23 +28,24 @@
 
 #include "config.h"
 
-#include <stdint.h>
-#include <string.h>
-
-#ifdef HAVE_ENDIAN_H
-#include <endian.h>
-#define VBYTE_ORDER	__BYTE_ORDER
-#define VBIG_ENDIAN	__BIG_ENDIAN
-#endif
 #ifdef HAVE_SYS_ENDIAN_H
 #include <sys/endian.h>
 #define VBYTE_ORDER	_BYTE_ORDER
 #define VBIG_ENDIAN	_BIG_ENDIAN
 #endif
 
-#include "libvarnish.h"
-#include "vsha256.h"
+#ifdef HAVE_ENDIAN_H
+#include <endian.h>
+#define VBYTE_ORDER	__BYTE_ORDER
+#define VBIG_ENDIAN	__BIG_ENDIAN
+#endif
+#include <errno.h>
+#include <stdint.h>
+#include <string.h>
+
+#include "vas.h"
 #include "vend.h"
+#include "vsha256.h"
 
 #if defined(VBYTE_ORDER) && VBYTE_ORDER == VBIG_ENDIAN
 

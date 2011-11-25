@@ -30,6 +30,10 @@
 
 #include "vqueue.h"
 
+#define	SLEEP_USEC			(50*1000)
+#define	TIMEOUT_USEC			(5*1000*1000)
+
+
 struct vsl_re_match {
 	unsigned			magic;
 #define VSL_RE_MATCH_MAGIC		0x4013151e
@@ -41,6 +45,8 @@ struct vsl_re_match {
 struct vsl {
 	unsigned		magic;
 #define VSL_MAGIC		0x7a31db38
+
+	struct VSM_fantom	vf;
 
 	/* Stuff relating the log records below here */
 
@@ -62,13 +68,6 @@ struct vsl {
 	unsigned		flags;
 #define F_SEEN_IX		(1 << 0)
 #define F_NON_BLOCKING		(1 << 1)
-
-	/*
-	 * These two bitmaps mark fd's as belonging to client or backend
-	 * transactions respectively.
-	 */
-	struct vbitmap		*vbm_client;
-	struct vbitmap		*vbm_backend;
 
 	/*
 	 * Bit map of programatically selected tags, that cannot be suppressed.

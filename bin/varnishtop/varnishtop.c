@@ -35,21 +35,21 @@
 #include <ctype.h>
 #include <curses.h>
 #include <errno.h>
+#include <limits.h>
 #include <pthread.h>
 #include <signal.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <limits.h>
 
+#include "vapi/vsl.h"
+#include "vapi/vsm.h"
+#include "vas.h"
+#include "vcs.h"
 #include "vqueue.h"
-
 #include "vsb.h"
-
-#include "libvarnish.h"
-#include "vsl.h"
-#include "varnishapi.h"
 
 #if 0
 #define AC(x) assert((x) != ERR)

@@ -5,6 +5,8 @@ server s1 {
 	txresp -hdr "Foo: bar" -body "abcdef\n"
 	rxreq
 	txresp -hdr "Panic: please" -body "012345\n"
+	close
+
 	sema r1 sync 2
 	accept
 	rxreq
@@ -25,25 +27,23 @@ varnish v1 -cliok "param.set diag_bitmap 0x00001000"
 # Force the (random) port selected to be used again after restart.
 varnish v1 -cliok "param.set listen_address ${v1_addr}:${v1_port}"
 
-# varnishtest defaults to auto_restart off, to avoid masking bugs.
-varnish v1 -cliok "param.set auto_restart on" 
-
 client c1 {
 	txreq -url "/"
 	rxresp
 	txreq -url "/foo"
 	# Don't expect answer, the server crashed.
-	sema r1 sync 2
 } -run
 
-delay 2.5
+varnish v1 -wait-stopped
+varnish v1 -cliok "panic.show"
+varnish v1 -cliok "panic.clear"
+varnish v1 -clierr 300 "panic.clear"
+varnish v1 -cliok "start"
+varnish v1 -wait-running
+sema r1 sync 2
 
 client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.http.foo == "foo"
 } -run
-
-varnish v1 -cliok "panic.show"
-varnish v1 -cliok "panic.clear"
-varnish v1 -clierr 300 "panic.clear"

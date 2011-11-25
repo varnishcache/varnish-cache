@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Varnish Software AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -33,6 +33,7 @@
 #include "config.h"
 
 #include <sys/types.h>
+
 #include <curses.h>
 #include <errno.h>
 #include <limits.h>
@@ -40,21 +41,23 @@
 #include <pthread.h>
 #include <regex.h>
 #include <signal.h>
-#include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "libvarnish.h"
-#include "vsl.h"
-#include "varnishapi.h"
+#include "vapi/vsl.h"
+#include "vapi/vsm.h"
+#include "vas.h"
+#include "vcs.h"
 
 #define HIST_N 2000 /* how far back we remember */
-#define HIST_LOW -6 /* low end of log range */
-#define HIST_HIGH 3 /* high end of log range */
-#define HIST_RANGE (HIST_HIGH - HIST_LOW)
 #define HIST_RES 100 /* bucket resolution */
-#define HIST_BUCKETS (HIST_RANGE * HIST_RES)
+
+static int hist_low;
+static int hist_high;
+static int hist_range;
+static int hist_buckets;
 
 static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 
@@ -62,10 +65,13 @@ static int delay = 1;
 static unsigned rr_hist[HIST_N];
 static unsigned nhist;
 static unsigned next_hist;
-static unsigned bucket_miss[HIST_BUCKETS];
-static unsigned bucket_hit[HIST_BUCKETS];
+static unsigned *bucket_miss;
+static unsigned *bucket_hit;
 static unsigned char hh[FD_SETSIZE];
 static uint64_t bitmap[FD_SETSIZE];
+static double  values[FD_SETSIZE];
+static char *format;
+static int match_tag;
 
 static double log_ten;
 
@@ -93,11 +99,25 @@ static int scales[] = {
 	INT_MAX
 };
 
+struct profile {
+	const char *name;
+	enum VSL_tag_e tag;
+	int field;
+	int hist_low;
+	int hist_high;
+} profiles[] = {
+	{ .name = "responsetime", .tag = SLT_ReqEnd, .field = 5, .hist_low = -6, .hist_high = 3 },
+	{ .name = "size", .tag = SLT_Length, .field = 1, .hist_low = 1, .hist_high = 8 },
+	{ 0 }
+};
+
+static struct profile *active_profile;
+
 static void
 update(struct VSM_data *vd)
 {
-	int w = COLS / HIST_RANGE;
-	int n = w * HIST_RANGE;
+	int w = COLS / hist_range;
+	int n = w * hist_range;
 	unsigned bm[n], bh[n];
 	unsigned max;
 	int i, j, scale;
@@ -105,11 +125,11 @@ update(struct VSM_data *vd)
 	erase();
 
 	/* Draw horizontal axis */
-	w = COLS / HIST_RANGE;
-	n = w * HIST_RANGE;
+	w = COLS / hist_range;
+	n = w * hist_range;
 	for (i = 0; i < n; ++i)
 		(void)mvaddch(LINES - 2, i, '-');
-	for (i = 0, j = HIST_LOW; i < HIST_RANGE; ++i, ++j) {
+	for (i = 0, j = hist_low; i < hist_range; ++i, ++j) {
 		(void)mvaddch(LINES - 2, w * i, '+');
 		mvprintw(LINES - 1, w * i, "|1e%d", j);
 	}
@@ -119,8 +139,8 @@ update(struct VSM_data *vd)
 	/* count our flock */
 	for (i = 0; i < n; ++i)
 		bm[i] = bh[i] = 0;
-	for (i = 0, max = 1; i < HIST_BUCKETS; ++i) {
-		j = i * n / HIST_BUCKETS;
+	for (i = 0, max = 1; i < hist_buckets; ++i) {
+		j = i * n / hist_buckets;
 		bm[j] += bucket_miss[i];
 		bh[j] += bucket_hit[i];
 		if (bm[j] + bh[j] > max)
@@ -149,11 +169,8 @@ static int
 h_hist(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
     unsigned spec, const char *ptr, uint64_t bm)
 {
-	double b;
 	int i, j;
 	struct VSM_data *vd = priv;
-
-	(void)len;
 	(void)spec;
 
 	if (fd >= FD_SETSIZE)
@@ -166,6 +183,15 @@ h_hist(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
 		hh[fd] = 1;
 		return (0);
 	}
+	if (tag == match_tag) {
+		char buf[1024]; /* size? */
+		assert(len < sizeof(buf));
+		memcpy(buf, ptr, len);
+		buf[len] = '\0';
+		i = sscanf(buf, format, &values[fd]);
+		assert(i == 1);
+	}
+
 	if (tag != SLT_ReqEnd)
 		return (0);
 
@@ -175,24 +201,15 @@ h_hist(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
 		return (0);
 	}
 
-	/* determine processing time */
-#if 1
-	i = sscanf(ptr, "%*d %*f %*f %*f %lf", &b);
-#else
-	i = sscanf(ptr, "%*d %*f %*f %lf", &b);
-#endif
-	assert(i == 1);
-
 	/* select bucket */
-	i = HIST_RES * (log(b) / log_ten);
-	if (i < HIST_LOW * HIST_RES)
-		i = HIST_LOW * HIST_RES;
-	if (i >= HIST_HIGH * HIST_RES)
-		i = HIST_HIGH * HIST_RES - 1;
-	i -= HIST_LOW * HIST_RES;
+	i = HIST_RES * (log(values[fd]) / log_ten);
+	if (i < hist_low * HIST_RES)
+		i = hist_low * HIST_RES;
+	if (i >= hist_high * HIST_RES)
+		i = hist_high * HIST_RES - 1;
+	i -= hist_low * HIST_RES;
 	assert(i >= 0);
-	assert(i < HIST_BUCKETS);
-
+	assert(i < hist_buckets);
 	pthread_mutex_lock(&mtx);
 
 	/* phase out old data */
@@ -318,26 +335,50 @@ static void
 usage(void)
 {
 	fprintf(stderr, "usage: varnishhist "
-	    "%s [-n varnish_name] [-V] [-w delay]\n", VSL_USAGE);
+	    "%s [-p profile] [-f field_num] [-R max] [-r min] [-V] [-w delay]\n", VSL_USAGE);
 	exit(1);
 }
 
 int
 main(int argc, char **argv)
 {
-	int o;
+	int o, i;
 	struct VSM_data *vd;
+	const char *profile = "responsetime";
+	int fnum = -1;
+	hist_low = -1;
+	hist_high = -1;
+	match_tag = -1;
 
 	vd = VSM_New();
 	VSL_Setup(vd);
 
-	while ((o = getopt(argc, argv, VSL_ARGS "Vw:")) != -1) {
+	while ((o = getopt(argc, argv, VSL_ARGS "Vw:r:R:f:p:")) != -1) {
 		switch (o) {
 		case 'V':
 			VCS_Message("varnishhist");
 			exit(0);
+		case 'i':
+			match_tag = VSL_Name2Tag(optarg, -1);
+			if (match_tag < 0) {
+				fprintf(stderr, "No such tag %s\n", optarg);
+				exit(1);
+			}
+			break;
 		case 'w':
 			delay = atoi(optarg);
+			break;
+		case 'f':
+			fnum = atoi(optarg);
+			break;
+		case 'R':
+			hist_high = atoi(optarg);
+			break;
+		case 'r':
+			hist_low = atoi(optarg);
+			break;
+		case 'p':
+			profile = optarg;
 			break;
 		default:
 			if (VSL_Arg(vd, o, optarg) > 0)
@@ -345,6 +386,43 @@ main(int argc, char **argv)
 			usage();
 		}
 	}
+	if (profile) {
+		for (active_profile = profiles; active_profile->name; active_profile++) {
+			if (strcmp(active_profile->name, profile) == 0) {
+				break;
+			}
+		}
+	}
+	if (! active_profile->name) {
+		fprintf(stderr, "No such profile %s\n", profile);
+		exit(1);
+	}
+	if (match_tag < 0) {
+		match_tag = active_profile->tag;
+	}
+
+	if (fnum < 0) {
+		fnum = active_profile->field;
+	}
+
+	if (hist_low < 0) {
+		hist_low = active_profile->hist_low;
+	}
+
+	if (hist_high < 0) {
+		hist_high = active_profile->hist_high;
+	}
+
+	hist_range = hist_high - hist_low;
+	hist_buckets = hist_range * HIST_RES;
+	bucket_hit = calloc(sizeof bucket_hit, hist_buckets);
+	bucket_miss = calloc(sizeof bucket_miss, hist_buckets);
+
+	format = malloc(4 * fnum);
+	for (i = 0; i < fnum-1; i++) {
+		strcpy(format + 4*i, "%*s ");
+	}
+	strcpy(format + 4*(fnum-1), "%lf");
 
 	if (VSL_Open(vd, 1))
 		exit(1);

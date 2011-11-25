@@ -29,8 +29,6 @@
 #ifndef _SHA256_H_
 #define _SHA256_H_
 
-#include <stdint.h>
-
 #define SHA256_LEN		32
 
 typedef struct SHA256Context {

@@ -28,19 +28,14 @@
 
 #include "config.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <stdarg.h>
-
-#include "libvarnish.h"
-#include "vsb.h"
-#include "miniobj.h"
-#include "vas.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "vtc.h"
+
+#include "vtim.h"
 
 static pthread_mutex_t	vtclog_mtx;
 static char		*vtclog_buf;
@@ -52,6 +47,7 @@ struct vtclog {
 	const char	*id;
 	struct vsb	*vsb;
 	pthread_mutex_t	mtx;
+	int		act;
 };
 
 static pthread_key_t log_key;
@@ -63,7 +59,7 @@ void
 vtc_loginit(char *buf, unsigned buflen)
 {
 
-	t0 = TIM_mono();
+	t0 = VTIM_mono();
 	vtclog_buf = buf;
 	vtclog_left = buflen;
 	AZ(pthread_mutex_init(&vtclog_mtx, NULL));
@@ -108,10 +104,12 @@ static const char * const lead[] = {
 #define NLEAD (sizeof(lead)/sizeof(lead[0]))
 
 static void
-vtc_log_emit(const struct vtclog *vl, unsigned lvl)
+vtc_log_emit(const struct vtclog *vl, int lvl)
 {
 	int l;
 
+	if (lvl < 0)
+		lvl = 0;
 	if (vtc_stop && lvl == 0)
 		return;
 	l = VSB_len(vl->vsb);
@@ -126,16 +124,18 @@ vtc_log_emit(const struct vtclog *vl, unsigned lvl)
 
 //lint -e{818}
 void
-vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...)
+vtc_log(struct vtclog *vl, int lvl, const char *fmt, ...)
 {
 	double tx;
 
 	CHECK_OBJ_NOTNULL(vl, VTCLOG_MAGIC);
-	tx = TIM_mono() - t0;
+	tx = VTIM_mono() - t0;
 	AZ(pthread_mutex_lock(&vl->mtx));
-	assert(lvl < NLEAD);
+	vl->act = 1;
+	assert(lvl < (int)NLEAD);
 	VSB_clear(vl->vsb);
-	VSB_printf(vl->vsb, "%s %-4s %4.1f ", lead[lvl], vl->id, tx);
+	VSB_printf(vl->vsb, "%s %-4s %4.1f ",
+	    lead[lvl < 0 ? 1: lvl], vl->id, tx);
 	va_list ap;
 	va_start(ap, fmt);
 	(void)VSB_vprintf(vl->vsb, fmt, ap);
@@ -146,12 +146,14 @@ vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...)
 	vtc_log_emit(vl, lvl);
 
 	VSB_clear(vl->vsb);
+	vl->act = 0;
 	AZ(pthread_mutex_unlock(&vl->mtx));
-	if (lvl == 0) {
+	if (lvl > 0)
+		return;
+	if (lvl == 0)
 		vtc_error = 1;
-		if (pthread_self() != vtc_thread)
-			pthread_exit(NULL);
-	}
+	if (pthread_self() != vtc_thread)
+		pthread_exit(NULL);
 }
 
 /**********************************************************************
@@ -160,16 +162,18 @@ vtc_log(struct vtclog *vl, unsigned lvl, const char *fmt, ...)
 
 //lint -e{818}
 void
-vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str, int len)
+vtc_dump(struct vtclog *vl, int lvl, const char *pfx, const char *str, int len)
 {
-	int nl = 1;
+	int nl = 1, olen;
 	unsigned l;
 	double tx;
 
 	CHECK_OBJ_NOTNULL(vl, VTCLOG_MAGIC);
-	tx = TIM_mono() - t0;
+	tx = VTIM_mono() - t0;
+	assert(lvl >= 0);
 	assert(lvl < NLEAD);
 	AZ(pthread_mutex_lock(&vl->mtx));
+	vl->act = 1;
 	VSB_clear(vl->vsb);
 	if (pfx == NULL)
 		pfx = "";
@@ -177,10 +181,11 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str, int 
 		VSB_printf(vl->vsb, "%s %-4s %4.1f %s(null)\n",
 		    lead[lvl], vl->id, tx, pfx);
 	else {
-		if (len == -1)
+		olen = len;
+		if (len < 0)
 			len = strlen(str);
 		for (l = 0; l < len; l++, str++) {
-			if (l > 512) {
+			if (l > 512 && olen != -2) {
 				VSB_printf(vl->vsb, "...");
 				break;
 			}
@@ -209,6 +214,7 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str, int 
 	vtc_log_emit(vl, lvl);
 
 	VSB_clear(vl->vsb);
+	vl->act = 0;
 	AZ(pthread_mutex_unlock(&vl->mtx));
 	if (lvl == 0) {
 		vtc_error = 1;
@@ -223,17 +229,19 @@ vtc_dump(struct vtclog *vl, unsigned lvl, const char *pfx, const char *str, int 
 
 //lint -e{818}
 void
-vtc_hexdump(struct vtclog *vl, unsigned lvl, const char *pfx, const unsigned char *str, int len)
+vtc_hexdump(struct vtclog *vl, int lvl, const char *pfx, const unsigned char *str, int len)
 {
 	int nl = 1;
 	unsigned l;
 	double tx;
 
 	CHECK_OBJ_NOTNULL(vl, VTCLOG_MAGIC);
-	tx = TIM_mono() - t0;
+	tx = VTIM_mono() - t0;
 	assert(len >= 0);
+	assert(lvl >= 0);
 	assert(lvl < NLEAD);
 	AZ(pthread_mutex_lock(&vl->mtx));
+	vl->act = 1;
 	VSB_clear(vl->vsb);
 	if (pfx == NULL)
 		pfx = "";
@@ -265,6 +273,7 @@ vtc_hexdump(struct vtclog *vl, unsigned lvl, const char *pfx, const unsigned cha
 	vtc_log_emit(vl, lvl);
 
 	VSB_clear(vl->vsb);
+	vl->act = 0;
 	AZ(pthread_mutex_unlock(&vl->mtx));
 	if (lvl == 0) {
 		vtc_error = 1;
@@ -284,7 +293,7 @@ vtc_log_VAS_Fail(const char *func, const char *file, int line,
 	(void)err;
 	(void)xxx;
 	vl = pthread_getspecific(log_key);
-	if (vl == NULL) {
+	if (vl == NULL || vl->act) {
 		fprintf(stderr,
 		    "Assert error in %s(), %s line %d:\n"
 		    "  Condition(%s) not true.\n",

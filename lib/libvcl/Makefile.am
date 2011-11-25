@@ -7,11 +7,8 @@ pkglib_LTLIBRARIES = libvcl.la
 libvcl_la_LDFLAGS = -avoid-version
 
 libvcl_la_SOURCES = \
-	vcc_priv.h \
 	vcc_compile.h \
 	vcc_token_defs.h \
-	vcc_types.h \
-	symbol_kind.h \
 	\
 	vcc_acl.c \
 	vcc_action.c \

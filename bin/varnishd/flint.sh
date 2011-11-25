@@ -15,7 +15,12 @@ flexelint \
 	-I../.. \
 	-I/usr/local/include \
 	-DVARNISH_STATE_DIR=\"foo\" \
-	*.c \
+	cache/*.c \
+	common/*.c \
+	storage/*.c \
+	waiter/*.c \
+	hash/*.c \
+	mgt/*.c \
 	../../lib/libvarnish/*.c \
 	../../lib/libvarnishcompat/execinfo.c \
 	../../lib/libvcl/*.c \

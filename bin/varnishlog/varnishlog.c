@@ -34,20 +34,20 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "compat/daemon.h"
-
-#include "vsb.h"
+#include "vapi/vsl.h"
+#include "vapi/vsm.h"
+#include "vas.h"
+#include "vcs.h"
 #include "vpf.h"
+#include "vsb.h"
 
-#include "libvarnish.h"
-#include "vsl.h"
-#include "vre.h"
-#include "varnishapi.h"
+#include "compat/daemon.h"
 
 static int	b_flag, c_flag;
 
@@ -60,7 +60,7 @@ static uint64_t       bitmap[65536];
 #define F_INVCL		(1 << 0)
 
 static void
-h_order_finish(int fd, struct VSM_data *vd)
+h_order_finish(int fd, const struct VSM_data *vd)
 {
 
 	AZ(VSB_finish(ob[fd]));
@@ -72,7 +72,7 @@ h_order_finish(int fd, struct VSM_data *vd)
 }
 
 static void
-clean_order(struct VSM_data *vd)
+clean_order(const struct VSM_data *vd)
 {
 	unsigned u;
 
@@ -321,7 +321,8 @@ main(int argc, char * const *argv)
 			w_arg = optarg;
 			break;
 		case 'm':
-			m_flag = 1; /* fall through */
+			m_flag = 1;
+			/* FALLTHROUGH */
 		default:
 			if (VSL_Arg(vd, c, optarg) > 0)
 				break;

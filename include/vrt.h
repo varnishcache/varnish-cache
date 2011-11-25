@@ -145,7 +145,7 @@ void VRT_acl_log(const struct sess *, const char *msg);
 /* Regexp related */
 void VRT_re_init(void **, const char *);
 void VRT_re_fini(void *);
-int VRT_re_match(const char *, void *re);
+int VRT_re_match(const struct sess *sp, const char *, void *re);
 const char *VRT_regsub(const struct sess *sp, int all, const char *,
     void *, const char *);
 
@@ -183,8 +183,8 @@ void VRT_init_dir(struct cli *, struct director **, const char *name,
 void VRT_fini_dir(struct cli *, struct director *);
 
 /* VMOD/Modules related */
-void VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
-    const char *path);
+int VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
+    const char *path, struct cli *cli);
 void VRT_Vmod_Fini(void **hdl);
 
 struct vmod_priv;

@@ -3,7 +3,7 @@ AC_COPYRIGHT([Copyright (c) 2006 Verdens Gang AS
 Copyright (c) 2006-2011 Varnish Software AS])
 AC_REVISION([$Id$])
 AC_INIT([Varnish], [trunk], [varnish-dev@varnish-cache.org])
-AC_CONFIG_SRCDIR(include/varnishapi.h)
+AC_CONFIG_SRCDIR(include/miniobj.h)
 AM_CONFIG_HEADER(config.h)
 
 # save command line CFLAGS for use in VCC_CC (to pass through things like -m64)
@@ -45,21 +45,24 @@ CC="$PTHREAD_CC"
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
-AC_CHECK_PROGS(XSLTPROC, [xsltproc], "no")
-if test "x$XSLTPROC" = "xno"; then
-   AC_MSG_WARN([xsltproc not found – not building documentation])
-fi
-AM_CONDITIONAL(HAVE_XSLTPROC,[test "x$XSLTPROC" != "xno"])
-AC_CHECK_PROGS(RST2MAN, [rst2man rst2man.py], "no")
-if test "x$RST2MAN" = "xno"; then
-   AC_MSG_WARN([rst2man not found – not building man pages])
-fi
+AC_ARG_WITH([rst2man],
+               AS_HELP_STRING([--with-rst2man=PATH],
+                              [Location of rst2man (auto)]),
+               [RST2MAN="$withval"],
+               [AC_CHECK_PROGS(RST2MAN, [rst2man rst2man.py], "no")
+	        if test "x$RST2MAN" = "xno"; then
+		   AC_MSG_WARN([rst2man not found – not building man pages])
+		fi])
 AM_CONDITIONAL(HAVE_RST2MAN,[test "x$RST2MAN" != "xno"])
 
-AC_CHECK_PROGS(RST2HTML, [rst2html rst2html.py], "no")
-if test "x$RST2HTML" = "xno"; then
-   AC_MSG_WARN([rst2html not found – not building changelog])
-fi
+AC_ARG_WITH([rst2html],
+               AS_HELP_STRING([--with-rst2html=PATH],
+                              [Location of rst2html (auto)]),
+               [RST2HTML="$withval"],
+               [AC_CHECK_PROGS(RST2HTML, [rst2html rst2html.py], "no")
+	        if test "x$RST2HTML" = "xno"; then
+		   AC_MSG_WARN([rst2html not found – not building changelog])
+		fi])
 AM_CONDITIONAL(HAVE_RST2HTML,[test "x$RST2HTML" != "xno"])
 
 # Checks for libraries.
@@ -87,6 +90,7 @@ AC_SUBST(CURSES_LIBS)
 if test "$have_curses" = no; then
 	AC_MSG_WARN([curses not found; some tools will not be built])
 fi
+AC_CHECK_HEADERS([ncurses/curses.h curses.h])
 AM_CONDITIONAL([HAVE_CURSES], [test x$have_curses = xyes])
 
 save_LIBS="${LIBS}"
@@ -107,7 +111,7 @@ AC_SUBST(NET_LIBS)
 AC_CHECK_LIBM
 AC_SUBST(LIBM)
 
-m4_pattern_forbid([^_?PKG_[A-Z_]+$],[pkg.m4 missing, please install pkg-config])
+m4_ifndef([PKG_PROG_PKG_CONFIG], [m4_fatal([pkg.m4 missing, please install pkg-config])])
 PKG_PROG_PKG_CONFIG
 if test -n $PKG_CONFIG; then
    PKG_CHECK_MODULES([PCRE], [libpcre])
@@ -183,7 +187,6 @@ AC_CHECK_FUNCS([socket])
 AC_CHECK_FUNCS([strptime])
 AC_CHECK_FUNCS([fmtcheck])
 AC_CHECK_FUNCS([getdtablesize])
-AC_CHECK_FUNCS([abort2])
 AC_CHECK_FUNCS([timegm])
 AC_CHECK_FUNCS([nanosleep])
 AC_CHECK_FUNCS([setppriv])
@@ -332,7 +335,7 @@ AC_ARG_ENABLE(kqueue,
 
 if test "$enable_kqueue" = yes; then
 	case $target in
-	*-*-freebsd* | *-*-darwin9* | *-*-netbsd* )
+	*-*-freebsd* | *-*-darwin9* | *-*-darwin11* | *-*-netbsd* )
 		AC_CHECK_FUNCS([kqueue])
 		;;
 	*-*-bsd*)
@@ -374,11 +377,20 @@ fi
 AM_MISSING_HAS_RUN
 AC_CHECK_PROGS(PYTHON, [python3 python3.1 python3.2 python2.7 python2.6 python2.5 python2 python], [AC_MSG_ERROR([Python is needed to build Varnish, please install python.])])
 
-# Solaris defines SO_{RCV,SND}TIMEO, but does not implement them.
+# Older Solaris versions define SO_{RCV,SND}TIMEO, but do not
+# implement them.
+#
 # Varnish will build and run without these, but connections will not
 # time out, which may leave Varnish vulnerable to denail-of-service
 # attacks which would not be possible on other platforms.
+#
+# Newer Solaris releases with the Volo framework (Solaris 11,
+# Opensolaris starting with onnv_106) do support SO_{RCV,SND}TIMEO
+# (see PSARC 2007/587, initially committed into onnv-gate /
+# OpenSolaris 8348:4137e18bfaf0 Thu Dec 11 20:04:13 2008)
 
+save_LIBS="${LIBS}"
+LIBS="${LIBS} ${NET_LIBS}"
 AC_CACHE_CHECK([whether SO_RCVTIMEO works],
   [ac_cv_so_rcvtimeo_works],
   [AC_RUN_IFELSE(
@@ -403,7 +415,10 @@ return 1;
 if test "$ac_cv_so_rcvtimeo_works" = yes; then
    AC_DEFINE([SO_RCVTIMEO_WORKS], [1], [Define if SO_RCVTIMEO works])
 fi
+LIBS="${save_LIBS}"
 
+save_LIBS="${LIBS}"
+LIBS="${LIBS} ${NET_LIBS}"
 AC_CACHE_CHECK([whether SO_SNDTIMEO works],
   [ac_cv_so_sndtimeo_works],
   [AC_RUN_IFELSE(
@@ -433,6 +448,7 @@ if test "$ac_cv_so_rcvtimeo_works" = no ||
    test "$ac_cv_so_sndtimeo_works" = no; then
 	AC_MSG_WARN([connection timeouts will not work])
 fi
+LIBS="${save_LIBS}"
 
 # Run-time directory
 VARNISH_STATE_DIR='${localstatedir}/varnish'
@@ -552,7 +568,6 @@ AC_CONFIG_FILES([
     bin/varnishncsa/Makefile
     bin/varnishreplay/Makefile
     bin/varnishstat/Makefile
-    bin/varnishsizes/Makefile
     bin/varnishtest/Makefile
     bin/varnishtop/Makefile
     doc/Makefile

@@ -13,14 +13,18 @@ string concatenation operator
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 String concatenation did not have an operator previously, but this has now been changed to ``+``.
 
+no more %-escapes in strings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To simplify strings, the %-encoding has been removed. If you need non-printable characters, you need to use inline C.
+
 ``log`` moved to the std vmod
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``log`` has moved to the std vmod:
+``log`` has moved to the std vmod::
 
 	log "log something";
 
-becomes
+becomes::
 
 	import std;
 	std.log("log something");
@@ -30,15 +34,15 @@ You only need to import std once.
 purges are now called bans
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``purge()`` and ``purge_url()`` are now respectively ``ban()`` and ``ban_url()``, so you should replace all occurences:
+``purge()`` and ``purge_url()`` are now respectively ``ban()`` and ``ban_url()``, so you should replace all occurences::
 
 	purge("req.url = " req.url);
 
-becomes
+becomes::
 
 	ban("req.url = " + req.url);
 
-``purge`` does not take any arguments anymore, but can be used in vcl_hit or vcl_miss to purge the item from the cache, where you would reduce ttl to 0 in Varnish 2.1.
+``purge`` does not take any arguments anymore, but can be used in vcl_hit or vcl_miss to purge the item from the cache, where you would reduce ttl to 0 in Varnish 2.1::
 
 	sub vcl_hit {
 	  if (req.request == "PURGE") {
@@ -47,7 +51,7 @@ becomes
 	  }
 	}
 
-becomes
+becomes::
 
 	sub vcl_hit {
 	  if (req.request == "PURGE") {
@@ -64,13 +68,13 @@ becomes
 returns are now done with the ``return()`` function
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``pass``, ``pipe``, ``lookup``, ``deliver``, ``fetch``, ``hash``, ``pipe`` and ``restart`` are no longer keywords, but arguments to ``return()``, so
+``pass``, ``pipe``, ``lookup``, ``deliver``, ``fetch``, ``hash``, ``pipe`` and ``restart`` are no longer keywords, but arguments to ``return()``, so::
 
 	sub vcl_pass {
 	  pass;
 	}
 
-becomes
+becomes::
 
 	sub vcl_pass {
 	  return(pass);
@@ -80,22 +84,22 @@ becomes
 ``req.hash`` is replaced with ``hash_data()``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You no longer append to the hash with ``+=``, so
+You no longer append to the hash with ``+=``, so::
 
 	set req.hash += req.url;
 
-becomes
+becomes::
 
 	hash_data(req.url);
 
 ``esi`` is replaced with ``beresp.do_esi``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You no longer enable ESI with ``esi``, so
+You no longer enable ESI with ``esi``, so::
 
 	esi;
 
-in ``vcl_fetch`` becomes
+in ``vcl_fetch`` becomes::
 
 	set beresp.do_esi = true;
 

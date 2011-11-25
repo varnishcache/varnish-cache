@@ -28,19 +28,11 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-#include <sys/socket.h>
-
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
 #include <limits.h>
+#include <stdio.h>
+#include <string.h>
 
-#include "vsb.h"
-
-#include "vcc_priv.h"
 #include "vcc_compile.h"
-#include "libvarnish.h"
 
 /*--------------------------------------------------------------------
  * Parse directors
@@ -87,7 +79,7 @@ print_backend(struct vcc *tl,
 	AN(vsb);
 	tl->fb = vsb;
 	Fc(tl, 0, "\t{ .host = VGC_backend_%s },\n",vgcname);
-	Fh(tl, 1, "\n#define VGC_backend_%s %d\n", vgcname, serial);
+	Fh(tl, 1, "\n#define VGC_backend_%s %d\n", vgcname, tl->ndirector);
 
 	Fb(tl, 0, "\nstatic const struct vrt_backend vgc_dir_priv_%s = {\n",
 	    vgcname);

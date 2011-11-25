@@ -28,10 +28,6 @@
  *
  */
 
-#include <poll.h>
-
-#include "vqueue.h"
-
 struct vev;
 struct vev_base;
 

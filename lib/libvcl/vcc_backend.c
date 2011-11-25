@@ -55,17 +55,12 @@
 
 #include <limits.h>
 #include <netdb.h>
-#include <stdio.h>
-#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "vsb.h"
-#include "vss.h"
-
-#include "vcc_priv.h"
 #include "vcc_compile.h"
-#include "libvarnish.h"
+
+#include "vss.h"
 
 struct host {
 	VTAILQ_ENTRY(host)      list;
@@ -104,8 +99,6 @@ emit_sockaddr(struct vcc *tl, void *sa, unsigned sal)
  * initialized data structure, so we encode it as a byte-string
  * and put it in an official sockaddr when we load the VCL.
  */
-
-#include <stdio.h>
 
 void
 Emit_Sockaddr(struct vcc *tl, const struct token *t_host, const char *port)
@@ -305,8 +298,9 @@ vcc_ParseProbeSpec(struct vcc *tl)
 			status = vcc_UintVal(tl);
 			if (status < 100 || status > 999) {
 				VSB_printf(tl->sb,
-				    "Must specify .status with exactly three "
-				    " digits (100 <= x <= 999)\n");
+				    "Must specify .expected_response with "
+				    "exactly three digits "
+				    "(100 <= x <= 999)\n");
 				vcc_ErrWhere(tl, tl->t);
 				return;
 			}

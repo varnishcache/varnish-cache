@@ -28,21 +28,17 @@
 
 #include "config.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "vtc.h"
 
-#include "vsb.h"
-#include "vqueue.h"
-#include "miniobj.h"
 #include "vss.h"
-#include "libvarnish.h"
+#include "vtcp.h"
 
 struct client {
 	unsigned		magic;
@@ -103,7 +99,7 @@ client_thread(void *priv)
 		VTCP_myname(fd, mabuf, sizeof mabuf, mpbuf, sizeof mpbuf);
 		vtc_log(vl, 3, "connected fd %d from %s %s to %s",
 		    fd, mabuf, mpbuf, VSB_data(vsb));
-		http_process(vl, c->spec, fd, -1);
+		fd = http_process(vl, c->spec, fd, NULL);
 		vtc_log(vl, 3, "closing fd %d", fd);
 		VTCP_close(&fd);
 	}

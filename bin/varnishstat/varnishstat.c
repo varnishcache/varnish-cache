@@ -41,10 +41,8 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "libvarnish.h"
-#include "vsc.h"
-#include "varnishapi.h"
 #include "varnishstat.h"
+
 
 /*--------------------------------------------------------------------*/
 
@@ -84,6 +82,63 @@ do_xml(struct VSM_data *vd)
 	printf("</varnishstat>\n");
 }
 
+
+/*--------------------------------------------------------------------*/
+
+static int
+do_json_cb(void *priv, const struct VSC_point * const pt)
+{
+	uint64_t val;
+	int *jp;
+
+	jp = priv;
+
+	assert(!strcmp(pt->fmt, "uint64_t"));
+	val = *(const volatile uint64_t*)pt->ptr;
+
+	if (*jp) *jp = 0; else printf(",\n");
+
+	printf("\t\"");
+	/* build the JSON key name.  */
+	if (pt->class[0])
+		printf("%s.", pt->class);
+	if (pt->ident[0])
+		printf("%s.", pt->ident);
+	printf("%s\": {", pt->name);
+
+	if (strcmp(pt->class, "")) printf("\"type\": \"%s\", ",  pt->class);
+	if (strcmp(pt->ident, "")) printf("\"ident\": \"%s\", ", pt->ident);
+
+	printf("\"value\": %ju, ", val);
+
+	printf("\"flag\": \"%c\", ", pt->flag);
+	printf("\"description\": \"%s\"", pt->desc);
+	printf("}");
+
+	if (*jp) printf("\n");
+	return (0);
+}
+
+static void
+do_json(struct VSM_data *vd)
+{
+	char time_stamp[20];
+	time_t now;
+	int jp;
+
+	jp = 1;
+
+	printf("{\n");
+	now = time(NULL);
+
+	(void)strftime(time_stamp, 20, "%Y-%m-%dT%H:%M:%S", localtime(&now));
+	printf("\t\"timestamp\": \"%s\",\n", time_stamp);
+	(void)VSC_Iter(vd, do_json_cb, &jp);
+	printf("\n}\n");
+	fflush(stdout);
+}
+
+
 /*--------------------------------------------------------------------*/
 
 struct once_priv {
@@ -110,7 +165,7 @@ do_once_cb(void *priv, const struct VSC_point * const pt)
 	if (i > op->pad)
 		op->pad = i + 1;
 	printf("%*.*s", op->pad - i, op->pad - i, "");
-	if (pt->flag == 'a')
+	if (pt->flag == 'a' || pt->flag == 'c')
 		printf("%12ju %12.2f %s\n", val, val / op->up, pt->desc);
 	else
 		printf("%12ju %12s %s\n", val, ".  ", pt->desc);
@@ -169,7 +224,7 @@ usage(void)
 	    "[-1lV] [-f field_list] "
 	    VSC_n_USAGE " "
 	    "[-w delay]\n");
-	fprintf(stderr, FMT, "-1", "Print the statistics once and exit");
+	fprintf(stderr, FMT, "-1", "Print the statistics to stdout.");
 	fprintf(stderr, FMT, "-f field_list",
 	    "Comma separated list of fields to display. ");
 	fprintf(stderr, FMT, "",
@@ -180,9 +235,11 @@ usage(void)
 	    "The varnishd instance to get logs from");
 	fprintf(stderr, FMT, "-V", "Display the version number and exit");
 	fprintf(stderr, FMT, "-w delay",
-	    "Wait delay seconds between updates.  The default is 1.");
+	    "Wait delay seconds between updates.  Default is 1 second. Can also be be used with -1, -x or -j for repeated output.");
 	fprintf(stderr, FMT, "-x",
-	    "Print statistics once as XML and exit.");
+	    "Print statistics to stdout as XML.");
+	fprintf(stderr, FMT, "-j",
+	    "Print statistics to stdout as JSON.");
 #undef FMT
 	exit(1);
 }
@@ -193,12 +250,12 @@ main(int argc, char * const *argv)
 	int c;
 	struct VSM_data *vd;
 	const struct VSC_C_main *VSC_C_main;
-	int delay = 1, once = 0, xml = 0;
+	int delay = 1, once = 0, xml = 0, json = 0, do_repeat = 0;
 
 	vd = VSM_New();
 	VSC_Setup(vd);
 
-	while ((c = getopt(argc, argv, VSC_ARGS "1f:lVw:x")) != -1) {
+	while ((c = getopt(argc, argv, VSC_ARGS "1f:lVw:xjt:")) != -1) {
 		switch (c) {
 		case '1':
 			once = 1;
@@ -212,10 +269,14 @@ main(int argc, char * const *argv)
 			VCS_Message("varnishstat");
 			exit(0);
 		case 'w':
+			do_repeat = 1;
 			delay = atoi(optarg);
 			break;
 		case 'x':
 			xml = 1;
+			break;
+		case 'j':
+			json = 1;
 			break;
 		default:
 			if (VSC_Arg(vd, c, optarg) > 0)
@@ -228,13 +289,29 @@ main(int argc, char * const *argv)
 		exit(1);
 
 	VSC_C_main = VSC_Main(vd);
+	AN(VSC_C_main);
 
-	if (xml)
-		do_xml(vd);
-	else if (once)
-		do_once(vd, VSC_C_main);
-	else
+	if (!(xml || json || once)) {
 		do_curses(vd, VSC_C_main, delay);
+		exit(0);
+	}
 
+	while (1) {
+		if (xml)
+			do_xml(vd);
+		else if (json)
+			do_json(vd);
+		else if (once)
+			do_once(vd, VSC_C_main);
+		else {
+			assert(0);
+		}
+		if (!do_repeat) break;
+
+		// end of output block marker.
+		printf("\n");
+
+		sleep(delay);
+	}
 	exit(0);
 }

@@ -30,14 +30,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "vtc.h"
-
-#include "vqueue.h"
-#include "miniobj.h"
-#include "libvarnish.h"
 
 struct sema {
 	unsigned		magic;

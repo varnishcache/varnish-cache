@@ -1,0 +1,65 @@
+varnishtest "Forcing health of backends"
+
+server s1 -repeat 3 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl {
+	backend s1 {
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
+		.probe = {
+			.window = 8;
+			.initial = 7;
+			.threshold = 8;
+			.interval = 10s;
+		}
+	}
+
+	sub vcl_recv {
+		return(pass);
+	}
+
+} -start
+
+delay 1
+
+varnish v1 -cliok "backend.list"
+varnish v1 -cliok "backend.set_health s1 auto"
+varnish v1 -cliok "backend.list s"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -cliok "backend.list (:)"
+varnish v1 -cliok "backend.set_health s1 sick"
+varnish v1 -cliok "backend.list (1:)"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
+varnish v1 -cliok "backend.list"
+varnish v1 -cliok "backend.set_health s1 healthy"
+varnish v1 -cliok "backend.list"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -clierr 106 "backend.set_health s1 foo"
+varnish v1 -clierr 106 "backend.set_health s2 foo"
+varnish v1 -clierr 106 "backend.set_health s2 auto"
+varnish v1 -cliok "backend.list (foo)"
+varnish v1 -clierr 300 "backend.list ("
+varnish v1 -clierr 300 {backend.list " ( : ) -"}
+varnish v1 -cliok {backend.list "a ( b : c )"}
+

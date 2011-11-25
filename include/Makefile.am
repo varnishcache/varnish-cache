@@ -1,55 +1,71 @@
 #
 
 pkginclude_HEADERS = \
-	vsm.h \
-	vsl.h \
-	vcli.h \
-	vsl_tags.h \
-	vsc_fields.h \
-	vsc_all.h \
-	vsc.h \
-	varnishapi.h
+	tbl/acct_fields.h \
+	tbl/backend_poll.h \
+	tbl/ban_vars.h \
+	tbl/body_status.h \
+	tbl/http_headers.h \
+	tbl/http_response.h \
+	tbl/locks.h \
+	tbl/steps.h \
+	tbl/symbol_kind.h \
+	tbl/vcc_types.h \
+	tbl/vcl_returns.h \
+	tbl/vrt_stv_var.h \
+	tbl/vsc_all.h \
+	tbl/vsc_fields.h \
+	tbl/vsl_tags.h \
+	vapi/vsm.h \
+	vapi/vsm_int.h \
+	vapi/vsc.h \
+	vapi/vsc_int.h \
+	vapi/vsl.h \
+	vapi/vsl_int.h \
+	vcli.h
 
 nobase_noinst_HEADERS = \
-	ban_vars.h \
 	binary_heap.h \
-	cli_common.h \
-	cli_priv.h \
-	cli_serve.h \
 	compat/daemon.h \
 	compat/execinfo.h \
 	compat/srandomdev.h \
 	flopen.h \
-	http_headers.h \
-	http_response.h \
-	libvarnish.h \
 	libvcl.h \
 	miniobj.h \
 	persistent.h \
 	vas.h \
 	vav.h \
-	vsha256.h \
-	vqueue.h \
-	vpf.h \
-	vsb.h \
+	vbm.h \
 	vcl.h \
-	vcl_returns.h \
+	vcli_common.h \
+	vcli_priv.h \
+	vcli_serve.h \
 	vcs_version.h \
+	vcs.h \
 	vct.h \
+	vdef.h \
 	vend.h \
 	vev.h \
+	vfil.h \
 	vin.h \
 	vlu.h \
-	vbm.h \
 	vmb.h \
 	vmod_abi.h \
+	vnum.h \
+	vpf.h \
+	vqueue.h \
 	vre.h \
 	vrt.h \
 	vrt_obj.h \
-	vrt_stv_var.h \
-	vss.h
+	vsb.h \
+	vsub.h \
+	vsha256.h \
+	vss.h \
+	vtcp.h \
+	vtim.h
 
-vrt_stv_var.h vcl_returns.h vcl.h vrt_obj.h: $(top_srcdir)/lib/libvcl/generate.py $(top_srcdir)/include/vrt.h
+tbl/vrt_stv_var.h tbl/vcl_returns.h vcl.h vrt_obj.h: $(top_srcdir)/lib/libvcl/generate.py $(top_srcdir)/include/vrt.h
+	mkdir -p tbl
 	@PYTHON@ $(top_srcdir)/lib/libvcl/generate.py $(top_srcdir) $(top_builddir)
 
 BUILT_SOURCES = vcs_version.h vmod_abi.h
@@ -98,7 +114,9 @@ vmod_abi.h: vcs_version.h
 	fi ; \
 	echo "#define VMOD_ABI_Version \"@PACKAGE_STRING@ $$GITID\"" > vmod_abi.h
 
-CLEANFILES = vcl_returns.h \
+CLEANFILES = \
+	tbl/vcl_returns.h \
+	tbl/vrt_stv_var.h \
 	vcl.h \
 	vrt_obj.h \
 	vmod_abi.h

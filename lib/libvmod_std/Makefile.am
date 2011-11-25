@@ -1,6 +1,9 @@
 #
 
-INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include
+INCLUDES = \
+	-I$(top_srcdir)/include \
+	-I$(top_srcdir)/bin/varnishd \
+	-I$(top_builddir)/include
 
 dist_man_MANS = vmod_std.3
 

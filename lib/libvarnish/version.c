@@ -33,7 +33,7 @@
 
 #include <stdio.h>
 
-#include "libvarnish.h"
+#include "vcs.h"
 #include "vcs_version.h"
 
 void

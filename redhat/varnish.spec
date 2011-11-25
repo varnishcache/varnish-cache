@@ -1,17 +1,21 @@
+%define v_rc
+%define vd_rc %{?v_rc:-%{?v_rc}}
+
 Summary: High-performance HTTP accelerator
 Name: varnish
-Version: 3.0.0
-Release: 0.20110715%{?dist}
+Version: 3.1.0
+Release: 0.20111006%{?v_rc}%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
 #Source0: http://repo.varnish-cache.org/source/%{name}-%{version}.tar.gz
+#Source0: %{name}-%{version}%{?vd_rc}.tar.gz
 Source0: %{name}-trunk.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # To build from git, start with a make dist, see redhat/README.redhat 
 # You will need at least automake autoconf libtool python-docutils
 #BuildRequires: automake autoconf libtool python-docutils
-BuildRequires: ncurses-devel libxslt groff pcre-devel pkgconfig
+BuildRequires: ncurses-devel groff pcre-devel pkgconfig
 Requires: varnish-libs = %{version}-%{release}
 Requires: logrotate
 Requires: ncurses
@@ -71,7 +75,7 @@ Documentation files for %name
 #Varnish Cache is a high-performance HTTP accelerator
 
 %prep
-#%setup -q
+#%setup -q -n varnish-%{version}%{?vd_rc}
 %setup -q -n varnish-trunk
 
 mkdir examples
@@ -87,9 +91,9 @@ cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
 # Remove "--disable static" if you want to build static libraries 
 # jemalloc is not compatible with Red Hat's ppc64 RHEL kernel :-(
 %ifarch ppc64 ppc
-	%configure --disable-static --localstatedir=/var/lib --disable-jemalloc
+	%configure --disable-static --localstatedir=/var/lib --without-jemalloc  --without-rst2man --without-rst2html
 %else
-	%configure --disable-static --localstatedir=/var/lib
+	%configure --disable-static --localstatedir=/var/lib --without-rst2man --without-rst2html
 %endif
 
 # We have to remove rpath - not allowed in Fedora
@@ -369,7 +373,7 @@ fi
 - Whitespace changes to make rpmlint more happy
 
 * Fri Sep 12 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.9.20080912svn3184
-- Added varnisnsca init script (Colin Hill)
+- Added varnisncsa init script (Colin Hill)
 - Corrected varnishlog init script (Colin Hill)
 
 * Tue Sep 09 2008 Ingvar Hagelund <ingvar@linpro.no> - 2.0-0.8.beta1

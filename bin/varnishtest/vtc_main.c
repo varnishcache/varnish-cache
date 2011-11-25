@@ -28,25 +28,23 @@
 
 #include "config.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "libvarnish.h"
-#include "vev.h"
-#include "vsb.h"
-#include "vqueue.h"
-#include "miniobj.h"
+#include <fcntl.h>
+#include <poll.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "vtc.h"
+
+#include "vev.h"
+#include "vqueue.h"
+#include "vtim.h"
 
 #ifndef HAVE_SRANDOMDEV
 #include "compat/srandomdev.h"
@@ -198,7 +196,7 @@ tst_cb(const struct vev *ve, int what)
 		njob--;
 		px = wait4(jp->child, &stx, 0, NULL);
 		assert(px == jp->child);
-		t = TIM_mono() - jp->t0;
+		t = VTIM_mono() - jp->t0;
 		AZ(close(ve->fd));
 
 		if (stx && vtc_verbosity)
@@ -224,8 +222,11 @@ tst_cb(const struct vev *ve, int what)
 		free(jp->tmpdir);
 
 		if (stx) {
-			printf("#     top  TEST %s FAILED (%.3f)\n",
+			printf("#     top  TEST %s FAILED (%.3f)",
 			    jp->tst->filename, t);
+			if (WIFSIGNALED(stx))
+				printf(" signal=%d", WTERMSIG(stx));
+			printf(" exit=%d\n", WEXITSTATUS(stx));
 			if (!vtc_continue) {
 				/* XXX kill -9 other jobs ? */
 				exit(2);
@@ -285,7 +286,7 @@ start_test(void)
 	AZ(pipe(p));
 	assert(p[0] > STDERR_FILENO);
 	assert(p[1] > STDERR_FILENO);
-	jp->t0 = TIM_mono();
+	jp->t0 = VTIM_mono();
 	jp->child = fork();
 	assert(jp->child >= 0);
 	if (jp->child == 0) {

@@ -26,8 +26,13 @@
  * SUCH DAMAGE.
  */
 
+#include "config.h"
+
+#include <errno.h>
 #include <pthread.h>
-#include "libvarnish.h"
+#include <unistd.h>
+
+#include "vas.h"
 #include "vmb.h"
 
 #ifdef VMB_NEEDS_PTHREAD_WORKAROUND_THIS_IS_BAD_FOR_PERFORMANCE
@@ -53,4 +58,4 @@ vmb_pthread(void)
 	AZ(pthread_mutex_unlock(&mb_mtx));
 }
 
-#endif
+#endif /* VMB_NEEDS_PTHREAD_WORKAROUND_THIS_IS_BAD_FOR_PERFORMANCE */

@@ -34,12 +34,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "vqueue.h"
-
-#include "vsb.h"
-
-#include "libvarnish.h"
-#include "vcc_priv.h"
 #include "vcc_compile.h"
 
 /*--------------------------------------------------------------------*/
@@ -492,7 +486,7 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 			continue;
 		}
 
-		/* Match strings, with \\ and \" escapes */
+		/* Match strings */
 		if (*p == '"') {
 			for (q = p + 1; q < sp->e; q++) {
 				if (*q == '"') {

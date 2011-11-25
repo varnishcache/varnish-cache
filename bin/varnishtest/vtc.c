@@ -28,26 +28,23 @@
 
 #include "config.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "libvarnish.h"
-#include "vev.h"
-#include "vsb.h"
-#include "vqueue.h"
-#include "miniobj.h"
+#include <ctype.h>
+#include <signal.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "vtc.h"
+
+#include "vav.h"
+#include "vtim.h"
+
 
 #ifndef HAVE_SRANDOMDEV
 #include "compat/srandomdev.h"
@@ -60,7 +57,6 @@ volatile sig_atomic_t	vtc_error;	/* Error encountered */
 int			vtc_stop;	/* Stops current test without error */
 pthread_t		vtc_thread;
 static struct vtclog	*vltop;
-int			in_tree = 0;	/* Are we running in-tree */
 
 /**********************************************************************
  * Macro facility
@@ -136,10 +132,10 @@ macro_get(const char *b, const char *e)
 	l = e - b;
 
 	if (l == 4 && !memcmp(b, "date", l)) {
-		double t = TIM_real();
+		double t = VTIM_real();
 		retval = malloc(64);
 		AN(retval);
-		TIM_format(t, retval);
+		VTIM_format(t, retval);
 		return (retval);
 	}
 
@@ -236,18 +232,6 @@ extmacro_def(const char *name, const char *fmt, ...)
 		free(m->val);
 		free(m);
 	}
-}
-
-const char *
-extmacro_get(const char *name)
-{
-	struct extmacro *m;
-
-	VTAILQ_FOREACH(m, &extmacro_list, list)
-		if (!strcmp(name, m->name))
-			return (m->val);
-
-	return (NULL);
 }
 
 /**********************************************************************
@@ -434,7 +418,7 @@ cmd_delay(CMD_ARGS)
 	AZ(av[2]);
 	f = strtod(av[1], NULL);
 	vtc_log(vl, 3, "delaying %g second(s)", f);
-	TIM_sleep(f);
+	VTIM_sleep(f);
 }
 
 /**********************************************************************
@@ -505,7 +489,13 @@ cmd_feature(CMD_ARGS)
 		if (sizeof(void*) == 8 && !strcmp(av[i], "64bit"))
 			continue;
 
-		vtc_log(vl, 1, "SKIPPING test, missing feature %s", av[i]);
+		if (!strcmp(av[i], "!OSX")) {
+#if !defined(__APPLE__) || !defined(__MACH__)
+			continue;
+#endif
+		}
+
+		vtc_log(vl, 1, "SKIPPING test, missing feature: %s", av[i]);
 		vtc_stop = 1;
 		return;
 	}
@@ -536,6 +526,8 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	char *cwd, *p;
 	FILE *f;
 	struct extmacro *m;
+
+	signal(SIGPIPE, SIG_IGN);
 
 	vtc_loginit(logbuf, loglen);
 	vltop = vtc_logopen("top");

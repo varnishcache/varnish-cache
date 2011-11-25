@@ -1,0 +1,133 @@
+varnishtest "ban lurker test"
+
+
+server s1 {
+	rxreq
+	expect req.url == "/alpha"
+	txresp -hdr "Foo: /alpha"
+
+	rxreq
+	expect req.url == "/beta"
+	txresp -hdr "Foo: /beta"
+
+	rxreq
+	expect req.url == "/gamma"
+	txresp -hdr "Foo: /gamma"
+
+	rxreq
+	expect req.url == "/delta"
+	txresp -hdr "Foo: /delta"
+
+	rxreq
+	expect req.url == "/alpha"
+	txresp -hdr "Foo: /alpha2"
+
+	rxreq
+	expect req.url == "/beta"
+	txresp -hdr "Foo: /beta2"
+
+	rxreq
+	expect req.url == "/delta"
+	txresp -hdr "Foo: /delta2"
+
+} -start
+
+varnish v1 -vcl+backend {
+} -start
+
+varnish v1 -cliok "param.set ban_lurker_sleep 0"
+varnish v1 -cliok "param.set diag_bitmap 0x80000"
+
+varnish v1 -cliok "ban.list"
+
+client c1 {
+	txreq -url "/alpha"
+	rxresp
+	expect resp.http.foo == /alpha
+} -run
+
+delay 0.1
+varnish v1 -cliok "ban req.url == /alpha"
+varnish v1 -cliok "ban.list"
+varnish v1 -expect bans == 2
+varnish v1 -expect bans_gone == 1
+
+client c1 {
+	txreq -url "/beta"
+	rxresp
+	expect resp.http.foo == /beta
+} -run
+
+delay 0.1
+varnish v1 -cliok "ban obj.http.foo == /beta"
+varnish v1 -cliok "ban.list"
+varnish v1 -expect bans == 3
+
+client c1 {
+	txreq -url "/gamma"
+	rxresp
+	expect resp.http.foo == /gamma
+} -run
+
+delay 0.1
+varnish v1 -cliok "ban obj.http.foo == /gamma"
+varnish v1 -cliok "ban.list"
+varnish v1 -expect bans == 4
+
+client c1 {
+	txreq -url "/delta"
+	rxresp
+	expect resp.http.foo == /delta
+} -run
+
+delay 0.1
+varnish v1 -cliok "ban req.url == /delta"
+
+varnish v1 -expect bans_gone == 1
+varnish v1 -cliok "ban obj.http.foo == /gamma"
+# Dup-check should have added one
+varnish v1 -expect bans_gone == 2
+
+varnish v1 -cliok "ban req.url == /epsilon"
+varnish v1 -cliok "ban.list"
+varnish v1 -expect bans == 7
+varnish v1 -expect bans_gone == 2
+
+varnish v1 -cliok "param.set ban_lurker_sleep .01"
+delay 1
+varnish v1 -cliok "param.set ban_lurker_sleep .00"
+varnish v1 -cliok "ban.list"
+varnish v1 -expect bans == 7
+varnish v1 -expect bans_gone == 4
+
+client c1 {
+	txreq -url "/alpha"
+	rxresp
+	expect resp.http.foo == /alpha2
+} -run
+
+delay 1
+varnish v1 -cliok "ban.list"
+varnish v1 -expect bans == 4
+
+client c1 {
+	txreq -url "/beta"
+	rxresp
+	expect resp.http.foo == /beta2
+} -run
+
+varnish v1 -cliok "ban.list"
+
+
+client c1 {
+	txreq -url "/delta"
+	rxresp
+	expect resp.http.foo == /delta2
+} -run
+
+delay 1
+varnish v1 -cliok "ban.list"
+varnish v1 -expect bans == 1
+varnish v1 -expect bans_gone == 0
+varnish v1 -expect bans_added == 7
+varnish v1 -expect bans_deleted == 6

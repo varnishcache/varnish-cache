@@ -28,10 +28,36 @@
  *
  */
 
-#include "vqueue.h"
+#include <sys/types.h>
+
+#include <errno.h>
+#include <stdio.h>
+#include <stdint.h>
 
 #include "miniobj.h"
+#include "vas.h"
 #include "vcl.h"
+#include "vdef.h"
+#include "vqueue.h"
+#include "vsb.h"
+
+
+#include "vcc_token_defs.h"
+
+#ifndef NULL
+#define NULL ((void*)0)
+#endif
+
+struct vsb;
+
+#define isident1(c) (isalpha(c))
+#define isident(c) (isalpha(c) || isdigit(c) || (c) == '_' || (c) == '-')
+#define isvar(c) (isident(c) || (c) == '.')
+unsigned vcl_fixed_token(const char *p, const char **q);
+extern const char * const vcl_tnames[256];
+void vcl_output_lang_h(struct vsb *sb);
+
+#define PF(t)	(int)((t)->e - (t)->b), (t)->b
 
 #define INDENT		2
 
@@ -43,7 +69,7 @@ struct symbol;
 
 enum var_type {
 #define VCC_TYPE(foo)		foo,
-#include "vcc_types.h"
+#include "tbl/vcc_types.h"
 #undef VCC_TYPE
 };
 
@@ -73,7 +99,7 @@ struct token {
 
 enum symkind {
 #define VCC_SYMB(uu, ll, dd)	SYM_##uu,
-#include "symbol_kind.h"
+#include "tbl/symbol_kind.h"
 #undef VCC_SYMB
 };
 

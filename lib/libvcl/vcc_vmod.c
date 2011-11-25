@@ -28,15 +28,12 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <dlfcn.h>
+#include <stdio.h>
 #include <string.h>
 
-#include "vsb.h"
-
-#include "vcc_priv.h"
 #include "vcc_compile.h"
-#include "libvarnish.h"
+
 #include "vmod_abi.h"
 
 void
@@ -102,13 +99,15 @@ vcc_ParseImport(struct vcc *tl)
 
 	Fh(tl, 0, "static void *VGC_vmod_%.*s;\n", PF(mod));
 
-	Fi(tl, 0, "\tVRT_Vmod_Init(&VGC_vmod_%.*s,\n", PF(mod));
+	Fi(tl, 0, "\tif (VRT_Vmod_Init(&VGC_vmod_%.*s,\n", PF(mod));
 	Fi(tl, 0, "\t    &Vmod_Func_%.*s,\n", PF(mod));
 	Fi(tl, 0, "\t    sizeof(Vmod_Func_%.*s),\n", PF(mod));
 	Fi(tl, 0, "\t    \"%.*s\",\n", PF(mod));
 	Fi(tl, 0, "\t    ");
 	EncString(tl->fi, fn, NULL, 0);
-	Fi(tl, 0, ");\n");
+	Fi(tl, 0, ",\n\t    ");
+	Fi(tl, 0, "cli))\n");
+	Fi(tl, 0, "\t\treturn(1);\n");
 
 	SkipToken(tl, ';');
 

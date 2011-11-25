@@ -39,6 +39,12 @@ In addition to the C-like assignment (=), comparison (==, !=) and
 boolean (!, && and \|\|) operators, VCL supports both regular
 expression and ACL matching using the ~ and the !~ operators.
 
+Basic strings are enclosed in " ... ", and may not contain newlines.
+
+Long strings are enclosed in {" ... "}. They may contain any
+character including ", newline and other control characters except
+for the NUL (0x00) character.
+
 Unlike C and Perl, the backslash (\) character has no special meaning
 in strings in VCL, so it can be freely used in regular expressions
 without doubling.
@@ -54,6 +60,15 @@ suffix.
 You can use the *set* keyword to arbitrary HTTP headers. You can
 remove headers with the *remove* or *unset* keywords, which are
 synonym.
+
+You can use the *rollback* keyword to revert any changes to req at
+any time.
+
+The *synthetic* keyword is used to produce a synthetic response
+body in vcl_error. It takes a single string as argument.
+
+You can force a crash of the client process with the *panic* keyword.
+*panic* takes a string as argument.
 
 The ``return(action)`` keyword terminates the subroutine. *action* can be,
 depending on context one of
@@ -148,65 +163,76 @@ Configuring a director may look like this:::
     }
   } 
 
+The family of random directors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are three directors that share the same logic, called the random
+director, client director and hash director. They each distribute traffic
+among the backends assigned to it using a random distribution seeded with
+either the client identity, a random number or the cache hash (typically
+url). Beyond the initial seed, they act the same.
+
+Each backend requires a .weight option which sets the amount of traffic
+each backend will get compared to the others. Equal weight means equal
+traffic. A backend with lower weight than an other will get proportionally
+less traffic.
+
+The director has an optional .retries option which defaults to the number
+of backends the director has. The director will attempt .retries times to
+find a healthy backend if the first attempt fails. Each attempt re-uses the
+previous seed in an iterative manner. For the random director this detail
+is of no importance as it will give different results each time. For the
+hash and client director, this means the same URL or the same client will
+fail to the same server consistently.
+
 The random director
-~~~~~~~~~~~~~~~~~~~
+...................
 
-The random director takes one per director option .retries.  This
-specifies how many tries it will use to find a working backend.  The
-default is the same as the number of backends defined for the
-director.
+This uses a random number to seed the backend selection.
 
-There is also a per-backend option: weight which defines the portion
-of traffic to send to the particular backend.
+The client director
+...................
+
+The client director picks a backend based on the clients
+*identity*. You can set the VCL variable *client.identity* to identify
+the client by picking up the value of a session cookie or similar.
+
+The hash director
+.................
+
+The hash director will pick a backend based on the URL hash
+value.
+
+This is useful is you are using Varnish to load balance in front of
+other Varnish caches or other web accelerators as objects won't be
+duplicated across caches.
+
+It will use the value of req.hash, just as the normal cache-lookup methods.
+
 
 The round-robin director
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 The round-robin director does not take any options.
 
+It will use the first backend for the first request, the second backend for
+the second request and so on, and start from the top again when it gets to
+the end.
 
-The client director
-~~~~~~~~~~~~~~~~~~~
-
-The client director picks a backend based on the clients
-*identity*. You can set the VCL variable *client.identity* to identify
-the client by picking up the value of a session cookie or similar.
-
-Note: from 2.1.0 to 2.1.3 *client.identity* isn't available and the
-director will use automatically set the idenity based on client.ip In
-2.1.4 and onwards you can set client.identity to any string available.
-
-The client director takes one option - *retries* which set the number
-of retries the director should take in order to find a healthy
-backend.
-
-
-
-The hash director
-~~~~~~~~~~~~~~~~~
-
-The hash director will pick a backend based on the URL hash
-value. 
-
-This is useful is you are using Varnish to load balance in front of
-other Varnish caches or other web accelerators as objects won't be
-duplicated across caches.
-
-The client director takes one option - *retries* which set the number
-of retries the director should take in order to find a healthy
-backend.
+If a backend is unhealthy or Varnish fails to connect, it will be skipped.
+The round-robin director will try all the backends once before giving up.
 
 The DNS director
 ~~~~~~~~~~~~~~~~
 
-The DNS director can use backends in three different ways. Either like the
+The DNS director can use backends in two different ways. Either like the
 random or round-robin director or using .list::
 
   director directorname dns {
           .list = {
                   .host_header = "www.example.com";
                   .port = "80";
-                  .connect_timeout = 0.4;
+                  .connect_timeout = 0.4s;
                   "192.168.15.0"/24;
                   "192.168.16.128"/25;
           }
@@ -216,12 +242,21 @@ random or round-robin director or using .list::
 
 This will specify 384 backends, all using port 80 and a connection timeout
 of 0.4s. Options must come before the list of IPs in the .list statement.
+The .list-method does not support IPv6. It is not a white-list, it is an
+actual list of backends that will be created internally in Varnish - the
+larger subnet the more overhead.
 
 The .ttl defines the cache duration of the DNS lookups.
 
 The above example will append "internal.example.net" to the incoming Host
 header supplied by the client, before looking it up. All settings are
 optional.
+
+Health checks are not thoroughly supported.
+
+DNS round robin balancing is supported. If a hostname resolves to multiple
+backends, the director will divide the traffic between all of them in a
+round-robin manner.
 
 The fallback director
 ~~~~~~~~~~~~~~~~~~~~~
@@ -245,11 +280,36 @@ Backend probes
 
 Backends can be probed to see whether they should be considered
 healthy or not.  The return status can also be checked by using
-req.backend.healthy .window is how many of the latest polls we
-examine, while .threshold is how many of those must have succeeded for
-us to consider the backend healthy.  .initial is how many of the
-probes are considered good when Varnish starts - defaults to the same
-amount as the threshold.
+req.backend.healthy.
+
+Probes take the following parameters:
+
+.url
+  Specify a URL to request from the backend.
+  Defaults to "/".
+.request
+  Specify a full HTTP request using multiple strings. .request will
+  have \\r\\n automatically inserted after every string.
+  If specified, .request will take precedence over .url.
+.window
+  How many of the latest polls we examine to determine backend health.
+  Defaults to 8.
+.threshold 
+  How many of the polls in .window must have succeeded for us to consider
+  the backend healthy.
+  Defaults to 3.
+.initial
+  How many of the probes are considered good when Varnish starts.
+  Defaults to the same amount as the threshold.
+.expected_response
+  The expected backend HTTP response code.
+  Defaults to 200.
+.interval
+  Defines how often the probe should check the backend.
+  Default is every 5 seconds.
+.timeout
+  How fast each probe times out.
+  Default is 2 seconds.
 
 A backend with a probe can be defined like this, together with the
 backend or director:::
@@ -275,6 +335,7 @@ Or it can be defined separately and then referenced:::
      .window = 8;
      .threshold = 3;
      .initial = 3;
+     .expected_response = 200;
   }	
 
   backend www {
@@ -512,12 +573,18 @@ vcl_fetch
   error code [reason]
     Return the specified error code to the client and abandon the request.
 
-  hit_for_pass
-    Pass in fetch. This will create a hit_for_pass object. Note that
-    the TTL for the hit_for_pass object will be set to what the
-    current value of beresp.ttl. Control will be handled to
-    vcl_deliver on the current request, but subsequent requests will
-    go directly to vcl_pass based on the hit_for_pass object.
+  hit_for_pass 
+    Pass in fetch. Passes the object without caching it. This will
+    create a socalled hit_for_pass object which has the side effect
+    that the decision not to cache will be cached. This is to allow
+    would-be uncachable requests to be passed to the backend at the
+    same time. The same logic is not necessary in vcl_recv because
+    this happens before any potential queueing for an object takes
+    place.  Note that the TTL for the hit_for_pass object will be set
+    to what the current value of beresp.ttl is. Control will be
+    handled to vcl_deliver on the current request, but subsequent
+    requests will go directly to vcl_pass based on the hit_for_pass
+    object.
 
   restart
     Restart the transaction. Increases the restart counter. If the number 
@@ -573,8 +640,11 @@ default code.
 
 Multiple subroutines
 ~~~~~~~~~~~~~~~~~~~~
-If multiple subroutines with the same name are defined, they are
-concatenated in the order in which the appear in the source.
+If multiple subroutines with the the name of one of the builtin
+ones are defined, they are concatenated in the order in which they
+appear in the source.
+The default versions distributed with Varnish will be implicitly
+concatenated as a last resort at the end.
 
 Example:::
 
@@ -600,8 +670,6 @@ Example:::
 	  }
 	}
 
-The builtin default subroutines are implicitly appended in this way.
-
 Variables
 ~~~~~~~~~
 
@@ -625,6 +693,9 @@ The following variables are available while processing a request:
 
 client.ip
   The client's IP address.
+
+client.identity
+  Identification of the client, used to load balance in the client director.
 
 server.hostname
   The host name of the server.
@@ -672,6 +743,23 @@ req.hash_ignore_busy
 req.can_gzip
   Does the client accept the gzip transfer encoding.
 
+req.restarts
+  A count of how many times this request has been restarted.
+
+req.esi
+  Boolean. Set to false to disable ESI processing regardless of any
+  value in beresp.do_esi. Defaults to true. This variable is subject
+  to change in future versions, you should avoid using it.
+
+req.esi_level
+  A count of how many levels of ESI requests we're currently at.
+
+req.grace
+  Set to a period to enable grace.
+
+req.xid
+  Unique ID of this request.
+
 The following variables are available while preparing a backend
 request (either for a cache miss or for pass or pipe mode):
 
@@ -709,8 +797,9 @@ beresp.do_stream
   as it is delivered so only client can access the object.
 
 beresp.do_esi
-  Boolean. ESI-process the object after fetching it. Defaults to false. Set it
-  to true to parse the object for ESI directives.
+  Boolean. ESI-process the object after fetching it. Defaults to
+  false. Set it to true to parse the object for ESI directives. Will
+  only be honored if req.esi is true.
 
 beresp.do_gzip
   Boolean. Gzip the object before storing it. Defaults to false.
@@ -730,6 +819,25 @@ beresp.response
 
 beresp.ttl
   The object's remaining time to live, in seconds. beresp.ttl is writable.
+
+beresp.grace
+  Set to a period to enable grace.
+
+beresp.saintmode
+  Set to a period to enable saint mode.
+
+beresp.backend.name
+  Name of the backend this response was fetched from.
+
+beresp.backend.ip
+  IP of the backend this response was fetched from.
+
+beresp.backend.port
+  Port of the backend this response was fetched from.
+
+beresp.storage
+  Set to force Varnish to save this object to a particular storage
+  backend.
 
 After the object is entered into the cache, the following (mostly
 read-only) variables are available when the object has been located in
@@ -754,6 +862,12 @@ obj.lastuse
 obj.hits
   The approximate number of times the object has been delivered. A value 
   of 0 indicates a cache miss.
+
+obj.grace
+  The object's grace period in seconds. obj.grace is writable.
+
+obj.http.header
+  The corresponding HTTP header.
 
 The following variables are available while determining the hash key
 of an object:
@@ -862,10 +976,10 @@ based on the request URL:::
     }
   }
 
-  The following snippet demonstrates how to force a minimum TTL for
-  all documents.  Note that this is not the same as setting the
-  default_ttl run-time parameter, as that only affects document for
-  which the backend did not specify a TTL:::
+The following snippet demonstrates how to force a minimum TTL for
+all documents.  Note that this is not the same as setting the
+default_ttl run-time parameter, as that only affects document for
+which the backend did not specify a TTL:::
   
   import std; # needed for std.log
 
@@ -939,8 +1053,8 @@ and Per Buer.
 COPYRIGHT
 =========
 
-This document is licensed under the same licence as Varnish
-itself. See LICENCE for details.
+This document is licensed under the same license as Varnish
+itself. See LICENSE for details.
 
 * Copyright (c) 2006 Verdens Gang AS
 * Copyright (c) 2006-2011 Varnish Software AS

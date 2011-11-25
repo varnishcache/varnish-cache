@@ -1,6 +1,6 @@
 # See source code comments to avoid memory leaks when enabling MALLOC_MAG.
-#CPPFLAGS := -DMALLOC_PRODUCTION -DMALLOC_MAG
-AM_CPPFLAGS := -DMALLOC_PRODUCTION
+#CPPFLAGS = -DMALLOC_PRODUCTION -DMALLOC_MAG
+AM_CPPFLAGS = -DMALLOC_PRODUCTION
 
 #all: libjemalloc.so.0 libjemalloc_mt.so.0
 

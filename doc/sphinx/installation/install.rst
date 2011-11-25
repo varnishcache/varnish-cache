@@ -92,7 +92,6 @@ installed. On a Debian or Ubuntu system these are:
 * libtool 
 * autoconf
 * libncurses-dev
-* xsltproc
 * groff-base
 * libpcre3-dev
 * pkg-config
@@ -107,7 +106,6 @@ packages installed:
 * autoconf 
 * libtool
 * ncurses-devel
-* libxslt
 * groff
 * pcre-devel
 * pkgconfig

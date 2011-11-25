@@ -32,21 +32,25 @@
 #include "config.h"
 
 #include <ctype.h>
+#include <errno.h>
 #include <poll.h>
-#include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 #include <unistd.h>
 
-#include <vqueue.h>
-#include <vsb.h>
-#include <vlu.h>
-#include <vcli.h>
-#include <cli_priv.h>
-#include <cli_common.h>
-#include <cli_serve.h>
-#include <libvarnish.h>
-#include <miniobj.h>
+#include "miniobj.h"
+#include "vas.h"
+
+#include "vav.h"
+#include "vcli.h"
+#include "vcli_common.h"
+#include "vcli_priv.h"
+#include "vcli_serve.h"
+#include "vlu.h"
+#include "vqueue.h"
+#include "vsb.h"
 
 struct VCLS_func {
 	unsigned			magic;
@@ -77,7 +81,8 @@ struct VCLS {
 	unsigned			nfd;
 	VTAILQ_HEAD(,VCLS_func)		funcs;
 	cls_cbc_f			*before, *after;
-	unsigned			maxlen;
+	volatile unsigned		*maxlen;
+	volatile unsigned		*limit;
 };
 
 /*--------------------------------------------------------------------*/
@@ -241,6 +246,10 @@ cls_vlu2(void *priv, char * const *av)
 	struct VCLS_func *cfn;
 	struct cli *cli;
 	unsigned na;
+	ssize_t len;
+	char *s;
+	unsigned lim;
+	const char *trunc = "!\n[response was truncated]\n";
 
 	CAST_OBJ_NOTNULL(cfd, priv, VCLS_FD_MAGIC);
 	cs = cfd->cls;
@@ -293,7 +302,16 @@ cls_vlu2(void *priv, char * const *av)
 
 	cli->cls = NULL;
 
-	if (VCLI_WriteResult(cfd->fdo, cli->result, VSB_data(cli->sb)) ||
+	s = VSB_data(cli->sb);
+	len = VSB_len(cli->sb);
+	lim = *cs->limit;
+	if (len > lim) {
+		if (cli->result == CLIS_OK)
+			cli->result = CLIS_TRUNCATED;
+		strcpy(s + (lim - strlen(trunc)), trunc);
+		assert(strlen(s) <= lim);
+	}
+	if (VCLI_WriteResult(cfd->fdo, cli->result, s) ||
 	    cli->result == CLIS_CLOSE)
 		return (1);
 
@@ -376,7 +394,8 @@ cls_vlu(void *priv, const char *p)
 }
 
 struct VCLS *
-VCLS_New(cls_cbc_f *before, cls_cbc_f *after, unsigned maxlen)
+VCLS_New(cls_cbc_f *before, cls_cbc_f *after, volatile unsigned *maxlen,
+    volatile unsigned *limit)
 {
 	struct VCLS *cs;
 
@@ -387,6 +406,7 @@ VCLS_New(cls_cbc_f *before, cls_cbc_f *after, unsigned maxlen)
 	cs->before = before;
 	cs->after = after;
 	cs->maxlen = maxlen;
+	cs->limit = limit;
 	return (cs);
 }
 
@@ -405,8 +425,9 @@ VCLS_AddFd(struct VCLS *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 	cfd->fdo = fdo;
 	cfd->cli = &cfd->clis;
 	cfd->cli->magic = CLI_MAGIC;
-	cfd->cli->vlu = VLU_New(cfd, cls_vlu, cs->maxlen);
+	cfd->cli->vlu = VLU_New(cfd, cls_vlu, *cs->maxlen);
 	cfd->cli->sb = VSB_new_auto();
+	cfd->cli->limit = cs->limit;
 	cfd->closefunc = closefunc;
 	cfd->priv = priv;
 	AN(cfd->cli->sb);

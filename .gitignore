@@ -43,9 +43,9 @@ TAGS
 
 # Various auto-generated code snippets
 /include/vcl.h
-/include/vcl_returns.h
+/include/tbl/vcl_returns.h
 /include/vrt_obj.h
-/include/vrt_stv_var.h
+/include/tbl/vrt_stv_var.h
 /include/vcs_version.h
 /lib/libvcl/vcc_fixed_token.c
 /lib/libvcl/vcc_obj.c
@@ -54,8 +54,10 @@ TAGS
 /lib/libvmod_std/vcc_if.h
 
 # Man-files and binaries
+/man/vsc2rst
 /man/vcl.7
 /man/varnish-cli.7
+/man/varnish-counters.7
 /bin/varnishadm/varnishadm
 /bin/varnishadm/varnishadm.1
 /bin/varnishd/varnishd
@@ -68,8 +70,6 @@ TAGS
 /bin/varnishncsa/varnishncsa.1
 /bin/varnishreplay/varnishreplay
 /bin/varnishreplay/varnishreplay.1
-/bin/varnishsizes/varnishsizes
-/bin/varnishsizes/varnishsizes.1
 /bin/varnishstat/varnishstat
 /bin/varnishstat/varnishstat.1
 /bin/varnishtest/varnishtest

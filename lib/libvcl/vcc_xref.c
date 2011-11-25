@@ -41,10 +41,6 @@
 
 #include <stdio.h>
 
-#include "vsb.h"
-
-#include "libvarnish.h"
-#include "vcc_priv.h"
 #include "vcc_compile.h"
 
 /*--------------------------------------------------------------------*/
@@ -228,7 +224,7 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 			VSB_printf(tl->sb, "Invalid return \"" #l "\"\n");\
 			vcc_ErrWhere(tl, p->return_tok[VCL_RET_##U]);	\
 		}
-#include "vcl_returns.h"
+#include "tbl/vcl_returns.h"
 #undef VCL_RET_MAC
 
 		VSB_printf(tl->sb, "\n...in subroutine \"%.*s\"\n",
@@ -273,7 +269,7 @@ vcc_checkaction1(struct vcc *tl, const struct symbol *sym)
 		if (m->ret_bitmap & ((1 << VCL_RET_##U)))	\
 			VSB_printf(tl->sb, " \"%s\"", #l);
 
-#include "vcl_returns.h"
+#include "tbl/vcl_returns.h"
 #undef VCL_RET_MAC
 		VSB_printf(tl->sb, "\n");
 		tl->err = 1;

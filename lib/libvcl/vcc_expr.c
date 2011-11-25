@@ -31,24 +31,20 @@
 
 #include "config.h"
 
+#include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
-#include "vsb.h"
-
-#include "vcc_priv.h"
 #include "vcc_compile.h"
-#include "libvarnish.h"
 
 static const char *
 vcc_Type(enum var_type fmt)
 {
 	switch(fmt) {
 #define VCC_TYPE(a)	case a: return(#a);
-#include "vcc_types.h"
+#include "tbl/vcc_types.h"
 #undef VCC_TYPE
 	default:
 		assert("Unknwon Type");
@@ -405,7 +401,7 @@ vcc_arg_type(const char **p)
 {
 
 #define VCC_TYPE(a) if (!strcmp(#a, *p)) { *p += strlen(#a) + 1; return (a);}
-#include "vcc_types.h"
+#include "tbl/vcc_types.h"
 #undef VCC_TYPE
 	return (VOID);
 }
@@ -886,6 +882,7 @@ static const struct cmps {
 	NUM_REL(INT),
 	NUM_REL(DURATION),
 	NUM_REL(BYTES),
+	NUM_REL(REAL),
 
 	{STRING,	T_EQ,	"!VRT_strcmp(\v1, \v2)" },
 	{STRING,	T_NEQ,	"VRT_strcmp(\v1, \v2)" },
@@ -940,7 +937,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 		re = vcc_regexp(tl);
 		ERRCHK(tl);
 		vcc_NextToken(tl);
-		bprintf(buf, "%sVRT_re_match(\v1, %s)", not, re);
+		bprintf(buf, "%sVRT_re_match(sp, \v1, %s)", not, re);
 		*e = vcc_expr_edit(BOOL, buf, *e, NULL);
 		return;
 	}

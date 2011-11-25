@@ -59,11 +59,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "vsb.h"
-
-#include "vcc_priv.h"
 #include "vcc_compile.h"
-#include "libvarnish.h"
 
 #define PFX "storage."
 
@@ -82,7 +78,7 @@ vcc_Stv_mkvar(struct vcc *tl, const struct token *t, enum var_type fmt)
 	v->name = TlDupTok(tl, t);
 	v->r_methods = 0
 #define VCL_MET_MAC(l,u,b)	| VCL_MET_##u
-#include "vcl_returns.h"
+#include "tbl/vcl_returns.h"
 #undef VCL_MET_MAC
 		;
 	v->fmt = fmt;
@@ -95,7 +91,7 @@ static struct stvars {
 	enum var_type	fmt;
 } stvars[] = {
 #define VRTSTVVAR(nm, vtype, ctype, dval)	{ #nm, vtype },
-#include "vrt_stv_var.h"
+#include "tbl/vrt_stv_var.h"
 #undef VRTSTVVAR
 	{ NULL,			BOOL }
 };

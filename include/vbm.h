@@ -29,8 +29,6 @@
  * Self-sizeing bitmap operations
  */
 
-#include "config.h"
-
 /**********************************************************************
  * Generic bitmap functions, may be generalized at some point.
  */
