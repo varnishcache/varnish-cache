@@ -311,6 +311,7 @@ vsm_cleaner(void *priv)
 		AZ(pthread_mutex_unlock(&vsm_mtx));
 		VTIM_sleep(1.1);
 	}
+	NEEDLESS_RETURN(NULL);
 }
 
 /*--------------------------------------------------------------------*/
