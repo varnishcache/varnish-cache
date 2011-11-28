@@ -19,6 +19,6 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.http.bar == "bar,  barf: fail"
-	expect resp.http.barf == resp.http.barf
-	expect resp.http.foo == resp.http.foo
+	expect resp.http.barf == <undef>
+	expect resp.http.foo == <undef>
 } -run

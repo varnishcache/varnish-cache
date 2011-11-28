@@ -1,0 +1,13 @@
+varnishtest "Ensure that we can test non-existence of headers (#1062)"
+
+server s1 {
+        rxreq
+        txresp
+} -start
+
+client c1 -connect ${s1_sock} {
+        txreq
+        rxresp
+        expect resp.http.X-Test == <undef>
+} -run
+

@@ -24,6 +24,6 @@ client c1 {
 
 	txreq -url /foobar 
 	rxresp
-	expect resp.http.content-encoding == "resp.http.content-encoding"
+	expect resp.http.content-encoding == <undef>
 	expect resp.bodylen == 43
 } -run
