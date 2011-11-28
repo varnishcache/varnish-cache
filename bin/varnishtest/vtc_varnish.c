@@ -201,7 +201,7 @@ varnishlog_thread(void *priv)
 	(void)VSL_Arg(vsl, 'n', v->workdir);
 	while (v->pid) {
 		if (VSL_Dispatch(vsl, h_addlog, v) <= 0)
-			break;
+			usleep(100000);
 	}
 	VSM_Delete(vsl);
 	return (NULL);
