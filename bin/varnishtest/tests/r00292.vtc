@@ -6,11 +6,11 @@ varnishtest "Header deletion test"
 server s1 {
 	rxreq
 	expect req.url == "/foo"
-	expect req.http.hdr1 == "req.http.hdr1"
+	expect req.http.hdr1 == <undef>
 	expect req.http.hdr2 == "2"
-	expect req.http.hdr3 == "req.http.hdr3"
+	expect req.http.hdr3 == <undef>
 	expect req.http.hdr4 == "4"
-	expect req.http.hdr5 == "req.http.hdr5"
+	expect req.http.hdr5 == <undef>
 	expect req.http.hdr6 == "6"
 	txresp -body "foobar"
 } -start

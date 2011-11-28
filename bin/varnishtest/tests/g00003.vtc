@@ -30,12 +30,12 @@ varnish v1 -cliok "param.set http_gzip_support true" -vcl+backend {
 client c1 {
 	txreq -url /foo -hdr "Accept-Encoding: gzip"
 	rxresp
-	expect resp.http.content-encoding == "resp.http.content-encoding"
+	expect resp.http.content-encoding == <undef>
 	expect resp.bodylen == 41
 
 	txreq -url /bar -hdr "Accept-Encoding: gzip"
 	rxresp
-	expect resp.http.content-encoding == "resp.http.content-encoding"
+	expect resp.http.content-encoding == <undef>
 	expect resp.bodylen == 42
 
 	txreq -url /foobar -hdr "Accept-Encoding: gzip"
@@ -46,6 +46,6 @@ client c1 {
 
 	txreq -url /foobar 
 	rxresp
-	expect resp.http.content-encoding == "resp.http.content-encoding"
+	expect resp.http.content-encoding == <undef>
 	expect resp.bodylen == 43
 } -run
