@@ -365,14 +365,14 @@ RES_StreamPoll(struct worker *w)
 	void *ptr;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(w->fetch_obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(w->busyobj->fetch_obj, OBJECT_MAGIC);
 	sctx = w->sctx;
 	CHECK_OBJ_NOTNULL(sctx, STREAM_CTX_MAGIC);
-	if (w->fetch_obj->len == sctx->stream_next)
+	if (w->busyobj->fetch_obj->len == sctx->stream_next)
 		return;
-	assert(w->fetch_obj->len > sctx->stream_next);
+	assert(w->busyobj->fetch_obj->len > sctx->stream_next);
 	l = sctx->stream_front;
-	VTAILQ_FOREACH(st, &w->fetch_obj->store, list) {
+	VTAILQ_FOREACH(st, &w->busyobj->fetch_obj->store, list) {
 		if (st->len + l <= sctx->stream_next) {
 			l += st->len;
 			continue;
@@ -391,18 +391,18 @@ RES_StreamPoll(struct worker *w)
 	if (!(w->res_mode & RES_GUNZIP))
 		(void)WRW_Flush(w);
 
-	if (w->fetch_obj->objcore == NULL ||
-	    (w->fetch_obj->objcore->flags & OC_F_PASS)) {
+	if (w->busyobj->fetch_obj->objcore == NULL ||
+	    (w->busyobj->fetch_obj->objcore->flags & OC_F_PASS)) {
 		/*
 		 * This is a pass object, release storage as soon as we
 		 * have delivered it.
 		 */
 		while (1) {
-			st = VTAILQ_FIRST(&w->fetch_obj->store);
+			st = VTAILQ_FIRST(&w->busyobj->fetch_obj->store);
 			if (st == NULL ||
 			    sctx->stream_front + st->len > sctx->stream_next)
 				break;
-			VTAILQ_REMOVE(&w->fetch_obj->store, st, list);
+			VTAILQ_REMOVE(&w->busyobj->fetch_obj->store, st, list);
 			sctx->stream_front += st->len;
 			STV_free(st);
 		}

@@ -81,7 +81,7 @@ vfp_esi_bytes_uu(struct worker *w, struct http_conn *htc, ssize_t bytes)
 			return (wl);
 		VEP_Parse(w, (const char *)st->ptr + st->len, wl);
 		st->len += wl;
-		w->fetch_obj->len += wl;
+		w->busyobj->fetch_obj->len += wl;
 		bytes -= wl;
 	}
 	return (1);
@@ -117,7 +117,7 @@ vfp_esi_bytes_gu(struct worker *w, struct http_conn *htc, ssize_t bytes)
 		i = VGZ_Gunzip(vg, &dp, &dl);
 		xxxassert(i == VGZ_OK || i == VGZ_END);
 		VEP_Parse(w, dp, dl);
-		w->fetch_obj->len += dl;
+		w->busyobj->fetch_obj->len += dl;
 	}
 	return (1);
 }
@@ -187,7 +187,7 @@ vfp_vep_callback(struct worker *w, ssize_t l, enum vgz_flag flg)
 			}
 			i = VGZ_Gzip(vef->vgz, &dp, &dl, flg);
 			vef->tot += dl;
-			w->fetch_obj->len += dl;
+			w->busyobj->fetch_obj->len += dl;
 		} while (!VGZ_IbufEmpty(vef->vgz) ||
 		    (flg != VGZ_NORMAL && VGZ_ObufFull(vef->vgz)));
 		if (px != 0) {
@@ -374,11 +374,11 @@ vfp_esi_end(struct worker *w)
 			l = VSB_len(vsb);
 			assert(l > 0);
 			/* XXX: This is a huge waste of storage... */
-			w->fetch_obj->esidata = STV_alloc(w, l);
-			if (w->fetch_obj->esidata != NULL) {
-				memcpy(w->fetch_obj->esidata->ptr,
+			w->busyobj->fetch_obj->esidata = STV_alloc(w, l);
+			if (w->busyobj->fetch_obj->esidata != NULL) {
+				memcpy(w->busyobj->fetch_obj->esidata->ptr,
 				    VSB_data(vsb), l);
-				w->fetch_obj->esidata->len = l;
+				w->busyobj->fetch_obj->esidata->len = l;
 			} else {
 				retval = FetchError(w,
 				    "Could not allocate storage for esidata");
@@ -391,7 +391,7 @@ vfp_esi_end(struct worker *w)
 		vef = w->vef_priv;
 		CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 		w->vef_priv = NULL;
-		VGZ_UpdateObj(vef->vgz, w->fetch_obj);
+		VGZ_UpdateObj(vef->vgz, w->busyobj->fetch_obj);
 		if (VGZ_Destroy(&vef->vgz,  -1) != VGZ_END)
 			retval = FetchError(w,
 			    "ESI+Gzip Failed at the very end");

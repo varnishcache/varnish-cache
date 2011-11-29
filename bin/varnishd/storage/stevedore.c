@@ -367,7 +367,7 @@ struct storage *
 STV_alloc(struct worker *w, size_t size)
 {
 
-	return (stv_alloc(w, w->fetch_obj, size));
+	return (stv_alloc(w, w->busyobj->fetch_obj, size));
 }
 
 void

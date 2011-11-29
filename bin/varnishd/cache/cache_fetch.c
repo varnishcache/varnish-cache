@@ -124,7 +124,7 @@ vfp_nop_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 		if (wl <= 0)
 			return (wl);
 		st->len += wl;
-		w->fetch_obj->len += wl;
+		w->busyobj->fetch_obj->len += wl;
 		bytes -= wl;
 		if (w->do_stream)
 			RES_StreamPoll(w);
@@ -146,12 +146,12 @@ vfp_nop_end(struct worker *w)
 {
 	struct storage *st;
 
-	st = VTAILQ_LAST(&w->fetch_obj->store, storagehead);
+	st = VTAILQ_LAST(&w->busyobj->fetch_obj->store, storagehead);
 	if (st == NULL)
 		return (0);
 
 	if (st->len == 0) {
-		VTAILQ_REMOVE(&w->fetch_obj->store, st, list);
+		VTAILQ_REMOVE(&w->busyobj->fetch_obj->store, st, list);
 		STV_free(st);
 		return (0);
 	}
@@ -178,7 +178,7 @@ FetchStorage(struct worker *w, ssize_t sz)
 	struct storage *st;
 	struct object *obj;
 
-	obj = w->fetch_obj;
+	obj = w->busyobj->fetch_obj;
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	st = VTAILQ_LAST(&obj->store, storagehead);
 	if (st != NULL && st->len < st->space)
@@ -495,7 +495,7 @@ FetchBody(struct worker *w, struct object *obj)
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(w->busyobj, BUSYOBJ_MAGIC);
-	AZ(w->fetch_obj);
+	AZ(w->busyobj->fetch_obj);
 	CHECK_OBJ_NOTNULL(w->vbc, VBC_MAGIC);
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(obj->http, HTTP_MAGIC);
@@ -510,7 +510,7 @@ FetchBody(struct worker *w, struct object *obj)
 	AZ(w->busyobj->vgz_rx);
 	AZ(VTAILQ_FIRST(&obj->store));
 
-	w->fetch_obj = obj;
+	w->busyobj->fetch_obj = obj;
 	w->busyobj->fetch_failed = 0;
 
 	/* XXX: pick up estimate from objdr ? */
@@ -564,7 +564,7 @@ FetchBody(struct worker *w, struct object *obj)
 	 */
 	AZ(vfp_nop_end(w));
 
-	w->fetch_obj = NULL;
+	w->busyobj->fetch_obj = NULL;
 
 	WSLB(w, SLT_Fetch_Body, "%u(%s) cls %d mklen %u",
 	    w->body_status, body_status(w->body_status),

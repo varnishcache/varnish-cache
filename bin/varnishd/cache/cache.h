@@ -329,7 +329,6 @@ struct worker {
 
 	/* Fetch stuff */
 	struct vbc		*vbc;
-	struct object		*fetch_obj;
 	enum body_status	body_status;
 	struct vef_priv		*vef_priv;
 	unsigned		do_stream;
@@ -501,6 +500,7 @@ struct busyobj {
 	unsigned		fetch_failed;
 	struct vgz		*vgz_rx;
 
+	struct object		*fetch_obj;
 	struct exp		exp;
 	struct http_conn	htc;
 };
