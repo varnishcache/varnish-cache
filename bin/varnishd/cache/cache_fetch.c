@@ -236,7 +236,7 @@ fetch_straight(struct worker *w, struct http_conn *htc, ssize_t cl)
 	} else if (cl == 0)
 		return (0);
 
-	i = w->vfp->bytes(w, htc, cl);
+	i = w->busyobj->vfp->bytes(w, htc, cl);
 	if (i <= 0)
 		return (FetchError(w, "straight insufficient bytes"));
 	return (0);
@@ -293,7 +293,7 @@ fetch_chunked(struct worker *w, struct http_conn *htc)
 		if (cl < 0)
 			return (FetchError(w,"chunked header number syntax"));
 
-		if (cl > 0 && w->vfp->bytes(w, htc, cl) <= 0)
+		if (cl > 0 && w->busyobj->vfp->bytes(w, htc, cl) <= 0)
 			return (-1);
 
 		i = HTC_Read(w, htc, buf, 1);
@@ -315,7 +315,7 @@ fetch_eof(struct worker *w, struct http_conn *htc)
 	int i;
 
 	assert(w->body_status == BS_EOF);
-	i = w->vfp->bytes(w, htc, SSIZE_MAX);
+	i = w->busyobj->vfp->bytes(w, htc, SSIZE_MAX);
 	if (i < 0)
 		return (-1);
 	return (0);
@@ -494,8 +494,8 @@ FetchBody(struct worker *w, struct object *obj)
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(obj->http, HTTP_MAGIC);
 
-	if (w->vfp == NULL)
-		w->vfp = &vfp_nop;
+	if (w->busyobj->vfp == NULL)
+		w->busyobj->vfp = &vfp_nop;
 
 	AssertObjCorePassOrBusy(obj->objcore);
 
@@ -518,24 +518,24 @@ FetchBody(struct worker *w, struct object *obj)
 		break;
 	case BS_LENGTH:
 		cl = fetch_number( w->h_content_length, 10);
-		w->vfp->begin(w, cl > 0 ? cl : 0);
+		w->busyobj->vfp->begin(w, cl > 0 ? cl : 0);
 		cls = fetch_straight(w, w->htc, cl);
 		mklen = 1;
-		if (w->vfp->end(w))
+		if (w->busyobj->vfp->end(w))
 			cls = -1;
 		break;
 	case BS_CHUNKED:
-		w->vfp->begin(w, cl);
+		w->busyobj->vfp->begin(w, cl);
 		cls = fetch_chunked(w, w->htc);
 		mklen = 1;
-		if (w->vfp->end(w))
+		if (w->busyobj->vfp->end(w))
 			cls = -1;
 		break;
 	case BS_EOF:
-		w->vfp->begin(w, cl);
+		w->busyobj->vfp->begin(w, cl);
 		cls = fetch_eof(w, w->htc);
 		mklen = 1;
-		if (w->vfp->end(w))
+		if (w->busyobj->vfp->end(w))
 			cls = -1;
 		break;
 	case BS_ERROR:

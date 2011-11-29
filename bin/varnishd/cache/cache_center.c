@@ -706,7 +706,6 @@ cnt_fetchbody(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	wrk = sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 
 	assert(sp->handling == VCL_RET_HIT_FOR_PASS ||
@@ -738,8 +737,6 @@ cnt_fetchbody(struct sess *sp)
 	 *	anything else			--> do nothing wrt gzip
 	 *
 	 */
-
-	AZ(wrk->vfp);
 
 	/* We do nothing unless the param is set */
 	if (!cache_param->http_gzip_support)
@@ -776,13 +773,13 @@ cnt_fetchbody(struct sess *sp)
 
 	/* ESI takes precedence and handles gzip/gunzip itself */
 	if (wrk->do_esi)
-		wrk->vfp = &vfp_esi;
+		wrk->busyobj->vfp = &vfp_esi;
 	else if (wrk->do_gunzip)
-		wrk->vfp = &vfp_gunzip;
+		wrk->busyobj->vfp = &vfp_gunzip;
 	else if (wrk->do_gzip)
-		wrk->vfp = &vfp_gzip;
+		wrk->busyobj->vfp = &vfp_gzip;
 	else if (wrk->busyobj->is_gzip)
-		wrk->vfp = &vfp_testgzip;
+		wrk->busyobj->vfp = &vfp_testgzip;
 
 	if (wrk->do_esi || sp->esi_level > 0)
 		wrk->do_stream = 0;
@@ -890,7 +887,7 @@ cnt_fetchbody(struct sess *sp)
 
 	http_Setup(wrk->bereq, NULL);
 	http_Setup(wrk->beresp, NULL);
-	wrk->vfp = NULL;
+	wrk->busyobj->vfp = NULL;
 	assert(WRW_IsReleased(wrk));
 	AZ(wrk->vbc);
 	AN(sp->director);
@@ -960,7 +957,7 @@ cnt_streambody(struct sess *sp)
 
 	http_Setup(wrk->bereq, NULL);
 	http_Setup(wrk->beresp, NULL);
-	wrk->vfp = NULL;
+	wrk->busyobj->vfp = NULL;
 	AZ(wrk->vbc);
 	AN(sp->director);
 

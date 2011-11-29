@@ -334,7 +334,6 @@ struct worker {
 	struct vbc		*vbc;
 	struct object		*fetch_obj;
 	enum body_status	body_status;
-	struct vfp		*vfp;
 	struct vgz		*vgz_rx;
 	struct vef_priv		*vef_priv;
 	unsigned		fetch_failed;
@@ -485,7 +484,16 @@ oc_getlru(const struct objcore *oc)
 	return (oc->methods->getlru(oc));
 }
 
-/* Busy Object structure ---------------------------------------------*/
+/* Busy Object structure ---------------------------------------------
+ *
+ * The busyobj structure captures the aspects of an object related to,
+ * and while it is being fetched from the backend.
+ *
+ * One of these aspects will be how much has been fetched, which
+ * streaming delivery will make use of.
+ *
+ * XXX: many fields from worker needs to move here.
+ */
 
 struct busyobj {
 	unsigned		magic;
@@ -493,6 +501,8 @@ struct busyobj {
 	uint8_t			*vary;
 	unsigned		is_gzip;
 	unsigned		is_gunzip;
+
+	struct vfp		*vfp;
 };
 
 /* Object structure --------------------------------------------------*/
