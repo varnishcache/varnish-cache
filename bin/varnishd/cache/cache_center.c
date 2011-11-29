@@ -238,7 +238,7 @@ cnt_prepresp(struct sess *sp)
 			break;
 		if (sp->wrk->do_stream) {
 			VDI_CloseFd(sp->wrk);
-			HSH_Drop(sp);
+			HSH_Drop(sp->wrk);
 		} else {
 			(void)HSH_Deref(sp->wrk, NULL, &sp->wrk->obj);
 		}
@@ -495,7 +495,7 @@ cnt_error(struct sess *sp)
 
 	if (sp->handling == VCL_RET_RESTART &&
 	    sp->restarts <  cache_param->max_restarts) {
-		HSH_Drop(sp);
+		HSH_Drop(sp->wrk);
 		sp->director = NULL;
 		sp->restarts++;
 		sp->step = STP_RECV;
@@ -873,7 +873,7 @@ cnt_fetchbody(struct sess *sp)
 	AN(sp->director);
 
 	if (i) {
-		HSH_Drop(sp);
+		HSH_Drop(wrk);
 		AZ(wrk->obj);
 		sp->err_code = 503;
 		sp->step = STP_ERROR;
@@ -884,7 +884,7 @@ cnt_fetchbody(struct sess *sp)
 		EXP_Insert(wrk->obj);
 		AN(wrk->obj->objcore);
 		AN(wrk->obj->objcore->ban);
-		HSH_Unbusy(sp);
+		HSH_Unbusy(wrk);
 	}
 	wrk->acct_tmp.fetch++;
 	sp->step = STP_PREPRESP;
@@ -939,7 +939,7 @@ cnt_streambody(struct sess *sp)
 		EXP_Insert(sp->wrk->obj);
 		AN(sp->wrk->obj->objcore);
 		AN(sp->wrk->obj->objcore->ban);
-		HSH_Unbusy(sp);
+		HSH_Unbusy(sp->wrk);
 	} else {
 		sp->doclose = "Stream error";
 	}

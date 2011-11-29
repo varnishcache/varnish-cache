@@ -580,29 +580,29 @@ HSH_Purge(const struct sess *sp, struct objhead *oh, double ttl, double grace)
  */
 
 void
-HSH_Drop(struct sess *sp)
+HSH_Drop(struct worker *wrk)
 {
 	struct object *o;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	o = sp->wrk->obj;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	o = wrk->obj;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	AssertObjCorePassOrBusy(o->objcore);
 	o->exp.ttl = -1.;
 	if (o->objcore != NULL)		/* Pass has no objcore */
-		HSH_Unbusy(sp);
-	(void)HSH_Deref(sp->wrk, NULL, &sp->wrk->obj);
+		HSH_Unbusy(wrk);
+	(void)HSH_Deref(wrk, NULL, &wrk->obj);
 }
 
 void
-HSH_Unbusy(const struct sess *sp)
+HSH_Unbusy(struct worker *wrk)
 {
 	struct object *o;
 	struct objhead *oh;
 	struct objcore *oc;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	o = sp->wrk->obj;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	o = wrk->obj;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oc = o->objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -614,9 +614,9 @@ HSH_Unbusy(const struct sess *sp)
 	assert(oc->refcnt > 0);
 	assert(oh->refcnt > 0);
 	if (o->ws_o->overflow)
-		sp->wrk->stats.n_objoverflow++;
+		wrk->stats.n_objoverflow++;
 	if (cache_param->diag_bitmap & 0x40)
-		WSP(sp, SLT_Debug,
+		WSL(wrk, SLT_Debug, 0,
 		    "Object %u workspace free %u", o->xid, WS_Free(o->ws_o));
 
 	/* XXX: pretouch neighbors on oh->objcs to prevent page-on under mtx */
@@ -626,14 +626,14 @@ HSH_Unbusy(const struct sess *sp)
 	VTAILQ_REMOVE(&oh->objcs, oc, list);
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, list);
 	oc->flags &= ~OC_F_BUSY;
-	AZ(sp->wrk->nbusyobj);
-	sp->wrk->nbusyobj = oc->busyobj;
+	AZ(wrk->nbusyobj);
+	wrk->nbusyobj = oc->busyobj;
 	oc->busyobj = NULL;
 	if (oh->waitinglist != NULL)
 		hsh_rush(oh);
 	AN(oc->ban);
 	Lck_Unlock(&oh->mtx);
-	assert(oc_getobj(sp->wrk, oc) == o);
+	assert(oc_getobj(wrk, oc) == o);
 }
 
 void
