@@ -556,7 +556,8 @@ VEP_Parse(const struct worker *w, const char *p, size_t l)
 	int i;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	vep = w->vep;
+	CHECK_OBJ_NOTNULL(w->busyobj, BUSYOBJ_MAGIC);
+	vep = w->busyobj->vep;
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 	assert(l > 0);
 
@@ -981,12 +982,15 @@ VEP_Parse(const struct worker *w, const char *p, size_t l)
 static ssize_t __match_proto__()
 vep_default_cb(struct worker *w, ssize_t l, enum vgz_flag flg)
 {
+	struct vep_state *vep;
 
+	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(w->busyobj, BUSYOBJ_MAGIC);
+	vep = w->busyobj->vep;
+	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 	(void)flg;
-	AN(w->vep);
-	w->vep->cb_x += l;
-Debug("CB(%jd,%d) = %jd\n", (intmax_t)l, flg, (intmax_t)w->vep->cb_x);
-	return (w->vep->cb_x);
+	vep->cb_x += l;
+	return (vep->cb_x);
 }
 
 /*---------------------------------------------------------------------
@@ -998,16 +1002,17 @@ VEP_Init(struct worker *w, vep_callback_t *cb)
 	struct vep_state *vep;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	AZ(w->vep);
-	w->vep = (void*)WS_Alloc(w->ws, sizeof *vep);
-	AN(w->vep);
+	CHECK_OBJ_NOTNULL(w->busyobj, BUSYOBJ_MAGIC);
+	AZ(w->busyobj->vep);
+	vep = (void*)WS_Alloc(w->ws, sizeof *vep);
+	AN(vep);
 
-	vep = w->vep;
 	memset(vep, 0, sizeof *vep);
 	vep->magic = VEP_MAGIC;
 	vep->wrk = w;
 	vep->vsb = VSB_new_auto();
 	AN(vep->vsb);
+	w->busyobj->vep = vep;
 
 	if (cb != NULL) {
 		vep->dogzip = 1;
@@ -1038,13 +1043,14 @@ VEP_Init(struct worker *w, vep_callback_t *cb)
  */
 
 struct vsb *
-VEP_Finish(struct worker *w)
+VEP_Finish(const struct worker *w)
 {
 	struct vep_state *vep;
 	ssize_t l, lcb;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	vep = w->vep;
+	CHECK_OBJ_NOTNULL(w->busyobj, BUSYOBJ_MAGIC);
+	vep = w->busyobj->vep;
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 
 	if (vep->o_pending)
@@ -1055,7 +1061,7 @@ VEP_Finish(struct worker *w)
 	}
 	(void)vep->cb(vep->wrk, 0, VGZ_FINISH);
 
-	w->vep = NULL;
+	w->busyobj->vep = NULL;
 
 	AZ(VSB_finish(vep->vsb));
 	l = VSB_len(vep->vsb);

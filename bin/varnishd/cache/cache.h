@@ -348,7 +348,6 @@ struct worker {
 	struct stream_ctx	*sctx;
 
 	/* ESI stuff */
-	struct vep_state	*vep;
 	int			gzip_resp;
 	ssize_t			l_crc;
 	uint32_t		crc;
@@ -503,6 +502,7 @@ struct busyobj {
 	unsigned		is_gunzip;
 
 	struct vfp		*vfp;
+	struct vep_state	*vep;
 };
 
 /* Object structure --------------------------------------------------*/

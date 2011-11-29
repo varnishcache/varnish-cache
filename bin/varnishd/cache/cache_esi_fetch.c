@@ -325,7 +325,7 @@ vfp_esi_begin(struct worker *w, size_t estimate)
 	}
 
 	(void)estimate;
-	AN(w->vep);
+	AN(w->busyobj->vep);
 }
 
 static int __match_proto__()
@@ -335,7 +335,7 @@ vfp_esi_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	AZ(w->fetch_failed);
-	AN(w->vep);
+	AN(w->busyobj->vep);
 	assert(w->htc == htc);
 	if (w->busyobj->is_gzip && w->do_gunzip)
 		i = vfp_esi_bytes_gu(w, htc, bytes);
@@ -345,7 +345,7 @@ vfp_esi_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 		i = vfp_esi_bytes_gg(w, htc, bytes);
 	else
 		i = vfp_esi_bytes_uu(w, htc, bytes);
-	AN(w->vep);
+	AN(w->busyobj->vep);
 	return (i);
 }
 
@@ -358,7 +358,7 @@ vfp_esi_end(struct worker *w)
 	int retval;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	AN(w->vep);
+	AN(w->busyobj->vep);
 
 	retval = w->fetch_failed;
 
