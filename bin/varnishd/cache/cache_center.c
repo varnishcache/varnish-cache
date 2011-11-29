@@ -442,22 +442,22 @@ cnt_error(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	sp->wrk->do_esi = 0;
-	sp->wrk->is_gzip = 0;
-	sp->wrk->is_gunzip = 0;
-	sp->wrk->do_gzip = 0;
-	sp->wrk->do_gunzip = 0;
-	sp->wrk->do_stream = 0;
-
 	w = sp->wrk;
-	if (sp->wrk->obj == NULL) {
+	w->do_esi = 0;
+	w->is_gzip = 0;
+	w->is_gunzip = 0;
+	w->do_gzip = 0;
+	w->do_gunzip = 0;
+	w->do_stream = 0;
+
+	if (w->obj == NULL) {
 		HSH_Prealloc(sp);
 		EXP_Clr(&w->exp);
-		sp->wrk->obj = STV_NewObject(sp, NULL, cache_param->http_resp_size,
-		     &w->exp, (uint16_t)cache_param->http_max_hdr);
+		w->obj = STV_NewObject(w, NULL, cache_param->http_resp_size,
+		     (uint16_t)cache_param->http_max_hdr);
 		if (sp->wrk->obj == NULL)
-			sp->wrk->obj = STV_NewObject(sp, TRANSIENT_STORAGE,
-			    cache_param->http_resp_size, &w->exp,
+			w->obj = STV_NewObject(w, TRANSIENT_STORAGE,
+			    cache_param->http_resp_size,
 			    (uint16_t)cache_param->http_max_hdr);
 		if (sp->wrk->obj == NULL) {
 			sp->doclose = "Out of objects";
@@ -684,15 +684,18 @@ cnt_fetchbody(struct sess *sp)
 	unsigned l;
 	struct vsb *vary = NULL;
 	int varyl = 0, pass;
+	struct worker *wrk;
+
+	wrk = sp->wrk;
 
 	assert(sp->handling == VCL_RET_HIT_FOR_PASS ||
 	    sp->handling == VCL_RET_DELIVER);
 
-	if (sp->wrk->objcore == NULL) {
+	if (wrk->objcore == NULL) {
 		/* This is a pass from vcl_recv */
 		pass = 1;
 		/* VCL may have fiddled this, but that doesn't help */
-		sp->wrk->exp.ttl = -1.;
+		wrk->exp.ttl = -1.;
 	} else if (sp->handling == VCL_RET_HIT_FOR_PASS) {
 		/* pass from vcl_fetch{} -> hit-for-pass */
 		/* XXX: the bereq was not filtered pass... */
@@ -715,63 +718,61 @@ cnt_fetchbody(struct sess *sp)
 	 *
 	 */
 
-	AZ(sp->wrk->vfp);
+	AZ(wrk->vfp);
 
 	/* We do nothing unless the param is set */
 	if (!cache_param->http_gzip_support)
-		sp->wrk->do_gzip = sp->wrk->do_gunzip = 0;
+		wrk->do_gzip = wrk->do_gunzip = 0;
 
-	sp->wrk->is_gzip =
-	    http_HdrIs(sp->wrk->beresp, H_Content_Encoding, "gzip");
+	wrk->is_gzip = http_HdrIs(wrk->beresp, H_Content_Encoding, "gzip");
 
-	sp->wrk->is_gunzip =
-	    !http_GetHdr(sp->wrk->beresp, H_Content_Encoding, NULL);
+	wrk->is_gunzip = !http_GetHdr(wrk->beresp, H_Content_Encoding, NULL);
 
 	/* It can't be both */
-	assert(sp->wrk->is_gzip == 0 || sp->wrk->is_gunzip == 0);
+	assert(wrk->is_gzip == 0 || wrk->is_gunzip == 0);
 
 	/* We won't gunzip unless it is gzip'ed */
-	if (sp->wrk->do_gunzip && !sp->wrk->is_gzip)
-		sp->wrk->do_gunzip = 0;
+	if (wrk->do_gunzip && !wrk->is_gzip)
+		wrk->do_gunzip = 0;
 
 	/* If we do gunzip, remove the C-E header */
-	if (sp->wrk->do_gunzip)
-		http_Unset(sp->wrk->beresp, H_Content_Encoding);
+	if (wrk->do_gunzip)
+		http_Unset(wrk->beresp, H_Content_Encoding);
 
 	/* We wont gzip unless it is ungziped */
-	if (sp->wrk->do_gzip && !sp->wrk->is_gunzip)
-		sp->wrk->do_gzip = 0;
+	if (wrk->do_gzip && !wrk->is_gunzip)
+		wrk->do_gzip = 0;
 
 	/* If we do gzip, add the C-E header */
-	if (sp->wrk->do_gzip)
-		http_SetHeader(sp->wrk, sp->vsl_id, sp->wrk->beresp,
+	if (wrk->do_gzip)
+		http_SetHeader(wrk, sp->vsl_id, wrk->beresp,
 		    "Content-Encoding: gzip");
 
 	/* But we can't do both at the same time */
-	assert(sp->wrk->do_gzip == 0 || sp->wrk->do_gunzip == 0);
+	assert(wrk->do_gzip == 0 || wrk->do_gunzip == 0);
 
 	/* ESI takes precedence and handles gzip/gunzip itself */
-	if (sp->wrk->do_esi)
-		sp->wrk->vfp = &vfp_esi;
-	else if (sp->wrk->do_gunzip)
-		sp->wrk->vfp = &vfp_gunzip;
-	else if (sp->wrk->do_gzip)
-		sp->wrk->vfp = &vfp_gzip;
-	else if (sp->wrk->is_gzip)
-		sp->wrk->vfp = &vfp_testgzip;
+	if (wrk->do_esi)
+		wrk->vfp = &vfp_esi;
+	else if (wrk->do_gunzip)
+		wrk->vfp = &vfp_gunzip;
+	else if (wrk->do_gzip)
+		wrk->vfp = &vfp_gzip;
+	else if (wrk->is_gzip)
+		wrk->vfp = &vfp_testgzip;
 
-	if (sp->wrk->do_esi || sp->esi_level > 0)
-		sp->wrk->do_stream = 0;
+	if (wrk->do_esi || sp->esi_level > 0)
+		wrk->do_stream = 0;
 	if (!sp->wantbody)
-		sp->wrk->do_stream = 0;
+		wrk->do_stream = 0;
 
-	l = http_EstimateWS(sp->wrk->beresp,
+	l = http_EstimateWS(wrk->beresp,
 	    pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
 
 	/* Create Vary instructions */
-	if (sp->wrk->objcore != NULL) {
-		CHECK_OBJ_NOTNULL(sp->wrk->objcore, OBJCORE_MAGIC);
-		vary = VRY_Create(sp, sp->wrk->beresp);
+	if (wrk->objcore != NULL) {
+		CHECK_OBJ_NOTNULL(wrk->objcore, OBJCORE_MAGIC);
+		vary = VRY_Create(sp, wrk->beresp);
 		if (vary != NULL) {
 			varyl = VSB_len(vary);
 			assert(varyl > 0);
@@ -785,110 +786,107 @@ cnt_fetchbody(struct sess *sp)
 	 */
 	l += strlen("Content-Length: XxxXxxXxxXxxXxxXxx") + sizeof(void *);
 
-	if (sp->wrk->exp.ttl < cache_param->shortlived || sp->wrk->objcore == NULL)
-		sp->wrk->storage_hint = TRANSIENT_STORAGE;
+	if (wrk->exp.ttl < cache_param->shortlived || wrk->objcore == NULL)
+		wrk->storage_hint = TRANSIENT_STORAGE;
 
-	sp->wrk->obj = STV_NewObject(sp, sp->wrk->storage_hint, l,
-	    &sp->wrk->exp, nhttp);
-	if (sp->wrk->obj == NULL) {
+	wrk->obj = STV_NewObject(wrk, wrk->storage_hint, l, nhttp);
+	if (wrk->obj == NULL) {
 		/*
 		 * Try to salvage the transaction by allocating a
 		 * shortlived object on Transient storage.
 		 */
-		sp->wrk->obj = STV_NewObject(sp, TRANSIENT_STORAGE, l,
-		    &sp->wrk->exp, nhttp);
-		if (sp->wrk->exp.ttl > cache_param->shortlived)
-			sp->wrk->exp.ttl = cache_param->shortlived;
-		sp->wrk->exp.grace = 0.0;
-		sp->wrk->exp.keep = 0.0;
+		wrk->obj = STV_NewObject(wrk, TRANSIENT_STORAGE, l, nhttp);
+		if (wrk->exp.ttl > cache_param->shortlived)
+			wrk->exp.ttl = cache_param->shortlived;
+		wrk->exp.grace = 0.0;
+		wrk->exp.keep = 0.0;
 	}
-	if (sp->wrk->obj == NULL) {
+	if (wrk->obj == NULL) {
 		sp->err_code = 503;
 		sp->step = STP_ERROR;
-		VDI_CloseFd(sp->wrk);
+		VDI_CloseFd(wrk);
 		return (0);
 	}
-	CHECK_OBJ_NOTNULL(sp->wrk->obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk->obj, OBJECT_MAGIC);
 
-	sp->wrk->storage_hint = NULL;
+	wrk->storage_hint = NULL;
 
-	if (sp->wrk->do_gzip || (sp->wrk->is_gzip && !sp->wrk->do_gunzip))
-		sp->wrk->obj->gziped = 1;
+	if (wrk->do_gzip || (wrk->is_gzip && !wrk->do_gunzip))
+		wrk->obj->gziped = 1;
 
 	if (vary != NULL) {
-		sp->wrk->obj->vary =
-		    (void *)WS_Alloc(sp->wrk->obj->http->ws, varyl);
-		AN(sp->wrk->obj->vary);
-		memcpy(sp->wrk->obj->vary, VSB_data(vary), varyl);
-		VRY_Validate(sp->wrk->obj->vary);
+		wrk->obj->vary = (void *)WS_Alloc(wrk->obj->http->ws, varyl);
+		AN(wrk->obj->vary);
+		memcpy(wrk->obj->vary, VSB_data(vary), varyl);
+		VRY_Validate(wrk->obj->vary);
 		VSB_delete(vary);
 	}
 
-	sp->wrk->obj->xid = sp->xid;
-	sp->wrk->obj->response = sp->err_code;
-	WS_Assert(sp->wrk->obj->ws_o);
+	wrk->obj->xid = sp->xid;
+	wrk->obj->response = sp->err_code;
+	WS_Assert(wrk->obj->ws_o);
 
 	/* Filter into object */
-	hp = sp->wrk->beresp;
-	hp2 = sp->wrk->obj->http;
+	hp = wrk->beresp;
+	hp2 = wrk->obj->http;
 
 	hp2->logtag = HTTP_Obj;
 	http_CopyResp(hp2, hp);
-	http_FilterFields(sp->wrk, sp->vsl_id, hp2, hp,
+	http_FilterFields(wrk, sp->vsl_id, hp2, hp,
 	    pass ? HTTPH_R_PASS : HTTPH_A_INS);
-	http_CopyHome(sp->wrk, sp->vsl_id, hp2);
+	http_CopyHome(wrk, sp->vsl_id, hp2);
 
 	if (http_GetHdr(hp, H_Last_Modified, &b))
-		sp->wrk->obj->last_modified = VTIM_parse(b);
+		wrk->obj->last_modified = VTIM_parse(b);
 	else
-		sp->wrk->obj->last_modified = floor(sp->wrk->exp.entered);
+		wrk->obj->last_modified = floor(wrk->exp.entered);
 
-	assert(WRW_IsReleased(sp->wrk));
+	assert(WRW_IsReleased(wrk));
 
 	/*
 	 * If we can deliver a 304 reply, we don't bother streaming.
 	 * Notice that vcl_deliver{} could still nuke the headers
 	 * that allow the 304, in which case we return 200 non-stream.
 	 */
-	if (sp->wrk->obj->response == 200 &&
+	if (wrk->obj->response == 200 &&
 	    sp->http->conds &&
 	    RFC2616_Do_Cond(sp))
-		sp->wrk->do_stream = 0;
+		wrk->do_stream = 0;
 
-	AssertObjCorePassOrBusy(sp->wrk->obj->objcore);
+	AssertObjCorePassOrBusy(wrk->obj->objcore);
 
-	if (sp->wrk->do_stream) {
+	if (wrk->do_stream) {
 		sp->step = STP_PREPRESP;
 		return (0);
 	}
 
 	/* Use unmodified headers*/
-	i = FetchBody(sp->wrk, sp->wrk->obj);
+	i = FetchBody(wrk, wrk->obj);
 
-	sp->wrk->h_content_length = NULL;
+	wrk->h_content_length = NULL;
 
-	http_Setup(sp->wrk->bereq, NULL);
-	http_Setup(sp->wrk->beresp, NULL);
-	sp->wrk->vfp = NULL;
-	assert(WRW_IsReleased(sp->wrk));
-	AZ(sp->wrk->vbc);
+	http_Setup(wrk->bereq, NULL);
+	http_Setup(wrk->beresp, NULL);
+	wrk->vfp = NULL;
+	assert(WRW_IsReleased(wrk));
+	AZ(wrk->vbc);
 	AN(sp->director);
 
 	if (i) {
 		HSH_Drop(sp);
-		AZ(sp->wrk->obj);
+		AZ(wrk->obj);
 		sp->err_code = 503;
 		sp->step = STP_ERROR;
 		return (0);
 	}
 
-	if (sp->wrk->obj->objcore != NULL) {
-		EXP_Insert(sp->wrk->obj);
-		AN(sp->wrk->obj->objcore);
-		AN(sp->wrk->obj->objcore->ban);
+	if (wrk->obj->objcore != NULL) {
+		EXP_Insert(wrk->obj);
+		AN(wrk->obj->objcore);
+		AN(wrk->obj->objcore->ban);
 		HSH_Unbusy(sp);
 	}
-	sp->wrk->acct_tmp.fetch++;
+	wrk->acct_tmp.fetch++;
 	sp->step = STP_PREPRESP;
 	return (0);
 }
@@ -970,7 +968,7 @@ DOT		shape=box
 DOT		label="first\nConfigure data structures"
 DOT	]
 DOT }
-DOT first -> wait 
+DOT first -> wait
  */
 
 static int
