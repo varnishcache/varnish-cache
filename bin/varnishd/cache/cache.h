@@ -325,8 +325,6 @@ struct worker {
 	struct objcore		*objcore;
 	struct busyobj		*busyobj;
 
-	struct exp		exp;
-
 	/* This is only here so VRT can find it */
 	const char		*storage_hint;
 
@@ -503,6 +501,8 @@ struct busyobj {
 	struct vep_state	*vep;
 	unsigned		fetch_failed;
 	struct vgz		*vgz_rx;
+
+	struct exp		exp;
 };
 
 /* Object structure --------------------------------------------------*/

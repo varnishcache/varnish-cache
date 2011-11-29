@@ -411,12 +411,12 @@ VRT_DO_EXP(obj, sp->wrk->obj->exp, keep, 0,
    EXP_Rearm(sp->wrk->obj);
    vrt_wsp_exp(sp, sp->wrk->obj->xid, &sp->wrk->obj->exp);)
 
-VRT_DO_EXP(beresp, sp->wrk->exp, grace, 0,
-   vrt_wsp_exp(sp, sp->xid, &sp->wrk->exp);)
-VRT_DO_EXP(beresp, sp->wrk->exp, ttl, 0,
-   vrt_wsp_exp(sp, sp->xid, &sp->wrk->exp);)
-VRT_DO_EXP(beresp, sp->wrk->exp, keep, 0,
-   vrt_wsp_exp(sp, sp->xid, &sp->wrk->exp);)
+VRT_DO_EXP(beresp, sp->wrk->busyobj->exp, grace, 0,
+   vrt_wsp_exp(sp, sp->xid, &sp->wrk->busyobj->exp);)
+VRT_DO_EXP(beresp, sp->wrk->busyobj->exp, ttl, 0,
+   vrt_wsp_exp(sp, sp->xid, &sp->wrk->busyobj->exp);)
+VRT_DO_EXP(beresp, sp->wrk->busyobj->exp, keep, 0,
+   vrt_wsp_exp(sp, sp->xid, &sp->wrk->busyobj->exp);)
 
 /*--------------------------------------------------------------------
  * req.xid

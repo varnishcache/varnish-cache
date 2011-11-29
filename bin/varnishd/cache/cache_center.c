@@ -464,7 +464,7 @@ cnt_error(struct sess *sp)
 
 	if (wrk->obj == NULL) {
 		HSH_Prealloc(sp);
-		EXP_Clr(&wrk->exp);
+		New_BusyObj(wrk);
 		wrk->obj = STV_NewObject(wrk, NULL, cache_param->http_resp_size,
 		     (uint16_t)cache_param->http_max_hdr);
 		if (wrk->obj == NULL)
@@ -613,13 +613,13 @@ cnt_fetch(struct sess *sp)
 		/*
 		 * What does RFC2616 think about TTL ?
 		 */
-		EXP_Clr(&wrk->exp);
-		wrk->exp.entered = W_TIM_real(wrk);
+		EXP_Clr(&wrk->busyobj->exp);
+		wrk->busyobj->exp.entered = W_TIM_real(wrk);
 		RFC2616_Ttl(sp);
 
 		/* pass from vclrecv{} has negative TTL */
 		if (wrk->objcore == NULL)
-			wrk->exp.ttl = -1.;
+			wrk->busyobj->exp.ttl = -1.;
 
 		AZ(wrk->do_esi);
 
@@ -715,7 +715,7 @@ cnt_fetchbody(struct sess *sp)
 		/* This is a pass from vcl_recv */
 		pass = 1;
 		/* VCL may have fiddled this, but that doesn't help */
-		wrk->exp.ttl = -1.;
+		wrk->busyobj->exp.ttl = -1.;
 	} else if (sp->handling == VCL_RET_HIT_FOR_PASS) {
 		/* pass from vcl_fetch{} -> hit-for-pass */
 		/* XXX: the bereq was not filtered pass... */
@@ -806,7 +806,8 @@ cnt_fetchbody(struct sess *sp)
 	 */
 	l += strlen("Content-Length: XxxXxxXxxXxxXxxXxx") + sizeof(void *);
 
-	if (wrk->exp.ttl < cache_param->shortlived || wrk->objcore == NULL)
+	if (wrk->busyobj->exp.ttl < cache_param->shortlived ||
+	    wrk->objcore == NULL)
 		wrk->storage_hint = TRANSIENT_STORAGE;
 
 	wrk->obj = STV_NewObject(wrk, wrk->storage_hint, l, nhttp);
@@ -816,10 +817,10 @@ cnt_fetchbody(struct sess *sp)
 		 * shortlived object on Transient storage.
 		 */
 		wrk->obj = STV_NewObject(wrk, TRANSIENT_STORAGE, l, nhttp);
-		if (wrk->exp.ttl > cache_param->shortlived)
-			wrk->exp.ttl = cache_param->shortlived;
-		wrk->exp.grace = 0.0;
-		wrk->exp.keep = 0.0;
+		if (wrk->busyobj->exp.ttl > cache_param->shortlived)
+			wrk->busyobj->exp.ttl = cache_param->shortlived;
+		wrk->busyobj->exp.grace = 0.0;
+		wrk->busyobj->exp.keep = 0.0;
 	}
 	if (wrk->obj == NULL) {
 		sp->err_code = 503;
@@ -859,7 +860,7 @@ cnt_fetchbody(struct sess *sp)
 	if (http_GetHdr(hp, H_Last_Modified, &b))
 		wrk->obj->last_modified = VTIM_parse(b);
 	else
-		wrk->obj->last_modified = floor(wrk->exp.entered);
+		wrk->obj->last_modified = floor(wrk->busyobj->exp.entered);
 
 	assert(WRW_IsReleased(wrk));
 

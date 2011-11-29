@@ -242,7 +242,7 @@ STV_MkObject(struct worker *wrk, void *ptr, unsigned ltot,
 
 	http_Setup(o->http, o->ws_o);
 	o->http->magic = HTTP_MAGIC;
-	o->exp = wrk->exp;
+	o->exp = wrk->busyobj->exp;
 	VTAILQ_INIT(&o->store);
 	wrk->stats.n_object++;
 
