@@ -98,10 +98,13 @@ cnt_wait(struct sess *sp)
 {
 	int i;
 	struct pollfd pfd[1];
+	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AZ(sp->vcl);
-	AZ(sp->wrk->obj);
+	AZ(wrk->obj);
 	AZ(sp->esi_level);
 	assert(sp->xid == 0);
 
@@ -116,9 +119,8 @@ cnt_wait(struct sess *sp)
 	}
 	if (i == 0) {
 		WSP(sp, SLT_Debug, "herding");
-		sp->wrk->stats.sess_herd++;
+		wrk->stats.sess_herd++;
 		SES_Charge(sp);
-		sp->wrk = NULL;
 		Pool_Wait(sp);
 		return (1);
 	}
@@ -168,66 +170,70 @@ DOT }
 static int
 cnt_prepresp(struct sess *sp)
 {
+	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->obj, OBJECT_MAGIC);
+	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
+	CHECK_OBJ_NOTNULL(wrk->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
-	if (sp->wrk->do_stream)
-		AssertObjCorePassOrBusy(sp->wrk->obj->objcore);
+	if (wrk->do_stream)
+		AssertObjCorePassOrBusy(wrk->obj->objcore);
 
-	sp->wrk->res_mode = 0;
+	wrk->res_mode = 0;
 
-	if ((sp->wrk->h_content_length != NULL || !sp->wrk->do_stream) &&
-	    !sp->wrk->do_gzip && !sp->wrk->do_gunzip)
-		sp->wrk->res_mode |= RES_LEN;
+	if ((wrk->h_content_length != NULL || !wrk->do_stream) &&
+	    !wrk->do_gzip && !wrk->do_gunzip)
+		wrk->res_mode |= RES_LEN;
 
-	if (!sp->disable_esi && sp->wrk->obj->esidata != NULL) {
+	if (!sp->disable_esi && wrk->obj->esidata != NULL) {
 		/* In ESI mode, we don't know the aggregate length */
-		sp->wrk->res_mode &= ~RES_LEN;
-		sp->wrk->res_mode |= RES_ESI;
+		wrk->res_mode &= ~RES_LEN;
+		wrk->res_mode |= RES_ESI;
 	}
 
 	if (sp->esi_level > 0) {
-		sp->wrk->res_mode &= ~RES_LEN;
-		sp->wrk->res_mode |= RES_ESI_CHILD;
+		wrk->res_mode &= ~RES_LEN;
+		wrk->res_mode |= RES_ESI_CHILD;
 	}
 
-	if (cache_param->http_gzip_support && sp->wrk->obj->gziped &&
+	if (cache_param->http_gzip_support && wrk->obj->gziped &&
 	    !RFC2616_Req_Gzip(sp)) {
 		/*
 		 * We don't know what it uncompresses to
 		 * XXX: we could cache that
 		 */
-		sp->wrk->res_mode &= ~RES_LEN;
-		sp->wrk->res_mode |= RES_GUNZIP;
+		wrk->res_mode &= ~RES_LEN;
+		wrk->res_mode |= RES_GUNZIP;
 	}
 
-	if (!(sp->wrk->res_mode & (RES_LEN|RES_CHUNKED|RES_EOF))) {
-		if (sp->wrk->obj->len == 0 && !sp->wrk->do_stream)
+	if (!(wrk->res_mode & (RES_LEN|RES_CHUNKED|RES_EOF))) {
+		if (wrk->obj->len == 0 && !wrk->do_stream)
 			/*
 			 * If the object is empty, neither ESI nor GUNZIP
 			 * can make it any different size
 			 */
-			sp->wrk->res_mode |= RES_LEN;
+			wrk->res_mode |= RES_LEN;
 		else if (!sp->wantbody) {
 			/* Nothing */
 		} else if (sp->http->protover >= 11) {
-			sp->wrk->res_mode |= RES_CHUNKED;
+			wrk->res_mode |= RES_CHUNKED;
 		} else {
-			sp->wrk->res_mode |= RES_EOF;
+			wrk->res_mode |= RES_EOF;
 			sp->doclose = "EOF mode";
 		}
 	}
 
-	sp->t_resp = W_TIM_real(sp->wrk);
-	if (sp->wrk->obj->objcore != NULL) {
-		if ((sp->t_resp - sp->wrk->obj->last_lru) > cache_param->lru_timeout &&
-		    EXP_Touch(sp->wrk->obj->objcore))
-			sp->wrk->obj->last_lru = sp->t_resp;
-		sp->wrk->obj->last_use = sp->t_resp;	/* XXX: locking ? */
+	sp->t_resp = W_TIM_real(wrk);
+	if (wrk->obj->objcore != NULL) {
+		if ((sp->t_resp - wrk->obj->last_lru) > cache_param->lru_timeout &&
+		    EXP_Touch(wrk->obj->objcore))
+			wrk->obj->last_lru = sp->t_resp;
+		wrk->obj->last_use = sp->t_resp;	/* XXX: locking ? */
 	}
-	http_Setup(sp->wrk->resp, sp->wrk->ws);
+	http_Setup(wrk->resp, wrk->ws);
 	RES_BuildHttp(sp);
 	VCL_deliver_method(sp);
 	switch (sp->handling) {
@@ -236,26 +242,26 @@ cnt_prepresp(struct sess *sp)
 	case VCL_RET_RESTART:
 		if (sp->restarts >= cache_param->max_restarts)
 			break;
-		if (sp->wrk->do_stream) {
-			VDI_CloseFd(sp->wrk);
-			HSH_Drop(sp->wrk);
+		if (wrk->do_stream) {
+			VDI_CloseFd(wrk);
+			HSH_Drop(wrk);
 		} else {
-			(void)HSH_Deref(sp->wrk, NULL, &sp->wrk->obj);
+			(void)HSH_Deref(wrk, NULL, &wrk->obj);
 		}
-		AZ(sp->wrk->obj);
+		AZ(wrk->obj);
 		sp->restarts++;
 		sp->director = NULL;
-		sp->wrk->h_content_length = NULL;
-		http_Setup(sp->wrk->bereq, NULL);
-		http_Setup(sp->wrk->beresp, NULL);
-		http_Setup(sp->wrk->resp, NULL);
+		wrk->h_content_length = NULL;
+		http_Setup(wrk->bereq, NULL);
+		http_Setup(wrk->beresp, NULL);
+		http_Setup(wrk->resp, NULL);
 		sp->step = STP_RECV;
 		return (0);
 	default:
 		WRONG("Illegal action in vcl_deliver{}");
 	}
-	if (sp->wrk->do_stream) {
-		AssertObjCorePassOrBusy(sp->wrk->obj->objcore);
+	if (wrk->do_stream) {
+		AssertObjCorePassOrBusy(wrk->obj->objcore);
 		sp->step = STP_STREAMBODY;
 	} else {
 		sp->step = STP_DELIVER;
@@ -281,16 +287,21 @@ DOT deliver -> DONE [style=bold,color=blue]
 static int
 cnt_deliver(struct sess *sp)
 {
+	struct worker *wrk;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	sp->director = NULL;
 	sp->restarts = 0;
 
 	RES_WriteObj(sp);
 
-	assert(WRW_IsReleased(sp->wrk));
-	assert(sp->wrk->wrw.ciov == sp->wrk->wrw.siov);
-	(void)HSH_Deref(sp->wrk, NULL, &sp->wrk->obj);
-	http_Setup(sp->wrk->resp, NULL);
+	assert(WRW_IsReleased(wrk));
+	assert(wrk->wrw.ciov == wrk->wrw.siov);
+	(void)HSH_Deref(wrk, NULL, &wrk->obj);
+	http_Setup(wrk->resp, NULL);
 	sp->step = STP_DONE;
 	return (0);
 }
@@ -314,21 +325,24 @@ cnt_done(struct sess *sp)
 {
 	double dh, dp, da;
 	int i;
+	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_ORNULL(sp->vcl, VCL_CONF_MAGIC);
 
-	AZ(sp->wrk->obj);
-	AZ(sp->wrk->vbc);
+	AZ(wrk->obj);
+	AZ(wrk->vbc);
 	sp->director = NULL;
 	sp->restarts = 0;
 
-	sp->wrk->busyobj = NULL;
+	wrk->busyobj = NULL;
 
-	sp->wrk->do_esi = 0;
-	sp->wrk->do_gunzip = 0;
-	sp->wrk->do_gzip = 0;
-	sp->wrk->do_stream = 0;
+	wrk->do_esi = 0;
+	wrk->do_gunzip = 0;
+	wrk->do_gzip = 0;
+	wrk->do_stream = 0;
 
 	SES_Charge(sp);
 
@@ -337,14 +351,14 @@ cnt_done(struct sess *sp)
 		return (1);
 
 	if (sp->vcl != NULL) {
-		if (sp->wrk->vcl != NULL)
-			VCL_Rel(&sp->wrk->vcl);
-		sp->wrk->vcl = sp->vcl;
+		if (wrk->vcl != NULL)
+			VCL_Rel(&wrk->vcl);
+		wrk->vcl = sp->vcl;
 		sp->vcl = NULL;
 	}
 
 
-	sp->t_end = W_TIM_real(sp->wrk);
+	sp->t_end = W_TIM_real(wrk);
 WSP(sp, SLT_Debug, "PHK req %.9f resp %.9f end %.9f open %.9f",
     sp->t_req, sp->t_resp, sp->t_end,  sp->t_open);
 	if (sp->xid == 0) {
@@ -364,7 +378,7 @@ WSP(sp, SLT_Debug, "PHK req %.9f resp %.9f end %.9f open %.9f",
 		    sp->xid, sp->t_req, sp->t_end, dh, dp, da);
 	}
 	sp->xid = 0;
-	WSL_Flush(sp->wrk, 0);
+	WSL_Flush(wrk, 0);
 
 	sp->t_open = sp->t_end;
 	sp->t_resp = NAN;
@@ -385,35 +399,34 @@ WSP(sp, SLT_Debug, "PHK req %.9f resp %.9f end %.9f open %.9f",
 	}
 
 	if (sp->fd < 0) {
-		sp->wrk->stats.sess_closed++;
+		wrk->stats.sess_closed++;
 		SES_Delete(sp, NULL);
 		return (1);
 	}
 
-	if (sp->wrk->stats.client_req >= cache_param->wthread_stats_rate)
-		WRK_SumStat(sp->wrk);
+	if (wrk->stats.client_req >= cache_param->wthread_stats_rate)
+		WRK_SumStat(wrk);
 	/* Reset the workspace to the session-watermark */
 	WS_Reset(sp->ws, sp->ws_ses);
-	WS_Reset(sp->wrk->ws, NULL);
+	WS_Reset(wrk->ws, NULL);
 
 	i = HTC_Reinit(sp->htc);
 	if (i == 1) {
-		sp->wrk->stats.sess_pipeline++;
+		wrk->stats.sess_pipeline++;
 		sp->step = STP_START;
 		return (0);
 	}
 	if (Tlen(sp->htc->rxbuf)) {
-		sp->wrk->stats.sess_readahead++;
+		wrk->stats.sess_readahead++;
 		sp->step = STP_WAIT;
 		return (0);
 	}
 	if (cache_param->session_linger > 0) {
-		sp->wrk->stats.sess_linger++;
+		wrk->stats.sess_linger++;
 		sp->step = STP_WAIT;
 		return (0);
 	}
-	sp->wrk->stats.sess_herd++;
-	sp->wrk = NULL;
+	wrk->stats.sess_herd++;
 	Pool_Wait(sp);
 	return (1);
 }
@@ -436,64 +449,65 @@ DOT rsterr [label="RESTART",shape=plaintext]
 static int
 cnt_error(struct sess *sp)
 {
-	struct worker *w;
 	struct http *h;
 	char date[40];
+	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
-	w = sp->wrk;
-	w->do_esi = 0;
-	w->do_gzip = 0;
-	w->do_gunzip = 0;
-	w->do_stream = 0;
+	wrk->do_esi = 0;
+	wrk->do_gzip = 0;
+	wrk->do_gunzip = 0;
+	wrk->do_stream = 0;
 
-	if (w->obj == NULL) {
+	if (wrk->obj == NULL) {
 		HSH_Prealloc(sp);
-		EXP_Clr(&w->exp);
-		w->obj = STV_NewObject(w, NULL, cache_param->http_resp_size,
+		EXP_Clr(&wrk->exp);
+		wrk->obj = STV_NewObject(wrk, NULL, cache_param->http_resp_size,
 		     (uint16_t)cache_param->http_max_hdr);
-		if (sp->wrk->obj == NULL)
-			w->obj = STV_NewObject(w, TRANSIENT_STORAGE,
+		if (wrk->obj == NULL)
+			wrk->obj = STV_NewObject(wrk, TRANSIENT_STORAGE,
 			    cache_param->http_resp_size,
 			    (uint16_t)cache_param->http_max_hdr);
-		if (sp->wrk->obj == NULL) {
+		if (wrk->obj == NULL) {
 			sp->doclose = "Out of objects";
 			sp->director = NULL;
-			sp->wrk->h_content_length = NULL;
-			http_Setup(sp->wrk->beresp, NULL);
-			http_Setup(sp->wrk->bereq, NULL);
+			wrk->h_content_length = NULL;
+			http_Setup(wrk->beresp, NULL);
+			http_Setup(wrk->bereq, NULL);
 			sp->step = STP_DONE;
 			return(0);
 		}
-		AN(sp->wrk->obj);
-		sp->wrk->obj->xid = sp->xid;
-		sp->wrk->obj->exp.entered = sp->t_req;
+		AN(wrk->obj);
+		wrk->obj->xid = sp->xid;
+		wrk->obj->exp.entered = sp->t_req;
 	} else {
 		/* XXX: Null the headers ? */
 	}
-	CHECK_OBJ_NOTNULL(sp->wrk->obj, OBJECT_MAGIC);
-	h = sp->wrk->obj->http;
+	CHECK_OBJ_NOTNULL(wrk->obj, OBJECT_MAGIC);
+	h = wrk->obj->http;
 
 	if (sp->err_code < 100 || sp->err_code > 999)
 		sp->err_code = 501;
 
-	http_PutProtocol(w, sp->vsl_id, h, "HTTP/1.1");
+	http_PutProtocol(wrk, sp->vsl_id, h, "HTTP/1.1");
 	http_PutStatus(h, sp->err_code);
-	VTIM_format(W_TIM_real(sp->wrk), date);
-	http_PrintfHeader(w, sp->vsl_id, h, "Date: %s", date);
-	http_SetHeader(w, sp->vsl_id, h, "Server: Varnish");
+	VTIM_format(W_TIM_real(wrk), date);
+	http_PrintfHeader(wrk, sp->vsl_id, h, "Date: %s", date);
+	http_SetHeader(wrk, sp->vsl_id, h, "Server: Varnish");
 
 	if (sp->err_reason != NULL)
-		http_PutResponse(w, sp->vsl_id, h, sp->err_reason);
+		http_PutResponse(wrk, sp->vsl_id, h, sp->err_reason);
 	else
-		http_PutResponse(w, sp->vsl_id, h,
+		http_PutResponse(wrk, sp->vsl_id, h,
 		    http_StatusMessage(sp->err_code));
 	VCL_error_method(sp);
 
 	if (sp->handling == VCL_RET_RESTART &&
 	    sp->restarts <  cache_param->max_restarts) {
-		HSH_Drop(sp->wrk);
+		HSH_Drop(wrk);
 		sp->director = NULL;
 		sp->restarts++;
 		sp->step = STP_RECV;
@@ -509,7 +523,7 @@ cnt_error(struct sess *sp)
 	assert(sp->handling == VCL_RET_DELIVER);
 	sp->err_code = 0;
 	sp->err_reason = NULL;
-	http_Setup(sp->wrk->bereq, NULL);
+	http_Setup(wrk->bereq, NULL);
 	sp->step = STP_PREPRESP;
 	return (0);
 }
@@ -547,19 +561,22 @@ static int
 cnt_fetch(struct sess *sp)
 {
 	int i;
+	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 
 	AN(sp->director);
-	AZ(sp->wrk->vbc);
-	AZ(sp->wrk->h_content_length);
-	AZ(sp->wrk->do_close);
-	AZ(sp->wrk->storage_hint);
+	AZ(wrk->vbc);
+	AZ(wrk->h_content_length);
+	AZ(wrk->do_close);
+	AZ(wrk->storage_hint);
 
-	http_Setup(sp->wrk->beresp, sp->wrk->ws);
+	http_Setup(wrk->beresp, wrk->ws);
 
 	i = FetchHdr(sp);
 	/*
@@ -581,41 +598,41 @@ cnt_fetch(struct sess *sp)
 		 * and we rely on their content outside of VCL, so collect them
 		 * into one line here.
 		 */
-		http_CollectHdr(sp->wrk->beresp, H_Cache_Control);
-		http_CollectHdr(sp->wrk->beresp, H_Vary);
+		http_CollectHdr(wrk->beresp, H_Cache_Control);
+		http_CollectHdr(wrk->beresp, H_Vary);
 
 		/*
 		 * Figure out how the fetch is supposed to happen, before the
 		 * headers are adultered by VCL
-		 * NB: Also sets other sp->wrk variables
+		 * NB: Also sets other wrk variables
 		 */
-		sp->wrk->body_status = RFC2616_Body(sp);
+		wrk->body_status = RFC2616_Body(sp);
 
-		sp->err_code = http_GetStatus(sp->wrk->beresp);
+		sp->err_code = http_GetStatus(wrk->beresp);
 
 		/*
 		 * What does RFC2616 think about TTL ?
 		 */
-		EXP_Clr(&sp->wrk->exp);
-		sp->wrk->exp.entered = W_TIM_real(sp->wrk);
+		EXP_Clr(&wrk->exp);
+		wrk->exp.entered = W_TIM_real(wrk);
 		RFC2616_Ttl(sp);
 
 		/* pass from vclrecv{} has negative TTL */
-		if (sp->wrk->objcore == NULL)
-			sp->wrk->exp.ttl = -1.;
+		if (wrk->objcore == NULL)
+			wrk->exp.ttl = -1.;
 
-		AZ(sp->wrk->do_esi);
+		AZ(wrk->do_esi);
 
 		VCL_fetch_method(sp);
 
 		switch (sp->handling) {
 		case VCL_RET_HIT_FOR_PASS:
-			if (sp->wrk->objcore != NULL)
-				sp->wrk->objcore->flags |= OC_F_PASS;
+			if (wrk->objcore != NULL)
+				wrk->objcore->flags |= OC_F_PASS;
 			sp->step = STP_FETCHBODY;
 			return (0);
 		case VCL_RET_DELIVER:
-			AssertObjCorePassOrBusy(sp->wrk->objcore);
+			AssertObjCorePassOrBusy(wrk->objcore);
 			sp->step = STP_FETCHBODY;
 			return (0);
 		default:
@@ -623,22 +640,22 @@ cnt_fetch(struct sess *sp)
 		}
 
 		/* We are not going to fetch the body, Close the connection */
-		VDI_CloseFd(sp->wrk);
+		VDI_CloseFd(wrk);
 	}
 
 	/* Clean up partial fetch */
-	AZ(sp->wrk->vbc);
+	AZ(wrk->vbc);
 
-	if (sp->wrk->objcore != NULL) {
-		CHECK_OBJ_NOTNULL(sp->wrk->objcore, OBJCORE_MAGIC);
-		AZ(HSH_Deref(sp->wrk, sp->wrk->objcore, NULL));
-		sp->wrk->objcore = NULL;
+	if (wrk->objcore != NULL) {
+		CHECK_OBJ_NOTNULL(wrk->objcore, OBJCORE_MAGIC);
+		AZ(HSH_Deref(wrk, wrk->objcore, NULL));
+		wrk->objcore = NULL;
 	}
-	http_Setup(sp->wrk->bereq, NULL);
-	http_Setup(sp->wrk->beresp, NULL);
-	sp->wrk->h_content_length = NULL;
+	http_Setup(wrk->bereq, NULL);
+	http_Setup(wrk->beresp, NULL);
+	wrk->h_content_length = NULL;
 	sp->director = NULL;
-	sp->wrk->storage_hint = NULL;
+	wrk->storage_hint = NULL;
 
 	switch (sp->handling) {
 	case VCL_RET_RESTART:
@@ -686,7 +703,9 @@ cnt_fetchbody(struct sess *sp)
 	int varyl = 0, pass;
 	struct worker *wrk;
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 
@@ -913,54 +932,59 @@ cnt_streambody(struct sess *sp)
 	struct stream_ctx sctx;
 	uint8_t obuf[sp->wrk->res_mode & RES_GUNZIP ?
 	    cache_param->gzip_stack_buffer : 1];
+	struct worker *wrk;
 
-	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
+	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 	memset(&sctx, 0, sizeof sctx);
 	sctx.magic = STREAM_CTX_MAGIC;
-	AZ(sp->wrk->sctx);
-	sp->wrk->sctx = &sctx;
+	AZ(wrk->sctx);
+	wrk->sctx = &sctx;
 
-	if (sp->wrk->res_mode & RES_GUNZIP) {
-		sctx.vgz = VGZ_NewUngzip(sp->wrk, "U S -");
+	if (wrk->res_mode & RES_GUNZIP) {
+		sctx.vgz = VGZ_NewUngzip(wrk, "U S -");
 		sctx.obuf = obuf;
 		sctx.obuf_len = sizeof (obuf);
 	}
 
 	RES_StreamStart(sp);
 
-	AssertObjCorePassOrBusy(sp->wrk->obj->objcore);
+	AssertObjCorePassOrBusy(wrk->obj->objcore);
 
-	i = FetchBody(sp->wrk, sp->wrk->obj);
+	i = FetchBody(wrk, wrk->obj);
 
-	sp->wrk->h_content_length = NULL;
+	wrk->h_content_length = NULL;
 
-	http_Setup(sp->wrk->bereq, NULL);
-	http_Setup(sp->wrk->beresp, NULL);
-	sp->wrk->vfp = NULL;
-	AZ(sp->wrk->vbc);
+	http_Setup(wrk->bereq, NULL);
+	http_Setup(wrk->beresp, NULL);
+	wrk->vfp = NULL;
+	AZ(wrk->vbc);
 	AN(sp->director);
 
-	if (!i && sp->wrk->obj->objcore != NULL) {
-		EXP_Insert(sp->wrk->obj);
-		AN(sp->wrk->obj->objcore);
-		AN(sp->wrk->obj->objcore->ban);
-		HSH_Unbusy(sp->wrk);
+	if (!i && wrk->obj->objcore != NULL) {
+		EXP_Insert(wrk->obj);
+		AN(wrk->obj->objcore);
+		AN(wrk->obj->objcore->ban);
+		HSH_Unbusy(wrk);
 	} else {
 		sp->doclose = "Stream error";
 	}
-	sp->wrk->acct_tmp.fetch++;
+	wrk->acct_tmp.fetch++;
 	sp->director = NULL;
 	sp->restarts = 0;
 
 	RES_StreamEnd(sp);
-	if (sp->wrk->res_mode & RES_GUNZIP)
+	if (wrk->res_mode & RES_GUNZIP)
 		(void)VGZ_Destroy(&sctx.vgz, sp->vsl_id);
 
-	sp->wrk->sctx = NULL;
-	assert(WRW_IsReleased(sp->wrk));
-	assert(sp->wrk->wrw.ciov == sp->wrk->wrw.siov);
-	(void)HSH_Deref(sp->wrk, NULL, &sp->wrk->obj);
-	http_Setup(sp->wrk->resp, NULL);
+	wrk->sctx = NULL;
+	assert(WRW_IsReleased(wrk));
+	assert(wrk->wrw.ciov == wrk->wrw.siov);
+	(void)HSH_Deref(wrk, NULL, &wrk->obj);
+	http_Setup(wrk->resp, NULL);
 	sp->step = STP_DONE;
 	return (0);
 }
@@ -979,6 +1003,11 @@ DOT first -> wait
 static int
 cnt_first(struct sess *sp)
 {
+	struct worker *wrk;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	/*
 	 * XXX: If we don't have acceptfilters we are somewhat subject
@@ -998,7 +1027,7 @@ cnt_first(struct sess *sp)
 	/* Receive a HTTP protocol request */
 	HTC_Init(sp->htc, sp->ws, sp->fd, sp->vsl_id, cache_param->http_req_size,
 	    cache_param->http_req_hdr_len);
-	sp->wrk->acct_tmp.sess++;
+	wrk->acct_tmp.sess++;
 
 	sp->step = STP_WAIT;
 	return (0);
@@ -1105,8 +1134,12 @@ cnt_lookup(struct sess *sp)
 	struct objcore *oc;
 	struct object *o;
 	struct objhead *oh;
+	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
 	if (sp->hash_objhead == NULL) {
@@ -1140,7 +1173,7 @@ cnt_lookup(struct sess *sp)
 
 	/* If we inserted a new object it's a miss */
 	if (oc->flags & OC_F_BUSY) {
-		sp->wrk->stats.cache_miss++;
+		wrk->stats.cache_miss++;
 
 		if (sp->vary_l != NULL) {
 			assert(oc->busyobj->vary == sp->vary_b);
@@ -1154,15 +1187,15 @@ cnt_lookup(struct sess *sp)
 		sp->vary_l = NULL;
 		sp->vary_e = NULL;
 
-		sp->wrk->objcore = oc;
-		CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);
+		wrk->objcore = oc;
+		CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 		sp->step = STP_MISS;
 		return (0);
 	}
 
-	o = oc_getobj(sp->wrk, oc);
+	o = oc_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	sp->wrk->obj = o;
+	wrk->obj = o;
 
 	WS_Release(sp->ws, 0);
 	sp->vary_b = NULL;
@@ -1170,16 +1203,16 @@ cnt_lookup(struct sess *sp)
 	sp->vary_e = NULL;
 
 	if (oc->flags & OC_F_PASS) {
-		sp->wrk->stats.cache_hitpass++;
-		WSP(sp, SLT_HitPass, "%u", sp->wrk->obj->xid);
-		(void)HSH_Deref(sp->wrk, NULL, &sp->wrk->obj);
-		sp->wrk->objcore = NULL;
+		wrk->stats.cache_hitpass++;
+		WSP(sp, SLT_HitPass, "%u", wrk->obj->xid);
+		(void)HSH_Deref(wrk, NULL, &wrk->obj);
+		wrk->objcore = NULL;
 		sp->step = STP_PASS;
 		return (0);
 	}
 
-	sp->wrk->stats.cache_hit++;
-	WSP(sp, SLT_Hit, "%u", sp->wrk->obj->xid);
+	wrk->stats.cache_hit++;
+	WSP(sp, SLT_Hit, "%u", wrk->obj->xid);
 	sp->step = STP_HIT;
 	return (0);
 }
@@ -1210,53 +1243,56 @@ DOT
 static int
 cnt_miss(struct sess *sp)
 {
+	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
-	AZ(sp->wrk->obj);
-	AN(sp->wrk->objcore);
-	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);
-	WS_Reset(sp->wrk->ws, NULL);
-	http_Setup(sp->wrk->bereq, sp->wrk->ws);
+	AZ(wrk->obj);
+	AN(wrk->objcore);
+	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
+	WS_Reset(wrk->ws, NULL);
+	http_Setup(wrk->bereq, wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_FETCH);
-	http_ForceGet(sp->wrk->bereq);
+	http_ForceGet(wrk->bereq);
 	if (cache_param->http_gzip_support) {
 		/*
 		 * We always ask the backend for gzip, even if the
 		 * client doesn't grok it.  We will uncompress for
 		 * the minority of clients which don't.
 		 */
-		http_Unset(sp->wrk->bereq, H_Accept_Encoding);
-		http_SetHeader(sp->wrk, sp->vsl_id, sp->wrk->bereq,
+		http_Unset(wrk->bereq, H_Accept_Encoding);
+		http_SetHeader(wrk, sp->vsl_id, wrk->bereq,
 		    "Accept-Encoding: gzip");
 	}
-	sp->wrk->connect_timeout = 0;
-	sp->wrk->first_byte_timeout = 0;
-	sp->wrk->between_bytes_timeout = 0;
-	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);
+	wrk->connect_timeout = 0;
+	wrk->first_byte_timeout = 0;
+	wrk->between_bytes_timeout = 0;
+	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 
 	VCL_miss_method(sp);
-	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 	switch(sp->handling) {
 	case VCL_RET_ERROR:
-		AZ(HSH_Deref(sp->wrk, sp->wrk->objcore, NULL));
-		sp->wrk->objcore = NULL;
-		http_Setup(sp->wrk->bereq, NULL);
+		AZ(HSH_Deref(wrk, wrk->objcore, NULL));
+		wrk->objcore = NULL;
+		http_Setup(wrk->bereq, NULL);
 		sp->step = STP_ERROR;
 		return (0);
 	case VCL_RET_PASS:
-		AZ(HSH_Deref(sp->wrk, sp->wrk->objcore, NULL));
-		sp->wrk->objcore = NULL;
+		AZ(HSH_Deref(wrk, wrk->objcore, NULL));
+		wrk->objcore = NULL;
 		sp->step = STP_PASS;
 		return (0);
 	case VCL_RET_FETCH:
-		CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);
+		CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 		sp->step = STP_FETCH;
 		return (0);
 	case VCL_RET_RESTART:
-		AZ(HSH_Deref(sp->wrk, sp->wrk->objcore, NULL));
-		sp->wrk->objcore = NULL;
+		AZ(HSH_Deref(wrk, wrk->objcore, NULL));
+		wrk->objcore = NULL;
 		INCOMPL();
 	default:
 		WRONG("Illegal action in vcl_miss{}");
@@ -1298,29 +1334,32 @@ DOT err_pass [label="ERROR",shape=plaintext]
 static int
 cnt_pass(struct sess *sp)
 {
+	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
-	AZ(sp->wrk->obj);
+	AZ(wrk->obj);
 
-	WS_Reset(sp->wrk->ws, NULL);
-	http_Setup(sp->wrk->bereq, sp->wrk->ws);
+	WS_Reset(wrk->ws, NULL);
+	http_Setup(wrk->bereq, wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_PASS);
 
-	sp->wrk->connect_timeout = 0;
-	sp->wrk->first_byte_timeout = 0;
-	sp->wrk->between_bytes_timeout = 0;
+	wrk->connect_timeout = 0;
+	wrk->first_byte_timeout = 0;
+	wrk->between_bytes_timeout = 0;
 	VCL_pass_method(sp);
 	if (sp->handling == VCL_RET_ERROR) {
-		http_Setup(sp->wrk->bereq, NULL);
+		http_Setup(wrk->bereq, NULL);
 		sp->step = STP_ERROR;
 		return (0);
 	}
 	assert(sp->handling == VCL_RET_PASS);
-	sp->wrk->acct_tmp.pass++;
+	wrk->acct_tmp.pass++;
 	sp->sendbody = 1;
 	sp->step = STP_FETCH;
-	New_BusyObj(sp->wrk);
+	New_BusyObj(wrk);
 	return (0);
 }
 
@@ -1352,13 +1391,16 @@ DOT err_pipe [label="ERROR",shape=plaintext]
 static int
 cnt_pipe(struct sess *sp)
 {
+	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
-	sp->wrk->acct_tmp.pipe++;
-	WS_Reset(sp->wrk->ws, NULL);
-	http_Setup(sp->wrk->bereq, sp->wrk->ws);
+	wrk->acct_tmp.pipe++;
+	WS_Reset(wrk->ws, NULL);
+	http_Setup(wrk->bereq, wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_PIPE);
 
 	VCL_pipe_method(sp);
@@ -1368,8 +1410,8 @@ cnt_pipe(struct sess *sp)
 	assert(sp->handling == VCL_RET_PIPE);
 
 	PipeSession(sp);
-	assert(WRW_IsReleased(sp->wrk));
-	http_Setup(sp->wrk->bereq, NULL);
+	assert(WRW_IsReleased(wrk));
+	http_Setup(wrk->bereq, NULL);
 	sp->step = STP_DONE;
 	return (0);
 }
@@ -1397,12 +1439,15 @@ DOT recv -> hash [label="lookup",style=bold,color=green]
 static int
 cnt_recv(struct sess *sp)
 {
+	struct worker *wrk;
 	unsigned recv_handling;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
-	AZ(sp->wrk->obj);
-	assert(sp->wrk->wrw.ciov == sp->wrk->wrw.siov);
+	AZ(wrk->obj);
+	assert(wrk->wrw.ciov == wrk->wrw.siov);
 
 	/* By default we use the first backend */
 	AZ(sp->director);
@@ -1427,27 +1472,27 @@ cnt_recv(struct sess *sp)
 	}
 
 	/* Zap these, in case we came here through restart */
-	sp->wrk->do_esi = 0;
-	sp->wrk->do_gzip = 0;
-	sp->wrk->do_gunzip = 0;
-	sp->wrk->do_stream = 0;
+	wrk->do_esi = 0;
+	wrk->do_gzip = 0;
+	wrk->do_gunzip = 0;
+	wrk->do_stream = 0;
 
 	if (cache_param->http_gzip_support &&
 	     (recv_handling != VCL_RET_PIPE) &&
 	     (recv_handling != VCL_RET_PASS)) {
 		if (RFC2616_Req_Gzip(sp)) {
 			http_Unset(sp->http, H_Accept_Encoding);
-			http_SetHeader(sp->wrk, sp->vsl_id, sp->http,
+			http_SetHeader(wrk, sp->vsl_id, sp->http,
 			    "Accept-Encoding: gzip");
 		} else {
 			http_Unset(sp->http, H_Accept_Encoding);
 		}
 	}
 
-	SHA256_Init(sp->wrk->sha256ctx);
+	SHA256_Init(wrk->sha256ctx);
 	VCL_hash_method(sp);
 	assert(sp->handling == VCL_RET_HASH);
-	SHA256_Final(sp->digest, sp->wrk->sha256ctx);
+	SHA256_Final(sp->digest, wrk->sha256ctx);
 
 	if (!strcmp(sp->http->hd[HTTP_HDR_REQ].b, "HEAD"))
 		sp->wantbody = 0;
@@ -1499,26 +1544,29 @@ cnt_start(struct sess *sp)
 	uint16_t done;
 	char *p;
 	const char *r = "HTTP/1.1 100 Continue\r\n\r\n";
+	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AZ(sp->restarts);
-	AZ(sp->wrk->obj);
+	AZ(wrk->obj);
 	AZ(sp->vcl);
 	AZ(sp->esi_level);
 
 	/* Update stats of various sorts */
-	sp->wrk->stats.client_req++;
-	sp->t_req = W_TIM_real(sp->wrk);
-	sp->wrk->acct_tmp.req++;
+	wrk->stats.client_req++;
+	sp->t_req = W_TIM_real(wrk);
+	wrk->acct_tmp.req++;
 
 	/* Assign XID and log */
 	sp->xid = ++xids;				/* XXX not locked */
 	WSP(sp, SLT_ReqStart, "%s %s %u", sp->addr, sp->port,  sp->xid);
 
 	/* Borrow VCL reference from worker thread */
-	VCL_Refresh(&sp->wrk->vcl);
-	sp->vcl = sp->wrk->vcl;
-	sp->wrk->vcl = NULL;
+	VCL_Refresh(&wrk->vcl);
+	sp->vcl = wrk->vcl;
+	wrk->vcl = NULL;
 
 	http_Setup(sp->http, sp->ws);
 	done = http_DissectRequest(sp);
@@ -1594,11 +1642,11 @@ void
 CNT_Session(struct sess *sp)
 {
 	int done;
-	struct worker *w;
+	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	w = sp->wrk;
-	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	/*
 	 * Possible entrance states
@@ -1609,12 +1657,12 @@ CNT_Session(struct sess *sp)
 	    sp->step == STP_LOOKUP ||
 	    sp->step == STP_RECV);
 
-	AZ(w->do_stream);
-	AZ(w->do_gzip);
-	AZ(w->do_gunzip);
-	AZ(w->do_esi);
-	AZ(w->obj);
-	AZ(w->objcore);
+	AZ(wrk->do_stream);
+	AZ(wrk->do_gzip);
+	AZ(wrk->do_gunzip);
+	AZ(wrk->do_esi);
+	AZ(wrk->obj);
+	AZ(wrk->objcore);
 
 	/*
 	 * Whenever we come in from the acceptor or waiter, we need to set
@@ -1637,16 +1685,16 @@ CNT_Session(struct sess *sp)
 	 * NB: Once done is set, we can no longer touch sp!
 	 */
 	for (done = 0; !done; ) {
-		assert(sp->wrk == w);
+		assert(sp->wrk == wrk);
 		/*
 		 * This is a good place to be paranoid about the various
 		 * pointers still pointing to the things we expect.
 		 */
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-		CHECK_OBJ_ORNULL(sp->wrk->obj, OBJECT_MAGIC);
-		CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
-		WS_Assert(w->ws);
+		CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+		CHECK_OBJ_ORNULL(wrk->obj, OBJECT_MAGIC);
+		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
+		WS_Assert(wrk->ws);
 
 		switch (sp->step) {
 #define STEP(l,u) \
@@ -1660,20 +1708,20 @@ CNT_Session(struct sess *sp)
 		default:
 			WRONG("State engine misfire");
 		}
-		WS_Assert(w->ws);
-		CHECK_OBJ_ORNULL(w->nobjhead, OBJHEAD_MAGIC);
+		WS_Assert(wrk->ws);
+		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 	}
-	WSL_Flush(w, 0);
-	AZ(w->obj);
-	AZ(w->objcore);
-	AZ(w->do_stream);
-	AZ(w->do_gzip);
-	AZ(w->do_gunzip);
-	AZ(w->do_esi);
-#define ACCT(foo)	AZ(w->acct_tmp.foo);
+	WSL_Flush(wrk, 0);
+	AZ(wrk->obj);
+	AZ(wrk->objcore);
+	AZ(wrk->do_stream);
+	AZ(wrk->do_gzip);
+	AZ(wrk->do_gunzip);
+	AZ(wrk->do_esi);
+#define ACCT(foo)	AZ(wrk->acct_tmp.foo);
 #include "tbl/acct_fields.h"
 #undef ACCT
-	assert(WRW_IsReleased(w));
+	assert(WRW_IsReleased(wrk));
 }
 
 /*

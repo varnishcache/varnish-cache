@@ -335,7 +335,8 @@ VSM_Init(void)
 	VWMB();
 
 	vsl_start = vsl_log_start;
-	vsl_end = vsl_start + cache_param->vsl_space / sizeof *vsl_end;
+	vsl_end = vsl_start +
+	    cache_param->vsl_space / (unsigned)sizeof *vsl_end;
 	vsl_ptr = vsl_start + 1;
 
 	VSC_C_main = VSM_Alloc(sizeof *VSC_C_main,
