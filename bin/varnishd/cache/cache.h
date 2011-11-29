@@ -315,7 +315,6 @@ struct worker {
 	/* Lookup stuff */
 	struct SHA256Context	*sha256ctx;
 
-	struct http_conn	htc[1];
 	struct ws		ws[1];
 	struct http		*bereq;
 	struct http		*beresp;
@@ -503,6 +502,7 @@ struct busyobj {
 	struct vgz		*vgz_rx;
 
 	struct exp		exp;
+	struct http_conn	htc;
 };
 
 /* Object structure --------------------------------------------------*/

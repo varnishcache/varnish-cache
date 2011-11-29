@@ -336,7 +336,7 @@ vfp_esi_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	AZ(w->busyobj->fetch_failed);
 	AN(w->busyobj->vep);
-	assert(w->htc == htc);
+	assert(&w->busyobj->htc == htc);
 	if (w->busyobj->is_gzip && w->do_gunzip)
 		i = vfp_esi_bytes_gu(w, htc, bytes);
 	else if (w->busyobj->is_gunzip && w->do_gzip)

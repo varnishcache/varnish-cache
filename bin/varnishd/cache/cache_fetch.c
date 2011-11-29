@@ -383,10 +383,13 @@ FetchHdr(struct sess *sp)
 	struct http *hp;
 	int retry = -1;
 	int i;
+	struct http_conn *htc;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	w = sp->wrk;
+	CHECK_OBJ_NOTNULL(w->busyobj, BUSYOBJ_MAGIC);
+	htc = &w->busyobj->htc;
 
 	AN(sp->director);
 	AZ(sp->wrk->obj);
@@ -437,12 +440,13 @@ FetchHdr(struct sess *sp)
 
 	/* Receive response */
 
-	HTC_Init(w->htc, w->ws, vc->fd, vc->vsl_id, cache_param->http_resp_size,
+	HTC_Init(htc, w->ws, vc->fd, vc->vsl_id,
+	    cache_param->http_resp_size,
 	    cache_param->http_resp_hdr_len);
 
 	VTCP_set_read_timeout(vc->fd, vc->first_byte_timeout);
 
-	i = HTC_Rx(w->htc);
+	i = HTC_Rx(htc);
 
 	if (i < 0) {
 		WSP(sp, SLT_FetchError, "http first read error: %d %d (%s)",
@@ -456,7 +460,7 @@ FetchHdr(struct sess *sp)
 	VTCP_set_read_timeout(vc->fd, vc->between_bytes_timeout);
 
 	while (i == 0) {
-		i = HTC_Rx(w->htc);
+		i = HTC_Rx(htc);
 		if (i < 0) {
 			WSP(sp, SLT_FetchError,
 			    "http first read error: %d %d (%s)",
@@ -469,7 +473,7 @@ FetchHdr(struct sess *sp)
 
 	hp = w->beresp;
 
-	if (http_DissectResponse(w, w->htc, hp)) {
+	if (http_DissectResponse(w, htc, hp)) {
 		WSP(sp, SLT_FetchError, "http format error");
 		VDI_CloseFd(sp->wrk);
 		/* XXX: other cleanup ? */
@@ -487,12 +491,16 @@ FetchBody(struct worker *w, struct object *obj)
 	struct storage *st;
 	int mklen;
 	ssize_t cl;
+	struct http_conn *htc;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(w->busyobj, BUSYOBJ_MAGIC);
 	AZ(w->fetch_obj);
 	CHECK_OBJ_NOTNULL(w->vbc, VBC_MAGIC);
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(obj->http, HTTP_MAGIC);
+
+	htc = &w->busyobj->htc;
 
 	if (w->busyobj->vfp == NULL)
 		w->busyobj->vfp = &vfp_nop;
@@ -519,21 +527,21 @@ FetchBody(struct worker *w, struct object *obj)
 	case BS_LENGTH:
 		cl = fetch_number( w->h_content_length, 10);
 		w->busyobj->vfp->begin(w, cl > 0 ? cl : 0);
-		cls = fetch_straight(w, w->htc, cl);
+		cls = fetch_straight(w, htc, cl);
 		mklen = 1;
 		if (w->busyobj->vfp->end(w))
 			cls = -1;
 		break;
 	case BS_CHUNKED:
 		w->busyobj->vfp->begin(w, cl);
-		cls = fetch_chunked(w, w->htc);
+		cls = fetch_chunked(w, htc);
 		mklen = 1;
 		if (w->busyobj->vfp->end(w))
 			cls = -1;
 		break;
 	case BS_EOF:
 		w->busyobj->vfp->begin(w, cl);
-		cls = fetch_eof(w, w->htc);
+		cls = fetch_eof(w, htc);
 		mklen = 1;
 		if (w->busyobj->vfp->end(w))
 			cls = -1;
