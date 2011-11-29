@@ -334,7 +334,6 @@ struct worker {
 	struct vbc		*vbc;
 	struct object		*fetch_obj;
 	enum body_status	body_status;
-	struct vgz		*vgz_rx;
 	struct vef_priv		*vef_priv;
 	unsigned		do_stream;
 	unsigned		do_esi;
@@ -503,6 +502,7 @@ struct busyobj {
 	struct vfp		*vfp;
 	struct vep_state	*vep;
 	unsigned		fetch_failed;
+	struct vgz		*vgz_rx;
 };
 
 /* Object structure --------------------------------------------------*/

@@ -499,7 +499,7 @@ FetchBody(struct worker *w, struct object *obj)
 
 	AssertObjCorePassOrBusy(obj->objcore);
 
-	AZ(w->vgz_rx);
+	AZ(w->busyobj->vgz_rx);
 	AZ(VTAILQ_FIRST(&obj->store));
 
 	w->fetch_obj = obj;
@@ -547,7 +547,7 @@ FetchBody(struct worker *w, struct object *obj)
 		mklen = 0;
 		INCOMPL();
 	}
-	AZ(w->vgz_rx);
+	AZ(w->busyobj->vgz_rx);
 
 	/*
 	 * It is OK for ->end to just leave the last storage segment

@@ -102,7 +102,7 @@ vfp_esi_bytes_gu(struct worker *w, struct http_conn *htc, ssize_t bytes)
 	const void *dp;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	vg = w->vgz_rx;
+	vg = w->busyobj->vgz_rx;
 
 	while (bytes > 0) {
 		if (VGZ_IbufEmpty(vg) && bytes > 0) {
@@ -264,10 +264,10 @@ vfp_esi_bytes_gg(struct worker *w, struct http_conn *htc, size_t bytes)
 		bytes -= wl;
 
 		vef->bufp = ibuf;
-		VGZ_Ibuf(w->vgz_rx, ibuf, wl);
+		VGZ_Ibuf(w->busyobj->vgz_rx, ibuf, wl);
 		do {
-			VGZ_Obuf(w->vgz_rx, ibuf2, sizeof ibuf2);
-			i = VGZ_Gunzip(w->vgz_rx, &dp, &dl);
+			VGZ_Obuf(w->busyobj->vgz_rx, ibuf2, sizeof ibuf2);
+			i = VGZ_Gunzip(w->busyobj->vgz_rx, &dp, &dl);
 			/* XXX: check i */
 			assert(i >= VGZ_OK);
 			vef->bufp = ibuf2;
@@ -284,7 +284,7 @@ vfp_esi_bytes_gg(struct worker *w, struct http_conn *htc, size_t bytes)
 				    vef->bufp, dl);
 				vef->npend += dl;
 			}
-		} while (!VGZ_IbufEmpty(w->vgz_rx));
+		} while (!VGZ_IbufEmpty(w->busyobj->vgz_rx));
 	}
 	return (1);
 }
@@ -300,9 +300,9 @@ vfp_esi_begin(struct worker *w, size_t estimate)
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(w->busyobj, BUSYOBJ_MAGIC);
 
-	AZ(w->vgz_rx);
+	AZ(w->busyobj->vgz_rx);
 	if (w->busyobj->is_gzip && w->do_gunzip) {
-		w->vgz_rx = VGZ_NewUngzip(w, "U F E");
+		w->busyobj->vgz_rx = VGZ_NewUngzip(w, "U F E");
 		VEP_Init(w, NULL);
 	} else if (w->busyobj->is_gunzip && w->do_gzip) {
 		ALLOC_OBJ(vef, VEF_MAGIC);
@@ -312,7 +312,7 @@ vfp_esi_begin(struct worker *w, size_t estimate)
 		w->vef_priv = vef;
 		VEP_Init(w, vfp_vep_callback);
 	} else if (w->busyobj->is_gzip) {
-		w->vgz_rx = VGZ_NewUngzip(w, "U F E");
+		w->busyobj->vgz_rx = VGZ_NewUngzip(w, "U F E");
 		ALLOC_OBJ(vef, VEF_MAGIC);
 		AN(vef);
 		vef->vgz = VGZ_NewGzip(w, "G F E");
@@ -362,7 +362,8 @@ vfp_esi_end(struct worker *w)
 
 	retval = w->busyobj->fetch_failed;
 
-	if (w->vgz_rx != NULL && VGZ_Destroy(&w->vgz_rx, -1) != VGZ_END)
+	if (w->busyobj->vgz_rx != NULL &&
+	     VGZ_Destroy(&w->busyobj->vgz_rx, -1) != VGZ_END)
 		retval = FetchError(w,
 		    "Gunzip+ESI Failed at the very end");
 
