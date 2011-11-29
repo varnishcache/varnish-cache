@@ -336,7 +336,6 @@ struct worker {
 	enum body_status	body_status;
 	struct vgz		*vgz_rx;
 	struct vef_priv		*vef_priv;
-	unsigned		fetch_failed;
 	unsigned		do_stream;
 	unsigned		do_esi;
 	unsigned		do_gzip;
@@ -347,7 +346,7 @@ struct worker {
 	/* Stream state */
 	struct stream_ctx	*sctx;
 
-	/* ESI stuff */
+	/* ESI delivery stuff */
 	int			gzip_resp;
 	ssize_t			l_crc;
 	uint32_t		crc;
@@ -503,6 +502,7 @@ struct busyobj {
 
 	struct vfp		*vfp;
 	struct vep_state	*vep;
+	unsigned		fetch_failed;
 };
 
 /* Object structure --------------------------------------------------*/

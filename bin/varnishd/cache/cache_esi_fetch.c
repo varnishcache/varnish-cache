@@ -334,7 +334,7 @@ vfp_esi_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 	int i;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	AZ(w->fetch_failed);
+	AZ(w->busyobj->fetch_failed);
 	AN(w->busyobj->vep);
 	assert(w->htc == htc);
 	if (w->busyobj->is_gzip && w->do_gunzip)
@@ -360,7 +360,7 @@ vfp_esi_end(struct worker *w)
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	AN(w->busyobj->vep);
 
-	retval = w->fetch_failed;
+	retval = w->busyobj->fetch_failed;
 
 	if (w->vgz_rx != NULL && VGZ_Destroy(&w->vgz_rx, -1) != VGZ_END)
 		retval = FetchError(w,

@@ -46,7 +46,7 @@ static unsigned fetchfrag;
  * We want to issue the first error we encounter on fetching and
  * supress the rest.  This function does that.
  *
- * Other code is allowed to look at w->fetch_failed to bail out
+ * Other code is allowed to look at w->busyobj->fetch_failed to bail out
  *
  * For convenience, always return -1
  */
@@ -56,13 +56,13 @@ FetchError2(struct worker *w, const char *error, const char *more)
 {
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	if (!w->fetch_failed) {
+	if (!w->busyobj->fetch_failed) {
 		if (more == NULL)
 			WSLB(w, SLT_FetchError, "%s", error);
 		else
 			WSLB(w, SLT_FetchError, "%s: %s", error, more);
 	}
-	w->fetch_failed = 1;
+	w->busyobj->fetch_failed = 1;
 	return (-1);
 }
 
@@ -112,7 +112,7 @@ vfp_nop_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 	ssize_t l, wl;
 	struct storage *st;
 
-	AZ(w->fetch_failed);
+	AZ(w->busyobj->fetch_failed);
 	while (bytes > 0) {
 		st = FetchStorage(w, 0);
 		if (st == NULL)
@@ -503,7 +503,7 @@ FetchBody(struct worker *w, struct object *obj)
 	AZ(VTAILQ_FIRST(&obj->store));
 
 	w->fetch_obj = obj;
-	w->fetch_failed = 0;
+	w->busyobj->fetch_failed = 0;
 
 	/* XXX: pick up estimate from objdr ? */
 	cl = 0;
@@ -579,7 +579,7 @@ FetchBody(struct worker *w, struct object *obj)
 		obj->len = 0;
 		return (__LINE__);
 	}
-	AZ(w->fetch_failed);
+	AZ(w->busyobj->fetch_failed);
 
 	if (cls == 0 && w->do_close)
 		cls = 1;

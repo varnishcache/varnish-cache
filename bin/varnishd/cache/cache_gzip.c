@@ -471,7 +471,7 @@ vfp_gunzip_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 	size_t dl;
 	const void *dp;
 
-	AZ(w->fetch_failed);
+	AZ(w->busyobj->fetch_failed);
 	vg = w->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
@@ -508,7 +508,7 @@ vfp_gunzip_end(struct worker *w)
 	vg = w->vgz_rx;
 	w->vgz_rx = NULL;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-	if (w->fetch_failed) {
+	if (w->busyobj->fetch_failed) {
 		(void)VGZ_Destroy(&vg, -1);
 		return(0);
 	}
@@ -549,7 +549,7 @@ vfp_gzip_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 	size_t dl;
 	const void *dp;
 
-	AZ(w->fetch_failed);
+	AZ(w->busyobj->fetch_failed);
 	vg = w->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
@@ -586,7 +586,7 @@ vfp_gzip_end(struct worker *w)
 	vg = w->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	w->vgz_rx = NULL;
-	if (w->fetch_failed) {
+	if (w->busyobj->fetch_failed) {
 		(void)VGZ_Destroy(&vg, -1);
 		return(0);
 	}
@@ -637,7 +637,7 @@ vfp_testgzip_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 	const void *dp;
 	struct storage *st;
 
-	AZ(w->fetch_failed);
+	AZ(w->busyobj->fetch_failed);
 	vg = w->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
@@ -680,7 +680,7 @@ vfp_testgzip_end(struct worker *w)
 	vg = w->vgz_rx;
 	w->vgz_rx = NULL;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-	if (w->fetch_failed) {
+	if (w->busyobj->fetch_failed) {
 		(void)VGZ_Destroy(&vg, -1);
 		return(0);
 	}
