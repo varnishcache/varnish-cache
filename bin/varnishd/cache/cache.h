@@ -332,7 +332,6 @@ struct worker {
 	struct http		*beresp;
 	struct vbc		*vbc;
 
-	struct vef_priv		*vef_priv;
 	unsigned		do_stream;
 	unsigned		do_esi;
 	unsigned		do_gzip;
@@ -507,6 +506,7 @@ struct busyobj {
 	struct http_conn	htc;
 
 	enum body_status	body_status;
+	struct vef_priv		*vef_priv;
 };
 
 /* Object structure --------------------------------------------------*/

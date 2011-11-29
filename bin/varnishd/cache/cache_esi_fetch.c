@@ -150,7 +150,8 @@ vfp_vep_callback(struct worker *w, ssize_t l, enum vgz_flag flg)
 	int i;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	vef = w->vef_priv;
+	CHECK_OBJ_NOTNULL(w->busyobj, BUSYOBJ_MAGIC);
+	vef = w->busyobj->vef_priv;
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 	assert(l >= 0);
 
@@ -211,7 +212,8 @@ vfp_esi_bytes_ug(struct worker *w, struct http_conn *htc, ssize_t bytes)
 	struct vef_priv *vef;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	vef = w->vef_priv;
+	CHECK_OBJ_NOTNULL(w->busyobj, BUSYOBJ_MAGIC);
+	vef = w->busyobj->vef_priv;
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 
 	while (bytes > 0) {
@@ -252,7 +254,8 @@ vfp_esi_bytes_gg(struct worker *w, struct http_conn *htc, size_t bytes)
 	int i;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	vef = w->vef_priv;
+	CHECK_OBJ_NOTNULL(w->busyobj, BUSYOBJ_MAGIC);
+	vef = w->busyobj->vef_priv;
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 	assert(sizeof ibuf >= 1024);
 	ibuf2[0] = 0; /* For Flexelint */
@@ -308,19 +311,19 @@ vfp_esi_begin(struct worker *w, size_t estimate)
 		ALLOC_OBJ(vef, VEF_MAGIC);
 		AN(vef);
 		vef->vgz = VGZ_NewGzip(w, "G F E");
-		AZ(w->vef_priv);
-		w->vef_priv = vef;
+		AZ(w->busyobj->vef_priv);
+		w->busyobj->vef_priv = vef;
 		VEP_Init(w, vfp_vep_callback);
 	} else if (w->busyobj->is_gzip) {
 		w->busyobj->vgz_rx = VGZ_NewUngzip(w, "U F E");
 		ALLOC_OBJ(vef, VEF_MAGIC);
 		AN(vef);
 		vef->vgz = VGZ_NewGzip(w, "G F E");
-		AZ(w->vef_priv);
-		w->vef_priv = vef;
+		AZ(w->busyobj->vef_priv);
+		w->busyobj->vef_priv = vef;
 		VEP_Init(w, vfp_vep_callback);
 	} else {
-		AZ(w->vef_priv);
+		AZ(w->busyobj->vef_priv);
 		VEP_Init(w, NULL);
 	}
 
@@ -358,6 +361,7 @@ vfp_esi_end(struct worker *w)
 	int retval;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(w->busyobj, BUSYOBJ_MAGIC);
 	AN(w->busyobj->vep);
 
 	retval = w->busyobj->fetch_failed;
@@ -387,10 +391,10 @@ vfp_esi_end(struct worker *w)
 		VSB_delete(vsb);
 	}
 
-	if (w->vef_priv != NULL) {
-		vef = w->vef_priv;
+	vef = w->busyobj->vef_priv;
+	if (vef != NULL) {
 		CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
-		w->vef_priv = NULL;
+		w->busyobj->vef_priv = NULL;
 		VGZ_UpdateObj(vef->vgz, w->busyobj->fetch_obj);
 		if (VGZ_Destroy(&vef->vgz,  -1) != VGZ_END)
 			retval = FetchError(w,
