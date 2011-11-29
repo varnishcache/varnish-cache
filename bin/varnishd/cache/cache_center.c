@@ -330,14 +330,19 @@ cnt_done(struct sess *sp)
 	sp->wrk->is_gunzip = 0;
 	sp->wrk->is_gzip = 0;
 
-	if (sp->vcl != NULL && sp->esi_level == 0) {
+	SES_Charge(sp);
+
+	/* If we did an ESI include, don't mess up our state */
+	if (sp->esi_level > 0)
+		return (1);
+
+	if (sp->vcl != NULL) {
 		if (sp->wrk->vcl != NULL)
 			VCL_Rel(&sp->wrk->vcl);
 		sp->wrk->vcl = sp->vcl;
 		sp->vcl = NULL;
 	}
 
-	SES_Charge(sp);
 
 	sp->t_end = W_TIM_real(sp->wrk);
 WSP(sp, SLT_Debug, "PHK req %.9f resp %.9f end %.9f open %.9f",
@@ -345,7 +350,7 @@ WSP(sp, SLT_Debug, "PHK req %.9f resp %.9f end %.9f open %.9f",
 	if (sp->xid == 0) {
 		// sp->t_req = sp->t_end;
 		sp->t_resp = sp->t_end;
-	} else if (sp->esi_level == 0) {
+	} else {
 		dp = sp->t_resp - sp->t_req;
 		da = sp->t_end - sp->t_resp;
 		dh = sp->t_req - sp->t_open;
@@ -360,10 +365,6 @@ WSP(sp, SLT_Debug, "PHK req %.9f resp %.9f end %.9f open %.9f",
 	}
 	sp->xid = 0;
 	WSL_Flush(sp->wrk, 0);
-
-	/* If we did an ESI include, don't mess up our state */
-	if (sp->esi_level > 0)
-		return (1);
 
 	sp->t_open = sp->t_end;
 	sp->t_resp = NAN;
