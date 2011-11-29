@@ -1028,3 +1028,9 @@ AssertObjCorePassOrBusy(const struct objcore *oc)
 	if (oc != NULL)
 		AN (oc->flags & OC_F_BUSY);
 }
+
+/*
+ * We want to cache the most recent timestamp in wrk->lastused to avoid
+ * extra timestamps in cache_pool.c.  Hide this detail with a macro
+ */
+#define W_TIM_real(w) ((w)->lastused = VTIM_real())

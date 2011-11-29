@@ -52,7 +52,7 @@ DOT	label="Request received"
 DOT ]
 DOT ERROR [shape=plaintext]
 DOT RESTART [shape=plaintext]
-DOT acceptor -> start [style=bold,color=green]
+DOT acceptor -> first [style=bold,color=green]
  */
 
 #include "config.h"
@@ -80,6 +80,17 @@ static unsigned xids;
 /*--------------------------------------------------------------------
  * WAIT
  * Wait (briefly) until we have a full request in our htc.
+ *
+DOT subgraph xcluster_wait {
+DOT	wait [
+DOT		shape=box
+DOT		label="wait for\nrequest"
+DOT	]
+DOT	herding [shape=hexagon]
+DOT	wait -> start [label="got req"]
+DOT	wait -> DONE [label="errors"]
+DOT	wait -> herding [label="timeout"]
+DOT }
  */
 
 static int
@@ -91,6 +102,7 @@ cnt_wait(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AZ(sp->vcl);
 	AZ(sp->obj);
+	AZ(sp->esi_level);
 	assert(sp->xid == 0);
 
 	i = HTC_Complete(sp->htc);
@@ -116,9 +128,7 @@ cnt_wait(struct sess *sp)
 	}
 	if (i == -2) {
 		SES_Close(sp, "overflow");
-		return (0);
-	}
-	if (i == -1 && Tlen(sp->htc->rxbuf) == 0 &&
+	} else if (i == -1 && Tlen(sp->htc->rxbuf) == 0 &&
 	    (errno == 0 || errno == ECONNRESET))
 		SES_Close(sp, "EOF");
 	else
@@ -210,7 +220,7 @@ cnt_prepresp(struct sess *sp)
 		}
 	}
 
-	sp->t_resp = VTIM_real();
+	sp->t_resp = W_TIM_real(sp->wrk);
 	if (sp->obj->objcore != NULL) {
 		if ((sp->t_resp - sp->obj->last_lru) > cache_param->lru_timeout &&
 		    EXP_Touch(sp->obj->objcore))
@@ -293,6 +303,10 @@ DOT	DONE [
 DOT		shape=hexagon
 DOT		label="Request completed"
 DOT	]
+DOT	ESI_RESP [ shape=hexagon ]
+DOT	DONE -> start
+DOT	DONE -> wait
+DOT	DONE -> ESI_RESP
  */
 
 static int
@@ -325,10 +339,11 @@ cnt_done(struct sess *sp)
 
 	SES_Charge(sp);
 
-	sp->t_end = VTIM_real();
-	sp->wrk->lastused = sp->t_end;
+	sp->t_end = W_TIM_real(sp->wrk);
+WSP(sp, SLT_Debug, "PHK req %.9f resp %.9f end %.9f open %.9f",
+    sp->t_req, sp->t_resp, sp->t_end,  sp->t_open);
 	if (sp->xid == 0) {
-		sp->t_req = sp->t_end;
+		// sp->t_req = sp->t_end;
 		sp->t_resp = sp->t_end;
 	} else if (sp->esi_level == 0) {
 		dp = sp->t_resp - sp->t_req;
@@ -344,13 +359,14 @@ cnt_done(struct sess *sp)
 		    sp->xid, sp->t_req, sp->t_end, dh, dp, da);
 	}
 	sp->xid = 0;
-	sp->t_open = sp->t_end;
-	sp->t_resp = NAN;
 	WSL_Flush(sp->wrk, 0);
 
 	/* If we did an ESI include, don't mess up our state */
 	if (sp->esi_level > 0)
 		return (1);
+
+	sp->t_open = sp->t_end;
+	sp->t_resp = NAN;
 
 	sp->req_bodybytes = 0;
 
@@ -465,7 +481,7 @@ cnt_error(struct sess *sp)
 
 	http_PutProtocol(w, sp->vsl_id, h, "HTTP/1.1");
 	http_PutStatus(h, sp->err_code);
-	VTIM_format(VTIM_real(), date);
+	VTIM_format(W_TIM_real(sp->wrk), date);
 	http_PrintfHeader(w, sp->vsl_id, h, "Date: %s", date);
 	http_SetHeader(w, sp->vsl_id, h, "Server: Varnish");
 
@@ -580,7 +596,7 @@ cnt_fetch(struct sess *sp)
 		 * What does RFC2616 think about TTL ?
 		 */
 		EXP_Clr(&sp->wrk->exp);
-		sp->wrk->exp.entered = VTIM_real();
+		sp->wrk->exp.entered = W_TIM_real(sp->wrk);
 		RFC2616_Ttl(sp);
 
 		/* pass from vclrecv{} has negative TTL */
@@ -947,7 +963,15 @@ cnt_streambody(struct sess *sp)
 
 /*--------------------------------------------------------------------
  * The very first request
+DOT subgraph xcluster_first {
+DOT	first [
+DOT		shape=box
+DOT		label="first\nConfigure data structures"
+DOT	]
+DOT }
+DOT first -> wait 
  */
+
 static int
 cnt_first(struct sess *sp)
 {
@@ -961,6 +985,7 @@ cnt_first(struct sess *sp)
 
 	assert(sp->xid == 0);
 	assert(sp->restarts == 0);
+	AZ(sp->esi_level);
 	VCA_Prep(sp);
 
 	/* Record the session watermark */
@@ -969,7 +994,6 @@ cnt_first(struct sess *sp)
 	/* Receive a HTTP protocol request */
 	HTC_Init(sp->htc, sp->ws, sp->fd, sp->vsl_id, cache_param->http_req_size,
 	    cache_param->http_req_hdr_len);
-	sp->wrk->lastused = sp->t_open;
 	sp->wrk->acct_tmp.sess++;
 
 	sp->step = STP_WAIT;
@@ -1344,7 +1368,9 @@ DOT		shape=record
 DOT		label="vcl_recv()|req."
 DOT	]
 DOT }
+DOT ESI_REQ [ shape=hexagon ]
 DOT RESTART -> recv
+DOT ESI_REQ -> recv
 DOT recv -> pipe [label="pipe",style=bold,color=orange]
 DOT recv -> pass2 [label="pass",style=bold,color=red]
 DOT recv -> err_recv [label="error"]
@@ -1445,8 +1471,12 @@ cnt_recv(struct sess *sp)
  * START
  * Handle a request, wherever it came from recv/restart.
  *
-DOT start [shape=box,label="Dissect request"]
+DOT start [
+DOT	shape=box
+DOT	label="Dissect request\nHandle expect"
+DOT ]
 DOT start -> recv [style=bold,color=green]
+DOT start -> DONE [label=errors]
  */
 
 static int
@@ -1460,11 +1490,11 @@ cnt_start(struct sess *sp)
 	AZ(sp->restarts);
 	AZ(sp->obj);
 	AZ(sp->vcl);
+	AZ(sp->esi_level);
 
 	/* Update stats of various sorts */
 	sp->wrk->stats.client_req++;
-	sp->t_req = VTIM_real();
-	sp->wrk->lastused = sp->t_req;
+	sp->t_req = W_TIM_real(sp->wrk);
 	sp->wrk->acct_tmp.req++;
 
 	/* Assign XID and log */
