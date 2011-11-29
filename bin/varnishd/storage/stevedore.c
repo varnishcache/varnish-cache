@@ -246,11 +246,11 @@ STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
 	VTAILQ_INIT(&o->store);
 	sp->wrk->stats.n_object++;
 
-	if (sp->objcore != NULL) {
-		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
+	if (sp->wrk->objcore != NULL) {
+		CHECK_OBJ_NOTNULL(sp->wrk->objcore, OBJCORE_MAGIC);
 
-		o->objcore = sp->objcore;
-		sp->objcore = NULL;     /* refcnt follows pointer. */
+		o->objcore = sp->wrk->objcore;
+		sp->wrk->objcore = NULL;     /* refcnt follows pointer. */
 		BAN_NewObjCore(o->objcore);
 
 		o->objcore->methods = &default_oc_methods;

@@ -230,7 +230,7 @@ vbe_NewConn(void)
 
 /*--------------------------------------------------------------------
  * It evaluates if a backend is healthy _for_a_specific_object_.
- * That means that it relies on sp->objcore->objhead. This is mainly for
+ * That means that it relies on sp->wrk->objcore->objhead. This is mainly for
  * saint-mode, but also takes backend->healthy into account. If
  * cache_param->saintmode_threshold is 0, this is basically just a test of
  * backend->healthy.
@@ -277,11 +277,11 @@ vbe_Healthy(const struct vdi_simple *vs, const struct sess *sp)
 	if (threshold == 0)
 		return (1);
 
-	if (sp->objcore == NULL)
+	if (sp->wrk->objcore == NULL)
 		return (1);
 
 	now = sp->t_req;
-	target = (uintptr_t)(sp->objcore->objhead);
+	target = (uintptr_t)(sp->wrk->objcore->objhead);
 
 	old = NULL;
 	retval = 1;

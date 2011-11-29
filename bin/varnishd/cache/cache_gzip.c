@@ -248,7 +248,7 @@ VGZ_ObufFull(const struct vgz *vg)
 
 /*--------------------------------------------------------------------
  * Keep the outbuffer supplied with storage and file it under the
- * sp->obj as it fills.
+ * sp->wrk->obj as it fills.
  */
 
 int

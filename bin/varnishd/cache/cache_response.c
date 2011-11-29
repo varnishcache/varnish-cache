@@ -41,7 +41,7 @@ res_dorange(const struct sess *sp, const char *r, ssize_t *plow, ssize_t *phigh)
 {
 	ssize_t low, high, has_low;
 
-	assert(sp->obj->response == 200);
+	assert(sp->wrk->obj->response == 200);
 	if (strncmp(r, "bytes=", 6))
 		return;
 	r += 6;
@@ -57,7 +57,7 @@ res_dorange(const struct sess *sp, const char *r, ssize_t *plow, ssize_t *phigh)
 		r++;
 	}
 
-	if (low >= sp->obj->len)
+	if (low >= sp->wrk->obj->len)
 		return;
 
 	if (*r != '-')
@@ -73,23 +73,23 @@ res_dorange(const struct sess *sp, const char *r, ssize_t *plow, ssize_t *phigh)
 			r++;
 		}
 		if (!has_low) {
-			low = sp->obj->len - high;
-			high = sp->obj->len - 1;
+			low = sp->wrk->obj->len - high;
+			high = sp->wrk->obj->len - 1;
 		}
 	} else
-		high = sp->obj->len - 1;
+		high = sp->wrk->obj->len - 1;
 	if (*r != '\0')
 		return;
 
-	if (high >= sp->obj->len)
-		high = sp->obj->len - 1;
+	if (high >= sp->wrk->obj->len)
+		high = sp->wrk->obj->len - 1;
 
 	if (low > high)
 		return;
 
 	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,
 	    "Content-Range: bytes %jd-%jd/%jd",
-	    (intmax_t)low, (intmax_t)high, (intmax_t)sp->obj->len);
+	    (intmax_t)low, (intmax_t)high, (intmax_t)sp->wrk->obj->len);
 	http_Unset(sp->wrk->resp, H_Content_Length);
 	assert(sp->wrk->res_mode & RES_LEN);
 	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,
@@ -112,8 +112,8 @@ RES_BuildHttp(const struct sess *sp)
 
 	http_ClrHeader(sp->wrk->resp);
 	sp->wrk->resp->logtag = HTTP_Tx;
-	http_CopyResp(sp->wrk->resp, sp->obj->http);
-	http_FilterFields(sp->wrk, sp->vsl_id, sp->wrk->resp, sp->obj->http,
+	http_CopyResp(sp->wrk->resp, sp->wrk->obj->http);
+	http_FilterFields(sp->wrk, sp->vsl_id, sp->wrk->resp, sp->wrk->obj->http,
 	    HTTPH_A_DELIVER);
 
 	if (!(sp->wrk->res_mode & RES_LEN)) {
@@ -131,14 +131,14 @@ RES_BuildHttp(const struct sess *sp)
 	VTIM_format(VTIM_real(), time_str);
 	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp, "Date: %s", time_str);
 
-	if (sp->xid != sp->obj->xid)
+	if (sp->xid != sp->wrk->obj->xid)
 		http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,
-		    "X-Varnish: %u %u", sp->xid, sp->obj->xid);
+		    "X-Varnish: %u %u", sp->xid, sp->wrk->obj->xid);
 	else
 		http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,
 		    "X-Varnish: %u", sp->xid);
 	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp, "Age: %.0f",
-	    sp->obj->exp.age + sp->t_resp - sp->obj->exp.entered);
+	    sp->wrk->obj->exp.age + sp->t_resp - sp->wrk->obj->exp.entered);
 	http_SetHeader(sp->wrk, sp->vsl_id, sp->wrk->resp, "Via: 1.1 varnish");
 	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp, "Connection: %s",
 	    sp->doclose ? "close" : "keep-alive");
@@ -165,7 +165,7 @@ res_WriteGunzipObj(const struct sess *sp)
 	vg = VGZ_NewUngzip(sp->wrk, "U D -");
 
 	VGZ_Obuf(vg, obuf, sizeof obuf);
-	VTAILQ_FOREACH(st, &sp->obj->store, list) {
+	VTAILQ_FOREACH(st, &sp->wrk->obj->store, list) {
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 		u += st->len;
@@ -183,7 +183,7 @@ res_WriteGunzipObj(const struct sess *sp)
 		(void)WRW_Flush(sp->wrk);
 	}
 	(void)VGZ_Destroy(&vg, sp->vsl_id);
-	assert(u == sp->obj->len);
+	assert(u == sp->wrk->obj->len);
 }
 
 /*--------------------------------------------------------------------*/
@@ -198,7 +198,7 @@ res_WriteDirObj(const struct sess *sp, ssize_t low, ssize_t high)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	ptr = 0;
-	VTAILQ_FOREACH(st, &sp->obj->store, list) {
+	VTAILQ_FOREACH(st, &sp->wrk->obj->store, list) {
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 		u += st->len;
@@ -239,7 +239,7 @@ res_WriteDirObj(const struct sess *sp, ssize_t low, ssize_t high)
 		VSC_C_main->n_objwrite++;
 		(void)WRW_Write(sp->wrk, st->ptr + off, len);
 	}
-	assert(u == sp->obj->len);
+	assert(u == sp->wrk->obj->len);
 }
 
 /*--------------------------------------------------------------------
@@ -257,7 +257,7 @@ RES_WriteObj(struct sess *sp)
 
 	WRW_Reserve(sp->wrk, &sp->fd);
 
-	if (sp->obj->response == 200 &&
+	if (sp->wrk->obj->response == 200 &&
 	    sp->http->conds &&
 	    RFC2616_Do_Cond(sp)) {
 		sp->wantbody = 0;
@@ -270,13 +270,13 @@ RES_WriteObj(struct sess *sp)
 	 * If nothing special planned, we can attempt Range support
 	 */
 	low = 0;
-	high = sp->obj->len - 1;
+	high = sp->wrk->obj->len - 1;
 	if (
 	    sp->wantbody &&
 	    (sp->wrk->res_mode & RES_LEN) &&
 	    !(sp->wrk->res_mode & (RES_ESI|RES_ESI_CHILD|RES_GUNZIP)) &&
 	    cache_param->http_range_support &&
-	    sp->obj->response == 200 &&
+	    sp->wrk->obj->response == 200 &&
 	    http_GetHdr(sp->http, H_Range, &r))
 		res_dorange(sp, r, &low, &high);
 
@@ -301,14 +301,14 @@ RES_WriteObj(struct sess *sp)
 
 	if (!sp->wantbody) {
 		/* This was a HEAD or conditional request */
-	} else if (sp->obj->len == 0) {
+	} else if (sp->wrk->obj->len == 0) {
 		/* Nothing to do here */
 	} else if (sp->wrk->res_mode & RES_ESI) {
 		ESI_Deliver(sp);
 	} else if (sp->wrk->res_mode & RES_ESI_CHILD && sp->wrk->gzip_resp) {
 		ESI_DeliverChild(sp);
 	} else if (sp->wrk->res_mode & RES_ESI_CHILD &&
-	    !sp->wrk->gzip_resp && sp->obj->gziped) {
+	    !sp->wrk->gzip_resp && sp->wrk->obj->gziped) {
 		res_WriteGunzipObj(sp);
 	} else if (sp->wrk->res_mode & RES_GUNZIP) {
 		res_WriteGunzipObj(sp);

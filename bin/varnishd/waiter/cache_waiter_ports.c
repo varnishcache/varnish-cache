@@ -77,7 +77,6 @@ vws_port_ev(struct vws *vws, port_event_t *ev) {
 	if(ev->portev_source == PORT_SOURCE_USER) {
 		CAST_OBJ_NOTNULL(sp, ev->portev_user, SESS_MAGIC);
 		assert(sp->fd >= 0);
-		AZ(sp->obj);
 		VTAILQ_INSERT_TAIL(&vws->sesshead, sp, list);
 		vws_add(vws, sp->fd, sp);
 	} else {

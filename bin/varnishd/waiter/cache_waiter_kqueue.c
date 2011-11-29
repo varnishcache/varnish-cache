@@ -102,7 +102,6 @@ vwk_kev(struct vwk *vwk, const struct kevent *kp)
 		while (i >= sizeof ss[0]) {
 			CHECK_OBJ_NOTNULL(ss[j], SESS_MAGIC);
 			assert(ss[j]->fd >= 0);
-			AZ(ss[j]->obj);
 			VTAILQ_INSERT_TAIL(&vwk->sesshead, ss[j], list);
 			vwk_kq_sess(vwk, ss[j], EV_ADD | EV_ONESHOT);
 			j++;

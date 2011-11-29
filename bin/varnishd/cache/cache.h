@@ -321,6 +321,9 @@ struct worker {
 	struct http		*beresp;
 	struct http		*resp;
 
+	struct object		*obj;
+	struct objcore		*objcore;
+
 	struct exp		exp;
 
 	/* This is only here so VRT can find it */
@@ -599,8 +602,6 @@ struct sess {
 	VTAILQ_ENTRY(sess)	list;
 
 	struct director		*director;
-	struct object		*obj;
-	struct objcore		*objcore;
 	struct VCL_conf		*vcl;
 
 	/* The busy objhead we sleep on */

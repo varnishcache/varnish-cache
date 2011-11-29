@@ -339,7 +339,6 @@ SES_Delete(struct sess *sp, const char *reason)
 		SES_Close(sp, reason);
 	assert(sp->fd < 0);
 
-	AZ(sp->obj);
 	AZ(sp->vcl);
 	if (sp->addr == NULL)
 		sp->addr = noaddr;

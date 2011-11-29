@@ -395,8 +395,8 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	 * XXX: serialize fetch of all Vary's if grace is possible.
 	 */
 
-	AZ(sp->objcore);
-	sp->objcore = grace_oc;		/* XXX: Hack-ish */
+	AZ(sp->wrk->objcore);
+	sp->wrk->objcore = grace_oc;		/* XXX: Hack-ish */
 	if (oc == NULL			/* We found no live object */
 	    && grace_oc != NULL		/* There is a grace candidate */
 	    && (busy_oc != NULL		/* Somebody else is already busy */
@@ -406,7 +406,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		oc = grace_oc;
 	}
-	sp->objcore = NULL;
+	sp->wrk->objcore = NULL;
 
 	if (oc != NULL && !sp->hash_always_miss) {
 		o = oc_getobj(sp->wrk, oc);
@@ -585,13 +585,13 @@ HSH_Drop(struct sess *sp)
 	struct object *o;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	o = sp->obj;
+	o = sp->wrk->obj;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	AssertObjCorePassOrBusy(o->objcore);
 	o->exp.ttl = -1.;
 	if (o->objcore != NULL)		/* Pass has no objcore */
 		HSH_Unbusy(sp);
-	(void)HSH_Deref(sp->wrk, NULL, &sp->obj);
+	(void)HSH_Deref(sp->wrk, NULL, &sp->wrk->obj);
 }
 
 void
@@ -602,7 +602,7 @@ HSH_Unbusy(const struct sess *sp)
 	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	o = sp->obj;
+	o = sp->wrk->obj;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oc = o->objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);

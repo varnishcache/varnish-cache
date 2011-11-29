@@ -266,8 +266,8 @@ pan_sess(const struct sess *sp)
 	if (VALID_OBJ(sp->wrk->vbc, BACKEND_MAGIC))
 		pan_vbc(sp->wrk->vbc);
 
-	if (VALID_OBJ(sp->obj, OBJECT_MAGIC))
-		pan_object(sp->obj);
+	if (VALID_OBJ(sp->wrk->obj, OBJECT_MAGIC))
+		pan_object(sp->wrk->obj);
 
 	VSB_printf(pan_vsp, "},\n");
 }

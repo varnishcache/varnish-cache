@@ -361,7 +361,6 @@ Pool_Wait(struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	AZ(sp->obj);
 	AZ(sp->vcl);
 	assert(sp->fd >= 0);
 	/*
