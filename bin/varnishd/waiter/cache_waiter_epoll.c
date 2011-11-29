@@ -119,7 +119,6 @@ vwe_eev(struct vwe *vwe, const struct epoll_event *ep)
 			while (i >= sizeof ss[0]) {
 				CHECK_OBJ_NOTNULL(ss[j], SESS_MAGIC);
 				assert(ss[j]->fd >= 0);
-				AZ(ss[j]->obj);
 				VTAILQ_INSERT_TAIL(&vwe->sesshead, ss[j], list);
 				vwe_cond_modadd(vwe, ss[j]->fd, ss[j]);
 				j++;
