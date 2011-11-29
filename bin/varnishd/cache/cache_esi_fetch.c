@@ -298,19 +298,20 @@ vfp_esi_begin(struct worker *w, size_t estimate)
 	struct vef_priv *vef;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(w->busyobj, BUSYOBJ_MAGIC);
 
 	AZ(w->vgz_rx);
-	if (w->is_gzip && w->do_gunzip) {
+	if (w->busyobj->is_gzip && w->do_gunzip) {
 		w->vgz_rx = VGZ_NewUngzip(w, "U F E");
 		VEP_Init(w, NULL);
-	} else if (w->is_gunzip && w->do_gzip) {
+	} else if (w->busyobj->is_gunzip && w->do_gzip) {
 		ALLOC_OBJ(vef, VEF_MAGIC);
 		AN(vef);
 		vef->vgz = VGZ_NewGzip(w, "G F E");
 		AZ(w->vef_priv);
 		w->vef_priv = vef;
 		VEP_Init(w, vfp_vep_callback);
-	} else if (w->is_gzip) {
+	} else if (w->busyobj->is_gzip) {
 		w->vgz_rx = VGZ_NewUngzip(w, "U F E");
 		ALLOC_OBJ(vef, VEF_MAGIC);
 		AN(vef);
@@ -336,11 +337,11 @@ vfp_esi_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 	AZ(w->fetch_failed);
 	AN(w->vep);
 	assert(w->htc == htc);
-	if (w->is_gzip && w->do_gunzip)
+	if (w->busyobj->is_gzip && w->do_gunzip)
 		i = vfp_esi_bytes_gu(w, htc, bytes);
-	else if (w->is_gunzip && w->do_gzip)
+	else if (w->busyobj->is_gunzip && w->do_gzip)
 		i = vfp_esi_bytes_ug(w, htc, bytes);
-	else if (w->is_gzip)
+	else if (w->busyobj->is_gzip)
 		i = vfp_esi_bytes_gg(w, htc, bytes);
 	else
 		i = vfp_esi_bytes_uu(w, htc, bytes);

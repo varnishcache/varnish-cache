@@ -323,6 +323,7 @@ struct worker {
 
 	struct object		*obj;
 	struct objcore		*objcore;
+	struct busyobj		*busyobj;
 
 	struct exp		exp;
 
@@ -340,9 +341,7 @@ struct worker {
 	unsigned		do_stream;
 	unsigned		do_esi;
 	unsigned		do_gzip;
-	unsigned		is_gzip;
 	unsigned		do_gunzip;
-	unsigned		is_gunzip;
 	unsigned		do_close;
 	char			*h_content_length;
 
@@ -492,6 +491,8 @@ struct busyobj {
 	unsigned		magic;
 #define BUSYOBJ_MAGIC		0x23b95567
 	uint8_t			*vary;
+	unsigned		is_gzip;
+	unsigned		is_gunzip;
 };
 
 /* Object structure --------------------------------------------------*/
@@ -966,6 +967,21 @@ void SMS_Init(void);
 void SMP_Init(void);
 void SMP_Ready(void);
 void SMP_NewBan(const uint8_t *ban, unsigned len);
+
+#define New_BusyObj(wrk)						\
+	do {								\
+		if (wrk->nbusyobj != NULL) {				\
+			CHECK_OBJ_NOTNULL(wrk->nbusyobj, BUSYOBJ_MAGIC);\
+			wrk->busyobj = wrk->nbusyobj;			\
+			wrk->nbusyobj = NULL;				\
+			memset(wrk->busyobj, 0, sizeof *wrk->busyobj);	\
+			wrk->busyobj->magic = BUSYOBJ_MAGIC;		\
+		} else {						\
+			ALLOC_OBJ(wrk->busyobj, BUSYOBJ_MAGIC);		\
+		}							\
+		CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);		\
+		AZ(wrk->nbusyobj);					\
+	} while (0)
 
 /*
  * A normal pointer difference is signed, but we never want a negative value

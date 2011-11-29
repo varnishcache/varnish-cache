@@ -323,12 +323,12 @@ cnt_done(struct sess *sp)
 	sp->director = NULL;
 	sp->restarts = 0;
 
+	sp->wrk->busyobj = NULL;
+
 	sp->wrk->do_esi = 0;
 	sp->wrk->do_gunzip = 0;
 	sp->wrk->do_gzip = 0;
 	sp->wrk->do_stream = 0;
-	sp->wrk->is_gunzip = 0;
-	sp->wrk->is_gzip = 0;
 
 	SES_Charge(sp);
 
@@ -444,8 +444,6 @@ cnt_error(struct sess *sp)
 
 	w = sp->wrk;
 	w->do_esi = 0;
-	w->is_gzip = 0;
-	w->is_gunzip = 0;
 	w->do_gzip = 0;
 	w->do_gunzip = 0;
 	w->do_stream = 0;
@@ -552,6 +550,8 @@ cnt_fetch(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);
 
 	AN(sp->director);
 	AZ(sp->wrk->vbc);
@@ -688,6 +688,8 @@ cnt_fetchbody(struct sess *sp)
 
 	wrk = sp->wrk;
 
+	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
+
 	assert(sp->handling == VCL_RET_HIT_FOR_PASS ||
 	    sp->handling == VCL_RET_DELIVER);
 
@@ -724,15 +726,17 @@ cnt_fetchbody(struct sess *sp)
 	if (!cache_param->http_gzip_support)
 		wrk->do_gzip = wrk->do_gunzip = 0;
 
-	wrk->is_gzip = http_HdrIs(wrk->beresp, H_Content_Encoding, "gzip");
+	wrk->busyobj->is_gzip =
+	    http_HdrIs(wrk->beresp, H_Content_Encoding, "gzip");
 
-	wrk->is_gunzip = !http_GetHdr(wrk->beresp, H_Content_Encoding, NULL);
+	wrk->busyobj->is_gunzip =
+	    !http_GetHdr(wrk->beresp, H_Content_Encoding, NULL);
 
 	/* It can't be both */
-	assert(wrk->is_gzip == 0 || wrk->is_gunzip == 0);
+	assert(wrk->busyobj->is_gzip == 0 || wrk->busyobj->is_gunzip == 0);
 
 	/* We won't gunzip unless it is gzip'ed */
-	if (wrk->do_gunzip && !wrk->is_gzip)
+	if (wrk->do_gunzip && !wrk->busyobj->is_gzip)
 		wrk->do_gunzip = 0;
 
 	/* If we do gunzip, remove the C-E header */
@@ -740,7 +744,7 @@ cnt_fetchbody(struct sess *sp)
 		http_Unset(wrk->beresp, H_Content_Encoding);
 
 	/* We wont gzip unless it is ungziped */
-	if (wrk->do_gzip && !wrk->is_gunzip)
+	if (wrk->do_gzip && !wrk->busyobj->is_gunzip)
 		wrk->do_gzip = 0;
 
 	/* If we do gzip, add the C-E header */
@@ -758,7 +762,7 @@ cnt_fetchbody(struct sess *sp)
 		wrk->vfp = &vfp_gunzip;
 	else if (wrk->do_gzip)
 		wrk->vfp = &vfp_gzip;
-	else if (wrk->is_gzip)
+	else if (wrk->busyobj->is_gzip)
 		wrk->vfp = &vfp_testgzip;
 
 	if (wrk->do_esi || sp->esi_level > 0)
@@ -811,7 +815,7 @@ cnt_fetchbody(struct sess *sp)
 
 	wrk->storage_hint = NULL;
 
-	if (wrk->do_gzip || (wrk->is_gzip && !wrk->do_gunzip))
+	if (wrk->do_gzip || (wrk->busyobj->is_gzip && !wrk->do_gunzip))
 		wrk->obj->gziped = 1;
 
 	if (vary != NULL) {
@@ -910,6 +914,7 @@ cnt_streambody(struct sess *sp)
 	uint8_t obuf[sp->wrk->res_mode & RES_GUNZIP ?
 	    cache_param->gzip_stack_buffer : 1];
 
+	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);
 	memset(&sctx, 0, sizeof sctx);
 	sctx.magic = STREAM_CTX_MAGIC;
 	AZ(sp->wrk->sctx);
@@ -1020,29 +1025,34 @@ DOT hit -> prepresp [label="deliver",style=bold,color=green]
 static int
 cnt_hit(struct sess *sp)
 {
+	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->obj, OBJECT_MAGIC);
+	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
+	CHECK_OBJ_NOTNULL(wrk->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
-	assert(!(sp->wrk->obj->objcore->flags & OC_F_PASS));
+	assert(!(wrk->obj->objcore->flags & OC_F_PASS));
 
-	AZ(sp->wrk->do_stream);
+	AZ(wrk->do_stream);
 
 	VCL_hit_method(sp);
 
 	if (sp->handling == VCL_RET_DELIVER) {
 		/* Dispose of any body part of the request */
 		(void)FetchReqBody(sp);
-		AZ(sp->wrk->bereq->ws);
-		AZ(sp->wrk->beresp->ws);
+		AZ(wrk->bereq->ws);
+		AZ(wrk->beresp->ws);
 		sp->step = STP_PREPRESP;
 		return (0);
 	}
 
 	/* Drop our object, we won't need it */
-	(void)HSH_Deref(sp->wrk, NULL, &sp->wrk->obj);
-	sp->wrk->objcore = NULL;
+	(void)HSH_Deref(wrk, NULL, &wrk->obj);
+	wrk->objcore = NULL;
+	wrk->busyobj = NULL;
 
 	switch(sp->handling) {
 	case VCL_RET_PASS:
@@ -1145,6 +1155,7 @@ cnt_lookup(struct sess *sp)
 		sp->vary_e = NULL;
 
 		sp->wrk->objcore = oc;
+		CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);
 		sp->step = STP_MISS;
 		return (0);
 	}
@@ -1205,6 +1216,7 @@ cnt_miss(struct sess *sp)
 
 	AZ(sp->wrk->obj);
 	AN(sp->wrk->objcore);
+	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);
 	WS_Reset(sp->wrk->ws, NULL);
 	http_Setup(sp->wrk->bereq, sp->wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_FETCH);
@@ -1222,7 +1234,10 @@ cnt_miss(struct sess *sp)
 	sp->wrk->connect_timeout = 0;
 	sp->wrk->first_byte_timeout = 0;
 	sp->wrk->between_bytes_timeout = 0;
+	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);
+
 	VCL_miss_method(sp);
+	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);
 	switch(sp->handling) {
 	case VCL_RET_ERROR:
 		AZ(HSH_Deref(sp->wrk, sp->wrk->objcore, NULL));
@@ -1236,6 +1251,7 @@ cnt_miss(struct sess *sp)
 		sp->step = STP_PASS;
 		return (0);
 	case VCL_RET_FETCH:
+		CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);
 		sp->step = STP_FETCH;
 		return (0);
 	case VCL_RET_RESTART:
@@ -1304,6 +1320,7 @@ cnt_pass(struct sess *sp)
 	sp->wrk->acct_tmp.pass++;
 	sp->sendbody = 1;
 	sp->step = STP_FETCH;
+	New_BusyObj(sp->wrk);
 	return (0);
 }
 
@@ -1411,8 +1428,6 @@ cnt_recv(struct sess *sp)
 
 	/* Zap these, in case we came here through restart */
 	sp->wrk->do_esi = 0;
-	sp->wrk->is_gzip = 0;
-	sp->wrk->is_gunzip = 0;
 	sp->wrk->do_gzip = 0;
 	sp->wrk->do_gunzip = 0;
 	sp->wrk->do_stream = 0;
@@ -1595,9 +1610,7 @@ CNT_Session(struct sess *sp)
 	    sp->step == STP_RECV);
 
 	AZ(w->do_stream);
-	AZ(w->is_gzip);
 	AZ(w->do_gzip);
-	AZ(w->is_gunzip);
 	AZ(w->do_gunzip);
 	AZ(w->do_esi);
 	AZ(w->obj);
@@ -1654,9 +1667,7 @@ CNT_Session(struct sess *sp)
 	AZ(w->obj);
 	AZ(w->objcore);
 	AZ(w->do_stream);
-	AZ(w->is_gzip);
 	AZ(w->do_gzip);
-	AZ(w->is_gunzip);
 	AZ(w->do_gunzip);
 	AZ(w->do_esi);
 #define ACCT(foo)	AZ(w->acct_tmp.foo);
