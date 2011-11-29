@@ -606,7 +606,7 @@ cnt_fetch(struct sess *sp)
 		 * headers are adultered by VCL
 		 * NB: Also sets other wrk variables
 		 */
-		wrk->body_status = RFC2616_Body(sp);
+		wrk->busyobj->body_status = RFC2616_Body(sp);
 
 		sp->err_code = http_GetStatus(wrk->beresp);
 

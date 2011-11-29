@@ -229,7 +229,7 @@ fetch_straight(struct worker *w, struct http_conn *htc, ssize_t cl)
 {
 	int i;
 
-	assert(w->body_status == BS_LENGTH);
+	assert(w->busyobj->body_status == BS_LENGTH);
 
 	if (cl < 0) {
 		return (FetchError(w, "straight length field bogus"));
@@ -256,7 +256,7 @@ fetch_chunked(struct worker *w, struct http_conn *htc)
 	unsigned u;
 	ssize_t cl;
 
-	assert(w->body_status == BS_CHUNKED);
+	assert(w->busyobj->body_status == BS_CHUNKED);
 	do {
 		/* Skip leading whitespace */
 		do {
@@ -314,7 +314,7 @@ fetch_eof(struct worker *w, struct http_conn *htc)
 {
 	int i;
 
-	assert(w->body_status == BS_EOF);
+	assert(w->busyobj->body_status == BS_EOF);
 	i = w->busyobj->vfp->bytes(w, htc, SSIZE_MAX);
 	if (i < 0)
 		return (-1);
@@ -515,7 +515,7 @@ FetchBody(struct worker *w, struct object *obj)
 
 	/* XXX: pick up estimate from objdr ? */
 	cl = 0;
-	switch (w->body_status) {
+	switch (w->busyobj->body_status) {
 	case BS_NONE:
 		cls = 0;
 		mklen = 0;
@@ -567,10 +567,10 @@ FetchBody(struct worker *w, struct object *obj)
 	w->busyobj->fetch_obj = NULL;
 
 	WSLB(w, SLT_Fetch_Body, "%u(%s) cls %d mklen %u",
-	    w->body_status, body_status(w->body_status),
+	    w->busyobj->body_status, body_status(w->busyobj->body_status),
 	    cls, mklen);
 
-	if (w->body_status == BS_ERROR) {
+	if (w->busyobj->body_status == BS_ERROR) {
 		VDI_CloseFd(w);
 		return (__LINE__);
 	}

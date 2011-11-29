@@ -316,8 +316,8 @@ struct worker {
 	struct SHA256Context	*sha256ctx;
 
 	struct ws		ws[1];
-	struct http		*bereq;
-	struct http		*beresp;
+
+
 	struct http		*resp;
 
 	struct object		*obj;
@@ -327,9 +327,11 @@ struct worker {
 	/* This is only here so VRT can find it */
 	const char		*storage_hint;
 
-	/* Fetch stuff */
+	/* Fetch stuff.  Here because pipe has no busyobj */
+	struct http		*bereq;
+	struct http		*beresp;
 	struct vbc		*vbc;
-	enum body_status	body_status;
+
 	struct vef_priv		*vef_priv;
 	unsigned		do_stream;
 	unsigned		do_esi;
@@ -503,6 +505,8 @@ struct busyobj {
 	struct object		*fetch_obj;
 	struct exp		exp;
 	struct http_conn	htc;
+
+	enum body_status	body_status;
 };
 
 /* Object structure --------------------------------------------------*/
