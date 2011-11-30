@@ -525,7 +525,7 @@ FetchBody(struct worker *w, struct object *obj)
 		mklen = 1;
 		break;
 	case BS_LENGTH:
-		cl = fetch_number( w->h_content_length, 10);
+		cl = fetch_number( w->busyobj->h_content_length, 10);
 		w->busyobj->vfp->begin(w, cl > 0 ? cl : 0);
 		cls = fetch_straight(w, htc, cl);
 		mklen = 1;

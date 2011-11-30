@@ -188,7 +188,8 @@ cnt_prepresp(struct sess *sp)
 		wrk->res_mode |= RES_LEN;
 
 	if (wrk->busyobj != NULL &&
-	    (wrk->h_content_length != NULL || !wrk->busyobj->do_stream) &&
+	    (wrk->busyobj->h_content_length != NULL ||
+	    !wrk->busyobj->do_stream) &&
 	    !wrk->busyobj->do_gzip && !wrk->busyobj->do_gunzip)
 		wrk->res_mode |= RES_LEN;
 
@@ -256,7 +257,6 @@ cnt_prepresp(struct sess *sp)
 		AZ(wrk->obj);
 		sp->restarts++;
 		sp->director = NULL;
-		wrk->h_content_length = NULL;
 		http_Setup(wrk->bereq, NULL);
 		http_Setup(wrk->beresp, NULL);
 		http_Setup(wrk->resp, NULL);
@@ -469,7 +469,6 @@ cnt_error(struct sess *sp)
 		if (wrk->obj == NULL) {
 			sp->doclose = "Out of objects";
 			sp->director = NULL;
-			wrk->h_content_length = NULL;
 			http_Setup(wrk->beresp, NULL);
 			http_Setup(wrk->bereq, NULL);
 			sp->step = STP_DONE;
@@ -567,7 +566,6 @@ cnt_fetch(struct sess *sp)
 
 	AN(sp->director);
 	AZ(wrk->vbc);
-	AZ(wrk->h_content_length);
 	AZ(wrk->busyobj->should_close);
 	AZ(wrk->storage_hint);
 
@@ -648,7 +646,6 @@ cnt_fetch(struct sess *sp)
 	}
 	http_Setup(wrk->bereq, NULL);
 	http_Setup(wrk->beresp, NULL);
-	wrk->h_content_length = NULL;
 	sp->director = NULL;
 	wrk->storage_hint = NULL;
 
@@ -880,8 +877,6 @@ cnt_fetchbody(struct sess *sp)
 	/* Use unmodified headers*/
 	i = FetchBody(wrk, wrk->obj);
 
-	wrk->h_content_length = NULL;
-
 	http_Setup(wrk->bereq, NULL);
 	http_Setup(wrk->beresp, NULL);
 	wrk->busyobj->vfp = NULL;
@@ -949,8 +944,6 @@ cnt_streambody(struct sess *sp)
 	AssertObjCorePassOrBusy(wrk->obj->objcore);
 
 	i = FetchBody(wrk, wrk->obj);
-
-	wrk->h_content_length = NULL;
 
 	http_Setup(wrk->bereq, NULL);
 	http_Setup(wrk->beresp, NULL);

@@ -239,7 +239,8 @@ RFC2616_Body(const struct sess *sp)
 		return (BS_ERROR);
 	}
 
-	if (http_GetHdr(hp, H_Content_Length, &sp->wrk->h_content_length)) {
+	if (http_GetHdr(hp, H_Content_Length,
+	    &sp->wrk->busyobj->h_content_length)) {
 		sp->wrk->stats.fetch_length++;
 		return (BS_LENGTH);
 	}

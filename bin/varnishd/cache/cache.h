@@ -332,8 +332,6 @@ struct worker {
 	struct http		*beresp;
 	struct vbc		*vbc;
 
-	char			*h_content_length;
-
 	/* Stream state */
 	struct stream_ctx	*sctx;
 
@@ -504,6 +502,7 @@ struct busyobj {
 	struct vef_priv		*vef_priv;
 
 	unsigned		should_close;
+	char			*h_content_length;
 
 	unsigned		do_esi;
 	unsigned		do_gzip;
