@@ -184,8 +184,12 @@ cnt_prepresp(struct sess *sp)
 
 	wrk->res_mode = 0;
 
-	if ((wrk->h_content_length != NULL || !wrk->do_stream) &&
-	    !wrk->do_gzip && !wrk->do_gunzip)
+	if (wrk->busyobj == NULL)
+		wrk->res_mode |= RES_LEN;
+
+	if (wrk->busyobj != NULL &&
+	    (wrk->h_content_length != NULL || !wrk->do_stream) &&
+	    !wrk->busyobj->do_gzip && !wrk->busyobj->do_gunzip)
 		wrk->res_mode |= RES_LEN;
 
 	if (!sp->disable_esi && wrk->obj->esidata != NULL) {
@@ -339,9 +343,6 @@ cnt_done(struct sess *sp)
 
 	wrk->busyobj = NULL;
 
-	wrk->do_esi = 0;
-	wrk->do_gunzip = 0;
-	wrk->do_gzip = 0;
 	wrk->do_stream = 0;
 
 	SES_Charge(sp);
@@ -457,9 +458,6 @@ cnt_error(struct sess *sp)
 	wrk = sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
-	wrk->do_esi = 0;
-	wrk->do_gzip = 0;
-	wrk->do_gunzip = 0;
 	wrk->do_stream = 0;
 
 	if (wrk->obj == NULL) {
@@ -621,7 +619,7 @@ cnt_fetch(struct sess *sp)
 		if (wrk->objcore == NULL)
 			wrk->busyobj->exp.ttl = -1.;
 
-		AZ(wrk->do_esi);
+		AZ(wrk->busyobj->do_esi);
 
 		VCL_fetch_method(sp);
 
@@ -740,7 +738,7 @@ cnt_fetchbody(struct sess *sp)
 
 	/* We do nothing unless the param is set */
 	if (!cache_param->http_gzip_support)
-		wrk->do_gzip = wrk->do_gunzip = 0;
+		wrk->busyobj->do_gzip = wrk->busyobj->do_gunzip = 0;
 
 	wrk->busyobj->is_gzip =
 	    http_HdrIs(wrk->beresp, H_Content_Encoding, "gzip");
@@ -752,36 +750,36 @@ cnt_fetchbody(struct sess *sp)
 	assert(wrk->busyobj->is_gzip == 0 || wrk->busyobj->is_gunzip == 0);
 
 	/* We won't gunzip unless it is gzip'ed */
-	if (wrk->do_gunzip && !wrk->busyobj->is_gzip)
-		wrk->do_gunzip = 0;
+	if (wrk->busyobj->do_gunzip && !wrk->busyobj->is_gzip)
+		wrk->busyobj->do_gunzip = 0;
 
 	/* If we do gunzip, remove the C-E header */
-	if (wrk->do_gunzip)
+	if (wrk->busyobj->do_gunzip)
 		http_Unset(wrk->beresp, H_Content_Encoding);
 
 	/* We wont gzip unless it is ungziped */
-	if (wrk->do_gzip && !wrk->busyobj->is_gunzip)
-		wrk->do_gzip = 0;
+	if (wrk->busyobj->do_gzip && !wrk->busyobj->is_gunzip)
+		wrk->busyobj->do_gzip = 0;
 
 	/* If we do gzip, add the C-E header */
-	if (wrk->do_gzip)
+	if (wrk->busyobj->do_gzip)
 		http_SetHeader(wrk, sp->vsl_id, wrk->beresp,
 		    "Content-Encoding: gzip");
 
 	/* But we can't do both at the same time */
-	assert(wrk->do_gzip == 0 || wrk->do_gunzip == 0);
+	assert(wrk->busyobj->do_gzip == 0 || wrk->busyobj->do_gunzip == 0);
 
 	/* ESI takes precedence and handles gzip/gunzip itself */
-	if (wrk->do_esi)
+	if (wrk->busyobj->do_esi)
 		wrk->busyobj->vfp = &vfp_esi;
-	else if (wrk->do_gunzip)
+	else if (wrk->busyobj->do_gunzip)
 		wrk->busyobj->vfp = &vfp_gunzip;
-	else if (wrk->do_gzip)
+	else if (wrk->busyobj->do_gzip)
 		wrk->busyobj->vfp = &vfp_gzip;
 	else if (wrk->busyobj->is_gzip)
 		wrk->busyobj->vfp = &vfp_testgzip;
 
-	if (wrk->do_esi || sp->esi_level > 0)
+	if (wrk->busyobj->do_esi || sp->esi_level > 0)
 		wrk->do_stream = 0;
 	if (!sp->wantbody)
 		wrk->do_stream = 0;
@@ -832,7 +830,8 @@ cnt_fetchbody(struct sess *sp)
 
 	wrk->storage_hint = NULL;
 
-	if (wrk->do_gzip || (wrk->busyobj->is_gzip && !wrk->do_gunzip))
+	if (wrk->busyobj->do_gzip ||
+	    (wrk->busyobj->is_gzip && !wrk->busyobj->do_gunzip))
 		wrk->obj->gziped = 1;
 
 	if (vary != NULL) {
@@ -1470,9 +1469,6 @@ cnt_recv(struct sess *sp)
 	}
 
 	/* Zap these, in case we came here through restart */
-	wrk->do_esi = 0;
-	wrk->do_gzip = 0;
-	wrk->do_gunzip = 0;
 	wrk->do_stream = 0;
 
 	if (cache_param->http_gzip_support &&
@@ -1656,9 +1652,6 @@ CNT_Session(struct sess *sp)
 	    sp->step == STP_RECV);
 
 	AZ(wrk->do_stream);
-	AZ(wrk->do_gzip);
-	AZ(wrk->do_gunzip);
-	AZ(wrk->do_esi);
 	AZ(wrk->obj);
 	AZ(wrk->objcore);
 
@@ -1713,9 +1706,6 @@ CNT_Session(struct sess *sp)
 	AZ(wrk->obj);
 	AZ(wrk->objcore);
 	AZ(wrk->do_stream);
-	AZ(wrk->do_gzip);
-	AZ(wrk->do_gunzip);
-	AZ(wrk->do_esi);
 #define ACCT(foo)	AZ(wrk->acct_tmp.foo);
 #include "tbl/acct_fields.h"
 #undef ACCT

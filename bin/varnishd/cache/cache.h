@@ -333,9 +333,6 @@ struct worker {
 	struct vbc		*vbc;
 
 	unsigned		do_stream;
-	unsigned		do_esi;
-	unsigned		do_gzip;
-	unsigned		do_gunzip;
 	unsigned		do_close;
 	char			*h_content_length;
 
@@ -507,6 +504,10 @@ struct busyobj {
 
 	enum body_status	body_status;
 	struct vef_priv		*vef_priv;
+
+	unsigned		do_esi;
+	unsigned		do_gzip;
+	unsigned		do_gunzip;
 };
 
 /* Object structure --------------------------------------------------*/

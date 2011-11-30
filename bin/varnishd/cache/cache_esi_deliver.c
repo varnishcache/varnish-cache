@@ -91,9 +91,6 @@ ved_include(struct sess *sp, const char *src, const char *host)
 	/* Client content already taken care of */
 	http_Unset(sp->http, H_Content_Length);
 
-	sp->wrk->do_esi = 0;
-	sp->wrk->do_gzip = 0;
-	sp->wrk->do_gunzip = 0;
 	sp->wrk->do_stream = 0;
 
 	sxid = sp->xid;

@@ -213,6 +213,9 @@ pan_busyobj(const struct busyobj *bo)
 	VSB_printf(pan_vsp, "  busyobj = %p {\n", bo);
 	if (bo->is_gzip)	VSB_printf(pan_vsp, "    is_gzip\n");
 	if (bo->is_gunzip)	VSB_printf(pan_vsp, "    is_gunzip\n");
+	if (bo->do_gzip)	VSB_printf(pan_vsp, "    do_gzip\n");
+	if (bo->do_gunzip)	VSB_printf(pan_vsp, "    do_gunzip\n");
+	if (bo->do_esi)		VSB_printf(pan_vsp, "    do_esi\n");
 	VSB_printf(pan_vsp, "    bodystatus = %d,\n", bo->body_status);
 	VSB_printf(pan_vsp, "    },\n");
 }
@@ -256,9 +259,6 @@ pan_sess(const struct sess *sp)
 
 	VSB_printf(pan_vsp, "  flags = ");
 	if (sp->wrk->do_stream)	VSB_printf(pan_vsp, " do_stream");
-	if (sp->wrk->do_gzip)	VSB_printf(pan_vsp, " do_gzip");
-	if (sp->wrk->do_gunzip)	VSB_printf(pan_vsp, " do_gunzip");
-	if (sp->wrk->do_esi)	VSB_printf(pan_vsp, " do_esi");
 	if (sp->wrk->do_close)	VSB_printf(pan_vsp, " do_close");
 	VSB_printf(pan_vsp, "\n");
 	pan_busyobj(sp->wrk->busyobj);
