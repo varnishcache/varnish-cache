@@ -216,6 +216,7 @@ pan_busyobj(const struct busyobj *bo)
 	if (bo->do_gzip)	VSB_printf(pan_vsp, "    do_gzip\n");
 	if (bo->do_gunzip)	VSB_printf(pan_vsp, "    do_gunzip\n");
 	if (bo->do_esi)		VSB_printf(pan_vsp, "    do_esi\n");
+	if (bo->do_stream)	VSB_printf(pan_vsp, "    do_stream\n");
 	VSB_printf(pan_vsp, "    bodystatus = %d,\n", bo->body_status);
 	VSB_printf(pan_vsp, "    },\n");
 }
@@ -258,7 +259,6 @@ pan_sess(const struct sess *sp)
 	    sp->restarts, sp->esi_level);
 
 	VSB_printf(pan_vsp, "  flags = ");
-	if (sp->wrk->do_stream)	VSB_printf(pan_vsp, " do_stream");
 	if (sp->wrk->do_close)	VSB_printf(pan_vsp, " do_close");
 	VSB_printf(pan_vsp, "\n");
 	pan_busyobj(sp->wrk->busyobj);

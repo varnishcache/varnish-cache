@@ -493,7 +493,7 @@ vfp_gunzip_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 		if (i != VGZ_OK && i != VGZ_END)
 			return(FetchError(w, "Gunzip data error"));
 		w->busyobj->fetch_obj->len += dl;
-		if (w->do_stream)
+		if (w->busyobj->do_stream)
 			RES_StreamPoll(w);
 	}
 	assert(i == Z_OK || i == Z_STREAM_END);
@@ -569,7 +569,7 @@ vfp_gzip_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 		i = VGZ_Gzip(vg, &dp, &dl, VGZ_NORMAL);
 		assert(i == Z_OK);
 		w->busyobj->fetch_obj->len += dl;
-		if (w->do_stream)
+		if (w->busyobj->do_stream)
 			RES_StreamPoll(w);
 	}
 	return (1);
@@ -597,7 +597,7 @@ vfp_gzip_end(struct worker *w)
 		i = VGZ_Gzip(vg, &dp, &dl, VGZ_FINISH);
 		w->busyobj->fetch_obj->len += dl;
 	} while (i != Z_STREAM_END);
-	if (w->do_stream)
+	if (w->busyobj->do_stream)
 		RES_StreamPoll(w);
 	VGZ_UpdateObj(vg, w->busyobj->fetch_obj);
 	if (VGZ_Destroy(&vg, -1) != VGZ_END)
@@ -655,7 +655,7 @@ vfp_testgzip_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 		VGZ_Ibuf(vg, st->ptr + st->len, wl);
 		st->len += wl;
 		w->busyobj->fetch_obj->len += wl;
-		if (w->do_stream)
+		if (w->busyobj->do_stream)
 			RES_StreamPoll(w);
 
 		while (!VGZ_IbufEmpty(vg)) {

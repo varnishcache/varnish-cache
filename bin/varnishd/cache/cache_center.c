@@ -179,7 +179,7 @@ cnt_prepresp(struct sess *sp)
 	CHECK_OBJ_NOTNULL(wrk->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
-	if (wrk->do_stream)
+	if (wrk->busyobj != NULL && wrk->busyobj->do_stream)
 		AssertObjCorePassOrBusy(wrk->obj->objcore);
 
 	wrk->res_mode = 0;
@@ -188,7 +188,7 @@ cnt_prepresp(struct sess *sp)
 		wrk->res_mode |= RES_LEN;
 
 	if (wrk->busyobj != NULL &&
-	    (wrk->h_content_length != NULL || !wrk->do_stream) &&
+	    (wrk->h_content_length != NULL || !wrk->busyobj->do_stream) &&
 	    !wrk->busyobj->do_gzip && !wrk->busyobj->do_gunzip)
 		wrk->res_mode |= RES_LEN;
 
@@ -214,7 +214,8 @@ cnt_prepresp(struct sess *sp)
 	}
 
 	if (!(wrk->res_mode & (RES_LEN|RES_CHUNKED|RES_EOF))) {
-		if (wrk->obj->len == 0 && !wrk->do_stream)
+		if (wrk->obj->len == 0 &&
+		    (wrk->busyobj == NULL || !wrk->busyobj->do_stream))
 			/*
 			 * If the object is empty, neither ESI nor GUNZIP
 			 * can make it any different size
@@ -246,7 +247,7 @@ cnt_prepresp(struct sess *sp)
 	case VCL_RET_RESTART:
 		if (sp->restarts >= cache_param->max_restarts)
 			break;
-		if (wrk->do_stream) {
+		if (wrk->busyobj->do_stream) {
 			VDI_CloseFd(wrk);
 			HSH_Drop(wrk);
 		} else {
@@ -264,7 +265,7 @@ cnt_prepresp(struct sess *sp)
 	default:
 		WRONG("Illegal action in vcl_deliver{}");
 	}
-	if (wrk->do_stream) {
+	if (wrk->busyobj != NULL && wrk->busyobj->do_stream) {
 		AssertObjCorePassOrBusy(wrk->obj->objcore);
 		sp->step = STP_STREAMBODY;
 	} else {
@@ -342,8 +343,6 @@ cnt_done(struct sess *sp)
 	sp->restarts = 0;
 
 	wrk->busyobj = NULL;
-
-	wrk->do_stream = 0;
 
 	SES_Charge(sp);
 
@@ -457,8 +456,6 @@ cnt_error(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	wrk = sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-
-	wrk->do_stream = 0;
 
 	if (wrk->obj == NULL) {
 		HSH_Prealloc(sp);
@@ -780,9 +777,9 @@ cnt_fetchbody(struct sess *sp)
 		wrk->busyobj->vfp = &vfp_testgzip;
 
 	if (wrk->busyobj->do_esi || sp->esi_level > 0)
-		wrk->do_stream = 0;
+		wrk->busyobj->do_stream = 0;
 	if (!sp->wantbody)
-		wrk->do_stream = 0;
+		wrk->busyobj->do_stream = 0;
 
 	l = http_EstimateWS(wrk->beresp,
 	    pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
@@ -871,11 +868,11 @@ cnt_fetchbody(struct sess *sp)
 	if (wrk->obj->response == 200 &&
 	    sp->http->conds &&
 	    RFC2616_Do_Cond(sp))
-		wrk->do_stream = 0;
+		wrk->busyobj->do_stream = 0;
 
 	AssertObjCorePassOrBusy(wrk->obj->objcore);
 
-	if (wrk->do_stream) {
+	if (wrk->busyobj->do_stream) {
 		sp->step = STP_PREPRESP;
 		return (0);
 	}
@@ -1061,8 +1058,6 @@ cnt_hit(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
 
 	assert(!(wrk->obj->objcore->flags & OC_F_PASS));
-
-	AZ(wrk->do_stream);
 
 	VCL_hit_method(sp);
 
@@ -1468,9 +1463,6 @@ cnt_recv(struct sess *sp)
 		return (0);
 	}
 
-	/* Zap these, in case we came here through restart */
-	wrk->do_stream = 0;
-
 	if (cache_param->http_gzip_support &&
 	     (recv_handling != VCL_RET_PIPE) &&
 	     (recv_handling != VCL_RET_PASS)) {
@@ -1651,7 +1643,6 @@ CNT_Session(struct sess *sp)
 	    sp->step == STP_LOOKUP ||
 	    sp->step == STP_RECV);
 
-	AZ(wrk->do_stream);
 	AZ(wrk->obj);
 	AZ(wrk->objcore);
 
@@ -1705,7 +1696,6 @@ CNT_Session(struct sess *sp)
 	WSL_Flush(wrk, 0);
 	AZ(wrk->obj);
 	AZ(wrk->objcore);
-	AZ(wrk->do_stream);
 #define ACCT(foo)	AZ(wrk->acct_tmp.foo);
 #include "tbl/acct_fields.h"
 #undef ACCT

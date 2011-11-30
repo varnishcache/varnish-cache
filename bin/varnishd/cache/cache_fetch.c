@@ -126,7 +126,7 @@ vfp_nop_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
 		st->len += wl;
 		w->busyobj->fetch_obj->len += wl;
 		bytes -= wl;
-		if (w->do_stream)
+		if (w->busyobj->do_stream)
 			RES_StreamPoll(w);
 	}
 	return (1);
@@ -601,7 +601,7 @@ FetchBody(struct worker *w, struct object *obj)
 		uu = 0;
 		VTAILQ_FOREACH(st, &obj->store, list)
 			uu += st->len;
-		if (w->do_stream)
+		if (w->busyobj->do_stream)
 			/* Streaming might have started freeing stuff */
 			assert (uu <= obj->len);
 

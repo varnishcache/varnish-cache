@@ -332,7 +332,6 @@ struct worker {
 	struct http		*beresp;
 	struct vbc		*vbc;
 
-	unsigned		do_stream;
 	unsigned		do_close;
 	char			*h_content_length;
 
@@ -508,6 +507,7 @@ struct busyobj {
 	unsigned		do_esi;
 	unsigned		do_gzip;
 	unsigned		do_gunzip;
+	unsigned		do_stream;
 };
 
 /* Object structure --------------------------------------------------*/
