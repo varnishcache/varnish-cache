@@ -498,7 +498,7 @@ vcl_pass
   client, but is not entered into the cache.  Subsequent requests sub‐
   mitted over the same client connection are handled normally.
   
-  The vcl_recv subroutine may terminate with calling return() with one of
+  The vcl_pass subroutine may terminate with calling return() with one of
   the following keywords:
   
   error code [reason]
