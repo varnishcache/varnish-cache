@@ -94,7 +94,7 @@ googling "Live HTTP Headers".
 The role of HTTP Headers
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Along with each HTTP request and reponse comes a bunch of headers
+Along with each HTTP request and response comes a bunch of headers
 carrying metadata. Varnish will look at these headers to determine if
 it is appropriate to cache the contents and how long Varnish can keep
 the content.
