@@ -14,11 +14,11 @@ the page encoded with the deflate encoding.
 The problem is that the Accept-Encoding field contains a lot of
 different encodings. If one browser sends::
 
-  Accept-Encodign: gzip,deflate
+  Accept-Encoding: gzip,deflate
 
 And another one sends::
 
-  Accept-Encoding:: deflate,gzip
+  Accept-Encoding: deflate,gzip
 
 Varnish will keep two variants of the page requested due to the
 different Accept-Encoding headers. Normalizing the accept-encoding
