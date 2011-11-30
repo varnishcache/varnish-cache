@@ -61,7 +61,6 @@ VDI_CloseFd(struct worker *wrk)
 	wrk->vbc->backend = NULL;
 	VBE_ReleaseConn(wrk->vbc);
 	wrk->vbc = NULL;
-	wrk->do_close = 0;
 }
 
 /* Recycle a connection ----------------------------------------------*/
@@ -74,7 +73,6 @@ VDI_RecycleFd(struct worker *wrk)
 	CHECK_OBJ_NOTNULL(wrk->vbc, VBC_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk->vbc->backend, BACKEND_MAGIC);
 	assert(wrk->vbc->fd >= 0);
-	AZ(wrk->do_close);
 
 	bp = wrk->vbc->backend;
 

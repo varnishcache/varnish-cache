@@ -186,11 +186,11 @@ RFC2616_Body(const struct sess *sp)
 	hp = sp->wrk->beresp;
 
 	if (hp->protover < 11 && !http_HdrIs(hp, H_Connection, "keep-alive"))
-		sp->wrk->do_close = 1;
+		sp->wrk->busyobj->should_close = 1;
 	else if (http_HdrIs(hp, H_Connection, "close"))
-		sp->wrk->do_close = 1;
+		sp->wrk->busyobj->should_close = 1;
 	else
-		sp->wrk->do_close = 0;
+		sp->wrk->busyobj->should_close = 0;
 
 	if (!strcasecmp(http_GetReq(sp->wrk->bereq), "head")) {
 		/*

@@ -332,7 +332,6 @@ struct worker {
 	struct http		*beresp;
 	struct vbc		*vbc;
 
-	unsigned		do_close;
 	char			*h_content_length;
 
 	/* Stream state */
@@ -503,6 +502,8 @@ struct busyobj {
 
 	enum body_status	body_status;
 	struct vef_priv		*vef_priv;
+
+	unsigned		should_close;
 
 	unsigned		do_esi;
 	unsigned		do_gzip;

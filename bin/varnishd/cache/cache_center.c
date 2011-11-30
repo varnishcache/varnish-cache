@@ -568,7 +568,7 @@ cnt_fetch(struct sess *sp)
 	AN(sp->director);
 	AZ(wrk->vbc);
 	AZ(wrk->h_content_length);
-	AZ(wrk->do_close);
+	AZ(wrk->busyobj->should_close);
 	AZ(wrk->storage_hint);
 
 	http_Setup(wrk->beresp, wrk->ws);

@@ -589,7 +589,7 @@ FetchBody(struct worker *w, struct object *obj)
 	}
 	AZ(w->busyobj->fetch_failed);
 
-	if (cls == 0 && w->do_close)
+	if (cls == 0 && w->busyobj->should_close)
 		cls = 1;
 
 	WSLB(w, SLT_Length, "%u", obj->len);
