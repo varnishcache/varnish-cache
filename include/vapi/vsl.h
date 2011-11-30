@@ -26,6 +26,17 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * This is the public API for the VSL access.
+ *
+ * VSL is a "subclass" of VSM.
+ *
+ * VSL can either read from VSM or from a file.
+ *
+ * When reading from a file, the filename is passed in with:
+ *	VSL_Arg(vd, "r", "/some/file");
+ * and once VSL_Dispatch()/VSL_NextSLT() will indicate EOF by returning -2.
+ * Another file can then be opened with VSL_Arg() and processed.
+ *
  */
 
 #ifndef VAPI_VSL_H_INCLUDED
@@ -38,20 +49,6 @@ struct VSM_data;
 /*---------------------------------------------------------------------
  * VSL level access functions
  */
-
-void VSL_Setup(struct VSM_data *vd);
-	/*
-	 * Setup vd for use with VSL functions.
-	 */
-
-int VSL_Open(struct VSM_data *vd, int diag);
-	/*
-	 * Attempt to open and map the shared memory file.
-	 * If diag is non-zero, diagnostics are emitted.
-	 * Returns:
-	 *	0 on success
-	 *	!= 0 on failure
-	 */
 
 #define VSL_ARGS	"bCcdI:i:k:n:r:s:X:x:m:"
 #define VSL_b_USAGE	"[-b]"
@@ -67,6 +64,7 @@ int VSL_Open(struct VSM_data *vd, int diag);
 #define VSL_s_USAGE	"[-s skip]"
 #define VSL_x_USAGE	"[-x tag]"
 #define VSL_X_USAGE	"[-X regexp]"
+
 #define VSL_USAGE	"[-bCcd] "		\
 			VSL_i_USAGE " "		\
 			VSL_I_USAGE " "		\
@@ -82,24 +80,79 @@ int VSL_Arg(struct VSM_data *vd, int arg, const char *opt);
 	/*
 	 * Handle standard log-presenter arguments
 	 * Return:
-	 *	-1 error
+	 *	-1 error, VSM_Error() returns diagnostic string
 	 *	 0 not handled
 	 *	 1 Handled.
 	 */
 
 typedef int VSL_handler_f(void *priv, enum VSL_tag_e tag, unsigned fd,
     unsigned len, unsigned spec, const char *ptr, uint64_t bitmap);
+	/*
+	 * This is the call-back function you must provide.
+	 *	priv is whatever you asked for it to be.
+	 *	tag is the SLT_mumble tag
+	 *	fd is the filedescriptor associated with this record
+	 *	len is the length of the data at ptr
+	 *	spec are the VSL_S_* flags
+	 *	ptr points to the data, beware of non-printables.
+	 *	bitmap is XXX ???
+	 */
 
 #define VSL_S_CLIENT	(1 << 0)
 #define VSL_S_BACKEND	(1 << 1)
+
 VSL_handler_f VSL_H_Print;
-struct VSM_data;
-void VSL_Select(const struct VSM_data *vd, unsigned tag);
-void VSL_NonBlocking(const struct VSM_data *vd, int nb);
+	/*
+	 * This call-back function will printf() the record to the FILE *
+	 * specified in priv.
+	 */
+
+void VSL_Select(struct VSM_data *vd, enum VSL_tag_e tag);
+	/*
+	 * This adds tags which shall always be selected, similar to using
+	 * the '-i' option.
+	 * VSL_Select()/-i takes precedence over all other filtering.
+	 */
+
 int VSL_Dispatch(struct VSM_data *vd, VSL_handler_f *func, void *priv);
-int VSL_NextLog(const struct VSM_data *lh, uint32_t **pp, uint64_t *bitmap);
-int VSL_Matched(const struct VSM_data *vd, uint64_t bitmap);
+	/*
+	 * Call func(priv, ...) for all filtered VSL records.
+	 *
+	 * Return values:
+	 *	!=0:	Non-zero return value from func()
+	 *	0:	no VSL records.
+	 *	-1:	VSL chunk was abandoned.
+	 *	-2:	End of file (-r) / -k arg exhausted / "done"
+	 */
+
+int VSL_NextSLT(struct VSM_data *lh, uint32_t **pp, uint64_t *bitmap);
+	/*
+	 * Return raw pointer to next filtered VSL record.
+	 *
+	 * Return values:
+	 *	1:	Valid VSL record at *pp
+	 *	0:	no VSL records
+	 *	-1:	VSL chunk was abandoned
+	 *	-2:	End of file (-r) / -k arg exhausted / "done"
+	 */
+
+int VSL_Matched(struct VSM_data *vd, uint64_t bitmap);
+	/*
+	 */
+
 int VSL_Name2Tag(const char *name, int l);
+	/*
+	 * Convert string to tag number (= enum VSL_tag_e)
+	 *
+	 * Return values:
+	 *	>=0:	Tag number
+	 *	-1:	No tag matches
+	 *	-2:	Multiple tags match substring
+	 */
+
 extern const char *VSL_tags[256];
+	/*
+	 * Tag to string array.  Contains NULL for invalid tags.
+	 */
 
 #endif /* VAPI_VSL_H_INCLUDED */

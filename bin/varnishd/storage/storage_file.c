@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Varnish Software AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "cache.h"
+#include "cache/cache.h"
 #include "storage/storage.h"
 
 #include "vnum.h"
@@ -227,7 +227,8 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 	b = bytes / sc->pagesize;
 	if (b >= NBUCKET)
 		b = NBUCKET - 1;
-	for (sp = NULL; b < NBUCKET - 1; b++) {
+	sp = NULL;
+	for (; b < NBUCKET - 1; b++) {
 		sp = VTAILQ_FIRST(&sc->free[b]);
 		if (sp != NULL)
 			break;

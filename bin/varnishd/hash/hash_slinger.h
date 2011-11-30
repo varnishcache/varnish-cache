@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Varnish Software AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -54,10 +54,10 @@ struct hash_slinger {
 void HSH_Prealloc(const struct sess *sp);
 void HSH_Cleanup(struct worker *w);
 struct objcore *HSH_Lookup(struct sess *sp, struct objhead **poh);
-void HSH_Unbusy(const struct sess *sp);
+void HSH_Unbusy(struct worker *wrk);
 void HSH_Ref(struct objcore *o);
-void HSH_Drop(struct sess *sp);
-void HSH_Init(void);
+void HSH_Drop(struct worker *wrk);
+void HSH_Init(const struct hash_slinger *slinger);
 void HSH_AddString(const struct sess *sp, const char *str);
 struct objcore *HSH_Insert(const struct sess *sp);
 void HSH_Purge(const struct sess *, struct objhead *, double ttl, double grace);

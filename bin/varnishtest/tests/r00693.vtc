@@ -4,11 +4,11 @@ feature 64bit
 
 server s1 {
 	rxreq
-	expect req.http.baz == "req.http.baz"
+	expect req.http.baz == <undef>
 	txresp -status 201
 
 	rxreq
-	expect req.http.baz == "req.http.baz"
+	expect req.http.baz == <undef>
 	txresp -status 202
 
 	rxreq
@@ -52,7 +52,7 @@ varnish v1 -arg "-p sess_workspace=1024" -vcl+backend {
 			"0123456789abcdef" + "0123456789abcdef" +
 			"0123456789abcdef" + "0123456789abcdef" +
 			"0123456789abcdef" +
-			"01234567";
+			"0123456";
 		set req.http.baz = "BAZ";
 		return (pass);
 	}

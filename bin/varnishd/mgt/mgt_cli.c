@@ -43,8 +43,8 @@
 #include <unistd.h>
 
 #include "mgt/mgt.h"
+#include "common/params.h"
 
-#include "heritage.h"
 #include "vcli.h"
 #include "vcli_common.h"
 #include "vcli_priv.h"
@@ -170,7 +170,8 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 	VSB_delete(vsb);
-	(void)VCLI_ReadResult(cli_i, &u, &q, params->cli_timeout);
+	if (VCLI_ReadResult(cli_i, &u, &q, mgt_param.cli_timeout))
+		MGT_Child_Cli_Fail();
 	VCLI_SetResult(cli, u);
 	VCLI_Out(cli, "%s", q);
 	free(q);
@@ -192,7 +193,7 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...) {
 	int i, j;
 	va_list ap;
 	unsigned u;
-	char buf[params->cli_buffer], *p;
+	char buf[mgt_param.cli_buffer], *p;
 
 	if (resp != NULL)
 		*resp = NULL;
@@ -219,11 +220,10 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...) {
 		return (CLIS_COMMS);
 	}
 
-	(void)VCLI_ReadResult(cli_i, &u, resp, params->cli_timeout);
+	if (VCLI_ReadResult(cli_i, &u, resp, mgt_param.cli_timeout))
+		MGT_Child_Cli_Fail();
 	if (status != NULL)
 		*status = u;
-	if (u == CLIS_COMMS)
-		MGT_Child_Cli_Fail();
 	return (u == CLIS_OK ? 0 : u);
 }
 
@@ -316,7 +316,7 @@ static void
 mgt_cli_cb_before(const struct cli *cli)
 {
 
-	if (params->syslog_cli_traffic)
+	if (mgt_param.syslog_cli_traffic)
 		syslog(LOG_NOTICE, "CLI %s Rd %s", cli->ident, cli->cmd);
 }
 
@@ -324,7 +324,7 @@ static void
 mgt_cli_cb_after(const struct cli *cli)
 {
 
-	if (params->syslog_cli_traffic)
+	if (mgt_param.syslog_cli_traffic)
 		syslog(LOG_NOTICE, "CLI %s Wr %03u %s",
 		    cli->ident, cli->result, VSB_data(cli->sb));
 }
@@ -335,7 +335,8 @@ static void
 mgt_cli_init_cls(void)
 {
 
-	cls = VCLS_New(mgt_cli_cb_before, mgt_cli_cb_after, params->cli_buffer);
+	cls = VCLS_New(mgt_cli_cb_before, mgt_cli_cb_after,
+	    &mgt_param.cli_buffer, &mgt_param.cli_limit);
 	AN(cls);
 	AZ(VCLS_AddFunc(cls, MCF_NOAUTH, cli_auth));
 	AZ(VCLS_AddFunc(cls, MCF_AUTH, cli_proto));
@@ -491,15 +492,11 @@ mgt_cli_secret(const char *S_arg)
 {
 	int i, fd;
 	char buf[BUFSIZ];
-	char *p;
 
 	/* Save in shmem */
-	i = strlen(S_arg);
-	p = VSM_Alloc(i + 1, "Arg", "-S", "");
-	AN(p);
-	strcpy(p, S_arg);
+	mgt_SHM_static_alloc(S_arg, strlen(S_arg) + 1L, "Arg", "-S", "");
 
-	srandomdev();
+	srandomdev();			/* XXX: why here ??? */
 	fd = open(S_arg, O_RDONLY);
 	if (fd < 0) {
 		fprintf(stderr, "Can not open secret-file \"%s\"\n", S_arg);
@@ -525,7 +522,6 @@ mgt_cli_telnet(const char *T_arg)
 	struct vss_addr **ta;
 	int i, n, sock, good;
 	struct telnet *tn;
-	char *p;
 	struct vsb *vsb;
 	char abuf[VTCP_ADDRBUFSIZE];
 	char pbuf[VTCP_PORTBUFSIZE];
@@ -562,9 +558,7 @@ mgt_cli_telnet(const char *T_arg)
 	}
 	AZ(VSB_finish(vsb));
 	/* Save in shmem */
-	p = VSM_Alloc(VSB_len(vsb) + 1, "Arg", "-T", "");
-	AN(p);
-	strcpy(p, VSB_data(vsb));
+	mgt_SHM_static_alloc(VSB_data(vsb), VSB_len(vsb) + 1, "Arg", "-T", "");
 	VSB_delete(vsb);
 }
 

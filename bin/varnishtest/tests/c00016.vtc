@@ -8,7 +8,7 @@ server s1 {
 
 	rxreq
 	expect req.url == "/bar"
-	expect req.http.Foo == "req.http.Foo"
+	expect req.http.Foo == <undef>
 	txresp -hdr "Bar: fnry,glyf, FOO ,brok" -hdr "Connection: bar" -body "foobar" 
 } -start
 
@@ -21,5 +21,5 @@ client c1 {
 
 	txreq -url "/bar" -hdr "Foo: bar2" -hdr "Connection: foo, close"
 	rxresp
-	expect req.http.Bar == "req.http.Bar"
+	expect req.http.Bar == <undef>
 } -run

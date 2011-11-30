@@ -43,7 +43,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "../../bin/varnishd/cache.h"
+#include "cache/cache.h"
 
 #include "vrt.h"
 #include "vfil.h"

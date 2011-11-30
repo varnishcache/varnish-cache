@@ -640,8 +640,11 @@ default code.
 
 Multiple subroutines
 ~~~~~~~~~~~~~~~~~~~~
-If multiple subroutines with the same name are defined, they are
-concatenated in the order in which the appear in the source.
+If multiple subroutines with the the name of one of the builtin
+ones are defined, they are concatenated in the order in which they
+appear in the source.
+The default versions distributed with Varnish will be implicitly
+concatenated as a last resort at the end.
 
 Example:::
 
@@ -666,8 +669,6 @@ Example:::
 	    }
 	  }
 	}
-
-The builtin default subroutines are implicitly appended in this way.
 
 Variables
 ~~~~~~~~~
@@ -975,10 +976,10 @@ based on the request URL:::
     }
   }
 
-  The following snippet demonstrates how to force a minimum TTL for
-  all documents.  Note that this is not the same as setting the
-  default_ttl run-time parameter, as that only affects document for
-  which the backend did not specify a TTL:::
+The following snippet demonstrates how to force a minimum TTL for
+all documents.  Note that this is not the same as setting the
+default_ttl run-time parameter, as that only affects document for
+which the backend did not specify a TTL:::
   
   import std; # needed for std.log
 

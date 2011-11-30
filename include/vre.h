@@ -48,8 +48,8 @@ typedef struct vre vre_t;
 #define VRE_ERROR_NOMATCH         (-1)
 
 /* And those to PCRE options */
-#define VRE_CASELESS           0x00000001
-#define VRE_NOTEMPTY_ATSTART   0x10000000
+extern const unsigned VRE_CASELESS;
+extern const unsigned VRE_NOTEMPTY;
 
 vre_t *VRE_compile(const char *, int, const char **, int *);
 int VRE_exec(const vre_t *code, const char *subject, int length,

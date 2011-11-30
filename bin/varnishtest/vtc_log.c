@@ -150,7 +150,7 @@ vtc_log(struct vtclog *vl, int lvl, const char *fmt, ...)
 	AZ(pthread_mutex_unlock(&vl->mtx));
 	if (lvl > 0)
 		return;
-	if (lvl == 0) 
+	if (lvl == 0)
 		vtc_error = 1;
 	if (pthread_self() != vtc_thread)
 		pthread_exit(NULL);

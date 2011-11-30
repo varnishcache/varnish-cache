@@ -29,6 +29,67 @@
  * Define the layout of the shared memory log segment.
  *
  * NB: THIS IS NOT A PUBLIC API TO VARNISH!
+ *
+ * There is a lot of diplomacy and protocol involved with the VSM segment
+ * since there is no way to (and no desire to!) lock between the readers
+ * and the writer.
+ *
+ * In particular we want the readers to seamlessly jump from one VSM instance
+ * to another when the child restarts.
+ *
+ * The VSM segment life-cycle is:
+ *
+ *	Manager creates VSM file under temp name
+ *
+ *	Temp VSM file is initialized such that VSM_head is consistent
+ *	with a non-zero alloc_seq
+ *
+ *	Manager renames Temp VSM file to correct filename as atomic
+ *	operation.
+ *
+ *	When manager abandons VSM file, alloc_seq is set to zero, which
+ *	never happens in any other circumstances.
+ *
+ *	If a manager is started and finds and old abandoned VSM segment
+ *	it will zero the alloc_seq in it, before replacing the file.
+ *
+ * Subscribers will have to monitor two things to make sure they have
+ * the current VSM instance:  The alloc_seq field and the dev+inode
+ * of the path-name.  The former check is by far the cheaper and the
+ * latter check should only be employed when lack of activity in the
+ * VSM segment raises suspicion that something has happened.
+ *
+ * The allocations ("chunks") in the VSM forms a linked list, starting with
+ * VSM_head->first, with the first/next fields being byte offsets relative
+ * to the start of the VSM segment.
+ *
+ * The last chunk on the list, has next == 0.
+ *
+ * New chunks are appended to the list, no matter where in the VSM
+ * they happen to be allocated.
+ *
+ * Chunk allocation sequence is:
+ *	Find free space
+ *	Zero payload
+ *	Init Chunk header
+ *	Write memory barrier
+ *	update hdr->first or $last->next pointer
+ *	hdr->alloc_seq changes
+ *	Write memory barrier
+ *
+ * Chunk contents should be designed so that zero bytes are not mistaken
+ * for valid contents.
+ *
+ * Chunk deallocation sequence is:
+ *	update hdr->first or $prev->next pointer
+ *	Write memory barrier
+ *	this->len = 0
+ *	hdr->alloc_seq changes
+ *	Write memory barrier
+ *
+ * The space occupied by the chunk is put on a cooling list and is not
+ * recycled for at least a minute.
+ *
  */
 
 #ifndef VSM_INT_H_INCLUDED
@@ -36,81 +97,23 @@
 
 #define VSM_FILENAME		"_.vsm"
 
-/*
- * This structure describes each allocation from the shmlog
- */
-
 struct VSM_chunk {
-#define VSM_CHUNK_MAGIC		0x43907b6e	/* From /dev/random */
-	unsigned		magic;
-	unsigned		len;
-	unsigned		state;
+#define VSM_CHUNK_MARKER	"VSMCHUNK"
+	char			marker[8];
+	ssize_t			len;		/* Incl VSM_chunk */
+	ssize_t			next;		/* Offset in shmem */
 	char			class[8];
 	char			type[8];
 	char			ident[64];
 };
 
-#define VSM_NEXT(sha)		((void*)((uintptr_t)(sha) + (sha)->len))
-#define VSM_PTR(sha)		((void*)((uintptr_t)((sha) + 1)))
-
 struct VSM_head {
-#define VSM_HEAD_MAGIC		4185512502U	/* From /dev/random */
-	unsigned		magic;
-
-	unsigned		hdrsize;
-
-	uint64_t		starttime;
-	int64_t			master_pid;
-	int64_t			child_pid;
-
-	unsigned		shm_size;
-
-	/* Panic message buffer */
-	char			panicstr[64 * 1024];
-
+#define VSM_HEAD_MARKER		"VSMHEAD0"	/* Incr. as version# */
+	char			marker[8];
+	ssize_t			hdrsize;
+	ssize_t			shm_size;
+	ssize_t			first;		/* Offset, first chunk */
 	unsigned		alloc_seq;
-	/* Must be last element */
-	struct VSM_chunk	head;
 };
-
-/*
- * You must include "miniobj.h" and have an assert function to be
- * able to use the VSM_ITER() macro.
- */
-#ifdef CHECK_OBJ_NOTNULL
-
-extern struct VSM_head *VSM_head;
-extern const struct VSM_chunk *vsm_end;
-
-static inline struct VSM_chunk *
-vsm_iter_0(void)
-{
-
-	CHECK_OBJ_NOTNULL(VSM_head, VSM_HEAD_MAGIC);
-	CHECK_OBJ_NOTNULL(&VSM_head->head, VSM_CHUNK_MAGIC);
-	return (&VSM_head->head);
-}
-
-static inline void
-vsm_iter_n(struct VSM_chunk **pp)
-{
-
-	CHECK_OBJ_NOTNULL(VSM_head, VSM_HEAD_MAGIC);
-	CHECK_OBJ_NOTNULL(*pp, VSM_CHUNK_MAGIC);
-	*pp = VSM_NEXT(*pp);
-	if (*pp >= vsm_end) {
-		*pp = NULL;
-		return;
-	}
-	CHECK_OBJ_NOTNULL(*pp, VSM_CHUNK_MAGIC);
-}
-
-#define VSM_ITER(vd) for ((vd) = vsm_iter_0(); (vd) != NULL; vsm_iter_n(&vd))
-
-#else
-
-#define VSM_ITER(vd) while (YOU_NEED_MINIOBJ_TO_USE_VSM_ITER)
-
-#endif /* CHECK_OBJ_NOTNULL */
 
 #endif /* VSM_INT_H_INCLUDED */

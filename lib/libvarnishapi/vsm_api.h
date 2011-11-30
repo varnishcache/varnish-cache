@@ -28,39 +28,29 @@
  *
  */
 
-/* Parameters */
-#define			SLEEP_USEC	(50*1000)
-#define			TIMEOUT_USEC	(5*1000*1000)
-
 struct vsc;
+struct vsb;
 
 struct VSM_data {
 	unsigned		magic;
 #define VSM_MAGIC		0x6e3bd69b
 
-	VSM_diag_f		*diag;
-	void			*priv;
+	struct vsb		*diag;
 
 	char			*n_opt;
 	char			*fname;
 
-
 	struct stat		fstat;
 
 	int			vsm_fd;
-	struct VSM_head		*VSM_head;
-	void			*vsm_end;
-	unsigned		alloc_seq;
-
-	/* Stuff relating the stats fields start here */
+	struct VSM_head		*head;
+	char			*b;
+	char			*e;
 
 	struct vsc		*vsc;
 	struct vsl		*vsl;
 };
 
-struct VSM_chunk *VSM_find_alloc(struct VSM_data *vd, const char *class,
-    const char *type, const char *ident);
-
+int vsm_diag(struct VSM_data *vd, const char *fmt, ...);
 void VSC_Delete(struct VSM_data *vd);
 void VSL_Delete(struct VSM_data *vd);
-void VSL_Open_CallBack(struct VSM_data *vd);

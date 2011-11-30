@@ -3,9 +3,10 @@
 Cookies
 -------
 
-Varnish will not cache a object coming from the backend with a
-Set-Cookie header present. Also, if the client sends a Cookie header,
-Varnish will bypass the cache and go directly to the backend.
+Varnish will, in the default configuration, not cache a object coming
+from the backend with a Set-Cookie header present. Also, if the client
+sends a Cookie header, Varnish will bypass the cache and go directly to
+the backend.
 
 This can be overly conservative. A lot of sites use Google Analytics
 (GA) to analyze their traffic. GA sets a cookie to track you. This

@@ -49,8 +49,8 @@ client c1 {
 delay 0.1
 varnish v1 -cliok "ban req.url == /alpha"
 varnish v1 -cliok "ban.list"
-varnish v1 -expect n_ban == 2
-varnish v1 -expect n_ban_gone == 1
+varnish v1 -expect bans == 2
+varnish v1 -expect bans_gone == 1
 
 client c1 {
 	txreq -url "/beta"
@@ -61,7 +61,7 @@ client c1 {
 delay 0.1
 varnish v1 -cliok "ban obj.http.foo == /beta"
 varnish v1 -cliok "ban.list"
-varnish v1 -expect n_ban == 3
+varnish v1 -expect bans == 3
 
 client c1 {
 	txreq -url "/gamma"
@@ -72,7 +72,7 @@ client c1 {
 delay 0.1
 varnish v1 -cliok "ban obj.http.foo == /gamma"
 varnish v1 -cliok "ban.list"
-varnish v1 -expect n_ban == 4
+varnish v1 -expect bans == 4
 
 client c1 {
 	txreq -url "/delta"
@@ -83,22 +83,22 @@ client c1 {
 delay 0.1
 varnish v1 -cliok "ban req.url == /delta"
 
-varnish v1 -expect n_ban_gone == 1
+varnish v1 -expect bans_gone == 1
 varnish v1 -cliok "ban obj.http.foo == /gamma"
 # Dup-check should have added one
-varnish v1 -expect n_ban_gone == 2
+varnish v1 -expect bans_gone == 2
 
 varnish v1 -cliok "ban req.url == /epsilon"
 varnish v1 -cliok "ban.list"
-varnish v1 -expect n_ban == 7
-varnish v1 -expect n_ban_gone == 2
+varnish v1 -expect bans == 7
+varnish v1 -expect bans_gone == 2
 
 varnish v1 -cliok "param.set ban_lurker_sleep .01"
 delay 1
 varnish v1 -cliok "param.set ban_lurker_sleep .00"
 varnish v1 -cliok "ban.list"
-varnish v1 -expect n_ban == 7
-varnish v1 -expect n_ban_gone == 4
+varnish v1 -expect bans == 7
+varnish v1 -expect bans_gone == 4
 
 client c1 {
 	txreq -url "/alpha"
@@ -108,7 +108,7 @@ client c1 {
 
 delay 1
 varnish v1 -cliok "ban.list"
-varnish v1 -expect n_ban == 4
+varnish v1 -expect bans == 4
 
 client c1 {
 	txreq -url "/beta"
@@ -127,5 +127,7 @@ client c1 {
 
 delay 1
 varnish v1 -cliok "ban.list"
-varnish v1 -expect n_ban == 1
-varnish v1 -expect n_ban_gone == 0
+varnish v1 -expect bans == 1
+varnish v1 -expect bans_gone == 0
+varnish v1 -expect bans_added == 7
+varnish v1 -expect bans_deleted == 6

@@ -28,9 +28,7 @@ int main(int argc, char **argv)
 	P("MAIN COUNTERS");
 	P("=============");
 	P("");
-#define VSC_DO_MAIN
-#include "tbl/vsc_fields.h"
-#undef VSC_DO_MAIN
+#include "tbl/vsc_f_main.h"
 
 	P("");
 	P("LOCK COUNTERS");
@@ -64,6 +62,6 @@ int main(int argc, char **argv)
 #include "tbl/vsc_fields.h"
 #undef VSC_DO_VBE
 
-	return 0;
+	return (0);
 }
 

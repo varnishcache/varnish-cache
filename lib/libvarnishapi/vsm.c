@@ -35,6 +35,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,13 +47,14 @@
 
 #include "vapi/vsm.h"
 #include "vapi/vsm_int.h"
-#include "vbm.h"
 #include "vin.h"
+#include "vsb.h"
 #include "vsm_api.h"
 
 #ifndef MAP_HASSEMAPHORE
 #define MAP_HASSEMAPHORE 0 /* XXX Linux */
 #endif
+
 
 /*--------------------------------------------------------------------*/
 
@@ -62,10 +64,8 @@ VSM_New(void)
 	struct VSM_data *vd;
 
 	ALLOC_OBJ(vd, VSM_MAGIC);
-	AN(vd);
-
-	vd->diag = (VSM_diag_f*)fprintf;
-	vd->priv = stderr;
+	if (vd == NULL)
+		return (vd);
 
 	vd->vsm_fd = -1;
 
@@ -75,16 +75,36 @@ VSM_New(void)
 
 /*--------------------------------------------------------------------*/
 
-void
-VSM_Diag(struct VSM_data *vd, VSM_diag_f *func, void *priv)
+int
+vsm_diag(struct VSM_data *vd, const char *fmt, ...)
+{
+	va_list ap;
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	AN(fmt);
+
+	if (vd->diag == NULL)
+		vd->diag = VSB_new_auto();
+	AN(vd->diag);
+	VSB_clear(vd->diag);
+	va_start(ap, fmt);
+	VSB_vprintf(vd->diag, fmt, ap);
+	va_end(ap);
+	AZ(VSB_finish(vd->diag));
+	return (-1);
+}
+/*--------------------------------------------------------------------*/
+
+const char *
+VSM_Error(const struct VSM_data *vd)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	if (func == NULL)
-		vd->diag = (VSM_diag_f*)getpid;
+
+	if (vd->diag == NULL)
+		return (NULL);
 	else
-		vd->diag = func;
-	vd->priv = priv;
+		return (VSB_data(vd->diag));
 }
 
 /*--------------------------------------------------------------------*/
@@ -94,13 +114,12 @@ VSM_n_Arg(struct VSM_data *vd, const char *opt)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	AN(opt);
+
 	REPLACE(vd->n_opt, opt);
-	AN(vd->n_opt);
-	if (VIN_N_Arg(vd->n_opt, NULL, NULL, &vd->fname)) {
-		vd->diag(vd->priv, "Invalid instance name: %s\n",
-		    strerror(errno));
-		return (-1);
-	}
+	if (VIN_N_Arg(vd->n_opt, NULL, NULL, &vd->fname))
+		return (vsm_diag(vd, "Invalid instance name: %s\n",
+		    strerror(errno)));
 	return (1);
 }
 
@@ -111,6 +130,7 @@ VSM_Name(const struct VSM_data *vd)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+
 	return (vd->n_opt);
 }
 
@@ -123,110 +143,83 @@ VSM_Delete(struct VSM_data *vd)
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 
 	VSM_Close(vd);
-
 	free(vd->n_opt);
 	free(vd->fname);
-
 	if (vd->vsc != NULL)
 		VSC_Delete(vd);
 	if (vd->vsl != NULL)
 		VSL_Delete(vd);
-
-	free(vd);
+	FREE_OBJ(vd);
 }
 
-/*--------------------------------------------------------------------*/
-
-static int
-vsm_open(struct VSM_data *vd, int diag)
-{
-	int i, j;
-	struct VSM_head slh;
-
-	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	AZ(vd->VSM_head);
-	AN(vd->fname);
-
-	vd->vsm_fd = open(vd->fname, O_RDONLY);
-	if (vd->vsm_fd < 0) {
-		if (diag)
-			vd->diag(vd->priv, "Cannot open %s: %s\n",
-			    vd->fname, strerror(errno));
-		return (1);
-	}
-
-	assert(fstat(vd->vsm_fd, &vd->fstat) == 0);
-	if (!S_ISREG(vd->fstat.st_mode)) {
-		if (diag)
-			vd->diag(vd->priv, "%s is not a regular file\n",
-			    vd->fname);
-		AZ(close(vd->vsm_fd));
-		vd->vsm_fd = -1;
-		return (1);
-	}
-
-	i = read(vd->vsm_fd, &slh, sizeof slh);
-	if (i != sizeof slh) {
-		if (diag)
-			vd->diag(vd->priv, "Cannot read %s: %s\n",
-			    vd->fname, strerror(errno));
-		AZ(close(vd->vsm_fd));
-		vd->vsm_fd = -1;
-		return (1);
-	}
-	if (slh.magic != VSM_HEAD_MAGIC) {
-		if (diag)
-			vd->diag(vd->priv, "Wrong magic number in file %s\n",
-			    vd->fname);
-		AZ(close(vd->vsm_fd));
-		vd->vsm_fd = -1;
-		return (1);
-	}
-
-	vd->VSM_head = (void *)mmap(NULL, slh.shm_size,
-	    PROT_READ, MAP_SHARED|MAP_HASSEMAPHORE, vd->vsm_fd, 0);
-	if (vd->VSM_head == MAP_FAILED) {
-		if (diag)
-			vd->diag(vd->priv, "Cannot mmap %s: %s\n",
-			    vd->fname, strerror(errno));
-		AZ(close(vd->vsm_fd));
-		vd->vsm_fd = -1;
-		vd->VSM_head = NULL;
-		return (1);
-	}
-	vd->vsm_end = (uint8_t *)vd->VSM_head + slh.shm_size;
-
-	for (j = 0; j < 20 && vd->VSM_head->alloc_seq == 0; j++)
-		(void)usleep(50000);
-	if (vd->VSM_head->alloc_seq == 0) {
-		if (diag)
-			vd->diag(vd->priv, "File not initialized %s\n",
-			    vd->fname);
-		assert(0 == munmap((void*)vd->VSM_head, slh.shm_size));
-		AZ(close(vd->vsm_fd));
-		vd->vsm_fd = -1;
-		vd->VSM_head = NULL;
-		return (1);
-	}
-	vd->alloc_seq = vd->VSM_head->alloc_seq;
-
-	if (vd->vsl != NULL)
-		VSL_Open_CallBack(vd);
-	return (0);
-}
+/*--------------------------------------------------------------------
+ * The internal VSM open function
+ *
+ * Return:
+ *	0 = sucess
+ *	<0 = failure
+ *
+ */
 
 /*--------------------------------------------------------------------*/
 
 int
-VSM_Open(struct VSM_data *vd, int diag)
-
+VSM_Open(struct VSM_data *vd)
 {
+	int i;
+	struct VSM_head slh;
+	void *v;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	AZ(vd->VSM_head);
+
+	AZ(vd->head);
 	if (!vd->n_opt)
 		(void)VSM_n_Arg(vd, "");
-	return (vsm_open(vd, diag));
+
+	AZ(vd->head);
+	AN(vd->fname);
+
+	vd->vsm_fd = open(vd->fname, O_RDONLY);
+	if (vd->vsm_fd < 0)
+		return (vsm_diag(vd, "Cannot open %s: %s\n",
+		    vd->fname, strerror(errno)));
+
+	AZ(fstat(vd->vsm_fd, &vd->fstat));
+	if (!S_ISREG(vd->fstat.st_mode)) {
+		AZ(close(vd->vsm_fd));
+		vd->vsm_fd = -1;
+		return (vsm_diag(vd, "%s is not a regular file\n",
+		    vd->fname));
+	}
+
+	i = read(vd->vsm_fd, &slh, sizeof slh);
+	if (i != sizeof slh) {
+		AZ(close(vd->vsm_fd));
+		vd->vsm_fd = -1;
+		return(vsm_diag(vd, "Cannot read %s: %s\n",
+		    vd->fname, strerror(errno)));
+	}
+
+	if (memcmp(slh.marker, VSM_HEAD_MARKER, sizeof slh.marker) ||
+	    slh.alloc_seq == 0) {
+		AZ(close(vd->vsm_fd));
+		vd->vsm_fd = -1;
+		return (vsm_diag(vd, "Not a VSM file %s\n", vd->fname));
+	}
+
+	v = mmap(NULL, slh.shm_size,
+	    PROT_READ, MAP_SHARED|MAP_HASSEMAPHORE, vd->vsm_fd, 0);
+	if (v == MAP_FAILED) {
+		AZ(close(vd->vsm_fd));
+		vd->vsm_fd = -1;
+		return (vsm_diag(vd, "Cannot mmap %s: %s\n",
+		    vd->fname, strerror(errno)));
+	}
+	vd->head = v;
+	vd->b = v;
+	vd->e = vd->b + slh.shm_size;
+
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -236,132 +229,136 @@ VSM_Close(struct VSM_data *vd)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	if (vd->VSM_head == NULL)
+
+	if (vd->head == NULL)
 		return;
-	assert(0 == munmap((void*)vd->VSM_head, vd->VSM_head->shm_size));
-	vd->VSM_head = NULL;
+
 	assert(vd->vsm_fd >= 0);
-	assert(0 == close(vd->vsm_fd));
+	AZ(munmap((void*)vd->b, vd->e - vd->b));
+	vd->b = NULL;
+	vd->e = NULL;
+	vd->head = NULL;
+	AZ(close(vd->vsm_fd));
 	vd->vsm_fd = -1;
 }
 
 /*--------------------------------------------------------------------*/
 
 int
-VSM_ReOpen(struct VSM_data *vd, int diag)
+VSM_Abandoned(const struct VSM_data *vd)
 {
 	struct stat st;
-	int i;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	AN(vd->VSM_head);
 
-	if (stat(vd->fname, &st))
+	if (vd->head == NULL)
+		return (1);
+
+	if (!vd->head->alloc_seq)
+		return (1);
+	if (!stat(vd->fname, &st))
+		return (1);
+	if (st.st_dev != vd->fstat.st_dev)
+		return (1);
+	if (st.st_ino != vd->fstat.st_ino)
+		return (1);
+	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VSM__iter0(const struct VSM_data *vd, struct VSM_fantom *vf)
+{
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	AN(vf);
+
+	memset(vf, 0, sizeof *vf);
+}
+
+/* XXX: revisit, logic is unclear */
+int
+VSM__itern(const struct VSM_data *vd, struct VSM_fantom *vf)
+{
+	void *p;
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	AN(vf);
+
+	if (vd->head->alloc_seq == 0)
+		return (0);	/* abandoned VSM */
+	else if (vf->priv != 0) {
+		if (vf->priv != vd->head->alloc_seq)
+			return (0);
+		if (vf->chunk->len == 0)
+			return (0);
+		if (vf->chunk->next == 0)
+			return (0);
+		p = (void*)(vd->b + vf->chunk->next);
+		assert(p != vf->chunk);
+		vf->chunk = p;
+	} else if (vd->head->first == 0) {
 		return (0);
-
-	if (st.st_dev == vd->fstat.st_dev && st.st_ino == vd->fstat.st_ino)
-		return (0);
-
-	VSM_Close(vd);
-	for (i = 0; i < 5; i++) {		/* XXX param */
-		if (!vsm_open(vd, 0))
-			return (1);
+	} else {
+		AZ(vf->chunk);
+		vf->chunk = (void*)(vd->b + vd->head->first);
 	}
-	if (vsm_open(vd, diag))
-		return (-1);
+	if (memcmp(vf->chunk->marker, VSM_CHUNK_MARKER,
+	    sizeof vf->chunk->marker))
+		return (0);
+	vf->priv = vd->head->alloc_seq;
+	vf->b = (void*)(vf->chunk + 1);
+	vf->e = (char*)vf->b + vf->chunk->len;
+
+	if (vf->priv == 0)
+		return (0);	/* abandoned VSM */
+	if (vf->b == vf->e)
+		return (0);	/* freed chunk */
+	AN(vf->priv);
+	AN(vf->chunk);
 	return (1);
 }
 
 /*--------------------------------------------------------------------*/
 
-struct VSM_head *
-VSM_Head(const struct VSM_data *vd)
+int
+VSM_StillValid(const struct VSM_data *vd, struct VSM_fantom *vf)
 {
+	struct VSM_fantom f2;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	AN(vd->VSM_head);
-	return(vd->VSM_head);
+	AN(vf);
+	if (!vd->head)
+		return (0);
+	if (!vd->head->alloc_seq)
+		return (0);
+	if (vf->priv == vd->head->alloc_seq)
+		return (1);
+	VSM_FOREACH_SAFE(&f2, vd) {
+		if (f2.chunk == vf->chunk && f2.b == vf->b && f2.e == vf->e) {
+			vf->priv = vd->head->alloc_seq;
+			return (2);
+		}
+	}
+	return (0);
 }
 
-
-/*--------------------------------------------------------------------*/
-
-struct VSM_chunk *
-VSM_find_alloc(struct VSM_data *vd, const char *class, const char *type, const char *ident)
+int
+VSM_Get(const struct VSM_data *vd, struct VSM_fantom *vf,
+    const char *class, const char *type, const char *ident)
 {
-	struct VSM_chunk *sha;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	AN(vd->VSM_head);
-	VSM_FOREACH(sha, vd) {
-		CHECK_OBJ_NOTNULL(sha, VSM_CHUNK_MAGIC);
-		if (strcmp(sha->class, class))
+	VSM_FOREACH_SAFE(vf, vd) {
+		if (strcmp(vf->chunk->class, class))
 			continue;
-		if (type != NULL && strcmp(sha->type, type))
+		if (type != NULL && strcmp(vf->chunk->type, type))
 			continue;
-		if (ident != NULL && strcmp(sha->ident, ident))
+		if (ident != NULL && strcmp(vf->chunk->ident, ident))
 			continue;
-		return (sha);
+		return (1);
 	}
-	return (NULL);
-}
-
-/*--------------------------------------------------------------------*/
-
-void *
-VSM_Find_Chunk(struct VSM_data *vd, const char *class, const char *type,
-    const char *ident, unsigned *lenp)
-{
-	struct VSM_chunk *sha;
-
-	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	sha = VSM_find_alloc(vd, class, type, ident);
-	if (sha == NULL)
-		return (NULL);
-	if (lenp != NULL)
-		*lenp = sha->len - sizeof *sha;
-	return (VSM_PTR(sha));
-}
-
-/*--------------------------------------------------------------------*/
-
-struct VSM_chunk *
-VSM_iter0(struct VSM_data *vd)
-{
-
-	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	vd->alloc_seq = vd->VSM_head->alloc_seq;
-	while (vd->alloc_seq == 0) {
-		(void)usleep(50000);
-		vd->alloc_seq = vd->VSM_head->alloc_seq;
-	}
-	CHECK_OBJ_NOTNULL(&vd->VSM_head->head, VSM_CHUNK_MAGIC);
-	return (&vd->VSM_head->head);
-}
-
-void
-VSM_itern(const struct VSM_data *vd, struct VSM_chunk **pp)
-{
-
-	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	if (vd->alloc_seq != vd->VSM_head->alloc_seq) {
-		*pp = NULL;
-		return;
-	}
-	CHECK_OBJ_NOTNULL(*pp, VSM_CHUNK_MAGIC);
-	*pp = VSM_NEXT(*pp);
-	if ((void*)(*pp) >= vd->vsm_end) {
-		*pp = NULL;
-		return;
-	}
-	CHECK_OBJ_NOTNULL(*pp, VSM_CHUNK_MAGIC);
-}
-
-/*--------------------------------------------------------------------*/
-unsigned
-VSM_Seq(const struct VSM_data *vd)
-{
-
-	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	return (vd->VSM_head->alloc_seq);
+	memset(vf, 0, sizeof *vf);
+	return (0);
 }

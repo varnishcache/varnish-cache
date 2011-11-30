@@ -53,8 +53,7 @@
 #include <unistd.h>
 
 #include "mgt/mgt.h"
-
-#include "heritage.h"
+#include "common/params.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -68,8 +67,8 @@ mgt_sandbox(void)
 	mgt_sandbox_solaris_privsep();
 #else
 	if (geteuid() == 0) {
-		XXXAZ(setgid(params->gid));
-		XXXAZ(setuid(params->uid));
+		XXXAZ(setgid(mgt_param.gid));
+		XXXAZ(setuid(mgt_param.uid));
 	} else {
 		REPORT0(LOG_INFO, "Not running as root, no priv-sep");
 	}

@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2006-2009 Varnish Software AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Tollef Fog Heen <tfheen@redpill-linpro.com>
@@ -42,6 +42,14 @@ struct vre {
 #define VRE_MAGIC		0xe83097dc
 	pcre *re;
 };
+
+/*
+ * We don't want to spread or even expose the majority of PCRE options
+ * so we establish our own options and implement hard linkage to PCRE
+ * here.
+ */
+const unsigned VRE_CASELESS = PCRE_CASELESS;
+const unsigned VRE_NOTEMPTY = PCRE_NOTEMPTY;
 
 vre_t *
 VRE_compile(const char *pattern, int options,

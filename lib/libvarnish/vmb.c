@@ -58,4 +58,4 @@ vmb_pthread(void)
 	AZ(pthread_mutex_unlock(&mb_mtx));
 }
 
-#endif
+#endif /* VMB_NEEDS_PTHREAD_WORKAROUND_THIS_IS_BAD_FOR_PERFORMANCE */

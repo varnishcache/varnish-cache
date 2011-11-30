@@ -26,62 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *
- * TODO:
- *
- * There is a risk that the child process might corrupt the VSM segment
- * and we should capture that event and recover gracefully.
- *
- * A possible state diagram could be:
- *
- *	[manager start]
- *		|
- *		v
- *      Open old VSM,
- *	check pid	--------> exit/fail (-n message)
- *		|
- *		+<----------------------+
- *		|			^
- *		v			|
- *	Create new VSM			|
- *		|			|
- *		v			|
- *	Init header			|
- *	Alloc VSL			|
- *	Alloc VSC:Main			|
- *	Alloc Args etc.			|
- *		|			|
- *		+<--------------+	|
- *		|		^	|
- *		v		|	|
- *	start worker		|	|
- *		|		|	|
- *		|		|	+<---- worker crash
- *		v		|	^
- *	Reset VSL ptr.		|	|
- *	Reset VSC counters	|	|
- *		|		|	|
- *		+<------+	|	|
- *		|	^	|	|
- *		v	|	|	|
- *	alloc dynamics	|	|	|
- *	free dynamics	|	|	|
- *		|	|	|	|
- *		v	|	|	|
- *		+------>+	|	|
- *		|		|	|
- *		v		|	|
- *	stop worker		|	|
- *		|		|	|
- *		v		|	|
- *	Check consist---------- | ----->+
- *		|		|
- *		v		|
- *	Free dynamics		|
- *		|		|
- *		v		|
- *		+-------------->+
- *
  */
 
 #include "config.h"
@@ -90,7 +34,6 @@
 #include <sys/stat.h>
 
 #include <fcntl.h>
-#include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -98,15 +41,13 @@
 #include <unistd.h>
 
 #include "mgt/mgt.h"
+#include "common/heritage.h"
+#include "common/params.h"
 
 #include "flopen.h"
-#include "heritage.h"
 #include "vapi/vsc_int.h"
-#include "vapi/vsl_int.h"
 #include "vapi/vsm_int.h"
-#include "vav.h"
 #include "vmb.h"
-#include "vnum.h"
 
 #ifndef MAP_HASSEMAPHORE
 #define MAP_HASSEMAPHORE 0 /* XXX Linux */
@@ -116,101 +57,231 @@
 #define MAP_NOSYNC 0 /* XXX Linux */
 #endif
 
-struct VSC_C_main	*VSC_C_main;
+#define PAN_CLASS "Panic"
 
-static int vsl_fd = -1;
+static void *mgt_vsm_p;
+static ssize_t mgt_vsm_l;
 
 /*--------------------------------------------------------------------
- * Check that we are not started with the same -n argument as an already
- * running varnishd
+ * Use a bogo-VSM to hold master-copies of the VSM chunks the master
+ * publishes, such as -S & -T arguments.
  */
 
-static void
-vsl_n_check(int fd)
+static struct vsm_sc *static_vsm;
+static char static_vsm_buf[1024];
+
+void
+mgt_SHM_static_alloc(const void *ptr, ssize_t size,
+    const char *class, const char *type, const char *ident)
 {
-	struct VSM_head slh;
-	int i;
-	struct stat st;
-	pid_t pid;
+	void *p;
 
-	AZ(fstat(fd, &st));
-	if (!S_ISREG(st.st_mode))
-		ARGV_ERR("\tshmlog: Not a file\n");
-
-	/* Test if the SHMFILE is locked by other Varnish */
-	if (fltest(fd, &pid) > 0) {
-		fprintf(stderr,
-			"SHMFILE locked by running varnishd master (pid=%jd)\n",
-			(intmax_t)pid);
-		fprintf(stderr,
-			"(Use unique -n arguments if you want multiple "
-			"instances)\n");
-		exit(2);
-	}
-
-	/* Read owning pid from SHMFILE */
-	memset(&slh, 0, sizeof slh);	/* XXX: for flexelint */
-	i = read(fd, &slh, sizeof slh);
-	if (i != sizeof slh)
-		return;
-	if (slh.magic != VSM_HEAD_MAGIC)
-		return;
-	if (slh.hdrsize != sizeof slh)
-		return;
-	if (slh.master_pid != 0 && !kill(slh.master_pid, 0)) {
-		fprintf(stderr,
-			"WARNING: Taking over SHMFILE marked as owned by "
-			"running process (pid=%jd)\n",
-			(intmax_t)slh.master_pid);
+	p = VSM_common_alloc(static_vsm, size, class, type, ident);
+	AN(p);
+	memcpy(p, ptr, size);
+	if (heritage.vsm != NULL) {
+		p = VSM_common_alloc(heritage.vsm, size, class, type, ident);
+		AN(p);
+		memcpy(p, ptr, size);
 	}
 }
 
 /*--------------------------------------------------------------------
- * Build a new shmlog file
+ * Check that we are not started with the same -n argument as an already
+ * running varnishd.
+ *
+ * Non-zero return means we should exit and not trample the file.
+ *
  */
 
-static void
-vsl_buildnew(const char *fn, unsigned size, int fill)
+static int
+vsm_n_check(void)
 {
-	struct VSM_head slh;
-	int i;
-	unsigned u;
+	int fd, i;
+	struct stat st;
+	pid_t pid;
+	struct VSM_head vsmh;
+	int retval = 2;
+
+	fd = open(VSM_FILENAME, O_RDWR, 0644);
+	if (fd < 0)
+		return (0);
+
+	AZ(fstat(fd, &st));
+	if (!S_ISREG(st.st_mode)) {
+		fprintf(stderr,
+		    "VSM (%s) not a regular file.\n", VSM_FILENAME);
+	} else {
+		i = fltest(fd, &pid);
+		if (i < 0) {
+			fprintf(stderr,
+			    "Cannot determine locking status of VSM (%s)\n.",
+			    VSM_FILENAME);
+		} else if (i == 0) {
+			/*
+			 * File is unlocked, mark it as dead, to help any
+			 * consumers still stuck on it.
+			 */
+			if (pread(fd, &vsmh, sizeof vsmh, 0) == sizeof vsmh) {
+				vsmh.alloc_seq = 0;
+				(void)pwrite(fd, &vsmh, sizeof vsmh, 0);
+			}
+			retval = 0;
+		} else {
+			/* The VSM is locked, we won't touch it. */
+			fprintf(stderr,
+			    "VSM locked by running varnishd master (pid=%jd)\n"
+			    "(Use unique -n arguments if you want"
+			    "  multiple instances)\n", (intmax_t)pid);
+		}
+	}
+	(void)close(fd);
+	return (retval);
+}
+
+/*--------------------------------------------------------------------
+ * Build a zeroed file
+ */
+
+static int
+vsm_zerofile(const char *fn, ssize_t size)
+{
+	int fd;
+	ssize_t i, u;
 	char buf[64*1024];
 	int flags;
 
-	(void)unlink(fn);
-	vsl_fd = flopen(fn, O_RDWR | O_CREAT | O_EXCL | O_NONBLOCK, 0644);
-	if (vsl_fd < 0) {
+	fd = flopen(fn, O_RDWR | O_CREAT | O_EXCL | O_NONBLOCK, 0644);
+	if (fd < 0) {
 		fprintf(stderr, "Could not create %s: %s\n",
 		    fn, strerror(errno));
-		exit (1);
+		return (-1);
 	}
-	flags = fcntl(vsl_fd, F_GETFL);
+	flags = fcntl(fd, F_GETFL);
 	assert(flags != -1);
 	flags &= ~O_NONBLOCK;
-	AZ(fcntl(vsl_fd, F_SETFL, flags));
+	AZ(fcntl(fd, F_SETFL, flags));
 
-	memset(&slh, 0, sizeof slh);
-	slh.magic = VSM_HEAD_MAGIC;
-	slh.hdrsize = sizeof slh;
-	slh.shm_size = size;
-	i = write(vsl_fd, &slh, sizeof slh);
-	xxxassert(i == sizeof slh);
-
-	if (fill) {
-		memset(buf, 0, sizeof buf);
-		for (u = sizeof slh; u < size; ) {
-			i = write(vsl_fd, buf, sizeof buf);
-			if (i <= 0) {
-				fprintf(stderr, "Write error %s: %s\n",
-				    fn, strerror(errno));
-				exit (1);
-			}
-			u += i;
+	memset(buf, 0, sizeof buf);
+	for (u = 0; u < size; ) {
+		i = write(fd, buf, sizeof buf);
+		if (i <= 0) {
+			fprintf(stderr, "Write error %s: %s\n",
+			    fn, strerror(errno));
+			return (-1);
 		}
+		u += i;
+	}
+	AZ(ftruncate(fd, (off_t)size));
+	return (fd);
+}
+
+/*--------------------------------------------------------------------
+ * Create a VSM instance
+ */
+
+static size_t
+mgt_shm_size(void)
+{
+	size_t size, ps;
+
+	size = mgt_param.vsl_space + mgt_param.vsm_space;
+	ps = getpagesize();
+	size += ps - 1;
+	size &= ~(ps - 1U);
+	return (size);
+}
+
+void
+mgt_SHM_Create(void)
+{
+	size_t size;
+	void *p;
+	char fnbuf[64];
+	int vsm_fd;
+
+	AZ(heritage.vsm);
+	size = mgt_shm_size();
+
+	bprintf(fnbuf, "%s.%jd", VSM_FILENAME, (intmax_t)getpid());
+
+	vsm_fd = vsm_zerofile(fnbuf, size);
+	if (vsm_fd < 0)
+		exit(1);
+
+	p = (void *)mmap(NULL, size,
+	    PROT_READ|PROT_WRITE,
+	    MAP_HASSEMAPHORE | MAP_NOSYNC | MAP_SHARED,
+	    vsm_fd, 0);
+
+	AZ(close(vsm_fd));
+
+	if (p == MAP_FAILED) {
+		fprintf(stderr, "Mmap error %s: %s\n", fnbuf, strerror(errno));
+		exit (-1);
 	}
 
-	AZ(ftruncate(vsl_fd, (off_t)size));
+	mgt_vsm_p = p;
+	mgt_vsm_l = size;
+
+	/* This may or may not work */
+	(void)mlock(p, size);
+
+	heritage.vsm = VSM_common_new(p, size);
+
+	VSM_common_copy(heritage.vsm, static_vsm);
+
+	heritage.param = VSM_common_alloc(heritage.vsm,
+	    sizeof *heritage.param, VSM_CLASS_PARAM, "", "");
+	AN(heritage.param);
+	*heritage.param = mgt_param;
+
+	heritage.panic_str_len = 64 * 1024;
+	heritage.panic_str = VSM_common_alloc(heritage.vsm,
+	    heritage.panic_str_len, PAN_CLASS, "", "");
+	AN(heritage.panic_str);
+
+	if (rename(fnbuf, VSM_FILENAME)) {
+		fprintf(stderr, "Rename failed %s -> %s: %s\n",
+		    fnbuf, VSM_FILENAME, strerror(errno));
+		(void)unlink(fnbuf);
+		exit (-1);
+	}
+}
+
+/*--------------------------------------------------------------------
+ * Destroy a VSM instance
+ */
+
+void
+mgt_SHM_Destroy(int keep)
+{
+
+	AN(heritage.vsm);
+	if (keep)
+		(void)rename(VSM_FILENAME, VSM_FILENAME ".keep");
+	heritage.panic_str = NULL;
+	heritage.panic_str_len = 0;
+	heritage.param = NULL;
+	VSM_common_delete(&heritage.vsm);
+	AZ(munmap(mgt_vsm_p, mgt_vsm_l));
+	mgt_vsm_p = NULL;
+	mgt_vsm_l = 0;
+}
+
+/*--------------------------------------------------------------------
+ * Destroy and recreate VSM if its size should change
+ */
+
+void
+mgt_SHM_Size_Adjust(void)
+{
+
+	AN(heritage.vsm);
+	if (mgt_vsm_l == mgt_shm_size())
+		return;
+	mgt_SHM_Destroy(0);
+	mgt_SHM_Create();
 }
 
 /*--------------------------------------------------------------------
@@ -221,131 +292,31 @@ static
 void
 mgt_shm_atexit(void)
 {
-	if (getpid() == VSM_head->master_pid)
-		VSM_head->master_pid = 0;
+
+	/* Do not let VCC kill our VSM */
+	if (getpid() != mgt_pid)
+		return;
+	if (heritage.vsm != NULL)
+		VSM_common_delete(&heritage.vsm);
 }
 
+/*--------------------------------------------------------------------
+ * Initialize VSM subsystem
+ */
+
 void
-mgt_SHM_Init(const char *l_arg)
+mgt_SHM_Init(void)
 {
-	int i, fill;
-	struct params *pp;
-	const char *q;
-	uintmax_t size, s1, s2, ps;
-	char **av, **ap;
-	uint32_t *vsl_log_start;
+	int i;
 
-	if (l_arg == NULL)
-		l_arg = "";
+	/* Collision check with already running varnishd */
+	i = vsm_n_check();
+	if (i)
+		exit(i);
 
-	av = VAV_Parse(l_arg, NULL, ARGV_COMMA);
-	AN(av);
-	if (av[0] != NULL)
-		ARGV_ERR("\t-l ...: %s", av[0]);
+	/* Create our static VSM instance */
+	static_vsm = VSM_common_new(static_vsm_buf, sizeof static_vsm_buf);
 
-	ap = av + 1;
-
-	/* Size of SHMLOG */
-	if (*ap != NULL && **ap != '\0') {
-		q = VNUM_2bytes(*ap, &s1, 0);
-		if (q != NULL)
-			ARGV_ERR("\t-l[1] ...:  %s\n", q);
-	} else {
-		s1 = 80 * 1024 * 1024;
-	}
-	if (*ap != NULL)
-		ap++;
-
-	/* Size of space for other stuff */
-	if (*ap != NULL && **ap != '\0') {
-		q = VNUM_2bytes(*ap, &s2, 0);
-		if (q != NULL)
-			ARGV_ERR("\t-l[2] ...:  %s\n", q);
-	} else {
-		s2 = 1024 * 1024;
-	}
-	if (*ap != NULL)
-		ap++;
-
-	/* Fill or not ? */
-	if (*ap != NULL) {
-		if (**ap == '\0')
-			fill = 1;
-		else if (!strcmp(*ap, "-"))
-			fill = 0;
-		else if (!strcmp(*ap, "+"))
-			fill = 1;
-		else
-			ARGV_ERR("\t-l[3] ...:  Must be \"-\" or \"+\"\n");
-		ap++;
-	} else {
-		fill = 1;
-	}
-
-	if (*ap != NULL)
-		ARGV_ERR("\t-l ...:  Too many sub-args\n");
-
-	VAV_Free(av);
-
-	size = s1 + s2;
-	ps = getpagesize();
-	size += ps - 1;
-	size &= ~(ps - 1);
-
-	i = open(VSM_FILENAME, O_RDWR, 0644);
-	if (i >= 0) {
-		vsl_n_check(i);
-		(void)close(i);
-	}
-	vsl_buildnew(VSM_FILENAME, size, fill);
-
-	VSM_head = (void *)mmap(NULL, size,
-	    PROT_READ|PROT_WRITE,
-	    MAP_HASSEMAPHORE | MAP_NOSYNC | MAP_SHARED,
-	    vsl_fd, 0);
-	VSM_head->master_pid = getpid();
+	/* Setup atexit handler */
 	AZ(atexit(mgt_shm_atexit));
-	xxxassert(VSM_head != MAP_FAILED);
-	(void)mlock((void*)VSM_head, size);
-
-	memset(&VSM_head->head, 0, sizeof VSM_head->head);
-	VSM_head->head.magic = VSM_CHUNK_MAGIC;
-	VSM_head->head.len =
-	    (uint8_t*)(VSM_head) + size - (uint8_t*)&VSM_head->head;
-	bprintf(VSM_head->head.class, "%s", VSM_CLASS_FREE);
-	VWMB();
-
-	vsm_end = (void*)((uint8_t*)VSM_head + size);
-
-	VSC_C_main = VSM_Alloc(sizeof *VSC_C_main,
-	    VSC_CLASS, VSC_TYPE_MAIN, "");
-	AN(VSC_C_main);
-
-	pp = VSM_Alloc(sizeof *pp, VSM_CLASS_PARAM, "", "");
-	AN(pp);
-	*pp = *params;
-	params = pp;
-
-	vsl_log_start = VSM_Alloc(s1, VSL_CLASS, "", "");
-	AN(vsl_log_start);
-	vsl_log_start[1] = VSL_ENDMARKER;
-	VWMB();
-
-	do
-		*vsl_log_start = random() & 0xffff;
-	while (*vsl_log_start == 0);
-
-	VWMB();
-
-	do
-		VSM_head->alloc_seq = random();
-	while (VSM_head->alloc_seq == 0);
-
-}
-
-void
-mgt_SHM_Pid(void)
-{
-
-	VSM_head->master_pid = getpid();
 }

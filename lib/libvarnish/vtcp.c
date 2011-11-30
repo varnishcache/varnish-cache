@@ -61,11 +61,11 @@ VTCP_port(const struct sockaddr_storage *addr)
 
 	if (addr->ss_family == AF_INET) {
 		const struct sockaddr_in *ain = (const void *)addr;
-		return ntohs((ain->sin_port));
+		return (ntohs((ain->sin_port)));
 	}
 	if (addr->ss_family == AF_INET6) {
 		const struct sockaddr_in6 *ain = (const void *)addr;
-		return ntohs((ain->sin6_port));
+		return (ntohs((ain->sin6_port)));
 	}
 	return (-1);
 }
@@ -265,7 +265,7 @@ VTCP_set_read_timeout(int s, double seconds)
 	timeout.tv_sec = (int)floor(seconds);
 	timeout.tv_usec = (int)(1e6 * (seconds - timeout.tv_sec));
 #ifdef SO_RCVTIMEO_WORKS
-	/* 
+	/*
 	 * Solaris bug (present at least in snv_151 and older): If this fails
 	 * with EINVAL, the socket is half-closed (SS_CANTSENDMORE) and the
 	 * timeout does not get set. Needs to be fixed in Solaris, there is

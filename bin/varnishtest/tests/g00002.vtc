@@ -22,7 +22,7 @@ varnish v1 \
 	}
 } -start
 
-varnish v1 -cliok "param.set fetch_chunksize 4"
+varnish v1 -cliok "param.set fetch_chunksize 4k"
 
 client c1 {
 	txreq -url /foo -hdr "Accept-Encoding: gzip"
@@ -39,12 +39,12 @@ client c1 {
 	# See varnish can gunzip it.
 	txreq -url /foo -hdr "Accept-Encoding: null"
 	rxresp
-	expect resp.http.content-encoding == "resp.http.content-encoding"
+	expect resp.http.content-encoding == <undef>
 	expect resp.bodylen == 4100
 
 	# See varnish can gunzip it, inside ESI
 	txreq -url /bar -hdr "Accept-Encoding: null"
 	rxresp
-	expect resp.http.content-encoding == "resp.http.content-encoding"
+	expect resp.http.content-encoding == <undef>
 	expect resp.bodylen == 4109
 } -run

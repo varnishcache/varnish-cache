@@ -44,11 +44,12 @@
 
 #include "mgt/mgt.h"
 
-#include "heritage.h"
+#include "common/heritage.h"
+#include "common/params.h"
 
 /*--------------------------------------------------------------------
  * SOLARIS PRIVILEGES: Note on use of symbolic PRIV_* constants
- * 
+ *
  * For privileges which existed in Solaris 10 FCS, we may use the constants from
  * sys/priv_names.h
  *
@@ -140,7 +141,7 @@ mgt_sandbox_solaris_init(void)
 		    errno, strerror(errno));
 		return;
 	}
-	
+
 	priv_emptyset(priv_all);
 
 	mgt_sandbox_solaris_add_effective(priv_all);
@@ -158,17 +159,17 @@ void
 mgt_sandbox_solaris_privsep(void)
 {
 	if (priv_ineffect(PRIV_PROC_SETID)) {
-                if (getgid() != params->gid)
-                        XXXAZ(setgid(params->gid));
-                if (getuid() != params->uid)
-                        XXXAZ(setuid(params->uid));
+                if (getgid() != mgt_param.gid)
+                        XXXAZ(setgid(mgt_param.gid));
+                if (getuid() != mgt_param.uid)
+                        XXXAZ(setuid(mgt_param.uid));
         } else {
                 REPORT(LOG_INFO, "Privilege %s missing, will not change uid/gid",
 		    PRIV_PROC_SETID);
         }
 }
 
-/* 
+/*
  * Waive most privileges in the child
  *
  * as of onnv_151a, we should end up with:
@@ -206,7 +207,7 @@ mgt_sandbox_solaris_fini(void)
 	priv_copyset(effective, permitted);
 	mgt_sandbox_solaris_add_permitted(permitted);
 
-	/* 
+	/*
 	 * invert the sets and clear privileges such that setppriv will always
 	 * succeed
 	 */

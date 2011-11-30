@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2008-2010 Varnish Software AS
+ * Copyright (c) 2008-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -34,7 +34,7 @@
 
 #include <stdlib.h>
 
-#include "cache.h"
+#include "cache/cache.h"
 
 #include "hash/hash_slinger.h"
 #include "vcli_priv.h"
@@ -57,7 +57,7 @@ static unsigned char hcb_bittbl[256];
 static unsigned char
 hcb_bits(unsigned char x, unsigned char y)
 {
-	return hcb_bittbl[x ^ y];
+	return (hcb_bittbl[x ^ y]);
 }
 
 static void
@@ -369,7 +369,7 @@ hcb_cleaner(void *priv)
 		VTAILQ_CONCAT(&dead_h, &cool_h, hoh_list);
 		Lck_Unlock(&hcb_mtx);
 		WRK_SumStat(&ww);
-		VTIM_sleep(params->critbit_cooloff);
+		VTIM_sleep(cache_param->critbit_cooloff);
 	}
 	NEEDLESS_RETURN(NULL);
 }

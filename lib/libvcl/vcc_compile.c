@@ -444,13 +444,13 @@ vcc_resolve_includes(struct vcc *tl)
 		}
 		t2 = VTAILQ_NEXT(t1, list);
 		assert(t2 != NULL);	/* There's always an EOI */
+
 		if (t2->tok != ';') {
 			VSB_printf(tl->sb,
 			    "include <string> not followed by semicolon.\n");
 			vcc_ErrWhere(tl, t1);
 			return;
 		}
-		assert(t2 != NULL);
 
 		sp = vcc_file_source(tl, tl->sb, t1->dec);
 		if (sp == NULL) {
@@ -708,21 +708,6 @@ VCC_Compile(const struct vcc *tl, struct vsb *sb, const char *b)
 		return (NULL);
 	r = vcc_CompileSource(tl, sb, sp);
 	return (r);
-}
-
-/*--------------------------------------------------------------------*/
-
-const char *
-VCC_Return_Name(unsigned method)
-{
-
-	switch (method) {
-#define VCL_RET_MAC(l, U, B) case VCL_RET_##U: return(#l);
-#include "tbl/vcl_returns.h"
-#undef VCL_RET_MAC
-	default:
-		return (NULL);
-	}
 }
 
 /*--------------------------------------------------------------------

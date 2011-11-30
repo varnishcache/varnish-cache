@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2009 Varnish Software AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -42,7 +42,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "cache.h"
+#include "cache/cache.h"
 
 #include "waiter/cache_waiter.h"
 #include "vtim.h"
@@ -102,7 +102,6 @@ vwk_kev(struct vwk *vwk, const struct kevent *kp)
 		while (i >= sizeof ss[0]) {
 			CHECK_OBJ_NOTNULL(ss[j], SESS_MAGIC);
 			assert(ss[j]->fd >= 0);
-			AZ(ss[j]->obj);
 			VTAILQ_INSERT_TAIL(&vwk->sesshead, ss[j], list);
 			vwk_kq_sess(vwk, ss[j], EV_ADD | EV_ONESHOT);
 			j++;
@@ -186,7 +185,7 @@ vwk_thread(void *priv)
 		 * would not know we meant "the old fd of this number".
 		 */
 		vwk_kq_flush(vwk);
-		deadline = VTIM_real() - params->sess_timeout;
+		deadline = VTIM_real() - cache_param->sess_timeout;
 		for (;;) {
 			sp = VTAILQ_FIRST(&vwk->sesshead);
 			if (sp == NULL)

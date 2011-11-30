@@ -30,12 +30,10 @@
 #include "config.h"
 
 #include <ctype.h>
-#include <errno.h>
 #include <math.h>
-#include <stdint.h>
 #include <stdlib.h>
 
-#include "../../bin/varnishd/cache.h"
+#include "cache/cache.h"
 
 #include "vrt.h"
 #include "vcc_if.h"

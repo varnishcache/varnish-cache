@@ -1,5 +1,7 @@
 
 -esym(850, av)
+-esym(785, VSL_tags)
+-esym(528, iter_call)		// Flexelint bug
 
 -e712	// 14      Info    712     Loss of precision (___) (___ to ___)
 -e747	// 16      Info    747     Significant prototype coercion (___) ___ to ___
@@ -23,3 +25,5 @@
 -e713	// Loss of precision (assignment) (unsigned long long to long long)
 -e574	// Signed-unsigned mix with relational
 -e835	//  A zero has been given as ___ argument to operator '___'  (<<)
+-e786	// String concatenation within initializer
+

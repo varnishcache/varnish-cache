@@ -3,7 +3,7 @@ varnishtest "Check Range forwarding to backend"
 server s1 {
 	rxreq 
 	expect req.url == "/foo"
-	expect req.http.range == "req.http.range"
+	expect req.http.range == <undef>
 	txresp \
 		-hdr "Foobar: _barf_" \
 		-body "012345\n"

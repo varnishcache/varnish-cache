@@ -33,14 +33,13 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <syslog.h>
 
 #include "vrt.h"
 #include "vtcp.h"
 
-#include "../../bin/varnishd/cache.h"
+#include "cache/cache.h"
 
 #include "vcc_if.h"
 

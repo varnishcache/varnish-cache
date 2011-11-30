@@ -40,7 +40,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "cache.h"
+#include "cache/cache.h"
 
 #include "waiter/cache_waiter.h"
 #include "vtim.h"
@@ -77,7 +77,6 @@ vws_port_ev(struct vws *vws, port_event_t *ev) {
 	if(ev->portev_source == PORT_SOURCE_USER) {
 		CAST_OBJ_NOTNULL(sp, ev->portev_user, SESS_MAGIC);
 		assert(sp->fd >= 0);
-		AZ(sp->obj);
 		VTAILQ_INSERT_TAIL(&vws->sesshead, sp, list);
 		vws_add(vws, sp->fd, sp);
 	} else {
@@ -197,7 +196,7 @@ vws_thread(void *priv)
 
 		/* check for timeouts */
 		now = VTIM_real();
-		deadline = now - params->sess_timeout;
+		deadline = now - cache_param->sess_timeout;
 
 		/*
 		 * This loop assumes that the oldest sessions are always at the
@@ -225,7 +224,7 @@ vws_thread(void *priv)
 		 */
 
 		if (sp) {
-			double tmo = (sp->t_open + params->sess_timeout) - now;
+			double tmo = (sp->t_open + cache_param->sess_timeout) - now;
 
 			/* we should have removed all sps whose timeout has passed */
 			assert(tmo > 0.0);

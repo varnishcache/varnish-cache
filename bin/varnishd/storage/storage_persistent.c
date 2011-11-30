@@ -43,7 +43,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cache.h"
+#include "cache/cache.h"
 #include "storage/storage.h"
 
 #include "hash/hash_slinger.h"
@@ -463,7 +463,7 @@ smp_allocx(struct stevedore *st, size_t min_size, size_t max_size,
  */
 
 static struct object *
-smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
+smp_allocobj(struct stevedore *stv, struct worker *wrk, unsigned ltot,
     const struct stv_objsecrets *soc)
 {
 	struct object *o;
@@ -474,11 +474,11 @@ smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 	struct objcore *oc;
 	unsigned objidx;
 
-	if (sp->objcore == NULL)
+	if (wrk->objcore == NULL)
 		return (NULL);		/* from cnt_error */
 	CAST_OBJ_NOTNULL(sc, stv->priv, SMP_SC_MAGIC);
-	AN(sp->objcore);
-	AN(sp->wrk->exp.ttl > 0.);
+	AN(wrk->objcore);
+	AN(wrk->busyobj->exp.ttl > 0.);
 
 	ltot = IRNUP(sc, ltot);
 
@@ -489,7 +489,7 @@ smp_allocobj(struct stevedore *stv, struct sess *sp, unsigned ltot,
 	assert(st->space >= ltot);
 	ltot = st->len = st->space;
 
-	o = STV_MkObject(sp, st->ptr, ltot, soc);
+	o = STV_MkObject(wrk, st->ptr, ltot, soc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	o->objstore = st;
 

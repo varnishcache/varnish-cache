@@ -169,7 +169,7 @@ http_find_header(char * const *hh, const char *hdr)
  * Expect
  */
 
-static char *
+static const char *
 cmd_var_resolve(struct http *hp, char *spec)
 {
 	char **hh, *hdr;
@@ -201,16 +201,16 @@ cmd_var_resolve(struct http *hp, char *spec)
 	hdr = http_find_header(hh, hdr);
 	if (hdr != NULL)
 		return (hdr);
-	return (spec);
+	return ("<undef>");
 }
 
 static void
 cmd_http_expect(CMD_ARGS)
 {
 	struct http *hp;
-	char *lhs;
+	const char *lhs;
 	char *cmp;
-	char *rhs;
+	const char *rhs;
 
 	(void)cmd;
 	(void)vl;

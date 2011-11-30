@@ -18,7 +18,7 @@ The Varnish Reference Manual
 	varnishstat.rst
 	varnishtest.rst
 	varnishtop.rst
-	shmem.rst
+	vsm.rst
 	vmod.rst
 	vmod_std.rst
 	vsl.rst

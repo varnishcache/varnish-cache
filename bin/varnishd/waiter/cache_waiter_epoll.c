@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Varnish Software AS
+ * Copyright (c) 2006-2011 Varnish Software AS
  * All rights reserved.
  *
  * Author: Rogerio Carvalho Schneider <stockrt@gmail.com>
@@ -40,7 +40,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 
-#include "cache.h"
+#include "cache/cache.h"
 
 #include "waiter/cache_waiter.h"
 #include "vtim.h"
@@ -119,7 +119,6 @@ vwe_eev(struct vwe *vwe, const struct epoll_event *ep)
 			while (i >= sizeof ss[0]) {
 				CHECK_OBJ_NOTNULL(ss[j], SESS_MAGIC);
 				assert(ss[j]->fd >= 0);
-				AZ(ss[j]->obj);
 				VTAILQ_INSERT_TAIL(&vwe->sesshead, ss[j], list);
 				vwe_cond_modadd(vwe, ss[j]->fd, ss[j]);
 				j++;
@@ -188,7 +187,7 @@ vwe_thread(void *priv)
 			continue;
 
 		/* check for timeouts */
-		deadline = VTIM_real() - params->sess_timeout;
+		deadline = VTIM_real() - cache_param->sess_timeout;
 		for (;;) {
 			sp = VTAILQ_FIRST(&vwe->sesshead);
 			if (sp == NULL)
@@ -200,7 +199,7 @@ vwe_thread(void *priv)
 			SES_Delete(sp, "timeout");
 		}
 	}
-	return NULL;
+	return (NULL);
 }
 
 /*--------------------------------------------------------------------*/
@@ -219,7 +218,7 @@ vwe_sess_timeout_ticker(void *priv)
 		assert(write(vwe->timer_pipes[1], &ticker, 1));
 		VTIM_sleep(100 * 1e-3);
 	}
-	return NULL;
+	return (NULL);
 }
 
 /*--------------------------------------------------------------------*/
