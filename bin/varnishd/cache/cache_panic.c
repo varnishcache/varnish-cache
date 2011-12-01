@@ -203,7 +203,7 @@ pan_wrk(const struct worker *wrk)
 		pan_http("beresp", wrk->beresp, 4);
 	if (wrk->resp->ws != NULL)
 		pan_http("resp", wrk->resp, 4);
-	VSB_printf(pan_vsp, "    },\n");
+	VSB_printf(pan_vsp, "  },\n");
 }
 
 static void
