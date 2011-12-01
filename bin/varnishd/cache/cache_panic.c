@@ -259,7 +259,8 @@ pan_sess(const struct sess *sp)
 	VSB_printf(pan_vsp, "  restarts = %d, esi_level = %d\n",
 	    sp->restarts, sp->esi_level);
 
-	pan_busyobj(sp->wrk->busyobj);
+	if (sp->wrk->busyobj != NULL)
+		pan_busyobj(sp->wrk->busyobj);
 
 	pan_ws(sp->ws, 2);
 	pan_http("req", sp->http, 2);
