@@ -554,7 +554,7 @@ DOT errfetch [label="ERROR",shape=plaintext]
 static int
 cnt_fetch(struct sess *sp)
 {
-	int i;
+	int i, need_host_hdr;
 	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -571,7 +571,9 @@ cnt_fetch(struct sess *sp)
 
 	http_Setup(wrk->beresp, wrk->ws);
 
-	i = FetchHdr(sp);
+	need_host_hdr = !http_GetHdr(wrk->bereq, H_Host, NULL);
+
+	i = FetchHdr(sp, need_host_hdr);
 	/*
 	 * If we recycle a backend connection, there is a finite chance
 	 * that the backend closed it before we get a request to it.
@@ -579,7 +581,7 @@ cnt_fetch(struct sess *sp)
 	 */
 	if (i == 1) {
 		VSC_C_main->backend_retry++;
-		i = FetchHdr(sp);
+		i = FetchHdr(sp, need_host_hdr);
 	}
 
 	if (i) {

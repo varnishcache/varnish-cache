@@ -375,11 +375,10 @@ FetchReqBody(struct sess *sp)
  */
 
 int
-FetchHdr(struct sess *sp)
+FetchHdr(struct sess *sp, int need_host_hdr)
 {
 	struct vbc *vc;
 	struct worker *w;
-	char *b;
 	struct http *hp;
 	int retry = -1;
 	int i;
@@ -415,7 +414,7 @@ FetchHdr(struct sess *sp)
 	 * header if one is necessary.  This cannot be done in the VCL
 	 * because the backend may be chosen by a director.
 	 */
-	if (!http_GetHdr(hp, H_Host, &b))
+	if (need_host_hdr)
 		VDI_AddHostHeader(sp);
 
 	(void)VTCP_blocking(vc->fd);	/* XXX: we should timeout instead */
