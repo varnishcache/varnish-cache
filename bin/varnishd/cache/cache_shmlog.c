@@ -291,10 +291,11 @@ WSLB(struct worker *w, enum VSL_tag_e tag, const char *fmt, ...)
 	va_list ap;
 
 	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(w->vbc, VBC_MAGIC);
+	CHECK_OBJ_NOTNULL(w->busyobj, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(w->busyobj->vbc, VBC_MAGIC);
 	AN(fmt);
 	va_start(ap, fmt);
-	wsl(w, tag, w->vbc->vsl_id, fmt, ap);
+	wsl(w, tag, w->busyobj->vbc->vsl_id, fmt, ap);
 	va_end(ap);
 }
 

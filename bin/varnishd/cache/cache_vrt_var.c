@@ -132,15 +132,19 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 	struct trouble *tr;
 	struct trouble *tr2;
 	struct worker *wrk;
+	struct vbc *vbc;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	wrk = sp->wrk;
-	if (!wrk->vbc)
+	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
+	vbc = wrk->busyobj->vbc;
+	if (!vbc)
 		return;
-	CHECK_OBJ_NOTNULL(wrk->vbc, VBC_MAGIC);
-	if (!wrk->vbc->backend)
+	CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
+	if (!vbc->backend)
 		return;
-	CHECK_OBJ_NOTNULL(wrk->vbc->backend, BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(vbc->backend, BACKEND_MAGIC);
 	if (!sp->wrk->objcore)
 		return;
 	CHECK_OBJ_NOTNULL(sp->wrk->objcore, OBJCORE_MAGIC);
@@ -159,8 +163,8 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 	 * timeout at a later date (ie: sort by which entry will time out
 	 * from the list
 	 */
-	Lck_Lock(&wrk->vbc->backend->mtx);
-	VTAILQ_FOREACH_SAFE(tr, &wrk->vbc->backend->troublelist, list, tr2) {
+	Lck_Lock(&vbc->backend->mtx);
+	VTAILQ_FOREACH_SAFE(tr, &vbc->backend->troublelist, list, tr2) {
 		if (tr->timeout < new->timeout) {
 			VTAILQ_INSERT_BEFORE(tr, new, list);
 			new = NULL;
@@ -172,9 +176,9 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 	 * items have a longer timeout.
 	 */
 	if (new)
-		VTAILQ_INSERT_TAIL(&wrk->vbc->backend->troublelist, new, list);
+		VTAILQ_INSERT_TAIL(&vbc->backend->troublelist, new, list);
 
-	Lck_Unlock(&wrk->vbc->backend->mtx);
+	Lck_Unlock(&vbc->backend->mtx);
 }
 
 /*--------------------------------------------------------------------*/
@@ -253,8 +257,8 @@ VRT_r_beresp_backend_name(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->vbc, VBC_MAGIC);
-	return(sp->wrk->vbc->backend->vcl_name);
+	CHECK_OBJ_NOTNULL(sp->wrk->busyobj->vbc, VBC_MAGIC);
+	return(sp->wrk->busyobj->vbc->backend->vcl_name);
 }
 
 struct sockaddr_storage *
@@ -262,8 +266,8 @@ VRT_r_beresp_backend_ip(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->vbc, VBC_MAGIC);
-	return(sp->wrk->vbc->addr);
+	CHECK_OBJ_NOTNULL(sp->wrk->busyobj->vbc, VBC_MAGIC);
+	return(sp->wrk->busyobj->vbc->addr);
 }
 
 int
@@ -271,8 +275,8 @@ VRT_r_beresp_backend_port(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->vbc, VBC_MAGIC);
-	return (VTCP_port(sp->wrk->vbc->addr));
+	CHECK_OBJ_NOTNULL(sp->wrk->busyobj->vbc, VBC_MAGIC);
+	return (VTCP_port(sp->wrk->busyobj->vbc->addr));
 }
 
 const char * __match_proto__()

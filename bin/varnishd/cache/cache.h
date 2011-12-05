@@ -330,7 +330,6 @@ struct worker {
 	/* Fetch stuff.  Here because pipe has no busyobj */
 	struct http		*bereq;
 	struct http		*beresp;
-	struct vbc		*vbc;
 
 	/* Stream state */
 	struct stream_ctx	*sctx;
@@ -494,6 +493,7 @@ struct busyobj {
 	unsigned		fetch_failed;
 	struct vgz		*vgz_rx;
 
+	struct vbc		*vbc;
 	struct object		*fetch_obj;
 	struct exp		exp;
 	struct http_conn	htc;
@@ -652,7 +652,7 @@ struct vbc *VDI_GetFd(const struct director *, struct sess *sp);
 int VDI_Healthy(const struct director *, const struct sess *sp);
 void VDI_CloseFd(struct worker *wrk, struct vbc **vbp);
 void VDI_RecycleFd(struct worker *wrk, struct vbc **vbp);
-void VDI_AddHostHeader(const struct sess *sp);
+void VDI_AddHostHeader(struct worker *wrk, const struct vbc *vbc);
 void VBE_Poll(void);
 
 /* cache_backend_cfg.c */

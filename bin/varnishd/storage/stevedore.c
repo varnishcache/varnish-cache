@@ -131,7 +131,7 @@ stv_pick_stevedore(struct worker *wrk, const char **hint)
 			return (stv_transient);
 
 		/* Hint was not valid, nuke it */
-		WSL(wrk, SLT_Debug, 0, 			/* XXX VSL_id ?? */
+		WSL(wrk, SLT_Debug, 0,			/* XXX VSL_id ?? */
 		    "Storage hint not usable");
 		*hint = NULL;
 	}

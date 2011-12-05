@@ -220,6 +220,9 @@ pan_busyobj(const struct busyobj *bo)
 	if (bo->should_close)	VSB_printf(pan_vsp, "    should_close\n");
 	VSB_printf(pan_vsp, "    bodystatus = %d,\n", bo->body_status);
 	VSB_printf(pan_vsp, "    },\n");
+	if (VALID_OBJ(bo->vbc, BACKEND_MAGIC))
+		pan_vbc(bo->vbc);
+
 }
 
 /*--------------------------------------------------------------------*/
@@ -270,9 +273,6 @@ pan_sess(const struct sess *sp)
 
 	if (VALID_OBJ(sp->vcl, VCL_CONF_MAGIC))
 		pan_vcl(sp->vcl);
-
-	if (VALID_OBJ(sp->wrk->vbc, BACKEND_MAGIC))
-		pan_vbc(sp->wrk->vbc);
 
 	if (VALID_OBJ(sp->wrk->obj, OBJECT_MAGIC))
 		pan_object(sp->wrk->obj);
