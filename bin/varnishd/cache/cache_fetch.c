@@ -617,7 +617,7 @@ FetchBody(struct worker *w, struct object *obj)
 	if (cls)
 		VDI_CloseFd(w, &w->vbc);
 	else
-		VDI_RecycleFd(w);
+		VDI_RecycleFd(w, &w->vbc);
 
 	return (0);
 }

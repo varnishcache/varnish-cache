@@ -651,7 +651,7 @@ void VBE_UseHealth(const struct director *vdi);
 struct vbc *VDI_GetFd(const struct director *, struct sess *sp);
 int VDI_Healthy(const struct director *, const struct sess *sp);
 void VDI_CloseFd(struct worker *wrk, struct vbc **vbp);
-void VDI_RecycleFd(struct worker *wrk);
+void VDI_RecycleFd(struct worker *wrk, struct vbc **vbp);
 void VDI_AddHostHeader(const struct sess *sp);
 void VBE_Poll(void);
 

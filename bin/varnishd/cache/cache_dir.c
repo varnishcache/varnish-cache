@@ -70,17 +70,22 @@ VDI_CloseFd(struct worker *wrk, struct vbc **vbp)
 /* Recycle a connection ----------------------------------------------*/
 
 void
-VDI_RecycleFd(struct worker *wrk)
+VDI_RecycleFd(struct worker *wrk, struct vbc **vbp)
 {
 	struct backend *bp;
+	struct vbc *vc;
 
-	CHECK_OBJ_NOTNULL(wrk->vbc, VBC_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->vbc->backend, BACKEND_MAGIC);
-	assert(wrk->vbc->fd >= 0);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	AN(vbp);
+	vc = *vbp;
+	*vbp = NULL;
+	CHECK_OBJ_NOTNULL(vc, VBC_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
+	assert(vc->fd >= 0);
 
-	bp = wrk->vbc->backend;
+	bp = vc->backend;
 
-	WSL(wrk, SLT_BackendReuse, wrk->vbc->vsl_id, "%s", bp->display_name);
+	WSL(wrk, SLT_BackendReuse, vc->vsl_id, "%s", bp->display_name);
 	/*
 	 * Flush the shmlog, so that another session reusing this backend
 	 * will log chronologically later than our use of it.
@@ -88,8 +93,7 @@ VDI_RecycleFd(struct worker *wrk)
 	WSL_Flush(wrk, 0);
 	Lck_Lock(&bp->mtx);
 	VSC_C_main->backend_recycle++;
-	VTAILQ_INSERT_HEAD(&bp->connlist, wrk->vbc, list);
-	wrk->vbc = NULL;
+	VTAILQ_INSERT_HEAD(&bp->connlist, vc, list);
 	VBE_DropRefLocked(bp);
 }
 
