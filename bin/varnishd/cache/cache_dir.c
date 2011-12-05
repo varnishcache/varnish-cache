@@ -40,27 +40,31 @@
 /* Close a connection ------------------------------------------------*/
 
 void
-VDI_CloseFd(struct worker *wrk)
+VDI_CloseFd(struct worker *wrk, struct vbc **vbp)
 {
 	struct backend *bp;
+	struct vbc *vc;
 
-	CHECK_OBJ_NOTNULL(wrk->vbc, VBC_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->vbc->backend, BACKEND_MAGIC);
-	assert(wrk->vbc->fd >= 0);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	AN(vbp);
+	vc = *vbp;
+	*vbp = NULL;
+	CHECK_OBJ_NOTNULL(vc, VBC_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
+	assert(vc->fd >= 0);
 
-	bp = wrk->vbc->backend;
+	bp = vc->backend;
 
-	WSL(wrk, SLT_BackendClose, wrk->vbc->vsl_id, "%s", bp->display_name);
+	WSL(wrk, SLT_BackendClose, vc->vsl_id, "%s", bp->display_name);
 
 	/* Checkpoint log to flush all info related to this connection
 	   before the OS reuses the FD */
 	WSL_Flush(wrk, 0);
 
-	VTCP_close(&wrk->vbc->fd);
+	VTCP_close(&vc->fd);
 	VBE_DropRefConn(bp);
-	wrk->vbc->backend = NULL;
-	VBE_ReleaseConn(wrk->vbc);
-	wrk->vbc = NULL;
+	vc->backend = NULL;
+	VBE_ReleaseConn(vc);
 }
 
 /* Recycle a connection ----------------------------------------------*/

@@ -249,7 +249,7 @@ cnt_prepresp(struct sess *sp)
 		if (sp->restarts >= cache_param->max_restarts)
 			break;
 		if (wrk->busyobj->do_stream) {
-			VDI_CloseFd(wrk);
+			VDI_CloseFd(wrk, &wrk->vbc);
 			HSH_Drop(wrk);
 		} else {
 			(void)HSH_Deref(wrk, NULL, &wrk->obj);
@@ -633,7 +633,7 @@ cnt_fetch(struct sess *sp)
 		}
 
 		/* We are not going to fetch the body, Close the connection */
-		VDI_CloseFd(wrk);
+		VDI_CloseFd(wrk, &wrk->vbc);
 	}
 
 	/* Clean up partial fetch */
@@ -817,7 +817,7 @@ cnt_fetchbody(struct sess *sp)
 	if (wrk->obj == NULL) {
 		sp->err_code = 503;
 		sp->step = STP_ERROR;
-		VDI_CloseFd(wrk);
+		VDI_CloseFd(wrk, &wrk->vbc);
 		return (0);
 	}
 	CHECK_OBJ_NOTNULL(wrk->obj, OBJECT_MAGIC);

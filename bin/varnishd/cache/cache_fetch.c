@@ -427,7 +427,7 @@ FetchHdr(struct sess *sp)
 	if (WRW_FlushRelease(w) || i > 0) {
 		WSP(sp, SLT_FetchError, "backend write error: %d (%s)",
 		    errno, strerror(errno));
-		VDI_CloseFd(sp->wrk);
+		VDI_CloseFd(sp->wrk, &sp->wrk->vbc);
 		/* XXX: other cleanup ? */
 		return (retry);
 	}
@@ -451,7 +451,7 @@ FetchHdr(struct sess *sp)
 	if (i < 0) {
 		WSP(sp, SLT_FetchError, "http first read error: %d %d (%s)",
 		    i, errno, strerror(errno));
-		VDI_CloseFd(sp->wrk);
+		VDI_CloseFd(sp->wrk, &sp->wrk->vbc);
 		/* XXX: other cleanup ? */
 		/* Retryable if we never received anything */
 		return (i == -1 ? retry : -1);
@@ -465,7 +465,7 @@ FetchHdr(struct sess *sp)
 			WSP(sp, SLT_FetchError,
 			    "http first read error: %d %d (%s)",
 			    i, errno, strerror(errno));
-			VDI_CloseFd(sp->wrk);
+			VDI_CloseFd(sp->wrk, &sp->wrk->vbc);
 			/* XXX: other cleanup ? */
 			return (-1);
 		}
@@ -475,7 +475,7 @@ FetchHdr(struct sess *sp)
 
 	if (http_DissectResponse(w, htc, hp)) {
 		WSP(sp, SLT_FetchError, "http format error");
-		VDI_CloseFd(sp->wrk);
+		VDI_CloseFd(sp->wrk, &sp->wrk->vbc);
 		/* XXX: other cleanup ? */
 		return (-1);
 	}
@@ -571,7 +571,7 @@ FetchBody(struct worker *w, struct object *obj)
 	    cls, mklen);
 
 	if (w->busyobj->body_status == BS_ERROR) {
-		VDI_CloseFd(w);
+		VDI_CloseFd(w, &w->vbc);
 		return (__LINE__);
 	}
 
@@ -583,7 +583,7 @@ FetchBody(struct worker *w, struct object *obj)
 			VTAILQ_REMOVE(&obj->store, st, list);
 			STV_free(st);
 		}
-		VDI_CloseFd(w);
+		VDI_CloseFd(w, &w->vbc);
 		obj->len = 0;
 		return (__LINE__);
 	}
@@ -616,7 +616,7 @@ FetchBody(struct worker *w, struct object *obj)
 	}
 
 	if (cls)
-		VDI_CloseFd(w);
+		VDI_CloseFd(w, &w->vbc);
 	else
 		VDI_RecycleFd(w);
 
