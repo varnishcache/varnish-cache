@@ -71,10 +71,9 @@ PipeSession(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	w = sp->wrk;
 
-	sp->wrk->vbc = VDI_GetFd(NULL, sp);
-	if (sp->wrk->vbc == NULL)
+	vc = VDI_GetFd(NULL, sp);
+	if (vc == NULL)
 		return;
-	vc = sp->wrk->vbc;
 	(void)VTCP_blocking(vc->fd);
 
 	WRW_Reserve(w, &vc->fd);
@@ -89,7 +88,7 @@ PipeSession(struct sess *sp)
 
 	if (i) {
 		SES_Close(sp, "pipe");
-		VDI_CloseFd(sp->wrk, &sp->wrk->vbc);
+		VDI_CloseFd(sp->wrk, &vc);
 		return;
 	}
 
@@ -129,5 +128,5 @@ PipeSession(struct sess *sp)
 		}
 	}
 	SES_Close(sp, "pipe");
-	VDI_CloseFd(sp->wrk, &sp->wrk->vbc);
+	VDI_CloseFd(sp->wrk, &vc);
 }
