@@ -165,7 +165,7 @@ WRW_Flush(struct worker *w)
 		if (i <= 0) {
 			wrw->werr++;
 			WSL(w, SLT_Debug, *wrw->wfd,
-			    "Write error, retval = %d, len = %d, errno = %s",
+			    "Write error, retval = %zd, len = %zd, errno = %s",
 			    i, wrw->liov, strerror(errno));
 		}
 	}

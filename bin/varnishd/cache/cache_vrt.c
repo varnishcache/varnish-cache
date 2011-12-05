@@ -74,7 +74,7 @@ VRT_count(const struct sess *sp, unsigned u)
 		return;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (cache_param->vcl_trace)
-		WSP(sp, SLT_VCL_trace, "%u %d.%d", u,
+		WSP(sp, SLT_VCL_trace, "%u %u.%u", u,
 		    sp->vcl->ref[u].line, sp->vcl->ref[u].pos);
 }
 
@@ -83,7 +83,8 @@ VRT_count(const struct sess *sp, unsigned u)
 void
 VRT_acl_log(const struct sess *sp, const char *msg)
 {
-	WSP(sp, SLT_VCL_acl, msg);
+
+	WSP(sp, SLT_VCL_acl, "%s", msg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -416,7 +417,7 @@ VRT_synth_page(const struct sess *sp, unsigned flags, const char *str, ...)
 	SMS_Finish(sp->wrk->obj);
 	http_Unset(sp->wrk->obj->http, H_Content_Length);
 	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->obj->http,
-	    "Content-Length: %d", sp->wrk->obj->len);
+	    "Content-Length: %zd", sp->wrk->obj->len);
 }
 
 /*--------------------------------------------------------------------*/

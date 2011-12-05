@@ -520,7 +520,7 @@ http_dissect_hdrs(struct worker *w, struct http *hp, unsigned vsl_id, char *p,
 		if (q - p > htc->maxhdr) {
 			VSC_C_main->losthdr++;
 			WSL(w, SLT_LostHeader, vsl_id, "%.*s",
-			    q - p > 20 ? 20 : q - p, p);
+			    (int)(q - p > 20 ? 20 : q - p), p);
 			return (413);
 		}
 
@@ -546,7 +546,7 @@ http_dissect_hdrs(struct worker *w, struct http *hp, unsigned vsl_id, char *p,
 		} else {
 			VSC_C_main->losthdr++;
 			WSL(w, SLT_LostHeader, vsl_id, "%.*s",
-			    q - p > 20 ? 20 : q - p, p);
+			    (int)(q - p > 20 ? 20 : q - p), p);
 			return (413);
 		}
 	}

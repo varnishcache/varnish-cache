@@ -565,7 +565,7 @@ FetchBody(struct worker *w, struct object *obj)
 
 	w->busyobj->fetch_obj = NULL;
 
-	WSLB(w, SLT_Fetch_Body, "%u(%s) cls %d mklen %u",
+	WSLB(w, SLT_Fetch_Body, "%u(%s) cls %d mklen %d",
 	    w->busyobj->body_status, body_status(w->busyobj->body_status),
 	    cls, mklen);
 
@@ -591,7 +591,7 @@ FetchBody(struct worker *w, struct object *obj)
 	if (cls == 0 && w->busyobj->should_close)
 		cls = 1;
 
-	WSLB(w, SLT_Length, "%u", obj->len);
+	WSLB(w, SLT_Length, "%zd", obj->len);
 
 	{
 	/* Sanity check fetch methods accounting */
