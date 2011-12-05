@@ -66,7 +66,7 @@ VDI_AddHostHeader(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->wrk->bereq, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk->vbc, VBC_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk->vbc->vdis, VDI_SIMPLE_MAGIC);
-	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->bereq,
+	http_PrintfHeader(sp->wrk, sp->wrk->vbc->vsl_id, sp->wrk->bereq,
 	    "Host: %s", sp->wrk->vbc->vdis->vrt->hosthdr);
 }
 
