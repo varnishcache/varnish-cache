@@ -34,6 +34,8 @@
 
 #include <poll.h>
 #include <stdlib.h>
+#include <stddef.h>
+#include <stdio.h>
 
 #include "cache.h"
 
@@ -62,6 +64,7 @@ vbe_NewBusyObj(void)
 
 	ALLOC_OBJ(busyobj, BUSYOBJ_MAGIC);
 	AN(busyobj);
+	Lck_New(&busyobj->mtx, lck_busyobj);
 	return (busyobj);
 }
 
@@ -70,6 +73,7 @@ vbe_FreeBusyObj(struct busyobj *busyobj)
 {
 	CHECK_OBJ_NOTNULL(busyobj, BUSYOBJ_MAGIC);
 	AZ(busyobj->refcount);
+	Lck_Delete(&busyobj->mtx);
 	FREE_OBJ(busyobj);
 }
 
@@ -83,8 +87,8 @@ VBE_GetBusyObj(void)
 		CHECK_OBJ_NOTNULL(nbusyobj, BUSYOBJ_MAGIC);
 		busyobj = nbusyobj;
 		nbusyobj = NULL;
-		memset(busyobj, 0, sizeof *busyobj);
-		busyobj->magic = BUSYOBJ_MAGIC;
+		memset((char *)busyobj + offsetof(struct busyobj, refcount), 0,
+		       sizeof *busyobj - offsetof(struct busyobj, refcount));
 	}
 	Lck_Unlock(&nbusyobj_mtx);
 	if (busyobj == NULL)
@@ -98,8 +102,10 @@ struct busyobj *
 VBE_RefBusyObj(struct busyobj *busyobj)
 {
 	CHECK_OBJ_NOTNULL(busyobj, BUSYOBJ_MAGIC);
+	Lck_Lock(&busyobj->mtx);
 	assert(busyobj->refcount > 0);
 	busyobj->refcount++;
+	Lck_Unlock(&busyobj->mtx);
 	return (busyobj);
 }
 
@@ -110,12 +116,18 @@ VBE_DerefBusyObj(struct busyobj **pbo)
 
 	busyobj = *pbo;
 	CHECK_OBJ_NOTNULL(busyobj, BUSYOBJ_MAGIC);
+	Lck_Lock(&busyobj->mtx);
 	assert(busyobj->refcount > 0);
 	busyobj->refcount--;
 	*pbo = NULL;
-	if (busyobj->refcount > 0)
+	if (busyobj->refcount > 0) {
+		Lck_Unlock(&busyobj->mtx);
 		return;
+	}
+	Lck_Unlock(&busyobj->mtx);
+
 	/* XXX Sanity checks e.g. AZ(busyobj->vbc) */
+
 	Lck_Lock(&nbusyobj_mtx);
 	if (nbusyobj == NULL) {
 		nbusyobj = busyobj;

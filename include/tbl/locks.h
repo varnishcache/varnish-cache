@@ -50,4 +50,5 @@ LOCK(vbe)
 LOCK(backend)
 LOCK(vcapace)
 LOCK(nbusyobj)
+LOCK(busyobj)
 /*lint -restore */

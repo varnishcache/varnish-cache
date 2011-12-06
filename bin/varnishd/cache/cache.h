@@ -496,6 +496,8 @@ oc_getlru(const struct objcore *oc)
 struct busyobj {
 	unsigned		magic;
 #define BUSYOBJ_MAGIC		0x23b95567
+	struct lock		mtx;
+	/* Members passed this line are cleared on reuse */
 	unsigned		refcount;
 
 	uint8_t			*vary;
