@@ -395,12 +395,14 @@ struct storage {
  */
 
 typedef struct object *getobj_f(struct worker *wrk, struct objcore *oc);
+typedef unsigned getxid_f(struct worker *wrk, struct objcore *oc);
 typedef void updatemeta_f(struct objcore *oc);
 typedef void freeobj_f(struct objcore *oc);
 typedef struct lru *getlru_f(const struct objcore *oc);
 
 struct objcore_methods {
 	getobj_f	*getobj;
+	getxid_f	*getxid;
 	updatemeta_f	*updatemeta;
 	freeobj_f	*freeobj;
 	getlru_f	*getlru;
@@ -428,6 +430,16 @@ struct objcore {
 	VTAILQ_ENTRY(objcore)	ban_list;
 	struct ban		*ban;
 };
+
+static inline unsigned
+oc_getxid(struct worker *wrk, struct objcore *oc)
+{
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	AN(oc->methods);
+	AN(oc->methods->getxid);
+	return (oc->methods->getxid(wrk, oc));
+}
 
 static inline struct object *
 oc_getobj(struct worker *wrk, struct objcore *oc)

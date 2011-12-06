@@ -48,6 +48,15 @@ static const struct stevedore * volatile stv_next;
  * Default objcore methods
  */
 
+static unsigned __match_proto__(getxid_f)
+default_oc_getxid(struct worker *wrk, struct objcore *oc)
+{
+	struct object *o;
+
+	o = oc_getobj(wrk, oc);
+	return (o->xid);
+}
+
 static struct object * __match_proto__(getobj_f)
 default_oc_getobj(struct worker *wrk, struct objcore *oc)
 {
@@ -84,6 +93,7 @@ default_oc_getlru(const struct objcore *oc)
 
 static struct objcore_methods default_oc_methods = {
 	.getobj = default_oc_getobj,
+	.getxid = default_oc_getxid,
 	.freeobj = default_oc_freeobj,
 	.getlru = default_oc_getlru,
 };

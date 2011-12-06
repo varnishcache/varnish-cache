@@ -401,7 +401,7 @@ exp_timer(struct sess *sp, void *priv)
 		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
 		o = oc_getobj(sp->wrk, oc);
 		WSL(sp->wrk, SLT_ExpKill, 0, "%u %.0f",
-		    o->xid, EXP_Ttl(NULL, o) - t);
+		    oc_getxid(sp->wrk, oc), EXP_Ttl(NULL, o) - t);
 		(void)HSH_Deref(sp->wrk, oc, NULL);
 	}
 	NEEDLESS_RETURN(NULL);
@@ -414,10 +414,9 @@ exp_timer(struct sess *sp, void *priv)
  */
 
 int
-EXP_NukeOne(struct worker *w, struct lru *lru)
+EXP_NukeOne(struct worker *wrk, struct lru *lru)
 {
 	struct objcore *oc;
-	struct object *o;
 
 	/* Find the first currently unused object on the LRU.  */
 	Lck_Lock(&lru->mtx);
@@ -446,9 +445,8 @@ EXP_NukeOne(struct worker *w, struct lru *lru)
 		return (-1);
 
 	/* XXX: bad idea for -spersistent */
-	o = oc_getobj(w, oc);
-	WSL(w, SLT_ExpKill, 0, "%u LRU", o->xid);
-	(void)HSH_Deref(w, NULL, &o);
+	WSL(wrk, SLT_ExpKill, 0, "%u LRU", oc_getxid(wrk, oc));
+	(void)HSH_Deref(wrk, oc, NULL);
 	return (1);
 }
 
