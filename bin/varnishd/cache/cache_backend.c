@@ -41,6 +41,91 @@
 #include "vrt.h"
 #include "vtcp.h"
 
+static struct lock nbusyobj_mtx;
+static struct busyobj *nbusyobj;
+
+void
+VBE_Init(void)
+{
+	Lck_New(&nbusyobj_mtx, lck_nbusyobj);
+	nbusyobj = NULL;
+}
+
+/*--------------------------------------------------------------------
+ * BusyObj handling
+ */
+
+static struct busyobj *
+vbe_NewBusyObj(void)
+{
+	struct busyobj *busyobj;
+
+	ALLOC_OBJ(busyobj, BUSYOBJ_MAGIC);
+	AN(busyobj);
+	return (busyobj);
+}
+
+static void
+vbe_FreeBusyObj(struct busyobj *busyobj)
+{
+	CHECK_OBJ_NOTNULL(busyobj, BUSYOBJ_MAGIC);
+	AZ(busyobj->refcount);
+	FREE_OBJ(busyobj);
+}
+
+struct busyobj *
+VBE_GetBusyObj(void)
+{
+	struct busyobj *busyobj = NULL;
+
+	Lck_Lock(&nbusyobj_mtx);
+	if (nbusyobj != NULL) {
+		CHECK_OBJ_NOTNULL(nbusyobj, BUSYOBJ_MAGIC);
+		busyobj = nbusyobj;
+		nbusyobj = NULL;
+		memset(busyobj, 0, sizeof *busyobj);
+		busyobj->magic = BUSYOBJ_MAGIC;
+	}
+	Lck_Unlock(&nbusyobj_mtx);
+	if (busyobj == NULL)
+		busyobj = vbe_NewBusyObj();
+	AN(busyobj);
+	busyobj->refcount = 1;
+	return (busyobj);
+}
+
+struct busyobj *
+VBE_RefBusyObj(struct busyobj *busyobj)
+{
+	CHECK_OBJ_NOTNULL(busyobj, BUSYOBJ_MAGIC);
+	assert(busyobj->refcount > 0);
+	busyobj->refcount++;
+	return (busyobj);
+}
+
+void
+VBE_DerefBusyObj(struct busyobj **pbo)
+{
+	struct busyobj *busyobj;
+
+	busyobj = *pbo;
+	CHECK_OBJ_NOTNULL(busyobj, BUSYOBJ_MAGIC);
+	assert(busyobj->refcount > 0);
+	busyobj->refcount--;
+	*pbo = NULL;
+	if (busyobj->refcount > 0)
+		return;
+	/* XXX Sanity checks e.g. AZ(busyobj->vbc) */
+	Lck_Lock(&nbusyobj_mtx);
+	if (nbusyobj == NULL) {
+		nbusyobj = busyobj;
+		busyobj = NULL;
+	}
+	Lck_Unlock(&nbusyobj_mtx);
+	if (busyobj != NULL)
+		vbe_FreeBusyObj(busyobj);
+}
+
 /*--------------------------------------------------------------------
  * The "simple" director really isn't, since thats where all the actual
  * connections happen.  Nontheless, pretend it is simple by sequestering
