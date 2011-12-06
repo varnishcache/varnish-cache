@@ -293,7 +293,7 @@ struct worker {
 	struct objhead		*nobjhead;
 	struct objcore		*nobjcore;
 	struct waitinglist	*nwaitinglist;
-	struct busyobj		*nbusyobj;
+	/* struct busyobj		*nbusyobj; */
 	void			*nhashpriv;
 	struct dstat		stats;
 
@@ -496,6 +496,8 @@ oc_getlru(const struct objcore *oc)
 struct busyobj {
 	unsigned		magic;
 #define BUSYOBJ_MAGIC		0x23b95567
+	unsigned		refcount;
+
 	uint8_t			*vary;
 	unsigned		is_gzip;
 	unsigned		is_gunzip;
@@ -667,8 +669,14 @@ void VDI_RecycleFd(struct worker *wrk, struct vbc **vbp);
 void VDI_AddHostHeader(struct worker *wrk, const struct vbc *vbc);
 void VBE_Poll(void);
 
-/* cache_backend_cfg.c */
+/* cache_backend.c */
 void VBE_Init(void);
+struct busyobj *VBE_GetBusyObj(void);
+struct busyobj *VBE_RefBusyObj(struct busyobj *busyobj);
+void VBE_DerefBusyObj(struct busyobj **busyobj);
+
+/* cache_backend_cfg.c */
+void VBE_InitCfg(void);
 struct backend *VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb);
 
 /* cache_backend_poll.c */
@@ -995,21 +1003,6 @@ void SMP_Init(void);
 void SMP_Ready(void);
 void SMP_NewBan(const uint8_t *ban, unsigned len);
 
-#define New_BusyObj(wrk)						\
-	do {								\
-		if (wrk->nbusyobj != NULL) {				\
-			CHECK_OBJ_NOTNULL(wrk->nbusyobj, BUSYOBJ_MAGIC);\
-			wrk->busyobj = wrk->nbusyobj;			\
-			wrk->nbusyobj = NULL;				\
-			memset(wrk->busyobj, 0, sizeof *wrk->busyobj);	\
-			wrk->busyobj->magic = BUSYOBJ_MAGIC;		\
-		} else {						\
-			ALLOC_OBJ(wrk->busyobj, BUSYOBJ_MAGIC);		\
-		}							\
-		CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);		\
-		AZ(wrk->nbusyobj);					\
-	} while (0)
-
 /*
  * A normal pointer difference is signed, but we never want a negative value
  * so this little tool will make sure we don't get that.
@@ -1064,6 +1057,7 @@ AssertObjBusy(const struct object *o)
 {
 	AN(o->objcore);
 	AN (o->objcore->flags & OC_F_BUSY);
+	AN(o->objcore->busyobj);
 }
 
 static inline void

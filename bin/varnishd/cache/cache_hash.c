@@ -106,11 +106,6 @@ HSH_Prealloc(const struct sess *sp)
 	}
 	CHECK_OBJ_NOTNULL(w->nwaitinglist, WAITINGLIST_MAGIC);
 
-	if (w->nbusyobj == NULL) {
-		ALLOC_OBJ(w->nbusyobj, BUSYOBJ_MAGIC);
-		XXXAN(w->nbusyobj);
-	}
-
 	if (hash->prep != NULL)
 		hash->prep(sp);
 }
@@ -139,10 +134,10 @@ HSH_Cleanup(struct worker *w)
 		free(w->nhashpriv);
 		w->nhashpriv = NULL;
 	}
-	if (w->nbusyobj != NULL) {
-		FREE_OBJ(w->nbusyobj);
-		w->nbusyobj = NULL;
-	}
+	/* if (w->nbusyobj != NULL) { */
+	/* 	FREE_OBJ(w->nbusyobj); */
+	/* 	w->nbusyobj = NULL; */
+	/* } */
 }
 
 void
@@ -456,7 +451,8 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	AN(oc->flags & OC_F_BUSY);
 	oc->refcnt = 1;
 
-	New_BusyObj(w);
+	AZ(w->busyobj);
+	w->busyobj = VBE_GetBusyObj();
 
 	VRY_Validate(sp->vary_b);
 	if (sp->vary_l != NULL)
@@ -626,8 +622,6 @@ HSH_Unbusy(struct worker *wrk)
 	VTAILQ_REMOVE(&oh->objcs, oc, list);
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, list);
 	oc->flags &= ~OC_F_BUSY;
-	AZ(wrk->nbusyobj);
-	wrk->nbusyobj = oc->busyobj;
 	oc->busyobj = NULL;
 	if (oh->waitinglist != NULL)
 		hsh_rush(oh);
@@ -715,16 +709,6 @@ HSH_Deref(struct worker *w, struct objcore *oc, struct object **oo)
 
 	BAN_DestroyObj(oc);
 	AZ(oc->ban);
-
-	if (oc->flags & OC_F_BUSY) {
-		CHECK_OBJ_NOTNULL(oc->busyobj, BUSYOBJ_MAGIC);
-		if (w->nbusyobj == NULL)
-			w->nbusyobj = oc->busyobj;
-		else
-			FREE_OBJ(oc->busyobj);
-		oc->busyobj = NULL;
-	}
-	AZ(oc->busyobj);
 
 	if (oc->methods != NULL) {
 		oc_freeobj(oc);
