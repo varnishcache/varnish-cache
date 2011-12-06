@@ -46,30 +46,30 @@ static unsigned fetchfrag;
  * We want to issue the first error we encounter on fetching and
  * supress the rest.  This function does that.
  *
- * Other code is allowed to look at w->busyobj->fetch_failed to bail out
+ * Other code is allowed to look at wrk->busyobj->fetch_failed to bail out
  *
  * For convenience, always return -1
  */
 
 int
-FetchError2(struct worker *w, const char *error, const char *more)
+FetchError2(struct worker *wrk, const char *error, const char *more)
 {
 
-	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	if (!w->busyobj->fetch_failed) {
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	if (!wrk->busyobj->fetch_failed) {
 		if (more == NULL)
-			WSLB(w, SLT_FetchError, "%s", error);
+			WSLB(wrk, SLT_FetchError, "%s", error);
 		else
-			WSLB(w, SLT_FetchError, "%s: %s", error, more);
+			WSLB(wrk, SLT_FetchError, "%s: %s", error, more);
 	}
-	w->busyobj->fetch_failed = 1;
+	wrk->busyobj->fetch_failed = 1;
 	return (-1);
 }
 
 int
-FetchError(struct worker *w, const char *error)
+FetchError(struct worker *wrk, const char *error)
 {
-	return(FetchError2(w, error, NULL));
+	return(FetchError2(wrk, error, NULL));
 }
 
 /*--------------------------------------------------------------------
@@ -88,11 +88,11 @@ FetchError(struct worker *w, const char *error)
  * as seen on the socket, or zero if unknown.
  */
 static void __match_proto__()
-vfp_nop_begin(struct worker *w, size_t estimate)
+vfp_nop_begin(struct worker *wrk, size_t estimate)
 {
 
 	if (estimate > 0)
-		(void)FetchStorage(w, estimate);
+		(void)FetchStorage(wrk, estimate);
 }
 
 /*--------------------------------------------------------------------
@@ -107,27 +107,27 @@ vfp_nop_begin(struct worker *w, size_t estimate)
  */
 
 static int __match_proto__()
-vfp_nop_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
+vfp_nop_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 {
 	ssize_t l, wl;
 	struct storage *st;
 
-	AZ(w->busyobj->fetch_failed);
+	AZ(wrk->busyobj->fetch_failed);
 	while (bytes > 0) {
-		st = FetchStorage(w, 0);
+		st = FetchStorage(wrk, 0);
 		if (st == NULL)
 			return(-1);
 		l = st->space - st->len;
 		if (l > bytes)
 			l = bytes;
-		wl = HTC_Read(w, htc, st->ptr + st->len, l);
+		wl = HTC_Read(wrk, htc, st->ptr + st->len, l);
 		if (wl <= 0)
 			return (wl);
 		st->len += wl;
-		w->busyobj->fetch_obj->len += wl;
+		wrk->busyobj->fetch_obj->len += wl;
 		bytes -= wl;
-		if (w->busyobj->do_stream)
-			RES_StreamPoll(w);
+		if (wrk->busyobj->do_stream)
+			RES_StreamPoll(wrk);
 	}
 	return (1);
 }
@@ -142,16 +142,16 @@ vfp_nop_bytes(struct worker *w, struct http_conn *htc, ssize_t bytes)
  */
 
 static int __match_proto__()
-vfp_nop_end(struct worker *w)
+vfp_nop_end(struct worker *wrk)
 {
 	struct storage *st;
 
-	st = VTAILQ_LAST(&w->busyobj->fetch_obj->store, storagehead);
+	st = VTAILQ_LAST(&wrk->busyobj->fetch_obj->store, storagehead);
 	if (st == NULL)
 		return (0);
 
 	if (st->len == 0) {
-		VTAILQ_REMOVE(&w->busyobj->fetch_obj->store, st, list);
+		VTAILQ_REMOVE(&wrk->busyobj->fetch_obj->store, st, list);
 		STV_free(st);
 		return (0);
 	}
@@ -172,13 +172,13 @@ static struct vfp vfp_nop = {
  */
 
 struct storage *
-FetchStorage(struct worker *w, ssize_t sz)
+FetchStorage(struct worker *wrk, ssize_t sz)
 {
 	ssize_t l;
 	struct storage *st;
 	struct object *obj;
 
-	obj = w->busyobj->fetch_obj;
+	obj = wrk->busyobj->fetch_obj;
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	st = VTAILQ_LAST(&obj->store, storagehead);
 	if (st != NULL && st->len < st->space)
@@ -189,9 +189,9 @@ FetchStorage(struct worker *w, ssize_t sz)
 		l = sz;
 	if (l == 0)
 		l = cache_param->fetch_chunksize;
-	st = STV_alloc(w, l);
+	st = STV_alloc(wrk, l);
 	if (st == NULL) {
-		(void)FetchError(w, "Could not get storage");
+		(void)FetchError(wrk, "Could not get storage");
 		return (NULL);
 	}
 	AZ(st->len);
@@ -225,20 +225,20 @@ fetch_number(const char *nbr, int radix)
 /*--------------------------------------------------------------------*/
 
 static int
-fetch_straight(struct worker *w, struct http_conn *htc, ssize_t cl)
+fetch_straight(struct worker *wrk, struct http_conn *htc, ssize_t cl)
 {
 	int i;
 
-	assert(w->busyobj->body_status == BS_LENGTH);
+	assert(wrk->busyobj->body_status == BS_LENGTH);
 
 	if (cl < 0) {
-		return (FetchError(w, "straight length field bogus"));
+		return (FetchError(wrk, "straight length field bogus"));
 	} else if (cl == 0)
 		return (0);
 
-	i = w->busyobj->vfp->bytes(w, htc, cl);
+	i = wrk->busyobj->vfp->bytes(wrk, htc, cl);
 	if (i <= 0)
-		return (FetchError(w, "straight insufficient bytes"));
+		return (FetchError(wrk, "straight insufficient bytes"));
 	return (0);
 }
 
@@ -249,28 +249,28 @@ fetch_straight(struct worker *w, struct http_conn *htc, ssize_t cl)
  */
 
 static int
-fetch_chunked(struct worker *w, struct http_conn *htc)
+fetch_chunked(struct worker *wrk, struct http_conn *htc)
 {
 	int i;
 	char buf[20];		/* XXX: 20 is arbitrary */
 	unsigned u;
 	ssize_t cl;
 
-	assert(w->busyobj->body_status == BS_CHUNKED);
+	assert(wrk->busyobj->body_status == BS_CHUNKED);
 	do {
 		/* Skip leading whitespace */
 		do {
-			if (HTC_Read(w, htc, buf, 1) <= 0)
+			if (HTC_Read(wrk, htc, buf, 1) <= 0)
 				return (-1);
 		} while (vct_islws(buf[0]));
 
 		if (!vct_ishex(buf[0]))
-			return (FetchError(w,"chunked header non-hex"));
+			return (FetchError(wrk,"chunked header non-hex"));
 
 		/* Collect hex digits, skipping leading zeros */
 		for (u = 1; u < sizeof buf; u++) {
 			do {
-				if (HTC_Read(w, htc, buf + u, 1) <= 0)
+				if (HTC_Read(wrk, htc, buf + u, 1) <= 0)
 					return (-1);
 			} while (u == 1 && buf[0] == '0' && buf[u] == '0');
 			if (!vct_ishex(buf[u]))
@@ -278,31 +278,31 @@ fetch_chunked(struct worker *w, struct http_conn *htc)
 		}
 
 		if (u >= sizeof buf)
-			return (FetchError(w,"chunked header too long"));
+			return (FetchError(wrk,"chunked header too long"));
 
 		/* Skip trailing white space */
 		while(vct_islws(buf[u]) && buf[u] != '\n')
-			if (HTC_Read(w, htc, buf + u, 1) <= 0)
+			if (HTC_Read(wrk, htc, buf + u, 1) <= 0)
 				return (-1);
 
 		if (buf[u] != '\n')
-			return (FetchError(w,"chunked header no NL"));
+			return (FetchError(wrk,"chunked header no NL"));
 
 		buf[u] = '\0';
 		cl = fetch_number(buf, 16);
 		if (cl < 0)
-			return (FetchError(w,"chunked header number syntax"));
+			return (FetchError(wrk,"chunked header number syntax"));
 
-		if (cl > 0 && w->busyobj->vfp->bytes(w, htc, cl) <= 0)
+		if (cl > 0 && wrk->busyobj->vfp->bytes(wrk, htc, cl) <= 0)
 			return (-1);
 
-		i = HTC_Read(w, htc, buf, 1);
+		i = HTC_Read(wrk, htc, buf, 1);
 		if (i <= 0)
 			return (-1);
-		if (buf[0] == '\r' && HTC_Read(w, htc, buf, 1) <= 0)
+		if (buf[0] == '\r' && HTC_Read(wrk, htc, buf, 1) <= 0)
 			return (-1);
 		if (buf[0] != '\n')
-			return (FetchError(w,"chunked tail no NL"));
+			return (FetchError(wrk,"chunked tail no NL"));
 	} while (cl > 0);
 	return (0);
 }
@@ -310,12 +310,12 @@ fetch_chunked(struct worker *w, struct http_conn *htc)
 /*--------------------------------------------------------------------*/
 
 static int
-fetch_eof(struct worker *w, struct http_conn *htc)
+fetch_eof(struct worker *wrk, struct http_conn *htc)
 {
 	int i;
 
-	assert(w->busyobj->body_status == BS_EOF);
-	i = w->busyobj->vfp->bytes(w, htc, SSIZE_MAX);
+	assert(wrk->busyobj->body_status == BS_EOF);
+	i = wrk->busyobj->vfp->bytes(wrk, htc, SSIZE_MAX);
 	if (i < 0)
 		return (-1);
 	return (0);
@@ -378,7 +378,7 @@ int
 FetchHdr(struct sess *sp, int need_host_hdr)
 {
 	struct vbc *vc;
-	struct worker *w;
+	struct worker *wrk;
 	struct http *hp;
 	int retry = -1;
 	int i;
@@ -386,9 +386,9 @@ FetchHdr(struct sess *sp, int need_host_hdr)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	w = sp->wrk;
-	CHECK_OBJ_NOTNULL(w->busyobj, BUSYOBJ_MAGIC);
-	htc = &w->busyobj->htc;
+	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
+	htc = &wrk->busyobj->htc;
 
 	AN(sp->director);
 	AZ(sp->wrk->obj);
@@ -398,7 +398,7 @@ FetchHdr(struct sess *sp, int need_host_hdr)
 		AN(sp->wrk->objcore->flags & OC_F_BUSY);
 	}
 
-	hp = w->bereq;
+	hp = wrk->bereq;
 
 	sp->wrk->busyobj->vbc = VDI_GetFd(NULL, sp);
 	if (sp->wrk->busyobj->vbc == NULL) {
@@ -418,12 +418,12 @@ FetchHdr(struct sess *sp, int need_host_hdr)
 		VDI_AddHostHeader(sp->wrk, vc);
 
 	(void)VTCP_blocking(vc->fd);	/* XXX: we should timeout instead */
-	WRW_Reserve(w, &vc->fd);
-	(void)http_Write(w, vc->vsl_id, hp, 0);	/* XXX: stats ? */
+	WRW_Reserve(wrk, &vc->fd);
+	(void)http_Write(wrk, vc->vsl_id, hp, 0);	/* XXX: stats ? */
 
 	/* Deal with any message-body the request might have */
 	i = FetchReqBody(sp);
-	if (WRW_FlushRelease(w) || i > 0) {
+	if (WRW_FlushRelease(wrk) || i > 0) {
 		WSP(sp, SLT_FetchError, "backend write error: %d (%s)",
 		    errno, strerror(errno));
 		VDI_CloseFd(sp->wrk, &sp->wrk->busyobj->vbc);
@@ -432,14 +432,14 @@ FetchHdr(struct sess *sp, int need_host_hdr)
 	}
 
 	/* Checkpoint the vsl.here */
-	WSL_Flush(w, 0);
+	WSL_Flush(wrk, 0);
 
 	/* XXX is this the right place? */
 	VSC_C_main->backend_req++;
 
 	/* Receive response */
 
-	HTC_Init(htc, w->ws, vc->fd, vc->vsl_id,
+	HTC_Init(htc, wrk->ws, vc->fd, vc->vsl_id,
 	    cache_param->http_resp_size,
 	    cache_param->http_resp_hdr_len);
 
@@ -470,9 +470,9 @@ FetchHdr(struct sess *sp, int need_host_hdr)
 		}
 	}
 
-	hp = w->beresp;
+	hp = wrk->beresp;
 
-	if (http_DissectResponse(w, htc, hp)) {
+	if (http_DissectResponse(wrk, htc, hp)) {
 		WSP(sp, SLT_FetchError, "http format error");
 		VDI_CloseFd(sp->wrk, &sp->wrk->busyobj->vbc);
 		/* XXX: other cleanup ? */
@@ -484,37 +484,39 @@ FetchHdr(struct sess *sp, int need_host_hdr)
 /*--------------------------------------------------------------------*/
 
 int
-FetchBody(struct worker *w, struct object *obj)
+FetchBody(struct worker *wrk, struct object *obj)
 {
 	int cls;
 	struct storage *st;
 	int mklen;
 	ssize_t cl;
 	struct http_conn *htc;
+	struct busyobj *bo;
 
-	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(w->busyobj, BUSYOBJ_MAGIC);
-	AZ(w->busyobj->fetch_obj);
-	CHECK_OBJ_NOTNULL(w->busyobj->vbc, VBC_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	bo = wrk->busyobj;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AZ(bo->fetch_obj);
+	CHECK_OBJ_NOTNULL(bo->vbc, VBC_MAGIC);
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(obj->http, HTTP_MAGIC);
 
-	htc = &w->busyobj->htc;
+	htc = &bo->htc;
 
-	if (w->busyobj->vfp == NULL)
-		w->busyobj->vfp = &vfp_nop;
+	if (bo->vfp == NULL)
+		bo->vfp = &vfp_nop;
 
 	AssertObjCorePassOrBusy(obj->objcore);
 
-	AZ(w->busyobj->vgz_rx);
+	AZ(bo->vgz_rx);
 	AZ(VTAILQ_FIRST(&obj->store));
 
-	w->busyobj->fetch_obj = obj;
-	w->busyobj->fetch_failed = 0;
+	bo->fetch_obj = obj;
+	bo->fetch_failed = 0;
 
 	/* XXX: pick up estimate from objdr ? */
 	cl = 0;
-	switch (w->busyobj->body_status) {
+	switch (bo->body_status) {
 	case BS_NONE:
 		cls = 0;
 		mklen = 0;
@@ -524,25 +526,25 @@ FetchBody(struct worker *w, struct object *obj)
 		mklen = 1;
 		break;
 	case BS_LENGTH:
-		cl = fetch_number( w->busyobj->h_content_length, 10);
-		w->busyobj->vfp->begin(w, cl > 0 ? cl : 0);
-		cls = fetch_straight(w, htc, cl);
+		cl = fetch_number(bo->h_content_length, 10);
+		bo->vfp->begin(wrk, cl > 0 ? cl : 0);
+		cls = fetch_straight(wrk, htc, cl);
 		mklen = 1;
-		if (w->busyobj->vfp->end(w))
+		if (bo->vfp->end(wrk))
 			cls = -1;
 		break;
 	case BS_CHUNKED:
-		w->busyobj->vfp->begin(w, cl);
-		cls = fetch_chunked(w, htc);
+		bo->vfp->begin(wrk, cl);
+		cls = fetch_chunked(wrk, htc);
 		mklen = 1;
-		if (w->busyobj->vfp->end(w))
+		if (bo->vfp->end(wrk))
 			cls = -1;
 		break;
 	case BS_EOF:
-		w->busyobj->vfp->begin(w, cl);
-		cls = fetch_eof(w, htc);
+		bo->vfp->begin(wrk, cl);
+		cls = fetch_eof(wrk, htc);
 		mklen = 1;
-		if (w->busyobj->vfp->end(w))
+		if (bo->vfp->end(wrk))
 			cls = -1;
 		break;
 	case BS_ERROR:
@@ -554,44 +556,44 @@ FetchBody(struct worker *w, struct object *obj)
 		mklen = 0;
 		INCOMPL();
 	}
-	AZ(w->busyobj->vgz_rx);
+	AZ(bo->vgz_rx);
 
 	/*
 	 * It is OK for ->end to just leave the last storage segment
-	 * sitting on w->storage, we will always call vfp_nop_end()
+	 * sitting on wrk->storage, we will always call vfp_nop_end()
 	 * to get it trimmed or thrown out if empty.
 	 */
-	AZ(vfp_nop_end(w));
+	AZ(vfp_nop_end(wrk));
 
-	w->busyobj->fetch_obj = NULL;
+	bo->fetch_obj = NULL;
 
-	WSLB(w, SLT_Fetch_Body, "%u(%s) cls %d mklen %d",
-	    w->busyobj->body_status, body_status(w->busyobj->body_status),
+	WSLB(wrk, SLT_Fetch_Body, "%u(%s) cls %d mklen %d",
+	    bo->body_status, body_status(bo->body_status),
 	    cls, mklen);
 
-	if (w->busyobj->body_status == BS_ERROR) {
-		VDI_CloseFd(w, &w->busyobj->vbc);
+	if (bo->body_status == BS_ERROR) {
+		VDI_CloseFd(wrk, &bo->vbc);
 		return (__LINE__);
 	}
 
 	if (cls < 0) {
-		w->stats.fetch_failed++;
+		wrk->stats.fetch_failed++;
 		/* XXX: Wouldn't this store automatically be released ? */
 		while (!VTAILQ_EMPTY(&obj->store)) {
 			st = VTAILQ_FIRST(&obj->store);
 			VTAILQ_REMOVE(&obj->store, st, list);
 			STV_free(st);
 		}
-		VDI_CloseFd(w, &w->busyobj->vbc);
+		VDI_CloseFd(wrk, &bo->vbc);
 		obj->len = 0;
 		return (__LINE__);
 	}
-	AZ(w->busyobj->fetch_failed);
+	AZ(bo->fetch_failed);
 
-	if (cls == 0 && w->busyobj->should_close)
+	if (cls == 0 && bo->should_close)
 		cls = 1;
 
-	WSLB(w, SLT_Length, "%zd", obj->len);
+	WSLB(wrk, SLT_Length, "%zd", obj->len);
 
 	{
 	/* Sanity check fetch methods accounting */
@@ -600,7 +602,7 @@ FetchBody(struct worker *w, struct object *obj)
 		uu = 0;
 		VTAILQ_FOREACH(st, &obj->store, list)
 			uu += st->len;
-		if (w->busyobj->do_stream)
+		if (bo->do_stream)
 			/* Streaming might have started freeing stuff */
 			assert (uu <= obj->len);
 
@@ -610,14 +612,14 @@ FetchBody(struct worker *w, struct object *obj)
 
 	if (mklen > 0) {
 		http_Unset(obj->http, H_Content_Length);
-		http_PrintfHeader(w, w->busyobj->vbc->vsl_id, obj->http,
-		    "Content-Length: %jd", (intmax_t)obj->len);
+		http_PrintfHeader(wrk, bo->vbc->vsl_id, obj->http,
+		    "Content-Length: %zd", obj->len);
 	}
 
 	if (cls)
-		VDI_CloseFd(w, &w->busyobj->vbc);
+		VDI_CloseFd(wrk, &bo->vbc);
 	else
-		VDI_RecycleFd(w, &w->busyobj->vbc);
+		VDI_RecycleFd(wrk, &bo->vbc);
 
 	return (0);
 }
