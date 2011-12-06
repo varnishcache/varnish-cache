@@ -1007,6 +1007,8 @@ VEP_Init(struct worker *wrk, vep_callback_t *cb)
 	vep = (void*)WS_Alloc(wrk->ws, sizeof *vep);
 	AN(vep);
 
+	memset(vep, 0, sizeof *vep);
+	vep->magic = VEP_MAGIC;
 	vep->wrk = wrk;
 	vep->vsb = VSB_new_auto();
 	AN(vep->vsb);
