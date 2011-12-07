@@ -192,7 +192,7 @@ vmod_collect(struct sess *sp, enum gethdr_e e, const char *h)
 	(void)h;
 	if (e == HDR_REQ)
 		http_CollectHdr(sp->http, h);
-	else if (e == HDR_BERESP)
-		http_CollectHdr(sp->wrk->beresp, h);
+	else if (e == HDR_BERESP && sp->wrk->busyobj != NULL)
+		http_CollectHdr(sp->wrk->busyobj->beresp, h);
 }
 
