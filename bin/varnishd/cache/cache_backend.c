@@ -78,10 +78,11 @@ vbe_FreeBusyObj(struct busyobj *busyobj)
 }
 
 struct busyobj *
-VBE_GetBusyObj(void)
+VBE_GetBusyObj(struct worker *wrk)
 {
 	struct busyobj *busyobj = NULL;
 
+	(void)wrk;
 	Lck_Lock(&nbusyobj_mtx);
 	if (nbusyobj != NULL) {
 		CHECK_OBJ_NOTNULL(nbusyobj, BUSYOBJ_MAGIC);
@@ -110,10 +111,11 @@ VBE_RefBusyObj(struct busyobj *busyobj)
 }
 
 void
-VBE_DerefBusyObj(struct busyobj **pbo)
+VBE_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 {
 	struct busyobj *busyobj;
 
+	(void)wrk;
 	busyobj = *pbo;
 	CHECK_OBJ_NOTNULL(busyobj, BUSYOBJ_MAGIC);
 	Lck_Lock(&busyobj->mtx);

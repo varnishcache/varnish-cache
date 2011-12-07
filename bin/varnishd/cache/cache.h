@@ -673,9 +673,9 @@ void VBE_Poll(void);
 
 /* cache_backend.c */
 void VBE_Init(void);
-struct busyobj *VBE_GetBusyObj(void);
+struct busyobj *VBE_GetBusyObj(struct worker *wrk);
 struct busyobj *VBE_RefBusyObj(struct busyobj *busyobj);
-void VBE_DerefBusyObj(struct busyobj **busyobj);
+void VBE_DerefBusyObj(struct worker *wrk, struct busyobj **busyobj);
 
 /* cache_backend_cfg.c */
 void VBE_InitCfg(void);
