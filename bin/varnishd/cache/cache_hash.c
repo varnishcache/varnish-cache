@@ -68,86 +68,86 @@ static const struct hash_slinger *hash;
 void
 HSH_Prealloc(const struct sess *sp)
 {
-	struct worker *w;
+	struct worker *wrk;
 	struct objhead *oh;
 	struct objcore *oc;
 	struct waitinglist *wl;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	w = sp->wrk;
+	wrk = sp->wrk;
 
-	if (w->nobjcore == NULL) {
+	if (wrk->nobjcore == NULL) {
 		ALLOC_OBJ(oc, OBJCORE_MAGIC);
 		XXXAN(oc);
-		w->nobjcore = oc;
-		w->stats.n_objectcore++;
+		wrk->nobjcore = oc;
+		wrk->stats.n_objectcore++;
 		oc->flags |= OC_F_BUSY;
 	}
-	CHECK_OBJ_NOTNULL(w->nobjcore, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk->nobjcore, OBJCORE_MAGIC);
 
-	if (w->nobjhead == NULL) {
+	if (wrk->nobjhead == NULL) {
 		ALLOC_OBJ(oh, OBJHEAD_MAGIC);
 		XXXAN(oh);
 		oh->refcnt = 1;
 		VTAILQ_INIT(&oh->objcs);
 		Lck_New(&oh->mtx, lck_objhdr);
-		w->nobjhead = oh;
-		w->stats.n_objecthead++;
+		wrk->nobjhead = oh;
+		wrk->stats.n_objecthead++;
 	}
-	CHECK_OBJ_NOTNULL(w->nobjhead, OBJHEAD_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 
-	if (w->nwaitinglist == NULL) {
+	if (wrk->nwaitinglist == NULL) {
 		ALLOC_OBJ(wl, WAITINGLIST_MAGIC);
 		XXXAN(wl);
 		VTAILQ_INIT(&wl->list);
-		w->nwaitinglist = wl;
-		w->stats.n_waitinglist++;
+		wrk->nwaitinglist = wl;
+		wrk->stats.n_waitinglist++;
 	}
-	CHECK_OBJ_NOTNULL(w->nwaitinglist, WAITINGLIST_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk->nwaitinglist, WAITINGLIST_MAGIC);
 
 	if (hash->prep != NULL)
 		hash->prep(sp);
 }
 
 void
-HSH_Cleanup(struct worker *w)
+HSH_Cleanup(struct worker *wrk)
 {
 
-	if (w->nobjcore != NULL) {
-		FREE_OBJ(w->nobjcore);
-		w->stats.n_objectcore--;
-		w->nobjcore = NULL;
+	if (wrk->nobjcore != NULL) {
+		FREE_OBJ(wrk->nobjcore);
+		wrk->stats.n_objectcore--;
+		wrk->nobjcore = NULL;
 	}
-	if (w->nobjhead != NULL) {
-		Lck_Delete(&w->nobjhead->mtx);
-		FREE_OBJ(w->nobjhead);
-		w->nobjhead = NULL;
-		w->stats.n_objecthead--;
+	if (wrk->nobjhead != NULL) {
+		Lck_Delete(&wrk->nobjhead->mtx);
+		FREE_OBJ(wrk->nobjhead);
+		wrk->nobjhead = NULL;
+		wrk->stats.n_objecthead--;
 	}
-	if (w->nwaitinglist != NULL) {
-		FREE_OBJ(w->nwaitinglist);
-		w->nwaitinglist = NULL;
+	if (wrk->nwaitinglist != NULL) {
+		FREE_OBJ(wrk->nwaitinglist);
+		wrk->nwaitinglist = NULL;
 	}
-	if (w->nhashpriv != NULL) {
+	if (wrk->nhashpriv != NULL) {
 		/* XXX: If needed, add slinger method for this */
-		free(w->nhashpriv);
-		w->nhashpriv = NULL;
+		free(wrk->nhashpriv);
+		wrk->nhashpriv = NULL;
 	}
-	/* if (w->nbusyobj != NULL) { */
-	/* 	FREE_OBJ(w->nbusyobj); */
-	/* 	w->nbusyobj = NULL; */
+	/* if (wrk->nbusyobj != NULL) { */
+	/* 	FREE_OBJ(wrk->nbusyobj); */
+	/* 	wrk->nbusyobj = NULL; */
 	/* } */
 }
 
 void
-HSH_DeleteObjHead(struct worker *w, struct objhead *oh)
+HSH_DeleteObjHead(struct worker *wrk, struct objhead *oh)
 {
 
 	AZ(oh->refcnt);
 	assert(VTAILQ_EMPTY(&oh->objcs));
 	Lck_Delete(&oh->mtx);
-	w->stats.n_objecthead--;
+	wrk->stats.n_objecthead--;
 	FREE_OBJ(oh);
 }
 
@@ -251,31 +251,31 @@ hsh_testmagic(void *result)
 struct objcore *
 HSH_Insert(const struct sess *sp)
 {
-	struct worker *w;
+	struct worker *wrk;
 	struct objhead *oh;
 	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	AN(hash);
-	w = sp->wrk;
+	wrk = sp->wrk;
 
 	HSH_Prealloc(sp);
 	if (cache_param->diag_bitmap & 0x80000000)
 		hsh_testmagic(sp->wrk->nobjhead->digest);
 
 	AZ(sp->hash_objhead);
-	AN(w->nobjhead);
-	oh = hash->lookup(sp, w->nobjhead);
+	AN(wrk->nobjhead);
+	oh = hash->lookup(sp, wrk->nobjhead);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-	if (oh == w->nobjhead)
-		w->nobjhead = NULL;
+	if (oh == wrk->nobjhead)
+		wrk->nobjhead = NULL;
 	Lck_Lock(&oh->mtx);
 	assert(oh->refcnt > 0);
 
 	/* Insert (precreated) objcore in objecthead */
-	oc = w->nobjcore;
-	w->nobjcore = NULL;
+	oc = wrk->nobjcore;
+	wrk->nobjcore = NULL;
 	oc->refcnt = 1;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ(oc->flags & OC_F_BUSY);
@@ -294,7 +294,7 @@ HSH_Insert(const struct sess *sp)
 struct objcore *
 HSH_Lookup(struct sess *sp, struct objhead **poh)
 {
-	struct worker *w;
+	struct worker *wrk;
 	struct objhead *oh;
 	struct objcore *oc;
 	struct objcore *busy_oc, *grace_oc;
@@ -306,7 +306,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);
 	AN(sp->director);
 	AN(hash);
-	w = sp->wrk;
+	wrk = sp->wrk;
 
 	HSH_Prealloc(sp);
 	memcpy(sp->wrk->nobjhead->digest, sp->digest, sizeof sp->digest);
@@ -322,10 +322,10 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		oh = sp->hash_objhead;
 		sp->hash_objhead = NULL;
 	} else {
-		AN(w->nobjhead);
-		oh = hash->lookup(sp, w->nobjhead);
-		if (oh == w->nobjhead)
-			w->nobjhead = NULL;
+		AN(wrk->nobjhead);
+		oh = hash->lookup(sp, wrk->nobjhead);
+		if (oh == wrk->nobjhead)
+			wrk->nobjhead = NULL;
 	}
 
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
@@ -446,20 +446,20 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	}
 
 	/* Insert (precreated) objcore in objecthead */
-	oc = w->nobjcore;
-	w->nobjcore = NULL;
+	oc = wrk->nobjcore;
+	wrk->nobjcore = NULL;
 	AN(oc->flags & OC_F_BUSY);
 	oc->refcnt = 1;
 
-	AZ(w->busyobj);
-	w->busyobj = VBE_GetBusyObj(w);
+	AZ(wrk->busyobj);
+	wrk->busyobj = VBE_GetBusyObj(wrk);
 
 	VRY_Validate(sp->vary_b);
 	if (sp->vary_l != NULL)
-		w->busyobj->vary = sp->vary_b;
+		wrk->busyobj->vary = sp->vary_b;
 	else
-		w->busyobj->vary = NULL;
-	oc->busyobj = w->busyobj;
+		wrk->busyobj->vary = NULL;
+	oc->busyobj = wrk->busyobj;
 
 	/*
 	 * Busy objects go on the tail, so they will not trip up searches.
@@ -659,7 +659,7 @@ HSH_Ref(struct objcore *oc)
  */
 
 int
-HSH_Deref(struct worker *w, struct objcore *oc, struct object **oo)
+HSH_Deref(struct worker *wrk, struct objcore *oc, struct object **oo)
 {
 	struct object *o = NULL;
 	struct objhead *oh;
@@ -682,7 +682,7 @@ HSH_Deref(struct worker *w, struct objcore *oc, struct object **oo)
 		 */
 		STV_Freestore(o);
 		STV_free(o->objstore);
-		w->stats.n_object--;
+		wrk->stats.n_object--;
 		return (0);
 	}
 
@@ -712,16 +712,16 @@ HSH_Deref(struct worker *w, struct objcore *oc, struct object **oo)
 
 	if (oc->methods != NULL) {
 		oc_freeobj(oc);
-		w->stats.n_object--;
+		wrk->stats.n_object--;
 	}
 	FREE_OBJ(oc);
 
-	w->stats.n_objectcore--;
+	wrk->stats.n_objectcore--;
 	/* Drop our ref on the objhead */
 	assert(oh->refcnt > 0);
 	if (hash->deref(oh))
 		return (0);
-	HSH_DeleteObjHead(w, oh);
+	HSH_DeleteObjHead(wrk, oh);
 	return (0);
 }
 
