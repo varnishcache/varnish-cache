@@ -73,7 +73,7 @@ RFC2616_Ttl(const struct sess *sp)
 
 	expp = &sp->wrk->busyobj->exp;
 
-	hp = sp->wrk->beresp;
+	hp = sp->wrk->busyobj->beresp;
 
 	assert(expp->entered != 0.0 && !isnan(expp->entered));
 	/* If all else fails, cache using default ttl */
@@ -183,7 +183,7 @@ RFC2616_Body(const struct sess *sp)
 	struct http *hp;
 	char *b;
 
-	hp = sp->wrk->beresp;
+	hp = sp->wrk->busyobj->beresp;
 
 	if (hp->protover < 11 && !http_HdrIs(hp, H_Connection, "keep-alive"))
 		sp->wrk->busyobj->should_close = 1;
@@ -192,7 +192,7 @@ RFC2616_Body(const struct sess *sp)
 	else
 		sp->wrk->busyobj->should_close = 0;
 
-	if (!strcasecmp(http_GetReq(sp->wrk->bereq), "head")) {
+	if (!strcasecmp(http_GetReq(sp->wrk->busyobj->bereq), "head")) {
 		/*
 		 * A HEAD request can never have a body in the reply,
 		 * no matter what the headers might say.

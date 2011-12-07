@@ -398,7 +398,7 @@ FetchHdr(struct sess *sp, int need_host_hdr)
 		AN(sp->wrk->objcore->flags & OC_F_BUSY);
 	}
 
-	hp = wrk->bereq;
+	hp = wrk->busyobj->bereq;
 
 	sp->wrk->busyobj->vbc = VDI_GetFd(NULL, sp);
 	if (sp->wrk->busyobj->vbc == NULL) {
@@ -470,7 +470,7 @@ FetchHdr(struct sess *sp, int need_host_hdr)
 		}
 	}
 
-	hp = wrk->beresp;
+	hp = wrk->busyobj->beresp;
 
 	if (http_DissectResponse(wrk, htc, hp)) {
 		WSP(sp, SLT_FetchError, "http format error");

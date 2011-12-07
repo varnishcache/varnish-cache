@@ -85,15 +85,15 @@ VRT_r_##obj##_##hdr(const struct sess *sp)			\
 VRT_DO_HDR(req,   request,	sp->http,		HTTP_HDR_REQ)
 VRT_DO_HDR(req,   url,		sp->http,		HTTP_HDR_URL)
 VRT_DO_HDR(req,   proto,	sp->http,		HTTP_HDR_PROTO)
-VRT_DO_HDR(bereq, request,	sp->wrk->bereq,		HTTP_HDR_REQ)
-VRT_DO_HDR(bereq, url,		sp->wrk->bereq,		HTTP_HDR_URL)
-VRT_DO_HDR(bereq, proto,	sp->wrk->bereq,		HTTP_HDR_PROTO)
+VRT_DO_HDR(bereq, request,	sp->wrk->busyobj->bereq,	HTTP_HDR_REQ)
+VRT_DO_HDR(bereq, url,		sp->wrk->busyobj->bereq,	HTTP_HDR_URL)
+VRT_DO_HDR(bereq, proto,	sp->wrk->busyobj->bereq,	HTTP_HDR_PROTO)
 VRT_DO_HDR(obj,   proto,	sp->wrk->obj->http,		HTTP_HDR_PROTO)
 VRT_DO_HDR(obj,   response,	sp->wrk->obj->http,		HTTP_HDR_RESPONSE)
 VRT_DO_HDR(resp,  proto,	sp->wrk->resp,		HTTP_HDR_PROTO)
 VRT_DO_HDR(resp,  response,	sp->wrk->resp,		HTTP_HDR_RESPONSE)
-VRT_DO_HDR(beresp,  proto,	sp->wrk->beresp,	HTTP_HDR_PROTO)
-VRT_DO_HDR(beresp,  response,	sp->wrk->beresp,	HTTP_HDR_RESPONSE)
+VRT_DO_HDR(beresp,  proto,	sp->wrk->busyobj->beresp,	HTTP_HDR_PROTO)
+VRT_DO_HDR(beresp,  response,	sp->wrk->busyobj->beresp,	HTTP_HDR_RESPONSE)
 
 /*--------------------------------------------------------------------*/
 
@@ -115,7 +115,7 @@ VRT_r_##obj##_status(const struct sess *sp)			\
 }
 
 VRT_DO_STATUS(obj, sp->wrk->obj->http)
-VRT_DO_STATUS(beresp, sp->wrk->beresp)
+VRT_DO_STATUS(beresp, sp->wrk->busyobj->beresp)
 VRT_DO_STATUS(resp, sp->wrk->resp)
 
 /*--------------------------------------------------------------------*/

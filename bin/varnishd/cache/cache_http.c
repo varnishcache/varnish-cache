@@ -869,7 +869,7 @@ http_FilterHeader(const struct sess *sp, unsigned how)
 {
 	struct http *hp;
 
-	hp = sp->wrk->bereq;
+	hp = sp->wrk->busyobj->bereq;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	hp->logtag = HTTP_Tx;
 

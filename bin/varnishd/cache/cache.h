@@ -328,8 +328,8 @@ struct worker {
 	const char		*storage_hint;
 
 	/* Fetch stuff.  Here because pipe has no busyobj */
-	struct http		*bereq;
-	struct http		*beresp;
+	struct http		*x_bereq;
+	struct http		*x_beresp;
 
 	/* Stream state */
 	struct stream_ctx	*sctx;
@@ -510,6 +510,8 @@ struct busyobj {
 	struct vgz		*vgz_rx;
 
 	struct vbc		*vbc;
+	struct http		*bereq;
+	struct http		*beresp;
 	struct object		*fetch_obj;
 	struct exp		exp;
 	struct http_conn	htc;

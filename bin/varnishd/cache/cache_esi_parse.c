@@ -499,7 +499,7 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 		VSB_printf(vep->vsb, "%c", 0);
 	} else {
 		VSB_printf(vep->vsb, "%c", 0);
-		url = vep->wrk->bereq->hd[HTTP_HDR_URL];
+		url = vep->wrk->busyobj->bereq->hd[HTTP_HDR_URL];
 		/* Look for the last / before a '?' */
 		h = NULL;
 		for (q = url.b; q < url.e && *q != '?'; q++)

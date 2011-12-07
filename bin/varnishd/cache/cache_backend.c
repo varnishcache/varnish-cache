@@ -96,6 +96,8 @@ VBE_GetBusyObj(struct worker *wrk)
 		busyobj = vbe_NewBusyObj();
 	AN(busyobj);
 	busyobj->refcount = 1;
+	busyobj->beresp = wrk->x_beresp;
+	busyobj->bereq = wrk->x_bereq;
 	return (busyobj);
 }
 
@@ -162,10 +164,10 @@ VDI_AddHostHeader(struct worker *wrk, const struct vbc *vbc)
 {
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->bereq, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk->busyobj->bereq, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
 	CHECK_OBJ_NOTNULL(vbc->vdis, VDI_SIMPLE_MAGIC);
-	http_PrintfHeader(wrk, vbc->vsl_id, wrk->bereq,
+	http_PrintfHeader(wrk, vbc->vsl_id, wrk->busyobj->bereq,
 	    "Host: %s", vbc->vdis->vrt->hosthdr);
 }
 

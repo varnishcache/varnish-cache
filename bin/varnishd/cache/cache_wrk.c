@@ -153,8 +153,8 @@ wrk_thread_real(void *priv, unsigned shm_workspace, unsigned sess_workspace,
 	w->wlb = w->wlp = wlog;
 	w->wle = wlog + (sizeof wlog) / 4;
 	w->sha256ctx = &sha256;
-	w->bereq = HTTP_create(http0, nhttp);
-	w->beresp = HTTP_create(http1, nhttp);
+	w->x_bereq = HTTP_create(http0, nhttp);
+	w->x_beresp = HTTP_create(http1, nhttp);
 	w->resp = HTTP_create(http2, nhttp);
 	w->wrw.iov = iov;
 	w->wrw.siov = siov;
