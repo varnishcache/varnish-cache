@@ -106,6 +106,7 @@ struct pool;
 struct sess;
 struct sesspool;
 struct vbc;
+struct vbo;
 struct vef_priv;
 struct vrt_backend;
 struct vsb;
@@ -293,7 +294,7 @@ struct worker {
 	struct objhead		*nobjhead;
 	struct objcore		*nobjcore;
 	struct waitinglist	*nwaitinglist;
-	/* struct busyobj		*nbusyobj; */
+	struct vbo		*nvbo;
 	void			*nhashpriv;
 	struct dstat		stats;
 
@@ -496,9 +497,7 @@ oc_getlru(const struct objcore *oc)
 struct busyobj {
 	unsigned		magic;
 #define BUSYOBJ_MAGIC		0x23b95567
-	struct lock		mtx;
-	/* Members passed this line are cleared on reuse */
-	unsigned		refcount;
+	struct vbo		*vbo;
 
 	uint8_t			*vary;
 	unsigned		is_gzip;
@@ -700,8 +699,9 @@ double BAN_Time(const struct ban *ban);
 /* cache_busyobj.c */
 void VBO_Init(void);
 struct busyobj *VBO_GetBusyObj(struct worker *wrk);
-struct busyobj *VBO_RefBusyObj(struct busyobj *busyobj);
+void VBO_RefBusyObj(const struct busyobj *busyobj);
 void VBO_DerefBusyObj(struct worker *wrk, struct busyobj **busyobj);
+void VBO_Free(struct vbo **vbo);
 
 /* cache_center.c [CNT] */
 void CNT_Session(struct sess *sp);

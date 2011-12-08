@@ -235,6 +235,20 @@ VSC_F(sess_dropped,		uint64_t, 1, 'c',
 	"  See also param queue_max."
 )
 
+/*---------------------------------------------------------------------
+ * BusyObj
+ */
+
+VSC_F(busyobj_alloc,		uint64_t, 1, 'c',
+    "Busyobj allocations",
+	"Number of busyobj structures allocated."
+)
+
+VSC_F(busyobj_free,		uint64_t, 1, 'c',
+    "Busyobj freed",
+	"Number of busyobj structures freed."
+)
+
 /*---------------------------------------------------------------------*/
 
 VSC_F(n_sess_mem,		uint64_t, 0, 'i', "N struct sess_mem", "")

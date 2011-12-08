@@ -1,8 +1,8 @@
 /*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2011 Varnish Software AS
  * All rights reserved.
  *
+ * Author: Martin Blix Grydeland <martin@varnish-software.com>
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,101 +38,141 @@
 
 #include "cache.h"
 
-static struct lock nbusyobj_mtx;
-static struct busyobj *nbusyobj;
+struct vbo {
+	unsigned		magic;
+#define VBO_MAGIC		0xde3d8223
+	struct lock		mtx;
+	unsigned		refcount;
+	struct busyobj		bo;
+};
+
+static struct lock vbo_mtx;
+static struct vbo *nvbo;
 
 void
 VBO_Init(void)
 {
-	Lck_New(&nbusyobj_mtx, lck_nbusyobj);
-	nbusyobj = NULL;
+	Lck_New(&vbo_mtx, lck_busyobj);
+	nvbo = NULL;
 }
 
 /*--------------------------------------------------------------------
  * BusyObj handling
  */
 
-static struct busyobj *
-vbo_NewBusyObj(void)
+static struct vbo *
+vbo_New(void)
 {
-	struct busyobj *busyobj;
+	struct vbo *vbo;
 
-	ALLOC_OBJ(busyobj, BUSYOBJ_MAGIC);
-	AN(busyobj);
-	Lck_New(&busyobj->mtx, lck_busyobj);
-	return (busyobj);
+	ALLOC_OBJ(vbo, VBO_MAGIC);
+	AN(vbo);
+	Lck_New(&vbo->mtx, lck_busyobj);
+	return (vbo);
 }
 
-static void
-vbe_FreeBusyObj(struct busyobj *busyobj)
+void
+VBO_Free(struct vbo **vbop)
 {
-	CHECK_OBJ_NOTNULL(busyobj, BUSYOBJ_MAGIC);
-	AZ(busyobj->refcount);
-	Lck_Delete(&busyobj->mtx);
-	FREE_OBJ(busyobj);
+	struct vbo *vbo;
+
+	AN(vbop);
+	vbo = *vbop;
+	*vbop = NULL;
+	CHECK_OBJ_NOTNULL(vbo, VBO_MAGIC);
+	AZ(vbo->refcount);
+	Lck_Delete(&vbo->mtx);
+	FREE_OBJ(vbo);
 }
 
 struct busyobj *
 VBO_GetBusyObj(struct worker *wrk)
 {
-	struct busyobj *busyobj = NULL;
+	struct vbo *vbo = NULL;
 
-	(void)wrk;
-	Lck_Lock(&nbusyobj_mtx);
-	if (nbusyobj != NULL) {
-		CHECK_OBJ_NOTNULL(nbusyobj, BUSYOBJ_MAGIC);
-		busyobj = nbusyobj;
-		nbusyobj = NULL;
-		memset((char *)busyobj + offsetof(struct busyobj, refcount), 0,
-		       sizeof *busyobj - offsetof(struct busyobj, refcount));
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
+	if (wrk->nvbo != NULL) {
+		vbo = wrk->nvbo;
+		wrk->nvbo = NULL;
 	}
-	Lck_Unlock(&nbusyobj_mtx);
-	if (busyobj == NULL)
-		busyobj = vbo_NewBusyObj();
-	AN(busyobj);
-	busyobj->refcount = 1;
-	busyobj->beresp = wrk->x_beresp;
-	busyobj->bereq = wrk->x_bereq;
-	return (busyobj);
+
+	if (vbo == NULL) {
+		Lck_Lock(&vbo_mtx);
+
+		vbo = nvbo;
+		nvbo = NULL;
+
+		if (vbo == NULL)
+			VSC_C_main->busyobj_alloc++;
+
+		Lck_Unlock(&vbo_mtx);
+	}
+
+	if (vbo == NULL)
+		vbo = vbo_New();
+
+	CHECK_OBJ_NOTNULL(vbo, VBO_MAGIC);
+	AZ(vbo->refcount);
+	AZ(vbo->bo.magic);
+	vbo->refcount = 1;
+	vbo->bo.magic = BUSYOBJ_MAGIC;
+	vbo->bo.vbo = vbo;
+	vbo->bo.beresp = wrk->x_beresp;
+	vbo->bo.bereq = wrk->x_bereq;
+	return (&vbo->bo);
 }
 
-struct busyobj *
-VBO_RefBusyObj(struct busyobj *busyobj)
+void
+VBO_RefBusyObj(const struct busyobj *busyobj)
 {
+	struct vbo *vbo;
+
 	CHECK_OBJ_NOTNULL(busyobj, BUSYOBJ_MAGIC);
-	Lck_Lock(&busyobj->mtx);
-	assert(busyobj->refcount > 0);
-	busyobj->refcount++;
-	Lck_Unlock(&busyobj->mtx);
-	return (busyobj);
+	vbo = busyobj->vbo;
+	CHECK_OBJ_NOTNULL(vbo, VBO_MAGIC);
+	Lck_Lock(&vbo->mtx);
+	assert(vbo->refcount > 0);
+	vbo->refcount++;
+	Lck_Unlock(&vbo->mtx);
 }
 
 void
 VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 {
-	struct busyobj *busyobj;
+	struct busyobj *bo;
+	struct vbo *vbo;
+	unsigned r;
 
-	(void)wrk;
-	busyobj = *pbo;
-	CHECK_OBJ_NOTNULL(busyobj, BUSYOBJ_MAGIC);
-	Lck_Lock(&busyobj->mtx);
-	assert(busyobj->refcount > 0);
-	busyobj->refcount--;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	AN(pbo);
+	bo = *pbo;
 	*pbo = NULL;
-	if (busyobj->refcount > 0) {
-		Lck_Unlock(&busyobj->mtx);
-		return;
-	}
-	Lck_Unlock(&busyobj->mtx);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	vbo = bo->vbo;
+	CHECK_OBJ_NOTNULL(vbo, VBO_MAGIC);
+	Lck_Lock(&vbo->mtx);
+	assert(vbo->refcount > 0);
+	r = --vbo->refcount;
+	Lck_Unlock(&vbo->mtx);
 
-	/* XXX Sanity checks e.g. AZ(busyobj->vbc) */
+	if (r == 0) {
+		/* XXX: Sanity checks & cleanup */
+		memset(&vbo->bo, 0, sizeof vbo->bo);
 
-	Lck_Lock(&nbusyobj_mtx);
-	if (nbusyobj == NULL) {
-		nbusyobj = busyobj;
-		busyobj = NULL;
+		if (cache_param->bo_cache && wrk->nvbo == NULL) {
+			wrk->nvbo = vbo;
+		} else {
+			Lck_Lock(&vbo_mtx);
+			if (nvbo == NULL) {
+				nvbo = vbo;
+				vbo = NULL;
+			} else
+				VSC_C_main->busyobj_free++;
+			Lck_Unlock(&vbo_mtx);
+
+			if (vbo != NULL)
+				VBO_Free(&vbo);
+		}
 	}
-	Lck_Unlock(&nbusyobj_mtx);
-	if (busyobj != NULL)
-		vbe_FreeBusyObj(busyobj);
 }
