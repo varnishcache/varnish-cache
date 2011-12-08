@@ -69,11 +69,13 @@ PipeSession(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);
 	w = sp->wrk;
 
 	vc = VDI_GetFd(NULL, sp);
 	if (vc == NULL)
 		return;
+	sp->wrk->busyobj->vbc = vc;		/* For panic dumping */
 	(void)VTCP_blocking(vc->fd);
 
 	WRW_Reserve(w, &vc->fd);
@@ -129,4 +131,5 @@ PipeSession(struct sess *sp)
 	}
 	SES_Close(sp, "pipe");
 	VDI_CloseFd(sp->wrk, &vc);
+	sp->wrk->busyobj->vbc = NULL;
 }
