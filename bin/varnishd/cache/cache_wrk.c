@@ -139,8 +139,6 @@ wrk_thread_real(void *priv, unsigned shm_workspace, unsigned sess_workspace,
 	uint32_t wlog[shm_workspace / 4];
 	/* XXX: can we trust these to be properly aligned ? */
 	unsigned char ws[sess_workspace];
-	unsigned char http0[http_space];
-	unsigned char http1[http_space];
 	unsigned char http2[http_space];
 	struct iovec iov[siov];
 	struct SHA256Context sha256;
@@ -153,8 +151,6 @@ wrk_thread_real(void *priv, unsigned shm_workspace, unsigned sess_workspace,
 	w->wlb = w->wlp = wlog;
 	w->wle = wlog + (sizeof wlog) / 4;
 	w->sha256ctx = &sha256;
-	w->x_bereq = HTTP_create(http0, nhttp);
-	w->x_beresp = HTTP_create(http1, nhttp);
 	w->resp = HTTP_create(http2, nhttp);
 	w->wrw.iov = iov;
 	w->wrw.siov = siov;

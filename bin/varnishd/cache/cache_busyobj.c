@@ -43,6 +43,7 @@ struct vbo {
 #define VBO_MAGIC		0xde3d8223
 	struct lock		mtx;
 	unsigned		refcount;
+	uint16_t		nhttp;
 	struct busyobj		bo;
 };
 
@@ -64,9 +65,20 @@ static struct vbo *
 vbo_New(void)
 {
 	struct vbo *vbo;
+	uint16_t nhttp;
+	ssize_t http_space;
 
-	ALLOC_OBJ(vbo, VBO_MAGIC);
+	assert(cache_param->http_max_hdr < 65536);
+	nhttp = (uint16_t)cache_param->http_max_hdr;
+
+	http_space = HTTP_estimate(nhttp);
+
+	vbo = malloc(sizeof *vbo + 2 * http_space);
 	AN(vbo);
+
+	memset(vbo, 0, sizeof *vbo);
+	vbo->magic = VBO_MAGIC;
+	vbo->nhttp = nhttp;
 	Lck_New(&vbo->mtx, lck_busyobj);
 	return (vbo);
 }
@@ -89,6 +101,7 @@ struct busyobj *
 VBO_GetBusyObj(struct worker *wrk)
 {
 	struct vbo *vbo = NULL;
+	char *p;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
@@ -109,17 +122,25 @@ VBO_GetBusyObj(struct worker *wrk)
 		Lck_Unlock(&vbo_mtx);
 	}
 
+	if (vbo != NULL && vbo->nhttp != cache_param->http_max_hdr)
+		VBO_Free(&vbo);
+
 	if (vbo == NULL)
 		vbo = vbo_New();
 
 	CHECK_OBJ_NOTNULL(vbo, VBO_MAGIC);
 	AZ(vbo->refcount);
+
 	AZ(vbo->bo.magic);
 	vbo->refcount = 1;
 	vbo->bo.magic = BUSYOBJ_MAGIC;
 	vbo->bo.vbo = vbo;
-	vbo->bo.beresp = wrk->x_beresp;
-	vbo->bo.bereq = wrk->x_bereq;
+
+	p = (void*)(vbo + 1);
+	vbo->bo.bereq = HTTP_create(p, vbo->nhttp);
+	p += HTTP_estimate(vbo->nhttp);
+	vbo->bo.beresp = HTTP_create(p, vbo->nhttp);
+
 	return (&vbo->bo);
 }
 

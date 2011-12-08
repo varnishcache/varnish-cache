@@ -328,10 +328,6 @@ struct worker {
 	/* This is only here so VRT can find it */
 	const char		*storage_hint;
 
-	/* Fetch stuff.  Here because pipe has no busyobj */
-	struct http		*x_bereq;
-	struct http		*x_beresp;
-
 	/* Stream state */
 	struct stream_ctx	*sctx;
 
