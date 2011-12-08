@@ -255,7 +255,7 @@ cnt_prepresp(struct sess *sp)
 			AN(wrk->busyobj->do_stream);
 			VDI_CloseFd(wrk, &wrk->busyobj->vbc);
 			HSH_Drop(wrk);
-			VBE_DerefBusyObj(wrk, &wrk->busyobj);
+			VBO_DerefBusyObj(wrk, &wrk->busyobj);
 		} else {
 			(void)HSH_Deref(wrk, NULL, &wrk->obj);
 		}
@@ -464,7 +464,7 @@ cnt_error(struct sess *sp)
 	if (wrk->obj == NULL) {
 		HSH_Prealloc(sp);
 		AZ(wrk->busyobj);
-		wrk->busyobj = VBE_GetBusyObj(wrk);
+		wrk->busyobj = VBO_GetBusyObj(wrk);
 		wrk->obj = STV_NewObject(wrk, NULL, cache_param->http_resp_size,
 		     (uint16_t)cache_param->http_max_hdr);
 		if (wrk->obj == NULL)
@@ -508,7 +508,7 @@ cnt_error(struct sess *sp)
 	if (sp->handling == VCL_RET_RESTART &&
 	    sp->restarts <  cache_param->max_restarts) {
 		HSH_Drop(wrk);
-		VBE_DerefBusyObj(wrk, &wrk->busyobj);
+		VBO_DerefBusyObj(wrk, &wrk->busyobj);
 		sp->director = NULL;
 		sp->restarts++;
 		sp->step = STP_RECV;
@@ -525,7 +525,7 @@ cnt_error(struct sess *sp)
 	sp->err_code = 0;
 	sp->err_reason = NULL;
 	http_Setup(wrk->busyobj->bereq, NULL);
-	VBE_DerefBusyObj(wrk, &wrk->busyobj);
+	VBO_DerefBusyObj(wrk, &wrk->busyobj);
 	sp->step = STP_PREPRESP;
 	return (0);
 }
@@ -654,7 +654,7 @@ cnt_fetch(struct sess *sp)
 		AZ(HSH_Deref(wrk, wrk->objcore, NULL));
 		wrk->objcore = NULL;
 	}
-	VBE_DerefBusyObj(wrk, &wrk->busyobj);
+	VBO_DerefBusyObj(wrk, &wrk->busyobj);
 	sp->director = NULL;
 	wrk->storage_hint = NULL;
 
@@ -827,7 +827,7 @@ cnt_fetchbody(struct sess *sp)
 		sp->err_code = 503;
 		sp->step = STP_ERROR;
 		VDI_CloseFd(wrk, &wrk->busyobj->vbc);
-		VBE_DerefBusyObj(wrk, &wrk->busyobj);
+		VBO_DerefBusyObj(wrk, &wrk->busyobj);
 		return (0);
 	}
 	CHECK_OBJ_NOTNULL(wrk->obj, OBJECT_MAGIC);
@@ -896,7 +896,7 @@ cnt_fetchbody(struct sess *sp)
 
 	if (i) {
 		HSH_Drop(wrk);
-		VBE_DerefBusyObj(wrk, &wrk->busyobj);
+		VBO_DerefBusyObj(wrk, &wrk->busyobj);
 		AZ(wrk->obj);
 		sp->err_code = 503;
 		sp->step = STP_ERROR;
@@ -909,7 +909,7 @@ cnt_fetchbody(struct sess *sp)
 		AN(wrk->obj->objcore->ban);
 		HSH_Unbusy(wrk);
 	}
-	VBE_DerefBusyObj(wrk, &wrk->busyobj);
+	VBO_DerefBusyObj(wrk, &wrk->busyobj);
 	wrk->acct_tmp.fetch++;
 	sp->step = STP_PREPRESP;
 	return (0);
@@ -983,7 +983,7 @@ cnt_streambody(struct sess *sp)
 	assert(WRW_IsReleased(wrk));
 	assert(wrk->wrw.ciov == wrk->wrw.siov);
 	(void)HSH_Deref(wrk, NULL, &wrk->obj);
-	VBE_DerefBusyObj(wrk, &wrk->busyobj);
+	VBO_DerefBusyObj(wrk, &wrk->busyobj);
 	http_Setup(wrk->resp, NULL);
 	sp->step = STP_DONE;
 	return (0);
@@ -1253,7 +1253,7 @@ cnt_miss(struct sess *sp)
 	AN(wrk->objcore);
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 	WS_Reset(wrk->ws, NULL);
-	wrk->busyobj = VBE_GetBusyObj(wrk);
+	wrk->busyobj = VBO_GetBusyObj(wrk);
 	http_Setup(wrk->busyobj->bereq, wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_FETCH);
 	http_ForceGet(wrk->busyobj->bereq);
@@ -1278,13 +1278,13 @@ cnt_miss(struct sess *sp)
 		AZ(HSH_Deref(wrk, wrk->objcore, NULL));
 		wrk->objcore = NULL;
 		http_Setup(wrk->busyobj->bereq, NULL);
-		VBE_DerefBusyObj(wrk, &wrk->busyobj);
+		VBO_DerefBusyObj(wrk, &wrk->busyobj);
 		sp->step = STP_ERROR;
 		return (0);
 	case VCL_RET_PASS:
 		AZ(HSH_Deref(wrk, wrk->objcore, NULL));
 		wrk->objcore = NULL;
-		VBE_DerefBusyObj(wrk, &wrk->busyobj);
+		VBO_DerefBusyObj(wrk, &wrk->busyobj);
 		sp->step = STP_PASS;
 		return (0);
 	case VCL_RET_FETCH:
@@ -1294,7 +1294,7 @@ cnt_miss(struct sess *sp)
 	case VCL_RET_RESTART:
 		AZ(HSH_Deref(wrk, wrk->objcore, NULL));
 		wrk->objcore = NULL;
-		VBE_DerefBusyObj(wrk, &wrk->busyobj);
+		VBO_DerefBusyObj(wrk, &wrk->busyobj);
 		INCOMPL();
 	default:
 		WRONG("Illegal action in vcl_miss{}");
@@ -1345,9 +1345,9 @@ cnt_pass(struct sess *sp)
 	AZ(wrk->obj);
 	AZ(wrk->busyobj);
 
-	wrk->busyobj = VBE_GetBusyObj(wrk);
+	wrk->busyobj = VBO_GetBusyObj(wrk);
 	WS_Reset(wrk->ws, NULL);
-	wrk->busyobj = VBE_GetBusyObj(wrk);
+	wrk->busyobj = VBO_GetBusyObj(wrk);
 	http_Setup(wrk->busyobj->bereq, wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_PASS);
 
@@ -1357,7 +1357,7 @@ cnt_pass(struct sess *sp)
 	VCL_pass_method(sp);
 	if (sp->handling == VCL_RET_ERROR) {
 		http_Setup(wrk->busyobj->bereq, NULL);
-		VBE_DerefBusyObj(wrk, &wrk->busyobj);
+		VBO_DerefBusyObj(wrk, &wrk->busyobj);
 		sp->step = STP_ERROR;
 		return (0);
 	}
@@ -1405,9 +1405,9 @@ cnt_pipe(struct sess *sp)
 	AZ(wrk->busyobj);
 
 	wrk->acct_tmp.pipe++;
-	wrk->busyobj = VBE_GetBusyObj(wrk);
+	wrk->busyobj = VBO_GetBusyObj(wrk);
 	WS_Reset(wrk->ws, NULL);
-	wrk->busyobj = VBE_GetBusyObj(wrk);
+	wrk->busyobj = VBO_GetBusyObj(wrk);
 	http_Setup(wrk->busyobj->bereq, wrk->ws);
 	http_FilterHeader(sp, HTTPH_R_PIPE);
 
@@ -1420,7 +1420,7 @@ cnt_pipe(struct sess *sp)
 	PipeSession(sp);
 	assert(WRW_IsReleased(wrk));
 	http_Setup(wrk->busyobj->bereq, NULL);
-	VBE_DerefBusyObj(wrk, &wrk->busyobj);
+	VBO_DerefBusyObj(wrk, &wrk->busyobj);
 	sp->step = STP_DONE;
 	return (0);
 }

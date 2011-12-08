@@ -673,12 +673,6 @@ void VDI_RecycleFd(struct worker *wrk, struct vbc **vbp);
 void VDI_AddHostHeader(struct worker *wrk, const struct vbc *vbc);
 void VBE_Poll(void);
 
-/* cache_backend.c */
-void VBE_Init(void);
-struct busyobj *VBE_GetBusyObj(struct worker *wrk);
-struct busyobj *VBE_RefBusyObj(struct busyobj *busyobj);
-void VBE_DerefBusyObj(struct worker *wrk, struct busyobj **busyobj);
-
 /* cache_backend_cfg.c */
 void VBE_InitCfg(void);
 struct backend *VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb);
@@ -702,6 +696,12 @@ void BAN_Compile(void);
 struct ban *BAN_RefBan(struct objcore *oc, double t0, const struct ban *tail);
 void BAN_TailDeref(struct ban **ban);
 double BAN_Time(const struct ban *ban);
+
+/* cache_busyobj.c */
+void VBO_Init(void);
+struct busyobj *VBO_GetBusyObj(struct worker *wrk);
+struct busyobj *VBO_RefBusyObj(struct busyobj *busyobj);
+void VBO_DerefBusyObj(struct worker *wrk, struct busyobj **busyobj);
 
 /* cache_center.c [CNT] */
 void CNT_Session(struct sess *sp);
