@@ -33,6 +33,12 @@
 
 #define VSM_CLASS_PARAM		"Params"
 
+struct poolparam {
+	unsigned		min_pool;
+	unsigned		max_pool;
+	double			max_age;
+};
+
 struct params {
 
 	/* Unprivileged user / group */

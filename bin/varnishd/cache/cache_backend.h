@@ -170,7 +170,6 @@ void VBE_ReleaseConn(struct vbc *vc);
 struct backend *vdi_get_backend_if_simple(const struct director *d);
 
 /* cache_backend_cfg.c */
-extern struct lock VBE_mtx;
 void VBE_DropRefConn(struct backend *);
 void VBE_DropRefVcl(struct backend *);
 void VBE_DropRefLocked(struct backend *b);

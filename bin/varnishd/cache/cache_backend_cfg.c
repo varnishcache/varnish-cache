@@ -43,9 +43,6 @@
 #include "vcli_priv.h"
 #include "vrt.h"
 
-struct lock VBE_mtx;
-
-
 /*
  * The list of backends is not locked, it is only ever accessed from
  * the CLI thread, so there is no need.
@@ -502,6 +499,5 @@ void
 VBE_InitCfg(void)
 {
 
-	Lck_New(&VBE_mtx, lck_vbe);
 	CLI_AddFuncs(backend_cmds);
 }

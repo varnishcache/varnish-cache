@@ -259,8 +259,6 @@ VSC_F(n_objectcore,		uint64_t, 1, 'i', "N struct objectcore", "")
 VSC_F(n_objecthead,		uint64_t, 1, 'i', "N struct objecthead", "")
 VSC_F(n_waitinglist,		uint64_t, 1, 'i', "N struct waitinglist", "")
 
-VSC_F(n_vbc,		uint64_t, 0, 'i', "N struct vbc", "")
-
 VSC_F(n_backend,		uint64_t, 0, 'i', "N backends", "")
 
 VSC_F(n_expired,		uint64_t, 0, 'i', "N expired objects", "")

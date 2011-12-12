@@ -43,6 +43,16 @@
 #include "vrt.h"
 #include "vtcp.h"
 
+static struct mempool	*vbcpool;
+
+static struct poolparam vbcpp = {
+	.min_pool	= 10,
+	.max_pool	= 100,
+	.max_age	= 60,
+};
+
+static unsigned		vbcps = sizeof(struct vbc);
+
 /*--------------------------------------------------------------------
  * The "simple" director really isn't, since thats where all the actual
  * connections happen.  Nontheless, pretend it is simple by sequestering
@@ -82,14 +92,7 @@ VBE_ReleaseConn(struct vbc *vc)
 	CHECK_OBJ_NOTNULL(vc, VBC_MAGIC);
 	assert(vc->backend == NULL);
 	assert(vc->fd < 0);
-
-	vc->addr = NULL;
-	vc->addrlen = 0;
-	vc->recycled = 0;
-	Lck_Lock(&VBE_mtx);
-	VSC_C_main->n_vbc--;
-	Lck_Unlock(&VBE_mtx);
-	FREE_OBJ(vc);
+	MPL_Free(vbcpool, vc);
 }
 
 #define FIND_TMO(tmx, dst, sp, be)		\
@@ -221,12 +224,10 @@ vbe_NewConn(void)
 {
 	struct vbc *vc;
 
-	ALLOC_OBJ(vc, VBC_MAGIC);
+	vc = MPL_Get(vbcpool, NULL);
 	XXXAN(vc);
+	vc->magic = VBC_MAGIC;
 	vc->fd = -1;
-	Lck_Lock(&VBE_mtx);
-	VSC_C_main->n_vbc++;
-	Lck_Unlock(&VBE_mtx);
 	return (vc);
 }
 
@@ -516,4 +517,12 @@ VRT_init_dir_simple(struct cli *cli, struct director **bp, int idx,
 		VBP_Insert(vs->backend, vs->vrt->probe, vs->vrt->hosthdr);
 
 	bp[idx] = &vs->dir;
+}
+
+void
+VDI_Init(void)
+{
+
+	vbcpool = MPL_New("vbc", NULL, &vbcpp, &vbcps);
+	AN(vbcpool);
 }
