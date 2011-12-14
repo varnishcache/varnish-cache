@@ -673,7 +673,8 @@ made available to the handler subroutines through global variables.
 The following variables are always available:
 
 now   
-  The current time, in seconds since the epoch.
+  The current time, in seconds since the epoch. When used in string context
+  it returns a formatted string.
 
 The following variables are available in backend declarations:
 
