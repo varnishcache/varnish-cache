@@ -45,12 +45,6 @@
 
 static struct mempool	*vbcpool;
 
-static struct poolparam vbcpp = {
-	.min_pool	= 10,
-	.max_pool	= 100,
-	.max_age	= 60,
-};
-
 static unsigned		vbcps = sizeof(struct vbc);
 
 /*--------------------------------------------------------------------
@@ -523,6 +517,6 @@ void
 VDI_Init(void)
 {
 
-	vbcpool = MPL_New("vbc", NULL, &vbcpp, &vbcps);
+	vbcpool = MPL_New("vbc", NULL, &cache_param->vbc_pool, &vbcps);
 	AN(vbcpool);
 }

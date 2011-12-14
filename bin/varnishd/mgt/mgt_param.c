@@ -102,33 +102,49 @@ tweak_timeout(struct cli *cli, const struct parspec *par, const char *arg)
 	tweak_generic_timeout(cli, dest, arg);
 }
 
+/*--------------------------------------------------------------------*/
+
+static int
+tweak_generic_timeout_double(struct cli *cli, volatile double *dest,
+    const char *arg, double min, double max)
+{
+	double u;
+	char *p;
+
+	if (arg != NULL) {
+		p = NULL;
+		u = strtod(arg, &p);
+		if (*arg == '\0' || *p != '\0') {
+			VCLI_Out(cli, "Not a number(%s)\n", arg);
+			VCLI_SetResult(cli, CLIS_PARAM);
+			return (-1);
+		}
+		if (u < min) {
+			VCLI_Out(cli,
+			    "Timeout must be greater or equal to %.g\n", min);
+			VCLI_SetResult(cli, CLIS_PARAM);
+			return (-1);
+		}
+		if (u > max) {
+			VCLI_Out(cli,
+			    "Timeout must be less than or equal to %.g\n", max);
+			VCLI_SetResult(cli, CLIS_PARAM);
+			return (-1);
+		}
+		*dest = u;
+	} else
+		VCLI_Out(cli, "%.6f", *dest);
+	return (0);
+}
+
 static void
 tweak_timeout_double(struct cli *cli, const struct parspec *par,
     const char *arg)
 {
 	volatile double *dest;
-	double u;
 
 	dest = par->priv;
-	if (arg != NULL) {
-		u = strtod(arg, NULL);
-		if (u < par->min) {
-			VCLI_Out(cli,
-			    "Timeout must be greater or equal to %.g\n",
-				 par->min);
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
-		}
-		if (u > par->max) {
-			VCLI_Out(cli,
-			    "Timeout must be less than or equal to %.g\n",
-				 par->max);
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
-		}
-		*dest = u;
-	} else
-		VCLI_Out(cli, "%.6f", *dest);
+	(void)tweak_generic_timeout_double(cli, dest, arg, par->min, par->max);
 }
 
 /*--------------------------------------------------------------------*/
@@ -138,11 +154,19 @@ tweak_generic_double(struct cli *cli, const struct parspec *par,
     const char *arg)
 {
 	volatile double *dest;
+	char *p;
 	double u;
 
 	dest = par->priv;
 	if (arg != NULL) {
-		u = strtod(arg, NULL);
+		p = NULL;
+		u = strtod(arg, &p);
+		if (arg == '\0' || *p != '\0') {
+			VCLI_Out(cli,
+			    "Not a number (%s)\n", arg);
+			VCLI_SetResult(cli, CLIS_PARAM);
+			return;
+		}
 		if (u < par->min) {
 			VCLI_Out(cli,
 			    "Must be greater or equal to %.g\n",
@@ -206,26 +230,33 @@ tweak_bool(struct cli *cli, const struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
-void
+int
 tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg,
     unsigned min, unsigned max)
 {
 	unsigned u;
+	char *p;
 
 	if (arg != NULL) {
+		p = NULL;
 		if (!strcasecmp(arg, "unlimited"))
 			u = UINT_MAX;
 		else
-			u = strtoul(arg, NULL, 0);
+			u = strtoul(arg, &p, 0);
+		if (*arg == '\0' || *p != '\0') {
+			VCLI_Out(cli, "Not a number (%s)\n", arg);
+			VCLI_SetResult(cli, CLIS_PARAM);
+			return (-1);
+		}
 		if (u < min) {
 			VCLI_Out(cli, "Must be at least %u\n", min);
 			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
+			return (-1);
 		}
 		if (u > max) {
 			VCLI_Out(cli, "Must be no more than %u\n", max);
 			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
+			return (-1);
 		}
 		*dest = u;
 	} else if (*dest == UINT_MAX) {
@@ -233,6 +264,7 @@ tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg,
 	} else {
 		VCLI_Out(cli, "%u", *dest);
 	}
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -243,7 +275,8 @@ tweak_uint(struct cli *cli, const struct parspec *par, const char *arg)
 	volatile unsigned *dest;
 
 	dest = par->priv;
-	tweak_generic_uint(cli, dest, arg, (uint)par->min, (uint)par->max);
+	(void)tweak_generic_uint(cli, dest, arg,
+	    (uint)par->min, (uint)par->max);
 }
 
 /*--------------------------------------------------------------------*/
@@ -549,6 +582,56 @@ tweak_diag_bitmap(struct cli *cli, const struct parspec *par, const char *arg)
 		mgt_param.diag_bitmap = u;
 	} else {
 		VCLI_Out(cli, "0x%x", mgt_param.diag_bitmap);
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+tweak_poolparam(struct cli *cli, const struct parspec *par, const char *arg)
+{
+	volatile struct poolparam *pp, px;
+	char **av;
+
+	pp = par->priv;
+	if (arg == NULL) {
+		VCLI_Out(cli, "%u,%u,%g",
+		    pp->min_pool, pp->max_pool, pp->max_age);
+	} else {
+		av = VAV_Parse(arg, NULL, ARGV_COMMA);
+		do {
+			if (av[0] != NULL) {
+				VCLI_Out(cli, "Parse error: %s", av[0]);
+				VCLI_SetResult(cli, CLIS_PARAM);
+				break;
+			}
+			if (av[1] == NULL || av[2] == NULL || av[3] == NULL) {
+				VCLI_Out(cli,
+				    "Three fields required:"
+				    " min_pool, max_pool and max_age\n");
+				VCLI_SetResult(cli, CLIS_PARAM);
+				break;
+			}
+			px = *pp;
+			if (tweak_generic_uint(cli, &px.min_pool, av[1],
+			    (uint)par->min, (uint)par->max))
+				break;
+			if (tweak_generic_uint(cli, &px.max_pool, av[2],
+			    (uint)par->min, (uint)par->max))
+				break;
+			if (tweak_generic_timeout_double(cli, &px.max_age,
+			    av[3], 0, 1e6))
+				break;
+			if (px.min_pool > px.max_pool) {
+				VCLI_Out(cli,
+				    "min_pool cannot be larger"
+				    " than max_pool\n");
+				VCLI_SetResult(cli, CLIS_PARAM);
+				break;
+			}
+			*pp = px;
+		} while(0);
+		
 	}
 }
 
@@ -1112,6 +1195,15 @@ static const struct parspec input_parspec[] = {
 		"to save the memory of one busyobj per worker thread.",
 		0,
 		"true", ""},
+
+	{ "vbc_pool", tweak_poolparam, &mgt_param.vbc_pool, 0, 10000,
+		"Parameters for backend connection memory pool.\n"
+		"The three numbers are:\n"
+		"   min_pool -- minimum size of free pool.\n"
+		"   max_pool -- maximum size of free pool.\n"
+		"   max_age -- max age of free element.\n",
+		0,
+		"10,100,10", ""},
 
 	{ NULL, NULL, NULL }
 };

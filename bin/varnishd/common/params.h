@@ -200,4 +200,6 @@ struct params {
 	/* VSM dimensions */
 	ssize_t			vsm_space;
 	ssize_t			vsl_space;
+
+	struct poolparam	vbc_pool;
 };
