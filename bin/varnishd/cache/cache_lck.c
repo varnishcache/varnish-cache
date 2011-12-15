@@ -118,6 +118,7 @@ Lck__Trylock(struct lock *lck, const char *p, const char *f, int l)
 	if (r == 0) {
 		AZ(ilck->held);
 		ilck->held = 1;
+		ilck->stat->locks++;
 		ilck->owner = pthread_self();
 	}
 	return (r);
