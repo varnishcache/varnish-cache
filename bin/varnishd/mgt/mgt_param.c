@@ -161,7 +161,7 @@ tweak_generic_double(struct cli *cli, const struct parspec *par,
 	if (arg != NULL) {
 		p = NULL;
 		u = strtod(arg, &p);
-		if (arg == '\0' || *p != '\0') {
+		if (*p != '\0') {
 			VCLI_Out(cli,
 			    "Not a number (%s)\n", arg);
 			VCLI_SetResult(cli, CLIS_PARAM);
@@ -241,12 +241,13 @@ tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg,
 		p = NULL;
 		if (!strcasecmp(arg, "unlimited"))
 			u = UINT_MAX;
-		else
+		else {
 			u = strtoul(arg, &p, 0);
-		if (*arg == '\0' || *p != '\0') {
-			VCLI_Out(cli, "Not a number (%s)\n", arg);
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return (-1);
+			if (*arg == '\0' || *p != '\0') {
+				VCLI_Out(cli, "Not a number (%s)\n", arg);
+				VCLI_SetResult(cli, CLIS_PARAM);
+				return (-1);
+			}
 		}
 		if (u < min) {
 			VCLI_Out(cli, "Must be at least %u\n", min);
