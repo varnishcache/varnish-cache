@@ -855,9 +855,7 @@ int Lck_CondWait(pthread_cond_t *cond, struct lock *lck, struct timespec *ts);
 /* cache_mempool.c */
 struct mempool * MPL_New(const char *name, struct lock *mtx,
     volatile struct poolparam *pp, volatile unsigned *cur_size);
-void *MPL_GetLocked(struct mempool *mpl, unsigned *size);
 void *MPL_Get(struct mempool *mpl, unsigned *size);
-void MPL_FreeLocked(struct mempool *mpl, void *item);
 void MPL_Free(struct mempool *mpl, void *item);
 
 

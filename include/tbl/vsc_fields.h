@@ -116,5 +116,6 @@ VSC_F(pool,			uint64_t, 0, 'g', "In Pool", "")
 VSC_F(recycle,			uint64_t, 0, 'g', "Recycled from pool", "")
 VSC_F(timeout,			uint64_t, 0, 'g', "Timed out from pool", "")
 VSC_F(toosmall,			uint64_t, 0, 'g', "Too small to recycle", "")
+VSC_F(surplus,			uint64_t, 0, 'g', "Too many for pool", "")
 
 #endif
