@@ -199,7 +199,8 @@ VTCP_nonblocking(int sock)
  */
 
 int
-VTCP_connect(int s, const struct sockaddr_storage *name, socklen_t namelen, int msec)
+VTCP_connect(int s, const struct sockaddr_storage *name, socklen_t namelen,
+    int msec)
 {
 	int i, k;
 	socklen_t l;
@@ -271,7 +272,8 @@ VTCP_set_read_timeout(int s, double seconds)
 	 * timeout does not get set. Needs to be fixed in Solaris, there is
 	 * nothing we can do about this.
 	 */
-	VTCP_Assert(setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout));
+	VTCP_Assert(setsockopt(s, SOL_SOCKET, SO_RCVTIMEO,
+	    &timeout, sizeof timeout));
 #else
 	(void)s;
 #endif

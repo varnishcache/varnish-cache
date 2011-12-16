@@ -270,7 +270,8 @@ static void
 usage(void)
 {
 	fprintf(stderr, "usage: varnishlog "
-	    "%s [-aDV] [-o [tag regex]] [-n varnish_name] [-P file] [-w file]\n", VSL_USAGE);
+	    "%s [-aDV] [-o [tag regex]] [-n varnish_name]"
+	    " [-P file] [-w file]\n", VSL_USAGE);
 	exit(1);
 }
 

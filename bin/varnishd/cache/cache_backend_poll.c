@@ -474,7 +474,8 @@ vbp_new_vcl(const struct vrt_backend_probe *p, const char *hosthdr)
  */
 
 void
-VBP_Insert(struct backend *b, const struct vrt_backend_probe *p, const char *hosthdr)
+VBP_Insert(struct backend *b, const struct vrt_backend_probe *p,
+    const char *hosthdr)
 {
 	struct vbp_target *vt;
 	struct vbp_vcl *vcl;

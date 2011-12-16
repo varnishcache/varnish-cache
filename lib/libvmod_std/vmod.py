@@ -223,12 +223,14 @@ while True:
 		if at == "ENUM":
 			if tq == None:
 				raise Exception(
-				    "Argument type '%s' needs qualifier {...}" % at)
+				    "Argument type '%s' needs qualifier {...}"
+				    % at)
 			at=parse_enum(tq)
 
 		elif tq != None:
 			raise Exception(
-			    "Argument type '%s' cannot be qualified with {...}" % at)
+			    "Argument type '%s' cannot be qualified with {...}"
+			    % at)
 
 		vargs.append(at)
 
@@ -246,7 +248,8 @@ def dumps(s):
 #######################################################################
 
 if initname != "":
-	plist += "int " + initname + "(struct vmod_priv *, const struct VCL_conf *);\n"
+	plist += "int " + initname 
+	plist += "(struct vmod_priv *, const struct VCL_conf *);\n"
 	pstruct += "\tvmod_init_f\t*_init;\n"
 	pinit += "\t" + initname + ",\n"
 	slist += '\t"INIT\\0Vmod_Func_' + modname + '._init",\n'

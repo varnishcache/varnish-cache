@@ -354,7 +354,8 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 			return (vc);
 		}
 		VSC_C_main->backend_toolate++;
-		WSL(sp->wrk, SLT_BackendClose, vc->vsl_id, "%s", bp->display_name);
+		WSL(sp->wrk, SLT_BackendClose, vc->vsl_id, "%s",
+		   bp->display_name);
 
 		/* Checkpoint log to flush all info related to this connection
 		   before the OS reuses the FD */

@@ -131,7 +131,8 @@ vwk_kev(struct vwk *vwk, const struct kevent *kp)
 		SES_Delete(sp, "EOF");
 		return;
 	} else {
-		VSL(SLT_Debug, sp->vsl_id, "KQ: sp %p kev data %lu flags 0x%x%s",
+		VSL(SLT_Debug, sp->vsl_id,
+		    "KQ: sp %p kev data %lu flags 0x%x%s",
 		    sp, (unsigned long)kp->data, kp->flags,
 		    (kp->flags & EV_EOF) ? " EOF" : "");
 	}

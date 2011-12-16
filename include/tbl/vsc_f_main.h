@@ -20,7 +20,7 @@
  * ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION, "")
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
  * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
@@ -136,7 +136,8 @@ VSC_F(fetch_chunked,		uint64_t, 1, 'a', "Fetch chunked", "")
 VSC_F(fetch_eof,		uint64_t, 1, 'a', "Fetch EOF", "")
 VSC_F(fetch_bad,		uint64_t, 1, 'a', "Fetch had bad headers", "")
 VSC_F(fetch_close,		uint64_t, 1, 'a', "Fetch wanted close", "")
-VSC_F(fetch_oldhttp,		uint64_t, 1, 'a', "Fetch pre HTTP/1.1 closed", "")
+VSC_F(fetch_oldhttp,		uint64_t, 1, 'a',
+    "Fetch pre HTTP/1.1 closed", "")
 VSC_F(fetch_zero,		uint64_t, 1, 'a', "Fetch zero len", "")
 VSC_F(fetch_failed,		uint64_t, 1, 'a', "Fetch failed", "")
 VSC_F(fetch_1xx,		uint64_t, 1, 'a', "Fetch no body (1xx)", "")
@@ -293,9 +294,11 @@ VSC_F(sess_herd,		uint64_t, 1, 'a', "Session herd", "")
 
 VSC_F(shm_records,		uint64_t, 0, 'a', "SHM records", "")
 VSC_F(shm_writes,		uint64_t, 0, 'a', "SHM writes", "")
-VSC_F(shm_flushes,		uint64_t, 0, 'a', "SHM flushes due to overflow", "")
+VSC_F(shm_flushes,		uint64_t, 0, 'a',
+    "SHM flushes due to overflow", "")
 VSC_F(shm_cont,		uint64_t, 0, 'a', "SHM MTX contention", "")
-VSC_F(shm_cycles,		uint64_t, 0, 'a', "SHM cycles through buffer", "")
+VSC_F(shm_cycles,		uint64_t, 0, 'a',
+    "SHM cycles through buffer", "")
 
 VSC_F(sms_nreq,		uint64_t, 0, 'a', "SMS allocator requests", "")
 VSC_F(sms_nobj,		uint64_t, 0, 'i', "SMS outstanding allocations", "")
@@ -353,19 +356,24 @@ VSC_F(bans_dups,		uint64_t, 0, 'c',
 
 /**********************************************************************/
 
-VSC_F(hcb_nolock,		uint64_t, 0, 'a', "HCB Lookups without lock", "")
+VSC_F(hcb_nolock,		uint64_t, 0, 'a',
+    "HCB Lookups without lock", "")
 VSC_F(hcb_lock,		uint64_t, 0, 'a', "HCB Lookups with lock", "")
 VSC_F(hcb_insert,		uint64_t, 0, 'a', "HCB Inserts", "")
 
-VSC_F(esi_errors,		uint64_t, 0, 'a', "ESI parse errors (unlock)", "")
-VSC_F(esi_warnings,		uint64_t, 0, 'a', "ESI parse warnings (unlock)", "")
+VSC_F(esi_errors,		uint64_t, 0, 'a',
+    "ESI parse errors (unlock)", "")
+VSC_F(esi_warnings,		uint64_t, 0, 'a',
+    "ESI parse warnings (unlock)", "")
 VSC_F(client_drop_late,	uint64_t, 0, 'a', "Connection dropped late", "")
 VSC_F(uptime,		uint64_t, 0, 'a', "Client uptime", "")
 
 VSC_F(dir_dns_lookups,	uint64_t, 0, 'a', "DNS director lookups", "")
 VSC_F(dir_dns_failed,	uint64_t, 0, 'a', "DNS director failed lookups", "")
-VSC_F(dir_dns_hit,		uint64_t, 0, 'a', "DNS director cached lookups hit", "")
-VSC_F(dir_dns_cache_full,	uint64_t, 0, 'a', "DNS director full dnscache", "")
+VSC_F(dir_dns_hit,		uint64_t, 0, 'a',
+    "DNS director cached lookups hit", "")
+VSC_F(dir_dns_cache_full,	uint64_t, 0, 'a',
+    "DNS director full dnscache", "")
 
 VSC_F(vmods,		uint64_t, 0, 'i', "Loaded VMODs", "")
 

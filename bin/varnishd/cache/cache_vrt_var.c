@@ -88,12 +88,12 @@ VRT_DO_HDR(req,   proto,	sp->http,		HTTP_HDR_PROTO)
 VRT_DO_HDR(bereq, request,	sp->wrk->busyobj->bereq,	HTTP_HDR_REQ)
 VRT_DO_HDR(bereq, url,		sp->wrk->busyobj->bereq,	HTTP_HDR_URL)
 VRT_DO_HDR(bereq, proto,	sp->wrk->busyobj->bereq,	HTTP_HDR_PROTO)
-VRT_DO_HDR(obj,   proto,	sp->wrk->obj->http,		HTTP_HDR_PROTO)
-VRT_DO_HDR(obj,   response,	sp->wrk->obj->http,		HTTP_HDR_RESPONSE)
+VRT_DO_HDR(obj,   proto,	sp->wrk->obj->http,	HTTP_HDR_PROTO)
+VRT_DO_HDR(obj,   response,	sp->wrk->obj->http,	HTTP_HDR_RESPONSE)
 VRT_DO_HDR(resp,  proto,	sp->wrk->resp,		HTTP_HDR_PROTO)
 VRT_DO_HDR(resp,  response,	sp->wrk->resp,		HTTP_HDR_RESPONSE)
 VRT_DO_HDR(beresp,  proto,	sp->wrk->busyobj->beresp,	HTTP_HDR_PROTO)
-VRT_DO_HDR(beresp,  response,	sp->wrk->busyobj->beresp,	HTTP_HDR_RESPONSE)
+VRT_DO_HDR(beresp,  response,	sp->wrk->busyobj->beresp, HTTP_HDR_RESPONSE)
 
 /*--------------------------------------------------------------------*/
 

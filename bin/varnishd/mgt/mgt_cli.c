@@ -374,7 +374,8 @@ mgt_cli_callback2(const struct vev *e, int what)
 /*--------------------------------------------------------------------*/
 
 void
-mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident, mgt_cli_close_f *closefunc, void *priv)
+mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident,
+    mgt_cli_close_f *closefunc, void *priv)
 {
 	struct cli *cli;
 	struct vev *ev;

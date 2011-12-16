@@ -229,7 +229,8 @@ vtc_dump(struct vtclog *vl, int lvl, const char *pfx, const char *str, int len)
 
 //lint -e{818}
 void
-vtc_hexdump(struct vtclog *vl, int lvl, const char *pfx, const unsigned char *str, int len)
+vtc_hexdump(struct vtclog *vl, int lvl, const char *pfx,
+    const unsigned char *str, int len)
 {
 	int nl = 1;
 	unsigned l;

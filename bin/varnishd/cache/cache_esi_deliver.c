@@ -313,7 +313,8 @@ ESI_Deliver(struct sess *sp)
 					 * We have a gzip'ed VEC and delivers
 					 * a gzip'ed ESI response.
 					 */
-					(void)WRW_Write(sp->wrk, st->ptr + off, l2);
+					(void)WRW_Write(sp->wrk,
+					    st->ptr + off, l2);
 				} else if (sp->wrk->gzip_resp) {
 					/*
 					 * A gzip'ed ESI response, but the VEC
@@ -339,7 +340,8 @@ ESI_Deliver(struct sess *sp)
 					/*
 					 * Ungzip'ed VEC, ungzip'ed ESI response
 					 */
-					(void)WRW_Write(sp->wrk, st->ptr + off, l2);
+					(void)WRW_Write(sp->wrk,
+					    st->ptr + off, l2);
 				}
 				off += l2;
 				if (off == st->len) {

@@ -113,8 +113,8 @@ RES_BuildHttp(const struct sess *sp)
 	http_ClrHeader(sp->wrk->resp);
 	sp->wrk->resp->logtag = HTTP_Tx;
 	http_CopyResp(sp->wrk->resp, sp->wrk->obj->http);
-	http_FilterFields(sp->wrk, sp->vsl_id, sp->wrk->resp, sp->wrk->obj->http,
-	    HTTPH_A_DELIVER);
+	http_FilterFields(sp->wrk, sp->vsl_id, sp->wrk->resp,
+	    sp->wrk->obj->http, HTTPH_A_DELIVER);
 
 	if (!(sp->wrk->res_mode & RES_LEN)) {
 		http_Unset(sp->wrk->resp, H_Content_Length);
@@ -129,7 +129,8 @@ RES_BuildHttp(const struct sess *sp)
 		    "Transfer-Encoding: chunked");
 
 	VTIM_format(VTIM_real(), time_str);
-	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp, "Date: %s", time_str);
+	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,
+	    "Date: %s", time_str);
 
 	if (sp->xid != sp->wrk->obj->xid)
 		http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,

@@ -123,7 +123,8 @@ VCA_Prep(struct sess *sp)
 	sp->addr = WS_Dup(sp->ws, addr);
 	sp->port = WS_Dup(sp->ws, port);
 	if (cache_param->log_local_addr) {
-		AZ(getsockname(sp->fd, (void*)&sp->mysockaddr, &sp->mysockaddrlen));
+		AZ(getsockname(sp->fd, (void*)&sp->mysockaddr,
+		    &sp->mysockaddrlen));
 		VTCP_name(&sp->mysockaddr, sp->mysockaddrlen,
 		    addr, sizeof addr, port, sizeof port);
 		WSP(sp, SLT_SessionOpen, "%s %s %s %s",

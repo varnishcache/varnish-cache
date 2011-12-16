@@ -237,7 +237,8 @@ cnt_prepresp(struct sess *sp)
 
 	sp->t_resp = W_TIM_real(wrk);
 	if (wrk->obj->objcore != NULL) {
-		if ((sp->t_resp - wrk->obj->last_lru) > cache_param->lru_timeout &&
+		if ((sp->t_resp - wrk->obj->last_lru) >
+		    cache_param->lru_timeout &&
 		    EXP_Touch(wrk->obj->objcore))
 			wrk->obj->last_lru = sp->t_resp;
 		wrk->obj->last_use = sp->t_resp;	/* XXX: locking ? */
@@ -1025,7 +1026,8 @@ cnt_first(struct sess *sp)
 	sp->ws_ses = WS_Snapshot(sp->ws);
 
 	/* Receive a HTTP protocol request */
-	HTC_Init(sp->htc, sp->ws, sp->fd, sp->vsl_id, cache_param->http_req_size,
+	HTC_Init(sp->htc, sp->ws, sp->fd, sp->vsl_id,
+	    cache_param->http_req_size,
 	    cache_param->http_req_hdr_len);
 	wrk->acct_tmp.sess++;
 
@@ -1758,7 +1760,8 @@ static struct cli_proto debug_cmds[] = {
 	{ "debug.xid", "debug.xid",
 		"\tExamine or set XID\n", 0, 1, "d", cli_debug_xid },
 	{ "debug.srandom", "debug.srandom",
-		"\tSeed the random(3) function\n", 0, 1, "d", cli_debug_srandom },
+		"\tSeed the random(3) function\n", 0, 1, "d",
+		cli_debug_srandom },
 	{ NULL }
 };
 

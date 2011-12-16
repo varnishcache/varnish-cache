@@ -15,7 +15,7 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
@@ -108,7 +108,8 @@ vws_port_ev(struct vws *vws, port_event_t *ev) {
 		 * port_dissociate after port_getn(), but in fact,
 		 * port_dissociate should be used
 		 *
-		 * Ref: http://opensolaris.org/jive/thread.jspa?threadID=129476&tstart=0
+		 * Ref: http://opensolaris.org/jive/thread.jspa?\
+		 *          threadID=129476&tstart=0
 		 */
 		vws_del(vws, sp->fd);
 		VTAILQ_REMOVE(&vws->sesshead, sp, list);
@@ -145,7 +146,7 @@ vws_thread(void *priv)
 	 * - additional tolerance for handling session timeouts
 	 *
 	 */
-	static struct timespec min_ts = {0L,    100L /*ms*/  * 1000L /*us*/  * 1000L /*ns*/};
+	static struct timespec min_ts = {0L, 100L * 1000L * 1000L /*ns*/};
 	static double          min_t  = 0.1; /* 100    ms*/
 	static struct timespec max_ts = {1L, 0L};		/* 1 second */
 	static double	       max_t  = 1.0;			/* 1 second */
@@ -177,7 +178,8 @@ vws_thread(void *priv)
 		/*
 		 * see disucssion in
 		 * - https://issues.apache.org/bugzilla/show_bug.cgi?id=47645
-		 * - http://mail.opensolaris.org/pipermail/networking-discuss/2009-August/011979.html
+		 * - http://mail.opensolaris.org/pipermail/\
+		 *       networking-discuss/2009-August/011979.html
 		 *
 		 * comment from apr/poll/unix/port.c :
 		 *
@@ -224,9 +226,13 @@ vws_thread(void *priv)
 		 */
 
 		if (sp) {
-			double tmo = (sp->t_open + cache_param->sess_timeout) - now;
+			double tmo =
+			    (sp->t_open + cache_param->sess_timeout) - now;
 
-			/* we should have removed all sps whose timeout has passed */
+			/*
+			 * we should have removed all sps whose timeout
+			 * has passed
+			 */
 			assert(tmo > 0.0);
 
 			if (tmo < min_t) {

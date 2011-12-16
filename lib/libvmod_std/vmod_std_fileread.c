@@ -59,8 +59,8 @@ struct frfile {
 	VTAILQ_ENTRY(frfile)		list;
 };
 
-static VTAILQ_HEAD(, frfile)		frlist = VTAILQ_HEAD_INITIALIZER(frlist);
-static pthread_mutex_t			frmtx = PTHREAD_MUTEX_INITIALIZER;
+static VTAILQ_HEAD(, frfile)	frlist = VTAILQ_HEAD_INITIALIZER(frlist);
+static pthread_mutex_t		frmtx = PTHREAD_MUTEX_INITIALIZER;
 
 static void
 free_frfile(void *ptr)

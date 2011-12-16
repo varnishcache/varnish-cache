@@ -379,9 +379,8 @@ VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv)
 			VSM_Close(vd);
 			if (!vd->head && VSM_Open(vd))
 				return (-1);
-			if (!VSM_Get(vd, &vsc->iter_fantom, VSC_CLASS, "", "")) {
+			if (!VSM_Get(vd, &vsc->iter_fantom, VSC_CLASS, "", ""))
 				return (-1);
-			}
 		}
 		AN(vd->head);
 		/* Tell app that list will be nuked */

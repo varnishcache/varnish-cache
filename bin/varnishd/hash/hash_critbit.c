@@ -191,7 +191,8 @@ hcb_crit_bit(const struct objhead *oh1, const struct objhead *oh2,
  */
 
 static struct objhead *
-hcb_insert(struct worker *wrk, struct hcb_root *root, struct objhead *oh, int has_lock)
+hcb_insert(struct worker *wrk, struct hcb_root *root, struct objhead *oh,
+    int has_lock)
 {
 	volatile uintptr_t *p;
 	uintptr_t pp;

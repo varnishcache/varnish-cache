@@ -174,7 +174,8 @@ do_curses(struct VSM_data *vd, const struct VSC_C_main *VSC_C_main,
 			 * Break to outher loop if we need to re-read file.
 			 * Only check if it looks like nothing is happening.
 			 */
-			act = VSC_C_main->cache_hit + VSC_C_main->cache_miss + 1;
+			act = VSC_C_main->cache_hit +
+			    VSC_C_main->cache_miss + 1;
 			lact = act;
 
 			AZ(gettimeofday(&tv, NULL));

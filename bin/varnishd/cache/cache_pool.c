@@ -385,9 +385,9 @@ pool_breed(struct pool *qp, const pthread_attr_t *tp_attr)
 	 * If we need more threads, and have space, create
 	 * one more thread.
 	 */
-	if (qp->nthr < cache_param->wthread_min ||	/* Not enough threads yet */
-	    (qp->lqueue > cache_param->wthread_add_threshold && /* more needed */
-	    qp->lqueue > qp->last_lqueue)) {	/* not getting better since last */
+	if (qp->nthr < cache_param->wthread_min || /* Not enough threads yet */
+	    (qp->lqueue > cache_param->wthread_add_threshold && /* need more  */
+	    qp->lqueue > qp->last_lqueue)) { /* not getting better since last */
 		if (qp->nthr > cache_param->wthread_max) {
 			Lck_Lock(&pool_mtx);
 			VSC_C_main->threads_limited++;
@@ -481,7 +481,8 @@ pool_herder(void *priv)
 		pp->nqueued = pp->ndropped = 0;
 		w = VTAILQ_LAST(&pp->idle, workerhead);
 		if (w != NULL &&
-		    (w->lastused < t_idle || pp->nthr > cache_param->wthread_max)) {
+		    (w->lastused < t_idle ||
+		    pp->nthr > cache_param->wthread_max)) {
 			VTAILQ_REMOVE(&pp->idle, w, list);
 		} else
 			w = NULL;

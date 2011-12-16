@@ -135,7 +135,8 @@ const struct parspec WRK_parspec[] = {
 		"Minimum is 2 threads.",
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"5", "threads" },
-	{ "thread_pool_timeout", tweak_timeout, &mgt_param.wthread_timeout, 1, 0,
+	{ "thread_pool_timeout", tweak_timeout, &mgt_param.wthread_timeout,
+		1, 0,
 		"Thread idle threshold.\n"
 		"\n"
 		"Threads in excess of thread_pool_min, which have been idle "
