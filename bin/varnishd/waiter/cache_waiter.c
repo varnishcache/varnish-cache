@@ -28,37 +28,31 @@
  *
  */
 
-struct sess;
+#include "config.h"
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
 
-typedef void* waiter_init_f(void);
-typedef void waiter_pass_f(void *priv, const struct sess *);
+#include "common/common.h"
 
-struct waiter {
-	const char		*name;
-	waiter_init_f		*init;
-	waiter_pass_f		*pass;
-};
+#include "waiter/waiter.h"
 
-extern struct waiter const * waiter;
+const char *
+WAIT_GetName(void)
+{
 
-#if defined(HAVE_EPOLL_CTL)
-extern const struct waiter waiter_epoll;
-#endif
+	if (waiter != NULL)
+		return (waiter->name);
+	else
+		return ("no_waiter");
+}
 
-#if defined(HAVE_KQUEUE)
-extern const struct waiter waiter_kqueue;
-#endif
+void
+WAIT_Init(void)
+{
 
-#if defined(HAVE_PORT_CREATE)
-extern const struct waiter waiter_ports;
-#endif
-
-
-/* cache_session.c */
-void SES_Handle(struct sess *sp, int status);
-
-/* cache_waiter.c */
-extern const struct waiter waiter_poll;
-const char *WAIT_GetName(void);
-void WAIT_tweak_waiter(struct cli *cli, const char *arg);
-void WAIT_Init(void);
+	AN(waiter);
+	AN(waiter->name);
+	AN(waiter->init);
+	AN(waiter->pass);
+}

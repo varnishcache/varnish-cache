@@ -42,7 +42,7 @@
 #include "common/heritage.h"
 
 #include "cache_backend.h"
-#include "waiter/cache_waiter.h"
+#include "waiter/waiter.h"
 #include "vcl.h"
 
 /*

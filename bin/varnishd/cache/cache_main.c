@@ -35,7 +35,7 @@
 #include "cache.h"
 #include "common/heritage.h"
 
-#include "waiter/cache_waiter.h"
+#include "waiter/waiter.h"
 #include "hash/hash_slinger.h"
 
 volatile struct params	*cache_param;

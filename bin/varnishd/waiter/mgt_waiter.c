@@ -35,11 +35,11 @@
 
 #include "common/common.h"
 
-#include "waiter/cache_waiter.h"
+#include "waiter/waiter.h"
 #include "vcli.h"
 #include "vcli_priv.h"
 
-static const struct waiter * const vca_waiters[] = {
+static const struct waiter *const vca_waiters[] = {
     #if defined(HAVE_KQUEUE)
 	&waiter_kqueue,
     #endif
@@ -53,17 +53,7 @@ static const struct waiter * const vca_waiters[] = {
 	NULL,
 };
 
-struct waiter const * waiter;
-
-const char *
-WAIT_GetName(void)
-{
-
-	if (waiter != NULL)
-		return (waiter->name);
-	else
-		return ("no_waiter");
-}
+struct waiter const *waiter;
 
 void
 WAIT_tweak_waiter(struct cli *cli, const char *arg)
@@ -86,7 +76,7 @@ WAIT_tweak_waiter(struct cli *cli, const char *arg)
 		return;
 	}
 	if (!strcmp(arg, "default")) {
-		waiter = NULL;
+		waiter = vca_waiters[0];
 		return;
 	}
 	for (i = 0; vca_waiters[i]; i++) {
@@ -97,17 +87,4 @@ WAIT_tweak_waiter(struct cli *cli, const char *arg)
 	}
 	VCLI_Out(cli, "Unknown waiter");
 	VCLI_SetResult(cli, CLIS_PARAM);
-}
-
-void
-WAIT_Init(void)
-{
-
-	if (waiter == NULL)
-		waiter = vca_waiters[0];
-
-	AN(waiter);
-	AN(waiter->name);
-	AN(waiter->init);
-	AN(waiter->pass);
 }

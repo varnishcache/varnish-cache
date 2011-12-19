@@ -35,7 +35,7 @@
 
 #include "cache/cache.h"
 
-#include "waiter/cache_waiter.h"
+#include "waiter/waiter.h"
 #include "vtim.h"
 
 #define NEEV	128

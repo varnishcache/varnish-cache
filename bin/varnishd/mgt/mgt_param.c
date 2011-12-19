@@ -43,7 +43,7 @@
 #include "common/params.h"
 
 #include "mgt/mgt_param.h"
-#include "waiter/cache_waiter.h"
+#include "waiter/waiter.h"
 #include "vav.h"
 #include "vcli.h"
 #include "vcli_common.h"
