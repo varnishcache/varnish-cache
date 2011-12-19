@@ -1,3 +1,4 @@
+.. _tutorial-logging:
 
 Logging in Varnish
 ------------------
@@ -8,7 +9,7 @@ memory segment. When the end of the segment is reached we start over,
 overwriting old data. This is much, much faster then logging to a file
 and it doesn't require disk space.
 
-The flip side is that is you forget to have program actually write the
+The flip side is that if you forget to have program actually write the
 logs to disk they will disappear.
 
 varnishlog is one of the programs you can use to look at what Varnish
@@ -68,9 +69,6 @@ want to know are:
  Filter the data through a regex and only show the matching lines. To
  show all cookie headers coming from the clients:
  ``$ varnishlog -c -i RxHeader -I Cookie``
-
--o 
- Group log entries by request ID.
 
 
 Now that Varnish seem to work OK it's time to put Varnish on port 80
