@@ -1,4 +1,4 @@
-_reference-varnishlog:
+.. _ref-varnishlog:
 
 ==========
 varnishlog
