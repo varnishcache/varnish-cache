@@ -60,16 +60,9 @@ want to know are:
 -c 
  Same as -b but for client side traffic.
 
--i tag
- Only show lines with a certain tag. "varnishlog -i SessionOpen" 
- will only give you new sessions. Note that the tags are case 
- insensitive. 
-
--I Regex
- Filter the data through a regex and only show the matching lines. To
- show all cookie headers coming from the clients:
- ``$ varnishlog -c -i RxHeader -I Cookie``
-
+-m tag:regex
+ Only list transactions where the tag matches a regular expression. If
+ it matches you will get the whole transaction.
 
 Now that Varnish seem to work OK it's time to put Varnish on port 80
 while we tune it.
