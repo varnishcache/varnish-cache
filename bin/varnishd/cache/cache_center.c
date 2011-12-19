@@ -121,7 +121,7 @@ cnt_wait(struct sess *sp)
 		WSP(sp, SLT_Debug, "herding");
 		wrk->stats.sess_herd++;
 		SES_Charge(sp);
-		Pool_Wait(sp);
+		WAIT_Enter(sp);
 		return (1);
 	}
 	if (i == 1) {
@@ -432,7 +432,7 @@ WSP(sp, SLT_Debug, "PHK req %.9f resp %.9f end %.9f open %.9f",
 		return (0);
 	}
 	wrk->stats.sess_herd++;
-	Pool_Wait(sp);
+	WAIT_Enter(sp);
 	return (1);
 }
 
