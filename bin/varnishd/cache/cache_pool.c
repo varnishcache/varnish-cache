@@ -168,6 +168,7 @@ pool_accept(struct pool *pp, struct worker *w, const struct poolsock *ps)
 		assert(sizeof *wa2 == WS_Reserve(w2->ws, sizeof *wa2));
 		wa2 = (void*)w2->ws->f;
 		memcpy(wa2, wa, sizeof *wa);
+		w2->do_what = pool_do_accept;
 		AZ(pthread_cond_signal(&w2->cond));
 	}
 }
@@ -190,6 +191,7 @@ Pool_Work_Thread(void *priv, struct worker *w)
 	while (1) {
 
 		Lck_AssertHeld(&pp->mtx);
+		w->do_what = pool_do_inval;
 
 		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 		CHECK_OBJ_NOTNULL(w->resp, HTTP_MAGIC);
@@ -201,6 +203,7 @@ Pool_Work_Thread(void *priv, struct worker *w)
 			/* Process queued requests, if any */
 			assert(pp->lqueue > 0);
 			VTAILQ_REMOVE(&pp->queue, w->sp, poollist);
+			w->do_what = pool_do_sess;
 			pp->lqueue--;
 		} else if (!VTAILQ_EMPTY(&pp->socks)) {
 			/* Accept on a socket */
@@ -215,6 +218,7 @@ Pool_Work_Thread(void *priv, struct worker *w)
 				continue;
 			}
 			VTAILQ_INSERT_TAIL(&pp->socks, ps, list);
+			w->do_what = pool_do_accept;
 		} else if (VTAILQ_EMPTY(&pp->socks)) {
 			/* Nothing to do: To sleep, perchance to dream ... */
 			if (isnan(w->lastused))
@@ -225,29 +229,27 @@ Pool_Work_Thread(void *priv, struct worker *w)
 			(void)Lck_CondWait(&w->cond, &pp->mtx, NULL);
 		}
 
-		/*
-		 * If we got neither session or accepted a socket, we were
-		 * woken up to die to cull the herd.
-		 */
-		if (w->sp == NULL && w->ws->r == NULL)
+		if (w->do_what == pool_do_die)
 			break;
 
 		Lck_Unlock(&pp->mtx);
 
-		if (w->sp == NULL) {
+		if (w->do_what == pool_do_accept) {
 			/* Turn accepted socket into a session */
-			assert(w->ws->r != NULL);
+			AZ(w->sp);
+			AN(w->ws->r);
 			w->sp = SES_New(w, pp->sesspool);
 			if (w->sp == NULL)
 				VCA_FailSess(w);
 			else
 				VCA_SetupSess(w);
 			WS_Release(w->ws, 0);
+			w->do_what = pool_do_sess;
 		}
-		assert(w->ws->r == NULL);
 
-		if (w->sp != NULL) {
+		if (w->do_what == pool_do_sess) {
 			CHECK_OBJ_NOTNULL(w->sp, SESS_MAGIC);
+			AZ(w->ws->r);
 
 			stats_clean = 0;
 			w->lastused = NAN;
@@ -270,6 +272,8 @@ Pool_Work_Thread(void *priv, struct worker *w)
 				if (w->vcl != NULL)
 					VCL_Rel(&w->vcl);
 			}
+		} else {
+			WRONG("Invalid w->do_what");
 		}
 		stats_clean = WRK_TrySumStat(w);
 		Lck_Lock(&pp->mtx);
@@ -297,6 +301,7 @@ pool_queue(struct pool *pp, struct sess *sp)
 		VTAILQ_REMOVE(&pp->idle, w, list);
 		Lck_Unlock(&pp->mtx);
 		w->sp = sp;
+		w->do_what = pool_do_sess;
 		AZ(pthread_cond_signal(&w->cond));
 		return (0);
 	}
@@ -469,6 +474,7 @@ pool_herder(void *priv)
 			VSC_C_main->threads_destroyed++;
 			Lck_Unlock(&pool_mtx);
 			AZ(w->sp);
+			w->do_what = pool_do_die;
 			AZ(pthread_cond_signal(&w->cond));
 		}
 	}

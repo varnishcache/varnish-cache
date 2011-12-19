@@ -289,6 +289,13 @@ struct wrk_accept {
 
 /*--------------------------------------------------------------------*/
 
+enum e_do_what {
+	pool_do_inval = 0,
+	pool_do_sess,
+	pool_do_accept,
+	pool_do_die,
+};
+
 struct worker {
 	unsigned		magic;
 #define WORKER_MAGIC		0x6391adcf
@@ -301,6 +308,8 @@ struct worker {
 	struct dstat		stats;
 
 	/* Pool stuff */
+	enum e_do_what		do_what;
+
 	double			lastused;
 
 	struct wrw		wrw;
