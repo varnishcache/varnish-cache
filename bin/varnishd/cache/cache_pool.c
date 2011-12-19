@@ -48,8 +48,6 @@
 #include "cache.h"
 #include "common/heritage.h"
 
-#include "waiter/waiter.h"
-#include "vtcp.h"
 #include "vtim.h"
 
 /*--------------------------------------------------------------------
@@ -81,8 +79,6 @@ pthread_condattr_setclock(pthread_condattr_t *attr, int foo)
 	return (0);
 }
 #endif /* !CLOCK_MONOTONIC */
-
-static void *waiter_priv;
 
 VTAILQ_HEAD(workerhead, worker);
 
@@ -350,29 +346,6 @@ Pool_Schedule(struct pool *pp, struct sess *sp)
 }
 
 /*--------------------------------------------------------------------
- * Wait for another request
- */
-
-void
-Pool_Wait(struct sess *sp)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	AZ(sp->vcl);
-	assert(sp->fd >= 0);
-	sp->wrk = NULL;
-
-	/*
-	 * Set nonblocking in the worker-thread, before passing to the
-	 * acceptor thread, to reduce syscall density of the latter.
-	 */
-	if (VTCP_nonblocking(sp->fd))
-		SES_Close(sp, "remote closed");
-	waiter->pass(waiter_priv, sp);
-}
-
-/*--------------------------------------------------------------------
  * Create another thread, if necessary & possible
  */
 
@@ -588,7 +561,6 @@ void
 Pool_Init(void)
 {
 
-	waiter_priv = waiter->init();
 	Lck_New(&pool_mtx, lck_wq);
 	AZ(pthread_create(&thr_pool_herder, NULL, pool_poolherder, NULL));
 }

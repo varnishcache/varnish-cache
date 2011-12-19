@@ -33,9 +33,13 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "common/common.h"
+#include "cache/cache.h"
 
 #include "waiter/waiter.h"
+
+#include "vtcp.h"
+
+static void *waiter_priv;
 
 const char *
 WAIT_GetName(void)
@@ -55,4 +59,24 @@ WAIT_Init(void)
 	AN(waiter->name);
 	AN(waiter->init);
 	AN(waiter->pass);
+	waiter_priv = waiter->init();
+}
+
+void
+WAIT_Enter(struct sess *sp)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	AZ(sp->vcl);
+	assert(sp->fd >= 0);
+	sp->wrk = NULL;
+
+	/*
+	* Set nonblocking in the worker-thread, before passing to the
+	* acceptor thread, to reduce syscall density of the latter.
+	*/
+	if (VTCP_nonblocking(sp->fd))
+		SES_Close(sp, "remote closed");
+	waiter->pass(waiter_priv, sp);
 }
