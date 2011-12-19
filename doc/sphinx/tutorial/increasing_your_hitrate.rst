@@ -35,7 +35,8 @@ backend you can use varnishlog to have a look at the request.
 ``varnishlog -c -m 'RxURL:^/foo/bar`` will show you the requests
 coming from the client (-c) matching /foo/bar.
 
-For more information on how varnishlog works please see :ref:`tutorial-logging`.
+For more information on how varnishlog works please see
+:ref:`tutorial-logging` or man :ref:`ref-varnishlog`.
 
 For extended diagnostics headers, see
 http://www.varnish-cache.org/trac/wiki/VCLExampleHitMissHeader
