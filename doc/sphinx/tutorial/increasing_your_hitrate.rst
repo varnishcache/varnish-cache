@@ -31,9 +31,11 @@ Tool: varnishlog
 ~~~~~~~~~~~~~~~~
 
 When you have identified the an URL which is frequently sent to the
-backend you can use varnishlog to have a look at the whole request.
-``varnishlog -c -m 'RxURL:^/foo/bar`` will give the whole (-o)
-requests coming from the client (-c) matching /foo/bar.
+backend you can use varnishlog to have a look at the request.
+``varnishlog -c -m 'RxURL:^/foo/bar`` will show you the requests
+coming from the client (-c) matching /foo/bar.
+
+For more information on how varnishlog works please see :ref:`tutorial-logging`.
 
 For extended diagnostics headers, see
 http://www.varnish-cache.org/trac/wiki/VCLExampleHitMissHeader
