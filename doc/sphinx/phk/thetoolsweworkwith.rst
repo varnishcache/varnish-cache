@@ -65,7 +65,7 @@ text actually means:
 	an uppercase letter or another underscore are always reserved
 	for any use.
 
-Feel free to guess.
+Feel free to guess, there's more such on pdf page 200 of the draft.
 
 Next, they broke the upper/lower rule, by adding special keywords
 in mixed case, probably because they thought it looked nicer::
@@ -103,8 +103,8 @@ aspects.
 
 For instance, neither pthreads nor C1X-threads offer a "assert I'm
 holding this mutex locked" facility.  I will posit that you cannot
-successfully develop real-world threaded programs and APIs that,
-or without wasting a lot of time debugging silly mistakes.
+successfully develop real-world threaded programs and APIs without
+that, or without wasting a lot of time debugging silly mistakes.
 
 If you look in the Varnish source code, which uses pthreads, you
 will see that I have wrapped pthread mutexes in my own little
