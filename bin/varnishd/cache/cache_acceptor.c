@@ -26,6 +26,17 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * This source file has the various trickery surrounding the accept/listen
+ * sockets.
+ *
+ * The actual acceptance is done from cache_pool.c, by calling
+ * into VCA_Accept() in this file.
+ *
+ * Once the session is allocated we move into it with a call to 
+ * VCA_SetupSess().
+ *
+ * If we fail to allocate a session we call VCA_FailSess() to clean up
+ * and initiate pacing.
  */
 
 #include "config.h"
@@ -41,6 +52,9 @@
 static pthread_t	VCA_thread;
 static struct timeval	tv_sndtimeo;
 static struct timeval	tv_rcvtimeo;
+static int hack_ready;
+static double vca_pace = 0.0;
+static struct lock pace_mtx;
 
 /*--------------------------------------------------------------------
  * We want to get out of any kind of trouble-hit TCP connections as fast
@@ -53,6 +67,12 @@ static const struct linger linger = {
 };
 
 static unsigned char	need_sndtimeo, need_rcvtimeo, need_linger, need_test;
+
+/*--------------------------------------------------------------------
+ * Some kernels have bugs/limitations with respect to which options are
+ * inherited from the accept/listen socket, so we have to keep track of
+ * which, if any, sockopts we have to set on the accepted socket.
+ */
 
 static void
 sock_test(int fd)
@@ -108,12 +128,12 @@ sock_test(int fd)
 }
 
 /*--------------------------------------------------------------------
- * Called once the workerthread gets hold of the session, to do setup
- * setup overhead, we don't want to bother the acceptor thread with.
+ * Called once the workerthread gets hold of the session, to fix up
+ * any socket options that need it.
  */
 
-void
-VCA_Prep(const struct sess *sp)
+static void
+vca_prep(const struct sess *sp)
 {
 
 	if (need_test)
@@ -137,9 +157,6 @@ VCA_Prep(const struct sess *sp)
  * If accept(2)'ing fails, we pace ourselves to relive any resource
  * shortage if possible.
  */
-
-static double vca_pace = 0.0;
-static struct lock pace_mtx;
 
 static void
 vca_pace_check(void)
@@ -182,8 +199,6 @@ vca_pace_good(void)
 /*--------------------------------------------------------------------
  * Accept on a listen socket, and handle error returns.
  */
-
-static int hack_ready;
 
 int
 VCA_Accept(struct listen_sock *ls, struct wrk_accept *wa)
@@ -243,7 +258,9 @@ VCA_FailSess(struct worker *w)
 	vca_pace_bad();
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * We have allocated a session, move our info into it.
+ */
 
 void
 VCA_SetupSess(struct worker *w)
@@ -268,6 +285,7 @@ VCA_SetupSess(struct worker *w)
 	sp->step = STP_FIRST;
 	vca_pace_good();
 	w->stats.sess_conn++;
+	vca_prep(sp);
 }
 
 /*--------------------------------------------------------------------*/
@@ -363,7 +381,7 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 
 	/*
 	 * This CLI command is primarily used by varnishtest.  Don't
-	 * respond until liste(2) has been called, in order to avoid
+	 * respond until listen(2) has been called, in order to avoid
 	 * a race where varnishtest::client would attempt to connect(2)
 	 * before listen(2) has been called.
 	 */

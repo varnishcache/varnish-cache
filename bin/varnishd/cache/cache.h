@@ -293,6 +293,7 @@ enum e_do_what {
 	pool_do_inval = 0,
 	pool_do_sess,
 	pool_do_accept,
+	pool_do_nothing,
 	pool_do_die,
 };
 
@@ -662,7 +663,6 @@ struct sess {
 /* Prototypes etc ----------------------------------------------------*/
 
 /* cache_acceptor.c */
-void VCA_Prep(const struct sess *sp);
 void VCA_Init(void);
 void VCA_Shutdown(void);
 int VCA_Accept(struct listen_sock *ls, struct wrk_accept *wa);

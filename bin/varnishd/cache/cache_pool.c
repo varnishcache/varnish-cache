@@ -239,12 +239,14 @@ Pool_Work_Thread(void *priv, struct worker *w)
 			AZ(w->sp);
 			AN(w->ws->r);
 			w->sp = SES_New(w, pp->sesspool);
-			if (w->sp == NULL)
+			if (w->sp == NULL) {
 				VCA_FailSess(w);
-			else
+				w->do_what = pool_do_nothing;
+			} else {
 				VCA_SetupSess(w);
+				w->do_what = pool_do_sess;
+			}
 			WS_Release(w->ws, 0);
-			w->do_what = pool_do_sess;
 		}
 
 		if (w->do_what == pool_do_sess) {
@@ -272,6 +274,8 @@ Pool_Work_Thread(void *priv, struct worker *w)
 				if (w->vcl != NULL)
 					VCL_Rel(&w->vcl);
 			}
+		} else if (w->do_what == pool_do_nothing) {
+			/* we already did */
 		} else {
 			WRONG("Invalid w->do_what");
 		}

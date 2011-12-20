@@ -1039,8 +1039,6 @@ cnt_first(struct sess *sp)
 	}
 	sp->acct_ses.first = sp->t_open;
 
-	VCA_Prep(sp);
-
 	/* Record the session watermark */
 	sp->ws_ses = WS_Snapshot(sp->ws);
 
