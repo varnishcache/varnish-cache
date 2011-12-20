@@ -200,7 +200,7 @@ To put an element on a linked list.
 I could go on like this, but it would rapidly become boring for
 both you and me, because the current C1X draft is 701 pages, and
 it contains not a single explanatory example if how to use any of
-the verbiage in pratice.
+the verbiage in practice.
 
 Compare this with The C Programming Language, a book of 274 pages
 which in addition to define the C language, taught people how to
