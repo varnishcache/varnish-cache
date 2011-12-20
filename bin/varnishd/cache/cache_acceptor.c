@@ -32,7 +32,7 @@
  * The actual acceptance is done from cache_pool.c, by calling
  * into VCA_Accept() in this file.
  *
- * Once the session is allocated we move into it with a call to 
+ * Once the session is allocated we move into it with a call to
  * VCA_SetupSess().
  *
  * If we fail to allocate a session we call VCA_FailSess() to clean up

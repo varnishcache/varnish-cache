@@ -611,7 +611,6 @@ struct sess {
 	struct http		*http0;
 
 	struct ws		ws[1];
-	char			*ws_ses;	/* WS above session data */
 	char			*ws_req;	/* WS above request data */
 
 	unsigned char		digest[DIGEST_LEN];

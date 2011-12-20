@@ -414,7 +414,7 @@ WSP(sp, SLT_Debug, "PHK req %.9f resp %.9f end %.9f open %.9f",
 	if (wrk->stats.client_req >= cache_param->wthread_stats_rate)
 		WRK_SumStat(wrk);
 	/* Reset the workspace to the session-watermark */
-	WS_Reset(sp->ws, sp->ws_ses);
+	WS_Reset(sp->ws, NULL);
 	WS_Reset(wrk->ws, NULL);
 
 	i = HTC_Reinit(sp->htc);
@@ -1038,9 +1038,6 @@ cnt_first(struct sess *sp)
 		    sp->addr, sp->port, sp->mylsock->name);
 	}
 	sp->acct_ses.first = sp->t_open;
-
-	/* Record the session watermark */
-	sp->ws_ses = WS_Snapshot(sp->ws);
 
 	/* Receive a HTTP protocol request */
 	HTC_Init(sp->htc, sp->ws, sp->fd, sp->vsl_id,
