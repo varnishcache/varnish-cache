@@ -60,6 +60,15 @@ struct cli;
  */
 #define __state_variable__(xxx)		/*lint -esym(838,xxx) */
 
+/**********************************************************************
+ * NI_MAXHOST and less so NI_MAXSERV, are ridiculously large for numeric
+ * representations of TCP/IP socket addresses, so we use our own.
+ */
+
+#define ADDR_BUFSIZE	64
+#define PORT_BUFSIZE	8
+
+
 /**********************************************************************/
 
 /* Name of transient storage */

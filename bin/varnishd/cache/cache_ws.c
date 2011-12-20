@@ -116,22 +116,6 @@ WS_Alloc(struct ws *ws, unsigned bytes)
 	return (r);
 }
 
-char *
-WS_Dup(struct ws *ws, const char *s)
-{
-	unsigned l;
-	char *p;
-
-	WS_Assert(ws);
-	l = strlen(s) + 1;
-	p = WS_Alloc(ws, l);
-	if (p != NULL)
-		memcpy(p, s, l);
-	DSL(0x02, SLT_Debug, 0, "WS_Dup(%p, \"%s\") = %p", ws, s, p);
-	WS_Assert(ws);
-	return (p);
-}
-
 unsigned
 WS_Free(const struct ws *ws)
 {

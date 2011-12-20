@@ -51,8 +51,8 @@ varnish v1 -arg "-p sess_workspace=1024" -vcl+backend {
 			"0123456789abcdef" + "0123456789abcdef" +
 			"0123456789abcdef" + "0123456789abcdef" +
 			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" +
-			"0123456";
+			"0123456789abcdef" + "0123456789abcdef" +
+			"0123456789abcde";
 		set req.http.baz = "BAZ";
 		return (pass);
 	}

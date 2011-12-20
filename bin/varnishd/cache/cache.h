@@ -600,8 +600,8 @@ struct sess {
 	struct listen_sock	*mylsock;
 
 	/* formatted ascii client address */
-	char			*addr;
-	char			*port;
+	char			addr[ADDR_BUFSIZE];
+	char			port[PORT_BUFSIZE];
 	char			*client_identity;
 
 	/* HTTP request */
@@ -662,7 +662,7 @@ struct sess {
 /* Prototypes etc ----------------------------------------------------*/
 
 /* cache_acceptor.c */
-void VCA_Prep(struct sess *sp);
+void VCA_Prep(const struct sess *sp);
 void VCA_Init(void);
 void VCA_Shutdown(void);
 int VCA_Accept(struct listen_sock *ls, struct wrk_accept *wa);
@@ -997,7 +997,6 @@ void WS_ReleaseP(struct ws *ws, char *ptr);
 void WS_Assert(const struct ws *ws);
 void WS_Reset(struct ws *ws, char *p);
 char *WS_Alloc(struct ws *ws, unsigned bytes);
-char *WS_Dup(struct ws *ws, const char *);
 char *WS_Snapshot(struct ws *ws);
 unsigned WS_Free(const struct ws *ws);
 

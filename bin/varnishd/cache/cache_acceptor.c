@@ -113,27 +113,9 @@ sock_test(int fd)
  */
 
 void
-VCA_Prep(struct sess *sp)
+VCA_Prep(const struct sess *sp)
 {
-	char addr[VTCP_ADDRBUFSIZE];
-	char port[VTCP_PORTBUFSIZE];
 
-	VTCP_name(&sp->sockaddr, sp->sockaddrlen,
-	    addr, sizeof addr, port, sizeof port);
-	sp->addr = WS_Dup(sp->ws, addr);
-	sp->port = WS_Dup(sp->ws, port);
-	if (cache_param->log_local_addr) {
-		AZ(getsockname(sp->fd, (void*)&sp->mysockaddr,
-		    &sp->mysockaddrlen));
-		VTCP_name(&sp->mysockaddr, sp->mysockaddrlen,
-		    addr, sizeof addr, port, sizeof port);
-		WSP(sp, SLT_SessionOpen, "%s %s %s %s",
-		    sp->addr, sp->port, addr, port);
-	} else {
-		WSP(sp, SLT_SessionOpen, "%s %s %s",
-		    sp->addr, sp->port, sp->mylsock->name);
-	}
-	sp->acct_ses.first = sp->t_open;
 	if (need_test)
 		sock_test(sp->fd);
 	if (need_linger)

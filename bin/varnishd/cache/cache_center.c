@@ -64,6 +64,8 @@ DOT acceptor -> first [style=bold,color=green]
 
 #include "cache.h"
 
+#include "common/heritage.h"
+
 #include "hash/hash_slinger.h"
 #include "vcl.h"
 #include "vcli_priv.h"
@@ -1005,6 +1007,8 @@ static int
 cnt_first(struct sess *sp)
 {
 	struct worker *wrk;
+	char laddr[ADDR_BUFSIZE];
+	char lport[PORT_BUFSIZE];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	wrk = sp->wrk;
@@ -1020,6 +1024,21 @@ cnt_first(struct sess *sp)
 	assert(sp->xid == 0);
 	assert(sp->restarts == 0);
 	AZ(sp->esi_level);
+	VTCP_name(&sp->sockaddr, sp->sockaddrlen,
+	    sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
+	if (cache_param->log_local_addr) {
+		AZ(getsockname(sp->fd, (void*)&sp->mysockaddr,
+		    &sp->mysockaddrlen));
+		VTCP_name(&sp->mysockaddr, sp->mysockaddrlen,
+		    laddr, sizeof laddr, lport, sizeof lport);
+		WSP(sp, SLT_SessionOpen, "%s %s %s %s",
+		    sp->addr, sp->port, laddr, lport);
+	} else {
+		WSP(sp, SLT_SessionOpen, "%s %s %s",
+		    sp->addr, sp->port, sp->mylsock->name);
+	}
+	sp->acct_ses.first = sp->t_open;
+
 	VCA_Prep(sp);
 
 	/* Record the session watermark */

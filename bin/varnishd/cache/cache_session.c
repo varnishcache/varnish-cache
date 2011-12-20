@@ -321,7 +321,6 @@ SES_Delete(struct sess *sp, const char *reason)
 {
 	struct acct *b;
 	struct sessmem *sm;
-	static char noaddr[] = "-";
 	struct worker *wrk;
 	struct sesspool *pp;
 
@@ -340,10 +339,10 @@ SES_Delete(struct sess *sp, const char *reason)
 	assert(sp->fd < 0);
 
 	AZ(sp->vcl);
-	if (sp->addr == NULL)
-		sp->addr = noaddr;
-	if (sp->port == NULL)
-		sp->port = noaddr;
+	if (*sp->addr == '\0')
+		strcpy(sp->addr, "-");
+	if (*sp->port == '\0')
+		strcpy(sp->addr, "-");
 
 	b = &sp->acct_ses;
 	assert(!isnan(b->first));
