@@ -8,6 +8,7 @@ You may or may not want to know what Poul-Henning think.
 
 .. toctree::
 
+	thetoolsweworkwith.rst
 	three-zero.rst
 	ssl.rst
 	gzip.rst
