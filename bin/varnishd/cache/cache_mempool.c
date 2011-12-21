@@ -42,14 +42,17 @@ struct memitem {
 #define MEMITEM_MAGIC			0x42e55401
 	VTAILQ_ENTRY(memitem)		list;
 	unsigned			size;
-	double				payload;
+	double				touched;
+	char				payload;
 };
+
+VTAILQ_HEAD(memhead_s, memitem);
 
 struct mempool {
 	unsigned			magic;
 #define MEMPOOL_MAGIC			0x37a75a8d
-	VTAILQ_HEAD(,memitem)		list;
-	VTAILQ_HEAD(,memitem)		surplus;
+	struct memhead_s		list;
+	struct memhead_s		surplus;
 	struct lock			*mtx;
 	struct lock			imtx;
 	const char			*name;
@@ -58,6 +61,7 @@ struct mempool {
 	struct VSC_C_mempool		*vsc;
 	unsigned			n_pool;
 	pthread_t			thread;
+	double				t_now;
 };
 
 /*---------------------------------------------------------------------
@@ -81,8 +85,11 @@ mpl_alloc(const struct mempool *mpl)
 /*---------------------------------------------------------------------
  * Pool-guard
  *   Attempt to keep number of free items in pool inside bounds with
- *   minimum locking activity.
+ *   minimum locking activity, and keep an eye on items at the tail
+ *   of the list not getting too old.
  */
+
+#include <stdio.h>
 
 static void *
 mpl_guard(void *priv)
@@ -90,12 +97,14 @@ mpl_guard(void *priv)
 	struct mempool *mpl;
 	struct memitem *mi = NULL;
 	double mpl_slp __state_variable__(mpl_slp);
+	double last = 0;
 
 	CAST_OBJ_NOTNULL(mpl, priv, MEMPOOL_MAGIC);
 	mpl_slp = 0.15;	// random
 	while (1) {
 		VTIM_sleep(mpl_slp);
 		mpl_slp = 0.814;	// random
+		mpl->t_now = VTIM_real();
 
 		if (mi != NULL && (mpl->n_pool > mpl->param->max_pool ||
 		    mi->size < *mpl->cur_size)) {
@@ -106,45 +115,69 @@ mpl_guard(void *priv)
 		if (mi == NULL && mpl->n_pool < mpl->param->min_pool)
 			mi = mpl_alloc(mpl);
 
+
 		if (mpl->n_pool < mpl->param->min_pool && mi != NULL) {
 			/* can do */
 		} else if (mpl->n_pool > mpl->param->max_pool && mi == NULL) {
 			/* can do */
 		} else if (!VTAILQ_EMPTY(&mpl->surplus)) {
 			/* can do */
+		} else if (last + .1 * mpl->param->max_age < mpl->t_now) {
+			/* should do */
 		} else {
-			continue;	/* cannot do */
+			continue;	/* nothing to do */
 		}
 
-		mpl_slp = 0.314;
+		mpl_slp = 0.314;	// random
 
 		if (Lck_Trylock(mpl->mtx))
 			continue;
-
-		mpl_slp = .01;
 
 		if (mpl->n_pool < mpl->param->min_pool &&
 		    mi != NULL && mi->size >= *mpl->cur_size) {
 			CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
 			mpl->vsc->pool++;
 			mpl->n_pool++;
+			mi->touched = mpl->t_now;
 			VTAILQ_INSERT_HEAD(&mpl->list, mi, list);
 			mi = NULL;
+			mpl_slp = .01;	// random
+
 		}
 		if (mpl->n_pool > mpl->param->max_pool && mi == NULL) {
 			mi = VTAILQ_FIRST(&mpl->list);
 			CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
 			mpl->vsc->pool--;
+			mpl->vsc->surplus++;
 			mpl->n_pool--;
 			VTAILQ_REMOVE(&mpl->list, mi, list);
+			mpl_slp = .01;	// random
 		}
 		if (mi == NULL) {
 			mi = VTAILQ_FIRST(&mpl->surplus);
 			if (mi != NULL) {
 				CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
 				VTAILQ_REMOVE(&mpl->surplus, mi, list);
+				mpl_slp = .01;	// random
 			}
 		}
+		if (mi == NULL && mpl->n_pool > mpl->param->min_pool) {
+			mi = VTAILQ_LAST(&mpl->list, memhead_s);
+			CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
+			if (mi->touched + mpl->param->max_age < mpl->t_now) {
+				mpl->vsc->pool--;
+				mpl->vsc->timeout++;
+				mpl->n_pool--;
+				VTAILQ_REMOVE(&mpl->list, mi, list);
+				mpl_slp = .01;	// random
+			} else {
+				mi = NULL;
+				last = mpl->t_now;
+			}
+		} else if (mpl->n_pool <= mpl->param->min_pool) {
+			last = mpl->t_now;
+		}
+
 		Lck_Unlock(mpl->mtx);
 
 		if (mi != NULL) {
@@ -250,6 +283,7 @@ MPL_Free(struct mempool *mpl, void *item)
 	} else {
 		mpl->vsc->pool++;
 		mpl->n_pool++;
+		mi->touched = mpl->t_now;
 		VTAILQ_INSERT_HEAD(&mpl->list, mi, list);
 	}
 
