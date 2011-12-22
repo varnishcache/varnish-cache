@@ -109,13 +109,14 @@ VSC_F(happy,		uint64_t, 0, 'b', "Happy health probes", "")
 /**********************************************************************/
 #ifdef VSC_DO_MEMPOOL
 
-VSC_F(allocs,			uint64_t, 0, 'c', "Allocations", "")
-VSC_F(frees,			uint64_t, 0, 'c', "Frees", "")
 VSC_F(live,			uint64_t, 0, 'g', "In use", "")
 VSC_F(pool,			uint64_t, 0, 'g', "In Pool", "")
-VSC_F(recycle,			uint64_t, 0, 'g', "Recycled from pool", "")
-VSC_F(timeout,			uint64_t, 0, 'g', "Timed out from pool", "")
-VSC_F(toosmall,			uint64_t, 0, 'g', "Too small to recycle", "")
-VSC_F(surplus,			uint64_t, 0, 'g', "Too many for pool", "")
+VSC_F(allocs,			uint64_t, 0, 'c', "Allocations", "")
+VSC_F(frees,			uint64_t, 0, 'c', "Frees", "")
+VSC_F(recycle,			uint64_t, 0, 'c', "Recycled from pool", "")
+VSC_F(timeout,			uint64_t, 0, 'c', "Timed out from pool", "")
+VSC_F(toosmall,			uint64_t, 0, 'c', "Too small to recycle", "")
+VSC_F(surplus,			uint64_t, 0, 'c', "Too many for pool", "")
+VSC_F(randry,			uint64_t, 0, 'c', "Pool ran dry", "")
 
 #endif

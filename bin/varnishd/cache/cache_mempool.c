@@ -51,17 +51,18 @@ VTAILQ_HEAD(memhead_s, memitem);
 struct mempool {
 	unsigned			magic;
 #define MEMPOOL_MAGIC			0x37a75a8d
+	char				name[8];
 	struct memhead_s		list;
 	struct memhead_s		surplus;
-	struct lock			*mtx;
-	struct lock			imtx;
-	const char			*name;
+	struct lock			mtx;
 	volatile struct poolparam	*param;
 	volatile unsigned		*cur_size;
+	uint64_t			live;
 	struct VSC_C_mempool		*vsc;
 	unsigned			n_pool;
 	pthread_t			thread;
 	double				t_now;
+	int				self_destruct;
 };
 
 /*---------------------------------------------------------------------
@@ -124,20 +125,50 @@ mpl_guard(void *priv)
 			/* can do */
 		} else if (last + .1 * mpl->param->max_age < mpl->t_now) {
 			/* should do */
+		} else if (mpl->self_destruct) {
+			/* can do */
 		} else {
 			continue;	/* nothing to do */
 		}
 
 		mpl_slp = 0.314;	// random
 
-		if (Lck_Trylock(mpl->mtx))
+		if (Lck_Trylock(&mpl->mtx))
 			continue;
+
+		if (mpl->self_destruct) {
+			AZ(mpl->live);
+			while (1) {
+				if (mi == NULL) {
+					mi = VTAILQ_FIRST(&mpl->list);
+					if (mi != NULL) {
+						mpl->vsc->pool = --mpl->n_pool;
+						VTAILQ_REMOVE(&mpl->list,
+						    mi, list);
+					}
+				}
+				if (mi == NULL) {
+					mi = VTAILQ_FIRST(&mpl->surplus);
+					if (mi != NULL)
+						VTAILQ_REMOVE(&mpl->surplus,
+						    mi, list);
+				}
+				if (mi == NULL) 
+					break;
+				FREE_OBJ(mi);
+				mi = NULL;
+			}
+			VSM_Free(mpl->vsc);
+			Lck_Unlock(&mpl->mtx);
+			Lck_Delete(&mpl->mtx);
+			FREE_OBJ(mpl);
+			break;
+		}
 
 		if (mpl->n_pool < mpl->param->min_pool &&
 		    mi != NULL && mi->size >= *mpl->cur_size) {
 			CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
-			mpl->vsc->pool++;
-			mpl->n_pool++;
+			mpl->vsc->pool = ++mpl->n_pool;
 			mi->touched = mpl->t_now;
 			VTAILQ_INSERT_HEAD(&mpl->list, mi, list);
 			mi = NULL;
@@ -147,9 +178,8 @@ mpl_guard(void *priv)
 		if (mpl->n_pool > mpl->param->max_pool && mi == NULL) {
 			mi = VTAILQ_FIRST(&mpl->list);
 			CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
-			mpl->vsc->pool--;
+			mpl->vsc->pool = --mpl->n_pool;
 			mpl->vsc->surplus++;
-			mpl->n_pool--;
 			VTAILQ_REMOVE(&mpl->list, mi, list);
 			mpl_slp = .01;	// random
 		}
@@ -165,9 +195,8 @@ mpl_guard(void *priv)
 			mi = VTAILQ_LAST(&mpl->list, memhead_s);
 			CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
 			if (mi->touched + mpl->param->max_age < mpl->t_now) {
-				mpl->vsc->pool--;
+				mpl->vsc->pool = --mpl->n_pool;
 				mpl->vsc->timeout++;
-				mpl->n_pool--;
 				VTAILQ_REMOVE(&mpl->list, mi, list);
 				mpl_slp = .01;	// random
 			} else {
@@ -178,22 +207,22 @@ mpl_guard(void *priv)
 			last = mpl->t_now;
 		}
 
-		Lck_Unlock(mpl->mtx);
+		Lck_Unlock(&mpl->mtx);
 
 		if (mi != NULL) {
 			FREE_OBJ(mi);
 			mi = NULL;
 		}
 	}
-	NEEDLESS_RETURN(NULL);
+	return (NULL);
 }
 
 /*---------------------------------------------------------------------
+ * Create a new memory pool, and start the guard thread for it.
  */
 
 struct mempool *
 MPL_New(const char *name,
-	struct lock *mtx,
 	volatile struct poolparam *pp,
 	volatile unsigned *cur_size)
 {
@@ -201,22 +230,43 @@ MPL_New(const char *name,
 
 	ALLOC_OBJ(mpl, MEMPOOL_MAGIC);
 	AN(mpl);
-	mpl->name = name;
+	bprintf(mpl->name, "%s", name);
 	mpl->param = pp;
 	mpl->cur_size = cur_size;
-	mpl->mtx = mtx;
 	VTAILQ_INIT(&mpl->list);
 	VTAILQ_INIT(&mpl->surplus);
-	Lck_New(&mpl->imtx, lck_mempool);
-	if (mpl->mtx == NULL)
-		mpl->mtx = &mpl->imtx;
+	Lck_New(&mpl->mtx, lck_mempool);
 	/* XXX: prealloc min_pool */
 	mpl->vsc = VSM_Alloc(sizeof *mpl->vsc,
-	    VSC_CLASS, VSC_TYPE_MEMPOOL, name);
+	    VSC_CLASS, VSC_TYPE_MEMPOOL, mpl->name);
 	AN(mpl->vsc);
 	AZ(pthread_create(&mpl->thread, NULL, mpl_guard, mpl));
+	AZ(pthread_detach(mpl->thread));
 	return (mpl);
 }
+
+/*---------------------------------------------------------------------
+ * Destroy a memory pool.  There must be no live items, and we cheat
+ * and leave all the hard work to the guard thread.
+ */
+
+void
+MPL_Destroy(struct mempool **mpp)
+{
+	struct mempool *mpl;
+
+	AN(mpp);
+	mpl = *mpp;
+	*mpp = NULL;
+	CHECK_OBJ_NOTNULL(mpl, MEMPOOL_MAGIC);
+	Lck_Lock(&mpl->mtx);
+	AZ(mpl->live);
+	mpl->self_destruct = 1;
+	Lck_Unlock(&mpl->mtx);
+}
+
+/*---------------------------------------------------------------------
+ */
 
 void *
 MPL_Get(struct mempool *mpl, unsigned *size)
@@ -225,17 +275,18 @@ MPL_Get(struct mempool *mpl, unsigned *size)
 
 	CHECK_OBJ_NOTNULL(mpl, MEMPOOL_MAGIC);
 
-	Lck_Lock(mpl->mtx);
+	Lck_Lock(&mpl->mtx);
 
 	mpl->vsc->allocs++;
-	mpl->vsc->live++;
+	mpl->vsc->live = ++mpl->live;
 
 	do {
 		mi = VTAILQ_FIRST(&mpl->list);
-		if (mi == NULL)
+		if (mi == NULL) {
+			mpl->vsc->randry++;
 			break;
-		mpl->vsc->pool--;
-		mpl->n_pool--;
+		}
+		mpl->vsc->pool = --mpl->n_pool;
 		CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
 		VTAILQ_REMOVE(&mpl->list, mi, list);
 		if (mi->size < *mpl->cur_size) {
@@ -247,7 +298,7 @@ MPL_Get(struct mempool *mpl, unsigned *size)
 		}
 	} while (mi == NULL);
 
-	Lck_Unlock(mpl->mtx);
+	Lck_Unlock(&mpl->mtx);
 
 	if (mi == NULL)
 		mi = mpl_alloc(mpl);
@@ -269,10 +320,10 @@ MPL_Free(struct mempool *mpl, void *item)
 	CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
 	memset(item, 0, mi->size);
 
-	Lck_Lock(mpl->mtx);
+	Lck_Lock(&mpl->mtx);
 
 	mpl->vsc->frees++;
-	mpl->vsc->live--;
+	mpl->vsc->live = --mpl->live;
 
 	if (mi->size < *mpl->cur_size) {
 		mpl->vsc->toosmall++;
@@ -281,11 +332,10 @@ MPL_Free(struct mempool *mpl, void *item)
 		mpl->vsc->surplus++;
 		VTAILQ_INSERT_HEAD(&mpl->surplus, mi, list);
 	} else {
-		mpl->vsc->pool++;
-		mpl->n_pool++;
+		mpl->vsc->pool = ++mpl->n_pool;
 		mi->touched = mpl->t_now;
 		VTAILQ_INSERT_HEAD(&mpl->list, mi, list);
 	}
 
-	Lck_Unlock(mpl->mtx);
+	Lck_Unlock(&mpl->mtx);
 }
