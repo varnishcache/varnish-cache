@@ -331,28 +331,10 @@ pool_queue(struct pool *pp, struct sess *sp)
 int
 Pool_Schedule(struct pool *pp, struct sess *sp)
 {
+
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AZ(sp->wrk);
-	if (pool_queue(pp, sp) == 0)
-		return(0);
-
-	VSC_C_main->client_drop_late++;
-
-	/*
-	 * Couldn't queue it -- kill it.
-	 *
-	 * XXX: a notice might be polite, but would potentially
-	 * XXX: sleep whichever thread got us here
-	 */
-	sp->t_end = VTIM_real();
-	if (sp->vcl != NULL) {
-		/*
-		 * A session parked on a busy object can come here
-		 * after it wakes up.  Loose the VCL reference.
-		 */
-		VCL_Rel(&sp->vcl);
-	}
-	return (1);
+	return(pool_queue(pp, sp));
 }
 
 /*--------------------------------------------------------------------

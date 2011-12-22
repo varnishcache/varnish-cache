@@ -42,6 +42,7 @@
 #include "cache.h"
 
 #include "waiter/waiter.h"
+#include "vtim.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -266,6 +267,15 @@ SES_Schedule(struct sess *sp)
 	AN(pp->pool);
 
 	if (Pool_Schedule(pp->pool, sp)) {
+		VSC_C_main->client_drop_late++;
+		sp->t_end = VTIM_real();
+		if (sp->vcl != NULL) {
+			/*
+			 * A session parked on a busy object can come here
+			 * after it wakes up.  Loose the VCL reference.
+			 */
+			VCL_Rel(&sp->vcl);
+		}
 		SES_Delete(sp, "dropped");
 		return (1);
 	}
