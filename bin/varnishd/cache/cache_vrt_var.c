@@ -441,21 +441,21 @@ VRT_r_req_xid(struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
-#define REQ_BOOL(which)						\
+#define REQ_BOOL(hash_var)					\
 void __match_proto__()						\
-VRT_l_req_##which(struct sess *sp, unsigned val)		\
+VRT_l_req_##hash_var(struct sess *sp, unsigned val)		\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	sp->which = val ? 1 : 0;				\
+	sp->hash_var = val ? 1 : 0;				\
 }								\
 								\
 unsigned __match_proto__()					\
-VRT_r_req_##which(struct sess *sp)				\
+VRT_r_req_##hash_var(struct sess *sp)				\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	return(sp->which);					\
+	return(sp->hash_var);					\
 }
 
 REQ_BOOL(hash_ignore_busy)
