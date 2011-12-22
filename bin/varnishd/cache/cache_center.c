@@ -98,9 +98,10 @@ DOT }
 static int
 cnt_wait(struct sess *sp)
 {
-	int i;
+	int i, j, tmo;
 	struct pollfd pfd[1];
 	struct worker *wrk;
+	double now, when;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	wrk = sp->wrk;
@@ -110,33 +111,59 @@ cnt_wait(struct sess *sp)
 	AZ(sp->esi_level);
 	assert(sp->xid == 0);
 
-	i = HTC_Complete(sp->htc);
-	if (i == 0 && cache_param->session_linger > 0) {
+	assert(!isnan(sp->t_req));
+	tmo = (int)(1e3 * cache_param->timeout_linger);
+	while (1) {
 		pfd[0].fd = sp->fd;
 		pfd[0].events = POLLIN;
 		pfd[0].revents = 0;
-		i = poll(pfd, 1, cache_param->session_linger);
-		if (i)
+		j = poll(pfd, 1, tmo);
+		assert(j >= 0);
+		if (j != 0)
 			i = HTC_Rx(sp->htc);
+		else
+			i = HTC_Complete(sp->htc);
+		if (i == -1) {
+			SES_Close(sp, "EOF");
+			break;
+		}
+		if (i == -2) {
+			SES_Close(sp, "overflow");
+			break;
+		}
+		now = VTIM_real();
+		if (i == 1) {
+			/* Got it, run with it */
+			sp->t_req = now;
+			sp->step = STP_START;
+			return (0);
+		}
+		if (i == -3) {
+			/* Nothing but whitespace */
+			when = sp->t_idle + cache_param->timeout_idle;
+			if (when < now) {
+				SES_Close(sp, "timeout");
+				break;
+			}
+			when = sp->t_idle + cache_param->timeout_linger;
+			tmo = (int)(1e3 * (when - now));
+			if (when < now || tmo == 0) {
+				sp->t_req = NAN;
+				wrk->stats.sess_herd++;
+				SES_Charge(sp);
+				WAIT_Enter(sp);
+				return (1);
+			}
+		} else {
+			/* Working on it */
+			when = sp->t_req + cache_param->timeout_req;
+			tmo = (int)(1e3 * (when - now));
+			if (when < now || tmo == 0) {
+				SES_Close(sp, "req timeout");
+				break;
+			}
+		}
 	}
-	if (i == 0) {
-		WSP(sp, SLT_Debug, "herding");
-		wrk->stats.sess_herd++;
-		SES_Charge(sp);
-		WAIT_Enter(sp);
-		return (1);
-	}
-	if (i == 1) {
-		sp->step = STP_START;
-		return (0);
-	}
-	if (i == -2) {
-		SES_Close(sp, "overflow");
-	} else if (i == -1 && Tlen(sp->htc->rxbuf) == 0 &&
-	    (errno == 0 || errno == ECONNRESET))
-		SES_Close(sp, "EOF");
-	else
-		SES_Close(sp, "error");
 	sp->step = STP_DONE;
 	return (0);
 }
@@ -366,8 +393,6 @@ cnt_done(struct sess *sp)
 
 
 	sp->t_idle = W_TIM_real(wrk);
-WSP(sp, SLT_Debug, "PHK req %.9f resp %.9f end %.9f open %.9f",
-    sp->t_req, sp->t_resp, sp->t_idle,  sp->t_open);
 	if (sp->xid == 0) {
 		sp->t_resp = sp->t_idle;
 	} else {
@@ -418,17 +443,20 @@ WSP(sp, SLT_Debug, "PHK req %.9f resp %.9f end %.9f open %.9f",
 	i = HTC_Reinit(sp->htc);
 	if (i == 1) {
 		wrk->stats.sess_pipeline++;
+		sp->t_req = sp->t_idle;
 		sp->step = STP_START;
 		return (0);
 	}
 	if (Tlen(sp->htc->rxbuf)) {
 		wrk->stats.sess_readahead++;
 		sp->step = STP_WAIT;
+		sp->t_req = sp->t_idle;
 		return (0);
 	}
-	if (cache_param->session_linger > 0) {
+	if (cache_param->timeout_linger > 0.) {
 		wrk->stats.sess_linger++;
 		sp->step = STP_WAIT;
+		sp->t_req = sp->t_idle;		// XXX: not quite correct
 		return (0);
 	}
 	wrk->stats.sess_herd++;
@@ -1574,7 +1602,7 @@ cnt_start(struct sess *sp)
 
 	/* Update stats of various sorts */
 	wrk->stats.client_req++;
-	sp->t_req = W_TIM_real(wrk);
+	assert(!isnan(sp->t_req));
 	wrk->acct_tmp.req++;
 
 	/* Assign XID and log */

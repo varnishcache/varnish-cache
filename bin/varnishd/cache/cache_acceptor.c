@@ -276,6 +276,7 @@ VCA_SetupSess(struct worker *w)
 	sp->vsl_id = wa->acceptsock | VSL_CLIENTMARKER ;
 	wa->acceptsock = -1;
 	sp->t_open = VTIM_real();
+	sp->t_req = sp->t_open;
 	sp->t_idle = sp->t_open;
 	sp->mylsock = wa->acceptlsock;
 	CHECK_OBJ_NOTNULL(sp->mylsock, LISTEN_SOCK_MAGIC);
@@ -293,7 +294,7 @@ static void *
 vca_acct(void *arg)
 {
 #ifdef SO_RCVTIMEO_WORKS
-	double sess_timeout = 0;
+	double timeout_idle = 0;
 #endif
 #ifdef SO_SNDTIMEO_WORKS
 	double send_timeout = 0;
@@ -333,10 +334,10 @@ vca_acct(void *arg)
 		}
 #endif
 #ifdef SO_RCVTIMEO_WORKS
-		if (cache_param->sess_timeout != sess_timeout) {
+		if (cache_param->timeout_idle != timeout_idle) {
 			need_test = 1;
-			sess_timeout = cache_param->sess_timeout;
-			tv_rcvtimeo = VTIM_timeval(sess_timeout);
+			timeout_idle = cache_param->timeout_idle;
+			tv_rcvtimeo = VTIM_timeval(timeout_idle);
 			VTAILQ_FOREACH(ls, &heritage.socks, list) {
 				if (ls->sock < 0)
 					continue;

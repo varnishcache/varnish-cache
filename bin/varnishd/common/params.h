@@ -85,8 +85,9 @@ struct params {
 
 	unsigned		shm_reclen;
 
-	/* Acceptor hints */
-	unsigned		sess_timeout;
+	double			timeout_linger;
+	double			timeout_idle;
+	double			timeout_req;
 	unsigned		pipe_timeout;
 	unsigned		send_timeout;
 	unsigned		idle_send_timeout;
@@ -139,9 +140,6 @@ struct params {
 	/* Read timeouts for backend */
 	double			first_byte_timeout;
 	double			between_bytes_timeout;
-
-	/* How long to linger on sessions */
-	unsigned		session_linger;
 
 	/* CLI buffer size */
 	unsigned		cli_buffer;

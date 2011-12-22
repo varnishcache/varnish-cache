@@ -191,7 +191,7 @@ vws_thread(void *priv)
 			vws_port_ev(vws, ev + ei, now);
 
 		/* check for timeouts */
-		deadline = now - cache_param->sess_timeout;
+		deadline = now - cache_param->timeout_idle;
 
 		/*
 		 * This loop assumes that the oldest sessions are always at the
@@ -220,7 +220,7 @@ vws_thread(void *priv)
 
 		if (sp) {
 			double tmo =
-			    (sp->t_open + cache_param->sess_timeout) - now;
+			    (sp->t_open + cache_param->timeout_idle) - now;
 
 			/*
 			 * we should have removed all sps whose timeout

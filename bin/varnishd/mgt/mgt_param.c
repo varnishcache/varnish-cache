@@ -773,12 +773,19 @@ static const struct parspec input_parspec[] = {
 		"cache at the end of ttl+grace+keep.",
 		DELAYED_EFFECT,
 		"0", "seconds" },
-	{ "sess_timeout", tweak_timeout, &mgt_param.sess_timeout, 0, 0,
-		"Idle timeout for persistent sessions. "
-		"If a HTTP request has not been received in this many "
-		"seconds, the session is closed.",
+	{ "timeout_idle", tweak_timeout_double, &mgt_param.timeout_idle,
+		0, UINT_MAX,
+		"Idle timeout for client connections.\n"
+		"A connection is considered idle, until we receive"
+		" a non-white-space character on it.",
 		0,
 		"5", "seconds" },
+	{ "timeout_req", tweak_timeout_double, &mgt_param.timeout_req,
+		0, UINT_MAX,
+		"Max time to receive clients request header, measured"
+		" from first non-white-space character to double CRNL.",
+		0,
+		"2", "seconds" },
 	{ "expiry_sleep", tweak_timeout_double, &mgt_param.expiry_sleep, 0, 60,
 		"How long the expiry thread sleeps when there is nothing "
 		"for it to do.\n",
@@ -993,18 +1000,18 @@ static const struct parspec input_parspec[] = {
 		"it.\n",
 		0,
 		"100000", "sessions" },
-	{ "session_linger", tweak_uint,
-		&mgt_param.session_linger,0, UINT_MAX,
-		"How long time the workerthread lingers on the session "
-		"to see if a new request appears right away.\n"
-		"If sessions are reused, as much as half of all reuses "
+	{ "timeout_linger", tweak_timeout_double, &mgt_param.timeout_linger,
+		0, UINT_MAX,
+		"How long time the workerthread lingers on an idle session "
+		"before handing it over to the waiter.\n"
+		"When sessions are reused, as much as half of all reuses "
 		"happen within the first 100 msec of the previous request "
 		"completing.\n"
 		"Setting this too high results in worker threads not doing "
 		"anything for their keep, setting it too low just means that "
 		"more sessions take a detour around the waiter.",
 		EXPERIMENTAL,
-		"50", "ms" },
+		"0.050", "seconds" },
 	{ "log_hashstring", tweak_bool, &mgt_param.log_hash, 0, 0,
 		"Log the hash string components to shared memory log.\n",
 		0,

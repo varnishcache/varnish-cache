@@ -183,7 +183,7 @@ vwe_thread(void *priv)
 			continue;
 
 		/* check for timeouts */
-		deadline = now - cache_param->sess_timeout;
+		deadline = now - cache_param->timeout_idle;
 		for (;;) {
 			sp = VTAILQ_FIRST(&vwe->sesshead);
 			if (sp == NULL)
@@ -201,13 +201,13 @@ vwe_thread(void *priv)
 /*--------------------------------------------------------------------*/
 
 static void *
-vwe_sess_timeout_ticker(void *priv)
+vwe_timeout_idle_ticker(void *priv)
 {
 	char ticker = 'R';
 	struct vwe *vwe;
 
 	CAST_OBJ_NOTNULL(vwe, priv, VWE_MAGIC);
-	THR_SetName("cache-epoll-sess_timeout_ticker");
+	THR_SetName("cache-epoll-timeout_idle_ticker");
 
 	while (1) {
 		/* ticking */
@@ -255,7 +255,7 @@ vwe_init(void)
 	assert(i != -1);
 
 	AZ(pthread_create(&vwe->timer_thread,
-	    NULL, vwe_sess_timeout_ticker, vwe));
+	    NULL, vwe_timeout_idle_ticker, vwe));
 	AZ(pthread_create(&vwe->epoll_thread, NULL, vwe_thread, vwe));
 	return(vwe);
 }

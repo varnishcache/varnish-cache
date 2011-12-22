@@ -141,7 +141,7 @@ vwp_main(void *priv)
 		v = poll(vwp->pollfd, vwp->hpoll + 1, 100);
 		assert(v >= 0);
 		now = VTIM_real();
-		deadline = now - cache_param->sess_timeout;
+		deadline = now - cache_param->timeout_idle;
 		v2 = v;
 		VTAILQ_FOREACH_SAFE(sp, &vwp->sesshead, list, sp2) {
 			if (v != 0 && v2 == 0)
