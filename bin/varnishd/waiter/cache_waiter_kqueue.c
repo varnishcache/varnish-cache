@@ -86,30 +86,41 @@ vwk_kq_sess(struct vwk *vwk, struct sess *sp, short arm)
 		vwk_kq_flush(vwk);
 }
 
+/*--------------------------------------------------------------------*/
+
 static void
-vwk_kev(struct vwk *vwk, const struct kevent *kp)
+vwk_pipe_ev(struct vwk *vwk, const struct kevent *kp)
 {
 	int i, j;
-	struct sess *sp;
 	struct sess *ss[NKEV];
 
 	AN(kp->udata);
-	if (kp->udata == vwk->pipes) {
-		j = 0;
-		i = read(vwk->pipes[0], ss, sizeof ss);
-		if (i == -1 && errno == EAGAIN)
-			return;
-		while (i >= sizeof ss[0]) {
-			CHECK_OBJ_NOTNULL(ss[j], SESS_MAGIC);
-			assert(ss[j]->fd >= 0);
-			VTAILQ_INSERT_TAIL(&vwk->sesshead, ss[j], list);
-			vwk_kq_sess(vwk, ss[j], EV_ADD | EV_ONESHOT);
-			j++;
-			i -= sizeof ss[0];
-		}
-		assert(i == 0);
+	assert(kp->udata == vwk->pipes);
+	j = 0;
+	i = read(vwk->pipes[0], ss, sizeof ss);
+	if (i == -1 && errno == EAGAIN)
 		return;
+	while (i >= sizeof ss[0]) {
+		CHECK_OBJ_NOTNULL(ss[j], SESS_MAGIC);
+		assert(ss[j]->fd >= 0);
+		VTAILQ_INSERT_TAIL(&vwk->sesshead, ss[j], list);
+		vwk_kq_sess(vwk, ss[j], EV_ADD | EV_ONESHOT);
+		j++;
+		i -= sizeof ss[0];
 	}
+	assert(i == 0);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+vwk_sess_ev(struct vwk *vwk, const struct kevent *kp)
+{
+	int i;
+	struct sess *sp;
+
+	AN(kp->udata);
+	assert(kp->udata != vwk->pipes);
 	CAST_OBJ_NOTNULL(sp, kp->udata, SESS_MAGIC);
 	DSL(0x04, SLT_Debug, sp->vsl_id, "KQ: sp %p kev data %lu flags 0x%x%s",
 	    sp, (unsigned long)kp->data, kp->flags,
@@ -171,10 +182,13 @@ vwk_thread(void *priv)
 		for (kp = ke, j = 0; j < n; j++, kp++) {
 			if (kp->filter == EVFILT_TIMER) {
 				dotimer = 1;
-				continue;
+			} else if (kp->filter == EVFILT_READ &&
+			    kp->udata == vwk->pipes) {
+				vwk_pipe_ev(vwk, kp);
+			} else {
+				assert(kp->filter == EVFILT_READ);
+				vwk_sess_ev(vwk, kp);
 			}
-			assert(kp->filter == EVFILT_READ);
-			vwk_kev(vwk, kp);
 		}
 		if (!dotimer)
 			continue;
