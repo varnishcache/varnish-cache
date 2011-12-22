@@ -581,18 +581,13 @@ struct object {
 struct sess {
 	unsigned		magic;
 #define SESS_MAGIC		0x2c2f9c5a
-	int			fd;
-	unsigned		vsl_id;
-	unsigned		xid;
-
-	int			restarts;
-	int			esi_level;
-	int			disable_esi;
-
-	uint8_t			hash_ignore_busy;
-	uint8_t			hash_always_miss;
 
 	struct worker		*wrk;
+
+	/* Session related fields ------------------------------------*/
+
+	int			fd;
+	unsigned		vsl_id;
 
 	socklen_t		sockaddrlen;
 	socklen_t		mysockaddrlen;
@@ -604,6 +599,29 @@ struct sess {
 	char			addr[ADDR_BUFSIZE];
 	char			port[PORT_BUFSIZE];
 	char			*client_identity;
+
+	/* Various internal stuff */
+	struct sessmem		*mem;
+
+	VTAILQ_ENTRY(sess)	poollist;
+	struct acct		acct_ses;
+
+	VTAILQ_ENTRY(sess)	list;
+
+#if defined(HAVE_EPOLL_CTL)
+	struct epoll_event ev;
+#endif
+
+	/* Request related fields ------------------------------------*/
+
+	unsigned		xid;
+
+	int			restarts;
+	int			esi_level;
+	int			disable_esi;
+
+	uint8_t			hash_ignore_busy;
+	uint8_t			hash_always_miss;
 
 	/* HTTP request */
 	const char		*doclose;
@@ -620,14 +638,6 @@ struct sess {
 	uint8_t			*vary_l;
 	uint8_t			*vary_e;
 
-	struct http_conn	htc[1];
-
-	/* Timestamps, all on TIM_real() timescale */
-	double			t_open;
-	double			t_req;
-	double			t_resp;
-	double			t_end;
-
 	/* Acceptable grace period */
 	struct exp		exp;
 
@@ -639,24 +649,24 @@ struct sess {
 	uint16_t		err_code;
 	const char		*err_reason;
 
-	VTAILQ_ENTRY(sess)	list;
+	/* The busy objhead we sleep on */
+	struct objhead		*hash_objhead;
 
 	struct director		*director;
 	struct VCL_conf		*vcl;
 
-	/* The busy objhead we sleep on */
-	struct objhead		*hash_objhead;
-
-	/* Various internal stuff */
-	struct sessmem		*mem;
-
-	VTAILQ_ENTRY(sess)	poollist;
 	uint64_t		req_bodybytes;
-	struct acct		acct_ses;
 
-#if defined(HAVE_EPOLL_CTL)
-	struct epoll_event ev;
-#endif
+	/* TBD fields ------------------------------------------------*/
+
+	struct http_conn	htc[1];
+
+	/* Timestamps, all on TIM_real() timescale */
+	double			t_open;
+	double			t_req;
+	double			t_resp;
+	double			t_end;
+
 };
 
 /* Prototypes etc ----------------------------------------------------*/
