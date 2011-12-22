@@ -1665,6 +1665,8 @@ CNT_Session(struct sess *sp)
 	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
+	MPL_AssertSane(sp->req);
 	wrk = sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
@@ -1702,6 +1704,8 @@ CNT_Session(struct sess *sp)
 	 */
 	for (done = 0; !done; ) {
 		assert(sp->wrk == wrk);
+		CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
+		MPL_AssertSane(sp->req);
 		/*
 		 * This is a good place to be paranoid about the various
 		 * pointers still pointing to the things we expect.

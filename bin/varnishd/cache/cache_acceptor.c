@@ -282,7 +282,6 @@ VCA_SetupSess(struct worker *w)
 	assert(wa->acceptaddrlen <= sp->sockaddrlen);
 	memcpy(&sp->sockaddr, &wa->acceptaddr, wa->acceptaddrlen);
 	sp->sockaddrlen = wa->acceptaddrlen;
-	sp->step = STP_FIRST;
 	vca_pace_good();
 	w->stats.sess_conn++;
 	vca_prep(sp);

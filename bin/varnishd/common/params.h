@@ -202,4 +202,5 @@ struct params {
 	ssize_t			vsl_space;
 
 	struct poolparam	vbc_pool;
+	struct poolparam	req_pool;
 };

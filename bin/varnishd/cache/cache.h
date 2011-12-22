@@ -576,13 +576,24 @@ struct object {
 
 };
 
-/* -------------------------------------------------------------------*/
+/*--------------------------------------------------------------------*/
+
+struct req {
+	unsigned		magic;
+#define REQ_MAGIC		0x2751aaa1
+};
+
+/*--------------------------------------------------------------------*/
 
 struct sess {
 	unsigned		magic;
 #define SESS_MAGIC		0x2c2f9c5a
 
+	/* Cross references ------------------------------------------*/
+
 	struct worker		*wrk;
+	struct req		*req;
+	struct sessmem		*mem;
 
 	/* Session related fields ------------------------------------*/
 
@@ -599,9 +610,6 @@ struct sess {
 	char			addr[ADDR_BUFSIZE];
 	char			port[PORT_BUFSIZE];
 	char			*client_identity;
-
-	/* Various internal stuff */
-	struct sessmem		*mem;
 
 	VTAILQ_ENTRY(sess)	poollist;
 	struct acct		acct_ses;
@@ -871,6 +879,7 @@ int Lck_CondWait(pthread_cond_t *cond, struct lock *lck, struct timespec *ts);
 #undef LOCK
 
 /* cache_mempool.c */
+void MPL_AssertSane(void *item);
 struct mempool * MPL_New(const char *name, volatile struct poolparam *pp,
     volatile unsigned *cur_size);
 void MPL_Destroy(struct mempool **mpp);
@@ -908,7 +917,7 @@ struct sess *SES_Alloc(void);
 void SES_Close(struct sess *sp, const char *reason);
 void SES_Delete(struct sess *sp, const char *reason);
 void SES_Charge(struct sess *sp);
-struct sesspool *SES_NewPool(struct pool *pp);
+struct sesspool *SES_NewPool(struct pool *pp, unsigned pool_no);
 void SES_DeletePool(struct sesspool *sp, struct worker *wrk);
 int SES_Schedule(struct sess *sp);
 void SES_Handle(struct sess *sp, int status);

@@ -36,6 +36,7 @@
 #include "config.h"
 
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "cache.h"
@@ -67,6 +68,8 @@ struct sesspool {
 	struct lock		mtx;
 	unsigned		nsess;
 	unsigned		dly_free_cnt;
+	unsigned		req_size;
+	struct mempool		*mpl_req;
 };
 
 /*--------------------------------------------------------------------
@@ -214,6 +217,9 @@ SES_New(struct worker *wrk, struct sesspool *pp)
 	if (sm == NULL)
 		return (NULL);
 	sp = &sm->sess;
+	sp->req = MPL_Get(pp->mpl_req, NULL);
+	AN(sp->req);
+	sp->req->magic = REQ_MAGIC;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	return (sp);
 }
@@ -233,6 +239,7 @@ SES_Alloc(void)
 	ses_setup(sm);
 	sp = &sm->sess;
 	sp->sockaddrlen = 0;
+	/* XXX: sp->req ? */
 	return (sp);
 }
 
@@ -326,6 +333,8 @@ SES_Delete(struct sess *sp, const char *reason)
 
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
+	MPL_AssertSane(sp->req);
 	sm = sp->mem;
 	CHECK_OBJ_NOTNULL(sm, SESSMEM_MAGIC);
 	pp = sm->pool;
@@ -352,6 +361,11 @@ SES_Delete(struct sess *sp, const char *reason)
 	    sp->addr, sp->port, sp->t_end - b->first,
 	    b->sess, b->req, b->pipe, b->pass,
 	    b->fetch, b->hdrbytes, b->bodybytes);
+
+	CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
+	MPL_AssertSane(sp->req);
+	MPL_Free(pp->mpl_req, sp->req);
+	sp->req = NULL;
 
 	if (sm->workspace != cache_param->sess_workspace ||
 	    sm->nhttp != (uint16_t)cache_param->http_max_hdr ||
@@ -382,15 +396,19 @@ SES_Delete(struct sess *sp, const char *reason)
  */
 
 struct sesspool *
-SES_NewPool(struct pool *pp)
+SES_NewPool(struct pool *pp, unsigned pool_no)
 {
 	struct sesspool *sp;
+	char nb[8];
 
 	ALLOC_OBJ(sp, SESSPOOL_MAGIC);
 	AN(sp);
 	sp->pool = pp;
 	VTAILQ_INIT(&sp->freelist);
 	Lck_New(&sp->mtx, lck_sessmem);
+	bprintf(nb, "req%u", pool_no);
+	sp->req_size = sizeof (struct req);
+	sp->mpl_req = MPL_New(nb, &cache_param->req_pool, &sp->req_size);
 	return (sp);
 }
 
@@ -413,5 +431,6 @@ SES_DeletePool(struct sesspool *sp, struct worker *wrk)
 	AZ(sp->nsess);
 	Lck_Unlock(&sp->mtx);
 	Lck_Delete(&sp->mtx);
+	MPL_Destroy(&sp->mpl_req);
 	FREE_OBJ(sp);
 }

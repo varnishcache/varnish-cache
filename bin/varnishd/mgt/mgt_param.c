@@ -1197,8 +1197,17 @@ static const struct parspec input_parspec[] = {
 		0,
 		"true", ""},
 
-	{ "vbc_pool", tweak_poolparam, &mgt_param.vbc_pool, 0, 10000,
+	{ "pool_vbc", tweak_poolparam, &mgt_param.vbc_pool, 0, 10000,
 		"Parameters for backend connection memory pool.\n"
+		"The three numbers are:\n"
+		"   min_pool -- minimum size of free pool.\n"
+		"   max_pool -- maximum size of free pool.\n"
+		"   max_age -- max age of free element.\n",
+		0,
+		"10,100,10", ""},
+
+	{ "pool_req", tweak_poolparam, &mgt_param.req_pool, 0, 10000,
+		"Parameters for per worker pool request memory pool.\n"
 		"The three numbers are:\n"
 		"   min_pool -- minimum size of free pool.\n"
 		"   max_pool -- maximum size of free pool.\n"

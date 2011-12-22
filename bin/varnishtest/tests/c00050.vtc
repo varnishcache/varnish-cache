@@ -8,20 +8,20 @@ delay 1
 
 varnish v1 -expect MEMPOOL.vbc.pool == 10
 
-varnish v1 -cliok "param.set vbc_pool 90,100,100"
+varnish v1 -cliok "param.set pool_vbc 90,100,100"
 
 delay 1
 
 varnish v1 -expect MEMPOOL.vbc.pool == 90
 
-varnish v1 -cliok "param.set vbc_pool 50,80,100"
+varnish v1 -cliok "param.set pool_vbc 50,80,100"
 
 delay 1
 
 varnish v1 -expect MEMPOOL.vbc.pool == 80
 varnish v1 -expect MEMPOOL.vbc.surplus == 10
 
-varnish v1 -cliok "param.set vbc_pool 10,80,1"
+varnish v1 -cliok "param.set pool_vbc 10,80,1"
 
 delay 1
 

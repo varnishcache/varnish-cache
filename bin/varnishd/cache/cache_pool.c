@@ -244,6 +244,7 @@ Pool_Work_Thread(void *priv, struct worker *w)
 				w->do_what = pool_do_nothing;
 			} else {
 				VCA_SetupSess(w);
+				w->sp->step = STP_FIRST;
 				w->do_what = pool_do_sess;
 			}
 			WS_Release(w->ws, 0);
@@ -490,7 +491,7 @@ pool_herder(void *priv)
  */
 
 static struct pool *
-pool_mkpool(void)
+pool_mkpool(unsigned pool_no)
 {
 	struct pool *pp;
 	struct listen_sock *ls;
@@ -504,7 +505,7 @@ pool_mkpool(void)
 	VTAILQ_INIT(&pp->queue);
 	VTAILQ_INIT(&pp->idle);
 	VTAILQ_INIT(&pp->socks);
-	pp->sesspool = SES_NewPool(pp);
+	pp->sesspool = SES_NewPool(pp, pool_no);
 	AN(pp->sesspool);
 
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
@@ -545,7 +546,7 @@ pool_poolherder(void *priv)
 	nwq = 0;
 	while (1) {
 		if (nwq < cache_param->wthread_pools) {
-			pp = pool_mkpool();
+			pp = pool_mkpool(nwq);
 			if (pp != NULL) {
 				VTAILQ_INSERT_TAIL(&pools, pp, list);
 				VSC_C_main->pools++;

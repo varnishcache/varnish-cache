@@ -153,7 +153,7 @@ mpl_guard(void *priv)
 						VTAILQ_REMOVE(&mpl->surplus,
 						    mi, list);
 				}
-				if (mi == NULL) 
+				if (mi == NULL)
 					break;
 				FREE_OBJ(mi);
 				mi = NULL;
@@ -305,6 +305,7 @@ MPL_Get(struct mempool *mpl, unsigned *size)
 	if (size != NULL)
 		*size = mi->size;
 
+	CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
 	/* Throw away sizeof info for FlexeLint: */
 	return ((void*)(uintptr_t)&mi->payload);
 }
@@ -315,6 +316,7 @@ MPL_Free(struct mempool *mpl, void *item)
 	struct memitem *mi;
 
 	CHECK_OBJ_NOTNULL(mpl, MEMPOOL_MAGIC);
+	AN(item);
 
 	mi = (void*)((uintptr_t)item - offsetof(struct memitem, payload));
 	CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
@@ -338,4 +340,12 @@ MPL_Free(struct mempool *mpl, void *item)
 	}
 
 	Lck_Unlock(&mpl->mtx);
+}
+
+void
+MPL_AssertSane(void *item)
+{
+	struct memitem *mi;
+	mi = (void*)((uintptr_t)item - offsetof(struct memitem, payload));
+	CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
 }
