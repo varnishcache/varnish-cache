@@ -1675,7 +1675,7 @@ CNT_Session(struct sess *sp)
 	 */
 	assert(
 	    sp->step == STP_FIRST ||
-	    sp->step == STP_START ||
+	    sp->step == STP_WAIT ||
 	    sp->step == STP_LOOKUP ||
 	    sp->step == STP_RECV);
 

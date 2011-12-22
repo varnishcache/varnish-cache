@@ -129,13 +129,8 @@ vwe_eev(struct vwe *vwe, const struct epoll_event *ep)
 	} else {
 		CAST_OBJ_NOTNULL(sp, ep->data.ptr, SESS_MAGIC);
 		if (ep->events & EPOLLIN || ep->events & EPOLLPRI) {
-			i = HTC_Rx(sp->htc);
-			if (i == 0) {
-				vwe_modadd(vwe, sp->fd, sp, EPOLL_CTL_MOD);
-				return;	/* more needed */
-			}
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			SES_Handle(sp, i);
+			SES_Handle(sp);
 		} else if (ep->events & EPOLLERR) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
 			SES_Delete(sp, "ERR");

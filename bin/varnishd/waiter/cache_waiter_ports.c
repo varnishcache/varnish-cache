@@ -90,13 +90,6 @@ vws_port_ev(struct vws *vws, port_event_t *ev) {
 			SES_Delete(sp, "EOF");
 			return;
 		}
-		i = HTC_Rx(sp->htc);
-
-		if (i == 0) {
-			/* incomplete header, wait for more data */
-			vws_add(vws, sp->fd, sp);
-			return;
-		}
 
 		/*
 		 * note: the original man page for port_associate(3C) states:
@@ -115,7 +108,7 @@ vws_port_ev(struct vws *vws, port_event_t *ev) {
 		VTAILQ_REMOVE(&vws->sesshead, sp, list);
 
 		/* SES_Handle will also handle errors */
-		SES_Handle(sp, i);
+		SES_Handle(sp);
 	}
 	return;
 }

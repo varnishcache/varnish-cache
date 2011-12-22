@@ -153,20 +153,10 @@ vwp_main(void *priv)
 			assert(vwp->pollfd[fd].fd == fd);
 			if (vwp->pollfd[fd].revents) {
 				v2--;
-				i = HTC_Rx(sp->htc);
-				if (vwp->pollfd[fd].revents != POLLIN)
-					VSL(SLT_Debug, fd, "Poll: %x / %d",
-					    vwp->pollfd[fd].revents, i);
 				vwp->pollfd[fd].revents = 0;
 				VTAILQ_REMOVE(&vwp->sesshead, sp, list);
-				if (i == 0) {
-					/* Mov to front of list for speed */
-					VTAILQ_INSERT_HEAD(&vwp->sesshead,
-					    sp, list);
-				} else {
-					vwp_unpoll(vwp, fd);
-					SES_Handle(sp, i);
-				}
+				vwp_unpoll(vwp, fd);
+				SES_Handle(sp);
 			} else if (sp->t_open <= deadline) {
 				VTAILQ_REMOVE(&vwp->sesshead, sp, list);
 				vwp_unpoll(vwp, fd);

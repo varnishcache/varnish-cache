@@ -279,23 +279,11 @@ SES_Schedule(struct sess *sp)
  */
 
 void
-SES_Handle(struct sess *sp, int status)
+SES_Handle(struct sess *sp)
 {
 
-	switch (status) {
-	case -2:
-		SES_Delete(sp, "blast");
-		break;
-	case -1:
-		SES_Delete(sp, "no request");
-		break;
-	case 1:
-		sp->step = STP_START;
-		(void)SES_Schedule(sp);
-		break;
-	default:
-		WRONG("Unexpected return from HTC_Rx()");
-	}
+	sp->step = STP_WAIT;
+	(void)SES_Schedule(sp);
 }
 
 /*--------------------------------------------------------------------

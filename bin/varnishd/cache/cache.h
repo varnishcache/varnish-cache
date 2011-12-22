@@ -920,8 +920,7 @@ void SES_Charge(struct sess *sp);
 struct sesspool *SES_NewPool(struct pool *pp, unsigned pool_no);
 void SES_DeletePool(struct sesspool *sp, struct worker *wrk);
 int SES_Schedule(struct sess *sp);
-void SES_Handle(struct sess *sp, int status);
-
+void SES_Handle(struct sess *sp);
 
 /* cache_shmlog.c */
 extern struct VSC_C_main *VSC_C_main;

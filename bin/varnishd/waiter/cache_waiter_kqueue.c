@@ -116,7 +116,6 @@ vwk_pipe_ev(struct vwk *vwk, const struct kevent *kp)
 static void
 vwk_sess_ev(struct vwk *vwk, const struct kevent *kp)
 {
-	int i;
 	struct sess *sp;
 
 	AN(kp->udata);
@@ -129,13 +128,8 @@ vwk_sess_ev(struct vwk *vwk, const struct kevent *kp)
 	assert((sp->vsl_id & VSL_IDENTMASK) == kp->ident);
 	assert((sp->vsl_id & VSL_IDENTMASK) == sp->fd);
 	if (kp->data > 0) {
-		i = HTC_Rx(sp->htc);
-		if (i == 0) {
-			vwk_kq_sess(vwk, sp, EV_ADD | EV_ONESHOT);
-			return;	/* more needed */
-		}
 		VTAILQ_REMOVE(&vwk->sesshead, sp, list);
-		SES_Handle(sp, i);
+		SES_Handle(sp);
 		return;
 	} else if (kp->flags & EV_EOF) {
 		VTAILQ_REMOVE(&vwk->sesshead, sp, list);
