@@ -168,9 +168,9 @@ ses_setup(struct sessmem *sm)
 	sp->mysockaddrlen = sizeof(sp->mysockaddr);
 	sp->sockaddr.ss_family = sp->mysockaddr.ss_family = PF_UNSPEC;
 	sp->t_open = NAN;
+	sp->t_idle = NAN;
 	sp->t_req = NAN;
 	sp->t_resp = NAN;
-	sp->t_end = NAN;
 	EXP_Clr(&sp->exp);
 
 	WS_Init(sp->ws, "sess", sm->wsp, sm->workspace);
@@ -268,7 +268,7 @@ SES_Schedule(struct sess *sp)
 
 	if (Pool_Schedule(pp->pool, sp)) {
 		VSC_C_main->client_drop_late++;
-		sp->t_end = VTIM_real();
+		sp->t_idle = VTIM_real();
 		if (sp->vcl != NULL) {
 			/*
 			 * A session parked on a busy object can come here
@@ -276,7 +276,7 @@ SES_Schedule(struct sess *sp)
 			 */
 			VCL_Rel(&sp->vcl);
 		}
-		SES_Delete(sp, "dropped");
+		SES_Delete(sp, "dropped", sp->t_idle);
 		return (1);
 	}
 	return (0);
@@ -284,20 +284,21 @@ SES_Schedule(struct sess *sp)
 
 /*--------------------------------------------------------------------
  * Handle a session (from waiter)
- *
- * Status: see HTC_Rx()
  */
 
 void
-SES_Handle(struct sess *sp)
+SES_Handle(struct sess *sp, double now)
 {
 
 	sp->step = STP_WAIT;
+	sp->t_req = now;
 	(void)SES_Schedule(sp);
 }
 
 /*--------------------------------------------------------------------
  * Close a sessions connection.
+ * XXX: Technically speaking we should catch a t_end timestamp here
+ * XXX: for SES_Delete() to use.
  */
 
 void
@@ -322,7 +323,7 @@ SES_Close(struct sess *sp, const char *reason)
  */
 
 void
-SES_Delete(struct sess *sp, const char *reason)
+SES_Delete(struct sess *sp, const char *reason, double now)
 {
 	struct acct *b;
 	struct sessmem *sm;
@@ -340,9 +341,10 @@ SES_Delete(struct sess *sp, const char *reason)
 	wrk = sp->wrk;
 	CHECK_OBJ_ORNULL(wrk, WORKER_MAGIC);
 
-
 	if (reason != NULL)
 		SES_Close(sp, reason);
+	if (isnan(now))
+		now = VTIM_real();
 	assert(sp->fd < 0);
 
 	AZ(sp->vcl);
@@ -353,10 +355,10 @@ SES_Delete(struct sess *sp, const char *reason)
 
 	b = &sp->acct_ses;
 	assert(!isnan(b->first));
-	assert(!isnan(sp->t_end));
 
 	VSL(SLT_StatSess, sp->vsl_id, "%s %s %.0f %ju %ju %ju %ju %ju %ju %ju",
-	    sp->addr, sp->port, sp->t_end - b->first,
+	    sp->addr, sp->port,
+	    now - b->first, 	// XXX ??? 
 	    b->sess, b->req, b->pipe, b->pass,
 	    b->fetch, b->hdrbytes, b->bodybytes);
 

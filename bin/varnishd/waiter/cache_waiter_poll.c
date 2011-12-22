@@ -123,7 +123,7 @@ vwp_main(void *priv)
 	int v, v2;
 	struct vwp *vwp;
 	struct sess *ss[NEEV], *sp, *sp2;
-	double deadline;
+	double now, deadline;
 	int i, j, fd;
 
 	CAST_OBJ_NOTNULL(vwp, priv, VWP_MAGIC);
@@ -140,7 +140,8 @@ vwp_main(void *priv)
 		assert(vwp->pollfd[vwp->pipes[1]].fd == -1);
 		v = poll(vwp->pollfd, vwp->hpoll + 1, 100);
 		assert(v >= 0);
-		deadline = VTIM_real() - cache_param->sess_timeout;
+		now = VTIM_real();
+		deadline = now - cache_param->sess_timeout;
 		v2 = v;
 		VTAILQ_FOREACH_SAFE(sp, &vwp->sesshead, list, sp2) {
 			if (v != 0 && v2 == 0)
@@ -156,12 +157,12 @@ vwp_main(void *priv)
 				vwp->pollfd[fd].revents = 0;
 				VTAILQ_REMOVE(&vwp->sesshead, sp, list);
 				vwp_unpoll(vwp, fd);
-				SES_Handle(sp);
-			} else if (sp->t_open <= deadline) {
+				SES_Handle(sp, now);
+			} else if (sp->t_idle <= deadline) {
 				VTAILQ_REMOVE(&vwp->sesshead, sp, list);
 				vwp_unpoll(vwp, fd);
 				// XXX: not yet (void)VTCP_linger(sp->fd, 0);
-				SES_Delete(sp, "timeout");
+				SES_Delete(sp, "timeout", now);
 			}
 		}
 		if (v2 && vwp->pollfd[vwp->pipes[0]].revents) {

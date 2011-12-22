@@ -365,15 +365,14 @@ cnt_done(struct sess *sp)
 	}
 
 
-	sp->t_end = W_TIM_real(wrk);
+	sp->t_idle = W_TIM_real(wrk);
 WSP(sp, SLT_Debug, "PHK req %.9f resp %.9f end %.9f open %.9f",
-    sp->t_req, sp->t_resp, sp->t_end,  sp->t_open);
+    sp->t_req, sp->t_resp, sp->t_idle,  sp->t_open);
 	if (sp->xid == 0) {
-		// sp->t_req = sp->t_end;
-		sp->t_resp = sp->t_end;
+		sp->t_resp = sp->t_idle;
 	} else {
 		dp = sp->t_resp - sp->t_req;
-		da = sp->t_end - sp->t_resp;
+		da = sp->t_idle - sp->t_resp;
 		dh = sp->t_req - sp->t_open;
 		/* XXX: Add StatReq == StatSess */
 		/* XXX: Workaround for pipe */
@@ -382,17 +381,16 @@ WSP(sp, SLT_Debug, "PHK req %.9f resp %.9f end %.9f open %.9f",
 			    (uintmax_t)sp->req_bodybytes);
 		}
 		WSP(sp, SLT_ReqEnd, "%u %.9f %.9f %.9f %.9f %.9f",
-		    sp->xid, sp->t_req, sp->t_end, dh, dp, da);
+		    sp->xid, sp->t_req, sp->t_idle, dh, dp, da);
 	}
 	sp->xid = 0;
 	WSL_Flush(wrk, 0);
 
-	sp->t_open = sp->t_end;
+	sp->t_req = NAN;
 	sp->t_resp = NAN;
 
 	sp->req_bodybytes = 0;
 
-	sp->t_req = NAN;
 	sp->hash_always_miss = 0;
 	sp->hash_ignore_busy = 0;
 
@@ -407,7 +405,7 @@ WSP(sp, SLT_Debug, "PHK req %.9f resp %.9f end %.9f open %.9f",
 
 	if (sp->fd < 0) {
 		wrk->stats.sess_closed++;
-		SES_Delete(sp, NULL);
+		SES_Delete(sp, NULL, NAN);
 		return (1);
 	}
 

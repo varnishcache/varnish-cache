@@ -72,7 +72,7 @@ vws_del(struct vws *vws, int fd)
 }
 
 static inline void
-vws_port_ev(struct vws *vws, port_event_t *ev) {
+vws_port_ev(struct vws *vws, port_event_t *ev, double now) {
 	struct sess *sp;
 	if(ev->portev_source == PORT_SOURCE_USER) {
 		CAST_OBJ_NOTNULL(sp, ev->portev_user, SESS_MAGIC);
@@ -87,7 +87,7 @@ vws_port_ev(struct vws *vws, port_event_t *ev) {
 		if(ev->portev_events & POLLERR) {
 			vws_del(vws, sp->fd);
 			VTAILQ_REMOVE(&vws->sesshead, sp, list);
-			SES_Delete(sp, "EOF");
+			SES_Delete(sp, "EOF", now);
 			return;
 		}
 
@@ -108,7 +108,7 @@ vws_port_ev(struct vws *vws, port_event_t *ev) {
 		VTAILQ_REMOVE(&vws->sesshead, sp, list);
 
 		/* SES_Handle will also handle errors */
-		SES_Handle(sp);
+		SES_Handle(sp, now);
 	}
 	return;
 }
@@ -182,15 +182,15 @@ vws_thread(void *priv)
 		 */
 
 		ret = port_getn(vws->dport, ev, MAX_EVENTS, &nevents, timeout);
+		now = VTIM_real();
 
 		if (ret < 0)
 			assert((errno == EINTR) || (errno == ETIME));
 
 		for (ei = 0; ei < nevents; ei++)
-			vws_port_ev(vws, ev + ei);
+			vws_port_ev(vws, ev + ei, now);
 
 		/* check for timeouts */
-		now = VTIM_real();
 		deadline = now - cache_param->sess_timeout;
 
 		/*
@@ -204,14 +204,14 @@ vws_thread(void *priv)
 			sp = VTAILQ_FIRST(&vws->sesshead);
 			if (sp == NULL)
 				break;
-			if (sp->t_open > deadline) {
+			if (sp->t_idle > deadline) {
 				break;
 			}
 			VTAILQ_REMOVE(&vws->sesshead, sp, list);
 			if(sp->fd != -1) {
 				vws_del(vws, sp->fd);
 			}
-			SES_Delete(sp, "timeout");
+			SES_Delete(sp, "timeout", now);
 		}
 
 		/*

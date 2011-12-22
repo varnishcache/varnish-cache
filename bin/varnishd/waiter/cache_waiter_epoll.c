@@ -104,7 +104,7 @@ vwe_cond_modadd(struct vwe *vwe, int fd, void *data)
 }
 
 static void
-vwe_eev(struct vwe *vwe, const struct epoll_event *ep)
+vwe_eev(struct vwe *vwe, const struct epoll_event *ep, double now)
 {
 	struct sess *ss[NEEV], *sp;
 	int i, j;
@@ -130,16 +130,16 @@ vwe_eev(struct vwe *vwe, const struct epoll_event *ep)
 		CAST_OBJ_NOTNULL(sp, ep->data.ptr, SESS_MAGIC);
 		if (ep->events & EPOLLIN || ep->events & EPOLLPRI) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			SES_Handle(sp);
+			SES_Handle(sp, now);
 		} else if (ep->events & EPOLLERR) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			SES_Delete(sp, "ERR");
+			SES_Delete(sp, "ERR", now);
 		} else if (ep->events & EPOLLHUP) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			SES_Delete(sp, "HUP");
+			SES_Delete(sp, "HUP", now);
 		} else if (ep->events & EPOLLRDHUP) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			SES_Delete(sp, "RHUP");
+			SES_Delete(sp, "RHUP", now);
 		}
 	}
 }
@@ -152,7 +152,7 @@ vwe_thread(void *priv)
 	struct epoll_event ev[NEEV], *ep;
 	struct sess *sp;
 	char junk;
-	double deadline;
+	double now, deadline;
 	int dotimer, i, n;
 	struct vwe *vwe;
 
@@ -169,6 +169,7 @@ vwe_thread(void *priv)
 	while (1) {
 		dotimer = 0;
 		n = epoll_wait(vwe->epfd, ev, NEEV, -1);
+		now = VTIM_real();
 		for (ep = ev, i = 0; i < n; i++, ep++) {
 			if (ep->data.ptr == vwe->timer_pipes &&
 			    (ep->events == EPOLLIN || ep->events == EPOLLPRI))
@@ -176,22 +177,22 @@ vwe_thread(void *priv)
 				assert(read(vwe->timer_pipes[0], &junk, 1));
 				dotimer = 1;
 			} else
-				vwe_eev(vwe, ep);
+				vwe_eev(vwe, ep, now);
 		}
 		if (!dotimer)
 			continue;
 
 		/* check for timeouts */
-		deadline = VTIM_real() - cache_param->sess_timeout;
+		deadline = now - cache_param->sess_timeout;
 		for (;;) {
 			sp = VTAILQ_FIRST(&vwe->sesshead);
 			if (sp == NULL)
 				break;
-			if (sp->t_open > deadline)
+			if (sp->t_idle > deadline)
 				break;
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
 			// XXX: not yet VTCP_linger(sp->fd, 0);
-			SES_Delete(sp, "timeout");
+			SES_Delete(sp, "timeout", now);
 		}
 	}
 	return (NULL);

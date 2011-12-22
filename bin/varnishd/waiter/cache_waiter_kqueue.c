@@ -114,7 +114,7 @@ vwk_pipe_ev(struct vwk *vwk, const struct kevent *kp)
 /*--------------------------------------------------------------------*/
 
 static void
-vwk_sess_ev(struct vwk *vwk, const struct kevent *kp)
+vwk_sess_ev(struct vwk *vwk, const struct kevent *kp, double now)
 {
 	struct sess *sp;
 
@@ -129,11 +129,11 @@ vwk_sess_ev(struct vwk *vwk, const struct kevent *kp)
 	assert((sp->vsl_id & VSL_IDENTMASK) == sp->fd);
 	if (kp->data > 0) {
 		VTAILQ_REMOVE(&vwk->sesshead, sp, list);
-		SES_Handle(sp);
+		SES_Handle(sp, now);
 		return;
 	} else if (kp->flags & EV_EOF) {
 		VTAILQ_REMOVE(&vwk->sesshead, sp, list);
-		SES_Delete(sp, "EOF");
+		SES_Delete(sp, "EOF", now);
 		return;
 	} else {
 		VSL(SLT_Debug, sp->vsl_id,
@@ -151,7 +151,7 @@ vwk_thread(void *priv)
 	struct vwk *vwk;
 	struct kevent ke[NKEV], *kp;
 	int j, n, dotimer;
-	double deadline;
+	double now, deadline;
 	struct sess *sp;
 
 	CAST_OBJ_NOTNULL(vwk, priv, VWK_MAGIC);
@@ -171,6 +171,7 @@ vwk_thread(void *priv)
 	while (1) {
 		dotimer = 0;
 		n = kevent(vwk->kq, vwk->ki, vwk->nki, ke, NKEV, NULL);
+		now = VTIM_real();
 		assert(n >= 1 && n <= NKEV);
 		vwk->nki = 0;
 		for (kp = ke, j = 0; j < n; j++, kp++) {
@@ -181,7 +182,7 @@ vwk_thread(void *priv)
 				vwk_pipe_ev(vwk, kp);
 			} else {
 				assert(kp->filter == EVFILT_READ);
-				vwk_sess_ev(vwk, kp);
+				vwk_sess_ev(vwk, kp, now);
 			}
 		}
 		if (!dotimer)
@@ -194,16 +195,16 @@ vwk_thread(void *priv)
 		 * would not know we meant "the old fd of this number".
 		 */
 		vwk_kq_flush(vwk);
-		deadline = VTIM_real() - cache_param->sess_timeout;
+		deadline = now - cache_param->sess_timeout;
 		for (;;) {
 			sp = VTAILQ_FIRST(&vwk->sesshead);
 			if (sp == NULL)
 				break;
-			if (sp->t_open > deadline)
+			if (sp->t_idle > deadline)
 				break;
 			VTAILQ_REMOVE(&vwk->sesshead, sp, list);
 			// XXX: not yet (void)VTCP_linger(sp->fd, 0);
-			SES_Delete(sp, "timeout");
+			SES_Delete(sp, "timeout", now);
 		}
 	}
 }

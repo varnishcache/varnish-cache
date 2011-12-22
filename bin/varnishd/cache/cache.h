@@ -616,6 +616,10 @@ struct sess {
 
 	VTAILQ_ENTRY(sess)	list;
 
+	/* Timestamps, all on TIM_real() timescale */
+	double			t_open;		/* fd accepted */
+	double			t_idle;		/* fd accepted or resp sent */
+
 #if defined(HAVE_EPOLL_CTL)
 	struct epoll_event ev;
 #endif
@@ -665,15 +669,13 @@ struct sess {
 
 	uint64_t		req_bodybytes;
 
+	/* Timestamps, all on TIM_real() timescale */
+	double			t_req;
+	double			t_resp;
+
 	/* TBD fields ------------------------------------------------*/
 
 	struct http_conn	htc[1];
-
-	/* Timestamps, all on TIM_real() timescale */
-	double			t_open;
-	double			t_req;
-	double			t_resp;
-	double			t_end;
 
 };
 
@@ -915,12 +917,12 @@ void WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len);
 struct sess *SES_New(struct worker *wrk, struct sesspool *pp);
 struct sess *SES_Alloc(void);
 void SES_Close(struct sess *sp, const char *reason);
-void SES_Delete(struct sess *sp, const char *reason);
+void SES_Delete(struct sess *sp, const char *reason, double now);
 void SES_Charge(struct sess *sp);
 struct sesspool *SES_NewPool(struct pool *pp, unsigned pool_no);
 void SES_DeletePool(struct sesspool *sp, struct worker *wrk);
 int SES_Schedule(struct sess *sp);
-void SES_Handle(struct sess *sp);
+void SES_Handle(struct sess *sp, double now);
 
 /* cache_shmlog.c */
 extern struct VSC_C_main *VSC_C_main;
