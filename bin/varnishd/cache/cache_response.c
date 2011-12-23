@@ -132,12 +132,12 @@ RES_BuildHttp(const struct sess *sp)
 	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,
 	    "Date: %s", time_str);
 
-	if (sp->xid != sp->wrk->obj->xid)
+	if (sp->req->xid != sp->wrk->obj->xid)
 		http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,
-		    "X-Varnish: %u %u", sp->xid, sp->wrk->obj->xid);
+		    "X-Varnish: %u %u", sp->req->xid, sp->wrk->obj->xid);
 	else
 		http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,
-		    "X-Varnish: %u", sp->xid);
+		    "X-Varnish: %u", sp->req->xid);
 	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp, "Age: %.0f",
 	    sp->wrk->obj->exp.age + sp->t_resp - sp->wrk->obj->exp.entered);
 	http_SetHeader(sp->wrk, sp->vsl_id, sp->wrk->resp, "Via: 1.1 varnish");

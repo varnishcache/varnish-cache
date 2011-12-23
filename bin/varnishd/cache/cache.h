@@ -580,6 +580,8 @@ struct object {
 struct req {
 	unsigned		magic;
 #define REQ_MAGIC		0x2751aaa1
+
+	unsigned		xid;
 };
 
 /*--------------------------------------------------------------------*/
@@ -625,7 +627,6 @@ struct sess {
 
 	/* Request related fields ------------------------------------*/
 
-	unsigned		xid;
 
 	int			restarts;
 	int			esi_level;

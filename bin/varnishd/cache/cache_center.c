@@ -113,7 +113,7 @@ cnt_wait(struct sess *sp)
 	AZ(sp->vcl);
 	AZ(wrk->obj);
 	AZ(sp->esi_level);
-	assert(sp->xid == 0);
+	assert(sp->req->xid == 0);
 
 	assert(!isnan(sp->t_req));
 	tmo = (int)(1e3 * cache_param->timeout_linger);
@@ -397,7 +397,7 @@ cnt_done(struct sess *sp)
 
 
 	sp->t_idle = W_TIM_real(wrk);
-	if (sp->xid == 0) {
+	if (sp->req->xid == 0) {
 		sp->t_resp = sp->t_idle;
 	} else {
 		dp = sp->t_resp - sp->t_req;
@@ -410,9 +410,9 @@ cnt_done(struct sess *sp)
 			    (uintmax_t)sp->req_bodybytes);
 		}
 		WSP(sp, SLT_ReqEnd, "%u %.9f %.9f %.9f %.9f %.9f",
-		    sp->xid, sp->t_req, sp->t_idle, dh, dp, da);
+		    sp->req->xid, sp->t_req, sp->t_idle, dh, dp, da);
 	}
-	sp->xid = 0;
+	sp->req->xid = 0;
 	WSL_Flush(wrk, 0);
 
 	sp->t_req = NAN;
@@ -503,7 +503,7 @@ cnt_error(struct sess *sp)
 			return(0);
 		}
 		AN(wrk->obj);
-		wrk->obj->xid = sp->xid;
+		wrk->obj->xid = sp->req->xid;
 		wrk->obj->exp.entered = sp->t_req;
 	} else {
 		CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
@@ -869,7 +869,7 @@ cnt_fetchbody(struct sess *sp)
 		VSB_delete(vary);
 	}
 
-	wrk->obj->xid = sp->xid;
+	wrk->obj->xid = sp->req->xid;
 	wrk->obj->response = sp->err_code;
 	WS_Assert(wrk->obj->ws_o);
 
@@ -1035,7 +1035,7 @@ cnt_first(struct sess *sp)
 	wrk = sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
-	assert(sp->xid == 0);
+	AZ(sp->req);
 	assert(sp->restarts == 0);
 	AZ(sp->esi_level);
 
@@ -1595,8 +1595,8 @@ cnt_start(struct sess *sp)
 	wrk->acct_tmp.req++;
 
 	/* Assign XID and log */
-	sp->xid = ++xids;				/* XXX not locked */
-	WSP(sp, SLT_ReqStart, "%s %s %u", sp->addr, sp->port,  sp->xid);
+	sp->req->xid = ++xids;				/* XXX not locked */
+	WSP(sp, SLT_ReqStart, "%s %s %u", sp->addr, sp->port,  sp->req->xid);
 
 	/* Borrow VCL reference from worker thread */
 	VCL_Refresh(&wrk->vcl);

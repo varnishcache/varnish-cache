@@ -91,7 +91,7 @@ ved_include(struct sess *sp, const char *src, const char *host)
 	/* Client content already taken care of */
 	http_Unset(sp->http, H_Content_Length);
 
-	sxid = sp->xid;
+	sxid = sp->req->xid;
 	while (1) {
 		sp->wrk = w;
 		CNT_Session(sp);
@@ -102,7 +102,7 @@ ved_include(struct sess *sp, const char *src, const char *host)
 		DSL(0x20, SLT_Debug, sp->vsl_id, "loop waiting for ESI");
 		(void)usleep(10000);
 	}
-	sp->xid = sxid;
+	sp->req->xid = sxid;
 	AN(sp->wrk);
 	assert(sp->step == STP_DONE);
 	sp->esi_level--;

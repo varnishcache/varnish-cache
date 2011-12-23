@@ -416,11 +416,11 @@ VRT_DO_EXP(obj, sp->wrk->obj->exp, keep, 0,
    vrt_wsp_exp(sp, sp->wrk->obj->xid, &sp->wrk->obj->exp);)
 
 VRT_DO_EXP(beresp, sp->wrk->busyobj->exp, grace, 0,
-   vrt_wsp_exp(sp, sp->xid, &sp->wrk->busyobj->exp);)
+   vrt_wsp_exp(sp, sp->req->xid, &sp->wrk->busyobj->exp);)
 VRT_DO_EXP(beresp, sp->wrk->busyobj->exp, ttl, 0,
-   vrt_wsp_exp(sp, sp->xid, &sp->wrk->busyobj->exp);)
+   vrt_wsp_exp(sp, sp->req->xid, &sp->wrk->busyobj->exp);)
 VRT_DO_EXP(beresp, sp->wrk->busyobj->exp, keep, 0,
-   vrt_wsp_exp(sp, sp->xid, &sp->wrk->busyobj->exp);)
+   vrt_wsp_exp(sp, sp->req->xid, &sp->wrk->busyobj->exp);)
 
 /*--------------------------------------------------------------------
  * req.xid
@@ -433,9 +433,9 @@ VRT_r_req_xid(struct sess *sp)
 	int size;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	size = snprintf(NULL, 0, "%u", sp->xid) + 1;
+	size = snprintf(NULL, 0, "%u", sp->req->xid) + 1;
 	AN(p = WS_Alloc(sp->http->ws, size));
-	assert(snprintf(p, size, "%u", sp->xid) < size);
+	assert(snprintf(p, size, "%u", sp->req->xid) < size);
 	return (p);
 }
 
