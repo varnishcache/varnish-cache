@@ -617,6 +617,7 @@ struct req {
 	double			t_resp;
 
 	struct http_conn	htc[1];
+	char			*client_identity;
 
 };
 
@@ -646,7 +647,6 @@ struct sess {
 	/* formatted ascii client address */
 	char			addr[ADDR_BUFSIZE];
 	char			port[PORT_BUFSIZE];
-	char			*client_identity;
 
 	VTAILQ_ENTRY(sess)	poollist;
 	struct acct		acct_ses;

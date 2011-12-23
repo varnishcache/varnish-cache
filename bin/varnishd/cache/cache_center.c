@@ -1498,7 +1498,7 @@ cnt_recv(struct sess *sp)
 	sp->req->disable_esi = 0;
 	sp->req->hash_always_miss = 0;
 	sp->req->hash_ignore_busy = 0;
-	sp->client_identity = NULL;
+	sp->req->client_identity = NULL;
 
 	http_CollectHdr(sp->http, H_Cache_Control);
 

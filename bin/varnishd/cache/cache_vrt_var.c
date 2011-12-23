@@ -209,8 +209,8 @@ const char * __match_proto__()
 VRT_r_client_identity(struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	if (sp->client_identity != NULL)
-		return (sp->client_identity);
+	if (sp->req->client_identity != NULL)
+		return (sp->req->client_identity);
 	else
 		return (sp->addr);
 }
@@ -224,7 +224,7 @@ VRT_l_client_identity(struct sess *sp, const char *str, ...)
 	va_start(ap, str);
 	b = VRT_String(sp->http->ws, NULL, str, ap);
 	va_end(ap);
-	sp->client_identity = b;
+	sp->req->client_identity = b;
 }
 
 /*--------------------------------------------------------------------*/
