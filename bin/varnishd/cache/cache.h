@@ -615,6 +615,9 @@ struct req {
 	char			*ws_req;	/* WS above request data */
 
 	double			t_resp;
+
+	struct http_conn	htc[1];
+
 };
 
 /*--------------------------------------------------------------------*/
@@ -669,10 +672,6 @@ struct sess {
 
 	/* Timestamps, all on TIM_real() timescale */
 	double			t_req;
-
-	/* TBD fields ------------------------------------------------*/
-
-	struct http_conn	htc[1];
 
 };
 

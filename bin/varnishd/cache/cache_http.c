@@ -658,7 +658,7 @@ http_DissectRequest(struct sess *sp)
 	uint16_t retval;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	htc = sp->htc;
+	htc = sp->req->htc;
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	hp = sp->http;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);

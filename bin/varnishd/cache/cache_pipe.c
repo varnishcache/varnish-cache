@@ -82,9 +82,9 @@ PipeSession(struct sess *sp)
 	sp->wrk->acct_tmp.hdrbytes +=
 	    http_Write(w, sp->vsl_id, sp->wrk->busyobj->bereq, 0);
 
-	if (sp->htc->pipeline.b != NULL)
+	if (sp->req->htc->pipeline.b != NULL)
 		sp->wrk->acct_tmp.bodybytes +=
-		    WRW_Write(w, sp->htc->pipeline.b, Tlen(sp->htc->pipeline));
+		    WRW_Write(w, sp->req->htc->pipeline.b, Tlen(sp->req->htc->pipeline));
 
 	i = WRW_FlushRelease(w);
 

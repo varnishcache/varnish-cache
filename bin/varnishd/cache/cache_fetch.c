@@ -345,7 +345,7 @@ FetchReqBody(struct sess *sp)
 				rdcnt = sizeof buf;
 			else
 				rdcnt = content_length;
-			rdcnt = HTC_Read(sp->wrk, sp->htc, buf, rdcnt);
+			rdcnt = HTC_Read(sp->wrk, sp->req->htc, buf, rdcnt);
 			if (rdcnt <= 0)
 				return (1);
 			content_length -= rdcnt;

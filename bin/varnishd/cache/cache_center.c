@@ -107,8 +107,12 @@ cnt_wait(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	wrk = sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	if (sp->req == NULL)
+	if (sp->req == NULL) {
 		SES_GetReq(sp);
+		HTC_Init(sp->req->htc, sp->ws, sp->fd, sp->vsl_id,
+		    cache_param->http_req_size,
+		    cache_param->http_req_hdr_len);
+	}
 
 	AZ(sp->req->vcl);
 	AZ(wrk->obj);
@@ -126,9 +130,9 @@ cnt_wait(struct sess *sp)
 		assert(j >= 0);
 		now = VTIM_real();
 		if (j != 0)
-			i = HTC_Rx(sp->htc);
+			i = HTC_Rx(sp->req->htc);
 		else
-			i = HTC_Complete(sp->htc);
+			i = HTC_Complete(sp->req->htc);
 		if (i == 1) {
 			/* Got it, run with it */
 			sp->t_req = now;
@@ -156,6 +160,8 @@ cnt_wait(struct sess *sp)
 				wrk->stats.sess_herd++;
 				SES_Charge(sp);
 				SES_ReleaseReq(sp);
+				WS_Release(sp->ws, 0);
+				WS_Reset(sp->ws, NULL);
 				WAIT_Enter(sp);
 				return (1);
 			}
@@ -445,14 +451,14 @@ cnt_done(struct sess *sp)
 	WS_Reset(sp->ws, NULL);
 	WS_Reset(wrk->ws, NULL);
 
-	i = HTC_Reinit(sp->htc);
+	i = HTC_Reinit(sp->req->htc);
 	if (i == 1) {
 		wrk->stats.sess_pipeline++;
 		sp->t_req = sp->t_idle;
 		sp->step = STP_START;
 		return (0);
 	}
-	if (Tlen(sp->htc->rxbuf))
+	if (Tlen(sp->req->htc->rxbuf))
 		wrk->stats.sess_readahead++;
 	sp->step = STP_WAIT;
 	sp->t_req = sp->t_idle;
@@ -1052,10 +1058,6 @@ cnt_first(struct sess *sp)
 		    sp->addr, sp->port, sp->mylsock->name);
 	}
 
-	/* Receive a HTTP protocol request */
-	HTC_Init(sp->htc, sp->ws, sp->fd, sp->vsl_id,
-	    cache_param->http_req_size,
-	    cache_param->http_req_hdr_len);
 	wrk->acct_tmp.sess++;
 
 	sp->step = STP_WAIT;
