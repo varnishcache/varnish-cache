@@ -245,7 +245,7 @@ pan_sess(const struct sess *sp)
 #undef STEP
 		default: stp = NULL;
 	}
-	hand = VCL_Return_Name(sp->handling);
+	hand = VCL_Return_Name(sp->req->handling);
 	if (stp != NULL)
 		VSB_printf(pan_vsp, "  step = %s,\n", stp);
 	else
@@ -253,14 +253,14 @@ pan_sess(const struct sess *sp)
 	if (hand != NULL)
 		VSB_printf(pan_vsp, "  handling = %s,\n", hand);
 	else
-		VSB_printf(pan_vsp, "  handling = 0x%x,\n", sp->handling);
+		VSB_printf(pan_vsp, "  handling = 0x%x,\n", sp->req->handling);
 	if (sp->err_code)
 		VSB_printf(pan_vsp,
 		    "  err_code = %d, err_reason = %s,\n", sp->err_code,
 		    sp->err_reason ? sp->err_reason : "(null)");
 
 	VSB_printf(pan_vsp, "  restarts = %d, esi_level = %d\n",
-	    sp->restarts, sp->esi_level);
+	    sp->req->restarts, sp->req->esi_level);
 
 	if (sp->wrk->busyobj != NULL)
 		pan_busyobj(sp->wrk->busyobj);

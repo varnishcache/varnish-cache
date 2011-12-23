@@ -327,15 +327,15 @@ VRT_l_req_esi(struct sess *sp, unsigned process_esi)
 	 * Only allow you to turn of esi in the main request
 	 * else everything gets confused
 	 */
-	if(sp->esi_level == 0)
-		sp->disable_esi = !process_esi;
+	if(sp->req->esi_level == 0)
+		sp->req->disable_esi = !process_esi;
 }
 
 unsigned __match_proto__()
 VRT_r_req_esi(struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (!sp->disable_esi);
+	return (!sp->req->disable_esi);
 }
 
 int
@@ -343,7 +343,7 @@ VRT_r_req_esi_level(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return(sp->esi_level);
+	return(sp->req->esi_level);
 }
 
 /*--------------------------------------------------------------------*/
@@ -364,7 +364,7 @@ VRT_r_req_restarts(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (sp->restarts);
+	return (sp->req->restarts);
 }
 
 /*--------------------------------------------------------------------
@@ -401,9 +401,9 @@ vrt_wsp_exp(const struct sess *sp, unsigned xid, const struct exp *e)
 	    sp->t_req, e->age + (sp->t_req - e->entered));
 }
 
-VRT_DO_EXP(req, sp->exp, ttl, 0, )
-VRT_DO_EXP(req, sp->exp, grace, 0, )
-VRT_DO_EXP(req, sp->exp, keep, 0, )
+VRT_DO_EXP(req, sp->req->exp, ttl, 0, )
+VRT_DO_EXP(req, sp->req->exp, grace, 0, )
+VRT_DO_EXP(req, sp->req->exp, keep, 0, )
 
 VRT_DO_EXP(obj, sp->wrk->obj->exp, grace, 0,
    EXP_Rearm(sp->wrk->obj);
@@ -447,7 +447,7 @@ VRT_l_req_##hash_var(struct sess *sp, unsigned val)		\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	sp->hash_var = val ? 1 : 0;				\
+	sp->req->hash_var = val ? 1 : 0;				\
 }								\
 								\
 unsigned __match_proto__()					\
@@ -455,7 +455,7 @@ VRT_r_req_##hash_var(struct sess *sp)				\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	return(sp->hash_var);					\
+	return(sp->req->hash_var);					\
 }
 
 REQ_BOOL(hash_ignore_busy)

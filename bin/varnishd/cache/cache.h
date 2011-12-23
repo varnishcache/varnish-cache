@@ -582,6 +582,29 @@ struct req {
 #define REQ_MAGIC		0x2751aaa1
 
 	unsigned		xid;
+	int			restarts;
+	int			esi_level;
+	int			disable_esi;
+	uint8_t			hash_ignore_busy;
+	uint8_t			hash_always_miss;
+
+	/* The busy objhead we sleep on */
+	struct objhead		*hash_objhead;
+
+	/* Built Vary string */
+	uint8_t			*vary_b;
+	uint8_t			*vary_l;
+	uint8_t			*vary_e;
+
+	unsigned char		digest[DIGEST_LEN];
+
+	const char		*doclose;
+	struct exp		exp;
+	unsigned		cur_method;
+	unsigned		handling;
+	unsigned char		sendbody;
+	unsigned char		wantbody;
+
 };
 
 /*--------------------------------------------------------------------*/
@@ -624,45 +647,19 @@ struct sess {
 #if defined(HAVE_EPOLL_CTL)
 	struct epoll_event ev;
 #endif
+	enum step		step;
 
 	/* Request related fields ------------------------------------*/
 
-
-	int			restarts;
-	int			esi_level;
-	int			disable_esi;
-
-	uint8_t			hash_ignore_busy;
-	uint8_t			hash_always_miss;
-
 	/* HTTP request */
-	const char		*doclose;
 	struct http		*http;
 	struct http		*http0;
 
 	struct ws		ws[1];
 	char			*ws_req;	/* WS above request data */
 
-	unsigned char		digest[DIGEST_LEN];
-
-	/* Built Vary string */
-	uint8_t			*vary_b;
-	uint8_t			*vary_l;
-	uint8_t			*vary_e;
-
-	/* Acceptable grace period */
-	struct exp		exp;
-
-	enum step		step;
-	unsigned		cur_method;
-	unsigned		handling;
-	unsigned char		sendbody;
-	unsigned char		wantbody;
 	uint16_t		err_code;
 	const char		*err_reason;
-
-	/* The busy objhead we sleep on */
-	struct objhead		*hash_objhead;
 
 	struct director		*director;
 	struct VCL_conf		*vcl;

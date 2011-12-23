@@ -112,8 +112,8 @@ vdi_random_init_seed(const struct vdi_random *vs, const struct sess *sp)
 		retval = vdi_random_sha(p, strlen(p));
 		break;
 	case c_hash:
-		AN(sp->digest);
-		retval = scalbn(vle32dec(sp->digest), -32);
+		AN(sp->req->digest);
+		retval = scalbn(vle32dec(sp->req->digest), -32);
 		break;
 	case c_random:
 	default:

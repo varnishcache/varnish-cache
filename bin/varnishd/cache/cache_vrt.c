@@ -248,7 +248,7 @@ VRT_handling(struct sess *sp, unsigned hand)
 	}
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	assert(hand < VCL_RET_MAX);
-	sp->handling = hand;
+	sp->req->handling = hand;
 }
 
 /*--------------------------------------------------------------------
@@ -510,9 +510,9 @@ VRT_ban_string(struct sess *sp, const char *str)
 void
 VRT_purge(const struct sess *sp, double ttl, double grace)
 {
-	if (sp->cur_method == VCL_MET_HIT)
+	if (sp->req->cur_method == VCL_MET_HIT)
 		HSH_Purge(sp, sp->wrk->obj->objcore->objhead, ttl, grace);
-	else if (sp->cur_method == VCL_MET_MISS)
+	else if (sp->req->cur_method == VCL_MET_MISS)
 		HSH_Purge(sp, sp->wrk->objcore->objhead, ttl, grace);
 }
 

@@ -142,7 +142,7 @@ RES_BuildHttp(const struct sess *sp)
 	    sp->wrk->obj->exp.age + sp->t_resp - sp->wrk->obj->exp.entered);
 	http_SetHeader(sp->wrk, sp->vsl_id, sp->wrk->resp, "Via: 1.1 varnish");
 	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp, "Connection: %s",
-	    sp->doclose ? "close" : "keep-alive");
+	    sp->req->doclose ? "close" : "keep-alive");
 }
 
 /*--------------------------------------------------------------------
@@ -261,7 +261,7 @@ RES_WriteObj(struct sess *sp)
 	if (sp->wrk->obj->response == 200 &&
 	    sp->http->conds &&
 	    RFC2616_Do_Cond(sp)) {
-		sp->wantbody = 0;
+		sp->req->wantbody = 0;
 		http_SetResp(sp->wrk->resp, "HTTP/1.1", 304, "Not Modified");
 		http_Unset(sp->wrk->resp, H_Content_Length);
 		http_Unset(sp->wrk->resp, H_Transfer_Encoding);
@@ -273,7 +273,7 @@ RES_WriteObj(struct sess *sp)
 	low = 0;
 	high = sp->wrk->obj->len - 1;
 	if (
-	    sp->wantbody &&
+	    sp->req->wantbody &&
 	    (sp->wrk->res_mode & RES_LEN) &&
 	    !(sp->wrk->res_mode & (RES_ESI|RES_ESI_CHILD|RES_GUNZIP)) &&
 	    cache_param->http_range_support &&
@@ -294,13 +294,13 @@ RES_WriteObj(struct sess *sp)
 		sp->wrk->acct_tmp.hdrbytes +=
 		    http_Write(sp->wrk, sp->vsl_id, sp->wrk->resp, 1);
 
-	if (!sp->wantbody)
+	if (!sp->req->wantbody)
 		sp->wrk->res_mode &= ~RES_CHUNKED;
 
 	if (sp->wrk->res_mode & RES_CHUNKED)
 		WRW_Chunked(sp->wrk);
 
-	if (!sp->wantbody) {
+	if (!sp->req->wantbody) {
 		/* This was a HEAD or conditional request */
 	} else if (sp->wrk->obj->len == 0) {
 		/* Nothing to do here */
@@ -336,7 +336,7 @@ RES_StreamStart(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sctx, STREAM_CTX_MAGIC);
 
 	AZ(sp->wrk->res_mode & RES_ESI_CHILD);
-	AN(sp->wantbody);
+	AN(sp->req->wantbody);
 
 	WRW_Reserve(sp->wrk, &sp->fd);
 	/*

@@ -52,9 +52,9 @@ ved_include(struct sess *sp, const char *src, const char *host)
 
 	w = sp->wrk;
 
-	if (sp->esi_level >= cache_param->max_esi_depth)
+	if (sp->req->esi_level >= cache_param->max_esi_depth)
 		return;
-	sp->esi_level++;
+	sp->req->esi_level++;
 
 	(void)WRW_FlushRelease(w);
 
@@ -105,7 +105,7 @@ ved_include(struct sess *sp, const char *src, const char *host)
 	sp->req->xid = sxid;
 	AN(sp->wrk);
 	assert(sp->step == STP_DONE);
-	sp->esi_level--;
+	sp->req->esi_level--;
 	sp->wrk->obj = obj;
 	sp->wrk->res_mode = res_mode;
 
@@ -247,7 +247,7 @@ ESI_Deliver(struct sess *sp)
 		isgzip = 0;
 	}
 
-	if (sp->esi_level == 0) {
+	if (sp->req->esi_level == 0) {
 		/*
 		 * Only the top level document gets to decide this.
 		 */
@@ -403,7 +403,7 @@ ESI_Deliver(struct sess *sp)
 			(void)WRW_Write(sp->wrk, obuf, obufl);
 		(void)VGZ_Destroy(&vgz, sp->vsl_id);
 	}
-	if (sp->wrk->gzip_resp && sp->esi_level == 0) {
+	if (sp->wrk->gzip_resp && sp->req->esi_level == 0) {
 		/* Emit a gzip literal block with finish bit set */
 		tailbuf[0] = 0x01;
 		tailbuf[1] = 0x00;

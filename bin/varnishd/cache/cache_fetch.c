@@ -349,7 +349,7 @@ FetchReqBody(struct sess *sp)
 			if (rdcnt <= 0)
 				return (1);
 			content_length -= rdcnt;
-			if (!sp->sendbody)
+			if (!sp->req->sendbody)
 				continue;
 			(void)WRW_Write(sp->wrk, buf, rdcnt); /* XXX: stats ? */
 			if (WRW_Flush(sp->wrk))
