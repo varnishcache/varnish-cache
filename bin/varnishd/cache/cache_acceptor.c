@@ -128,32 +128,6 @@ sock_test(int fd)
 }
 
 /*--------------------------------------------------------------------
- * Called once the workerthread gets hold of the session, to fix up
- * any socket options that need it.
- */
-
-static void
-vca_prep(const struct sess *sp)
-{
-
-	if (need_test)
-		sock_test(sp->fd);
-	if (need_linger)
-		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_LINGER,
-		    &linger, sizeof linger));
-#ifdef SO_SNDTIMEO_WORKS
-	if (need_sndtimeo)
-		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO,
-		    &tv_sndtimeo, sizeof tv_sndtimeo));
-#endif
-#ifdef SO_RCVTIMEO_WORKS
-	if (need_rcvtimeo)
-		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_RCVTIMEO,
-		    &tv_rcvtimeo, sizeof tv_rcvtimeo));
-#endif
-}
-
-/*--------------------------------------------------------------------
  * If accept(2)'ing fails, we pace ourselves to relive any resource
  * shortage if possible.
  */
@@ -285,7 +259,22 @@ VCA_SetupSess(struct worker *w)
 	sp->sockaddrlen = wa->acceptaddrlen;
 	vca_pace_good();
 	w->stats.sess_conn++;
-	vca_prep(sp);
+
+	if (need_test)
+		sock_test(sp->fd);
+	if (need_linger)
+		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_LINGER,
+		    &linger, sizeof linger));
+#ifdef SO_SNDTIMEO_WORKS
+	if (need_sndtimeo)
+		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO,
+		    &tv_sndtimeo, sizeof tv_sndtimeo));
+#endif
+#ifdef SO_RCVTIMEO_WORKS
+	if (need_rcvtimeo)
+		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_RCVTIMEO,
+		    &tv_rcvtimeo, sizeof tv_rcvtimeo));
+#endif
 }
 
 /*--------------------------------------------------------------------*/
