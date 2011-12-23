@@ -86,11 +86,11 @@ static unsigned xids;
 DOT subgraph xcluster_wait {
 DOT	wait [
 DOT		shape=box
-DOT		label="wait for\nrequest"
+DOT		label="cnt_wait:\nwait for\nrequest"
 DOT	]
 DOT	herding [shape=hexagon]
 DOT	wait -> start [label="got req"]
-DOT	wait -> DONE [label="errors"]
+DOT	wait -> "SES_Delete()" [label="errors"]
 DOT	wait -> herding [label="timeout"]
 DOT }
  */
@@ -119,31 +119,30 @@ cnt_wait(struct sess *sp)
 		pfd[0].revents = 0;
 		j = poll(pfd, 1, tmo);
 		assert(j >= 0);
+		now = VTIM_real();
 		if (j != 0)
 			i = HTC_Rx(sp->htc);
 		else
 			i = HTC_Complete(sp->htc);
-		if (i == -1) {
-			SES_Close(sp, "EOF");
-			break;
-		}
-		if (i == -2) {
-			SES_Close(sp, "overflow");
-			break;
-		}
-		now = VTIM_real();
 		if (i == 1) {
 			/* Got it, run with it */
 			sp->t_req = now;
-			sp->step = STP_START;
-			return (0);
+			break;
+		}
+		if (i == -1) {
+			SES_Delete(sp, "EOF", now);
+			return (1);
+		}
+		if (i == -2) {
+			SES_Delete(sp, "overflow", now);
+			return (1);
 		}
 		if (i == -3) {
 			/* Nothing but whitespace */
 			when = sp->t_idle + cache_param->timeout_idle;
 			if (when < now) {
-				SES_Close(sp, "timeout");
-				break;
+				SES_Delete(sp, "timeout", now);
+				return (1);
 			}
 			when = sp->t_idle + cache_param->timeout_linger;
 			tmo = (int)(1e3 * (when - now));
@@ -159,12 +158,12 @@ cnt_wait(struct sess *sp)
 			when = sp->t_req + cache_param->timeout_req;
 			tmo = (int)(1e3 * (when - now));
 			if (when < now || tmo == 0) {
-				SES_Close(sp, "req timeout");
-				break;
+				SES_Delete(sp, "req timeout", now);
+				return (1);
 			}
 		}
 	}
-	sp->step = STP_DONE;
+	sp->step = STP_START;
 	return (0);
 }
 
