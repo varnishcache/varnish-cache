@@ -110,10 +110,11 @@ cnt_wait(struct sess *sp)
 	if (sp->req == NULL)
 		SES_GetReq(sp);
 
-	AZ(sp->vcl);
+	AZ(sp->req->vcl);
 	AZ(wrk->obj);
 	AZ(sp->req->esi_level);
 	assert(sp->req->xid == 0);
+	sp->req->t_resp = NAN;
 
 	assert(!isnan(sp->t_req));
 	tmo = (int)(1e3 * cache_param->timeout_linger);
@@ -210,7 +211,7 @@ cnt_prepresp(struct sess *sp)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	CHECK_OBJ_NOTNULL(wrk->obj, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->req->vcl, VCL_CONF_MAGIC);
 
 	if (wrk->busyobj != NULL) {
 		CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
@@ -268,13 +269,13 @@ cnt_prepresp(struct sess *sp)
 		}
 	}
 
-	sp->t_resp = W_TIM_real(wrk);
+	sp->req->t_resp = W_TIM_real(wrk);
 	if (wrk->obj->objcore != NULL) {
-		if ((sp->t_resp - wrk->obj->last_lru) >
+		if ((sp->req->t_resp - wrk->obj->last_lru) >
 		    cache_param->lru_timeout &&
 		    EXP_Touch(wrk->obj->objcore))
-			wrk->obj->last_lru = sp->t_resp;
-		wrk->obj->last_use = sp->t_resp;	/* XXX: locking ? */
+			wrk->obj->last_lru = sp->req->t_resp;
+		wrk->obj->last_use = sp->req->t_resp;	/* XXX: locking ? */
 	}
 	http_Setup(wrk->resp, wrk->ws);
 	RES_BuildHttp(sp);
@@ -295,7 +296,7 @@ cnt_prepresp(struct sess *sp)
 		}
 		AZ(wrk->obj);
 		sp->req->restarts++;
-		sp->director = NULL;
+		sp->req->director = NULL;
 		http_Setup(wrk->resp, NULL);
 		sp->step = STP_RECV;
 		return (0);
@@ -336,7 +337,7 @@ cnt_deliver(struct sess *sp)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	AZ(sp->wrk->busyobj);
-	sp->director = NULL;
+	sp->req->director = NULL;
 	sp->req->restarts = 0;
 
 	RES_WriteObj(sp);
@@ -373,11 +374,11 @@ cnt_done(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	wrk = sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_ORNULL(sp->vcl, VCL_CONF_MAGIC);
+	CHECK_OBJ_ORNULL(sp->req->vcl, VCL_CONF_MAGIC);
 
 	AZ(wrk->obj);
 	AZ(wrk->busyobj);
-	sp->director = NULL;
+	sp->req->director = NULL;
 	sp->req->restarts = 0;
 
 	wrk->busyobj = NULL;
@@ -388,26 +389,26 @@ cnt_done(struct sess *sp)
 	if (sp->req->esi_level > 0)
 		return (1);
 
-	if (sp->vcl != NULL) {
+	if (sp->req->vcl != NULL) {
 		if (wrk->vcl != NULL)
 			VCL_Rel(&wrk->vcl);
-		wrk->vcl = sp->vcl;
-		sp->vcl = NULL;
+		wrk->vcl = sp->req->vcl;
+		sp->req->vcl = NULL;
 	}
 
 
 	sp->t_idle = W_TIM_real(wrk);
 	if (sp->req->xid == 0) {
-		sp->t_resp = sp->t_idle;
+		sp->req->t_resp = sp->t_idle;
 	} else {
-		dp = sp->t_resp - sp->t_req;
-		da = sp->t_idle - sp->t_resp;
+		dp = sp->req->t_resp - sp->t_req;
+		da = sp->t_idle - sp->req->t_resp;
 		dh = sp->t_req - sp->t_open;
 		/* XXX: Add StatReq == StatSess */
 		/* XXX: Workaround for pipe */
 		if (sp->fd >= 0) {
 			WSP(sp, SLT_Length, "%ju",
-			    (uintmax_t)sp->req_bodybytes);
+			    (uintmax_t)sp->req->req_bodybytes);
 		}
 		WSP(sp, SLT_ReqEnd, "%u %.9f %.9f %.9f %.9f %.9f",
 		    sp->req->xid, sp->t_req, sp->t_idle, dh, dp, da);
@@ -416,9 +417,9 @@ cnt_done(struct sess *sp)
 	WSL_Flush(wrk, 0);
 
 	sp->t_req = NAN;
-	sp->t_resp = NAN;
+	sp->req->t_resp = NAN;
 
-	sp->req_bodybytes = 0;
+	sp->req->req_bodybytes = 0;
 
 	sp->req->hash_always_miss = 0;
 	sp->req->hash_ignore_busy = 0;
@@ -496,7 +497,7 @@ cnt_error(struct sess *sp)
 			    (uint16_t)cache_param->http_max_hdr);
 		if (wrk->obj == NULL) {
 			sp->req->doclose = "Out of objects";
-			sp->director = NULL;
+			sp->req->director = NULL;
 			http_Setup(wrk->busyobj->beresp, NULL);
 			http_Setup(wrk->busyobj->bereq, NULL);
 			sp->step = STP_DONE;
@@ -512,27 +513,27 @@ cnt_error(struct sess *sp)
 	CHECK_OBJ_NOTNULL(wrk->obj, OBJECT_MAGIC);
 	h = wrk->obj->http;
 
-	if (sp->err_code < 100 || sp->err_code > 999)
-		sp->err_code = 501;
+	if (sp->req->err_code < 100 || sp->req->err_code > 999)
+		sp->req->err_code = 501;
 
 	http_PutProtocol(wrk, sp->vsl_id, h, "HTTP/1.1");
-	http_PutStatus(h, sp->err_code);
+	http_PutStatus(h, sp->req->err_code);
 	VTIM_format(W_TIM_real(wrk), date);
 	http_PrintfHeader(wrk, sp->vsl_id, h, "Date: %s", date);
 	http_SetHeader(wrk, sp->vsl_id, h, "Server: Varnish");
 
-	if (sp->err_reason != NULL)
-		http_PutResponse(wrk, sp->vsl_id, h, sp->err_reason);
+	if (sp->req->err_reason != NULL)
+		http_PutResponse(wrk, sp->vsl_id, h, sp->req->err_reason);
 	else
 		http_PutResponse(wrk, sp->vsl_id, h,
-		    http_StatusMessage(sp->err_code));
+		    http_StatusMessage(sp->req->err_code));
 	VCL_error_method(sp);
 
 	if (sp->req->handling == VCL_RET_RESTART &&
 	    sp->req->restarts <  cache_param->max_restarts) {
 		HSH_Drop(wrk);
 		VBO_DerefBusyObj(wrk, &wrk->busyobj);
-		sp->director = NULL;
+		sp->req->director = NULL;
 		sp->req->restarts++;
 		sp->step = STP_RECV;
 		return (0);
@@ -545,8 +546,8 @@ cnt_error(struct sess *sp)
 	sp->req->wantbody = 1;
 
 	assert(sp->req->handling == VCL_RET_DELIVER);
-	sp->err_code = 0;
-	sp->err_reason = NULL;
+	sp->req->err_code = 0;
+	sp->req->err_reason = NULL;
 	http_Setup(wrk->busyobj->bereq, NULL);
 	VBO_DerefBusyObj(wrk, &wrk->busyobj);
 	sp->step = STP_PREPRESP;
@@ -592,10 +593,10 @@ cnt_fetch(struct sess *sp)
 	wrk = sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
-	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->req->vcl, VCL_CONF_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 
-	AN(sp->director);
+	AN(sp->req->director);
 	AZ(wrk->busyobj->vbc);
 	AZ(wrk->busyobj->should_close);
 	AZ(wrk->storage_hint);
@@ -617,7 +618,7 @@ cnt_fetch(struct sess *sp)
 
 	if (i) {
 		sp->req->handling = VCL_RET_ERROR;
-		sp->err_code = 503;
+		sp->req->err_code = 503;
 	} else {
 		/*
 		 * These two headers can be spread over multiple actual headers
@@ -634,7 +635,7 @@ cnt_fetch(struct sess *sp)
 		 */
 		wrk->busyobj->body_status = RFC2616_Body(sp);
 
-		sp->err_code = http_GetStatus(wrk->busyobj->beresp);
+		sp->req->err_code = http_GetStatus(wrk->busyobj->beresp);
 
 		/*
 		 * What does RFC2616 think about TTL ?
@@ -678,7 +679,7 @@ cnt_fetch(struct sess *sp)
 		wrk->objcore = NULL;
 	}
 	VBO_DerefBusyObj(wrk, &wrk->busyobj);
-	sp->director = NULL;
+	sp->req->director = NULL;
 	wrk->storage_hint = NULL;
 
 	switch (sp->req->handling) {
@@ -847,7 +848,7 @@ cnt_fetchbody(struct sess *sp)
 		wrk->busyobj->exp.keep = 0.0;
 	}
 	if (wrk->obj == NULL) {
-		sp->err_code = 503;
+		sp->req->err_code = 503;
 		sp->step = STP_ERROR;
 		VDI_CloseFd(wrk, &wrk->busyobj->vbc);
 		VBO_DerefBusyObj(wrk, &wrk->busyobj);
@@ -870,7 +871,7 @@ cnt_fetchbody(struct sess *sp)
 	}
 
 	wrk->obj->xid = sp->req->xid;
-	wrk->obj->response = sp->err_code;
+	wrk->obj->response = sp->req->err_code;
 	WS_Assert(wrk->obj->ws_o);
 
 	/* Filter into object */
@@ -915,13 +916,13 @@ cnt_fetchbody(struct sess *sp)
 	wrk->busyobj->vfp = NULL;
 	assert(WRW_IsReleased(wrk));
 	AZ(wrk->busyobj->vbc);
-	AN(sp->director);
+	AN(sp->req->director);
 
 	if (i) {
 		HSH_Drop(wrk);
 		VBO_DerefBusyObj(wrk, &wrk->busyobj);
 		AZ(wrk->obj);
-		sp->err_code = 503;
+		sp->req->err_code = 503;
 		sp->step = STP_ERROR;
 		return (0);
 	}
@@ -984,7 +985,7 @@ cnt_streambody(struct sess *sp)
 	http_Setup(wrk->busyobj->beresp, NULL);
 	wrk->busyobj->vfp = NULL;
 	AZ(wrk->busyobj->vbc);
-	AN(sp->director);
+	AN(sp->req->director);
 
 	if (!i && wrk->obj->objcore != NULL) {
 		EXP_Insert(wrk->obj);
@@ -995,7 +996,7 @@ cnt_streambody(struct sess *sp)
 		sp->req->doclose = "Stream error";
 	}
 	wrk->acct_tmp.fetch++;
-	sp->director = NULL;
+	sp->req->director = NULL;
 	sp->req->restarts = 0;
 
 	RES_StreamEnd(sp);
@@ -1089,7 +1090,7 @@ cnt_hit(struct sess *sp)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	CHECK_OBJ_NOTNULL(wrk->obj, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->req->vcl, VCL_CONF_MAGIC);
 	AZ(wrk->busyobj);
 
 	assert(!(wrk->obj->objcore->flags & OC_F_PASS));
@@ -1117,7 +1118,7 @@ cnt_hit(struct sess *sp)
 		sp->step = STP_ERROR;
 		return (0);
 	case VCL_RET_RESTART:
-		sp->director = NULL;
+		sp->req->director = NULL;
 		sp->req->restarts++;
 		sp->step = STP_RECV;
 		return (0);
@@ -1166,7 +1167,7 @@ cnt_lookup(struct sess *sp)
 	wrk = sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
-	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->req->vcl, VCL_CONF_MAGIC);
 	AZ(wrk->busyobj);
 
 	if (sp->req->hash_objhead == NULL) {
@@ -1275,7 +1276,7 @@ cnt_miss(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	wrk = sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->req->vcl, VCL_CONF_MAGIC);
 
 	AZ(wrk->obj);
 	AN(wrk->objcore);
@@ -1369,7 +1370,7 @@ cnt_pass(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	wrk = sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->req->vcl, VCL_CONF_MAGIC);
 	AZ(wrk->obj);
 	AZ(wrk->busyobj);
 
@@ -1429,7 +1430,7 @@ cnt_pipe(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	wrk = sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->req->vcl, VCL_CONF_MAGIC);
 	AZ(wrk->busyobj);
 
 	wrk->acct_tmp.pipe++;
@@ -1482,15 +1483,15 @@ cnt_recv(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	wrk = sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->vcl, VCL_CONF_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->req->vcl, VCL_CONF_MAGIC);
 	AZ(wrk->obj);
 	AZ(wrk->busyobj);
 	assert(wrk->wrw.ciov == wrk->wrw.siov);
 
 	/* By default we use the first backend */
-	AZ(sp->director);
-	sp->director = sp->vcl->director[0];
-	AN(sp->director);
+	AZ(sp->req->director);
+	sp->req->director = sp->req->vcl->director[0];
+	AN(sp->req->director);
 
 	sp->req->disable_esi = 0;
 	sp->req->hash_always_miss = 0;
@@ -1503,8 +1504,8 @@ cnt_recv(struct sess *sp)
 	recv_handling = sp->req->handling;
 
 	if (sp->req->restarts >= cache_param->max_restarts) {
-		if (sp->err_code == 0)
-			sp->err_code = 503;
+		if (sp->req->err_code == 0)
+			sp->req->err_code = 503;
 		sp->step = STP_ERROR;
 		return (0);
 	}
@@ -1584,7 +1585,7 @@ cnt_start(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
 	AZ(sp->req->restarts);
 	AZ(wrk->obj);
-	AZ(sp->vcl);
+	AZ(sp->req->vcl);
 	EXP_Clr(&sp->req->exp);
 	AZ(sp->req->esi_level);
 
@@ -1599,7 +1600,7 @@ cnt_start(struct sess *sp)
 
 	/* Borrow VCL reference from worker thread */
 	VCL_Refresh(&wrk->vcl);
-	sp->vcl = wrk->vcl;
+	sp->req->vcl = wrk->vcl;
 	wrk->vcl = NULL;
 
 	http_Setup(sp->http, sp->ws);
@@ -1613,13 +1614,13 @@ cnt_start(struct sess *sp)
 	}
 
 	/* Catch request snapshot */
-	sp->ws_req = WS_Snapshot(sp->ws);
+	sp->req->ws_req = WS_Snapshot(sp->ws);
 
 	/* Catch original request, before modification */
 	HTTP_Copy(sp->http0, sp->http);
 
 	if (done != 0) {
-		sp->err_code = done;
+		sp->req->err_code = done;
 		sp->step = STP_ERROR;
 		return (0);
 	}
@@ -1633,7 +1634,7 @@ cnt_start(struct sess *sp)
 	 */
 	if (http_GetHdr(sp->http, H_Expect, &p)) {
 		if (strcasecmp(p, "100-continue")) {
-			sp->err_code = 417;
+			sp->req->err_code = 417;
 			sp->step = STP_ERROR;
 			return (0);
 		}
@@ -1661,14 +1662,21 @@ cnt_start(struct sess *sp)
 static void
 cnt_diag(struct sess *sp, const char *state)
 {
+	void *vcl;
+
+	if (sp->req == NULL)
+		vcl = NULL;
+	else
+		vcl = sp->req->vcl;
+
 	if (sp->wrk != NULL) {
 		WSP(sp, SLT_Debug, "thr %p STP_%s sp %p obj %p vcl %p",
-		    pthread_self(), state, sp, sp->wrk->obj, sp->vcl);
+		    pthread_self(), state, sp, sp->wrk->obj, vcl);
 		WSL_Flush(sp->wrk, 0);
 	} else {
 		VSL(SLT_Debug, sp->vsl_id,
 		    "thr %p STP_%s sp %p obj %p vcl %p",
-		    pthread_self(), state, sp, sp->wrk->obj, sp->vcl);
+		    pthread_self(), state, sp, sp->wrk->obj, vcl);
 	}
 }
 

@@ -60,8 +60,8 @@ VRT_error(struct sess *sp, unsigned code, const char *reason)
 	    reason : "(null)");
 	if (code < 100 || code > 999)
 		code = 503;
-	sp->err_code = (uint16_t)code;
-	sp->err_reason = reason ? reason : http_StatusMessage(sp->err_code);
+	sp->req->err_code = (uint16_t)code;
+	sp->req->err_reason = reason ? reason : http_StatusMessage(sp->req->err_code);
 }
 
 /*--------------------------------------------------------------------*/
@@ -75,7 +75,7 @@ VRT_count(const struct sess *sp, unsigned u)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (cache_param->vcl_trace)
 		WSP(sp, SLT_VCL_trace, "%u %u.%u", u,
-		    sp->vcl->ref[u].line, sp->vcl->ref[u].pos);
+		    sp->req->vcl->ref[u].line, sp->req->vcl->ref[u].pos);
 }
 
 /*--------------------------------------------------------------------*/
@@ -351,7 +351,7 @@ VRT_backend_string(const struct sess *sp, const struct director *d)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (d == NULL)
-		d = sp->director;
+		d = sp->req->director;
 	if (d == NULL)
 		return (NULL);
 	return (d->vcl_name);
@@ -372,7 +372,7 @@ VRT_Rollback(struct sess *sp)
 {
 
 	HTTP_Copy(sp->http, sp->http0);
-	WS_Reset(sp->ws, sp->ws_req);
+	WS_Reset(sp->ws, sp->req->ws_req);
 }
 
 /*--------------------------------------------------------------------*/

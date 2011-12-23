@@ -94,7 +94,7 @@ PipeSession(struct sess *sp)
 		return;
 	}
 
-	sp->t_resp = VTIM_real();
+	sp->req->t_resp = VTIM_real();
 
 	memset(fds, 0, sizeof fds);
 

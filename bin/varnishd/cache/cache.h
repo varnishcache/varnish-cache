@@ -605,6 +605,16 @@ struct req {
 	unsigned char		sendbody;
 	unsigned char		wantbody;
 
+	uint16_t		err_code;
+	const char		*err_reason;
+
+	struct director		*director;
+	struct VCL_conf		*vcl;
+
+	uint64_t		req_bodybytes;
+	char			*ws_req;	/* WS above request data */
+
+	double			t_resp;
 };
 
 /*--------------------------------------------------------------------*/
@@ -656,19 +666,9 @@ struct sess {
 	struct http		*http0;
 
 	struct ws		ws[1];
-	char			*ws_req;	/* WS above request data */
-
-	uint16_t		err_code;
-	const char		*err_reason;
-
-	struct director		*director;
-	struct VCL_conf		*vcl;
-
-	uint64_t		req_bodybytes;
 
 	/* Timestamps, all on TIM_real() timescale */
 	double			t_req;
-	double			t_resp;
 
 	/* TBD fields ------------------------------------------------*/
 

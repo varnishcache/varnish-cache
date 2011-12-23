@@ -82,7 +82,7 @@ SES_Charge(struct sess *sp)
 {
 	struct acct *a = &sp->wrk->acct_tmp;
 
-	sp->req_bodybytes += a->bodybytes;
+	sp->req->req_bodybytes += a->bodybytes;
 
 #define ACCT(foo)				\
 	sp->wrk->stats.s_##foo += a->foo;	\
@@ -170,7 +170,6 @@ ses_setup(struct sessmem *sm)
 	sp->t_open = NAN;
 	sp->t_idle = NAN;
 	sp->t_req = NAN;
-	sp->t_resp = NAN;
 
 	WS_Init(sp->ws, "sess", sm->wsp, sm->workspace);
 	sp->http = sm->http[0];
@@ -274,12 +273,12 @@ SES_Schedule(struct sess *sp)
 	if (Pool_Schedule(pp->pool, sp)) {
 		VSC_C_main->client_drop_late++;
 		sp->t_idle = VTIM_real();
-		if (sp->vcl != NULL) {
+		if (sp->req->vcl != NULL) {
 			/*
 			 * A session parked on a busy object can come here
 			 * after it wakes up.  Loose the VCL reference.
 			 */
-			VCL_Rel(&sp->vcl);
+			VCL_Rel(&sp->req->vcl);
 		}
 		SES_Delete(sp, "dropped", sp->t_idle);
 		return (1);
@@ -349,10 +348,11 @@ SES_Delete(struct sess *sp, const char *reason, double now)
 	assert(!isnan(sp->t_open));
 	assert(sp->fd < 0);
 
-	if (sp->req != NULL)
+	if (sp->req != NULL) {
+		AZ(sp->req->vcl);
 		SES_ReleaseReq(sp);
+	}
 
-	AZ(sp->vcl);
 	if (*sp->addr == '\0')
 		strcpy(sp->addr, "-");
 	if (*sp->port == '\0')

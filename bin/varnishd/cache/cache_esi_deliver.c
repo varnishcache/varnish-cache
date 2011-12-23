@@ -80,7 +80,7 @@ ved_include(struct sess *sp, const char *src, const char *host)
 	 * XXX: or not (for session/backend coupling).  Until then
 	 * XXX: make sure we don't trip up the check in vcl_recv.
 	 */
-	sp->director = NULL;
+	sp->req->director = NULL;
 	sp->step = STP_RECV;
 	http_ForceGet(sp->http);
 

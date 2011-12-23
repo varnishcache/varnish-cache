@@ -105,7 +105,7 @@ VDI_GetFd(const struct director *d, struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (d == NULL)
-		d = sp->director;
+		d = sp->req->director;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	return (d->getfd(d, sp));
 }

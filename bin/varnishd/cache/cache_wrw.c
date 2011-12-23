@@ -159,7 +159,7 @@ WRW_Flush(struct worker *wrk)
 			 * counter to prevent slowlaris attacks
 			*/
 
-			if (VTIM_real() - wrk->sp->t_resp >
+			if (VTIM_real() - wrk->sp->req->t_resp >
 			    cache_param->send_timeout) {
 				WSL(wrk, SLT_Debug, *wrw->wfd,
 				    "Hit total send timeout, "

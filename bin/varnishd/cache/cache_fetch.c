@@ -390,7 +390,7 @@ FetchHdr(struct sess *sp, int need_host_hdr)
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 	htc = &wrk->busyobj->htc;
 
-	AN(sp->director);
+	AN(sp->req->director);
 	AZ(sp->wrk->obj);
 
 	if (sp->wrk->objcore != NULL) {		/* pass has no objcore */

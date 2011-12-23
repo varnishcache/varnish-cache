@@ -98,7 +98,7 @@ RFC2616_Ttl(const struct sess *sp)
 	if (http_GetHdr(hp, H_Date, &p))
 		h_date = VTIM_parse(p);
 
-	switch (sp->err_code) {
+	switch (sp->req->err_code) {
 	default:
 		expp->ttl = -1.;
 		break;

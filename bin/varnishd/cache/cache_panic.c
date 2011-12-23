@@ -254,10 +254,10 @@ pan_sess(const struct sess *sp)
 		VSB_printf(pan_vsp, "  handling = %s,\n", hand);
 	else
 		VSB_printf(pan_vsp, "  handling = 0x%x,\n", sp->req->handling);
-	if (sp->err_code)
+	if (sp->req->err_code)
 		VSB_printf(pan_vsp,
-		    "  err_code = %d, err_reason = %s,\n", sp->err_code,
-		    sp->err_reason ? sp->err_reason : "(null)");
+		    "  err_code = %d, err_reason = %s,\n", sp->req->err_code,
+		    sp->req->err_reason ? sp->req->err_reason : "(null)");
 
 	VSB_printf(pan_vsp, "  restarts = %d, esi_level = %d\n",
 	    sp->req->restarts, sp->req->esi_level);
@@ -271,8 +271,8 @@ pan_sess(const struct sess *sp)
 	if (sp->wrk != NULL)
 		pan_wrk(sp->wrk);
 
-	if (VALID_OBJ(sp->vcl, VCL_CONF_MAGIC))
-		pan_vcl(sp->vcl);
+	if (VALID_OBJ(sp->req->vcl, VCL_CONF_MAGIC))
+		pan_vcl(sp->req->vcl);
 
 	if (VALID_OBJ(sp->wrk->obj, OBJECT_MAGIC))
 		pan_object(sp->wrk->obj);

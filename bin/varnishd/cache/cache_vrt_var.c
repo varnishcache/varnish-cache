@@ -307,14 +307,14 @@ void
 VRT_l_req_backend(struct sess *sp, struct director *be)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	sp->director = be;
+	sp->req->director = be;
 }
 
 struct director * __match_proto__()
 VRT_r_req_backend(struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (sp->director);
+	return (sp->req->director);
 }
 
 /*--------------------------------------------------------------------*/
@@ -548,7 +548,7 @@ unsigned
 VRT_r_req_backend_healthy(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
-	return (VDI_Healthy(sp->director, sp));
+	CHECK_OBJ_NOTNULL(sp->req->director, DIRECTOR_MAGIC);
+	return (VDI_Healthy(sp->req->director, sp));
 }
 

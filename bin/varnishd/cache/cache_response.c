@@ -139,7 +139,7 @@ RES_BuildHttp(const struct sess *sp)
 		http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,
 		    "X-Varnish: %u", sp->req->xid);
 	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp, "Age: %.0f",
-	    sp->wrk->obj->exp.age + sp->t_resp - sp->wrk->obj->exp.entered);
+	    sp->wrk->obj->exp.age + sp->req->t_resp - sp->wrk->obj->exp.entered);
 	http_SetHeader(sp->wrk, sp->vsl_id, sp->wrk->resp, "Via: 1.1 varnish");
 	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp, "Connection: %s",
 	    sp->req->doclose ? "close" : "keep-alive");

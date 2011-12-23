@@ -348,7 +348,7 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 			/* XXX locking of stats */
 			VSC_C_main->backend_reuse += 1;
 			WSP(sp, SLT_Backend, "%d %s %s",
-			    vc->fd, sp->director->vcl_name, bp->display_name);
+			    vc->fd, sp->req->director->vcl_name, bp->display_name);
 			vc->vdis = vs;
 			vc->recycled = 1;
 			return (vc);
@@ -390,7 +390,7 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 	vc->backend = bp;
 	VSC_C_main->backend_conn++;
 	WSP(sp, SLT_Backend, "%d %s %s",
-	    vc->fd, sp->director->vcl_name, bp->display_name);
+	    vc->fd, sp->req->director->vcl_name, bp->display_name);
 	vc->vdis = vs;
 	return (vc);
 }
