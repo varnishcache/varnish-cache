@@ -218,9 +218,6 @@ SES_New(struct worker *wrk, struct sesspool *pp)
 	if (sm == NULL)
 		return (NULL);
 	sp = &sm->sess;
-	sp->req = MPL_Get(pp->mpl_req, NULL);
-	AN(sp->req);
-	sp->req->magic = REQ_MAGIC;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	return (sp);
 }
@@ -245,24 +242,33 @@ SES_Alloc(void)
 }
 
 /*--------------------------------------------------------------------
+ */
+
+static struct sesspool *
+ses_getpool(const struct sess *sp)
+{
+	struct sessmem *sm;
+	struct sesspool *pp;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	sm = sp->mem;
+	CHECK_OBJ_NOTNULL(sm, SESSMEM_MAGIC);
+	pp = sm->pool;
+	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
+	return (pp);
+}
+
+/*--------------------------------------------------------------------
  * Schedule a session back on a work-thread from its pool
  */
 
 int
 SES_Schedule(struct sess *sp)
 {
-	struct sessmem *sm;
 	struct sesspool *pp;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-
+	pp = ses_getpool(sp);
 	AZ(sp->wrk);
-
-	sm = sp->mem;
-	CHECK_OBJ_NOTNULL(sm, SESSMEM_MAGIC);
-
-	pp = sm->pool;
-	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 
 	AN(pp->pool);
 
@@ -330,14 +336,10 @@ SES_Delete(struct sess *sp, const char *reason, double now)
 	struct worker *wrk;
 	struct sesspool *pp;
 
+	pp = ses_getpool(sp);
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
-	MPL_AssertSane(sp->req);
 	sm = sp->mem;
 	CHECK_OBJ_NOTNULL(sm, SESSMEM_MAGIC);
-	pp = sm->pool;
-	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	wrk = sp->wrk;
 	CHECK_OBJ_ORNULL(wrk, WORKER_MAGIC);
 
@@ -347,6 +349,9 @@ SES_Delete(struct sess *sp, const char *reason, double now)
 		now = VTIM_real();
 	assert(!isnan(sp->t_open));
 	assert(sp->fd < 0);
+
+	if (sp->req != NULL)
+		SES_ReleaseReq(sp);
 
 	AZ(sp->vcl);
 	if (*sp->addr == '\0')
@@ -361,11 +366,6 @@ SES_Delete(struct sess *sp, const char *reason, double now)
 	    now - sp->t_open,
 	    b->sess, b->req, b->pipe, b->pass,
 	    b->fetch, b->hdrbytes, b->bodybytes);
-
-	CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
-	MPL_AssertSane(sp->req);
-	MPL_Free(pp->mpl_req, sp->req);
-	sp->req = NULL;
 
 	if (sm->workspace != cache_param->sess_workspace ||
 	    sm->nhttp != (uint16_t)cache_param->http_max_hdr ||
@@ -392,45 +392,73 @@ SES_Delete(struct sess *sp, const char *reason, double now)
 }
 
 /*--------------------------------------------------------------------
+ * Alloc/Free/Clean sp->req
+ */
+
+void
+SES_GetReq(struct sess *sp)
+{
+	struct sesspool *pp;
+
+	pp = ses_getpool(sp);
+	AZ(sp->req);
+	sp->req = MPL_Get(pp->mpl_req, NULL);
+	AN(sp->req);
+	sp->req->magic = REQ_MAGIC;
+}
+
+void
+SES_ReleaseReq(struct sess *sp)
+{
+	struct sesspool *pp;
+
+	pp = ses_getpool(sp);
+	CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
+	MPL_AssertSane(sp->req);
+	MPL_Free(pp->mpl_req, sp->req);
+	sp->req = NULL;
+}
+
+/*--------------------------------------------------------------------
  * Create and delete pools
  */
 
 struct sesspool *
-SES_NewPool(struct pool *pp, unsigned pool_no)
+SES_NewPool(struct pool *wp, unsigned pool_no)
 {
-	struct sesspool *sp;
+	struct sesspool *pp;
 	char nb[8];
 
-	ALLOC_OBJ(sp, SESSPOOL_MAGIC);
-	AN(sp);
-	sp->pool = pp;
-	VTAILQ_INIT(&sp->freelist);
-	Lck_New(&sp->mtx, lck_sessmem);
+	ALLOC_OBJ(pp, SESSPOOL_MAGIC);
+	AN(pp);
+	pp->pool = wp;
+	VTAILQ_INIT(&pp->freelist);
+	Lck_New(&pp->mtx, lck_sessmem);
 	bprintf(nb, "req%u", pool_no);
-	sp->req_size = sizeof (struct req);
-	sp->mpl_req = MPL_New(nb, &cache_param->req_pool, &sp->req_size);
-	return (sp);
+	pp->req_size = sizeof (struct req);
+	pp->mpl_req = MPL_New(nb, &cache_param->req_pool, &pp->req_size);
+	return (pp);
 }
 
 void
-SES_DeletePool(struct sesspool *sp, struct worker *wrk)
+SES_DeletePool(struct sesspool *pp, struct worker *wrk)
 {
 	struct sessmem *sm;
 
-	CHECK_OBJ_NOTNULL(sp, SESSPOOL_MAGIC);
+	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	Lck_Lock(&sp->mtx);
-	while (!VTAILQ_EMPTY(&sp->freelist)) {
-		sm = VTAILQ_FIRST(&sp->freelist);
+	Lck_Lock(&pp->mtx);
+	while (!VTAILQ_EMPTY(&pp->freelist)) {
+		sm = VTAILQ_FIRST(&pp->freelist);
 		CHECK_OBJ_NOTNULL(sm, SESSMEM_MAGIC);
-		VTAILQ_REMOVE(&sp->freelist, sm, list);
+		VTAILQ_REMOVE(&pp->freelist, sm, list);
 		FREE_OBJ(sm);
 		wrk->stats.sessmem_free++;
-		sp->nsess--;
+		pp->nsess--;
 	}
-	AZ(sp->nsess);
-	Lck_Unlock(&sp->mtx);
-	Lck_Delete(&sp->mtx);
-	MPL_Destroy(&sp->mpl_req);
-	FREE_OBJ(sp);
+	AZ(pp->nsess);
+	Lck_Unlock(&pp->mtx);
+	Lck_Delete(&pp->mtx);
+	MPL_Destroy(&pp->mpl_req);
+	FREE_OBJ(pp);
 }

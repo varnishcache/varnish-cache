@@ -68,6 +68,7 @@ WAIT_Enter(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	AZ(sp->req);
 	AZ(sp->vcl);
 	assert(sp->fd >= 0);
 	sp->wrk = NULL;

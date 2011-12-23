@@ -37,7 +37,7 @@
  * a dot(1) graph in the source code comments.  So to see the big picture,
  * extract the DOT lines and run though dot(1), for instance with the
  * command:
- *	sed -n '/^DOT/s///p' cache_center.c | dot -Tps > /tmp/_.ps
+ *	sed -n '/^DOT/s///p' cache/cache_center.c | dot -Tps > /tmp/_.ps
  */
 
 /*
@@ -91,7 +91,8 @@ DOT	]
 DOT	herding [shape=hexagon]
 DOT	wait -> start [label="got req"]
 DOT	wait -> "SES_Delete()" [label="errors"]
-DOT	wait -> herding [label="timeout"]
+DOT	wait -> herding [label="timeout_linger"]
+DOT	herding -> wait [label="fd read_ready"]
 DOT }
  */
 
@@ -106,6 +107,9 @@ cnt_wait(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	wrk = sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	if (sp->req == NULL)
+		SES_GetReq(sp);
+
 	AZ(sp->vcl);
 	AZ(wrk->obj);
 	AZ(sp->esi_level);
@@ -150,6 +154,7 @@ cnt_wait(struct sess *sp)
 				sp->t_req = NAN;
 				wrk->stats.sess_herd++;
 				SES_Charge(sp);
+				SES_ReleaseReq(sp);
 				WAIT_Enter(sp);
 				return (1);
 			}
@@ -350,10 +355,10 @@ cnt_deliver(struct sess *sp)
  *
 DOT	DONE [
 DOT		shape=hexagon
-DOT		label="Request completed"
+DOT		label="cnt_done:\nRequest completed"
 DOT	]
 DOT	ESI_RESP [ shape=hexagon ]
-DOT	DONE -> start
+DOT	DONE -> start [label="full pipeline"]
 DOT	DONE -> wait
 DOT	DONE -> ESI_RESP
  */
@@ -446,21 +451,11 @@ cnt_done(struct sess *sp)
 		sp->step = STP_START;
 		return (0);
 	}
-	if (Tlen(sp->htc->rxbuf)) {
+	if (Tlen(sp->htc->rxbuf))
 		wrk->stats.sess_readahead++;
-		sp->step = STP_WAIT;
-		sp->t_req = sp->t_idle;
-		return (0);
-	}
-	if (cache_param->timeout_linger > 0.) {
-		wrk->stats.sess_linger++;
-		sp->step = STP_WAIT;
-		sp->t_req = sp->t_idle;		// XXX: not quite correct
-		return (0);
-	}
-	wrk->stats.sess_herd++;
-	WAIT_Enter(sp);
-	return (1);
+	sp->step = STP_WAIT;
+	sp->t_req = sp->t_idle;
+	return (0);
 }
 
 /*--------------------------------------------------------------------
@@ -1023,7 +1018,7 @@ cnt_streambody(struct sess *sp)
 DOT subgraph xcluster_first {
 DOT	first [
 DOT		shape=box
-DOT		label="first\nConfigure data structures"
+DOT		label="cnt_first:\nSockaddr's"
 DOT	]
 DOT }
 DOT first -> wait
@@ -1567,11 +1562,11 @@ cnt_recv(struct sess *sp)
 
 /*--------------------------------------------------------------------
  * START
- * Handle a request, wherever it came from recv/restart.
+ * Handle a request.
  *
 DOT start [
 DOT	shape=box
-DOT	label="Dissect request\nHandle expect"
+DOT	label="cnt_start:\nDissect request\nHandle expect"
 DOT ]
 DOT start -> recv [style=bold,color=green]
 DOT start -> DONE [label=errors]
@@ -1588,6 +1583,7 @@ cnt_start(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	wrk = sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
 	AZ(sp->restarts);
 	AZ(wrk->obj);
 	AZ(sp->vcl);
@@ -1684,8 +1680,10 @@ CNT_Session(struct sess *sp)
 	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+#if 0
 	CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
 	MPL_AssertSane(sp->req);
+#endif
 	wrk = sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
@@ -1723,8 +1721,10 @@ CNT_Session(struct sess *sp)
 	 */
 	for (done = 0; !done; ) {
 		assert(sp->wrk == wrk);
+#if 0
 		CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
 		MPL_AssertSane(sp->req);
+#endif
 		/*
 		 * This is a good place to be paranoid about the various
 		 * pointers still pointing to the things we expect.
