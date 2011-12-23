@@ -345,6 +345,7 @@ SES_Delete(struct sess *sp, const char *reason, double now)
 		SES_Close(sp, reason);
 	if (isnan(now))
 		now = VTIM_real();
+	assert(!isnan(sp->t_open));
 	assert(sp->fd < 0);
 
 	AZ(sp->vcl);
@@ -354,11 +355,10 @@ SES_Delete(struct sess *sp, const char *reason, double now)
 		strcpy(sp->addr, "-");
 
 	b = &sp->acct_ses;
-	assert(!isnan(b->first));
 
 	VSL(SLT_StatSess, sp->vsl_id, "%s %s %.0f %ju %ju %ju %ju %ju %ju %ju",
 	    sp->addr, sp->port,
-	    now - b->first, 	// XXX ??? 
+	    now - sp->t_open,
 	    b->sess, b->req, b->pipe, b->pass,
 	    b->fetch, b->hdrbytes, b->bodybytes);
 

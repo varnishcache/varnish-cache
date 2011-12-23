@@ -198,7 +198,6 @@ struct http_conn {
 /*--------------------------------------------------------------------*/
 
 struct acct {
-	double			first;
 #define ACCT(foo)	uint64_t	foo;
 #include "tbl/acct_fields.h"
 #undef ACCT

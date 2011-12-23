@@ -1019,7 +1019,8 @@ cnt_streambody(struct sess *sp)
 }
 
 /*--------------------------------------------------------------------
- * The very first request
+ * A freshly accepted socket
+ *
 DOT subgraph xcluster_first {
 DOT	first [
 DOT		shape=box
@@ -1040,16 +1041,10 @@ cnt_first(struct sess *sp)
 	wrk = sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
-	/*
-	 * XXX: If we don't have acceptfilters we are somewhat subject
-	 * XXX: to DoS'ing here.  One remedy would be to set a shorter
-	 * XXX: SO_RCVTIMEO and once we have received something here
-	 * XXX: increase it to the normal value.
-	 */
-
 	assert(sp->xid == 0);
 	assert(sp->restarts == 0);
 	AZ(sp->esi_level);
+
 	VTCP_name(&sp->sockaddr, sp->sockaddrlen,
 	    sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
 	if (cache_param->log_local_addr) {
@@ -1063,7 +1058,6 @@ cnt_first(struct sess *sp)
 		WSP(sp, SLT_SessionOpen, "%s %s %s",
 		    sp->addr, sp->port, sp->mylsock->name);
 	}
-	sp->acct_ses.first = sp->t_open;
 
 	/* Receive a HTTP protocol request */
 	HTC_Init(sp->htc, sp->ws, sp->fd, sp->vsl_id,
