@@ -90,8 +90,8 @@ VRT_DO_HDR(bereq, url,		sp->wrk->busyobj->bereq,	HTTP_HDR_URL)
 VRT_DO_HDR(bereq, proto,	sp->wrk->busyobj->bereq,	HTTP_HDR_PROTO)
 VRT_DO_HDR(obj,   proto,	sp->wrk->obj->http,	HTTP_HDR_PROTO)
 VRT_DO_HDR(obj,   response,	sp->wrk->obj->http,	HTTP_HDR_RESPONSE)
-VRT_DO_HDR(resp,  proto,	sp->wrk->resp,		HTTP_HDR_PROTO)
-VRT_DO_HDR(resp,  response,	sp->wrk->resp,		HTTP_HDR_RESPONSE)
+VRT_DO_HDR(resp,  proto,	sp->req->resp,		HTTP_HDR_PROTO)
+VRT_DO_HDR(resp,  response,	sp->req->resp,		HTTP_HDR_RESPONSE)
 VRT_DO_HDR(beresp,  proto,	sp->wrk->busyobj->beresp,	HTTP_HDR_PROTO)
 VRT_DO_HDR(beresp,  response,	sp->wrk->busyobj->beresp, HTTP_HDR_RESPONSE)
 
@@ -116,7 +116,7 @@ VRT_r_##obj##_status(const struct sess *sp)			\
 
 VRT_DO_STATUS(obj, sp->wrk->obj->http)
 VRT_DO_STATUS(beresp, sp->wrk->busyobj->beresp)
-VRT_DO_STATUS(resp, sp->wrk->resp)
+VRT_DO_STATUS(resp, sp->req->resp)
 
 /*--------------------------------------------------------------------*/
 
@@ -205,8 +205,8 @@ VBERESP(beresp, unsigned, do_stream, busyobj->do_stream)
 
 /*--------------------------------------------------------------------*/
 
-const char * __match_proto__()
-VRT_r_client_identity(struct sess *sp)
+const char *
+VRT_r_client_identity(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (sp->req->client_identity != NULL)
@@ -216,7 +216,7 @@ VRT_r_client_identity(struct sess *sp)
 }
 
 void
-VRT_l_client_identity(struct sess *sp, const char *str, ...)
+VRT_l_client_identity(const struct sess *sp, const char *str, ...)
 {
 	va_list ap;
 	char *b;
@@ -304,14 +304,14 @@ VRT_l_beresp_storage(struct sess *sp, const char *str, ...)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_l_req_backend(struct sess *sp, struct director *be)
+VRT_l_req_backend(const struct sess *sp, struct director *be)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	sp->req->director = be;
 }
 
-struct director * __match_proto__()
-VRT_r_req_backend(struct sess *sp)
+struct director *
+VRT_r_req_backend(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	return (sp->req->director);
@@ -320,7 +320,7 @@ VRT_r_req_backend(struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_l_req_esi(struct sess *sp, unsigned process_esi)
+VRT_l_req_esi(const struct sess *sp, unsigned process_esi)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	/*
@@ -331,8 +331,8 @@ VRT_l_req_esi(struct sess *sp, unsigned process_esi)
 		sp->req->disable_esi = !process_esi;
 }
 
-unsigned __match_proto__()
-VRT_r_req_esi(struct sess *sp)
+unsigned
+VRT_r_req_esi(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	return (!sp->req->disable_esi);

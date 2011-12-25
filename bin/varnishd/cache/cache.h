@@ -329,9 +329,6 @@ struct worker {
 
 	struct ws		ws[1];
 
-
-	struct http		*resp;
-
 	struct object		*obj;
 	struct objcore		*objcore;
 	struct busyobj		*busyobj;
@@ -622,6 +619,7 @@ struct req {
 	/* HTTP request */
 	struct http		*http;
 	struct http		*http0;
+	struct http		*resp;
 
 	struct ws		ws[1];
 };

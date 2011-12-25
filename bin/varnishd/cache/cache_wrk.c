@@ -133,13 +133,12 @@ WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func, void *priv)
 
 static void *
 wrk_thread_real(void *priv, unsigned shm_workspace, unsigned sess_workspace,
-    uint16_t nhttp, unsigned http_space, unsigned siov)
+    unsigned siov)
 {
 	struct worker *w, ww;
 	uint32_t wlog[shm_workspace / 4];
 	/* XXX: can we trust these to be properly aligned ? */
 	unsigned char ws[sess_workspace];
-	unsigned char http2[http_space];
 	struct iovec iov[siov];
 	struct SHA256Context sha256;
 
@@ -151,7 +150,6 @@ wrk_thread_real(void *priv, unsigned shm_workspace, unsigned sess_workspace,
 	w->wlb = w->wlp = wlog;
 	w->wle = wlog + (sizeof wlog) / 4;
 	w->sha256ctx = &sha256;
-	w->resp = HTTP_create(http2, nhttp);
 	w->wrw.iov = iov;
 	w->wrw.siov = siov;
 	w->wrw.ciov = siov;
@@ -187,8 +185,7 @@ WRK_thread(void *priv)
 		siov = IOV_MAX;
 	return (wrk_thread_real(priv,
 	    cache_param->shm_workspace,
-	    cache_param->wthread_workspace,
-	    nhttp, HTTP_estimate(nhttp), siov));
+	    cache_param->wthread_workspace, siov));
 }
 
 void

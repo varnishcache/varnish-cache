@@ -281,7 +281,7 @@ cnt_prepresp(struct sess *sp)
 			wrk->obj->last_lru = sp->req->t_resp;
 		wrk->obj->last_use = sp->req->t_resp;	/* XXX: locking ? */
 	}
-	http_Setup(wrk->resp, wrk->ws);
+	http_Setup(sp->req->resp, sp->req->ws);
 	RES_BuildHttp(sp);
 	VCL_deliver_method(sp);
 	switch (sp->req->handling) {
@@ -301,7 +301,7 @@ cnt_prepresp(struct sess *sp)
 		AZ(wrk->obj);
 		sp->req->restarts++;
 		sp->req->director = NULL;
-		http_Setup(wrk->resp, NULL);
+		http_Setup(sp->req->resp, NULL);
 		sp->step = STP_RECV;
 		return (0);
 	default:
@@ -349,7 +349,7 @@ cnt_deliver(struct sess *sp)
 	assert(WRW_IsReleased(wrk));
 	assert(wrk->wrw.ciov == wrk->wrw.siov);
 	(void)HSH_Deref(wrk, NULL, &wrk->obj);
-	http_Setup(wrk->resp, NULL);
+	http_Setup(sp->req->resp, NULL);
 	sp->step = STP_DONE;
 	return (0);
 }
@@ -1012,7 +1012,7 @@ cnt_streambody(struct sess *sp)
 	assert(wrk->wrw.ciov == wrk->wrw.siov);
 	(void)HSH_Deref(wrk, NULL, &wrk->obj);
 	VBO_DerefBusyObj(wrk, &wrk->busyobj);
-	http_Setup(wrk->resp, NULL);
+	http_Setup(sp->req->resp, NULL);
 	sp->step = STP_DONE;
 	return (0);
 }

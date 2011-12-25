@@ -52,7 +52,7 @@ const void * const vrt_magic_string_end = &vrt_magic_string_end;
 /*--------------------------------------------------------------------*/
 
 void
-VRT_error(struct sess *sp, unsigned code, const char *reason)
+VRT_error(const struct sess *sp, unsigned code, const char *reason)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -106,7 +106,7 @@ vrt_selecthttp(const struct sess *sp, enum gethdr_e where)
 		hp = sp->wrk->busyobj->beresp;
 		break;
 	case HDR_RESP:
-		hp = sp->wrk->resp;
+		hp = sp->req->resp;
 		break;
 	case HDR_OBJ:
 		CHECK_OBJ_NOTNULL(sp->wrk->obj, OBJECT_MAGIC);
@@ -239,7 +239,7 @@ VRT_SetHdr(const struct sess *sp , enum gethdr_e where, const char *hdr,
 /*--------------------------------------------------------------------*/
 
 void
-VRT_handling(struct sess *sp, unsigned hand)
+VRT_handling(const struct sess *sp, unsigned hand)
 {
 
 	if (sp == NULL) {
@@ -368,7 +368,7 @@ VRT_bool_string(const struct sess *sp, unsigned val)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_Rollback(struct sess *sp)
+VRT_Rollback(const struct sess *sp)
 {
 
 	HTTP_Copy(sp->req->http, sp->req->http0);

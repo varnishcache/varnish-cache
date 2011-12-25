@@ -270,14 +270,18 @@ SES_GetReq(struct sess *sp)
 	nhttp = (uint16_t)cache_param->http_max_hdr;
 	hl = HTTP_estimate(nhttp);
 
-	xxxassert(sz > 2 * hl + 128);
+	xxxassert(sz > 3 * hl + 128);
 
 	sp->req->http = HTTP_create(p, nhttp);
-	p += hl;
+	p += hl;		// XXX: align ?
 	sz -= hl;
 
 	sp->req->http0 = HTTP_create(p, nhttp);
-	p += hl;
+	p += hl;		// XXX: align ?
+	sz -= hl;
+
+	sp->req->resp = HTTP_create(p, nhttp);
+	p += hl;		// XXX: align ?
 	sz -= hl;
 
 	WS_Init(sp->req->ws, "req", p, sz);

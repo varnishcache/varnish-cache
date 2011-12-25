@@ -201,8 +201,6 @@ pan_wrk(const struct worker *wrk)
 		pan_http("bereq", wrk->busyobj->bereq, 4);
 	if (wrk->busyobj != NULL && wrk->busyobj->beresp->ws != NULL)
 		pan_http("beresp", wrk->busyobj->beresp, 4);
-	if (wrk->resp->ws != NULL)
-		pan_http("resp", wrk->resp, 4);
 	VSB_printf(pan_vsp, "  },\n");
 }
 
@@ -267,6 +265,8 @@ pan_sess(const struct sess *sp)
 
 	pan_ws(sp->req->ws, 2);
 	pan_http("req", sp->req->http, 2);
+	if (sp->req->resp->ws != NULL)
+		pan_http("resp", sp->req->resp, 4);
 
 	if (sp->wrk != NULL)
 		pan_wrk(sp->wrk);

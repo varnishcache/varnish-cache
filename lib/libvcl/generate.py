@@ -113,7 +113,7 @@ sp_variables = (
 		'STRING',
 		( 'proc',),
 		( 'proc',),
-		'struct sess *'
+		'const struct sess *'
 	),
 	('server.ip',
 		'IP',
@@ -167,7 +167,7 @@ sp_variables = (
 		'BACKEND',
 		( 'proc',),
 		( 'proc',),
-		'struct sess *'
+		'const struct sess *'
 	),
 	('req.restarts',
 		'INT',
@@ -209,7 +209,7 @@ sp_variables = (
 		'BOOL',
 		( 'recv', 'fetch', 'deliver', 'error',),
 		( 'recv', 'fetch', 'deliver', 'error',),
-		'struct sess *'
+		'const struct sess *'
 	),
 	('req.can_gzip',
 		'BOOL',

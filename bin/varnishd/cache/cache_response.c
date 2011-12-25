@@ -87,14 +87,14 @@ res_dorange(const struct sess *sp, const char *r, ssize_t *plow, ssize_t *phigh)
 	if (low > high)
 		return;
 
-	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,
+	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->req->resp,
 	    "Content-Range: bytes %jd-%jd/%jd",
 	    (intmax_t)low, (intmax_t)high, (intmax_t)sp->wrk->obj->len);
-	http_Unset(sp->wrk->resp, H_Content_Length);
+	http_Unset(sp->req->resp, H_Content_Length);
 	assert(sp->wrk->res_mode & RES_LEN);
-	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,
+	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->req->resp,
 	    "Content-Length: %jd", (intmax_t)(1 + high - low));
-	http_SetResp(sp->wrk->resp, "HTTP/1.1", 206, "Partial Content");
+	http_SetResp(sp->req->resp, "HTTP/1.1", 206, "Partial Content");
 
 	*plow = low;
 	*phigh = high;
@@ -110,39 +110,39 @@ RES_BuildHttp(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 
-	http_ClrHeader(sp->wrk->resp);
-	sp->wrk->resp->logtag = HTTP_Tx;
-	http_CopyResp(sp->wrk->resp, sp->wrk->obj->http);
-	http_FilterFields(sp->wrk, sp->vsl_id, sp->wrk->resp,
+	http_ClrHeader(sp->req->resp);
+	sp->req->resp->logtag = HTTP_Tx;
+	http_CopyResp(sp->req->resp, sp->wrk->obj->http);
+	http_FilterFields(sp->wrk, sp->vsl_id, sp->req->resp,
 	    sp->wrk->obj->http, HTTPH_A_DELIVER);
 
 	if (!(sp->wrk->res_mode & RES_LEN)) {
-		http_Unset(sp->wrk->resp, H_Content_Length);
+		http_Unset(sp->req->resp, H_Content_Length);
 	} else if (cache_param->http_range_support) {
 		/* We only accept ranges if we know the length */
-		http_SetHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,
+		http_SetHeader(sp->wrk, sp->vsl_id, sp->req->resp,
 		    "Accept-Ranges: bytes");
 	}
 
 	if (sp->wrk->res_mode & RES_CHUNKED)
-		http_SetHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,
+		http_SetHeader(sp->wrk, sp->vsl_id, sp->req->resp,
 		    "Transfer-Encoding: chunked");
 
 	VTIM_format(VTIM_real(), time_str);
-	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,
+	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->req->resp,
 	    "Date: %s", time_str);
 
 	if (sp->req->xid != sp->wrk->obj->xid)
-		http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,
+		http_PrintfHeader(sp->wrk, sp->vsl_id, sp->req->resp,
 		    "X-Varnish: %u %u", sp->req->xid, sp->wrk->obj->xid);
 	else
-		http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,
+		http_PrintfHeader(sp->wrk, sp->vsl_id, sp->req->resp,
 		    "X-Varnish: %u", sp->req->xid);
-	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp, "Age: %.0f",
+	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->req->resp, "Age: %.0f",
 	    sp->wrk->obj->exp.age + sp->req->t_resp -
 	    sp->wrk->obj->exp.entered);
-	http_SetHeader(sp->wrk, sp->vsl_id, sp->wrk->resp, "Via: 1.1 varnish");
-	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp, "Connection: %s",
+	http_SetHeader(sp->wrk, sp->vsl_id, sp->req->resp, "Via: 1.1 varnish");
+	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->req->resp, "Connection: %s",
 	    sp->req->doclose ? "close" : "keep-alive");
 }
 
@@ -263,9 +263,9 @@ RES_WriteObj(struct sess *sp)
 	    sp->req->http->conds &&
 	    RFC2616_Do_Cond(sp)) {
 		sp->req->wantbody = 0;
-		http_SetResp(sp->wrk->resp, "HTTP/1.1", 304, "Not Modified");
-		http_Unset(sp->wrk->resp, H_Content_Length);
-		http_Unset(sp->wrk->resp, H_Transfer_Encoding);
+		http_SetResp(sp->req->resp, "HTTP/1.1", 304, "Not Modified");
+		http_Unset(sp->req->resp, H_Content_Length);
+		http_Unset(sp->req->resp, H_Transfer_Encoding);
 	}
 
 	/*
@@ -286,14 +286,14 @@ RES_WriteObj(struct sess *sp)
 	 * Always remove C-E if client don't grok it
 	 */
 	if (sp->wrk->res_mode & RES_GUNZIP)
-		http_Unset(sp->wrk->resp, H_Content_Encoding);
+		http_Unset(sp->req->resp, H_Content_Encoding);
 
 	/*
 	 * Send HTTP protocol header, unless interior ESI object
 	 */
 	if (!(sp->wrk->res_mode & RES_ESI_CHILD))
 		sp->wrk->acct_tmp.hdrbytes +=
-		    http_Write(sp->wrk, sp->vsl_id, sp->wrk->resp, 1);
+		    http_Write(sp->wrk, sp->vsl_id, sp->req->resp, 1);
 
 	if (!sp->req->wantbody)
 		sp->wrk->res_mode &= ~RES_CHUNKED;
@@ -344,15 +344,15 @@ RES_StreamStart(struct sess *sp)
 	 * Always remove C-E if client don't grok it
 	 */
 	if (sp->wrk->res_mode & RES_GUNZIP)
-		http_Unset(sp->wrk->resp, H_Content_Encoding);
+		http_Unset(sp->req->resp, H_Content_Encoding);
 
 	if (!(sp->wrk->res_mode & RES_CHUNKED) &&
 	    sp->wrk->busyobj->h_content_length != NULL)
-		http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->resp,
+		http_PrintfHeader(sp->wrk, sp->vsl_id, sp->req->resp,
 		    "Content-Length: %s", sp->wrk->busyobj->h_content_length);
 
 	sp->wrk->acct_tmp.hdrbytes +=
-	    http_Write(sp->wrk, sp->vsl_id, sp->wrk->resp, 1);
+	    http_Write(sp->wrk, sp->vsl_id, sp->req->resp, 1);
 
 	if (sp->wrk->res_mode & RES_CHUNKED)
 		WRW_Chunked(sp->wrk);

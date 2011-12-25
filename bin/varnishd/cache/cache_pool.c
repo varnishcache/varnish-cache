@@ -194,7 +194,6 @@ Pool_Work_Thread(void *priv, struct worker *w)
 		w->do_what = pool_do_inval;
 
 		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-		CHECK_OBJ_NOTNULL(w->resp, HTTP_MAGIC);
 
 		WS_Reset(w->ws, NULL);
 
@@ -267,7 +266,6 @@ Pool_Work_Thread(void *priv, struct worker *w)
 
 			WS_Assert(w->ws);
 			AZ(w->busyobj);
-			AZ(w->resp->ws);
 			AZ(w->wrw.wfd);
 			AZ(w->storage_hint);
 			assert(w->wlp == w->wlb);
