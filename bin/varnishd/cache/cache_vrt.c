@@ -61,7 +61,8 @@ VRT_error(const struct sess *sp, unsigned code, const char *reason)
 	if (code < 100 || code > 999)
 		code = 503;
 	sp->req->err_code = (uint16_t)code;
-	sp->req->err_reason = reason ? reason : http_StatusMessage(sp->req->err_code);
+	sp->req->err_reason =
+	    reason ? reason : http_StatusMessage(sp->req->err_code);
 }
 
 /*--------------------------------------------------------------------*/
