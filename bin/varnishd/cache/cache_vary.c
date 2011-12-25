@@ -96,7 +96,7 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 		    (char)(1 + (q - p)), (int)(q - p), p, 0);
 		AZ(VSB_finish(sbh));
 
-		if (http_GetHdr(sp->http, VSB_data(sbh), &h)) {
+		if (http_GetHdr(sp->req->http, VSB_data(sbh), &h)) {
 			AZ(vct_issp(*h));
 			/* Trim trailing space */
 			e = strchr(h, '\0');
@@ -187,7 +187,7 @@ VRY_Match(struct sess *sp, const uint8_t *vary)
 		if (i == 1) {
 			/* Build a new entry */
 
-			i = http_GetHdr(sp->http, (const char*)(vary+2), &h);
+			i = http_GetHdr(sp->req->http, (const char*)(vary+2), &h);
 			if (i) {
 				/* Trim trailing space */
 				e = strchr(h, '\0');

@@ -660,7 +660,7 @@ http_DissectRequest(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	htc = sp->req->htc;
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	hp = sp->http;
+	hp = sp->req->http;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
 	hp->logtag = HTTP_Rx;
@@ -873,13 +873,13 @@ http_FilterHeader(const struct sess *sp, unsigned how)
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	hp->logtag = HTTP_Tx;
 
-	http_copyh(hp, sp->http, HTTP_HDR_REQ);
-	http_copyh(hp, sp->http, HTTP_HDR_URL);
+	http_copyh(hp, sp->req->http, HTTP_HDR_REQ);
+	http_copyh(hp, sp->req->http, HTTP_HDR_URL);
 	if (how == HTTPH_R_FETCH)
 		http_SetH(hp, HTTP_HDR_PROTO, "HTTP/1.1");
 	else
-		http_copyh(hp, sp->http, HTTP_HDR_PROTO);
-	http_FilterFields(sp->wrk, sp->vsl_id, hp, sp->http, how);
+		http_copyh(hp, sp->req->http, HTTP_HDR_PROTO);
+	http_FilterFields(sp->wrk, sp->vsl_id, hp, sp->req->http, how);
 	http_PrintfHeader(sp->wrk, sp->vsl_id, hp, "X-Varnish: %u", sp->req->xid);
 }
 

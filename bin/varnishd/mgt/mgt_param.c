@@ -688,7 +688,7 @@ static const struct parspec input_parspec[] = {
 		0,
 		"120", "seconds" },
 	{ "sess_workspace",
-		tweak_bytes_u, &mgt_param.sess_workspace, 1024, UINT_MAX,
+		tweak_bytes_u, &mgt_param.sess_workspace, 3072, UINT_MAX,
 		"Bytes of HTTP protocol workspace allocated for sessions. "
 		"This space must be big enough for the entire HTTP protocol "
 		"header and any edits done to it in the VCL code.\n"

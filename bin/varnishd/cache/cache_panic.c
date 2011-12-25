@@ -265,8 +265,8 @@ pan_sess(const struct sess *sp)
 	if (sp->wrk->busyobj != NULL)
 		pan_busyobj(sp->wrk->busyobj);
 
-	pan_ws(sp->ws, 2);
-	pan_http("req", sp->http, 2);
+	pan_ws(sp->req->ws, 2);
+	pan_http("req", sp->req->http, 2);
 
 	if (sp->wrk != NULL)
 		pan_wrk(sp->wrk);

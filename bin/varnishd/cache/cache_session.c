@@ -55,7 +55,6 @@ struct sessmem {
 	unsigned		workspace;
 	uint16_t		nhttp;
 	void			*wsp;
-	struct http		*http[2];
 	VTAILQ_ENTRY(sessmem)	list;
 
 	struct sess		sess;
@@ -69,7 +68,6 @@ struct sesspool {
 	struct lock		mtx;
 	unsigned		nsess;
 	unsigned		dly_free_cnt;
-	unsigned		req_size;
 	struct mempool		*mpl_req;
 };
 
@@ -82,6 +80,7 @@ SES_Charge(struct sess *sp)
 {
 	struct acct *a = &sp->wrk->acct_tmp;
 
+	CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
 	sp->req->req_bodybytes += a->bodybytes;
 
 #define ACCT(foo)				\
@@ -170,10 +169,6 @@ ses_setup(struct sessmem *sm)
 	sp->t_open = NAN;
 	sp->t_idle = NAN;
 	sp->t_req = NAN;
-
-	WS_Init(sp->ws, "sess", sm->wsp, sm->workspace);
-	sp->http = sm->http[0];
-	sp->http0 = sm->http[1];
 }
 
 /*--------------------------------------------------------------------
@@ -273,7 +268,7 @@ SES_Schedule(struct sess *sp)
 	if (Pool_Schedule(pp->pool, sp)) {
 		VSC_C_main->client_drop_late++;
 		sp->t_idle = VTIM_real();
-		if (sp->req->vcl != NULL) {
+		if (sp->req != NULL && sp->req->vcl != NULL) {
 			/*
 			 * A session parked on a busy object can come here
 			 * after it wakes up.  Loose the VCL reference.
@@ -391,19 +386,40 @@ SES_Delete(struct sess *sp, const char *reason, double now)
 }
 
 /*--------------------------------------------------------------------
- * Alloc/Free/Clean sp->req
+ * Alloc/Free sp->req
  */
 
 void
 SES_GetReq(struct sess *sp)
 {
 	struct sesspool *pp;
+	uint16_t nhttp;
+	unsigned sz, hl;
+	char *p;
 
 	pp = ses_getpool(sp);
 	AZ(sp->req);
-	sp->req = MPL_Get(pp->mpl_req, NULL);
+	sp->req = MPL_Get(pp->mpl_req, &sz);
 	AN(sp->req);
 	sp->req->magic = REQ_MAGIC;
+
+	p = (char*)(sp->req + 1);
+	sz -= sizeof *sp->req;
+
+	nhttp = (uint16_t)cache_param->http_max_hdr;
+	hl = HTTP_estimate(nhttp);
+
+	xxxassert(sz > 2 * hl + 128);
+
+	sp->req->http = HTTP_create(p, nhttp);
+	p += hl;
+	sz -= hl;
+
+	sp->req->http0 = HTTP_create(p, nhttp);
+	p += hl;
+	sz -= hl;
+	
+	WS_Init(sp->req->ws, "req", p, sz);
 }
 
 void
@@ -434,8 +450,8 @@ SES_NewPool(struct pool *wp, unsigned pool_no)
 	VTAILQ_INIT(&pp->freelist);
 	Lck_New(&pp->mtx, lck_sessmem);
 	bprintf(nb, "req%u", pool_no);
-	pp->req_size = sizeof (struct req);
-	pp->mpl_req = MPL_New(nb, &cache_param->req_pool, &pp->req_size);
+	pp->mpl_req = MPL_New(nb, &cache_param->req_pool,
+	    &cache_param->sess_workspace);
 	return (pp);
 }
 

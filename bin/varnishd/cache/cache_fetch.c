@@ -336,7 +336,7 @@ FetchReqBody(struct sess *sp)
 	char *ptr, *endp;
 	int rdcnt;
 
-	if (http_GetHdr(sp->http, H_Content_Length, &ptr)) {
+	if (http_GetHdr(sp->req->http, H_Content_Length, &ptr)) {
 
 		content_length = strtoul(ptr, &endp, 10);
 		/* XXX should check result of conversion */
@@ -356,7 +356,7 @@ FetchReqBody(struct sess *sp)
 				return (2);
 		}
 	}
-	if (http_GetHdr(sp->http, H_Transfer_Encoding, NULL)) {
+	if (http_GetHdr(sp->req->http, H_Transfer_Encoding, NULL)) {
 		/* XXX: Handle chunked encoding. */
 		WSP(sp, SLT_Debug, "Transfer-Encoding in request");
 		return (1);

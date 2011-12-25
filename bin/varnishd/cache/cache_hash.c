@@ -301,7 +301,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->http, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->req->http, HTTP_MAGIC);
 	AN(sp->req->director);
 	AN(hash);
 	wrk = sp->wrk;

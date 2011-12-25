@@ -619,6 +619,11 @@ struct req {
 	struct http_conn	htc[1];
 	char			*client_identity;
 
+	/* HTTP request */
+	struct http		*http;
+	struct http		*http0;
+
+	struct ws		ws[1];
 };
 
 /*--------------------------------------------------------------------*/
@@ -664,11 +669,6 @@ struct sess {
 
 	/* Request related fields ------------------------------------*/
 
-	/* HTTP request */
-	struct http		*http;
-	struct http		*http0;
-
-	struct ws		ws[1];
 
 	/* Timestamps, all on TIM_real() timescale */
 	double			t_req;

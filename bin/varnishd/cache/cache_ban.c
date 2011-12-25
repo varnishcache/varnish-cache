@@ -675,6 +675,7 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 	struct objcore *oc;
 	struct ban * volatile b0;
 	unsigned tests, skipped;
+	struct http *http;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
@@ -687,6 +688,11 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 
 	if (b0 == oc->ban)
 		return (0);
+
+	if (has_req)
+		http = sp->req->http;
+	else
+		http = NULL;
 
 	/*
 	 * This loop is safe without locks, because we know we hold
@@ -711,7 +717,7 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 			 * be other bans that match, so we soldier on
 			 */
 			skipped++;
-		} else if (ban_evaluate(b->spec, o->http, sp->http, &tests))
+		} else if (ban_evaluate(b->spec, o->http, http, &tests))
 			break;
 	}
 

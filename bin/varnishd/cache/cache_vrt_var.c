@@ -82,9 +82,9 @@ VRT_r_##obj##_##hdr(const struct sess *sp)			\
 	return (http->hd[fld].b);				\
 }
 
-VRT_DO_HDR(req,   request,	sp->http,		HTTP_HDR_REQ)
-VRT_DO_HDR(req,   url,		sp->http,		HTTP_HDR_URL)
-VRT_DO_HDR(req,   proto,	sp->http,		HTTP_HDR_PROTO)
+VRT_DO_HDR(req,   request,	sp->req->http,		HTTP_HDR_REQ)
+VRT_DO_HDR(req,   url,		sp->req->http,		HTTP_HDR_URL)
+VRT_DO_HDR(req,   proto,	sp->req->http,		HTTP_HDR_PROTO)
 VRT_DO_HDR(bereq, request,	sp->wrk->busyobj->bereq,	HTTP_HDR_REQ)
 VRT_DO_HDR(bereq, url,		sp->wrk->busyobj->bereq,	HTTP_HDR_URL)
 VRT_DO_HDR(bereq, proto,	sp->wrk->busyobj->bereq,	HTTP_HDR_PROTO)
@@ -222,7 +222,7 @@ VRT_l_client_identity(struct sess *sp, const char *str, ...)
 	char *b;
 
 	va_start(ap, str);
-	b = VRT_String(sp->http->ws, NULL, str, ap);
+	b = VRT_String(sp->req->http->ws, NULL, str, ap);
 	va_end(ap);
 	sp->req->client_identity = b;
 }
@@ -434,7 +434,7 @@ VRT_r_req_xid(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	size = snprintf(NULL, 0, "%u", sp->req->xid) + 1;
-	AN(p = WS_Alloc(sp->http->ws, size));
+	AN(p = WS_Alloc(sp->req->http->ws, size));
 	assert(snprintf(p, size, "%u", sp->req->xid) < size);
 	return (p);
 }

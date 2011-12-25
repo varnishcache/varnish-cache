@@ -109,7 +109,7 @@ cnt_wait(struct sess *sp)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	if (sp->req == NULL) {
 		SES_GetReq(sp);
-		HTC_Init(sp->req->htc, sp->ws, sp->fd, sp->vsl_id,
+		HTC_Init(sp->req->htc, sp->req->ws, sp->fd, sp->vsl_id,
 		    cache_param->http_req_size,
 		    cache_param->http_req_hdr_len);
 	}
@@ -160,8 +160,6 @@ cnt_wait(struct sess *sp)
 				wrk->stats.sess_herd++;
 				SES_Charge(sp);
 				SES_ReleaseReq(sp);
-				WS_Release(sp->ws, 0);
-				WS_Reset(sp->ws, NULL);
 				WAIT_Enter(sp);
 				return (1);
 			}
@@ -267,7 +265,7 @@ cnt_prepresp(struct sess *sp)
 			wrk->res_mode |= RES_LEN;
 		else if (!sp->req->wantbody) {
 			/* Nothing */
-		} else if (sp->http->protover >= 11) {
+		} else if (sp->req->http->protover >= 11) {
 			wrk->res_mode |= RES_CHUNKED;
 		} else {
 			wrk->res_mode |= RES_EOF;
@@ -448,7 +446,7 @@ cnt_done(struct sess *sp)
 	if (wrk->stats.client_req >= cache_param->wthread_stats_rate)
 		WRK_SumStat(wrk);
 	/* Reset the workspace to the session-watermark */
-	WS_Reset(sp->ws, NULL);
+	WS_Reset(sp->req->ws, NULL);
 	WS_Reset(wrk->ws, NULL);
 
 	i = HTC_Reinit(sp->req->htc);
@@ -903,7 +901,7 @@ cnt_fetchbody(struct sess *sp)
 	 * that allow the 304, in which case we return 200 non-stream.
 	 */
 	if (wrk->obj->response == 200 &&
-	    sp->http->conds &&
+	    sp->req->http->conds &&
 	    RFC2616_Do_Cond(sp))
 		wrk->busyobj->do_stream = 0;
 
@@ -1177,12 +1175,12 @@ cnt_lookup(struct sess *sp)
 		AZ(sp->req->vary_b);
 		AZ(sp->req->vary_l);
 		AZ(sp->req->vary_e);
-		(void)WS_Reserve(sp->ws, 0);
+		(void)WS_Reserve(sp->req->ws, 0);
 	} else {
-		AN(sp->ws->r);
+		AN(sp->req->ws->r);
 	}
-	sp->req->vary_b = (void*)sp->ws->f;
-	sp->req->vary_e = (void*)sp->ws->r;
+	sp->req->vary_b = (void*)sp->req->ws->f;
+	sp->req->vary_e = (void*)sp->req->ws->r;
 	sp->req->vary_b[2] = '\0';
 
 	oc = HSH_Lookup(sp, &oh);
@@ -1208,10 +1206,10 @@ cnt_lookup(struct sess *sp)
 		if (sp->req->vary_l != NULL) {
 			assert(oc->busyobj->vary == sp->req->vary_b);
 			VRY_Validate(oc->busyobj->vary);
-			WS_ReleaseP(sp->ws, (void*)sp->req->vary_l);
+			WS_ReleaseP(sp->req->ws, (void*)sp->req->vary_l);
 		} else {
 			AZ(oc->busyobj->vary);
-			WS_Release(sp->ws, 0);
+			WS_Release(sp->req->ws, 0);
 		}
 		sp->req->vary_b = NULL;
 		sp->req->vary_l = NULL;
@@ -1227,7 +1225,7 @@ cnt_lookup(struct sess *sp)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	wrk->obj = o;
 
-	WS_Release(sp->ws, 0);
+	WS_Release(sp->req->ws, 0);
 	sp->req->vary_b = NULL;
 	sp->req->vary_l = NULL;
 	sp->req->vary_e = NULL;
@@ -1500,7 +1498,7 @@ cnt_recv(struct sess *sp)
 	sp->req->hash_ignore_busy = 0;
 	sp->req->client_identity = NULL;
 
-	http_CollectHdr(sp->http, H_Cache_Control);
+	http_CollectHdr(sp->req->http, H_Cache_Control);
 
 	VCL_recv_method(sp);
 	recv_handling = sp->req->handling;
@@ -1516,11 +1514,11 @@ cnt_recv(struct sess *sp)
 	     (recv_handling != VCL_RET_PIPE) &&
 	     (recv_handling != VCL_RET_PASS)) {
 		if (RFC2616_Req_Gzip(sp)) {
-			http_Unset(sp->http, H_Accept_Encoding);
-			http_SetHeader(wrk, sp->vsl_id, sp->http,
+			http_Unset(sp->req->http, H_Accept_Encoding);
+			http_SetHeader(wrk, sp->vsl_id, sp->req->http,
 			    "Accept-Encoding: gzip");
 		} else {
-			http_Unset(sp->http, H_Accept_Encoding);
+			http_Unset(sp->req->http, H_Accept_Encoding);
 		}
 	}
 
@@ -1529,7 +1527,7 @@ cnt_recv(struct sess *sp)
 	assert(sp->req->handling == VCL_RET_HASH);
 	SHA256_Final(sp->req->digest, wrk->sha256ctx);
 
-	if (!strcmp(sp->http->hd[HTTP_HDR_REQ].b, "HEAD"))
+	if (!strcmp(sp->req->http->hd[HTTP_HDR_REQ].b, "HEAD"))
 		sp->req->wantbody = 0;
 	else
 		sp->req->wantbody = 1;
@@ -1605,7 +1603,7 @@ cnt_start(struct sess *sp)
 	sp->req->vcl = wrk->vcl;
 	wrk->vcl = NULL;
 
-	http_Setup(sp->http, sp->ws);
+	http_Setup(sp->req->http, sp->req->ws);
 	done = http_DissectRequest(sp);
 
 	/* If we could not even parse the request, just close */
@@ -1616,10 +1614,10 @@ cnt_start(struct sess *sp)
 	}
 
 	/* Catch request snapshot */
-	sp->req->ws_req = WS_Snapshot(sp->ws);
+	sp->req->ws_req = WS_Snapshot(sp->req->ws);
 
 	/* Catch original request, before modification */
-	HTTP_Copy(sp->http0, sp->http);
+	HTTP_Copy(sp->req->http0, sp->req->http);
 
 	if (done != 0) {
 		sp->req->err_code = done;
@@ -1627,14 +1625,14 @@ cnt_start(struct sess *sp)
 		return (0);
 	}
 
-	sp->req->doclose = http_DoConnection(sp->http);
+	sp->req->doclose = http_DoConnection(sp->req->http);
 
 	/* XXX: Handle TRACE & OPTIONS of Max-Forwards = 0 */
 
 	/*
 	 * Handle Expect headers
 	 */
-	if (http_GetHdr(sp->http, H_Expect, &p)) {
+	if (http_GetHdr(sp->req->http, H_Expect, &p)) {
 		if (strcasecmp(p, "100-continue")) {
 			sp->req->err_code = 417;
 			sp->step = STP_ERROR;
@@ -1647,7 +1645,7 @@ cnt_start(struct sess *sp)
 		 * XXX: because we use http0 as our basis.  Believed
 		 * XXX: safe, but potentially confusing.
 		 */
-		http_Unset(sp->http, H_Expect);
+		http_Unset(sp->req->http, H_Expect);
 	}
 
 	sp->step = STP_RECV;

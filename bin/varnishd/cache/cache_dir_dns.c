@@ -350,7 +350,7 @@ vdi_dns_find_backend(const struct sess *sp, struct vdi_dns *vs)
 	if (sp->wrk->busyobj != NULL && sp->wrk->busyobj->bereq)
 		hp = sp->wrk->busyobj->bereq;
 	else
-		hp = sp->http;
+		hp = sp->req->http;
 
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);

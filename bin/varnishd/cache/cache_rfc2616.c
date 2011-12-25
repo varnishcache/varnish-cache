@@ -291,7 +291,7 @@ RFC2616_Req_Gzip(const struct sess *sp)
 	 * p104 says to not do q values for x-gzip, so we just test
 	 * for its existence.
 	 */
-	if (http_GetHdrData(sp->http, H_Accept_Encoding, "x-gzip", NULL))
+	if (http_GetHdrData(sp->req->http, H_Accept_Encoding, "x-gzip", NULL))
 		return (1);
 
 	/*
@@ -299,7 +299,7 @@ RFC2616_Req_Gzip(const struct sess *sp)
 	 * We do not care a hoot if the client prefers some other
 	 * compression more than gzip: Varnish only does gzip.
 	 */
-	if (http_GetHdrQ(sp->http, H_Accept_Encoding, "gzip") > 0.)
+	if (http_GetHdrQ(sp->req->http, H_Accept_Encoding, "gzip") > 0.)
 		return (1);
 
 	/* Bad client, no gzip. */
@@ -318,7 +318,7 @@ RFC2616_Do_Cond(const struct sess *sp)
 	/* RFC 2616 13.3.4 states we need to match both ETag
 	   and If-Modified-Since if present*/
 
-	if (http_GetHdr(sp->http, H_If_Modified_Since, &p) ) {
+	if (http_GetHdr(sp->req->http, H_If_Modified_Since, &p) ) {
 		if (!sp->wrk->obj->last_modified)
 			return (0);
 		ims = VTIM_parse(p);
@@ -329,7 +329,7 @@ RFC2616_Do_Cond(const struct sess *sp)
 		do_cond = 1;
 	}
 
-	if (http_GetHdr(sp->http, H_If_None_Match, &p) &&
+	if (http_GetHdr(sp->req->http, H_If_None_Match, &p) &&
 	    http_GetHdr(sp->wrk->obj->http, H_ETag, &e)) {
 		if (strcmp(p,e) != 0)
 			return (0);

@@ -63,17 +63,17 @@ ved_include(struct sess *sp, const char *src, const char *host)
 	res_mode = sp->wrk->res_mode;
 
 	/* Reset request to status before we started messing with it */
-	HTTP_Copy(sp->http, sp->http0);
+	HTTP_Copy(sp->req->http, sp->req->http0);
 
 	/* Take a workspace snapshot */
-	sp_ws_wm = WS_Snapshot(sp->ws);
+	sp_ws_wm = WS_Snapshot(sp->req->ws);
 	wrk_ws_wm = WS_Snapshot(w->ws);
 
-	http_SetH(sp->http, HTTP_HDR_URL, src);
+	http_SetH(sp->req->http, HTTP_HDR_URL, src);
 	if (host != NULL && *host != '\0')  {
-		http_Unset(sp->http, H_Host);
-		http_Unset(sp->http, H_If_Modified_Since);
-		http_SetHeader(w, sp->vsl_id, sp->http, host);
+		http_Unset(sp->req->http, H_Host);
+		http_Unset(sp->req->http, H_If_Modified_Since);
+		http_SetHeader(w, sp->vsl_id, sp->req->http, host);
 	}
 	/*
 	 * XXX: We should decide if we should cache the director
@@ -82,14 +82,14 @@ ved_include(struct sess *sp, const char *src, const char *host)
 	 */
 	sp->req->director = NULL;
 	sp->step = STP_RECV;
-	http_ForceGet(sp->http);
+	http_ForceGet(sp->req->http);
 
 	/* Don't do conditionals */
-	sp->http->conds = 0;
-	http_Unset(sp->http, H_If_Modified_Since);
+	sp->req->http->conds = 0;
+	http_Unset(sp->req->http, H_If_Modified_Since);
 
 	/* Client content already taken care of */
-	http_Unset(sp->http, H_Content_Length);
+	http_Unset(sp->req->http, H_Content_Length);
 
 	sxid = sp->req->xid;
 	while (1) {
@@ -110,7 +110,7 @@ ved_include(struct sess *sp, const char *src, const char *host)
 	sp->wrk->res_mode = res_mode;
 
 	/* Reset the workspace */
-	WS_Reset(sp->ws, sp_ws_wm);
+	WS_Reset(sp->req->ws, sp_ws_wm);
 	WS_Reset(w->ws, wrk_ws_wm);
 
 	WRW_Reserve(sp->wrk, &sp->fd);

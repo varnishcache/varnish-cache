@@ -110,8 +110,8 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re,
 		return(str);
 	}
 
-	u = WS_Reserve(sp->http->ws, 0);
-	res.e = res.b = b0 = sp->http->ws->f;
+	u = WS_Reserve(sp->req->http->ws, 0);
+	res.e = res.b = b0 = sp->req->http->ws->f;
 	res.e += u;
 
 	do {
@@ -143,7 +143,7 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re,
 		i = VRE_exec(t, str, len, 0, options, ovector, 30,
 		    &cache_param->vre_limits);
 		if (i < VRE_ERROR_NOMATCH ) {
-			WS_Release(sp->http->ws, 0);
+			WS_Release(sp->req->http->ws, 0);
 			WSP(sp, SLT_VCL_Error,
 			    "Regexp matching returned %d", i);
 			return(str);
@@ -153,10 +153,10 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re,
 	/* Copy suffix to match */
 	Tadd(&res, str, len+1);
 	if (res.b >= res.e) {
-		WS_Release(sp->http->ws, 0);
+		WS_Release(sp->req->http->ws, 0);
 		return (str);
 	}
 	Tcheck(res);
-	WS_ReleaseP(sp->http->ws, res.b);
+	WS_ReleaseP(sp->req->http->ws, res.b);
 	return (b0);
 }

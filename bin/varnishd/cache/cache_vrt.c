@@ -97,7 +97,7 @@ vrt_selecthttp(const struct sess *sp, enum gethdr_e where)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	switch (where) {
 	case HDR_REQ:
-		hp = sp->http;
+		hp = sp->req->http;
 		break;
 	case HDR_BEREQ:
 		hp = sp->wrk->busyobj->bereq;
@@ -307,7 +307,7 @@ VRT_IP_string(const struct sess *sp, const struct sockaddr_storage *sa)
 		INCOMPL();
 	}
 	XXXAN(len);
-	AN(p = WS_Alloc(sp->http->ws, len));
+	AN(p = WS_Alloc(sp->req->http->ws, len));
 	AN(inet_ntop(sa->ss_family, addr, p, len));
 	return (p);
 }
@@ -319,7 +319,7 @@ VRT_int_string(const struct sess *sp, int num)
 	int size;
 
 	size = snprintf(NULL, 0, "%d", num) + 1;
-	AN(p = WS_Alloc(sp->http->ws, size));
+	AN(p = WS_Alloc(sp->req->http->ws, size));
 	assert(snprintf(p, size, "%d", num) < size);
 	return (p);
 }
@@ -331,7 +331,7 @@ VRT_double_string(const struct sess *sp, double num)
 	int size;
 
 	size = snprintf(NULL, 0, "%.3f", num) + 1;
-	AN(p = WS_Alloc(sp->http->ws, size));
+	AN(p = WS_Alloc(sp->req->http->ws, size));
 	assert(snprintf(p, size, "%.3f", num) < size);
 	return (p);
 }
@@ -341,7 +341,7 @@ VRT_time_string(const struct sess *sp, double t)
 {
 	char *p;
 
-	AN(p = WS_Alloc(sp->http->ws, VTIM_FORMAT_SIZE));
+	AN(p = WS_Alloc(sp->req->http->ws, VTIM_FORMAT_SIZE));
 	VTIM_format(t, p);
 	return (p);
 }
@@ -371,8 +371,8 @@ void
 VRT_Rollback(struct sess *sp)
 {
 
-	HTTP_Copy(sp->http, sp->http0);
-	WS_Reset(sp->ws, sp->req->ws_req);
+	HTTP_Copy(sp->req->http, sp->req->http0);
+	WS_Reset(sp->req->ws, sp->req->ws_req);
 }
 
 /*--------------------------------------------------------------------*/
@@ -384,7 +384,7 @@ VRT_panic(const struct sess *sp, const char *str, ...)
 	char *b;
 
 	va_start(ap, str);
-	b = VRT_String(sp->http->ws, "PANIC: ", str, ap);
+	b = VRT_String(sp->req->http->ws, "PANIC: ", str, ap);
 	va_end(ap);
 	VAS_Fail("VCL", "", 0, b, 0, 2);
 }

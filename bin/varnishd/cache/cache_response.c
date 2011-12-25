@@ -259,7 +259,7 @@ RES_WriteObj(struct sess *sp)
 	WRW_Reserve(sp->wrk, &sp->fd);
 
 	if (sp->wrk->obj->response == 200 &&
-	    sp->http->conds &&
+	    sp->req->http->conds &&
 	    RFC2616_Do_Cond(sp)) {
 		sp->req->wantbody = 0;
 		http_SetResp(sp->wrk->resp, "HTTP/1.1", 304, "Not Modified");
@@ -278,7 +278,7 @@ RES_WriteObj(struct sess *sp)
 	    !(sp->wrk->res_mode & (RES_ESI|RES_ESI_CHILD|RES_GUNZIP)) &&
 	    cache_param->http_range_support &&
 	    sp->wrk->obj->response == 200 &&
-	    http_GetHdr(sp->http, H_Range, &r))
+	    http_GetHdr(sp->req->http, H_Range, &r))
 		res_dorange(sp, r, &low, &high);
 
 	/*
