@@ -17,28 +17,11 @@ server s1 {
 
 } -start
 
-varnish v1 -arg "-p sess_workspace=1024" -vcl+backend {
+varnish v1 -arg "-p sess_workspace=3072" -vcl+backend {
 
 	sub vcl_recv {
 		set req.http.foo = 
 			req.http.bar +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
 			"0123456789abcdef" + "0123456789abcdef" +
 			"0123456789abcdef" + "0123456789abcdef" +
 			"0123456789abcdef" + "0123456789abcdef" +
