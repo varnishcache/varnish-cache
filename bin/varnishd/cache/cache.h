@@ -634,9 +634,9 @@ struct sess {
 
 	/* Cross references ------------------------------------------*/
 
+	struct sesspool		*sesspool;
 	struct worker		*wrk;
 	struct req		*req;
-	struct sessmem		*mem;
 
 	/* Session related fields ------------------------------------*/
 
