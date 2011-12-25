@@ -145,36 +145,6 @@ VSC_F(fetch_204,		uint64_t, 1, 'a', "Fetch no body (204)", "")
 VSC_F(fetch_304,		uint64_t, 1, 'a', "Fetch no body (304)", "")
 
 /*---------------------------------------------------------------------
- * Session Memory
- *    see: cache_session.c
- */
-
-VSC_F(sessmem_size,		uint64_t, 1, 'g',
-    "Session mem size",
-	"Bytes of memory allocated for last allocated session."
-)
-
-VSC_F(sessmem_alloc,		uint64_t, 1, 'c',
-    "Session mem allocated",
-	"Count of all allocations of session memory."
-)
-
-VSC_F(sessmem_free,		uint64_t, 1, 'c',
-    "Session mem freed",
-	"Count of all frees of session memory."
-)
-
-VSC_F(sessmem_fail,		uint64_t, 1, 'c',
-    "Session mem alloc failed",
-	"Count of session memory allocation failures."
-)
-
-VSC_F(sessmem_limit,		uint64_t, 1, 'c',
-    "Session mem alloc limited",
-	"Count of session memory allocations blocked by limit (max_sess)."
-)
-
-/*---------------------------------------------------------------------
  * Pools, threads, and sessions
  *    see: cache_pool.c
  *
@@ -252,8 +222,6 @@ VSC_F(busyobj_free,		uint64_t, 1, 'c',
 
 /*---------------------------------------------------------------------*/
 
-VSC_F(n_sess_mem,		uint64_t, 0, 'i', "N struct sess_mem", "")
-VSC_F(n_sess,			uint64_t, 0, 'i', "N struct sess", "")
 VSC_F(n_object,			uint64_t, 1, 'i', "N struct object", "")
 VSC_F(n_vampireobject,		uint64_t, 1, 'i', "N unresurrected objects", "")
 VSC_F(n_objectcore,		uint64_t, 1, 'i', "N struct objectcore", "")

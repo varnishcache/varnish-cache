@@ -618,9 +618,11 @@ ban_evaluate(const uint8_t *bs, const struct http *objhttp,
 		arg1 = NULL;
 		switch (bt.arg1) {
 		case BAN_ARG_URL:
+			AN(reqhttp);
 			arg1 = reqhttp->hd[HTTP_HDR_URL].b;
 			break;
 		case BAN_ARG_REQHTTP:
+			AN(reqhttp);
 			(void)http_GetHdr(reqhttp, bt.arg1_spec, &arg1);
 			break;
 		case BAN_ARG_OBJHTTP:

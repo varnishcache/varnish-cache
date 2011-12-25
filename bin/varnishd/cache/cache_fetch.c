@@ -329,7 +329,7 @@ fetch_eof(struct worker *wrk, struct http_conn *htc)
  */
 
 int
-FetchReqBody(struct sess *sp)
+FetchReqBody(const struct sess *sp)
 {
 	unsigned long content_length;
 	char buf[8192];

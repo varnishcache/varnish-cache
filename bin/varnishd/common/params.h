@@ -75,7 +75,7 @@ struct params {
 	unsigned		queue_max;
 
 	/* Memory allocation hints */
-	unsigned		sess_workspace;
+	unsigned		workspace_client;
 	unsigned		shm_workspace;
 	unsigned		http_req_size;
 	unsigned		http_req_hdr_len;

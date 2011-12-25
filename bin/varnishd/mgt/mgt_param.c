@@ -687,12 +687,9 @@ static const struct parspec input_parspec[] = {
 		"flush of the cache use \"ban.url .\"",
 		0,
 		"120", "seconds" },
-	{ "sess_workspace",
-		tweak_bytes_u, &mgt_param.sess_workspace, 3072, UINT_MAX,
-		"Bytes of HTTP protocol workspace allocated for sessions. "
-		"This space must be big enough for the entire HTTP protocol "
-		"header and any edits done to it in the VCL code.\n"
-		"Minimum is 1024 bytes.",
+	{ "workspace_client",
+		tweak_bytes_u, &mgt_param.workspace_client, 3072, UINT_MAX,
+		"Bytes of HTTP protocol workspace for clients HTTP req/resp.",
 		DELAYED_EFFECT,
 		"64k", "bytes" },
 	{ "http_req_hdr_len",

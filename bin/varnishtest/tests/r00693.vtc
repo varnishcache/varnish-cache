@@ -17,7 +17,7 @@ server s1 {
 
 } -start
 
-varnish v1 -arg "-p sess_workspace=3072" -vcl+backend {
+varnish v1 -arg "-p workspace_client=3072" -vcl+backend {
 
 	sub vcl_recv {
 		set req.http.foo = 

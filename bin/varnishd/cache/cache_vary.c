@@ -174,7 +174,7 @@ vry_cmp(const uint8_t * const *v1, uint8_t * const *v2)
 }
 
 int
-VRY_Match(struct sess *sp, const uint8_t *vary)
+VRY_Match(const struct sess *sp, const uint8_t *vary)
 {
 	uint8_t *vsp = sp->req->vary_b;
 	char *h, *e;

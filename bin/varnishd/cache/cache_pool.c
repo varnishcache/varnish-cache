@@ -238,7 +238,7 @@ Pool_Work_Thread(void *priv, struct worker *w)
 			/* Turn accepted socket into a session */
 			AZ(w->sp);
 			AN(w->ws->r);
-			w->sp = SES_New(w, pp->sesspool);
+			w->sp = SES_New(pp->sesspool);
 			if (w->sp == NULL) {
 				VCA_FailSess(w);
 				w->do_what = pool_do_nothing;
@@ -538,7 +538,7 @@ pool_poolherder(void *priv)
 		}
 		/* XXX: remove pools */
 		if (0)
-			SES_DeletePool(NULL, NULL);
+			SES_DeletePool(NULL);
 		(void)sleep(1);
 		u = 0;
 		VTAILQ_FOREACH(pp, &pools, list)

@@ -651,7 +651,7 @@ http_ProtoVer(struct http *hp)
 /*--------------------------------------------------------------------*/
 
 uint16_t
-http_DissectRequest(struct sess *sp)
+http_DissectRequest(const struct sess *sp)
 {
 	struct http_conn *htc;
 	struct http *hp;

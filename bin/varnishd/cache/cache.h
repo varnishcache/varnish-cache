@@ -761,7 +761,7 @@ int FetchError(struct worker *w, const char *error);
 int FetchError2(struct worker *w, const char *error, const char *more);
 int FetchHdr(struct sess *sp, int need_host_hdr);
 int FetchBody(struct worker *w, struct object *obj);
-int FetchReqBody(struct sess *sp);
+int FetchReqBody(const struct sess *sp);
 void Fetch_Init(void);
 
 /* cache_gzip.c */
@@ -825,7 +825,7 @@ double http_GetHdrQ(const struct http *hp, const char *hdr, const char *field);
 uint16_t http_GetStatus(const struct http *hp);
 const char *http_GetReq(const struct http *hp);
 int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
-uint16_t http_DissectRequest(struct sess *sp);
+uint16_t http_DissectRequest(const struct sess *sp);
 uint16_t http_DissectResponse(struct worker *w, const struct http_conn *htc,
     struct http *sp);
 const char *http_DoConnection(const struct http *hp);
@@ -910,13 +910,13 @@ void WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len);
 #endif  /* SENDFILE_WORKS */
 
 /* cache_session.c [SES] */
-struct sess *SES_New(struct worker *wrk, struct sesspool *pp);
+struct sess *SES_New(struct sesspool *pp);
 struct sess *SES_Alloc(void);
 void SES_Close(struct sess *sp, const char *reason);
 void SES_Delete(struct sess *sp, const char *reason, double now);
 void SES_Charge(struct sess *sp);
 struct sesspool *SES_NewPool(struct pool *pp, unsigned pool_no);
-void SES_DeletePool(struct sesspool *sp, struct worker *wrk);
+void SES_DeletePool(struct sesspool *sp);
 int SES_Schedule(struct sess *sp);
 void SES_Handle(struct sess *sp, double now);
 void SES_GetReq(struct sess *sp);
@@ -966,7 +966,7 @@ void RES_StreamPoll(struct worker *);
 
 /* cache_vary.c */
 struct vsb *VRY_Create(const struct sess *sp, const struct http *hp);
-int VRY_Match(struct sess *sp, const uint8_t *vary);
+int VRY_Match(const struct sess *sp, const uint8_t *vary);
 void VRY_Validate(const uint8_t *vary);
 
 /* cache_vcl.c */

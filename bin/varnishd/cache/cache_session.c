@@ -98,11 +98,10 @@ ses_setup(struct sess *sp)
  */
 
 struct sess *
-SES_New(struct worker *wrk, struct sesspool *pp)
+SES_New(struct sesspool *pp)
 {
 	struct sess *sp;
 
-	(void)wrk;					// XXX
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	sp = MPL_Get(pp->mpl_sess, NULL);
 	sp->magic = SESS_MAGIC;
@@ -280,7 +279,7 @@ SES_GetReq(struct sess *sp)
 	sp->req->http0 = HTTP_create(p, nhttp);
 	p += hl;
 	sz -= hl;
-	
+
 	WS_Init(sp->req->ws, "req", p, sz);
 }
 
@@ -314,17 +313,16 @@ SES_NewPool(struct pool *wp, unsigned pool_no)
 	pp->pool = wp;
 	bprintf(nb, "req%u", pool_no);
 	pp->mpl_req = MPL_New(nb, &cache_param->req_pool,
-	    &cache_param->sess_workspace);
+	    &cache_param->workspace_client);
 	pp->mpl_sess = MPL_New(nb, &cache_param->sess_pool, &ses_size);
 	return (pp);
 }
 
 void
-SES_DeletePool(struct sesspool *pp, struct worker *wrk)
+SES_DeletePool(struct sesspool *pp)
 {
 
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	MPL_Destroy(&pp->mpl_sess);
 	MPL_Destroy(&pp->mpl_req);
 	FREE_OBJ(pp);
