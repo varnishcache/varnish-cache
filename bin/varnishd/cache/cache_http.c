@@ -880,7 +880,8 @@ http_FilterHeader(const struct sess *sp, unsigned how)
 	else
 		http_copyh(hp, sp->req->http, HTTP_HDR_PROTO);
 	http_FilterFields(sp->wrk, sp->vsl_id, hp, sp->req->http, how);
-	http_PrintfHeader(sp->wrk, sp->vsl_id, hp, "X-Varnish: %u", sp->req->xid);
+	http_PrintfHeader(sp->wrk, sp->vsl_id, hp,
+	    "X-Varnish: %u", sp->req->xid);
 }
 
 /*--------------------------------------------------------------------

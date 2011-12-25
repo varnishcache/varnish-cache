@@ -307,7 +307,8 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	wrk = sp->wrk;
 
 	HSH_Prealloc(sp);
-	memcpy(sp->wrk->nobjhead->digest, sp->req->digest, sizeof sp->req->digest);
+	memcpy(sp->wrk->nobjhead->digest, sp->req->digest,
+	    sizeof sp->req->digest);
 	if (cache_param->diag_bitmap & 0x80000000)
 		hsh_testmagic(sp->wrk->nobjhead->digest);
 

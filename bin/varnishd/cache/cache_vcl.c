@@ -334,12 +334,12 @@ VCL_##func##_method(struct sess *sp)					\
 {									\
 									\
 	sp->req->handling = 0;						\
-	sp->req->cur_method = VCL_MET_ ## upper;				\
+	sp->req->cur_method = VCL_MET_ ## upper;			\
 	WSP(sp, SLT_VCL_call, "%s", #func);				\
-	(void)sp->req->vcl->func##_func(sp);					\
-	WSP(sp, SLT_VCL_return, "%s", VCL_Return_Name(sp->req->handling));	\
-	sp->req->cur_method = 0;						\
-	assert((1U << sp->req->handling) & bitmap);				\
+	(void)sp->req->vcl->func##_func(sp);				\
+	WSP(sp, SLT_VCL_return, "%s", VCL_Return_Name(sp->req->handling)); \
+	sp->req->cur_method = 0;					\
+	assert((1U << sp->req->handling) & bitmap);			\
 	assert(!((1U << sp->req->handling) & ~bitmap));			\
 }
 

@@ -187,7 +187,8 @@ VRY_Match(const struct sess *sp, const uint8_t *vary)
 		if (i == 1) {
 			/* Build a new entry */
 
-			i = http_GetHdr(sp->req->http, (const char*)(vary+2), &h);
+			i = http_GetHdr(sp->req->http,
+			    (const char*)(vary+2), &h);
 			if (i) {
 				/* Trim trailing space */
 				e = strchr(h, '\0');
