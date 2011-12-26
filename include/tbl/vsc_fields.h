@@ -111,6 +111,8 @@ VSC_F(happy,		uint64_t, 0, 'b', "Happy health probes", "")
 
 VSC_F(live,			uint64_t, 0, 'g', "In use", "")
 VSC_F(pool,			uint64_t, 0, 'g', "In Pool", "")
+VSC_F(sz_wanted,		uint64_t, 0, 'g', "Size requested", "")
+VSC_F(sz_needed,		uint64_t, 0, 'g', "Size allocated", "")
 VSC_F(allocs,			uint64_t, 0, 'c', "Allocations", "")
 VSC_F(frees,			uint64_t, 0, 'c', "Frees", "")
 VSC_F(recycle,			uint64_t, 0, 'c', "Recycled from pool", "")
