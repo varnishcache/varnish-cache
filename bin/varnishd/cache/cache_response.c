@@ -307,10 +307,10 @@ RES_WriteObj(struct sess *sp)
 		/* Nothing to do here */
 	} else if (sp->wrk->res_mode & RES_ESI) {
 		ESI_Deliver(sp);
-	} else if (sp->wrk->res_mode & RES_ESI_CHILD && sp->wrk->gzip_resp) {
+	} else if (sp->wrk->res_mode & RES_ESI_CHILD && sp->req->gzip_resp) {
 		ESI_DeliverChild(sp);
 	} else if (sp->wrk->res_mode & RES_ESI_CHILD &&
-	    !sp->wrk->gzip_resp && sp->req->obj->gziped) {
+	    !sp->req->gzip_resp && sp->req->obj->gziped) {
 		res_WriteGunzipObj(sp);
 	} else if (sp->wrk->res_mode & RES_GUNZIP) {
 		res_WriteGunzipObj(sp);

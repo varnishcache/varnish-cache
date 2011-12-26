@@ -328,16 +328,8 @@ struct worker {
 
 	struct busyobj		*busyobj;
 
-	/* This is only here so VRT can find it */
-	const char		*storage_hint;
-
 	/* Stream state */
 	struct stream_ctx	*sctx;
-
-	/* ESI delivery stuff */
-	int			gzip_resp;
-	ssize_t			l_crc;
-	uint32_t		crc;
 
 	/* Timeouts */
 	double			connect_timeout;
@@ -621,6 +613,14 @@ struct req {
 	struct objcore		*objcore;
 	/* Lookup stuff */
 	struct SHA256Context	*sha256ctx;
+	/* This is only here so VRT can find it */
+	const char		*storage_hint;
+
+	/* ESI delivery stuff */
+	int			gzip_resp;
+	ssize_t			l_crc;
+	uint32_t		crc;
+
 
 };
 

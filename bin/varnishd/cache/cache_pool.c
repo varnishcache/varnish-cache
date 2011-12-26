@@ -255,7 +255,6 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 
 			stats_clean = 0;
 			wrk->lastused = NAN;
-			wrk->storage_hint = NULL;
 
 			AZ(wrk->sp->wrk);
 			THR_SetSession(wrk->sp);
@@ -267,7 +266,6 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 			WS_Assert(wrk->ws);
 			AZ(wrk->busyobj);
 			AZ(wrk->wrw.wfd);
-			AZ(wrk->storage_hint);
 			assert(wrk->wlp == wrk->wlb);
 			if (cache_param->diag_bitmap & 0x00040000) {
 				if (wrk->vcl != NULL)

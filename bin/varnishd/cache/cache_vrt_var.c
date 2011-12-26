@@ -283,8 +283,8 @@ const char * __match_proto__()
 VRT_r_beresp_storage(struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	if (sp->wrk->storage_hint != NULL)
-		return (sp->wrk->storage_hint);
+	if (sp->req->storage_hint != NULL)
+		return (sp->req->storage_hint);
 	else
 		return (NULL);
 }
@@ -298,7 +298,7 @@ VRT_l_beresp_storage(struct sess *sp, const char *str, ...)
 	va_start(ap, str);
 	b = VRT_String(sp->wrk->ws, NULL, str, ap);
 	va_end(ap);
-	sp->wrk->storage_hint = b;
+	sp->req->storage_hint = b;
 }
 
 /*--------------------------------------------------------------------*/

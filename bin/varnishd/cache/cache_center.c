@@ -597,7 +597,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 	AN(req->director);
 	AZ(wrk->busyobj->vbc);
 	AZ(wrk->busyobj->should_close);
-	AZ(wrk->storage_hint);
+	AZ(req->storage_hint);
 
 	http_Setup(wrk->busyobj->beresp, wrk->ws);
 
@@ -678,7 +678,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 	}
 	VBO_DerefBusyObj(wrk, &wrk->busyobj);
 	req->director = NULL;
-	wrk->storage_hint = NULL;
+	req->storage_hint = NULL;
 
 	switch (req->handling) {
 	case VCL_RET_RESTART:
@@ -830,9 +830,9 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 
 	if (wrk->busyobj->exp.ttl < cache_param->shortlived ||
 	    req->objcore == NULL)
-		wrk->storage_hint = TRANSIENT_STORAGE;
+		req->storage_hint = TRANSIENT_STORAGE;
 
-	req->obj = STV_NewObject(wrk, wrk->storage_hint, l, nhttp);
+	req->obj = STV_NewObject(wrk, req->storage_hint, l, nhttp);
 	if (req->obj == NULL) {
 		/*
 		 * Try to salvage the transaction by allocating a
@@ -853,7 +853,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	}
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 
-	wrk->storage_hint = NULL;
+	req->storage_hint = NULL;
 
 	if (wrk->busyobj->do_gzip ||
 	    (wrk->busyobj->is_gzip && !wrk->busyobj->do_gunzip))

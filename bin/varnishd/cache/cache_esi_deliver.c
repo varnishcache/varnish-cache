@@ -194,8 +194,8 @@ ved_pretend_gzip(const struct sess *sp, const uint8_t *p, ssize_t l)
 			(void)WRW_Write(sp->wrk, buf2, sizeof buf2);
 		}
 		(void)WRW_Write(sp->wrk, p, lx);
-		sp->wrk->crc = crc32(sp->wrk->crc, p, lx);
-		sp->wrk->l_crc += lx;
+		sp->req->crc = crc32(sp->req->crc, p, lx);
+		sp->req->l_crc += lx;
 		l -= lx;
 		p += lx;
 	}
@@ -251,18 +251,18 @@ ESI_Deliver(struct sess *sp)
 		/*
 		 * Only the top level document gets to decide this.
 		 */
-		sp->wrk->gzip_resp = 0;
+		sp->req->gzip_resp = 0;
 		if (isgzip && !(sp->wrk->res_mode & RES_GUNZIP)) {
 			assert(sizeof gzip_hdr == 10);
 			/* Send out the gzip header */
 			(void)WRW_Write(sp->wrk, gzip_hdr, 10);
-			sp->wrk->l_crc = 0;
-			sp->wrk->gzip_resp = 1;
-			sp->wrk->crc = crc32(0L, Z_NULL, 0);
+			sp->req->l_crc = 0;
+			sp->req->gzip_resp = 1;
+			sp->req->crc = crc32(0L, Z_NULL, 0);
 		}
 	}
 
-	if (isgzip && !sp->wrk->gzip_resp) {
+	if (isgzip && !sp->req->gzip_resp) {
 		vgz = VGZ_NewUngzip(sp->wrk, "U D E");
 
 		/* Feed a gzip header to gunzip to make it happy */
@@ -291,10 +291,10 @@ ESI_Deliver(struct sess *sp)
 				l_icrc = ved_decode_len(&p);
 				icrc = vbe32dec(p);
 				p += 4;
-				if (sp->wrk->gzip_resp) {
-					sp->wrk->crc = crc32_combine(
-					    sp->wrk->crc, icrc, l_icrc);
-					sp->wrk->l_crc += l_icrc;
+				if (sp->req->gzip_resp) {
+					sp->req->crc = crc32_combine(
+					    sp->req->crc, icrc, l_icrc);
+					sp->req->l_crc += l_icrc;
 				}
 			}
 			/*
@@ -308,14 +308,14 @@ ESI_Deliver(struct sess *sp)
 					l2 = st->len - off;
 				l -= l2;
 
-				if (sp->wrk->gzip_resp && isgzip) {
+				if (sp->req->gzip_resp && isgzip) {
 					/*
 					 * We have a gzip'ed VEC and delivers
 					 * a gzip'ed ESI response.
 					 */
 					(void)WRW_Write(sp->wrk,
 					    st->ptr + off, l2);
-				} else if (sp->wrk->gzip_resp) {
+				} else if (sp->req->gzip_resp) {
 					/*
 					 * A gzip'ed ESI response, but the VEC
 					 * was not gzip'ed.
@@ -403,7 +403,7 @@ ESI_Deliver(struct sess *sp)
 			(void)WRW_Write(sp->wrk, obuf, obufl);
 		(void)VGZ_Destroy(&vgz, sp->vsl_id);
 	}
-	if (sp->wrk->gzip_resp && sp->req->esi_level == 0) {
+	if (sp->req->gzip_resp && sp->req->esi_level == 0) {
 		/* Emit a gzip literal block with finish bit set */
 		tailbuf[0] = 0x01;
 		tailbuf[1] = 0x00;
@@ -412,10 +412,10 @@ ESI_Deliver(struct sess *sp)
 		tailbuf[4] = 0xff;
 
 		/* Emit CRC32 */
-		vle32enc(tailbuf + 5, sp->wrk->crc);
+		vle32enc(tailbuf + 5, sp->req->crc);
 
 		/* MOD(2^32) length */
-		vle32enc(tailbuf + 9, sp->wrk->l_crc);
+		vle32enc(tailbuf + 9, sp->req->l_crc);
 
 		(void)WRW_Write(sp->wrk, tailbuf, 13);
 	}
@@ -560,6 +560,6 @@ ESI_DeliverChild(const struct sess *sp)
 	p = st->ptr + st->len - 8;
 	icrc = vle32dec(p);
 	ilen = vle32dec(p + 4);
-	sp->wrk->crc = crc32_combine(sp->wrk->crc, icrc, ilen);
-	sp->wrk->l_crc += ilen;
+	sp->req->crc = crc32_combine(sp->req->crc, icrc, ilen);
+	sp->req->l_crc += ilen;
 }
