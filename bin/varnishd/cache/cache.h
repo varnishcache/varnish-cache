@@ -329,8 +329,6 @@ struct worker {
 
 	struct ws		ws[1];
 
-	struct object		*obj;
-	struct objcore		*objcore;
 	struct busyobj		*busyobj;
 
 	/* This is only here so VRT can find it */
@@ -622,6 +620,8 @@ struct req {
 	struct http		*resp;
 
 	struct ws		ws[1];
+	struct object		*obj;
+	struct objcore		*objcore;
 };
 
 /*--------------------------------------------------------------------*/

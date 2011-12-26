@@ -474,10 +474,10 @@ smp_allocobj(struct stevedore *stv, struct worker *wrk, unsigned ltot,
 	struct objcore *oc;
 	unsigned objidx;
 
-	if (wrk->objcore == NULL)
+	if (wrk->sp->req->objcore == NULL)
 		return (NULL);		/* from cnt_error */
 	CAST_OBJ_NOTNULL(sc, stv->priv, SMP_SC_MAGIC);
-	AN(wrk->objcore);
+	AN(wrk->sp->req->objcore);
 	AN(wrk->busyobj->exp.ttl > 0.);
 
 	ltot = IRNUP(sc, ltot);

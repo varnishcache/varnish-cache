@@ -319,18 +319,18 @@ RFC2616_Do_Cond(const struct sess *sp)
 	   and If-Modified-Since if present*/
 
 	if (http_GetHdr(sp->req->http, H_If_Modified_Since, &p) ) {
-		if (!sp->wrk->obj->last_modified)
+		if (!sp->req->obj->last_modified)
 			return (0);
 		ims = VTIM_parse(p);
 		if (ims > sp->t_req)	/* [RFC2616 14.25] */
 			return (0);
-		if (sp->wrk->obj->last_modified > ims)
+		if (sp->req->obj->last_modified > ims)
 			return (0);
 		do_cond = 1;
 	}
 
 	if (http_GetHdr(sp->req->http, H_If_None_Match, &p) &&
-	    http_GetHdr(sp->wrk->obj->http, H_ETag, &e)) {
+	    http_GetHdr(sp->req->obj->http, H_ETag, &e)) {
 		if (strcmp(p,e) != 0)
 			return (0);
 		do_cond = 1;

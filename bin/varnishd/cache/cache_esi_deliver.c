@@ -58,8 +58,8 @@ ved_include(struct sess *sp, const char *src, const char *host)
 
 	(void)WRW_FlushRelease(w);
 
-	obj = sp->wrk->obj;
-	sp->wrk->obj = NULL;
+	obj = sp->req->obj;
+	sp->req->obj = NULL;
 	res_mode = sp->wrk->res_mode;
 
 	/* Reset request to status before we started messing with it */
@@ -106,7 +106,7 @@ ved_include(struct sess *sp, const char *src, const char *host)
 	AN(sp->wrk);
 	assert(sp->step == STP_DONE);
 	sp->req->esi_level--;
-	sp->wrk->obj = obj;
+	sp->req->obj = obj;
 	sp->wrk->res_mode = res_mode;
 
 	/* Reset the workspace */
@@ -231,7 +231,7 @@ ESI_Deliver(struct sess *sp)
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	st = sp->wrk->obj->esidata;
+	st = sp->req->obj->esidata;
 	AN(st);
 	assert(sizeof obuf >= 1024);
 
@@ -276,7 +276,7 @@ ESI_Deliver(struct sess *sp)
 		obufl = 0;
 	}
 
-	st = VTAILQ_FIRST(&sp->wrk->obj->store);
+	st = VTAILQ_FIRST(&sp->req->obj->store);
 	off = 0;
 
 	while (p < e) {
@@ -435,7 +435,7 @@ ved_deliver_byterange(const struct sess *sp, ssize_t low, ssize_t high)
 
 //printf("BR %jd %jd\n", low, high);
 	lx = 0;
-	VTAILQ_FOREACH(st, &sp->wrk->obj->store, list) {
+	VTAILQ_FOREACH(st, &sp->req->obj->store, list) {
 		p = st->ptr;
 		l = st->len;
 //printf("[0-] %jd %jd\n", lx, lx + l);
@@ -476,8 +476,8 @@ ESI_DeliverChild(const struct sess *sp)
 	uint32_t ilen;
 	uint8_t *dbits;
 
-	if (!sp->wrk->obj->gziped) {
-		VTAILQ_FOREACH(st, &sp->wrk->obj->store, list)
+	if (!sp->req->obj->gziped) {
+		VTAILQ_FOREACH(st, &sp->req->obj->store, list)
 			ved_pretend_gzip(sp, st->ptr, st->len);
 		return;
 	}
@@ -489,7 +489,7 @@ ESI_DeliverChild(const struct sess *sp)
 
 	dbits = (void*)WS_Alloc(sp->wrk->ws, 8);
 	AN(dbits);
-	obj = sp->wrk->obj;
+	obj = sp->req->obj;
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	start = obj->gzip_start;
 	last = obj->gzip_last;
@@ -554,7 +554,7 @@ ESI_DeliverChild(const struct sess *sp)
 	}
 	if (lpad > 0)
 		(void)WRW_Write(sp->wrk, dbits + 1, lpad);
-	st = VTAILQ_LAST(&sp->wrk->obj->store, storagehead);
+	st = VTAILQ_LAST(&sp->req->obj->store, storagehead);
 	assert(st->len > 8);
 
 	p = st->ptr + st->len - 8;

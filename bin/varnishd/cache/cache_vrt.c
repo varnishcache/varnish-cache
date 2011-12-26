@@ -110,8 +110,8 @@ vrt_selecthttp(const struct sess *sp, enum gethdr_e where)
 		hp = sp->req->resp;
 		break;
 	case HDR_OBJ:
-		CHECK_OBJ_NOTNULL(sp->wrk->obj, OBJECT_MAGIC);
-		hp = sp->wrk->obj->http;
+		CHECK_OBJ_NOTNULL(sp->req->obj, OBJECT_MAGIC);
+		hp = sp->req->obj->http;
 		break;
 	default:
 		INCOMPL();
@@ -401,8 +401,8 @@ VRT_synth_page(const struct sess *sp, unsigned flags, const char *str, ...)
 
 	(void)flags;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->obj, OBJECT_MAGIC);
-	vsb = SMS_Makesynth(sp->wrk->obj);
+	CHECK_OBJ_NOTNULL(sp->req->obj, OBJECT_MAGIC);
+	vsb = SMS_Makesynth(sp->req->obj);
 	AN(vsb);
 
 	VSB_cat(vsb, str);
@@ -415,10 +415,10 @@ VRT_synth_page(const struct sess *sp, unsigned flags, const char *str, ...)
 		p = va_arg(ap, const char *);
 	}
 	va_end(ap);
-	SMS_Finish(sp->wrk->obj);
-	http_Unset(sp->wrk->obj->http, H_Content_Length);
-	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->obj->http,
-	    "Content-Length: %zd", sp->wrk->obj->len);
+	SMS_Finish(sp->req->obj);
+	http_Unset(sp->req->obj->http, H_Content_Length);
+	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->req->obj->http,
+	    "Content-Length: %zd", sp->req->obj->len);
 }
 
 /*--------------------------------------------------------------------*/
@@ -512,9 +512,9 @@ void
 VRT_purge(const struct sess *sp, double ttl, double grace)
 {
 	if (sp->req->cur_method == VCL_MET_HIT)
-		HSH_Purge(sp, sp->wrk->obj->objcore->objhead, ttl, grace);
+		HSH_Purge(sp, sp->req->obj->objcore->objhead, ttl, grace);
 	else if (sp->req->cur_method == VCL_MET_MISS)
-		HSH_Purge(sp, sp->wrk->objcore->objhead, ttl, grace);
+		HSH_Purge(sp, sp->req->objcore->objhead, ttl, grace);
 }
 
 /*--------------------------------------------------------------------

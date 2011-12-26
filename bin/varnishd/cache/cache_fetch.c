@@ -391,11 +391,11 @@ FetchHdr(struct sess *sp, int need_host_hdr)
 	htc = &wrk->busyobj->htc;
 
 	AN(sp->req->director);
-	AZ(sp->wrk->obj);
+	AZ(sp->req->obj);
 
-	if (sp->wrk->objcore != NULL) {		/* pass has no objcore */
-		CHECK_OBJ_NOTNULL(sp->wrk->objcore, OBJCORE_MAGIC);
-		AN(sp->wrk->objcore->flags & OC_F_BUSY);
+	if (sp->req->objcore != NULL) {		/* pass has no objcore */
+		CHECK_OBJ_NOTNULL(sp->req->objcore, OBJCORE_MAGIC);
+		AN(sp->req->objcore->flags & OC_F_BUSY);
 	}
 
 	hp = wrk->busyobj->bereq;
