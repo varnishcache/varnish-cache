@@ -348,11 +348,11 @@ static void *
 hcb_cleaner(void *priv)
 {
 	struct hcb_y *y, *y2;
-	struct worker ww;
+	struct worker wrk;
 	struct objhead *oh, *oh2;
 
-	memset(&ww, 0, sizeof ww);
-	ww.magic = WORKER_MAGIC;
+	memset(&wrk, 0, sizeof wrk);
+	wrk.magic = WORKER_MAGIC;
 
 	THR_SetName("hcb_cleaner");
 	(void)priv;
@@ -363,13 +363,13 @@ hcb_cleaner(void *priv)
 		}
 		VTAILQ_FOREACH_SAFE(oh, &dead_h, hoh_list, oh2) {
 			VTAILQ_REMOVE(&dead_h, oh, hoh_list);
-			HSH_DeleteObjHead(&ww, oh);
+			HSH_DeleteObjHead(&wrk, oh);
 		}
 		Lck_Lock(&hcb_mtx);
 		VSTAILQ_CONCAT(&dead_y, &cool_y);
 		VTAILQ_CONCAT(&dead_h, &cool_h, hoh_list);
 		Lck_Unlock(&hcb_mtx);
-		WRK_SumStat(&ww);
+		WRK_SumStat(&wrk);
 		VTIM_sleep(cache_param->critbit_cooloff);
 	}
 	NEEDLESS_RETURN(NULL);
@@ -386,6 +386,7 @@ hcb_start(void)
 	(void)oh;
 	CLI_AddFuncs(hcb_cmds);
 	Lck_New(&hcb_mtx, lck_hcb);
+	/* XXX: use WRK_BgThread */
 	AZ(pthread_create(&tp, NULL, hcb_cleaner, NULL));
 	memset(&hcb_root, 0, sizeof hcb_root);
 	hcb_build_bittbl();

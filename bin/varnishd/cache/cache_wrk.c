@@ -94,7 +94,7 @@ static void *
 wrk_bgthread(void *arg)
 {
 	struct bgthread *bt;
-	struct worker ww;
+	struct worker wrk;
 	struct sess *sp;
 	uint32_t logbuf[1024];	/* XXX:  size ? */
 
@@ -102,11 +102,11 @@ wrk_bgthread(void *arg)
 	THR_SetName(bt->name);
 	sp = SES_Alloc();
 	XXXAN(sp);
-	memset(&ww, 0, sizeof ww);
-	sp->wrk = &ww;
-	ww.magic = WORKER_MAGIC;
-	ww.wlp = ww.wlb = logbuf;
-	ww.wle = logbuf + (sizeof logbuf) / 4;
+	memset(&wrk, 0, sizeof wrk);
+	sp->wrk = &wrk;
+	wrk.magic = WORKER_MAGIC;
+	wrk.wlp = wrk.wlb = logbuf;
+	wrk.wle = logbuf + (sizeof logbuf) / 4;
 
 	(void)bt->func(sp, bt->priv);
 

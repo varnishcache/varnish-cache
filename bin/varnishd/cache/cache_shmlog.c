@@ -35,7 +35,7 @@
 #include "cache.h"
 #include "common/heritage.h"
 
-#include "cache_backend.h"	// For w->vbc
+#include "cache_backend.h"	// For wrk->vbc
 
 #include "vmb.h"
 #include "vtim.h"
@@ -180,30 +180,30 @@ VSL(enum VSL_tag_e tag, int id, const char *fmt, ...)
 /*--------------------------------------------------------------------*/
 
 void
-WSL_Flush(struct worker *w, int overflow)
+WSL_Flush(struct worker *wrk, int overflow)
 {
 	uint32_t *p;
 	unsigned l;
 
-	l = pdiff(w->wlb, w->wlp);
+	l = pdiff(wrk->wlb, wrk->wlp);
 	if (l == 0)
 		return;
 
 	assert(l >= 8);
 
-	p = vsl_get(l - 8, w->wlr, overflow);
+	p = vsl_get(l - 8, wrk->wlr, overflow);
 
-	memcpy(p + 1, w->wlb + 1, l - 4);
+	memcpy(p + 1, wrk->wlb + 1, l - 4);
 	VWMB();
-	p[0] = w->wlb[0];
-	w->wlp = w->wlb;
-	w->wlr = 0;
+	p[0] = wrk->wlb[0];
+	wrk->wlp = wrk->wlb;
+	wrk->wlr = 0;
 }
 
 /*--------------------------------------------------------------------*/
 
 void
-WSLR(struct worker *w, enum VSL_tag_e tag, int id, txt t)
+WSLR(struct worker *wrk, enum VSL_tag_e tag, int id, txt t)
 {
 	unsigned l, mlen;
 
@@ -217,25 +217,25 @@ WSLR(struct worker *w, enum VSL_tag_e tag, int id, txt t)
 		t.e = t.b + l;
 	}
 
-	assert(w->wlp < w->wle);
+	assert(wrk->wlp < wrk->wle);
 
 	/* Wrap if necessary */
-	if (VSL_END(w->wlp, l) >= w->wle)
-		WSL_Flush(w, 1);
-	assert (VSL_END(w->wlp, l) < w->wle);
-	memcpy(VSL_DATA(w->wlp), t.b, l);
-	vsl_hdr(tag, w->wlp, l, id);
-	w->wlp = VSL_END(w->wlp, l);
-	assert(w->wlp < w->wle);
-	w->wlr++;
+	if (VSL_END(wrk->wlp, l) >= wrk->wle)
+		WSL_Flush(wrk, 1);
+	assert (VSL_END(wrk->wlp, l) < wrk->wle);
+	memcpy(VSL_DATA(wrk->wlp), t.b, l);
+	vsl_hdr(tag, wrk->wlp, l, id);
+	wrk->wlp = VSL_END(wrk->wlp, l);
+	assert(wrk->wlp < wrk->wle);
+	wrk->wlr++;
 	if (cache_param->diag_bitmap & 0x10000)
-		WSL_Flush(w, 0);
+		WSL_Flush(wrk, 0);
 }
 
 /*--------------------------------------------------------------------*/
 
 static void
-wsl(struct worker *w, enum VSL_tag_e tag, int id, const char *fmt, va_list ap)
+wsl(struct worker *wrk, enum VSL_tag_e tag, int id, const char *fmt, va_list ap)
 {
 	char *p;
 	unsigned n, mlen;
@@ -247,38 +247,38 @@ wsl(struct worker *w, enum VSL_tag_e tag, int id, const char *fmt, va_list ap)
 	if (strchr(fmt, '%') == NULL) {
 		t.b = TRUST_ME(fmt);
 		t.e = strchr(t.b, '\0');
-		WSLR(w, tag, id, t);
+		WSLR(wrk, tag, id, t);
 	} else {
-		assert(w->wlp < w->wle);
+		assert(wrk->wlp < wrk->wle);
 
 		/* Wrap if we cannot fit a full size record */
-		if (VSL_END(w->wlp, mlen) >= w->wle)
-			WSL_Flush(w, 1);
+		if (VSL_END(wrk->wlp, mlen) >= wrk->wle)
+			WSL_Flush(wrk, 1);
 
-		p = VSL_DATA(w->wlp);
+		p = VSL_DATA(wrk->wlp);
 		n = vsnprintf(p, mlen, fmt, ap);
 		if (n > mlen)
 			n = mlen;	/* we truncate long fields */
-		vsl_hdr(tag, w->wlp, n, id);
-		w->wlp = VSL_END(w->wlp, n);
-		assert(w->wlp < w->wle);
-		w->wlr++;
+		vsl_hdr(tag, wrk->wlp, n, id);
+		wrk->wlp = VSL_END(wrk->wlp, n);
+		assert(wrk->wlp < wrk->wle);
+		wrk->wlr++;
 	}
 	if (cache_param->diag_bitmap & 0x10000)
-		WSL_Flush(w, 0);
+		WSL_Flush(wrk, 0);
 }
 
 /*--------------------------------------------------------------------*/
 
 void
-WSL(struct worker *w, enum VSL_tag_e tag, int id, const char *fmt, ...)
+WSL(struct worker *wrk, enum VSL_tag_e tag, int id, const char *fmt, ...)
 {
 	va_list ap;
 
-	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(fmt);
 	va_start(ap, fmt);
-	wsl(w, tag, id, fmt, ap);
+	wsl(wrk, tag, id, fmt, ap);
 	va_end(ap);
 }
 
@@ -286,16 +286,16 @@ WSL(struct worker *w, enum VSL_tag_e tag, int id, const char *fmt, ...)
 /*--------------------------------------------------------------------*/
 
 void
-WSLB(struct worker *w, enum VSL_tag_e tag, const char *fmt, ...)
+WSLB(struct worker *wrk, enum VSL_tag_e tag, const char *fmt, ...)
 {
 	va_list ap;
 
-	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(w->busyobj, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(w->busyobj->vbc, VBC_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk->busyobj->vbc, VBC_MAGIC);
 	AN(fmt);
 	va_start(ap, fmt);
-	wsl(w, tag, w->busyobj->vbc->vsl_id, fmt, ap);
+	wsl(wrk, tag, wrk->busyobj->vbc->vsl_id, fmt, ap);
 	va_end(ap);
 }
 
