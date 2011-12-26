@@ -158,8 +158,8 @@ HSH_AddString(const struct sess *sp, const char *str)
 		str = "";
 	l = strlen(str);
 
-	SHA256_Update(sp->wrk->sha256ctx, str, l);
-	SHA256_Update(sp->wrk->sha256ctx, "#", 1);
+	SHA256_Update(sp->req->sha256ctx, str, l);
+	SHA256_Update(sp->req->sha256ctx, "#", 1);
 
 	if (cache_param->log_hash)
 		WSP(sp, SLT_Hash, "%s", str);

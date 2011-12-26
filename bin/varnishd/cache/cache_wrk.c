@@ -37,7 +37,6 @@
 #include "cache.h"
 
 #include "hash/hash_slinger.h"
-#include "vsha256.h"
 
 static struct lock		wstat_mtx;
 
@@ -140,7 +139,6 @@ wrk_thread_real(void *priv, unsigned shm_workspace, unsigned sess_workspace,
 	/* XXX: can we trust these to be properly aligned ? */
 	unsigned char ws[sess_workspace];
 	struct iovec iov[siov];
-	struct SHA256Context sha256;
 
 	THR_SetName("cache-worker");
 	w = &ww;
@@ -149,7 +147,6 @@ wrk_thread_real(void *priv, unsigned shm_workspace, unsigned sess_workspace,
 	w->lastused = NAN;
 	w->wlb = w->wlp = wlog;
 	w->wle = wlog + (sizeof wlog) / 4;
-	w->sha256ctx = &sha256;
 	w->wrw.iov = iov;
 	w->wrw.siov = siov;
 	w->wrw.ciov = siov;

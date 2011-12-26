@@ -324,9 +324,6 @@ struct worker {
 	uint32_t		*wlb, *wlp, *wle;
 	unsigned		wlr;
 
-	/* Lookup stuff */
-	struct SHA256Context	*sha256ctx;
-
 	struct ws		ws[1];
 
 	struct busyobj		*busyobj;
@@ -622,6 +619,9 @@ struct req {
 	struct ws		ws[1];
 	struct object		*obj;
 	struct objcore		*objcore;
+	/* Lookup stuff */
+	struct SHA256Context	*sha256ctx;
+
 };
 
 /*--------------------------------------------------------------------*/

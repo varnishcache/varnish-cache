@@ -1502,10 +1502,10 @@ cnt_recv(struct sess *sp, struct worker *wrk, struct req *req)
 		}
 	}
 
-	SHA256_Init(wrk->sha256ctx);
+	SHA256_Init(req->sha256ctx);
 	VCL_hash_method(sp);
 	assert(req->handling == VCL_RET_HASH);
-	SHA256_Final(req->digest, wrk->sha256ctx);
+	SHA256_Final(req->digest, req->sha256ctx);
 
 	if (!strcmp(req->http->hd[HTTP_HDR_REQ].b, "HEAD"))
 		req->wantbody = 0;
