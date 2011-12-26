@@ -42,7 +42,6 @@
 #include "cache.h"
 
 #include "waiter/waiter.h"
-#include "vsha256.h"
 #include "vtim.h"
 
 static unsigned ses_size = sizeof (struct sess);
@@ -271,10 +270,7 @@ SES_GetReq(struct sess *sp)
 	nhttp = (uint16_t)cache_param->http_max_hdr;
 	hl = HTTP_estimate(nhttp);
 
-	xxxassert(sz > 3 * hl + sizeof(struct SHA256Context) + 128);
-
-	sp->req->sha256ctx = (void*)p;
-	p += sizeof(struct SHA256Context);
+	xxxassert(sz > 3 * hl + 128);
 
 	sp->req->http = HTTP_create(p, nhttp);
 	p += hl;		// XXX: align ?

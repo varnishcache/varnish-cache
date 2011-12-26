@@ -1459,6 +1459,7 @@ static int
 cnt_recv(struct sess *sp, struct worker *wrk, struct req *req)
 {
 	unsigned recv_handling;
+	struct SHA256Context sha256ctx;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -1502,10 +1503,12 @@ cnt_recv(struct sess *sp, struct worker *wrk, struct req *req)
 		}
 	}
 
+	req->sha256ctx = &sha256ctx;
 	SHA256_Init(req->sha256ctx);
 	VCL_hash_method(sp);
 	assert(req->handling == VCL_RET_HASH);
 	SHA256_Final(req->digest, req->sha256ctx);
+	req->sha256ctx = NULL;
 
 	if (!strcmp(req->http->hd[HTTP_HDR_REQ].b, "HEAD"))
 		req->wantbody = 0;

@@ -158,6 +158,7 @@ HSH_AddString(const struct sess *sp, const char *str)
 		str = "";
 	l = strlen(str);
 
+	AN(sp->req->sha256ctx);
 	SHA256_Update(sp->req->sha256ctx, str, l);
 	SHA256_Update(sp->req->sha256ctx, "#", 1);
 
