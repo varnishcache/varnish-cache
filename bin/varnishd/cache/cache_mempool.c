@@ -80,6 +80,8 @@ mpl_alloc(const struct mempool *mpl)
 	AN(mi);
 	mi->magic = MEMITEM_MAGIC;
 	mi->size = tsz;
+	mpl->vsc->sz_wanted = tsz;
+	mpl->vsc->sz_needed = tsz + sizeof *mi;
 	return (mi);
 }
 

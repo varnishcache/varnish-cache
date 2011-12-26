@@ -318,6 +318,7 @@ SES_NewPool(struct pool *wp, unsigned pool_no)
 	bprintf(nb, "req%u", pool_no);
 	pp->mpl_req = MPL_New(nb, &cache_param->req_pool,
 	    &cache_param->workspace_client);
+	bprintf(nb, "sess%u", pool_no);
 	pp->mpl_sess = MPL_New(nb, &cache_param->sess_pool, &ses_size);
 	return (pp);
 }
