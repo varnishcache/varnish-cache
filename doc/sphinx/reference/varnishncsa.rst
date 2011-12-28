@@ -120,7 +120,7 @@ The following options are available:
 		     cache hit, miss, pass, pipe or error.
 	
 		   VCL_Log:key
-		     Output value set by std.log("key=value") in VCL.
+		     Output value set by std.log("key:value") in VCL.
 		     
 
 -m tag:regex only list records where tag matches regex. Multiple
