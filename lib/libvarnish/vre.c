@@ -40,8 +40,13 @@
 struct vre {
 	unsigned		magic;
 #define VRE_MAGIC		0xe83097dc
-	pcre *re;
+	pcre			*re;
+	pcre_extra		*re_extra;
 };
+
+#ifndef PCRE_STUDY_JIT_COMPILE
+#define PCRE_STUDY_JIT_COMPILE 0
+#endif
 
 /*
  * We don't want to spread or even expose the majority of PCRE options
@@ -66,6 +71,20 @@ VRE_compile(const char *pattern, int options,
 		VRE_free(&v);
 		return (NULL);
 	}
+	v->re_extra = pcre_study(v->re, PCRE_STUDY_JIT_COMPILE, errptr);
+	if (v->re_extra == NULL) {
+		if (*errptr != NULL) {
+			VRE_free(&v);
+			return (NULL);
+		}
+		/* allocate our own, pcre_study can return NULL without it
+		 * being an error */
+		v->re_extra = calloc(1, sizeof(pcre_extra));
+		if (v->re_extra == NULL) {
+			VRE_free(&v);
+			return (NULL);
+		}
+	}
 	return (v);
 }
 
@@ -76,22 +95,23 @@ VRE_exec(const vre_t *code, const char *subject, int length,
 {
 	CHECK_OBJ_NOTNULL(code, VRE_MAGIC);
 	int ov[30];
-	pcre_extra extra;
 
 	if (ovector == NULL) {
 		ovector = ov;
 		ovecsize = sizeof(ov)/sizeof(ov[0]);
 	}
 
-	memset(&extra, 0, sizeof extra);
 	if (lim != NULL) {
-		extra.match_limit = lim->match;
-		extra.flags |= PCRE_EXTRA_MATCH_LIMIT;
-		extra.match_limit_recursion = lim->match_recursion;
-		extra.flags |= PCRE_EXTRA_MATCH_LIMIT_RECURSION;
+		code->re_extra->match_limit = lim->match;
+		code->re_extra->flags |= PCRE_EXTRA_MATCH_LIMIT;
+		code->re_extra->match_limit_recursion = lim->match_recursion;
+		code->re_extra->flags |= PCRE_EXTRA_MATCH_LIMIT_RECURSION;
+	} else {
+		code->re_extra->flags &= ~PCRE_EXTRA_MATCH_LIMIT;
+		code->re_extra->flags &= ~PCRE_EXTRA_MATCH_LIMIT_RECURSION;
 	}
 
-	return (pcre_exec(code->re, &extra, subject, length,
+	return (pcre_exec(code->re, code->re_extra, subject, length,
 	    startoffset, options, ovector, ovecsize));
 }
 
@@ -102,6 +122,11 @@ VRE_free(vre_t **vv)
 
 	*vv = NULL;
 	CHECK_OBJ(v, VRE_MAGIC);
+#ifdef PCRE_CONFIG_JIT
+	pcre_free_study(v->re_extra);
+#else
+	free(v->re_extra);
+#endif
 	pcre_free(v->re);
 	FREE_OBJ(v);
 }
