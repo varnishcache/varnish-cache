@@ -144,7 +144,14 @@ AC_SUBST(PCRE_LIBS)
 
 PKG_CHECK_MODULES([LIBEDIT], [libedit], 
 	[AC_DEFINE([HAVE_LIBEDIT], [1], [Define we have libedit])],
-	[AC_MSG_WARN([libedit not found, disabling libedit support])])
+	[AC_CHECK_HEADERS([readline/readline.h])
+	 AC_CHECK_LIB(edit, el_init,
+	        [ AC_DEFINE([HAVE_LIBEDIT], [1], [Define we have libedit])
+		  LIBEDIT_CFLAGS=""
+		  LIBEDIT_LIBS="-ledit ${CURSES_LIBS}"
+		],
+               [AC_MSG_WARN([libedit not found, disabling libedit support])],
+               [${CURSES_LIBS}])])
 
 # Checks for header files.
 AC_HEADER_STDC
