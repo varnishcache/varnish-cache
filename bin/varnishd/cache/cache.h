@@ -624,7 +624,15 @@ struct req {
 
 };
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Struct sess is a high memory-load structure because sessions typically
+ * hang around the waiter for relatively long time.
+ *
+ * The size goal for struct sess + struct memitem is <512 bytes
+ *
+ * Getting down to the next relevant size (<256 bytes because of how malloc
+ * works, is not realistic without a lot of code changes.
+ */
 
 struct sess {
 	unsigned		magic;
