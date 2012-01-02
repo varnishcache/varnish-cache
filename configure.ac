@@ -340,16 +340,7 @@ AC_ARG_ENABLE(kqueue,
     [enable_kqueue=yes])
 
 if test "$enable_kqueue" = yes; then
-	case $target in
-	*-*-freebsd* | *-*-darwin9* | *-*-netbsd* )
-		AC_CHECK_FUNCS([kqueue])
-		;;
-	*-*-bsd*)
-		# No other BSD has a sufficiently recent implementation
-		AC_MSG_WARN([won't look for kqueue() on $target])
-		ac_cv_func_kqueue=no
-		;;
-	esac
+	AC_CHECK_FUNCS([kqueue])
 else
 	ac_cv_func_kqueue=no
 fi
