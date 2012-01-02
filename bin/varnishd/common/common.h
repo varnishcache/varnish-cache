@@ -63,9 +63,10 @@ struct cli;
 /**********************************************************************
  * NI_MAXHOST and less so NI_MAXSERV, are ridiculously large for numeric
  * representations of TCP/IP socket addresses, so we use our own.
+ * <netinet/in6.h>::INET6_ADDRSTRLEN is 46
  */
 
-#define ADDR_BUFSIZE	64
+#define ADDR_BUFSIZE	48
 #define PORT_BUFSIZE	8
 
 
