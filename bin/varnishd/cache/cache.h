@@ -630,6 +630,10 @@ struct sess {
 	unsigned		magic;
 #define SESS_MAGIC		0x2c2f9c5a
 
+	enum step		step;
+	int			fd;
+	unsigned		vsl_id;
+
 	/* Cross references ------------------------------------------*/
 
 	struct sesspool		*sesspool;
@@ -639,9 +643,6 @@ struct sess {
 	VTAILQ_ENTRY(sess)	list;
 
 	/* Session related fields ------------------------------------*/
-
-	int			fd;
-	unsigned		vsl_id;
 
 	socklen_t		sockaddrlen;
 	socklen_t		mysockaddrlen;
@@ -658,18 +659,11 @@ struct sess {
 	/* Timestamps, all on TIM_real() timescale */
 	double			t_open;		/* fd accepted */
 	double			t_idle;		/* fd accepted or resp sent */
+	double			t_req;
 
 #if defined(HAVE_EPOLL_CTL)
 	struct epoll_event ev;
 #endif
-	enum step		step;
-
-	/* Request related fields ------------------------------------*/
-
-
-	/* Timestamps, all on TIM_real() timescale */
-	double			t_req;
-
 };
 
 /* Prototypes etc ----------------------------------------------------*/
