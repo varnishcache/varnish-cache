@@ -35,3 +35,4 @@
 PVAR("req.url",		PVAR_REQ,		BAN_ARG_URL)
 PVAR("req.http.",	PVAR_REQ|PVAR_HTTP,	BAN_ARG_REQHTTP)
 PVAR("obj.http.",	PVAR_HTTP,		BAN_ARG_OBJHTTP)
+PVAR("obj.status",	0,			BAN_ARG_OBJSTATUS)
