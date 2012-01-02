@@ -29,6 +29,7 @@
  */
 
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "config.h"
@@ -40,10 +41,9 @@
 struct memitem {
 	unsigned			magic;
 #define MEMITEM_MAGIC			0x42e55401
-	VTAILQ_ENTRY(memitem)		list;
 	unsigned			size;
+	VTAILQ_ENTRY(memitem)		list;
 	double				touched;
-	char				payload;
 };
 
 VTAILQ_HEAD(memhead_s, memitem);
@@ -91,8 +91,6 @@ mpl_alloc(const struct mempool *mpl)
  *   minimum locking activity, and keep an eye on items at the tail
  *   of the list not getting too old.
  */
-
-#include <stdio.h>
 
 static void *
 mpl_guard(void *priv)
@@ -309,7 +307,7 @@ MPL_Get(struct mempool *mpl, unsigned *size)
 
 	CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
 	/* Throw away sizeof info for FlexeLint: */
-	return ((void*)(uintptr_t)&mi->payload);
+	return ((void*)(uintptr_t)(mi+1));
 }
 
 void
@@ -320,7 +318,7 @@ MPL_Free(struct mempool *mpl, void *item)
 	CHECK_OBJ_NOTNULL(mpl, MEMPOOL_MAGIC);
 	AN(item);
 
-	mi = (void*)((uintptr_t)item - offsetof(struct memitem, payload));
+	mi = (void*)((uintptr_t)item - sizeof(*mi));
 	CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
 	memset(item, 0, mi->size);
 
@@ -348,6 +346,6 @@ void
 MPL_AssertSane(void *item)
 {
 	struct memitem *mi;
-	mi = (void*)((uintptr_t)item - offsetof(struct memitem, payload));
+	mi = (void*)((uintptr_t)item - sizeof(*mi));
 	CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
 }
