@@ -201,7 +201,7 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 		if (wrk->sp != NULL) {
 			/* Process queued requests, if any */
 			assert(pp->lqueue > 0);
-			VTAILQ_REMOVE(&pp->queue, wrk->sp, poollist);
+			VTAILQ_REMOVE(&pp->queue, wrk->sp, list);
 			wrk->do_what = pool_do_sess;
 			pp->lqueue--;
 		} else if (!VTAILQ_EMPTY(&pp->socks)) {
@@ -314,7 +314,7 @@ pool_queue(struct pool *pp, struct sess *sp)
 		return (-1);
 	}
 
-	VTAILQ_INSERT_TAIL(&pp->queue, sp, poollist);
+	VTAILQ_INSERT_TAIL(&pp->queue, sp, list);
 	pp->nqueued++;
 	pp->lqueue++;
 	Lck_Unlock(&pp->mtx);

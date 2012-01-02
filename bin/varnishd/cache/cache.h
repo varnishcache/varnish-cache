@@ -636,6 +636,8 @@ struct sess {
 	struct worker		*wrk;
 	struct req		*req;
 
+	VTAILQ_ENTRY(sess)	list;
+
 	/* Session related fields ------------------------------------*/
 
 	int			fd;
@@ -651,10 +653,7 @@ struct sess {
 	char			addr[ADDR_BUFSIZE];
 	char			port[PORT_BUFSIZE];
 
-	VTAILQ_ENTRY(sess)	poollist;
 	struct acct		acct_ses;
-
-	VTAILQ_ENTRY(sess)	list;
 
 	/* Timestamps, all on TIM_real() timescale */
 	double			t_open;		/* fd accepted */
