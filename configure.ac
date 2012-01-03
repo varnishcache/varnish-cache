@@ -326,12 +326,6 @@ AC_CHECK_FUNCS([clock_gettime])
 AC_CHECK_FUNCS([gethrtime]) 
 LIBS="${save_LIBS}"
 
-# Check which mechanism to use for the acceptor.  We look for kqueue
-# only on platforms on which we know that it works, because there are
-# platforms where a simple AC_CHECK_FUNCS([kqueue]) would succeed but
-# the build would fail.  We also allow the user to disable mechanisms
-# he doesn't want to use.
-
 # --enable-kqueue
 AC_ARG_ENABLE(kqueue,
     AS_HELP_STRING([--enable-kqueue],
