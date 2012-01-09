@@ -858,7 +858,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	}
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 
-	wrk->busyobj->exp.keep = sp->exp.keep;
+	wrk->busyobj->exp.keep = req->exp.keep;
 
 	req->storage_hint = NULL;
 
@@ -897,7 +897,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
         if (sp->stale_obj) {
             http_Check304(sp);
             if (wrk->busyobj->beresp->status == 304)
-                assert(wrk->obj->http->status == 200);
+                assert(req->obj->http->status == 200);
 	    EXP_Clr(&sp->stale_obj->exp);
 	    EXP_Rearm(sp->stale_obj);
 	    HSH_Deref(sp->wrk, NULL, &sp->stale_obj);
@@ -906,8 +906,8 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	http_CopyHome(wrk, sp->vsl_id, hp2);
 
 	if (http_GetHdr(hp, H_Last_Modified, &b)
-            || http_GetHdr(wrk->obj->http, H_Last_Modified, &b))
-		wrk->obj->last_modified = VTIM_parse(b);
+            || http_GetHdr(req->obj->http, H_Last_Modified, &b))
+		req->obj->last_modified = VTIM_parse(b);
 	else
 		req->obj->last_modified = floor(wrk->busyobj->exp.entered);
 

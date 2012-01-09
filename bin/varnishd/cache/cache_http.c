@@ -959,7 +959,7 @@ http_Check304(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	o_stale = sp->stale_obj;
 	CHECK_OBJ_NOTNULL(o_stale, OBJECT_MAGIC);
-	o = sp->wrk->obj;
+	o = sp->req->obj;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
 	if (sp->wrk->busyobj->beresp->status != 304) {
@@ -984,7 +984,8 @@ http_Check304(struct sess *sp)
 	 */
 	STV_dup(sp, o_stale, o);
 	http_Unset(o->http, H_Content_Length);
-	http_PrintfHeader(sp->wrk, sp->fd, o->http, "Content-Length: %u", o->len);
+	http_PrintfHeader(sp->wrk, sp->fd, o->http, "Content-Length: %u",
+	    o->len);
 
 	http_SetResp(o->http, "HTTP/1.1", 200, "Ok Not Modified");
 	http_SetH(o->http, HTTP_HDR_REQ, "GET");

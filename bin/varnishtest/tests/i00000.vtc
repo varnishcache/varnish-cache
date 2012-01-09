@@ -491,8 +491,7 @@ varnish v1 -badvcl {
 
 varnish v1 -cliok "param.show default_keep"
 
-varnish v1 -cliok "param.set default_keep 30s"
+varnish v1 -cliok "param.set default_keep 30"
 
-## XXX: This is not caught as an error
-#varnish v1 -clierr 106 "param.set default_keep foo"
+varnish v1 -clierr 106 "param.set default_keep foo"
 

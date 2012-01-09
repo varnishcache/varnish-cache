@@ -472,7 +472,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 
         /* If we're not serving a valid or graced object and we saved stale_o,
 	 * it is a candidate for the conditional backend request. */
-        AZ(oc && !sp->hash_always_miss);
+        AZ(oc && !sp->req->hash_always_miss);
         AZ(busy_oc);
         if (stale_o != NULL) {
                 AZ(stale_o->objcore->flags & OC_F_BUSY);

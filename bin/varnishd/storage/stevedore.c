@@ -378,7 +378,7 @@ STV_alloc(struct worker *w, size_t size)
 {
 	struct object *obj = w->busyobj->fetch_obj;
 	if (obj == NULL)
-		obj = w->obj;
+		obj = w->sp->req->obj;
 
 	return (stv_alloc(w, obj, size));
 }
