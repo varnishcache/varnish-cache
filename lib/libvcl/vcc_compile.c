@@ -229,7 +229,7 @@ EncString(struct vsb *sb, const char *b, const char *e, int mode)
 			if (isgraph(*b))
 				VSB_printf(sb, "%c", *b);
 			else
-				VSB_printf(sb, "\\%03o", *b);
+				VSB_printf(sb, "\\%03o", (uint8_t)*b);
 			break;
 		}
 	}
@@ -241,7 +241,7 @@ EncToken(struct vsb *sb, const struct token *t)
 {
 
 	assert(t->tok == CSTR);
-	EncString(sb, t->dec, NULL, 0);
+	EncString(sb, t->dec, NULL, 1);
 }
 
 /*--------------------------------------------------------------------
