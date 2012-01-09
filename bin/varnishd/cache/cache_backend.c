@@ -43,6 +43,10 @@
 #include "vrt.h"
 #include "vtcp.h"
 
+static struct mempool	*vbcpool;
+
+static unsigned		vbcps = sizeof(struct vbc);
+
 /*--------------------------------------------------------------------
  * The "simple" director really isn't, since thats where all the actual
  * connections happen.  Nontheless, pretend it is simple by sequestering
@@ -82,14 +86,7 @@ VBE_ReleaseConn(struct vbc *vc)
 	CHECK_OBJ_NOTNULL(vc, VBC_MAGIC);
 	assert(vc->backend == NULL);
 	assert(vc->fd < 0);
-
-	vc->addr = NULL;
-	vc->addrlen = 0;
-	vc->recycled = 0;
-	Lck_Lock(&VBE_mtx);
-	VSC_C_main->n_vbc--;
-	Lck_Unlock(&VBE_mtx);
-	FREE_OBJ(vc);
+	MPL_Free(vbcpool, vc);
 }
 
 #define FIND_TMO(tmx, dst, sp, be)		\
@@ -221,18 +218,16 @@ vbe_NewConn(void)
 {
 	struct vbc *vc;
 
-	ALLOC_OBJ(vc, VBC_MAGIC);
+	vc = MPL_Get(vbcpool, NULL);
 	XXXAN(vc);
+	vc->magic = VBC_MAGIC;
 	vc->fd = -1;
-	Lck_Lock(&VBE_mtx);
-	VSC_C_main->n_vbc++;
-	Lck_Unlock(&VBE_mtx);
 	return (vc);
 }
 
 /*--------------------------------------------------------------------
  * It evaluates if a backend is healthy _for_a_specific_object_.
- * That means that it relies on sp->wrk->objcore->objhead. This is mainly for
+ * That means that it relies on sp->req->objcore->objhead. This is mainly for
  * saint-mode, but also takes backend->healthy into account. If
  * cache_param->saintmode_threshold is 0, this is basically just a test of
  * backend->healthy.
@@ -279,11 +274,11 @@ vbe_Healthy(const struct vdi_simple *vs, const struct sess *sp)
 	if (threshold == 0)
 		return (1);
 
-	if (sp->wrk->objcore == NULL)
+	if (sp->req->objcore == NULL)
 		return (1);
 
 	now = sp->t_req;
-	target = (uintptr_t)(sp->wrk->objcore->objhead);
+	target = (uintptr_t)(sp->req->objcore->objhead);
 
 	old = NULL;
 	retval = 1;
@@ -353,13 +348,15 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 			/* XXX locking of stats */
 			VSC_C_main->backend_reuse += 1;
 			WSP(sp, SLT_Backend, "%d %s %s",
-			    vc->fd, sp->director->vcl_name, bp->display_name);
+			    vc->fd, sp->req->director->vcl_name,
+			    bp->display_name);
 			vc->vdis = vs;
 			vc->recycled = 1;
 			return (vc);
 		}
 		VSC_C_main->backend_toolate++;
-		WSL(sp->wrk, SLT_BackendClose, vc->vsl_id, "%s", bp->display_name);
+		WSL(sp->wrk, SLT_BackendClose, vc->vsl_id, "%s",
+		   bp->display_name);
 
 		/* Checkpoint log to flush all info related to this connection
 		   before the OS reuses the FD */
@@ -394,7 +391,7 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 	vc->backend = bp;
 	VSC_C_main->backend_conn++;
 	WSP(sp, SLT_Backend, "%d %s %s",
-	    vc->fd, sp->director->vcl_name, bp->display_name);
+	    vc->fd, sp->req->director->vcl_name, bp->display_name);
 	vc->vdis = vs;
 	return (vc);
 }
@@ -516,4 +513,12 @@ VRT_init_dir_simple(struct cli *cli, struct director **bp, int idx,
 		VBP_Insert(vs->backend, vs->vrt->probe, vs->vrt->hosthdr);
 
 	bp[idx] = &vs->dir;
+}
+
+void
+VDI_Init(void)
+{
+
+	vbcpool = MPL_New("vbc", &cache_param->vbc_pool, &vbcps);
+	AN(vbcpool);
 }

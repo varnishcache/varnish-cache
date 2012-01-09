@@ -28,13 +28,14 @@
  *
  */
 
-#define VSC_CLASS          "Stat"
+#define VSC_CLASS		"Stat"
 
 #define VSC_TYPE_MAIN		""
-#define VSC_TYPE_SMA	"SMA"
-#define VSC_TYPE_SMF	"SMF"
-#define VSC_TYPE_VBE	"VBE"
-#define VSC_TYPE_LCK	"LCK"
+#define VSC_TYPE_SMA		"SMA"
+#define VSC_TYPE_SMF		"SMF"
+#define VSC_TYPE_VBE		"VBE"
+#define VSC_TYPE_LCK		"LCK"
+#define VSC_TYPE_MEMPOOL	"MEMPOOL"
 
 #define VSC_F(n, t, l, f, e, d)	t n;
 

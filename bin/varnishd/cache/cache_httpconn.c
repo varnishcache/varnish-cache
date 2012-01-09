@@ -50,6 +50,7 @@
  * Check if we have a complete HTTP request or response yet
  *
  * Return values:
+ *	-3  All whitespace so far
  *	 0  No, keep trying
  *	>0  Yes, it is this many bytes long.
  */
@@ -62,13 +63,13 @@ htc_header_complete(txt *t)
 	Tcheck(*t);
 	assert(*t->e == '\0');
 	/* Skip any leading white space */
-	for (p = t->b ; vct_issp(*p); p++)
+	for (p = t->b ; vct_islws(*p); p++)
 		continue;
 	if (p == t->e) {
 		/* All white space */
 		t->e = t->b;
 		*t->e = '\0';
-		return (0);
+		return (-3);
 	}
 	while (1) {
 		p = strchr(p, '\n');
@@ -133,6 +134,8 @@ HTC_Reinit(struct http_conn *htc)
 }
 
 /*--------------------------------------------------------------------
+ * Return -3 if it's all whitespace so far
+ * Return 0 if we need more text
  * Return 1 if we have a complete HTTP procol header
  */
 
@@ -143,9 +146,8 @@ HTC_Complete(struct http_conn *htc)
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	i = htc_header_complete(&htc->rxbuf);
-	assert(i >= 0);
-	if (i == 0)
-		return (0);
+	if (i <= 0)
+		return (i);
 	WS_ReleaseP(htc->ws, htc->rxbuf.e);
 	AZ(htc->pipeline.b);
 	AZ(htc->pipeline.e);
@@ -160,8 +162,9 @@ HTC_Complete(struct http_conn *htc)
 /*--------------------------------------------------------------------
  * Receive more HTTP protocol bytes
  * Returns:
+ *	-3 all whitespace so far
  *	-2 overflow
- *	-1 error
+ *	-1 error/EOF
  *	 0 more needed
  *	 1 got complete HTTP header
  */

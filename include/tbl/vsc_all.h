@@ -56,3 +56,9 @@ VSC_DO(VBE, vbe, VSC_TYPE_VBE)
 #include "tbl/vsc_fields.h"
 #undef VSC_DO_VBE
 VSC_DONE(VBE, vbe, VSC_TYPE_VBE)
+
+VSC_DO(MEMPOOL, mempool, VSC_TYPE_MEMPOOL)
+#define VSC_DO_MEMPOOL
+#include "tbl/vsc_fields.h"
+#undef VSC_DO_MEMPOOL
+VSC_DONE(MEMPOOL, mempool, VSC_TYPE_MEMPOOL)

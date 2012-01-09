@@ -241,7 +241,9 @@ usage(void)
 	    "The varnishd instance to get logs from");
 	fprintf(stderr, FMT, "-V", "Display the version number and exit");
 	fprintf(stderr, FMT, "-w delay",
-	    "Wait delay seconds between updates.  Default is 1 second. Can also be be used with -1, -x or -j for repeated output.");
+	    "Wait delay seconds between updates."
+	    "  Default is 1 second."
+	    " Can also be be used with -1, -x or -j for repeated output.");
 	fprintf(stderr, FMT, "-x",
 	    "Print statistics to stdout as XML.");
 	fprintf(stderr, FMT, "-j",

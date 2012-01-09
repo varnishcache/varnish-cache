@@ -94,16 +94,16 @@ VRT_r_##obj##_##hdr(const struct sess *sp)			\
 VRT_DO_HDR_l(obj, hdr, cont, http, fld)				\
 VRT_DO_HDR_r(obj, hdr, cont, http, fld, nullable)		\
 
-VRT_DO_HDR(req,		request,	sp,			http,	HTTP_HDR_REQ,		0)
-VRT_DO_HDR(req,		url,		sp,			http,	HTTP_HDR_URL,		0)
-VRT_DO_HDR(req,		proto,		sp,			http,	HTTP_HDR_PROTO,		0)
+VRT_DO_HDR(req,		request,	sp->req,		http,	HTTP_HDR_REQ,		0)
+VRT_DO_HDR(req,		url,		sp->req,		http,	HTTP_HDR_URL,		0)
+VRT_DO_HDR(req,		proto,		sp->req,		http,	HTTP_HDR_PROTO,		0)
 VRT_DO_HDR(bereq,	request,	sp->wrk->busyobj,	bereq,	HTTP_HDR_REQ,		0)
 VRT_DO_HDR(bereq,	url,		sp->wrk->busyobj,	bereq,	HTTP_HDR_URL,		0)
 VRT_DO_HDR(bereq,	proto,		sp->wrk->busyobj,	bereq,	HTTP_HDR_PROTO,		0)
-VRT_DO_HDR(obj,		proto,		sp->wrk->obj,		http,	HTTP_HDR_PROTO,		0)
-VRT_DO_HDR(obj,		response,	sp->wrk->obj,		http,	HTTP_HDR_RESPONSE,	0)
-VRT_DO_HDR(resp,	proto,		sp->wrk,		resp,	HTTP_HDR_PROTO,		0)
-VRT_DO_HDR(resp,	response,	sp->wrk,		resp,	HTTP_HDR_RESPONSE,	0)
+VRT_DO_HDR(obj,		proto,		sp->req->obj,		http,	HTTP_HDR_PROTO,		0)
+VRT_DO_HDR(obj,		response,	sp->req->obj,		http,	HTTP_HDR_RESPONSE,	0)
+VRT_DO_HDR(resp,	proto,		sp->req,		resp,	HTTP_HDR_PROTO,		0)
+VRT_DO_HDR(resp,	response,	sp->req,		resp,	HTTP_HDR_RESPONSE,	0)
 VRT_DO_HDR(beresp,	proto,		sp->wrk->busyobj,	beresp,	HTTP_HDR_PROTO,		0)
 VRT_DO_HDR(beresp,	response,	sp->wrk->busyobj,	beresp,	HTTP_HDR_RESPONSE,	0)
 VRT_DO_HDR_r(stale_obj,	proto,		sp->stale_obj,		http,	HTTP_HDR_PROTO,		1)
@@ -137,9 +137,9 @@ VRT_r_##obj##_status(const struct sess *sp)			\
 VRT_DO_STATUS_l(obj, cont, http)				\
 VRT_DO_STATUS_r(obj, cont, http, nullable)			\
 
-VRT_DO_STATUS(obj,		sp->wrk->obj,		http,	0)
+VRT_DO_STATUS(obj,		sp->req->obj,		http,	0)
 VRT_DO_STATUS(beresp,		sp->wrk->busyobj,	beresp,	0)
-VRT_DO_STATUS(resp,		sp->wrk,		resp,	0)
+VRT_DO_STATUS(resp,		sp->req,		resp,	0)
 VRT_DO_STATUS_r(stale_obj,	sp->stale_obj,		http,	1)
 
 /*--------------------------------------------------------------------*/
@@ -169,9 +169,9 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 	if (!vbc->backend)
 		return;
 	CHECK_OBJ_NOTNULL(vbc->backend, BACKEND_MAGIC);
-	if (!sp->wrk->objcore)
+	if (!sp->req->objcore)
 		return;
-	CHECK_OBJ_NOTNULL(sp->wrk->objcore, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->req->objcore, OBJCORE_MAGIC);
 
 	/* Setting a negative holdoff period is a mistake. Detecting this
 	 * when compiling the VCL would be better.
@@ -180,7 +180,7 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 
 	ALLOC_OBJ(new, TROUBLE_MAGIC);
 	AN(new);
-	new->target = (uintptr_t)(sp->wrk->objcore->objhead);
+	new->target = (uintptr_t)(sp->req->objcore->objhead);
 	new->timeout = sp->t_req + a;
 
 	/* Insert the new item on the list before the first item with a
@@ -229,26 +229,26 @@ VBERESP(beresp, unsigned, do_stream, busyobj->do_stream)
 
 /*--------------------------------------------------------------------*/
 
-const char * __match_proto__()
-VRT_r_client_identity(struct sess *sp)
+const char *
+VRT_r_client_identity(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	if (sp->client_identity != NULL)
-		return (sp->client_identity);
+	if (sp->req->client_identity != NULL)
+		return (sp->req->client_identity);
 	else
 		return (sp->addr);
 }
 
 void
-VRT_l_client_identity(struct sess *sp, const char *str, ...)
+VRT_l_client_identity(const struct sess *sp, const char *str, ...)
 {
 	va_list ap;
 	char *b;
 
 	va_start(ap, str);
-	b = VRT_String(sp->http->ws, NULL, str, ap);
+	b = VRT_String(sp->req->http->ws, NULL, str, ap);
 	va_end(ap);
-	sp->client_identity = b;
+	sp->req->client_identity = b;
 }
 
 /*--------------------------------------------------------------------*/
@@ -307,8 +307,8 @@ const char * __match_proto__()
 VRT_r_beresp_storage(struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	if (sp->wrk->storage_hint != NULL)
-		return (sp->wrk->storage_hint);
+	if (sp->req->storage_hint != NULL)
+		return (sp->req->storage_hint);
 	else
 		return (NULL);
 }
@@ -322,44 +322,44 @@ VRT_l_beresp_storage(struct sess *sp, const char *str, ...)
 	va_start(ap, str);
 	b = VRT_String(sp->wrk->ws, NULL, str, ap);
 	va_end(ap);
-	sp->wrk->storage_hint = b;
+	sp->req->storage_hint = b;
 }
 
 /*--------------------------------------------------------------------*/
 
 void
-VRT_l_req_backend(struct sess *sp, struct director *be)
+VRT_l_req_backend(const struct sess *sp, struct director *be)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	sp->director = be;
+	sp->req->director = be;
 }
 
-struct director * __match_proto__()
-VRT_r_req_backend(struct sess *sp)
+struct director *
+VRT_r_req_backend(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (sp->director);
+	return (sp->req->director);
 }
 
 /*--------------------------------------------------------------------*/
 
 void
-VRT_l_req_esi(struct sess *sp, unsigned process_esi)
+VRT_l_req_esi(const struct sess *sp, unsigned process_esi)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	/*
 	 * Only allow you to turn of esi in the main request
 	 * else everything gets confused
 	 */
-	if(sp->esi_level == 0)
-		sp->disable_esi = !process_esi;
+	if(sp->req->esi_level == 0)
+		sp->req->disable_esi = !process_esi;
 }
 
-unsigned __match_proto__()
-VRT_r_req_esi(struct sess *sp)
+unsigned
+VRT_r_req_esi(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (!sp->disable_esi);
+	return (!sp->req->disable_esi);
 }
 
 int
@@ -367,7 +367,7 @@ VRT_r_req_esi_level(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return(sp->esi_level);
+	return(sp->req->esi_level);
 }
 
 /*--------------------------------------------------------------------*/
@@ -388,7 +388,7 @@ VRT_r_req_restarts(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (sp->restarts);
+	return (sp->req->restarts);
 }
 
 /*--------------------------------------------------------------------
@@ -433,26 +433,26 @@ vrt_wsp_exp(const struct sess *sp, unsigned xid, const struct exp *e)
 	    sp->t_req, e->age + (sp->t_req - e->entered));
 }
 
-VRT_DO_EXP(req, sp, ttl, 0, 0, )
-VRT_DO_EXP(req, sp, grace, 0, 0, )
-VRT_DO_EXP(req, sp, keep, 0, 0, )
+VRT_DO_EXP(req, sp->req, ttl, 0, 0, )
+VRT_DO_EXP(req, sp->req, grace, 0, 0, )
+VRT_DO_EXP(req, sp->req, keep, 0, 0, )
 
-VRT_DO_EXP(obj, sp->wrk->obj, grace, 0, 0,
-   EXP_Rearm(sp->wrk->obj);
-   vrt_wsp_exp(sp, sp->wrk->obj->xid, &sp->wrk->obj->exp);)
-VRT_DO_EXP(obj, sp->wrk->obj, ttl, (sp->t_req - sp->wrk->obj->exp.entered), 0,
-   EXP_Rearm(sp->wrk->obj);
-   vrt_wsp_exp(sp, sp->wrk->obj->xid, &sp->wrk->obj->exp);)
-VRT_DO_EXP(obj, sp->wrk->obj, keep, 0, 0,
-   EXP_Rearm(sp->wrk->obj);
-   vrt_wsp_exp(sp, sp->wrk->obj->xid, &sp->wrk->obj->exp);)
+VRT_DO_EXP(obj, sp->req->obj, grace, 0, 0,
+   EXP_Rearm(sp->req->obj);
+   vrt_wsp_exp(sp, sp->req->obj->xid, &sp->req->obj->exp);)
+VRT_DO_EXP(obj, sp->req->obj, ttl, (sp->t_req - sp->req->obj->exp.entered), 0,
+   EXP_Rearm(sp->req->obj);
+   vrt_wsp_exp(sp, sp->req->obj->xid, &sp->req->obj->exp);)
+VRT_DO_EXP(obj, sp->req->obj, keep, 0, 0,
+   EXP_Rearm(sp->req->obj);
+   vrt_wsp_exp(sp, sp->req->obj->xid, &sp->req->obj->exp);)
 
 VRT_DO_EXP(beresp, sp->wrk->busyobj, grace, 0, 0,
-   vrt_wsp_exp(sp, sp->xid, &sp->wrk->busyobj->exp);)
+   vrt_wsp_exp(sp, sp->req->xid, &sp->wrk->busyobj->exp);)
 VRT_DO_EXP(beresp, sp->wrk->busyobj, ttl, 0, 0,
-   vrt_wsp_exp(sp, sp->xid, &sp->wrk->busyobj->exp);)
+   vrt_wsp_exp(sp, sp->req->xid, &sp->wrk->busyobj->exp);)
 VRT_DO_EXP(beresp, sp->wrk->busyobj, keep, 0, 0,
-   vrt_wsp_exp(sp, sp->xid, &sp->wrk->busyobj->exp);)
+   vrt_wsp_exp(sp, sp->req->xid, &sp->wrk->busyobj->exp);)
     
 VRT_DO_EXP_r(stale_obj, sp->stale_obj, grace, 0, 1)
 VRT_DO_EXP_r(stale_obj, sp->stale_obj, ttl, 0, 1)
@@ -469,29 +469,29 @@ VRT_r_req_xid(struct sess *sp)
 	int size;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	size = snprintf(NULL, 0, "%u", sp->xid) + 1;
-	AN(p = WS_Alloc(sp->http->ws, size));
-	assert(snprintf(p, size, "%u", sp->xid) < size);
+	size = snprintf(NULL, 0, "%u", sp->req->xid) + 1;
+	AN(p = WS_Alloc(sp->req->http->ws, size));
+	assert(snprintf(p, size, "%u", sp->req->xid) < size);
 	return (p);
 }
 
 /*--------------------------------------------------------------------*/
 
-#define REQ_BOOL(which)						\
+#define REQ_BOOL(hash_var)					\
 void __match_proto__()						\
-VRT_l_req_##which(struct sess *sp, unsigned val)		\
+VRT_l_req_##hash_var(struct sess *sp, unsigned val)		\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	sp->which = val ? 1 : 0;				\
+	sp->req->hash_var = val ? 1 : 0;				\
 }								\
 								\
 unsigned __match_proto__()					\
-VRT_r_req_##which(struct sess *sp)				\
+VRT_r_req_##hash_var(struct sess *sp)				\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	return(sp->which);					\
+	return(sp->req->hash_var);					\
 }
 
 REQ_BOOL(hash_ignore_busy)
@@ -569,8 +569,8 @@ VRT_r_obj_hits(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->obj, OBJECT_MAGIC);	/* XXX */
-	return (sp->wrk->obj->hits);
+	CHECK_OBJ_NOTNULL(sp->req->obj, OBJECT_MAGIC);	/* XXX */
+	return (sp->req->obj->hits);
 }
 
 int
@@ -591,8 +591,8 @@ VRT_r_obj_lastuse(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->obj, OBJECT_MAGIC);	/* XXX */
-	return (VTIM_real() - sp->wrk->obj->last_use);
+	CHECK_OBJ_NOTNULL(sp->req->obj, OBJECT_MAGIC);	/* XXX */
+	return (VTIM_real() - sp->req->obj->last_use);
 }
 
 double
@@ -612,8 +612,8 @@ unsigned
 VRT_r_req_backend_healthy(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
-	return (VDI_Healthy(sp->director, sp));
+	CHECK_OBJ_NOTNULL(sp->req->director, DIRECTOR_MAGIC);
+	return (VDI_Healthy(sp->req->director, sp));
 }
 
 unsigned

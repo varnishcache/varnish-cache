@@ -33,27 +33,13 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "common/common.h"
+#include "cache/cache.h"
 
-#include "waiter/cache_waiter.h"
-#include "vcli.h"
-#include "vcli_priv.h"
+#include "waiter/waiter.h"
 
-static const struct waiter * const vca_waiters[] = {
-    #if defined(HAVE_KQUEUE)
-	&waiter_kqueue,
-    #endif
-    #if defined(HAVE_EPOLL_CTL)
-	&waiter_epoll,
-    #endif
-    #if defined(HAVE_PORT_CREATE)
-	&waiter_ports,
-    #endif
-	&waiter_poll,
-	NULL,
-};
+#include "vtcp.h"
 
-struct waiter const * waiter;
+static void *waiter_priv;
 
 const char *
 WAIT_GetName(void)
@@ -66,48 +52,31 @@ WAIT_GetName(void)
 }
 
 void
-WAIT_tweak_waiter(struct cli *cli, const char *arg)
-{
-	int i;
-
-	ASSERT_MGT();
-
-	if (arg == NULL) {
-		if (waiter == NULL)
-			VCLI_Out(cli, "default");
-		else
-			VCLI_Out(cli, "%s", waiter->name);
-
-		VCLI_Out(cli, " (");
-		for (i = 0; vca_waiters[i] != NULL; i++)
-			VCLI_Out(cli, "%s%s", i == 0 ? "" : ", ",
-			    vca_waiters[i]->name);
-		VCLI_Out(cli, ")");
-		return;
-	}
-	if (!strcmp(arg, "default")) {
-		waiter = NULL;
-		return;
-	}
-	for (i = 0; vca_waiters[i]; i++) {
-		if (!strcmp(arg, vca_waiters[i]->name)) {
-			waiter = vca_waiters[i];
-			return;
-		}
-	}
-	VCLI_Out(cli, "Unknown waiter");
-	VCLI_SetResult(cli, CLIS_PARAM);
-}
-
-void
 WAIT_Init(void)
 {
-
-	if (waiter == NULL)
-		waiter = vca_waiters[0];
 
 	AN(waiter);
 	AN(waiter->name);
 	AN(waiter->init);
 	AN(waiter->pass);
+	waiter_priv = waiter->init();
+}
+
+void
+WAIT_Enter(struct sess *sp)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	AZ(sp->req);
+	assert(sp->fd >= 0);
+	sp->wrk = NULL;
+
+	/*
+	* Set nonblocking in the worker-thread, before passing to the
+	* acceptor thread, to reduce syscall density of the latter.
+	*/
+	if (VTCP_nonblocking(sp->fd))
+		SES_Close(sp, "remote closed");
+	waiter->pass(waiter_priv, sp);
 }

@@ -44,7 +44,7 @@
 
 #include "cache/cache.h"
 
-#include "waiter/cache_waiter.h"
+#include "waiter/waiter.h"
 #include "vtim.h"
 
 #define NKEV	100
@@ -86,30 +86,40 @@ vwk_kq_sess(struct vwk *vwk, struct sess *sp, short arm)
 		vwk_kq_flush(vwk);
 }
 
+/*--------------------------------------------------------------------*/
+
 static void
-vwk_kev(struct vwk *vwk, const struct kevent *kp)
+vwk_pipe_ev(struct vwk *vwk, const struct kevent *kp)
 {
 	int i, j;
-	struct sess *sp;
 	struct sess *ss[NKEV];
 
 	AN(kp->udata);
-	if (kp->udata == vwk->pipes) {
-		j = 0;
-		i = read(vwk->pipes[0], ss, sizeof ss);
-		if (i == -1 && errno == EAGAIN)
-			return;
-		while (i >= sizeof ss[0]) {
-			CHECK_OBJ_NOTNULL(ss[j], SESS_MAGIC);
-			assert(ss[j]->fd >= 0);
-			VTAILQ_INSERT_TAIL(&vwk->sesshead, ss[j], list);
-			vwk_kq_sess(vwk, ss[j], EV_ADD | EV_ONESHOT);
-			j++;
-			i -= sizeof ss[0];
-		}
-		assert(i == 0);
+	assert(kp->udata == vwk->pipes);
+	j = 0;
+	i = read(vwk->pipes[0], ss, sizeof ss);
+	if (i == -1 && errno == EAGAIN)
 		return;
+	while (i >= sizeof ss[0]) {
+		CHECK_OBJ_NOTNULL(ss[j], SESS_MAGIC);
+		assert(ss[j]->fd >= 0);
+		VTAILQ_INSERT_TAIL(&vwk->sesshead, ss[j], list);
+		vwk_kq_sess(vwk, ss[j], EV_ADD | EV_ONESHOT);
+		j++;
+		i -= sizeof ss[0];
 	}
+	assert(i == 0);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+vwk_sess_ev(struct vwk *vwk, const struct kevent *kp, double now)
+{
+	struct sess *sp;
+
+	AN(kp->udata);
+	assert(kp->udata != vwk->pipes);
 	CAST_OBJ_NOTNULL(sp, kp->udata, SESS_MAGIC);
 	DSL(0x04, SLT_Debug, sp->vsl_id, "KQ: sp %p kev data %lu flags 0x%x%s",
 	    sp, (unsigned long)kp->data, kp->flags,
@@ -118,20 +128,16 @@ vwk_kev(struct vwk *vwk, const struct kevent *kp)
 	assert((sp->vsl_id & VSL_IDENTMASK) == kp->ident);
 	assert((sp->vsl_id & VSL_IDENTMASK) == sp->fd);
 	if (kp->data > 0) {
-		i = HTC_Rx(sp->htc);
-		if (i == 0) {
-			vwk_kq_sess(vwk, sp, EV_ADD | EV_ONESHOT);
-			return;	/* more needed */
-		}
 		VTAILQ_REMOVE(&vwk->sesshead, sp, list);
-		SES_Handle(sp, i);
+		SES_Handle(sp, now);
 		return;
 	} else if (kp->flags & EV_EOF) {
 		VTAILQ_REMOVE(&vwk->sesshead, sp, list);
-		SES_Delete(sp, "EOF");
+		SES_Delete(sp, "EOF", now);
 		return;
 	} else {
-		VSL(SLT_Debug, sp->vsl_id, "KQ: sp %p kev data %lu flags 0x%x%s",
+		VSL(SLT_Debug, sp->vsl_id,
+		    "KQ: sp %p kev data %lu flags 0x%x%s",
 		    sp, (unsigned long)kp->data, kp->flags,
 		    (kp->flags & EV_EOF) ? " EOF" : "");
 	}
@@ -145,7 +151,7 @@ vwk_thread(void *priv)
 	struct vwk *vwk;
 	struct kevent ke[NKEV], *kp;
 	int j, n, dotimer;
-	double deadline;
+	double now, deadline;
 	struct sess *sp;
 
 	CAST_OBJ_NOTNULL(vwk, priv, VWK_MAGIC);
@@ -165,15 +171,19 @@ vwk_thread(void *priv)
 	while (1) {
 		dotimer = 0;
 		n = kevent(vwk->kq, vwk->ki, vwk->nki, ke, NKEV, NULL);
+		now = VTIM_real();
 		assert(n >= 1 && n <= NKEV);
 		vwk->nki = 0;
 		for (kp = ke, j = 0; j < n; j++, kp++) {
 			if (kp->filter == EVFILT_TIMER) {
 				dotimer = 1;
-				continue;
+			} else if (kp->filter == EVFILT_READ &&
+			    kp->udata == vwk->pipes) {
+				vwk_pipe_ev(vwk, kp);
+			} else {
+				assert(kp->filter == EVFILT_READ);
+				vwk_sess_ev(vwk, kp, now);
 			}
-			assert(kp->filter == EVFILT_READ);
-			vwk_kev(vwk, kp);
 		}
 		if (!dotimer)
 			continue;
@@ -185,16 +195,16 @@ vwk_thread(void *priv)
 		 * would not know we meant "the old fd of this number".
 		 */
 		vwk_kq_flush(vwk);
-		deadline = VTIM_real() - cache_param->sess_timeout;
+		deadline = now - cache_param->timeout_idle;
 		for (;;) {
 			sp = VTAILQ_FIRST(&vwk->sesshead);
 			if (sp == NULL)
 				break;
-			if (sp->t_open > deadline)
+			if (sp->t_idle > deadline)
 				break;
 			VTAILQ_REMOVE(&vwk->sesshead, sp, list);
 			// XXX: not yet (void)VTCP_linger(sp->fd, 0);
-			SES_Delete(sp, "timeout");
+			SES_Delete(sp, "timeout", now);
 		}
 	}
 }

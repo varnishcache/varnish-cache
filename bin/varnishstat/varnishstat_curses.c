@@ -145,7 +145,6 @@ do_curses(struct VSM_data *vd, const struct VSC_C_main *VSC_C_main,
 	time_t rt;
 	int ch, line;
 	struct pt *pt;
-	double act, lact;
 
 	(void)initscr();
 	AC(raw());
@@ -167,16 +166,12 @@ do_curses(struct VSM_data *vd, const struct VSC_C_main *VSC_C_main,
 		lt = 0;
 		lhit = 0;
 		lmiss = 0;
-		lact = 0;
 
 		while (1) {
 			/*
 			 * Break to outher loop if we need to re-read file.
 			 * Only check if it looks like nothing is happening.
 			 */
-			act = VSC_C_main->cache_hit + VSC_C_main->cache_miss + 1;
-			lact = act;
-
 			AZ(gettimeofday(&tv, NULL));
 			tt = tv.tv_usec * 1e-6 + tv.tv_sec;
 			lt = tt - lt;

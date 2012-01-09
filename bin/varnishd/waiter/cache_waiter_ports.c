@@ -15,7 +15,7 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
@@ -42,7 +42,7 @@
 
 #include "cache/cache.h"
 
-#include "waiter/cache_waiter.h"
+#include "waiter/waiter.h"
 #include "vtim.h"
 
 #define MAX_EVENTS 256
@@ -72,7 +72,7 @@ vws_del(struct vws *vws, int fd)
 }
 
 static inline void
-vws_port_ev(struct vws *vws, port_event_t *ev) {
+vws_port_ev(struct vws *vws, port_event_t *ev, double now) {
 	struct sess *sp;
 	if(ev->portev_source == PORT_SOURCE_USER) {
 		CAST_OBJ_NOTNULL(sp, ev->portev_user, SESS_MAGIC);
@@ -87,14 +87,7 @@ vws_port_ev(struct vws *vws, port_event_t *ev) {
 		if(ev->portev_events & POLLERR) {
 			vws_del(vws, sp->fd);
 			VTAILQ_REMOVE(&vws->sesshead, sp, list);
-			SES_Delete(sp, "EOF");
-			return;
-		}
-		i = HTC_Rx(sp->htc);
-
-		if (i == 0) {
-			/* incomplete header, wait for more data */
-			vws_add(vws, sp->fd, sp);
+			SES_Delete(sp, "EOF", now);
 			return;
 		}
 
@@ -108,13 +101,14 @@ vws_port_ev(struct vws *vws, port_event_t *ev) {
 		 * port_dissociate after port_getn(), but in fact,
 		 * port_dissociate should be used
 		 *
-		 * Ref: http://opensolaris.org/jive/thread.jspa?threadID=129476&tstart=0
+		 * Ref: http://opensolaris.org/jive/thread.jspa?\
+		 *          threadID=129476&tstart=0
 		 */
 		vws_del(vws, sp->fd);
 		VTAILQ_REMOVE(&vws->sesshead, sp, list);
 
 		/* SES_Handle will also handle errors */
-		SES_Handle(sp, i);
+		SES_Handle(sp, now);
 	}
 	return;
 }
@@ -145,7 +139,7 @@ vws_thread(void *priv)
 	 * - additional tolerance for handling session timeouts
 	 *
 	 */
-	static struct timespec min_ts = {0L,    100L /*ms*/  * 1000L /*us*/  * 1000L /*ns*/};
+	static struct timespec min_ts = {0L, 100L * 1000L * 1000L /*ns*/};
 	static double          min_t  = 0.1; /* 100    ms*/
 	static struct timespec max_ts = {1L, 0L};		/* 1 second */
 	static double	       max_t  = 1.0;			/* 1 second */
@@ -177,7 +171,8 @@ vws_thread(void *priv)
 		/*
 		 * see disucssion in
 		 * - https://issues.apache.org/bugzilla/show_bug.cgi?id=47645
-		 * - http://mail.opensolaris.org/pipermail/networking-discuss/2009-August/011979.html
+		 * - http://mail.opensolaris.org/pipermail/\
+		 *       networking-discuss/2009-August/011979.html
 		 *
 		 * comment from apr/poll/unix/port.c :
 		 *
@@ -187,16 +182,16 @@ vws_thread(void *priv)
 		 */
 
 		ret = port_getn(vws->dport, ev, MAX_EVENTS, &nevents, timeout);
+		now = VTIM_real();
 
 		if (ret < 0)
 			assert((errno == EINTR) || (errno == ETIME));
 
 		for (ei = 0; ei < nevents; ei++)
-			vws_port_ev(vws, ev + ei);
+			vws_port_ev(vws, ev + ei, now);
 
 		/* check for timeouts */
-		now = VTIM_real();
-		deadline = now - cache_param->sess_timeout;
+		deadline = now - cache_param->timeout_idle;
 
 		/*
 		 * This loop assumes that the oldest sessions are always at the
@@ -209,14 +204,14 @@ vws_thread(void *priv)
 			sp = VTAILQ_FIRST(&vws->sesshead);
 			if (sp == NULL)
 				break;
-			if (sp->t_open > deadline) {
+			if (sp->t_idle > deadline) {
 				break;
 			}
 			VTAILQ_REMOVE(&vws->sesshead, sp, list);
 			if(sp->fd != -1) {
 				vws_del(vws, sp->fd);
 			}
-			SES_Delete(sp, "timeout");
+			SES_Delete(sp, "timeout", now);
 		}
 
 		/*
@@ -224,9 +219,13 @@ vws_thread(void *priv)
 		 */
 
 		if (sp) {
-			double tmo = (sp->t_open + cache_param->sess_timeout) - now;
+			double tmo =
+			    (sp->t_open + cache_param->timeout_idle) - now;
 
-			/* we should have removed all sps whose timeout has passed */
+			/*
+			 * we should have removed all sps whose timeout
+			 * has passed
+			 */
 			assert(tmo > 0.0);
 
 			if (tmo < min_t) {

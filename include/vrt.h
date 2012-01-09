@@ -156,14 +156,14 @@ void VRT_purge(const struct sess *sp, double ttl, double grace);
 
 void VRT_count(const struct sess *, unsigned);
 int VRT_rewrite(const char *, const char *);
-void VRT_error(struct sess *, unsigned, const char *);
+void VRT_error(const struct sess *, unsigned, const char *);
 int VRT_switch_config(const char *);
 
 enum gethdr_e { HDR_REQ, HDR_RESP, HDR_OBJ, HDR_STALE_OBJ, HDR_BEREQ, HDR_BERESP };
 char *VRT_GetHdr(const struct sess *, enum gethdr_e where, const char *);
 void VRT_SetHdr(const struct sess *, enum gethdr_e where, const char *,
     const char *, ...);
-void VRT_handling(struct sess *sp, unsigned hand);
+void VRT_handling(const struct sess *sp, unsigned hand);
 
 void VRT_hashdata(const struct sess *sp, const char *str, ...);
 
@@ -172,7 +172,7 @@ int VRT_strcmp(const char *s1, const char *s2);
 void VRT_memmove(void *dst, const void *src, unsigned len);
 
 void VRT_ESI(const struct sess *sp);
-void VRT_Rollback(struct sess *sp);
+void VRT_Rollback(const struct sess *sp);
 
 /* Synthetic pages */
 void VRT_synth_page(const struct sess *sp, unsigned flags, const char *, ...);

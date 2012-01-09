@@ -256,11 +256,11 @@ STV_MkObject(struct worker *wrk, void *ptr, unsigned ltot,
 	VTAILQ_INIT(&o->store);
 	wrk->stats.n_object++;
 
-	if (wrk->objcore != NULL) {
-		CHECK_OBJ_NOTNULL(wrk->objcore, OBJCORE_MAGIC);
+	if (wrk->sp->req->objcore != NULL) {
+		CHECK_OBJ_NOTNULL(wrk->sp->req->objcore, OBJCORE_MAGIC);
 
-		o->objcore = wrk->objcore;
-		wrk->objcore = NULL;     /* refcnt follows pointer. */
+		o->objcore = wrk->sp->req->objcore;
+		wrk->sp->req->objcore = NULL;     /* refcnt follows pointer. */
 		BAN_NewObjCore(o->objcore);
 
 		o->objcore->methods = &default_oc_methods;

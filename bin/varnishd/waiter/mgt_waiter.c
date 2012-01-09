@@ -28,32 +28,63 @@
  *
  */
 
-struct parspec;
+#include "config.h"
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
 
-typedef void tweak_t(struct cli *, const struct parspec *, const char *arg);
+#include "common/common.h"
 
-struct parspec {
-	const char	*name;
-	tweak_t		*func;
-	volatile void	*priv;
-	double		min;
-	double		max;
-	const char	*descr;
-	int		 flags;
-#define DELAYED_EFFECT	(1<<0)
-#define EXPERIMENTAL	(1<<1)
-#define MUST_RESTART	(1<<2)
-#define MUST_RELOAD	(1<<3)
-#define WIZARD		(1<<4)
-	const char	*def;
-	const char	*units;
+#include "waiter/waiter.h"
+#include "vcli.h"
+#include "vcli_priv.h"
+
+static const struct waiter *const vca_waiters[] = {
+    #if defined(HAVE_KQUEUE)
+	&waiter_kqueue,
+    #endif
+    #if defined(HAVE_EPOLL_CTL)
+	&waiter_epoll,
+    #endif
+    #if defined(HAVE_PORT_CREATE)
+	&waiter_ports,
+    #endif
+	&waiter_poll,
+	NULL,
 };
 
-int tweak_generic_uint(struct cli *cli,
-    volatile unsigned *dest, const char *arg, unsigned min, unsigned max);
-void tweak_uint(struct cli *cli, const struct parspec *par, const char *arg);
-void tweak_timeout(struct cli *cli,
-    const struct parspec *par, const char *arg);
+struct waiter const *waiter;
 
-/* mgt_pool.c */
-extern const struct parspec WRK_parspec[];
+void
+WAIT_tweak_waiter(struct cli *cli, const char *arg)
+{
+	int i;
+
+	ASSERT_MGT();
+
+	if (arg == NULL) {
+		if (waiter == NULL)
+			VCLI_Out(cli, "default");
+		else
+			VCLI_Out(cli, "%s", waiter->name);
+
+		VCLI_Out(cli, " (");
+		for (i = 0; vca_waiters[i] != NULL; i++)
+			VCLI_Out(cli, "%s%s", i == 0 ? "" : ", ",
+			    vca_waiters[i]->name);
+		VCLI_Out(cli, ")");
+		return;
+	}
+	if (!strcmp(arg, "default")) {
+		waiter = vca_waiters[0];
+		return;
+	}
+	for (i = 0; vca_waiters[i]; i++) {
+		if (!strcmp(arg, vca_waiters[i]->name)) {
+			waiter = vca_waiters[i];
+			return;
+		}
+	}
+	VCLI_Out(cli, "Unknown waiter");
+	VCLI_SetResult(cli, CLIS_PARAM);
+}

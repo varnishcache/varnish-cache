@@ -98,6 +98,17 @@ Lck__Unlock(struct lock *lck, const char *p, const char *f, int l)
 	assert(pthread_equal(ilck->owner, pthread_self()));
 	AN(ilck->held);
 	ilck->held = 0;
+	/*
+	 * #ifdef POSIX_STUPIDITY:
+	 * The pthread_t type has no defined assignment or comparison
+	 * operators, this is why pthread_equal() is necessary.
+	 * Unfortunately POSIX forgot to define a NULL value for pthread_t
+	 * so you can never unset a pthread_t variable.
+	 * We hack it and fill it with zero bits, hoping for sane
+	 * implementations of pthread.
+	 * #endif
+	 */ 
+	memset(&ilck->owner, 0, sizeof ilck->owner);
 	AZ(pthread_mutex_unlock(&ilck->mtx));
 	if (cache_param->diag_bitmap & 0x8)
 		VSL(SLT_Debug, 0, "MTX_UNLOCK(%s,%s,%d,%s)", p, f, l, ilck->w);
@@ -118,6 +129,7 @@ Lck__Trylock(struct lock *lck, const char *p, const char *f, int l)
 	if (r == 0) {
 		AZ(ilck->held);
 		ilck->held = 1;
+		ilck->stat->locks++;
 		ilck->owner = pthread_self();
 	}
 	return (r);

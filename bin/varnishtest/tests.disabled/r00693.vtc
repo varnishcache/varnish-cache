@@ -17,7 +17,7 @@ server s1 {
 
 } -start
 
-varnish v1 -arg "-p sess_workspace=1024" -vcl+backend {
+varnish v1 -arg "-p workspace_client=3072" -vcl+backend {
 
 	sub vcl_recv {
 		set req.http.foo = 
@@ -35,24 +35,7 @@ varnish v1 -arg "-p sess_workspace=1024" -vcl+backend {
 			"0123456789abcdef" + "0123456789abcdef" +
 			"0123456789abcdef" + "0123456789abcdef" +
 			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" + "0123456789abcdef" +
-			"0123456789abcdef" +
-			"0123456";
+			"0123456789abcde";
 		set req.http.baz = "BAZ";
 		return (pass);
 	}

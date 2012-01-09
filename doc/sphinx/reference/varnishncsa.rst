@@ -15,7 +15,7 @@ Display Varnish logs in Apache / NCSA combined log format
 SYNOPSIS
 ========
 
-varnishncsa [-a] [-b] [-C] [-c] [-D] [-d] [-f] [-F format] [-I regex]
+varnishncsa [-a] [-C] [-D] [-d] [-f] [-F format] [-I regex]
 [-i tag] [-n varnish_name] [-m tag:regex ...] [-P file] [-r file] [-V] [-w file] 
 [-X regex] [-x tag]
 
@@ -30,15 +30,7 @@ The following options are available:
 
 -a          When writing to a file, append to it rather than overwrite it.
 
--b          Include log entries which result from communication with a 
-	    backend server.  If neither -b nor -c is
-	    specified, varnishncsa acts as if they both were.
-
 -C          Ignore case when matching regular expressions.
-
--c          Include log entries which result from communication 
-	    with a client.  If neither -b nor -c is specified, 
-	    varnishncsa acts as if they both were.
 
 -D          Daemonize.
 
@@ -120,7 +112,7 @@ The following options are available:
 		     cache hit, miss, pass, pipe or error.
 	
 		   VCL_Log:key
-		     Output value set by std.log("key=value") in VCL.
+		     Output value set by std.log("key:value") in VCL.
 		     
 
 -m tag:regex only list records where tag matches regex. Multiple

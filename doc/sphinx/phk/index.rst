@@ -8,6 +8,8 @@ You may or may not want to know what Poul-Henning think.
 
 .. toctree::
 
+	varnish_does_not_hash.rst
+	thetoolsweworkwith.rst
 	three-zero.rst
 	ssl.rst
 	gzip.rst

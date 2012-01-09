@@ -50,7 +50,7 @@ cookies named COOKIE1 and COOKIE2 and you can marvel at it::
 
   sub vcl_recv {
     if (req.http.Cookie) {
-      set req.http.Cookie = ";" req.http.Cookie;
+      set req.http.Cookie = ";" + req.http.Cookie;
       set req.http.Cookie = regsuball(req.http.Cookie, "; +", ";");
       set req.http.Cookie = regsuball(req.http.Cookie, ";(COOKIE1|COOKIE2)=", "; \1=");
       set req.http.Cookie = regsuball(req.http.Cookie, ";[^ ][^;]*", "");

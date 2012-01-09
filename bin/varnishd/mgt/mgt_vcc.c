@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #include "mgt/mgt.h"
 
@@ -271,6 +272,14 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 
 	if (!i)
 		i = VSUB_run(sb, run_dlopen, of, "dlopen", 10);
+
+	/* Ensure the file is readable to the unprivileged user */
+	if (!i) {
+		i = chmod(of, 0755);
+		if (i)
+			VSB_printf(sb, "Failed to set permissions on %s: %s",
+				   of, strerror(errno));
+	}
 
 	if (i) {
 		(void)unlink(of);

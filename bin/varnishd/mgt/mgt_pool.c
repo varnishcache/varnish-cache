@@ -59,7 +59,7 @@ tweak_thread_pool_min(struct cli *cli, const struct parspec *par,
     const char *arg)
 {
 
-	tweak_generic_uint(cli, &mgt_param.wthread_min, arg,
+	(void)tweak_generic_uint(cli, &mgt_param.wthread_min, arg,
 	    (unsigned)par->min, mgt_param.wthread_max);
 }
 
@@ -86,7 +86,7 @@ tweak_stack_size(struct cli *cli, const struct parspec *par,
 		arg = buf;
 	}
 
-	tweak_generic_uint(cli, &mgt_param.wthread_stacksize, arg,
+	(void)tweak_generic_uint(cli, &mgt_param.wthread_stacksize, arg,
 	    low, (uint)par->max);
 }
 
@@ -98,7 +98,7 @@ tweak_thread_pool_max(struct cli *cli, const struct parspec *par,
 {
 
 	(void)par;
-	tweak_generic_uint(cli, &mgt_param.wthread_max, arg,
+	(void)tweak_generic_uint(cli, &mgt_param.wthread_max, arg,
 	    mgt_param.wthread_min, UINT_MAX);
 }
 
@@ -135,7 +135,8 @@ const struct parspec WRK_parspec[] = {
 		"Minimum is 2 threads.",
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"5", "threads" },
-	{ "thread_pool_timeout", tweak_timeout, &mgt_param.wthread_timeout, 1, 0,
+	{ "thread_pool_timeout", tweak_timeout, &mgt_param.wthread_timeout,
+		1, 0,
 		"Thread idle threshold.\n"
 		"\n"
 		"Threads in excess of thread_pool_min, which have been idle "

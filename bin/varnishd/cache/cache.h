@@ -99,10 +99,12 @@ struct cli;
 struct cli_proto;
 struct director;
 struct iovec;
+struct mempool;
 struct objcore;
 struct object;
 struct objhead;
 struct pool;
+struct poolparam;
 struct sess;
 struct sesspool;
 struct vbc;
@@ -125,7 +127,7 @@ typedef struct {
 /*--------------------------------------------------------------------*/
 
 enum step {
-#define STEP(l, u)	STP_##u,
+#define STEP(l, u, arg)	STP_##u,
 #include "tbl/steps.h"
 #undef STEP
 };
@@ -196,7 +198,6 @@ struct http_conn {
 /*--------------------------------------------------------------------*/
 
 struct acct {
-	double			first;
 #define ACCT(foo)	uint64_t	foo;
 #include "tbl/acct_fields.h"
 #undef ACCT
@@ -287,6 +288,14 @@ struct wrk_accept {
 
 /*--------------------------------------------------------------------*/
 
+enum e_do_what {
+	pool_do_inval = 0,
+	pool_do_sess,
+	pool_do_accept,
+	pool_do_nothing,
+	pool_do_die,
+};
+
 struct worker {
 	unsigned		magic;
 #define WORKER_MAGIC		0x6391adcf
@@ -299,6 +308,8 @@ struct worker {
 	struct dstat		stats;
 
 	/* Pool stuff */
+	enum e_do_what		do_what;
+
 	double			lastused;
 
 	struct wrw		wrw;
@@ -313,28 +324,12 @@ struct worker {
 	uint32_t		*wlb, *wlp, *wle;
 	unsigned		wlr;
 
-	/* Lookup stuff */
-	struct SHA256Context	*sha256ctx;
-
 	struct ws		ws[1];
 
-
-	struct http		*resp;
-
-	struct object		*obj;
-	struct objcore		*objcore;
 	struct busyobj		*busyobj;
-
-	/* This is only here so VRT can find it */
-	const char		*storage_hint;
 
 	/* Stream state */
 	struct stream_ctx	*sctx;
-
-	/* ESI delivery stuff */
-	int			gzip_resp;
-	ssize_t			l_crc;
-	uint32_t		crc;
 
 	/* Timeouts */
 	double			connect_timeout;
@@ -564,23 +559,100 @@ struct object {
 
 };
 
-/* -------------------------------------------------------------------*/
+/*--------------------------------------------------------------------*/
+
+struct req {
+	unsigned		magic;
+#define REQ_MAGIC		0x2751aaa1
+
+	unsigned		xid;
+	int			restarts;
+	int			esi_level;
+	int			disable_esi;
+	uint8_t			hash_ignore_busy;
+	uint8_t			hash_always_miss;
+
+	/* The busy objhead we sleep on */
+	struct objhead		*hash_objhead;
+
+	/* Built Vary string */
+	uint8_t			*vary_b;
+	uint8_t			*vary_l;
+	uint8_t			*vary_e;
+
+	unsigned char		digest[DIGEST_LEN];
+
+	const char		*doclose;
+	struct exp		exp;
+	unsigned		cur_method;
+	unsigned		handling;
+	unsigned char		sendbody;
+	unsigned char		wantbody;
+
+	uint16_t		err_code;
+	const char		*err_reason;
+
+	struct director		*director;
+	struct VCL_conf		*vcl;
+
+	uint64_t		req_bodybytes;
+	char			*ws_req;	/* WS above request data */
+
+	double			t_resp;
+
+	struct http_conn	htc[1];
+	char			*client_identity;
+
+	/* HTTP request */
+	struct http		*http;
+	struct http		*http0;
+	struct http		*resp;
+
+	struct ws		ws[1];
+	struct object		*obj;
+	struct objcore		*objcore;
+	/* Lookup stuff */
+	struct SHA256Context	*sha256ctx;
+	/* This is only here so VRT can find it */
+	const char		*storage_hint;
+
+	/* ESI delivery stuff */
+	int			gzip_resp;
+	ssize_t			l_crc;
+	uint32_t		crc;
+
+
+};
+
+/*--------------------------------------------------------------------
+ * Struct sess is a high memory-load structure because sessions typically
+ * hang around the waiter for relatively long time.
+ *
+ * The size goal for struct sess + struct memitem is <512 bytes
+ *
+ * Getting down to the next relevant size (<256 bytes because of how malloc
+ * works, is not realistic without a lot of code changes.
+ */
 
 struct sess {
 	unsigned		magic;
 #define SESS_MAGIC		0x2c2f9c5a
+
+	enum step		step;
 	int			fd;
 	unsigned		vsl_id;
-	unsigned		xid;
 
-	int			restarts;
-	int			esi_level;
-	int			disable_esi;
+	struct object		*stale_obj;
+	
+	/* Cross references ------------------------------------------*/
 
-	uint8_t			hash_ignore_busy;
-	uint8_t			hash_always_miss;
-
+	struct sesspool		*sesspool;
 	struct worker		*wrk;
+	struct req		*req;
+
+	VTAILQ_ENTRY(sess)	list;
+
+	/* Session related fields ------------------------------------*/
 
 	socklen_t		sockaddrlen;
 	socklen_t		mysockaddrlen;
@@ -589,60 +661,15 @@ struct sess {
 	struct listen_sock	*mylsock;
 
 	/* formatted ascii client address */
-	char			*addr;
-	char			*port;
-	char			*client_identity;
+	char			addr[ADDR_BUFSIZE];
+	char			port[PORT_BUFSIZE];
 
-	/* HTTP request */
-	const char		*doclose;
-	struct http		*http;
-	struct http		*http0;
-
-	struct ws		ws[1];
-	char			*ws_ses;	/* WS above session data */
-	char			*ws_req;	/* WS above request data */
-
-	unsigned char		digest[DIGEST_LEN];
-
-	/* Built Vary string */
-	uint8_t			*vary_b;
-	uint8_t			*vary_l;
-	uint8_t			*vary_e;
-
-	struct http_conn	htc[1];
+	struct acct		acct_ses;
 
 	/* Timestamps, all on TIM_real() timescale */
-	double			t_open;
+	double			t_open;		/* fd accepted */
+	double			t_idle;		/* fd accepted or resp sent */
 	double			t_req;
-	double			t_resp;
-	double			t_end;
-
-	/* Acceptable grace period */
-	struct exp		exp;
-
-	enum step		step;
-	unsigned		cur_method;
-	unsigned		handling;
-	unsigned char		sendbody;
-	unsigned char		wantbody;
-	uint16_t		err_code;
-	const char		*err_reason;
-
-	VTAILQ_ENTRY(sess)	list;
-
-	struct director		*director;
-	struct VCL_conf		*vcl;
-
-	struct object		*stale_obj;
-	/* The busy objhead we sleep on */
-	struct objhead		*hash_objhead;
-
-	/* Various internal stuff */
-	struct sessmem		*mem;
-
-	VTAILQ_ENTRY(sess)	poollist;
-	uint64_t		req_bodybytes;
-	struct acct		acct_ses;
 
 #if defined(HAVE_EPOLL_CTL)
 	struct epoll_event ev;
@@ -652,7 +679,6 @@ struct sess {
 /* Prototypes etc ----------------------------------------------------*/
 
 /* cache_acceptor.c */
-void VCA_Prep(struct sess *sp);
 void VCA_Init(void);
 void VCA_Shutdown(void);
 int VCA_Accept(struct listen_sock *ls, struct wrk_accept *wa);
@@ -668,6 +694,7 @@ void VDI_CloseFd(struct worker *wrk, struct vbc **vbp);
 void VDI_RecycleFd(struct worker *wrk, struct vbc **vbp);
 void VDI_AddHostHeader(struct worker *wrk, const struct vbc *vbc);
 void VBE_Poll(void);
+void VDI_Init(void);
 
 /* cache_backend_cfg.c */
 void VBE_InitCfg(void);
@@ -736,7 +763,7 @@ int FetchError(struct worker *w, const char *error);
 int FetchError2(struct worker *w, const char *error, const char *more);
 int FetchHdr(struct sess *sp, int need_host_hdr);
 int FetchBody(struct worker *w, struct object *obj);
-int FetchReqBody(struct sess *sp);
+int FetchReqBody(const struct sess *sp);
 void Fetch_Init(void);
 
 /* cache_gzip.c */
@@ -806,7 +833,7 @@ double http_GetHdrQ(const struct http *hp, const char *hdr, const char *field);
 uint16_t http_GetStatus(const struct http *hp);
 const char *http_GetReq(const struct http *hp);
 int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
-uint16_t http_DissectRequest(struct sess *sp);
+uint16_t http_DissectRequest(const struct sess *sp);
 uint16_t http_DissectResponse(struct worker *w, const struct http_conn *htc,
     struct http *sp);
 const char *http_DoConnection(const struct http *hp);
@@ -857,6 +884,15 @@ int Lck_CondWait(pthread_cond_t *cond, struct lock *lck, struct timespec *ts);
 #include "tbl/locks.h"
 #undef LOCK
 
+/* cache_mempool.c */
+void MPL_AssertSane(void *item);
+struct mempool * MPL_New(const char *name, volatile struct poolparam *pp,
+    volatile unsigned *cur_size);
+void MPL_Destroy(struct mempool **mpp);
+void *MPL_Get(struct mempool *mpl, unsigned *size);
+void MPL_Free(struct mempool *mpl, void *item);
+
+
 /* cache_panic.c */
 void PAN_Init(void);
 
@@ -866,7 +902,6 @@ void PipeSession(struct sess *sp);
 /* cache_pool.c */
 void Pool_Init(void);
 void Pool_Work_Thread(void *priv, struct worker *w);
-void Pool_Wait(struct sess *sp);
 int Pool_Schedule(struct pool *pp, struct sess *sp);
 
 #define WRW_IsReleased(w)	((w)->wrw.wfd == NULL)
@@ -883,15 +918,17 @@ void WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len);
 #endif  /* SENDFILE_WORKS */
 
 /* cache_session.c [SES] */
-struct sess *SES_New(struct worker *wrk, struct sesspool *pp);
+struct sess *SES_New(struct sesspool *pp);
 struct sess *SES_Alloc(void);
 void SES_Close(struct sess *sp, const char *reason);
-void SES_Delete(struct sess *sp, const char *reason);
+void SES_Delete(struct sess *sp, const char *reason, double now);
 void SES_Charge(struct sess *sp);
-struct sesspool *SES_NewPool(struct pool *pp);
-void SES_DeletePool(struct sesspool *sp, struct worker *wrk);
+struct sesspool *SES_NewPool(struct pool *pp, unsigned pool_no);
+void SES_DeletePool(struct sesspool *sp);
 int SES_Schedule(struct sess *sp);
-
+void SES_Handle(struct sess *sp, double now);
+void SES_GetReq(struct sess *sp);
+void SES_ReleaseReq(struct sess *sp);
 
 /* cache_shmlog.c */
 extern struct VSC_C_main *VSC_C_main;
@@ -937,7 +974,7 @@ void RES_StreamPoll(struct worker *);
 
 /* cache_vary.c */
 struct vsb *VRY_Create(const struct sess *sp, const struct http *hp);
-int VRY_Match(struct sess *sp, const uint8_t *vary);
+int VRY_Match(const struct sess *sp, const uint8_t *vary);
 void VRY_Validate(const uint8_t *vary);
 
 /* cache_vcl.c */
@@ -962,6 +999,11 @@ void ESI_DeliverChild(const struct sess *);
 /* cache_vrt_vmod.c */
 void VMOD_Init(void);
 
+/* cache_waiter.c */
+void WAIT_Enter(struct sess *sp);
+void WAIT_Init(void);
+const char *WAIT_GetName(void);
+
 /* cache_wrk.c */
 
 void WRK_Init(void);
@@ -981,7 +1023,6 @@ void WS_ReleaseP(struct ws *ws, char *ptr);
 void WS_Assert(const struct ws *ws);
 void WS_Reset(struct ws *ws, char *p);
 char *WS_Alloc(struct ws *ws, unsigned bytes);
-char *WS_Dup(struct ws *ws, const char *);
 char *WS_Snapshot(struct ws *ws);
 unsigned WS_Free(const struct ws *ws);
 

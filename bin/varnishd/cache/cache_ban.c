@@ -113,9 +113,10 @@ static bgthread_t ban_lurker;
 #define	BAN_OPER_MATCH	0x12
 #define	BAN_OPER_NMATCH	0x13
 
-#define BAN_ARG_URL	0x18
-#define BAN_ARG_REQHTTP	0x19
-#define BAN_ARG_OBJHTTP	0x1a
+#define BAN_ARG_URL		0x18
+#define BAN_ARG_REQHTTP		0x19
+#define BAN_ARG_OBJHTTP		0x1a
+#define BAN_ARG_OBJSTATUS	0x1b
 
 /*--------------------------------------------------------------------
  * Variables we can purge on
@@ -609,6 +610,7 @@ ban_evaluate(const uint8_t *bs, const struct http *objhttp,
 	struct ban_test bt;
 	const uint8_t *be;
 	char *arg1;
+	char buf[10];
 
 	be = bs + ban_len(bs);
 	bs += 13;
@@ -618,13 +620,19 @@ ban_evaluate(const uint8_t *bs, const struct http *objhttp,
 		arg1 = NULL;
 		switch (bt.arg1) {
 		case BAN_ARG_URL:
+			AN(reqhttp);
 			arg1 = reqhttp->hd[HTTP_HDR_URL].b;
 			break;
 		case BAN_ARG_REQHTTP:
+			AN(reqhttp);
 			(void)http_GetHdr(reqhttp, bt.arg1_spec, &arg1);
 			break;
 		case BAN_ARG_OBJHTTP:
 			(void)http_GetHdr(objhttp, bt.arg1_spec, &arg1);
+			break;
+		case BAN_ARG_OBJSTATUS:
+			arg1 = buf;
+			sprintf(buf, "%d", objhttp->status);
 			break;
 		default:
 			INCOMPL();
@@ -675,6 +683,7 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 	struct objcore *oc;
 	struct ban * volatile b0;
 	unsigned tests, skipped;
+	struct http *http;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
@@ -687,6 +696,11 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 
 	if (b0 == oc->ban)
 		return (0);
+
+	if (has_req)
+		http = sp->req->http;
+	else
+		http = NULL;
 
 	/*
 	 * This loop is safe without locks, because we know we hold
@@ -711,7 +725,7 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 			 * be other bans that match, so we soldier on
 			 */
 			skipped++;
-		} else if (ban_evaluate(b->spec, o->http, sp->http, &tests))
+		} else if (ban_evaluate(b->spec, o->http, http, &tests))
 			break;
 	}
 

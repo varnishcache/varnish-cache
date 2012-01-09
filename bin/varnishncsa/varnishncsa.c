@@ -102,7 +102,8 @@ static struct logline {
 	char *df_u;			/* %u, Remote user */
 	char *df_ttfb;			/* Time to first byte */
 	const char *df_hitmiss;		/* Whether this is a hit or miss */
-	const char *df_handling;	/* How the request was handled (hit/miss/pass/pipe) */
+	const char *df_handling;	/* How the request was handled
+					   (hit/miss/pass/pipe) */
 	int active;			/* Is log line in an active trans */
 	int complete;			/* Is log line complete */
 	uint64_t bitmap;		/* Bitmap for regex matches */
@@ -549,7 +550,9 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		char ttfb[64];
 		if (!lp->active)
 			break;
-		if (lp->df_ttfb != NULL || sscanf(ptr, "%*u %*u.%*u %ld.%*u %*u.%*u %s", &l, ttfb) != 2) {
+		if (lp->df_ttfb != NULL ||
+		    sscanf(ptr, "%*u %*u.%*u %ld.%*u %*u.%*u %s", &l, ttfb)
+		    != 2) {
 			clean_logline(lp);
 			break;
 		}
@@ -679,7 +682,8 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 			VSB_cat(os, lp->df_m ? lp->df_m : "-");
 			VSB_putc(os, ' ');
 			if (req_header(lp, "Host")) {
-				if (strncmp(req_header(lp, "Host"), "http://", 7) != 0)
+				if (strncmp(req_header(lp, "Host"),
+				    "http://", 7) != 0)
 					VSB_cat(os, "http://");
 				VSB_cat(os, req_header(lp, "Host"));
 			} else {
@@ -698,7 +702,8 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 
 		case 't':
 			/* %t */
-			strftime(tbuf, sizeof tbuf, "[%d/%b/%Y:%T %z]", &lp->df_t);
+			strftime(tbuf, sizeof tbuf,
+			    "[%d/%b/%Y:%T %z]", &lp->df_t);
 			VSB_cat(os, tbuf);
 			break;
 
@@ -753,20 +758,23 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 				p = tmp;
 				break;
 			case 'x':
-				if (strcmp(fname, "Varnish:time_firstbyte") == 0) {
+				if (!strcmp(fname, "Varnish:time_firstbyte")) {
 					VSB_cat(os, lp->df_ttfb);
 					p = tmp;
 					break;
-				} else if (strcmp(fname, "Varnish:hitmiss") == 0) {
-					VSB_cat(os, (lp->df_hitmiss ? lp->df_hitmiss : "-"));
+				} else if (!strcmp(fname, "Varnish:hitmiss")) {
+					VSB_cat(os, (lp->df_hitmiss ?
+					    lp->df_hitmiss : "-"));
 					p = tmp;
 					break;
-				} else if (strcmp(fname, "Varnish:handling") == 0) {
-					VSB_cat(os, (lp->df_handling ? lp->df_handling : "-"));
+				} else if (!strcmp(fname, "Varnish:handling")) {
+					VSB_cat(os, (lp->df_handling ?
+					    lp->df_handling : "-"));
 					p = tmp;
 					break;
-				} else if (strncmp(fname, "VCL_Log:", 8) == 0) {
-					// support pulling entries logged with std.log() into output.
+				} else if (!strncmp(fname, "VCL_Log:", 8)) {
+					// support pulling entries logged
+					// with std.log() into output.
 					// Format: %{VCL_Log:keyname}x
 					// Logging: std.log("keyname:value")
 					h = vcl_log(lp, fname+8);
@@ -775,7 +783,8 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 					break;
 				}
 			default:
-				fprintf(stderr, "Unknown format starting at: %s\n", --p);
+				fprintf(stderr,
+				    "Unknown format starting at: %s\n", --p);
 				exit(1);
 			}
 			break;
@@ -783,7 +792,8 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 			/* Fall through if we haven't handled something */
 			/* FALLTHROUGH*/
 		default:
-			fprintf(stderr, "Unknown format starting at: %s\n", --p);
+			fprintf(stderr,
+			    "Unknown format starting at: %s\n", --p);
 			exit(1);
 		}
 	}
@@ -854,15 +864,18 @@ main(int argc, char *argv[])
 			break;
 		case 'f':
 			if (format_flag) {
-				fprintf(stderr, "-f and -F can not be combined\n");
+				fprintf(stderr,
+				    "-f and -F can not be combined\n");
 				exit(1);
 			}
-			format = "%{X-Forwarded-For}i %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-agent}i\"";
+			format = "%{X-Forwarded-For}i %l %u %t \"%r\""
+			    " %s %b \"%{Referer}i\" \"%{User-agent}i\"";
 			format_flag = 1;
 			break;
 		case 'F':
 			if (format_flag) {
-				fprintf(stderr, "-f and -F can not be combined\n");
+				fprintf(stderr,
+				    "-f and -F can not be combined\n");
 				exit(1);
 			}
 			format_flag = 1;

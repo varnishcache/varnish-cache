@@ -20,7 +20,7 @@
  * ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION, "")
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
  * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
@@ -136,7 +136,8 @@ VSC_F(fetch_chunked,		uint64_t, 1, 'a', "Fetch chunked", "")
 VSC_F(fetch_eof,		uint64_t, 1, 'a', "Fetch EOF", "")
 VSC_F(fetch_bad,		uint64_t, 1, 'a', "Fetch had bad headers", "")
 VSC_F(fetch_close,		uint64_t, 1, 'a', "Fetch wanted close", "")
-VSC_F(fetch_oldhttp,		uint64_t, 1, 'a', "Fetch pre HTTP/1.1 closed", "")
+VSC_F(fetch_oldhttp,		uint64_t, 1, 'a',
+    "Fetch pre HTTP/1.1 closed", "")
 VSC_F(fetch_zero,		uint64_t, 1, 'a', "Fetch zero len", "")
 VSC_F(fetch_failed,		uint64_t, 1, 'a', "Fetch failed", "")
 VSC_F(fetch_1xx,		uint64_t, 1, 'a', "Fetch no body (1xx)", "")
@@ -146,91 +147,61 @@ VSC_F(fetch_not_validated,	uint64_t, 1, 'c', "Non-validating responses",
       "Count of backend responses to conditional requests with status != 304")
 
 /*---------------------------------------------------------------------
- * Session Memory
- *    see: cache_session.c
- */
-
-VSC_F(sessmem_size,		uint64_t, 1, 'g',
-    "Session mem size",
-	"Bytes of memory allocated for last allocated session."
-)
-
-VSC_F(sessmem_alloc,		uint64_t, 1, 'c',
-    "Session mem allocated",
-	"Count of all allocations of session memory."
-)
-
-VSC_F(sessmem_free,		uint64_t, 1, 'c',
-    "Session mem freed",
-	"Count of all frees of session memory."
-)
-
-VSC_F(sessmem_fail,		uint64_t, 1, 'c',
-    "Session mem alloc failed",
-	"Count of session memory allocation failures."
-)
-
-VSC_F(sessmem_limit,		uint64_t, 1, 'c',
-    "Session mem alloc limited",
-	"Count of session memory allocations blocked by limit (max_sess)."
-)
-
-/*---------------------------------------------------------------------
  * Pools, threads, and sessions
  *    see: cache_pool.c
  *
  */
 
-VSC_F(pools,			uint64_t, 1, 'g',
+VSC_F(pools,			uint64_t, 0, 'g',
     "Number of thread pools",
 	"Number of thread pools.  See also param wthread_pools."
 	"  NB: Presently pools cannot be removed once created."
 )
 
-VSC_F(threads,			uint64_t, 1, 'g',
+VSC_F(threads,			uint64_t, 0, 'g',
     "Total number of threads",
 	"Number of threads in all pools."
 	"  See also params thread_pools, thread_pool_min & thread_pool_max."
 )
 
-VSC_F(threads_limited,		uint64_t, 1, 'c',
+VSC_F(threads_limited,		uint64_t, 0, 'c',
     "Threads hit max",
 	"Number of times more threads were needed, but limit was reached"
 	" in a thread pool."
 	"  See also param thread_pool_max."
 )
 
-VSC_F(threads_created,		uint64_t, 1, 'c',
+VSC_F(threads_created,		uint64_t, 0, 'c',
     "Threads created",
 	"Total number of threads created in all pools."
 )
 
-VSC_F(threads_destroyed,	uint64_t, 1, 'c',
+VSC_F(threads_destroyed,	uint64_t, 0, 'c',
     "Threads destoryed",
 	"Total number of threads destroyed in all pools."
 )
 
-VSC_F(threads_failed,		uint64_t, 1, 'c',
+VSC_F(threads_failed,		uint64_t, 0, 'c',
     "Thread creation failed",
 	"Number of times creating a thread failed."
 	"  See VSL::Debug for diagnostics."
 	"  See also param thread_fail_delay."
 )
 
-VSC_F(thread_queue_len,		uint64_t, 1, 'g',
+VSC_F(thread_queue_len,		uint64_t, 0, 'g',
     "Length of session queue",
 	"Length of session queue waiting for threads."
 	"  NB: Only updates once per second."
 	"  See also param queue_max."
 )
 
-VSC_F(sess_queued,		uint64_t, 1, 'c',
+VSC_F(sess_queued,		uint64_t, 0, 'c',
     "Sessions queued for thread",
 	"Number of times session was queued waiting for a thread."
 	"  See also param queue_max."
 )
 
-VSC_F(sess_dropped,		uint64_t, 1, 'c',
+VSC_F(sess_dropped,		uint64_t, 0, 'c',
     "Sessions dropped for thread",
 	"Number of times session was dropped because the queue were too"
 	" long already."
@@ -241,27 +212,23 @@ VSC_F(sess_dropped,		uint64_t, 1, 'c',
  * BusyObj
  */
 
-VSC_F(busyobj_alloc,		uint64_t, 1, 'c',
+VSC_F(busyobj_alloc,		uint64_t, 0, 'c',
     "Busyobj allocations",
 	"Number of busyobj structures allocated."
 )
 
-VSC_F(busyobj_free,		uint64_t, 1, 'c',
+VSC_F(busyobj_free,		uint64_t, 0, 'c',
     "Busyobj freed",
 	"Number of busyobj structures freed."
 )
 
 /*---------------------------------------------------------------------*/
 
-VSC_F(n_sess_mem,		uint64_t, 0, 'i', "N struct sess_mem", "")
-VSC_F(n_sess,			uint64_t, 0, 'i', "N struct sess", "")
 VSC_F(n_object,			uint64_t, 1, 'i', "N struct object", "")
 VSC_F(n_vampireobject,		uint64_t, 1, 'i', "N unresurrected objects", "")
 VSC_F(n_objectcore,		uint64_t, 1, 'i', "N struct objectcore", "")
 VSC_F(n_objecthead,		uint64_t, 1, 'i', "N struct objecthead", "")
 VSC_F(n_waitinglist,		uint64_t, 1, 'i', "N struct waitinglist", "")
-
-VSC_F(n_vbc,		uint64_t, 0, 'i', "N struct vbc", "")
 
 VSC_F(n_backend,		uint64_t, 0, 'i', "N backends", "")
 
@@ -281,27 +248,29 @@ VSC_F(n_objwrite,		uint64_t, 0, 'a', "Objects sent with write",
 VSC_F(n_objoverflow,	uint64_t, 1, 'a',
 					"Objects overflowing workspace", "")
 
-VSC_F(s_sess,		uint64_t, 1, 'a', "Total Sessions", "")
-VSC_F(s_req,		uint64_t, 1, 'a', "Total Requests", "")
-VSC_F(s_pipe,		uint64_t, 1, 'a', "Total pipe", "")
-VSC_F(s_pass,		uint64_t, 1, 'a', "Total pass", "")
-VSC_F(s_fetch,		uint64_t, 1, 'a', "Total fetch", "")
+VSC_F(s_sess,			uint64_t, 1, 'a', "Total Sessions", "")
+VSC_F(s_req,			uint64_t, 1, 'a', "Total Requests", "")
+VSC_F(s_pipe,			uint64_t, 1, 'a', "Total pipe", "")
+VSC_F(s_pass,			uint64_t, 1, 'a', "Total pass", "")
+VSC_F(s_fetch,			uint64_t, 1, 'a', "Total fetch", "")
 VSC_F(s_hdrbytes,		uint64_t, 1, 'a', "Total header bytes", "")
 VSC_F(s_bodybytes,		uint64_t, 1, 'a', "Total body bytes", "")
 
 VSC_F(sess_closed,		uint64_t, 1, 'a', "Session Closed", "")
-VSC_F(sess_pipeline,	uint64_t, 1, 'a', "Session Pipeline", "")
-VSC_F(sess_readahead,	uint64_t, 1, 'a', "Session Read Ahead", "")
+VSC_F(sess_pipeline,		uint64_t, 1, 'a', "Session Pipeline", "")
+VSC_F(sess_readahead,		uint64_t, 1, 'a', "Session Read Ahead", "")
 VSC_F(sess_linger,		uint64_t, 1, 'a', "Session Linger", "")
 VSC_F(sess_herd,		uint64_t, 1, 'a', "Session herd", "")
 
 VSC_F(shm_records,		uint64_t, 0, 'a', "SHM records", "")
 VSC_F(shm_writes,		uint64_t, 0, 'a', "SHM writes", "")
-VSC_F(shm_flushes,		uint64_t, 0, 'a', "SHM flushes due to overflow", "")
-VSC_F(shm_cont,		uint64_t, 0, 'a', "SHM MTX contention", "")
-VSC_F(shm_cycles,		uint64_t, 0, 'a', "SHM cycles through buffer", "")
+VSC_F(shm_flushes,		uint64_t, 0, 'a',
+    "SHM flushes due to overflow", "")
+VSC_F(shm_cont,			uint64_t, 0, 'a', "SHM MTX contention", "")
+VSC_F(shm_cycles,		uint64_t, 0, 'a',
+    "SHM cycles through buffer", "")
 
-VSC_F(sms_nreq,		uint64_t, 0, 'a', "SMS allocator requests", "")
+VSC_F(sms_nreq,			uint64_t, 0, 'a', "SMS allocator requests", "")
 VSC_F(sms_nobj,		uint64_t, 0, 'i', "SMS outstanding allocations", "")
 VSC_F(sms_nbytes,		uint64_t, 0, 'i', "SMS outstanding bytes", "")
 VSC_F(sms_balloc,		uint64_t, 0, 'i', "SMS bytes allocated", "")
@@ -309,9 +278,9 @@ VSC_F(sms_bfree,		uint64_t, 0, 'i', "SMS bytes freed", "")
 
 VSC_F(backend_req,		uint64_t, 0, 'a', "Backend requests made", "")
 
-VSC_F(n_vcl,		uint64_t, 0, 'a', "N vcl total", "")
+VSC_F(n_vcl,			uint64_t, 0, 'a', "N vcl total", "")
 VSC_F(n_vcl_avail,		uint64_t, 0, 'a', "N vcl available", "")
-VSC_F(n_vcl_discard,	uint64_t, 0, 'a', "N vcl discarded", "")
+VSC_F(n_vcl_discard,		uint64_t, 0, 'a', "N vcl discarded", "")
 
 /**********************************************************************/
 
@@ -357,19 +326,24 @@ VSC_F(bans_dups,		uint64_t, 0, 'c',
 
 /**********************************************************************/
 
-VSC_F(hcb_nolock,		uint64_t, 0, 'a', "HCB Lookups without lock", "")
+VSC_F(hcb_nolock,		uint64_t, 0, 'a',
+    "HCB Lookups without lock", "")
 VSC_F(hcb_lock,		uint64_t, 0, 'a', "HCB Lookups with lock", "")
 VSC_F(hcb_insert,		uint64_t, 0, 'a', "HCB Inserts", "")
 
-VSC_F(esi_errors,		uint64_t, 0, 'a', "ESI parse errors (unlock)", "")
-VSC_F(esi_warnings,		uint64_t, 0, 'a', "ESI parse warnings (unlock)", "")
+VSC_F(esi_errors,		uint64_t, 0, 'a',
+    "ESI parse errors (unlock)", "")
+VSC_F(esi_warnings,		uint64_t, 0, 'a',
+    "ESI parse warnings (unlock)", "")
 VSC_F(client_drop_late,	uint64_t, 0, 'a', "Connection dropped late", "")
 VSC_F(uptime,		uint64_t, 0, 'a', "Client uptime", "")
 
 VSC_F(dir_dns_lookups,	uint64_t, 0, 'a', "DNS director lookups", "")
 VSC_F(dir_dns_failed,	uint64_t, 0, 'a', "DNS director failed lookups", "")
-VSC_F(dir_dns_hit,		uint64_t, 0, 'a', "DNS director cached lookups hit", "")
-VSC_F(dir_dns_cache_full,	uint64_t, 0, 'a', "DNS director full dnscache", "")
+VSC_F(dir_dns_hit,		uint64_t, 0, 'a',
+    "DNS director cached lookups hit", "")
+VSC_F(dir_dns_cache_full,	uint64_t, 0, 'a',
+    "DNS director full dnscache", "")
 
 VSC_F(vmods,		uint64_t, 0, 'i', "Loaded VMODs", "")
 

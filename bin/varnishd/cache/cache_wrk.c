@@ -37,7 +37,6 @@
 #include "cache.h"
 
 #include "hash/hash_slinger.h"
-#include "vsha256.h"
 
 static struct lock		wstat_mtx;
 
@@ -94,7 +93,7 @@ static void *
 wrk_bgthread(void *arg)
 {
 	struct bgthread *bt;
-	struct worker ww;
+	struct worker wrk;
 	struct sess *sp;
 	uint32_t logbuf[1024];	/* XXX:  size ? */
 
@@ -102,11 +101,11 @@ wrk_bgthread(void *arg)
 	THR_SetName(bt->name);
 	sp = SES_Alloc();
 	XXXAN(sp);
-	memset(&ww, 0, sizeof ww);
-	sp->wrk = &ww;
-	ww.magic = WORKER_MAGIC;
-	ww.wlp = ww.wlb = logbuf;
-	ww.wle = logbuf + (sizeof logbuf) / 4;
+	memset(&wrk, 0, sizeof wrk);
+	sp->wrk = &wrk;
+	wrk.magic = WORKER_MAGIC;
+	wrk.wlp = wrk.wlb = logbuf;
+	wrk.wle = logbuf + (sizeof logbuf) / 4;
 
 	(void)bt->func(sp, bt->priv);
 
@@ -133,15 +132,13 @@ WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func, void *priv)
 
 static void *
 wrk_thread_real(void *priv, unsigned shm_workspace, unsigned sess_workspace,
-    uint16_t nhttp, unsigned http_space, unsigned siov)
+    unsigned siov)
 {
 	struct worker *w, ww;
 	uint32_t wlog[shm_workspace / 4];
 	/* XXX: can we trust these to be properly aligned ? */
 	unsigned char ws[sess_workspace];
-	unsigned char http2[http_space];
 	struct iovec iov[siov];
-	struct SHA256Context sha256;
 
 	THR_SetName("cache-worker");
 	w = &ww;
@@ -150,8 +147,6 @@ wrk_thread_real(void *priv, unsigned shm_workspace, unsigned sess_workspace,
 	w->lastused = NAN;
 	w->wlb = w->wlp = wlog;
 	w->wle = wlog + (sizeof wlog) / 4;
-	w->sha256ctx = &sha256;
-	w->resp = HTTP_create(http2, nhttp);
 	w->wrw.iov = iov;
 	w->wrw.siov = siov;
 	w->wrw.ciov = siov;
@@ -187,8 +182,7 @@ WRK_thread(void *priv)
 		siov = IOV_MAX;
 	return (wrk_thread_real(priv,
 	    cache_param->shm_workspace,
-	    cache_param->wthread_workspace,
-	    nhttp, HTTP_estimate(nhttp), siov));
+	    cache_param->wthread_workspace, siov));
 }
 
 void

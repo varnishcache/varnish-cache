@@ -196,7 +196,7 @@ consists of a field, an operator, and an argument.  Conditions can be
 ANDed together with "&&".
 
 A field can be any of the variables from VCL, for instance req.url,
-req.http.host or obj.set-cookie.
+req.http.host or obj.http.set-cookie.
 
 Operators are "==" for direct comparision, "~" for a regular
 expression match, and ">" or "<" for size comparisons.  Prepending

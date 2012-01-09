@@ -320,12 +320,6 @@ AC_CHECK_FUNCS([clock_gettime])
 AC_CHECK_FUNCS([gethrtime]) 
 LIBS="${save_LIBS}"
 
-# Check which mechanism to use for the acceptor.  We look for kqueue
-# only on platforms on which we know that it works, because there are
-# platforms where a simple AC_CHECK_FUNCS([kqueue]) would succeed but
-# the build would fail.  We also allow the user to disable mechanisms
-# he doesn't want to use.
-
 # --enable-kqueue
 AC_ARG_ENABLE(kqueue,
     AS_HELP_STRING([--enable-kqueue],
@@ -334,16 +328,7 @@ AC_ARG_ENABLE(kqueue,
     [enable_kqueue=yes])
 
 if test "$enable_kqueue" = yes; then
-	case $target in
-	*-*-freebsd* | *-*-darwin9* | *-*-darwin11* | *-*-netbsd* )
-		AC_CHECK_FUNCS([kqueue])
-		;;
-	*-*-bsd*)
-		# No other BSD has a sufficiently recent implementation
-		AC_MSG_WARN([won't look for kqueue() on $target])
-		ac_cv_func_kqueue=no
-		;;
-	esac
+	AC_CHECK_FUNCS([kqueue])
 else
 	ac_cv_func_kqueue=no
 fi

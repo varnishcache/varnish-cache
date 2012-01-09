@@ -170,13 +170,13 @@ void VBE_ReleaseConn(struct vbc *vc);
 struct backend *vdi_get_backend_if_simple(const struct director *d);
 
 /* cache_backend_cfg.c */
-extern struct lock VBE_mtx;
 void VBE_DropRefConn(struct backend *);
 void VBE_DropRefVcl(struct backend *);
 void VBE_DropRefLocked(struct backend *b);
 
 /* cache_backend_poll.c */
-void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p, const char *hosthdr);
+void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,
+    const char *hosthdr);
 void VBP_Remove(struct backend *b, struct vrt_backend_probe const *p);
 void VBP_Use(const struct backend *b, const struct vrt_backend_probe const *p);
 void VBP_Summary(struct cli *cli, const struct vbp_target *vt);

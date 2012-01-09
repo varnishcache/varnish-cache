@@ -350,7 +350,7 @@ vdi_dns_find_backend(const struct sess *sp, struct vdi_dns *vs)
 	if (sp->wrk->busyobj != NULL && sp->wrk->busyobj->bereq)
 		hp = sp->wrk->busyobj->bereq;
 	else
-		hp = sp->http;
+		hp = sp->req->http;
 
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
@@ -403,8 +403,8 @@ vdi_dns_healthy(const struct director *dir, const struct sess *sp)
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
-	CAST_OBJ_NOTNULL(vs, sp->director->priv, VDI_DNS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->req->director, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(vs, sp->req->director->priv, VDI_DNS_MAGIC);
 
 	dir = vdi_dns_find_backend(sp, vs);
 

@@ -137,7 +137,8 @@ mgt_sandbox_solaris_init(void)
 
 	if (! (priv_all = priv_allocset())) {
 		REPORT(LOG_ERR,
-		    "Child start warning: mgt_sandbox_init - priv_allocset failed: errno=%d (%s)",
+		    "Child start warning: "
+		    " mgt_sandbox_init - priv_allocset failed: errno=%d (%s)",
 		    errno, strerror(errno));
 		return;
 	}
@@ -164,7 +165,8 @@ mgt_sandbox_solaris_privsep(void)
                 if (getuid() != mgt_param.uid)
                         XXXAZ(setuid(mgt_param.uid));
         } else {
-                REPORT(LOG_INFO, "Privilege %s missing, will not change uid/gid",
+                REPORT(LOG_INFO,
+		    "Privilege %s missing, will not change uid/gid",
 		    PRIV_PROC_SETID);
         }
 }
@@ -194,7 +196,8 @@ mgt_sandbox_solaris_fini(void)
 	    !(inheritable = priv_allocset()) ||
 	    !(permitted = priv_allocset())) {
 		REPORT(LOG_ERR,
-		    "Child start warning: mgt_sandbox_waive - priv_allocset failed: errno=%d (%s)",
+		    "Child start warning: "
+		    " mgt_sandbox_waive - priv_allocset failed: errno=%d (%s)",
 		    errno, strerror(errno));
 		return;
 	}
@@ -218,7 +221,8 @@ mgt_sandbox_solaris_fini(void)
 #define SETPPRIV(which, set)						\
 	if (setppriv(PRIV_OFF, which, set))				\
 		REPORT(LOG_ERR,						\
-		    "Child start warning: Waiving privileges failed on %s: errno=%d (%s)", \
+		    "Child start warning: "				\
+		    " Waiving privileges failed on %s: errno=%d (%s)",	\
 		    #which, errno, strerror(errno));
 
 	SETPPRIV(PRIV_LIMIT, permitted);

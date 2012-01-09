@@ -106,9 +106,21 @@ struct profile {
 	int hist_low;
 	int hist_high;
 } profiles[] = {
-	{ .name = "responsetime", .tag = SLT_ReqEnd, .field = 5, .hist_low = -6, .hist_high = 3 },
-	{ .name = "size", .tag = SLT_Length, .field = 1, .hist_low = 1, .hist_high = 8 },
-	{ 0 }
+	{
+		.name = "responsetime",
+		.tag = SLT_ReqEnd,
+		.field = 5,
+		.hist_low = -6,
+		.hist_high = 3
+	}, {
+		.name = "size",
+		.tag = SLT_Length,
+		.field = 1,
+		.hist_low = 1,
+		.hist_high = 8
+	}, {
+		.name = 0,
+	}
 };
 
 static struct profile *active_profile;
@@ -335,7 +347,8 @@ static void
 usage(void)
 {
 	fprintf(stderr, "usage: varnishhist "
-	    "%s [-p profile] [-f field_num] [-R max] [-r min] [-V] [-w delay]\n", VSL_USAGE);
+	    "%s [-p profile] [-f field_num] "
+	    "[-R max] [-r min] [-V] [-w delay]\n", VSL_USAGE);
 	exit(1);
 }
 
@@ -386,7 +399,8 @@ main(int argc, char **argv)
 		}
 	}
 	if (profile) {
-		for (active_profile = profiles; active_profile->name; active_profile++) {
+		for (active_profile = profiles; active_profile->name;
+		    active_profile++) {
 			if (strcmp(active_profile->name, profile) == 0) {
 				break;
 			}

@@ -191,7 +191,8 @@ hcb_crit_bit(const struct objhead *oh1, const struct objhead *oh2,
  */
 
 static struct objhead *
-hcb_insert(struct worker *wrk, struct hcb_root *root, struct objhead *oh, int has_lock)
+hcb_insert(struct worker *wrk, struct hcb_root *root, struct objhead *oh,
+    int has_lock)
 {
 	volatile uintptr_t *p;
 	uintptr_t pp;
@@ -343,17 +344,13 @@ static struct cli_proto hcb_cmds[] = {
 
 /*--------------------------------------------------------------------*/
 
-static void *
-hcb_cleaner(void *priv)
+static void * __match_proto__(bgthread_t)
+hcb_cleaner(struct sess *sp, void *priv)
 {
 	struct hcb_y *y, *y2;
-	struct worker ww;
+	struct worker *wrk = sp->wrk;
 	struct objhead *oh, *oh2;
 
-	memset(&ww, 0, sizeof ww);
-	ww.magic = WORKER_MAGIC;
-
-	THR_SetName("hcb_cleaner");
 	(void)priv;
 	while (1) {
 		VSTAILQ_FOREACH_SAFE(y, &dead_y, list, y2) {
@@ -362,13 +359,13 @@ hcb_cleaner(void *priv)
 		}
 		VTAILQ_FOREACH_SAFE(oh, &dead_h, hoh_list, oh2) {
 			VTAILQ_REMOVE(&dead_h, oh, hoh_list);
-			HSH_DeleteObjHead(&ww, oh);
+			HSH_DeleteObjHead(wrk, oh);
 		}
 		Lck_Lock(&hcb_mtx);
 		VSTAILQ_CONCAT(&dead_y, &cool_y);
 		VTAILQ_CONCAT(&dead_h, &cool_h, hoh_list);
 		Lck_Unlock(&hcb_mtx);
-		WRK_SumStat(&ww);
+		WRK_SumStat(wrk);
 		VTIM_sleep(cache_param->critbit_cooloff);
 	}
 	NEEDLESS_RETURN(NULL);
@@ -385,7 +382,7 @@ hcb_start(void)
 	(void)oh;
 	CLI_AddFuncs(hcb_cmds);
 	Lck_New(&hcb_mtx, lck_hcb);
-	AZ(pthread_create(&tp, NULL, hcb_cleaner, NULL));
+	WRK_BgThread(&tp, "hcb-cleaner", hcb_cleaner, NULL);
 	memset(&hcb_root, 0, sizeof hcb_root);
 	hcb_build_bittbl();
 }

@@ -1,0 +1,29 @@
+varnishtest "Memory pool gymnastics"
+
+server s1 { } -start
+
+varnish v1 -vcl+backend {} -start
+
+delay 2
+
+varnish v1 -expect MEMPOOL.vbc.pool == 10
+
+varnish v1 -cliok "param.set pool_vbc 90,100,100"
+
+delay 2
+
+varnish v1 -expect MEMPOOL.vbc.pool == 90
+
+varnish v1 -cliok "param.set pool_vbc 50,80,100"
+
+delay 2
+
+varnish v1 -expect MEMPOOL.vbc.pool == 80
+varnish v1 -expect MEMPOOL.vbc.surplus == 10
+
+varnish v1 -cliok "param.set pool_vbc 10,80,1"
+
+delay 2
+
+varnish v1 -expect MEMPOOL.vbc.pool == 10
+varnish v1 -expect MEMPOOL.vbc.timeout == 70

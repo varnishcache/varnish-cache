@@ -33,6 +33,12 @@
 
 #define VSM_CLASS_PARAM		"Params"
 
+struct poolparam {
+	unsigned		min_pool;
+	unsigned		max_pool;
+	double			max_age;
+};
+
 struct params {
 
 	/* Unprivileged user / group */
@@ -69,7 +75,7 @@ struct params {
 	unsigned		queue_max;
 
 	/* Memory allocation hints */
-	unsigned		sess_workspace;
+	unsigned		workspace_client;
 	unsigned		shm_workspace;
 	unsigned		http_req_size;
 	unsigned		http_req_hdr_len;
@@ -79,8 +85,9 @@ struct params {
 
 	unsigned		shm_reclen;
 
-	/* Acceptor hints */
-	unsigned		sess_timeout;
+	double			timeout_linger;
+	double			timeout_idle;
+	double			timeout_req;
 	unsigned		pipe_timeout;
 	unsigned		send_timeout;
 	unsigned		idle_send_timeout;
@@ -133,9 +140,6 @@ struct params {
 	/* Read timeouts for backend */
 	double			first_byte_timeout;
 	double			between_bytes_timeout;
-
-	/* How long to linger on sessions */
-	unsigned		session_linger;
 
 	/* CLI buffer size */
 	unsigned		cli_buffer;
@@ -194,4 +198,8 @@ struct params {
 	/* VSM dimensions */
 	ssize_t			vsm_space;
 	ssize_t			vsl_space;
+
+	struct poolparam	vbc_pool;
+	struct poolparam	req_pool;
+	struct poolparam	sess_pool;
 };

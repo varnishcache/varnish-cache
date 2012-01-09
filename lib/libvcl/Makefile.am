@@ -33,8 +33,9 @@ libvcl_la_SOURCES = \
 EXTRA_DIST = \
 	generate.py
 
-vcc_obj.c vcc_fixed_token.c vcc_token_defs.h: $(srcdir)/generate.py $(top_srcdir)/include/vrt.h
-	@PYTHON@ $(top_srcdir)/lib/libvcl/generate.py $(top_srcdir) $(top_builddir)
+vcc_obj.c vcc_fixed_token.c vcc_token_defs.h: \
+	$(srcdir)/generate.py $(top_srcdir)/include/vrt.h
+	@PYTHON@ $(srcdir)/generate.py $(srcdir) $(top_builddir)
 
 CLEANFILES = $(builddir)/vcc_token_defs.h \
 	$(builddir)/vcc_fixed_token.c \

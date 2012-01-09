@@ -329,14 +329,14 @@ fetch_eof(struct worker *wrk, struct http_conn *htc)
  */
 
 int
-FetchReqBody(struct sess *sp)
+FetchReqBody(const struct sess *sp)
 {
 	unsigned long content_length;
 	char buf[8192];
 	char *ptr, *endp;
 	int rdcnt;
 
-	if (http_GetHdr(sp->http, H_Content_Length, &ptr)) {
+	if (http_GetHdr(sp->req->http, H_Content_Length, &ptr)) {
 
 		content_length = strtoul(ptr, &endp, 10);
 		/* XXX should check result of conversion */
@@ -345,18 +345,18 @@ FetchReqBody(struct sess *sp)
 				rdcnt = sizeof buf;
 			else
 				rdcnt = content_length;
-			rdcnt = HTC_Read(sp->wrk, sp->htc, buf, rdcnt);
+			rdcnt = HTC_Read(sp->wrk, sp->req->htc, buf, rdcnt);
 			if (rdcnt <= 0)
 				return (1);
 			content_length -= rdcnt;
-			if (!sp->sendbody)
+			if (!sp->req->sendbody)
 				continue;
 			(void)WRW_Write(sp->wrk, buf, rdcnt); /* XXX: stats ? */
 			if (WRW_Flush(sp->wrk))
 				return (2);
 		}
 	}
-	if (http_GetHdr(sp->http, H_Transfer_Encoding, NULL)) {
+	if (http_GetHdr(sp->req->http, H_Transfer_Encoding, NULL)) {
 		/* XXX: Handle chunked encoding. */
 		WSP(sp, SLT_Debug, "Transfer-Encoding in request");
 		return (1);
@@ -390,12 +390,12 @@ FetchHdr(struct sess *sp, int need_host_hdr)
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 	htc = &wrk->busyobj->htc;
 
-	AN(sp->director);
-	AZ(sp->wrk->obj);
+	AN(sp->req->director);
+	AZ(sp->req->obj);
 
-	if (sp->wrk->objcore != NULL) {		/* pass has no objcore */
-		CHECK_OBJ_NOTNULL(sp->wrk->objcore, OBJCORE_MAGIC);
-		AN(sp->wrk->objcore->flags & OC_F_BUSY);
+	if (sp->req->objcore != NULL) {		/* pass has no objcore */
+		CHECK_OBJ_NOTNULL(sp->req->objcore, OBJCORE_MAGIC);
+		AN(sp->req->objcore->flags & OC_F_BUSY);
 	}
 
 	hp = wrk->busyobj->bereq;

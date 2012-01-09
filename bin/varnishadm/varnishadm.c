@@ -14,7 +14,7 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
@@ -224,7 +224,8 @@ pass(int sock)
 		if (fds[0].revents & POLLIN) {
 			/* Get rid of the prompt, kinda hackish */
 			u = write(1, "\r           \r", 13);
-			u = VCLI_ReadResult(fds[0].fd, &status, &answer, timeout);
+			u = VCLI_ReadResult(fds[0].fd, &status, &answer,
+			    timeout);
 			if (u) {
 				if (status == CLIS_COMMS)
 					RL_EXIT(0);

@@ -1,3 +1,5 @@
+.. _ref-varnishlog:
+
 ==========
 varnishlog
 ==========

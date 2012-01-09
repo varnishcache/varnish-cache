@@ -98,7 +98,7 @@ RFC2616_Ttl(const struct sess *sp)
 	if (http_GetHdr(hp, H_Date, &p))
 		h_date = VTIM_parse(p);
 
-	switch (sp->err_code) {
+	switch (sp->req->err_code) {
 	default:
 		expp->ttl = -1.;
 		break;
@@ -169,7 +169,7 @@ RFC2616_Ttl(const struct sess *sp)
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
 	WSP(sp, SLT_TTL,
 	    "%u RFC %.0f %.0f %.0f %.0f %.0f %.0f %.0f %u",
-	    sp->xid, expp->ttl, -1., -1., expp->entered,
+	    sp->req->xid, expp->ttl, -1., -1., expp->entered,
 	    expp->age, h_date, h_expires, max_age);
 }
 
@@ -291,7 +291,7 @@ RFC2616_Req_Gzip(const struct sess *sp)
 	 * p104 says to not do q values for x-gzip, so we just test
 	 * for its existence.
 	 */
-	if (http_GetHdrData(sp->http, H_Accept_Encoding, "x-gzip", NULL))
+	if (http_GetHdrData(sp->req->http, H_Accept_Encoding, "x-gzip", NULL))
 		return (1);
 
 	/*
@@ -299,7 +299,7 @@ RFC2616_Req_Gzip(const struct sess *sp)
 	 * We do not care a hoot if the client prefers some other
 	 * compression more than gzip: Varnish only does gzip.
 	 */
-	if (http_GetHdrQ(sp->http, H_Accept_Encoding, "gzip") > 0.)
+	if (http_GetHdrQ(sp->req->http, H_Accept_Encoding, "gzip") > 0.)
 		return (1);
 
 	/* Bad client, no gzip. */
@@ -318,19 +318,19 @@ RFC2616_Do_Cond(const struct sess *sp)
 	/* RFC 2616 13.3.4 states we need to match both ETag
 	   and If-Modified-Since if present*/
 
-	if (http_GetHdr(sp->http, H_If_Modified_Since, &p) ) {
-		if (!sp->wrk->obj->last_modified)
+	if (http_GetHdr(sp->req->http, H_If_Modified_Since, &p) ) {
+		if (!sp->req->obj->last_modified)
 			return (0);
 		ims = VTIM_parse(p);
 		if (ims > sp->t_req)	/* [RFC2616 14.25] */
 			return (0);
-		if (sp->wrk->obj->last_modified > ims)
+		if (sp->req->obj->last_modified > ims)
 			return (0);
 		do_cond = 1;
 	}
 
-	if (http_GetHdr(sp->http, H_If_None_Match, &p) &&
-	    http_GetHdr(sp->wrk->obj->http, H_ETag, &e)) {
+	if (http_GetHdr(sp->req->http, H_If_None_Match, &p) &&
+	    http_GetHdr(sp->req->obj->http, H_ETag, &e)) {
 		if (strcmp(p,e) != 0)
 			return (0);
 		do_cond = 1;

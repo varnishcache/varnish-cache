@@ -110,7 +110,8 @@ VFIL_readfile(const char *pfx, const char *fn, ssize_t *sz)
 	if (fn[0] == '/')
 		fd = open(fn, O_RDONLY);
 	else if (pfx != NULL) {
-		bprintf(fnb, "/%s/%s", pfx, fn); /* XXX: graceful length check */
+		bprintf(fnb, "/%s/%s", pfx, fn);
+		    /* XXX: graceful length check */
 		fd = open(fnb, O_RDONLY);
 	} else
 		fd = open(fn, O_RDONLY);

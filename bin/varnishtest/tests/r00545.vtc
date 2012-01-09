@@ -1,0 +1,18 @@
+varnishtest "High-bit chars"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_deliver {
+		set resp.http.foo = "זרו";
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.foo == "זרו"
+} -run

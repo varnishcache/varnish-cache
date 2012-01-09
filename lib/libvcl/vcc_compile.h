@@ -103,7 +103,8 @@ enum symkind {
 #undef VCC_SYMB
 };
 
-typedef void sym_expr_t(struct vcc *tl, struct expr **, const struct symbol *sym);
+typedef void sym_expr_t(struct vcc *tl, struct expr **,
+    const struct symbol *sym);
 typedef struct symbol *sym_wildcard_t(struct vcc *tl, const struct token *t,
     const struct symbol *sym);
 
@@ -234,7 +235,8 @@ void vcc_ResetFldSpec(struct fld_spec *f);
 void vcc_IsField(struct vcc *tl, struct token **t, struct fld_spec *fs);
 void vcc_FieldsOk(struct vcc *tl, const struct fld_spec *fs);
 
-void Emit_Sockaddr(struct vcc *tl, const struct token *t_host, const char *port);
+void Emit_Sockaddr(struct vcc *tl, const struct token *t_host,
+    const char *port);
 
 /* vcc_compile.c */
 extern struct method method_tab[];
@@ -292,7 +294,8 @@ char *vcc_regexp(struct vcc *tl);
 
 /* vcc_symb.c */
 struct symbol *VCC_AddSymbolStr(struct vcc *tl, const char *name, enum symkind);
-struct symbol *VCC_AddSymbolTok(struct vcc *tl, const struct token *t, enum symkind kind);
+struct symbol *VCC_AddSymbolTok(struct vcc *tl, const struct token *t,
+    enum symkind kind);
 struct symbol *VCC_GetSymbolTok(struct vcc *tl, const struct token *tok,
     enum symkind);
 struct symbol *VCC_FindSymbol(struct vcc *tl,

@@ -127,14 +127,18 @@ cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
 	SZOF(struct http_conn);
 	SZOF(struct acct);
 	SZOF(struct worker);
+	SZOF(struct wrk_accept);
 	SZOF(struct storage);
 	SZOF(struct object);
 	SZOF(struct objcore);
 	SZOF(struct objhead);
 	SZOF(struct sess);
+	SZOF(struct req);
 	SZOF(struct vbc);
 	SZOF(struct VSC_C_main);
 	SZOF(struct lock);
+	SZOF(struct wrw);
+	SZOF(struct dstat);
 #if 0
 #define OFOF(foo, bar)	{ foo __foo; VCLI_Out(cli, \
     "%-30s = 0x%4zx @ 0x%4zx\n", \

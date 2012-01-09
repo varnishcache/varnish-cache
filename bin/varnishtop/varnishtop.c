@@ -327,7 +327,8 @@ main(int argc, char **argv)
 			errno = 0;
 			period = strtol(optarg, NULL, 0);
 			if (errno != 0)  {
-				fprintf(stderr, "Syntax error, %s is not a number", optarg);
+				fprintf(stderr,
+				    "Syntax error, %s is not a number", optarg);
 				exit(1);
 			}
 			break;

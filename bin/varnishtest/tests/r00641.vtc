@@ -18,7 +18,7 @@ varnish v1 -vcl+backend {
 	sub vcl_fetch {
 		set beresp.do_esi = true;
 	}
-} -cliok "param.set sess_timeout 60" -start
+} -cliok "param.set timeout_idle 60" -start
 
 client c1 {
 	txreq -proto HTTP/1.1

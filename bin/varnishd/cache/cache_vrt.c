@@ -52,7 +52,7 @@ const void * const vrt_magic_string_end = &vrt_magic_string_end;
 /*--------------------------------------------------------------------*/
 
 void
-VRT_error(struct sess *sp, unsigned code, const char *reason)
+VRT_error(const struct sess *sp, unsigned code, const char *reason)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -60,8 +60,9 @@ VRT_error(struct sess *sp, unsigned code, const char *reason)
 	    reason : "(null)");
 	if (code < 100 || code > 999)
 		code = 503;
-	sp->err_code = (uint16_t)code;
-	sp->err_reason = reason ? reason : http_StatusMessage(sp->err_code);
+	sp->req->err_code = (uint16_t)code;
+	sp->req->err_reason =
+	    reason ? reason : http_StatusMessage(sp->req->err_code);
 }
 
 /*--------------------------------------------------------------------*/
@@ -75,7 +76,7 @@ VRT_count(const struct sess *sp, unsigned u)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (cache_param->vcl_trace)
 		WSP(sp, SLT_VCL_trace, "%u %u.%u", u,
-		    sp->vcl->ref[u].line, sp->vcl->ref[u].pos);
+		    sp->req->vcl->ref[u].line, sp->req->vcl->ref[u].pos);
 }
 
 /*--------------------------------------------------------------------*/
@@ -97,7 +98,7 @@ vrt_selecthttp(const struct sess *sp, enum gethdr_e where)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	switch (where) {
 	case HDR_REQ:
-		hp = sp->http;
+		hp = sp->req->http;
 		break;
 	case HDR_BEREQ:
 		hp = sp->wrk->busyobj->bereq;
@@ -106,11 +107,11 @@ vrt_selecthttp(const struct sess *sp, enum gethdr_e where)
 		hp = sp->wrk->busyobj->beresp;
 		break;
 	case HDR_RESP:
-		hp = sp->wrk->resp;
+		hp = sp->req->resp;
 		break;
 	case HDR_OBJ:
-		CHECK_OBJ_NOTNULL(sp->wrk->obj, OBJECT_MAGIC);
-		hp = sp->wrk->obj->http;
+		CHECK_OBJ_NOTNULL(sp->req->obj, OBJECT_MAGIC);
+		hp = sp->req->obj->http;
 		break;
         case HDR_STALE_OBJ:
 		CHECK_OBJ_NOTNULL(sp->stale_obj, OBJECT_MAGIC);
@@ -248,7 +249,7 @@ VRT_SetHdr(const struct sess *sp , enum gethdr_e where, const char *hdr,
 /*--------------------------------------------------------------------*/
 
 void
-VRT_handling(struct sess *sp, unsigned hand)
+VRT_handling(const struct sess *sp, unsigned hand)
 {
 
 	if (sp == NULL) {
@@ -257,7 +258,7 @@ VRT_handling(struct sess *sp, unsigned hand)
 	}
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	assert(hand < VCL_RET_MAX);
-	sp->handling = hand;
+	sp->req->handling = hand;
 }
 
 /*--------------------------------------------------------------------
@@ -316,7 +317,7 @@ VRT_IP_string(const struct sess *sp, const struct sockaddr_storage *sa)
 		INCOMPL();
 	}
 	XXXAN(len);
-	AN(p = WS_Alloc(sp->http->ws, len));
+	AN(p = WS_Alloc(sp->req->http->ws, len));
 	AN(inet_ntop(sa->ss_family, addr, p, len));
 	return (p);
 }
@@ -328,7 +329,7 @@ VRT_int_string(const struct sess *sp, int num)
 	int size;
 
 	size = snprintf(NULL, 0, "%d", num) + 1;
-	AN(p = WS_Alloc(sp->http->ws, size));
+	AN(p = WS_Alloc(sp->req->http->ws, size));
 	assert(snprintf(p, size, "%d", num) < size);
 	return (p);
 }
@@ -340,7 +341,7 @@ VRT_double_string(const struct sess *sp, double num)
 	int size;
 
 	size = snprintf(NULL, 0, "%.3f", num) + 1;
-	AN(p = WS_Alloc(sp->http->ws, size));
+	AN(p = WS_Alloc(sp->req->http->ws, size));
 	assert(snprintf(p, size, "%.3f", num) < size);
 	return (p);
 }
@@ -350,7 +351,7 @@ VRT_time_string(const struct sess *sp, double t)
 {
 	char *p;
 
-	AN(p = WS_Alloc(sp->http->ws, VTIM_FORMAT_SIZE));
+	AN(p = WS_Alloc(sp->req->http->ws, VTIM_FORMAT_SIZE));
 	VTIM_format(t, p);
 	return (p);
 }
@@ -360,7 +361,7 @@ VRT_backend_string(const struct sess *sp, const struct director *d)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (d == NULL)
-		d = sp->director;
+		d = sp->req->director;
 	if (d == NULL)
 		return (NULL);
 	return (d->vcl_name);
@@ -377,11 +378,11 @@ VRT_bool_string(const struct sess *sp, unsigned val)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_Rollback(struct sess *sp)
+VRT_Rollback(const struct sess *sp)
 {
 
-	HTTP_Copy(sp->http, sp->http0);
-	WS_Reset(sp->ws, sp->ws_req);
+	HTTP_Copy(sp->req->http, sp->req->http0);
+	WS_Reset(sp->req->ws, sp->req->ws_req);
 }
 
 /*--------------------------------------------------------------------*/
@@ -393,7 +394,7 @@ VRT_panic(const struct sess *sp, const char *str, ...)
 	char *b;
 
 	va_start(ap, str);
-	b = VRT_String(sp->http->ws, "PANIC: ", str, ap);
+	b = VRT_String(sp->req->http->ws, "PANIC: ", str, ap);
 	va_end(ap);
 	VAS_Fail("VCL", "", 0, b, 0, 2);
 }
@@ -409,8 +410,8 @@ VRT_synth_page(const struct sess *sp, unsigned flags, const char *str, ...)
 
 	(void)flags;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->obj, OBJECT_MAGIC);
-	vsb = SMS_Makesynth(sp->wrk->obj);
+	CHECK_OBJ_NOTNULL(sp->req->obj, OBJECT_MAGIC);
+	vsb = SMS_Makesynth(sp->req->obj);
 	AN(vsb);
 
 	VSB_cat(vsb, str);
@@ -423,10 +424,10 @@ VRT_synth_page(const struct sess *sp, unsigned flags, const char *str, ...)
 		p = va_arg(ap, const char *);
 	}
 	va_end(ap);
-	SMS_Finish(sp->wrk->obj);
-	http_Unset(sp->wrk->obj->http, H_Content_Length);
-	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->obj->http,
-	    "Content-Length: %zd", sp->wrk->obj->len);
+	SMS_Finish(sp->req->obj);
+	http_Unset(sp->req->obj->http, H_Content_Length);
+	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->req->obj->http,
+	    "Content-Length: %zd", sp->req->obj->len);
 }
 
 /*--------------------------------------------------------------------*/
@@ -519,10 +520,10 @@ VRT_ban_string(struct sess *sp, const char *str)
 void
 VRT_purge(const struct sess *sp, double ttl, double grace)
 {
-	if (sp->cur_method == VCL_MET_HIT)
-		HSH_Purge(sp, sp->wrk->obj->objcore->objhead, ttl, grace);
-	else if (sp->cur_method == VCL_MET_MISS)
-		HSH_Purge(sp, sp->wrk->objcore->objhead, ttl, grace);
+	if (sp->req->cur_method == VCL_MET_HIT)
+		HSH_Purge(sp, sp->req->obj->objcore->objhead, ttl, grace);
+	else if (sp->req->cur_method == VCL_MET_MISS)
+		HSH_Purge(sp, sp->req->objcore->objhead, ttl, grace);
 }
 
 /*--------------------------------------------------------------------

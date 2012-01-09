@@ -29,7 +29,7 @@ following VCL in place::
 
   acl purge {
 	  "localhost";
-	  "192.168.55.0/24";
+	  "192.168.55.0"/24;
   }
   
   sub vcl_recv {

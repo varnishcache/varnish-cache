@@ -26,6 +26,17 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * This source file has the various trickery surrounding the accept/listen
+ * sockets.
+ *
+ * The actual acceptance is done from cache_pool.c, by calling
+ * into VCA_Accept() in this file.
+ *
+ * Once the session is allocated we move into it with a call to
+ * VCA_SetupSess().
+ *
+ * If we fail to allocate a session we call VCA_FailSess() to clean up
+ * and initiate pacing.
  */
 
 #include "config.h"
@@ -41,6 +52,9 @@
 static pthread_t	VCA_thread;
 static struct timeval	tv_sndtimeo;
 static struct timeval	tv_rcvtimeo;
+static int hack_ready;
+static double vca_pace = 0.0;
+static struct lock pace_mtx;
 
 /*--------------------------------------------------------------------
  * We want to get out of any kind of trouble-hit TCP connections as fast
@@ -53,6 +67,12 @@ static const struct linger linger = {
 };
 
 static unsigned char	need_sndtimeo, need_rcvtimeo, need_linger, need_test;
+
+/*--------------------------------------------------------------------
+ * Some kernels have bugs/limitations with respect to which options are
+ * inherited from the accept/listen socket, so we have to keep track of
+ * which, if any, sockopts we have to set on the accepted socket.
+ */
 
 static void
 sock_test(int fd)
@@ -108,55 +128,9 @@ sock_test(int fd)
 }
 
 /*--------------------------------------------------------------------
- * Called once the workerthread gets hold of the session, to do setup
- * setup overhead, we don't want to bother the acceptor thread with.
- */
-
-void
-VCA_Prep(struct sess *sp)
-{
-	char addr[VTCP_ADDRBUFSIZE];
-	char port[VTCP_PORTBUFSIZE];
-
-	VTCP_name(&sp->sockaddr, sp->sockaddrlen,
-	    addr, sizeof addr, port, sizeof port);
-	sp->addr = WS_Dup(sp->ws, addr);
-	sp->port = WS_Dup(sp->ws, port);
-	if (cache_param->log_local_addr) {
-		AZ(getsockname(sp->fd, (void*)&sp->mysockaddr, &sp->mysockaddrlen));
-		VTCP_name(&sp->mysockaddr, sp->mysockaddrlen,
-		    addr, sizeof addr, port, sizeof port);
-		WSP(sp, SLT_SessionOpen, "%s %s %s %s",
-		    sp->addr, sp->port, addr, port);
-	} else {
-		WSP(sp, SLT_SessionOpen, "%s %s %s",
-		    sp->addr, sp->port, sp->mylsock->name);
-	}
-	sp->acct_ses.first = sp->t_open;
-	if (need_test)
-		sock_test(sp->fd);
-	if (need_linger)
-		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_LINGER,
-		    &linger, sizeof linger));
-#ifdef SO_SNDTIMEO_WORKS
-	if (need_sndtimeo)
-		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO,
-		    &tv_sndtimeo, sizeof tv_sndtimeo));
-#endif
-#ifdef SO_RCVTIMEO_WORKS
-	if (need_rcvtimeo)
-		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_RCVTIMEO,
-		    &tv_rcvtimeo, sizeof tv_rcvtimeo));
-#endif
-}
-
-/*--------------------------------------------------------------------
  * If accept(2)'ing fails, we pace ourselves to relive any resource
  * shortage if possible.
  */
-
-static double vca_pace = 0.0;
-static struct lock pace_mtx;
 
 static void
 vca_pace_check(void)
@@ -199,8 +173,6 @@ vca_pace_good(void)
 /*--------------------------------------------------------------------
  * Accept on a listen socket, and handle error returns.
  */
-
-static int hack_ready;
 
 int
 VCA_Accept(struct listen_sock *ls, struct wrk_accept *wa)
@@ -248,43 +220,61 @@ VCA_Accept(struct listen_sock *ls, struct wrk_accept *wa)
  */
 
 void
-VCA_FailSess(struct worker *w)
+VCA_FailSess(struct worker *wrk)
 {
 	struct wrk_accept *wa;
 
-	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	CAST_OBJ_NOTNULL(wa, (void*)w->ws->f, WRK_ACCEPT_MAGIC);
-	AZ(w->sp);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CAST_OBJ_NOTNULL(wa, (void*)wrk->ws->f, WRK_ACCEPT_MAGIC);
+	AZ(wrk->sp);
 	AZ(close(wa->acceptsock));
-	w->stats.sess_drop++;
+	wrk->stats.sess_drop++;
 	vca_pace_bad();
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * We have allocated a session, move our info into it.
+ */
 
 void
-VCA_SetupSess(struct worker *w)
+VCA_SetupSess(struct worker *wrk)
 {
 	struct sess *sp;
 	struct wrk_accept *wa;
 
-	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-	CAST_OBJ_NOTNULL(wa, (void*)w->ws->f, WRK_ACCEPT_MAGIC);
-	sp = w->sp;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CAST_OBJ_NOTNULL(wa, (void*)wrk->ws->f, WRK_ACCEPT_MAGIC);
+	sp = wrk->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	sp->fd = wa->acceptsock;
 	sp->vsl_id = wa->acceptsock | VSL_CLIENTMARKER ;
 	wa->acceptsock = -1;
 	sp->t_open = VTIM_real();
-	sp->t_end = sp->t_open;
+	sp->t_req = sp->t_open;
+	sp->t_idle = sp->t_open;
 	sp->mylsock = wa->acceptlsock;
 	CHECK_OBJ_NOTNULL(sp->mylsock, LISTEN_SOCK_MAGIC);
 	assert(wa->acceptaddrlen <= sp->sockaddrlen);
 	memcpy(&sp->sockaddr, &wa->acceptaddr, wa->acceptaddrlen);
 	sp->sockaddrlen = wa->acceptaddrlen;
-	sp->step = STP_FIRST;
 	vca_pace_good();
-	w->stats.sess_conn++;
+	wrk->stats.sess_conn++;
+
+	if (need_test)
+		sock_test(sp->fd);
+	if (need_linger)
+		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_LINGER,
+		    &linger, sizeof linger));
+#ifdef SO_SNDTIMEO_WORKS
+	if (need_sndtimeo)
+		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO,
+		    &tv_sndtimeo, sizeof tv_sndtimeo));
+#endif
+#ifdef SO_RCVTIMEO_WORKS
+	if (need_rcvtimeo)
+		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_RCVTIMEO,
+		    &tv_rcvtimeo, sizeof tv_rcvtimeo));
+#endif
 }
 
 /*--------------------------------------------------------------------*/
@@ -293,7 +283,7 @@ static void *
 vca_acct(void *arg)
 {
 #ifdef SO_RCVTIMEO_WORKS
-	double sess_timeout = 0;
+	double timeout_idle = 0;
 #endif
 #ifdef SO_SNDTIMEO_WORKS
 	double send_timeout = 0;
@@ -333,10 +323,10 @@ vca_acct(void *arg)
 		}
 #endif
 #ifdef SO_RCVTIMEO_WORKS
-		if (cache_param->sess_timeout != sess_timeout) {
+		if (cache_param->timeout_idle != timeout_idle) {
 			need_test = 1;
-			sess_timeout = cache_param->sess_timeout;
-			tv_rcvtimeo = VTIM_timeval(sess_timeout);
+			timeout_idle = cache_param->timeout_idle;
+			tv_rcvtimeo = VTIM_timeval(timeout_idle);
 			VTAILQ_FOREACH(ls, &heritage.socks, list) {
 				if (ls->sock < 0)
 					continue;
@@ -380,7 +370,7 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 
 	/*
 	 * This CLI command is primarily used by varnishtest.  Don't
-	 * respond until liste(2) has been called, in order to avoid
+	 * respond until listen(2) has been called, in order to avoid
 	 * a race where varnishtest::client would attempt to connect(2)
 	 * before listen(2) has been called.
 	 */

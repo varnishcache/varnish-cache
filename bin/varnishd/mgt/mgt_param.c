@@ -43,7 +43,7 @@
 #include "common/params.h"
 
 #include "mgt/mgt_param.h"
-#include "waiter/cache_waiter.h"
+#include "waiter/waiter.h"
 #include "vav.h"
 #include "vcli.h"
 #include "vcli_common.h"
@@ -102,33 +102,49 @@ tweak_timeout(struct cli *cli, const struct parspec *par, const char *arg)
 	tweak_generic_timeout(cli, dest, arg);
 }
 
+/*--------------------------------------------------------------------*/
+
+static int
+tweak_generic_timeout_double(struct cli *cli, volatile double *dest,
+    const char *arg, double min, double max)
+{
+	double u;
+	char *p;
+
+	if (arg != NULL) {
+		p = NULL;
+		u = strtod(arg, &p);
+		if (*arg == '\0' || *p != '\0') {
+			VCLI_Out(cli, "Not a number(%s)\n", arg);
+			VCLI_SetResult(cli, CLIS_PARAM);
+			return (-1);
+		}
+		if (u < min) {
+			VCLI_Out(cli,
+			    "Timeout must be greater or equal to %.g\n", min);
+			VCLI_SetResult(cli, CLIS_PARAM);
+			return (-1);
+		}
+		if (u > max) {
+			VCLI_Out(cli,
+			    "Timeout must be less than or equal to %.g\n", max);
+			VCLI_SetResult(cli, CLIS_PARAM);
+			return (-1);
+		}
+		*dest = u;
+	} else
+		VCLI_Out(cli, "%.6f", *dest);
+	return (0);
+}
+
 static void
 tweak_timeout_double(struct cli *cli, const struct parspec *par,
     const char *arg)
 {
 	volatile double *dest;
-	double u;
 
 	dest = par->priv;
-	if (arg != NULL) {
-		u = strtod(arg, NULL);
-		if (u < par->min) {
-			VCLI_Out(cli,
-			    "Timeout must be greater or equal to %.g\n",
-				 par->min);
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
-		}
-		if (u > par->max) {
-			VCLI_Out(cli,
-			    "Timeout must be less than or equal to %.g\n",
-				 par->max);
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
-		}
-		*dest = u;
-	} else
-		VCLI_Out(cli, "%.6f", *dest);
+	(void)tweak_generic_timeout_double(cli, dest, arg, par->min, par->max);
 }
 
 /*--------------------------------------------------------------------*/
@@ -138,11 +154,19 @@ tweak_generic_double(struct cli *cli, const struct parspec *par,
     const char *arg)
 {
 	volatile double *dest;
+	char *p;
 	double u;
 
 	dest = par->priv;
 	if (arg != NULL) {
-		u = strtod(arg, NULL);
+		p = NULL;
+		u = strtod(arg, &p);
+		if (*p != '\0') {
+			VCLI_Out(cli,
+			    "Not a number (%s)\n", arg);
+			VCLI_SetResult(cli, CLIS_PARAM);
+			return;
+		}
 		if (u < par->min) {
 			VCLI_Out(cli,
 			    "Must be greater or equal to %.g\n",
@@ -206,26 +230,34 @@ tweak_bool(struct cli *cli, const struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
-void
+int
 tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg,
     unsigned min, unsigned max)
 {
 	unsigned u;
+	char *p;
 
 	if (arg != NULL) {
+		p = NULL;
 		if (!strcasecmp(arg, "unlimited"))
 			u = UINT_MAX;
-		else
-			u = strtoul(arg, NULL, 0);
+		else {
+			u = strtoul(arg, &p, 0);
+			if (*arg == '\0' || *p != '\0') {
+				VCLI_Out(cli, "Not a number (%s)\n", arg);
+				VCLI_SetResult(cli, CLIS_PARAM);
+				return (-1);
+			}
+		}
 		if (u < min) {
 			VCLI_Out(cli, "Must be at least %u\n", min);
 			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
+			return (-1);
 		}
 		if (u > max) {
 			VCLI_Out(cli, "Must be no more than %u\n", max);
 			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
+			return (-1);
 		}
 		*dest = u;
 	} else if (*dest == UINT_MAX) {
@@ -233,6 +265,7 @@ tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg,
 	} else {
 		VCLI_Out(cli, "%u", *dest);
 	}
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -243,7 +276,8 @@ tweak_uint(struct cli *cli, const struct parspec *par, const char *arg)
 	volatile unsigned *dest;
 
 	dest = par->priv;
-	tweak_generic_uint(cli, dest, arg, (uint)par->min, (uint)par->max);
+	(void)tweak_generic_uint(cli, dest, arg,
+	    (uint)par->min, (uint)par->max);
 }
 
 /*--------------------------------------------------------------------*/
@@ -554,6 +588,55 @@ tweak_diag_bitmap(struct cli *cli, const struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
+static void
+tweak_poolparam(struct cli *cli, const struct parspec *par, const char *arg)
+{
+	volatile struct poolparam *pp, px;
+	char **av;
+
+	pp = par->priv;
+	if (arg == NULL) {
+		VCLI_Out(cli, "%u,%u,%g",
+		    pp->min_pool, pp->max_pool, pp->max_age);
+	} else {
+		av = VAV_Parse(arg, NULL, ARGV_COMMA);
+		do {
+			if (av[0] != NULL) {
+				VCLI_Out(cli, "Parse error: %s", av[0]);
+				VCLI_SetResult(cli, CLIS_PARAM);
+				break;
+			}
+			if (av[1] == NULL || av[2] == NULL || av[3] == NULL) {
+				VCLI_Out(cli,
+				    "Three fields required:"
+				    " min_pool, max_pool and max_age\n");
+				VCLI_SetResult(cli, CLIS_PARAM);
+				break;
+			}
+			px = *pp;
+			if (tweak_generic_uint(cli, &px.min_pool, av[1],
+			    (uint)par->min, (uint)par->max))
+				break;
+			if (tweak_generic_uint(cli, &px.max_pool, av[2],
+			    (uint)par->min, (uint)par->max))
+				break;
+			if (tweak_generic_timeout_double(cli, &px.max_age,
+			    av[3], 0, 1e6))
+				break;
+			if (px.min_pool > px.max_pool) {
+				VCLI_Out(cli,
+				    "min_pool cannot be larger"
+				    " than max_pool\n");
+				VCLI_SetResult(cli, CLIS_PARAM);
+				break;
+			}
+			*pp = px;
+		} while(0);
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
 /*
  * Make sure to end all lines with either a space or newline of the
  * formatting will go haywire.
@@ -604,12 +687,9 @@ static const struct parspec input_parspec[] = {
 		"flush of the cache use \"ban.url .\"",
 		0,
 		"120", "seconds" },
-	{ "sess_workspace",
-		tweak_bytes_u, &mgt_param.sess_workspace, 1024, UINT_MAX,
-		"Bytes of HTTP protocol workspace allocated for sessions. "
-		"This space must be big enough for the entire HTTP protocol "
-		"header and any edits done to it in the VCL code.\n"
-		"Minimum is 1024 bytes.",
+	{ "workspace_client",
+		tweak_bytes_u, &mgt_param.workspace_client, 3072, UINT_MAX,
+		"Bytes of HTTP protocol workspace for clients HTTP req/resp.",
 		DELAYED_EFFECT,
 		"64k", "bytes" },
 	{ "http_req_hdr_len",
@@ -690,12 +770,19 @@ static const struct parspec input_parspec[] = {
 		"cache at the end of ttl+max(grace,keep).",
 		DELAYED_EFFECT,
 		"10", "seconds" },
-	{ "sess_timeout", tweak_timeout, &mgt_param.sess_timeout, 0, 0,
-		"Idle timeout for persistent sessions. "
-		"If a HTTP request has not been received in this many "
-		"seconds, the session is closed.",
+	{ "timeout_idle", tweak_timeout_double, &mgt_param.timeout_idle,
+		0, UINT_MAX,
+		"Idle timeout for client connections.\n"
+		"A connection is considered idle, until we receive"
+		" a non-white-space character on it.",
 		0,
 		"5", "seconds" },
+	{ "timeout_req", tweak_timeout_double, &mgt_param.timeout_req,
+		0, UINT_MAX,
+		"Max time to receive clients request header, measured"
+		" from first non-white-space character to double CRNL.",
+		0,
+		"2", "seconds" },
 	{ "expiry_sleep", tweak_timeout_double, &mgt_param.expiry_sleep, 0, 60,
 		"How long the expiry thread sleeps when there is nothing "
 		"for it to do.\n",
@@ -714,7 +801,8 @@ static const struct parspec input_parspec[] = {
 		"See setsockopt(2) under SO_SNDTIMEO for more information.",
 		DELAYED_EFFECT,
 		"600", "seconds" },
-	{ "idle_send_timeout", tweak_timeout, &mgt_param.idle_send_timeout, 0, 0,
+	{ "idle_send_timeout", tweak_timeout, &mgt_param.idle_send_timeout,
+		0, 0,
 		"Time to wait with no data sent. "
 		"If no data has been transmitted in this many\n"
                 "seconds the session is closed. \n"
@@ -909,18 +997,18 @@ static const struct parspec input_parspec[] = {
 		"it.\n",
 		0,
 		"100000", "sessions" },
-	{ "session_linger", tweak_uint,
-		&mgt_param.session_linger,0, UINT_MAX,
-		"How long time the workerthread lingers on the session "
-		"to see if a new request appears right away.\n"
-		"If sessions are reused, as much as half of all reuses "
+	{ "timeout_linger", tweak_timeout_double, &mgt_param.timeout_linger,
+		0, UINT_MAX,
+		"How long time the workerthread lingers on an idle session "
+		"before handing it over to the waiter.\n"
+		"When sessions are reused, as much as half of all reuses "
 		"happen within the first 100 msec of the previous request "
 		"completing.\n"
 		"Setting this too high results in worker threads not doing "
 		"anything for their keep, setting it too low just means that "
 		"more sessions take a detour around the waiter.",
 		EXPERIMENTAL,
-		"50", "ms" },
+		"0.050", "seconds" },
 	{ "log_hashstring", tweak_bool, &mgt_param.log_hash, 0, 0,
 		"Log the hash string components to shared memory log.\n",
 		0,
@@ -1112,6 +1200,32 @@ static const struct parspec input_parspec[] = {
 		"to save the memory of one busyobj per worker thread.",
 		0,
 		"true", ""},
+
+	{ "pool_vbc", tweak_poolparam, &mgt_param.vbc_pool, 0, 10000,
+		"Parameters for backend connection memory pool.\n"
+		"The three numbers are:\n"
+		"   min_pool -- minimum size of free pool.\n"
+		"   max_pool -- maximum size of free pool.\n"
+		"   max_age -- max age of free element.\n",
+		0,
+		"10,100,10", ""},
+
+	{ "pool_req", tweak_poolparam, &mgt_param.req_pool, 0, 10000,
+		"Parameters for per worker pool request memory pool.\n"
+		"The three numbers are:\n"
+		"   min_pool -- minimum size of free pool.\n"
+		"   max_pool -- maximum size of free pool.\n"
+		"   max_age -- max age of free element.\n",
+		0,
+		"10,100,10", ""},
+	{ "pool_sess", tweak_poolparam, &mgt_param.sess_pool, 0, 10000,
+		"Parameters for per worker pool session memory pool.\n"
+		"The three numbers are:\n"
+		"   min_pool -- minimum size of free pool.\n"
+		"   max_pool -- maximum size of free pool.\n"
+		"   max_age -- max age of free element.\n",
+		0,
+		"10,100,10", ""},
 
 	{ NULL, NULL, NULL }
 };
@@ -1317,7 +1431,8 @@ MCF_DumpRst(void)
 	const char *p, *q;
 	int i;
 
-	printf("\n.. The following is the autogenerated output from varnishd -x dumprst\n\n");
+	printf("\n.. The following is the autogenerated "
+	    "output from varnishd -x dumprst\n\n");
 	for (i = 0; i < nparspec; i++) {
 		pp = parspec[i];
 		printf("%s\n", pp->name);

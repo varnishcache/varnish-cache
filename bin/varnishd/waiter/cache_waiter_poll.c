@@ -35,7 +35,7 @@
 
 #include "cache/cache.h"
 
-#include "waiter/cache_waiter.h"
+#include "waiter/waiter.h"
 #include "vtim.h"
 
 #define NEEV	128
@@ -123,7 +123,7 @@ vwp_main(void *priv)
 	int v, v2;
 	struct vwp *vwp;
 	struct sess *ss[NEEV], *sp, *sp2;
-	double deadline;
+	double now, deadline;
 	int i, j, fd;
 
 	CAST_OBJ_NOTNULL(vwp, priv, VWP_MAGIC);
@@ -140,7 +140,8 @@ vwp_main(void *priv)
 		assert(vwp->pollfd[vwp->pipes[1]].fd == -1);
 		v = poll(vwp->pollfd, vwp->hpoll + 1, 100);
 		assert(v >= 0);
-		deadline = VTIM_real() - cache_param->sess_timeout;
+		now = VTIM_real();
+		deadline = now - cache_param->timeout_idle;
 		v2 = v;
 		VTAILQ_FOREACH_SAFE(sp, &vwp->sesshead, list, sp2) {
 			if (v != 0 && v2 == 0)
@@ -153,25 +154,15 @@ vwp_main(void *priv)
 			assert(vwp->pollfd[fd].fd == fd);
 			if (vwp->pollfd[fd].revents) {
 				v2--;
-				i = HTC_Rx(sp->htc);
-				if (vwp->pollfd[fd].revents != POLLIN)
-					VSL(SLT_Debug, fd, "Poll: %x / %d",
-					    vwp->pollfd[fd].revents, i);
 				vwp->pollfd[fd].revents = 0;
 				VTAILQ_REMOVE(&vwp->sesshead, sp, list);
-				if (i == 0) {
-					/* Mov to front of list for speed */
-					VTAILQ_INSERT_HEAD(&vwp->sesshead,
-					    sp, list);
-				} else {
-					vwp_unpoll(vwp, fd);
-					SES_Handle(sp, i);
-				}
-			} else if (sp->t_open <= deadline) {
+				vwp_unpoll(vwp, fd);
+				SES_Handle(sp, now);
+			} else if (sp->t_idle <= deadline) {
 				VTAILQ_REMOVE(&vwp->sesshead, sp, list);
 				vwp_unpoll(vwp, fd);
 				// XXX: not yet (void)VTCP_linger(sp->fd, 0);
-				SES_Delete(sp, "timeout");
+				SES_Delete(sp, "timeout", now);
 			}
 		}
 		if (v2 && vwp->pollfd[vwp->pipes[0]].revents) {

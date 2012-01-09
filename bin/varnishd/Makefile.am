@@ -34,6 +34,7 @@ varnishd_SOURCES = \
 	cache/cache_httpconn.c \
 	cache/cache_lck.c \
 	cache/cache_main.c \
+	cache/cache_mempool.c \
 	cache/cache_panic.c \
 	cache/cache_pipe.c \
 	cache/cache_pool.c \
@@ -75,7 +76,8 @@ varnishd_SOURCES = \
 	storage/storage_persistent_subr.c \
 	storage/storage_synth.c \
 	storage/storage_umem.c \
-	waiter/waiter_common.c \
+	waiter/mgt_waiter.c \
+	waiter/cache_waiter.c \
 	waiter/cache_waiter_epoll.c \
 	waiter/cache_waiter_kqueue.c \
 	waiter/cache_waiter_poll.c \
@@ -95,7 +97,7 @@ noinst_HEADERS = \
 	mgt/mgt_param.h \
 	storage/storage.h \
 	storage/storage_persistent.h \
-	waiter/cache_waiter.h
+	waiter/waiter.h
 
 varnishd_CFLAGS = \
 	@PCRE_CFLAGS@ \

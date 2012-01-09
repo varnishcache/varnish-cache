@@ -42,6 +42,36 @@
 
 struct cli;
 
+/**********************************************************************
+ * FlexeLint and compiler shutuppery
+ */
+
+/*
+ * In OO-light situations, functions have to match their prototype
+ * even if that means not const'ing a const'able argument.
+ * The typedef should be specified as argument to the macro.
+ */
+#define __match_proto__(xxx)		/*lint -e{818} */
+
+/*
+ * State variables may change value before we use the last value we
+ * set them to.
+ * Pass no argument.
+ */
+#define __state_variable__(xxx)		/*lint -esym(838,xxx) */
+
+/**********************************************************************
+ * NI_MAXHOST and less so NI_MAXSERV, are ridiculously large for numeric
+ * representations of TCP/IP socket addresses, so we use our own.
+ * <netinet/in6.h>::INET6_ADDRSTRLEN is 46
+ */
+
+#define ADDR_BUFSIZE	48
+#define PORT_BUFSIZE	8
+
+
+/**********************************************************************/
+
 /* Name of transient storage */
 #define TRANSIENT_STORAGE	"Transient"
 
@@ -52,8 +82,6 @@ extern pid_t mgt_pid;
 extern struct vsb *vident;		// XXX: -> heritage ?
 int Symbol_Lookup(struct vsb *vsb, void *ptr);
 
-/* Help shut up FlexeLint */
-#define __match_proto__(xxx) /*lint -e{818} */
 
 /* Really belongs in mgt.h, but storage_file chokes on both */
 void mgt_child_inherit(int fd, const char *what);

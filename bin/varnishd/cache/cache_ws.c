@@ -14,7 +14,7 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
@@ -114,22 +114,6 @@ WS_Alloc(struct ws *ws, unsigned bytes)
 	DSL(0x02, SLT_Debug, 0, "WS_Alloc(%p, %u) = %p", ws, bytes, r);
 	WS_Assert(ws);
 	return (r);
-}
-
-char *
-WS_Dup(struct ws *ws, const char *s)
-{
-	unsigned l;
-	char *p;
-
-	WS_Assert(ws);
-	l = strlen(s) + 1;
-	p = WS_Alloc(ws, l);
-	if (p != NULL)
-		memcpy(p, s, l);
-	DSL(0x02, SLT_Debug, 0, "WS_Dup(%p, \"%s\") = %p", ws, s, p);
-	WS_Assert(ws);
-	return (p);
 }
 
 unsigned

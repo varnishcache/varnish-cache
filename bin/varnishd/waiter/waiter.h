@@ -39,7 +39,9 @@ struct waiter {
 	waiter_pass_f		*pass;
 };
 
+/* mgt_waiter.c */
 extern struct waiter const * waiter;
+void WAIT_tweak_waiter(struct cli *cli, const char *arg);
 
 #if defined(HAVE_EPOLL_CTL)
 extern const struct waiter waiter_epoll;
@@ -53,12 +55,4 @@ extern const struct waiter waiter_kqueue;
 extern const struct waiter waiter_ports;
 #endif
 
-
-/* cache_session.c */
-void SES_Handle(struct sess *sp, int status);
-
-/* cache_waiter.c */
 extern const struct waiter waiter_poll;
-const char *WAIT_GetName(void);
-void WAIT_tweak_waiter(struct cli *cli, const char *arg);
-void WAIT_Init(void);

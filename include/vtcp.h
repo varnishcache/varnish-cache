@@ -54,8 +54,10 @@ VTCP_Check(int a)
 
 #define VTCP_Assert(a) assert(VTCP_Check(a))
 
-void VTCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen);
-void VTCP_hisname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen);
+void VTCP_myname(int sock, char *abuf, unsigned alen,
+    char *pbuf, unsigned plen);
+void VTCP_hisname(int sock, char *abuf, unsigned alen,
+    char *pbuf, unsigned plen);
 int VTCP_filter_http(int sock);
 int VTCP_blocking(int sock);
 int VTCP_nonblocking(int sock);
