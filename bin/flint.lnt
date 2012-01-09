@@ -2,6 +2,9 @@
 
 -ffc			// No automatic custody
 
+-printf(2, VSB_printf)
+
+
 ///////////////////////////////////////////////////////////////////////
 // Weirdness relating to varnish includes etc.
 

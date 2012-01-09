@@ -58,7 +58,7 @@ client c3 {
 } -run
 
 varnish v1 -expect fetch_304 == 1
-varnish v1 -expect cond_not_validated == 0
+varnish v1 -expect fetch_not_validated == 0
 
 server s1 -wait
 varnish v1 -stop
@@ -117,7 +117,7 @@ client c3 {
 } -run
 
 varnish v1 -expect fetch_304 == 1
-varnish v1 -expect cond_not_validated == 0
+varnish v1 -expect fetch_not_validated == 0
 
 server s1 -wait
 varnish v1 -stop
@@ -153,4 +153,4 @@ delay 2.1
 client c3 -run
 
 varnish v1 -expect fetch_304 == 1
-varnish v1 -expect cond_not_validated == 0
+varnish v1 -expect fetch_not_validated == 0

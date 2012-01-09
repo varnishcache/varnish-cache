@@ -707,7 +707,6 @@ main(int argc, char *argv[])
 	const char *address = NULL;
 
 	vd = VSM_New();
-	VSL_Setup(vd);
 	debug = 0;
 
 	VSL_Arg(vd, 'c', NULL);
@@ -730,8 +729,10 @@ main(int argc, char *argv[])
 		usage();
 	}
 
-	if (VSL_Open(vd, 1))
+	if (VSM_Open(vd)) {
+		fprintf(stderr, "%s\n", VSM_Error(vd));
 		exit(1);
+	}
 
 	addr_info = init_connection(address);
 

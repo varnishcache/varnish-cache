@@ -81,7 +81,9 @@ do_curses_cb(void *priv, const struct VSC_point * const sp)
 	char buf[128];
 
 	(void)priv;
-	assert(!strcmp(sp->fmt, "uint64_t"));
+	if (sp == NULL)
+		return (0);
+	assert(!strcmp(sp->desc->fmt, "uint64_t"));
 
 	pt = calloc(sizeof *pt, 1);
 	AN(pt);
@@ -89,7 +91,7 @@ do_curses_cb(void *priv, const struct VSC_point * const sp)
 
 	pt->ptr = sp->ptr;
 	pt->ref = *pt->ptr;
-	pt->flag = sp->flag;
+	pt->flag = sp->desc->flag;
 
 	*buf = '\0';
 	if (strcmp(sp->class, "")) {
@@ -100,9 +102,9 @@ do_curses_cb(void *priv, const struct VSC_point * const sp)
 		strcat(buf, sp->ident);
 		strcat(buf, ".");
 	}
-	strcat(buf, sp->name);
+	strcat(buf, sp->desc->name);
 	strcat(buf, " - ");
-	strcat(buf, sp->desc);
+	strcat(buf, sp->desc->sdesc);
 	pt->name = strdup(buf);
 	AN(pt->name);
 	return (0);
@@ -144,7 +146,6 @@ do_curses(struct VSM_data *vd, const struct VSC_C_main *VSC_C_main,
 	int ch, line;
 	struct pt *pt;
 	double act, lact;
-	unsigned seq;
 
 	(void)initscr();
 	AC(raw());
@@ -157,7 +158,6 @@ do_curses(struct VSM_data *vd, const struct VSC_C_main *VSC_C_main,
 		/*
 		 * Initialization goes in outher loop
 		 */
-		seq = VSM_Seq(vd);
 		prep_pts(vd);
 		AC(erase());
 		AC(refresh());
@@ -170,15 +170,11 @@ do_curses(struct VSM_data *vd, const struct VSC_C_main *VSC_C_main,
 		lact = 0;
 
 		while (1) {
-			if (seq != VSM_Seq(vd))
-				break;
 			/*
 			 * Break to outher loop if we need to re-read file.
 			 * Only check if it looks like nothing is happening.
 			 */
 			act = VSC_C_main->cache_hit + VSC_C_main->cache_miss + 1;
-			if (act == lact && VSM_ReOpen(vd, 1))
-				break;
 			lact = act;
 
 			AZ(gettimeofday(&tv, NULL));

@@ -189,6 +189,8 @@ struct params {
 
 	struct vre_limits	vre_limits;
 
+	unsigned		bo_cache;
+
 	/* VSM dimensions */
 	ssize_t			vsm_space;
 	ssize_t			vsl_space;

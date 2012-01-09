@@ -161,7 +161,8 @@ vwp_main(void *priv)
 				VTAILQ_REMOVE(&vwp->sesshead, sp, list);
 				if (i == 0) {
 					/* Mov to front of list for speed */
-					VTAILQ_INSERT_HEAD(&vwp->sesshead, sp, list);
+					VTAILQ_INSERT_HEAD(&vwp->sesshead,
+					    sp, list);
 				} else {
 					vwp_unpoll(vwp, fd);
 					SES_Handle(sp, i);

@@ -351,7 +351,6 @@ main(int argc, char **argv)
 	match_tag = -1;
 
 	vd = VSM_New();
-	VSL_Setup(vd);
 
 	while ((o = getopt(argc, argv, VSL_ARGS "Vw:r:R:f:p:")) != -1) {
 		switch (o) {
@@ -424,8 +423,10 @@ main(int argc, char **argv)
 	}
 	strcpy(format + 4*(fnum-1), "%lf");
 
-	if (VSL_Open(vd, 1))
+	if (VSM_Open(vd)) {
+		fprintf(stderr, "%s\n", VSM_Error(vd));
 		exit(1);
+	}
 
 	log_ten = log(10.0);
 

@@ -77,7 +77,7 @@ struct ban {
 	unsigned		magic;
 #define BAN_MAGIC		0x700b08ea
 	VTAILQ_ENTRY(ban)	list;
-	unsigned		refcount;
+	int			refcount;
 	unsigned		flags;
 #define BAN_F_GONE		(1 << 0)
 #define BAN_F_REQ		(1 << 2)
@@ -841,7 +841,7 @@ ban_lurker_work(const struct sess *sp, unsigned pass)
 				break;
 			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 			if (cache_param->diag_bitmap & 0x80000)
-				VSL(SLT_Debug, 0, "test: %p %d %d",
+				VSL(SLT_Debug, 0, "test: %p %u %u",
 				    oc, oc->flags & OC_F_LURK, pass);
 			if ((oc->flags & OC_F_LURK) == pass)
 				break;
@@ -892,7 +892,7 @@ ban_lurker_work(const struct sess *sp, unsigned pass)
 			}
 			Lck_Unlock(&oh->mtx);
 			if (cache_param->diag_bitmap & 0x80000)
-				VSL(SLT_Debug, 0, "lurker done: %p %d %d",
+				VSL(SLT_Debug, 0, "lurker done: %p %u %u",
 				    oc, oc->flags & OC_F_LURK, pass);
 			(void)HSH_Deref(sp->wrk, NULL, &o);
 			VTIM_sleep(cache_param->ban_lurker_sleep);

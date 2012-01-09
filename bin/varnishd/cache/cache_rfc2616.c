@@ -69,12 +69,15 @@ RFC2616_Ttl(const struct sess *sp)
 	double h_date, h_expires;
 	char *p;
 	const struct http *hp;
+	struct exp *expp;
 
-	hp = sp->wrk->beresp;
+	expp = &sp->wrk->busyobj->exp;
 
-	assert(sp->wrk->exp.entered != 0.0 && !isnan(sp->wrk->exp.entered));
+	hp = sp->wrk->busyobj->beresp;
+
+	assert(expp->entered != 0.0 && !isnan(expp->entered));
 	/* If all else fails, cache using default ttl */
-	sp->wrk->exp.ttl = cache_param->default_ttl;
+	expp->ttl = cache_param->default_ttl;
 
 	max_age = age = 0;
 	h_expires = 0;
@@ -87,7 +90,7 @@ RFC2616_Ttl(const struct sess *sp)
 
 	if (http_GetHdr(hp, H_Age, &p)) {
 		age = strtoul(p, NULL, 0);
-		sp->wrk->exp.age = age;
+		expp->age = age;
 	}
 	if (http_GetHdr(hp, H_Expires, &p))
 		h_expires = VTIM_parse(p);
@@ -97,7 +100,7 @@ RFC2616_Ttl(const struct sess *sp)
 
 	switch (sp->err_code) {
 	default:
-		sp->wrk->exp.ttl = -1.;
+		expp->ttl = -1.;
 		break;
 	case 200: /* OK */
 	case 203: /* Non-Authoritative Information */
@@ -122,9 +125,9 @@ RFC2616_Ttl(const struct sess *sp)
 				max_age = strtoul(p, NULL, 0);
 
 			if (age > max_age)
-				sp->wrk->exp.ttl = 0;
+				expp->ttl = 0;
 			else
-				sp->wrk->exp.ttl = max_age - age;
+				expp->ttl = max_age - age;
 			break;
 		}
 
@@ -135,22 +138,22 @@ RFC2616_Ttl(const struct sess *sp)
 
 		/* If backend told us it is expired already, don't cache. */
 		if (h_expires < h_date) {
-			sp->wrk->exp.ttl = 0;
+			expp->ttl = 0;
 			break;
 		}
 
 		if (h_date == 0 ||
-		    fabs(h_date - sp->wrk->exp.entered) < cache_param->clock_skew) {
+		    fabs(h_date - expp->entered) < cache_param->clock_skew) {
 			/*
 			 * If we have no Date: header or if it is
 			 * sufficiently close to our clock we will
 			 * trust Expires: relative to our own clock.
 			 */
-			if (h_expires < sp->wrk->exp.entered)
-				sp->wrk->exp.ttl = 0;
+			if (h_expires < expp->entered)
+				expp->ttl = 0;
 			else
-				sp->wrk->exp.ttl = h_expires -
-				    sp->wrk->exp.entered;
+				expp->ttl = h_expires -
+				    expp->entered;
 			break;
 		} else {
 			/*
@@ -158,7 +161,7 @@ RFC2616_Ttl(const struct sess *sp)
 			 * derive a relative time from the two headers.
 			 * (the negative ttl case is caught above)
 			 */
-			sp->wrk->exp.ttl = (int)(h_expires - h_date);
+			expp->ttl = (int)(h_expires - h_date);
 		}
 
 	}
@@ -166,8 +169,8 @@ RFC2616_Ttl(const struct sess *sp)
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
 	WSP(sp, SLT_TTL,
 	    "%u RFC %.0f %.0f %.0f %.0f %.0f %.0f %.0f %u",
-	    sp->xid, sp->wrk->exp.ttl, -1., -1., sp->wrk->exp.entered,
-	    sp->wrk->exp.age, h_date, h_expires, max_age);
+	    sp->xid, expp->ttl, -1., -1., expp->entered,
+	    expp->age, h_date, h_expires, max_age);
 }
 
 /*--------------------------------------------------------------------
@@ -180,16 +183,16 @@ RFC2616_Body(const struct sess *sp)
 	struct http *hp;
 	char *b;
 
-	hp = sp->wrk->beresp;
+	hp = sp->wrk->busyobj->beresp;
 
 	if (hp->protover < 11 && !http_HdrIs(hp, H_Connection, "keep-alive"))
-		sp->wrk->do_close = 1;
+		sp->wrk->busyobj->should_close = 1;
 	else if (http_HdrIs(hp, H_Connection, "close"))
-		sp->wrk->do_close = 1;
+		sp->wrk->busyobj->should_close = 1;
 	else
-		sp->wrk->do_close = 0;
+		sp->wrk->busyobj->should_close = 0;
 
-	if (!strcasecmp(http_GetReq(sp->wrk->bereq), "head")) {
+	if (!strcasecmp(http_GetReq(sp->wrk->busyobj->bereq), "head")) {
 		/*
 		 * A HEAD request can never have a body in the reply,
 		 * no matter what the headers might say.
@@ -236,7 +239,8 @@ RFC2616_Body(const struct sess *sp)
 		return (BS_ERROR);
 	}
 
-	if (http_GetHdr(hp, H_Content_Length, &sp->wrk->h_content_length)) {
+	if (http_GetHdr(hp, H_Content_Length,
+	    &sp->wrk->busyobj->h_content_length)) {
 		sp->wrk->stats.fetch_length++;
 		return (BS_LENGTH);
 	}
@@ -315,18 +319,18 @@ RFC2616_Do_Cond(const struct sess *sp)
 	   and If-Modified-Since if present*/
 
 	if (http_GetHdr(sp->http, H_If_Modified_Since, &p) ) {
-		if (!sp->obj->last_modified)
+		if (!sp->wrk->obj->last_modified)
 			return (0);
 		ims = VTIM_parse(p);
 		if (ims > sp->t_req)	/* [RFC2616 14.25] */
 			return (0);
-		if (sp->obj->last_modified > ims)
+		if (sp->wrk->obj->last_modified > ims)
 			return (0);
 		do_cond = 1;
 	}
 
 	if (http_GetHdr(sp->http, H_If_None_Match, &p) &&
-	    http_GetHdr(sp->obj->http, H_ETag, &e)) {
+	    http_GetHdr(sp->wrk->obj->http, H_ETag, &e)) {
 		if (strcmp(p,e) != 0)
 			return (0);
 		do_cond = 1;

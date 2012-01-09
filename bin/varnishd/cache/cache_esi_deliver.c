@@ -58,8 +58,8 @@ ved_include(struct sess *sp, const char *src, const char *host)
 
 	(void)WRW_FlushRelease(w);
 
-	obj = sp->obj;
-	sp->obj = NULL;
+	obj = sp->wrk->obj;
+	sp->wrk->obj = NULL;
 	res_mode = sp->wrk->res_mode;
 
 	/* Reset request to status before we started messing with it */
@@ -91,13 +91,6 @@ ved_include(struct sess *sp, const char *src, const char *host)
 	/* Client content already taken care of */
 	http_Unset(sp->http, H_Content_Length);
 
-	sp->wrk->do_esi = 0;
-	sp->wrk->is_gzip = 0;
-	sp->wrk->is_gunzip = 0;
-	sp->wrk->do_gzip = 0;
-	sp->wrk->do_gunzip = 0;
-	sp->wrk->do_stream = 0;
-
 	sxid = sp->xid;
 	while (1) {
 		sp->wrk = w;
@@ -113,7 +106,7 @@ ved_include(struct sess *sp, const char *src, const char *host)
 	AN(sp->wrk);
 	assert(sp->step == STP_DONE);
 	sp->esi_level--;
-	sp->obj = obj;
+	sp->wrk->obj = obj;
 	sp->wrk->res_mode = res_mode;
 
 	/* Reset the workspace */
@@ -238,7 +231,7 @@ ESI_Deliver(struct sess *sp)
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	st = sp->obj->esidata;
+	st = sp->wrk->obj->esidata;
 	AN(st);
 	assert(sizeof obuf >= 1024);
 
@@ -283,7 +276,7 @@ ESI_Deliver(struct sess *sp)
 		obufl = 0;
 	}
 
-	st = VTAILQ_FIRST(&sp->obj->store);
+	st = VTAILQ_FIRST(&sp->wrk->obj->store);
 	off = 0;
 
 	while (p < e) {
@@ -440,7 +433,7 @@ ved_deliver_byterange(const struct sess *sp, ssize_t low, ssize_t high)
 
 //printf("BR %jd %jd\n", low, high);
 	lx = 0;
-	VTAILQ_FOREACH(st, &sp->obj->store, list) {
+	VTAILQ_FOREACH(st, &sp->wrk->obj->store, list) {
 		p = st->ptr;
 		l = st->len;
 //printf("[0-] %jd %jd\n", lx, lx + l);
@@ -481,8 +474,8 @@ ESI_DeliverChild(const struct sess *sp)
 	uint32_t ilen;
 	uint8_t *dbits;
 
-	if (!sp->obj->gziped) {
-		VTAILQ_FOREACH(st, &sp->obj->store, list)
+	if (!sp->wrk->obj->gziped) {
+		VTAILQ_FOREACH(st, &sp->wrk->obj->store, list)
 			ved_pretend_gzip(sp, st->ptr, st->len);
 		return;
 	}
@@ -494,7 +487,7 @@ ESI_DeliverChild(const struct sess *sp)
 
 	dbits = (void*)WS_Alloc(sp->wrk->ws, 8);
 	AN(dbits);
-	obj = sp->obj;
+	obj = sp->wrk->obj;
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	start = obj->gzip_start;
 	last = obj->gzip_last;
@@ -559,7 +552,7 @@ ESI_DeliverChild(const struct sess *sp)
 	}
 	if (lpad > 0)
 		(void)WRW_Write(sp->wrk, dbits + 1, lpad);
-	st = VTAILQ_LAST(&sp->obj->store, storagehead);
+	st = VTAILQ_LAST(&sp->wrk->obj->store, storagehead);
 	assert(st->len > 8);
 
 	p = st->ptr + st->len - 8;

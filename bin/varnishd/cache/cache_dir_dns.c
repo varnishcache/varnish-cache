@@ -347,8 +347,8 @@ vdi_dns_find_backend(const struct sess *sp, struct vdi_dns *vs)
 	/* bereq is only present after recv et. al, otherwise use req (ie:
 	 * use req for health checks in vcl_recv and such).
 	 */
-	if (sp->wrk->bereq)
-		hp = sp->wrk->bereq;
+	if (sp->wrk->busyobj != NULL && sp->wrk->busyobj->bereq)
+		hp = sp->wrk->busyobj->bereq;
 	else
 		hp = sp->http;
 

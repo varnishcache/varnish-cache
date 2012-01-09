@@ -196,8 +196,6 @@ Pool_Work_Thread(void *priv, struct worker *w)
 		Lck_AssertHeld(&pp->mtx);
 
 		CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
-		CHECK_OBJ_NOTNULL(w->bereq, HTTP_MAGIC);
-		CHECK_OBJ_NOTNULL(w->beresp, HTTP_MAGIC);
 		CHECK_OBJ_NOTNULL(w->resp, HTTP_MAGIC);
 
 		WS_Reset(w->ws, NULL);
@@ -267,8 +265,7 @@ Pool_Work_Thread(void *priv, struct worker *w)
 			w->sp = NULL;
 
 			WS_Assert(w->ws);
-			AZ(w->bereq->ws);
-			AZ(w->beresp->ws);
+			AZ(w->busyobj);
 			AZ(w->resp->ws);
 			AZ(w->wrw.wfd);
 			AZ(w->storage_hint);
@@ -361,9 +358,11 @@ Pool_Wait(struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	AZ(sp->obj);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	AZ(sp->vcl);
 	assert(sp->fd >= 0);
+	sp->wrk = NULL;
+
 	/*
 	 * Set nonblocking in the worker-thread, before passing to the
 	 * acceptor thread, to reduce syscall density of the latter.

@@ -69,17 +69,18 @@ PipeSession(struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);
 	w = sp->wrk;
 
-	sp->wrk->vbc = VDI_GetFd(NULL, sp);
-	if (sp->wrk->vbc == NULL)
+	vc = VDI_GetFd(NULL, sp);
+	if (vc == NULL)
 		return;
-	vc = sp->wrk->vbc;
+	sp->wrk->busyobj->vbc = vc;		/* For panic dumping */
 	(void)VTCP_blocking(vc->fd);
 
 	WRW_Reserve(w, &vc->fd);
 	sp->wrk->acct_tmp.hdrbytes +=
-	    http_Write(w, sp->vsl_id, sp->wrk->bereq, 0);
+	    http_Write(w, sp->vsl_id, sp->wrk->busyobj->bereq, 0);
 
 	if (sp->htc->pipeline.b != NULL)
 		sp->wrk->acct_tmp.bodybytes +=
@@ -89,7 +90,7 @@ PipeSession(struct sess *sp)
 
 	if (i) {
 		SES_Close(sp, "pipe");
-		VDI_CloseFd(sp->wrk);
+		VDI_CloseFd(sp->wrk, &vc);
 		return;
 	}
 
@@ -129,5 +130,6 @@ PipeSession(struct sess *sp)
 		}
 	}
 	SES_Close(sp, "pipe");
-	VDI_CloseFd(sp->wrk);
+	VDI_CloseFd(sp->wrk, &vc);
+	sp->wrk->busyobj->vbc = NULL;
 }

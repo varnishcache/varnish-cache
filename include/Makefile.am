@@ -15,6 +15,7 @@ pkginclude_HEADERS = \
 	tbl/vrt_stv_var.h \
 	tbl/vsc_all.h \
 	tbl/vsc_fields.h \
+	tbl/vsc_f_main.h \
 	tbl/vsl_tags.h \
 	vapi/vsm.h \
 	vapi/vsm_int.h \

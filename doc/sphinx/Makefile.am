@@ -116,7 +116,6 @@ EXTRA_DIST = \
 	phk/three-zero.rst \
 	phk/vcl_expr.rst \
 	reference/index.rst \
-	reference/shmem.rst \
 	reference/params.rst \
 	reference/varnishadm.rst \
 	reference/varnish-cli.rst \
@@ -132,6 +131,7 @@ EXTRA_DIST = \
 	reference/vcl.rst \
 	reference/vmod.rst \
 	reference/vmod_std.rst \
+	reference/vsm.rst \
 	tutorial/advanced_backend_servers.rst \
 	tutorial/advanced_topics.rst \
 	tutorial/backend_servers.rst \

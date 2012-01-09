@@ -60,7 +60,7 @@ static uint64_t       bitmap[65536];
 #define F_INVCL		(1 << 0)
 
 static void
-h_order_finish(int fd, const struct VSM_data *vd)
+h_order_finish(int fd, struct VSM_data *vd)
 {
 
 	AZ(VSB_finish(ob[fd]));
@@ -72,7 +72,7 @@ h_order_finish(int fd, const struct VSM_data *vd)
 }
 
 static void
-clean_order(const struct VSM_data *vd)
+clean_order(struct VSM_data *vd)
 {
 	unsigned u;
 
@@ -234,7 +234,7 @@ open_log(const char *w_arg, int a_flag)
 }
 
 static void
-do_write(const struct VSM_data *vd, const char *w_arg, int a_flag)
+do_write(struct VSM_data *vd, const char *w_arg, int a_flag)
 {
 	int fd, i, l;
 	uint32_t *p;
@@ -243,7 +243,7 @@ do_write(const struct VSM_data *vd, const char *w_arg, int a_flag)
 	XXXAN(fd >= 0);
 	(void)signal(SIGHUP, sighup);
 	while (1) {
-		i = VSL_NextLog(vd, &p, NULL);
+		i = VSL_NextSLT(vd, &p, NULL);
 		if (i < 0)
 			break;
 		if (i > 0) {
@@ -285,7 +285,6 @@ main(int argc, char * const *argv)
 	struct VSM_data *vd;
 
 	vd = VSM_New();
-	VSL_Setup(vd);
 
 	while ((c = getopt(argc, argv, VSL_ARGS "aDP:uVw:oO")) != -1) {
 		switch (c) {
@@ -336,8 +335,10 @@ main(int argc, char * const *argv)
 	if ((argc - optind) > 0)
 		usage();
 
-	if (VSL_Open(vd, 1))
+	if (VSM_Open(vd)) {
+		fprintf(stderr, "%s\n", VSM_Error(vd));
 		exit(1);
+	}
 
 	if (P_arg && (pfh = VPF_Open(P_arg, 0644, NULL)) == NULL) {
 		perror(P_arg);

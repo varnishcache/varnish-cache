@@ -36,9 +36,7 @@ VSC_DO(LCK, lck, VSC_TYPE_LCK)
 VSC_DONE(LCK, lck, VSC_TYPE_LCK)
 
 VSC_DO(MAIN, main, VSC_TYPE_MAIN)
-#define VSC_DO_MAIN
-#include "tbl/vsc_fields.h"
-#undef VSC_DO_MAIN
+#include "tbl/vsc_f_main.h"
 VSC_DONE(MAIN, main, VSC_TYPE_MAIN)
 
 VSC_DO(SMA, sma, VSC_TYPE_SMA)

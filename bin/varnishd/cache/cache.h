@@ -106,6 +106,7 @@ struct pool;
 struct sess;
 struct sesspool;
 struct vbc;
+struct vbo;
 struct vef_priv;
 struct vrt_backend;
 struct vsb;
@@ -206,12 +207,10 @@ struct acct {
 #define L0(t, n)
 #define L1(t, n)		t n;
 #define VSC_F(n, t, l, f, e,d)	L##l(t, n)
-#define VSC_DO_MAIN
 struct dstat {
-#include "tbl/vsc_fields.h"
+#include "tbl/vsc_f_main.h"
 };
 #undef VSC_F
-#undef VSC_DO_MAIN
 #undef L0
 #undef L1
 
@@ -295,7 +294,7 @@ struct worker {
 	struct objhead		*nobjhead;
 	struct objcore		*nobjcore;
 	struct waitinglist	*nwaitinglist;
-	struct busyobj		*nbusyobj;
+	struct vbo		*nvbo;
 	void			*nhashpriv;
 	struct dstat		stats;
 
@@ -317,39 +316,22 @@ struct worker {
 	/* Lookup stuff */
 	struct SHA256Context	*sha256ctx;
 
-	struct http_conn	htc[1];
 	struct ws		ws[1];
-	struct http		*bereq;
-	struct http		*beresp;
+
+
 	struct http		*resp;
 
-	struct exp		exp;
+	struct object		*obj;
+	struct objcore		*objcore;
+	struct busyobj		*busyobj;
 
 	/* This is only here so VRT can find it */
 	const char		*storage_hint;
 
-	/* Fetch stuff */
-	struct vbc		*vbc;
-	struct object		*fetch_obj;
-	enum body_status	body_status;
-	struct vfp		*vfp;
-	struct vgz		*vgz_rx;
-	struct vef_priv		*vef_priv;
-	unsigned		fetch_failed;
-	unsigned		do_stream;
-	unsigned		do_esi;
-	unsigned		do_gzip;
-	unsigned		is_gzip;
-	unsigned		do_gunzip;
-	unsigned		is_gunzip;
-	unsigned		do_close;
-	char			*h_content_length;
-
 	/* Stream state */
 	struct stream_ctx	*sctx;
 
-	/* ESI stuff */
-	struct vep_state	*vep;
+	/* ESI delivery stuff */
 	int			gzip_resp;
 	ssize_t			l_crc;
 	uint32_t		crc;
@@ -410,12 +392,14 @@ struct storage {
  */
 
 typedef struct object *getobj_f(struct worker *wrk, struct objcore *oc);
+typedef unsigned getxid_f(struct worker *wrk, struct objcore *oc);
 typedef void updatemeta_f(struct objcore *oc);
 typedef void freeobj_f(struct objcore *oc);
 typedef struct lru *getlru_f(const struct objcore *oc);
 
 struct objcore_methods {
 	getobj_f	*getobj;
+	getxid_f	*getxid;
 	updatemeta_f	*updatemeta;
 	freeobj_f	*freeobj;
 	getlru_f	*getlru;
@@ -443,6 +427,16 @@ struct objcore {
 	VTAILQ_ENTRY(objcore)	ban_list;
 	struct ban		*ban;
 };
+
+static inline unsigned
+oc_getxid(struct worker *wrk, struct objcore *oc)
+{
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	AN(oc->methods);
+	AN(oc->methods->getxid);
+	return (oc->methods->getxid(wrk, oc));
+}
 
 static inline struct object *
 oc_getobj(struct worker *wrk, struct objcore *oc)
@@ -485,12 +479,48 @@ oc_getlru(const struct objcore *oc)
 	return (oc->methods->getlru(oc));
 }
 
-/* Busy Object structure ---------------------------------------------*/
+/* Busy Object structure ---------------------------------------------
+ *
+ * The busyobj structure captures the aspects of an object related to,
+ * and while it is being fetched from the backend.
+ *
+ * One of these aspects will be how much has been fetched, which
+ * streaming delivery will make use of.
+ *
+ * XXX: many fields from worker needs to move here.
+ */
 
 struct busyobj {
 	unsigned		magic;
 #define BUSYOBJ_MAGIC		0x23b95567
+	struct vbo		*vbo;
+
 	uint8_t			*vary;
+	unsigned		is_gzip;
+	unsigned		is_gunzip;
+
+	struct vfp		*vfp;
+	struct vep_state	*vep;
+	unsigned		fetch_failed;
+	struct vgz		*vgz_rx;
+
+	struct vbc		*vbc;
+	struct http		*bereq;
+	struct http		*beresp;
+	struct object		*fetch_obj;
+	struct exp		exp;
+	struct http_conn	htc;
+
+	enum body_status	body_status;
+	struct vef_priv		*vef_priv;
+
+	unsigned		should_close;
+	char			*h_content_length;
+
+	unsigned		do_esi;
+	unsigned		do_gzip;
+	unsigned		do_gunzip;
+	unsigned		do_stream;
 };
 
 /* Object structure --------------------------------------------------*/
@@ -601,8 +631,6 @@ struct sess {
 	VTAILQ_ENTRY(sess)	list;
 
 	struct director		*director;
-	struct object		*obj;
-	struct objcore		*objcore;
 	struct VCL_conf		*vcl;
 
 	struct object		*stale_obj;
@@ -636,13 +664,13 @@ void VBE_UseHealth(const struct director *vdi);
 
 struct vbc *VDI_GetFd(const struct director *, struct sess *sp);
 int VDI_Healthy(const struct director *, const struct sess *sp);
-void VDI_CloseFd(struct worker *wrk);
-void VDI_RecycleFd(struct worker *wrk);
-void VDI_AddHostHeader(const struct sess *sp);
+void VDI_CloseFd(struct worker *wrk, struct vbc **vbp);
+void VDI_RecycleFd(struct worker *wrk, struct vbc **vbp);
+void VDI_AddHostHeader(struct worker *wrk, const struct vbc *vbc);
 void VBE_Poll(void);
 
 /* cache_backend_cfg.c */
-void VBE_Init(void);
+void VBE_InitCfg(void);
 struct backend *VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb);
 
 /* cache_backend_poll.c */
@@ -664,6 +692,13 @@ void BAN_Compile(void);
 struct ban *BAN_RefBan(struct objcore *oc, double t0, const struct ban *tail);
 void BAN_TailDeref(struct ban **ban);
 double BAN_Time(const struct ban *ban);
+
+/* cache_busyobj.c */
+void VBO_Init(void);
+struct busyobj *VBO_GetBusyObj(struct worker *wrk);
+void VBO_RefBusyObj(const struct busyobj *busyobj);
+void VBO_DerefBusyObj(struct worker *wrk, struct busyobj **busyobj);
+void VBO_Free(struct vbo **vbo);
 
 /* cache_center.c [CNT] */
 void CNT_Session(struct sess *sp);
@@ -699,7 +734,7 @@ int EXP_NukeOne(struct worker *w, struct lru *lru);
 struct storage *FetchStorage(struct worker *w, ssize_t sz);
 int FetchError(struct worker *w, const char *error);
 int FetchError2(struct worker *w, const char *error, const char *more);
-int FetchHdr(struct sess *sp);
+int FetchHdr(struct sess *sp, int need_host_hdr);
 int FetchBody(struct worker *w, struct object *obj);
 int FetchReqBody(struct sess *sp);
 void Fetch_Init(void);
@@ -860,7 +895,7 @@ int SES_Schedule(struct sess *sp);
 
 /* cache_shmlog.c */
 extern struct VSC_C_main *VSC_C_main;
-void VSL_Init(void);
+void VSM_Init(void);
 void *VSM_Alloc(unsigned size, const char *class, const char *type,
     const char *ident);
 void VSM_Free(void *ptr);
@@ -957,8 +992,8 @@ unsigned RFC2616_Req_Gzip(const struct sess *sp);
 int RFC2616_Do_Cond(const struct sess *sp);
 
 /* stevedore.c */
-struct object *STV_NewObject(struct sess *sp, const char *hint, unsigned len,
-    struct exp *, uint16_t nhttp);
+struct object *STV_NewObject(struct worker *wrk, const char *hint, unsigned len,
+    uint16_t nhttp);
 struct storage *STV_alloc(struct worker *w, size_t size);
 void STV_trim(struct storage *st, size_t size);
 void STV_free(struct storage *st);
@@ -1030,6 +1065,7 @@ AssertObjBusy(const struct object *o)
 {
 	AN(o->objcore);
 	AN (o->objcore->flags & OC_F_BUSY);
+	AN(o->objcore->busyobj);
 }
 
 static inline void
@@ -1038,3 +1074,9 @@ AssertObjCorePassOrBusy(const struct objcore *oc)
 	if (oc != NULL)
 		AN (oc->flags & OC_F_BUSY);
 }
+
+/*
+ * We want to cache the most recent timestamp in wrk->lastused to avoid
+ * extra timestamps in cache_pool.c.  Hide this detail with a macro
+ */
+#define W_TIM_real(w) ((w)->lastused = VTIM_real())

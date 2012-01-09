@@ -64,7 +64,7 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 {
 	char *v, *p, *q, *h, *e;
 	struct vsb *sb, *sbh;
-	int l;
+	unsigned l;
 
 	/* No Vary: header, no worries */
 	if (!http_GetHdr(hp, H_Vary, &v))
@@ -109,7 +109,7 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 			e = h;
 			l = 0xffff;
 		}
-		VSB_printf(sb, "%c%c", (unsigned)l >> 8, l & 0xff);
+		VSB_printf(sb, "%c%c", (int)(l >> 8), (int)(l & 0xff));
 		/* Append to vary matching string */
 		VSB_bcat(sb, VSB_data(sbh), VSB_len(sbh));
 		if (e != h)

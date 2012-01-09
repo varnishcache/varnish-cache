@@ -3,13 +3,14 @@
 Cookies
 -------
 
-Varnish will not cache a object coming from the backend with a
-Set-Cookie header present. Also, if the client sends a Cookie header,
-Varnish will bypass the cache and go directly to the backend.
+Varnish will, in the default configuration, not cache a object coming
+from the backend with a Set-Cookie header present. Also, if the client
+sends a Cookie header, Varnish will bypass the cache and go directly to
+the backend.
 
 This can be overly conservative. A lot of sites use Google Analytics
 (GA) to analyze their traffic. GA sets a cookie to track you. This
-cookie is used by the client side java script and is therefore of no
+cookie is used by the client side javascript and is therefore of no
 interest to the server. 
 
 For a lot of web application it makes sense to completely disregard the
@@ -61,4 +62,4 @@ cookies named COOKIE1 and COOKIE2 and you can marvel at it::
   }
 
 The example is taken from the Varnish Wiki, where you can find other
-scary examples of what can be done i VCL.
+scary examples of what can be done in VCL.

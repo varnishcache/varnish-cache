@@ -74,7 +74,7 @@ VRT_count(const struct sess *sp, unsigned u)
 		return;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (cache_param->vcl_trace)
-		WSP(sp, SLT_VCL_trace, "%u %d.%d", u,
+		WSP(sp, SLT_VCL_trace, "%u %u.%u", u,
 		    sp->vcl->ref[u].line, sp->vcl->ref[u].pos);
 }
 
@@ -83,7 +83,8 @@ VRT_count(const struct sess *sp, unsigned u)
 void
 VRT_acl_log(const struct sess *sp, const char *msg)
 {
-	WSP(sp, SLT_VCL_acl, msg);
+
+	WSP(sp, SLT_VCL_acl, "%s", msg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -99,17 +100,17 @@ vrt_selecthttp(const struct sess *sp, enum gethdr_e where)
 		hp = sp->http;
 		break;
 	case HDR_BEREQ:
-		hp = sp->wrk->bereq;
+		hp = sp->wrk->busyobj->bereq;
 		break;
 	case HDR_BERESP:
-		hp = sp->wrk->beresp;
+		hp = sp->wrk->busyobj->beresp;
 		break;
 	case HDR_RESP:
 		hp = sp->wrk->resp;
 		break;
 	case HDR_OBJ:
-		CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-		hp = sp->obj->http;
+		CHECK_OBJ_NOTNULL(sp->wrk->obj, OBJECT_MAGIC);
+		hp = sp->wrk->obj->http;
 		break;
         case HDR_STALE_OBJ:
 		CHECK_OBJ_NOTNULL(sp->stale_obj, OBJECT_MAGIC);
@@ -408,8 +409,8 @@ VRT_synth_page(const struct sess *sp, unsigned flags, const char *str, ...)
 
 	(void)flags;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);
-	vsb = SMS_Makesynth(sp->obj);
+	CHECK_OBJ_NOTNULL(sp->wrk->obj, OBJECT_MAGIC);
+	vsb = SMS_Makesynth(sp->wrk->obj);
 	AN(vsb);
 
 	VSB_cat(vsb, str);
@@ -422,10 +423,10 @@ VRT_synth_page(const struct sess *sp, unsigned flags, const char *str, ...)
 		p = va_arg(ap, const char *);
 	}
 	va_end(ap);
-	SMS_Finish(sp->obj);
-	http_Unset(sp->obj->http, H_Content_Length);
-	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->obj->http,
-	    "Content-Length: %d", sp->obj->len);
+	SMS_Finish(sp->wrk->obj);
+	http_Unset(sp->wrk->obj->http, H_Content_Length);
+	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->wrk->obj->http,
+	    "Content-Length: %zd", sp->wrk->obj->len);
 }
 
 /*--------------------------------------------------------------------*/
@@ -519,9 +520,9 @@ void
 VRT_purge(const struct sess *sp, double ttl, double grace)
 {
 	if (sp->cur_method == VCL_MET_HIT)
-		HSH_Purge(sp, sp->obj->objcore->objhead, ttl, grace);
+		HSH_Purge(sp, sp->wrk->obj->objcore->objhead, ttl, grace);
 	else if (sp->cur_method == VCL_MET_MISS)
-		HSH_Purge(sp, sp->objcore->objhead, ttl, grace);
+		HSH_Purge(sp, sp->wrk->objcore->objhead, ttl, grace);
 }
 
 /*--------------------------------------------------------------------

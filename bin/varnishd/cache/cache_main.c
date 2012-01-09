@@ -103,7 +103,7 @@ child_main(void)
 
 	THR_SetName("cache-main");
 
-	VSL_Init();	/* First, LCK needs it. */
+	VSM_Init();	/* First, LCK needs it. */
 
 	LCK_Init();	/* Second, locking */
 
@@ -117,7 +117,8 @@ child_main(void)
 
 	HTTP_Init();
 
-	VBE_Init();
+	VBO_Init();
+	VBE_InitCfg();
 	VBP_Init();
 	WRK_Init();
 	Pool_Init();

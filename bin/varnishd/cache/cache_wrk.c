@@ -50,11 +50,9 @@ wrk_sumstat(struct worker *w)
 	Lck_AssertHeld(&wstat_mtx);
 #define L0(n)
 #define L1(n) (VSC_C_main->n += w->stats.n)
-#define VSC_DO_MAIN
 #define VSC_F(n, t, l, f, d, e) L##l(n);
-#include "tbl/vsc_fields.h"
+#include "tbl/vsc_f_main.h"
 #undef VSC_F
-#undef VSC_DO_MAIN
 #undef L0
 #undef L1
 	memset(&w->stats, 0, sizeof w->stats);
@@ -141,8 +139,6 @@ wrk_thread_real(void *priv, unsigned shm_workspace, unsigned sess_workspace,
 	uint32_t wlog[shm_workspace / 4];
 	/* XXX: can we trust these to be properly aligned ? */
 	unsigned char ws[sess_workspace];
-	unsigned char http0[http_space];
-	unsigned char http1[http_space];
 	unsigned char http2[http_space];
 	struct iovec iov[siov];
 	struct SHA256Context sha256;
@@ -155,8 +151,6 @@ wrk_thread_real(void *priv, unsigned shm_workspace, unsigned sess_workspace,
 	w->wlb = w->wlp = wlog;
 	w->wle = wlog + (sizeof wlog) / 4;
 	w->sha256ctx = &sha256;
-	w->bereq = HTTP_create(http0, nhttp);
-	w->beresp = HTTP_create(http1, nhttp);
 	w->resp = HTTP_create(http2, nhttp);
 	w->wrw.iov = iov;
 	w->wrw.siov = siov;

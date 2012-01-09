@@ -197,13 +197,32 @@ pan_wrk(const struct worker *wrk)
 
 	VSB_printf(pan_vsp, "  worker = %p {\n", wrk);
 	pan_ws(wrk->ws, 4);
-	if (wrk->bereq->ws != NULL)
-		pan_http("bereq", wrk->bereq, 4);
-	if (wrk->beresp->ws != NULL)
-		pan_http("beresp", wrk->beresp, 4);
+	if (wrk->busyobj != NULL && wrk->busyobj->bereq->ws != NULL)
+		pan_http("bereq", wrk->busyobj->bereq, 4);
+	if (wrk->busyobj != NULL && wrk->busyobj->beresp->ws != NULL)
+		pan_http("beresp", wrk->busyobj->beresp, 4);
 	if (wrk->resp->ws != NULL)
 		pan_http("resp", wrk->resp, 4);
+	VSB_printf(pan_vsp, "  },\n");
+}
+
+static void
+pan_busyobj(const struct busyobj *bo)
+{
+
+	VSB_printf(pan_vsp, "  busyobj = %p {\n", bo);
+	if (bo->is_gzip)	VSB_printf(pan_vsp, "    is_gzip\n");
+	if (bo->is_gunzip)	VSB_printf(pan_vsp, "    is_gunzip\n");
+	if (bo->do_gzip)	VSB_printf(pan_vsp, "    do_gzip\n");
+	if (bo->do_gunzip)	VSB_printf(pan_vsp, "    do_gunzip\n");
+	if (bo->do_esi)		VSB_printf(pan_vsp, "    do_esi\n");
+	if (bo->do_stream)	VSB_printf(pan_vsp, "    do_stream\n");
+	if (bo->should_close)	VSB_printf(pan_vsp, "    should_close\n");
+	VSB_printf(pan_vsp, "    bodystatus = %d,\n", bo->body_status);
 	VSB_printf(pan_vsp, "    },\n");
+	if (VALID_OBJ(bo->vbc, BACKEND_MAGIC))
+		pan_vbc(bo->vbc);
+
 }
 
 /*--------------------------------------------------------------------*/
@@ -215,7 +234,7 @@ pan_sess(const struct sess *sp)
 
 	VSB_printf(pan_vsp, "sp = %p {\n", sp);
 	VSB_printf(pan_vsp,
-	    "  fd = %d, id = %d, xid = %u,\n",
+	    "  fd = %d, id = %u, xid = %u,\n",
 	    sp->fd, sp->vsl_id & VSL_IDENTMASK, sp->xid);
 	VSB_printf(pan_vsp, "  client = %s %s,\n",
 	    sp->addr ? sp->addr : "?.?.?.?",
@@ -243,16 +262,8 @@ pan_sess(const struct sess *sp)
 	VSB_printf(pan_vsp, "  restarts = %d, esi_level = %d\n",
 	    sp->restarts, sp->esi_level);
 
-	VSB_printf(pan_vsp, "  flags = ");
-	if (sp->wrk->do_stream)	VSB_printf(pan_vsp, " do_stream");
-	if (sp->wrk->do_gzip)	VSB_printf(pan_vsp, " do_gzip");
-	if (sp->wrk->do_gunzip)	VSB_printf(pan_vsp, " do_gunzip");
-	if (sp->wrk->do_esi)	VSB_printf(pan_vsp, " do_esi");
-	if (sp->wrk->do_close)	VSB_printf(pan_vsp, " do_close");
-	if (sp->wrk->is_gzip)	VSB_printf(pan_vsp, " is_gzip");
-	if (sp->wrk->is_gunzip)	VSB_printf(pan_vsp, " is_gunzip");
-	VSB_printf(pan_vsp, "\n");
-	VSB_printf(pan_vsp, "  bodystatus = %d\n", sp->wrk->body_status);
+	if (sp->wrk->busyobj != NULL)
+		pan_busyobj(sp->wrk->busyobj);
 
 	pan_ws(sp->ws, 2);
 	pan_http("req", sp->http, 2);
@@ -263,11 +274,8 @@ pan_sess(const struct sess *sp)
 	if (VALID_OBJ(sp->vcl, VCL_CONF_MAGIC))
 		pan_vcl(sp->vcl);
 
-	if (VALID_OBJ(sp->wrk->vbc, BACKEND_MAGIC))
-		pan_vbc(sp->wrk->vbc);
-
-	if (VALID_OBJ(sp->obj, OBJECT_MAGIC))
-		pan_object(sp->obj);
+	if (VALID_OBJ(sp->wrk->obj, OBJECT_MAGIC))
+		pan_object(sp->wrk->obj);
 
 	VSB_printf(pan_vsp, "},\n");
 }

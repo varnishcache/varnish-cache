@@ -126,4 +126,4 @@ client c2 {
 }  -run
 
 varnish v1 -expect fetch_304 == 1
-varnish v1 -expect cond_not_validated == 4
+varnish v1 -expect fetch_not_validated == 4

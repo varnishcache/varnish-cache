@@ -104,7 +104,7 @@ vcc_icoord(struct vsb *vsb, const struct token *t, int tail)
 		} else
 			pos++;
 	}
-	VSB_printf(vsb, "('%s' Line %d Pos %d)", t->src->name, lin, pos + 1);
+	VSB_printf(vsb, "('%s' Line %u Pos %u)", t->src->name, lin, pos + 1);
 }
 
 /*--------------------------------------------------------------------*/
@@ -261,7 +261,7 @@ vcc_NextToken(struct vcc *tl)
 }
 
 void
-vcc__Expect(struct vcc *tl, unsigned tok, int line)
+vcc__Expect(struct vcc *tl, unsigned tok, unsigned line)
 {
 	if (tl->t->tok == tok)
 		return;

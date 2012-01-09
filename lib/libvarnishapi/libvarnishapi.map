@@ -75,3 +75,12 @@ LIBVARNISHAPI_1.1 {
 	VSL_Name2Tag;
 	# Variables:
 } LIBVARNISHAPI_1.0;
+
+LIBVARNISHAPI_1.2 {
+  global:
+	# Functions:
+	VSL_NextSLT;
+	VSM_Error;
+	VSM_Get;
+	# Variables:
+} LIBVARNISHAPI_1.0;

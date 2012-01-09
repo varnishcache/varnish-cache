@@ -41,7 +41,7 @@ varnish v1 -cli "ban.url \"/foo\""
 client c1 -run
 
 varnish v1 -expect fetch_304 == 0
-varnish v1 -expect cond_not_validated == 0
+varnish v1 -expect fetch_not_validated == 0
 
 server s1 -wait
 varnish v1 -stop
@@ -67,7 +67,7 @@ client c1 -run
 client c1 -run
 
 varnish v1 -expect fetch_304 == 0
-varnish v1 -expect cond_not_validated == 0
+varnish v1 -expect fetch_not_validated == 0
 
 server s1 -wait
 varnish v1 -stop
@@ -115,7 +115,7 @@ delay 0.5
 client c2 -run
 
 varnish v1 -expect fetch_304 == 1
-varnish v1 -expect cond_not_validated == 0
+varnish v1 -expect fetch_not_validated == 0
 
 server s2 -wait
 varnish v1 -stop
@@ -144,4 +144,4 @@ delay 0.5
 client c1 -run
 
 varnish v1 -expect fetch_304 == 1
-varnish v1 -expect cond_not_validated == 0
+varnish v1 -expect fetch_not_validated == 0

@@ -14,16 +14,16 @@ the page encoded with the deflate encoding.
 The problem is that the Accept-Encoding field contains a lot of
 different encodings. If one browser sends::
 
-  Accept-Encodign: gzip,deflate
+  Accept-Encoding: gzip,deflate
 
 And another one sends::
 
-  Accept-Encoding:: deflate,gzip
+  Accept-Encoding: deflate,gzip
 
 Varnish will keep two variants of the page requested due to the
 different Accept-Encoding headers. Normalizing the accept-encoding
 header will sure that you have as few variants as possible. The
-following VCL code will normalize the Accept-Encoding headers.::
+following VCL code will normalize the Accept-Encoding headers::
 
     if (req.http.Accept-Encoding) {
         if (req.url ~ "\.(jpg|png|gif|gz|tgz|bz2|tbz|mp3|ogg)$") {
@@ -34,7 +34,7 @@ following VCL code will normalize the Accept-Encoding headers.::
         } elsif (req.http.Accept-Encoding ~ "deflate") {
             set req.http.Accept-Encoding = "deflate";
         } else {
-            # unkown algorithm
+            # unknown algorithm
             remove req.http.Accept-Encoding;
         }
     }

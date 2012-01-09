@@ -82,21 +82,23 @@ VSL_Name2Tag(const char *name, int l)
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_r_arg(const struct VSM_data *vd, const char *opt)
+vsl_r_arg(struct VSM_data *vd, const char *opt)
 {
+	struct vsl *vsl = vsl_Setup(vd);
 
-	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	if (vsl->r_fd > STDIN_FILENO)
+		(void)close(vsl->r_fd);
 	if (!strcmp(opt, "-"))
-		vd->vsl->r_fd = STDIN_FILENO;
+		vsl->r_fd = STDIN_FILENO;
 	else
-		vd->vsl->r_fd = open(opt, O_RDONLY);
-	if (vd->vsl->r_fd < 0) {
-		perror(opt);
-		return (-1);
-	} else if (vd->vsl->rbuflen == 0) {
-		vd->vsl->rbuf = malloc(1024);
-		AN(vd->vsl->rbuf);
-		vd->vsl->rbuflen = 1024;
+		vsl->r_fd = open(opt, O_RDONLY);
+	if (vsl->r_fd < 0)
+		return (vsm_diag(vd,
+		    "Could not open %s: %s", opt, strerror(errno)));
+	if (vsl->rbuflen == 0) {
+		vsl->rbuflen = BUFSIZ;
+		vsl->rbuf = malloc(vsl->rbuflen);
+		AN(vsl->rbuf);
 	}
 	return (1);
 }
@@ -104,43 +106,41 @@ vsl_r_arg(const struct VSM_data *vd, const char *opt)
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_IX_arg(const struct VSM_data *vd, const char *opt, int arg)
+vsl_IX_arg(struct VSM_data *vd, const char *opt, int arg)
 {
+	struct vsl *vsl = vsl_Setup(vd);
 	vre_t **rp;
 	const char *error;
 	int erroroffset;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	if (arg == 'I')
-		rp = &vd->vsl->regincl;
+		rp = &vsl->regincl;
 	else
-		rp = &vd->vsl->regexcl;
-	if (*rp != NULL) {
-		fprintf(stderr, "Option %c can only be given once", arg);
-		return (-1);
-	}
-	*rp = VRE_compile(opt, vd->vsl->regflags, &error, &erroroffset);
-	if (*rp == NULL) {
-		fprintf(stderr, "Illegal regex: %s\n", error);
-		return (-1);
-	}
+		rp = &vsl->regexcl;
+	if (*rp != NULL)
+		return (vsm_diag(vd, "Option %c can only be given once", arg));
+	*rp = VRE_compile(opt, vsl->regflags, &error, &erroroffset);
+	if (*rp == NULL)
+		return (vsm_diag(vd, "Illegal regex: %s\n", error));
 	return (1);
 }
 
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_ix_arg(const struct VSM_data *vd, const char *opt, int arg)
+vsl_ix_arg(struct VSM_data *vd, const char *opt, int arg)
 {
+	struct vsl *vsl = vsl_Setup(vd);
 	int i, l;
 	const char *b, *e;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	/* If first option is 'i', set all bits for supression */
-	if (arg == 'i' && !(vd->vsl->flags & F_SEEN_IX))
+	if (arg == 'i' && !(vsl->flags & F_SEEN_IX))
 		for (i = 0; i < 256; i++)
-			vbit_set(vd->vsl->vbm_supress, i);
-	vd->vsl->flags |= F_SEEN_IX;
+			vbit_set(vsl->vbm_supress, i);
+	vsl->flags |= F_SEEN_IX;
 
 	for (b = opt; *b; b = e) {
 		while (isspace(*b))
@@ -156,17 +156,15 @@ vsl_ix_arg(const struct VSM_data *vd, const char *opt, int arg)
 		i = VSL_Name2Tag(b, l);
 		if (i >= 0) {
 			if (arg == 'x')
-				vbit_set(vd->vsl->vbm_supress, i);
+				vbit_set(vsl->vbm_supress, i);
 			else
-				vbit_clr(vd->vsl->vbm_supress, i);
+				vbit_clr(vsl->vbm_supress, i);
 		} else if (i == -2) {
-			fprintf(stderr,
-			    "\"%*.*s\" matches multiple tags\n", l, l, b);
-			return (-1);
+			return (vsm_diag(vd,
+			    "\"%*.*s\" matches multiple tags\n", l, l, b));
 		} else {
-			fprintf(stderr,
-			    "Could not match \"%*.*s\" to any tag\n", l, l, b);
-			return (-1);
+			return (vsm_diag(vd,
+			    "Could not match \"%*.*s\" to any tag\n", l, l, b));
 		}
 	}
 	return (1);
@@ -176,8 +174,9 @@ vsl_ix_arg(const struct VSM_data *vd, const char *opt, int arg)
 
 
 static int
-vsl_m_arg(const struct VSM_data *vd, const char *opt)
+vsl_m_arg(struct VSM_data *vd, const char *opt)
 {
+	struct vsl *vsl = vsl_Setup(vd);
 	struct vsl_re_match *m;
 	const char *error;
 	char *o, *regex;
@@ -185,10 +184,9 @@ vsl_m_arg(const struct VSM_data *vd, const char *opt)
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 
-	if (!strchr(opt, ':')) {
-		fprintf(stderr, "No : found in -m option %s\n", opt);
-		return (-1);
-	}
+	if (!strchr(opt, ':'))
+		return (vsm_diag(vd,
+		    "No : found in -m option %s\n", opt));
 
 	o = strdup(opt);
 	AN(o);
@@ -200,21 +198,21 @@ vsl_m_arg(const struct VSM_data *vd, const char *opt)
 	AN(m);
 	m->tag = VSL_Name2Tag(o, -1);
 	if (m->tag < 0) {
-		fprintf(stderr, "Illegal tag %s specified\n", o);
+		(void)vsm_diag(vd, "Illegal tag %s specified\n", o);
 		free(o);
 		FREE_OBJ(m);
 		return (-1);
 	}
 	/* Get tag, regex */
-	m->re = VRE_compile(regex, vd->vsl->regflags, &error, &erroroffset);
+	m->re = VRE_compile(regex, vsl->regflags, &error, &erroroffset);
 	if (m->re == NULL) {
-		fprintf(stderr, "Illegal regex: %s\n", error);
+		(void)vsm_diag(vd, "Illegal regex: %s\n", error);
 		free(o);
 		FREE_OBJ(m);
 		return (-1);
 	}
-	vd->vsl->num_matchers++;
-	VTAILQ_INSERT_TAIL(&vd->vsl->matchers, m, next);
+	vsl->num_matchers++;
+	VTAILQ_INSERT_TAIL(&vsl->matchers, m, next);
 	free(o);
 	return (1);
 }
@@ -222,40 +220,34 @@ vsl_m_arg(const struct VSM_data *vd, const char *opt)
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_s_arg(const struct VSM_data *vd, const char *opt)
+vsl_s_arg(struct VSM_data *vd, const char *opt)
 {
+	struct vsl *vsl = vsl_Setup(vd);
 	char *end;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	if (*opt == '\0') {
-		fprintf(stderr, "number required for -s\n");
-		return (-1);
-	}
-	vd->vsl->skip = strtoul(opt, &end, 10);
-	if (*end != '\0') {
-		fprintf(stderr, "invalid number for -s\n");
-		return (-1);
-	}
+	if (*opt == '\0')
+		return (vsm_diag(vd, "number required for -s\n"));
+	vsl->skip = strtoul(opt, &end, 10);
+	if (*end != '\0')
+		return (vsm_diag(vd, "invalid number for -k\n"));
 	return (1);
 }
 
 /*--------------------------------------------------------------------*/
 
 static int
-vsl_k_arg(const struct VSM_data *vd, const char *opt)
+vsl_k_arg(struct VSM_data *vd, const char *opt)
 {
+	struct vsl *vsl = vsl_Setup(vd);
 	char *end;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	if (*opt == '\0') {
-		fprintf(stderr, "number required for -k\n");
-		return (-1);
-	}
-	vd->vsl->keep = strtoul(opt, &end, 10);
-	if (*end != '\0') {
-		fprintf(stderr, "invalid number for -k\n");
-		return (-1);
-	}
+	if (*opt == '\0')
+		return (vsm_diag(vd, "number required for -k\n"));
+	vsl->keep = strtoul(opt, &end, 10);
+	if (*end != '\0')
+		return (vsm_diag(vd, "invalid number for -k\n"));
 	return (1);
 }
 
@@ -264,14 +256,13 @@ vsl_k_arg(const struct VSM_data *vd, const char *opt)
 int
 VSL_Arg(struct VSM_data *vd, int arg, const char *opt)
 {
+	struct vsl *vsl = vsl_Setup(vd);
 
-	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	switch (arg) {
-	case 'b': vd->vsl->b_opt = !vd->vsl->b_opt; return (1);
-	case 'c': vd->vsl->c_opt = !vd->vsl->c_opt; return (1);
+	case 'b': vsl->b_opt = !vsl->b_opt; return (1);
+	case 'c': vsl->c_opt = !vsl->c_opt; return (1);
 	case 'd':
-		vd->vsl->d_opt = !vd->vsl->d_opt;
-		vd->vsl->flags |= F_NON_BLOCKING;
+		vsl->d_opt = !vsl->d_opt;
 		return (1);
 	case 'i': case 'x': return (vsl_ix_arg(vd, opt, arg));
 	case 'k': return (vsl_k_arg(vd, opt));
@@ -280,7 +271,7 @@ VSL_Arg(struct VSM_data *vd, int arg, const char *opt)
 	case 's': return (vsl_s_arg(vd, opt));
 	case 'I': case 'X': return (vsl_IX_arg(vd, opt, arg));
 	case 'm': return (vsl_m_arg(vd, opt));
-	case 'C': vd->vsl->regflags = VRE_CASELESS; return (1);
+	case 'C': vsl->regflags = VRE_CASELESS; return (1);
 	default:
 		return (0);
 	}

@@ -499,7 +499,7 @@ static struct cli_proto backend_cmds[] = {
 /*---------------------------------------------------------------------*/
 
 void
-VBE_Init(void)
+VBE_InitCfg(void)
 {
 
 	Lck_New(&VBE_mtx, lck_vbe);

@@ -34,6 +34,7 @@
 struct stv_objsecrets;
 struct stevedore;
 struct sess;
+struct worker;
 struct lru;
 
 typedef void storage_init_f(struct stevedore *, int ac, char * const *av);
@@ -42,8 +43,8 @@ typedef struct storage *storage_alloc_f(struct stevedore *, size_t size);
 typedef void storage_dup_f(const struct sess *sp, struct object *src, struct object *target);
 typedef void storage_trim_f(struct storage *, size_t size);
 typedef void storage_free_f(struct storage *);
-typedef struct object *storage_allocobj_f(struct stevedore *, struct sess *sp,
-    unsigned ltot, const struct stv_objsecrets *);
+typedef struct object *storage_allocobj_f(struct stevedore *,
+    struct worker *wrk, unsigned ltot, const struct stv_objsecrets *);
 typedef void storage_close_f(const struct stevedore *);
 
 /* Prototypes for VCL variable responders */
@@ -91,7 +92,7 @@ extern struct stevedore *stv_transient;
 int STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx);
 uintmax_t STV_FileSize(int fd, const char *size, unsigned *granularity,
     const char *ctx);
-struct object *STV_MkObject(struct sess *sp, void *ptr, unsigned ltot,
+struct object *STV_MkObject(struct worker *wrk, void *ptr, unsigned ltot,
     const struct stv_objsecrets *soc);
 
 struct lru *LRU_Alloc(void);

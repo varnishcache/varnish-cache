@@ -114,7 +114,7 @@ Lck__Trylock(struct lock *lck, const char *p, const char *f, int l)
 	assert(r == 0 || r == EBUSY);
 	if (cache_param->diag_bitmap & 0x8)
 		VSL(SLT_Debug, 0,
-		    "MTX_TRYLOCK(%s,%s,%d,%s) = %d", p, f, l, ilck->w);
+		    "MTX_TRYLOCK(%s,%s,%d,%s) = %d", p, f, l, ilck->w, r);
 	if (r == 0) {
 		AZ(ilck->held);
 		ilck->held = 1;

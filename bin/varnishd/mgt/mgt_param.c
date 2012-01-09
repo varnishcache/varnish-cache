@@ -1105,6 +1105,14 @@ static const struct parspec input_parspec[] = {
 		MUST_RESTART,
 		"1M", "bytes"},
 
+	{ "busyobj_worker_cache", tweak_bool,
+		&mgt_param.bo_cache, 0, 0,
+		"Cache free busyobj per worker thread."
+		"Disable this if you have very high hitrates and want"
+		"to save the memory of one busyobj per worker thread.",
+		0,
+		"true", ""},
+
 	{ NULL, NULL, NULL }
 };
 

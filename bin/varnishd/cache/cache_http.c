@@ -524,7 +524,7 @@ http_dissect_hdrs(struct worker *w, struct http *hp, unsigned vsl_id, char *p,
 		if (q - p > htc->maxhdr) {
 			VSC_C_main->losthdr++;
 			WSL(w, SLT_LostHeader, vsl_id, "%.*s",
-			    q - p > 20 ? 20 : q - p, p);
+			    (int)(q - p > 20 ? 20 : q - p), p);
 			return (413);
 		}
 
@@ -550,7 +550,7 @@ http_dissect_hdrs(struct worker *w, struct http *hp, unsigned vsl_id, char *p,
 		} else {
 			VSC_C_main->losthdr++;
 			WSL(w, SLT_LostHeader, vsl_id, "%.*s",
-			    q - p > 20 ? 20 : q - p, p);
+			    (int)(q - p > 20 ? 20 : q - p), p);
 			return (413);
 		}
 	}
@@ -903,7 +903,7 @@ http_FilterHeader(const struct sess *sp, unsigned how)
 {
 	struct http *hp;
 
-	hp = sp->wrk->bereq;
+	hp = sp->wrk->busyobj->bereq;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	hp->logtag = HTTP_Tx;
 
@@ -932,7 +932,7 @@ http_CheckRefresh(struct sess *sp)
 
 	freshen_obj = sp->stale_obj;
 	CHECK_OBJ_NOTNULL(freshen_obj, OBJECT_MAGIC);
-	bereq_hp = sp->wrk->bereq;
+	bereq_hp = sp->wrk->busyobj->bereq;
 	CHECK_OBJ_NOTNULL(bereq_hp, HTTP_MAGIC);
 	obj_hp = freshen_obj->http;
 	CHECK_OBJ_NOTNULL(obj_hp, HTTP_MAGIC);
@@ -958,25 +958,24 @@ http_Check304(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	o_stale = sp->stale_obj;
 	CHECK_OBJ_NOTNULL(o_stale, OBJECT_MAGIC);
-	o = sp->obj;
+	o = sp->wrk->obj;
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
-	if (sp->wrk->beresp->status != 304) {
+	if (sp->wrk->busyobj->beresp->status != 304) {
 	    /*
 	     * IMS/INM headers may have been removed in VCL, so only count a
 	     * non-validating response if they were present in the request.
 	     */
-	    if (http_GetHdr(sp->wrk->bereq, H_If_Modified_Since, &p)
-		|| http_GetHdr(sp->wrk->bereq, H_If_None_Match, &p))
-		sp->wrk->stats.cond_not_validated++;
+	    if (http_GetHdr(sp->wrk->busyobj->bereq, H_If_Modified_Since, &p)
+		|| http_GetHdr(sp->wrk->busyobj->bereq, H_If_None_Match, &p))
+		sp->wrk->stats.fetch_not_validated++;
 	    return;
 	}
 
 	/* 
 	 * Copy headers we need from the stale object into the 304 response
 	 */
-	http_FilterMissingFields(sp->wrk, sp->fd, sp->obj->http,
-				 sp->stale_obj->http);
+	http_FilterMissingFields(sp->wrk, sp->fd, o->http, o_stale->http);
 
 	/*
 	 * Dup the stale object's storage in to the new object
@@ -988,7 +987,7 @@ http_Check304(struct sess *sp)
 
 	http_SetResp(o->http, "HTTP/1.1", 200, "Ok Not Modified");
 	http_SetH(o->http, HTTP_HDR_REQ, "GET");
-	http_copyh(o->http, sp->wrk->bereq, HTTP_HDR_URL);
+	http_copyh(o->http, sp->wrk->busyobj->bereq, HTTP_HDR_URL);
 
 	/*
 	 * XXX: Are we copying all the necessary fields from stale_obj?

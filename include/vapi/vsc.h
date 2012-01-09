@@ -26,6 +26,10 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * This is the public API for the VSC access.
+ *
+ * VSC is a "subclass" of VSM.
+ *
  */
 
 #ifndef VAPI_VSC_H_INCLUDED
@@ -34,16 +38,11 @@
 #include "vapi/vsc_int.h"
 
 struct VSM_data;
+struct VSM_fantom;
 
 /*---------------------------------------------------------------------
  * VSC level access functions
  */
-
-void VSC_Setup(struct VSM_data *vd);
-	/*
-	 * Setup vd for use with VSC functions.
-	 * Must be called once before any other VSC function is called
-	 */
 
 #define VSC_ARGS	"f:n:"
 #define VSC_n_USAGE	VSM_n_USAGE
@@ -55,39 +54,58 @@ int VSC_Arg(struct VSM_data *vd, int arg, const char *opt);
 	/*
 	 * Handle standard stat-presenter arguments
 	 * Return:
-	 *	-1 error
+	 *	-1 error, VSM_Error() returns diagnostic string
 	 *	 0 not handled
 	 *	 1 Handled.
 	 */
 
-int VSC_Open(struct VSM_data *vd, int diag);
-	/*
-	 * Open shared memory for VSC processing.
-	 * args and returns as VSM_Open()
-	 */
-
-struct VSC_C_main *VSC_Main(const struct VSM_data *vd);
+struct VSC_C_main *VSC_Main(struct VSM_data *vd);
 	/*
 	 * return Main stats structure
 	 * returns NULL until child has been started.
 	 */
 
+struct VSC_desc {
+	const char *name;		/* field name			*/
+	const char *fmt;		/* field format ("uint64_t")	*/
+	int flag;			/* 'c' = counter, 'g' = gauge	*/
+	const char *sdesc;		/* short description		*/
+	const char *ldesc;		/* long description		*/
+};
+
 struct VSC_point {
 	const char *class;		/* stat struct type		*/
 	const char *ident;		/* stat struct ident		*/
-	const char *name;		/* field name			*/
-	const char *fmt;		/* field format ("uint64_t")	*/
-	int flag;			/* 'a' = counter, 'i' = gauge	*/
-	const char *desc;		/* description			*/
+	const struct VSC_desc *desc;	/* point description		*/
 	const volatile void *ptr;	/* field value			*/
+	struct VSM_fantom *vf;
 };
 
 typedef int VSC_iter_f(void *priv, const struct VSC_point *const pt);
 
-int VSC_Iter(const struct VSM_data *vd, VSC_iter_f *func, void *priv);
+int VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv);
 	/*
 	 * Iterate over all statistics counters, calling "func" for
 	 * each counter not suppressed by any "-f" arguments.
+	 *
+	 * Func is called with pt == NULL, whenever VSM allocations
+	 * change (child restart, allocations/deallocations)
+	 *
+	 * Returns:
+	 *	!=0:	func returned non-zero
+	 *	-1:	No VSC's available
+	 *	0:	Done
 	 */
+
+/**********************************************************************
+ * Precompiled VSC_desc's for all know VSCs.
+ */
+#define VSC_F(n,t,l,f,d,e)
+#define VSC_DO(U,l,t) extern const struct VSC_desc VSC_desc_##l[];
+#define VSC_DONE(U,l,t)
+#include "tbl/vsc_all.h"
+#undef VSC_F
+#undef VSC_DO
+#undef VSC_DONE
 
 #endif /* VAPI_VSC_H_INCLUDED */

@@ -195,7 +195,7 @@ accumulate_thread(void *arg)
 
 	for (;;) {
 
-		i = VSL_NextLog(vd, &p, NULL);
+		i = VSL_NextSLT(vd, &p, NULL);
 		if (i < 0)
 			break;
 		if (i == 0) {
@@ -292,7 +292,7 @@ do_once(struct VSM_data *vd)
 {
 	uint32_t *p;
 
-	while (VSL_NextLog(vd, &p, NULL) > 0)
+	while (VSL_NextSLT(vd, &p, NULL) > 0)
 		accumulate(p);
 	dump();
 }
@@ -313,7 +313,6 @@ main(int argc, char **argv)
 	float period = 60; /* seconds */
 
 	vd = VSM_New();
-	VSL_Setup(vd);
 
 	while ((o = getopt(argc, argv, VSL_ARGS "1fVp:")) != -1) {
 		switch (o) {
@@ -345,11 +344,12 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (VSL_Open(vd, 1))
+	if (VSM_Open(vd)) {
+		fprintf(stderr, "%s\n", VSM_Error(vd));
 		exit (1);
+	}
 
 	if (once) {
-		VSL_NonBlocking(vd, 1);
 		do_once(vd);
 	} else {
 		do_curses(vd, period);

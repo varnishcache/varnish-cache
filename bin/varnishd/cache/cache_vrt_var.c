@@ -58,7 +58,7 @@ vrt_do_string(struct worker *w, int fd, const struct http *hp, int fld,
 	AN(hp);
 	b = VRT_String(hp->ws, NULL, p, ap);
 	if (b == NULL || *b == '\0') {
-		WSL(w, SLT_LostHeader, fd, err);
+		WSL(w, SLT_LostHeader, fd, "%s", err);
 	} else {
 		http_SetH(hp, fld, b);
 	}
@@ -94,20 +94,20 @@ VRT_r_##obj##_##hdr(const struct sess *sp)			\
 VRT_DO_HDR_l(obj, hdr, cont, http, fld)				\
 VRT_DO_HDR_r(obj, hdr, cont, http, fld, nullable)		\
 
-VRT_DO_HDR(req,         request,    sp,             http,	HTTP_HDR_REQ,	    0)
-VRT_DO_HDR(req,         url,        sp,             http,	HTTP_HDR_URL,	    0)
-VRT_DO_HDR(req,         proto,      sp,             http,	HTTP_HDR_PROTO,	    0)
-VRT_DO_HDR(bereq,       request,    sp->wrk,        bereq,	HTTP_HDR_REQ,	    0)
-VRT_DO_HDR(bereq,       url,        sp->wrk,        bereq,	HTTP_HDR_URL,	    0)
-VRT_DO_HDR(bereq,       proto,      sp->wrk,        bereq,	HTTP_HDR_PROTO,	    0)
-VRT_DO_HDR(obj,         proto,      sp->obj,        http,	HTTP_HDR_PROTO,	    0)
-VRT_DO_HDR(obj,         response,   sp->obj,        http,	HTTP_HDR_RESPONSE,  0)
-VRT_DO_HDR(resp,        proto,      sp->wrk,        resp,	HTTP_HDR_PROTO,	    0)
-VRT_DO_HDR(resp,        response,   sp->wrk,        resp,	HTTP_HDR_RESPONSE,  0)
-VRT_DO_HDR(beresp,      proto,      sp->wrk,        beresp,	HTTP_HDR_PROTO,	    0)
-VRT_DO_HDR(beresp,      response,   sp->wrk,        beresp,	HTTP_HDR_RESPONSE,  0)
-VRT_DO_HDR_r(stale_obj,   proto,      sp->stale_obj,  http,	HTTP_HDR_PROTO,	    1)
-VRT_DO_HDR_r(stale_obj,   response,   sp->stale_obj,  http,	HTTP_HDR_RESPONSE,  1)
+VRT_DO_HDR(req,		request,	sp,			http,	HTTP_HDR_REQ,		0)
+VRT_DO_HDR(req,		url,		sp,			http,	HTTP_HDR_URL,		0)
+VRT_DO_HDR(req,		proto,		sp,			http,	HTTP_HDR_PROTO,		0)
+VRT_DO_HDR(bereq,	request,	sp->wrk->busyobj,	bereq,	HTTP_HDR_REQ,		0)
+VRT_DO_HDR(bereq,	url,		sp->wrk->busyobj,	bereq,	HTTP_HDR_URL,		0)
+VRT_DO_HDR(bereq,	proto,		sp->wrk->busyobj,	bereq,	HTTP_HDR_PROTO,		0)
+VRT_DO_HDR(obj,		proto,		sp->wrk->obj,		http,	HTTP_HDR_PROTO,		0)
+VRT_DO_HDR(obj,		response,	sp->wrk->obj,		http,	HTTP_HDR_RESPONSE,	0)
+VRT_DO_HDR(resp,	proto,		sp->wrk,		resp,	HTTP_HDR_PROTO,		0)
+VRT_DO_HDR(resp,	response,	sp->wrk,		resp,	HTTP_HDR_RESPONSE,	0)
+VRT_DO_HDR(beresp,	proto,		sp->wrk->busyobj,	beresp,	HTTP_HDR_PROTO,		0)
+VRT_DO_HDR(beresp,	response,	sp->wrk->busyobj,	beresp,	HTTP_HDR_RESPONSE,	0)
+VRT_DO_HDR_r(stale_obj,	proto,		sp->stale_obj,		http,	HTTP_HDR_PROTO,		1)
+VRT_DO_HDR_r(stale_obj,	response,	sp->stale_obj,		http,	HTTP_HDR_RESPONSE,	1)
 
 /*--------------------------------------------------------------------*/
 
@@ -137,10 +137,10 @@ VRT_r_##obj##_status(const struct sess *sp)			\
 VRT_DO_STATUS_l(obj, cont, http)				\
 VRT_DO_STATUS_r(obj, cont, http, nullable)			\
 
-VRT_DO_STATUS(obj,          sp->obj,        http,	0)
-VRT_DO_STATUS(beresp,       sp->wrk,        beresp,	0)
-VRT_DO_STATUS(resp,	    sp->wrk,        resp,	0)
-VRT_DO_STATUS_r(stale_obj,  sp->stale_obj,  http,	1)
+VRT_DO_STATUS(obj,		sp->wrk->obj,		http,	0)
+VRT_DO_STATUS(beresp,		sp->wrk->busyobj,	beresp,	0)
+VRT_DO_STATUS(resp,		sp->wrk,		resp,	0)
+VRT_DO_STATUS_r(stale_obj,	sp->stale_obj,		http,	1)
 
 /*--------------------------------------------------------------------*/
 
@@ -156,18 +156,22 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 	struct trouble *tr;
 	struct trouble *tr2;
 	struct worker *wrk;
+	struct vbc *vbc;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	wrk = sp->wrk;
-	if (!wrk->vbc)
+	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
+	vbc = wrk->busyobj->vbc;
+	if (!vbc)
 		return;
-	CHECK_OBJ_NOTNULL(wrk->vbc, VBC_MAGIC);
-	if (!wrk->vbc->backend)
+	CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
+	if (!vbc->backend)
 		return;
-	CHECK_OBJ_NOTNULL(wrk->vbc->backend, BACKEND_MAGIC);
-	if (!sp->objcore)
+	CHECK_OBJ_NOTNULL(vbc->backend, BACKEND_MAGIC);
+	if (!sp->wrk->objcore)
 		return;
-	CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk->objcore, OBJCORE_MAGIC);
 
 	/* Setting a negative holdoff period is a mistake. Detecting this
 	 * when compiling the VCL would be better.
@@ -176,15 +180,15 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 
 	ALLOC_OBJ(new, TROUBLE_MAGIC);
 	AN(new);
-	new->target = (uintptr_t)(sp->objcore->objhead);
+	new->target = (uintptr_t)(sp->wrk->objcore->objhead);
 	new->timeout = sp->t_req + a;
 
 	/* Insert the new item on the list before the first item with a
 	 * timeout at a later date (ie: sort by which entry will time out
 	 * from the list
 	 */
-	Lck_Lock(&wrk->vbc->backend->mtx);
-	VTAILQ_FOREACH_SAFE(tr, &wrk->vbc->backend->troublelist, list, tr2) {
+	Lck_Lock(&vbc->backend->mtx);
+	VTAILQ_FOREACH_SAFE(tr, &vbc->backend->troublelist, list, tr2) {
 		if (tr->timeout < new->timeout) {
 			VTAILQ_INSERT_BEFORE(tr, new, list);
 			new = NULL;
@@ -196,9 +200,9 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 	 * items have a longer timeout.
 	 */
 	if (new)
-		VTAILQ_INSERT_TAIL(&wrk->vbc->backend->troublelist, new, list);
+		VTAILQ_INSERT_TAIL(&vbc->backend->troublelist, new, list);
 
-	Lck_Unlock(&wrk->vbc->backend->mtx);
+	Lck_Unlock(&vbc->backend->mtx);
 }
 
 /*--------------------------------------------------------------------*/
@@ -218,10 +222,10 @@ VRT_r_##dir##_##onm(const struct sess *sp)				\
 	return (sp->wrk->field);					\
 }
 
-VBERESP(beresp, unsigned, do_esi, do_esi)
-VBERESP(beresp, unsigned, do_gzip, do_gzip)
-VBERESP(beresp, unsigned, do_gunzip, do_gunzip)
-VBERESP(beresp, unsigned, do_stream, do_stream)
+VBERESP(beresp, unsigned, do_esi, busyobj->do_esi)
+VBERESP(beresp, unsigned, do_gzip, busyobj->do_gzip)
+VBERESP(beresp, unsigned, do_gunzip, busyobj->do_gunzip)
+VBERESP(beresp, unsigned, do_stream, busyobj->do_stream)
 
 /*--------------------------------------------------------------------*/
 
@@ -277,8 +281,8 @@ VRT_r_beresp_backend_name(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->vbc, VBC_MAGIC);
-	return(sp->wrk->vbc->backend->vcl_name);
+	CHECK_OBJ_NOTNULL(sp->wrk->busyobj->vbc, VBC_MAGIC);
+	return(sp->wrk->busyobj->vbc->backend->vcl_name);
 }
 
 struct sockaddr_storage *
@@ -286,8 +290,8 @@ VRT_r_beresp_backend_ip(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->vbc, VBC_MAGIC);
-	return(sp->wrk->vbc->addr);
+	CHECK_OBJ_NOTNULL(sp->wrk->busyobj->vbc, VBC_MAGIC);
+	return(sp->wrk->busyobj->vbc->addr);
 }
 
 int
@@ -295,8 +299,8 @@ VRT_r_beresp_backend_port(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->vbc, VBC_MAGIC);
-	return (VTCP_port(sp->wrk->vbc->addr));
+	CHECK_OBJ_NOTNULL(sp->wrk->busyobj->vbc, VBC_MAGIC);
+	return (VTCP_port(sp->wrk->busyobj->vbc->addr));
 }
 
 const char * __match_proto__()
@@ -433,22 +437,22 @@ VRT_DO_EXP(req, sp, ttl, 0, 0, )
 VRT_DO_EXP(req, sp, grace, 0, 0, )
 VRT_DO_EXP(req, sp, keep, 0, 0, )
 
-VRT_DO_EXP(obj, sp->obj, grace, 0, 0,
-   EXP_Rearm(sp->obj);
-   vrt_wsp_exp(sp, sp->obj->xid, &sp->obj->exp);)
-VRT_DO_EXP(obj, sp->obj, ttl, (sp->t_req - sp->obj->exp.entered), 0,
-   EXP_Rearm(sp->obj);
-   vrt_wsp_exp(sp, sp->obj->xid, &sp->obj->exp);)
-VRT_DO_EXP(obj, sp->obj, keep, 0, 0,
-   EXP_Rearm(sp->obj);
-   vrt_wsp_exp(sp, sp->obj->xid, &sp->obj->exp);)
+VRT_DO_EXP(obj, sp->wrk->obj, grace, 0, 0,
+   EXP_Rearm(sp->wrk->obj);
+   vrt_wsp_exp(sp, sp->wrk->obj->xid, &sp->wrk->obj->exp);)
+VRT_DO_EXP(obj, sp->wrk->obj, ttl, (sp->t_req - sp->wrk->obj->exp.entered), 0,
+   EXP_Rearm(sp->wrk->obj);
+   vrt_wsp_exp(sp, sp->wrk->obj->xid, &sp->wrk->obj->exp);)
+VRT_DO_EXP(obj, sp->wrk->obj, keep, 0, 0,
+   EXP_Rearm(sp->wrk->obj);
+   vrt_wsp_exp(sp, sp->wrk->obj->xid, &sp->wrk->obj->exp);)
 
-VRT_DO_EXP(beresp, sp->wrk, grace, 0, 0,
-   vrt_wsp_exp(sp, sp->xid, &sp->wrk->exp);)
-VRT_DO_EXP(beresp, sp->wrk, ttl, 0, 0,
-   vrt_wsp_exp(sp, sp->xid, &sp->wrk->exp);)
-VRT_DO_EXP(beresp, sp->wrk, keep, 0, 0,
-   vrt_wsp_exp(sp, sp->xid, &sp->wrk->exp);)
+VRT_DO_EXP(beresp, sp->wrk->busyobj, grace, 0, 0,
+   vrt_wsp_exp(sp, sp->xid, &sp->wrk->busyobj->exp);)
+VRT_DO_EXP(beresp, sp->wrk->busyobj, ttl, 0, 0,
+   vrt_wsp_exp(sp, sp->xid, &sp->wrk->busyobj->exp);)
+VRT_DO_EXP(beresp, sp->wrk->busyobj, keep, 0, 0,
+   vrt_wsp_exp(sp, sp->xid, &sp->wrk->busyobj->exp);)
     
 VRT_DO_EXP_r(stale_obj, sp->stale_obj, grace, 0, 1)
 VRT_DO_EXP_r(stale_obj, sp->stale_obj, ttl, 0, 1)
@@ -565,8 +569,8 @@ VRT_r_obj_hits(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	return (sp->obj->hits);
+	CHECK_OBJ_NOTNULL(sp->wrk->obj, OBJECT_MAGIC);	/* XXX */
+	return (sp->wrk->obj->hits);
 }
 
 int
@@ -587,8 +591,8 @@ VRT_r_obj_lastuse(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->obj, OBJECT_MAGIC);	/* XXX */
-	return (VTIM_real() - sp->obj->last_use);
+	CHECK_OBJ_NOTNULL(sp->wrk->obj, OBJECT_MAGIC);	/* XXX */
+	return (VTIM_real() - sp->wrk->obj->last_use);
 }
 
 double

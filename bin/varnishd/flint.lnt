@@ -1,5 +1,11 @@
 -d__flexelint_v9__=1
 
+-printf(3, VSL)
+-printf(4, http_PrintfHeader)
+-printf(4, WSL)
+-printf(3, WSLB)
+-printf(2, VSB_printf)
+
 -esym(755, vct_*)
 -esym(759, vev_*)
 -esym(765, vev_*)

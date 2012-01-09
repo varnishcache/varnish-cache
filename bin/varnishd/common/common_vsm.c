@@ -43,6 +43,7 @@
 #include "common.h"
 
 #include "vapi/vsm_int.h"
+#include "vapi/vsc_int.h"
 #include "vmb.h"
 #include "vtim.h"
 
@@ -69,6 +70,11 @@ struct vsm_sc {
 	VTAILQ_HEAD(,vsm_range)		r_cooling;
 	VTAILQ_HEAD(,vsm_range)		r_free;
 	VTAILQ_HEAD(,vsm_range)		r_bogus;
+	uint64_t			g_free;
+	uint64_t			g_used;
+	uint64_t			g_cooling;
+	uint64_t			g_overflow;
+	uint64_t			c_overflow;
 };
 
 /*--------------------------------------------------------------------
@@ -148,7 +154,34 @@ VSM_common_new(void *p, ssize_t l)
 	vr->off = RUP2(sizeof(*sc->head), 16);
 	vr->len = RDN2(l - vr->off, 16);
 	VTAILQ_INSERT_TAIL(&sc->r_free, vr, list);
+	sc->g_free = vr->len;
 	return (sc);
+}
+
+/*--------------------------------------------------------------------
+ * Move from cooling list to free list
+ */
+
+void
+VSM_common_cleaner(struct vsm_sc *sc, struct VSC_C_main *stats)
+{
+	double now = VTIM_real();
+	struct vsm_range *vr, *vr2;
+
+	CHECK_OBJ_NOTNULL(sc, VSM_SC_MAGIC);
+
+	/* Move cooled off stuff to free list */
+	VTAILQ_FOREACH_SAFE(vr, &sc->r_cooling, list, vr2) {
+		if (vr->cool > now)
+			break;
+		VTAILQ_REMOVE(&sc->r_cooling, vr, list);
+		vsm_common_insert_free(sc, vr);
+	}
+	stats->vsm_free = sc->g_free;
+	stats->vsm_used = sc->g_used;
+	stats->vsm_cooling = sc->g_cooling;
+	stats->vsm_overflow = sc->g_overflow;
+	stats->vsm_overflowed = sc->c_overflow;
 }
 
 /*--------------------------------------------------------------------
@@ -160,7 +193,6 @@ VSM_common_alloc(struct vsm_sc *sc, ssize_t size,
     const char *class, const char *type, const char *ident)
 {
 	struct vsm_range *vr, *vr2, *vr3;
-	double now = VTIM_real();
 	unsigned l1, l2;
 
 	CHECK_OBJ_NOTNULL(sc, VSM_SC_MAGIC);
@@ -173,14 +205,6 @@ VSM_common_alloc(struct vsm_sc *sc, ssize_t size,
 	assert(strlen(type) < sizeof(vr->chunk->type));
 	AN(ident);
 	assert(strlen(ident) < sizeof(vr->chunk->ident));
-
-	/* Move cooled off stuff to free list */
-	VTAILQ_FOREACH_SAFE(vr, &sc->r_cooling, list, vr2) {
-		if (vr->cool > now)
-			break;
-		VTAILQ_REMOVE(&sc->r_cooling, vr, list);
-		vsm_common_insert_free(sc, vr);
-	}
 
 	l1 = RUP2(size + sizeof(struct VSM_chunk), 16);
 	l2 = RUP2(size + 2 * sizeof(struct VSM_chunk), 16);
@@ -213,12 +237,15 @@ VSM_common_alloc(struct vsm_sc *sc, ssize_t size,
 		AN(vr);
 		vr->ptr = malloc(size);
 		AN(vr->ptr);
+		vr->len = size;
 		VTAILQ_INSERT_TAIL(&sc->r_bogus, vr, list);
-		/* XXX: log + stats */
+		sc->g_overflow += vr->len;
+		sc->c_overflow += vr->len;
 		return (vr->ptr);
 	}
 
-	/* XXX: stats ? */
+	sc->g_free -= vr->len;
+	sc->g_used += vr->len;
 
 	/* Zero the entire allocation, to avoid garbage confusing readers */
 	memset(sc->b + vr->off, 0, vr->len);
@@ -263,7 +290,10 @@ VSM_common_free(struct vsm_sc *sc, void *ptr)
 	VTAILQ_FOREACH(vr, &sc->r_used, list) {
 		if (vr->ptr != ptr)
 			continue;
-		/* XXX: stats ? */
+
+		sc->g_used -= vr->len;
+		sc->g_cooling += vr->len;
+
 		vr2 = VTAILQ_NEXT(vr, list);
 		VTAILQ_REMOVE(&sc->r_used, vr, list);
 		VTAILQ_INSERT_TAIL(&sc->r_cooling, vr, list);
@@ -278,15 +308,18 @@ VSM_common_free(struct vsm_sc *sc, void *ptr)
 		VWMB();
 		return;
 	}
+
 	/* Look in bogus list, free */
 	VTAILQ_FOREACH(vr, &sc->r_bogus, list) {
-		if (vr->ptr == ptr) {
-			VTAILQ_REMOVE(&sc->r_bogus, vr, list);
-			FREE_OBJ(vr);
-			/* XXX: stats ? */
-			free(ptr);
-			return;
-		}
+		if (vr->ptr != ptr)
+			continue;
+
+		sc->g_overflow -= vr->len;
+
+		VTAILQ_REMOVE(&sc->r_bogus, vr, list);
+		FREE_OBJ(vr);
+		free(ptr);
+		return;
 	}
 	/* Panic */
 	assert(ptr == NULL);
@@ -326,7 +359,7 @@ VSM_common_delete(struct vsm_sc **scp)
 }
 
 /*--------------------------------------------------------------------
- * Copy one VSM to another
+ * Copy all chunks in one VSM segment to another VSM segment
  */
 
 void
