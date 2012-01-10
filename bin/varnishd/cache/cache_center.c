@@ -896,8 +896,10 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
          */
         if (sp->stale_obj) {
             http_Check304(sp);
-            if (wrk->busyobj->beresp->status == 304)
+            if (wrk->busyobj->beresp->status == 304) {
                 assert(req->obj->http->status == 200);
+		wrk->busyobj->do_stream = 0;
+	    }
 	    EXP_Clr(&sp->stale_obj->exp);
 	    EXP_Rearm(sp->stale_obj);
 	    HSH_Deref(sp->wrk, NULL, &sp->stale_obj);
