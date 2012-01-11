@@ -96,6 +96,8 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re,
 	AN(re);
 	if (str == NULL)
 		str = "";
+	if (sub == NULL)
+		sub = "";
 	t = re;
 	memset(ovector, 0, sizeof(ovector));
 	len = strlen(str);
