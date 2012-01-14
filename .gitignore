@@ -84,3 +84,6 @@ TAGS
 /doc/*.html
 /doc/sphinx/=build/
 /doc/sphinx/conf.py
+
+# NetBeans insists on this
+/nbproject/private/
