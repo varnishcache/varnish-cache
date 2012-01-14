@@ -88,7 +88,7 @@ print_backend(struct vcc *tl,
 	if (serial >= 0)
 		Fb(tl, 0, "[%d]", serial);
 	Fb(tl, 0, "\",\n");
-	Emit_Sockaddr(tl, &tmptok, b_defaults.port);
+	Emit_Sockaddr(tl, &tmptok, b_defaults.port ? b_defaults.port : "80");
 
 	Fb(tl, 0, "\t.hosthdr = \"");
 	if (b_defaults.hostheader != NULL)
