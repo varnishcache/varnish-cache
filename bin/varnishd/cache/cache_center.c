@@ -1655,13 +1655,13 @@ cnt_diag(struct sess *sp, const char *state)
 	}
 
 	if (sp->wrk != NULL) {
-		WSP(sp, SLT_Debug, "thr %p STP_%s sp %p obj %p vcl %p",
-		    pthread_self(), state, sp, obj, vcl);
+		WSP(sp, SLT_Debug, "vsl_id %u STP_%s sp %p obj %p vcl %p",
+		    sp->vsl_id, state, sp, obj, vcl);
 		WSL_Flush(sp->wrk, 0);
 	} else {
 		VSL(SLT_Debug, sp->vsl_id,
-		    "thr %p STP_%s sp %p obj %p vcl %p",
-		    pthread_self(), state, sp, obj, vcl);
+		    "vsl_id %u STP_%s sp %p obj %p vcl %p",
+		    sp->vsl_id, state, sp, obj, vcl);
 	}
 }
 
