@@ -286,7 +286,7 @@ LocTable(const struct vcc *tl)
 				pos++;
 
 		}
-		Fc(tl, 0, "  [%3u] = { %d, %8u, %4u, %3u, 0, ",
+		Fc(tl, 0, "  [%3u] = { %d, %8tu, %4u, %3u, 0, ",
 		    t->cnt, sp->idx, t->b - sp->b, lin, pos + 1);
 		if (t->tok == CSRC)
 			Fc(tl, 0, " \"C{\"},\n");

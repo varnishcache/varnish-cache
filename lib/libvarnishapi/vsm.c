@@ -44,6 +44,7 @@
 
 #include "miniobj.h"
 #include "vas.h"
+#include "vdef.h"
 
 #include "vapi/vsm.h"
 #include "vapi/vsm_int.h"

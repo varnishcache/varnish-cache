@@ -92,9 +92,9 @@ print_backend(struct vcc *tl,
 
 	Fb(tl, 0, "\t.hosthdr = \"");
 	if (b_defaults.hostheader != NULL)
-		Fb(tl,0, b_defaults.hostheader);
+		Fb(tl, 0, "%s", b_defaults.hostheader);
 	else
-		Fb(tl,0, strip);
+		Fb(tl, 0, "%s", strip);
 	Fb(tl, 0, "\",\n");
 
 	Fb(tl, 0, "\t.saintmode_threshold = %d,\n",b_defaults.saint);

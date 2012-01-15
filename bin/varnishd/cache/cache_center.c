@@ -1776,7 +1776,7 @@ cli_debug_srandom(struct cli *cli, const char * const *av, void *priv)
 		seed = strtoul(av[2], NULL, 0);
 	srandom(seed);
 	srand48(random());
-	VCLI_Out(cli, "Random(3) seeded with %lu", seed);
+	VCLI_Out(cli, "Random(3) seeded with %u", seed);
 }
 
 static struct cli_proto debug_cmds[] = {

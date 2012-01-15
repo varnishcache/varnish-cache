@@ -362,12 +362,12 @@ vcc_acl_emit(const struct vcc *tl, const char *acln, int anon)
 
 	Fh(tl, 0, "\n");
 	Fh(tl, 0, "\ta = p;\n");
-	Fh(tl, 0, "\tVRT_memmove(&fam, a + %d, sizeof fam);\n",
+	Fh(tl, 0, "\tVRT_memmove(&fam, a + %zd, sizeof fam);\n",
 	    offsetof(struct sockaddr, sa_family));
 	Fh(tl, 0, "\tif (fam == %d)\n", PF_INET);
-	Fh(tl, 0, "\t\ta += %d;\n", offsetof(struct sockaddr_in, sin_addr));
+	Fh(tl, 0, "\t\ta += %zd;\n", offsetof(struct sockaddr_in, sin_addr));
 	Fh(tl, 0, "\telse if (fam == %d)\n", PF_INET6);
-	Fh(tl, 0, "\t\ta += %d;\n", offsetof(struct sockaddr_in6, sin6_addr));
+	Fh(tl, 0, "\t\ta += %zd;\n", offsetof(struct sockaddr_in6, sin6_addr));
 	Fh(tl, 0, "\telse {\n");
 	Fh(tl, 0, "\t\tVRT_acl_log(sp, \"NO_FAM %s\");\n", acln);
 	Fh(tl, 0, "\t\treturn(0);\n");
@@ -422,8 +422,7 @@ vcc_acl_emit(const struct vcc *tl, const char *acln, int anon)
 
 		if (!anon) {
 			Fh(tl, 0, "\t%*sVRT_acl_log(sp, \"%sMATCH %s \" ",
-			    -i, "", ae->not ? "NEG_" : "", acln,
-			    PF(ae->t_addr));
+			    -i, "", ae->not ? "NEG_" : "", acln);
 			EncToken(tl->fh, ae->t_addr);
 			if (ae->t_mask != NULL)
 				Fh(tl, 0, " \"/%.*s\" ", PF(ae->t_mask));

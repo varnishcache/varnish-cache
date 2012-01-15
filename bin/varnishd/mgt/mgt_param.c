@@ -261,7 +261,7 @@ tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg,
 		}
 		*dest = u;
 	} else if (*dest == UINT_MAX) {
-		VCLI_Out(cli, "unlimited", *dest);
+		VCLI_Out(cli, "unlimited");
 	} else {
 		VCLI_Out(cli, "%u", *dest);
 	}

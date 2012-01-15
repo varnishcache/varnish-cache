@@ -253,6 +253,10 @@ vcc_new_expr(void)
 
 static struct expr *
 vcc_mk_expr(enum var_type fmt, const char *str, ...)
+    __printflike(2, 3);
+
+static struct expr *
+vcc_mk_expr(enum var_type fmt, const char *str, ...)
 {
 	va_list ap;
 	struct expr *e;
@@ -537,7 +541,7 @@ vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 			r = strchr(sym->name, '.');
 			AN(r);
 			e1 = vcc_mk_expr(VOID, "&vmod_priv_%.*s",
-			    r - sym->name, sym->name);
+			    (int) (r - sym->name), sym->name);
 			p += strlen(p) + 1;
 		} else if (fmt == VOID && !strcmp(p, "PRIV_CALL")) {
 			bprintf(buf, "vmod_priv_%u", tl->nvmodpriv++);

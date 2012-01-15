@@ -31,6 +31,8 @@
 #ifndef VSB_H_INCLUDED
 #define VSB_H_INCLUDED
 
+#include "vdef.h"
+
 /*
  * Structure definition
  */
@@ -48,10 +50,6 @@ struct vsb {
 #define	VSB_DYNSTRUCT	0x00080000	/* vsb must be freed */
 	int		 s_flags;	/* flags */
 };
-
-#ifndef __printflike
-#define __printflike(a,b)
-#endif
 
 #ifdef __cplusplus
 extern "C" {

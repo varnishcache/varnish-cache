@@ -154,7 +154,7 @@ vcc_Compound(struct vcc *tl)
 			return;
 		case CSRC:
 			Fb(tl, 1, "%.*s\n",
-			    tl->t->e - (tl->t->b + 2),
+			    (int) (tl->t->e - (tl->t->b + 2)),
 			    tl->t->b + 1);
 			vcc_NextToken(tl);
 			break;
@@ -274,7 +274,7 @@ vcc_Parse(struct vcc *tl)
 		switch (tl->t->tok) {
 		case CSRC:
 			Fc(tl, 0, "%.*s\n",
-			    tl->t->e - (tl->t->b + 4), tl->t->b + 2);
+			    (int) (tl->t->e - (tl->t->b + 4)), tl->t->b + 2);
 			vcc_NextToken(tl);
 			break;
 		case EOI:

@@ -53,6 +53,7 @@ struct cli_proto {
 
 /* The implementation must provide these functions */
 int VCLI_Overflow(struct cli *cli);
-void VCLI_Out(struct cli *cli, const char *fmt, ...);
+void VCLI_Out(struct cli *cli, const char *fmt, ...)
+    __printflike(2, 3);
 void VCLI_Quote(struct cli *cli, const char *str);
 void VCLI_SetResult(struct cli *cli, unsigned r);
