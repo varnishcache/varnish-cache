@@ -3,7 +3,7 @@
  * Copyright (c) 2006 Varnish Software AS
  * Copyright (c) 2007 OmniTI Computer Consulting, Inc.
  * Copyright (c) 2007 Theo Schlossnagle
- * Copyright (c) 2010 UPLEX, Nils Goroll
+ * Copyright (c) 2010-2012 UPLEX, Nils Goroll
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -224,7 +224,8 @@ vca_main(void *arg)
 		 */
 
 		if (sp) {
-			double tmo = (sp->t_open + params->sess_timeout) - now;
+			double tmo =
+			    (sp->t_end + cache_param->timeout_idle) - now;
 
 			/* we should have removed all sps whose timeout has passed */
 			assert(tmo > 0.0);
