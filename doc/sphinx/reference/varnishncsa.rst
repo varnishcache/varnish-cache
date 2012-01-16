@@ -90,6 +90,11 @@ The following options are available:
 	         Time when the request was received, in HTTP date/time
 	         format.
 
+	      %{X}t
+	         Time when the request was received, in the format
+		 specified by X.  The time specification format is the
+		 same as for strftime(3).
+
 	      %U
 	         The request URL without any query string. Defaults to
                  '-' if not known.
