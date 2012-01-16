@@ -749,6 +749,11 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 				VSB_cat(os, h ? h : "-");
 				p = tmp;
 				break;
+			case 't':
+				strftime(tbuf, sizeof tbuf, fname, &lp->df_t);
+				VSB_cat(os, tbuf);
+				p = tmp;
+				break;
 			case 'x':
 				if (strcmp(fname, "Varnish:time_firstbyte") == 0) {
 					VSB_cat(os, lp->df_ttfb);
