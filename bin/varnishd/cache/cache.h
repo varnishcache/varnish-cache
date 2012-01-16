@@ -810,7 +810,7 @@ void http_FilterHeader(const struct sess *sp, unsigned how);
 /* Check if a refresh should be done */
 void http_CheckRefresh(struct sess *sp);
 /* Check if we got 304 response */
-void http_Check304(struct sess *sp);
+void http_Check304(struct sess *sp, struct busyobj *busyobj);
 
 void http_PutProtocol(struct worker *w, unsigned vsl_id, const struct http *to,
     const char *protocol);

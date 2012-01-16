@@ -509,12 +509,7 @@ FetchBody(struct worker *wrk, struct object *obj)
 	AssertObjCorePassOrBusy(obj->objcore);
 
 	AZ(bo->vgz_rx);
-
-        /* If we've freshened from another object and got a "Not Modified"
-         * response, then we have already duped the other object's body.
-         */
-        if (bo->beresp->status != 304)
-        	AZ(VTAILQ_FIRST(&obj->store));
+	AZ(VTAILQ_FIRST(&obj->store));
 
 	bo->fetch_obj = obj;
 	bo->fetch_failed = 0;

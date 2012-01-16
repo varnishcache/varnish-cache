@@ -19,10 +19,10 @@ server s1 {
         txresp -status 304
 } -start
 
-varnish v1 -vcl+backend {
-        sub vcl_fetch {
-            set beresp.ttl = 0.5s;
-        }
+varnish v1 -arg "-t 0.5" -vcl+backend {
+	sub vcl_fetch {
+	    set beresp.http.X-TTL = beresp.ttl;
+	}
 } -start
 
 client c1 {
@@ -32,6 +32,7 @@ client c1 {
         expect resp.http.content-length == 6
         expect resp.bodylen == 6
         expect resp.http.Age == 0
+	expect resp.http.X-TTL == 0.500
 } -run
 
 delay 0.6
@@ -40,6 +41,7 @@ client c1 -run
 
 varnish v1 -expect fetch_304 == 1
 varnish v1 -expect fetch_not_validated == 0
+varnish v1 -expect cache_hitpass == 0
 
 server s1 -wait
 varnish v1 -stop

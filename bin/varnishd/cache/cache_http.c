@@ -34,7 +34,6 @@
 #include <stdio.h>
 
 #include "cache.h"
-#include "storage/storage.h"
 
 #include "vct.h"
 
@@ -951,52 +950,46 @@ http_CheckRefresh(struct sess *sp)
  */
 
 void
-http_Check304(struct sess *sp)
+http_Check304(struct sess *sp, struct busyobj *busyobj)
 {
-	struct object *o, *o_stale;
+	struct object *o_stale;
 	char *p;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(busyobj, BUSYOBJ_MAGIC);
 	o_stale = sp->stale_obj;
 	CHECK_OBJ_NOTNULL(o_stale, OBJECT_MAGIC);
-	o = sp->req->obj;
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
-	if (sp->wrk->busyobj->beresp->status != 304) {
+	if (busyobj->beresp->status != 304) {
 	    /*
 	     * IMS/INM headers may have been removed in VCL, so only count a
 	     * non-validating response if they were present in the request.
 	     */
-	    if (http_GetHdr(sp->wrk->busyobj->bereq, H_If_Modified_Since, &p)
-		|| http_GetHdr(sp->wrk->busyobj->bereq, H_If_None_Match, &p))
+	    if (http_GetHdr(busyobj->bereq, H_If_Modified_Since, &p)
+		|| http_GetHdr(busyobj->bereq, H_If_None_Match, &p))
 		sp->wrk->stats.fetch_not_validated++;
+
+	    HSH_Deref(sp->wrk, NULL, &sp->stale_obj);
+	    AZ(sp->stale_obj);
 	    return;
 	}
 
 	/* 
 	 * Copy headers we need from the stale object into the 304 response
 	 */
-	http_FilterMissingFields(sp->wrk, sp->fd, o->http, o_stale->http);
+	http_FilterMissingFields(sp->wrk, sp->fd, busyobj->beresp,
+	    o_stale->http);
 
-	/*
-	 * Dup the stale object's storage in to the new object
-	 * and reset Content-Length from the size of the storage.
-	 */
-	STV_dup(sp, o_stale, o);
-	http_Unset(o->http, H_Content_Length);
-	http_PrintfHeader(sp->wrk, sp->fd, o->http, "Content-Length: %u",
-	    o->len);
-
-	http_SetResp(o->http, "HTTP/1.1", 200, "Ok Not Modified");
-	http_SetH(o->http, HTTP_HDR_REQ, "GET");
-	http_copyh(o->http, sp->wrk->busyobj->bereq, HTTP_HDR_URL);
+	http_SetResp(busyobj->beresp, "HTTP/1.1", 200, "Ok Not Modified");
+	http_SetH(busyobj->beresp, HTTP_HDR_REQ, "GET");
+	http_copyh(busyobj->beresp, busyobj->bereq, HTTP_HDR_URL);
 
 	/*
 	 * XXX: Are we copying all the necessary fields from stale_obj?
 	 *	Should we copy o_stale->hits into o->hits?
+	 *      What about do_esi and do_g(un)zip?
 	 */
-	o->response = 200;
-	o->gziped = o_stale->gziped;
+	busyobj->is_gzip = o_stale->gziped;
 
         AZ(o_stale->objcore->flags & OC_F_BUSY);
 }

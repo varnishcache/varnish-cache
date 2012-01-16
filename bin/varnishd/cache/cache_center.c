@@ -73,6 +73,8 @@ DOT acceptor -> first [style=bold,color=green]
 #include "vtcp.h"
 #include "vtim.h"
 
+#include "storage/storage.h"
+
 #ifndef HAVE_SRANDOMDEV
 #include "compat/srandomdev.h"
 #endif
@@ -633,6 +635,15 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 		 */
 		wrk->busyobj->body_status = RFC2616_Body(sp);
 
+		/*
+		 * If we found a candidate for conditional backend
+		 * request, check now if the backend responded with 304,
+		 * and merge headers from stale_obj into the busyobj if so.
+		 * Any other response is handled as usual.
+		 */
+		if (sp->stale_obj)
+			http_Check304(sp, wrk->busyobj);
+
 		req->err_code = http_GetStatus(wrk->busyobj->beresp);
 
 		/*
@@ -650,6 +661,12 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 		AZ(wrk->busyobj->do_esi);
 
 		VCL_fetch_method(sp);
+
+		/* Cancel streaming if a stale object was validated    */
+		/* XXX: But not if original beresp.status != 304       */
+		/*      See also AZ(sp->stale_obj) in cnt_streambody() */
+		if (sp->stale_obj)
+			wrk->busyobj->do_stream = 0;
 
 		switch (req->handling) {
 		case VCL_RET_HIT_FOR_PASS:
@@ -888,23 +905,6 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	http_FilterFields(wrk, sp->vsl_id, hp2, hp,
 	    pass ? HTTPH_R_PASS : HTTPH_A_INS);
 
-        /*
-	 * If we found a candidate for conditional backend request, attempt it
-         * now. If backend responds with 304, http_Check304() merges stale_obj
-         * into wrk->obj, any other response is handled as usual. In either case,
-         * the stale_obj is no longer needed in the cache, so discard it.
-         */
-        if (sp->stale_obj) {
-            http_Check304(sp);
-            if (wrk->busyobj->beresp->status == 304) {
-                assert(req->obj->http->status == 200);
-		wrk->busyobj->do_stream = 0;
-	    }
-	    EXP_Clr(&sp->stale_obj->exp);
-	    EXP_Rearm(sp->stale_obj);
-	    HSH_Deref(sp->wrk, NULL, &sp->stale_obj);
-	    AZ(sp->stale_obj);
-        }
 	http_CopyHome(wrk, sp->vsl_id, hp2);
 
 	if (http_GetHdr(hp, H_Last_Modified, &b)
@@ -934,6 +934,25 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 
 	/* Use unmodified headers*/
 	i = FetchBody(wrk, req->obj);
+
+	/*
+	 * If a stale_obj was found, dup its storage into the new obj,
+	 * reset Content-Length from the size of the storage, and discard
+	 * the stale_obj.
+	 */
+	if (sp->stale_obj) {
+		STV_dup(sp, sp->stale_obj, req->obj);
+		assert(sp->stale_obj->len == req->obj->len);
+		
+		http_Unset(req->obj->http, H_Content_Length);
+		http_PrintfHeader(sp->wrk, sp->fd, req->obj->http,
+		    "Content-Length: %u", req->obj->len);
+		
+		EXP_Clr(&sp->stale_obj->exp);
+		EXP_Rearm(sp->stale_obj);
+		HSH_Deref(sp->wrk, NULL, &sp->stale_obj);
+		AZ(sp->stale_obj);
+	}
 
 	http_Setup(wrk->busyobj->bereq, NULL);
 	http_Setup(wrk->busyobj->beresp, NULL);
@@ -985,6 +1004,7 @@ cnt_streambody(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AZ(sp->stale_obj);
 
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 	memset(&sctx, 0, sizeof sctx);

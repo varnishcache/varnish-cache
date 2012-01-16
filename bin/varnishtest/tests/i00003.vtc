@@ -52,6 +52,47 @@ varnish v1 -expect fetch_not_validated == 0
 server s1 -wait
 varnish v1 -stop
 
+## Verify that backend conditionals work correctly with streaming
+## i.e. streaming is cancelled if a stale object is delivered
+
+server s1 {
+        rxreq
+        expect req.url == "/foo"
+        txresp -status 200 \
+    	    -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+            -hdr "ETag: foo" \
+            -body "abcdefghijklmonpqrstuvwxyz"
+
+        rxreq
+        expect req.url == "/foo"
+        expect req.http.If-Modified-Since == "Thu, 26 Jun 2008 12:00:01 GMT"
+        expect req.http.If-None-Match == "foo"
+        txresp -status 304
+} -start
+
+varnish v1 -vcl {
+        backend s1 {
+                .host = "${s1_addr}"; .port = "${s1_port}";
+        }
+
+        sub vcl_fetch {
+            set beresp.ttl = 0.5s;
+	    set beresp.do_stream = true;
+        }
+} -start
+
+client c1 -run
+
+delay 0.6
+
+client c1 -run
+
+varnish v1 -expect fetch_304 == 1
+varnish v1 -expect fetch_not_validated == 0
+
+server s1 -wait
+varnish v1 -stop
+
 ## Verify that if a client sends a conditional request to Varnish, then Varnish
 ## can return a 304 response to the client after it got 304 from the backend
 
@@ -99,9 +140,8 @@ varnish v1 -expect fetch_not_validated == 0
 server s2 -wait
 varnish v1 -stop
 
-##
-## If stale_obj has a gzipped body, make sure it interacts correctly with clients
-##
+## If stale_obj has a gzipped body, make sure it interacts correctly
+## with clients
 
 server s2 {
         rxreq
@@ -144,3 +184,6 @@ client c2 {
 
 varnish v1 -expect fetch_304 == 1
 varnish v1 -expect fetch_not_validated == 0
+
+server s2 -wait
+varnish v1 -stop
