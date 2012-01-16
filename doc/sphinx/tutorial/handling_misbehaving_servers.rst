@@ -69,7 +69,7 @@ can be enabled in VCL:::
   sub vcl_fetch {
     if (beresp.status == 500) { 
       set beresp.saintmode = 10s;
-      restart;
+      return(restart);
     }
     set beresp.grace = 5m;
   } 

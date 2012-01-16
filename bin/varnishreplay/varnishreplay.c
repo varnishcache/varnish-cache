@@ -44,6 +44,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "vdef.h"
 #include "vapi/vsl.h"
 #include "vapi/vsm.h"
 #include "vas.h"
@@ -168,6 +169,10 @@ mailbox_close(struct mailbox *mbox)
  */
 
 static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static void
+thread_log(int lvl, int errcode, const char *fmt, ...)
+    __printflike(3, 4);
 
 static void
 thread_log(int lvl, int errcode, const char *fmt, ...)

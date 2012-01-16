@@ -818,7 +818,8 @@ void http_PutStatus(struct http *to, uint16_t status);
 void http_PutResponse(struct worker *w, unsigned vsl_id, const struct http *to,
     const char *response);
 void http_PrintfHeader(struct worker *w, unsigned vsl_id, struct http *to,
-    const char *fmt, ...);
+    const char *fmt, ...)
+    __printflike(4, 5);
 void http_SetHeader(struct worker *w, unsigned vsl_id, struct http *to,
     const char *hdr);
 void http_SetH(const struct http *to, unsigned n, const char *fm);
@@ -937,10 +938,13 @@ void *VSM_Alloc(unsigned size, const char *class, const char *type,
     const char *ident);
 void VSM_Free(void *ptr);
 #ifdef VSL_ENDMARKER
-void VSL(enum VSL_tag_e tag, int id, const char *fmt, ...);
+void VSL(enum VSL_tag_e tag, int id, const char *fmt, ...)
+    __printflike(3, 4);
 void WSLR(struct worker *w, enum VSL_tag_e tag, int id, txt t);
-void WSL(struct worker *w, enum VSL_tag_e tag, int id, const char *fmt, ...);
-void WSLB(struct worker *w, enum VSL_tag_e tag, const char *fmt, ...);
+void WSL(struct worker *w, enum VSL_tag_e tag, int id, const char *fmt, ...)
+    __printflike(4, 5);
+void WSLB(struct worker *w, enum VSL_tag_e tag, const char *fmt, ...)
+    __printflike(3, 4);
 
 void WSL_Flush(struct worker *w, int overflow);
 

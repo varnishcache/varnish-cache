@@ -353,7 +353,7 @@ vcc_ParseProbeSpec(struct vcc *tl)
 	if (t_initial != NULL)
 		Fh(tl, 0, "\t.initial = %u,\n", initial);
 	else
-		Fh(tl, 0, "\t.initial = ~0U,\n", initial);
+		Fh(tl, 0, "\t.initial = ~0U,\n");
 	if (status > 0)
 		Fh(tl, 0, "\t.exp_status = %u,\n", status);
 	Fh(tl, 0, "};\n");

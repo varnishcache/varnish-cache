@@ -247,11 +247,16 @@ extern struct method method_tab[];
  * I -> Initializer function
  * F -> Finish function
  */
-void Fh(const struct vcc *tl, int indent, const char *fmt, ...);
-void Fc(const struct vcc *tl, int indent, const char *fmt, ...);
-void Fb(const struct vcc *tl, int indent, const char *fmt, ...);
-void Fi(const struct vcc *tl, int indent, const char *fmt, ...);
-void Ff(const struct vcc *tl, int indent, const char *fmt, ...);
+void Fh(const struct vcc *tl, int indent, const char *fmt, ...)
+    __printflike(3, 4);
+void Fc(const struct vcc *tl, int indent, const char *fmt, ...)
+    __printflike(3, 4);
+void Fb(const struct vcc *tl, int indent, const char *fmt, ...)
+    __printflike(3, 4);
+void Fi(const struct vcc *tl, int indent, const char *fmt, ...)
+    __printflike(3, 4);
+void Ff(const struct vcc *tl, int indent, const char *fmt, ...)
+    __printflike(3, 4);
 void EncToken(struct vsb *sb, const struct token *t);
 int IsMethod(const struct token *t);
 void *TlAlloc(struct vcc *tl, unsigned len);

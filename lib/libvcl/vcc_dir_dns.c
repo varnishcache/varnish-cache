@@ -88,13 +88,13 @@ print_backend(struct vcc *tl,
 	if (serial >= 0)
 		Fb(tl, 0, "[%d]", serial);
 	Fb(tl, 0, "\",\n");
-	Emit_Sockaddr(tl, &tmptok, b_defaults.port);
+	Emit_Sockaddr(tl, &tmptok, b_defaults.port ? b_defaults.port : "80");
 
 	Fb(tl, 0, "\t.hosthdr = \"");
 	if (b_defaults.hostheader != NULL)
-		Fb(tl,0, b_defaults.hostheader);
+		Fb(tl, 0, "%s", b_defaults.hostheader);
 	else
-		Fb(tl,0, strip);
+		Fb(tl, 0, "%s", strip);
 	Fb(tl, 0, "\",\n");
 
 	Fb(tl, 0, "\t.saintmode_threshold = %d,\n",b_defaults.saint);

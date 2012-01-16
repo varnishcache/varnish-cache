@@ -236,6 +236,10 @@ WSLR(struct worker *wrk, enum VSL_tag_e tag, int id, txt t)
 
 static void
 wsl(struct worker *wrk, enum VSL_tag_e tag, int id, const char *fmt, va_list ap)
+    __printflike(4, 0);
+
+static void
+wsl(struct worker *wrk, enum VSL_tag_e tag, int id, const char *fmt, va_list ap)
 {
 	char *p;
 	unsigned n, mlen;

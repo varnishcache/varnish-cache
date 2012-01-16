@@ -28,6 +28,8 @@
  *
  */
 
+#include "vdef.h"
+
 struct vlu;
 struct VCLS;
 

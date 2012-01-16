@@ -21,6 +21,8 @@ varnish v1 -vcl+backend {
 		    regsub(beresp.http.Foobar, "(b)(a)(r)(f)", "\0\4\3\2\\p");
 		set beresp.http.Snafu6 =
 		    regsub(beresp.http.Foobar, "(b)(a)(r)(f)", "\4\&\3\2p\");
+		set beresp.http.Snafu7 =
+		    regsub(beresp.http.Foobar, "ar", req.http.nosuchheader);
 	}
 } -start 
 
@@ -37,4 +39,5 @@ client c1 {
 	# NB: have to escape the \\ in the next two lines
 	expect resp.http.snafu5 == "_barffra\\p_"
 	expect resp.http.snafu6 == "_f&rap\\_"
+	expect resp.http.snafu7 == "_bf_"
 } -run

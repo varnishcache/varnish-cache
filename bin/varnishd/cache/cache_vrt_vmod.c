@@ -104,7 +104,8 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
 		AN(w);
 		if (strcmp(x, nm)) {
 			VCLI_Out(cli, "Loading VMOD %s from %s:\n", nm, path);
-			VCLI_Out(cli, "File contain wrong VMOD (\"%s\")\n", x);
+			VCLI_Out(cli, "File contain wrong VMOD (\"%s\")\n",
+			    (char *) x);
 			VCLI_Out(cli, "Check relative pathnames ?.\n");
 			(void)dlclose(v->hdl);
 			FREE_OBJ(v);

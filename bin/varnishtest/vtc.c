@@ -449,7 +449,7 @@ cmd_random(CMD_ARGS)
 		l = random();
 		if (l == random_expect[i])
 			continue;
-		vtc_log(vl, 4, "random[%d] = 0x%x (expect 0x%x)",
+		vtc_log(vl, 4, "random[%d] = 0x%x (expect 0x%lx)",
 		    i, l, random_expect[i]);
 		vtc_log(vl, 1, "SKIPPING test: unknown srandom(1) sequence.");
 		vtc_stop = 1;
@@ -538,17 +538,17 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 
 	/* Apply extmacro definitions */
 	VTAILQ_FOREACH(m, &extmacro_list, list)
-		macro_def(vltop, NULL, m->name, m->val);
+		macro_def(vltop, NULL, m->name, "%s", m->val);
 
 	/* Other macro definitions */
 	cwd = getcwd(NULL, PATH_MAX);
-	macro_def(vltop, NULL, "pwd", cwd);
+	macro_def(vltop, NULL, "pwd", "%s", cwd);
 	macro_def(vltop, NULL, "topbuild", "%s/%s", cwd, TOP_BUILDDIR);
 	macro_def(vltop, NULL, "bad_ip", "10.255.255.255");
 
 	/* Move into our tmpdir */
 	AZ(chdir(tmpdir));
-	macro_def(vltop, NULL, "tmpdir", tmpdir);
+	macro_def(vltop, NULL, "tmpdir", "%s", tmpdir);
 
 	/* Drop file to tell what was going on here */
 	f = fopen("INFO", "w");

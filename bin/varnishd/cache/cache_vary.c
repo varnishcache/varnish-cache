@@ -145,18 +145,18 @@ vry_len(const uint8_t *p)
  * Compare two vary entries
  */
 static int
-vry_cmp(const uint8_t * const *v1, uint8_t * const *v2)
+vry_cmp(const uint8_t *v1, const uint8_t *v2)
 {
 	unsigned retval = 0;
 
-	if (!memcmp(*v1, *v2, vry_len(*v1))) {
+	if (!memcmp(v1, v2, vry_len(v1))) {
 		/* Same same */
 		retval = 0;
-	} else if (memcmp((*v1) + 2, (*v2) + 2, (*v1)[2] + 2)) {
+	} else if (memcmp(v1 + 2, v2 + 2, v1[2] + 2)) {
 		/* Different header */
 		retval = 1;
 	} else if (cache_param->http_gzip_support &&
-	    !strcasecmp(H_Accept_Encoding, (const char*)((*v1)+2))) {
+	    !strcasecmp(H_Accept_Encoding, (const char*) v1 + 2)) {
 		/*
 		 * If we do gzip processing, we do not vary on Accept-Encoding,
 		 * because we want everybody to get the gzip'ed object, and
@@ -183,7 +183,7 @@ VRY_Match(const struct sess *sp, const uint8_t *vary)
 
 	AN(vsp);
 	while (vary[2]) {
-		i = vry_cmp(&vary, &vsp);
+		i = vry_cmp(vary, vsp);
 		if (i == 1) {
 			/* Build a new entry */
 
@@ -222,7 +222,7 @@ VRY_Match(const struct sess *sp, const uint8_t *vary)
 			} else
 				vsp[2 + vary[2] + 2 + 2] = '\0';
 
-			i = vry_cmp(&vary, &vsp);
+			i = vry_cmp(vary, vsp);
 			assert(i != 1);	/* hdr must be the same now */
 		}
 		if (i != 0)
