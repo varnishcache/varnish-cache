@@ -876,9 +876,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	hp2 = req->obj->http;
 
 	hp2->logtag = HTTP_Obj;
-	http_CopyResp(hp2, hp);
-	http_FilterFields(wrk, sp->vsl_id, hp2, hp,
-	    pass ? HTTPH_R_PASS : HTTPH_A_INS);
+	http_FilterResp(sp, hp, hp2, pass ? HTTPH_R_PASS : HTTPH_A_INS);
 	http_CopyHome(wrk, sp->vsl_id, hp2);
 
 	if (http_GetHdr(hp, H_Last_Modified, &b))
@@ -1268,7 +1266,7 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
 	WS_Reset(wrk->ws, NULL);
 	wrk->busyobj = VBO_GetBusyObj(wrk);
 	http_Setup(wrk->busyobj->bereq, wrk->ws);
-	http_FilterHeader(sp, HTTPH_R_FETCH);
+	http_FilterReq(sp, HTTPH_R_FETCH);
 	http_ForceGet(wrk->busyobj->bereq);
 	if (cache_param->http_gzip_support) {
 		/*
@@ -1360,7 +1358,7 @@ cnt_pass(struct sess *sp, struct worker *wrk, struct req *req)
 	WS_Reset(wrk->ws, NULL);
 	wrk->busyobj = VBO_GetBusyObj(wrk);
 	http_Setup(wrk->busyobj->bereq, wrk->ws);
-	http_FilterHeader(sp, HTTPH_R_PASS);
+	http_FilterReq(sp, HTTPH_R_PASS);
 
 	wrk->connect_timeout = 0;
 	wrk->first_byte_timeout = 0;
@@ -1419,7 +1417,7 @@ cnt_pipe(struct sess *sp, struct worker *wrk, const struct req *req)
 	WS_Reset(wrk->ws, NULL);
 	wrk->busyobj = VBO_GetBusyObj(wrk);
 	http_Setup(wrk->busyobj->bereq, wrk->ws);
-	http_FilterHeader(sp, 0);
+	http_FilterReq(sp, 0);
 
 	VCL_pipe_method(sp);
 

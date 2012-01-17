@@ -797,12 +797,11 @@ void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
 unsigned http_Write(struct worker *w, unsigned vsl_id, const struct http *hp,
     int resp);
-void http_CopyResp(struct http *to, const struct http *fm);
 void http_SetResp(struct http *to, const char *proto, uint16_t status,
     const char *response);
-void http_FilterFields(struct worker *w, unsigned vsl_id, struct http *to,
-    const struct http *fm, unsigned how);
-void http_FilterHeader(const struct sess *sp, unsigned how);
+void http_FilterReq(const struct sess *sp, unsigned how);
+void http_FilterResp(const struct sess *sp, const struct http *fm, struct http *to,
+    unsigned how);
 void http_PutProtocol(struct worker *w, unsigned vsl_id, const struct http *to,
     const char *protocol);
 void http_PutStatus(struct http *to, uint16_t status);

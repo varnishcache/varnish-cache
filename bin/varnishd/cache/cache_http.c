@@ -765,17 +765,6 @@ http_ForceGet(const struct http *to)
 }
 
 void
-http_CopyResp(struct http *to, const struct http *fm)
-{
-
-	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
-	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
-	to->status = fm->status;
-	http_copyh(to, fm, HTTP_HDR_RESPONSE);
-}
-
-void
 http_SetResp(struct http *to, const char *proto, uint16_t status,
     const char *response)
 {
@@ -838,8 +827,8 @@ http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd)
 
 /*--------------------------------------------------------------------*/
 
-void
-http_FilterFields(struct worker *w, unsigned vsl_id, struct http *to,
+static void
+http_filterfields(struct worker *w, unsigned vsl_id, struct http *to,
     const struct http *fm, unsigned how)
 {
 	unsigned u;
@@ -865,7 +854,7 @@ http_FilterFields(struct worker *w, unsigned vsl_id, struct http *to,
 /*--------------------------------------------------------------------*/
 
 void
-http_FilterHeader(const struct sess *sp, unsigned how)
+http_FilterReq(const struct sess *sp, unsigned how)
 {
 	struct http *hp;
 
@@ -879,9 +868,24 @@ http_FilterHeader(const struct sess *sp, unsigned how)
 		http_SetH(hp, HTTP_HDR_PROTO, "HTTP/1.1");
 	else
 		http_copyh(hp, sp->req->http, HTTP_HDR_PROTO);
-	http_FilterFields(sp->wrk, sp->vsl_id, hp, sp->req->http, how);
+	http_filterfields(sp->wrk, sp->vsl_id, hp, sp->req->http, how);
 	http_PrintfHeader(sp->wrk, sp->vsl_id, hp,
 	    "X-Varnish: %u", sp->req->xid);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+http_FilterResp(const struct sess *sp, const struct http *fm, struct http *to,
+    unsigned how)
+{
+
+	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
+	http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
+	to->status = fm->status;
+	http_copyh(to, fm, HTTP_HDR_RESPONSE);
+	http_filterfields(sp->wrk, sp->vsl_id, to, fm, how);
 }
 
 /*--------------------------------------------------------------------

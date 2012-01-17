@@ -117,9 +117,7 @@ RES_BuildHttp(const struct sess *sp)
 
 	http_ClrHeader(req->resp);
 	req->resp->logtag = HTTP_Tx;
-	http_CopyResp(req->resp, req->obj->http);
-	http_FilterFields(sp->wrk, sp->vsl_id, req->resp,
-	    req->obj->http, 0);
+	http_FilterResp(sp, req->obj->http, req->resp, 0);
 
 	if (!(sp->wrk->res_mode & RES_LEN)) {
 		http_Unset(req->resp, H_Content_Length);
