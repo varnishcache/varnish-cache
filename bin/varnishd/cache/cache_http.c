@@ -37,7 +37,7 @@
 
 #include "vct.h"
 
-#define HTTPH(a, b, c, d, e, f, g) char b[] = "*" a ":";
+#define HTTPH(a, b, c) char b[] = "*" a ":";
 #include "tbl/http_headers.h"
 #undef HTTPH
 
@@ -751,7 +751,7 @@ http_SetH(const struct http *to, unsigned n, const char *fm)
 }
 
 static void
-http_copyh(const struct http *to, const struct http *fm, unsigned n)
+http_linkh(const struct http *to, const struct http *fm, unsigned n)
 {
 
 	assert(n < HTTP_HDR_FIRST);
@@ -765,17 +765,6 @@ http_ForceGet(const struct http *to)
 {
 	if (strcmp(http_GetReq(to), "GET"))
 		http_SetH(to, HTTP_HDR_REQ, "GET");
-}
-
-void
-http_CopyResp(struct http *to, const struct http *fm)
-{
-
-	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
-	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
-	to->status = fm->status;
-	http_copyh(to, fm, HTTP_HDR_RESPONSE);
 }
 
 void
@@ -827,8 +816,8 @@ http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd)
 			continue;
 		if (fm->hdf[u] & HDF_FILTER)
 			continue;
-#define HTTPH(a, b, c, d, e, f, g) \
-		if (((e) & how) && http_IsHdr(&fm->hd[u], (b))) \
+#define HTTPH(a, b, c) \
+		if (((c) & how) && http_IsHdr(&fm->hd[u], (b))) \
 			continue;
 #include "tbl/http_headers.h"
 #undef HTTPH
@@ -841,8 +830,8 @@ http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd)
 
 /*--------------------------------------------------------------------*/
 
-void
-http_FilterFields(struct worker *w, unsigned vsl_id, struct http *to,
+static void
+http_filterfields(struct worker *w, unsigned vsl_id, struct http *to,
     const struct http *fm, unsigned how)
 {
 	unsigned u;
@@ -856,8 +845,8 @@ http_FilterFields(struct worker *w, unsigned vsl_id, struct http *to,
 			continue;
 		if (fm->hdf[u] & HDF_FILTER)
 			continue;
-#define HTTPH(a, b, c, d, e, f, g) \
-		if (((e) & how) && http_IsHdr(&fm->hd[u], (b))) \
+#define HTTPH(a, b, c) \
+		if (((c) & how) && http_IsHdr(&fm->hd[u], (b))) \
 			continue;
 #include "tbl/http_headers.h"
 #undef HTTPH
@@ -898,7 +887,7 @@ http_FilterMissingFields(struct worker *w, int fd, struct http *to,
 /*--------------------------------------------------------------------*/
 
 void
-http_FilterHeader(const struct sess *sp, unsigned how)
+http_FilterReq(const struct sess *sp, unsigned how)
 {
 	struct http *hp;
 
@@ -906,13 +895,13 @@ http_FilterHeader(const struct sess *sp, unsigned how)
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	hp->logtag = HTTP_Tx;
 
-	http_copyh(hp, sp->req->http, HTTP_HDR_REQ);
-	http_copyh(hp, sp->req->http, HTTP_HDR_URL);
+	http_linkh(hp, sp->req->http, HTTP_HDR_REQ);
+	http_linkh(hp, sp->req->http, HTTP_HDR_URL);
 	if (how == HTTPH_R_FETCH)
 		http_SetH(hp, HTTP_HDR_PROTO, "HTTP/1.1");
 	else
-		http_copyh(hp, sp->req->http, HTTP_HDR_PROTO);
-	http_FilterFields(sp->wrk, sp->vsl_id, hp, sp->req->http, how);
+		http_linkh(hp, sp->req->http, HTTP_HDR_PROTO);
+	http_filterfields(sp->wrk, sp->vsl_id, hp, sp->req->http, how);
 	http_PrintfHeader(sp->wrk, sp->vsl_id, hp,
 	    "X-Varnish: %u", sp->req->xid);
 }
@@ -938,10 +927,12 @@ http_CheckRefresh(struct sess *sp)
 	CHECK_OBJ_NOTNULL(obj_hp, HTTP_MAGIC);
 
 	if(http_GetHdr(obj_hp, H_ETag, &p))
-		http_PrintfHeader(sp->wrk, sp->fd, bereq_hp, "If-None-Match: %s", p);
+		http_PrintfHeader(sp->wrk, sp->fd, bereq_hp,
+		    "If-None-Match: %s", p);
 
 	if(http_GetHdr(obj_hp, H_Last_Modified, &p))
-		http_PrintfHeader(sp->wrk, sp->fd, bereq_hp, "If-Modified-Since: %s",p);
+		http_PrintfHeader(sp->wrk, sp->fd, bereq_hp,
+		    "If-Modified-Since: %s", p);
 }
 
 /*-------------------------------------------------------------------
@@ -982,7 +973,7 @@ http_Check304(struct sess *sp, struct busyobj *busyobj)
 
 	http_SetResp(busyobj->beresp, "HTTP/1.1", 200, "Ok Not Modified");
 	http_SetH(busyobj->beresp, HTTP_HDR_REQ, "GET");
-	http_copyh(busyobj->beresp, busyobj->bereq, HTTP_HDR_URL);
+	http_linkh(busyobj->beresp, busyobj->bereq, HTTP_HDR_URL);
 
 	/*
 	 * XXX: Are we copying all the necessary fields from stale_obj?
@@ -992,6 +983,21 @@ http_Check304(struct sess *sp, struct busyobj *busyobj)
 	busyobj->is_gzip = o_stale->gziped;
 
         AZ(o_stale->objcore->flags & OC_F_BUSY);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+http_FilterResp(const struct sess *sp, const struct http *fm, struct http *to,
+    unsigned how)
+{
+
+	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
+	http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
+	to->status = fm->status;
+	http_linkh(to, fm, HTTP_HDR_RESPONSE);
+	http_filterfields(sp->wrk, sp->vsl_id, to, fm, how);
 }
 
 /*--------------------------------------------------------------------
@@ -1224,7 +1230,7 @@ void
 HTTP_Init(void)
 {
 
-#define HTTPH(a, b, c, d, e, f, g) b[0] = (char)strlen(b + 1);
+#define HTTPH(a, b, c) b[0] = (char)strlen(b + 1);
 #include "tbl/http_headers.h"
 #undef HTTPH
 }

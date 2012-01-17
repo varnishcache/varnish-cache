@@ -800,12 +800,11 @@ void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
 unsigned http_Write(struct worker *w, unsigned vsl_id, const struct http *hp,
     int resp);
-void http_CopyResp(struct http *to, const struct http *fm);
 void http_SetResp(struct http *to, const char *proto, uint16_t status,
     const char *response);
-void http_FilterFields(struct worker *w, unsigned vsl_id, struct http *to,
-    const struct http *fm, unsigned how);
-void http_FilterHeader(const struct sess *sp, unsigned how);
+void http_FilterReq(const struct sess *sp, unsigned how);
+void http_FilterResp(const struct sess *sp, const struct http *fm, struct http *to,
+    unsigned how);
 
 /* Check if a refresh should be done */
 void http_CheckRefresh(struct sess *sp);
@@ -850,7 +849,7 @@ int HTC_Rx(struct http_conn *htc);
 ssize_t HTC_Read(struct worker *w, struct http_conn *htc, void *d, size_t len);
 int HTC_Complete(struct http_conn *htc);
 
-#define HTTPH(a, b, c, d, e, f, g) extern char b[];
+#define HTTPH(a, b, c) extern char b[];
 #include "tbl/http_headers.h"
 #undef HTTPH
 

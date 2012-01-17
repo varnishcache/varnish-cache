@@ -107,7 +107,7 @@ Lck__Unlock(struct lock *lck, const char *p, const char *f, int l)
 	 * We hack it and fill it with zero bits, hoping for sane
 	 * implementations of pthread.
 	 * #endif
-	 */ 
+	 */
 	memset(&ilck->owner, 0, sizeof ilck->owner);
 	AZ(pthread_mutex_unlock(&ilck->mtx));
 	if (cache_param->diag_bitmap & 0x8)
