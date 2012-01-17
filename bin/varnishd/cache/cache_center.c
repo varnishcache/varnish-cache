@@ -1405,7 +1405,7 @@ DOT err_pipe [label="ERROR",shape=plaintext]
  */
 
 static int
-cnt_pipe(struct sess *sp, struct worker *wrk, struct req *req)
+cnt_pipe(struct sess *sp, struct worker *wrk, const struct req *req)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
