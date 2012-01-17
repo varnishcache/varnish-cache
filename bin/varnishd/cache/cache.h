@@ -841,7 +841,7 @@ int HTC_Rx(struct http_conn *htc);
 ssize_t HTC_Read(struct worker *w, struct http_conn *htc, void *d, size_t len);
 int HTC_Complete(struct http_conn *htc);
 
-#define HTTPH(a, b, c, d, e, f, g) extern char b[];
+#define HTTPH(a, b, c) extern char b[];
 #include "tbl/http_headers.h"
 #undef HTTPH
 

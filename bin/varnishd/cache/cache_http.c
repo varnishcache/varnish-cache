@@ -37,7 +37,7 @@
 
 #include "vct.h"
 
-#define HTTPH(a, b, c, d, e, f, g) char b[] = "*" a ":";
+#define HTTPH(a, b, c) char b[] = "*" a ":";
 #include "tbl/http_headers.h"
 #undef HTTPH
 
@@ -824,8 +824,8 @@ http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd)
 			continue;
 		if (fm->hdf[u] & HDF_FILTER)
 			continue;
-#define HTTPH(a, b, c, d, e, f, g) \
-		if (((e) & how) && http_IsHdr(&fm->hd[u], (b))) \
+#define HTTPH(a, b, c) \
+		if (((c) & how) && http_IsHdr(&fm->hd[u], (b))) \
 			continue;
 #include "tbl/http_headers.h"
 #undef HTTPH
@@ -853,8 +853,8 @@ http_FilterFields(struct worker *w, unsigned vsl_id, struct http *to,
 			continue;
 		if (fm->hdf[u] & HDF_FILTER)
 			continue;
-#define HTTPH(a, b, c, d, e, f, g) \
-		if (((e) & how) && http_IsHdr(&fm->hd[u], (b))) \
+#define HTTPH(a, b, c) \
+		if (((c) & how) && http_IsHdr(&fm->hd[u], (b))) \
 			continue;
 #include "tbl/http_headers.h"
 #undef HTTPH
@@ -1114,7 +1114,7 @@ void
 HTTP_Init(void)
 {
 
-#define HTTPH(a, b, c, d, e, f, g) b[0] = (char)strlen(b + 1);
+#define HTTPH(a, b, c) b[0] = (char)strlen(b + 1);
 #include "tbl/http_headers.h"
 #undef HTTPH
 }

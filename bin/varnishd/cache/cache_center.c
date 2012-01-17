@@ -1419,7 +1419,7 @@ cnt_pipe(struct sess *sp, struct worker *wrk, const struct req *req)
 	WS_Reset(wrk->ws, NULL);
 	wrk->busyobj = VBO_GetBusyObj(wrk);
 	http_Setup(wrk->busyobj->bereq, wrk->ws);
-	http_FilterHeader(sp, HTTPH_R_PIPE);
+	http_FilterHeader(sp, 0);
 
 	VCL_pipe_method(sp);
 
