@@ -748,7 +748,7 @@ http_SetH(const struct http *to, unsigned n, const char *fm)
 }
 
 static void
-http_copyh(const struct http *to, const struct http *fm, unsigned n)
+http_linkh(const struct http *to, const struct http *fm, unsigned n)
 {
 
 	assert(n < HTTP_HDR_FIRST);
@@ -774,25 +774,6 @@ http_SetResp(struct http *to, const char *proto, uint16_t status,
 	assert(status >= 100 && status <= 999);
 	to->status = status;
 	http_SetH(to, HTTP_HDR_RESPONSE, response);
-}
-
-static void
-http_copyheader(struct worker *w, unsigned vsl_id, struct http *to,
-    const struct http *fm, unsigned n)
-{
-
-	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
-	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	assert(n < fm->shd);
-	Tcheck(fm->hd[n]);
-	if (to->nhd < to->shd) {
-		to->hd[to->nhd] = fm->hd[n];
-		to->hdf[to->nhd] = 0;
-		to->nhd++;
-	} else  {
-		VSC_C_main->losthdr++;
-		WSLR(w, SLT_LostHeader, vsl_id, fm->hd[n]);
-	}
 }
 
 /*--------------------------------------------------------------------
@@ -847,7 +828,15 @@ http_filterfields(struct worker *w, unsigned vsl_id, struct http *to,
 			continue;
 #include "tbl/http_headers.h"
 #undef HTTPH
-		http_copyheader(w, vsl_id, to, fm, u);
+		Tcheck(fm->hd[u]);
+		if (to->nhd < to->shd) {
+			to->hd[to->nhd] = fm->hd[u];
+			to->hdf[to->nhd] = 0;
+			to->nhd++;
+		} else  {
+			VSC_C_main->losthdr++;
+			WSLR(w, SLT_LostHeader, vsl_id, fm->hd[u]);
+		}
 	}
 }
 
@@ -862,12 +851,12 @@ http_FilterReq(const struct sess *sp, unsigned how)
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	hp->logtag = HTTP_Tx;
 
-	http_copyh(hp, sp->req->http, HTTP_HDR_REQ);
-	http_copyh(hp, sp->req->http, HTTP_HDR_URL);
+	http_linkh(hp, sp->req->http, HTTP_HDR_REQ);
+	http_linkh(hp, sp->req->http, HTTP_HDR_URL);
 	if (how == HTTPH_R_FETCH)
 		http_SetH(hp, HTTP_HDR_PROTO, "HTTP/1.1");
 	else
-		http_copyh(hp, sp->req->http, HTTP_HDR_PROTO);
+		http_linkh(hp, sp->req->http, HTTP_HDR_PROTO);
 	http_filterfields(sp->wrk, sp->vsl_id, hp, sp->req->http, how);
 	http_PrintfHeader(sp->wrk, sp->vsl_id, hp,
 	    "X-Varnish: %u", sp->req->xid);
@@ -884,7 +873,7 @@ http_FilterResp(const struct sess *sp, const struct http *fm, struct http *to,
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
 	to->status = fm->status;
-	http_copyh(to, fm, HTTP_HDR_RESPONSE);
+	http_linkh(to, fm, HTTP_HDR_RESPONSE);
 	http_filterfields(sp->wrk, sp->vsl_id, to, fm, how);
 }
 
