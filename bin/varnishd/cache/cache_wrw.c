@@ -163,14 +163,14 @@ WRW_Flush(struct worker *wrk)
 			    cache_param->send_timeout) {
 				WSL(wrk, SLT_Debug, *wrw->wfd,
 				    "Hit total send timeout, "
-				    "wrote = %ld/%ld; not retrying",
+				    "wrote = %zd/%zd; not retrying",
 				    i, wrw->liov);
 				i = -1;
 				break;
 			}
 
 			WSL(wrk, SLT_Debug, *wrw->wfd,
-			    "Hit send timeout, wrote = %ld/%ld; retrying",
+			    "Hit send timeout, wrote = %zd/%zd; retrying",
 			    i, wrw->liov);
 
 			wrw_prune(wrw, i);
