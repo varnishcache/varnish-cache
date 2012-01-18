@@ -725,8 +725,8 @@ static const struct parspec input_parspec[] = {
 		"Maximum number of bytes of HTTP client request we will deal "
 		"with.  This is a limit on all bytes up to the double blank "
 		"line which ends the HTTP request.\n"
-		"The memory for the request is allocated from the session "
-		"workspace (param: sess_workspace) and this parameter limits "
+		"The memory for the request is allocated from the client "
+		"workspace (param: workspace_client) and this parameter limits "
 		"how much of that the request is allowed to take up.",
 		0,
 		"32k", "bytes" },
@@ -744,8 +744,8 @@ static const struct parspec input_parspec[] = {
 		"with.  This is a limit on all bytes up to the double blank "
 		"line which ends the HTTP request.\n"
 		"The memory for the request is allocated from the worker "
-		"workspace (param: sess_workspace) and this parameter limits "
-		"how much of that the request is allowed to take up.",
+		"workspace (param: thread_pool_workspace) and this parameter "
+		"limits how much of that the request is allowed to take up.",
 		0,
 		"32k", "bytes" },
 	{ "http_max_hdr", tweak_uint, &mgt_param.http_max_hdr, 32, 65535,
