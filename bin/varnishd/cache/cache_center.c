@@ -139,10 +139,12 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			break;
 		}
 		if (i == -1) {
+			SES_Charge(sp);
 			SES_Delete(sp, "EOF", now);
 			return (1);
 		}
 		if (i == -2) {
+			SES_Charge(sp);
 			SES_Delete(sp, "overflow", now);
 			return (1);
 		}
@@ -150,6 +152,7 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			/* Nothing but whitespace */
 			when = sp->t_idle + cache_param->timeout_idle;
 			if (when < now) {
+				SES_Charge(sp);
 				SES_Delete(sp, "timeout", now);
 				return (1);
 			}
@@ -168,6 +171,7 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			when = sp->t_req + cache_param->timeout_req;
 			tmo = (int)(1e3 * (when - now));
 			if (when < now || tmo == 0) {
+				SES_Charge(sp);
 				SES_Delete(sp, "req timeout", now);
 				return (1);
 			}
