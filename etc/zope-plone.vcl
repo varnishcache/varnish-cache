@@ -52,13 +52,18 @@ sub vcl_recv {
                         }
                         return(lookup);
                 }
+
+                # Do not cache the creation of objects in Plone
+                if (req.url ~ "createObject"){
+                        return(pass);
+                }
         }
 
         # Don't cache authenticated requests
         if (req.http.Cookie && req.http.Cookie ~ "__ac(|_(name|password|persistent))=") {
 
 		# Force lookup of specific urls unlikely to need protection
-		if (req.url ~ "\.(js|css)") {
+		if (req.url ~ "\.(js|css|kss)") {
                         remove req.http.cookie;
                         return(lookup);
                 }
