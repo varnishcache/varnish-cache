@@ -42,6 +42,8 @@ varnish v1 -cliok "start"
 varnish v1 -wait-running
 sema r1 sync 2
 
+delay 0.5
+
 client c1 {
 	txreq -url "/"
 	rxresp
