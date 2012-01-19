@@ -250,7 +250,7 @@ http_req_size
 	- Default: 32768
 
 	Maximum number of bytes of HTTP client request we will deal with.  This is a limit on all bytes up to the double blank line which ends the HTTP request.
-	The memory for the request is allocated from the session workspace (param: sess_workspace) and this parameter limits how much of that the request is allowed to take up.
+	The memory for the request is allocated from the client workspace (param: workspace_client) and this parameter limits how much of that the request is allowed to take up.
 
 http_resp_hdr_len
 	- Units: bytes
@@ -263,7 +263,7 @@ http_resp_size
 	- Default: 32768
 
 	Maximum number of bytes of HTTP backend resonse we will deal with.  This is a limit on all bytes up to the double blank line which ends the HTTP request.
-	The memory for the request is allocated from the worker workspace (param: sess_workspace) and this parameter limits how much of that the request is allowed to take up.
+	The memory for the request is allocated from the thread pool workspace (param: thread_pool_workspace) and this parameter limits how much of that the request is allowed to take up.
 
 listen_address
 	- Default: :80
@@ -377,14 +377,6 @@ sess_timeout
 	- Default: 5
 
 	Idle timeout for persistent sessions. If a HTTP request has not been received in this many seconds, the session is closed.
-
-sess_workspace
-	- Units: bytes
-	- Default: 65536
-	- Flags: delayed
-
-	Bytes of HTTP protocol workspace allocated for sessions. This space must be big enough for the entire HTTP protocol header and any edits done to it in the VCL code.
-	Minimum is 1024 bytes.
 
 session_linger
 	- Units: ms
