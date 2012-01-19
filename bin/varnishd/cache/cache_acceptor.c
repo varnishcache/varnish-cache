@@ -186,7 +186,10 @@ VCA_Accept(struct listen_sock *ls, struct wrk_accept *wa)
 		(void)usleep(100*1000);
 
 	wa->acceptaddrlen = sizeof wa->acceptaddr;
-	i = accept(ls->sock, (void*)&wa->acceptaddr, &wa->acceptaddrlen);
+	do {
+		i = accept(ls->sock, (void*)&wa->acceptaddr,
+			   &wa->acceptaddrlen);
+	} while (i < 0 && errno == EAGAIN);
 
 	if (i < 0) {
 		switch (errno) {
