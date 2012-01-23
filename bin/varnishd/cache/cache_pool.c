@@ -186,6 +186,8 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how)
 	int retval = 0;
 
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
+	AN(task);
+	AN(task->func);
 
 	Lck_Lock(&pp->mtx);
 
@@ -257,6 +259,7 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 
 		if (tp != NULL) {
 			Lck_Unlock(&pp->mtx);
+			AN(tp->func);
 			tp->func(pp, wrk, tp->priv);
 			stats_clean = WRK_TrySumStat(wrk);
 			Lck_Lock(&pp->mtx);
@@ -316,27 +319,8 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 		}
 
 		if (wrk->do_what == pool_do_sess) {
-			CHECK_OBJ_NOTNULL(wrk->sp, SESS_MAGIC);
-			AZ(wrk->ws->r);
-
 			stats_clean = 0;
-			wrk->lastused = NAN;
-
-			AZ(wrk->sp->wrk);
-			THR_SetSession(wrk->sp);
-			wrk->sp->wrk = wrk;
-			CNT_Session(wrk->sp);
-			THR_SetSession(NULL);
-			wrk->sp = NULL;
-
-			WS_Assert(wrk->ws);
-			AZ(wrk->busyobj);
-			AZ(wrk->wrw.wfd);
-			assert(wrk->wlp == wrk->wlb);
-			if (cache_param->diag_bitmap & 0x00040000) {
-				if (wrk->vcl != NULL)
-					VCL_Rel(&wrk->vcl);
-			}
+			SES_pool_task(pp, wrk, wrk->sp);
 		} else if (wrk->do_what == pool_do_nothing) {
 			/* we already did */
 		} else {

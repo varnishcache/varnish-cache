@@ -942,6 +942,8 @@ int SES_Schedule(struct sess *sp);
 void SES_Handle(struct sess *sp, double now);
 void SES_GetReq(struct sess *sp);
 void SES_ReleaseReq(struct sess *sp);
+pool_func_t SES_pool_task;
+
 
 /* cache_shmlog.c */
 extern struct VSC_C_main *VSC_C_main;

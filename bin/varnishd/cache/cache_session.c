@@ -127,6 +127,42 @@ SES_Alloc(void)
 	return (sp);
 }
 
+
+/*--------------------------------------------------------------------
+ * The pool-task function for sessions
+ */
+
+void
+SES_pool_task(struct pool *pp, struct worker *wrk, void *arg)
+{
+	struct sess *sp;
+
+	AN(pp);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
+
+	AZ(wrk->ws->r);
+	wrk->lastused = NAN;
+	THR_SetSession(sp);
+	// AZ(wrk->sp);
+	// wrk->sp = sp;
+	AZ(sp->wrk);
+	sp->wrk = wrk;
+	CNT_Session(sp);
+	sp = NULL;
+	/* Cannot access sp now */
+	THR_SetSession(NULL);
+	wrk->sp = NULL;
+	WS_Assert(wrk->ws);
+	AZ(wrk->busyobj);
+	AZ(wrk->wrw.wfd);
+	assert(wrk->wlp == wrk->wlb);
+	if (cache_param->diag_bitmap & 0x00040000) {
+		if (wrk->vcl != NULL)
+			VCL_Rel(&wrk->vcl);
+	}
+}
+
 /*--------------------------------------------------------------------
  * Schedule a session back on a work-thread from its pool
  */
