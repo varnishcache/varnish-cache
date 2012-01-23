@@ -578,12 +578,6 @@ FetchBody(struct worker *wrk, struct object *obj)
 
 	if (cls < 0) {
 		wrk->stats.fetch_failed++;
-		/* XXX: Wouldn't this store automatically be released ? */
-		while (!VTAILQ_EMPTY(&obj->store)) {
-			st = VTAILQ_FIRST(&obj->store);
-			VTAILQ_REMOVE(&obj->store, st, list);
-			STV_free(st);
-		}
 		VDI_CloseFd(wrk, &bo->vbc);
 		obj->len = 0;
 		return (__LINE__);
