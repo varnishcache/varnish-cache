@@ -257,7 +257,7 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 
 		if (tp != NULL) {
 			Lck_Unlock(&pp->mtx);
-			tp->func(pp, tp->priv);
+			tp->func(pp, wrk, tp->priv);
 			stats_clean = WRK_TrySumStat(wrk);
 			Lck_Lock(&pp->mtx);
 			continue;

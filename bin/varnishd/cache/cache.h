@@ -288,7 +288,7 @@ struct wrk_accept {
 
 /* Worker pool stuff -------------------------------------------------*/
 
-typedef void pool_func_t(struct pool *pp, void *priv);
+typedef void pool_func_t(struct pool *pp, struct worker *wrk, void *priv);
 
 struct pool_task {
 	VTAILQ_ENTRY(pool_task)		list;
