@@ -488,32 +488,25 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
+	AZ(req->objcore);
+	AZ(req->obj);
+	AZ(wrk->busyobj);
+	wrk->busyobj = VBO_GetBusyObj(wrk);
+	req->obj = STV_NewObject(wrk, TRANSIENT_STORAGE,
+	    cache_param->http_resp_size,
+	    (uint16_t)cache_param->http_max_hdr);
 	if (req->obj == NULL) {
-		HSH_Prealloc(sp);
-		AZ(wrk->busyobj);
-		wrk->busyobj = VBO_GetBusyObj(wrk);
-		req->obj = STV_NewObject(wrk, NULL, cache_param->http_resp_size,
-		     (uint16_t)cache_param->http_max_hdr);
-		if (req->obj == NULL)
-			req->obj = STV_NewObject(wrk, TRANSIENT_STORAGE,
-			    cache_param->http_resp_size,
-			    (uint16_t)cache_param->http_max_hdr);
-		if (req->obj == NULL) {
-			req->doclose = "Out of objects";
-			req->director = NULL;
-			http_Setup(wrk->busyobj->beresp, NULL);
-			http_Setup(wrk->busyobj->bereq, NULL);
-			sp->step = STP_DONE;
-			return(0);
-		}
-		AN(req->obj);
-		req->obj->xid = req->xid;
-		req->obj->exp.entered = sp->t_req;
-	} else {
-		CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
-		/* XXX: Null the headers ? */
+		req->doclose = "Out of objects";
+		req->director = NULL;
+		http_Setup(wrk->busyobj->beresp, NULL);
+		http_Setup(wrk->busyobj->bereq, NULL);
+		sp->step = STP_DONE;
+		return(0);
 	}
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
+	req->obj->xid = req->xid;
+	req->obj->exp.entered = sp->t_req;
+
 	h = req->obj->http;
 
 	if (req->err_code < 100 || req->err_code > 999)
