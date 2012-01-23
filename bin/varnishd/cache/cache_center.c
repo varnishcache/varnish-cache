@@ -81,15 +81,15 @@ static unsigned xids;
 
 /*--------------------------------------------------------------------
  * WAIT
- * Wait (briefly) until we have a full request in our htc.
+ * Collect the request from the client.
  *
 DOT subgraph xcluster_wait {
 DOT	wait [
 DOT		shape=box
-DOT		label="cnt_wait:\nwait for\nrequest"
+DOT		label="cnt_wait:\nwait for\ncomplete\nrequest"
 DOT	]
 DOT	herding [shape=hexagon]
-DOT	wait -> start [label="got req"]
+DOT	wait -> start [label="got req",style=bold,color=green]
 DOT	wait -> "SES_Delete()" [label="errors"]
 DOT	wait -> herding [label="timeout_linger"]
 DOT	herding -> wait [label="fd read_ready"]
@@ -102,9 +102,11 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 	int i, j, tmo;
 	struct pollfd pfd[1];
 	double now, when;
+	const char *why = NULL;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
 	if (req == NULL) {
 		SES_GetReq(sp);
 		req = sp->req;
@@ -136,25 +138,20 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 		if (i == 1) {
 			/* Got it, run with it */
 			sp->t_req = now;
+			sp->step = STP_START;
+			return (0);
+		} else if (i == -1) {
+			why = "EOF";
 			break;
-		}
-		if (i == -1) {
-			SES_Charge(sp);
-			SES_Delete(sp, "EOF", now);
-			return (1);
-		}
-		if (i == -2) {
-			SES_Charge(sp);
-			SES_Delete(sp, "overflow", now);
-			return (1);
-		}
-		if (i == -3) {
+		} else if (i == -2) {
+			why = "overflow";
+			break;
+		} else if (i == -3) {
 			/* Nothing but whitespace */
 			when = sp->t_idle + cache_param->timeout_idle;
 			if (when < now) {
-				SES_Charge(sp);
-				SES_Delete(sp, "timeout", now);
-				return (1);
+				why = "timeout";
+				break;
 			}
 			when = sp->t_idle + cache_param->timeout_linger;
 			tmo = (int)(1e3 * (when - now));
@@ -171,14 +168,14 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			when = sp->t_req + cache_param->timeout_req;
 			tmo = (int)(1e3 * (when - now));
 			if (when < now || tmo == 0) {
-				SES_Charge(sp);
-				SES_Delete(sp, "req timeout", now);
-				return (1);
+				why = "req timeout";
+				break;
 			}
 		}
 	}
-	sp->step = STP_START;
-	return (0);
+	SES_Charge(sp);
+	SES_Delete(sp, why, now);
+	return (1);
 }
 
 /*--------------------------------------------------------------------
@@ -1014,10 +1011,10 @@ cnt_streambody(struct sess *sp, struct worker *wrk, struct req *req)
 DOT subgraph xcluster_first {
 DOT	first [
 DOT		shape=box
-DOT		label="cnt_first:\nSockaddr's"
+DOT		label="cnt_first:\nrender\naddresses"
 DOT	]
 DOT }
-DOT first -> wait
+DOT first -> wait [style=bold,color=green]
  */
 
 static int
@@ -1543,7 +1540,7 @@ cnt_recv(struct sess *sp, struct worker *wrk, struct req *req)
 
 /*--------------------------------------------------------------------
  * START
- * Handle a request.
+ * First time we see a request
  *
 DOT start [
 DOT	shape=box
@@ -1556,7 +1553,6 @@ DOT start -> DONE [label=errors]
 static int
 cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 {
-	uint16_t done;
 	char *p;
 	const char *r = "HTTP/1.1 100 Continue\r\n\r\n";
 
@@ -1566,7 +1562,6 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 	AZ(req->restarts);
 	AZ(req->obj);
 	AZ(req->vcl);
-	EXP_Clr(&req->exp);
 	AZ(req->esi_level);
 
 	/* Update stats of various sorts */
@@ -1583,52 +1578,43 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 	req->vcl = wrk->vcl;
 	wrk->vcl = NULL;
 
+	EXP_Clr(&req->exp);
+
 	http_Setup(req->http, req->ws);
-	done = http_DissectRequest(sp);
+	req->err_code = http_DissectRequest(sp);
 
 	/* If we could not even parse the request, just close */
-	if (done == 400) {
+	if (req->err_code == 400) {
 		sp->step = STP_DONE;
 		SES_Close(sp, "junk");
 		return (0);
 	}
 
-	/* Catch request snapshot */
 	req->ws_req = WS_Snapshot(req->ws);
-
-	/* Catch original request, before modification */
-	HTTP_Copy(req->http0, req->http);
-
-	if (done != 0) {
-		req->err_code = done;
-		sp->step = STP_ERROR;
-		return (0);
-	}
 
 	req->doclose = http_DoConnection(req->http);
 
-	/* XXX: Handle TRACE & OPTIONS of Max-Forwards = 0 */
-
 	/*
-	 * Handle Expect headers
+	 * We want to deal with Expect: headers the first time we
+	 * attempt the request, and remove them before we move on.
 	 */
-	if (http_GetHdr(req->http, H_Expect, &p)) {
+	if (req->err_code == 0 && http_GetHdr(req->http, H_Expect, &p)) {
 		if (strcasecmp(p, "100-continue")) {
 			req->err_code = 417;
-			sp->step = STP_ERROR;
+		} else if (strlen(r) != write(sp->fd, r, strlen(r))) {
+			sp->step = STP_DONE;
+			SES_Close(sp, "remote closed");
 			return (0);
 		}
-
-		/* XXX: Don't bother with write failures for now */
-		(void)write(sp->fd, r, strlen(r));
-		/* XXX: When we do ESI includes, this is not removed
-		 * XXX: because we use http0 as our basis.  Believed
-		 * XXX: safe, but potentially confusing.
-		 */
-		http_Unset(req->http, H_Expect);
 	}
+	http_Unset(req->http, H_Expect);
 
-	sp->step = STP_RECV;
+	HTTP_Copy(req->http0, req->http);	/* Copy for restart/ESI use */
+
+	if (req->err_code)
+		sp->step = STP_ERROR;
+	else 
+		sp->step = STP_RECV;
 	return (0);
 }
 
