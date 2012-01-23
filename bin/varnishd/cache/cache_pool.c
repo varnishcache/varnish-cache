@@ -80,7 +80,7 @@ pthread_condattr_setclock(pthread_condattr_t *attr, int foo)
 }
 #endif /* !CLOCK_MONOTONIC */
 
-VTAILQ_HEAD(workerhead, worker);
+VTAILQ_HEAD(taskhead, pool_task);
 
 struct poolsock {
 	unsigned			magic;
@@ -101,9 +101,9 @@ struct pool {
 	pthread_t			herder_thr;
 
 	struct lock			mtx;
-	struct workerhead		idle;
-	VTAILQ_HEAD(, pool_task)	front_queue;
-	VTAILQ_HEAD(, pool_task)	back_queue;
+	struct taskhead			idle_queue;
+	struct taskhead			front_queue;
+	struct taskhead			back_queue;
 	VTAILQ_HEAD(, poolsock)		socks;
 	unsigned			nthr;
 	unsigned			lqueue;
@@ -115,6 +115,27 @@ struct pool {
 
 static struct lock		pool_mtx;
 static pthread_t		thr_pool_herder;
+
+/*--------------------------------------------------------------------
+ */
+
+static struct worker *
+pool_getidleworker(const struct pool *pp, int back)
+{
+	struct pool_task *pt;
+	struct worker *wrk;
+
+	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
+	if (back)
+		pt = VTAILQ_LAST(&pp->idle_queue, taskhead);
+	else
+		pt = VTAILQ_FIRST(&pp->idle_queue);
+	if (pt == NULL)
+		return (NULL);
+	AZ(pt->func);
+	CAST_OBJ_NOTNULL(wrk, pt->priv, WORKER_MAGIC);
+	return (wrk);
+}
 
 /*--------------------------------------------------------------------
  * Nobody is accepting on this socket, so we do.
@@ -161,10 +182,10 @@ pool_accept(struct pool *pp, struct worker *wrk, const struct poolsock *ps)
 		}
 
 		Lck_Lock(&pp->mtx);
-		if (VTAILQ_EMPTY(&pp->idle))
+		wrk2 = pool_getidleworker(pp, 0);
+		if (wrk2 == NULL)
 			return (0);
-		wrk2 = VTAILQ_FIRST(&pp->idle);
-		VTAILQ_REMOVE(&pp->idle, wrk2, list);
+		VTAILQ_REMOVE(&pp->idle_queue, &wrk2->task, list);
 		Lck_Unlock(&pp->mtx);
 		assert(sizeof *wa2 == WS_Reserve(wrk2->ws, sizeof *wa2));
 		wa2 = (void*)wrk2->ws->f;
@@ -194,9 +215,9 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how)
 	 * The common case first:  Take an idle thread, do it.
 	 */
 
-	wrk = VTAILQ_FIRST(&pp->idle);
+	wrk = pool_getidleworker(pp, 0);
 	if (wrk != NULL) {
-		VTAILQ_REMOVE(&pp->idle, wrk, list);
+		VTAILQ_REMOVE(&pp->idle_queue, &wrk->task, list);
 		Lck_Unlock(&pp->mtx);
 		wrk->task.func = task->func;
 		wrk->task.priv = task->priv;
@@ -296,7 +317,9 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 			/* Nothing to do: To sleep, perchance to dream ... */
 			if (isnan(wrk->lastused))
 				wrk->lastused = VTIM_real();
-			VTAILQ_INSERT_HEAD(&pp->idle, wrk, list);
+			wrk->task.func = NULL;
+			wrk->task.priv = wrk;
+			VTAILQ_INSERT_HEAD(&pp->idle_queue, &wrk->task, list);
 			if (!stats_clean)
 				WRK_SumStat(wrk);
 			(void)Lck_CondWait(&wrk->cond, &pp->mtx, NULL);
@@ -457,12 +480,12 @@ pool_herder(void *priv)
 		VSC_C_main->sess_queued += pp->nqueued;
 		VSC_C_main->sess_dropped += pp->ndropped;
 		pp->nqueued = pp->ndropped = 0;
-		wrk = VTAILQ_LAST(&pp->idle, workerhead);
+		wrk = pool_getidleworker(pp, 1);
 		if (wrk != NULL &&
 		    (wrk->lastused < t_idle ||
 		    pp->nthr > cache_param->wthread_max)) {
-			VTAILQ_REMOVE(&pp->idle, wrk, list);
-		} else
+			VTAILQ_REMOVE(&pp->idle_queue, &wrk->task, list);
+		} else 
 			wrk = NULL;
 		Lck_Unlock(&pp->mtx);
 
@@ -497,7 +520,7 @@ pool_mkpool(unsigned pool_no)
 	XXXAN(pp);
 	Lck_New(&pp->mtx, lck_wq);
 
-	VTAILQ_INIT(&pp->idle);
+	VTAILQ_INIT(&pp->idle_queue);
 	VTAILQ_INIT(&pp->socks);
 	VTAILQ_INIT(&pp->front_queue);
 	VTAILQ_INIT(&pp->back_queue);

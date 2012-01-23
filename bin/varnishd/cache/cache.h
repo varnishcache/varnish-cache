@@ -335,7 +335,6 @@ struct worker {
 
 	pthread_cond_t		cond;
 
-	VTAILQ_ENTRY(worker)	list;
 	struct sess		*sp;
 
 	struct VCL_conf		*vcl;
