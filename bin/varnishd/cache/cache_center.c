@@ -83,6 +83,11 @@ static unsigned xids;
  * WAIT
  * Collect the request from the client.
  *
+ * We "abuse" sp->t_req a bit here:  On input it means "request reception
+ * started at xxx" and is used to trigger timeouts.  On return it means
+ * "we had full request headers by xxx" and is used for reporting by
+ * later steps.
+ *
 DOT subgraph xcluster_wait {
 DOT	wait [
 DOT		shape=box
@@ -446,17 +451,16 @@ cnt_done(struct sess *sp, struct worker *wrk, struct req *req)
 	WS_Reset(req->ws, NULL);
 	WS_Reset(wrk->ws, NULL);
 
+	sp->t_req = sp->t_idle;
 	i = HTC_Reinit(req->htc);
 	if (i == 1) {
 		wrk->stats.sess_pipeline++;
-		sp->t_req = sp->t_idle;
 		sp->step = STP_START;
-		return (0);
+	} else {
+		if (Tlen(req->htc->rxbuf))
+			wrk->stats.sess_readahead++;
+		sp->step = STP_WAIT;
 	}
-	if (Tlen(req->htc->rxbuf))
-		wrk->stats.sess_readahead++;
-	sp->step = STP_WAIT;
-	sp->t_req = sp->t_idle;
 	return (0);
 }
 
@@ -597,7 +601,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 
 	need_host_hdr = !http_GetHdr(wrk->busyobj->bereq, H_Host, NULL);
 
-	i = FetchHdr(sp, need_host_hdr);
+	i = FetchHdr(sp, need_host_hdr, req->objcore == NULL);
 	/*
 	 * If we recycle a backend connection, there is a finite chance
 	 * that the backend closed it before we get a request to it.
@@ -605,7 +609,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 	 */
 	if (i == 1) {
 		VSC_C_main->backend_retry++;
-		i = FetchHdr(sp, need_host_hdr);
+		i = FetchHdr(sp, need_host_hdr, req->objcore == NULL);
 	}
 
 	if (i) {
@@ -1042,6 +1046,8 @@ cnt_first(struct sess *sp, struct worker *wrk)
 
 	wrk->acct_tmp.sess++;
 
+	sp->t_req = sp->t_open;
+	sp->t_idle = sp->t_open;
 	sp->step = STP_WAIT;
 	return (0);
 }
@@ -1080,10 +1086,9 @@ cnt_hit(struct sess *sp, struct worker *wrk, struct req *req)
 	VCL_hit_method(sp);
 
 	if (req->handling == VCL_RET_DELIVER) {
-		/* Dispose of any body part of the request */
-		(void)FetchReqBody(sp);
 		//AZ(wrk->busyobj->bereq->ws);
 		//AZ(wrk->busyobj->beresp->ws);
+		(void)FetchReqBody(sp, 0);
 		sp->step = STP_PREPRESP;
 		return (0);
 	}
@@ -1117,10 +1122,6 @@ cnt_hit(struct sess *sp, struct worker *wrk, struct req *req)
  * encounter a busy object.
  *
 DOT subgraph xcluster_lookup {
-DOT	hash [
-DOT		shape=record
-DOT		label="vcl_hash()|req."
-DOT	]
 DOT	lookup [
 DOT		shape=diamond
 DOT		label="obj in cache ?\ncreate if not"
@@ -1129,7 +1130,6 @@ DOT	lookup2 [
 DOT		shape=diamond
 DOT		label="obj.f.pass ?"
 DOT	]
-DOT	hash -> lookup [label="hash",style=bold,color=green]
 DOT	lookup -> lookup2 [label="yes",style=bold,color=green]
 DOT }
 DOT lookup2 -> hit [label="no", style=bold,color=green]
@@ -1343,7 +1343,7 @@ DOT err_pass [label="ERROR",shape=plaintext]
  */
 
 static int
-cnt_pass(struct sess *sp, struct worker *wrk, struct req *req)
+cnt_pass(struct sess *sp, struct worker *wrk, const struct req *req)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -1370,7 +1370,6 @@ cnt_pass(struct sess *sp, struct worker *wrk, struct req *req)
 	}
 	assert(req->handling == VCL_RET_PASS);
 	wrk->acct_tmp.pass++;
-	req->sendbody = 1;
 	sp->step = STP_FETCH;
 	return (0);
 }
@@ -1434,11 +1433,19 @@ cnt_pipe(struct sess *sp, struct worker *wrk, const struct req *req)
 /*--------------------------------------------------------------------
  * RECV
  * We have a complete request, set everything up and start it.
+ * We can come here both with a request from the client and with
+ * a interior request during ESI delivery.
  *
 DOT subgraph xcluster_recv {
 DOT	recv [
 DOT		shape=record
-DOT		label="vcl_recv()|req."
+DOT		label="{cnt_recv:|{vcl_recv\{\}|req.*}}"
+DOT	]
+DOT }
+DOT subgraph xcluster_hash {
+DOT	hash [
+DOT		shape=record
+DOT		label="{cnt_recv:|{vcl_hash\{\}|req.*}}"
 DOT	]
 DOT }
 DOT ESI_REQ [ shape=hexagon ]
@@ -1449,6 +1456,7 @@ DOT recv -> pass2 [label="pass",style=bold,color=red]
 DOT recv -> err_recv [label="error"]
 DOT err_recv [label="ERROR",shape=plaintext]
 DOT recv -> hash [label="lookup",style=bold,color=green]
+DOT hash -> lookup [label="hash",style=bold,color=green]
  */
 
 static int
@@ -1481,6 +1489,11 @@ cnt_recv(struct sess *sp, struct worker *wrk, struct req *req)
 	recv_handling = req->handling;
 
 	if (req->restarts >= cache_param->max_restarts) {
+		/*
+		 * XXX: Why not before vcl_recv{} ?  We go to vcl_error{}
+		 * XXX: without vcl_recv{} on 413 and 417 already.
+		 * XXX tell vcl_error why we come
+		 */
 		if (req->err_code == 0)
 			req->err_code = 503;
 		sp->step = STP_ERROR;
@@ -1499,7 +1512,7 @@ cnt_recv(struct sess *sp, struct worker *wrk, struct req *req)
 		}
 	}
 
-	req->sha256ctx = &sha256ctx;
+	req->sha256ctx = &sha256ctx;	/* so HSH_AddString() can find it */
 	SHA256_Init(req->sha256ctx);
 	VCL_hash_method(sp);
 	assert(req->handling == VCL_RET_HASH);
@@ -1511,10 +1524,8 @@ cnt_recv(struct sess *sp, struct worker *wrk, struct req *req)
 	else
 		req->wantbody = 1;
 
-	req->sendbody = 0;
 	switch(recv_handling) {
 	case VCL_RET_LOOKUP:
-		/* XXX: discard req body, if any */
 		sp->step = STP_LOOKUP;
 		return (0);
 	case VCL_RET_PIPE:
@@ -1530,7 +1541,6 @@ cnt_recv(struct sess *sp, struct worker *wrk, struct req *req)
 		sp->step = STP_PASS;
 		return (0);
 	case VCL_RET_ERROR:
-		/* XXX: discard req body, if any */
 		sp->step = STP_ERROR;
 		return (0);
 	default:
@@ -1563,10 +1573,10 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 	AZ(req->obj);
 	AZ(req->vcl);
 	AZ(req->esi_level);
+	assert(!isnan(sp->t_req));
 
 	/* Update stats of various sorts */
 	wrk->stats.client_req++;
-	assert(!isnan(sp->t_req));
 	wrk->acct_tmp.req++;
 
 	/* Assign XID and log */
@@ -1609,11 +1619,14 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 	}
 	http_Unset(req->http, H_Expect);
 
+	/* XXX: pull in req-body and make it available instead. */
+	req->reqbodydone = 0;
+
 	HTTP_Copy(req->http0, req->http);	/* Copy for restart/ESI use */
 
 	if (req->err_code)
 		sp->step = STP_ERROR;
-	else 
+	else
 		sp->step = STP_RECV;
 	return (0);
 }

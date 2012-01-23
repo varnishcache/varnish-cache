@@ -592,7 +592,7 @@ struct req {
 	struct exp		exp;
 	unsigned		cur_method;
 	unsigned		handling;
-	unsigned char		sendbody;
+	unsigned char		reqbodydone;
 	unsigned char		wantbody;
 
 	uint16_t		err_code;
@@ -765,9 +765,9 @@ int EXP_NukeOne(struct worker *w, struct lru *lru);
 struct storage *FetchStorage(struct worker *w, ssize_t sz);
 int FetchError(struct worker *w, const char *error);
 int FetchError2(struct worker *w, const char *error, const char *more);
-int FetchHdr(struct sess *sp, int need_host_hdr);
+int FetchHdr(struct sess *sp, int need_host_hdr, int sendbody);
 int FetchBody(struct worker *w, struct object *obj);
-int FetchReqBody(const struct sess *sp);
+int FetchReqBody(const struct sess *sp, int sendbody);
 void Fetch_Init(void);
 
 /* cache_gzip.c */

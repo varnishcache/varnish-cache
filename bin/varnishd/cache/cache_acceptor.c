@@ -253,8 +253,6 @@ VCA_SetupSess(struct worker *wrk)
 	sp->vsl_id = wa->acceptsock | VSL_CLIENTMARKER ;
 	wa->acceptsock = -1;
 	sp->t_open = VTIM_real();
-	sp->t_req = sp->t_open;
-	sp->t_idle = sp->t_open;
 	sp->mylsock = wa->acceptlsock;
 	CHECK_OBJ_NOTNULL(sp->mylsock, LISTEN_SOCK_MAGIC);
 	assert(wa->acceptaddrlen <= sp->sockaddrlen);
