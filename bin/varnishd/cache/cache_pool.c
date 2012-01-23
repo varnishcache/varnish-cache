@@ -218,7 +218,7 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 			}
 			VTAILQ_INSERT_TAIL(&pp->socks, ps, list);
 			wrk->do_what = pool_do_accept;
-		} else if (VTAILQ_EMPTY(&pp->socks)) {
+		} else {
 			/* Nothing to do: To sleep, perchance to dream ... */
 			if (isnan(wrk->lastused))
 				wrk->lastused = VTIM_real();
