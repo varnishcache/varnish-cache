@@ -1,4 +1,4 @@
-varnishtest "Test VCL regsub()"
+varnishtest "Test POST->GET conversion"
 
 server s1 {
 	rxreq 
