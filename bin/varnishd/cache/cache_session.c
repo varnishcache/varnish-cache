@@ -133,19 +133,20 @@ SES_Alloc(void)
  */
 
 void
-SES_pool_task(struct pool *pp, struct worker *wrk, void *arg)
+SES_pool_task(struct worker *wrk, void *arg)
 {
 	struct sess *sp;
 
-	AN(pp);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
 
 	AZ(wrk->ws->r);
 	wrk->lastused = NAN;
 	THR_SetSession(sp);
-	// AZ(wrk->sp);
-	// wrk->sp = sp;
+	if (wrk->sp == NULL)
+		wrk->sp = sp;
+	else
+		assert(wrk->sp == sp);
 	AZ(sp->wrk);
 	sp->wrk = wrk;
 	CNT_Session(sp);
@@ -178,7 +179,11 @@ SES_Schedule(struct sess *sp)
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
 
-	if (Pool_Schedule(pp->pool, sp)) {
+	AZ(sp->wrk);
+	sp->task.func = SES_pool_task;
+	sp->task.priv = sp;
+
+	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT)) {
 		VSC_C_main->client_drop_late++;
 		sp->t_idle = VTIM_real();
 		if (sp->req != NULL && sp->req->vcl != NULL) {

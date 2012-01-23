@@ -288,7 +288,7 @@ struct wrk_accept {
 
 /* Worker pool stuff -------------------------------------------------*/
 
-typedef void pool_func_t(struct pool *pp, struct worker *wrk, void *priv);
+typedef void pool_func_t(struct worker *wrk, void *priv);
 
 struct pool_task {
 	VTAILQ_ENTRY(pool_task)		list;
@@ -324,8 +324,7 @@ struct worker {
 	struct dstat		stats;
 
 	/* New Pool stuff */
-	pool_func_t		*pool_func;
-	void			*pool_priv;
+	struct pool_task	task;
 
 	/* Pool stuff */
 	enum e_do_what		do_what;
@@ -914,7 +913,6 @@ void PipeSession(struct sess *sp);
 /* cache_pool.c */
 void Pool_Init(void);
 void Pool_Work_Thread(void *priv, struct worker *w);
-int Pool_Schedule(struct pool *pp, struct sess *sp);
 int Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how);
 
 #define WRW_IsReleased(w)	((w)->wrw.wfd == NULL)
