@@ -104,7 +104,6 @@ struct pool {
 	struct workerhead		idle;
 	VTAILQ_HEAD(, pool_task)	front_queue;
 	VTAILQ_HEAD(, pool_task)	back_queue;
-	VTAILQ_HEAD(, sess)		queue;
 	VTAILQ_HEAD(, poolsock)		socks;
 	unsigned			nthr;
 	unsigned			lqueue;
@@ -279,14 +278,7 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 			continue;
 		}
 
-		wrk->sp = VTAILQ_FIRST(&pp->queue);
-		if (wrk->sp != NULL) {
-			/* Process queued requests, if any */
-			assert(pp->lqueue > 0);
-			VTAILQ_REMOVE(&pp->queue, wrk->sp, list);
-			wrk->do_what = pool_do_sess;
-			pp->lqueue--;
-		} else if (!VTAILQ_EMPTY(&pp->socks)) {
+		if (!VTAILQ_EMPTY(&pp->socks)) {
 			/* Accept on a socket */
 			ps = VTAILQ_FIRST(&pp->socks);
 			VTAILQ_REMOVE(&pp->socks, ps, list);
@@ -505,7 +497,6 @@ pool_mkpool(unsigned pool_no)
 	XXXAN(pp);
 	Lck_New(&pp->mtx, lck_wq);
 
-	VTAILQ_INIT(&pp->queue);
 	VTAILQ_INIT(&pp->idle);
 	VTAILQ_INIT(&pp->socks);
 	VTAILQ_INIT(&pp->front_queue);
