@@ -190,7 +190,8 @@ pool_accept(struct pool *pp, struct worker *wrk, const struct poolsock *ps)
 		assert(sizeof *wa2 == WS_Reserve(wrk2->ws, sizeof *wa2));
 		wa2 = (void*)wrk2->ws->f;
 		memcpy(wa2, wa, sizeof *wa);
-		wrk2->do_what = pool_do_accept;
+		wrk2->task.func = SES_pool_accept_task;
+		wrk2->task.priv = pp->sesspool;
 		AZ(pthread_cond_signal(&wrk2->cond));
 	}
 }
@@ -342,19 +343,11 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 		Lck_Unlock(&pp->mtx);
 
 		if (wrk->do_what == pool_do_accept) {
-			/* Turn accepted socket into a session */
-			AZ(wrk->sp);
-			AN(wrk->ws->r);
-			wrk->sp = SES_New(pp->sesspool);
-			if (wrk->sp == NULL) {
-				VCA_FailSess(wrk);
+			SES_pool_accept_task(wrk, pp->sesspool);
+			if (wrk->sp == NULL)
 				wrk->do_what = pool_do_nothing;
-			} else {
-				VCA_SetupSess(wrk);
-				wrk->sp->step = STP_FIRST;
+			else
 				wrk->do_what = pool_do_sess;
-			}
-			WS_Release(wrk->ws, 0);
 		}
 
 		if (wrk->do_what == pool_do_sess) {

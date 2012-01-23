@@ -928,7 +928,6 @@ void WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len);
 #endif  /* SENDFILE_WORKS */
 
 /* cache_session.c [SES] */
-struct sess *SES_New(struct sesspool *pp);
 struct sess *SES_Alloc(void);
 void SES_Close(struct sess *sp, const char *reason);
 void SES_Delete(struct sess *sp, const char *reason, double now);
@@ -940,7 +939,7 @@ void SES_Handle(struct sess *sp, double now);
 void SES_GetReq(struct sess *sp);
 void SES_ReleaseReq(struct sess *sp);
 pool_func_t SES_pool_task;
-
+pool_func_t SES_pool_accept_task;
 
 /* cache_shmlog.c */
 extern struct VSC_C_main *VSC_C_main;

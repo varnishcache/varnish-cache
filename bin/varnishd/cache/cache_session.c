@@ -97,8 +97,8 @@ ses_setup(struct sess *sp)
  * Get a new session, preferably by recycling an already ready one
  */
 
-struct sess *
-SES_New(struct sesspool *pp)
+static struct sess *
+ses_new(struct sesspool *pp)
 {
 	struct sess *sp;
 
@@ -126,6 +126,33 @@ SES_Alloc(void)
 	/* XXX: sp->req ? */
 	return (sp);
 }
+
+ /*--------------------------------------------------------------------
+ * The pool-task for a newly accepted session
+ */
+
+void
+SES_pool_accept_task(struct worker *wrk, void *arg)
+{
+	struct sesspool *pp;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CAST_OBJ_NOTNULL(pp, arg, SESSPOOL_MAGIC);
+
+	/* Turn accepted socket into a session */
+	AZ(wrk->sp);
+	AN(wrk->ws->r);
+	wrk->sp = ses_new(pp);
+	if (wrk->sp == NULL) {
+		VCA_FailSess(wrk);
+		return;
+	}
+	VCA_SetupSess(wrk);
+	wrk->sp->step = STP_FIRST;
+	WS_Release(wrk->ws, 0);
+	SES_pool_task(wrk, wrk->sp);
+}
+
 
 
 /*--------------------------------------------------------------------
