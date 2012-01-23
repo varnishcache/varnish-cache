@@ -92,24 +92,26 @@ struct poolsock {
 /* Number of work requests queued in excess of worker threads available */
 
 struct pool {
-	unsigned		magic;
-#define POOL_MAGIC		0x606658fa
-	VTAILQ_ENTRY(pool)	list;
+	unsigned			magic;
+#define POOL_MAGIC			0x606658fa
+	VTAILQ_ENTRY(pool)		list;
 
-	pthread_cond_t		herder_cond;
-	struct lock		herder_mtx;
-	pthread_t		herder_thr;
+	pthread_cond_t			herder_cond;
+	struct lock			herder_mtx;
+	pthread_t			herder_thr;
 
-	struct lock		mtx;
-	struct workerhead	idle;
-	VTAILQ_HEAD(, sess)	queue;
-	VTAILQ_HEAD(, poolsock)	socks;
-	unsigned		nthr;
-	unsigned		lqueue;
-	unsigned		last_lqueue;
-	uintmax_t		ndropped;
-	uintmax_t		nqueued;
-	struct sesspool		*sesspool;
+	struct lock			mtx;
+	struct workerhead		idle;
+	VTAILQ_HEAD(, pool_task)	front_queue;
+	VTAILQ_HEAD(, pool_task)	back_queue;
+	VTAILQ_HEAD(, sess)		queue;
+	VTAILQ_HEAD(, poolsock)		socks;
+	unsigned			nthr;
+	unsigned			lqueue;
+	unsigned			last_lqueue;
+	uintmax_t			ndropped;
+	uintmax_t			nqueued;
+	struct sesspool			*sesspool;
 };
 
 static struct lock		pool_mtx;
@@ -174,6 +176,51 @@ pool_accept(struct pool *pp, struct worker *wrk, const struct poolsock *ps)
 }
 
 /*--------------------------------------------------------------------
+ * Enter a new task to be done
+ */
+
+int
+Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how)
+{
+	struct worker *wrk;
+	int retval = 0;
+
+	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
+
+	Lck_Lock(&pp->mtx);
+
+	/*
+	 * The common case first:  Take an idle thread, do it.
+	 */
+
+	wrk = VTAILQ_FIRST(&pp->idle);
+	if (wrk != NULL) {
+		VTAILQ_REMOVE(&pp->idle, wrk, list);
+		Lck_Unlock(&pp->mtx);
+		wrk->pool_func = task->func;
+		wrk->pool_priv = task->priv;
+		AZ(pthread_cond_signal(&wrk->cond));
+		return (0);
+	}
+
+	switch (how) {
+	case POOL_NO_QUEUE:
+		retval = -1;
+		break;
+	case POOL_QUEUE_FRONT:
+		VTAILQ_INSERT_TAIL(&pp->front_queue, task, list);
+		break;
+	case POOL_QUEUE_BACK:
+		VTAILQ_INSERT_TAIL(&pp->back_queue, task, list);
+		break;
+	default:
+		WRONG("Unknown enum pool_how");
+	}
+	Lck_Unlock(&pp->mtx);
+	return (retval);
+}
+
+/*--------------------------------------------------------------------
  * This is the work function for worker threads in the pool.
  */
 
@@ -183,6 +230,7 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 	struct pool *pp;
 	int stats_clean, i;
 	struct poolsock *ps;
+	struct pool_task *tp;
 
 	CAST_OBJ_NOTNULL(pp, priv, POOL_MAGIC);
 	wrk->pool = pp;
@@ -196,6 +244,24 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 		CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 		WS_Reset(wrk->ws, NULL);
+
+		tp = VTAILQ_FIRST(&pp->front_queue);
+		if (tp != NULL)
+			VTAILQ_REMOVE(&pp->front_queue, tp, list);
+
+		if (tp == NULL) {
+			tp = VTAILQ_FIRST(&pp->back_queue);
+			if (tp != NULL)
+				VTAILQ_REMOVE(&pp->back_queue, tp, list);
+		}
+
+		if (tp != NULL) {
+			Lck_Unlock(&pp->mtx);
+			tp->func(pp, tp->priv);
+			stats_clean = WRK_TrySumStat(wrk);
+			Lck_Lock(&pp->mtx);
+			continue;
+		}
 
 		wrk->sp = VTAILQ_FIRST(&pp->queue);
 		if (wrk->sp != NULL) {
@@ -483,6 +549,8 @@ pool_mkpool(unsigned pool_no)
 	VTAILQ_INIT(&pp->queue);
 	VTAILQ_INIT(&pp->idle);
 	VTAILQ_INIT(&pp->socks);
+	VTAILQ_INIT(&pp->front_queue);
+	VTAILQ_INIT(&pp->back_queue);
 	pp->sesspool = SES_NewPool(pp, pool_no);
 	AN(pp->sesspool);
 

@@ -286,6 +286,22 @@ struct wrk_accept {
 	struct listen_sock	*acceptlsock;
 };
 
+/* Worker pool stuff -------------------------------------------------*/
+
+typedef void pool_func_t(struct pool *pp, void *priv);
+
+struct pool_task {
+	VTAILQ_ENTRY(pool_task)		list;
+	pool_func_t			*func;
+	void				*priv;
+};
+
+enum pool_how {
+	POOL_NO_QUEUE,
+	POOL_QUEUE_FRONT,
+	POOL_QUEUE_BACK
+};
+
 /*--------------------------------------------------------------------*/
 
 enum e_do_what {
@@ -306,6 +322,10 @@ struct worker {
 	struct vbo		*nvbo;
 	void			*nhashpriv;
 	struct dstat		stats;
+
+	/* New Pool stuff */
+	pool_func_t		*pool_func;
+	void			*pool_priv;
 
 	/* Pool stuff */
 	enum e_do_what		do_what;
@@ -648,6 +668,7 @@ struct sess {
 	struct worker		*wrk;
 	struct req		*req;
 
+	struct pool_task	task;
 	VTAILQ_ENTRY(sess)	list;
 
 	/* Session related fields ------------------------------------*/
@@ -894,6 +915,7 @@ void PipeSession(struct sess *sp);
 void Pool_Init(void);
 void Pool_Work_Thread(void *priv, struct worker *w);
 int Pool_Schedule(struct pool *pp, struct sess *sp);
+int Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how);
 
 #define WRW_IsReleased(w)	((w)->wrw.wfd == NULL)
 int WRW_Error(const struct worker *w);
