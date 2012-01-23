@@ -304,14 +304,6 @@ enum pool_how {
 
 /*--------------------------------------------------------------------*/
 
-enum e_do_what {
-	pool_do_inval = 0,
-	pool_do_sess,
-	pool_do_accept,
-	pool_do_nothing,
-	pool_do_die,
-};
-
 struct worker {
 	unsigned		magic;
 #define WORKER_MAGIC		0x6391adcf
@@ -323,11 +315,7 @@ struct worker {
 	void			*nhashpriv;
 	struct dstat		stats;
 
-	/* New Pool stuff */
 	struct pool_task	task;
-
-	/* Pool stuff */
-	enum e_do_what		do_what;
 
 	double			lastused;
 
@@ -938,7 +926,6 @@ int SES_Schedule(struct sess *sp);
 void SES_Handle(struct sess *sp, double now);
 void SES_GetReq(struct sess *sp);
 void SES_ReleaseReq(struct sess *sp);
-pool_func_t SES_pool_task;
 pool_func_t SES_pool_accept_task;
 
 /* cache_shmlog.c */

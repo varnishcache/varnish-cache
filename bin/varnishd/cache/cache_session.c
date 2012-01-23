@@ -127,40 +127,12 @@ SES_Alloc(void)
 	return (sp);
 }
 
- /*--------------------------------------------------------------------
- * The pool-task for a newly accepted session
- */
-
-void
-SES_pool_accept_task(struct worker *wrk, void *arg)
-{
-	struct sesspool *pp;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CAST_OBJ_NOTNULL(pp, arg, SESSPOOL_MAGIC);
-
-	/* Turn accepted socket into a session */
-	AZ(wrk->sp);
-	AN(wrk->ws->r);
-	wrk->sp = ses_new(pp);
-	if (wrk->sp == NULL) {
-		VCA_FailSess(wrk);
-		return;
-	}
-	VCA_SetupSess(wrk);
-	wrk->sp->step = STP_FIRST;
-	WS_Release(wrk->ws, 0);
-	SES_pool_task(wrk, wrk->sp);
-}
-
-
-
 /*--------------------------------------------------------------------
  * The pool-task function for sessions
  */
 
-void
-SES_pool_task(struct worker *wrk, void *arg)
+static void
+ses_pool_task(struct worker *wrk, void *arg)
 {
 	struct sess *sp;
 
@@ -192,6 +164,32 @@ SES_pool_task(struct worker *wrk, void *arg)
 }
 
 /*--------------------------------------------------------------------
+ * The pool-task for a newly accepted session
+ */
+
+void
+SES_pool_accept_task(struct worker *wrk, void *arg)
+{
+	struct sesspool *pp;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CAST_OBJ_NOTNULL(pp, arg, SESSPOOL_MAGIC);
+
+	/* Turn accepted socket into a session */
+	AZ(wrk->sp);
+	AN(wrk->ws->r);
+	wrk->sp = ses_new(pp);
+	if (wrk->sp == NULL) {
+		VCA_FailSess(wrk);
+		return;
+	}
+	VCA_SetupSess(wrk);
+	wrk->sp->step = STP_FIRST;
+	WS_Release(wrk->ws, 0);
+	ses_pool_task(wrk, wrk->sp);
+}
+
+/*--------------------------------------------------------------------
  * Schedule a session back on a work-thread from its pool
  */
 
@@ -207,7 +205,7 @@ SES_Schedule(struct sess *sp)
 	AN(pp->pool);
 
 	AZ(sp->wrk);
-	sp->task.func = SES_pool_task;
+	sp->task.func = ses_pool_task;
 	sp->task.priv = sp;
 
 	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT)) {
