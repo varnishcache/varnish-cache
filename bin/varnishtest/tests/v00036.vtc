@@ -1,127 +1,66 @@
 varnishtest "Test fallback director"
 
 server s1 {
-	rxreq
-	expect req.url == "/"
-	txresp -body "slash"
-	close
-
-	sema r1 sync 3
-
-	accept
-	rxreq
-	expect req.url == "/"
-	txresp -body "slash"
-	close
-
-	accept
-	rxreq
-	expect req.url == "/"
-	txresp -body "slash"
-	close
-
-	sema r3 sync 2
-
-	accept
-	rxreq
-	expect req.url == "/foo"
-	txresp -hdr "Foo: 1" -body "foobar"
-
+        rxreq
+        txresp -hdr "Foo: 1"
 } -start
 
 server s2 {
-	rxreq
-	expect req.url == "/"
-	txresp -body "slash"
-	close
-
-	sema r1 sync 3
-
-	accept
-	rxreq
-	expect req.url == "/"
-	txresp -body "slash"
-	close
-
-	sema r2 sync 2
-
-	accept
-	rxreq
-	expect req.url == "/foo"
-	txresp -hdr "Foo: 2" -body "foobar"
+        rxreq
+        txresp -hdr "Foo: 2"
 } -start
 
 server s3 {
-	rxreq
-	expect req.url == "/foo"
-	txresp -hdr "Foo: 3" -body "foobar"
+        rxreq
+        txresp -hdr "Foo: 3"
 } -start
 
 varnish v1 -vcl {
-
-	probe p1 {
-		.url = "/";
-		.timeout = 1s;
-		.interval = 1s;
-		.window = 4;
-		.threshold = 3;
-		.initial = 0;
-	}
-	probe p2 {
-		.url = "/";
-		.timeout = 1s;
-		.interval = 1s;
-		.window = 3;
-		.threshold = 2;
-		.initial = 0;
-	}
-
-	backend b1 {
-		.host = "${s1_addr}";
-		.port = "${s1_port}";
-		.max_connections = 1;
-		.probe = p1;
-	}
-	backend b2 {
-		.host = "${s2_addr}";
-		.port = "${s2_port}";
-		.max_connections = 1;
-		.probe = p2;
-	}
-	backend b3 {
-		.host = "${s3_addr}";
-		.port = "${s3_port}";
-	}
-	director f1 fallback {
-		{ .backend = b1; }
-		{ .backend = b2; }
-		{ .backend = b3; }
-	}
-
-	sub vcl_recv {
-		set req.backend = f1;
-		return(pass);
-	}
+        backend b1 {
+                .host = "${s1_addr}";
+                .port = "${s1_port}";
+        }
+        backend b2 {
+                .host = "${s2_addr}";
+                .port = "${s2_port}";
+        }
+        backend b3 {
+                .host = "${s3_addr}";
+                .port = "${s3_port}";
+        }
+        director f1 fallback {
+                { .backend = b1; }
+                { .backend = b2; }
+                { .backend = b3; }
+        }
+        sub vcl_recv {
+                set req.backend = f1;
+                return (pass);
+        }
 } -start
 
+varnish v1 -cliok "backend.set_health b1 sick"
+varnish v1 -cliok "backend.set_health b2 sick"
 
 client c1 {
-	# s1 & s2 are both sick, expect response from s3
-	txreq -url "/foo"
-	rxresp
-	expect resp.http.foo == "3"
+        # s1 & s2 are both sick, expect response from s3
+        txreq
+        rxresp
+        expect resp.http.foo == "3"
+} -run
 
-	sema r1 sync 3
+varnish v1 -cliok "backend.set_health b2 healthy"
 
-	# wait for s2 to become healthy
-	sema r2 sync 2
-	txreq -url "/foo"
-	rxresp
-	expect resp.http.foo == "2"
+client c1 {
+        txreq
+        rxresp
+        expect resp.http.foo == "2"
+} -run
 
-	# wait for s1 to become healthy
-	sema r3 sync 2
-	txreq -url "/foo"
-	rxresp
-	expect resp.http.foo == "1"
+varnish v1 -cliok "backend.set_health b1 healthy"
+
+client c1 {
+        txreq
+        rxresp
+        expect resp.http.foo == "1"
 } -run
