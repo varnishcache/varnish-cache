@@ -488,10 +488,10 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-
 	AZ(req->objcore);
 	AZ(req->obj);
 	AZ(wrk->busyobj);
+
 	wrk->busyobj = VBO_GetBusyObj(wrk);
 	req->obj = STV_NewObject(wrk, TRANSIENT_STORAGE,
 	    cache_param->http_resp_size,
@@ -1079,6 +1079,7 @@ cnt_hit(struct sess *sp, struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
+	AZ(req->objcore);
 	AZ(wrk->busyobj);
 
 	assert(!(req->obj->objcore->flags & OC_F_PASS));
@@ -1123,18 +1124,19 @@ cnt_hit(struct sess *sp, struct worker *wrk, struct req *req)
  *
 DOT subgraph xcluster_lookup {
 DOT	lookup [
-DOT		shape=diamond
-DOT		label="obj in cache ?\ncreate if not"
+DOT		shape=record
+DOT		label="{cnt_lookup:|hash lookup}"
 DOT	]
 DOT	lookup2 [
 DOT		shape=diamond
 DOT		label="obj.f.pass ?"
 DOT	]
-DOT	lookup -> lookup2 [label="yes",style=bold,color=green]
 DOT }
+DOT lookup -> lookup [label="Busy object found"]
+DOT lookup -> miss [label="not found\ncreate new",style=bold,color=blue]
+DOT lookup -> lookup2 [label="found",style=bold,color=green]
 DOT lookup2 -> hit [label="no", style=bold,color=green]
 DOT lookup2 -> pass [label="yes",style=bold,color=red]
-DOT lookup -> miss [label="no",style=bold,color=blue]
  */
 
 static int
@@ -1147,6 +1149,7 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AZ(req->objcore);
 
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 	AZ(wrk->busyobj);
@@ -1165,17 +1168,18 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 	req->vary_b[2] = '\0';
 
 	oc = HSH_Lookup(sp, &oh);
+	AZ(req->objcore);
 
 	if (oc == NULL) {
 		/*
 		 * We lost the session to a busy object, disembark the
-		 * worker thread.   The hash code to restart the session,
-		 * still in STP_LOOKUP, later when the busy object isn't.
+		 * worker thread.   We return to STP_LOOKUP when the busy
+		 * object has been unbusied, and still have the hash digest
+		 * around to do the lookup with.
 		 * NB:  Do not access sp any more !
 		 */
 		return (1);
 	}
-
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
@@ -1215,7 +1219,7 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 		wrk->stats.cache_hitpass++;
 		WSP(sp, SLT_HitPass, "%u", req->obj->xid);
 		(void)HSH_Deref(wrk, NULL, &req->obj);
-		req->objcore = NULL;
+		AZ(req->objcore);
 		sp->step = STP_PASS;
 		return (0);
 	}
@@ -1257,10 +1261,10 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
-
-	AZ(req->obj);
-	AN(req->objcore);
+	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
+	AZ(req->obj);
+
 	WS_Reset(wrk->ws, NULL);
 	wrk->busyobj = VBO_GetBusyObj(wrk);
 	http_Setup(wrk->busyobj->bereq, wrk->ws);
@@ -1276,38 +1280,36 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
 		http_SetHeader(wrk, sp->vsl_id, wrk->busyobj->bereq,
 		    "Accept-Encoding: gzip");
 	}
-	wrk->connect_timeout = 0;
-	wrk->first_byte_timeout = 0;
-	wrk->between_bytes_timeout = 0;
 
 	VCL_miss_method(sp);
 
-	switch(req->handling) {
-	case VCL_RET_ERROR:
-		AZ(HSH_Deref(wrk, req->objcore, NULL));
-		req->objcore = NULL;
-		http_Setup(wrk->busyobj->bereq, NULL);
-		VBO_DerefBusyObj(wrk, &wrk->busyobj);
-		sp->step = STP_ERROR;
-		return (0);
-	case VCL_RET_PASS:
-		AZ(HSH_Deref(wrk, req->objcore, NULL));
-		req->objcore = NULL;
-		VBO_DerefBusyObj(wrk, &wrk->busyobj);
-		sp->step = STP_PASS;
-		return (0);
-	case VCL_RET_FETCH:
+	if (req->handling == VCL_RET_FETCH) {
 		CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 		sp->step = STP_FETCH;
 		return (0);
+	}
+
+	AZ(HSH_Deref(wrk, req->objcore, NULL));
+	req->objcore = NULL;
+	http_Setup(wrk->busyobj->bereq, NULL);
+	VBO_DerefBusyObj(wrk, &wrk->busyobj);
+
+	switch(req->handling) {
+	case VCL_RET_ERROR:
+		sp->step = STP_ERROR;
+		break;
+	case VCL_RET_PASS:
+		sp->step = STP_PASS;
+		break;
 	case VCL_RET_RESTART:
-		AZ(HSH_Deref(wrk, req->objcore, NULL));
-		req->objcore = NULL;
-		VBO_DerefBusyObj(wrk, &wrk->busyobj);
-		INCOMPL();
+		req->restarts++;
+		req->director = NULL;
+		sp->step = STP_RECV;
+		break;
 	default:
 		WRONG("Illegal action in vcl_miss{}");
 	}
+	return (0);
 }
 
 /*--------------------------------------------------------------------
@@ -1349,6 +1351,7 @@ cnt_pass(struct sess *sp, struct worker *wrk, const struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
+	AZ(req->objcore);
 	AZ(req->obj);
 	AZ(wrk->busyobj);
 
@@ -1358,10 +1361,8 @@ cnt_pass(struct sess *sp, struct worker *wrk, const struct req *req)
 	http_Setup(wrk->busyobj->bereq, wrk->ws);
 	http_FilterReq(sp, HTTPH_R_PASS);
 
-	wrk->connect_timeout = 0;
-	wrk->first_byte_timeout = 0;
-	wrk->between_bytes_timeout = 0;
 	VCL_pass_method(sp);
+
 	if (req->handling == VCL_RET_ERROR) {
 		http_Setup(wrk->busyobj->bereq, NULL);
 		VBO_DerefBusyObj(wrk, &wrk->busyobj);
@@ -1477,6 +1478,10 @@ cnt_recv(struct sess *sp, struct worker *wrk, struct req *req)
 	AZ(req->director);
 	req->director = req->vcl->director[0];
 	AN(req->director);
+
+	wrk->connect_timeout = 0;
+	wrk->first_byte_timeout = 0;
+	wrk->between_bytes_timeout = 0;
 
 	req->disable_esi = 0;
 	req->hash_always_miss = 0;

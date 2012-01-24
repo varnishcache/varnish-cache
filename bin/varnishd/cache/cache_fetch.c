@@ -340,7 +340,7 @@ FetchReqBody(const struct sess *sp, int sendbody)
 		AZ(sendbody);
 		return (0);
 	}
-		
+
 	if (http_GetHdr(sp->req->http, H_Content_Length, &ptr)) {
 		sp->req->reqbodydone = 1;
 
