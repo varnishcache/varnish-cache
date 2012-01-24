@@ -329,14 +329,20 @@ fetch_eof(struct worker *wrk, struct http_conn *htc)
  */
 
 int
-FetchReqBody(const struct sess *sp)
+FetchReqBody(const struct sess *sp, int sendbody)
 {
 	unsigned long content_length;
 	char buf[8192];
 	char *ptr, *endp;
 	int rdcnt;
 
+	if (sp->req->reqbodydone) {
+		AZ(sendbody);
+		return (0);
+	}
+
 	if (http_GetHdr(sp->req->http, H_Content_Length, &ptr)) {
+		sp->req->reqbodydone = 1;
 
 		content_length = strtoul(ptr, &endp, 10);
 		/* XXX should check result of conversion */
@@ -349,11 +355,12 @@ FetchReqBody(const struct sess *sp)
 			if (rdcnt <= 0)
 				return (1);
 			content_length -= rdcnt;
-			if (!sp->req->sendbody)
-				continue;
-			(void)WRW_Write(sp->wrk, buf, rdcnt); /* XXX: stats ? */
-			if (WRW_Flush(sp->wrk))
-				return (2);
+			if (sendbody) {
+				/* XXX: stats ? */
+				(void)WRW_Write(sp->wrk, buf, rdcnt);
+				if (WRW_Flush(sp->wrk))
+					return (2);
+			}
 		}
 	}
 	if (http_GetHdr(sp->req->http, H_Transfer_Encoding, NULL)) {
@@ -375,7 +382,7 @@ FetchReqBody(const struct sess *sp)
  */
 
 int
-FetchHdr(struct sess *sp, int need_host_hdr)
+FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 {
 	struct vbc *vc;
 	struct worker *wrk;
@@ -422,7 +429,7 @@ FetchHdr(struct sess *sp, int need_host_hdr)
 	(void)http_Write(wrk, vc->vsl_id, hp, 0);	/* XXX: stats ? */
 
 	/* Deal with any message-body the request might have */
-	i = FetchReqBody(sp);
+	i = FetchReqBody(sp, sendbody);
 	if (WRW_FlushRelease(wrk) || i > 0) {
 		WSP(sp, SLT_FetchError, "backend write error: %d (%s)",
 		    errno, strerror(errno));
@@ -578,12 +585,6 @@ FetchBody(struct worker *wrk, struct object *obj)
 
 	if (cls < 0) {
 		wrk->stats.fetch_failed++;
-		/* XXX: Wouldn't this store automatically be released ? */
-		while (!VTAILQ_EMPTY(&obj->store)) {
-			st = VTAILQ_FIRST(&obj->store);
-			VTAILQ_REMOVE(&obj->store, st, list);
-			STV_free(st);
-		}
 		VDI_CloseFd(wrk, &bo->vbc);
 		obj->len = 0;
 		return (__LINE__);

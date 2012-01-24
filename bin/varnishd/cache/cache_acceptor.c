@@ -186,7 +186,10 @@ VCA_Accept(struct listen_sock *ls, struct wrk_accept *wa)
 		(void)usleep(100*1000);
 
 	wa->acceptaddrlen = sizeof wa->acceptaddr;
-	i = accept(ls->sock, (void*)&wa->acceptaddr, &wa->acceptaddrlen);
+	do {
+		i = accept(ls->sock, (void*)&wa->acceptaddr,
+			   &wa->acceptaddrlen);
+	} while (i < 0 && errno == EAGAIN);
 
 	if (i < 0) {
 		switch (errno) {
@@ -250,8 +253,6 @@ VCA_SetupSess(struct worker *wrk)
 	sp->vsl_id = wa->acceptsock | VSL_CLIENTMARKER ;
 	wa->acceptsock = -1;
 	sp->t_open = VTIM_real();
-	sp->t_req = sp->t_open;
-	sp->t_idle = sp->t_open;
 	sp->mylsock = wa->acceptlsock;
 	CHECK_OBJ_NOTNULL(sp->mylsock, LISTEN_SOCK_MAGIC);
 	assert(wa->acceptaddrlen <= sp->sockaddrlen);

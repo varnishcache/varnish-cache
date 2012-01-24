@@ -83,15 +83,20 @@ static unsigned xids;
 
 /*--------------------------------------------------------------------
  * WAIT
- * Wait (briefly) until we have a full request in our htc.
+ * Collect the request from the client.
+ *
+ * We "abuse" sp->t_req a bit here:  On input it means "request reception
+ * started at xxx" and is used to trigger timeouts.  On return it means
+ * "we had full request headers by xxx" and is used for reporting by
+ * later steps.
  *
 DOT subgraph xcluster_wait {
 DOT	wait [
 DOT		shape=box
-DOT		label="cnt_wait:\nwait for\nrequest"
+DOT		label="cnt_wait:\nwait for\ncomplete\nrequest"
 DOT	]
 DOT	herding [shape=hexagon]
-DOT	wait -> start [label="got req"]
+DOT	wait -> start [label="got req",style=bold,color=green]
 DOT	wait -> "SES_Delete()" [label="errors"]
 DOT	wait -> herding [label="timeout_linger"]
 DOT	herding -> wait [label="fd read_ready"]
@@ -104,9 +109,11 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 	int i, j, tmo;
 	struct pollfd pfd[1];
 	double now, when;
+	const char *why = NULL;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
 	if (req == NULL) {
 		SES_GetReq(sp);
 		req = sp->req;
@@ -138,22 +145,20 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 		if (i == 1) {
 			/* Got it, run with it */
 			sp->t_req = now;
+			sp->step = STP_START;
+			return (0);
+		} else if (i == -1) {
+			why = "EOF";
 			break;
-		}
-		if (i == -1) {
-			SES_Delete(sp, "EOF", now);
-			return (1);
-		}
-		if (i == -2) {
-			SES_Delete(sp, "overflow", now);
-			return (1);
-		}
-		if (i == -3) {
+		} else if (i == -2) {
+			why = "overflow";
+			break;
+		} else if (i == -3) {
 			/* Nothing but whitespace */
 			when = sp->t_idle + cache_param->timeout_idle;
 			if (when < now) {
-				SES_Delete(sp, "timeout", now);
-				return (1);
+				why = "timeout";
+				break;
 			}
 			when = sp->t_idle + cache_param->timeout_linger;
 			tmo = (int)(1e3 * (when - now));
@@ -170,13 +175,14 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			when = sp->t_req + cache_param->timeout_req;
 			tmo = (int)(1e3 * (when - now));
 			if (when < now || tmo == 0) {
-				SES_Delete(sp, "req timeout", now);
-				return (1);
+				why = "req timeout";
+				break;
 			}
 		}
 	}
-	sp->step = STP_START;
-	return (0);
+	SES_Charge(sp);
+	SES_Delete(sp, why, now);
+	return (1);
 }
 
 /*--------------------------------------------------------------------
@@ -447,17 +453,16 @@ cnt_done(struct sess *sp, struct worker *wrk, struct req *req)
 	WS_Reset(req->ws, NULL);
 	WS_Reset(wrk->ws, NULL);
 
+	sp->t_req = sp->t_idle;
 	i = HTC_Reinit(req->htc);
 	if (i == 1) {
 		wrk->stats.sess_pipeline++;
-		sp->t_req = sp->t_idle;
 		sp->step = STP_START;
-		return (0);
+	} else {
+		if (Tlen(req->htc->rxbuf))
+			wrk->stats.sess_readahead++;
+		sp->step = STP_WAIT;
 	}
-	if (Tlen(req->htc->rxbuf))
-		wrk->stats.sess_readahead++;
-	sp->step = STP_WAIT;
-	sp->t_req = sp->t_idle;
 	return (0);
 }
 
@@ -485,33 +490,26 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AZ(req->objcore);
+	AZ(req->obj);
+	AZ(wrk->busyobj);
 
+	wrk->busyobj = VBO_GetBusyObj(wrk);
+	req->obj = STV_NewObject(wrk, TRANSIENT_STORAGE,
+	    cache_param->http_resp_size,
+	    (uint16_t)cache_param->http_max_hdr);
 	if (req->obj == NULL) {
-		HSH_Prealloc(sp);
-		AZ(wrk->busyobj);
-		wrk->busyobj = VBO_GetBusyObj(wrk);
-		req->obj = STV_NewObject(wrk, NULL, cache_param->http_resp_size,
-		     (uint16_t)cache_param->http_max_hdr);
-		if (req->obj == NULL)
-			req->obj = STV_NewObject(wrk, TRANSIENT_STORAGE,
-			    cache_param->http_resp_size,
-			    (uint16_t)cache_param->http_max_hdr);
-		if (req->obj == NULL) {
-			req->doclose = "Out of objects";
-			req->director = NULL;
-			http_Setup(wrk->busyobj->beresp, NULL);
-			http_Setup(wrk->busyobj->bereq, NULL);
-			sp->step = STP_DONE;
-			return(0);
-		}
-		AN(req->obj);
-		req->obj->xid = req->xid;
-		req->obj->exp.entered = sp->t_req;
-	} else {
-		CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
-		/* XXX: Null the headers ? */
+		req->doclose = "Out of objects";
+		req->director = NULL;
+		http_Setup(wrk->busyobj->beresp, NULL);
+		http_Setup(wrk->busyobj->bereq, NULL);
+		sp->step = STP_DONE;
+		return(0);
 	}
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
+	req->obj->xid = req->xid;
+	req->obj->exp.entered = sp->t_req;
+
 	h = req->obj->http;
 
 	if (req->err_code < 100 || req->err_code > 999)
@@ -605,7 +603,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 
 	need_host_hdr = !http_GetHdr(wrk->busyobj->bereq, H_Host, NULL);
 
-	i = FetchHdr(sp, need_host_hdr);
+	i = FetchHdr(sp, need_host_hdr, req->objcore == NULL);
 	/*
 	 * If we recycle a backend connection, there is a finite chance
 	 * that the backend closed it before we get a request to it.
@@ -613,7 +611,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 	 */
 	if (i == 1) {
 		VSC_C_main->backend_retry++;
-		i = FetchHdr(sp, need_host_hdr);
+		i = FetchHdr(sp, need_host_hdr, req->objcore == NULL);
 	}
 
 	if (i) {
@@ -824,6 +822,10 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	if (wrk->busyobj->do_esi || req->esi_level > 0)
 		wrk->busyobj->do_stream = 0;
 	if (!req->wantbody)
+		wrk->busyobj->do_stream = 0;
+
+	/* No reason to try streaming a non-existing body */
+	if (wrk->busyobj->body_status == BS_NONE)
 		wrk->busyobj->do_stream = 0;
 
 	l = http_EstimateWS(wrk->busyobj->beresp,
@@ -1058,10 +1060,10 @@ cnt_streambody(struct sess *sp, struct worker *wrk, struct req *req)
 DOT subgraph xcluster_first {
 DOT	first [
 DOT		shape=box
-DOT		label="cnt_first:\nSockaddr's"
+DOT		label="cnt_first:\nrender\naddresses"
 DOT	]
 DOT }
-DOT first -> wait
+DOT first -> wait [style=bold,color=green]
  */
 
 static int
@@ -1089,6 +1091,8 @@ cnt_first(struct sess *sp, struct worker *wrk)
 
 	wrk->acct_tmp.sess++;
 
+	sp->t_req = sp->t_open;
+	sp->t_idle = sp->t_open;
 	sp->step = STP_WAIT;
 	return (0);
 }
@@ -1120,6 +1124,7 @@ cnt_hit(struct sess *sp, struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
+	AZ(req->objcore);
 	AZ(wrk->busyobj);
 
 	assert(!(req->obj->objcore->flags & OC_F_PASS));
@@ -1127,10 +1132,9 @@ cnt_hit(struct sess *sp, struct worker *wrk, struct req *req)
 	VCL_hit_method(sp);
 
 	if (req->handling == VCL_RET_DELIVER) {
-		/* Dispose of any body part of the request */
-		(void)FetchReqBody(sp);
 		//AZ(wrk->busyobj->bereq->ws);
 		//AZ(wrk->busyobj->beresp->ws);
+		(void)FetchReqBody(sp, 0);
 		sp->step = STP_PREPRESP;
 		return (0);
 	}
@@ -1164,24 +1168,20 @@ cnt_hit(struct sess *sp, struct worker *wrk, struct req *req)
  * encounter a busy object.
  *
 DOT subgraph xcluster_lookup {
-DOT	hash [
-DOT		shape=record
-DOT		label="vcl_hash()|req."
-DOT	]
 DOT	lookup [
-DOT		shape=diamond
-DOT		label="obj in cache ?\ncreate if not"
+DOT		shape=record
+DOT		label="{cnt_lookup:|hash lookup}"
 DOT	]
 DOT	lookup2 [
 DOT		shape=diamond
 DOT		label="obj.f.pass ?"
 DOT	]
-DOT	hash -> lookup [label="hash",style=bold,color=green]
-DOT	lookup -> lookup2 [label="yes",style=bold,color=green]
 DOT }
+DOT lookup -> lookup [label="Busy object found"]
+DOT lookup -> miss [label="not found\ncreate new",style=bold,color=blue]
+DOT lookup -> lookup2 [label="found",style=bold,color=green]
 DOT lookup2 -> hit [label="no", style=bold,color=green]
 DOT lookup2 -> pass [label="yes",style=bold,color=red]
-DOT lookup -> miss [label="no",style=bold,color=blue]
  */
 
 static int
@@ -1194,6 +1194,7 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AZ(req->objcore);
 
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 	AZ(wrk->busyobj);
@@ -1212,17 +1213,18 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 	req->vary_b[2] = '\0';
 
 	oc = HSH_Lookup(sp, &oh);
+	AZ(req->objcore);
 
 	if (oc == NULL) {
 		/*
 		 * We lost the session to a busy object, disembark the
-		 * worker thread.   The hash code to restart the session,
-		 * still in STP_LOOKUP, later when the busy object isn't.
+		 * worker thread.   We return to STP_LOOKUP when the busy
+		 * object has been unbusied, and still have the hash digest
+		 * around to do the lookup with.
 		 * NB:  Do not access sp any more !
 		 */
 		return (1);
 	}
-
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
@@ -1264,7 +1266,7 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 		(void)HSH_Deref(wrk, NULL, &req->obj);
                 if (sp->stale_obj != NULL)
                     (void)HSH_Deref(wrk, NULL, &sp->stale_obj);
-		req->objcore = NULL;
+		AZ(req->objcore);
 		sp->step = STP_PASS;
 		return (0);
 	}
@@ -1306,10 +1308,10 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
-
-	AZ(req->obj);
-	AN(req->objcore);
+	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
+	AZ(req->obj);
+
 	WS_Reset(wrk->ws, NULL);
 	wrk->busyobj = VBO_GetBusyObj(wrk);
 	http_Setup(wrk->busyobj->bereq, wrk->ws);
@@ -1325,9 +1327,6 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
 		http_SetHeader(wrk, sp->vsl_id, wrk->busyobj->bereq,
 		    "Accept-Encoding: gzip");
 	}
-	wrk->connect_timeout = 0;
-	wrk->first_byte_timeout = 0;
-	wrk->between_bytes_timeout = 0;
 
         /* If a candidate for a conditional backend request was found,
          * add If-Modified-Since and/or If-None-Match to the bereq.
@@ -1337,32 +1336,33 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
 
 	VCL_miss_method(sp);
 
-	switch(req->handling) {
-	case VCL_RET_ERROR:
-		AZ(HSH_Deref(wrk, req->objcore, NULL));
-		req->objcore = NULL;
-		http_Setup(wrk->busyobj->bereq, NULL);
-		VBO_DerefBusyObj(wrk, &wrk->busyobj);
-		sp->step = STP_ERROR;
-		return (0);
-	case VCL_RET_PASS:
-		AZ(HSH_Deref(wrk, req->objcore, NULL));
-		req->objcore = NULL;
-		VBO_DerefBusyObj(wrk, &wrk->busyobj);
-		sp->step = STP_PASS;
-		return (0);
-	case VCL_RET_FETCH:
+	if (req->handling == VCL_RET_FETCH) {
 		CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 		sp->step = STP_FETCH;
 		return (0);
+	}
+
+	AZ(HSH_Deref(wrk, req->objcore, NULL));
+	req->objcore = NULL;
+	http_Setup(wrk->busyobj->bereq, NULL);
+	VBO_DerefBusyObj(wrk, &wrk->busyobj);
+
+	switch(req->handling) {
+	case VCL_RET_ERROR:
+		sp->step = STP_ERROR;
+		break;
+	case VCL_RET_PASS:
+		sp->step = STP_PASS;
+		break;
 	case VCL_RET_RESTART:
-		AZ(HSH_Deref(wrk, req->objcore, NULL));
-		req->objcore = NULL;
-		VBO_DerefBusyObj(wrk, &wrk->busyobj);
-		INCOMPL();
+		req->restarts++;
+		req->director = NULL;
+		sp->step = STP_RECV;
+		break;
 	default:
 		WRONG("Illegal action in vcl_miss{}");
 	}
+	return (0);
 }
 
 /*--------------------------------------------------------------------
@@ -1398,12 +1398,13 @@ DOT err_pass [label="ERROR",shape=plaintext]
  */
 
 static int
-cnt_pass(struct sess *sp, struct worker *wrk, struct req *req)
+cnt_pass(struct sess *sp, struct worker *wrk, const struct req *req)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
+	AZ(req->objcore);
 	AZ(req->obj);
 	AZ(wrk->busyobj);
 
@@ -1413,10 +1414,8 @@ cnt_pass(struct sess *sp, struct worker *wrk, struct req *req)
 	http_Setup(wrk->busyobj->bereq, wrk->ws);
 	http_FilterReq(sp, HTTPH_R_PASS);
 
-	wrk->connect_timeout = 0;
-	wrk->first_byte_timeout = 0;
-	wrk->between_bytes_timeout = 0;
 	VCL_pass_method(sp);
+
 	if (req->handling == VCL_RET_ERROR) {
 		http_Setup(wrk->busyobj->bereq, NULL);
 		VBO_DerefBusyObj(wrk, &wrk->busyobj);
@@ -1425,7 +1424,6 @@ cnt_pass(struct sess *sp, struct worker *wrk, struct req *req)
 	}
 	assert(req->handling == VCL_RET_PASS);
 	wrk->acct_tmp.pass++;
-	req->sendbody = 1;
 	sp->step = STP_FETCH;
 	return (0);
 }
@@ -1489,11 +1487,19 @@ cnt_pipe(struct sess *sp, struct worker *wrk, const struct req *req)
 /*--------------------------------------------------------------------
  * RECV
  * We have a complete request, set everything up and start it.
+ * We can come here both with a request from the client and with
+ * a interior request during ESI delivery.
  *
 DOT subgraph xcluster_recv {
 DOT	recv [
 DOT		shape=record
-DOT		label="vcl_recv()|req."
+DOT		label="{cnt_recv:|{vcl_recv\{\}|req.*}}"
+DOT	]
+DOT }
+DOT subgraph xcluster_hash {
+DOT	hash [
+DOT		shape=record
+DOT		label="{cnt_recv:|{vcl_hash\{\}|req.*}}"
 DOT	]
 DOT }
 DOT ESI_REQ [ shape=hexagon ]
@@ -1504,6 +1510,7 @@ DOT recv -> pass2 [label="pass",style=bold,color=red]
 DOT recv -> err_recv [label="error"]
 DOT err_recv [label="ERROR",shape=plaintext]
 DOT recv -> hash [label="lookup",style=bold,color=green]
+DOT hash -> lookup [label="hash",style=bold,color=green]
  */
 
 static int
@@ -1525,6 +1532,10 @@ cnt_recv(struct sess *sp, struct worker *wrk, struct req *req)
 	req->director = req->vcl->director[0];
 	AN(req->director);
 
+	wrk->connect_timeout = 0;
+	wrk->first_byte_timeout = 0;
+	wrk->between_bytes_timeout = 0;
+
 	req->disable_esi = 0;
 	req->hash_always_miss = 0;
 	req->hash_ignore_busy = 0;
@@ -1536,6 +1547,11 @@ cnt_recv(struct sess *sp, struct worker *wrk, struct req *req)
 	recv_handling = req->handling;
 
 	if (req->restarts >= cache_param->max_restarts) {
+		/*
+		 * XXX: Why not before vcl_recv{} ?  We go to vcl_error{}
+		 * XXX: without vcl_recv{} on 413 and 417 already.
+		 * XXX tell vcl_error why we come
+		 */
 		if (req->err_code == 0)
 			req->err_code = 503;
 		sp->step = STP_ERROR;
@@ -1554,7 +1570,7 @@ cnt_recv(struct sess *sp, struct worker *wrk, struct req *req)
 		}
 	}
 
-	req->sha256ctx = &sha256ctx;
+	req->sha256ctx = &sha256ctx;	/* so HSH_AddString() can find it */
 	SHA256_Init(req->sha256ctx);
 	VCL_hash_method(sp);
 	assert(req->handling == VCL_RET_HASH);
@@ -1566,10 +1582,8 @@ cnt_recv(struct sess *sp, struct worker *wrk, struct req *req)
 	else
 		req->wantbody = 1;
 
-	req->sendbody = 0;
 	switch(recv_handling) {
 	case VCL_RET_LOOKUP:
-		/* XXX: discard req body, if any */
 		sp->step = STP_LOOKUP;
 		return (0);
 	case VCL_RET_PIPE:
@@ -1585,7 +1599,6 @@ cnt_recv(struct sess *sp, struct worker *wrk, struct req *req)
 		sp->step = STP_PASS;
 		return (0);
 	case VCL_RET_ERROR:
-		/* XXX: discard req body, if any */
 		sp->step = STP_ERROR;
 		return (0);
 	default:
@@ -1595,7 +1608,7 @@ cnt_recv(struct sess *sp, struct worker *wrk, struct req *req)
 
 /*--------------------------------------------------------------------
  * START
- * Handle a request.
+ * First time we see a request
  *
 DOT start [
 DOT	shape=box
@@ -1608,7 +1621,6 @@ DOT start -> DONE [label=errors]
 static int
 cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 {
-	uint16_t done;
 	char *p;
 	const char *r = "HTTP/1.1 100 Continue\r\n\r\n";
 
@@ -1618,12 +1630,11 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 	AZ(req->restarts);
 	AZ(req->obj);
 	AZ(req->vcl);
-	EXP_Clr(&req->exp);
 	AZ(req->esi_level);
+	assert(!isnan(sp->t_req));
 
 	/* Update stats of various sorts */
 	wrk->stats.client_req++;
-	assert(!isnan(sp->t_req));
 	wrk->acct_tmp.req++;
 
 	/* Assign XID and log */
@@ -1635,52 +1646,46 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 	req->vcl = wrk->vcl;
 	wrk->vcl = NULL;
 
+	EXP_Clr(&req->exp);
+
 	http_Setup(req->http, req->ws);
-	done = http_DissectRequest(sp);
+	req->err_code = http_DissectRequest(sp);
 
 	/* If we could not even parse the request, just close */
-	if (done == 400) {
+	if (req->err_code == 400) {
 		sp->step = STP_DONE;
 		SES_Close(sp, "junk");
 		return (0);
 	}
 
-	/* Catch request snapshot */
 	req->ws_req = WS_Snapshot(req->ws);
-
-	/* Catch original request, before modification */
-	HTTP_Copy(req->http0, req->http);
-
-	if (done != 0) {
-		req->err_code = done;
-		sp->step = STP_ERROR;
-		return (0);
-	}
 
 	req->doclose = http_DoConnection(req->http);
 
-	/* XXX: Handle TRACE & OPTIONS of Max-Forwards = 0 */
-
 	/*
-	 * Handle Expect headers
+	 * We want to deal with Expect: headers the first time we
+	 * attempt the request, and remove them before we move on.
 	 */
-	if (http_GetHdr(req->http, H_Expect, &p)) {
+	if (req->err_code == 0 && http_GetHdr(req->http, H_Expect, &p)) {
 		if (strcasecmp(p, "100-continue")) {
 			req->err_code = 417;
-			sp->step = STP_ERROR;
+		} else if (strlen(r) != write(sp->fd, r, strlen(r))) {
+			sp->step = STP_DONE;
+			SES_Close(sp, "remote closed");
 			return (0);
 		}
-
-		/* XXX: Don't bother with write failures for now */
-		(void)write(sp->fd, r, strlen(r));
-		/* XXX: When we do ESI includes, this is not removed
-		 * XXX: because we use http0 as our basis.  Believed
-		 * XXX: safe, but potentially confusing.
-		 */
-		http_Unset(req->http, H_Expect);
 	}
+	http_Unset(req->http, H_Expect);
 
-	sp->step = STP_RECV;
+	/* XXX: pull in req-body and make it available instead. */
+	req->reqbodydone = 0;
+
+	HTTP_Copy(req->http0, req->http);	/* Copy for restart/ESI use */
+
+	if (req->err_code)
+		sp->step = STP_ERROR;
+	else
+		sp->step = STP_RECV;
 	return (0);
 }
 

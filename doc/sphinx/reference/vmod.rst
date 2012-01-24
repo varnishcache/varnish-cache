@@ -171,7 +171,7 @@ STRING_LIST
 	a function, we may relax that at a latter time.
 
 	If you don't want to bother with STRING_LIST, just use STRING
-	and make sure your sess_workspace param is big enough.
+	and make sure your thread_pool_workspace param is big enough.
 
 PRIV_VCL
 	See below

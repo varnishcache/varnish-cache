@@ -80,67 +80,88 @@ pthread_condattr_setclock(pthread_condattr_t *attr, int foo)
 }
 #endif /* !CLOCK_MONOTONIC */
 
-VTAILQ_HEAD(workerhead, worker);
+VTAILQ_HEAD(taskhead, pool_task);
 
 struct poolsock {
 	unsigned			magic;
 #define POOLSOCK_MAGIC			0x1b0a2d38
-	VTAILQ_ENTRY(poolsock)		list;
 	struct listen_sock		*lsock;
+	struct pool_task		task;
 };
 
 /* Number of work requests queued in excess of worker threads available */
 
 struct pool {
-	unsigned		magic;
-#define POOL_MAGIC		0x606658fa
-	VTAILQ_ENTRY(pool)	list;
+	unsigned			magic;
+#define POOL_MAGIC			0x606658fa
+	VTAILQ_ENTRY(pool)		list;
 
-	pthread_cond_t		herder_cond;
-	struct lock		herder_mtx;
-	pthread_t		herder_thr;
+	pthread_cond_t			herder_cond;
+	struct lock			herder_mtx;
+	pthread_t			herder_thr;
 
-	struct lock		mtx;
-	struct workerhead	idle;
-	VTAILQ_HEAD(, sess)	queue;
-	VTAILQ_HEAD(, poolsock)	socks;
-	unsigned		nthr;
-	unsigned		lqueue;
-	unsigned		last_lqueue;
-	uintmax_t		ndropped;
-	uintmax_t		nqueued;
-	struct sesspool		*sesspool;
+	struct lock			mtx;
+	struct taskhead			idle_queue;
+	struct taskhead			front_queue;
+	struct taskhead			back_queue;
+	unsigned			nthr;
+	unsigned			lqueue;
+	unsigned			last_lqueue;
+	uintmax_t			ndropped;
+	uintmax_t			nqueued;
+	struct sesspool			*sesspool;
 };
 
 static struct lock		pool_mtx;
 static pthread_t		thr_pool_herder;
 
 /*--------------------------------------------------------------------
+ */
+
+static struct worker *
+pool_getidleworker(const struct pool *pp, int back)
+{
+	struct pool_task *pt;
+	struct worker *wrk;
+
+	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
+	Lck_AssertHeld(&pp->mtx);
+	if (back)
+		pt = VTAILQ_LAST(&pp->idle_queue, taskhead);
+	else
+		pt = VTAILQ_FIRST(&pp->idle_queue);
+	if (pt == NULL)
+		return (NULL);
+	AZ(pt->func);
+	CAST_OBJ_NOTNULL(wrk, pt->priv, WORKER_MAGIC);
+	return (wrk);
+}
+
+/*--------------------------------------------------------------------
  * Nobody is accepting on this socket, so we do.
  *
  * As long as we can stick the accepted connection to another thread
- * we do so, otherwise we return and handle it ourselves.
+ * we do so, otherwise we put the socket back on the "BACK" queue
+ * and handle the new connection ourselves.
  *
- * Notice calling convention:  Called locked and returns locked, but
- * works lock in the meantime.
- *
- * We store data about the accept in reserved workspace, it is only used
- * for a brief moment and it takes up around 144 bytes.
+ * We store data about the accept in reserved workspace on the reserved
+ * worker workspace.  SES_pool_accept_task() knows about this.
  */
 
-static int
-pool_accept(struct pool *pp, struct worker *wrk, const struct poolsock *ps)
+static void
+pool_accept(struct worker *wrk, void *arg)
 {
 	struct worker *wrk2;
 	struct wrk_accept *wa, *wa2;
+	struct pool *pp;
+	struct poolsock *ps;
 
-	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(ps, POOLSOCK_MAGIC);
+	pp = wrk->pool;
+	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
+	CAST_OBJ_NOTNULL(ps, arg, POOLSOCK_MAGIC);
 
 	CHECK_OBJ_NOTNULL(ps->lsock, LISTEN_SOCK_MAGIC);
-	Lck_AssertHeld(&pp->mtx);
-	Lck_Unlock(&pp->mtx);
 	assert(sizeof *wa == WS_Reserve(wrk->ws, sizeof *wa));
 	wa = (void*)wrk->ws->f;
 	while (1) {
@@ -149,8 +170,9 @@ pool_accept(struct pool *pp, struct worker *wrk, const struct poolsock *ps)
 
 		if (ps->lsock->sock < 0) {
 			/* Socket Shutdown */
-			Lck_Lock(&pp->mtx);
-			return (-1);
+			FREE_OBJ(ps);
+			WS_Release(wrk->ws, 0);
+			return;
 		}
 		if (VCA_Accept(ps->lsock, wa) < 0) {
 			wrk->stats.sess_fail++;
@@ -160,17 +182,80 @@ pool_accept(struct pool *pp, struct worker *wrk, const struct poolsock *ps)
 		}
 
 		Lck_Lock(&pp->mtx);
-		if (VTAILQ_EMPTY(&pp->idle))
-			return (0);
-		wrk2 = VTAILQ_FIRST(&pp->idle);
-		VTAILQ_REMOVE(&pp->idle, wrk2, list);
+		wrk2 = pool_getidleworker(pp, 0);
+		if (wrk2 == NULL) {
+			/* No idle threads, do it ourselves */
+			Lck_Unlock(&pp->mtx);
+			AZ(Pool_Task(pp, &ps->task, POOL_QUEUE_BACK));
+			SES_pool_accept_task(wrk, pp->sesspool);
+			return;
+		}
+		VTAILQ_REMOVE(&pp->idle_queue, &wrk2->task, list);
 		Lck_Unlock(&pp->mtx);
 		assert(sizeof *wa2 == WS_Reserve(wrk2->ws, sizeof *wa2));
 		wa2 = (void*)wrk2->ws->f;
 		memcpy(wa2, wa, sizeof *wa);
-		wrk2->do_what = pool_do_accept;
+		wrk2->task.func = SES_pool_accept_task;
+		wrk2->task.priv = pp->sesspool;
 		AZ(pthread_cond_signal(&wrk2->cond));
 	}
+}
+
+/*--------------------------------------------------------------------
+ * Enter a new task to be done
+ */
+
+int
+Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how)
+{
+	struct worker *wrk;
+	int retval = 0;
+
+	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
+	AN(task);
+	AN(task->func);
+
+	Lck_Lock(&pp->mtx);
+
+	/*
+	 * The common case first:  Take an idle thread, do it.
+	 */
+
+	wrk = pool_getidleworker(pp, 0);
+	if (wrk != NULL) {
+		VTAILQ_REMOVE(&pp->idle_queue, &wrk->task, list);
+		Lck_Unlock(&pp->mtx);
+		wrk->task.func = task->func;
+		wrk->task.priv = task->priv;
+		AZ(pthread_cond_signal(&wrk->cond));
+		return (0);
+	}
+
+	switch (how) {
+	case POOL_NO_QUEUE:
+		retval = -1;
+		break;
+	case POOL_QUEUE_FRONT:
+		/* If we have too much in the queue already, refuse. */
+		if (pp->lqueue > (cache_param->queue_max * pp->nthr) / 100) {
+			pp->ndropped++;
+			retval = -1;
+		} else {
+			VTAILQ_INSERT_TAIL(&pp->front_queue, task, list);
+			pp->nqueued++;
+			pp->lqueue++;
+		}
+		break;
+	case POOL_QUEUE_BACK:
+		VTAILQ_INSERT_TAIL(&pp->back_queue, task, list);
+		break;
+	default:
+		WRONG("Unknown enum pool_how");
+	}
+	Lck_Unlock(&pp->mtx);
+	if (retval)
+		AZ(pthread_cond_signal(&pp->herder_cond));
+	return (retval);
 }
 
 /*--------------------------------------------------------------------
@@ -181,156 +266,51 @@ void
 Pool_Work_Thread(void *priv, struct worker *wrk)
 {
 	struct pool *pp;
-	int stats_clean, i;
-	struct poolsock *ps;
+	int stats_clean;
+	struct pool_task *tp;
 
 	CAST_OBJ_NOTNULL(pp, priv, POOL_MAGIC);
 	wrk->pool = pp;
-	Lck_Lock(&pp->mtx);
 	stats_clean = 1;
 	while (1) {
-
-		Lck_AssertHeld(&pp->mtx);
-		wrk->do_what = pool_do_inval;
+		Lck_Lock(&pp->mtx);
 
 		CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 		WS_Reset(wrk->ws, NULL);
 
-		wrk->sp = VTAILQ_FIRST(&pp->queue);
-		if (wrk->sp != NULL) {
-			/* Process queued requests, if any */
-			assert(pp->lqueue > 0);
-			VTAILQ_REMOVE(&pp->queue, wrk->sp, list);
-			wrk->do_what = pool_do_sess;
+		tp = VTAILQ_FIRST(&pp->front_queue);
+		if (tp != NULL) {
 			pp->lqueue--;
-		} else if (!VTAILQ_EMPTY(&pp->socks)) {
-			/* Accept on a socket */
-			ps = VTAILQ_FIRST(&pp->socks);
-			VTAILQ_REMOVE(&pp->socks, ps, list);
-			i = pool_accept(pp, wrk, ps);
-			Lck_AssertHeld(&pp->mtx);
-			if (i < 0) {
-				/* Socket Shutdown */
-				FREE_OBJ(ps);
-				WS_Release(wrk->ws, 0);
-				continue;
-			}
-			VTAILQ_INSERT_TAIL(&pp->socks, ps, list);
-			wrk->do_what = pool_do_accept;
-		} else if (VTAILQ_EMPTY(&pp->socks)) {
+			VTAILQ_REMOVE(&pp->front_queue, tp, list);
+		} else {
+			tp = VTAILQ_FIRST(&pp->back_queue);
+			if (tp != NULL)
+				VTAILQ_REMOVE(&pp->back_queue, tp, list);
+		}
+
+		if (tp == NULL) {
 			/* Nothing to do: To sleep, perchance to dream ... */
 			if (isnan(wrk->lastused))
 				wrk->lastused = VTIM_real();
-			VTAILQ_INSERT_HEAD(&pp->idle, wrk, list);
+			wrk->task.func = NULL;
+			wrk->task.priv = wrk;
+			VTAILQ_INSERT_HEAD(&pp->idle_queue, &wrk->task, list);
 			if (!stats_clean)
 				WRK_SumStat(wrk);
 			(void)Lck_CondWait(&wrk->cond, &pp->mtx, NULL);
+			tp = &wrk->task;
 		}
+		Lck_Unlock(&pp->mtx);
 
-		if (wrk->do_what == pool_do_die)
+		if (tp->func == NULL)
 			break;
 
-		Lck_Unlock(&pp->mtx);
-
-		if (wrk->do_what == pool_do_accept) {
-			/* Turn accepted socket into a session */
-			AZ(wrk->sp);
-			AN(wrk->ws->r);
-			wrk->sp = SES_New(pp->sesspool);
-			if (wrk->sp == NULL) {
-				VCA_FailSess(wrk);
-				wrk->do_what = pool_do_nothing;
-			} else {
-				VCA_SetupSess(wrk);
-				wrk->sp->step = STP_FIRST;
-				wrk->do_what = pool_do_sess;
-			}
-			WS_Release(wrk->ws, 0);
-		}
-
-		if (wrk->do_what == pool_do_sess) {
-			CHECK_OBJ_NOTNULL(wrk->sp, SESS_MAGIC);
-			AZ(wrk->ws->r);
-
-			stats_clean = 0;
-			wrk->lastused = NAN;
-
-			AZ(wrk->sp->wrk);
-			THR_SetSession(wrk->sp);
-			wrk->sp->wrk = wrk;
-			CNT_Session(wrk->sp);
-			THR_SetSession(NULL);
-			wrk->sp = NULL;
-
-			WS_Assert(wrk->ws);
-			AZ(wrk->busyobj);
-			AZ(wrk->wrw.wfd);
-			assert(wrk->wlp == wrk->wlb);
-			if (cache_param->diag_bitmap & 0x00040000) {
-				if (wrk->vcl != NULL)
-					VCL_Rel(&wrk->vcl);
-			}
-		} else if (wrk->do_what == pool_do_nothing) {
-			/* we already did */
-		} else {
-			WRONG("Invalid wrk->do_what");
-		}
+		assert(wrk->pool == pp);
+		tp->func(wrk, tp->priv);
 		stats_clean = WRK_TrySumStat(wrk);
-		Lck_Lock(&pp->mtx);
 	}
-	Lck_Unlock(&pp->mtx);
 	wrk->pool = NULL;
-}
-
-/*--------------------------------------------------------------------
- * Queue a workrequest if possible.
- *
- * Return zero if the request was queued, negative if it wasn't.
- */
-
-static int
-pool_queue(struct pool *pp, struct sess *sp)
-{
-	struct worker *wrk;
-
-	Lck_Lock(&pp->mtx);
-
-	/* If there are idle threads, we tickle the first one into action */
-	wrk = VTAILQ_FIRST(&pp->idle);
-	if (wrk != NULL) {
-		VTAILQ_REMOVE(&pp->idle, wrk, list);
-		Lck_Unlock(&pp->mtx);
-		wrk->sp = sp;
-		wrk->do_what = pool_do_sess;
-		AZ(pthread_cond_signal(&wrk->cond));
-		return (0);
-	}
-
-	/* If we have too much in the queue already, refuse. */
-	if (pp->lqueue > (cache_param->queue_max * pp->nthr) / 100) {
-		pp->ndropped++;
-		Lck_Unlock(&pp->mtx);
-		return (-1);
-	}
-
-	VTAILQ_INSERT_TAIL(&pp->queue, sp, list);
-	pp->nqueued++;
-	pp->lqueue++;
-	Lck_Unlock(&pp->mtx);
-	AZ(pthread_cond_signal(&pp->herder_cond));
-	return (0);
-}
-
-/*--------------------------------------------------------------------*/
-
-int
-Pool_Schedule(struct pool *pp, struct sess *sp)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	AZ(sp->wrk);
-	return(pool_queue(pp, sp));
 }
 
 /*--------------------------------------------------------------------
@@ -440,11 +420,10 @@ pool_herder(void *priv)
 		VSC_C_main->sess_queued += pp->nqueued;
 		VSC_C_main->sess_dropped += pp->ndropped;
 		pp->nqueued = pp->ndropped = 0;
-		wrk = VTAILQ_LAST(&pp->idle, workerhead);
-		if (wrk != NULL &&
-		    (wrk->lastused < t_idle ||
+		wrk = pool_getidleworker(pp, 1);
+		if (wrk != NULL && (wrk->lastused < t_idle ||
 		    pp->nthr > cache_param->wthread_max)) {
-			VTAILQ_REMOVE(&pp->idle, wrk, list);
+			VTAILQ_REMOVE(&pp->idle_queue, &wrk->task, list);
 		} else
 			wrk = NULL;
 		Lck_Unlock(&pp->mtx);
@@ -457,7 +436,8 @@ pool_herder(void *priv)
 			VSC_C_main->threads_destroyed++;
 			Lck_Unlock(&pool_mtx);
 			AZ(wrk->sp);
-			wrk->do_what = pool_do_die;
+			wrk->task.func = NULL;
+			wrk->task.priv = NULL;
 			AZ(pthread_cond_signal(&wrk->cond));
 		}
 	}
@@ -480,9 +460,9 @@ pool_mkpool(unsigned pool_no)
 	XXXAN(pp);
 	Lck_New(&pp->mtx, lck_wq);
 
-	VTAILQ_INIT(&pp->queue);
-	VTAILQ_INIT(&pp->idle);
-	VTAILQ_INIT(&pp->socks);
+	VTAILQ_INIT(&pp->idle_queue);
+	VTAILQ_INIT(&pp->front_queue);
+	VTAILQ_INIT(&pp->back_queue);
 	pp->sesspool = SES_NewPool(pp, pool_no);
 	AN(pp->sesspool);
 
@@ -492,7 +472,9 @@ pool_mkpool(unsigned pool_no)
 		ALLOC_OBJ(ps, POOLSOCK_MAGIC);
 		XXXAN(ps);
 		ps->lsock = ls;
-		VTAILQ_INSERT_TAIL(&pp->socks, ps, list);
+		ps->task.func = pool_accept;
+		ps->task.priv = ps;
+		AZ(Pool_Task(pp, &ps->task, POOL_QUEUE_BACK));
 	}
 
 	AZ(pthread_condattr_init(&cv_attr));

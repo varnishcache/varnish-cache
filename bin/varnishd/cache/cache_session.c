@@ -97,8 +97,8 @@ ses_setup(struct sess *sp)
  * Get a new session, preferably by recycling an already ready one
  */
 
-struct sess *
-SES_New(struct sesspool *pp)
+static struct sess *
+ses_new(struct sesspool *pp)
 {
 	struct sess *sp;
 
@@ -128,6 +128,68 @@ SES_Alloc(void)
 }
 
 /*--------------------------------------------------------------------
+ * The pool-task function for sessions
+ */
+
+static void
+ses_pool_task(struct worker *wrk, void *arg)
+{
+	struct sess *sp;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
+
+	AZ(wrk->ws->r);
+	wrk->lastused = NAN;
+	THR_SetSession(sp);
+	if (wrk->sp == NULL)
+		wrk->sp = sp;
+	else
+		assert(wrk->sp == sp);
+	AZ(sp->wrk);
+	sp->wrk = wrk;
+	CNT_Session(sp);
+	sp = NULL;
+	/* Cannot access sp now */
+	THR_SetSession(NULL);
+	wrk->sp = NULL;
+	WS_Assert(wrk->ws);
+	AZ(wrk->busyobj);
+	AZ(wrk->wrw.wfd);
+	assert(wrk->wlp == wrk->wlb);
+	if (cache_param->diag_bitmap & 0x00040000) {
+		if (wrk->vcl != NULL)
+			VCL_Rel(&wrk->vcl);
+	}
+}
+
+/*--------------------------------------------------------------------
+ * The pool-task for a newly accepted session
+ */
+
+void
+SES_pool_accept_task(struct worker *wrk, void *arg)
+{
+	struct sesspool *pp;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CAST_OBJ_NOTNULL(pp, arg, SESSPOOL_MAGIC);
+
+	/* Turn accepted socket into a session */
+	AZ(wrk->sp);
+	AN(wrk->ws->r);
+	wrk->sp = ses_new(pp);
+	if (wrk->sp == NULL) {
+		VCA_FailSess(wrk);
+		return;
+	}
+	VCA_SetupSess(wrk);
+	wrk->sp->step = STP_FIRST;
+	WS_Release(wrk->ws, 0);
+	ses_pool_task(wrk, wrk->sp);
+}
+
+/*--------------------------------------------------------------------
  * Schedule a session back on a work-thread from its pool
  */
 
@@ -142,7 +204,11 @@ SES_Schedule(struct sess *sp)
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
 
-	if (Pool_Schedule(pp->pool, sp)) {
+	AZ(sp->wrk);
+	sp->task.func = ses_pool_task;
+	sp->task.priv = sp;
+
+	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT)) {
 		VSC_C_main->client_drop_late++;
 		sp->t_idle = VTIM_real();
 		if (sp->req != NULL && sp->req->vcl != NULL) {

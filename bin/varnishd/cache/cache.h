@@ -286,15 +286,23 @@ struct wrk_accept {
 	struct listen_sock	*acceptlsock;
 };
 
-/*--------------------------------------------------------------------*/
+/* Worker pool stuff -------------------------------------------------*/
 
-enum e_do_what {
-	pool_do_inval = 0,
-	pool_do_sess,
-	pool_do_accept,
-	pool_do_nothing,
-	pool_do_die,
+typedef void pool_func_t(struct worker *wrk, void *priv);
+
+struct pool_task {
+	VTAILQ_ENTRY(pool_task)		list;
+	pool_func_t			*func;
+	void				*priv;
 };
+
+enum pool_how {
+	POOL_NO_QUEUE,
+	POOL_QUEUE_FRONT,
+	POOL_QUEUE_BACK
+};
+
+/*--------------------------------------------------------------------*/
 
 struct worker {
 	unsigned		magic;
@@ -307,8 +315,7 @@ struct worker {
 	void			*nhashpriv;
 	struct dstat		stats;
 
-	/* Pool stuff */
-	enum e_do_what		do_what;
+	struct pool_task	task;
 
 	double			lastused;
 
@@ -316,7 +323,6 @@ struct worker {
 
 	pthread_cond_t		cond;
 
-	VTAILQ_ENTRY(worker)	list;
 	struct sess		*sp;
 
 	struct VCL_conf		*vcl;
@@ -586,7 +592,7 @@ struct req {
 	struct exp		exp;
 	unsigned		cur_method;
 	unsigned		handling;
-	unsigned char		sendbody;
+	unsigned char		reqbodydone;
 	unsigned char		wantbody;
 
 	uint16_t		err_code;
@@ -650,6 +656,7 @@ struct sess {
 	struct worker		*wrk;
 	struct req		*req;
 
+	struct pool_task	task;
 	VTAILQ_ENTRY(sess)	list;
 
 	/* Session related fields ------------------------------------*/
@@ -761,9 +768,9 @@ int EXP_NukeOne(struct worker *w, struct lru *lru);
 struct storage *FetchStorage(struct worker *w, ssize_t sz);
 int FetchError(struct worker *w, const char *error);
 int FetchError2(struct worker *w, const char *error, const char *more);
-int FetchHdr(struct sess *sp, int need_host_hdr);
+int FetchHdr(struct sess *sp, int need_host_hdr, int sendbody);
 int FetchBody(struct worker *w, struct object *obj);
-int FetchReqBody(const struct sess *sp);
+int FetchReqBody(const struct sess *sp, int sendbody);
 void Fetch_Init(void);
 
 /* cache_gzip.c */
@@ -902,7 +909,7 @@ void PipeSession(struct sess *sp);
 /* cache_pool.c */
 void Pool_Init(void);
 void Pool_Work_Thread(void *priv, struct worker *w);
-int Pool_Schedule(struct pool *pp, struct sess *sp);
+int Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how);
 
 #define WRW_IsReleased(w)	((w)->wrw.wfd == NULL)
 int WRW_Error(const struct worker *w);
@@ -918,7 +925,6 @@ void WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len);
 #endif  /* SENDFILE_WORKS */
 
 /* cache_session.c [SES] */
-struct sess *SES_New(struct sesspool *pp);
 struct sess *SES_Alloc(void);
 void SES_Close(struct sess *sp, const char *reason);
 void SES_Delete(struct sess *sp, const char *reason, double now);
@@ -929,6 +935,7 @@ int SES_Schedule(struct sess *sp);
 void SES_Handle(struct sess *sp, double now);
 void SES_GetReq(struct sess *sp);
 void SES_ReleaseReq(struct sess *sp);
+pool_func_t SES_pool_accept_task;
 
 /* cache_shmlog.c */
 extern struct VSC_C_main *VSC_C_main;

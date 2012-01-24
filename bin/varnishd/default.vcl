@@ -118,6 +118,9 @@ sub vcl_deliver {
     return (deliver);
 }
 
+/*
+ * We can come here "invisibly" with the following errors:  413, 417 & 503
+ */
 sub vcl_error {
     set obj.http.Content-Type = "text/html; charset=utf-8";
     set obj.http.Retry-After = "5";

@@ -1,0 +1,30 @@
+varnishtest "test restart in miss"
+
+server s1 {
+	rxreq
+	txresp -body "FOOBAR"
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_recv {
+		if (req.restarts > 0) {
+			unset req.http.foobar;
+		}
+	}
+
+	sub vcl_miss {
+		if (req.http.foobar) {
+			return (restart);
+		}
+	}
+	sub vcl_deliver {
+		set resp.http.restarts = req.restarts;
+	}
+} -start
+
+client c1 {
+	txreq -hdr "foobar: snafu"
+	rxresp
+	expect resp.http.restarts == 1
+} -run
