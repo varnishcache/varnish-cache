@@ -79,12 +79,12 @@ EXAMPLES
 ========
 
 The following example displays a continuously updated list of the most
-frequently requested URLs:::
+frequently requested URLs::
 
   varnishtop -i RxURL
 
 The following example displays a continuously updated list of the most
-commonly used user agents:::
+commonly used user agents::
 
   varnishtop -i RxHeader -C -I ^User-Agent
 

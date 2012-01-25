@@ -66,7 +66,7 @@ zero if the command succeeded, and non-zero otherwise.
 EXAMPLES
 ========
 
-Some ways you can use varnishadm:::
+Some ways you can use varnishadm::
 
            varnishadm -T localhost:999 -S /var/db/secret vcl.use foo
            echo vcl.use foo | varnishadm -T localhost:999 -S /var/db/secret
