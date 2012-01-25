@@ -116,7 +116,7 @@ Configuring and compiling
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Next, configuration: The configuration will need the dependencies
-above satisfied. Once that is taken care of:::
+above satisfied. Once that is taken care of::
 
 	cd varnish-cache
 	sh autogen.sh
