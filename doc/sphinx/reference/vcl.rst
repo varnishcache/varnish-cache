@@ -96,14 +96,14 @@ file as a quoted string.
 Backend declarations
 --------------------
 
-A backend declaration creates and initializes a named backend object:::
+A backend declaration creates and initializes a named backend object::
 
   backend www {
     .host = "www.example.com";
     .port = "http";
   }
 
-The backend object can later be used to select a backend at request time:::
+The backend object can later be used to select a backend at request time::
 
   if (req.http.host ~ "(?i)^(www.)?example.com$") {
     set req.backend = www;
@@ -118,7 +118,7 @@ backend connection, .first_byte_timeout for the time to wait for the
 first byte from the backend and .between_bytes_timeout for time to
 wait between each received byte.
 
-These can be set in the declaration like this:::
+These can be set in the declaration like this::
 
   backend www {
     .host = "www.example.com";
@@ -145,7 +145,7 @@ be used.
 There are several types of directors. The different director types
 use different algorithms to choose which backend to use.
 
-Configuring a director may look like this:::
+Configuring a director may look like this::
 
   director b2 random {
     .retries = 5;
@@ -312,7 +312,7 @@ Probes take the following parameters:
   Default is 2 seconds.
 
 A backend with a probe can be defined like this, together with the
-backend or director:::
+backend or director::
 
   backend www {
     .host = "www.example.com";
@@ -326,7 +326,7 @@ backend or director:::
     }
   }
 
-Or it can be defined separately and then referenced:::
+Or it can be defined separately and then referenced::
 
   probe healthcheck {
      .url = "/status.cgi";
@@ -361,7 +361,7 @@ ACLs
 ----
 
 An ACL declaration creates and initializes a named access control list
-which can later be used to match client addresses:::
+which can later be used to match client addresses::
 
   acl local {
     "localhost";         // myself
@@ -375,7 +375,7 @@ if it is preceded by a negation mark, it will reject any address it is
 compared to, which may not be what you intended.  If the entry is
 enclosed in parentheses, however, it will simply be ignored.
 
-To match an IP address against an ACL, simply use the match operator:::
+To match an IP address against an ACL, simply use the match operator::
 
   if (client.ip ~ local) {
     return (pipe);
@@ -390,7 +390,7 @@ PCRE(3) man page.
 
 To send flags to the PCRE engine, such as to turn on *case
 insensitivity* add the flag within parens following a question mark,
-like this:::
+like this::
 
   if (req.http.host ~ "(?i)example.com$") {
           ...
@@ -424,7 +424,7 @@ ban_url(regex)
 Subroutines
 ~~~~~~~~~~~
 
-A subroutine is used to group code for legibility or reusability:::
+A subroutine is used to group code for legibility or reusability::
   
   sub pipe_if_local {
     if (client.ip ~ local) {
@@ -640,7 +640,7 @@ appear in the source.
 The default versions distributed with Varnish will be implicitly
 concatenated as a last resort at the end.
 
-Example:::
+Example::
 
 	# in file "main.vcl"
 	include "backends.vcl";
@@ -885,7 +885,7 @@ resp.response
 resp.http.header
   The corresponding HTTP header.
 
-Values may be assigned to variables using the set keyword:::
+Values may be assigned to variables using the set keyword::
 
   sub vcl_recv {
     # Normalize the Host: header
@@ -894,7 +894,7 @@ Values may be assigned to variables using the set keyword:::
     }
   }
 
-HTTP headers can be removed entirely using the remove keyword:::
+HTTP headers can be removed entirely using the remove keyword::
 
   sub vcl_fetch {
     # Don't cache cookies
@@ -936,7 +936,7 @@ EXAMPLES
 
 The following code is the equivalent of the default configuration with
 the backend address set to "backend.example.com" and no backend port
-specified:::
+specified::
 
   backend default {
    .host = "backend.example.com";
@@ -948,7 +948,7 @@ specified:::
 
 The following example shows how to support multiple sites running on
 separate backends in the same Varnish instance, by selecting backends
-based on the request URL:::
+based on the request URL::
 
   backend www {
     .host = "www.example.com";
@@ -974,7 +974,7 @@ based on the request URL:::
 The following snippet demonstrates how to force a minimum TTL for
 all documents.  Note that this is not the same as setting the
 default_ttl run-time parameter, as that only affects document for
-which the backend did not specify a TTL:::
+which the backend did not specify a TTL::
   
   import std; # needed for std.log
 
@@ -986,7 +986,7 @@ which the backend did not specify a TTL:::
   }
 
 The following snippet demonstrates how to force Varnish to cache
-documents even when cookies are present:::
+documents even when cookies are present::
 
   sub vcl_recv {
     if (req.request == "GET" && req.http.cookie) {
@@ -1001,7 +1001,7 @@ documents even when cookies are present:::
   }
 
 The following code implements the HTTP PURGE method as used by Squid
-for object invalidation:::
+for object invalidation::
 
   acl purge {
     "localhost";

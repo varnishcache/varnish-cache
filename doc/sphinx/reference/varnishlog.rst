@@ -141,11 +141,11 @@ The following log entry tags are currently defined:
 EXAMPLES
 ========
 
-The following command line simply copies all log entries to a log file:::
+The following command line simply copies all log entries to a log file::
 
     $ varnishlog -w /var/log/varnish.log
 
-The following command line reads that same log file and displays requests for the front page:::
+The following command line reads that same log file and displays requests for the front page::
 
     $ varnishlog -r /var/log/varnish.log -c -m 'RxURL:^/$'
 
