@@ -634,15 +634,14 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 			wrk->busyobj->exp.ttl = -1.;
 
 		AZ(wrk->busyobj->do_esi);
-
+		AZ(wrk->busyobj->do_pass);
+		
 		VCL_fetch_method(sp);
 
+		if (req->objcore != NULL && wrk->busyobj->do_pass)
+			req->objcore->flags |= OC_F_PASS;
+
 		switch (req->handling) {
-		case VCL_RET_HIT_FOR_PASS:
-			if (req->objcore != NULL)
-				req->objcore->flags |= OC_F_PASS;
-			sp->step = STP_FETCHBODY;
-			return (0);
 		case VCL_RET_DELIVER:
 			AssertObjCorePassOrBusy(req->objcore);
 			sp->step = STP_FETCHBODY;
@@ -717,18 +716,15 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 
-	assert(req->handling == VCL_RET_HIT_FOR_PASS ||
-	    req->handling == VCL_RET_DELIVER);
+	assert(req->handling == VCL_RET_DELIVER);
 
 	if (req->objcore == NULL) {
 		/* This is a pass from vcl_recv */
 		pass = 1;
 		/* VCL may have fiddled this, but that doesn't help */
 		wrk->busyobj->exp.ttl = -1.;
-	} else if (req->handling == VCL_RET_HIT_FOR_PASS) {
-		/* pass from vcl_fetch{} -> hit-for-pass */
-		/* XXX: the bereq was not filtered pass... */
-		pass = 1;
+	} else if (wrk->busyobj->do_pass) {
+			pass = 1;
 	} else {
 		/* regular object */
 		pass = 0;

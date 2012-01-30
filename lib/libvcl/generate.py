@@ -89,7 +89,7 @@ returns =(
 	('hash',	('hash',)),
 	('miss',	('error', 'restart', 'pass', 'fetch',)),
 	('hit',		('error', 'restart', 'pass', 'deliver',)),
-	('fetch',	('error', 'restart', 'hit_for_pass', 'deliver',)),
+	('fetch',	('error', 'restart', 'deliver',)),
 	('deliver',	('restart', 'deliver',)),
 	('error',	('restart', 'deliver',)),
 	('init',	('ok',)),
@@ -326,6 +326,12 @@ sp_variables = (
 		'const struct sess *'
 	),
 	('beresp.do_gunzip',
+		'BOOL',
+		( 'fetch',),
+		( 'fetch',),
+		'const struct sess *'
+	),
+	('beresp.do_pass',
 		'BOOL',
 		( 'fetch',),
 		( 'fetch',),

@@ -522,6 +522,7 @@ struct busyobj {
 	unsigned		do_gzip;
 	unsigned		do_gunzip;
 	unsigned		do_stream;
+	unsigned		do_pass;
 };
 
 /* Object structure --------------------------------------------------*/
