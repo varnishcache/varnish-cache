@@ -556,28 +556,17 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
  *
 DOT subgraph xcluster_fetch {
 DOT	fetch [
-DOT		shape=ellipse
-DOT		label="fetch hdr\nfrom backend\n(find obj.ttl)"
-DOT	]
-DOT	vcl_fetch [
 DOT		shape=record
-DOT		label="vcl_fetch()|req.\nbereq.\nberesp."
+DOT		label="{cnt_fetch:|fetch hdr\nfrom backend|(find obj.ttl)|{vcl_fetch\{\}|{req.|bereq.|beresp.}}|{<err>error?|<rst>restart?}|{<hfp>hit_for_pass?|<del>deliver?}}"
 DOT	]
-DOT	fetch -> vcl_fetch [style=bold,color=blue]
-DOT	fetch -> vcl_fetch [style=bold,color=red]
 DOT	fetch_pass [
 DOT		shape=ellipse
 DOT		label="obj.f.pass=true"
 DOT	]
 DOT	vcl_fetch -> fetch_pass [label="hit_for_pass",style=bold,color=red]
 DOT }
-DOT fetch_pass -> fetchbody [style=bold,color=red]
-DOT vcl_fetch -> fetchbody [label="deliver",style=bold,color=blue]
-DOT vcl_fetch -> rstfetch [label="restart",color=purple]
-DOT rstfetch [label="RESTART",shape=plaintext]
-DOT fetch -> errfetch
-DOT vcl_fetch -> errfetch [label="error"]
-DOT errfetch [label="ERROR",shape=plaintext]
+DOT fetch:hfp -> fetchbody [style=bold,color=red]
+DOT fetch:del -> fetchbody [label="deliver",style=bold,color=blue]
  */
 
 static int
@@ -1059,15 +1048,15 @@ cnt_first(struct sess *sp, struct worker *wrk)
 DOT subgraph xcluster_hit {
 DOT	hit [
 DOT		shape=record
-DOT		label="vcl_hit()|req.\nobj."
+DOT		label="{cnt_hit:|{vcl_hit()|{req.|obj.}}|{<err>error?|<del>deliver?|<rst>restart?|<pass>pass?}}"
 DOT	]
 DOT }
-DOT hit -> err_hit [label="error"]
-DOT err_hit [label="ERROR",shape=plaintext]
-DOT hit -> rst_hit [label="restart",color=purple]
-DOT rst_hit [label="RESTART",shape=plaintext]
-DOT hit -> pass [label=pass,style=bold,color=red]
-DOT hit -> prepresp [label="deliver",style=bold,color=green]
+XDOT hit:err -> err_hit [label="error"]
+XDOT err_hit [label="ERROR",shape=plaintext]
+XDOT hit:rst -> rst_hit [label="restart",color=purple]
+XDOT rst_hit [label="RESTART",shape=plaintext]
+DOT hit:pass -> pass [label=pass,style=bold,color=red]
+DOT hit:del -> prepresp [label="deliver",style=bold,color=green]
  */
 
 static int
@@ -1125,18 +1114,13 @@ cnt_hit(struct sess *sp, struct worker *wrk, struct req *req)
 DOT subgraph xcluster_lookup {
 DOT	lookup [
 DOT		shape=record
-DOT		label="{cnt_lookup:|hash lookup}"
-DOT	]
-DOT	lookup2 [
-DOT		shape=diamond
-DOT		label="obj.f.pass ?"
+DOT		label="{<top>cnt_lookup:|hash lookup|{<busy>busy ?|<miss>miss ?}|{<no>no|obj.f.pass?|<yes>yes}}"
 DOT	]
 DOT }
-DOT lookup -> lookup [label="Busy object found"]
-DOT lookup -> miss [label="not found\ncreate new",style=bold,color=blue]
-DOT lookup -> lookup2 [label="found",style=bold,color=green]
-DOT lookup2 -> hit [label="no", style=bold,color=green]
-DOT lookup2 -> pass [label="yes",style=bold,color=red]
+DOT lookup:busy -> lookup:top [label="(waitinglist)"]
+DOT lookup:miss -> miss [style=bold,color=blue]
+DOT lookup:no -> hit [style=bold,color=green]
+DOT lookup:yes -> pass [style=bold,color=red]
  */
 
 static int
@@ -1235,21 +1219,16 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
  *
 DOT subgraph xcluster_miss {
 DOT	miss [
-DOT		shape=ellipse
-DOT		label="filter req.->bereq."
-DOT	]
-DOT	vcl_miss [
 DOT		shape=record
-DOT		label="vcl_miss()|req.\nbereq."
+DOT		label="{cnt_miss:|filter req.-\>bereq.|{vcl_miss\{\}|{req.*|bereq.*}}|{<pass>pass?|<err>error?|<restart>restart?|<fetch>fetch?}}"
 DOT	]
-DOT	miss -> vcl_miss [style=bold,color=blue]
 DOT }
-DOT vcl_miss -> rst_miss [label="restart",color=purple]
-DOT rst_miss [label="RESTART",shape=plaintext]
-DOT vcl_miss -> err_miss [label="error"]
-DOT err_miss [label="ERROR",shape=plaintext]
-DOT vcl_miss -> fetch [label="fetch",style=bold,color=blue]
-DOT vcl_miss -> pass [label="pass",style=bold,color=red]
+XDOT miss:restart -> rst_miss [label="restart",color=purple]
+XDOT rst_miss [label="RESTART",shape=plaintext]
+XDOT miss:err -> err_miss [label="error"]
+XDOT err_miss [label="ERROR",shape=plaintext]
+DOT miss:fetch -> fetch [label="fetch",style=bold,color=blue]
+DOT miss:pass -> pass [label="pass",style=bold,color=red]
 DOT
  */
 
@@ -1318,30 +1297,15 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
  *
 DOT subgraph xcluster_pass {
 DOT	pass [
-DOT		shape=ellipse
-DOT		label="deref obj."
-DOT	]
-DOT	pass2 [
-DOT		shape=ellipse
-DOT		label="filter req.->bereq."
-DOT	]
-DOT	vcl_pass [
 DOT		shape=record
-DOT		label="vcl_pass()|req.\nbereq."
+DOT		label="{cnt_pass:|(XXX: deref obj.)|filter req.*-\>bereq.|{vcl_pass\{\}|{req.*|bereq.*}}|{<err>error?|<rst>restart?}|<pass>create anon obj}"
 DOT	]
-DOT	pass_do [
-DOT		shape=ellipse
-DOT		label="create anon object\n"
-DOT	]
-DOT	pass -> pass2 [style=bold, color=red]
-DOT	pass2 -> vcl_pass [style=bold, color=red]
-DOT	vcl_pass -> pass_do [label="pass"] [style=bold, color=red]
 DOT }
-DOT pass_do -> fetch [style=bold, color=red]
-DOT vcl_pass -> rst_pass [label="restart",color=purple]
-DOT rst_pass [label="RESTART",shape=plaintext]
-DOT vcl_pass -> err_pass [label="error"]
-DOT err_pass [label="ERROR",shape=plaintext]
+DOT pass:pass -> fetch [style=bold, color=red]
+XDOT pass:rst -> rst_pass [label="restart",color=purple]
+XDOT rst_pass [label="RESTART",shape=plaintext]
+XDOT pass:err -> err_pass [label="error"]
+XDOT err_pass [label="ERROR",shape=plaintext]
  */
 
 static int
@@ -1440,7 +1404,7 @@ cnt_pipe(struct sess *sp, struct worker *wrk, const struct req *req)
 DOT subgraph xcluster_recv {
 DOT	recv [
 DOT		shape=record
-DOT		label="{cnt_recv:|{vcl_recv\{\}|req.*}}"
+DOT		label="{cnt_recv:|{vcl_recv\{\}|req.*}|{<pipe>pipe?|<pass>pass?|<error>error?|<lookup>lookup?}}"
 DOT	]
 DOT }
 DOT subgraph xcluster_hash {
@@ -1450,13 +1414,13 @@ DOT		label="{cnt_recv:|{vcl_hash\{\}|req.*}}"
 DOT	]
 DOT }
 DOT ESI_REQ [ shape=hexagon ]
-DOT RESTART -> recv
+DOT RESTART -> recv [color=purple]
 DOT ESI_REQ -> recv
-DOT recv -> pipe [label="pipe",style=bold,color=orange]
-DOT recv -> pass2 [label="pass",style=bold,color=red]
-DOT recv -> err_recv [label="error"]
-DOT err_recv [label="ERROR",shape=plaintext]
-DOT recv -> hash [label="lookup",style=bold,color=green]
+DOT recv:pipe -> pipe [style=bold,color=orange]
+DOT recv:pass -> pass [style=bold,color=red]
+#DOT recv:error -> err_recv
+#DOT err_recv [label="ERROR",shape=plaintext]
+DOT recv:lookup -> hash [style=bold,color=green]
 DOT hash -> lookup [label="hash",style=bold,color=green]
  */
 
