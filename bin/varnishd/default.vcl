@@ -109,7 +109,7 @@ sub vcl_fetch {
 		 * Mark as "Hit-For-Pass" for the next 2 minutes
 		 */
 		set beresp.ttl = 120 s;
-		return (hit_for_pass);
+		set beresp.do_pass = true;
     }
     return (deliver);
 }

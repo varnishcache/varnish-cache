@@ -54,7 +54,7 @@ Syntax
 
 Commands are usually terminated with a newline. Long command can be
 entered using sh style *here documents*. The format of here-documents
-is:::
+is::
 
    << word
 	here document
@@ -233,7 +233,7 @@ file on the fly.
 
 Use the unix file permissions to control access to the file.
 
-An authenticated session looks like this:::
+An authenticated session looks like this::
 
    critter phk> telnet localhost 1234
    Trying ::1...
@@ -273,7 +273,7 @@ following byte sequence:
 
 and dumping the resulting digest in lower-case hex.
 
-In the above example, the secret file contained foo\n and thus:::
+In the above example, the secret file contained foo\n and thus::
 
    critter phk> cat > _
    ixslvvxrgkjptxmcgnnsdxsvdmvfympg
@@ -300,18 +300,18 @@ EXAMPLES
 ========
 
 Simple example: All requests where req.url exactly matches the string
-/news are banned from the cache:::
+/news are banned from the cache::
 
     req.url == "/news"
 
 Example: Ban all documents where the name does not end with ".ogg",
-and where the size of the object is greater than 10 megabytes:::
+and where the size of the object is greater than 10 megabytes::
 
     req.url !~ "\.ogg$" && obj.size > 10MB
 
 Example: Ban all documents where the serving host is "example.com"
 or "www.example.com", and where the Set-Cookie header received from
-the backend contains "USERID=1663":::
+the backend contains "USERID=1663"::
 
     req.http.host ~ "^(?i)(www\.)example.com$" && obj.set-cookie ~ "USERID=1663"
 

@@ -558,28 +558,17 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
  *
 DOT subgraph xcluster_fetch {
 DOT	fetch [
-DOT		shape=ellipse
-DOT		label="fetch hdr\nfrom backend\n(find obj.ttl)"
-DOT	]
-DOT	vcl_fetch [
 DOT		shape=record
-DOT		label="vcl_fetch()|req.\nbereq.\nberesp."
+DOT		label="{cnt_fetch:|fetch hdr\nfrom backend|(find obj.ttl)|{vcl_fetch\{\}|{req.|bereq.|beresp.}}|{<err>error?|<rst>restart?}|{<hfp>hit_for_pass?|<del>deliver?}}"
 DOT	]
-DOT	fetch -> vcl_fetch [style=bold,color=blue]
-DOT	fetch -> vcl_fetch [style=bold,color=red]
 DOT	fetch_pass [
 DOT		shape=ellipse
 DOT		label="obj.f.pass=true"
 DOT	]
 DOT	vcl_fetch -> fetch_pass [label="hit_for_pass",style=bold,color=red]
 DOT }
-DOT fetch_pass -> fetchbody [style=bold,color=red]
-DOT vcl_fetch -> fetchbody [label="deliver",style=bold,color=blue]
-DOT vcl_fetch -> rstfetch [label="restart",color=purple]
-DOT rstfetch [label="RESTART",shape=plaintext]
-DOT fetch -> errfetch
-DOT vcl_fetch -> errfetch [label="error"]
-DOT errfetch [label="ERROR",shape=plaintext]
+DOT fetch:hfp -> fetchbody [style=bold,color=red]
+DOT fetch:del -> fetchbody [label="deliver",style=bold,color=blue]
  */
 
 static int
@@ -657,7 +646,8 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 			wrk->busyobj->exp.ttl = -1.;
 
 		AZ(wrk->busyobj->do_esi);
-
+		AZ(wrk->busyobj->do_pass);
+		
 		VCL_fetch_method(sp);
 
 		/* Cancel streaming if a stale object was validated    */
@@ -666,12 +656,10 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 		if (sp->stale_obj)
 			wrk->busyobj->do_stream = 0;
 
+		if (req->objcore != NULL && wrk->busyobj->do_pass)
+			req->objcore->flags |= OC_F_PASS;
+
 		switch (req->handling) {
-		case VCL_RET_HIT_FOR_PASS:
-			if (req->objcore != NULL)
-				req->objcore->flags |= OC_F_PASS;
-			sp->step = STP_FETCHBODY;
-			return (0);
 		case VCL_RET_DELIVER:
 			AssertObjCorePassOrBusy(req->objcore);
 			sp->step = STP_FETCHBODY;
@@ -740,23 +728,22 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	unsigned l;
 	struct vsb *vary = NULL;
 	int varyl = 0, pass;
+	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
+	bo = wrk->busyobj;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	assert(req->handling == VCL_RET_HIT_FOR_PASS ||
-	    req->handling == VCL_RET_DELIVER);
+	assert(req->handling == VCL_RET_DELIVER);
 
 	if (req->objcore == NULL) {
 		/* This is a pass from vcl_recv */
 		pass = 1;
 		/* VCL may have fiddled this, but that doesn't help */
-		wrk->busyobj->exp.ttl = -1.;
-	} else if (req->handling == VCL_RET_HIT_FOR_PASS) {
-		/* pass from vcl_fetch{} -> hit-for-pass */
-		/* XXX: the bereq was not filtered pass... */
+		bo->exp.ttl = -1.;
+	} else if (bo->do_pass) {
 		pass = 1;
 	} else {
 		/* regular object */
@@ -778,57 +765,55 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 
 	/* We do nothing unless the param is set */
 	if (!cache_param->http_gzip_support)
-		wrk->busyobj->do_gzip = wrk->busyobj->do_gunzip = 0;
+		bo->do_gzip = bo->do_gunzip = 0;
 
-	wrk->busyobj->is_gzip =
-	    http_HdrIs(wrk->busyobj->beresp, H_Content_Encoding, "gzip");
+	bo->is_gzip = http_HdrIs(bo->beresp, H_Content_Encoding, "gzip");
 
-	wrk->busyobj->is_gunzip =
-	    !http_GetHdr(wrk->busyobj->beresp, H_Content_Encoding, NULL);
+	bo->is_gunzip = !http_GetHdr(bo->beresp, H_Content_Encoding, NULL);
 
 	/* It can't be both */
-	assert(wrk->busyobj->is_gzip == 0 || wrk->busyobj->is_gunzip == 0);
+	assert(bo->is_gzip == 0 || bo->is_gunzip == 0);
 
 	/* We won't gunzip unless it is gzip'ed */
-	if (wrk->busyobj->do_gunzip && !wrk->busyobj->is_gzip)
-		wrk->busyobj->do_gunzip = 0;
+	if (bo->do_gunzip && !bo->is_gzip)
+		bo->do_gunzip = 0;
 
 	/* If we do gunzip, remove the C-E header */
-	if (wrk->busyobj->do_gunzip)
-		http_Unset(wrk->busyobj->beresp, H_Content_Encoding);
+	if (bo->do_gunzip)
+		http_Unset(bo->beresp, H_Content_Encoding);
 
 	/* We wont gzip unless it is ungziped */
-	if (wrk->busyobj->do_gzip && !wrk->busyobj->is_gunzip)
-		wrk->busyobj->do_gzip = 0;
+	if (bo->do_gzip && !bo->is_gunzip)
+		bo->do_gzip = 0;
 
 	/* If we do gzip, add the C-E header */
-	if (wrk->busyobj->do_gzip)
-		http_SetHeader(wrk, sp->vsl_id, wrk->busyobj->beresp,
+	if (bo->do_gzip)
+		http_SetHeader(wrk, sp->vsl_id, bo->beresp,
 		    "Content-Encoding: gzip");
 
 	/* But we can't do both at the same time */
-	assert(wrk->busyobj->do_gzip == 0 || wrk->busyobj->do_gunzip == 0);
+	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
 
 	/* ESI takes precedence and handles gzip/gunzip itself */
-	if (wrk->busyobj->do_esi)
-		wrk->busyobj->vfp = &vfp_esi;
-	else if (wrk->busyobj->do_gunzip)
-		wrk->busyobj->vfp = &vfp_gunzip;
-	else if (wrk->busyobj->do_gzip)
-		wrk->busyobj->vfp = &vfp_gzip;
-	else if (wrk->busyobj->is_gzip)
-		wrk->busyobj->vfp = &vfp_testgzip;
+	if (bo->do_esi)
+		bo->vfp = &vfp_esi;
+	else if (bo->do_gunzip)
+		bo->vfp = &vfp_gunzip;
+	else if (bo->do_gzip)
+		bo->vfp = &vfp_gzip;
+	else if (bo->is_gzip)
+		bo->vfp = &vfp_testgzip;
 
-	if (wrk->busyobj->do_esi || req->esi_level > 0)
-		wrk->busyobj->do_stream = 0;
+	if (bo->do_esi || req->esi_level > 0)
+		bo->do_stream = 0;
 	if (!req->wantbody)
-		wrk->busyobj->do_stream = 0;
+		bo->do_stream = 0;
 
 	/* No reason to try streaming a non-existing body */
-	if (wrk->busyobj->body_status == BS_NONE)
-		wrk->busyobj->do_stream = 0;
+	if (bo->body_status == BS_NONE)
+		bo->do_stream = 0;
 
-	l = http_EstimateWS(wrk->busyobj->beresp,
+	l = http_EstimateWS(bo->beresp,
 	    pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
         if (sp->stale_obj) {
             l += http_EstimateWS(sp->stale_obj->http, 0, &stale_nhttp);
@@ -838,7 +823,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	/* Create Vary instructions */
 	if (req->objcore != NULL) {
 		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-		vary = VRY_Create(sp, wrk->busyobj->beresp);
+		vary = VRY_Create(sp, bo->beresp);
 		if (vary != NULL) {
 			varyl = VSB_len(vary);
 			assert(varyl > 0);
@@ -852,7 +837,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	 */
 	l += strlen("Content-Length: XxxXxxXxxXxxXxxXxx") + sizeof(void *);
 
-	if (wrk->busyobj->exp.ttl < cache_param->shortlived ||
+	if (bo->exp.ttl < cache_param->shortlived ||
 	    req->objcore == NULL)
 		req->storage_hint = TRANSIENT_STORAGE;
 
@@ -863,15 +848,15 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 		 * shortlived object on Transient storage.
 		 */
 		req->obj = STV_NewObject(wrk, TRANSIENT_STORAGE, l, nhttp);
-		if (wrk->busyobj->exp.ttl > cache_param->shortlived)
-			wrk->busyobj->exp.ttl = cache_param->shortlived;
-		wrk->busyobj->exp.grace = 0.0;
-		wrk->busyobj->exp.keep = 0.0;
+		if (bo->exp.ttl > cache_param->shortlived)
+			bo->exp.ttl = cache_param->shortlived;
+		bo->exp.grace = 0.0;
+		bo->exp.keep = 0.0;
 	}
 	if (req->obj == NULL) {
 		req->err_code = 503;
 		sp->step = STP_ERROR;
-		VDI_CloseFd(wrk, &wrk->busyobj->vbc);
+		VDI_CloseFd(wrk, &bo->vbc);
 		VBO_DerefBusyObj(wrk, &wrk->busyobj);
 		return (0);
 	}
@@ -881,8 +866,8 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 
 	req->storage_hint = NULL;
 
-	if (wrk->busyobj->do_gzip ||
-	    (wrk->busyobj->is_gzip && !wrk->busyobj->do_gunzip))
+	if (bo->do_gzip ||
+	    (bo->is_gzip && !bo->do_gunzip))
 		req->obj->gziped = 1;
 
 	if (vary != NULL) {
@@ -898,7 +883,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	WS_Assert(req->obj->ws_o);
 
 	/* Filter into object */
-	hp = wrk->busyobj->beresp;
+	hp = bo->beresp;
 	hp2 = req->obj->http;
 
 	hp2->logtag = HTTP_Obj;
@@ -909,7 +894,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
             || http_GetHdr(req->obj->http, H_Last_Modified, &b))
 		req->obj->last_modified = VTIM_parse(b);
 	else
-		req->obj->last_modified = floor(wrk->busyobj->exp.entered);
+		req->obj->last_modified = floor(bo->exp.entered);
 
 	assert(WRW_IsReleased(wrk));
 
@@ -921,11 +906,11 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	if (req->obj->response == 200 &&
 	    req->http->conds &&
 	    RFC2616_Do_Cond(sp))
-		wrk->busyobj->do_stream = 0;
+		bo->do_stream = 0;
 
 	AssertObjCorePassOrBusy(req->obj->objcore);
 
-	if (wrk->busyobj->do_stream) {
+	if (bo->do_stream) {
 		sp->step = STP_PREPRESP;
 		return (0);
 	}
@@ -952,11 +937,11 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 		AZ(sp->stale_obj);
 	}
 
-	http_Setup(wrk->busyobj->bereq, NULL);
-	http_Setup(wrk->busyobj->beresp, NULL);
-	wrk->busyobj->vfp = NULL;
+	http_Setup(bo->bereq, NULL);
+	http_Setup(bo->beresp, NULL);
+	bo->vfp = NULL;
 	assert(WRW_IsReleased(wrk));
-	AZ(wrk->busyobj->vbc);
+	AZ(bo->vbc);
 	AN(req->director);
 
 	if (i) {
@@ -1104,15 +1089,15 @@ cnt_first(struct sess *sp, struct worker *wrk)
 DOT subgraph xcluster_hit {
 DOT	hit [
 DOT		shape=record
-DOT		label="vcl_hit()|req.\nobj."
+DOT		label="{cnt_hit:|{vcl_hit()|{req.|obj.}}|{<err>error?|<del>deliver?|<rst>restart?|<pass>pass?}}"
 DOT	]
 DOT }
-DOT hit -> err_hit [label="error"]
-DOT err_hit [label="ERROR",shape=plaintext]
-DOT hit -> rst_hit [label="restart",color=purple]
-DOT rst_hit [label="RESTART",shape=plaintext]
-DOT hit -> pass [label=pass,style=bold,color=red]
-DOT hit -> prepresp [label="deliver",style=bold,color=green]
+XDOT hit:err -> err_hit [label="error"]
+XDOT err_hit [label="ERROR",shape=plaintext]
+XDOT hit:rst -> rst_hit [label="restart",color=purple]
+XDOT rst_hit [label="RESTART",shape=plaintext]
+DOT hit:pass -> pass [label=pass,style=bold,color=red]
+DOT hit:del -> prepresp [label="deliver",style=bold,color=green]
  */
 
 static int
@@ -1170,18 +1155,13 @@ cnt_hit(struct sess *sp, struct worker *wrk, struct req *req)
 DOT subgraph xcluster_lookup {
 DOT	lookup [
 DOT		shape=record
-DOT		label="{cnt_lookup:|hash lookup}"
-DOT	]
-DOT	lookup2 [
-DOT		shape=diamond
-DOT		label="obj.f.pass ?"
+DOT		label="{<top>cnt_lookup:|hash lookup|{<busy>busy ?|<miss>miss ?}|{<no>no|obj.f.pass?|<yes>yes}}"
 DOT	]
 DOT }
-DOT lookup -> lookup [label="Busy object found"]
-DOT lookup -> miss [label="not found\ncreate new",style=bold,color=blue]
-DOT lookup -> lookup2 [label="found",style=bold,color=green]
-DOT lookup2 -> hit [label="no", style=bold,color=green]
-DOT lookup2 -> pass [label="yes",style=bold,color=red]
+DOT lookup:busy -> lookup:top [label="(waitinglist)"]
+DOT lookup:miss -> miss [style=bold,color=blue]
+DOT lookup:no -> hit [style=bold,color=green]
+DOT lookup:yes -> pass [style=bold,color=red]
  */
 
 static int
@@ -1282,21 +1262,16 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
  *
 DOT subgraph xcluster_miss {
 DOT	miss [
-DOT		shape=ellipse
-DOT		label="filter req.->bereq."
-DOT	]
-DOT	vcl_miss [
 DOT		shape=record
-DOT		label="vcl_miss()|req.\nbereq."
+DOT		label="{cnt_miss:|filter req.-\>bereq.|{vcl_miss\{\}|{req.*|bereq.*}}|{<pass>pass?|<err>error?|<restart>restart?|<fetch>fetch?}}"
 DOT	]
-DOT	miss -> vcl_miss [style=bold,color=blue]
 DOT }
-DOT vcl_miss -> rst_miss [label="restart",color=purple]
-DOT rst_miss [label="RESTART",shape=plaintext]
-DOT vcl_miss -> err_miss [label="error"]
-DOT err_miss [label="ERROR",shape=plaintext]
-DOT vcl_miss -> fetch [label="fetch",style=bold,color=blue]
-DOT vcl_miss -> pass [label="pass",style=bold,color=red]
+XDOT miss:restart -> rst_miss [label="restart",color=purple]
+XDOT rst_miss [label="RESTART",shape=plaintext]
+XDOT miss:err -> err_miss [label="error"]
+XDOT err_miss [label="ERROR",shape=plaintext]
+DOT miss:fetch -> fetch [label="fetch",style=bold,color=blue]
+DOT miss:pass -> pass [label="pass",style=bold,color=red]
 DOT
  */
 
@@ -1371,30 +1346,15 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
  *
 DOT subgraph xcluster_pass {
 DOT	pass [
-DOT		shape=ellipse
-DOT		label="deref obj."
-DOT	]
-DOT	pass2 [
-DOT		shape=ellipse
-DOT		label="filter req.->bereq."
-DOT	]
-DOT	vcl_pass [
 DOT		shape=record
-DOT		label="vcl_pass()|req.\nbereq."
+DOT		label="{cnt_pass:|(XXX: deref obj.)|filter req.*-\>bereq.|{vcl_pass\{\}|{req.*|bereq.*}}|{<err>error?|<rst>restart?}|<pass>create anon obj}"
 DOT	]
-DOT	pass_do [
-DOT		shape=ellipse
-DOT		label="create anon object\n"
-DOT	]
-DOT	pass -> pass2 [style=bold, color=red]
-DOT	pass2 -> vcl_pass [style=bold, color=red]
-DOT	vcl_pass -> pass_do [label="pass"] [style=bold, color=red]
 DOT }
-DOT pass_do -> fetch [style=bold, color=red]
-DOT vcl_pass -> rst_pass [label="restart",color=purple]
-DOT rst_pass [label="RESTART",shape=plaintext]
-DOT vcl_pass -> err_pass [label="error"]
-DOT err_pass [label="ERROR",shape=plaintext]
+DOT pass:pass -> fetch [style=bold, color=red]
+XDOT pass:rst -> rst_pass [label="restart",color=purple]
+XDOT rst_pass [label="RESTART",shape=plaintext]
+XDOT pass:err -> err_pass [label="error"]
+XDOT err_pass [label="ERROR",shape=plaintext]
  */
 
 static int
@@ -1493,7 +1453,7 @@ cnt_pipe(struct sess *sp, struct worker *wrk, const struct req *req)
 DOT subgraph xcluster_recv {
 DOT	recv [
 DOT		shape=record
-DOT		label="{cnt_recv:|{vcl_recv\{\}|req.*}}"
+DOT		label="{cnt_recv:|{vcl_recv\{\}|req.*}|{<pipe>pipe?|<pass>pass?|<error>error?|<lookup>lookup?}}"
 DOT	]
 DOT }
 DOT subgraph xcluster_hash {
@@ -1503,13 +1463,13 @@ DOT		label="{cnt_recv:|{vcl_hash\{\}|req.*}}"
 DOT	]
 DOT }
 DOT ESI_REQ [ shape=hexagon ]
-DOT RESTART -> recv
+DOT RESTART -> recv [color=purple]
 DOT ESI_REQ -> recv
-DOT recv -> pipe [label="pipe",style=bold,color=orange]
-DOT recv -> pass2 [label="pass",style=bold,color=red]
-DOT recv -> err_recv [label="error"]
-DOT err_recv [label="ERROR",shape=plaintext]
-DOT recv -> hash [label="lookup",style=bold,color=green]
+DOT recv:pipe -> pipe [style=bold,color=orange]
+DOT recv:pass -> pass [style=bold,color=red]
+#DOT recv:error -> err_recv
+#DOT err_recv [label="ERROR",shape=plaintext]
+DOT recv:lookup -> hash [style=bold,color=green]
 DOT hash -> lookup [label="hash",style=bold,color=green]
  */
 

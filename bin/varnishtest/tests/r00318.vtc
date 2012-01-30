@@ -8,7 +8,7 @@ server s1 {
 varnish v1 -vcl+backend {
 	sub vcl_fetch {
 		set beresp.do_esi = true;
-		return(hit_for_pass);
+		set beresp.do_pass = true;
 	}
 } -start
 

@@ -136,7 +136,7 @@ Example 1 - manipulating headers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Lets say we want to remove the cookie for all objects in the /static
-directory of our web server:::
+directory of our web server::
 
   sub vcl_recv {
     if (req.url ~ "^/images") {
@@ -154,7 +154,7 @@ Example 2 - manipulating beresp
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Here we override the TTL of a object comming from the backend if it
-matches certain criteria:::
+matches certain criteria::
 
   sub vcl_fetch {
      if (req.url ~ "\.(png|gif|jpg)$") {

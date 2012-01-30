@@ -26,7 +26,7 @@ requests somewhat stale content.
 
 So, in order to serve stale content we must first have some content to
 serve. So to make Varnish keep all objects for 30 minutes beyond their
-TTL use the following VCL:::
+TTL use the following VCL::
 
   sub vcl_fetch {
     set beresp.grace = 30m;
@@ -64,7 +64,7 @@ errors. You can instruct Varnish to try to handle this in a
 more-than-graceful way - enter *Saint mode*. Saint mode enables you to
 discard a certain page from one backend server and either try another
 server or serve stale content from cache. Lets have a look at how this
-can be enabled in VCL:::
+can be enabled in VCL::
 
   sub vcl_fetch {
     if (beresp.status == 500) { 

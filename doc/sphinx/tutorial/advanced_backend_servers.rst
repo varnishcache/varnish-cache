@@ -40,6 +40,8 @@ really arbitrary data. You want to send mobile devices to a different
 backend? No problem. if (req.User-agent ~ /mobile/) .... should do the
 trick. 
 
+.. _tutorial-advanced_backend_servers-directors:
+
 Directors
 ---------
 

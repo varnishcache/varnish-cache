@@ -226,6 +226,7 @@ VBERESP(beresp, unsigned, do_esi, busyobj->do_esi)
 VBERESP(beresp, unsigned, do_gzip, busyobj->do_gzip)
 VBERESP(beresp, unsigned, do_gunzip, busyobj->do_gunzip)
 VBERESP(beresp, unsigned, do_stream, busyobj->do_stream)
+VBERESP(beresp, unsigned, do_pass, busyobj->do_pass)
 
 /*--------------------------------------------------------------------*/
 

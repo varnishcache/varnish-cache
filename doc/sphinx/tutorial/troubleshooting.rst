@@ -55,7 +55,7 @@ Varnish is crashing
 
 When varnish goes bust the child processes crashes. Usually the mother
 process will manage this by restarting the child process again. Any
-errors will be logged in syslog. It might look like this:::
+errors will be logged in syslog. It might look like this::
 
        Mar  8 13:23:38 smoke varnishd[15670]: Child (15671) not responding to CLI, killing it.
        Mar  8 13:23:43 smoke varnishd[15670]: last message repeated 2 times
@@ -78,13 +78,13 @@ Varnish gives me Guru meditation
 First find the relevant log entries in varnishlog. That will probably
 give you a clue. Since varnishlog logs so much data it might be hard
 to track the entries down. You can set varnishlog to log all your 503
-errors by issuing the following command:::
+errors by issuing the following command::
 
    $ varnishlog -c -m TxStatus:503
 
 If the error happened just a short time ago the transaction might still
 be in the shared memory log segment. To get varnishlog to process the
-whole shared memory log just add the -d option:::
+whole shared memory log just add the -d option::
 
    $ varnishlog -d -c -m TxStatus:503
 
