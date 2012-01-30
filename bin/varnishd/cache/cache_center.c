@@ -710,11 +710,13 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	unsigned l;
 	struct vsb *vary = NULL;
 	int varyl = 0, pass;
+	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
+	bo = wrk->busyobj;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	assert(req->handling == VCL_RET_DELIVER);
 
@@ -722,9 +724,9 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 		/* This is a pass from vcl_recv */
 		pass = 1;
 		/* VCL may have fiddled this, but that doesn't help */
-		wrk->busyobj->exp.ttl = -1.;
-	} else if (wrk->busyobj->do_pass) {
-			pass = 1;
+		bo->exp.ttl = -1.;
+	} else if (bo->do_pass) {
+		pass = 1;
 	} else {
 		/* regular object */
 		pass = 0;
@@ -745,63 +747,61 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 
 	/* We do nothing unless the param is set */
 	if (!cache_param->http_gzip_support)
-		wrk->busyobj->do_gzip = wrk->busyobj->do_gunzip = 0;
+		bo->do_gzip = bo->do_gunzip = 0;
 
-	wrk->busyobj->is_gzip =
-	    http_HdrIs(wrk->busyobj->beresp, H_Content_Encoding, "gzip");
+	bo->is_gzip = http_HdrIs(bo->beresp, H_Content_Encoding, "gzip");
 
-	wrk->busyobj->is_gunzip =
-	    !http_GetHdr(wrk->busyobj->beresp, H_Content_Encoding, NULL);
+	bo->is_gunzip = !http_GetHdr(bo->beresp, H_Content_Encoding, NULL);
 
 	/* It can't be both */
-	assert(wrk->busyobj->is_gzip == 0 || wrk->busyobj->is_gunzip == 0);
+	assert(bo->is_gzip == 0 || bo->is_gunzip == 0);
 
 	/* We won't gunzip unless it is gzip'ed */
-	if (wrk->busyobj->do_gunzip && !wrk->busyobj->is_gzip)
-		wrk->busyobj->do_gunzip = 0;
+	if (bo->do_gunzip && !bo->is_gzip)
+		bo->do_gunzip = 0;
 
 	/* If we do gunzip, remove the C-E header */
-	if (wrk->busyobj->do_gunzip)
-		http_Unset(wrk->busyobj->beresp, H_Content_Encoding);
+	if (bo->do_gunzip)
+		http_Unset(bo->beresp, H_Content_Encoding);
 
 	/* We wont gzip unless it is ungziped */
-	if (wrk->busyobj->do_gzip && !wrk->busyobj->is_gunzip)
-		wrk->busyobj->do_gzip = 0;
+	if (bo->do_gzip && !bo->is_gunzip)
+		bo->do_gzip = 0;
 
 	/* If we do gzip, add the C-E header */
-	if (wrk->busyobj->do_gzip)
-		http_SetHeader(wrk, sp->vsl_id, wrk->busyobj->beresp,
+	if (bo->do_gzip)
+		http_SetHeader(wrk, sp->vsl_id, bo->beresp,
 		    "Content-Encoding: gzip");
 
 	/* But we can't do both at the same time */
-	assert(wrk->busyobj->do_gzip == 0 || wrk->busyobj->do_gunzip == 0);
+	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
 
 	/* ESI takes precedence and handles gzip/gunzip itself */
-	if (wrk->busyobj->do_esi)
-		wrk->busyobj->vfp = &vfp_esi;
-	else if (wrk->busyobj->do_gunzip)
-		wrk->busyobj->vfp = &vfp_gunzip;
-	else if (wrk->busyobj->do_gzip)
-		wrk->busyobj->vfp = &vfp_gzip;
-	else if (wrk->busyobj->is_gzip)
-		wrk->busyobj->vfp = &vfp_testgzip;
+	if (bo->do_esi)
+		bo->vfp = &vfp_esi;
+	else if (bo->do_gunzip)
+		bo->vfp = &vfp_gunzip;
+	else if (bo->do_gzip)
+		bo->vfp = &vfp_gzip;
+	else if (bo->is_gzip)
+		bo->vfp = &vfp_testgzip;
 
-	if (wrk->busyobj->do_esi || req->esi_level > 0)
-		wrk->busyobj->do_stream = 0;
+	if (bo->do_esi || req->esi_level > 0)
+		bo->do_stream = 0;
 	if (!req->wantbody)
-		wrk->busyobj->do_stream = 0;
+		bo->do_stream = 0;
 
 	/* No reason to try streaming a non-existing body */
-	if (wrk->busyobj->body_status == BS_NONE)
-		wrk->busyobj->do_stream = 0;
+	if (bo->body_status == BS_NONE)
+		bo->do_stream = 0;
 
-	l = http_EstimateWS(wrk->busyobj->beresp,
+	l = http_EstimateWS(bo->beresp,
 	    pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
 
 	/* Create Vary instructions */
 	if (req->objcore != NULL) {
 		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-		vary = VRY_Create(sp, wrk->busyobj->beresp);
+		vary = VRY_Create(sp, bo->beresp);
 		if (vary != NULL) {
 			varyl = VSB_len(vary);
 			assert(varyl > 0);
@@ -815,7 +815,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	 */
 	l += strlen("Content-Length: XxxXxxXxxXxxXxxXxx") + sizeof(void *);
 
-	if (wrk->busyobj->exp.ttl < cache_param->shortlived ||
+	if (bo->exp.ttl < cache_param->shortlived ||
 	    req->objcore == NULL)
 		req->storage_hint = TRANSIENT_STORAGE;
 
@@ -826,15 +826,15 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 		 * shortlived object on Transient storage.
 		 */
 		req->obj = STV_NewObject(wrk, TRANSIENT_STORAGE, l, nhttp);
-		if (wrk->busyobj->exp.ttl > cache_param->shortlived)
-			wrk->busyobj->exp.ttl = cache_param->shortlived;
-		wrk->busyobj->exp.grace = 0.0;
-		wrk->busyobj->exp.keep = 0.0;
+		if (bo->exp.ttl > cache_param->shortlived)
+			bo->exp.ttl = cache_param->shortlived;
+		bo->exp.grace = 0.0;
+		bo->exp.keep = 0.0;
 	}
 	if (req->obj == NULL) {
 		req->err_code = 503;
 		sp->step = STP_ERROR;
-		VDI_CloseFd(wrk, &wrk->busyobj->vbc);
+		VDI_CloseFd(wrk, &bo->vbc);
 		VBO_DerefBusyObj(wrk, &wrk->busyobj);
 		return (0);
 	}
@@ -842,8 +842,8 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 
 	req->storage_hint = NULL;
 
-	if (wrk->busyobj->do_gzip ||
-	    (wrk->busyobj->is_gzip && !wrk->busyobj->do_gunzip))
+	if (bo->do_gzip ||
+	    (bo->is_gzip && !bo->do_gunzip))
 		req->obj->gziped = 1;
 
 	if (vary != NULL) {
@@ -859,7 +859,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	WS_Assert(req->obj->ws_o);
 
 	/* Filter into object */
-	hp = wrk->busyobj->beresp;
+	hp = bo->beresp;
 	hp2 = req->obj->http;
 
 	hp2->logtag = HTTP_Obj;
@@ -869,7 +869,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	if (http_GetHdr(hp, H_Last_Modified, &b))
 		req->obj->last_modified = VTIM_parse(b);
 	else
-		req->obj->last_modified = floor(wrk->busyobj->exp.entered);
+		req->obj->last_modified = floor(bo->exp.entered);
 
 	assert(WRW_IsReleased(wrk));
 
@@ -881,11 +881,11 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	if (req->obj->response == 200 &&
 	    req->http->conds &&
 	    RFC2616_Do_Cond(sp))
-		wrk->busyobj->do_stream = 0;
+		bo->do_stream = 0;
 
 	AssertObjCorePassOrBusy(req->obj->objcore);
 
-	if (wrk->busyobj->do_stream) {
+	if (bo->do_stream) {
 		sp->step = STP_PREPRESP;
 		return (0);
 	}
@@ -893,11 +893,11 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	/* Use unmodified headers*/
 	i = FetchBody(wrk, req->obj);
 
-	http_Setup(wrk->busyobj->bereq, NULL);
-	http_Setup(wrk->busyobj->beresp, NULL);
-	wrk->busyobj->vfp = NULL;
+	http_Setup(bo->bereq, NULL);
+	http_Setup(bo->beresp, NULL);
+	bo->vfp = NULL;
 	assert(WRW_IsReleased(wrk));
-	AZ(wrk->busyobj->vbc);
+	AZ(bo->vbc);
 	AN(req->director);
 
 	if (i) {
