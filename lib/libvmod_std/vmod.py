@@ -248,7 +248,7 @@ def dumps(s):
 #######################################################################
 
 if initname != "":
-	plist += "int " + initname 
+	plist += "int " + initname
 	plist += "(struct vmod_priv *, const struct VCL_conf *);\n"
 	pstruct += "\tvmod_init_f\t*_init;\n"
 	pinit += "\t" + initname + ",\n"
