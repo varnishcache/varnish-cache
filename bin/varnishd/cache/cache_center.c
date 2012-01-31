@@ -565,8 +565,8 @@ DOT		label="obj.f.pass=true"
 DOT	]
 DOT	vcl_fetch -> fetch_pass [label="hit_for_pass",style=bold,color=red]
 DOT }
-DOT fetch:hfp -> fetchbody [style=bold,color=red]
-DOT fetch:del -> fetchbody [label="deliver",style=bold,color=blue]
+DOT fetch:hfp -> prepfetch [style=bold,color=red]
+DOT fetch:del -> prepfetch [label="deliver",style=bold,color=blue]
  */
 
 static int
@@ -635,7 +635,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 
 		AZ(wrk->busyobj->do_esi);
 		AZ(wrk->busyobj->do_pass);
-		
+
 		VCL_fetch_method(sp);
 
 		if (req->objcore != NULL && wrk->busyobj->do_pass)
@@ -644,7 +644,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 		switch (req->handling) {
 		case VCL_RET_DELIVER:
 			AssertObjCorePassOrBusy(req->objcore);
-			sp->step = STP_FETCHBODY;
+			sp->step = STP_PREPFETCH;
 			return (0);
 		default:
 			break;
@@ -680,30 +680,22 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 }
 
 /*--------------------------------------------------------------------
- * Fetch response body from the backend
+ * Prepare to fetch body from backend
  *
 DOT subgraph xcluster_body {
-DOT	fetchbody [
-DOT		shape=diamond
-DOT		label="stream ?"
-DOT	]
-DOT	fetchbody2 [
-DOT		shape=ellipse
-DOT		label="fetch body\nfrom backend\n"
+DOT	prepfetch [
+DOT		shape=record
+DOT		label="{cnt_prepfetch:|error?|<out>stream ?}"
 DOT	]
 DOT }
-DOT fetchbody -> fetchbody2 [label=no,style=bold,color=red]
-DOT fetchbody -> fetchbody2 [style=bold,color=blue]
-DOT fetchbody -> prepresp [label=yes,style=bold,color=cyan]
-DOT fetchbody2 -> prepresp [style=bold,color=red]
-DOT fetchbody2 -> prepresp [style=bold,color=blue]
+DOT prepfetch:out -> fetchbody [style=bold,color=red]
+DOT prepfetch:out -> fetchbody [style=bold,color=blue]
+DOT prepfetch:out -> prepresp [label=yes,style=bold,color=cyan]
  */
 
-
 static int
-cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
+cnt_prepfetch(struct sess *sp, struct worker *wrk, struct req *req)
 {
-	int i;
 	struct http *hp, *hp2;
 	char *b;
 	uint16_t nhttp;
@@ -888,7 +880,36 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	if (bo->do_stream) {
 		sp->step = STP_PREPRESP;
 		return (0);
+	} else {
+		sp->step = STP_FETCHBODY;
+		return (0);
 	}
+}
+
+/*--------------------------------------------------------------------
+ * Actually fetch body from backend
+ *
+DOT subgraph xcluster_fetchbody {
+DOT	fetchbody [
+DOT		shape=record
+DOT		label="{cnt_fetchbody:|error ?|<out>success ?}"
+DOT	]
+DOT }
+DOT fetchbody:out -> prepresp [style=bold,color=red]
+DOT fetchbody:out -> prepresp [style=bold,color=blue]
+ */
+
+static int
+cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
+{
+	int i;
+	struct busyobj *bo;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	bo = wrk->busyobj;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	/* Use unmodified headers*/
 	i = FetchBody(wrk, req->obj);
