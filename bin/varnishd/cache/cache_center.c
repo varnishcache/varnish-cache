@@ -188,25 +188,13 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
  *
 DOT subgraph xcluster_prepresp {
 DOT	prepresp [
-DOT		shape=ellipse
-DOT		label="Filter obj.->resp."
-DOT	]
-DOT	vcl_deliver [
 DOT		shape=record
-DOT		label="vcl_deliver()|resp."
+DOT		label="{cnt_prepresp:|Filter obj.-\>resp.|{vcl_deliver\{\}|{req.|resp.}}|{error?|restart?}|stream ?}"
 DOT	]
-DOT	prepresp -> vcl_deliver [style=bold,color=green]
-DOT	prepresp -> vcl_deliver [style=bold,color=cyan]
-DOT	prepresp -> vcl_deliver [style=bold,color=red]
-DOT	prepresp -> vcl_deliver [style=bold,color=blue,]
-DOT	vcl_deliver -> deliver [style=bold,color=green,label=deliver]
-DOT	vcl_deliver -> deliver [style=bold,color=red]
-DOT	vcl_deliver -> deliver [style=bold,color=blue]
-DOT     vcl_deliver -> errdeliver [label="error"]
-DOT     errdeliver [label="ERROR",shape=plaintext]
-DOT     vcl_deliver -> rstdeliver [label="restart",color=purple]
-DOT     rstdeliver [label="RESTART",shape=plaintext]
-DOT     vcl_deliver -> streambody [style=bold,color=cyan,label="deliver"]
+DOT	prepresp -> deliver [style=bold,color=green,label=deliver]
+DOT	prepresp -> deliver [style=bold,color=red]
+DOT	prepresp -> deliver [style=bold,color=blue]
+DOT     prepresp -> streambody [style=bold,color=cyan,label="deliver"]
 DOT }
  *
  */
@@ -326,8 +314,8 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
  *
 DOT subgraph xcluster_deliver {
 DOT	deliver [
-DOT		shape=ellipse
-DOT		label="Send body"
+DOT		shape=record
+DOT		label="{cnt_deliver:|Send body}"
 DOT	]
 DOT }
 DOT deliver -> DONE [style=bold,color=green]
@@ -362,8 +350,8 @@ cnt_deliver(struct sess *sp, struct worker *wrk, struct req *req)
  * the client connection
  *
 DOT	DONE [
-DOT		shape=hexagon
-DOT		label="cnt_done:\nRequest completed"
+DOT		shape=record
+DOT		label="{cnt_done:|Request completed}"
 DOT	]
 DOT	ESI_RESP [ shape=hexagon ]
 DOT	DONE -> start [label="full pipeline"]
@@ -557,16 +545,11 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
 DOT subgraph xcluster_fetch {
 DOT	fetch [
 DOT		shape=record
-DOT		label="{cnt_fetch:|fetch hdr\nfrom backend|(find obj.ttl)|{vcl_fetch\{\}|{req.|bereq.|beresp.}}|{<err>error?|<rst>restart?}|{<hfp>hit_for_pass?|<del>deliver?}}"
+DOT		label="{cnt_fetch:|fetch hdr\nfrom backend|(find obj.ttl)|{vcl_fetch\{\}|{req.|bereq.|beresp.}}|{<err>error?|<rst>restart?}}"
 DOT	]
-DOT	fetch_pass [
-DOT		shape=ellipse
-DOT		label="obj.f.pass=true"
-DOT	]
-DOT	vcl_fetch -> fetch_pass [label="hit_for_pass",style=bold,color=red]
 DOT }
-DOT fetch:hfp -> prepfetch [style=bold,color=red]
-DOT fetch:del -> prepfetch [label="deliver",style=bold,color=blue]
+DOT fetch -> prepfetch [style=bold,color=red]
+DOT fetch -> prepfetch [style=bold,color=blue]
  */
 
 static int
@@ -946,8 +929,8 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
  * Stream the body as we fetch it
 DOT subgraph xstreambody {
 DOT	streambody [
-DOT		shape=ellipse
-DOT		label="streaming\nfetch/deliver"
+DOT		shape=record
+DOT		label="{cnt_streambody:|ping_pong\nfetch/deliver}"
 DOT	]
 DOT }
 DOT streambody -> DONE [style=bold,color=cyan]
@@ -1065,7 +1048,7 @@ cnt_first(struct sess *sp, struct worker *wrk)
 DOT subgraph xcluster_hit {
 DOT	hit [
 DOT		shape=record
-DOT		label="{cnt_hit:|{vcl_hit()|{req.|obj.}}|{<err>error?|<del>deliver?|<rst>restart?|<pass>pass?}}"
+DOT		label="{cnt_hit:|{vcl_hit()|{req.|obj.}}|{<err>error?|<rst>restart?}|{<del>deliver?|<pass>pass?}}"
 DOT	]
 DOT }
 XDOT hit:err -> err_hit [label="error"]
@@ -1237,13 +1220,9 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 DOT subgraph xcluster_miss {
 DOT	miss [
 DOT		shape=record
-DOT		label="{cnt_miss:|filter req.-\>bereq.|{vcl_miss\{\}|{req.*|bereq.*}}|{<pass>pass?|<err>error?|<restart>restart?|<fetch>fetch?}}"
+DOT		label="{cnt_miss:|filter req.-\>bereq.|{vcl_miss\{\}|{req.*|bereq.*}}|{<err>error?|<rst>restart?}|{<pass>pass?|<fetch>fetch?}}"
 DOT	]
 DOT }
-XDOT miss:restart -> rst_miss [label="restart",color=purple]
-XDOT rst_miss [label="RESTART",shape=plaintext]
-XDOT miss:err -> err_miss [label="error"]
-XDOT err_miss [label="ERROR",shape=plaintext]
 DOT miss:fetch -> fetch [label="fetch",style=bold,color=blue]
 DOT miss:pass -> pass [label="pass",style=bold,color=red]
 DOT
