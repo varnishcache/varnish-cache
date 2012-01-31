@@ -114,8 +114,8 @@ vrt_selecthttp(const struct sess *sp, enum gethdr_e where)
 		hp = sp->req->obj->http;
 		break;
         case HDR_STALE_OBJ:
-		CHECK_OBJ_NOTNULL(sp->stale_obj, OBJECT_MAGIC);
-		hp = sp->stale_obj->http;
+		CHECK_OBJ_NOTNULL(sp->wrk->busyobj->stale_obj, OBJECT_MAGIC);
+		hp = sp->wrk->busyobj->stale_obj->http;
 		break;
 	default:
 		INCOMPL();
@@ -131,7 +131,7 @@ VRT_GetHdr(const struct sess *sp, enum gethdr_e where, const char *n)
 	struct http *hp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-        if (where == HDR_STALE_OBJ && sp->stale_obj == NULL) {
+        if (where == HDR_STALE_OBJ && sp->wrk->busyobj->stale_obj == NULL) {
 	    WSP(sp, SLT_VCL_error,
 		"stale_obj does not exist (reading header %s)", n);
             return NULL;

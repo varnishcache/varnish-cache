@@ -509,6 +509,7 @@ struct busyobj {
 	struct http		*bereq;
 	struct http		*beresp;
 	struct object		*fetch_obj;
+	struct object		*stale_obj;
 	struct exp		exp;
 	struct http_conn	htc;
 
@@ -649,8 +650,6 @@ struct sess {
 	int			fd;
 	unsigned		vsl_id;
 
-	struct object		*stale_obj;
-	
 	/* Cross references ------------------------------------------*/
 
 	struct sesspool		*sesspool;

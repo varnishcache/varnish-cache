@@ -907,9 +907,8 @@ http_FilterReq(const struct sess *sp, unsigned how)
 }
 
 /*-------------------------------------------------------------------
- * This function checks for sp->freshen_obj.  If present, HSH_Lookup()
- * found an expired object that qualifies for a refresh check,
- * so add the appropriate headers.
+ * This function checks if a stale_obj was found in HSH_Lookup().
+ * If so, add the appropriate headers for backend validation.
  */
 
 void
@@ -919,7 +918,10 @@ http_CheckRefresh(struct sess *sp)
 	struct http *obj_hp, *bereq_hp;
 	char *p;
 
-	freshen_obj = sp->stale_obj;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);
+	freshen_obj = sp->wrk->busyobj->stale_obj;
 	CHECK_OBJ_NOTNULL(freshen_obj, OBJECT_MAGIC);
 	bereq_hp = sp->wrk->busyobj->bereq;
 	CHECK_OBJ_NOTNULL(bereq_hp, HTTP_MAGIC);
@@ -936,7 +938,7 @@ http_CheckRefresh(struct sess *sp)
 }
 
 /*-------------------------------------------------------------------
- * Called after fetch and sp->freshen_obj present.  Check
+ * Called after fetch for a backend conditional request.  Check
  * response and handle as needed.
  */
 
@@ -948,7 +950,7 @@ http_Check304(struct sess *sp, struct busyobj *busyobj)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(busyobj, BUSYOBJ_MAGIC);
-	o_stale = sp->stale_obj;
+	o_stale = busyobj->stale_obj;
 	CHECK_OBJ_NOTNULL(o_stale, OBJECT_MAGIC);
 
 	if (busyobj->beresp->status != 304) {
@@ -960,8 +962,10 @@ http_Check304(struct sess *sp, struct busyobj *busyobj)
 		|| http_GetHdr(busyobj->bereq, H_If_None_Match, &p))
 		sp->wrk->stats.fetch_not_validated++;
 
-	    HSH_Deref(sp->wrk, NULL, &sp->stale_obj);
-	    AZ(sp->stale_obj);
+	    /* Discard the stale object */
+	    /* XXX: just deref, or force expire? */
+	    HSH_Deref(sp->wrk, NULL, &busyobj->stale_obj);
+	    AZ(busyobj->stale_obj);
 	    return;
 	}
 

@@ -628,7 +628,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 		 * and merge headers from stale_obj into the busyobj if so.
 		 * Any other response is handled as usual.
 		 */
-		if (sp->stale_obj)
+		if (wrk->busyobj->stale_obj)
 			http_Check304(sp, wrk->busyobj);
 
 		req->err_code = http_GetStatus(wrk->busyobj->beresp);
@@ -650,10 +650,10 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 		
 		VCL_fetch_method(sp);
 
-		/* Cancel streaming if a stale object was validated    */
-		/* XXX: But not if original beresp.status != 304       */
-		/*      See also AZ(sp->stale_obj) in cnt_streambody() */
-		if (sp->stale_obj)
+		/* Cancel streaming if a stale object was validated         */
+		/* XXX: But not if original beresp.status != 304            */
+		/*      See also AZ(busyobj->stale_obj) in cnt_streambody() */
+		if (wrk->busyobj->stale_obj)
 			wrk->busyobj->do_stream = 0;
 
 		if (req->objcore != NULL && wrk->busyobj->do_pass)
@@ -815,8 +815,8 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 
 	l = http_EstimateWS(bo->beresp,
 	    pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
-        if (sp->stale_obj) {
-            l += http_EstimateWS(sp->stale_obj->http, 0, &stale_nhttp);
+        if (bo->stale_obj) {
+            l += http_EstimateWS(bo->stale_obj->http, 0, &stale_nhttp);
             nhttp += stale_nhttp;
         }
 
@@ -923,18 +923,18 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	 * reset Content-Length from the size of the storage, and discard
 	 * the stale_obj.
 	 */
-	if (sp->stale_obj) {
-		STV_dup(sp, sp->stale_obj, req->obj);
-		assert(sp->stale_obj->len == req->obj->len);
+	if (bo->stale_obj) {
+		STV_dup(sp, bo->stale_obj, req->obj);
+		assert(bo->stale_obj->len == req->obj->len);
 		
 		http_Unset(req->obj->http, H_Content_Length);
 		http_PrintfHeader(sp->wrk, sp->fd, req->obj->http,
 		    "Content-Length: %u", req->obj->len);
 		
-		EXP_Clr(&sp->stale_obj->exp);
-		EXP_Rearm(sp->stale_obj);
-		HSH_Deref(sp->wrk, NULL, &sp->stale_obj);
-		AZ(sp->stale_obj);
+		EXP_Clr(&bo->stale_obj->exp);
+		EXP_Rearm(bo->stale_obj);
+		HSH_Deref(sp->wrk, NULL, &bo->stale_obj);
+		AZ(bo->stale_obj);
 	}
 
 	http_Setup(bo->bereq, NULL);
@@ -987,9 +987,9 @@ cnt_streambody(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	AZ(sp->stale_obj);
 
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
+	AZ(wrk->busyobj->stale_obj);
 	memset(&sctx, 0, sizeof sctx);
 	sctx.magic = STREAM_CTX_MAGIC;
 	AZ(wrk->sctx);
@@ -1244,8 +1244,8 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 		wrk->stats.cache_hitpass++;
 		WSP(sp, SLT_HitPass, "%u", req->obj->xid);
 		(void)HSH_Deref(wrk, NULL, &req->obj);
-                if (sp->stale_obj != NULL)
-                    (void)HSH_Deref(wrk, NULL, &sp->stale_obj);
+                if (wrk->busyobj != NULL && wrk->busyobj->stale_obj != NULL)
+                    (void)HSH_Deref(wrk, NULL, &wrk->busyobj->stale_obj);
 		AZ(req->objcore);
 		sp->step = STP_PASS;
 		return (0);
@@ -1287,8 +1287,10 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 	AZ(req->obj);
 
-	WS_Reset(wrk->ws, NULL);
-	wrk->busyobj = VBO_GetBusyObj(wrk);
+	if (!wrk->busyobj->stale_obj) {
+		WS_Reset(wrk->ws, NULL);
+		wrk->busyobj = VBO_GetBusyObj(wrk);
+	}
 	http_Setup(wrk->busyobj->bereq, wrk->ws);
 	http_FilterReq(sp, HTTPH_R_FETCH);
 	http_ForceGet(wrk->busyobj->bereq);
@@ -1306,7 +1308,7 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
         /* If a candidate for a conditional backend request was found,
          * add If-Modified-Since and/or If-None-Match to the bereq.
          */
-        if (sp->stale_obj)
+        if (wrk->busyobj->stale_obj)
                 http_CheckRefresh(sp);
 
 	VCL_miss_method(sp);

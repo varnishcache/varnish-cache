@@ -307,7 +307,6 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	CHECK_OBJ_NOTNULL(sp->req->http, HTTP_MAGIC);
 	AN(sp->req->director);
 	AN(hash);
-	AZ(sp->stale_obj);
 	wrk = sp->wrk;
 
 	HSH_Prealloc(sp);
@@ -470,18 +469,6 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		return (NULL);
 	}
 
-        /* If we're not serving a valid or graced object and we saved stale_o,
-	 * it is a candidate for the conditional backend request. */
-        AZ(oc && !sp->req->hash_always_miss);
-        AZ(busy_oc);
-        if (stale_o != NULL) {
-                AZ(stale_o->objcore->flags & OC_F_BUSY);
-		CHECK_OBJ_NOTNULL(stale_o->objcore, OBJCORE_MAGIC);
-                Lck_AssertHeld(&oh->mtx);
-                stale_o->objcore->refcnt++;
-                sp->stale_obj = stale_o;
-        }
-
 	/* Insert (precreated) objcore in objecthead */
 	oc = wrk->nobjcore;
 	wrk->nobjcore = NULL;
@@ -490,6 +477,17 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 
 	AZ(wrk->busyobj);
 	wrk->busyobj = VBO_GetBusyObj(wrk);
+
+        /* If we're not serving a valid or graced object and we saved stale_o,
+	 * it is a candidate for the conditional backend request. */
+        AZ(busy_oc);
+        if (stale_o != NULL) {
+                AZ(stale_o->objcore->flags & OC_F_BUSY);
+		CHECK_OBJ_NOTNULL(stale_o->objcore, OBJCORE_MAGIC);
+                Lck_AssertHeld(&oh->mtx);
+                stale_o->objcore->refcnt++;
+                wrk->busyobj->stale_obj = stale_o;
+        }
 
 	VRY_Validate(sp->req->vary_b);
 	if (sp->req->vary_l != NULL)
