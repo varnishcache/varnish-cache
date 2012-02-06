@@ -47,7 +47,7 @@ vcc_Type(enum var_type fmt)
 #include "tbl/vcc_types.h"
 #undef VCC_TYPE
 	default:
-		assert("Unknwon Type");
+		assert("Unknown Type");
 		return(NULL);
 	}
 }
