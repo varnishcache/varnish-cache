@@ -315,17 +315,17 @@ vfp_esi_begin(struct worker *wrk, size_t estimate)
 	if (bo->is_gzip && bo->do_gunzip) {
 		bo->vgz_rx = VGZ_NewUngzip(wrk, "U F E");
 		VEP_Init(wrk, NULL);
-		vef->ibuf_sz = cache_param->gzip_stack_buffer;
+		vef->ibuf_sz = cache_param->gzip_buffer;
 	} else if (bo->is_gunzip && bo->do_gzip) {
 		vef->vgz = VGZ_NewGzip(wrk, "G F E");
 		VEP_Init(wrk, vfp_vep_callback);
-		vef->ibuf_sz = cache_param->gzip_stack_buffer;
+		vef->ibuf_sz = cache_param->gzip_buffer;
 	} else if (bo->is_gzip) {
 		bo->vgz_rx = VGZ_NewUngzip(wrk, "U F E");
 		vef->vgz = VGZ_NewGzip(wrk, "G F E");
 		VEP_Init(wrk, vfp_vep_callback);
-		vef->ibuf_sz = cache_param->gzip_stack_buffer;
-		vef->ibuf2_sz = cache_param->gzip_stack_buffer;
+		vef->ibuf_sz = cache_param->gzip_buffer;
+		vef->ibuf2_sz = cache_param->gzip_buffer;
 	} else {
 		VEP_Init(wrk, NULL);
 	}

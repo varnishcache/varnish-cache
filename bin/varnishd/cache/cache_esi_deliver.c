@@ -389,7 +389,7 @@ ESI_Deliver(struct sess *sp)
 		}
 	}
 	if (vgz != NULL) {
-		VGZ_WrwFinish(sp->wrk, vgz);
+		VGZ_WrwFlush(sp->wrk, vgz);
 		(void)VGZ_Destroy(&vgz, sp->vsl_id);
 	}
 	if (sp->req->gzip_resp && sp->req->esi_level == 0) {

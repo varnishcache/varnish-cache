@@ -86,33 +86,12 @@ struct vgz {
 	struct storage		*st_obuf;
 
 	/* Wrw stuff */
-	char			*wrw_buf;
-	ssize_t			wrw_sz;
-	ssize_t			wrw_len;
+	char			*m_buf;
+	ssize_t			m_sz;
+	ssize_t			m_len;
 
 	z_stream		vz;
 };
-
-/*--------------------------------------------------------------------*/
-
-static voidpf
-vgz_alloc(voidpf opaque, uInt items, uInt size)
-{
-	struct vgz *vg;
-
-	CAST_OBJ_NOTNULL(vg, opaque, VGZ_MAGIC);
-
-	return (WS_Alloc(vg->tmp, items * size));
-}
-
-static void
-vgz_free(voidpf opaque, voidpf address)
-{
-	struct vgz *vg;
-
-	CAST_OBJ_NOTNULL(vg, opaque, VGZ_MAGIC);
-	(void)address;
-}
 
 /*--------------------------------------------------------------------
  * Set up a gunzip instance
@@ -127,30 +106,10 @@ vgz_alloc_vgz(struct worker *wrk, const char *id)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	ws = wrk->ws;
 	WS_Assert(ws);
-	// XXX: we restore workspace in esi:include
-	// vg = (void*)WS_Alloc(ws, sizeof *vg);
 	ALLOC_OBJ(vg, VGZ_MAGIC);
 	AN(vg);
-	memset(vg, 0, sizeof *vg);
-	vg->magic = VGZ_MAGIC;
 	vg->wrk = wrk;
 	vg->id = id;
-
-	switch (cache_param->gzip_tmp_space) {
-	case 0:
-	case 1:
-		/* malloc, the default */
-		break;
-	case 2:
-		vg->tmp = wrk->ws;
-		vg->tmp_snapshot = WS_Snapshot(vg->tmp);
-		vg->vz.zalloc = vgz_alloc;
-		vg->vz.zfree = vgz_free;
-		vg->vz.opaque = vg;
-		break;
-	default:
-		assert(0 == __LINE__);
-	}
 	return (vg);
 }
 
@@ -208,6 +167,27 @@ VGZ_NewGzip(struct worker *wrk, const char *id)
 	    Z_DEFAULT_STRATEGY);
 	assert(Z_OK == i);
 	return (vg);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+static int
+vgz_getmbuf(struct vgz *vg)
+{
+
+	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+	AZ(vg->m_sz);
+	AZ(vg->m_len);
+	AZ(vg->m_buf);
+
+	vg->m_sz = cache_param->gzip_buffer;
+	vg->m_buf = malloc(vg->m_sz);
+	if (vg->m_buf == NULL) {
+		vg->m_sz = 0;
+		return (-1);
+	}
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -356,17 +336,11 @@ VGZ_WrwInit(struct vgz *vg)
 {
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-	AZ(vg->wrw_sz);
-	AZ(vg->wrw_len);
-	AZ(vg->wrw_buf);
 
-	vg->wrw_sz = cache_param->gzip_stack_buffer;
-	vg->wrw_buf = malloc(vg->wrw_sz);
-	if (vg->wrw_buf == NULL) {
-		vg->wrw_sz = 0;
+	if (vgz_getmbuf(vg))
 		return (-1);
-	}
-	VGZ_Obuf(vg, vg->wrw_buf, vg->wrw_sz);
+
+	VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 	return (0);
 }
 
@@ -385,27 +359,27 @@ VGZ_WrwGunzip(struct worker *wrk, struct vgz *vg, const void *ibuf,
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-	AN(vg->wrw_buf);
+	AN(vg->m_buf);
 	VGZ_Ibuf(vg, ibuf, ibufl);
 	if (ibufl == 0)
 		return (VGZ_OK);
 	do {
-		if (vg->wrw_len == vg->wrw_sz)
+		if (vg->m_len == vg->m_sz)
 			i = VGZ_STUCK;
 		else {
 			i = VGZ_Gunzip(vg, &dp, &dl);
-			vg->wrw_len += dl;
+			vg->m_len += dl;
 		}
 		if (i < VGZ_OK) {
 			/* XXX: VSL ? */
 			return (-1);
 		}
-		if (vg->wrw_len == vg->wrw_sz || i == VGZ_STUCK) {
-			wrk->acct_tmp.bodybytes += vg->wrw_len;
-			(void)WRW_Write(wrk, vg->wrw_buf, vg->wrw_len);
+		if (vg->m_len == vg->m_sz || i == VGZ_STUCK) {
+			wrk->acct_tmp.bodybytes += vg->m_len;
+			(void)WRW_Write(wrk, vg->m_buf, vg->m_len);
 			(void)WRW_Flush(wrk);
-			vg->wrw_len = 0;
-			VGZ_Obuf(vg, vg->wrw_buf, vg->wrw_sz);
+			vg->m_len = 0;
+			VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 		}
 	} while (!VGZ_IbufEmpty(vg));
 	if (i == VGZ_STUCK)
@@ -421,25 +395,11 @@ VGZ_WrwFlush(struct worker *wrk, struct vgz *vg)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 
-	if (vg->wrw_len ==  0)
+	if (vg->m_len ==  0)
 		return;
-	(void)WRW_Write(wrk, vg->wrw_buf, vg->wrw_len);
+	(void)WRW_Write(wrk, vg->m_buf, vg->m_len);
 	(void)WRW_Flush(wrk);
-	vg->wrw_len = 0;
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-VGZ_WrwFinish(struct worker *wrk, struct vgz *vg)
-{
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-
-	VGZ_WrwFlush(wrk, vg);
-	free(vg->wrw_buf);
-	vg->wrw_buf = 0;
-	vg->wrw_sz = 0;
+	vg->m_len = 0;
 }
 
 /*--------------------------------------------------------------------*/
@@ -468,7 +428,6 @@ VGZ_Destroy(struct vgz **vgp, int vsl_id)
 	vg = *vgp;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	*vgp = NULL;
-	AZ(vg->wrw_buf);
 
 	if (vsl_id < 0)
 		WSLB(vg->wrk, SLT_Gzip, "%s %jd %jd %jd %jd %jd",
@@ -494,6 +453,8 @@ VGZ_Destroy(struct vgz **vgp, int vsl_id)
 		i = inflateEnd(&vg->vz);
 	if (vg->last_i == Z_STREAM_END && i == Z_OK)
 		i = Z_STREAM_END;
+	if (vg->m_buf)
+		free(vg->m_buf);
 	FREE_OBJ(vg);
 	if (i == Z_OK)
 		return (VGZ_OK);
@@ -518,6 +479,7 @@ vfp_gunzip_begin(struct worker *wrk, size_t estimate)
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 	AZ(wrk->busyobj->vgz_rx);
 	wrk->busyobj->vgz_rx = VGZ_NewUngzip(wrk, "U F -");
+	XXXAZ(vgz_getmbuf(wrk->busyobj->vgz_rx));
 }
 
 static int __match_proto__()
@@ -526,7 +488,6 @@ vfp_gunzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 	struct vgz *vg;
 	ssize_t l, wl;
 	int i = -100;
-	uint8_t	ibuf[cache_param->gzip_stack_buffer];
 	size_t dl;
 	const void *dp;
 
@@ -538,13 +499,13 @@ vfp_gunzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 	AZ(vg->vz.avail_in);
 	while (bytes > 0 || vg->vz.avail_in > 0) {
 		if (vg->vz.avail_in == 0 && bytes > 0) {
-			l = sizeof ibuf;
+			l = vg->m_sz;
 			if (l > bytes)
 				l = bytes;
-			wl = HTC_Read(wrk, htc, ibuf, l);
+			wl = HTC_Read(wrk, htc, vg->m_buf, l);
 			if (wl <= 0)
 				return (wl);
-			VGZ_Ibuf(vg, ibuf, wl);
+			VGZ_Ibuf(vg, vg->m_buf, wl);
 			bytes -= wl;
 		}
 
@@ -586,7 +547,6 @@ struct vfp vfp_gunzip = {
         .end    =       vfp_gunzip_end,
 };
 
-
 /*--------------------------------------------------------------------
  * VFP_GZIP
  *
@@ -602,6 +562,7 @@ vfp_gzip_begin(struct worker *wrk, size_t estimate)
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 	AZ(wrk->busyobj->vgz_rx);
 	wrk->busyobj->vgz_rx = VGZ_NewGzip(wrk, "G F -");
+	XXXAZ(vgz_getmbuf(wrk->busyobj->vgz_rx));
 }
 
 static int __match_proto__()
@@ -610,7 +571,6 @@ vfp_gzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 	struct vgz *vg;
 	ssize_t l, wl;
 	int i = -100;
-	uint8_t ibuf[cache_param->gzip_stack_buffer];
 	size_t dl;
 	const void *dp;
 
@@ -622,13 +582,13 @@ vfp_gzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 	AZ(vg->vz.avail_in);
 	while (bytes > 0 || !VGZ_IbufEmpty(vg)) {
 		if (VGZ_IbufEmpty(vg) && bytes > 0) {
-			l = sizeof ibuf;
+			l = vg->m_sz;
 			if (l > bytes)
 				l = bytes;
-			wl = HTC_Read(wrk, htc, ibuf, l);
+			wl = HTC_Read(wrk, htc, vg->m_buf, l);
 			if (wl <= 0)
 				return (wl);
-			VGZ_Ibuf(vg, ibuf, wl);
+			VGZ_Ibuf(vg, vg->m_buf, wl);
 			bytes -= wl;
 		}
 		if (VGZ_ObufStorage(wrk, vg))
@@ -695,6 +655,7 @@ vfp_testgzip_begin(struct worker *wrk, size_t estimate)
 	(void)estimate;
 	wrk->busyobj->vgz_rx = VGZ_NewUngzip(wrk, "u F -");
 	CHECK_OBJ_NOTNULL(wrk->busyobj->vgz_rx, VGZ_MAGIC);
+	XXXAZ(vgz_getmbuf(wrk->busyobj->vgz_rx));
 }
 
 static int __match_proto__()
@@ -703,7 +664,6 @@ vfp_testgzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 	struct vgz *vg;
 	ssize_t l, wl;
 	int i = -100;
-	uint8_t	obuf[cache_param->gzip_stack_buffer];
 	size_t dl;
 	const void *dp;
 	struct storage *st;
@@ -732,7 +692,7 @@ vfp_testgzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 			RES_StreamPoll(wrk);
 
 		while (!VGZ_IbufEmpty(vg)) {
-			VGZ_Obuf(vg, obuf, sizeof obuf);
+			VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 			i = VGZ_Gunzip(vg, &dp, &dl);
 			if (i == VGZ_END && !VGZ_IbufEmpty(vg))
 				return(FetchError(wrk, "Junk after gzip data"));

@@ -788,7 +788,6 @@ int VGZ_WrwInit(struct vgz *vg);
 int VGZ_WrwGunzip(struct worker *w, struct vgz *, const void *ibuf,
     ssize_t ibufl);
 void VGZ_WrwFlush(struct worker *wrk, struct vgz *vg);
-void VGZ_WrwFinish(struct worker *wrk, struct vgz *vg);
 
 /* Return values */
 #define VGZ_ERROR	-1

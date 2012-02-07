@@ -1084,17 +1084,6 @@ static const struct parspec input_parspec[] = {
 		"Varnish reference.",
 		EXPERIMENTAL,
 		"on", "bool" },
-	{ "gzip_tmp_space", tweak_uint, &mgt_param.gzip_tmp_space, 0, 2,
-		"Where temporary space for gzip/gunzip is allocated:\n"
-		"  0 - malloc\n"
-		"  2 - thread workspace\n"
-		"\n"
-		"If you have much gzip/gunzip activity, it may be an"
-		" advantage to use workspace for these allocations to reduce"
-		" malloc activity.  Be aware that gzip needs 256+KB and gunzip"
-		" needs 32+KB of workspace (64+KB if ESI processing).",
-		EXPERIMENTAL,
-		"0", "" },
 	{ "gzip_level", tweak_uint, &mgt_param.gzip_level, 0, 9,
 		"Gzip compression level: 0=debug, 1=fast, 9=best",
 		0,
@@ -1109,11 +1098,11 @@ static const struct parspec input_parspec[] = {
 		"Memory impact is 1=1k, 2=2k, ... 9=256k.",
 		0,
 		"8", ""},
-	{ "gzip_stack_buffer",
-		tweak_bytes_u, &mgt_param.gzip_stack_buffer,
+	{ "gzip_buffer",
+		tweak_bytes_u, &mgt_param.gzip_buffer,
 	        2048, UINT_MAX,
-		"Size of stack buffer used for gzip processing.\n"
-		"The stack buffers are used for in-transit data,"
+		"Size of malloc buffer used for gzip processing.\n"
+		"These buffers are used for in-transit data,"
 		" for instance gunzip'ed data being sent to a client."
 		"Making this space to small results in more overhead,"
 		" writes to sockets etc, making it too big is probably"

@@ -179,7 +179,7 @@ res_WriteGunzipObj(const struct sess *sp)
 		/* XXX: error check */
 		(void)i;
 	}
-	VGZ_WrwFinish(sp->wrk, vg);
+	VGZ_WrwFlush(sp->wrk, vg);
 	(void)VGZ_Destroy(&vg, sp->vsl_id);
 	assert(u == sp->req->obj->len);
 }
@@ -420,7 +420,7 @@ RES_StreamEnd(struct sess *sp)
 
 	if (sp->wrk->res_mode & RES_GUNZIP) {
 		AN(sctx->vgz);
-		VGZ_WrwFinish(sp->wrk, sctx->vgz);
+		VGZ_WrwFlush(sp->wrk, sctx->vgz);
 		(void)VGZ_Destroy(&sctx->vgz, sp->vsl_id);
 	}
 	if (sp->wrk->res_mode & RES_CHUNKED &&
