@@ -161,15 +161,13 @@ res_WriteGunzipObj(const struct sess *sp)
 	struct storage *st;
 	unsigned u = 0;
 	struct vgz *vg;
-	char obuf[cache_param->gzip_stack_buffer];
-	ssize_t obufl = 0;
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	vg = VGZ_NewUngzip(sp->wrk, "U D -");
+	AZ(VGZ_WrwInit(vg));
 
-	VGZ_Obuf(vg, obuf, sizeof obuf);
 	VTAILQ_FOREACH(st, &sp->req->obj->store, list) {
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
@@ -177,16 +175,11 @@ res_WriteGunzipObj(const struct sess *sp)
 
 		VSC_C_main->n_objwrite++;
 
-		i = VGZ_WrwGunzip(sp->wrk, vg,
-		    st->ptr, st->len,
-		    obuf, sizeof obuf, &obufl);
+		i = VGZ_WrwGunzip(sp->wrk, vg, st->ptr, st->len);
 		/* XXX: error check */
 		(void)i;
 	}
-	if (obufl) {
-		(void)WRW_Write(sp->wrk, obuf, obufl);
-		(void)WRW_Flush(sp->wrk);
-	}
+	VGZ_WrwFinish(sp->wrk, vg);
 	(void)VGZ_Destroy(&vg, sp->vsl_id);
 	assert(u == sp->req->obj->len);
 }
@@ -346,11 +339,12 @@ RES_StreamStart(struct sess *sp)
 	AN(sp->req->wantbody);
 
 	WRW_Reserve(sp->wrk, &sp->fd);
-	/*
-	 * Always remove C-E if client don't grok it
-	 */
-	if (sp->wrk->res_mode & RES_GUNZIP)
+
+	if (sp->wrk->res_mode & RES_GUNZIP) {
+		sctx->vgz = VGZ_NewUngzip(sp->wrk, "U S -");
+		AZ(VGZ_WrwInit(sctx->vgz));
 		http_Unset(sp->req->resp, H_Content_Encoding);
+	}
 
 	if (!(sp->wrk->res_mode & RES_CHUNKED) &&
 	    sp->wrk->busyobj->h_content_length != NULL)
@@ -388,8 +382,7 @@ RES_StreamPoll(struct worker *wrk)
 		l2 = st->len + l - sctx->stream_next;
 		ptr = st->ptr + (sctx->stream_next - l);
 		if (wrk->res_mode & RES_GUNZIP) {
-			(void)VGZ_WrwGunzip(wrk, sctx->vgz, ptr, l2,
-			    sctx->obuf, sctx->obuf_len, &sctx->obuf_ptr);
+			(void)VGZ_WrwGunzip(wrk, sctx->vgz, ptr, l2);
 		} else {
 			(void)WRW_Write(wrk, ptr, l2);
 		}
@@ -425,8 +418,11 @@ RES_StreamEnd(struct sess *sp)
 	sctx = sp->wrk->sctx;
 	CHECK_OBJ_NOTNULL(sctx, STREAM_CTX_MAGIC);
 
-	if (sp->wrk->res_mode & RES_GUNZIP && sctx->obuf_ptr > 0)
-		(void)WRW_Write(sp->wrk, sctx->obuf, sctx->obuf_ptr);
+	if (sp->wrk->res_mode & RES_GUNZIP) {
+		AN(sctx->vgz);
+		VGZ_WrwFinish(sp->wrk, sctx->vgz);
+		(void)VGZ_Destroy(&sctx->vgz, sp->vsl_id);
+	}
 	if (sp->wrk->res_mode & RES_CHUNKED &&
 	    !(sp->wrk->res_mode & RES_ESI_CHILD))
 		WRW_EndChunk(sp->wrk);
