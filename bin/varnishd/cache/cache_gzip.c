@@ -83,7 +83,12 @@ struct vgz {
 	char			*tmp_snapshot;
 	int			last_i;
 
-	struct storage		*obuf;
+	struct storage		*st_obuf;
+
+	/* Wrw stuff */
+	char			*wrw_buf;
+	ssize_t			wrw_sz;
+	ssize_t			wrw_len;
 
 	z_stream		vz;
 };
@@ -260,7 +265,7 @@ VGZ_ObufStorage(struct worker *wrk, struct vgz *vg)
 	if (st == NULL)
 		return (-1);
 
-	vg->obuf = st;
+	vg->st_obuf = st;
 	VGZ_Obuf(vg, st->ptr + st->len, st->space - st->len);
 
 	return (0);
@@ -287,8 +292,8 @@ VGZ_Gunzip(struct vgz *vg, const void **pptr, size_t *plen)
 		*pptr = before;
 		l = (const uint8_t *)vg->vz.next_out - before;
 		*plen = l;
-		if (vg->obuf != NULL)
-			vg->obuf->len += l;
+		if (vg->st_obuf != NULL)
+			vg->st_obuf->len += l;
 	}
 	vg->last_i = i;
 	if (i == Z_OK)
@@ -330,8 +335,8 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, size_t *plen, enum vgz_flag flags)
 		*pptr = before;
 		l = (const uint8_t *)vg->vz.next_out - before;
 		*plen = l;
-		if (vg->obuf != NULL)
-			vg->obuf->len += l;
+		if (vg->st_obuf != NULL)
+			vg->st_obuf->len += l;
 	}
 	vg->last_i = i;
 	if (i == Z_OK)
@@ -344,46 +349,97 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, size_t *plen, enum vgz_flag flags)
 }
 
 /*--------------------------------------------------------------------
+ */
+
+int
+VGZ_WrwInit(struct vgz *vg)
+{
+
+	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+	AZ(vg->wrw_sz);
+	AZ(vg->wrw_len);
+	AZ(vg->wrw_buf);
+
+	vg->wrw_sz = cache_param->gzip_stack_buffer;
+	vg->wrw_buf = malloc(vg->wrw_sz);
+	if (vg->wrw_buf == NULL) {
+		vg->wrw_sz = 0;
+		return (-1);
+	}
+	VGZ_Obuf(vg, vg->wrw_buf, vg->wrw_sz);
+	return (0);
+}
+
+/*--------------------------------------------------------------------
  * Gunzip ibuf into outb, if it runs full, emit it with WRW.
  * Leave flushing to caller, more data may be coming.
  */
 
 int
 VGZ_WrwGunzip(struct worker *wrk, struct vgz *vg, const void *ibuf,
-    ssize_t ibufl, char *obuf, ssize_t obufl, ssize_t *obufp)
+    ssize_t ibufl)
 {
 	int i;
 	size_t dl;
 	const void *dp;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-	assert(obufl > 16);
+	AN(vg->wrw_buf);
 	VGZ_Ibuf(vg, ibuf, ibufl);
 	if (ibufl == 0)
 		return (VGZ_OK);
-	VGZ_Obuf(vg, obuf + *obufp, obufl - *obufp);
 	do {
-		if (obufl == *obufp)
+		if (vg->wrw_len == vg->wrw_sz)
 			i = VGZ_STUCK;
 		else {
 			i = VGZ_Gunzip(vg, &dp, &dl);
-			*obufp += dl;
+			vg->wrw_len += dl;
 		}
 		if (i < VGZ_OK) {
 			/* XXX: VSL ? */
 			return (-1);
 		}
-		if (obufl == *obufp || i == VGZ_STUCK) {
-			wrk->acct_tmp.bodybytes += *obufp;
-			(void)WRW_Write(wrk, obuf, *obufp);
+		if (vg->wrw_len == vg->wrw_sz || i == VGZ_STUCK) {
+			wrk->acct_tmp.bodybytes += vg->wrw_len;
+			(void)WRW_Write(wrk, vg->wrw_buf, vg->wrw_len);
 			(void)WRW_Flush(wrk);
-			*obufp = 0;
-			VGZ_Obuf(vg, obuf + *obufp, obufl - *obufp);
+			vg->wrw_len = 0;
+			VGZ_Obuf(vg, vg->wrw_buf, vg->wrw_sz);
 		}
 	} while (!VGZ_IbufEmpty(vg));
 	if (i == VGZ_STUCK)
 		i = VGZ_OK;
 	return (i);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VGZ_WrwFlush(struct worker *wrk, struct vgz *vg)
+{
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+
+	if (vg->wrw_len ==  0)
+		return;
+	(void)WRW_Write(wrk, vg->wrw_buf, vg->wrw_len);
+	(void)WRW_Flush(wrk);
+	vg->wrw_len = 0;
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VGZ_WrwFinish(struct worker *wrk, struct vgz *vg)
+{
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+
+	VGZ_WrwFlush(wrk, vg);
+	free(vg->wrw_buf);
+	vg->wrw_buf = 0;
+	vg->wrw_sz = 0;
 }
 
 /*--------------------------------------------------------------------*/
@@ -412,6 +468,7 @@ VGZ_Destroy(struct vgz **vgp, int vsl_id)
 	vg = *vgp;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	*vgp = NULL;
+	AZ(vg->wrw_buf);
 
 	if (vsl_id < 0)
 		WSLB(vg->wrk, SLT_Gzip, "%s %jd %jd %jd %jd %jd",
