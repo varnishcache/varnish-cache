@@ -44,13 +44,12 @@ struct vef_priv {
 #define VEF_MAGIC		0xf104b51f
 	struct vgz		*vgz;
 
-	char			*bufp;
 	ssize_t			tot;
 	int			error;
-	char			pending[20];
-	ssize_t			npend;
 
 	char			*ibuf;
+	char			*ibuf_i;
+	char			*ibuf_o;
 	ssize_t			ibuf_sz;
 
 	char			*ibuf2;
@@ -148,13 +147,46 @@ vfp_esi_bytes_gu(struct worker *wrk, const struct vef_priv *vef,
 
 /*---------------------------------------------------------------------
  * We receive a [un]gzip'ed object, and want to store it gzip'ed.
+ *
+ * This is rather complicated, because the ESI parser does not
+ * spit out all bytes we feed it right away:  Sometimes it needs
+ * more input to make up its mind.
+ *
+ * The inject function feeds uncompressed bytes into the VEP, and
+ * takes care to keep any bytes VEP didn't decide on intact until
+ * later.
+ *
+ * The callback is called by VEP to dispose of bytes and report
+ * where to find them again later.
  */
+
+static int
+vfp_vep_inject(const struct worker *wrk, struct vef_priv *vef, ssize_t wl)
+{
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
+
+	VEP_Parse(wrk, vef->ibuf_i, wl);
+	vef->ibuf_i += wl;
+	assert(vef->ibuf_o >= vef->ibuf && vef->ibuf_o <= vef->ibuf_i);
+	if (vef->error) {
+		errno = vef->error;
+		return (-1);
+	}
+	wl = vef->ibuf_i - vef->ibuf_o;
+	if (wl > 0)
+		memmove(vef->ibuf, vef->ibuf_o, wl);
+	vef->ibuf_o = vef->ibuf;
+	vef->ibuf_i = vef->ibuf + wl;
+	return (0);
+}
 
 static ssize_t
 vfp_vep_callback(struct worker *wrk, ssize_t l, enum vgz_flag flg)
 {
 	struct vef_priv *vef;
-	size_t dl, px;
+	size_t dl;
 	const void *dp;
 	int i;
 
@@ -177,41 +209,30 @@ vfp_vep_callback(struct worker *wrk, ssize_t l, enum vgz_flag flg)
 	if (l == 0 && flg == VGZ_NORMAL)
 		return (vef->tot);
 
+	VGZ_Ibuf(vef->vgz, vef->ibuf_o, l);
 	do {
-		px = vef->npend;
-		if (l < px)
-			px = l;
-		if (px != 0) {
-			VGZ_Ibuf(vef->vgz, vef->pending, px);
-			l -= px;
-		} else {
-			VGZ_Ibuf(vef->vgz, vef->bufp, l);
-			vef->bufp += l;
-			l = 0;
+		if (VGZ_ObufStorage(wrk, vef->vgz)) {
+			vef->error = ENOMEM;
+			vef->tot += l;
+			return (vef->tot);
 		}
-		do {
-			if (VGZ_ObufStorage(wrk, vef->vgz)) {
-				vef->error = ENOMEM;
-				vef->tot += l;
-				return (vef->tot);
-			}
-			i = VGZ_Gzip(vef->vgz, &dp, &dl, flg);
-			vef->tot += dl;
-			wrk->busyobj->fetch_obj->len += dl;
-		} while (!VGZ_IbufEmpty(vef->vgz) ||
-		    (flg != VGZ_NORMAL && VGZ_ObufFull(vef->vgz)));
-		if (px != 0) {
-			memmove(vef->pending, vef->pending + px,
-			    vef->npend - px);
-			vef->npend -= px;
-		}
-	} while (l > 0);
+		i = VGZ_Gzip(vef->vgz, &dp, &dl, flg);
+		vef->tot += dl;
+		wrk->busyobj->fetch_obj->len += dl;
+	} while (!VGZ_IbufEmpty(vef->vgz) ||
+	    (flg != VGZ_NORMAL && VGZ_ObufFull(vef->vgz)));
+	assert(VGZ_IbufEmpty(vef->vgz));
+	vef->ibuf_o += l;
 	if (flg == VGZ_FINISH)
 		assert(i == 1);			/* XXX */
 	else
 		assert(i == 0);			/* XXX */
 	return (vef->tot);
 }
+
+/*---------------------------------------------------------------------
+ * We receive a gunzip'ed object, and want to store it gzip'ed.
+ */
 
 static int
 vfp_esi_bytes_ug(struct worker *wrk, struct vef_priv *vef,
@@ -224,23 +245,13 @@ vfp_esi_bytes_ug(struct worker *wrk, struct vef_priv *vef,
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 
 	while (bytes > 0) {
-		wl = vef_read(wrk, htc, vef->ibuf, vef->ibuf_sz, bytes);
+		wl = vef->ibuf_sz - (vef->ibuf_i - vef->ibuf);
+		wl = vef_read(wrk, htc, vef->ibuf_i, wl, bytes);
 		if (wl <= 0)
 			return (wl);
 		bytes -= wl;
-		vef->bufp = vef->ibuf;
-		VEP_Parse(wrk, vef->ibuf, wl);
-		assert(vef->bufp >= vef->ibuf && vef->bufp <= vef->ibuf + wl);
-		if (vef->error) {
-			errno = vef->error;
+		if (vfp_vep_inject(wrk, vef, wl))
 			return (-1);
-		}
-		if (vef->bufp < vef->ibuf + wl) {
-			wl = (vef->ibuf + wl) - vef->bufp;
-			assert(wl + vef->npend < sizeof vef->pending);
-			memmove(vef->pending + vef->npend, vef->bufp, wl);
-			vef->npend += wl;
-		}
 	}
 	return (1);
 }
@@ -268,33 +279,19 @@ vfp_esi_bytes_gg(struct worker *wrk, struct vef_priv *vef,
 			return (wl);
 		bytes -= wl;
 
-		vef->bufp = vef->ibuf2;
 		VGZ_Ibuf(wrk->busyobj->vgz_rx, vef->ibuf2, wl);
 		do {
-			VGZ_Obuf(wrk->busyobj->vgz_rx, vef->ibuf,
-			    vef->ibuf_sz);
+			wl = vef->ibuf_sz - (vef->ibuf_i - vef->ibuf);
+			VGZ_Obuf(wrk->busyobj->vgz_rx, vef->ibuf_i, wl);
 			i = VGZ_Gunzip(wrk->busyobj->vgz_rx, &dp, &dl);
 			/* XXX: check i */
 			assert(i >= VGZ_OK);
-			vef->bufp = vef->ibuf;
-			if (dl > 0)
-				VEP_Parse(wrk, vef->ibuf, dl);
-			if (vef->error) {
-				errno = vef->error;
+			if (dl > 0 && vfp_vep_inject(wrk, vef, dl))
 				return (-1);
-			}
-			if (vef->bufp < vef->ibuf + dl) {
-				dl = (vef->ibuf + dl) - vef->bufp;
-				assert(dl + vef->npend < sizeof vef->pending);
-				memmove(vef->pending + vef->npend,
-				    vef->bufp, dl);
-				vef->npend += dl;
-			}
 		} while (!VGZ_IbufEmpty(wrk->busyobj->vgz_rx));
 	}
 	return (1);
 }
-
 
 /*---------------------------------------------------------------------*/
 
@@ -335,6 +332,8 @@ vfp_esi_begin(struct worker *wrk, size_t estimate)
 	if (vef->ibuf_sz > 0) {
 		vef->ibuf = calloc(1L, vef->ibuf_sz);
 		XXXAN(vef->ibuf);
+		vef->ibuf_i = vef->ibuf;
+		vef->ibuf_o = vef->ibuf;
 	}
 	if (vef->ibuf2_sz > 0) {
 		vef->ibuf2 = calloc(1L, vef->ibuf2_sz);
