@@ -52,6 +52,9 @@ struct vef_priv {
 
 	char			*ibuf;
 	ssize_t			ibuf_sz;
+
+	char			*ibuf2;
+	ssize_t			ibuf2_sz;
 };
 
 /*---------------------------------------------------------------------
@@ -251,7 +254,6 @@ vfp_esi_bytes_gg(struct worker *wrk, struct vef_priv *vef,
     struct http_conn *htc, size_t bytes)
 {
 	ssize_t wl;
-	char ibuf2[cache_param->gzip_stack_buffer];
 	size_t dl;
 	const void *dp;
 	int i;
@@ -259,30 +261,30 @@ vfp_esi_bytes_gg(struct worker *wrk, struct vef_priv *vef,
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
-	ibuf2[0] = 0; /* For Flexelint */
 
 	while (bytes > 0) {
-		wl = vef_read(wrk, htc, vef->ibuf, vef->ibuf_sz, bytes);
+		wl = vef_read(wrk, htc, vef->ibuf2, vef->ibuf2_sz, bytes);
 		if (wl <= 0)
 			return (wl);
 		bytes -= wl;
 
-		vef->bufp = vef->ibuf;
-		VGZ_Ibuf(wrk->busyobj->vgz_rx, vef->ibuf, wl);
+		vef->bufp = vef->ibuf2;
+		VGZ_Ibuf(wrk->busyobj->vgz_rx, vef->ibuf2, wl);
 		do {
-			VGZ_Obuf(wrk->busyobj->vgz_rx, ibuf2, sizeof ibuf2);
+			VGZ_Obuf(wrk->busyobj->vgz_rx, vef->ibuf,
+			    vef->ibuf_sz);
 			i = VGZ_Gunzip(wrk->busyobj->vgz_rx, &dp, &dl);
 			/* XXX: check i */
 			assert(i >= VGZ_OK);
-			vef->bufp = ibuf2;
+			vef->bufp = vef->ibuf;
 			if (dl > 0)
-				VEP_Parse(wrk, ibuf2, dl);
+				VEP_Parse(wrk, vef->ibuf, dl);
 			if (vef->error) {
 				errno = vef->error;
 				return (-1);
 			}
-			if (vef->bufp < ibuf2 + dl) {
-				dl = (ibuf2 + dl) - vef->bufp;
+			if (vef->bufp < vef->ibuf + dl) {
+				dl = (vef->ibuf + dl) - vef->bufp;
 				assert(dl + vef->npend < sizeof vef->pending);
 				memmove(vef->pending + vef->npend,
 				    vef->bufp, dl);
@@ -326,12 +328,17 @@ vfp_esi_begin(struct worker *wrk, size_t estimate)
 		vef->vgz = VGZ_NewGzip(wrk, "G F E");
 		VEP_Init(wrk, vfp_vep_callback);
 		vef->ibuf_sz = cache_param->gzip_stack_buffer;
+		vef->ibuf2_sz = cache_param->gzip_stack_buffer;
 	} else {
 		VEP_Init(wrk, NULL);
 	}
 	if (vef->ibuf_sz > 0) {
 		vef->ibuf = calloc(1L, vef->ibuf_sz);
 		XXXAN(vef->ibuf);
+	}
+	if (vef->ibuf2_sz > 0) {
+		vef->ibuf2 = calloc(1L, vef->ibuf2_sz);
+		XXXAN(vef->ibuf2);
 	}
 	AN(bo->vep);
 }
@@ -414,6 +421,8 @@ vfp_esi_end(struct worker *wrk)
 	}
 	if (vef->ibuf != NULL)
 		free(vef->ibuf);
+	if (vef->ibuf2 != NULL)
+		free(vef->ibuf2);
 	FREE_OBJ(vef);
 	return (retval);
 }
