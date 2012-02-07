@@ -985,8 +985,6 @@ cnt_streambody(struct sess *sp, struct worker *wrk, struct req *req)
 {
 	int i;
 	struct stream_ctx sctx;
-	uint8_t obuf[sp->wrk->res_mode & RES_GUNZIP ?
-	    cache_param->gzip_stack_buffer : 1];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -998,12 +996,6 @@ cnt_streambody(struct sess *sp, struct worker *wrk, struct req *req)
 	sctx.magic = STREAM_CTX_MAGIC;
 	AZ(wrk->sctx);
 	wrk->sctx = &sctx;
-
-	if (wrk->res_mode & RES_GUNZIP) {
-		sctx.vgz = VGZ_NewUngzip(wrk, "U S -");
-		sctx.obuf = obuf;
-		sctx.obuf_len = sizeof (obuf);
-	}
 
 	RES_StreamStart(sp);
 
@@ -1030,8 +1022,6 @@ cnt_streambody(struct sess *sp, struct worker *wrk, struct req *req)
 	req->restarts = 0;
 
 	RES_StreamEnd(sp);
-	if (wrk->res_mode & RES_GUNZIP)
-		(void)VGZ_Destroy(&sctx.vgz, sp->vsl_id);
 
 	wrk->sctx = NULL;
 	assert(WRW_IsReleased(wrk));

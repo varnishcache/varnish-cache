@@ -224,8 +224,6 @@ ESI_Deliver(struct sess *sp)
 	uint8_t tailbuf[8 + 5];
 	int isgzip;
 	struct vgz *vgz = NULL;
-	char obuf[cache_param->gzip_stack_buffer];
-	ssize_t obufl = 0;
 	size_t dl;
 	const void *dp;
 	int i;
@@ -233,9 +231,6 @@ ESI_Deliver(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	st = sp->req->obj->esidata;
 	AN(st);
-	assert(sizeof obuf >= 1024);
-
-	obuf[0] = 0;	/* For flexelint */
 
 	p = st->ptr;
 	e = st->ptr + st->len;
@@ -264,16 +259,14 @@ ESI_Deliver(struct sess *sp)
 
 	if (isgzip && !sp->req->gzip_resp) {
 		vgz = VGZ_NewUngzip(sp->wrk, "U D E");
+		AZ(VGZ_WrwInit(vgz));
 
 		/* Feed a gzip header to gunzip to make it happy */
 		VGZ_Ibuf(vgz, gzip_hdr, sizeof gzip_hdr);
-		VGZ_Obuf(vgz, obuf, sizeof obuf);
 		i = VGZ_Gunzip(vgz, &dp, &dl);
 		assert(i == VGZ_OK);
 		assert(VGZ_IbufEmpty(vgz));
 		assert(dl == 0);
-
-		obufl = 0;
 	}
 
 	st = VTAILQ_FIRST(&sp->req->obj->store);
@@ -328,8 +321,7 @@ ESI_Deliver(struct sess *sp)
 					 */
 					AN(vgz);
 					i = VGZ_WrwGunzip(sp->wrk, vgz,
-						st->ptr + off, l2,
-						obuf, sizeof obuf, &obufl);
+						st->ptr + off, l2);
 					if (WRW_Error(sp->wrk)) {
 						SES_Close(sp, "remote closed");
 						p = e;
@@ -379,10 +371,8 @@ ESI_Deliver(struct sess *sp)
 			q++;
 			r = (void*)strchr((const char*)q, '\0');
 			AN(r);
-			if (obufl > 0) {
-				(void)WRW_Write(sp->wrk, obuf, obufl);
-				obufl = 0;
-			}
+			if (vgz != NULL)
+				VGZ_WrwFlush(sp->wrk, vgz);
 			if (WRW_Flush(sp->wrk)) {
 				SES_Close(sp, "remote closed");
 				p = e;
@@ -399,8 +389,7 @@ ESI_Deliver(struct sess *sp)
 		}
 	}
 	if (vgz != NULL) {
-		if (obufl > 0)
-			(void)WRW_Write(sp->wrk, obuf, obufl);
+		VGZ_WrwFinish(sp->wrk, vgz);
 		(void)VGZ_Destroy(&vgz, sp->vsl_id);
 	}
 	if (sp->req->gzip_resp && sp->req->esi_level == 0) {

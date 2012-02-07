@@ -262,9 +262,6 @@ struct stream_ctx {
 #define STREAM_CTX_MAGIC	0x8213728b
 
 	struct vgz		*vgz;
-	void			*obuf;
-	ssize_t			obuf_len;
-	ssize_t			obuf_ptr;
 
 	/* Next byte we will take from storage */
 	ssize_t			stream_next;
@@ -788,8 +785,12 @@ int VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
 int VGZ_Gunzip(struct vgz *, const void **, size_t *len);
 int VGZ_Destroy(struct vgz **, int vsl_id);
 void VGZ_UpdateObj(const struct vgz*, struct object *);
+
+int VGZ_WrwInit(struct vgz *vg);
 int VGZ_WrwGunzip(struct worker *w, struct vgz *, const void *ibuf,
-    ssize_t ibufl, char *obuf, ssize_t obufl, ssize_t *obufp);
+    ssize_t ibufl);
+void VGZ_WrwFlush(struct worker *wrk, struct vgz *vg);
+void VGZ_WrwFinish(struct worker *wrk, struct vgz *vg);
 
 /* Return values */
 #define VGZ_ERROR	-1
