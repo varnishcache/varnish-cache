@@ -73,11 +73,8 @@ static struct vgz *
 vgz_alloc_vgz(struct worker *wrk, const char *id)
 {
 	struct vgz *vg;
-	struct ws *ws;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	ws = wrk->ws;
-	WS_Assert(ws);
 	ALLOC_OBJ(vg, VGZ_MAGIC);
 	AN(vg);
 	vg->wrk = wrk;
