@@ -662,6 +662,12 @@ tweak_poolparam(struct cli *cli, const struct parspec *par, const char *arg)
 	"\nNB: Do not change this parameter, unless a developer tell " \
 	"you to do so."
 
+#define MEMPOOL_TEXT 							\
+	"The three numbers are:\n"					\
+	"   min_pool -- minimum size of free pool.\n"			\
+	"   max_pool -- maximum size of free pool.\n"			\
+	"   max_age -- max age of free element.\n"
+
 /*
  * Remember to update varnishd.1 whenever you add / remove a parameter or
  * change its default value.
@@ -1192,27 +1198,23 @@ static const struct parspec input_parspec[] = {
 
 	{ "pool_vbc", tweak_poolparam, &mgt_param.vbc_pool, 0, 10000,
 		"Parameters for backend connection memory pool.\n"
-		"The three numbers are:\n"
-		"   min_pool -- minimum size of free pool.\n"
-		"   max_pool -- maximum size of free pool.\n"
-		"   max_age -- max age of free element.\n",
+		MEMPOOL_TEXT,
 		0,
 		"10,100,10", ""},
 
 	{ "pool_req", tweak_poolparam, &mgt_param.req_pool, 0, 10000,
 		"Parameters for per worker pool request memory pool.\n"
-		"The three numbers are:\n"
-		"   min_pool -- minimum size of free pool.\n"
-		"   max_pool -- maximum size of free pool.\n"
-		"   max_age -- max age of free element.\n",
+		MEMPOOL_TEXT,
 		0,
 		"10,100,10", ""},
 	{ "pool_sess", tweak_poolparam, &mgt_param.sess_pool, 0, 10000,
 		"Parameters for per worker pool session memory pool.\n"
-		"The three numbers are:\n"
-		"   min_pool -- minimum size of free pool.\n"
-		"   max_pool -- maximum size of free pool.\n"
-		"   max_age -- max age of free element.\n",
+		MEMPOOL_TEXT,
+		0,
+		"10,100,10", ""},
+	{ "pool_vbo", tweak_poolparam, &mgt_param.vbo_pool, 0, 10000,
+		"Parameters for backend object fetch memory pool.\n"
+		MEMPOOL_TEXT,
 		0,
 		"10,100,10", ""},
 

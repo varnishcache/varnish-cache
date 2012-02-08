@@ -201,4 +201,5 @@ struct params {
 	struct poolparam	vbc_pool;
 	struct poolparam	req_pool;
 	struct poolparam	sess_pool;
+	struct poolparam	vbo_pool;
 };

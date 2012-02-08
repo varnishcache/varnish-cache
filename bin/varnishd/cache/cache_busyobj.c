@@ -38,6 +38,10 @@
 
 #include "cache.h"
 
+static struct mempool		*vbopool;
+
+static volatile unsigned	vbosize;
+
 struct vbo {
 	unsigned		magic;
 #define VBO_MAGIC		0xde3d8223
@@ -48,13 +52,35 @@ struct vbo {
 };
 
 static struct lock vbo_mtx;
-static struct vbo *nvbo;
+
+/*--------------------------------------------------------------------
+ */
+
+static void
+vbo_size_calc(volatile unsigned *u)
+{
+	uint16_t nhttp;
+	ssize_t http_space;
+
+	assert(cache_param->http_max_hdr < 65536);
+	nhttp = (uint16_t)cache_param->http_max_hdr;
+
+	http_space = HTTP_estimate(nhttp);
+
+	*u = sizeof(struct vbo) + http_space * 2L;
+}
+
+/*--------------------------------------------------------------------
+ */
 
 void
 VBO_Init(void)
 {
+
+	vbopool = MPL_New("vbo", &cache_param->vbo_pool, &vbosize,
+	    vbo_size_calc);
+	AN(vbopool);
 	Lck_New(&vbo_mtx, lck_busyobj);
-	nvbo = NULL;
 }
 
 /*--------------------------------------------------------------------
@@ -67,16 +93,19 @@ vbo_New(void)
 	struct vbo *vbo;
 	uint16_t nhttp;
 	ssize_t http_space;
+	unsigned sz;
 
-	assert(cache_param->http_max_hdr < 65536);
+	vbo = MPL_Get(vbopool, &sz);
 	nhttp = (uint16_t)cache_param->http_max_hdr;
-
 	http_space = HTTP_estimate(nhttp);
-
-	vbo = malloc(sizeof *vbo + 2 * http_space);
+	if (sizeof *vbo + 2 * http_space > sz) {
+		/* Could be transient, try again */
+		MPL_Free(vbopool, vbo);
+		vbo_size_calc(&vbosize);
+		vbo = MPL_Get(vbopool, &sz);
+		assert (sizeof *vbo + 2 * http_space <= sz);
+	}
 	AN(vbo);
-
-	memset(vbo, 0, sizeof *vbo);
 	vbo->magic = VBO_MAGIC;
 	vbo->nhttp = nhttp;
 	Lck_New(&vbo->mtx, lck_busyobj);
@@ -94,7 +123,7 @@ VBO_Free(struct vbo **vbop)
 	CHECK_OBJ_NOTNULL(vbo, VBO_MAGIC);
 	AZ(vbo->refcount);
 	Lck_Delete(&vbo->mtx);
-	FREE_OBJ(vbo);
+	MPL_Free(vbopool, vbo);
 }
 
 struct busyobj *
@@ -109,21 +138,6 @@ VBO_GetBusyObj(struct worker *wrk)
 		vbo = wrk->nvbo;
 		wrk->nvbo = NULL;
 	}
-
-	if (vbo == NULL) {
-		Lck_Lock(&vbo_mtx);
-
-		vbo = nvbo;
-		nvbo = NULL;
-
-		if (vbo == NULL)
-			VSC_C_main->busyobj_alloc++;
-
-		Lck_Unlock(&vbo_mtx);
-	}
-
-	if (vbo != NULL && vbo->nhttp != cache_param->http_max_hdr)
-		VBO_Free(&vbo);
 
 	if (vbo == NULL)
 		vbo = vbo_New();
@@ -181,19 +195,9 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 		/* XXX: Sanity checks & cleanup */
 		memset(&vbo->bo, 0, sizeof vbo->bo);
 
-		if (cache_param->bo_cache && wrk->nvbo == NULL) {
+		if (cache_param->bo_cache && wrk->nvbo == NULL)
 			wrk->nvbo = vbo;
-		} else {
-			Lck_Lock(&vbo_mtx);
-			if (nvbo == NULL) {
-				nvbo = vbo;
-				vbo = NULL;
-			} else
-				VSC_C_main->busyobj_free++;
-			Lck_Unlock(&vbo_mtx);
-
-			if (vbo != NULL)
-				VBO_Free(&vbo);
-		}
+		else 
+			VBO_Free(&vbo);
 	}
 }

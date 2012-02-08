@@ -237,6 +237,8 @@ MPL_New(const char *name,
 	mpl->param = pp;
 	mpl->cur_size = cur_size;
 	mpl->poll_func = poll_f;
+	if (poll_f != NULL)
+		poll_f(mpl->cur_size);
 	VTAILQ_INIT(&mpl->list);
 	VTAILQ_INIT(&mpl->surplus);
 	Lck_New(&mpl->mtx, lck_mempool);
