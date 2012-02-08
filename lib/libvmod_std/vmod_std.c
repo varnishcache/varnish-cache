@@ -58,8 +58,8 @@ vmod_updown(struct sess *sp, int up, const char *s, va_list ap)
 	const char *p;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	u = WS_Reserve(sp->wrk->ws, 0);
-	e = b = sp->wrk->ws->f;
+	u = WS_Reserve(sp->req->ws, 0);
+	e = b = sp->req->ws->f;
 	e += u;
 	p = s;
 	while (p != vrt_magic_string_end && b < e) {
@@ -76,12 +76,12 @@ vmod_updown(struct sess *sp, int up, const char *s, va_list ap)
 		*b = '\0';
 	b++;
 	if (b > e) {
-		WS_Release(sp->wrk->ws, 0);
+		WS_Release(sp->req->ws, 0);
 		return (NULL);
 	} else {
 		e = b;
-		b = sp->wrk->ws->f;
-		WS_Release(sp->wrk->ws, e - b);
+		b = sp->req->ws->f;
+		WS_Release(sp->req->ws, e - b);
 		return (b);
 	}
 }
