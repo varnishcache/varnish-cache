@@ -662,7 +662,7 @@ tweak_poolparam(struct cli *cli, const struct parspec *par, const char *arg)
 	"\nNB: Do not change this parameter, unless a developer tell " \
 	"you to do so."
 
-#define MEMPOOL_TEXT 							\
+#define MEMPOOL_TEXT							\
 	"The three numbers are:\n"					\
 	"   min_pool -- minimum size of free pool.\n"			\
 	"   max_pool -- maximum size of free pool.\n"			\
@@ -698,6 +698,18 @@ static const struct parspec input_parspec[] = {
 		"Bytes of HTTP protocol workspace for clients HTTP req/resp.",
 		DELAYED_EFFECT,
 		"64k", "bytes" },
+	{ "workspace_backend",
+		tweak_bytes_u, &mgt_param.workspace_backend, 1024, UINT_MAX,
+		"Bytes of HTTP protocol workspace for backend HTTP req/resp.",
+		DELAYED_EFFECT,
+		"64k", "bytes" },
+	{ "workspace_thread",
+		tweak_bytes_u, &mgt_param.workspace_thread, 256, 256,
+		"Bytes of auxillary workspace per thread."
+		/* XXX: See comment in cache.h */
+		"This is not the workspace you are looking for.",
+		DELAYED_EFFECT,
+		"256", "bytes" },
 	{ "http_req_hdr_len",
 		tweak_bytes_u, &mgt_param.http_req_hdr_len,
 		40, UINT_MAX,
@@ -1194,7 +1206,7 @@ static const struct parspec input_parspec[] = {
 		"Disable this if you have very high hitrates and want"
 		"to save the memory of one busyobj per worker thread.",
 		0,
-		"true", ""},
+		"false", ""},
 
 	{ "pool_vbc", tweak_poolparam, &mgt_param.vbc_pool, 0, 10000,
 		"Parameters for backend connection memory pool.\n"

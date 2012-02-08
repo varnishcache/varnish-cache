@@ -152,7 +152,7 @@ wrk_thread_real(void *priv, unsigned shm_workspace, unsigned sess_workspace,
 	w->wrw.ciov = siov;
 	AZ(pthread_cond_init(&w->cond, NULL));
 
-	WS_Init(w->ws, "wrk", ws, sess_workspace);
+	WS_Init(w->aws, "wrk", ws, sess_workspace);
 
 	VSL(SLT_WorkThread, 0, "%p start", w);
 
@@ -182,7 +182,7 @@ WRK_thread(void *priv)
 		siov = IOV_MAX;
 	return (wrk_thread_real(priv,
 	    cache_param->shm_workspace,
-	    cache_param->wthread_workspace, siov));
+	    cache_param->workspace_thread, siov));
 }
 
 void

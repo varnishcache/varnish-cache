@@ -196,7 +196,7 @@ pan_wrk(const struct worker *wrk)
 {
 
 	VSB_printf(pan_vsp, "  worker = %p {\n", wrk);
-	pan_ws(wrk->ws, 4);
+	pan_ws(wrk->aws, 4);
 	if (wrk->busyobj != NULL && wrk->busyobj->bereq->ws != NULL)
 		pan_http("bereq", wrk->busyobj->bereq, 4);
 	if (wrk->busyobj != NULL && wrk->busyobj->beresp->ws != NULL)
@@ -209,6 +209,7 @@ pan_busyobj(const struct busyobj *bo)
 {
 
 	VSB_printf(pan_vsp, "  busyobj = %p {\n", bo);
+	pan_ws(bo->ws, 4);
 	if (bo->is_gzip)	VSB_printf(pan_vsp, "    is_gzip\n");
 	if (bo->is_gunzip)	VSB_printf(pan_vsp, "    is_gunzip\n");
 	if (bo->do_gzip)	VSB_printf(pan_vsp, "    do_gzip\n");

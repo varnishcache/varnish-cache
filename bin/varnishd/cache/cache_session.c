@@ -139,7 +139,7 @@ ses_pool_task(struct worker *wrk, void *arg)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
 
-	AZ(wrk->ws->r);
+	AZ(wrk->aws->r);
 	wrk->lastused = NAN;
 	THR_SetSession(sp);
 	if (wrk->sp == NULL)
@@ -153,7 +153,7 @@ ses_pool_task(struct worker *wrk, void *arg)
 	/* Cannot access sp now */
 	THR_SetSession(NULL);
 	wrk->sp = NULL;
-	WS_Assert(wrk->ws);
+	WS_Assert(wrk->aws);
 	AZ(wrk->busyobj);
 	AZ(wrk->wrw.wfd);
 	assert(wrk->wlp == wrk->wlb);
@@ -177,7 +177,7 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 
 	/* Turn accepted socket into a session */
 	AZ(wrk->sp);
-	AN(wrk->ws->r);
+	AN(wrk->aws->r);
 	wrk->sp = ses_new(pp);
 	if (wrk->sp == NULL) {
 		VCA_FailSess(wrk);
@@ -185,7 +185,7 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 	}
 	VCA_SetupSess(wrk);
 	wrk->sp->step = STP_FIRST;
-	WS_Release(wrk->ws, 0);
+	WS_Release(wrk->aws, 0);
 	ses_pool_task(wrk, wrk->sp);
 }
 

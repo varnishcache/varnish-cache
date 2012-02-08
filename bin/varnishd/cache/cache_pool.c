@@ -162,8 +162,8 @@ pool_accept(struct worker *wrk, void *arg)
 	CAST_OBJ_NOTNULL(ps, arg, POOLSOCK_MAGIC);
 
 	CHECK_OBJ_NOTNULL(ps->lsock, LISTEN_SOCK_MAGIC);
-	assert(sizeof *wa == WS_Reserve(wrk->ws, sizeof *wa));
-	wa = (void*)wrk->ws->f;
+	assert(sizeof *wa == WS_Reserve(wrk->aws, sizeof *wa));
+	wa = (void*)wrk->aws->f;
 	while (1) {
 		memset(wa, 0, sizeof *wa);
 		wa->magic = WRK_ACCEPT_MAGIC;
@@ -171,7 +171,7 @@ pool_accept(struct worker *wrk, void *arg)
 		if (ps->lsock->sock < 0) {
 			/* Socket Shutdown */
 			FREE_OBJ(ps);
-			WS_Release(wrk->ws, 0);
+			WS_Release(wrk->aws, 0);
 			return;
 		}
 		if (VCA_Accept(ps->lsock, wa) < 0) {
@@ -192,8 +192,8 @@ pool_accept(struct worker *wrk, void *arg)
 		}
 		VTAILQ_REMOVE(&pp->idle_queue, &wrk2->task, list);
 		Lck_Unlock(&pp->mtx);
-		assert(sizeof *wa2 == WS_Reserve(wrk2->ws, sizeof *wa2));
-		wa2 = (void*)wrk2->ws->f;
+		assert(sizeof *wa2 == WS_Reserve(wrk2->aws, sizeof *wa2));
+		wa2 = (void*)wrk2->aws->f;
 		memcpy(wa2, wa, sizeof *wa);
 		wrk2->task.func = SES_pool_accept_task;
 		wrk2->task.priv = pp->sesspool;
@@ -277,7 +277,7 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 
 		CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
-		WS_Reset(wrk->ws, NULL);
+		WS_Reset(wrk->aws, NULL);
 
 		tp = VTAILQ_FIRST(&pp->front_queue);
 		if (tp != NULL) {

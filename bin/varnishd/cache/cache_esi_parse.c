@@ -1004,7 +1004,7 @@ VEP_Init(struct worker *wrk, vep_callback_t *cb)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 	AZ(wrk->busyobj->vep);
-	vep = (void*)WS_Alloc(wrk->ws, sizeof *vep);
+	vep = (void*)WS_Alloc(wrk->busyobj->ws, sizeof *vep);
 	AN(vep);
 
 	memset(vep, 0, sizeof *vep);

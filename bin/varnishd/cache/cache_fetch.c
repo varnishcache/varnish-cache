@@ -446,7 +446,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 
 	/* Receive response */
 
-	HTC_Init(htc, wrk->ws, vc->fd, vc->vsl_id,
+	HTC_Init(htc, wrk->busyobj->ws, vc->fd, vc->vsl_id,
 	    cache_param->http_resp_size,
 	    cache_param->http_resp_hdr_len);
 

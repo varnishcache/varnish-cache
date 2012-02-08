@@ -521,8 +521,8 @@ HSH_Purge(const struct sess *sp, struct objhead *oh, double ttl, double grace)
 	struct object *o;
 
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-	spc = WS_Reserve(sp->wrk->ws, 0);
-	ocp = (void*)sp->wrk->ws->f;
+	spc = WS_Reserve(sp->req->ws, 0);
+	ocp = (void*)sp->req->ws->f;
 	Lck_Lock(&oh->mtx);
 	assert(oh->refcnt > 0);
 	nobj = 0;
@@ -565,7 +565,7 @@ HSH_Purge(const struct sess *sp, struct objhead *oh, double ttl, double grace)
 		EXP_Rearm(o);
 		(void)HSH_Deref(sp->wrk, NULL, &o);
 	}
-	WS_Release(sp->wrk->ws, 0);
+	WS_Release(sp->req->ws, 0);
 }
 
 

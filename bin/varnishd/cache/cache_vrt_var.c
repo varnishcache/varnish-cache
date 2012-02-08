@@ -297,7 +297,7 @@ VRT_l_beresp_storage(struct sess *sp, const char *str, ...)
 	char *b;
 
 	va_start(ap, str);
-	b = VRT_String(sp->wrk->ws, NULL, str, ap);
+	b = VRT_String(sp->wrk->busyobj->ws, NULL, str, ap);
 	va_end(ap);
 	sp->req->storage_hint = b;
 }

@@ -327,7 +327,11 @@ struct worker {
 	uint32_t		*wlb, *wlp, *wle;
 	unsigned		wlr;
 
-	struct ws		ws[1];
+	/*
+	 * In practice this workspace is only used for wrk_accept now
+	 * but it might come handy later, so keep it around.  For now.
+	 */
+	struct ws		aws[1];
 
 	struct busyobj		*busyobj;
 
@@ -502,6 +506,7 @@ struct busyobj {
 	unsigned		fetch_failed;
 	struct vgz		*vgz_rx;
 
+	struct ws		ws[1];
 	struct vbc		*vbc;
 	struct http		*bereq;
 	struct http		*beresp;

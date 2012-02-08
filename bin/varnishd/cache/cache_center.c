@@ -435,9 +435,9 @@ cnt_done(struct sess *sp, struct worker *wrk, struct req *req)
 
 	if (wrk->stats.client_req >= cache_param->wthread_stats_rate)
 		WRK_SumStat(wrk);
-	/* Reset the workspace to the session-watermark */
+
 	WS_Reset(req->ws, NULL);
-	WS_Reset(wrk->ws, NULL);
+	WS_Reset(wrk->aws, NULL);
 
 	sp->t_req = sp->t_idle;
 	i = HTC_Reinit(req->htc);
@@ -569,7 +569,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 	AZ(wrk->busyobj->should_close);
 	AZ(req->storage_hint);
 
-	http_Setup(wrk->busyobj->beresp, wrk->ws);
+	http_Setup(wrk->busyobj->beresp, wrk->busyobj->ws);
 
 	need_host_hdr = !http_GetHdr(wrk->busyobj->bereq, H_Host, NULL);
 
@@ -1230,9 +1230,8 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 	AZ(req->obj);
 
-	WS_Reset(wrk->ws, NULL);
 	wrk->busyobj = VBO_GetBusyObj(wrk);
-	http_Setup(wrk->busyobj->bereq, wrk->ws);
+	http_Setup(wrk->busyobj->bereq, wrk->busyobj->ws);
 	http_FilterReq(sp, HTTPH_R_FETCH);
 	http_ForceGet(wrk->busyobj->bereq);
 	if (cache_param->http_gzip_support) {
@@ -1306,9 +1305,7 @@ cnt_pass(struct sess *sp, struct worker *wrk, const struct req *req)
 	AZ(wrk->busyobj);
 
 	wrk->busyobj = VBO_GetBusyObj(wrk);
-	WS_Reset(wrk->ws, NULL);
-	wrk->busyobj = VBO_GetBusyObj(wrk);
-	http_Setup(wrk->busyobj->bereq, wrk->ws);
+	http_Setup(wrk->busyobj->bereq, wrk->busyobj->ws);
 	http_FilterReq(sp, HTTPH_R_PASS);
 
 	VCL_pass_method(sp);
@@ -1362,9 +1359,7 @@ cnt_pipe(struct sess *sp, struct worker *wrk, const struct req *req)
 
 	wrk->acct_tmp.pipe++;
 	wrk->busyobj = VBO_GetBusyObj(wrk);
-	WS_Reset(wrk->ws, NULL);
-	wrk->busyobj = VBO_GetBusyObj(wrk);
-	http_Setup(wrk->busyobj->bereq, wrk->ws);
+	http_Setup(wrk->busyobj->bereq, wrk->busyobj->ws);
 	http_FilterReq(sp, 0);
 
 	VCL_pipe_method(sp);
@@ -1674,7 +1669,7 @@ CNT_Session(struct sess *sp)
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 		CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
-		WS_Assert(wrk->ws);
+		WS_Assert(wrk->aws);
 
 		switch (sp->step) {
 #define STEP(l,u,arg) \
@@ -1688,7 +1683,7 @@ CNT_Session(struct sess *sp)
 		default:
 			WRONG("State engine misfire");
 		}
-		WS_Assert(wrk->ws);
+		WS_Assert(wrk->aws);
 		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 	}
 	WSL_Flush(wrk, 0);

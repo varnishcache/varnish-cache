@@ -70,12 +70,14 @@ struct params {
 	unsigned		wthread_purge_delay;
 	unsigned		wthread_stats_rate;
 	unsigned		wthread_stacksize;
-	unsigned		wthread_workspace;
 
 	unsigned		queue_max;
 
 	/* Memory allocation hints */
 	unsigned		workspace_client;
+	unsigned		workspace_backend;
+	unsigned		workspace_thread;
+
 	unsigned		shm_workspace;
 	unsigned		http_req_size;
 	unsigned		http_req_hdr_len;

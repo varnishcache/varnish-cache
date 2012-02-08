@@ -67,7 +67,7 @@ ved_include(struct sess *sp, const char *src, const char *host)
 
 	/* Take a workspace snapshot */
 	sp_ws_wm = WS_Snapshot(sp->req->ws);
-	wrk_ws_wm = WS_Snapshot(w->ws);
+	wrk_ws_wm = WS_Snapshot(w->aws); /* XXX ? */
 
 	http_SetH(sp->req->http, HTTP_HDR_URL, src);
 	if (host != NULL && *host != '\0')  {
@@ -111,7 +111,7 @@ ved_include(struct sess *sp, const char *src, const char *host)
 
 	/* Reset the workspace */
 	WS_Reset(sp->req->ws, sp_ws_wm);
-	WS_Reset(w->ws, wrk_ws_wm);
+	WS_Reset(w->aws, wrk_ws_wm);	/* XXX ? */
 
 	WRW_Reserve(sp->wrk, &sp->fd);
 	if (sp->wrk->res_mode & RES_CHUNKED)
@@ -476,7 +476,7 @@ ESI_DeliverChild(const struct sess *sp)
 	 * padding it, as necessary, to a byte boundary.
 	 */
 
-	dbits = (void*)WS_Alloc(sp->wrk->ws, 8);
+	dbits = (void*)WS_Alloc(sp->req->ws, 8);
 	AN(dbits);
 	obj = sp->req->obj;
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
