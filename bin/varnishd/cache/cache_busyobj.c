@@ -57,7 +57,7 @@ VBO_Init(void)
 {
 
 	vbopool = MPL_New("vbo", &cache_param->vbo_pool,
-	    &cache_param->workspace_backend, NULL);
+	    &cache_param->workspace_backend);
 	AN(vbopool);
 }
 

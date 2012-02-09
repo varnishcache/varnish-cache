@@ -519,6 +519,6 @@ void
 VDI_Init(void)
 {
 
-	vbcpool = MPL_New("vbc", &cache_param->vbc_pool, &vbcps, NULL);
+	vbcpool = MPL_New("vbc", &cache_param->vbc_pool, &vbcps);
 	AN(vbcpool);
 }

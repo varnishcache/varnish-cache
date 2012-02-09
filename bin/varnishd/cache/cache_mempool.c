@@ -57,7 +57,6 @@ struct mempool {
 	struct lock			mtx;
 	volatile struct poolparam	*param;
 	volatile unsigned		*cur_size;
-	mpl_poll_f			*poll_func;
 	uint64_t			live;
 	struct VSC_C_mempool		*vsc;
 	unsigned			n_pool;
@@ -105,8 +104,6 @@ mpl_guard(void *priv)
 	mpl_slp = 0.15;	// random
 	while (1) {
 		VTIM_sleep(mpl_slp);
-		if (mpl->poll_func != NULL)
-			mpl->poll_func(mpl->cur_size);
 		mpl_slp = 0.814;	// random
 		mpl->t_now = VTIM_real();
 
@@ -226,8 +223,7 @@ mpl_guard(void *priv)
 
 struct mempool *
 MPL_New(const char *name,
-	volatile struct poolparam *pp,
-	volatile unsigned *cur_size, mpl_poll_f *poll_f)
+    volatile struct poolparam *pp, volatile unsigned *cur_size)
 {
 	struct mempool *mpl;
 
@@ -236,9 +232,6 @@ MPL_New(const char *name,
 	bprintf(mpl->name, "%s", name);
 	mpl->param = pp;
 	mpl->cur_size = cur_size;
-	mpl->poll_func = poll_f;
-	if (poll_f != NULL)
-		poll_f(mpl->cur_size);
 	VTAILQ_INIT(&mpl->list);
 	VTAILQ_INIT(&mpl->surplus);
 	Lck_New(&mpl->mtx, lck_mempool);
