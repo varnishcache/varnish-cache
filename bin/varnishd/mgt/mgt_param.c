@@ -695,12 +695,14 @@ static const struct parspec input_parspec[] = {
 		"120", "seconds" },
 	{ "workspace_client",
 		tweak_bytes_u, &mgt_param.workspace_client, 3072, UINT_MAX,
-		"Bytes of HTTP protocol workspace for clients HTTP req/resp.",
+		"Bytes of HTTP protocol workspace for clients HTTP req/resp."
+		"  If larger than 4k, use a multiple of 4k for VM efficiency.",
 		DELAYED_EFFECT,
 		"64k", "bytes" },
 	{ "workspace_backend",
 		tweak_bytes_u, &mgt_param.workspace_backend, 1024, UINT_MAX,
-		"Bytes of HTTP protocol workspace for backend HTTP req/resp.",
+		"Bytes of HTTP protocol workspace for backend HTTP req/resp."
+		"  If larger than 4k, use a multiple of 4k for VM efficiency.",
 		DELAYED_EFFECT,
 		"64k", "bytes" },
 	{ "workspace_thread",
