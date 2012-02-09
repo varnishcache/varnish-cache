@@ -40,8 +40,6 @@
 
 static struct mempool		*vbopool;
 
-static volatile unsigned	vbosize;
-
 struct vbo {
 	unsigned		magic;
 #define VBO_MAGIC		0xde3d8223
@@ -51,27 +49,6 @@ struct vbo {
 	struct busyobj		bo;
 };
 
-static struct lock vbo_mtx;
-
-/*--------------------------------------------------------------------
- */
-
-static void
-vbo_size_calc(volatile unsigned *u)
-{
-	uint16_t nhttp;
-	ssize_t http_space;
-
-	assert(cache_param->http_max_hdr < 65536);
-	nhttp = (uint16_t)cache_param->http_max_hdr;
-
-	http_space = HTTP_estimate(nhttp);
-
-	*u = sizeof(struct vbo) +
-	    http_space * 2L +
-	    cache_param->workspace_backend;
-}
-
 /*--------------------------------------------------------------------
  */
 
@@ -79,10 +56,9 @@ void
 VBO_Init(void)
 {
 
-	vbopool = MPL_New("vbo", &cache_param->vbo_pool, &vbosize,
-	    vbo_size_calc);
+	vbopool = MPL_New("vbo", &cache_param->vbo_pool,
+	    &cache_param->workspace_backend, NULL);
 	AN(vbopool);
-	Lck_New(&vbo_mtx, lck_busyobj);
 }
 
 /*--------------------------------------------------------------------
