@@ -863,13 +863,6 @@ static const struct parspec input_parspec[] = {
 		"fragmentation.\n",
 		EXPERIMENTAL,
 		"256m", "bytes" },
-#ifdef SENDFILE_WORKS
-	{ "sendfile_threshold",
-		tweak_bytes, &mgt_param.sendfile_threshold, 0, 0,
-		"The minimum size of objects transmitted with sendfile.",
-		EXPERIMENTAL,
-		"1E", "bytes" },
-#endif /* SENDFILE_WORKS */
 	{ "vcl_trace", tweak_bool,  &mgt_param.vcl_trace, 0, 0,
 		"Trace VCL execution in the shmlog.\n"
 		"Enabling this will allow you to see the path each "

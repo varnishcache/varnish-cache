@@ -220,20 +220,6 @@ res_WriteDirObj(const struct sess *sp, ssize_t low, ssize_t high)
 		ptr += len;
 
 		sp->wrk->acct_tmp.bodybytes += len;
-#ifdef SENDFILE_WORKS
-		/*
-		 * XXX: the overhead of setting up sendfile is not
-		 * XXX: epsilon and maybe not even delta, so avoid
-		 * XXX: engaging sendfile for small objects.
-		 * XXX: Should use getpagesize() ?
-		 */
-		if (st->fd >= 0 &&
-		    st->len >= cache_param->sendfile_threshold) {
-			VSC_C_main->n_objsendfile++;
-			WRW_Sendfile(sp->wrk, st->fd, st->where + off, len);
-			continue;
-		}
-#endif /* SENDFILE_WORKS */
 		VSC_C_main->n_objwrite++;
 		(void)WRW_Write(sp->wrk, st->ptr + off, len);
 	}

@@ -371,10 +371,6 @@ struct storage {
 	unsigned		magic;
 #define STORAGE_MAGIC		0x1a4e51c0
 
-#ifdef SENDFILE_WORKS
-	int			fd;
-	off_t			where;
-#endif
 
 	VTAILQ_ENTRY(storage)	list;
 	struct stevedore	*stevedore;
@@ -916,9 +912,6 @@ unsigned WRW_Flush(struct worker *w);
 unsigned WRW_FlushRelease(struct worker *w);
 unsigned WRW_Write(struct worker *w, const void *ptr, int len);
 unsigned WRW_WriteH(struct worker *w, const txt *hh, const char *suf);
-#ifdef SENDFILE_WORKS
-void WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len);
-#endif  /* SENDFILE_WORKS */
 
 /* cache_session.c [SES] */
 struct sess *SES_Alloc(void);

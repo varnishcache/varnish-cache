@@ -35,17 +35,6 @@
 #include "config.h"
 
 #include <sys/types.h>
-#ifdef SENDFILE_WORKS
-#  if defined(__FreeBSD__) || defined(__DragonFly__)
-#    include <sys/socket.h>
-#  elif defined(__linux__)
-#    include <sys/sendfile.h>
-#  elif defined(__sun)
-#    include <sys/sendfile.h>
-#  else
-#     error Unknown sendfile() implementation
-#  endif
-#endif /* SENDFILE_WORKS */
 #include <sys/uio.h>
 
 #include <stdio.h>
@@ -290,69 +279,4 @@ WRW_EndChunk(struct worker *wrk)
 }
 
 
-#ifdef SENDFILE_WORKS
-void
-WRW_Sendfile(struct worker *wrk, int fd, off_t off, unsigned len)
-{
-	struct wrw *wrw;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	wrw = &wrk->wrw;
-	AN(wrw->wfd);
-	assert(fd >= 0);
-	assert(len > 0);
-
-#if defined(__FreeBSD__) || defined(__DragonFly__)
-	do {
-		struct sf_hdtr sfh;
-		memset(&sfh, 0, sizeof sfh);
-		if (wrw->niov > 0) {
-			sfh.headers = wrw->iov;
-			sfh.hdr_cnt = wrw->niov;
-		}
-		if (sendfile(fd, *wrw->wfd, off, len, &sfh, NULL, 0) != 0)
-			wrw->werr++;
-		wrw->liov = 0;
-		wrw->niov = 0;
-	} while (0);
-#elif defined(__linux__)
-	do {
-		if (WRW_Flush(wrk) == 0 &&
-		    sendfile(*wrw->wfd, fd, &off, len) != len)
-			wrw->werr++;
-	} while (0);
-#elif defined(__sun) && defined(HAVE_SENDFILEV)
-	do {
-		sendfilevec_t svvec[cache_param->http_headers * 2 + 1];
-		size_t xferred = 0, expected = 0;
-		int i;
-		for (i = 0; i < wrw->niov; i++) {
-			svvec[i].sfv_fd = SFV_FD_SELF;
-			svvec[i].sfv_flag = 0;
-			svvec[i].sfv_off = (off_t) wrw->iov[i].iov_base;
-			svvec[i].sfv_len = wrw->iov[i].iov_len;
-			expected += svvec[i].sfv_len;
-		}
-		svvec[i].sfv_fd = fd;
-		svvec[i].sfv_flag = 0;
-		svvec[i].sfv_off = off;
-		svvec[i].sfv_len = len;
-		expected += svvec[i].sfv_len;
-		if (sendfilev(*wrw->wfd, svvec, i, &xferred) == -1 ||
-		    xferred != expected)
-			wrw->werr++;
-		wrw->liov = 0;
-		wrw->niov = 0;
-	} while (0);
-#elif defined(__sun) && defined(HAVE_SENDFILE)
-	do {
-		if (WRW_Flush(wrk) == 0 &&
-		    sendfile(*wrw->wfd, fd, &off, len) != len)
-			wrw->werr++;
-	} while (0);
-#else
-#error Unknown sendfile() implementation
-#endif
-}
-#endif /* SENDFILE_WORKS */
 

@@ -102,10 +102,6 @@ struct params {
 	ssize_t			fetch_maxchunksize;
 	unsigned		nuke_limit;
 
-#ifdef SENDFILE_WORKS
-	/* Sendfile object minimum size */
-	ssize_t			sendfile_threshold;
-#endif
 
 	/* VCL traces */
 	unsigned		vcl_trace;

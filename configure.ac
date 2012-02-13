@@ -198,40 +198,6 @@ AC_CHECK_FUNCS([pthread_mutex_isowned_np])
 AC_CHECK_FUNCS([pthread_timedjoin_np])
 LIBS="${save_LIBS}"
 
-# sendfile is tricky: there are multiple versions, and most of them
-# don't work.
-case $target in
-*-*-freebsd*)
-	AC_CACHE_CHECK([whether sendfile works],
-	  [ac_cv_so_sendfile_works],
-	  [AC_RUN_IFELSE(
-	    [AC_LANG_PROGRAM([[
-	#include <sys/types.h>
-	#include <sys/socket.h>
-	#include <sys/uio.h>
-	    ]],[[
-		return (SF_SYNC == 0);
-	    ]])],
-	    [ac_cv_so_sendfile_works=yes],
-	    [ac_cv_so_sendfile_works=no])
-	  ])
-	;;
-#*-*-solaris*)
-#	save_LIBS="${LIBS}"
-#	LIBS="${NET_LIBS}"
-#	AC_CHECK_LIB(sendfile, sendfile)
-#	AC_CHECK_FUNCS([sendfile])
-#	AC_CHECK_FUNCS([sendfilev])
-#	NET_LIBS="${LIBS}"
-#	LIBS="${save_LIBS}"
-*)
-	AC_MSG_WARN([won't look for sendfile() on $target])
-	;;
-esac
-if test "$ac_cv_so_sendfile_works" = yes; then
-	AC_DEFINE([SENDFILE_WORKS], [1], [Define if SENDFILE works])
-fi
-
 # Support for visibility attribute 
 save_CFLAGS="${CFLAGS}" 
 CFLAGS="${CFLAGS} -Werror" 
