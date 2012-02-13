@@ -409,7 +409,7 @@ main(int argc, char * const *argv)
 		MCF_ParamSet(cli, "workspace_client", "16384");
 		cli_check(cli);
 
-		MCF_ParamSet(cli, "thread_pool_workspace", "16384");
+		MCF_ParamSet(cli, "workspace_backend", "16384");
 		cli_check(cli);
 
 		MCF_ParamSet(cli, "http_resp_size", "8192");
