@@ -338,7 +338,6 @@ cnt_deliver(struct sess *sp, struct worker *wrk, struct req *req)
 	RES_WriteObj(sp);
 
 	assert(WRW_IsReleased(wrk));
-	assert(wrk->wrw.ciov == wrk->wrw.siov);
 	(void)HSH_Deref(wrk, NULL, &req->obj);
 	http_Setup(req->resp, NULL);
 	sp->step = STP_DONE;
@@ -974,7 +973,6 @@ cnt_streambody(struct sess *sp, struct worker *wrk, struct req *req)
 	RES_StreamEnd(sp);
 
 	assert(WRW_IsReleased(wrk));
-	assert(wrk->wrw.ciov == wrk->wrw.siov);
 	(void)HSH_Deref(wrk, NULL, &req->obj);
 	VBO_DerefBusyObj(wrk, &wrk->busyobj);
 	http_Setup(req->resp, NULL);
@@ -1411,7 +1409,6 @@ cnt_recv(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 	AZ(req->obj);
 	AZ(wrk->busyobj);
-	assert(wrk->wrw.ciov == wrk->wrw.siov);
 
 	/* By default we use the first backend */
 	AZ(req->director);

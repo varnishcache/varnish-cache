@@ -42,6 +42,21 @@
 #include "cache.h"
 #include "vtim.h"
 
+/*--------------------------------------------------------------------*/
+
+struct wrw {
+	unsigned		magic;
+#define WRW_MAGIC		0x2f2142e5
+	int			*wfd;
+	unsigned		werr;	/* valid after WRW_Flush() */
+	struct iovec		*iov;
+	unsigned		siov;
+	unsigned		niov;
+	ssize_t			liov;
+	ssize_t			cliov;
+	unsigned		ciov;	/* Chunked header marker */
+};
+
 /*--------------------------------------------------------------------
  */
 
@@ -49,22 +64,32 @@ int
 WRW_Error(const struct worker *wrk)
 {
 
-	return (wrk->wrw.werr);
+	return (wrk->wrw->werr);
 }
 
 void
 WRW_Reserve(struct worker *wrk, int *fd)
 {
 	struct wrw *wrw;
+	unsigned u;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	wrw = &wrk->wrw;
-	AZ(wrw->wfd);
+	AZ(wrk->wrw);
+	wrw = (void*)WS_Alloc(wrk->aws, sizeof *wrw);
+	AN(wrw);
+	memset(wrw, 0, sizeof *wrw);
+	wrw->magic = WRW_MAGIC;
+	u = WS_Reserve(wrk->aws, 0);
+	u /= sizeof(struct iovec);
+	AN(u);
+	wrw->iov = (void*)wrk->aws->f;
+	wrw->siov = u;
+	wrw->ciov = u;
 	wrw->werr = 0;
 	wrw->liov = 0;
 	wrw->niov = 0;
-	wrw->ciov = wrw->siov;
 	wrw->wfd = fd;
+	wrk->wrw = wrw;
 }
 
 static void
@@ -73,13 +98,11 @@ WRW_Release(struct worker *wrk)
 	struct wrw *wrw;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	wrw = &wrk->wrw;
-	AN(wrw->wfd);
-	wrw->werr = 0;
-	wrw->liov = 0;
-	wrw->niov = 0;
-	wrw->ciov = wrw->siov;
-	wrw->wfd = NULL;
+	wrw = wrk->wrw;
+	wrk->wrw = NULL;
+	CHECK_OBJ_NOTNULL(wrw, WRW_MAGIC);
+	WS_Release(wrk->aws, 0);
+	WS_Reset(wrk->aws, NULL);
 }
 
 static void
@@ -114,7 +137,8 @@ WRW_Flush(struct worker *wrk)
 	char cbuf[32];
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	wrw = &wrk->wrw;
+	wrw = wrk->wrw;
+	CHECK_OBJ_NOTNULL(wrw, WRW_MAGIC);
 	AN(wrw->wfd);
 
 	/* For chunked, there must be one slot reserved for the chunked tail */
@@ -186,7 +210,7 @@ WRW_FlushRelease(struct worker *wrk)
 	unsigned u;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	AN(wrk->wrw.wfd);
+	AN(wrk->wrw->wfd);
 	u = WRW_Flush(wrk);
 	WRW_Release(wrk);
 	return (u);
@@ -198,7 +222,7 @@ WRW_WriteH(struct worker *wrk, const txt *hh, const char *suf)
 	unsigned u;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	AN(wrk->wrw.wfd);
+	AN(wrk->wrw->wfd);
 	AN(wrk);
 	AN(hh);
 	AN(hh->b);
@@ -215,7 +239,8 @@ WRW_Write(struct worker *wrk, const void *ptr, int len)
 	struct wrw *wrw;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	wrw = &wrk->wrw;
+	wrw = wrk->wrw;
+	CHECK_OBJ_NOTNULL(wrw, WRW_MAGIC);
 	AN(wrw->wfd);
 	if (len == 0 || *wrw->wfd < 0)
 		return (0);
@@ -240,7 +265,8 @@ WRW_Chunked(struct worker *wrk)
 	struct wrw *wrw;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	wrw = &wrk->wrw;
+	wrw = wrk->wrw;
+	CHECK_OBJ_NOTNULL(wrw, WRW_MAGIC);
 
 	assert(wrw->ciov == wrw->siov);
 	/*
@@ -268,7 +294,8 @@ WRW_EndChunk(struct worker *wrk)
 	struct wrw *wrw;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	wrw = &wrk->wrw;
+	wrw = wrk->wrw;
+	CHECK_OBJ_NOTNULL(wrw, WRW_MAGIC);
 
 	assert(wrw->ciov < wrw->siov);
 	(void)WRW_Flush(wrk);

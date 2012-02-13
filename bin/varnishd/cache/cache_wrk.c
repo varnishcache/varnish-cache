@@ -131,14 +131,11 @@ WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func, void *priv)
 /*--------------------------------------------------------------------*/
 
 static void *
-wrk_thread_real(void *priv, unsigned shm_workspace, unsigned thread_workspace,
-    unsigned siov)
+wrk_thread_real(void *priv, unsigned shm_workspace, unsigned thread_workspace)
 {
 	struct worker *w, ww;
 	uint32_t wlog[shm_workspace / 4];
-	/* XXX: can we trust these to be properly aligned ? */
 	unsigned char ws[thread_workspace];
-	struct iovec iov[siov];
 
 	THR_SetName("cache-worker");
 	w = &ww;
@@ -147,9 +144,6 @@ wrk_thread_real(void *priv, unsigned shm_workspace, unsigned thread_workspace,
 	w->lastused = NAN;
 	w->wlb = w->wlp = wlog;
 	w->wle = wlog + (sizeof wlog) / 4;
-	w->wrw.iov = iov;
-	w->wrw.siov = siov;
-	w->wrw.ciov = siov;
 	AZ(pthread_cond_init(&w->cond, NULL));
 
 	WS_Init(w->aws, "wrk", ws, thread_workspace);
@@ -173,18 +167,10 @@ wrk_thread_real(void *priv, unsigned shm_workspace, unsigned thread_workspace,
 void *
 WRK_thread(void *priv)
 {
-	uint16_t nhttp;
-	unsigned siov;
 
-	assert(cache_param->http_max_hdr <= 65535);
-	/* We need to snapshot these two for consistency */
-	nhttp = (uint16_t)cache_param->http_max_hdr;
-	siov = nhttp * 2;
-	if (siov > IOV_MAX)
-		siov = IOV_MAX;
 	return (wrk_thread_real(priv,
 	    cache_param->shm_workspace,
-	    cache_param->workspace_thread, siov));
+	    cache_param->workspace_thread));
 }
 
 void

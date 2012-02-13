@@ -114,6 +114,7 @@ struct vrt_backend;
 struct vsb;
 struct waitinglist;
 struct worker;
+struct wrw;
 
 #define DIGEST_LEN		32
 
@@ -244,19 +245,6 @@ struct exp {
 
 /*--------------------------------------------------------------------*/
 
-struct wrw {
-	int			*wfd;
-	unsigned		werr;	/* valid after WRW_Flush() */
-	struct iovec		*iov;
-	unsigned		siov;
-	unsigned		niov;
-	ssize_t			liov;
-	ssize_t			cliov;
-	unsigned		ciov;	/* Chunked header marker */
-};
-
-/*--------------------------------------------------------------------*/
-
 struct wrk_accept {
 	unsigned		magic;
 #define WRK_ACCEPT_MAGIC	0x8c4b4d59
@@ -301,7 +289,7 @@ struct worker {
 
 	double			lastused;
 
-	struct wrw		wrw;
+	struct wrw		*wrw;
 
 	pthread_cond_t		cond;
 
@@ -312,10 +300,6 @@ struct worker {
 	uint32_t		*wlb, *wlp, *wle;
 	unsigned		wlr;
 
-	/*
-	 * In practice this workspace is only used for wrk_accept now
-	 * but it might come handy later, so keep it around.  For now.
-	 */
 	struct ws		aws[1];
 
 	struct busyobj		*busyobj;
@@ -893,7 +877,7 @@ void Pool_Init(void);
 void Pool_Work_Thread(void *priv, struct worker *w);
 int Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how);
 
-#define WRW_IsReleased(w)	((w)->wrw.wfd == NULL)
+#define WRW_IsReleased(w)	((w)->wrw == NULL)
 int WRW_Error(const struct worker *w);
 void WRW_Chunked(struct worker *w);
 void WRW_EndChunk(struct worker *w);

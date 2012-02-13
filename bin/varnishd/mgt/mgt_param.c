@@ -712,12 +712,16 @@ static const struct parspec input_parspec[] = {
 		DELAYED_EFFECT,
 		"64k", "bytes" },
 	{ "workspace_thread",
-		tweak_bytes_u, &mgt_param.workspace_thread, 256, 256,
-		"Bytes of auxillary workspace per thread."
-		/* XXX: See comment in cache.h */
-		"This is not the workspace you are looking for.",
+		tweak_bytes_u, &mgt_param.workspace_thread, 256, 8192,
+		"Bytes of auxillary workspace per thread.\n"
+		"This workspace is used for certain temporary data structures"
+		" during the operation of a worker thread.\n"
+		"One use is for the io-vectors for writing requests and"
+		" responses to sockets, having too little space will"
+		" result in more writev(2) system calls, having too much"
+		" just wastes the space.\n",
 		DELAYED_EFFECT,
-		"256", "bytes" },
+		"2048", "bytes" },
 	{ "http_req_hdr_len",
 		tweak_bytes_u, &mgt_param.http_req_hdr_len,
 		40, UINT_MAX,

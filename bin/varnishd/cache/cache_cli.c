@@ -138,7 +138,6 @@ cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
 	SZOF(struct vbc);
 	SZOF(struct VSC_C_main);
 	SZOF(struct lock);
-	SZOF(struct wrw);
 	SZOF(struct dstat);
 #if 0
 #define OFOF(foo, bar)	{ foo __foo; VCLI_Out(cli, \

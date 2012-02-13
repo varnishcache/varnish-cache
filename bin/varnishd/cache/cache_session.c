@@ -155,7 +155,7 @@ ses_pool_task(struct worker *wrk, void *arg)
 	wrk->sp = NULL;
 	WS_Assert(wrk->aws);
 	AZ(wrk->busyobj);
-	AZ(wrk->wrw.wfd);
+	AZ(wrk->wrw);
 	assert(wrk->wlp == wrk->wlb);
 	if (cache_param->diag_bitmap & 0x00040000) {
 		if (wrk->vcl != NULL)
