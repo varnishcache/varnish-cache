@@ -421,7 +421,7 @@ main(int argc, char * const *argv)
 		MCF_ParamSet(cli, "thread_pool_stack", "32bit");
 		cli_check(cli);
 
-		MCF_ParamSet(cli, "gzip_stack_buffer", "4096");
+		MCF_ParamSet(cli, "gzip_buffer", "4096");
 		cli_check(cli);
 	}
 
