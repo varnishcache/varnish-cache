@@ -322,7 +322,13 @@ tweak_generic_bytes(struct cli *cli, volatile ssize_t *dest, const char *arg,
 			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
 		}
-		if ((uintmax_t)((ssize_t)r) != r || r > max) {
+		if ((uintmax_t)((ssize_t)r) != r) {
+			fmt_bytes(cli, (uintmax_t)max);
+			VCLI_Out(cli, " is too large for this architecture.\n");
+			VCLI_SetResult(cli, CLIS_PARAM);
+			return;
+		}
+		if (max != 0. && r > max) {
 			VCLI_Out(cli, "Must be no more than ");
 			fmt_bytes(cli, (uintmax_t)max);
 			VCLI_Out(cli, "\n");
@@ -859,7 +865,7 @@ static const struct parspec input_parspec[] = {
 		"256m", "bytes" },
 #ifdef SENDFILE_WORKS
 	{ "sendfile_threshold",
-		tweak_bytes, &mgt_param.sendfile_threshold, 0, HUGE_VAL,
+		tweak_bytes, &mgt_param.sendfile_threshold, 0, 0,
 		"The minimum size of objects transmitted with sendfile.",
 		EXPERIMENTAL,
 		"1E", "bytes" },
@@ -1183,7 +1189,7 @@ static const struct parspec input_parspec[] = {
 		"10000", ""},
 
 	{ "vsl_space", tweak_bytes,
-		&mgt_param.vsl_space, 1024*1024, HUGE_VAL,
+		&mgt_param.vsl_space, 1024*1024, 0,
 		"The amount of space to allocate for the VSL fifo buffer"
 		" in the VSM memory segment."
 		"  If you make this too small, varnish{ncsa|log} etc will"
@@ -1193,7 +1199,7 @@ static const struct parspec input_parspec[] = {
 		"80M", "bytes"},
 
 	{ "vsm_space", tweak_bytes,
-		&mgt_param.vsm_space, 1024*1024, HUGE_VAL,
+		&mgt_param.vsm_space, 1024*1024, 0,
 		"The amount of space to allocate for stats counters"
 		" in the VSM memory segment."
 		"  If you make this too small, some counters will be"
