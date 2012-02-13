@@ -94,7 +94,7 @@ res_dorange(const struct sess *sp, const char *r, ssize_t *plow, ssize_t *phigh)
 	    "Content-Range: bytes %jd-%jd/%jd",
 	    (intmax_t)low, (intmax_t)high, (intmax_t)req->obj->len);
 	http_Unset(req->resp, H_Content_Length);
-	assert(sp->wrk->res_mode & RES_LEN);
+	assert(req->res_mode & RES_LEN);
 	http_PrintfHeader(sp->wrk, sp->vsl_id, req->resp,
 	    "Content-Length: %jd", (intmax_t)(1 + high - low));
 	http_SetResp(req->resp, "HTTP/1.1", 206, "Partial Content");
@@ -119,7 +119,7 @@ RES_BuildHttp(const struct sess *sp)
 	req->resp->logtag = HTTP_Tx;
 	http_FilterResp(sp, req->obj->http, req->resp, 0);
 
-	if (!(sp->wrk->res_mode & RES_LEN)) {
+	if (!(req->res_mode & RES_LEN)) {
 		http_Unset(req->resp, H_Content_Length);
 	} else if (cache_param->http_range_support) {
 		/* We only accept ranges if we know the length */
@@ -127,7 +127,7 @@ RES_BuildHttp(const struct sess *sp)
 		    "Accept-Ranges: bytes");
 	}
 
-	if (sp->wrk->res_mode & RES_CHUNKED)
+	if (req->res_mode & RES_CHUNKED)
 		http_SetHeader(sp->wrk, sp->vsl_id, req->resp,
 		    "Transfer-Encoding: chunked");
 
@@ -260,8 +260,8 @@ RES_WriteObj(struct sess *sp)
 	high = req->obj->len - 1;
 	if (
 	    req->wantbody &&
-	    (sp->wrk->res_mode & RES_LEN) &&
-	    !(sp->wrk->res_mode & (RES_ESI|RES_ESI_CHILD|RES_GUNZIP)) &&
+	    (req->res_mode & RES_LEN) &&
+	    !(req->res_mode & (RES_ESI|RES_ESI_CHILD|RES_GUNZIP)) &&
 	    cache_param->http_range_support &&
 	    req->obj->response == 200 &&
 	    http_GetHdr(req->http, H_Range, &r))
@@ -270,41 +270,41 @@ RES_WriteObj(struct sess *sp)
 	/*
 	 * Always remove C-E if client don't grok it
 	 */
-	if (sp->wrk->res_mode & RES_GUNZIP)
+	if (req->res_mode & RES_GUNZIP)
 		http_Unset(req->resp, H_Content_Encoding);
 
 	/*
 	 * Send HTTP protocol header, unless interior ESI object
 	 */
-	if (!(sp->wrk->res_mode & RES_ESI_CHILD))
+	if (!(req->res_mode & RES_ESI_CHILD))
 		sp->wrk->acct_tmp.hdrbytes +=
 		    http_Write(sp->wrk, sp->vsl_id, req->resp, 1);
 
 	if (!req->wantbody)
-		sp->wrk->res_mode &= ~RES_CHUNKED;
+		req->res_mode &= ~RES_CHUNKED;
 
-	if (sp->wrk->res_mode & RES_CHUNKED)
+	if (req->res_mode & RES_CHUNKED)
 		WRW_Chunked(sp->wrk);
 
 	if (!req->wantbody) {
 		/* This was a HEAD or conditional request */
 	} else if (req->obj->len == 0) {
 		/* Nothing to do here */
-	} else if (sp->wrk->res_mode & RES_ESI) {
+	} else if (req->res_mode & RES_ESI) {
 		ESI_Deliver(sp);
-	} else if (sp->wrk->res_mode & RES_ESI_CHILD && req->gzip_resp) {
+	} else if (req->res_mode & RES_ESI_CHILD && req->gzip_resp) {
 		ESI_DeliverChild(sp);
-	} else if (sp->wrk->res_mode & RES_ESI_CHILD &&
+	} else if (req->res_mode & RES_ESI_CHILD &&
 	    !req->gzip_resp && req->obj->gziped) {
 		res_WriteGunzipObj(sp);
-	} else if (sp->wrk->res_mode & RES_GUNZIP) {
+	} else if (req->res_mode & RES_GUNZIP) {
 		res_WriteGunzipObj(sp);
 	} else {
 		res_WriteDirObj(sp, low, high);
 	}
 
-	if (sp->wrk->res_mode & RES_CHUNKED &&
-	    !(sp->wrk->res_mode & RES_ESI_CHILD))
+	if (req->res_mode & RES_CHUNKED &&
+	    !(req->res_mode & RES_ESI_CHILD))
 		WRW_EndChunk(sp->wrk);
 
 	if (WRW_FlushRelease(sp->wrk) && sp->fd >= 0)
@@ -321,18 +321,18 @@ RES_StreamStart(struct sess *sp)
 	sctx = sp->wrk->sctx;
 	CHECK_OBJ_NOTNULL(sctx, STREAM_CTX_MAGIC);
 
-	AZ(sp->wrk->res_mode & RES_ESI_CHILD);
+	AZ(sp->req->res_mode & RES_ESI_CHILD);
 	AN(sp->req->wantbody);
 
 	WRW_Reserve(sp->wrk, &sp->fd);
 
-	if (sp->wrk->res_mode & RES_GUNZIP) {
+	if (sp->req->res_mode & RES_GUNZIP) {
 		sctx->vgz = VGZ_NewUngzip(sp->wrk, "U S -");
 		AZ(VGZ_WrwInit(sctx->vgz));
 		http_Unset(sp->req->resp, H_Content_Encoding);
 	}
 
-	if (!(sp->wrk->res_mode & RES_CHUNKED) &&
+	if (!(sp->req->res_mode & RES_CHUNKED) &&
 	    sp->wrk->busyobj->h_content_length != NULL)
 		http_PrintfHeader(sp->wrk, sp->vsl_id, sp->req->resp,
 		    "Content-Length: %s", sp->wrk->busyobj->h_content_length);
@@ -340,7 +340,7 @@ RES_StreamStart(struct sess *sp)
 	sp->wrk->acct_tmp.hdrbytes +=
 	    http_Write(sp->wrk, sp->vsl_id, sp->req->resp, 1);
 
-	if (sp->wrk->res_mode & RES_CHUNKED)
+	if (sp->req->res_mode & RES_CHUNKED)
 		WRW_Chunked(sp->wrk);
 }
 
@@ -367,7 +367,7 @@ RES_StreamPoll(struct worker *wrk)
 		}
 		l2 = st->len + l - sctx->stream_next;
 		ptr = st->ptr + (sctx->stream_next - l);
-		if (wrk->res_mode & RES_GUNZIP) {
+		if (wrk->sp->req->res_mode & RES_GUNZIP) {
 			(void)VGZ_WrwGunzip(wrk, sctx->vgz, ptr, l2);
 		} else {
 			(void)WRW_Write(wrk, ptr, l2);
@@ -375,7 +375,7 @@ RES_StreamPoll(struct worker *wrk)
 		l += st->len;
 		sctx->stream_next += l2;
 	}
-	if (!(wrk->res_mode & RES_GUNZIP))
+	if (!(wrk->sp->req->res_mode & RES_GUNZIP))
 		(void)WRW_Flush(wrk);
 
 	if (wrk->busyobj->fetch_obj->objcore == NULL ||
@@ -404,13 +404,13 @@ RES_StreamEnd(struct sess *sp)
 	sctx = sp->wrk->sctx;
 	CHECK_OBJ_NOTNULL(sctx, STREAM_CTX_MAGIC);
 
-	if (sp->wrk->res_mode & RES_GUNZIP) {
+	if (sp->req->res_mode & RES_GUNZIP) {
 		AN(sctx->vgz);
 		VGZ_WrwFlush(sp->wrk, sctx->vgz);
 		(void)VGZ_Destroy(&sctx->vgz, sp->vsl_id);
 	}
-	if (sp->wrk->res_mode & RES_CHUNKED &&
-	    !(sp->wrk->res_mode & RES_ESI_CHILD))
+	if (sp->req->res_mode & RES_CHUNKED &&
+	    !(sp->req->res_mode & RES_ESI_CHILD))
 		WRW_EndChunk(sp->wrk);
 	if (WRW_FlushRelease(sp->wrk))
 		SES_Close(sp, "remote closed");

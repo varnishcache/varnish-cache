@@ -60,7 +60,7 @@ ved_include(struct sess *sp, const char *src, const char *host)
 
 	obj = sp->req->obj;
 	sp->req->obj = NULL;
-	res_mode = sp->wrk->res_mode;
+	res_mode = sp->req->res_mode;
 
 	/* Reset request to status before we started messing with it */
 	HTTP_Copy(sp->req->http, sp->req->http0);
@@ -107,14 +107,14 @@ ved_include(struct sess *sp, const char *src, const char *host)
 	assert(sp->step == STP_DONE);
 	sp->req->esi_level--;
 	sp->req->obj = obj;
-	sp->wrk->res_mode = res_mode;
+	sp->req->res_mode = res_mode;
 
 	/* Reset the workspace */
 	WS_Reset(sp->req->ws, sp_ws_wm);
 	WS_Reset(w->aws, wrk_ws_wm);	/* XXX ? */
 
 	WRW_Reserve(sp->wrk, &sp->fd);
-	if (sp->wrk->res_mode & RES_CHUNKED)
+	if (sp->req->res_mode & RES_CHUNKED)
 		WRW_Chunked(sp->wrk);
 }
 
@@ -247,7 +247,7 @@ ESI_Deliver(struct sess *sp)
 		 * Only the top level document gets to decide this.
 		 */
 		sp->req->gzip_resp = 0;
-		if (isgzip && !(sp->wrk->res_mode & RES_GUNZIP)) {
+		if (isgzip && !(sp->req->res_mode & RES_GUNZIP)) {
 			assert(sizeof gzip_hdr == 10);
 			/* Send out the gzip header */
 			(void)WRW_Write(sp->wrk, gzip_hdr, 10);

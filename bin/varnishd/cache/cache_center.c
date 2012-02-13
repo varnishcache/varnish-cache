@@ -216,26 +216,26 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 		AssertObjCorePassOrBusy(req->obj->objcore);
 	}
 
-	wrk->res_mode = 0;
+	req->res_mode = 0;
 
 	if (wrk->busyobj == NULL)
-		wrk->res_mode |= RES_LEN;
+		req->res_mode |= RES_LEN;
 
 	if (wrk->busyobj != NULL &&
 	    (wrk->busyobj->h_content_length != NULL ||
 	    !wrk->busyobj->do_stream) &&
 	    !wrk->busyobj->do_gzip && !wrk->busyobj->do_gunzip)
-		wrk->res_mode |= RES_LEN;
+		req->res_mode |= RES_LEN;
 
 	if (!req->disable_esi && req->obj->esidata != NULL) {
 		/* In ESI mode, we don't know the aggregate length */
-		wrk->res_mode &= ~RES_LEN;
-		wrk->res_mode |= RES_ESI;
+		req->res_mode &= ~RES_LEN;
+		req->res_mode |= RES_ESI;
 	}
 
 	if (req->esi_level > 0) {
-		wrk->res_mode &= ~RES_LEN;
-		wrk->res_mode |= RES_ESI_CHILD;
+		req->res_mode &= ~RES_LEN;
+		req->res_mode |= RES_ESI_CHILD;
 	}
 
 	if (cache_param->http_gzip_support && req->obj->gziped &&
@@ -244,24 +244,24 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 		 * We don't know what it uncompresses to
 		 * XXX: we could cache that
 		 */
-		wrk->res_mode &= ~RES_LEN;
-		wrk->res_mode |= RES_GUNZIP;
+		req->res_mode &= ~RES_LEN;
+		req->res_mode |= RES_GUNZIP;
 	}
 
-	if (!(wrk->res_mode & (RES_LEN|RES_CHUNKED|RES_EOF))) {
+	if (!(req->res_mode & (RES_LEN|RES_CHUNKED|RES_EOF))) {
 		if (req->obj->len == 0 &&
 		    (wrk->busyobj == NULL || !wrk->busyobj->do_stream))
 			/*
 			 * If the object is empty, neither ESI nor GUNZIP
 			 * can make it any different size
 			 */
-			wrk->res_mode |= RES_LEN;
+			req->res_mode |= RES_LEN;
 		else if (!req->wantbody) {
 			/* Nothing */
 		} else if (req->http->protover >= 11) {
-			wrk->res_mode |= RES_CHUNKED;
+			req->res_mode |= RES_CHUNKED;
 		} else {
-			wrk->res_mode |= RES_EOF;
+			req->res_mode |= RES_EOF;
 			req->doclose = "EOF mode";
 		}
 	}
