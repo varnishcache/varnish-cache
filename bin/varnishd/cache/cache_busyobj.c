@@ -127,6 +127,11 @@ VBO_GetBusyObj(struct worker *wrk)
 	p += httpsz;
 	vbo->bo.beresp = HTTP_create(p, nhttp);
 	p += httpsz;
+	if (p >= vbo->end) {
+		fprintf(stderr, "workspace_backend is at least %jd to small\n",
+		    (p - vbo->end));
+		assert (p < vbo->end);
+	}
 	WS_Init(vbo->bo.ws, "bo", p, vbo->end - p);
 
 	return (&vbo->bo);

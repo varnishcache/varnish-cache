@@ -45,7 +45,7 @@ server s1 {
 	txresp -body "foo8"
 } -start
 
-varnish v1 -arg "-p workspace_backend=1024" -vcl+backend {
+varnish v1 -arg "-p workspace_backend=3072" -vcl+backend {
 	sub vcl_fetch {
 		set beresp.do_esi = true;
 	}
@@ -54,8 +54,11 @@ varnish v1 -arg "-p workspace_backend=1024" -vcl+backend {
 client c1 {
 	txreq
 	rxresp
+	expect resp.bodylen == 42
+
 	txreq
 	rxresp
+	expect resp.bodylen == 42
 } -run
 
 varnish v1 -expect losthdr == 0
