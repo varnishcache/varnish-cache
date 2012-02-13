@@ -1418,10 +1418,6 @@ cnt_recv(struct sess *sp, struct worker *wrk, struct req *req)
 	req->director = req->vcl->director[0];
 	AN(req->director);
 
-	wrk->connect_timeout = 0;
-	wrk->first_byte_timeout = 0;
-	wrk->between_bytes_timeout = 0;
-
 	req->disable_esi = 0;
 	req->hash_always_miss = 0;
 	req->hash_ignore_busy = 0;

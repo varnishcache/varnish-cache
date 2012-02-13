@@ -89,13 +89,14 @@ VBE_ReleaseConn(struct vbc *vc)
 	MPL_Free(vbcpool, vc);
 }
 
-#define FIND_TMO(tmx, dst, sp, be)		\
-	do {					\
-		dst = sp->wrk->tmx;		\
-		if (dst == 0.0)			\
-			dst = be->tmx;		\
-		if (dst == 0.0)			\
-			dst = cache_param->tmx;	\
+#define FIND_TMO(tmx, dst, sp, be)					\
+	do {								\
+		CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);	\
+		dst = sp->wrk->busyobj->tmx;				\
+		if (dst == 0.0)						\
+			dst = be->tmx;					\
+		if (dst == 0.0)						\
+			dst = cache_param->tmx;				\
 	} while (0)
 
 /*--------------------------------------------------------------------

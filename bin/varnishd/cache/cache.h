@@ -320,11 +320,6 @@ struct worker {
 
 	struct busyobj		*busyobj;
 
-	/* Timeouts */
-	double			connect_timeout;
-	double			first_byte_timeout;
-	double			between_bytes_timeout;
-
 	/* Temporary accounting */
 	struct acct		acct_tmp;
 };
@@ -494,6 +489,11 @@ struct busyobj {
 	unsigned		do_gunzip;
 	unsigned		do_stream;
 	unsigned		do_pass;
+
+	/* Timeouts */
+	double			connect_timeout;
+	double			first_byte_timeout;
+	double			between_bytes_timeout;
 };
 
 /* Object structure --------------------------------------------------*/

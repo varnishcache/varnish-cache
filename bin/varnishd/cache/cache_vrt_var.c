@@ -236,7 +236,8 @@ VRT_l_bereq_##which(struct sess *sp, double num)		\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	sp->wrk->which = (num > 0.0 ? num : 0.0);		\
+	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);	\
+	sp->wrk->busyobj->which = (num > 0.0 ? num : 0.0);	\
 }								\
 								\
 double __match_proto__()					\
@@ -244,7 +245,8 @@ VRT_r_bereq_##which(struct sess *sp)				\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	return(sp->wrk->which);					\
+	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);	\
+	return(sp->wrk->busyobj->which);			\
 }
 
 BEREQ_TIMEOUT(connect_timeout)
