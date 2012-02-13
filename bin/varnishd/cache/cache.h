@@ -257,21 +257,6 @@ struct wrw {
 
 /*--------------------------------------------------------------------*/
 
-struct stream_ctx {
-	unsigned		magic;
-#define STREAM_CTX_MAGIC	0x8213728b
-
-	struct vgz		*vgz;
-
-	/* Next byte we will take from storage */
-	ssize_t			stream_next;
-
-	/* First byte of storage if we free it as we go (pass) */
-	ssize_t			stream_front;
-};
-
-/*--------------------------------------------------------------------*/
-
 struct wrk_accept {
 	unsigned		magic;
 #define WRK_ACCEPT_MAGIC	0x8c4b4d59
@@ -334,9 +319,6 @@ struct worker {
 	struct ws		aws[1];
 
 	struct busyobj		*busyobj;
-
-	/* Stream state */
-	struct stream_ctx	*sctx;
 
 	/* Timeouts */
 	double			connect_timeout;
@@ -625,6 +607,15 @@ struct req {
 #define RES_ESI			(1<<4)
 #define RES_ESI_CHILD		(1<<5)
 #define RES_GUNZIP		(1<<6)
+
+	/* Stream gunzip instance */
+	struct vgz		*stream_vgz;
+
+	/* Next byte we will take from storage */
+	ssize_t			stream_next;
+
+	/* First byte of storage if we free it as we go (pass) */
+	ssize_t			stream_front;
 
 };
 

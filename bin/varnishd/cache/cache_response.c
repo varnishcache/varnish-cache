@@ -316,23 +316,26 @@ RES_WriteObj(struct sess *sp)
 void
 RES_StreamStart(struct sess *sp)
 {
-	struct stream_ctx *sctx;
+	struct req *req;
 
-	sctx = sp->wrk->sctx;
-	CHECK_OBJ_NOTNULL(sctx, STREAM_CTX_MAGIC);
+	req = sp->req;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	AZ(sp->req->res_mode & RES_ESI_CHILD);
-	AN(sp->req->wantbody);
+	AZ(req->res_mode & RES_ESI_CHILD);
+	AN(req->wantbody);
+	AZ(req->stream_vgz);
+	AZ(req->stream_next);
+	AZ(req->stream_front);
 
 	WRW_Reserve(sp->wrk, &sp->fd);
 
-	if (sp->req->res_mode & RES_GUNZIP) {
-		sctx->vgz = VGZ_NewUngzip(sp->wrk, "U S -");
-		AZ(VGZ_WrwInit(sctx->vgz));
-		http_Unset(sp->req->resp, H_Content_Encoding);
+	if (req->res_mode & RES_GUNZIP) {
+		req->stream_vgz = VGZ_NewUngzip(sp->wrk, "U S -");
+		AZ(VGZ_WrwInit(req->stream_vgz));
+		http_Unset(req->resp, H_Content_Encoding);
 	}
 
-	if (!(sp->req->res_mode & RES_CHUNKED) &&
+	if (!(req->res_mode & RES_CHUNKED) &&
 	    sp->wrk->busyobj->h_content_length != NULL)
 		http_PrintfHeader(sp->wrk, sp->vsl_id, sp->req->resp,
 		    "Content-Length: %s", sp->wrk->busyobj->h_content_length);
@@ -340,57 +343,59 @@ RES_StreamStart(struct sess *sp)
 	sp->wrk->acct_tmp.hdrbytes +=
 	    http_Write(sp->wrk, sp->vsl_id, sp->req->resp, 1);
 
-	if (sp->req->res_mode & RES_CHUNKED)
+	if (req->res_mode & RES_CHUNKED)
 		WRW_Chunked(sp->wrk);
 }
 
 void
 RES_StreamPoll(struct worker *wrk)
 {
-	struct stream_ctx *sctx;
 	struct storage *st;
+	struct busyobj *bo;
+	struct req *req;
 	ssize_t l, l2;
 	void *ptr;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->busyobj->fetch_obj, OBJECT_MAGIC);
-	sctx = wrk->sctx;
-	CHECK_OBJ_NOTNULL(sctx, STREAM_CTX_MAGIC);
-	if (wrk->busyobj->fetch_obj->len == sctx->stream_next)
+	bo = wrk->busyobj;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->fetch_obj, OBJECT_MAGIC);
+	req = wrk->sp->req;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	if (bo->fetch_obj->len == req->stream_next)
 		return;
-	assert(wrk->busyobj->fetch_obj->len > sctx->stream_next);
-	l = sctx->stream_front;
-	VTAILQ_FOREACH(st, &wrk->busyobj->fetch_obj->store, list) {
-		if (st->len + l <= sctx->stream_next) {
+	assert(bo->fetch_obj->len > req->stream_next);
+	l = req->stream_front;
+	VTAILQ_FOREACH(st, &bo->fetch_obj->store, list) {
+		if (st->len + l <= req->stream_next) {
 			l += st->len;
 			continue;
 		}
-		l2 = st->len + l - sctx->stream_next;
-		ptr = st->ptr + (sctx->stream_next - l);
-		if (wrk->sp->req->res_mode & RES_GUNZIP) {
-			(void)VGZ_WrwGunzip(wrk, sctx->vgz, ptr, l2);
-		} else {
+		l2 = st->len + l - req->stream_next;
+		ptr = st->ptr + (req->stream_next - l);
+		if (wrk->sp->req->res_mode & RES_GUNZIP)
+			(void)VGZ_WrwGunzip(wrk, req->stream_vgz, ptr, l2);
+		else
 			(void)WRW_Write(wrk, ptr, l2);
-		}
 		l += st->len;
-		sctx->stream_next += l2;
+		req->stream_next += l2;
 	}
 	if (!(wrk->sp->req->res_mode & RES_GUNZIP))
 		(void)WRW_Flush(wrk);
 
-	if (wrk->busyobj->fetch_obj->objcore == NULL ||
-	    (wrk->busyobj->fetch_obj->objcore->flags & OC_F_PASS)) {
+	if (bo->fetch_obj->objcore == NULL ||
+	    (bo->fetch_obj->objcore->flags & OC_F_PASS)) {
 		/*
 		 * This is a pass object, release storage as soon as we
 		 * have delivered it.
 		 */
 		while (1) {
-			st = VTAILQ_FIRST(&wrk->busyobj->fetch_obj->store);
+			st = VTAILQ_FIRST(&bo->fetch_obj->store);
 			if (st == NULL ||
-			    sctx->stream_front + st->len > sctx->stream_next)
+			    req->stream_front + st->len > req->stream_next)
 				break;
-			VTAILQ_REMOVE(&wrk->busyobj->fetch_obj->store, st, list);
-			sctx->stream_front += st->len;
+			VTAILQ_REMOVE(&bo->fetch_obj->store, st, list);
+			req->stream_front += st->len;
 			STV_free(st);
 		}
 	}
@@ -399,19 +404,21 @@ RES_StreamPoll(struct worker *wrk)
 void
 RES_StreamEnd(struct sess *sp)
 {
-	struct stream_ctx *sctx;
+	struct req *req;
 
-	sctx = sp->wrk->sctx;
-	CHECK_OBJ_NOTNULL(sctx, STREAM_CTX_MAGIC);
+	req = sp->req;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	if (sp->req->res_mode & RES_GUNZIP) {
-		AN(sctx->vgz);
-		VGZ_WrwFlush(sp->wrk, sctx->vgz);
-		(void)VGZ_Destroy(&sctx->vgz, sp->vsl_id);
+	if (req->res_mode & RES_GUNZIP) {
+		AN(req->stream_vgz);
+		VGZ_WrwFlush(sp->wrk, req->stream_vgz);
+		(void)VGZ_Destroy(&req->stream_vgz, sp->vsl_id);
 	}
-	if (sp->req->res_mode & RES_CHUNKED &&
-	    !(sp->req->res_mode & RES_ESI_CHILD))
+	if (req->res_mode & RES_CHUNKED && !(req->res_mode & RES_ESI_CHILD))
 		WRW_EndChunk(sp->wrk);
 	if (WRW_FlushRelease(sp->wrk))
 		SES_Close(sp, "remote closed");
+	req->stream_vgz = NULL;
+	req->stream_next = 0;
+	req->stream_front = 0;
 }

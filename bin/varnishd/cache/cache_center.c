@@ -940,17 +940,12 @@ static int
 cnt_streambody(struct sess *sp, struct worker *wrk, struct req *req)
 {
 	int i;
-	struct stream_ctx sctx;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
-	memset(&sctx, 0, sizeof sctx);
-	sctx.magic = STREAM_CTX_MAGIC;
-	AZ(wrk->sctx);
-	wrk->sctx = &sctx;
 
 	RES_StreamStart(sp);
 
@@ -978,7 +973,6 @@ cnt_streambody(struct sess *sp, struct worker *wrk, struct req *req)
 
 	RES_StreamEnd(sp);
 
-	wrk->sctx = NULL;
 	assert(WRW_IsReleased(wrk));
 	assert(wrk->wrw.ciov == wrk->wrw.siov);
 	(void)HSH_Deref(wrk, NULL, &req->obj);
