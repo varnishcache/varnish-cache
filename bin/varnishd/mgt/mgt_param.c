@@ -283,7 +283,7 @@ tweak_uint(struct cli *cli, const struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-fmt_bytes(struct cli *cli, ssize_t t)
+fmt_bytes(struct cli *cli, uintmax_t t)
 {
 	const char *p;
 
@@ -298,7 +298,7 @@ fmt_bytes(struct cli *cli, ssize_t t)
 		}
 		t /= 1024;
 		if (t & 0x0ff) {
-			VCLI_Out(cli, "%zu%c", t, *p);
+			VCLI_Out(cli, "%ju%c", t, *p);
 			return;
 		}
 	}
@@ -324,14 +324,14 @@ tweak_generic_bytes(struct cli *cli, volatile ssize_t *dest, const char *arg,
 		}
 		if ((uintmax_t)((ssize_t)r) != r || r > max) {
 			VCLI_Out(cli, "Must be no more than ");
-			fmt_bytes(cli, (ssize_t)max);
+			fmt_bytes(cli, (uintmax_t)max);
 			VCLI_Out(cli, "\n");
 			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
 		}
 		if (r < min) {
 			VCLI_Out(cli, "Must be at least ");
-			fmt_bytes(cli, (ssize_t)min);
+			fmt_bytes(cli, (uintmax_t)min);
 			VCLI_Out(cli, "\n");
 			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
