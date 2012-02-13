@@ -323,7 +323,7 @@ tweak_generic_bytes(struct cli *cli, volatile ssize_t *dest, const char *arg,
 			return;
 		}
 		if ((uintmax_t)((ssize_t)r) != r) {
-			fmt_bytes(cli, (uintmax_t)max);
+			fmt_bytes(cli, r);
 			VCLI_Out(cli, " is too large for this architecture.\n");
 			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
