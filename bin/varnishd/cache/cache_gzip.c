@@ -407,7 +407,7 @@ VGZ_Destroy(struct vgz **vgp, int vsl_id)
 		    (intmax_t)vg->vz.last_bit,
 		    (intmax_t)vg->vz.stop_bit);
 	else
-		WSL(vg->wrk, SLT_Gzip, vsl_id, "%s %jd %jd %jd %jd %jd",
+		WSL(vg->wrk->vsl, SLT_Gzip, vsl_id, "%s %jd %jd %jd %jd %jd",
 		    vg->id,
 		    (intmax_t)vg->vz.total_in,
 		    (intmax_t)vg->vz.total_out,

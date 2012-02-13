@@ -156,7 +156,7 @@ ses_pool_task(struct worker *wrk, void *arg)
 	WS_Assert(wrk->aws);
 	AZ(wrk->busyobj);
 	AZ(wrk->wrw);
-	assert(wrk->wlp == wrk->wlb);
+	assert(wrk->vsl->wlp == wrk->vsl->wlb);
 	if (cache_param->diag_bitmap & 0x00040000) {
 		if (wrk->vcl != NULL)
 			VCL_Rel(&wrk->vcl);

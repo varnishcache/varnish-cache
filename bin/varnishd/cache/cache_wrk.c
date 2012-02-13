@@ -104,8 +104,8 @@ wrk_bgthread(void *arg)
 	memset(&wrk, 0, sizeof wrk);
 	sp->wrk = &wrk;
 	wrk.magic = WORKER_MAGIC;
-	wrk.wlp = wrk.wlb = logbuf;
-	wrk.wle = logbuf + (sizeof logbuf) / 4;
+	wrk.vsl->wlp = wrk.vsl->wlb = logbuf;
+	wrk.vsl->wle = logbuf + (sizeof logbuf) / 4;
 
 	(void)bt->func(sp, bt->priv);
 
@@ -142,8 +142,8 @@ wrk_thread_real(void *priv, unsigned shm_workspace, unsigned thread_workspace)
 	memset(w, 0, sizeof *w);
 	w->magic = WORKER_MAGIC;
 	w->lastused = NAN;
-	w->wlb = w->wlp = wlog;
-	w->wle = wlog + (sizeof wlog) / 4;
+	w->vsl->wlb = w->vsl->wlp = wlog;
+	w->vsl->wle = wlog + (sizeof wlog) / 4;
 	AZ(pthread_cond_init(&w->cond, NULL));
 
 	WS_Init(w->aws, "wrk", ws, thread_workspace);

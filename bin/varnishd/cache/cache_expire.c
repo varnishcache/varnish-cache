@@ -342,7 +342,7 @@ exp_timer(struct sess *sp, void *priv)
 	oc = NULL;
 	while (1) {
 		if (oc == NULL) {
-			WSL_Flush(sp->wrk, 0);
+			WSL_Flush(sp->wrk->vsl, 0);
 			WRK_SumStat(sp->wrk);
 			VTIM_sleep(cache_param->expiry_sleep);
 			t = VTIM_real();
@@ -400,7 +400,7 @@ exp_timer(struct sess *sp, void *priv)
 
 		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
 		o = oc_getobj(sp->wrk, oc);
-		WSL(sp->wrk, SLT_ExpKill, 0, "%u %.0f",
+		WSL(sp->wrk->vsl, SLT_ExpKill, 0, "%u %.0f",
 		    oc_getxid(sp->wrk, oc), EXP_Ttl(NULL, o) - t);
 		(void)HSH_Deref(sp->wrk, oc, NULL);
 	}
@@ -445,7 +445,7 @@ EXP_NukeOne(struct worker *wrk, struct lru *lru)
 		return (-1);
 
 	/* XXX: bad idea for -spersistent */
-	WSL(wrk, SLT_ExpKill, 0, "%u LRU", oc_getxid(wrk, oc));
+	WSL(wrk->vsl, SLT_ExpKill, 0, "%u LRU", oc_getxid(wrk, oc));
 	(void)HSH_Deref(wrk, oc, NULL);
 	return (1);
 }

@@ -407,7 +407,7 @@ cnt_done(struct sess *sp, struct worker *wrk, struct req *req)
 		    req->xid, sp->t_req, sp->t_idle, dh, dp, da);
 	}
 	req->xid = 0;
-	WSL_Flush(wrk, 0);
+	WSL_Flush(wrk->vsl, 0);
 
 	sp->t_req = NAN;
 	req->t_resp = NAN;
@@ -1592,7 +1592,7 @@ cnt_diag(struct sess *sp, const char *state)
 	if (sp->wrk != NULL) {
 		WSP(sp, SLT_Debug, "vsl_id %u STP_%s sp %p obj %p vcl %p",
 		    sp->vsl_id, state, sp, obj, vcl);
-		WSL_Flush(sp->wrk, 0);
+		WSL_Flush(sp->wrk->vsl, 0);
 	} else {
 		VSL(SLT_Debug, sp->vsl_id,
 		    "vsl_id %u STP_%s sp %p obj %p vcl %p",
@@ -1673,7 +1673,7 @@ CNT_Session(struct sess *sp)
 		WS_Assert(wrk->aws);
 		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 	}
-	WSL_Flush(wrk, 0);
+	WSL_Flush(wrk->vsl, 0);
 #define ACCT(foo)	AZ(wrk->acct_tmp.foo);
 #include "tbl/acct_fields.h"
 #undef ACCT

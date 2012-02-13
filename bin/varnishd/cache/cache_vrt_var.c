@@ -55,7 +55,7 @@ vrt_do_string(struct worker *w, int fd, const struct http *hp, int fld,
 	AN(hp);
 	b = VRT_String(hp->ws, NULL, p, ap);
 	if (b == NULL || *b == '\0') {
-		WSL(w, SLT_LostHeader, fd, "%s", err);
+		WSL(w->vsl, SLT_LostHeader, fd, "%s", err);
 	} else {
 		http_SetH(hp, fld, b);
 	}

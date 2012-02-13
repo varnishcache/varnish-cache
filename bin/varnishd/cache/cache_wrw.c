@@ -174,7 +174,7 @@ WRW_Flush(struct worker *wrk)
 
 			if (VTIM_real() - wrk->sp->req->t_resp >
 			    cache_param->send_timeout) {
-				WSL(wrk, SLT_Debug, *wrw->wfd,
+				WSL(wrk->vsl, SLT_Debug, *wrw->wfd,
 				    "Hit total send timeout, "
 				    "wrote = %zd/%zd; not retrying",
 				    i, wrw->liov);
@@ -182,7 +182,7 @@ WRW_Flush(struct worker *wrk)
 				break;
 			}
 
-			WSL(wrk, SLT_Debug, *wrw->wfd,
+			WSL(wrk->vsl, SLT_Debug, *wrw->wfd,
 			    "Hit send timeout, wrote = %zd/%zd; retrying",
 			    i, wrw->liov);
 
@@ -191,7 +191,7 @@ WRW_Flush(struct worker *wrk)
 		}
 		if (i <= 0) {
 			wrw->werr++;
-			WSL(wrk, SLT_Debug, *wrw->wfd,
+			WSL(wrk->vsl, SLT_Debug, *wrw->wfd,
 			    "Write error, retval = %zd, len = %zd, errno = %s",
 			    i, wrw->liov, strerror(errno));
 		}

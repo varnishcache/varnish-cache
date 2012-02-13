@@ -612,7 +612,7 @@ HSH_Unbusy(struct worker *wrk)
 	if (o->ws_o->overflow)
 		wrk->stats.n_objoverflow++;
 	if (cache_param->diag_bitmap & 0x40)
-		WSL(wrk, SLT_Debug, 0,
+		WSL(wrk->vsl, SLT_Debug, 0,
 		    "Object %u workspace free %u", o->xid, WS_Free(o->ws_o));
 
 	/* XXX: pretouch neighbors on oh->objcs to prevent page-on under mtx */

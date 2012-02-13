@@ -225,7 +225,7 @@ HTC_Read(struct worker *w, struct http_conn *htc, void *d, size_t len)
 		return (l);
 	i = read(htc->fd, p, len);
 	if (i < 0) {
-		WSL(w, SLT_FetchError, htc->vsl_id, "%s", strerror(errno));
+		WSL(w->vsl, SLT_FetchError, htc->vsl_id, "%s", strerror(errno));
 		return (i);
 	}
 	return (i + l);

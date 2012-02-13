@@ -245,6 +245,13 @@ struct exp {
 
 /*--------------------------------------------------------------------*/
 
+struct vsl_log {
+	uint32_t		*wlb, *wlp, *wle;
+	unsigned		wlr;
+};
+
+/*--------------------------------------------------------------------*/
+
 struct wrk_accept {
 	unsigned		magic;
 #define WRK_ACCEPT_MAGIC	0x8c4b4d59
@@ -297,8 +304,7 @@ struct worker {
 
 	struct VCL_conf		*vcl;
 
-	uint32_t		*wlb, *wlp, *wle;
-	unsigned		wlr;
+	struct vsl_log		vsl[1];
 
 	struct ws		aws[1];
 
@@ -909,13 +915,13 @@ void VSM_Free(void *ptr);
 #ifdef VSL_ENDMARKER
 void VSL(enum VSL_tag_e tag, int id, const char *fmt, ...)
     __printflike(3, 4);
-void WSLR(struct worker *w, enum VSL_tag_e tag, int id, txt t);
-void WSL(struct worker *w, enum VSL_tag_e tag, int id, const char *fmt, ...)
+void WSLR(struct vsl_log *, enum VSL_tag_e tag, int id, txt t);
+void WSL(struct vsl_log *, enum VSL_tag_e tag, int id, const char *fmt, ...)
     __printflike(4, 5);
-void WSLB(struct worker *w, enum VSL_tag_e tag, const char *fmt, ...)
+void WSLB(struct worker *, enum VSL_tag_e tag, const char *fmt, ...)
     __printflike(3, 4);
 
-void WSL_Flush(struct worker *w, int overflow);
+void WSL_Flush(struct vsl_log *, int overflow);
 
 #define DSL(flag, tag, id, ...)					\
 	do {							\
@@ -924,10 +930,10 @@ void WSL_Flush(struct worker *w, int overflow);
 	} while (0)
 
 #define WSP(sess, tag, ...)					\
-	WSL((sess)->wrk, tag, (sess)->vsl_id, __VA_ARGS__)
+	WSL((sess)->wrk->vsl, tag, (sess)->vsl_id, __VA_ARGS__)
 
 #define WSPR(sess, tag, txt)					\
-	WSLR((sess)->wrk, tag, (sess)->vsl_id, txt)
+	WSLR((sess)->wrk->vsl, tag, (sess)->vsl_id, txt)
 
 #define INCOMPL() do {							\
 	VSL(SLT_Debug, 0, "INCOMPLETE AT: %s(%d)", __func__, __LINE__); \

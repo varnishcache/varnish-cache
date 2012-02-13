@@ -56,7 +56,7 @@ VRT_error(const struct sess *sp, unsigned code, const char *reason)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	WSL(sp->wrk, SLT_Debug, 0, "VCL_error(%u, %s)", code, reason ?
+	WSL(sp->wrk->vsl, SLT_Debug, 0, "VCL_error(%u, %s)", code, reason ?
 	    reason : "(null)");
 	if (code < 100 || code > 999)
 		code = 503;

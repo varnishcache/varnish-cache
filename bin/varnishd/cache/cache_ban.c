@@ -954,7 +954,7 @@ ban_lurker(struct sess *sp, void *priv)
 		}
 
 		i = ban_lurker_work(sp, pass);
-		WSL_Flush(sp->wrk, 0);
+		WSL_Flush(sp->wrk->vsl, 0);
 		WRK_SumStat(sp->wrk);
 		if (i) {
 			pass += (1 << LURK_SHIFT);
