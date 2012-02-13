@@ -304,6 +304,18 @@ WSLB(struct worker *wrk, enum VSL_tag_e tag, const char *fmt, ...)
 
 /*--------------------------------------------------------------------*/
 
+void
+VSL_Setup(struct vsl_log *vsl, void *ptr, size_t len)
+{
+	vsl->wlp = ptr;
+	vsl->wlb = ptr;
+	vsl->wle = ptr;
+	vsl->wle += len / sizeof(*vsl->wle);
+	vsl->wlr = 0;
+}
+
+/*--------------------------------------------------------------------*/
+
 static void *
 vsm_cleaner(void *priv)
 {

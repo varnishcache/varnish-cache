@@ -104,8 +104,7 @@ wrk_bgthread(void *arg)
 	memset(&wrk, 0, sizeof wrk);
 	sp->wrk = &wrk;
 	wrk.magic = WORKER_MAGIC;
-	wrk.vsl->wlp = wrk.vsl->wlb = logbuf;
-	wrk.vsl->wle = logbuf + (sizeof logbuf) / 4;
+	VSL_Setup(wrk.vsl, logbuf, sizeof logbuf);
 
 	(void)bt->func(sp, bt->priv);
 
