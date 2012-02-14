@@ -54,7 +54,7 @@ struct hash_slinger {
 void HSH_Prealloc(const struct sess *sp);
 void HSH_Cleanup(struct worker *w);
 struct objcore *HSH_Lookup(struct sess *sp, struct objhead **poh);
-void HSH_Unbusy(struct worker *wrk);
+void HSH_Unbusy(struct objcore *);
 void HSH_Ref(struct objcore *o);
 void HSH_Drop(struct worker *wrk);
 void HSH_Init(const struct hash_slinger *slinger);
@@ -95,8 +95,8 @@ struct objhead {
 #define hoh_head _u.n.u_n_hoh_head
 };
 
-void HSH_DeleteObjHead(struct worker *w, struct objhead *oh);
-int HSH_Deref(struct worker *w, struct objcore *oc, struct object **o);
+void HSH_DeleteObjHead(struct dstat *, struct objhead *oh);
+int HSH_Deref(struct dstat *, struct objcore *oc, struct object **o);
 #endif /* VARNISH_CACHE_CHILD */
 
 extern const struct hash_slinger hsl_slinger;

@@ -283,7 +283,7 @@ tweak_uint(struct cli *cli, const struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-fmt_bytes(struct cli *cli, ssize_t t)
+fmt_bytes(struct cli *cli, uintmax_t t)
 {
 	const char *p;
 
@@ -298,7 +298,7 @@ fmt_bytes(struct cli *cli, ssize_t t)
 		}
 		t /= 1024;
 		if (t & 0x0ff) {
-			VCLI_Out(cli, "%zu%c", t, *p);
+			VCLI_Out(cli, "%ju%c", t, *p);
 			return;
 		}
 	}
@@ -322,16 +322,22 @@ tweak_generic_bytes(struct cli *cli, volatile ssize_t *dest, const char *arg,
 			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
 		}
-		if ((uintmax_t)((ssize_t)r) != r || r > max) {
+		if ((uintmax_t)((ssize_t)r) != r) {
+			fmt_bytes(cli, r);
+			VCLI_Out(cli, " is too large for this architecture.\n");
+			VCLI_SetResult(cli, CLIS_PARAM);
+			return;
+		}
+		if (max != 0. && r > max) {
 			VCLI_Out(cli, "Must be no more than ");
-			fmt_bytes(cli, (ssize_t)max);
+			fmt_bytes(cli, (uintmax_t)max);
 			VCLI_Out(cli, "\n");
 			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
 		}
 		if (r < min) {
 			VCLI_Out(cli, "Must be at least ");
-			fmt_bytes(cli, (ssize_t)min);
+			fmt_bytes(cli, (uintmax_t)min);
 			VCLI_Out(cli, "\n");
 			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
@@ -662,6 +668,12 @@ tweak_poolparam(struct cli *cli, const struct parspec *par, const char *arg)
 	"\nNB: Do not change this parameter, unless a developer tell " \
 	"you to do so."
 
+#define MEMPOOL_TEXT							\
+	"The three numbers are:\n"					\
+	"   min_pool -- minimum size of free pool.\n"			\
+	"   max_pool -- maximum size of free pool.\n"			\
+	"   max_age -- max age of free element.\n"
+
 /*
  * Remember to update varnishd.1 whenever you add / remove a parameter or
  * change its default value.
@@ -689,9 +701,27 @@ static const struct parspec input_parspec[] = {
 		"120", "seconds" },
 	{ "workspace_client",
 		tweak_bytes_u, &mgt_param.workspace_client, 3072, UINT_MAX,
-		"Bytes of HTTP protocol workspace for clients HTTP req/resp.",
+		"Bytes of HTTP protocol workspace for clients HTTP req/resp."
+		"  If larger than 4k, use a multiple of 4k for VM efficiency.",
 		DELAYED_EFFECT,
 		"64k", "bytes" },
+	{ "workspace_backend",
+		tweak_bytes_u, &mgt_param.workspace_backend, 1024, UINT_MAX,
+		"Bytes of HTTP protocol workspace for backend HTTP req/resp."
+		"  If larger than 4k, use a multiple of 4k for VM efficiency.",
+		DELAYED_EFFECT,
+		"64k", "bytes" },
+	{ "workspace_thread",
+		tweak_bytes_u, &mgt_param.workspace_thread, 256, 8192,
+		"Bytes of auxillary workspace per thread.\n"
+		"This workspace is used for certain temporary data structures"
+		" during the operation of a worker thread.\n"
+		"One use is for the io-vectors for writing requests and"
+		" responses to sockets, having too little space will"
+		" result in more writev(2) system calls, having too much"
+		" just wastes the space.\n",
+		DELAYED_EFFECT,
+		"2048", "bytes" },
 	{ "http_req_hdr_len",
 		tweak_bytes_u, &mgt_param.http_req_hdr_len,
 		40, UINT_MAX,
@@ -705,8 +735,8 @@ static const struct parspec input_parspec[] = {
 		"Maximum number of bytes of HTTP client request we will deal "
 		"with.  This is a limit on all bytes up to the double blank "
 		"line which ends the HTTP request.\n"
-		"The memory for the request is allocated from the session "
-		"workspace (param: sess_workspace) and this parameter limits "
+		"The memory for the request is allocated from the client "
+		"workspace (param: workspace_client) and this parameter limits "
 		"how much of that the request is allowed to take up.",
 		0,
 		"32k", "bytes" },
@@ -724,8 +754,8 @@ static const struct parspec input_parspec[] = {
 		"with.  This is a limit on all bytes up to the double blank "
 		"line which ends the HTTP request.\n"
 		"The memory for the request is allocated from the worker "
-		"workspace (param: sess_workspace) and this parameter limits "
-		"how much of that the request is allowed to take up.",
+		"workspace (param: thread_pool_workspace) and this parameter "
+		"limits how much of that the request is allowed to take up.",
 		0,
 		"32k", "bytes" },
 	{ "http_max_hdr", tweak_uint, &mgt_param.http_max_hdr, 32, 65535,
@@ -736,6 +766,18 @@ static const struct parspec input_parspec[] = {
 		"objects allocate exact space for the headers they store.\n",
 		0,
 		"64", "header lines" },
+	{ "vsl_buffer",
+		tweak_bytes_u, &mgt_param.vsl_buffer, 1024, UINT_MAX,
+		"Bytes of (req-/backend-)workspace dedicated to buffering"
+		" VSL records.\n"
+		"At a bare minimum, this must be longer than"
+		" the longest HTTP header to be logged.\n"
+		"Setting this too high costs memory, setting it too low"
+		" will cause more VSL flushes and likely increase"
+		" lock-contention on the VSL mutex.\n"
+		"Minimum is 1k bytes.",
+		0,
+		"4k", "bytes" },
 	{ "shm_workspace",
 		tweak_bytes_u, &mgt_param.shm_workspace, 4096, UINT_MAX,
 		"Bytes of shmlog workspace allocated for worker threads. "
@@ -837,13 +879,6 @@ static const struct parspec input_parspec[] = {
 		"fragmentation.\n",
 		EXPERIMENTAL,
 		"256m", "bytes" },
-#ifdef SENDFILE_WORKS
-	{ "sendfile_threshold",
-		tweak_bytes, &mgt_param.sendfile_threshold, 0, HUGE_VAL,
-		"The minimum size of objects transmitted with sendfile.",
-		EXPERIMENTAL,
-		"1E", "bytes" },
-#endif /* SENDFILE_WORKS */
 	{ "vcl_trace", tweak_bool,  &mgt_param.vcl_trace, 0, 0,
 		"Trace VCL execution in the shmlog.\n"
 		"Enabling this will allow you to see the path each "
@@ -1084,17 +1119,6 @@ static const struct parspec input_parspec[] = {
 		"Varnish reference.",
 		EXPERIMENTAL,
 		"on", "bool" },
-	{ "gzip_tmp_space", tweak_uint, &mgt_param.gzip_tmp_space, 0, 2,
-		"Where temporary space for gzip/gunzip is allocated:\n"
-		"  0 - malloc\n"
-		"  2 - thread workspace\n"
-		"\n"
-		"If you have much gzip/gunzip activity, it may be an"
-		" advantage to use workspace for these allocations to reduce"
-		" malloc activity.  Be aware that gzip needs 256+KB and gunzip"
-		" needs 32+KB of workspace (64+KB if ESI processing).",
-		EXPERIMENTAL,
-		"0", "" },
 	{ "gzip_level", tweak_uint, &mgt_param.gzip_level, 0, 9,
 		"Gzip compression level: 0=debug, 1=fast, 9=best",
 		0,
@@ -1109,11 +1133,11 @@ static const struct parspec input_parspec[] = {
 		"Memory impact is 1=1k, 2=2k, ... 9=256k.",
 		0,
 		"8", ""},
-	{ "gzip_stack_buffer",
-		tweak_bytes_u, &mgt_param.gzip_stack_buffer,
+	{ "gzip_buffer",
+		tweak_bytes_u, &mgt_param.gzip_buffer,
 	        2048, UINT_MAX,
-		"Size of stack buffer used for gzip processing.\n"
-		"The stack buffers are used for in-transit data,"
+		"Size of malloc buffer used for gzip processing.\n"
+		"These buffers are used for in-transit data,"
 		" for instance gunzip'ed data being sent to a client."
 		"Making this space to small results in more overhead,"
 		" writes to sockets etc, making it too big is probably"
@@ -1174,7 +1198,7 @@ static const struct parspec input_parspec[] = {
 		"10000", ""},
 
 	{ "vsl_space", tweak_bytes,
-		&mgt_param.vsl_space, 1024*1024, HUGE_VAL,
+		&mgt_param.vsl_space, 1024*1024, 0,
 		"The amount of space to allocate for the VSL fifo buffer"
 		" in the VSM memory segment."
 		"  If you make this too small, varnish{ncsa|log} etc will"
@@ -1184,7 +1208,7 @@ static const struct parspec input_parspec[] = {
 		"80M", "bytes"},
 
 	{ "vsm_space", tweak_bytes,
-		&mgt_param.vsm_space, 1024*1024, HUGE_VAL,
+		&mgt_param.vsm_space, 1024*1024, 0,
 		"The amount of space to allocate for stats counters"
 		" in the VSM memory segment."
 		"  If you make this too small, some counters will be"
@@ -1199,31 +1223,27 @@ static const struct parspec input_parspec[] = {
 		"Disable this if you have very high hitrates and want"
 		"to save the memory of one busyobj per worker thread.",
 		0,
-		"true", ""},
+		"false", ""},
 
 	{ "pool_vbc", tweak_poolparam, &mgt_param.vbc_pool, 0, 10000,
 		"Parameters for backend connection memory pool.\n"
-		"The three numbers are:\n"
-		"   min_pool -- minimum size of free pool.\n"
-		"   max_pool -- maximum size of free pool.\n"
-		"   max_age -- max age of free element.\n",
+		MEMPOOL_TEXT,
 		0,
 		"10,100,10", ""},
 
 	{ "pool_req", tweak_poolparam, &mgt_param.req_pool, 0, 10000,
 		"Parameters for per worker pool request memory pool.\n"
-		"The three numbers are:\n"
-		"   min_pool -- minimum size of free pool.\n"
-		"   max_pool -- maximum size of free pool.\n"
-		"   max_age -- max age of free element.\n",
+		MEMPOOL_TEXT,
 		0,
 		"10,100,10", ""},
 	{ "pool_sess", tweak_poolparam, &mgt_param.sess_pool, 0, 10000,
 		"Parameters for per worker pool session memory pool.\n"
-		"The three numbers are:\n"
-		"   min_pool -- minimum size of free pool.\n"
-		"   max_pool -- maximum size of free pool.\n"
-		"   max_age -- max age of free element.\n",
+		MEMPOOL_TEXT,
+		0,
+		"10,100,10", ""},
+	{ "pool_vbo", tweak_poolparam, &mgt_param.vbo_pool, 0, 10000,
+		"Parameters for backend object fetch memory pool.\n"
+		MEMPOOL_TEXT,
 		0,
 		"10,100,10", ""},
 

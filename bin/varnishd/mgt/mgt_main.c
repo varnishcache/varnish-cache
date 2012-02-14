@@ -406,10 +406,10 @@ main(int argc, char * const *argv)
 		 * Adjust default parameters for 32 bit systems to conserve
 		 * VM space.
 		 */
-		MCF_ParamSet(cli, "sess_workspace", "16384");
+		MCF_ParamSet(cli, "workspace_client", "16384");
 		cli_check(cli);
 
-		MCF_ParamSet(cli, "thread_pool_workspace", "16384");
+		MCF_ParamSet(cli, "workspace_backend", "16384");
 		cli_check(cli);
 
 		MCF_ParamSet(cli, "http_resp_size", "8192");
@@ -421,7 +421,7 @@ main(int argc, char * const *argv)
 		MCF_ParamSet(cli, "thread_pool_stack", "32bit");
 		cli_check(cli);
 
-		MCF_ParamSet(cli, "gzip_stack_buffer", "4096");
+		MCF_ParamSet(cli, "gzip_buffer", "4096");
 		cli_check(cli);
 	}
 

@@ -1,7 +1,7 @@
 -d__flexelint_v9__=1
 
 -printf(3, VSL)
--printf(4, http_PrintfHeader)
+-printf(2, http_PrintfHeader)
 -printf(4, WSL)
 -printf(3, WSLB)
 -printf(2, VSB_printf)
@@ -165,3 +165,4 @@
 -e712	// 96 Loss of precision (___) (___ to ___)
 -e747	// 297 Significant prototype coercion (___) ___ to ___
 -e840	// Use of nul character in a string literal (see: vcc_if.c)
+-e663	// Suspicious array to pointer conversion

@@ -370,13 +370,13 @@ smp_loaded_st(const struct smp_sc *sc, const struct smp_seg *sg,
  */
 
 static unsigned __match_proto__(getxid_f)
-smp_oc_getxid(struct worker *wrk, struct objcore *oc)
+smp_oc_getxid(struct dstat *ds, struct objcore *oc)
 {
 	struct object *o;
 	struct smp_seg *sg;
 	struct smp_object *so;
 
-	(void)wrk;
+	(void)ds;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	CAST_OBJ_NOTNULL(sg, oc->priv, SMP_SEG_MAGIC);
@@ -399,7 +399,7 @@ smp_oc_getxid(struct worker *wrk, struct objcore *oc)
  */
 
 static struct object *
-smp_oc_getobj(struct worker *wrk, struct objcore *oc)
+smp_oc_getobj(struct dstat *ds, struct objcore *oc)
 {
 	struct object *o;
 	struct smp_seg *sg;
@@ -412,7 +412,7 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 	assert(oc->methods->getobj == smp_oc_getobj);
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	if (wrk == NULL)
+	if (ds == NULL)
 		AZ(oc->flags & OC_F_NEEDFIXUP);
 
 	CAST_OBJ_NOTNULL(sg, oc->priv, SMP_SEG_MAGIC);
@@ -435,7 +435,7 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 	if (!(oc->flags & OC_F_NEEDFIXUP))
 		return (o);
 
-	AN(wrk);
+	AN(ds);
 	Lck_Lock(&sg->sc->mtx);
 	/* Check again, we might have raced. */
 	if (oc->flags & OC_F_NEEDFIXUP) {
@@ -459,8 +459,8 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 		}
 
 		sg->nfixed++;
-		wrk->stats.n_object++;
-		wrk->stats.n_vampireobject--;
+		ds->n_object++;
+		ds->n_vampireobject--;
 		oc->flags &= ~OC_F_NEEDFIXUP;
 	}
 	Lck_Unlock(&sg->sc->mtx);

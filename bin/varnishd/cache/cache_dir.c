@@ -55,11 +55,15 @@ VDI_CloseFd(struct worker *wrk, struct vbc **vbp)
 
 	bp = vc->backend;
 
-	WSL(wrk, SLT_BackendClose, vc->vsl_id, "%s", bp->display_name);
+	WSL(vc->vsl, SLT_BackendClose, vc->vsl_id, "%s", bp->display_name);
 
 	/* Checkpoint log to flush all info related to this connection
 	   before the OS reuses the FD */
-	WSL_Flush(wrk, 0);
+	WSL_Flush(wrk->vsl, 0);
+	WSL_Flush(vc->vsl, 0);
+	vc->vsl->wid = vc->orig_vsl_id;
+	vc->vsl = NULL;
+	vc->orig_vsl_id = 0;
 
 	VTCP_close(&vc->fd);
 	VBE_DropRefConn(bp);
@@ -85,12 +89,18 @@ VDI_RecycleFd(struct worker *wrk, struct vbc **vbp)
 
 	bp = vc->backend;
 
-	WSL(wrk, SLT_BackendReuse, vc->vsl_id, "%s", bp->display_name);
+	WSL(vc->vsl, SLT_BackendReuse, vc->vsl_id, "%s", bp->display_name);
+
 	/*
 	 * Flush the shmlog, so that another session reusing this backend
 	 * will log chronologically later than our use of it.
 	 */
-	WSL_Flush(wrk, 0);
+	WSL_Flush(wrk->vsl, 0);
+	WSL_Flush(vc->vsl, 0);
+	vc->vsl->wid = vc->orig_vsl_id;
+	vc->vsl = NULL;
+	vc->orig_vsl_id = 0;
+
 	Lck_Lock(&bp->mtx);
 	VSC_C_main->backend_recycle++;
 	VTAILQ_INSERT_HEAD(&bp->connlist, vc, list);
@@ -102,12 +112,19 @@ VDI_RecycleFd(struct worker *wrk, struct vbc **vbp)
 struct vbc *
 VDI_GetFd(const struct director *d, struct sess *sp)
 {
+	struct vbc *vc;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (d == NULL)
 		d = sp->req->director;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	return (d->getfd(d, sp));
+	vc = d->getfd(d, sp);
+	if (vc != NULL) {
+		vc->vsl = sp->wrk->busyobj->vsl;
+		vc->orig_vsl_id = vc->vsl->wid;
+		vc->vsl->wid = vc->vsl_id;
+	}
+	return (vc);
 }
 
 /* Check health ------------------------------------------------------

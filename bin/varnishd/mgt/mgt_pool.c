@@ -66,7 +66,7 @@ tweak_thread_pool_min(struct cli *cli, const struct parspec *par,
 /*--------------------------------------------------------------------
  * This is utterly ridiculous:  POSIX does not guarantee that the
  * minimum thread stack size is a compile time constant.
- * XXX: "32" is a magic marker for 32bit systems.
+ * XXX: "32bit" is a magic marker for 32bit systems.
  */
 
 static void
@@ -220,20 +220,10 @@ const struct parspec WRK_parspec[] = {
 	{ "thread_pool_stack",
 		tweak_stack_size, &mgt_param.wthread_stacksize, 0, UINT_MAX,
 		"Worker thread stack size.\n"
+		"This is likely rounded up to a multiple of 4k by the kernel.\n"
 		"On 32bit systems you may need to tweak this down to fit "
 		"many threads into the limited address space.\n",
 		EXPERIMENTAL,
 		"-1", "bytes" },
-	{ "thread_pool_workspace", tweak_uint, &mgt_param.wthread_workspace,
-		1024, UINT_MAX,
-		"Bytes of HTTP protocol workspace allocated for worker "
-		"threads. "
-		"This space must be big enough for the backend request "
-		"and responses, and response to the client plus any other "
-		"memory needs in the VCL code."
-		"Minimum is 1024 bytes.",
-		DELAYED_EFFECT,
-		"65536",
-		"bytes" },
 	{ NULL, NULL, NULL }
 };

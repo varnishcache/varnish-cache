@@ -70,12 +70,16 @@ struct params {
 	unsigned		wthread_purge_delay;
 	unsigned		wthread_stats_rate;
 	unsigned		wthread_stacksize;
-	unsigned		wthread_workspace;
 
 	unsigned		queue_max;
 
 	/* Memory allocation hints */
 	unsigned		workspace_client;
+	unsigned		workspace_backend;
+	unsigned		workspace_thread;
+
+	unsigned		vsl_buffer;
+
 	unsigned		shm_workspace;
 	unsigned		http_req_size;
 	unsigned		http_req_hdr_len;
@@ -100,10 +104,6 @@ struct params {
 	ssize_t			fetch_maxchunksize;
 	unsigned		nuke_limit;
 
-#ifdef SENDFILE_WORKS
-	/* Sendfile object minimum size */
-	ssize_t			sendfile_threshold;
-#endif
 
 	/* VCL traces */
 	unsigned		vcl_trace;
@@ -181,8 +181,7 @@ struct params {
 	unsigned		http_range_support;
 
 	unsigned		http_gzip_support;
-	unsigned		gzip_stack_buffer;
-	unsigned		gzip_tmp_space;
+	unsigned		gzip_buffer;
 	unsigned		gzip_level;
 	unsigned		gzip_window;
 	unsigned		gzip_memlevel;
@@ -202,4 +201,5 @@ struct params {
 	struct poolparam	vbc_pool;
 	struct poolparam	req_pool;
 	struct poolparam	sess_pool;
+	struct poolparam	vbo_pool;
 };

@@ -139,13 +139,13 @@ HSH_Cleanup(struct worker *wrk)
 }
 
 void
-HSH_DeleteObjHead(struct worker *wrk, struct objhead *oh)
+HSH_DeleteObjHead(struct dstat *ds, struct objhead *oh)
 {
 
 	AZ(oh->refcnt);
 	assert(VTAILQ_EMPTY(&oh->objcs));
 	Lck_Delete(&oh->mtx);
-	wrk->stats.n_objecthead--;
+	ds->n_objecthead--;
 	FREE_OBJ(oh);
 }
 
@@ -357,7 +357,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 			continue;
 		}
 
-		o = oc_getobj(sp->wrk, oc);
+		o = oc_getobj(&sp->wrk->stats, oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
 		if (o->exp.ttl <= 0. && o->exp.grace <= 0.
@@ -421,14 +421,14 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	    && (busy_oc != NULL		/* Somebody else is already busy */
 	    || !VDI_Healthy(sp->req->director, sp))) {
 					/* Or it is impossible to fetch */
-		o = oc_getobj(sp->wrk, grace_oc);
+		o = oc_getobj(&sp->wrk->stats, grace_oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		oc = grace_oc;
 	}
 	sp->req->objcore = NULL;
 
 	if (oc != NULL && !sp->req->hash_always_miss) {
-		o = oc_getobj(sp->wrk, oc);
+		o = oc_getobj(&sp->wrk->stats, oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		assert(oc->objhead == oh);
 
@@ -477,6 +477,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 
 	AZ(wrk->busyobj);
 	wrk->busyobj = VBO_GetBusyObj(wrk);
+	wrk->busyobj->vsl->wid = sp->vsl_id;
 
         /* If we're not serving a valid or graced object and we saved stale_o,
 	 * it is a candidate for the conditional backend request. */
@@ -556,8 +557,8 @@ HSH_Purge(const struct sess *sp, struct objhead *oh, double ttl, double grace)
 	struct object *o;
 
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-	spc = WS_Reserve(sp->wrk->ws, 0);
-	ocp = (void*)sp->wrk->ws->f;
+	spc = WS_Reserve(sp->req->ws, 0);
+	ocp = (void*)sp->req->ws->f;
 	Lck_Lock(&oh->mtx);
 	assert(oh->refcnt > 0);
 	nobj = 0;
@@ -574,7 +575,7 @@ HSH_Purge(const struct sess *sp, struct objhead *oh, double ttl, double grace)
 			continue;
 		}
 
-		(void)oc_getobj(sp->wrk, oc); /* XXX: still needed ? */
+		(void)oc_getobj(&sp->wrk->stats, oc); /* XXX: still needed ? */
 
 		xxxassert(spc >= sizeof *ocp);
 		oc->refcnt++;
@@ -591,16 +592,16 @@ HSH_Purge(const struct sess *sp, struct objhead *oh, double ttl, double grace)
 	for (n = 0; n < nobj; n++) {
 		oc = ocp[n];
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-		o = oc_getobj(sp->wrk, oc);
+		o = oc_getobj(&sp->wrk->stats, oc);
 		if (o == NULL)
 			continue;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		o->exp.ttl = ttl;
 		o->exp.grace = grace;
 		EXP_Rearm(o);
-		(void)HSH_Deref(sp->wrk, NULL, &o);
+		(void)HSH_Deref(&sp->wrk->stats, NULL, &o);
 	}
-	WS_Release(sp->wrk->ws, 0);
+	WS_Release(sp->req->ws, 0);
 }
 
 
@@ -621,34 +622,23 @@ HSH_Drop(struct worker *wrk)
 	AssertObjCorePassOrBusy(o->objcore);
 	o->exp.ttl = -1.;
 	if (o->objcore != NULL)		/* Pass has no objcore */
-		HSH_Unbusy(wrk);
-	(void)HSH_Deref(wrk, NULL, &wrk->sp->req->obj);
+		HSH_Unbusy(o->objcore);
+	(void)HSH_Deref(&wrk->stats, NULL, &wrk->sp->req->obj);
 }
 
 void
-HSH_Unbusy(struct worker *wrk)
+HSH_Unbusy(struct objcore *oc)
 {
-	struct object *o;
 	struct objhead *oh;
-	struct objcore *oc;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	o = wrk->sp->req->obj;
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	oc = o->objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	oh = oc->objhead;
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
 
-	AssertObjBusy(o);
+	AssertOCBusy(oc);
 	AN(oc->ban);
 	assert(oc->refcnt > 0);
 	assert(oh->refcnt > 0);
-	if (o->ws_o->overflow)
-		wrk->stats.n_objoverflow++;
-	if (cache_param->diag_bitmap & 0x40)
-		WSL(wrk, SLT_Debug, 0,
-		    "Object %u workspace free %u", o->xid, WS_Free(o->ws_o));
 
 	/* XXX: pretouch neighbors on oh->objcs to prevent page-on under mtx */
 	Lck_Lock(&oh->mtx);
@@ -662,7 +652,6 @@ HSH_Unbusy(struct worker *wrk)
 		hsh_rush(oh);
 	AN(oc->ban);
 	Lck_Unlock(&oh->mtx);
-	assert(oc_getobj(wrk, oc) == o);
 }
 
 void
@@ -694,7 +683,7 @@ HSH_Ref(struct objcore *oc)
  */
 
 int
-HSH_Deref(struct worker *wrk, struct objcore *oc, struct object **oo)
+HSH_Deref(struct dstat *ds, struct objcore *oc, struct object **oo)
 {
 	struct object *o = NULL;
 	struct objhead *oh;
@@ -717,7 +706,7 @@ HSH_Deref(struct worker *wrk, struct objcore *oc, struct object **oo)
 		 */
 		STV_Freestore(o);
 		STV_free(o->objstore);
-		wrk->stats.n_object--;
+		ds->n_object--;
 		return (0);
 	}
 
@@ -747,16 +736,16 @@ HSH_Deref(struct worker *wrk, struct objcore *oc, struct object **oo)
 
 	if (oc->methods != NULL) {
 		oc_freeobj(oc);
-		wrk->stats.n_object--;
+		ds->n_object--;
 	}
 	FREE_OBJ(oc);
 
-	wrk->stats.n_objectcore--;
+	ds->n_objectcore--;
 	/* Drop our ref on the objhead */
 	assert(oh->refcnt > 0);
 	if (hash->deref(oh))
 		return (0);
-	HSH_DeleteObjHead(wrk, oh);
+	HSH_DeleteObjHead(ds, oh);
 	return (0);
 }
 

@@ -34,6 +34,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <poll.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -107,7 +108,7 @@ VCLS_func_ping(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 	(void)av;
 	t = time(NULL);
-	VCLI_Out(cli, "PONG %ld 1.0", t);
+	VCLI_Out(cli, "PONG %jd 1.0", (intmax_t)t);
 }
 
 /*--------------------------------------------------------------------*/

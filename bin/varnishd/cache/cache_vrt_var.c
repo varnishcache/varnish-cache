@@ -58,7 +58,7 @@ vrt_do_string(struct worker *w, int fd, const struct http *hp, int fld,
 	AN(hp);
 	b = VRT_String(hp->ws, NULL, p, ap);
 	if (b == NULL || *b == '\0') {
-		WSL(w, SLT_LostHeader, fd, "%s", err);
+		WSL(w->vsl, SLT_LostHeader, fd, "%s", err);
 	} else {
 		http_SetH(hp, fld, b);
 	}
@@ -278,7 +278,8 @@ VRT_l_bereq_##which(struct sess *sp, double num)		\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	sp->wrk->which = (num > 0.0 ? num : 0.0);		\
+	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);	\
+	sp->wrk->busyobj->which = (num > 0.0 ? num : 0.0);	\
 }								\
 								\
 double __match_proto__()					\
@@ -286,7 +287,8 @@ VRT_r_bereq_##which(struct sess *sp)				\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	return(sp->wrk->which);					\
+	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);	\
+	return(sp->wrk->busyobj->which);			\
 }
 
 BEREQ_TIMEOUT(connect_timeout)
@@ -339,7 +341,7 @@ VRT_l_beresp_storage(struct sess *sp, const char *str, ...)
 	char *b;
 
 	va_start(ap, str);
-	b = VRT_String(sp->wrk->ws, NULL, str, ap);
+	b = VRT_String(sp->wrk->busyobj->ws, NULL, str, ap);
 	va_end(ap);
 	sp->req->storage_hint = b;
 }

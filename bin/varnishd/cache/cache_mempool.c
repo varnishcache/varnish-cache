@@ -223,8 +223,7 @@ mpl_guard(void *priv)
 
 struct mempool *
 MPL_New(const char *name,
-	volatile struct poolparam *pp,
-	volatile unsigned *cur_size)
+    volatile struct poolparam *pp, volatile unsigned *cur_size)
 {
 	struct mempool *mpl;
 

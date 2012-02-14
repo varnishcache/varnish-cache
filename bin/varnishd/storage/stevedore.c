@@ -49,20 +49,20 @@ static const struct stevedore * volatile stv_next;
  */
 
 static unsigned __match_proto__(getxid_f)
-default_oc_getxid(struct worker *wrk, struct objcore *oc)
+default_oc_getxid(struct dstat *ds, struct objcore *oc)
 {
 	struct object *o;
 
-	o = oc_getobj(wrk, oc);
+	o = oc_getobj(ds, oc);
 	return (o->xid);
 }
 
 static struct object * __match_proto__(getobj_f)
-default_oc_getobj(struct worker *wrk, struct objcore *oc)
+default_oc_getobj(struct dstat *ds, struct objcore *oc)
 {
 	struct object *o;
 
-	(void)wrk;
+	(void)ds;
 	if (oc->priv == NULL)
 		return (NULL);
 	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
@@ -141,7 +141,7 @@ stv_pick_stevedore(struct worker *wrk, const char **hint)
 			return (stv_transient);
 
 		/* Hint was not valid, nuke it */
-		WSL(wrk, SLT_Debug, 0,			/* XXX VSL_id ?? */
+		WSL(wrk->vsl, SLT_Debug, 0,		/* XXX VSL_id ?? */
 		    "Storage hint not usable");
 		*hint = NULL;
 	}
@@ -250,7 +250,7 @@ STV_MkObject(struct worker *wrk, void *ptr, unsigned ltot,
 	WS_Assert(o->ws_o);
 	assert(o->ws_o->e <= (char*)ptr + ltot);
 
-	http_Setup(o->http, o->ws_o);
+	http_Setup(o->http, o->ws_o, wrk->busyobj->vsl);
 	o->http->magic = HTTP_MAGIC;
 	o->exp = wrk->busyobj->exp;
 	VTAILQ_INIT(&o->store);

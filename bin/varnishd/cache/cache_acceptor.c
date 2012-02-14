@@ -228,7 +228,7 @@ VCA_FailSess(struct worker *wrk)
 	struct wrk_accept *wa;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CAST_OBJ_NOTNULL(wa, (void*)wrk->ws->f, WRK_ACCEPT_MAGIC);
+	CAST_OBJ_NOTNULL(wa, (void*)wrk->aws->f, WRK_ACCEPT_MAGIC);
 	AZ(wrk->sp);
 	AZ(close(wa->acceptsock));
 	wrk->stats.sess_drop++;
@@ -246,9 +246,11 @@ VCA_SetupSess(struct worker *wrk)
 	struct wrk_accept *wa;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CAST_OBJ_NOTNULL(wa, (void*)wrk->ws->f, WRK_ACCEPT_MAGIC);
+	CAST_OBJ_NOTNULL(wa, (void*)wrk->aws->f, WRK_ACCEPT_MAGIC);
 	sp = wrk->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	sp->vxid = wa->vxid;
+	sp->vseq = 0;
 	sp->fd = wa->acceptsock;
 	sp->vsl_id = wa->acceptsock | VSL_CLIENTMARKER ;
 	wa->acceptsock = -1;
