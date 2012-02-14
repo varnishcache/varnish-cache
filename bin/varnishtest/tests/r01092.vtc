@@ -1,0 +1,34 @@
+varnishtest "Test case for #1092 - esi:remove and comments"
+
+server s1 {
+	rxreq
+	txresp -body {
+		<html>
+		Keep-1
+		<!--esX Keep-22 -->
+		<!--esi Keep-333 -->
+		<esi:remove>
+		Remove-1
+		<!-- Remove-22 -->
+		<!--esi Remove-333 -->
+		Remove-4444
+		</esi:remove>
+		Keep-4444
+		</html>
+	}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		set beresp.do_esi = true;
+	}
+} -start -cliok "param.set esi_syntax 4"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 80
+}
+
+client c1 -run
+varnish v1 -expect esi_errors == 1
