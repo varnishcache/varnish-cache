@@ -809,9 +809,9 @@ void http_FilterResp(const struct http *fm, struct http *to, unsigned how);
 void http_PutProtocol(const struct http *to, const char *protocol);
 
 /* Check if a refresh should be done */
-void http_CheckRefresh(struct sess *sp);
+void http_CheckRefresh(struct busyobj *busyobj);
 /* Check if we got 304 response */
-void http_Check304(struct sess *sp, struct busyobj *busyobj);
+void http_Check304(struct worker *wrk);
 
 void http_PutStatus(struct http *to, uint16_t status);
 void http_PutResponse(const struct http *to, const char *response);

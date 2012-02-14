@@ -611,7 +611,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 		 * Any other response is handled as usual.
 		 */
 		if (wrk->busyobj->stale_obj)
-			http_Check304(sp, wrk->busyobj);
+			http_Check304(wrk);
 
 		req->err_code = http_GetStatus(wrk->busyobj->beresp);
 
@@ -1290,7 +1290,7 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
          * add If-Modified-Since and/or If-None-Match to the bereq.
          */
         if (wrk->busyobj->stale_obj)
-                http_CheckRefresh(sp);
+                http_CheckRefresh(wrk->busyobj);
 
 	VCL_miss_method(sp);
 

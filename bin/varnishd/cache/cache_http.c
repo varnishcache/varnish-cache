@@ -60,8 +60,7 @@ static const enum VSL_tag_e logmtx[][HTTP_HDR_FIRST + 1] = {
 };
 /*lint -restore */
 
-void http_FilterMissingFields(struct worker *w, int fd, struct http *to,
-    const struct http *fm);
+void http_FilterMissingFields(struct http *to, const struct http *fm);
 
 static enum VSL_tag_e
 http2shmlog(const struct http *hp, int t)
@@ -874,8 +873,7 @@ http_filterfields(struct http *to, const struct http *fm, unsigned how)
  */
 
 void
-http_FilterMissingFields(struct worker *w, int fd, struct http *to,
-    const struct http *fm)
+http_FilterMissingFields(struct http *to, const struct http *fm)
 {
 	unsigned u;
 	unsigned hdrlen;
@@ -921,18 +919,16 @@ http_FilterReq(const struct sess *sp, unsigned how)
  */
 
 void
-http_CheckRefresh(struct sess *sp)
+http_CheckRefresh(struct busyobj *busyobj)
 {
 	struct object *freshen_obj;
 	struct http *obj_hp, *bereq_hp;
 	char *p;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);
-	freshen_obj = sp->wrk->busyobj->stale_obj;
+	CHECK_OBJ_NOTNULL(busyobj, BUSYOBJ_MAGIC);
+	freshen_obj = busyobj->stale_obj;
 	CHECK_OBJ_NOTNULL(freshen_obj, OBJECT_MAGIC);
-	bereq_hp = sp->wrk->busyobj->bereq;
+	bereq_hp = busyobj->bereq;
 	CHECK_OBJ_NOTNULL(bereq_hp, HTTP_MAGIC);
 	obj_hp = freshen_obj->http;
 	CHECK_OBJ_NOTNULL(obj_hp, HTTP_MAGIC);
@@ -952,15 +948,17 @@ http_CheckRefresh(struct sess *sp)
  */
 
 void
-http_Check304(struct sess *sp, struct busyobj *busyobj)
+http_Check304(struct worker *wrk)
 {
+	struct busyobj *busyobj;
 	struct object *o_stale;
 	char *p;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(busyobj, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
+	busyobj = wrk->busyobj;
+	CHECK_OBJ_NOTNULL(busyobj->stale_obj, OBJECT_MAGIC);
 	o_stale = busyobj->stale_obj;
-	CHECK_OBJ_NOTNULL(o_stale, OBJECT_MAGIC);
 
 	if (busyobj->beresp->status != 304) {
 	    /*
@@ -969,11 +967,11 @@ http_Check304(struct sess *sp, struct busyobj *busyobj)
 	     */
 	    if (http_GetHdr(busyobj->bereq, H_If_Modified_Since, &p)
 		|| http_GetHdr(busyobj->bereq, H_If_None_Match, &p))
-		sp->wrk->stats.fetch_not_validated++;
+		wrk->stats.fetch_not_validated++;
 
 	    /* Discard the stale object */
 	    /* XXX: just deref, or force expire? */
-	    HSH_Deref(&sp->wrk->stats, NULL, &busyobj->stale_obj);
+	    HSH_Deref(&wrk->stats, NULL, &busyobj->stale_obj);
 	    AZ(busyobj->stale_obj);
 	    return;
 	}
@@ -982,8 +980,7 @@ http_Check304(struct sess *sp, struct busyobj *busyobj)
 	 * Copy headers we need from the stale object into the 304 response
 	 * http_EstimateWS(beresp) must have been called before this.
 	 */
-	http_FilterMissingFields(sp->wrk, sp->fd, busyobj->beresp,
-	    o_stale->http);
+	http_FilterMissingFields(busyobj->beresp, o_stale->http);
 
 	http_SetResp(busyobj->beresp, "HTTP/1.1", 200, "Ok Not Modified");
 	http_SetH(busyobj->beresp, HTTP_HDR_REQ, "GET");
