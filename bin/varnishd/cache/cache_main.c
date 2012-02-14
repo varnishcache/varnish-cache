@@ -85,6 +85,33 @@ THR_GetName(void)
 }
 
 /*--------------------------------------------------------------------
+ */
+
+static uint32_t vxid_base;
+static struct lock vxid_lock;
+
+static void
+vxid_More(struct vxid *v)
+{
+
+	Lck_Lock(&vxid_lock);
+	v->next = vxid_base;
+	v->count = 32768;
+	vxid_base = v->count;
+	Lck_Unlock(&vxid_lock);
+}
+
+uint32_t
+VXID_Get(struct vxid *v)
+{
+	if (v->count == 0)
+		vxid_More(v);
+	AN(v->count);
+	v->count--;
+	return (v->next++);
+}
+
+/*--------------------------------------------------------------------
  * XXX: Think more about which order we start things
  */
 
@@ -106,6 +133,8 @@ child_main(void)
 	VSM_Init();	/* First, LCK needs it. */
 
 	LCK_Init();	/* Second, locking */
+
+	Lck_New(&vxid_lock, lck_vxid);
 
 	WAIT_Init();
 	PAN_Init();

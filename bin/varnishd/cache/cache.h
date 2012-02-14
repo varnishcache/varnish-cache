@@ -252,6 +252,13 @@ struct vsl_log {
 
 /*--------------------------------------------------------------------*/
 
+struct vxid {
+	uint32_t		next;
+	uint32_t		count;
+};
+
+/*--------------------------------------------------------------------*/
+
 struct wrk_accept {
 	unsigned		magic;
 #define WRK_ACCEPT_MAGIC	0x8c4b4d59
@@ -261,6 +268,7 @@ struct wrk_accept {
 	socklen_t		acceptaddrlen;
 	int			acceptsock;
 	struct listen_sock	*acceptlsock;
+	uint32_t		vxid;
 };
 
 /* Worker pool stuff -------------------------------------------------*/
@@ -626,6 +634,8 @@ struct sess {
 	enum step		step;
 	int			fd;
 	unsigned		vsl_id;
+	uint32_t		vxid;
+	uint32_t		vseq;
 
 	/* Cross references ------------------------------------------*/
 
@@ -834,6 +844,7 @@ int HTC_Complete(struct http_conn *htc);
 #undef HTTPH
 
 /* cache_main.c */
+uint32_t VXID_Get(struct vxid *v);
 extern volatile struct params * cache_param;
 void THR_SetName(const char *name);
 const char* THR_GetName(void);
