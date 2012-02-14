@@ -117,7 +117,7 @@ RES_BuildHttp(const struct sess *sp)
 
 	http_ClrHeader(req->resp);
 	req->resp->logtag = HTTP_Tx;
-	http_FilterResp(sp, req->obj->http, req->resp, 0);
+	http_FilterResp(req->obj->http, req->resp, 0);
 
 	if (!(req->res_mode & RES_LEN)) {
 		http_Unset(req->resp, H_Content_Length);
@@ -278,7 +278,7 @@ RES_WriteObj(struct sess *sp)
 	 */
 	if (!(req->res_mode & RES_ESI_CHILD))
 		sp->wrk->acct_tmp.hdrbytes +=
-		    http_Write(sp->wrk, sp->vsl_id, req->resp, 1);
+		    http_Write(sp->wrk, req->resp, 1);
 
 	if (!req->wantbody)
 		req->res_mode &= ~RES_CHUNKED;
@@ -341,7 +341,7 @@ RES_StreamStart(struct sess *sp)
 		    "Content-Length: %s", sp->wrk->busyobj->h_content_length);
 
 	sp->wrk->acct_tmp.hdrbytes +=
-	    http_Write(sp->wrk, sp->vsl_id, sp->req->resp, 1);
+	    http_Write(sp->wrk, sp->req->resp, 1);
 
 	if (req->res_mode & RES_CHUNKED)
 		WRW_Chunked(sp->wrk);

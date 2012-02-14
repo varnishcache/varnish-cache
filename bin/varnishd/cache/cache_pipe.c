@@ -80,7 +80,7 @@ PipeSession(struct sess *sp)
 
 	WRW_Reserve(w, &vc->fd);
 	sp->wrk->acct_tmp.hdrbytes +=
-	    http_Write(w, sp->vsl_id, sp->wrk->busyobj->bereq, 0);
+	    http_Write(w, sp->wrk->busyobj->bereq, 0);
 
 	if (sp->req->htc->pipeline.b != NULL)
 		sp->wrk->acct_tmp.bodybytes +=

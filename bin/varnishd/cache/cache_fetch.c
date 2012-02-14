@@ -427,7 +427,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 
 	(void)VTCP_blocking(vc->fd);	/* XXX: we should timeout instead */
 	WRW_Reserve(wrk, &vc->fd);
-	(void)http_Write(wrk, vc->vsl_id, hp, 0);	/* XXX: stats ? */
+	(void)http_Write(wrk, hp, 0);	/* XXX: stats ? */
 
 	/* Deal with any message-body the request might have */
 	i = FetchReqBody(sp, sendbody);
@@ -480,7 +480,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 
 	hp = wrk->busyobj->beresp;
 
-	if (http_DissectResponse(wrk, htc, hp)) {
+	if (http_DissectResponse(hp, htc)) {
 		WSP(sp, SLT_FetchError, "http format error");
 		VDI_CloseFd(sp->wrk, &sp->wrk->busyobj->vbc);
 		/* XXX: other cleanup ? */

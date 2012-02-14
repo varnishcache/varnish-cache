@@ -838,7 +838,7 @@ cnt_prepfetch(struct sess *sp, struct worker *wrk, struct req *req)
 	hp2 = req->obj->http;
 
 	hp2->logtag = HTTP_Obj;
-	http_FilterResp(sp, hp, hp2, pass ? HTTPH_R_PASS : HTTPH_A_INS);
+	http_FilterResp(hp, hp2, pass ? HTTPH_R_PASS : HTTPH_A_INS);
 	http_CopyHome(wrk, sp->vsl_id, hp2);
 
 	if (http_GetHdr(hp, H_Last_Modified, &b))

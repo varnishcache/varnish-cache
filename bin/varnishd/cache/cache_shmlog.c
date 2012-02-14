@@ -208,6 +208,8 @@ WSLR(struct vsl_log *vsl, enum VSL_tag_e tag, int id, txt t)
 	unsigned l, mlen;
 
 	Tcheck(t);
+	if (id == -1)
+		id = vsl->wid;
 	mlen = cache_param->shm_reclen;
 
 	/* Truncate */
@@ -279,6 +281,8 @@ WSL(struct vsl_log *vsl, enum VSL_tag_e tag, int id, const char *fmt, ...)
 {
 	va_list ap;
 
+	if (id == -1)
+		id = vsl->wid;
 	AN(fmt);
 	va_start(ap, fmt);
 	wsl(vsl, tag, id, fmt, ap);

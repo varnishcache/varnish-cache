@@ -799,13 +799,11 @@ const char *http_StatusMessage(unsigned);
 unsigned http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd);
 void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
-unsigned http_Write(struct worker *w, unsigned vsl_id, const struct http *hp,
-    int resp);
+unsigned http_Write(struct worker *w, const struct http *hp, int resp);
 void http_SetResp(struct http *to, const char *proto, uint16_t status,
     const char *response);
 void http_FilterReq(const struct sess *sp, unsigned how);
-void http_FilterResp(const struct sess *sp, const struct http *fm, struct http *to,
-    unsigned how);
+void http_FilterResp(const struct http *fm, struct http *to, unsigned how);
 void http_PutProtocol(struct worker *w, unsigned vsl_id, const struct http *to,
     const char *protocol);
 void http_PutStatus(struct http *to, uint16_t status);
@@ -830,8 +828,7 @@ uint16_t http_GetStatus(const struct http *hp);
 const char *http_GetReq(const struct http *hp);
 int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
 uint16_t http_DissectRequest(const struct sess *sp);
-uint16_t http_DissectResponse(struct worker *w, const struct http_conn *htc,
-    struct http *sp);
+uint16_t http_DissectResponse(struct http *sp, const struct http_conn *htc);
 const char *http_DoConnection(const struct http *hp);
 void http_CopyHome(struct worker *w, unsigned vsl_id, const struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
