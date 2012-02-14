@@ -250,7 +250,7 @@ STV_MkObject(struct worker *wrk, void *ptr, unsigned ltot,
 	WS_Assert(o->ws_o);
 	assert(o->ws_o->e <= (char*)ptr + ltot);
 
-	http_Setup(o->http, o->ws_o);
+	http_Setup(o->http, o->ws_o, wrk->busyobj->vsl);
 	o->http->magic = HTTP_MAGIC;
 	o->exp = wrk->busyobj->exp;
 	VTAILQ_INIT(&o->store);

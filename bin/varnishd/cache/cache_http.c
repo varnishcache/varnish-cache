@@ -130,10 +130,11 @@ HTTP_create(void *p, uint16_t nhttp)
 /*--------------------------------------------------------------------*/
 
 void
-http_Setup(struct http *hp, struct ws *ws)
+http_Setup(struct http *hp, struct ws *ws, struct vsl_log *vsl)
 {
 	http_Teardown(hp);
 	hp->ws = ws;
+	hp->vsl = vsl;
 }
 
 /*--------------------------------------------------------------------*/

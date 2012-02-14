@@ -274,7 +274,7 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 			req->obj->last_lru = req->t_resp;
 		req->obj->last_use = req->t_resp;	/* XXX: locking ? */
 	}
-	http_Setup(req->resp, req->ws);
+	http_Setup(req->resp, req->ws, req->vsl);
 	RES_BuildHttp(sp);
 	VCL_deliver_method(sp);
 	switch (req->handling) {
@@ -569,7 +569,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 	AZ(wrk->busyobj->should_close);
 	AZ(req->storage_hint);
 
-	http_Setup(wrk->busyobj->beresp, wrk->busyobj->ws);
+	http_Setup(wrk->busyobj->beresp, wrk->busyobj->ws, wrk->busyobj->vsl);
 
 	need_host_hdr = !http_GetHdr(wrk->busyobj->bereq, H_Host, NULL);
 
@@ -1223,7 +1223,7 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 	AZ(req->obj);
 
-	http_Setup(wrk->busyobj->bereq, wrk->busyobj->ws);
+	http_Setup(wrk->busyobj->bereq, wrk->busyobj->ws, wrk->busyobj->vsl);
 	http_FilterReq(sp, HTTPH_R_FETCH);
 	http_ForceGet(wrk->busyobj->bereq);
 	if (cache_param->http_gzip_support) {
@@ -1298,7 +1298,7 @@ cnt_pass(struct sess *sp, struct worker *wrk, const struct req *req)
 
 	wrk->busyobj = VBO_GetBusyObj(wrk);
 	wrk->busyobj->vsl->wid = sp->vsl_id;
-	http_Setup(wrk->busyobj->bereq, wrk->busyobj->ws);
+	http_Setup(wrk->busyobj->bereq, wrk->busyobj->ws, wrk->busyobj->vsl);
 	http_FilterReq(sp, HTTPH_R_PASS);
 
 	VCL_pass_method(sp);
@@ -1353,7 +1353,7 @@ cnt_pipe(struct sess *sp, struct worker *wrk, const struct req *req)
 	wrk->acct_tmp.pipe++;
 	wrk->busyobj = VBO_GetBusyObj(wrk);
 	wrk->busyobj->vsl->wid = sp->vsl_id;
-	http_Setup(wrk->busyobj->bereq, wrk->busyobj->ws);
+	http_Setup(wrk->busyobj->bereq, wrk->busyobj->ws, wrk->busyobj->vsl);
 	http_FilterReq(sp, 0);
 
 	VCL_pipe_method(sp);
@@ -1529,7 +1529,7 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 
 	EXP_Clr(&req->exp);
 
-	http_Setup(req->http, req->ws);
+	http_Setup(req->http, req->ws, req->vsl);
 	req->err_code = http_DissectRequest(sp);
 
 	/* If we could not even parse the request, just close */
