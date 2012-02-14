@@ -706,7 +706,6 @@ VEP_Parse(const struct busyobj *bo, const char *p, size_t l)
 					vep->until_p = vep->until = "-->";
 					vep->until_s = VEP_NEXTTAG;
 					vep->state = VEP_UNTIL;
-					vep_mark_verbatim(vep, p);
 					break;
 				}
 				p++;
