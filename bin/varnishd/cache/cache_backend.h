@@ -152,6 +152,7 @@ struct vbc {
 	VTAILQ_ENTRY(vbc)	list;
 	struct backend		*backend;
 	struct vdi_simple	*vdis;
+	struct vsl_log		*vsl;
 	unsigned		vsl_id;
 	int			fd;
 

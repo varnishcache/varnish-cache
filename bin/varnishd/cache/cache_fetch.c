@@ -416,8 +416,6 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 	if (vc->recycled)
 		retry = 1;
 
-	sp->wrk->busyobj->vsl->wid = vc->vsl_id;
-
 	/*
 	 * Now that we know our backend, we can set a default Host:
 	 * header if one is necessary.  This cannot be done in the VCL
