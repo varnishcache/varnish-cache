@@ -37,6 +37,7 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 
+#include <limits.h>
 #include <stdio.h>
 
 #include "cache.h"
@@ -82,6 +83,8 @@ WRW_Reserve(struct worker *wrk, int *fd)
 	u = WS_Reserve(wrk->aws, 0);
 	u = PRNDDN(u);
 	u /= sizeof(struct iovec);
+	if (u > IOV_MAX)
+		u = IOV_MAX;
 	AN(u);
 	wrw->iov = (void*)PRNDUP(wrk->aws->f);
 	wrw->siov = u;
