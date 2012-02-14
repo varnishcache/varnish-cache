@@ -116,14 +116,6 @@ WS_Alloc(struct ws *ws, unsigned bytes)
 	return (r);
 }
 
-unsigned
-WS_Free(const struct ws *ws)
-{
-
-	WS_Assert(ws);
-	return(ws->e - ws->f);
-}
-
 char *
 WS_Snapshot(struct ws *ws)
 {

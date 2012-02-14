@@ -49,20 +49,20 @@ static const struct stevedore * volatile stv_next;
  */
 
 static unsigned __match_proto__(getxid_f)
-default_oc_getxid(struct worker *wrk, struct objcore *oc)
+default_oc_getxid(struct dstat *ds, struct objcore *oc)
 {
 	struct object *o;
 
-	o = oc_getobj(wrk, oc);
+	o = oc_getobj(ds, oc);
 	return (o->xid);
 }
 
 static struct object * __match_proto__(getobj_f)
-default_oc_getobj(struct worker *wrk, struct objcore *oc)
+default_oc_getobj(struct dstat *ds, struct objcore *oc)
 {
 	struct object *o;
 
-	(void)wrk;
+	(void)ds;
 	if (oc->priv == NULL)
 		return (NULL);
 	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);

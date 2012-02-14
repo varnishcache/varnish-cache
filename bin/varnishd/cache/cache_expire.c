@@ -224,7 +224,7 @@ EXP_Insert(struct object *o)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oc = o->objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AssertObjBusy(o);
+	AssertOCBusy(oc);
 	HSH_Ref(oc);
 
 	assert(o->exp.entered != 0 && !isnan(o->exp.entered));
@@ -399,9 +399,9 @@ exp_timer(struct sess *sp, void *priv)
 		VSC_C_main->n_expired++;
 
 		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
-		o = oc_getobj(sp->wrk, oc);
+		o = oc_getobj(&sp->wrk->stats, oc);
 		WSL(sp->wrk->vsl, SLT_ExpKill, 0, "%u %.0f",
-		    oc_getxid(sp->wrk, oc), EXP_Ttl(NULL, o) - t);
+		    oc_getxid(&sp->wrk->stats, oc), EXP_Ttl(NULL, o) - t);
 		(void)HSH_Deref(&sp->wrk->stats, oc, NULL);
 	}
 	NEEDLESS_RETURN(NULL);
@@ -445,7 +445,7 @@ EXP_NukeOne(struct worker *wrk, struct lru *lru)
 		return (-1);
 
 	/* XXX: bad idea for -spersistent */
-	WSL(wrk->vsl, SLT_ExpKill, 0, "%u LRU", oc_getxid(wrk, oc));
+	WSL(wrk->vsl, SLT_ExpKill, 0, "%u LRU", oc_getxid(&wrk->stats, oc));
 	(void)HSH_Deref(&wrk->stats, oc, NULL);
 	return (1);
 }

@@ -357,8 +357,8 @@ struct storage {
  * housekeeping fields parts of an object.
  */
 
-typedef struct object *getobj_f(struct worker *wrk, struct objcore *oc);
-typedef unsigned getxid_f(struct worker *wrk, struct objcore *oc);
+typedef struct object *getobj_f(struct dstat *ds, struct objcore *oc);
+typedef unsigned getxid_f(struct dstat *ds, struct objcore *oc);
 typedef void updatemeta_f(struct objcore *oc);
 typedef void freeobj_f(struct objcore *oc);
 typedef struct lru *getlru_f(const struct objcore *oc);
@@ -395,24 +395,24 @@ struct objcore {
 };
 
 static inline unsigned
-oc_getxid(struct worker *wrk, struct objcore *oc)
+oc_getxid(struct dstat *ds, struct objcore *oc)
 {
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	AN(oc->methods);
 	AN(oc->methods->getxid);
-	return (oc->methods->getxid(wrk, oc));
+	return (oc->methods->getxid(ds, oc));
 }
 
 static inline struct object *
-oc_getobj(struct worker *wrk, struct objcore *oc)
+oc_getobj(struct dstat *ds, struct objcore *oc)
 {
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ(oc->flags & OC_F_BUSY);
 	AN(oc->methods);
 	AN(oc->methods->getobj);
-	return (oc->methods->getobj(wrk, oc));
+	return (oc->methods->getobj(ds, oc));
 }
 
 static inline void
@@ -1014,7 +1014,6 @@ void WS_Assert(const struct ws *ws);
 void WS_Reset(struct ws *ws, char *p);
 char *WS_Alloc(struct ws *ws, unsigned bytes);
 char *WS_Snapshot(struct ws *ws);
-unsigned WS_Free(const struct ws *ws);
 
 /* rfc2616.c */
 void RFC2616_Ttl(const struct sess *sp);
@@ -1092,11 +1091,11 @@ Tadd(txt *t, const char *p, int l)
 }
 
 static inline void
-AssertObjBusy(const struct object *o)
+AssertOCBusy(const struct objcore *oc)
 {
-	AN(o->objcore);
-	AN (o->objcore->flags & OC_F_BUSY);
-	AN(o->objcore->busyobj);
+	AN(oc);
+	AN (oc->flags & OC_F_BUSY);
+	AN(oc->busyobj);
 }
 
 static inline void

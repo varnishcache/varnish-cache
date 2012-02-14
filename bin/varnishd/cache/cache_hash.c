@@ -353,7 +353,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 			continue;
 		}
 
-		o = oc_getobj(sp->wrk, oc);
+		o = oc_getobj(&sp->wrk->stats, oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
 		if (o->exp.ttl <= 0.)
@@ -397,14 +397,14 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	    && (busy_oc != NULL		/* Somebody else is already busy */
 	    || !VDI_Healthy(sp->req->director, sp))) {
 					/* Or it is impossible to fetch */
-		o = oc_getobj(sp->wrk, grace_oc);
+		o = oc_getobj(&sp->wrk->stats, grace_oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		oc = grace_oc;
 	}
 	sp->req->objcore = NULL;
 
 	if (oc != NULL && !sp->req->hash_always_miss) {
-		o = oc_getobj(sp->wrk, oc);
+		o = oc_getobj(&sp->wrk->stats, oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		assert(oc->objhead == oh);
 
@@ -540,7 +540,7 @@ HSH_Purge(const struct sess *sp, struct objhead *oh, double ttl, double grace)
 			continue;
 		}
 
-		(void)oc_getobj(sp->wrk, oc); /* XXX: still needed ? */
+		(void)oc_getobj(&sp->wrk->stats, oc); /* XXX: still needed ? */
 
 		xxxassert(spc >= sizeof *ocp);
 		oc->refcnt++;
@@ -557,7 +557,7 @@ HSH_Purge(const struct sess *sp, struct objhead *oh, double ttl, double grace)
 	for (n = 0; n < nobj; n++) {
 		oc = ocp[n];
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-		o = oc_getobj(sp->wrk, oc);
+		o = oc_getobj(&sp->wrk->stats, oc);
 		if (o == NULL)
 			continue;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
@@ -587,34 +587,23 @@ HSH_Drop(struct worker *wrk)
 	AssertObjCorePassOrBusy(o->objcore);
 	o->exp.ttl = -1.;
 	if (o->objcore != NULL)		/* Pass has no objcore */
-		HSH_Unbusy(wrk);
+		HSH_Unbusy(o->objcore);
 	(void)HSH_Deref(&wrk->stats, NULL, &wrk->sp->req->obj);
 }
 
 void
-HSH_Unbusy(struct worker *wrk)
+HSH_Unbusy(struct objcore *oc)
 {
-	struct object *o;
 	struct objhead *oh;
-	struct objcore *oc;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	o = wrk->sp->req->obj;
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	oc = o->objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	oh = oc->objhead;
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
 
-	AssertObjBusy(o);
+	AssertOCBusy(oc);
 	AN(oc->ban);
 	assert(oc->refcnt > 0);
 	assert(oh->refcnt > 0);
-	if (o->ws_o->overflow)
-		wrk->stats.n_objoverflow++;
-	if (cache_param->diag_bitmap & 0x40)
-		WSL(wrk->vsl, SLT_Debug, 0,
-		    "Object %u workspace free %u", o->xid, WS_Free(o->ws_o));
 
 	/* XXX: pretouch neighbors on oh->objcs to prevent page-on under mtx */
 	Lck_Lock(&oh->mtx);
@@ -628,7 +617,6 @@ HSH_Unbusy(struct worker *wrk)
 		hsh_rush(oh);
 	AN(oc->ban);
 	Lck_Unlock(&oh->mtx);
-	assert(oc_getobj(wrk, oc) == o);
 }
 
 void

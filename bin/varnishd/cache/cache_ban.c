@@ -891,7 +891,7 @@ ban_lurker_work(const struct sess *sp, unsigned pass)
 			/*
 			 * Get the object and check it against all relevant bans
 			 */
-			o = oc_getobj(sp->wrk, oc);
+			o = oc_getobj(&sp->wrk->stats, oc);
 			i = ban_check_object(o, sp, 0);
 			if (cache_param->diag_bitmap & 0x80000)
 				VSL(SLT_Debug, 0, "lurker got: %p %d",
