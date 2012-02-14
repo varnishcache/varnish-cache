@@ -908,7 +908,7 @@ ban_lurker_work(const struct sess *sp, unsigned pass)
 			if (cache_param->diag_bitmap & 0x80000)
 				VSL(SLT_Debug, 0, "lurker done: %p %u %u",
 				    oc, oc->flags & OC_F_LURK, pass);
-			(void)HSH_Deref(sp->wrk, NULL, &o);
+			(void)HSH_Deref(&sp->wrk->stats, NULL, &o);
 			VTIM_sleep(cache_param->ban_lurker_sleep);
 		}
 		Lck_AssertHeld(&ban_mtx);

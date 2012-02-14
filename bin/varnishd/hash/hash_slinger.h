@@ -95,8 +95,8 @@ struct objhead {
 #define hoh_head _u.n.u_n_hoh_head
 };
 
-void HSH_DeleteObjHead(struct worker *w, struct objhead *oh);
-int HSH_Deref(struct worker *w, struct objcore *oc, struct object **o);
+void HSH_DeleteObjHead(struct dstat *, struct objhead *oh);
+int HSH_Deref(struct dstat *, struct objcore *oc, struct object **o);
 #endif /* VARNISH_CACHE_CHILD */
 
 extern const struct hash_slinger hsl_slinger;

@@ -402,7 +402,7 @@ exp_timer(struct sess *sp, void *priv)
 		o = oc_getobj(sp->wrk, oc);
 		WSL(sp->wrk->vsl, SLT_ExpKill, 0, "%u %.0f",
 		    oc_getxid(sp->wrk, oc), EXP_Ttl(NULL, o) - t);
-		(void)HSH_Deref(sp->wrk, oc, NULL);
+		(void)HSH_Deref(&sp->wrk->stats, oc, NULL);
 	}
 	NEEDLESS_RETURN(NULL);
 }
@@ -446,7 +446,7 @@ EXP_NukeOne(struct worker *wrk, struct lru *lru)
 
 	/* XXX: bad idea for -spersistent */
 	WSL(wrk->vsl, SLT_ExpKill, 0, "%u LRU", oc_getxid(wrk, oc));
-	(void)HSH_Deref(wrk, oc, NULL);
+	(void)HSH_Deref(&wrk->stats, oc, NULL);
 	return (1);
 }
 

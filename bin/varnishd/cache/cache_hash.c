@@ -139,13 +139,13 @@ HSH_Cleanup(struct worker *wrk)
 }
 
 void
-HSH_DeleteObjHead(struct worker *wrk, struct objhead *oh)
+HSH_DeleteObjHead(struct dstat *ds, struct objhead *oh)
 {
 
 	AZ(oh->refcnt);
 	assert(VTAILQ_EMPTY(&oh->objcs));
 	Lck_Delete(&oh->mtx);
-	wrk->stats.n_objecthead--;
+	ds->n_objecthead--;
 	FREE_OBJ(oh);
 }
 
@@ -564,7 +564,7 @@ HSH_Purge(const struct sess *sp, struct objhead *oh, double ttl, double grace)
 		o->exp.ttl = ttl;
 		o->exp.grace = grace;
 		EXP_Rearm(o);
-		(void)HSH_Deref(sp->wrk, NULL, &o);
+		(void)HSH_Deref(&sp->wrk->stats, NULL, &o);
 	}
 	WS_Release(sp->req->ws, 0);
 }
@@ -588,7 +588,7 @@ HSH_Drop(struct worker *wrk)
 	o->exp.ttl = -1.;
 	if (o->objcore != NULL)		/* Pass has no objcore */
 		HSH_Unbusy(wrk);
-	(void)HSH_Deref(wrk, NULL, &wrk->sp->req->obj);
+	(void)HSH_Deref(&wrk->stats, NULL, &wrk->sp->req->obj);
 }
 
 void
@@ -660,7 +660,7 @@ HSH_Ref(struct objcore *oc)
  */
 
 int
-HSH_Deref(struct worker *wrk, struct objcore *oc, struct object **oo)
+HSH_Deref(struct dstat *ds, struct objcore *oc, struct object **oo)
 {
 	struct object *o = NULL;
 	struct objhead *oh;
@@ -683,7 +683,7 @@ HSH_Deref(struct worker *wrk, struct objcore *oc, struct object **oo)
 		 */
 		STV_Freestore(o);
 		STV_free(o->objstore);
-		wrk->stats.n_object--;
+		ds->n_object--;
 		return (0);
 	}
 
@@ -713,16 +713,16 @@ HSH_Deref(struct worker *wrk, struct objcore *oc, struct object **oo)
 
 	if (oc->methods != NULL) {
 		oc_freeobj(oc);
-		wrk->stats.n_object--;
+		ds->n_object--;
 	}
 	FREE_OBJ(oc);
 
-	wrk->stats.n_objectcore--;
+	ds->n_objectcore--;
 	/* Drop our ref on the objhead */
 	assert(oh->refcnt > 0);
 	if (hash->deref(oh))
 		return (0);
-	HSH_DeleteObjHead(wrk, oh);
+	HSH_DeleteObjHead(ds, oh);
 	return (0);
 }
 

@@ -289,7 +289,7 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 			HSH_Drop(wrk);
 			VBO_DerefBusyObj(wrk, &wrk->busyobj);
 		} else {
-			(void)HSH_Deref(wrk, NULL, &req->obj);
+			(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
 		}
 		AZ(req->obj);
 		req->restarts++;
@@ -338,7 +338,7 @@ cnt_deliver(struct sess *sp, struct worker *wrk, struct req *req)
 	RES_WriteObj(sp);
 
 	assert(WRW_IsReleased(wrk));
-	(void)HSH_Deref(wrk, NULL, &req->obj);
+	(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
 	http_Teardown(req->resp);
 	sp->step = STP_DONE;
 	return (0);
@@ -641,7 +641,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 
 	if (req->objcore != NULL) {
 		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-		AZ(HSH_Deref(wrk, req->objcore, NULL));
+		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
 		req->objcore = NULL;
 	}
 	VBO_DerefBusyObj(wrk, &wrk->busyobj);
@@ -972,7 +972,7 @@ cnt_streambody(struct sess *sp, struct worker *wrk, struct req *req)
 	RES_StreamEnd(sp);
 
 	assert(WRW_IsReleased(wrk));
-	(void)HSH_Deref(wrk, NULL, &req->obj);
+	(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
 	VBO_DerefBusyObj(wrk, &wrk->busyobj);
 	http_Teardown(req->resp);
 	sp->step = STP_DONE;
@@ -1065,7 +1065,7 @@ cnt_hit(struct sess *sp, struct worker *wrk, struct req *req)
 	}
 
 	/* Drop our object, we won't need it */
-	(void)HSH_Deref(wrk, NULL, &req->obj);
+	(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
 	req->objcore = NULL;
 
 	switch(req->handling) {
@@ -1183,7 +1183,7 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 	if (oc->flags & OC_F_PASS) {
 		wrk->stats.cache_hitpass++;
 		WSP(sp, SLT_HitPass, "%u", req->obj->xid);
-		(void)HSH_Deref(wrk, NULL, &req->obj);
+		(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
 		AZ(req->objcore);
 		sp->step = STP_PASS;
 		return (0);
@@ -1242,7 +1242,7 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
 		return (0);
 	}
 
-	AZ(HSH_Deref(wrk, req->objcore, NULL));
+	AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
 	req->objcore = NULL;
 	http_Teardown(wrk->busyobj->bereq);
 	VBO_DerefBusyObj(wrk, &wrk->busyobj);
