@@ -451,8 +451,6 @@ oc_getlru(const struct objcore *oc)
  *
  * One of these aspects will be how much has been fetched, which
  * streaming delivery will make use of.
- *
- * XXX: many fields from worker needs to move here.
  */
 
 struct busyobj {
@@ -493,6 +491,8 @@ struct busyobj {
 	double			connect_timeout;
 	double			first_byte_timeout;
 	double			between_bytes_timeout;
+
+	struct vsl_log		vsl[1];
 };
 
 /* Object structure --------------------------------------------------*/

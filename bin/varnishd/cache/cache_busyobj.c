@@ -98,13 +98,10 @@ VBO_GetBusyObj(struct worker *wrk)
 {
 	struct vbo *vbo = NULL;
 	uint16_t nhttp;
-	unsigned httpsz;
+	unsigned sz;
 	char *p;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-
-	nhttp = (uint16_t)cache_param->http_max_hdr;
-	httpsz = HTTP_estimate(nhttp);
 
 	if (wrk->nvbo != NULL) {
 		vbo = wrk->nvbo;
@@ -123,15 +120,28 @@ VBO_GetBusyObj(struct worker *wrk)
 	vbo->bo.vbo = vbo;
 
 	p = (void*)(vbo + 1);
+	p = (void*)PRNDUP(p);
+	assert(p < vbo->end);
+
+	nhttp = (uint16_t)cache_param->http_max_hdr;
+	sz = HTTP_estimate(nhttp);
+
 	vbo->bo.bereq = HTTP_create(p, nhttp);
-	p += httpsz;
+	p += sz;
+	p = (void*)PRNDUP(p);
+	assert(p < vbo->end);
+
 	vbo->bo.beresp = HTTP_create(p, nhttp);
-	p += httpsz;
-	if (p >= vbo->end) {
-		fprintf(stderr, "workspace_backend is at least %jd to small\n",
-		    (p - vbo->end));
-		assert (p < vbo->end);
-	}
+	p += sz;
+	p = (void*)PRNDUP(p);
+	assert(p < vbo->end);
+
+	sz = cache_param->vsl_buffer;
+	VSL_Setup(vbo->bo.vsl, p, sz);
+	p += sz;
+	p = (void*)PRNDUP(p);
+	assert(p < vbo->end);
+
 	WS_Init(vbo->bo.ws, "bo", p, vbo->end - p);
 
 	return (&vbo->bo);
@@ -170,13 +180,15 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 	r = --vbo->refcount;
 	Lck_Unlock(&vbo->mtx);
 
-	if (r == 0) {
-		/* XXX: Sanity checks & cleanup */
-		memset(&vbo->bo, 0, sizeof vbo->bo);
+	if (r)
+		return;
 
-		if (cache_param->bo_cache && wrk->nvbo == NULL)
-			wrk->nvbo = vbo;
-		else
-			VBO_Free(&vbo);
-	}
+	WSL_Flush(vbo->bo.vsl, 0);
+	/* XXX: Sanity checks & cleanup */
+	memset(&vbo->bo, 0, sizeof vbo->bo);
+
+	if (cache_param->bo_cache && wrk->nvbo == NULL)
+		wrk->nvbo = vbo;
+	else
+		VBO_Free(&vbo);
 }

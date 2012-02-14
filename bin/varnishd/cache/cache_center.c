@@ -480,6 +480,7 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
 	AZ(wrk->busyobj);
 
 	wrk->busyobj = VBO_GetBusyObj(wrk);
+	wrk->busyobj->vsl->wid = sp->vsl_id;
 	req->obj = STV_NewObject(wrk, TRANSIENT_STORAGE,
 	    cache_param->http_resp_size,
 	    (uint16_t)cache_param->http_max_hdr);
@@ -1222,7 +1223,6 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 	AZ(req->obj);
 
-	wrk->busyobj = VBO_GetBusyObj(wrk);
 	http_Setup(wrk->busyobj->bereq, wrk->busyobj->ws);
 	http_FilterReq(sp, HTTPH_R_FETCH);
 	http_ForceGet(wrk->busyobj->bereq);
@@ -1297,6 +1297,7 @@ cnt_pass(struct sess *sp, struct worker *wrk, const struct req *req)
 	AZ(wrk->busyobj);
 
 	wrk->busyobj = VBO_GetBusyObj(wrk);
+	wrk->busyobj->vsl->wid = sp->vsl_id;
 	http_Setup(wrk->busyobj->bereq, wrk->busyobj->ws);
 	http_FilterReq(sp, HTTPH_R_PASS);
 
@@ -1351,6 +1352,7 @@ cnt_pipe(struct sess *sp, struct worker *wrk, const struct req *req)
 
 	wrk->acct_tmp.pipe++;
 	wrk->busyobj = VBO_GetBusyObj(wrk);
+	wrk->busyobj->vsl->wid = sp->vsl_id;
 	http_Setup(wrk->busyobj->bereq, wrk->busyobj->ws);
 	http_FilterReq(sp, 0);
 

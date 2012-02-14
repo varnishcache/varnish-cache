@@ -453,6 +453,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 
 	AZ(wrk->busyobj);
 	wrk->busyobj = VBO_GetBusyObj(wrk);
+	wrk->busyobj->vsl->wid = sp->vsl_id;
 
 	VRY_Validate(sp->req->vary_b);
 	if (sp->req->vary_l != NULL)
