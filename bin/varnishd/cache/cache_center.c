@@ -501,17 +501,16 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
 	if (req->err_code < 100 || req->err_code > 999)
 		req->err_code = 501;
 
-	http_PutProtocol(wrk, sp->vsl_id, h, "HTTP/1.1");
+	http_PutProtocol(h, "HTTP/1.1");
 	http_PutStatus(h, req->err_code);
 	VTIM_format(W_TIM_real(wrk), date);
-	http_PrintfHeader(wrk, sp->vsl_id, h, "Date: %s", date);
-	http_SetHeader(wrk, sp->vsl_id, h, "Server: Varnish");
+	http_PrintfHeader(h, "Date: %s", date);
+	http_SetHeader(h, "Server: Varnish");
 
 	if (req->err_reason != NULL)
-		http_PutResponse(wrk, sp->vsl_id, h, req->err_reason);
+		http_PutResponse(h, req->err_reason);
 	else
-		http_PutResponse(wrk, sp->vsl_id, h,
-		    http_StatusMessage(req->err_code));
+		http_PutResponse(h, http_StatusMessage(req->err_code));
 	VCL_error_method(sp);
 
 	if (req->handling == VCL_RET_RESTART &&
@@ -745,8 +744,7 @@ cnt_prepfetch(struct sess *sp, struct worker *wrk, struct req *req)
 
 	/* If we do gzip, add the C-E header */
 	if (bo->do_gzip)
-		http_SetHeader(wrk, sp->vsl_id, bo->beresp,
-		    "Content-Encoding: gzip");
+		http_SetHeader(bo->beresp, "Content-Encoding: gzip");
 
 	/* But we can't do both at the same time */
 	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
@@ -839,7 +837,7 @@ cnt_prepfetch(struct sess *sp, struct worker *wrk, struct req *req)
 
 	hp2->logtag = HTTP_Obj;
 	http_FilterResp(hp, hp2, pass ? HTTPH_R_PASS : HTTPH_A_INS);
-	http_CopyHome(wrk, sp->vsl_id, hp2);
+	http_CopyHome(hp2);
 
 	if (http_GetHdr(hp, H_Last_Modified, &b))
 		req->obj->last_modified = VTIM_parse(b);
@@ -1233,8 +1231,7 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
 		 * the minority of clients which don't.
 		 */
 		http_Unset(wrk->busyobj->bereq, H_Accept_Encoding);
-		http_SetHeader(wrk, sp->vsl_id, wrk->busyobj->bereq,
-		    "Accept-Encoding: gzip");
+		http_SetHeader(wrk->busyobj->bereq, "Accept-Encoding: gzip");
 	}
 
 	VCL_miss_method(sp);
@@ -1400,7 +1397,7 @@ DOT hash -> lookup [label="hash",style=bold,color=green]
  */
 
 static int
-cnt_recv(struct sess *sp, struct worker *wrk, struct req *req)
+cnt_recv(struct sess *sp, const struct worker *wrk, struct req *req)
 {
 	unsigned recv_handling;
 	struct SHA256Context sha256ctx;
@@ -1444,8 +1441,7 @@ cnt_recv(struct sess *sp, struct worker *wrk, struct req *req)
 	     (recv_handling != VCL_RET_PASS)) {
 		if (RFC2616_Req_Gzip(sp)) {
 			http_Unset(req->http, H_Accept_Encoding);
-			http_SetHeader(wrk, sp->vsl_id, req->http,
-			    "Accept-Encoding: gzip");
+			http_SetHeader(req->http, "Accept-Encoding: gzip");
 		} else {
 			http_Unset(req->http, H_Accept_Encoding);
 		}

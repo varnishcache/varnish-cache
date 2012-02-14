@@ -691,7 +691,7 @@ struct vbc *VDI_GetFd(const struct director *, struct sess *sp);
 int VDI_Healthy(const struct director *, const struct sess *sp);
 void VDI_CloseFd(struct worker *wrk, struct vbc **vbp);
 void VDI_RecycleFd(struct worker *wrk, struct vbc **vbp);
-void VDI_AddHostHeader(struct worker *wrk, const struct vbc *vbc);
+void VDI_AddHostHeader(struct http *to, const struct vbc *vbc);
 void VBE_Poll(void);
 void VDI_Init(void);
 
@@ -804,16 +804,12 @@ void http_SetResp(struct http *to, const char *proto, uint16_t status,
     const char *response);
 void http_FilterReq(const struct sess *sp, unsigned how);
 void http_FilterResp(const struct http *fm, struct http *to, unsigned how);
-void http_PutProtocol(struct worker *w, unsigned vsl_id, const struct http *to,
-    const char *protocol);
+void http_PutProtocol(const struct http *to, const char *protocol);
 void http_PutStatus(struct http *to, uint16_t status);
-void http_PutResponse(struct worker *w, unsigned vsl_id, const struct http *to,
-    const char *response);
-void http_PrintfHeader(struct worker *w, unsigned vsl_id, struct http *to,
-    const char *fmt, ...)
-    __printflike(4, 5);
-void http_SetHeader(struct worker *w, unsigned vsl_id, struct http *to,
-    const char *hdr);
+void http_PutResponse(const struct http *to, const char *response);
+void http_PrintfHeader(struct http *to, const char *fmt, ...)
+    __printflike(2, 3);
+void http_SetHeader(struct http *to, const char *hdr);
 void http_SetH(const struct http *to, unsigned n, const char *fm);
 void http_ForceGet(const struct http *to);
 void http_Setup(struct http *ht, struct ws *ws, struct vsl_log *);
@@ -830,7 +826,7 @@ int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
 uint16_t http_DissectRequest(const struct sess *sp);
 uint16_t http_DissectResponse(struct http *sp, const struct http_conn *htc);
 const char *http_DoConnection(const struct http *hp);
-void http_CopyHome(struct worker *w, unsigned vsl_id, const struct http *hp);
+void http_CopyHome(const struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
 void http_CollectHdr(struct http *hp, const char *hdr);
 

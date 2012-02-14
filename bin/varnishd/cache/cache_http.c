@@ -865,8 +865,7 @@ http_FilterReq(const struct sess *sp, unsigned how)
 	else
 		http_linkh(hp, sp->req->http, HTTP_HDR_PROTO);
 	http_filterfields(hp, sp->req->http, how);
-	http_PrintfHeader(sp->wrk, sp->vsl_id, hp,
-	    "X-Varnish: %u", sp->req->xid);
+	http_PrintfHeader(hp, "X-Varnish: %u", sp->req->xid);
 }
 
 /*--------------------------------------------------------------------*/
@@ -889,7 +888,7 @@ http_FilterResp(const struct http *fm, struct http *to, unsigned how)
  */
 
 void
-http_CopyHome(struct worker *w, unsigned vsl_id, const struct http *hp)
+http_CopyHome(const struct http *hp)
 {
 	unsigned u, l;
 	char *p;
@@ -911,7 +910,7 @@ http_CopyHome(struct worker *w, unsigned vsl_id, const struct http *hp)
 		} else {
 			/* XXX This leaves a slot empty */
 			VSC_C_main->losthdr++;
-			WSLR(w->vsl, SLT_LostHeader, vsl_id, hp->hd[u]);
+			WSLR(hp->vsl, SLT_LostHeader, -1, hp->hd[u]);
 			hp->hd[u].b = NULL;
 			hp->hd[u].e = NULL;
 		}
@@ -935,14 +934,13 @@ http_ClrHeader(struct http *to)
 /*--------------------------------------------------------------------*/
 
 void
-http_SetHeader(struct worker *w, unsigned vsl_id, struct http *to,
-    const char *hdr)
+http_SetHeader(struct http *to, const char *hdr)
 {
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	if (to->nhd >= to->shd) {
 		VSC_C_main->losthdr++;
-		WSL(w->vsl, SLT_LostHeader, vsl_id, "%s", hdr);
+		WSL(to->vsl, SLT_LostHeader, -1, "%s", hdr);
 		return;
 	}
 	http_SetH(to, to->nhd++, hdr);
@@ -951,8 +949,7 @@ http_SetHeader(struct worker *w, unsigned vsl_id, struct http *to,
 /*--------------------------------------------------------------------*/
 
 static void
-http_PutField(struct worker *w, unsigned vsl_id, const struct http *to,
-    int field, const char *string)
+http_PutField(const struct http *to, int field, const char *string)
 {
 	char *p;
 	unsigned l;
@@ -961,7 +958,7 @@ http_PutField(struct worker *w, unsigned vsl_id, const struct http *to,
 	l = strlen(string);
 	p = WS_Alloc(to->ws, l + 1);
 	if (p == NULL) {
-		WSL(w->vsl, SLT_LostHeader, vsl_id, "%s", string);
+		WSL(to->vsl, SLT_LostHeader, -1, "%s", string);
 		to->hd[field].b = NULL;
 		to->hd[field].e = NULL;
 		to->hdf[field] = 0;
@@ -974,11 +971,10 @@ http_PutField(struct worker *w, unsigned vsl_id, const struct http *to,
 }
 
 void
-http_PutProtocol(struct worker *w, unsigned vsl_id, const struct http *to,
-    const char *protocol)
+http_PutProtocol(const struct http *to, const char *protocol)
 {
 
-	http_PutField(w, vsl_id, to, HTTP_HDR_PROTO, protocol);
+	http_PutField(to, HTTP_HDR_PROTO, protocol);
 	if (to->hd[HTTP_HDR_PROTO].b == NULL)
 		http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
 	Tcheck(to->hd[HTTP_HDR_PROTO]);
@@ -993,19 +989,17 @@ http_PutStatus(struct http *to, uint16_t status)
 }
 
 void
-http_PutResponse(struct worker *w, unsigned vsl_id, const struct http *to,
-    const char *response)
+http_PutResponse(const struct http *to, const char *response)
 {
 
-	http_PutField(w, vsl_id, to, HTTP_HDR_RESPONSE, response);
+	http_PutField(to, HTTP_HDR_RESPONSE, response);
 	if (to->hd[HTTP_HDR_RESPONSE].b == NULL)
 		http_SetH(to, HTTP_HDR_RESPONSE, "Lost Response");
 	Tcheck(to->hd[HTTP_HDR_RESPONSE]);
 }
 
 void
-http_PrintfHeader(struct worker *w, unsigned vsl_id, struct http *to,
-    const char *fmt, ...)
+http_PrintfHeader(struct http *to, const char *fmt, ...)
 {
 	va_list ap;
 	unsigned l, n;
@@ -1017,7 +1011,7 @@ http_PrintfHeader(struct worker *w, unsigned vsl_id, struct http *to,
 	va_end(ap);
 	if (n + 1 >= l || to->nhd >= to->shd) {
 		VSC_C_main->losthdr++;
-		WSL(w->vsl, SLT_LostHeader, vsl_id, "%s", to->ws->f);
+		WSL(to->vsl, SLT_LostHeader, -1, "%s", to->ws->f);
 		WS_Release(to->ws, 0);
 	} else {
 		to->hd[to->nhd].b = to->ws->f;

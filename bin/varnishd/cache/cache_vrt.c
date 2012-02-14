@@ -231,7 +231,7 @@ VRT_SetHdr(const struct sess *sp , enum gethdr_e where, const char *hdr,
 			WSP(sp, SLT_LostHeader, "%s", hdr + 1);
 		} else {
 			http_Unset(hp, hdr);
-			http_SetHeader(sp->wrk, sp->vsl_id, hp, b);
+			http_SetHeader(hp, b);
 		}
 	}
 	va_end(ap);
@@ -417,7 +417,7 @@ VRT_synth_page(const struct sess *sp, unsigned flags, const char *str, ...)
 	va_end(ap);
 	SMS_Finish(sp->req->obj);
 	http_Unset(sp->req->obj->http, H_Content_Length);
-	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->req->obj->http,
+	http_PrintfHeader(sp->req->obj->http,
 	    "Content-Length: %zd", sp->req->obj->len);
 }
 

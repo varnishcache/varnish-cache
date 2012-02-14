@@ -90,13 +90,12 @@ res_dorange(const struct sess *sp, const char *r, ssize_t *plow, ssize_t *phigh)
 	if (low > high)
 		return;
 
-	http_PrintfHeader(sp->wrk, sp->vsl_id, req->resp,
-	    "Content-Range: bytes %jd-%jd/%jd",
+	http_PrintfHeader(req->resp, "Content-Range: bytes %jd-%jd/%jd",
 	    (intmax_t)low, (intmax_t)high, (intmax_t)req->obj->len);
 	http_Unset(req->resp, H_Content_Length);
 	assert(req->res_mode & RES_LEN);
-	http_PrintfHeader(sp->wrk, sp->vsl_id, req->resp,
-	    "Content-Length: %jd", (intmax_t)(1 + high - low));
+	http_PrintfHeader(req->resp, "Content-Length: %jd",
+	    (intmax_t)(1 + high - low));
 	http_SetResp(req->resp, "HTTP/1.1", 206, "Partial Content");
 
 	*plow = low;
@@ -123,29 +122,25 @@ RES_BuildHttp(const struct sess *sp)
 		http_Unset(req->resp, H_Content_Length);
 	} else if (cache_param->http_range_support) {
 		/* We only accept ranges if we know the length */
-		http_SetHeader(sp->wrk, sp->vsl_id, req->resp,
-		    "Accept-Ranges: bytes");
+		http_SetHeader(req->resp, "Accept-Ranges: bytes");
 	}
 
 	if (req->res_mode & RES_CHUNKED)
-		http_SetHeader(sp->wrk, sp->vsl_id, req->resp,
-		    "Transfer-Encoding: chunked");
+		http_SetHeader(req->resp, "Transfer-Encoding: chunked");
 
 	VTIM_format(VTIM_real(), time_str);
-	http_PrintfHeader(sp->wrk, sp->vsl_id, req->resp,
-	    "Date: %s", time_str);
+	http_PrintfHeader(req->resp, "Date: %s", time_str);
 
 	if (req->xid != req->obj->xid)
-		http_PrintfHeader(sp->wrk, sp->vsl_id, req->resp,
+		http_PrintfHeader(req->resp,
 		    "X-Varnish: %u %u", req->xid, req->obj->xid);
 	else
-		http_PrintfHeader(sp->wrk, sp->vsl_id, req->resp,
-		    "X-Varnish: %u", req->xid);
-	http_PrintfHeader(sp->wrk, sp->vsl_id, req->resp, "Age: %.0f",
+		http_PrintfHeader(req->resp, "X-Varnish: %u", req->xid);
+	http_PrintfHeader(req->resp, "Age: %.0f",
 	    req->obj->exp.age + req->t_resp -
 	    req->obj->exp.entered);
-	http_SetHeader(sp->wrk, sp->vsl_id, req->resp, "Via: 1.1 varnish");
-	http_PrintfHeader(sp->wrk, sp->vsl_id, req->resp, "Connection: %s",
+	http_SetHeader(req->resp, "Via: 1.1 varnish");
+	http_PrintfHeader(req->resp, "Connection: %s",
 	    req->doclose ? "close" : "keep-alive");
 }
 
@@ -337,7 +332,7 @@ RES_StreamStart(struct sess *sp)
 
 	if (!(req->res_mode & RES_CHUNKED) &&
 	    sp->wrk->busyobj->h_content_length != NULL)
-		http_PrintfHeader(sp->wrk, sp->vsl_id, sp->req->resp,
+		http_PrintfHeader(sp->req->resp,
 		    "Content-Length: %s", sp->wrk->busyobj->h_content_length);
 
 	sp->wrk->acct_tmp.hdrbytes +=

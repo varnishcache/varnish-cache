@@ -393,8 +393,8 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 	struct http_conn *htc;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
 	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 	htc = &wrk->busyobj->htc;
 
@@ -408,12 +408,12 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 
 	hp = wrk->busyobj->bereq;
 
-	sp->wrk->busyobj->vbc = VDI_GetFd(NULL, sp);
-	if (sp->wrk->busyobj->vbc == NULL) {
+	wrk->busyobj->vbc = VDI_GetFd(NULL, sp);
+	if (wrk->busyobj->vbc == NULL) {
 		WSP(sp, SLT_FetchError, "no backend connection");
 		return (-1);
 	}
-	vc = sp->wrk->busyobj->vbc;
+	vc = wrk->busyobj->vbc;
 	if (vc->recycled)
 		retry = 1;
 
@@ -423,7 +423,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 	 * because the backend may be chosen by a director.
 	 */
 	if (need_host_hdr)
-		VDI_AddHostHeader(sp->wrk, vc);
+		VDI_AddHostHeader(wrk->busyobj->bereq, vc);
 
 	(void)VTCP_blocking(vc->fd);	/* XXX: we should timeout instead */
 	WRW_Reserve(wrk, &vc->fd);
@@ -434,7 +434,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 	if (WRW_FlushRelease(wrk) || i > 0) {
 		WSP(sp, SLT_FetchError, "backend write error: %d (%s)",
 		    errno, strerror(errno));
-		VDI_CloseFd(sp->wrk, &sp->wrk->busyobj->vbc);
+		VDI_CloseFd(wrk, &wrk->busyobj->vbc);
 		/* XXX: other cleanup ? */
 		return (retry);
 	}
@@ -458,7 +458,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 	if (i < 0) {
 		WSP(sp, SLT_FetchError, "http first read error: %d %d (%s)",
 		    i, errno, strerror(errno));
-		VDI_CloseFd(sp->wrk, &sp->wrk->busyobj->vbc);
+		VDI_CloseFd(wrk, &wrk->busyobj->vbc);
 		/* XXX: other cleanup ? */
 		/* Retryable if we never received anything */
 		return (i == -1 ? retry : -1);
@@ -472,7 +472,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 			WSP(sp, SLT_FetchError,
 			    "http first read error: %d %d (%s)",
 			    i, errno, strerror(errno));
-			VDI_CloseFd(sp->wrk, &sp->wrk->busyobj->vbc);
+			VDI_CloseFd(wrk, &wrk->busyobj->vbc);
 			/* XXX: other cleanup ? */
 			return (-1);
 		}
@@ -482,7 +482,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 
 	if (http_DissectResponse(hp, htc)) {
 		WSP(sp, SLT_FetchError, "http format error");
-		VDI_CloseFd(sp->wrk, &sp->wrk->busyobj->vbc);
+		VDI_CloseFd(wrk, &wrk->busyobj->vbc);
 		/* XXX: other cleanup ? */
 		return (-1);
 	}
@@ -614,8 +614,7 @@ FetchBody(struct worker *wrk, struct object *obj)
 
 	if (mklen > 0) {
 		http_Unset(obj->http, H_Content_Length);
-		http_PrintfHeader(wrk, bo->vbc->vsl_id, obj->http,
-		    "Content-Length: %zd", obj->len);
+		http_PrintfHeader(obj->http, "Content-Length: %zd", obj->len);
 	}
 
 	if (cls)

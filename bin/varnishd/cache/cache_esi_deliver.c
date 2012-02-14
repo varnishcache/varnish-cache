@@ -73,7 +73,7 @@ ved_include(struct sess *sp, const char *src, const char *host)
 	if (host != NULL && *host != '\0')  {
 		http_Unset(sp->req->http, H_Host);
 		http_Unset(sp->req->http, H_If_Modified_Since);
-		http_SetHeader(w, sp->vsl_id, sp->req->http, host);
+		http_SetHeader(sp->req->http, host);
 	}
 	/*
 	 * XXX: We should decide if we should cache the director

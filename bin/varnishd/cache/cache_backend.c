@@ -65,14 +65,12 @@ struct vdi_simple {
  * Create default Host: header for backend request
  */
 void
-VDI_AddHostHeader(struct worker *wrk, const struct vbc *vbc)
+VDI_AddHostHeader(struct http *hp, const struct vbc *vbc)
 {
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->busyobj->bereq, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
 	CHECK_OBJ_NOTNULL(vbc->vdis, VDI_SIMPLE_MAGIC);
-	http_PrintfHeader(wrk, vbc->vsl_id, wrk->busyobj->bereq,
+	http_PrintfHeader(hp,
 	    "Host: %s", vbc->vdis->vrt->hosthdr);
 }
 
