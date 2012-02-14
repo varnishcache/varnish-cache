@@ -387,7 +387,7 @@ vfp_esi_end(struct worker *wrk)
 	retval = bo->fetch_failed;
 
 	if (bo->vgz_rx != NULL && VGZ_Destroy(&bo->vgz_rx, -1) != VGZ_END)
-		retval = FetchError(wrk, "Gunzip+ESI Failed at the very end");
+		retval = FetchError(bo, "Gunzip+ESI Failed at the very end");
 
 	vsb = VEP_Finish(wrk);
 
@@ -402,7 +402,7 @@ vfp_esi_end(struct worker *wrk)
 				    VSB_data(vsb), l);
 				bo->fetch_obj->esidata->len = l;
 			} else {
-				retval = FetchError(wrk,
+				retval = FetchError(bo,
 				    "Could not allocate storage for esidata");
 			}
 		}
@@ -415,7 +415,7 @@ vfp_esi_end(struct worker *wrk)
 	if (vef->vgz != NULL) {
 		VGZ_UpdateObj(vef->vgz, bo->fetch_obj);
 		if (VGZ_Destroy(&vef->vgz,  -1) != VGZ_END)
-			retval = FetchError(wrk,
+			retval = FetchError(bo,
 			    "ESI+Gzip Failed at the very end");
 	}
 	if (vef->ibuf != NULL)

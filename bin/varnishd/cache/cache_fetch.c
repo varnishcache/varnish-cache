@@ -52,25 +52,24 @@ static unsigned fetchfrag;
  */
 
 int
-FetchError2(const struct worker *wrk, const char *error, const char *more)
+FetchError2(struct busyobj *bo, const char *error, const char *more)
 {
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	if (!wrk->busyobj->fetch_failed) {
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	if (!bo->fetch_failed) {
 		if (more == NULL)
-			VSLB(wrk->busyobj, SLT_FetchError, "%s", error);
+			VSLB(bo, SLT_FetchError, "%s", error);
 		else
-			VSLB(wrk->busyobj, SLT_FetchError, "%s: %s", error,
-			    more);
+			VSLB(bo, SLT_FetchError, "%s: %s", error, more);
 	}
-	wrk->busyobj->fetch_failed = 1;
+	bo->fetch_failed = 1;
 	return (-1);
 }
 
 int
-FetchError(const struct worker *wrk, const char *error)
+FetchError(struct busyobj *bo, const char *error)
 {
-	return(FetchError2(wrk, error, NULL));
+	return(FetchError2(bo, error, NULL));
 }
 
 /*--------------------------------------------------------------------
@@ -192,7 +191,7 @@ FetchStorage(struct worker *wrk, ssize_t sz)
 		l = cache_param->fetch_chunksize;
 	st = STV_alloc(wrk, l);
 	if (st == NULL) {
-		(void)FetchError(wrk, "Could not get storage");
+		(void)FetchError(wrk->busyobj, "Could not get storage");
 		return (NULL);
 	}
 	AZ(st->len);
@@ -233,13 +232,13 @@ fetch_straight(struct worker *wrk, struct http_conn *htc, ssize_t cl)
 	assert(wrk->busyobj->body_status == BS_LENGTH);
 
 	if (cl < 0) {
-		return (FetchError(wrk, "straight length field bogus"));
+		return (FetchError(wrk->busyobj, "straight length field bogus"));
 	} else if (cl == 0)
 		return (0);
 
 	i = wrk->busyobj->vfp->bytes(wrk, htc, cl);
 	if (i <= 0)
-		return (FetchError(wrk, "straight insufficient bytes"));
+		return (FetchError(wrk->busyobj, "straight insufficient bytes"));
 	return (0);
 }
 
@@ -266,7 +265,7 @@ fetch_chunked(struct worker *wrk, struct http_conn *htc)
 		} while (vct_islws(buf[0]));
 
 		if (!vct_ishex(buf[0]))
-			return (FetchError(wrk,"chunked header non-hex"));
+			return (FetchError(wrk->busyobj, "chunked header non-hex"));
 
 		/* Collect hex digits, skipping leading zeros */
 		for (u = 1; u < sizeof buf; u++) {
@@ -279,7 +278,7 @@ fetch_chunked(struct worker *wrk, struct http_conn *htc)
 		}
 
 		if (u >= sizeof buf)
-			return (FetchError(wrk,"chunked header too long"));
+			return (FetchError(wrk->busyobj,"chunked header too long"));
 
 		/* Skip trailing white space */
 		while(vct_islws(buf[u]) && buf[u] != '\n')
@@ -287,12 +286,12 @@ fetch_chunked(struct worker *wrk, struct http_conn *htc)
 				return (-1);
 
 		if (buf[u] != '\n')
-			return (FetchError(wrk,"chunked header no NL"));
+			return (FetchError(wrk->busyobj,"chunked header no NL"));
 
 		buf[u] = '\0';
 		cl = fetch_number(buf, 16);
 		if (cl < 0)
-			return (FetchError(wrk,"chunked header number syntax"));
+			return (FetchError(wrk->busyobj,"chunked header number syntax"));
 
 		if (cl > 0 && wrk->busyobj->vfp->bytes(wrk, htc, cl) <= 0)
 			return (-1);
@@ -303,7 +302,7 @@ fetch_chunked(struct worker *wrk, struct http_conn *htc)
 		if (buf[0] == '\r' && HTC_Read( htc, buf, 1) <= 0)
 			return (-1);
 		if (buf[0] != '\n')
-			return (FetchError(wrk,"chunked tail no NL"));
+			return (FetchError(wrk->busyobj,"chunked tail no NL"));
 	} while (cl > 0);
 	return (0);
 }
