@@ -80,9 +80,10 @@ WRW_Reserve(struct worker *wrk, int *fd)
 	memset(wrw, 0, sizeof *wrw);
 	wrw->magic = WRW_MAGIC;
 	u = WS_Reserve(wrk->aws, 0);
+	u = PRNDDN(u);
 	u /= sizeof(struct iovec);
 	AN(u);
-	wrw->iov = (void*)wrk->aws->f;
+	wrw->iov = (void*)PRNDUP(wrk->aws->f);
 	wrw->siov = u;
 	wrw->ciov = u;
 	wrw->werr = 0;
