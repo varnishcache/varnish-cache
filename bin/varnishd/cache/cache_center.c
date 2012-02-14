@@ -294,7 +294,7 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 		AZ(req->obj);
 		req->restarts++;
 		req->director = NULL;
-		http_Setup(req->resp, NULL);
+		http_Teardown(req->resp);
 		sp->step = STP_RECV;
 		return (0);
 	default:
@@ -339,7 +339,7 @@ cnt_deliver(struct sess *sp, struct worker *wrk, struct req *req)
 
 	assert(WRW_IsReleased(wrk));
 	(void)HSH_Deref(wrk, NULL, &req->obj);
-	http_Setup(req->resp, NULL);
+	http_Teardown(req->resp);
 	sp->step = STP_DONE;
 	return (0);
 }
@@ -487,8 +487,8 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
 	if (req->obj == NULL) {
 		req->doclose = "Out of objects";
 		req->director = NULL;
-		http_Setup(wrk->busyobj->beresp, NULL);
-		http_Setup(wrk->busyobj->bereq, NULL);
+		http_Teardown(wrk->busyobj->beresp);
+		http_Teardown(wrk->busyobj->bereq);
 		sp->step = STP_DONE;
 		return(0);
 	}
@@ -533,7 +533,7 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
 	assert(req->handling == VCL_RET_DELIVER);
 	req->err_code = 0;
 	req->err_reason = NULL;
-	http_Setup(wrk->busyobj->bereq, NULL);
+	http_Teardown(wrk->busyobj->bereq);
 	VBO_DerefBusyObj(wrk, &wrk->busyobj);
 	sp->step = STP_PREPRESP;
 	return (0);
@@ -897,8 +897,8 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	/* Use unmodified headers*/
 	i = FetchBody(wrk, req->obj);
 
-	http_Setup(bo->bereq, NULL);
-	http_Setup(bo->beresp, NULL);
+	http_Teardown(bo->bereq);
+	http_Teardown(bo->beresp);
 	bo->vfp = NULL;
 	assert(WRW_IsReleased(wrk));
 	AZ(bo->vbc);
@@ -953,8 +953,8 @@ cnt_streambody(struct sess *sp, struct worker *wrk, struct req *req)
 
 	i = FetchBody(wrk, req->obj);
 
-	http_Setup(wrk->busyobj->bereq, NULL);
-	http_Setup(wrk->busyobj->beresp, NULL);
+	http_Teardown(wrk->busyobj->bereq);
+	http_Teardown(wrk->busyobj->beresp);
 	wrk->busyobj->vfp = NULL;
 	AZ(wrk->busyobj->vbc);
 	AN(req->director);
@@ -976,7 +976,7 @@ cnt_streambody(struct sess *sp, struct worker *wrk, struct req *req)
 	assert(WRW_IsReleased(wrk));
 	(void)HSH_Deref(wrk, NULL, &req->obj);
 	VBO_DerefBusyObj(wrk, &wrk->busyobj);
-	http_Setup(req->resp, NULL);
+	http_Teardown(req->resp);
 	sp->step = STP_DONE;
 	return (0);
 }
@@ -1247,7 +1247,7 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
 
 	AZ(HSH_Deref(wrk, req->objcore, NULL));
 	req->objcore = NULL;
-	http_Setup(wrk->busyobj->bereq, NULL);
+	http_Teardown(wrk->busyobj->bereq);
 	VBO_DerefBusyObj(wrk, &wrk->busyobj);
 
 	switch(req->handling) {
@@ -1304,7 +1304,7 @@ cnt_pass(struct sess *sp, struct worker *wrk, const struct req *req)
 	VCL_pass_method(sp);
 
 	if (req->handling == VCL_RET_ERROR) {
-		http_Setup(wrk->busyobj->bereq, NULL);
+		http_Teardown(wrk->busyobj->bereq);
 		VBO_DerefBusyObj(wrk, &wrk->busyobj);
 		sp->step = STP_ERROR;
 		return (0);
@@ -1364,7 +1364,7 @@ cnt_pipe(struct sess *sp, struct worker *wrk, const struct req *req)
 
 	PipeSession(sp);
 	assert(WRW_IsReleased(wrk));
-	http_Setup(wrk->busyobj->bereq, NULL);
+	http_Teardown(wrk->busyobj->bereq);
 	VBO_DerefBusyObj(wrk, &wrk->busyobj);
 	sp->step = STP_DONE;
 	return (0);

@@ -132,6 +132,15 @@ HTTP_create(void *p, uint16_t nhttp)
 void
 http_Setup(struct http *hp, struct ws *ws)
 {
+	http_Teardown(hp);
+	hp->ws = ws;
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+http_Teardown(struct http *hp)
+{
 	uint16_t shd;
 	txt *hd;
 	unsigned char *hdf;
@@ -144,7 +153,6 @@ http_Setup(struct http *hp, struct ws *ws)
 	memset(hd, 0, sizeof *hd * shd);
 	memset(hdf, 0, sizeof *hdf * shd);
 	hp->magic = HTTP_MAGIC;
-	hp->ws = ws;
 	hp->nhd = HTTP_HDR_FIRST;
 	hp->shd = shd;
 	hp->hd = hd;

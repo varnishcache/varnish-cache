@@ -818,6 +818,7 @@ void http_SetHeader(struct worker *w, unsigned vsl_id, struct http *to,
 void http_SetH(const struct http *to, unsigned n, const char *fm);
 void http_ForceGet(const struct http *to);
 void http_Setup(struct http *ht, struct ws *ws);
+void http_Teardown(struct http *ht);
 int http_GetHdr(const struct http *hp, const char *hdr, char **ptr);
 int http_GetHdrData(const struct http *hp, const char *hdr,
     const char *field, char **ptr);
