@@ -318,7 +318,7 @@ SES_GetReq(struct sess *sp)
 	struct sesspool *pp;
 	uint16_t nhttp;
 	unsigned sz, hl;
-	char *p;
+	char *p, *e;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	pp = sp->sesspool;
@@ -330,27 +330,38 @@ SES_GetReq(struct sess *sp)
 	AN(sp->req);
 	sp->req->magic = REQ_MAGIC;
 
+	e = (char*)sp->req + sz;
 	p = (char*)(sp->req + 1);
-	sz -= sizeof *sp->req;
+	p = (void*)PRNDUP(p);
+	assert(p < e);
 
 	nhttp = (uint16_t)cache_param->http_max_hdr;
 	hl = HTTP_estimate(nhttp);
 
-	xxxassert(sz > 3 * hl + 128);
-
 	sp->req->http = HTTP_create(p, nhttp);
-	p += hl;		// XXX: align ?
-	sz -= hl;
+	p += hl;
+	p = (void*)PRNDUP(p);
+	assert(p < e);
 
 	sp->req->http0 = HTTP_create(p, nhttp);
-	p += hl;		// XXX: align ?
-	sz -= hl;
+	p += hl;
+	p = (void*)PRNDUP(p);
+	assert(p < e);
 
 	sp->req->resp = HTTP_create(p, nhttp);
-	p += hl;		// XXX: align ?
-	sz -= hl;
+	p += hl;
+	p = (void*)PRNDUP(p);
+	assert(p < e);
 
-	WS_Init(sp->req->ws, "req", p, sz);
+	sz = cache_param->workspace_thread;
+	VSL_Setup(sp->req->vsl, p, sz);
+	sp->req->vsl->wid = sp->vsl_id;
+	p += sz;
+	p = (void*)PRNDUP(p);
+
+	assert(p < e);
+
+	WS_Init(sp->req->ws, "req", p, e - p);
 }
 
 void
@@ -364,6 +375,7 @@ SES_ReleaseReq(struct sess *sp)
 	AN(pp->pool);
 	CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
 	MPL_AssertSane(sp->req);
+	WSL_Flush(sp->req->vsl, 0);
 	MPL_Free(pp->mpl_req, sp->req);
 	sp->req = NULL;
 }

@@ -78,6 +78,8 @@ struct params {
 	unsigned		workspace_backend;
 	unsigned		workspace_thread;
 
+	unsigned		vsl_buffer;
+
 	unsigned		shm_workspace;
 	unsigned		http_req_size;
 	unsigned		http_req_hdr_len;

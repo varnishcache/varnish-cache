@@ -766,6 +766,18 @@ static const struct parspec input_parspec[] = {
 		"objects allocate exact space for the headers they store.\n",
 		0,
 		"64", "header lines" },
+	{ "vsl_buffer",
+		tweak_bytes_u, &mgt_param.vsl_buffer, 1024, UINT_MAX,
+		"Bytes of (req-/backend-)workspace dedicated to buffering"
+		" VSL records.\n"
+		"At a bare minimum, this must be longer than"
+		" the longest HTTP header to be logged.\n"
+		"Setting this too high costs memory, setting it too low"
+		" will cause more VSL flushes and likely increase"
+		" lock-contention on the VSL mutex.\n"
+		"Minimum is 1k bytes.",
+		0,
+		"4k", "bytes" },
 	{ "shm_workspace",
 		tweak_bytes_u, &mgt_param.shm_workspace, 4096, UINT_MAX,
 		"Bytes of shmlog workspace allocated for worker threads. "

@@ -248,6 +248,7 @@ struct exp {
 struct vsl_log {
 	uint32_t		*wlb, *wlp, *wle;
 	unsigned		wlr;
+	unsigned		wid;
 };
 
 /*--------------------------------------------------------------------*/
@@ -614,6 +615,9 @@ struct req {
 
 	/* First byte of storage if we free it as we go (pass) */
 	ssize_t			stream_front;
+
+	/* Transaction VSL buffer */
+	struct vsl_log		vsl[1];
 
 };
 
