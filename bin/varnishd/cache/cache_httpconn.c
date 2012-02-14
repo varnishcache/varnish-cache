@@ -88,14 +88,14 @@ htc_header_complete(txt *t)
 /*--------------------------------------------------------------------*/
 
 void
-HTC_Init(struct http_conn *htc, struct ws *ws, int fd, unsigned vsl_id,
+HTC_Init(struct http_conn *htc, struct ws *ws, int fd, struct vsl_log *vsl,
     unsigned maxbytes, unsigned maxhdr)
 {
 
 	htc->magic = HTTP_CONN_MAGIC;
 	htc->ws = ws;
 	htc->fd = fd;
-	htc->vsl_id = vsl_id;
+	htc->vsl = vsl;
 	htc->maxbytes = maxbytes;
 	htc->maxhdr = maxhdr;
 
@@ -200,13 +200,12 @@ HTC_Rx(struct http_conn *htc)
  */
 
 ssize_t
-HTC_Read(struct worker *w, struct http_conn *htc, void *d, size_t len)
+HTC_Read(struct http_conn *htc, void *d, size_t len)
 {
 	size_t l;
 	unsigned char *p;
 	ssize_t i;
 
-	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	l = 0;
 	p = d;
@@ -225,7 +224,7 @@ HTC_Read(struct worker *w, struct http_conn *htc, void *d, size_t len)
 		return (l);
 	i = read(htc->fd, p, len);
 	if (i < 0) {
-		WSL(w->vsl, SLT_FetchError, htc->vsl_id, "%s", strerror(errno));
+		WSL(htc->vsl, SLT_FetchError, -1, "%s", strerror(errno));
 		return (i);
 	}
 	return (i + l);

@@ -121,7 +121,7 @@ vfp_nop_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 		l = st->space - st->len;
 		if (l > bytes)
 			l = bytes;
-		wl = HTC_Read(wrk, htc, st->ptr + st->len, l);
+		wl = HTC_Read(htc, st->ptr + st->len, l);
 		if (wl <= 0)
 			return (wl);
 		st->len += wl;
@@ -261,7 +261,7 @@ fetch_chunked(struct worker *wrk, struct http_conn *htc)
 	do {
 		/* Skip leading whitespace */
 		do {
-			if (HTC_Read(wrk, htc, buf, 1) <= 0)
+			if (HTC_Read(htc, buf, 1) <= 0)
 				return (-1);
 		} while (vct_islws(buf[0]));
 
@@ -271,7 +271,7 @@ fetch_chunked(struct worker *wrk, struct http_conn *htc)
 		/* Collect hex digits, skipping leading zeros */
 		for (u = 1; u < sizeof buf; u++) {
 			do {
-				if (HTC_Read(wrk, htc, buf + u, 1) <= 0)
+				if (HTC_Read(htc, buf + u, 1) <= 0)
 					return (-1);
 			} while (u == 1 && buf[0] == '0' && buf[u] == '0');
 			if (!vct_ishex(buf[u]))
@@ -283,7 +283,7 @@ fetch_chunked(struct worker *wrk, struct http_conn *htc)
 
 		/* Skip trailing white space */
 		while(vct_islws(buf[u]) && buf[u] != '\n')
-			if (HTC_Read(wrk, htc, buf + u, 1) <= 0)
+			if (HTC_Read(htc, buf + u, 1) <= 0)
 				return (-1);
 
 		if (buf[u] != '\n')
@@ -297,10 +297,10 @@ fetch_chunked(struct worker *wrk, struct http_conn *htc)
 		if (cl > 0 && wrk->busyobj->vfp->bytes(wrk, htc, cl) <= 0)
 			return (-1);
 
-		i = HTC_Read(wrk, htc, buf, 1);
+		i = HTC_Read(htc, buf, 1);
 		if (i <= 0)
 			return (-1);
-		if (buf[0] == '\r' && HTC_Read(wrk, htc, buf, 1) <= 0)
+		if (buf[0] == '\r' && HTC_Read( htc, buf, 1) <= 0)
 			return (-1);
 		if (buf[0] != '\n')
 			return (FetchError(wrk,"chunked tail no NL"));
@@ -352,7 +352,7 @@ FetchReqBody(const struct sess *sp, int sendbody)
 				rdcnt = sizeof buf;
 			else
 				rdcnt = content_length;
-			rdcnt = HTC_Read(sp->wrk, sp->req->htc, buf, rdcnt);
+			rdcnt = HTC_Read(sp->req->htc, buf, rdcnt);
 			if (rdcnt <= 0)
 				return (1);
 			content_length -= rdcnt;
@@ -447,7 +447,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 
 	/* Receive response */
 
-	HTC_Init(htc, wrk->busyobj->ws, vc->fd, vc->vsl_id,
+	HTC_Init(htc, wrk->busyobj->ws, vc->fd, vc->vsl,
 	    cache_param->http_resp_size,
 	    cache_param->http_resp_hdr_len);
 

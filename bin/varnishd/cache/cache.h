@@ -189,7 +189,7 @@ struct http_conn {
 #define HTTP_CONN_MAGIC		0x3e19edd1
 
 	int			fd;
-	unsigned		vsl_id;
+	struct vsl_log		*vsl;
 	unsigned		maxbytes;
 	unsigned		maxhdr;
 	struct ws		*ws;
@@ -831,11 +831,11 @@ void http_Unset(struct http *hp, const char *hdr);
 void http_CollectHdr(struct http *hp, const char *hdr);
 
 /* cache_httpconn.c */
-void HTC_Init(struct http_conn *htc, struct ws *ws, int fd, unsigned vsl_id,
+void HTC_Init(struct http_conn *htc, struct ws *ws, int fd, struct vsl_log *,
     unsigned maxbytes, unsigned maxhdr);
 int HTC_Reinit(struct http_conn *htc);
 int HTC_Rx(struct http_conn *htc);
-ssize_t HTC_Read(struct worker *w, struct http_conn *htc, void *d, size_t len);
+ssize_t HTC_Read(struct http_conn *htc, void *d, size_t len);
 int HTC_Complete(struct http_conn *htc);
 
 #define HTTPH(a, b, c) extern char b[];

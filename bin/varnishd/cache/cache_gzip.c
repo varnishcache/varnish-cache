@@ -471,7 +471,7 @@ vfp_gunzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 			l = vg->m_sz;
 			if (l > bytes)
 				l = bytes;
-			wl = HTC_Read(wrk, htc, vg->m_buf, l);
+			wl = HTC_Read(htc, vg->m_buf, l);
 			if (wl <= 0)
 				return (wl);
 			VGZ_Ibuf(vg, vg->m_buf, wl);
@@ -554,7 +554,7 @@ vfp_gzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 			l = vg->m_sz;
 			if (l > bytes)
 				l = bytes;
-			wl = HTC_Read(wrk, htc, vg->m_buf, l);
+			wl = HTC_Read(htc, vg->m_buf, l);
 			if (wl <= 0)
 				return (wl);
 			VGZ_Ibuf(vg, vg->m_buf, wl);
@@ -650,7 +650,7 @@ vfp_testgzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 		l = st->space - st->len;
 		if (l > bytes)
 			l = bytes;
-		wl = HTC_Read(wrk, htc, st->ptr + st->len, l);
+		wl = HTC_Read(htc, st->ptr + st->len, l);
 		if (wl <= 0)
 			return (wl);
 		bytes -= wl;

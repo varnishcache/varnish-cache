@@ -116,7 +116,7 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 		SES_GetReq(sp);
 		req = sp->req;
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-		HTC_Init(req->htc, req->ws, sp->fd, sp->vsl_id,
+		HTC_Init(req->htc, req->ws, sp->fd, sp->req->vsl,
 		    cache_param->http_req_size,
 		    cache_param->http_req_hdr_len);
 	}

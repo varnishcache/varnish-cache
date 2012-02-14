@@ -549,16 +549,15 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
  */
 
 void
-VEP_Parse(const struct worker *wrk, const char *p, size_t l)
+VEP_Parse(const struct busyobj *bo, const char *p, size_t l)
 {
 	struct vep_state *vep;
 	const char *e;
 	struct vep_match *vm;
 	int i;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
-	vep = wrk->busyobj->vep;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	vep = bo->vep;
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 	assert(l > 0);
 
