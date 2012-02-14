@@ -52,22 +52,23 @@ static unsigned fetchfrag;
  */
 
 int
-FetchError2(struct worker *wrk, const char *error, const char *more)
+FetchError2(const struct worker *wrk, const char *error, const char *more)
 {
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	if (!wrk->busyobj->fetch_failed) {
 		if (more == NULL)
-			WSLB(wrk, SLT_FetchError, "%s", error);
+			VSLB(wrk->busyobj, SLT_FetchError, "%s", error);
 		else
-			WSLB(wrk, SLT_FetchError, "%s: %s", error, more);
+			VSLB(wrk->busyobj, SLT_FetchError, "%s: %s", error,
+			    more);
 	}
 	wrk->busyobj->fetch_failed = 1;
 	return (-1);
 }
 
 int
-FetchError(struct worker *wrk, const char *error)
+FetchError(const struct worker *wrk, const char *error)
 {
 	return(FetchError2(wrk, error, NULL));
 }
@@ -574,7 +575,7 @@ FetchBody(struct worker *wrk, struct object *obj)
 
 	bo->fetch_obj = NULL;
 
-	WSLB(wrk, SLT_Fetch_Body, "%u(%s) cls %d mklen %d",
+	VSLB(bo, SLT_Fetch_Body, "%u(%s) cls %d mklen %d",
 	    bo->body_status, body_status(bo->body_status),
 	    cls, mklen);
 
@@ -594,7 +595,7 @@ FetchBody(struct worker *wrk, struct object *obj)
 	if (cls == 0 && bo->should_close)
 		cls = 1;
 
-	WSLB(wrk, SLT_Length, "%zd", obj->len);
+	VSLB(bo, SLT_Length, "%zd", obj->len);
 
 	{
 	/* Sanity check fetch methods accounting */

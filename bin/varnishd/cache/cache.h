@@ -756,8 +756,8 @@ int EXP_NukeOne(struct worker *w, struct lru *lru);
 
 /* cache_fetch.c */
 struct storage *FetchStorage(struct worker *w, ssize_t sz);
-int FetchError(struct worker *w, const char *error);
-int FetchError2(struct worker *w, const char *error, const char *more);
+int FetchError(const struct worker *w, const char *error);
+int FetchError2(const struct worker *w, const char *error, const char *more);
 int FetchHdr(struct sess *sp, int need_host_hdr, int sendbody);
 int FetchBody(struct worker *w, struct object *obj);
 int FetchReqBody(const struct sess *sp, int sendbody);
@@ -934,7 +934,7 @@ void VSL(enum VSL_tag_e tag, int id, const char *fmt, ...)
 void WSLR(struct vsl_log *, enum VSL_tag_e tag, int id, txt t);
 void WSL(struct vsl_log *, enum VSL_tag_e tag, int id, const char *fmt, ...)
     __printflike(4, 5);
-void WSLB(struct worker *, enum VSL_tag_e tag, const char *fmt, ...)
+void VSLB(struct busyobj *, enum VSL_tag_e tag, const char *fmt, ...)
     __printflike(3, 4);
 
 void WSL_Flush(struct vsl_log *, int overflow);

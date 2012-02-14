@@ -399,7 +399,7 @@ VGZ_Destroy(struct vgz **vgp, int vsl_id)
 	*vgp = NULL;
 
 	if (vsl_id < 0)
-		WSLB(vg->wrk, SLT_Gzip, "%s %jd %jd %jd %jd %jd",
+		VSLB(vg->wrk->busyobj, SLT_Gzip, "%s %jd %jd %jd %jd %jd",
 		    vg->id,
 		    (intmax_t)vg->vz.total_in,
 		    (intmax_t)vg->vz.total_out,

@@ -289,16 +289,14 @@ WSL(struct vsl_log *vsl, enum VSL_tag_e tag, int id, const char *fmt, ...)
 /*--------------------------------------------------------------------*/
 
 void
-WSLB(struct worker *wrk, enum VSL_tag_e tag, const char *fmt, ...)
+VSLB(struct busyobj *bo, enum VSL_tag_e tag, const char *fmt, ...)
 {
 	va_list ap;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->busyobj->vbc, VBC_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	AN(fmt);
 	va_start(ap, fmt);
-	wsl(wrk->vsl, tag, wrk->busyobj->vbc->vsl_id, fmt, ap);
+	wsl(bo->vsl, tag, bo->vsl->wid, fmt, ap);
 	va_end(ap);
 }
 

@@ -61,6 +61,7 @@ struct vep_state {
 	struct vsb		*vsb;
 
 	struct worker		*wrk;
+	struct busyobj		*bo;
 	int			dogzip;
 	vep_callback_t		*cb;
 
@@ -186,7 +187,7 @@ vep_error(const struct vep_state *vep, const char *p)
 
 	VSC_C_main->esi_errors++;
 	l = (intmax_t)(vep->ver_p - vep->hack_p);
-	WSLB(vep->wrk, SLT_ESI_xmlerror, "ERR at %jd %s", l, p);
+	VSLB(vep->bo, SLT_ESI_xmlerror, "ERR at %jd %s", l, p);
 
 }
 
@@ -202,7 +203,7 @@ vep_warn(const struct vep_state *vep, const char *p)
 	VSC_C_main->esi_warnings++;
 	l = (intmax_t)(vep->ver_p - vep->hack_p);
 	printf("WARNING at %jd %s\n", l, p);
-	WSLB(vep->wrk, SLT_ESI_xmlerror, "WARN at %jd %s", l, p);
+	VSLB(vep->bo, SLT_ESI_xmlerror, "WARN at %jd %s", l, p);
 
 }
 
@@ -602,7 +603,7 @@ VEP_Parse(const struct worker *wrk, const char *p, size_t l)
 				p++;
 				vep->state = VEP_STARTTAG;
 			} else if (p < e) {
-				WSLB(vep->wrk, SLT_ESI_xmlerror,
+				VSLB(vep->bo, SLT_ESI_xmlerror,
 				    "No ESI processing, first char not '<'");
 				vep->state = VEP_NOTXML;
 			}
@@ -1010,6 +1011,7 @@ VEP_Init(struct worker *wrk, vep_callback_t *cb)
 	memset(vep, 0, sizeof *vep);
 	vep->magic = VEP_MAGIC;
 	vep->wrk = wrk;
+	vep->bo = wrk->busyobj;
 	vep->vsb = VSB_new_auto();
 	AN(vep->vsb);
 	wrk->busyobj->vep = vep;

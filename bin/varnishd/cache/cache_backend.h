@@ -153,6 +153,7 @@ struct vbc {
 	struct backend		*backend;
 	struct vdi_simple	*vdis;
 	struct vsl_log		*vsl;
+	unsigned		orig_vsl_id;
 	unsigned		vsl_id;
 	int			fd;
 
