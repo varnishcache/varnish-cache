@@ -126,8 +126,6 @@ vfp_nop_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 		st->len += wl;
 		wrk->busyobj->fetch_obj->len += wl;
 		bytes -= wl;
-		if (wrk->busyobj->do_stream)
-			RES_StreamPoll(wrk);
 	}
 	return (1);
 }

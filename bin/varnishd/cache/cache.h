@@ -608,15 +608,6 @@ struct req {
 #define RES_ESI_CHILD		(1<<5)
 #define RES_GUNZIP		(1<<6)
 
-	/* Stream gunzip instance */
-	struct vgz		*stream_vgz;
-
-	/* Next byte we will take from storage */
-	ssize_t			stream_next;
-
-	/* First byte of storage if we free it as we go (pass) */
-	ssize_t			stream_front;
-
 	/* Transaction VSL buffer */
 	struct vsl_log		vsl[1];
 
@@ -958,9 +949,6 @@ void WSL_Flush(struct vsl_log *, int overflow);
 /* cache_response.c */
 void RES_BuildHttp(const struct sess *sp);
 void RES_WriteObj(struct sess *sp);
-void RES_StreamStart(struct sess *sp);
-void RES_StreamEnd(struct sess *sp);
-void RES_StreamPoll(struct worker *);
 
 /* cache_vary.c */
 struct vsb *VRY_Create(const struct sess *sp, const struct http *hp);

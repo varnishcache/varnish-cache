@@ -194,7 +194,6 @@ DOT	]
 DOT	prepresp -> deliver [style=bold,color=green,label=deliver]
 DOT	prepresp -> deliver [style=bold,color=red]
 DOT	prepresp -> deliver [style=bold,color=blue]
-DOT     prepresp -> streambody [style=bold,color=cyan,label="deliver"]
 DOT }
  *
  */
@@ -300,12 +299,7 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 	default:
 		WRONG("Illegal action in vcl_deliver{}");
 	}
-	if (wrk->busyobj != NULL && wrk->busyobj->do_stream) {
-		AssertObjCorePassOrBusy(req->obj->objcore);
-		sp->step = STP_STREAMBODY;
-	} else {
-		sp->step = STP_DELIVER;
-	}
+	sp->step = STP_DELIVER;
 	return (0);
 }
 
@@ -858,13 +852,8 @@ cnt_prepfetch(struct sess *sp, struct worker *wrk, struct req *req)
 
 	AssertObjCorePassOrBusy(req->obj->objcore);
 
-	if (bo->do_stream) {
-		sp->step = STP_PREPRESP;
-		return (0);
-	} else {
-		sp->step = STP_FETCHBODY;
-		return (0);
-	}
+	sp->step = STP_FETCHBODY;
+	return (0);
 }
 
 /*--------------------------------------------------------------------
@@ -921,63 +910,6 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	VBO_DerefBusyObj(wrk, &wrk->busyobj);
 	wrk->acct_tmp.fetch++;
 	sp->step = STP_PREPRESP;
-	return (0);
-}
-
-/*--------------------------------------------------------------------
- * Stream the body as we fetch it
-DOT subgraph xstreambody {
-DOT	streambody [
-DOT		shape=record
-DOT		label="{cnt_streambody:|ping_pong\nfetch/deliver}"
-DOT	]
-DOT }
-DOT streambody -> DONE [style=bold,color=cyan]
- */
-
-static int
-cnt_streambody(struct sess *sp, struct worker *wrk, struct req *req)
-{
-	int i;
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-
-	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
-
-	RES_StreamStart(sp);
-
-	AssertObjCorePassOrBusy(req->obj->objcore);
-
-	i = FetchBody(wrk, req->obj);
-
-	http_Teardown(wrk->busyobj->bereq);
-	http_Teardown(wrk->busyobj->beresp);
-	wrk->busyobj->vfp = NULL;
-	AZ(wrk->busyobj->vbc);
-	AN(req->director);
-
-	if (!i && req->obj->objcore != NULL) {
-		EXP_Insert(req->obj);
-		AN(req->obj->objcore);
-		AN(req->obj->objcore->ban);
-		AZ(req->obj->ws_o->overflow);
-		HSH_Unbusy(req->obj->objcore);
-	} else {
-		req->doclose = "Stream error";
-	}
-	wrk->acct_tmp.fetch++;
-	req->director = NULL;
-	req->restarts = 0;
-
-	RES_StreamEnd(sp);
-
-	assert(WRW_IsReleased(wrk));
-	(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
-	VBO_DerefBusyObj(wrk, &wrk->busyobj);
-	http_Teardown(req->resp);
-	sp->step = STP_DONE;
 	return (0);
 }
 
