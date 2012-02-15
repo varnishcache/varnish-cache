@@ -292,15 +292,12 @@ vfp_esi_bytes_gg(const struct busyobj *bo, struct vef_priv *vef,
 
 /*---------------------------------------------------------------------*/
 
-static void __match_proto__()
-vfp_esi_begin(struct worker *wrk, size_t estimate)
+static void __match_proto__(vfp_begin_f)
+vfp_esi_begin(struct busyobj *bo, size_t estimate)
 {
-	struct busyobj *bo;
 	struct vef_priv *vef;
 
 	(void)estimate;
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	bo = wrk->busyobj;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	ALLOC_OBJ(vef, VEF_MAGIC);
@@ -310,16 +307,16 @@ vfp_esi_begin(struct worker *wrk, size_t estimate)
 
 	AZ(bo->vgz_rx);
 	if (bo->is_gzip && bo->do_gunzip) {
-		bo->vgz_rx = VGZ_NewUngzip(wrk->vsl, "U F E");
+		bo->vgz_rx = VGZ_NewUngzip(bo->vsl, "U F E");
 		VEP_Init(bo, NULL);
 		vef->ibuf_sz = cache_param->gzip_buffer;
 	} else if (bo->is_gunzip && bo->do_gzip) {
-		vef->vgz = VGZ_NewGzip(wrk->vsl, "G F E");
+		vef->vgz = VGZ_NewGzip(bo->vsl, "G F E");
 		VEP_Init(bo, vfp_vep_callback);
 		vef->ibuf_sz = cache_param->gzip_buffer;
 	} else if (bo->is_gzip) {
-		bo->vgz_rx = VGZ_NewUngzip(wrk->vsl, "U F E");
-		vef->vgz = VGZ_NewGzip(wrk->vsl, "G F E");
+		bo->vgz_rx = VGZ_NewUngzip(bo->vsl, "U F E");
+		vef->vgz = VGZ_NewGzip(bo->vsl, "G F E");
 		VEP_Init(bo, vfp_vep_callback);
 		vef->ibuf_sz = cache_param->gzip_buffer;
 		vef->ibuf2_sz = cache_param->gzip_buffer;
@@ -339,15 +336,12 @@ vfp_esi_begin(struct worker *wrk, size_t estimate)
 	AN(bo->vep);
 }
 
-static int __match_proto__()
-vfp_esi_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
+static int __match_proto__(vfp_bytes_f)
+vfp_esi_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 {
-	struct busyobj *bo;
 	struct vef_priv *vef;
 	int i;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	bo = wrk->busyobj;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	vef = bo->vef_priv;
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
@@ -367,17 +361,14 @@ vfp_esi_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 	return (i);
 }
 
-static int __match_proto__()
-vfp_esi_end(struct worker *wrk)
+static int __match_proto__(vfp_end_f)
+vfp_esi_end(struct busyobj *bo)
 {
 	struct vsb *vsb;
 	struct vef_priv *vef;
-	struct busyobj *bo;
 	ssize_t l;
 	int retval;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	bo = wrk->busyobj;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	AN(bo->vep);
 

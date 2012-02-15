@@ -428,19 +428,18 @@ VGZ_Destroy(struct vgz **vgp)
  * A VFP for gunzip'ing an object as we receive it from the backend
  */
 
-static void __match_proto__()
-vfp_gunzip_begin(struct worker *wrk, size_t estimate)
+static void __match_proto__(vfp_begin_f)
+vfp_gunzip_begin(struct busyobj *bo, size_t estimate)
 {
 	(void)estimate;
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
-	AZ(wrk->busyobj->vgz_rx);
-	wrk->busyobj->vgz_rx = VGZ_NewUngzip(wrk->vsl, "U F -");
-	XXXAZ(vgz_getmbuf(wrk->busyobj->vgz_rx));
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AZ(bo->vgz_rx);
+	bo->vgz_rx = VGZ_NewUngzip(bo->vsl, "U F -");
+	XXXAZ(vgz_getmbuf(bo->vgz_rx));
 }
 
-static int __match_proto__()
-vfp_gunzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
+static int __match_proto__(vfp_bytes_f)
+vfp_gunzip_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 {
 	struct vgz *vg;
 	ssize_t l, wl;
@@ -448,10 +447,9 @@ vfp_gunzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 	size_t dl;
 	const void *dp;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
-	AZ(wrk->busyobj->fetch_failed);
-	vg = wrk->busyobj->vgz_rx;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AZ(bo->fetch_failed);
+	vg = bo->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
 	while (bytes > 0 || vg->vz.avail_in > 0) {
@@ -466,34 +464,32 @@ vfp_gunzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 			bytes -= wl;
 		}
 
-		if (VGZ_ObufStorage(wrk->busyobj, vg))
+		if (VGZ_ObufStorage(bo, vg))
 			return(-1);
 		i = VGZ_Gunzip(vg, &dp, &dl);
 		if (i != VGZ_OK && i != VGZ_END)
-			return(FetchError(wrk->busyobj, "Gunzip data error"));
-		wrk->busyobj->fetch_obj->len += dl;
+			return(FetchError(bo, "Gunzip data error"));
+		bo->fetch_obj->len += dl;
 	}
 	assert(i == Z_OK || i == Z_STREAM_END);
 	return (1);
 }
 
-static int __match_proto__()
-vfp_gunzip_end(struct worker *wrk)
+static int __match_proto__(vfp_end_f)
+vfp_gunzip_end(struct busyobj *bo)
 {
 	struct vgz *vg;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
-	vg = wrk->busyobj->vgz_rx;
-	wrk->busyobj->vgz_rx = NULL;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	vg = bo->vgz_rx;
+	bo->vgz_rx = NULL;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-	if (wrk->busyobj->fetch_failed) {
+	if (bo->fetch_failed) {
 		(void)VGZ_Destroy(&vg);
 		return(0);
 	}
 	if (VGZ_Destroy(&vg) != VGZ_END)
-		return(FetchError(wrk->busyobj,
-		    "Gunzip error at the very end"));
+		return(FetchError(bo, "Gunzip error at the very end"));
 	return (0);
 }
 
@@ -509,20 +505,19 @@ struct vfp vfp_gunzip = {
  * A VFP for gzip'ing an object as we receive it from the backend
  */
 
-static void __match_proto__()
-vfp_gzip_begin(struct worker *wrk, size_t estimate)
+static void __match_proto__(vfp_begin_f)
+vfp_gzip_begin(struct busyobj *bo, size_t estimate)
 {
 	(void)estimate;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
-	AZ(wrk->busyobj->vgz_rx);
-	wrk->busyobj->vgz_rx = VGZ_NewGzip(wrk->vsl, "G F -");
-	XXXAZ(vgz_getmbuf(wrk->busyobj->vgz_rx));
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AZ(bo->vgz_rx);
+	bo->vgz_rx = VGZ_NewGzip(bo->vsl, "G F -");
+	XXXAZ(vgz_getmbuf(bo->vgz_rx));
 }
 
-static int __match_proto__()
-vfp_gzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
+static int __match_proto__(vfp_bytes_f)
+vfp_gzip_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 {
 	struct vgz *vg;
 	ssize_t l, wl;
@@ -530,10 +525,9 @@ vfp_gzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 	size_t dl;
 	const void *dp;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
-	AZ(wrk->busyobj->fetch_failed);
-	vg = wrk->busyobj->vgz_rx;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AZ(bo->fetch_failed);
+	vg = bo->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
 	while (bytes > 0 || !VGZ_IbufEmpty(vg)) {
@@ -547,42 +541,41 @@ vfp_gzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 			VGZ_Ibuf(vg, vg->m_buf, wl);
 			bytes -= wl;
 		}
-		if (VGZ_ObufStorage(wrk->busyobj, vg))
+		if (VGZ_ObufStorage(bo, vg))
 			return(-1);
 		i = VGZ_Gzip(vg, &dp, &dl, VGZ_NORMAL);
 		assert(i == Z_OK);
-		wrk->busyobj->fetch_obj->len += dl;
+		bo->fetch_obj->len += dl;
 	}
 	return (1);
 }
 
-static int __match_proto__()
-vfp_gzip_end(struct worker *wrk)
+static int __match_proto__(vfp_end_f)
+vfp_gzip_end(struct busyobj *bo)
 {
 	struct vgz *vg;
 	size_t dl;
 	const void *dp;
 	int i;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
-	vg = wrk->busyobj->vgz_rx;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	vg = bo->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-	wrk->busyobj->vgz_rx = NULL;
-	if (wrk->busyobj->fetch_failed) {
+	bo->vgz_rx = NULL;
+	if (bo->fetch_failed) {
 		(void)VGZ_Destroy(&vg);
 		return(0);
 	}
 	do {
 		VGZ_Ibuf(vg, "", 0);
-		if (VGZ_ObufStorage(wrk->busyobj, vg))
+		if (VGZ_ObufStorage(bo, vg))
 			return(-1);
 		i = VGZ_Gzip(vg, &dp, &dl, VGZ_FINISH);
-		wrk->busyobj->fetch_obj->len += dl;
+		bo->fetch_obj->len += dl;
 	} while (i != Z_STREAM_END);
-	VGZ_UpdateObj(vg, wrk->busyobj->fetch_obj);
+	VGZ_UpdateObj(vg, bo->fetch_obj);
 	if (VGZ_Destroy(&vg) != VGZ_END)
-		return(FetchError(wrk->busyobj, "Gzip error at the very end"));
+		return(FetchError(bo, "Gzip error at the very end"));
 	return (0);
 }
 
@@ -599,19 +592,18 @@ struct vfp vfp_gzip = {
  * collecting the magic bits while we're at it.
  */
 
-static void __match_proto__()
-vfp_testgzip_begin(struct worker *wrk, size_t estimate)
+static void __match_proto__(vfp_begin_f)
+vfp_testgzip_begin(struct busyobj *bo, size_t estimate)
 {
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	(void)estimate;
-	wrk->busyobj->vgz_rx = VGZ_NewUngzip(wrk->vsl, "u F -");
-	CHECK_OBJ_NOTNULL(wrk->busyobj->vgz_rx, VGZ_MAGIC);
-	XXXAZ(vgz_getmbuf(wrk->busyobj->vgz_rx));
+	bo->vgz_rx = VGZ_NewUngzip(bo->vsl, "u F -");
+	CHECK_OBJ_NOTNULL(bo->vgz_rx, VGZ_MAGIC);
+	XXXAZ(vgz_getmbuf(bo->vgz_rx));
 }
 
-static int __match_proto__()
-vfp_testgzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
+static int __match_proto__(vfp_bytes_f)
+vfp_testgzip_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 {
 	struct vgz *vg;
 	ssize_t l, wl;
@@ -620,14 +612,13 @@ vfp_testgzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 	const void *dp;
 	struct storage *st;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
-	AZ(wrk->busyobj->fetch_failed);
-	vg = wrk->busyobj->vgz_rx;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AZ(bo->fetch_failed);
+	vg = bo->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
 	while (bytes > 0) {
-		st = FetchStorage(wrk->busyobj, 0);
+		st = FetchStorage(bo, 0);
 		if (st == NULL)
 			return(-1);
 		l = st->space - st->len;
@@ -639,16 +630,15 @@ vfp_testgzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 		bytes -= wl;
 		VGZ_Ibuf(vg, st->ptr + st->len, wl);
 		st->len += wl;
-		wrk->busyobj->fetch_obj->len += wl;
+		bo->fetch_obj->len += wl;
 
 		while (!VGZ_IbufEmpty(vg)) {
 			VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 			i = VGZ_Gunzip(vg, &dp, &dl);
 			if (i == VGZ_END && !VGZ_IbufEmpty(vg))
-				return(FetchError(wrk->busyobj,
-				    "Junk after gzip data"));
+				return(FetchError(bo, "Junk after gzip data"));
 			if (i != VGZ_OK && i != VGZ_END)
-				return(FetchError2(wrk->busyobj,
+				return(FetchError2(bo,
 				    "Invalid Gzip data", vg->vz.msg));
 		}
 	}
@@ -656,24 +646,22 @@ vfp_testgzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 	return (1);
 }
 
-static int __match_proto__()
-vfp_testgzip_end(struct worker *wrk)
+static int __match_proto__(vfp_end_f)
+vfp_testgzip_end(struct busyobj *bo)
 {
 	struct vgz *vg;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
-	vg = wrk->busyobj->vgz_rx;
-	wrk->busyobj->vgz_rx = NULL;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	vg = bo->vgz_rx;
+	bo->vgz_rx = NULL;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-	if (wrk->busyobj->fetch_failed) {
+	if (bo->fetch_failed) {
 		(void)VGZ_Destroy(&vg);
 		return(0);
 	}
-	VGZ_UpdateObj(vg, wrk->busyobj->fetch_obj);
+	VGZ_UpdateObj(vg, bo->fetch_obj);
 	if (VGZ_Destroy(&vg) != VGZ_END)
-		return(FetchError(wrk->busyobj,
-		    "TestGunzip error at the very end"));
+		return(FetchError(bo, "TestGunzip error at the very end"));
 	return (0);
 }
 
