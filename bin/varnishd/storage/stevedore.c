@@ -127,7 +127,7 @@ LRU_Free(struct lru *lru)
  */
 
 static struct stevedore *
-stv_pick_stevedore(struct worker *wrk, const char **hint)
+stv_pick_stevedore(struct vsl_log *vsl, const char **hint)
 {
 	struct stevedore *stv;
 
@@ -141,8 +141,7 @@ stv_pick_stevedore(struct worker *wrk, const char **hint)
 			return (stv_transient);
 
 		/* Hint was not valid, nuke it */
-		WSL(wrk->vsl, SLT_Debug, 0,		/* XXX VSL_id ?? */
-		    "Storage hint not usable");
+		WSL(vsl, SLT_Debug, -1, "Storage hint not usable");
 		*hint = NULL;
 	}
 	/* pick a stevedore and bump the head along */
@@ -189,7 +188,7 @@ stv_alloc(struct worker *w, const struct object *obj, size_t size)
 		}
 
 		/* no luck; try to free some space and keep trying */
-		if (EXP_NukeOne(w, stv->lru) == -1)
+		if (EXP_NukeOne(w->vsl, &w->stats, stv->lru) == -1)
 			break;
 
 		/* Enough is enough: try another if we have one */
@@ -327,12 +326,12 @@ STV_NewObject(struct worker *wrk, const char *hint, unsigned wsl,
 
 	ltot = sizeof *o + wsl + lhttp;
 
-	stv = stv0 = stv_pick_stevedore(wrk, &hint);
+	stv = stv0 = stv_pick_stevedore(wrk->vsl, &hint);
 	AN(stv->allocobj);
 	o = stv->allocobj(stv, wrk, ltot, &soc);
 	if (o == NULL && hint == NULL) {
 		do {
-			stv = stv_pick_stevedore(wrk, &hint);
+			stv = stv_pick_stevedore(wrk->vsl, &hint);
 			AN(stv->allocobj);
 			o = stv->allocobj(stv, wrk, ltot, &soc);
 		} while (o == NULL && stv != stv0);
@@ -340,7 +339,7 @@ STV_NewObject(struct worker *wrk, const char *hint, unsigned wsl,
 	if (o == NULL) {
 		/* no luck; try to free some space and keep trying */
 		for (i = 0; o == NULL && i < cache_param->nuke_limit; i++) {
-			if (EXP_NukeOne(wrk, stv->lru) == -1)
+			if (EXP_NukeOne(wrk->vsl, &wrk->stats, stv->lru) == -1)
 				break;
 			o = stv->allocobj(stv, wrk, ltot, &soc);
 		}

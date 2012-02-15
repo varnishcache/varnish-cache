@@ -753,7 +753,7 @@ void EXP_Inject(struct objcore *oc, struct lru *lru, double when);
 void EXP_Init(void);
 void EXP_Rearm(const struct object *o);
 int EXP_Touch(struct objcore *oc);
-int EXP_NukeOne(struct worker *w, struct lru *lru);
+int EXP_NukeOne(struct vsl_log *, struct dstat *, struct lru *lru);
 
 /* cache_fetch.c */
 struct storage *FetchStorage(struct worker *w, ssize_t sz);

@@ -414,7 +414,7 @@ exp_timer(struct sess *sp, void *priv)
  */
 
 int
-EXP_NukeOne(struct worker *wrk, struct lru *lru)
+EXP_NukeOne(struct vsl_log *vsl, struct dstat *ds, struct lru *lru)
 {
 	struct objcore *oc;
 
@@ -445,8 +445,8 @@ EXP_NukeOne(struct worker *wrk, struct lru *lru)
 		return (-1);
 
 	/* XXX: bad idea for -spersistent */
-	WSL(wrk->vsl, SLT_ExpKill, 0, "%u LRU", oc_getxid(&wrk->stats, oc));
-	(void)HSH_Deref(&wrk->stats, oc, NULL);
+	WSL(vsl, SLT_ExpKill, -1, "%u LRU", oc_getxid(ds, oc));
+	(void)HSH_Deref(ds, oc, NULL);
 	return (1);
 }
 
