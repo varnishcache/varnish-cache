@@ -49,7 +49,7 @@ struct vgz {
 	unsigned		magic;
 #define VGZ_MAGIC		0x162df0cb
 	enum {VGZ_GZ,VGZ_UN}	dir;
-	struct worker		*wrk;
+	struct vsl_log		*vsl;
 	const char		*id;
 	struct ws		*tmp;
 	char			*tmp_snapshot;
@@ -70,25 +70,23 @@ struct vgz {
  */
 
 static struct vgz *
-vgz_alloc_vgz(struct worker *wrk, const char *id)
+vgz_alloc_vgz(struct vsl_log *vsl, const char *id)
 {
 	struct vgz *vg;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	ALLOC_OBJ(vg, VGZ_MAGIC);
 	AN(vg);
-	vg->wrk = wrk;
+	vg->vsl = vsl;
 	vg->id = id;
 	return (vg);
 }
 
 struct vgz *
-VGZ_NewUngzip(struct worker *wrk, const char *id)
+VGZ_NewUngzip(struct vsl_log *vsl, const char *id)
 {
 	struct vgz *vg;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	vg = vgz_alloc_vgz(wrk, id);
+	vg = vgz_alloc_vgz(vsl, id);
 	vg->dir = VGZ_UN;
 	VSC_C_main->n_gunzip++;
 
@@ -103,13 +101,12 @@ VGZ_NewUngzip(struct worker *wrk, const char *id)
 }
 
 struct vgz *
-VGZ_NewGzip(struct worker *wrk, const char *id)
+VGZ_NewGzip(struct vsl_log *vsl, const char *id)
 {
 	struct vgz *vg;
 	int i;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	vg = vgz_alloc_vgz(wrk, id);
+	vg = vgz_alloc_vgz(vsl, id);
 	vg->dir = VGZ_GZ;
 	VSC_C_main->n_gzip++;
 
@@ -389,7 +386,7 @@ VGZ_UpdateObj(const struct vgz *vg, struct object *obj)
  */
 
 int
-VGZ_Destroy(struct vgz **vgp, int vsl_id)
+VGZ_Destroy(struct vgz **vgp)
 {
 	struct vgz *vg;
 	int i;
@@ -398,22 +395,13 @@ VGZ_Destroy(struct vgz **vgp, int vsl_id)
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	*vgp = NULL;
 
-	if (vsl_id < 0)
-		VSLB(vg->wrk->busyobj, SLT_Gzip, "%s %jd %jd %jd %jd %jd",
-		    vg->id,
-		    (intmax_t)vg->vz.total_in,
-		    (intmax_t)vg->vz.total_out,
-		    (intmax_t)vg->vz.start_bit,
-		    (intmax_t)vg->vz.last_bit,
-		    (intmax_t)vg->vz.stop_bit);
-	else
-		WSL(vg->wrk->vsl, SLT_Gzip, vsl_id, "%s %jd %jd %jd %jd %jd",
-		    vg->id,
-		    (intmax_t)vg->vz.total_in,
-		    (intmax_t)vg->vz.total_out,
-		    (intmax_t)vg->vz.start_bit,
-		    (intmax_t)vg->vz.last_bit,
-		    (intmax_t)vg->vz.stop_bit);
+	WSL(vg->vsl, SLT_Gzip, -1, "%s %jd %jd %jd %jd %jd",
+	    vg->id,
+	    (intmax_t)vg->vz.total_in,
+	    (intmax_t)vg->vz.total_out,
+	    (intmax_t)vg->vz.start_bit,
+	    (intmax_t)vg->vz.last_bit,
+	    (intmax_t)vg->vz.stop_bit);
 	if (vg->tmp != NULL)
 		WS_Reset(vg->tmp, vg->tmp_snapshot);
 	if (vg->dir == VGZ_GZ)
@@ -447,7 +435,7 @@ vfp_gunzip_begin(struct worker *wrk, size_t estimate)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 	AZ(wrk->busyobj->vgz_rx);
-	wrk->busyobj->vgz_rx = VGZ_NewUngzip(wrk, "U F -");
+	wrk->busyobj->vgz_rx = VGZ_NewUngzip(wrk->vsl, "U F -");
 	XXXAZ(vgz_getmbuf(wrk->busyobj->vgz_rx));
 }
 
@@ -502,10 +490,10 @@ vfp_gunzip_end(struct worker *wrk)
 	wrk->busyobj->vgz_rx = NULL;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	if (wrk->busyobj->fetch_failed) {
-		(void)VGZ_Destroy(&vg, -1);
+		(void)VGZ_Destroy(&vg);
 		return(0);
 	}
-	if (VGZ_Destroy(&vg, -1) != VGZ_END)
+	if (VGZ_Destroy(&vg) != VGZ_END)
 		return(FetchError(wrk->busyobj,
 		    "Gunzip error at the very end"));
 	return (0);
@@ -531,7 +519,7 @@ vfp_gzip_begin(struct worker *wrk, size_t estimate)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 	AZ(wrk->busyobj->vgz_rx);
-	wrk->busyobj->vgz_rx = VGZ_NewGzip(wrk, "G F -");
+	wrk->busyobj->vgz_rx = VGZ_NewGzip(wrk->vsl, "G F -");
 	XXXAZ(vgz_getmbuf(wrk->busyobj->vgz_rx));
 }
 
@@ -586,7 +574,7 @@ vfp_gzip_end(struct worker *wrk)
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	wrk->busyobj->vgz_rx = NULL;
 	if (wrk->busyobj->fetch_failed) {
-		(void)VGZ_Destroy(&vg, -1);
+		(void)VGZ_Destroy(&vg);
 		return(0);
 	}
 	do {
@@ -599,7 +587,7 @@ vfp_gzip_end(struct worker *wrk)
 	if (wrk->busyobj->do_stream)
 		RES_StreamPoll(wrk);
 	VGZ_UpdateObj(vg, wrk->busyobj->fetch_obj);
-	if (VGZ_Destroy(&vg, -1) != VGZ_END)
+	if (VGZ_Destroy(&vg) != VGZ_END)
 		return(FetchError(wrk->busyobj, "Gzip error at the very end"));
 	return (0);
 }
@@ -623,7 +611,7 @@ vfp_testgzip_begin(struct worker *wrk, size_t estimate)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
 	(void)estimate;
-	wrk->busyobj->vgz_rx = VGZ_NewUngzip(wrk, "u F -");
+	wrk->busyobj->vgz_rx = VGZ_NewUngzip(wrk->vsl, "u F -");
 	CHECK_OBJ_NOTNULL(wrk->busyobj->vgz_rx, VGZ_MAGIC);
 	XXXAZ(vgz_getmbuf(wrk->busyobj->vgz_rx));
 }
@@ -687,11 +675,11 @@ vfp_testgzip_end(struct worker *wrk)
 	wrk->busyobj->vgz_rx = NULL;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	if (wrk->busyobj->fetch_failed) {
-		(void)VGZ_Destroy(&vg, -1);
+		(void)VGZ_Destroy(&vg);
 		return(0);
 	}
 	VGZ_UpdateObj(vg, wrk->busyobj->fetch_obj);
-	if (VGZ_Destroy(&vg, -1) != VGZ_END)
+	if (VGZ_Destroy(&vg) != VGZ_END)
 		return(FetchError(wrk->busyobj,
 		    "TestGunzip error at the very end"));
 	return (0);

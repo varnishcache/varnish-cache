@@ -160,7 +160,7 @@ res_WriteGunzipObj(const struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	vg = VGZ_NewUngzip(sp->wrk, "U D -");
+	vg = VGZ_NewUngzip(sp->wrk->vsl, "U D -");
 	AZ(VGZ_WrwInit(vg));
 
 	VTAILQ_FOREACH(st, &sp->req->obj->store, list) {
@@ -175,7 +175,7 @@ res_WriteGunzipObj(const struct sess *sp)
 		(void)i;
 	}
 	VGZ_WrwFlush(sp->wrk, vg);
-	(void)VGZ_Destroy(&vg, sp->vsl_id);
+	(void)VGZ_Destroy(&vg);
 	assert(u == sp->req->obj->len);
 }
 
@@ -325,7 +325,7 @@ RES_StreamStart(struct sess *sp)
 	WRW_Reserve(sp->wrk, &sp->fd);
 
 	if (req->res_mode & RES_GUNZIP) {
-		req->stream_vgz = VGZ_NewUngzip(sp->wrk, "U S -");
+		req->stream_vgz = VGZ_NewUngzip(sp->wrk->vsl, "U S -");
 		AZ(VGZ_WrwInit(req->stream_vgz));
 		http_Unset(req->resp, H_Content_Encoding);
 	}
@@ -407,7 +407,7 @@ RES_StreamEnd(struct sess *sp)
 	if (req->res_mode & RES_GUNZIP) {
 		AN(req->stream_vgz);
 		VGZ_WrwFlush(sp->wrk, req->stream_vgz);
-		(void)VGZ_Destroy(&req->stream_vgz, sp->vsl_id);
+		(void)VGZ_Destroy(&req->stream_vgz);
 	}
 	if (req->res_mode & RES_CHUNKED && !(req->res_mode & RES_ESI_CHILD))
 		WRW_EndChunk(sp->wrk);

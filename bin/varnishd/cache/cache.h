@@ -768,8 +768,8 @@ void Fetch_Init(void);
 struct vgz;
 
 enum vgz_flag { VGZ_NORMAL, VGZ_ALIGN, VGZ_RESET, VGZ_FINISH };
-struct vgz *VGZ_NewUngzip(struct worker *wrk, const char *id);
-struct vgz *VGZ_NewGzip(struct worker *wrk, const char *id);
+struct vgz *VGZ_NewUngzip(struct vsl_log *vsl, const char *id);
+struct vgz *VGZ_NewGzip(struct vsl_log *vsl, const char *id);
 void VGZ_Ibuf(struct vgz *, const void *, ssize_t len);
 int VGZ_IbufEmpty(const struct vgz *vg);
 void VGZ_Obuf(struct vgz *, void *, ssize_t len);
@@ -777,7 +777,7 @@ int VGZ_ObufFull(const struct vgz *vg);
 int VGZ_ObufStorage(struct worker *w, struct vgz *vg);
 int VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
 int VGZ_Gunzip(struct vgz *, const void **, size_t *len);
-int VGZ_Destroy(struct vgz **, int vsl_id);
+int VGZ_Destroy(struct vgz **);
 void VGZ_UpdateObj(const struct vgz*, struct object *);
 
 int VGZ_WrwInit(struct vgz *vg);

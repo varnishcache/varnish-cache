@@ -313,16 +313,16 @@ vfp_esi_begin(struct worker *wrk, size_t estimate)
 
 	AZ(bo->vgz_rx);
 	if (bo->is_gzip && bo->do_gunzip) {
-		bo->vgz_rx = VGZ_NewUngzip(wrk, "U F E");
+		bo->vgz_rx = VGZ_NewUngzip(wrk->vsl, "U F E");
 		VEP_Init(wrk, NULL);
 		vef->ibuf_sz = cache_param->gzip_buffer;
 	} else if (bo->is_gunzip && bo->do_gzip) {
-		vef->vgz = VGZ_NewGzip(wrk, "G F E");
+		vef->vgz = VGZ_NewGzip(wrk->vsl, "G F E");
 		VEP_Init(wrk, vfp_vep_callback);
 		vef->ibuf_sz = cache_param->gzip_buffer;
 	} else if (bo->is_gzip) {
-		bo->vgz_rx = VGZ_NewUngzip(wrk, "U F E");
-		vef->vgz = VGZ_NewGzip(wrk, "G F E");
+		bo->vgz_rx = VGZ_NewUngzip(wrk->vsl, "U F E");
+		vef->vgz = VGZ_NewGzip(wrk->vsl, "G F E");
 		VEP_Init(wrk, vfp_vep_callback);
 		vef->ibuf_sz = cache_param->gzip_buffer;
 		vef->ibuf2_sz = cache_param->gzip_buffer;
@@ -386,7 +386,7 @@ vfp_esi_end(struct worker *wrk)
 
 	retval = bo->fetch_failed;
 
-	if (bo->vgz_rx != NULL && VGZ_Destroy(&bo->vgz_rx, -1) != VGZ_END)
+	if (bo->vgz_rx != NULL && VGZ_Destroy(&bo->vgz_rx) != VGZ_END)
 		retval = FetchError(bo, "Gunzip+ESI Failed at the very end");
 
 	vsb = VEP_Finish(wrk);
@@ -414,7 +414,7 @@ vfp_esi_end(struct worker *wrk)
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 	if (vef->vgz != NULL) {
 		VGZ_UpdateObj(vef->vgz, bo->fetch_obj);
-		if (VGZ_Destroy(&vef->vgz,  -1) != VGZ_END)
+		if (VGZ_Destroy(&vef->vgz) != VGZ_END)
 			retval = FetchError(bo,
 			    "ESI+Gzip Failed at the very end");
 	}
