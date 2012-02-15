@@ -494,6 +494,7 @@ struct busyobj {
 	double			between_bytes_timeout;
 
 	struct vsl_log		vsl[1];
+	struct dstat		*stats;
 };
 
 /* Object structure --------------------------------------------------*/

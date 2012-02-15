@@ -506,6 +506,13 @@ FetchBody(struct worker *wrk, struct object *obj)
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(obj->http, HTTP_MAGIC);
 
+	/*
+ 	 * XXX: The busyobj needs a dstat, but it is not obvious which one
+	 * XXX: it should be (own/borrowed).  For now borrow the wrk's.
+	 */
+	AZ(bo->stats);
+	bo->stats = &wrk->stats;
+
 	htc = &bo->htc;
 
 	if (bo->vfp == NULL)
@@ -578,6 +585,7 @@ FetchBody(struct worker *wrk, struct object *obj)
 
 	if (bo->body_status == BS_ERROR) {
 		VDI_CloseFd(wrk, &bo->vbc);
+		bo->stats = NULL;
 		return (__LINE__);
 	}
 
@@ -585,6 +593,7 @@ FetchBody(struct worker *wrk, struct object *obj)
 		wrk->stats.fetch_failed++;
 		VDI_CloseFd(wrk, &bo->vbc);
 		obj->len = 0;
+		bo->stats = NULL;
 		return (__LINE__);
 	}
 	AZ(bo->fetch_failed);
@@ -619,6 +628,7 @@ FetchBody(struct worker *wrk, struct object *obj)
 	else
 		VDI_RecycleFd(wrk, &bo->vbc);
 
+	bo->stats = NULL;
 	return (0);
 }
 
