@@ -203,11 +203,11 @@ VGZ_ObufFull(const struct vgz *vg)
  */
 
 int
-VGZ_ObufStorage(struct worker *wrk, struct vgz *vg)
+VGZ_ObufStorage(struct busyobj *bo, struct vgz *vg)
 {
 	struct storage *st;
 
-	st = FetchStorage(wrk->busyobj, 0);
+	st = FetchStorage(bo, 0);
 	if (st == NULL)
 		return (-1);
 
@@ -466,7 +466,7 @@ vfp_gunzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 			bytes -= wl;
 		}
 
-		if (VGZ_ObufStorage(wrk, vg))
+		if (VGZ_ObufStorage(wrk->busyobj, vg))
 			return(-1);
 		i = VGZ_Gunzip(vg, &dp, &dl);
 		if (i != VGZ_OK && i != VGZ_END)
@@ -547,7 +547,7 @@ vfp_gzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 			VGZ_Ibuf(vg, vg->m_buf, wl);
 			bytes -= wl;
 		}
-		if (VGZ_ObufStorage(wrk, vg))
+		if (VGZ_ObufStorage(wrk->busyobj, vg))
 			return(-1);
 		i = VGZ_Gzip(vg, &dp, &dl, VGZ_NORMAL);
 		assert(i == Z_OK);
@@ -575,7 +575,7 @@ vfp_gzip_end(struct worker *wrk)
 	}
 	do {
 		VGZ_Ibuf(vg, "", 0);
-		if (VGZ_ObufStorage(wrk, vg))
+		if (VGZ_ObufStorage(wrk->busyobj, vg))
 			return(-1);
 		i = VGZ_Gzip(vg, &dp, &dl, VGZ_FINISH);
 		wrk->busyobj->fetch_obj->len += dl;

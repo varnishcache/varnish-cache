@@ -135,7 +135,7 @@ vfp_esi_bytes_gu(struct worker *wrk, const struct vef_priv *vef,
 			VGZ_Ibuf(vg, vef->ibuf, wl);
 			bytes -= wl;
 		}
-		if (VGZ_ObufStorage(wrk, vg))
+		if (VGZ_ObufStorage(wrk->busyobj, vg))
 			return(-1);
 		i = VGZ_Gunzip(vg, &dp, &dl);
 		xxxassert(i == VGZ_OK || i == VGZ_END);
@@ -211,7 +211,7 @@ vfp_vep_callback(struct worker *wrk, ssize_t l, enum vgz_flag flg)
 
 	VGZ_Ibuf(vef->vgz, vef->ibuf_o, l);
 	do {
-		if (VGZ_ObufStorage(wrk, vef->vgz)) {
+		if (VGZ_ObufStorage(wrk->busyobj, vef->vgz)) {
 			vef->error = ENOMEM;
 			vef->tot += l;
 			return (vef->tot);
