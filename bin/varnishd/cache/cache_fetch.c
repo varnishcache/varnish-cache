@@ -92,7 +92,7 @@ vfp_nop_begin(struct worker *wrk, size_t estimate)
 {
 
 	if (estimate > 0)
-		(void)FetchStorage(wrk, estimate);
+		(void)FetchStorage(wrk->busyobj, estimate);
 }
 
 /*--------------------------------------------------------------------
@@ -114,7 +114,7 @@ vfp_nop_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 
 	AZ(wrk->busyobj->fetch_failed);
 	while (bytes > 0) {
-		st = FetchStorage(wrk, 0);
+		st = FetchStorage(wrk->busyobj, 0);
 		if (st == NULL)
 			return(-1);
 		l = st->space - st->len;
@@ -170,13 +170,14 @@ static struct vfp vfp_nop = {
  */
 
 struct storage *
-FetchStorage(struct worker *wrk, ssize_t sz)
+FetchStorage(struct busyobj *bo, ssize_t sz)
 {
 	ssize_t l;
 	struct storage *st;
 	struct object *obj;
 
-	obj = wrk->busyobj->fetch_obj;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	obj = bo->fetch_obj;
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	st = VTAILQ_LAST(&obj->store, storagehead);
 	if (st != NULL && st->len < st->space)
@@ -187,9 +188,9 @@ FetchStorage(struct worker *wrk, ssize_t sz)
 		l = sz;
 	if (l == 0)
 		l = cache_param->fetch_chunksize;
-	st = STV_alloc(wrk, l);
+	st = STV_alloc(bo, l);
 	if (st == NULL) {
-		(void)FetchError(wrk->busyobj, "Could not get storage");
+		(void)FetchError(bo, "Could not get storage");
 		return (NULL);
 	}
 	AZ(st->len);
@@ -507,7 +508,7 @@ FetchBody(struct worker *wrk, struct object *obj)
 	CHECK_OBJ_NOTNULL(obj->http, HTTP_MAGIC);
 
 	/*
- 	 * XXX: The busyobj needs a dstat, but it is not obvious which one
+	 * XXX: The busyobj needs a dstat, but it is not obvious which one
 	 * XXX: it should be (own/borrowed).  For now borrow the wrk's.
 	 */
 	AZ(bo->stats);

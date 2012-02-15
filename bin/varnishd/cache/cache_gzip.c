@@ -207,7 +207,7 @@ VGZ_ObufStorage(struct worker *wrk, struct vgz *vg)
 {
 	struct storage *st;
 
-	st = FetchStorage(wrk, 0);
+	st = FetchStorage(wrk->busyobj, 0);
 	if (st == NULL)
 		return (-1);
 
@@ -627,7 +627,7 @@ vfp_testgzip_bytes(struct worker *wrk, struct http_conn *htc, ssize_t bytes)
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
 	while (bytes > 0) {
-		st = FetchStorage(wrk, 0);
+		st = FetchStorage(wrk->busyobj, 0);
 		if (st == NULL)
 			return(-1);
 		l = st->space - st->len;

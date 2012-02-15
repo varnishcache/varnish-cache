@@ -94,7 +94,7 @@ vfp_esi_bytes_uu(struct worker *wrk, const struct vef_priv *vef,
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 
 	while (bytes > 0) {
-		st = FetchStorage(wrk, 0);
+		st = FetchStorage(wrk->busyobj, 0);
 		if (st == NULL)
 			return (-1);
 		wl = vef_read(htc,
@@ -396,7 +396,7 @@ vfp_esi_end(struct worker *wrk)
 			l = VSB_len(vsb);
 			assert(l > 0);
 			/* XXX: This is a huge waste of storage... */
-			bo->fetch_obj->esidata = STV_alloc(wrk, l);
+			bo->fetch_obj->esidata = STV_alloc(bo, l);
 			if (bo->fetch_obj->esidata != NULL) {
 				memcpy(bo->fetch_obj->esidata->ptr,
 				    VSB_data(vsb), l);

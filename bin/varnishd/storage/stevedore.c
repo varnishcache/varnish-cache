@@ -157,18 +157,20 @@ stv_pick_stevedore(struct vsl_log *vsl, const char **hint)
 /*-------------------------------------------------------------------*/
 
 static struct storage *
-stv_alloc(struct worker *w, const struct object *obj, size_t size)
+stv_alloc(struct busyobj *bo, size_t size)
 {
 	struct storage *st;
 	struct stevedore *stv;
 	unsigned fail = 0;
+	struct object *obj;
 
 	/*
 	 * Always use the stevedore which allocated the object in order to
 	 * keep an object inside the same stevedore.
 	 */
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	obj = bo->fetch_obj;
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	stv = obj->objstore->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
@@ -188,7 +190,7 @@ stv_alloc(struct worker *w, const struct object *obj, size_t size)
 		}
 
 		/* no luck; try to free some space and keep trying */
-		if (EXP_NukeOne(w->vsl, &w->stats, stv->lru) == -1)
+		if (EXP_NukeOne(bo, stv->lru) == -1)
 			break;
 
 		/* Enough is enough: try another if we have one */
@@ -337,12 +339,16 @@ STV_NewObject(struct worker *wrk, const char *hint, unsigned wsl,
 		} while (o == NULL && stv != stv0);
 	}
 	if (o == NULL) {
+		/* XXX: lend busyobj wrk's stats while we nuke */
+		AZ(wrk->busyobj->stats);
+		wrk->busyobj->stats = &wrk->stats;
 		/* no luck; try to free some space and keep trying */
 		for (i = 0; o == NULL && i < cache_param->nuke_limit; i++) {
-			if (EXP_NukeOne(wrk->vsl, &wrk->stats, stv->lru) == -1)
+			if (EXP_NukeOne(wrk->busyobj, stv->lru) == -1)
 				break;
 			o = stv->allocobj(stv, wrk, ltot, &soc);
 		}
+		wrk->busyobj->stats = NULL;
 	}
 
 	if (o == NULL)
@@ -373,10 +379,10 @@ STV_Freestore(struct object *o)
 /*-------------------------------------------------------------------*/
 
 struct storage *
-STV_alloc(struct worker *w, size_t size)
+STV_alloc(struct busyobj *bo, size_t size)
 {
 
-	return (stv_alloc(w, w->busyobj->fetch_obj, size));
+	return (stv_alloc(bo, size));
 }
 
 void

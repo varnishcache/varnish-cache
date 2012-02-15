@@ -745,10 +745,10 @@ void EXP_Inject(struct objcore *oc, struct lru *lru, double when);
 void EXP_Init(void);
 void EXP_Rearm(const struct object *o);
 int EXP_Touch(struct objcore *oc);
-int EXP_NukeOne(struct vsl_log *, struct dstat *, struct lru *lru);
+int EXP_NukeOne(struct busyobj *, struct lru *lru);
 
 /* cache_fetch.c */
-struct storage *FetchStorage(struct worker *w, ssize_t sz);
+struct storage *FetchStorage(struct busyobj *, ssize_t sz);
 int FetchError(struct busyobj *, const char *error);
 int FetchError2(struct busyobj *, const char *error, const char *more);
 int FetchHdr(struct sess *sp, int need_host_hdr, int sendbody);
@@ -1013,7 +1013,7 @@ int RFC2616_Do_Cond(const struct sess *sp);
 /* stevedore.c */
 struct object *STV_NewObject(struct worker *wrk, const char *hint, unsigned len,
     uint16_t nhttp);
-struct storage *STV_alloc(struct worker *w, size_t size);
+struct storage *STV_alloc(struct busyobj *, size_t size);
 void STV_trim(struct storage *st, size_t size);
 void STV_free(struct storage *st);
 void STV_open(void);
