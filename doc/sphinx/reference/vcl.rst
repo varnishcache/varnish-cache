@@ -836,7 +836,8 @@ beresp.storage
 
 After the object is entered into the cache, the following (mostly
 read-only) variables are available when the object has been located in
-cache, typically in vcl_hit and vcl_deliver.
+cache, typically in vcl_hit, or when constructing a synthetic reply in
+vcl_error:
 
 obj.proto
   The HTTP protocol version used when the object was retrieved.
@@ -852,11 +853,12 @@ obj.ttl
 
 obj.lastuse
   The approximate time elapsed since the object was last requests, in
-  seconds.
+  seconds. This variable is also available in vcl_deliver.
 
 obj.hits
   The approximate number of times the object has been delivered. A value 
-  of 0 indicates a cache miss.
+  of 0 indicates a cache miss. This variable is also available in
+  vcl_deliver.
 
 obj.grace
   The object's grace period in seconds. obj.grace is writable.
