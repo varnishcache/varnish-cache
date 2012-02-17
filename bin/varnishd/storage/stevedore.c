@@ -127,7 +127,7 @@ LRU_Free(struct lru *lru)
  */
 
 static struct stevedore *
-stv_pick_stevedore(struct worker *wrk, const char **hint)
+stv_pick_stevedore(struct vsl_log *vsl, const char **hint)
 {
 	struct stevedore *stv;
 
@@ -141,8 +141,7 @@ stv_pick_stevedore(struct worker *wrk, const char **hint)
 			return (stv_transient);
 
 		/* Hint was not valid, nuke it */
-		WSL(wrk->vsl, SLT_Debug, 0,		/* XXX VSL_id ?? */
-		    "Storage hint not usable");
+		WSL(vsl, SLT_Debug, -1, "Storage hint not usable");
 		*hint = NULL;
 	}
 	/* pick a stevedore and bump the head along */
@@ -158,18 +157,20 @@ stv_pick_stevedore(struct worker *wrk, const char **hint)
 /*-------------------------------------------------------------------*/
 
 static struct storage *
-stv_alloc(struct worker *w, const struct object *obj, size_t size)
+stv_alloc(struct busyobj *bo, size_t size)
 {
 	struct storage *st;
 	struct stevedore *stv;
 	unsigned fail = 0;
+	struct object *obj;
 
 	/*
 	 * Always use the stevedore which allocated the object in order to
 	 * keep an object inside the same stevedore.
 	 */
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	obj = bo->fetch_obj;
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(w, WORKER_MAGIC);
 	stv = obj->objstore->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
@@ -189,7 +190,7 @@ stv_alloc(struct worker *w, const struct object *obj, size_t size)
 		}
 
 		/* no luck; try to free some space and keep trying */
-		if (EXP_NukeOne(w, stv->lru) == -1)
+		if (EXP_NukeOne(bo, stv->lru) == -1)
 			break;
 
 		/* Enough is enough: try another if we have one */
@@ -327,23 +328,27 @@ STV_NewObject(struct worker *wrk, const char *hint, unsigned wsl,
 
 	ltot = sizeof *o + wsl + lhttp;
 
-	stv = stv0 = stv_pick_stevedore(wrk, &hint);
+	stv = stv0 = stv_pick_stevedore(wrk->vsl, &hint);
 	AN(stv->allocobj);
 	o = stv->allocobj(stv, wrk, ltot, &soc);
 	if (o == NULL && hint == NULL) {
 		do {
-			stv = stv_pick_stevedore(wrk, &hint);
+			stv = stv_pick_stevedore(wrk->vsl, &hint);
 			AN(stv->allocobj);
 			o = stv->allocobj(stv, wrk, ltot, &soc);
 		} while (o == NULL && stv != stv0);
 	}
 	if (o == NULL) {
+		/* XXX: lend busyobj wrk's stats while we nuke */
+		AZ(wrk->busyobj->stats);
+		wrk->busyobj->stats = &wrk->stats;
 		/* no luck; try to free some space and keep trying */
 		for (i = 0; o == NULL && i < cache_param->nuke_limit; i++) {
-			if (EXP_NukeOne(wrk, stv->lru) == -1)
+			if (EXP_NukeOne(wrk->busyobj, stv->lru) == -1)
 				break;
 			o = stv->allocobj(stv, wrk, ltot, &soc);
 		}
+		wrk->busyobj->stats = NULL;
 	}
 
 	if (o == NULL)
@@ -374,13 +379,9 @@ STV_Freestore(struct object *o)
 /*-------------------------------------------------------------------*/
 
 struct storage *
-STV_alloc(struct worker *w, size_t size)
+STV_alloc(struct busyobj *bo, size_t size)
 {
-	struct object *obj = w->busyobj->fetch_obj;
-	if (obj == NULL)
-		obj = w->sp->req->obj;
-
-	return (stv_alloc(w, obj, size));
+	return (stv_alloc(bo, size));
 }
 
 void
@@ -402,7 +403,7 @@ STV_trim(struct storage *st, size_t size)
  * sharing storage together with reference counting.
  */
 void
-STV_dup(const struct sess *sp, struct object *src, struct object *target)
+STV_dup(struct object *src, struct object *target)
 {
         struct stevedore *stv;
 
@@ -414,7 +415,7 @@ STV_dup(const struct sess *sp, struct object *src, struct object *target)
         stv = src->objstore->stevedore;
         AN(stv->dup);
         
-        stv->dup(sp, src, target);
+        stv->dup(src, target);
 }
 
 void
@@ -506,14 +507,25 @@ VRT_Stv_##nm(const char *nm)			\
  * Default object store dup just copies the storage.
  */
 void
-default_dup(const struct sess *sp, struct object *src, struct object *target)
+default_dup(struct object *src, struct object *target)
 {
         struct storage *st, *st2;
         unsigned cl;
+	struct stevedore *stv = target->objstore->stevedore;
 
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+	AN(stv->alloc);
+
+	/*
+	 * XXX: This should use the logic of STV_alloc() instead of just
+	 * stv->alloc, to check if space is exhausted, nuke if necessary,
+	 * etc. This is *not* safe; it risks running out of storage with
+	 * no recovery. But STV_alloc() now assumes that allocs are only
+	 * for busyobj->fetchobj.
+	 */
         VTAILQ_FOREACH(st2, &src->store, list) {
 		cl = st2->len;
-		st = STV_alloc(sp->wrk, cl);
+		st = stv->alloc(stv, cl);
 		XXXAN(st);
                 assert(st->space >= cl);
 		VTAILQ_INSERT_TAIL(&target->store, st, list);

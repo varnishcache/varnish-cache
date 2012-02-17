@@ -219,9 +219,9 @@ struct dstat {
 
 /* Fetch processors --------------------------------------------------*/
 
-typedef void vfp_begin_f(struct worker *, size_t );
-typedef int vfp_bytes_f(struct worker *, struct http_conn *, ssize_t);
-typedef int vfp_end_f(struct worker *);
+typedef void vfp_begin_f(struct busyobj *, size_t );
+typedef int vfp_bytes_f(struct busyobj *, struct http_conn *, ssize_t);
+typedef int vfp_end_f(struct busyobj *);
 
 struct vfp {
 	vfp_begin_f	*begin;
@@ -495,6 +495,7 @@ struct busyobj {
 	double			between_bytes_timeout;
 
 	struct vsl_log		vsl[1];
+	struct dstat		*stats;
 };
 
 /* Object structure --------------------------------------------------*/
@@ -608,15 +609,6 @@ struct req {
 #define RES_ESI			(1<<4)
 #define RES_ESI_CHILD		(1<<5)
 #define RES_GUNZIP		(1<<6)
-
-	/* Stream gunzip instance */
-	struct vgz		*stream_vgz;
-
-	/* Next byte we will take from storage */
-	ssize_t			stream_next;
-
-	/* First byte of storage if we free it as we go (pass) */
-	ssize_t			stream_front;
 
 	/* Transaction VSL buffer */
 	struct vsl_log		vsl[1];
@@ -755,10 +747,10 @@ void EXP_Inject(struct objcore *oc, struct lru *lru, double when);
 void EXP_Init(void);
 void EXP_Rearm(const struct object *o);
 int EXP_Touch(struct objcore *oc);
-int EXP_NukeOne(struct worker *w, struct lru *lru);
+int EXP_NukeOne(struct busyobj *, struct lru *lru);
 
 /* cache_fetch.c */
-struct storage *FetchStorage(struct worker *w, ssize_t sz);
+struct storage *FetchStorage(struct busyobj *, ssize_t sz);
 int FetchError(struct busyobj *, const char *error);
 int FetchError2(struct busyobj *, const char *error, const char *more);
 int FetchHdr(struct sess *sp, int need_host_hdr, int sendbody);
@@ -770,16 +762,16 @@ void Fetch_Init(void);
 struct vgz;
 
 enum vgz_flag { VGZ_NORMAL, VGZ_ALIGN, VGZ_RESET, VGZ_FINISH };
-struct vgz *VGZ_NewUngzip(struct worker *wrk, const char *id);
-struct vgz *VGZ_NewGzip(struct worker *wrk, const char *id);
+struct vgz *VGZ_NewUngzip(struct vsl_log *vsl, const char *id);
+struct vgz *VGZ_NewGzip(struct vsl_log *vsl, const char *id);
 void VGZ_Ibuf(struct vgz *, const void *, ssize_t len);
 int VGZ_IbufEmpty(const struct vgz *vg);
 void VGZ_Obuf(struct vgz *, void *, ssize_t len);
 int VGZ_ObufFull(const struct vgz *vg);
-int VGZ_ObufStorage(struct worker *w, struct vgz *vg);
+int VGZ_ObufStorage(struct busyobj *, struct vgz *vg);
 int VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
 int VGZ_Gunzip(struct vgz *, const void **, size_t *len);
-int VGZ_Destroy(struct vgz **, int vsl_id);
+int VGZ_Destroy(struct vgz **);
 void VGZ_UpdateObj(const struct vgz*, struct object *);
 
 int VGZ_WrwInit(struct vgz *vg);
@@ -966,9 +958,6 @@ void WSL_Flush(struct vsl_log *, int overflow);
 /* cache_response.c */
 void RES_BuildHttp(const struct sess *sp);
 void RES_WriteObj(struct sess *sp);
-void RES_StreamStart(struct sess *sp);
-void RES_StreamEnd(struct sess *sp);
-void RES_StreamPoll(struct worker *);
 
 /* cache_vary.c */
 struct vsb *VRY_Create(const struct sess *sp, const struct http *hp);
@@ -1032,7 +1021,7 @@ int RFC2616_Do_Cond(const struct sess *sp);
 /* stevedore.c */
 struct object *STV_NewObject(struct worker *wrk, const char *hint, unsigned len,
     uint16_t nhttp);
-struct storage *STV_alloc(struct worker *w, size_t size);
+struct storage *STV_alloc(struct busyobj *, size_t size);
 void STV_trim(struct storage *st, size_t size);
 void STV_free(struct storage *st);
 void STV_open(void);

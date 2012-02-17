@@ -288,7 +288,7 @@ fmt_bytes(struct cli *cli, uintmax_t t)
 	const char *p;
 
 	if (t & 0xff) {
-		VCLI_Out(cli, "%zub", t);
+		VCLI_Out(cli, "%jub", t);
 		return;
 	}
 	for (p = "kMGTPEZY"; *p; p++) {

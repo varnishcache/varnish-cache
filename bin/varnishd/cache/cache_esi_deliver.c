@@ -258,7 +258,7 @@ ESI_Deliver(struct sess *sp)
 	}
 
 	if (isgzip && !sp->req->gzip_resp) {
-		vgz = VGZ_NewUngzip(sp->wrk, "U D E");
+		vgz = VGZ_NewUngzip(sp->wrk->vsl, "U D E");
 		AZ(VGZ_WrwInit(vgz));
 
 		/* Feed a gzip header to gunzip to make it happy */
@@ -390,7 +390,7 @@ ESI_Deliver(struct sess *sp)
 	}
 	if (vgz != NULL) {
 		VGZ_WrwFlush(sp->wrk, vgz);
-		(void)VGZ_Destroy(&vgz, sp->vsl_id);
+		(void)VGZ_Destroy(&vgz);
 	}
 	if (sp->req->gzip_resp && sp->req->esi_level == 0) {
 		/* Emit a gzip literal block with finish bit set */

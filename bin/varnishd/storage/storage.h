@@ -40,7 +40,7 @@ struct lru;
 typedef void storage_init_f(struct stevedore *, int ac, char * const *av);
 typedef void storage_open_f(const struct stevedore *);
 typedef struct storage *storage_alloc_f(struct stevedore *, size_t size);
-typedef void storage_dup_f(const struct sess *sp, struct object *src, struct object *target);
+typedef void storage_dup_f(struct object *src, struct object *target);
 typedef void storage_trim_f(struct storage *, size_t size);
 typedef void storage_free_f(struct storage *);
 typedef struct object *storage_allocobj_f(struct stevedore *,
@@ -107,5 +107,5 @@ extern const struct stevedore smu_stevedore;
 #endif
 
 /* Default dup method */
-void STV_dup(const struct sess *sp, struct object *src, struct object *target);
-void default_dup(const struct sess *sp, struct object *src, struct object *target);
+void STV_dup(struct object *src, struct object *target);
+void default_dup(struct object *src, struct object *target);

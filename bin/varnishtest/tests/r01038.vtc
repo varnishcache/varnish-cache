@@ -45,7 +45,7 @@ server s1 {
 	txresp -body "foo8"
 } -start
 
-varnish v1 -arg "-p workspace_backend=7k" -vcl+backend {
+varnish v1 -arg "-p workspace_backend=8k" -vcl+backend {
 	sub vcl_fetch {
 		set beresp.do_esi = true;
 	}
