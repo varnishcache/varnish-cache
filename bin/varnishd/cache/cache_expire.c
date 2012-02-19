@@ -330,7 +330,7 @@ EXP_Rearm(const struct object *o)
  */
 
 static void * __match_proto__(bgthread_t)
-exp_timer(struct sess *sp, void *priv)
+exp_timer(struct worker *wrk, void *priv)
 {
 	struct objcore *oc;
 	struct lru *lru;
@@ -342,8 +342,8 @@ exp_timer(struct sess *sp, void *priv)
 	oc = NULL;
 	while (1) {
 		if (oc == NULL) {
-			VSL_Flush(sp->wrk->vsl, 0);
-			WRK_SumStat(sp->wrk);
+			VSL_Flush(wrk->vsl, 0);
+			WRK_SumStat(wrk);
 			VTIM_sleep(cache_param->expiry_sleep);
 			t = VTIM_real();
 		}
@@ -399,10 +399,10 @@ exp_timer(struct sess *sp, void *priv)
 		VSC_C_main->n_expired++;
 
 		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
-		o = oc_getobj(&sp->wrk->stats, oc);
-		WSL(sp->wrk->vsl, SLT_ExpKill, 0, "%u %.0f",
-		    oc_getxid(&sp->wrk->stats, oc), EXP_Ttl(NULL, o) - t);
-		(void)HSH_Deref(&sp->wrk->stats, oc, NULL);
+		o = oc_getobj(&wrk->stats, oc);
+		WSL(wrk->vsl, SLT_ExpKill, 0, "%u %.0f",
+		    oc_getxid(&wrk->stats, oc), EXP_Ttl(NULL, o) - t);
+		(void)HSH_Deref(&wrk->stats, oc, NULL);
 	}
 	NEEDLESS_RETURN(NULL);
 }

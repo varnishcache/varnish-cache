@@ -94,19 +94,15 @@ wrk_bgthread(void *arg)
 {
 	struct bgthread *bt;
 	struct worker wrk;
-	struct sess *sp;
 	uint32_t logbuf[1024];	/* XXX:  size ? */
 
 	CAST_OBJ_NOTNULL(bt, arg, BGTHREAD_MAGIC);
 	THR_SetName(bt->name);
-	sp = SES_Alloc();
-	XXXAN(sp);
 	memset(&wrk, 0, sizeof wrk);
-	sp->wrk = &wrk;
 	wrk.magic = WORKER_MAGIC;
 	VSL_Setup(wrk.vsl, logbuf, sizeof logbuf);
 
-	(void)bt->func(sp, bt->priv);
+	(void)bt->func(&wrk, bt->priv);
 
 	WRONG("BgThread terminated");
 

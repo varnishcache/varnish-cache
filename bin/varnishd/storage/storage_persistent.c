@@ -268,18 +268,18 @@ smp_open_segs(struct smp_sc *sc, struct smp_signctx *ctx)
  */
 
 static void * __match_proto__(bgthread_t)
-smp_thread(struct sess *sp, void *priv)
+smp_thread(struct worker *wrk, void *priv)
 {
 	struct smp_sc	*sc;
 	struct smp_seg *sg;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(sc, priv, SMP_SC_MAGIC);
 
 	/* First, load all the objects from all segments */
 	VTAILQ_FOREACH(sg, &sc->segments, list)
 		if (sg->flags & SMP_SEG_MUSTLOAD)
-			smp_load_seg(sp->wrk, sc, sg);
+			smp_load_seg(wrk, sc, sg);
 
 	sc->flags |= SMP_SC_LOADED;
 	BAN_TailDeref(&sc->tailban);
@@ -288,8 +288,7 @@ smp_thread(struct sess *sp, void *priv)
 	while (1) {
 		(void)sleep (1);
 		sg = VTAILQ_FIRST(&sc->segments);
-		if (sg != NULL && sg -> sc->cur_seg &&
-		    sg->nobj == 0) {
+		if (sg != NULL && sg -> sc->cur_seg && sg->nobj == 0) {
 			Lck_Lock(&sc->mtx);
 			smp_save_segs(sc);
 			Lck_Unlock(&sc->mtx);

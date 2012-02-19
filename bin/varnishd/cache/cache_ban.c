@@ -927,7 +927,7 @@ ban_lurker_work(struct worker *wrk, unsigned pass)
 }
 
 static void * __match_proto__(bgthread_t)
-ban_lurker(struct sess *sp, void *priv)
+ban_lurker(struct worker *wrk, void *priv)
 {
 	struct ban *bf;
 	unsigned pass = (1 << LURK_SHIFT);
@@ -950,9 +950,9 @@ ban_lurker(struct sess *sp, void *priv)
 				VTIM_sleep(1.0);
 		}
 
-		i = ban_lurker_work(sp->wrk, pass);
-		VSL_Flush(sp->wrk->vsl, 0);
-		WRK_SumStat(sp->wrk);
+		i = ban_lurker_work(wrk, pass);
+		VSL_Flush(wrk->vsl, 0);
+		WRK_SumStat(wrk);
 		if (i) {
 			pass += (1 << LURK_SHIFT);
 			pass &= BAN_F_LURK;

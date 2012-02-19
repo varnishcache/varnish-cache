@@ -345,10 +345,9 @@ static struct cli_proto hcb_cmds[] = {
 /*--------------------------------------------------------------------*/
 
 static void * __match_proto__(bgthread_t)
-hcb_cleaner(struct sess *sp, void *priv)
+hcb_cleaner(struct worker *wrk, void *priv)
 {
 	struct hcb_y *y, *y2;
-	struct worker *wrk = sp->wrk;
 	struct objhead *oh, *oh2;
 
 	(void)priv;

@@ -981,7 +981,7 @@ void WRK_Init(void);
 int WRK_TrySumStat(struct worker *w);
 void WRK_SumStat(struct worker *w);
 void *WRK_thread(void *priv);
-typedef void *bgthread_t(struct sess *, void *priv);
+typedef void *bgthread_t(struct worker *, void *priv);
 void WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func,
     void *priv);
 
