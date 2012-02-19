@@ -475,9 +475,12 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
 
 	wrk->busyobj = VBO_GetBusyObj(wrk);
 	wrk->busyobj->vsl->wid = sp->vsl_id;
-	req->obj = STV_NewObject(wrk, TRANSIENT_STORAGE,
-	    cache_param->http_resp_size,
+	AZ(wrk->busyobj->stats);
+	wrk->busyobj->stats = &wrk->stats;
+	req->obj = STV_NewObject(wrk->busyobj, &req->objcore,
+	    TRANSIENT_STORAGE, cache_param->http_resp_size,
 	    (uint16_t)cache_param->http_max_hdr);
+	wrk->busyobj->stats = NULL;
 	if (req->obj == NULL) {
 		req->doclose = "Out of objects";
 		req->director = NULL;
@@ -786,18 +789,24 @@ cnt_prepfetch(struct sess *sp, struct worker *wrk, struct req *req)
 	    req->objcore == NULL)
 		req->storage_hint = TRANSIENT_STORAGE;
 
-	req->obj = STV_NewObject(wrk, req->storage_hint, l, nhttp);
+	assert(bo == wrk->busyobj);
+	AZ(bo->stats);
+	bo->stats = &wrk->stats;
+	req->obj = STV_NewObject(bo, &req->objcore, req->storage_hint, l,
+	    nhttp);
 	if (req->obj == NULL) {
 		/*
 		 * Try to salvage the transaction by allocating a
 		 * shortlived object on Transient storage.
 		 */
-		req->obj = STV_NewObject(wrk, TRANSIENT_STORAGE, l, nhttp);
+		req->obj = STV_NewObject(bo, &req->objcore, TRANSIENT_STORAGE,
+		    l, nhttp);
 		if (bo->exp.ttl > cache_param->shortlived)
 			bo->exp.ttl = cache_param->shortlived;
 		bo->exp.grace = 0.0;
 		bo->exp.keep = 0.0;
 	}
+	bo->stats = NULL;
 	if (req->obj == NULL) {
 		req->err_code = 503;
 		sp->step = STP_ERROR;

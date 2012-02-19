@@ -227,13 +227,15 @@ struct stv_objsecrets {
  */
 
 struct object *
-STV_MkObject(struct worker *wrk, void *ptr, unsigned ltot,
+STV_MkObject(struct busyobj *bo, struct objcore **ocp, void *ptr, unsigned ltot,
     const struct stv_objsecrets *soc)
 {
 	struct object *o;
 	unsigned l;
 
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(soc, STV_OBJ_SECRETES_MAGIC);
+	AN(ocp);
 
 	assert(PAOK(ptr));
 	assert(PAOK(soc->wsl));
@@ -253,17 +255,17 @@ STV_MkObject(struct worker *wrk, void *ptr, unsigned ltot,
 	WS_Assert(o->ws_o);
 	assert(o->ws_o->e <= (char*)ptr + ltot);
 
-	http_Setup(o->http, o->ws_o, wrk->busyobj->vsl);
+	http_Setup(o->http, o->ws_o, bo->vsl);
 	o->http->magic = HTTP_MAGIC;
-	o->exp = wrk->busyobj->exp;
+	o->exp = bo->exp;
 	VTAILQ_INIT(&o->store);
-	wrk->stats.n_object++;
+	bo->stats->n_object++;
 
-	if (wrk->sp->req->objcore != NULL) {
-		CHECK_OBJ_NOTNULL(wrk->sp->req->objcore, OBJCORE_MAGIC);
+	if (*ocp != NULL) {
+		CHECK_OBJ_NOTNULL((*ocp), OBJCORE_MAGIC);
 
-		o->objcore = wrk->sp->req->objcore;
-		wrk->sp->req->objcore = NULL;     /* refcnt follows pointer. */
+		o->objcore = *ocp;
+		*ocp = NULL;     /* refcnt follows pointer. */
 		BAN_NewObjCore(o->objcore);
 
 		o->objcore->methods = &default_oc_methods;
@@ -278,13 +280,15 @@ STV_MkObject(struct worker *wrk, void *ptr, unsigned ltot,
  */
 
 struct object *
-stv_default_allocobj(struct stevedore *stv, struct worker *wrk, unsigned ltot,
-    const struct stv_objsecrets *soc)
+stv_default_allocobj(struct stevedore *stv, struct busyobj *bo,
+    struct objcore **ocp, unsigned ltot, const struct stv_objsecrets *soc)
 {
 	struct object *o;
 	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(soc, STV_OBJ_SECRETES_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AN(ocp);
 	st = stv->alloc(stv, ltot);
 	if (st == NULL)
 		return (NULL);
@@ -293,7 +297,7 @@ stv_default_allocobj(struct stevedore *stv, struct worker *wrk, unsigned ltot,
 		return (NULL);
 	}
 	ltot = st->len = st->space;
-	o = STV_MkObject(wrk, st->ptr, ltot, soc);
+	o = STV_MkObject(bo, ocp, st->ptr, ltot, soc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	o->objstore = st;
 	return (o);
@@ -306,8 +310,8 @@ stv_default_allocobj(struct stevedore *stv, struct worker *wrk, unsigned ltot,
  */
 
 struct object *
-STV_NewObject(struct worker *wrk, const char *hint, unsigned wsl,
-     uint16_t nhttp)
+STV_NewObject(struct busyobj *bo, struct objcore **ocp, const char *hint,
+    unsigned wsl, uint16_t nhttp)
 {
 	struct object *o;
 	struct stevedore *stv, *stv0;
@@ -315,7 +319,8 @@ STV_NewObject(struct worker *wrk, const char *hint, unsigned wsl,
 	struct stv_objsecrets soc;
 	int i;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AN(ocp);
 	assert(wsl > 0);
 	wsl = PRNDUP(wsl);
 
@@ -330,27 +335,23 @@ STV_NewObject(struct worker *wrk, const char *hint, unsigned wsl,
 
 	ltot = sizeof *o + wsl + lhttp;
 
-	stv = stv0 = stv_pick_stevedore(wrk->vsl, &hint);
+	stv = stv0 = stv_pick_stevedore(bo->vsl, &hint);
 	AN(stv->allocobj);
-	o = stv->allocobj(stv, wrk, ltot, &soc);
+	o = stv->allocobj(stv, bo, ocp, ltot, &soc);
 	if (o == NULL && hint == NULL) {
 		do {
-			stv = stv_pick_stevedore(wrk->vsl, &hint);
+			stv = stv_pick_stevedore(bo->vsl, &hint);
 			AN(stv->allocobj);
-			o = stv->allocobj(stv, wrk, ltot, &soc);
+			o = stv->allocobj(stv, bo, ocp, ltot, &soc);
 		} while (o == NULL && stv != stv0);
 	}
 	if (o == NULL) {
-		/* XXX: lend busyobj wrk's stats while we nuke */
-		AZ(wrk->busyobj->stats);
-		wrk->busyobj->stats = &wrk->stats;
 		/* no luck; try to free some space and keep trying */
 		for (i = 0; o == NULL && i < cache_param->nuke_limit; i++) {
-			if (EXP_NukeOne(wrk->busyobj, stv->lru) == -1)
+			if (EXP_NukeOne(bo, stv->lru) == -1)
 				break;
-			o = stv->allocobj(stv, wrk, ltot, &soc);
+			o = stv->allocobj(stv, bo, ocp, ltot, &soc);
 		}
-		wrk->busyobj->stats = NULL;
 	}
 
 	if (o == NULL)

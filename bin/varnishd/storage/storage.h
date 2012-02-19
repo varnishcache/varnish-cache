@@ -34,6 +34,8 @@
 struct stv_objsecrets;
 struct stevedore;
 struct sess;
+struct busyobj;
+struct objcore;
 struct worker;
 struct lru;
 
@@ -42,8 +44,8 @@ typedef void storage_open_f(const struct stevedore *);
 typedef struct storage *storage_alloc_f(struct stevedore *, size_t size);
 typedef void storage_trim_f(struct storage *, size_t size);
 typedef void storage_free_f(struct storage *);
-typedef struct object *storage_allocobj_f(struct stevedore *,
-    struct worker *wrk, unsigned ltot, const struct stv_objsecrets *);
+typedef struct object *storage_allocobj_f(struct stevedore *, struct busyobj *,
+    struct objcore **, unsigned ltot, const struct stv_objsecrets *);
 typedef void storage_close_f(const struct stevedore *);
 
 /* Prototypes for VCL variable responders */
@@ -90,8 +92,8 @@ extern struct stevedore *stv_transient;
 int STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx);
 uintmax_t STV_FileSize(int fd, const char *size, unsigned *granularity,
     const char *ctx);
-struct object *STV_MkObject(struct worker *wrk, void *ptr, unsigned ltot,
-    const struct stv_objsecrets *soc);
+struct object *STV_MkObject(struct busyobj *bo, struct objcore **ocp,
+    void *ptr, unsigned ltot, const struct stv_objsecrets *soc);
 
 struct lru *LRU_Alloc(void);
 void LRU_Free(struct lru *lru);
