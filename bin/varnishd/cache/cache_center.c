@@ -285,7 +285,7 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 		if (wrk->busyobj != NULL) {
 			AN(wrk->busyobj->do_stream);
 			VDI_CloseFd(wrk, &wrk->busyobj->vbc);
-			HSH_Drop(wrk);
+			HSH_Drop(wrk, &sp->req->obj);
 			VBO_DerefBusyObj(wrk, &wrk->busyobj);
 		} else {
 			(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
@@ -509,7 +509,7 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
 
 	if (req->handling == VCL_RET_RESTART &&
 	    req->restarts <  cache_param->max_restarts) {
-		HSH_Drop(wrk);
+		HSH_Drop(wrk, &sp->req->obj);
 		VBO_DerefBusyObj(wrk, &wrk->busyobj);
 		req->director = NULL;
 		req->restarts++;
@@ -892,7 +892,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	AN(req->director);
 
 	if (i) {
-		HSH_Drop(wrk);
+		HSH_Drop(wrk, &sp->req->obj);
 		VBO_DerefBusyObj(wrk, &wrk->busyobj);
 		AZ(req->obj);
 		req->err_code = 503;

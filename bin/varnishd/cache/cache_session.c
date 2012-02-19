@@ -181,12 +181,11 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 	wrk->sp = ses_new(pp);
 	if (wrk->sp == NULL) {
 		VCA_FailSess(wrk);
-		return;
+	} else {
+		VCA_SetupSess(wrk, wrk->sp);
+		wrk->sp->step = STP_FIRST;
+		ses_pool_task(wrk, wrk->sp);
 	}
-	VCA_SetupSess(wrk);
-	wrk->sp->step = STP_FIRST;
-	WS_Release(wrk->aws, 0);
-	ses_pool_task(wrk, wrk->sp);
 }
 
 /*--------------------------------------------------------------------

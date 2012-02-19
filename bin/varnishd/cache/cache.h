@@ -673,7 +673,7 @@ struct sess {
 void VCA_Init(void);
 void VCA_Shutdown(void);
 int VCA_Accept(struct listen_sock *ls, struct wrk_accept *wa);
-void VCA_SetupSess(struct worker *w);
+void VCA_SetupSess(struct worker *w, struct sess *sp);
 void VCA_FailSess(struct worker *w);
 
 /* cache_backend.c */

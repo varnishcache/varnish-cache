@@ -56,7 +56,7 @@ void HSH_Cleanup(struct worker *w);
 struct objcore *HSH_Lookup(struct sess *sp, struct objhead **poh);
 void HSH_Unbusy(struct objcore *);
 void HSH_Ref(struct objcore *o);
-void HSH_Drop(struct worker *wrk);
+void HSH_Drop(struct worker *, struct object **);
 void HSH_Init(const struct hash_slinger *slinger);
 void HSH_AddString(const struct sess *sp, const char *str);
 struct objcore *HSH_Insert(const struct sess *sp);

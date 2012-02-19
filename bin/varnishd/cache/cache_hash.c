@@ -577,18 +577,17 @@ HSH_Purge(const struct sess *sp, struct objhead *oh, double ttl, double grace)
  */
 
 void
-HSH_Drop(struct worker *wrk)
+HSH_Drop(struct worker *wrk, struct object **oo)
 {
-	struct object *o;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	o = wrk->sp->req->obj;
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	AssertObjCorePassOrBusy(o->objcore);
-	o->exp.ttl = -1.;
-	if (o->objcore != NULL)		/* Pass has no objcore */
-		HSH_Unbusy(o->objcore);
-	(void)HSH_Deref(&wrk->stats, NULL, &wrk->sp->req->obj);
+	AN(oo);
+	CHECK_OBJ_NOTNULL(*oo, OBJECT_MAGIC);
+	AssertObjCorePassOrBusy((*oo)->objcore);
+	(*oo)->exp.ttl = -1.;
+	if ((*oo)->objcore != NULL)		/* Pass has no objcore */
+		HSH_Unbusy((*oo)->objcore);
+	(void)HSH_Deref(&wrk->stats, NULL, oo);
 }
 
 void
