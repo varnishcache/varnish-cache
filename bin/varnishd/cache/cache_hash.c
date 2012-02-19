@@ -65,17 +65,14 @@ static const struct hash_slinger *hash;
 
 /*---------------------------------------------------------------------*/
 /* Precreate an objhead and object for later use */
-void
-HSH_Prealloc(const struct sess *sp)
+static void
+hsh_prealloc(struct worker *wrk)
 {
-	struct worker *wrk;
 	struct objhead *oh;
 	struct objcore *oc;
 	struct waitinglist *wl;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	if (wrk->nobjcore == NULL) {
 		ALLOC_OBJ(oc, OBJCORE_MAGIC);
@@ -107,7 +104,7 @@ HSH_Prealloc(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(wrk->nwaitinglist, WAITINGLIST_MAGIC);
 
 	if (hash->prep != NULL)
-		hash->prep(sp);
+		hash->prep(wrk);
 }
 
 void
@@ -247,24 +244,26 @@ hsh_testmagic(void *result)
  * Return it with a reference held.
  */
 
-struct objcore *
-HSH_Insert(const struct sess *sp)
+void
+HSH_Insert(const struct sess *sp, const void *digest, struct objcore *oc)
 {
 	struct worker *wrk;
 	struct objhead *oh;
-	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	AN(hash);
-	wrk = sp->wrk;
+	AN(digest);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	HSH_Prealloc(sp);
+	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
+	hsh_prealloc(wrk);
 	if (cache_param->diag_bitmap & 0x80000000)
-		hsh_testmagic(sp->wrk->nobjhead->digest);
+		hsh_testmagic(wrk->nobjhead->digest);
 
 	AZ(sp->req);
 	AN(wrk->nobjhead);
+	memcpy(wrk->nobjhead->digest, digest, SHA256_LEN);
 	oh = hash->lookup(sp, wrk->nobjhead);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	if (oh == wrk->nobjhead)
@@ -273,8 +272,6 @@ HSH_Insert(const struct sess *sp)
 	assert(oh->refcnt > 0);
 
 	/* Insert (precreated) objcore in objecthead */
-	oc = wrk->nobjcore;
-	wrk->nobjcore = NULL;
 	oc->refcnt = 1;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ(oc->flags & OC_F_BUSY);
@@ -283,8 +280,8 @@ HSH_Insert(const struct sess *sp)
 	/* NB: do not deref objhead the new object inherits our reference */
 	oc->objhead = oh;
 	Lck_Unlock(&oh->mtx);
-	sp->wrk->stats.n_vampireobject++;
-	return (oc);
+	wrk->stats.n_objectcore++;
+	wrk->stats.n_vampireobject++;
 }
 
 /*---------------------------------------------------------------------
@@ -307,7 +304,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	AN(hash);
 	wrk = sp->wrk;
 
-	HSH_Prealloc(sp);
+	hsh_prealloc(wrk);
 	memcpy(sp->wrk->nobjhead->digest, sp->req->digest,
 	    sizeof sp->req->digest);
 	if (cache_param->diag_bitmap & 0x80000000)

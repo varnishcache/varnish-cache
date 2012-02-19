@@ -116,6 +116,7 @@
 
 -emacro(527, NEEDLESS_RETURN)	// unreachable code
 
+-sem(EXP_Inject, custodial(1))
 -sem(WS_Init, custodial(2))
 -sem(http_Setup, custodial(2))
 

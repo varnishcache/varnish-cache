@@ -469,13 +469,14 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 }
 
 static void
-hcb_prep(const struct sess *sp)
+hcb_prep(struct worker *wrk)
 {
 	struct hcb_y *y;
 
-	if (sp->wrk->nhashpriv == NULL) {
+	if (wrk->nhashpriv == NULL) {
 		ALLOC_OBJ(y, HCB_Y_MAGIC);
-		sp->wrk->nhashpriv = y;
+		AN(y);
+		wrk->nhashpriv = y;
 	}
 }
 

@@ -150,15 +150,13 @@ smp_load_seg(const struct sess *sp, const struct smp_sc *sc,
 	for (;no > 0; so++,no--) {
 		if (so->ttl == 0 || so->ttl < t_now)
 			continue;
-		HSH_Prealloc(sp);
-		oc = sp->wrk->nobjcore;
+		ALLOC_OBJ(oc, OBJCORE_MAGIC);
+		AN(oc);
 		oc->flags |= OC_F_NEEDFIXUP | OC_F_LRUDONTMOVE;
 		oc->flags &= ~OC_F_BUSY;
 		smp_init_oc(oc, sg, no);
 		oc->ban = BAN_RefBan(oc, so->ban, sc->tailban);
-		memcpy(sp->wrk->nobjhead->digest, so->hash, SHA256_LEN);
-		(void)HSH_Insert(sp);
-		AZ(sp->wrk->nobjcore);
+		HSH_Insert(sp, so->hash, oc);
 		EXP_Inject(oc, sg->lru, so->ttl);
 		sg->nobj++;
 	}
