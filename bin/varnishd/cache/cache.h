@@ -998,8 +998,8 @@ char *WS_Snapshot(struct ws *ws);
 
 /* rfc2616.c */
 void RFC2616_Ttl(struct busyobj *, unsigned xid);
-enum body_status RFC2616_Body(const struct sess *sp);
-unsigned RFC2616_Req_Gzip(const struct sess *sp);
+enum body_status RFC2616_Body(struct busyobj *, struct dstat *);
+unsigned RFC2616_Req_Gzip(const struct http *);
 int RFC2616_Do_Cond(const struct sess *sp);
 
 /* stevedore.c */

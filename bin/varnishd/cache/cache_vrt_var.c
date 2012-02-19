@@ -355,7 +355,7 @@ VRT_r_req_can_gzip(struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (RFC2616_Req_Gzip(sp));
+	return (RFC2616_Req_Gzip(sp->req->http));
 }
 
 

@@ -238,7 +238,7 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 	}
 
 	if (cache_param->http_gzip_support && req->obj->gziped &&
-	    !RFC2616_Req_Gzip(sp)) {
+	    !RFC2616_Req_Gzip(req->http)) {
 		/*
 		 * We don't know what it uncompresses to
 		 * XXX: we could cache that
@@ -552,22 +552,24 @@ static int
 cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 {
 	int i, need_host_hdr;
+	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
+	bo = wrk->busyobj;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	AN(req->director);
-	AZ(wrk->busyobj->vbc);
-	AZ(wrk->busyobj->should_close);
+	AZ(bo->vbc);
+	AZ(bo->should_close);
 	AZ(req->storage_hint);
 
-	http_Setup(wrk->busyobj->beresp, wrk->busyobj->ws, wrk->busyobj->vsl);
+	http_Setup(bo->beresp, bo->ws, bo->vsl);
 
-	need_host_hdr = !http_GetHdr(wrk->busyobj->bereq, H_Host, NULL);
+	need_host_hdr = !http_GetHdr(bo->bereq, H_Host, NULL);
 
 	i = FetchHdr(sp, need_host_hdr, req->objcore == NULL);
 	/*
@@ -589,35 +591,35 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 		 * and we rely on their content outside of VCL, so collect them
 		 * into one line here.
 		 */
-		http_CollectHdr(wrk->busyobj->beresp, H_Cache_Control);
-		http_CollectHdr(wrk->busyobj->beresp, H_Vary);
+		http_CollectHdr(bo->beresp, H_Cache_Control);
+		http_CollectHdr(bo->beresp, H_Vary);
 
 		/*
 		 * Figure out how the fetch is supposed to happen, before the
 		 * headers are adultered by VCL
 		 * NB: Also sets other wrk variables
 		 */
-		wrk->busyobj->body_status = RFC2616_Body(sp);
+		bo->body_status = RFC2616_Body(bo, &wrk->stats);
 
-		req->err_code = http_GetStatus(wrk->busyobj->beresp);
+		req->err_code = http_GetStatus(bo->beresp);
 
 		/*
 		 * What does RFC2616 think about TTL ?
 		 */
-		EXP_Clr(&wrk->busyobj->exp);
-		wrk->busyobj->exp.entered = W_TIM_real(wrk);
-		RFC2616_Ttl(wrk->busyobj, sp->req->xid);
+		EXP_Clr(&bo->exp);
+		bo->exp.entered = W_TIM_real(wrk);
+		RFC2616_Ttl(bo, sp->req->xid);
 
 		/* pass from vclrecv{} has negative TTL */
 		if (req->objcore == NULL)
-			wrk->busyobj->exp.ttl = -1.;
+			bo->exp.ttl = -1.;
 
-		AZ(wrk->busyobj->do_esi);
-		AZ(wrk->busyobj->do_pass);
+		AZ(bo->do_esi);
+		AZ(bo->do_pass);
 
 		VCL_fetch_method(sp);
 
-		if (req->objcore != NULL && wrk->busyobj->do_pass)
+		if (req->objcore != NULL && bo->do_pass)
 			req->objcore->flags |= OC_F_PASS;
 
 		switch (req->handling) {
@@ -630,11 +632,11 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 		}
 
 		/* We are not going to fetch the body, Close the connection */
-		VDI_CloseFd(wrk, &wrk->busyobj->vbc);
+		VDI_CloseFd(wrk, &bo->vbc);
 	}
 
 	/* Clean up partial fetch */
-	AZ(wrk->busyobj->vbc);
+	AZ(bo->vbc);
 
 	if (req->objcore != NULL) {
 		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
@@ -1384,7 +1386,7 @@ cnt_recv(struct sess *sp, const struct worker *wrk, struct req *req)
 	if (cache_param->http_gzip_support &&
 	     (recv_handling != VCL_RET_PIPE) &&
 	     (recv_handling != VCL_RET_PASS)) {
-		if (RFC2616_Req_Gzip(sp)) {
+		if (RFC2616_Req_Gzip(req->http)) {
 			http_Unset(req->http, H_Accept_Encoding);
 			http_SetHeader(req->http, "Accept-Encoding: gzip");
 		} else {
