@@ -796,7 +796,7 @@ ban_CheckLast(void)
  * Ban lurker thread
  */
 
-static int 
+static int
 ban_lurker_work(struct worker *wrk, unsigned pass)
 {
 	struct ban *b, *b0, *b2;

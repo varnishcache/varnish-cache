@@ -89,8 +89,8 @@ VBE_ReleaseConn(struct vbc *vc)
 
 #define FIND_TMO(tmx, dst, sp, be)					\
 	do {								\
-		CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);	\
-		dst = sp->wrk->busyobj->tmx;				\
+		CHECK_OBJ_NOTNULL(sp->req->busyobj, BUSYOBJ_MAGIC);	\
+		dst = sp->req->busyobj->tmx;				\
 		if (dst == 0.0)						\
 			dst = be->tmx;					\
 		if (dst == 0.0)						\

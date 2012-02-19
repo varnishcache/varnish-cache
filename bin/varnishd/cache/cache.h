@@ -316,7 +316,6 @@ struct worker {
 
 	struct ws		aws[1];
 
-	struct busyobj		*busyobj;
 
 	/* Temporary accounting */
 	struct acct		acct_tmp;
@@ -551,6 +550,7 @@ struct req {
 
 	/* The busy objhead we sleep on */
 	struct objhead		*hash_objhead;
+	struct busyobj		*busyobj;
 
 	/* Built Vary string */
 	uint8_t			*vary_b;
@@ -750,7 +750,7 @@ struct storage *FetchStorage(struct busyobj *, ssize_t sz);
 int FetchError(struct busyobj *, const char *error);
 int FetchError2(struct busyobj *, const char *error, const char *more);
 int FetchHdr(struct sess *sp, int need_host_hdr, int sendbody);
-int FetchBody(struct worker *w, struct object *obj);
+int FetchBody(struct worker *w, struct busyobj *bo, struct object *obj);
 int FetchReqBody(const struct sess *sp, int sendbody);
 void Fetch_Init(void);
 
@@ -894,7 +894,6 @@ unsigned WRW_Write(struct worker *w, const void *ptr, int len);
 unsigned WRW_WriteH(struct worker *w, const txt *hh, const char *suf);
 
 /* cache_session.c [SES] */
-struct sess *SES_Alloc(void);
 void SES_Close(struct sess *sp, const char *reason);
 void SES_Delete(struct sess *sp, const char *reason, double now);
 void SES_Charge(struct sess *sp);

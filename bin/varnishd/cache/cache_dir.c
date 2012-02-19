@@ -120,7 +120,7 @@ VDI_GetFd(const struct director *d, struct sess *sp)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	vc = d->getfd(d, sp);
 	if (vc != NULL) {
-		vc->vsl = sp->wrk->busyobj->vsl;
+		vc->vsl = sp->req->busyobj->vsl;
 		vc->orig_vsl_id = vc->vsl->wid;
 		vc->vsl->wid = vc->vsl_id;
 	}

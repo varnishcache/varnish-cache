@@ -46,7 +46,7 @@ static unsigned fetchfrag;
  * We want to issue the first error we encounter on fetching and
  * supress the rest.  This function does that.
  *
- * Other code is allowed to look at wrk->busyobj->fetch_failed to bail out
+ * Other code is allowed to look at sp->req->busyobj->fetch_failed to bail out
  *
  * For convenience, always return -1
  */
@@ -385,33 +385,37 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 {
 	struct vbc *vc;
 	struct worker *wrk;
+	struct req *req;
+	struct busyobj *bo;
 	struct http *hp;
 	int retry = -1;
 	int i;
 	struct http_conn *htc;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	wrk = sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
-	htc = &wrk->busyobj->htc;
+	req = sp->req;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	bo = req->busyobj;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	htc = &bo->htc;
 
-	AN(sp->req->director);
-	AZ(sp->req->obj);
+	AN(req->director);
+	AZ(req->obj);
 
-	if (sp->req->objcore != NULL) {		/* pass has no objcore */
-		CHECK_OBJ_NOTNULL(sp->req->objcore, OBJCORE_MAGIC);
-		AN(sp->req->objcore->flags & OC_F_BUSY);
+	if (req->objcore != NULL) {		/* pass has no objcore */
+		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+		AN(req->objcore->flags & OC_F_BUSY);
 	}
 
-	hp = wrk->busyobj->bereq;
+	hp = bo->bereq;
 
-	wrk->busyobj->vbc = VDI_GetFd(NULL, sp);
-	if (wrk->busyobj->vbc == NULL) {
-		VSLb(sp->req->vsl, SLT_FetchError, "no backend connection");
+	bo->vbc = VDI_GetFd(NULL, sp);
+	if (bo->vbc == NULL) {
+		VSLb(req->vsl, SLT_FetchError, "no backend connection");
 		return (-1);
 	}
-	vc = wrk->busyobj->vbc;
+	vc = bo->vbc;
 	if (vc->recycled)
 		retry = 1;
 
@@ -421,7 +425,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 	 * because the backend may be chosen by a director.
 	 */
 	if (need_host_hdr)
-		VDI_AddHostHeader(wrk->busyobj->bereq, vc);
+		VDI_AddHostHeader(bo->bereq, vc);
 
 	(void)VTCP_blocking(vc->fd);	/* XXX: we should timeout instead */
 	WRW_Reserve(wrk, &vc->fd, sp->t_req);	/* XXX t_resp ? */
@@ -430,10 +434,10 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 	/* Deal with any message-body the request might have */
 	i = FetchReqBody(sp, sendbody);
 	if (WRW_FlushRelease(wrk) || i > 0) {
-		VSLb(sp->req->vsl, SLT_FetchError,
+		VSLb(req->vsl, SLT_FetchError,
 		    "backend write error: %d (%s)",
 		    errno, strerror(errno));
-		VDI_CloseFd(wrk, &wrk->busyobj->vbc);
+		VDI_CloseFd(wrk, &bo->vbc);
 		/* XXX: other cleanup ? */
 		return (retry);
 	}
@@ -446,7 +450,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 
 	/* Receive response */
 
-	HTC_Init(htc, wrk->busyobj->ws, vc->fd, vc->vsl,
+	HTC_Init(htc, bo->ws, vc->fd, vc->vsl,
 	    cache_param->http_resp_size,
 	    cache_param->http_resp_hdr_len);
 
@@ -455,10 +459,10 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 	i = HTC_Rx(htc);
 
 	if (i < 0) {
-		VSLb(sp->req->vsl, SLT_FetchError,
+		VSLb(req->vsl, SLT_FetchError,
 		    "http first read error: %d %d (%s)",
 		    i, errno, strerror(errno));
-		VDI_CloseFd(wrk, &wrk->busyobj->vbc);
+		VDI_CloseFd(wrk, &bo->vbc);
 		/* XXX: other cleanup ? */
 		/* Retryable if we never received anything */
 		return (i == -1 ? retry : -1);
@@ -469,20 +473,20 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 	while (i == 0) {
 		i = HTC_Rx(htc);
 		if (i < 0) {
-			VSLb(sp->req->vsl, SLT_FetchError,
+			VSLb(req->vsl, SLT_FetchError,
 			    "http first read error: %d %d (%s)",
 			    i, errno, strerror(errno));
-			VDI_CloseFd(wrk, &wrk->busyobj->vbc);
+			VDI_CloseFd(wrk, &bo->vbc);
 			/* XXX: other cleanup ? */
 			return (-1);
 		}
 	}
 
-	hp = wrk->busyobj->beresp;
+	hp = bo->beresp;
 
 	if (http_DissectResponse(hp, htc)) {
-		VSLb(sp->req->vsl, SLT_FetchError, "http format error");
-		VDI_CloseFd(wrk, &wrk->busyobj->vbc);
+		VSLb(req->vsl, SLT_FetchError, "http format error");
+		VDI_CloseFd(wrk, &bo->vbc);
 		/* XXX: other cleanup ? */
 		return (-1);
 	}
@@ -492,17 +496,15 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 /*--------------------------------------------------------------------*/
 
 int
-FetchBody(struct worker *wrk, struct object *obj)
+FetchBody(struct worker *wrk, struct busyobj *bo, struct object *obj)
 {
 	int cls;
 	struct storage *st;
 	int mklen;
 	ssize_t cl;
 	struct http_conn *htc;
-	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	bo = wrk->busyobj;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	AZ(bo->fetch_obj);
 	CHECK_OBJ_NOTNULL(bo->vbc, VBC_MAGIC);

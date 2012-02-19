@@ -112,22 +112,6 @@ ses_new(struct sesspool *pp)
 }
 
 /*--------------------------------------------------------------------
- * Allocate a session for use by background threads.
- */
-
-struct sess *
-SES_Alloc(void)
-{
-	struct sess *sp;
-
-	ALLOC_OBJ(sp, SESS_MAGIC);
-	AN(sp);
-	ses_setup(sp);
-	/* XXX: sp->req ? */
-	return (sp);
-}
-
-/*--------------------------------------------------------------------
  * The pool-task function for sessions
  */
 
@@ -148,7 +132,6 @@ ses_pool_task(struct worker *wrk, void *arg)
 	sp = NULL;			/* Cannot access sp any longer */
 	THR_SetSession(NULL);
 	WS_Assert(wrk->aws);
-	AZ(wrk->busyobj);
 	AZ(wrk->wrw);
 	assert(wrk->vsl->wlp == wrk->vsl->wlb);
 	if (cache_param->diag_bitmap & 0x00040000) {

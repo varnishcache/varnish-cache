@@ -443,16 +443,16 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	AN(oc->flags & OC_F_BUSY);
 	oc->refcnt = 1;
 
-	AZ(wrk->busyobj);
-	wrk->busyobj = VBO_GetBusyObj(wrk);
-	wrk->busyobj->vsl->wid = sp->vsl_id;
+	AZ(sp->req->busyobj);
+	sp->req->busyobj = VBO_GetBusyObj(wrk);
+	sp->req->busyobj->vsl->wid = sp->vsl_id;
 
 	VRY_Validate(sp->req->vary_b);
 	if (sp->req->vary_l != NULL)
-		wrk->busyobj->vary = sp->req->vary_b;
+		sp->req->busyobj->vary = sp->req->vary_b;
 	else
-		wrk->busyobj->vary = NULL;
-	oc->busyobj = wrk->busyobj;
+		sp->req->busyobj->vary = NULL;
+	oc->busyobj = sp->req->busyobj;
 
 	/*
 	 * Busy objects go on the tail, so they will not trip up searches.

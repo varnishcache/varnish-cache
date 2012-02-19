@@ -84,15 +84,15 @@ VRT_r_##obj##_##hdr(const struct sess *sp)			\
 VRT_DO_HDR(req,   request,	sp->req->http,		HTTP_HDR_REQ)
 VRT_DO_HDR(req,   url,		sp->req->http,		HTTP_HDR_URL)
 VRT_DO_HDR(req,   proto,	sp->req->http,		HTTP_HDR_PROTO)
-VRT_DO_HDR(bereq, request,	sp->wrk->busyobj->bereq,	HTTP_HDR_REQ)
-VRT_DO_HDR(bereq, url,		sp->wrk->busyobj->bereq,	HTTP_HDR_URL)
-VRT_DO_HDR(bereq, proto,	sp->wrk->busyobj->bereq,	HTTP_HDR_PROTO)
+VRT_DO_HDR(bereq, request,	sp->req->busyobj->bereq,	HTTP_HDR_REQ)
+VRT_DO_HDR(bereq, url,		sp->req->busyobj->bereq,	HTTP_HDR_URL)
+VRT_DO_HDR(bereq, proto,	sp->req->busyobj->bereq,	HTTP_HDR_PROTO)
 VRT_DO_HDR(obj,   proto,	sp->req->obj->http,	HTTP_HDR_PROTO)
 VRT_DO_HDR(obj,   response,	sp->req->obj->http,	HTTP_HDR_RESPONSE)
 VRT_DO_HDR(resp,  proto,	sp->req->resp,		HTTP_HDR_PROTO)
 VRT_DO_HDR(resp,  response,	sp->req->resp,		HTTP_HDR_RESPONSE)
-VRT_DO_HDR(beresp,  proto,	sp->wrk->busyobj->beresp,	HTTP_HDR_PROTO)
-VRT_DO_HDR(beresp,  response,	sp->wrk->busyobj->beresp, HTTP_HDR_RESPONSE)
+VRT_DO_HDR(beresp,  proto,	sp->req->busyobj->beresp,	HTTP_HDR_PROTO)
+VRT_DO_HDR(beresp,  response,	sp->req->busyobj->beresp, HTTP_HDR_RESPONSE)
 
 /*--------------------------------------------------------------------*/
 
@@ -114,7 +114,7 @@ VRT_r_##obj##_status(const struct sess *sp)			\
 }
 
 VRT_DO_STATUS(obj, sp->req->obj->http)
-VRT_DO_STATUS(beresp, sp->wrk->busyobj->beresp)
+VRT_DO_STATUS(beresp, sp->req->busyobj->beresp)
 VRT_DO_STATUS(resp, sp->req->resp)
 
 /*--------------------------------------------------------------------*/
@@ -130,14 +130,11 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 	struct trouble *new;
 	struct trouble *tr;
 	struct trouble *tr2;
-	struct worker *wrk;
 	struct vbc *vbc;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	wrk = sp->wrk;
-	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
-	vbc = wrk->busyobj->vbc;
+	CHECK_OBJ_NOTNULL(sp->req->busyobj, BUSYOBJ_MAGIC);
+	vbc = sp->req->busyobj->vbc;
 	if (!vbc)
 		return;
 	CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
@@ -187,14 +184,14 @@ void									\
 VRT_l_##dir##_##onm(const struct sess *sp, type a)			\
 {									\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);				\
-	sp->wrk->field = a;						\
+	sp->req->field = a;						\
 }									\
 									\
 type									\
 VRT_r_##dir##_##onm(const struct sess *sp)				\
 {									\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);				\
-	return (sp->wrk->field);					\
+	return (sp->req->field);					\
 }
 
 VBERESP(beresp, unsigned, do_esi, busyobj->do_esi)
@@ -235,8 +232,8 @@ VRT_l_bereq_##which(struct sess *sp, double num)		\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);	\
-	sp->wrk->busyobj->which = (num > 0.0 ? num : 0.0);	\
+	CHECK_OBJ_NOTNULL(sp->req->busyobj, BUSYOBJ_MAGIC);	\
+	sp->req->busyobj->which = (num > 0.0 ? num : 0.0);	\
 }								\
 								\
 double __match_proto__()					\
@@ -244,8 +241,8 @@ VRT_r_bereq_##which(struct sess *sp)				\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);	\
-	return(sp->wrk->busyobj->which);			\
+	CHECK_OBJ_NOTNULL(sp->req->busyobj, BUSYOBJ_MAGIC);	\
+	return(sp->req->busyobj->which);			\
 }
 
 BEREQ_TIMEOUT(connect_timeout)
@@ -259,8 +256,8 @@ VRT_r_beresp_backend_name(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->busyobj->vbc, VBC_MAGIC);
-	return(sp->wrk->busyobj->vbc->backend->vcl_name);
+	CHECK_OBJ_NOTNULL(sp->req->busyobj->vbc, VBC_MAGIC);
+	return(sp->req->busyobj->vbc->backend->vcl_name);
 }
 
 struct sockaddr_storage *
@@ -268,8 +265,8 @@ VRT_r_beresp_backend_ip(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->busyobj->vbc, VBC_MAGIC);
-	return(sp->wrk->busyobj->vbc->addr);
+	CHECK_OBJ_NOTNULL(sp->req->busyobj->vbc, VBC_MAGIC);
+	return(sp->req->busyobj->vbc->addr);
 }
 
 int
@@ -277,8 +274,8 @@ VRT_r_beresp_backend_port(const struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->busyobj->vbc, VBC_MAGIC);
-	return (VTCP_port(sp->wrk->busyobj->vbc->addr));
+	CHECK_OBJ_NOTNULL(sp->req->busyobj->vbc, VBC_MAGIC);
+	return (VTCP_port(sp->req->busyobj->vbc->addr));
 }
 
 const char * __match_proto__()
@@ -298,7 +295,7 @@ VRT_l_beresp_storage(struct sess *sp, const char *str, ...)
 	char *b;
 
 	va_start(ap, str);
-	b = VRT_String(sp->wrk->busyobj->ws, NULL, str, ap);
+	b = VRT_String(sp->req->busyobj->ws, NULL, str, ap);
 	va_end(ap);
 	sp->req->storage_hint = b;
 }
@@ -417,12 +414,12 @@ VRT_DO_EXP(obj, sp->req->obj->exp, keep, 0,
    EXP_Rearm(sp->req->obj);
    vrt_wsp_exp(sp, sp->req->obj->xid, &sp->req->obj->exp);)
 
-VRT_DO_EXP(beresp, sp->wrk->busyobj->exp, grace, 0,
-   vrt_wsp_exp(sp, sp->req->xid, &sp->wrk->busyobj->exp);)
-VRT_DO_EXP(beresp, sp->wrk->busyobj->exp, ttl, 0,
-   vrt_wsp_exp(sp, sp->req->xid, &sp->wrk->busyobj->exp);)
-VRT_DO_EXP(beresp, sp->wrk->busyobj->exp, keep, 0,
-   vrt_wsp_exp(sp, sp->req->xid, &sp->wrk->busyobj->exp);)
+VRT_DO_EXP(beresp, sp->req->busyobj->exp, grace, 0,
+   vrt_wsp_exp(sp, sp->req->xid, &sp->req->busyobj->exp);)
+VRT_DO_EXP(beresp, sp->req->busyobj->exp, ttl, 0,
+   vrt_wsp_exp(sp, sp->req->xid, &sp->req->busyobj->exp);)
+VRT_DO_EXP(beresp, sp->req->busyobj->exp, keep, 0,
+   vrt_wsp_exp(sp, sp->req->xid, &sp->req->busyobj->exp);)
 
 /*--------------------------------------------------------------------
  * req.xid

@@ -63,31 +63,33 @@ void
 PipeSession(struct sess *sp)
 {
 	struct vbc *vc;
-	struct worker *w;
+	struct worker *wrk;
 	struct pollfd fds[2];
+	struct busyobj *bo;
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);
-	w = sp->wrk;
+	bo = sp->req->busyobj;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	wrk = sp->wrk;
 
 	vc = VDI_GetFd(NULL, sp);
 	if (vc == NULL)
 		return;
-	sp->wrk->busyobj->vbc = vc;		/* For panic dumping */
+	bo->vbc = vc;		/* For panic dumping */
 	(void)VTCP_blocking(vc->fd);
 
-	WRW_Reserve(w, &vc->fd, sp->t_req);
+	WRW_Reserve(wrk, &vc->fd, sp->t_req);
 	sp->wrk->acct_tmp.hdrbytes +=
-	    http_Write(w, sp->wrk->busyobj->bereq, 0);
+	    http_Write(wrk, bo->bereq, 0);
 
 	if (sp->req->htc->pipeline.b != NULL)
 		sp->wrk->acct_tmp.bodybytes +=
-		    WRW_Write(w, sp->req->htc->pipeline.b,
+		    WRW_Write(wrk, sp->req->htc->pipeline.b,
 		    Tlen(sp->req->htc->pipeline));
 
-	i = WRW_FlushRelease(w);
+	i = WRW_FlushRelease(wrk);
 
 	if (i) {
 		SES_Close(sp, "pipe");
@@ -132,5 +134,5 @@ PipeSession(struct sess *sp)
 	}
 	SES_Close(sp, "pipe");
 	VDI_CloseFd(sp->wrk, &vc);
-	sp->wrk->busyobj->vbc = NULL;
+	bo->vbc = NULL;
 }
