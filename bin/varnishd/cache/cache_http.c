@@ -677,7 +677,7 @@ http_DissectRequest(const struct sess *sp)
 	retval = http_splitline(hp, htc,
 	    HTTP_HDR_REQ, HTTP_HDR_URL, HTTP_HDR_PROTO);
 	if (retval != 0) {
-		WSPR(sp, SLT_HttpGarbage, htc->rxbuf);
+		WSLR(sp->req->vsl, SLT_HttpGarbage, -1, htc->rxbuf);
 		return (retval);
 	}
 	http_ProtoVer(hp);

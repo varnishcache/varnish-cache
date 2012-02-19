@@ -935,9 +935,6 @@ void WSL_Flush(struct vsl_log *, int overflow);
 #define WSP(sess, tag, ...)					\
 	WSL((sess)->wrk->vsl, tag, (sess)->vsl_id, __VA_ARGS__)
 
-#define WSPR(sess, tag, txt)					\
-	WSLR((sess)->wrk->vsl, tag, (sess)->vsl_id, txt)
-
 #define INCOMPL() do {							\
 	VSL(SLT_Debug, 0, "INCOMPLETE AT: %s(%d)", __func__, __LINE__); \
 	fprintf(stderr,							\
