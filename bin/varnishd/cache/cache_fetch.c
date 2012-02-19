@@ -572,9 +572,8 @@ FetchBody(struct worker *wrk, struct object *obj)
 	AZ(bo->vgz_rx);
 
 	/*
-	 * It is OK for ->end to just leave the last storage segment
-	 * sitting on wrk->storage, we will always call vfp_nop_end()
-	 * to get it trimmed or thrown out if empty.
+	 * We always call vfp_nop_end() to ditch or trim the last storage
+	 * segment, to avoid having to replicate that code in all vfp's.
 	 */
 	AZ(vfp_nop_end(bo));
 

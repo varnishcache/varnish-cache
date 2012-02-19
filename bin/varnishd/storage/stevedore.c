@@ -177,6 +177,8 @@ stv_alloc(struct busyobj *bo, size_t size)
 	if (size > cache_param->fetch_maxchunksize)
 		size = cache_param->fetch_maxchunksize;
 
+	assert(size <= UINT_MAX);	/* field limit in struct storage */
+
 	for (;;) {
 		/* try to allocate from it */
 		AN(stv->alloc);
