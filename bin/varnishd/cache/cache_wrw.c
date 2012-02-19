@@ -56,6 +56,7 @@ struct wrw {
 	ssize_t			liov;
 	ssize_t			cliov;
 	unsigned		ciov;	/* Chunked header marker */
+	double			t0;
 };
 
 /*--------------------------------------------------------------------
@@ -69,7 +70,7 @@ WRW_Error(const struct worker *wrk)
 }
 
 void
-WRW_Reserve(struct worker *wrk, int *fd)
+WRW_Reserve(struct worker *wrk, int *fd, double t0)
 {
 	struct wrw *wrw;
 	unsigned u;
@@ -93,6 +94,7 @@ WRW_Reserve(struct worker *wrk, int *fd)
 	wrw->liov = 0;
 	wrw->niov = 0;
 	wrw->wfd = fd;
+	wrw->t0 = t0;
 	wrk->wrw = wrw;
 }
 
@@ -176,8 +178,7 @@ WRW_Flush(struct worker *wrk)
 			 * counter to prevent slowlaris attacks
 			*/
 
-			if (VTIM_real() - wrk->sp->req->t_resp >
-			    cache_param->send_timeout) {
+			if (VTIM_real() - wrw->t0 > cache_param->send_timeout) {
 				WSL(wrk->vsl, SLT_Debug, *wrw->wfd,
 				    "Hit total send timeout, "
 				    "wrote = %zd/%zd; not retrying",

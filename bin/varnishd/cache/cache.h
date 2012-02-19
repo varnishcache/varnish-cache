@@ -889,7 +889,7 @@ int Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how);
 int WRW_Error(const struct worker *w);
 void WRW_Chunked(struct worker *w);
 void WRW_EndChunk(struct worker *w);
-void WRW_Reserve(struct worker *w, int *fd);
+void WRW_Reserve(struct worker *w, int *fd, double t0);
 unsigned WRW_Flush(struct worker *w);
 unsigned WRW_FlushRelease(struct worker *w);
 unsigned WRW_Write(struct worker *w, const void *ptr, int len);

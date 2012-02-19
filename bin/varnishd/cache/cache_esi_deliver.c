@@ -113,7 +113,7 @@ ved_include(struct sess *sp, const char *src, const char *host)
 	WS_Reset(sp->req->ws, sp_ws_wm);
 	WS_Reset(w->aws, wrk_ws_wm);	/* XXX ? */
 
-	WRW_Reserve(sp->wrk, &sp->fd);
+	WRW_Reserve(sp->wrk, &sp->fd, sp->req->t_resp);
 	if (sp->req->res_mode & RES_CHUNKED)
 		WRW_Chunked(sp->wrk);
 }
