@@ -58,9 +58,9 @@ FetchError2(struct busyobj *bo, const char *error, const char *more)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	if (!bo->fetch_failed) {
 		if (more == NULL)
-			VSLB(bo, SLT_FetchError, "%s", error);
+			VSLb(bo->vsl, SLT_FetchError, "%s", error);
 		else
-			VSLB(bo, SLT_FetchError, "%s: %s", error, more);
+			VSLb(bo->vsl, SLT_FetchError, "%s: %s", error, more);
 	}
 	bo->fetch_failed = 1;
 	return (-1);
@@ -364,7 +364,7 @@ FetchReqBody(const struct sess *sp, int sendbody)
 	}
 	if (http_GetHdr(sp->req->http, H_Transfer_Encoding, NULL)) {
 		/* XXX: Handle chunked encoding. */
-		WSP(sp, SLT_Debug, "Transfer-Encoding in request");
+		VSLb(sp->req->vsl, SLT_Debug, "Transfer-Encoding in request");
 		return (1);
 	}
 	return (0);
@@ -408,7 +408,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 
 	wrk->busyobj->vbc = VDI_GetFd(NULL, sp);
 	if (wrk->busyobj->vbc == NULL) {
-		WSP(sp, SLT_FetchError, "no backend connection");
+		VSLb(sp->req->vsl, SLT_FetchError, "no backend connection");
 		return (-1);
 	}
 	vc = wrk->busyobj->vbc;
@@ -430,7 +430,8 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 	/* Deal with any message-body the request might have */
 	i = FetchReqBody(sp, sendbody);
 	if (WRW_FlushRelease(wrk) || i > 0) {
-		WSP(sp, SLT_FetchError, "backend write error: %d (%s)",
+		VSLb(sp->req->vsl, SLT_FetchError,
+		    "backend write error: %d (%s)",
 		    errno, strerror(errno));
 		VDI_CloseFd(wrk, &wrk->busyobj->vbc);
 		/* XXX: other cleanup ? */
@@ -438,7 +439,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 	}
 
 	/* Checkpoint the vsl.here */
-	WSL_Flush(wrk->vsl, 0);
+	VSL_Flush(wrk->vsl, 0);
 
 	/* XXX is this the right place? */
 	VSC_C_main->backend_req++;
@@ -454,7 +455,8 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 	i = HTC_Rx(htc);
 
 	if (i < 0) {
-		WSP(sp, SLT_FetchError, "http first read error: %d %d (%s)",
+		VSLb(sp->req->vsl, SLT_FetchError,
+		    "http first read error: %d %d (%s)",
 		    i, errno, strerror(errno));
 		VDI_CloseFd(wrk, &wrk->busyobj->vbc);
 		/* XXX: other cleanup ? */
@@ -467,7 +469,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 	while (i == 0) {
 		i = HTC_Rx(htc);
 		if (i < 0) {
-			WSP(sp, SLT_FetchError,
+			VSLb(sp->req->vsl, SLT_FetchError,
 			    "http first read error: %d %d (%s)",
 			    i, errno, strerror(errno));
 			VDI_CloseFd(wrk, &wrk->busyobj->vbc);
@@ -479,7 +481,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 	hp = wrk->busyobj->beresp;
 
 	if (http_DissectResponse(hp, htc)) {
-		WSP(sp, SLT_FetchError, "http format error");
+		VSLb(sp->req->vsl, SLT_FetchError, "http format error");
 		VDI_CloseFd(wrk, &wrk->busyobj->vbc);
 		/* XXX: other cleanup ? */
 		return (-1);
@@ -579,7 +581,7 @@ FetchBody(struct worker *wrk, struct object *obj)
 
 	bo->fetch_obj = NULL;
 
-	VSLB(bo, SLT_Fetch_Body, "%u(%s) cls %d mklen %d",
+	VSLb(bo->vsl, SLT_Fetch_Body, "%u(%s) cls %d mklen %d",
 	    bo->body_status, body_status(bo->body_status),
 	    cls, mklen);
 
@@ -601,7 +603,7 @@ FetchBody(struct worker *wrk, struct object *obj)
 	if (cls == 0 && bo->should_close)
 		cls = 1;
 
-	VSLB(bo, SLT_Length, "%zd", obj->len);
+	VSLb(bo->vsl, SLT_Length, "%zd", obj->len);
 
 	{
 	/* Sanity check fetch methods accounting */

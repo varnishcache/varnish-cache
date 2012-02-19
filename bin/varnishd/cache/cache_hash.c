@@ -163,7 +163,7 @@ HSH_AddString(const struct sess *sp, const char *str)
 	SHA256_Update(sp->req->sha256ctx, "#", 1);
 
 	if (cache_param->log_hash)
-		WSP(sp, SLT_Hash, "%s", str);
+		VSLb(sp->req->vsl, SLT_Hash, "%s", str);
 }
 
 /*---------------------------------------------------------------------
@@ -431,7 +431,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 			VTAILQ_INSERT_TAIL(&oh->waitinglist->list, sp, list);
 		}
 		if (cache_param->diag_bitmap & 0x20)
-			WSP(sp, SLT_Debug,
+			VSLb(sp->req->vsl, SLT_Debug,
 				"on waiting list <%p>", oh);
 		SES_Charge(sp);
 		/*

@@ -56,7 +56,7 @@ VRT_error(const struct sess *sp, unsigned code, const char *reason)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	WSL(sp->wrk->vsl, SLT_Debug, 0, "VCL_error(%u, %s)", code, reason ?
+	VSLb(sp->req->vsl, SLT_Debug, "VCL_error(%u, %s)", code, reason ?
 	    reason : "(null)");
 	if (code < 100 || code > 999)
 		code = 503;
@@ -75,7 +75,7 @@ VRT_count(const struct sess *sp, unsigned u)
 		return;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (cache_param->vcl_trace)
-		WSP(sp, SLT_VCL_trace, "%u %u.%u", u,
+		VSLb(sp->req->vsl, SLT_VCL_trace, "%u %u.%u", u,
 		    sp->req->vcl->ref[u].line, sp->req->vcl->ref[u].pos);
 }
 
@@ -85,7 +85,7 @@ void
 VRT_acl_log(const struct sess *sp, const char *msg)
 {
 
-	WSP(sp, SLT_VCL_acl, "%s", msg);
+	VSLb(sp->req->vsl, SLT_VCL_acl, "%s", msg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -228,7 +228,7 @@ VRT_SetHdr(const struct sess *sp , enum gethdr_e where, const char *hdr,
 	} else {
 		b = VRT_String(hp->ws, hdr + 1, p, ap);
 		if (b == NULL) {
-			WSP(sp, SLT_LostHeader, "%s", hdr + 1);
+			VSLb(sp->req->vsl, SLT_LostHeader, "%s", hdr + 1);
 		} else {
 			http_Unset(hp, hdr);
 			http_SetHeader(hp, b);

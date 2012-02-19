@@ -394,14 +394,14 @@ cnt_done(struct sess *sp, struct worker *wrk, struct req *req)
 		/* XXX: Add StatReq == StatSess */
 		/* XXX: Workaround for pipe */
 		if (sp->fd >= 0) {
-			WSP(sp, SLT_Length, "%ju",
+			VSLb(sp->req->vsl, SLT_Length, "%ju",
 			    (uintmax_t)req->req_bodybytes);
 		}
-		WSP(sp, SLT_ReqEnd, "%u %.9f %.9f %.9f %.9f %.9f",
+		VSLb(sp->req->vsl, SLT_ReqEnd, "%u %.9f %.9f %.9f %.9f %.9f",
 		    req->xid, sp->t_req, sp->t_idle, dh, dp, da);
 	}
 	req->xid = 0;
-	WSL_Flush(wrk->vsl, 0);
+	VSL_Flush(wrk->vsl, 0);
 
 	sp->t_req = NAN;
 	req->t_resp = NAN;
@@ -941,10 +941,12 @@ cnt_first(struct sess *sp, struct worker *wrk)
 		    &sp->mysockaddrlen));
 		VTCP_name(&sp->mysockaddr, sp->mysockaddrlen,
 		    laddr, sizeof laddr, lport, sizeof lport);
-		WSP(sp, SLT_SessionOpen, "%s %s %s %s",
+		/* XXX: have no req yet */
+		VSLb(sp->wrk->vsl, SLT_SessionOpen, "%s %s %s %s",
 		    sp->addr, sp->port, laddr, lport);
 	} else {
-		WSP(sp, SLT_SessionOpen, "%s %s %s",
+		/* XXX: have no req yet */
+		VSLb(sp->wrk->vsl, SLT_SessionOpen, "%s %s %s",
 		    sp->addr, sp->port, sp->mylsock->name);
 	}
 
@@ -1116,7 +1118,7 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 
 	if (oc->flags & OC_F_PASS) {
 		wrk->stats.cache_hitpass++;
-		WSP(sp, SLT_HitPass, "%u", req->obj->xid);
+		VSLb(sp->req->vsl, SLT_HitPass, "%u", req->obj->xid);
 		(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
 		AZ(req->objcore);
 		sp->step = STP_PASS;
@@ -1124,7 +1126,7 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 	}
 
 	wrk->stats.cache_hit++;
-	WSP(sp, SLT_Hit, "%u", req->obj->xid);
+	VSLb(sp->req->vsl, SLT_Hit, "%u", req->obj->xid);
 	sp->step = STP_HIT;
 	return (0);
 }
@@ -1450,7 +1452,8 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 
 	/* Assign XID and log */
 	req->xid = ++xids;				/* XXX not locked */
-	WSP(sp, SLT_ReqStart, "%s %s %u", sp->addr, sp->port,  req->xid);
+	VSLb(sp->req->vsl, SLT_ReqStart, "%s %s %u",
+	    sp->addr, sp->port,  req->xid);
 
 	/* Borrow VCL reference from worker thread */
 	VCL_Refresh(&wrk->vcl);
@@ -1521,10 +1524,11 @@ cnt_diag(struct sess *sp, const char *state)
 		obj = sp->req->obj;
 	}
 
-	if (sp->wrk != NULL) {
-		WSP(sp, SLT_Debug, "vsl_id %u STP_%s sp %p obj %p vcl %p",
+	if (sp->req != NULL) {
+		VSLb(sp->req->vsl,  SLT_Debug,
+		    "vsl_id %u STP_%s sp %p obj %p vcl %p",
 		    sp->vsl_id, state, sp, obj, vcl);
-		WSL_Flush(sp->wrk->vsl, 0);
+		VSL_Flush(sp->req->vsl, 0);
 	} else {
 		VSL(SLT_Debug, sp->vsl_id,
 		    "vsl_id %u STP_%s sp %p obj %p vcl %p",
@@ -1605,7 +1609,7 @@ CNT_Session(struct sess *sp)
 		WS_Assert(wrk->aws);
 		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 	}
-	WSL_Flush(wrk->vsl, 0);
+	VSL_Flush(wrk->vsl, 0);
 #define ACCT(foo)	AZ(wrk->acct_tmp.foo);
 #include "tbl/acct_fields.h"
 #undef ACCT

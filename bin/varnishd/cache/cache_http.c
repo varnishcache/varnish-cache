@@ -78,7 +78,7 @@ http_VSLH(const struct http *hp, unsigned hdr)
 
 	AN(hp->vsl);
 	AN(hp->vsl->wid & (VSL_CLIENTMARKER|VSL_BACKENDMARKER));
-	WSLR(hp->vsl, http2shmlog(hp, hdr), -1, hp->hd[hdr]);
+	VSLbt(hp->vsl, http2shmlog(hp, hdr), hp->hd[hdr]);
 }
 
 /*--------------------------------------------------------------------*/
@@ -528,7 +528,7 @@ http_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
 
 		if (q - p > htc->maxhdr) {
 			VSC_C_main->losthdr++;
-			WSL(hp->vsl, SLT_LostHeader, -1, "%.*s",
+			VSLb(hp->vsl, SLT_LostHeader, "%.*s",
 			    (int)(q - p > 20 ? 20 : q - p), p);
 			return (413);
 		}
@@ -554,7 +554,7 @@ http_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
 			hp->nhd++;
 		} else {
 			VSC_C_main->losthdr++;
-			WSL(hp->vsl, SLT_LostHeader, -1, "%.*s",
+			VSLb(hp->vsl, SLT_LostHeader, "%.*s",
 			    (int)(q - p > 20 ? 20 : q - p), p);
 			return (413);
 		}
@@ -677,7 +677,7 @@ http_DissectRequest(const struct sess *sp)
 	retval = http_splitline(hp, htc,
 	    HTTP_HDR_REQ, HTTP_HDR_URL, HTTP_HDR_PROTO);
 	if (retval != 0) {
-		WSLR(sp->req->vsl, SLT_HttpGarbage, -1, htc->rxbuf);
+		VSLbt(sp->req->vsl, SLT_HttpGarbage, htc->rxbuf);
 		return (retval);
 	}
 	http_ProtoVer(hp);
@@ -724,7 +724,7 @@ http_DissectResponse(struct http *hp, const struct http_conn *htc)
 	}
 
 	if (retval != 0) {
-		WSLR(hp->vsl, SLT_HttpGarbage, -1, htc->rxbuf);
+		VSLbt(hp->vsl, SLT_HttpGarbage, htc->rxbuf);
 		assert(retval >= 100 && retval <= 999);
 		hp->status = retval;
 	} else {
@@ -842,7 +842,7 @@ http_filterfields(struct http *to, const struct http *fm, unsigned how)
 			to->nhd++;
 		} else  {
 			VSC_C_main->losthdr++;
-			WSLR(to->vsl, SLT_LostHeader, -1, fm->hd[u]);
+			VSLbt(to->vsl, SLT_LostHeader, fm->hd[u]);
 		}
 	}
 }
@@ -910,7 +910,7 @@ http_CopyHome(const struct http *hp)
 		} else {
 			/* XXX This leaves a slot empty */
 			VSC_C_main->losthdr++;
-			WSLR(hp->vsl, SLT_LostHeader, -1, hp->hd[u]);
+			VSLbt(hp->vsl, SLT_LostHeader, hp->hd[u]);
 			hp->hd[u].b = NULL;
 			hp->hd[u].e = NULL;
 		}
@@ -940,7 +940,7 @@ http_SetHeader(struct http *to, const char *hdr)
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	if (to->nhd >= to->shd) {
 		VSC_C_main->losthdr++;
-		WSL(to->vsl, SLT_LostHeader, -1, "%s", hdr);
+		VSLb(to->vsl, SLT_LostHeader, "%s", hdr);
 		return;
 	}
 	http_SetH(to, to->nhd++, hdr);
@@ -958,7 +958,7 @@ http_PutField(const struct http *to, int field, const char *string)
 	l = strlen(string);
 	p = WS_Alloc(to->ws, l + 1);
 	if (p == NULL) {
-		WSL(to->vsl, SLT_LostHeader, -1, "%s", string);
+		VSLb(to->vsl, SLT_LostHeader, "%s", string);
 		to->hd[field].b = NULL;
 		to->hd[field].e = NULL;
 		to->hdf[field] = 0;
@@ -1011,7 +1011,7 @@ http_PrintfHeader(struct http *to, const char *fmt, ...)
 	va_end(ap);
 	if (n + 1 >= l || to->nhd >= to->shd) {
 		VSC_C_main->losthdr++;
-		WSL(to->vsl, SLT_LostHeader, -1, "%s", to->ws->f);
+		VSLb(to->vsl, SLT_LostHeader, "%s", to->ws->f);
 		WS_Release(to->ws, 0);
 	} else {
 		to->hd[to->nhd].b = to->ws->f;

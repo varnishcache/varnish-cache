@@ -98,7 +98,7 @@ ved_include(struct sess *sp, const char *src, const char *host)
 		if (sp->step == STP_DONE)
 			break;
 		AZ(sp->wrk);
-		WSL_Flush(w->vsl, 0);
+		VSL_Flush(w->vsl, 0);
 		DSL(0x20, SLT_Debug, sp->vsl_id, "loop waiting for ESI");
 		(void)usleep(10000);
 	}

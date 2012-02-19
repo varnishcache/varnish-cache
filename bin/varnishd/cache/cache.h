@@ -918,22 +918,19 @@ void VSM_Free(void *ptr);
 #ifdef VSL_ENDMARKER
 void VSL(enum VSL_tag_e tag, int id, const char *fmt, ...)
     __printflike(3, 4);
-void WSLR(struct vsl_log *, enum VSL_tag_e tag, int id, txt t);
 void WSL(struct vsl_log *, enum VSL_tag_e tag, int id, const char *fmt, ...)
     __printflike(4, 5);
-void VSLB(struct busyobj *, enum VSL_tag_e tag, const char *fmt, ...)
+void VSLb(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, ...)
     __printflike(3, 4);
+void VSLbt(struct vsl_log *, enum VSL_tag_e tag, txt t);
 
-void WSL_Flush(struct vsl_log *, int overflow);
+void VSL_Flush(struct vsl_log *, int overflow);
 
 #define DSL(flag, tag, id, ...)					\
 	do {							\
 		if (cache_param->diag_bitmap & (flag))		\
 			VSL((tag), (id), __VA_ARGS__);		\
 	} while (0)
-
-#define WSP(sess, tag, ...)					\
-	WSL((sess)->wrk->vsl, tag, (sess)->vsl_id, __VA_ARGS__)
 
 #define INCOMPL() do {							\
 	VSL(SLT_Debug, 0, "INCOMPLETE AT: %s(%d)", __func__, __LINE__); \

@@ -59,8 +59,8 @@ VDI_CloseFd(struct worker *wrk, struct vbc **vbp)
 
 	/* Checkpoint log to flush all info related to this connection
 	   before the OS reuses the FD */
-	WSL_Flush(wrk->vsl, 0);
-	WSL_Flush(vc->vsl, 0);
+	VSL_Flush(wrk->vsl, 0);
+	VSL_Flush(vc->vsl, 0);
 	vc->vsl->wid = vc->orig_vsl_id;
 	vc->vsl = NULL;
 	vc->orig_vsl_id = 0;
@@ -95,8 +95,8 @@ VDI_RecycleFd(struct worker *wrk, struct vbc **vbp)
 	 * Flush the shmlog, so that another session reusing this backend
 	 * will log chronologically later than our use of it.
 	 */
-	WSL_Flush(wrk->vsl, 0);
-	WSL_Flush(vc->vsl, 0);
+	VSL_Flush(wrk->vsl, 0);
+	VSL_Flush(vc->vsl, 0);
 	vc->vsl->wid = vc->orig_vsl_id;
 	vc->vsl = NULL;
 	vc->orig_vsl_id = 0;

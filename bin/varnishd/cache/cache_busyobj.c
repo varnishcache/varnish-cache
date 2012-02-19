@@ -183,7 +183,7 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 	if (r)
 		return;
 
-	WSL_Flush(vbo->bo.vsl, 0);
+	VSL_Flush(vbo->bo.vsl, 0);
 	/* XXX: Sanity checks & cleanup */
 	memset(&vbo->bo, 0, sizeof vbo->bo);
 

@@ -79,7 +79,8 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 	AN(sbh);
 
 	if (*v == ':') {
-		WSP(sp, SLT_Error, "Vary header had extra ':', fix backend");
+		VSLb(sp->req->vsl, SLT_Error,
+		    "Vary header had extra ':', fix backend");
 		v++;
 	}
 	for (p = v; *p; p++) {

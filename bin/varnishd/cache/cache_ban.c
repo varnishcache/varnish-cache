@@ -761,7 +761,8 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 		oc->ban = NULL;
 		oc_updatemeta(oc);
 		/* BAN also changed, but that is not important any more */
-		WSP(sp, SLT_ExpBan, "%u was banned", o->xid);
+		/* XXX: no req in lurker */
+		VSLb(sp->wrk->vsl, SLT_ExpBan, "%u was banned", o->xid);
 		EXP_Rearm(o);
 		return (1);
 	}
@@ -954,7 +955,7 @@ ban_lurker(struct sess *sp, void *priv)
 		}
 
 		i = ban_lurker_work(sp, pass);
-		WSL_Flush(sp->wrk->vsl, 0);
+		VSL_Flush(sp->wrk->vsl, 0);
 		WRK_SumStat(sp->wrk);
 		if (i) {
 			pass += (1 << LURK_SHIFT);

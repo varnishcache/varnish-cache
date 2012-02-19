@@ -152,7 +152,7 @@ vmod_log(struct sess *sp, const char *fmt, ...)
 	p = VRT_StringList(buf, sizeof buf, fmt, ap);
 	va_end(ap);
 	if (p != NULL)
-		WSP(sp, SLT_VCL_Log, "%s", buf);
+		VSLb(sp->req->vsl, SLT_VCL_Log, "%s", buf);
 }
 
 void

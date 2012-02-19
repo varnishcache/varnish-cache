@@ -395,7 +395,7 @@ VGZ_Destroy(struct vgz **vgp)
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	*vgp = NULL;
 
-	WSL(vg->vsl, SLT_Gzip, -1, "%s %jd %jd %jd %jd %jd",
+	VSLb(vg->vsl, SLT_Gzip, "%s %jd %jd %jd %jd %jd",
 	    vg->id,
 	    (intmax_t)vg->vz.total_in,
 	    (intmax_t)vg->vz.total_out,

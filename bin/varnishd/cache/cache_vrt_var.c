@@ -46,16 +46,15 @@ static char vrt_hostname[255] = "";
 /*--------------------------------------------------------------------*/
 
 static void
-vrt_do_string(struct worker *w, int fd, const struct http *hp, int fld,
+vrt_do_string(const struct http *hp, int fld,
     const char *err, const char *p, va_list ap)
 {
 	char *b;
 
-	// AN(p);
 	AN(hp);
 	b = VRT_String(hp->ws, NULL, p, ap);
 	if (b == NULL || *b == '\0') {
-		WSL(w->vsl, SLT_LostHeader, fd, "%s", err);
+		VSLb(hp->vsl, SLT_LostHeader, "%s", err);
 	} else {
 		http_SetH(hp, fld, b);
 	}
@@ -68,9 +67,9 @@ VRT_l_##obj##_##hdr(const struct sess *sp, const char *p, ...)	\
 {								\
 	va_list ap;						\
 								\
+	(void)sp;						\
 	va_start(ap, p);					\
-	vrt_do_string(sp->wrk, sp->fd,				\
-	    http, fld, #obj "." #hdr, p, ap);			\
+	vrt_do_string(http, fld, #obj "." #hdr, p, ap);		\
 	va_end(ap);						\
 }								\
 								\
@@ -399,7 +398,7 @@ VRT_r_##which##_##fld(struct sess *sp)				\
 static void
 vrt_wsp_exp(const struct sess *sp, unsigned xid, const struct exp *e)
 {
-	WSP(sp, SLT_TTL, "%u VCL %.0f %.0f %.0f %.0f %.0f",
+	VSLb(sp->req->vsl, SLT_TTL, "%u VCL %.0f %.0f %.0f %.0f %.0f",
 	    xid, e->ttl - (sp->t_req - e->entered), e->grace, e->keep,
 	    sp->t_req, e->age + (sp->t_req - e->entered));
 }

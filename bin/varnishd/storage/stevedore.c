@@ -141,7 +141,7 @@ stv_pick_stevedore(struct vsl_log *vsl, const char **hint)
 			return (stv_transient);
 
 		/* Hint was not valid, nuke it */
-		WSL(vsl, SLT_Debug, -1, "Storage hint not usable");
+		VSLb(vsl, SLT_Debug, "Storage hint not usable");
 		*hint = NULL;
 	}
 	/* pick a stevedore and bump the head along */

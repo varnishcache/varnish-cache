@@ -133,7 +133,7 @@ vsl_get(unsigned len, unsigned records, unsigned flushes)
  */
 
 static void
-VSLR(enum VSL_tag_e tag, int id, const char *b, unsigned len)
+vslr(enum VSL_tag_e tag, int id, const char *b, unsigned len)
 {
 	uint32_t *p;
 	unsigned mlen;
@@ -161,18 +161,18 @@ VSL(enum VSL_tag_e tag, int id, const char *fmt, ...)
 
 	/*
 	 * XXX: consider formatting into a stack buffer then move into
-	 * XXX: shmlog with VSLR().
+	 * XXX: shmlog with vslr().
 	 */
 	AN(fmt);
 	va_start(ap, fmt);
 
 	if (strchr(fmt, '%') == NULL) {
-		VSLR(tag, id, fmt, strlen(fmt));
+		vslr(tag, id, fmt, strlen(fmt));
 	} else {
 		n = vsnprintf(buf, mlen, fmt, ap);
 		if (n > mlen)
 			n = mlen;
-		VSLR(tag, id, buf, n);
+		vslr(tag, id, buf, n);
 	}
 	va_end(ap);
 }
@@ -180,7 +180,7 @@ VSL(enum VSL_tag_e tag, int id, const char *fmt, ...)
 /*--------------------------------------------------------------------*/
 
 void
-WSL_Flush(struct vsl_log *vsl, int overflow)
+VSL_Flush(struct vsl_log *vsl, int overflow)
 {
 	uint32_t *p;
 	unsigned l;
@@ -202,8 +202,8 @@ WSL_Flush(struct vsl_log *vsl, int overflow)
 
 /*--------------------------------------------------------------------*/
 
-void
-WSLR(struct vsl_log *vsl, enum VSL_tag_e tag, int id, txt t)
+static void
+wslr(struct vsl_log *vsl, enum VSL_tag_e tag, int id, txt t)
 {
 	unsigned l, mlen;
 
@@ -223,7 +223,7 @@ WSLR(struct vsl_log *vsl, enum VSL_tag_e tag, int id, txt t)
 
 	/* Wrap if necessary */
 	if (VSL_END(vsl->wlp, l) >= vsl->wle)
-		WSL_Flush(vsl, 1);
+		VSL_Flush(vsl, 1);
 	assert (VSL_END(vsl->wlp, l) < vsl->wle);
 	memcpy(VSL_DATA(vsl->wlp), t.b, l);
 	vsl_hdr(tag, vsl->wlp, l, id);
@@ -231,7 +231,7 @@ WSLR(struct vsl_log *vsl, enum VSL_tag_e tag, int id, txt t)
 	assert(vsl->wlp < vsl->wle);
 	vsl->wlr++;
 	if (cache_param->diag_bitmap & 0x10000)
-		WSL_Flush(vsl, 0);
+		VSL_Flush(vsl, 0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -253,13 +253,13 @@ wsl(struct vsl_log *vsl, enum VSL_tag_e tag, int id, const char *fmt, va_list ap
 	if (strchr(fmt, '%') == NULL) {
 		t.b = TRUST_ME(fmt);
 		t.e = strchr(t.b, '\0');
-		WSLR(vsl, tag, id, t);
+		wslr(vsl, tag, id, t);
 	} else {
 		assert(vsl->wlp < vsl->wle);
 
 		/* Wrap if we cannot fit a full size record */
 		if (VSL_END(vsl->wlp, mlen) >= vsl->wle)
-			WSL_Flush(vsl, 1);
+			VSL_Flush(vsl, 1);
 
 		p = VSL_DATA(vsl->wlp);
 		n = vsnprintf(p, mlen, fmt, ap);
@@ -271,7 +271,7 @@ wsl(struct vsl_log *vsl, enum VSL_tag_e tag, int id, const char *fmt, va_list ap
 		vsl->wlr++;
 	}
 	if (cache_param->diag_bitmap & 0x10000)
-		WSL_Flush(vsl, 0);
+		VSL_Flush(vsl, 0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -290,18 +290,29 @@ WSL(struct vsl_log *vsl, enum VSL_tag_e tag, int id, const char *fmt, ...)
 }
 
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * VSL-buffered
+ */
 
 void
-VSLB(struct busyobj *bo, enum VSL_tag_e tag, const char *fmt, ...)
+VSLb(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, ...)
 {
 	va_list ap;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	AN(fmt);
 	va_start(ap, fmt);
-	wsl(bo->vsl, tag, bo->vsl->wid, fmt, ap);
+	wsl(vsl, tag, vsl->wid, fmt, ap);
 	va_end(ap);
+}
+
+/*--------------------------------------------------------------------
+ * VSL-buffered-txt
+ */
+
+void
+VSLbt(struct vsl_log *vsl, enum VSL_tag_e tag, txt t)
+{
+	wslr(vsl, tag, -1, t);
 }
 
 /*--------------------------------------------------------------------*/

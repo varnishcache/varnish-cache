@@ -375,7 +375,7 @@ SES_ReleaseReq(struct sess *sp)
 	AN(pp->pool);
 	CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
 	MPL_AssertSane(sp->req);
-	WSL_Flush(sp->req->vsl, 0);
+	VSL_Flush(sp->req->vsl, 0);
 	MPL_Free(pp->mpl_req, sp->req);
 	sp->req = NULL;
 }
