@@ -677,16 +677,17 @@ ban_evaluate(const uint8_t *bs, const struct http *objhttp,
  */
 
 static int
-ban_check_object(struct object *o, const struct sess *sp, int has_req)
+ban_check_object(struct object *o, struct worker *wrk,
+    const struct http *req_http)
 {
 	struct ban *b;
 	struct objcore *oc;
 	struct ban * volatile b0;
 	unsigned tests, skipped;
-	struct http *http;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_ORNULL(req_http, HTTP_MAGIC);
 	oc = o->objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->ban, BAN_MAGIC);
@@ -696,11 +697,6 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 
 	if (b0 == oc->ban)
 		return (0);
-
-	if (has_req)
-		http = sp->req->http;
-	else
-		http = NULL;
 
 	/*
 	 * This loop is safe without locks, because we know we hold
@@ -719,13 +715,13 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 			/* Lurker already tested this */
 			continue;
 		}
-		if (!has_req && (b->flags & BAN_F_REQ)) {
+		if (req_http == NULL && (b->flags & BAN_F_REQ)) {
 			/*
 			 * We cannot test this one, but there might
 			 * be other bans that match, so we soldier on
 			 */
 			skipped++;
-		} else if (ban_evaluate(b->spec, o->http, http, &tests))
+		} else if (ban_evaluate(b->spec, o->http, req_http, &tests))
 			break;
 	}
 
@@ -734,7 +730,7 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 	VSC_C_main->bans_tests_tested += tests;
 
 	if (b == oc->ban && skipped > 0) {
-		AZ(has_req);
+		AZ(req_http);
 		Lck_Unlock(&ban_mtx);
 		/*
 		 * Not banned, but some tests were skipped, so we cannot know
@@ -762,7 +758,7 @@ ban_check_object(struct object *o, const struct sess *sp, int has_req)
 		oc_updatemeta(oc);
 		/* BAN also changed, but that is not important any more */
 		/* XXX: no req in lurker */
-		VSLb(sp->wrk->vsl, SLT_ExpBan, "%u was banned", o->xid);
+		VSLb(wrk->vsl, SLT_ExpBan, "%u was banned", o->xid);
 		EXP_Rearm(o);
 		return (1);
 	}
@@ -772,7 +768,7 @@ int
 BAN_CheckObject(struct object *o, const struct sess *sp)
 {
 
-	return (ban_check_object(o, sp, 1) > 0);
+	return (ban_check_object(o, sp->wrk, sp->req->http) > 0);
 }
 
 static struct ban *
@@ -800,8 +796,8 @@ ban_CheckLast(void)
  * Ban lurker thread
  */
 
-static int __match_proto__(bgthread_t)
-ban_lurker_work(const struct sess *sp, unsigned pass)
+static int 
+ban_lurker_work(struct worker *wrk, unsigned pass)
 {
 	struct ban *b, *b0, *b2;
 	struct objhead *oh;
@@ -892,8 +888,8 @@ ban_lurker_work(const struct sess *sp, unsigned pass)
 			/*
 			 * Get the object and check it against all relevant bans
 			 */
-			o = oc_getobj(&sp->wrk->stats, oc);
-			i = ban_check_object(o, sp, 0);
+			o = oc_getobj(&wrk->stats, oc);
+			i = ban_check_object(o, wrk, NULL);
 			if (cache_param->diag_bitmap & 0x80000)
 				VSL(SLT_Debug, 0, "lurker got: %p %d",
 				    oc, i);
@@ -909,7 +905,7 @@ ban_lurker_work(const struct sess *sp, unsigned pass)
 			if (cache_param->diag_bitmap & 0x80000)
 				VSL(SLT_Debug, 0, "lurker done: %p %u %u",
 				    oc, oc->flags & OC_F_LURK, pass);
-			(void)HSH_Deref(&sp->wrk->stats, NULL, &o);
+			(void)HSH_Deref(&wrk->stats, NULL, &o);
 			VTIM_sleep(cache_param->ban_lurker_sleep);
 		}
 		Lck_AssertHeld(&ban_mtx);
@@ -954,7 +950,7 @@ ban_lurker(struct sess *sp, void *priv)
 				VTIM_sleep(1.0);
 		}
 
-		i = ban_lurker_work(sp, pass);
+		i = ban_lurker_work(sp->wrk, pass);
 		VSL_Flush(sp->wrk->vsl, 0);
 		WRK_SumStat(sp->wrk);
 		if (i) {
