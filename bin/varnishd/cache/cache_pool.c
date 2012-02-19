@@ -438,7 +438,6 @@ pool_herder(void *priv)
 			VSC_C_main->threads--;
 			VSC_C_main->threads_destroyed++;
 			Lck_Unlock(&pool_mtx);
-			AZ(wrk->sp);
 			wrk->task.func = NULL;
 			wrk->task.priv = NULL;
 			AZ(pthread_cond_signal(&wrk->cond));

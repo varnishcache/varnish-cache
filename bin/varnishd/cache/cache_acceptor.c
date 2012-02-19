@@ -229,7 +229,6 @@ VCA_FailSess(struct worker *wrk)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(wa, (void*)wrk->aws->f, WRK_ACCEPT_MAGIC);
-	AZ(wrk->sp);
 	AZ(close(wa->acceptsock));
 	wrk->stats.sess_drop++;
 	vca_pace_bad();

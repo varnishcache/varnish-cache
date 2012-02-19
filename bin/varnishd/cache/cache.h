@@ -310,8 +310,6 @@ struct worker {
 
 	pthread_cond_t		cond;
 
-	struct sess		*sp;
-
 	struct VCL_conf		*vcl;
 
 	struct vsl_log		vsl[1];
