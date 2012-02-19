@@ -329,7 +329,7 @@ EXP_Rearm(const struct object *o)
  * object expires, accounting also for graceability, it is killed.
  */
 
-static void * __match_proto__(void *start_routine(void *))
+static void * __match_proto__(bgthread_t)
 exp_timer(struct sess *sp, void *priv)
 {
 	struct objcore *oc;

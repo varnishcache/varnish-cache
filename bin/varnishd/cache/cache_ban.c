@@ -800,7 +800,7 @@ ban_CheckLast(void)
  * Ban lurker thread
  */
 
-static int
+static int __match_proto__(bgthread_t)
 ban_lurker_work(const struct sess *sp, unsigned pass)
 {
 	struct ban *b, *b0, *b2;

@@ -245,26 +245,21 @@ hsh_testmagic(void *result)
  */
 
 void
-HSH_Insert(const struct sess *sp, const void *digest, struct objcore *oc)
+HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc)
 {
-	struct worker *wrk;
 	struct objhead *oh;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(digest);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-
-	wrk = sp->wrk;
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	hsh_prealloc(wrk);
 	if (cache_param->diag_bitmap & 0x80000000)
 		hsh_testmagic(wrk->nobjhead->digest);
 
-	AZ(sp->req);
 	AN(wrk->nobjhead);
 	memcpy(wrk->nobjhead->digest, digest, SHA256_LEN);
-	oh = hash->lookup(sp, wrk->nobjhead);
+	oh = hash->lookup(wrk, wrk->nobjhead);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	if (oh == wrk->nobjhead)
 		wrk->nobjhead = NULL;
@@ -320,7 +315,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		sp->req->hash_objhead = NULL;
 	} else {
 		AN(wrk->nobjhead);
-		oh = hash->lookup(sp, wrk->nobjhead);
+		oh = hash->lookup(wrk, wrk->nobjhead);
 		if (oh == wrk->nobjhead)
 			wrk->nobjhead = NULL;
 	}

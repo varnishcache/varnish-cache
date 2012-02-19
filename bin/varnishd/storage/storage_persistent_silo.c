@@ -118,7 +118,7 @@ smp_save_segs(struct smp_sc *sc)
  */
 
 void
-smp_load_seg(const struct sess *sp, const struct smp_sc *sc,
+smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
     struct smp_seg *sg)
 {
 	struct smp_object *so;
@@ -128,7 +128,7 @@ smp_load_seg(const struct sess *sp, const struct smp_sc *sc,
 	struct smp_signctx ctx[1];
 
 	ASSERT_SILO_THREAD(sc);
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
 	CHECK_OBJ_NOTNULL(sg->lru, LRU_MAGIC);
 	assert(sg->flags & SMP_SEG_MUSTLOAD);
@@ -156,11 +156,11 @@ smp_load_seg(const struct sess *sp, const struct smp_sc *sc,
 		oc->flags &= ~OC_F_BUSY;
 		smp_init_oc(oc, sg, no);
 		oc->ban = BAN_RefBan(oc, so->ban, sc->tailban);
-		HSH_Insert(sp, so->hash, oc);
+		HSH_Insert(wrk, so->hash, oc);
 		EXP_Inject(oc, sg->lru, so->ttl);
 		sg->nobj++;
 	}
-	WRK_SumStat(sp->wrk);
+	WRK_SumStat(wrk);
 	sg->flags |= SMP_SEG_LOADED;
 }
 

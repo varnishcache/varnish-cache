@@ -267,19 +267,19 @@ smp_open_segs(struct smp_sc *sc, struct smp_signctx *ctx)
  * Silo worker thread
  */
 
-static void *
+static void * __match_proto__(bgthread_t)
 smp_thread(struct sess *sp, void *priv)
 {
 	struct smp_sc	*sc;
 	struct smp_seg *sg;
 
-	(void)sp;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CAST_OBJ_NOTNULL(sc, priv, SMP_SC_MAGIC);
 
 	/* First, load all the objects from all segments */
 	VTAILQ_FOREACH(sg, &sc->segments, list)
 		if (sg->flags & SMP_SEG_MUSTLOAD)
-			smp_load_seg(sp, sc, sg);
+			smp_load_seg(sp->wrk, sc, sg);
 
 	sc->flags |= SMP_SC_LOADED;
 	BAN_TailDeref(&sc->tailban);

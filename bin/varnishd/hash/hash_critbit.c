@@ -373,7 +373,7 @@ hcb_cleaner(struct sess *sp, void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static void
+static void __match_proto__(hash_start_f)
 hcb_start(void)
 {
 	struct objhead *oh = NULL;
@@ -387,7 +387,7 @@ hcb_start(void)
 	hcb_build_bittbl();
 }
 
-static int
+static int __match_proto__(hash_deref_f)
 hcb_deref(struct objhead *oh)
 {
 	int r;
@@ -412,28 +412,28 @@ hcb_deref(struct objhead *oh)
 	return (r);
 }
 
-static struct objhead *
-hcb_lookup(const struct sess *sp, struct objhead *noh)
+static struct objhead * __match_proto__(hash_lookup_f)
+hcb_lookup(struct worker *wrk, struct objhead *noh)
 {
 	struct objhead *oh;
 	struct hcb_y *y;
 	unsigned u;
 	unsigned with_lock;
 
-	(void)sp;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	with_lock = 0;
 	while (1) {
 		if (with_lock) {
-			CAST_OBJ_NOTNULL(y, sp->wrk->nhashpriv, HCB_Y_MAGIC);
+			CAST_OBJ_NOTNULL(y, wrk->nhashpriv, HCB_Y_MAGIC);
 			Lck_Lock(&hcb_mtx);
 			VSC_C_main->hcb_lock++;
 			assert(noh->refcnt == 1);
-			oh = hcb_insert(sp->wrk, &hcb_root, noh, 1);
+			oh = hcb_insert(wrk, &hcb_root, noh, 1);
 			Lck_Unlock(&hcb_mtx);
 		} else {
 			VSC_C_main->hcb_nolock++;
-			oh = hcb_insert(sp->wrk, &hcb_root, noh, 0);
+			oh = hcb_insert(wrk, &hcb_root, noh, 0);
 		}
 
 		if (oh != NULL && oh == noh) {
@@ -468,7 +468,7 @@ hcb_lookup(const struct sess *sp, struct objhead *noh)
 	}
 }
 
-static void
+static void __match_proto__(hash_prep_f)
 hcb_prep(struct worker *wrk)
 {
 	struct hcb_y *y;

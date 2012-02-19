@@ -36,7 +36,7 @@ typedef void hash_init_f(int ac, char * const *av);
 typedef void hash_start_f(void);
 typedef void hash_prep_f(struct worker *);
 typedef struct objhead *
-    hash_lookup_f(const struct sess *sp, struct objhead *nobj);
+    hash_lookup_f(struct worker *wrk, struct objhead *nobj);
 typedef int hash_deref_f(struct objhead *obj);
 
 struct hash_slinger {
@@ -58,7 +58,7 @@ void HSH_Ref(struct objcore *o);
 void HSH_Drop(struct worker *, struct object **);
 void HSH_Init(const struct hash_slinger *slinger);
 void HSH_AddString(const struct sess *sp, const char *str);
-void HSH_Insert(const struct sess *sp, const void *hash, struct objcore *);
+void HSH_Insert(struct worker *, const void *hash, struct objcore *);
 void HSH_Purge(const struct sess *, struct objhead *, double ttl, double grace);
 void HSH_config(const char *h_arg);
 

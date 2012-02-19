@@ -45,7 +45,7 @@ static struct lock hsl_mtx;
  * initialization to happen before the first lookup.
  */
 
-static void
+static void __match_proto__(hash_start_f)
 hsl_start(void)
 {
 
@@ -59,13 +59,13 @@ hsl_start(void)
  * A reference to the returned object is held.
  */
 
-static struct objhead *
-hsl_lookup(const struct sess *sp, struct objhead *noh)
+static struct objhead * __match_proto__(hash_lookup_f)
+hsl_lookup(struct worker *wrk, struct objhead *noh)
 {
 	struct objhead *oh;
 	int i;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(noh, OBJHEAD_MAGIC);
 	Lck_Lock(&hsl_mtx);
 	VTAILQ_FOREACH(oh, &hsl_head, hoh_list) {
@@ -92,7 +92,7 @@ hsl_lookup(const struct sess *sp, struct objhead *noh)
  * Dereference and if no references are left, free.
  */
 
-static int
+static int __match_proto__(hash_deref_f)
 hsl_deref(struct objhead *oh)
 {
 	int ret;
