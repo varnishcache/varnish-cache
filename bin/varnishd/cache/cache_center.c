@@ -606,7 +606,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 		 */
 		EXP_Clr(&wrk->busyobj->exp);
 		wrk->busyobj->exp.entered = W_TIM_real(wrk);
-		RFC2616_Ttl(sp);
+		RFC2616_Ttl(wrk->busyobj, sp->req->xid);
 
 		/* pass from vclrecv{} has negative TTL */
 		if (req->objcore == NULL)

@@ -997,7 +997,7 @@ char *WS_Alloc(struct ws *ws, unsigned bytes);
 char *WS_Snapshot(struct ws *ws);
 
 /* rfc2616.c */
-void RFC2616_Ttl(const struct sess *sp);
+void RFC2616_Ttl(struct busyobj *, unsigned xid);
 enum body_status RFC2616_Body(const struct sess *sp);
 unsigned RFC2616_Req_Gzip(const struct sess *sp);
 int RFC2616_Do_Cond(const struct sess *sp);

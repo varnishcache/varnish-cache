@@ -63,7 +63,7 @@
  */
 
 void
-RFC2616_Ttl(const struct sess *sp)
+RFC2616_Ttl(struct busyobj *bo, unsigned xid)
 {
 	unsigned max_age, age;
 	double h_date, h_expires;
@@ -71,9 +71,10 @@ RFC2616_Ttl(const struct sess *sp)
 	const struct http *hp;
 	struct exp *expp;
 
-	expp = &sp->wrk->busyobj->exp;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	expp = &bo->exp;
 
-	hp = sp->wrk->busyobj->beresp;
+	hp = bo->beresp;
 
 	assert(expp->entered != 0.0 && !isnan(expp->entered));
 	/* If all else fails, cache using default ttl */
@@ -98,7 +99,7 @@ RFC2616_Ttl(const struct sess *sp)
 	if (http_GetHdr(hp, H_Date, &p))
 		h_date = VTIM_parse(p);
 
-	switch (sp->req->err_code) {
+	switch (http_GetStatus(hp)) {
 	default:
 		expp->ttl = -1.;
 		break;
@@ -167,9 +168,9 @@ RFC2616_Ttl(const struct sess *sp)
 	}
 
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
-	VSLb(sp->req->vsl, SLT_TTL,	/* XXX Bo->vsl ? */
+	VSLb(bo->vsl, SLT_TTL,
 	    "%u RFC %.0f %.0f %.0f %.0f %.0f %.0f %.0f %u",
-	    sp->req->xid, expp->ttl, -1., -1., expp->entered,
+	    xid, expp->ttl, -1., -1., expp->entered,
 	    expp->age, h_date, h_expires, max_age);
 }
 
