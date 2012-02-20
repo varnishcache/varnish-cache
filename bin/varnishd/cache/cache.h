@@ -312,8 +312,6 @@ struct worker {
 
 	struct VCL_conf		*vcl;
 
-	struct vsl_log		vsl[1];
-
 	struct ws		aws[1];
 
 

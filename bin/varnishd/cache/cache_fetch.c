@@ -442,9 +442,6 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 		return (retry);
 	}
 
-	/* Checkpoint the vsl.here */
-	VSL_Flush(wrk->vsl, 0);
-
 	/* XXX is this the right place? */
 	VSC_C_main->backend_req++;
 

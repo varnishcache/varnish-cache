@@ -778,16 +778,6 @@ static const struct parspec input_parspec[] = {
 		"Minimum is 1k bytes.",
 		0,
 		"4k", "bytes" },
-	{ "shm_workspace",
-		tweak_bytes_u, &mgt_param.shm_workspace, 4096, UINT_MAX,
-		"Bytes of shmlog workspace allocated for worker threads. "
-		"If too big, it wastes some ram, if too small it causes "
-		"needless flushes of the SHM workspace.\n"
-		"These flushes show up in stats as "
-		"\"SHM flushes due to overflow\".\n"
-		"Minimum is 4096 bytes.",
-		DELAYED_EFFECT,
-		"8k", "bytes" },
 	{ "shm_reclen",
 		tweak_bytes_u, &mgt_param.shm_reclen, 16, 65535,
 		"Maximum number of bytes in SHM log record.\n"

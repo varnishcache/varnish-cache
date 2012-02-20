@@ -402,7 +402,7 @@ cnt_done(struct sess *sp, struct worker *wrk, struct req *req)
 		    req->xid, sp->t_req, sp->t_idle, dh, dp, da);
 	}
 	req->xid = 0;
-	VSL_Flush(wrk->vsl, 0);
+	VSL_Flush(sp->req->vsl, 0);
 
 	sp->t_req = NAN;
 	req->t_resp = NAN;
@@ -1623,7 +1623,6 @@ CNT_Session(struct sess *sp)
 		WS_Assert(wrk->aws);
 		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 	}
-	VSL_Flush(wrk->vsl, 0);
 #define ACCT(foo)	AZ(wrk->acct_tmp.foo);
 #include "tbl/acct_fields.h"
 #undef ACCT

@@ -94,13 +94,11 @@ wrk_bgthread(void *arg)
 {
 	struct bgthread *bt;
 	struct worker wrk;
-	uint32_t logbuf[1024];	/* XXX:  size ? */
 
 	CAST_OBJ_NOTNULL(bt, arg, BGTHREAD_MAGIC);
 	THR_SetName(bt->name);
 	memset(&wrk, 0, sizeof wrk);
 	wrk.magic = WORKER_MAGIC;
-	VSL_Setup(wrk.vsl, logbuf, sizeof logbuf);
 
 	(void)bt->func(&wrk, bt->priv);
 
@@ -126,10 +124,9 @@ WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func, void *priv)
 /*--------------------------------------------------------------------*/
 
 static void *
-wrk_thread_real(void *priv, unsigned shm_workspace, unsigned thread_workspace)
+wrk_thread_real(void *priv, unsigned thread_workspace)
 {
 	struct worker *w, ww;
-	uint32_t wlog[shm_workspace / 4];
 	unsigned char ws[thread_workspace];
 
 	THR_SetName("cache-worker");
@@ -137,7 +134,6 @@ wrk_thread_real(void *priv, unsigned shm_workspace, unsigned thread_workspace)
 	memset(w, 0, sizeof *w);
 	w->magic = WORKER_MAGIC;
 	w->lastused = NAN;
-	VSL_Setup(w->vsl, wlog, sizeof wlog);
 	AZ(pthread_cond_init(&w->cond, NULL));
 
 	WS_Init(w->aws, "wrk", ws, thread_workspace);
@@ -162,9 +158,7 @@ void *
 WRK_thread(void *priv)
 {
 
-	return (wrk_thread_real(priv,
-	    cache_param->shm_workspace,
-	    cache_param->workspace_thread));
+	return (wrk_thread_real(priv, cache_param->workspace_thread));
 }
 
 void

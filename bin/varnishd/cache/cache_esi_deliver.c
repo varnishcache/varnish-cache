@@ -45,18 +45,18 @@ static void
 ved_include(struct sess *sp, const char *src, const char *host)
 {
 	struct object *obj;
-	struct worker *w;
+	struct worker *wrk;
 	char *sp_ws_wm;
 	char *wrk_ws_wm;
 	unsigned sxid, res_mode;
 
-	w = sp->wrk;
+	wrk = sp->wrk;
 
 	if (sp->req->esi_level >= cache_param->max_esi_depth)
 		return;
 	sp->req->esi_level++;
 
-	(void)WRW_FlushRelease(w);
+	(void)WRW_FlushRelease(wrk);
 
 	obj = sp->req->obj;
 	sp->req->obj = NULL;
@@ -67,7 +67,7 @@ ved_include(struct sess *sp, const char *src, const char *host)
 
 	/* Take a workspace snapshot */
 	sp_ws_wm = WS_Snapshot(sp->req->ws);
-	wrk_ws_wm = WS_Snapshot(w->aws); /* XXX ? */
+	wrk_ws_wm = WS_Snapshot(wrk->aws); /* XXX ? */
 
 	http_SetH(sp->req->http, HTTP_HDR_URL, src);
 	if (host != NULL && *host != '\0')  {
@@ -93,12 +93,11 @@ ved_include(struct sess *sp, const char *src, const char *host)
 
 	sxid = sp->req->xid;
 	while (1) {
-		sp->wrk = w;
+		sp->wrk = wrk;
 		CNT_Session(sp);
 		if (sp->step == STP_DONE)
 			break;
 		AZ(sp->wrk);
-		VSL_Flush(w->vsl, 0);
 		DSL(0x20, SLT_Debug, sp->vsl_id, "loop waiting for ESI");
 		(void)usleep(10000);
 	}
@@ -111,7 +110,7 @@ ved_include(struct sess *sp, const char *src, const char *host)
 
 	/* Reset the workspace */
 	WS_Reset(sp->req->ws, sp_ws_wm);
-	WS_Reset(w->aws, wrk_ws_wm);	/* XXX ? */
+	WS_Reset(wrk->aws, wrk_ws_wm);	/* XXX ? */
 
 	WRW_Reserve(sp->wrk, &sp->fd, sp->req->vsl, sp->req->t_resp);
 	if (sp->req->res_mode & RES_CHUNKED)
