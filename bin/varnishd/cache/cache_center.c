@@ -947,6 +947,13 @@ cnt_first(struct sess *sp, struct worker *wrk)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
+	/* Allocate a request already now, so we can VSL to it */
+	SES_GetReq(sp);
+	CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
+	HTC_Init(sp->req->htc, sp->req->ws, sp->fd, sp->req->vsl,
+	    cache_param->http_req_size,
+	    cache_param->http_req_hdr_len);
+
 	VTCP_name(&sp->sockaddr, sp->sockaddrlen,
 	    sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
 	if (cache_param->log_local_addr) {
@@ -955,11 +962,11 @@ cnt_first(struct sess *sp, struct worker *wrk)
 		VTCP_name(&sp->mysockaddr, sp->mysockaddrlen,
 		    laddr, sizeof laddr, lport, sizeof lport);
 		/* XXX: have no req yet */
-		VSLb(sp->wrk->vsl, SLT_SessionOpen, "%s %s %s %s",
+		VSLb(sp->req->vsl, SLT_SessionOpen, "%s %s %s %s",
 		    sp->addr, sp->port, laddr, lport);
 	} else {
 		/* XXX: have no req yet */
-		VSLb(sp->wrk->vsl, SLT_SessionOpen, "%s %s %s",
+		VSLb(sp->req->vsl, SLT_SessionOpen, "%s %s %s",
 		    sp->addr, sp->port, sp->mylsock->name);
 	}
 
