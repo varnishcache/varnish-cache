@@ -336,13 +336,15 @@ exp_timer(struct worker *wrk, void *priv)
 	struct lru *lru;
 	double t;
 	struct object *o;
+	struct vsl_log vsl;
 
 	(void)priv;
+	VSL_Setup(&vsl, NULL, 0);
 	t = VTIM_real();
 	oc = NULL;
 	while (1) {
 		if (oc == NULL) {
-			VSL_Flush(wrk->vsl, 0);
+			VSL_Flush(&vsl, 0);
 			WRK_SumStat(wrk);
 			VTIM_sleep(cache_param->expiry_sleep);
 			t = VTIM_real();
@@ -400,7 +402,7 @@ exp_timer(struct worker *wrk, void *priv)
 
 		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
 		o = oc_getobj(&wrk->stats, oc);
-		WSL(wrk->vsl, SLT_ExpKill, 0, "%u %.0f",
+		VSLb(&vsl, SLT_ExpKill, "%u %.0f",
 		    oc_getxid(&wrk->stats, oc), EXP_Ttl(NULL, o) - t);
 		(void)HSH_Deref(&wrk->stats, oc, NULL);
 	}

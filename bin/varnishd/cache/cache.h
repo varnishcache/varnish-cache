@@ -915,8 +915,6 @@ void VSM_Free(void *ptr);
 #ifdef VSL_ENDMARKER
 void VSL(enum VSL_tag_e tag, int id, const char *fmt, ...)
     __printflike(3, 4);
-void WSL(struct vsl_log *, enum VSL_tag_e tag, int id, const char *fmt, ...)
-    __printflike(4, 5);
 void VSLb(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, ...)
     __printflike(3, 4);
 void VSLbt(struct vsl_log *, enum VSL_tag_e tag, txt t);

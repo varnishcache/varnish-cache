@@ -274,22 +274,6 @@ wsl(struct vsl_log *vsl, enum VSL_tag_e tag, int id, const char *fmt, va_list ap
 		VSL_Flush(vsl, 0);
 }
 
-/*--------------------------------------------------------------------*/
-
-void
-WSL(struct vsl_log *vsl, enum VSL_tag_e tag, int id, const char *fmt, ...)
-{
-	va_list ap;
-
-	if (id == -1)
-		id = vsl->wid;
-	AN(fmt);
-	va_start(ap, fmt);
-	wsl(vsl, tag, id, fmt, ap);
-	va_end(ap);
-}
-
-
 /*--------------------------------------------------------------------
  * VSL-buffered
  */
@@ -320,6 +304,12 @@ VSLbt(struct vsl_log *vsl, enum VSL_tag_e tag, txt t)
 void
 VSL_Setup(struct vsl_log *vsl, void *ptr, size_t len)
 {
+
+	if (ptr == NULL) {
+		len = cache_param->vsl_buffer;
+		ptr = malloc(len);
+		AN(ptr);
+	}
 	vsl->wlp = ptr;
 	vsl->wlb = ptr;
 	vsl->wle = ptr;
