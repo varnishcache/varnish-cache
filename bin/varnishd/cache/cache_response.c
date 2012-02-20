@@ -237,7 +237,7 @@ RES_WriteObj(struct sess *sp)
 	req = sp->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	WRW_Reserve(sp->wrk, &sp->fd, sp->req->t_resp);
+	WRW_Reserve(sp->wrk, &sp->fd, sp->req->vsl, sp->req->t_resp);
 
 	if (req->obj->response == 200 &&
 	    req->http->conds &&

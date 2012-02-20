@@ -773,7 +773,7 @@ void VGZ_UpdateObj(const struct vgz*, struct object *);
 int VGZ_WrwInit(struct vgz *vg);
 int VGZ_WrwGunzip(struct worker *w, struct vgz *, const void *ibuf,
     ssize_t ibufl);
-void VGZ_WrwFlush(struct worker *wrk, struct vgz *vg);
+void VGZ_WrwFlush(const struct worker *wrk, struct vgz *vg);
 
 /* Return values */
 #define VGZ_ERROR	-1
@@ -789,7 +789,7 @@ const char *http_StatusMessage(unsigned);
 unsigned http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd);
 void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
-unsigned http_Write(struct worker *w, const struct http *hp, int resp);
+unsigned http_Write(const struct worker *w, const struct http *hp, int resp);
 void http_SetResp(struct http *to, const char *proto, uint16_t status,
     const char *response);
 void http_FilterReq(const struct sess *sp, unsigned how);
@@ -885,13 +885,13 @@ int Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how);
 
 #define WRW_IsReleased(w)	((w)->wrw == NULL)
 int WRW_Error(const struct worker *w);
-void WRW_Chunked(struct worker *w);
-void WRW_EndChunk(struct worker *w);
-void WRW_Reserve(struct worker *w, int *fd, double t0);
-unsigned WRW_Flush(struct worker *w);
+void WRW_Chunked(const struct worker *w);
+void WRW_EndChunk(const struct worker *w);
+void WRW_Reserve(struct worker *w, int *fd, struct vsl_log *, double t0);
+unsigned WRW_Flush(const struct worker *w);
 unsigned WRW_FlushRelease(struct worker *w);
-unsigned WRW_Write(struct worker *w, const void *ptr, int len);
-unsigned WRW_WriteH(struct worker *w, const txt *hh, const char *suf);
+unsigned WRW_Write(const struct worker *w, const void *ptr, int len);
+unsigned WRW_WriteH(const struct worker *w, const txt *hh, const char *suf);
 
 /* cache_session.c [SES] */
 void SES_Close(struct sess *sp, const char *reason);

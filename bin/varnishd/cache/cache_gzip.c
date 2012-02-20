@@ -356,7 +356,7 @@ VGZ_WrwGunzip(struct worker *wrk, struct vgz *vg, const void *ibuf,
 /*--------------------------------------------------------------------*/
 
 void
-VGZ_WrwFlush(struct worker *wrk, struct vgz *vg)
+VGZ_WrwFlush(const struct worker *wrk, struct vgz *vg)
 {
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);

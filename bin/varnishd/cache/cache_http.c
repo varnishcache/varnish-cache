@@ -1061,7 +1061,7 @@ HTTP_Copy(struct http *to, const struct http * const fm)
 /*--------------------------------------------------------------------*/
 
 unsigned
-http_Write(struct worker *w, const struct http *hp, int resp)
+http_Write(const struct worker *w, const struct http *hp, int resp)
 {
 	unsigned u, l;
 
