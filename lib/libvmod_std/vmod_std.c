@@ -163,7 +163,7 @@ vmod_log(struct sess *sp, const char *fmt, ...)
 	WS_Release(sp->req->ws, 0);
 }
 
-void
+void __match_proto__()
 vmod_syslog(struct sess *sp, int fac, const char *fmt, ...)
 {
 	char *p;
