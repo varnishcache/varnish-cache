@@ -160,7 +160,7 @@ res_WriteGunzipObj(const struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	vg = VGZ_NewUngzip(sp->wrk->vsl, "U D -");
+	vg = VGZ_NewUngzip(sp->req->vsl, "U D -");
 	AZ(VGZ_WrwInit(vg));
 
 	VTAILQ_FOREACH(st, &sp->req->obj->store, list) {
