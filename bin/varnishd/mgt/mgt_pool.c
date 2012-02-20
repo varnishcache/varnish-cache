@@ -73,21 +73,13 @@ static void
 tweak_stack_size(struct cli *cli, const struct parspec *par,
     const char *arg)
 {
-	unsigned low, u;
-	char buf[12];
+	ssize_t low;
 
 	low = sysconf(_SC_THREAD_STACK_MIN);
 
-	if (arg != NULL && !strcmp(arg, "32bit")) {
-		u = 65536;
-		if (u < low)
-			u = low;
-		sprintf(buf, "%u", u);
-		arg = buf;
-	}
-
-	(void)tweak_generic_uint(cli, &mgt_param.wthread_stacksize, arg,
-	    low, (uint)par->max);
+	tweak_bytes(cli, par, arg);
+	if (mgt_param.wthread_stacksize < low)
+		mgt_param.wthread_stacksize = low;
 }
 
 /*--------------------------------------------------------------------*/
@@ -221,9 +213,8 @@ const struct parspec WRK_parspec[] = {
 		tweak_stack_size, &mgt_param.wthread_stacksize, 0, UINT_MAX,
 		"Worker thread stack size.\n"
 		"This is likely rounded up to a multiple of 4k by the kernel.\n"
-		"On 32bit systems you may need to tweak this down to fit "
-		"many threads into the limited address space.\n",
+		"The kernel/OS has a lower limit which will be enforced.\n",
 		EXPERIMENTAL,
-		"-1", "bytes" },
+		"32k", "bytes" },
 	{ NULL, NULL, NULL }
 };

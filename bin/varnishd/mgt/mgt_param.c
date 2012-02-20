@@ -350,7 +350,7 @@ tweak_generic_bytes(struct cli *cli, volatile ssize_t *dest, const char *arg,
 
 /*--------------------------------------------------------------------*/
 
-static void
+void
 tweak_bytes(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	volatile ssize_t *dest;
