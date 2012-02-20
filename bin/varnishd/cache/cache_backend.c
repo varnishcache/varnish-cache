@@ -183,8 +183,8 @@ bes_conn_try(const struct sess *sp, struct vbc *vc, const struct vdi_simple *vs)
 	} else {
 		vc->vsl_id = s | VSL_BACKENDMARKER;
 		VTCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-		WSL(sp->req->vsl, SLT_BackendOpen, vc->vsl_id, "%s %s %s ",
-		    vs->backend->display_name, abuf1, pbuf1);
+		VSLb(sp->req->vsl, SLT_BackendOpen, "%d %s %s %s ",
+		    vc->fd, vs->backend->display_name, abuf1, pbuf1);
 	}
 
 }
@@ -354,12 +354,12 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 			return (vc);
 		}
 		VSC_C_main->backend_toolate++;
-		WSL(sp->wrk->vsl, SLT_BackendClose, vc->vsl_id, "%s",
-		   bp->display_name);
+		VSLb(sp->req->vsl, SLT_BackendClose, "%d %s toolate",
+		    vc->fd, bp->display_name);
 
 		/* Checkpoint log to flush all info related to this connection
 		   before the OS reuses the FD */
-		VSL_Flush(sp->wrk->vsl, 0);
+		VSL_Flush(sp->req->vsl, 0);
 
 		VTCP_close(&vc->fd);
 		VBE_DropRefConn(bp);
