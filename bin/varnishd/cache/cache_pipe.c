@@ -93,7 +93,7 @@ PipeSession(struct sess *sp)
 
 	if (i) {
 		SES_Close(sp, "pipe");
-		VDI_CloseFd(sp->wrk, &vc);
+		VDI_CloseFd(&vc);
 		return;
 	}
 
@@ -133,6 +133,6 @@ PipeSession(struct sess *sp)
 		}
 	}
 	SES_Close(sp, "pipe");
-	VDI_CloseFd(sp->wrk, &vc);
+	VDI_CloseFd(&vc);
 	bo->vbc = NULL;
 }

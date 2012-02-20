@@ -40,12 +40,11 @@
 /* Close a connection ------------------------------------------------*/
 
 void
-VDI_CloseFd(struct worker *wrk, struct vbc **vbp)
+VDI_CloseFd(struct vbc **vbp)
 {
 	struct backend *bp;
 	struct vbc *vc;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(vbp);
 	vc = *vbp;
 	*vbp = NULL;
@@ -75,12 +74,11 @@ VDI_CloseFd(struct worker *wrk, struct vbc **vbp)
 /* Recycle a connection ----------------------------------------------*/
 
 void
-VDI_RecycleFd(struct worker *wrk, struct vbc **vbp)
+VDI_RecycleFd(struct vbc **vbp)
 {
 	struct backend *bp;
 	struct vbc *vc;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(vbp);
 	vc = *vbp;
 	*vbp = NULL;

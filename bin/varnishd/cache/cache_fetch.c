@@ -437,7 +437,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 		VSLb(req->vsl, SLT_FetchError,
 		    "backend write error: %d (%s)",
 		    errno, strerror(errno));
-		VDI_CloseFd(wrk, &bo->vbc);
+		VDI_CloseFd(&bo->vbc);
 		/* XXX: other cleanup ? */
 		return (retry);
 	}
@@ -459,7 +459,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 		VSLb(req->vsl, SLT_FetchError,
 		    "http first read error: %d %d (%s)",
 		    i, errno, strerror(errno));
-		VDI_CloseFd(wrk, &bo->vbc);
+		VDI_CloseFd(&bo->vbc);
 		/* XXX: other cleanup ? */
 		/* Retryable if we never received anything */
 		return (i == -1 ? retry : -1);
@@ -473,7 +473,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 			VSLb(req->vsl, SLT_FetchError,
 			    "http first read error: %d %d (%s)",
 			    i, errno, strerror(errno));
-			VDI_CloseFd(wrk, &bo->vbc);
+			VDI_CloseFd(&bo->vbc);
 			/* XXX: other cleanup ? */
 			return (-1);
 		}
@@ -483,7 +483,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 
 	if (http_DissectResponse(hp, htc)) {
 		VSLb(req->vsl, SLT_FetchError, "http format error");
-		VDI_CloseFd(wrk, &bo->vbc);
+		VDI_CloseFd(&bo->vbc);
 		/* XXX: other cleanup ? */
 		return (-1);
 	}
@@ -585,14 +585,14 @@ FetchBody(struct worker *wrk, struct busyobj *bo, struct object *obj)
 	    cls, mklen);
 
 	if (bo->body_status == BS_ERROR) {
-		VDI_CloseFd(wrk, &bo->vbc);
+		VDI_CloseFd(&bo->vbc);
 		bo->stats = NULL;
 		return (__LINE__);
 	}
 
 	if (cls < 0) {
 		wrk->stats.fetch_failed++;
-		VDI_CloseFd(wrk, &bo->vbc);
+		VDI_CloseFd(&bo->vbc);
 		obj->len = 0;
 		bo->stats = NULL;
 		return (__LINE__);
@@ -625,9 +625,9 @@ FetchBody(struct worker *wrk, struct busyobj *bo, struct object *obj)
 	}
 
 	if (cls)
-		VDI_CloseFd(wrk, &bo->vbc);
+		VDI_CloseFd(&bo->vbc);
 	else
-		VDI_RecycleFd(wrk, &bo->vbc);
+		VDI_RecycleFd(&bo->vbc);
 
 	bo->stats = NULL;
 	return (0);

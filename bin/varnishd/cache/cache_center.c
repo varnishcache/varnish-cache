@@ -287,7 +287,7 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 			break;
 		if (bo != NULL) {
 			AN(bo->do_stream);
-			VDI_CloseFd(wrk, &bo->vbc);
+			VDI_CloseFd(&bo->vbc);
 			HSH_Drop(wrk, &sp->req->obj);
 			VBO_DerefBusyObj(wrk, &bo);
 		} else {
@@ -635,7 +635,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 		}
 
 		/* We are not going to fetch the body, Close the connection */
-		VDI_CloseFd(wrk, &bo->vbc);
+		VDI_CloseFd(&bo->vbc);
 	}
 
 	/* Clean up partial fetch */
@@ -814,7 +814,7 @@ cnt_prepfetch(struct sess *sp, struct worker *wrk, struct req *req)
 	if (req->obj == NULL) {
 		req->err_code = 503;
 		sp->step = STP_ERROR;
-		VDI_CloseFd(wrk, &bo->vbc);
+		VDI_CloseFd(&bo->vbc);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		return (0);
 	}
