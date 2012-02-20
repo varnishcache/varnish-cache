@@ -145,28 +145,39 @@ vmod_random(struct sess *sp, double lo, double hi)
 void __match_proto__()
 vmod_log(struct sess *sp, const char *fmt, ...)
 {
-	char buf[8192], *p;
+	char *p;
+	unsigned u;
 	va_list ap;
+	txt t;
 
+	u = WS_Reserve(sp->req->ws, 0);
+	p = sp->req->ws->f;
 	va_start(ap, fmt);
-	p = VRT_StringList(buf, sizeof buf, fmt, ap);
+	p = VRT_StringList(p, u, fmt, ap);
 	va_end(ap);
-	if (p != NULL)
-		VSLb(sp->req->vsl, SLT_VCL_Log, "%s", buf);
+	if (p != NULL) {
+		t.b = p;
+		t.e = strchr(p, '\0');
+		VSLbt(sp->req->vsl, SLT_VCL_Log, t);
+	}
+	WS_Release(sp->req->ws, 0);
 }
 
 void
 vmod_syslog(struct sess *sp, int fac, const char *fmt, ...)
 {
-	char buf[8192], *p;
+	char *p;
+	unsigned u;
 	va_list ap;
 
-	(void)sp;
+	u = WS_Reserve(sp->req->ws, 0);
+	p = sp->req->ws->f;
 	va_start(ap, fmt);
-	p = VRT_StringList(buf, sizeof buf, fmt, ap);
+	p = VRT_StringList(p, u, fmt, ap);
 	va_end(ap);
 	if (p != NULL)
-		syslog(fac, "%s", buf);
+		syslog(fac, "%s", p);
+	WS_Release(sp->req->ws, 0);
 }
 
 const char * __match_proto__()
