@@ -22,7 +22,7 @@ For instance::
 The "std" vmod is one you get with Varnish, it will always be there
 and we will put "boutique" functions in it, such as the "toupper"
 function shown above.  The full contents of the "std" module is
-documented in XXX:TBW.
+documented in vmod_std(7).
 
 This part of the manual is about how you go about writing your own
 VMOD, how the language interface between C and VCC works etc.  This
@@ -185,7 +185,12 @@ VOID
 	Can only be used for return-value, which makes the function a VCL
 	procedure.
 
-IP, BOOL, HEADER
+HEADER
+	C-type: ``enum gethdr_e, const char *``
+
+	XXX: explain me
+
+IP, BOOL
 	XXX: these types are not released for use in vmods yet.
 
 
