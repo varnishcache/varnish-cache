@@ -60,10 +60,10 @@ becomes::
 	  }
 	}
 
-``beresp.cacheable`` is gone
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``beresp.cacheable`` and ``obj.cacheable``is gone
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``beresp.cacheable`` is gone, and can be replaced with ``beresp.ttl > 0s``
+``beresp.cacheable`` is gone, and can be replaced with ``beresp.ttl > 0s``. Similarly ``obj.cacheable`` can be replaced with ``obj.ttl > 0s``.
 
 returns are now done with the ``return()`` function
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -111,6 +111,58 @@ The difference in behaviour of ``pass`` in ``vcl_recv`` and
 different, you must now do ``return(hit_for_pass)`` when doing a pass
 in ``vcl_fetch``.
 
+Changes to runtime parameters
+=============================
+
+Deleted parameters
+~~~~~~~~~~~~~~~~~~
+
+``cache_vbe_conns`` and ``err_ttl`` has been removed.
+
+New parameters
+~~~~~~~~~~~~~~
+
+The following parameters have been added, see man varnishd for reference:
+
+* ``default_keep``
+* ``expiry_sleep``
+* ``fetch_maxchunksize``
+* ``gzip_level``
+* ``gzip_memlevel``
+* ``gzip_stack_buffer``
+* ``gzip_tmp_space``
+* ``gzip_window``
+* ``http_gzip_support``
+* ``http_req_hdr_len``
+* ``http_req_size``
+* ``http_resp_hdr_len``
+* ``http_resp_size``
+* ``shortlived``
+* ``thread_pool_workspace``
+* ``vcc_err_unref``
+* ``vcl_dir``
+* ``vmod_dir``
+
+Changed default values
+~~~~~~~~~~~~~~~~~~~~~~
+
+The following parameters have new defaults:
+
+* ``ban_lurker_sleep`` changed from 0 to 0.01 seconds, enabling the ban lurker by default.
+* ``connect_timeout`` changed from 0.4 to 0.7 seconds.
+* ``log_hashstring`` changed from off to on.
+* ``send_timeout`` changed from 60 to 60 seconds.
+* ``thread_pool_add_delay`` changed from 20 to 2 ms.
+
+Changed parameter names
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The following parameters have new names:
+
+* ``http_headers`` has been renamed to ``http_max_hdr``.
+* ``max_esi_includes`` has been renamed to ``max_esi_depth``.
+* ``overflow_max`` has been renamed to ``queue_max``.
+* ``purge_dups`` has been renamed to ``ban_dups``.
 
 Changes to behaviour
 ====================
