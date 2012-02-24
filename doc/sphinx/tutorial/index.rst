@@ -29,6 +29,7 @@ separate topic. Good luck.
 	compression
 	esi
 	virtualised
+	websockets
 	advanced_backend_servers
         handling_misbehaving_servers
         advanced_topics
