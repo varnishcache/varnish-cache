@@ -123,6 +123,7 @@ New parameters
 ~~~~~~~~~~~~~~
 
 The following parameters have been added, see man varnishd for reference:
+
 * ``default_keep``
 * ``expiry_sleep``
 * ``fetch_maxchunksize``
@@ -157,6 +158,7 @@ Changed parameter names
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 The following parameters have new names:
+
 * ``http_headers`` has been renamed to ``http_max_hdr``.
 * ``max_esi_includes`` has been renamed to ``max_esi_depth``.
 * ``overflow_max`` has been renamed to ``queue_max``.
