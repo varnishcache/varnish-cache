@@ -151,7 +151,7 @@ The following parameters have new defaults:
 * ``ban_lurker_sleep`` changed from 0 to 0.01 seconds, enabling the ban lurker by default.
 * ``connect_timeout`` changed from 0.4 to 0.7 seconds.
 * ``log_hashstring`` changed from off to on.
-* ``send_timeout`` changed from 60 to 60 seconds.
+* ``send_timeout`` changed from 600 to 60 seconds.
 * ``thread_pool_add_delay`` changed from 20 to 2 ms.
 
 Changed parameter names
