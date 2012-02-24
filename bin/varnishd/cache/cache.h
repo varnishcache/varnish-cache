@@ -114,6 +114,7 @@ struct vrt_backend;
 struct vsb;
 struct waitinglist;
 struct worker;
+struct wrw;
 
 #define DIGEST_LEN		32
 
@@ -166,6 +167,7 @@ struct http {
 #define HTTP_MAGIC		0x6428b5c9
 
 	enum httpwhence		logtag;
+	struct vsl_log		*vsl;
 
 	struct ws		*ws;
 	txt			*hd;
@@ -187,7 +189,7 @@ struct http_conn {
 #define HTTP_CONN_MAGIC		0x3e19edd1
 
 	int			fd;
-	unsigned		vsl_id;
+	struct vsl_log		*vsl;
 	unsigned		maxbytes;
 	unsigned		maxhdr;
 	struct ws		*ws;
@@ -217,9 +219,9 @@ struct dstat {
 
 /* Fetch processors --------------------------------------------------*/
 
-typedef void vfp_begin_f(struct worker *, size_t );
-typedef int vfp_bytes_f(struct worker *, struct http_conn *, ssize_t);
-typedef int vfp_end_f(struct worker *);
+typedef void vfp_begin_f(struct busyobj *, size_t );
+typedef int vfp_bytes_f(struct busyobj *, struct http_conn *, ssize_t);
+typedef int vfp_end_f(struct busyobj *);
 
 struct vfp {
 	vfp_begin_f	*begin;
@@ -244,30 +246,17 @@ struct exp {
 
 /*--------------------------------------------------------------------*/
 
-struct wrw {
-	int			*wfd;
-	unsigned		werr;	/* valid after WRW_Flush() */
-	struct iovec		*iov;
-	unsigned		siov;
-	unsigned		niov;
-	ssize_t			liov;
-	ssize_t			cliov;
-	unsigned		ciov;	/* Chunked header marker */
+struct vsl_log {
+	uint32_t		*wlb, *wlp, *wle;
+	unsigned		wlr;
+	unsigned		wid;
 };
 
 /*--------------------------------------------------------------------*/
 
-struct stream_ctx {
-	unsigned		magic;
-#define STREAM_CTX_MAGIC	0x8213728b
-
-	struct vgz		*vgz;
-
-	/* Next byte we will take from storage */
-	ssize_t			stream_next;
-
-	/* First byte of storage if we free it as we go (pass) */
-	ssize_t			stream_front;
+struct vxid {
+	uint32_t		next;
+	uint32_t		count;
 };
 
 /*--------------------------------------------------------------------*/
@@ -281,6 +270,7 @@ struct wrk_accept {
 	socklen_t		acceptaddrlen;
 	int			acceptsock;
 	struct listen_sock	*acceptlsock;
+	uint32_t		vxid;
 };
 
 /* Worker pool stuff -------------------------------------------------*/
@@ -316,37 +306,14 @@ struct worker {
 
 	double			lastused;
 
-	struct wrw		wrw;
+	struct wrw		*wrw;
 
 	pthread_cond_t		cond;
 
-	struct sess		*sp;
-
 	struct VCL_conf		*vcl;
 
-	uint32_t		*wlb, *wlp, *wle;
-	unsigned		wlr;
+	struct ws		aws[1];
 
-	struct ws		ws[1];
-
-	struct busyobj		*busyobj;
-
-	/* Stream state */
-	struct stream_ctx	*sctx;
-
-	/* Timeouts */
-	double			connect_timeout;
-	double			first_byte_timeout;
-	double			between_bytes_timeout;
-
-	/* Delivery mode */
-	unsigned		res_mode;
-#define RES_LEN			(1<<1)
-#define RES_EOF			(1<<2)
-#define RES_CHUNKED		(1<<3)
-#define RES_ESI			(1<<4)
-#define RES_ESI_CHILD		(1<<5)
-#define RES_GUNZIP		(1<<6)
 
 	/* Temporary accounting */
 	struct acct		acct_tmp;
@@ -367,10 +334,6 @@ struct storage {
 	unsigned		magic;
 #define STORAGE_MAGIC		0x1a4e51c0
 
-#ifdef SENDFILE_WORKS
-	int			fd;
-	off_t			where;
-#endif
 
 	VTAILQ_ENTRY(storage)	list;
 	struct stevedore	*stevedore;
@@ -389,8 +352,8 @@ struct storage {
  * housekeeping fields parts of an object.
  */
 
-typedef struct object *getobj_f(struct worker *wrk, struct objcore *oc);
-typedef unsigned getxid_f(struct worker *wrk, struct objcore *oc);
+typedef struct object *getobj_f(struct dstat *ds, struct objcore *oc);
+typedef unsigned getxid_f(struct dstat *ds, struct objcore *oc);
 typedef void updatemeta_f(struct objcore *oc);
 typedef void freeobj_f(struct objcore *oc);
 typedef struct lru *getlru_f(const struct objcore *oc);
@@ -406,7 +369,7 @@ struct objcore_methods {
 struct objcore {
 	unsigned		magic;
 #define OBJCORE_MAGIC		0x4d301302
-	unsigned		refcnt;
+	int			refcnt;
 	struct objcore_methods	*methods;
 	void			*priv;
 	unsigned		priv2;
@@ -427,24 +390,24 @@ struct objcore {
 };
 
 static inline unsigned
-oc_getxid(struct worker *wrk, struct objcore *oc)
+oc_getxid(struct dstat *ds, struct objcore *oc)
 {
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	AN(oc->methods);
 	AN(oc->methods->getxid);
-	return (oc->methods->getxid(wrk, oc));
+	return (oc->methods->getxid(ds, oc));
 }
 
 static inline struct object *
-oc_getobj(struct worker *wrk, struct objcore *oc)
+oc_getobj(struct dstat *ds, struct objcore *oc)
 {
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ(oc->flags & OC_F_BUSY);
 	AN(oc->methods);
 	AN(oc->methods->getobj);
-	return (oc->methods->getobj(wrk, oc));
+	return (oc->methods->getobj(ds, oc));
 }
 
 static inline void
@@ -484,8 +447,6 @@ oc_getlru(const struct objcore *oc)
  *
  * One of these aspects will be how much has been fetched, which
  * streaming delivery will make use of.
- *
- * XXX: many fields from worker needs to move here.
  */
 
 struct busyobj {
@@ -502,6 +463,7 @@ struct busyobj {
 	unsigned		fetch_failed;
 	struct vgz		*vgz_rx;
 
+	struct ws		ws[1];
 	struct vbc		*vbc;
 	struct http		*bereq;
 	struct http		*beresp;
@@ -520,6 +482,14 @@ struct busyobj {
 	unsigned		do_gunzip;
 	unsigned		do_stream;
 	unsigned		do_pass;
+
+	/* Timeouts */
+	double			connect_timeout;
+	double			first_byte_timeout;
+	double			between_bytes_timeout;
+
+	struct vsl_log		vsl[1];
+	struct dstat		*stats;
 };
 
 /* Object structure --------------------------------------------------*/
@@ -578,6 +548,7 @@ struct req {
 
 	/* The busy objhead we sleep on */
 	struct objhead		*hash_objhead;
+	struct busyobj		*busyobj;
 
 	/* Built Vary string */
 	uint8_t			*vary_b;
@@ -625,6 +596,17 @@ struct req {
 	ssize_t			l_crc;
 	uint32_t		crc;
 
+	/* Delivery mode */
+	unsigned		res_mode;
+#define RES_LEN			(1<<1)
+#define RES_EOF			(1<<2)
+#define RES_CHUNKED		(1<<3)
+#define RES_ESI			(1<<4)
+#define RES_ESI_CHILD		(1<<5)
+#define RES_GUNZIP		(1<<6)
+
+	/* Transaction VSL buffer */
+	struct vsl_log		vsl[1];
 
 };
 
@@ -645,6 +627,8 @@ struct sess {
 	enum step		step;
 	int			fd;
 	unsigned		vsl_id;
+	uint32_t		vxid;
+	uint32_t		vseq;
 
 	/* Cross references ------------------------------------------*/
 
@@ -685,7 +669,7 @@ struct sess {
 void VCA_Init(void);
 void VCA_Shutdown(void);
 int VCA_Accept(struct listen_sock *ls, struct wrk_accept *wa);
-void VCA_SetupSess(struct worker *w);
+void VCA_SetupSess(struct worker *w, struct sess *sp);
 void VCA_FailSess(struct worker *w);
 
 /* cache_backend.c */
@@ -693,9 +677,9 @@ void VBE_UseHealth(const struct director *vdi);
 
 struct vbc *VDI_GetFd(const struct director *, struct sess *sp);
 int VDI_Healthy(const struct director *, const struct sess *sp);
-void VDI_CloseFd(struct worker *wrk, struct vbc **vbp);
-void VDI_RecycleFd(struct worker *wrk, struct vbc **vbp);
-void VDI_AddHostHeader(struct worker *wrk, const struct vbc *vbc);
+void VDI_CloseFd(struct vbc **vbp);
+void VDI_RecycleFd(struct vbc **vbp);
+void VDI_AddHostHeader(struct http *to, const struct vbc *vbc);
 void VBE_Poll(void);
 void VDI_Init(void);
 
@@ -757,14 +741,14 @@ void EXP_Inject(struct objcore *oc, struct lru *lru, double when);
 void EXP_Init(void);
 void EXP_Rearm(const struct object *o);
 int EXP_Touch(struct objcore *oc);
-int EXP_NukeOne(struct worker *w, struct lru *lru);
+int EXP_NukeOne(struct busyobj *, struct lru *lru);
 
 /* cache_fetch.c */
-struct storage *FetchStorage(struct worker *w, ssize_t sz);
-int FetchError(struct worker *w, const char *error);
-int FetchError2(struct worker *w, const char *error, const char *more);
+struct storage *FetchStorage(struct busyobj *, ssize_t sz);
+int FetchError(struct busyobj *, const char *error);
+int FetchError2(struct busyobj *, const char *error, const char *more);
 int FetchHdr(struct sess *sp, int need_host_hdr, int sendbody);
-int FetchBody(struct worker *w, struct object *obj);
+int FetchBody(struct worker *w, struct busyobj *bo, struct object *obj);
 int FetchReqBody(const struct sess *sp, int sendbody);
 void Fetch_Init(void);
 
@@ -772,23 +756,22 @@ void Fetch_Init(void);
 struct vgz;
 
 enum vgz_flag { VGZ_NORMAL, VGZ_ALIGN, VGZ_RESET, VGZ_FINISH };
-struct vgz *VGZ_NewUngzip(struct worker *wrk, const char *id);
-struct vgz *VGZ_NewGzip(struct worker *wrk, const char *id);
+struct vgz *VGZ_NewUngzip(struct vsl_log *vsl, const char *id);
+struct vgz *VGZ_NewGzip(struct vsl_log *vsl, const char *id);
 void VGZ_Ibuf(struct vgz *, const void *, ssize_t len);
 int VGZ_IbufEmpty(const struct vgz *vg);
 void VGZ_Obuf(struct vgz *, void *, ssize_t len);
 int VGZ_ObufFull(const struct vgz *vg);
-int VGZ_ObufStorage(struct worker *w, struct vgz *vg);
+int VGZ_ObufStorage(struct busyobj *, struct vgz *vg);
 int VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
 int VGZ_Gunzip(struct vgz *, const void **, size_t *len);
-int VGZ_Destroy(struct vgz **, int vsl_id);
+int VGZ_Destroy(struct vgz **);
 void VGZ_UpdateObj(const struct vgz*, struct object *);
 
 int VGZ_WrwInit(struct vgz *vg);
 int VGZ_WrwGunzip(struct worker *w, struct vgz *, const void *ibuf,
     ssize_t ibufl);
-void VGZ_WrwFlush(struct worker *wrk, struct vgz *vg);
-void VGZ_WrwFinish(struct worker *wrk, struct vgz *vg);
+void VGZ_WrwFlush(const struct worker *wrk, struct vgz *vg);
 
 /* Return values */
 #define VGZ_ERROR	-1
@@ -804,26 +787,21 @@ const char *http_StatusMessage(unsigned);
 unsigned http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd);
 void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
-unsigned http_Write(struct worker *w, unsigned vsl_id, const struct http *hp,
-    int resp);
+unsigned http_Write(const struct worker *w, const struct http *hp, int resp);
 void http_SetResp(struct http *to, const char *proto, uint16_t status,
     const char *response);
 void http_FilterReq(const struct sess *sp, unsigned how);
-void http_FilterResp(const struct sess *sp, const struct http *fm, struct http *to,
-    unsigned how);
-void http_PutProtocol(struct worker *w, unsigned vsl_id, const struct http *to,
-    const char *protocol);
+void http_FilterResp(const struct http *fm, struct http *to, unsigned how);
+void http_PutProtocol(const struct http *to, const char *protocol);
 void http_PutStatus(struct http *to, uint16_t status);
-void http_PutResponse(struct worker *w, unsigned vsl_id, const struct http *to,
-    const char *response);
-void http_PrintfHeader(struct worker *w, unsigned vsl_id, struct http *to,
-    const char *fmt, ...)
-    __printflike(4, 5);
-void http_SetHeader(struct worker *w, unsigned vsl_id, struct http *to,
-    const char *hdr);
+void http_PutResponse(const struct http *to, const char *response);
+void http_PrintfHeader(struct http *to, const char *fmt, ...)
+    __printflike(2, 3);
+void http_SetHeader(struct http *to, const char *hdr);
 void http_SetH(const struct http *to, unsigned n, const char *fm);
 void http_ForceGet(const struct http *to);
-void http_Setup(struct http *ht, struct ws *ws);
+void http_Setup(struct http *ht, struct ws *ws, struct vsl_log *);
+void http_Teardown(struct http *ht);
 int http_GetHdr(const struct http *hp, const char *hdr, char **ptr);
 int http_GetHdrData(const struct http *hp, const char *hdr,
     const char *field, char **ptr);
@@ -834,19 +812,18 @@ uint16_t http_GetStatus(const struct http *hp);
 const char *http_GetReq(const struct http *hp);
 int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
 uint16_t http_DissectRequest(const struct sess *sp);
-uint16_t http_DissectResponse(struct worker *w, const struct http_conn *htc,
-    struct http *sp);
+uint16_t http_DissectResponse(struct http *sp, const struct http_conn *htc);
 const char *http_DoConnection(const struct http *hp);
-void http_CopyHome(struct worker *w, unsigned vsl_id, const struct http *hp);
+void http_CopyHome(const struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
 void http_CollectHdr(struct http *hp, const char *hdr);
 
 /* cache_httpconn.c */
-void HTC_Init(struct http_conn *htc, struct ws *ws, int fd, unsigned vsl_id,
+void HTC_Init(struct http_conn *htc, struct ws *ws, int fd, struct vsl_log *,
     unsigned maxbytes, unsigned maxhdr);
 int HTC_Reinit(struct http_conn *htc);
 int HTC_Rx(struct http_conn *htc);
-ssize_t HTC_Read(struct worker *w, struct http_conn *htc, void *d, size_t len);
+ssize_t HTC_Read(struct http_conn *htc, void *d, size_t len);
 int HTC_Complete(struct http_conn *htc);
 
 #define HTTPH(a, b, c) extern char b[];
@@ -854,6 +831,7 @@ int HTC_Complete(struct http_conn *htc);
 #undef HTTPH
 
 /* cache_main.c */
+uint32_t VXID_Get(struct vxid *v);
 extern volatile struct params * cache_param;
 void THR_SetName(const char *name);
 const char* THR_GetName(void);
@@ -892,7 +870,6 @@ void MPL_Destroy(struct mempool **mpp);
 void *MPL_Get(struct mempool *mpl, unsigned *size);
 void MPL_Free(struct mempool *mpl, void *item);
 
-
 /* cache_panic.c */
 void PAN_Init(void);
 
@@ -904,21 +881,17 @@ void Pool_Init(void);
 void Pool_Work_Thread(void *priv, struct worker *w);
 int Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how);
 
-#define WRW_IsReleased(w)	((w)->wrw.wfd == NULL)
+#define WRW_IsReleased(w)	((w)->wrw == NULL)
 int WRW_Error(const struct worker *w);
-void WRW_Chunked(struct worker *w);
-void WRW_EndChunk(struct worker *w);
-void WRW_Reserve(struct worker *w, int *fd);
-unsigned WRW_Flush(struct worker *w);
+void WRW_Chunked(const struct worker *w);
+void WRW_EndChunk(const struct worker *w);
+void WRW_Reserve(struct worker *w, int *fd, struct vsl_log *, double t0);
+unsigned WRW_Flush(const struct worker *w);
 unsigned WRW_FlushRelease(struct worker *w);
-unsigned WRW_Write(struct worker *w, const void *ptr, int len);
-unsigned WRW_WriteH(struct worker *w, const txt *hh, const char *suf);
-#ifdef SENDFILE_WORKS
-void WRW_Sendfile(struct worker *w, int fd, off_t off, unsigned len);
-#endif  /* SENDFILE_WORKS */
+unsigned WRW_Write(const struct worker *w, const void *ptr, int len);
+unsigned WRW_WriteH(const struct worker *w, const txt *hh, const char *suf);
 
 /* cache_session.c [SES] */
-struct sess *SES_Alloc(void);
 void SES_Close(struct sess *sp, const char *reason);
 void SES_Delete(struct sess *sp, const char *reason, double now);
 void SES_Charge(struct sess *sp);
@@ -935,29 +908,22 @@ extern struct VSC_C_main *VSC_C_main;
 void VSM_Init(void);
 void *VSM_Alloc(unsigned size, const char *class, const char *type,
     const char *ident);
+void VSL_Setup(struct vsl_log *vsl, void *ptr, size_t len);
 void VSM_Free(void *ptr);
 #ifdef VSL_ENDMARKER
 void VSL(enum VSL_tag_e tag, int id, const char *fmt, ...)
     __printflike(3, 4);
-void WSLR(struct worker *w, enum VSL_tag_e tag, int id, txt t);
-void WSL(struct worker *w, enum VSL_tag_e tag, int id, const char *fmt, ...)
-    __printflike(4, 5);
-void WSLB(struct worker *w, enum VSL_tag_e tag, const char *fmt, ...)
+void VSLb(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, ...)
     __printflike(3, 4);
+void VSLbt(struct vsl_log *, enum VSL_tag_e tag, txt t);
 
-void WSL_Flush(struct worker *w, int overflow);
+void VSL_Flush(struct vsl_log *, int overflow);
 
 #define DSL(flag, tag, id, ...)					\
 	do {							\
 		if (cache_param->diag_bitmap & (flag))		\
 			VSL((tag), (id), __VA_ARGS__);		\
 	} while (0)
-
-#define WSP(sess, tag, ...)					\
-	WSL((sess)->wrk, tag, (sess)->vsl_id, __VA_ARGS__)
-
-#define WSPR(sess, tag, txt)					\
-	WSLR((sess)->wrk, tag, (sess)->vsl_id, txt)
 
 #define INCOMPL() do {							\
 	VSL(SLT_Debug, 0, "INCOMPLETE AT: %s(%d)", __func__, __LINE__); \
@@ -971,9 +937,6 @@ void WSL_Flush(struct worker *w, int overflow);
 /* cache_response.c */
 void RES_BuildHttp(const struct sess *sp);
 void RES_WriteObj(struct sess *sp);
-void RES_StreamStart(struct sess *sp);
-void RES_StreamEnd(struct sess *sp);
-void RES_StreamPoll(struct worker *);
 
 /* cache_vary.c */
 struct vsb *VRY_Create(const struct sess *sp, const struct http *hp);
@@ -1013,7 +976,7 @@ void WRK_Init(void);
 int WRK_TrySumStat(struct worker *w);
 void WRK_SumStat(struct worker *w);
 void *WRK_thread(void *priv);
-typedef void *bgthread_t(struct sess *, void *priv);
+typedef void *bgthread_t(struct worker *, void *priv);
 void WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func,
     void *priv);
 
@@ -1027,18 +990,17 @@ void WS_Assert(const struct ws *ws);
 void WS_Reset(struct ws *ws, char *p);
 char *WS_Alloc(struct ws *ws, unsigned bytes);
 char *WS_Snapshot(struct ws *ws);
-unsigned WS_Free(const struct ws *ws);
 
 /* rfc2616.c */
-void RFC2616_Ttl(const struct sess *sp);
-enum body_status RFC2616_Body(const struct sess *sp);
-unsigned RFC2616_Req_Gzip(const struct sess *sp);
+void RFC2616_Ttl(struct busyobj *, unsigned xid);
+enum body_status RFC2616_Body(struct busyobj *, struct dstat *);
+unsigned RFC2616_Req_Gzip(const struct http *);
 int RFC2616_Do_Cond(const struct sess *sp);
 
 /* stevedore.c */
-struct object *STV_NewObject(struct worker *wrk, const char *hint, unsigned len,
-    uint16_t nhttp);
-struct storage *STV_alloc(struct worker *w, size_t size);
+struct object *STV_NewObject(struct busyobj *, struct objcore **,
+    const char *hint, unsigned len, uint16_t nhttp);
+struct storage *STV_alloc(struct busyobj *, size_t size);
 void STV_trim(struct storage *st, size_t size);
 void STV_free(struct storage *st);
 void STV_open(void);
@@ -1105,11 +1067,11 @@ Tadd(txt *t, const char *p, int l)
 }
 
 static inline void
-AssertObjBusy(const struct object *o)
+AssertOCBusy(const struct objcore *oc)
 {
-	AN(o->objcore);
-	AN (o->objcore->flags & OC_F_BUSY);
-	AN(o->objcore->busyobj);
+	AN(oc);
+	AN (oc->flags & OC_F_BUSY);
+	AN(oc->busyobj);
 }
 
 static inline void

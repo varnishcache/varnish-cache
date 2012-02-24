@@ -267,19 +267,19 @@ smp_open_segs(struct smp_sc *sc, struct smp_signctx *ctx)
  * Silo worker thread
  */
 
-static void *
-smp_thread(struct sess *sp, void *priv)
+static void * __match_proto__(bgthread_t)
+smp_thread(struct worker *wrk, void *priv)
 {
 	struct smp_sc	*sc;
 	struct smp_seg *sg;
 
-	(void)sp;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(sc, priv, SMP_SC_MAGIC);
 
 	/* First, load all the objects from all segments */
 	VTAILQ_FOREACH(sg, &sc->segments, list)
 		if (sg->flags & SMP_SEG_MUSTLOAD)
-			smp_load_seg(sp, sc, sg);
+			smp_load_seg(wrk, sc, sg);
 
 	sc->flags |= SMP_SC_LOADED;
 	BAN_TailDeref(&sc->tailban);
@@ -288,8 +288,7 @@ smp_thread(struct sess *sp, void *priv)
 	while (1) {
 		(void)sleep (1);
 		sg = VTAILQ_FIRST(&sc->segments);
-		if (sg != NULL && sg -> sc->cur_seg &&
-		    sg->nobj == 0) {
+		if (sg != NULL && sg -> sc->cur_seg && sg->nobj == 0) {
 			Lck_Lock(&sc->mtx);
 			smp_save_segs(sc);
 			Lck_Unlock(&sc->mtx);
@@ -450,9 +449,6 @@ smp_allocx(struct stevedore *st, size_t min_size, size_t max_size,
 	ss->space = max_size;
 	ss->priv = sc;
 	ss->stevedore = st;
-#ifdef SENDFILE_WORKS
-	ss->fd = sc->fd;
-#endif
 	if (ssg != NULL)
 		*ssg = sg;
 	return (ss);
@@ -463,8 +459,8 @@ smp_allocx(struct stevedore *st, size_t min_size, size_t max_size,
  */
 
 static struct object *
-smp_allocobj(struct stevedore *stv, struct worker *wrk, unsigned ltot,
-    const struct stv_objsecrets *soc)
+smp_allocobj(struct stevedore *stv, struct busyobj *bo, struct objcore **ocp,
+    unsigned ltot, const struct stv_objsecrets *soc)
 {
 	struct object *o;
 	struct storage *st;
@@ -474,11 +470,11 @@ smp_allocobj(struct stevedore *stv, struct worker *wrk, unsigned ltot,
 	struct objcore *oc;
 	unsigned objidx;
 
-	if (wrk->sp->req->objcore == NULL)
+	AN(ocp);
+	if (*ocp == NULL)
 		return (NULL);		/* from cnt_error */
 	CAST_OBJ_NOTNULL(sc, stv->priv, SMP_SC_MAGIC);
-	AN(wrk->sp->req->objcore);
-	AN(wrk->busyobj->exp.ttl > 0.);
+	AN(bo->exp.ttl > 0.);
 
 	ltot = IRNUP(sc, ltot);
 
@@ -489,7 +485,7 @@ smp_allocobj(struct stevedore *stv, struct worker *wrk, unsigned ltot,
 	assert(st->space >= ltot);
 	ltot = st->len = st->space;
 
-	o = STV_MkObject(wrk, st->ptr, ltot, soc);
+	o = STV_MkObject(bo, ocp, st->ptr, ltot, soc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	o->objstore = st;
 

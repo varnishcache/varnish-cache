@@ -118,7 +118,7 @@ smp_save_segs(struct smp_sc *sc)
  */
 
 void
-smp_load_seg(const struct sess *sp, const struct smp_sc *sc,
+smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
     struct smp_seg *sg)
 {
 	struct smp_object *so;
@@ -128,7 +128,7 @@ smp_load_seg(const struct sess *sp, const struct smp_sc *sc,
 	struct smp_signctx ctx[1];
 
 	ASSERT_SILO_THREAD(sc);
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
 	CHECK_OBJ_NOTNULL(sg->lru, LRU_MAGIC);
 	assert(sg->flags & SMP_SEG_MUSTLOAD);
@@ -150,19 +150,17 @@ smp_load_seg(const struct sess *sp, const struct smp_sc *sc,
 	for (;no > 0; so++,no--) {
 		if (so->ttl == 0 || so->ttl < t_now)
 			continue;
-		HSH_Prealloc(sp);
-		oc = sp->wrk->nobjcore;
+		ALLOC_OBJ(oc, OBJCORE_MAGIC);
+		AN(oc);
 		oc->flags |= OC_F_NEEDFIXUP | OC_F_LRUDONTMOVE;
 		oc->flags &= ~OC_F_BUSY;
 		smp_init_oc(oc, sg, no);
 		oc->ban = BAN_RefBan(oc, so->ban, sc->tailban);
-		memcpy(sp->wrk->nobjhead->digest, so->hash, SHA256_LEN);
-		(void)HSH_Insert(sp);
-		AZ(sp->wrk->nobjcore);
+		HSH_Insert(wrk, so->hash, oc);
 		EXP_Inject(oc, sg->lru, so->ttl);
 		sg->nobj++;
 	}
-	WRK_SumStat(sp->wrk);
+	WRK_SumStat(wrk);
 	sg->flags |= SMP_SEG_LOADED;
 }
 
@@ -370,13 +368,13 @@ smp_loaded_st(const struct smp_sc *sc, const struct smp_seg *sg,
  */
 
 static unsigned __match_proto__(getxid_f)
-smp_oc_getxid(struct worker *wrk, struct objcore *oc)
+smp_oc_getxid(struct dstat *ds, struct objcore *oc)
 {
 	struct object *o;
 	struct smp_seg *sg;
 	struct smp_object *so;
 
-	(void)wrk;
+	(void)ds;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	CAST_OBJ_NOTNULL(sg, oc->priv, SMP_SEG_MAGIC);
@@ -399,7 +397,7 @@ smp_oc_getxid(struct worker *wrk, struct objcore *oc)
  */
 
 static struct object *
-smp_oc_getobj(struct worker *wrk, struct objcore *oc)
+smp_oc_getobj(struct dstat *ds, struct objcore *oc)
 {
 	struct object *o;
 	struct smp_seg *sg;
@@ -412,7 +410,7 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 	assert(oc->methods->getobj == smp_oc_getobj);
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	if (wrk == NULL)
+	if (ds == NULL)
 		AZ(oc->flags & OC_F_NEEDFIXUP);
 
 	CAST_OBJ_NOTNULL(sg, oc->priv, SMP_SEG_MAGIC);
@@ -435,7 +433,7 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 	if (!(oc->flags & OC_F_NEEDFIXUP))
 		return (o);
 
-	AN(wrk);
+	AN(ds);
 	Lck_Lock(&sg->sc->mtx);
 	/* Check again, we might have raced. */
 	if (oc->flags & OC_F_NEEDFIXUP) {
@@ -459,8 +457,8 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 		}
 
 		sg->nfixed++;
-		wrk->stats.n_object++;
-		wrk->stats.n_vampireobject--;
+		ds->n_object++;
+		ds->n_vampireobject--;
 		oc->flags &= ~OC_F_NEEDFIXUP;
 	}
 	Lck_Unlock(&sg->sc->mtx);

@@ -56,7 +56,7 @@ VRT_error(const struct sess *sp, unsigned code, const char *reason)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	WSL(sp->wrk, SLT_Debug, 0, "VCL_error(%u, %s)", code, reason ?
+	VSLb(sp->req->vsl, SLT_Debug, "VCL_error(%u, %s)", code, reason ?
 	    reason : "(null)");
 	if (code < 100 || code > 999)
 		code = 503;
@@ -75,7 +75,7 @@ VRT_count(const struct sess *sp, unsigned u)
 		return;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (cache_param->vcl_trace)
-		WSP(sp, SLT_VCL_trace, "%u %u.%u", u,
+		VSLb(sp->req->vsl, SLT_VCL_trace, "%u %u.%u", u,
 		    sp->req->vcl->ref[u].line, sp->req->vcl->ref[u].pos);
 }
 
@@ -85,7 +85,7 @@ void
 VRT_acl_log(const struct sess *sp, const char *msg)
 {
 
-	WSP(sp, SLT_VCL_acl, "%s", msg);
+	VSLb(sp->req->vsl, SLT_VCL_acl, "%s", msg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -101,10 +101,10 @@ vrt_selecthttp(const struct sess *sp, enum gethdr_e where)
 		hp = sp->req->http;
 		break;
 	case HDR_BEREQ:
-		hp = sp->wrk->busyobj->bereq;
+		hp = sp->req->busyobj->bereq;
 		break;
 	case HDR_BERESP:
-		hp = sp->wrk->busyobj->beresp;
+		hp = sp->req->busyobj->beresp;
 		break;
 	case HDR_RESP:
 		hp = sp->req->resp;
@@ -205,7 +205,7 @@ VRT_WrkString(const struct sess *sp, const char *p, ...)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	va_start(ap, p);
-	b = VRT_String(sp->wrk->ws, NULL, p, ap);
+	b = VRT_String(sp->wrk->aws, NULL, p, ap);
 	va_end(ap);
 	return (b);
 }
@@ -228,10 +228,10 @@ VRT_SetHdr(const struct sess *sp , enum gethdr_e where, const char *hdr,
 	} else {
 		b = VRT_String(hp->ws, hdr + 1, p, ap);
 		if (b == NULL) {
-			WSP(sp, SLT_LostHeader, "%s", hdr + 1);
+			VSLb(sp->req->vsl, SLT_LostHeader, "%s", hdr + 1);
 		} else {
 			http_Unset(hp, hdr);
-			http_SetHeader(sp->wrk, sp->vsl_id, hp, b);
+			http_SetHeader(hp, b);
 		}
 	}
 	va_end(ap);
@@ -417,7 +417,7 @@ VRT_synth_page(const struct sess *sp, unsigned flags, const char *str, ...)
 	va_end(ap);
 	SMS_Finish(sp->req->obj);
 	http_Unset(sp->req->obj->http, H_Content_Length);
-	http_PrintfHeader(sp->wrk, sp->vsl_id, sp->req->obj->http,
+	http_PrintfHeader(sp->req->obj->http,
 	    "Content-Length: %zd", sp->req->obj->len);
 }
 

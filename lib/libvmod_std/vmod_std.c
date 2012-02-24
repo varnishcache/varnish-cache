@@ -58,8 +58,8 @@ vmod_updown(struct sess *sp, int up, const char *s, va_list ap)
 	const char *p;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	u = WS_Reserve(sp->wrk->ws, 0);
-	e = b = sp->wrk->ws->f;
+	u = WS_Reserve(sp->req->ws, 0);
+	e = b = sp->req->ws->f;
 	e += u;
 	p = s;
 	while (p != vrt_magic_string_end && b < e) {
@@ -76,12 +76,12 @@ vmod_updown(struct sess *sp, int up, const char *s, va_list ap)
 		*b = '\0';
 	b++;
 	if (b > e) {
-		WS_Release(sp->wrk->ws, 0);
+		WS_Release(sp->req->ws, 0);
 		return (NULL);
 	} else {
 		e = b;
-		b = sp->wrk->ws->f;
-		WS_Release(sp->wrk->ws, e - b);
+		b = sp->req->ws->f;
+		WS_Release(sp->req->ws, e - b);
 		return (b);
 	}
 }
@@ -145,28 +145,39 @@ vmod_random(struct sess *sp, double lo, double hi)
 void __match_proto__()
 vmod_log(struct sess *sp, const char *fmt, ...)
 {
-	char buf[8192], *p;
+	char *p;
+	unsigned u;
 	va_list ap;
+	txt t;
 
+	u = WS_Reserve(sp->req->ws, 0);
+	p = sp->req->ws->f;
 	va_start(ap, fmt);
-	p = VRT_StringList(buf, sizeof buf, fmt, ap);
+	p = VRT_StringList(p, u, fmt, ap);
 	va_end(ap);
-	if (p != NULL)
-		WSP(sp, SLT_VCL_Log, "%s", buf);
+	if (p != NULL) {
+		t.b = p;
+		t.e = strchr(p, '\0');
+		VSLbt(sp->req->vsl, SLT_VCL_Log, t);
+	}
+	WS_Release(sp->req->ws, 0);
 }
 
-void
+void __match_proto__()
 vmod_syslog(struct sess *sp, int fac, const char *fmt, ...)
 {
-	char buf[8192], *p;
+	char *p;
+	unsigned u;
 	va_list ap;
 
-	(void)sp;
+	u = WS_Reserve(sp->req->ws, 0);
+	p = sp->req->ws->f;
 	va_start(ap, fmt);
-	p = VRT_StringList(buf, sizeof buf, fmt, ap);
+	p = VRT_StringList(p, u, fmt, ap);
 	va_end(ap);
 	if (p != NULL)
-		syslog(fac, "%s", buf);
+		syslog(fac, "%s", p);
+	WS_Release(sp->req->ws, 0);
 }
 
 const char * __match_proto__()
@@ -192,7 +203,7 @@ vmod_collect(struct sess *sp, enum gethdr_e e, const char *h)
 	(void)h;
 	if (e == HDR_REQ)
 		http_CollectHdr(sp->req->http, h);
-	else if (e == HDR_BERESP && sp->wrk->busyobj != NULL)
-		http_CollectHdr(sp->wrk->busyobj->beresp, h);
+	else if (e == HDR_BERESP && sp->req->busyobj != NULL)
+		http_CollectHdr(sp->req->busyobj->beresp, h);
 }
 

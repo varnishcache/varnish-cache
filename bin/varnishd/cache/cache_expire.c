@@ -224,7 +224,7 @@ EXP_Insert(struct object *o)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oc = o->objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AssertObjBusy(o);
+	AssertOCBusy(oc);
 	HSH_Ref(oc);
 
 	assert(o->exp.entered != 0 && !isnan(o->exp.entered));
@@ -329,21 +329,23 @@ EXP_Rearm(const struct object *o)
  * object expires, accounting also for graceability, it is killed.
  */
 
-static void * __match_proto__(void *start_routine(void *))
-exp_timer(struct sess *sp, void *priv)
+static void * __match_proto__(bgthread_t)
+exp_timer(struct worker *wrk, void *priv)
 {
 	struct objcore *oc;
 	struct lru *lru;
 	double t;
 	struct object *o;
+	struct vsl_log vsl;
 
 	(void)priv;
+	VSL_Setup(&vsl, NULL, 0);
 	t = VTIM_real();
 	oc = NULL;
 	while (1) {
 		if (oc == NULL) {
-			WSL_Flush(sp->wrk, 0);
-			WRK_SumStat(sp->wrk);
+			VSL_Flush(&vsl, 0);
+			WRK_SumStat(wrk);
 			VTIM_sleep(cache_param->expiry_sleep);
 			t = VTIM_real();
 		}
@@ -399,10 +401,10 @@ exp_timer(struct sess *sp, void *priv)
 		VSC_C_main->n_expired++;
 
 		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
-		o = oc_getobj(sp->wrk, oc);
-		WSL(sp->wrk, SLT_ExpKill, 0, "%u %.0f",
-		    oc_getxid(sp->wrk, oc), EXP_Ttl(NULL, o) - t);
-		(void)HSH_Deref(sp->wrk, oc, NULL);
+		o = oc_getobj(&wrk->stats, oc);
+		VSLb(&vsl, SLT_ExpKill, "%u %.0f",
+		    oc_getxid(&wrk->stats, oc), EXP_Ttl(NULL, o) - t);
+		(void)HSH_Deref(&wrk->stats, oc, NULL);
 	}
 	NEEDLESS_RETURN(NULL);
 }
@@ -414,7 +416,7 @@ exp_timer(struct sess *sp, void *priv)
  */
 
 int
-EXP_NukeOne(struct worker *wrk, struct lru *lru)
+EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 {
 	struct objcore *oc;
 
@@ -445,8 +447,8 @@ EXP_NukeOne(struct worker *wrk, struct lru *lru)
 		return (-1);
 
 	/* XXX: bad idea for -spersistent */
-	WSL(wrk, SLT_ExpKill, 0, "%u LRU", oc_getxid(wrk, oc));
-	(void)HSH_Deref(wrk, oc, NULL);
+	VSLb(bo->vsl, SLT_ExpKill, "%u LRU", oc_getxid(bo->stats, oc));
+	(void)HSH_Deref(bo->stats, oc, NULL);
 	return (1);
 }
 

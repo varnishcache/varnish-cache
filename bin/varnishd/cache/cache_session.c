@@ -112,22 +112,6 @@ ses_new(struct sesspool *pp)
 }
 
 /*--------------------------------------------------------------------
- * Allocate a session for use by background threads.
- */
-
-struct sess *
-SES_Alloc(void)
-{
-	struct sess *sp;
-
-	ALLOC_OBJ(sp, SESS_MAGIC);
-	AN(sp);
-	ses_setup(sp);
-	/* XXX: sp->req ? */
-	return (sp);
-}
-
-/*--------------------------------------------------------------------
  * The pool-task function for sessions
  */
 
@@ -139,24 +123,16 @@ ses_pool_task(struct worker *wrk, void *arg)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
 
-	AZ(wrk->ws->r);
+	AZ(wrk->aws->r);
 	wrk->lastused = NAN;
 	THR_SetSession(sp);
-	if (wrk->sp == NULL)
-		wrk->sp = sp;
-	else
-		assert(wrk->sp == sp);
 	AZ(sp->wrk);
 	sp->wrk = wrk;
 	CNT_Session(sp);
-	sp = NULL;
-	/* Cannot access sp now */
+	sp = NULL;			/* Cannot access sp any longer */
 	THR_SetSession(NULL);
-	wrk->sp = NULL;
-	WS_Assert(wrk->ws);
-	AZ(wrk->busyobj);
-	AZ(wrk->wrw.wfd);
-	assert(wrk->wlp == wrk->wlb);
+	WS_Assert(wrk->aws);
+	AZ(wrk->wrw);
 	if (cache_param->diag_bitmap & 0x00040000) {
 		if (wrk->vcl != NULL)
 			VCL_Rel(&wrk->vcl);
@@ -171,22 +147,21 @@ void
 SES_pool_accept_task(struct worker *wrk, void *arg)
 {
 	struct sesspool *pp;
+	struct sess *sp;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(pp, arg, SESSPOOL_MAGIC);
 
 	/* Turn accepted socket into a session */
-	AZ(wrk->sp);
-	AN(wrk->ws->r);
-	wrk->sp = ses_new(pp);
-	if (wrk->sp == NULL) {
+	AN(wrk->aws->r);
+	sp = ses_new(pp);
+	if (sp == NULL) {
 		VCA_FailSess(wrk);
-		return;
+	} else {
+		VCA_SetupSess(wrk, sp);
+		sp->step = STP_FIRST;
+		ses_pool_task(wrk, sp);
 	}
-	VCA_SetupSess(wrk);
-	wrk->sp->step = STP_FIRST;
-	WS_Release(wrk->ws, 0);
-	ses_pool_task(wrk, wrk->sp);
 }
 
 /*--------------------------------------------------------------------
@@ -318,7 +293,7 @@ SES_GetReq(struct sess *sp)
 	struct sesspool *pp;
 	uint16_t nhttp;
 	unsigned sz, hl;
-	char *p;
+	char *p, *e;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	pp = sp->sesspool;
@@ -330,27 +305,38 @@ SES_GetReq(struct sess *sp)
 	AN(sp->req);
 	sp->req->magic = REQ_MAGIC;
 
+	e = (char*)sp->req + sz;
 	p = (char*)(sp->req + 1);
-	sz -= sizeof *sp->req;
+	p = (void*)PRNDUP(p);
+	assert(p < e);
 
 	nhttp = (uint16_t)cache_param->http_max_hdr;
 	hl = HTTP_estimate(nhttp);
 
-	xxxassert(sz > 3 * hl + 128);
-
 	sp->req->http = HTTP_create(p, nhttp);
-	p += hl;		// XXX: align ?
-	sz -= hl;
+	p += hl;
+	p = (void*)PRNDUP(p);
+	assert(p < e);
 
 	sp->req->http0 = HTTP_create(p, nhttp);
-	p += hl;		// XXX: align ?
-	sz -= hl;
+	p += hl;
+	p = (void*)PRNDUP(p);
+	assert(p < e);
 
 	sp->req->resp = HTTP_create(p, nhttp);
-	p += hl;		// XXX: align ?
-	sz -= hl;
+	p += hl;
+	p = (void*)PRNDUP(p);
+	assert(p < e);
 
-	WS_Init(sp->req->ws, "req", p, sz);
+	sz = cache_param->workspace_thread;
+	VSL_Setup(sp->req->vsl, p, sz);
+	sp->req->vsl->wid = sp->vsl_id;
+	p += sz;
+	p = (void*)PRNDUP(p);
+
+	assert(p < e);
+
+	WS_Init(sp->req->ws, "req", p, e - p);
 }
 
 void
@@ -364,6 +350,7 @@ SES_ReleaseReq(struct sess *sp)
 	AN(pp->pool);
 	CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
 	MPL_AssertSane(sp->req);
+	VSL_Flush(sp->req->vsl, 0);
 	MPL_Free(pp->mpl_req, sp->req);
 	sp->req = NULL;
 }

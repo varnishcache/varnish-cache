@@ -82,67 +82,119 @@ VSC_F(sess_fail,		uint64_t, 1, 'c',
 /*---------------------------------------------------------------------*/
 
 VSC_F(client_req,		uint64_t, 1, 'a',
-      "Client requests received",
-      "")
+    "Client requests received",
+	""
+)
 
 VSC_F(cache_hit,		uint64_t, 1, 'a',
-      "Cache hits",
-      "Count of cache hits. "
-      "  A cache hit indicates that an object has been delivered to a"
-      "  client without fetching it from a backend server."
+    "Cache hits",
+	"Count of cache hits. "
+	"  A cache hit indicates that an object has been delivered to a"
+	"  client without fetching it from a backend server."
 )
 
-VSC_F(cache_hitpass,	uint64_t, 1, 'a',
-      "Cache hits for pass",
-      "Count of hits for pass"
-      "  A cache hit for pass indicates that Varnish is going to"
-      "  pass the request to the backend and this decision has been "
-      "  cached in it self. This counts how many times the cached "
-      "  decision is being used."
+VSC_F(cache_hitpass,		uint64_t, 1, 'a',
+    "Cache hits for pass",
+	"Count of hits for pass"
+	"  A cache hit for pass indicates that Varnish is going to"
+	"  pass the request to the backend and this decision has been "
+	"  cached in it self. This counts how many times the cached "
+	"  decision is being used."
 )
 VSC_F(cache_miss,		uint64_t, 1, 'a',
-      "Cache misses",
-      "Count of misses"
-      "  A cache miss indicates the object was fetched from the"
-      "  backend before delivering it to the backend.")
+    "Cache misses",
+	"Count of misses"
+	"  A cache miss indicates the object was fetched from the"
+	"  backend before delivering it to the backend."
+)
 
-VSC_F(backend_conn,	uint64_t, 0, 'a',
-      "Backend conn. success",
-      "")
+VSC_F(backend_conn,		uint64_t, 0, 'a',
+    "Backend conn. success",
+	""
+)
 
 VSC_F(backend_unhealthy,	uint64_t, 0, 'a',
-      "Backend conn. not attempted",
-      ""
+    "Backend conn. not attempted",
+	""
 )
-VSC_F(backend_busy,	uint64_t, 0, 'a', "Backend conn. too many", "")
-VSC_F(backend_fail,	uint64_t, 0, 'a', "Backend conn. failures", "")
-VSC_F(backend_reuse,	uint64_t, 0, 'a',
-      "Backend conn. reuses",
-      "Count of backend connection reuses"
-      "  This counter is increased whenever we reuse a recycled connection.")
-VSC_F(backend_toolate,	uint64_t, 0, 'a', "Backend conn. was closed", "")
-VSC_F(backend_recycle,	uint64_t, 0, 'a',
-      "Backend conn. recycles",
-      "Count of backend connection recycles"
-      "  This counter is increased whenever we have a keep-alive"
-      "  connection that is put back into the pool of connections."
-      "  It has not yet been used, but it might be, unless the backend"
-      "  closes it.")
-VSC_F(backend_retry,	uint64_t, 0, 'a', "Backend conn. retry", "")
+VSC_F(backend_busy,		uint64_t, 0, 'a',
+    "Backend conn. too many",
+	""
+)
+VSC_F(backend_fail,		uint64_t, 0, 'a',
+    "Backend conn. failures",
+	""
+)
+VSC_F(backend_reuse,		uint64_t, 0, 'a',
+    "Backend conn. reuses",
+	"Count of backend connection reuses"
+	"  This counter is increased whenever we reuse a recycled connection."
+)
+VSC_F(backend_toolate,		uint64_t, 0, 'a',
+    "Backend conn. was closed",
+	""
+)
+VSC_F(backend_recycle,		uint64_t, 0, 'a',
+    "Backend conn. recycles",
+	"Count of backend connection recycles"
+	"  This counter is increased whenever we have a keep-alive"
+	"  connection that is put back into the pool of connections."
+	"  It has not yet been used, but it might be, unless the backend"
+	"  closes it."
+)
+VSC_F(backend_retry,		uint64_t, 0, 'a',
+    "Backend conn. retry",
+	""
+)
 
-VSC_F(fetch_head,		uint64_t, 1, 'a', "Fetch head", "")
-VSC_F(fetch_length,		uint64_t, 1, 'a', "Fetch with Length", "")
-VSC_F(fetch_chunked,		uint64_t, 1, 'a', "Fetch chunked", "")
-VSC_F(fetch_eof,		uint64_t, 1, 'a', "Fetch EOF", "")
-VSC_F(fetch_bad,		uint64_t, 1, 'a', "Fetch had bad headers", "")
-VSC_F(fetch_close,		uint64_t, 1, 'a', "Fetch wanted close", "")
+VSC_F(fetch_head,		uint64_t, 1, 'a',
+    "Fetch head",
+	""
+)
+VSC_F(fetch_length,		uint64_t, 1, 'a',
+    "Fetch with Length",
+	""
+)
+VSC_F(fetch_chunked,		uint64_t, 1, 'a',
+    "Fetch chunked",
+	""
+)
+VSC_F(fetch_eof,		uint64_t, 1, 'a',
+    "Fetch EOF",
+	""
+)
+VSC_F(fetch_bad,		uint64_t, 1, 'a',
+    "Fetch had bad headers",
+	""
+)
+VSC_F(fetch_close,		uint64_t, 1, 'a',
+    "Fetch wanted close",
+	""
+)
 VSC_F(fetch_oldhttp,		uint64_t, 1, 'a',
-    "Fetch pre HTTP/1.1 closed", "")
-VSC_F(fetch_zero,		uint64_t, 1, 'a', "Fetch zero len", "")
-VSC_F(fetch_failed,		uint64_t, 1, 'a', "Fetch failed", "")
-VSC_F(fetch_1xx,		uint64_t, 1, 'a', "Fetch no body (1xx)", "")
-VSC_F(fetch_204,		uint64_t, 1, 'a', "Fetch no body (204)", "")
-VSC_F(fetch_304,		uint64_t, 1, 'a', "Fetch no body (304)", "")
+    "Fetch pre HTTP/1.1 closed",
+	""
+)
+VSC_F(fetch_zero,		uint64_t, 1, 'a',
+    "Fetch zero len",
+	""
+)
+VSC_F(fetch_failed,		uint64_t, 1, 'a',
+    "Fetch failed",
+	""
+)
+VSC_F(fetch_1xx,		uint64_t, 1, 'a',
+    "Fetch no body (1xx)",
+	""
+)
+VSC_F(fetch_204,		uint64_t, 1, 'a',
+    "Fetch no body (204)",
+	""
+)
+VSC_F(fetch_304,		uint64_t, 1, 'a',
+    "Fetch no body (304)",
+	""
+)
 
 /*---------------------------------------------------------------------
  * Pools, threads, and sessions
@@ -206,79 +258,173 @@ VSC_F(sess_dropped,		uint64_t, 0, 'c',
 	"  See also param queue_max."
 )
 
-/*---------------------------------------------------------------------
- * BusyObj
- */
-
-VSC_F(busyobj_alloc,		uint64_t, 0, 'c',
-    "Busyobj allocations",
-	"Number of busyobj structures allocated."
-)
-
-VSC_F(busyobj_free,		uint64_t, 0, 'c',
-    "Busyobj freed",
-	"Number of busyobj structures freed."
-)
-
 /*---------------------------------------------------------------------*/
 
-VSC_F(n_object,			uint64_t, 1, 'i', "N struct object", "")
-VSC_F(n_vampireobject,		uint64_t, 1, 'i', "N unresurrected objects", "")
-VSC_F(n_objectcore,		uint64_t, 1, 'i', "N struct objectcore", "")
-VSC_F(n_objecthead,		uint64_t, 1, 'i', "N struct objecthead", "")
-VSC_F(n_waitinglist,		uint64_t, 1, 'i', "N struct waitinglist", "")
+VSC_F(n_object,			uint64_t, 1, 'i',
+    "N struct object",
+	""
+)
+VSC_F(n_vampireobject,		uint64_t, 1, 'i',
+    "N unresurrected objects",
+	""
+)
+VSC_F(n_objectcore,		uint64_t, 1, 'i',
+    "N struct objectcore",
+	""
+)
+VSC_F(n_objecthead,		uint64_t, 1, 'i',
+    "N struct objecthead",
+	""
+)
+VSC_F(n_waitinglist,		uint64_t, 1, 'i',
+    "N struct waitinglist",
+	""
+)
 
-VSC_F(n_backend,		uint64_t, 0, 'i', "N backends", "")
+VSC_F(n_backend,		uint64_t, 0, 'i',
+    "N backends",
+	""
+)
 
-VSC_F(n_expired,		uint64_t, 0, 'i', "N expired objects", "")
-VSC_F(n_lru_nuked,		uint64_t, 0, 'i', "N LRU nuked objects", "")
-VSC_F(n_lru_moved,		uint64_t, 0, 'i', "N LRU moved objects", "")
+VSC_F(n_expired,		uint64_t, 0, 'i',
+    "N expired objects",
+	""
+)
+VSC_F(n_lru_nuked,		uint64_t, 0, 'i',
+    "N LRU nuked objects",
+	""
+)
+VSC_F(n_lru_moved,		uint64_t, 0, 'i',
+    "N LRU moved objects",
+	""
+)
 
-VSC_F(losthdr,		uint64_t, 0, 'a', "HTTP header overflows", "")
+VSC_F(losthdr,			uint64_t, 0, 'a',
+    "HTTP header overflows",
+	""
+)
 
-VSC_F(n_objsendfile,	uint64_t, 0, 'a', "Objects sent with sendfile",
-      "The number of objects sent with the sendfile system call. If enabled "
-      "sendfile will be used on object larger than a certain size.")
-VSC_F(n_objwrite,		uint64_t, 0, 'a', "Objects sent with write",
-      "The number of objects sent with regular write calls."
-      "Writes are used when the objects are too small for sendfile "
-      "or if the sendfile call has been disabled")
-VSC_F(n_objoverflow,	uint64_t, 1, 'a',
-					"Objects overflowing workspace", "")
+VSC_F(n_objsendfile,		uint64_t, 0, 'a',
+    "Objects sent with sendfile",
+	"The number of objects sent with the sendfile system call. If enabled "
+	"sendfile will be used on object larger than a certain size."
+)
+VSC_F(n_objwrite,		uint64_t, 0, 'a',
+    "Objects sent with write",
+	"The number of objects sent with regular write calls."
+	"Writes are used when the objects are too small for sendfile "
+	"or if the sendfile call has been disabled"
+)
+VSC_F(n_objoverflow,		uint64_t, 1, 'a',
+    "Objects overflowing workspace",
+	""
+)
 
-VSC_F(s_sess,			uint64_t, 1, 'a', "Total Sessions", "")
-VSC_F(s_req,			uint64_t, 1, 'a', "Total Requests", "")
-VSC_F(s_pipe,			uint64_t, 1, 'a', "Total pipe", "")
-VSC_F(s_pass,			uint64_t, 1, 'a', "Total pass", "")
-VSC_F(s_fetch,			uint64_t, 1, 'a', "Total fetch", "")
-VSC_F(s_hdrbytes,		uint64_t, 1, 'a', "Total header bytes", "")
-VSC_F(s_bodybytes,		uint64_t, 1, 'a', "Total body bytes", "")
+VSC_F(s_sess,			uint64_t, 1, 'a',
+    "Total Sessions",
+	""
+)
+VSC_F(s_req,			uint64_t, 1, 'a',
+    "Total Requests",
+	""
+)
+VSC_F(s_pipe,			uint64_t, 1, 'a',
+    "Total pipe",
+	""
+)
+VSC_F(s_pass,			uint64_t, 1, 'a',
+    "Total pass",
+	""
+)
+VSC_F(s_fetch,			uint64_t, 1, 'a',
+    "Total fetch",
+	""
+)
+VSC_F(s_hdrbytes,		uint64_t, 1, 'a',
+    "Total header bytes",
+	""
+)
+VSC_F(s_bodybytes,		uint64_t, 1, 'a',
+    "Total body bytes",
+	""
+)
 
-VSC_F(sess_closed,		uint64_t, 1, 'a', "Session Closed", "")
-VSC_F(sess_pipeline,		uint64_t, 1, 'a', "Session Pipeline", "")
-VSC_F(sess_readahead,		uint64_t, 1, 'a', "Session Read Ahead", "")
-VSC_F(sess_linger,		uint64_t, 1, 'a', "Session Linger", "")
-VSC_F(sess_herd,		uint64_t, 1, 'a', "Session herd", "")
+VSC_F(sess_closed,		uint64_t, 1, 'a',
+    "Session Closed",
+	""
+)
+VSC_F(sess_pipeline,		uint64_t, 1, 'a',
+    "Session Pipeline",
+	""
+)
+VSC_F(sess_readahead,		uint64_t, 1, 'a',
+    "Session Read Ahead",
+	""
+)
+VSC_F(sess_herd,		uint64_t, 1, 'a',
+    "Session herd",
+	""
+)
 
-VSC_F(shm_records,		uint64_t, 0, 'a', "SHM records", "")
-VSC_F(shm_writes,		uint64_t, 0, 'a', "SHM writes", "")
+VSC_F(shm_records,		uint64_t, 0, 'a',
+    "SHM records",
+	""
+)
+VSC_F(shm_writes,		uint64_t, 0, 'a',
+    "SHM writes",
+	""
+)
 VSC_F(shm_flushes,		uint64_t, 0, 'a',
-    "SHM flushes due to overflow", "")
-VSC_F(shm_cont,			uint64_t, 0, 'a', "SHM MTX contention", "")
+    "SHM flushes due to overflow",
+	""
+)
+VSC_F(shm_cont,			uint64_t, 0, 'a',
+    "SHM MTX contention",
+	""
+)
 VSC_F(shm_cycles,		uint64_t, 0, 'a',
-    "SHM cycles through buffer", "")
+    "SHM cycles through buffer",
+	""
+)
 
-VSC_F(sms_nreq,			uint64_t, 0, 'a', "SMS allocator requests", "")
-VSC_F(sms_nobj,		uint64_t, 0, 'i', "SMS outstanding allocations", "")
-VSC_F(sms_nbytes,		uint64_t, 0, 'i', "SMS outstanding bytes", "")
-VSC_F(sms_balloc,		uint64_t, 0, 'i', "SMS bytes allocated", "")
-VSC_F(sms_bfree,		uint64_t, 0, 'i', "SMS bytes freed", "")
+VSC_F(sms_nreq,			uint64_t, 0, 'a',
+    "SMS allocator requests",
+	""
+)
+VSC_F(sms_nobj,			uint64_t, 0, 'i',
+    "SMS outstanding allocations",
+	""
+)
+VSC_F(sms_nbytes,		uint64_t, 0, 'i',
+    "SMS outstanding bytes",
+	""
+)
+VSC_F(sms_balloc,		uint64_t, 0, 'i',
+    "SMS bytes allocated",
+	""
+)
+VSC_F(sms_bfree,		uint64_t, 0, 'i',
+    "SMS bytes freed",
+	""
+)
 
-VSC_F(backend_req,		uint64_t, 0, 'a', "Backend requests made", "")
+VSC_F(backend_req,		uint64_t, 0, 'a',
+    "Backend requests made",
+	""
+)
 
-VSC_F(n_vcl,			uint64_t, 0, 'a', "N vcl total", "")
-VSC_F(n_vcl_avail,		uint64_t, 0, 'a', "N vcl available", "")
-VSC_F(n_vcl_discard,		uint64_t, 0, 'a', "N vcl discarded", "")
+VSC_F(n_vcl,			uint64_t, 0, 'a',
+    "N vcl total",
+	""
+)
+VSC_F(n_vcl_avail,		uint64_t, 0, 'a',
+    "N vcl available",
+	""
+)
+VSC_F(n_vcl_discard,		uint64_t, 0, 'a',
+    "N vcl discarded",
+	""
+)
 
 /**********************************************************************/
 
@@ -325,28 +471,65 @@ VSC_F(bans_dups,		uint64_t, 0, 'c',
 /**********************************************************************/
 
 VSC_F(hcb_nolock,		uint64_t, 0, 'a',
-    "HCB Lookups without lock", "")
-VSC_F(hcb_lock,		uint64_t, 0, 'a', "HCB Lookups with lock", "")
-VSC_F(hcb_insert,		uint64_t, 0, 'a', "HCB Inserts", "")
+    "HCB Lookups without lock",
+	""
+)
+VSC_F(hcb_lock,			uint64_t, 0, 'a',
+    "HCB Lookups with lock",
+	""
+)
+VSC_F(hcb_insert,		uint64_t, 0, 'a',
+    "HCB Inserts",
+	""
+)
 
 VSC_F(esi_errors,		uint64_t, 0, 'a',
-    "ESI parse errors (unlock)", "")
+    "ESI parse errors (unlock)",
+	""
+)
 VSC_F(esi_warnings,		uint64_t, 0, 'a',
-    "ESI parse warnings (unlock)", "")
-VSC_F(client_drop_late,	uint64_t, 0, 'a', "Connection dropped late", "")
-VSC_F(uptime,		uint64_t, 0, 'a', "Client uptime", "")
+    "ESI parse warnings (unlock)",
+	""
+)
+VSC_F(client_drop_late,		uint64_t, 0, 'a',
+    "Connection dropped late",
+	""
+)
+VSC_F(uptime,			uint64_t, 0, 'a',
+    "Client uptime",
+	""
+)
 
-VSC_F(dir_dns_lookups,	uint64_t, 0, 'a', "DNS director lookups", "")
-VSC_F(dir_dns_failed,	uint64_t, 0, 'a', "DNS director failed lookups", "")
+VSC_F(dir_dns_lookups,		uint64_t, 0, 'a',
+    "DNS director lookups",
+	""
+)
+VSC_F(dir_dns_failed,		uint64_t, 0, 'a',
+    "DNS director failed lookups",
+	""
+)
 VSC_F(dir_dns_hit,		uint64_t, 0, 'a',
-    "DNS director cached lookups hit", "")
+    "DNS director cached lookups hit",
+	""
+)
 VSC_F(dir_dns_cache_full,	uint64_t, 0, 'a',
-    "DNS director full dnscache", "")
+    "DNS director full dnscache",
+	""
+)
 
-VSC_F(vmods,		uint64_t, 0, 'i', "Loaded VMODs", "")
+VSC_F(vmods,			uint64_t, 0, 'i',
+    "Loaded VMODs",
+	""
+)
 
-VSC_F(n_gzip,			uint64_t, 0, 'a', "Gzip operations", "")
-VSC_F(n_gunzip,			uint64_t, 0, 'a', "Gunzip operations", "")
+VSC_F(n_gzip,			uint64_t, 0, 'a',
+    "Gzip operations",
+	""
+)
+VSC_F(n_gunzip,			uint64_t, 0, 'a',
+    "Gunzip operations",
+	""
+)
 
 /**********************************************************************/
 

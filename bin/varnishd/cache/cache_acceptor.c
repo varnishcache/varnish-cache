@@ -228,11 +228,11 @@ VCA_FailSess(struct worker *wrk)
 	struct wrk_accept *wa;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CAST_OBJ_NOTNULL(wa, (void*)wrk->ws->f, WRK_ACCEPT_MAGIC);
-	AZ(wrk->sp);
+	CAST_OBJ_NOTNULL(wa, (void*)wrk->aws->f, WRK_ACCEPT_MAGIC);
 	AZ(close(wa->acceptsock));
 	wrk->stats.sess_drop++;
 	vca_pace_bad();
+	WS_Release(wrk->aws, 0);
 }
 
 /*--------------------------------------------------------------------
@@ -240,15 +240,15 @@ VCA_FailSess(struct worker *wrk)
  */
 
 void
-VCA_SetupSess(struct worker *wrk)
+VCA_SetupSess(struct worker *wrk, struct sess *sp)
 {
-	struct sess *sp;
 	struct wrk_accept *wa;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CAST_OBJ_NOTNULL(wa, (void*)wrk->ws->f, WRK_ACCEPT_MAGIC);
-	sp = wrk->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CAST_OBJ_NOTNULL(wa, (void*)wrk->aws->f, WRK_ACCEPT_MAGIC);
+	sp->vxid = wa->vxid;
+	sp->vseq = 0;
 	sp->fd = wa->acceptsock;
 	sp->vsl_id = wa->acceptsock | VSL_CLIENTMARKER ;
 	wa->acceptsock = -1;
@@ -260,6 +260,7 @@ VCA_SetupSess(struct worker *wrk)
 	sp->sockaddrlen = wa->acceptaddrlen;
 	vca_pace_good();
 	wrk->stats.sess_conn++;
+	WS_Release(wrk->aws, 0);
 
 	if (need_test)
 		sock_test(sp->fd);

@@ -94,20 +94,13 @@ wrk_bgthread(void *arg)
 {
 	struct bgthread *bt;
 	struct worker wrk;
-	struct sess *sp;
-	uint32_t logbuf[1024];	/* XXX:  size ? */
 
 	CAST_OBJ_NOTNULL(bt, arg, BGTHREAD_MAGIC);
 	THR_SetName(bt->name);
-	sp = SES_Alloc();
-	XXXAN(sp);
 	memset(&wrk, 0, sizeof wrk);
-	sp->wrk = &wrk;
 	wrk.magic = WORKER_MAGIC;
-	wrk.wlp = wrk.wlb = logbuf;
-	wrk.wle = logbuf + (sizeof logbuf) / 4;
 
-	(void)bt->func(sp, bt->priv);
+	(void)bt->func(&wrk, bt->priv);
 
 	WRONG("BgThread terminated");
 
@@ -131,28 +124,19 @@ WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func, void *priv)
 /*--------------------------------------------------------------------*/
 
 static void *
-wrk_thread_real(void *priv, unsigned shm_workspace, unsigned sess_workspace,
-    unsigned siov)
+wrk_thread_real(void *priv, unsigned thread_workspace)
 {
 	struct worker *w, ww;
-	uint32_t wlog[shm_workspace / 4];
-	/* XXX: can we trust these to be properly aligned ? */
-	unsigned char ws[sess_workspace];
-	struct iovec iov[siov];
+	unsigned char ws[thread_workspace];
 
 	THR_SetName("cache-worker");
 	w = &ww;
 	memset(w, 0, sizeof *w);
 	w->magic = WORKER_MAGIC;
 	w->lastused = NAN;
-	w->wlb = w->wlp = wlog;
-	w->wle = wlog + (sizeof wlog) / 4;
-	w->wrw.iov = iov;
-	w->wrw.siov = siov;
-	w->wrw.ciov = siov;
 	AZ(pthread_cond_init(&w->cond, NULL));
 
-	WS_Init(w->ws, "wrk", ws, sess_workspace);
+	WS_Init(w->aws, "wrk", ws, thread_workspace);
 
 	VSL(SLT_WorkThread, 0, "%p start", w);
 
@@ -163,6 +147,8 @@ wrk_thread_real(void *priv, unsigned shm_workspace, unsigned sess_workspace,
 	if (w->vcl != NULL)
 		VCL_Rel(&w->vcl);
 	AZ(pthread_cond_destroy(&w->cond));
+	if (w->nvbo != NULL)
+		VBO_Free(&w->nvbo);
 	HSH_Cleanup(w);
 	WRK_SumStat(w);
 	return (NULL);
@@ -171,18 +157,8 @@ wrk_thread_real(void *priv, unsigned shm_workspace, unsigned sess_workspace,
 void *
 WRK_thread(void *priv)
 {
-	uint16_t nhttp;
-	unsigned siov;
 
-	assert(cache_param->http_max_hdr <= 65535);
-	/* We need to snapshot these two for consistency */
-	nhttp = (uint16_t)cache_param->http_max_hdr;
-	siov = nhttp * 2;
-	if (siov > IOV_MAX)
-		siov = IOV_MAX;
-	return (wrk_thread_real(priv,
-	    cache_param->shm_workspace,
-	    cache_param->wthread_workspace, siov));
+	return (wrk_thread_real(priv, cache_param->workspace_thread));
 }
 
 void

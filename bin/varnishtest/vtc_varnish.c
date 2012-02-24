@@ -156,6 +156,12 @@ wait_running(const struct varnish *v)
 		if (st != CLIS_OK)
 			vtc_log(v->vl, 0,
 			    "CLI status command failed: %u %s", st, r);
+		if (!strcmp(r, "Child in state stopped")) {
+			vtc_log(v->vl, 0,
+			    "Child stopped before running: %u %s", st, r);
+			free(r);
+			break;
+		}
 		if (!strcmp(r, "Child in state running")) {
 			free(r);
 			break;

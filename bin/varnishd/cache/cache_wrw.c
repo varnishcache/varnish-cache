@@ -35,23 +35,30 @@
 #include "config.h"
 
 #include <sys/types.h>
-#ifdef SENDFILE_WORKS
-#  if defined(__FreeBSD__) || defined(__DragonFly__)
-#    include <sys/socket.h>
-#  elif defined(__linux__)
-#    include <sys/sendfile.h>
-#  elif defined(__sun)
-#    include <sys/sendfile.h>
-#  else
-#     error Unknown sendfile() implementation
-#  endif
-#endif /* SENDFILE_WORKS */
 #include <sys/uio.h>
 
+#include <limits.h>
 #include <stdio.h>
 
 #include "cache.h"
 #include "vtim.h"
+
+/*--------------------------------------------------------------------*/
+
+struct wrw {
+	unsigned		magic;
+#define WRW_MAGIC		0x2f2142e5
+	int			*wfd;
+	unsigned		werr;	/* valid after WRW_Flush() */
+	struct iovec		*iov;
+	unsigned		siov;
+	unsigned		niov;
+	ssize_t			liov;
+	ssize_t			cliov;
+	unsigned		ciov;	/* Chunked header marker */
+	double			t0;
+	struct vsl_log		*vsl;
+};
 
 /*--------------------------------------------------------------------
  */
@@ -60,22 +67,37 @@ int
 WRW_Error(const struct worker *wrk)
 {
 
-	return (wrk->wrw.werr);
+	return (wrk->wrw->werr);
 }
 
 void
-WRW_Reserve(struct worker *wrk, int *fd)
+WRW_Reserve(struct worker *wrk, int *fd, struct vsl_log *vsl, double t0)
 {
 	struct wrw *wrw;
+	unsigned u;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	wrw = &wrk->wrw;
-	AZ(wrw->wfd);
+	AZ(wrk->wrw);
+	wrw = (void*)WS_Alloc(wrk->aws, sizeof *wrw);
+	AN(wrw);
+	memset(wrw, 0, sizeof *wrw);
+	wrw->magic = WRW_MAGIC;
+	u = WS_Reserve(wrk->aws, 0);
+	u = PRNDDN(u);
+	u /= sizeof(struct iovec);
+	if (u > IOV_MAX)
+		u = IOV_MAX;
+	AN(u);
+	wrw->iov = (void*)PRNDUP(wrk->aws->f);
+	wrw->siov = u;
+	wrw->ciov = u;
 	wrw->werr = 0;
 	wrw->liov = 0;
 	wrw->niov = 0;
-	wrw->ciov = wrw->siov;
 	wrw->wfd = fd;
+	wrw->t0 = t0;
+	wrw->vsl = vsl;
+	wrk->wrw = wrw;
 }
 
 static void
@@ -84,13 +106,11 @@ WRW_Release(struct worker *wrk)
 	struct wrw *wrw;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	wrw = &wrk->wrw;
-	AN(wrw->wfd);
-	wrw->werr = 0;
-	wrw->liov = 0;
-	wrw->niov = 0;
-	wrw->ciov = wrw->siov;
-	wrw->wfd = NULL;
+	wrw = wrk->wrw;
+	wrk->wrw = NULL;
+	CHECK_OBJ_NOTNULL(wrw, WRW_MAGIC);
+	WS_Release(wrk->aws, 0);
+	WS_Reset(wrk->aws, NULL);
 }
 
 static void
@@ -118,14 +138,15 @@ wrw_prune(struct wrw *wrw, ssize_t bytes)
 }
 
 unsigned
-WRW_Flush(struct worker *wrk)
+WRW_Flush(const struct worker *wrk)
 {
 	ssize_t i;
 	struct wrw *wrw;
 	char cbuf[32];
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	wrw = &wrk->wrw;
+	wrw = wrk->wrw;
+	CHECK_OBJ_NOTNULL(wrw, WRW_MAGIC);
 	AN(wrw->wfd);
 
 	/* For chunked, there must be one slot reserved for the chunked tail */
@@ -159,18 +180,17 @@ WRW_Flush(struct worker *wrk)
 			 * counter to prevent slowlaris attacks
 			*/
 
-			if (VTIM_real() - wrk->sp->req->t_resp >
-			    cache_param->send_timeout) {
-				WSL(wrk, SLT_Debug, *wrw->wfd,
+			if (VTIM_real() - wrw->t0 > cache_param->send_timeout) {
+				VSLb(wrw->vsl, SLT_Debug,
 				    "Hit total send timeout, "
-				    "wrote = %ld/%ld; not retrying",
+				    "wrote = %zd/%zd; not retrying",
 				    i, wrw->liov);
 				i = -1;
 				break;
 			}
 
-			WSL(wrk, SLT_Debug, *wrw->wfd,
-			    "Hit send timeout, wrote = %ld/%ld; retrying",
+			VSLb(wrw->vsl, SLT_Debug,
+			    "Hit send timeout, wrote = %zd/%zd; retrying",
 			    i, wrw->liov);
 
 			wrw_prune(wrw, i);
@@ -178,7 +198,7 @@ WRW_Flush(struct worker *wrk)
 		}
 		if (i <= 0) {
 			wrw->werr++;
-			WSL(wrk, SLT_Debug, *wrw->wfd,
+			VSLb(wrw->vsl, SLT_Debug,
 			    "Write error, retval = %zd, len = %zd, errno = %s",
 			    i, wrw->liov, strerror(errno));
 		}
@@ -197,19 +217,19 @@ WRW_FlushRelease(struct worker *wrk)
 	unsigned u;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	AN(wrk->wrw.wfd);
+	AN(wrk->wrw->wfd);
 	u = WRW_Flush(wrk);
 	WRW_Release(wrk);
 	return (u);
 }
 
 unsigned
-WRW_WriteH(struct worker *wrk, const txt *hh, const char *suf)
+WRW_WriteH(const struct worker *wrk, const txt *hh, const char *suf)
 {
 	unsigned u;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	AN(wrk->wrw.wfd);
+	AN(wrk->wrw->wfd);
 	AN(wrk);
 	AN(hh);
 	AN(hh->b);
@@ -221,12 +241,13 @@ WRW_WriteH(struct worker *wrk, const txt *hh, const char *suf)
 }
 
 unsigned
-WRW_Write(struct worker *wrk, const void *ptr, int len)
+WRW_Write(const struct worker *wrk, const void *ptr, int len)
 {
 	struct wrw *wrw;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	wrw = &wrk->wrw;
+	wrw = wrk->wrw;
+	CHECK_OBJ_NOTNULL(wrw, WRW_MAGIC);
 	AN(wrw->wfd);
 	if (len == 0 || *wrw->wfd < 0)
 		return (0);
@@ -246,12 +267,13 @@ WRW_Write(struct worker *wrk, const void *ptr, int len)
 }
 
 void
-WRW_Chunked(struct worker *wrk)
+WRW_Chunked(const struct worker *wrk)
 {
 	struct wrw *wrw;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	wrw = &wrk->wrw;
+	wrw = wrk->wrw;
+	CHECK_OBJ_NOTNULL(wrw, WRW_MAGIC);
 
 	assert(wrw->ciov == wrw->siov);
 	/*
@@ -274,12 +296,13 @@ WRW_Chunked(struct worker *wrk)
  */
 
 void
-WRW_EndChunk(struct worker *wrk)
+WRW_EndChunk(const struct worker *wrk)
 {
 	struct wrw *wrw;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	wrw = &wrk->wrw;
+	wrw = wrk->wrw;
+	CHECK_OBJ_NOTNULL(wrw, WRW_MAGIC);
 
 	assert(wrw->ciov < wrw->siov);
 	(void)WRW_Flush(wrk);
@@ -290,69 +313,4 @@ WRW_EndChunk(struct worker *wrk)
 }
 
 
-#ifdef SENDFILE_WORKS
-void
-WRW_Sendfile(struct worker *wrk, int fd, off_t off, unsigned len)
-{
-	struct wrw *wrw;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	wrw = &wrk->wrw;
-	AN(wrw->wfd);
-	assert(fd >= 0);
-	assert(len > 0);
-
-#if defined(__FreeBSD__) || defined(__DragonFly__)
-	do {
-		struct sf_hdtr sfh;
-		memset(&sfh, 0, sizeof sfh);
-		if (wrw->niov > 0) {
-			sfh.headers = wrw->iov;
-			sfh.hdr_cnt = wrw->niov;
-		}
-		if (sendfile(fd, *wrw->wfd, off, len, &sfh, NULL, 0) != 0)
-			wrw->werr++;
-		wrw->liov = 0;
-		wrw->niov = 0;
-	} while (0);
-#elif defined(__linux__)
-	do {
-		if (WRW_Flush(wrk) == 0 &&
-		    sendfile(*wrw->wfd, fd, &off, len) != len)
-			wrw->werr++;
-	} while (0);
-#elif defined(__sun) && defined(HAVE_SENDFILEV)
-	do {
-		sendfilevec_t svvec[cache_param->http_headers * 2 + 1];
-		size_t xferred = 0, expected = 0;
-		int i;
-		for (i = 0; i < wrw->niov; i++) {
-			svvec[i].sfv_fd = SFV_FD_SELF;
-			svvec[i].sfv_flag = 0;
-			svvec[i].sfv_off = (off_t) wrw->iov[i].iov_base;
-			svvec[i].sfv_len = wrw->iov[i].iov_len;
-			expected += svvec[i].sfv_len;
-		}
-		svvec[i].sfv_fd = fd;
-		svvec[i].sfv_flag = 0;
-		svvec[i].sfv_off = off;
-		svvec[i].sfv_len = len;
-		expected += svvec[i].sfv_len;
-		if (sendfilev(*wrw->wfd, svvec, i, &xferred) == -1 ||
-		    xferred != expected)
-			wrw->werr++;
-		wrw->liov = 0;
-		wrw->niov = 0;
-	} while (0);
-#elif defined(__sun) && defined(HAVE_SENDFILE)
-	do {
-		if (WRW_Flush(wrk) == 0 &&
-		    sendfile(*wrw->wfd, fd, &off, len) != len)
-			wrw->werr++;
-	} while (0);
-#else
-#error Unknown sendfile() implementation
-#endif
-}
-#endif /* SENDFILE_WORKS */
 

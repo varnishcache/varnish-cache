@@ -34,9 +34,9 @@ struct object;
 
 typedef void hash_init_f(int ac, char * const *av);
 typedef void hash_start_f(void);
-typedef void hash_prep_f(const struct sess *sp);
+typedef void hash_prep_f(struct worker *);
 typedef struct objhead *
-    hash_lookup_f(const struct sess *sp, struct objhead *nobj);
+    hash_lookup_f(struct worker *wrk, struct objhead *nobj);
 typedef int hash_deref_f(struct objhead *obj);
 
 struct hash_slinger {
@@ -51,15 +51,14 @@ struct hash_slinger {
 };
 
 /* cache_hash.c */
-void HSH_Prealloc(const struct sess *sp);
 void HSH_Cleanup(struct worker *w);
 struct objcore *HSH_Lookup(struct sess *sp, struct objhead **poh);
-void HSH_Unbusy(struct worker *wrk);
+void HSH_Unbusy(struct objcore *);
 void HSH_Ref(struct objcore *o);
-void HSH_Drop(struct worker *wrk);
+void HSH_Drop(struct worker *, struct object **);
 void HSH_Init(const struct hash_slinger *slinger);
 void HSH_AddString(const struct sess *sp, const char *str);
-struct objcore *HSH_Insert(const struct sess *sp);
+void HSH_Insert(struct worker *, const void *hash, struct objcore *);
 void HSH_Purge(const struct sess *, struct objhead *, double ttl, double grace);
 void HSH_config(const char *h_arg);
 
@@ -95,8 +94,8 @@ struct objhead {
 #define hoh_head _u.n.u_n_hoh_head
 };
 
-void HSH_DeleteObjHead(struct worker *w, struct objhead *oh);
-int HSH_Deref(struct worker *w, struct objcore *oc, struct object **o);
+void HSH_DeleteObjHead(struct dstat *, struct objhead *oh);
+int HSH_Deref(struct dstat *, struct objcore *oc, struct object **o);
 #endif /* VARNISH_CACHE_CHILD */
 
 extern const struct hash_slinger hsl_slinger;

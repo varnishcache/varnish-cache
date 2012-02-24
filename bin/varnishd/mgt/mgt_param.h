@@ -54,6 +54,7 @@ int tweak_generic_uint(struct cli *cli,
 void tweak_uint(struct cli *cli, const struct parspec *par, const char *arg);
 void tweak_timeout(struct cli *cli,
     const struct parspec *par, const char *arg);
+void tweak_bytes(struct cli *cli, const struct parspec *par, const char *arg);
 
 /* mgt_pool.c */
 extern const struct parspec WRK_parspec[];

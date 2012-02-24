@@ -66,28 +66,20 @@ tweak_thread_pool_min(struct cli *cli, const struct parspec *par,
 /*--------------------------------------------------------------------
  * This is utterly ridiculous:  POSIX does not guarantee that the
  * minimum thread stack size is a compile time constant.
- * XXX: "32" is a magic marker for 32bit systems.
+ * XXX: "32bit" is a magic marker for 32bit systems.
  */
 
 static void
 tweak_stack_size(struct cli *cli, const struct parspec *par,
     const char *arg)
 {
-	unsigned low, u;
-	char buf[12];
+	ssize_t low;
 
 	low = sysconf(_SC_THREAD_STACK_MIN);
 
-	if (arg != NULL && !strcmp(arg, "32bit")) {
-		u = 65536;
-		if (u < low)
-			u = low;
-		sprintf(buf, "%u", u);
-		arg = buf;
-	}
-
-	(void)tweak_generic_uint(cli, &mgt_param.wthread_stacksize, arg,
-	    low, (uint)par->max);
+	tweak_bytes(cli, par, arg);
+	if (mgt_param.wthread_stacksize < low)
+		mgt_param.wthread_stacksize = low;
 }
 
 /*--------------------------------------------------------------------*/
@@ -220,20 +212,9 @@ const struct parspec WRK_parspec[] = {
 	{ "thread_pool_stack",
 		tweak_stack_size, &mgt_param.wthread_stacksize, 0, UINT_MAX,
 		"Worker thread stack size.\n"
-		"On 32bit systems you may need to tweak this down to fit "
-		"many threads into the limited address space.\n",
+		"This is likely rounded up to a multiple of 4k by the kernel.\n"
+		"The kernel/OS has a lower limit which will be enforced.\n",
 		EXPERIMENTAL,
-		"-1", "bytes" },
-	{ "thread_pool_workspace", tweak_uint, &mgt_param.wthread_workspace,
-		1024, UINT_MAX,
-		"Bytes of HTTP protocol workspace allocated for worker "
-		"threads. "
-		"This space must be big enough for the backend request "
-		"and responses, and response to the client plus any other "
-		"memory needs in the VCL code."
-		"Minimum is 1024 bytes.",
-		DELAYED_EFFECT,
-		"65536",
-		"bytes" },
+		"32k", "bytes" },
 	{ NULL, NULL, NULL }
 };

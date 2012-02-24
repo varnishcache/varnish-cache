@@ -1,7 +1,7 @@
 -d__flexelint_v9__=1
 
 -printf(3, VSL)
--printf(4, http_PrintfHeader)
+-printf(2, http_PrintfHeader)
 -printf(4, WSL)
 -printf(3, WSLB)
 -printf(2, VSB_printf)
@@ -116,6 +116,7 @@
 
 -emacro(527, NEEDLESS_RETURN)	// unreachable code
 
+-sem(EXP_Inject, custodial(1))
 -sem(WS_Init, custodial(2))
 -sem(http_Setup, custodial(2))
 
@@ -165,3 +166,4 @@
 -e712	// 96 Loss of precision (___) (___ to ___)
 -e747	// 297 Significant prototype coercion (___) ___ to ___
 -e840	// Use of nul character in a string literal (see: vcc_if.c)
+-e663	// Suspicious array to pointer conversion

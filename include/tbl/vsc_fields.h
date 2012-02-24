@@ -61,10 +61,22 @@
 
 #ifdef VSC_DO_LCK
 
-VSC_F(creat,		uint64_t, 0, 'a', "Created locks", "")
-VSC_F(destroy,		uint64_t, 0, 'a', "Destroyed locks", "")
-VSC_F(locks,		uint64_t, 0, 'a', "Lock Operations", "")
-VSC_F(colls,		uint64_t, 0, 'a', "Collisions", "")
+VSC_F(creat,			uint64_t, 0, 'a',
+    "Created locks",
+	""
+)
+VSC_F(destroy,			uint64_t, 0, 'a',
+    "Destroyed locks",
+	""
+)
+VSC_F(locks,			uint64_t, 0, 'a',
+    "Lock Operations",
+	""
+)
+VSC_F(colls,			uint64_t, 0, 'a',
+    "Collisions",
+	""
+)
 
 #endif
 
@@ -73,13 +85,34 @@ VSC_F(colls,		uint64_t, 0, 'a', "Collisions", "")
  */
 
 #if defined(VSC_DO_SMA) || defined (VSC_DO_SMF)
-VSC_F(c_req,		uint64_t, 0, 'a', "Allocator requests", "")
-VSC_F(c_fail,		uint64_t, 0, 'a', "Allocator failures", "")
-VSC_F(c_bytes,		uint64_t, 0, 'a', "Bytes allocated", "")
-VSC_F(c_freed,		uint64_t, 0, 'a', "Bytes freed", "")
-VSC_F(g_alloc,		uint64_t, 0, 'i', "Allocations outstanding", "")
-VSC_F(g_bytes,		uint64_t, 0, 'i', "Bytes outstanding", "")
-VSC_F(g_space,		uint64_t, 0, 'i', "Bytes available", "")
+VSC_F(c_req,			uint64_t, 0, 'a',
+    "Allocator requests",
+	""
+)
+VSC_F(c_fail,			uint64_t, 0, 'a',
+    "Allocator failures",
+	""
+)
+VSC_F(c_bytes,			uint64_t, 0, 'a',
+    "Bytes allocated",
+	""
+)
+VSC_F(c_freed,			uint64_t, 0, 'a',
+    "Bytes freed",
+	""
+)
+VSC_F(g_alloc,			uint64_t, 0, 'i',
+    "Allocations outstanding",
+	""
+)
+VSC_F(g_bytes,			uint64_t, 0, 'i',
+    "Bytes outstanding",
+	""
+)
+VSC_F(g_space,			uint64_t, 0, 'i',
+    "Bytes available",
+	""
+)
 #endif
 
 
@@ -92,33 +125,81 @@ VSC_F(g_space,		uint64_t, 0, 'i', "Bytes available", "")
 /**********************************************************************/
 
 #ifdef VSC_DO_SMF
-VSC_F(g_smf,			uint64_t, 0, 'i', "N struct smf", "")
-VSC_F(g_smf_frag,		uint64_t, 0, 'i', "N small free smf", "")
-VSC_F(g_smf_large,		uint64_t, 0, 'i', "N large free smf", "")
+VSC_F(g_smf,			uint64_t, 0, 'i',
+    "N struct smf",
+	""
+)
+VSC_F(g_smf_frag,		uint64_t, 0, 'i',
+    "N small free smf",
+	""
+)
+VSC_F(g_smf_large,		uint64_t, 0, 'i',
+    "N large free smf",
+	""
+)
 #endif
 
 /**********************************************************************/
 
 #ifdef VSC_DO_VBE
 
-VSC_F(vcls,			uint64_t, 0, 'i', "VCL references", "")
-VSC_F(happy,		uint64_t, 0, 'b', "Happy health probes", "")
+VSC_F(vcls,			uint64_t, 0, 'i',
+    "VCL references",
+	""
+)
+VSC_F(happy,			uint64_t, 0, 'b',
+    "Happy health probes",
+	""
+)
 
 #endif
 
 /**********************************************************************/
 #ifdef VSC_DO_MEMPOOL
 
-VSC_F(live,			uint64_t, 0, 'g', "In use", "")
-VSC_F(pool,			uint64_t, 0, 'g', "In Pool", "")
-VSC_F(sz_wanted,		uint64_t, 0, 'g', "Size requested", "")
-VSC_F(sz_needed,		uint64_t, 0, 'g', "Size allocated", "")
-VSC_F(allocs,			uint64_t, 0, 'c', "Allocations", "")
-VSC_F(frees,			uint64_t, 0, 'c', "Frees", "")
-VSC_F(recycle,			uint64_t, 0, 'c', "Recycled from pool", "")
-VSC_F(timeout,			uint64_t, 0, 'c', "Timed out from pool", "")
-VSC_F(toosmall,			uint64_t, 0, 'c', "Too small to recycle", "")
-VSC_F(surplus,			uint64_t, 0, 'c', "Too many for pool", "")
-VSC_F(randry,			uint64_t, 0, 'c', "Pool ran dry", "")
+VSC_F(live,			uint64_t, 0, 'g',
+    "In use",
+	""
+)
+VSC_F(pool,			uint64_t, 0, 'g',
+    "In Pool",
+	""
+)
+VSC_F(sz_wanted,		uint64_t, 0, 'g',
+    "Size requested",
+	""
+)
+VSC_F(sz_needed,		uint64_t, 0, 'g',
+    "Size allocated",
+	""
+)
+VSC_F(allocs,			uint64_t, 0, 'c',
+    "Allocations",
+	""
+)
+VSC_F(frees,			uint64_t, 0, 'c',
+    "Frees",
+	""
+)
+VSC_F(recycle,			uint64_t, 0, 'c',
+    "Recycled from pool",
+	""
+)
+VSC_F(timeout,			uint64_t, 0, 'c',
+    "Timed out from pool",
+	""
+)
+VSC_F(toosmall,			uint64_t, 0, 'c',
+    "Too small to recycle",
+	""
+)
+VSC_F(surplus,			uint64_t, 0, 'c',
+    "Too many for pool",
+	""
+)
+VSC_F(randry,			uint64_t, 0, 'c',
+    "Pool ran dry",
+	""
+)
 
 #endif

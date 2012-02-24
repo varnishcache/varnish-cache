@@ -65,14 +65,12 @@ struct vdi_simple {
  * Create default Host: header for backend request
  */
 void
-VDI_AddHostHeader(struct worker *wrk, const struct vbc *vbc)
+VDI_AddHostHeader(struct http *hp, const struct vbc *vbc)
 {
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->busyobj->bereq, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
 	CHECK_OBJ_NOTNULL(vbc->vdis, VDI_SIMPLE_MAGIC);
-	http_PrintfHeader(wrk, vbc->vsl_id, wrk->busyobj->bereq,
+	http_PrintfHeader(hp,
 	    "Host: %s", vbc->vdis->vrt->hosthdr);
 }
 
@@ -89,13 +87,14 @@ VBE_ReleaseConn(struct vbc *vc)
 	MPL_Free(vbcpool, vc);
 }
 
-#define FIND_TMO(tmx, dst, sp, be)		\
-	do {					\
-		dst = sp->wrk->tmx;		\
-		if (dst == 0.0)			\
-			dst = be->tmx;		\
-		if (dst == 0.0)			\
-			dst = cache_param->tmx;	\
+#define FIND_TMO(tmx, dst, sp, be)					\
+	do {								\
+		CHECK_OBJ_NOTNULL(sp->req->busyobj, BUSYOBJ_MAGIC);	\
+		dst = sp->req->busyobj->tmx;				\
+		if (dst == 0.0)						\
+			dst = be->tmx;					\
+		if (dst == 0.0)						\
+			dst = cache_param->tmx;				\
 	} while (0)
 
 /*--------------------------------------------------------------------
@@ -184,8 +183,8 @@ bes_conn_try(const struct sess *sp, struct vbc *vc, const struct vdi_simple *vs)
 	} else {
 		vc->vsl_id = s | VSL_BACKENDMARKER;
 		VTCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-		WSL(sp->wrk, SLT_BackendOpen, vc->vsl_id, "%s %s %s ",
-		    vs->backend->display_name, abuf1, pbuf1);
+		VSLb(sp->req->vsl, SLT_BackendOpen, "%d %s %s %s ",
+		    vc->fd, vs->backend->display_name, abuf1, pbuf1);
 	}
 
 }
@@ -347,7 +346,7 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 		if (vbe_CheckFd(vc->fd)) {
 			/* XXX locking of stats */
 			VSC_C_main->backend_reuse += 1;
-			WSP(sp, SLT_Backend, "%d %s %s",
+			VSLb(sp->req->vsl, SLT_Backend, "%d %s %s",
 			    vc->fd, sp->req->director->vcl_name,
 			    bp->display_name);
 			vc->vdis = vs;
@@ -355,12 +354,12 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 			return (vc);
 		}
 		VSC_C_main->backend_toolate++;
-		WSL(sp->wrk, SLT_BackendClose, vc->vsl_id, "%s",
-		   bp->display_name);
+		VSLb(sp->req->vsl, SLT_BackendClose, "%d %s toolate",
+		    vc->fd, bp->display_name);
 
 		/* Checkpoint log to flush all info related to this connection
 		   before the OS reuses the FD */
-		WSL_Flush(sp->wrk, 0);
+		VSL_Flush(sp->req->vsl, 0);
 
 		VTCP_close(&vc->fd);
 		VBE_DropRefConn(bp);
@@ -390,7 +389,7 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 	}
 	vc->backend = bp;
 	VSC_C_main->backend_conn++;
-	WSP(sp, SLT_Backend, "%d %s %s",
+	VSLb(sp->req->vsl, SLT_Backend, "%d %s %s",
 	    vc->fd, sp->req->director->vcl_name, bp->display_name);
 	vc->vdis = vs;
 	return (vc);

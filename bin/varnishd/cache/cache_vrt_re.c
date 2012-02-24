@@ -75,7 +75,8 @@ VRT_re_match(const struct sess *sp, const char *s, void *re)
 	if (i >= 0)
 		return (1);
 	if (i < VRE_ERROR_NOMATCH )
-		WSP(sp, SLT_VCL_Error, "Regexp matching returned %d", i);
+		VSLb(sp->req->vsl, SLT_VCL_Error,
+		    "Regexp matching returned %d", i);
 	return (0);
 }
 
@@ -108,7 +109,8 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re,
 	if (i == VRE_ERROR_NOMATCH)
 		return(str);
 	if (i < VRE_ERROR_NOMATCH ) {
-		WSP(sp, SLT_VCL_Error, "Regexp matching returned %d", i);
+		VSLb(sp->req->vsl, SLT_VCL_Error,
+		    "Regexp matching returned %d", i);
 		return(str);
 	}
 
@@ -146,7 +148,7 @@ VRT_regsub(const struct sess *sp, int all, const char *str, void *re,
 		    &cache_param->vre_limits);
 		if (i < VRE_ERROR_NOMATCH ) {
 			WS_Release(sp->req->http->ws, 0);
-			WSP(sp, SLT_VCL_Error,
+			VSLb(sp->req->vsl, SLT_VCL_Error,
 			    "Regexp matching returned %d", i);
 			return(str);
 		}
