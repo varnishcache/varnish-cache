@@ -60,8 +60,8 @@ becomes::
 	  }
 	}
 
-``beresp.cacheable`` and ``obj.cacheable``is gone
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``beresp.cacheable`` and ``obj.cacheable`` are gone
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``beresp.cacheable`` is gone, and can be replaced with ``beresp.ttl > 0s``. Similarly ``obj.cacheable`` can be replaced with ``obj.ttl > 0s``.
 
