@@ -149,7 +149,7 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 
 	ALLOC_OBJ(new, TROUBLE_MAGIC);
 	AN(new);
-	new->target = (uintptr_t)(sp->objcore->objhead);
+	memcpy(new->digest, sp->digest, sizeof new->digest);
 	new->timeout = sp->t_req + a;
 
 	/* Insert the new item on the list before the first item with a
