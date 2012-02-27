@@ -276,6 +276,13 @@ cnt_deliver(struct sess *sp)
 
 	RES_WriteObj(sp);
 
+	/* No point in saving the body if it is hit-for-pass */
+	if (sp->obj->objcore != NULL) {
+		CHECK_OBJ_NOTNULL(sp->obj->objcore, OBJCORE_MAGIC);
+		if (sp->obj->objcore->flags & OC_F_PASS)
+			STV_Freestore(sp->obj);
+	}
+
 	assert(WRW_IsReleased(sp->wrk));
 	assert(sp->wrk->wrw.ciov == sp->wrk->wrw.siov);
 	(void)HSH_Deref(sp->wrk, NULL, &sp->obj);
