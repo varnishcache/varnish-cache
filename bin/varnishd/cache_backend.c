@@ -268,16 +268,15 @@ vbe_Healthy(const struct vdi_simple *vs, const struct sess *sp)
 	/* VRT/VCC sets threshold to UINT_MAX to mark that it's not
 	 * specified by VCL (thus use param).
 	 */
-	if (vs->vrt->saintmode_threshold == UINT_MAX)
+	threshold = vs->vrt->saintmode_threshold;
+	if (threshold == UINT_MAX)
 		threshold = params->saintmode_threshold;
-	else
-		threshold = vs->vrt->saintmode_threshold;
 
 	if (backend->admin_health == ah_healthy)
 		threshold = UINT_MAX;
 
-	/* Saintmode is disabled */
-	if (threshold == 0)
+	/* Saintmode is disabled, or list is empty */
+	if (threshold == 0 || VTAILQ_EMPTY(&backend->troublelist))
 		return (1);
 
 	if (sp->objcore == NULL)
