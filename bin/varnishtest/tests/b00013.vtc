@@ -9,10 +9,10 @@ server s1 {
 	txresp -body "foobar"
 } -start 
 
-varnish v1 -vcl+backend {} -start
+varnish v1 -arg "-p accept_filter=false" -vcl+backend {} -start
 
 client c1 {
-	send "GET /foo HTTP/1.1\n\nGET "
+	send "GET /foo HTTP/1.1\r\n\r\nGET "
 	rxresp
 	expect resp.status == 200
 	expect resp.http.content-length == 3

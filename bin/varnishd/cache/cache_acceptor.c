@@ -292,6 +292,7 @@ vca_acct(void *arg)
 #endif
 	struct listen_sock *ls;
 	double t0, now;
+	int i;
 
 	THR_SetName("cache-acceptor");
 	(void)arg;
@@ -302,6 +303,13 @@ vca_acct(void *arg)
 		AZ(listen(ls->sock, cache_param->listen_depth));
 		AZ(setsockopt(ls->sock, SOL_SOCKET, SO_LINGER,
 		    &linger, sizeof linger));
+		if (cache_param->accept_filter) {
+			i = VTCP_filter_http(ls->sock);
+			if (i)
+				VSL(SLT_Error, ls->sock,
+				    "Kernel filtering: sock=%d, ret=%d %s\n",
+				    ls->sock, i, strerror(errno));
+		}
 	}
 
 	hack_ready = 1;

@@ -877,6 +877,10 @@ static const struct parspec input_parspec[] = {
 		"default.",
 		0,
 		"off", "bool" },
+	{ "accept_filter", tweak_bool, &mgt_param.accept_filter, 0, 0,
+		"Enable kernel accept-filters, if supported by the kernel.",
+		MUST_RESTART,
+		"on", "bool" },
 	{ "listen_address", tweak_listen_address, NULL, 0, 0,
 		"Whitespace separated list of network endpoints where "
 		"Varnish will accept requests.\n"

@@ -53,7 +53,6 @@
 #include "vev.h"
 #include "vlu.h"
 #include "vss.h"
-#include "vtcp.h"
 #include "vtim.h"
 
 #include "mgt_cli.h"
@@ -239,12 +238,6 @@ open_sockets(void)
 
 		mgt_child_inherit(ls->sock, "sock");
 
-		/*
-		 * Set nonblocking mode to avoid a race where a client
-		 * closes before we call accept(2) and nobody else are in
-		 * the listen queue to release us.
-		 */
-		(void)VTCP_filter_http(ls->sock);
 		good++;
 	}
 	if (!good)

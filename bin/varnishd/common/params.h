@@ -108,6 +108,8 @@ struct params {
 	/* VCL traces */
 	unsigned		vcl_trace;
 
+	unsigned		accept_filter;
+
 	/* Listen address */
 	char			*listen_address;
 
