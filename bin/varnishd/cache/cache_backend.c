@@ -244,7 +244,6 @@ vbe_Healthy(const struct vdi_simple *vs, const struct sess *sp)
 	unsigned i = 0, retval;
 	unsigned int threshold;
 	struct backend *backend;
-	uintptr_t target;
 	double now;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -276,7 +275,6 @@ vbe_Healthy(const struct vdi_simple *vs, const struct sess *sp)
 		return (1);
 
 	now = sp->t_req;
-	target = (uintptr_t)(sp->req->objcore->objhead);
 
 	old = NULL;
 	retval = 1;
@@ -291,7 +289,7 @@ vbe_Healthy(const struct vdi_simple *vs, const struct sess *sp)
 			break;
 		}
 
-		if (tr->target == target) {
+		if (!memcmp(tr->digest, sp->req->digest, sizeof tr->digest)) {
 			retval = 0;
 			break;
 		}

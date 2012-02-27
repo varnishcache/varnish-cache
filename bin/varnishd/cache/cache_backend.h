@@ -97,7 +97,7 @@ struct director {
 struct trouble {
 	unsigned		magic;
 #define TROUBLE_MAGIC		0x4211ab21
-	uintptr_t		target;
+	unsigned char		digest[DIGEST_LEN];
 	double			timeout;
 	VTAILQ_ENTRY(trouble)	list;
 };
