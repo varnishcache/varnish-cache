@@ -327,12 +327,20 @@ cnt_deliver(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 
 	AZ(req->busyobj);
 	req->director = NULL;
 	req->restarts = 0;
 
 	RES_WriteObj(sp);
+
+	/* No point in saving the body if it is hit-for-pass */
+	if (req->obj->objcore != NULL) {
+		CHECK_OBJ_NOTNULL(req->obj->objcore, OBJCORE_MAGIC);
+		if (req->obj->objcore->flags & OC_F_PASS)
+			STV_Freestore(req->obj);
+	}
 
 	assert(WRW_IsReleased(wrk));
 	(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
