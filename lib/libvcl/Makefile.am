@@ -31,7 +31,8 @@ libvcl_la_SOURCES = \
 	vcc_xref.c
 
 EXTRA_DIST = \
-	generate.py
+	generate.py \
+	vmodtool.py
 
 vcc_obj.c vcc_fixed_token.c vcc_token_defs.h: \
 	$(srcdir)/generate.py $(top_srcdir)/include/vrt.h

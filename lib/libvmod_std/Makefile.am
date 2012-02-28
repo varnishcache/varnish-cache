@@ -9,6 +9,7 @@ dist_man_MANS = vmod_std.3
 
 vmoddir = $(pkglibdir)/vmods
 vmod_srcdir = $(top_srcdir)/lib/libvmod_std
+vmodtool = $(top_srcdir)/lib/libvcl/vmodtool.py
 vmod_LTLIBRARIES = libvmod_std.la
 
 libvmod_std_la_LDFLAGS = -module -export-dynamic -avoid-version
@@ -20,10 +21,10 @@ libvmod_std_la_SOURCES = \
 	vmod_std_fileread.c \
 	vmod_std_conversions.c
 
-vcc_if.c vcc_if.h: $(vmod_srcdir)/vmod.py $(vmod_srcdir)/vmod.vcc 
-	@PYTHON@ $(vmod_srcdir)/vmod.py $(vmod_srcdir)/vmod.vcc
+vcc_if.c vcc_if.h: $(vmodtool) $(vmod_srcdir)/vmod.vcc
+	@PYTHON@ $(vmodtool) $(vmod_srcdir)/vmod.vcc
 
-EXTRA_DIST = vmod.py vmod.vcc
+EXTRA_DIST = vmod.vcc
 
 CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h
 
