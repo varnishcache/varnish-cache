@@ -31,7 +31,9 @@ libvcl_la_SOURCES = \
 	vcc_xref.c
 
 EXTRA_DIST = \
-	generate.py \
+	generate.py
+
+dist_pkgdata_SCRIPTS = \
 	vmodtool.py
 
 vcc_obj.c vcc_fixed_token.c vcc_token_defs.h: \
