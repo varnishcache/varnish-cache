@@ -13,6 +13,9 @@ This can be overly conservative. A lot of sites use Google Analytics
 cookie is used by the client side javascript and is therefore of no
 interest to the server. 
 
+Cookies from the client
+~~~~~~~~~~~~~~~~~~~~~~~
+
 For a lot of web application it makes sense to completely disregard the
 cookies unless you are accessing a special part of the web site. This
 VCL snippet in vcl_recv will disregard cookies unless you are
@@ -63,3 +66,12 @@ cookies named COOKIE1 and COOKIE2 and you can marvel at it::
 
 The example is taken from the Varnish Wiki, where you can find other
 scary examples of what can be done in VCL.
+
+Cookies coming from the backend
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If your backend server sets a cookie using the Set-Cookie header
+Varnish will not cache the page.  A hit-for-pass object (see
+:ref:`tutorial_vcl_fetch_actions`) is created. So, if the backend
+server acts silly and sets unwanted cookies just unset the Set-Cookie
+header and all should be fine. 
