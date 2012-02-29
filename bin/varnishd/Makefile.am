@@ -84,12 +84,9 @@ varnishd_SOURCES = \
 	waiter/cache_waiter_ports.c 
 
 noinst_HEADERS = \
-	cache/cache.h \
 	cache/cache_backend.h \
 	cache/cache_esi.h \
-	common/common.h \
 	common/heritage.h \
-	common/params.h \
 	default_vcl.h \
 	hash/hash_slinger.h \
 	mgt/mgt.h \
@@ -98,6 +95,13 @@ noinst_HEADERS = \
 	storage/storage.h \
 	storage/storage_persistent.h \
 	waiter/waiter.h
+
+# Headers for use with vmods
+pkgdataincludedir = $(pkgdatadir)/include
+nobase_pkgdatainclude_HEADERS = \
+	cache/cache.h \
+	common/common.h \
+	common/params.h
 
 varnishd_CFLAGS = \
 	@PCRE_CFLAGS@ \

@@ -1,5 +1,6 @@
 #
 
+# API headers
 nobase_pkginclude_HEADERS = \
 	tbl/acct_fields.h \
 	tbl/backend_poll.h \
@@ -26,6 +27,7 @@ nobase_pkginclude_HEADERS = \
 	vapi/vsl_int.h \
 	vcli.h
 
+# Private headers
 nobase_noinst_HEADERS = \
 	binary_heap.h \
 	compat/daemon.h \
@@ -33,38 +35,42 @@ nobase_noinst_HEADERS = \
 	compat/srandomdev.h \
 	flopen.h \
 	libvcl.h \
-	miniobj.h \
 	persistent.h \
-	vas.h \
-	vav.h \
-	vbm.h \
-	vcl.h \
 	vcli_common.h \
 	vcli_priv.h \
 	vcli_serve.h \
 	vcs_version.h \
-	vcs.h \
 	vct.h \
-	vdef.h \
 	vend.h \
 	vev.h \
 	vfil.h \
 	vin.h \
 	vlu.h \
 	vmb.h \
-	vmod_abi.h \
 	vnum.h \
 	vpf.h \
-	vqueue.h \
-	vre.h \
-	vrt.h \
-	vrt_obj.h \
-	vsb.h \
 	vsub.h \
-	vsha256.h \
 	vss.h \
 	vtcp.h \
 	vtim.h
+
+# Headers for use with vmods
+pkgdataincludedir = $(pkgdatadir)/include
+nobase_pkgdatainclude_HEADERS = \
+	miniobj.h \
+	vas.h \
+	vav.h \
+	vbm.h \
+	vcl.h \
+	vcs.h \
+	vmod_abi.h \
+	vqueue.h \
+	vre.h \
+	vdef.h \
+	vrt.h \
+	vrt_obj.h \
+	vsb.h \
+	vsha256.h
 
 tbl/vrt_stv_var.h tbl/vcl_returns.h vcl.h vrt_obj.h: $(top_srcdir)/lib/libvcl/generate.py $(top_srcdir)/include/vrt.h
 	mkdir -p tbl
