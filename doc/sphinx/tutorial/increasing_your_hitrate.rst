@@ -146,7 +146,7 @@ header. You could easily add support for this header in VCL.
 In vcl_fetch::
 
   if (beresp.http.Pragma ~ "nocache") {
-     return(pass);
+     return(hit_for_pass);
   }
 
 Authorization
