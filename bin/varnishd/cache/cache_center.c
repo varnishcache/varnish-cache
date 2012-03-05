@@ -830,8 +830,10 @@ cnt_prepfetch(struct sess *sp, struct worker *wrk, struct req *req)
 
 	req->storage_hint = NULL;
 
-	if (bo->do_gzip ||
-	    (bo->is_gzip && !bo->do_gunzip))
+	AZ(bo->fetch_obj);
+	bo->fetch_obj = req->obj;
+
+	if (bo->do_gzip || (bo->is_gzip && !bo->do_gunzip))
 		req->obj->gziped = 1;
 
 	if (vary != NULL) {
@@ -903,7 +905,8 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	/* Use unmodified headers*/
-	i = FetchBody(wrk, bo, req->obj);
+	i = FetchBody(wrk, bo);
+	bo->fetch_obj = NULL;
 
 	http_Teardown(bo->bereq);
 	http_Teardown(bo->beresp);
@@ -1115,6 +1118,8 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 
 	/* If we inserted a new object it's a miss */
 	if (oc->flags & OC_F_BUSY) {
+		CHECK_OBJ_NOTNULL(oc->busyobj, BUSYOBJ_MAGIC);
+		assert(oc->busyobj == req->busyobj);
 		wrk->stats.cache_miss++;
 
 		if (req->vary_l != NULL) {
@@ -1130,7 +1135,6 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 		req->vary_e = NULL;
 
 		req->objcore = oc;
-		CHECK_OBJ_NOTNULL(req->busyobj, BUSYOBJ_MAGIC);
 		sp->step = STP_MISS;
 		return (0);
 	}

@@ -493,18 +493,19 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 /*--------------------------------------------------------------------*/
 
 int
-FetchBody(struct worker *wrk, struct busyobj *bo, struct object *obj)
+FetchBody(struct worker *wrk, struct busyobj *bo)
 {
 	int cls;
 	struct storage *st;
 	int mklen;
 	ssize_t cl;
 	struct http_conn *htc;
+	struct object *obj;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	AZ(bo->fetch_obj);
 	CHECK_OBJ_NOTNULL(bo->vbc, VBC_MAGIC);
+	obj = bo->fetch_obj;
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(obj->http, HTTP_MAGIC);
 
@@ -525,7 +526,6 @@ FetchBody(struct worker *wrk, struct busyobj *bo, struct object *obj)
 	AZ(bo->vgz_rx);
 	AZ(VTAILQ_FIRST(&obj->store));
 
-	bo->fetch_obj = obj;
 	bo->fetch_failed = 0;
 
 	/* XXX: pick up estimate from objdr ? */
@@ -577,8 +577,6 @@ FetchBody(struct worker *wrk, struct busyobj *bo, struct object *obj)
 	 * segment, to avoid having to replicate that code in all vfp's.
 	 */
 	AZ(vfp_nop_end(bo));
-
-	bo->fetch_obj = NULL;
 
 	VSLb(bo->vsl, SLT_Fetch_Body, "%u(%s) cls %d mklen %d",
 	    bo->body_status, body_status(bo->body_status),
