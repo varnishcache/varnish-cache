@@ -895,7 +895,6 @@ DOT fetchbody:out -> prepresp [style=bold,color=blue]
 static int
 cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 {
-	int i;
 	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -904,8 +903,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	bo = req->busyobj;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	/* Use unmodified headers*/
-	i = FetchBody(wrk, bo);
+	FetchBody(wrk, bo);
 	bo->fetch_obj = NULL;
 
 	http_Teardown(bo->bereq);
@@ -915,7 +913,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	AZ(bo->vbc);
 	AN(req->director);
 
-	if (i) {
+	if (bo->state == BOS_FAILED) {
 		HSH_Drop(wrk, &sp->req->obj);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		AZ(req->obj);

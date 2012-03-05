@@ -76,21 +76,20 @@ FetchError(struct busyobj *bo, const char *error)
  * VFP method functions
  */
 
-static int
+static void
 VFP_Begin(struct busyobj *bo, size_t estimate)
 {
+
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	AN(bo->vfp);
 
 	bo->vfp->begin(bo, estimate);
-	if (bo->state == BOS_FAILED)
-		return (-1);
-	return (0);
 }
 
 static int
 VFP_Bytes(struct busyobj *bo, struct http_conn *htc, ssize_t sz)
 {
+
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	AN(bo->vfp);
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
@@ -99,7 +98,7 @@ VFP_Bytes(struct busyobj *bo, struct http_conn *htc, ssize_t sz)
 	return (bo->vfp->bytes(bo, htc, sz));
 }
 
-static int
+static void
 VFP_End(struct busyobj *bo)
 {
 	int i;
@@ -110,8 +109,6 @@ VFP_End(struct busyobj *bo)
 	i = bo->vfp->end(bo);
 	if (i)
 		assert(bo->state == BOS_FAILED);
-	return (i);
-
 }
 
 
@@ -351,16 +348,13 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 
 /*--------------------------------------------------------------------*/
 
-static int
+static void
 fetch_eof(struct busyobj *bo, struct http_conn *htc)
 {
-	int i;
 
 	assert(bo->body_status == BS_EOF);
-	i = VFP_Bytes(bo, htc, SSIZE_MAX);
-	if (i < 0)
-		return (FetchError(bo,"eof socket fail"));
-	return (0);
+	if (VFP_Bytes(bo, htc, SSIZE_MAX) < 0)
+		(void)FetchError(bo,"eof socket fail");
 }
 
 /*--------------------------------------------------------------------
@@ -535,7 +529,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 
 /*--------------------------------------------------------------------*/
 
-int
+void
 FetchBody(struct worker *wrk, struct busyobj *bo)
 {
 	int cls;
@@ -576,42 +570,39 @@ FetchBody(struct worker *wrk, struct busyobj *bo)
 
 	/* XXX: pick up estimate from objdr ? */
 	cl = 0;
+	cls = 0;
 	switch (bo->body_status) {
 	case BS_NONE:
-		cls = 0;
 		mklen = 0;
 		break;
 	case BS_ZERO:
-		cls = 0;
 		mklen = 1;
 		break;
 	case BS_LENGTH:
 		cl = fetch_number(bo->h_content_length, 10);
-		cls = VFP_Begin(bo, cl > 0 ? cl : 0);
-		if (!cls)
+		VFP_Begin(bo, cl > 0 ? cl : 0);
+		if (bo->state == BOS_FETCHING)
 			cls = fetch_straight(bo, htc, cl);
 		mklen = 1;
-		if (VFP_End(bo))
-			cls = -1;
+		VFP_End(bo);
 		break;
 	case BS_CHUNKED:
-		cls = VFP_Begin(bo, cl);
-		if (!cls)
+		VFP_Begin(bo, cl);
+		if (bo->state == BOS_FETCHING)
 			cls = fetch_chunked(bo, htc);
 		mklen = 1;
-		if (VFP_End(bo))
-			cls = -1;
+		VFP_End(bo);
 		break;
 	case BS_EOF:
-		cls = VFP_Begin(bo, cl);
-		if (!cls)
-			cls = fetch_eof(bo, htc);
+		VFP_Begin(bo, cl);
+		if (bo->state == BOS_FETCHING)
+			fetch_eof(bo, htc);
 		mklen = 1;
-		if (VFP_End(bo))
-			cls = -1;
+		cls = 1;
+		VFP_End(bo);
 		break;
 	case BS_ERROR:
-		cls = 1;
+		cls = FetchError(bo, "error incompatible Transfer-Encoding");
 		mklen = 0;
 		break;
 	default:
@@ -631,20 +622,14 @@ FetchBody(struct worker *wrk, struct busyobj *bo)
 	    bo->body_status, body_status(bo->body_status),
 	    cls, mklen);
 
-	if (bo->body_status == BS_ERROR) {
-		VDI_CloseFd(&bo->vbc);
-		bo->stats = NULL;
-		return (__LINE__);
-	}
-
-	if (cls < 0) {
-		assert(bo->state == BOS_FAILED);
+	if (bo->state == BOS_FAILED) {
 		wrk->stats.fetch_failed++;
 		VDI_CloseFd(&bo->vbc);
 		obj->len = 0;
 		bo->stats = NULL;
-		return (__LINE__);
+		return;
 	}
+
 	assert(bo->state == BOS_FETCHING);
 
 	if (cls == 0 && bo->should_close)
@@ -680,7 +665,6 @@ FetchBody(struct worker *wrk, struct busyobj *bo)
 		VDI_RecycleFd(&bo->vbc);
 
 	bo->stats = NULL;
-	return (0);
 }
 
 /*--------------------------------------------------------------------
