@@ -483,7 +483,7 @@ vfp_gunzip_end(struct busyobj *bo)
 	vg = bo->vgz_rx;
 	bo->vgz_rx = NULL;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-	if (bo->fetch_failed) {
+	if (bo->state == BOS_FAILED) {
 		(void)VGZ_Destroy(&vg);
 		return(0);
 	}
@@ -560,7 +560,7 @@ vfp_gzip_end(struct busyobj *bo)
 	vg = bo->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	bo->vgz_rx = NULL;
-	if (bo->fetch_failed) {
+	if (bo->state == BOS_FAILED) {
 		(void)VGZ_Destroy(&vg);
 		return(0);
 	}
@@ -652,7 +652,7 @@ vfp_testgzip_end(struct busyobj *bo)
 	vg = bo->vgz_rx;
 	bo->vgz_rx = NULL;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-	if (bo->fetch_failed) {
+	if (bo->state == BOS_FAILED) {
 		(void)VGZ_Destroy(&vg);
 		return(0);
 	}

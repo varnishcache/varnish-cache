@@ -56,13 +56,13 @@ FetchError2(struct busyobj *bo, const char *error, const char *more)
 {
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	if (!bo->fetch_failed) {
+	if (bo->state == BOS_FETCHING) {
 		if (more == NULL)
 			VSLb(bo->vsl, SLT_FetchError, "%s", error);
 		else
 			VSLb(bo->vsl, SLT_FetchError, "%s: %s", error, more);
 	}
-	bo->fetch_failed = 1;
+	bo->state = BOS_FAILED;
 	return (-1);
 }
 
@@ -83,7 +83,7 @@ VFP_Begin(struct busyobj *bo, size_t estimate)
 	AN(bo->vfp);
 
 	bo->vfp->begin(bo, estimate);
-	if (bo->fetch_failed)
+	if (bo->state == BOS_FAILED)
 		return (-1);
 	return (0);
 }
@@ -94,7 +94,7 @@ VFP_Bytes(struct busyobj *bo, struct http_conn *htc, ssize_t sz)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	AN(bo->vfp);
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	AZ(bo->fetch_failed);
+	assert(bo->state == BOS_FETCHING);
 
 	return (bo->vfp->bytes(bo, htc, sz));
 }
@@ -102,10 +102,16 @@ VFP_Bytes(struct busyobj *bo, struct http_conn *htc, ssize_t sz)
 static int
 VFP_End(struct busyobj *bo)
 {
+	int i;
+
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	AN(bo->vfp);
 
-	return (bo->vfp->end(bo));
+	i = bo->vfp->end(bo);
+	if (i)
+		assert(bo->state == BOS_FAILED);
+	return (i);
+
 }
 
 
@@ -295,8 +301,8 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 	do {
 		/* Skip leading whitespace */
 		do {
-			if (HTC_Read(htc, buf, 1) <= 0)
-				return (-1);
+			if (HTC_Read(htc, buf, 1) <= 0) 
+				return (FetchError(bo, "chunked read err"));
 		} while (vct_islws(buf[0]));
 
 		if (!vct_ishex(buf[0]))
@@ -306,7 +312,8 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 		for (u = 1; u < sizeof buf; u++) {
 			do {
 				if (HTC_Read(htc, buf + u, 1) <= 0)
-					return (-1);
+					return (FetchError(bo,
+					    "chunked read err"));
 			} while (u == 1 && buf[0] == '0' && buf[u] == '0');
 			if (!vct_ishex(buf[u]))
 				break;
@@ -318,7 +325,7 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 		/* Skip trailing white space */
 		while(vct_islws(buf[u]) && buf[u] != '\n')
 			if (HTC_Read(htc, buf + u, 1) <= 0)
-				return (-1);
+				return (FetchError(bo, "chunked read err"));
 
 		if (buf[u] != '\n')
 			return (FetchError(bo,"chunked header no NL"));
@@ -329,13 +336,13 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 			return (FetchError(bo,"chunked header number syntax"));
 
 		if (cl > 0 && VFP_Bytes(bo, htc, cl) <= 0)
-			return (-1);
+			return (FetchError(bo, "chunked read err"));
 
 		i = HTC_Read(htc, buf, 1);
 		if (i <= 0)
-			return (-1);
+			return (FetchError(bo, "chunked read err"));
 		if (buf[0] == '\r' && HTC_Read( htc, buf, 1) <= 0)
-			return (-1);
+			return (FetchError(bo, "chunked read err"));
 		if (buf[0] != '\n')
 			return (FetchError(bo,"chunked tail no NL"));
 	} while (cl > 0);
@@ -352,7 +359,7 @@ fetch_eof(struct busyobj *bo, struct http_conn *htc)
 	assert(bo->body_status == BS_EOF);
 	i = VFP_Bytes(bo, htc, SSIZE_MAX);
 	if (i < 0)
-		return (-1);
+		return (FetchError(bo,"eof socket fail"));
 	return (0);
 }
 
@@ -545,6 +552,9 @@ FetchBody(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(obj->http, HTTP_MAGIC);
 
+	assert(bo->state == BOS_INVALID);
+	bo->state = BOS_FINISHED;
+
 	/*
 	 * XXX: The busyobj needs a dstat, but it is not obvious which one
 	 * XXX: it should be (own/borrowed).  For now borrow the wrk's.
@@ -562,7 +572,7 @@ FetchBody(struct worker *wrk, struct busyobj *bo)
 	AZ(bo->vgz_rx);
 	AZ(VTAILQ_FIRST(&obj->store));
 
-	bo->fetch_failed = 0;
+	bo->state = BOS_FETCHING;
 
 	/* XXX: pick up estimate from objdr ? */
 	cl = 0;
@@ -628,13 +638,14 @@ FetchBody(struct worker *wrk, struct busyobj *bo)
 	}
 
 	if (cls < 0) {
+		assert(bo->state == BOS_FAILED);
 		wrk->stats.fetch_failed++;
 		VDI_CloseFd(&bo->vbc);
 		obj->len = 0;
 		bo->stats = NULL;
 		return (__LINE__);
 	}
-	AZ(bo->fetch_failed);
+	assert(bo->state == BOS_FETCHING);
 
 	if (cls == 0 && bo->should_close)
 		cls = 1;
@@ -660,6 +671,8 @@ FetchBody(struct worker *wrk, struct busyobj *bo)
 		http_Unset(obj->http, H_Content_Length);
 		http_PrintfHeader(obj->http, "Content-Length: %zd", obj->len);
 	}
+
+	bo->state = BOS_FINISHED;
 
 	if (cls)
 		VDI_CloseFd(&bo->vbc);

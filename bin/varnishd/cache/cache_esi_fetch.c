@@ -366,12 +366,13 @@ vfp_esi_end(struct busyobj *bo)
 	struct vsb *vsb;
 	struct vef_priv *vef;
 	ssize_t l;
-	int retval;
+	int retval = 0;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	AN(bo->vep);
 
-	retval = bo->fetch_failed;
+	if (bo->state == BOS_FAILED)
+		retval = -1;
 
 	if (bo->vgz_rx != NULL && VGZ_Destroy(&bo->vgz_rx) != VGZ_END)
 		retval = FetchError(bo, "Gunzip+ESI Failed at the very end");

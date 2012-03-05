@@ -449,6 +449,13 @@ oc_getlru(const struct objcore *oc)
  * streaming delivery will make use of.
  */
 
+enum busyobj_state_e {
+	BOS_INVALID = 0,
+	BOS_FETCHING,
+	BOS_FAILED,
+	BOS_FINISHED
+};
+
 struct busyobj {
 	unsigned		magic;
 #define BUSYOBJ_MAGIC		0x23b95567
@@ -460,7 +467,7 @@ struct busyobj {
 
 	struct vfp		*vfp;
 	struct vep_state	*vep;
-	unsigned		fetch_failed;
+	enum busyobj_state_e	state;
 	struct vgz		*vgz_rx;
 
 	struct ws		ws[1];
