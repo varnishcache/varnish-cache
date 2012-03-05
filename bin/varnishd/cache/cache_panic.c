@@ -213,7 +213,8 @@ pan_busyobj(const struct busyobj *bo)
 	if (bo->do_esi)		VSB_printf(pan_vsp, "    do_esi\n");
 	if (bo->do_stream)	VSB_printf(pan_vsp, "    do_stream\n");
 	if (bo->should_close)	VSB_printf(pan_vsp, "    should_close\n");
-	VSB_printf(pan_vsp, "    bodystatus = %d,\n", bo->body_status);
+	VSB_printf(pan_vsp, "    bodystatus = %d (%s),\n",
+	    bo->body_status, body_status(bo->body_status));
 	VSB_printf(pan_vsp, "    },\n");
 	if (VALID_OBJ(bo->vbc, BACKEND_MAGIC))
 		pan_vbc(bo->vbc);
