@@ -479,6 +479,8 @@ struct busyobj {
 	struct http_conn	htc;
 
 	enum body_status	body_status;
+	struct pool_task	task;
+
 	struct vef_priv		*vef_priv;
 
 	unsigned		should_close;
@@ -755,7 +757,7 @@ struct storage *FetchStorage(struct busyobj *, ssize_t sz);
 int FetchError(struct busyobj *, const char *error);
 int FetchError2(struct busyobj *, const char *error, const char *more);
 int FetchHdr(struct sess *sp, int need_host_hdr, int sendbody);
-void FetchBody(struct worker *w, struct busyobj *bo);
+void FetchBody(struct worker *w, void *bo);
 int FetchReqBody(const struct sess *sp, int sendbody);
 void Fetch_Init(void);
 

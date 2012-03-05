@@ -530,7 +530,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 /*--------------------------------------------------------------------*/
 
 void
-FetchBody(struct worker *wrk, struct busyobj *bo)
+FetchBody(struct worker *wrk, void *priv)
 {
 	int cls;
 	struct storage *st;
@@ -538,9 +538,10 @@ FetchBody(struct worker *wrk, struct busyobj *bo)
 	ssize_t cl;
 	struct http_conn *htc;
 	struct object *obj;
+	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->vbc, VBC_MAGIC);
 	obj = bo->fetch_obj;
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
