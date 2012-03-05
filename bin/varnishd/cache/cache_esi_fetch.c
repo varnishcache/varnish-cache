@@ -346,7 +346,6 @@ vfp_esi_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 	vef = bo->vef_priv;
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 
-	AZ(bo->fetch_failed);
 	AN(bo->vep);
 	assert(&bo->htc == htc);
 	if (bo->is_gzip && bo->do_gunzip)
