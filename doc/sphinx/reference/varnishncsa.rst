@@ -64,7 +64,7 @@ The following options are available:
                  Defaults to 127.0.0.1 for backend requests.
 
 	      %{X}i
-	         The contents of request header line X.
+	         The contents of request header X.
 
 	      %l
 	         Remote logname (always '-')
@@ -77,7 +77,7 @@ The following options are available:
                  empty string.
 
 	      %{X}o
-	         The contents of response header line X.
+	         The contents of response header X.
 
 	      %r
 	         The first line of the request. Synthesized from other
