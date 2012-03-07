@@ -30,6 +30,7 @@ separate topic. Good luck.
 	esi
 	virtualised
 	websockets
+	devicedetection
 	advanced_backend_servers
         handling_misbehaving_servers
         advanced_topics
