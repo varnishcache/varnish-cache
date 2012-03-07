@@ -382,9 +382,10 @@ vca_return_session(struct sess *sp)
 	 * Set nonblocking in the worker-thread, before passing to the
 	 * acceptor thread, to reduce syscall density of the latter.
 	 */
-	if (VTCP_nonblocking(sp->fd))
+	if (VTCP_nonblocking(sp->fd)) {
 		vca_close_session(sp, "remote closed");
-	else if (vca_act->pass == NULL)
+		SES_Delete(sp);
+	} else if (vca_act->pass == NULL)
 		assert(sizeof sp == write(vca_pipes[1], &sp, sizeof sp));
 	else
 		vca_act->pass(sp);
