@@ -4,7 +4,7 @@
  Purging and banning
 =====================
 
-One of the most effective way of increasing your hit ratio is to
+One of the most effective ways of increasing your hit ratio is to
 increase the time-to-live (ttl) of your objects. But, as you're aware
 of, in this twitterific day of age serving content that is outdated is
 bad for business.
