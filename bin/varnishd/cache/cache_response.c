@@ -128,6 +128,7 @@ RES_BuildHttp(const struct sess *sp)
 	if (req->res_mode & RES_CHUNKED)
 		http_SetHeader(req->resp, "Transfer-Encoding: chunked");
 
+	http_Unset(req->resp, H_Date);
 	VTIM_format(VTIM_real(), time_str);
 	http_PrintfHeader(req->resp, "Date: %s", time_str);
 
