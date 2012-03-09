@@ -133,6 +133,7 @@ RES_BuildHttp(const struct sess *sp)
 		http_SetHeader(sp->wrk, sp->fd, sp->wrk->resp,
 		    "Transfer-Encoding: chunked");
 
+	http_Unset(sp->wrk->resp, H_Date);
 	TIM_format(TIM_real(), time_str);
 	http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp, "Date: %s", time_str);
 
