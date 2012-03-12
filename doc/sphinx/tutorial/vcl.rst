@@ -135,7 +135,7 @@ down for, uhm, examples.
 Example 1 - manipulating headers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Lets say we want to remove the cookie for all objects in the /static
+Lets say we want to remove the cookie for all objects in the /images
 directory of our web server::
 
   sub vcl_recv {

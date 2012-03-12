@@ -9,7 +9,7 @@ memory segment. When the end of the segment is reached we start over,
 overwriting old data. This is much, much faster then logging to a file
 and it doesn't require disk space.
 
-The flip side is that if you forget to have program actually write the
+The flip side is that if you forget to have a program actually write the
 logs to disk they will disappear.
 
 varnishlog is one of the programs you can use to look at what Varnish
