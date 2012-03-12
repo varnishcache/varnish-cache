@@ -50,7 +50,7 @@ Description
 Example
 	set beresp.http.x-nice = std.tolower("VerY");
 
-set_up_tos
+set_ip_tos
 ----------
 Prototype
 	set_ip_tos(INT i)
