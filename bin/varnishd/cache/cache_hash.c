@@ -302,9 +302,9 @@ HSH_Lookup(struct sess *sp)
 	AN(hash);
 
 	hsh_prealloc(wrk);
-	memcpy(sp->wrk->nobjhead->digest, req->digest, sizeof req->digest);
+	memcpy(wrk->nobjhead->digest, req->digest, sizeof req->digest);
 	if (cache_param->diag_bitmap & 0x80000000)
-		hsh_testmagic(sp->wrk->nobjhead->digest);
+		hsh_testmagic(wrk->nobjhead->digest);
 
 	if (req->hash_objhead != NULL) {
 		/*
@@ -339,21 +339,21 @@ HSH_Lookup(struct sess *sp)
 				continue;
 
 			if (oc->busyobj->vary != NULL &&
-			    !VRY_Match(sp, oc->busyobj->vary))
+			    !VRY_Match(req, oc->busyobj->vary))
 				continue;
 
 			busy_oc = oc;
 			continue;
 		}
 
-		o = oc_getobj(&sp->wrk->stats, oc);
+		o = oc_getobj(&wrk->stats, oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
 		if (o->exp.ttl <= 0.)
 			continue;
 		if (BAN_CheckObject(o, sp))
 			continue;
-		if (o->vary != NULL && !VRY_Match(sp, o->vary))
+		if (o->vary != NULL && !VRY_Match(req, o->vary))
 			continue;
 
 		/* If still valid, use it */
@@ -390,14 +390,14 @@ HSH_Lookup(struct sess *sp)
 	    && (busy_oc != NULL		/* Somebody else is already busy */
 	    || !VDI_Healthy(req->director, sp))) {
 					/* Or it is impossible to fetch */
-		o = oc_getobj(&sp->wrk->stats, grace_oc);
+		o = oc_getobj(&wrk->stats, grace_oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		oc = grace_oc;
 	}
 	req->objcore = NULL;
 
 	if (oc != NULL && !req->hash_always_miss) {
-		o = oc_getobj(&sp->wrk->stats, oc);
+		o = oc_getobj(&wrk->stats, oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		assert(oc->objhead == oh);
 
@@ -414,11 +414,11 @@ HSH_Lookup(struct sess *sp)
 	if (busy_oc != NULL) {
 		/* There are one or more busy objects, wait for them */
 		if (req->esi_level == 0) {
-			CHECK_OBJ_NOTNULL(sp->wrk->nwaitinglist,
+			CHECK_OBJ_NOTNULL(wrk->nwaitinglist,
 			    WAITINGLIST_MAGIC);
 			if (oh->waitinglist == NULL) {
-				oh->waitinglist = sp->wrk->nwaitinglist;
-				sp->wrk->nwaitinglist = NULL;
+				oh->waitinglist = wrk->nwaitinglist;
+				wrk->nwaitinglist = NULL;
 			}
 			VTAILQ_INSERT_TAIL(&oh->waitinglist->list, sp, list);
 		}

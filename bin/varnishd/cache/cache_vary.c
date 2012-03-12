@@ -60,7 +60,7 @@
 #include "vend.h"
 
 struct vsb *
-VRY_Create(const struct sess *sp, const struct http *hp)
+VRY_Create(struct req *req, const struct http *hp)
 {
 	char *v, *p, *q, *h, *e;
 	struct vsb *sb, *sbh;
@@ -79,7 +79,7 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 	AN(sbh);
 
 	if (*v == ':') {
-		VSLb(sp->req->vsl, SLT_Error,
+		VSLb(req->vsl, SLT_Error,
 		    "Vary header had extra ':', fix backend");
 		v++;
 	}
@@ -97,7 +97,7 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 		    (char)(1 + (q - p)), (int)(q - p), p, 0);
 		AZ(VSB_finish(sbh));
 
-		if (http_GetHdr(sp->req->http, VSB_data(sbh), &h)) {
+		if (http_GetHdr(req->http, VSB_data(sbh), &h)) {
 			AZ(vct_issp(*h));
 			/* Trim trailing space */
 			e = strchr(h, '\0');
@@ -175,9 +175,9 @@ vry_cmp(const uint8_t *v1, const uint8_t *v2)
 }
 
 int
-VRY_Match(const struct sess *sp, const uint8_t *vary)
+VRY_Match(struct req *req, const uint8_t *vary)
 {
-	uint8_t *vsp = sp->req->vary_b;
+	uint8_t *vsp = req->vary_b;
 	char *h, *e;
 	unsigned lh, ln;
 	int i, retval = 1, oflo = 0;
@@ -188,7 +188,7 @@ VRY_Match(const struct sess *sp, const uint8_t *vary)
 		if (i == 1) {
 			/* Build a new entry */
 
-			i = http_GetHdr(sp->req->http,
+			i = http_GetHdr(req->http,
 			    (const char*)(vary+2), &h);
 			if (i) {
 				/* Trim trailing space */
@@ -204,8 +204,8 @@ VRY_Match(const struct sess *sp, const uint8_t *vary)
 
 			/* Length of the entire new vary entry */
 			ln = 2 + vary[2] + 2 + (lh == 0xffff ? 0 : lh);
-			if (vsp + ln >= sp->req->vary_e) {
-				vsp = sp->req->vary_b;
+			if (vsp + ln >= req->vary_e) {
+				vsp = req->vary_b;
 				oflo = 1;
 			}
 
@@ -213,7 +213,7 @@ VRY_Match(const struct sess *sp, const uint8_t *vary)
 			 * We MUST have space for one entry and the end marker
 			 * after it, which prevents old junk from confusing us
 			 */
-			assert(vsp + ln + 2 < sp->req->vary_e);
+			assert(vsp + ln + 2 < req->vary_e);
 
 			vbe16enc(vsp, (uint16_t)lh);
 			memcpy(vsp + 2, vary + 2, vary[2] + 2);
@@ -231,20 +231,20 @@ VRY_Match(const struct sess *sp, const uint8_t *vary)
 		vsp += vry_len(vsp);
 		vary += vry_len(vary);
 	}
-	if (vsp + 3 > sp->req->vary_e)
+	if (vsp + 3 > req->vary_e)
 		oflo = 1;
 
 	if (oflo) {
 		/* XXX: Should log this */
-		vsp = sp->req->vary_b;
+		vsp = req->vary_b;
 	}
 	vsp[0] = 0xff;
 	vsp[1] = 0xff;
 	vsp[2] = 0;
 	if (oflo)
-		sp->req->vary_l = NULL;
+		req->vary_l = NULL;
 	else
-		sp->req->vary_l = vsp + 3;
+		req->vary_l = vsp + 3;
 	return (retval);
 }
 

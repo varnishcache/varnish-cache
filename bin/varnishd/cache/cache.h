@@ -954,8 +954,8 @@ void RES_BuildHttp(const struct sess *sp);
 void RES_WriteObj(struct sess *sp);
 
 /* cache_vary.c */
-struct vsb *VRY_Create(const struct sess *sp, const struct http *hp);
-int VRY_Match(const struct sess *sp, const uint8_t *vary);
+struct vsb *VRY_Create(struct req *sp, const struct http *hp);
+int VRY_Match(struct req *, const uint8_t *vary);
 void VRY_Validate(const uint8_t *vary);
 
 /* cache_vcl.c */

@@ -784,7 +784,7 @@ cnt_prepfetch(struct sess *sp, struct worker *wrk, struct req *req)
 	/* Create Vary instructions */
 	if (req->objcore != NULL) {
 		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-		vary = VRY_Create(sp, bo->beresp);
+		vary = VRY_Create(req, bo->beresp);
 		if (vary != NULL) {
 			varyl = VSB_len(vary);
 			assert(varyl > 0);
