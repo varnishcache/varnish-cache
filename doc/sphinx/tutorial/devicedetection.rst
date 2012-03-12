@@ -228,6 +228,11 @@ special needs in VCL, you can use the X-UA-Device header like this::
             set req.backend = mobile;
         }
     }
+    sub vcl_hash {
+        if (req.http.X-UA-Device) {
+            hash_data(req.http.X-UA-Device);
+        }
+    }
 
 Redirecting mobile clients
 --------------------------
