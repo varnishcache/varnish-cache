@@ -92,8 +92,9 @@ extern struct stevedore *stv_transient;
 int STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx);
 uintmax_t STV_FileSize(int fd, const char *size, unsigned *granularity,
     const char *ctx);
-struct object *STV_MkObject(struct busyobj *bo, struct objcore **ocp,
-    void *ptr, unsigned ltot, const struct stv_objsecrets *soc);
+struct object *STV_MkObject(struct stevedore *stv, struct busyobj *bo,
+    struct objcore **ocp, void *ptr, unsigned ltot,
+    const struct stv_objsecrets *soc);
 
 struct lru *LRU_Alloc(void);
 void LRU_Free(struct lru *lru);

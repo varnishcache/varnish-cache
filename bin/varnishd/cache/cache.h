@@ -371,7 +371,7 @@ struct objcore {
 	int			refcnt;
 	struct objcore_methods	*methods;
 	void			*priv;
-	unsigned		priv2;
+	uintptr_t		priv2;
 	struct objhead		*objhead;
 	struct busyobj		*busyobj;
 	double			timer_when;

@@ -85,10 +85,10 @@ default_oc_freeobj(struct objcore *oc)
 static struct lru *
 default_oc_getlru(const struct objcore *oc)
 {
-	struct object *o;
+	struct stevedore *stv;
 
-	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
-	return (o->objstore->stevedore->lru);
+	CAST_OBJ_NOTNULL(stv, (void *)oc->priv2, STEVEDORE_MAGIC);
+	return (stv->lru);
 }
 
 static struct objcore_methods default_oc_methods = {
@@ -227,12 +227,13 @@ struct stv_objsecrets {
  */
 
 struct object *
-STV_MkObject(struct busyobj *bo, struct objcore **ocp, void *ptr, unsigned ltot,
-    const struct stv_objsecrets *soc)
+STV_MkObject(struct stevedore *stv, struct busyobj *bo, struct objcore **ocp,
+    void *ptr, unsigned ltot, const struct stv_objsecrets *soc)
 {
 	struct object *o;
 	unsigned l;
 
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(soc, STV_OBJ_SECRETES_MAGIC);
 	AN(ocp);
@@ -270,6 +271,7 @@ STV_MkObject(struct busyobj *bo, struct objcore **ocp, void *ptr, unsigned ltot,
 
 		o->objcore->methods = &default_oc_methods;
 		o->objcore->priv = o;
+		o->objcore->priv2 = (uintptr_t)stv;
 	}
 	return (o);
 }
@@ -297,7 +299,7 @@ stv_default_allocobj(struct stevedore *stv, struct busyobj *bo,
 		return (NULL);
 	}
 	ltot = st->len = st->space;
-	o = STV_MkObject(bo, ocp, st->ptr, ltot, soc);
+	o = STV_MkObject(stv, bo, ocp, st->ptr, ltot, soc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	o->objstore = st;
 	return (o);
