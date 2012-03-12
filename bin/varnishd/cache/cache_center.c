@@ -921,9 +921,9 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	AN(req->director);
 
 	if (bo->state == BOS_FAILED) {
-		HSH_Drop(wrk, &sp->req->obj);
-		VBO_DerefBusyObj(wrk, &req->busyobj);
+		HSH_Drop(wrk, &req->obj);
 		AZ(req->obj);
+		VBO_DerefBusyObj(wrk, &req->busyobj);
 		req->err_code = 503;
 		sp->step = STP_ERROR;
 		return (0);
@@ -1144,6 +1144,9 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 		sp->step = STP_MISS;
 		return (0);
 	}
+
+	/* For now... */
+	AN(oc->flags & (OC_F_COMPLETE|OC_F_FAILED));
 
 	o = oc_getobj(&wrk->stats, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);

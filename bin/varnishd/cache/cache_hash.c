@@ -269,6 +269,7 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc)
 	oc->refcnt = 1;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ(oc->flags & OC_F_BUSY);
+	oc->flags |= OC_F_COMPLETE;
 
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, list);
 	/* NB: do not deref objhead the new object inherits our reference */

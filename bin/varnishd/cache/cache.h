@@ -381,6 +381,8 @@ struct objcore {
 #define OC_F_LRUDONTMOVE	(1<<4)
 #define OC_F_PRIV		(1<<5)		/* Stevedore private flag */
 #define OC_F_LURK		(3<<6)		/* Ban-lurker-color */
+#define OC_F_COMPLETE		(1<<8)
+#define OC_F_FAILED		(1<<9)
 	unsigned		timer_idx;
 	VTAILQ_ENTRY(objcore)	list;
 	VTAILQ_ENTRY(objcore)	lru_list;
