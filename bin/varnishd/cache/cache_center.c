@@ -1104,9 +1104,8 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 	req->vary_e = (void*)req->ws->r;
 	req->vary_b[2] = '\0';
 
-	oc = HSH_Lookup(sp, &oh);
 	AZ(req->objcore);
-
+	oc = HSH_Lookup(sp);
 	if (oc == NULL) {
 		/*
 		 * We lost the session to a busy object, disembark the
@@ -1117,8 +1116,10 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 		 */
 		return (1);
 	}
+	AZ(req->objcore);
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	oh = oc->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
 	/* If we inserted a new object it's a miss */

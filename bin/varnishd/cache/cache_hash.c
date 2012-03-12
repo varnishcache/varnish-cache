@@ -282,36 +282,38 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc)
  */
 
 struct objcore *
-HSH_Lookup(struct sess *sp, struct objhead **poh)
+HSH_Lookup(struct sess *sp)
 {
 	struct worker *wrk;
 	struct objhead *oh;
 	struct objcore *oc;
 	struct objcore *busy_oc, *grace_oc;
 	struct object *o;
+	struct req *req;
 	double grace_ttl;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->req->http, HTTP_MAGIC);
-	AN(sp->req->director);
-	AN(hash);
 	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	req = sp->req;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->http, HTTP_MAGIC);
+	AN(req->director);
+	AN(hash);
 
 	hsh_prealloc(wrk);
-	memcpy(sp->wrk->nobjhead->digest, sp->req->digest,
-	    sizeof sp->req->digest);
+	memcpy(sp->wrk->nobjhead->digest, req->digest, sizeof req->digest);
 	if (cache_param->diag_bitmap & 0x80000000)
 		hsh_testmagic(sp->wrk->nobjhead->digest);
 
-	if (sp->req->hash_objhead != NULL) {
+	if (req->hash_objhead != NULL) {
 		/*
 		 * This sess came off the waiting list, and brings a
 		 * oh refcnt with it.
 		 */
-		CHECK_OBJ_NOTNULL(sp->req->hash_objhead, OBJHEAD_MAGIC);
-		oh = sp->req->hash_objhead;
-		sp->req->hash_objhead = NULL;
+		CHECK_OBJ_NOTNULL(req->hash_objhead, OBJHEAD_MAGIC);
+		oh = req->hash_objhead;
+		req->hash_objhead = NULL;
 	} else {
 		AN(wrk->nobjhead);
 		oh = hash->lookup(wrk, wrk->nobjhead);
@@ -333,7 +335,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 
 		if (oc->flags & OC_F_BUSY) {
 			CHECK_OBJ_NOTNULL(oc->busyobj, BUSYOBJ_MAGIC);
-			if (sp->req->hash_ignore_busy)
+			if (req->hash_ignore_busy)
 				continue;
 
 			if (oc->busyobj->vary != NULL &&
@@ -381,20 +383,20 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	 * XXX: serialize fetch of all Vary's if grace is possible.
 	 */
 
-	AZ(sp->req->objcore);
-	sp->req->objcore = grace_oc;		/* XXX: Hack-ish */
+	AZ(req->objcore);
+	req->objcore = grace_oc;		/* XXX: Hack-ish */
 	if (oc == NULL			/* We found no live object */
 	    && grace_oc != NULL		/* There is a grace candidate */
 	    && (busy_oc != NULL		/* Somebody else is already busy */
-	    || !VDI_Healthy(sp->req->director, sp))) {
+	    || !VDI_Healthy(req->director, sp))) {
 					/* Or it is impossible to fetch */
 		o = oc_getobj(&sp->wrk->stats, grace_oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		oc = grace_oc;
 	}
-	sp->req->objcore = NULL;
+	req->objcore = NULL;
 
-	if (oc != NULL && !sp->req->hash_always_miss) {
+	if (oc != NULL && !req->hash_always_miss) {
 		o = oc_getobj(&sp->wrk->stats, oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		assert(oc->objhead == oh);
@@ -406,13 +408,12 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		assert(oh->refcnt > 1);
 		Lck_Unlock(&oh->mtx);
 		assert(hash->deref(oh));
-		*poh = oh;
 		return (oc);
 	}
 
 	if (busy_oc != NULL) {
 		/* There are one or more busy objects, wait for them */
-		if (sp->req->esi_level == 0) {
+		if (req->esi_level == 0) {
 			CHECK_OBJ_NOTNULL(sp->wrk->nwaitinglist,
 			    WAITINGLIST_MAGIC);
 			if (oh->waitinglist == NULL) {
@@ -422,7 +423,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 			VTAILQ_INSERT_TAIL(&oh->waitinglist->list, sp, list);
 		}
 		if (cache_param->diag_bitmap & 0x20)
-			VSLb(sp->req->vsl, SLT_Debug,
+			VSLb(req->vsl, SLT_Debug,
 				"on waiting list <%p>", oh);
 		SES_Charge(sp);
 		/*
@@ -430,7 +431,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 		 * back when the sess comes off the waiting list and
 		 * calls us again
 		 */
-		sp->req->hash_objhead = oh;
+		req->hash_objhead = oh;
 		sp->wrk = NULL;
 		Lck_Unlock(&oh->mtx);
 		return (NULL);
@@ -442,16 +443,16 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	AN(oc->flags & OC_F_BUSY);
 	oc->refcnt = 1;
 
-	AZ(sp->req->busyobj);
-	sp->req->busyobj = VBO_GetBusyObj(wrk);
-	sp->req->busyobj->vsl->wid = sp->vsl_id;
+	AZ(req->busyobj);
+	req->busyobj = VBO_GetBusyObj(wrk);
+	req->busyobj->vsl->wid = sp->vsl_id;
 
-	VRY_Validate(sp->req->vary_b);
-	if (sp->req->vary_l != NULL)
-		sp->req->busyobj->vary = sp->req->vary_b;
+	VRY_Validate(req->vary_b);
+	if (req->vary_l != NULL)
+		req->busyobj->vary = req->vary_b;
 	else
-		sp->req->busyobj->vary = NULL;
-	oc->busyobj = sp->req->busyobj;
+		req->busyobj->vary = NULL;
+	oc->busyobj = req->busyobj;
 
 	/*
 	 * Busy objects go on the tail, so they will not trip up searches.
@@ -461,7 +462,6 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 	oc->objhead = oh;
 	/* NB: do not deref objhead the new object inherits our reference */
 	Lck_Unlock(&oh->mtx);
-	*poh = oh;
 	return (oc);
 }
 

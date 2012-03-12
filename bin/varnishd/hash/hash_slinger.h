@@ -52,7 +52,7 @@ struct hash_slinger {
 
 /* cache_hash.c */
 void HSH_Cleanup(struct worker *w);
-struct objcore *HSH_Lookup(struct sess *sp, struct objhead **poh);
+struct objcore *HSH_Lookup(struct sess *sp);
 void HSH_Ref(struct objcore *o);
 void HSH_Drop(struct worker *, struct object **);
 void HSH_Init(const struct hash_slinger *slinger);
