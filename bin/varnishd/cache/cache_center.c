@@ -916,7 +916,6 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 		(void)usleep(10000);
 	assert(bo->state >= BOS_FAILED);
 
-	bo->vfp = NULL;
 	assert(WRW_IsReleased(wrk));
 	AZ(bo->vbc);
 	AN(req->director);

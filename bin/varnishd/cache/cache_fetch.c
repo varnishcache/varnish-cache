@@ -625,6 +625,8 @@ FetchBody(struct worker *wrk, void *priv)
 	 */
 	AZ(vfp_nop_end(bo));
 
+	bo->vfp = NULL;
+
 	VSLb(bo->vsl, SLT_Fetch_Body, "%u(%s) cls %d mklen %d",
 	    bo->body_status, body_status(bo->body_status),
 	    cls, mklen);
@@ -674,7 +676,7 @@ FetchBody(struct worker *wrk, void *priv)
 
 	}
 	bo->stats = NULL;
-	VBO_DerefBusyObj(NULL, &bo);
+	VBO_DerefBusyObj(wrk, &bo);
 }
 
 /*--------------------------------------------------------------------
