@@ -903,18 +903,13 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	bo = req->busyobj;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-#if 1
-	FetchBody(wrk, bo);
-#else
 	bo->fetch_task.func = FetchBody;
 	bo->fetch_task.priv = bo;
-	if (Pool_Task(wrk->pool, &bo->fetch_task, POOL_NO_QUEUE)) {
+	if (Pool_Task(wrk->pool, &bo->fetch_task, POOL_NO_QUEUE))
 		FetchBody(wrk, bo);
-	} else {
-		while (bo->state < BOS_FAILED)
-			(void)usleep(10000);
-	}
-#endif
+
+	while (bo->state < BOS_FAILED)
+		(void)usleep(10000);
 	assert(bo->state >= BOS_FAILED);
 
 	http_Teardown(bo->bereq);

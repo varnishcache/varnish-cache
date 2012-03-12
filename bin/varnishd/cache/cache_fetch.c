@@ -627,44 +627,43 @@ FetchBody(struct worker *wrk, void *priv)
 		wrk->stats.fetch_failed++;
 		VDI_CloseFd(&bo->vbc);
 		obj->len = 0;
-		bo->stats = NULL;
-		return;
-	}
+	} else {
+		assert(bo->state == BOS_FETCHING);
 
-	assert(bo->state == BOS_FETCHING);
+		if (cls == 0 && bo->should_close)
+			cls = 1;
 
-	if (cls == 0 && bo->should_close)
-		cls = 1;
+		VSLb(bo->vsl, SLT_Length, "%zd", obj->len);
 
-	VSLb(bo->vsl, SLT_Length, "%zd", obj->len);
+		{
+		/* Sanity check fetch methods accounting */
+			ssize_t uu;
 
-	{
-	/* Sanity check fetch methods accounting */
-		ssize_t uu;
+			uu = 0;
+			VTAILQ_FOREACH(st, &obj->store, list)
+				uu += st->len;
+			if (bo->do_stream)
+				/* Streaming might have started freeing stuff */
+				assert (uu <= obj->len);
 
-		uu = 0;
-		VTAILQ_FOREACH(st, &obj->store, list)
-			uu += st->len;
-		if (bo->do_stream)
-			/* Streaming might have started freeing stuff */
-			assert (uu <= obj->len);
+			else
+				assert(uu == obj->len);
+		}
 
+		if (mklen > 0) {
+			http_Unset(obj->http, H_Content_Length);
+			http_PrintfHeader(obj->http,
+			    "Content-Length: %zd", obj->len);
+		}
+
+		bo->state = BOS_FINISHED;
+
+		if (cls)
+			VDI_CloseFd(&bo->vbc);
 		else
-			assert(uu == obj->len);
+			VDI_RecycleFd(&bo->vbc);
+
 	}
-
-	if (mklen > 0) {
-		http_Unset(obj->http, H_Content_Length);
-		http_PrintfHeader(obj->http, "Content-Length: %zd", obj->len);
-	}
-
-	bo->state = BOS_FINISHED;
-
-	if (cls)
-		VDI_CloseFd(&bo->vbc);
-	else
-		VDI_RecycleFd(&bo->vbc);
-
 	bo->stats = NULL;
 }
 
