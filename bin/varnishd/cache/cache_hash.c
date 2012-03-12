@@ -125,14 +125,13 @@ HSH_Cleanup(struct worker *wrk)
 	if (wrk->nwaitinglist != NULL) {
 		FREE_OBJ(wrk->nwaitinglist);
 		wrk->nwaitinglist = NULL;
+		wrk->stats.n_waitinglist--;
 	}
 	if (wrk->nhashpriv != NULL) {
 		/* XXX: If needed, add slinger method for this */
 		free(wrk->nhashpriv);
 		wrk->nhashpriv = NULL;
 	}
-	if (wrk->nvbo != NULL)
-		VBO_Free(&wrk->nvbo);
 }
 
 void
@@ -470,7 +469,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
  */
 
 static void
-hsh_rush(struct objhead *oh)
+hsh_rush(struct dstat *ds, struct objhead *oh)
 {
 	unsigned u;
 	struct sess *sp;
@@ -499,6 +498,7 @@ hsh_rush(struct objhead *oh)
 	if (VTAILQ_EMPTY(&wl->list)) {
 		oh->waitinglist = NULL;
 		FREE_OBJ(wl);
+		ds->n_waitinglist--;
 	}
 }
 
@@ -578,12 +578,12 @@ HSH_Drop(struct worker *wrk, struct object **oo)
 	AssertObjCorePassOrBusy((*oo)->objcore);
 	(*oo)->exp.ttl = -1.;
 	if ((*oo)->objcore != NULL)		/* Pass has no objcore */
-		HSH_Unbusy((*oo)->objcore);
+		HSH_Unbusy(&wrk->stats, (*oo)->objcore);
 	(void)HSH_Deref(&wrk->stats, NULL, oo);
 }
 
 void
-HSH_Unbusy(struct objcore *oc)
+HSH_Unbusy(struct dstat *ds, struct objcore *oc)
 {
 	struct objhead *oh;
 
@@ -605,7 +605,7 @@ HSH_Unbusy(struct objcore *oc)
 	oc->flags &= ~OC_F_BUSY;
 	oc->busyobj = NULL;
 	if (oh->waitinglist != NULL)
-		hsh_rush(oh);
+		hsh_rush(ds, oh);
 	AN(oc->ban);
 	Lck_Unlock(&oh->mtx);
 }
@@ -682,7 +682,7 @@ HSH_Deref(struct dstat *ds, struct objcore *oc, struct object **oo)
 		AN(oc->methods);
 	}
 	if (oh->waitinglist != NULL)
-		hsh_rush(oh);
+		hsh_rush(ds, oh);
 	Lck_Unlock(&oh->mtx);
 	if (r != 0)
 		return (r);

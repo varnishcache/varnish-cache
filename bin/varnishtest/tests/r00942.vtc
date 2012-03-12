@@ -26,7 +26,11 @@ server s1 {
 
 varnish v1 \
 	-arg {-p diag_bitmap=0x00010000} \
-	-vcl+backend {} 
+	-vcl+backend {
+		sub vcl_fetch {
+			set beresp.do_stream = false;
+		}
+} 
 
 varnish v1 -start
 

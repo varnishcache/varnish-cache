@@ -903,23 +903,19 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	bo = req->busyobj;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-#if 1
-	FetchBody(wrk, bo);
-#else
-	bo->task.func = FetchBody;
-	bo->task.priv = bo;
-	if (Pool_Task(wrk->pool, &bo->task, POOL_NO_QUEUE)) {
+	bo->fetch_task.func = FetchBody;
+	bo->fetch_task.priv = bo;
+
+	/* Gain a reference for FetchBody() */
+	VBO_RefBusyObj(bo);
+
+	if (Pool_Task(wrk->pool, &bo->fetch_task, POOL_NO_QUEUE))
 		FetchBody(wrk, bo);
-	} else {
-		while (bo->state < BOS_FAILED)
-			(void)usleep(10000);
-	}
-#endif
+
+	while (bo->state < BOS_FAILED)
+		(void)usleep(10000);
 	assert(bo->state >= BOS_FAILED);
 
-	http_Teardown(bo->bereq);
-	http_Teardown(bo->beresp);
-	bo->vfp = NULL;
 	assert(WRW_IsReleased(wrk));
 	AZ(bo->vbc);
 	AN(req->director);
@@ -938,7 +934,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 		AN(req->obj->objcore);
 		AN(req->obj->objcore->ban);
 		AZ(req->obj->ws_o->overflow);
-		HSH_Unbusy(req->obj->objcore);
+		HSH_Unbusy(&wrk->stats, req->obj->objcore);
 	}
 	VBO_DerefBusyObj(wrk, &req->busyobj);
 	wrk->acct_tmp.fetch++;

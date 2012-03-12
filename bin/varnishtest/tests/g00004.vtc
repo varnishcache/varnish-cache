@@ -21,6 +21,8 @@ varnish v1 \
 	-arg {-p diag_bitmap=0x00010000} \
 	-vcl+backend {
 	sub vcl_fetch {
+		set beresp.do_stream = false;
+
 		if (req.url == "/gunzip") {
 			set beresp.do_gunzip = true;
 		} 

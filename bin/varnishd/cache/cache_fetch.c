@@ -298,7 +298,7 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 	do {
 		/* Skip leading whitespace */
 		do {
-			if (HTC_Read(htc, buf, 1) <= 0) 
+			if (HTC_Read(htc, buf, 1) <= 0)
 				return (FetchError(bo, "chunked read err"));
 		} while (vct_islws(buf[0]));
 
@@ -527,7 +527,13 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 	return (0);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * This function is either called by the requesting thread OR by a
+ * dedicated body-fetch work-thread.
+ *
+ * We get passed the busyobj in the priv arg, and we inherit a
+ * refcount on it, which we must release, when done fetching.
+ */
 
 void
 FetchBody(struct worker *wrk, void *priv)
@@ -619,53 +625,58 @@ FetchBody(struct worker *wrk, void *priv)
 	 */
 	AZ(vfp_nop_end(bo));
 
+	bo->vfp = NULL;
+
 	VSLb(bo->vsl, SLT_Fetch_Body, "%u(%s) cls %d mklen %d",
 	    bo->body_status, body_status(bo->body_status),
 	    cls, mklen);
+
+	http_Teardown(bo->bereq);
+	http_Teardown(bo->beresp);
 
 	if (bo->state == BOS_FAILED) {
 		wrk->stats.fetch_failed++;
 		VDI_CloseFd(&bo->vbc);
 		obj->len = 0;
-		bo->stats = NULL;
-		return;
-	}
+	} else {
+		assert(bo->state == BOS_FETCHING);
 
-	assert(bo->state == BOS_FETCHING);
+		if (cls == 0 && bo->should_close)
+			cls = 1;
 
-	if (cls == 0 && bo->should_close)
-		cls = 1;
+		VSLb(bo->vsl, SLT_Length, "%zd", obj->len);
 
-	VSLb(bo->vsl, SLT_Length, "%zd", obj->len);
+		{
+		/* Sanity check fetch methods accounting */
+			ssize_t uu;
 
-	{
-	/* Sanity check fetch methods accounting */
-		ssize_t uu;
+			uu = 0;
+			VTAILQ_FOREACH(st, &obj->store, list)
+				uu += st->len;
+			if (bo->do_stream)
+				/* Streaming might have started freeing stuff */
+				assert (uu <= obj->len);
 
-		uu = 0;
-		VTAILQ_FOREACH(st, &obj->store, list)
-			uu += st->len;
-		if (bo->do_stream)
-			/* Streaming might have started freeing stuff */
-			assert (uu <= obj->len);
+			else
+				assert(uu == obj->len);
+		}
 
+		if (mklen > 0) {
+			http_Unset(obj->http, H_Content_Length);
+			http_PrintfHeader(obj->http,
+			    "Content-Length: %zd", obj->len);
+		}
+
+		bo->state = BOS_FINISHED;
+
+		if (cls)
+			VDI_CloseFd(&bo->vbc);
 		else
-			assert(uu == obj->len);
+			VDI_RecycleFd(&bo->vbc);
+
 	}
-
-	if (mklen > 0) {
-		http_Unset(obj->http, H_Content_Length);
-		http_PrintfHeader(obj->http, "Content-Length: %zd", obj->len);
-	}
-
-	bo->state = BOS_FINISHED;
-
-	if (cls)
-		VDI_CloseFd(&bo->vbc);
-	else
-		VDI_RecycleFd(&bo->vbc);
-
 	bo->stats = NULL;
+	VBO_DerefBusyObj(wrk, &bo);
 }
 
 /*--------------------------------------------------------------------
