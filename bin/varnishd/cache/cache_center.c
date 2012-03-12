@@ -935,7 +935,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 		AN(req->obj->objcore);
 		AN(req->obj->objcore->ban);
 		AZ(req->obj->ws_o->overflow);
-		HSH_Unbusy(req->obj->objcore);
+		HSH_Unbusy(&wrk->stats, req->obj->objcore);
 	}
 	VBO_DerefBusyObj(wrk, &req->busyobj);
 	wrk->acct_tmp.fetch++;
