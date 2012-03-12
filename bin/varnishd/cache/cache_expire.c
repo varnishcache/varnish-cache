@@ -109,39 +109,39 @@ EXP_ACCESS(keep, 0.,)
  */
 
 static double
-EXP_Keep(const struct sess *sp, const struct object *o)
+EXP_Keep(const struct req *req, const struct object *o)
 {
 	double r;
 
 	r = (double)cache_param->default_keep;
 	if (o->exp.keep > 0.)
 		r = o->exp.keep;
-	if (sp != NULL && sp->req->exp.keep > 0. && sp->req->exp.keep < r)
-		r = sp->req->exp.keep;
-	return (EXP_Ttl(sp, o) + r);
+	if (req != NULL && req->exp.keep > 0. && req->exp.keep < r)
+		r = req->exp.keep;
+	return (EXP_Ttl(req, o) + r);
 }
 
 double
-EXP_Grace(const struct sess *sp, const struct object *o)
+EXP_Grace(const struct req *req, const struct object *o)
 {
 	double r;
 
 	r = (double)cache_param->default_grace;
 	if (o->exp.grace >= 0.)
 		r = o->exp.grace;
-	if (sp != NULL && sp->req->exp.grace > 0. && sp->req->exp.grace < r)
-		r = sp->req->exp.grace;
-	return (EXP_Ttl(sp, o) + r);
+	if (req != NULL && req->exp.grace > 0. && req->exp.grace < r)
+		r = req->exp.grace;
+	return (EXP_Ttl(req, o) + r);
 }
 
 double
-EXP_Ttl(const struct sess *sp, const struct object *o)
+EXP_Ttl(const struct req *req, const struct object *o)
 {
 	double r;
 
 	r = o->exp.ttl;
-	if (sp != NULL && sp->req->exp.ttl > 0. && sp->req->exp.ttl < r)
-		r = sp->req->exp.ttl;
+	if (req != NULL && req->exp.ttl > 0. && req->exp.ttl < r)
+		r = req->exp.ttl;
 	return (o->exp.entered + r);
 }
 
