@@ -298,7 +298,7 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 	do {
 		/* Skip leading whitespace */
 		do {
-			if (HTC_Read(htc, buf, 1) <= 0) 
+			if (HTC_Read(htc, buf, 1) <= 0)
 				return (FetchError(bo, "chunked read err"));
 		} while (vct_islws(buf[0]));
 
@@ -527,7 +527,13 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 	return (0);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * This function is either called by the requesting thread OR by a
+ * dedicated body-fetch work-thread.
+ *
+ * We get passed the busyobj in the priv arg, and we inherit a
+ * refcount on it, which we must release, when done fetching.
+ */
 
 void
 FetchBody(struct worker *wrk, void *priv)
@@ -623,6 +629,9 @@ FetchBody(struct worker *wrk, void *priv)
 	    bo->body_status, body_status(bo->body_status),
 	    cls, mklen);
 
+	http_Teardown(bo->bereq);
+	http_Teardown(bo->beresp);
+
 	if (bo->state == BOS_FAILED) {
 		wrk->stats.fetch_failed++;
 		VDI_CloseFd(&bo->vbc);
@@ -665,6 +674,7 @@ FetchBody(struct worker *wrk, void *priv)
 
 	}
 	bo->stats = NULL;
+	VBO_DerefBusyObj(NULL, &bo);
 }
 
 /*--------------------------------------------------------------------

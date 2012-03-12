@@ -135,21 +135,16 @@ VBO_GetBusyObj(struct worker *wrk)
 	return (bo);
 }
 
-#if 0
 void
-VBO_RefBusyObj(const struct busyobj *busyobj)
+VBO_RefBusyObj(struct busyobj *bo)
 {
-	struct vbo *vbo;
 
-	CHECK_OBJ_NOTNULL(busyobj, BUSYOBJ_MAGIC);
-	vbo = busyobj->vbo;
-	CHECK_OBJ_NOTNULL(vbo, VBO_MAGIC);
-	Lck_Lock(&vbo->mtx);
-	assert(vbo->refcount > 0);
-	vbo->refcount++;
-	Lck_Unlock(&vbo->mtx);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	Lck_Lock(&bo->mtx);
+	assert(bo->refcount > 0);
+	bo->refcount++;
+	Lck_Unlock(&bo->mtx);
 }
-#endif
 
 void
 VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
@@ -157,7 +152,7 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 	struct busyobj *bo;
 	unsigned r;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_ORNULL(wrk, WORKER_MAGIC);
 	AN(pbo);
 	bo = *pbo;
 	*pbo = NULL;
@@ -175,7 +170,7 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 	memset(&bo->refcount, 0,
 	    sizeof *bo - offsetof(struct busyobj, refcount));
 
-	if (cache_param->bo_cache && wrk->nbo == NULL)
+	if (cache_param->bo_cache && wrk != NULL && wrk->nbo == NULL)
 		wrk->nbo = bo;
 	else
 		VBO_Free(&bo);

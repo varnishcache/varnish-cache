@@ -905,6 +905,10 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 
 	bo->fetch_task.func = FetchBody;
 	bo->fetch_task.priv = bo;
+
+	/* Gain a reference for FetchBody() */
+	VBO_RefBusyObj(bo);
+
 	if (Pool_Task(wrk->pool, &bo->fetch_task, POOL_NO_QUEUE))
 		FetchBody(wrk, bo);
 
@@ -912,8 +916,6 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 		(void)usleep(10000);
 	assert(bo->state >= BOS_FAILED);
 
-	http_Teardown(bo->bereq);
-	http_Teardown(bo->beresp);
 	bo->vfp = NULL;
 	assert(WRW_IsReleased(wrk));
 	AZ(bo->vbc);
