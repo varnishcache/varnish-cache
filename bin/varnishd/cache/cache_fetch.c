@@ -35,6 +35,8 @@
 
 #include "cache.h"
 
+#include "hash/hash_slinger.h"
+
 #include "cache_backend.h"
 #include "vcli_priv.h"
 #include "vct.h"
@@ -674,12 +676,21 @@ FetchBody(struct worker *wrk, void *priv)
 			    "Content-Length: %zd", obj->len);
 		}
 
-		bo->state = BOS_FINISHED;
 
 		if (cls)
 			VDI_CloseFd(&bo->vbc);
 		else
 			VDI_RecycleFd(&bo->vbc);
+
+		if (obj->objcore != NULL) {
+			EXP_Insert(obj);
+			AN(obj->objcore->ban);
+			AZ(obj->ws_o->overflow);
+			HSH_Unbusy(&wrk->stats, obj->objcore);
+		}
+
+		/* XXX: Atomic assignment, needs volatile/membar ? */
+		bo->state = BOS_FINISHED;
 
 	}
 	bo->stats = NULL;
