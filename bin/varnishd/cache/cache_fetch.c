@@ -647,6 +647,7 @@ FetchBody(struct worker *wrk, void *priv)
 		wrk->stats.fetch_failed++;
 		VDI_CloseFd(&bo->vbc);
 		obj->len = 0;
+		HSH_Drop(wrk, &obj);
 	} else {
 		assert(bo->state == BOS_FETCHING);
 

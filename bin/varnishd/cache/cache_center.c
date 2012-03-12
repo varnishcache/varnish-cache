@@ -917,12 +917,9 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	assert(bo->state >= BOS_FAILED);
 
 	assert(WRW_IsReleased(wrk));
-	AZ(bo->vbc);
-	AN(req->director);
 
 	if (bo->state == BOS_FAILED) {
-		HSH_Drop(wrk, &req->obj);
-		AZ(req->obj);
+		req->obj = NULL;
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		req->err_code = 503;
 		sp->step = STP_ERROR;
