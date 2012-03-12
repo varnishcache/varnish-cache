@@ -9,7 +9,11 @@ server s1 {
 	send "Baba\n"
 } -start
 
-varnish v1 -vcl+backend {} -start
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		set beresp.do_stream = false;
+	}
+} -start
 varnish v1 -cliok "param.set between_bytes_timeout 1"
 
 client c1 {

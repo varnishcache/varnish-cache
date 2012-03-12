@@ -11,7 +11,11 @@ server s1 {
 	send "\r\n"
 } -start
 
-varnish v1 -vcl+backend {} -start
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		set beresp.do_stream = false;
+	}
+} -start
 
 client c1 {
 	txreq

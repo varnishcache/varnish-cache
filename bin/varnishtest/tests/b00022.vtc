@@ -15,6 +15,9 @@ varnish v1 -vcl {
 		.port = "${s1_port}";
 		.between_bytes_timeout = 1s;
 	}
+	sub vcl_fetch {
+		set beresp.do_stream = false;
+	}
 } -start
 
 client c1 {
