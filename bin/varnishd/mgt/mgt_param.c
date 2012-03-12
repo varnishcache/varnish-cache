@@ -1060,6 +1060,7 @@ static const struct parspec input_parspec[] = {
 		"  0x00000010 - mutex contests.\n"
 		"  0x00000020 - waiting list.\n"
 		"  0x00000040 - object workspace.\n"
+		"  0x00000080 - mutex timing.\n"
 		"  0x00001000 - do not core-dump child process.\n"
 		"  0x00002000 - only short panic message.\n"
 		"  0x00004000 - panic to stderr.\n"
@@ -1069,7 +1070,11 @@ static const struct parspec input_parspec[] = {
 		"  0x00080000 - ban-lurker debugging.\n"
 		"  0x80000000 - do edge-detection on digest.\n"
 		"\n"
-		"Use 0x notation and do the bitor in your head :-)\n",
+		"Use 0x notation and do the bitor in your head :-)\n"
+		"\n"
+		"Note: Mutex timing will add extra overhead and "
+		"synchronization between threads, consequently changing the "
+		"locking characteristics.\n",
 		0,
 		"0", "bitmap" },
 	{ "ban_dups", tweak_bool, &mgt_param.ban_dups, 0, 0,
