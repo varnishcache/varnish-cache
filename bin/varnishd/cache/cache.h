@@ -108,7 +108,6 @@ struct poolparam;
 struct sess;
 struct sesspool;
 struct vbc;
-struct vbo;
 struct vef_priv;
 struct vrt_backend;
 struct vsb;
@@ -298,7 +297,7 @@ struct worker {
 	struct objhead		*nobjhead;
 	struct objcore		*nobjcore;
 	struct waitinglist	*nwaitinglist;
-	struct vbo		*nvbo;
+	struct busyobj		*nbo;
 	void			*nhashpriv;
 	struct dstat		stats;
 
@@ -459,7 +458,14 @@ enum busyobj_state_e {
 struct busyobj {
 	unsigned		magic;
 #define BUSYOBJ_MAGIC		0x23b95567
-	struct vbo		*vbo;
+	struct lock		mtx;
+	char			*end;
+
+	/*
+	 * All fields from refcount and down are zeroed when the busyobj
+	 * is recycled.
+	 */
+	unsigned		refcount;
 
 	uint8_t			*vary;
 	unsigned		is_gzip;
@@ -479,7 +485,7 @@ struct busyobj {
 	struct http_conn	htc;
 
 	enum body_status	body_status;
-	struct pool_task	task;
+	struct pool_task	fetch_task;
 
 	struct vef_priv		*vef_priv;
 
@@ -721,7 +727,7 @@ void VBO_Init(void);
 struct busyobj *VBO_GetBusyObj(struct worker *wrk);
 void VBO_RefBusyObj(const struct busyobj *busyobj);
 void VBO_DerefBusyObj(struct worker *wrk, struct busyobj **busyobj);
-void VBO_Free(struct vbo **vbo);
+void VBO_Free(struct busyobj **vbo);
 
 /* cache_center.c [CNT] */
 void CNT_Session(struct sess *sp);

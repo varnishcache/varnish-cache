@@ -147,8 +147,8 @@ wrk_thread_real(void *priv, unsigned thread_workspace)
 	if (w->vcl != NULL)
 		VCL_Rel(&w->vcl);
 	AZ(pthread_cond_destroy(&w->cond));
-	if (w->nvbo != NULL)
-		VBO_Free(&w->nvbo);
+	if (w->nbo != NULL)
+		VBO_Free(&w->nbo);
 	HSH_Cleanup(w);
 	WRK_SumStat(w);
 	return (NULL);

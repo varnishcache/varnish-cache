@@ -131,8 +131,6 @@ HSH_Cleanup(struct worker *wrk)
 		free(wrk->nhashpriv);
 		wrk->nhashpriv = NULL;
 	}
-	if (wrk->nvbo != NULL)
-		VBO_Free(&wrk->nvbo);
 }
 
 void

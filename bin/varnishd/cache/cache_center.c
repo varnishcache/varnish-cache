@@ -906,9 +906,9 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 #if 1
 	FetchBody(wrk, bo);
 #else
-	bo->task.func = FetchBody;
-	bo->task.priv = bo;
-	if (Pool_Task(wrk->pool, &bo->task, POOL_NO_QUEUE)) {
+	bo->fetch_task.func = FetchBody;
+	bo->fetch_task.priv = bo;
+	if (Pool_Task(wrk->pool, &bo->fetch_task, POOL_NO_QUEUE)) {
 		FetchBody(wrk, bo);
 	} else {
 		while (bo->state < BOS_FAILED)
