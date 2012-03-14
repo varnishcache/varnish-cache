@@ -377,7 +377,6 @@ HSH_Lookup(struct sess *sp)
 	 */
 
 	AZ(req->objcore);
-	req->objcore = grace_oc;		/* XXX: Hack-ish */
 	if (oc == NULL			/* We found no live object */
 	    && grace_oc != NULL		/* There is a grace candidate */
 	    && (busy_oc != NULL		/* Somebody else is already busy */
@@ -387,7 +386,6 @@ HSH_Lookup(struct sess *sp)
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		oc = grace_oc;
 	}
-	req->objcore = NULL;
 
 	if (oc != NULL && !req->hash_always_miss) {
 		o = oc_getobj(&wrk->stats, oc);
