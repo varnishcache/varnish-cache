@@ -326,6 +326,9 @@ HSH_Lookup(struct sess *sp)
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 		assert(oc->objhead == oh);
 
+		if (oc->flags & OC_F_NOTYET)
+			continue;
+
 		if (oc->flags & OC_F_BUSY) {
 			CHECK_OBJ_NOTNULL(oc->busyobj, BUSYOBJ_MAGIC);
 			if (req->hash_ignore_busy)
@@ -370,10 +373,7 @@ HSH_Lookup(struct sess *sp)
 	 * If we have seen a busy object or the backend is unhealthy, and
 	 * we have an object in grace, use it, if req.grace is also
 	 * satisified.
-	 * XXX: Interesting footnote:  The busy object might be for a
-	 * XXX: different "Vary:" than we sought.  We have no way of knowing
-	 * XXX: this until the object is unbusy'ed, so in practice we
-	 * XXX: serialize fetch of all Vary's if grace is possible.
+	 * XXX: VDI_Healty() call with oh->mtx is not so cool.
 	 */
 
 	AZ(req->objcore);
@@ -388,17 +388,16 @@ HSH_Lookup(struct sess *sp)
 	}
 
 	if (oc != NULL && !req->hash_always_miss) {
-		o = oc_getobj(&wrk->stats, oc);
-		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-		assert(oc->objhead == oh);
-
 		/* We found an object we like */
-		oc->refcnt++;
-		if (o->hits < INT_MAX)
-			o->hits++;
 		assert(oh->refcnt > 1);
+		assert(oc->objhead == oh);
+		oc->refcnt++;
 		Lck_Unlock(&oh->mtx);
 		assert(hash->deref(oh));
+		o = oc_getobj(&wrk->stats, oc);
+		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+		if (o->hits < INT_MAX)
+			o->hits++;
 		return (oc);
 	}
 
@@ -428,11 +427,16 @@ HSH_Lookup(struct sess *sp)
 		return (NULL);
 	}
 
-	/* Insert (precreated) objcore in objecthead */
+	/* Insert (precreated) objcore in objecthead and release mutex */
 	oc = wrk->nobjcore;
 	wrk->nobjcore = NULL;
 	AN(oc->flags & OC_F_BUSY);
+	oc->flags |= OC_F_NOTYET;
 	oc->refcnt = 1;
+	oc->objhead = oh;
+	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
+	/* NB: do not deref objhead the new object inherits our reference */
+	Lck_Unlock(&oh->mtx);
 
 	AZ(req->busyobj);
 	req->busyobj = VBO_GetBusyObj(wrk);
@@ -445,14 +449,7 @@ HSH_Lookup(struct sess *sp)
 		req->busyobj->vary = NULL;
 	oc->busyobj = req->busyobj;
 
-	/*
-	 * Busy objects go on the tail, so they will not trip up searches.
-	 * HSH_Unbusy() will move them to the front.
-	 */
-	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
-	oc->objhead = oh;
-	/* NB: do not deref objhead the new object inherits our reference */
-	Lck_Unlock(&oh->mtx);
+	oc->flags &= ~OC_F_NOTYET;
 	return (oc);
 }
 

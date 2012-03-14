@@ -383,6 +383,7 @@ struct objcore {
 #define OC_F_LURK		(3<<6)		/* Ban-lurker-color */
 #define OC_F_COMPLETE		(1<<8)
 #define OC_F_FAILED		(1<<9)
+#define OC_F_NOTYET		(1<<10)
 	unsigned		timer_idx;
 	VTAILQ_ENTRY(objcore)	list;
 	VTAILQ_ENTRY(objcore)	lru_list;
