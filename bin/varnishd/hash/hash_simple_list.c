@@ -60,16 +60,19 @@ hsl_start(void)
  */
 
 static struct objhead * __match_proto__(hash_lookup_f)
-hsl_lookup(struct worker *wrk, struct objhead *noh)
+hsl_lookup(struct worker *wrk, const void *digest, struct objhead **noh)
 {
 	struct objhead *oh;
 	int i;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(noh, OBJHEAD_MAGIC);
+	AN(digest);
+	AN(noh);
+	CHECK_OBJ_NOTNULL(*noh, OBJHEAD_MAGIC);
+
 	Lck_Lock(&hsl_mtx);
 	VTAILQ_FOREACH(oh, &hsl_head, hoh_list) {
-		i = memcmp(oh->digest, noh->digest, sizeof oh->digest);
+		i = memcmp(oh->digest, digest, sizeof oh->digest);
 		if (i < 0)
 			continue;
 		if (i > 0)
@@ -80,12 +83,15 @@ hsl_lookup(struct worker *wrk, struct objhead *noh)
 	}
 
 	if (oh != NULL)
-		VTAILQ_INSERT_BEFORE(oh, noh, hoh_list);
+		VTAILQ_INSERT_BEFORE(oh, *noh, hoh_list);
 	else
-		VTAILQ_INSERT_TAIL(&hsl_head, noh, hoh_list);
+		VTAILQ_INSERT_TAIL(&hsl_head, *noh, hoh_list);
 
+	oh = *noh;
+	*noh = NULL;
+	memcpy(oh->digest, digest, sizeof oh->digest);
 	Lck_Unlock(&hsl_mtx);
-	return (noh);
+	return (oh);
 }
 
 /*--------------------------------------------------------------------

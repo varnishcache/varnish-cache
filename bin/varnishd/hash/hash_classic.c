@@ -111,24 +111,26 @@ hcl_start(void)
  */
 
 static struct objhead * __match_proto__(hash_lookup_f)
-hcl_lookup(struct worker *wrk, struct objhead *noh)
+hcl_lookup(struct worker *wrk, const void *digest, struct objhead **noh)
 {
 	struct objhead *oh;
 	struct hcl_hd *hp;
-	unsigned u1, digest;
+	unsigned u1, hdigest;
 	int i;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(noh, OBJHEAD_MAGIC);
+	AN(digest);
+	AN(noh);
+	CHECK_OBJ_NOTNULL(*noh, OBJHEAD_MAGIC);
 
-	assert(sizeof noh->digest > sizeof digest);
-	memcpy(&digest, noh->digest, sizeof digest);
-	u1 = digest % hcl_nhash;
+	assert(sizeof oh->digest >= sizeof hdigest);
+	memcpy(&hdigest, digest, sizeof hdigest);
+	u1 = hdigest % hcl_nhash;
 	hp = &hcl_head[u1];
 
 	Lck_Lock(&hp->mtx);
 	VTAILQ_FOREACH(oh, &hp->head, hoh_list) {
-		i = memcmp(oh->digest, noh->digest, sizeof oh->digest);
+		i = memcmp(oh->digest, digest, sizeof oh->digest);
 		if (i < 0)
 			continue;
 		if (i > 0)
@@ -139,14 +141,18 @@ hcl_lookup(struct worker *wrk, struct objhead *noh)
 	}
 
 	if (oh != NULL)
-		VTAILQ_INSERT_BEFORE(oh, noh, hoh_list);
+		VTAILQ_INSERT_BEFORE(oh, *noh, hoh_list);
 	else
-		VTAILQ_INSERT_TAIL(&hp->head, noh, hoh_list);
+		VTAILQ_INSERT_TAIL(&hp->head, *noh, hoh_list);
 
-	noh->hoh_head = hp;
+	oh = *noh;
+	*noh = NULL;
+	memcpy(oh->digest, digest, sizeof oh->digest);
+
+	oh->hoh_head = hp;
 
 	Lck_Unlock(&hp->mtx);
-	return (noh);
+	return (oh);
 }
 
 /*--------------------------------------------------------------------

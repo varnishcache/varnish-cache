@@ -253,15 +253,10 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	hsh_prealloc(wrk);
-	if (cache_param->diag_bitmap & 0x80000000)
-		hsh_testmagic(wrk->nobjhead->digest);
 
 	AN(wrk->nobjhead);
-	memcpy(wrk->nobjhead->digest, digest, SHA256_LEN);
-	oh = hash->lookup(wrk, wrk->nobjhead);
+	oh = hash->lookup(wrk, digest, &wrk->nobjhead);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-	if (oh == wrk->nobjhead)
-		wrk->nobjhead = NULL;
 	Lck_Lock(&oh->mtx);
 	assert(oh->refcnt > 0);
 
@@ -303,9 +298,8 @@ HSH_Lookup(struct sess *sp)
 	AN(hash);
 
 	hsh_prealloc(wrk);
-	memcpy(wrk->nobjhead->digest, req->digest, sizeof req->digest);
 	if (cache_param->diag_bitmap & 0x80000000)
-		hsh_testmagic(wrk->nobjhead->digest);
+		hsh_testmagic(req->digest);
 
 	if (req->hash_objhead != NULL) {
 		/*
@@ -317,9 +311,7 @@ HSH_Lookup(struct sess *sp)
 		req->hash_objhead = NULL;
 	} else {
 		AN(wrk->nobjhead);
-		oh = hash->lookup(wrk, wrk->nobjhead);
-		if (oh == wrk->nobjhead)
-			wrk->nobjhead = NULL;
+		oh = hash->lookup(wrk, req->digest, &wrk->nobjhead);
 	}
 
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);

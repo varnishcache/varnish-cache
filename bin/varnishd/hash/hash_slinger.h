@@ -35,8 +35,8 @@ struct object;
 typedef void hash_init_f(int ac, char * const *av);
 typedef void hash_start_f(void);
 typedef void hash_prep_f(struct worker *);
-typedef struct objhead *
-    hash_lookup_f(struct worker *wrk, struct objhead *nobj);
+typedef struct objhead *hash_lookup_f(struct worker *wrk, const void *digest,
+    struct objhead **nobj);
 typedef int hash_deref_f(struct objhead *obj);
 
 struct hash_slinger {
