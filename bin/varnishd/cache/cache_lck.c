@@ -64,7 +64,7 @@ Lck__Lock(struct lock *lck, const char *p, const char *f, int l)
 {
 	struct ilck *ilck;
 	int r;
-	double t0, t;
+	double t0 = 0, t;
 
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	if (!(cache_param->diag_bitmap & 0x98)) {
