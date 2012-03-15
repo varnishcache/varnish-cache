@@ -654,6 +654,8 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
 		req->objcore = NULL;
 	}
+	assert(bo->refcount == 2);
+	VBO_DerefBusyObj(wrk, &bo);
 	VBO_DerefBusyObj(wrk, &req->busyobj);
 	req->director = NULL;
 	req->storage_hint = NULL;
@@ -906,8 +908,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	bo->fetch_task.func = FetchBody;
 	bo->fetch_task.priv = bo;
 
-	/* Gain a reference for FetchBody() */
-	VBO_RefBusyObj(bo);
+	assert(bo->refcount == 2);	/* one for each thread */
 
 	if (Pool_Task(wrk->pool, &bo->fetch_task, POOL_NO_QUEUE))
 		FetchBody(wrk, bo);
@@ -1264,6 +1265,7 @@ cnt_pass(struct sess *sp, struct worker *wrk, struct req *req)
 
 	req->busyobj = VBO_GetBusyObj(wrk);
 	req->busyobj->vsl->wid = sp->vsl_id;
+	req->busyobj->refcount = 2;
 	http_Setup(req->busyobj->bereq, req->busyobj->ws, req->busyobj->vsl);
 	http_FilterReq(sp, HTTPH_R_PASS);
 

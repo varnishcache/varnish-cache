@@ -58,7 +58,9 @@
 
 #include "cache.h"
 
+
 #include "hash/hash_slinger.h"
+#include "vmb.h"
 #include "vsha256.h"
 
 static const struct hash_slinger *hash;
@@ -326,15 +328,17 @@ HSH_Lookup(struct sess *sp)
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 		assert(oc->objhead == oh);
 
-		if (oc->flags & OC_F_NOTYET)
+		/* We ignore failed oc's, they're no use, ever. */
+		if (oc->flags & OC_F_FAILED)
 			continue;
 
-		if (oc->flags & OC_F_BUSY) {
+		if (oc->flags & (OC_F_BUSY | OC_F_NOTYET)) {
 			CHECK_OBJ_NOTNULL(oc->busyobj, BUSYOBJ_MAGIC);
 			if (req->hash_ignore_busy)
 				continue;
 
-			if (oc->busyobj->vary != NULL &&
+			if (!(oc->flags & OC_F_NOTYET) &&
+			    oc->busyobj->vary != NULL &&
 			    !VRY_Match(req, oc->busyobj->vary))
 				continue;
 
@@ -440,15 +444,17 @@ HSH_Lookup(struct sess *sp)
 
 	AZ(req->busyobj);
 	req->busyobj = VBO_GetBusyObj(wrk);
+	oc->busyobj = req->busyobj;
 	req->busyobj->vsl->wid = sp->vsl_id;
+	req->busyobj->refcount = 2;	/* One for headers, one for body*/
 
 	VRY_Validate(req->vary_b);
 	if (req->vary_l != NULL)
 		req->busyobj->vary = req->vary_b;
 	else
 		req->busyobj->vary = NULL;
-	oc->busyobj = req->busyobj;
 
+	VMB();
 	oc->flags &= ~OC_F_NOTYET;
 	return (oc);
 }
