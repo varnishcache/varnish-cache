@@ -1136,9 +1136,6 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 		return (0);
 	}
 
-	/* For now... */
-	AN(oc->flags & (OC_F_COMPLETE|OC_F_FAILED));
-
 	o = oc_getobj(&wrk->stats, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	req->obj = o;

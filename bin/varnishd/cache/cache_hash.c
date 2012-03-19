@@ -266,7 +266,6 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc)
 	oc->refcnt = 1;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ(oc->flags & OC_F_BUSY);
-	oc->flags |= OC_F_COMPLETE;
 
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, list);
 	/* NB: do not deref objhead the new object inherits our reference */
@@ -285,10 +284,11 @@ HSH_Lookup(struct sess *sp)
 	struct worker *wrk;
 	struct objhead *oh;
 	struct objcore *oc;
-	struct objcore *busy_oc, *grace_oc;
+	struct objcore *grace_oc;
 	struct object *o;
 	struct req *req;
 	double grace_ttl;
+	int busy_found;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	wrk = sp->wrk;
@@ -319,7 +319,7 @@ HSH_Lookup(struct sess *sp)
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_Lock(&oh->mtx);
 	assert(oh->refcnt > 0);
-	busy_oc = NULL;
+	busy_found = 0;
 	grace_oc = NULL;
 	grace_ttl = NAN;
 	VTAILQ_FOREACH(oc, &oh->objcs, list) {
@@ -328,21 +328,17 @@ HSH_Lookup(struct sess *sp)
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 		assert(oc->objhead == oh);
 
-		/* We ignore failed oc's, they're no use, ever. */
-		if (oc->flags & OC_F_FAILED)
-			continue;
-
-		if (oc->flags & (OC_F_BUSY | OC_F_NOTYET)) {
-			CHECK_OBJ_NOTNULL(oc->busyobj, BUSYOBJ_MAGIC);
+		if (oc->flags & OC_F_BUSY) {
+			CHECK_OBJ_ORNULL(oc->busyobj, BUSYOBJ_MAGIC);
 			if (req->hash_ignore_busy)
 				continue;
 
-			if (!(oc->flags & OC_F_NOTYET) &&
+			if (oc->busyobj != NULL &&
 			    oc->busyobj->vary != NULL &&
 			    !VRY_Match(req, oc->busyobj->vary))
 				continue;
 
-			busy_oc = oc;
+			busy_found = 1;
 			continue;
 		}
 
@@ -383,7 +379,7 @@ HSH_Lookup(struct sess *sp)
 	AZ(req->objcore);
 	if (oc == NULL			/* We found no live object */
 	    && grace_oc != NULL		/* There is a grace candidate */
-	    && (busy_oc != NULL		/* Somebody else is already busy */
+	    && (busy_found 		/* Somebody else is already busy */
 	    || !VDI_Healthy(req->director, sp))) {
 					/* Or it is impossible to fetch */
 		o = oc_getobj(&wrk->stats, grace_oc);
@@ -405,7 +401,7 @@ HSH_Lookup(struct sess *sp)
 		return (oc);
 	}
 
-	if (busy_oc != NULL) {
+	if (busy_found) {
 		/* There are one or more busy objects, wait for them */
 		if (req->esi_level == 0) {
 			CHECK_OBJ_NOTNULL(wrk->nwaitinglist,
@@ -435,7 +431,6 @@ HSH_Lookup(struct sess *sp)
 	oc = wrk->nobjcore;
 	wrk->nobjcore = NULL;
 	AN(oc->flags & OC_F_BUSY);
-	oc->flags |= OC_F_NOTYET;
 	oc->refcnt = 1;
 	oc->objhead = oh;
 	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
@@ -444,7 +439,6 @@ HSH_Lookup(struct sess *sp)
 
 	AZ(req->busyobj);
 	req->busyobj = VBO_GetBusyObj(wrk);
-	oc->busyobj = req->busyobj;
 	req->busyobj->vsl->wid = sp->vsl_id;
 	req->busyobj->refcount = 2;	/* One for headers, one for body*/
 
@@ -455,7 +449,7 @@ HSH_Lookup(struct sess *sp)
 		req->busyobj->vary = NULL;
 
 	VMB();
-	oc->flags &= ~OC_F_NOTYET;
+	oc->busyobj = req->busyobj;
 	return (oc);
 }
 

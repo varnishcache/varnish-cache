@@ -636,13 +636,6 @@ FetchBody(struct worker *wrk, void *priv)
 	http_Teardown(bo->bereq);
 	http_Teardown(bo->beresp);
 
-	if (obj->objcore != NULL) {
-		/* pass has no objcore */
-		/* XXX: lock protection ?? */
-		obj->objcore->flags |=
-		    (bo->state == BOS_FAILED ? OC_F_FAILED : OC_F_COMPLETE);
-	}
-
 	if (bo->state == BOS_FAILED) {
 		wrk->stats.fetch_failed++;
 		VDI_CloseFd(&bo->vbc);
