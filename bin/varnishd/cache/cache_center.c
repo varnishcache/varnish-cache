@@ -215,7 +215,6 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 	if (bo != NULL) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 		AN(bo->do_stream);
-		AssertObjCorePassOrBusy(req->obj->objcore);
 	}
 
 	req->res_mode = 0;
@@ -635,7 +634,6 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 
 		switch (req->handling) {
 		case VCL_RET_DELIVER:
-			AssertObjCorePassOrBusy(req->objcore);
 			sp->step = STP_PREPFETCH;
 			return (0);
 		default:
@@ -874,8 +872,6 @@ cnt_prepfetch(struct sess *sp, struct worker *wrk, struct req *req)
 	    req->http->conds &&
 	    RFC2616_Do_Cond(sp))
 		bo->do_stream = 0;
-
-	AssertObjCorePassOrBusy(req->obj->objcore);
 
 	sp->step = STP_FETCHBODY;
 	return (0);
@@ -1135,6 +1131,9 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 		sp->step = STP_MISS;
 		return (0);
 	}
+
+	/* We are not prepared to do streaming yet */
+	XXXAZ(req->busyobj);
 
 	o = oc_getobj(&wrk->stats, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);

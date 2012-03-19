@@ -551,9 +551,7 @@ HSH_Purge(const struct sess *sp, struct objhead *oh, double ttl, double grace)
 
 
 /*---------------------------------------------------------------------
- * Kill a busy object we don't need anyway.
- * There may be sessions on the waiting list, so we cannot just blow
- * it out of the water.
+ * Kill a busy object we don't need and can't use.
  */
 
 void
@@ -563,12 +561,13 @@ HSH_Drop(struct worker *wrk, struct object **oo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(oo);
 	CHECK_OBJ_NOTNULL(*oo, OBJECT_MAGIC);
-	AssertObjCorePassOrBusy((*oo)->objcore);
 	(*oo)->exp.ttl = -1.;
-	if ((*oo)->objcore != NULL)		/* Pass has no objcore */
-		HSH_Unbusy(&wrk->stats, (*oo)->objcore);
-	(void)HSH_Deref(&wrk->stats, NULL, oo);
+	AZ(HSH_Deref(&wrk->stats, NULL, oo));
 }
+
+/*---------------------------------------------------------------------
+ * Unbusy an objcore when the object is completely fetched.
+ */
 
 void
 HSH_Unbusy(struct dstat *ds, struct objcore *oc)
@@ -579,9 +578,8 @@ HSH_Unbusy(struct dstat *ds, struct objcore *oc)
 	oh = oc->objhead;
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
 
-	AssertOCBusy(oc);
+	AN(oc->flags & OC_F_BUSY);
 	AN(oc->ban);
-	assert(oc->refcnt > 0);
 	assert(oh->refcnt > 0);
 
 	/* XXX: pretouch neighbors on oh->objcs to prevent page-on under mtx */
@@ -591,12 +589,14 @@ HSH_Unbusy(struct dstat *ds, struct objcore *oc)
 	VTAILQ_REMOVE(&oh->objcs, oc, list);
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, list);
 	oc->flags &= ~OC_F_BUSY;
-	oc->busyobj = NULL;
 	if (oh->waitinglist != NULL)
 		hsh_rush(ds, oh);
-	AN(oc->ban);
 	Lck_Unlock(&oh->mtx);
 }
+
+/*---------------------------------------------------------------------
+ * Gain a reference on an objcore
+ */
 
 void
 HSH_Ref(struct objcore *oc)

@@ -40,6 +40,7 @@
 #include "cache_backend.h"
 #include "vcli_priv.h"
 #include "vct.h"
+#include "vmb.h"
 #include "vtcp.h"
 
 static unsigned fetchfrag;
@@ -570,8 +571,6 @@ FetchBody(struct worker *wrk, void *priv)
 	if (bo->vfp == NULL)
 		bo->vfp = &vfp_nop;
 
-	AssertObjCorePassOrBusy(obj->objcore);
-
 	AZ(bo->vgz_rx);
 	AZ(VTAILQ_FIRST(&obj->store));
 
@@ -681,6 +680,8 @@ FetchBody(struct worker *wrk, void *priv)
 			AN(obj->objcore->ban);
 			AZ(obj->ws_o->overflow);
 			HSH_Unbusy(&wrk->stats, obj->objcore);
+			obj->objcore->busyobj = NULL;
+			VMB();
 		}
 
 		/* XXX: Atomic assignment, needs volatile/membar ? */

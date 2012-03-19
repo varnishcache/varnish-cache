@@ -224,7 +224,6 @@ EXP_Insert(struct object *o)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oc = o->objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AssertOCBusy(oc);
 	HSH_Ref(oc);
 
 	assert(o->exp.entered != 0 && !isnan(o->exp.entered));
