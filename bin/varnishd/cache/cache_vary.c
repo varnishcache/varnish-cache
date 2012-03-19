@@ -49,7 +49,9 @@
  *	'\0'			/
  *      <header>		>   Only present if length != 0xffff
  * }
- *      '\0'
+ *	0xff,			\   Length field
+ *	0xff,			/
+ *      '\0'			>   Terminator
  */
 
 #include "config.h"
