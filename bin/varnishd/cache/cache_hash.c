@@ -328,7 +328,7 @@ HSH_Lookup(struct sess *sp)
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 		assert(oc->objhead == oh);
 
-		if (oc->flags & OC_F_BUSY) {
+		if (oc->flags & OC_F_BUSY || oc->busyobj != NULL) {
 			CHECK_OBJ_ORNULL(oc->busyobj, BUSYOBJ_MAGIC);
 			if (req->hash_ignore_busy)
 				continue;
@@ -379,7 +379,7 @@ HSH_Lookup(struct sess *sp)
 	AZ(req->objcore);
 	if (oc == NULL			/* We found no live object */
 	    && grace_oc != NULL		/* There is a grace candidate */
-	    && (busy_found 		/* Somebody else is already busy */
+	    && (busy_found		/* Somebody else is already busy */
 	    || !VDI_Healthy(req->director, sp))) {
 					/* Or it is impossible to fetch */
 		o = oc_getobj(&wrk->stats, grace_oc);
@@ -431,7 +431,7 @@ HSH_Lookup(struct sess *sp)
 	oc = wrk->nobjcore;
 	wrk->nobjcore = NULL;
 	AN(oc->flags & OC_F_BUSY);
-	oc->refcnt = 1;
+	oc->refcnt = 1;		/* Owned by busyobj */
 	oc->objhead = oh;
 	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
 	/* NB: do not deref objhead the new object inherits our reference */
@@ -440,7 +440,7 @@ HSH_Lookup(struct sess *sp)
 	AZ(req->busyobj);
 	req->busyobj = VBO_GetBusyObj(wrk);
 	req->busyobj->vsl->wid = sp->vsl_id;
-	req->busyobj->refcount = 2;	/* One for headers, one for body*/
+	req->busyobj->refcount = 2;	/* One for req, one for FetchBody */
 
 	VRY_Validate(req->vary_b);
 	if (req->vary_l != NULL)

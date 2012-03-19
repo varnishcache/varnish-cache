@@ -38,6 +38,8 @@
 
 #include "cache.h"
 
+#include "hash/hash_slinger.h"
+
 static struct mempool		*vbopool;
 
 /*--------------------------------------------------------------------
@@ -157,6 +159,7 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 	bo = *pbo;
 	*pbo = NULL;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_ORNULL(bo->fetch_obj, OBJECT_MAGIC);
 	Lck_Lock(&bo->mtx);
 	assert(bo->refcount > 0);
 	r = --bo->refcount;
@@ -166,6 +169,11 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 		return;
 
 	VSL_Flush(bo->vsl, 0);
+
+	if (bo->fetch_obj != NULL && bo->fetch_obj->objcore != NULL) {
+		AN(wrk);
+		(void)HSH_Deref(&wrk->stats, NULL, &bo->fetch_obj);
+	}
 
 	memset(&bo->refcount, 0,
 	    sizeof *bo - offsetof(struct busyobj, refcount));

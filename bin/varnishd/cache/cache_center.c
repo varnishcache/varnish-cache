@@ -906,6 +906,13 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 
 	assert(bo->refcount == 2);	/* one for each thread */
 
+	if (req->obj->objcore != NULL) {
+		EXP_Insert(req->obj);
+		AN(req->obj->objcore->ban);
+		AZ(req->obj->ws_o->overflow);
+		HSH_Unbusy(&wrk->stats, req->obj->objcore);
+	}
+
 	if (Pool_Task(wrk->pool, &bo->fetch_task, POOL_NO_QUEUE))
 		FetchBody(wrk, bo);
 
@@ -922,6 +929,9 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 		sp->step = STP_ERROR;
 		return (0);
 	}
+
+	if (req->obj->objcore != NULL)
+		HSH_Ref(req->obj->objcore);
 
 	VBO_DerefBusyObj(wrk, &req->busyobj);
 	wrk->acct_tmp.fetch++;

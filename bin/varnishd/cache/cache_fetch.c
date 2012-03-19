@@ -35,8 +35,6 @@
 
 #include "cache.h"
 
-#include "hash/hash_slinger.h"
-
 #include "cache_backend.h"
 #include "vcli_priv.h"
 #include "vct.h"
@@ -557,7 +555,6 @@ FetchBody(struct worker *wrk, void *priv)
 	CHECK_OBJ_NOTNULL(obj->http, HTTP_MAGIC);
 
 	assert(bo->state == BOS_INVALID);
-	bo->state = BOS_FINISHED;
 
 	/*
 	 * XXX: The busyobj needs a dstat, but it is not obvious which one
@@ -638,8 +635,8 @@ FetchBody(struct worker *wrk, void *priv)
 	if (bo->state == BOS_FAILED) {
 		wrk->stats.fetch_failed++;
 		VDI_CloseFd(&bo->vbc);
+		obj->exp.ttl = -1.;
 		obj->len = 0;
-		HSH_Drop(wrk, &obj);
 	} else {
 		assert(bo->state == BOS_FETCHING);
 
@@ -669,24 +666,19 @@ FetchBody(struct worker *wrk, void *priv)
 			    "Content-Length: %zd", obj->len);
 		}
 
-
 		if (cls)
 			VDI_CloseFd(&bo->vbc);
 		else
 			VDI_RecycleFd(&bo->vbc);
 
-		if (obj->objcore != NULL) {
-			EXP_Insert(obj);
-			AN(obj->objcore->ban);
-			AZ(obj->ws_o->overflow);
-			HSH_Unbusy(&wrk->stats, obj->objcore);
-			obj->objcore->busyobj = NULL;
-			VMB();
-		}
 
 		/* XXX: Atomic assignment, needs volatile/membar ? */
 		bo->state = BOS_FINISHED;
-
+	}
+	if (obj->objcore != NULL) {
+		VMB();
+		obj->objcore->busyobj = NULL;
+		VMB();
 	}
 	bo->stats = NULL;
 	VBO_DerefBusyObj(wrk, &bo);
