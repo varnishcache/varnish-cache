@@ -138,20 +138,10 @@ VBO_GetBusyObj(struct worker *wrk)
 }
 
 void
-VBO_RefBusyObj(struct busyobj *bo)
-{
-
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	Lck_Lock(&bo->mtx);
-	assert(bo->refcount > 0);
-	bo->refcount++;
-	Lck_Unlock(&bo->mtx);
-}
-
-void
 VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 {
 	struct busyobj *bo;
+	struct objcore *oc;
 	unsigned r;
 
 	CHECK_OBJ_ORNULL(wrk, WORKER_MAGIC);
@@ -160,17 +150,28 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 	*pbo = NULL;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_ORNULL(bo->fetch_obj, OBJECT_MAGIC);
-	Lck_Lock(&bo->mtx);
-	assert(bo->refcount > 0);
-	r = --bo->refcount;
-	Lck_Unlock(&bo->mtx);
+	if (bo->fetch_obj != NULL && bo->fetch_obj->objcore != NULL) {
+		oc = bo->fetch_obj->objcore;
+		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
+		Lck_Lock(&oc->objhead->mtx);
+		assert(bo->refcount > 0);
+		r = --bo->refcount;
+		Lck_Unlock(&oc->objhead->mtx);
+	} else {
+		oc = NULL;
+		Lck_Lock(&bo->mtx);
+		assert(bo->refcount > 0);
+		r = --bo->refcount;
+		Lck_Unlock(&bo->mtx);
+	}
 
 	if (r)
 		return;
 
 	VSL_Flush(bo->vsl, 0);
 
-	if (bo->fetch_obj != NULL && bo->fetch_obj->objcore != NULL) {
+	if (oc != NULL) {
 		AN(wrk);
 		(void)HSH_Deref(&wrk->stats, NULL, &bo->fetch_obj);
 	}

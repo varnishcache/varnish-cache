@@ -725,7 +725,6 @@ double BAN_Time(const struct ban *ban);
 /* cache_busyobj.c */
 void VBO_Init(void);
 struct busyobj *VBO_GetBusyObj(struct worker *wrk);
-void VBO_RefBusyObj(struct busyobj *busyobj);
 void VBO_DerefBusyObj(struct worker *wrk, struct busyobj **busyobj);
 void VBO_Free(struct busyobj **vbo);
 
