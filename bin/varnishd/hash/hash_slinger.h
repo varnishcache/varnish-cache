@@ -94,6 +94,7 @@ struct objhead {
 };
 
 void HSH_Unbusy(struct dstat *, struct objcore *);
+void HSH_Complete(struct objcore *oc);
 void HSH_DeleteObjHead(struct dstat *, struct objhead *oh);
 int HSH_Deref(struct dstat *, struct objcore *oc, struct object **o);
 #endif /* VARNISH_CACHE_CHILD */

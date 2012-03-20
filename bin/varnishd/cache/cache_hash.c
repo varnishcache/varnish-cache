@@ -566,6 +566,24 @@ HSH_Drop(struct worker *wrk, struct object **oo)
 }
 
 /*---------------------------------------------------------------------
+ * Remove the busyobj from an objcore
+ */
+
+void
+HSH_Complete(struct objcore *oc)
+{
+	struct objhead *oh;
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	oh = oc->objhead;
+	CHECK_OBJ(oh, OBJHEAD_MAGIC);
+
+	Lck_Lock(&oh->mtx);
+	oc->busyobj = NULL;
+	Lck_Unlock(&oh->mtx);
+}
+
+/*---------------------------------------------------------------------
  * Unbusy an objcore when the object is completely fetched.
  */
 

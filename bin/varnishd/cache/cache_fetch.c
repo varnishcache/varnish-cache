@@ -35,10 +35,11 @@
 
 #include "cache.h"
 
+#include "hash/hash_slinger.h"
+
 #include "cache_backend.h"
 #include "vcli_priv.h"
 #include "vct.h"
-#include "vmb.h"
 #include "vtcp.h"
 
 static unsigned fetchfrag;
@@ -675,11 +676,8 @@ FetchBody(struct worker *wrk, void *priv)
 		/* XXX: Atomic assignment, needs volatile/membar ? */
 		bo->state = BOS_FINISHED;
 	}
-	if (obj->objcore != NULL) {
-		VMB();
-		obj->objcore->busyobj = NULL;
-		VMB();
-	}
+	if (obj->objcore != NULL)
+		HSH_Complete(obj->objcore);
 	bo->stats = NULL;
 	VBO_DerefBusyObj(wrk, &bo);
 }
