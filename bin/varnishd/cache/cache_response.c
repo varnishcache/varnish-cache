@@ -115,7 +115,6 @@ RES_BuildHttp(const struct sess *sp)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	http_ClrHeader(req->resp);
-	req->resp->logtag = HTTP_Tx;
 	http_FilterResp(req->obj->http, req->resp, 0);
 
 	if (!(req->res_mode & RES_LEN)) {

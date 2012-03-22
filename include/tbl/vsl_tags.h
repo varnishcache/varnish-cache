@@ -53,11 +53,19 @@ SLTM(Length)
 
 SLTM(FetchError)
 
-#define SLTH(aa, bb)	SLTM(Rx##aa)
+#define SLTH(aa, bb)	SLTM(Req##aa)
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 
-#define SLTH(aa, bb)	SLTM(Tx##aa)
+#define SLTH(aa, bb)	SLTM(Resp##aa)
+#include "tbl/vsl_tags_http.h"
+#undef SLTH
+
+#define SLTH(aa, bb)	SLTM(Bereq##aa)
+#include "tbl/vsl_tags_http.h"
+#undef SLTH
+
+#define SLTH(aa, bb)	SLTM(Beresp##aa)
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 

@@ -275,7 +275,7 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 			req->obj->last_lru = req->t_resp;
 		req->obj->last_use = req->t_resp;	/* XXX: locking ? */
 	}
-	http_Setup(req->resp, req->ws, req->vsl);
+	HTTP_Setup(req->resp, req->ws, req->vsl, HTTP_Resp);
 	RES_BuildHttp(sp);
 	VCL_deliver_method(sp);
 	switch (req->handling) {
@@ -577,7 +577,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 	AZ(bo->should_close);
 	AZ(req->storage_hint);
 
-	http_Setup(bo->beresp, bo->ws, bo->vsl);
+	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, HTTP_Beresp);
 
 	need_host_hdr = !http_GetHdr(bo->bereq, H_Host, NULL);
 
@@ -1197,7 +1197,7 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	AZ(req->obj);
 
-	http_Setup(bo->bereq, bo->ws, bo->vsl);
+	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
 	http_FilterReq(sp, HTTPH_R_FETCH);
 	http_ForceGet(bo->bereq);
 	if (cache_param->http_gzip_support) {
@@ -1275,7 +1275,7 @@ cnt_pass(struct sess *sp, struct worker *wrk, struct req *req)
 	bo = req->busyobj;
 	bo->vsl->wid = sp->vsl_id;
 	bo->refcount = 2;
-	http_Setup(bo->bereq, bo->ws, bo->vsl);
+	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
 	http_FilterReq(sp, HTTPH_R_PASS);
 
 	VCL_pass_method(sp);
@@ -1332,7 +1332,7 @@ cnt_pipe(struct sess *sp, struct worker *wrk, struct req *req)
 	req->busyobj = VBO_GetBusyObj(wrk);
 	bo = req->busyobj;
 	bo->vsl->wid = sp->vsl_id;
-	http_Setup(bo->bereq, bo->ws, bo->vsl);
+	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
 	http_FilterReq(sp, 0);
 
 	VCL_pipe_method(sp);
@@ -1508,7 +1508,7 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 
 	EXP_Clr(&req->exp);
 
-	http_Setup(req->http, req->ws, req->vsl);
+	HTTP_Setup(req->http, req->ws, req->vsl, HTTP_Req);
 	req->err_code = http_DissectRequest(sp);
 
 	/* If we could not even parse the request, just close */

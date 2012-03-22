@@ -42,9 +42,11 @@
 #undef HTTPH
 
 static const enum VSL_tag_e foo[] = {
-	[HTTP_Rx] = SLT_RxRequest,
-	[HTTP_Tx] = SLT_TxRequest,
-	[HTTP_Obj] = SLT_ObjRequest,
+	[HTTP_Req]	= SLT_ReqRequest,
+	[HTTP_Resp]	= SLT_RespRequest,
+	[HTTP_Bereq]	= SLT_BereqRequest,
+	[HTTP_Beresp]	= SLT_BerespRequest,
+	[HTTP_Obj]	= SLT_ObjRequest,
 };
 
 static enum VSL_tag_e
@@ -54,7 +56,7 @@ http2shmlog(const struct http *hp, int t)
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	if (t > HTTP_HDR_FIRST)
 		t = HTTP_HDR_FIRST;
-	assert(hp->logtag >= HTTP_Rx && hp->logtag <= HTTP_Obj); /*lint !e685*/
+	assert(hp->logtag >= HTTP_Req && hp->logtag <= HTTP_Obj); /*lint !e685*/
 	assert(t >= HTTP_HDR_REQ && t <= HTTP_HDR_FIRST);
 	return ((enum VSL_tag_e)(foo[hp->logtag] + t));
 }
@@ -118,9 +120,11 @@ HTTP_create(void *p, uint16_t nhttp)
 /*--------------------------------------------------------------------*/
 
 void
-http_Setup(struct http *hp, struct ws *ws, struct vsl_log *vsl)
+HTTP_Setup(struct http *hp, struct ws *ws, struct vsl_log *vsl,
+    enum httpwhence  whence)
 {
 	http_Teardown(hp);
+	hp->logtag = whence;
 	hp->ws = ws;
 	hp->vsl = vsl;
 }
@@ -659,8 +663,6 @@ http_DissectRequest(const struct sess *sp)
 	hp = sp->req->http;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
-	hp->logtag = HTTP_Rx;
-
 	retval = http_splitline(hp, htc,
 	    HTTP_HDR_REQ, HTTP_HDR_URL, HTTP_HDR_PROTO);
 	if (retval != 0) {
@@ -683,7 +685,6 @@ http_DissectResponse(struct http *hp, const struct http_conn *htc)
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	hp->logtag = HTTP_Rx;
 
 	if (http_splitline(hp, htc,
 	    HTTP_HDR_PROTO, HTTP_HDR_STATUS, HTTP_HDR_RESPONSE))
@@ -843,7 +844,6 @@ http_FilterReq(const struct sess *sp, unsigned how)
 
 	hp = sp->req->busyobj->bereq;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	hp->logtag = HTTP_Tx;
 
 	http_linkh(hp, sp->req->http, HTTP_HDR_REQ);
 	http_linkh(hp, sp->req->http, HTTP_HDR_URL);
