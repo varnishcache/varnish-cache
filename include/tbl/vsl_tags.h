@@ -53,15 +53,15 @@ SLTM(Length)
 
 SLTM(FetchError)
 
-#define SLTH(aa)	SLTM(Rx##aa)
+#define SLTH(aa, bb)	SLTM(Rx##aa)
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 
-#define SLTH(aa)	SLTM(Tx##aa)
+#define SLTH(aa, bb)	SLTM(Tx##aa)
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 
-#define SLTH(aa)	SLTM(Obj##aa)
+#define SLTH(aa, bb)	SLTM(Obj##aa)
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 

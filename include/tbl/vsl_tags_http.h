@@ -27,12 +27,15 @@
  *
  * Define the VSL tags for HTTP protocol messages
  *
+ * The order of this table is not random, do not resort.
+ * In particular, the FIRST and LOST entries must be last, in that order.
+ *
  */
 
-SLTH(Request)
-SLTH(Response)
-SLTH(Status)
-SLTH(URL)
-SLTH(Protocol)
-SLTH(Header)
-SLTH(Lost)
+SLTH(Request,	HTTP_HDR_REQ)
+SLTH(URL,	HTTP_HDR_URL)
+SLTH(Protocol,	HTTP_HDR_PROTO)
+SLTH(Status,	HTTP_HDR_STATUS)
+SLTH(Response,	HTTP_HDR_RESPONSE)
+SLTH(Header,	HTTP_HDR_FIRST)
+SLTH(Lost,	HTTP_HDR_LOST)
