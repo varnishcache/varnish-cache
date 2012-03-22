@@ -1,6 +1,5 @@
 /*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Varnish Software AS
+ * Copyright (c) 2012 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -26,69 +25,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Define the tags in the shared memory in a reusable format.
- * Whoever includes this get to define what the SLTM macro does.
+ * Define the VSL tags for HTTP protocol messages
  *
- * REMEMBER to update the documentation (especially the varnishlog(1) man
- * page) whenever this list changes.
- *
- * XXX: Please add new entries a the end to not break saved log-segments.
- * XXX: we can resort them when we have a major release.
  */
 
-SLTM(Debug)
-SLTM(Error)
-SLTM(CLI)
-SLTM(StatSess)
-SLTM(ReqEnd)
-SLTM(SessionOpen)
-SLTM(SessionClose)
-SLTM(BackendOpen)
-SLTM(BackendXID)
-SLTM(BackendReuse)
-SLTM(BackendClose)
-SLTM(HttpGarbage)
-SLTM(Backend)
-SLTM(Length)
-
-SLTM(FetchError)
-
-#define SLTH(aa)	SLTM(Rx##aa)
-#include "tbl/vsl_tags_http.h"
-#undef SLTH
-
-#define SLTH(aa)	SLTM(Tx##aa)
-#include "tbl/vsl_tags_http.h"
-#undef SLTH
-
-#define SLTH(aa)	SLTM(Obj##aa)
-#include "tbl/vsl_tags_http.h"
-#undef SLTH
-
-SLTM(LostHeader)
-
-SLTM(TTL)
-SLTM(Fetch_Body)
-SLTM(VCL_acl)
-SLTM(VCL_call)
-SLTM(VCL_trace)
-SLTM(VCL_return)
-SLTM(VCL_error)
-SLTM(ReqStart)
-SLTM(Hit)
-SLTM(HitPass)
-SLTM(ExpBan)
-SLTM(ExpKill)
-SLTM(WorkThread)
-
-SLTM(ESI_xmlerror)
-
-SLTM(Hash)
-
-SLTM(Backend_health)
-
-SLTM(VCL_Debug)
-SLTM(VCL_Log)
-SLTM(VCL_Error)
-
-SLTM(Gzip)
+SLTH(Request)
+SLTH(Response)
+SLTH(Status)
+SLTH(URL)
+SLTH(Protocol)
+SLTH(Header)
+SLTH(Lost)
