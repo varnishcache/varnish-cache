@@ -1261,6 +1261,8 @@ XDOT err_pass [label="ERROR",shape=plaintext]
 static int
 cnt_pass(struct sess *sp, struct worker *wrk, struct req *req)
 {
+	struct busyobj *bo;
+
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -1270,15 +1272,16 @@ cnt_pass(struct sess *sp, struct worker *wrk, struct req *req)
 	AZ(req->busyobj);
 
 	req->busyobj = VBO_GetBusyObj(wrk);
-	req->busyobj->vsl->wid = sp->vsl_id;
-	req->busyobj->refcount = 2;
-	http_Setup(req->busyobj->bereq, req->busyobj->ws, req->busyobj->vsl);
+	bo = req->busyobj;
+	bo->vsl->wid = sp->vsl_id;
+	bo->refcount = 2;
+	http_Setup(bo->bereq, bo->ws, bo->vsl);
 	http_FilterReq(sp, HTTPH_R_PASS);
 
 	VCL_pass_method(sp);
 
 	if (req->handling == VCL_RET_ERROR) {
-		http_Teardown(req->busyobj->bereq);
+		http_Teardown(bo->bereq);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		sp->step = STP_ERROR;
 		return (0);
@@ -1317,6 +1320,7 @@ DOT err_pipe [label="ERROR",shape=plaintext]
 static int
 cnt_pipe(struct sess *sp, struct worker *wrk, struct req *req)
 {
+	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -1326,8 +1330,9 @@ cnt_pipe(struct sess *sp, struct worker *wrk, struct req *req)
 
 	wrk->acct_tmp.pipe++;
 	req->busyobj = VBO_GetBusyObj(wrk);
-	req->busyobj->vsl->wid = sp->vsl_id;
-	http_Setup(req->busyobj->bereq, req->busyobj->ws, req->busyobj->vsl);
+	bo = req->busyobj;
+	bo->vsl->wid = sp->vsl_id;
+	http_Setup(bo->bereq, bo->ws, bo->vsl);
 	http_FilterReq(sp, 0);
 
 	VCL_pipe_method(sp);
@@ -1338,7 +1343,7 @@ cnt_pipe(struct sess *sp, struct worker *wrk, struct req *req)
 
 	PipeSession(sp);
 	assert(WRW_IsReleased(wrk));
-	http_Teardown(req->busyobj->bereq);
+	http_Teardown(bo->bereq);
 	VBO_DerefBusyObj(wrk, &req->busyobj);
 	sp->step = STP_DONE;
 	return (0);
