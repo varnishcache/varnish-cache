@@ -82,13 +82,9 @@ body_status(enum body_status e)
 
 enum {
 	/* Fields from the first line of HTTP proto */
-	HTTP_HDR_REQ,
-	HTTP_HDR_URL,
-	HTTP_HDR_PROTO,
-	HTTP_HDR_STATUS,
-	HTTP_HDR_RESPONSE,
-	/* HTTP header lines */
-	HTTP_HDR_FIRST,
+#define SLTH(aa, bb)	bb,
+#include "tbl/vsl_tags_http.h"
+#undef SLTH
 };
 
 struct SHA256Context;

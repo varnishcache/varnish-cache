@@ -41,24 +41,11 @@
 #include "tbl/http_headers.h"
 #undef HTTPH
 
-/*lint -save -e773 not () */
-#define LOGMTX2(ax, bx, cx)	[bx] = SLT_##ax##cx
-
-#define LOGMTX1(ax) {					\
-	LOGMTX2(ax, HTTP_HDR_REQ,	Request),	\
-	LOGMTX2(ax, HTTP_HDR_RESPONSE,	Response),	\
-	LOGMTX2(ax, HTTP_HDR_STATUS,	Status),	\
-	LOGMTX2(ax, HTTP_HDR_URL,	URL),		\
-	LOGMTX2(ax, HTTP_HDR_PROTO,	Protocol),	\
-	LOGMTX2(ax, HTTP_HDR_FIRST,	Header),	\
-	}
-
-static const enum VSL_tag_e logmtx[][HTTP_HDR_FIRST + 1] = {
-	[HTTP_Rx] = LOGMTX1(Rx),
-	[HTTP_Tx] = LOGMTX1(Tx),
-	[HTTP_Obj] = LOGMTX1(Obj)
+static const enum VSL_tag_e foo[] = {
+	[HTTP_Rx] = SLT_RxRequest,
+	[HTTP_Tx] = SLT_TxRequest,
+	[HTTP_Obj] = SLT_ObjRequest,
 };
-/*lint -restore */
 
 static enum VSL_tag_e
 http2shmlog(const struct http *hp, int t)
@@ -69,7 +56,7 @@ http2shmlog(const struct http *hp, int t)
 		t = HTTP_HDR_FIRST;
 	assert(hp->logtag >= HTTP_Rx && hp->logtag <= HTTP_Obj); /*lint !e685*/
 	assert(t >= HTTP_HDR_REQ && t <= HTTP_HDR_FIRST);
-	return (logmtx[hp->logtag][t]);
+	return ((enum VSL_tag_e)(foo[hp->logtag] + t));
 }
 
 static void
