@@ -515,28 +515,28 @@ replay_thread(void *arg)
 		thread_log(2, 0, "%s(%s)", VSL_tags[tag], msg->ptr);
 
 		switch (tag) {
-		case SLT_RxRequest:
+		case SLT_ReqRequest:
 			if (thr->method != NULL)
 				thr->bogus = 1;
 			else
 				thr->method = trimline(thr, ptr);
 			break;
 
-		case SLT_RxURL:
+		case SLT_ReqURL:
 			if (thr->url != NULL)
 				thr->bogus = 1;
 			else
 				thr->url = trimline(thr, ptr);
 			break;
 
-		case SLT_RxProtocol:
+		case SLT_ReqProtocol:
 			if (thr->proto != NULL)
 				thr->bogus = 1;
 			else
 				thr->proto = trimline(thr, ptr);
 			break;
 
-		case SLT_RxHeader:
+		case SLT_ReqHeader:
 			if (thr->nhdr >= sizeof thr->hdr / sizeof *thr->hdr) {
 				thr->bogus = 1;
 			} else {
