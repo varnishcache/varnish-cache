@@ -34,69 +34,74 @@
  *
  * XXX: Please add new entries a the end to not break saved log-segments.
  * XXX: we can resort them when we have a major release.
+ *
+ * Arguments:
+ *	Tag-Name
+ *	Short Description (1 line, max ?? chars)
+ *	Long Description (Multi line)
  */
 
-SLTM(Debug)
-SLTM(Error)
-SLTM(CLI)
-SLTM(StatSess)
-SLTM(ReqEnd)
-SLTM(SessionOpen)
-SLTM(SessionClose)
-SLTM(BackendOpen)
-SLTM(BackendXID)
-SLTM(BackendReuse)
-SLTM(BackendClose)
-SLTM(HttpGarbage)
-SLTM(Backend)
-SLTM(Length)
+SLTM(Debug, "", "")
+SLTM(Error, "", "")
+SLTM(CLI, "", "")
+SLTM(StatSess, "", "")
+SLTM(ReqEnd, "", "")
+SLTM(SessionOpen, "", "")
+SLTM(SessionClose, "", "")
+SLTM(BackendOpen, "", "")
+SLTM(BackendXID, "", "")
+SLTM(BackendReuse, "", "")
+SLTM(BackendClose, "", "")
+SLTM(HttpGarbage, "", "")
+SLTM(Backend, "", "")
+SLTM(Length, "", "")
 
-SLTM(FetchError)
+SLTM(FetchError, "", "")
 
-#define SLTH(aa, bb)	SLTM(Req##aa)
+#define SLTH(aa, bb)	SLTM(Req##aa, "", "")
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 
-#define SLTH(aa, bb)	SLTM(Resp##aa)
+#define SLTH(aa, bb)	SLTM(Resp##aa, "", "")
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 
-#define SLTH(aa, bb)	SLTM(Bereq##aa)
+#define SLTH(aa, bb)	SLTM(Bereq##aa, "", "")
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 
-#define SLTH(aa, bb)	SLTM(Beresp##aa)
+#define SLTH(aa, bb)	SLTM(Beresp##aa, "", "")
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 
-#define SLTH(aa, bb)	SLTM(Obj##aa)
+#define SLTH(aa, bb)	SLTM(Obj##aa, "", "")
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 
-SLTM(LostHeader)
+SLTM(LostHeader, "", "")
 
-SLTM(TTL)
-SLTM(Fetch_Body)
-SLTM(VCL_acl)
-SLTM(VCL_call)
-SLTM(VCL_trace)
-SLTM(VCL_return)
-SLTM(VCL_error)
-SLTM(ReqStart)
-SLTM(Hit)
-SLTM(HitPass)
-SLTM(ExpBan)
-SLTM(ExpKill)
-SLTM(WorkThread)
+SLTM(TTL, "", "")
+SLTM(Fetch_Body, "", "")
+SLTM(VCL_acl, "", "")
+SLTM(VCL_call, "", "")
+SLTM(VCL_trace, "", "")
+SLTM(VCL_return, "", "")
+SLTM(VCL_error, "", "")
+SLTM(ReqStart, "", "")
+SLTM(Hit, "", "")
+SLTM(HitPass, "", "")
+SLTM(ExpBan, "", "")
+SLTM(ExpKill, "", "")
+SLTM(WorkThread, "", "")
 
-SLTM(ESI_xmlerror)
+SLTM(ESI_xmlerror, "", "")
 
-SLTM(Hash)
+SLTM(Hash, "", "")
 
-SLTM(Backend_health)
+SLTM(Backend_health, "", "")
 
-SLTM(VCL_Debug)
-SLTM(VCL_Log)
-SLTM(VCL_Error)
+SLTM(VCL_Debug, "", "")
+SLTM(VCL_Log, "", "")
+SLTM(VCL_Error, "", "")
 
-SLTM(Gzip)
+SLTM(Gzip, "", "")

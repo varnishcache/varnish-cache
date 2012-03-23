@@ -55,7 +55,7 @@
 /*--------------------------------------------------------------------*/
 
 const char *VSL_tags[256] = {
-#  define SLTM(foo)       [SLT_##foo] = #foo,
+#  define SLTM(foo,sdesc,ldesc)       [SLT_##foo] = #foo,
 #  include "tbl/vsl_tags.h"
 #  undef SLTM
 };
