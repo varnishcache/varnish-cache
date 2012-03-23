@@ -17,6 +17,7 @@ pkginclude_HEADERS = \
 	tbl/vsc_fields.h \
 	tbl/vsc_f_main.h \
 	tbl/vsl_tags.h \
+	tbl/vsl_tags_http.h \
 	vapi/vsm.h \
 	vapi/vsm_int.h \
 	vapi/vsc.h \
