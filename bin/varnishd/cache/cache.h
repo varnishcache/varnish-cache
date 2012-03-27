@@ -216,6 +216,8 @@ struct dstat {
 
 /* Fetch processors --------------------------------------------------*/
 
+void VFP_update_length(const struct busyobj *, ssize_t);
+
 typedef void vfp_begin_f(struct busyobj *, size_t );
 typedef int vfp_bytes_f(struct busyobj *, struct http_conn *, ssize_t);
 typedef int vfp_end_f(struct busyobj *);
