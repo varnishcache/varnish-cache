@@ -366,6 +366,7 @@ VGZ_WrwFlush(const struct worker *wrk, struct vgz *vg)
 	(void)WRW_Write(wrk, vg->m_buf, vg->m_len);
 	(void)WRW_Flush(wrk);
 	vg->m_len = 0;
+	VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 }
 
 /*--------------------------------------------------------------------*/
