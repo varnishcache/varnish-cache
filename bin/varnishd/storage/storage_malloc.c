@@ -145,7 +145,7 @@ sma_free(struct storage *s)
 }
 
 static void
-sma_trim(struct storage *s, size_t size)
+sma_trim(struct storage *s, size_t size, int move_ok)
 {
 	struct sma_sc *sma_sc;
 	struct sma *sma;
@@ -158,6 +158,10 @@ sma_trim(struct storage *s, size_t size)
 
 	assert(sma->sz == sma->s.space);
 	assert(size < sma->sz);
+
+	if (!move_ok)
+		return;
+
 	delta = sma->sz - size;
 	if (delta < 256)
 		return;

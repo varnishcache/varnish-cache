@@ -391,13 +391,13 @@ STV_alloc(struct busyobj *bo, size_t size)
 }
 
 void
-STV_trim(struct storage *st, size_t size)
+STV_trim(struct storage *st, size_t size, int move_ok)
 {
 
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	AN(st->stevedore);
 	if (st->stevedore->trim)
-		st->stevedore->trim(st, size);
+		st->stevedore->trim(st, size, move_ok);
 }
 
 void

@@ -195,7 +195,7 @@ vfp_nop_end(struct busyobj *bo)
 		return (0);
 	}
 	if (st->len < st->space)
-		STV_trim(st, st->len);
+		STV_trim(st, st->len, 1);
 	return (0);
 }
 

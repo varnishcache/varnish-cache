@@ -42,7 +42,7 @@ struct lru;
 typedef void storage_init_f(struct stevedore *, int ac, char * const *av);
 typedef void storage_open_f(const struct stevedore *);
 typedef struct storage *storage_alloc_f(struct stevedore *, size_t size);
-typedef void storage_trim_f(struct storage *, size_t size);
+typedef void storage_trim_f(struct storage *, size_t size, int move_ok);
 typedef void storage_free_f(struct storage *);
 typedef struct object *storage_allocobj_f(struct stevedore *, struct busyobj *,
     struct objcore **, unsigned ltot, const struct stv_objsecrets *);

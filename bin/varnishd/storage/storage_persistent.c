@@ -523,19 +523,6 @@ smp_alloc(struct stevedore *st, size_t size)
 }
 
 /*--------------------------------------------------------------------
- * Trim a bite
- * XXX: We could trim the last allocation.
- */
-
-static void
-smp_trim(struct storage *ss, size_t size)
-{
-
-	(void)ss;
-	(void)size;
-}
-
-/*--------------------------------------------------------------------
  * We don't track frees of storage, we track the objects which own the
  * storage and when there are no more objects in in the first segment,
  * it can be reclaimed.
@@ -562,7 +549,6 @@ const struct stevedore smp_stevedore = {
 	.alloc	=	smp_alloc,
 	.allocobj =	smp_allocobj,
 	.free	=	smp_free,
-	.trim	=	smp_trim,
 };
 
 /*--------------------------------------------------------------------

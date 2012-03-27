@@ -1013,7 +1013,7 @@ int RFC2616_Do_Cond(const struct sess *sp);
 struct object *STV_NewObject(struct busyobj *, struct objcore **,
     const char *hint, unsigned len, uint16_t nhttp);
 struct storage *STV_alloc(struct busyobj *, size_t size);
-void STV_trim(struct storage *st, size_t size);
+void STV_trim(struct storage *st, size_t size, int move_ok);
 void STV_free(struct storage *st);
 void STV_open(void);
 void STV_close(void);
