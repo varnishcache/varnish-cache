@@ -49,6 +49,8 @@ In vcl_fetch you still have the request object, req, available. There
 is also a *backend response*, beresp. beresp will contain the HTTP
 headers from the backend.
 
+.. _tutorial-vcl_fetch_actions:
+
 
 actions
 ~~~~~~~
