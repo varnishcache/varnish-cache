@@ -64,8 +64,25 @@ cookies named COOKIE1 and COOKIE2 and you can marvel at it::
       }
   }
 
-The example is taken from the Varnish Wiki, where you can find other
-scary examples of what can be done in VCL.
+A somewhat simpler example that can accomplish almost the same can be
+found below. Instead of filtering out the other cookies it picks out
+the one cookie that is needed, copies it to another header and then
+copies it back, deleting the original cookie header.::
+
+  sub vcl_recv {
+         # save the original cookie header so we can mangle it
+        set req.http.X-Varnish-PHP_SID = req.http.Cookie;
+        # using a capturing sub pattern, extract the continuous string of 
+        # alphanumerics that immediately follows "PHPSESSID="
+        set req.http.X-Varnish-PHP_SID = 
+           regsuball(req.http.X-Varnish-PHP_SID, ";? ?PHPSESSID=([a-zA-Z0-9]+)( |;| ;).*","\1");
+        set req.http.Cookie = req.X-Varnish-PHP_SID;
+        remove req.X-Varnish-PHP_SID;
+   }   
+
+There are other scary examples of what can be done in VCL in the
+Varnish Cache Wiki.
+
 
 Cookies coming from the backend
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
