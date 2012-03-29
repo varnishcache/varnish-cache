@@ -51,7 +51,6 @@ headers from the backend.
 
 .. _tutorial-vcl_fetch_actions:
 
-
 actions
 ~~~~~~~
 

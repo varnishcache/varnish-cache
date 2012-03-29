@@ -61,6 +61,7 @@ is dependant on this header.
 Everything works out of the box from Varnish' perspective.
 
 .. 071-example1-start
+
 VCL::
 
     sub vcl_recv { 
@@ -95,6 +96,7 @@ VCL::
             set resp.http.Vary = regsub(resp.http.Vary, "X-UA-Device", "User-Agent");
         }
     }
+
 .. 071-example1-end
 
 Example 2: Normalize the User-Agent string
@@ -118,6 +120,7 @@ A possible use for this is for CGI scripts where only a small set of predefined
 headers are (by default) available for the script.
 
 .. 072-example2-start
+
 VCL::
 
     sub vcl_recv { 
@@ -158,6 +161,7 @@ The client itself does not see this classification, only the backend request
 is changed.
 
 .. 073-example3-start
+
 VCL::
 
     sub vcl_recv { 
@@ -240,6 +244,7 @@ Redirecting mobile clients
 If you want to redirect mobile clients you can use the following snippet.
 
 .. 065-redir-mobile-start
+
 VCL::
 
     sub vcl_recv {
