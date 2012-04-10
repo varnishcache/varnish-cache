@@ -1,0 +1,43 @@
+varnishtest "Test case for #1109 - Gzip+ESI broken for large included objects"
+
+server s1 {
+	rxreq
+	expect req.url == "/test1"
+	txresp -body {<html>start<esi:include src="/include1"/>end}
+	rxreq
+	expect req.url == "/include1"
+	# This tests ESI+gzip delivery when the ESI-included object
+	# has more than one storage chunk
+	txresp -bodylen 4082
+
+	rxreq
+	txresp -body {<html>start<esi:include src="/include2"/>end}
+	expect req.url == "/test2"
+
+	rxreq
+	expect req.url == "/include2"
+	# This tests gzip trailer extraction for ESI+gzip CRC calculation
+	# when the trailer spans two storage chunks
+	txresp -bodylen 4074
+} -start
+
+varnish v1 -arg "-pfetch_chunksize=4k" -arg "-pgzip_level=0" -vcl+backend {
+	sub vcl_fetch {
+		if (req.url ~ "/test") {
+			set beresp.do_esi = true;
+		}
+		set beresp.do_gzip = true;
+	}
+} -start
+
+client c1 {
+	txreq -url "/test1" -hdr "Accept-Encoding: gzip"
+	rxresp
+	gunzip
+	expect resp.bodylen == 4096
+
+	txreq -url "/test2" -hdr "Accept-Encoding: gzip"
+	rxresp
+	gunzip
+	expect resp.bodylen == 4088
+} -run
