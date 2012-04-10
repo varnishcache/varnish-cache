@@ -440,12 +440,10 @@ ved_deliver_byterange(const struct sess *sp, ssize_t low, ssize_t high)
 	ssize_t l, lx;
 	u_char *p;
 
-//printf("BR %jd %jd\n", low, high);
 	lx = 0;
 	VTAILQ_FOREACH(st, &sp->obj->store, list) {
 		p = st->ptr;
 		l = st->len;
-//printf("[0-] %jd %jd\n", lx, lx + l);
 		if (lx + l < low) {
 			lx += l;
 			continue;
@@ -458,16 +456,14 @@ ved_deliver_byterange(const struct sess *sp, ssize_t low, ssize_t high)
 			l -= (low - lx);
 			lx = low;
 		}
-//printf("[1-] %jd %jd\n", lx, lx + l);
 		if (lx + l >= high)
 			l = high - lx;
-//printf("[2-] %jd %jd\n", lx, lx + l);
 		assert(lx >= low && lx + l <= high);
 		if (l != 0)
 			(void)WRW_Write(sp->wrk, p, l);
-		if (lx + st->len > high)
+		if (p + l < st->ptr + st->len)
 			return(p[l]);
-		lx += st->len;
+		lx += l;
 	}
 	INCOMPL();
 }
@@ -478,10 +474,12 @@ ESI_DeliverChild(const struct sess *sp)
 	struct storage *st;
 	struct object *obj;
 	ssize_t start, last, stop, lpad;
-	u_char *p, cc;
+	u_char cc;
 	uint32_t icrc;
 	uint32_t ilen;
 	uint8_t *dbits;
+	int i, j;
+	uint8_t tailbuf[8];
 
 	if (!sp->obj->gziped) {
 		VTAILQ_FOREACH(st, &sp->obj->store, list)
@@ -561,12 +559,21 @@ ESI_DeliverChild(const struct sess *sp)
 	}
 	if (lpad > 0)
 		(void)WRW_Write(sp->wrk, dbits + 1, lpad);
-	st = VTAILQ_LAST(&sp->obj->store, storagehead);
-	assert(st->len > 8);
 
-	p = st->ptr + st->len - 8;
-	icrc = vle32dec(p);
-	ilen = vle32dec(p + 4);
+	/* We need the entire tail, but it may not be in one storage segment */
+	st = VTAILQ_LAST(&sp->obj->store, storagehead);
+	for (i = sizeof tailbuf; i > 0; i -= j) {
+		j = st->len;
+		if (j > i)
+			j = i;
+		memcpy(tailbuf + i - j, st->ptr + st->len - j, j);
+		st = VTAILQ_PREV(st, storagehead, list);
+		assert(i == j || st != NULL);
+	}
+
+	icrc = vle32dec(tailbuf);
+	ilen = vle32dec(tailbuf + 4);
+
 	sp->wrk->crc = crc32_combine(sp->wrk->crc, icrc, ilen);
 	sp->wrk->l_crc += ilen;
 }
