@@ -145,6 +145,7 @@ AC_SUBST(PCRE_LIBS)
 PKG_CHECK_MODULES([LIBEDIT], [libedit], 
 	[AC_DEFINE([HAVE_LIBEDIT], [1], [Define we have libedit])],
 	[AC_CHECK_HEADERS([readline/readline.h])
+	 AC_CHECK_HEADERS([edit/readline/readline.h])
 	 AC_CHECK_LIB(edit, el_init,
 	        [ AC_DEFINE([HAVE_LIBEDIT], [1], [Define we have libedit])
 		  LIBEDIT_CFLAGS=""
