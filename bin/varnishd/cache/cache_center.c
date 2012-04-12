@@ -293,10 +293,8 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 			(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
 		}
 		AZ(req->obj);
-		req->restarts++;
-		req->director = NULL;
 		http_Teardown(req->resp);
-		sp->step = STP_RECV;
+		sp->step = STP_RESTART;
 		return (0);
 	default:
 		WRONG("Illegal action in vcl_deliver{}");
@@ -524,9 +522,7 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
 	    req->restarts <  cache_param->max_restarts) {
 		HSH_Drop(wrk, &sp->req->obj);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
-		req->director = NULL;
-		req->restarts++;
-		sp->step = STP_RECV;
+		sp->step = STP_RESTART;
 		return (0);
 	} else if (req->handling == VCL_RET_RESTART)
 		req->handling = VCL_RET_DELIVER;
@@ -660,8 +656,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 
 	switch (req->handling) {
 	case VCL_RET_RESTART:
-		req->restarts++;
-		sp->step = STP_RECV;
+		sp->step = STP_RESTART;
 		return (0);
 	case VCL_RET_ERROR:
 		sp->step = STP_ERROR;
@@ -1045,9 +1040,7 @@ cnt_hit(struct sess *sp, struct worker *wrk, struct req *req)
 		sp->step = STP_ERROR;
 		return (0);
 	case VCL_RET_RESTART:
-		req->director = NULL;
-		req->restarts++;
-		sp->step = STP_RECV;
+		sp->step = STP_RESTART;
 		return (0);
 	default:
 		WRONG("Illegal action in vcl_hit{}");
@@ -1231,9 +1224,7 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
 		sp->step = STP_PASS;
 		break;
 	case VCL_RET_RESTART:
-		req->restarts++;
-		req->director = NULL;
-		sp->step = STP_RECV;
+		sp->step = STP_RESTART;
 		break;
 	default:
 		WRONG("Illegal action in vcl_miss{}");
@@ -1350,6 +1341,37 @@ cnt_pipe(struct sess *sp, struct worker *wrk, struct req *req)
 }
 
 /*--------------------------------------------------------------------
+ *
+DOT subgraph xcluster_restart {
+DOT	restart [
+DOT		shape=record
+DOT		label="{cnt_restart}"
+DOT	]
+DOT }
+DOT RESTART -> restart [color=purple]
+DOT restart -> recv [color=purple]
+ */
+
+static int
+cnt_restart(struct sess *sp, const struct worker *wrk, struct req *req)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	
+	req->director = NULL;
+	if (++req->restarts >= cache_param->max_restarts) {
+		req->err_code = 503;
+		sp->step = STP_ERROR;
+	} else {
+		req->err_code = 0;
+		sp->step = STP_RECV;
+	}
+	return (0);
+}
+
+/*--------------------------------------------------------------------
  * RECV
  * We have a complete request, set everything up and start it.
  * We can come here both with a request from the client and with
@@ -1368,7 +1390,6 @@ DOT		label="{cnt_recv:|{vcl_hash\{\}|req.*}}"
 DOT	]
 DOT }
 DOT ESI_REQ [ shape=hexagon ]
-DOT RESTART -> recv [color=purple]
 DOT ESI_REQ -> recv
 DOT recv:pipe -> pipe [style=bold,color=orange]
 DOT recv:pass -> pass [style=bold,color=red]
@@ -1405,18 +1426,6 @@ cnt_recv(struct sess *sp, const struct worker *wrk, struct req *req)
 
 	VCL_recv_method(sp);
 	recv_handling = req->handling;
-
-	if (req->restarts >= cache_param->max_restarts) {
-		/*
-		 * XXX: Why not before vcl_recv{} ?  We go to vcl_error{}
-		 * XXX: without vcl_recv{} on 413 and 417 already.
-		 * XXX tell vcl_error why we come
-		 */
-		if (req->err_code == 0)
-			req->err_code = 503;
-		sp->step = STP_ERROR;
-		return (0);
-	}
 
 	if (cache_param->http_gzip_support &&
 	     (recv_handling != VCL_RET_PIPE) &&

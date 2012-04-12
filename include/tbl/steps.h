@@ -31,6 +31,7 @@
 /*lint -save -e525 -e539 */
 STEP(wait,		WAIT,		(sp, sp->wrk, sp->req))
 STEP(first,		FIRST,		(sp, sp->wrk))
+STEP(restart,		RESTART,	(sp, sp->wrk, sp->req))
 STEP(recv,		RECV,		(sp, sp->wrk, sp->req))
 STEP(start,		START,		(sp, sp->wrk, sp->req))
 STEP(pipe,		PIPE,		(sp, sp->wrk, sp->req))
