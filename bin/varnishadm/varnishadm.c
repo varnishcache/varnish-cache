@@ -38,7 +38,12 @@
 #include <sys/socket.h>
 
 #ifdef HAVE_LIBEDIT
-#include <editline/readline.h>
+#  include <stdio.h>
+#  ifdef HAVE_EDIT_READLINE_READLINE_H
+#    include <edit/readline/readline.h>
+#  else
+#    include <editline/readline.h>
+#  endif
 #endif
 
 #include "vcli.h"
