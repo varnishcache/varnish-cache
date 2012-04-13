@@ -1,6 +1,6 @@
 #
 
-pkginclude_HEADERS = \
+nobase_pkginclude_HEADERS = \
 	tbl/acct_fields.h \
 	tbl/backend_poll.h \
 	tbl/ban_vars.h \
