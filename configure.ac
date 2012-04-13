@@ -554,5 +554,6 @@ AC_CONFIG_FILES([
     man/Makefile
     redhat/Makefile
     varnishapi.pc
+    varnishapi-uninstalled.pc
 ])
 AC_OUTPUT

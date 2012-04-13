@@ -1,0 +1,20 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+sbindir=@sbindir@
+libdir=@libdir@
+includedir=@includedir@
+pkgincludedir=${includedir}/@PACKAGE@
+datarootdir=@datarootdir@
+datadir=@datadir@
+pkgdatadir=${datadir}/@PACKAGE@
+pkgdataincludedir=${pkgdatadir}/include
+vmoddir=${libdir}/@PACKAGE@/vmods
+builddir=@abs_top_builddir@
+srcdir=@abs_top_srcdir@
+
+Name: VarnishAPI
+Description: Varnish API
+Version: @PACKAGE_VERSION@
+Cflags: -I${includedir}/@PACKAGE@
+Libs: -L${libdir} -lvarnishapi
