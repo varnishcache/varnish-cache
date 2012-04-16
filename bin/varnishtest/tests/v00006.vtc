@@ -8,7 +8,7 @@ server s1 {
 } -start
 
 # Only one pool, to avoid getting more than one work thread
-varnish v1 -arg "-p thread_pools=1 -w1,1,300" -vcl+backend {
+varnish v1 -arg "-p thread_pools=1" -vcl+backend {
 } -start
 
 client c1 {
