@@ -420,9 +420,9 @@ hash_data(str)
 
 regsub(str, regex, sub)
   Returns a copy of str with the first occurrence of the regular 
-  expression regex replaced with sub. Within sub, \\0 (which can 
-  also be spelled &) is replaced with the entire matched string, 
-  and \n is replaced with the contents of subgroup n in the 
+  expression regex replaced with sub. Within sub, \\0 (which can
+  also be spelled \\&) is replaced with the entire matched string,
+  and \\n is replaced with the contents of subgroup n in the 
   matched string.
 
 regsuball(str, regex, sub)
