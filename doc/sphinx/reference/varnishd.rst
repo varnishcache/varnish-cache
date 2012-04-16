@@ -23,7 +23,7 @@ varnishd [-a address[:port]] [-b host[:port]] [-d] [-F] [-f config]
 	 [-g group] [-h type[,options]] [-i identity]
 	 [-l shmlogsize] [-n name] [-P file] [-p param=value] 
 	 [-s type[,options]] [-T address[:port]] [-t ttl]
-	 [-u user] [-V] [-w min[,max[,timeout]]]
+	 [-u user] [-V] 
 
 DESCRIPTION
 ===========
@@ -119,20 +119,6 @@ OPTIONS
             specified first.
 
 -V          Display the version number and exit.
-
--w min[,max[,timeout]]
-
-            Start at least min but no more than max worker threads
-            with the specified idle timeout.  This is a shortcut for
-            specifying the thread_pool_min, thread_pool_max and
-            thread_pool_timeout run-time parameters.
-
-            If only one number is specified, thread_pool_min and
-            thread_pool_max are both set to this number, and
-            thread_pool_timeout has no effect.
-
-
-
 
 
 Hash Algorithms
