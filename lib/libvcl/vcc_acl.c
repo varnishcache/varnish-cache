@@ -265,8 +265,10 @@ vcc_acl_try_netnotation(struct vcc *tl, struct acl_e *ae)
 			return (0);
 		p += k + 1;
 	}
-	if (ae->t_mask == NULL)
+	if (ae->t_mask == NULL) {
 		ae->mask = 8 + 8 * i;
+		ae->t_mask = ae->t_addr;
+	}
 	vcc_acl_add_entry(tl, ae, 4, b, AF_INET);
 	return (1);
 }
