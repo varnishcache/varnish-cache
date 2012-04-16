@@ -1081,18 +1081,7 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 	AZ(req->busyobj);
 
-	if (req->hash_objhead == NULL) {
-		/* Not a waiting list return */
-		AZ(req->vary_b);
-		AZ(req->vary_l);
-		AZ(req->vary_e);
-		(void)WS_Reserve(req->ws, 0);
-	} else {
-		AN(req->ws->r);
-	}
-	req->vary_b = (void*)req->ws->f;
-	req->vary_e = (void*)req->ws->r;
-	req->vary_b[2] = '\0';
+	VRY_Prep(req);
 
 	AZ(req->objcore);
 	oc = HSH_Lookup(sp);
@@ -1359,7 +1348,7 @@ cnt_restart(struct sess *sp, const struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	
+
 	req->director = NULL;
 	if (++req->restarts >= cache_param->max_restarts) {
 		req->err_code = 503;
