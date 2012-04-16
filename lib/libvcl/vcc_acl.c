@@ -103,7 +103,10 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 	if (fam == PF_INET && ae->mask > 32) {
 		VSB_printf(tl->sb,
 		    "Too wide mask (%u) for IPv4 address", ae->mask);
-		vcc_ErrWhere(tl, ae->t_mask);
+		if (ae->t_mask != NULL)
+			vcc_ErrWhere(tl, ae->t_mask);
+		else
+			vcc_ErrWhere(tl, ae->t_addr);
 		return;
 	}
 	if (fam == PF_INET6 && ae->mask > 128) {
@@ -265,10 +268,8 @@ vcc_acl_try_netnotation(struct vcc *tl, struct acl_e *ae)
 			return (0);
 		p += k + 1;
 	}
-	if (ae->t_mask == NULL) {
+	if (ae->t_mask == NULL)
 		ae->mask = 8 + 8 * i;
-		ae->t_mask = ae->t_addr;
-	}
 	vcc_acl_add_entry(tl, ae, 4, b, AF_INET);
 	return (1);
 }
