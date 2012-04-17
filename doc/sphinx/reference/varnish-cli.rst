@@ -28,9 +28,6 @@ parameters
      available through the CLI. The individual parameters are
      documented in the varnishd(1) man page.
 
-statistics
-     Statistic counters are available from the CLI.
-
 bans 
      Bans are filters that are applied to keep Varnish from serving
      stale content. When you issue a ban Varnish will not serve any
@@ -148,13 +145,6 @@ quit
 
 start
       Start the Varnish cache process if it is not already running.
-
-stats
-      Show summary statistics.
-
-      All the numbers presented are totals since server startup; for a
-      better idea of the current situation, use the varnishstat(1)
-      utility.
 
 status
       Check the status of the Varnish cache process.
