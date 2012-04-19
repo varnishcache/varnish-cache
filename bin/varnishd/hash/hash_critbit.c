@@ -425,9 +425,10 @@ hcb_lookup(struct worker *wrk, const void *digest, struct objhead **noh)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(digest);
-	AN(noh);
-	CHECK_OBJ_NOTNULL(*noh, OBJHEAD_MAGIC);
-	assert((*noh)->refcnt == 1);
+	if (noh != NULL) {
+		CHECK_OBJ_NOTNULL(*noh, OBJHEAD_MAGIC);
+		assert((*noh)->refcnt == 1);
+	}
 
 	/* First try in read-only mode without holding a lock */
 
@@ -440,11 +441,11 @@ hcb_lookup(struct worker *wrk, const void *digest, struct objhead **noh)
 		 * under us, so fall through and try with the lock held.
 		 */
 		u = oh->refcnt;
-		if (u > 0)
+		if (u > 0) {
 			oh->refcnt++;
-		Lck_Unlock(&oh->mtx);
-		if (u > 0)
 			return (oh);
+		}
+		Lck_Unlock(&oh->mtx);
 	}
 
 	while (1) {
@@ -455,23 +456,27 @@ hcb_lookup(struct worker *wrk, const void *digest, struct objhead **noh)
 		oh = hcb_insert(wrk, &hcb_root, digest, noh);
 		Lck_Unlock(&hcb_mtx);
 
+		if (oh == NULL)
+			return (NULL);
+
+		Lck_Lock(&oh->mtx);
+
 		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-		if (*noh == NULL) {
+		if (noh != NULL && *noh == NULL) {
 			assert(oh->refcnt > 0);
 			VSC_C_main->hcb_insert++;
 			return (oh);
 		}
-		Lck_Lock(&oh->mtx);
 		/*
 		 * A refcount of zero indicates that the tree changed
 		 * under us, so fall through and try with the lock held.
 		 */
 		u = oh->refcnt;
-		if (u > 0)
+		if (u > 0) {
 			oh->refcnt++;
-		Lck_Unlock(&oh->mtx);
-		if (u > 0)
 			return (oh);
+		}
+		Lck_Unlock(&oh->mtx);
 	}
 }
 

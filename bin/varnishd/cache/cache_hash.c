@@ -259,7 +259,7 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc)
 	AN(wrk->nobjhead);
 	oh = hash->lookup(wrk, digest, &wrk->nobjhead);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-	Lck_Lock(&oh->mtx);
+	Lck_AssertHeld(&oh->mtx);
 	assert(oh->refcnt > 0);
 
 	/* Insert (precreated) objcore in objecthead */
@@ -310,6 +310,7 @@ HSH_Lookup(struct sess *sp)
 		 */
 		CHECK_OBJ_NOTNULL(req->hash_objhead, OBJHEAD_MAGIC);
 		oh = req->hash_objhead;
+		Lck_Lock(&oh->mtx);
 		req->hash_objhead = NULL;
 	} else {
 		AN(wrk->nobjhead);
@@ -317,7 +318,8 @@ HSH_Lookup(struct sess *sp)
 	}
 
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-	Lck_Lock(&oh->mtx);
+	Lck_AssertHeld(&oh->mtx);
+
 	assert(oh->refcnt > 0);
 	busy_found = 0;
 	grace_oc = NULL;

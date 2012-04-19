@@ -67,8 +67,8 @@ hsl_lookup(struct worker *wrk, const void *digest, struct objhead **noh)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(digest);
-	AN(noh);
-	CHECK_OBJ_NOTNULL(*noh, OBJHEAD_MAGIC);
+	if (noh != NULL)
+		CHECK_OBJ_NOTNULL(*noh, OBJHEAD_MAGIC);
 
 	Lck_Lock(&hsl_mtx);
 	VTAILQ_FOREACH(oh, &hsl_head, hoh_list) {
@@ -79,8 +79,12 @@ hsl_lookup(struct worker *wrk, const void *digest, struct objhead **noh)
 			break;
 		oh->refcnt++;
 		Lck_Unlock(&hsl_mtx);
+		Lck_Lock(&oh->mtx);
 		return (oh);
 	}
+
+	if (noh == NULL)
+		return (NULL);
 
 	if (oh != NULL)
 		VTAILQ_INSERT_BEFORE(oh, *noh, hoh_list);
@@ -91,6 +95,7 @@ hsl_lookup(struct worker *wrk, const void *digest, struct objhead **noh)
 	*noh = NULL;
 	memcpy(oh->digest, digest, sizeof oh->digest);
 	Lck_Unlock(&hsl_mtx);
+	Lck_Lock(&oh->mtx);
 	return (oh);
 }
 
