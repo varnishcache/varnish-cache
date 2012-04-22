@@ -329,9 +329,6 @@ MPL_Free(struct mempool *mpl, void *item)
 	if (mi->size < *mpl->cur_size) {
 		mpl->vsc->toosmall++;
 		VTAILQ_INSERT_HEAD(&mpl->surplus, mi, list);
-	} else if (mpl->n_pool >= mpl->param->max_pool) {
-		mpl->vsc->surplus++;
-		VTAILQ_INSERT_HEAD(&mpl->surplus, mi, list);
 	} else {
 		mpl->vsc->pool = ++mpl->n_pool;
 		mi->touched = mpl->t_now;
