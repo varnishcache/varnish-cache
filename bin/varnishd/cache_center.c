@@ -115,11 +115,9 @@ cnt_wait(struct sess *sp)
 		sp->step = STP_START;
 		return (0);
 	}
-	if (i == -2) {
+	if (i == -2)
 		vca_close_session(sp, "overflow");
-		return (0);
-	}
-	if (i == -1 && Tlen(sp->htc->rxbuf) == 0 &&
+	else if (i == -1 && Tlen(sp->htc->rxbuf) == 0 &&
 	    (errno == 0 || errno == ECONNRESET))
 		vca_close_session(sp, "EOF");
 	else
