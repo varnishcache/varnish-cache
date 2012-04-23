@@ -340,7 +340,7 @@ pool_breed(struct pool *qp, const pthread_attr_t *tp_attr)
 			VSL(SLT_Debug, 0, "Create worker thread failed %d %s",
 			    errno, strerror(errno));
 			Lck_Lock(&pool_mtx);
-			VSC_C_main->threads_limited++;
+			VSC_C_main->threads_failed++;
 			Lck_Unlock(&pool_mtx);
 			VTIM_sleep(cache_param->wthread_fail_delay * 1e-3);
 		} else {

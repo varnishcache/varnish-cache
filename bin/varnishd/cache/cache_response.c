@@ -168,8 +168,6 @@ res_WriteGunzipObj(const struct sess *sp)
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 		u += st->len;
 
-		VSC_C_main->n_objwrite++;
-
 		i = VGZ_WrwGunzip(sp->wrk, vg, st->ptr, st->len);
 		/* XXX: error check */
 		(void)i;
@@ -215,7 +213,6 @@ res_WriteDirObj(const struct sess *sp, ssize_t low, ssize_t high)
 		ptr += len;
 
 		sp->wrk->acct_tmp.bodybytes += len;
-		VSC_C_main->n_objwrite++;
 		(void)WRW_Write(sp->wrk, st->ptr + off, len);
 	}
 	assert(u == sp->req->obj->len);

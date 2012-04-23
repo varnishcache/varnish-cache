@@ -304,22 +304,6 @@ VSC_F(losthdr,			uint64_t, 0, 'a',
 	""
 )
 
-VSC_F(n_objsendfile,		uint64_t, 0, 'a',
-    "Objects sent with sendfile",
-	"The number of objects sent with the sendfile system call. If enabled "
-	"sendfile will be used on object larger than a certain size."
-)
-VSC_F(n_objwrite,		uint64_t, 0, 'a',
-    "Objects sent with write",
-	"The number of objects sent with regular write calls."
-	"Writes are used when the objects are too small for sendfile "
-	"or if the sendfile call has been disabled"
-)
-VSC_F(n_objoverflow,		uint64_t, 1, 'a',
-    "Objects overflowing workspace",
-	""
-)
-
 VSC_F(s_sess,			uint64_t, 1, 'a',
     "Total Sessions",
 	""
