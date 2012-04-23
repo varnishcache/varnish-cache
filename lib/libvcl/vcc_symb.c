@@ -70,7 +70,7 @@ vcc_AddSymbol(struct vcc *tl, const char *nb, int l, enum symkind kind)
 	}
 	ALLOC_OBJ(sym, SYMBOL_MAGIC);
 	AN(sym);
-	sym->name = malloc(l + 1);
+	sym->name = malloc(l + 1L);
 	AN(sym->name);
 	memcpy(sym->name, nb, l);
 	sym->name[l] = '\0';
