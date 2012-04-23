@@ -119,7 +119,9 @@ tail -n +11 etc/default.vcl >> redhat/default.vcl
 	redhat/varnish.initrc redhat/varnishlog.initrc redhat/varnishncsa.initrc
 %endif
 
-cp -r doc/sphinx/\=build/html doc
+rm -rf doc/sphinx/\=build/html/_sources
+mv doc/sphinx/\=build/html doc
+rm -rf doc/sphinx/\=build
 
 %check
 # rhel5 on ppc64 is just too strange
