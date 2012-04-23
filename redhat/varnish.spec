@@ -156,6 +156,7 @@ find %{buildroot}/%{_libdir}/ -name '*.la' -exec rm -f {} ';'
 mkdir -p %{buildroot}/var/lib/varnish
 mkdir -p %{buildroot}/var/log/varnish
 mkdir -p %{buildroot}/var/run/varnish
+mkdir -p %{buildroot}%{_sysconfdir}/ld.so.conf.d/
 install -D -m 0644 redhat/default.vcl %{buildroot}%{_sysconfdir}/varnish/default.vcl
 install -D -m 0644 redhat/varnish.sysconfig %{buildroot}%{_sysconfdir}/sysconfig/varnish
 install -D -m 0644 redhat/varnish.logrotate %{buildroot}%{_sysconfdir}/logrotate.d/varnish
@@ -164,6 +165,8 @@ install -D -m 0755 redhat/varnishlog.initrc %{buildroot}%{_initrddir}/varnishlog
 install -D -m 0755 redhat/varnishncsa.initrc %{buildroot}%{_initrddir}/varnishncsa
 install -D -m 0755 redhat/varnish_reload_vcl %{buildroot}%{_bindir}/varnish_reload_vcl
 
+echo %{_libdir}/varnish > %{buildroot}%{_sysconfdir}/ld.so.conf.d/varnish-%{_arch}.conf
+
 %clean
 rm -rf %{buildroot}
 
@@ -171,7 +174,6 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 %{_sbindir}/*
 %{_bindir}/*
-%{_libdir}/varnish
 %{_var}/lib/varnish
 %{_var}/log/varnish
 %{_mandir}/man1/*.1*
@@ -190,7 +192,9 @@ rm -rf %{buildroot}
 %files libs
 %defattr(-,root,root,-)
 %{_libdir}/*.so.*
+%{_libdir}/varnish
 %doc LICENSE
+%config %{_sysconfdir}/ld.so.conf.d/varnish-%{_arch}.conf
 
 %files libs-devel
 %defattr(-,root,root,-)
