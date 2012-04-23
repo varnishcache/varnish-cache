@@ -90,6 +90,8 @@ macro_def(struct vtclog *vl, const char *instance, const char *name,
 	struct macro *m;
 	va_list ap;
 
+	AN(fmt);
+
 	if (instance != NULL) {
 		bprintf(buf1, "%s_%s", instance, name);
 		name = buf1;
@@ -99,23 +101,40 @@ macro_def(struct vtclog *vl, const char *instance, const char *name,
 	VTAILQ_FOREACH(m, &macro_list, list)
 		if (!strcmp(name, m->name))
 			break;
-	if (m == NULL && fmt != NULL) {
+	if (m == NULL) {
 		m = calloc(sizeof *m, 1);
 		AN(m);
 		REPLACE(m->name, name);
 		VTAILQ_INSERT_TAIL(&macro_list, m, list);
 	}
-	if (fmt != NULL) {
-		AN(m);
-		va_start(ap, fmt);
-		free(m->val);
-		m->val = NULL;
-		vbprintf(buf2, fmt, ap);
-		va_end(ap);
-		m->val = strdup(buf2);
-		AN(m->val);
-		vtc_log(vl, 4, "macro def %s=%s", name, m->val);
-	} else if (m != NULL) {
+	AN(m);
+	va_start(ap, fmt);
+	free(m->val);
+	m->val = NULL;
+	vbprintf(buf2, fmt, ap);
+	va_end(ap);
+	m->val = strdup(buf2);
+	AN(m->val);
+	vtc_log(vl, 4, "macro def %s=%s", name, m->val);
+	AZ(pthread_mutex_unlock(&macro_mtx));
+}
+
+void
+macro_undef(struct vtclog *vl, const char *instance, const char *name)
+{
+	char buf1[256];
+	struct macro *m;
+
+	if (instance != NULL) {
+		bprintf(buf1, "%s_%s", instance, name);
+		name = buf1;
+	}
+
+	AZ(pthread_mutex_lock(&macro_mtx));
+	VTAILQ_FOREACH(m, &macro_list, list)
+		if (!strcmp(name, m->name))
+			break;
+	if (m != NULL) {
 		vtc_log(vl, 4, "macro undef %s", name);
 		VTAILQ_REMOVE(&macro_list, m, list);
 		free(m->name);

@@ -527,9 +527,9 @@ varnish_stop(struct varnish *v)
 		varnish_launch(v);
 	if (vtc_error)
 		return;
-	macro_def(v->vl, v->name, "addr", NULL);
-	macro_def(v->vl, v->name, "port", NULL);
-	macro_def(v->vl, v->name, "sock", NULL);
+	macro_undef(v->vl, v->name, "addr");
+	macro_undef(v->vl, v->name, "port");
+	macro_undef(v->vl, v->name, "sock");
 	vtc_log(v->vl, 2, "Stop");
 	(void)varnish_ask_cli(v, "stop", NULL);
 	while (1) {
