@@ -454,7 +454,7 @@ VSC_F(bans_dups,		uint64_t, 0, 'c',
 
 /**********************************************************************/
 
-VSC_F(hcb_nolock,		uint64_t, 0, 'a',
+VSC_F(hcb_nolock,		uint64_t, 1, 'a',
     "HCB Lookups without lock",
 	""
 )

@@ -432,7 +432,7 @@ hcb_lookup(struct worker *wrk, const void *digest, struct objhead **noh)
 
 	/* First try in read-only mode without holding a lock */
 
-	VSC_C_main->hcb_nolock++;
+	wrk->stats.hcb_nolock++;
 	oh = hcb_insert(wrk, &hcb_root, digest, NULL);
 	if (oh != NULL) {
 		Lck_Lock(&oh->mtx);
