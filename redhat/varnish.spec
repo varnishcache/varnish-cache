@@ -101,7 +101,7 @@ cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
 #sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g;
 #	s|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
 
-%{__make} %{?_smp_mflags}
+make %{?_smp_mflags}
 
 head -6 etc/default.vcl > redhat/default.vcl
 
@@ -141,7 +141,7 @@ cp -r doc/sphinx/\=build/html doc
 	%endif
 %endif
 
-%{__make} check LD_LIBRARY_PATH="../../lib/libvarnish/.libs:../../lib/libvarnishcompat/.libs:../../lib/libvarnishapi/.libs:../../lib/libvcl/.libs:../../lib/libvgz/.libs"
+make check LD_LIBRARY_PATH="../../lib/libvarnish/.libs:../../lib/libvarnishcompat/.libs:../../lib/libvarnishapi/.libs:../../lib/libvcl/.libs:../../lib/libvgz/.libs"
 
 %install
 rm -rf %{buildroot}
