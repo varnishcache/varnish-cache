@@ -177,7 +177,7 @@ rm -rf %{buildroot}
 %{_mandir}/man1/*.1*
 %{_mandir}/man3/*.3*
 %{_mandir}/man7/*.7*
-%doc INSTALL LICENSE README redhat/README.redhat ChangeLog
+%doc LICENSE README redhat/README.redhat ChangeLog
 %doc examples
 %dir %{_sysconfdir}/varnish/
 %config(noreplace) %{_sysconfdir}/varnish/default.vcl
