@@ -248,6 +248,22 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Fri Feb 10 2012 Petr Pisar <ppisar@redhat.com> - 2.1.5-4
+- Rebuild against PCRE 8.30
+
+* Sat Jan 14 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.1.5-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
+
+* Mon Feb 07 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.1.5-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
+
+* Tue Feb 01 2011 Ingvar Hagelund <ingvar@redpill-linpro.com> - 2.1.5-1
+- New upstream release
+- New download location
+- Moved varnish_reload_vcl to sbin
+- Removed patches included upstream
+- Use jemalloc as system installed library
+
 * Mon Nov 15 2010 Ingvar Hagelund <ingvar@redpill-linpro.com> - 3.0.0-0.svn20101115r5543
 - Merged some changes from fedora
 - Upped general version to 3.0 prerelease in trunk
