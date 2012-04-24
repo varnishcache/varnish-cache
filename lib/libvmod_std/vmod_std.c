@@ -147,19 +147,18 @@ vmod_random(struct sess *sp, double lo, double hi)
 void __match_proto__()
 vmod_log(struct sess *sp, const char *fmt, ...)
 {
-	char *p;
 	unsigned u;
 	va_list ap;
 	txt t;
 
 	u = WS_Reserve(sp->req->ws, 0);
-	p = sp->req->ws->f;
+	t.b = sp->req->ws->f;
 	va_start(ap, fmt);
-	p = VRT_StringList(p, u, fmt, ap);
+	t.e = VRT_StringList(t.b, u, fmt, ap);
 	va_end(ap);
-	if (p != NULL) {
-		t.b = p;
-		t.e = strchr(p, '\0');
+	if (t.e != NULL) {
+		assert(t.e > t.b);
+		t.e--;
 		VSLbt(sp->req->vsl, SLT_VCL_Log, t);
 	}
 	WS_Release(sp->req->ws, 0);
