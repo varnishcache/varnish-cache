@@ -143,9 +143,9 @@ server_delete(struct server *s)
 {
 
 	CHECK_OBJ_NOTNULL(s, SERVER_MAGIC);
-	macro_def(s->vl, s->name, "addr", NULL);
-	macro_def(s->vl, s->name, "port", NULL);
-	macro_def(s->vl, s->name, "sock", NULL);
+	macro_undef(s->vl, s->name, "addr");
+	macro_undef(s->vl, s->name, "port");
+	macro_undef(s->vl, s->name, "sock");
 	vtc_logclose(s->vl);
 	free(s->name);
 	/* XXX: MEMLEAK (?) (VSS ??) */

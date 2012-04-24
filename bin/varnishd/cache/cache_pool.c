@@ -194,6 +194,7 @@ pool_accept(struct worker *wrk, void *arg)
 			return;
 		}
 		VTAILQ_REMOVE(&pp->idle_queue, &wrk2->task, list);
+		AZ(wrk2->task.func);
 		Lck_Unlock(&pp->mtx);
 		assert(sizeof *wa2 == WS_Reserve(wrk2->aws, sizeof *wa2));
 		wa2 = (void*)wrk2->aws->f;
@@ -227,6 +228,7 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how)
 	wrk = pool_getidleworker(pp, 0);
 	if (wrk != NULL) {
 		VTAILQ_REMOVE(&pp->idle_queue, &wrk->task, list);
+		AZ(wrk->task.func);
 		Lck_Unlock(&pp->mtx);
 		wrk->task.func = task->func;
 		wrk->task.priv = task->priv;
@@ -298,6 +300,7 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 				wrk->lastused = VTIM_real();
 			wrk->task.func = NULL;
 			wrk->task.priv = wrk;
+			AZ(wrk->task.func);
 			VTAILQ_INSERT_HEAD(&pp->idle_queue, &wrk->task, list);
 			if (!stats_clean)
 				WRK_SumStat(wrk);
@@ -427,6 +430,7 @@ pool_herder(void *priv)
 		if (wrk != NULL && (wrk->lastused < t_idle ||
 		    pp->nthr > cache_param->wthread_max)) {
 			VTAILQ_REMOVE(&pp->idle_queue, &wrk->task, list);
+			AZ(wrk->task.func);
 		} else
 			wrk = NULL;
 		Lck_Unlock(&pp->mtx);

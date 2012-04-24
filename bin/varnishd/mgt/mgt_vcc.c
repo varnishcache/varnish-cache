@@ -394,18 +394,16 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, char *vcl, int C_flag)
 	if (VSB_len(sb) > 0)
 		fprintf(stderr, "%s", VSB_data(sb));
 	VSB_delete(sb);
-	if (C_flag) {
-		if (vf != NULL)
-			AZ(unlink(vf));
-		return (0);
-	}
+	if (C_flag && vf != NULL)
+		AZ(unlink(vf));
 	if (vf == NULL) {
 		fprintf(stderr, "\nVCL compilation failed\n");
 		return (1);
+	} else {
+		vp = mgt_vcc_add(buf, vf);
+		vp->active = 1;
+		return (0);
 	}
-	vp = mgt_vcc_add(buf, vf);
-	vp->active = 1;
-	return (0);
 }
 
 /*--------------------------------------------------------------------*/
