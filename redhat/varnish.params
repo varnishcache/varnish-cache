@@ -20,13 +20,6 @@ VARNISH_ADMIN_LISTEN_PORT=6082
 # Shared secret file for admin interface
 VARNISH_SECRET_FILE=/etc/varnish/secret   
 
-# The minimum and maximum number of worker threads to start
-VARNISH_MIN_THREADS=1                     
-VARNISH_MAX_THREADS=1000                  
-
-# Idle timeout for worker threads
-VARNISH_THREAD_TIMEOUT=120                
-
 # Backend storage specification, see Storage Types in the varnishd(5)
 # man page for details.
 VARNISH_STORAGE="file,/var/lib/varnish/varnish_storage.bin,1G"
@@ -38,3 +31,5 @@ VARNISH_TTL=120
 VARNISH_USER=varnish                      
 VARNISH_GROUP=varnish                     
 
+# Other options, see the man page varnishd(1)
+#DAEMON_OPTS="-p thread_pool_min=5 -p thread_pool_max=500 -p thread_pool_timeout=300"
