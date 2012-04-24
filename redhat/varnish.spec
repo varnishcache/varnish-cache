@@ -301,6 +301,31 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Mon Mar 12 2012 Ingvar Hagelund <ingvar@redpill-linpro.com> - 3.0.2-2
+- Added PrivateTmp=true to varnishd unit file, closing #782539
+- Fixed comment typos in varnish unit file
+
+* Tue Mar 06 2012 Ingvar Hagelund <ingvar@redpill-linpro.com> - 3.0.2-1
+- New upstream version 3.0.2
+- Removed INSTALL as requested by rpmlint
+- Added a ld.so.conf.d fragment file listing libdir/varnish 
+- Removed redundant doc/html/_sources
+- systemd support from fedora 17
+- Stopped using macros for make and install, according to 
+  Fedora's packaging guidelines
+- Changes merged from upstream:
+  - Added suse_version macro
+  - Added comments on building from a git checkout
+  - mkpasswd -> uuidgen for fewer dependencies
+  - Fixed missing quotes around cflags for pcre
+  - Removed unnecessary 32/64 bit parallell build hack as this is fixed upstream
+  - Fixed typo in configure call, disable -> without
+  - Added lib/libvgz/.libs to LD_LIBRARY_PATH in make check
+  - Added section 3 manpages
+  - Configure with --without-rst2man --without-rst2html
+  - changelog entries
+- Removed unnecessary patch for system jemalloc, upstream now supports this
+
 * Fri Feb 10 2012 Petr Pisar <ppisar@redhat.com> - 2.1.5-4
 - Rebuild against PCRE 8.30
 
