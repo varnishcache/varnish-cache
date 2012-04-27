@@ -146,7 +146,7 @@ You can use the following template to write ban lurker friendly bans::
       if (client.ip !~ purge) {
         error 401 "Not allowed";
       }
-      ban("obj.http.x-url ~ " req.url); # Assumes req.url is a regex. This might be a bit too simple
+      ban("obj.http.x-url ~ " + req.url); # Assumes req.url is a regex. This might be a bit too simple
     }
   }
 
