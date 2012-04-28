@@ -193,6 +193,8 @@ struct vcc {
 	unsigned		nvmodpriv;
 
 	unsigned		err_unref;
+	unsigned		allow_inline_c;
+	unsigned		unsafe_path;
 };
 
 struct var {

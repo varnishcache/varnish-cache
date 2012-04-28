@@ -411,6 +411,10 @@ vcc_file_source(const struct vcc *tl, struct vsb *sb, const char *fn)
 	char *f;
 	struct source *sp;
 
+	if (!tl->unsafe_path && strchr(fn, '/') != NULL) {
+		VSB_printf(sb, "Include path is unsafe '%s'\n", fn);
+		return (NULL);
+	}
 	f = VFIL_readfile(tl->vcl_dir, fn, NULL);
 	if (f == NULL) {
 		VSB_printf(sb, "Cannot read file '%s': %s\n",
@@ -487,6 +491,8 @@ vcc_NewVcc(const struct vcc *tl0)
 		REPLACE(tl->vmod_dir, tl0->vmod_dir);
 		tl->vars = tl0->vars;
 		tl->err_unref = tl0->err_unref;
+		tl->allow_inline_c = tl0->allow_inline_c;
+		tl->unsafe_path = tl0->unsafe_path;
 	} else {
 		tl->err_unref = 1;
 	}
@@ -763,7 +769,7 @@ VCC_VMOD_dir(struct vcc *tl, const char *str)
 }
 
 /*--------------------------------------------------------------------
- * Configure default
+ * Configure settings
  */
 
 void
@@ -772,4 +778,20 @@ VCC_Err_Unref(struct vcc *tl, unsigned u)
 
 	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
 	tl->err_unref = u;
+}
+
+void
+VCC_Allow_InlineC(struct vcc *tl, unsigned u)
+{
+
+	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
+	tl->allow_inline_c = u;
+}
+
+void
+VCC_Unsafe_Path(struct vcc *tl, unsigned u)
+{
+
+	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
+	tl->unsafe_path = u;
 }

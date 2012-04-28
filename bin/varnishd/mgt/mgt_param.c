@@ -1188,6 +1188,11 @@ static const struct parspec input_parspec[] = {
 		0,
 		"on", "bool" },
 
+	{ "vcc_unsafe_path", tweak_bool, &mgt_vcc_unsafe_path, 0, 0,
+		"Allow '/' in vmod & include paths.\n"
+		"Allow 'import ... from ...'.\n",
+		0,
+		"on", "bool" },
 
 	{ "pcre_match_limit", tweak_uint,
 		&mgt_param.vre_limits.match,
