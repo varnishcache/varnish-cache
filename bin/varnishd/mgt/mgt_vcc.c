@@ -63,6 +63,7 @@ char *mgt_cc_cmd;
 const char *mgt_vcl_dir;
 const char *mgt_vmod_dir;
 unsigned mgt_vcc_err_unref;
+unsigned mgt_vcc_allow_inline_c;
 
 static struct vcc *vcc;
 
@@ -139,6 +140,7 @@ run_vcc(void *priv)
 	VCC_VCL_dir(vcc, mgt_vcl_dir);
 	VCC_VMOD_dir(vcc, mgt_vmod_dir);
 	VCC_Err_Unref(vcc, mgt_vcc_err_unref);
+	VCC_Allow_InlineC(vcc, mgt_vcc_allow_inline_c);
 	csrc = VCC_Compile(vcc, sb, vp->vcl);
 	AZ(VSB_finish(sb));
 	if (VSB_len(sb))

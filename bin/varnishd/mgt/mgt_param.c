@@ -1177,8 +1177,14 @@ static const struct parspec input_parspec[] = {
 		".",
 #endif
 		NULL },
+
 	{ "vcc_err_unref", tweak_bool, &mgt_vcc_err_unref, 0, 0,
 		"Unreferenced VCL objects result in error.\n",
+		0,
+		"on", "bool" },
+
+	{ "vcc_allow_inline_c", tweak_bool, &mgt_vcc_allow_inline_c, 0, 0,
+		"Allow inline C code in VCL.\n",
 		0,
 		"on", "bool" },
 
