@@ -186,7 +186,9 @@ run_dlopen(void *priv)
 
 	of = priv;
 
-	/* Try to load the object into the management process */
+	mgt_sandbox();
+
+	/* Try to load the object into this sub-process */
 	if ((dlh = dlopen(of, RTLD_NOW | RTLD_LOCAL)) == NULL) {
 		fprintf(stderr,
 		    "Compiled VCL program failed to load:\n  %s\n",
