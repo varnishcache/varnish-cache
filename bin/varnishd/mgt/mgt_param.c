@@ -668,6 +668,9 @@ tweak_poolparam(struct cli *cli, const struct parspec *par, const char *arg)
 	"\nNB: Do not change this parameter, unless a developer tell " \
 	"you to do so."
 
+#define PROTECTED_TEXT \
+	"\nNB: This parameter is protected and can not be changed."
+
 #define MEMPOOL_TEXT							\
 	"The three numbers are:\n"					\
 	"   min_pool -- minimum size of free pool.\n"			\
@@ -1319,6 +1322,8 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 				mcf_wrap(cli, MUST_RESTART_TEXT);
 			if (pp->flags & WIZARD)
 				mcf_wrap(cli, WIZARD_TEXT);
+			if (pp->flags & PROTECTED)
+				mcf_wrap(cli, PROTECTED_TEXT);
 			if (!lfmt)
 				return;
 			else
@@ -1329,6 +1334,43 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 		VCLI_SetResult(cli, CLIS_PARAM);
 		VCLI_Out(cli, "Unknown parameter \"%s\".", av[2]);
 	}
+}
+
+/*--------------------------------------------------------------------
+ * Mark paramters as protected
+ */
+
+void
+MCF_ParamProtect(struct cli *cli, const char *args)
+{
+	char **av;
+	struct parspec *pp;
+	int i, j;
+
+	av = VAV_Parse(args, NULL, ARGV_COMMA);
+	if (av[0] != NULL) {
+		VCLI_Out(cli, "Parse error: %s", av[0]);
+		VCLI_SetResult(cli, CLIS_PARAM);
+		VAV_Free(av);
+		return;
+	}
+	for (i = 1; av[i] != NULL; i++) {
+		for (j = 0; j < nparspec; j++)
+			if (!strcmp(parspecs[j]->name, av[i]))
+				break;
+		if (j == nparspec) {
+			VCLI_Out(cli, "Unknown parameter %s", av[i]);
+			VCLI_SetResult(cli, CLIS_PARAM);
+			VAV_Free(av);
+			return;
+		}
+		pp = calloc(sizeof *pp, 1L);
+		XXXAN(pp);
+		memcpy(pp, parspecs[j], sizeof *pp);
+		pp->flags |= PROTECTED;
+		parspecs[j] = pp;
+	}
+	VAV_Free(av);
 }
 
 /*--------------------------------------------------------------------*/
@@ -1342,6 +1384,11 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 	if (pp == NULL) {
 		VCLI_SetResult(cli, CLIS_PARAM);
 		VCLI_Out(cli, "Unknown parameter \"%s\".", param);
+		return;
+	}
+	if (pp->flags & PROTECTED) {
+		VCLI_SetResult(cli, CLIS_AUTH);
+		VCLI_Out(cli, "parameter \"%s\" is protected.", param);
 		return;
 	}
 	pp->func(cli, pp, val);

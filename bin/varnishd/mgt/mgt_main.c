@@ -127,6 +127,7 @@ usage(void)
 	fprintf(stderr, FMT, "-n dir", "varnishd working directory");
 	fprintf(stderr, FMT, "-P file", "PID file");
 	fprintf(stderr, FMT, "-p param=value", "set parameter");
+	fprintf(stderr, FMT, "-r param[,param...]", "make parameter read-only");
 	fprintf(stderr, FMT,
 	    "-s kind[,storageoptions]", "Backend storage specification");
 	fprintf(stderr, FMT, "", "  -s malloc");
@@ -369,7 +370,7 @@ main(int argc, char * const *argv)
 	cli_check(cli);
 
 	while ((o = getopt(argc, argv,
-	    "a:b:Cdf:Fg:h:i:l:L:M:n:P:p:S:s:T:t:u:Vx:w:")) != -1)
+	    "a:b:Cdf:Fg:h:i:l:L:M:n:P:p:r:S:s:T:t:u:Vx:w:")) != -1)
 		switch (o) {
 		case 'a':
 			MCF_ParamSet(cli, "listen_address", optarg);
@@ -430,6 +431,10 @@ main(int argc, char * const *argv)
 			AN(p);
 			*p++ = '\0';
 			MCF_ParamSet(cli, optarg, p);
+			cli_check(cli);
+			break;
+		case 'r':
+			MCF_ParamProtect(cli, optarg);
 			cli_check(cli);
 			break;
 		case 's':

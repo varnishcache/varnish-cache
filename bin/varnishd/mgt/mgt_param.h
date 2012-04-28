@@ -45,6 +45,7 @@ struct parspec {
 #define MUST_RESTART	(1<<2)
 #define MUST_RELOAD	(1<<3)
 #define WIZARD		(1<<4)
+#define PROTECTED	(1<<5)
 	const char	*def;
 	const char	*units;
 };
