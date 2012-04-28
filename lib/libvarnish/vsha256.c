@@ -29,6 +29,7 @@
 #include "config.h"
 
 #ifdef HAVE_SYS_ENDIAN_H
+#include <sys/types.h>
 #include <sys/endian.h>
 #define VBYTE_ORDER	_BYTE_ORDER
 #define VBIG_ENDIAN	_BIG_ENDIAN
