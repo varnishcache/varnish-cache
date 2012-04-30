@@ -23,7 +23,7 @@ varnishd [-a address[:port]] [-b host[:port]] [-d] [-F] [-f config]
 	 [-g group] [-h type[,options]] [-i identity]
 	 [-l shmlogsize] [-n name] [-P file] [-p param=value] 
 	 [-s type[,options]] [-T address[:port]] [-t ttl]
-	 [-u user] [-V] 
+	 [-r param[,param...]] [-u user] [-V] 
 
 DESCRIPTION
 ===========
@@ -109,6 +109,13 @@ OPTIONS
 	    Specifies a hard minimum time to live for cached
             documents.  This is a shortcut for specifying the
             default_ttl run-time parameter.
+
+-r param[,param...]  
+            Specifies a list of parameters that are read only. In a
+            very secure environment you want to consider setting
+            parameters such as *user*, *group*, *cc_command*,
+            *vcc_allow_inline_c* to read only as these can potentially
+            be used to escalate privileges.
 
 -u user     Specifies the name of an unprivileged user to which the child
             process should switch before it starts accepting
