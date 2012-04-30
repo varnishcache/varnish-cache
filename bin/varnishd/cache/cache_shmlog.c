@@ -224,7 +224,7 @@ wslr(struct vsl_log *vsl, enum VSL_tag_e tag, int id, txt t)
 	/* Wrap if necessary */
 	if (VSL_END(vsl->wlp, l) >= vsl->wle)
 		VSL_Flush(vsl, 1);
-	assert (VSL_END(vsl->wlp, l) < vsl->wle);
+	assert(VSL_END(vsl->wlp, l) < vsl->wle);
 	memcpy(VSL_DATA(vsl->wlp), t.b, l);
 	vsl_hdr(tag, vsl->wlp, l, id);
 	vsl->wlp = VSL_END(vsl->wlp, l);

@@ -268,7 +268,7 @@ VTCP_close(int *s)
 
 	i = close(*s);
 
-	assert (VTCP_Check(i));
+	assert(VTCP_Check(i));
 	*s = -1;
 }
 

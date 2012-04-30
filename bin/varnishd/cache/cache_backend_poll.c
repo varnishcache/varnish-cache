@@ -500,7 +500,7 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *p,
 	}
 
 	VTAILQ_FOREACH(vcl, &vt->vcls, list)
-		assert (vcl->probep != p);
+		assert(vcl->probep != p);
 
 	vcl = vbp_new_vcl(p, hosthdr);
 	Lck_Lock(&vbp_mtx);

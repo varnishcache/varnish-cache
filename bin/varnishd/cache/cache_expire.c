@@ -424,7 +424,7 @@ EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 	Lck_Lock(&exp_mtx);
 	VTAILQ_FOREACH(oc, &lru->lru_head, lru_list) {
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-		assert (oc->timer_idx != BINHEAP_NOIDX);
+		assert(oc->timer_idx != BINHEAP_NOIDX);
 		/*
 		 * It wont release any space if we cannot release the last
 		 * reference, besides, if somebody else has a reference,

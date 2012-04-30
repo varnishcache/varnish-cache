@@ -525,7 +525,7 @@ BAN_Reload(const uint8_t *ban, unsigned len)
 
 	VTAILQ_FOREACH(b, &ban_head, list) {
 		t1 = ban_time(b->spec);
-		assert (t1 < t2);
+		assert(t1 < t2);
 		t2 = t1;
 		if (t1 == t0) {
 			Lck_Unlock(&ban_mtx);

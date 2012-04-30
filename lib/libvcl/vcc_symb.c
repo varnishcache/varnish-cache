@@ -118,7 +118,7 @@ VCC_FindSymbol(struct vcc *tl, const struct token *t, enum symkind kind)
 		if (sym->kind == SYM_WILDCARD &&
 		   (t->e - t->b > sym->nlen) &&
 		   !memcmp(sym->name, t->b, sym->nlen)) {
-			AN (sym->wildcard);
+			AN(sym->wildcard);
 			return (sym->wildcard(tl, t, sym));
 		}
 		if (kind != SYM_NONE && kind != sym->kind)

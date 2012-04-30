@@ -352,7 +352,7 @@ vcc_ParseAction(struct vcc *tl)
 	const struct symbol *sym;
 
 	at = tl->t;
-	assert (at->tok == ID);
+	assert(at->tok == ID);
 	for(atp = action_table; atp->name != NULL; atp++) {
 		if (vcc_IdIs(at, atp->name)) {
 			if (atp->bitmask != 0)

@@ -152,7 +152,7 @@ vrt_init_dir(struct cli *cli, struct director **bp, int idx,
 	te = t->members;
 	for (i = 0; i < t->nmember; i++, vh++, te++) {
 		vh->backend = bp[te->host];
-		AN (vh->backend);
+		AN(vh->backend);
 	}
 	vs->nhosts = t->nmember;
 	vs->next_host = 0;

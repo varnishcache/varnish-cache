@@ -666,7 +666,7 @@ FetchBody(struct worker *wrk, void *priv)
 				uu += st->len;
 			if (bo->do_stream)
 				/* Streaming might have started freeing stuff */
-				assert (uu <= obj->len);
+				assert(uu <= obj->len);
 
 			else
 				assert(uu == obj->len);

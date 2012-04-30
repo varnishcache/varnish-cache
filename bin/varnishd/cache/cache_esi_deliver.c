@@ -326,7 +326,7 @@ ESI_Deliver(struct sess *sp)
 						p = e;
 						break;
 					}
-					assert (i == VGZ_OK || i == VGZ_END);
+					assert(i == VGZ_OK || i == VGZ_END);
 				} else {
 					/*
 					 * Ungzip'ed VEC, ungzip'ed ESI response

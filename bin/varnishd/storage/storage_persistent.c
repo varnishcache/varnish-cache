@@ -216,7 +216,7 @@ smp_open_segs(struct smp_sc *sc, struct smp_signctx *ctx)
 		}
 	}
 
-	assert (l >= sc->free_reserve);
+	assert(l >= sc->free_reserve);
 
 
 	sg1 = NULL;
