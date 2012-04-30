@@ -111,11 +111,13 @@ OPTIONS
             default_ttl run-time parameter.
 
 -r param[,param...]  
-            Specifies a list of parameters that are read only. In a
-            very secure environment you want to consider setting
-            parameters such as *user*, *group*, *cc_command*,
-            *vcc_allow_inline_c* to read only as these can potentially
-            be used to escalate privileges.
+            Specifies a list of parameters that are read only. This
+            gives the system administrator a way to limit what someone
+            with access to the Varnish CLI can do. In a very secure
+            environment you want to consider setting parameters such
+            as *user*, *group*, *cc_command*, *vcc_allow_inline_c* to
+            read only as these can potentially be used to escalate
+            privileges.
 
 -u user     Specifies the name of an unprivileged user to which the child
             process should switch before it starts accepting
