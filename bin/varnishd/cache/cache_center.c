@@ -550,8 +550,8 @@ DOT		shape=record
 DOT		label="{cnt_fetch:|fetch hdr\nfrom backend|(find obj.ttl)|{vcl_fetch\{\}|{req.|bereq.|beresp.}}|{<err>error?|<rst>restart?}}"
 DOT	]
 DOT }
-DOT fetch -> prepfetch [style=bold,color=red]
-DOT fetch -> prepfetch [style=bold,color=blue]
+DOT fetch -> fetchbody [style=bold,color=red]
+DOT fetch -> fetchbody [style=bold,color=blue]
  */
 
 static int
@@ -630,7 +630,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 
 		switch (req->handling) {
 		case VCL_RET_DELIVER:
-			sp->step = STP_PREPFETCH;
+			sp->step = STP_FETCHBODY;
 			return (0);
 		default:
 			break;
@@ -670,18 +670,17 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
  * Prepare to fetch body from backend
  *
 DOT subgraph xcluster_body {
-DOT	prepfetch [
+DOT	fetchbody [
 DOT		shape=record
-DOT		label="{cnt_prepfetch:|error?|<out>stream ?}"
+DOT		label="{cnt_fetchbody:|start fetch_thread}"
 DOT	]
 DOT }
-DOT prepfetch:out -> fetchbody [style=bold,color=red]
-DOT prepfetch:out -> fetchbody [style=bold,color=blue]
-DOT prepfetch:out -> prepresp [label=yes,style=bold,color=cyan]
+DOT fetchbody:out -> prepresp [style=bold,color=red]
+DOT fetchbody:out -> prepresp [style=bold,color=blue]
  */
 
 static int
-cnt_prepfetch(struct sess *sp, struct worker *wrk, struct req *req)
+cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 {
 	struct http *hp, *hp2;
 	char *b;
@@ -868,34 +867,9 @@ cnt_prepfetch(struct sess *sp, struct worker *wrk, struct req *req)
 	    RFC2616_Do_Cond(sp))
 		bo->do_stream = 0;
 
-	sp->step = STP_FETCHBODY;
-	return (0);
-}
-
-/*--------------------------------------------------------------------
- * Actually fetch body from backend
- *
-DOT subgraph xcluster_fetchbody {
-DOT	fetchbody [
-DOT		shape=record
-DOT		label="{cnt_fetchbody:|error ?|<out>success ?}"
-DOT	]
-DOT }
-DOT fetchbody:out -> prepresp [style=bold,color=red]
-DOT fetchbody:out -> prepresp [style=bold,color=blue]
- */
-
-static int
-cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
-{
-	struct busyobj *bo;
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	bo = req->busyobj;
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-
+	/*
+	 * Ready to fetch the body
+	 */
 	bo->fetch_task.func = FetchBody;
 	bo->fetch_task.priv = bo;
 
@@ -1707,5 +1681,3 @@ CNT_Init(void)
 	xids = random();
 	CLI_AddFuncs(debug_cmds);
 }
-
-
