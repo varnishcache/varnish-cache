@@ -33,16 +33,21 @@
 #include "miniobj.h"
 #include "vre.h"
 
+#ifndef PCRE_STUDY_JIT_COMPILE
+#define PCRE_STUDY_JIT_COMPILE 0
+#endif
+
+#if PCRE_MAJOR < 8 || (PCRE_MAJOR == 8 && PCRE_MINOR < 20)
+#  define pcre_free_study pcre_free
+#endif
+
 struct vre {
 	unsigned		magic;
 #define VRE_MAGIC		0xe83097dc
 	pcre			*re;
 	pcre_extra		*re_extra;
+	int			my_extra;
 };
-
-#ifndef PCRE_STUDY_JIT_COMPILE
-#define PCRE_STUDY_JIT_COMPILE 0
-#endif
 
 /*
  * We don't want to spread or even expose the majority of PCRE options
@@ -54,29 +59,32 @@ const unsigned VRE_NOTEMPTY = PCRE_NOTEMPTY;
 
 vre_t *
 VRE_compile(const char *pattern, int options,
-		    const char **errptr, int *erroffset)
+    const char **errptr, int *erroffset)
 {
 	vre_t *v;
 	*errptr = NULL; *erroffset = 0;
 
 	ALLOC_OBJ(v, VRE_MAGIC);
-	if (v == NULL)
+	if (v == NULL) {
+		*errptr = "Out of memory for VRE";
 		return (NULL);
+	}
 	v->re = pcre_compile(pattern, options, errptr, erroffset, NULL);
 	if (v->re == NULL) {
 		VRE_free(&v);
 		return (NULL);
 	}
 	v->re_extra = pcre_study(v->re, PCRE_STUDY_JIT_COMPILE, errptr);
+	if (*errptr != NULL) {
+		VRE_free(&v);
+		return (NULL);
+	}
 	if (v->re_extra == NULL) {
-		if (*errptr != NULL) {
-			VRE_free(&v);
-			return (NULL);
-		}
-		/* allocate our own, pcre_study can return NULL without it
-		 * being an error */
+		/* allocate our own */
 		v->re_extra = calloc(1, sizeof(pcre_extra));
+		v->my_extra = 1;
 		if (v->re_extra == NULL) {
+			*errptr = "Out of memory for pcre_extra";
 			VRE_free(&v);
 			return (NULL);
 		}
@@ -118,11 +126,13 @@ VRE_free(vre_t **vv)
 
 	*vv = NULL;
 	CHECK_OBJ(v, VRE_MAGIC);
-#ifdef PCRE_CONFIG_JIT
-	pcre_free_study(v->re_extra);
-#else
-	free(v->re_extra);
-#endif
-	pcre_free(v->re);
+	if (v->re_extra != NULL) {
+		if (v->my_extra)
+			free(v->re_extra);
+		else
+			pcre_free_study(v->re_extra);
+	}
+	if (v->re != NULL)
+		pcre_free(v->re);
 	FREE_OBJ(v);
 }
