@@ -215,6 +215,6 @@ const struct parspec WRK_parspec[] = {
 		"This is likely rounded up to a multiple of 4k by the kernel.\n"
 		"The kernel/OS has a lower limit which will be enforced.\n",
 		EXPERIMENTAL,
-		"32k", "bytes" },
+		"48k", "bytes" },
 	{ NULL, NULL, NULL }
 };
