@@ -34,21 +34,21 @@ client c1 {
 	txreq -url "/one"
 	rxresp
 	expect resp.status == 200
-	expect resp.http.content-length == "4"
+	expect resp.bodylen == "4"
 	expect resp.http.foo == "bar"
 	expect resp.http.one == "File One"
 
 	txreq -url "/two"
 	rxresp
 	expect resp.status == 200
-	expect resp.http.content-length == "4"
+	expect resp.bodylen == "4"
 	expect resp.http.foo == "bar"
 	expect resp.http.two == "File Two"
 
 	txreq -url "/three"
 	rxresp
 	expect resp.status == 200
-	expect resp.http.content-length == "4"
+	expect resp.bodylen == "4"
 	expect resp.http.foo == "bar"
 	expect resp.http.three == "File Three"
 } -run

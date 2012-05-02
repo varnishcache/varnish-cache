@@ -15,17 +15,17 @@ client c1 {
 	send "GET /foo HTTP/1.1\r\n\r\nGET "
 	rxresp
 	expect resp.status == 200
-	expect resp.http.content-length == 3
+	expect resp.bodylen == 3
 	expect resp.http.x-varnish == "1001"
 	send "/bar HTTP/1.1\n\nGET /bar "
 	rxresp
 	expect resp.status == 200
-	expect resp.http.content-length == 6
+	expect resp.bodylen == 6
 	expect resp.http.x-varnish == "1002"
 	send "HTTP/1.1\n\n"
 	rxresp
 	expect resp.status == 200
-	expect resp.http.content-length == 6
+	expect resp.bodylen == 6
 	expect resp.http.x-varnish == "1003 1002"
 } -run
 

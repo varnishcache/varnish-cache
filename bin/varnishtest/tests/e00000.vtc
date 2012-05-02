@@ -18,7 +18,7 @@ client c1 {
 	txreq 
 	rxresp
 	expect resp.status == 200
-	expect resp.http.content-length == 33
+	expect resp.bodylen == 33
 }
 
 client c1 -run

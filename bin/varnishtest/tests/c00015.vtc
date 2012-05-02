@@ -25,7 +25,7 @@ client c1 {
 	txreq -url "/foo"
 	rxresp
 	expect resp.status == 200
-	expect resp.http.content-length == 6
+	expect resp.bodylen == 6
 	expect resp.http.x-varnish == "1001"
 } -run
 
@@ -35,7 +35,7 @@ client c2 {
 	txreq -url "/foo"
 	rxresp
 	expect resp.status == 200
-	expect resp.http.content-length == 7
+	expect resp.bodylen == 7
 	expect resp.http.x-varnish == "1002"
 } -run
 
@@ -45,7 +45,7 @@ client c3 {
 	txreq -url "/foo"
 	rxresp
 	expect resp.status == 200
-	expect resp.http.content-length == 6
+	expect resp.bodylen == 6
 	expect resp.http.x-varnish == "1003 1001"
 } -run
 
