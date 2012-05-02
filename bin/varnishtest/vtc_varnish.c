@@ -59,7 +59,7 @@ struct varnish {
 	struct vsb		*storage;
 
 	struct vsb		*args;
-	int			fds[6];
+	int			fds[4];
 	pid_t			pid;
 
 	pthread_t		tp;
@@ -365,7 +365,6 @@ varnish_launch(struct varnish *v)
 	vtc_log(v->vl, 3, "CMD: %s", VSB_data(vsb));
 	AZ(pipe(&v->fds[0]));
 	AZ(pipe(&v->fds[2]));
-	AZ(pipe(&v->fds[4]));
 	v->pid = fork();
 	assert(v->pid >= 0);
 	if (v->pid == 0) {
@@ -376,11 +375,8 @@ varnish_launch(struct varnish *v)
 		AZ(close(v->fds[1]));
 		AZ(close(v->fds[2]));
 		AZ(close(v->fds[3]));
-		AZ(close(v->fds[4]));
-		for (i = 3; i <getdtablesize(); i++) {
-			if (v->fds[5] != i)
-				(void)close(i);
-		}
+		for (i = 3; i <getdtablesize(); i++)
+			(void)close(i);
 		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(vsb), NULL));
 		exit(1);
 	} else {
@@ -388,7 +384,6 @@ varnish_launch(struct varnish *v)
 	}
 	AZ(close(v->fds[0]));
 	AZ(close(v->fds[3]));
-	AZ(close(v->fds[5]));
 	v->fds[0] = v->fds[2];
 	v->fds[2] = v->fds[3] = -1;
 	VSB_delete(vsb);
@@ -399,8 +394,8 @@ varnish_launch(struct varnish *v)
 	memset(fd, 0, sizeof fd);
 	fd[0].fd = v->cli_fd;
 	fd[0].events = POLLIN;
-	fd[1].fd = v->fds[4];
-	fd[1].events = POLLIN|POLLHUP;
+	fd[1].fd = v->fds[0];
+	fd[1].events = POLLHUP;
 #ifdef __APPLE__
 	/*
 	 * OSX cannot poll a pipe for POLLHUP only, poll just returns
@@ -430,7 +425,6 @@ varnish_launch(struct varnish *v)
 		return;
 	}
 
-	AZ(close(v->fds[4]));
 	AZ(close(v->cli_fd));
 	v->cli_fd = nfd;
 
