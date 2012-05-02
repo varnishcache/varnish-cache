@@ -286,7 +286,6 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 			break;
 		if (bo != NULL) {
 			AN(bo->do_stream);
-			VDI_CloseFd(&bo->vbc);
 			HSH_Drop(wrk, &sp->req->obj);
 			VBO_DerefBusyObj(wrk, &bo);
 		} else {
