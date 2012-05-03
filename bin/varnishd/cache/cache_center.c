@@ -212,23 +212,15 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 
-	if (bo != NULL) {
+	if (bo != NULL)
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-		AN(bo->do_stream);
-	}
 
 	req->res_mode = 0;
 
 	if (bo == NULL)
 		req->res_mode |= RES_LEN;
 
-	if (bo != NULL &&
-	    (bo->h_content_length != NULL ||
-	    !bo->do_stream) &&
-	    !bo->do_gzip && !bo->do_gunzip)
-		req->res_mode |= RES_LEN;
-
-	if (!req->disable_esi && req->obj->esidata != NULL) {
+	if (bo == NULL && !req->disable_esi && req->obj->esidata != NULL) {
 		/* In ESI mode, we don't know the aggregate length */
 		req->res_mode &= ~RES_LEN;
 		req->res_mode |= RES_ESI;
@@ -883,7 +875,8 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 		HSH_Unbusy(&wrk->stats, req->obj->objcore);
 	}
 
-	if (Pool_Task(wrk->pool, &bo->fetch_task, POOL_NO_QUEUE))
+	if (!bo->do_stream ||
+	    Pool_Task(wrk->pool, &bo->fetch_task, POOL_NO_QUEUE))
 		FetchBody(wrk, bo);
 
 	while (bo->state < BOS_FAILED)

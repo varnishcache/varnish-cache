@@ -134,6 +134,8 @@ VBO_GetBusyObj(struct worker *wrk)
 
 	WS_Init(bo->ws, "bo", p, bo->end - p);
 
+	bo->do_stream = 1;
+
 	return (bo);
 }
 
