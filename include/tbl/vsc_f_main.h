@@ -147,53 +147,57 @@ VSC_F(backend_retry,		uint64_t, 0, 'a',
 	""
 )
 
-VSC_F(fetch_head,		uint64_t, 1, 'a',
-    "Fetch head",
-	""
+/*---------------------------------------------------------------------
+ * Backend fetch statistics
+ */
+
+VSC_F(fetch_head,		uint64_t, 1, 'c',
+    "Fetch no body (HEAD)",
+	"beresp with no body because the request is HEAD."
 )
-VSC_F(fetch_length,		uint64_t, 1, 'a',
+VSC_F(fetch_length,		uint64_t, 1, 'c',
     "Fetch with Length",
-	""
+	"beresp with Content-Length."
 )
-VSC_F(fetch_chunked,		uint64_t, 1, 'a',
+VSC_F(fetch_chunked,		uint64_t, 1, 'c',
     "Fetch chunked",
-	""
+	"beresp with Chunked."
 )
-VSC_F(fetch_eof,		uint64_t, 1, 'a',
+VSC_F(fetch_eof,		uint64_t, 1, 'c',
     "Fetch EOF",
-	""
+	"beresp with EOF from lack of other info."
 )
-VSC_F(fetch_bad,		uint64_t, 1, 'a',
-    "Fetch had bad headers",
-	""
+VSC_F(fetch_bad,		uint64_t, 1, 'c',
+    "Fetch bad T-E",
+	"beresp failed due to unknown Transfer-Encoding."
 )
-VSC_F(fetch_close,		uint64_t, 1, 'a',
+VSC_F(fetch_close,		uint64_t, 1, 'c',
     "Fetch wanted close",
-	""
+	"beresp with EOF due to Connection: Close."
 )
-VSC_F(fetch_oldhttp,		uint64_t, 1, 'a',
+VSC_F(fetch_oldhttp,		uint64_t, 1, 'c',
     "Fetch pre HTTP/1.1 closed",
-	""
+	"beresp with EOF due to HTTP < 1.1"
 )
-VSC_F(fetch_zero,		uint64_t, 1, 'a',
-    "Fetch zero len",
-	""
+VSC_F(fetch_zero,		uint64_t, 1, 'c',
+    "Fetch zero len body",
+	"beresp with EOF due to keep-live but neither Chunked or Len."
 )
-VSC_F(fetch_failed,		uint64_t, 1, 'a',
-    "Fetch failed",
-	""
-)
-VSC_F(fetch_1xx,		uint64_t, 1, 'a',
+VSC_F(fetch_1xx,		uint64_t, 1, 'c',
     "Fetch no body (1xx)",
-	""
+	"beresp with no body because of 1XX response."
 )
-VSC_F(fetch_204,		uint64_t, 1, 'a',
+VSC_F(fetch_204,		uint64_t, 1, 'c',
     "Fetch no body (204)",
-	""
+	"beresp with no body because of 204 response."
 )
-VSC_F(fetch_304,		uint64_t, 1, 'a',
+VSC_F(fetch_304,		uint64_t, 1, 'c',
     "Fetch no body (304)",
-	""
+	"beresp with no body because of 304 response."
+)
+VSC_F(fetch_failed,		uint64_t, 1, 'c',
+    "Fetch body failed",
+	"beresp body fetch failed."
 )
 
 /*---------------------------------------------------------------------

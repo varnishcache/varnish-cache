@@ -576,6 +576,8 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 
 	need_host_hdr = !http_GetHdr(bo->bereq, H_Host, NULL);
 
+	wrk->acct_tmp.fetch++;
+
 	i = FetchHdr(sp, need_host_hdr, req->objcore == NULL);
 	/*
 	 * If we recycle a backend connection, there is a finite chance
@@ -902,7 +904,6 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 		HSH_Ref(req->obj->objcore);
 
 	VBO_DerefBusyObj(wrk, &req->busyobj);
-	wrk->acct_tmp.fetch++;
 	sp->step = STP_PREPRESP;
 	return (0);
 }
