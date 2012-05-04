@@ -278,8 +278,8 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 			break;
 		if (bo != NULL) {
 			AN(bo->do_stream);
-			HSH_Drop(wrk, &sp->req->obj);
-			VBO_DerefBusyObj(wrk, &bo);
+			(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
+			VBO_DerefBusyObj(wrk, &req->busyobj);
 		} else {
 			(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
 		}
@@ -312,10 +312,29 @@ DOT deliver -> DONE [style=bold,color=blue]
 static int
 cnt_deliver(struct sess *sp, struct worker *wrk, struct req *req)
 {
+	struct busyobj *bo;
+
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
+	bo = req->busyobj;
+	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
+
+	if (bo != NULL) {
+		while (bo->state < BOS_FAILED)
+			(void)usleep(10000);
+		assert(bo->state >= BOS_FAILED);
+
+		if (bo->state == BOS_FAILED) {
+			req->obj = NULL;
+			VBO_DerefBusyObj(wrk, &req->busyobj);
+			req->err_code = 503;
+			sp->step = STP_ERROR;
+			return (0);
+		}
+		VBO_DerefBusyObj(wrk, &req->busyobj);
+	}
 
 	AZ(req->busyobj);
 	req->director = NULL;
@@ -879,13 +898,13 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	    Pool_Task(wrk->pool, &bo->fetch_task, POOL_NO_QUEUE))
 		FetchBody(wrk, bo);
 
-	while (bo->state < BOS_FAILED)
-		(void)usleep(10000);
-	assert(bo->state >= BOS_FAILED);
+	if (req->obj->objcore != NULL)
+		HSH_Ref(req->obj->objcore);
 
-	assert(WRW_IsReleased(wrk));
-
-	if (bo->state == BOS_FAILED) {
+	if (bo->state > BOS_FAILED) {
+		VBO_DerefBusyObj(wrk, &req->busyobj);
+	} else if (bo->state == BOS_FAILED) {
+		/* handle early failures */
 		req->obj = NULL;
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		req->err_code = 503;
@@ -893,10 +912,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 		return (0);
 	}
 
-	if (req->obj->objcore != NULL)
-		HSH_Ref(req->obj->objcore);
-
-	VBO_DerefBusyObj(wrk, &req->busyobj);
+	assert(WRW_IsReleased(wrk));
 	sp->step = STP_PREPRESP;
 	return (0);
 }
