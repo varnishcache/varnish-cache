@@ -184,7 +184,8 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 }
 
 /*--------------------------------------------------------------------
- * We have a refcounted object on the session, now deliver it.
+ * We have a refcounted object on the session, and possibly the busyobj
+ * which is fetching it, prepare a response.
  *
 DOT subgraph xcluster_prepresp {
 DOT	prepresp [
@@ -212,21 +213,22 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 
-	if (bo != NULL)
-		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-
 	req->res_mode = 0;
 
-	if (bo == NULL)
-		req->res_mode |= RES_LEN;
-
-	if (bo == NULL && !req->disable_esi && req->obj->esidata != NULL) {
-		/* In ESI mode, we don't know the aggregate length */
-		req->res_mode &= ~RES_LEN;
-		req->res_mode |= RES_ESI;
+	if (bo == NULL) {
+		if (!req->disable_esi && req->obj->esidata != NULL) {
+			/* In ESI mode, we can't know the aggregate length */
+			req->res_mode &= ~RES_LEN;
+			req->res_mode |= RES_ESI;
+		} else {
+			req->res_mode |= RES_LEN;
+		}
+	} else {
+		AZ(bo->do_esi);
 	}
 
 	if (req->esi_level > 0) {
+		/* Included ESI object, always CHUNKED or EOF */
 		req->res_mode &= ~RES_LEN;
 		req->res_mode |= RES_ESI_CHILD;
 	}
@@ -242,14 +244,8 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 	}
 
 	if (!(req->res_mode & (RES_LEN|RES_CHUNKED|RES_EOF))) {
-		if (req->obj->len == 0 &&
-		    (bo == NULL || !bo->do_stream))
-			/*
-			 * If the object is empty, neither ESI nor GUNZIP
-			 * can make it any different size
-			 */
-			req->res_mode |= RES_LEN;
-		else if (!req->wantbody) {
+		/* We havn't chosen yet, do so */
+		if (!req->wantbody) {
 			/* Nothing */
 		} else if (req->http->protover >= 11) {
 			req->res_mode |= RES_CHUNKED;
@@ -901,7 +897,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	if (req->obj->objcore != NULL)
 		HSH_Ref(req->obj->objcore);
 
-	if (bo->state > BOS_FAILED) {
+	if (bo->state == BOS_FINISHED) {
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 	} else if (bo->state == BOS_FAILED) {
 		/* handle early failures */
