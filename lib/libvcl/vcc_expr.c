@@ -434,8 +434,10 @@ vcc_expr_tostring(struct expr **e, enum var_type fmt)
 	case TIME:	p = "VRT_time_string(sp, \v1)"; break;
 	default:	break;
 	}
-	if (p != NULL)
+	if (p != NULL) {
 		*e = vcc_expr_edit(fmt, p, *e, NULL);
+		(*e)->constant = 0;
+	}
 }
 
 /*--------------------------------------------------------------------
