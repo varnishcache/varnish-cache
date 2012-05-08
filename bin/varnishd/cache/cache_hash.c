@@ -332,7 +332,7 @@ HSH_Lookup(struct sess *sp)
 
 		if (oc->flags & OC_F_BUSY || oc->busyobj != NULL) {
 			CHECK_OBJ_ORNULL(oc->busyobj, BUSYOBJ_MAGIC);
-			if (req->hash_ignore_busy)
+			if (req->hash_ignore_busy || req->hash_always_miss)
 				continue;
 
 			if (oc->busyobj != NULL &&
