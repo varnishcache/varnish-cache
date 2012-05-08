@@ -352,7 +352,7 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
 
 		if (oc->flags & OC_F_BUSY) {
 			CHECK_OBJ_NOTNULL(oc->busyobj, BUSYOBJ_MAGIC);
-			if (sp->hash_ignore_busy)
+			if (sp->hash_ignore_busy || sp->hash_always_miss)
 				continue;
 
 			if (oc->busyobj->vary != NULL &&
