@@ -135,6 +135,7 @@ VSS_resolve(const char *addr, const char *port, struct vss_addr ***vap)
 	struct addrinfo hints, *res0, *res;
 	struct vss_addr **va;
 	int i, ret;
+	long int ptst;
 	char *adp, *hop;
 
 	*vap = NULL;
@@ -148,8 +149,12 @@ VSS_resolve(const char *addr, const char *port, struct vss_addr ***vap)
 
 	if (adp == NULL)
 		ret = getaddrinfo(addr, port, &hints, &res0);
-	else
+	else {
+		ptst = strtol(adp,NULL,10);
+		if (ptst < 0 || ptst > 65535)
+			return(0);
 		ret = getaddrinfo(hop, adp, &hints, &res0);
+	}
 
 	free(hop);
 	free(adp);
