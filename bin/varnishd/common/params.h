@@ -188,6 +188,8 @@ struct params {
 	unsigned		gzip_window;
 	unsigned		gzip_memlevel;
 
+	unsigned		obj_readonly;
+
 	double			critbit_cooloff;
 
 	double			shortlived;

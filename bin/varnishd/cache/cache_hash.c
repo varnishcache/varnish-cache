@@ -398,7 +398,7 @@ HSH_Lookup(struct sess *sp)
 		assert(hash->deref(oh));
 		o = oc_getobj(&wrk->stats, oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-		if (o->hits < INT_MAX)
+		if (!cache_param->obj_readonly && o->hits < INT_MAX)
 			o->hits++;
 		return (oc);
 	}

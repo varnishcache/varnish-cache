@@ -1260,6 +1260,12 @@ static const struct parspec input_parspec[] = {
 		0,
 		"10,100,10", ""},
 
+	{ "obj_readonly", tweak_bool, &mgt_param.obj_readonly, 0, 0,
+		"If set, we do not update obj.hits and obj.lastuse to"
+		"avoid dirtying VM pages associated with cached objects.",
+		0,
+		"false", ""},
+
 	{ NULL, NULL, NULL }
 };
 

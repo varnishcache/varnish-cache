@@ -261,7 +261,8 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 		    cache_param->lru_timeout &&
 		    EXP_Touch(req->obj->objcore))
 			req->obj->last_lru = req->t_resp;
-		req->obj->last_use = req->t_resp;	/* XXX: locking ? */
+		if (!cache_param->obj_readonly)
+			req->obj->last_use = req->t_resp; /* XXX: locking ? */
 	}
 	HTTP_Setup(req->resp, req->ws, req->vsl, HTTP_Resp);
 	RES_BuildHttp(sp);
