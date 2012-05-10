@@ -23,10 +23,6 @@ varnish v1 -vcl {
 	}
 	backend s2 {
 		.host = "${s2_addr}"; .port = "${s2_port}";
-		.probe = {
-			.url = "/";
-			.initial = 0;
-		}
 	}
 	director foo random {
 		{ .backend = s2; .weight = 1; }
@@ -37,6 +33,9 @@ varnish v1 -vcl {
 		set req.backend = foo;
 	}
 } -start
+
+varnish v1 -cliok "backend.set_health s2 sick"
+varnish v1 -cliok "backend.list"
 
 client c1 {
 	timeout 10
