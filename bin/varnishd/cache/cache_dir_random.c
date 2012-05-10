@@ -127,32 +127,50 @@ vdi_random_init_seed(const struct vdi_random *vs, const struct sess *sp)
  * Find the healthy backend corresponding to the weight r [0...1[
  */
 static struct vbc *
-vdi_random_pick_one(struct sess *sp, const struct vdi_random *vs, double r)
+vdi_random_pick_one(struct sess *sp, const struct vdi_random *vs, double r,
+    int retries)
 {
 	double w[vs->nhosts];
 	int i;
-	double s1;
+	double s1, s2;
+	struct vbc *vbc;
 
-	assert(r >= 0.0 && r < 1.0);
-
+	/* Sum up the weights of all backends */
 	memset(w, 0, sizeof w);
-	/* Sum up the weights of healty backends */
 	s1 = 0.0;
 	for (i = 0; i < vs->nhosts; i++) {
-		if (VDI_Healthy(vs->hosts[i].backend, sp))
-			w[i] = vs->hosts[i].weight;
+		w[i] = vs->hosts[i].weight;
 		s1 += w[i];
 	}
-
 	if (s1 == 0.0)
 		return (NULL);
 
-	r *= s1;
-	s1 = 0.0;
-	for (i = 0; i < vs->nhosts; i++)  {
-		s1 += w[i];
-		if (r < s1)
-			return(VDI_GetFd(vs->hosts[i].backend, sp));
+	while (retries-- > 0) {
+		assert(r >= 0.0 && r < 1.0);
+
+		r *= s1;
+		s2 = 0.0;
+		for (i = 0; i < vs->nhosts; i++)  {
+			s2 += w[i];
+			if (r >= s2)
+				continue;
+			if (!VDI_Healthy(vs->hosts[i].backend, sp))
+				break;
+			vbc = VDI_GetFd(vs->hosts[i].backend, sp);
+			if (vbc == NULL)
+				break;
+			return (vbc);
+		}
+		/*
+		 * Rescale and rotate r's relative position this backends
+		 * window onto the remaining backends and try again.
+		 */
+		r -= (s2 - w[i]);		// r in [0...w[i][
+		r /= w[i];			// r in [0...1[
+		r *= (s1 - w[i])/s1;		// r in [0...1-W[i]]
+		r += s2 / s1;			// rotate
+		if (r >= 1.0)
+			r -= 1.0;
 	}
 	return (NULL);
 }
@@ -165,10 +183,8 @@ vdi_random_pick_one(struct sess *sp, const struct vdi_random *vs, double r)
 static struct vbc *
 vdi_random_getfd(const struct director *d, struct sess *sp)
 {
-	int k;
 	struct vdi_random *vs;
 	double r;
-	struct vbc *vbe;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
@@ -176,17 +192,12 @@ vdi_random_getfd(const struct director *d, struct sess *sp)
 
 	r = vdi_random_init_seed(vs, sp);
 
-	for (k = 0; k < vs->retries; k++) {
-		vbe = vdi_random_pick_one(sp, vs, r);
-		if (vbe != NULL)
-			return (vbe);
-		r = vdi_random_sha((void *)&r, sizeof(r));
-	}
-	return (NULL);
+	return (vdi_random_pick_one(sp, vs, r, vs->retries));
 }
 
 /*
  * Healthy if just a single backend is...
+ * XXX: we should really have a weight param/criteria here
  */
 static unsigned
 vdi_random_healthy(const struct director *d, const struct sess *sp)
