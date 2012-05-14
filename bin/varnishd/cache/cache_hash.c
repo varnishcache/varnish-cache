@@ -66,23 +66,31 @@
 static const struct hash_slinger *hash;
 
 /*---------------------------------------------------------------------*/
+
+struct objcore *
+HSH_NewObjCore(struct worker *wrk)
+{
+	struct objcore *oc;
+
+	ALLOC_OBJ(oc, OBJCORE_MAGIC);
+	XXXAN(oc);
+	wrk->stats.n_objectcore++;
+	oc->flags |= OC_F_BUSY;
+	return (oc);
+}
+
+/*---------------------------------------------------------------------*/
 /* Precreate an objhead and object for later use */
 static void
 hsh_prealloc(struct worker *wrk)
 {
 	struct objhead *oh;
-	struct objcore *oc;
 	struct waitinglist *wl;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
-	if (wrk->nobjcore == NULL) {
-		ALLOC_OBJ(oc, OBJCORE_MAGIC);
-		XXXAN(oc);
-		wrk->nobjcore = oc;
-		wrk->stats.n_objectcore++;
-		oc->flags |= OC_F_BUSY;
-	}
+	if (wrk->nobjcore == NULL)
+		wrk->nobjcore = HSH_NewObjCore(wrk);
 	CHECK_OBJ_NOTNULL(wrk->nobjcore, OBJCORE_MAGIC);
 
 	if (wrk->nobjhead == NULL) {
@@ -663,40 +671,31 @@ HSH_Deref(struct dstat *ds, struct objcore *oc, struct object **oo)
 		oc = o->objcore;
 	}
 
-	if (o != NULL && oc == NULL) {
-		/*
-		 * A pass object with neither objcore nor objhdr reference.
-		 * -> simply free the (Transient) storage
-		 */
-		STV_Freestore(o);
-		STV_free(o->objstore);
-		ds->n_object--;
-		return (0);
-	}
-
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	oh = oc->objhead;
-	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	if (oh != NULL) {
+		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
-	Lck_Lock(&oh->mtx);
-	assert(oh->refcnt > 0);
-	assert(oc->refcnt > 0);
-	r = --oc->refcnt;
-	if (!r)
-		VTAILQ_REMOVE(&oh->objcs, oc, list);
-	else {
-		/* Must have an object */
-		AN(oc->methods);
+		Lck_Lock(&oh->mtx);
+		assert(oh->refcnt > 0);
+		assert(oc->refcnt > 0);
+		r = --oc->refcnt;
+		if (!r)
+			VTAILQ_REMOVE(&oh->objcs, oc, list);
+		else {
+			/* Must have an object */
+			AN(oc->methods);
+		}
+		if (oh->waitinglist != NULL)
+			hsh_rush(ds, oh);
+		Lck_Unlock(&oh->mtx);
+		if (r != 0)
+			return (r);
+
+		BAN_DestroyObj(oc);
+		AZ(oc->ban);
 	}
-	if (oh->waitinglist != NULL)
-		hsh_rush(ds, oh);
-	Lck_Unlock(&oh->mtx);
-	if (r != 0)
-		return (r);
-
-	BAN_DestroyObj(oc);
-	AZ(oc->ban);
 
 	if (oc->methods != NULL) {
 		oc_freeobj(oc);
@@ -705,11 +704,13 @@ HSH_Deref(struct dstat *ds, struct objcore *oc, struct object **oo)
 	FREE_OBJ(oc);
 
 	ds->n_objectcore--;
-	/* Drop our ref on the objhead */
-	assert(oh->refcnt > 0);
-	if (hash->deref(oh))
-		return (0);
-	HSH_DeleteObjHead(ds, oh);
+	if (oh != NULL) {
+		/* Drop our ref on the objhead */
+		assert(oh->refcnt > 0);
+		if (hash->deref(oh))
+			return (0);
+		HSH_DeleteObjHead(ds, oh);
+	}
 	return (0);
 }
 

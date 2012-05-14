@@ -237,6 +237,7 @@ STV_MkObject(struct stevedore *stv, struct busyobj *bo, struct objcore **ocp,
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(soc, STV_OBJ_SECRETES_MAGIC);
 	AN(ocp);
+	CHECK_OBJ_NOTNULL((*ocp), OBJCORE_MAGIC);
 
 	assert(PAOK(ptr));
 	assert(PAOK(soc->wsl));
@@ -262,17 +263,14 @@ STV_MkObject(struct stevedore *stv, struct busyobj *bo, struct objcore **ocp,
 	VTAILQ_INIT(&o->store);
 	bo->stats->n_object++;
 
-	if (*ocp != NULL) {
-		CHECK_OBJ_NOTNULL((*ocp), OBJCORE_MAGIC);
-
-		o->objcore = *ocp;
-		*ocp = NULL;     /* refcnt follows pointer. */
+	o->objcore = *ocp;
+	*ocp = NULL;     /* refcnt follows pointer. */
+	if (o->objcore->objhead != NULL)
 		BAN_NewObjCore(o->objcore);
 
-		o->objcore->methods = &default_oc_methods;
-		o->objcore->priv = o;
-		o->objcore->priv2 = (uintptr_t)stv;
-	}
+	o->objcore->methods = &default_oc_methods;
+	o->objcore->priv = o;
+	o->objcore->priv2 = (uintptr_t)stv;
 	return (o);
 }
 
@@ -356,8 +354,11 @@ STV_NewObject(struct busyobj *bo, struct objcore **ocp, const char *hint,
 		}
 	}
 
-	if (o == NULL)
+	if (o == NULL) {
+		AN(*ocp);
 		return (NULL);
+	}
+	AZ(*ocp);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(o->objstore, STORAGE_MAGIC);
 	return (o);

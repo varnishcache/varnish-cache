@@ -141,7 +141,7 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 	if (!vbc->backend)
 		return;
 	CHECK_OBJ_NOTNULL(vbc->backend, BACKEND_MAGIC);
-	if (!sp->req->objcore)
+	if (!sp->req->objcore->objhead)
 		return;
 	CHECK_OBJ_NOTNULL(sp->req->objcore, OBJCORE_MAGIC);
 

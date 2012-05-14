@@ -453,10 +453,8 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 	AN(req->director);
 	AZ(req->obj);
 
-	if (req->objcore != NULL) {		/* pass has no objcore */
-		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-		AN(req->objcore->flags & OC_F_BUSY);
-	}
+	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+	AN(req->objcore->flags & OC_F_BUSY);
 
 	hp = bo->bereq;
 
@@ -687,7 +685,7 @@ FetchBody(struct worker *wrk, void *priv)
 		/* XXX: Atomic assignment, needs volatile/membar ? */
 		bo->state = BOS_FINISHED;
 	}
-	if (obj->objcore != NULL)
+	if (obj->objcore->objhead != NULL)
 		HSH_Complete(obj->objcore);
 	bo->stats = NULL;
 	VBO_DerefBusyObj(wrk, &bo);

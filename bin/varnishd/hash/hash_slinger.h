@@ -60,6 +60,7 @@ void HSH_AddString(const struct sess *sp, const char *str);
 void HSH_Insert(struct worker *, const void *hash, struct objcore *);
 void HSH_Purge(const struct sess *, struct objhead *, double ttl, double grace);
 void HSH_config(const char *h_arg);
+struct objcore *HSH_NewObjCore(struct worker *wrk);
 
 #ifdef VARNISH_CACHE_CHILD
 

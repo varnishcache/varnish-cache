@@ -152,7 +152,7 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 	*pbo = NULL;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_ORNULL(bo->fetch_obj, OBJECT_MAGIC);
-	if (bo->fetch_obj != NULL && bo->fetch_obj->objcore != NULL) {
+	if (bo->fetch_obj != NULL && bo->fetch_obj->objcore->objhead != NULL) {
 		oc = bo->fetch_obj->objcore;
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);

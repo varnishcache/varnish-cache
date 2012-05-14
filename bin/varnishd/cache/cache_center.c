@@ -256,7 +256,7 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 	}
 
 	req->t_resp = W_TIM_real(wrk);
-	if (req->obj->objcore != NULL) {
+	if (req->obj->objcore->objhead != NULL) {
 		if ((req->t_resp - req->obj->last_lru) >
 		    cache_param->lru_timeout &&
 		    EXP_Touch(req->obj->objcore))
@@ -340,11 +340,8 @@ cnt_deliver(struct sess *sp, struct worker *wrk, struct req *req)
 	RES_WriteObj(sp);
 
 	/* No point in saving the body if it is hit-for-pass */
-	if (req->obj->objcore != NULL) {
-		CHECK_OBJ_NOTNULL(req->obj->objcore, OBJCORE_MAGIC);
-		if (req->obj->objcore->flags & OC_F_PASS)
-			STV_Freestore(req->obj);
-	}
+	if (req->obj->objcore->flags & OC_F_PASS)
+		STV_Freestore(req->obj);
 
 	assert(WRW_IsReleased(wrk));
 	(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
@@ -492,6 +489,7 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
 	bo->vsl->wid = sp->vsl_id;
 	AZ(bo->stats);
 	bo->stats = &wrk->stats;
+	req->objcore = HSH_NewObjCore(wrk);
 	req->obj = STV_NewObject(bo, &req->objcore,
 	    TRANSIENT_STORAGE, cache_param->http_resp_size,
 	    (uint16_t)cache_param->http_max_hdr);
@@ -586,7 +584,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 
 	wrk->acct_tmp.fetch++;
 
-	i = FetchHdr(sp, need_host_hdr, req->objcore == NULL);
+	i = FetchHdr(sp, need_host_hdr, req->objcore->objhead == NULL);
 	/*
 	 * If we recycle a backend connection, there is a finite chance
 	 * that the backend closed it before we get a request to it.
@@ -594,7 +592,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 	 */
 	if (i == 1) {
 		VSC_C_main->backend_retry++;
-		i = FetchHdr(sp, need_host_hdr, req->objcore == NULL);
+		i = FetchHdr(sp, need_host_hdr, req->objcore->objhead == NULL);
 	}
 
 	if (i) {
@@ -626,7 +624,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 		RFC2616_Ttl(bo, sp->req->xid);
 
 		/* pass from vclrecv{} has negative TTL */
-		if (req->objcore == NULL)
+		if (req->objcore->objhead == NULL)
 			bo->exp.ttl = -1.;
 
 		AZ(bo->do_esi);
@@ -634,7 +632,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 
 		VCL_fetch_method(sp);
 
-		if (req->objcore != NULL && bo->do_pass)
+		if (bo->do_pass)
 			req->objcore->flags |= OC_F_PASS;
 
 		switch (req->handling) {
@@ -652,7 +650,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 	/* Clean up partial fetch */
 	AZ(bo->vbc);
 
-	if (req->objcore != NULL) {
+	if (req->objcore->objhead != NULL || req->handling == VCL_RET_ERROR) {
 		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
 		req->objcore = NULL;
@@ -707,7 +705,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 
 	assert(req->handling == VCL_RET_DELIVER);
 
-	if (req->objcore == NULL) {
+	if (req->objcore->objhead == NULL) {
 		/* This is a pass from vcl_recv */
 		pass = 1;
 		/* VCL may have fiddled this, but that doesn't help */
@@ -785,7 +783,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	    pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
 
 	/* Create Vary instructions */
-	if (req->objcore != NULL) {
+	if (req->objcore->objhead != NULL) {
 		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 		vary = VRY_Create(req, bo->beresp);
 		if (vary != NULL) {
@@ -884,7 +882,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 
 	assert(bo->refcount == 2);	/* one for each thread */
 
-	if (req->obj->objcore != NULL) {
+	if (req->obj->objcore->objhead != NULL) {
 		EXP_Insert(req->obj);
 		AN(req->obj->objcore->ban);
 		AZ(req->obj->ws_o->overflow);
@@ -895,7 +893,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	    Pool_Task(wrk->pool, &bo->fetch_task, POOL_NO_QUEUE))
 		FetchBody(wrk, bo);
 
-	if (req->obj->objcore != NULL)
+	if (req->obj->objcore->objhead != NULL)
 		HSH_Ref(req->obj->objcore);
 
 	if (bo->state == BOS_FINISHED) {
@@ -1249,6 +1247,9 @@ cnt_pass(struct sess *sp, struct worker *wrk, struct req *req)
 	assert(req->handling == VCL_RET_PASS);
 	wrk->acct_tmp.pass++;
 	sp->step = STP_FETCH;
+
+	req->objcore = HSH_NewObjCore(wrk);
+	req->objcore->busyobj = bo;
 	return (0);
 }
 

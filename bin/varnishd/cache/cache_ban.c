@@ -447,6 +447,7 @@ BAN_NewObjCore(struct objcore *oc)
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ(oc->ban);
+	AN(oc->objhead);
 	Lck_Lock(&ban_mtx);
 	oc->ban = ban_start;
 	ban_start->refcount++;
