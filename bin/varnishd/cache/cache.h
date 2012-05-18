@@ -790,6 +790,7 @@ void EXP_Init(void);
 void EXP_Rearm(const struct object *o);
 int EXP_Touch(struct objcore *oc);
 int EXP_NukeOne(struct busyobj *, struct lru *lru);
+void EXP_NukeLRU(struct worker *wrk, struct vsl_log *vsl, struct lru *lru);
 
 /* cache_fetch.c */
 struct storage *FetchStorage(struct busyobj *, ssize_t sz);

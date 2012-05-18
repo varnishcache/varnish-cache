@@ -460,6 +460,65 @@ EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 }
 
 /*--------------------------------------------------------------------
+ * Nukes an entire LRU
+ */
+
+#define NUKEBUF 10	/* XXX: Randomly chosen to be bigger than one */
+
+void
+EXP_NukeLRU(struct worker *wrk, struct vsl_log *vsl, struct lru *lru)
+{
+	struct objcore *oc;
+	struct objcore *oc_array[NUKEBUF];
+	struct object *o;
+	int i, n;
+	double t;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
+
+	t = VTIM_real();
+	Lck_Lock(&lru->mtx);
+	while (!VTAILQ_EMPTY(&lru->lru_head)) {
+		Lck_Lock(&exp_mtx);
+		n = 0;
+		while (n < NUKEBUF) {
+			oc = VTAILQ_FIRST(&lru->lru_head);
+			if (oc == NULL)
+				break;
+			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+			assert(oc_getlru(oc) == lru);
+
+			/* Remove from the LRU and binheap */
+			VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
+			assert(oc->timer_idx != BINHEAP_NOIDX);
+			binheap_delete(exp_heap, oc->timer_idx);
+			assert(oc->timer_idx == BINHEAP_NOIDX);
+
+			oc_array[n++] = oc;
+			VSC_C_main->n_lru_nuked++;
+		}
+		assert(n > 0);
+		Lck_Unlock(&exp_mtx);
+		Lck_Unlock(&lru->mtx);
+
+		for (i = 0; i < n; i++) {
+			oc = oc_array[i];
+			o = oc_getobj(&wrk->stats, oc);
+			VSLb(vsl, SLT_ExpKill, "%u %.0f LRU",
+			     oc_getxid(&wrk->stats, oc), EXP_Ttl(NULL, o) - t);
+			EXP_Set_ttl(&o->exp, 0.);
+			(void)HSH_Deref(&wrk->stats, oc, NULL);
+		}
+
+		Lck_Lock(&lru->mtx);
+	}
+	Lck_Unlock(&lru->mtx);
+
+	WRK_SumStat(wrk);
+}
+
+/*--------------------------------------------------------------------
  * BinHeap helper functions for objcore.
  */
 
