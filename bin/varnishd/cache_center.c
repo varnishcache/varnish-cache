@@ -788,12 +788,12 @@ cnt_fetchbody(struct sess *sp)
 		 * Try to salvage the transaction by allocating a
 		 * shortlived object on Transient storage.
 		 */
-		sp->obj = STV_NewObject(sp, TRANSIENT_STORAGE, l,
-		    &sp->wrk->exp, nhttp);
 		if (sp->wrk->exp.ttl > params->shortlived)
 			sp->wrk->exp.ttl = params->shortlived;
 		sp->wrk->exp.grace = 0.0;
 		sp->wrk->exp.keep = 0.0;
+		sp->obj = STV_NewObject(sp, TRANSIENT_STORAGE, l,
+		    &sp->wrk->exp, nhttp);
 	}
 	if (sp->obj == NULL) {
 		sp->err_code = 503;
