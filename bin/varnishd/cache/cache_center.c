@@ -812,12 +812,12 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 		 * Try to salvage the transaction by allocating a
 		 * shortlived object on Transient storage.
 		 */
-		req->obj = STV_NewObject(bo, &req->objcore, TRANSIENT_STORAGE,
-		    l, nhttp);
 		if (bo->exp.ttl > cache_param->shortlived)
 			bo->exp.ttl = cache_param->shortlived;
 		bo->exp.grace = 0.0;
 		bo->exp.keep = 0.0;
+		req->obj = STV_NewObject(bo, &req->objcore, TRANSIENT_STORAGE,
+		    l, nhttp);
 	}
 	bo->stats = NULL;
 	if (req->obj == NULL) {
