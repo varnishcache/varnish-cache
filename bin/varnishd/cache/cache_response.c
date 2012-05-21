@@ -234,17 +234,6 @@ RES_WriteObj(struct sess *sp)
 	req = sp->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	WRW_Reserve(sp->wrk, &sp->fd, sp->req->vsl, sp->req->t_resp);
-
-	if (req->obj->response == 200 &&
-	    req->http->conds &&
-	    RFC2616_Do_Cond(sp)) {
-		req->wantbody = 0;
-		http_SetResp(req->resp, "HTTP/1.1", 304, "Not Modified");
-		http_Unset(req->resp, H_Content_Length);
-		http_Unset(req->resp, H_Transfer_Encoding);
-	}
-
 	/*
 	 * If nothing special planned, we can attempt Range support
 	 */
@@ -264,6 +253,8 @@ RES_WriteObj(struct sess *sp)
 	 */
 	if (req->res_mode & RES_GUNZIP)
 		http_Unset(req->resp, H_Content_Encoding);
+
+	WRW_Reserve(sp->wrk, &sp->fd, sp->req->vsl, sp->req->t_resp);
 
 	/*
 	 * Send HTTP protocol header, unless interior ESI object
