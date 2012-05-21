@@ -324,7 +324,7 @@ cnt_deliver(struct sess *sp, struct worker *wrk, struct req *req)
 		assert(bo->state >= BOS_FAILED);
 
 		if (bo->state == BOS_FAILED) {
-			req->obj = NULL;
+			HSH_Deref(&wrk->stats, NULL, &req->obj);
 			VBO_DerefBusyObj(wrk, &req->busyobj);
 			req->err_code = 503;
 			sp->step = STP_ERROR;
@@ -900,7 +900,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 	} else if (bo->state == BOS_FAILED) {
 		/* handle early failures */
-		req->obj = NULL;
+		HSH_Deref(&wrk->stats, NULL, &req->obj);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		req->err_code = 503;
 		sp->step = STP_ERROR;

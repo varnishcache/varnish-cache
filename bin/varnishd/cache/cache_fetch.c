@@ -645,8 +645,9 @@ FetchBody(struct worker *wrk, void *priv)
 	if (bo->state == BOS_FAILED) {
 		wrk->stats.fetch_failed++;
 		VDI_CloseFd(&bo->vbc);
-		obj->exp.ttl = -1.;
 		obj->len = 0;
+		EXP_Clr(&obj->exp);
+		EXP_Rearm(obj);
 	} else {
 		assert(bo->state == BOS_FETCHING);
 
