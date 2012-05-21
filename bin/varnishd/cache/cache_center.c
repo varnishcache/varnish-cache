@@ -267,14 +267,6 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 	HTTP_Setup(req->resp, req->ws, req->vsl, HTTP_Resp);
 	RES_BuildHttp(sp);
 
-	if (req->obj->response == 200
-	    && req->http->conds && RFC2616_Do_Cond(sp)) {
-		req->wantbody = 0;
-		http_SetResp(req->resp, "HTTP/1.1", 304, "Not Modified");
-		http_Unset(req->resp, H_Content_Length);
-		http_Unset(req->resp, H_Transfer_Encoding);
-	}
-
 	VCL_deliver_method(sp);
 	switch (req->handling) {
 	case VCL_RET_DELIVER:

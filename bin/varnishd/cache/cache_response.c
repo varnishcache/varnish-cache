@@ -124,7 +124,15 @@ RES_BuildHttp(const struct sess *sp)
 		http_SetHeader(req->resp, "Accept-Ranges: bytes");
 	}
 
-	if (req->res_mode & RES_CHUNKED)
+	if (req->res_mode & RES_GUNZIP)
+		http_Unset(req->resp, H_Content_Encoding);
+
+	if (req->obj->response == 200
+	    && req->http->conds && RFC2616_Do_Cond(sp)) {
+		req->wantbody = 0;
+		http_SetResp(req->resp, "HTTP/1.1", 304, "Not Modified");
+		http_Unset(req->resp, H_Content_Length);
+	} else if (req->res_mode & RES_CHUNKED)
 		http_SetHeader(req->resp, "Transfer-Encoding: chunked");
 
 	http_Unset(req->resp, H_Date);
@@ -247,12 +255,6 @@ RES_WriteObj(struct sess *sp)
 	    req->obj->response == 200 &&
 	    http_GetHdr(req->http, H_Range, &r))
 		res_dorange(sp, r, &low, &high);
-
-	/*
-	 * Always remove C-E if client don't grok it
-	 */
-	if (req->res_mode & RES_GUNZIP)
-		http_Unset(req->resp, H_Content_Encoding);
 
 	WRW_Reserve(sp->wrk, &sp->fd, sp->req->vsl, sp->req->t_resp);
 
