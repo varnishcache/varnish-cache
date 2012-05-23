@@ -92,14 +92,23 @@ smp_appendban(struct smp_sc *sc, struct smp_signspace *spc,
 
 /* Trust that cache_ban.c takes care of locking */
 
-void
-SMP_NewBan(const uint8_t *ban, unsigned ln)
+static void
+smp_baninfo(struct stevedore *stv, enum baninfo event,
+	    const uint8_t *ban, unsigned len)
 {
 	struct smp_sc *sc;
 
-	VTAILQ_FOREACH(sc, &silos, list) {
-		smp_appendban(sc, &sc->ban1, ln, ban);
-		smp_appendban(sc, &sc->ban2, ln, ban);
+	(void)stv;
+	switch (event) {
+	case BI_NEW:
+		VTAILQ_FOREACH(sc, &silos, list) {
+			smp_appendban(sc, &sc->ban1, len, ban);
+			smp_appendban(sc, &sc->ban2, len, ban);
+		}
+		break;
+	default:
+		/* Ignored */
+		break;
 	}
 }
 
@@ -584,6 +593,7 @@ const struct stevedore smp_stevedore = {
 	.allocobj =	smp_allocobj,
 	.free	=	smp_free,
 	.signal_close = smp_signal_close,
+	.baninfo =	smp_baninfo,
 };
 
 /*--------------------------------------------------------------------

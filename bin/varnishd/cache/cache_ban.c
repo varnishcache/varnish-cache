@@ -66,6 +66,7 @@
 #include <stdio.h>
 
 #include "cache.h"
+#include "storage/storage.h"
 
 #include "hash/hash_slinger.h"
 #include "vcli.h"
@@ -413,7 +414,7 @@ BAN_Insert(struct ban *b)
 	else
 		be = NULL;
 
-	SMP_NewBan(b->spec, ln);
+	STV_BanInfo(BI_NEW, b->spec, ln);	/* Notify stevedores */
 	Lck_Unlock(&ban_mtx);
 
 	if (be == NULL)
@@ -595,7 +596,9 @@ BAN_Compile(void)
 
 	ASSERT_CLI();
 
-	SMP_NewBan(ban_magic->spec, ban_len(ban_magic->spec));
+	/* Notify stevedores */
+	STV_BanInfo(BI_NEW, ban_magic->spec, ban_len(ban_magic->spec));
+
 	ban_start = VTAILQ_FIRST(&ban_head);
 	WRK_BgThread(&ban_thread, "ban-lurker", ban_lurker, NULL);
 }
@@ -812,6 +815,9 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl, unsigned pass)
 	do {
 		Lck_Lock(&ban_mtx);
 		b2 = ban_CheckLast();
+		if (b2 != NULL)
+			/* Notify stevedores */
+			STV_BanInfo(BI_DROP, b2->spec, ban_len(b2->spec));
 		Lck_Unlock(&ban_mtx);
 		if (b2 != NULL)
 			BAN_Free(b2);
@@ -959,6 +965,10 @@ ban_lurker(struct worker *wrk, void *priv)
 			 */
 			Lck_Lock(&ban_mtx);
 			bf = ban_CheckLast();
+			if (bf != NULL)
+				/* Notify stevedores */
+				STV_BanInfo(BI_DROP, bf->spec,
+					    ban_len(bf->spec));
 			Lck_Unlock(&ban_mtx);
 			if (bf != NULL)
 				BAN_Free(bf);

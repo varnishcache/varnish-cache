@@ -38,6 +38,7 @@ struct busyobj;
 struct objcore;
 struct worker;
 struct lru;
+enum baninfo;
 
 typedef void storage_init_f(struct stevedore *, int ac, char * const *av);
 typedef void storage_open_f(const struct stevedore *);
@@ -48,6 +49,8 @@ typedef struct object *storage_allocobj_f(struct stevedore *, struct busyobj *,
     struct objcore **, unsigned ltot, const struct stv_objsecrets *);
 typedef void storage_close_f(const struct stevedore *);
 typedef void storage_signal_close_f(const struct stevedore *);
+typedef void storage_baninfo_f(struct stevedore *, enum baninfo event,
+    const uint8_t *ban, unsigned len);
 
 /* Prototypes for VCL variable responders */
 #define VRTSTVTYPE(ct) typedef ct storage_var_##ct(const struct stevedore *);
@@ -71,6 +74,7 @@ struct stevedore {
 	storage_close_f		*close;		/* --//-- */
 	storage_allocobj_f	*allocobj;	/* --//-- */
 	storage_signal_close_f	*signal_close;	/* --//-- */
+	storage_baninfo_f	*baninfo;	/* --//-- */
 
 	struct lru		*lru;
 

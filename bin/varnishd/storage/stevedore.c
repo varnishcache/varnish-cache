@@ -453,6 +453,15 @@ STV_close(void)
 		stv->close(stv);
 }
 
+void
+STV_BanInfo(enum baninfo event, const uint8_t *ban, unsigned len)
+{
+	struct stevedore *stv;
+
+	VTAILQ_FOREACH(stv, &stv_stevedores, list)
+		if (stv->baninfo != NULL)
+			stv->baninfo(stv, event, ban, len);
+}
 
 /*--------------------------------------------------------------------
  * VRT functions for stevedores
