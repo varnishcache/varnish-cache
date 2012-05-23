@@ -747,6 +747,10 @@ cnt_fetchbody(struct sess *sp)
 	if (!sp->wantbody)
 		sp->wrk->do_stream = 0;
 
+	/* No reason to try streaming a non-existing body */
+	if (sp->wrk->body_status == BS_NONE)
+		sp->wrk->do_stream = 0;
+
 	l = http_EstimateWS(sp->wrk->beresp,
 	    pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
 
