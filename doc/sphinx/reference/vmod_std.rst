@@ -124,7 +124,7 @@ Description
 	the usual s (seconds), m (minutes), h (hours), d (days) and w
 	(weeks) units. If *s* fails to parse, *fallback* will be used.
 Example
-	set beresp.ttl = std.duration("1w", 3600);
+	set beresp.ttl = std.duration("1w", 3600s);
 
 integer
 --------
