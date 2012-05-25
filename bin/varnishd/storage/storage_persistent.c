@@ -343,9 +343,18 @@ smp_open(const struct stevedore *st)
 
 	sc->ident = SIGN_DATA(&sc->idn);
 
-	/* We attempt ban1 first, and if that fails, try ban2 */
-	if (smp_open_bans(sc, &sc->ban1))
-		AZ(smp_open_bans(sc, &sc->ban2));
+	/* Check ban lists */
+	if (smp_chk_signspace(&sc->ban1)) {
+		/* Ban list 1 is broken, use ban2 */
+		AZ(smp_chk_signspace(&sc->ban2));
+		smp_copy_signspace(&sc->ban1, &sc->ban2);
+		smp_sync_sign(&sc->ban1.ctx);
+	} else {
+		/* Ban1 is OK, copy to ban2 for consistency */
+		smp_copy_signspace(&sc->ban2, &sc->ban1);
+		smp_sync_sign(&sc->ban2.ctx);
+	}
+	AZ(smp_open_bans(sc, &sc->ban1));
 
 	/* We attempt seg1 first, and if that fails, try seg2 */
 	if (smp_open_segs(sc, &sc->seg1))
