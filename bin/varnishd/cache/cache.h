@@ -691,6 +691,8 @@ void VCA_FailSess(struct worker *w);
 
 /* cache_backend.c */
 void VBE_UseHealth(const struct director *vdi);
+void VBE_DiscardHealth(const struct director *vdi);
+
 
 struct vbc *VDI_GetFd(const struct director *, struct sess *sp);
 int VDI_Healthy(const struct director *, const struct sess *sp);

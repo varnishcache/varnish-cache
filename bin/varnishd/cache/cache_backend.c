@@ -432,6 +432,25 @@ VBE_UseHealth(const struct director *vdi)
  *
  */
 
+void
+VBE_DiscardHealth(const struct director *vdi)
+{
+	struct vdi_simple *vs;
+
+	ASSERT_CLI();
+
+	if (strcmp(vdi->name, "simple"))
+		return;
+	CAST_OBJ_NOTNULL(vs, vdi->priv, VDI_SIMPLE_MAGIC);
+	if (vs->vrt->probe == NULL)
+		return;
+	VBP_Remove(vs->backend, vs->vrt->probe);
+}
+
+/*--------------------------------------------------------------------
+ *
+ */
+
 static struct vbc * __match_proto__(vdi_getfd_f)
 vdi_simple_getfd(const struct director *d, struct sess *sp)
 {
@@ -470,8 +489,6 @@ vdi_simple_fini(const struct director *d)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
 
-	if (vs->vrt->probe != NULL)
-		VBP_Remove(vs->backend, vs->vrt->probe);
 	VBE_DropRefVcl(vs->backend);
 	free(vs->dir.vcl_name);
 	vs->dir.magic = 0;

@@ -278,10 +278,10 @@ static void
 ccf_config_discard(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcls *vcl;
+	int i;
 
 	ASSERT_CLI();
-	(void)av;
-	(void)priv;
+	AZ(priv);
 	vcl = vcl_find(av[2]);
 	if (vcl == NULL) {
 		VCLI_SetResult(cli, CLIS_PARAM);
@@ -299,6 +299,11 @@ ccf_config_discard(struct cli *cli, const char * const *av, void *priv)
 	VSC_C_main->n_vcl_avail--;
 	vcl->conf->discard = 1;
 	Lck_Unlock(&vcl_mtx);
+
+	/* Tickle this VCL's backends to give up health polling */
+	for(i = 1; i < vcl->conf->ndirector; i++)
+		VBE_DiscardHealth(vcl->conf->director[i]);
+
 	if (vcl->conf->busy == 0)
 		VCL_Nuke(vcl);
 }
