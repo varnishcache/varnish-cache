@@ -561,6 +561,8 @@ struct req {
 	uint8_t			hash_ignore_busy;
 	uint8_t			hash_always_miss;
 
+	struct sess		*sp;
+
 	/* The busy objhead we sleep on */
 	struct objhead		*hash_objhead;
 	struct busyobj		*busyobj;
