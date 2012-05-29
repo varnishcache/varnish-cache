@@ -111,6 +111,8 @@ struct smp_sign {
 	char			ident[8];
 	uint32_t		unique;
 	uint64_t		mapped;
+	/* The length field is the length of the signed data only
+	 * (does not include struct smp_sign) */
 	uint64_t		length;		/* NB: Must be last */
 };
 
