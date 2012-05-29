@@ -330,18 +330,18 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 
 #define VCL_MET_MAC(func, upper, bitmap)				\
 void									\
-VCL_##func##_method(struct sess *sp)					\
+VCL_##func##_method(struct req *req)					\
 {									\
 									\
-	sp->req->handling = 0;						\
-	sp->req->cur_method = VCL_MET_ ## upper;			\
-	VSLb(sp->req->vsl, SLT_VCL_call, "%s", #func);			\
-	(void)sp->req->vcl->func##_func(sp);				\
-	VSLb(sp->req->vsl, SLT_VCL_return, "%s",			\
-	    VCL_Return_Name(sp->req->handling));			\
-	sp->req->cur_method = 0;					\
-	assert((1U << sp->req->handling) & bitmap);			\
-	assert(!((1U << sp->req->handling) & ~bitmap));			\
+	req->handling = 0;						\
+	req->cur_method = VCL_MET_ ## upper;				\
+	VSLb(req->vsl, SLT_VCL_call, "%s", #func);			\
+	(void)req->vcl->func##_func(req->sp);				\
+	VSLb(req->vsl, SLT_VCL_return, "%s",				\
+	    VCL_Return_Name(req->handling));				\
+	req->cur_method = 0;						\
+	assert((1U << req->handling) & bitmap);				\
+	assert(!((1U << req->handling) & ~bitmap));			\
 }
 
 #include "tbl/vcl_returns.h"

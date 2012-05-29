@@ -267,7 +267,7 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 	HTTP_Setup(req->resp, req->ws, req->vsl, HTTP_Resp);
 	RES_BuildHttp(sp);
 
-	VCL_deliver_method(sp);
+	VCL_deliver_method(req);
 	switch (req->handling) {
 	case VCL_RET_DELIVER:
 		break;
@@ -522,7 +522,7 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
 		http_PutResponse(h, req->err_reason);
 	else
 		http_PutResponse(h, http_StatusMessage(req->err_code));
-	VCL_error_method(sp);
+	VCL_error_method(req);
 
 	if (req->handling == VCL_RET_RESTART &&
 	    req->restarts <  cache_param->max_restarts) {
@@ -631,7 +631,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 		AZ(bo->do_esi);
 		AZ(bo->do_pass);
 
-		VCL_fetch_method(sp);
+		VCL_fetch_method(req);
 
 		if (bo->do_pass)
 			req->objcore->flags |= OC_F_PASS;
@@ -997,7 +997,7 @@ cnt_hit(struct sess *sp, struct worker *wrk, struct req *req)
 
 	assert(!(req->obj->objcore->flags & OC_F_PASS));
 
-	VCL_hit_method(sp);
+	VCL_hit_method(req);
 
 	if (req->handling == VCL_RET_DELIVER) {
 		//AZ(req->busyobj->bereq->ws);
@@ -1171,7 +1171,7 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
 		http_SetHeader(bo->bereq, "Accept-Encoding: gzip");
 	}
 
-	VCL_miss_method(sp);
+	VCL_miss_method(req);
 
 	if (req->handling == VCL_RET_FETCH) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -1237,7 +1237,7 @@ cnt_pass(struct sess *sp, struct worker *wrk, struct req *req)
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
 	http_FilterReq(sp, HTTPH_R_PASS);
 
-	VCL_pass_method(sp);
+	VCL_pass_method(req);
 
 	if (req->handling == VCL_RET_ERROR) {
 		http_Teardown(bo->bereq);
@@ -1297,7 +1297,7 @@ cnt_pipe(struct sess *sp, struct worker *wrk, struct req *req)
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
 	http_FilterReq(sp, 0);
 
-	VCL_pipe_method(sp);
+	VCL_pipe_method(req);
 
 	if (req->handling == VCL_RET_ERROR)
 		INCOMPL();
@@ -1395,7 +1395,7 @@ cnt_recv(struct sess *sp, const struct worker *wrk, struct req *req)
 
 	http_CollectHdr(req->http, H_Cache_Control);
 
-	VCL_recv_method(sp);
+	VCL_recv_method(req);
 	recv_handling = req->handling;
 
 	if (cache_param->http_gzip_support &&
@@ -1411,7 +1411,7 @@ cnt_recv(struct sess *sp, const struct worker *wrk, struct req *req)
 
 	req->sha256ctx = &sha256ctx;	/* so HSH_AddString() can find it */
 	SHA256_Init(req->sha256ctx);
-	VCL_hash_method(sp);
+	VCL_hash_method(req);
 	assert(req->handling == VCL_RET_HASH);
 	SHA256_Final(req->digest, req->sha256ctx);
 	req->sha256ctx = NULL;
