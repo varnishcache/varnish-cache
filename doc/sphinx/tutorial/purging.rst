@@ -88,7 +88,7 @@ Support for bans is built into Varnish and available in the CLI
 interface. To ban every png object belonging on example.com, issue
 the following command::
 
-  ban req.http.host == "example.com" && req.http.url ~ "\.png$"
+  ban req.http.host == "example.com" && req.url ~ "\.png$"
 
 Quite powerful, really.
 
