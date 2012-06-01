@@ -426,7 +426,7 @@ regsub(str, regex, sub)
   matched string.
 
 regsuball(str, regex, sub)
-  As regsuball() but this replaces all occurrences.
+  As regsub() but this replaces all occurrences.
 
 ban(ban expression)
 
