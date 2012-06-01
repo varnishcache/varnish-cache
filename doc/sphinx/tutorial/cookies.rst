@@ -62,6 +62,7 @@ cookies named COOKIE1 and COOKIE2 and you can marvel at it::
       if (req.http.Cookie == "") {
           remove req.http.Cookie;
       }
+    }
   }
 
 A somewhat simpler example that can accomplish almost the same can be
