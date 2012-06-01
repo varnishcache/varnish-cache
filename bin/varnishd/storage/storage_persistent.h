@@ -104,8 +104,10 @@ struct smp_sc {
 #define SMP_SC_MAGIC		0x7b73af0a
 	struct stevedore	*parent;
 
+	pthread_t		bgthread;
 	unsigned		flags;
 #define SMP_SC_LOADED		(1 << 0)
+#define SMP_SC_STOP		(1 << 1)
 
 	const struct stevedore	*stevedore;
 	int			fd;

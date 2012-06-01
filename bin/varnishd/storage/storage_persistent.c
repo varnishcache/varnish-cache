@@ -51,6 +51,7 @@
 #include "vcli_priv.h"
 #include "vend.h"
 #include "vsha256.h"
+#include "vtim.h"
 
 #include "persistent.h"
 #include "storage/storage_persistent.h"
@@ -287,15 +288,24 @@ smp_thread(struct worker *wrk, void *priv)
 	BAN_TailDeref(&sc->tailban);
 	AZ(sc->tailban);
 	printf("Silo completely loaded\n");
-	while (1) {
-		(void)sleep (1);
+
+	/* Housekeeping loop */
+	Lck_Lock(&sc->mtx);
+	while (!(sc->flags & SMP_SC_STOP)) {
 		sg = VTAILQ_FIRST(&sc->segments);
-		if (sg != NULL && sg -> sc->cur_seg && sg->nobj == 0) {
-			Lck_Lock(&sc->mtx);
+		if (sg != NULL && sg != sc->cur_seg && sg->nobj == 0)
 			smp_save_segs(sc);
-			Lck_Unlock(&sc->mtx);
-		}
+
+		Lck_Unlock(&sc->mtx);
+		VTIM_sleep(3.14159265359 - 2);
+		Lck_Lock(&sc->mtx);
 	}
+
+	smp_save_segs(sc);
+
+	Lck_Unlock(&sc->mtx);
+	pthread_exit(0);
+
 	NEEDLESS_RETURN(NULL);
 }
 
@@ -307,7 +317,6 @@ static void
 smp_open(const struct stevedore *st)
 {
 	struct smp_sc	*sc;
-	pthread_t pt;
 
 	ASSERT_CLI();
 
@@ -349,7 +358,7 @@ smp_open(const struct stevedore *st)
 	smp_new_seg(sc);
 
 	/* Start the worker silo worker thread, it will load the objects */
-	WRK_BgThread(&pt, "persistence", smp_thread, sc);
+	WRK_BgThread(&sc->bgthread, "persistence", smp_thread, sc);
 
 	VTAILQ_INSERT_TAIL(&silos, sc, list);
 	Lck_Unlock(&sc->mtx);
@@ -360,7 +369,7 @@ smp_open(const struct stevedore *st)
  */
 
 static void
-smp_close(const struct stevedore *st)
+smp_signal_close(const struct stevedore *st)
 {
 	struct smp_sc	*sc;
 
@@ -371,9 +380,22 @@ smp_close(const struct stevedore *st)
 	if (sc->cur_seg != NULL)
 		smp_close_seg(sc, sc->cur_seg);
 	AZ(sc->cur_seg);
+	sc->flags |= SMP_SC_STOP;
 	Lck_Unlock(&sc->mtx);
+}
 
-	/* XXX: reap thread */
+static void
+smp_close(const struct stevedore *st)
+{
+	struct smp_sc	*sc;
+	void *status;
+
+	ASSERT_CLI();
+
+	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
+
+	pthread_join(sc->bgthread, &status);
+	AZ(status);
 }
 
 /*--------------------------------------------------------------------
@@ -561,6 +583,7 @@ const struct stevedore smp_stevedore = {
 	.alloc	=	smp_alloc,
 	.allocobj =	smp_allocobj,
 	.free	=	smp_free,
+	.signal_close = smp_signal_close,
 };
 
 /*--------------------------------------------------------------------
