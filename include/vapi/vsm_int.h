@@ -104,7 +104,7 @@ struct VSM_chunk {
 	ssize_t			next;		/* Offset in shmem */
 	char			class[8];
 	char			type[8];
-	char			ident[64];
+	char			ident[128];
 };
 
 struct VSM_head {
