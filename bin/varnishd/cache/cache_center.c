@@ -116,6 +116,7 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 		SES_GetReq(sp);
 		req = sp->req;
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+		assert(req->sp == sp);
 		HTC_Init(req->htc, req->ws, sp->fd, sp->req->vsl,
 		    cache_param->http_req_size,
 		    cache_param->http_req_hdr_len);
@@ -928,6 +929,7 @@ DOT first -> wait [style=bold,color=green]
 static int
 cnt_first(struct sess *sp, struct worker *wrk)
 {
+	struct req *req;
 	char laddr[ADDR_BUFSIZE];
 	char lport[PORT_BUFSIZE];
 
@@ -936,8 +938,10 @@ cnt_first(struct sess *sp, struct worker *wrk)
 
 	/* Allocate a request already now, so we can VSL to it */
 	SES_GetReq(sp);
-	CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
-	HTC_Init(sp->req->htc, sp->req->ws, sp->fd, sp->req->vsl,
+	req = sp->req;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	assert(req->sp == sp);
+	HTC_Init(req->htc, req->ws, sp->fd, req->vsl,
 	    cache_param->http_req_size,
 	    cache_param->http_req_hdr_len);
 
@@ -949,11 +953,11 @@ cnt_first(struct sess *sp, struct worker *wrk)
 		VTCP_name(&sp->mysockaddr, sp->mysockaddrlen,
 		    laddr, sizeof laddr, lport, sizeof lport);
 		/* XXX: have no req yet */
-		VSLb(sp->req->vsl, SLT_SessionOpen, "%s %s %s %s",
+		VSLb(req->vsl, SLT_SessionOpen, "%s %s %s %s",
 		    sp->addr, sp->port, laddr, lport);
 	} else {
 		/* XXX: have no req yet */
-		VSLb(sp->req->vsl, SLT_SessionOpen, "%s %s %s",
+		VSLb(req->vsl, SLT_SessionOpen, "%s %s %s",
 		    sp->addr, sp->port, sp->mylsock->name);
 	}
 
