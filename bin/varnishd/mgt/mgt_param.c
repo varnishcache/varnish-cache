@@ -765,7 +765,7 @@ static const struct parspec input_parspec[] = {
 		"Maximum number of HTTP headers we will deal with in "
 		"client request or backend reponses.  "
 		"Note that the first line occupies five header fields.\n"
-		"This paramter does not influence storage consumption, "
+		"This parameter does not influence storage consumption, "
 		"objects allocate exact space for the headers they store.\n",
 		0,
 		"64", "header lines" },
