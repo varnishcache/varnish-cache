@@ -85,17 +85,21 @@ free_frfile(void *ptr)
 const char *
 vmod_fileread(struct sess *sp, struct vmod_priv *priv, const char *file_name)
 {
-	struct frfile *frf;
+	struct frfile *frf = NULL;
 	char *s;
 
 	(void)sp;
 	AN(priv);
+
 	if (priv->priv != NULL) {
 		CAST_OBJ_NOTNULL(frf, priv->priv, CACHED_FILE_MAGIC);
-		return (frf->contents);
+		if (!strcmp(file_name, frf->file_name))
+			return (frf->contents);
 	}
 
 	AZ(pthread_mutex_lock(&frmtx));
+	if (frf != NULL)
+		frf->refcount--;
 	VTAILQ_FOREACH(frf, &frlist, list) {
 		if (!strcmp(file_name, frf->file_name)) {
 			frf->refcount++;

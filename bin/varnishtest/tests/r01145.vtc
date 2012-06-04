@@ -1,0 +1,43 @@
+varnishtest "Test fileread for std VMOD"
+
+shell {
+	printf "File One" > "${tmpdir}/one"
+	printf "File Two" > "${tmpdir}/two"
+	printf "File Three" > "${tmpdir}/three"
+}
+
+server s1 {
+	loop 3 {
+		rxreq
+		txresp
+	}
+} -start
+
+
+varnish v1 -vcl+backend {
+	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
+
+	sub vcl_deliver {
+            set resp.http.foo = std.fileread("${tmpdir}" + req.url);
+	}
+} -start
+
+
+client c1 {
+	txreq -url "/one"
+	rxresp
+	expect resp.http.foo == "File One"
+
+	txreq -url "/two"
+	rxresp
+	expect resp.http.foo == "File Two"
+
+	txreq -url "/three"
+	rxresp
+	expect resp.http.foo == "File Three"
+} -run
+
+client c1 -run
+client c1 -run
+
+
