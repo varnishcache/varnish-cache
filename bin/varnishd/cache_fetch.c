@@ -77,6 +77,40 @@ FetchError(const struct sess *sp, const char *error)
 }
 
 /*--------------------------------------------------------------------
+ * VFP method functions
+ */
+
+static void
+VFP_Begin(struct sess *sp, size_t estimate)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	AN(sp->wrk->vfp);
+
+	sp->wrk->vfp->begin(sp, estimate);
+}
+
+static int
+VFP_Bytes(struct sess *sp, struct http_conn *htc, ssize_t sz)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	AN(sp->wrk->vfp);
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	AZ(sp->wrk->fetch_failed);
+
+	return (sp->wrk->vfp->bytes(sp, htc, sz));
+}
+
+static int
+VFP_End(struct sess *sp)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	AN(sp->wrk->vfp);
+
+	return (sp->wrk->vfp->end(sp));
+}
+
+
+/*--------------------------------------------------------------------
  * VFP_NOP
  *
  * This fetch-processor does nothing but store the object.
@@ -237,7 +271,7 @@ fetch_straight(struct sess *sp, struct http_conn *htc, ssize_t cl)
 	} else if (cl == 0)
 		return (0);
 
-	i = sp->wrk->vfp->bytes(sp, htc, cl);
+	i = VFP_Bytes(sp, htc, cl);
 	if (i <= 0) {
 		return (FetchError(sp, "straight insufficient bytes"));
 	}
@@ -296,7 +330,7 @@ fetch_chunked(struct sess *sp, struct http_conn *htc)
 		if (cl < 0)
 			return (FetchError(sp,"chunked header number syntax"));
 
-		if (cl > 0 && sp->wrk->vfp->bytes(sp, htc, cl) <= 0)
+		if (cl > 0 && VFP_Bytes(sp, htc, cl) <= 0)
 			return (-1);
 
 		i = HTC_Read(sp->wrk, htc, buf, 1);
@@ -318,7 +352,7 @@ fetch_eof(struct sess *sp, struct http_conn *htc)
 	int i;
 
 	assert(sp->wrk->body_status == BS_EOF);
-	i = sp->wrk->vfp->bytes(sp, htc, SSIZE_MAX);
+	i = VFP_Bytes(sp, htc, SSIZE_MAX);
 	if (i < 0) 
 		return (-1);
 	return (0);
@@ -521,24 +555,24 @@ FetchBody(struct sess *sp)
 		break;
 	case BS_LENGTH:
 		cl = fetch_number(sp->wrk->h_content_length, 10);
-		w->vfp->begin(sp, cl > 0 ? cl : 0);
+		VFP_Begin(sp, cl > 0 ? cl : 0);
 		cls = fetch_straight(sp, w->htc, cl);
 		mklen = 1;
-		if (w->vfp->end(sp))
+		if (VFP_End(sp))
 			cls = -1;
 		break;
 	case BS_CHUNKED:
-		w->vfp->begin(sp, cl);
+		VFP_Begin(sp, cl);
 		cls = fetch_chunked(sp, w->htc);
 		mklen = 1;
-		if (w->vfp->end(sp))
+		if (VFP_End(sp))
 			cls = -1;
 		break;
 	case BS_EOF:
-		w->vfp->begin(sp, cl);
+		VFP_Begin(sp, cl);
 		cls = fetch_eof(sp, w->htc);
 		mklen = 1;
-		if (w->vfp->end(sp))
+		if (VFP_End(sp))
 			cls = -1;
 		break;
 	case BS_ERROR:

@@ -335,7 +335,6 @@ vfp_esi_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	AZ(sp->wrk->fetch_failed);
 	AN(sp->wrk->vep);
 	assert(sp->wrk->htc == htc);
 	if (sp->wrk->is_gzip && sp->wrk->do_gunzip)

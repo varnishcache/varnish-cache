@@ -465,7 +465,6 @@ vfp_gunzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	size_t dl;
 	const void *dp;
 
-	AZ(sp->wrk->fetch_failed);
 	vg = sp->wrk->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
@@ -543,7 +542,6 @@ vfp_gzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	size_t dl;
 	const void *dp;
 
-	AZ(sp->wrk->fetch_failed);
 	vg = sp->wrk->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
@@ -632,7 +630,6 @@ vfp_testgzip_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	const void *dp;
 	struct storage *st;
 
-	AZ(sp->wrk->fetch_failed);
 	vg = sp->wrk->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
