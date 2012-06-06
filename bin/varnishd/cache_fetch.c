@@ -80,13 +80,16 @@ FetchError(const struct sess *sp, const char *error)
  * VFP method functions
  */
 
-static void
+static int
 VFP_Begin(struct sess *sp, size_t estimate)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AN(sp->wrk->vfp);
 
 	sp->wrk->vfp->begin(sp, estimate);
+	if (sp->wrk->fetch_failed)
+		return (-1);
+	return (0);
 }
 
 static int
@@ -150,7 +153,6 @@ vfp_nop_bytes(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 	ssize_t l, w;
 	struct storage *st;
 
-	AZ(sp->wrk->fetch_failed);
 	while (bytes > 0) {
 		st = FetchStorage(sp, 0);
 		if (st == NULL)
@@ -555,22 +557,25 @@ FetchBody(struct sess *sp)
 		break;
 	case BS_LENGTH:
 		cl = fetch_number(sp->wrk->h_content_length, 10);
-		VFP_Begin(sp, cl > 0 ? cl : 0);
-		cls = fetch_straight(sp, w->htc, cl);
+		cls = VFP_Begin(sp, cl > 0 ? cl : 0);
+		if (!cls)
+			cls = fetch_straight(sp, w->htc, cl);
 		mklen = 1;
 		if (VFP_End(sp))
 			cls = -1;
 		break;
 	case BS_CHUNKED:
-		VFP_Begin(sp, cl);
-		cls = fetch_chunked(sp, w->htc);
+		cls = VFP_Begin(sp, cl);
+		if (!cls)
+			cls = fetch_chunked(sp, w->htc);
 		mklen = 1;
 		if (VFP_End(sp))
 			cls = -1;
 		break;
 	case BS_EOF:
-		VFP_Begin(sp, cl);
-		cls = fetch_eof(sp, w->htc);
+		cls = VFP_Begin(sp, cl);
+		if (!cls)
+			cls = fetch_eof(sp, w->htc);
 		mklen = 1;
 		if (VFP_End(sp))
 			cls = -1;
