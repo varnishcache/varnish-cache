@@ -352,6 +352,8 @@ SES_ReleaseReq(struct sess *sp)
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
 	CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
+	AN(sp->req->sp);
+	assert(sp->req->sp == sp);
 	MPL_AssertSane(sp->req);
 	VSL_Flush(sp->req->vsl, 0);
 	MPL_Free(pp->mpl_req, sp->req);

@@ -340,6 +340,7 @@ VCL_##func##_method(struct req *req)					\
 									\
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);				\
 	CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);				\
+	AN(req->sp);							\
 	req->handling = 0;						\
 	req->cur_method = VCL_MET_ ## upper;				\
 	VSLb(req->vsl, SLT_VCL_call, "%s", #func);			\
