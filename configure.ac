@@ -13,6 +13,7 @@ AC_CANONICAL_SYSTEM
 AC_LANG(C)
 
 AM_INIT_AUTOMAKE([foreign])
+LT_INIT([disable-static])
 
 # Checks for programs.
 AC_GNU_SOURCE
@@ -43,7 +44,6 @@ CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 CC="$PTHREAD_CC"
 
 AC_PROG_INSTALL
-AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
 AC_ARG_WITH([rst2man],
                AS_HELP_STRING([--with-rst2man=PATH],
