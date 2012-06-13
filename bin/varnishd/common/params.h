@@ -185,7 +185,6 @@ struct params {
 	unsigned		http_gzip_support;
 	unsigned		gzip_buffer;
 	unsigned		gzip_level;
-	unsigned		gzip_window;
 	unsigned		gzip_memlevel;
 
 	unsigned		obj_readonly;

@@ -1125,11 +1125,6 @@ static const struct parspec input_parspec[] = {
 		"Gzip compression level: 0=debug, 1=fast, 9=best",
 		0,
 		"6", ""},
-	{ "gzip_window", tweak_uint, &mgt_param.gzip_window, 8, 15,
-		"Gzip window size 8=least, 15=most compression.\n"
-		"Memory impact is 8=1k, 9=2k, ... 15=128k.",
-		0,
-		"15", ""},
 	{ "gzip_memlevel", tweak_uint, &mgt_param.gzip_memlevel, 1, 9,
 		"Gzip memory level 1=slow/least, 9=fast/most compression.\n"
 		"Memory impact is 1=1k, 2=2k, ... 9=256k.",

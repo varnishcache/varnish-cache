@@ -128,7 +128,7 @@ VGZ_NewGzip(struct vsl_log *vsl, const char *id)
 	i = deflateInit2(&vg->vz,
 	    cache_param->gzip_level,		/* Level */
 	    Z_DEFLATED,				/* Method */
-	    16 + cache_param->gzip_window,	/* Window bits (16=gzip + 15) */
+	    16 + 15,				/* Window bits (16=gzip) */
 	    cache_param->gzip_memlevel,		/* memLevel */
 	    Z_DEFAULT_STRATEGY);
 	assert(Z_OK == i);
