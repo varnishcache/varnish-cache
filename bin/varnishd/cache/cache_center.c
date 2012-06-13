@@ -120,6 +120,8 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 		HTC_Init(req->htc, req->ws, sp->fd, sp->req->vsl,
 		    cache_param->http_req_size,
 		    cache_param->http_req_hdr_len);
+	} else {
+		assert(req->sp == sp);
 	}
 
 	AZ(req->vcl);
@@ -943,6 +945,7 @@ cnt_first(struct sess *sp, struct worker *wrk)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	/* Allocate a request already now, so we can VSL to it */
+	AZ(sp->req);
 	SES_GetReq(sp);
 	req = sp->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -1493,6 +1496,7 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 	AZ(req->vcl);
 	AZ(req->esi_level);
 	assert(!isnan(sp->t_req));
+	assert(req->sp == sp);
 
 	/* Update stats of various sorts */
 	wrk->stats.client_req++;

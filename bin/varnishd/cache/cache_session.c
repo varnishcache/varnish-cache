@@ -356,8 +356,8 @@ SES_ReleaseReq(struct sess *sp)
 	assert(sp->req->sp == sp);
 	MPL_AssertSane(sp->req);
 	VSL_Flush(sp->req->vsl, 0);
-	MPL_Free(pp->mpl_req, sp->req);
 	sp->req->sp = NULL;
+	MPL_Free(pp->mpl_req, sp->req);
 	sp->req = NULL;
 }
 
