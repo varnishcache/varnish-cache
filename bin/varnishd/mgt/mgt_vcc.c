@@ -39,6 +39,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+#include "common/params.h"
 #include "mgt/mgt.h"
 
 #include "libvcl.h"
@@ -136,6 +137,7 @@ run_vcc(void *priv)
 	int fd, i, l;
 
 	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
+	mgt_sandbox();
 	sb = VSB_new_auto();
 	XXXAN(sb);
 	VCC_VCL_dir(vcc, mgt_vcl_dir);
@@ -174,6 +176,7 @@ run_vcc(void *priv)
 static void
 run_cc(void *priv)
 {
+	mgt_sandbox();
 	(void)execl("/bin/sh", "/bin/sh", "-c", priv, NULL);
 }
 
@@ -241,7 +244,9 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 		VSB_printf(sb, "Failed to create %s: %s", sf, strerror(errno));
 		return (NULL);
 	}
+	(void)fchown(sfd, mgt_param.uid, mgt_param.gid);
 	AZ(close(sfd));
+
 
 	/* Run the VCC compiler in a sub-process */
 	memset(&vp, 0, sizeof vp);
@@ -267,6 +272,16 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 	of[sizeof sf - 1] = 'o';
 	of[sizeof sf] = '\0';
 
+	i = open(of, O_WRONLY|O_CREAT|O_TRUNC, 0600);
+	if (i < 0) {
+		VSB_printf(sb, "Failed to create %s: %s",
+		    of, strerror(errno));
+		(void)unlink(sf);
+		return (NULL);
+	}
+	(void)fchown(i, mgt_param.uid, mgt_param.gid);
+	AZ(close(i));
+
 	/* Build the C-compiler command line */
 	cmdsb = mgt_make_cc_cmd(sf, of);
 
@@ -284,7 +299,7 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 		i = chmod(of, 0755);
 		if (i)
 			VSB_printf(sb, "Failed to set permissions on %s: %s",
-				   of, strerror(errno));
+			    of, strerror(errno));
 	}
 
 	if (i) {
