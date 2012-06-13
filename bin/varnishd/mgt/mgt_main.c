@@ -275,7 +275,7 @@ cli_stdin_close(void *priv)
 int
 main(int argc, char * const *argv)
 {
-	int o;
+	int o, fd;
 	unsigned C_flag = 0;
 	unsigned F_flag = 0;
 	const char *b_arg = NULL;
@@ -530,7 +530,7 @@ main(int argc, char * const *argv)
 	}
 
 	if (n_arg != NULL)
-		openlog(n_arg, LOG_PID, LOG_LOCAL0);
+		openlog(n_arg, LOG_PID, LOG_LOCAL0);	/* XXX: i_arg ? */
 	else
 		openlog("varnishd", LOG_PID, LOG_LOCAL0);
 
@@ -545,6 +545,17 @@ main(int argc, char * const *argv)
 		    dirname, strerror(errno));
 		exit(1);
 	}
+
+	fd = open("_.testfile", O_RDWR|O_CREAT|O_EXCL, 0600);
+	if (fd < 0) {
+		fprintf(stderr, "Cannot create test-file in %s (%s)\n",
+		    dirname, strerror(errno));
+		fprintf(stderr,
+		    "Check permissions (or delete old directory)\n");
+		exit(1);
+	}
+	AZ(close(fd));
+	AZ(unlink("_.testfile"));
 
 	/* XXX: should this be relative to the -n arg ? */
 	if (P_arg && (pfh = VPF_Open(P_arg, 0644, NULL)) == NULL) {
