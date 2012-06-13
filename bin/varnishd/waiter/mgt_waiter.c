@@ -68,14 +68,14 @@ WAIT_tweak_waiter(struct cli *cli, const char *arg)
 		else
 			VCLI_Out(cli, "%s", waiter->name);
 
-		VCLI_Out(cli, " (");
+		VCLI_Out(cli, " (possible values: ");
 		for (i = 0; vca_waiters[i] != NULL; i++)
 			VCLI_Out(cli, "%s%s", i == 0 ? "" : ", ",
 			    vca_waiters[i]->name);
 		VCLI_Out(cli, ")");
 		return;
 	}
-	if (!strcmp(arg, "default")) {
+	if (!strcmp(arg, WAITER_DEFAULT)) {
 		waiter = vca_waiters[0];
 		return;
 	}

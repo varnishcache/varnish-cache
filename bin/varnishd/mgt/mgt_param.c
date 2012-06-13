@@ -1052,8 +1052,8 @@ static const struct parspec input_parspec[] = {
 		"off", "bool" },
 	{ "waiter", tweak_waiter, NULL, 0, 0,
 		"Select the waiter kernel interface.\n",
-		EXPERIMENTAL | MUST_RESTART,
-		"default", NULL },
+		WIZARD | MUST_RESTART,
+		WAITER_DEFAULT, NULL },
 	{ "diag_bitmap", tweak_diag_bitmap, 0, 0, 0,
 		"Bitmap controlling diagnostics code:\n"
 		"  0x00000001 - CNT_Session states.\n"

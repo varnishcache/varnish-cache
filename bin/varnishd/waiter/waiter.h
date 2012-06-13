@@ -33,6 +33,8 @@ struct sess;
 typedef void* waiter_init_f(void);
 typedef void waiter_pass_f(void *priv, const struct sess *);
 
+#define WAITER_DEFAULT		"platform dependent"
+
 struct waiter {
 	const char		*name;
 	waiter_init_f		*init;
