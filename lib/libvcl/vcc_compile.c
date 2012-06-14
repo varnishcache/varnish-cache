@@ -609,6 +609,8 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	/* Macro for accessing directors */
 	Fh(tl, 0, "#define VGCDIR(n) VCL_conf.director[VGC_backend_##n]\n");
 
+	Fh(tl, 0, "#define __match_proto__(xxx)		/*lint -e{818} */\n");
+
 	/* Register and lex the main source */
 	VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
 	sp->idx = tl->nsources++;
@@ -669,7 +671,7 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 
 	/* Emit method functions */
 	for (i = 0; i < VCL_MET_MAX; i++) {
-		Fc(tl, 1, "\nstatic int\n");
+		Fc(tl, 1, "\nstatic int __match_proto__(vcl_func_f)\n");
 		Fc(tl, 1, "VGC_function_%s(struct sess *sp, struct req *req)\n",
 		    method_tab[i].name);
 		AZ(VSB_finish(tl->fm[i]));
