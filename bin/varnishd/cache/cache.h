@@ -1015,7 +1015,7 @@ char *WS_Snapshot(struct ws *ws);
 void RFC2616_Ttl(struct busyobj *, unsigned xid);
 enum body_status RFC2616_Body(struct busyobj *, struct dstat *);
 unsigned RFC2616_Req_Gzip(const struct http *);
-int RFC2616_Do_Cond(const struct sess *sp);
+int RFC2616_Do_Cond(const struct req *sp);
 
 /* stevedore.c */
 struct object *STV_NewObject(struct busyobj *, struct objcore **,

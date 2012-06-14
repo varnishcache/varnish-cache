@@ -128,7 +128,7 @@ RES_BuildHttp(const struct sess *sp)
 		http_Unset(req->resp, H_Content_Encoding);
 
 	if (req->obj->response == 200
-	    && req->http->conds && RFC2616_Do_Cond(sp)) {
+	    && req->http->conds && RFC2616_Do_Cond(req)) {
 		req->wantbody = 0;
 		http_SetResp(req->resp, "HTTP/1.1", 304, "Not Modified");
 		http_Unset(req->resp, H_Content_Length);

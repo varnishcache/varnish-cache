@@ -880,7 +880,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	 */
 	if (req->obj->response == 200 &&
 	    req->http->conds &&
-	    RFC2616_Do_Cond(sp))
+	    RFC2616_Do_Cond(req))
 		bo->do_stream = 0;
 
 	/*
