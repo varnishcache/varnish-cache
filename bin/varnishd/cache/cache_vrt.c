@@ -70,15 +70,15 @@ VRT_error(const struct sess *sp, unsigned code, const char *reason)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_count(const struct sess *sp, unsigned u)
+VRT_count(struct req *req, unsigned u)
 {
 
-	if (sp == NULL)
+	if (req == NULL)
 		return;
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	if (cache_param->vcl_trace)
-		VSLb(sp->req->vsl, SLT_VCL_trace, "%u %u.%u", u,
-		    sp->req->vcl->ref[u].line, sp->req->vcl->ref[u].pos);
+		VSLb(req->vsl, SLT_VCL_trace, "%u %u.%u", u,
+		    req->vcl->ref[u].line, req->vcl->ref[u].pos);
 }
 
 /*--------------------------------------------------------------------*/

@@ -47,7 +47,7 @@ static void vcc_Compound(struct vcc *tl);
 } while (0)
 
 #define C(tl, sep)	do {					\
-	Fb(tl, 1, "VRT_count(sp, %u)%s\n", ++tl->cnt, sep);	\
+	Fb(tl, 1, "VRT_count(req, %u)%s\n", ++tl->cnt, sep);	\
 	tl->t->cnt = tl->cnt;					\
 } while (0)
 

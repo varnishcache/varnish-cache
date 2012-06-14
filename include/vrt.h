@@ -32,6 +32,7 @@
  */
 
 struct sess;
+struct req;
 struct vsb;
 struct cli;
 struct director;
@@ -154,7 +155,7 @@ void VRT_ban(struct sess *sp, char *, ...);
 void VRT_ban_string(struct sess *sp, const char *);
 void VRT_purge(const struct sess *sp, double ttl, double grace);
 
-void VRT_count(const struct sess *, unsigned);
+void VRT_count(struct req *, unsigned);
 int VRT_rewrite(const char *, const char *);
 void VRT_error(const struct sess *, unsigned, const char *);
 int VRT_switch_config(const char *);
