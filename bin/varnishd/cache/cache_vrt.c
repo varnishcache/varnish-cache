@@ -277,10 +277,10 @@ VRT_hashdata(const struct sess *sp, const char *str, ...)
 /*--------------------------------------------------------------------*/
 
 double
-VRT_r_now(const struct sess *sp)
+VRT_r_now(const struct req *req)
 {
 
-	(void)sp;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	return (VTIM_real());
 }
 
