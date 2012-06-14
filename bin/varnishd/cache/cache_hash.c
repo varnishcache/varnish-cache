@@ -363,14 +363,14 @@ HSH_Lookup(struct sess *sp)
 			continue;
 
 		/* If still valid, use it */
-		if (EXP_Ttl(req, o) >= sp->t_req)
+		if (EXP_Ttl(req, o) >= req->t_req)
 			break;
 
 		/*
 		 * Remember any matching objects inside their grace period
 		 * and if there are several, use the least expired one.
 		 */
-		if (EXP_Grace(req, o) >= sp->t_req) {
+		if (EXP_Grace(req, o) >= req->t_req) {
 			if (grace_oc == NULL ||
 			    grace_ttl < o->exp.entered + o->exp.ttl) {
 				grace_oc = oc;

@@ -83,11 +83,6 @@ static unsigned xids;
  * WAIT
  * Collect the request from the client.
  *
- * We "abuse" sp->t_req a bit here:  On input it means "request reception
- * started at xxx" and is used to trigger timeouts.  On return it means
- * "we had full request headers by xxx" and is used for reporting by
- * later steps.
- *
 DOT subgraph xcluster_wait {
 DOT	wait [
 DOT		shape=box
@@ -112,6 +107,8 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
+	assert(!isnan(sp->t_rx));
+
 	if (req == NULL) {
 		SES_GetReq(sp);
 		req = sp->req;
@@ -128,9 +125,9 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 	AZ(req->obj);
 	AZ(req->esi_level);
 	assert(req->xid == 0);
+	req->t_req = sp->t_rx;
 	req->t_resp = NAN;
 
-	assert(!isnan(sp->t_req));
 	tmo = (int)(1e3 * cache_param->timeout_linger);
 	while (1) {
 		pfd[0].fd = sp->fd;
@@ -145,7 +142,7 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			i = HTC_Complete(req->htc);
 		if (i == 1) {
 			/* Got it, run with it */
-			sp->t_req = now;
+			req->t_req = now;
 			sp->step = STP_START;
 			return (0);
 		} else if (i == -1) {
@@ -164,7 +161,7 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			when = sp->t_idle + cache_param->timeout_linger;
 			tmo = (int)(1e3 * (when - now));
 			if (when < now || tmo == 0) {
-				sp->t_req = NAN;
+				sp->t_rx = NAN;
 				wrk->stats.sess_herd++;
 				SES_Charge(sp);
 				SES_ReleaseReq(sp);
@@ -173,7 +170,7 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			}
 		} else {
 			/* Working on it */
-			when = sp->t_req + cache_param->timeout_req;
+			when = sp->t_rx + cache_param->timeout_req;
 			tmo = (int)(1e3 * (when - now));
 			if (when < now || tmo == 0) {
 				why = "req timeout";
@@ -404,9 +401,9 @@ cnt_done(struct sess *sp, struct worker *wrk, struct req *req)
 	if (req->xid == 0) {
 		req->t_resp = sp->t_idle;
 	} else {
-		dp = req->t_resp - sp->t_req;
+		dp = req->t_resp - req->t_req;
 		da = sp->t_idle - req->t_resp;
-		dh = sp->t_req - sp->t_open;
+		dh = req->t_req - sp->t_open;
 		/* XXX: Add StatReq == StatSess */
 		/* XXX: Workaround for pipe */
 		if (sp->fd >= 0) {
@@ -414,12 +411,12 @@ cnt_done(struct sess *sp, struct worker *wrk, struct req *req)
 			    (uintmax_t)req->req_bodybytes);
 		}
 		VSLb(sp->req->vsl, SLT_ReqEnd, "%u %.9f %.9f %.9f %.9f %.9f",
-		    req->xid, sp->t_req, sp->t_idle, dh, dp, da);
+		    req->xid, req->t_req, sp->t_idle, dh, dp, da);
 	}
 	req->xid = 0;
 	VSL_Flush(sp->req->vsl, 0);
 
-	sp->t_req = NAN;
+	req->t_req = NAN;
 	req->t_resp = NAN;
 
 	req->req_bodybytes = 0;
@@ -448,12 +445,14 @@ cnt_done(struct sess *sp, struct worker *wrk, struct req *req)
 	WS_Reset(req->ws, NULL);
 	WS_Reset(wrk->aws, NULL);
 
-	sp->t_req = sp->t_idle;
 	i = HTC_Reinit(req->htc);
 	if (i == 1) {
+		req->t_req = sp->t_idle;
 		wrk->stats.sess_pipeline++;
 		sp->step = STP_START;
 	} else {
+		sp->t_rx = sp->t_idle;
+		req->t_req = NAN;
 		if (Tlen(req->htc->rxbuf))
 			wrk->stats.sess_readahead++;
 		sp->step = STP_WAIT;
@@ -510,7 +509,7 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
 	}
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 	req->obj->xid = req->xid;
-	req->obj->exp.entered = sp->t_req;
+	req->obj->exp.entered = req->t_req;
 
 	h = req->obj->http;
 
@@ -972,7 +971,7 @@ cnt_first(struct sess *sp, struct worker *wrk)
 
 	wrk->acct_tmp.sess++;
 
-	sp->t_req = sp->t_open;
+	sp->t_rx = sp->t_open;
 	sp->t_idle = sp->t_open;
 	sp->step = STP_WAIT;
 	return (0);
@@ -1495,7 +1494,7 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 	AZ(req->obj);
 	AZ(req->vcl);
 	AZ(req->esi_level);
-	assert(!isnan(sp->t_req));
+	assert(!isnan(req->t_req));
 	assert(req->sp == sp);
 
 	/* Update stats of various sorts */

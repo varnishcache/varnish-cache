@@ -271,7 +271,7 @@ vbe_Healthy(const struct vdi_simple *vs, const struct sess *sp)
 	if (threshold == 0 || VTAILQ_EMPTY(&backend->troublelist))
 		return (1);
 
-	now = sp->t_req;
+	now = sp->req->t_req;
 
 	old = NULL;
 	retval = 1;

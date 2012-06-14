@@ -153,7 +153,7 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 	ALLOC_OBJ(new, TROUBLE_MAGIC);
 	AN(new);
 	memcpy(new->digest, sp->req->digest, sizeof new->digest);
-	new->timeout = sp->t_req + a;
+	new->timeout = sp->req->t_req + a;
 
 	/* Insert the new item on the list before the first item with a
 	 * timeout at a later date (ie: sort by which entry will time out
@@ -396,8 +396,8 @@ static void
 vrt_wsp_exp(const struct sess *sp, unsigned xid, const struct exp *e)
 {
 	VSLb(sp->req->vsl, SLT_TTL, "%u VCL %.0f %.0f %.0f %.0f %.0f",
-	    xid, e->ttl - (sp->t_req - e->entered), e->grace, e->keep,
-	    sp->t_req, e->age + (sp->t_req - e->entered));
+	    xid, e->ttl - (sp->req->t_req - e->entered), e->grace, e->keep,
+	    sp->req->t_req, e->age + (sp->req->t_req - e->entered));
 }
 
 VRT_DO_EXP(req, sp->req->exp, ttl, 0, )
@@ -407,7 +407,8 @@ VRT_DO_EXP(req, sp->req->exp, keep, 0, )
 VRT_DO_EXP(obj, sp->req->obj->exp, grace, 0,
    EXP_Rearm(sp->req->obj);
    vrt_wsp_exp(sp, sp->req->obj->xid, &sp->req->obj->exp);)
-VRT_DO_EXP(obj, sp->req->obj->exp, ttl, (sp->t_req - sp->req->obj->exp.entered),
+VRT_DO_EXP(obj, sp->req->obj->exp, ttl,
+   (sp->req->t_req - sp->req->obj->exp.entered),
    EXP_Rearm(sp->req->obj);
    vrt_wsp_exp(sp, sp->req->obj->xid, &sp->req->obj->exp);)
 VRT_DO_EXP(obj, sp->req->obj->exp, keep, 0,

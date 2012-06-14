@@ -590,6 +590,7 @@ struct req {
 	uint64_t		req_bodybytes;
 	char			*ws_req;	/* WS above request data */
 
+	double			t_req;
 	double			t_resp;
 
 	struct http_conn	htc[1];
@@ -673,7 +674,7 @@ struct sess {
 	/* Timestamps, all on TIM_real() timescale */
 	double			t_open;		/* fd accepted */
 	double			t_idle;		/* fd accepted or resp sent */
-	double			t_req;
+	double			t_rx;
 
 #if defined(HAVE_EPOLL_CTL)
 	struct epoll_event ev;

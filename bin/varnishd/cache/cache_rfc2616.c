@@ -323,7 +323,7 @@ RFC2616_Do_Cond(const struct sess *sp)
 		if (!sp->req->obj->last_modified)
 			return (0);
 		ims = VTIM_parse(p);
-		if (ims > sp->t_req)	/* [RFC2616 14.25] */
+		if (ims > sp->req->t_req)	/* [RFC2616 14.25] */
 			return (0);
 		if (sp->req->obj->last_modified > ims)
 			return (0);

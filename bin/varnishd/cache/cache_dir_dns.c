@@ -203,7 +203,7 @@ vdi_dns_cache_has(const struct sess *sp,
 	struct vdi_dns_hostgroup *hostgr2;
 	VTAILQ_FOREACH_SAFE(hostgr, &vs->cachelist, list, hostgr2) {
 		CHECK_OBJ_NOTNULL(hostgr, VDI_DNSDIR_MAGIC);
-		if (hostgr->ttl <= sp->t_req) {
+		if (hostgr->ttl <= sp->req->t_req) {
 			if (rwlock)
 				vdi_dns_pop_cache(vs, hostgr);
 			return (0);
@@ -233,7 +233,7 @@ vdi_dns_cache_list_add(const struct sess *sp,
 	}
 	CHECK_OBJ_NOTNULL(new, VDI_DNSDIR_MAGIC);
 	assert(new->hostname != 0);
-	new->ttl = sp->t_req + vs->ttl;
+	new->ttl = sp->req->t_req + vs->ttl;
 	VTAILQ_INSERT_HEAD(&vs->cachelist, new, list);
 	vs->ncachelist++;
 }

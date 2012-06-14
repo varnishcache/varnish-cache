@@ -80,7 +80,7 @@ PipeSession(struct sess *sp)
 	bo->vbc = vc;		/* For panic dumping */
 	(void)VTCP_blocking(vc->fd);
 
-	WRW_Reserve(wrk, &vc->fd, bo->vsl, sp->t_req);
+	WRW_Reserve(wrk, &vc->fd, bo->vsl, sp->req->t_req);
 	sp->wrk->acct_tmp.hdrbytes +=
 	    http_Write(wrk, bo->bereq, 0);
 

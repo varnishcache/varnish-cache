@@ -90,7 +90,7 @@ ses_setup(struct sess *sp)
 	sp->sockaddr.ss_family = sp->mysockaddr.ss_family = PF_UNSPEC;
 	sp->t_open = NAN;
 	sp->t_idle = NAN;
-	sp->t_req = NAN;
+	sp->t_rx = NAN;
 }
 
 /*--------------------------------------------------------------------
@@ -208,7 +208,7 @@ SES_Handle(struct sess *sp, double now)
 {
 
 	sp->step = STP_WAIT;
-	sp->t_req = now;
+	sp->t_rx = now;
 	(void)SES_Schedule(sp);
 }
 
