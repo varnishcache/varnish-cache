@@ -191,7 +191,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	REPLACE(vcl->name, name);
 	VCLI_Out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
 	VTAILQ_INSERT_TAIL(&vcl_head, vcl, list);
-	(void)vcl->conf->init_func(NULL);
+	(void)vcl->conf->init_func(NULL, NULL);
 	Lck_Lock(&vcl_mtx);
 	if (vcl_active == NULL)
 		vcl_active = vcl;
@@ -215,7 +215,7 @@ VCL_Nuke(struct vcls *vcl)
 	assert(vcl->conf->discard);
 	assert(vcl->conf->busy == 0);
 	VTAILQ_REMOVE(&vcl_head, vcl, list);
-	(void)vcl->conf->fini_func(NULL);
+	(void)vcl->conf->fini_func(NULL, NULL);
 	vcl->conf->fini_vcl(NULL);
 	free(vcl->name);
 	(void)dlclose(vcl->dlh);
@@ -344,7 +344,7 @@ VCL_##func##_method(struct req *req)					\
 	req->handling = 0;						\
 	req->cur_method = VCL_MET_ ## upper;				\
 	VSLb(req->vsl, SLT_VCL_call, "%s", #func);			\
-	(void)req->vcl->func##_func(req->sp);				\
+	(void)req->vcl->func##_func(req->sp, req);			\
 	VSLb(req->vsl, SLT_VCL_return, "%s",				\
 	    VCL_Return_Name(req->handling));				\
 	req->cur_method = 0;						\
