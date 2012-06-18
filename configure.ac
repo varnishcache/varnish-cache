@@ -550,6 +550,7 @@ AC_CONFIG_FILES([
     lib/libvarnishcompat/Makefile
     lib/libvcl/Makefile
     lib/libvgz/Makefile
+    lib/libvmod_debug/Makefile
     lib/libvmod_std/Makefile
     lib/libjemalloc/Makefile
     man/Makefile

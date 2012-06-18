@@ -89,18 +89,12 @@ vmod_updown(struct sess *sp, int up, const char *s, va_list ap)
 }
 
 const char * __match_proto__()
-vmod_toupper(struct sess *sp, struct vmod_priv *priv, const char *s, ...)
+vmod_toupper(struct sess *sp, const char *s, ...)
 {
 	const char *p;
 	va_list ap;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	if (priv->priv == NULL) {
-		priv->priv = strdup("BAR");
-		priv->free = free;
-	} else {
-		assert(!strcmp(priv->priv, "BAR"));
-	}
 	va_start(ap, s);
 	p = vmod_updown(sp, 1, s, ap);
 	va_end(ap);
@@ -108,27 +102,16 @@ vmod_toupper(struct sess *sp, struct vmod_priv *priv, const char *s, ...)
 }
 
 const char * __match_proto__()
-vmod_tolower(struct sess *sp, struct vmod_priv *priv, const char *s, ...)
+vmod_tolower(struct sess *sp, const char *s, ...)
 {
 	const char *p;
 	va_list ap;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	assert(!strcmp(priv->priv, "FOO"));
 	va_start(ap, s);
 	p = vmod_updown(sp, 0, s, ap);
 	va_end(ap);
 	return (p);
-}
-
-int
-init_function(struct vmod_priv *priv, const struct VCL_conf *cfg)
-{
-	(void)cfg;
-
-	priv->priv = strdup("FOO");
-	priv->free = free;
-	return (0);
 }
 
 double
@@ -179,21 +162,6 @@ vmod_syslog(struct sess *sp, int fac, const char *fmt, ...)
 	if (p != NULL)
 		syslog(fac, "%s", p);
 	WS_Release(sp->req->ws, 0);
-}
-
-const char * __match_proto__()
-vmod_author(struct sess *sp, const char *id)
-{
-	(void)sp;
-	if (!strcmp(id, "phk"))
-		return ("Poul-Henning");
-	if (!strcmp(id, "des"))
-		return ("Dag-Erling");
-	if (!strcmp(id, "kristian"))
-		return ("Kristian");
-	if (!strcmp(id, "mithrandir"))
-		return ("Tollef");
-	WRONG("Illegal VMOD enum");
 }
 
 void __match_proto__()

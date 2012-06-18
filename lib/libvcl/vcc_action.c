@@ -234,19 +234,6 @@ parse_hash_data(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_panic(struct vcc *tl)
-{
-	vcc_NextToken(tl);
-
-	Fb(tl, 1, "VRT_panic(req, ");
-	vcc_Expr(tl, STRING);
-	ERRCHK(tl);
-	Fb(tl, 0, ", vrt_magic_string_end);\n");
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
 parse_return(struct vcc *tl)
 {
 	int retval = 0;
@@ -331,7 +318,6 @@ static struct action_table {
 	/* Keep list sorted from here */
 	{ "call",		parse_call },
 	{ "hash_data",		parse_hash_data, VCL_MET_HASH },
-	{ "panic",		parse_panic },
 	{ "ban",		parse_ban },
 	{ "ban_url",		parse_ban_url },
 	{ "remove",		parse_unset }, /* backward compatibility */

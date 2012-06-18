@@ -1,4 +1,4 @@
-varnishtest "Test std vmod"
+varnishtest "Test std & debug vmod"
 
 server s1 {
 	rxreq 
@@ -7,11 +7,14 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
+	import debug from "${topbuild}/lib/libvmod_debug/.libs/libvmod_debug.so" ;
 
 	sub vcl_deliver {
 		set resp.http.foo = std.toupper(resp.http.foo);
 		set resp.http.bar = std.tolower(resp.http.bar);
-		set resp.http.who = std.author(phk);
+		set resp.http.who = debug.author(phk);
+		debug.test_priv_call();
+		debug.test_priv_vcl();
 		std.log("VCL initiated log");
 		std.syslog(8 + 7, "Somebody runs varnishtest");
 	}
@@ -27,9 +30,9 @@ client c1 {
 } -run
 
 varnish v1 -badvcl {
-	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so.1" ;
+	import debug from "${topbuild}/lib/libvmod_debug/.libs/libvmod_debug.so.1" ;
 	sub vcl_deliver {
-		set resp.http.who = std.author(jfk);
+		set resp.http.who = debug.author(jfk);
 	}
 }
 

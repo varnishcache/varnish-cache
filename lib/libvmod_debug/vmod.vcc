@@ -25,14 +25,9 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-Module std
-Function STRING toupper(STRING_LIST)
-Function STRING tolower(STRING_LIST)
-Function VOID set_ip_tos(INT)
-Function REAL random(REAL, REAL)
-Function VOID log(STRING_LIST)
-Function VOID syslog(INT, STRING_LIST)
-Function STRING fileread(PRIV_CALL, STRING)
-Function DURATION duration(STRING, DURATION)
-Function INT integer(STRING, INT)
-Function VOID collect(HEADER)
+Module debug
+Init init_function
+Function VOID panic(STRING_LIST)
+Function STRING author(ENUM { phk, des, kristian, mithrandir })
+Function VOID test_priv_call(PRIV_CALL)
+Function VOID test_priv_vcl(PRIV_VCL)

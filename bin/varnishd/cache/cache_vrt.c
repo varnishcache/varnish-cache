@@ -385,21 +385,6 @@ VRT_Rollback(const struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_panic(struct req *req, const char *str, ...)
-{
-	va_list ap;
-	char *b;
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	va_start(ap, str);
-	b = VRT_String(req->http->ws, "PANIC: ", str, ap);
-	va_end(ap);
-	VAS_Fail("VCL", "", 0, b, 0, 2);
-}
-
-/*--------------------------------------------------------------------*/
-
-void
 VRT_synth_page(struct req *req, unsigned flags, const char *str, ...)
 {
 	va_list ap;

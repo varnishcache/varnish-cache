@@ -150,7 +150,6 @@ int VRT_re_match(struct req *, const char *, void *re);
 const char *VRT_regsub(struct req *, int all, const char *,
     void *, const char *);
 
-void VRT_panic(struct req *req, const char *, ...);
 void VRT_ban(struct sess *sp, char *, ...);
 void VRT_ban_string(struct sess *sp, const char *);
 void VRT_purge(const struct sess *sp, double ttl, double grace);
