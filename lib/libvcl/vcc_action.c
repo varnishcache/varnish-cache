@@ -77,7 +77,7 @@ parse_error(struct vcc *tl)
 			Fb(tl, 1, ", 0\n");
 	}
 	Fb(tl, 1, ");\n");
-	Fb(tl, 1, "VRT_done(sp, VCL_RET_ERROR);\n");
+	Fb(tl, 1, "VRT_done(req, VCL_RET_ERROR);\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -224,7 +224,7 @@ parse_hash_data(struct vcc *tl)
 	vcc_NextToken(tl);
 	SkipToken(tl, '(');
 
-	Fb(tl, 1, "VRT_hashdata(sp, ");
+	Fb(tl, 1, "VRT_hashdata(req, ");
 	vcc_Expr(tl, STRING_LIST);
 	ERRCHK(tl);
 	Fb(tl, 0, ");\n");
@@ -259,7 +259,7 @@ parse_return(struct vcc *tl)
 #define VCL_RET_MAC(l, U, B)						\
 	do {								\
 		if (vcc_IdIs(tl->t, #l)) {				\
-			Fb(tl, 1, "VRT_done(sp, VCL_RET_" #U ");\n");	\
+			Fb(tl, 1, "VRT_done(req, VCL_RET_" #U ");\n");	\
 			vcc_ProcAction(tl->curproc, VCL_RET_##U, tl->t);\
 			retval = 1;					\
 		}							\

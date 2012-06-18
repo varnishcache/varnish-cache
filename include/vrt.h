@@ -161,12 +161,12 @@ void VRT_error(const struct sess *, unsigned, const char *);
 int VRT_switch_config(const char *);
 
 enum gethdr_e { HDR_REQ, HDR_RESP, HDR_OBJ, HDR_BEREQ, HDR_BERESP };
-char *VRT_GetHdr(const struct sess *, enum gethdr_e where, const char *);
-void VRT_SetHdr(const struct sess *, enum gethdr_e where, const char *,
+char *VRT_GetHdr(const struct req *, enum gethdr_e where, const char *);
+void VRT_SetHdr(struct req *, enum gethdr_e where, const char *,
     const char *, ...);
-void VRT_handling(const struct sess *sp, unsigned hand);
+void VRT_handling(struct req *, unsigned hand);
 
-void VRT_hashdata(const struct sess *sp, const char *str, ...);
+void VRT_hashdata(struct req *, const char *str, ...);
 
 /* Simple stuff */
 int VRT_strcmp(const char *s1, const char *s2);
@@ -217,9 +217,9 @@ char *VRT_time_string(const struct sess *sp, double);
 const char *VRT_bool_string(const struct sess *sp, unsigned);
 const char *VRT_backend_string(const struct sess *sp, const struct director *d);
 
-#define VRT_done(sp, hand)			\
+#define VRT_done(req, hand)			\
 	do {					\
-		VRT_handling(sp, hand);		\
+		VRT_handling(req, hand);	\
 		return (1);			\
 	} while (0)
 

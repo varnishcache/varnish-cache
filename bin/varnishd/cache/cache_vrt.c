@@ -93,27 +93,27 @@ VRT_acl_log(const struct sess *sp, const char *msg)
 /*--------------------------------------------------------------------*/
 
 static struct http *
-vrt_selecthttp(const struct sess *sp, enum gethdr_e where)
+vrt_selecthttp(const struct req *req, enum gethdr_e where)
 {
 	struct http *hp;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	switch (where) {
 	case HDR_REQ:
-		hp = sp->req->http;
+		hp = req->http;
 		break;
 	case HDR_BEREQ:
-		hp = sp->req->busyobj->bereq;
+		hp = req->busyobj->bereq;
 		break;
 	case HDR_BERESP:
-		hp = sp->req->busyobj->beresp;
+		hp = req->busyobj->beresp;
 		break;
 	case HDR_RESP:
-		hp = sp->req->resp;
+		hp = req->resp;
 		break;
 	case HDR_OBJ:
-		CHECK_OBJ_NOTNULL(sp->req->obj, OBJECT_MAGIC);
-		hp = sp->req->obj->http;
+		CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
+		hp = req->obj->http;
 		break;
 	default:
 		INCOMPL();
@@ -123,13 +123,13 @@ vrt_selecthttp(const struct sess *sp, enum gethdr_e where)
 }
 
 char *
-VRT_GetHdr(const struct sess *sp, enum gethdr_e where, const char *n)
+VRT_GetHdr(const struct req *req, enum gethdr_e where, const char *n)
 {
 	char *p;
 	struct http *hp;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	hp = vrt_selecthttp(sp, where);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	hp = vrt_selecthttp(req, where);
 	if (!http_GetHdr(hp, n, &p))
 		return (NULL);
 	return (p);
@@ -215,22 +215,22 @@ VRT_WrkString(const struct sess *sp, const char *p, ...)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_SetHdr(const struct sess *sp , enum gethdr_e where, const char *hdr,
+VRT_SetHdr(struct req *req , enum gethdr_e where, const char *hdr,
     const char *p, ...)
 {
 	struct http *hp;
 	va_list ap;
 	char *b;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	hp = vrt_selecthttp(sp, where);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	hp = vrt_selecthttp(req, where);
 	va_start(ap, p);
 	if (p == NULL) {
 		http_Unset(hp, hdr);
 	} else {
 		b = VRT_String(hp->ws, hdr + 1, p, ap);
 		if (b == NULL) {
-			VSLb(sp->req->vsl, SLT_LostHeader, "%s", hdr + 1);
+			VSLb(req->vsl, SLT_LostHeader, "%s", hdr + 1);
 		} else {
 			http_Unset(hp, hdr);
 			http_SetHeader(hp, b);
@@ -242,16 +242,16 @@ VRT_SetHdr(const struct sess *sp , enum gethdr_e where, const char *hdr,
 /*--------------------------------------------------------------------*/
 
 void
-VRT_handling(const struct sess *sp, unsigned hand)
+VRT_handling(struct req *req, unsigned hand)
 {
 
-	if (sp == NULL) {
+	if (req == NULL) {
 		assert(hand == VCL_RET_OK);
 		return;
 	}
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	assert(hand < VCL_RET_MAX);
-	sp->req->handling = hand;
+	req->handling = hand;
 }
 
 /*--------------------------------------------------------------------
@@ -259,18 +259,18 @@ VRT_handling(const struct sess *sp, unsigned hand)
  */
 
 void
-VRT_hashdata(const struct sess *sp, const char *str, ...)
+VRT_hashdata(struct req *req, const char *str, ...)
 {
 	va_list ap;
 	const char *p;
 
-	HSH_AddString(sp, str);
+	HSH_AddString(req, str);
 	va_start(ap, str);
 	while (1) {
 		p = va_arg(ap, const char *);
 		if (p == vrt_magic_string_end)
 			break;
-		HSH_AddString(sp, p);
+		HSH_AddString(req, p);
 	}
 }
 
