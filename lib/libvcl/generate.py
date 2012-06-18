@@ -833,7 +833,7 @@ for i in sp_variables:
 	if len(i[2]) > 0:
 		fo.write('\t    "VRT_r_%s(req)",\n' % cnam)
 		if typ != "HEADER":
-			fh.write(ctyp + " VRT_r_%s(%s);\n" % (cnam, i[4]))
+			fh.write(ctyp + " VRT_r_%s(const %s);\n" % (cnam, i[4]))
 	else:
 		fo.write('\t    NULL,\t/* No reads allowed */\n')
 	restrict(fo, i[2])

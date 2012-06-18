@@ -204,7 +204,7 @@ VBERESP(beresp, unsigned, do_pass, busyobj->do_pass)
 /*--------------------------------------------------------------------*/
 
 const char *
-VRT_r_client_identity(struct req *req)
+VRT_r_client_identity(const struct req *req)
 {
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -238,8 +238,8 @@ VRT_l_bereq_##which(struct req *req, double num)		\
 	req->busyobj->which = (num > 0.0 ? num : 0.0);		\
 }								\
 								\
-double __match_proto__()					\
-VRT_r_bereq_##which(struct req *req)				\
+double								\
+VRT_r_bereq_##which(const struct req *req)			\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
@@ -280,8 +280,8 @@ VRT_r_beresp_backend_port(const struct req *req)
 	return (VTCP_port(req->busyobj->vbc->addr));
 }
 
-const char * __match_proto__()
-VRT_r_beresp_storage(struct req *req)
+const char *
+VRT_r_beresp_storage(const struct req *req)
 {
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	if (req->storage_hint != NULL)
@@ -290,7 +290,7 @@ VRT_r_beresp_storage(struct req *req)
 		return (NULL);
 }
 
-void __match_proto__()
+void
 VRT_l_beresp_storage(struct req *req, const char *str, ...)
 {
 	va_list ap;
@@ -314,7 +314,7 @@ VRT_l_req_backend(struct req *req, struct director *be)
 }
 
 struct director *
-VRT_r_req_backend(struct req *req)
+VRT_r_req_backend(const struct req *req)
 {
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -336,7 +336,7 @@ VRT_l_req_esi(struct req *req, unsigned process_esi)
 }
 
 unsigned
-VRT_r_req_esi(struct req *req)
+VRT_r_req_esi(const struct req *req)
 {
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	return (!req->disable_esi);
@@ -352,8 +352,8 @@ VRT_r_req_esi_level(const struct req *req)
 
 /*--------------------------------------------------------------------*/
 
-unsigned __match_proto__()
-VRT_r_req_can_gzip(struct req *req)
+unsigned
+VRT_r_req_can_gzip(const struct req *req)
 {
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -378,7 +378,7 @@ VRT_r_req_restarts(const struct req *req)
 
 #define VRT_DO_EXP(which, exp, fld, offset, extra)		\
 								\
-void __match_proto__()						\
+void								\
 VRT_l_##which##_##fld(struct req *req, double a)		\
 {								\
 								\
@@ -389,8 +389,8 @@ VRT_l_##which##_##fld(struct req *req, double a)		\
 	extra;							\
 }								\
 								\
-double __match_proto__()					\
-VRT_r_##which##_##fld(struct req *req)				\
+double								\
+VRT_r_##which##_##fld(const struct req *req)			\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
@@ -432,8 +432,8 @@ VRT_DO_EXP(beresp, req->busyobj->exp, keep, 0,
  * req.xid
  */
 
-const char * __match_proto__()
-VRT_r_req_xid(struct req *req)
+const char *
+VRT_r_req_xid(const struct req *req)
 {
 	char *p;
 	int size;
@@ -448,7 +448,7 @@ VRT_r_req_xid(struct req *req)
 /*--------------------------------------------------------------------*/
 
 #define REQ_BOOL(hash_var)					\
-void __match_proto__()						\
+void								\
 VRT_l_req_##hash_var(struct req *req, unsigned val)		\
 {								\
 								\
@@ -456,8 +456,8 @@ VRT_l_req_##hash_var(struct req *req, unsigned val)		\
 	req->hash_var = val ? 1 : 0;				\
 }								\
 								\
-unsigned __match_proto__()					\
-VRT_r_req_##hash_var(struct req *req)				\
+unsigned							\
+VRT_r_req_##hash_var(const struct req *req)			\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
@@ -470,7 +470,7 @@ REQ_BOOL(hash_always_miss)
 /*--------------------------------------------------------------------*/
 
 struct sockaddr_storage *
-VRT_r_client_ip(struct req *req)
+VRT_r_client_ip(const struct req *req)
 {
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -478,7 +478,7 @@ VRT_r_client_ip(struct req *req)
 }
 
 struct sockaddr_storage *
-VRT_r_server_ip(struct req *req)
+VRT_r_server_ip(const struct req *req)
 {
 	int i;
 
@@ -493,7 +493,7 @@ VRT_r_server_ip(struct req *req)
 }
 
 const char*
-VRT_r_server_identity(struct req *req)
+VRT_r_server_identity(const struct req *req)
 {
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -504,7 +504,7 @@ VRT_r_server_identity(struct req *req)
 }
 
 const char*
-VRT_r_server_hostname(struct req *req)
+VRT_r_server_hostname(const struct req *req)
 {
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -518,7 +518,7 @@ VRT_r_server_hostname(struct req *req)
  */
 
 int
-VRT_r_server_port(struct req *req)
+VRT_r_server_port(const struct req *req)
 {
 	int i;
 
@@ -552,7 +552,7 @@ VRT_r_obj_lastuse(const struct req *req)
 }
 
 unsigned
-VRT_r_req_backend_healthy(struct req *req)
+VRT_r_req_backend_healthy(const struct req *req)
 {
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->director, DIRECTOR_MAGIC);
