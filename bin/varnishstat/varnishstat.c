@@ -168,7 +168,7 @@ do_once_cb(void *priv, const struct VSC_point * const pt)
 	if (strcmp(pt->ident, ""))
 		i += printf("%s.", pt->ident);
 	i += printf("%s", pt->desc->name);
-	if (i > op->pad)
+	if (i >= op->pad)
 		op->pad = i + 1;
 	printf("%*.*s", op->pad - i, op->pad - i, "");
 	if (pt->desc->flag == 'a' || pt->desc->flag == 'c')
