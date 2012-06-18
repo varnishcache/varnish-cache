@@ -157,7 +157,7 @@ void VRT_purge(const struct sess *sp, double ttl, double grace);
 
 void VRT_count(struct req *, unsigned);
 int VRT_rewrite(const char *, const char *);
-void VRT_error(const struct sess *, unsigned, const char *);
+void VRT_error(struct req *, unsigned, const char *);
 int VRT_switch_config(const char *);
 
 enum gethdr_e { HDR_REQ, HDR_RESP, HDR_OBJ, HDR_BEREQ, HDR_BERESP };
@@ -176,7 +176,7 @@ void VRT_ESI(const struct sess *sp);
 void VRT_Rollback(const struct sess *sp);
 
 /* Synthetic pages */
-void VRT_synth_page(const struct sess *sp, unsigned flags, const char *, ...);
+void VRT_synth_page(struct req *sp, unsigned flags, const char *, ...);
 
 /* Backend related */
 void VRT_init_dir(struct cli *, struct director **, const char *name,
@@ -210,12 +210,12 @@ int VRT_Stv(const char *nm);
 
 /* Convert things to string */
 
-char *VRT_IP_string(const struct sess *sp, const struct sockaddr_storage *sa);
-char *VRT_int_string(const struct sess *sp, int);
-char *VRT_double_string(const struct sess *sp, double);
-char *VRT_time_string(const struct sess *sp, double);
-const char *VRT_bool_string(const struct sess *sp, unsigned);
-const char *VRT_backend_string(const struct sess *sp, const struct director *d);
+char *VRT_IP_string(struct req *, const struct sockaddr_storage *sa);
+char *VRT_int_string(struct req *, int);
+char *VRT_double_string(struct req *, double);
+char *VRT_time_string(struct req *, double);
+const char *VRT_bool_string(const struct req *, unsigned);
+const char *VRT_backend_string(const struct req *, const struct director *d);
 
 #define VRT_done(req, hand)			\
 	do {					\
@@ -223,4 +223,4 @@ const char *VRT_backend_string(const struct sess *sp, const struct director *d);
 		return (1);			\
 	} while (0)
 
-const char *VRT_WrkString(const struct sess *sp, const char *p, ...);
+const char *VRT_ReqString(struct req *, const char *p, ...);

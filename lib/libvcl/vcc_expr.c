@@ -423,15 +423,15 @@ vcc_expr_tostring(struct expr **e, enum var_type fmt)
 
 	p = NULL;
 	switch((*e)->fmt) {
-	case BACKEND:	p = "VRT_backend_string(sp, \v1)"; break;
-	case BOOL:	p = "VRT_bool_string(sp, \v1)"; break;
-	case DURATION:	p = "VRT_double_string(sp, \v1)"; break;
+	case BACKEND:	p = "VRT_backend_string(req, \v1)"; break;
+	case BOOL:	p = "VRT_bool_string(req, \v1)"; break;
+	case DURATION:	p = "VRT_double_string(req, \v1)"; break;
 			 /* XXX: should DURATION insist on "s" suffix ? */
-	case INT:	p = "VRT_int_string(sp, \v1)"; break;
-	case IP:	p = "VRT_IP_string(sp, \v1)"; break;
-	case BYTES:	p = "VRT_double_string(sp, \v1)"; break; /* XXX */
-	case REAL:	p = "VRT_double_string(sp, \v1)"; break;
-	case TIME:	p = "VRT_time_string(sp, \v1)"; break;
+	case INT:	p = "VRT_int_string(req, \v1)"; break;
+	case IP:	p = "VRT_IP_string(req, \v1)"; break;
+	case BYTES:	p = "VRT_double_string(req, \v1)"; break; /* XXX */
+	case REAL:	p = "VRT_double_string(req, \v1)"; break;
+	case TIME:	p = "VRT_time_string(req, \v1)"; break;
 	default:	break;
 	}
 	if (p != NULL) {
@@ -819,7 +819,7 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 	}
 	if (fmt != STRING_LIST && (*e)->fmt == STRING_LIST)
 		*e = vcc_expr_edit(STRING,
-		    "\v+VRT_WrkString(sp,\n\v1,\nvrt_magic_string_end)",
+		    "\v+VRT_ReqString(req,\n\v1,\nvrt_magic_string_end)",
 		    *e, NULL);
 	if (fmt == STRING_LIST && (*e)->fmt == STRING)
 		(*e)->fmt = STRING_LIST;

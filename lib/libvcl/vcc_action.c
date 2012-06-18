@@ -57,7 +57,7 @@ parse_error(struct vcc *tl)
 {
 
 	vcc_NextToken(tl);
-	Fb(tl, 1, "VRT_error(sp,\n");
+	Fb(tl, 1, "VRT_error(req,\n");
 	if (tl->t->tok == '(') {
 		vcc_NextToken(tl);
 		vcc_Expr(tl, INT);
@@ -303,7 +303,7 @@ parse_synthetic(struct vcc *tl)
 {
 	vcc_NextToken(tl);
 
-	Fb(tl, 1, "VRT_synth_page(sp, 0, ");
+	Fb(tl, 1, "VRT_synth_page(req, 0, ");
 	vcc_Expr(tl, STRING_LIST);
 	ERRCHK(tl);
 	Fb(tl, 0, ");\n");

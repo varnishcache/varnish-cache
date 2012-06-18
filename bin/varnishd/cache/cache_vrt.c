@@ -54,17 +54,16 @@ const void * const vrt_magic_string_end = &vrt_magic_string_end;
 /*--------------------------------------------------------------------*/
 
 void
-VRT_error(const struct sess *sp, unsigned code, const char *reason)
+VRT_error(struct req *req, unsigned code, const char *reason)
 {
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	VSLb(sp->req->vsl, SLT_Debug, "VCL_error(%u, %s)", code, reason ?
-	    reason : "(null)");
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	VSLb(req->vsl, SLT_Debug, "VCL_error(%u, %s)", code,
+	    reason ?  reason : "(null)");
 	if (code < 100 || code > 999)
 		code = 503;
-	sp->req->err_code = (uint16_t)code;
-	sp->req->err_reason =
-	    reason ? reason : http_StatusMessage(sp->req->err_code);
+	req->err_code = (uint16_t)code;
+	req->err_reason = reason ? reason : http_StatusMessage(req->err_code);
 }
 
 /*--------------------------------------------------------------------*/
@@ -196,18 +195,18 @@ VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
 }
 
 /*--------------------------------------------------------------------
- * Build a string on the worker threads workspace
+ * Build a string on the request workspace
  */
 
 const char *
-VRT_WrkString(const struct sess *sp, const char *p, ...)
+VRT_ReqString(struct req *req, const char *p, ...)
 {
 	va_list ap;
 	char *b;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	va_start(ap, p);
-	b = VRT_String(sp->wrk->aws, NULL, p, ap);
+	b = VRT_String(req->ws, NULL, p, ap);
 	va_end(ap);
 	return (b);
 }
@@ -287,7 +286,7 @@ VRT_r_now(const struct req *req)
 /*--------------------------------------------------------------------*/
 
 char *
-VRT_IP_string(const struct sess *sp, const struct sockaddr_storage *sa)
+VRT_IP_string(struct req *req, const struct sockaddr_storage *sa)
 {
 	char *p;
 	const struct sockaddr_in *si4;
@@ -295,6 +294,7 @@ VRT_IP_string(const struct sess *sp, const struct sockaddr_storage *sa)
 	const void *addr;
 	int len;
 
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	switch (sa->ss_family) {
 	case AF_INET:
 		len = INET_ADDRSTRLEN;
@@ -310,61 +310,65 @@ VRT_IP_string(const struct sess *sp, const struct sockaddr_storage *sa)
 		INCOMPL();
 	}
 	XXXAN(len);
-	AN(p = WS_Alloc(sp->req->http->ws, len));
+	AN(p = WS_Alloc(req->http->ws, len));
 	AN(inet_ntop(sa->ss_family, addr, p, len));
 	return (p);
 }
 
 char *
-VRT_int_string(const struct sess *sp, int num)
+VRT_int_string(struct req *req, int num)
 {
 	char *p;
 	int size;
 
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	size = snprintf(NULL, 0, "%d", num) + 1;
-	AN(p = WS_Alloc(sp->req->http->ws, size));
+	AN(p = WS_Alloc(req->http->ws, size));
 	assert(snprintf(p, size, "%d", num) < size);
 	return (p);
 }
 
 char *
-VRT_double_string(const struct sess *sp, double num)
+VRT_double_string(struct req *req, double num)
 {
 	char *p;
 	int size;
 
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	size = snprintf(NULL, 0, "%.3f", num) + 1;
-	AN(p = WS_Alloc(sp->req->http->ws, size));
+	AN(p = WS_Alloc(req->http->ws, size));
 	assert(snprintf(p, size, "%.3f", num) < size);
 	return (p);
 }
 
 char *
-VRT_time_string(const struct sess *sp, double t)
+VRT_time_string(struct req *req, double t)
 {
 	char *p;
 
-	AN(p = WS_Alloc(sp->req->http->ws, VTIM_FORMAT_SIZE));
-	VTIM_format(t, p);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	p = WS_Alloc(req->http->ws, VTIM_FORMAT_SIZE);
+	if (p != NULL)
+		VTIM_format(t, p);
 	return (p);
 }
 
 const char *
-VRT_backend_string(const struct sess *sp, const struct director *d)
+VRT_backend_string(const struct req *req, const struct director *d)
 {
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	if (d == NULL)
-		d = sp->req->director;
+		d = req->director;
 	if (d == NULL)
 		return (NULL);
 	return (d->vcl_name);
 }
 
 const char *
-VRT_bool_string(const struct sess *sp, unsigned val)
+VRT_bool_string(const struct req *req, unsigned val)
 {
 
-	(void)sp;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	return (val ? "true" : "false");
 }
 
@@ -395,16 +399,16 @@ VRT_panic(const struct sess *sp, const char *str, ...)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_synth_page(const struct sess *sp, unsigned flags, const char *str, ...)
+VRT_synth_page(struct req *req, unsigned flags, const char *str, ...)
 {
 	va_list ap;
 	const char *p;
 	struct vsb *vsb;
 
 	(void)flags;
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->req->obj, OBJECT_MAGIC);
-	vsb = SMS_Makesynth(sp->req->obj);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
+	vsb = SMS_Makesynth(req->obj);
 	AN(vsb);
 
 	VSB_cat(vsb, str);
@@ -417,10 +421,9 @@ VRT_synth_page(const struct sess *sp, unsigned flags, const char *str, ...)
 		p = va_arg(ap, const char *);
 	}
 	va_end(ap);
-	SMS_Finish(sp->req->obj);
-	http_Unset(sp->req->obj->http, H_Content_Length);
-	http_PrintfHeader(sp->req->obj->http,
-	    "Content-Length: %zd", sp->req->obj->len);
+	SMS_Finish(req->obj);
+	http_Unset(req->obj->http, H_Content_Length);
+	http_PrintfHeader(req->obj->http, "Content-Length: %zd", req->obj->len);
 }
 
 /*--------------------------------------------------------------------*/
