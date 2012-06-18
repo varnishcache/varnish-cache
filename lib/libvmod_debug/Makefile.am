@@ -8,7 +8,7 @@ INCLUDES = \
 vmoddir = $(pkglibdir)/vmods
 vmod_srcdir = $(top_srcdir)/lib/libvmod_debug
 vmodtool = $(top_srcdir)/lib/libvcl/vmodtool.py
-vmod_LTLIBRARIES = libvmod_debug.la
+noinst_LTLIBRARIES = libvmod_debug.la
 
 libvmod_debug_la_LDFLAGS = -module -export-dynamic -avoid-version
 
