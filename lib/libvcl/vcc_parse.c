@@ -225,11 +225,9 @@ vcc_Function(struct vcc *tl)
 		}
 		tl->curproc = vcc_AddProc(tl, tl->t);
 		Fh(tl, 0, "static int VGC_function_%.*s "
-		    "(struct sess *, struct req *);\n",
-		    PF(tl->t));
+		    "(struct req *);\n", PF(tl->t));
 		Fc(tl, 1, "\nstatic int __match_proto__(vcl_func_t)\n");
-		Fc(tl, 1, "VGC_function_%.*s"
-		    "(struct sess *sp, struct req *req)\n",
+		Fc(tl, 1, "VGC_function_%.*s(struct req *req)\n",
 		    PF(tl->t));
 	}
 	vcc_NextToken(tl);

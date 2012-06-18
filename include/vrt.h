@@ -31,7 +31,6 @@
  * XXX: When this file is changed, lib/libvcl/generate.py *MUST* be rerun.
  */
 
-struct sess;
 struct req;
 struct vsb;
 struct cli;
@@ -150,9 +149,9 @@ int VRT_re_match(struct req *, const char *, void *re);
 const char *VRT_regsub(struct req *, int all, const char *,
     void *, const char *);
 
-void VRT_ban(struct sess *sp, char *, ...);
-void VRT_ban_string(struct sess *sp, const char *);
-void VRT_purge(const struct sess *sp, double ttl, double grace);
+void VRT_ban(const struct req *, char *, ...);
+void VRT_ban_string(const struct req *, const char *);
+void VRT_purge(struct req *, double ttl, double grace);
 
 void VRT_count(struct req *, unsigned);
 int VRT_rewrite(const char *, const char *);
@@ -171,11 +170,10 @@ void VRT_hashdata(struct req *, const char *str, ...);
 int VRT_strcmp(const char *s1, const char *s2);
 void VRT_memmove(void *dst, const void *src, unsigned len);
 
-void VRT_ESI(const struct sess *sp);
-void VRT_Rollback(const struct sess *sp);
+void VRT_Rollback(struct req *);
 
 /* Synthetic pages */
-void VRT_synth_page(struct req *sp, unsigned flags, const char *, ...);
+void VRT_synth_page(const struct req *, unsigned flags, const char *, ...);
 
 /* Backend related */
 void VRT_init_dir(struct cli *, struct director **, const char *name,
@@ -209,10 +207,10 @@ int VRT_Stv(const char *nm);
 
 /* Convert things to string */
 
-char *VRT_IP_string(struct req *, const struct sockaddr_storage *sa);
-char *VRT_int_string(struct req *, int);
-char *VRT_double_string(struct req *, double);
-char *VRT_time_string(struct req *, double);
+char *VRT_IP_string(const struct req *, const struct sockaddr_storage *sa);
+char *VRT_int_string(const struct req *, int);
+char *VRT_double_string(const struct req *, double);
+char *VRT_time_string(const struct req *, double);
 const char *VRT_bool_string(const struct req *, unsigned);
 const char *VRT_backend_string(const struct req *, const struct director *d);
 

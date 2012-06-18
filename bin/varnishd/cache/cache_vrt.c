@@ -286,7 +286,7 @@ VRT_r_now(const struct req *req)
 /*--------------------------------------------------------------------*/
 
 char *
-VRT_IP_string(struct req *req, const struct sockaddr_storage *sa)
+VRT_IP_string(const struct req *req, const struct sockaddr_storage *sa)
 {
 	char *p;
 	const struct sockaddr_in *si4;
@@ -316,7 +316,7 @@ VRT_IP_string(struct req *req, const struct sockaddr_storage *sa)
 }
 
 char *
-VRT_int_string(struct req *req, int num)
+VRT_int_string(const struct req *req, int num)
 {
 	char *p;
 	int size;
@@ -329,7 +329,7 @@ VRT_int_string(struct req *req, int num)
 }
 
 char *
-VRT_double_string(struct req *req, double num)
+VRT_double_string(const struct req *req, double num)
 {
 	char *p;
 	int size;
@@ -342,7 +342,7 @@ VRT_double_string(struct req *req, double num)
 }
 
 char *
-VRT_time_string(struct req *req, double t)
+VRT_time_string(const struct req *req, double t)
 {
 	char *p;
 
@@ -375,17 +375,18 @@ VRT_bool_string(const struct req *req, unsigned val)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_Rollback(const struct sess *sp)
+VRT_Rollback(struct req *req)
 {
 
-	HTTP_Copy(sp->req->http, sp->req->http0);
-	WS_Reset(sp->req->ws, sp->req->ws_req);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	HTTP_Copy(req->http, req->http0);
+	WS_Reset(req->ws, req->ws_req);
 }
 
 /*--------------------------------------------------------------------*/
 
 void
-VRT_synth_page(struct req *req, unsigned flags, const char *str, ...)
+VRT_synth_page(const struct req *req, unsigned flags, const char *str, ...)
 {
 	va_list ap;
 	const char *p;
@@ -415,14 +416,14 @@ VRT_synth_page(struct req *req, unsigned flags, const char *str, ...)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_ban(struct sess *sp, char *cmds, ...)
+VRT_ban(const struct req *req, char *cmds, ...)
 {
 	char *a1, *a2, *a3;
 	va_list ap;
 	struct ban *b;
 	int good;
 
-	(void)sp;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	b = BAN_New();
 	va_start(ap, cmds);
 	a1 = cmds;
@@ -450,7 +451,7 @@ VRT_ban(struct sess *sp, char *cmds, ...)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_ban_string(struct sess *sp, const char *str)
+VRT_ban_string(const struct req *req, const char *str)
 {
 	char *a1, *a2, *a3;
 	char **av;
@@ -458,7 +459,7 @@ VRT_ban_string(struct sess *sp, const char *str)
 	int good;
 	int i;
 
-	(void)sp;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	av = VAV_Parse(str, NULL, ARGV_NOESC);
 	if (av[0] != NULL) {
 		/* XXX: report error how ? */
@@ -500,12 +501,14 @@ VRT_ban_string(struct sess *sp, const char *str)
  */
 
 void
-VRT_purge(const struct sess *sp, double ttl, double grace)
+VRT_purge(struct req *req, double ttl, double grace)
 {
-	if (sp->req->cur_method == VCL_MET_HIT)
-		HSH_Purge(sp, sp->req->obj->objcore->objhead, ttl, grace);
-	else if (sp->req->cur_method == VCL_MET_MISS)
-		HSH_Purge(sp, sp->req->objcore->objhead, ttl, grace);
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	if (req->cur_method == VCL_MET_HIT)
+		HSH_Purge(req, req->obj->objcore->objhead, ttl, grace);
+	else if (req->cur_method == VCL_MET_MISS)
+		HSH_Purge(req, req->objcore->objhead, ttl, grace);
 }
 
 /*--------------------------------------------------------------------

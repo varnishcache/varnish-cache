@@ -81,7 +81,7 @@ def do_func(fname, rval, args, vargs):
 	#print(fname, rval, args)
 
 	# C argument list
-	cargs = "(struct sess *"
+	cargs = "(struct req *"
 	for i in args:
 		cargs += ", " + i
 	cargs += ")"
@@ -273,7 +273,7 @@ fh = open("vcc_if.h", "w")
 file_header(fc)
 file_header(fh)
 
-fh.write('struct sess;\n')
+fh.write('struct req;\n')
 fh.write('struct VCL_conf;\n')
 fh.write('struct vmod_priv;\n')
 fh.write("\n");

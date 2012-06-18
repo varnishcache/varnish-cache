@@ -82,13 +82,13 @@ free_frfile(void *ptr)
 	}
 }
 
-const char *
-vmod_fileread(struct sess *sp, struct vmod_priv *priv, const char *file_name)
+const char * __match_proto__(td_std_fileread)
+vmod_fileread(struct req *req, struct vmod_priv *priv, const char *file_name)
 {
 	struct frfile *frf = NULL;
 	char *s;
 
-	(void)sp;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(priv);
 
 	if (priv->priv != NULL) {

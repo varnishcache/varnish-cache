@@ -672,7 +672,7 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	/* Emit method functions */
 	for (i = 0; i < VCL_MET_MAX; i++) {
 		Fc(tl, 1, "\nstatic int __match_proto__(vcl_func_f)\n");
-		Fc(tl, 1, "VGC_function_%s(struct sess *sp, struct req *req)\n",
+		Fc(tl, 1, "VGC_function_%s(struct req *req)\n",
 		    method_tab[i].name);
 		AZ(VSB_finish(tl->fm[i]));
 		Fc(tl, 1, "{\n");

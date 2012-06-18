@@ -539,7 +539,7 @@ vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 	SkipToken(tl, ID);
 	SkipToken(tl, '(');
 	p = sym->args;
-	e2 = vcc_mk_expr(vcc_arg_type(&p), "%s(sp\v+", sym->cfunc);
+	e2 = vcc_mk_expr(vcc_arg_type(&p), "%s(req\v+", sym->cfunc);
 	while (*p != '\0') {
 		e1 = NULL;
 		fmt = vcc_arg_type(&p);

@@ -44,7 +44,7 @@ parse_call(struct vcc *tl)
 	ExpectErr(tl, ID);
 	vcc_AddCall(tl, tl->t);
 	vcc_AddRef(tl, tl->t, SYM_SUB);
-	Fb(tl, 1, "if (VGC_function_%.*s(sp, req))\n", PF(tl->t));
+	Fb(tl, 1, "if (VGC_function_%.*s(req))\n", PF(tl->t));
 	Fb(tl, 1, "\treturn (1);\n");
 	vcc_NextToken(tl);
 	return;
@@ -178,7 +178,7 @@ parse_ban(struct vcc *tl)
 	ExpectErr(tl, '(');
 	vcc_NextToken(tl);
 
-	Fb(tl, 1, "VRT_ban_string(sp, ");
+	Fb(tl, 1, "VRT_ban_string(req, ");
 	vcc_Expr(tl, STRING);
 	ERRCHK(tl);
 	Fb(tl, 0, ");\n");
@@ -197,7 +197,7 @@ parse_ban_url(struct vcc *tl)
 	ExpectErr(tl, '(');
 	vcc_NextToken(tl);
 
-	Fb(tl, 1, "VRT_ban(sp, \"req.url\", \"~\", ");
+	Fb(tl, 1, "VRT_ban(req, \"req.url\", \"~\", ");
 	vcc_Expr(tl, STRING);
 	ERRCHK(tl);
 	ExpectErr(tl, ')');
@@ -270,7 +270,7 @@ parse_rollback(struct vcc *tl)
 {
 
 	vcc_NextToken(tl);
-	Fb(tl, 1, "VRT_Rollback(sp);\n");
+	Fb(tl, 1, "VRT_Rollback(req);\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -280,7 +280,7 @@ parse_purge(struct vcc *tl)
 {
 
 	vcc_NextToken(tl);
-	Fb(tl, 1, "VRT_purge(sp, 0, 0);\n");
+	Fb(tl, 1, "VRT_purge(req, 0, 0);\n");
 }
 
 /*--------------------------------------------------------------------*/

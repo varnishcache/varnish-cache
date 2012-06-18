@@ -155,6 +155,16 @@
 
 -e441	//  for clause irregularity: loop variable '___' not found in 2nd for expression
 
+// Vmod instantiation symbols are defined in all vmods
+
+-esym(14, Vmod_Name)
+-esym(14, Vmod_Func)
+-esym(14, Vmod_Len)
+-esym(14, Vmod_Proto)
+-esym(14, Vmod_Spec)
+-esym(14, Vmod_Varnish_ABI)
+-esym(14, Vmod_Id)
+
 // Review all below this line ///////////////////////////////////////////////
 
 -e732   // 183 Loss of sign (___) (___ to ___)

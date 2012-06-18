@@ -45,23 +45,25 @@
 
 #include "vcc_if.h"
 
-void __match_proto__()
-vmod_set_ip_tos(struct sess *sp, int tos)
+void __match_proto__(td_std_set_ip_tos)
+vmod_set_ip_tos(struct req *req, int tos)
 {
 
-	VTCP_Assert(setsockopt(sp->fd, IPPROTO_IP, IP_TOS, &tos, sizeof(tos)));
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	VTCP_Assert(setsockopt(req->sp->fd,
+	    IPPROTO_IP, IP_TOS, &tos, sizeof(tos)));
 }
 
-static const char * __match_proto__()
-vmod_updown(struct sess *sp, int up, const char *s, va_list ap)
+static const char *
+vmod_updown(struct req *req, int up, const char *s, va_list ap)
 {
 	unsigned u;
 	char *b, *e;
 	const char *p;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	u = WS_Reserve(sp->req->ws, 0);
-	e = b = sp->req->ws->f;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	u = WS_Reserve(req->ws, 0);
+	e = b = req->ws->f;
 	e += u;
 	p = s;
 	while (p != vrt_magic_string_end && b < e) {
@@ -78,101 +80,101 @@ vmod_updown(struct sess *sp, int up, const char *s, va_list ap)
 		*b = '\0';
 	b++;
 	if (b > e) {
-		WS_Release(sp->req->ws, 0);
+		WS_Release(req->ws, 0);
 		return (NULL);
 	} else {
 		e = b;
-		b = sp->req->ws->f;
-		WS_Release(sp->req->ws, e - b);
+		b = req->ws->f;
+		WS_Release(req->ws, e - b);
 		return (b);
 	}
 }
 
-const char * __match_proto__()
-vmod_toupper(struct sess *sp, const char *s, ...)
+const char * __match_proto__(td_std_toupper)
+vmod_toupper(struct req *req, const char *s, ...)
 {
 	const char *p;
 	va_list ap;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	va_start(ap, s);
-	p = vmod_updown(sp, 1, s, ap);
+	p = vmod_updown(req, 1, s, ap);
 	va_end(ap);
 	return (p);
 }
 
-const char * __match_proto__()
-vmod_tolower(struct sess *sp, const char *s, ...)
+const char * __match_proto__(td_std_tolower)
+vmod_tolower(struct req *req, const char *s, ...)
 {
 	const char *p;
 	va_list ap;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	va_start(ap, s);
-	p = vmod_updown(sp, 0, s, ap);
+	p = vmod_updown(req, 0, s, ap);
 	va_end(ap);
 	return (p);
 }
 
-double
-vmod_random(struct sess *sp, double lo, double hi)
+double __match_proto__(td_std_random)
+vmod_random(struct req *req, double lo, double hi)
 {
 	double a;
 
-	(void)sp;
-
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	a = drand48();
 	a *= hi - lo;
 	a += lo;
 	return (a);
 }
 
-void __match_proto__()
-vmod_log(struct sess *sp, const char *fmt, ...)
+void __match_proto__(td_std_log)
+vmod_log(struct req *req, const char *fmt, ...)
 {
 	unsigned u;
 	va_list ap;
 	txt t;
 
-	u = WS_Reserve(sp->req->ws, 0);
-	t.b = sp->req->ws->f;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	u = WS_Reserve(req->ws, 0);
+	t.b = req->ws->f;
 	va_start(ap, fmt);
 	t.e = VRT_StringList(t.b, u, fmt, ap);
 	va_end(ap);
 	if (t.e != NULL) {
 		assert(t.e > t.b);
 		t.e--;
-		VSLbt(sp->req->vsl, SLT_VCL_Log, t);
+		VSLbt(req->vsl, SLT_VCL_Log, t);
 	}
-	WS_Release(sp->req->ws, 0);
+	WS_Release(req->ws, 0);
 }
 
-void __match_proto__()
-vmod_syslog(struct sess *sp, int fac, const char *fmt, ...)
+void __match_proto__(td_std_syslog)
+vmod_syslog(struct req *req, int fac, const char *fmt, ...)
 {
 	char *p;
 	unsigned u;
 	va_list ap;
 
-	u = WS_Reserve(sp->req->ws, 0);
-	p = sp->req->ws->f;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	u = WS_Reserve(req->ws, 0);
+	p = req->ws->f;
 	va_start(ap, fmt);
 	p = VRT_StringList(p, u, fmt, ap);
 	va_end(ap);
 	if (p != NULL)
 		syslog(fac, "%s", p);
-	WS_Release(sp->req->ws, 0);
+	WS_Release(req->ws, 0);
 }
 
-void __match_proto__()
-vmod_collect(struct sess *sp, enum gethdr_e e, const char *h)
+void __match_proto__(td_std_collect)
+vmod_collect(struct req *req, enum gethdr_e e, const char *h)
 {
-	(void)e;
-	(void)sp;
-	(void)h;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	if (e == HDR_REQ)
-		http_CollectHdr(sp->req->http, h);
-	else if (e == HDR_BERESP && sp->req->busyobj != NULL)
-		http_CollectHdr(sp->req->busyobj->beresp, h);
+		http_CollectHdr(req->http, h);
+	else if (e == HDR_BERESP && req->busyobj != NULL)
+		http_CollectHdr(req->busyobj->beresp, h);
 }
 
