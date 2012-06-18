@@ -141,16 +141,16 @@ struct vrt_ref {
 /* ACL related */
 #define VRT_ACL_MAXADDR		16	/* max(IPv4, IPv6) */
 
-void VRT_acl_log(const struct sess *, const char *msg);
+void VRT_acl_log(struct req *, const char *msg);
 
 /* Regexp related */
 void VRT_re_init(void **, const char *);
 void VRT_re_fini(void *);
-int VRT_re_match(const struct sess *sp, const char *, void *re);
-const char *VRT_regsub(const struct sess *sp, int all, const char *,
+int VRT_re_match(struct req *, const char *, void *re);
+const char *VRT_regsub(struct req *, int all, const char *,
     void *, const char *);
 
-void VRT_panic(const struct sess *sp, const char *, ...);
+void VRT_panic(struct req *req, const char *, ...);
 void VRT_ban(struct sess *sp, char *, ...);
 void VRT_ban_string(struct sess *sp, const char *);
 void VRT_purge(const struct sess *sp, double ttl, double grace);

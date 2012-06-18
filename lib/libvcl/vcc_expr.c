@@ -466,7 +466,7 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym)
 	p = vcc_regexp(tl);
 	vcc_NextToken(tl);
 
-	bprintf(buf, "VRT_regsub(sp, %d,\n\v1,\n%s\n", all, p);
+	bprintf(buf, "VRT_regsub(req, %d,\n\v1,\n%s\n", all, p);
 	*e = vcc_expr_edit(STRING, buf, e2, *e);
 
 	SkipToken(tl, ',');
@@ -947,7 +947,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 		re = vcc_regexp(tl);
 		ERRCHK(tl);
 		vcc_NextToken(tl);
-		bprintf(buf, "%sVRT_re_match(sp, \v1, %s)", not, re);
+		bprintf(buf, "%sVRT_re_match(req, \v1, %s)", not, re);
 		*e = vcc_expr_edit(BOOL, buf, *e, NULL);
 		return;
 	}
@@ -957,7 +957,8 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 		vcc_NextToken(tl);
 		ExpectErr(tl, ID);
 		vcc_AddRef(tl, tl->t, SYM_ACL);
-		bprintf(buf, "%smatch_acl_named_%.*s(sp, \v1)", not, PF(tl->t));
+		bprintf(buf, "%smatch_acl_named_%.*s(req, \v1)",
+		    not, PF(tl->t));
 		vcc_NextToken(tl);
 		*e = vcc_expr_edit(BOOL, buf, *e, NULL);
 		return;

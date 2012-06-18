@@ -83,10 +83,10 @@ VRT_count(struct req *req, unsigned u)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_acl_log(const struct sess *sp, const char *msg)
+VRT_acl_log(struct req *req, const char *msg)
 {
 
-	VSLb(sp->req->vsl, SLT_VCL_acl, "%s", msg);
+	VSLb(req->vsl, SLT_VCL_acl, "%s", msg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -385,13 +385,14 @@ VRT_Rollback(const struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_panic(const struct sess *sp, const char *str, ...)
+VRT_panic(struct req *req, const char *str, ...)
 {
 	va_list ap;
 	char *b;
 
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	va_start(ap, str);
-	b = VRT_String(sp->req->http->ws, "PANIC: ", str, ap);
+	b = VRT_String(req->http->ws, "PANIC: ", str, ap);
 	va_end(ap);
 	VAS_Fail("VCL", "", 0, b, 0, 2);
 }
