@@ -45,9 +45,25 @@ SLTM(Debug, "", "")
 SLTM(Error, "", "")
 SLTM(CLI, "CLI communication", "CLI communication between master and child process.")
 SLTM(StatSess, "Session statistics", "")
-SLTM(ReqEnd, "Client request end", "")
+SLTM(ReqEnd, "Client request end", "Client request end. The first number is the XID. \n"
+"The second is the time when processing of the request started.\n"
+"The third is the time the request completed.\n"
+"The forth is is the time elapsed between the request actually being accepted and\n"
+"the start of the request processing.\n" 
+"The fifth number is the time elapsed from the start of the request processing \n"
+"until we start delivering the object to the client.\n" 
+"The sixth and last number is the time from we start delivering the object\n" 
+"until the request completes. ")
 SLTM(SessionOpen, "Client connection opened", "")
-SLTM(SessionClose, "Client connection closed", "")
+SLTM(SessionClose, "Client connection closed", "SessionClose tells you why HTTP\n"
+"client-connections are closed. These can be:\n"
+"timeout - No keep-alive was received within sess_timeout\n"
+"Connection: close - The client specifed that keepalive should be disabled by sending a 'Connection: close' header.\n"
+"no request - No initial request was received within sess_timeout.\n"
+"EOF - ???\n"
+"remote closed - ???\n"
+"error - Processing reached vcl_error even if the status code indicates success\n"
+"blast - ???")
 SLTM(BackendOpen, "Backend connection opened", "")
 SLTM(BackendXID, "The unique ID of the backend transaction", "")
 SLTM(BackendReuse, "Backend connection reused", "")
