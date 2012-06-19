@@ -265,7 +265,7 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 			req->obj->last_use = req->t_resp; /* XXX: locking ? */
 	}
 	HTTP_Setup(req->resp, req->ws, req->vsl, HTTP_Resp);
-	RES_BuildHttp(sp);
+	RES_BuildHttp(req);
 
 	assert(req->sp == sp);
 	VCL_deliver_method(req);
@@ -340,7 +340,7 @@ cnt_deliver(struct sess *sp, struct worker *wrk, struct req *req)
 	req->director = NULL;
 	req->restarts = 0;
 
-	RES_WriteObj(sp);
+	RES_WriteObj(req);
 
 	/* No point in saving the body if it is hit-for-pass */
 	if (req->obj->objcore->flags & OC_F_PASS)
@@ -591,7 +591,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 
 	wrk->acct_tmp.fetch++;
 
-	i = FetchHdr(sp, need_host_hdr, req->objcore->objhead == NULL);
+	i = FetchHdr(req, need_host_hdr, req->objcore->objhead == NULL);
 	/*
 	 * If we recycle a backend connection, there is a finite chance
 	 * that the backend closed it before we get a request to it.
@@ -599,7 +599,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 	 */
 	if (i == 1) {
 		VSC_C_main->backend_retry++;
-		i = FetchHdr(sp, need_host_hdr, req->objcore->objhead == NULL);
+		i = FetchHdr(req, need_host_hdr, req->objcore->objhead == NULL);
 	}
 
 	if (i) {
@@ -1016,7 +1016,7 @@ cnt_hit(struct sess *sp, struct worker *wrk, struct req *req)
 	if (req->handling == VCL_RET_DELIVER) {
 		//AZ(req->busyobj->bereq->ws);
 		//AZ(req->busyobj->beresp->ws);
-		(void)FetchReqBody(sp, 0);
+		(void)FetchReqBody(req, 0);
 		sp->step = STP_PREPRESP;
 		return (0);
 	}
@@ -1173,7 +1173,7 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
 	AZ(req->obj);
 
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
-	http_FilterReq(sp, HTTPH_R_FETCH);
+	http_FilterReq(req, HTTPH_R_FETCH);
 	http_ForceGet(bo->bereq);
 	if (cache_param->http_gzip_support) {
 		/*
@@ -1251,7 +1251,7 @@ cnt_pass(struct sess *sp, struct worker *wrk, struct req *req)
 	bo->vsl->wid = sp->vsl_id;
 	bo->refcount = 2;
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
-	http_FilterReq(sp, HTTPH_R_PASS);
+	http_FilterReq(req, HTTPH_R_PASS);
 
 	assert(req->sp == sp);
 	VCL_pass_method(req);
@@ -1313,7 +1313,7 @@ cnt_pipe(struct sess *sp, struct worker *wrk, struct req *req)
 	bo = req->busyobj;
 	bo->vsl->wid = sp->vsl_id;
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
-	http_FilterReq(sp, 0);
+	http_FilterReq(req, 0);
 
 	assert(req->sp == sp);
 	VCL_pipe_method(req);
@@ -1514,7 +1514,7 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 	EXP_Clr(&req->exp);
 
 	HTTP_Setup(req->http, req->ws, req->vsl, HTTP_Req);
-	req->err_code = http_DissectRequest(sp);
+	req->err_code = http_DissectRequest(req);
 
 	/* If we could not even parse the request, just close */
 	if (req->err_code == 400) {

@@ -358,7 +358,7 @@ HSH_Lookup(struct sess *sp)
 
 		if (o->exp.ttl <= 0.)
 			continue;
-		if (BAN_CheckObject(o, sp))
+		if (BAN_CheckObject(o, req))
 			continue;
 		if (o->vary != NULL && !VRY_Match(req, o->vary))
 			continue;
@@ -391,7 +391,7 @@ HSH_Lookup(struct sess *sp)
 	if (oc == NULL			/* We found no live object */
 	    && grace_oc != NULL		/* There is a grace candidate */
 	    && (busy_found		/* Somebody else is already busy */
-	    || !VDI_Healthy(req->director, sp))) {
+	    || !VDI_Healthy(req->director, req))) {
 					/* Or it is impossible to fetch */
 		o = oc_getobj(&wrk->stats, grace_oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);

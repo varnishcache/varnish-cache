@@ -150,7 +150,7 @@ vdi_dns_pick_host(const struct sess *sp, struct vdi_dns_hostgroup *group) {
 			current = i + initial - nhosts;
 		else
 			current = i + initial;
-		if (VDI_Healthy(group->hosts[current], sp)) {
+		if (VDI_Healthy(group->hosts[current], sp->req)) {
 			group->next_host = current+1;
 			return (group->hosts[current]);
 		}
@@ -372,31 +372,31 @@ vdi_dns_find_backend(const struct sess *sp, struct vdi_dns *vs)
 }
 
 static struct vbc *
-vdi_dns_getfd(const struct director *director, struct sess *sp)
+vdi_dns_getfd(const struct director *director, struct req *req)
 {
 	struct vdi_dns *vs;
 	struct director *dir;
 	struct vbc *vbe;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(director, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, director->priv, VDI_DNS_MAGIC);
 
-	dir = vdi_dns_find_backend(sp, vs);
-	if (!dir || !VDI_Healthy(dir, sp))
+	dir = vdi_dns_find_backend(req->sp, vs);
+	if (!dir || !VDI_Healthy(dir, req))
 		return (NULL);
 
-	vbe = VDI_GetFd(dir, sp);
+	vbe = VDI_GetFd(dir, req);
 	return (vbe);
 }
 
 static unsigned
-vdi_dns_healthy(const struct director *dir, const struct sess *sp)
+vdi_dns_healthy(const struct director *dir, const struct req *req)
 {
 	/* XXX: Fooling -Werror for a bit until it's actually implemented.
 	 */
 	(void)dir;
-	(void)sp;
+	(void)req;
 	return (1);
 
 	/*
@@ -404,11 +404,11 @@ vdi_dns_healthy(const struct director *dir, const struct sess *sp)
 	struct director *dir;
 	int i;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->req->director, DIRECTOR_MAGIC);
-	CAST_OBJ_NOTNULL(vs, sp->req->director->priv, VDI_DNS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->director, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(vs, req->director->priv, VDI_DNS_MAGIC);
 
-	dir = vdi_dns_find_backend(sp, vs);
+	dir = vdi_dns_find_backend(req->sp, vs);
 
 	if (dir)
 		return (1);

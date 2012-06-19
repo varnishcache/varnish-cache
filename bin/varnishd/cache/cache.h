@@ -695,8 +695,8 @@ void VBE_UseHealth(const struct director *vdi);
 void VBE_DiscardHealth(const struct director *vdi);
 
 
-struct vbc *VDI_GetFd(const struct director *, struct sess *sp);
-int VDI_Healthy(const struct director *, const struct sess *sp);
+struct vbc *VDI_GetFd(const struct director *, struct req *);
+int VDI_Healthy(const struct director *, const struct req *);
 void VDI_CloseFd(struct vbc **vbp);
 void VDI_RecycleFd(struct vbc **vbp);
 void VDI_AddHostHeader(struct http *to, const struct vbc *vbc);
@@ -719,7 +719,7 @@ void BAN_Insert(struct ban *b);
 void BAN_Init(void);
 void BAN_NewObjCore(struct objcore *oc);
 void BAN_DestroyObj(struct objcore *oc);
-int BAN_CheckObject(struct object *o, const struct sess *sp);
+int BAN_CheckObject(struct object *o, struct req *sp);
 void BAN_Reload(const uint8_t *ban, unsigned len);
 struct ban *BAN_TailRef(void);
 void BAN_Compile(void);
@@ -766,9 +766,9 @@ int EXP_NukeOne(struct busyobj *, struct lru *lru);
 struct storage *FetchStorage(struct busyobj *, ssize_t sz);
 int FetchError(struct busyobj *, const char *error);
 int FetchError2(struct busyobj *, const char *error, const char *more);
-int FetchHdr(struct sess *sp, int need_host_hdr, int sendbody);
+int FetchHdr(struct req *req, int need_host_hdr, int sendbody);
 void FetchBody(struct worker *w, void *bo);
-int FetchReqBody(const struct sess *sp, int sendbody);
+int FetchReqBody(struct req *, int sendbody);
 void Fetch_Init(void);
 
 /* cache_gzip.c */
@@ -809,7 +809,7 @@ void http_ClrHeader(struct http *to);
 unsigned http_Write(const struct worker *w, const struct http *hp, int resp);
 void http_SetResp(struct http *to, const char *proto, uint16_t status,
     const char *response);
-void http_FilterReq(const struct sess *sp, unsigned how);
+void http_FilterReq(const struct req *, unsigned how);
 void http_FilterResp(const struct http *fm, struct http *to, unsigned how);
 void http_PutProtocol(const struct http *to, const char *protocol);
 void http_PutStatus(struct http *to, uint16_t status);
@@ -830,7 +830,7 @@ double http_GetHdrQ(const struct http *hp, const char *hdr, const char *field);
 uint16_t http_GetStatus(const struct http *hp);
 const char *http_GetReq(const struct http *hp);
 int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
-uint16_t http_DissectRequest(const struct sess *sp);
+uint16_t http_DissectRequest(struct req *);
 uint16_t http_DissectResponse(struct http *sp, const struct http_conn *htc);
 const char *http_DoConnection(const struct http *hp);
 void http_CopyHome(const struct http *hp);
@@ -954,8 +954,8 @@ void VSL_Flush(struct vsl_log *, int overflow);
 #endif
 
 /* cache_response.c */
-void RES_BuildHttp(const struct sess *sp);
-void RES_WriteObj(struct sess *sp);
+void RES_BuildHttp(struct req *);
+void RES_WriteObj(struct req *);
 
 /* cache_vary.c */
 struct vsb *VRY_Create(struct req *sp, const struct http *hp);
@@ -979,7 +979,7 @@ const char *VCL_Return_Name(unsigned method);
 char *VRT_String(struct ws *ws, const char *h, const char *p, va_list ap);
 char *VRT_StringList(char *d, unsigned dl, const char *p, va_list ap);
 
-void ESI_Deliver(struct sess *);
+void ESI_Deliver(struct req *);
 void ESI_DeliverChild(const struct sess *);
 
 /* cache_vrt_vmod.c */

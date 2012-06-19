@@ -651,22 +651,22 @@ http_ProtoVer(struct http *hp)
 /*--------------------------------------------------------------------*/
 
 uint16_t
-http_DissectRequest(const struct sess *sp)
+http_DissectRequest(struct req *req)
 {
 	struct http_conn *htc;
 	struct http *hp;
 	uint16_t retval;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	htc = sp->req->htc;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	htc = req->htc;
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	hp = sp->req->http;
+	hp = req->http;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
 	retval = http_splitline(hp, htc,
 	    HTTP_HDR_REQ, HTTP_HDR_URL, HTTP_HDR_PROTO);
 	if (retval != 0) {
-		VSLbt(sp->req->vsl, SLT_HttpGarbage, htc->rxbuf);
+		VSLbt(req->vsl, SLT_HttpGarbage, htc->rxbuf);
 		return (retval);
 	}
 	http_ProtoVer(hp);
@@ -838,21 +838,21 @@ http_filterfields(struct http *to, const struct http *fm, unsigned how)
 /*--------------------------------------------------------------------*/
 
 void
-http_FilterReq(const struct sess *sp, unsigned how)
+http_FilterReq(const struct req *req, unsigned how)
 {
 	struct http *hp;
 
-	hp = sp->req->busyobj->bereq;
+	hp = req->busyobj->bereq;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
-	http_linkh(hp, sp->req->http, HTTP_HDR_REQ);
-	http_linkh(hp, sp->req->http, HTTP_HDR_URL);
+	http_linkh(hp, req->http, HTTP_HDR_REQ);
+	http_linkh(hp, req->http, HTTP_HDR_URL);
 	if (how == HTTPH_R_FETCH)
 		http_SetH(hp, HTTP_HDR_PROTO, "HTTP/1.1");
 	else
-		http_linkh(hp, sp->req->http, HTTP_HDR_PROTO);
-	http_filterfields(hp, sp->req->http, how);
-	http_PrintfHeader(hp, "X-Varnish: %u", sp->req->xid);
+		http_linkh(hp, req->http, HTTP_HDR_PROTO);
+	http_filterfields(hp, req->http, how);
+	http_PrintfHeader(hp, "X-Varnish: %u", req->xid);
 }
 
 /*--------------------------------------------------------------------*/

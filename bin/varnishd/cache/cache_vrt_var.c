@@ -556,6 +556,6 @@ VRT_r_req_backend_healthy(const struct req *req)
 {
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->director, DIRECTOR_MAGIC);
-	return (VDI_Healthy(req->director, req->sp));
+	return (VDI_Healthy(req->director, req));
 }
 

@@ -42,7 +42,7 @@
 /*--------------------------------------------------------------------*/
 
 static void
-ved_include(struct sess *sp, const char *src, const char *host)
+ved_include(struct req *req, const char *src, const char *host)
 {
 	struct object *obj;
 	struct worker *wrk;
@@ -50,71 +50,71 @@ ved_include(struct sess *sp, const char *src, const char *host)
 	char *wrk_ws_wm;
 	unsigned sxid, res_mode;
 
-	wrk = sp->wrk;
+	wrk = req->sp->wrk;
 
-	if (sp->req->esi_level >= cache_param->max_esi_depth)
+	if (req->esi_level >= cache_param->max_esi_depth)
 		return;
-	sp->req->esi_level++;
+	req->esi_level++;
 
 	(void)WRW_FlushRelease(wrk);
 
-	obj = sp->req->obj;
-	sp->req->obj = NULL;
-	res_mode = sp->req->res_mode;
+	obj = req->obj;
+	req->obj = NULL;
+	res_mode = req->res_mode;
 
 	/* Reset request to status before we started messing with it */
-	HTTP_Copy(sp->req->http, sp->req->http0);
+	HTTP_Copy(req->http, req->http0);
 
 	/* Take a workspace snapshot */
-	sp_ws_wm = WS_Snapshot(sp->req->ws);
+	sp_ws_wm = WS_Snapshot(req->ws);
 	wrk_ws_wm = WS_Snapshot(wrk->aws); /* XXX ? */
 
-	http_SetH(sp->req->http, HTTP_HDR_URL, src);
+	http_SetH(req->http, HTTP_HDR_URL, src);
 	if (host != NULL && *host != '\0')  {
-		http_Unset(sp->req->http, H_Host);
-		http_Unset(sp->req->http, H_If_Modified_Since);
-		http_SetHeader(sp->req->http, host);
+		http_Unset(req->http, H_Host);
+		http_Unset(req->http, H_If_Modified_Since);
+		http_SetHeader(req->http, host);
 	}
 	/*
 	 * XXX: We should decide if we should cache the director
 	 * XXX: or not (for session/backend coupling).  Until then
 	 * XXX: make sure we don't trip up the check in vcl_recv.
 	 */
-	sp->req->director = NULL;
-	sp->step = STP_RECV;
-	http_ForceGet(sp->req->http);
+	req->director = NULL;
+	req->sp->step = STP_RECV;
+	http_ForceGet(req->http);
 
 	/* Don't do conditionals */
-	sp->req->http->conds = 0;
-	http_Unset(sp->req->http, H_If_Modified_Since);
+	req->http->conds = 0;
+	http_Unset(req->http, H_If_Modified_Since);
 
 	/* Client content already taken care of */
-	http_Unset(sp->req->http, H_Content_Length);
+	http_Unset(req->http, H_Content_Length);
 
-	sxid = sp->req->xid;
+	sxid = req->xid;
 	while (1) {
-		sp->wrk = wrk;
-		CNT_Session(sp);
-		if (sp->step == STP_DONE)
+		req->sp->wrk = wrk;
+		CNT_Session(req->sp);
+		if (req->sp->step == STP_DONE)
 			break;
-		AZ(sp->wrk);
-		DSL(0x20, SLT_Debug, sp->vsl_id, "loop waiting for ESI");
+		AZ(req->sp->wrk);
+		DSL(0x20, SLT_Debug, req->sp->vsl_id, "loop waiting for ESI");
 		(void)usleep(10000);
 	}
-	sp->req->xid = sxid;
-	AN(sp->wrk);
-	assert(sp->step == STP_DONE);
-	sp->req->esi_level--;
-	sp->req->obj = obj;
-	sp->req->res_mode = res_mode;
+	req->xid = sxid;
+	AN(req->sp->wrk);
+	assert(req->sp->step == STP_DONE);
+	req->esi_level--;
+	req->obj = obj;
+	req->res_mode = res_mode;
 
 	/* Reset the workspace */
-	WS_Reset(sp->req->ws, sp_ws_wm);
+	WS_Reset(req->ws, sp_ws_wm);
 	WS_Reset(wrk->aws, wrk_ws_wm);	/* XXX ? */
 
-	WRW_Reserve(sp->wrk, &sp->fd, sp->req->vsl, sp->req->t_resp);
-	if (sp->req->res_mode & RES_CHUNKED)
-		WRW_Chunked(sp->wrk);
+	WRW_Reserve(req->sp->wrk, &req->sp->fd, req->vsl, req->t_resp);
+	if (req->res_mode & RES_CHUNKED)
+		WRW_Chunked(req->sp->wrk);
 }
 
 /*--------------------------------------------------------------------*/
@@ -171,7 +171,7 @@ ved_decode_len(uint8_t **pp)
  */
 
 static void
-ved_pretend_gzip(const struct sess *sp, const uint8_t *p, ssize_t l)
+ved_pretend_gzip(struct req *req, const uint8_t *p, ssize_t l)
 {
 	uint8_t buf1[5], buf2[5];
 	uint16_t lx;
@@ -184,22 +184,22 @@ ved_pretend_gzip(const struct sess *sp, const uint8_t *p, ssize_t l)
 	while (l > 0) {
 		if (l >= 65535) {
 			lx = 65535;
-			(void)WRW_Write(sp->wrk, buf1, sizeof buf1);
+			(void)WRW_Write(req->sp->wrk, buf1, sizeof buf1);
 		} else {
 			lx = (uint16_t)l;
 			buf2[0] = 0;
 			vle16enc(buf2 + 1, lx);
 			vle16enc(buf2 + 3, ~lx);
-			(void)WRW_Write(sp->wrk, buf2, sizeof buf2);
+			(void)WRW_Write(req->sp->wrk, buf2, sizeof buf2);
 		}
-		(void)WRW_Write(sp->wrk, p, lx);
-		sp->req->crc = crc32(sp->req->crc, p, lx);
-		sp->req->l_crc += lx;
+		(void)WRW_Write(req->sp->wrk, p, lx);
+		req->crc = crc32(req->crc, p, lx);
+		req->l_crc += lx;
 		l -= lx;
 		p += lx;
 	}
 	/* buf2 is local, have to flush */
-	(void)WRW_Flush(sp->wrk);
+	(void)WRW_Flush(req->sp->wrk);
 }
 
 /*---------------------------------------------------------------------
@@ -213,7 +213,7 @@ static const uint8_t gzip_hdr[] = {
 };
 
 void
-ESI_Deliver(struct sess *sp)
+ESI_Deliver(struct req *req)
 {
 	struct storage *st;
 	uint8_t *p, *e, *q, *r;
@@ -227,8 +227,8 @@ ESI_Deliver(struct sess *sp)
 	const void *dp;
 	int i;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	st = sp->req->obj->esidata;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	st = req->obj->esidata;
 	AN(st);
 
 	p = st->ptr;
@@ -241,23 +241,23 @@ ESI_Deliver(struct sess *sp)
 		isgzip = 0;
 	}
 
-	if (sp->req->esi_level == 0) {
+	if (req->esi_level == 0) {
 		/*
 		 * Only the top level document gets to decide this.
 		 */
-		sp->req->gzip_resp = 0;
-		if (isgzip && !(sp->req->res_mode & RES_GUNZIP)) {
+		req->gzip_resp = 0;
+		if (isgzip && !(req->res_mode & RES_GUNZIP)) {
 			assert(sizeof gzip_hdr == 10);
 			/* Send out the gzip header */
-			(void)WRW_Write(sp->wrk, gzip_hdr, 10);
-			sp->req->l_crc = 0;
-			sp->req->gzip_resp = 1;
-			sp->req->crc = crc32(0L, Z_NULL, 0);
+			(void)WRW_Write(req->sp->wrk, gzip_hdr, 10);
+			req->l_crc = 0;
+			req->gzip_resp = 1;
+			req->crc = crc32(0L, Z_NULL, 0);
 		}
 	}
 
-	if (isgzip && !sp->req->gzip_resp) {
-		vgz = VGZ_NewUngzip(sp->req->vsl, "U D E");
+	if (isgzip && !req->gzip_resp) {
+		vgz = VGZ_NewUngzip(req->vsl, "U D E");
 		AZ(VGZ_WrwInit(vgz));
 
 		/* Feed a gzip header to gunzip to make it happy */
@@ -268,7 +268,7 @@ ESI_Deliver(struct sess *sp)
 		assert(dl == 0);
 	}
 
-	st = VTAILQ_FIRST(&sp->req->obj->store);
+	st = VTAILQ_FIRST(&req->obj->store);
 	off = 0;
 
 	while (p < e) {
@@ -283,10 +283,10 @@ ESI_Deliver(struct sess *sp)
 				l_icrc = ved_decode_len(&p);
 				icrc = vbe32dec(p);
 				p += 4;
-				if (sp->req->gzip_resp) {
-					sp->req->crc = crc32_combine(
-					    sp->req->crc, icrc, l_icrc);
-					sp->req->l_crc += l_icrc;
+				if (req->gzip_resp) {
+					req->crc = crc32_combine(
+					    req->crc, icrc, l_icrc);
+					req->l_crc += l_icrc;
 				}
 			}
 			/*
@@ -300,29 +300,31 @@ ESI_Deliver(struct sess *sp)
 					l2 = st->len - off;
 				l -= l2;
 
-				if (sp->req->gzip_resp && isgzip) {
+				if (req->gzip_resp && isgzip) {
 					/*
 					 * We have a gzip'ed VEC and delivers
 					 * a gzip'ed ESI response.
 					 */
-					(void)WRW_Write(sp->wrk,
+					(void)WRW_Write(req->sp->wrk,
 					    st->ptr + off, l2);
-				} else if (sp->req->gzip_resp) {
+				} else if (req->gzip_resp) {
 					/*
 					 * A gzip'ed ESI response, but the VEC
 					 * was not gzip'ed.
 					 */
-					ved_pretend_gzip(sp, st->ptr + off, l2);
+					ved_pretend_gzip(req,
+					    st->ptr + off, l2);
 				} else if (isgzip) {
 					/*
 					 * A gzip'ed VEC, but ungzip'ed ESI
 					 * response
 					 */
 					AN(vgz);
-					i = VGZ_WrwGunzip(sp->wrk, vgz,
+					i = VGZ_WrwGunzip(req->sp->wrk, vgz,
 						st->ptr + off, l2);
-					if (WRW_Error(sp->wrk)) {
-						SES_Close(sp, "remote closed");
+					if (WRW_Error(req->sp->wrk)) {
+						SES_Close(req->sp,
+						    "remote closed");
 						p = e;
 						break;
 					}
@@ -331,7 +333,7 @@ ESI_Deliver(struct sess *sp)
 					/*
 					 * Ungzip'ed VEC, ungzip'ed ESI response
 					 */
-					(void)WRW_Write(sp->wrk,
+					(void)WRW_Write(req->sp->wrk,
 					    st->ptr + off, l2);
 				}
 				off += l2;
@@ -371,14 +373,14 @@ ESI_Deliver(struct sess *sp)
 			r = (void*)strchr((const char*)q, '\0');
 			AN(r);
 			if (vgz != NULL)
-				VGZ_WrwFlush(sp->wrk, vgz);
-			if (WRW_Flush(sp->wrk)) {
-				SES_Close(sp, "remote closed");
+				VGZ_WrwFlush(req->sp->wrk, vgz);
+			if (WRW_Flush(req->sp->wrk)) {
+				SES_Close(req->sp, "remote closed");
 				p = e;
 				break;
 			}
 			Debug("INCL [%s][%s] BEGIN\n", q, p);
-			ved_include(sp, (const char*)q, (const char*)p);
+			ved_include(req, (const char*)q, (const char*)p);
 			Debug("INCL [%s][%s] END\n", q, p);
 			p = r + 1;
 			break;
@@ -388,10 +390,10 @@ ESI_Deliver(struct sess *sp)
 		}
 	}
 	if (vgz != NULL) {
-		VGZ_WrwFlush(sp->wrk, vgz);
+		VGZ_WrwFlush(req->sp->wrk, vgz);
 		(void)VGZ_Destroy(&vgz);
 	}
-	if (sp->req->gzip_resp && sp->req->esi_level == 0) {
+	if (req->gzip_resp && req->esi_level == 0) {
 		/* Emit a gzip literal block with finish bit set */
 		tailbuf[0] = 0x01;
 		tailbuf[1] = 0x00;
@@ -400,14 +402,14 @@ ESI_Deliver(struct sess *sp)
 		tailbuf[4] = 0xff;
 
 		/* Emit CRC32 */
-		vle32enc(tailbuf + 5, sp->req->crc);
+		vle32enc(tailbuf + 5, req->crc);
 
 		/* MOD(2^32) length */
-		vle32enc(tailbuf + 9, sp->req->l_crc);
+		vle32enc(tailbuf + 9, req->l_crc);
 
-		(void)WRW_Write(sp->wrk, tailbuf, 13);
+		(void)WRW_Write(req->sp->wrk, tailbuf, 13);
 	}
-	(void)WRW_Flush(sp->wrk);
+	(void)WRW_Flush(req->sp->wrk);
 }
 
 /*---------------------------------------------------------------------
@@ -464,7 +466,7 @@ ESI_DeliverChild(const struct sess *sp)
 
 	if (!sp->req->obj->gziped) {
 		VTAILQ_FOREACH(st, &sp->req->obj->store, list)
-			ved_pretend_gzip(sp, st->ptr, st->len);
+			ved_pretend_gzip(sp->req, st->ptr, st->len);
 		return;
 	}
 	/*

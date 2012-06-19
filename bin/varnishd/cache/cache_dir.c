@@ -105,17 +105,17 @@ VDI_RecycleFd(struct vbc **vbp)
 /* Get a connection --------------------------------------------------*/
 
 struct vbc *
-VDI_GetFd(const struct director *d, struct sess *sp)
+VDI_GetFd(const struct director *d, struct req *req)
 {
 	struct vbc *vc;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	if (d == NULL)
-		d = sp->req->director;
+		d = req->director;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	vc = d->getfd(d, sp);
+	vc = d->getfd(d, req);
 	if (vc != NULL) {
-		vc->vsl = sp->req->busyobj->vsl;
+		vc->vsl = req->busyobj->vsl;
 		vc->orig_vsl_id = vc->vsl->wid;
 		vc->vsl->wid = vc->vsl_id;
 	}
@@ -130,10 +130,10 @@ VDI_GetFd(const struct director *d, struct sess *sp)
  */
 
 int
-VDI_Healthy(const struct director *d, const struct sess *sp)
+VDI_Healthy(const struct director *d, const struct req *req)
 {
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	return (d->healthy(d, sp));
+	return (d->healthy(d, req));
 }

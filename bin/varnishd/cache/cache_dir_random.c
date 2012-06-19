@@ -98,22 +98,22 @@ vdi_random_sha(const char *input, ssize_t len)
  * Sets up the initial seed for picking a backend according to policy.
  */
 static double
-vdi_random_init_seed(const struct vdi_random *vs, const struct sess *sp)
+vdi_random_init_seed(const struct vdi_random *vs, const struct req *req)
 {
 	const char *p;
 	double retval;
 
 	switch (vs->criteria) {
 	case c_client:
-		if (sp->req->client_identity != NULL)
-			p = sp->req->client_identity;
+		if (req->client_identity != NULL)
+			p = req->client_identity;
 		else
-			p = sp->addr;
+			p = req->sp->addr;
 		retval = vdi_random_sha(p, strlen(p));
 		break;
 	case c_hash:
-		AN(sp->req->digest);
-		retval = scalbn(vle32dec(sp->req->digest), -32);
+		AN(req->digest);
+		retval = scalbn(vle32dec(req->digest), -32);
 		break;
 	case c_random:
 	default:
@@ -127,7 +127,7 @@ vdi_random_init_seed(const struct vdi_random *vs, const struct sess *sp)
  * Find the healthy backend corresponding to the weight r [0...1[
  */
 static struct vbc *
-vdi_random_pick_one(struct sess *sp, const struct vdi_random *vs, double r,
+vdi_random_pick_one(struct req *req, const struct vdi_random *vs, double r,
     int retries)
 {
 	double w[vs->nhosts];
@@ -154,9 +154,9 @@ vdi_random_pick_one(struct sess *sp, const struct vdi_random *vs, double r,
 			s2 += w[i];
 			if (r >= s2)
 				continue;
-			if (!VDI_Healthy(vs->hosts[i].backend, sp))
+			if (!VDI_Healthy(vs->hosts[i].backend, req))
 				break;
-			vbc = VDI_GetFd(vs->hosts[i].backend, sp);
+			vbc = VDI_GetFd(vs->hosts[i].backend, req);
 			if (vbc == NULL)
 				break;
 			return (vbc);
@@ -181,18 +181,18 @@ vdi_random_pick_one(struct sess *sp, const struct vdi_random *vs, double r,
  * random by rehashing the key.
  */
 static struct vbc *
-vdi_random_getfd(const struct director *d, struct sess *sp)
+vdi_random_getfd(const struct director *d, struct req *req)
 {
 	struct vdi_random *vs;
 	double r;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_RANDOM_MAGIC);
 
-	r = vdi_random_init_seed(vs, sp);
+	r = vdi_random_init_seed(vs, req);
 
-	return (vdi_random_pick_one(sp, vs, r, vs->retries));
+	return (vdi_random_pick_one(req, vs, r, vs->retries));
 }
 
 /*
@@ -200,7 +200,7 @@ vdi_random_getfd(const struct director *d, struct sess *sp)
  * XXX: we should really have a weight param/criteria here
  */
 static unsigned
-vdi_random_healthy(const struct director *d, const struct sess *sp)
+vdi_random_healthy(const struct director *d, const struct req *req)
 {
 	struct vdi_random *vs;
 	int i;
@@ -209,7 +209,7 @@ vdi_random_healthy(const struct director *d, const struct sess *sp)
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_RANDOM_MAGIC);
 
 	for (i = 0; i < vs->nhosts; i++) {
-		if (VDI_Healthy(vs->hosts[i].backend, sp))
+		if (VDI_Healthy(vs->hosts[i].backend, req))
 			return (1);
 	}
 	return (0);

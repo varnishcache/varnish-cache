@@ -378,20 +378,20 @@ fetch_eof(struct busyobj *bo, struct http_conn *htc)
  */
 
 int
-FetchReqBody(const struct sess *sp, int sendbody)
+FetchReqBody(struct req *req, int sendbody)
 {
 	unsigned long content_length;
 	char buf[8192];
 	char *ptr, *endp;
 	int rdcnt;
 
-	if (sp->req->reqbodydone) {
+	if (req->reqbodydone) {
 		AZ(sendbody);
 		return (0);
 	}
 
-	if (http_GetHdr(sp->req->http, H_Content_Length, &ptr)) {
-		sp->req->reqbodydone = 1;
+	if (http_GetHdr(req->http, H_Content_Length, &ptr)) {
+		req->reqbodydone = 1;
 
 		content_length = strtoul(ptr, &endp, 10);
 		/* XXX should check result of conversion */
@@ -400,21 +400,21 @@ FetchReqBody(const struct sess *sp, int sendbody)
 				rdcnt = sizeof buf;
 			else
 				rdcnt = content_length;
-			rdcnt = HTC_Read(sp->req->htc, buf, rdcnt);
+			rdcnt = HTC_Read(req->htc, buf, rdcnt);
 			if (rdcnt <= 0)
 				return (1);
 			content_length -= rdcnt;
 			if (sendbody) {
 				/* XXX: stats ? */
-				(void)WRW_Write(sp->wrk, buf, rdcnt);
-				if (WRW_Flush(sp->wrk))
+				(void)WRW_Write(req->sp->wrk, buf, rdcnt);
+				if (WRW_Flush(req->sp->wrk))
 					return (2);
 			}
 		}
 	}
-	if (http_GetHdr(sp->req->http, H_Transfer_Encoding, NULL)) {
+	if (http_GetHdr(req->http, H_Transfer_Encoding, NULL)) {
 		/* XXX: Handle chunked encoding. */
-		VSLb(sp->req->vsl, SLT_Debug, "Transfer-Encoding in request");
+		VSLb(req->vsl, SLT_Debug, "Transfer-Encoding in request");
 		return (1);
 	}
 	return (0);
@@ -431,20 +431,18 @@ FetchReqBody(const struct sess *sp, int sendbody)
  */
 
 int
-FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
+FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 {
 	struct vbc *vc;
 	struct worker *wrk;
-	struct req *req;
 	struct busyobj *bo;
 	struct http *hp;
 	int retry = -1;
 	int i;
 	struct http_conn *htc;
 
-	wrk = sp->wrk;
+	wrk = req->sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	req = sp->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	bo = req->busyobj;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -458,7 +456,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 
 	hp = bo->bereq;
 
-	bo->vbc = VDI_GetFd(NULL, sp);
+	bo->vbc = VDI_GetFd(NULL, req);
 	if (bo->vbc == NULL) {
 		VSLb(req->vsl, SLT_FetchError, "no backend connection");
 		return (-1);
@@ -480,7 +478,7 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 	(void)http_Write(wrk, hp, 0);	/* XXX: stats ? */
 
 	/* Deal with any message-body the request might have */
-	i = FetchReqBody(sp, sendbody);
+	i = FetchReqBody(req, sendbody);
 	if (WRW_FlushRelease(wrk) || i > 0) {
 		VSLb(req->vsl, SLT_FetchError,
 		    "backend write error: %d (%s)",

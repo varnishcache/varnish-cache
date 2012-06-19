@@ -37,12 +37,10 @@
 /*--------------------------------------------------------------------*/
 
 static void
-res_dorange(const struct sess *sp, const char *r, ssize_t *plow, ssize_t *phigh)
+res_dorange(const struct req *req, const char *r, ssize_t *plow, ssize_t *phigh)
 {
 	ssize_t low, high, has_low;
-	struct req *req;
 
-	req = sp->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	assert(req->obj->response == 200);
 	if (strncmp(r, "bytes=", 6))
@@ -105,13 +103,10 @@ res_dorange(const struct sess *sp, const char *r, ssize_t *plow, ssize_t *phigh)
 /*--------------------------------------------------------------------*/
 
 void
-RES_BuildHttp(const struct sess *sp)
+RES_BuildHttp(struct req *req)
 {
 	char time_str[30];
-	struct req *req;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	req = sp->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	http_ClrHeader(req->resp);
@@ -188,17 +183,17 @@ res_WriteGunzipObj(const struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 static void
-res_WriteDirObj(const struct sess *sp, ssize_t low, ssize_t high)
+res_WriteDirObj(const struct req *req, ssize_t low, ssize_t high)
 {
 	ssize_t u = 0;
 	size_t ptr, off, len;
 	struct storage *st;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	ptr = 0;
-	VTAILQ_FOREACH(st, &sp->req->obj->store, list) {
-		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	VTAILQ_FOREACH(st, &req->obj->store, list) {
+		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 		u += st->len;
 		len = st->len;
@@ -220,10 +215,10 @@ res_WriteDirObj(const struct sess *sp, ssize_t low, ssize_t high)
 
 		ptr += len;
 
-		sp->wrk->acct_tmp.bodybytes += len;
-		(void)WRW_Write(sp->wrk, st->ptr + off, len);
+		req->sp->wrk->acct_tmp.bodybytes += len;
+		(void)WRW_Write(req->sp->wrk, st->ptr + off, len);
 	}
-	assert(u == sp->req->obj->len);
+	assert(u == req->obj->len);
 }
 
 /*--------------------------------------------------------------------
@@ -232,14 +227,11 @@ res_WriteDirObj(const struct sess *sp, ssize_t low, ssize_t high)
  */
 
 void
-RES_WriteObj(struct sess *sp)
+RES_WriteObj(struct req *req)
 {
 	char *r;
 	ssize_t low, high;
-	struct req *req;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	req = sp->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	/*
@@ -254,44 +246,44 @@ RES_WriteObj(struct sess *sp)
 	    cache_param->http_range_support &&
 	    req->obj->response == 200 &&
 	    http_GetHdr(req->http, H_Range, &r))
-		res_dorange(sp, r, &low, &high);
+		res_dorange(req, r, &low, &high);
 
-	WRW_Reserve(sp->wrk, &sp->fd, sp->req->vsl, sp->req->t_resp);
+	WRW_Reserve(req->sp->wrk, &req->sp->fd, req->vsl, req->t_resp);
 
 	/*
 	 * Send HTTP protocol header, unless interior ESI object
 	 */
 	if (!(req->res_mode & RES_ESI_CHILD))
-		sp->wrk->acct_tmp.hdrbytes +=
-		    http_Write(sp->wrk, req->resp, 1);
+		req->sp->wrk->acct_tmp.hdrbytes +=
+		    http_Write(req->sp->wrk, req->resp, 1);
 
 	if (!req->wantbody)
 		req->res_mode &= ~RES_CHUNKED;
 
 	if (req->res_mode & RES_CHUNKED)
-		WRW_Chunked(sp->wrk);
+		WRW_Chunked(req->sp->wrk);
 
 	if (!req->wantbody) {
 		/* This was a HEAD or conditional request */
 	} else if (req->obj->len == 0) {
 		/* Nothing to do here */
 	} else if (req->res_mode & RES_ESI) {
-		ESI_Deliver(sp);
+		ESI_Deliver(req);
 	} else if (req->res_mode & RES_ESI_CHILD && req->gzip_resp) {
-		ESI_DeliverChild(sp);
+		ESI_DeliverChild(req->sp);
 	} else if (req->res_mode & RES_ESI_CHILD &&
 	    !req->gzip_resp && req->obj->gziped) {
-		res_WriteGunzipObj(sp);
+		res_WriteGunzipObj(req->sp);
 	} else if (req->res_mode & RES_GUNZIP) {
-		res_WriteGunzipObj(sp);
+		res_WriteGunzipObj(req->sp);
 	} else {
-		res_WriteDirObj(sp, low, high);
+		res_WriteDirObj(req, low, high);
 	}
 
 	if (req->res_mode & RES_CHUNKED &&
 	    !(req->res_mode & RES_ESI_CHILD))
-		WRW_EndChunk(sp->wrk);
+		WRW_EndChunk(req->sp->wrk);
 
-	if (WRW_FlushRelease(sp->wrk) && sp->fd >= 0)
-		SES_Close(sp, "remote closed");
+	if (WRW_FlushRelease(req->sp->wrk) && req->sp->fd >= 0)
+		SES_Close(req->sp, "remote closed");
 }

@@ -55,14 +55,14 @@ struct vdi_round_robin {
 };
 
 static struct vbc *
-vdi_round_robin_getfd(const struct director *d, struct sess *sp)
+vdi_round_robin_getfd(const struct director *d, struct req *req)
 {
 	int i;
 	struct vdi_round_robin *vs;
 	struct director *backend;
 	struct vbc *vbe;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_ROUND_ROBIN_MAGIC);
 
@@ -77,9 +77,9 @@ vdi_round_robin_getfd(const struct director *d, struct sess *sp)
 		} else /* m_fallback */ {
 			backend = vs->hosts[i].backend;
 		}
-		if (!VDI_Healthy(backend, sp))
+		if (!VDI_Healthy(backend, req))
 			continue;
-		vbe = VDI_GetFd(backend, sp);
+		vbe = VDI_GetFd(backend, req);
 		if (vbe != NULL)
 			return (vbe);
 	}
@@ -88,7 +88,7 @@ vdi_round_robin_getfd(const struct director *d, struct sess *sp)
 }
 
 static unsigned
-vdi_round_robin_healthy(const struct director *d, const struct sess *sp)
+vdi_round_robin_healthy(const struct director *d, const struct req *req)
 {
 	struct vdi_round_robin *vs;
 	struct director *backend;
@@ -99,7 +99,7 @@ vdi_round_robin_healthy(const struct director *d, const struct sess *sp)
 
 	for (i = 0; i < vs->nhosts; i++) {
 		backend = vs->hosts[i].backend;
-		if (VDI_Healthy(backend, sp))
+		if (VDI_Healthy(backend, req))
 			return (1);
 	}
 	return (0);

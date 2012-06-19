@@ -74,7 +74,7 @@ PipeSession(struct sess *sp)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	wrk = sp->wrk;
 
-	vc = VDI_GetFd(NULL, sp);
+	vc = VDI_GetFd(NULL, sp->req);
 	if (vc == NULL)
 		return;
 	bo->vbc = vc;		/* For panic dumping */

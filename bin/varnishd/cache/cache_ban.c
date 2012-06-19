@@ -765,10 +765,10 @@ ban_check_object(struct object *o, struct vsl_log *vsl,
 }
 
 int
-BAN_CheckObject(struct object *o, const struct sess *sp)
+BAN_CheckObject(struct object *o, struct req *req)
 {
 
-	return (ban_check_object(o, sp->req->vsl, sp->req->http) > 0);
+	return (ban_check_object(o, req->vsl, req->http) > 0);
 }
 
 static struct ban *
