@@ -80,58 +80,6 @@ DOT acceptor -> first [style=bold,color=green]
 static unsigned xids;
 
 /*--------------------------------------------------------------------
- * A freshly accepted socket
- *
-DOT subgraph xcluster_first {
-DOT	first [
-DOT		shape=box
-DOT		label="cnt_first:\nrender\naddresses"
-DOT	]
-DOT }
-DOT first -> wait [style=bold,color=green]
- */
-
-static int
-cnt_first(struct sess *sp, struct worker *wrk)
-{
-	struct req *req;
-	char laddr[ADDR_BUFSIZE];
-	char lport[PORT_BUFSIZE];
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-
-	/* Allocate a request already now, so we can VSL to it */
-	AZ(sp->req);
-	req = SES_GetReq(sp);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	assert(req->sp == sp);
-
-	VTCP_name(&sp->sockaddr, sp->sockaddrlen,
-	    sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
-	if (cache_param->log_local_addr) {
-		AZ(getsockname(sp->fd, (void*)&sp->mysockaddr,
-		    &sp->mysockaddrlen));
-		VTCP_name(&sp->mysockaddr, sp->mysockaddrlen,
-		    laddr, sizeof laddr, lport, sizeof lport);
-		/* XXX: have no req yet */
-		VSLb(req->vsl, SLT_SessionOpen, "%s %s %s %s",
-		    sp->addr, sp->port, laddr, lport);
-	} else {
-		/* XXX: have no req yet */
-		VSLb(req->vsl, SLT_SessionOpen, "%s %s %s",
-		    sp->addr, sp->port, sp->mylsock->name);
-	}
-
-	wrk->acct_tmp.sess++;
-
-	sp->t_rx = sp->t_open;
-	sp->t_idle = sp->t_open;
-	sp->step = STP_WAIT;
-	return (0);
-}
-
-/*--------------------------------------------------------------------
  * WAIT
  * Collect the request from the client.
  *
@@ -155,17 +103,43 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 	struct pollfd pfd[1];
 	double now, when;
 	const char *why = NULL;
+	char laddr[ADDR_BUFSIZE];
+	char lport[PORT_BUFSIZE];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-
-	assert(!isnan(sp->t_rx));
 
 	if (req == NULL) {
 		req = SES_GetReq(sp);
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	}
 	assert(req->sp == sp);
+
+	if (!sp->init_done) {
+		VTCP_name(&sp->sockaddr, sp->sockaddrlen,
+		    sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
+		if (cache_param->log_local_addr) {
+			AZ(getsockname(sp->fd, (void*)&sp->mysockaddr,
+			    &sp->mysockaddrlen));
+			VTCP_name(&sp->mysockaddr, sp->mysockaddrlen,
+			    laddr, sizeof laddr, lport, sizeof lport);
+			/* XXX: have no req yet */
+			VSLb(req->vsl, SLT_SessionOpen, "%s %s %s %s",
+			    sp->addr, sp->port, laddr, lport);
+		} else {
+			/* XXX: have no req yet */
+			VSLb(req->vsl, SLT_SessionOpen, "%s %s %s",
+			    sp->addr, sp->port, sp->mylsock->name);
+		}
+
+		wrk->acct_tmp.sess++;
+
+		sp->t_rx = sp->t_open;
+		sp->t_idle = sp->t_open;
+		sp->init_done = 1;
+	}
+
+	assert(!isnan(sp->t_rx));
 
 	AZ(req->vcl);
 	AZ(req->obj);
@@ -1591,7 +1565,6 @@ CNT_Session(struct sess *sp)
 	 * Possible entrance states
 	 */
 	assert(
-	    sp->step == STP_FIRST ||
 	    sp->step == STP_WAIT ||
 	    sp->step == STP_LOOKUP ||
 	    sp->step == STP_RECV);
@@ -1604,7 +1577,7 @@ CNT_Session(struct sess *sp)
 	 * rather do the syscall in the worker thread.
 	 * On systems which return errors for ioctl, we close early
 	 */
-	if ((sp->step == STP_FIRST || sp->step == STP_START) &&
+	if ((sp->step == STP_WAIT || sp->step == STP_START) &&
 	    VTCP_blocking(sp->fd)) {
 		if (errno == ECONNRESET)
 			SES_Close(sp, "remote closed");

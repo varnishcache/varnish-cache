@@ -665,6 +665,7 @@ struct sess {
 	struct sockaddr_storage	sockaddr;
 	struct sockaddr_storage	mysockaddr;
 	struct listen_sock	*mylsock;
+	int			init_done;
 
 	/* formatted ascii client address */
 	char			addr[ADDR_BUFSIZE];
