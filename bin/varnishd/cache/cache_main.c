@@ -46,6 +46,7 @@ volatile struct params	*cache_param;
  */
 
 static pthread_key_t sp_key;
+static pthread_key_t req_key;
 
 void
 THR_SetSession(const struct sess *sp)
@@ -59,6 +60,20 @@ THR_GetSession(void)
 {
 
 	return (pthread_getspecific(sp_key));
+}
+
+void
+THR_SetRequest(const struct req *req)
+{
+
+	AZ(pthread_setspecific(req_key, req));
+}
+
+const struct req *
+THR_GetRequest(void)
+{
+
+	return (pthread_getspecific(req_key));
 }
 
 /*--------------------------------------------------------------------
@@ -126,6 +141,7 @@ child_main(void)
 	cache_param = heritage.param;
 
 	AZ(pthread_key_create(&sp_key, NULL));
+	AZ(pthread_key_create(&req_key, NULL));
 	AZ(pthread_key_create(&name_key, NULL));
 
 	THR_SetName("cache-main");

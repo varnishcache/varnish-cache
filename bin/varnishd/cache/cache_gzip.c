@@ -198,7 +198,7 @@ VGZ_ObufFull(const struct vgz *vg)
 }
 
 /*--------------------------------------------------------------------
- * Keep the outbuffer supplied with storage 
+ * Keep the outbuffer supplied with storage
  */
 
 int

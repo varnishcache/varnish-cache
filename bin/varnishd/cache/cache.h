@@ -854,7 +854,9 @@ uint32_t VXID_Get(struct vxid *v);
 extern volatile struct params * cache_param;
 void THR_SetName(const char *name);
 const char* THR_GetName(void);
-void THR_SetSession(const struct sess *sp);
+void THR_SetRequest(const struct req *);
+const struct req * THR_GetRequest(void);
+void THR_SetSession(const struct sess *);
 const struct sess * THR_GetSession(void);
 
 /* cache_lck.c */

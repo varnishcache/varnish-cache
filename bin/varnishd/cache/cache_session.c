@@ -307,6 +307,7 @@ SES_GetReq(struct sess *sp)
 	req->magic = REQ_MAGIC;
 	sp->req = req;
 	req->sp = sp;
+	THR_SetRequest(req);
 
 	e = (char*)req + sz;
 	p = (char*)(req + 1);
@@ -359,6 +360,7 @@ SES_ReleaseReq(struct sess *sp)
 	sp->req->sp = NULL;
 	MPL_Free(pp->mpl_req, sp->req);
 	sp->req = NULL;
+	THR_SetRequest(NULL);
 }
 
 /*--------------------------------------------------------------------

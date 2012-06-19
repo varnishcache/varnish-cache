@@ -228,14 +228,52 @@ pan_busyobj(const struct busyobj *bo)
 /*--------------------------------------------------------------------*/
 
 static void
+pan_req(const struct req *req)
+{
+	const char *hand;
+
+	VSB_printf(pan_vsp, "req = %p {\n", req);
+	VSB_printf(pan_vsp, "  sp = %p, xid = %u,\n", req->sp, req->xid);
+	hand = VCL_Return_Name(req->handling);
+	if (hand != NULL)
+		VSB_printf(pan_vsp, "  handling = %s,\n", hand);
+	else
+		VSB_printf(pan_vsp, "  handling = 0x%x,\n", req->handling);
+	if (req->err_code)
+		VSB_printf(pan_vsp,
+		    "  err_code = %d, err_reason = %s,\n", req->err_code,
+		    req->err_reason ? req->err_reason : "(null)");
+
+	VSB_printf(pan_vsp, "  restarts = %d, esi_level = %d\n",
+	    req->restarts, req->esi_level);
+
+	if (req->busyobj != NULL)
+		pan_busyobj(req->busyobj);
+
+	pan_ws(req->ws, 2);
+	pan_http("req", req->http, 2);
+	if (req->resp->ws != NULL)
+		pan_http("resp", req->resp, 4);
+
+	if (VALID_OBJ(req->vcl, VCL_CONF_MAGIC))
+		pan_vcl(req->vcl);
+
+	if (VALID_OBJ(req->obj, OBJECT_MAGIC))
+		pan_object(req->obj);
+
+	VSB_printf(pan_vsp, "},\n");
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 pan_sess(const struct sess *sp)
 {
-	const char *stp, *hand;
+	const char *stp;
 
 	VSB_printf(pan_vsp, "sp = %p {\n", sp);
-	VSB_printf(pan_vsp,
-	    "  fd = %d, id = %u, xid = %u,\n",
-	    sp->fd, sp->vsl_id & VSL_IDENTMASK, sp->req->xid);
+	VSB_printf(pan_vsp, "  fd = %d, id = %u,\n",
+	    sp->fd, sp->vsl_id & VSL_IDENTMASK);
 	VSB_printf(pan_vsp, "  client = %s %s,\n",
 	    sp->addr ? sp->addr : "?.?.?.?",
 	    sp->port ? sp->port : "?");
@@ -245,39 +283,13 @@ pan_sess(const struct sess *sp)
 #undef STEP
 		default: stp = NULL;
 	}
-	hand = VCL_Return_Name(sp->req->handling);
 	if (stp != NULL)
 		VSB_printf(pan_vsp, "  step = %s,\n", stp);
 	else
 		VSB_printf(pan_vsp, "  step = 0x%x,\n", sp->step);
-	if (hand != NULL)
-		VSB_printf(pan_vsp, "  handling = %s,\n", hand);
-	else
-		VSB_printf(pan_vsp, "  handling = 0x%x,\n", sp->req->handling);
-	if (sp->req->err_code)
-		VSB_printf(pan_vsp,
-		    "  err_code = %d, err_reason = %s,\n", sp->req->err_code,
-		    sp->req->err_reason ? sp->req->err_reason : "(null)");
-
-	VSB_printf(pan_vsp, "  restarts = %d, esi_level = %d\n",
-	    sp->req->restarts, sp->req->esi_level);
-
-	if (sp->req->busyobj != NULL)
-		pan_busyobj(sp->req->busyobj);
-
-	pan_ws(sp->req->ws, 2);
-	pan_http("req", sp->req->http, 2);
-	if (sp->req->resp->ws != NULL)
-		pan_http("resp", sp->req->resp, 4);
 
 	if (sp->wrk != NULL)
 		pan_wrk(sp->wrk);
-
-	if (VALID_OBJ(sp->req->vcl, VCL_CONF_MAGIC))
-		pan_vcl(sp->req->vcl);
-
-	if (VALID_OBJ(sp->req->obj, OBJECT_MAGIC))
-		pan_object(sp->req->obj);
 
 	VSB_printf(pan_vsp, "},\n");
 }
@@ -318,6 +330,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 {
 	const char *q;
 	const struct sess *sp;
+	const struct req *req;
 
 	AZ(pthread_mutex_lock(&panicstr_mtx)); /* Won't be released,
 						  we're going to die
@@ -361,6 +374,9 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 		sp = THR_GetSession();
 		if (sp != NULL)
 			pan_sess(sp);
+		req = THR_GetRequest();
+		if (req != NULL)
+			pan_req(req);
 	}
 	VSB_printf(pan_vsp, "\n");
 	VSB_bcat(pan_vsp, "", 1);	/* NUL termination */
