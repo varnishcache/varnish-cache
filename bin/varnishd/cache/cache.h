@@ -893,7 +893,7 @@ void MPL_Free(struct mempool *mpl, void *item);
 void PAN_Init(void);
 
 /* cache_pipe.c */
-void PipeSession(struct sess *sp);
+void PipeRequest(struct req *req);
 
 /* cache_pool.c */
 void Pool_Init(void);
@@ -980,7 +980,7 @@ char *VRT_String(struct ws *ws, const char *h, const char *p, va_list ap);
 char *VRT_StringList(char *d, unsigned dl, const char *p, va_list ap);
 
 void ESI_Deliver(struct req *);
-void ESI_DeliverChild(const struct sess *);
+void ESI_DeliverChild(struct req *);
 
 /* cache_vrt_vmod.c */
 void VMOD_Init(void);

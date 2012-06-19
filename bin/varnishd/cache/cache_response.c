@@ -154,30 +154,30 @@ RES_BuildHttp(struct req *req)
  */
 
 static void
-res_WriteGunzipObj(const struct sess *sp)
+res_WriteGunzipObj(struct req *req)
 {
 	struct storage *st;
 	unsigned u = 0;
 	struct vgz *vg;
 	int i;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	vg = VGZ_NewUngzip(sp->req->vsl, "U D -");
+	vg = VGZ_NewUngzip(req->vsl, "U D -");
 	AZ(VGZ_WrwInit(vg));
 
-	VTAILQ_FOREACH(st, &sp->req->obj->store, list) {
-		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	VTAILQ_FOREACH(st, &req->obj->store, list) {
+		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 		u += st->len;
 
-		i = VGZ_WrwGunzip(sp->wrk, vg, st->ptr, st->len);
+		i = VGZ_WrwGunzip(req->sp->wrk, vg, st->ptr, st->len);
 		/* XXX: error check */
 		(void)i;
 	}
-	VGZ_WrwFlush(sp->wrk, vg);
+	VGZ_WrwFlush(req->sp->wrk, vg);
 	(void)VGZ_Destroy(&vg);
-	assert(u == sp->req->obj->len);
+	assert(u == req->obj->len);
 }
 
 /*--------------------------------------------------------------------*/
@@ -270,12 +270,12 @@ RES_WriteObj(struct req *req)
 	} else if (req->res_mode & RES_ESI) {
 		ESI_Deliver(req);
 	} else if (req->res_mode & RES_ESI_CHILD && req->gzip_resp) {
-		ESI_DeliverChild(req->sp);
+		ESI_DeliverChild(req);
 	} else if (req->res_mode & RES_ESI_CHILD &&
 	    !req->gzip_resp && req->obj->gziped) {
-		res_WriteGunzipObj(req->sp);
+		res_WriteGunzipObj(req);
 	} else if (req->res_mode & RES_GUNZIP) {
-		res_WriteGunzipObj(req->sp);
+		res_WriteGunzipObj(req);
 	} else {
 		res_WriteDirObj(req, low, high);
 	}

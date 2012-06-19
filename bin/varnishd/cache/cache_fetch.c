@@ -48,7 +48,7 @@ static unsigned fetchfrag;
  * We want to issue the first error we encounter on fetching and
  * supress the rest.  This function does that.
  *
- * Other code is allowed to look at sp->req->busyobj->fetch_failed to bail out
+ * Other code is allowed to look at busyobj->fetch_failed to bail out
  *
  * For convenience, always return -1
  */

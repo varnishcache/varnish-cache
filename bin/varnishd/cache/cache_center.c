@@ -407,14 +407,14 @@ cnt_done(struct sess *sp, struct worker *wrk, struct req *req)
 		/* XXX: Add StatReq == StatSess */
 		/* XXX: Workaround for pipe */
 		if (sp->fd >= 0) {
-			VSLb(sp->req->vsl, SLT_Length, "%ju",
+			VSLb(req->vsl, SLT_Length, "%ju",
 			    (uintmax_t)req->req_bodybytes);
 		}
-		VSLb(sp->req->vsl, SLT_ReqEnd, "%u %.9f %.9f %.9f %.9f %.9f",
+		VSLb(req->vsl, SLT_ReqEnd, "%u %.9f %.9f %.9f %.9f %.9f",
 		    req->xid, req->t_req, sp->t_idle, dh, dp, da);
 	}
 	req->xid = 0;
-	VSL_Flush(sp->req->vsl, 0);
+	VSL_Flush(req->vsl, 0);
 
 	req->t_req = NAN;
 	req->t_resp = NAN;
@@ -532,7 +532,7 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
 
 	if (req->handling == VCL_RET_RESTART &&
 	    req->restarts <  cache_param->max_restarts) {
-		HSH_Drop(wrk, &sp->req->obj);
+		HSH_Drop(wrk, &req->obj);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		sp->step = STP_RESTART;
 		return (0);
@@ -628,7 +628,7 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 		 */
 		EXP_Clr(&bo->exp);
 		bo->exp.entered = W_TIM_real(wrk);
-		RFC2616_Ttl(bo, sp->req->xid);
+		RFC2616_Ttl(bo, req->xid);
 
 		/* pass from vclrecv{} has negative TTL */
 		if (req->objcore->objhead == NULL)
@@ -1077,7 +1077,7 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 	VRY_Prep(req);
 
 	AZ(req->objcore);
-	oc = HSH_Lookup(sp);
+	oc = HSH_Lookup(req);
 	if (oc == NULL) {
 		/*
 		 * We lost the session to a busy object, disembark the
@@ -1131,7 +1131,7 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 
 	if (oc->flags & OC_F_PASS) {
 		wrk->stats.cache_hitpass++;
-		VSLb(sp->req->vsl, SLT_HitPass, "%u", req->obj->xid);
+		VSLb(req->vsl, SLT_HitPass, "%u", req->obj->xid);
 		(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
 		AZ(req->objcore);
 		sp->step = STP_PASS;
@@ -1139,7 +1139,7 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 	}
 
 	wrk->stats.cache_hit++;
-	VSLb(sp->req->vsl, SLT_Hit, "%u", req->obj->xid);
+	VSLb(req->vsl, SLT_Hit, "%u", req->obj->xid);
 	sp->step = STP_HIT;
 	return (0);
 }
@@ -1323,7 +1323,7 @@ cnt_pipe(struct sess *sp, struct worker *wrk, struct req *req)
 		INCOMPL();
 	assert(req->handling == VCL_RET_PIPE);
 
-	PipeSession(sp);
+	PipeRequest(req);
 	assert(WRW_IsReleased(wrk));
 	http_Teardown(bo->bereq);
 	VBO_DerefBusyObj(wrk, &req->busyobj);
@@ -1503,7 +1503,7 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 
 	/* Assign XID and log */
 	req->xid = ++xids;				/* XXX not locked */
-	VSLb(sp->req->vsl, SLT_ReqStart, "%s %s %u",
+	VSLb(req->vsl, SLT_ReqStart, "%s %s %u",
 	    sp->addr, sp->port,  req->xid);
 
 	/* Borrow VCL reference from worker thread */

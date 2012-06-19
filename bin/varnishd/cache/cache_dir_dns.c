@@ -135,8 +135,10 @@ vdi_dns_comp_addrinfo(const struct director *dir,
  * healthy ones.
  */
 static struct director *
-vdi_dns_pick_host(const struct sess *sp, struct vdi_dns_hostgroup *group) {
+vdi_dns_pick_host(const struct req *req, struct vdi_dns_hostgroup *group)
+{
 	int initial, i, nhosts, current;
+
 	if (group->nhosts == 0)
 		return (NULL); // In case of error.
 	if (group->next_host >= group->nhosts)
@@ -150,7 +152,7 @@ vdi_dns_pick_host(const struct sess *sp, struct vdi_dns_hostgroup *group) {
 			current = i + initial - nhosts;
 		else
 			current = i + initial;
-		if (VDI_Healthy(group->hosts[current], sp->req)) {
+		if (VDI_Healthy(group->hosts[current], req)) {
 			group->next_host = current+1;
 			return (group->hosts[current]);
 		}
@@ -192,24 +194,22 @@ vdi_dns_groupmatch(const struct vdi_dns_hostgroup *group, const char *hostname)
  * and freed.
  */
 static int
-vdi_dns_cache_has(const struct sess *sp,
-		  struct vdi_dns *vs,
-		  const char *hostname,
-		  struct director **backend,
-		  int rwlock)
+vdi_dns_cache_has(const struct req *req, struct vdi_dns *vs,
+    const char *hostname, struct director **backend, int rwlock)
 {
 	struct director *ret;
 	struct vdi_dns_hostgroup *hostgr;
 	struct vdi_dns_hostgroup *hostgr2;
+
 	VTAILQ_FOREACH_SAFE(hostgr, &vs->cachelist, list, hostgr2) {
 		CHECK_OBJ_NOTNULL(hostgr, VDI_DNSDIR_MAGIC);
-		if (hostgr->ttl <= sp->req->t_req) {
+		if (hostgr->ttl <= req->t_req) {
 			if (rwlock)
 				vdi_dns_pop_cache(vs, hostgr);
 			return (0);
 		}
 		if (vdi_dns_groupmatch(hostgr, hostname)) {
-			ret = (vdi_dns_pick_host(sp, hostgr));
+			ret = (vdi_dns_pick_host(req, hostgr));
 			*backend = ret;
 			if (*backend != NULL)
 				CHECK_OBJ_NOTNULL(*backend, DIRECTOR_MAGIC);
@@ -223,17 +223,17 @@ vdi_dns_cache_has(const struct sess *sp,
  * (Sorry for the list_add/_add confusion...)
  */
 static void
-vdi_dns_cache_list_add(const struct sess *sp,
-		       struct vdi_dns *vs,
-		       struct vdi_dns_hostgroup *new)
+vdi_dns_cache_list_add(const struct req *req, struct vdi_dns *vs,
+    struct vdi_dns_hostgroup *new)
 {
+
 	if (vs->ncachelist >= VDI_DNS_MAX_CACHE) {
 		VSC_C_main->dir_dns_cache_full++;
 		vdi_dns_pop_cache(vs, NULL);
 	}
 	CHECK_OBJ_NOTNULL(new, VDI_DNSDIR_MAGIC);
 	assert(new->hostname != 0);
-	new->ttl = sp->req->t_req + vs->ttl;
+	new->ttl = req->t_req + vs->ttl;
 	VTAILQ_INSERT_HEAD(&vs->cachelist, new, list);
 	vs->ncachelist++;
 }
@@ -243,10 +243,8 @@ vdi_dns_cache_list_add(const struct sess *sp,
  * cache_has() afterwards to do multiple dns lookups in parallel...
  */
 static int
-vdi_dns_cache_add(const struct sess *sp,
-		  struct vdi_dns *vs,
-		  const char *hostname,
-		  struct director **backend)
+vdi_dns_cache_add(const struct req *req, struct vdi_dns *vs,
+    const char *hostname, struct director **backend)
 {
 	int error, i, host = 0;
 	struct addrinfo *res0, *res, hint;
@@ -258,7 +256,7 @@ vdi_dns_cache_add(const struct sess *sp,
 	 * unique names or something equally troublesome).
 	 */
 
-	if (vdi_dns_cache_has(sp, vs, hostname, backend, 1))
+	if (vdi_dns_cache_has(req, vs, hostname, backend, 1))
 		return (1);
 
 	memset(&hint, 0, sizeof hint);
@@ -273,7 +271,7 @@ vdi_dns_cache_add(const struct sess *sp,
 	error = getaddrinfo(hostname, "80", &hint, &res0);
 	VSC_C_main->dir_dns_lookups++;
 	if (error) {
-		vdi_dns_cache_list_add(sp, vs, new);
+		vdi_dns_cache_list_add(req, vs, new);
 		VSC_C_main->dir_dns_failed++;
 		return (0);
 	}
@@ -297,8 +295,8 @@ vdi_dns_cache_add(const struct sess *sp,
 	freeaddrinfo(res0);
 
 	new->nhosts = host;
-	vdi_dns_cache_list_add(sp, vs, new);
-	*backend = vdi_dns_pick_host(sp, new);
+	vdi_dns_cache_list_add(req, vs, new);
+	*backend = vdi_dns_pick_host(req, new);
 	return (1);
 }
 
@@ -308,15 +306,14 @@ vdi_dns_cache_add(const struct sess *sp,
  * Returns a backend or NULL.
  */
 static struct director *
-vdi_dns_walk_cache(const struct sess *sp,
-		   struct vdi_dns *vs,
-		   const char *hostname)
+vdi_dns_walk_cache(const struct req *req, struct vdi_dns *vs,
+    const char *hostname)
 {
 	struct director *backend = NULL;
 	int ret;
 
 	AZ(pthread_rwlock_rdlock(&vs->rwlock));
-	ret = vdi_dns_cache_has(sp, vs, hostname, &backend, 0);
+	ret = vdi_dns_cache_has(req, vs, hostname, &backend, 0);
 	AZ(pthread_rwlock_unlock(&vs->rwlock));
 	if (!ret) {
 		/*
@@ -325,7 +322,7 @@ vdi_dns_walk_cache(const struct sess *sp,
 		 * XXX: Should 'ret' be checked for that ?
 		 */
 		AZ(pthread_rwlock_wrlock(&vs->rwlock));
-		ret = vdi_dns_cache_add(sp, vs, hostname, &backend);
+		ret = vdi_dns_cache_add(req, vs, hostname, &backend);
 		AZ(pthread_rwlock_unlock(&vs->rwlock));
 	} else
 		VSC_C_main->dir_dns_hit++;
@@ -339,7 +336,7 @@ vdi_dns_walk_cache(const struct sess *sp,
 /* Parses the Host:-header and heads out to find a backend.
  */
 static struct director *
-vdi_dns_find_backend(const struct sess *sp, struct vdi_dns *vs)
+vdi_dns_find_backend(const struct req *req, struct vdi_dns *vs)
 {
 	struct director *ret;
 	struct http *hp;
@@ -349,10 +346,10 @@ vdi_dns_find_backend(const struct sess *sp, struct vdi_dns *vs)
 	/* bereq is only present after recv et. al, otherwise use req (ie:
 	 * use req for health checks in vcl_recv and such).
 	 */
-	if (sp->req->busyobj != NULL && sp->req->busyobj->bereq)
-		hp = sp->req->busyobj->bereq;
+	if (req->busyobj != NULL && req->busyobj->bereq)
+		hp = req->busyobj->bereq;
 	else
-		hp = sp->req->http;
+		hp = req->http;
 
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
@@ -367,7 +364,7 @@ vdi_dns_find_backend(const struct sess *sp, struct vdi_dns *vs)
 	bprintf(hostname, "%.*s%s", (int)(q - p), p,
 	    vs->suffix ? vs->suffix : "");
 
-	ret = vdi_dns_walk_cache(sp, vs, hostname);
+	ret = vdi_dns_walk_cache(req, vs, hostname);
 	return (ret);
 }
 
@@ -382,7 +379,7 @@ vdi_dns_getfd(const struct director *director, struct req *req)
 	CHECK_OBJ_NOTNULL(director, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, director->priv, VDI_DNS_MAGIC);
 
-	dir = vdi_dns_find_backend(req->sp, vs);
+	dir = vdi_dns_find_backend(req, vs);
 	if (!dir || !VDI_Healthy(dir, req))
 		return (NULL);
 
@@ -408,7 +405,7 @@ vdi_dns_healthy(const struct director *dir, const struct req *req)
 	CHECK_OBJ_NOTNULL(req->director, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, req->director->priv, VDI_DNS_MAGIC);
 
-	dir = vdi_dns_find_backend(req->sp, vs);
+	dir = vdi_dns_find_backend(req, vs);
 
 	if (dir)
 		return (1);

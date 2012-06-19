@@ -288,22 +288,19 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc)
  */
 
 struct objcore *
-HSH_Lookup(struct sess *sp)
+HSH_Lookup(struct req *req)
 {
 	struct worker *wrk;
 	struct objhead *oh;
 	struct objcore *oc;
 	struct objcore *grace_oc;
 	struct object *o;
-	struct req *req;
 	double grace_ttl;
 	int busy_found;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	wrk = sp->wrk;
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	req = sp->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	wrk = req->sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req->http, HTTP_MAGIC);
 	AN(req->director);
 	AN(hash);
@@ -421,19 +418,20 @@ HSH_Lookup(struct sess *sp)
 				oh->waitinglist = wrk->nwaitinglist;
 				wrk->nwaitinglist = NULL;
 			}
-			VTAILQ_INSERT_TAIL(&oh->waitinglist->list, sp, list);
+			VTAILQ_INSERT_TAIL(&oh->waitinglist->list,
+			    req->sp, list);
 		}
 		if (cache_param->diag_bitmap & 0x20)
 			VSLb(req->vsl, SLT_Debug,
 				"on waiting list <%p>", oh);
-		SES_Charge(sp);
+		SES_Charge(req->sp);
 		/*
 		 * The objhead reference transfers to the sess, we get it
 		 * back when the sess comes off the waiting list and
 		 * calls us again
 		 */
 		req->hash_objhead = oh;
-		sp->wrk = NULL;
+		req->sp->wrk = NULL;
 		Lck_Unlock(&oh->mtx);
 		return (NULL);
 	}
@@ -450,7 +448,7 @@ HSH_Lookup(struct sess *sp)
 
 	AZ(req->busyobj);
 	req->busyobj = VBO_GetBusyObj(wrk);
-	req->busyobj->vsl->wid = sp->vsl_id;
+	req->busyobj->vsl->wid = req->sp->vsl_id;
 	req->busyobj->refcount = 2;	/* One for req, one for FetchBody */
 
 	VRY_Validate(req->vary_b);

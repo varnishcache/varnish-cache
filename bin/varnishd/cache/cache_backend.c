@@ -87,10 +87,10 @@ VBE_ReleaseConn(struct vbc *vc)
 	MPL_Free(vbcpool, vc);
 }
 
-#define FIND_TMO(tmx, dst, sp, be)					\
+#define FIND_TMO(tmx, dst, req, be)					\
 	do {								\
-		CHECK_OBJ_NOTNULL(sp->req->busyobj, BUSYOBJ_MAGIC);	\
-		dst = sp->req->busyobj->tmx;				\
+		CHECK_OBJ_NOTNULL(req->busyobj, BUSYOBJ_MAGIC);		\
+		dst = req->busyobj->tmx;				\
 		if (dst == 0.0)						\
 			dst = be->tmx;					\
 		if (dst == 0.0)						\
@@ -107,20 +107,20 @@ VBE_ReleaseConn(struct vbc *vc)
  */
 
 static int
-vbe_TryConnect(const struct sess *sp, int pf, const struct sockaddr_storage *sa,
+vbe_TryConnect(const struct req *req, int pf, const struct sockaddr_storage *sa,
     socklen_t salen, const struct vdi_simple *vs)
 {
 	int s, i, tmo;
 	double tmod;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
 
 	s = socket(pf, SOCK_STREAM, 0);
 	if (s < 0)
 		return (s);
 
-	FIND_TMO(connect_timeout, tmod, sp, vs->vrt);
+	FIND_TMO(connect_timeout, tmod, req, vs->vrt);
 
 	tmo = (int)(tmod * 1000.0);
 
@@ -137,7 +137,7 @@ vbe_TryConnect(const struct sess *sp, int pf, const struct sockaddr_storage *sa,
 /*--------------------------------------------------------------------*/
 
 static void
-bes_conn_try(const struct sess *sp, struct vbc *vc, const struct vdi_simple *vs)
+bes_conn_try(struct req *req, struct vbc *vc, const struct vdi_simple *vs)
 {
 	int s;
 	struct backend *bp = vs->backend;
@@ -157,17 +157,17 @@ bes_conn_try(const struct sess *sp, struct vbc *vc, const struct vdi_simple *vs)
 	/* release lock during stuff that can take a long time */
 
 	if (cache_param->prefer_ipv6 && bp->ipv6 != NULL) {
-		s = vbe_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len, vs);
+		s = vbe_TryConnect(req, PF_INET6, bp->ipv6, bp->ipv6len, vs);
 		vc->addr = bp->ipv6;
 		vc->addrlen = bp->ipv6len;
 	}
 	if (s == -1 && bp->ipv4 != NULL) {
-		s = vbe_TryConnect(sp, PF_INET, bp->ipv4, bp->ipv4len, vs);
+		s = vbe_TryConnect(req, PF_INET, bp->ipv4, bp->ipv4len, vs);
 		vc->addr = bp->ipv4;
 		vc->addrlen = bp->ipv4len;
 	}
 	if (s == -1 && !cache_param->prefer_ipv6 && bp->ipv6 != NULL) {
-		s = vbe_TryConnect(sp, PF_INET6, bp->ipv6, bp->ipv6len, vs);
+		s = vbe_TryConnect(req, PF_INET6, bp->ipv6, bp->ipv6len, vs);
 		vc->addr = bp->ipv6;
 		vc->addrlen = bp->ipv6len;
 	}
@@ -183,7 +183,7 @@ bes_conn_try(const struct sess *sp, struct vbc *vc, const struct vdi_simple *vs)
 	} else {
 		vc->vsl_id = s | VSL_BACKENDMARKER;
 		VTCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-		VSLb(sp->req->vsl, SLT_BackendOpen, "%d %s %s %s ",
+		VSLb(req->vsl, SLT_BackendOpen, "%d %s %s %s ",
 		    vc->fd, vs->backend->display_name, abuf1, pbuf1);
 	}
 
@@ -226,7 +226,7 @@ vbe_NewConn(void)
 
 /*--------------------------------------------------------------------
  * It evaluates if a backend is healthy _for_a_specific_object_.
- * That means that it relies on sp->req->objcore->objhead. This is mainly for
+ * That means that it relies on req->objcore->objhead. This is mainly for
  * saint-mode, but also takes backend->healthy into account. If
  * cache_param->saintmode_threshold is 0, this is basically just a test of
  * backend->healthy.
@@ -236,7 +236,7 @@ vbe_NewConn(void)
  */
 
 static unsigned int
-vbe_Healthy(const struct vdi_simple *vs, const struct sess *sp)
+vbe_Healthy(const struct vdi_simple *vs, const struct req *req)
 {
 	struct trouble *tr;
 	struct trouble *tr2;
@@ -246,7 +246,7 @@ vbe_Healthy(const struct vdi_simple *vs, const struct sess *sp)
 	struct backend *backend;
 	double now;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
 	backend = vs->backend;
 	CHECK_OBJ_NOTNULL(backend, BACKEND_MAGIC);
@@ -271,7 +271,7 @@ vbe_Healthy(const struct vdi_simple *vs, const struct sess *sp)
 	if (threshold == 0 || VTAILQ_EMPTY(&backend->troublelist))
 		return (1);
 
-	now = sp->req->t_req;
+	now = req->t_req;
 
 	old = NULL;
 	retval = 1;
@@ -286,7 +286,7 @@ vbe_Healthy(const struct vdi_simple *vs, const struct sess *sp)
 			break;
 		}
 
-		if (!memcmp(tr->digest, sp->req->digest, sizeof tr->digest)) {
+		if (!memcmp(tr->digest, req->digest, sizeof tr->digest)) {
 			retval = 0;
 			break;
 		}
@@ -313,12 +313,12 @@ vbe_Healthy(const struct vdi_simple *vs, const struct sess *sp)
  */
 
 static struct vbc *
-vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
+vbe_GetVbe(struct req *req, struct vdi_simple *vs)
 {
 	struct vbc *vc;
 	struct backend *bp;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
 	bp = vs->backend;
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
@@ -340,20 +340,20 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 		if (vbe_CheckFd(vc->fd)) {
 			/* XXX locking of stats */
 			VSC_C_main->backend_reuse += 1;
-			VSLb(sp->req->vsl, SLT_Backend, "%d %s %s",
-			    vc->fd, sp->req->director->vcl_name,
+			VSLb(req->vsl, SLT_Backend, "%d %s %s",
+			    vc->fd, req->director->vcl_name,
 			    bp->display_name);
 			vc->vdis = vs;
 			vc->recycled = 1;
 			return (vc);
 		}
 		VSC_C_main->backend_toolate++;
-		VSLb(sp->req->vsl, SLT_BackendClose, "%d %s toolate",
+		VSLb(req->vsl, SLT_BackendClose, "%d %s toolate",
 		    vc->fd, bp->display_name);
 
 		/* Checkpoint log to flush all info related to this connection
 		   before the OS reuses the FD */
-		VSL_Flush(sp->req->vsl, 0);
+		VSL_Flush(req->vsl, 0);
 
 		VTCP_close(&vc->fd);
 		VBE_DropRefConn(bp);
@@ -361,7 +361,7 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 		VBE_ReleaseConn(vc);
 	}
 
-	if (!vbe_Healthy(vs, sp)) {
+	if (!vbe_Healthy(vs, req)) {
 		VSC_C_main->backend_unhealthy++;
 		return (NULL);
 	}
@@ -375,7 +375,7 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 	vc = vbe_NewConn();
 	assert(vc->fd == -1);
 	AZ(vc->backend);
-	bes_conn_try(sp, vc, vs);
+	bes_conn_try(req, vc, vs);
 	if (vc->fd < 0) {
 		VBE_ReleaseConn(vc);
 		VSC_C_main->backend_fail++;
@@ -383,8 +383,8 @@ vbe_GetVbe(const struct sess *sp, struct vdi_simple *vs)
 	}
 	vc->backend = bp;
 	VSC_C_main->backend_conn++;
-	VSLb(sp->req->vsl, SLT_Backend, "%d %s %s",
-	    vc->fd, sp->req->director->vcl_name, bp->display_name);
+	VSLb(req->vsl, SLT_Backend, "%d %s %s",
+	    vc->fd, req->director->vcl_name, bp->display_name);
 	vc->vdis = vs;
 	return (vc);
 }
@@ -460,12 +460,12 @@ vdi_simple_getfd(const struct director *d, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
-	vc = vbe_GetVbe(req->sp, vs);
+	vc = vbe_GetVbe(req, vs);
 	if (vc != NULL) {
 		FIND_TMO(first_byte_timeout,
-		    vc->first_byte_timeout, req->sp, vs->vrt);
+		    vc->first_byte_timeout, req, vs->vrt);
 		FIND_TMO(between_bytes_timeout,
-		    vc->between_bytes_timeout, req->sp, vs->vrt);
+		    vc->between_bytes_timeout, req, vs->vrt);
 	}
 	return (vc);
 }
@@ -477,7 +477,7 @@ vdi_simple_healthy(const struct director *d, const struct req *req)
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
-	return (vbe_Healthy(vs, req->sp));
+	return (vbe_Healthy(vs, req));
 }
 
 static void
