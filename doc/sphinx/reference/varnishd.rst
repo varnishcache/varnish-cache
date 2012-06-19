@@ -93,7 +93,8 @@ OPTIONS
             Use the specified storage backend.  See Storage Types for a list of supported storage
             types.  This option can be used multiple times to specify multiple storage files. You
  	    can name the different backends. Varnish will then reference that backend with the 
-	    given name in logs, statistics, etc.
+	    given name in logs, statistics, etc. You will also be able to ask Varnish to use
+            these named backends specifically through VCL by setting backend.storage in vcl_fetch.
 
 -T address[:port]
             Offer a management interface on the specified address and port.  See Management
