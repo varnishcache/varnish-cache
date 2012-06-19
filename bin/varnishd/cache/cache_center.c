@@ -110,16 +110,10 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 	assert(!isnan(sp->t_rx));
 
 	if (req == NULL) {
-		SES_GetReq(sp);
-		req = sp->req;
+		req = SES_GetReq(sp);
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-		assert(req->sp == sp);
-		HTC_Init(req->htc, req->ws, sp->fd, sp->req->vsl,
-		    cache_param->http_req_size,
-		    cache_param->http_req_hdr_len);
-	} else {
-		assert(req->sp == sp);
 	}
+	assert(req->sp == sp);
 
 	AZ(req->vcl);
 	AZ(req->obj);
@@ -945,13 +939,9 @@ cnt_first(struct sess *sp, struct worker *wrk)
 
 	/* Allocate a request already now, so we can VSL to it */
 	AZ(sp->req);
-	SES_GetReq(sp);
-	req = sp->req;
+	req = SES_GetReq(sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	assert(req->sp == sp);
-	HTC_Init(req->htc, req->ws, sp->fd, req->vsl,
-	    cache_param->http_req_size,
-	    cache_param->http_req_hdr_len);
 
 	VTCP_name(&sp->sockaddr, sp->sockaddrlen,
 	    sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);

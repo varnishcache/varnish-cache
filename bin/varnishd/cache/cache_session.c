@@ -287,7 +287,7 @@ SES_Delete(struct sess *sp, const char *reason, double now)
  * Alloc/Free sp->req
  */
 
-void
+struct req *
 SES_GetReq(struct sess *sp)
 {
 	struct sesspool *pp;
@@ -341,6 +341,12 @@ SES_GetReq(struct sess *sp)
 	assert(p < e);
 
 	WS_Init(req->ws, "req", p, e - p);
+
+	HTC_Init(req->htc, req->ws, sp->fd, req->vsl,
+	    cache_param->http_req_size,
+	    cache_param->http_req_hdr_len);
+
+	return (req);
 }
 
 void
