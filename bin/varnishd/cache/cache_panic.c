@@ -278,9 +278,9 @@ pan_sess(const struct sess *sp)
 	    sp->addr ? sp->addr : "?.?.?.?",
 	    sp->port ? sp->port : "?");
 	switch (sp->step) {
-#define STEP(l, u, arg) case STP_##u: stp = "STP_" #u; break;
+#define SESS_STEP(l, u, arg) case STP_##u: stp = "STP_" #u; break;
 #include "tbl/steps.h"
-#undef STEP
+#undef SESS_STEP
 		default: stp = NULL;
 	}
 	if (stp != NULL)

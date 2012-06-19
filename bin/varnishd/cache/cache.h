@@ -123,9 +123,9 @@ typedef struct {
 /*--------------------------------------------------------------------*/
 
 enum step {
-#define STEP(l, u, arg)	STP_##u,
+#define SESS_STEP(l, u, arg)	STP_##u,
 #include "tbl/steps.h"
-#undef STEP
+#undef SESS_STEP
 };
 
 /*--------------------------------------------------------------------*/

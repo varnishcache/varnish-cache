@@ -1644,14 +1644,14 @@ CNT_Session(struct sess *sp)
 		}
 
 		switch (sp->step) {
-#define STEP(l,u,arg) \
+#define SESS_STEP(l,u,arg) \
 		    case STP_##u: \
 			if (cache_param->diag_bitmap & 0x01) \
 				cnt_diag(sp, #u); \
 			done = cnt_##l arg; \
 		        break;
 #include "tbl/steps.h"
-#undef STEP
+#undef SESS_STEP
 		default:
 			WRONG("State engine misfire");
 		}
