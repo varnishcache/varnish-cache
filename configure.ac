@@ -12,7 +12,7 @@ OCFLAGS="$CFLAGS"
 AC_CANONICAL_SYSTEM
 AC_LANG(C)
 
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([foreign color-tests parallel-tests])
 AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
 
@@ -525,6 +525,10 @@ else
 fi
 
 AC_DEFINE_UNQUOTED([VCC_CC],"$VCC_CC",[C compiler command line for VCL code])
+
+# Stupid automake needs this
+VTC_TESTS="$(cd $srcdir/bin/varnishtest && echo tests/*.vtc)"
+AC_SUBST(VTC_TESTS)
 
 # Generate output
 AC_CONFIG_FILES([
