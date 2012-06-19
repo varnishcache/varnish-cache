@@ -562,6 +562,7 @@ struct req {
 	uint8_t			hash_always_miss;
 
 	struct sess		*sp;
+	VTAILQ_ENTRY(req)	w_list;
 
 	/* The busy objhead we sleep on */
 	struct objhead		*hash_objhead;

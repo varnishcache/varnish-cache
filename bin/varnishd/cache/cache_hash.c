@@ -419,7 +419,7 @@ HSH_Lookup(struct req *req)
 				wrk->nwaitinglist = NULL;
 			}
 			VTAILQ_INSERT_TAIL(&oh->waitinglist->list,
-			    req->sp, list);
+			    req, w_list);
 		}
 		if (cache_param->diag_bitmap & 0x20)
 			VSLb(req->vsl, SLT_Debug,
@@ -469,6 +469,7 @@ static void
 hsh_rush(struct dstat *ds, struct objhead *oh)
 {
 	unsigned u;
+	struct req *req;
 	struct sess *sp;
 	struct waitinglist *wl;
 
@@ -477,12 +478,14 @@ hsh_rush(struct dstat *ds, struct objhead *oh)
 	wl = oh->waitinglist;
 	CHECK_OBJ_NOTNULL(wl, WAITINGLIST_MAGIC);
 	for (u = 0; u < cache_param->rush_exponent; u++) {
-		sp = VTAILQ_FIRST(&wl->list);
-		if (sp == NULL)
+		req = VTAILQ_FIRST(&wl->list);
+		if (req == NULL)
 			break;
+		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+		sp = req->sp;
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 		AZ(sp->wrk);
-		VTAILQ_REMOVE(&wl->list, sp, list);
+		VTAILQ_REMOVE(&wl->list, req, w_list);
 		DSL(0x20, SLT_Debug, sp->vsl_id, "off waiting list");
 		if (SES_Schedule(sp)) {
 			/*

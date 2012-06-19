@@ -68,7 +68,7 @@ struct objcore *HSH_NewObjCore(struct worker *wrk);
 struct waitinglist {
 	unsigned		magic;
 #define WAITINGLIST_MAGIC	0x063a477a
-	VTAILQ_HEAD(, sess)	list;
+	VTAILQ_HEAD(, req)	list;
 };
 
 struct objhead {
