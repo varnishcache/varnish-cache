@@ -122,10 +122,16 @@ typedef struct {
 
 /*--------------------------------------------------------------------*/
 
-enum step {
-#define SESS_STEP(l, u, arg)	STP_##u,
+enum sess_step {
+#define SESS_STEP(l, u)		S_STP_##u,
 #include "tbl/steps.h"
 #undef SESS_STEP
+};
+
+enum req_step {
+#define REQ_STEP(l, u, arg)	R_STP_##u,
+#include "tbl/steps.h"
+#undef REQ_STEP
 };
 
 /*--------------------------------------------------------------------*/
@@ -562,6 +568,7 @@ struct req {
 	uint8_t			hash_always_miss;
 
 	struct sess		*sp;
+	enum req_step		req_step;
 	VTAILQ_ENTRY(req)	w_list;
 
 	/* The busy objhead we sleep on */
@@ -643,7 +650,7 @@ struct sess {
 	unsigned		magic;
 #define SESS_MAGIC		0x2c2f9c5a
 
-	enum step		step;
+	enum sess_step		sess_step;
 	int			fd;
 	unsigned		vsl_id;
 	uint32_t		vxid;

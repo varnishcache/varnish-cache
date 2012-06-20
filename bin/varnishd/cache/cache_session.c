@@ -159,7 +159,7 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 		VCA_FailSess(wrk);
 	} else {
 		VCA_SetupSess(wrk, sp);
-		sp->step = STP_WAIT;
+		sp->sess_step = S_STP_NEWREQ;
 		ses_pool_task(wrk, sp);
 	}
 }
@@ -207,7 +207,7 @@ void
 SES_Handle(struct sess *sp, double now)
 {
 
-	sp->step = STP_WAIT;
+	sp->sess_step = S_STP_NEWREQ;
 	sp->t_rx = now;
 	(void)SES_Schedule(sp);
 }

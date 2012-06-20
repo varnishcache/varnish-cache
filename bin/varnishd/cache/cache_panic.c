@@ -230,10 +230,24 @@ pan_busyobj(const struct busyobj *bo)
 static void
 pan_req(const struct req *req)
 {
-	const char *hand;
+	const char *hand, *stp;
 
 	VSB_printf(pan_vsp, "req = %p {\n", req);
-	VSB_printf(pan_vsp, "  sp = %p, xid = %u,\n", req->sp, req->xid);
+
+	VSB_printf(pan_vsp, "  sp = %p, xid = %u,",
+	    req->sp, req->xid);
+
+	switch (req->req_step) {
+#define REQ_STEP(l, u, arg) case R_STP_##u: stp = "R_STP_" #u; break;
+#include "tbl/steps.h"
+#undef REQ_STEP
+		default: stp = NULL;
+	}
+	if (stp != NULL)
+		VSB_printf(pan_vsp, "  step = %s,\n", stp);
+	else
+		VSB_printf(pan_vsp, "  step = 0x%x,\n", req->req_step);
+
 	hand = VCL_Return_Name(req->handling);
 	if (hand != NULL)
 		VSB_printf(pan_vsp, "  handling = %s,\n", hand);
@@ -277,8 +291,8 @@ pan_sess(const struct sess *sp)
 	VSB_printf(pan_vsp, "  client = %s %s,\n",
 	    sp->addr ? sp->addr : "?.?.?.?",
 	    sp->port ? sp->port : "?");
-	switch (sp->step) {
-#define SESS_STEP(l, u, arg) case STP_##u: stp = "STP_" #u; break;
+	switch (sp->sess_step) {
+#define SESS_STEP(l, u) case S_STP_##u: stp = "S_STP_" #u; break;
 #include "tbl/steps.h"
 #undef SESS_STEP
 		default: stp = NULL;
@@ -286,7 +300,7 @@ pan_sess(const struct sess *sp)
 	if (stp != NULL)
 		VSB_printf(pan_vsp, "  step = %s,\n", stp);
 	else
-		VSB_printf(pan_vsp, "  step = 0x%x,\n", sp->step);
+		VSB_printf(pan_vsp, "  step = 0x%x,\n", sp->sess_step);
 
 	if (sp->wrk != NULL)
 		pan_wrk(sp->wrk);

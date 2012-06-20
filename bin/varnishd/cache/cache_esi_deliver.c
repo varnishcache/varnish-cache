@@ -82,7 +82,7 @@ ved_include(struct req *req, const char *src, const char *host)
 	 * XXX: make sure we don't trip up the check in vcl_recv.
 	 */
 	req->director = NULL;
-	req->sp->step = STP_RECV;
+	req->req_step = R_STP_RECV;
 	http_ForceGet(req->http);
 
 	/* Don't do conditionals */

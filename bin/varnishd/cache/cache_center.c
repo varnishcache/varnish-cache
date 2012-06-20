@@ -341,7 +341,7 @@ CNT_Session(struct sess *sp)
 	 * rather do the syscall in the worker thread.
 	 * On systems which return errors for ioctl, we close early
 	 */
-	if (sp->step == STP_WAIT && VTCP_blocking(sp->fd)) {
+	if (sp->sess_step == S_STP_NEWREQ && VTCP_blocking(sp->fd)) {
 		if (errno == ECONNRESET)
 			SES_Close(sp, "remote closed");
 		else
@@ -356,11 +356,12 @@ CNT_Session(struct sess *sp)
 		 * Possible entrance states
 		 */
 		assert(
-		    sp->step == STP_WAIT ||
-		    sp->step == STP_LOOKUP ||
-		    sp->step == STP_START);
+		    sp->sess_step == S_STP_NEWREQ ||
+		    (sp->req != NULL &&
+		    (sp->req->req_step == R_STP_LOOKUP ||
+		    sp->req->req_step == R_STP_START)));
 
-		if (sp->step != STP_WAIT) {
+		if (sp->sess_step == S_STP_WORKING) {
 			done = CNT_Request(sp->req);
 			if (done == 2)
 				return;
@@ -370,21 +371,24 @@ CNT_Session(struct sess *sp)
 			case SESS_DONE_RET_GONE:
 				return;
 			case SESS_DONE_RET_WAIT:
-				sp->step = STP_WAIT;
+				sp->sess_step = S_STP_NEWREQ;
 				break;
 			case SESS_DONE_RET_START:
-				sp->step = STP_START;
+				sp->sess_step = S_STP_WORKING;
+				sp->req->req_step = R_STP_START;
 				break;
 			default:
 				WRONG("Illegal enum cnt_sess_done_ret");
 			}
 		}
 
-		if (sp->step == STP_WAIT) {
+		if (sp->sess_step == S_STP_NEWREQ) {
 			done = cnt_wait(sp, wrk, sp->req);
-			if (done)
+			if (done) {
 				return;
-			sp->step = STP_START;
+			}
+			sp->sess_step = S_STP_WORKING;
+			sp->req->req_step = R_STP_START;
 		}
 	}
 }
@@ -491,12 +495,12 @@ cnt_prepresp(struct worker *wrk, struct req *req)
 		}
 		AZ(req->obj);
 		http_Teardown(req->resp);
-		req->sp->step = STP_RESTART;
+		req->req_step = R_STP_RESTART;
 		return (0);
 	default:
 		WRONG("Illegal action in vcl_deliver{}");
 	}
-	req->sp->step = STP_DELIVER;
+	req->req_step = R_STP_DELIVER;
 	return (0);
 }
 
@@ -535,7 +539,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 			HSH_Deref(&wrk->stats, NULL, &req->obj);
 			VBO_DerefBusyObj(wrk, &req->busyobj);
 			req->err_code = 503;
-			req->sp->step = STP_ERROR;
+			req->req_step = R_STP_ERROR;
 			return (0);
 		}
 		VBO_DerefBusyObj(wrk, &req->busyobj);
@@ -626,7 +630,7 @@ cnt_error(struct worker *wrk, struct req *req)
 	    req->restarts <  cache_param->max_restarts) {
 		HSH_Drop(wrk, &req->obj);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
-		req->sp->step = STP_RESTART;
+		req->req_step = R_STP_RESTART;
 		return (0);
 	} else if (req->handling == VCL_RET_RESTART)
 		req->handling = VCL_RET_DELIVER;
@@ -641,7 +645,7 @@ cnt_error(struct worker *wrk, struct req *req)
 	req->err_reason = NULL;
 	http_Teardown(bo->bereq);
 	VBO_DerefBusyObj(wrk, &req->busyobj);
-	req->sp->step = STP_PREPRESP;
+	req->req_step = R_STP_PREPRESP;
 	return (0);
 }
 
@@ -735,7 +739,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 
 		switch (req->handling) {
 		case VCL_RET_DELIVER:
-			req->sp->step = STP_FETCHBODY;
+			req->req_step = R_STP_FETCHBODY;
 			return (0);
 		default:
 			break;
@@ -761,10 +765,10 @@ cnt_fetch(struct worker *wrk, struct req *req)
 
 	switch (req->handling) {
 	case VCL_RET_RESTART:
-		req->sp->step = STP_RESTART;
+		req->req_step = R_STP_RESTART;
 		return (0);
 	case VCL_RET_ERROR:
-		req->sp->step = STP_ERROR;
+		req->req_step = R_STP_ERROR;
 		return (0);
 	default:
 		WRONG("Illegal action in vcl_fetch{}");
@@ -919,7 +923,7 @@ cnt_fetchbody(struct worker *wrk, struct req *req)
 	bo->stats = NULL;
 	if (req->obj == NULL) {
 		req->err_code = 503;
-		req->sp->step = STP_ERROR;
+		req->req_step = R_STP_ERROR;
 		VDI_CloseFd(&bo->vbc);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		return (0);
@@ -1000,12 +1004,12 @@ cnt_fetchbody(struct worker *wrk, struct req *req)
 		HSH_Deref(&wrk->stats, NULL, &req->obj);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		req->err_code = 503;
-		req->sp->step = STP_ERROR;
+		req->req_step = R_STP_ERROR;
 		return (0);
 	}
 
 	assert(WRW_IsReleased(wrk));
-	req->sp->step = STP_PREPRESP;
+	req->req_step = R_STP_PREPRESP;
 	return (0);
 }
 
@@ -1046,7 +1050,7 @@ cnt_hit(struct worker *wrk, struct req *req)
 		//AZ(req->busyobj->bereq->ws);
 		//AZ(req->busyobj->beresp->ws);
 		(void)FetchReqBody(req, 0);
-		req->sp->step = STP_PREPRESP;
+		req->req_step = R_STP_PREPRESP;
 		return (0);
 	}
 
@@ -1056,13 +1060,13 @@ cnt_hit(struct worker *wrk, struct req *req)
 
 	switch(req->handling) {
 	case VCL_RET_PASS:
-		req->sp->step = STP_PASS;
+		req->req_step = R_STP_PASS;
 		return (0);
 	case VCL_RET_ERROR:
-		req->sp->step = STP_ERROR;
+		req->req_step = R_STP_ERROR;
 		return (0);
 	case VCL_RET_RESTART:
-		req->sp->step = STP_RESTART;
+		req->req_step = R_STP_RESTART;
 		return (0);
 	default:
 		WRONG("Illegal action in vcl_hit{}");
@@ -1140,7 +1144,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		req->vary_e = NULL;
 
 		req->objcore = oc;
-		req->sp->step = STP_MISS;
+		req->req_step = R_STP_MISS;
 		return (0);
 	}
 
@@ -1161,13 +1165,13 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		VSLb(req->vsl, SLT_HitPass, "%u", req->obj->xid);
 		(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
 		AZ(req->objcore);
-		req->sp->step = STP_PASS;
+		req->req_step = R_STP_PASS;
 		return (0);
 	}
 
 	wrk->stats.cache_hit++;
 	VSLb(req->vsl, SLT_Hit, "%u", req->obj->xid);
-	req->sp->step = STP_HIT;
+	req->req_step = R_STP_HIT;
 	return (0);
 }
 
@@ -1215,7 +1219,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 
 	if (req->handling == VCL_RET_FETCH) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-		req->sp->step = STP_FETCH;
+		req->req_step = R_STP_FETCH;
 		return (0);
 	}
 
@@ -1226,13 +1230,13 @@ cnt_miss(struct worker *wrk, struct req *req)
 
 	switch(req->handling) {
 	case VCL_RET_ERROR:
-		req->sp->step = STP_ERROR;
+		req->req_step = R_STP_ERROR;
 		break;
 	case VCL_RET_PASS:
-		req->sp->step = STP_PASS;
+		req->req_step = R_STP_PASS;
 		break;
 	case VCL_RET_RESTART:
-		req->sp->step = STP_RESTART;
+		req->req_step = R_STP_RESTART;
 		break;
 	default:
 		WRONG("Illegal action in vcl_miss{}");
@@ -1281,12 +1285,12 @@ cnt_pass(struct worker *wrk, struct req *req)
 	if (req->handling == VCL_RET_ERROR) {
 		http_Teardown(bo->bereq);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
-		req->sp->step = STP_ERROR;
+		req->req_step = R_STP_ERROR;
 		return (0);
 	}
 	assert(req->handling == VCL_RET_PASS);
 	wrk->acct_tmp.pass++;
-	req->sp->step = STP_FETCH;
+	req->req_step = R_STP_FETCH;
 
 	req->objcore = HSH_NewObjCore(wrk);
 	req->objcore->busyobj = bo;
@@ -1370,10 +1374,10 @@ cnt_restart(const struct worker *wrk, struct req *req)
 	req->director = NULL;
 	if (++req->restarts >= cache_param->max_restarts) {
 		req->err_code = 503;
-		req->sp->step = STP_ERROR;
+		req->req_step = R_STP_ERROR;
 	} else {
 		req->err_code = 0;
-		req->sp->step = STP_RECV;
+		req->req_step = R_STP_RECV;
 	}
 	return (0);
 }
@@ -1458,7 +1462,7 @@ cnt_recv(const struct worker *wrk, struct req *req)
 
 	switch(recv_handling) {
 	case VCL_RET_LOOKUP:
-		req->sp->step = STP_LOOKUP;
+		req->req_step = R_STP_LOOKUP;
 		return (0);
 	case VCL_RET_PIPE:
 		if (req->esi_level > 0) {
@@ -1466,13 +1470,13 @@ cnt_recv(const struct worker *wrk, struct req *req)
 			INCOMPL();
 			return (1);
 		}
-		req->sp->step = STP_PIPE;
+		req->req_step = R_STP_PIPE;
 		return (0);
 	case VCL_RET_PASS:
-		req->sp->step = STP_PASS;
+		req->req_step = R_STP_PASS;
 		return (0);
 	case VCL_RET_ERROR:
-		req->sp->step = STP_ERROR;
+		req->req_step = R_STP_ERROR;
 		return (0);
 	default:
 		WRONG("Illegal action in vcl_recv{}");
@@ -1554,9 +1558,9 @@ cnt_start(struct worker *wrk, struct req *req)
 	HTTP_Copy(req->http0, req->http);	/* Copy for restart/ESI use */
 
 	if (req->err_code)
-		req->sp->step = STP_ERROR;
+		req->req_step = R_STP_ERROR;
 	else
-		req->sp->step = STP_RECV;
+		req->req_step = R_STP_RECV;
 	return (0);
 }
 
@@ -1610,9 +1614,9 @@ CNT_Request(struct req *req)
 	 * Possible entrance states
 	 */
 	assert(
-	    sp->step == STP_LOOKUP ||
-	    sp->step == STP_START ||
-	    sp->step == STP_RECV);
+	    req->req_step == R_STP_LOOKUP ||
+	    req->req_step == R_STP_START ||
+	    req->req_step == R_STP_RECV);
 
 	for (done = 0; !done; ) {
 		assert(sp->wrk == wrk);
@@ -1628,17 +1632,15 @@ CNT_Request(struct req *req)
 		AN(req->sp);
 		assert(req->sp == sp);
 
-		assert(sp->step != STP_WAIT);
-
-		switch (sp->step) {
-#define SESS_STEP(l,u,arg) \
-		    case STP_##u: \
+		switch (req->req_step) {
+#define REQ_STEP(l,u,arg) \
+		    case R_STP_##u: \
 			if (cache_param->diag_bitmap & 0x01) \
 				cnt_diag(sp, #u); \
 			done = cnt_##l arg; \
 		        break;
 #include "tbl/steps.h"
-#undef SESS_STEP
+#undef REQ_STEP
 		default:
 			WRONG("State engine misfire");
 		}
