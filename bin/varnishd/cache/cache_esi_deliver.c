@@ -96,10 +96,8 @@ ved_include(struct req *req, const char *src, const char *host)
 	while (1) {
 		req->sp->wrk = wrk;
 		i = CNT_Request(req);
-		if (req->sp->step == STP_DONE) {
-			assert(i == 1);
+		if (i == 1)
 			break;
-		}
 		assert(i == 2);
 		AZ(req->sp->wrk);
 		DSL(0x20, SLT_Debug, req->sp->vsl_id, "loop waiting for ESI");
@@ -107,7 +105,6 @@ ved_include(struct req *req, const char *src, const char *host)
 	}
 	req->xid = sxid;
 	AN(req->sp->wrk);
-	assert(req->sp->step == STP_DONE);
 	req->esi_level--;
 	req->obj = obj;
 	req->res_mode = res_mode;

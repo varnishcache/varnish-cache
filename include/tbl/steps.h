@@ -43,5 +43,4 @@ SESS_STEP(fetchbody,	FETCHBODY,	(sp, sp->wrk, sp->req))
 SESS_STEP(prepresp,	PREPRESP,	(sp, sp->wrk, sp->req))
 SESS_STEP(deliver,	DELIVER,	(sp, sp->wrk, sp->req))
 SESS_STEP(error,	ERROR,		(sp, sp->wrk, sp->req))
-SESS_STEP(done,		DONE,		(sp, sp->wrk, sp->req))
 /*lint -restore */

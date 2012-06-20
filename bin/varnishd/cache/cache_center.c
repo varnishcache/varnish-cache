@@ -227,7 +227,7 @@ DOT	DONE -> ESI_RESP
  */
 
 static int
-cnt_done(struct sess *sp, struct worker *wrk, struct req *req)
+cnt_sess_done(struct sess *sp, struct worker *wrk, struct req *req)
 {
 	double dh, dp, da;
 	int i;
@@ -242,9 +242,7 @@ cnt_done(struct sess *sp, struct worker *wrk, struct req *req)
 	req->director = NULL;
 	req->restarts = 0;
 
-	/* If we did an ESI include, don't mess up our state */
-	if (req->esi_level > 0)
-		return (1);
+	AZ(req->esi_level);
 
 	if (req->vcl != NULL) {
 		if (wrk->vcl != NULL)
@@ -343,7 +341,7 @@ CNT_Session(struct sess *sp)
 			SES_Close(sp, "remote closed");
 		else
 			SES_Close(sp, "error");
-		assert(cnt_done(sp, wrk, sp->req) == 1);
+		assert(cnt_sess_done(sp, wrk, sp->req) == 1);
 		return;
 	}
 
@@ -362,10 +360,7 @@ CNT_Session(struct sess *sp)
 			if (done == 2)
 				return;
 			assert(done == 1);
-		}
-
-		if (sp->step == STP_DONE) {
-			done = cnt_done(sp, wrk, sp->req);
+			done = cnt_sess_done(sp, wrk, sp->req);
 			if (done)
 				return;
 		}
@@ -547,7 +542,6 @@ cnt_deliver(struct sess *sp, struct worker *wrk, struct req *req)
 	assert(WRW_IsReleased(wrk));
 	(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
 	http_Teardown(req->resp);
-	sp->step = STP_DONE;
 	return (1);
 }
 /*--------------------------------------------------------------------
@@ -594,7 +588,6 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
 		req->director = NULL;
 		http_Teardown(bo->beresp);
 		http_Teardown(bo->bereq);
-		sp->step = STP_DONE;
 		return(1);
 	}
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
@@ -1361,7 +1354,6 @@ cnt_pipe(struct sess *sp, struct worker *wrk, struct req *req)
 	assert(WRW_IsReleased(wrk));
 	http_Teardown(bo->bereq);
 	VBO_DerefBusyObj(wrk, &req->busyobj);
-	sp->step = STP_DONE;
 	return (1);
 }
 
@@ -1487,7 +1479,6 @@ cnt_recv(struct sess *sp, const struct worker *wrk, struct req *req)
 		if (req->esi_level > 0) {
 			/* XXX: VSL something */
 			INCOMPL();
-			/* sp->step = STP_DONE; */
 			return (1);
 		}
 		sp->step = STP_PIPE;
@@ -1552,7 +1543,6 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 
 	/* If we could not even parse the request, just close */
 	if (req->err_code == 400) {
-		sp->step = STP_DONE;
 		SES_Close(sp, "junk");
 		return (1);
 	}
@@ -1569,7 +1559,6 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 		if (strcasecmp(p, "100-continue")) {
 			req->err_code = 417;
 		} else if (strlen(r) != write(sp->fd, r, strlen(r))) {
-			sp->step = STP_DONE;
 			SES_Close(sp, "remote closed");
 			return (1);
 		}
@@ -1657,7 +1646,6 @@ CNT_Request(struct req *req)
 		assert(req->sp == sp);
 
 		assert(sp->step != STP_WAIT);
-		assert(sp->step != STP_DONE);
 
 		switch (sp->step) {
 #define SESS_STEP(l,u,arg) \
