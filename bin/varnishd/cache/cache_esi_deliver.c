@@ -49,6 +49,7 @@ ved_include(struct req *req, const char *src, const char *host)
 	char *sp_ws_wm;
 	char *wrk_ws_wm;
 	unsigned sxid, res_mode;
+	int i;
 
 	wrk = req->sp->wrk;
 
@@ -94,9 +95,12 @@ ved_include(struct req *req, const char *src, const char *host)
 	sxid = req->xid;
 	while (1) {
 		req->sp->wrk = wrk;
-		CNT_Session(req->sp);
-		if (req->sp->step == STP_DONE)
+		i = CNT_Request(req);
+		if (req->sp->step == STP_DONE) {
+			assert(i == 1);
 			break;
+		}
+		assert(i == 2);
 		AZ(req->sp->wrk);
 		DSL(0x20, SLT_Debug, req->sp->vsl_id, "loop waiting for ESI");
 		(void)usleep(10000);

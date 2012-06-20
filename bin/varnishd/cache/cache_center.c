@@ -26,12 +26,21 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * This file contains the central state machine for pushing requests.
+ * This file contains the two central state machine for pushing 
+ * sessions and requests.
  *
- * We cannot just use direct calls because it is possible to kick a
- * request back to the lookup stage (usually after a rewrite).  The
- * state engine also allows us to break the processing up into some
- * logical chunks which improves readability a little bit.
+ * The first part of the file, entrypoint CNT_Session() and down to
+ * the ==== separator, is concerned with sessions.  When a session has
+ * a request to deal with, it calls into the second half of the file.
+ * This part is for all practical purposes HTTP/1.x specific.
+ *
+ * The second part of the file, entrypoint CNT_Request() and below the
+ * ==== separator, is intended to (over time) be(ome) protocol agnostic.
+ * We already use this now with ESI:includes, which are for all relevant
+ * purposes a different "protocol"
+ *
+ * A special complication is the fact that we can suspend processing of
+ * a request when hash-lookup finds a busy objhdr.
  *
  * Since the states are rather nasty in detail, I have decided to embedd
  * a dot(1) graph in the source code comments.  So to see the big picture,
@@ -204,6 +213,175 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 }
 
 /*--------------------------------------------------------------------
+ * This is the final state, figure out if we should close or recycle
+ * the client connection
+ *
+DOT	DONE [
+DOT		shape=record
+DOT		label="{cnt_done:|Request completed}"
+DOT	]
+DOT	ESI_RESP [ shape=hexagon ]
+DOT	DONE -> start [label="full pipeline"]
+DOT	DONE -> wait
+DOT	DONE -> ESI_RESP
+ */
+
+static int
+cnt_done(struct sess *sp, struct worker *wrk, struct req *req)
+{
+	double dh, dp, da;
+	int i;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_ORNULL(req->vcl, VCL_CONF_MAGIC);
+
+	AZ(req->obj);
+	AZ(req->busyobj);
+	req->director = NULL;
+	req->restarts = 0;
+
+	/* If we did an ESI include, don't mess up our state */
+	if (req->esi_level > 0)
+		return (1);
+
+	if (req->vcl != NULL) {
+		if (wrk->vcl != NULL)
+			VCL_Rel(&wrk->vcl);
+		wrk->vcl = req->vcl;
+		req->vcl = NULL;
+	}
+
+
+	sp->t_idle = W_TIM_real(wrk);
+	if (req->xid == 0) {
+		req->t_resp = sp->t_idle;
+	} else {
+		dp = req->t_resp - req->t_req;
+		da = sp->t_idle - req->t_resp;
+		dh = req->t_req - sp->t_open;
+		/* XXX: Add StatReq == StatSess */
+		/* XXX: Workaround for pipe */
+		if (sp->fd >= 0) {
+			VSLb(req->vsl, SLT_Length, "%ju",
+			    (uintmax_t)req->req_bodybytes);
+		}
+		VSLb(req->vsl, SLT_ReqEnd, "%u %.9f %.9f %.9f %.9f %.9f",
+		    req->xid, req->t_req, sp->t_idle, dh, dp, da);
+	}
+	req->xid = 0;
+	VSL_Flush(req->vsl, 0);
+
+	req->t_req = NAN;
+	req->t_resp = NAN;
+
+	req->req_bodybytes = 0;
+
+	req->hash_always_miss = 0;
+	req->hash_ignore_busy = 0;
+
+	if (sp->fd >= 0 && req->doclose != NULL) {
+		/*
+		 * This is an orderly close of the connection; ditch nolinger
+		 * before we close, to get queued data transmitted.
+		 */
+		// XXX: not yet (void)VTCP_linger(sp->fd, 0);
+		SES_Close(sp, req->doclose);
+	}
+
+	if (sp->fd < 0) {
+		wrk->stats.sess_closed++;
+		SES_Delete(sp, NULL, NAN);
+		return (1);
+	}
+
+	if (wrk->stats.client_req >= cache_param->wthread_stats_rate)
+		WRK_SumStat(wrk);
+
+	WS_Reset(req->ws, NULL);
+	WS_Reset(wrk->aws, NULL);
+
+	i = HTC_Reinit(req->htc);
+	if (i == 1) {
+		req->t_req = sp->t_idle;
+		wrk->stats.sess_pipeline++;
+		sp->step = STP_START;
+	} else {
+		sp->t_rx = sp->t_idle;
+		req->t_req = NAN;
+		if (Tlen(req->htc->rxbuf))
+			wrk->stats.sess_readahead++;
+		sp->step = STP_WAIT;
+	}
+	return (0);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+void
+CNT_Session(struct sess *sp)
+{
+	int done;
+	struct worker *wrk;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	wrk = sp->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
+	/*
+	 * Whenever we come in from the acceptor or waiter, we need to set
+	 * blocking mode, but there is no point in setting it when we come from
+	 * ESI or when a parked sessions returns.
+	 * It would be simpler to do this in the acceptor or waiter, but we'd
+	 * rather do the syscall in the worker thread.
+	 * On systems which return errors for ioctl, we close early
+	 */
+	if (sp->step == STP_WAIT && VTCP_blocking(sp->fd)) {
+		if (errno == ECONNRESET)
+			SES_Close(sp, "remote closed");
+		else
+			SES_Close(sp, "error");
+		assert(cnt_done(sp, wrk, sp->req) == 1);
+		return;
+	}
+
+	while (1) {
+		/*
+		 * Possible entrance states
+		 */
+		assert(
+		    sp->step == STP_WAIT ||
+		    sp->step == STP_LOOKUP ||
+		    sp->step == STP_START ||
+		    sp->step == STP_RECV);
+
+		if (sp->step != STP_WAIT) {
+			done = CNT_Request(sp->req);
+			if (done == 2)
+				return;
+			assert(done == 1);
+		}
+
+		if (sp->step == STP_DONE) {
+			done = cnt_done(sp, wrk, sp->req);
+			if (done)
+				return;
+		}
+
+		if (sp->step == STP_WAIT) {
+			done = cnt_wait(sp, wrk, sp->req);
+			if (done)
+				return;
+		}
+	}
+}
+
+/*====================================================================*/
+
+
+/*--------------------------------------------------------------------
  * We have a refcounted object on the session, and possibly the busyobj
  * which is fetching it, prepare a response.
  *
@@ -370,116 +548,8 @@ cnt_deliver(struct sess *sp, struct worker *wrk, struct req *req)
 	(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
 	http_Teardown(req->resp);
 	sp->step = STP_DONE;
-	return (0);
+	return (1);
 }
-
-/*--------------------------------------------------------------------
- * This is the final state, figure out if we should close or recycle
- * the client connection
- *
-DOT	DONE [
-DOT		shape=record
-DOT		label="{cnt_done:|Request completed}"
-DOT	]
-DOT	ESI_RESP [ shape=hexagon ]
-DOT	DONE -> start [label="full pipeline"]
-DOT	DONE -> wait
-DOT	DONE -> ESI_RESP
- */
-
-static int
-cnt_done(struct sess *sp, struct worker *wrk, struct req *req)
-{
-	double dh, dp, da;
-	int i;
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_ORNULL(req->vcl, VCL_CONF_MAGIC);
-
-	AZ(req->obj);
-	AZ(req->busyobj);
-	req->director = NULL;
-	req->restarts = 0;
-
-	SES_Charge(sp);
-
-	/* If we did an ESI include, don't mess up our state */
-	if (req->esi_level > 0)
-		return (1);
-
-	if (req->vcl != NULL) {
-		if (wrk->vcl != NULL)
-			VCL_Rel(&wrk->vcl);
-		wrk->vcl = req->vcl;
-		req->vcl = NULL;
-	}
-
-
-	sp->t_idle = W_TIM_real(wrk);
-	if (req->xid == 0) {
-		req->t_resp = sp->t_idle;
-	} else {
-		dp = req->t_resp - req->t_req;
-		da = sp->t_idle - req->t_resp;
-		dh = req->t_req - sp->t_open;
-		/* XXX: Add StatReq == StatSess */
-		/* XXX: Workaround for pipe */
-		if (sp->fd >= 0) {
-			VSLb(req->vsl, SLT_Length, "%ju",
-			    (uintmax_t)req->req_bodybytes);
-		}
-		VSLb(req->vsl, SLT_ReqEnd, "%u %.9f %.9f %.9f %.9f %.9f",
-		    req->xid, req->t_req, sp->t_idle, dh, dp, da);
-	}
-	req->xid = 0;
-	VSL_Flush(req->vsl, 0);
-
-	req->t_req = NAN;
-	req->t_resp = NAN;
-
-	req->req_bodybytes = 0;
-
-	req->hash_always_miss = 0;
-	req->hash_ignore_busy = 0;
-
-	if (sp->fd >= 0 && req->doclose != NULL) {
-		/*
-		 * This is an orderly close of the connection; ditch nolinger
-		 * before we close, to get queued data transmitted.
-		 */
-		// XXX: not yet (void)VTCP_linger(sp->fd, 0);
-		SES_Close(sp, req->doclose);
-	}
-
-	if (sp->fd < 0) {
-		wrk->stats.sess_closed++;
-		SES_Delete(sp, NULL, NAN);
-		return (1);
-	}
-
-	if (wrk->stats.client_req >= cache_param->wthread_stats_rate)
-		WRK_SumStat(wrk);
-
-	WS_Reset(req->ws, NULL);
-	WS_Reset(wrk->aws, NULL);
-
-	i = HTC_Reinit(req->htc);
-	if (i == 1) {
-		req->t_req = sp->t_idle;
-		wrk->stats.sess_pipeline++;
-		sp->step = STP_START;
-	} else {
-		sp->t_rx = sp->t_idle;
-		req->t_req = NAN;
-		if (Tlen(req->htc->rxbuf))
-			wrk->stats.sess_readahead++;
-		sp->step = STP_WAIT;
-	}
-	return (0);
-}
-
 /*--------------------------------------------------------------------
  * Emit an error
  *
@@ -525,7 +595,7 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
 		http_Teardown(bo->beresp);
 		http_Teardown(bo->bereq);
 		sp->step = STP_DONE;
-		return(0);
+		return(1);
 	}
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 	req->obj->xid = req->xid;
@@ -1050,7 +1120,7 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 		 * around to do the lookup with.
 		 * NB:  Do not access sp any more !
 		 */
-		return (1);
+		return (2);
 	}
 	AZ(req->objcore);
 
@@ -1292,7 +1362,7 @@ cnt_pipe(struct sess *sp, struct worker *wrk, struct req *req)
 	http_Teardown(bo->bereq);
 	VBO_DerefBusyObj(wrk, &req->busyobj);
 	sp->step = STP_DONE;
-	return (0);
+	return (1);
 }
 
 /*--------------------------------------------------------------------
@@ -1484,7 +1554,7 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 	if (req->err_code == 400) {
 		sp->step = STP_DONE;
 		SES_Close(sp, "junk");
-		return (0);
+		return (1);
 	}
 
 	req->ws_req = WS_Snapshot(req->ws);
@@ -1501,7 +1571,7 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 		} else if (strlen(r) != write(sp->fd, r, strlen(r))) {
 			sp->step = STP_DONE;
 			SES_Close(sp, "remote closed");
-			return (0);
+			return (1);
 		}
 	}
 	http_Unset(req->http, H_Expect);
@@ -1551,12 +1621,15 @@ cnt_diag(struct sess *sp, const char *state)
 	}
 }
 
-void
-CNT_Session(struct sess *sp)
+int
+CNT_Request(struct req *req)
 {
 	int done;
 	struct worker *wrk;
+	struct sess *sp;
 
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	wrk = sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -1565,30 +1638,10 @@ CNT_Session(struct sess *sp)
 	 * Possible entrance states
 	 */
 	assert(
-	    sp->step == STP_WAIT ||
 	    sp->step == STP_LOOKUP ||
+	    sp->step == STP_START ||
 	    sp->step == STP_RECV);
 
-	/*
-	 * Whenever we come in from the acceptor or waiter, we need to set
-	 * blocking mode, but there is no point in setting it when we come from
-	 * ESI or when a parked sessions returns.
-	 * It would be simpler to do this in the acceptor or waiter, but we'd
-	 * rather do the syscall in the worker thread.
-	 * On systems which return errors for ioctl, we close early
-	 */
-	if ((sp->step == STP_WAIT || sp->step == STP_START) &&
-	    VTCP_blocking(sp->fd)) {
-		if (errno == ECONNRESET)
-			SES_Close(sp, "remote closed");
-		else
-			SES_Close(sp, "error");
-		sp->step = STP_DONE;
-	}
-
-	/*
-	 * NB: Once done is set, we can no longer touch sp!
-	 */
 	for (done = 0; !done; ) {
 		assert(sp->wrk == wrk);
 		/*
@@ -1599,12 +1652,12 @@ CNT_Session(struct sess *sp)
 		CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 		WS_Assert(wrk->aws);
+		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+		AN(req->sp);
+		assert(req->sp == sp);
 
-		if (sp->req != NULL) {
-			CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
-			AN(sp->req->sp);
-			assert(sp->req->sp == sp);
-		}
+		assert(sp->step != STP_WAIT);
+		assert(sp->step != STP_DONE);
 
 		switch (sp->step) {
 #define SESS_STEP(l,u,arg) \
@@ -1621,10 +1674,11 @@ CNT_Session(struct sess *sp)
 		WS_Assert(wrk->aws);
 		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 	}
-#define ACCT(foo)	AZ(wrk->acct_tmp.foo);
-#include "tbl/acct_fields.h"
-#undef ACCT
+	if (done == 1)
+		SES_Charge(sp);
+
 	assert(WRW_IsReleased(wrk));
+	return (done);
 }
 
 /*
