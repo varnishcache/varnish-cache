@@ -172,7 +172,6 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 		if (i == 1) {
 			/* Got it, run with it */
 			req->t_req = now;
-			sp->step = STP_START;
 			return (0);
 		} else if (i == -1) {
 			why = "EOF";
@@ -226,7 +225,13 @@ DOT	DONE -> wait
 DOT	DONE -> ESI_RESP
  */
 
-static int
+enum cnt_sess_done_ret {
+	SESS_DONE_RET_GONE,
+	SESS_DONE_RET_WAIT,
+	SESS_DONE_RET_START,
+};
+
+static enum cnt_sess_done_ret
 cnt_sess_done(struct sess *sp, struct worker *wrk, struct req *req)
 {
 	double dh, dp, da;
@@ -291,7 +296,7 @@ cnt_sess_done(struct sess *sp, struct worker *wrk, struct req *req)
 	if (sp->fd < 0) {
 		wrk->stats.sess_closed++;
 		SES_Delete(sp, NULL, NAN);
-		return (1);
+		return (SESS_DONE_RET_GONE);
 	}
 
 	if (wrk->stats.client_req >= cache_param->wthread_stats_rate)
@@ -304,15 +309,14 @@ cnt_sess_done(struct sess *sp, struct worker *wrk, struct req *req)
 	if (i == 1) {
 		req->t_req = sp->t_idle;
 		wrk->stats.sess_pipeline++;
-		sp->step = STP_START;
+		return (SESS_DONE_RET_START);
 	} else {
 		sp->t_rx = sp->t_idle;
 		req->t_req = NAN;
 		if (Tlen(req->htc->rxbuf))
 			wrk->stats.sess_readahead++;
-		sp->step = STP_WAIT;
+		return (SESS_DONE_RET_WAIT);
 	}
-	return (0);
 }
 
 /*--------------------------------------------------------------------
@@ -322,6 +326,7 @@ void
 CNT_Session(struct sess *sp)
 {
 	int done;
+	enum cnt_sess_done_ret sdr;
 	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -341,7 +346,8 @@ CNT_Session(struct sess *sp)
 			SES_Close(sp, "remote closed");
 		else
 			SES_Close(sp, "error");
-		assert(cnt_sess_done(sp, wrk, sp->req) == 1);
+		sdr = cnt_sess_done(sp, wrk, sp->req);
+		assert(sdr == SESS_DONE_RET_GONE);
 		return;
 	}
 
@@ -352,23 +358,33 @@ CNT_Session(struct sess *sp)
 		assert(
 		    sp->step == STP_WAIT ||
 		    sp->step == STP_LOOKUP ||
-		    sp->step == STP_START ||
-		    sp->step == STP_RECV);
+		    sp->step == STP_START);
 
 		if (sp->step != STP_WAIT) {
 			done = CNT_Request(sp->req);
 			if (done == 2)
 				return;
 			assert(done == 1);
-			done = cnt_sess_done(sp, wrk, sp->req);
-			if (done)
+			sdr = cnt_sess_done(sp, wrk, sp->req);
+			switch (sdr) {
+			case SESS_DONE_RET_GONE:
 				return;
+			case SESS_DONE_RET_WAIT:
+				sp->step = STP_WAIT;	
+				break;
+			case SESS_DONE_RET_START:
+				sp->step = STP_START;	
+				break;
+			default:
+				WRONG("Illegal enum cnt_sess_done_ret");
+			}
 		}
 
 		if (sp->step == STP_WAIT) {
 			done = cnt_wait(sp, wrk, sp->req);
 			if (done)
 				return;
+			sp->step = STP_START;
 		}
 	}
 }
