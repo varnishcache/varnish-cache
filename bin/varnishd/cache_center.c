@@ -930,13 +930,13 @@ cnt_streambody(struct sess *sp)
 	AZ(sp->vbc);
 	AN(sp->director);
 
-	if (!i && sp->obj->objcore != NULL) {
+	if (i)
+		sp->doclose = "Stream error";
+	else if (sp->obj->objcore != NULL) {
 		EXP_Insert(sp->obj);
 		AN(sp->obj->objcore);
 		AN(sp->obj->objcore->ban);
 		HSH_Unbusy(sp);
-	} else {
-		sp->doclose = "Stream error";
 	}
 	sp->wrk->acct_tmp.fetch++;
 	sp->director = NULL;

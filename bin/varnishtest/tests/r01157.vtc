@@ -1,0 +1,26 @@
+varnishtest "#1157 - Connection close on pass and do_stream"
+
+server s1 {
+	rxreq
+	txresp
+	expect req.url == "/"
+
+	rxreq
+	txresp
+	expect req.url == "/"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv { return (pass); }
+	sub vcl_fetch {	set beresp.do_stream = true; }
+} -start
+
+client c1 {
+	txreq -url /
+	rxresp
+	expect resp.status == 200
+
+	txreq -url /
+	rxresp
+	expect resp.status == 200
+} -run
