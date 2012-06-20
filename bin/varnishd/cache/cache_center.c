@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * This file contains the two central state machine for pushing 
+ * This file contains the two central state machine for pushing
  * sessions and requests.
  *
  * The first part of the file, entrypoint CNT_Session() and down to
@@ -370,10 +370,10 @@ CNT_Session(struct sess *sp)
 			case SESS_DONE_RET_GONE:
 				return;
 			case SESS_DONE_RET_WAIT:
-				sp->step = STP_WAIT;	
+				sp->step = STP_WAIT;
 				break;
 			case SESS_DONE_RET_START:
-				sp->step = STP_START;	
+				sp->step = STP_START;
 				break;
 			default:
 				WRONG("Illegal enum cnt_sess_done_ret");
@@ -409,11 +409,10 @@ DOT }
  */
 
 static int
-cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
+cnt_prepresp(struct worker *wrk, struct req *req)
 {
 	struct busyobj *bo;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	bo = req->busyobj;
@@ -476,9 +475,7 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 	HTTP_Setup(req->resp, req->ws, req->vsl, HTTP_Resp);
 	RES_BuildHttp(req);
 
-	assert(req->sp == sp);
 	VCL_deliver_method(req);
-	assert(req->sp == sp);
 	switch (req->handling) {
 	case VCL_RET_DELIVER:
 		break;
@@ -494,12 +491,12 @@ cnt_prepresp(struct sess *sp, struct worker *wrk, struct req *req)
 		}
 		AZ(req->obj);
 		http_Teardown(req->resp);
-		sp->step = STP_RESTART;
+		req->sp->step = STP_RESTART;
 		return (0);
 	default:
 		WRONG("Illegal action in vcl_deliver{}");
 	}
-	sp->step = STP_DELIVER;
+	req->sp->step = STP_DELIVER;
 	return (0);
 }
 
@@ -519,11 +516,10 @@ DOT deliver -> DONE [style=bold,color=blue]
  */
 
 static int
-cnt_deliver(struct sess *sp, struct worker *wrk, struct req *req)
+cnt_deliver(struct worker *wrk, struct req *req)
 {
 	struct busyobj *bo;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
@@ -539,7 +535,7 @@ cnt_deliver(struct sess *sp, struct worker *wrk, struct req *req)
 			HSH_Deref(&wrk->stats, NULL, &req->obj);
 			VBO_DerefBusyObj(wrk, &req->busyobj);
 			req->err_code = 503;
-			sp->step = STP_ERROR;
+			req->sp->step = STP_ERROR;
 			return (0);
 		}
 		VBO_DerefBusyObj(wrk, &req->busyobj);
@@ -576,13 +572,12 @@ DOT rsterr [label="RESTART",shape=plaintext]
  */
 
 static int
-cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
+cnt_error(struct worker *wrk, struct req *req)
 {
 	struct http *h;
 	struct busyobj *bo;
 	char date[40];
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AZ(req->objcore);
@@ -591,7 +586,7 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
 
 	bo = VBO_GetBusyObj(wrk);
 	req->busyobj = bo;
-	bo->vsl->wid = sp->vsl_id;
+	bo->vsl->wid = req->sp->vsl_id;
 	AZ(bo->stats);
 	bo->stats = &wrk->stats;
 	req->objcore = HSH_NewObjCore(wrk);
@@ -625,15 +620,13 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
 		http_PutResponse(h, req->err_reason);
 	else
 		http_PutResponse(h, http_StatusMessage(req->err_code));
-	assert(req->sp == sp);
 	VCL_error_method(req);
-	assert(req->sp == sp);
 
 	if (req->handling == VCL_RET_RESTART &&
 	    req->restarts <  cache_param->max_restarts) {
 		HSH_Drop(wrk, &req->obj);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
-		sp->step = STP_RESTART;
+		req->sp->step = STP_RESTART;
 		return (0);
 	} else if (req->handling == VCL_RET_RESTART)
 		req->handling = VCL_RET_DELIVER;
@@ -648,7 +641,7 @@ cnt_error(struct sess *sp, struct worker *wrk, struct req *req)
 	req->err_reason = NULL;
 	http_Teardown(bo->bereq);
 	VBO_DerefBusyObj(wrk, &req->busyobj);
-	sp->step = STP_PREPRESP;
+	req->sp->step = STP_PREPRESP;
 	return (0);
 }
 
@@ -666,12 +659,11 @@ DOT fetch -> fetchbody [style=bold,color=blue]
  */
 
 static int
-cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
+cnt_fetch(struct worker *wrk, struct req *req)
 {
 	int i, need_host_hdr;
 	struct busyobj *bo;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
@@ -736,16 +728,14 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 		AZ(bo->do_esi);
 		AZ(bo->do_pass);
 
-		assert(req->sp == sp);
 		VCL_fetch_method(req);
-		assert(req->sp == sp);
 
 		if (bo->do_pass)
 			req->objcore->flags |= OC_F_PASS;
 
 		switch (req->handling) {
 		case VCL_RET_DELIVER:
-			sp->step = STP_FETCHBODY;
+			req->sp->step = STP_FETCHBODY;
 			return (0);
 		default:
 			break;
@@ -771,10 +761,10 @@ cnt_fetch(struct sess *sp, struct worker *wrk, struct req *req)
 
 	switch (req->handling) {
 	case VCL_RET_RESTART:
-		sp->step = STP_RESTART;
+		req->sp->step = STP_RESTART;
 		return (0);
 	case VCL_RET_ERROR:
-		sp->step = STP_ERROR;
+		req->sp->step = STP_ERROR;
 		return (0);
 	default:
 		WRONG("Illegal action in vcl_fetch{}");
@@ -795,7 +785,7 @@ DOT fetchbody:out -> prepresp [style=bold,color=blue]
  */
 
 static int
-cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
+cnt_fetchbody(struct worker *wrk, struct req *req)
 {
 	struct http *hp, *hp2;
 	char *b;
@@ -805,7 +795,6 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	int varyl = 0, pass;
 	struct busyobj *bo;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	bo = req->busyobj;
@@ -930,7 +919,7 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 	bo->stats = NULL;
 	if (req->obj == NULL) {
 		req->err_code = 503;
-		sp->step = STP_ERROR;
+		req->sp->step = STP_ERROR;
 		VDI_CloseFd(&bo->vbc);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		return (0);
@@ -1011,12 +1000,12 @@ cnt_fetchbody(struct sess *sp, struct worker *wrk, struct req *req)
 		HSH_Deref(&wrk->stats, NULL, &req->obj);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		req->err_code = 503;
-		sp->step = STP_ERROR;
+		req->sp->step = STP_ERROR;
 		return (0);
 	}
 
 	assert(WRW_IsReleased(wrk));
-	sp->step = STP_PREPRESP;
+	req->sp->step = STP_PREPRESP;
 	return (0);
 }
 
@@ -1039,9 +1028,8 @@ DOT hit:del -> prepresp [label="deliver",style=bold,color=green]
  */
 
 static int
-cnt_hit(struct sess *sp, struct worker *wrk, struct req *req)
+cnt_hit(struct worker *wrk, struct req *req)
 {
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
@@ -1052,15 +1040,13 @@ cnt_hit(struct sess *sp, struct worker *wrk, struct req *req)
 
 	assert(!(req->obj->objcore->flags & OC_F_PASS));
 
-	assert(req->sp == sp);
 	VCL_hit_method(req);
-	assert(req->sp == sp);
 
 	if (req->handling == VCL_RET_DELIVER) {
 		//AZ(req->busyobj->bereq->ws);
 		//AZ(req->busyobj->beresp->ws);
 		(void)FetchReqBody(req, 0);
-		sp->step = STP_PREPRESP;
+		req->sp->step = STP_PREPRESP;
 		return (0);
 	}
 
@@ -1070,13 +1056,13 @@ cnt_hit(struct sess *sp, struct worker *wrk, struct req *req)
 
 	switch(req->handling) {
 	case VCL_RET_PASS:
-		sp->step = STP_PASS;
+		req->sp->step = STP_PASS;
 		return (0);
 	case VCL_RET_ERROR:
-		sp->step = STP_ERROR;
+		req->sp->step = STP_ERROR;
 		return (0);
 	case VCL_RET_RESTART:
-		sp->step = STP_RESTART;
+		req->sp->step = STP_RESTART;
 		return (0);
 	default:
 		WRONG("Illegal action in vcl_hit{}");
@@ -1103,13 +1089,12 @@ DOT lookup:yes -> pass [style=bold,color=red]
  */
 
 static int
-cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
+cnt_lookup(struct worker *wrk, struct req *req)
 {
 	struct objcore *oc;
 	struct object *o;
 	struct objhead *oh;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AZ(req->objcore);
@@ -1127,7 +1112,6 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 		 * worker thread.   We return to STP_LOOKUP when the busy
 		 * object has been unbusied, and still have the hash digest
 		 * around to do the lookup with.
-		 * NB:  Do not access sp any more !
 		 */
 		return (2);
 	}
@@ -1156,7 +1140,7 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 		req->vary_e = NULL;
 
 		req->objcore = oc;
-		sp->step = STP_MISS;
+		req->sp->step = STP_MISS;
 		return (0);
 	}
 
@@ -1177,13 +1161,13 @@ cnt_lookup(struct sess *sp, struct worker *wrk, struct req *req)
 		VSLb(req->vsl, SLT_HitPass, "%u", req->obj->xid);
 		(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
 		AZ(req->objcore);
-		sp->step = STP_PASS;
+		req->sp->step = STP_PASS;
 		return (0);
 	}
 
 	wrk->stats.cache_hit++;
 	VSLb(req->vsl, SLT_Hit, "%u", req->obj->xid);
-	sp->step = STP_HIT;
+	req->sp->step = STP_HIT;
 	return (0);
 }
 
@@ -1202,11 +1186,10 @@ DOT
  */
 
 static int
-cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
+cnt_miss(struct worker *wrk, struct req *req)
 {
 	struct busyobj *bo;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
@@ -1228,13 +1211,11 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
 		http_SetHeader(bo->bereq, "Accept-Encoding: gzip");
 	}
 
-	assert(req->sp == sp);
 	VCL_miss_method(req);
-	assert(req->sp == sp);
 
 	if (req->handling == VCL_RET_FETCH) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-		sp->step = STP_FETCH;
+		req->sp->step = STP_FETCH;
 		return (0);
 	}
 
@@ -1245,13 +1226,13 @@ cnt_miss(struct sess *sp, struct worker *wrk, struct req *req)
 
 	switch(req->handling) {
 	case VCL_RET_ERROR:
-		sp->step = STP_ERROR;
+		req->sp->step = STP_ERROR;
 		break;
 	case VCL_RET_PASS:
-		sp->step = STP_PASS;
+		req->sp->step = STP_PASS;
 		break;
 	case VCL_RET_RESTART:
-		sp->step = STP_RESTART;
+		req->sp->step = STP_RESTART;
 		break;
 	default:
 		WRONG("Illegal action in vcl_miss{}");
@@ -1277,11 +1258,10 @@ XDOT err_pass [label="ERROR",shape=plaintext]
  */
 
 static int
-cnt_pass(struct sess *sp, struct worker *wrk, struct req *req)
+cnt_pass(struct worker *wrk, struct req *req)
 {
 	struct busyobj *bo;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
@@ -1291,24 +1271,22 @@ cnt_pass(struct sess *sp, struct worker *wrk, struct req *req)
 
 	req->busyobj = VBO_GetBusyObj(wrk);
 	bo = req->busyobj;
-	bo->vsl->wid = sp->vsl_id;
+	bo->vsl->wid = req->sp->vsl_id;
 	bo->refcount = 2;
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
 	http_FilterReq(req, HTTPH_R_PASS);
 
-	assert(req->sp == sp);
 	VCL_pass_method(req);
-	assert(req->sp == sp);
 
 	if (req->handling == VCL_RET_ERROR) {
 		http_Teardown(bo->bereq);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
-		sp->step = STP_ERROR;
+		req->sp->step = STP_ERROR;
 		return (0);
 	}
 	assert(req->handling == VCL_RET_PASS);
 	wrk->acct_tmp.pass++;
-	sp->step = STP_FETCH;
+	req->sp->step = STP_FETCH;
 
 	req->objcore = HSH_NewObjCore(wrk);
 	req->objcore->busyobj = bo;
@@ -1341,11 +1319,10 @@ DOT err_pipe [label="ERROR",shape=plaintext]
  */
 
 static int
-cnt_pipe(struct sess *sp, struct worker *wrk, struct req *req)
+cnt_pipe(struct worker *wrk, struct req *req)
 {
 	struct busyobj *bo;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
@@ -1354,13 +1331,11 @@ cnt_pipe(struct sess *sp, struct worker *wrk, struct req *req)
 	wrk->acct_tmp.pipe++;
 	req->busyobj = VBO_GetBusyObj(wrk);
 	bo = req->busyobj;
-	bo->vsl->wid = sp->vsl_id;
+	bo->vsl->wid = req->sp->vsl_id;
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
 	http_FilterReq(req, 0);
 
-	assert(req->sp == sp);
 	VCL_pipe_method(req);
-	assert(req->sp == sp);
 
 	if (req->handling == VCL_RET_ERROR)
 		INCOMPL();
@@ -1386,20 +1361,19 @@ DOT restart -> recv [color=purple]
  */
 
 static int
-cnt_restart(struct sess *sp, const struct worker *wrk, struct req *req)
+cnt_restart(const struct worker *wrk, struct req *req)
 {
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	req->director = NULL;
 	if (++req->restarts >= cache_param->max_restarts) {
 		req->err_code = 503;
-		sp->step = STP_ERROR;
+		req->sp->step = STP_ERROR;
 	} else {
 		req->err_code = 0;
-		sp->step = STP_RECV;
+		req->sp->step = STP_RECV;
 	}
 	return (0);
 }
@@ -1433,12 +1407,11 @@ DOT hash -> lookup [label="hash",style=bold,color=green]
  */
 
 static int
-cnt_recv(struct sess *sp, const struct worker *wrk, struct req *req)
+cnt_recv(const struct worker *wrk, struct req *req)
 {
 	unsigned recv_handling;
 	struct SHA256Context sha256ctx;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
@@ -1457,9 +1430,7 @@ cnt_recv(struct sess *sp, const struct worker *wrk, struct req *req)
 
 	http_CollectHdr(req->http, H_Cache_Control);
 
-	assert(req->sp == sp);
 	VCL_recv_method(req);
-	assert(req->sp == sp);
 	recv_handling = req->handling;
 
 	if (cache_param->http_gzip_support &&
@@ -1475,9 +1446,7 @@ cnt_recv(struct sess *sp, const struct worker *wrk, struct req *req)
 
 	req->sha256ctx = &sha256ctx;	/* so HSH_AddString() can find it */
 	SHA256_Init(req->sha256ctx);
-	assert(req->sp == sp);
 	VCL_hash_method(req);
-	assert(req->sp == sp);
 	assert(req->handling == VCL_RET_HASH);
 	SHA256_Final(req->digest, req->sha256ctx);
 	req->sha256ctx = NULL;
@@ -1489,7 +1458,7 @@ cnt_recv(struct sess *sp, const struct worker *wrk, struct req *req)
 
 	switch(recv_handling) {
 	case VCL_RET_LOOKUP:
-		sp->step = STP_LOOKUP;
+		req->sp->step = STP_LOOKUP;
 		return (0);
 	case VCL_RET_PIPE:
 		if (req->esi_level > 0) {
@@ -1497,13 +1466,13 @@ cnt_recv(struct sess *sp, const struct worker *wrk, struct req *req)
 			INCOMPL();
 			return (1);
 		}
-		sp->step = STP_PIPE;
+		req->sp->step = STP_PIPE;
 		return (0);
 	case VCL_RET_PASS:
-		sp->step = STP_PASS;
+		req->sp->step = STP_PASS;
 		return (0);
 	case VCL_RET_ERROR:
-		sp->step = STP_ERROR;
+		req->sp->step = STP_ERROR;
 		return (0);
 	default:
 		WRONG("Illegal action in vcl_recv{}");
@@ -1523,12 +1492,11 @@ DOT start -> DONE [label=errors]
  */
 
 static int
-cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
+cnt_start(struct worker *wrk, struct req *req)
 {
 	char *p;
 	const char *r = "HTTP/1.1 100 Continue\r\n\r\n";
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AZ(req->restarts);
@@ -1536,7 +1504,6 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 	AZ(req->vcl);
 	AZ(req->esi_level);
 	assert(!isnan(req->t_req));
-	assert(req->sp == sp);
 
 	/* Update stats of various sorts */
 	wrk->stats.client_req++;
@@ -1545,7 +1512,7 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 	/* Assign XID and log */
 	req->xid = ++xids;				/* XXX not locked */
 	VSLb(req->vsl, SLT_ReqStart, "%s %s %u",
-	    sp->addr, sp->port,  req->xid);
+	    req->sp->addr, req->sp->port, req->xid);
 
 	/* Borrow VCL reference from worker thread */
 	VCL_Refresh(&wrk->vcl);
@@ -1559,7 +1526,7 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 
 	/* If we could not even parse the request, just close */
 	if (req->err_code == 400) {
-		SES_Close(sp, "junk");
+		SES_Close(req->sp, "junk");
 		return (1);
 	}
 
@@ -1574,8 +1541,8 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 	if (req->err_code == 0 && http_GetHdr(req->http, H_Expect, &p)) {
 		if (strcasecmp(p, "100-continue")) {
 			req->err_code = 417;
-		} else if (strlen(r) != write(sp->fd, r, strlen(r))) {
-			SES_Close(sp, "remote closed");
+		} else if (strlen(r) != write(req->sp->fd, r, strlen(r))) {
+			SES_Close(req->sp, "remote closed");
 			return (1);
 		}
 	}
@@ -1587,9 +1554,9 @@ cnt_start(struct sess *sp, struct worker *wrk, struct req *req)
 	HTTP_Copy(req->http0, req->http);	/* Copy for restart/ESI use */
 
 	if (req->err_code)
-		sp->step = STP_ERROR;
+		req->sp->step = STP_ERROR;
 	else
-		sp->step = STP_RECV;
+		req->sp->step = STP_RECV;
 	return (0);
 }
 
