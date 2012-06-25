@@ -61,16 +61,18 @@ struct sesspool {
  */
 
 void
-SES_Charge(struct worker *wrk, struct sess *sp)
+SES_Charge(struct worker *wrk, struct req *req)
 {
+	struct sess *sp;
 	struct acct *a;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	sp = req->sp;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	a = &wrk->acct_tmp;
-	sp->req->req_bodybytes += a->bodybytes;
+	req->req_bodybytes += a->bodybytes;
 
 #define ACCT(foo)				\
 	wrk->stats.s_##foo += a->foo;		\
@@ -259,7 +261,7 @@ SES_Delete(struct sess *sp, const char *reason, double now)
 
 	if (sp->req != NULL) {
 		AZ(sp->req->vcl);
-		SES_ReleaseReq(sp);
+		SES_ReleaseReq(sp->req);
 	}
 
 	if (*sp->addr == '\0')
@@ -346,21 +348,23 @@ SES_GetReq(struct sess *sp)
 }
 
 void
-SES_ReleaseReq(struct sess *sp)
+SES_ReleaseReq(struct req *req)
 {
+	struct sess *sp;
 	struct sesspool *pp;
 
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	assert(sp->req == req);
 	pp = sp->sesspool;
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
-	CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
-	AN(sp->req->sp);
-	assert(sp->req->sp == sp);
-	MPL_AssertSane(sp->req);
-	VSL_Flush(sp->req->vsl, 0);
-	sp->req->sp = NULL;
-	MPL_Free(pp->mpl_req, sp->req);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	MPL_AssertSane(req);
+	VSL_Flush(req->vsl, 0);
+	req->sp = NULL;
+	MPL_Free(pp->mpl_req, req);
 	sp->req = NULL;
 	THR_SetRequest(NULL);
 }

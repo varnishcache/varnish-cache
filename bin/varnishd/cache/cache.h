@@ -925,13 +925,13 @@ unsigned WRW_WriteH(const struct worker *w, const txt *hh, const char *suf);
 /* cache_session.c [SES] */
 void SES_Close(struct sess *sp, const char *reason);
 void SES_Delete(struct sess *sp, const char *reason, double now);
-void SES_Charge(struct worker *, struct sess *);
+void SES_Charge(struct worker *, struct req *);
 struct sesspool *SES_NewPool(struct pool *pp, unsigned pool_no);
 void SES_DeletePool(struct sesspool *sp);
 int SES_Schedule(struct sess *sp);
 void SES_Handle(struct sess *sp, double now);
 struct req *SES_GetReq(struct sess *sp);
-void SES_ReleaseReq(struct sess *sp);
+void SES_ReleaseReq(struct req *);
 pool_func_t SES_pool_accept_task;
 
 /* cache_shmlog.c */
