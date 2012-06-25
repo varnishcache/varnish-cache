@@ -171,11 +171,11 @@ res_WriteGunzipObj(struct req *req)
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 		u += st->len;
 
-		i = VGZ_WrwGunzip(req->sp->wrk, vg, st->ptr, st->len);
+		i = VGZ_WrwGunzip(req->wrk, vg, st->ptr, st->len);
 		/* XXX: error check */
 		(void)i;
 	}
-	VGZ_WrwFlush(req->sp->wrk, vg);
+	VGZ_WrwFlush(req->wrk, vg);
 	(void)VGZ_Destroy(&vg);
 	assert(u == req->obj->len);
 }
@@ -215,8 +215,8 @@ res_WriteDirObj(const struct req *req, ssize_t low, ssize_t high)
 
 		ptr += len;
 
-		req->sp->wrk->acct_tmp.bodybytes += len;
-		(void)WRW_Write(req->sp->wrk, st->ptr + off, len);
+		req->wrk->acct_tmp.bodybytes += len;
+		(void)WRW_Write(req->wrk, st->ptr + off, len);
 	}
 	assert(u == req->obj->len);
 }
@@ -248,20 +248,20 @@ RES_WriteObj(struct req *req)
 	    http_GetHdr(req->http, H_Range, &r))
 		res_dorange(req, r, &low, &high);
 
-	WRW_Reserve(req->sp->wrk, &req->sp->fd, req->vsl, req->t_resp);
+	WRW_Reserve(req->wrk, &req->sp->fd, req->vsl, req->t_resp);
 
 	/*
 	 * Send HTTP protocol header, unless interior ESI object
 	 */
 	if (!(req->res_mode & RES_ESI_CHILD))
-		req->sp->wrk->acct_tmp.hdrbytes +=
-		    http_Write(req->sp->wrk, req->resp, 1);
+		req->wrk->acct_tmp.hdrbytes +=
+		    http_Write(req->wrk, req->resp, 1);
 
 	if (!req->wantbody)
 		req->res_mode &= ~RES_CHUNKED;
 
 	if (req->res_mode & RES_CHUNKED)
-		WRW_Chunked(req->sp->wrk);
+		WRW_Chunked(req->wrk);
 
 	if (!req->wantbody) {
 		/* This was a HEAD or conditional request */
@@ -282,8 +282,8 @@ RES_WriteObj(struct req *req)
 
 	if (req->res_mode & RES_CHUNKED &&
 	    !(req->res_mode & RES_ESI_CHILD))
-		WRW_EndChunk(req->sp->wrk);
+		WRW_EndChunk(req->wrk);
 
-	if (WRW_FlushRelease(req->sp->wrk) && req->sp->fd >= 0)
+	if (WRW_FlushRelease(req->wrk) && req->sp->fd >= 0)
 		SES_Close(req->sp, "remote closed");
 }

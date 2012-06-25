@@ -323,15 +323,13 @@ cnt_sess_done(struct sess *sp, struct worker *wrk, struct req *req)
  */
 
 void
-CNT_Session(struct sess *sp)
+CNT_Session(struct worker *wrk, struct sess *sp)
 {
 	int done;
 	enum cnt_sess_done_ret sdr;
-	struct worker *wrk;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	wrk = sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	/*
 	 * Whenever we come in from the acceptor or waiter, we need to set
@@ -363,8 +361,10 @@ CNT_Session(struct sess *sp)
 
 		if (sp->sess_step == S_STP_WORKING) {
 			done = CNT_Request(sp->wrk, sp->req);
-			if (done == 2)
+			if (done == 2) {
+				sp->wrk = NULL;
 				return;
+			}
 			assert(done == 1);
 			sdr = cnt_sess_done(sp, wrk, sp->req);
 			switch (sdr) {
@@ -1598,6 +1598,8 @@ CNT_Request(struct worker *wrk, struct req *req)
 	    req->req_step == R_STP_START ||
 	    req->req_step == R_STP_RECV);
 
+	req->wrk = wrk;
+
 	for (done = 0; !done; ) {
 		/*
 		 * This is a good place to be paranoid about the various
@@ -1625,6 +1627,8 @@ CNT_Request(struct worker *wrk, struct req *req)
 	}
 	if (done == 1)
 		SES_Charge(req->sp);
+
+	req->wrk = NULL;
 
 	assert(WRW_IsReleased(wrk));
 	return (done);

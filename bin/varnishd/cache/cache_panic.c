@@ -261,8 +261,8 @@ pan_req(const struct req *req)
 	VSB_printf(pan_vsp, "  restarts = %d, esi_level = %d\n",
 	    req->restarts, req->esi_level);
 
-	if (req->busyobj != NULL)
-		pan_busyobj(req->busyobj);
+	if (req->wrk != NULL)
+		pan_wrk(req->wrk);
 
 	pan_ws(req->ws, 2);
 	pan_http("req", req->http, 2);
@@ -271,6 +271,9 @@ pan_req(const struct req *req)
 
 	if (VALID_OBJ(req->vcl, VCL_CONF_MAGIC))
 		pan_vcl(req->vcl);
+
+	if (req->busyobj != NULL)
+		pan_busyobj(req->busyobj);
 
 	if (VALID_OBJ(req->obj, OBJECT_MAGIC))
 		pan_object(req->obj);
@@ -301,9 +304,6 @@ pan_sess(const struct sess *sp)
 		VSB_printf(pan_vsp, "  step = %s,\n", stp);
 	else
 		VSB_printf(pan_vsp, "  step = 0x%x,\n", sp->sess_step);
-
-	if (sp->wrk != NULL)
-		pan_wrk(sp->wrk);
 
 	VSB_printf(pan_vsp, "},\n");
 }

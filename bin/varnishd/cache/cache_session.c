@@ -128,7 +128,7 @@ ses_pool_task(struct worker *wrk, void *arg)
 	THR_SetSession(sp);
 	AZ(sp->wrk);
 	sp->wrk = wrk;
-	CNT_Session(sp);
+	CNT_Session(wrk, sp);
 	sp = NULL;			/* Cannot access sp any longer */
 	THR_SetSession(NULL);
 	WS_Assert(wrk->aws);

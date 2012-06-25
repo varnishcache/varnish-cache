@@ -568,6 +568,7 @@ struct req {
 	uint8_t			hash_always_miss;
 
 	struct sess		*sp;
+	struct worker		*wrk;
 	enum req_step		req_step;
 	VTAILQ_ENTRY(req)	w_list;
 
@@ -744,7 +745,7 @@ void VBO_Free(struct busyobj **vbo);
 
 /* cache_center.c [CNT] */
 int CNT_Request(struct worker *, struct req *);
-void CNT_Session(struct sess *);
+void CNT_Session(struct worker *, struct sess *);
 void CNT_Init(void);
 
 /* cache_cli.c [CLI] */

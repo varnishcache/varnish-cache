@@ -299,7 +299,7 @@ HSH_Lookup(struct req *req)
 	int busy_found;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	wrk = req->sp->wrk;
+	wrk = req->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req->http, HTTP_MAGIC);
 	AN(req->director);
@@ -431,7 +431,6 @@ HSH_Lookup(struct req *req)
 		 * calls us again
 		 */
 		req->hash_objhead = oh;
-		req->sp->wrk = NULL;
 		Lck_Unlock(&oh->mtx);
 		return (NULL);
 	}
@@ -482,9 +481,9 @@ hsh_rush(struct dstat *ds, struct objhead *oh)
 		if (req == NULL)
 			break;
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+		AZ(req->wrk);
 		sp = req->sp;
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-		AZ(sp->wrk);
 		VTAILQ_REMOVE(&wl->list, req, w_list);
 		DSL(0x20, SLT_Debug, sp->vsl_id, "off waiting list");
 		if (SES_Schedule(sp)) {
@@ -533,7 +532,7 @@ HSH_Purge(struct req *req, struct objhead *oh, double ttl, double grace)
 			continue;
 		}
 
-		(void)oc_getobj(&req->sp->wrk->stats, oc);
+		(void)oc_getobj(&req->wrk->stats, oc);
 		    /* XXX: still needed ? */
 
 		xxxassert(spc >= sizeof *ocp);
@@ -551,14 +550,14 @@ HSH_Purge(struct req *req, struct objhead *oh, double ttl, double grace)
 	for (n = 0; n < nobj; n++) {
 		oc = ocp[n];
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-		o = oc_getobj(&req->sp->wrk->stats, oc);
+		o = oc_getobj(&req->wrk->stats, oc);
 		if (o == NULL)
 			continue;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		o->exp.ttl = ttl;
 		o->exp.grace = grace;
 		EXP_Rearm(o);
-		(void)HSH_Deref(&req->sp->wrk->stats, NULL, &o);
+		(void)HSH_Deref(&req->wrk->stats, NULL, &o);
 	}
 	WS_Release(req->ws, 0);
 }

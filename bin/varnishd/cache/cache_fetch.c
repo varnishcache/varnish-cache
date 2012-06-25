@@ -406,8 +406,8 @@ FetchReqBody(struct req *req, int sendbody)
 			content_length -= rdcnt;
 			if (sendbody) {
 				/* XXX: stats ? */
-				(void)WRW_Write(req->sp->wrk, buf, rdcnt);
-				if (WRW_Flush(req->sp->wrk))
+				(void)WRW_Write(req->wrk, buf, rdcnt);
+				if (WRW_Flush(req->wrk))
 					return (2);
 			}
 		}
@@ -441,7 +441,7 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 	int i;
 	struct http_conn *htc;
 
-	wrk = req->sp->wrk;
+	wrk = req->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	bo = req->busyobj;
