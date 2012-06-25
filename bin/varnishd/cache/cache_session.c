@@ -124,16 +124,18 @@ ses_new(struct sesspool *pp)
 static void
 ses_pool_task(struct worker *wrk, void *arg)
 {
+	struct req *req;
 	struct sess *sp;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
+	CAST_OBJ_NOTNULL(req, arg, REQ_MAGIC);
+	sp = req->sp;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	AZ(wrk->aws->r);
 	wrk->lastused = NAN;
 	THR_SetSession(sp);
-	CNT_Session(wrk, sp);
-	sp = NULL;			/* Cannot access sp any longer */
+	CNT_Session(wrk, req);
 	THR_SetSession(NULL);
 	WS_Assert(wrk->aws);
 	AZ(wrk->wrw);
@@ -151,6 +153,7 @@ void
 SES_pool_accept_task(struct worker *wrk, void *arg)
 {
 	struct sesspool *pp;
+	struct req *req;
 	struct sess *sp;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -161,11 +164,13 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 	sp = ses_new(pp);
 	if (sp == NULL) {
 		VCA_FailSess(wrk);
-	} else {
-		VCA_SetupSess(wrk, sp);
-		sp->sess_step = S_STP_NEWREQ;
-		ses_pool_task(wrk, sp);
-	}
+		return;
+	} 
+	VCA_SetupSess(wrk, sp);
+	sp->sess_step = S_STP_NEWREQ;
+	req = SES_GetReq(sp);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	ses_pool_task(wrk, req);
 }
 
 /*--------------------------------------------------------------------
@@ -186,7 +191,7 @@ SES_ScheduleReq(struct req *req)
 	AN(pp->pool);
 
 	sp->task.func = ses_pool_task;
-	sp->task.priv = sp;
+	sp->task.priv = req;
 
 	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT)) {
 		VSC_C_main->client_drop_late++;
@@ -206,6 +211,7 @@ SES_ScheduleReq(struct req *req)
 void
 SES_Handle(struct sess *sp, double now)
 {
+	struct req *req;
 	struct sesspool *pp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -213,8 +219,10 @@ SES_Handle(struct sess *sp, double now)
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
 	AZ(sp->req);
+	req = SES_GetReq(sp);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	sp->task.func = ses_pool_task;
-	sp->task.priv = sp;
+	sp->task.priv = req;
 	sp->sess_step = S_STP_NEWREQ;
 	sp->t_rx = now;
 	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT)) {

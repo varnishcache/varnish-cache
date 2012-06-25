@@ -744,7 +744,7 @@ void VBO_Free(struct busyobj **vbo);
 
 /* cache_center.c [CNT] */
 int CNT_Request(struct worker *, struct req *);
-void CNT_Session(struct worker *, struct sess *);
+void CNT_Session(struct worker *, struct req *);
 void CNT_Init(void);
 
 /* cache_cli.c [CLI] */

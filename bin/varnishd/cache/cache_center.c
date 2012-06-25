@@ -117,11 +117,8 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	if (req == NULL) {
-		req = SES_GetReq(sp);
-		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	}
 	assert(req->sp == sp);
 
 	if (!sp->init_done) {
@@ -327,13 +324,17 @@ cnt_sess_done(struct sess *sp, struct worker *wrk, struct req *req)
  */
 
 void
-CNT_Session(struct worker *wrk, struct sess *sp)
+CNT_Session(struct worker *wrk, struct req *req)
 {
 	int done;
+	struct sess *sp;
 	enum cnt_sess_done_ret sdr;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	assert(sp->req == req);
 
 	/*
 	 * Whenever we come in from the acceptor or waiter, we need to set
@@ -348,7 +349,7 @@ CNT_Session(struct worker *wrk, struct sess *sp)
 			SES_Close(sp, "remote closed");
 		else
 			SES_Close(sp, "error");
-		sdr = cnt_sess_done(sp, wrk, sp->req);
+		sdr = cnt_sess_done(sp, wrk, req);
 		assert(sdr == SESS_DONE_RET_GONE);
 		return;
 	}
@@ -357,18 +358,19 @@ CNT_Session(struct worker *wrk, struct sess *sp)
 		/*
 		 * Possible entrance states
 		 */
+		assert(sp->req == req);
+
 		assert(
 		    sp->sess_step == S_STP_NEWREQ ||
-		    (sp->req != NULL &&
-		    (sp->req->req_step == R_STP_LOOKUP ||
-		    sp->req->req_step == R_STP_START)));
+		    req->req_step == R_STP_LOOKUP ||
+		    req->req_step == R_STP_START);
 
 		if (sp->sess_step == S_STP_WORKING) {
-			done = CNT_Request(wrk, sp->req);
+			done = CNT_Request(wrk, req);
 			if (done == 2)
 				return;
 			assert(done == 1);
-			sdr = cnt_sess_done(sp, wrk, sp->req);
+			sdr = cnt_sess_done(sp, wrk, req);
 			switch (sdr) {
 			case SESS_DONE_RET_GONE:
 				return;
@@ -377,7 +379,7 @@ CNT_Session(struct worker *wrk, struct sess *sp)
 				break;
 			case SESS_DONE_RET_START:
 				sp->sess_step = S_STP_WORKING;
-				sp->req->req_step = R_STP_START;
+				req->req_step = R_STP_START;
 				break;
 			default:
 				WRONG("Illegal enum cnt_sess_done_ret");
@@ -385,12 +387,11 @@ CNT_Session(struct worker *wrk, struct sess *sp)
 		}
 
 		if (sp->sess_step == S_STP_NEWREQ) {
-			done = cnt_wait(sp, wrk, sp->req);
-			if (done) {
+			done = cnt_wait(sp, wrk, req);
+			if (done)
 				return;
-			}
 			sp->sess_step = S_STP_WORKING;
-			sp->req->req_step = R_STP_START;
+			req->req_step = R_STP_START;
 		}
 	}
 }
