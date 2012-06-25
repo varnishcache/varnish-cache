@@ -169,14 +169,17 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 }
 
 /*--------------------------------------------------------------------
- * Schedule a session back on a work-thread from its pool
+ * Schedule a request back on a work-thread from its sessions pool
  */
 
 int
-SES_Schedule(struct sess *sp)
+SES_ScheduleReq(struct req *req)
 {
+	struct sess *sp;
 	struct sesspool *pp;
 
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	pp = sp->sesspool;
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
@@ -188,13 +191,8 @@ SES_Schedule(struct sess *sp)
 	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT)) {
 		VSC_C_main->client_drop_late++;
 		sp->t_idle = VTIM_real();
-		if (sp->req != NULL && sp->req->vcl != NULL) {
-			/*
-			 * A session parked on a busy object can come here
-			 * after it wakes up.  Loose the VCL reference.
-			 */
-			VCL_Rel(&sp->req->vcl);
-		}
+		AN (req->vcl);
+		VCL_Rel(&req->vcl);
 		SES_Delete(sp, "dropped", sp->t_idle);
 		return (1);
 	}
@@ -208,10 +206,22 @@ SES_Schedule(struct sess *sp)
 void
 SES_Handle(struct sess *sp, double now)
 {
+	struct sesspool *pp;
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	pp = sp->sesspool;
+	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
+	AN(pp->pool);
+	AZ(sp->req);
+	sp->task.func = ses_pool_task;
+	sp->task.priv = sp;
 	sp->sess_step = S_STP_NEWREQ;
 	sp->t_rx = now;
-	(void)SES_Schedule(sp);
+	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT)) {
+		VSC_C_main->client_drop_late++;
+		sp->t_idle = VTIM_real();
+		SES_Delete(sp, "dropped", sp->t_idle);
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -248,6 +258,7 @@ SES_Delete(struct sess *sp, const char *reason, double now)
 	struct sesspool *pp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	AZ(sp->req);
 	pp = sp->sesspool;
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
@@ -258,11 +269,6 @@ SES_Delete(struct sess *sp, const char *reason, double now)
 		now = VTIM_real();
 	assert(!isnan(sp->t_open));
 	assert(sp->fd < 0);
-
-	if (sp->req != NULL) {
-		AZ(sp->req->vcl);
-		SES_ReleaseReq(sp->req);
-	}
 
 	if (*sp->addr == '\0')
 		strcpy(sp->addr, "-");

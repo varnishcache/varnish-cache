@@ -928,7 +928,7 @@ void SES_Delete(struct sess *sp, const char *reason, double now);
 void SES_Charge(struct worker *, struct req *);
 struct sesspool *SES_NewPool(struct pool *pp, unsigned pool_no);
 void SES_DeletePool(struct sesspool *sp);
-int SES_Schedule(struct sess *sp);
+int SES_ScheduleReq(struct req *);
 void SES_Handle(struct sess *sp, double now);
 struct req *SES_GetReq(struct sess *sp);
 void SES_ReleaseReq(struct req *);

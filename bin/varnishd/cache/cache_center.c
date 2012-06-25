@@ -207,6 +207,8 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 		}
 	}
 	SES_Charge(wrk, req);
+	AZ(req->vcl);
+	SES_ReleaseReq(req);
 	SES_Delete(sp, why, now);
 	return (1);
 }
@@ -295,6 +297,8 @@ cnt_sess_done(struct sess *sp, struct worker *wrk, struct req *req)
 
 	if (sp->fd < 0) {
 		wrk->stats.sess_closed++;
+		AZ(req->vcl);
+		SES_ReleaseReq(req);
 		SES_Delete(sp, NULL, NAN);
 		return (SESS_DONE_RET_GONE);
 	}
