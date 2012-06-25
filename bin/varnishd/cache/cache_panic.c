@@ -57,6 +57,8 @@
 static struct vsb pan_vsp_storage, *pan_vsp;
 static pthread_mutex_t panicstr_mtx = PTHREAD_MUTEX_INITIALIZER;
 
+static void pan_sess(const struct sess *sp);
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -261,6 +263,9 @@ pan_req(const struct req *req)
 	VSB_printf(pan_vsp, "  restarts = %d, esi_level = %d\n",
 	    req->restarts, req->esi_level);
 
+	if (req->sp != NULL)
+		pan_sess(req->sp);
+
 	if (req->wrk != NULL)
 		pan_wrk(req->wrk);
 
@@ -343,7 +348,6 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
     int err, int xxx)
 {
 	const char *q;
-	const struct sess *sp;
 	const struct req *req;
 
 	AZ(pthread_mutex_lock(&panicstr_mtx)); /* Won't be released,
@@ -385,9 +389,6 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	pan_backtrace();
 
 	if (!(cache_param->diag_bitmap & 0x2000)) {
-		sp = THR_GetSession();
-		if (sp != NULL)
-			pan_sess(sp);
 		req = THR_GetRequest();
 		if (req != NULL)
 			pan_req(req);

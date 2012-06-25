@@ -334,7 +334,6 @@ CNT_Session(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	assert(sp->req == req);
 
 	/*
 	 * Whenever we come in from the acceptor or waiter, we need to set
@@ -358,7 +357,6 @@ CNT_Session(struct worker *wrk, struct req *req)
 		/*
 		 * Possible entrance states
 		 */
-		assert(sp->req == req);
 
 		assert(
 		    sp->sess_step == S_STP_NEWREQ ||

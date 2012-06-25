@@ -46,6 +46,8 @@
 
 static unsigned ses_size = sizeof (struct sess);
 
+static struct req * ses_GetReq(struct sess *sp);
+
 /*--------------------------------------------------------------------*/
 
 struct sesspool {
@@ -134,9 +136,7 @@ ses_pool_task(struct worker *wrk, void *arg)
 
 	AZ(wrk->aws->r);
 	wrk->lastused = NAN;
-	THR_SetSession(sp);
 	CNT_Session(wrk, req);
-	THR_SetSession(NULL);
 	WS_Assert(wrk->aws);
 	AZ(wrk->wrw);
 	if (cache_param->diag_bitmap & 0x00040000) {
@@ -168,7 +168,7 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 	} 
 	VCA_SetupSess(wrk, sp);
 	sp->sess_step = S_STP_NEWREQ;
-	req = SES_GetReq(sp);
+	req = ses_GetReq(sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	ses_pool_task(wrk, req);
 }
@@ -218,8 +218,7 @@ SES_Handle(struct sess *sp, double now)
 	pp = sp->sesspool;
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
-	AZ(sp->req);
-	req = SES_GetReq(sp);
+	req = ses_GetReq(sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	sp->task.func = ses_pool_task;
 	sp->task.priv = req;
@@ -266,7 +265,6 @@ SES_Delete(struct sess *sp, const char *reason, double now)
 	struct sesspool *pp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	AZ(sp->req);
 	pp = sp->sesspool;
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
@@ -296,11 +294,11 @@ SES_Delete(struct sess *sp, const char *reason, double now)
 }
 
 /*--------------------------------------------------------------------
- * Alloc/Free sp->req
+ * Alloc/Free a request
  */
 
-struct req *
-SES_GetReq(struct sess *sp)
+static struct req *
+ses_GetReq(struct sess *sp)
 {
 	struct sesspool *pp;
 	struct req *req;
@@ -313,11 +311,9 @@ SES_GetReq(struct sess *sp)
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
 
-	AZ(sp->req);
 	req = MPL_Get(pp->mpl_req, &sz);
 	AN(req);
 	req->magic = REQ_MAGIC;
-	sp->req = req;
 	req->sp = sp;
 	THR_SetRequest(req);
 
@@ -370,7 +366,6 @@ SES_ReleaseReq(struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	assert(sp->req == req);
 	pp = sp->sesspool;
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
@@ -379,7 +374,6 @@ SES_ReleaseReq(struct req *req)
 	VSL_Flush(req->vsl, 0);
 	req->sp = NULL;
 	MPL_Free(pp->mpl_req, req);
-	sp->req = NULL;
 	THR_SetRequest(NULL);
 }
 

@@ -67,7 +67,6 @@ WAIT_Enter(struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	AZ(sp->req);
 	assert(sp->fd >= 0);
 
 	/*

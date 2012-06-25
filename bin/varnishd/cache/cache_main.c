@@ -49,20 +49,6 @@ static pthread_key_t sp_key;
 static pthread_key_t req_key;
 
 void
-THR_SetSession(const struct sess *sp)
-{
-
-	AZ(pthread_setspecific(sp_key, sp));
-}
-
-const struct sess *
-THR_GetSession(void)
-{
-
-	return (pthread_getspecific(sp_key));
-}
-
-void
 THR_SetRequest(const struct req *req)
 {
 

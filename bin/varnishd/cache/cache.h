@@ -660,7 +660,6 @@ struct sess {
 	/* Cross references ------------------------------------------*/
 
 	struct sesspool		*sesspool;
-	struct req		*req;
 
 	struct pool_task	task;
 	VTAILQ_ENTRY(sess)	list;
@@ -866,8 +865,6 @@ void THR_SetName(const char *name);
 const char* THR_GetName(void);
 void THR_SetRequest(const struct req *);
 const struct req * THR_GetRequest(void);
-void THR_SetSession(const struct sess *);
-const struct sess * THR_GetSession(void);
 
 /* cache_lck.c */
 
@@ -930,7 +927,6 @@ struct sesspool *SES_NewPool(struct pool *pp, unsigned pool_no);
 void SES_DeletePool(struct sesspool *sp);
 int SES_ScheduleReq(struct req *);
 void SES_Handle(struct sess *sp, double now);
-struct req *SES_GetReq(struct sess *sp);
 void SES_ReleaseReq(struct req *);
 pool_func_t SES_pool_accept_task;
 
