@@ -134,6 +134,7 @@ ses_pool_task(struct worker *wrk, void *arg)
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
+	THR_SetRequest(req);
 	AZ(wrk->aws->r);
 	wrk->lastused = NAN;
 	CNT_Session(wrk, req);
@@ -143,6 +144,7 @@ ses_pool_task(struct worker *wrk, void *arg)
 		if (wrk->vcl != NULL)
 			VCL_Rel(&wrk->vcl);
 	}
+	THR_SetRequest(NULL);
 }
 
 /*--------------------------------------------------------------------
@@ -315,7 +317,6 @@ ses_GetReq(struct sess *sp)
 	AN(req);
 	req->magic = REQ_MAGIC;
 	req->sp = sp;
-	THR_SetRequest(req);
 
 	e = (char*)req + sz;
 	p = (char*)(req + 1);
@@ -374,7 +375,6 @@ SES_ReleaseReq(struct req *req)
 	VSL_Flush(req->vsl, 0);
 	req->sp = NULL;
 	MPL_Free(pp->mpl_req, req);
-	THR_SetRequest(NULL);
 }
 
 /*--------------------------------------------------------------------

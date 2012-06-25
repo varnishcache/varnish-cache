@@ -45,7 +45,6 @@ volatile struct params	*cache_param;
  * the thread.  This is used for panic messages.
  */
 
-static pthread_key_t sp_key;
 static pthread_key_t req_key;
 
 void
@@ -126,7 +125,6 @@ child_main(void)
 
 	cache_param = heritage.param;
 
-	AZ(pthread_key_create(&sp_key, NULL));
 	AZ(pthread_key_create(&req_key, NULL));
 	AZ(pthread_key_create(&name_key, NULL));
 

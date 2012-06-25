@@ -182,12 +182,12 @@ pan_vcl(const struct VCL_conf *vcl)
 {
 	int i;
 
-	VSB_printf(pan_vsp, "    vcl = {\n");
-	VSB_printf(pan_vsp, "      srcname = {\n");
+	VSB_printf(pan_vsp, "  vcl = {\n");
+	VSB_printf(pan_vsp, "    srcname = {\n");
 	for (i = 0; i < vcl->nsrc; ++i)
-		VSB_printf(pan_vsp, "        \"%s\",\n", vcl->srcname[i]);
-	VSB_printf(pan_vsp, "      },\n");
+		VSB_printf(pan_vsp, "      \"%s\",\n", vcl->srcname[i]);
 	VSB_printf(pan_vsp, "    },\n");
+	VSB_printf(pan_vsp, "  },\n");
 }
 
 
@@ -224,7 +224,7 @@ pan_busyobj(const struct busyobj *bo)
 		pan_http("bereq", bo->bereq, 4);
 	if (bo->beresp->ws != NULL)
 		pan_http("beresp", bo->beresp, 4);
-
+	VSB_printf(pan_vsp, "  }\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -272,7 +272,7 @@ pan_req(const struct req *req)
 	pan_ws(req->ws, 2);
 	pan_http("req", req->http, 2);
 	if (req->resp->ws != NULL)
-		pan_http("resp", req->resp, 4);
+		pan_http("resp", req->resp, 2);
 
 	if (VALID_OBJ(req->vcl, VCL_CONF_MAGIC))
 		pan_vcl(req->vcl);
@@ -293,10 +293,10 @@ pan_sess(const struct sess *sp)
 {
 	const char *stp;
 
-	VSB_printf(pan_vsp, "sp = %p {\n", sp);
-	VSB_printf(pan_vsp, "  fd = %d, id = %u,\n",
+	VSB_printf(pan_vsp, "  sp = %p {\n", sp);
+	VSB_printf(pan_vsp, "    fd = %d, id = %u,\n",
 	    sp->fd, sp->vsl_id & VSL_IDENTMASK);
-	VSB_printf(pan_vsp, "  client = %s %s,\n",
+	VSB_printf(pan_vsp, "    client = %s %s,\n",
 	    sp->addr ? sp->addr : "?.?.?.?",
 	    sp->port ? sp->port : "?");
 	switch (sp->sess_step) {
@@ -306,11 +306,11 @@ pan_sess(const struct sess *sp)
 		default: stp = NULL;
 	}
 	if (stp != NULL)
-		VSB_printf(pan_vsp, "  step = %s,\n", stp);
+		VSB_printf(pan_vsp, "    step = %s,\n", stp);
 	else
-		VSB_printf(pan_vsp, "  step = 0x%x,\n", sp->sess_step);
+		VSB_printf(pan_vsp, "    step = 0x%x,\n", sp->sess_step);
 
-	VSB_printf(pan_vsp, "},\n");
+	VSB_printf(pan_vsp, "  },\n");
 }
 
 /*--------------------------------------------------------------------*/

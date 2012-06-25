@@ -4,7 +4,15 @@ server s1 {
 	rxreq
 	txresp -hdr "Foo: bar" -body "abcdef\n"
 	rxreq
-	txresp -hdr "Panic: please" -body "012345\n"
+	txresp -hdr "Panic: fetch" -body "012345\n"
+	close
+
+	sema r1 sync 2
+	accept
+	rxreq
+	txresp -hdr "Foo: bar" -body "abcdef\n"
+	rxreq
+	txresp -hdr "Panic: deliver" -body "012345\n"
 	close
 
 	sema r1 sync 2
@@ -17,8 +25,13 @@ varnish v1 -storage "-smalloc,1m" -vcl+backend {
 
 	import debug from "${topbuild}/lib/libvmod_debug/.libs/libvmod_debug.so";
 
+	sub vcl_fetch {
+		if (beresp.http.panic == "fetch") {
+			debug.panic("Had Panic header: " + beresp.http.panic);
+		}
+	}
 	sub vcl_deliver {
-		if (resp.http.panic) {
+		if (resp.http.panic == "deliver") {
 			debug.panic("Had Panic header: " + resp.http.panic);
 		}
 	}
@@ -28,6 +41,23 @@ varnish v1 -cliok "param.set diag_bitmap 0x00001000"
 
 # Force the (random) port selected to be used again after restart.
 varnish v1 -cliok "param.set listen_address ${v1_addr}:${v1_port}"
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	txreq -url "/foo"
+	# Don't expect answer, the server crashed.
+} -run
+
+varnish v1 -wait-stopped
+varnish v1 -cliok "panic.show"
+varnish v1 -cliok "panic.clear"
+varnish v1 -clierr 300 "panic.clear"
+varnish v1 -cliok "start"
+varnish v1 -wait-running
+sema r1 sync 2
+
+delay 0.5
 
 client c1 {
 	txreq -url "/"
