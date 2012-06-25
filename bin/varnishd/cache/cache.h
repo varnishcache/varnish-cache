@@ -743,7 +743,7 @@ void VBO_DerefBusyObj(struct worker *wrk, struct busyobj **busyobj);
 void VBO_Free(struct busyobj **vbo);
 
 /* cache_center.c [CNT] */
-int CNT_Request(struct req *);
+int CNT_Request(struct worker *, struct req *);
 void CNT_Session(struct sess *);
 void CNT_Init(void);
 

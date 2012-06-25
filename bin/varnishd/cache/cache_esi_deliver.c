@@ -95,7 +95,7 @@ ved_include(struct req *req, const char *src, const char *host)
 	sxid = req->xid;
 	while (1) {
 		req->sp->wrk = wrk;
-		i = CNT_Request(req);
+		i = CNT_Request(wrk, req);
 		if (i == 1)
 			break;
 		assert(i == 2);

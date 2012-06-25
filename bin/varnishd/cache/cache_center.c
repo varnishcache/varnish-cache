@@ -362,7 +362,7 @@ CNT_Session(struct sess *sp)
 		    sp->req->req_step == R_STP_START)));
 
 		if (sp->sess_step == S_STP_WORKING) {
-			done = CNT_Request(sp->req);
+			done = CNT_Request(sp->wrk, sp->req);
 			if (done == 2)
 				return;
 			assert(done == 1);
@@ -1572,43 +1572,23 @@ cnt_start(struct worker *wrk, struct req *req)
  */
 
 static void
-cnt_diag(struct sess *sp, const char *state)
+cnt_diag(struct req *req, const char *state)
 {
-	void *vcl;
-	void *obj;
 
-	if (sp->req == NULL) {
-		vcl = NULL;
-		obj = NULL;
-	} else {
-		vcl = sp->req->vcl;
-		obj = sp->req->obj;
-	}
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	if (sp->req != NULL) {
-		VSLb(sp->req->vsl,  SLT_Debug,
-		    "vsl_id %u STP_%s sp %p obj %p vcl %p",
-		    sp->vsl_id, state, sp, obj, vcl);
-		VSL_Flush(sp->req->vsl, 0);
-	} else {
-		VSL(SLT_Debug, sp->vsl_id,
-		    "vsl_id %u STP_%s sp %p obj %p vcl %p",
-		    sp->vsl_id, state, sp, obj, vcl);
-	}
+	VSLb(req->vsl,  SLT_Debug, "vsl_id %u STP_%s sp %p obj %p vcl %p",
+	    req->sp->vsl_id, state, req->sp, req->obj, req->vcl);
+	VSL_Flush(req->vsl, 0);
 }
 
 int
-CNT_Request(struct req *req)
+CNT_Request(struct worker *wrk, struct req *req)
 {
 	int done;
-	struct worker *wrk;
-	struct sess *sp;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	sp = req->sp;
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	wrk = sp->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	/*
 	 * Possible entrance states
@@ -1619,24 +1599,20 @@ CNT_Request(struct req *req)
 	    req->req_step == R_STP_RECV);
 
 	for (done = 0; !done; ) {
-		assert(sp->wrk == wrk);
 		/*
 		 * This is a good place to be paranoid about the various
 		 * pointers still pointing to the things we expect.
 		 */
-		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 		CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 		WS_Assert(wrk->aws);
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-		AN(req->sp);
-		assert(req->sp == sp);
 
 		switch (req->req_step) {
 #define REQ_STEP(l,u,arg) \
 		    case R_STP_##u: \
 			if (cache_param->diag_bitmap & 0x01) \
-				cnt_diag(sp, #u); \
+				cnt_diag(req, #u); \
 			done = cnt_##l arg; \
 		        break;
 #include "tbl/steps.h"
@@ -1648,7 +1624,7 @@ CNT_Request(struct req *req)
 		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 	}
 	if (done == 1)
-		SES_Charge(sp);
+		SES_Charge(req->sp);
 
 	assert(WRW_IsReleased(wrk));
 	return (done);
