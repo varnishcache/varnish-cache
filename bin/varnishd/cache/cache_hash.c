@@ -424,7 +424,7 @@ HSH_Lookup(struct req *req)
 		if (cache_param->diag_bitmap & 0x20)
 			VSLb(req->vsl, SLT_Debug,
 				"on waiting list <%p>", oh);
-		SES_Charge(req->sp);
+		SES_Charge(req->wrk, req->sp);
 		/*
 		 * The objhead reference transfers to the sess, we get it
 		 * back when the sess comes off the waiting list and

@@ -61,15 +61,19 @@ struct sesspool {
  */
 
 void
-SES_Charge(struct sess *sp)
+SES_Charge(struct worker *wrk, struct sess *sp)
 {
-	struct acct *a = &sp->wrk->acct_tmp;
+	struct acct *a;
 
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
+
+	a = &wrk->acct_tmp;
 	sp->req->req_bodybytes += a->bodybytes;
 
 #define ACCT(foo)				\
-	sp->wrk->stats.s_##foo += a->foo;	\
+	wrk->stats.s_##foo += a->foo;		\
 	sp->acct_ses.foo += a->foo;		\
 	a->foo = 0;
 #include "tbl/acct_fields.h"
@@ -126,8 +130,6 @@ ses_pool_task(struct worker *wrk, void *arg)
 	AZ(wrk->aws->r);
 	wrk->lastused = NAN;
 	THR_SetSession(sp);
-	AZ(sp->wrk);
-	sp->wrk = wrk;
 	CNT_Session(wrk, sp);
 	sp = NULL;			/* Cannot access sp any longer */
 	THR_SetSession(NULL);
@@ -174,12 +176,10 @@ SES_Schedule(struct sess *sp)
 	struct sesspool *pp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	AZ(sp->wrk);
 	pp = sp->sesspool;
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
 
-	AZ(sp->wrk);
 	sp->task.func = ses_pool_task;
 	sp->task.priv = sp;
 
@@ -243,16 +243,12 @@ void
 SES_Delete(struct sess *sp, const char *reason, double now)
 {
 	struct acct *b;
-	struct worker *wrk;
 	struct sesspool *pp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	pp = sp->sesspool;
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
-
-	wrk = sp->wrk;
-	CHECK_OBJ_ORNULL(wrk, WORKER_MAGIC);
 
 	if (reason != NULL)
 		SES_Close(sp, reason);

@@ -191,7 +191,7 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			if (when < now || tmo == 0) {
 				sp->t_rx = NAN;
 				wrk->stats.sess_herd++;
-				SES_Charge(sp);
+				SES_Charge(wrk, sp);
 				SES_ReleaseReq(sp);
 				WAIT_Enter(sp);
 				return (1);
@@ -206,7 +206,7 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			}
 		}
 	}
-	SES_Charge(sp);
+	SES_Charge(wrk, sp);
 	SES_Delete(sp, why, now);
 	return (1);
 }
@@ -360,11 +360,9 @@ CNT_Session(struct worker *wrk, struct sess *sp)
 		    sp->req->req_step == R_STP_START)));
 
 		if (sp->sess_step == S_STP_WORKING) {
-			done = CNT_Request(sp->wrk, sp->req);
-			if (done == 2) {
-				sp->wrk = NULL;
+			done = CNT_Request(wrk, sp->req);
+			if (done == 2)
 				return;
-			}
 			assert(done == 1);
 			sdr = cnt_sess_done(sp, wrk, sp->req);
 			switch (sdr) {
@@ -1626,7 +1624,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 	}
 	if (done == 1)
-		SES_Charge(req->sp);
+		SES_Charge(wrk, req->sp);
 
 	req->wrk = NULL;
 

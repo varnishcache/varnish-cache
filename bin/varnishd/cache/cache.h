@@ -660,7 +660,6 @@ struct sess {
 	/* Cross references ------------------------------------------*/
 
 	struct sesspool		*sesspool;
-	struct worker		*wrk;
 	struct req		*req;
 
 	struct pool_task	task;
@@ -926,7 +925,7 @@ unsigned WRW_WriteH(const struct worker *w, const txt *hh, const char *suf);
 /* cache_session.c [SES] */
 void SES_Close(struct sess *sp, const char *reason);
 void SES_Delete(struct sess *sp, const char *reason, double now);
-void SES_Charge(struct sess *sp);
+void SES_Charge(struct worker *, struct sess *);
 struct sesspool *SES_NewPool(struct pool *pp, unsigned pool_no);
 void SES_DeletePool(struct sesspool *sp);
 int SES_Schedule(struct sess *sp);
