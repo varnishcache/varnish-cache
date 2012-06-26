@@ -167,7 +167,7 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 	if (sp == NULL) {
 		VCA_FailSess(wrk);
 		return;
-	} 
+	}
 	VCA_SetupSess(wrk, sp);
 	sp->sess_step = S_STP_NEWREQ;
 	req = ses_GetReq(sp);

@@ -311,6 +311,3 @@ WRW_EndChunk(const struct worker *wrk)
 	wrw->cliov = 0;
 	(void)WRW_Write(wrk, "0\r\n\r\n", -1);
 }
-
-
-

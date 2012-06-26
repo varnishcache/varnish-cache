@@ -177,4 +177,3 @@ vmod_collect(struct req *req, enum gethdr_e e, const char *h)
 	else if (e == HDR_BERESP && req->busyobj != NULL)
 		http_CollectHdr(req->busyobj->beresp, h);
 }
-

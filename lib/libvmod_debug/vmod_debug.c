@@ -94,4 +94,3 @@ vmod_test_priv_vcl(struct req *req, struct vmod_priv *priv)
         CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
         assert(!strcmp(priv->priv, "FOO"));
 }
-

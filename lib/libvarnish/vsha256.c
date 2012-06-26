@@ -332,4 +332,3 @@ SHA256_Test(void)
 		assert(!memcmp(o, p->output, 32));
 	}
 }
-

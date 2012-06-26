@@ -173,4 +173,3 @@ VRT_init_dir_fallback(struct cli *cli, struct director **bp, int idx,
 {
 	vrt_init_dir(cli, bp, idx, priv, m_fallback);
 }
-

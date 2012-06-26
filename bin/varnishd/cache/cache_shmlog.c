@@ -241,7 +241,8 @@ wsl(struct vsl_log *, enum VSL_tag_e tag, int id, const char *fmt, va_list ap)
     __printflike(4, 0);
 
 static void
-wsl(struct vsl_log *vsl, enum VSL_tag_e tag, int id, const char *fmt, va_list ap)
+wsl(struct vsl_log *vsl, enum VSL_tag_e tag, int id, const char *fmt,
+    va_list ap)
 {
 	char *p;
 	unsigned n, mlen;

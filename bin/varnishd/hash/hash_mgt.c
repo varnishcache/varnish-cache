@@ -81,4 +81,3 @@ HSH_config(const char *h_arg)
 		ARGV_ERR("Hash method \"%s\" takes no arguments\n",
 		    hp->name);
 }
-

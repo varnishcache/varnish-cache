@@ -318,4 +318,3 @@ fh.write('extern const void * const Vmod_Id;\n')
 fc.write('const void * const Vmod_Id = &Vmod_Id;\n')
 
 fc.write("\n")
-
