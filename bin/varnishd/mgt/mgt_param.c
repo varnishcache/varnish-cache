@@ -93,7 +93,7 @@ tweak_generic_timeout(struct cli *cli, volatile unsigned *dst, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
-void
+static void
 tweak_timeout(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *dest;
@@ -137,7 +137,7 @@ tweak_generic_timeout_double(struct cli *cli, volatile double *dest,
 	return (0);
 }
 
-static void
+void
 tweak_timeout_double(struct cli *cli, const struct parspec *par,
     const char *arg)
 {

@@ -62,16 +62,15 @@ struct params {
 	/* Worker threads and pool */
 	unsigned		wthread_min;
 	unsigned		wthread_max;
-	unsigned		wthread_timeout;
+	double			wthread_timeout;
 	unsigned		wthread_pools;
 	unsigned		wthread_add_threshold;
-	unsigned		wthread_add_delay;
-	unsigned		wthread_fail_delay;
-	unsigned		wthread_purge_delay;
-	unsigned		wthread_stats_rate;
+	double			wthread_add_delay;
+	double			wthread_fail_delay;
+	double			wthread_destroy_delay;
+	double			wthread_stats_rate;
 	ssize_t			wthread_stacksize;
-
-	unsigned		queue_max;
+	unsigned		wthread_queue_limit;
 
 	/* Memory allocation hints */
 	unsigned		workspace_client;

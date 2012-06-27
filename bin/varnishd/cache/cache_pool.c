@@ -31,13 +31,6 @@
  * Pools can be added on the fly, as a means to mitigate lock contention,
  * but can only be removed again by a restart. (XXX: we could fix that)
  *
- * Two threads herd the pools, one eliminates idle threads and aggregates
- * statistics for all the pools, the other thread creates new threads
- * on demand, subject to various numerical constraints.
- *
- * The algorithm for when to create threads needs to be reactive enough
- * to handle startup spikes, but sufficiently attenuated to not cause
- * thread pileups.  This remains subject for improvement.
  */
 
 #include "config.h"
@@ -49,36 +42,6 @@
 #include "common/heritage.h"
 
 #include "vtim.h"
-
-/*--------------------------------------------------------------------
- * MAC OS/X is incredibly moronic when it comes to time and such...
- */
-
-#ifndef CLOCK_MONOTONIC
-#define CLOCK_MONOTONIC	0
-
-#include <sys/time.h>
-
-static int
-clock_gettime(int foo, struct timespec *ts)
-{
-	struct timeval tv;
-
-	(void)foo;
-	gettimeofday(&tv, NULL);
-	ts->tv_sec = tv.tv_sec;
-	ts->tv_nsec = tv.tv_usec * 1000;
-	return (0);
-}
-
-static int
-pthread_condattr_setclock(pthread_condattr_t *attr, int foo)
-{
-	(void)attr;
-	(void)foo;
-	return (0);
-}
-#endif /* !CLOCK_MONOTONIC */
 
 VTAILQ_HEAD(taskhead, pool_task);
 
@@ -97,7 +60,6 @@ struct pool {
 	VTAILQ_ENTRY(pool)		list;
 
 	pthread_cond_t			herder_cond;
-	struct lock			herder_mtx;
 	pthread_t			herder_thr;
 
 	struct vxid			vxid;
@@ -107,8 +69,8 @@ struct pool {
 	struct taskhead			front_queue;
 	struct taskhead			back_queue;
 	unsigned			nthr;
+	unsigned			dry;
 	unsigned			lqueue;
-	unsigned			last_lqueue;
 	uintmax_t			ndropped;
 	uintmax_t			nqueued;
 	struct sesspool			*sesspool;
@@ -121,19 +83,21 @@ static pthread_t		thr_pool_herder;
  */
 
 static struct worker *
-pool_getidleworker(const struct pool *pp, int back)
+pool_getidleworker(struct pool *pp)
 {
 	struct pool_task *pt;
 	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	Lck_AssertHeld(&pp->mtx);
-	if (back)
-		pt = VTAILQ_LAST(&pp->idle_queue, taskhead);
-	else
-		pt = VTAILQ_FIRST(&pp->idle_queue);
-	if (pt == NULL)
+	pt = VTAILQ_FIRST(&pp->idle_queue);
+	if (pt == NULL) {
+		if (pp->nthr < cache_param->wthread_max) {
+			pp->dry++;
+			AZ(pthread_cond_signal(&pp->herder_cond));
+		}
 		return (NULL);
+	}
 	AZ(pt->func);
 	CAST_OBJ_NOTNULL(wrk, pt->priv, WORKER_MAGIC);
 	return (wrk);
@@ -185,7 +149,7 @@ pool_accept(struct worker *wrk, void *arg)
 
 		Lck_Lock(&pp->mtx);
 		wa->vxid = VXID_Get(&pp->vxid);
-		wrk2 = pool_getidleworker(pp, 0);
+		wrk2 = pool_getidleworker(pp);
 		if (wrk2 == NULL) {
 			/* No idle threads, do it ourselves */
 			Lck_Unlock(&pp->mtx);
@@ -225,7 +189,7 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how)
 	 * The common case first:  Take an idle thread, do it.
 	 */
 
-	wrk = pool_getidleworker(pp, 0);
+	wrk = pool_getidleworker(pp);
 	if (wrk != NULL) {
 		VTAILQ_REMOVE(&pp->idle_queue, &wrk->task, list);
 		AZ(wrk->task.func);
@@ -242,7 +206,7 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how)
 		break;
 	case POOL_QUEUE_FRONT:
 		/* If we have too much in the queue already, refuse. */
-		if (pp->lqueue > (cache_param->queue_max * pp->nthr) / 100) {
+		if (pp->lqueue > cache_param->wthread_queue_limit) {
 			pp->ndropped++;
 			retval = -1;
 		} else {
@@ -258,8 +222,6 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how)
 		WRONG("Unknown enum pool_how");
 	}
 	Lck_Unlock(&pp->mtx);
-	if (retval)
-		AZ(pthread_cond_signal(&pp->herder_cond));
 	return (retval);
 }
 
@@ -320,7 +282,7 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 }
 
 /*--------------------------------------------------------------------
- * Create another thread, if necessary & possible
+ * Create another thread.
  */
 
 static void
@@ -328,35 +290,23 @@ pool_breed(struct pool *qp, const pthread_attr_t *tp_attr)
 {
 	pthread_t tp;
 
-	/*
-	 * If we need more threads, and have space, create
-	 * one more thread.
-	 */
-	if (qp->nthr < cache_param->wthread_min || /* Not enough threads yet */
-	    (qp->lqueue > cache_param->wthread_add_threshold && /* need more  */
-	    qp->lqueue > qp->last_lqueue)) { /* not getting better since last */
-		if (qp->nthr > cache_param->wthread_max) {
-			Lck_Lock(&pool_mtx);
-			VSC_C_main->threads_limited++;
-			Lck_Unlock(&pool_mtx);
-		} else if (pthread_create(&tp, tp_attr, WRK_thread, qp)) {
-			VSL(SLT_Debug, 0, "Create worker thread failed %d %s",
-			    errno, strerror(errno));
-			Lck_Lock(&pool_mtx);
-			VSC_C_main->threads_failed++;
-			Lck_Unlock(&pool_mtx);
-			VTIM_sleep(cache_param->wthread_fail_delay * 1e-3);
-		} else {
-			AZ(pthread_detach(tp));
-			VTIM_sleep(cache_param->wthread_add_delay * 1e-3);
-			qp->nthr++;
-			Lck_Lock(&pool_mtx);
-			VSC_C_main->threads++;
-			VSC_C_main->threads_created++;
-			Lck_Unlock(&pool_mtx);
-		}
+	if (pthread_create(&tp, tp_attr, WRK_thread, qp)) {
+		VSL(SLT_Debug, 0, "Create worker thread failed %d %s",
+		    errno, strerror(errno));
+		Lck_Lock(&pool_mtx);
+		VSC_C_main->threads_failed++;
+		Lck_Unlock(&pool_mtx);
+		VTIM_sleep(cache_param->wthread_fail_delay);
+	} else {
+		AZ(pthread_detach(tp));
+		qp->dry = 0;
+		qp->nthr++;
+		Lck_Lock(&pool_mtx);
+		VSC_C_main->threads++;
+		VSC_C_main->threads_created++;
+		Lck_Unlock(&pool_mtx);
+		VTIM_sleep(cache_param->wthread_add_delay);
 	}
-	qp->last_lqueue = qp->lqueue;
 }
 
 /*--------------------------------------------------------------------
@@ -378,11 +328,10 @@ static void*
 pool_herder(void *priv)
 {
 	struct pool *pp;
+	struct pool_task *pt;
 	pthread_attr_t tp_attr;
-	struct timespec ts;
 	double t_idle;
 	struct worker *wrk;
-	int i;
 
 	CAST_OBJ_NOTNULL(pp, priv, POOL_MAGIC);
 	AZ(pthread_attr_init(&tp_attr));
@@ -397,55 +346,56 @@ pool_herder(void *priv)
 			AZ(pthread_attr_init(&tp_attr));
 		}
 
-		pool_breed(pp, &tp_attr);
-
-		if (pp->nthr < cache_param->wthread_min)
+		/* Make more threads if needed and allowed */
+		if (pp->nthr < cache_param->wthread_min ||
+		    (pp->dry && pp->nthr < cache_param->wthread_max)) {
+			pool_breed(pp, &tp_attr);
 			continue;
-
-		AZ(clock_gettime(CLOCK_MONOTONIC, &ts));
-		ts.tv_sec += cache_param->wthread_purge_delay / 1000;
-		ts.tv_nsec +=
-		    (cache_param->wthread_purge_delay % 1000) * 1000000;
-		if (ts.tv_nsec >= 1000000000) {
-			ts.tv_sec++;
-			ts.tv_nsec -= 1000000000;
 		}
 
-		Lck_Lock(&pp->herder_mtx);
-		i = Lck_CondWait(&pp->herder_cond, &pp->herder_mtx, &ts);
-		Lck_Unlock(&pp->herder_mtx);
-		if (!i)
-			continue;
+		if (pp->nthr > cache_param->wthread_min) {
 
-		if (pp->nthr <= cache_param->wthread_min)
-			continue;
+			t_idle = VTIM_real() - cache_param->wthread_timeout;
 
-		t_idle = VTIM_real() - cache_param->wthread_timeout;
+			Lck_Lock(&pp->mtx);
+			/* XXX: unsafe counters */
+			VSC_C_main->sess_queued += pp->nqueued;
+			VSC_C_main->sess_dropped += pp->ndropped;
+			pp->nqueued = pp->ndropped = 0;
+
+			wrk = NULL;
+			pt = VTAILQ_LAST(&pp->idle_queue, taskhead);
+			if (pt != NULL) {
+				AZ(pt->func);
+				CAST_OBJ_NOTNULL(wrk, pt->priv, WORKER_MAGIC);
+
+				if (wrk->lastused < t_idle ||
+				    pp->nthr > cache_param->wthread_max)
+					VTAILQ_REMOVE(&pp->idle_queue,
+					    &wrk->task, list);
+				else
+					wrk = NULL;
+			}
+			Lck_Unlock(&pp->mtx);
+
+			/* And give it a kiss on the cheek... */
+			if (wrk != NULL) {
+				pp->nthr--;
+				Lck_Lock(&pool_mtx);
+				VSC_C_main->threads--;
+				VSC_C_main->threads_destroyed++;
+				Lck_Unlock(&pool_mtx);
+				wrk->task.func = NULL;
+				wrk->task.priv = NULL;
+				VTIM_sleep(cache_param->wthread_destroy_delay);
+				continue;
+			}
+		}
 
 		Lck_Lock(&pp->mtx);
-		VSC_C_main->sess_queued += pp->nqueued;
-		VSC_C_main->sess_dropped += pp->ndropped;
-		pp->nqueued = pp->ndropped = 0;
-		wrk = pool_getidleworker(pp, 1);
-		if (wrk != NULL && (wrk->lastused < t_idle ||
-		    pp->nthr > cache_param->wthread_max)) {
-			VTAILQ_REMOVE(&pp->idle_queue, &wrk->task, list);
-			AZ(wrk->task.func);
-		} else
-			wrk = NULL;
+		if (!pp->dry)
+			(void)Lck_CondWait(&pp->herder_cond, &pp->mtx, NULL);
 		Lck_Unlock(&pp->mtx);
-
-		/* And give it a kiss on the cheek... */
-		if (wrk != NULL) {
-			pp->nthr--;
-			Lck_Lock(&pool_mtx);
-			VSC_C_main->threads--;
-			VSC_C_main->threads_destroyed++;
-			Lck_Unlock(&pool_mtx);
-			wrk->task.func = NULL;
-			wrk->task.priv = NULL;
-			AZ(pthread_cond_signal(&wrk->cond));
-		}
 	}
 	NEEDLESS_RETURN(NULL);
 }
@@ -460,10 +410,10 @@ pool_mkpool(unsigned pool_no)
 	struct pool *pp;
 	struct listen_sock *ls;
 	struct poolsock *ps;
-	pthread_condattr_t cv_attr;
 
 	ALLOC_OBJ(pp, POOL_MAGIC);
-	XXXAN(pp);
+	if (pp == NULL)
+		return (NULL);
 	Lck_New(&pp->mtx, lck_wq);
 
 	VTAILQ_INIT(&pp->idle_queue);
@@ -483,11 +433,7 @@ pool_mkpool(unsigned pool_no)
 		AZ(Pool_Task(pp, &ps->task, POOL_QUEUE_BACK));
 	}
 
-	AZ(pthread_condattr_init(&cv_attr));
-	AZ(pthread_condattr_setclock(&cv_attr, CLOCK_MONOTONIC));
-	AZ(pthread_cond_init(&pp->herder_cond, &cv_attr));
-	AZ(pthread_condattr_destroy(&cv_attr));
-	Lck_New(&pp->herder_mtx, lck_herder);
+	AZ(pthread_cond_init(&pp->herder_cond, NULL));
 	AZ(pthread_create(&pp->herder_thr, NULL, pool_herder, pp));
 
 	return (pp);

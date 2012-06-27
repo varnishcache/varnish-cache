@@ -53,7 +53,7 @@ struct parspec {
 int tweak_generic_uint(struct cli *cli,
     volatile unsigned *dest, const char *arg, unsigned min, unsigned max);
 void tweak_uint(struct cli *cli, const struct parspec *par, const char *arg);
-void tweak_timeout(struct cli *cli,
+void tweak_timeout_double(struct cli *cli,
     const struct parspec *par, const char *arg);
 void tweak_bytes(struct cli *cli, const struct parspec *par, const char *arg);
 

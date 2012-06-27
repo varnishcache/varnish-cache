@@ -5,7 +5,7 @@ server s1 {
 	txresp -hdr "Connection: close" -body "012345\n"
 } -start
 
-varnish v1 -arg "-p thread_pool_min=2 -p thread_pool_max=8 -p thread_pools=4 -p thread_pool_purge_delay=100 -p thread_pool_timeout=1 -p thread_pool_add_delay=100"
+varnish v1 -arg "-p thread_pool_min=10 -p thread_pool_max=10 -p thread_pools=2"
 
 varnish v1 -vcl+backend {} -start
 
@@ -16,4 +16,4 @@ client c1 {
 	expect resp.status == 200
 } -run
 
-varnish v1 -expect threads == 8
+varnish v1 -expect threads == 20

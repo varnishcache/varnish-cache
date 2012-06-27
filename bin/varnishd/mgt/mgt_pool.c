@@ -97,7 +97,8 @@ tweak_thread_pool_max(struct cli *cli, const struct parspec *par,
 /*--------------------------------------------------------------------*/
 
 const struct parspec WRK_parspec[] = {
-	{ "thread_pools", tweak_uint, &mgt_param.wthread_pools, 1, UINT_MAX,
+	{ "thread_pools", tweak_uint, &mgt_param.wthread_pools,
+		1, UINT_MAX,
 		"Number of worker thread pools.\n"
 		"\n"
 		"Increasing number of worker pools decreases lock "
@@ -110,71 +111,69 @@ const struct parspec WRK_parspec[] = {
 		"restart to take effect.",
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"2", "pools" },
-	{ "thread_pool_max", tweak_thread_pool_max, NULL, 1, 0,
+	{ "thread_pool_max", tweak_thread_pool_max, NULL, 10, 0,
 		"The maximum number of worker threads in each pool.\n"
 		"\n"
 		"Do not set this higher than you have to, since excess "
 		"worker threads soak up RAM and CPU and generally just get "
-		"in the way of getting work done.\n",
-		EXPERIMENTAL | DELAYED_EFFECT,
-		"500", "threads" },
-	{ "thread_pool_min", tweak_thread_pool_min, NULL, 2, 0,
+		"in the way of getting work done.\n"
+		"\n"
+		"Minimum is 10 threads.",
+		DELAYED_EFFECT,
+		"5000", "threads" },
+	{ "thread_pool_min", tweak_thread_pool_min, NULL, 10, 0,
 		"The minimum number of worker threads in each pool.\n"
 		"\n"
 		"Increasing this may help ramp up faster from low load "
-		"situations where threads have expired.\n"
+		"situations or when threads have expired.\n"
 		"\n"
-		"Minimum is 2 threads.",
-		EXPERIMENTAL | DELAYED_EFFECT,
-		"5", "threads" },
-	{ "thread_pool_timeout", tweak_timeout, &mgt_param.wthread_timeout,
-		1, 0,
+		"Minimum is 10 threads.",
+		DELAYED_EFFECT,
+		"100", "threads" },
+	{ "thread_pool_timeout",
+		tweak_timeout_double, &mgt_param.wthread_timeout,
+		10, UINT_MAX,
 		"Thread idle threshold.\n"
 		"\n"
 		"Threads in excess of thread_pool_min, which have been idle "
-		"for at least this long are candidates for purging.\n"
+		"for at least this long, will be destroyed.\n"
 		"\n"
-		"Minimum is 1 second.",
+		"Minimum is 10 seconds.",
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"300", "seconds" },
-	{ "thread_pool_purge_delay",
-		tweak_timeout, &mgt_param.wthread_purge_delay, 100, 0,
-		"Wait this long between purging threads.\n"
+	{ "thread_pool_destroy_delay",
+		tweak_timeout_double, &mgt_param.wthread_destroy_delay,
+		0.01, UINT_MAX,
+		"Wait this long after destroying a thread.\n"
 		"\n"
 		"This controls the decay of thread pools when idle(-ish).\n"
 		"\n"
-		"Minimum is 100 milliseconds.",
+		"Minimum is 0.01 second.",
 		EXPERIMENTAL | DELAYED_EFFECT,
-		"1000", "milliseconds" },
-	{ "thread_pool_add_threshold",
-		tweak_uint, &mgt_param.wthread_add_threshold, 0, UINT_MAX,
-		"Overflow threshold for worker thread creation.\n"
-		"\n"
-		"Setting this too low, will result in excess worker threads, "
-		"which is generally a bad idea.\n"
-		"\n"
-		"Setting it too high results in insuffient worker threads.\n",
-		EXPERIMENTAL,
-		"2", "requests" },
+		"1", "seconds" },
 	{ "thread_pool_add_delay",
-		tweak_timeout, &mgt_param.wthread_add_delay, 0, UINT_MAX,
-		"Wait at least this long between creating threads.\n"
+		tweak_timeout_double, &mgt_param.wthread_add_delay,
+		0, UINT_MAX,
+		"Wait at least this long after creating a thread.\n"
 		"\n"
-		"Setting this too long results in insuffient worker threads.\n"
+		"Some (buggy) systems may need a short (sub-second) "
+		"delay between creating threads.\n"
+		"Set this to a few milliseconds if you see the "
+		"'threads_failed' counter grow too much.\n"
 		"\n"
-		"Setting this too short increases the risk of worker "
-		"thread pile-up.\n",
-		0,
-		"2", "milliseconds" },
+		"Setting this too high results in insuffient worker threads.\n",
+		EXPERIMENTAL,
+		"0", "seconds" },
 	{ "thread_pool_fail_delay",
-		tweak_timeout, &mgt_param.wthread_fail_delay, 100, UINT_MAX,
+		tweak_timeout_double, &mgt_param.wthread_fail_delay,
+		10e-3, UINT_MAX,
 		"Wait at least this long after a failed thread creation "
 		"before trying to create another thread.\n"
 		"\n"
 		"Failure to create a worker thread is often a sign that "
 		" the end is near, because the process is running out of "
-		"RAM resources for thread stacks.\n"
-		"This delay tries to not rush it on needlessly.\n"
+		"some resource.  "
+		"This delay tries to not rush the end on needlessly.\n"
 		"\n"
 		"If thread creation failures are a problem, check that "
 		"thread_pool_max is not too high.\n"
@@ -183,7 +182,7 @@ const struct parspec WRK_parspec[] = {
 		"thread_pool_min, to reduce the rate at which treads are "
 		"destroyed and later recreated.\n",
 		EXPERIMENTAL,
-		"200", "milliseconds" },
+		"0.2", "seconds" },
 	{ "thread_stats_rate",
 		tweak_uint, &mgt_param.wthread_stats_rate, 0, UINT_MAX,
 		"Worker threads accumulate statistics, and dump these into "
@@ -194,13 +193,15 @@ const struct parspec WRK_parspec[] = {
 		"its accumulated stats into the global counters.\n",
 		EXPERIMENTAL,
 		"10", "requests" },
-	{ "queue_max", tweak_uint, &mgt_param.queue_max, 0, UINT_MAX,
-		"Percentage permitted queue length.\n"
+	{ "thread_queue_limit", tweak_uint, &mgt_param.wthread_queue_limit,
+		0, UINT_MAX,
+		"Permitted queue length per thread-pool.\n"
 		"\n"
-		"This sets the ratio of queued requests to worker threads, "
-		"above which sessions will be dropped instead of queued.\n",
+		"This sets the number of requests we will queue, waiting "
+		"for an available thread.  Above this limit sessions will "
+		"be dropped instead of queued.\n",
 		EXPERIMENTAL,
-		"100", "%" },
+		"20", "" },
 	{ "rush_exponent", tweak_uint, &mgt_param.rush_exponent, 2, UINT_MAX,
 		"How many parked request we start for each completed "
 		"request on the object.\n"
