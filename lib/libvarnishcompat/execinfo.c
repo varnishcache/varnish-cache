@@ -127,22 +127,22 @@ backtrace_symbols(void *const *buffer, int size)
 }
 
 /* Binary expansion */
-#define L1(x)	L0(x); L0(x + 0x01);
-#define L2(x)	L1(x); L1(x + 0x02);
-#define L3(x)	L2(x); L2(x + 0x04);
-#define L4(x)	L3(x); L3(x + 0x08);
-#define L5(x)	L4(x); L4(x + 0x10);
-#define L6(x)	L5(x); L5(x + 0x20);
-#define L7(x)	L6(x); L6(x + 0x40);
+#define DO_P2_TIMES_1(x)	DO_P2_TIMES_0(x); DO_P2_TIMES_0((x) + (1<<0))
+#define DO_P2_TIMES_2(x)	DO_P2_TIMES_1(x); DO_P2_TIMES_1((x) + (1<<1))
+#define DO_P2_TIMES_3(x)	DO_P2_TIMES_2(x); DO_P2_TIMES_2((x) + (1<<2))
+#define DO_P2_TIMES_4(x)	DO_P2_TIMES_3(x); DO_P2_TIMES_3((x) + (1<<3))
+#define DO_P2_TIMES_5(x)	DO_P2_TIMES_4(x); DO_P2_TIMES_4((x) + (1<<4))
+#define DO_P2_TIMES_6(x)	DO_P2_TIMES_5(x); DO_P2_TIMES_5((x) + (1<<5))
+#define DO_P2_TIMES_7(x)	DO_P2_TIMES_6(x); DO_P2_TIMES_6((x) + (1<<6))
 
 static void *
 getreturnaddr(int level)
 {
 
 	switch(level) {
-#define L0(x)	case x: return __builtin_return_address(x + 1);
-	L7(0)
-#undef L0
+#define DO_P2_TIMES_0(x)	case (x): return __builtin_return_address((x) + 1)
+	DO_P2_TIMES_7(0);
+#undef DO_P2_TIMES_0
 	default: return NULL;
 	}
 }
@@ -152,9 +152,9 @@ getframeaddr(int level)
 {
 
 	switch(level) {
-#define L0(x)	case x: return __builtin_frame_address(x + 1);
-	L7(0)
-#undef L0
+#define DO_P2_TIMES_0(x)	case (x): return __builtin_frame_address((x) + 1)
+	DO_P2_TIMES_7(0);
+#undef DO_P2_TIMES_0
 	default: return NULL;
 	}
 }
