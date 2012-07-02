@@ -38,32 +38,55 @@
  * Arguments:
  *	Tag-Name
  *	Short Description (1 line, max ?? chars)
- *	Long Description (Multi line)
+ *	Long Description (in RST "definition list" format)
  */
 
-SLTM(Debug, "", "")
-SLTM(Error, "", "")
-SLTM(CLI, "CLI communication", "CLI communication between master and child process.")
+SLTM(Debug, "Debug messages",
+	"Debug messages can normally be ignored, but are sometimes\n"
+	"helpful during trouble-shooting.  Most debug messages must\n"
+	"be explicitly enabled with parameters."
+)
+SLTM(Error, "Error messages",
+	"Error messages are stuff you probably want to know."
+)
+SLTM(CLI, "CLI communication",
+	"CLI communication between master and child process."
+)
 SLTM(StatSess, "Session statistics", "")
-SLTM(ReqEnd, "Client request end", "Client request end. The first number is the XID. \n"
-"The second is the time when processing of the request started.\n"
-"The third is the time the request completed.\n"
-"The forth is is the time elapsed between the request actually being accepted and\n"
-"the start of the request processing.\n" 
-"The fifth number is the time elapsed from the start of the request processing \n"
-"until we start delivering the object to the client.\n" 
-"The sixth and last number is the time from we start delivering the object\n" 
-"until the request completes. ")
-SLTM(SessionOpen, "Client connection opened", "")
-SLTM(SessionClose, "Client connection closed", "SessionClose tells you why HTTP\n"
-"client-connections are closed. These can be:\n"
-"timeout - No keep-alive was received within sess_timeout\n"
-"Connection: close - The client specifed that keepalive should be disabled by sending a 'Connection: close' header.\n"
-"no request - No initial request was received within sess_timeout.\n"
-"EOF - ???\n"
-"remote closed - ???\n"
-"error - Processing reached vcl_error even if the status code indicates success\n"
-"blast - ???")
+
+SLTM(ReqEnd, "Client request end",
+	"Marks the end of client request.\n\n"
+	"xid\n    Transaction id.\n\n"
+	"Trxd\n     Timestamp when the request started.\n\n"
+	"Tidle\n    Timestamp when the request ended.\n\n"
+	"dTrx\n    Time to receive request\n\n"
+	"dTproc\n    Time to process request\n\n"
+	"dTtx\n    Time to transmit response\n\n"
+)
+
+SLTM(SessionOpen, "Client connection opened",
+	"The first record for a client connection, with the\n"
+	"socket-endpoints of the connection.\n\n"
+	"caddr\n    Client IPv4/6 address\n\n"
+	"cport\n    Client TCP port\n\n"
+	"lsock\n    Listen socket name\n\n"
+	"laddr\n    Local IPv4/6 address ('-' if $log_local_addr not set)\n\n"
+	"lport\n    Local TCP port ('-' if $log_local_addr not set)\n\n"
+)
+
+SLTM(SessionClose, "Client connection closed",
+	"SessionClose tells you why HTTP client-connections are closed.  "
+	"These can be:  "
+	"'timeout' - No keep-alive was received within sess_timeout.  "
+	"'Connection: close' - The client specifed that keepalive should "
+	"be disabled by sending a 'Connection: close' header.  "
+	"'no request' - No initial request was received within sess_timeout.  "
+	"'EOF' - ???  "
+	"'remote closed' - ???  "
+	"'error' - Processing reached vcl_error even if the status code "
+	"indicates success.  "
+	"' blast' - ???"
+)
 SLTM(BackendOpen, "Backend connection opened", "")
 SLTM(BackendXID, "The unique ID of the backend transaction", "")
 SLTM(BackendReuse, "Backend connection reused", "")
