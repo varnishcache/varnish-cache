@@ -937,7 +937,7 @@ void *VSM_Alloc(unsigned size, const char *class, const char *type,
 void VSL_Setup(struct vsl_log *vsl, void *ptr, size_t len);
 void VSM_Free(void *ptr);
 #ifdef VSL_ENDMARKER
-void VSL(enum VSL_tag_e tag, int id, const char *fmt, ...)
+void VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
     __printflike(3, 4);
 void VSLb(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, ...)
     __printflike(3, 4);

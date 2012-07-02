@@ -87,30 +87,29 @@ THR_GetName(void)
 /*--------------------------------------------------------------------
  * VXID's are unique transaction numbers allocated with a minimum of
  * locking overhead via pools in the worker threads.
+ *
+ * VXID's are mostly for use in VSL and for that reason we never return
+ * zero vxid, in order to reserve that for "unassociated" VSL records.
  */
 
 static uint32_t vxid_base;
 static struct lock vxid_lock;
 
-static void
-vxid_More(struct vxid_pool *v)
-{
-
-	Lck_Lock(&vxid_lock);
-	v->next = vxid_base;
-	v->count = 32768;
-	vxid_base = v->count;
-	Lck_Unlock(&vxid_lock);
-}
-
 uint32_t
 VXID_Get(struct vxid_pool *v)
 {
-	if (v->count == 0)
-		vxid_More(v);
-	AN(v->count);
-	v->count--;
-	return (v->next++);
+	do {
+		if (v->count == 0) {
+			Lck_Lock(&vxid_lock);
+			v->next = vxid_base;
+			v->count = 32768;
+			vxid_base = v->count;
+			Lck_Unlock(&vxid_lock);
+		}
+		v->count--;
+		v->next++;
+	} while (v->next == 0);
+	return (v->next);
 }
 
 /*--------------------------------------------------------------------

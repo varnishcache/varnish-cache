@@ -61,12 +61,12 @@ vsl_w0(uint32_t type, uint32_t length)
 /*--------------------------------------------------------------------*/
 
 static inline void
-vsl_hdr(enum VSL_tag_e tag, uint32_t *p, unsigned len, unsigned id)
+vsl_hdr(enum VSL_tag_e tag, uint32_t *p, unsigned len, uint32_t vxid)
 {
 
 	assert(((uintptr_t)p & 0x3) == 0);
 
-	p[1] = id;
+	p[1] = vxid;
 	VMB();
 	p[0] = vsl_w0(tag, len);
 }
@@ -133,7 +133,7 @@ vsl_get(unsigned len, unsigned records, unsigned flushes)
  */
 
 static void
-vslr(enum VSL_tag_e tag, int id, const char *b, unsigned len)
+vslr(enum VSL_tag_e tag, uint32_t vxid, const char *b, unsigned len)
 {
 	uint32_t *p;
 	unsigned mlen;
@@ -147,13 +147,13 @@ vslr(enum VSL_tag_e tag, int id, const char *b, unsigned len)
 	p = vsl_get(len, 1, 0);
 
 	memcpy(p + 2, b, len);
-	vsl_hdr(tag, p, len, id);
+	vsl_hdr(tag, p, len, vxid);
 }
 
 /*--------------------------------------------------------------------*/
 
 void
-VSL(enum VSL_tag_e tag, int id, const char *fmt, ...)
+VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
 {
 	va_list ap;
 	unsigned n, mlen = cache_param->shm_reclen;
@@ -167,12 +167,12 @@ VSL(enum VSL_tag_e tag, int id, const char *fmt, ...)
 	va_start(ap, fmt);
 
 	if (strchr(fmt, '%') == NULL) {
-		vslr(tag, id, fmt, strlen(fmt));
+		vslr(tag, vxid, fmt, strlen(fmt));
 	} else {
 		n = vsnprintf(buf, mlen, fmt, ap);
 		if (n > mlen)
 			n = mlen;
-		vslr(tag, id, buf, n);
+		vslr(tag, vxid, buf, n);
 	}
 	va_end(ap);
 }
