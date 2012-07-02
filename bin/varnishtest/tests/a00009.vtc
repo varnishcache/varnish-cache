@@ -1,4 +1,4 @@
 varnishtest "Code coverage of VCL compiler and RSTdump"
 
 shell "cd ${topbuild}/bin/varnishd && ./varnishd -b 127.0.0.1:80 -C -n ${tmpdir} > /dev/null 2>&1"
-shell "cd ${topbuild}/bin/varnishd && ./varnishd -x dumprst > /dev/null 2>&1"
+shell "cd ${topbuild}/bin/varnishd && ./varnishd -x dumprstparam > /dev/null 2>&1"

@@ -70,7 +70,7 @@ const void *pick(const struct choice *cp, const char *which, const char *kind);
 void MCF_ParamInit(struct cli *);
 void MCF_ParamSet(struct cli *, const char *param, const char *val);
 void MCF_ParamProtect(struct cli *, const char *arg);
-void MCF_DumpRst(void);
+void MCF_DumpRstParam(void);
 extern struct params mgt_param;
 
 /* mgt_sandbox.c */

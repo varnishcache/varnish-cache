@@ -458,8 +458,8 @@ main(int argc, char * const *argv)
 			VCS_Message("varnishd");
 			exit(0);
 		case 'x':
-			if (!strcmp(optarg, "dumprst")) {
-				MCF_DumpRst();
+			if (!strcmp(optarg, "dumprstparam")) {
+				MCF_DumpRstParam();
 				exit (0);
 			}
 			usage();
