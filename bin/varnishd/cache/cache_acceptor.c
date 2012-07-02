@@ -248,8 +248,6 @@ VCA_SetupSess(struct worker *wrk, struct sess *sp)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CAST_OBJ_NOTNULL(wa, (void*)wrk->aws->f, WRK_ACCEPT_MAGIC);
-	sp->vxid = wa->vxid;
-	sp->vseq = 0;
 	sp->fd = wa->acceptsock;
 	sp->vsl_id = wa->acceptsock | VSL_CLIENTMARKER ;
 	wa->acceptsock = -1;

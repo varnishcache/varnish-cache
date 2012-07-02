@@ -85,13 +85,15 @@ THR_GetName(void)
 }
 
 /*--------------------------------------------------------------------
+ * VXID's are unique transaction numbers allocated with a minimum of
+ * locking overhead via pools in the worker threads.
  */
 
 static uint32_t vxid_base;
 static struct lock vxid_lock;
 
 static void
-vxid_More(struct vxid *v)
+vxid_More(struct vxid_pool *v)
 {
 
 	Lck_Lock(&vxid_lock);
@@ -102,7 +104,7 @@ vxid_More(struct vxid *v)
 }
 
 uint32_t
-VXID_Get(struct vxid *v)
+VXID_Get(struct vxid_pool *v)
 {
 	if (v->count == 0)
 		vxid_More(v);

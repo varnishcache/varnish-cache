@@ -207,11 +207,14 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 	sp->t_open = VTIM_real();
 	sp->t_rx = sp->t_open;
 	sp->t_idle = sp->t_open;
+	sp->vxid = VXID_Get(&wrk->vxid_pool);
 
 	lsockname = VCA_SetupSess(wrk, sp);
 
 	req = ses_GetReq(sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	req->vxid = VXID_Get(&wrk->vxid_pool);
 
 	ses_vsl_socket(req, lsockname);
 
@@ -262,12 +265,16 @@ SES_Handle(struct sess *sp, double now)
 	struct req *req;
 	struct sesspool *pp;
 
+	/* NB: This only works with single-threaded waiters */
+	static struct vxid_pool vxid_pool;
+
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	pp = sp->sesspool;
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
 	req = ses_GetReq(sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	req->vxid = VXID_Get(&vxid_pool);
 	sp->task.func = ses_pool_task;
 	sp->task.priv = req;
 	sp->sess_step = S_STP_NEWREQ;

@@ -108,6 +108,7 @@ VBO_GetBusyObj(struct worker *wrk)
 	AZ(bo->refcount);
 
 	bo->refcount = 1;
+	bo->vxid = VXID_Get(&wrk->vxid_pool);
 
 	p = (void*)(bo + 1);
 	p = (void*)PRNDUP(p);

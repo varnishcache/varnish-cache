@@ -277,6 +277,7 @@ cnt_sess_done(struct sess *sp, struct worker *wrk, struct req *req)
 
 	WS_Reset(req->ws, NULL);
 	WS_Reset(wrk->aws, NULL);
+	req->vxid = VXID_Get(&wrk->vxid_pool);
 
 	i = HTC_Reinit(req->htc);
 	if (i == 1) {

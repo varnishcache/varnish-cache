@@ -259,7 +259,7 @@ struct vsl_log {
 
 /*--------------------------------------------------------------------*/
 
-struct vxid {
+struct vxid_pool {
 	uint32_t		next;
 	uint32_t		count;
 };
@@ -275,7 +275,6 @@ struct wrk_accept {
 	socklen_t		acceptaddrlen;
 	int			acceptsock;
 	struct listen_sock	*acceptlsock;
-	uint32_t		vxid;
 };
 
 /* Worker pool stuff -------------------------------------------------*/
@@ -319,6 +318,7 @@ struct worker {
 
 	struct ws		aws[1];
 
+	struct vxid_pool	vxid_pool;
 
 	/* Temporary accounting */
 	struct acct		acct_tmp;
@@ -472,6 +472,7 @@ struct busyobj {
 	 * is recycled.
 	 */
 	unsigned		refcount;
+	uint32_t		vxid;
 
 	uint8_t			*vary;
 	unsigned		is_gzip;
@@ -560,6 +561,7 @@ struct req {
 	unsigned		magic;
 #define REQ_MAGIC		0x2751aaa1
 
+	uint32_t		vxid;
 	unsigned		xid;
 	int			restarts;
 	int			esi_level;
@@ -655,7 +657,6 @@ struct sess {
 	int			fd;
 	unsigned		vsl_id;
 	uint32_t		vxid;
-	uint32_t		vseq;
 
 	/* Cross references ------------------------------------------*/
 
@@ -857,7 +858,7 @@ int HTC_Complete(struct http_conn *htc);
 #undef HTTPH
 
 /* cache_main.c */
-uint32_t VXID_Get(struct vxid *v);
+uint32_t VXID_Get(struct vxid_pool *v);
 extern volatile struct params * cache_param;
 void THR_SetName(const char *name);
 const char* THR_GetName(void);

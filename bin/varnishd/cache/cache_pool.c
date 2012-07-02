@@ -62,8 +62,6 @@ struct pool {
 	pthread_cond_t			herder_cond;
 	pthread_t			herder_thr;
 
-	struct vxid			vxid;
-
 	struct lock			mtx;
 	struct taskhead			idle_queue;
 	struct taskhead			front_queue;
@@ -148,7 +146,6 @@ pool_accept(struct worker *wrk, void *arg)
 		}
 
 		Lck_Lock(&pp->mtx);
-		wa->vxid = VXID_Get(&pp->vxid);
 		wrk2 = pool_getidleworker(pp);
 		if (wrk2 == NULL) {
 			/* No idle threads, do it ourselves */
