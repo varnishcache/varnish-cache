@@ -159,10 +159,6 @@ VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
 	unsigned n, mlen = cache_param->shm_reclen;
 	char buf[mlen];
 
-	/*
-	 * XXX: consider formatting into a stack buffer then move into
-	 * XXX: shmlog with vslr().
-	 */
 	AN(fmt);
 	va_start(ap, fmt);
 
