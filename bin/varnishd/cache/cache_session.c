@@ -42,6 +42,7 @@
 #include "cache.h"
 
 #include "waiter/waiter.h"
+#include "vtcp.h"
 #include "vtim.h"
 
 static unsigned ses_size = sizeof (struct sess);
@@ -148,7 +149,40 @@ ses_pool_task(struct worker *wrk, void *arg)
 }
 
 /*--------------------------------------------------------------------
+ */
+static void
+ses_vsl_socket(struct req *req, const char *lsockname)
+{
+	char laddr[ADDR_BUFSIZE];
+	char lport[PORT_BUFSIZE];
+	struct sess *sp;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AN(lsockname);
+	sp = req->sp;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+
+	VTCP_name(&sp->sockaddr, sp->sockaddrlen,
+	    sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
+	if (cache_param->log_local_addr) {
+		AZ(getsockname(sp->fd, (void*)&sp->mysockaddr,
+		    &sp->mysockaddrlen));
+		VTCP_name(&sp->mysockaddr, sp->mysockaddrlen,
+		    laddr, sizeof laddr, lport, sizeof lport);
+		/* XXX: have no req yet */
+		VSLb(req->vsl, SLT_SessionOpen, "%s %s %s %s %s",
+		    sp->addr, sp->port, lsockname, laddr, lport);
+	} else {
+		/* XXX: have no req yet */
+		VSLb(req->vsl, SLT_SessionOpen, "%s %s %s - -",
+		    sp->addr, sp->port, lsockname);
+	}
+}
+
+/*--------------------------------------------------------------------
  * The pool-task for a newly accepted session
+ *
+ * Called from assigned worker thread
  */
 
 void
@@ -157,6 +191,7 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 	struct sesspool *pp;
 	struct req *req;
 	struct sess *sp;
+	const char *lsockname;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(pp, arg, SESSPOOL_MAGIC);
@@ -168,10 +203,21 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 		VCA_FailSess(wrk);
 		return;
 	}
-	VCA_SetupSess(wrk, sp);
-	sp->sess_step = S_STP_NEWREQ;
+
+	sp->t_open = VTIM_real();
+	sp->t_rx = sp->t_open;
+	sp->t_idle = sp->t_open;
+
+	lsockname = VCA_SetupSess(wrk, sp);
+
 	req = ses_GetReq(sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	ses_vsl_socket(req, lsockname);
+
+	wrk->acct_tmp.sess++;
+
+	sp->sess_step = S_STP_NEWREQ;
 	ses_pool_task(wrk, req);
 }
 

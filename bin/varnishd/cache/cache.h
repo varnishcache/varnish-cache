@@ -670,8 +670,6 @@ struct sess {
 	socklen_t		mysockaddrlen;
 	struct sockaddr_storage	sockaddr;
 	struct sockaddr_storage	mysockaddr;
-	struct listen_sock	*mylsock;
-	int			init_done;
 
 	/* formatted ascii client address */
 	char			addr[ADDR_BUFSIZE];
@@ -695,7 +693,7 @@ struct sess {
 void VCA_Init(void);
 void VCA_Shutdown(void);
 int VCA_Accept(struct listen_sock *ls, struct wrk_accept *wa);
-void VCA_SetupSess(struct worker *w, struct sess *sp);
+const char *VCA_SetupSess(struct worker *w, struct sess *sp);
 void VCA_FailSess(struct worker *w);
 
 /* cache_backend.c */
