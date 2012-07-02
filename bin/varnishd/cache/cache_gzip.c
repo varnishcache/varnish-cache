@@ -355,13 +355,15 @@ VGZ_WrwGunzip(struct worker *wrk, struct vgz *vg, const void *ibuf,
 /*--------------------------------------------------------------------*/
 
 void
-VGZ_WrwFlush(const struct worker *wrk, struct vgz *vg)
+VGZ_WrwFlush(struct worker *wrk, struct vgz *vg)
 {
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 
 	if (vg->m_len ==  0)
 		return;
+
+	wrk->acct_tmp.bodybytes += vg->m_len;
 	(void)WRW_Write(wrk, vg->m_buf, vg->m_len);
 	(void)WRW_Flush(wrk);
 	vg->m_len = 0;
