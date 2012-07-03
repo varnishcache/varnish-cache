@@ -92,7 +92,7 @@ PipeRequest(struct req *req)
 	i = WRW_FlushRelease(wrk);
 
 	if (i) {
-		SES_Close(req->sp, "pipe");
+		SES_Close(req->sp, SC_TX_PIPE);
 		VDI_CloseFd(&vc);
 		return;
 	}
@@ -132,7 +132,7 @@ PipeRequest(struct req *req)
 			fds[1].fd = -1;
 		}
 	}
-	SES_Close(req->sp, "pipe");
+	SES_Close(req->sp, SC_TX_PIPE);
 	VDI_CloseFd(&vc);
 	bo->vbc = NULL;
 }

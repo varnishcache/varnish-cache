@@ -410,19 +410,19 @@ http_GetHdrField(const struct http *hp, const char *hdr,
  * XXX: redo with http_GetHdrField() ?
  */
 
-const char *
+enum sess_close
 http_DoConnection(const struct http *hp)
 {
 	char *p, *q;
-	const char *ret;
+	enum sess_close ret;
 	unsigned u;
 
 	if (!http_GetHdr(hp, H_Connection, &p)) {
 		if (hp->protover < 11)
-			return ("not HTTP/1.1");
-		return (NULL);
+			return (SC_REQ_HTTP10);
+		return (SC_NULL);
 	}
-	ret = NULL;
+	ret = SC_NULL;
 	AN(p);
 	for (; *p; p++) {
 		if (vct_issp(*p))
@@ -434,7 +434,7 @@ http_DoConnection(const struct http *hp)
 				break;
 		u = pdiff(p, q);
 		if (u == 5 && !strncasecmp(p, "close", u))
-			ret = "Connection: close";
+			ret = SC_REQ_CLOSE;
 		u = http_findhdr(hp, u, p);
 		if (u != 0)
 			hp->hdf[u] |= HDF_FILTER;

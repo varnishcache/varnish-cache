@@ -162,7 +162,7 @@ vwp_main(void *priv)
 				VTAILQ_REMOVE(&vwp->sesshead, sp, list);
 				vwp_unpoll(vwp, fd);
 				// XXX: not yet (void)VTCP_linger(sp->fd, 0);
-				SES_Delete(sp, "timeout", now);
+				SES_Delete(sp, SC_RX_TIMEOUT, now);
 			}
 		}
 		if (v2 && vwp->pollfd[vwp->pipes[0]].revents) {

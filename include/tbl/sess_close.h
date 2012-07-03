@@ -1,6 +1,5 @@
 /*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2012 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -28,52 +27,17 @@
  *
  */
 
-#include "config.h"
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
+/*lint -save -e525 -e539 */
 
-#include "cache/cache.h"
+SESS_CLOSE(REM_CLOSE,	"Client Closed")
+SESS_CLOSE(REQ_CLOSE,	"Client requested close")
+SESS_CLOSE(REQ_HTTP10,	"proto < HTTP.1.1")
+SESS_CLOSE(RX_JUNK,	"Received junk data")
+SESS_CLOSE(RX_OVERFLOW,	"Received buffer overflow")
+SESS_CLOSE(RX_TIMEOUT,	"Receive timeout")
+SESS_CLOSE(TX_PIPE,	"Piped transaction")
+SESS_CLOSE(TX_ERROR,	"Error transaction")
+SESS_CLOSE(TX_EOF,	"EOF transmission")
+SESS_CLOSE(OVERLOAD,	"Out of some resource")
 
-#include "waiter/waiter.h"
-
-#include "vtcp.h"
-
-static void *waiter_priv;
-
-const char *
-WAIT_GetName(void)
-{
-
-	if (waiter != NULL)
-		return (waiter->name);
-	else
-		return ("no_waiter");
-}
-
-void
-WAIT_Init(void)
-{
-
-	AN(waiter);
-	AN(waiter->name);
-	AN(waiter->init);
-	AN(waiter->pass);
-	waiter_priv = waiter->init();
-}
-
-void
-WAIT_Enter(struct sess *sp)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	assert(sp->fd >= 0);
-
-	/*
-	* Set nonblocking in the worker-thread, before passing to the
-	* acceptor thread, to reduce syscall density of the latter.
-	*/
-	if (VTCP_nonblocking(sp->fd))
-		SES_Close(sp, SC_REM_CLOSE);
-	waiter->pass(waiter_priv, sp);
-}
+/*lint -restore */

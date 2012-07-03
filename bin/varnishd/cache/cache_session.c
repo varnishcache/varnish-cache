@@ -175,7 +175,7 @@ ses_vsl_socket(struct sess *sp, const char *lsockname)
 		strcpy(laddr, "-");
 		strcpy(lport, "-");
 	}
-	VSL(SLT_SessionOpen, sp->vxid, "%s %s %s %s %s",
+	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s",
 	    sp->addr, sp->port, lsockname, laddr, lport);
 }
 
@@ -203,6 +203,7 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 		VCA_FailSess(wrk);
 		return;
 	}
+	wrk->acct_tmp.sess++;
 
 	sp->t_open = VTIM_real();
 	sp->t_rx = sp->t_open;
@@ -216,9 +217,6 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	req->vxid = VXID_Get(&wrk->vxid_pool);
-
-
-	wrk->acct_tmp.sess++;
 
 	sp->sess_step = S_STP_NEWREQ;
 	ses_pool_task(wrk, req);
@@ -249,7 +247,7 @@ SES_ScheduleReq(struct req *req)
 		sp->t_idle = VTIM_real();
 		AN (req->vcl);
 		VCL_Rel(&req->vcl);
-		SES_Delete(sp, "dropped", sp->t_idle);
+		SES_Delete(sp, SC_OVERLOAD, sp->t_idle);
 		return (1);
 	}
 	return (0);
@@ -282,7 +280,7 @@ SES_Handle(struct sess *sp, double now)
 	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT)) {
 		VSC_C_main->client_drop_late++;
 		sp->t_idle = VTIM_real();
-		SES_Delete(sp, "dropped", sp->t_idle);
+		SES_Delete(sp, SC_OVERLOAD, sp->t_idle);
 	}
 }
 
@@ -293,12 +291,12 @@ SES_Handle(struct sess *sp, double now)
  */
 
 void
-SES_Close(struct sess *sp, const char *reason)
+SES_Close(struct sess *sp, enum sess_close reason)
 {
 	int i;
 
 	assert(sp->fd >= 0);
-	VSL(SLT_SessionClose, sp->vsl_id, "%s", reason);
+	sp->reason = reason;
 	i = close(sp->fd);
 	assert(i == 0 || errno != EBADF); /* XXX EINVAL seen */
 	sp->fd = -1;
@@ -314,7 +312,7 @@ SES_Close(struct sess *sp, const char *reason)
  */
 
 void
-SES_Delete(struct sess *sp, const char *reason, double now)
+SES_Delete(struct sess *sp, enum sess_close reason, double now)
 {
 	struct acct *b;
 	struct sesspool *pp;
@@ -324,7 +322,7 @@ SES_Delete(struct sess *sp, const char *reason, double now)
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
 
-	if (reason != NULL)
+	if (reason != SC_NULL)
 		SES_Close(sp, reason);
 	if (isnan(now))
 		now = VTIM_real();
@@ -338,10 +336,11 @@ SES_Delete(struct sess *sp, const char *reason, double now)
 
 	b = &sp->acct_ses;
 
-	VSL(SLT_StatSess, sp->vsl_id, "%s %s %.0f %ju %ju %ju %ju %ju %ju %ju",
-	    sp->addr, sp->port,
+	VSL(SLT_SessClose, sp->vxid,
+	    "%s %.3f %ju %ju %ju %ju %ju %ju",
+	    sess_close_str(sp->reason, 0),
 	    now - sp->t_open,
-	    b->sess, b->req, b->pipe, b->pass,
+	    b->req, b->pipe, b->pass,
 	    b->fetch, b->hdrbytes, b->bodybytes);
 
 	MPL_Free(pp->mpl_sess, sp);

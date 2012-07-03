@@ -325,7 +325,7 @@ ESI_Deliver(struct req *req)
 						st->ptr + off, l2);
 					if (WRW_Error(req->wrk)) {
 						SES_Close(req->sp,
-						    "remote closed");
+						    SC_REM_CLOSE);
 						p = e;
 						break;
 					}
@@ -376,7 +376,7 @@ ESI_Deliver(struct req *req)
 			if (vgz != NULL)
 				VGZ_WrwFlush(req->wrk, vgz);
 			if (WRW_Flush(req->wrk)) {
-				SES_Close(req->sp, "remote closed");
+				SES_Close(req->sp, SC_REM_CLOSE);
 				p = e;
 				break;
 			}
