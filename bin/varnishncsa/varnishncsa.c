@@ -535,11 +535,11 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		lp->df_b = trimline(ptr, end);
 		break;
 
-	case SLT_SessionClose:
+	case SLT_SessClose:
 		if (!lp->active)
 			break;
-		if (strncmp(ptr, "pipe", len) == 0 ||
-		    strncmp(ptr, "error", len) == 0) {
+		if (strncmp(ptr, "TX_PIPE", len) == 0 ||
+		    strncmp(ptr, "TX_ERROR", len) == 0) {
 			clean_logline(lp);
 			break;
 		}

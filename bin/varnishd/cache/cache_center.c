@@ -109,7 +109,7 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 	int i, j, tmo;
 	struct pollfd pfd[1];
 	double now, when;
-	const char *why = NULL;
+	enum sess_close why = SC_NULL;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -143,16 +143,16 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			req->t_req = now;
 			return (0);
 		} else if (i == -1) {
-			why = "EOF";
+			why = SC_REM_CLOSE;
 			break;
 		} else if (i == -2) {
-			why = "overflow";
+			why = SC_RX_OVERFLOW;
 			break;
 		} else if (i == -3) {
 			/* Nothing but whitespace */
 			when = sp->t_idle + cache_param->timeout_idle;
 			if (when < now) {
-				why = "timeout";
+				why = SC_RX_TIMEOUT;
 				break;
 			}
 			when = sp->t_idle + cache_param->timeout_linger;
@@ -170,7 +170,7 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			when = sp->t_rx + cache_param->timeout_req;
 			tmo = (int)(1e3 * (when - now));
 			if (when < now || tmo == 0) {
-				why = "req timeout";
+				why = SC_RX_TIMEOUT;
 				break;
 			}
 		}
@@ -255,7 +255,7 @@ cnt_sess_done(struct sess *sp, struct worker *wrk, struct req *req)
 	req->hash_always_miss = 0;
 	req->hash_ignore_busy = 0;
 
-	if (sp->fd >= 0 && req->doclose != NULL) {
+	if (sp->fd >= 0 && req->doclose != SC_NULL) {
 		/*
 		 * This is an orderly close of the connection; ditch nolinger
 		 * before we close, to get queued data transmitted.
@@ -268,7 +268,7 @@ cnt_sess_done(struct sess *sp, struct worker *wrk, struct req *req)
 		wrk->stats.sess_closed++;
 		AZ(req->vcl);
 		SES_ReleaseReq(req);
-		SES_Delete(sp, NULL, NAN);
+		SES_Delete(sp, SC_NULL, NAN);
 		return (SESS_DONE_RET_GONE);
 	}
 
@@ -318,9 +318,9 @@ CNT_Session(struct worker *wrk, struct req *req)
 	 */
 	if (sp->sess_step == S_STP_NEWREQ && VTCP_blocking(sp->fd)) {
 		if (errno == ECONNRESET)
-			SES_Close(sp, "remote closed");
+			SES_Close(sp, SC_REM_CLOSE);
 		else
-			SES_Close(sp, "error");
+			SES_Close(sp, SC_TX_ERROR);
 		sdr = cnt_sess_done(sp, wrk, req);
 		assert(sdr == SESS_DONE_RET_GONE);
 		return;
@@ -437,7 +437,7 @@ cnt_prepresp(struct worker *wrk, struct req *req)
 			req->res_mode |= RES_CHUNKED;
 		} else {
 			req->res_mode |= RES_EOF;
-			req->doclose = "EOF mode";
+			req->doclose = SC_TX_EOF;
 		}
 	}
 
@@ -573,7 +573,7 @@ cnt_error(struct worker *wrk, struct req *req)
 	    (uint16_t)cache_param->http_max_hdr);
 	bo->stats = NULL;
 	if (req->obj == NULL) {
-		req->doclose = "Out of objects";
+		req->doclose = SC_OVERLOAD;
 		req->director = NULL;
 		http_Teardown(bo->beresp);
 		http_Teardown(bo->bereq);
@@ -611,7 +611,7 @@ cnt_error(struct worker *wrk, struct req *req)
 
 
 	/* We always close when we take this path */
-	req->doclose = "error";
+	req->doclose = SC_TX_ERROR;
 	req->wantbody = 1;
 
 	assert(req->handling == VCL_RET_DELIVER);
@@ -1504,7 +1504,7 @@ cnt_start(struct worker *wrk, struct req *req)
 
 	/* If we could not even parse the request, just close */
 	if (req->err_code == 400) {
-		SES_Close(req->sp, "junk");
+		SES_Close(req->sp, SC_RX_JUNK);
 		return (1);
 	}
 
@@ -1520,7 +1520,7 @@ cnt_start(struct worker *wrk, struct req *req)
 		if (strcasecmp(p, "100-continue")) {
 			req->err_code = 417;
 		} else if (strlen(r) != write(req->sp->fd, r, strlen(r))) {
-			SES_Close(req->sp, "remote closed");
+			SES_Close(req->sp, SC_REM_CLOSE);
 			return (1);
 		}
 	}

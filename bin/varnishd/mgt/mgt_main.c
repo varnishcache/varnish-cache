@@ -86,7 +86,7 @@ mgt_sltm(const char *tag, const char *sdesc, const char *ldesc)
 		printf("%s\n", sdesc);
 	else
 		printf("%s\n", "(description not yet written)");
-		
+
 }
 
 static void

@@ -285,5 +285,5 @@ RES_WriteObj(struct req *req)
 		WRW_EndChunk(req->wrk);
 
 	if (WRW_FlushRelease(req->wrk) && req->sp->fd >= 0)
-		SES_Close(req->sp, "remote closed");
+		SES_Close(req->sp, SC_REM_CLOSE);
 }

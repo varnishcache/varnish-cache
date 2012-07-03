@@ -109,6 +109,10 @@
 -esym(458, name_key)
 
 //////////////
+// 436 = Apparent preprocessor directive in invocation of macro '___'
+-emacro(436, SLTM)
+
+//////////////
 
 +libh mgt_event.h
 

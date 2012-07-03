@@ -133,7 +133,7 @@ vwk_sess_ev(struct vwk *vwk, const struct kevent *kp, double now)
 		return;
 	} else if (kp->flags & EV_EOF) {
 		VTAILQ_REMOVE(&vwk->sesshead, sp, list);
-		SES_Delete(sp, "EOF", now);
+		SES_Delete(sp, SC_REM_CLOSE, now);
 		return;
 	} else {
 		VSL(SLT_Debug, sp->vsl_id,
@@ -204,7 +204,7 @@ vwk_thread(void *priv)
 				break;
 			VTAILQ_REMOVE(&vwk->sesshead, sp, list);
 			// XXX: not yet (void)VTCP_linger(sp->fd, 0);
-			SES_Delete(sp, "timeout", now);
+			SES_Delete(sp, SC_RX_TIMEOUT, now);
 		}
 	}
 }

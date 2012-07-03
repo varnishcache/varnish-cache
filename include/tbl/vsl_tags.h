@@ -52,7 +52,6 @@ SLTM(Error, "Error messages",
 SLTM(CLI, "CLI communication",
 	"CLI communication between master and child process."
 )
-SLTM(StatSess, "Session statistics", "")
 
 SLTM(ReqEnd, "Client request end",
 	"Marks the end of client request.\n\n"
@@ -64,7 +63,9 @@ SLTM(ReqEnd, "Client request end",
 	"dTtx\n    Time to transmit response\n\n"
 )
 
-SLTM(SessionOpen, "Client connection opened",
+/*---------------------------------------------------------------------*/
+
+SLTM(SessOpen, "Client connection opened",
 	"The first record for a client connection, with the\n"
 	"socket-endpoints of the connection.\n\n"
 	"caddr\n    Client IPv4/6 address\n\n"
@@ -74,19 +75,24 @@ SLTM(SessionOpen, "Client connection opened",
 	"lport\n    Local TCP port ('-' if !$log_local_addr)\n\n"
 )
 
-SLTM(SessionClose, "Client connection closed",
-	"SessionClose tells you why HTTP client-connections are closed.  "
-	"These can be:  "
-	"'timeout' - No keep-alive was received within sess_timeout.  "
-	"'Connection: close' - The client specifed that keepalive should "
-	"be disabled by sending a 'Connection: close' header.  "
-	"'no request' - No initial request was received within sess_timeout.  "
-	"'EOF' - ?  "
-	"'remote closed' - ?  "
-	"'error' - Processing reached vcl_error even if the status code "
-	"indicates success.  "
-	"' blast' - ?"
+#define SESS_CLOSE(nm, desc) "    " #nm "\n\t" desc "\n\n"
+
+SLTM(SessClose, "Client connection closed",
+	"SessionClose is the last record for any client connection.\n\n"
+	"reason\n    Why the connection closed.\n\n"
+#include <tbl/sess_close.h>
+	"duration\n    How long the session were open.\n\n"
+	"Nreq\n    How many requests on session.\n\n"
+	"Npipe\n    If 'pipe' were used on session.\n\n"
+	"Npass\n    Requests handled with pass.\n\n"
+	"Nfetch\n    Backend fetches by session.\n\n"
+	"Bhdr\n    Header bytes sent on session.\n\n"
+	"Bbody\n    Body bytes sent on session.\n\n"
 )
+#undef SESS_CLOSE
+
+/*---------------------------------------------------------------------*/
+
 SLTM(BackendOpen, "Backend connection opened", "")
 SLTM(BackendXID, "The unique ID of the backend transaction", "")
 SLTM(BackendReuse, "Backend connection reused", "")

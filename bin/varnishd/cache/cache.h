@@ -75,6 +75,30 @@ body_status(enum body_status e)
 	}
 }
 
+/*--------------------------------------------------------------------*/
+
+enum sess_close {
+	SC_NULL = 0,
+#define SESS_CLOSE(nm, desc)	SC_##nm,
+#include "tbl/sess_close.h"
+#undef SESS_CLOSE
+};
+
+static inline const char *
+sess_close_str(enum sess_close sc, int want_desc)
+{
+	switch (sc) {
+	case SC_NULL:		return(want_desc ? "(null)": "NULL");
+#define SESS_CLOSE(nm, desc)	case SC_##nm: return(want_desc ? desc : #nm);
+#include "tbl/sess_close.h"
+#undef SESS_CLOSE
+
+	default:		return(want_desc ? "(invalid)" : "INVALID");
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
 /*
  * NB: HDR_STATUS is only used in cache_http.c, everybody else uses the
  * http->status integer field.
@@ -585,7 +609,7 @@ struct req {
 
 	unsigned char		digest[DIGEST_LEN];
 
-	const char		*doclose;
+	enum sess_close		doclose;
 	struct exp		exp;
 	unsigned		cur_method;
 	unsigned		handling;
@@ -655,6 +679,7 @@ struct sess {
 
 	enum sess_step		sess_step;
 	int			fd;
+	enum sess_close		reason;
 	unsigned		vsl_id;
 	uint32_t		vxid;
 
@@ -840,7 +865,7 @@ const char *http_GetReq(const struct http *hp);
 int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
 uint16_t http_DissectRequest(struct req *);
 uint16_t http_DissectResponse(struct http *sp, const struct http_conn *htc);
-const char *http_DoConnection(const struct http *hp);
+enum sess_close http_DoConnection(const struct http *);
 void http_CopyHome(const struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
 void http_CollectHdr(struct http *hp, const char *hdr);
@@ -919,8 +944,8 @@ unsigned WRW_Write(const struct worker *w, const void *ptr, int len);
 unsigned WRW_WriteH(const struct worker *w, const txt *hh, const char *suf);
 
 /* cache_session.c [SES] */
-void SES_Close(struct sess *sp, const char *reason);
-void SES_Delete(struct sess *sp, const char *reason, double now);
+void SES_Close(struct sess *sp, enum sess_close reason);
+void SES_Delete(struct sess *sp, enum sess_close reason, double now);
 void SES_Charge(struct worker *, struct req *);
 struct sesspool *SES_NewPool(struct pool *pp, unsigned pool_no);
 void SES_DeletePool(struct sesspool *sp);
