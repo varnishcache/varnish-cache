@@ -133,13 +133,13 @@ vwe_eev(struct vwe *vwe, const struct epoll_event *ep, double now)
 			SES_Handle(sp, now);
 		} else if (ep->events & EPOLLERR) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			SES_Delete(sp, "ERR", now);
+			SES_Delete(sp, SC_REM_CLOSE, now);
 		} else if (ep->events & EPOLLHUP) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			SES_Delete(sp, "HUP", now);
+			SES_Delete(sp, SC_REM_CLOSE, now);
 		} else if (ep->events & EPOLLRDHUP) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			SES_Delete(sp, "RHUP", now);
+			SES_Delete(sp, SC_REM_CLOSE, now);
 		}
 	}
 }
@@ -192,7 +192,7 @@ vwe_thread(void *priv)
 				break;
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
 			// XXX: not yet VTCP_linger(sp->fd, 0);
-			SES_Delete(sp, "timeout", now);
+			SES_Delete(sp, SC_RX_TIMEOUT, now);
 		}
 	}
 	return (NULL);
