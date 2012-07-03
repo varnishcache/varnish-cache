@@ -37,7 +37,7 @@
  *
  * Arguments:
  *	Tag-Name
- *	Short Description (1 line, max ?? chars)
+ *	Short Description (1 line, max ? chars)
  *	Long Description (in RST "definition list" format)
  */
 
@@ -69,9 +69,9 @@ SLTM(SessionOpen, "Client connection opened",
 	"socket-endpoints of the connection.\n\n"
 	"caddr\n    Client IPv4/6 address\n\n"
 	"cport\n    Client TCP port\n\n"
-	"lsock\n    Listen socket name\n\n"
-	"laddr\n    Local IPv4/6 address ('-' if $log_local_addr not set)\n\n"
-	"lport\n    Local TCP port ('-' if $log_local_addr not set)\n\n"
+	"lsock\n    Listen socket\n\n"
+	"laddr\n    Local IPv4/6 address ('-' if !$log_local_addr)\n\n"
+	"lport\n    Local TCP port ('-' if !$log_local_addr)\n\n"
 )
 
 SLTM(SessionClose, "Client connection closed",
@@ -81,11 +81,11 @@ SLTM(SessionClose, "Client connection closed",
 	"'Connection: close' - The client specifed that keepalive should "
 	"be disabled by sending a 'Connection: close' header.  "
 	"'no request' - No initial request was received within sess_timeout.  "
-	"'EOF' - ???  "
-	"'remote closed' - ???  "
+	"'EOF' - ?  "
+	"'remote closed' - ?  "
 	"'error' - Processing reached vcl_error even if the status code "
 	"indicates success.  "
-	"' blast' - ???"
+	"' blast' - ?"
 )
 SLTM(BackendOpen, "Backend connection opened", "")
 SLTM(BackendXID, "The unique ID of the backend transaction", "")

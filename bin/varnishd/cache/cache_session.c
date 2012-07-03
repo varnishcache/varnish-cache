@@ -149,18 +149,20 @@ ses_pool_task(struct worker *wrk, void *arg)
 }
 
 /*--------------------------------------------------------------------
+ * VSL log the endpoints of the TCP connection.
+ *
+ * We use VSL() to get the sessions vxid and to make sure tha this
+ * VSL comes before anything else for this session.
  */
+
 static void
-ses_vsl_socket(struct req *req, const char *lsockname)
+ses_vsl_socket(struct sess *sp, const char *lsockname)
 {
 	char laddr[ADDR_BUFSIZE];
 	char lport[PORT_BUFSIZE];
-	struct sess *sp;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	AN(lsockname);
-	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	AN(lsockname);
 
 	VTCP_name(&sp->sockaddr, sp->sockaddrlen,
 	    sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
@@ -169,14 +171,12 @@ ses_vsl_socket(struct req *req, const char *lsockname)
 		    &sp->mysockaddrlen));
 		VTCP_name(&sp->mysockaddr, sp->mysockaddrlen,
 		    laddr, sizeof laddr, lport, sizeof lport);
-		/* XXX: have no req yet */
-		VSLb(req->vsl, SLT_SessionOpen, "%s %s %s %s %s",
-		    sp->addr, sp->port, lsockname, laddr, lport);
 	} else {
-		/* XXX: have no req yet */
-		VSLb(req->vsl, SLT_SessionOpen, "%s %s %s - -",
-		    sp->addr, sp->port, lsockname);
+		strcpy(laddr, "-");
+		strcpy(lport, "-");
 	}
+	VSL(SLT_SessionOpen, sp->vxid, "%s %s %s %s %s",
+	    sp->addr, sp->port, lsockname, laddr, lport);
 }
 
 /*--------------------------------------------------------------------
@@ -210,13 +210,13 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 	sp->vxid = VXID_Get(&wrk->vxid_pool);
 
 	lsockname = VCA_SetupSess(wrk, sp);
+	ses_vsl_socket(sp, lsockname);
 
 	req = ses_GetReq(sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	req->vxid = VXID_Get(&wrk->vxid_pool);
 
-	ses_vsl_socket(req, lsockname);
 
 	wrk->acct_tmp.sess++;
 

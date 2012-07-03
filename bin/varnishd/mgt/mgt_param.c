@@ -1047,9 +1047,11 @@ static const struct parspec input_parspec[] = {
 		"on", "bool" },
 	{ "log_local_address", tweak_bool, &mgt_param.log_local_addr, 0, 0,
 		"Log the local address on the TCP connection in the "
-		"SessionOpen shared memory record.\n",
+		"SessionOpen VSL record.\n"
+		"Disabling this saves a getsockname(2) system call "
+		"per TCP connection.\n",
 		0,
-		"off", "bool" },
+		"on", "bool" },
 	{ "waiter", tweak_waiter, NULL, 0, 0,
 		"Select the waiter kernel interface.\n",
 		WIZARD | MUST_RESTART,
