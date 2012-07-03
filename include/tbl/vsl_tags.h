@@ -80,7 +80,13 @@ SLTM(SessOpen, "Client connection opened",
 SLTM(SessClose, "Client connection closed",
 	"SessionClose is the last record for any client connection.\n\n"
 	"reason\n    Why the connection closed.\n\n"
+#ifdef __clang__
+/*
+ * GCC barfs at this construct, but we have no way to ask compiler
+ * if it is _not_ a GCC compiler since CLANG also defines __GNUC__
+ */
 #include <tbl/sess_close.h>
+#endif
 	"duration\n    How long the session were open.\n\n"
 	"Nreq\n    How many requests on session.\n\n"
 	"Npipe\n    If 'pipe' were used on session.\n\n"
