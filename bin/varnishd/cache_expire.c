@@ -431,9 +431,10 @@ EXP_NukeOne(struct worker *w, struct lru *lru)
 		/*
 		 * It wont release any space if we cannot release the last
 		 * reference, besides, if somebody else has a reference,
-		 * it's a bad idea to nuke this object anyway.
+		 * it's a bad idea to nuke this object anyway. Also do not
+		 * touch busy objects.
 		 */
-		if (oc->refcnt == 1)
+		if (oc->refcnt == 1 && !(oc->flags & OC_F_BUSY))
 			break;
 	}
 	if (oc != NULL) {
