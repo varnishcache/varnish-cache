@@ -879,6 +879,18 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl, unsigned pass)
 				continue;
 			}
 			/*
+			 * If the object is busy, we can't touch
+			 * it. Defer it to a later run.
+			 */
+			if (oc->flags & OC_F_BUSY) {
+				oc->flags |= pass;
+				VTAILQ_REMOVE(&b->objcore, oc, ban_list);
+				VTAILQ_INSERT_TAIL(&b->objcore, oc, ban_list);
+				Lck_Unlock(&oh->mtx);
+				Lck_Unlock(&ban_mtx);
+				continue;
+			}
+			/*
 			 * Grab a reference to the OC and we can let go of
 			 * the BAN mutex
 			 */
