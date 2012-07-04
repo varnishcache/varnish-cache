@@ -371,6 +371,13 @@ exp_timer(struct sess *sp, void *priv)
 			continue;
 		}
 
+		/* If the object is busy, we have to wait for it */
+		if (oc->flags & OC_F_BUSY) {
+			Lck_Unlock(&exp_mtx);
+			oc = NULL;
+			continue;
+		}
+
 		/*
 		 * It's time...
 		 * Technically we should drop the exp_mtx, get the lru->mtx
