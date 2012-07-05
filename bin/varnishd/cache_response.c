@@ -185,6 +185,7 @@ res_WriteGunzipObj(struct sess *sp)
 		(void)i;
 	}
 	if (obufl) {
+		sp->wrk->acct_tmp.bodybytes += obufl;
 		(void)WRW_Write(sp->wrk, obuf, obufl);
 		(void)WRW_Flush(sp->wrk);
 	}
