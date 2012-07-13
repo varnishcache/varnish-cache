@@ -32,8 +32,9 @@ The following options are available:
 
 -D                   Turn on debugging mode.
 
--r file              Parse logs from this file.  This option is mandatory.
-
+-r file              Parse logs from this file.  The input file has to be from
+		     a varnishlog of the same version as the varnishreplay
+		     binary.  This option is mandatory.
 
 SEE ALSO
 ========
