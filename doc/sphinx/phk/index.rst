@@ -7,7 +7,7 @@ Poul-Hennings random outbursts
 You may or may not want to know what Poul-Henning think.
 
 .. toctree::
-	:titlesonly:
+	:maxdepth: 1
 
 	http20.rst
 	varnish_does_not_hash.rst
