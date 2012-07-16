@@ -74,6 +74,8 @@ static struct lock		ses_mem_mtx;
 /*--------------------------------------------------------------------*/
 
 static struct lock		stat_mtx;
+static volatile uint64_t	n_sess_grab = 0;
+static uint64_t			n_sess_rel = 0;
 
 /*--------------------------------------------------------------------*/
 
@@ -214,7 +216,8 @@ SES_New(void)
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	}
 
-	VSC_C_main->n_sess++;		/* XXX: locking  ? */
+	/* Only updated from the cache acceptor - no lock needed */
+	n_sess_grab++;
 
 	return (sp);
 }
@@ -255,7 +258,6 @@ SES_Delete(struct sess *sp)
 
 	AZ(sp->obj);
 	AZ(sp->vcl);
-	VSC_C_main->n_sess--;			/* XXX: locking ? */
 	assert(!isnan(b->first));
 	assert(!isnan(sp->t_end));
 	if (sp->addr == NULL)
@@ -267,10 +269,8 @@ SES_Delete(struct sess *sp)
 	    b->sess, b->req, b->pipe, b->pass,
 	    b->fetch, b->hdrbytes, b->bodybytes);
 	if (sm->workspace != params->sess_workspace) {
-		Lck_Lock(&stat_mtx);
-		VSC_C_main->n_sess_mem--;
-		Lck_Unlock(&stat_mtx);
 		free(sm);
+		sm = NULL;
 	} else {
 		/* Clean and prepare for reuse */
 		ses_setup(sm);
@@ -278,6 +278,14 @@ SES_Delete(struct sess *sp)
 		VTAILQ_INSERT_HEAD(&ses_free_mem[1 - ses_qp], sm, list);
 		Lck_Unlock(&ses_mem_mtx);
 	}
+
+	/* Update statistics */
+	Lck_Lock(&stat_mtx);
+	if (sm == NULL)
+		VSC_C_main->n_sess_mem--;
+	n_sess_rel++;
+	VSC_C_main->n_sess = n_sess_grab - n_sess_rel;
+	Lck_Unlock(&stat_mtx);
 
 	/* Try to precreate some ses-mem so the acceptor will not have to */
 	if (VSC_C_main->n_sess_mem < VSC_C_main->n_sess + 10) {
