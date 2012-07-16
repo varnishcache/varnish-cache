@@ -171,7 +171,7 @@ struct ws {
 	unsigned		overflow;	/* workspace overflowed */
 	const char		*id;		/* identity */
 	char			*s;		/* (S)tart of buffer */
-	char			*f;		/* (F)ree pointer */
+	char			*f;		/* (F)ree/front pointer */
 	char			*r;		/* (R)eserved length */
 	char			*e;		/* (E)nd of buffer */
 };
