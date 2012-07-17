@@ -172,6 +172,8 @@ vca_pace_good(void)
 
 /*--------------------------------------------------------------------
  * Accept on a listen socket, and handle error returns.
+ *
+ * Called from a worker thread from a pool
  */
 
 int

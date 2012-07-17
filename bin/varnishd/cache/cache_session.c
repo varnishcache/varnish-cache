@@ -28,8 +28,13 @@
  *
  * Session management
  *
- * This is a little bit of a mixed back, containing both memory management
+ * This is a little bit of a mixed bag, containing both memory management
  * and various state-change functions.
+ *
+ * The overall picture is complicated by the fact that requests can
+ * disembark their worker-threads if they hit a busy object, then come
+ * back later in a different worker thread to continue.
+ * XXX: I wonder if that complexity pays of any more ?
  *
  */
 
@@ -121,11 +126,11 @@ ses_new(struct sesspool *pp)
 }
 
 /*--------------------------------------------------------------------
- * The pool-task function for sessions
+ * Process new/existing request on this session.
  */
 
 static void
-ses_pool_task(struct worker *wrk, void *arg)
+ses_req_pool_task(struct worker *wrk, void *arg)
 {
 	struct req *req;
 	struct sess *sp;
@@ -146,6 +151,28 @@ ses_pool_task(struct worker *wrk, void *arg)
 			VCL_Rel(&wrk->vcl);
 	}
 	THR_SetRequest(NULL);
+}
+
+/*--------------------------------------------------------------------
+ * Allocate a request + vxid, call ses_req_pool_task()
+ */
+
+static void
+ses_sess_pool_task(struct worker *wrk, void *arg)
+{
+	struct req *req;
+	struct sess *sp;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
+
+	req = ses_GetReq(sp);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	req->vxid = VXID_Get(&wrk->vxid_pool);
+
+	sp->sess_step = S_STP_NEWREQ;
+	ses_req_pool_task(wrk, req);
 }
 
 /*--------------------------------------------------------------------
@@ -189,7 +216,6 @@ void
 SES_pool_accept_task(struct worker *wrk, void *arg)
 {
 	struct sesspool *pp;
-	struct req *req;
 	struct sess *sp;
 	const char *lsockname;
 
@@ -213,17 +239,13 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 	lsockname = VCA_SetupSess(wrk, sp);
 	ses_vsl_socket(sp, lsockname);
 
-	req = ses_GetReq(sp);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-
-	req->vxid = VXID_Get(&wrk->vxid_pool);
-
-	sp->sess_step = S_STP_NEWREQ;
-	ses_pool_task(wrk, req);
+	ses_sess_pool_task(wrk, sp);
 }
 
 /*--------------------------------------------------------------------
  * Schedule a request back on a work-thread from its sessions pool
+ *
+ * This is used to reschedule requests waiting on busy objects
  */
 
 int
@@ -239,7 +261,7 @@ SES_ScheduleReq(struct req *req)
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
 
-	sp->task.func = ses_pool_task;
+	sp->task.func = ses_req_pool_task;
 	sp->task.priv = req;
 
 	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT)) {
@@ -260,22 +282,14 @@ SES_ScheduleReq(struct req *req)
 void
 SES_Handle(struct sess *sp, double now)
 {
-	struct req *req;
 	struct sesspool *pp;
-
-	/* NB: This only works with single-threaded waiters */
-	static struct vxid_pool vxid_pool;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	pp = sp->sesspool;
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
-	req = ses_GetReq(sp);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	req->vxid = VXID_Get(&vxid_pool);
-	sp->task.func = ses_pool_task;
-	sp->task.priv = req;
-	sp->sess_step = S_STP_NEWREQ;
+	sp->task.func = ses_sess_pool_task;
+	sp->task.priv = sp;
 	sp->t_rx = now;
 	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT)) {
 		VSC_C_main->client_drop_late++;
