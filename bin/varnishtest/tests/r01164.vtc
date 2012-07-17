@@ -1,0 +1,23 @@
+varnishtest "Regression test for #1163: allow backends to be named storage*"
+
+varnish v1 -vcl {
+	backend storage_foo {
+		.host = "127.0.0.1";
+	}
+
+	sub vcl_recv {
+		set req.backend = storage_foo;
+	}	    
+}
+
+varnish v1 -vcl {
+	backend storagefoo {
+		.host = "127.0.0.1";
+	}
+
+	sub vcl_recv {
+		set req.backend = storagefoo;
+	}	
+}
+
+

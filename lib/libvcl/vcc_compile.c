@@ -599,7 +599,7 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 		sym->r_methods = v->r_methods;
 	}
 
-	sym = VCC_AddSymbolStr(tl, "storage", SYM_WILDCARD);
+	sym = VCC_AddSymbolStr(tl, "storage.", SYM_WILDCARD);
 	sym->wildcard = vcc_Stv_Wildcard;
 
 	vcl_output_lang_h(tl->fh);
