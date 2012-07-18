@@ -871,12 +871,20 @@ void http_Unset(struct http *hp, const char *hdr);
 void http_CollectHdr(struct http *hp, const char *hdr);
 
 /* cache_httpconn.c */
+enum htc_status_e {
+	HTC_ALL_WHITESPACE =	-3,
+	HTC_OVERFLOW =		-2,
+	HTC_ERROR_EOF =		-1,
+	HTC_NEED_MORE =		 0,
+	HTC_COMPLETE =		 1
+};
+
 void HTC_Init(struct http_conn *htc, struct ws *ws, int fd, struct vsl_log *,
     unsigned maxbytes, unsigned maxhdr);
 int HTC_Reinit(struct http_conn *htc);
-int HTC_Rx(struct http_conn *htc);
+enum htc_status_e HTC_Rx(struct http_conn *htc);
 ssize_t HTC_Read(struct http_conn *htc, void *d, size_t len);
-int HTC_Complete(struct http_conn *htc);
+enum htc_status_e HTC_Complete(struct http_conn *htc);
 
 #define HTTPH(a, b, c) extern char b[];
 #include "tbl/http_headers.h"

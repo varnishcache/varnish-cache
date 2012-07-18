@@ -106,10 +106,11 @@ DOT }
 static int
 cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 {
-	int i, j, tmo;
+	int j, tmo;
 	struct pollfd pfd[1];
 	double now, when;
 	enum sess_close why = SC_NULL;
+	enum htc_status_e hs;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -135,20 +136,20 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 		assert(j >= 0);
 		now = VTIM_real();
 		if (j != 0)
-			i = HTC_Rx(req->htc);
+			hs = HTC_Rx(req->htc);
 		else
-			i = HTC_Complete(req->htc);
-		if (i == 1) {
+			hs = HTC_Complete(req->htc);
+		if (hs == HTC_COMPLETE) {
 			/* Got it, run with it */
 			req->t_req = now;
 			return (0);
-		} else if (i == -1) {
+		} else if (hs == HTC_ERROR_EOF) {
 			why = SC_REM_CLOSE;
 			break;
-		} else if (i == -2) {
+		} else if (hs == HTC_OVERFLOW) {
 			why = SC_RX_OVERFLOW;
 			break;
-		} else if (i == -3) {
+		} else if (hs == HTC_ALL_WHITESPACE) {
 			/* Nothing but whitespace */
 			when = sp->t_idle + cache_param->timeout_idle;
 			if (when < now) {

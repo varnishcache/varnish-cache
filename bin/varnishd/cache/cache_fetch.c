@@ -437,8 +437,9 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 	struct worker *wrk;
 	struct busyobj *bo;
 	struct http *hp;
+	enum htc_status_e hs;
 	int retry = -1;
-	int i;
+	int i, first;
 	struct http_conn *htc;
 
 	wrk = req->wrk;
@@ -499,31 +500,31 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 
 	VTCP_set_read_timeout(vc->fd, vc->first_byte_timeout);
 
-	i = HTC_Rx(htc);
-
-	if (i < 0) {
-		VSLb(req->vsl, SLT_FetchError,
-		    "http first read error: %d %d (%s)",
-		    i, errno, strerror(errno));
-		VDI_CloseFd(&bo->vbc);
-		/* XXX: other cleanup ? */
-		/* Retryable if we never received anything */
-		return (i == -1 ? retry : -1);
-	}
-
-	VTCP_set_read_timeout(vc->fd, vc->between_bytes_timeout);
-
-	while (i == 0) {
-		i = HTC_Rx(htc);
-		if (i < 0) {
+	first = 1;
+	do {
+		hs = HTC_Rx(htc);
+		if (hs == HTC_OVERFLOW) {
 			VSLb(req->vsl, SLT_FetchError,
-			    "http first read error: %d %d (%s)",
-			    i, errno, strerror(errno));
+			    "http %sread error: overflow",
+			    first ? "first " : "");
 			VDI_CloseFd(&bo->vbc);
 			/* XXX: other cleanup ? */
 			return (-1);
 		}
-	}
+		if (hs == HTC_ERROR_EOF) {
+			VSLb(req->vsl, SLT_FetchError,
+			    "http %sread error: EOF",
+			    first ? "first " : "");
+			VDI_CloseFd(&bo->vbc);
+			/* XXX: other cleanup ? */
+			return (retry);
+		}
+		if (first) {
+			first = 0;
+			VTCP_set_read_timeout(vc->fd,
+			    vc->between_bytes_timeout);
+		}
+	} while (hs != HTC_COMPLETE);
 
 	hp = bo->beresp;
 
