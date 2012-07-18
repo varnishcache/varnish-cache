@@ -171,11 +171,11 @@ res_WriteGunzipObj(struct req *req)
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 		u += st->len;
 
-		i = VGZ_WrwGunzip(req->wrk, vg, st->ptr, st->len);
+		i = VGZ_WrwGunzip(req, vg, st->ptr, st->len);
 		/* XXX: error check */
 		(void)i;
 	}
-	VGZ_WrwFlush(req->wrk, vg);
+	VGZ_WrwFlush(req, vg);
 	(void)VGZ_Destroy(&vg);
 	assert(u == req->obj->len);
 }
@@ -183,7 +183,7 @@ res_WriteGunzipObj(struct req *req)
 /*--------------------------------------------------------------------*/
 
 static void
-res_WriteDirObj(const struct req *req, ssize_t low, ssize_t high)
+res_WriteDirObj(struct req *req, ssize_t low, ssize_t high)
 {
 	ssize_t u = 0;
 	size_t ptr, off, len;
@@ -215,7 +215,7 @@ res_WriteDirObj(const struct req *req, ssize_t low, ssize_t high)
 
 		ptr += len;
 
-		req->wrk->acct_tmp.bodybytes += len;
+		req->acct_req.bodybytes += len;
 		(void)WRW_Write(req->wrk, st->ptr + off, len);
 	}
 	assert(u == req->obj->len);
@@ -254,7 +254,7 @@ RES_WriteObj(struct req *req)
 	 * Send HTTP protocol header, unless interior ESI object
 	 */
 	if (!(req->res_mode & RES_ESI_CHILD))
-		req->wrk->acct_tmp.hdrbytes +=
+		req->acct_req.hdrbytes +=
 		    http_Write(req->wrk, req->resp, 1);
 
 	if (!req->wantbody)

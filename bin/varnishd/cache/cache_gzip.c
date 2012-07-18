@@ -315,13 +315,16 @@ VGZ_WrwInit(struct vgz *vg)
  */
 
 int
-VGZ_WrwGunzip(struct worker *wrk, struct vgz *vg, const void *ibuf,
+VGZ_WrwGunzip(struct req *req, struct vgz *vg, const void *ibuf,
     ssize_t ibufl)
 {
 	int i;
 	size_t dl;
 	const void *dp;
+	struct worker *wrk;
 
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	wrk = req->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AN(vg->m_buf);
@@ -340,7 +343,7 @@ VGZ_WrwGunzip(struct worker *wrk, struct vgz *vg, const void *ibuf,
 			return (-1);
 		}
 		if (vg->m_len == vg->m_sz || i == VGZ_STUCK) {
-			wrk->acct_tmp.bodybytes += vg->m_len;
+			req->acct_req.bodybytes += vg->m_len;
 			(void)WRW_Write(wrk, vg->m_buf, vg->m_len);
 			(void)WRW_Flush(wrk);
 			vg->m_len = 0;
@@ -355,15 +358,19 @@ VGZ_WrwGunzip(struct worker *wrk, struct vgz *vg, const void *ibuf,
 /*--------------------------------------------------------------------*/
 
 void
-VGZ_WrwFlush(struct worker *wrk, struct vgz *vg)
+VGZ_WrwFlush(struct req *req, struct vgz *vg)
 {
+	struct worker *wrk;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	wrk = req->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 
 	if (vg->m_len ==  0)
 		return;
 
-	wrk->acct_tmp.bodybytes += vg->m_len;
+	req->acct_req.bodybytes += vg->m_len;
 	(void)WRW_Write(wrk, vg->m_buf, vg->m_len);
 	(void)WRW_Flush(wrk);
 	vg->m_len = 0;

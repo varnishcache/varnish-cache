@@ -79,7 +79,7 @@ SES_Charge(struct worker *wrk, struct req *req)
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	a = &wrk->acct_tmp;
+	a = &req->acct_req;
 	req->req_bodybytes += a->bodybytes;
 
 #define ACCT(foo)				\
@@ -229,7 +229,7 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 		VCA_FailSess(wrk);
 		return;
 	}
-	wrk->acct_tmp.sess++;
+	wrk->stats.s_sess++;
 
 	sp->t_open = VTIM_real();
 	sp->t_rx = sp->t_open;
@@ -431,6 +431,9 @@ SES_ReleaseReq(struct req *req)
 	struct sesspool *pp;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+#define ACCT(foo)	AZ(req->acct_req.foo);
+#include "tbl/acct_fields.h"
+#undef ACCT
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	pp = sp->sesspool;

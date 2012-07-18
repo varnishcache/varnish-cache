@@ -321,7 +321,7 @@ ESI_Deliver(struct req *req)
 					 * response
 					 */
 					AN(vgz);
-					i = VGZ_WrwGunzip(req->wrk, vgz,
+					i = VGZ_WrwGunzip(req, vgz,
 						st->ptr + off, l2);
 					if (WRW_Error(req->wrk)) {
 						SES_Close(req->sp,
@@ -374,7 +374,7 @@ ESI_Deliver(struct req *req)
 			r = (void*)strchr((const char*)q, '\0');
 			AN(r);
 			if (vgz != NULL)
-				VGZ_WrwFlush(req->wrk, vgz);
+				VGZ_WrwFlush(req, vgz);
 			if (WRW_Flush(req->wrk)) {
 				SES_Close(req->sp, SC_REM_CLOSE);
 				p = e;
@@ -391,7 +391,7 @@ ESI_Deliver(struct req *req)
 		}
 	}
 	if (vgz != NULL) {
-		VGZ_WrwFlush(req->wrk, vgz);
+		VGZ_WrwFlush(req, vgz);
 		(void)VGZ_Destroy(&vgz);
 	}
 	if (req->gzip_resp && req->esi_level == 0) {

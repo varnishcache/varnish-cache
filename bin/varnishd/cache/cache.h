@@ -344,8 +344,6 @@ struct worker {
 
 	struct vxid_pool	vxid_pool;
 
-	/* Temporary accounting */
-	struct acct		acct_tmp;
 };
 
 /* LRU ---------------------------------------------------------------*/
@@ -661,6 +659,8 @@ struct req {
 	/* Transaction VSL buffer */
 	struct vsl_log		vsl[1];
 
+	/* Temporary accounting */
+	struct acct		acct_req;
 };
 
 /*--------------------------------------------------------------------
@@ -821,9 +821,9 @@ int VGZ_Destroy(struct vgz **);
 void VGZ_UpdateObj(const struct vgz*, struct object *);
 
 int VGZ_WrwInit(struct vgz *vg);
-int VGZ_WrwGunzip(struct worker *w, struct vgz *, const void *ibuf,
+int VGZ_WrwGunzip(struct req *, struct vgz *, const void *ibuf,
     ssize_t ibufl);
-void VGZ_WrwFlush(struct worker *wrk, struct vgz *vg);
+void VGZ_WrwFlush(struct req *, struct vgz *vg);
 
 /* Return values */
 #define VGZ_ERROR	-1

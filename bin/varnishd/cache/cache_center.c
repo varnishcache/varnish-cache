@@ -161,7 +161,6 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			if (when < now || tmo == 0) {
 				sp->t_rx = NAN;
 				wrk->stats.sess_herd++;
-				SES_Charge(wrk, req);
 				SES_ReleaseReq(req);
 				WAIT_Enter(sp);
 				return (1);
@@ -176,7 +175,6 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			}
 		}
 	}
-	SES_Charge(wrk, req);
 	AZ(req->vcl);
 	SES_ReleaseReq(req);
 	SES_Delete(sp, why, now);
@@ -659,7 +657,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 
 	need_host_hdr = !http_GetHdr(bo->bereq, H_Host, NULL);
 
-	wrk->acct_tmp.fetch++;
+	req->acct_req.fetch++;
 
 	i = FetchHdr(req, need_host_hdr, req->objcore->objhead == NULL);
 	/*
@@ -1264,7 +1262,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 		return (0);
 	}
 	assert(req->handling == VCL_RET_PASS);
-	wrk->acct_tmp.pass++;
+	req->acct_req.pass++;
 	req->req_step = R_STP_FETCH;
 
 	req->objcore = HSH_NewObjCore(wrk);
@@ -1307,7 +1305,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 	AZ(req->busyobj);
 
-	wrk->acct_tmp.pipe++;
+	req->acct_req.pipe++;
 	req->busyobj = VBO_GetBusyObj(wrk);
 	bo = req->busyobj;
 	bo->vsl->wid = req->sp->vsl_id;
@@ -1486,7 +1484,7 @@ cnt_start(struct worker *wrk, struct req *req)
 
 	/* Update stats of various sorts */
 	wrk->stats.client_req++;
-	wrk->acct_tmp.req++;
+	req->acct_req.req++;
 
 	/* Assign XID and log */
 	req->xid = ++xids;				/* XXX not locked */
@@ -1600,8 +1598,10 @@ CNT_Request(struct worker *wrk, struct req *req)
 		WS_Assert(wrk->aws);
 		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 	}
-	if (done == 1)
+	if (done == 1) {
+		/* done == 2 was charged by cache_hash.c */
 		SES_Charge(wrk, req);
+	}
 
 	req->wrk = NULL;
 
