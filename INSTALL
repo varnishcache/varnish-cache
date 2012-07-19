@@ -5,8 +5,8 @@ run the 'configure' script in the top-level directory, then run 'make'
 and 'make install'.  On Linux, you need to run 'ldconfig' as root
 afterwards in order to update the shared library cache.
 
-If you obtained the sources directly from the Subversion repository,
-you will need to run autogen.sh first to create the configure script.
+If you obtained the sources directly from the Git repository, you will
+need to run autogen.sh first to create the configure script.
 
 Varnish will store run-time state in $localstatedir/varnish; you may
 want to tune this using configure's --localstatedir parameter.
