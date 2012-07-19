@@ -133,12 +133,9 @@ static void
 ses_req_pool_task(struct worker *wrk, void *arg)
 {
 	struct req *req;
-	struct sess *sp;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(req, arg, REQ_MAGIC);
-	sp = req->sp;
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	THR_SetRequest(req);
 	AZ(wrk->aws->r);
@@ -180,6 +177,9 @@ ses_sess_pool_task(struct worker *wrk, void *arg)
  *
  * We use VSL() to get the sessions vxid and to make sure tha this
  * VSL comes before anything else for this session.
+ *
+ * This is a separate procedure only to isolate the two stack buffers.
+ * 
  */
 
 static void
@@ -317,12 +317,7 @@ SES_Close(struct sess *sp, enum sess_close reason)
 }
 
 /*--------------------------------------------------------------------
- * (Close &) Free or Recycle a session.
- *
- * If the workspace has changed, deleted it, otherwise wash it, and put
- * it up for adoption.
- *
- * XXX: We should also check nhttp
+ * Report and dismantle a session.
  */
 
 void
@@ -338,27 +333,18 @@ SES_Delete(struct sess *sp, enum sess_close reason, double now)
 
 	if (reason != SC_NULL)
 		SES_Close(sp, reason);
+	assert(sp->fd < 0);
+
 	if (isnan(now))
 		now = VTIM_real();
 	assert(!isnan(sp->t_open));
-	assert(sp->fd < 0);
-
-	if (*sp->addr == '\0')
-		strcpy(sp->addr, "-");
-	if (*sp->port == '\0')
-		strcpy(sp->addr, "-");
 
 	b = &sp->acct_ses;
-
-	VSL(SLT_SessClose, sp->vxid,
-	    "%s %.3f %ju %ju %ju %ju %ju %ju",
-	    sess_close_str(sp->reason, 0),
-	    now - sp->t_open,
-	    b->req, b->pipe, b->pass,
-	    b->fetch, b->hdrbytes, b->bodybytes);
+	VSL(SLT_SessClose, sp->vxid, "%s %.3f %ju %ju %ju %ju %ju %ju",
+	    sess_close_str(sp->reason, 0), now - sp->t_open, b->req,
+	    b->pipe, b->pass, b->fetch, b->hdrbytes, b->bodybytes);
 
 	MPL_Free(pp->mpl_sess, sp);
-
 }
 
 /*--------------------------------------------------------------------

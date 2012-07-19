@@ -175,8 +175,8 @@ cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			}
 		}
 	}
-	AZ(req->vcl);
 	SES_ReleaseReq(req);
+	assert(why != SC_NULL);
 	SES_Delete(sp, why, now);
 	return (1);
 }
@@ -254,14 +254,8 @@ cnt_sess_done(struct sess *sp, struct worker *wrk, struct req *req)
 	req->hash_always_miss = 0;
 	req->hash_ignore_busy = 0;
 
-	if (sp->fd >= 0 && req->doclose != SC_NULL) {
-		/*
-		 * This is an orderly close of the connection; ditch nolinger
-		 * before we close, to get queued data transmitted.
-		 */
-		// XXX: not yet (void)VTCP_linger(sp->fd, 0);
+	if (sp->fd >= 0 && req->doclose != SC_NULL)
 		SES_Close(sp, req->doclose);
-	}
 
 	if (sp->fd < 0) {
 		wrk->stats.sess_closed++;
