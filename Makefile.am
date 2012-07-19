@@ -1,5 +1,3 @@
-#
-
 ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = include lib bin man etc doc
