@@ -908,7 +908,7 @@ static const struct parspec input_parspec[] = {
 		" this limit, the reponse code will be 201 instead of"
 		" 200 and the last line will indicate the truncation.",
 		0,
-		"4k", "bytes" },
+		"48k", "bytes" },
 	{ "cli_timeout", tweak_timeout, &mgt_param.cli_timeout, 0, 0,
 		"Timeout for the childs replies to CLI requests from "
 		"the mgt_param.",
