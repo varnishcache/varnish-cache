@@ -1,3 +1,123 @@
+===========================
+Changes from 3.0.2 to 3.0.3
+===========================
+
+Varnishd
+--------
+
+- Fix an issue where the bodybytes counter is not updated correctly on
+  gunzipped delivery.
+- Fix a race on the n_sess counter. This race made varnish do excessive
+  session workspace allocations. `Bug #897`_.
+- Fix some crashes in the gzip code when it runs out of memory. `Bug #1037`_.
+  `Bug #1043`_. `Bug #1044`_.
+- Fix a bug where the regular expression parser could end up in an infinite
+  loop. `Bug #1047`_.
+- Fix a memory leak in the regex code.
+- DNS director now uses port 80 by default if not specified.
+- Introduce `idle_send_timeout` and increase default value for `send_timeout`
+  to 600s. This allows a long send timeout for slow clients while still being
+  able to disconnect idle clients.
+- Fix an issue where <esi:remove> did not remove HTML comments. `Bug #1092`_.
+- Fix a crash when passing with streaming on.
+- Fix a crash in the idle session timeout code.
+- Fix an issue where the poll waiter did not timeout clients if all clients
+  were idle. `Bug #1023`_.
+- Log regex errors instead of crashing.
+- Introduce `pcre_match_limit`, and `pcre_match_limit_recursion` parameters.
+- Add CLI commands to manually control health state of a backend.
+- Fix an issue where the s_bodybytes counter is not updated correctly on
+  gunzipped delivery.
+- Fix a race on the n_sess counter that leads to increased session object
+  allocation. `Bug #897`_.
+- Fix a crash when we couldn't allocate memory for a fetched object.
+  `Bug #1100`_.
+- Fix an issue where objects could end up in the transient store with a
+  long TTL, when memory could not be allocated for them in the requested
+  store. `Bug #1140`_.
+- Activate req.hash_ignore_busy when req.hash_always_miss is activated.
+  `Bug #1073`_.
+- Reject invalid tcp port numbers for listen address. `Bug #1035`_.
+- Enable JIT for better performing regular expressions. `Bug #1080`_.
+- Return VCL errors in exit code when using -C. `Bug #1069`_.
+- Stricter validation of acl syntax, to avoid a crash with 5-octet IPv4
+  addresses. `Bug #1126`_.
+- Fix a crash when first argument to regsub was null. `Bug #1125`_.
+- Fix a case where varnish delivered corrupt gzip content when using ESI.
+  `Bug #1109`_.
+- Fix a case where varnish didn't remove the old Date header and served
+  it alongside the varnish-generated Date header. `Bug #1104`_.
+- Make saint mode work, for the case where we have no object with that hash.
+  `Bug #1091`_.
+- Don't save the object body on hit-for-pass objects.
+- n_ban_gone counter added to count the number of "gone" bans.
+- Ban lurker rewritten to properly sleep when no bans are present, and
+  otherwise to process the list at the configured speed.
+- Fix a case where varnish delivered wrong content for an uncompressed page
+  with compressed ESI child. `Bug #1029`_.
+- Fix an issue where varnish runs out of thread workspace when processing
+  many ESI includes on an object. `Bug #1038`_.
+- Fix a crash when streaming was enabled for an empty body.
+- Better error reporting for some fetch errors.
+- Small performance optimizations.
+
+.. _bug #897: http://varnish-cache.org/trac/ticket/897
+.. _bug #1023: http://varnish-cache.org/trac/ticket/1023
+.. _bug #1029: http://varnish-cache.org/trac/ticket/1029
+.. _bug #1023: http://varnish-cache.org/trac/ticket/1023
+.. _bug #1035: http://varnish-cache.org/trac/ticket/1035
+.. _bug #1037: http://varnish-cache.org/trac/ticket/1037
+.. _bug #1038: http://varnish-cache.org/trac/ticket/1038
+.. _bug #1043: http://varnish-cache.org/trac/ticket/1043
+.. _bug #1044: http://varnish-cache.org/trac/ticket/1044
+.. _bug #1047: http://varnish-cache.org/trac/ticket/1047
+.. _bug #1069: http://varnish-cache.org/trac/ticket/1069
+.. _bug #1073: http://varnish-cache.org/trac/ticket/1073
+.. _bug #1080: http://varnish-cache.org/trac/ticket/1080
+.. _bug #1091: http://varnish-cache.org/trac/ticket/1091
+.. _bug #1092: http://varnish-cache.org/trac/ticket/1092
+.. _bug #1100: http://varnish-cache.org/trac/ticket/1100
+.. _bug #1104: http://varnish-cache.org/trac/ticket/1104
+.. _bug #1109: http://varnish-cache.org/trac/ticket/1109
+.. _bug #1125: http://varnish-cache.org/trac/ticket/1125
+.. _bug #1126: http://varnish-cache.org/trac/ticket/1126
+.. _bug #1140: http://varnish-cache.org/trac/ticket/1140
+
+varnishncsa
+-----------
+
+- Support for \t\n in varnishncsa format strings.
+- Add new format: %{VCL_Log:foo}x which output key:value from std.log() in
+  VCL.
+- Add user-defined date formatting, using %{format}t.
+
+varnishtest
+-----------
+
+- resp.body is now available for inspection.
+- Make it possible to test for the absence of an HTTP header. `Bug #1062`_.
+- Log the full panic message instead of shortening it to 512 characters.
+
+.. _bug #1062: http://varnish-cache.org/trac/ticket/1062
+
+varnishstat
+-----------
+
+- Add json output (-j).
+
+Other
+-----
+
+- Documentation updates.
+- Bump minimum number of threads to 50 in RPM packages.
+- RPM packaging updates.
+- Fix some compilation warnings on Solaris.
+- Fix some build issues on Open/Net/DragonFly-BSD.
+- Fix build on FreeBSD 10-current.
+- Fix libedit detection on \*BSD OSes. `Bug #1003`_.
+
+.. _bug #1003: http://varnish-cache.org/trac/ticket/1003
+
 ================================
 Changes from 3.0.2 rc 1 to 3.0.2
 ================================
@@ -60,10 +180,11 @@ Varnishd
 
 .. _bug #994: http://varnish-cache.org/trac/ticket/994
 .. _bug #992: http://varnish-cache.org/trac/ticket/992
+.. _bug #996: http://varnish-cache.org/trac/ticket/996
 .. _bug #1007: http://varnish-cache.org/trac/ticket/1007
 .. _bug #1008: http://varnish-cache.org/trac/ticket/1008
 .. _bug #1012: http://varnish-cache.org/trac/ticket/1012
-.. _bug #1012: http://varnish-cache.org/trac/ticket/1016
+.. _bug #1016: http://varnish-cache.org/trac/ticket/1016
 
 VCL
 ---
