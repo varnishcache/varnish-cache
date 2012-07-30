@@ -563,7 +563,15 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	cwd = getcwd(NULL, PATH_MAX);
 	macro_def(vltop, NULL, "pwd", "%s", cwd);
 	macro_def(vltop, NULL, "topbuild", "%s/%s", cwd, TOP_BUILDDIR);
-	macro_def(vltop, NULL, "bad_ip", "10.255.255.255");
+
+	/*
+	 * We need an IP number which will not repond, ever, and that is a
+	 * lot harder than it sounds.  This IP# is from RFC5737 and a
+	 * C-class broadcast at that.
+	 * If tests involving ${bad_ip} fails and you run linux, you should
+	 * check your /proc/sys/net/ipv4/ip_nonlocal_bind setting.
+	 */
+	macro_def(vltop, NULL, "bad_ip", "192.0.2.255");
 
 	/* Move into our tmpdir */
 	AZ(chdir(tmpdir));
