@@ -179,7 +179,7 @@ ses_sess_pool_task(struct worker *wrk, void *arg)
  * VSL comes before anything else for this session.
  *
  * This is a separate procedure only to isolate the two stack buffers.
- * 
+ *
  */
 
 static void

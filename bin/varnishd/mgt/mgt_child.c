@@ -338,7 +338,7 @@ start_child(struct cli *cli)
 		(void)signal(SIGINT, SIG_DFL);
 		(void)signal(SIGTERM, SIG_DFL);
 
-		mgt_sandbox();
+		mgt_sandbox(SANDBOX_WORKER);
 
 		child_main();
 

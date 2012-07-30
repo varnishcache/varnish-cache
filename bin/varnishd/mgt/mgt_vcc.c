@@ -137,7 +137,7 @@ run_vcc(void *priv)
 	int fd, i, l;
 
 	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
-	mgt_sandbox();
+	mgt_sandbox(SANDBOX_VCC);
 	sb = VSB_new_auto();
 	XXXAN(sb);
 	VCC_VCL_dir(vcc, mgt_vcl_dir);
@@ -176,7 +176,7 @@ run_vcc(void *priv)
 static void
 run_cc(void *priv)
 {
-	mgt_sandbox();
+	mgt_sandbox(SANDBOX_CC);
 	(void)execl("/bin/sh", "/bin/sh", "-c", priv, NULL);
 }
 
@@ -193,7 +193,7 @@ run_dlopen(void *priv)
 
 	of = priv;
 
-	mgt_sandbox();
+	mgt_sandbox(SANDBOX_VCLLOAD);
 
 	/* Try to load the object into this sub-process */
 	if ((dlh = dlopen(of, RTLD_NOW | RTLD_LOCAL)) == NULL) {

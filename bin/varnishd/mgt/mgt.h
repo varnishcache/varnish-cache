@@ -74,13 +74,19 @@ void MCF_DumpRstParam(void);
 extern struct params mgt_param;
 
 /* mgt_sandbox.c */
-void mgt_sandbox(void);
+enum sandbox_e {
+	SANDBOX_VCC = 1,
+	SANDBOX_CC = 2,
+	SANDBOX_VCLLOAD = 3,
+	SANDBOX_WORKER = 4,
+};
+
+typedef void mgt_sandbox_f(enum sandbox_e);
+extern mgt_sandbox_f *mgt_sandbox;
 
 /* mgt_sandbox_solaris.c */
 #ifdef HAVE_SETPPRIV
-void mgt_sandbox_solaris_init(void);
-void mgt_sandbox_solaris_fini(void);
-void mgt_sandbox_solaris_privsep(void);
+mgt_sandbox_f mgt_sandbox_solaris;
 #endif
 
 /* mgt_shmem.c */

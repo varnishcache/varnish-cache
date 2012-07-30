@@ -59,32 +59,41 @@
 
 /* Waive all privileges in the child, it does not need any */
 
-void
-mgt_sandbox(void)
+static void __match_proto__(mgt_sandbox_f)
+mgt_sandbox_unix(enum sandbox_e who)
 {
-#ifdef HAVE_SETPPRIV
-	mgt_sandbox_solaris_init();
-	mgt_sandbox_solaris_privsep();
-#else
+	(void)who;
 	if (geteuid() == 0) {
 		XXXAZ(setgid(mgt_param.gid));
 		XXXAZ(setuid(mgt_param.uid));
 	} else {
 		REPORT0(LOG_INFO, "Not running as root, no priv-sep");
 	}
-#endif
+}
 
-	/* On Linux >= 2.4, you need to set the dumpable flag
-	   to get core dumps after you have done a setuid. */
+/*--------------------------------------------------------------------*/
 
 #ifdef __linux__
-	if (prctl(PR_SET_DUMPABLE, 1) != 0)
+static void __match_proto__(mgt_sandbox_f)
+mgt_sandbox_linux(enum sandbox_e who)
+{
+	mgt_sandbox_unix(who);
+
+	if (prctl(PR_SET_DUMPABLE, 1) != 0) {
 		REPORT0(LOG_INFO,
 		    "Could not set dumpable bit.  Core dumps turned off\n");
-#endif
-
-#ifdef HAVE_SETPPRIV
-	mgt_sandbox_solaris_fini();
-#endif
-
+	}
 }
+#endif
+
+
+/*--------------------------------------------------------------------*/
+
+mgt_sandbox_f *mgt_sandbox =
+#ifdef HAVE_SETPRIV
+	mgt_sandbox_solaris;
+#elif defined (__linux__)
+	mgt_sandbox_linux;
+#else
+	mgt_sandbox_unix;
+#endif
