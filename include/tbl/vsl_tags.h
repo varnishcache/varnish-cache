@@ -75,18 +75,19 @@ SLTM(SessOpen, "Client connection opened",
 	"lport\n    Local TCP port ('-' if !$log_local_addr)\n\n"
 )
 
+/*
+ * XXX: compilers are _so_ picky, and won't let us do an #include
+ * XXX: in the middle of a macro invocation :-(
+ * XXX: If we could, these three lines would have described the
+ * XXX: 'reason' field below.
 #define SESS_CLOSE(nm, desc) "    " #nm "\n\t" desc "\n\n"
+#include <tbl/sess_close.h>
+#undef SESS_CLOSE
+*/
 
 SLTM(SessClose, "Client connection closed",
 	"SessionClose is the last record for any client connection.\n\n"
 	"reason\n    Why the connection closed.\n\n"
-#ifdef __clang__
-/*
- * GCC barfs at this construct, but we have no way to ask compiler
- * if it is _not_ a GCC compiler since CLANG also defines __GNUC__
- */
-#include <tbl/sess_close.h>
-#endif
 	"duration\n    How long the session were open.\n\n"
 	"Nreq\n    How many requests on session.\n\n"
 	"Npipe\n    If 'pipe' were used on session.\n\n"
@@ -95,7 +96,6 @@ SLTM(SessClose, "Client connection closed",
 	"Bhdr\n    Header bytes sent on session.\n\n"
 	"Bbody\n    Body bytes sent on session.\n\n"
 )
-#undef SESS_CLOSE
 
 /*---------------------------------------------------------------------*/
 
