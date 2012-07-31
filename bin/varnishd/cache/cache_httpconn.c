@@ -75,7 +75,7 @@ HTC_Init(struct http_conn *htc, struct ws *ws, int fd, struct vsl_log *vsl,
  * the ws somewhere, because WS_Reset only fiddles pointers.
  */
 
-int
+enum htc_status_e
 HTC_Reinit(struct http_conn *htc)
 {
 	unsigned l;

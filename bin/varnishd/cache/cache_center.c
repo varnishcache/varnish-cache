@@ -204,7 +204,6 @@ enum cnt_sess_done_ret {
 static enum cnt_sess_done_ret
 cnt_sess_done(struct sess *sp, struct worker *wrk, struct req *req)
 {
-	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -258,8 +257,7 @@ cnt_sess_done(struct sess *sp, struct worker *wrk, struct req *req)
 	WS_Reset(wrk->aws, NULL);
 	req->vxid = VXID_Get(&wrk->vxid_pool);
 
-	i = HTC_Reinit(req->htc);
-	if (i == 1) {
+	if (HTC_Reinit(req->htc) == HTC_COMPLETE) {
 		req->t_req = sp->t_idle;
 		wrk->stats.sess_pipeline++;
 		return (SESS_DONE_RET_START);

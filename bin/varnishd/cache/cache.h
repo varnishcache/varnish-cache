@@ -881,7 +881,7 @@ enum htc_status_e {
 
 void HTC_Init(struct http_conn *htc, struct ws *ws, int fd, struct vsl_log *,
     unsigned maxbytes, unsigned maxhdr);
-int HTC_Reinit(struct http_conn *htc);
+enum htc_status_e HTC_Reinit(struct http_conn *htc);
 enum htc_status_e HTC_Rx(struct http_conn *htc);
 ssize_t HTC_Read(struct http_conn *htc, void *d, size_t len);
 enum htc_status_e HTC_Complete(struct http_conn *htc);
