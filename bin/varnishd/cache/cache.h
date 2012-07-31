@@ -706,7 +706,6 @@ struct sess {
 	/* Timestamps, all on TIM_real() timescale */
 	double			t_open;		/* fd accepted */
 	double			t_idle;		/* fd accepted or resp sent */
-	double			t_rx;
 
 #if defined(HAVE_EPOLL_CTL)
 	struct epoll_event ev;

@@ -118,14 +118,13 @@ cnt_sess_wait(struct sess *sp, struct worker *wrk, struct req *req)
 
 	assert(req->sp == sp);
 
-	assert(!isnan(sp->t_rx));
 
 	AZ(req->vcl);
 	AZ(req->obj);
 	AZ(req->esi_level);
 	assert(req->xid == 0);
-	req->t_req = sp->t_rx;
-	req->t_resp = NAN;
+	assert(isnan(req->t_req));
+	assert(isnan(req->t_resp));
 
 	tmo = (int)(1e3 * cache_param->timeout_linger);
 	while (1) {
@@ -159,7 +158,7 @@ cnt_sess_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			when = sp->t_idle + cache_param->timeout_linger;
 			tmo = (int)(1e3 * (when - now));
 			if (when < now || tmo == 0) {
-				sp->t_rx = NAN;
+				req->t_req = NAN;
 				wrk->stats.sess_herd++;
 				SES_ReleaseReq(req);
 				WAIT_Enter(sp);
@@ -167,7 +166,9 @@ cnt_sess_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			}
 		} else {
 			/* Working on it */
-			when = sp->t_rx + cache_param->timeout_req;
+			if (isnan(req->t_req))
+				req->t_req = now;
+			when = req->t_req + cache_param->timeout_req;
 			tmo = (int)(1e3 * (when - now));
 			if (when < now || tmo == 0) {
 				why = SC_RX_TIMEOUT;
@@ -224,7 +225,6 @@ cnt_sess_done(struct sess *sp, struct worker *wrk, struct req *req)
 		req->vcl = NULL;
 	}
 
-
 	sp->t_idle = W_TIM_real(wrk);
 	if (req->xid == 0) 
 		req->t_resp = sp->t_idle;
@@ -262,8 +262,6 @@ cnt_sess_done(struct sess *sp, struct worker *wrk, struct req *req)
 		wrk->stats.sess_pipeline++;
 		return (SESS_DONE_RET_START);
 	} else {
-		sp->t_rx = sp->t_idle;
-		req->t_req = NAN;
 		if (Tlen(req->htc->rxbuf))
 			wrk->stats.sess_readahead++;
 		return (SESS_DONE_RET_WAIT);
@@ -301,6 +299,12 @@ CNT_Session(struct worker *wrk, struct req *req)
 		sdr = cnt_sess_done(sp, wrk, req);
 		assert(sdr == SESS_DONE_RET_GONE);
 		return;
+	}
+
+	if (sp->sess_step == S_STP_NEWREQ) {
+		HTC_Init(req->htc, req->ws, sp->fd, req->vsl,
+		    cache_param->http_req_size,
+		    cache_param->http_req_hdr_len);
 	}
 
 	while (1) {

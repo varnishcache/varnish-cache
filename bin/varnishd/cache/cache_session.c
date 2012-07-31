@@ -104,7 +104,6 @@ ses_setup(struct sess *sp)
 	sp->sockaddr.ss_family = sp->mysockaddr.ss_family = PF_UNSPEC;
 	sp->t_open = NAN;
 	sp->t_idle = NAN;
-	sp->t_rx = NAN;
 }
 
 /*--------------------------------------------------------------------
@@ -202,8 +201,8 @@ ses_vsl_socket(struct sess *sp, const char *lsockname)
 		strcpy(laddr, "-");
 		strcpy(lport, "-");
 	}
-	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s",
-	    sp->addr, sp->port, lsockname, laddr, lport);
+	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s %.6f",
+	    sp->addr, sp->port, lsockname, laddr, lport, sp->t_open);
 }
 
 /*--------------------------------------------------------------------
@@ -232,7 +231,6 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 	wrk->stats.s_sess++;
 
 	sp->t_open = VTIM_real();
-	sp->t_rx = sp->t_open;
 	sp->t_idle = sp->t_open;
 	sp->vxid = VXID_Get(&wrk->vxid_pool);
 
@@ -266,10 +264,9 @@ SES_ScheduleReq(struct req *req)
 
 	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT)) {
 		VSC_C_main->client_drop_late++;
-		sp->t_idle = VTIM_real();
 		AN (req->vcl);
 		VCL_Rel(&req->vcl);
-		SES_Delete(sp, SC_OVERLOAD, sp->t_idle);
+		SES_Delete(sp, SC_OVERLOAD, NAN);
 		return (1);
 	}
 	return (0);
@@ -290,11 +287,9 @@ SES_Handle(struct sess *sp, double now)
 	AN(pp->pool);
 	sp->task.func = ses_sess_pool_task;
 	sp->task.priv = sp;
-	sp->t_rx = now;
 	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT)) {
 		VSC_C_main->client_drop_late++;
-		sp->t_idle = VTIM_real();
-		SES_Delete(sp, SC_OVERLOAD, sp->t_idle);
+		SES_Delete(sp, SC_OVERLOAD, now);
 	}
 }
 
@@ -403,9 +398,8 @@ ses_GetReq(struct sess *sp)
 
 	WS_Init(req->ws, "req", p, e - p);
 
-	HTC_Init(req->htc, req->ws, sp->fd, req->vsl,
-	    cache_param->http_req_size,
-	    cache_param->http_req_hdr_len);
+	req->t_req = NAN;
+	req->t_resp = NAN;
 
 	return (req);
 }
@@ -417,6 +411,7 @@ SES_ReleaseReq(struct req *req)
 	struct sesspool *pp;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AZ(req->vcl);
 #define ACCT(foo)	AZ(req->acct_req.foo);
 #include "tbl/acct_fields.h"
 #undef ACCT
