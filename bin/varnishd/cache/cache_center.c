@@ -93,7 +93,7 @@ static unsigned xids;
 DOT subgraph xcluster_wait {
 DOT	wait [
 DOT		shape=box
-DOT		label="cnt_wait:\nwait for\ncomplete\nrequest"
+DOT		label="cnt_sess_wait:\nwait for\ncomplete\nrequest"
 DOT	]
 DOT	herding [shape=hexagon]
 DOT	wait -> start [label="got req",style=bold,color=green]
@@ -104,7 +104,7 @@ DOT }
  */
 
 static int
-cnt_wait(struct sess *sp, struct worker *wrk, struct req *req)
+cnt_sess_wait(struct sess *sp, struct worker *wrk, struct req *req)
 {
 	int j, tmo;
 	struct pollfd pfd[1];
@@ -204,7 +204,6 @@ enum cnt_sess_done_ret {
 static enum cnt_sess_done_ret
 cnt_sess_done(struct sess *sp, struct worker *wrk, struct req *req)
 {
-	double dh, dp, da;
 	int i;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -228,21 +227,8 @@ cnt_sess_done(struct sess *sp, struct worker *wrk, struct req *req)
 
 
 	sp->t_idle = W_TIM_real(wrk);
-	if (req->xid == 0) {
+	if (req->xid == 0) 
 		req->t_resp = sp->t_idle;
-	} else {
-		dp = req->t_resp - req->t_req;
-		da = sp->t_idle - req->t_resp;
-		dh = req->t_req - sp->t_open;
-		/* XXX: Add StatReq == StatSess */
-		/* XXX: Workaround for pipe */
-		if (sp->fd >= 0) {
-			VSLb(req->vsl, SLT_Length, "%ju",
-			    (uintmax_t)req->req_bodybytes);
-		}
-		VSLb(req->vsl, SLT_ReqEnd, "%u %.9f %.9f %.9f %.9f %.9f",
-		    req->xid, req->t_req, sp->t_idle, dh, dp, da);
-	}
 	req->xid = 0;
 	VSL_Flush(req->vsl, 0);
 
@@ -351,7 +337,7 @@ CNT_Session(struct worker *wrk, struct req *req)
 		}
 
 		if (sp->sess_step == S_STP_NEWREQ) {
-			done = cnt_wait(sp, wrk, req);
+			done = cnt_sess_wait(sp, wrk, req);
 			if (done)
 				return;
 			sp->sess_step = S_STP_WORKING;
@@ -1593,6 +1579,19 @@ CNT_Request(struct worker *wrk, struct req *req)
 		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 	}
 	if (done == 1) {
+		/* XXX: Workaround for pipe */
+		if (req->sp->fd >= 0) {
+			VSLb(req->vsl, SLT_Length, "%ju",
+			    (uintmax_t)req->req_bodybytes);
+		}
+		VSLb(req->vsl, SLT_ReqEnd, "%u %.9f %.9f %.9f %.9f %.9f",
+		    req->xid,
+		    req->t_req,
+		    req->sp->t_idle,
+		    req->sp->t_idle - req->t_resp,
+		    req->t_resp - req->t_req,
+		    req->sp->t_idle - req->t_resp);
+
 		/* done == 2 was charged by cache_hash.c */
 		SES_Charge(wrk, req);
 	}
