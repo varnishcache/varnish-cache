@@ -480,6 +480,8 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 
 	/* Deal with any message-body the request might have */
 	i = FetchReqBody(req, sendbody);
+	if (sendbody && req->reqbodydone)
+		retry = -1;
 	if (WRW_FlushRelease(wrk) || i > 0) {
 		VSLb(req->vsl, SLT_FetchError,
 		    "backend write error: %d (%s)",
@@ -520,6 +522,7 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 			return (retry);
 		}
 		if (first) {
+			retry = -1;
 			first = 0;
 			VTCP_set_read_timeout(vc->fd,
 			    vc->between_bytes_timeout);

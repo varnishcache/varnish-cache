@@ -1,0 +1,53 @@
+varnishtest "Don't retry if backend ever sent anything"
+
+server s1 {
+	rxreq
+	expect req.url == /1
+	txresp -bodylen 1
+
+	rxreq
+	expect req.url == /2
+	close
+	accept
+
+	rxreq
+	expect req.url == /2
+	txresp -bodylen 2
+
+	rxreq
+	expect req.url == /3
+	send "200 "
+	delay .1
+	close
+	accept
+
+	rxreq
+	expect req.url == /4
+	txresp -bodylen 4
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq -url /1
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 1
+
+	# This one should get retried
+	txreq -url /2
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 2
+
+	# This one should not get retried
+	txreq -url /3
+	rxresp
+	expect resp.status == 503
+} -run
+client c1 {
+	txreq -url /4
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 4
+} -run
