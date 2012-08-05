@@ -28,8 +28,6 @@ Varnishd
 - Add CLI commands to manually control health state of a backend.
 - Fix an issue where the s_bodybytes counter is not updated correctly on
   gunzipped delivery.
-- Fix a race on the n_sess counter that leads to increased session object
-  allocation. `Bug #897`_.
 - Fix a crash when we couldn't allocate memory for a fetched object.
   `Bug #1100`_.
 - Fix an issue where objects could end up in the transient store with a
