@@ -17,7 +17,6 @@ varnishd_SOURCES = \
 	cache/cache_backend_poll.c \
 	cache/cache_ban.c \
 	cache/cache_busyobj.c \
-	cache/cache_center.c \
 	cache/cache_cli.c \
 	cache/cache_dir.c \
 	cache/cache_dir_dns.c \
@@ -31,6 +30,7 @@ varnishd_SOURCES = \
 	cache/cache_gzip.c \
 	cache/cache_hash.c \
 	cache/cache_http.c \
+	cache/cache_http1_fsm.c \
 	cache/cache_httpconn.c \
 	cache/cache_lck.c \
 	cache/cache_main.c \
@@ -38,6 +38,7 @@ varnishd_SOURCES = \
 	cache/cache_panic.c \
 	cache/cache_pipe.c \
 	cache/cache_pool.c \
+	cache/cache_req_fsm.c \
 	cache/cache_response.c \
 	cache/cache_rfc2616.c \
 	cache/cache_session.c \
