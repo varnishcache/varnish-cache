@@ -1,5 +1,6 @@
 /*-
  * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2011-2012 UPLEX - Nils Goroll Systemoptimierung
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -38,6 +39,7 @@
 #include <priv.h>
 #endif
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
 #include <unistd.h>
@@ -95,49 +97,113 @@
  *
  */
 
-/* effective during runtime of the child */
-static inline void
-mgt_sandbox_solaris_add_effective(priv_set_t *pset)
+static void
+mgt_sandbox_solaris_add_inheritable(priv_set_t *pset, enum sandbox_e who)
 {
-	/* PSARC/2009/685 - 8eca52188202 - onnv_132 */
-	priv_addset(pset, "net_access");
-
-	/* PSARC/2009/378 - 63678502e95e - onnv_140 */
-	priv_addset(pset, "file_read");
-	priv_addset(pset, "file_write");
+	switch (who) {
+	case SANDBOX_VCC:
+		break;
+	case SANDBOX_CC:
+		priv_addset(pset, "proc_exec");
+		priv_addset(pset, "proc_fork");
+		/* PSARC/2009/378 - 63678502e95e - onnv_140 */
+		priv_addset(pset, "file_read");
+		priv_addset(pset, "file_write");
+		break;
+	case SANDBOX_VCLLOAD:
+		break;
+	case SANDBOX_WORKER:
+		break;
+	default:
+		REPORT(LOG_ERR, "INCOMPLETE AT: %s(%d)\n", __func__, __LINE__);
+		exit(1);
+	}
 }
 
-/* permitted during runtime of the child - for privilege bracketing */
-static inline void
-mgt_sandbox_solaris_add_permitted(priv_set_t *pset)
+/*
+ * effective is initialized from inheritable (see mgt_sandbox_solaris_waive)
+ * so only additionally required privileges need to be added here
+ */
+
+static void
+mgt_sandbox_solaris_add_effective(priv_set_t *pset, enum sandbox_e who)
 {
-	/* for raising limits in cache_waiter_ports.c */
-	priv_addset(pset, PRIV_SYS_RESOURCE);
+	switch (who) {
+	case SANDBOX_VCC:
+		/* PSARC/2009/378 - 63678502e95e - onnv_140 */
+		priv_addset(pset, "file_write");
+		break;
+	case SANDBOX_CC:
+		break;
+	case SANDBOX_VCLLOAD:
+		/* PSARC/2009/378 - 63678502e95e - onnv_140 */
+		priv_addset(pset, "file_read");
+	case SANDBOX_WORKER:
+		/* PSARC/2009/685 - 8eca52188202 - onnv_132 */
+		priv_addset(pset, "net_access");
+		/* PSARC/2009/378 - 63678502e95e - onnv_140 */
+		priv_addset(pset, "file_read");
+		priv_addset(pset, "file_write");
+		break;
+	default:
+		REPORT(LOG_ERR, "INCOMPLETE AT: %s(%d)\n", __func__, __LINE__);
+		exit(1);
+	}
 }
 
-/* effective during mgt_sandbox */
-static inline void
-mgt_sandbox_solaris_add_initial(priv_set_t *pset)
+/*
+ * permitted is initialized from effective (see mgt_sandbox_solaris_waive)
+ * so only additionally required privileges need to be added here
+ */
+
+static void
+mgt_sandbox_solaris_add_permitted(priv_set_t *pset, enum sandbox_e who)
 {
+	switch (who) {
+	case SANDBOX_VCC:
+	case SANDBOX_CC:
+	case SANDBOX_VCLLOAD:
+		break;
+	case SANDBOX_WORKER:
+		/* for raising limits in cache_waiter_ports.c */
+		priv_addset(pset, PRIV_SYS_RESOURCE);
+		break;
+	default:
+		REPORT(LOG_ERR, "INCOMPLETE AT: %s(%d)\n", __func__, __LINE__);
+		exit(1);
+	}
+}
+
+/*
+ * additional privileges needed by mgt_sandbox_solaris_privsep -
+ * will get waived in mgt_sandbox_solaris_waive
+ */
+static void
+mgt_sandbox_solaris_add_initial(priv_set_t *pset, enum sandbox_e who)
+{
+	(void)who;
+
 	/* for setgid/setuid */
 	priv_addset(pset, PRIV_PROC_SETID);
 }
 
 /*
  * if we are not yet privilege-aware already (ie we have been started
- * not-privilege aware wird euid 0), we need to grab any additional privileges
- * needed during mgt_standbox, until we reduce to least privileges in
- * mgt_sandbox_waive, otherwise we would loose them with setuid()
+ * not-privilege aware with euid 0), we try to grab any privileges we
+ * will need later.
+ * We will reduce to least privileges in mgt_sandbox_solaris_waive
+ *
+ * We need to become privilege-aware to avoid setuid resetting them.
  */
 
-void
-mgt_sandbox_solaris_init(void)
+static void
+mgt_sandbox_solaris_init(enum sandbox_e who)
 {
 	priv_set_t *priv_all;
 
 	if (! (priv_all = priv_allocset())) {
 		REPORT(LOG_ERR,
-		    "Child start warning: "
+		    "Sandbox warning: "
 		    " mgt_sandbox_init - priv_allocset failed: errno=%d (%s)",
 		    errno, strerror(errno));
 		return;
@@ -145,9 +211,10 @@ mgt_sandbox_solaris_init(void)
 
 	priv_emptyset(priv_all);
 
-	mgt_sandbox_solaris_add_effective(priv_all);
-	mgt_sandbox_solaris_add_permitted(priv_all);
-	mgt_sandbox_solaris_add_initial(priv_all);
+	mgt_sandbox_solaris_add_inheritable(priv_all, who);
+	mgt_sandbox_solaris_add_effective(priv_all, who);
+	mgt_sandbox_solaris_add_permitted(priv_all, who);
+	mgt_sandbox_solaris_add_initial(priv_all, who);
 
 	setppriv(PRIV_ON, PRIV_PERMITTED, priv_all);
 	setppriv(PRIV_ON, PRIV_EFFECTIVE, priv_all);
@@ -156,9 +223,11 @@ mgt_sandbox_solaris_init(void)
 	priv_freeset(priv_all);
 }
 
-void
-mgt_sandbox_solaris_privsep(void)
+static void
+mgt_sandbox_solaris_privsep(enum sandbox_e who)
 {
+	(void)who;
+
 	if (priv_ineffect(PRIV_PROC_SETID)) {
                 if (getgid() != mgt_param.gid)
                         XXXAZ(setgid(mgt_param.gid));
@@ -187,8 +256,8 @@ mgt_sandbox_solaris_privsep(void)
  * We should keep sys_resource in P in order to adjust our limits if we need to
  */
 
-void
-mgt_sandbox_solaris_fini(void)
+static void
+mgt_sandbox_solaris_waive(enum sandbox_e who)
 {
 	priv_set_t *effective, *inheritable, *permitted;
 
@@ -196,19 +265,22 @@ mgt_sandbox_solaris_fini(void)
 	    !(inheritable = priv_allocset()) ||
 	    !(permitted = priv_allocset())) {
 		REPORT(LOG_ERR,
-		    "Child start warning: "
+		    "Sandbox warning: "
 		    " mgt_sandbox_waive - priv_allocset failed: errno=%d (%s)",
 		    errno, strerror(errno));
 		return;
 	}
 
-	priv_emptyset(inheritable);
+	/* simple scheme: (inheritable subset-of effective) subset-of permitted */
 
-	priv_emptyset(effective);
-	mgt_sandbox_solaris_add_effective(effective);
+	priv_emptyset(inheritable);
+	mgt_sandbox_solaris_add_inheritable(inheritable, who);
+
+	priv_copyset(inheritable, effective);
+	mgt_sandbox_solaris_add_effective(effective, who);
 
 	priv_copyset(effective, permitted);
-	mgt_sandbox_solaris_add_permitted(permitted);
+	mgt_sandbox_solaris_add_permitted(permitted, who);
 
 	/*
 	 * invert the sets and clear privileges such that setppriv will always
@@ -221,7 +293,7 @@ mgt_sandbox_solaris_fini(void)
 #define SETPPRIV(which, set)						\
 	if (setppriv(PRIV_OFF, which, set))				\
 		REPORT(LOG_ERR,						\
-		    "Child start warning: "				\
+		    "Sandbox warning: "					\
 		    " Waiving privileges failed on %s: errno=%d (%s)",	\
 		    #which, errno, strerror(errno));
 
@@ -233,6 +305,14 @@ mgt_sandbox_solaris_fini(void)
 
 	priv_freeset(inheritable);
 	priv_freeset(effective);
+	priv_freeset(permitted);
 }
 
+void __match_proto__(mgt_sandbox_f)
+mgt_sandbox_solaris(enum sandbox_e who)
+{
+	mgt_sandbox_solaris_init(who);
+	mgt_sandbox_solaris_privsep(who);
+	mgt_sandbox_solaris_waive(who);
+}
 #endif /* HAVE_SETPPRIV */

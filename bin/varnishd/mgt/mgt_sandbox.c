@@ -57,8 +57,7 @@
 
 /*--------------------------------------------------------------------*/
 
-/* Waive all privileges in the child, it does not need any */
-
+#ifndef HAVE_SETPPRIV
 static void __match_proto__(mgt_sandbox_f)
 mgt_sandbox_unix(enum sandbox_e who)
 {
@@ -70,6 +69,7 @@ mgt_sandbox_unix(enum sandbox_e who)
 		REPORT0(LOG_INFO, "Not running as root, no priv-sep");
 	}
 }
+#endif
 
 /*--------------------------------------------------------------------*/
 
@@ -90,7 +90,7 @@ mgt_sandbox_linux(enum sandbox_e who)
 /*--------------------------------------------------------------------*/
 
 mgt_sandbox_f *mgt_sandbox =
-#ifdef HAVE_SETPRIV
+#ifdef HAVE_SETPPRIV
 	mgt_sandbox_solaris;
 #elif defined (__linux__)
 	mgt_sandbox_linux;
