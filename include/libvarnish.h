@@ -104,6 +104,7 @@ struct timespec TIM_timespec(double t);
 struct timeval TIM_timeval(double t);
 
 /* from libvarnish/version.c */
+extern const char *VCS_version;
 void VCS_Message(const char *);
 
 /* from libvarnish/vtmpfile.c */
