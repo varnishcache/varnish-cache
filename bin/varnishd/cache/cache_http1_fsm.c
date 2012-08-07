@@ -26,42 +26,44 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * This file contains the two central state machine for pushing
- * sessions and requests.
+ * This file contains the two central state machine for pushing HTTP1
+ * sessions through their states.
  *
- * The first part of the file, entrypoint CNT_Session() and down to
- * the ==== separator, is concerned with sessions.  When a session has
- * a request to deal with, it calls into the second half of the file.
- * This part is for all practical purposes HTTP/1.x specific.
+ * The following dot-graph shows the big picture, and the two major
+ * complicating features:
  *
- * The second part of the file, entrypoint CNT_Request() and below the
- * ==== separator, is intended to (over time) be(ome) protocol agnostic.
- * We already use this now with ESI:includes, which are for all relevant
- * purposes a different "protocol"
+ * - The blue path is where a request disembarks its worker thread while
+ *   waiting for a busy object to become available:
  *
- * A special complication is the fact that we can suspend processing of
- * a request when hash-lookup finds a busy objhdr.
+ * - The green path is where we time out waiting for the next request to
+ *   arrive, release the worker thread and hand the session to the waiter.
  *
- * Since the states are rather nasty in detail, I have decided to embedd
- * a dot(1) graph in the source code comments.  So to see the big picture,
- * extract the DOT lines and run though dot(1), for instance with the
- * command:
- *	sed -n '/^DOT/s///p' cache/cache_center.c | dot -Tps > /tmp/_.ps
- */
-
-/*
-DOT digraph vcl_center {
-xDOT	page="8.2,11.5"
-DOT	size="7.2,10.5"
-DOT	margin="0.5"
-DOT	center="1"
-DOT acceptor [
-DOT	shape=hexagon
-DOT	label="Request received"
-DOT ]
-DOT ERROR [shape=plaintext]
-DOT RESTART [shape=plaintext]
-DOT acceptor -> first [style=bold,color=green]
+ * Render the graph with:
+ *	sed -n '/^..DOT/s///p' % | dot -Tps > /tmp/_.ps
+ *
+ *DOT	digraph vcl_center {
+ *DOT		size="7.2,10.5"
+ *DOT		margin="0.5"
+ *DOT		center="1"
+ *DOT
+ *DOT	acceptor -> http1_wait [label=S_STP_NEWREQ, align=center]
+ *DOT	hash -> CNT_Request [label="Busy object\nS_STP_WORKING\nR_STP_LOOKUP"
+ *DOT		color=blue]
+ *DOT	disembark -> hash [style=dotted, color=blue]
+ *DOT	http1_wait -> CNT_Request [label="S_STP_WORKING\nR_STP_START"]
+ *DOT	http1_wait -> disembark [label="Session close"]
+ *DOT	http1_wait -> disembark [label="Timeout" color=green]
+ *DOT	disembark -> waiter [style=dotted, color=green]
+ *DOT	waiter -> http1_wait [color=green]
+ *DOT	CNT_Request -> disembark
+ *DOT		[label="Busy object\nS_STP_WORKING\nR_STP_LOOKUP" color=blue]
+ *DOT	CNT_Request -> http1_cleanup
+ *DOT	http1_cleanup -> disembark [label="Session close"]
+ *DOT	http1_cleanup -> CNT_Request [label="S_STP_WORKING\nR_STP_START"]
+ *DOT	http1_cleanup -> http1_wait [label="S_STP_NEWREQ"]
+ *DOT
+ *DOT	}
+ *
  */
 
 #include "config.h"
@@ -73,37 +75,16 @@ DOT acceptor -> first [style=bold,color=green]
 
 #include "cache.h"
 
-#include "hash/hash_slinger.h"
 #include "vcl.h"
-#include "vcli_priv.h"
-#include "vsha256.h"
 #include "vtcp.h"
 #include "vtim.h"
 
-#ifndef HAVE_SRANDOMDEV
-#include "compat/srandomdev.h"
-#endif
-
-
 /*--------------------------------------------------------------------
- * WAIT
- * Collect the request from the client.
- *
-DOT subgraph xcluster_wait {
-DOT	wait [
-DOT		shape=box
-DOT		label="cnt_sess_wait:\nwait for\ncomplete\nrequest"
-DOT	]
-DOT	herding [shape=hexagon]
-DOT	wait -> start [label="got req",style=bold,color=green]
-DOT	wait -> "SES_Delete()" [label="errors"]
-DOT	wait -> herding [label="timeout_linger"]
-DOT	herding -> wait [label="fd read_ready"]
-DOT }
+ * Collect a request from the client.
  */
 
 static int
-cnt_sess_wait(struct sess *sp, struct worker *wrk, struct req *req)
+http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 {
 	int j, tmo;
 	struct pollfd pfd[1];
@@ -116,7 +97,6 @@ cnt_sess_wait(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	assert(req->sp == sp);
-
 
 	AZ(req->vcl);
 	AZ(req->obj);
@@ -184,25 +164,16 @@ cnt_sess_wait(struct sess *sp, struct worker *wrk, struct req *req)
 /*--------------------------------------------------------------------
  * This is the final state, figure out if we should close or recycle
  * the client connection
- *
-DOT	DONE [
-DOT		shape=record
-DOT		label="{cnt_done:|Request completed}"
-DOT	]
-DOT	ESI_RESP [ shape=hexagon ]
-DOT	DONE -> start [label="full pipeline"]
-DOT	DONE -> wait
-DOT	DONE -> ESI_RESP
  */
 
-enum cnt_sess_done_ret {
+enum http1_cleanup_ret {
 	SESS_DONE_RET_GONE,
 	SESS_DONE_RET_WAIT,
 	SESS_DONE_RET_START,
 };
 
-static enum cnt_sess_done_ret
-cnt_sess_done(struct sess *sp, struct worker *wrk, struct req *req)
+static enum http1_cleanup_ret
+http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -225,7 +196,7 @@ cnt_sess_done(struct sess *sp, struct worker *wrk, struct req *req)
 	}
 
 	sp->t_idle = W_TIM_real(wrk);
-	if (req->xid == 0) 
+	if (req->xid == 0)
 		req->t_resp = sp->t_idle;
 	req->xid = 0;
 	VSL_Flush(req->vsl, 0);
@@ -271,11 +242,11 @@ cnt_sess_done(struct sess *sp, struct worker *wrk, struct req *req)
  */
 
 void
-CNT_Session(struct worker *wrk, struct req *req)
+HTTP1_Session(struct worker *wrk, struct req *req)
 {
 	int done;
 	struct sess *sp;
-	enum cnt_sess_done_ret sdr;
+	enum http1_cleanup_ret sdr;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -295,7 +266,7 @@ CNT_Session(struct worker *wrk, struct req *req)
 			SES_Close(sp, SC_REM_CLOSE);
 		else
 			SES_Close(sp, SC_TX_ERROR);
-		sdr = cnt_sess_done(sp, wrk, req);
+		sdr = http1_cleanup(sp, wrk, req);
 		assert(sdr == SESS_DONE_RET_GONE);
 		return;
 	}
@@ -307,10 +278,6 @@ CNT_Session(struct worker *wrk, struct req *req)
 	}
 
 	while (1) {
-		/*
-		 * Possible entrance states
-		 */
-
 		assert(
 		    sp->sess_step == S_STP_NEWREQ ||
 		    req->req_step == R_STP_LOOKUP ||
@@ -321,7 +288,7 @@ CNT_Session(struct worker *wrk, struct req *req)
 			if (done == 2)
 				return;
 			assert(done == 1);
-			sdr = cnt_sess_done(sp, wrk, req);
+			sdr = http1_cleanup(sp, wrk, req);
 			switch (sdr) {
 			case SESS_DONE_RET_GONE:
 				return;
@@ -333,12 +300,12 @@ CNT_Session(struct worker *wrk, struct req *req)
 				req->req_step = R_STP_START;
 				break;
 			default:
-				WRONG("Illegal enum cnt_sess_done_ret");
+				WRONG("Illegal enum http1_cleanup_ret");
 			}
 		}
 
 		if (sp->sess_step == S_STP_NEWREQ) {
-			done = cnt_sess_wait(sp, wrk, req);
+			done = http1_wait(sp, wrk, req);
 			if (done)
 				return;
 			sp->sess_step = S_STP_WORKING;

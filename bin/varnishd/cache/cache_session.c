@@ -139,7 +139,7 @@ ses_req_pool_task(struct worker *wrk, void *arg)
 	THR_SetRequest(req);
 	AZ(wrk->aws->r);
 	wrk->lastused = NAN;
-	CNT_Session(wrk, req);
+	HTTP1_Session(wrk, req);
 	WS_Assert(wrk->aws);
 	AZ(wrk->wrw);
 	if (cache_param->diag_bitmap & 0x00040000) {

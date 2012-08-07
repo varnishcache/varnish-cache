@@ -764,9 +764,11 @@ struct busyobj *VBO_GetBusyObj(struct worker *wrk);
 void VBO_DerefBusyObj(struct worker *wrk, struct busyobj **busyobj);
 void VBO_Free(struct busyobj **vbo);
 
-/* cache_center.c [CNT] */
+/* cache_http1_fsm.c [HTTP1] */
+void HTTP1_Session(struct worker *, struct req *);
+
+/* cache_req_fsm.c [FSM] */
 int CNT_Request(struct worker *, struct req *);
-void CNT_Session(struct worker *, struct req *);
 void CNT_Init(void);
 
 /* cache_cli.c [CLI] */
