@@ -1181,14 +1181,12 @@ DOT start -> DONE [label=errors]
 static int
 cnt_start(struct worker *wrk, struct req *req)
 {
-	char *p;
-	const char *r = "HTTP/1.1 100 Continue\r\n\r\n";
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AZ(req->restarts);
 	AZ(req->obj);
-	AZ(req->vcl);
+	AN(req->vcl);
 	AZ(req->esi_level);
 	assert(!isnan(req->t_req));
 
@@ -1201,44 +1199,7 @@ cnt_start(struct worker *wrk, struct req *req)
 	VSLb(req->vsl, SLT_ReqStart, "%s %s %u",
 	    req->sp->addr, req->sp->port, req->xid);
 
-	/* Borrow VCL reference from worker thread */
-	VCL_Refresh(&wrk->vcl);
-	req->vcl = wrk->vcl;
-	wrk->vcl = NULL;
-
 	EXP_Clr(&req->exp);
-
-	HTTP_Setup(req->http, req->ws, req->vsl, HTTP_Req);
-	req->err_code = http_DissectRequest(req);
-
-	/* If we could not even parse the request, just close */
-	if (req->err_code == 400) {
-		SES_Close(req->sp, SC_RX_JUNK);
-		return (1);
-	}
-
-	req->ws_req = WS_Snapshot(req->ws);
-
-	req->doclose = http_DoConnection(req->http);
-
-	/*
-	 * We want to deal with Expect: headers the first time we
-	 * attempt the request, and remove them before we move on.
-	 */
-	if (req->err_code == 0 && http_GetHdr(req->http, H_Expect, &p)) {
-		if (strcasecmp(p, "100-continue")) {
-			req->err_code = 417;
-		} else if (strlen(r) != write(req->sp->fd, r, strlen(r))) {
-			SES_Close(req->sp, SC_REM_CLOSE);
-			return (1);
-		}
-	}
-	http_Unset(req->http, H_Expect);
-
-	/* XXX: pull in req-body and make it available instead. */
-	req->reqbodydone = 0;
-
-	HTTP_Copy(req->http0, req->http);	/* Copy for restart/ESI use */
 
 	if (req->err_code)
 		req->req_step = R_STP_ERROR;

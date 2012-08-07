@@ -241,10 +241,57 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 /*--------------------------------------------------------------------
  */
 
+static int
+http1_dissect(struct worker *wrk, struct req *req)
+{
+	const char *r = "HTTP/1.1 100 Continue\r\n\r\n";
+	char *p;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	/* Borrow VCL reference from worker thread */
+	VCL_Refresh(&wrk->vcl);
+	req->vcl = wrk->vcl;
+	wrk->vcl = NULL;
+
+	HTTP_Setup(req->http, req->ws, req->vsl, HTTP_Req);
+	req->err_code = http_DissectRequest(req);
+
+	/* If we could not even parse the request, just close */
+	if (req->err_code == 400) {
+		SES_Close(req->sp, SC_RX_JUNK);
+		return (1);
+	}
+
+	req->ws_req = WS_Snapshot(req->ws);
+	req->doclose = http_DoConnection(req->http);
+
+	/* XXX: Expect headers are a mess */
+	if (req->err_code == 0 && http_GetHdr(req->http, H_Expect, &p)) {
+		if (strcasecmp(p, "100-continue")) {
+			req->err_code = 417;
+		} else if (strlen(r) != write(req->sp->fd, r, strlen(r))) {
+			SES_Close(req->sp, SC_REM_CLOSE);
+			return (1);
+		}
+	}
+	http_Unset(req->http, H_Expect);
+	/* XXX: pull in req-body and make it available instead. */
+	req->reqbodydone = 0;
+
+	HTTP_Copy(req->http0, req->http);	// For ESI & restart
+
+	return (0);
+}
+
+/*--------------------------------------------------------------------
+ */
+
 void
 HTTP1_Session(struct worker *wrk, struct req *req)
 {
-	int done;
+	int done = 0;
 	struct sess *sp;
 	enum http1_cleanup_ret sdr;
 
@@ -284,7 +331,10 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 		    req->req_step == R_STP_START);
 
 		if (sp->sess_step == S_STP_WORKING) {
-			done = CNT_Request(wrk, req);
+			if (req->req_step == R_STP_START)
+				done = http1_dissect(wrk, req);
+			if (done == 0)
+				done = CNT_Request(wrk, req);
 			if (done == 2)
 				return;
 			assert(done == 1);
