@@ -767,7 +767,7 @@ void VBO_Free(struct busyobj **vbo);
 /* cache_http1_fsm.c [HTTP1] */
 void HTTP1_Session(struct worker *, struct req *);
 
-/* cache_req_fsm.c [FSM] */
+/* cache_req_fsm.c [CNT] */
 int CNT_Request(struct worker *, struct req *);
 void CNT_Init(void);
 

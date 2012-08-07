@@ -26,13 +26,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * This file contains the two central state machine for pushing
- * sessions and requests.
- *
- * The first part of the file, entrypoint CNT_Session() and down to
- * the ==== separator, is concerned with sessions.  When a session has
- * a request to deal with, it calls into the second half of the file.
- * This part is for all practical purposes HTTP/1.x specific.
+ * This file contains the two central state machine for pushing HTTP
+ * requests through their paces.
  *
  * The second part of the file, entrypoint CNT_Request() and below the
  * ==== separator, is intended to (over time) be(ome) protocol agnostic.
@@ -46,7 +41,7 @@
  * a dot(1) graph in the source code comments.  So to see the big picture,
  * extract the DOT lines and run though dot(1), for instance with the
  * command:
- *	sed -n '/^DOT/s///p' cache/cache_center.c | dot -Tps > /tmp/_.ps
+ *	sed -n '/^DOT/s///p' cache/cache_req_fsm.c | dot -Tps > /tmp/_.ps
  */
 
 /*
@@ -61,7 +56,7 @@ DOT	label="Request received"
 DOT ]
 DOT ERROR [shape=plaintext]
 DOT RESTART [shape=plaintext]
-DOT acceptor -> first [style=bold,color=green]
+DOT acceptor -> start [style=bold,color=green]
  */
 
 #include "config.h"
@@ -1284,7 +1279,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 	assert(
 	    req->req_step == R_STP_LOOKUP ||
 	    req->req_step == R_STP_START ||
-	    req->req_step == R_STP_RECV);
+	    req->req_step == R_STP_RECV);	// from ESI
 
 	req->wrk = wrk;
 
