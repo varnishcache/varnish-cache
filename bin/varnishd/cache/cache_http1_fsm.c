@@ -264,6 +264,9 @@ http1_dissect(struct worker *wrk, struct req *req)
 		return (1);
 	}
 
+	wrk->stats.client_req++;
+	req->acct_req.req++;
+
 	req->ws_req = WS_Snapshot(req->ws);
 	req->doclose = http_DoConnection(req->http);
 

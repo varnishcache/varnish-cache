@@ -1110,6 +1110,8 @@ cnt_recv(const struct worker *wrk, struct req *req)
 	req->director = req->vcl->director[0];
 	AN(req->director);
 
+	EXP_Clr(&req->exp);
+
 	req->disable_esi = 0;
 	req->hash_always_miss = 0;
 	req->hash_ignore_busy = 0;
@@ -1190,16 +1192,10 @@ cnt_start(struct worker *wrk, struct req *req)
 	AZ(req->esi_level);
 	assert(!isnan(req->t_req));
 
-	/* Update stats of various sorts */
-	wrk->stats.client_req++;
-	req->acct_req.req++;
-
 	/* Assign XID and log */
 	req->xid = ++xids;				/* XXX not locked */
 	VSLb(req->vsl, SLT_ReqStart, "%s %s %u",
 	    req->sp->addr, req->sp->port, req->xid);
-
-	EXP_Clr(&req->exp);
 
 	if (req->err_code)
 		req->req_step = R_STP_ERROR;
