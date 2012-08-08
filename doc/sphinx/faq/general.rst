@@ -187,7 +187,7 @@ Yes, you need VCL code like this::
 		set req.backend = foobar;
 	}
 
-    Please see :ref:`tutorial-advanced_backend_servers-directors_`.
+Please see :ref:`tutorial-advanced_backend_servers-directors_`.
 
 
 Why ...
