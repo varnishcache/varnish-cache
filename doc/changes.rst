@@ -5,8 +5,6 @@ Changes from 3.0.2 to 3.0.3
 Varnishd
 --------
 
-- Fix an issue where the bodybytes counter is not updated correctly on
-  gunzipped delivery.
 - Fix a race on the n_sess counter. This race made varnish do excessive
   session workspace allocations. `Bug #897`_.
 - Fix some crashes in the gzip code when it runs out of memory. `Bug #1037`_.
