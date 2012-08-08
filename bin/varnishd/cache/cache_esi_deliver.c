@@ -42,80 +42,93 @@
 /*--------------------------------------------------------------------*/
 
 static void
-ved_include(struct req *req, const char *src, const char *host)
+ved_include(struct req *preq, const char *src, const char *host)
 {
-	struct object *obj;
 	struct worker *wrk;
-	char *sp_ws_wm;
+	struct req *req;
 	char *wrk_ws_wm;
-	unsigned sxid, res_mode;
 	int i;
 
-	wrk = req->wrk;
+	wrk = preq->wrk;
 
-	if (req->esi_level >= cache_param->max_esi_depth)
+	if (preq->esi_level >= cache_param->max_esi_depth)
 		return;
-	req->esi_level++;
 
 	(void)WRW_FlushRelease(wrk);
 
-	obj = req->obj;
-	req->obj = NULL;
-	res_mode = req->res_mode;
+	/* Take a workspace snapshot */
+	wrk_ws_wm = WS_Snapshot(wrk->aws); /* XXX ? */
+
+	req = SES_GetReq(preq->sp);
+	req->esi_level = preq->esi_level + 1;
+
+	HTTP_Copy(req->http0, preq->http0);
+
+	req->http0->conds = 0;
+
+	HTTP_Setup(req->http, req->ws, req->vsl, HTTP_Req);
+
+	http_SetH(req->http0, HTTP_HDR_URL, src);
+	if (host != NULL && *host != '\0')  {
+		http_Unset(req->http0, H_Host);
+		http_SetHeader(req->http0, host);
+	}
+
+	http_ForceGet(req->http0);
+	http_Unset(req->http0, H_If_Modified_Since);
+
+	/* Client content already taken care of */
+	http_Unset(req->http0, H_Content_Length);
 
 	/* Reset request to status before we started messing with it */
 	HTTP_Copy(req->http, req->http0);
 
-	/* Take a workspace snapshot */
-	sp_ws_wm = WS_Snapshot(req->ws);
-	wrk_ws_wm = WS_Snapshot(wrk->aws); /* XXX ? */
+	req->vcl = preq->vcl;
+	preq->vcl = NULL;
+	req->wrk = preq->wrk;
 
-	http_SetH(req->http, HTTP_HDR_URL, src);
-	if (host != NULL && *host != '\0')  {
-		http_Unset(req->http, H_Host);
-		http_Unset(req->http, H_If_Modified_Since);
-		http_SetHeader(req->http, host);
-	}
 	/*
 	 * XXX: We should decide if we should cache the director
 	 * XXX: or not (for session/backend coupling).  Until then
 	 * XXX: make sure we don't trip up the check in vcl_recv.
 	 */
-	req->director = NULL;
 	req->req_step = R_STP_RECV;
-	http_ForceGet(req->http);
+	req->t_req = preq->t_req;
+	req->gzip_resp = preq->gzip_resp;
+	req->crc = preq->crc;
+	req->l_crc = preq->l_crc;
 
-	/* Don't do conditionals */
-	req->http->conds = 0;
-	http_Unset(req->http, H_If_Modified_Since);
+	THR_SetRequest(req);
 
-	/* Client content already taken care of */
-	http_Unset(req->http, H_Content_Length);
-
-	sxid = req->xid;
 	while (1) {
 		req->wrk = wrk;
 		i = CNT_Request(wrk, req);
 		if (i == 1)
 			break;
+		DSL(0x20, SLT_Debug, req->sp->vsl_id,
+		    "loop waiting for ESI (%d)", i);
 		assert(i == 2);
 		AZ(req->wrk);
-		DSL(0x20, SLT_Debug, req->sp->vsl_id, "loop waiting for ESI");
 		(void)usleep(10000);
 	}
-	req->xid = sxid;
-	req->wrk = wrk;
-	req->esi_level--;
-	req->obj = obj;
-	req->res_mode = res_mode;
 
 	/* Reset the workspace */
-	WS_Reset(req->ws, sp_ws_wm);
 	WS_Reset(wrk->aws, wrk_ws_wm);	/* XXX ? */
 
-	WRW_Reserve(req->wrk, &req->sp->fd, req->vsl, req->t_resp);
-	if (req->res_mode & RES_CHUNKED)
-		WRW_Chunked(req->wrk);
+	WRW_Reserve(preq->wrk, &preq->sp->fd, preq->vsl, preq->t_resp);
+	if (preq->res_mode & RES_CHUNKED)
+		WRW_Chunked(preq->wrk);
+
+	preq->vcl = req->vcl;
+	req->vcl = NULL;
+
+	preq->crc = req->crc;
+	preq->l_crc = req->l_crc;
+
+	req->wrk = NULL;
+
+	THR_SetRequest(preq);
+	SES_ReleaseReq(req);
 }
 
 /*--------------------------------------------------------------------*/
