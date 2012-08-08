@@ -52,8 +52,6 @@
 
 static unsigned ses_size = sizeof (struct sess);
 
-static struct req * ses_GetReq(struct sess *sp);
-
 /*--------------------------------------------------------------------*/
 
 struct sesspool {
@@ -162,7 +160,7 @@ ses_sess_pool_task(struct worker *wrk, void *arg)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
 
-	req = ses_GetReq(sp);
+	req = SES_GetReq(sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	req->vxid = VXID_Get(&wrk->vxid_pool);
@@ -346,8 +344,8 @@ SES_Delete(struct sess *sp, enum sess_close reason, double now)
  * Alloc/Free a request
  */
 
-static struct req *
-ses_GetReq(struct sess *sp)
+struct req *
+SES_GetReq(struct sess *sp)
 {
 	struct sesspool *pp;
 	struct req *req;
