@@ -187,7 +187,7 @@ Yes, you need VCL code like this::
 		set req.backend = foobar;
 	}
 
-Please see :ref:`tutorial-advanced_backend_servers-directors_`.
+Please see :ref:`tutorial-advanced_backend_servers-directors`.
 
 
 Why ...
@@ -196,7 +196,7 @@ Why ...
 **Why does it look like Varnish sends all requests to the backend? I thought it was a cache?**
 
 
-Please see ref:`tutorial-increasing_your_hitrate`.
+Please see :ref:`tutorial-increasing_your_hitrate`.
 
 **Why does Varnish require the system to have a C compiler?**
 
