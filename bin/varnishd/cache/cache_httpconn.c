@@ -96,12 +96,6 @@ HTC_Reinit(struct http_conn *htc)
 }
 
 /*--------------------------------------------------------------------
- * Return -3 if it's all whitespace so far
- * Return 0 if we need more text
- * Return 1 if we have a complete HTTP procol header
- */
-
-/*--------------------------------------------------------------------
  * Check if we have a complete HTTP request or response yet
  *
  */
