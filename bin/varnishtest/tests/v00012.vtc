@@ -33,8 +33,6 @@ client c2 {
 	expect resp.status == 503
 } -run
 
-varnish v1 -cli "debug.backend"
-
 sema r2 sync 2
 client c1 -wait
 
