@@ -140,6 +140,8 @@ stv_pick_stevedore(const struct sess *sp, const char **hint)
 		WSP(sp, SLT_Debug, "Storage hint not usable");
 		*hint = NULL;
 	}
+	if (stv_next == NULL)
+		return (stv_transient);
 	/* pick a stevedore and bump the head along */
 	stv = VTAILQ_NEXT(stv_next, list);
 	if (stv == NULL)
