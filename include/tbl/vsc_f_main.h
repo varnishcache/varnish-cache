@@ -249,6 +249,18 @@ VSC_F(thread_queue_len,		uint64_t, 0, 'g',
 	"  See also param queue_max."
 )
 
+VSC_F(busy_sleep,		uint64_t, 1, 'c',
+    "Number of requests sent to sleep on busy objhdr",
+	"Number of requests sent to sleep without a worker threads because"
+	" they found a busy object."
+)
+
+VSC_F(busy_wakeup,		uint64_t, 1, 'c',
+    "Number of requests woken after sleep on busy objhdr",
+	"Number of requests taken of the busy object sleep list and"
+	" and rescheduled."
+)
+
 VSC_F(sess_queued,		uint64_t, 0, 'c',
     "Sessions queued for thread",
 	"Number of times session was queued waiting for a thread."

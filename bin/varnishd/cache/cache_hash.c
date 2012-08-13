@@ -424,6 +424,8 @@ HSH_Lookup(struct req *req)
 		if (cache_param->diag_bitmap & 0x20)
 			VSLb(req->vsl, SLT_Debug,
 				"on waiting list <%p>", oh);
+
+		wrk->stats.busy_sleep++;
 		SES_Charge(req->wrk, req);
 		/*
 		 * The objhead reference transfers to the sess, we get it
@@ -480,6 +482,7 @@ hsh_rush(struct dstat *ds, struct objhead *oh)
 		if (req == NULL)
 			break;
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+		ds->busy_wakeup++;
 		AZ(req->wrk);
 		VTAILQ_REMOVE(&wl->list, req, w_list);
 		DSL(0x20, SLT_Debug, req->sp->vsl_id, "off waiting list");
