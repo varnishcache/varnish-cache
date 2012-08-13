@@ -101,7 +101,6 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 	AZ(req->vcl);
 	AZ(req->obj);
 	AZ(req->esi_level);
-	assert(req->xid == 0);
 	assert(isnan(req->t_req));
 	assert(isnan(req->t_resp));
 
@@ -196,9 +195,6 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	}
 
 	sp->t_idle = W_TIM_real(wrk);
-	if (req->xid == 0)
-		req->t_resp = sp->t_idle;
-	req->xid = 0;
 	VSL_Flush(req->vsl, 0);
 
 	req->t_req = NAN;
@@ -225,7 +221,6 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 
 	WS_Reset(req->ws, NULL);
 	WS_Reset(wrk->aws, NULL);
-	req->vxid = VXID_Get(&wrk->vxid_pool);
 
 	if (HTC_Reinit(req->htc) == HTC_COMPLETE) {
 		req->t_req = sp->t_idle;
@@ -341,6 +336,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			if (done == 2)
 				return;
 			assert(done == 1);
+			assert(req->vxid == 0);
 			sdr = http1_cleanup(sp, wrk, req);
 			switch (sdr) {
 			case SESS_DONE_RET_GONE:

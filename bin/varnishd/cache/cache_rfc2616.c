@@ -63,7 +63,7 @@
  */
 
 void
-RFC2616_Ttl(struct busyobj *bo, unsigned xid)
+RFC2616_Ttl(struct busyobj *bo)
 {
 	unsigned max_age, age;
 	double h_date, h_expires;
@@ -170,7 +170,7 @@ RFC2616_Ttl(struct busyobj *bo, unsigned xid)
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
 	VSLb(bo->vsl, SLT_TTL,
 	    "%u RFC %.0f %.0f %.0f %.0f %.0f %.0f %.0f %u",
-	    xid, expp->ttl, -1., -1., expp->entered,
+	    bo->vxid, expp->ttl, -1., -1., expp->entered,
 	    expp->age, h_date, h_expires, max_age);
 }
 

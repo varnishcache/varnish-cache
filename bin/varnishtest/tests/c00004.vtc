@@ -26,25 +26,25 @@ client c1 {
 	txreq -hdr "Foobar: 2"
 	rxresp
 	expect resp.status == 200
-	expect resp.http.X-Varnish == "1002"
+	expect resp.http.X-Varnish == "1003"
 	expect resp.http.snafu == "2"
 
 	txreq -hdr "Foobar: 3"
 	rxresp
 	expect resp.status == 200
-	expect resp.http.X-Varnish == "1003"
+	expect resp.http.X-Varnish == "1005"
 	expect resp.http.snafu == "3"
 
 	txreq 
 	rxresp
 	expect resp.status == 200
-	expect resp.http.X-Varnish == "1004"
+	expect resp.http.X-Varnish == "1007"
 	expect resp.http.snafu == "4"
 
 	txreq -hdr "Foobar:  1 "
 	rxresp
 	expect resp.status == 200
-	expect resp.http.X-Varnish == "1005 1001"
+	expect resp.http.X-Varnish == "1009 1001"
 	expect resp.http.snafu == "1"
 
 } -run

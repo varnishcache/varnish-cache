@@ -69,5 +69,5 @@ client c2 {
 	rxresp
 	expect resp.http.foo == "bar"
 	expect resp.status == 200
-	expect resp.http.x-varnish == "1002 1001"
+	expect resp.http.x-varnish == "1004 1001"
 } -run

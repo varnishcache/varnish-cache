@@ -543,7 +543,7 @@ VTAILQ_HEAD(storagehead, storage);
 struct object {
 	unsigned		magic;
 #define OBJECT_MAGIC		0x32851d42
-	unsigned		xid;
+	uint32_t		vxid;
 	struct storage		*objstore;
 	struct objcore		*objcore;
 
@@ -584,7 +584,6 @@ struct req {
 #define REQ_MAGIC		0x2751aaa1
 
 	uint32_t		vxid;
-	unsigned		xid;
 	int			restarts;
 	int			esi_level;
 	int			disable_esi;
@@ -769,7 +768,6 @@ void HTTP1_Session(struct worker *, struct req *);
 
 /* cache_req_fsm.c [CNT] */
 int CNT_Request(struct worker *, struct req *);
-void CNT_Init(void);
 
 /* cache_cli.c [CLI] */
 void CLI_Init(void);
@@ -1054,7 +1052,7 @@ char *WS_Alloc(struct ws *ws, unsigned bytes);
 char *WS_Snapshot(struct ws *ws);
 
 /* rfc2616.c */
-void RFC2616_Ttl(struct busyobj *, unsigned xid);
+void RFC2616_Ttl(struct busyobj *);
 enum body_status RFC2616_Body(struct busyobj *, struct dstat *);
 unsigned RFC2616_Req_Gzip(const struct http *);
 int RFC2616_Do_Cond(const struct req *sp);

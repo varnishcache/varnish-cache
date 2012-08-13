@@ -35,6 +35,8 @@
 #include "cache.h"
 #include "common/heritage.h"
 
+#include "vcli_priv.h"
+
 #include "waiter/waiter.h"
 #include "hash/hash_slinger.h"
 
@@ -93,6 +95,7 @@ THR_GetName(void)
  */
 
 static uint32_t vxid_base;
+static uint32_t vxid_chunk = 32768;
 static struct lock vxid_lock;
 
 uint32_t
@@ -102,8 +105,8 @@ VXID_Get(struct vxid_pool *v)
 		if (v->count == 0) {
 			Lck_Lock(&vxid_lock);
 			v->next = vxid_base;
-			v->count = 32768;
-			vxid_base = v->count;
+			v->count = vxid_chunk;
+			vxid_base += v->count;
 			Lck_Unlock(&vxid_lock);
 		}
 		v->count--;
@@ -111,6 +114,52 @@ VXID_Get(struct vxid_pool *v)
 	} while (v->next == 0);
 	return (v->next);
 }
+
+/*--------------------------------------------------------------------
+ * Debugging aids
+ */
+
+/*
+ * Dumb down the VXID allocation to make it predictable for
+ * varnishtest cases
+ */
+static void
+cli_debug_xid(struct cli *cli, const char * const *av, void *priv)
+{
+	(void)priv;
+	if (av[2] != NULL) {
+		vxid_base = strtoul(av[2], NULL, 0);
+		vxid_chunk = 1;
+	}
+	VCLI_Out(cli, "XID is %u", vxid_base);
+}
+
+/*
+ * Default to seed=1, this is the only seed value POSIXl guarantees will
+ * result in a reproducible random number sequence.
+ */
+static void
+cli_debug_srandom(struct cli *cli, const char * const *av, void *priv)
+{
+	(void)priv;
+	unsigned seed = 1;
+
+	if (av[2] != NULL)
+		seed = strtoul(av[2], NULL, 0);
+	srandom(seed);
+	srand48(random());
+	VCLI_Out(cli, "Random(3) seeded with %u", seed);
+}
+
+static struct cli_proto debug_cmds[] = {
+	{ "debug.xid", "debug.xid",
+		"\tExamine or set XID\n", 0, 1, "d", cli_debug_xid },
+	{ "debug.srandom", "debug.srandom",
+		"\tSeed the random(3) function\n", 0, 1, "d",
+		cli_debug_srandom },
+	{ NULL }
+};
+
 
 /*--------------------------------------------------------------------
  * XXX: Think more about which order we start things
@@ -142,7 +191,6 @@ child_main(void)
 	CLI_Init();
 	Fetch_Init();
 
-	CNT_Init();
 	VCL_Init();
 
 	HTTP_Init();
@@ -167,6 +215,10 @@ child_main(void)
 	VMOD_Init();
 
 	BAN_Compile();
+
+	srandomdev();
+	srand48(random());
+	CLI_AddFuncs(debug_cmds);
 
 	/* Wait for persistent storage to load if asked to */
 	if (cache_param->diag_bitmap & 0x00020000)

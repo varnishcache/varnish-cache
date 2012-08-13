@@ -54,7 +54,7 @@ default_oc_getxid(struct dstat *ds, struct objcore *oc)
 	struct object *o;
 
 	o = oc_getobj(ds, oc);
-	return (o->xid);
+	return (o->vxid);
 }
 
 static struct object * __match_proto__(getobj_f)

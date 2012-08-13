@@ -483,7 +483,7 @@ varnish_start(struct varnish *v)
 		vtc_log(v->vl, 0, "CLI start command failed: %u %s", u, resp);
 	wait_running(v);
 	free(resp);
-	u = varnish_ask_cli(v, "debug.xid 1000", &resp);
+	u = varnish_ask_cli(v, "debug.xid 999", &resp);
 	if (vtc_error)
 		return;
 	if (u != CLIS_OK)

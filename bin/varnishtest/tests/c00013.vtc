@@ -20,14 +20,16 @@ client c1 {
 	expect resp.http.x-varnish == "1001"
 } -start
 
+sema r1 sync 2
+
 client c2 {
-	sema r1 sync 2
 	txreq -url "/foo" -hdr "client: c2"
+	delay .1
 	sema r1 sync 2
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 12
-	expect resp.http.x-varnish == "1002 1001"
+	expect resp.http.x-varnish == "1004 1001"
 } -run
 
 client c1 -wait

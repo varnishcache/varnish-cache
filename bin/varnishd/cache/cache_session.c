@@ -163,8 +163,6 @@ ses_sess_pool_task(struct worker *wrk, void *arg)
 	req = SES_GetReq(sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	req->vxid = VXID_Get(&wrk->vxid_pool);
-
 	sp->sess_step = S_STP_NEWREQ;
 	ses_req_pool_task(wrk, req);
 }
@@ -199,8 +197,8 @@ ses_vsl_socket(struct sess *sp, const char *lsockname)
 		strcpy(laddr, "-");
 		strcpy(lport, "-");
 	}
-	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s %.6f",
-	    sp->addr, sp->port, lsockname, laddr, lport, sp->t_open);
+	VSL(SLT_SessOpen, sp->vxid, "%u %s %s %s %s %s %.6f",
+	    sp->vxid, sp->addr, sp->port, lsockname, laddr, lport, sp->t_open);
 }
 
 /*--------------------------------------------------------------------

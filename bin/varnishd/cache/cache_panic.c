@@ -164,7 +164,7 @@ pan_object(const struct object *o)
 	const struct storage *st;
 
 	VSB_printf(pan_vsp, "  obj = %p {\n", o);
-	VSB_printf(pan_vsp, "    xid = %u,\n", o->xid);
+	VSB_printf(pan_vsp, "    vxid = %u,\n", o->vxid);
 	pan_ws(o->ws_o, 4);
 	pan_http("obj", o->http, 4);
 	VSB_printf(pan_vsp, "    len = %jd,\n", (intmax_t)o->len);
@@ -236,8 +236,8 @@ pan_req(const struct req *req)
 
 	VSB_printf(pan_vsp, "req = %p {\n", req);
 
-	VSB_printf(pan_vsp, "  sp = %p, xid = %u,",
-	    req->sp, req->xid);
+	VSB_printf(pan_vsp, "  sp = %p, vxid = %u,",
+	    req->sp, req->vxid);
 
 	switch (req->req_step) {
 #define REQ_STEP(l, u, arg) case R_STP_##u: stp = "R_STP_" #u; break;

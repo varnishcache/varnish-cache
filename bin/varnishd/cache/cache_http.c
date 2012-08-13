@@ -852,7 +852,7 @@ http_FilterReq(const struct req *req, unsigned how)
 	else
 		http_linkh(hp, req->http, HTTP_HDR_PROTO);
 	http_filterfields(hp, req->http, how);
-	http_PrintfHeader(hp, "X-Varnish: %u", req->xid);
+	http_PrintfHeader(hp, "X-Varnish: %u", req->vxid);
 }
 
 /*--------------------------------------------------------------------*/

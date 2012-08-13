@@ -134,11 +134,11 @@ RES_BuildHttp(struct req *req)
 	VTIM_format(VTIM_real(), time_str);
 	http_PrintfHeader(req->resp, "Date: %s", time_str);
 
-	if (req->xid != req->obj->xid)
+	if (req->vxid != req->obj->vxid)
 		http_PrintfHeader(req->resp,
-		    "X-Varnish: %u %u", req->xid, req->obj->xid);
+		    "X-Varnish: %u %u", req->vxid, req->obj->vxid);
 	else
-		http_PrintfHeader(req->resp, "X-Varnish: %u", req->xid);
+		http_PrintfHeader(req->resp, "X-Varnish: %u", req->vxid);
 	http_PrintfHeader(req->resp, "Age: %.0f",
 	    req->obj->exp.age + req->t_resp -
 	    req->obj->exp.entered);

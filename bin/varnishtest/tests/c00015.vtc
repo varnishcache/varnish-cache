@@ -36,7 +36,7 @@ client c2 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 7
-	expect resp.http.x-varnish == "1002"
+	expect resp.http.x-varnish == "1004"
 } -run
 
 varnish v1 -cli "vcl.use vcl1"
@@ -46,7 +46,7 @@ client c3 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 6
-	expect resp.http.x-varnish == "1003 1001"
+	expect resp.http.x-varnish == "1007 1001"
 } -run
 
 varnish v1 -cli "vcl.show vcl2"

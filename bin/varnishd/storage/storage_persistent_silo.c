@@ -389,7 +389,7 @@ smp_oc_getxid(struct dstat *ds, struct objcore *oc)
 	 */
 	ASSERT_PTR_IN_SILO(sg->sc, o);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	return (o->xid);
+	return (o->vxid);
 }
 
 /*---------------------------------------------------------------------

@@ -758,7 +758,7 @@ ban_check_object(struct object *o, struct vsl_log *vsl,
 		oc_updatemeta(oc);
 		/* BAN also changed, but that is not important any more */
 		/* XXX: no req in lurker */
-		VSLb(vsl, SLT_ExpBan, "%u was banned", o->xid);
+		VSLb(vsl, SLT_ExpBan, "%u was banned", o->vxid);
 		EXP_Rearm(o);
 		return (1);
 	}

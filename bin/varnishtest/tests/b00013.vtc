@@ -21,12 +21,12 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 6
-	expect resp.http.x-varnish == "1002"
+	expect resp.http.x-varnish == "1003"
 	send "HTTP/1.1\n\n"
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 6
-	expect resp.http.x-varnish == "1003 1002"
+	expect resp.http.x-varnish == "1005 1003"
 } -run
 
 varnish v1 -expect sess_readahead == 2

@@ -62,7 +62,6 @@ DOT acceptor -> start [style=bold,color=green]
 #include "config.h"
 
 #include <math.h>
-#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -70,7 +69,6 @@ DOT acceptor -> start [style=bold,color=green]
 
 #include "hash/hash_slinger.h"
 #include "vcl.h"
-#include "vcli_priv.h"
 #include "vsha256.h"
 #include "vtim.h"
 
@@ -78,7 +76,6 @@ DOT acceptor -> start [style=bold,color=green]
 #include "compat/srandomdev.h"
 #endif
 
-static unsigned xids;
 /*--------------------------------------------------------------------
  * We have a refcounted object on the session, and possibly the busyobj
  * which is fetching it, prepare a response.
@@ -289,7 +286,7 @@ cnt_error(struct worker *wrk, struct req *req)
 		return(1);
 	}
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
-	req->obj->xid = req->xid;
+	req->obj->vxid = req->vxid;
 	req->obj->exp.entered = req->t_req;
 
 	h = req->obj->http;
@@ -406,7 +403,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 		 */
 		EXP_Clr(&bo->exp);
 		bo->exp.entered = W_TIM_real(wrk);
-		RFC2616_Ttl(bo, req->xid);
+		RFC2616_Ttl(bo);
 
 		/* pass from vclrecv{} has negative TTL */
 		if (req->objcore->objhead == NULL)
@@ -629,7 +626,7 @@ cnt_fetchbody(struct worker *wrk, struct req *req)
 		VSB_delete(vary);
 	}
 
-	req->obj->xid = req->xid;
+	req->obj->vxid = req->vxid;
 	req->obj->response = req->err_code;
 	WS_Assert(req->obj->ws_o);
 
@@ -845,7 +842,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	if (oc->flags & OC_F_PASS) {
 		wrk->stats.cache_hitpass++;
-		VSLb(req->vsl, SLT_HitPass, "%u", req->obj->xid);
+		VSLb(req->vsl, SLT_HitPass, "%u", req->obj->vxid);
 		(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
 		AZ(req->objcore);
 		req->req_step = R_STP_PASS;
@@ -853,7 +850,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	}
 
 	wrk->stats.cache_hit++;
-	VSLb(req->vsl, SLT_Hit, "%u", req->obj->xid);
+	VSLb(req->vsl, SLT_Hit, "%u", req->obj->vxid);
 	req->req_step = R_STP_HIT;
 	return (0);
 }
@@ -1106,9 +1103,8 @@ cnt_recv(const struct worker *wrk, struct req *req)
 	AZ(req->busyobj);
 
 	/* Assign XID and log */
-	req->xid = ++xids;				/* XXX not locked */
 	VSLb(req->vsl, SLT_ReqStart, "%s %s %u",
-	    req->sp->addr, req->sp->port, req->xid);
+	    req->sp->addr, req->sp->port, req->vxid);
 
 	if (req->err_code) {
 		req->req_step = R_STP_ERROR;
@@ -1211,6 +1207,9 @@ CNT_Request(struct worker *wrk, struct req *req)
 	    req->req_step == R_STP_LOOKUP ||
 	    req->req_step == R_STP_RECV);
 
+	if (req->req_step == R_STP_RECV)
+		req->vxid = VXID_Get(&wrk->vxid_pool);
+
 	req->wrk = wrk;
 
 	for (done = 0; !done; ) {
@@ -1245,7 +1244,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 			    (uintmax_t)req->req_bodybytes);
 		}
 		VSLb(req->vsl, SLT_ReqEnd, "%u %.9f %.9f %.9f %.9f %.9f",
-		    req->xid,
+		    req->vxid,
 		    req->t_req,
 		    req->sp->t_idle,
 		    req->sp->t_idle - req->t_resp,
@@ -1254,6 +1253,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 
 		/* done == 2 was charged by cache_hash.c */
 		SES_Charge(wrk, req);
+		req->vxid = 0;
 	}
 
 	req->wrk = NULL;
@@ -1265,56 +1265,3 @@ CNT_Request(struct worker *wrk, struct req *req)
 /*
 DOT }
 */
-
-/*--------------------------------------------------------------------
- * Debugging aids
- */
-
-static void
-cli_debug_xid(struct cli *cli, const char * const *av, void *priv)
-{
-	(void)priv;
-	if (av[2] != NULL)
-		xids = strtoul(av[2], NULL, 0);
-	VCLI_Out(cli, "XID is %u", xids);
-}
-
-/*
- * Default to seed=1, this is the only seed value POSIXl guarantees will
- * result in a reproducible random number sequence.
- */
-static void
-cli_debug_srandom(struct cli *cli, const char * const *av, void *priv)
-{
-	(void)priv;
-	unsigned seed = 1;
-
-	if (av[2] != NULL)
-		seed = strtoul(av[2], NULL, 0);
-	srandom(seed);
-	srand48(random());
-	VCLI_Out(cli, "Random(3) seeded with %u", seed);
-}
-
-static struct cli_proto debug_cmds[] = {
-	{ "debug.xid", "debug.xid",
-		"\tExamine or set XID\n", 0, 1, "d", cli_debug_xid },
-	{ "debug.srandom", "debug.srandom",
-		"\tSeed the random(3) function\n", 0, 1, "d",
-		cli_debug_srandom },
-	{ NULL }
-};
-
-/*--------------------------------------------------------------------
- *
- */
-
-void
-CNT_Init(void)
-{
-
-	srandomdev();
-	srand48(random());
-	xids = random();
-	CLI_AddFuncs(debug_cmds);
-}
