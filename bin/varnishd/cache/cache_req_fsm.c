@@ -1105,6 +1105,16 @@ cnt_recv(const struct worker *wrk, struct req *req)
 	AZ(req->obj);
 	AZ(req->busyobj);
 
+	/* Assign XID and log */
+	req->xid = ++xids;				/* XXX not locked */
+	VSLb(req->vsl, SLT_ReqStart, "%s %s %u",
+	    req->sp->addr, req->sp->port, req->xid);
+
+	if (req->err_code) {
+		req->req_step = R_STP_ERROR;
+		return (0);
+	}
+
 	/* By default we use the first backend */
 	AZ(req->director);
 	req->director = req->vcl->director[0];
@@ -1169,42 +1179,6 @@ cnt_recv(const struct worker *wrk, struct req *req)
 }
 
 /*--------------------------------------------------------------------
- * START
- * First time we see a request
- *
-DOT start [
-DOT	shape=box
-DOT	label="cnt_start:\nDissect request\nHandle expect"
-DOT ]
-DOT start -> recv [style=bold,color=green]
-DOT start -> DONE [label=errors]
- */
-
-static int
-cnt_start(struct worker *wrk, struct req *req)
-{
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	AZ(req->restarts);
-	AZ(req->obj);
-	AN(req->vcl);
-	AZ(req->esi_level);
-	assert(!isnan(req->t_req));
-
-	/* Assign XID and log */
-	req->xid = ++xids;				/* XXX not locked */
-	VSLb(req->vsl, SLT_ReqStart, "%s %s %u",
-	    req->sp->addr, req->sp->port, req->xid);
-
-	if (req->err_code)
-		req->req_step = R_STP_ERROR;
-	else
-		req->req_step = R_STP_RECV;
-	return (0);
-}
-
-/*--------------------------------------------------------------------
  * Central state engine dispatcher.
  *
  * Kick the session around until it has had enough.
@@ -1235,8 +1209,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 	 */
 	assert(
 	    req->req_step == R_STP_LOOKUP ||
-	    req->req_step == R_STP_START ||
-	    req->req_step == R_STP_RECV);	// from ESI
+	    req->req_step == R_STP_RECV);
 
 	req->wrk = wrk;
 

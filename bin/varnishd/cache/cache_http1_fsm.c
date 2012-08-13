@@ -50,7 +50,7 @@
  *DOT	hash -> CNT_Request [label="Busy object\nS_STP_WORKING\nR_STP_LOOKUP"
  *DOT		color=blue]
  *DOT	disembark -> hash [style=dotted, color=blue]
- *DOT	http1_wait -> CNT_Request [label="S_STP_WORKING\nR_STP_START"]
+ *DOT	http1_wait -> CNT_Request [label="S_STP_WORKING\nR_STP_RECV"]
  *DOT	http1_wait -> disembark [label="Session close"]
  *DOT	http1_wait -> disembark [label="Timeout" color=green]
  *DOT	disembark -> waiter [style=dotted, color=green]
@@ -59,7 +59,7 @@
  *DOT		[label="Busy object\nS_STP_WORKING\nR_STP_LOOKUP" color=blue]
  *DOT	CNT_Request -> http1_cleanup
  *DOT	http1_cleanup -> disembark [label="Session close"]
- *DOT	http1_cleanup -> CNT_Request [label="S_STP_WORKING\nR_STP_START"]
+ *DOT	http1_cleanup -> CNT_Request [label="S_STP_WORKING\nR_STP_RECV"]
  *DOT	http1_cleanup -> http1_wait [label="S_STP_NEWREQ"]
  *DOT
  *DOT	}
@@ -331,10 +331,10 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 		assert(
 		    sp->sess_step == S_STP_NEWREQ ||
 		    req->req_step == R_STP_LOOKUP ||
-		    req->req_step == R_STP_START);
+		    req->req_step == R_STP_RECV);
 
 		if (sp->sess_step == S_STP_WORKING) {
-			if (req->req_step == R_STP_START)
+			if (req->req_step == R_STP_RECV)
 				done = http1_dissect(wrk, req);
 			if (done == 0)
 				done = CNT_Request(wrk, req);
@@ -350,7 +350,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 				break;
 			case SESS_DONE_RET_START:
 				sp->sess_step = S_STP_WORKING;
-				req->req_step = R_STP_START;
+				req->req_step = R_STP_RECV;
 				break;
 			default:
 				WRONG("Illegal enum http1_cleanup_ret");
@@ -362,7 +362,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			if (done)
 				return;
 			sp->sess_step = S_STP_WORKING;
-			req->req_step = R_STP_START;
+			req->req_step = R_STP_RECV;
 		}
 	}
 }

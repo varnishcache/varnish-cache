@@ -38,7 +38,6 @@ SESS_STEP(working,	WORKING)
 #ifdef REQ_STEP
 REQ_STEP(restart,	RESTART,	(wrk, req))
 REQ_STEP(recv,		RECV,		(wrk, req))
-REQ_STEP(start,		START,		(wrk, req))
 REQ_STEP(pipe,		PIPE,		(wrk, req))
 REQ_STEP(pass,		PASS,		(wrk, req))
 REQ_STEP(lookup,	LOOKUP,		(wrk, req))
