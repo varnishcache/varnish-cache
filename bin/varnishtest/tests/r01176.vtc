@@ -1,0 +1,14 @@
+varnishtest "-s Transient=malloc crash"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -storage "-s Transient=malloc" -vcl+backend {} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
