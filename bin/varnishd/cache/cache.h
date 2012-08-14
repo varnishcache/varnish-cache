@@ -494,7 +494,6 @@ struct busyobj {
 	 * is recycled.
 	 */
 	unsigned		refcount;
-	uint32_t		vxid;
 
 	uint8_t			*vary;
 	unsigned		is_gzip;
@@ -583,7 +582,6 @@ struct req {
 	unsigned		magic;
 #define REQ_MAGIC		0x2751aaa1
 
-	uint32_t		vxid;
 	int			restarts;
 	int			esi_level;
 	int			disable_esi;
@@ -679,7 +677,6 @@ struct sess {
 	enum sess_step		sess_step;
 	int			fd;
 	enum sess_close		reason;
-	unsigned		vsl_id;
 	uint32_t		vxid;
 
 	/* Cross references ------------------------------------------*/
@@ -957,7 +954,7 @@ void SES_Charge(struct worker *, struct req *);
 struct sesspool *SES_NewPool(struct pool *pp, unsigned pool_no);
 void SES_DeletePool(struct sesspool *sp);
 int SES_ScheduleReq(struct req *);
-struct req *SES_GetReq(struct sess *sp);
+struct req *SES_GetReq(struct worker *, struct sess *);
 void SES_Handle(struct sess *sp, double now);
 void SES_ReleaseReq(struct req *);
 pool_func_t SES_pool_accept_task;

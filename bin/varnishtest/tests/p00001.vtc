@@ -32,12 +32,13 @@ varnish v1 -vcl+backend {
 server s1 -wait
 
 varnish v1 -start
+varnish v1 -cliok "debug.xid 1999"
 
 client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 200
-	expect resp.http.X-Varnish == "1001"
+	expect resp.http.X-Varnish == "2001 1002"
 	expect resp.http.foo == "foo"
 } -run
 
@@ -53,12 +54,13 @@ varnish v1 -vcl+backend { }
 delay 2
 
 varnish v1 -start
+varnish v1 -cliok "debug.xid 2999"
 
 client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 200
-	expect resp.http.X-Varnish == "1001"
+	expect resp.http.X-Varnish == "3001"
 	expect resp.http.foo == "bar"
 } -run
 

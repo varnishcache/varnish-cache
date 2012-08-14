@@ -29,7 +29,7 @@ client c2 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 12
-	expect resp.http.x-varnish == "1004 1001"
+	expect resp.http.x-varnish == "1004 1002"
 } -run
 
 client c1 -wait

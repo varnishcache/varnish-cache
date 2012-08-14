@@ -270,7 +270,6 @@ cnt_error(struct worker *wrk, struct req *req)
 
 	bo = VBO_GetBusyObj(wrk);
 	req->busyobj = bo;
-	bo->vsl->wid = req->sp->vsl_id;
 	AZ(bo->stats);
 	bo->stats = &wrk->stats;
 	req->objcore = HSH_NewObjCore(wrk);
@@ -286,7 +285,7 @@ cnt_error(struct worker *wrk, struct req *req)
 		return(1);
 	}
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
-	req->obj->vxid = req->vxid;
+	req->obj->vxid = bo->vsl->wid;
 	req->obj->exp.entered = req->t_req;
 
 	h = req->obj->http;
@@ -626,7 +625,7 @@ cnt_fetchbody(struct worker *wrk, struct req *req)
 		VSB_delete(vary);
 	}
 
-	req->obj->vxid = req->vxid;
+	req->obj->vxid = bo->vsl->wid;
 	req->obj->response = req->err_code;
 	WS_Assert(req->obj->ws_o);
 
@@ -955,7 +954,6 @@ cnt_pass(struct worker *wrk, struct req *req)
 
 	req->busyobj = VBO_GetBusyObj(wrk);
 	bo = req->busyobj;
-	bo->vsl->wid = req->sp->vsl_id;
 	bo->refcount = 2;
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
 	http_FilterReq(req, HTTPH_R_PASS);
@@ -1015,7 +1013,6 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	req->acct_req.pipe++;
 	req->busyobj = VBO_GetBusyObj(wrk);
 	bo = req->busyobj;
-	bo->vsl->wid = req->sp->vsl_id;
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
 	http_FilterReq(req, 0);
 
@@ -1103,8 +1100,7 @@ cnt_recv(const struct worker *wrk, struct req *req)
 	AZ(req->busyobj);
 
 	/* Assign XID and log */
-	VSLb(req->vsl, SLT_ReqStart, "%s %s %u",
-	    req->sp->addr, req->sp->port, req->vxid);
+	VSLb(req->vsl, SLT_ReqStart, "%s %s", req->sp->addr, req->sp->port);
 
 	if (req->err_code) {
 		req->req_step = R_STP_ERROR;
@@ -1187,8 +1183,8 @@ cnt_diag(struct req *req, const char *state)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	VSLb(req->vsl,  SLT_Debug, "vsl_id %u STP_%s sp %p obj %p vcl %p",
-	    req->sp->vsl_id, state, req->sp, req->obj, req->vcl);
+	VSLb(req->vsl,  SLT_Debug, "vxid %u STP_%s sp %p obj %p vcl %p",
+	    req->vsl->wid, state, req->sp, req->obj, req->vcl);
 	VSL_Flush(req->vsl, 0);
 }
 
@@ -1207,8 +1203,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 	    req->req_step == R_STP_LOOKUP ||
 	    req->req_step == R_STP_RECV);
 
-	if (req->req_step == R_STP_RECV)
-		req->vxid = VXID_Get(&wrk->vxid_pool);
+	AN(req->vsl->wid & VSL_CLIENTMARKER);
 
 	req->wrk = wrk;
 
@@ -1243,8 +1238,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 			VSLb(req->vsl, SLT_Length, "%ju",
 			    (uintmax_t)req->req_bodybytes);
 		}
-		VSLb(req->vsl, SLT_ReqEnd, "%u %.9f %.9f %.9f %.9f %.9f",
-		    req->vxid,
+		VSLb(req->vsl, SLT_ReqEnd, "%.9f %.9f %.9f %.9f %.9f",
 		    req->t_req,
 		    req->sp->t_idle,
 		    req->sp->t_idle - req->t_resp,
@@ -1253,7 +1247,12 @@ CNT_Request(struct worker *wrk, struct req *req)
 
 		/* done == 2 was charged by cache_hash.c */
 		SES_Charge(wrk, req);
-		req->vxid = 0;
+
+		/*
+		 * Nuke the VXID, cache_http1_fsm.c::http1_dissect() will
+		 * allocate a new one when necessary.
+		 */
+		req->vsl->wid = 0;
 	}
 
 	req->wrk = NULL;

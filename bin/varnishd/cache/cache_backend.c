@@ -181,7 +181,6 @@ bes_conn_try(struct req *req, struct vbc *vc, const struct vdi_simple *vs)
 		vc->addr = NULL;
 		vc->addrlen = 0;
 	} else {
-		vc->vsl_id = s | VSL_BACKENDMARKER;
 		VTCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
 		VSLb(req->vsl, SLT_BackendOpen, "%d %s %s %s ",
 		    vc->fd, vs->backend->display_name, abuf1, pbuf1);

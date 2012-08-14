@@ -391,7 +391,6 @@ VGZ_UpdateObj(const struct vgz *vg, struct object *obj)
 }
 
 /*--------------------------------------------------------------------
- * Passing a vsl_id of -1 means "use wrk->vbc->vsl_id"
  */
 
 int

@@ -46,7 +46,7 @@ client c3 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 6
-	expect resp.http.x-varnish == "1007 1001"
+	expect resp.http.x-varnish == "1007 1002"
 } -run
 
 varnish v1 -cli "vcl.show vcl2"

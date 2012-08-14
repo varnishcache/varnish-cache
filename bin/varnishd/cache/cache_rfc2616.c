@@ -169,8 +169,8 @@ RFC2616_Ttl(struct busyobj *bo)
 
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
 	VSLb(bo->vsl, SLT_TTL,
-	    "%u RFC %.0f %.0f %.0f %.0f %.0f %.0f %.0f %u",
-	    bo->vxid, expp->ttl, -1., -1., expp->entered,
+	    "RFC %.0f %.0f %.0f %.0f %.0f %.0f %.0f %u",
+	    expp->ttl, -1., -1., expp->entered,
 	    expp->age, h_date, h_expires, max_age);
 }
 

@@ -236,8 +236,7 @@ pan_req(const struct req *req)
 
 	VSB_printf(pan_vsp, "req = %p {\n", req);
 
-	VSB_printf(pan_vsp, "  sp = %p, vxid = %u,",
-	    req->sp, req->vxid);
+	VSB_printf(pan_vsp, "  sp = %p, vxid = %u,", req->sp, req->vsl->wid);
 
 	switch (req->req_step) {
 #define REQ_STEP(l, u, arg) case R_STP_##u: stp = "R_STP_" #u; break;
@@ -294,8 +293,8 @@ pan_sess(const struct sess *sp)
 	const char *stp;
 
 	VSB_printf(pan_vsp, "  sp = %p {\n", sp);
-	VSB_printf(pan_vsp, "    fd = %d, id = %u,\n",
-	    sp->fd, sp->vsl_id & VSL_IDENTMASK);
+	VSB_printf(pan_vsp, "    fd = %d, vxid = %u,\n",
+	    sp->fd, sp->vxid & VSL_IDENTMASK);
 	VSB_printf(pan_vsp, "    client = %s %s,\n",
 	    sp->addr ? sp->addr : "?.?.?.?",
 	    sp->port ? sp->port : "?");

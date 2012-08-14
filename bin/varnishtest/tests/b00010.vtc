@@ -14,5 +14,5 @@ client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 200
-	expect resp.http.x-varnish == "1003 1001"
+	expect resp.http.x-varnish == "1003 1002"
 } -run

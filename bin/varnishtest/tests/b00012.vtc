@@ -24,7 +24,7 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 6
-	expect resp.http.x-varnish == "1005 1003"
+	expect resp.http.x-varnish == "1005 1004"
 } -run
 
 varnish v1 -expect sess_pipeline == 2

@@ -160,7 +160,7 @@ ses_sess_pool_task(struct worker *wrk, void *arg)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
 
-	req = SES_GetReq(sp);
+	req = SES_GetReq(wrk, sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	sp->sess_step = S_STP_NEWREQ;
@@ -228,7 +228,7 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 
 	sp->t_open = VTIM_real();
 	sp->t_idle = sp->t_open;
-	sp->vxid = VXID_Get(&wrk->vxid_pool);
+	sp->vxid = VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER;
 
 	lsockname = VCA_SetupSess(wrk, sp);
 	ses_vsl_socket(sp, lsockname);
@@ -343,7 +343,7 @@ SES_Delete(struct sess *sp, enum sess_close reason, double now)
  */
 
 struct req *
-SES_GetReq(struct sess *sp)
+SES_GetReq(struct worker *wrk, struct sess *sp)
 {
 	struct sesspool *pp;
 	struct req *req;
@@ -351,6 +351,7 @@ SES_GetReq(struct sess *sp)
 	unsigned sz, hl;
 	char *p, *e;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	pp = sp->sesspool;
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
@@ -386,7 +387,7 @@ SES_GetReq(struct sess *sp)
 
 	sz = cache_param->workspace_thread;
 	VSL_Setup(req->vsl, p, sz);
-	req->vsl->wid = sp->vsl_id;
+	req->vsl->wid = VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER;
 	p += sz;
 	p = (void*)PRNDUP(p);
 

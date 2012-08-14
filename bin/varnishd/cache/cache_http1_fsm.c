@@ -245,6 +245,13 @@ http1_dissect(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
+	/*
+	 * Cache_req_fsm zeros the vxid once a requests is processed.
+	 * Allocate a new one only now that we know will need it.
+	 */
+	if (req->vsl->wid == 0)
+		req->vsl->wid = VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER;
+
 	/* Borrow VCL reference from worker thread */
 	VCL_Refresh(&wrk->vcl);
 	req->vcl = wrk->vcl;
@@ -336,7 +343,6 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			if (done == 2)
 				return;
 			assert(done == 1);
-			assert(req->vxid == 0);
 			sdr = http1_cleanup(sp, wrk, req);
 			switch (sdr) {
 			case SESS_DONE_RET_GONE:

@@ -61,9 +61,7 @@ VDI_CloseFd(struct vbc **vbp)
 	 * before the OS reuses the FD
 	 */
 	VSL_Flush(vc->vsl, 0);
-	vc->vsl->wid = vc->orig_vsl_id;
 	vc->vsl = NULL;
-	vc->orig_vsl_id = 0;
 
 	VTCP_close(&vc->fd);
 	VBE_DropRefConn(bp);
@@ -92,9 +90,7 @@ VDI_RecycleFd(struct vbc **vbp)
 
 	/* XXX: revisit this hack */
 	VSL_Flush(vc->vsl, 0);
-	vc->vsl->wid = vc->orig_vsl_id;
 	vc->vsl = NULL;
-	vc->orig_vsl_id = 0;
 
 	Lck_Lock(&bp->mtx);
 	VSC_C_main->backend_recycle++;
@@ -114,11 +110,8 @@ VDI_GetFd(const struct director *d, struct req *req)
 		d = req->director;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	vc = d->getfd(d, req);
-	if (vc != NULL) {
+	if (vc != NULL)
 		vc->vsl = req->busyobj->vsl;
-		vc->orig_vsl_id = vc->vsl->wid;
-		vc->vsl->wid = vc->vsl_id;
-	}
 	return (vc);
 }
 
