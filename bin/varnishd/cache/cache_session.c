@@ -197,8 +197,8 @@ ses_vsl_socket(struct sess *sp, const char *lsockname)
 		strcpy(laddr, "-");
 		strcpy(lport, "-");
 	}
-	VSL(SLT_SessOpen, sp->vxid, "%u %s %s %s %s %s %.6f",
-	    sp->vxid, sp->addr, sp->port, lsockname, laddr, lport, sp->t_open);
+	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s %.6f %d",
+	    sp->addr, sp->port, lsockname, laddr, lport, sp->t_open, sp->fd);
 }
 
 /*--------------------------------------------------------------------

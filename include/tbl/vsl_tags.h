@@ -73,6 +73,7 @@ SLTM(SessOpen, "Client connection opened",
 	"lsock\n    Listen socket\n\n"
 	"laddr\n    Local IPv4/6 address ('-' if !$log_local_addr)\n\n"
 	"lport\n    Local TCP port ('-' if !$log_local_addr)\n\n"
+	"fd\n    File descriptor number"
 )
 
 /*
