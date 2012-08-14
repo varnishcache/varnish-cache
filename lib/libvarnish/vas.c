@@ -37,16 +37,24 @@
 
 #include "vas.h"
 
-static void
+static void __attribute__((__noreturn__))
 VAS_Fail_default(const char *func, const char *file, int line,
-    const char *cond, int err, int xxx)
+    const char *cond, int err, enum vas_e kind)
 {
 
-	if (xxx) {
+	if (kind == VAS_MISSING) {
 		fprintf(stderr,
 		    "Missing errorhandling code in %s(), %s line %d:\n"
 		    "  Condition(%s) not true.\n",
 		    func, file, line, cond);
+	} else if (kind == VAS_INCOMPLETE) {
+		fprintf(stderr,
+		    "Incompelte code in %s(), %s line %d:\n",
+		    func, file, line);
+	} else if (kind == VAS_WRONG) {
+		fprintf(stderr,
+		    "Wrong turn in %s(), %s line %d:\n",
+		    func, file, line);
 	} else {
 		fprintf(stderr,
 		    "Assert error in %s(), %s line %d:\n"
@@ -59,4 +67,4 @@ VAS_Fail_default(const char *func, const char *file, int line,
 	abort();
 }
 
-vas_f *VAS_Fail = VAS_Fail_default;
+vas_f *VAS_Fail __attribute__((__noreturn__)) = VAS_Fail_default;

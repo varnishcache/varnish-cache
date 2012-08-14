@@ -285,14 +285,14 @@ vtc_hexdump(struct vtclog *vl, int lvl, const char *pfx,
 
 /**********************************************************************/
 
-static void
+static void __attribute__((__noreturn__))
 vtc_log_VAS_Fail(const char *func, const char *file, int line,
-    const char *cond, int err, int xxx)
+    const char *cond, int err, enum vas_e why)
 {
 	struct vtclog *vl;
 
 	(void)err;
-	(void)xxx;
+	(void)why;
 	vl = pthread_getspecific(log_key);
 	if (vl == NULL || vl->act) {
 		fprintf(stderr,
@@ -303,6 +303,7 @@ vtc_log_VAS_Fail(const char *func, const char *file, int line,
 		vtc_log(vl, 0, "Assert error in %s(), %s line %d:"
 		    "  Condition(%s) not true.\n", func, file, line, cond);
 	}
+	abort();
 }
 
-vas_f *VAS_Fail = vtc_log_VAS_Fail;
+vas_f *VAS_Fail __attribute__((__noreturn__)) = vtc_log_VAS_Fail;

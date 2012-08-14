@@ -343,9 +343,9 @@ pan_backtrace(void)
 
 /*--------------------------------------------------------------------*/
 
-static void
+static void __attribute__((__noreturn__))
 pan_ic(const char *func, const char *file, int line, const char *cond,
-    int err, int xxx)
+    int err, enum vas_e kind)
 {
 	const char *q;
 	const struct req *req;
@@ -353,23 +353,28 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	AZ(pthread_mutex_lock(&panicstr_mtx)); /* Won't be released,
 						  we're going to die
 						  anyway */
-	switch(xxx) {
-	case 3:
+	switch(kind) {
+	case VAS_WRONG:
 		VSB_printf(pan_vsp,
 		    "Wrong turn at %s:%d:\n%s\n", file, line, cond);
 		break;
-	case 2:
+	case VAS_VCL:
 		VSB_printf(pan_vsp,
 		    "Panic from VCL:\n  %s\n", cond);
 		break;
-	case 1:
+	case VAS_MISSING:
 		VSB_printf(pan_vsp,
 		    "Missing errorhandling code in %s(), %s line %d:\n"
 		    "  Condition(%s) not true.",
 		    func, file, line, cond);
 		break;
+	case VAS_INCOMPLETE:
+		VSB_printf(pan_vsp,
+		    "Incomplete code in %s(), %s line %d:\n",
+		    func, file, line);
+		break;
 	default:
-	case 0:
+	case VAS_ASSERT:
 		VSB_printf(pan_vsp,
 		    "Assert error in %s(), %s line %d:\n"
 		    "  Condition(%s) not true.\n",

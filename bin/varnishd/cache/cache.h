@@ -984,13 +984,6 @@ void VSL_Flush(struct vsl_log *, int overflow);
 			VSL((tag), (id), __VA_ARGS__);		\
 	} while (0)
 
-#define INCOMPL() do {							\
-	VSL(SLT_Debug, 0, "INCOMPLETE AT: %s(%d)", __func__, __LINE__); \
-	fprintf(stderr,							\
-	    "INCOMPLETE AT: %s(%d)\n",					\
-	    (const char *)__func__, __LINE__);				\
-	abort();							\
-	} while (0)
 #endif
 
 /* cache_response.c */

@@ -45,7 +45,7 @@ vmod_panic(struct req *req, const char *str, ...)
 	va_start(ap, str);
 	b = VRT_String(req->http->ws, "PANIC: ", str, ap);
 	va_end(ap);
-	VAS_Fail("VCL", "", 0, b, 0, 2);
+	VAS_Fail("VCL", "", 0, b, 0, VAS_VCL);
 }
 
 const char * __match_proto__(td_debug_author)
