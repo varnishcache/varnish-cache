@@ -593,6 +593,10 @@ WRK_Init(void)
 	Lck_New(&herder_mtx, lck_herder);
 	Lck_New(&wstat_mtx, lck_wstat);
 
+	nthr_max = params->wthread_max;
+	if (nthr_max < params->wthread_min)
+		nthr_max = params->wthread_min;
+
 	wrk_addpools(params->wthread_pools);
 	AZ(pthread_create(&tp, NULL, wrk_herdtimer_thread, NULL));
 	AZ(pthread_detach(tp));
