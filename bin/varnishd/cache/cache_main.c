@@ -40,6 +40,10 @@
 #include "waiter/waiter.h"
 #include "hash/hash_slinger.h"
 
+#ifndef HAVE_SRANDOMDEV
+#include "compat/srandomdev.h"
+#endif
+
 volatile struct params	*cache_param;
 
 /*--------------------------------------------------------------------
