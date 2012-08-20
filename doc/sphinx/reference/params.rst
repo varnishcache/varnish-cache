@@ -127,6 +127,7 @@ diag_bitmap
 	  0x00010000 - synchronize shmlog.
 	  0x00020000 - synchronous start of persistence.
 	  0x00040000 - release VCL early.
+	  0x00080000 - ban-lurker debugging.
 	  0x80000000 - do edge-detection on digest.
 	Use 0x notation and do the bitor in your head :-)
 
@@ -232,7 +233,6 @@ http_max_hdr
 http_range_support
 	- Units: bool
 	- Default: on
-	- Flags: experimental
 
 	Enable support for HTTP Range headers.
 
@@ -261,6 +261,15 @@ http_resp_size
 
 	Maximum number of bytes of HTTP backend resonse we will deal with.  This is a limit on all bytes up to the double blank line which ends the HTTP request.
 	The memory for the request is allocated from the worker workspace (param: sess_workspace) and this parameter limits how much of that the request is allowed to take up.
+
+idle_send_timeout
+	- Units: seconds
+	- Default: 60
+	- Flags: delayed
+
+	Time to wait with no data sent. If no data has been transmitted in this many
+	seconds the session is closed. 
+	See setsockopt(2) under SO_SNDTIMEO for more information.
 
 listen_address
 	- Default: :80
@@ -316,6 +325,16 @@ nuke_limit
 
 	Maximum number of objects we attempt to nuke in orderto make space for a object body.
 
+pcre_match_limit
+	- Default: 10000
+
+	The limit for the  number of internal matching function calls in a pcre_exec() execution.
+
+pcre_match_limit_recursion
+	- Default: 10000
+
+	The limit for the  number of internal matching function recursions in a pcre_exec() execution.
+
 ping_interval
 	- Units: seconds
 	- Default: 3
@@ -362,7 +381,7 @@ saintmode_threshold
 
 send_timeout
 	- Units: seconds
-	- Default: 60
+	- Default: 600
 	- Flags: delayed
 
 	Send timeout for client connections. If the HTTP response hasn't been transmitted in this many
