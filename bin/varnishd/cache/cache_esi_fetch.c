@@ -119,7 +119,7 @@ vfp_esi_bytes_gu(struct busyobj *bo, const struct vef_priv *vef,
 {
 	struct vgz *vg;
 	ssize_t wl;
-	int i;
+	enum vgzret_e vr;
 	size_t dl;
 	const void *dp;
 
@@ -137,10 +137,13 @@ vfp_esi_bytes_gu(struct busyobj *bo, const struct vef_priv *vef,
 		}
 		if (VGZ_ObufStorage(bo, vg))
 			return(-1);
-		i = VGZ_Gunzip(vg, &dp, &dl);
-		xxxassert(i == VGZ_OK || i == VGZ_END);
-		VEP_Parse(bo, dp, dl);
-		VFP_update_length(bo, dl);
+		vr = VGZ_Gunzip(vg, &dp, &dl);
+		if (vr < VGZ_OK)
+			return (-1);
+		if (dl > 0) {
+			VEP_Parse(bo, dp, dl);
+			VFP_update_length(bo, dl);
+		}
 	}
 	return (1);
 }
@@ -265,7 +268,7 @@ vfp_esi_bytes_gg(const struct busyobj *bo, struct vef_priv *vef,
 	ssize_t wl;
 	size_t dl;
 	const void *dp;
-	int i;
+	enum vgzret_e vr;
 
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -280,9 +283,9 @@ vfp_esi_bytes_gg(const struct busyobj *bo, struct vef_priv *vef,
 		do {
 			wl = vef->ibuf_sz - (vef->ibuf_i - vef->ibuf);
 			VGZ_Obuf(bo->vgz_rx, vef->ibuf_i, wl);
-			i = VGZ_Gunzip(bo->vgz_rx, &dp, &dl);
-			/* XXX: check i */
-			assert(i >= VGZ_OK);
+			vr = VGZ_Gunzip(bo->vgz_rx, &dp, &dl);
+			if (vr < VGZ_OK)
+				return (-1);
 			if (dl > 0 && vfp_vep_inject(bo, vef, dl))
 				return (-1);
 		} while (!VGZ_IbufEmpty(bo->vgz_rx));

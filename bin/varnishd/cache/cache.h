@@ -803,6 +803,13 @@ void Fetch_Init(void);
 /* cache_gzip.c */
 struct vgz;
 
+enum vgzret_e {
+	VGZ_ERROR = -1,
+	VGZ_OK = 0,
+	VGZ_END = 1,
+	VGZ_STUCK = 2,
+};
+
 enum vgz_flag { VGZ_NORMAL, VGZ_ALIGN, VGZ_RESET, VGZ_FINISH };
 struct vgz *VGZ_NewUngzip(struct vsl_log *vsl, const char *id);
 struct vgz *VGZ_NewGzip(struct vsl_log *vsl, const char *id);
@@ -811,21 +818,15 @@ int VGZ_IbufEmpty(const struct vgz *vg);
 void VGZ_Obuf(struct vgz *, void *, ssize_t len);
 int VGZ_ObufFull(const struct vgz *vg);
 int VGZ_ObufStorage(struct busyobj *, struct vgz *vg);
-int VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
-int VGZ_Gunzip(struct vgz *, const void **, size_t *len);
-int VGZ_Destroy(struct vgz **);
+enum vgzret_e VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
+enum vgzret_e VGZ_Gunzip(struct vgz *, const void **, size_t *len);
+enum vgzret_e VGZ_Destroy(struct vgz **);
 void VGZ_UpdateObj(const struct vgz*, struct object *);
 
 int VGZ_WrwInit(struct vgz *vg);
-int VGZ_WrwGunzip(struct req *, struct vgz *, const void *ibuf,
+enum vgzret_e VGZ_WrwGunzip(struct req *, struct vgz *, const void *ibuf,
     ssize_t ibufl);
 void VGZ_WrwFlush(struct req *, struct vgz *vg);
-
-/* Return values */
-#define VGZ_ERROR	-1
-#define VGZ_OK		0
-#define VGZ_END		1
-#define VGZ_STUCK	2
 
 /* cache_http.c */
 unsigned HTTP_estimate(unsigned nhttp);

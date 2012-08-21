@@ -218,7 +218,7 @@ VGZ_ObufStorage(struct busyobj *bo, struct vgz *vg)
 
 /*--------------------------------------------------------------------*/
 
-int
+enum vgzret_e
 VGZ_Gunzip(struct vgz *vg, const void **pptr, size_t *plen)
 {
 	int i;
@@ -247,13 +247,13 @@ VGZ_Gunzip(struct vgz *vg, const void **pptr, size_t *plen)
 		return (VGZ_END);
 	if (i == Z_BUF_ERROR)
 		return (VGZ_STUCK);
-	VSL(SLT_Debug, 0, "Unknown INFLATE=%d (%s)\n", i, vg->vz.msg);
+	VSLb(vg->vsl, SLT_Gzip, "Gunzip error: %d (%s)", i, vg->vz.msg);
 	return (VGZ_ERROR);
 }
 
 /*--------------------------------------------------------------------*/
 
-int
+enum vgzret_e
 VGZ_Gzip(struct vgz *vg, const void **pptr, size_t *plen, enum vgz_flag flags)
 {
 	int i;
@@ -285,12 +285,13 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, size_t *plen, enum vgz_flag flags)
 	}
 	vg->last_i = i;
 	if (i == Z_OK)
-		return (0);
+		return (VGZ_OK);
 	if (i == Z_STREAM_END)
-		return (1);
+		return (VGZ_END);
 	if (i == Z_BUF_ERROR)
-		return (2);
-	return (-1);
+		return (VGZ_STUCK);
+	VSLb(vg->vsl, SLT_Gzip, "Gzip error: %d (%s)", i, vg->vz.msg);
+	return (VGZ_ERROR);
 }
 
 /*--------------------------------------------------------------------
@@ -314,11 +315,11 @@ VGZ_WrwInit(struct vgz *vg)
  * Leave flushing to caller, more data may be coming.
  */
 
-int
+enum vgzret_e
 VGZ_WrwGunzip(struct req *req, struct vgz *vg, const void *ibuf,
     ssize_t ibufl)
 {
-	int i;
+	enum vgzret_e vr;
 	size_t dl;
 	const void *dp;
 	struct worker *wrk;
@@ -333,16 +334,14 @@ VGZ_WrwGunzip(struct req *req, struct vgz *vg, const void *ibuf,
 		return (VGZ_OK);
 	do {
 		if (vg->m_len == vg->m_sz)
-			i = VGZ_STUCK;
+			vr = VGZ_STUCK;
 		else {
-			i = VGZ_Gunzip(vg, &dp, &dl);
+			vr = VGZ_Gunzip(vg, &dp, &dl);
 			vg->m_len += dl;
 		}
-		if (i < VGZ_OK) {
-			/* XXX: VSL ? */
-			return (-1);
-		}
-		if (vg->m_len == vg->m_sz || i == VGZ_STUCK) {
+		if (vr < VGZ_OK)
+			return (vr);
+		if (vg->m_len == vg->m_sz || vr == VGZ_STUCK) {
 			req->acct_req.bodybytes += vg->m_len;
 			(void)WRW_Write(wrk, vg->m_buf, vg->m_len);
 			(void)WRW_Flush(wrk);
@@ -350,9 +349,9 @@ VGZ_WrwGunzip(struct req *req, struct vgz *vg, const void *ibuf,
 			VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 		}
 	} while (!VGZ_IbufEmpty(vg));
-	if (i == VGZ_STUCK)
-		i = VGZ_OK;
-	return (i);
+	if (vr == VGZ_STUCK)
+		vr = VGZ_OK;
+	return (vr);
 }
 
 /*--------------------------------------------------------------------*/
@@ -393,10 +392,11 @@ VGZ_UpdateObj(const struct vgz *vg, struct object *obj)
 /*--------------------------------------------------------------------
  */
 
-int
+enum vgzret_e
 VGZ_Destroy(struct vgz **vgp)
 {
 	struct vgz *vg;
+	enum vgzret_e vr;
 	int i;
 
 	vg = *vgp;
@@ -420,14 +420,18 @@ VGZ_Destroy(struct vgz **vgp)
 		i = Z_STREAM_END;
 	if (vg->m_buf)
 		free(vg->m_buf);
-	FREE_OBJ(vg);
 	if (i == Z_OK)
-		return (VGZ_OK);
-	if (i == Z_STREAM_END)
-		return (VGZ_END);
-	if (i == Z_BUF_ERROR)
-		return (VGZ_STUCK);
-	return (VGZ_ERROR);
+		vr = VGZ_OK;
+	else if (i == Z_STREAM_END)
+		vr = VGZ_END;
+	else if (i == Z_BUF_ERROR)
+		vr = VGZ_STUCK;
+	else {
+		VSLb(vg->vsl, SLT_Gzip, "G(un)zip error: %d (%s)", i, vg->vz.msg);
+		vr = VGZ_ERROR;
+	}
+	FREE_OBJ(vg);
+	return (vr);
 }
 
 /*--------------------------------------------------------------------
