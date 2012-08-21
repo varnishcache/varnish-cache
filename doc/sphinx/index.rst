@@ -21,7 +21,6 @@ Contents:
    installation/index.rst
    tutorial/index.rst
    reference/index.rst
-   faq/index.rst
    phk/index.rst
    glossary/index.rst
 
