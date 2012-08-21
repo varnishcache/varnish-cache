@@ -7,8 +7,7 @@ Varnish Glossary
 .. glossary:: 
    :sorted:
 
-   .. comment:
-
+   ..
 	This file will be sorted automagically during formatting,
 	so we keep the source in subject order to make sure we
 	cover all bases.
