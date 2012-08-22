@@ -404,7 +404,8 @@ insensitivity* add the flag within parens following a question mark,
 like this:
 ::
 
-  if (req.http.host ~ "(?i)example.com$") {
+  # If host is NOT example dot com..
+  if (req.http.host !~ "(?i)example.com$") {
           ...
   }
 
