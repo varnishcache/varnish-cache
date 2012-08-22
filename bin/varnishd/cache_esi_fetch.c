@@ -117,9 +117,12 @@ vfp_esi_bytes_gu(struct sess *sp, struct http_conn *htc, ssize_t bytes)
 		if (VGZ_ObufStorage(sp, vg))
 			return(-1);
 		i = VGZ_Gunzip(vg, &dp, &dl);
-		xxxassert(i == VGZ_OK || i == VGZ_END);
-		VEP_parse(sp, dp, dl);
-		sp->obj->len += dl;
+		if (i < VGZ_OK)
+			return (-1);
+		if (dl > 0) {
+			VEP_parse(sp, dp, dl);
+			sp->obj->len += dl;
+		}
 	}
 	return (1);
 }
@@ -270,8 +273,8 @@ vfp_esi_bytes_gg(struct sess *sp, struct http_conn *htc, size_t bytes)
 		do {
 			VGZ_Obuf(sp->wrk->vgz_rx, ibuf2, sizeof ibuf2);
 			i = VGZ_Gunzip(sp->wrk->vgz_rx, &dp, &dl);
-			/* XXX: check i */
-			assert(i >= VGZ_OK);
+			if (i < VGZ_OK)
+				return (-1);
 			vef->bufp = ibuf2;
 			if (dl > 0)
 				VEP_parse(sp, ibuf2, dl);
