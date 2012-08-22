@@ -42,7 +42,7 @@
 #endif
 
 #define ASSERT_SILO_THREAD(sc) \
-    do {assert(pthread_self() == (sc)->thread);} while (0)
+    do {assert(pthread_equal(pthread_self(), (sc)->thread));} while (0)
 
 #define OC_F_NEEDFIXUP OC_F_PRIV
 
