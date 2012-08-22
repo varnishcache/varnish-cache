@@ -418,6 +418,8 @@ pool_mkpool(unsigned pool_no)
 	VTAILQ_INIT(&pp->back_queue);
 	pp->sesspool = SES_NewPool(pp, pool_no);
 	AN(pp->sesspool);
+	AZ(pthread_cond_init(&pp->herder_cond, NULL));
+	AZ(pthread_create(&pp->herder_thr, NULL, pool_herder, pp));
 
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (ls->sock < 0)
@@ -429,9 +431,6 @@ pool_mkpool(unsigned pool_no)
 		ps->task.priv = ps;
 		AZ(Pool_Task(pp, &ps->task, POOL_QUEUE_BACK));
 	}
-
-	AZ(pthread_cond_init(&pp->herder_cond, NULL));
-	AZ(pthread_create(&pp->herder_thr, NULL, pool_herder, pp));
 
 	return (pp);
 }
