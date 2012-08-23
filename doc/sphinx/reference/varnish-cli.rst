@@ -148,7 +148,6 @@ Commands
   start
       Start the Varnish cache process if it is not already running.
 
-status
   status
       Check the status of the Varnish cache process.
 
