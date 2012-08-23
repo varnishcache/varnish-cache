@@ -1,8 +1,10 @@
 INCLUDES = -I$(top_srcdir)/include @PCRE_CFLAGS@
 
+AM_LDFLAGS  = $(AM_LT_LDFLAGS)
+
 pkglib_LTLIBRARIES = libvarnish.la
 
-libvarnish_la_LDFLAGS = -avoid-version
+libvarnish_la_LDFLAGS = $(AM_LDFLAGS) -avoid-version
 
 libvarnish_la_SOURCES = \
 	vav.c \

@@ -1,5 +1,7 @@
 #
 
+AM_LDFLAGS  = $(AM_LT_LDFLAGS)
+
 INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/bin/varnishd \
@@ -12,7 +14,7 @@ vmod_srcdir = $(top_srcdir)/lib/libvmod_std
 vmodtool = $(top_srcdir)/lib/libvcl/vmodtool.py
 vmod_LTLIBRARIES = libvmod_std.la
 
-libvmod_std_la_LDFLAGS = -module -export-dynamic -avoid-version
+libvmod_std_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-version
 
 libvmod_std_la_SOURCES = \
 	vcc_if.c \

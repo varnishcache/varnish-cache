@@ -1,10 +1,12 @@
 #
 
+AM_LDFLAGS  = $(AM_LT_LDFLAGS)
+
 INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include
 
 pkglib_LTLIBRARIES = libvcl.la
 
-libvcl_la_LDFLAGS = -avoid-version
+libvcl_la_LDFLAGS = $(AM_LDFLAGS) -avoid-version
 
 libvcl_la_SOURCES = \
 	vcc_compile.h \

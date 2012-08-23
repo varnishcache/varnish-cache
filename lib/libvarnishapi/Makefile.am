@@ -1,10 +1,12 @@
 #
 
+AM_LDFLAGS  = $(AM_LT_LDFLAGS)
+
 INCLUDES = -I$(top_srcdir)/include @PCRE_CFLAGS@
 
 lib_LTLIBRARIES = libvarnishapi.la
 
-libvarnishapi_la_LDFLAGS = -version-info 1:0:0
+libvarnishapi_la_LDFLAGS = $(AM_LDFLAGS) -version-info 1:0:0
 
 libvarnishapi_la_SOURCES = \
 	vsm_api.h \

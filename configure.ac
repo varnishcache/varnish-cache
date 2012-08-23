@@ -480,12 +480,16 @@ AC_ARG_ENABLE(stack-protector,
 if test "x$enable_stack_protector" != "xno"; then
 	save_CFLAGS="$CFLAGS"
 	CFLAGS="${CFLAGS} -fstack-protector-all"
+	save_AM_LT_LDFLAGS="$AM_LT_LDFLAGS"
+	AM_LT_LDFLAGS="${AM_LT_LDFLAGS} -Wc,-fstack-protector"
 	AC_COMPILE_IFELSE(
 		[AC_LANG_PROGRAM([],[],[])],
 		[],
 		[AC_MSG_WARN([-fstack-protector not supported, disabling])
-		    CFLAGS="$save_CFLAGS"])
+		    CFLAGS="$save_CFLAGS"]
+		    AM_LT_LDFLAGS="$save_AM_LT_LDFLAGS")
 fi
+AC_SUBST(AM_LT_LDFLAGS)
 
 # --enable-tests
 AC_ARG_ENABLE(tests,

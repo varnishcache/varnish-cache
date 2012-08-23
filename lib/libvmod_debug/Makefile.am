@@ -1,4 +1,5 @@
 #
+AM_LDFLAGS  = $(AM_LT_LDFLAGS)
 
 INCLUDES = \
 	-I$(top_srcdir)/include \
@@ -10,7 +11,7 @@ vmod_srcdir = $(top_srcdir)/lib/libvmod_debug
 vmodtool = $(top_srcdir)/lib/libvcl/vmodtool.py
 noinst_LTLIBRARIES = libvmod_debug.la
 
-libvmod_debug_la_LDFLAGS = -module -export-dynamic -avoid-version -rpath /nowhere
+libvmod_debug_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-version -rpath /nowhere
 
 libvmod_debug_la_SOURCES = \
 	vcc_if.c \
