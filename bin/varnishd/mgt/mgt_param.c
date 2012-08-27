@@ -1046,11 +1046,8 @@ static const struct parspec input_parspec[] = {
 		WAITER_DEFAULT, NULL },
 	{ "diag_bitmap", tweak_diag_bitmap, 0, 0, 0,
 		"Bitmap controlling diagnostics code:\n"
-		"  0x00000002 - workspace debugging.\n"
-		"  0x00000004 - kqueue debugging.\n"
 		"  0x00000008 - mutex logging.\n"
 		"  0x00000010 - mutex contests.\n"
-		"  0x00000020 - waiting list.\n"
 		"  0x00000040 - object workspace.\n"
 		"  0x00000080 - mutex timing.\n"
 		"  0x00001000 - do not core-dump child process.\n"

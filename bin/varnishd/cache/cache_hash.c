@@ -420,7 +420,7 @@ HSH_Lookup(struct req *req)
 			VTAILQ_INSERT_TAIL(&oh->waitinglist->list,
 			    req, w_list);
 		}
-		if (cache_param->diag_bitmap & 0x20)
+		if (DO_DEBUG(DBG_WAITINGLIST))
 			VSLb(req->vsl, SLT_Debug,
 				"on waiting list <%p>", oh);
 
@@ -483,7 +483,7 @@ hsh_rush(struct dstat *ds, struct objhead *oh)
 		ds->busy_wakeup++;
 		AZ(req->wrk);
 		VTAILQ_REMOVE(&wl->list, req, w_list);
-		DSL(0x20, SLT_Debug, req->vsl->wid, "off waiting list");
+		DSL(DBG_WAITINGLIST, req->vsl->wid, "off waiting list");
 		if (SES_ScheduleReq(req)) {
 			/*
 			 * We could not schedule the session, leave the

@@ -29,4 +29,7 @@
  *
  */
 
-DEBUG_BIT(REQ_STATE,		req_state,	"",  "Request state engine")
+DEBUG_BIT(REQ_STATE,		req_state,	"",  "VSL Request state engine")
+DEBUG_BIT(WORKSPACE,		workspace,	"",  "VSL Workspace operations")
+DEBUG_BIT(WAITER,		waiter,		"",  "VSL Waiter internals")
+DEBUG_BIT(WAITINGLIST,		waitinglist,	"",  "VSL Waitinglist events")

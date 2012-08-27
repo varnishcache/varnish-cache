@@ -1124,8 +1124,8 @@ DO_DEBUG(enum debug_bits x)
 	    (0x80U >> ((unsigned)x & 7)));
 }
 
-#define DSL(flag, tag, id, ...)					\
+#define DSL(debug_bit, id, ...)					\
 	do {							\
-		if (cache_param->diag_bitmap & (flag))		\
-			VSL((tag), (id), __VA_ARGS__);		\
+		if (DO_DEBUG(debug_bit))			\
+			VSL(SLT_Debug, (id), __VA_ARGS__);	\
 	} while (0)

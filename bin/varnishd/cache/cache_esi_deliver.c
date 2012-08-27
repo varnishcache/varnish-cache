@@ -105,7 +105,7 @@ ved_include(struct req *preq, const char *src, const char *host)
 		i = CNT_Request(wrk, req);
 		if (i == 1)
 			break;
-		DSL(0x20, SLT_Debug, req->vsl->wid,
+		DSL(DBG_WAITINGLIST, req->vsl->wid,
 		    "loop waiting for ESI (%d)", i);
 		assert(i == 2);
 		AZ(req->wrk);
