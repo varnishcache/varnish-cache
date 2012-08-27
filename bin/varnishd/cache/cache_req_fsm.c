@@ -1220,7 +1220,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 		switch (req->req_step) {
 #define REQ_STEP(l,u,arg) \
 		    case R_STP_##u: \
-			if (cache_param->diag_bitmap & 0x01) \
+			if (DO_DEBUG(DBG_REQ_STATE)) \
 				cnt_diag(req, #u); \
 			done = cnt_##l arg; \
 		        break;

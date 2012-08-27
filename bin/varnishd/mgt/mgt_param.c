@@ -1046,7 +1046,6 @@ static const struct parspec input_parspec[] = {
 		WAITER_DEFAULT, NULL },
 	{ "diag_bitmap", tweak_diag_bitmap, 0, 0, 0,
 		"Bitmap controlling diagnostics code:\n"
-		"  0x00000001 - CNT_Session states.\n"
 		"  0x00000002 - workspace debugging.\n"
 		"  0x00000004 - kqueue debugging.\n"
 		"  0x00000008 - mutex logging.\n"

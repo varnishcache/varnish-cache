@@ -33,6 +33,13 @@
 
 #define VSM_CLASS_PARAM		"Params"
 
+enum debug_bits {
+#define DEBUG_BIT(U, l, p, d) DBG_##U,
+#include "tbl/debug_bits.h"
+#undef DEBUG_BIT
+       DBG_Reserved
+};
+
 struct poolparam {
 	unsigned		min_pool;
 	unsigned		max_pool;
@@ -198,5 +205,6 @@ struct params {
 	struct poolparam	sess_pool;
 	struct poolparam	vbo_pool;
 
-	uint8_t			vsl_mask[256/8];
+	uint8_t			vsl_mask[256>>3];
+	uint8_t			debug_bits[(DBG_Reserved+7)>>3];
 };

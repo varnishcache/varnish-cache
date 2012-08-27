@@ -154,6 +154,45 @@ tweak_vsl_mask(struct cli *cli, const struct parspec *par, const char *arg)
 }
 
 /*--------------------------------------------------------------------
+ * The debug parameter
+ */
+
+static const char * const debug_tags[] = {
+#  define DEBUG_BIT(U,l,p,d)       [DBG_##U] = #l,
+#  include "tbl/debug_bits.h"
+#  undef DEBUG_BIT
+       NULL
+};
+
+static void
+tweak_debug(struct cli *cli, const struct parspec *par, const char *arg)
+{
+	const char *s;
+	unsigned j;
+	(void)par;
+
+	if (arg != NULL) {
+		if (!strcmp(arg, "none")) {
+			memset(mgt_param.debug_bits,
+			    0, sizeof mgt_param.debug_bits);
+		} else {
+			bit_tweak(cli, mgt_param.debug_bits,
+			    DBG_Reserved, arg, debug_tags, "debug bit", "+");
+		}
+	} else {
+		s = "";
+		for (j = 0; j < (unsigned)DBG_Reserved; j++) {
+			if (bit(mgt_param.debug_bits, j, BTST)) {
+				VCLI_Out(cli, "%s+%s", s, debug_tags[j]);
+				s = ",";
+			}
+		}
+		if (*s == '\0')
+			VCLI_Out(cli, "none");
+	}
+}
+
+/*--------------------------------------------------------------------
  * The parameter table itself
  */
 
@@ -164,5 +203,13 @@ const struct parspec VSL_parspec[] = {
 		"Use +/- prefixe in front of VSL tag name, to mask/unmask "
 		"individual VSL messages.",
 		0, "default", "" },
+	{ "debug", tweak_debug, NULL, 0, 0,
+		"Enable/Disable various kinds of debugging.\n"
+		"\tnone\t\tDisable all debugging\n"
+		"Use +/- prefix to set/reset individual bits:\n"
+#define DEBUG_BIT(U, l, p, d) "\t" #l "\t" p d "\n"
+#include "tbl/debug_bits.h"
+#undef DEBUG_BIT
+		, 0, "none", "" },
 	{ NULL, NULL, NULL }
 };

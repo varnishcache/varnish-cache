@@ -976,12 +976,6 @@ void VSLbt(struct vsl_log *, enum VSL_tag_e tag, txt t);
 
 void VSL_Flush(struct vsl_log *, int overflow);
 
-#define DSL(flag, tag, id, ...)					\
-	do {							\
-		if (cache_param->diag_bitmap & (flag))		\
-			VSL((tag), (id), __VA_ARGS__);		\
-	} while (0)
-
 #endif
 
 /* cache_response.c */
@@ -1122,3 +1116,16 @@ Tadd(txt *t, const char *p, int l)
  * extra timestamps in cache_pool.c.  Hide this detail with a macro
  */
 #define W_TIM_real(w) ((w)->lastused = VTIM_real())
+
+static inline int
+DO_DEBUG(enum debug_bits x)
+{
+	return (cache_param->debug_bits[(unsigned)x>>3] &
+	    (0x80U >> ((unsigned)x & 7)));
+}
+
+#define DSL(flag, tag, id, ...)					\
+	do {							\
+		if (cache_param->diag_bitmap & (flag))		\
+			VSL((tag), (id), __VA_ARGS__);		\
+	} while (0)
