@@ -240,7 +240,7 @@ wslr(struct vsl_log *vsl, enum VSL_tag_e tag, int id, txt t)
 	vsl->wlp = VSL_END(vsl->wlp, l);
 	assert(vsl->wlp < vsl->wle);
 	vsl->wlr++;
-	if (cache_param->diag_bitmap & 0x10000)
+	if (DO_DEBUG(DBG_SYNCVSL))
 		VSL_Flush(vsl, 0);
 }
 
@@ -281,7 +281,7 @@ wsl(struct vsl_log *vsl, enum VSL_tag_e tag, int id, const char *fmt,
 		assert(vsl->wlp < vsl->wle);
 		vsl->wlr++;
 	}
-	if (cache_param->diag_bitmap & 0x10000)
+	if (DO_DEBUG(DBG_SYNCVSL))
 		VSL_Flush(vsl, 0);
 }
 

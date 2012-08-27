@@ -18,7 +18,6 @@ server s1 -repeat 2 {
 } -start
 
 varnish v1 \
-	-arg {-p diag_bitmap=0x00010000} \
 	-vcl+backend {
 	sub vcl_fetch {
 		set beresp.do_stream = false;
@@ -28,6 +27,8 @@ varnish v1 \
 		} 
 	}
 } 
+
+varnish v1 -cliok "param.set debug +syncvsl"
 
 varnish v1 -start
 

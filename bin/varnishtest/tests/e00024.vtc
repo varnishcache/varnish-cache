@@ -69,7 +69,7 @@ varnish v1 -vcl+backend {
 
 varnish v1 -cliok "param.set http_gzip_support true"
 varnish v1 -cliok "param.set esi_syntax 0x3e" 
-varnish v1 -cliok "param.set diag_bitmap 0x10000"
+varnish v1 -cliok "param.set debug +syncvsl"
 
 client c1 {
 	txreq -hdr "Accept-Encoding: gzip"
