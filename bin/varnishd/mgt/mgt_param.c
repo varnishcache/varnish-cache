@@ -1033,10 +1033,6 @@ static const struct parspec input_parspec[] = {
 		"more sessions take a detour around the waiter.",
 		EXPERIMENTAL,
 		"0.050", "seconds" },
-	{ "log_hashstring", tweak_bool, &mgt_param.log_hash, 0, 0,
-		"Log the hash string components to shared memory log.\n",
-		0,
-		"on", "bool" },
 	{ "log_local_address", tweak_bool, &mgt_param.log_local_addr, 0, 0,
 		"Log the local address on the TCP connection in the "
 		"SessionOpen VSL record.\n"

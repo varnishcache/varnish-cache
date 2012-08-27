@@ -82,6 +82,7 @@ tweak_vsl_mask(struct cli *cli, const struct parspec *par, const char *arg)
 		if (!strcmp(arg, "default")) {
 			(void)vsl_bit(SLT_VCL_trace, BSET);
 			(void)vsl_bit(SLT_WorkThread, BSET);
+			(void)vsl_bit(SLT_Hash, BSET);
 		} else if (*arg != 0) {
 			av = VAV_Parse(arg, &n, ARGV_COMMA);
 			if (av[0] != NULL) {
@@ -118,7 +119,7 @@ tweak_vsl_mask(struct cli *cli, const struct parspec *par, const char *arg)
 		}
 	} else {
 		s = "";
-		for (j = 0; j < 256; j++) {
+		for (j = 0; j < (unsigned)SLT_Reserved; j++) {
 			if (vsl_bit(j, BTST)) {
 				VCLI_Out(cli, "%s-%s", s, VSL_tags[j]);
 				s = ",";

@@ -144,9 +144,6 @@ struct params {
 	/* Control diagnostic code */
 	unsigned		diag_bitmap;
 
-	/* Log hash string to shm */
-	unsigned		log_hash;
-
 	/* Log local socket address to shm */
 	unsigned		log_local_addr;
 

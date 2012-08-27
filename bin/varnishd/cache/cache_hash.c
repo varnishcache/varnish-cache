@@ -169,8 +169,7 @@ HSH_AddString(struct req *req, const char *str)
 	SHA256_Update(req->sha256ctx, str, l);
 	SHA256_Update(req->sha256ctx, "#", 1);
 
-	if (cache_param->log_hash)
-		VSLb(req->vsl, SLT_Hash, "%s", str);
+	VSLb(req->vsl, SLT_Hash, "%s", str);
 }
 
 /*---------------------------------------------------------------------
