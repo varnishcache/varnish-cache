@@ -44,83 +44,106 @@
 
 #include "vapi/vsl_int.h"
 
-static const char * const VSL_tags[256] = {
-#  define SLTM(foo,sdesc,ldesc)       [SLT_##foo] = #foo,
-#  include "tbl/vsl_tags.h"
-#  undef SLTM
-};
+/*--------------------------------------------------------------------
+ */
 
 enum bit_do {BSET, BCLR, BTST};
 
 static int
-vsl_bit(unsigned no, enum bit_do act)
+bit(uint8_t *p, unsigned no, enum bit_do act)
 {
-	volatile uint8_t *bm = &mgt_param.vsl_mask[0];
 	uint8_t b;
 
-	assert(no < (unsigned)SLT_Reserved);
-
-	bm += (no >> 3);
+	p += (no >> 3);
 	b = (0x80 >> (no & 7));
 	if (act == BSET)
-		*bm |= b;
+		*p |= b;
 	else if (act == BCLR)
-		*bm &= ~b;
-	return (*bm & b);
+		*p &= ~b;
+	return (*p & b);
 }
+
+/*--------------------------------------------------------------------
+ */
+
+static void
+bit_tweak(struct cli *cli, uint8_t *p, unsigned l, const char *arg,
+    const char * const *tags, const char *desc, const char *sign)
+{
+	int i, n;
+	unsigned j;
+	char **av;
+	const char *s;
+
+	av = VAV_Parse(arg, &n, ARGV_COMMA);
+	if (av[0] != NULL) {
+		VCLI_Out(cli, "Cannot parse: %s\n", av[0]);
+		VCLI_SetResult(cli, CLIS_PARAM);
+		VAV_Free(av);
+		return;
+	}
+	for (i = 1; av[i] != NULL; i++) {
+		s = av[i];
+		if (*s != '-' && *s != '+') {
+			VCLI_Out(cli, "Missing '+' or '-' (%s)\n", s);
+			VCLI_SetResult(cli, CLIS_PARAM);
+			VAV_Free(av);
+			return;
+		}
+		for (j = 0; j < l; j++) {
+			if (tags[j] != NULL && !strcasecmp(s + 1, tags[j]))
+				break;
+		}
+		if (tags[j] == NULL) {
+			VCLI_Out(cli, "Unknown %s (%s)\n", desc, s);
+			VCLI_SetResult(cli, CLIS_PARAM);
+			VAV_Free(av);
+			return;
+		}
+		assert(j < l);
+		if (s[0] == *sign)
+			(void)bit(p, j, BSET);
+		else
+			(void)bit(p, j, BCLR);
+	}
+	VAV_Free(av);
+}
+
+
+/*--------------------------------------------------------------------
+ * The vsl_mask parameter
+ */
+
+static const char * const VSL_tags[256] = {
+#  define SLTM(foo,sdesc,ldesc)       [SLT_##foo] = #foo,
+#  include "tbl/vsl_tags.h"
+#  undef SLTM
+	NULL
+};
 
 static void
 tweak_vsl_mask(struct cli *cli, const struct parspec *par, const char *arg)
 {
-	int i, n;
 	unsigned j;
 	const char *s;
-	char **av;
 	(void)par;
 
 	if (arg != NULL) {
 		if (!strcmp(arg, "default")) {
-			(void)vsl_bit(SLT_VCL_trace, BSET);
-			(void)vsl_bit(SLT_WorkThread, BSET);
-			(void)vsl_bit(SLT_Hash, BSET);
-		} else if (*arg != 0) {
-			av = VAV_Parse(arg, &n, ARGV_COMMA);
-			if (av[0] != NULL) {
-				VCLI_Out(cli, "Cannot parse: %s\n", av[0]);
-				VCLI_SetResult(cli, CLIS_PARAM);
-				return;
-			}
-			for (i = 1; av[i] != NULL; i++) {
-				s = av[i];
-				if (*s != '-' && *s != '+') {
-					VCLI_Out(cli,
-					    "Missing '+' or '-' (%s)\n", s);
-					VCLI_SetResult(cli, CLIS_PARAM);
-					VAV_Free(av);
-					return;
-				}
-				for (j = 0; j < 256; j++)
-					if (VSL_tags[j] != NULL &&
-					    !strcasecmp(s + 1, VSL_tags[j]))
-						break;
-				if (j == 256) {
-					VCLI_Out(cli,
-					    "Unknown VSL tag (%s)\n", s);
-					VCLI_SetResult(cli, CLIS_PARAM);
-					VAV_Free(av);
-					return;
-				}
-				if (s[0] == '+')
-					(void)vsl_bit(j, BCLR);
-				else
-					(void)vsl_bit(j, BSET);
-			}
-			VAV_Free(av);
+			memset(mgt_param.vsl_mask,
+			    0, sizeof mgt_param.vsl_mask);
+			(void)bit(mgt_param.vsl_mask, SLT_VCL_trace, BSET);
+			(void)bit(mgt_param.vsl_mask, SLT_WorkThread, BSET);
+			(void)bit(mgt_param.vsl_mask, SLT_Hash, BSET);
+		} else {
+			bit_tweak(cli, mgt_param.vsl_mask,
+			    SLT_Reserved, arg, VSL_tags,
+			    "VSL tag", "-");
 		}
 	} else {
 		s = "";
 		for (j = 0; j < (unsigned)SLT_Reserved; j++) {
-			if (vsl_bit(j, BTST)) {
+			if (bit(mgt_param.vsl_mask, j, BTST)) {
 				VCLI_Out(cli, "%s-%s", s, VSL_tags[j]);
 				s = ",";
 			}
@@ -130,9 +153,16 @@ tweak_vsl_mask(struct cli *cli, const struct parspec *par, const char *arg)
 	}
 }
 
+/*--------------------------------------------------------------------
+ * The parameter table itself
+ */
+
 const struct parspec VSL_parspec[] = {
 	{ "vsl_mask", tweak_vsl_mask, NULL, 0, 0,
-		"Mask individual VSL messages from being logged",
+		"Mask individual VSL messages from being logged.\n"
+		"\tdefault\tSet default value\n"
+		"Use +/- prefixe in front of VSL tag name, to mask/unmask "
+		"individual VSL messages.",
 		0, "default", "" },
 	{ NULL, NULL, NULL }
 };
