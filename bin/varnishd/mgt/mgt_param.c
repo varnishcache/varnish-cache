@@ -872,14 +872,6 @@ static const struct parspec input_parspec[] = {
 		"fragmentation.\n",
 		EXPERIMENTAL,
 		"256m", "bytes" },
-	{ "vcl_trace", tweak_bool,  &mgt_param.vcl_trace, 0, 0,
-		"Trace VCL execution in the shmlog.\n"
-		"Enabling this will allow you to see the path each "
-		"request has taken through the VCL program.\n"
-		"This generates a lot of logrecords so it is off by "
-		"default.",
-		0,
-		"off", "bool" },
 	{ "accept_filter", tweak_bool, &mgt_param.accept_filter, 0, 0,
 		"Enable kernel accept-filters, if supported by the kernel.",
 		MUST_RESTART,
@@ -1318,7 +1310,7 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 				continue;
 		}
 		pp->func(cli, pp, NULL);
-		if (pp->units != NULL)
+		if (pp->units != NULL && *pp->units != '\0')
 			VCLI_Out(cli, " [%s]\n", pp->units);
 		else
 			VCLI_Out(cli, "\n");
@@ -1496,6 +1488,7 @@ MCF_ParamInit(struct cli *cli)
 
 	MCF_AddParams(input_parspec);
 	MCF_AddParams(WRK_parspec);
+	MCF_AddParams(VSL_parspec);
 
 	/* XXX: We do this twice, to get past any interdependencies */
 	MCF_SetDefaults(NULL);

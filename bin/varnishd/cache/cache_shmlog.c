@@ -50,6 +50,18 @@ static uint32_t			*vsl_ptr;
 
 struct VSC_C_main       *VSC_C_main;
 
+static inline int
+vsl_tag_is_masked(enum VSL_tag_e tag)
+{
+	volatile uint8_t *bm = &cache_param->vsl_mask[0];
+	uint8_t b;
+
+	assert(tag < SLT_Reserved);
+	bm += ((unsigned)tag >> 3);
+	b = (0x80 >> ((unsigned)tag & 7));
+	return (*bm & b);
+}
+
 static inline uint32_t
 vsl_w0(uint32_t type, uint32_t length)
 {
@@ -159,6 +171,8 @@ VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
 	unsigned n, mlen = cache_param->shm_reclen;
 	char buf[mlen];
 
+	if (vsl_tag_is_masked(tag))
+		return;
 	AN(fmt);
 	va_start(ap, fmt);
 
@@ -281,6 +295,8 @@ VSLb(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, ...)
 	va_list ap;
 
 	AN(fmt);
+	if (vsl_tag_is_masked(tag))
+		return;
 	va_start(ap, fmt);
 	wsl(vsl, tag, vsl->wid, fmt, ap);
 	va_end(ap);
@@ -293,6 +309,9 @@ VSLb(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, ...)
 void
 VSLbt(struct vsl_log *vsl, enum VSL_tag_e tag, txt t)
 {
+
+	if (vsl_tag_is_masked(tag))
+		return;
 	wslr(vsl, tag, -1, t);
 }
 

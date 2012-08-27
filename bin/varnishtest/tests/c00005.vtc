@@ -9,7 +9,7 @@ server s1 {
 	txresp -body "2222\n"
 } -start
 
-varnish v1 -arg "-p vcl_trace=on" -vcl+backend {
+varnish v1 -arg "-p vsl_mask=+VCL_trace" -vcl+backend {
 	acl acl1 {
 		"localhost";
 	}

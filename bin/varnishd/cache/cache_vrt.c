@@ -75,9 +75,8 @@ VRT_count(struct req *req, unsigned u)
 	if (req == NULL)
 		return;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	if (cache_param->vcl_trace)
-		VSLb(req->vsl, SLT_VCL_trace, "%u %u.%u", u,
-		    req->vcl->ref[u].line, req->vcl->ref[u].pos);
+	VSLb(req->vsl, SLT_VCL_trace, "%u %u.%u", u,
+	    req->vcl->ref[u].line, req->vcl->ref[u].pos);
 }
 
 /*--------------------------------------------------------------------*/

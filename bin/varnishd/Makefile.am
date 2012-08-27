@@ -61,6 +61,7 @@ varnishd_SOURCES = \
 	mgt/mgt_cli.c \
 	mgt/mgt_main.c \
 	mgt/mgt_param.c \
+	mgt/mgt_param_vsl.c \
 	mgt/mgt_pool.c \
 	mgt/mgt_sandbox.c \
 	mgt/mgt_sandbox_solaris.c \

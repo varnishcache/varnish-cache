@@ -103,10 +103,6 @@ struct params {
 	ssize_t			fetch_maxchunksize;
 	unsigned		nuke_limit;
 
-
-	/* VCL traces */
-	unsigned		vcl_trace;
-
 	unsigned		accept_filter;
 
 	/* Listen address */
@@ -204,4 +200,6 @@ struct params {
 	struct poolparam	req_pool;
 	struct poolparam	sess_pool;
 	struct poolparam	vbo_pool;
+
+	uint8_t			vsl_mask[256/8];
 };
