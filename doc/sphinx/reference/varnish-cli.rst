@@ -77,12 +77,12 @@ Commands
 --------
 
 .. glossary:: 
-   :sorted:
+  :sorted:
 
   help [command]
       Display a list of available commands.
       If the command is specified, display help for this command.
-
+  
   param.set param value
       Set the parameter specified by param to the specified value.
       See Run-Time Parameters for a list of parame‐ ters.
