@@ -305,7 +305,7 @@ HSH_Lookup(struct req *req)
 	AN(hash);
 
 	hsh_prealloc(wrk);
-	if (cache_param->diag_bitmap & 0x80000000)
+	if (DO_DEBUG(DBG_HASHEDGE))
 		hsh_testmagic(req->digest);
 
 	if (req->hash_objhead != NULL) {

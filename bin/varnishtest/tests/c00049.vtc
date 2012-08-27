@@ -36,7 +36,7 @@ varnish v1 -vcl+backend {
 } -start
 
 varnish v1 -cliok "param.set ban_lurker_sleep 0"
-varnish v1 -cliok "param.set diag_bitmap 0x80000"
+varnish v1 -cliok "param.set debug +lurker"
 
 varnish v1 -cliok "ban.list"
 

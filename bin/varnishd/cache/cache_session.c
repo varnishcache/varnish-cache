@@ -140,10 +140,8 @@ ses_req_pool_task(struct worker *wrk, void *arg)
 	HTTP1_Session(wrk, req);
 	WS_Assert(wrk->aws);
 	AZ(wrk->wrw);
-	if (cache_param->diag_bitmap & 0x00040000) {
-		if (wrk->vcl != NULL)
-			VCL_Rel(&wrk->vcl);
-	}
+	if (DO_DEBUG(DBG_VCLREL) && wrk->vcl != NULL)
+		VCL_Rel(&wrk->vcl);
 	THR_SetRequest(NULL);
 }
 

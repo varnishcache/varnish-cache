@@ -15,7 +15,7 @@ varnish v1 -arg "-pthread_pools=1" -vcl+backend {
 	}
 } -start
 
-varnish v1 -cliok "param.set diag_bitmap 0x40000"
+varnish v1 -cliok "param.set debug +vclrel"
 
 client c1 {
 	txreq -url "/bar"
