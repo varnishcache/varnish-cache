@@ -155,9 +155,6 @@ struct params {
 	/* CLI buffer size */
 	unsigned		cli_buffer;
 
-	/* Control diagnostic code */
-	unsigned		diag_bitmap;
-
 	/* Log local socket address to shm */
 	unsigned		log_local_addr;
 

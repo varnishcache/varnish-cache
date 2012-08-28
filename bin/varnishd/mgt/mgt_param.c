@@ -579,22 +579,6 @@ tweak_waiter(struct cli *cli, const struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_diag_bitmap(struct cli *cli, const struct parspec *par, const char *arg)
-{
-	unsigned u;
-
-	(void)par;
-	if (arg != NULL) {
-		u = strtoul(arg, NULL, 0);
-		mgt_param.diag_bitmap = u;
-	} else {
-		VCLI_Out(cli, "0x%x", mgt_param.diag_bitmap);
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
 tweak_poolparam(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	volatile struct poolparam *pp, px;
@@ -1044,19 +1028,6 @@ static const struct parspec input_parspec[] = {
 		"Select the waiter kernel interface.\n",
 		WIZARD | MUST_RESTART,
 		WAITER_DEFAULT, NULL },
-	{ "diag_bitmap", tweak_diag_bitmap, 0, 0, 0,
-		"Bitmap controlling diagnostics code:\n"
-		"  0x00000008 - mutex logging.\n"
-		"  0x00000010 - mutex contests.\n"
-		"  0x00000080 - mutex timing.\n"
-		"\n"
-		"Use 0x notation and do the bitor in your head :-)\n"
-		"\n"
-		"Note: Mutex timing will add extra overhead and "
-		"synchronization between threads, consequently changing the "
-		"locking characteristics.\n",
-		0,
-		"0", "bitmap" },
 	{ "ban_dups", tweak_bool, &mgt_param.ban_dups, 0, 0,
 		"Detect and eliminate duplicate bans.\n",
 		0,

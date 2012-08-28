@@ -37,7 +37,6 @@
 
 #include <stdlib.h>
 
-#include "vtim.h"
 #include "cache.h"
 
 /*The constability of lck depends on platform pthreads implementation */
@@ -48,7 +47,6 @@ struct ilck {
 	pthread_mutex_t		mtx;
 	int			held;
 	pthread_t		owner;
-	double			t0;
 	VTAILQ_ENTRY(ilck)	list;
 	const char		*w;
 	struct VSC_C_lck	*stat;
@@ -63,37 +61,13 @@ void __match_proto__()
 Lck__Lock(struct lock *lck, const char *p, const char *f, int l)
 {
 	struct ilck *ilck;
-	int r;
-	double t0 = 0, t;
+
+	(void)p;
+	(void)f;
+	(void)l;
 
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
-	if (!(cache_param->diag_bitmap & 0x98)) {
-		AZ(pthread_mutex_lock(&ilck->mtx));
-		AZ(ilck->held);
-		ilck->stat->locks++;
-		ilck->owner = pthread_self();
-		ilck->held = 1;
-		return;
-	}
-	if (cache_param->diag_bitmap & 0x80)
-		t0 = VTIM_real();
-	r = pthread_mutex_trylock(&ilck->mtx);
-	assert(r == 0 || r == EBUSY);
-	if (r) {
-		ilck->stat->colls++;
-		if (cache_param->diag_bitmap & 0x8)
-			VSL(SLT_Debug, 0, "MTX_CONTEST(%s,%s,%d,%s)",
-			    p, f, l, ilck->w);
-		AZ(pthread_mutex_lock(&ilck->mtx));
-	} else if (cache_param->diag_bitmap & 0x8) {
-		VSL(SLT_Debug, 0, "MTX_LOCK(%s,%s,%d,%s)", p, f, l, ilck->w);
-	}
-	if (cache_param->diag_bitmap & 0x80) {
-		t = VTIM_real();
-		VSL(SLT_Debug, 0, "MTX_LOCKWAIT(%s,%s,%d,%s) %.9fs",
-		    p, f, l, ilck->w, t - t0);
-		ilck->t0 = t;
-	}
+	AZ(pthread_mutex_lock(&ilck->mtx));
 	AZ(ilck->held);
 	ilck->stat->locks++;
 	ilck->owner = pthread_self();
@@ -104,6 +78,10 @@ void __match_proto__()
 Lck__Unlock(struct lock *lck, const char *p, const char *f, int l)
 {
 	struct ilck *ilck;
+
+	(void)p;
+	(void)f;
+	(void)l;
 
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	assert(pthread_equal(ilck->owner, pthread_self()));
@@ -121,11 +99,6 @@ Lck__Unlock(struct lock *lck, const char *p, const char *f, int l)
 	 */
 	memset(&ilck->owner, 0, sizeof ilck->owner);
 	AZ(pthread_mutex_unlock(&ilck->mtx));
-	if (cache_param->diag_bitmap & 0x80)
-		VSL(SLT_Debug, 0, "MTX_UNLOCK(%s,%s,%d,%s) %.9fs",
-		    p, f, l, ilck->w, VTIM_real() - ilck->t0);
-	else if (cache_param->diag_bitmap & 0x8)
-		VSL(SLT_Debug, 0, "MTX_UNLOCK(%s,%s,%d,%s)", p, f, l, ilck->w);
 }
 
 int __match_proto__()
@@ -134,19 +107,18 @@ Lck__Trylock(struct lock *lck, const char *p, const char *f, int l)
 	struct ilck *ilck;
 	int r;
 
+	(void)p;
+	(void)f;
+	(void)l;
+
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	r = pthread_mutex_trylock(&ilck->mtx);
 	assert(r == 0 || r == EBUSY);
-	if (cache_param->diag_bitmap & 0x8)
-		VSL(SLT_Debug, 0,
-		    "MTX_TRYLOCK(%s,%s,%d,%s) = %d", p, f, l, ilck->w, r);
 	if (r == 0) {
 		AZ(ilck->held);
 		ilck->held = 1;
 		ilck->stat->locks++;
 		ilck->owner = pthread_self();
-		if (cache_param->diag_bitmap & 0x80)
-			ilck->t0 = VTIM_real();
 	}
 	return (r);
 }
