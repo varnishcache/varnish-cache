@@ -73,10 +73,6 @@ VSC_F(locks,			uint64_t, 0, 'a',
     "Lock Operations",
 	""
 )
-VSC_F(colls,			uint64_t, 0, 'a',
-    "Collisions",
-	""
-)
 
 #endif
 
