@@ -1118,6 +1118,13 @@ Tadd(txt *t, const char *p, int l)
 #define W_TIM_real(w) ((w)->lastused = VTIM_real())
 
 static inline int
+FEATURE(enum feature_bits x)
+{
+	return (cache_param->feature_bits[(unsigned)x>>3] &
+	    (0x80U >> ((unsigned)x & 7)));
+}
+
+static inline int
 DO_DEBUG(enum debug_bits x)
 {
 	return (cache_param->debug_bits[(unsigned)x>>3] &

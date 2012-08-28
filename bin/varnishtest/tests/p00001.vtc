@@ -8,7 +8,7 @@ server s1 {
 } -start
 
 varnish v1 \
-	-arg "-pdiag_bitmap=0x20000" \
+	-arg "-pfeature=+wait_silo" \
 	-arg "-pban_lurker_sleep=0" \
 	-storage "-spersistent,${tmpdir}/_.per,10m" \
 	-vcl+backend { } -start 

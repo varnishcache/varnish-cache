@@ -7,6 +7,7 @@ nobase_pkginclude_HEADERS = \
 	tbl/ban_vars.h \
 	tbl/body_status.h \
 	tbl/debug_bits.h \
+	tbl/feature_bits.h \
 	tbl/http_headers.h \
 	tbl/http_response.h \
 	tbl/locks.h \

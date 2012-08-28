@@ -40,6 +40,13 @@ enum debug_bits {
        DBG_Reserved
 };
 
+enum feature_bits {
+#define FEATURE_BIT(U, l, p, d, ld) FEATURE_##U,
+#include "tbl/feature_bits.h"
+#undef FEATURE_BIT
+       FEATURE_Reserved
+};
+
 struct poolparam {
 	unsigned		min_pool;
 	unsigned		max_pool;
@@ -207,4 +214,5 @@ struct params {
 
 	uint8_t			vsl_mask[256>>3];
 	uint8_t			debug_bits[(DBG_Reserved+7)>>3];
+	uint8_t			feature_bits[(FEATURE_Reserved+7)>>3];
 };

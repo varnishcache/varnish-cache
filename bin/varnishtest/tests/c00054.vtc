@@ -21,6 +21,7 @@ varnish v1 -clierr 106 {param.set vsl_mask \"}
 
 varnish v1 -cliok "param.set debug +workspace"
 varnish v1 -cliok "param.show debug"
+varnish v1 -cliok "param.show feature"
 
 client c1 {
 	txreq

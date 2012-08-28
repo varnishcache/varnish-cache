@@ -225,7 +225,7 @@ child_main(void)
 	CLI_AddFuncs(debug_cmds);
 
 	/* Wait for persistent storage to load if asked to */
-	if (cache_param->diag_bitmap & 0x00020000)
+	if (FEATURE(FEATURE_WAIT_SILO))
 		SMP_Ready();
 
 	CLI_Run();

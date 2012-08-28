@@ -392,7 +392,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 
 	pan_backtrace();
 
-	if (!(cache_param->diag_bitmap & 0x2000)) {
+	if (!FEATURE(FEATURE_SHORT_PANIC)) {
 		req = THR_GetRequest();
 		if (req != NULL)
 			pan_req(req);
@@ -400,10 +400,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	VSB_printf(pan_vsp, "\n");
 	VSB_bcat(pan_vsp, "", 1);	/* NUL termination */
 
-	if (cache_param->diag_bitmap & 0x4000)
-		(void)fputs(heritage.panic_str, stderr);
-
-	if (cache_param->diag_bitmap & 0x1000)
+	if (FEATURE(FEATURE_NO_COREDUMP))
 		exit(4);
 	else
 		abort();

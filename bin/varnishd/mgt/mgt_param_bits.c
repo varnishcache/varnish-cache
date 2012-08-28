@@ -115,7 +115,7 @@ bit_tweak(struct cli *cli, uint8_t *p, unsigned l, const char *arg,
  */
 
 static const char * const VSL_tags[256] = {
-#  define SLTM(foo,sdesc,ldesc)       [SLT_##foo] = #foo,
+#  define SLTM(foo,sdesc,ldesc) [SLT_##foo] = #foo,
 #  include "tbl/vsl_tags.h"
 #  undef SLTM
 	NULL
@@ -158,7 +158,7 @@ tweak_vsl_mask(struct cli *cli, const struct parspec *par, const char *arg)
  */
 
 static const char * const debug_tags[] = {
-#  define DEBUG_BIT(U,l,p,d)       [DBG_##U] = #l,
+#  define DEBUG_BIT(U,l,p,d) [DBG_##U] = #l,
 #  include "tbl/debug_bits.h"
 #  undef DEBUG_BIT
        NULL
@@ -193,6 +193,46 @@ tweak_debug(struct cli *cli, const struct parspec *par, const char *arg)
 }
 
 /*--------------------------------------------------------------------
+ * The feature parameter
+ */
+
+static const char * const feature_tags[] = {
+#  define FEATURE_BIT(U,l,p,d, ld) [FEATURE_##U] = #l,
+#  include "tbl/feature_bits.h"
+#  undef FEATURE_BIT
+       NULL
+};
+
+static void
+tweak_feature(struct cli *cli, const struct parspec *par, const char *arg)
+{
+	const char *s;
+	unsigned j;
+	(void)par;
+
+	if (arg != NULL) {
+		if (!strcmp(arg, "none")) {
+			memset(mgt_param.feature_bits,
+			    0, sizeof mgt_param.feature_bits);
+		} else {
+			bit_tweak(cli, mgt_param.feature_bits,
+			    FEATURE_Reserved, arg, feature_tags,
+			    "feature bit", "+");
+		}
+	} else {
+		s = "";
+		for (j = 0; j < (unsigned)FEATURE_Reserved; j++) {
+			if (bit(mgt_param.feature_bits, j, BTST)) {
+				VCLI_Out(cli, "%s+%s", s, feature_tags[j]);
+				s = ",";
+			}
+		}
+		if (*s == '\0')
+			VCLI_Out(cli, "none");
+	}
+}
+
+/*--------------------------------------------------------------------
  * The parameter table itself
  */
 
@@ -210,6 +250,14 @@ const struct parspec VSL_parspec[] = {
 #define DEBUG_BIT(U, l, p, d) "\t" #l "\t" p d "\n"
 #include "tbl/debug_bits.h"
 #undef DEBUG_BIT
+		, 0, "none", "" },
+	{ "feature", tweak_feature, NULL, 0, 0,
+		"Enable/Disable various minor features.\n"
+		"\tnone\t\tDisable all features.\n"
+		"Use +/- prefix to enable/disable individual feature:\n"
+#define FEATURE_BIT(U, l, p, d, ld) "\t" #l "\t" p d "\n"
+#include "tbl/feature_bits.h"
+#undef FEATURE_BIT
 		, 0, "none", "" },
 	{ NULL, NULL, NULL }
 };
