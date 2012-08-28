@@ -1048,7 +1048,6 @@ static const struct parspec input_parspec[] = {
 		"Bitmap controlling diagnostics code:\n"
 		"  0x00000008 - mutex logging.\n"
 		"  0x00000010 - mutex contests.\n"
-		"  0x00000040 - object workspace.\n"
 		"  0x00000080 - mutex timing.\n"
 		"  0x00001000 - do not core-dump child process.\n"
 		"  0x00002000 - only short panic message.\n"

@@ -22,7 +22,7 @@ varnish v1 -cliok "param.show"
 
 varnish v1 -cliok "param.show diag_bitmap"
 
-varnish v1 -cliok "param.set diag_bitmap 0x40"
+varnish v1 -cliok "param.set diag_bitmap 0x80"
 
 varnish v1 -cliok "param.set diag_bitmap 0x0"
 
