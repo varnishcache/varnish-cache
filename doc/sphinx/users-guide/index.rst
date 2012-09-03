@@ -1,13 +1,14 @@
-.. _tutorial-index:
+.. _users-guide-index:
 
 %%%%%%%%%%%%%
 Using Varnish
 %%%%%%%%%%%%%
 
-This tutorial is intended for system administrators managing Varnish
-cache. The reader should know how to configure her web- or application
+This guide is intended for system administrators managing Varnish
+Cache. The reader should know how to configure her web- or application
 server and have basic knowledge of the HTTP protocol. The reader
-should have Varnish up and running with the default configuration. 
+should have Varnish Cache up and running with the default
+configuration.
 
 The tutorial is split into short chapters, each chapter taking on a
 separate topic. Good luck.
