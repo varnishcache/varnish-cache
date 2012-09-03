@@ -109,39 +109,39 @@ EXP_ACCESS(keep, 0.,)
  */
 
 double
-EXP_Keep(const struct sess *sp, const struct object *o)
+EXP_Keep(const struct req *req, const struct object *o)
 {
 	double r;
 
 	r = (double)cache_param->default_keep;
 	if (o->exp.keep > 0.)
 		r = o->exp.keep;
-	if (sp != NULL && sp->req->exp.keep > 0. && sp->req->exp.keep < r)
-		r = sp->req->exp.keep;
-	return (EXP_Ttl(sp, o) + r);
+	if (req != NULL && req->exp.keep > 0. && req->exp.keep < r)
+		r = req->exp.keep;
+	return (EXP_Ttl(req, o) + r);
 }
 
 double
-EXP_Grace(const struct sess *sp, const struct object *o)
+EXP_Grace(const struct req *req, const struct object *o)
 {
 	double r;
 
 	r = (double)cache_param->default_grace;
 	if (o->exp.grace >= 0.)
 		r = o->exp.grace;
-	if (sp != NULL && sp->req->exp.grace > 0. && sp->req->exp.grace < r)
-		r = sp->req->exp.grace;
-	return (EXP_Ttl(sp, o) + r);
+	if (req != NULL && req->exp.grace > 0. && req->exp.grace < r)
+		r = req->exp.grace;
+	return (EXP_Ttl(req, o) + r);
 }
 
 double
-EXP_Ttl(const struct sess *sp, const struct object *o)
+EXP_Ttl(const struct req *req, const struct object *o)
 {
 	double r;
 
 	r = o->exp.ttl;
-	if (sp != NULL && sp->req->exp.ttl > 0. && sp->req->exp.ttl < r)
-		r = sp->req->exp.ttl;
+	if (req != NULL && req->exp.ttl > 0. && req->exp.ttl < r)
+		r = req->exp.ttl;
 	return (o->exp.entered + r);
 }
 
@@ -224,7 +224,6 @@ EXP_Insert(struct object *o)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oc = o->objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AssertOCBusy(oc);
 	HSH_Ref(oc);
 
 	assert(o->exp.entered != 0 && !isnan(o->exp.entered));
@@ -329,21 +328,23 @@ EXP_Rearm(const struct object *o)
  * object expires, accounting also for graceability, it is killed.
  */
 
-static void * __match_proto__(void *start_routine(void *))
-exp_timer(struct sess *sp, void *priv)
+static void * __match_proto__(bgthread_t)
+exp_timer(struct worker *wrk, void *priv)
 {
 	struct objcore *oc;
 	struct lru *lru;
 	double t;
 	struct object *o;
+	struct vsl_log vsl;
 
 	(void)priv;
+	VSL_Setup(&vsl, NULL, 0);
 	t = VTIM_real();
 	oc = NULL;
 	while (1) {
 		if (oc == NULL) {
-			WSL_Flush(sp->wrk->vsl, 0);
-			WRK_SumStat(sp->wrk);
+			VSL_Flush(&vsl, 0);
+			WRK_SumStat(wrk);
 			VTIM_sleep(cache_param->expiry_sleep);
 			t = VTIM_real();
 		}
@@ -363,6 +364,13 @@ exp_timer(struct sess *sp, void *priv)
 		if (oc->timer_when > t)
 			t = VTIM_real();
 		if (oc->timer_when > t) {
+			Lck_Unlock(&exp_mtx);
+			oc = NULL;
+			continue;
+		}
+
+		/* If the object is busy, we have to wait for it */
+		if (oc->flags & OC_F_BUSY) {
 			Lck_Unlock(&exp_mtx);
 			oc = NULL;
 			continue;
@@ -399,10 +407,10 @@ exp_timer(struct sess *sp, void *priv)
 		VSC_C_main->n_expired++;
 
 		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
-		o = oc_getobj(&sp->wrk->stats, oc);
-		WSL(sp->wrk->vsl, SLT_ExpKill, 0, "%u %.0f",
-		    oc_getxid(&sp->wrk->stats, oc), EXP_Ttl(NULL, o) - t);
-		(void)HSH_Deref(&sp->wrk->stats, oc, NULL);
+		o = oc_getobj(&wrk->stats, oc);
+		VSLb(&vsl, SLT_ExpKill, "%u %.0f",
+		    oc_getxid(&wrk->stats, oc), EXP_Ttl(NULL, o) - t);
+		(void)HSH_Deref(&wrk->stats, oc, NULL);
 	}
 	NEEDLESS_RETURN(NULL);
 }
@@ -423,13 +431,14 @@ EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 	Lck_Lock(&exp_mtx);
 	VTAILQ_FOREACH(oc, &lru->lru_head, lru_list) {
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-		assert (oc->timer_idx != BINHEAP_NOIDX);
+		assert(oc->timer_idx != BINHEAP_NOIDX);
 		/*
 		 * It wont release any space if we cannot release the last
 		 * reference, besides, if somebody else has a reference,
-		 * it's a bad idea to nuke this object anyway.
+		 * it's a bad idea to nuke this object anyway. Also do not
+		 * touch busy objects.
 		 */
-		if (oc->refcnt == 1)
+		if (oc->refcnt == 1 && !(oc->flags & OC_F_BUSY))
 			break;
 	}
 	if (oc != NULL) {
@@ -445,7 +454,7 @@ EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 		return (-1);
 
 	/* XXX: bad idea for -spersistent */
-	WSL(bo->vsl, SLT_ExpKill, -1, "%u LRU", oc_getxid(bo->stats, oc));
+	VSLb(bo->vsl, SLT_ExpKill, "%u LRU", oc_getxid(bo->stats, oc));
 	(void)HSH_Deref(bo->stats, oc, NULL);
 	return (1);
 }

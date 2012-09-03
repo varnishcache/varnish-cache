@@ -577,4 +577,3 @@ VCLS_Destroy(struct VCLS **csp)
 	}
 	FREE_OBJ(cs);
 }
-

@@ -87,6 +87,7 @@ void vtc_hexdump(struct vtclog *vl, int lvl, const char *pfx,
 int exec_file(const char *fn, const char *script, const char *tmpdir,
     char *logbuf, unsigned loglen);
 
+void macro_undef(struct vtclog *vl, const char *instance, const char *name);
 void macro_def(struct vtclog *vl, const char *instance, const char *name,
     const char *fmt, ...)
     __printflike(4, 5);

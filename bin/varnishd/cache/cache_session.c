@@ -28,8 +28,13 @@
  *
  * Session management
  *
- * This is a little bit of a mixed back, containing both memory management
+ * This is a little bit of a mixed bag, containing both memory management
  * and various state-change functions.
+ *
+ * The overall picture is complicated by the fact that requests can
+ * disembark their worker-threads if they hit a busy object, then come
+ * back later in a different worker thread to continue.
+ * XXX: I wonder if that complexity pays of any more ?
  *
  */
 
@@ -42,6 +47,7 @@
 #include "cache.h"
 
 #include "waiter/waiter.h"
+#include "vtcp.h"
 #include "vtim.h"
 
 static unsigned ses_size = sizeof (struct sess);
@@ -61,15 +67,21 @@ struct sesspool {
  */
 
 void
-SES_Charge(struct sess *sp)
+SES_Charge(struct worker *wrk, struct req *req)
 {
-	struct acct *a = &sp->wrk->acct_tmp;
+	struct sess *sp;
+	struct acct *a;
 
-	CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
-	sp->req->req_bodybytes += a->bodybytes;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	sp = req->sp;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+
+	a = &req->acct_req;
+	req->req_bodybytes += a->bodybytes;
 
 #define ACCT(foo)				\
-	sp->wrk->stats.s_##foo += a->foo;	\
+	wrk->stats.s_##foo += a->foo;		\
 	sp->acct_ses.foo += a->foo;		\
 	a->foo = 0;
 #include "tbl/acct_fields.h"
@@ -90,7 +102,6 @@ ses_setup(struct sess *sp)
 	sp->sockaddr.ss_family = sp->mysockaddr.ss_family = PF_UNSPEC;
 	sp->t_open = NAN;
 	sp->t_idle = NAN;
-	sp->t_req = NAN;
 }
 
 /*--------------------------------------------------------------------
@@ -112,113 +123,144 @@ ses_new(struct sesspool *pp)
 }
 
 /*--------------------------------------------------------------------
- * Allocate a session for use by background threads.
- */
-
-struct sess *
-SES_Alloc(void)
-{
-	struct sess *sp;
-
-	ALLOC_OBJ(sp, SESS_MAGIC);
-	AN(sp);
-	ses_setup(sp);
-	/* XXX: sp->req ? */
-	return (sp);
-}
-
-/*--------------------------------------------------------------------
- * The pool-task function for sessions
+ * Process new/existing request on this session.
  */
 
 static void
-ses_pool_task(struct worker *wrk, void *arg)
+ses_req_pool_task(struct worker *wrk, void *arg)
 {
+	struct req *req;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CAST_OBJ_NOTNULL(req, arg, REQ_MAGIC);
+
+	THR_SetRequest(req);
+	AZ(wrk->aws->r);
+	wrk->lastused = NAN;
+	HTTP1_Session(wrk, req);
+	WS_Assert(wrk->aws);
+	AZ(wrk->wrw);
+	if (DO_DEBUG(DBG_VCLREL) && wrk->vcl != NULL)
+		VCL_Rel(&wrk->vcl);
+	THR_SetRequest(NULL);
+}
+
+/*--------------------------------------------------------------------
+ * Allocate a request + vxid, call ses_req_pool_task()
+ */
+
+static void
+ses_sess_pool_task(struct worker *wrk, void *arg)
+{
+	struct req *req;
 	struct sess *sp;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
 
-	AZ(wrk->aws->r);
-	wrk->lastused = NAN;
-	THR_SetSession(sp);
-	if (wrk->sp == NULL)
-		wrk->sp = sp;
-	else
-		assert(wrk->sp == sp);
-	AZ(sp->wrk);
-	sp->wrk = wrk;
-	CNT_Session(sp);
-	sp = NULL;
-	/* Cannot access sp now */
-	THR_SetSession(NULL);
-	wrk->sp = NULL;
-	WS_Assert(wrk->aws);
-	AZ(wrk->busyobj);
-	AZ(wrk->wrw);
-	assert(wrk->vsl->wlp == wrk->vsl->wlb);
-	if (cache_param->diag_bitmap & 0x00040000) {
-		if (wrk->vcl != NULL)
-			VCL_Rel(&wrk->vcl);
+	req = SES_GetReq(wrk, sp);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	sp->sess_step = S_STP_NEWREQ;
+	ses_req_pool_task(wrk, req);
+}
+
+/*--------------------------------------------------------------------
+ * VSL log the endpoints of the TCP connection.
+ *
+ * We use VSL() to get the sessions vxid and to make sure tha this
+ * VSL comes before anything else for this session.
+ *
+ * This is a separate procedure only to isolate the two stack buffers.
+ *
+ */
+
+static void
+ses_vsl_socket(struct sess *sp, const char *lsockname)
+{
+	char laddr[ADDR_BUFSIZE];
+	char lport[PORT_BUFSIZE];
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	AN(lsockname);
+
+	VTCP_name(&sp->sockaddr, sp->sockaddrlen,
+	    sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
+	if (cache_param->log_local_addr) {
+		AZ(getsockname(sp->fd, (void*)&sp->mysockaddr,
+		    &sp->mysockaddrlen));
+		VTCP_name(&sp->mysockaddr, sp->mysockaddrlen,
+		    laddr, sizeof laddr, lport, sizeof lport);
+	} else {
+		strcpy(laddr, "-");
+		strcpy(lport, "-");
 	}
+	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s %.6f %d",
+	    sp->addr, sp->port, lsockname, laddr, lport, sp->t_open, sp->fd);
 }
 
 /*--------------------------------------------------------------------
  * The pool-task for a newly accepted session
+ *
+ * Called from assigned worker thread
  */
 
 void
 SES_pool_accept_task(struct worker *wrk, void *arg)
 {
 	struct sesspool *pp;
+	struct sess *sp;
+	const char *lsockname;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(pp, arg, SESSPOOL_MAGIC);
 
 	/* Turn accepted socket into a session */
-	AZ(wrk->sp);
 	AN(wrk->aws->r);
-	wrk->sp = ses_new(pp);
-	if (wrk->sp == NULL) {
+	sp = ses_new(pp);
+	if (sp == NULL) {
 		VCA_FailSess(wrk);
 		return;
 	}
-	VCA_SetupSess(wrk);
-	wrk->sp->step = STP_FIRST;
-	WS_Release(wrk->aws, 0);
-	ses_pool_task(wrk, wrk->sp);
+	wrk->stats.s_sess++;
+
+	sp->t_open = VTIM_real();
+	sp->t_idle = sp->t_open;
+	sp->vxid = VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER;
+
+	lsockname = VCA_SetupSess(wrk, sp);
+	ses_vsl_socket(sp, lsockname);
+
+	ses_sess_pool_task(wrk, sp);
 }
 
 /*--------------------------------------------------------------------
- * Schedule a session back on a work-thread from its pool
+ * Schedule a request back on a work-thread from its sessions pool
+ *
+ * This is used to reschedule requests waiting on busy objects
  */
 
 int
-SES_Schedule(struct sess *sp)
+SES_ScheduleReq(struct req *req)
 {
+	struct sess *sp;
 	struct sesspool *pp;
 
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	AZ(sp->wrk);
 	pp = sp->sesspool;
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
 
-	AZ(sp->wrk);
-	sp->task.func = ses_pool_task;
-	sp->task.priv = sp;
+	sp->task.func = ses_req_pool_task;
+	sp->task.priv = req;
 
 	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT)) {
 		VSC_C_main->client_drop_late++;
-		sp->t_idle = VTIM_real();
-		if (sp->req != NULL && sp->req->vcl != NULL) {
-			/*
-			 * A session parked on a busy object can come here
-			 * after it wakes up.  Loose the VCL reference.
-			 */
-			VCL_Rel(&sp->req->vcl);
-		}
-		SES_Delete(sp, "dropped", sp->t_idle);
+		AN (req->vcl);
+		VCL_Rel(&req->vcl);
+		SES_Delete(sp, SC_OVERLOAD, NAN);
 		return (1);
 	}
 	return (0);
@@ -231,10 +273,18 @@ SES_Schedule(struct sess *sp)
 void
 SES_Handle(struct sess *sp, double now)
 {
+	struct sesspool *pp;
 
-	sp->step = STP_WAIT;
-	sp->t_req = now;
-	(void)SES_Schedule(sp);
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	pp = sp->sesspool;
+	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
+	AN(pp->pool);
+	sp->task.func = ses_sess_pool_task;
+	sp->task.priv = sp;
+	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT)) {
+		VSC_C_main->client_drop_late++;
+		SES_Delete(sp, SC_OVERLOAD, now);
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -244,31 +294,25 @@ SES_Handle(struct sess *sp, double now)
  */
 
 void
-SES_Close(struct sess *sp, const char *reason)
+SES_Close(struct sess *sp, enum sess_close reason)
 {
 	int i;
 
 	assert(sp->fd >= 0);
-	VSL(SLT_SessionClose, sp->vsl_id, "%s", reason);
+	sp->reason = reason;
 	i = close(sp->fd);
 	assert(i == 0 || errno != EBADF); /* XXX EINVAL seen */
 	sp->fd = -1;
 }
 
 /*--------------------------------------------------------------------
- * (Close &) Free or Recycle a session.
- *
- * If the workspace has changed, deleted it, otherwise wash it, and put
- * it up for adoption.
- *
- * XXX: We should also check nhttp
+ * Report and dismantle a session.
  */
 
 void
-SES_Delete(struct sess *sp, const char *reason, double now)
+SES_Delete(struct sess *sp, enum sess_close reason, double now)
 {
 	struct acct *b;
-	struct worker *wrk;
 	struct sesspool *pp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -276,108 +320,106 @@ SES_Delete(struct sess *sp, const char *reason, double now)
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
 
-	wrk = sp->wrk;
-	CHECK_OBJ_ORNULL(wrk, WORKER_MAGIC);
-
-	if (reason != NULL)
+	if (reason != SC_NULL)
 		SES_Close(sp, reason);
+	assert(sp->fd < 0);
+
 	if (isnan(now))
 		now = VTIM_real();
 	assert(!isnan(sp->t_open));
-	assert(sp->fd < 0);
-
-	if (sp->req != NULL) {
-		AZ(sp->req->vcl);
-		SES_ReleaseReq(sp);
-	}
-
-	if (*sp->addr == '\0')
-		strcpy(sp->addr, "-");
-	if (*sp->port == '\0')
-		strcpy(sp->addr, "-");
 
 	b = &sp->acct_ses;
-
-	VSL(SLT_StatSess, sp->vsl_id, "%s %s %.0f %ju %ju %ju %ju %ju %ju %ju",
-	    sp->addr, sp->port,
-	    now - sp->t_open,
-	    b->sess, b->req, b->pipe, b->pass,
-	    b->fetch, b->hdrbytes, b->bodybytes);
+	VSL(SLT_SessClose, sp->vxid, "%s %.3f %ju %ju %ju %ju %ju %ju",
+	    sess_close_str(sp->reason, 0), now - sp->t_open, b->req,
+	    b->pipe, b->pass, b->fetch, b->hdrbytes, b->bodybytes);
 
 	MPL_Free(pp->mpl_sess, sp);
-
 }
 
 /*--------------------------------------------------------------------
- * Alloc/Free sp->req
+ * Alloc/Free a request
  */
 
-void
-SES_GetReq(struct sess *sp)
+struct req *
+SES_GetReq(struct worker *wrk, struct sess *sp)
 {
 	struct sesspool *pp;
+	struct req *req;
 	uint16_t nhttp;
 	unsigned sz, hl;
 	char *p, *e;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	pp = sp->sesspool;
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
 
-	AZ(sp->req);
-	sp->req = MPL_Get(pp->mpl_req, &sz);
-	AN(sp->req);
-	sp->req->magic = REQ_MAGIC;
+	req = MPL_Get(pp->mpl_req, &sz);
+	AN(req);
+	req->magic = REQ_MAGIC;
+	req->sp = sp;
 
-	e = (char*)sp->req + sz;
-	p = (char*)(sp->req + 1);
+	e = (char*)req + sz;
+	p = (char*)(req + 1);
 	p = (void*)PRNDUP(p);
 	assert(p < e);
 
 	nhttp = (uint16_t)cache_param->http_max_hdr;
 	hl = HTTP_estimate(nhttp);
 
-	sp->req->http = HTTP_create(p, nhttp);
+	req->http = HTTP_create(p, nhttp);
 	p += hl;
 	p = (void*)PRNDUP(p);
 	assert(p < e);
 
-	sp->req->http0 = HTTP_create(p, nhttp);
+	req->http0 = HTTP_create(p, nhttp);
 	p += hl;
 	p = (void*)PRNDUP(p);
 	assert(p < e);
 
-	sp->req->resp = HTTP_create(p, nhttp);
+	req->resp = HTTP_create(p, nhttp);
 	p += hl;
 	p = (void*)PRNDUP(p);
 	assert(p < e);
 
 	sz = cache_param->workspace_thread;
-	VSL_Setup(sp->req->vsl, p, sz);
-	sp->req->vsl->wid = sp->vsl_id;
+	VSL_Setup(req->vsl, p, sz);
+	req->vsl->wid = VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER;
 	p += sz;
 	p = (void*)PRNDUP(p);
 
 	assert(p < e);
 
-	WS_Init(sp->req->ws, "req", p, e - p);
+	WS_Init(req->ws, "req", p, e - p);
+
+	req->t_req = NAN;
+	req->t_resp = NAN;
+
+	return (req);
 }
 
 void
-SES_ReleaseReq(struct sess *sp)
+SES_ReleaseReq(struct req *req)
 {
+	struct sess *sp;
 	struct sesspool *pp;
 
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AZ(req->vcl);
+#define ACCT(foo)	AZ(req->acct_req.foo);
+#include "tbl/acct_fields.h"
+#undef ACCT
+	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	pp = sp->sesspool;
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
-	CHECK_OBJ_NOTNULL(sp->req, REQ_MAGIC);
-	MPL_AssertSane(sp->req);
-	WSL_Flush(sp->req->vsl, 0);
-	MPL_Free(pp->mpl_req, sp->req);
-	sp->req = NULL;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	MPL_AssertSane(req);
+	VSL_Flush(req->vsl, 0);
+	req->sp = NULL;
+	MPL_Free(pp->mpl_req, req);
 }
 
 /*--------------------------------------------------------------------

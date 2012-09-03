@@ -293,7 +293,7 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			lp->df_h = trimfield(ptr, end);
 		break;
 
-	case SLT_TxRequest:
+	case SLT_BereqRequest:
 		if (!lp->active)
 			break;
 		if (lp->df_m != NULL) {
@@ -303,7 +303,7 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		lp->df_m = trimline(ptr, end);
 		break;
 
-	case SLT_TxURL: {
+	case SLT_BereqURL: {
 		char *qs;
 
 		if (!lp->active)
@@ -322,7 +322,7 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		break;
 	}
 
-	case SLT_TxProtocol:
+	case SLT_BereqProtocol:
 		if (!lp->active)
 			break;
 		if (lp->df_H != NULL) {
@@ -332,7 +332,7 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		lp->df_H = trimline(ptr, end);
 		break;
 
-	case SLT_RxStatus:
+	case SLT_BerespStatus:
 		if (!lp->active)
 			break;
 		if (lp->df_s != NULL) {
@@ -342,7 +342,7 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		lp->df_s = trimline(ptr, end);
 		break;
 
-	case SLT_RxHeader:
+	case SLT_BerespHeader:
 		if (!lp->active)
 			break;
 		if (isprefix(ptr, "content-length:", end, &next))
@@ -353,7 +353,7 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		}
 		break;
 
-	case SLT_TxHeader:
+	case SLT_BereqHeader:
 		if (!lp->active)
 			break;
 		split = strchr(ptr, ':');
@@ -412,7 +412,7 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		lp->df_h = trimfield(ptr, end);
 		break;
 
-	case SLT_RxRequest:
+	case SLT_ReqRequest:
 		if (!lp->active)
 			break;
 		if (lp->df_m != NULL) {
@@ -422,7 +422,7 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		lp->df_m = trimline(ptr, end);
 		break;
 
-	case SLT_RxURL: {
+	case SLT_ReqURL: {
 		char *qs;
 
 		if (!lp->active)
@@ -441,7 +441,7 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		break;
 	}
 
-	case SLT_RxProtocol:
+	case SLT_ReqProtocol:
 		if (!lp->active)
 			break;
 		if (lp->df_H != NULL) {
@@ -451,7 +451,7 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		lp->df_H = trimline(ptr, end);
 		break;
 
-	case SLT_TxStatus:
+	case SLT_ObjStatus:
 		if (!lp->active)
 			break;
 		if (lp->df_s != NULL)
@@ -460,14 +460,14 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			lp->df_s = trimline(ptr, end);
 		break;
 
-	case SLT_TxHeader:
-	case SLT_RxHeader:
+	case SLT_ObjHeader:
+	case SLT_ReqHeader:
 		if (!lp->active)
 			break;
 		split = strchr(ptr, ':');
 		if (split == NULL)
 			break;
-		if (tag == SLT_RxHeader &&
+		if (tag == SLT_ReqHeader &&
 		    isprefix(ptr, "authorization:", end, &next) &&
 		    isprefix(next, "basic", end, &next)) {
 			free(lp->df_u);
@@ -479,7 +479,7 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			AN(split);
 			h->key = trimline(ptr, split);
 			h->value = trimline(split+1, end);
-			if (tag == SLT_RxHeader)
+			if (tag == SLT_ReqHeader)
 				VTAILQ_INSERT_HEAD(&lp->req_headers, h, list);
 			else
 				VTAILQ_INSERT_HEAD(&lp->resp_headers, h, list);
@@ -535,11 +535,11 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		lp->df_b = trimline(ptr, end);
 		break;
 
-	case SLT_SessionClose:
+	case SLT_SessClose:
 		if (!lp->active)
 			break;
-		if (strncmp(ptr, "pipe", len) == 0 ||
-		    strncmp(ptr, "error", len) == 0) {
+		if (strncmp(ptr, "TX_PIPE", len) == 0 ||
+		    strncmp(ptr, "TX_ERROR", len) == 0) {
 			clean_logline(lp);
 			break;
 		}

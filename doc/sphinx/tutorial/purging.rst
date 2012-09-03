@@ -4,7 +4,7 @@
  Purging and banning
 =====================
 
-One of the most effective way of increasing your hit ratio is to
+One of the most effective ways of increasing your hit ratio is to
 increase the time-to-live (ttl) of your objects. But, as you're aware
 of, in this twitterific day of age serving content that is outdated is
 bad for business.
@@ -88,7 +88,7 @@ Support for bans is built into Varnish and available in the CLI
 interface. To ban every png object belonging on example.com, issue
 the following command::
 
-  ban req.http.host == "example.com" && req.http.url ~ "\.png$"
+  ban req.http.host == "example.com" && req.url ~ "\.png$"
 
 Quite powerful, really.
 
@@ -146,7 +146,7 @@ You can use the following template to write ban lurker friendly bans::
       if (client.ip !~ purge) {
         error 401 "Not allowed";
       }
-      ban("obj.http.x-url ~ " req.url); # Assumes req.url is a regex. This might be a bit too simple
+      ban("obj.http.x-url ~ " + req.url); # Assumes req.url is a regex. This might be a bit too simple
     }
   }
 

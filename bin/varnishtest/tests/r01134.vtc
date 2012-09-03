@@ -1,0 +1,19 @@
+varnishtest "vcc const/non-const tostring conversion - bug 1134"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		set req.http.x-test = "Test " + 1;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+

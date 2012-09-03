@@ -63,7 +63,7 @@
  */
 
 void
-RFC2616_Ttl(const struct sess *sp)
+RFC2616_Ttl(struct busyobj *bo)
 {
 	unsigned max_age, age;
 	double h_date, h_expires;
@@ -71,9 +71,10 @@ RFC2616_Ttl(const struct sess *sp)
 	const struct http *hp;
 	struct exp *expp;
 
-	expp = &sp->wrk->busyobj->exp;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	expp = &bo->exp;
 
-	hp = sp->wrk->busyobj->beresp;
+	hp = bo->beresp;
 
 	assert(expp->entered != 0.0 && !isnan(expp->entered));
 	/* If all else fails, cache using default ttl */
@@ -98,7 +99,7 @@ RFC2616_Ttl(const struct sess *sp)
 	if (http_GetHdr(hp, H_Date, &p))
 		h_date = VTIM_parse(p);
 
-	switch (sp->req->err_code) {
+	switch (http_GetStatus(hp)) {
 	default:
 		expp->ttl = -1.;
 		break;
@@ -167,9 +168,9 @@ RFC2616_Ttl(const struct sess *sp)
 	}
 
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
-	WSP(sp, SLT_TTL,
-	    "%u RFC %.0f %.0f %.0f %.0f %.0f %.0f %.0f %u",
-	    sp->req->xid, expp->ttl, -1., -1., expp->entered,
+	VSLb(bo->vsl, SLT_TTL,
+	    "RFC %.0f %.0f %.0f %.0f %.0f %.0f %.0f %u",
+	    expp->ttl, -1., -1., expp->entered,
 	    expp->age, h_date, h_expires, max_age);
 }
 
@@ -178,27 +179,27 @@ RFC2616_Ttl(const struct sess *sp)
  */
 
 enum body_status
-RFC2616_Body(const struct sess *sp)
+RFC2616_Body(struct busyobj *bo, struct dstat *stats)
 {
 	struct http *hp;
 	char *b;
 
-	hp = sp->wrk->busyobj->beresp;
+	hp = bo->beresp;
 
 	if (hp->protover < 11 && !http_HdrIs(hp, H_Connection, "keep-alive"))
-		sp->wrk->busyobj->should_close = 1;
+		bo->should_close = 1;
 	else if (http_HdrIs(hp, H_Connection, "close"))
-		sp->wrk->busyobj->should_close = 1;
+		bo->should_close = 1;
 	else
-		sp->wrk->busyobj->should_close = 0;
+		bo->should_close = 0;
 
-	if (!strcasecmp(http_GetReq(sp->wrk->busyobj->bereq), "head")) {
+	if (!strcasecmp(http_GetReq(bo->bereq), "head")) {
 		/*
 		 * A HEAD request can never have a body in the reply,
 		 * no matter what the headers might say.
 		 * [RFC2516 4.3 p33]
 		 */
-		sp->wrk->stats.fetch_head++;
+		stats->fetch_head++;
 		return (BS_NONE);
 	}
 
@@ -207,7 +208,7 @@ RFC2616_Body(const struct sess *sp)
 		 * 1xx responses never have a body.
 		 * [RFC2616 4.3 p33]
 		 */
-		sp->wrk->stats.fetch_1xx++;
+		stats->fetch_1xx++;
 		return (BS_NONE);
 	}
 
@@ -216,7 +217,7 @@ RFC2616_Body(const struct sess *sp)
 		 * 204 is "No Content", obviously don't expect a body.
 		 * [RFC2616 10.2.5 p60]
 		 */
-		sp->wrk->stats.fetch_204++;
+		stats->fetch_204++;
 		return (BS_NONE);
 	}
 
@@ -225,23 +226,23 @@ RFC2616_Body(const struct sess *sp)
 		 * 304 is "Not Modified" it has no body.
 		 * [RFC2616 10.3.5 p63]
 		 */
-		sp->wrk->stats.fetch_304++;
+		stats->fetch_304++;
 		return (BS_NONE);
 	}
 
 	if (http_HdrIs(hp, H_Transfer_Encoding, "chunked")) {
-		 sp->wrk->stats.fetch_chunked++;
+		 stats->fetch_chunked++;
 		return (BS_CHUNKED);
 	}
 
 	if (http_GetHdr(hp, H_Transfer_Encoding, &b)) {
-		sp->wrk->stats.fetch_bad++;
+		stats->fetch_bad++;
 		return (BS_ERROR);
 	}
 
 	if (http_GetHdr(hp, H_Content_Length,
-	    &sp->wrk->busyobj->h_content_length)) {
-		sp->wrk->stats.fetch_length++;
+	    &bo->h_content_length)) {
+		stats->fetch_length++;
 		return (BS_LENGTH);
 	}
 
@@ -250,7 +251,7 @@ RFC2616_Body(const struct sess *sp)
 		 * Keep alive with neither TE=Chunked or C-Len is impossible.
 		 * We assume a zero length body.
 		 */
-		sp->wrk->stats.fetch_zero++;
+		stats->fetch_zero++;
 		return (BS_ZERO);
 	}
 
@@ -258,7 +259,7 @@ RFC2616_Body(const struct sess *sp)
 		/*
 		 * In this case, it is safe to just read what comes.
 		 */
-		sp->wrk->stats.fetch_close++;
+		stats->fetch_close++;
 		return (BS_EOF);
 	}
 
@@ -266,14 +267,14 @@ RFC2616_Body(const struct sess *sp)
 		/*
 		 * With no Connection header, assume EOF.
 		 */
-		sp->wrk->stats.fetch_oldhttp++;
+		stats->fetch_oldhttp++;
 		return (BS_EOF);
 	}
 
 	/*
 	 * Fall back to EOF transfer.
 	 */
-	sp->wrk->stats.fetch_eof++;
+	stats->fetch_eof++;
 	return (BS_EOF);
 }
 
@@ -282,7 +283,7 @@ RFC2616_Body(const struct sess *sp)
  */
 
 unsigned
-RFC2616_Req_Gzip(const struct sess *sp)
+RFC2616_Req_Gzip(const struct http *hp)
 {
 
 
@@ -291,7 +292,7 @@ RFC2616_Req_Gzip(const struct sess *sp)
 	 * p104 says to not do q values for x-gzip, so we just test
 	 * for its existence.
 	 */
-	if (http_GetHdrData(sp->req->http, H_Accept_Encoding, "x-gzip", NULL))
+	if (http_GetHdrData(hp, H_Accept_Encoding, "x-gzip", NULL))
 		return (1);
 
 	/*
@@ -299,7 +300,7 @@ RFC2616_Req_Gzip(const struct sess *sp)
 	 * We do not care a hoot if the client prefers some other
 	 * compression more than gzip: Varnish only does gzip.
 	 */
-	if (http_GetHdrQ(sp->req->http, H_Accept_Encoding, "gzip") > 0.)
+	if (http_GetHdrQ(hp, H_Accept_Encoding, "gzip") > 0.)
 		return (1);
 
 	/* Bad client, no gzip. */
@@ -309,7 +310,7 @@ RFC2616_Req_Gzip(const struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 int
-RFC2616_Do_Cond(const struct sess *sp)
+RFC2616_Do_Cond(const struct req *req)
 {
 	char *p, *e;
 	double ims;
@@ -318,19 +319,19 @@ RFC2616_Do_Cond(const struct sess *sp)
 	/* RFC 2616 13.3.4 states we need to match both ETag
 	   and If-Modified-Since if present*/
 
-	if (http_GetHdr(sp->req->http, H_If_Modified_Since, &p) ) {
-		if (!sp->req->obj->last_modified)
+	if (http_GetHdr(req->http, H_If_Modified_Since, &p) ) {
+		if (!req->obj->last_modified)
 			return (0);
 		ims = VTIM_parse(p);
-		if (ims > sp->t_req)	/* [RFC2616 14.25] */
+		if (ims > req->t_req)	/* [RFC2616 14.25] */
 			return (0);
-		if (sp->req->obj->last_modified > ims)
+		if (req->obj->last_modified > ims)
 			return (0);
 		do_cond = 1;
 	}
 
-	if (http_GetHdr(sp->req->http, H_If_None_Match, &p) &&
-	    http_GetHdr(sp->req->obj->http, H_ETag, &e)) {
+	if (http_GetHdr(req->http, H_If_None_Match, &p) &&
+	    http_GetHdr(req->obj->http, H_ETag, &e)) {
 		if (strcmp(p,e) != 0)
 			return (0);
 		do_cond = 1;

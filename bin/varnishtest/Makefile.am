@@ -1,11 +1,17 @@
 #
 
-TESTS_PARALLELISM = 3
-check: varnishtest
-	./varnishtest -i -j$(TESTS_PARALLELISM) $(srcdir)/tests/*.vtc
-	@echo "==================="
-	@echo "All tests succeeded"
-	@echo "==================="
+VTC_LOG_COMPILER = ./varnishtest -v -i
+TEST_EXTENSIONS = .vtc
+TESTS = @VTC_TESTS@
+
+# Make sure we run check-local first
+check: check-am check-local
+check-am: check-local
+# See if list of checks have changed, recheck
+check-local:
+	if [ "$$(cd $(srcdir) && echo tests/*.vtc)" != "@VTC_TESTS@" ]; then \
+		cd $(top_builddir) && ./config.status --recheck ; \
+	fi
 
 DISTCLEANFILES = _.ok
 

@@ -53,7 +53,6 @@
 #include "vev.h"
 #include "vlu.h"
 #include "vss.h"
-#include "vtcp.h"
 #include "vtim.h"
 
 #include "mgt_cli.h"
@@ -88,6 +87,14 @@ static struct vev	*ev_listen;
 static struct vlu	*vlu;
 
 static struct vsb *child_panic = NULL;
+
+static inline int
+MGT_FEATURE(enum feature_bits x)
+{
+	return (mgt_param.feature_bits[(unsigned)x>>3] &
+	    (0x80U >> ((unsigned)x & 7)));
+}
+
 
 /*--------------------------------------------------------------------
  * Track the highest file descriptor the parent knows is being used.
@@ -214,7 +221,7 @@ MGT_Child_Cli_Fail(void)
 		return;
 	REPORT(LOG_ERR, "Child (%jd) not responding to CLI, killing it.",
 	    (intmax_t)child_pid);
-	if (mgt_param.diag_bitmap & 0x1000)
+	if (MGT_FEATURE(FEATURE_NO_COREDUMP))
 		(void)kill(child_pid, SIGKILL);
 	else
 		(void)kill(child_pid, SIGQUIT);
@@ -239,12 +246,6 @@ open_sockets(void)
 
 		mgt_child_inherit(ls->sock, "sock");
 
-		/*
-		 * Set nonblocking mode to avoid a race where a client
-		 * closes before we call accept(2) and nobody else are in
-		 * the listen queue to release us.
-		 */
-		(void)VTCP_filter_http(ls->sock);
 		good++;
 	}
 	if (!good)
@@ -345,7 +346,7 @@ start_child(struct cli *cli)
 		(void)signal(SIGINT, SIG_DFL);
 		(void)signal(SIGTERM, SIG_DFL);
 
-		mgt_sandbox();
+		mgt_sandbox(SANDBOX_WORKER);
 
 		child_main();
 

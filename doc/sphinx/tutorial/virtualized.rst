@@ -3,7 +3,7 @@ Running Varnish in a virtualized environment
 --------------------------------------------
 
 It is possible, but not recommended for high performance, to run
-Varnish on virtualised hardware. Reduced disk- and network performance
+Varnish on virtualized hardware. Reduced disk- and network performance
 will reduce the performance a bit so make sure your system has good IO
 performance.
 

@@ -61,28 +61,13 @@ void __match_proto__()
 Lck__Lock(struct lock *lck, const char *p, const char *f, int l)
 {
 	struct ilck *ilck;
-	int r;
+
+	(void)p;
+	(void)f;
+	(void)l;
 
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
-	if (!(cache_param->diag_bitmap & 0x18)) {
-		AZ(pthread_mutex_lock(&ilck->mtx));
-		AZ(ilck->held);
-		ilck->stat->locks++;
-		ilck->owner = pthread_self();
-		ilck->held = 1;
-		return;
-	}
-	r = pthread_mutex_trylock(&ilck->mtx);
-	assert(r == 0 || r == EBUSY);
-	if (r) {
-		ilck->stat->colls++;
-		if (cache_param->diag_bitmap & 0x8)
-			VSL(SLT_Debug, 0, "MTX_CONTEST(%s,%s,%d,%s)",
-			    p, f, l, ilck->w);
-		AZ(pthread_mutex_lock(&ilck->mtx));
-	} else if (cache_param->diag_bitmap & 0x8) {
-		VSL(SLT_Debug, 0, "MTX_LOCK(%s,%s,%d,%s)", p, f, l, ilck->w);
-	}
+	AZ(pthread_mutex_lock(&ilck->mtx));
 	AZ(ilck->held);
 	ilck->stat->locks++;
 	ilck->owner = pthread_self();
@@ -93,6 +78,10 @@ void __match_proto__()
 Lck__Unlock(struct lock *lck, const char *p, const char *f, int l)
 {
 	struct ilck *ilck;
+
+	(void)p;
+	(void)f;
+	(void)l;
 
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	assert(pthread_equal(ilck->owner, pthread_self()));
@@ -110,8 +99,6 @@ Lck__Unlock(struct lock *lck, const char *p, const char *f, int l)
 	 */
 	memset(&ilck->owner, 0, sizeof ilck->owner);
 	AZ(pthread_mutex_unlock(&ilck->mtx));
-	if (cache_param->diag_bitmap & 0x8)
-		VSL(SLT_Debug, 0, "MTX_UNLOCK(%s,%s,%d,%s)", p, f, l, ilck->w);
 }
 
 int __match_proto__()
@@ -120,12 +107,13 @@ Lck__Trylock(struct lock *lck, const char *p, const char *f, int l)
 	struct ilck *ilck;
 	int r;
 
+	(void)p;
+	(void)f;
+	(void)l;
+
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	r = pthread_mutex_trylock(&ilck->mtx);
 	assert(r == 0 || r == EBUSY);
-	if (cache_param->diag_bitmap & 0x8)
-		VSL(SLT_Debug, 0,
-		    "MTX_TRYLOCK(%s,%s,%d,%s) = %d", p, f, l, ilck->w, r);
 	if (r == 0) {
 		AZ(ilck->held);
 		ilck->held = 1;

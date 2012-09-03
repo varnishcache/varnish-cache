@@ -6,6 +6,9 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		set beresp.do_stream = false;
+	}
 } -start
 
 varnish v1 -cliok "param.set http_range_support on"

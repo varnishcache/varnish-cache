@@ -44,7 +44,7 @@ parse_call(struct vcc *tl)
 	ExpectErr(tl, ID);
 	vcc_AddCall(tl, tl->t);
 	vcc_AddRef(tl, tl->t, SYM_SUB);
-	Fb(tl, 1, "if (VGC_function_%.*s(sp))\n", PF(tl->t));
+	Fb(tl, 1, "if (VGC_function_%.*s(req))\n", PF(tl->t));
 	Fb(tl, 1, "\treturn (1);\n");
 	vcc_NextToken(tl);
 	return;
@@ -57,7 +57,7 @@ parse_error(struct vcc *tl)
 {
 
 	vcc_NextToken(tl);
-	Fb(tl, 1, "VRT_error(sp,\n");
+	Fb(tl, 1, "VRT_error(req,\n");
 	if (tl->t->tok == '(') {
 		vcc_NextToken(tl);
 		vcc_Expr(tl, INT);
@@ -77,7 +77,7 @@ parse_error(struct vcc *tl)
 			Fb(tl, 1, ", 0\n");
 	}
 	Fb(tl, 1, ");\n");
-	Fb(tl, 1, "VRT_done(sp, VCL_RET_ERROR);\n");
+	Fb(tl, 1, "VRT_done(req, VCL_RET_ERROR);\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -178,7 +178,7 @@ parse_ban(struct vcc *tl)
 	ExpectErr(tl, '(');
 	vcc_NextToken(tl);
 
-	Fb(tl, 1, "VRT_ban_string(sp, ");
+	Fb(tl, 1, "VRT_ban_string(req, ");
 	vcc_Expr(tl, STRING);
 	ERRCHK(tl);
 	Fb(tl, 0, ");\n");
@@ -197,7 +197,7 @@ parse_ban_url(struct vcc *tl)
 	ExpectErr(tl, '(');
 	vcc_NextToken(tl);
 
-	Fb(tl, 1, "VRT_ban(sp, \"req.url\", \"~\", ");
+	Fb(tl, 1, "VRT_ban(req, \"req.url\", \"~\", ");
 	vcc_Expr(tl, STRING);
 	ERRCHK(tl);
 	ExpectErr(tl, ')');
@@ -224,24 +224,11 @@ parse_hash_data(struct vcc *tl)
 	vcc_NextToken(tl);
 	SkipToken(tl, '(');
 
-	Fb(tl, 1, "VRT_hashdata(sp, ");
+	Fb(tl, 1, "VRT_hashdata(req, ");
 	vcc_Expr(tl, STRING_LIST);
 	ERRCHK(tl);
 	Fb(tl, 0, ");\n");
 	SkipToken(tl, ')');
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-parse_panic(struct vcc *tl)
-{
-	vcc_NextToken(tl);
-
-	Fb(tl, 1, "VRT_panic(sp, ");
-	vcc_Expr(tl, STRING);
-	ERRCHK(tl);
-	Fb(tl, 0, ", vrt_magic_string_end);\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -259,7 +246,7 @@ parse_return(struct vcc *tl)
 #define VCL_RET_MAC(l, U, B)						\
 	do {								\
 		if (vcc_IdIs(tl->t, #l)) {				\
-			Fb(tl, 1, "VRT_done(sp, VCL_RET_" #U ");\n");	\
+			Fb(tl, 1, "VRT_done(req, VCL_RET_" #U ");\n");	\
 			vcc_ProcAction(tl->curproc, VCL_RET_##U, tl->t);\
 			retval = 1;					\
 		}							\
@@ -283,7 +270,7 @@ parse_rollback(struct vcc *tl)
 {
 
 	vcc_NextToken(tl);
-	Fb(tl, 1, "VRT_Rollback(sp);\n");
+	Fb(tl, 1, "VRT_Rollback(req);\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -293,7 +280,7 @@ parse_purge(struct vcc *tl)
 {
 
 	vcc_NextToken(tl);
-	Fb(tl, 1, "VRT_purge(sp, 0, 0);\n");
+	Fb(tl, 1, "VRT_purge(req, 0, 0);\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -303,7 +290,7 @@ parse_synthetic(struct vcc *tl)
 {
 	vcc_NextToken(tl);
 
-	Fb(tl, 1, "VRT_synth_page(sp, 0, ");
+	Fb(tl, 1, "VRT_synth_page(req, 0, ");
 	vcc_Expr(tl, STRING_LIST);
 	ERRCHK(tl);
 	Fb(tl, 0, ");\n");
@@ -331,7 +318,6 @@ static struct action_table {
 	/* Keep list sorted from here */
 	{ "call",		parse_call },
 	{ "hash_data",		parse_hash_data, VCL_MET_HASH },
-	{ "panic",		parse_panic },
 	{ "ban",		parse_ban },
 	{ "ban_url",		parse_ban_url },
 	{ "remove",		parse_unset }, /* backward compatibility */
@@ -352,7 +338,7 @@ vcc_ParseAction(struct vcc *tl)
 	const struct symbol *sym;
 
 	at = tl->t;
-	assert (at->tok == ID);
+	assert(at->tok == ID);
 	for(atp = action_table; atp->name != NULL; atp++) {
 		if (vcc_IdIs(at, atp->name)) {
 			if (atp->bitmask != 0)

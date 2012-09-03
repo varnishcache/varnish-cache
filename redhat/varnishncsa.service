@@ -1,0 +1,11 @@
+[Unit]
+Description=Varnish NCSA logging
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/run/varnishncsa.pid
+ExecStart=/usr/bin/varnishncsa -a -w /var/log/varnish/varnishncsa.log -D -P /run/varnishncsa.pid
+
+[Install]
+WantedBy=multi-user.target

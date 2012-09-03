@@ -56,7 +56,6 @@ vcc_ParseImport(struct vcc *tl)
 
 	ExpectErr(tl, ID);
 	mod = tl->t;
-
 	vcc_NextToken(tl);
 
 	osym = VCC_FindSymbol(tl, mod, SYM_NONE);
@@ -83,6 +82,14 @@ vcc_ParseImport(struct vcc *tl)
 	sym->def_e = tl->t;
 
 	if (tl->t->tok == ID) {
+		if (!tl->unsafe_path) {
+			VSB_printf(tl->sb,
+			    "'import ... from path...'"
+			    " not allowed.\nAt:");
+			vcc_ErrToken(tl, tl->t);
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
 		if (!vcc_IdIs(tl->t, "from")) {
 			VSB_printf(tl->sb, "Expected 'from path...' at ");
 			vcc_ErrToken(tl, tl->t);

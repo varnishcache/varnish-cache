@@ -1,0 +1,32 @@
+varnishtest "bitmap params masking"
+
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+varnish v1 -cliok "param.show vsl_mask"
+varnish v1 -cliok "param.set vsl_mask +VCL_trace"
+varnish v1 -cliok "param.show vsl_mask"
+varnish v1 -cliok "param.set vsl_mask -WorkThread,-TTL"
+varnish v1 -cliok "param.show vsl_mask"
+varnish v1 -cliok "param.set vsl_mask +WorkThread,+TTL,+Hash"
+varnish v1 -cliok "param.show vsl_mask"
+varnish v1 -clierr 106 "param.set vsl_mask FooBar"
+varnish v1 -clierr 106 "param.set vsl_mask -FooBar"
+varnish v1 -clierr 106 {param.set vsl_mask \"}
+
+varnish v1 -cliok "param.set debug +workspace"
+varnish v1 -cliok "param.show debug"
+varnish v1 -cliok "param.show feature"
+varnish v1 -cliok "param.set feature +short_panic"
+varnish v1 -cliok "param.show feature"
+
+
+client c1 {
+	txreq
+	rxresp
+} -run

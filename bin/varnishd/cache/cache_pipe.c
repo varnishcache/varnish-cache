@@ -60,42 +60,44 @@ rdf(int fd0, int fd1)
 }
 
 void
-PipeSession(struct sess *sp)
+PipeRequest(struct req *req)
 {
 	struct vbc *vc;
-	struct worker *w;
+	struct worker *wrk;
 	struct pollfd fds[2];
+	struct busyobj *bo;
 	int i;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);
-	w = sp->wrk;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
+	wrk = req->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	bo = req->busyobj;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	vc = VDI_GetFd(NULL, sp);
+	vc = VDI_GetFd(NULL, req);
 	if (vc == NULL)
 		return;
-	sp->wrk->busyobj->vbc = vc;		/* For panic dumping */
+	bo->vbc = vc;		/* For panic dumping */
 	(void)VTCP_blocking(vc->fd);
 
-	WRW_Reserve(w, &vc->fd);
-	sp->wrk->acct_tmp.hdrbytes +=
-	    http_Write(w, sp->wrk->busyobj->bereq, 0);
+	WRW_Reserve(wrk, &vc->fd, bo->vsl, req->t_req);
+	req->acct_req.hdrbytes += http_Write(wrk, bo->bereq, 0);
 
-	if (sp->req->htc->pipeline.b != NULL)
-		sp->wrk->acct_tmp.bodybytes +=
-		    WRW_Write(w, sp->req->htc->pipeline.b,
-		    Tlen(sp->req->htc->pipeline));
+	if (req->htc->pipeline.b != NULL)
+		req->acct_req.bodybytes +=
+		    WRW_Write(wrk, req->htc->pipeline.b,
+		    Tlen(req->htc->pipeline));
 
-	i = WRW_FlushRelease(w);
+	i = WRW_FlushRelease(wrk);
 
 	if (i) {
-		SES_Close(sp, "pipe");
-		VDI_CloseFd(sp->wrk, &vc);
+		SES_Close(req->sp, SC_TX_PIPE);
+		VDI_CloseFd(&vc);
 		return;
 	}
 
-	sp->req->t_resp = VTIM_real();
+	req->t_resp = VTIM_real();
 
 	memset(fds, 0, sizeof fds);
 
@@ -103,8 +105,8 @@ PipeSession(struct sess *sp)
 	fds[0].fd = vc->fd;
 	fds[0].events = POLLIN | POLLERR;
 
-	// XXX: not yet (void)VTCP_linger(sp->fd, 0);
-	fds[1].fd = sp->fd;
+	// XXX: not yet (void)VTCP_linger(req->sp->fd, 0);
+	fds[1].fd = req->sp->fd;
 	fds[1].events = POLLIN | POLLERR;
 
 	while (fds[0].fd > -1 || fds[1].fd > -1) {
@@ -113,24 +115,24 @@ PipeSession(struct sess *sp)
 		i = poll(fds, 2, cache_param->pipe_timeout * 1000);
 		if (i < 1)
 			break;
-		if (fds[0].revents && rdf(vc->fd, sp->fd)) {
+		if (fds[0].revents && rdf(vc->fd, req->sp->fd)) {
 			if (fds[1].fd == -1)
 				break;
 			(void)shutdown(vc->fd, SHUT_RD);
-			(void)shutdown(sp->fd, SHUT_WR);
+			(void)shutdown(req->sp->fd, SHUT_WR);
 			fds[0].events = 0;
 			fds[0].fd = -1;
 		}
-		if (fds[1].revents && rdf(sp->fd, vc->fd)) {
+		if (fds[1].revents && rdf(req->sp->fd, vc->fd)) {
 			if (fds[0].fd == -1)
 				break;
-			(void)shutdown(sp->fd, SHUT_RD);
+			(void)shutdown(req->sp->fd, SHUT_RD);
 			(void)shutdown(vc->fd, SHUT_WR);
 			fds[1].events = 0;
 			fds[1].fd = -1;
 		}
 	}
-	SES_Close(sp, "pipe");
-	VDI_CloseFd(sp->wrk, &vc);
-	sp->wrk->busyobj->vbc = NULL;
+	SES_Close(req->sp, SC_TX_PIPE);
+	VDI_CloseFd(&vc);
+	bo->vbc = NULL;
 }

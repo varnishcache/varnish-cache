@@ -56,6 +56,8 @@ struct wrw {
 	ssize_t			liov;
 	ssize_t			cliov;
 	unsigned		ciov;	/* Chunked header marker */
+	double			t0;
+	struct vsl_log		*vsl;
 };
 
 /*--------------------------------------------------------------------
@@ -69,7 +71,7 @@ WRW_Error(const struct worker *wrk)
 }
 
 void
-WRW_Reserve(struct worker *wrk, int *fd)
+WRW_Reserve(struct worker *wrk, int *fd, struct vsl_log *vsl, double t0)
 {
 	struct wrw *wrw;
 	unsigned u;
@@ -93,6 +95,8 @@ WRW_Reserve(struct worker *wrk, int *fd)
 	wrw->liov = 0;
 	wrw->niov = 0;
 	wrw->wfd = fd;
+	wrw->t0 = t0;
+	wrw->vsl = vsl;
 	wrk->wrw = wrw;
 }
 
@@ -134,7 +138,7 @@ wrw_prune(struct wrw *wrw, ssize_t bytes)
 }
 
 unsigned
-WRW_Flush(struct worker *wrk)
+WRW_Flush(const struct worker *wrk)
 {
 	ssize_t i;
 	struct wrw *wrw;
@@ -176,9 +180,8 @@ WRW_Flush(struct worker *wrk)
 			 * counter to prevent slowlaris attacks
 			*/
 
-			if (VTIM_real() - wrk->sp->req->t_resp >
-			    cache_param->send_timeout) {
-				WSL(wrk->vsl, SLT_Debug, *wrw->wfd,
+			if (VTIM_real() - wrw->t0 > cache_param->send_timeout) {
+				VSLb(wrw->vsl, SLT_Debug,
 				    "Hit total send timeout, "
 				    "wrote = %zd/%zd; not retrying",
 				    i, wrw->liov);
@@ -186,7 +189,7 @@ WRW_Flush(struct worker *wrk)
 				break;
 			}
 
-			WSL(wrk->vsl, SLT_Debug, *wrw->wfd,
+			VSLb(wrw->vsl, SLT_Debug,
 			    "Hit send timeout, wrote = %zd/%zd; retrying",
 			    i, wrw->liov);
 
@@ -195,7 +198,7 @@ WRW_Flush(struct worker *wrk)
 		}
 		if (i <= 0) {
 			wrw->werr++;
-			WSL(wrk->vsl, SLT_Debug, *wrw->wfd,
+			VSLb(wrw->vsl, SLT_Debug,
 			    "Write error, retval = %zd, len = %zd, errno = %s",
 			    i, wrw->liov, strerror(errno));
 		}
@@ -221,7 +224,7 @@ WRW_FlushRelease(struct worker *wrk)
 }
 
 unsigned
-WRW_WriteH(struct worker *wrk, const txt *hh, const char *suf)
+WRW_WriteH(const struct worker *wrk, const txt *hh, const char *suf)
 {
 	unsigned u;
 
@@ -238,7 +241,7 @@ WRW_WriteH(struct worker *wrk, const txt *hh, const char *suf)
 }
 
 unsigned
-WRW_Write(struct worker *wrk, const void *ptr, int len)
+WRW_Write(const struct worker *wrk, const void *ptr, int len)
 {
 	struct wrw *wrw;
 
@@ -264,7 +267,7 @@ WRW_Write(struct worker *wrk, const void *ptr, int len)
 }
 
 void
-WRW_Chunked(struct worker *wrk)
+WRW_Chunked(const struct worker *wrk)
 {
 	struct wrw *wrw;
 
@@ -293,7 +296,7 @@ WRW_Chunked(struct worker *wrk)
  */
 
 void
-WRW_EndChunk(struct worker *wrk)
+WRW_EndChunk(const struct worker *wrk)
 {
 	struct wrw *wrw;
 
@@ -308,6 +311,3 @@ WRW_EndChunk(struct worker *wrk)
 	wrw->cliov = 0;
 	(void)WRW_Write(wrk, "0\r\n\r\n", -1);
 }
-
-
-

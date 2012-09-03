@@ -35,5 +35,7 @@ void VCC_Default_VCL(struct vcc *, const char *str);
 void VCC_VCL_dir(struct vcc *, const char *str);
 void VCC_VMOD_dir(struct vcc *, const char *str);
 void VCC_Err_Unref(struct vcc *tl, unsigned u);
+void VCC_Allow_InlineC(struct vcc *tl, unsigned u);
+void VCC_Unsafe_Path(struct vcc *tl, unsigned u);
 
 char *VCC_Compile(const struct vcc *, struct vsb *sb, const char *b);

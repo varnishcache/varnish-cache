@@ -49,7 +49,9 @@
  *	'\0'			/
  *      <header>		>   Only present if length != 0xffff
  * }
- *      '\0'
+ *	0xff,			\   Length field
+ *	0xff,			/
+ *      '\0'			>   Terminator
  */
 
 #include "config.h"
@@ -60,7 +62,7 @@
 #include "vend.h"
 
 struct vsb *
-VRY_Create(const struct sess *sp, const struct http *hp)
+VRY_Create(struct req *req, const struct http *hp)
 {
 	char *v, *p, *q, *h, *e;
 	struct vsb *sb, *sbh;
@@ -79,7 +81,8 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 	AN(sbh);
 
 	if (*v == ':') {
-		WSP(sp, SLT_Error, "Vary header had extra ':', fix backend");
+		VSLb(req->vsl, SLT_Error,
+		    "Vary header had extra ':', fix backend");
 		v++;
 	}
 	for (p = v; *p; p++) {
@@ -96,7 +99,7 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 		    (char)(1 + (q - p)), (int)(q - p), p, 0);
 		AZ(VSB_finish(sbh));
 
-		if (http_GetHdr(sp->req->http, VSB_data(sbh), &h)) {
+		if (http_GetHdr(req->http, VSB_data(sbh), &h)) {
 			AZ(vct_issp(*h));
 			/* Trim trailing space */
 			e = strchr(h, '\0');
@@ -173,22 +176,61 @@ vry_cmp(const uint8_t *v1, const uint8_t *v2)
 	return (retval);
 }
 
-int
-VRY_Match(const struct sess *sp, const uint8_t *vary)
+/**********************************************************************
+ * Prepare predictive vary string
+ */
+
+void
+VRY_Prep(struct req *req)
 {
-	uint8_t *vsp = sp->req->vary_b;
+	if (req->hash_objhead == NULL) {
+		/* Not a waiting list return */
+		AZ(req->vary_b);
+		AZ(req->vary_l);
+		AZ(req->vary_e);
+		(void)WS_Reserve(req->ws, 0);
+	} else {
+		AN(req->ws->r);
+	}
+	req->vary_b = (void*)req->ws->f;
+	req->vary_e = (void*)req->ws->r;
+	if (req->vary_b + 2 < req->vary_e)
+		req->vary_b[2] = '\0';
+}
+
+/**********************************************************************
+ * Match vary strings, and build a new cached string if possible.
+ *
+ * Return zero if there is certainly no match.
+ * Return non-zero if there could be a match or if we couldn't tell.
+ */
+
+int
+VRY_Match(struct req *req, const uint8_t *vary)
+{
+	uint8_t *vsp = req->vary_b;
 	char *h, *e;
 	unsigned lh, ln;
-	int i, retval = 1, oflo = 0;
+	int i, oflo = 0;
 
 	AN(vsp);
 	while (vary[2]) {
+		if (vsp + 2 >= req->vary_e) {
+			/*
+			 * Too little workspace to find out
+			 */
+			oflo = 1;
+			break;
+		}
 		i = vry_cmp(vary, vsp);
 		if (i == 1) {
-			/* Build a new entry */
+			/*
+			 * Different header, build a new entry,
+			 * then compare again with that new entry.
+			 */
 
-			i = http_GetHdr(sp->req->http,
-			    (const char*)(vary+2), &h);
+			ln = 2 + vary[2] + 2;
+			i = http_GetHdr(req->http, (const char*)(vary+2), &h);
 			if (i) {
 				/* Trim trailing space */
 				e = strchr(h, '\0');
@@ -196,55 +238,55 @@ VRY_Match(const struct sess *sp, const uint8_t *vary)
 					e--;
 				lh = e - h;
 				assert(lh < 0xffff);
+				ln += lh;
 			} else {
 				e = h = NULL;
 				lh = 0xffff;
 			}
 
-			/* Length of the entire new vary entry */
-			ln = 2 + vary[2] + 2 + (lh == 0xffff ? 0 : lh);
-			if (vsp + ln >= sp->req->vary_e) {
-				vsp = sp->req->vary_b;
+			if (vsp + ln + 2 >= req->vary_e) {
+				/*
+				 * Not enough space to build new entry
+				 * and put terminator behind it.
+				 */
 				oflo = 1;
+				break;
 			}
-
-			/*
-			 * We MUST have space for one entry and the end marker
-			 * after it, which prevents old junk from confusing us
-			 */
-			assert(vsp + ln + 2 < sp->req->vary_e);
 
 			vbe16enc(vsp, (uint16_t)lh);
 			memcpy(vsp + 2, vary + 2, vary[2] + 2);
-			if (h != NULL && e != NULL) {
-				memcpy(vsp + 2 + vsp[2] + 2, h, e - h);
-				vsp[2 + vary[2] + 2 + (e - h) + 2] = '\0';
-			} else
-				vsp[2 + vary[2] + 2 + 2] = '\0';
+			if (h != NULL)
+				memcpy(vsp + 2 + vsp[2] + 2, h, lh);
+			vsp[ln + 0] = 0xff;
+			vsp[ln + 1] = 0xff;
+			vsp[ln + 2] = 0;
+			VRY_Validate(vsp);
+			req->vary_l = vsp + 3;
 
 			i = vry_cmp(vary, vsp);
-			assert(i != 1);	/* hdr must be the same now */
+			assert(i == 0 || i == 2);
 		}
-		if (i != 0)
-			retval = 0;
-		vsp += vry_len(vsp);
-		vary += vry_len(vary);
+		if (i == 0) {
+			/* Same header, same contents*/
+			vsp += vry_len(vsp);
+			vary += vry_len(vary);
+		} else if (i == 2) {
+			/* Same header, different contents, cannot match */
+			return (0);
+		}
 	}
-	if (vsp + 3 > sp->req->vary_e)
-		oflo = 1;
-
 	if (oflo) {
-		/* XXX: Should log this */
-		vsp = sp->req->vary_b;
+		vsp = req->vary_b;
+		req->vary_l = NULL;
+		if (vsp + 2 < req->vary_e) {
+			vsp[0] = 0xff;
+			vsp[1] = 0xff;
+			vsp[2] = 0;
+		}
+		return (0);
+	} else {
+		return (1);
 	}
-	vsp[0] = 0xff;
-	vsp[1] = 0xff;
-	vsp[2] = 0;
-	if (oflo)
-		sp->req->vary_l = NULL;
-	else
-		sp->req->vary_l = vsp + 3;
-	return (retval);
 }
 
 void

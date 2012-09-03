@@ -54,7 +54,7 @@ default_oc_getxid(struct dstat *ds, struct objcore *oc)
 	struct object *o;
 
 	o = oc_getobj(ds, oc);
-	return (o->xid);
+	return (o->vxid);
 }
 
 static struct object * __match_proto__(getobj_f)
@@ -85,10 +85,10 @@ default_oc_freeobj(struct objcore *oc)
 static struct lru *
 default_oc_getlru(const struct objcore *oc)
 {
-	struct object *o;
+	struct stevedore *stv;
 
-	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
-	return (o->objstore->stevedore->lru);
+	CAST_OBJ_NOTNULL(stv, (void *)oc->priv2, STEVEDORE_MAGIC);
+	return (stv->lru);
 }
 
 static struct objcore_methods default_oc_methods = {
@@ -141,9 +141,11 @@ stv_pick_stevedore(struct vsl_log *vsl, const char **hint)
 			return (stv_transient);
 
 		/* Hint was not valid, nuke it */
-		WSL(vsl, SLT_Debug, -1, "Storage hint not usable");
+		VSLb(vsl, SLT_Debug, "Storage hint not usable");
 		*hint = NULL;
 	}
+	if (stv_next == NULL)
+		return (stv_transient);
 	/* pick a stevedore and bump the head along */
 	stv = VTAILQ_NEXT(stv_next, list);
 	if (stv == NULL)
@@ -176,6 +178,8 @@ stv_alloc(struct busyobj *bo, size_t size)
 
 	if (size > cache_param->fetch_maxchunksize)
 		size = cache_param->fetch_maxchunksize;
+
+	assert(size <= UINT_MAX);	/* field limit in struct storage */
 
 	for (;;) {
 		/* try to allocate from it */
@@ -225,13 +229,17 @@ struct stv_objsecrets {
  */
 
 struct object *
-STV_MkObject(struct worker *wrk, void *ptr, unsigned ltot,
-    const struct stv_objsecrets *soc)
+STV_MkObject(struct stevedore *stv, struct busyobj *bo, struct objcore **ocp,
+    void *ptr, unsigned ltot, const struct stv_objsecrets *soc)
 {
 	struct object *o;
 	unsigned l;
 
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(soc, STV_OBJ_SECRETES_MAGIC);
+	AN(ocp);
+	CHECK_OBJ_NOTNULL((*ocp), OBJCORE_MAGIC);
 
 	assert(PAOK(ptr));
 	assert(PAOK(soc->wsl));
@@ -251,22 +259,20 @@ STV_MkObject(struct worker *wrk, void *ptr, unsigned ltot,
 	WS_Assert(o->ws_o);
 	assert(o->ws_o->e <= (char*)ptr + ltot);
 
-	http_Setup(o->http, o->ws_o, wrk->busyobj->vsl);
+	HTTP_Setup(o->http, o->ws_o, bo->vsl, HTTP_Obj);
 	o->http->magic = HTTP_MAGIC;
-	o->exp = wrk->busyobj->exp;
+	o->exp = bo->exp;
 	VTAILQ_INIT(&o->store);
-	wrk->stats.n_object++;
+	bo->stats->n_object++;
 
-	if (wrk->sp->req->objcore != NULL) {
-		CHECK_OBJ_NOTNULL(wrk->sp->req->objcore, OBJCORE_MAGIC);
-
-		o->objcore = wrk->sp->req->objcore;
-		wrk->sp->req->objcore = NULL;     /* refcnt follows pointer. */
+	o->objcore = *ocp;
+	*ocp = NULL;     /* refcnt follows pointer. */
+	if (o->objcore->objhead != NULL)
 		BAN_NewObjCore(o->objcore);
 
-		o->objcore->methods = &default_oc_methods;
-		o->objcore->priv = o;
-	}
+	o->objcore->methods = &default_oc_methods;
+	o->objcore->priv = o;
+	o->objcore->priv2 = (uintptr_t)stv;
 	return (o);
 }
 
@@ -276,13 +282,15 @@ STV_MkObject(struct worker *wrk, void *ptr, unsigned ltot,
  */
 
 struct object *
-stv_default_allocobj(struct stevedore *stv, struct worker *wrk, unsigned ltot,
-    const struct stv_objsecrets *soc)
+stv_default_allocobj(struct stevedore *stv, struct busyobj *bo,
+    struct objcore **ocp, unsigned ltot, const struct stv_objsecrets *soc)
 {
 	struct object *o;
 	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(soc, STV_OBJ_SECRETES_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AN(ocp);
 	st = stv->alloc(stv, ltot);
 	if (st == NULL)
 		return (NULL);
@@ -291,7 +299,7 @@ stv_default_allocobj(struct stevedore *stv, struct worker *wrk, unsigned ltot,
 		return (NULL);
 	}
 	ltot = st->len = st->space;
-	o = STV_MkObject(wrk, st->ptr, ltot, soc);
+	o = STV_MkObject(stv, bo, ocp, st->ptr, ltot, soc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	o->objstore = st;
 	return (o);
@@ -304,8 +312,8 @@ stv_default_allocobj(struct stevedore *stv, struct worker *wrk, unsigned ltot,
  */
 
 struct object *
-STV_NewObject(struct worker *wrk, const char *hint, unsigned wsl,
-     uint16_t nhttp)
+STV_NewObject(struct busyobj *bo, struct objcore **ocp, const char *hint,
+    unsigned wsl, uint16_t nhttp)
 {
 	struct object *o;
 	struct stevedore *stv, *stv0;
@@ -313,7 +321,8 @@ STV_NewObject(struct worker *wrk, const char *hint, unsigned wsl,
 	struct stv_objsecrets soc;
 	int i;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AN(ocp);
 	assert(wsl > 0);
 	wsl = PRNDUP(wsl);
 
@@ -328,31 +337,30 @@ STV_NewObject(struct worker *wrk, const char *hint, unsigned wsl,
 
 	ltot = sizeof *o + wsl + lhttp;
 
-	stv = stv0 = stv_pick_stevedore(wrk->vsl, &hint);
+	stv = stv0 = stv_pick_stevedore(bo->vsl, &hint);
 	AN(stv->allocobj);
-	o = stv->allocobj(stv, wrk, ltot, &soc);
+	o = stv->allocobj(stv, bo, ocp, ltot, &soc);
 	if (o == NULL && hint == NULL) {
 		do {
-			stv = stv_pick_stevedore(wrk->vsl, &hint);
+			stv = stv_pick_stevedore(bo->vsl, &hint);
 			AN(stv->allocobj);
-			o = stv->allocobj(stv, wrk, ltot, &soc);
+			o = stv->allocobj(stv, bo, ocp, ltot, &soc);
 		} while (o == NULL && stv != stv0);
 	}
 	if (o == NULL) {
-		/* XXX: lend busyobj wrk's stats while we nuke */
-		AZ(wrk->busyobj->stats);
-		wrk->busyobj->stats = &wrk->stats;
 		/* no luck; try to free some space and keep trying */
 		for (i = 0; o == NULL && i < cache_param->nuke_limit; i++) {
-			if (EXP_NukeOne(wrk->busyobj, stv->lru) == -1)
+			if (EXP_NukeOne(bo, stv->lru) == -1)
 				break;
-			o = stv->allocobj(stv, wrk, ltot, &soc);
+			o = stv->allocobj(stv, bo, ocp, ltot, &soc);
 		}
-		wrk->busyobj->stats = NULL;
 	}
 
-	if (o == NULL)
+	if (o == NULL) {
+		AN(*ocp);
 		return (NULL);
+	}
+	AZ(*ocp);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(o->objstore, STORAGE_MAGIC);
 	return (o);
@@ -385,13 +393,13 @@ STV_alloc(struct busyobj *bo, size_t size)
 }
 
 void
-STV_trim(struct storage *st, size_t size)
+STV_trim(struct storage *st, size_t size, int move_ok)
 {
 
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	AN(st->stevedore);
 	if (st->stevedore->trim)
-		st->stevedore->trim(st, size);
+		st->stevedore->trim(st, size, move_ok);
 }
 
 /*
@@ -403,19 +411,20 @@ STV_trim(struct storage *st, size_t size)
  * sharing storage together with reference counting.
  */
 void
-STV_dup(struct object *src, struct object *target)
+STV_dup(struct busyobj *bo, struct object *src, struct object *target)
 {
         struct stevedore *stv;
 
         CHECK_OBJ_NOTNULL(src, OBJECT_MAGIC);
         CHECK_OBJ_NOTNULL(target, OBJECT_MAGIC);
-        CHECK_OBJ_NOTNULL(src->objstore, STORAGE_MAGIC);
-        CHECK_OBJ_NOTNULL(src->objstore->stevedore, STEVEDORE_MAGIC);
-
+        CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+        CHECK_OBJ_NOTNULL(bo->fetch_obj, OBJECT_MAGIC);
         stv = src->objstore->stevedore;
+        CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+
         AN(stv->dup);
         
-        stv->dup(src, target);
+        stv->dup(bo, src, target);
 }
 
 void
@@ -507,14 +516,18 @@ VRT_Stv_##nm(const char *nm)			\
  * Default object store dup just copies the storage.
  */
 void
-default_dup(struct object *src, struct object *target)
+default_dup(struct busyobj *bo, struct object *src, struct object *target)
 {
         struct storage *st, *st2;
         unsigned cl;
-	struct stevedore *stv = target->objstore->stevedore;
+	/*struct stevedore *stv = target->objstore->stevedore;
 
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
-	AN(stv->alloc);
+	AN(stv->alloc);*/
+        
+        CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+        CHECK_OBJ_NOTNULL(src, OBJECT_MAGIC);
+        CHECK_OBJ_NOTNULL(target, OBJECT_MAGIC);
 
 	/*
 	 * XXX: This should use the logic of STV_alloc() instead of just
@@ -523,9 +536,11 @@ default_dup(struct object *src, struct object *target)
 	 * no recovery. But STV_alloc() now assumes that allocs are only
 	 * for busyobj->fetchobj.
 	 */
+        AN(target->len); /* XXX: !!! */
         VTAILQ_FOREACH(st2, &src->store, list) {
 		cl = st2->len;
-		st = stv->alloc(stv, cl);
+		/*st = stv->alloc(stv, cl);*/
+                st = STV_alloc(bo, cl);
 		XXXAN(st);
                 assert(st->space >= cl);
 		VTAILQ_INSERT_TAIL(&target->store, st, list);

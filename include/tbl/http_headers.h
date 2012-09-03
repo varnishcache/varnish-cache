@@ -56,12 +56,13 @@ HTTPH("Authorization",		H_Authorization,	0					  )	/* RFC2616 14.8 */
 HTTPH("Cache-Control",		H_Cache_Control,		       HTTPH_R_FETCH		  )	/* RFC2616 14.9 */
 HTTPH("Connection",		H_Connection,		HTTPH_R_PASS | HTTPH_R_FETCH | HTTPH_A_INS)	/* RFC2616 14.10 */
 HTTPH("Content-Encoding",	H_Content_Encoding,	0					  )	/* RFC2616 14.11 */
-HTTPH("Content-Langugae",	H_Content_Language,	0					  )	/* RFC2616 14.12 */
+HTTPH("Content-Language",	H_Content_Language,	0					  )	/* RFC2616 14.12 */
 HTTPH("Content-Length",		H_Content_Length,		       HTTPH_R_FETCH | HTTPH_A_INS)	/* RFC2616 14.13 */
 HTTPH("Content-Location",	H_Content_Location,	0					  )	/* RFC2616 14.14 */
 HTTPH("Content-MD5",		H_Content_MD5,		0					  )	/* RFC2616 14.15 */
 HTTPH("Content-Range",		H_Content_Range,		       HTTPH_R_FETCH | HTTPH_A_INS)	/* RFC2616 14.16 */
 HTTPH("Content-Type",		H_Content_Type,		0					  )	/* RFC2616 14.17 */
+HTTPH("Cookie",			H_Cookie,		0					  )	/* RFC6265 4.2 */
 HTTPH("Date",			H_Date,			0					  )	/* RFC2616 14.18 */
 HTTPH("ETag",			H_ETag,			0					  )	/* RFC2616 14.19 */
 HTTPH("Expect",			H_Expect,		0					  )	/* RFC2616 14.20 */
@@ -83,6 +84,7 @@ HTTPH("Range",			H_Range,			       HTTPH_R_FETCH | HTTPH_A_INS)	/* RFC2616 14.35
 HTTPH("Referer",		H_Referer,		0					  )	/* RFC2616 14.36 */
 HTTPH("Retry-After",		H_Retry_After,		0					  )	/* RFC2616 14.37 */
 HTTPH("Server",			H_Server,		0					  )	/* RFC2616 14.38 */
+HTTPH("Set-Cookie",		H_Set_Cookie,		0					  )	/* RFC6265 4.1 */
 HTTPH("TE",			H_TE,			HTTPH_R_PASS | HTTPH_R_FETCH | HTTPH_A_INS)	/* RFC2616 14.39 */
 HTTPH("Trailer",		H_Trailer,		HTTPH_R_PASS | HTTPH_R_FETCH | HTTPH_A_INS)	/* RFC2616 14.40 */
 HTTPH("Transfer-Encoding",	H_Transfer_Encoding,	HTTPH_R_PASS | HTTPH_R_FETCH | HTTPH_A_INS)	/* RFC2616 14.41 */

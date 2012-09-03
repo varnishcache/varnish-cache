@@ -89,8 +89,6 @@
 //////////////
 -efunc(1791, pdiff)	// return last on line
 //////////////
--efile(451, "sys/\*.h")	// No include guard
--efile(451, "machine/\*.h")	// No include guard
 -efile(451, "tbl/*.h")	// No include guard
 -efile(451, "vcc_types.h")	// No include guard
 -efile(451, "symbol_kind.h")	// No include guard
@@ -111,11 +109,16 @@
 -esym(458, name_key)
 
 //////////////
+// 436 = Apparent preprocessor directive in invocation of macro '___'
+-emacro(436, SLTM)
+
+//////////////
 
 +libh mgt_event.h
 
 -emacro(527, NEEDLESS_RETURN)	// unreachable code
 
+-sem(EXP_Inject, custodial(1))
 -sem(WS_Init, custodial(2))
 -sem(http_Setup, custodial(2))
 
@@ -155,6 +158,16 @@
 -e641	// Converting enum 'cli_status_e' to int
 
 -e441	//  for clause irregularity: loop variable '___' not found in 2nd for expression
+
+// Vmod instantiation symbols are defined in all vmods
+
+-esym(14, Vmod_Name)
+-esym(14, Vmod_Func)
+-esym(14, Vmod_Len)
+-esym(14, Vmod_Proto)
+-esym(14, Vmod_Spec)
+-esym(14, Vmod_Varnish_ABI)
+-esym(14, Vmod_Id)
 
 // Review all below this line ///////////////////////////////////////////////
 

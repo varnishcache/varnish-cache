@@ -1,0 +1,46 @@
+[Unit]
+Description=Varnish a high-perfomance HTTP accelerator
+After=syslog.target network.target
+
+[Service]
+
+#
+# If you want to make changes to this file, please copy it to 
+# /etc/systemd/system/varnish.service and make your changes there.
+# This will override the file kept at /lib/systemd/system/varnish.service
+#
+# Enviroment variables may be found in /etc/varnish/varnish.params
+#
+
+# Maximum number of open files (for ulimit -n)
+LimitNOFILE=131072
+
+# Locked shared memory (for ulimit -l)
+# Default log size is 82MB + header
+LimitMEMLOCK=82000
+
+# Maximum size of the corefile. 
+LimitCORE=infinity
+
+EnvironmentFile=/etc/varnish/varnish.params
+
+Type=forking
+PIDFile=/var/run/varnish.pid
+PrivateTmp=true
+ExecStart=/usr/sbin/varnishd \
+	-P /var/run/varnish.pid \
+	-f $VARNISH_VCL_CONF \
+	-a ${VARNISH_LISTEN_ADDRESS}:${VARNISH_LISTEN_PORT} \
+	-T ${VARNISH_ADMIN_LISTEN_ADDRESS}:${VARNISH_ADMIN_LISTEN_PORT} \
+	-t $VARNISH_TTL \
+	-u $VARNISH_USER \
+	-g $VARNISH_GROUP \
+	-S $VARNISH_SECRET_FILE \
+	-s $VARNISH_STORAGE \
+	$DAEMON_OPTS
+
+ExecReload=/usr/sbin/varnish_reload_vcl
+
+[Install]
+WantedBy=multi-user.target
+

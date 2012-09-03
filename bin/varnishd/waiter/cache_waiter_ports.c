@@ -80,14 +80,13 @@ vws_port_ev(struct vws *vws, port_event_t *ev, double now) {
 		VTAILQ_INSERT_TAIL(&vws->sesshead, sp, list);
 		vws_add(vws, sp->fd, sp);
 	} else {
-		int i;
 		assert(ev->portev_source == PORT_SOURCE_FD);
 		CAST_OBJ_NOTNULL(sp, ev->portev_user, SESS_MAGIC);
 		assert(sp->fd >= 0);
 		if(ev->portev_events & POLLERR) {
 			vws_del(vws, sp->fd);
 			VTAILQ_REMOVE(&vws->sesshead, sp, list);
-			SES_Delete(sp, "EOF", now);
+			SES_Delete(sp, SC_REM_CLOSE, now);
 			return;
 		}
 
@@ -211,7 +210,7 @@ vws_thread(void *priv)
 			if(sp->fd != -1) {
 				vws_del(vws, sp->fd);
 			}
-			SES_Delete(sp, "timeout", now);
+			SES_Delete(sp, SC_RX_TIMEOUT, now);
 		}
 
 		/*

@@ -26,9 +26,9 @@ client c1 {
 	txreq -url "/bar"
 	rxresp
 	expect resp.status == 200
-	expect resp.http.content-length == "4"
+	expect resp.bodylen == "4"
 	txreq -url "/foo"
 	rxresp
 	expect resp.status == 200
-	expect resp.http.content-length == "8"
+	expect resp.bodylen == "8"
 } -run

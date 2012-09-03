@@ -1,0 +1,6 @@
+varnishtest "test parameter protection"
+
+varnish v1 -arg "-r cli_timeout" 
+
+varnish v1 -cliok "param.show cli_timeout"
+varnish v1 -clierr 107 "param.set cli_timeout 1m"

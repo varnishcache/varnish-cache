@@ -115,9 +115,9 @@ h_order(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
 		ob[fd] = VSB_new_auto();
 		assert(ob[fd] != NULL);
 	}
-	if ((tag == SLT_BackendOpen || tag == SLT_SessionOpen ||
+	if ((tag == SLT_BackendOpen || tag == SLT_SessOpen ||
 		(tag == SLT_ReqStart &&
-		    last[fd] != SLT_SessionOpen &&
+		    last[fd] != SLT_SessOpen &&
 		    last[fd] != SLT_VCL_acl) ||
 		(tag == SLT_BackendXID &&
 		    last[fd] != SLT_BackendOpen)) &&
@@ -127,7 +127,7 @@ h_order(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
 		 * the end of the previous one.  Spit it out anyway before
 		 * starting on the new one.
 		 */
-		if (last[fd] != SLT_SessionClose)
+		if (last[fd] != SLT_SessClose)
 			VSB_printf(ob[fd], "%5d %-12s %c %s\n",
 			    fd, "Interrupted", type, VSL_tags[tag]);
 		h_order_finish(fd, vd);
@@ -165,7 +165,6 @@ h_order(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
 	case SLT_ReqEnd:
 	case SLT_BackendClose:
 	case SLT_BackendReuse:
-	case SLT_StatSess:
 		h_order_finish(fd, vd);
 		break;
 	default:
@@ -180,8 +179,8 @@ do_order(struct VSM_data *vd)
 	int i;
 
 	if (!b_flag) {
-		VSL_Select(vd, SLT_SessionOpen);
-		VSL_Select(vd, SLT_SessionClose);
+		VSL_Select(vd, SLT_SessOpen);
+		VSL_Select(vd, SLT_SessClose);
 		VSL_Select(vd, SLT_ReqEnd);
 	}
 	if (!c_flag) {

@@ -1,0 +1,23 @@
+varnishtest "Test std vmod vs. unsafe_path"
+
+server s1 {
+	rxreq 
+	txresp -hdr "foo: bAr" -hdr "bar: fOo" -bodylen 4
+} -start
+
+varnish v1 -vcl+backend {
+	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
+}
+
+varnish v1 -cliok "param.set vcc_unsafe_path off"
+
+varnish v1 -badvcl {
+	backend default { .host = "${s1_sock}"; }
+	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
+}
+
+varnish v1 -cliok "param.set vmod_dir ${topbuild}/lib/libvmod_std/.libs/"
+
+varnish v1 -vcl+backend {
+	import std;
+}

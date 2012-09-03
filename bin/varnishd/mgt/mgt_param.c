@@ -56,7 +56,7 @@
 #define MAGIC_INIT_STRING	"\001"
 struct params mgt_param;
 static int nparspec;
-static struct parspec const ** parspec;
+static struct parspec const ** parspecs;
 static int margin;
 
 /*--------------------------------------------------------------------*/
@@ -67,8 +67,8 @@ mcf_findpar(const char *name)
 	int i;
 
 	for (i = 0; i < nparspec; i++)
-		if (!strcmp(parspec[i]->name, name))
-			return (parspec[i]);
+		if (!strcmp(parspecs[i]->name, name))
+			return (parspecs[i]);
 	return (NULL);
 }
 
@@ -93,7 +93,7 @@ tweak_generic_timeout(struct cli *cli, volatile unsigned *dst, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
-void
+static void
 tweak_timeout(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *dest;
@@ -137,7 +137,7 @@ tweak_generic_timeout_double(struct cli *cli, volatile double *dest,
 	return (0);
 }
 
-static void
+void
 tweak_timeout_double(struct cli *cli, const struct parspec *par,
     const char *arg)
 {
@@ -350,7 +350,7 @@ tweak_generic_bytes(struct cli *cli, volatile ssize_t *dest, const char *arg,
 
 /*--------------------------------------------------------------------*/
 
-static void
+void
 tweak_bytes(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	volatile ssize_t *dest;
@@ -579,22 +579,6 @@ tweak_waiter(struct cli *cli, const struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-tweak_diag_bitmap(struct cli *cli, const struct parspec *par, const char *arg)
-{
-	unsigned u;
-
-	(void)par;
-	if (arg != NULL) {
-		u = strtoul(arg, NULL, 0);
-		mgt_param.diag_bitmap = u;
-	} else {
-		VCLI_Out(cli, "0x%x", mgt_param.diag_bitmap);
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
 tweak_poolparam(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	volatile struct poolparam *pp, px;
@@ -667,6 +651,9 @@ tweak_poolparam(struct cli *cli, const struct parspec *par, const char *arg)
 #define WIZARD_TEXT \
 	"\nNB: Do not change this parameter, unless a developer tell " \
 	"you to do so."
+
+#define PROTECTED_TEXT \
+	"\nNB: This parameter is protected and can not be changed."
 
 #define MEMPOOL_TEXT							\
 	"The three numbers are:\n"					\
@@ -762,7 +749,7 @@ static const struct parspec input_parspec[] = {
 		"Maximum number of HTTP headers we will deal with in "
 		"client request or backend reponses.  "
 		"Note that the first line occupies five header fields.\n"
-		"This paramter does not influence storage consumption, "
+		"This parameter does not influence storage consumption, "
 		"objects allocate exact space for the headers they store.\n",
 		0,
 		"64", "header lines" },
@@ -778,16 +765,6 @@ static const struct parspec input_parspec[] = {
 		"Minimum is 1k bytes.",
 		0,
 		"4k", "bytes" },
-	{ "shm_workspace",
-		tweak_bytes_u, &mgt_param.shm_workspace, 4096, UINT_MAX,
-		"Bytes of shmlog workspace allocated for worker threads. "
-		"If too big, it wastes some ram, if too small it causes "
-		"needless flushes of the SHM workspace.\n"
-		"These flushes show up in stats as "
-		"\"SHM flushes due to overflow\".\n"
-		"Minimum is 4096 bytes.",
-		DELAYED_EFFECT,
-		"8k", "bytes" },
 	{ "shm_reclen",
 		tweak_bytes_u, &mgt_param.shm_reclen, 16, 65535,
 		"Maximum number of bytes in SHM log record.\n"
@@ -879,14 +856,10 @@ static const struct parspec input_parspec[] = {
 		"fragmentation.\n",
 		EXPERIMENTAL,
 		"256m", "bytes" },
-	{ "vcl_trace", tweak_bool,  &mgt_param.vcl_trace, 0, 0,
-		"Trace VCL execution in the shmlog.\n"
-		"Enabling this will allow you to see the path each "
-		"request has taken through the VCL program.\n"
-		"This generates a lot of logrecords so it is off by "
-		"default.",
-		0,
-		"off", "bool" },
+	{ "accept_filter", tweak_bool, &mgt_param.accept_filter, 0, 0,
+		"Enable kernel accept-filters, if supported by the kernel.",
+		MUST_RESTART,
+		"on", "bool" },
 	{ "listen_address", tweak_listen_address, NULL, 0, 0,
 		"Whitespace separated list of network endpoints where "
 		"Varnish will accept requests.\n"
@@ -911,7 +884,7 @@ static const struct parspec input_parspec[] = {
 		" this limit, the reponse code will be 201 instead of"
 		" 200 and the last line will indicate the truncation.",
 		0,
-		"4k", "bytes" },
+		"48k", "bytes" },
 	{ "cli_timeout", tweak_timeout, &mgt_param.cli_timeout, 0, 0,
 		"Timeout for the childs replies to CLI requests from "
 		"the mgt_param.",
@@ -1044,40 +1017,17 @@ static const struct parspec input_parspec[] = {
 		"more sessions take a detour around the waiter.",
 		EXPERIMENTAL,
 		"0.050", "seconds" },
-	{ "log_hashstring", tweak_bool, &mgt_param.log_hash, 0, 0,
-		"Log the hash string components to shared memory log.\n",
-		0,
-		"on", "bool" },
 	{ "log_local_address", tweak_bool, &mgt_param.log_local_addr, 0, 0,
 		"Log the local address on the TCP connection in the "
-		"SessionOpen shared memory record.\n",
+		"SessionOpen VSL record.\n"
+		"Disabling this saves a getsockname(2) system call "
+		"per TCP connection.\n",
 		0,
-		"off", "bool" },
+		"on", "bool" },
 	{ "waiter", tweak_waiter, NULL, 0, 0,
 		"Select the waiter kernel interface.\n",
-		EXPERIMENTAL | MUST_RESTART,
-		"default", NULL },
-	{ "diag_bitmap", tweak_diag_bitmap, 0, 0, 0,
-		"Bitmap controlling diagnostics code:\n"
-		"  0x00000001 - CNT_Session states.\n"
-		"  0x00000002 - workspace debugging.\n"
-		"  0x00000004 - kqueue debugging.\n"
-		"  0x00000008 - mutex logging.\n"
-		"  0x00000010 - mutex contests.\n"
-		"  0x00000020 - waiting list.\n"
-		"  0x00000040 - object workspace.\n"
-		"  0x00001000 - do not core-dump child process.\n"
-		"  0x00002000 - only short panic message.\n"
-		"  0x00004000 - panic to stderr.\n"
-		"  0x00010000 - synchronize shmlog.\n"
-		"  0x00020000 - synchronous start of persistence.\n"
-		"  0x00040000 - release VCL early.\n"
-		"  0x00080000 - ban-lurker debugging.\n"
-		"  0x80000000 - do edge-detection on digest.\n"
-		"\n"
-		"Use 0x notation and do the bitor in your head :-)\n",
-		0,
-		"0", "bitmap" },
+		WIZARD | MUST_RESTART,
+		WAITER_DEFAULT, NULL },
 	{ "ban_dups", tweak_bool, &mgt_param.ban_dups, 0, 0,
 		"Detect and eliminate duplicate bans.\n",
 		0,
@@ -1123,11 +1073,6 @@ static const struct parspec input_parspec[] = {
 		"Gzip compression level: 0=debug, 1=fast, 9=best",
 		0,
 		"6", ""},
-	{ "gzip_window", tweak_uint, &mgt_param.gzip_window, 8, 15,
-		"Gzip window size 8=least, 15=most compression.\n"
-		"Memory impact is 8=1k, 9=2k, ... 15=128k.",
-		0,
-		"15", ""},
 	{ "gzip_memlevel", tweak_uint, &mgt_param.gzip_memlevel, 1, 9,
 		"Gzip memory level 1=slow/least, 9=fast/most compression.\n"
 		"Memory impact is 1=1k, 2=2k, ... 9=256k.",
@@ -1175,11 +1120,22 @@ static const struct parspec input_parspec[] = {
 		".",
 #endif
 		NULL },
+
 	{ "vcc_err_unref", tweak_bool, &mgt_vcc_err_unref, 0, 0,
 		"Unreferenced VCL objects result in error.\n",
 		0,
 		"on", "bool" },
 
+	{ "vcc_allow_inline_c", tweak_bool, &mgt_vcc_allow_inline_c, 0, 0,
+		"Allow inline C code in VCL.\n",
+		0,
+		"on", "bool" },
+
+	{ "vcc_unsafe_path", tweak_bool, &mgt_vcc_unsafe_path, 0, 0,
+		"Allow '/' in vmod & include paths.\n"
+		"Allow 'import ... from ...'.\n",
+		0,
+		"on", "bool" },
 
 	{ "pcre_match_limit", tweak_uint,
 		&mgt_param.vre_limits.match,
@@ -1247,6 +1203,12 @@ static const struct parspec input_parspec[] = {
 		0,
 		"10,100,10", ""},
 
+	{ "obj_readonly", tweak_bool, &mgt_param.obj_readonly, 0, 0,
+		"If set, we do not update obj.hits and obj.lastuse to"
+		"avoid dirtying VM pages associated with cached objects.",
+		0,
+		"false", ""},
+
 	{ NULL, NULL, NULL }
 };
 
@@ -1290,7 +1252,7 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 	else
 		lfmt = 1;
 	for (i = 0; i < nparspec; i++) {
-		pp = parspec[i];
+		pp = parspecs[i];
 		if (av[2] != NULL && !lfmt && strcmp(pp->name, av[2]))
 			continue;
 		VCLI_Out(cli, "%-*s ", margin, pp->name);
@@ -1302,7 +1264,7 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 				continue;
 		}
 		pp->func(cli, pp, NULL);
-		if (pp->units != NULL)
+		if (pp->units != NULL && *pp->units != '\0')
 			VCLI_Out(cli, " [%s]\n", pp->units);
 		else
 			VCLI_Out(cli, "\n");
@@ -1320,6 +1282,8 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 				mcf_wrap(cli, MUST_RESTART_TEXT);
 			if (pp->flags & WIZARD)
 				mcf_wrap(cli, WIZARD_TEXT);
+			if (pp->flags & PROTECTED)
+				mcf_wrap(cli, PROTECTED_TEXT);
 			if (!lfmt)
 				return;
 			else
@@ -1330,6 +1294,43 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 		VCLI_SetResult(cli, CLIS_PARAM);
 		VCLI_Out(cli, "Unknown parameter \"%s\".", av[2]);
 	}
+}
+
+/*--------------------------------------------------------------------
+ * Mark paramters as protected
+ */
+
+void
+MCF_ParamProtect(struct cli *cli, const char *args)
+{
+	char **av;
+	struct parspec *pp;
+	int i, j;
+
+	av = VAV_Parse(args, NULL, ARGV_COMMA);
+	if (av[0] != NULL) {
+		VCLI_Out(cli, "Parse error: %s", av[0]);
+		VCLI_SetResult(cli, CLIS_PARAM);
+		VAV_Free(av);
+		return;
+	}
+	for (i = 1; av[i] != NULL; i++) {
+		for (j = 0; j < nparspec; j++)
+			if (!strcmp(parspecs[j]->name, av[i]))
+				break;
+		if (j == nparspec) {
+			VCLI_Out(cli, "Unknown parameter %s", av[i]);
+			VCLI_SetResult(cli, CLIS_PARAM);
+			VAV_Free(av);
+			return;
+		}
+		pp = calloc(sizeof *pp, 1L);
+		XXXAN(pp);
+		memcpy(pp, parspecs[j], sizeof *pp);
+		pp->flags |= PROTECTED;
+		parspecs[j] = pp;
+	}
+	VAV_Free(av);
 }
 
 /*--------------------------------------------------------------------*/
@@ -1343,6 +1344,11 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 	if (pp == NULL) {
 		VCLI_SetResult(cli, CLIS_PARAM);
 		VCLI_Out(cli, "Unknown parameter \"%s\".", param);
+		return;
+	}
+	if (pp->flags & PROTECTED) {
+		VCLI_SetResult(cli, CLIS_AUTH);
+		VCLI_Out(cli, "parameter \"%s\" is protected.", param);
 		return;
 	}
 	pp->func(cli, pp, val);
@@ -1399,12 +1405,12 @@ MCF_AddParams(const struct parspec *ps)
 			margin = strlen(pp->name) + 1;
 		n++;
 	}
-	parspec = realloc(parspec, (1L + nparspec + n) * sizeof *parspec);
-	XXXAN(parspec);
+	parspecs = realloc(parspecs, (1L + nparspec + n) * sizeof *parspecs);
+	XXXAN(parspecs);
 	for (pp = ps; pp->name != NULL; pp++)
-		parspec[nparspec++] = pp;
-	parspec[nparspec] = NULL;
-	qsort (parspec, nparspec, sizeof parspec[0], parspec_cmp);
+		parspecs[nparspec++] = pp;
+	parspecs[nparspec] = NULL;
+	qsort (parspecs, nparspec, sizeof parspecs[0], parspec_cmp);
 }
 
 /*--------------------------------------------------------------------
@@ -1418,7 +1424,7 @@ MCF_SetDefaults(struct cli *cli)
 	int i;
 
 	for (i = 0; i < nparspec; i++) {
-		pp = parspec[i];
+		pp = parspecs[i];
 		if (cli != NULL)
 			VCLI_Out(cli,
 			    "Set Default for %s = %s\n", pp->name, pp->def);
@@ -1436,6 +1442,7 @@ MCF_ParamInit(struct cli *cli)
 
 	MCF_AddParams(input_parspec);
 	MCF_AddParams(WRK_parspec);
+	MCF_AddParams(VSL_parspec);
 
 	/* XXX: We do this twice, to get past any interdependencies */
 	MCF_SetDefaults(NULL);
@@ -1445,16 +1452,16 @@ MCF_ParamInit(struct cli *cli)
 /*--------------------------------------------------------------------*/
 
 void
-MCF_DumpRst(void)
+MCF_DumpRstParam(void)
 {
 	const struct parspec *pp;
 	const char *p, *q;
 	int i;
 
 	printf("\n.. The following is the autogenerated "
-	    "output from varnishd -x dumprst\n\n");
+	    "output from varnishd -x dumprstparam\n\n");
 	for (i = 0; i < nparspec; i++) {
-		pp = parspec[i];
+		pp = parspecs[i];
 		printf("%s\n", pp->name);
 		if (pp->units != NULL && *pp->units != '\0')
 			printf("\t- Units: %s\n", pp->units);

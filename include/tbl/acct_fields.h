@@ -26,12 +26,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * These are the stats we keep track of per session.  They will be summed,
- * via the sp->wrk->stats into the s_<name> fields in the SHM file.
+ * These are the stats we keep track of per session.
+ * SES_Charge() sums them into wrk->stats
  * NB: Remember to mark those in vsc_fields.h to be included in struct dstat.
  */
 
-ACCT(sess)
 ACCT(req)
 ACCT(pipe)
 ACCT(pass)

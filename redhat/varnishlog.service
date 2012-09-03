@@ -1,0 +1,11 @@
+[Unit]
+Description=Varnish HTTP accelerator logging daemon
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/run/varnishlog.pid
+ExecStart=/usr/bin/varnishlog -a -w /var/log/varnish/varnish.log -D -P /run/varnishlog.pid
+
+[Install]
+WantedBy=multi-user.target

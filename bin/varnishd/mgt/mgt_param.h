@@ -45,6 +45,7 @@ struct parspec {
 #define MUST_RESTART	(1<<2)
 #define MUST_RELOAD	(1<<3)
 #define WIZARD		(1<<4)
+#define PROTECTED	(1<<5)
 	const char	*def;
 	const char	*units;
 };
@@ -52,8 +53,12 @@ struct parspec {
 int tweak_generic_uint(struct cli *cli,
     volatile unsigned *dest, const char *arg, unsigned min, unsigned max);
 void tweak_uint(struct cli *cli, const struct parspec *par, const char *arg);
-void tweak_timeout(struct cli *cli,
+void tweak_timeout_double(struct cli *cli,
     const struct parspec *par, const char *arg);
+void tweak_bytes(struct cli *cli, const struct parspec *par, const char *arg);
+
+/* mgt_param_vsl.c */
+extern const struct parspec VSL_parspec[];
 
 /* mgt_pool.c */
 extern const struct parspec WRK_parspec[];

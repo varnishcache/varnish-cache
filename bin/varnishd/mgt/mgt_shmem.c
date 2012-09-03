@@ -187,8 +187,7 @@ mgt_shm_size(void)
 
 	size = mgt_param.vsl_space + mgt_param.vsm_space;
 	ps = getpagesize();
-	size += ps - 1;
-	size &= ~(ps - 1U);
+	size = RUP2(size, ps);
 	return (size);
 }
 
@@ -247,6 +246,9 @@ mgt_SHM_Create(void)
 		(void)unlink(fnbuf);
 		exit (-1);
 	}
+
+	/* Commit changes, for OS's without coherent VM/buf */
+	AZ(msync(p, getpagesize(), MS_SYNC));
 }
 
 /*--------------------------------------------------------------------

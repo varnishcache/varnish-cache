@@ -216,7 +216,7 @@ smp_open_segs(struct smp_sc *sc, struct smp_signctx *ctx)
 		}
 	}
 
-	assert (l >= sc->free_reserve);
+	assert(l >= sc->free_reserve);
 
 
 	sg1 = NULL;
@@ -267,19 +267,20 @@ smp_open_segs(struct smp_sc *sc, struct smp_signctx *ctx)
  * Silo worker thread
  */
 
-static void *
-smp_thread(struct sess *sp, void *priv)
+static void * __match_proto__(bgthread_t)
+smp_thread(struct worker *wrk, void *priv)
 {
 	struct smp_sc	*sc;
 	struct smp_seg *sg;
 
-	(void)sp;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(sc, priv, SMP_SC_MAGIC);
+	sc->thread = pthread_self();
 
 	/* First, load all the objects from all segments */
 	VTAILQ_FOREACH(sg, &sc->segments, list)
 		if (sg->flags & SMP_SEG_MUSTLOAD)
-			smp_load_seg(sp, sc, sg);
+			smp_load_seg(wrk, sc, sg);
 
 	sc->flags |= SMP_SC_LOADED;
 	BAN_TailDeref(&sc->tailban);
@@ -288,8 +289,7 @@ smp_thread(struct sess *sp, void *priv)
 	while (1) {
 		(void)sleep (1);
 		sg = VTAILQ_FIRST(&sc->segments);
-		if (sg != NULL && sg -> sc->cur_seg &&
-		    sg->nobj == 0) {
+		if (sg != NULL && sg -> sc->cur_seg && sg->nobj == 0) {
 			Lck_Lock(&sc->mtx);
 			smp_save_segs(sc);
 			Lck_Unlock(&sc->mtx);
@@ -306,6 +306,7 @@ static void
 smp_open(const struct stevedore *st)
 {
 	struct smp_sc	*sc;
+	pthread_t pt;
 
 	ASSERT_CLI();
 
@@ -347,7 +348,7 @@ smp_open(const struct stevedore *st)
 	smp_new_seg(sc);
 
 	/* Start the worker silo worker thread, it will load the objects */
-	WRK_BgThread(&sc->thread, "persistence", smp_thread, sc);
+	WRK_BgThread(&pt, "persistence", smp_thread, sc);
 
 	VTAILQ_INSERT_TAIL(&silos, sc, list);
 	Lck_Unlock(&sc->mtx);
@@ -460,8 +461,8 @@ smp_allocx(struct stevedore *st, size_t min_size, size_t max_size,
  */
 
 static struct object *
-smp_allocobj(struct stevedore *stv, struct worker *wrk, unsigned ltot,
-    const struct stv_objsecrets *soc)
+smp_allocobj(struct stevedore *stv, struct busyobj *bo, struct objcore **ocp,
+    unsigned ltot, const struct stv_objsecrets *soc)
 {
 	struct object *o;
 	struct storage *st;
@@ -471,11 +472,11 @@ smp_allocobj(struct stevedore *stv, struct worker *wrk, unsigned ltot,
 	struct objcore *oc;
 	unsigned objidx;
 
-	if (wrk->sp->req->objcore == NULL)
+	AN(ocp);
+	if (*ocp == NULL)
 		return (NULL);		/* from cnt_error */
 	CAST_OBJ_NOTNULL(sc, stv->priv, SMP_SC_MAGIC);
-	AN(wrk->sp->req->objcore);
-	AN(wrk->busyobj->exp.ttl > 0.);
+	AN(bo->exp.ttl > 0.);
 
 	ltot = IRNUP(sc, ltot);
 
@@ -486,7 +487,7 @@ smp_allocobj(struct stevedore *stv, struct worker *wrk, unsigned ltot,
 	assert(st->space >= ltot);
 	ltot = st->len = st->space;
 
-	o = STV_MkObject(wrk, st->ptr, ltot, soc);
+	o = STV_MkObject(stv, bo, ocp, st->ptr, ltot, soc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	o->objstore = st;
 
@@ -524,19 +525,6 @@ smp_alloc(struct stevedore *st, size_t size)
 }
 
 /*--------------------------------------------------------------------
- * Trim a bite
- * XXX: We could trim the last allocation.
- */
-
-static void
-smp_trim(struct storage *ss, size_t size)
-{
-
-	(void)ss;
-	(void)size;
-}
-
-/*--------------------------------------------------------------------
  * We don't track frees of storage, we track the objects which own the
  * storage and when there are no more objects in in the first segment,
  * it can be reclaimed.
@@ -563,7 +551,6 @@ const struct stevedore smp_stevedore = {
 	.alloc	=	smp_alloc,
 	.allocobj =	smp_allocobj,
 	.free	=	smp_free,
-	.trim	=	smp_trim,
         .dup    =       default_dup,
 };
 

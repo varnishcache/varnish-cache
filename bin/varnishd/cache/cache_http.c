@@ -41,24 +41,13 @@
 #include "tbl/http_headers.h"
 #undef HTTPH
 
-/*lint -save -e773 not () */
-#define LOGMTX2(ax, bx, cx)	[bx] = SLT_##ax##cx
-
-#define LOGMTX1(ax) {					\
-	LOGMTX2(ax, HTTP_HDR_REQ,	Request),	\
-	LOGMTX2(ax, HTTP_HDR_RESPONSE,	Response),	\
-	LOGMTX2(ax, HTTP_HDR_STATUS,	Status),	\
-	LOGMTX2(ax, HTTP_HDR_URL,	URL),		\
-	LOGMTX2(ax, HTTP_HDR_PROTO,	Protocol),	\
-	LOGMTX2(ax, HTTP_HDR_FIRST,	Header),	\
-	}
-
-static const enum VSL_tag_e logmtx[][HTTP_HDR_FIRST + 1] = {
-	[HTTP_Rx] = LOGMTX1(Rx),
-	[HTTP_Tx] = LOGMTX1(Tx),
-	[HTTP_Obj] = LOGMTX1(Obj)
+static const enum VSL_tag_e foo[] = {
+	[HTTP_Req]	= SLT_ReqRequest,
+	[HTTP_Resp]	= SLT_RespRequest,
+	[HTTP_Bereq]	= SLT_BereqRequest,
+	[HTTP_Beresp]	= SLT_BerespRequest,
+	[HTTP_Obj]	= SLT_ObjRequest,
 };
-/*lint -restore */
 
 void http_FilterMissingFields(struct http *to, const struct http *fm);
 
@@ -69,9 +58,9 @@ http2shmlog(const struct http *hp, int t)
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	if (t > HTTP_HDR_FIRST)
 		t = HTTP_HDR_FIRST;
-	assert(hp->logtag >= HTTP_Rx && hp->logtag <= HTTP_Obj); /*lint !e685*/
+	assert(hp->logtag >= HTTP_Req && hp->logtag <= HTTP_Obj); /*lint !e685*/
 	assert(t >= HTTP_HDR_REQ && t <= HTTP_HDR_FIRST);
-	return (logmtx[hp->logtag][t]);
+	return ((enum VSL_tag_e)(foo[hp->logtag] + t));
 }
 
 static void
@@ -80,7 +69,7 @@ http_VSLH(const struct http *hp, unsigned hdr)
 
 	AN(hp->vsl);
 	AN(hp->vsl->wid & (VSL_CLIENTMARKER|VSL_BACKENDMARKER));
-	WSLR(hp->vsl, http2shmlog(hp, hdr), -1, hp->hd[hdr]);
+	VSLbt(hp->vsl, http2shmlog(hp, hdr), hp->hd[hdr]);
 }
 
 /*--------------------------------------------------------------------*/
@@ -133,9 +122,11 @@ HTTP_create(void *p, uint16_t nhttp)
 /*--------------------------------------------------------------------*/
 
 void
-http_Setup(struct http *hp, struct ws *ws, struct vsl_log *vsl)
+HTTP_Setup(struct http *hp, struct ws *ws, struct vsl_log *vsl,
+    enum httpwhence  whence)
 {
 	http_Teardown(hp);
+	hp->logtag = whence;
 	hp->ws = ws;
 	hp->vsl = vsl;
 }
@@ -421,19 +412,19 @@ http_GetHdrField(const struct http *hp, const char *hdr,
  * XXX: redo with http_GetHdrField() ?
  */
 
-const char *
+enum sess_close
 http_DoConnection(const struct http *hp)
 {
 	char *p, *q;
-	const char *ret;
+	enum sess_close ret;
 	unsigned u;
 
 	if (!http_GetHdr(hp, H_Connection, &p)) {
 		if (hp->protover < 11)
-			return ("not HTTP/1.1");
-		return (NULL);
+			return (SC_REQ_HTTP10);
+		return (SC_NULL);
 	}
-	ret = NULL;
+	ret = SC_NULL;
 	AN(p);
 	for (; *p; p++) {
 		if (vct_issp(*p))
@@ -445,7 +436,7 @@ http_DoConnection(const struct http *hp)
 				break;
 		u = pdiff(p, q);
 		if (u == 5 && !strncasecmp(p, "close", u))
-			ret = "Connection: close";
+			ret = SC_REQ_CLOSE;
 		u = http_findhdr(hp, u, p);
 		if (u != 0)
 			hp->hdf[u] |= HDF_FILTER;
@@ -530,7 +521,7 @@ http_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
 
 		if (q - p > htc->maxhdr) {
 			VSC_C_main->losthdr++;
-			WSL(hp->vsl, SLT_LostHeader, -1, "%.*s",
+			VSLb(hp->vsl, SLT_LostHeader, "%.*s",
 			    (int)(q - p > 20 ? 20 : q - p), p);
 			return (413);
 		}
@@ -556,7 +547,7 @@ http_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
 			hp->nhd++;
 		} else {
 			VSC_C_main->losthdr++;
-			WSL(hp->vsl, SLT_LostHeader, -1, "%.*s",
+			VSLb(hp->vsl, SLT_LostHeader, "%.*s",
 			    (int)(q - p > 20 ? 20 : q - p), p);
 			return (413);
 		}
@@ -662,24 +653,22 @@ http_ProtoVer(struct http *hp)
 /*--------------------------------------------------------------------*/
 
 uint16_t
-http_DissectRequest(const struct sess *sp)
+http_DissectRequest(struct req *req)
 {
 	struct http_conn *htc;
 	struct http *hp;
 	uint16_t retval;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	htc = sp->req->htc;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	htc = req->htc;
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	hp = sp->req->http;
+	hp = req->http;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-
-	hp->logtag = HTTP_Rx;
 
 	retval = http_splitline(hp, htc,
 	    HTTP_HDR_REQ, HTTP_HDR_URL, HTTP_HDR_PROTO);
 	if (retval != 0) {
-		WSPR(sp, SLT_HttpGarbage, htc->rxbuf);
+		VSLbt(req->vsl, SLT_HttpGarbage, htc->rxbuf);
 		return (retval);
 	}
 	http_ProtoVer(hp);
@@ -698,7 +687,6 @@ http_DissectResponse(struct http *hp, const struct http_conn *htc)
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	hp->logtag = HTTP_Rx;
 
 	if (http_splitline(hp, htc,
 	    HTTP_HDR_PROTO, HTTP_HDR_STATUS, HTTP_HDR_RESPONSE))
@@ -726,7 +714,7 @@ http_DissectResponse(struct http *hp, const struct http_conn *htc)
 	}
 
 	if (retval != 0) {
-		WSLR(hp->vsl, SLT_HttpGarbage, -1, htc->rxbuf);
+		VSLbt(hp->vsl, SLT_HttpGarbage, htc->rxbuf);
 		assert(retval >= 100 && retval <= 999);
 		hp->status = retval;
 	} else {
@@ -800,7 +788,7 @@ http_copyheader(struct http *to, const struct http *fm, unsigned n)
 		to->nhd++;
 	} else  {
 		VSC_C_main->losthdr++;
-		WSLR(to->vsl, SLT_LostHeader, -1, fm->hd[n]);
+		VSLbt(to->vsl, SLT_LostHeader, fm->hd[n]);
 	}
 }
 
@@ -855,8 +843,18 @@ http_filterfields(struct http *to, const struct http *fm, unsigned how)
 			continue;
 #include "tbl/http_headers.h"
 #undef HTTPH
-		http_copyheader(to, fm, u);
+		Tcheck(fm->hd[u]);
+		if (to->nhd < to->shd) {
+			to->hd[to->nhd] = fm->hd[u];
+			to->hdf[to->nhd] = 0;
+			to->nhd++;
+		} else  {
+			VSC_C_main->losthdr++;
+			VSLbt(to->vsl, SLT_LostHeader, fm->hd[u]);
+		}
 	}
+	/* Copy header contents, presupposes http_EstimateWS(to) */
+	http_CopyHome(to);
 }
 
 /*---------------------------------------------------------------------
@@ -887,6 +885,15 @@ http_FilterMissingFields(struct http *to, const struct http *fm)
                 if (http_findhdr(to, hdrlen, fm->hd[u].b))
                     continue;
                 http_copyheader(to, fm, u);
+		Tcheck(fm->hd[u]);
+		if (to->nhd < to->shd) {
+			to->hd[to->nhd] = fm->hd[u];
+			to->hdf[to->nhd] = 0;
+			to->nhd++;
+		} else  {
+			VSC_C_main->losthdr++;
+			VSLbt(to->vsl, SLT_LostHeader, fm->hd[u]);
+		}
 	}
 	/* Copy header contents, presupposes http_EstimateWS(to) */
 	http_CopyHome(to);
@@ -895,22 +902,21 @@ http_FilterMissingFields(struct http *to, const struct http *fm)
 /*--------------------------------------------------------------------*/
 
 void
-http_FilterReq(const struct sess *sp, unsigned how)
+http_FilterReq(const struct req *req, unsigned how)
 {
 	struct http *hp;
 
-	hp = sp->wrk->busyobj->bereq;
+	hp = req->busyobj->bereq;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	hp->logtag = HTTP_Tx;
 
-	http_linkh(hp, sp->req->http, HTTP_HDR_REQ);
-	http_linkh(hp, sp->req->http, HTTP_HDR_URL);
+	http_linkh(hp, req->http, HTTP_HDR_REQ);
+	http_linkh(hp, req->http, HTTP_HDR_URL);
 	if (how == HTTPH_R_FETCH)
 		http_SetH(hp, HTTP_HDR_PROTO, "HTTP/1.1");
 	else
-		http_linkh(hp, sp->req->http, HTTP_HDR_PROTO);
-	http_filterfields(hp, sp->req->http, how);
-	http_PrintfHeader(hp, "X-Varnish: %u", sp->req->xid);
+		http_linkh(hp, req->http, HTTP_HDR_PROTO);
+	http_filterfields(hp, req->http, how);
+	http_PrintfHeader(hp, "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
 }
 
 /*-------------------------------------------------------------------
@@ -948,15 +954,13 @@ http_CheckRefresh(struct busyobj *busyobj)
  */
 
 void
-http_Check304(struct worker *wrk)
+http_Check304(struct worker *wrk, struct busyobj *busyobj)
 {
-	struct busyobj *busyobj;
 	struct object *o_stale;
 	char *p;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
-	busyobj = wrk->busyobj;
+	CHECK_OBJ_NOTNULL(busyobj, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(busyobj->stale_obj, OBJECT_MAGIC);
 	o_stale = busyobj->stale_obj;
 
@@ -970,9 +974,8 @@ http_Check304(struct worker *wrk)
 		wrk->stats.fetch_not_validated++;
 
 	    /* Discard the stale object */
-	    /* XXX: just deref, or force expire? */
-	    HSH_Deref(&wrk->stats, NULL, &busyobj->stale_obj);
-	    AZ(busyobj->stale_obj);
+            EXP_Clr(&busyobj->stale_obj->exp);
+            EXP_Rearm(busyobj->stale_obj);
 	    return;
 	}
 
@@ -1038,7 +1041,7 @@ http_CopyHome(const struct http *hp)
 		} else {
 			/* XXX This leaves a slot empty */
 			VSC_C_main->losthdr++;
-			WSLR(hp->vsl, SLT_LostHeader, -1, hp->hd[u]);
+			VSLbt(hp->vsl, SLT_LostHeader, hp->hd[u]);
 			hp->hd[u].b = NULL;
 			hp->hd[u].e = NULL;
 		}
@@ -1068,7 +1071,7 @@ http_SetHeader(struct http *to, const char *hdr)
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	if (to->nhd >= to->shd) {
 		VSC_C_main->losthdr++;
-		WSL(to->vsl, SLT_LostHeader, -1, "%s", hdr);
+		VSLb(to->vsl, SLT_LostHeader, "%s", hdr);
 		return;
 	}
 	http_SetH(to, to->nhd++, hdr);
@@ -1086,7 +1089,7 @@ http_PutField(const struct http *to, int field, const char *string)
 	l = strlen(string);
 	p = WS_Alloc(to->ws, l + 1);
 	if (p == NULL) {
-		WSL(to->vsl, SLT_LostHeader, -1, "%s", string);
+		VSLb(to->vsl, SLT_LostHeader, "%s", string);
 		to->hd[field].b = NULL;
 		to->hd[field].e = NULL;
 		to->hdf[field] = 0;
@@ -1139,7 +1142,7 @@ http_PrintfHeader(struct http *to, const char *fmt, ...)
 	va_end(ap);
 	if (n + 1 >= l || to->nhd >= to->shd) {
 		VSC_C_main->losthdr++;
-		WSL(to->vsl, SLT_LostHeader, -1, "%s", to->ws->f);
+		VSLb(to->vsl, SLT_LostHeader, "%s", to->ws->f);
 		WS_Release(to->ws, 0);
 	} else {
 		to->hd[to->nhd].b = to->ws->f;
@@ -1189,7 +1192,7 @@ HTTP_Copy(struct http *to, const struct http * const fm)
 /*--------------------------------------------------------------------*/
 
 unsigned
-http_Write(struct worker *w, const struct http *hp, int resp)
+http_Write(const struct worker *w, const struct http *hp, int resp)
 {
 	unsigned u, l;
 

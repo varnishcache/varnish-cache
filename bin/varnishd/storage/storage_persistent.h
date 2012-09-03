@@ -34,7 +34,7 @@
  */
 
 #define ASSERT_SILO_THREAD(sc) \
-    do {assert(pthread_self() == (sc)->thread);} while (0)
+    do {assert(pthread_equal(pthread_self(), (sc)->thread));} while (0)
 
 #define OC_F_NEEDFIXUP OC_F_PRIV
 
@@ -167,8 +167,7 @@ void smp_mgt_init(struct stevedore *parent, int ac, char * const *av);
 
 /* storage_persistent_silo.c */
 
-void smp_load_seg(const struct sess *sp, const struct smp_sc *sc,
-    struct smp_seg *sg);
+void smp_load_seg(struct worker *, const struct smp_sc *sc, struct smp_seg *sg);
 void smp_new_seg(struct smp_sc *sc);
 void smp_close_seg(struct smp_sc *sc, struct smp_seg *sg);
 void smp_init_oc(struct objcore *oc, struct smp_seg *sg, unsigned objidx);

@@ -101,7 +101,10 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 	if (fam == PF_INET && ae->mask > 32) {
 		VSB_printf(tl->sb,
 		    "Too wide mask (%u) for IPv4 address", ae->mask);
-		vcc_ErrWhere(tl, ae->t_mask);
+		if (ae->t_mask != NULL)
+			vcc_ErrWhere(tl, ae->t_mask);
+		else
+			vcc_ErrWhere(tl, ae->t_addr);
 		return;
 	}
 	if (fam == PF_INET6 && ae->mask > 128) {
@@ -354,7 +357,7 @@ vcc_acl_emit(const struct vcc *tl, const char *acln, int anon)
 	const char *oc;
 
 	Fh(tl, 0, "\nstatic int\n");
-	Fh(tl, 0, "match_acl_%s_%s(const struct sess *sp, const void *p)\n",
+	Fh(tl, 0, "match_acl_%s_%s(struct req *req, const void *p)\n",
 	    anon ? "anon" : "named", acln);
 	Fh(tl, 0, "{\n");
 	Fh(tl, 0, "\tconst unsigned char *a;\n");
@@ -369,7 +372,7 @@ vcc_acl_emit(const struct vcc *tl, const char *acln, int anon)
 	Fh(tl, 0, "\telse if (fam == %d)\n", PF_INET6);
 	Fh(tl, 0, "\t\ta += %zd;\n", offsetof(struct sockaddr_in6, sin6_addr));
 	Fh(tl, 0, "\telse {\n");
-	Fh(tl, 0, "\t\tVRT_acl_log(sp, \"NO_FAM %s\");\n", acln);
+	Fh(tl, 0, "\t\tVRT_acl_log(req, \"NO_FAM %s\");\n", acln);
 	Fh(tl, 0, "\t\treturn(0);\n");
 	Fh(tl, 0, "\t}\n\n");
 	depth = -1;
@@ -421,7 +424,7 @@ vcc_acl_emit(const struct vcc *tl, const char *acln, int anon)
 		i = (ae->mask + 7) / 8;
 
 		if (!anon) {
-			Fh(tl, 0, "\t%*sVRT_acl_log(sp, \"%sMATCH %s \" ",
+			Fh(tl, 0, "\t%*sVRT_acl_log(req, \"%sMATCH %s \" ",
 			    -i, "", ae->not ? "NEG_" : "", acln);
 			EncToken(tl->fh, ae->t_addr);
 			if (ae->t_mask != NULL)
@@ -438,7 +441,7 @@ vcc_acl_emit(const struct vcc *tl, const char *acln, int anon)
 
 	/* Deny by default */
 	if (!anon)
-		Fh(tl, 0, "\tVRT_acl_log(sp, \"NO_MATCH %s\");\n", acln);
+		Fh(tl, 0, "\tVRT_acl_log(req, \"NO_MATCH %s\");\n", acln);
 	Fh(tl, 0, "\treturn (0);\n}\n");
 }
 
@@ -454,7 +457,7 @@ vcc_Acl_Hack(struct vcc *tl, char *b)
 	bprintf(acln, "%u", tl->unique++);
 	vcc_acl_entry(tl);
 	vcc_acl_emit(tl, acln, 1);
-	sprintf(b, "%smatch_acl_anon_%s(sp, \v1)",
+	sprintf(b, "%smatch_acl_anon_%s(req, \v1)",
 	    (tcond == T_NEQ ? "!" : ""), acln);
 }
 

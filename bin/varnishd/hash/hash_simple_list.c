@@ -45,7 +45,7 @@ static struct lock hsl_mtx;
  * initialization to happen before the first lookup.
  */
 
-static void
+static void __match_proto__(hash_start_f)
 hsl_start(void)
 {
 
@@ -59,40 +59,51 @@ hsl_start(void)
  * A reference to the returned object is held.
  */
 
-static struct objhead *
-hsl_lookup(const struct sess *sp, struct objhead *noh)
+static struct objhead * __match_proto__(hash_lookup_f)
+hsl_lookup(struct worker *wrk, const void *digest, struct objhead **noh)
 {
 	struct objhead *oh;
 	int i;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(noh, OBJHEAD_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	AN(digest);
+	if (noh != NULL)
+		CHECK_OBJ_NOTNULL(*noh, OBJHEAD_MAGIC);
+
 	Lck_Lock(&hsl_mtx);
 	VTAILQ_FOREACH(oh, &hsl_head, hoh_list) {
-		i = memcmp(oh->digest, noh->digest, sizeof oh->digest);
+		i = memcmp(oh->digest, digest, sizeof oh->digest);
 		if (i < 0)
 			continue;
 		if (i > 0)
 			break;
 		oh->refcnt++;
 		Lck_Unlock(&hsl_mtx);
+		Lck_Lock(&oh->mtx);
 		return (oh);
 	}
 
-	if (oh != NULL)
-		VTAILQ_INSERT_BEFORE(oh, noh, hoh_list);
-	else
-		VTAILQ_INSERT_TAIL(&hsl_head, noh, hoh_list);
+	if (noh == NULL)
+		return (NULL);
 
+	if (oh != NULL)
+		VTAILQ_INSERT_BEFORE(oh, *noh, hoh_list);
+	else
+		VTAILQ_INSERT_TAIL(&hsl_head, *noh, hoh_list);
+
+	oh = *noh;
+	*noh = NULL;
+	memcpy(oh->digest, digest, sizeof oh->digest);
 	Lck_Unlock(&hsl_mtx);
-	return (noh);
+	Lck_Lock(&oh->mtx);
+	return (oh);
 }
 
 /*--------------------------------------------------------------------
  * Dereference and if no references are left, free.
  */
 
-static int
+static int __match_proto__(hash_deref_f)
 hsl_deref(struct objhead *oh)
 {
 	int ret;

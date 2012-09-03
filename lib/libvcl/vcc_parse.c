@@ -47,7 +47,7 @@ static void vcc_Compound(struct vcc *tl);
 } while (0)
 
 #define C(tl, sep)	do {					\
-	Fb(tl, 1, "VRT_count(sp, %u)%s\n", ++tl->cnt, sep);	\
+	Fb(tl, 1, "VRT_count(req, %u)%s\n", ++tl->cnt, sep);	\
 	tl->t->cnt = tl->cnt;					\
 } while (0)
 
@@ -153,10 +153,16 @@ vcc_Compound(struct vcc *tl)
 			Fb(tl, 1, "}\n");
 			return;
 		case CSRC:
-			Fb(tl, 1, "%.*s\n",
-			    (int) (tl->t->e - (tl->t->b + 2)),
-			    tl->t->b + 1);
-			vcc_NextToken(tl);
+			if (tl->allow_inline_c) {
+				Fb(tl, 1, "%.*s\n",
+				    (int) (tl->t->e - (tl->t->b + 2)),
+				    tl->t->b + 1);
+				vcc_NextToken(tl);
+			} else {
+				VSB_printf(tl->sb,
+				    "Inline-C not allowed");
+				vcc_ErrWhere(tl, tl->t);
+			}
 			break;
 		case EOI:
 			VSB_printf(tl->sb,
@@ -218,10 +224,11 @@ vcc_Function(struct vcc *tl)
 			return;
 		}
 		tl->curproc = vcc_AddProc(tl, tl->t);
-		Fh(tl, 0, "static int VGC_function_%.*s (struct sess *sp);\n",
+		Fh(tl, 0, "static int VGC_function_%.*s "
+		    "(struct req *);\n", PF(tl->t));
+		Fc(tl, 1, "\nstatic int __match_proto__(vcl_func_t)\n");
+		Fc(tl, 1, "VGC_function_%.*s(struct req *req)\n",
 		    PF(tl->t));
-		Fc(tl, 1, "\nstatic int\n");
-		Fc(tl, 1, "VGC_function_%.*s (struct sess *sp)\n", PF(tl->t));
 	}
 	vcc_NextToken(tl);
 	tl->indent += INDENT;
@@ -273,9 +280,16 @@ vcc_Parse(struct vcc *tl)
 		ERRCHK(tl);
 		switch (tl->t->tok) {
 		case CSRC:
-			Fc(tl, 0, "%.*s\n",
-			    (int) (tl->t->e - (tl->t->b + 4)), tl->t->b + 2);
-			vcc_NextToken(tl);
+			if (tl->allow_inline_c) {
+				Fc(tl, 0, "%.*s\n",
+				    (int) (tl->t->e - (tl->t->b + 4)),
+				    tl->t->b + 2);
+				vcc_NextToken(tl);
+			} else {
+				VSB_printf(tl->sb,
+				    "Inline-C not allowed");
+				vcc_ErrWhere(tl, tl->t);
+			}
 			break;
 		case EOI:
 			break;

@@ -29,20 +29,24 @@
  */
 
 /*lint -save -e525 -e539 */
-STEP(wait,		WAIT,		(sp, sp->wrk, sp->req))
-STEP(first,		FIRST,		(sp, sp->wrk))
-STEP(recv,		RECV,		(sp, sp->wrk, sp->req))
-STEP(start,		START,		(sp, sp->wrk, sp->req))
-STEP(pipe,		PIPE,		(sp, sp->wrk, sp->req))
-STEP(pass,		PASS,		(sp, sp->wrk, sp->req))
-STEP(lookup,		LOOKUP,		(sp, sp->wrk, sp->req))
-STEP(miss,		MISS,		(sp, sp->wrk, sp->req))
-STEP(hit,		HIT,		(sp, sp->wrk, sp->req))
-STEP(fetch,		FETCH,		(sp, sp->wrk, sp->req))
-STEP(prepfetch,		PREPFETCH,	(sp, sp->wrk, sp->req))
-STEP(fetchbody,		FETCHBODY,	(sp, sp->wrk, sp->req))
-STEP(prepresp,		PREPRESP,	(sp, sp->wrk, sp->req))
-STEP(deliver,		DELIVER,	(sp, sp->wrk, sp->req))
-STEP(error,		ERROR,		(sp, sp->wrk, sp->req))
-STEP(done,		DONE,		(sp, sp->wrk, sp->req))
+
+#ifdef SESS_STEP
+SESS_STEP(newreq,	NEWREQ)
+SESS_STEP(working,	WORKING)
+#endif
+
+#ifdef REQ_STEP
+REQ_STEP(restart,	RESTART,	(wrk, req))
+REQ_STEP(recv,		RECV,		(wrk, req))
+REQ_STEP(pipe,		PIPE,		(wrk, req))
+REQ_STEP(pass,		PASS,		(wrk, req))
+REQ_STEP(lookup,	LOOKUP,		(wrk, req))
+REQ_STEP(miss,		MISS,		(wrk, req))
+REQ_STEP(hit,		HIT,		(wrk, req))
+REQ_STEP(fetch,		FETCH,		(wrk, req))
+REQ_STEP(fetchbody,	FETCHBODY,	(wrk, req))
+REQ_STEP(prepresp,	PREPRESP,	(wrk, req))
+REQ_STEP(deliver,	DELIVER,	(wrk, req))
+REQ_STEP(error,		ERROR,		(wrk, req))
+#endif
 /*lint -restore */

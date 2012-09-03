@@ -31,7 +31,7 @@
  * XXX: When this file is changed, lib/libvcl/generate.py *MUST* be rerun.
  */
 
-struct sess;
+struct req;
 struct vsb;
 struct cli;
 struct director;
@@ -140,42 +140,41 @@ struct vrt_ref {
 /* ACL related */
 #define VRT_ACL_MAXADDR		16	/* max(IPv4, IPv6) */
 
-void VRT_acl_log(const struct sess *, const char *msg);
+void VRT_acl_log(struct req *, const char *msg);
 
 /* Regexp related */
 void VRT_re_init(void **, const char *);
 void VRT_re_fini(void *);
-int VRT_re_match(const struct sess *sp, const char *, void *re);
-const char *VRT_regsub(const struct sess *sp, int all, const char *,
+int VRT_re_match(struct req *, const char *, void *re);
+const char *VRT_regsub(struct req *, int all, const char *,
     void *, const char *);
 
-void VRT_panic(const struct sess *sp, const char *, ...);
-void VRT_ban(struct sess *sp, char *, ...);
-void VRT_ban_string(struct sess *sp, const char *);
-void VRT_purge(const struct sess *sp, double ttl, double grace);
+void VRT_ban(const struct req *, char *, ...);
+void VRT_ban_string(const struct req *, const char *);
+void VRT_purge(struct req *, double ttl, double grace);
 
-void VRT_count(const struct sess *, unsigned);
+void VRT_count(struct req *, unsigned);
 int VRT_rewrite(const char *, const char *);
-void VRT_error(const struct sess *, unsigned, const char *);
+void VRT_error(struct req *, unsigned, const char *);
 int VRT_switch_config(const char *);
 
 enum gethdr_e { HDR_REQ, HDR_RESP, HDR_OBJ, HDR_STALE_OBJ, HDR_BEREQ, HDR_BERESP };
-char *VRT_GetHdr(const struct sess *, enum gethdr_e where, const char *);
-void VRT_SetHdr(const struct sess *, enum gethdr_e where, const char *,
-    const char *, ...);
-void VRT_handling(const struct sess *sp, unsigned hand);
 
-void VRT_hashdata(const struct sess *sp, const char *str, ...);
+char *VRT_GetHdr(const struct req *, enum gethdr_e where, const char *);
+void VRT_SetHdr(struct req *, enum gethdr_e where, const char *,
+    const char *, ...);
+void VRT_handling(struct req *, unsigned hand);
+
+void VRT_hashdata(struct req *, const char *str, ...);
 
 /* Simple stuff */
 int VRT_strcmp(const char *s1, const char *s2);
 void VRT_memmove(void *dst, const void *src, unsigned len);
 
-void VRT_ESI(const struct sess *sp);
-void VRT_Rollback(const struct sess *sp);
+void VRT_Rollback(struct req *);
 
 /* Synthetic pages */
-void VRT_synth_page(const struct sess *sp, unsigned flags, const char *, ...);
+void VRT_synth_page(const struct req *, unsigned flags, const char *, ...);
 
 /* Backend related */
 void VRT_init_dir(struct cli *, struct director **, const char *name,
@@ -209,17 +208,17 @@ int VRT_Stv(const char *nm);
 
 /* Convert things to string */
 
-char *VRT_IP_string(const struct sess *sp, const struct sockaddr_storage *sa);
-char *VRT_int_string(const struct sess *sp, int);
-char *VRT_double_string(const struct sess *sp, double);
-char *VRT_time_string(const struct sess *sp, double);
-const char *VRT_bool_string(const struct sess *sp, unsigned);
-const char *VRT_backend_string(const struct sess *sp, const struct director *d);
+char *VRT_IP_string(const struct req *, const struct sockaddr_storage *sa);
+char *VRT_int_string(const struct req *, int);
+char *VRT_double_string(const struct req *, double);
+char *VRT_time_string(const struct req *, double);
+const char *VRT_bool_string(const struct req *, unsigned);
+const char *VRT_backend_string(const struct req *, const struct director *d);
 
-#define VRT_done(sp, hand)			\
+#define VRT_done(req, hand)			\
 	do {					\
-		VRT_handling(sp, hand);		\
+		VRT_handling(req, hand);	\
 		return (1);			\
 	} while (0)
 
-const char *VRT_WrkString(const struct sess *sp, const char *p, ...);
+const char *VRT_ReqString(struct req *, const char *p, ...);

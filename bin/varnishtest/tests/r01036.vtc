@@ -9,6 +9,7 @@ server s1 {
 
 varnish v1 -arg "-smalloc,1M" -arg "-pgzip_level=0" -vcl+backend {
 	sub vcl_fetch {
+		set beresp.do_stream = false;
 		set beresp.do_gzip = true;
 	}
 } -start

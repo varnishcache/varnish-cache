@@ -118,7 +118,7 @@ smp_save_segs(struct smp_sc *sc)
  */
 
 void
-smp_load_seg(const struct sess *sp, const struct smp_sc *sc,
+smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
     struct smp_seg *sg)
 {
 	struct smp_object *so;
@@ -128,7 +128,7 @@ smp_load_seg(const struct sess *sp, const struct smp_sc *sc,
 	struct smp_signctx ctx[1];
 
 	ASSERT_SILO_THREAD(sc);
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
 	CHECK_OBJ_NOTNULL(sg->lru, LRU_MAGIC);
 	assert(sg->flags & SMP_SEG_MUSTLOAD);
@@ -150,19 +150,17 @@ smp_load_seg(const struct sess *sp, const struct smp_sc *sc,
 	for (;no > 0; so++,no--) {
 		if (so->ttl == 0 || so->ttl < t_now)
 			continue;
-		HSH_Prealloc(sp);
-		oc = sp->wrk->nobjcore;
+		ALLOC_OBJ(oc, OBJCORE_MAGIC);
+		AN(oc);
 		oc->flags |= OC_F_NEEDFIXUP | OC_F_LRUDONTMOVE;
 		oc->flags &= ~OC_F_BUSY;
 		smp_init_oc(oc, sg, no);
 		oc->ban = BAN_RefBan(oc, so->ban, sc->tailban);
-		memcpy(sp->wrk->nobjhead->digest, so->hash, SHA256_LEN);
-		(void)HSH_Insert(sp);
-		AZ(sp->wrk->nobjcore);
+		HSH_Insert(wrk, so->hash, oc);
 		EXP_Inject(oc, sg->lru, so->ttl);
 		sg->nobj++;
 	}
-	WRK_SumStat(sp->wrk);
+	WRK_SumStat(wrk);
 	sg->flags |= SMP_SEG_LOADED;
 }
 
@@ -391,7 +389,7 @@ smp_oc_getxid(struct dstat *ds, struct objcore *oc)
 	 */
 	ASSERT_PTR_IN_SILO(sg->sc, o);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	return (o->xid);
+	return (o->vxid);
 }
 
 /*---------------------------------------------------------------------

@@ -15,13 +15,13 @@ varnish v1 -arg "-pthread_pools=1" -vcl+backend {
 	}
 } -start
 
-varnish v1 -cliok "param.set diag_bitmap 0x40000"
+varnish v1 -cliok "param.set debug +vclrel"
 
 client c1 {
 	txreq -url "/bar"
 	rxresp
 	expect resp.status == 200
-	expect resp.http.content-length == "4"
+	expect resp.bodylen == "4"
 	expect resp.http.foo == "BAR"
 	expect resp.http.bar == "foo"
 } -run
@@ -33,7 +33,7 @@ client c1 {
 	txreq -url "/bar"
 	rxresp
 	expect resp.status == 200
-	expect resp.http.content-length == "4"
+	expect resp.bodylen == "4"
 	expect resp.http.foo == "bAr"
 	expect resp.http.bar == "fOo"
 } -run

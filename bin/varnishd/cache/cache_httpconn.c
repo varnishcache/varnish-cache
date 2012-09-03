@@ -46,44 +46,6 @@
 
 #include "vct.h"
 
-/*--------------------------------------------------------------------
- * Check if we have a complete HTTP request or response yet
- *
- * Return values:
- *	-3  All whitespace so far
- *	 0  No, keep trying
- *	>0  Yes, it is this many bytes long.
- */
-
-static int
-htc_header_complete(txt *t)
-{
-	const char *p;
-
-	Tcheck(*t);
-	assert(*t->e == '\0');
-	/* Skip any leading white space */
-	for (p = t->b ; vct_islws(*p); p++)
-		continue;
-	if (p == t->e) {
-		/* All white space */
-		t->e = t->b;
-		*t->e = '\0';
-		return (-3);
-	}
-	while (1) {
-		p = strchr(p, '\n');
-		if (p == NULL)
-			return (0);
-		p++;
-		if (*p == '\r')
-			p++;
-		if (*p == '\n')
-			break;
-	}
-	p++;
-	return (p - t->b);
-}
 
 /*--------------------------------------------------------------------*/
 
@@ -113,7 +75,7 @@ HTC_Init(struct http_conn *htc, struct ws *ws, int fd, struct vsl_log *vsl,
  * the ws somewhere, because WS_Reset only fiddles pointers.
  */
 
-int
+enum htc_status_e
 HTC_Reinit(struct http_conn *htc)
 {
 	unsigned l;
@@ -134,20 +96,44 @@ HTC_Reinit(struct http_conn *htc)
 }
 
 /*--------------------------------------------------------------------
- * Return -3 if it's all whitespace so far
- * Return 0 if we need more text
- * Return 1 if we have a complete HTTP procol header
+ * Check if we have a complete HTTP request or response yet
+ *
  */
 
-int
+enum htc_status_e
 HTC_Complete(struct http_conn *htc)
 {
 	int i;
+	const char *p;
+	txt *t;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	i = htc_header_complete(&htc->rxbuf);
-	if (i <= 0)
-		return (i);
+
+	t = &htc->rxbuf;
+	Tcheck(*t);
+	assert(*t->e == '\0');
+
+	/* Skip any leading white space */
+	for (p = t->b ; vct_islws(*p); p++)
+		continue;
+	if (p == t->e) {
+		/* All white space */
+		t->e = t->b;
+		*t->e = '\0';
+		return (HTC_ALL_WHITESPACE);
+	}
+	while (1) {
+		p = strchr(p, '\n');
+		if (p == NULL)
+			return (HTC_NEED_MORE);
+		p++;
+		if (*p == '\r')
+			p++;
+		if (*p == '\n')
+			break;
+	}
+	p++;
+	i = p - t->b;
 	WS_ReleaseP(htc->ws, htc->rxbuf.e);
 	AZ(htc->pipeline.b);
 	AZ(htc->pipeline.e);
@@ -156,20 +142,14 @@ HTC_Complete(struct http_conn *htc)
 		htc->pipeline.e = htc->rxbuf.e;
 		htc->rxbuf.e = htc->pipeline.b;
 	}
-	return (1);
+	return (HTC_COMPLETE);
 }
 
 /*--------------------------------------------------------------------
  * Receive more HTTP protocol bytes
- * Returns:
- *	-3 all whitespace so far
- *	-2 overflow
- *	-1 error/EOF
- *	 0 more needed
- *	 1 got complete HTTP header
  */
 
-int
+enum htc_status_e
 HTC_Rx(struct http_conn *htc)
 {
 	int i;
@@ -179,7 +159,7 @@ HTC_Rx(struct http_conn *htc)
 	i = (htc->ws->r - htc->rxbuf.e) - 1;	/* space for NUL */
 	if (i <= 0) {
 		WS_ReleaseP(htc->ws, htc->rxbuf.b);
-		return (-2);
+		return (HTC_OVERFLOW);
 	}
 	i = read(htc->fd, htc->rxbuf.e, i);
 	if (i <= 0) {
@@ -188,7 +168,7 @@ HTC_Rx(struct http_conn *htc)
 		 * so consequently an EOF can not be OK
 		 */
 		WS_ReleaseP(htc->ws, htc->rxbuf.b);
-		return (-1);
+		return (HTC_ERROR_EOF);
 	}
 	htc->rxbuf.e += i;
 	*htc->rxbuf.e = '\0';
@@ -224,7 +204,7 @@ HTC_Read(struct http_conn *htc, void *d, size_t len)
 		return (l);
 	i = read(htc->fd, p, len);
 	if (i < 0) {
-		WSL(htc->vsl, SLT_FetchError, -1, "%s", strerror(errno));
+		VSLb(htc->vsl, SLT_FetchError, "%s", strerror(errno));
 		return (i);
 	}
 	return (i + l);

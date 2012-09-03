@@ -28,7 +28,7 @@ client c1 {
 		-body "123456789\n"
 	rxresp
 	expect resp.status == 200
-	expect resp.http.X-Varnish == "1002 1001"
+	expect resp.http.X-Varnish == "1003 1002"
 }
 
 client c1 -run

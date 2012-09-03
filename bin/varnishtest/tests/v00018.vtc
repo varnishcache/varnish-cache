@@ -101,11 +101,6 @@ varnish v1 -vcl {
 
 varnish v1 -badvcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { panic if; }
-}
-
-varnish v1 -badvcl {
-	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv { kluf ; }
 }
 

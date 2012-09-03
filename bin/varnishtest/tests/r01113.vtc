@@ -1,0 +1,62 @@
+varnishtest "HTTP status code when hitting max_restarts"
+
+server s1 {
+	rxreq
+	txresp
+	accept
+	rxreq
+	txresp
+	accept
+	rxreq
+	txresp
+	accept
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_hit {
+		if (req.url == "/hit") {
+			return(restart);
+		}
+	}
+	sub vcl_fetch {
+		if (req.url == "/fetch") {
+			return(restart);
+		}
+	}
+	sub vcl_deliver {
+		if (req.url == "/deliver") {
+			return(restart);
+		}
+	}
+	sub vcl_miss {
+		if (req.url == "/miss") {
+			return(restart);
+		}
+	}
+} -start -cliok "param.set max_restarts 1"
+
+client c1 {
+	txreq -url /hit
+	rxresp
+	expect resp.status == 200
+	txreq -url /hit
+	rxresp
+	expect resp.status == 503
+} -run
+client c1 {
+	txreq -url /miss
+	rxresp
+	expect resp.status == 503
+} -run
+client c1 {
+	txreq -url /fetch
+	rxresp
+	expect resp.status == 503
+} -run
+client c1 {
+	txreq -url /deliver
+	rxresp
+	expect resp.status == 503
+} -run

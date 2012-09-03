@@ -31,7 +31,7 @@ server s1 {
 } -start
 
 varnish v1 -arg "-hcritbit" -vcl+backend { } -start 
-varnish v1 -cliok "param.set diag_bitmap 0x80000000"
+varnish v1 -cliok "param.set debug +hashedge"
 
 client c1 {
         txreq -url "/1"
@@ -44,49 +44,49 @@ client c1 {
         rxresp
         expect resp.bodylen == 2
         expect resp.status == 200
-        expect resp.http.X-Varnish == "1002"
+        expect resp.http.X-Varnish == "1003"
 
         txreq -url "/3"
         rxresp
         expect resp.bodylen == 3
         expect resp.status == 200
-        expect resp.http.X-Varnish == "1003"
+        expect resp.http.X-Varnish == "1005"
 
         txreq -url "/4"
         rxresp
         expect resp.bodylen == 4
         expect resp.status == 200
-        expect resp.http.X-Varnish == "1004"
+        expect resp.http.X-Varnish == "1007"
 
         txreq -url "/5"
         rxresp
         expect resp.bodylen == 5
         expect resp.status == 200
-        expect resp.http.X-Varnish == "1005"
+        expect resp.http.X-Varnish == "1009"
 
         txreq -url "/6"
         rxresp
         expect resp.bodylen == 6
         expect resp.status == 200
-        expect resp.http.X-Varnish == "1006"
+        expect resp.http.X-Varnish == "1011"
 
         txreq -url "/7"
         rxresp
         expect resp.bodylen == 7
         expect resp.status == 200
-        expect resp.http.X-Varnish == "1007"
+        expect resp.http.X-Varnish == "1013"
 
         txreq -url "/8"
         rxresp
         expect resp.bodylen == 8
         expect resp.status == 200
-        expect resp.http.X-Varnish == "1008"
+        expect resp.http.X-Varnish == "1015"
 
         txreq -url "/9"
         rxresp
         expect resp.bodylen == 9
         expect resp.status == 200
-        expect resp.http.X-Varnish == "1009"
+        expect resp.http.X-Varnish == "1017"
 } -run
 
 
@@ -95,55 +95,55 @@ client c1 {
         rxresp
         expect resp.status == 200
         expect resp.bodylen == 1
-        expect resp.http.X-Varnish == "1010 1001"
+        expect resp.http.X-Varnish == "1020 1002"
 
         txreq -url "/2"
         rxresp
         expect resp.bodylen == 2
         expect resp.status == 200
-        expect resp.http.X-Varnish == "1011 1002"
+        expect resp.http.X-Varnish == "1021 1004"
 
         txreq -url "/3"
         rxresp
         expect resp.bodylen == 3
         expect resp.status == 200
-        expect resp.http.X-Varnish == "1012 1003"
+        expect resp.http.X-Varnish == "1022 1006"
 
         txreq -url "/4"
         rxresp
         expect resp.bodylen == 4
         expect resp.status == 200
-        expect resp.http.X-Varnish == "1013 1004"
+        expect resp.http.X-Varnish == "1023 1008"
 
         txreq -url "/5"
         rxresp
         expect resp.bodylen == 5
         expect resp.status == 200
-        expect resp.http.X-Varnish == "1014 1005"
+        expect resp.http.X-Varnish == "1024 1010"
 
         txreq -url "/6"
         rxresp
         expect resp.bodylen == 6
         expect resp.status == 200
-        expect resp.http.X-Varnish == "1015 1006"
+        expect resp.http.X-Varnish == "1025 1012"
 
         txreq -url "/7"
         rxresp
         expect resp.bodylen == 7
         expect resp.status == 200
-        expect resp.http.X-Varnish == "1016 1007"
+        expect resp.http.X-Varnish == "1026 1014"
 
         txreq -url "/8"
         rxresp
         expect resp.bodylen == 8
         expect resp.status == 200
-        expect resp.http.X-Varnish == "1017 1008"
+        expect resp.http.X-Varnish == "1027 1016"
 
         txreq -url "/9"
         rxresp
         expect resp.bodylen == 9
         expect resp.status == 200
-        expect resp.http.X-Varnish == "1018 1009"
+        expect resp.http.X-Varnish == "1028 1018"
 } -run
 
 varnish v1 -cliok "hcb.dump"

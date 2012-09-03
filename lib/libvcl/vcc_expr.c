@@ -423,19 +423,21 @@ vcc_expr_tostring(struct expr **e, enum var_type fmt)
 
 	p = NULL;
 	switch((*e)->fmt) {
-	case BACKEND:	p = "VRT_backend_string(sp, \v1)"; break;
-	case BOOL:	p = "VRT_bool_string(sp, \v1)"; break;
-	case DURATION:	p = "VRT_double_string(sp, \v1)"; break;
+	case BACKEND:	p = "VRT_backend_string(req, \v1)"; break;
+	case BOOL:	p = "VRT_bool_string(req, \v1)"; break;
+	case DURATION:	p = "VRT_double_string(req, \v1)"; break;
 			 /* XXX: should DURATION insist on "s" suffix ? */
-	case INT:	p = "VRT_int_string(sp, \v1)"; break;
-	case IP:	p = "VRT_IP_string(sp, \v1)"; break;
-	case BYTES:	p = "VRT_double_string(sp, \v1)"; break; /* XXX */
-	case REAL:	p = "VRT_double_string(sp, \v1)"; break;
-	case TIME:	p = "VRT_time_string(sp, \v1)"; break;
+	case INT:	p = "VRT_int_string(req, \v1)"; break;
+	case IP:	p = "VRT_IP_string(req, \v1)"; break;
+	case BYTES:	p = "VRT_double_string(req, \v1)"; break; /* XXX */
+	case REAL:	p = "VRT_double_string(req, \v1)"; break;
+	case TIME:	p = "VRT_time_string(req, \v1)"; break;
 	default:	break;
 	}
-	if (p != NULL)
+	if (p != NULL) {
 		*e = vcc_expr_edit(fmt, p, *e, NULL);
+		(*e)->constant = 0;
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -454,6 +456,8 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym)
 	SkipToken(tl, '(');
 
 	vcc_expr0(tl, &e2, STRING);
+	if (e2 == NULL)
+		return;
 	if (e2->fmt != STRING)
 		vcc_expr_tostring(&e2, STRING);
 
@@ -462,11 +466,13 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym)
 	p = vcc_regexp(tl);
 	vcc_NextToken(tl);
 
-	bprintf(buf, "VRT_regsub(sp, %d,\n\v1,\n%s\n", all, p);
+	bprintf(buf, "VRT_regsub(req, %d,\n\v1,\n%s\n", all, p);
 	*e = vcc_expr_edit(STRING, buf, e2, *e);
 
 	SkipToken(tl, ',');
 	vcc_expr0(tl, &e2, STRING);
+	if (e2 == NULL)
+		return;
 	if (e2->fmt != STRING)
 		vcc_expr_tostring(&e2, STRING);
 	*e = vcc_expr_edit(STRING, "\v1, \v2)", *e, e2);
@@ -533,7 +539,7 @@ vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 	SkipToken(tl, ID);
 	SkipToken(tl, '(');
 	p = sym->args;
-	e2 = vcc_mk_expr(vcc_arg_type(&p), "%s(sp\v+", sym->cfunc);
+	e2 = vcc_mk_expr(vcc_arg_type(&p), "%s(req\v+", sym->cfunc);
 	while (*p != '\0') {
 		e1 = NULL;
 		fmt = vcc_arg_type(&p);
@@ -813,7 +819,7 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 	}
 	if (fmt != STRING_LIST && (*e)->fmt == STRING_LIST)
 		*e = vcc_expr_edit(STRING,
-		    "\v+VRT_WrkString(sp,\n\v1,\nvrt_magic_string_end)",
+		    "\v+VRT_ReqString(req,\n\v1,\nvrt_magic_string_end)",
 		    *e, NULL);
 	if (fmt == STRING_LIST && (*e)->fmt == STRING)
 		(*e)->fmt = STRING_LIST;
@@ -941,7 +947,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 		re = vcc_regexp(tl);
 		ERRCHK(tl);
 		vcc_NextToken(tl);
-		bprintf(buf, "%sVRT_re_match(sp, \v1, %s)", not, re);
+		bprintf(buf, "%sVRT_re_match(req, \v1, %s)", not, re);
 		*e = vcc_expr_edit(BOOL, buf, *e, NULL);
 		return;
 	}
@@ -951,7 +957,8 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 		vcc_NextToken(tl);
 		ExpectErr(tl, ID);
 		vcc_AddRef(tl, tl->t, SYM_ACL);
-		bprintf(buf, "%smatch_acl_named_%.*s(sp, \v1)", not, PF(tl->t));
+		bprintf(buf, "%smatch_acl_named_%.*s(req, \v1)",
+		    not, PF(tl->t));
 		vcc_NextToken(tl);
 		*e = vcc_expr_edit(BOOL, buf, *e, NULL);
 		return;

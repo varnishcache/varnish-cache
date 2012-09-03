@@ -186,7 +186,7 @@ vep_error(const struct vep_state *vep, const char *p)
 
 	VSC_C_main->esi_errors++;
 	l = (intmax_t)(vep->ver_p - vep->hack_p);
-	VSLB(vep->bo, SLT_ESI_xmlerror, "ERR at %jd %s", l, p);
+	VSLb(vep->bo->vsl, SLT_ESI_xmlerror, "ERR at %jd %s", l, p);
 
 }
 
@@ -202,7 +202,7 @@ vep_warn(const struct vep_state *vep, const char *p)
 	VSC_C_main->esi_warnings++;
 	l = (intmax_t)(vep->ver_p - vep->hack_p);
 	printf("WARNING at %jd %s\n", l, p);
-	VSLB(vep->bo, SLT_ESI_xmlerror, "WARN at %jd %s", l, p);
+	VSLb(vep->bo->vsl, SLT_ESI_xmlerror, "WARN at %jd %s", l, p);
 
 }
 
@@ -601,7 +601,7 @@ VEP_Parse(const struct busyobj *bo, const char *p, size_t l)
 				p++;
 				vep->state = VEP_STARTTAG;
 			} else if (p < e) {
-				VSLB(vep->bo, SLT_ESI_xmlerror,
+				VSLb(vep->bo->vsl, SLT_ESI_xmlerror,
 				    "No ESI processing, first char not '<'");
 				vep->state = VEP_NOTXML;
 			}

@@ -25,6 +25,7 @@ flexelint \
 	../../lib/libvarnishcompat/execinfo.c \
 	../../lib/libvcl/*.c \
 	../../lib/libvmod_std/*.c \
+	../../lib/libvmod_debug/*.c \
 	2>&1 | tee _.fl
 
 if [ -f _.fl.old ] ; then

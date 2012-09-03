@@ -39,12 +39,12 @@
 #include "vcc_if.h"
 
 double __match_proto__()
-vmod_duration(struct sess *sp, const char *p, double d)
+vmod_duration(struct req *req, const char *p, double d)
 {
 	char *e;
 	double r;
 
-	(void)sp;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	if (p == NULL)
 		return (d);
@@ -89,12 +89,12 @@ vmod_duration(struct sess *sp, const char *p, double d)
 }
 
 int __match_proto__()
-vmod_integer(struct sess *sp, const char *p, int i)
+vmod_integer(struct req *req, const char *p, int i)
 {
 	char *e;
 	int r;
 
-	(void)sp;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	if (p == NULL)
 		return (i);

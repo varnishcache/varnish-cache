@@ -31,31 +31,31 @@ toupper
 -------
 
 Prototype
-	toupper(STRING S)
+	toupper(STRING s)
 Return value
-       String
+	String
 Description
-	Converts the STRING S to upper case.
+	Converts the string *s* to upper case.
 Example
 	set beresp.http.x-scream = std.toupper("yes!");
 
 tolower
 -------
 Prototype
-	tolower(STRING S)
+	tolower(STRING s)
 Return value
-       String
+	String
 Description
-	Converts the STRING to lower case.
+	Converts the string *s* to lower case.
 Example
-        set beresp.http.x-nice = std.tolower("VerY");
+	set beresp.http.x-nice = std.tolower("VerY");
 
-set_up_tos
+set_ip_tos
 ----------
 Prototype
-	set_ip_tos(INT I)
+	set_ip_tos(INT i)
 Return value
-       Void
+	Void
 Description
 	Sets the Type-of-Service flag for the current session. Please
 	note that the TOS flag is not removed by the end of the
@@ -71,7 +71,7 @@ random
 Prototype
 	random(REAL a, REAL b)
 Return value
-       Real
+	Real
 Description
 	Returns a random REAL number between *a* and *b*.
 Example
@@ -82,9 +82,9 @@ log
 Prototype
 	log(STRING string)
 Return value
-       Void
+	Void
 Description
-	Logs string to the shared memory log.
+	Logs *string* to the shared memory log.
 Example
 	std.log("Something fishy is going on with the vhost " + req.host);
 
@@ -93,7 +93,7 @@ syslog
 Prototype
 	syslog(INT priority, STRING string)
 Return value
-        Void
+	Void
 Description
 	Logs *string* to syslog marked with *priority*.
 Example
@@ -104,7 +104,7 @@ fileread
 Prototype
 	fileread(STRING filename)
 Return value
-        String
+	String
 Description
 	Reads a file and returns a string with the content. Please
 	note that it is not recommended to send variables to this
@@ -118,33 +118,32 @@ duration
 Prototype
 	duration(STRING s, DURATION fallback)
 Return value
-       Duration
+	Duration
 Description
-	Converts the string s to seconds. s can be quantified with the
-	usual s (seconds), m (minutes), h (hours), d (days) and w
-	(weeks) units. If it fails to parse the string *fallback* 
-	will be used
+	Converts the string *s* to seconds. *s* can be quantified with
+	the usual s (seconds), m (minutes), h (hours), d (days) and w
+	(weeks) units. If *s* fails to parse, *fallback* will be used.
 Example
-	set beresp.ttl = std.duration("1w", 3600);
+	set beresp.ttl = std.duration("1w", 3600s);
 
 integer
 --------
 Prototype
 	integer(STRING s, INT fallback)
 Return value
-       Int
+	Int
 Description
-	Converts the string s to an integer.  If it fails to parse the
-	string *fallback* will be used
+	Converts the string *s* to an integer.  If *s* fails to parse,
+	*fallback* will be used
 Example
-	if (std.integer(beresp.http.x-foo, 0) > 5) { … }
+	if (std.integer(beresp.http.x-foo, 0) > 5) { ... }
 
 collect
 -------
 Prototype
 	collect(HEADER header)
 Return value
-       Void
+	Void
 Description
 	Collapses the header, joining the headers into one.
 Example

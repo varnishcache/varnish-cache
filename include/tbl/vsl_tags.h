@@ -34,70 +34,125 @@
  *
  * XXX: Please add new entries a the end to not break saved log-segments.
  * XXX: we can resort them when we have a major release.
+ *
+ * Arguments:
+ *	Tag-Name
+ *	Short Description (1 line, max ? chars)
+ *	Long Description (in RST "definition list" format)
  */
 
-SLTM(Debug)
-SLTM(Error)
-SLTM(CLI)
-SLTM(StatSess)
-SLTM(ReqEnd)
-SLTM(SessionOpen)
-SLTM(SessionClose)
-SLTM(BackendOpen)
-SLTM(BackendXID)
-SLTM(BackendReuse)
-SLTM(BackendClose)
-SLTM(HttpGarbage)
-SLTM(Backend)
-SLTM(Length)
+SLTM(Debug, "Debug messages",
+	"Debug messages can normally be ignored, but are sometimes\n"
+	"helpful during trouble-shooting.  Most debug messages must\n"
+	"be explicitly enabled with parameters."
+)
+SLTM(Error, "Error messages",
+	"Error messages are stuff you probably want to know."
+)
+SLTM(CLI, "CLI communication",
+	"CLI communication between master and child process."
+)
 
-SLTM(FetchError)
+SLTM(ReqEnd, "Client request end",
+	"Marks the end of client request.\n\n"
+	"xid\n    Transaction id.\n\n"
+	"Trxd\n     Timestamp when the request started.\n\n"
+	"Tidle\n    Timestamp when the request ended.\n\n"
+	"dTrx\n    Time to receive request\n\n"
+	"dTproc\n    Time to process request\n\n"
+	"dTtx\n    Time to transmit response\n\n"
+)
 
-SLTM(RxRequest)
-SLTM(RxResponse)
-SLTM(RxStatus)
-SLTM(RxURL)
-SLTM(RxProtocol)
-SLTM(RxHeader)
+/*---------------------------------------------------------------------*/
 
-SLTM(TxRequest)
-SLTM(TxResponse)
-SLTM(TxStatus)
-SLTM(TxURL)
-SLTM(TxProtocol)
-SLTM(TxHeader)
+SLTM(SessOpen, "Client connection opened",
+	"The first record for a client connection, with the\n"
+	"socket-endpoints of the connection.\n\n"
+	"caddr\n    Client IPv4/6 address\n\n"
+	"cport\n    Client TCP port\n\n"
+	"lsock\n    Listen socket\n\n"
+	"laddr\n    Local IPv4/6 address ('-' if !$log_local_addr)\n\n"
+	"lport\n    Local TCP port ('-' if !$log_local_addr)\n\n"
+	"fd\n    File descriptor number"
+)
 
-SLTM(ObjRequest)
-SLTM(ObjResponse)
-SLTM(ObjStatus)
-SLTM(ObjURL)
-SLTM(ObjProtocol)
-SLTM(ObjHeader)
+/*
+ * XXX: compilers are _so_ picky, and won't let us do an #include
+ * XXX: in the middle of a macro invocation :-(
+ * XXX: If we could, these three lines would have described the
+ * XXX: 'reason' field below.
+#define SESS_CLOSE(nm, desc) "    " #nm "\n\t" desc "\n\n"
+#include <tbl/sess_close.h>
+#undef SESS_CLOSE
+*/
 
-SLTM(LostHeader)
+SLTM(SessClose, "Client connection closed",
+	"SessionClose is the last record for any client connection.\n\n"
+	"reason\n    Why the connection closed.\n\n"
+	"duration\n    How long the session were open.\n\n"
+	"Nreq\n    How many requests on session.\n\n"
+	"Npipe\n    If 'pipe' were used on session.\n\n"
+	"Npass\n    Requests handled with pass.\n\n"
+	"Nfetch\n    Backend fetches by session.\n\n"
+	"Bhdr\n    Header bytes sent on session.\n\n"
+	"Bbody\n    Body bytes sent on session.\n\n"
+)
 
-SLTM(TTL)
-SLTM(Fetch_Body)
-SLTM(VCL_acl)
-SLTM(VCL_call)
-SLTM(VCL_trace)
-SLTM(VCL_return)
-SLTM(VCL_error)
-SLTM(ReqStart)
-SLTM(Hit)
-SLTM(HitPass)
-SLTM(ExpBan)
-SLTM(ExpKill)
-SLTM(WorkThread)
+/*---------------------------------------------------------------------*/
 
-SLTM(ESI_xmlerror)
+SLTM(BackendOpen, "Backend connection opened", "")
+SLTM(BackendXID, "The unique ID of the backend transaction", "")
+SLTM(BackendReuse, "Backend connection reused", "")
+SLTM(BackendClose, "Backend connection closed", "")
+SLTM(HttpGarbage, "", "")
+SLTM(Backend, "Backend selected", "")
+SLTM(Length, "Size of object body", "")
 
-SLTM(Hash)
+SLTM(FetchError, "Error while fetching object", "")
 
-SLTM(Backend_health)
+#define SLTH(aa, bb)	SLTM(Req##aa, "", "")
+#include "tbl/vsl_tags_http.h"
+#undef SLTH
 
-SLTM(VCL_Debug)
-SLTM(VCL_Log)
-SLTM(VCL_Error)
+#define SLTH(aa, bb)	SLTM(Resp##aa, "", "")
+#include "tbl/vsl_tags_http.h"
+#undef SLTH
 
-SLTM(Gzip)
+#define SLTH(aa, bb)	SLTM(Bereq##aa, "", "")
+#include "tbl/vsl_tags_http.h"
+#undef SLTH
+
+#define SLTH(aa, bb)	SLTM(Beresp##aa, "", "")
+#include "tbl/vsl_tags_http.h"
+#undef SLTH
+
+#define SLTH(aa, bb)	SLTM(Obj##aa, "", "")
+#include "tbl/vsl_tags_http.h"
+#undef SLTH
+
+SLTM(LostHeader, "", "")
+
+SLTM(TTL, "TTL set on object", "")
+SLTM(Fetch_Body, "Body fetched from backend", "")
+SLTM(VCL_acl, "", "")
+SLTM(VCL_call, "VCL method called", "")
+SLTM(VCL_trace, "VCL trace data", "")
+SLTM(VCL_return, "VCL method return value", "")
+SLTM(ReqStart, "Client request start", "")
+SLTM(Hit, "Hit object in cache", "")
+SLTM(HitPass, "Hit for pass object in cache", "")
+SLTM(ExpBan, "Object evicted due to ban", "")
+SLTM(ExpKill, "Object expired", "")
+SLTM(WorkThread, "", "")
+
+SLTM(ESI_xmlerror, "Error while parsing ESI tags", "")
+
+SLTM(Hash, "Value added to hash", "")
+
+SLTM(Backend_health, "Backend health check", "")
+
+SLTM(VCL_Debug, "Unused", "")
+SLTM(VCL_Log, "Log statement from VCL", "")
+SLTM(VCL_Error, "", "")
+
+SLTM(Gzip, "G(un)zip performed on object", "")

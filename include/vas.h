@@ -38,24 +38,37 @@
 #ifndef VAS_H_INCLUDED
 #define VAS_H_INCLUDED
 
-typedef void vas_f(const char *, const char *, int, const char *, int, int);
+enum vas_e {
+	VAS_WRONG,
+	VAS_MISSING,
+	VAS_ASSERT,
+	VAS_INCOMPLETE,
+	VAS_VCL,
+};
 
-extern vas_f *VAS_Fail;
+typedef void vas_f(const char *, const char *, int, const char *, int,
+    enum vas_e);
+
+extern vas_f *VAS_Fail __attribute__((__noreturn__));
 
 #ifdef WITHOUT_ASSERTS
 #define assert(e)	((void)(e))
 #else /* WITH_ASSERTS */
 #define assert(e)							\
 do {									\
-	if (!(e))							\
-		VAS_Fail(__func__, __FILE__, __LINE__, #e, errno, 0);	\
+	if (!(e)) {							\
+		VAS_Fail(__func__, __FILE__, __LINE__,			\
+		    #e, errno, VAS_ASSERT);				\
+	}								\
 } while (0)
 #endif
 
 #define xxxassert(e)							\
 do {									\
-	if (!(e))							\
-		VAS_Fail(__func__, __FILE__, __LINE__, #e, errno, 1);	\
+	if (!(e)) {							\
+		VAS_Fail(__func__, __FILE__, __LINE__,			\
+		    #e, errno, VAS_MISSING);				\
+	}								\
 } while (0)
 
 /* Assert zero return value */
@@ -66,8 +79,13 @@ do {									\
 #define diagnostic(foo)	assert(foo)
 #define WRONG(expl)							\
 do {									\
-	VAS_Fail(__func__, __FILE__, __LINE__, expl, errno, 3);		\
-	abort();							\
+	VAS_Fail(__func__, __FILE__, __LINE__, expl, errno, VAS_WRONG);	\
+} while (0)
+
+#define INCOMPL()							\
+do {									\
+	VAS_Fail(__func__, __FILE__, __LINE__,				\
+	    "", errno, VAS_INCOMPLETE);					\
 } while (0)
 
 #endif

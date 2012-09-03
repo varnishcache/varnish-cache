@@ -35,8 +35,14 @@
 #include "cache.h"
 #include "common/heritage.h"
 
+#include "vcli_priv.h"
+
 #include "waiter/waiter.h"
 #include "hash/hash_slinger.h"
+
+#ifndef HAVE_SRANDOMDEV
+#include "compat/srandomdev.h"
+#endif
 
 volatile struct params	*cache_param;
 
@@ -45,20 +51,20 @@ volatile struct params	*cache_param;
  * the thread.  This is used for panic messages.
  */
 
-static pthread_key_t sp_key;
+static pthread_key_t req_key;
 
 void
-THR_SetSession(const struct sess *sp)
+THR_SetRequest(const struct req *req)
 {
 
-	AZ(pthread_setspecific(sp_key, sp));
+	AZ(pthread_setspecific(req_key, req));
 }
 
-const struct sess *
-THR_GetSession(void)
+const struct req *
+THR_GetRequest(void)
 {
 
-	return (pthread_getspecific(sp_key));
+	return (pthread_getspecific(req_key));
 }
 
 /*--------------------------------------------------------------------
@@ -85,31 +91,79 @@ THR_GetName(void)
 }
 
 /*--------------------------------------------------------------------
+ * VXID's are unique transaction numbers allocated with a minimum of
+ * locking overhead via pools in the worker threads.
+ *
+ * VXID's are mostly for use in VSL and for that reason we never return
+ * zero vxid, in order to reserve that for "unassociated" VSL records.
  */
 
 static uint32_t vxid_base;
+static uint32_t vxid_chunk = 32768;
 static struct lock vxid_lock;
 
-static void
-vxid_More(struct vxid *v)
-{
-
-	Lck_Lock(&vxid_lock);
-	v->next = vxid_base;
-	v->count = 32768;
-	vxid_base = v->count;
-	Lck_Unlock(&vxid_lock);
-}
-
 uint32_t
-VXID_Get(struct vxid *v)
+VXID_Get(struct vxid_pool *v)
 {
-	if (v->count == 0)
-		vxid_More(v);
-	AN(v->count);
-	v->count--;
-	return (v->next++);
+	do {
+		if (v->count == 0) {
+			Lck_Lock(&vxid_lock);
+			v->next = vxid_base;
+			v->count = vxid_chunk;
+			vxid_base += v->count;
+			Lck_Unlock(&vxid_lock);
+		}
+		v->count--;
+		v->next++;
+	} while (v->next == 0);
+	return (v->next);
 }
+
+/*--------------------------------------------------------------------
+ * Debugging aids
+ */
+
+/*
+ * Dumb down the VXID allocation to make it predictable for
+ * varnishtest cases
+ */
+static void
+cli_debug_xid(struct cli *cli, const char * const *av, void *priv)
+{
+	(void)priv;
+	if (av[2] != NULL) {
+		vxid_base = strtoul(av[2], NULL, 0);
+		vxid_chunk = 1;
+	}
+	VCLI_Out(cli, "XID is %u", vxid_base);
+}
+
+/*
+ * Default to seed=1, this is the only seed value POSIXl guarantees will
+ * result in a reproducible random number sequence.
+ */
+static void
+cli_debug_srandom(struct cli *cli, const char * const *av, void *priv)
+{
+	(void)priv;
+	unsigned seed = 1;
+
+	if (av[2] != NULL)
+		seed = strtoul(av[2], NULL, 0);
+	srandom(seed);
+	srand48(random());
+	VCLI_Out(cli, "Random(3) seeded with %u", seed);
+}
+
+static struct cli_proto debug_cmds[] = {
+	{ "debug.xid", "debug.xid",
+		"\tExamine or set XID\n", 0, 1, "d", cli_debug_xid },
+	{ "debug.srandom", "debug.srandom",
+		"\tSeed the random(3) function\n", 0, 1, "d",
+		cli_debug_srandom },
+	{ NULL }
+};
+
 
 /*--------------------------------------------------------------------
  * XXX: Think more about which order we start things
@@ -125,7 +179,7 @@ child_main(void)
 
 	cache_param = heritage.param;
 
-	AZ(pthread_key_create(&sp_key, NULL));
+	AZ(pthread_key_create(&req_key, NULL));
 	AZ(pthread_key_create(&name_key, NULL));
 
 	THR_SetName("cache-main");
@@ -141,7 +195,6 @@ child_main(void)
 	CLI_Init();
 	Fetch_Init();
 
-	CNT_Init();
 	VCL_Init();
 
 	HTTP_Init();
@@ -167,8 +220,12 @@ child_main(void)
 
 	BAN_Compile();
 
+	srandomdev();
+	srand48(random());
+	CLI_AddFuncs(debug_cmds);
+
 	/* Wait for persistent storage to load if asked to */
-	if (cache_param->diag_bitmap & 0x00020000)
+	if (FEATURE(FEATURE_WAIT_SILO))
 		SMP_Ready();
 
 	CLI_Run();

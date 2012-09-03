@@ -28,7 +28,6 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 57
-	expect resp.http.content-length == 57
 } -run
 
 varnish v1  -cli "param.set esi_syntax 1" 

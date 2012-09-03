@@ -37,7 +37,7 @@ varnish v1 -vcl+backend {
 } -start
 
 varnish v1 -cliok "param.set esi_syntax 4"
-varnish v1 -cliok "param.set diag_bitmap 0x10000"
+varnish v1 -cliok "param.set debug +syncvsl"
 varnish v1 -cliok "debug.fragfetch 32"
 
 client c1 {

@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifdef HAVE_SYS_MOUNT_H
+#  include <sys/param.h>
 #  include <sys/mount.h>
 #endif
 #ifdef HAVE_SYS_STATVFS_H

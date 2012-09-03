@@ -12,7 +12,10 @@ OCFLAGS="$CFLAGS"
 AC_CANONICAL_SYSTEM
 AC_LANG(C)
 
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
+AM_SILENT_RULES([yes])
+AC_DISABLE_STATIC
+AC_PROG_LIBTOOL
 
 # Checks for programs.
 AC_GNU_SOURCE
@@ -43,7 +46,6 @@ CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 CC="$PTHREAD_CC"
 
 AC_PROG_INSTALL
-AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
 AC_ARG_WITH([rst2man],
                AS_HELP_STRING([--with-rst2man=PATH],
@@ -144,7 +146,15 @@ AC_SUBST(PCRE_LIBS)
 
 PKG_CHECK_MODULES([LIBEDIT], [libedit], 
 	[AC_DEFINE([HAVE_LIBEDIT], [1], [Define we have libedit])],
-	[AC_MSG_WARN([libedit not found, disabling libedit support])])
+	[AC_CHECK_HEADERS([readline/readline.h])
+	 AC_CHECK_HEADERS([edit/readline/readline.h])
+	 AC_CHECK_LIB(edit, el_init,
+	        [ AC_DEFINE([HAVE_LIBEDIT], [1], [Define we have libedit])
+		  LIBEDIT_CFLAGS=""
+		  LIBEDIT_LIBS="-ledit ${CURSES_LIBS}"
+		],
+               [AC_MSG_WARN([libedit not found, disabling libedit support])],
+               [${CURSES_LIBS}])])
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -328,6 +338,15 @@ fi
 AM_MISSING_HAS_RUN
 AC_CHECK_PROGS(PYTHON, [python3 python3.1 python3.2 python2.7 python2.6 python2.5 python2 python], [AC_MSG_ERROR([Python is needed to build Varnish, please install python.])])
 
+AC_CHECK_DECL([SO_ACCEPTFILTER],
+    AC_DEFINE(HAVE_ACCEPT_FILTERS,1,[Define to 1 if you have accept filters]),
+    ,
+    [
+#include <sys/types.h>
+#include <sys/socket.h>
+    ]
+)
+
 # Older Solaris versions define SO_{RCV,SND}TIMEO, but do not
 # implement them.
 #
@@ -461,12 +480,16 @@ AC_ARG_ENABLE(stack-protector,
 if test "x$enable_stack_protector" != "xno"; then
 	save_CFLAGS="$CFLAGS"
 	CFLAGS="${CFLAGS} -fstack-protector-all"
+	save_AM_LT_LDFLAGS="$AM_LT_LDFLAGS"
+	AM_LT_LDFLAGS="${AM_LT_LDFLAGS} -Wc,-fstack-protector"
 	AC_COMPILE_IFELSE(
 		[AC_LANG_PROGRAM([],[],[])],
 		[],
 		[AC_MSG_WARN([-fstack-protector not supported, disabling])
-		    CFLAGS="$save_CFLAGS"])
+		    CFLAGS="$save_CFLAGS"]
+		    AM_LT_LDFLAGS="$save_AM_LT_LDFLAGS")
 fi
+AC_SUBST(AM_LT_LDFLAGS)
 
 # --enable-tests
 AC_ARG_ENABLE(tests,
@@ -508,6 +531,10 @@ fi
 
 AC_DEFINE_UNQUOTED([VCC_CC],"$VCC_CC",[C compiler command line for VCL code])
 
+# Stupid automake needs this
+VTC_TESTS="$(cd $srcdir/bin/varnishtest && echo tests/*.vtc)"
+AC_SUBST(VTC_TESTS)
+
 # Generate output
 AC_CONFIG_FILES([
     Makefile
@@ -532,10 +559,12 @@ AC_CONFIG_FILES([
     lib/libvarnishcompat/Makefile
     lib/libvcl/Makefile
     lib/libvgz/Makefile
+    lib/libvmod_debug/Makefile
     lib/libvmod_std/Makefile
     lib/libjemalloc/Makefile
     man/Makefile
     redhat/Makefile
     varnishapi.pc
+    varnishapi-uninstalled.pc
 ])
 AC_OUTPUT

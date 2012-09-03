@@ -41,124 +41,120 @@
 #include "vtcp.h"
 #include "vtim.h"
 
-#define ILLEGAL_R(sess, obj, field)                                         \
-WSP(sess, SLT_VCL_error, "%s does not exist (reading field %s)", obj, field)
-
 static char vrt_hostname[255] = "";
 
 /*--------------------------------------------------------------------*/
 
 static void
-vrt_do_string(struct worker *w, int fd, const struct http *hp, int fld,
+vrt_illegal_r(const struct req *req, const char *obj, const char *fld)
+{
+        struct vsl_log *vsl = req->vsl;
+        VSLb(vsl, SLT_Error, "%s does not exist (reading field %s)",
+             obj, fld);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+vrt_do_string(const struct http *hp, int fld,
     const char *err, const char *p, va_list ap)
 {
 	char *b;
 
-	// AN(p);
 	AN(hp);
 	b = VRT_String(hp->ws, NULL, p, ap);
 	if (b == NULL || *b == '\0') {
-		WSL(w->vsl, SLT_LostHeader, fd, "%s", err);
+		VSLb(hp->vsl, SLT_LostHeader, "%s", err);
 	} else {
 		http_SetH(hp, fld, b);
 	}
 	va_end(ap);
 }
 
-#define VRT_DO_HDR_l(obj, hdr, cont, http, fld)			\
+#define VRT_DO_HDR_l(obj, hdr, http, fld)			\
 void								\
-VRT_l_##obj##_##hdr(const struct sess *sp, const char *p, ...)	\
+VRT_l_##obj##_##hdr(const struct req *req, const char *p, ...)	\
 {								\
 	va_list ap;						\
 								\
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
 	va_start(ap, p);					\
-	vrt_do_string(sp->wrk, sp->fd,				\
-	    cont->http, fld, #obj "." #hdr, p, ap);		\
+	vrt_do_string(http, fld, #obj "." #hdr, p, ap);		\
 	va_end(ap);						\
 }
 
-#define VRT_DO_HDR_r(obj, hdr, cont, http, fld, nullable)	\
+#define VRT_DO_HDR_r(obj, hdr, http, fld, nullcheck)		\
 const char *							\
-VRT_r_##obj##_##hdr(const struct sess *sp)			\
+VRT_r_##obj##_##hdr(const struct req *req)			\
 {								\
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-        if (!nullable || cont != NULL) {			\
-            CHECK_OBJ_NOTNULL(cont->http, HTTP_MAGIC);		\
-            return (cont->http->hd[fld].b);			\
-        }							\
-        ILLEGAL_R(sp, #obj, #hdr);				\
-        return(NULL);                                           \
-}                                                               \
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
+        nullcheck;						\
+        CHECK_OBJ_NOTNULL(http, HTTP_MAGIC);                    \
+        return (http->hd[fld].b);				\
+}
 
-#define VRT_DO_HDR(obj, hdr, cont, http, fld, nullable)		\
-VRT_DO_HDR_l(obj, hdr, cont, http, fld)				\
-VRT_DO_HDR_r(obj, hdr, cont, http, fld, nullable)		\
+#define VRT_DO_HDR(obj, hdr, http, fld, nullcheck)		\
+VRT_DO_HDR_l(obj, hdr, http, fld)				\
+VRT_DO_HDR_r(obj, hdr, http, fld, nullcheck)
 
-VRT_DO_HDR(req,		request,	sp->req,
-	   http,	HTTP_HDR_REQ,		0)
-VRT_DO_HDR(req,		url,		sp->req,
-    	   http,	HTTP_HDR_URL,		0)
-VRT_DO_HDR(req,		proto,		sp->req,
-	   http,	HTTP_HDR_PROTO,		0)
-VRT_DO_HDR(bereq,	request,	sp->wrk->busyobj,
-	   bereq,	HTTP_HDR_REQ,		0)
-VRT_DO_HDR(bereq,	url,		sp->wrk->busyobj,
-	   bereq,	HTTP_HDR_URL,		0)
-VRT_DO_HDR(bereq,	proto,		sp->wrk->busyobj,
-	   bereq,	HTTP_HDR_PROTO,		0)
-VRT_DO_HDR(obj,		proto,		sp->req->obj,
-	   http,	HTTP_HDR_PROTO,		0)
-VRT_DO_HDR(obj,		response,	sp->req->obj,
-	   http,	HTTP_HDR_RESPONSE,	0)
-VRT_DO_HDR(resp,	proto,		sp->req,
-	   resp,	HTTP_HDR_PROTO,		0)
-VRT_DO_HDR(resp,	response,	sp->req,
-	   resp,	HTTP_HDR_RESPONSE,	0)
-VRT_DO_HDR(beresp,	proto,		sp->wrk->busyobj,
-	   beresp,	HTTP_HDR_PROTO,		0)
-VRT_DO_HDR(beresp,	response,	sp->wrk->busyobj,
-	   beresp,	HTTP_HDR_RESPONSE,	0)
-VRT_DO_HDR_r(stale_obj,	proto,		sp->wrk->busyobj->stale_obj,
-	     http,	HTTP_HDR_PROTO,		1)
-VRT_DO_HDR_r(stale_obj,	response,	sp->wrk->busyobj->stale_obj,
-	     http,	HTTP_HDR_RESPONSE,	1)
+VRT_DO_HDR(req,   request,	req->http,		HTTP_HDR_REQ, )
+VRT_DO_HDR(req,   url,		req->http,		HTTP_HDR_URL, )
+VRT_DO_HDR(req,   proto,	req->http,		HTTP_HDR_PROTO, )
+VRT_DO_HDR(bereq, request,	req->busyobj->bereq,	HTTP_HDR_REQ, )
+VRT_DO_HDR(bereq, url,		req->busyobj->bereq,	HTTP_HDR_URL, )
+VRT_DO_HDR(bereq, proto,	req->busyobj->bereq,	HTTP_HDR_PROTO, )
+VRT_DO_HDR(obj,   proto,	req->obj->http,		HTTP_HDR_PROTO, )
+VRT_DO_HDR(obj,   response,	req->obj->http,		HTTP_HDR_RESPONSE, )
+VRT_DO_HDR(resp,  proto,	req->resp,		HTTP_HDR_PROTO, )
+VRT_DO_HDR(resp,  response,	req->resp,		HTTP_HDR_RESPONSE, )
+VRT_DO_HDR(beresp,  proto,	req->busyobj->beresp,	HTTP_HDR_PROTO, )
+VRT_DO_HDR(beresp,  response,	req->busyobj->beresp,	HTTP_HDR_RESPONSE, )
+VRT_DO_HDR_r(stale_obj, proto,  req->busyobj->stale_obj->http, HTTP_HDR_PROTO,
+    if (req->busyobj->stale_obj == NULL) {
+            vrt_illegal_r(req, "stale_obj", "proto");
+            return(NULL);
+    })
+VRT_DO_HDR_r(stale_obj, response, req->busyobj->stale_obj->http,
+    HTTP_HDR_RESPONSE,
+    if (req->busyobj->stale_obj == NULL) {
+            vrt_illegal_r(req, "stale_obj", "response");
+            return(NULL);
+    })
 
 /*--------------------------------------------------------------------*/
 
-#define VRT_DO_STATUS_l(obj, cont, http)			\
+#define VRT_DO_STATUS_l(obj, http)				\
 void								\
-VRT_l_##obj##_status(const struct sess *sp, int num)		\
+VRT_l_##obj##_status(const struct req *req, int num)		\
 {								\
 								\
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
 	assert(num >= 100 && num <= 999);			\
-	cont->http->status = (uint16_t) num;			\
+	http->status = (uint16_t) num;				\
 }
 
-#define VRT_DO_STATUS_r(obj, cont, http, nullable)		\
+#define VRT_DO_STATUS_r(obj, http, nullcheck)			\
 int								\
-VRT_r_##obj##_status(const struct sess *sp)			\
+VRT_r_##obj##_status(const struct req *req)			\
 {								\
 								\
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-        if (nullable && cont == NULL) {				\
-            ILLEGAL_R(sp, #obj, "status");			\
-            return (503);                                       \
-        }                                                       \
-	return(cont->http->status);				\
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
+        nullcheck;						\
+	return(http->status);					\
 }
 
-#define VRT_DO_STATUS(obj, cont, http, nullable)		\
-VRT_DO_STATUS_l(obj, cont, http)				\
-VRT_DO_STATUS_r(obj, cont, http, nullable)			\
+#define VRT_DO_STATUS(obj, http, nullcheck)			\
+VRT_DO_STATUS_l(obj, http)					\
+VRT_DO_STATUS_r(obj, http, nullcheck)
 
-VRT_DO_STATUS(obj,		sp->req->obj,
-	      http,	0)
-VRT_DO_STATUS(beresp,		sp->wrk->busyobj,
-	      beresp,	0)
-VRT_DO_STATUS(resp,		sp->req,
-	      resp,	0)
-VRT_DO_STATUS_r(stale_obj,	sp->wrk->busyobj->stale_obj,
-		http,	1)
+VRT_DO_STATUS(obj, req->obj->http, )
+VRT_DO_STATUS(beresp, req->busyobj->beresp, )
+VRT_DO_STATUS(resp, req->resp, )
+VRT_DO_STATUS_r(stale_obj, req->busyobj->stale_obj->http,
+    if (req->busyobj->stale_obj == NULL) {
+            vrt_illegal_r(req, "stale_obj", "status");
+            return (503);
+    })
 
 /*--------------------------------------------------------------------*/
 
@@ -168,28 +164,25 @@ VRT_DO_STATUS_r(stale_obj,	sp->wrk->busyobj->stale_obj,
  * is no object.
  */
 void
-VRT_l_beresp_saintmode(const struct sess *sp, double a)
+VRT_l_beresp_saintmode(const struct req *req, double a)
 {
 	struct trouble *new;
 	struct trouble *tr;
 	struct trouble *tr2;
-	struct worker *wrk;
 	struct vbc *vbc;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk, WORKER_MAGIC);
-	wrk = sp->wrk;
-	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
-	vbc = wrk->busyobj->vbc;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->busyobj, BUSYOBJ_MAGIC);
+	vbc = req->busyobj->vbc;
 	if (!vbc)
 		return;
 	CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
 	if (!vbc->backend)
 		return;
 	CHECK_OBJ_NOTNULL(vbc->backend, BACKEND_MAGIC);
-	if (!sp->req->objcore)
+	if (!req->objcore->objhead)
 		return;
-	CHECK_OBJ_NOTNULL(sp->req->objcore, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
 	/* Setting a negative holdoff period is a mistake. Detecting this
 	 * when compiling the VCL would be better.
@@ -198,8 +191,8 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 
 	ALLOC_OBJ(new, TROUBLE_MAGIC);
 	AN(new);
-	new->target = (uintptr_t)(sp->req->objcore->objhead);
-	new->timeout = sp->t_req + a;
+	memcpy(new->digest, req->digest, sizeof new->digest);
+	new->timeout = req->t_req + a;
 
 	/* Insert the new item on the list before the first item with a
 	 * timeout at a later date (ie: sort by which entry will time out
@@ -227,17 +220,17 @@ VRT_l_beresp_saintmode(const struct sess *sp, double a)
 
 #define VBERESP(dir, type, onm, field)					\
 void									\
-VRT_l_##dir##_##onm(const struct sess *sp, type a)			\
+VRT_l_##dir##_##onm(const struct req *req, type a)			\
 {									\
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);				\
-	sp->wrk->field = a;						\
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);				\
+	req->field = a;							\
 }									\
 									\
 type									\
-VRT_r_##dir##_##onm(const struct sess *sp)				\
+VRT_r_##dir##_##onm(const struct req *req)				\
 {									\
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);				\
-	return (sp->wrk->field);					\
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);				\
+	return (req->field);						\
 }
 
 VBERESP(beresp, unsigned, do_esi, busyobj->do_esi)
@@ -249,46 +242,47 @@ VBERESP(beresp, unsigned, do_pass, busyobj->do_pass)
 /*--------------------------------------------------------------------*/
 
 const char *
-VRT_r_client_identity(const struct sess *sp)
+VRT_r_client_identity(const struct req *req)
 {
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	if (sp->req->client_identity != NULL)
-		return (sp->req->client_identity);
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	if (req->client_identity != NULL)
+		return (req->client_identity);
 	else
-		return (sp->addr);
+		return (req->sp->addr);
 }
 
 void
-VRT_l_client_identity(const struct sess *sp, const char *str, ...)
+VRT_l_client_identity(struct req *req, const char *str, ...)
 {
 	va_list ap;
 	char *b;
 
 	va_start(ap, str);
-	b = VRT_String(sp->req->http->ws, NULL, str, ap);
+	b = VRT_String(req->http->ws, NULL, str, ap);
 	va_end(ap);
-	sp->req->client_identity = b;
+	req->client_identity = b;
 }
 
 /*--------------------------------------------------------------------*/
 
 #define BEREQ_TIMEOUT(which)					\
 void __match_proto__()						\
-VRT_l_bereq_##which(struct sess *sp, double num)		\
+VRT_l_bereq_##which(struct req *req, double num)		\
 {								\
 								\
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);	\
-	sp->wrk->busyobj->which = (num > 0.0 ? num : 0.0);	\
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
+	CHECK_OBJ_NOTNULL(req->busyobj, BUSYOBJ_MAGIC);		\
+	req->busyobj->which = (num > 0.0 ? num : 0.0);		\
 }								\
 								\
-double __match_proto__()					\
-VRT_r_bereq_##which(struct sess *sp)				\
+double								\
+VRT_r_bereq_##which(const struct req *req)			\
 {								\
 								\
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	CHECK_OBJ_NOTNULL(sp->wrk->busyobj, BUSYOBJ_MAGIC);	\
-	return(sp->wrk->busyobj->which);			\
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
+	CHECK_OBJ_NOTNULL(req->busyobj, BUSYOBJ_MAGIC);		\
+	return(req->busyobj->which);				\
 }
 
 BEREQ_TIMEOUT(connect_timeout)
@@ -298,118 +292,121 @@ BEREQ_TIMEOUT(between_bytes_timeout)
 /*--------------------------------------------------------------------*/
 
 const char *
-VRT_r_beresp_backend_name(const struct sess *sp)
+VRT_r_beresp_backend_name(const struct req *req)
 {
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->busyobj->vbc, VBC_MAGIC);
-	return(sp->wrk->busyobj->vbc->backend->vcl_name);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->busyobj->vbc, VBC_MAGIC);
+	return(req->busyobj->vbc->backend->vcl_name);
 }
 
 struct sockaddr_storage *
-VRT_r_beresp_backend_ip(const struct sess *sp)
+VRT_r_beresp_backend_ip(const struct req *req)
 {
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->busyobj->vbc, VBC_MAGIC);
-	return(sp->wrk->busyobj->vbc->addr);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->busyobj->vbc, VBC_MAGIC);
+	return(req->busyobj->vbc->addr);
 }
 
 int
-VRT_r_beresp_backend_port(const struct sess *sp)
+VRT_r_beresp_backend_port(const struct req *req)
 {
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->wrk->busyobj->vbc, VBC_MAGIC);
-	return (VTCP_port(sp->wrk->busyobj->vbc->addr));
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->busyobj->vbc, VBC_MAGIC);
+	return (VTCP_port(req->busyobj->vbc->addr));
 }
 
-const char * __match_proto__()
-VRT_r_beresp_storage(struct sess *sp)
+const char *
+VRT_r_beresp_storage(const struct req *req)
 {
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	if (sp->req->storage_hint != NULL)
-		return (sp->req->storage_hint);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	if (req->storage_hint != NULL)
+		return (req->storage_hint);
 	else
 		return (NULL);
 }
 
-void __match_proto__()
-VRT_l_beresp_storage(struct sess *sp, const char *str, ...)
+void
+VRT_l_beresp_storage(struct req *req, const char *str, ...)
 {
 	va_list ap;
 	char *b;
 
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	va_start(ap, str);
-	b = VRT_String(sp->wrk->busyobj->ws, NULL, str, ap);
+	b = VRT_String(req->busyobj->ws, NULL, str, ap);
 	va_end(ap);
-	sp->req->storage_hint = b;
+	req->storage_hint = b;
 }
 
 /*--------------------------------------------------------------------*/
 
 void
-VRT_l_req_backend(const struct sess *sp, struct director *be)
+VRT_l_req_backend(struct req *req, struct director *be)
 {
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	sp->req->director = be;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	req->director = be;
 }
 
 struct director *
-VRT_r_req_backend(const struct sess *sp)
+VRT_r_req_backend(const struct req *req)
 {
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (sp->req->director);
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	return (req->director);
 }
 
 /*--------------------------------------------------------------------*/
 
 void
-VRT_l_req_esi(const struct sess *sp, unsigned process_esi)
+VRT_l_req_esi(struct req *req, unsigned process_esi)
 {
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	/*
 	 * Only allow you to turn of esi in the main request
 	 * else everything gets confused
 	 */
-	if(sp->req->esi_level == 0)
-		sp->req->disable_esi = !process_esi;
+	if(req->esi_level == 0)
+		req->disable_esi = !process_esi;
 }
 
 unsigned
-VRT_r_req_esi(const struct sess *sp)
+VRT_r_req_esi(const struct req *req)
 {
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (!sp->req->disable_esi);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	return (!req->disable_esi);
 }
 
 int
-VRT_r_req_esi_level(const struct sess *sp)
+VRT_r_req_esi_level(const struct req *req)
 {
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return(sp->req->esi_level);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	return(req->esi_level);
 }
 
 /*--------------------------------------------------------------------*/
 
-unsigned __match_proto__()
-VRT_r_req_can_gzip(struct sess *sp)
+unsigned
+VRT_r_req_can_gzip(const struct req *req)
 {
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (RFC2616_Req_Gzip(sp));
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	return (RFC2616_Req_Gzip(req->http));
 }
 
 
 /*--------------------------------------------------------------------*/
 
 int
-VRT_r_req_restarts(const struct sess *sp)
+VRT_r_req_restarts(const struct req *req)
 {
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	return (sp->req->restarts);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	return (req->restarts);
 }
 
 /*--------------------------------------------------------------------
@@ -417,102 +414,119 @@ VRT_r_req_restarts(const struct sess *sp)
  * keep are relative to ttl.
  */
 
-#define VRT_DO_EXP_l(which, cont, fld, offset, extra)		    \
-void __match_proto__()						    \
-VRT_l_##which##_##fld(struct sess *sp, double a)		    \
-{								    \
-								    \
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			    \
-	if (a > 0.)						    \
-		a += offset;					    \
-	EXP_Set_##fld(&cont->exp, a);				    \
-	extra;							    \
+#define VRT_DO_EXP_l(which, exp, fld, offset, extra)		\
+void								\
+VRT_l_##which##_##fld(struct req *req, double a)		\
+{								\
+								\
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
+	if (a > 0.)						\
+		a += offset;					\
+	EXP_Set_##fld(&exp, a);					\
+	extra;							\
 }
 
-#define VRT_DO_EXP_r(which, cont, fld, offset, nullable)	    \
-double __match_proto__()					    \
-VRT_r_##which##_##fld(struct sess *sp)				    \
-{								    \
-								    \
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			    \
-	if (nullable && cont == NULL) {				    \
-	    ILLEGAL_R(sp, #which, #fld);			    \
-	    return (-1);					    \
-	}							    \
-	return(EXP_Get_##fld(&cont->exp) - offset);		    \
+#define VRT_DO_EXP_r(which, exp, fld, offset, nullcheck)	\
+double								\
+VRT_r_##which##_##fld(const struct req *req)			\
+{								\
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
+        nullcheck;						\
+	return(EXP_Get_##fld(&exp) - offset);			\
 }
-
-#define VRT_DO_EXP(which, cont, fld, offset, nullable, extra)	    \
-VRT_DO_EXP_l(which, cont, fld, offset, extra)  		            \
-VRT_DO_EXP_r(which, cont, fld, offset, nullable)
 
 static void
-vrt_wsp_exp(const struct sess *sp, unsigned xid, const struct exp *e)
+vrt_wsp_exp(struct req *req, unsigned xid, const struct exp *e)
 {
-	WSP(sp, SLT_TTL, "%u VCL %.0f %.0f %.0f %.0f %.0f",
-	    xid, e->ttl - (sp->t_req - e->entered), e->grace, e->keep,
-	    sp->t_req, e->age + (sp->t_req - e->entered));
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	VSLb(req->vsl, SLT_TTL, "%u VCL %.0f %.0f %.0f %.0f %.0f",
+	    xid, e->ttl - (req->t_req - e->entered), e->grace, e->keep,
+	    req->t_req, e->age + (req->t_req - e->entered));
 }
 
-VRT_DO_EXP(req, sp->req, ttl, 0, 0, )
-VRT_DO_EXP(req, sp->req, grace, 0, 0, )
-VRT_DO_EXP(req, sp->req, keep, 0, 0, )
+#define VRT_DO_EXP(which, exp, fld, offset, extra, nullcheck)	\
+VRT_DO_EXP_l(which, exp, fld, offset, extra)			\
+VRT_DO_EXP_r(which, exp, fld, offset, nullcheck)
 
-VRT_DO_EXP(obj, sp->req->obj, grace, 0, 0,
-   EXP_Rearm(sp->req->obj);
-   vrt_wsp_exp(sp, sp->req->obj->xid, &sp->req->obj->exp);)
-VRT_DO_EXP(obj, sp->req->obj, ttl, (sp->t_req - sp->req->obj->exp.entered), 0,
-   EXP_Rearm(sp->req->obj);
-   vrt_wsp_exp(sp, sp->req->obj->xid, &sp->req->obj->exp);)
-VRT_DO_EXP(obj, sp->req->obj, keep, 0, 0,
-   EXP_Rearm(sp->req->obj);
-   vrt_wsp_exp(sp, sp->req->obj->xid, &sp->req->obj->exp);)
+VRT_DO_EXP(req, req->exp, ttl, 0, , )
+VRT_DO_EXP(req, req->exp, grace, 0, , )
+VRT_DO_EXP(req, req->exp, keep, 0, , )
 
-VRT_DO_EXP(beresp, sp->wrk->busyobj, grace, 0, 0,
-   vrt_wsp_exp(sp, sp->req->xid, &sp->wrk->busyobj->exp);)
-VRT_DO_EXP(beresp, sp->wrk->busyobj, ttl, 0, 0,
-   vrt_wsp_exp(sp, sp->req->xid, &sp->wrk->busyobj->exp);)
-VRT_DO_EXP(beresp, sp->wrk->busyobj, keep, 0, 0,
-   vrt_wsp_exp(sp, sp->req->xid, &sp->wrk->busyobj->exp);)
-    
-VRT_DO_EXP_r(stale_obj, sp->wrk->busyobj->stale_obj, grace, 0, 1)
-VRT_DO_EXP_r(stale_obj, sp->wrk->busyobj->stale_obj, ttl, 0, 1)
-VRT_DO_EXP_r(stale_obj, sp->wrk->busyobj->stale_obj, keep, 0, 1)
+VRT_DO_EXP(obj, req->obj->exp, grace, 0,
+   EXP_Rearm(req->obj);
+   vrt_wsp_exp(req, req->obj->vxid, &req->obj->exp);
+    ,)
+VRT_DO_EXP(obj, req->obj->exp, ttl,
+   (req->t_req - req->obj->exp.entered),
+   EXP_Rearm(req->obj);
+   vrt_wsp_exp(req, req->obj->vxid, &req->obj->exp);
+    ,)
+VRT_DO_EXP(obj, req->obj->exp, keep, 0,
+   EXP_Rearm(req->obj);
+   vrt_wsp_exp(req, req->obj->vxid, &req->obj->exp);
+    ,)
+
+VRT_DO_EXP(beresp, req->busyobj->exp, grace, 0,
+   vrt_wsp_exp(req, req->vsl->wid & VSL_IDENTMASK, &req->busyobj->exp);
+    ,)
+VRT_DO_EXP(beresp, req->busyobj->exp, ttl, 0,
+   vrt_wsp_exp(req, req->vsl->wid & VSL_IDENTMASK, &req->busyobj->exp);
+    ,)
+VRT_DO_EXP(beresp, req->busyobj->exp, keep, 0,
+   vrt_wsp_exp(req, req->vsl->wid & VSL_IDENTMASK, &req->busyobj->exp);
+    ,) 
+
+VRT_DO_EXP_r(stale_obj, req->busyobj->stale_obj->exp, grace, 0,
+    if (req->busyobj->stale_obj == NULL) {
+	    vrt_illegal_r(req, "stale_obj", "grace");
+	    return (-1);
+    })
+VRT_DO_EXP_r(stale_obj, req->busyobj->stale_obj->exp, ttl,
+    (req->t_req - req->busyobj->stale_obj->exp.entered),
+    if (req->busyobj->stale_obj == NULL) {
+	    vrt_illegal_r(req, "stale_obj", "ttl");
+	    return (-1);
+    })
+VRT_DO_EXP_r(stale_obj, req->busyobj->stale_obj->exp, keep, 0,
+    if (req->busyobj->stale_obj == NULL) {
+	    vrt_illegal_r(req, "stale_obj", "keep");
+	    return (-1);
+    })
 
 /*--------------------------------------------------------------------
  * req.xid
  */
 
-const char * __match_proto__()
-VRT_r_req_xid(struct sess *sp)
+const char *
+VRT_r_req_xid(const struct req *req)
 {
 	char *p;
 	int size;
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	size = snprintf(NULL, 0, "%u", sp->req->xid) + 1;
-	AN(p = WS_Alloc(sp->req->http->ws, size));
-	assert(snprintf(p, size, "%u", sp->req->xid) < size);
+	size = snprintf(NULL, 0, "%u", req->vsl->wid & VSL_IDENTMASK) + 1;
+	AN(p = WS_Alloc(req->http->ws, size));
+	assert(snprintf(p, size, "%u", req->vsl->wid & VSL_IDENTMASK) < size);
 	return (p);
 }
 
 /*--------------------------------------------------------------------*/
 
 #define REQ_BOOL(hash_var)					\
-void __match_proto__()						\
-VRT_l_req_##hash_var(struct sess *sp, unsigned val)		\
+void								\
+VRT_l_req_##hash_var(struct req *req, unsigned val)		\
 {								\
 								\
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	sp->req->hash_var = val ? 1 : 0;				\
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
+	req->hash_var = val ? 1 : 0;				\
 }								\
 								\
-unsigned __match_proto__()					\
-VRT_r_req_##hash_var(struct sess *sp)				\
+unsigned							\
+VRT_r_req_##hash_var(const struct req *req)			\
 {								\
 								\
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);			\
-	return(sp->req->hash_var);					\
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
+	return(req->hash_var);					\
 }
 
 REQ_BOOL(hash_ignore_busy)
@@ -521,46 +535,46 @@ REQ_BOOL(hash_always_miss)
 /*--------------------------------------------------------------------*/
 
 struct sockaddr_storage *
-VRT_r_client_ip(struct sess *sp)
+VRT_r_client_ip(const struct req *req)
 {
 
-	return (&sp->sockaddr);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	return (&req->sp->sockaddr);
 }
 
 struct sockaddr_storage *
-VRT_r_server_ip(struct sess *sp)
+VRT_r_server_ip(const struct req *req)
 {
 	int i;
 
-	if (sp->mysockaddr.ss_family == AF_UNSPEC) {
-		i = getsockname(sp->fd,
-		    (void*)&sp->mysockaddr, &sp->mysockaddrlen);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	if (req->sp->mysockaddr.ss_family == AF_UNSPEC) {
+		i = getsockname(req->sp->fd,
+		    (void*)&req->sp->mysockaddr, &req->sp->mysockaddrlen);
 		assert(VTCP_Check(i));
 	}
 
-	return (&sp->mysockaddr);
+	return (&req->sp->mysockaddr);
 }
 
 const char*
-VRT_r_server_identity(struct sess *sp)
+VRT_r_server_identity(const struct req *req)
 {
-	(void)sp;
 
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	if (heritage.identity[0] != '\0')
 		return (heritage.identity);
 	else
 		return (heritage.name);
 }
 
-
 const char*
-VRT_r_server_hostname(struct sess *sp)
+VRT_r_server_hostname(const struct req *req)
 {
-	(void)sp;
 
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	if (vrt_hostname[0] == '\0')
 		AZ(gethostname(vrt_hostname, sizeof(vrt_hostname)));
-
 	return (vrt_hostname);
 }
 
@@ -569,77 +583,76 @@ VRT_r_server_hostname(struct sess *sp)
  */
 
 int
-VRT_r_server_port(struct sess *sp)
+VRT_r_server_port(const struct req *req)
 {
 	int i;
 
-	if (sp->mysockaddr.ss_family == AF_UNSPEC) {
-		i = getsockname(sp->fd,
-		    (void*)&sp->mysockaddr, &sp->mysockaddrlen);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	if (req->sp->mysockaddr.ss_family == AF_UNSPEC) {
+		i = getsockname(req->sp->fd,
+		    (void*)&req->sp->mysockaddr, &req->sp->mysockaddrlen);
 		assert(VTCP_Check(i));
 	}
-	return (VTCP_port(&sp->mysockaddr));
+	return (VTCP_port(&req->sp->mysockaddr));
 }
 
 /*--------------------------------------------------------------------*/
 
-/* XXX: uplex/GS: a nice macro would eliminate the repetition here ... */
-
 int
-VRT_r_obj_hits(const struct sess *sp)
+VRT_r_obj_hits(const struct req *req)
 {
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->req->obj, OBJECT_MAGIC);	/* XXX */
-	return (sp->req->obj->hits);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);	/* XXX */
+	return (req->obj->hits);
 }
 
 int
-VRT_r_stale_obj_hits(const struct sess *sp)
+VRT_r_stale_obj_hits(const struct req *req)
 {
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-        if (sp->wrk->busyobj->stale_obj == NULL) {
-            ILLEGAL_R(sp, "stale_obj", "hits");
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+        if (req->busyobj->stale_obj == NULL) {
+            vrt_illegal_r(req, "stale_obj", "hits");
             return (0);
         }
-	CHECK_OBJ(sp->wrk->busyobj->stale_obj, OBJECT_MAGIC);	/* XXX */
-	return (sp->wrk->busyobj->stale_obj->hits);
+	CHECK_OBJ(req->busyobj->stale_obj, OBJECT_MAGIC);	/* XXX */
+	return (req->busyobj->stale_obj->hits);
 }
 
 double
-VRT_r_obj_lastuse(const struct sess *sp)
+VRT_r_obj_lastuse(const struct req *req)
 {
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->req->obj, OBJECT_MAGIC);	/* XXX */
-	return (VTIM_real() - sp->req->obj->last_use);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);	/* XXX */
+	return (VTIM_real() - req->obj->last_use);
 }
 
 double
-VRT_r_stale_obj_lastuse(const struct sess *sp)
+VRT_r_stale_obj_lastuse(const struct req *req)
 {
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-        if (sp->wrk->busyobj->stale_obj == NULL) {
-            ILLEGAL_R(sp, "stale_obj", "lastuse");
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+        if (req->busyobj->stale_obj == NULL) {
+            vrt_illegal_r(req, "stale_obj", "lastuse");
             return (0);
         }
-	CHECK_OBJ(sp->wrk->busyobj->stale_obj, OBJECT_MAGIC);	/* XXX */
-	return (VTIM_real() - sp->wrk->busyobj->stale_obj->last_use);
+	CHECK_OBJ(req->busyobj->stale_obj, OBJECT_MAGIC);	/* XXX */
+	return (VTIM_real() - req->busyobj->stale_obj->last_use);
 }
 
 unsigned
-VRT_r_req_backend_healthy(const struct sess *sp)
+VRT_r_req_backend_healthy(const struct req *req)
 {
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(sp->req->director, DIRECTOR_MAGIC);
-	return (VDI_Healthy(sp->req->director, sp));
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->director, DIRECTOR_MAGIC);
+	return (VDI_Healthy(req->director, req));
 }
 
 unsigned
-VRT_r_stale_obj(const struct sess *sp)
+VRT_r_stale_obj(const struct req *req)
 {
-        CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-        return (sp->wrk->busyobj->stale_obj != NULL);
+        CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+        return (req->busyobj->stale_obj != NULL);
 }

@@ -55,7 +55,7 @@
 /*--------------------------------------------------------------------*/
 
 const char *VSL_tags[256] = {
-#  define SLTM(foo)       [SLT_##foo] = #foo,
+#  define SLTM(foo,sdesc,ldesc)       [SLT_##foo] = #foo,
 #  include "tbl/vsl_tags.h"
 #  undef SLTM
 };
@@ -139,9 +139,12 @@ vsl_open(struct VSM_data *vd)
 	vsl->log_end = vsl->vf.e;
 	vsl->log_ptr = vsl->log_start + 1;
 	if (!vsl->d_opt) {
-		while (*vsl->log_ptr != VSL_ENDMARKER)
+		while (vsl->log_ptr < vsl->log_end &&
+		    *vsl->log_ptr != VSL_ENDMARKER)
 			vsl->log_ptr = VSL_NEXT(vsl->log_ptr);
 	}
+	if (vsl->log_ptr >= vsl->log_end)
+		vsl->log_ptr = vsl->log_start + 1;
 	return (0);
 }
 

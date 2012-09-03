@@ -172,6 +172,8 @@ vca_pace_good(void)
 
 /*--------------------------------------------------------------------
  * Accept on a listen socket, and handle error returns.
+ *
+ * Called from a worker thread from a pool
  */
 
 int
@@ -229,39 +231,34 @@ VCA_FailSess(struct worker *wrk)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(wa, (void*)wrk->aws->f, WRK_ACCEPT_MAGIC);
-	AZ(wrk->sp);
 	AZ(close(wa->acceptsock));
 	wrk->stats.sess_drop++;
 	vca_pace_bad();
+	WS_Release(wrk->aws, 0);
 }
 
 /*--------------------------------------------------------------------
  * We have allocated a session, move our info into it.
  */
 
-void
-VCA_SetupSess(struct worker *wrk)
+const char *
+VCA_SetupSess(struct worker *wrk, struct sess *sp)
 {
-	struct sess *sp;
 	struct wrk_accept *wa;
+	const char *retval;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CAST_OBJ_NOTNULL(wa, (void*)wrk->aws->f, WRK_ACCEPT_MAGIC);
-	sp = wrk->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	sp->vxid = wa->vxid;
-	sp->vseq = 0;
+	CAST_OBJ_NOTNULL(wa, (void*)wrk->aws->f, WRK_ACCEPT_MAGIC);
 	sp->fd = wa->acceptsock;
-	sp->vsl_id = wa->acceptsock | VSL_CLIENTMARKER ;
 	wa->acceptsock = -1;
-	sp->t_open = VTIM_real();
-	sp->mylsock = wa->acceptlsock;
-	CHECK_OBJ_NOTNULL(sp->mylsock, LISTEN_SOCK_MAGIC);
+	retval = wa->acceptlsock->name;
 	assert(wa->acceptaddrlen <= sp->sockaddrlen);
 	memcpy(&sp->sockaddr, &wa->acceptaddr, wa->acceptaddrlen);
 	sp->sockaddrlen = wa->acceptaddrlen;
 	vca_pace_good();
 	wrk->stats.sess_conn++;
+	WS_Release(wrk->aws, 0);
 
 	if (need_test)
 		sock_test(sp->fd);
@@ -278,6 +275,7 @@ VCA_SetupSess(struct worker *wrk)
 		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_RCVTIMEO,
 		    &tv_rcvtimeo, sizeof tv_rcvtimeo));
 #endif
+	return (retval);
 }
 
 /*--------------------------------------------------------------------*/
@@ -293,6 +291,7 @@ vca_acct(void *arg)
 #endif
 	struct listen_sock *ls;
 	double t0, now;
+	int i;
 
 	THR_SetName("cache-acceptor");
 	(void)arg;
@@ -303,6 +302,13 @@ vca_acct(void *arg)
 		AZ(listen(ls->sock, cache_param->listen_depth));
 		AZ(setsockopt(ls->sock, SOL_SOCKET, SO_LINGER,
 		    &linger, sizeof linger));
+		if (cache_param->accept_filter) {
+			i = VTCP_filter_http(ls->sock);
+			if (i)
+				VSL(SLT_Error, ls->sock,
+				    "Kernel filtering: sock=%d, ret=%d %s\n",
+				    ls->sock, i, strerror(errno));
+		}
 	}
 
 	hack_ready = 1;

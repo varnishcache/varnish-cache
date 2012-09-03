@@ -1,0 +1,26 @@
+varnishtest "Test ESI rollback interaction"
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -body {<esi:include src="/esi"/>}
+
+	rxreq
+	expect req.url == "/esi"
+	txresp -body "1"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		rollback;
+	}
+	sub vcl_fetch {
+		set beresp.do_esi = true;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 1
+} -run

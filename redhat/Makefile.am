@@ -9,4 +9,8 @@ EXTRA_DIST =			\
 	varnish.spec		\
 	varnish.sysconfig	\
 	varnishlog.initrc	\
-	varnishncsa.initrc
+	varnishncsa.initrc	\
+	varnish.params		\
+	varnish.service		\
+	varnishncsa.service	\
+	varnishlog.service

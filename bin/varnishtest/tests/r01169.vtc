@@ -1,0 +1,9 @@
+varnishtest "cli_limit truncating full parameter listing - #1169"
+
+server s1 {
+	rxreq
+} -start
+
+varnish v1 -vcl+backend { }
+
+varnish v1 -cliok "param.show -l"

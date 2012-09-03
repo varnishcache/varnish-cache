@@ -13,6 +13,9 @@ This can be overly conservative. A lot of sites use Google Analytics
 cookie is used by the client side javascript and is therefore of no
 interest to the server. 
 
+Cookies from the client
+~~~~~~~~~~~~~~~~~~~~~~~
+
 For a lot of web application it makes sense to completely disregard the
 cookies unless you are accessing a special part of the web site. This
 VCL snippet in vcl_recv will disregard cookies unless you are
@@ -59,7 +62,34 @@ cookies named COOKIE1 and COOKIE2 and you can marvel at it::
       if (req.http.Cookie == "") {
           remove req.http.Cookie;
       }
+    }
   }
 
-The example is taken from the Varnish Wiki, where you can find other
-scary examples of what can be done in VCL.
+A somewhat simpler example that can accomplish almost the same can be
+found below. Instead of filtering out the other cookies it picks out
+the one cookie that is needed, copies it to another header and then
+copies it back, deleting the original cookie header.::
+
+  sub vcl_recv {
+         # save the original cookie header so we can mangle it
+        set req.http.X-Varnish-PHP_SID = req.http.Cookie;
+        # using a capturing sub pattern, extract the continuous string of 
+        # alphanumerics that immediately follows "PHPSESSID="
+        set req.http.X-Varnish-PHP_SID = 
+           regsuball(req.http.X-Varnish-PHP_SID, ";? ?PHPSESSID=([a-zA-Z0-9]+)( |;| ;).*","\1");
+        set req.http.Cookie = req.X-Varnish-PHP_SID;
+        remove req.X-Varnish-PHP_SID;
+   }   
+
+There are other scary examples of what can be done in VCL in the
+Varnish Cache Wiki.
+
+
+Cookies coming from the backend
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If your backend server sets a cookie using the Set-Cookie header
+Varnish will not cache the page in the default configuration.  A
+hit-for-pass object (see :ref:`tutorial-vcl_fetch_actions`) is created.
+So, if the backend server acts silly and sets unwanted cookies just unset
+the Set-Cookie header and all should be fine. 

@@ -29,11 +29,18 @@
 
 #include "config.h"
 
+#include <sys/types.h>
 #include <sys/socket.h>
 
 #ifdef HAVE_LIBEDIT
-#include <stdio.h>
-#include <editline/readline.h>
+#  include <stdio.h>
+#  ifdef HAVE_EDIT_READLINE_READLINE_H
+#    include <edit/readline/readline.h>
+#  elif HAVE_READLINE_READLINE_H
+#    include <readline/readline.h>
+#  else
+#    include <editline/readline.h>
+#  endif
 #endif
 
 #include <errno.h>
@@ -291,20 +298,19 @@ n_arg_sock(const char *n_arg)
 		fprintf(stderr, "%s\n", VSM_Error(vsd));
 		return (-1);
 	}
-	if (T_arg == NULL) {
-		if (VSM_Get(vsd, &vt, "Arg", "-T", "")) {
-			fprintf(stderr, "No -T arg in shared memory\n");
-			return (-1);
-		}
-		T_start = T_arg = strdup(vt.b);
+
+	if (!VSM_Get(vsd, &vt, "Arg", "-T", "")) {
+		fprintf(stderr, "No -T arg in shared memory\n");
+		return (-1);
 	}
-	if (S_arg == NULL) {
-		if (VSM_Get(vsd, &vt, "Arg", "-S", "")) {
-			fprintf(stderr, "No -S arg in shared memory\n");
-			return (-1);
-		}
+	AN(vt.b);
+	T_start = T_arg = strdup(vt.b);
+
+	if (VSM_Get(vsd, &vt, "Arg", "-S", "")) {
+		AN(vt.b);
 		S_arg = strdup(vt.b);
 	}
+
 	sock = -1;
 	while (*T_arg) {
 		p = strchr(T_arg, '\n');

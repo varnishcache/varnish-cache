@@ -37,7 +37,7 @@ WS_Assert(const struct ws *ws)
 {
 
 	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
-	DSL(0x02, SLT_Debug, 0, "WS(%p = (%s, %p %u %u %u)",
+	DSL(DBG_WORKSPACE, 0, "WS(%p = (%s, %p %u %u %u)",
 	    ws, ws->id, ws->s, pdiff(ws->s, ws->f),
 	    ws->r == NULL ? 0 : pdiff(ws->f, ws->r),
 	    pdiff(ws->s, ws->e));
@@ -60,7 +60,7 @@ void
 WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 {
 
-	DSL(0x02, SLT_Debug, 0,
+	DSL(DBG_WORKSPACE, 0,
 	    "WS_Init(%p, \"%s\", %p, %u)", ws, id, space, len);
 	assert(space != NULL);
 	memset(ws, 0, sizeof *ws);
@@ -83,7 +83,7 @@ WS_Reset(struct ws *ws, char *p)
 {
 
 	WS_Assert(ws);
-	DSL(0x02, SLT_Debug, 0, "WS_Reset(%p, %p)", ws, p);
+	DSL(DBG_WORKSPACE, 0, "WS_Reset(%p, %p)", ws, p);
 	assert(ws->r == NULL);
 	if (p == NULL)
 		ws->f = ws->s;
@@ -111,7 +111,7 @@ WS_Alloc(struct ws *ws, unsigned bytes)
 	}
 	r = ws->f;
 	ws->f += bytes;
-	DSL(0x02, SLT_Debug, 0, "WS_Alloc(%p, %u) = %p", ws, bytes, r);
+	DSL(DBG_WORKSPACE, 0, "WS_Alloc(%p, %u) = %p", ws, bytes, r);
 	WS_Assert(ws);
 	return (r);
 }
@@ -122,7 +122,7 @@ WS_Snapshot(struct ws *ws)
 
 	WS_Assert(ws);
 	assert(ws->r == NULL);
-	DSL(0x02, SLT_Debug, 0, "WS_Snapshot(%p) = %p", ws, ws->f);
+	DSL(DBG_WORKSPACE, 0, "WS_Snapshot(%p) = %p", ws, ws->f);
 	return (ws->f);
 }
 
@@ -142,7 +142,7 @@ WS_Reserve(struct ws *ws, unsigned bytes)
 	b2 = PRNDDN(b2);
 	xxxassert(ws->f + b2 <= ws->e);
 	ws->r = ws->f + b2;
-	DSL(0x02, SLT_Debug, 0, "WS_Reserve(%p, %u/%u) = %u",
+	DSL(DBG_WORKSPACE, 0, "WS_Reserve(%p, %u/%u) = %u",
 	    ws, b2, bytes, pdiff(ws->f, ws->r));
 	WS_Assert(ws);
 	return (pdiff(ws->f, ws->r));
@@ -154,7 +154,7 @@ WS_Release(struct ws *ws, unsigned bytes)
 	WS_Assert(ws);
 	bytes = PRNDUP(bytes);
 	assert(bytes <= ws->e - ws->f);
-	DSL(0x02, SLT_Debug, 0, "WS_Release(%p, %u)", ws, bytes);
+	DSL(DBG_WORKSPACE, 0, "WS_Release(%p, %u)", ws, bytes);
 	assert(ws->r != NULL);
 	assert(ws->f + bytes <= ws->r);
 	ws->f += bytes;
@@ -166,7 +166,7 @@ void
 WS_ReleaseP(struct ws *ws, char *ptr)
 {
 	WS_Assert(ws);
-	DSL(0x02, SLT_Debug, 0, "WS_ReleaseP(%p, %p)", ws, ptr);
+	DSL(DBG_WORKSPACE, 0, "WS_ReleaseP(%p, %p)", ws, ptr);
 	assert(ws->r != NULL);
 	assert(ptr >= ws->f);
 	assert(ptr <= ws->r);

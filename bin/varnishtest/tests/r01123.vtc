@@ -1,0 +1,25 @@
+varnishtest "Test case for #1123 - gunzip buffer reset"
+
+server s1 {
+	rxreq
+	txresp -body {<html>start <esi:include src="/included"/> end}
+	rxreq
+	expect req.url == "/included"
+	txresp -body {INCLUDED}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		if (req.url == "/") {
+			set beresp.do_esi = true;
+		}
+		set beresp.do_gzip = true;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 24
+	expect resp.body == "<html>start INCLUDED end"
+} -run

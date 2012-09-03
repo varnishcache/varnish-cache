@@ -411,6 +411,10 @@ vcc_file_source(const struct vcc *tl, struct vsb *sb, const char *fn)
 	char *f;
 	struct source *sp;
 
+	if (!tl->unsafe_path && strchr(fn, '/') != NULL) {
+		VSB_printf(sb, "Include path is unsafe '%s'\n", fn);
+		return (NULL);
+	}
 	f = VFIL_readfile(tl->vcl_dir, fn, NULL);
 	if (f == NULL) {
 		VSB_printf(sb, "Cannot read file '%s': %s\n",
@@ -487,6 +491,8 @@ vcc_NewVcc(const struct vcc *tl0)
 		REPLACE(tl->vmod_dir, tl0->vmod_dir);
 		tl->vars = tl0->vars;
 		tl->err_unref = tl0->err_unref;
+		tl->allow_inline_c = tl0->allow_inline_c;
+		tl->unsafe_path = tl0->unsafe_path;
 	} else {
 		tl->err_unref = 1;
 	}
@@ -593,7 +599,7 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 		sym->r_methods = v->r_methods;
 	}
 
-	sym = VCC_AddSymbolStr(tl, "storage", SYM_WILDCARD);
+	sym = VCC_AddSymbolStr(tl, "storage.", SYM_WILDCARD);
 	sym->wildcard = vcc_Stv_Wildcard;
 
 	vcl_output_lang_h(tl->fh);
@@ -602,6 +608,8 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 
 	/* Macro for accessing directors */
 	Fh(tl, 0, "#define VGCDIR(n) VCL_conf.director[VGC_backend_##n]\n");
+
+	Fh(tl, 0, "#define __match_proto__(xxx)		/*lint -e{818} */\n");
 
 	/* Register and lex the main source */
 	VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
@@ -663,8 +671,8 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 
 	/* Emit method functions */
 	for (i = 0; i < VCL_MET_MAX; i++) {
-		Fc(tl, 1, "\nstatic int\n");
-		Fc(tl, 1, "VGC_function_%s (struct sess *sp)\n",
+		Fc(tl, 1, "\nstatic int __match_proto__(vcl_func_f)\n");
+		Fc(tl, 1, "VGC_function_%s(struct req *req)\n",
 		    method_tab[i].name);
 		AZ(VSB_finish(tl->fm[i]));
 		Fc(tl, 1, "{\n");
@@ -763,7 +771,7 @@ VCC_VMOD_dir(struct vcc *tl, const char *str)
 }
 
 /*--------------------------------------------------------------------
- * Configure default
+ * Configure settings
  */
 
 void
@@ -772,4 +780,20 @@ VCC_Err_Unref(struct vcc *tl, unsigned u)
 
 	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
 	tl->err_unref = u;
+}
+
+void
+VCC_Allow_InlineC(struct vcc *tl, unsigned u)
+{
+
+	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
+	tl->allow_inline_c = u;
+}
+
+void
+VCC_Unsafe_Path(struct vcc *tl, unsigned u)
+{
+
+	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
+	tl->unsafe_path = u;
 }

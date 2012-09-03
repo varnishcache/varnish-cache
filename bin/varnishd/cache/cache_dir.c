@@ -40,12 +40,11 @@
 /* Close a connection ------------------------------------------------*/
 
 void
-VDI_CloseFd(struct worker *wrk, struct vbc **vbp)
+VDI_CloseFd(struct vbc **vbp)
 {
 	struct backend *bp;
 	struct vbc *vc;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(vbp);
 	vc = *vbp;
 	*vbp = NULL;
@@ -55,15 +54,14 @@ VDI_CloseFd(struct worker *wrk, struct vbc **vbp)
 
 	bp = vc->backend;
 
-	WSL(vc->vsl, SLT_BackendClose, vc->vsl_id, "%s", bp->display_name);
+	VSLb(vc->vsl, SLT_BackendClose, "%s", bp->display_name);
 
-	/* Checkpoint log to flush all info related to this connection
-	   before the OS reuses the FD */
-	WSL_Flush(wrk->vsl, 0);
-	WSL_Flush(vc->vsl, 0);
-	vc->vsl->wid = vc->orig_vsl_id;
+	/*
+	 * Checkpoint log to flush all info related to this connection
+	 * before the OS reuses the FD
+	 */
+	VSL_Flush(vc->vsl, 0);
 	vc->vsl = NULL;
-	vc->orig_vsl_id = 0;
 
 	VTCP_close(&vc->fd);
 	VBE_DropRefConn(bp);
@@ -74,12 +72,11 @@ VDI_CloseFd(struct worker *wrk, struct vbc **vbp)
 /* Recycle a connection ----------------------------------------------*/
 
 void
-VDI_RecycleFd(struct worker *wrk, struct vbc **vbp)
+VDI_RecycleFd(struct vbc **vbp)
 {
 	struct backend *bp;
 	struct vbc *vc;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(vbp);
 	vc = *vbp;
 	*vbp = NULL;
@@ -89,17 +86,11 @@ VDI_RecycleFd(struct worker *wrk, struct vbc **vbp)
 
 	bp = vc->backend;
 
-	WSL(vc->vsl, SLT_BackendReuse, vc->vsl_id, "%s", bp->display_name);
+	VSLb(vc->vsl, SLT_BackendReuse, "%s", bp->display_name);
 
-	/*
-	 * Flush the shmlog, so that another session reusing this backend
-	 * will log chronologically later than our use of it.
-	 */
-	WSL_Flush(wrk->vsl, 0);
-	WSL_Flush(vc->vsl, 0);
-	vc->vsl->wid = vc->orig_vsl_id;
+	/* XXX: revisit this hack */
+	VSL_Flush(vc->vsl, 0);
 	vc->vsl = NULL;
-	vc->orig_vsl_id = 0;
 
 	Lck_Lock(&bp->mtx);
 	VSC_C_main->backend_recycle++;
@@ -110,20 +101,17 @@ VDI_RecycleFd(struct worker *wrk, struct vbc **vbp)
 /* Get a connection --------------------------------------------------*/
 
 struct vbc *
-VDI_GetFd(const struct director *d, struct sess *sp)
+VDI_GetFd(const struct director *d, struct req *req)
 {
 	struct vbc *vc;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	if (d == NULL)
-		d = sp->req->director;
+		d = req->director;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	vc = d->getfd(d, sp);
-	if (vc != NULL) {
-		vc->vsl = sp->wrk->busyobj->vsl;
-		vc->orig_vsl_id = vc->vsl->wid;
-		vc->vsl->wid = vc->vsl_id;
-	}
+	vc = d->getfd(d, req);
+	if (vc != NULL)
+		vc->vsl = req->busyobj->vsl;
 	return (vc);
 }
 
@@ -135,10 +123,10 @@ VDI_GetFd(const struct director *d, struct sess *sp)
  */
 
 int
-VDI_Healthy(const struct director *d, const struct sess *sp)
+VDI_Healthy(const struct director *d, const struct req *req)
 {
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	return (d->healthy(d, sp));
+	return (d->healthy(d, req));
 }

@@ -59,10 +59,10 @@ vcc_Var_Wildcard(struct vcc *tl, const struct token *t, const struct symbol *wc)
 
 	bprintf(buf, "\\%03o%s:", (unsigned)l, v->name + vh->len);
 	v->hdr = TlDup(tl, buf);
-	bprintf(buf, "VRT_GetHdr(sp, %s, \"%s\")", v->http, v->hdr);
+	bprintf(buf, "VRT_GetHdr(req, %s, \"%s\")", v->http, v->hdr);
 	v->rname = TlDup(tl, buf);
 
-	bprintf(buf, "VRT_SetHdr(sp, %s, \"%s\", ", v->http, v->hdr);
+	bprintf(buf, "VRT_SetHdr(req, %s, \"%s\", ", v->http, v->hdr);
 	v->lname = TlDup(tl, buf);
 
 	sym = VCC_AddSymbolTok(tl, t, SYM_VAR);

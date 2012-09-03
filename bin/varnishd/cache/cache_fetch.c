@@ -35,6 +35,8 @@
 
 #include "cache.h"
 
+#include "hash/hash_slinger.h"
+
 #include "cache_backend.h"
 #include "vcli_priv.h"
 #include "vct.h"
@@ -46,7 +48,7 @@ static unsigned fetchfrag;
  * We want to issue the first error we encounter on fetching and
  * supress the rest.  This function does that.
  *
- * Other code is allowed to look at wrk->busyobj->fetch_failed to bail out
+ * Other code is allowed to look at busyobj->fetch_failed to bail out
  *
  * For convenience, always return -1
  */
@@ -56,13 +58,13 @@ FetchError2(struct busyobj *bo, const char *error, const char *more)
 {
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	if (!bo->fetch_failed) {
+	if (bo->state == BOS_FETCHING) {
 		if (more == NULL)
-			VSLB(bo, SLT_FetchError, "%s", error);
+			VSLb(bo->vsl, SLT_FetchError, "%s", error);
 		else
-			VSLB(bo, SLT_FetchError, "%s: %s", error, more);
+			VSLb(bo->vsl, SLT_FetchError, "%s: %s", error, more);
 	}
-	bo->fetch_failed = 1;
+	bo->state = BOS_FAILED;
 	return (-1);
 }
 
@@ -70,6 +72,57 @@ int
 FetchError(struct busyobj *bo, const char *error)
 {
 	return(FetchError2(bo, error, NULL));
+}
+
+/*--------------------------------------------------------------------
+ * VFP method functions
+ */
+
+static void
+VFP_Begin(struct busyobj *bo, size_t estimate)
+{
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AN(bo->vfp);
+
+	bo->vfp->begin(bo, estimate);
+}
+
+static int
+VFP_Bytes(struct busyobj *bo, struct http_conn *htc, ssize_t sz)
+{
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AN(bo->vfp);
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	assert(bo->state == BOS_FETCHING);
+
+	return (bo->vfp->bytes(bo, htc, sz));
+}
+
+static void
+VFP_End(struct busyobj *bo)
+{
+	int i;
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AN(bo->vfp);
+
+	i = bo->vfp->end(bo);
+	if (i)
+		assert(bo->state == BOS_FAILED);
+}
+
+void
+VFP_update_length(const struct busyobj *bo, ssize_t l)
+{
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->fetch_obj, OBJECT_MAGIC);
+	if (l == 0)
+		return;
+	assert(l > 0);
+	bo->fetch_obj->len += l;
 }
 
 /*--------------------------------------------------------------------
@@ -112,7 +165,6 @@ vfp_nop_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 	ssize_t l, wl;
 	struct storage *st;
 
-	AZ(bo->fetch_failed);
 	while (bytes > 0) {
 		st = FetchStorage(bo, 0);
 		if (st == NULL)
@@ -124,7 +176,7 @@ vfp_nop_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 		if (wl <= 0)
 			return (wl);
 		st->len += wl;
-		bo->fetch_obj->len += wl;
+		VFP_update_length(bo, wl);
 		bytes -= wl;
 	}
 	return (1);
@@ -154,7 +206,7 @@ vfp_nop_end(struct busyobj *bo)
 		return (0);
 	}
 	if (st->len < st->space)
-		STV_trim(st, st->len);
+		STV_trim(st, st->len, 1);
 	return (0);
 }
 
@@ -235,7 +287,7 @@ fetch_straight(struct busyobj *bo, struct http_conn *htc, ssize_t cl)
 	} else if (cl == 0)
 		return (0);
 
-	i = bo->vfp->bytes(bo, htc, cl);
+	i = VFP_Bytes(bo, htc, cl);
 	if (i <= 0)
 		return (FetchError(bo, "straight insufficient bytes"));
 	return (0);
@@ -260,7 +312,7 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 		/* Skip leading whitespace */
 		do {
 			if (HTC_Read(htc, buf, 1) <= 0)
-				return (-1);
+				return (FetchError(bo, "chunked read err"));
 		} while (vct_islws(buf[0]));
 
 		if (!vct_ishex(buf[0]))
@@ -270,7 +322,8 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 		for (u = 1; u < sizeof buf; u++) {
 			do {
 				if (HTC_Read(htc, buf + u, 1) <= 0)
-					return (-1);
+					return (FetchError(bo,
+					    "chunked read err"));
 			} while (u == 1 && buf[0] == '0' && buf[u] == '0');
 			if (!vct_ishex(buf[u]))
 				break;
@@ -282,7 +335,7 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 		/* Skip trailing white space */
 		while(vct_islws(buf[u]) && buf[u] != '\n')
 			if (HTC_Read(htc, buf + u, 1) <= 0)
-				return (-1);
+				return (FetchError(bo, "chunked read err"));
 
 		if (buf[u] != '\n')
 			return (FetchError(bo,"chunked header no NL"));
@@ -292,14 +345,14 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 		if (cl < 0)
 			return (FetchError(bo,"chunked header number syntax"));
 
-		if (cl > 0 && bo->vfp->bytes(bo, htc, cl) <= 0)
-			return (-1);
+		if (cl > 0 && VFP_Bytes(bo, htc, cl) <= 0)
+			return (FetchError(bo, "chunked read err"));
 
 		i = HTC_Read(htc, buf, 1);
 		if (i <= 0)
-			return (-1);
+			return (FetchError(bo, "chunked read err"));
 		if (buf[0] == '\r' && HTC_Read( htc, buf, 1) <= 0)
-			return (-1);
+			return (FetchError(bo, "chunked read err"));
 		if (buf[0] != '\n')
 			return (FetchError(bo,"chunked tail no NL"));
 	} while (cl > 0);
@@ -308,16 +361,13 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 
 /*--------------------------------------------------------------------*/
 
-static int
+static void
 fetch_eof(struct busyobj *bo, struct http_conn *htc)
 {
-	int i;
 
 	assert(bo->body_status == BS_EOF);
-	i = bo->vfp->bytes(bo, htc, SSIZE_MAX);
-	if (i < 0)
-		return (-1);
-	return (0);
+	if (VFP_Bytes(bo, htc, SSIZE_MAX) < 0)
+		(void)FetchError(bo,"eof socket fail");
 }
 
 /*--------------------------------------------------------------------
@@ -328,20 +378,20 @@ fetch_eof(struct busyobj *bo, struct http_conn *htc)
  */
 
 int
-FetchReqBody(const struct sess *sp, int sendbody)
+FetchReqBody(struct req *req, int sendbody)
 {
 	unsigned long content_length;
 	char buf[8192];
 	char *ptr, *endp;
 	int rdcnt;
 
-	if (sp->req->reqbodydone) {
+	if (req->reqbodydone) {
 		AZ(sendbody);
 		return (0);
 	}
 
-	if (http_GetHdr(sp->req->http, H_Content_Length, &ptr)) {
-		sp->req->reqbodydone = 1;
+	if (http_GetHdr(req->http, H_Content_Length, &ptr)) {
+		req->reqbodydone = 1;
 
 		content_length = strtoul(ptr, &endp, 10);
 		/* XXX should check result of conversion */
@@ -350,21 +400,21 @@ FetchReqBody(const struct sess *sp, int sendbody)
 				rdcnt = sizeof buf;
 			else
 				rdcnt = content_length;
-			rdcnt = HTC_Read(sp->req->htc, buf, rdcnt);
+			rdcnt = HTC_Read(req->htc, buf, rdcnt);
 			if (rdcnt <= 0)
 				return (1);
 			content_length -= rdcnt;
 			if (sendbody) {
 				/* XXX: stats ? */
-				(void)WRW_Write(sp->wrk, buf, rdcnt);
-				if (WRW_Flush(sp->wrk))
+				(void)WRW_Write(req->wrk, buf, rdcnt);
+				if (WRW_Flush(req->wrk))
 					return (2);
 			}
 		}
 	}
-	if (http_GetHdr(sp->req->http, H_Transfer_Encoding, NULL)) {
+	if (http_GetHdr(req->http, H_Transfer_Encoding, NULL)) {
 		/* XXX: Handle chunked encoding. */
-		WSP(sp, SLT_Debug, "Transfer-Encoding in request");
+		VSLb(req->vsl, SLT_Debug, "Transfer-Encoding in request");
 		return (1);
 	}
 	return (0);
@@ -381,37 +431,38 @@ FetchReqBody(const struct sess *sp, int sendbody)
  */
 
 int
-FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
+FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 {
 	struct vbc *vc;
 	struct worker *wrk;
+	struct busyobj *bo;
 	struct http *hp;
+	enum htc_status_e hs;
 	int retry = -1;
-	int i;
+	int i, first;
 	struct http_conn *htc;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	wrk = sp->wrk;
+	wrk = req->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->busyobj, BUSYOBJ_MAGIC);
-	htc = &wrk->busyobj->htc;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	bo = req->busyobj;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	htc = &bo->htc;
 
-	AN(sp->req->director);
-	AZ(sp->req->obj);
+	AN(req->director);
+	AZ(req->obj);
 
-	if (sp->req->objcore != NULL) {		/* pass has no objcore */
-		CHECK_OBJ_NOTNULL(sp->req->objcore, OBJCORE_MAGIC);
-		AN(sp->req->objcore->flags & OC_F_BUSY);
-	}
+	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+	AN(req->objcore->flags & OC_F_BUSY);
 
-	hp = wrk->busyobj->bereq;
+	hp = bo->bereq;
 
-	wrk->busyobj->vbc = VDI_GetFd(NULL, sp);
-	if (wrk->busyobj->vbc == NULL) {
-		WSP(sp, SLT_FetchError, "no backend connection");
+	bo->vbc = VDI_GetFd(NULL, req);
+	if (bo->vbc == NULL) {
+		VSLb(req->vsl, SLT_FetchError, "no backend connection");
 		return (-1);
 	}
-	vc = wrk->busyobj->vbc;
+	vc = bo->vbc;
 	if (vc->recycled)
 		retry = 1;
 
@@ -421,91 +472,101 @@ FetchHdr(struct sess *sp, int need_host_hdr, int sendbody)
 	 * because the backend may be chosen by a director.
 	 */
 	if (need_host_hdr)
-		VDI_AddHostHeader(wrk->busyobj->bereq, vc);
+		VDI_AddHostHeader(bo->bereq, vc);
 
 	(void)VTCP_blocking(vc->fd);	/* XXX: we should timeout instead */
-	WRW_Reserve(wrk, &vc->fd);
+	WRW_Reserve(wrk, &vc->fd, bo->vsl, req->t_req);	/* XXX t_resp ? */
 	(void)http_Write(wrk, hp, 0);	/* XXX: stats ? */
 
 	/* Deal with any message-body the request might have */
-	i = FetchReqBody(sp, sendbody);
+	i = FetchReqBody(req, sendbody);
+	if (sendbody && req->reqbodydone)
+		retry = -1;
 	if (WRW_FlushRelease(wrk) || i > 0) {
-		WSP(sp, SLT_FetchError, "backend write error: %d (%s)",
+		VSLb(req->vsl, SLT_FetchError,
+		    "backend write error: %d (%s)",
 		    errno, strerror(errno));
-		VDI_CloseFd(wrk, &wrk->busyobj->vbc);
+		VDI_CloseFd(&bo->vbc);
 		/* XXX: other cleanup ? */
 		return (retry);
 	}
-
-	/* Checkpoint the vsl.here */
-	WSL_Flush(wrk->vsl, 0);
 
 	/* XXX is this the right place? */
 	VSC_C_main->backend_req++;
 
 	/* Receive response */
 
-	HTC_Init(htc, wrk->busyobj->ws, vc->fd, vc->vsl,
+	HTC_Init(htc, bo->ws, vc->fd, vc->vsl,
 	    cache_param->http_resp_size,
 	    cache_param->http_resp_hdr_len);
 
 	VTCP_set_read_timeout(vc->fd, vc->first_byte_timeout);
 
-	i = HTC_Rx(htc);
-
-	if (i < 0) {
-		WSP(sp, SLT_FetchError, "http first read error: %d %d (%s)",
-		    i, errno, strerror(errno));
-		VDI_CloseFd(wrk, &wrk->busyobj->vbc);
-		/* XXX: other cleanup ? */
-		/* Retryable if we never received anything */
-		return (i == -1 ? retry : -1);
-	}
-
-	VTCP_set_read_timeout(vc->fd, vc->between_bytes_timeout);
-
-	while (i == 0) {
-		i = HTC_Rx(htc);
-		if (i < 0) {
-			WSP(sp, SLT_FetchError,
-			    "http first read error: %d %d (%s)",
-			    i, errno, strerror(errno));
-			VDI_CloseFd(wrk, &wrk->busyobj->vbc);
+	first = 1;
+	do {
+		hs = HTC_Rx(htc);
+		if (hs == HTC_OVERFLOW) {
+			VSLb(req->vsl, SLT_FetchError,
+			    "http %sread error: overflow",
+			    first ? "first " : "");
+			VDI_CloseFd(&bo->vbc);
 			/* XXX: other cleanup ? */
 			return (-1);
 		}
-	}
+		if (hs == HTC_ERROR_EOF) {
+			VSLb(req->vsl, SLT_FetchError,
+			    "http %sread error: EOF",
+			    first ? "first " : "");
+			VDI_CloseFd(&bo->vbc);
+			/* XXX: other cleanup ? */
+			return (retry);
+		}
+		if (first) {
+			retry = -1;
+			first = 0;
+			VTCP_set_read_timeout(vc->fd,
+			    vc->between_bytes_timeout);
+		}
+	} while (hs != HTC_COMPLETE);
 
-	hp = wrk->busyobj->beresp;
+	hp = bo->beresp;
 
 	if (http_DissectResponse(hp, htc)) {
-		WSP(sp, SLT_FetchError, "http format error");
-		VDI_CloseFd(wrk, &wrk->busyobj->vbc);
+		VSLb(req->vsl, SLT_FetchError, "http format error");
+		VDI_CloseFd(&bo->vbc);
 		/* XXX: other cleanup ? */
 		return (-1);
 	}
 	return (0);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * This function is either called by the requesting thread OR by a
+ * dedicated body-fetch work-thread.
+ *
+ * We get passed the busyobj in the priv arg, and we inherit a
+ * refcount on it, which we must release, when done fetching.
+ */
 
-int
-FetchBody(struct worker *wrk, struct object *obj)
+void
+FetchBody(struct worker *wrk, void *priv)
 {
 	int cls;
 	struct storage *st;
 	int mklen;
 	ssize_t cl;
 	struct http_conn *htc;
+	struct object *obj;
 	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	bo = wrk->busyobj;
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	AZ(bo->fetch_obj);
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->vbc, VBC_MAGIC);
+	obj = bo->fetch_obj;
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(obj->http, HTTP_MAGIC);
+
+	assert(bo->state == BOS_INVALID);
 
 	/*
 	 * XXX: The busyobj needs a dstat, but it is not obvious which one
@@ -519,49 +580,46 @@ FetchBody(struct worker *wrk, struct object *obj)
 	if (bo->vfp == NULL)
 		bo->vfp = &vfp_nop;
 
-	AssertObjCorePassOrBusy(obj->objcore);
-
 	AZ(bo->vgz_rx);
 	AZ(VTAILQ_FIRST(&obj->store));
 
-	bo->fetch_obj = obj;
-	bo->fetch_failed = 0;
+	bo->state = BOS_FETCHING;
 
 	/* XXX: pick up estimate from objdr ? */
 	cl = 0;
+	cls = 0;
 	switch (bo->body_status) {
 	case BS_NONE:
-		cls = 0;
 		mklen = 0;
 		break;
 	case BS_ZERO:
-		cls = 0;
 		mklen = 1;
 		break;
 	case BS_LENGTH:
 		cl = fetch_number(bo->h_content_length, 10);
-		bo->vfp->begin(bo, cl > 0 ? cl : 0);
-		cls = fetch_straight(bo, htc, cl);
+		VFP_Begin(bo, cl > 0 ? cl : 0);
+		if (bo->state == BOS_FETCHING)
+			cls = fetch_straight(bo, htc, cl);
 		mklen = 1;
-		if (bo->vfp->end(bo))
-			cls = -1;
+		VFP_End(bo);
 		break;
 	case BS_CHUNKED:
-		bo->vfp->begin(bo, cl);
-		cls = fetch_chunked(bo, htc);
+		VFP_Begin(bo, cl);
+		if (bo->state == BOS_FETCHING)
+			cls = fetch_chunked(bo, htc);
 		mklen = 1;
-		if (bo->vfp->end(bo))
-			cls = -1;
+		VFP_End(bo);
 		break;
 	case BS_EOF:
-		bo->vfp->begin(bo, cl);
-		cls = fetch_eof(bo, htc);
+		VFP_Begin(bo, cl);
+		if (bo->state == BOS_FETCHING)
+			fetch_eof(bo, htc);
 		mklen = 1;
-		if (bo->vfp->end(bo))
-			cls = -1;
+		cls = 1;
+		VFP_End(bo);
 		break;
 	case BS_ERROR:
-		cls = 1;
+		cls = FetchError(bo, "error incompatible Transfer-Encoding");
 		mklen = 0;
 		break;
 	default:
@@ -572,65 +630,68 @@ FetchBody(struct worker *wrk, struct object *obj)
 	AZ(bo->vgz_rx);
 
 	/*
-	 * It is OK for ->end to just leave the last storage segment
-	 * sitting on wrk->storage, we will always call vfp_nop_end()
-	 * to get it trimmed or thrown out if empty.
+	 * We always call vfp_nop_end() to ditch or trim the last storage
+	 * segment, to avoid having to replicate that code in all vfp's.
 	 */
 	AZ(vfp_nop_end(bo));
 
-	bo->fetch_obj = NULL;
+	bo->vfp = NULL;
 
-	VSLB(bo, SLT_Fetch_Body, "%u(%s) cls %d mklen %d",
+	VSLb(bo->vsl, SLT_Fetch_Body, "%u(%s) cls %d mklen %d",
 	    bo->body_status, body_status(bo->body_status),
 	    cls, mklen);
 
-	if (bo->body_status == BS_ERROR) {
-		VDI_CloseFd(wrk, &bo->vbc);
-		bo->stats = NULL;
-		return (__LINE__);
-	}
+	http_Teardown(bo->bereq);
+	http_Teardown(bo->beresp);
 
-	if (cls < 0) {
+	if (bo->state == BOS_FAILED) {
 		wrk->stats.fetch_failed++;
-		VDI_CloseFd(wrk, &bo->vbc);
+		VDI_CloseFd(&bo->vbc);
 		obj->len = 0;
-		bo->stats = NULL;
-		return (__LINE__);
-	}
-	AZ(bo->fetch_failed);
+		EXP_Clr(&obj->exp);
+		EXP_Rearm(obj);
+	} else {
+		assert(bo->state == BOS_FETCHING);
 
-	if (cls == 0 && bo->should_close)
-		cls = 1;
+		if (cls == 0 && bo->should_close)
+			cls = 1;
 
-	VSLB(bo, SLT_Length, "%zd", obj->len);
+		VSLb(bo->vsl, SLT_Length, "%zd", obj->len);
 
-	{
-	/* Sanity check fetch methods accounting */
-		ssize_t uu;
+		{
+		/* Sanity check fetch methods accounting */
+			ssize_t uu;
 
-		uu = 0;
-		VTAILQ_FOREACH(st, &obj->store, list)
-			uu += st->len;
-		if (bo->do_stream)
-			/* Streaming might have started freeing stuff */
-			assert (uu <= obj->len);
+			uu = 0;
+			VTAILQ_FOREACH(st, &obj->store, list)
+				uu += st->len;
+			if (bo->do_stream)
+				/* Streaming might have started freeing stuff */
+				assert(uu <= obj->len);
 
+			else
+				assert(uu == obj->len);
+		}
+
+		if (mklen > 0) {
+			http_Unset(obj->http, H_Content_Length);
+			http_PrintfHeader(obj->http,
+			    "Content-Length: %zd", obj->len);
+		}
+
+		if (cls)
+			VDI_CloseFd(&bo->vbc);
 		else
-			assert(uu == obj->len);
+			VDI_RecycleFd(&bo->vbc);
+
+
+		/* XXX: Atomic assignment, needs volatile/membar ? */
+		bo->state = BOS_FINISHED;
 	}
-
-	if (mklen > 0) {
-		http_Unset(obj->http, H_Content_Length);
-		http_PrintfHeader(obj->http, "Content-Length: %zd", obj->len);
-	}
-
-	if (cls)
-		VDI_CloseFd(wrk, &bo->vbc);
-	else
-		VDI_RecycleFd(wrk, &bo->vbc);
-
+	if (obj->objcore->objhead != NULL)
+		HSH_Complete(obj->objcore);
 	bo->stats = NULL;
-	return (0);
+	VBO_DerefBusyObj(wrk, &bo);
 }
 
 /*--------------------------------------------------------------------

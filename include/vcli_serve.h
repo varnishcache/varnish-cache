@@ -43,4 +43,3 @@ void VCLS_Destroy(struct VCLS **);
 cli_func_t	VCLS_func_close;
 cli_func_t	VCLS_func_help;
 cli_func_t	VCLS_func_ping;
-

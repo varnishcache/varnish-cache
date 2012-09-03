@@ -278,10 +278,10 @@ static void
 ccf_config_discard(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcls *vcl;
+	int i;
 
 	ASSERT_CLI();
-	(void)av;
-	(void)priv;
+	AZ(priv);
 	vcl = vcl_find(av[2]);
 	if (vcl == NULL) {
 		VCLI_SetResult(cli, CLIS_PARAM);
@@ -299,6 +299,11 @@ ccf_config_discard(struct cli *cli, const char * const *av, void *priv)
 	VSC_C_main->n_vcl_avail--;
 	vcl->conf->discard = 1;
 	Lck_Unlock(&vcl_mtx);
+
+	/* Tickle this VCL's backends to give up health polling */
+	for(i = 1; i < vcl->conf->ndirector; i++)
+		VBE_DiscardHealth(vcl->conf->director[i]);
+
 	if (vcl->conf->busy == 0)
 		VCL_Nuke(vcl);
 }
@@ -330,17 +335,21 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 
 #define VCL_MET_MAC(func, upper, bitmap)				\
 void									\
-VCL_##func##_method(struct sess *sp)					\
+VCL_##func##_method(struct req *req)					\
 {									\
 									\
-	sp->req->handling = 0;						\
-	sp->req->cur_method = VCL_MET_ ## upper;			\
-	WSP(sp, SLT_VCL_call, "%s", #func);				\
-	(void)sp->req->vcl->func##_func(sp);				\
-	WSP(sp, SLT_VCL_return, "%s", VCL_Return_Name(sp->req->handling)); \
-	sp->req->cur_method = 0;					\
-	assert((1U << sp->req->handling) & bitmap);			\
-	assert(!((1U << sp->req->handling) & ~bitmap));			\
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);				\
+	CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);				\
+	AN(req->sp);							\
+	req->handling = 0;						\
+	req->cur_method = VCL_MET_ ## upper;				\
+	VSLb(req->vsl, SLT_VCL_call, "%s", #func);			\
+	(void)req->vcl->func##_func(req);				\
+	VSLb(req->vsl, SLT_VCL_return, "%s",				\
+	    VCL_Return_Name(req->handling));				\
+	req->cur_method = 0;						\
+	assert((1U << req->handling) & bitmap);				\
+	assert(!((1U << req->handling) & ~bitmap));			\
 }
 
 #include "tbl/vcl_returns.h"

@@ -27,6 +27,13 @@ Requires(preun): /sbin/service
 %if %{undefined suse_version}
 Requires(preun): initscripts
 %endif
+%if 0%{?fedora} >= 17
+Requires(post): systemd-units
+Requires(post): systemd-sysv
+Requires(preun): systemd-units
+Requires(postun): systemd-units
+BuildRequires: systemd-units
+%endif
 
 # Varnish actually needs gcc installed to work. It uses the C compiler 
 # at runtime to compile the VCL configuration files. This is by design.
@@ -101,7 +108,7 @@ cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
 #sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g;
 #	s|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
 
-%{__make} %{?_smp_mflags}
+make %{?_smp_mflags}
 
 head -6 etc/default.vcl > redhat/default.vcl
 
@@ -122,7 +129,9 @@ tail -n +11 etc/default.vcl >> redhat/default.vcl
 	redhat/varnish.initrc redhat/varnishlog.initrc redhat/varnishncsa.initrc
 %endif
 
-cp -r doc/sphinx/\=build/html doc
+rm -rf doc/sphinx/\=build/html/_sources
+mv doc/sphinx/\=build/html doc
+rm -rf doc/sphinx/\=build
 
 %check
 # rhel5 on ppc64 is just too strange
@@ -141,7 +150,7 @@ cp -r doc/sphinx/\=build/html doc
 	%endif
 %endif
 
-%{__make} check LD_LIBRARY_PATH="../../lib/libvarnish/.libs:../../lib/libvarnishcompat/.libs:../../lib/libvarnishapi/.libs:../../lib/libvcl/.libs:../../lib/libvgz/.libs"
+make check LD_LIBRARY_PATH="../../lib/libvarnish/.libs:../../lib/libvarnishcompat/.libs:../../lib/libvarnishapi/.libs:../../lib/libvcl/.libs:../../lib/libvgz/.libs"
 
 %install
 rm -rf %{buildroot}
@@ -156,13 +165,28 @@ find %{buildroot}/%{_libdir}/ -name '*.la' -exec rm -f {} ';'
 mkdir -p %{buildroot}/var/lib/varnish
 mkdir -p %{buildroot}/var/log/varnish
 mkdir -p %{buildroot}/var/run/varnish
-%{__install} -D -m 0644 redhat/default.vcl %{buildroot}%{_sysconfdir}/varnish/default.vcl
-%{__install} -D -m 0644 redhat/varnish.sysconfig %{buildroot}%{_sysconfdir}/sysconfig/varnish
-%{__install} -D -m 0644 redhat/varnish.logrotate %{buildroot}%{_sysconfdir}/logrotate.d/varnish
-%{__install} -D -m 0755 redhat/varnish.initrc %{buildroot}%{_initrddir}/varnish
-%{__install} -D -m 0755 redhat/varnishlog.initrc %{buildroot}%{_initrddir}/varnishlog
-%{__install} -D -m 0755 redhat/varnishncsa.initrc %{buildroot}%{_initrddir}/varnishncsa
-%{__install} -D -m 0755 redhat/varnish_reload_vcl %{buildroot}%{_bindir}/varnish_reload_vcl
+mkdir -p %{buildroot}%{_sysconfdir}/ld.so.conf.d/
+install -D -m 0644 redhat/default.vcl %{buildroot}%{_sysconfdir}/varnish/default.vcl
+install -D -m 0644 redhat/varnish.logrotate %{buildroot}%{_sysconfdir}/logrotate.d/varnish
+
+# systemd support
+%if 0%{?fedora} >= 17
+mkdir -p %{buildroot}%{_unitdir}
+install -D -m 0644 redhat/varnish.service %{buildroot}%{_unitdir}/varnish.service
+install -D -m 0644 redhat/varnish.params %{buildroot}%{_sysconfdir}/varnish/varnish.params
+install -D -m 0644 redhat/varnishncsa.service %{buildroot}%{_unitdir}/varnishncsa.service
+install -D -m 0644 redhat/varnishlog.service %{buildroot}%{_unitdir}/varnishlog.service
+sed -i 's,sysconfig/varnish,varnish/varnish.params,' redhat/varnish_reload_vcl
+# default is standard sysvinit
+%else
+install -D -m 0644 redhat/varnish.sysconfig %{buildroot}%{_sysconfdir}/sysconfig/varnish
+install -D -m 0755 redhat/varnish.initrc %{buildroot}%{_initrddir}/varnish
+install -D -m 0755 redhat/varnishlog.initrc %{buildroot}%{_initrddir}/varnishlog
+install -D -m 0755 redhat/varnishncsa.initrc %{buildroot}%{_initrddir}/varnishncsa
+%endif
+install -D -m 0755 redhat/varnish_reload_vcl %{buildroot}%{_sbindir}/varnish_reload_vcl
+
+echo %{_libdir}/varnish > %{buildroot}%{_sysconfdir}/ld.so.conf.d/varnish-%{_arch}.conf
 
 %clean
 rm -rf %{buildroot}
@@ -171,26 +195,38 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 %{_sbindir}/*
 %{_bindir}/*
-%{_libdir}/varnish
 %{_var}/lib/varnish
 %{_var}/log/varnish
 %{_mandir}/man1/*.1*
 %{_mandir}/man3/*.3*
 %{_mandir}/man7/*.7*
-%doc INSTALL LICENSE README redhat/README.redhat ChangeLog
+%doc LICENSE README redhat/README.redhat ChangeLog
 %doc examples
 %dir %{_sysconfdir}/varnish/
 %config(noreplace) %{_sysconfdir}/varnish/default.vcl
-%config(noreplace) %{_sysconfdir}/sysconfig/varnish
 %config(noreplace) %{_sysconfdir}/logrotate.d/varnish
+
+# systemd from fedora 17
+%if 0%{?fedora} >= 17
+%{_unitdir}/varnish.service
+%{_unitdir}/varnishncsa.service
+%{_unitdir}/varnishlog.service
+%config(noreplace)%{_sysconfdir}/varnish/varnish.params
+
+# default is standard sysvinit
+%else
+%config(noreplace) %{_sysconfdir}/sysconfig/varnish
 %{_initrddir}/varnish
 %{_initrddir}/varnishlog
 %{_initrddir}/varnishncsa
+%endif
 
 %files libs
 %defattr(-,root,root,-)
 %{_libdir}/*.so.*
+%{_libdir}/varnish
 %doc LICENSE
+%config %{_sysconfdir}/ld.so.conf.d/varnish-%{_arch}.conf
 
 %files libs-devel
 %defattr(-,root,root,-)
@@ -222,19 +258,42 @@ getent passwd varnish >/dev/null || \
 exit 0
 
 %post
+%if 0%{?fedora} >= 17
+/bin/systemctl daemon-reload >/dev/null 2>&1 || :
+%else
 /sbin/chkconfig --add varnish
 /sbin/chkconfig --add varnishlog
 /sbin/chkconfig --add varnishncsa 
+%endif
 test -f /etc/varnish/secret || (uuidgen > /etc/varnish/secret && chmod 0600 /etc/varnish/secret)
+
+%triggerun -- varnish < 3.0.2-1
+# Save the current service runlevel info
+# User must manually run systemd-sysv-convert --apply varnish 
+# to migrate them to systemd targets
+%{_bindir}/systemd-sysv-convert --save varnish >/dev/null 2>&1 ||:
+
+# If the package is allowed to autostart:
+#/bin/systemctl --no-reload enable varnish.service >/dev/null 2>&1 ||:
+
+# Run these because the SysV package being removed won't do them
+/sbin/chkconfig --del varnish >/dev/null 2>&1 || :
+#/bin/systemctl try-restart varnish.service >/dev/null 2>&1 || :
 
 %preun
 if [ $1 -lt 1 ]; then
+  # Package removal, not upgrade
+  %if 0%{?fedora} >= 17
+  /bin/systemctl --no-reload disable varnish.service > /dev/null 2>&1 || :
+  /bin/systemctl stop varnish.service > /dev/null 2>&1 || :
+  %else
   /sbin/service varnish stop > /dev/null 2>&1
   /sbin/service varnishlog stop > /dev/null 2>&1
   /sbin/service varnishncsa stop > /dev/null 2>%1
   /sbin/chkconfig --del varnish
   /sbin/chkconfig --del varnishlog
   /sbin/chkconfig --del varnishncsa 
+  %endif
 fi
 
 %post libs -p /sbin/ldconfig
@@ -242,6 +301,47 @@ fi
 %postun libs -p /sbin/ldconfig
 
 %changelog
+* Mon Mar 12 2012 Ingvar Hagelund <ingvar@redpill-linpro.com> - 3.0.2-2
+- Added PrivateTmp=true to varnishd unit file, closing #782539
+- Fixed comment typos in varnish unit file
+
+* Tue Mar 06 2012 Ingvar Hagelund <ingvar@redpill-linpro.com> - 3.0.2-1
+- New upstream version 3.0.2
+- Removed INSTALL as requested by rpmlint
+- Added a ld.so.conf.d fragment file listing libdir/varnish 
+- Removed redundant doc/html/_sources
+- systemd support from fedora 17
+- Stopped using macros for make and install, according to 
+  Fedora's packaging guidelines
+- Changes merged from upstream:
+  - Added suse_version macro
+  - Added comments on building from a git checkout
+  - mkpasswd -> uuidgen for fewer dependencies
+  - Fixed missing quotes around cflags for pcre
+  - Removed unnecessary 32/64 bit parallell build hack as this is fixed upstream
+  - Fixed typo in configure call, disable -> without
+  - Added lib/libvgz/.libs to LD_LIBRARY_PATH in make check
+  - Added section 3 manpages
+  - Configure with --without-rst2man --without-rst2html
+  - changelog entries
+- Removed unnecessary patch for system jemalloc, upstream now supports this
+
+* Fri Feb 10 2012 Petr Pisar <ppisar@redhat.com> - 2.1.5-4
+- Rebuild against PCRE 8.30
+
+* Sat Jan 14 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.1.5-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
+
+* Mon Feb 07 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.1.5-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
+
+* Tue Feb 01 2011 Ingvar Hagelund <ingvar@redpill-linpro.com> - 2.1.5-1
+- New upstream release
+- New download location
+- Moved varnish_reload_vcl to sbin
+- Removed patches included upstream
+- Use jemalloc as system installed library
+
 * Mon Nov 15 2010 Ingvar Hagelund <ingvar@redpill-linpro.com> - 3.0.0-0.svn20101115r5543
 - Merged some changes from fedora
 - Upped general version to 3.0 prerelease in trunk

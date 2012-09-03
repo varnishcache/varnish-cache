@@ -107,421 +107,421 @@ sp_variables = (
 		'IP',
 		( 'proc',),
 		( ),
-		'struct sess *'
+		'struct req *'
 	),
 	('client.identity',
 		'STRING',
 		( 'proc',),
 		( 'proc',),
-		'const struct sess *'
+		'struct req *'
 	),
 	('server.ip',
 		'IP',
 		( 'proc',),
 		( ),
-		'struct sess *'
+		'struct req *'
 	),
 	('server.hostname',
 		'STRING',
 		( 'proc',),
 		( ),
-		'struct sess *'
+		'struct req *'
 	),
 	('server.identity',
 		'STRING',
 		( 'proc',),
 		( ),
-		'struct sess *'
+		'struct req *'
 	),
 	('server.port',
 		'INT',
 		( 'proc',),
 		( ),
-		'struct sess *'
+		'struct req *'
 	),
 	('req.request',
 		'STRING',
 		( 'proc',),
 		( 'proc',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('req.url',
 		'STRING',
 		( 'proc',),
 		( 'proc',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('req.proto',
 		'STRING',
 		( 'proc',),
 		( 'proc',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('req.http.',
 		'HDR_REQ',
 		( 'proc',),
 		( 'proc',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('req.backend',
 		'BACKEND',
 		( 'proc',),
 		( 'proc',),
-		'const struct sess *'
+		'struct req *'
 	),
 	('req.restarts',
 		'INT',
 		( 'proc',),
 		( ),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('req.esi_level',
 		'INT',
 		( 'proc',),
 		( ),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('req.ttl',
 		'DURATION',
 		( 'proc',),
 		( 'proc',),
-		'struct sess *'
+		'struct req *'
 	),
 	('req.grace',
 		'DURATION',
 		( 'proc',),
 		( 'proc',),
-		'struct sess *'
+		'struct req *'
 	),
 	('req.keep',
 		'DURATION',
 		( 'proc',),
 		( 'proc',),
-		'struct sess *'
+		'struct req *'
 	),
 	('req.xid',
 		'STRING',
 		( 'proc',),
 		( ),
-		'struct sess *'
+		'struct req *'
 	),
 	('req.esi',
 		'BOOL',
 		( 'recv', 'fetch', 'deliver', 'error',),
 		( 'recv', 'fetch', 'deliver', 'error',),
-		'const struct sess *'
+		'struct req *'
 	),
 	('req.can_gzip',
 		'BOOL',
 		( 'proc',),
 		( ),
-		'struct sess *'
+		'struct req *'
 	),
 	('req.backend.healthy',
 		'BOOL',
 		( 'proc',),
 		( ),
-		'const struct sess *'
+		'struct req *'
 	),
 	('req.hash_ignore_busy',
 		'BOOL',
 		( 'recv',),
 		( 'recv',),
-		'struct sess *'
+		'struct req *'
 	),
 	('req.hash_always_miss',
 		'BOOL',
 		( 'recv',),
 		( 'recv',),
-		'struct sess *'
+		'struct req *'
 	),
 	('bereq.request',
 		'STRING',
 		( 'pipe', 'pass', 'miss', 'fetch',),
 		( 'pipe', 'pass', 'miss', 'fetch',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('bereq.url',
 		'STRING',
 		( 'pipe', 'pass', 'miss', 'fetch',),
 		( 'pipe', 'pass', 'miss', 'fetch',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('bereq.proto',
 		'STRING',
 		( 'pipe', 'pass', 'miss', 'fetch',),
 		( 'pipe', 'pass', 'miss', 'fetch',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('bereq.http.',
 		'HDR_BEREQ',
 		( 'pipe', 'pass', 'miss', 'fetch',),
 		( 'pipe', 'pass', 'miss', 'fetch',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('bereq.connect_timeout',
 		'DURATION',
 		( 'pipe', 'pass', 'miss',),
 		( 'pipe', 'pass', 'miss',),
-		'struct sess *'
+		'struct req *'
 	),
 	('bereq.first_byte_timeout',
 		'DURATION',
 		( 'pass', 'miss',),
 		( 'pass', 'miss',),
-		'struct sess *'
+		'struct req *'
 	),
 	('bereq.between_bytes_timeout',
 		'DURATION',
 		( 'pass', 'miss',),
 		( 'pass', 'miss',),
-		'struct sess *'
+		'struct req *'
 	),
 	('beresp.proto',
 		'STRING',
 		( 'fetch',),
 		( 'fetch',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('beresp.saintmode',
 		'DURATION',
 		( ),
 		( 'fetch',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('beresp.status',
 		'INT',
 		( 'fetch',),
 		( 'fetch',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('beresp.response',
 		'STRING',
 		( 'fetch',),
 		( 'fetch',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('beresp.http.',
 		'HDR_BERESP',
 		( 'fetch',),
 		( 'fetch',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('beresp.do_esi',
 		'BOOL',
 		( 'fetch',),
 		( 'fetch',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('beresp.do_stream',
 		'BOOL',
 		( 'fetch',),
 		( 'fetch',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('beresp.do_gzip',
 		'BOOL',
 		( 'fetch',),
 		( 'fetch',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('beresp.do_gunzip',
 		'BOOL',
 		( 'fetch',),
 		( 'fetch',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('beresp.do_pass',
 		'BOOL',
 		( 'fetch',),
 		( 'fetch',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('beresp.ttl',
 		'DURATION',
 		( 'fetch',),
 		( 'fetch',),
-		'struct sess *'
+		'struct req *'
 	),
 	('beresp.grace',
 		'DURATION',
 		( 'fetch',),
 		( 'fetch',),
-		'struct sess *'
+		'struct req *'
 	),
 	('beresp.keep',
 		'DURATION',
 		( 'fetch',),
 		( 'fetch',),
-		'struct sess *'
+		'struct req *'
 	),
 	('beresp.backend.name',
 		'STRING',
 		( 'fetch',),
 		( ),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('beresp.backend.ip',
 		'IP',
 		( 'fetch',),
 		( ),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('beresp.backend.port',
 		'INT',
 		( 'fetch',),
 		( ),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('beresp.storage',
 		'STRING',
 		( 'fetch',),
 		( 'fetch',),
-		'struct sess *'
+		'struct req *'
 	),
 	('obj.proto',
 		'STRING',
 		( 'hit', 'error',),
 		( 'hit', 'error',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('obj.status',
 		'INT',
 		( 'error',),
 		( 'error',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('obj.response',
 		'STRING',
 		( 'error',),
 		( 'error',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('obj.hits',
 		'INT',
 		( 'hit', 'deliver',),
 		( ),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('obj.http.',
 		'HDR_OBJ',
 		( 'hit', 'error',),
 		( 'error',),		# XXX ?
-		'const struct sess *'
+		'const struct req *'
 	),
 	('obj.ttl',
 		'DURATION',
 		( 'hit', 'error',),
 		( 'hit', 'error',),
-		'struct sess *'
+		'struct req *'
 	),
 	('obj.grace',
 		'DURATION',
 		( 'hit', 'error',),
 		( 'hit', 'error',),
-		'struct sess *'
+		'struct req *'
 	),
 	('obj.keep',
 		'DURATION',
 		( 'hit', 'error',),
 		( 'hit', 'error',),
-		'struct sess *'
+		'struct req *'
 	),
 	('obj.lastuse',
 		'DURATION',
 		( 'hit', 'deliver', 'error',),
 		( ),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('stale_obj',
 		'BOOL',
  		( 'error', 'miss', 'fetch',),
 		( ),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('stale_obj.proto',
 		'STRING',
  		( 'error', 'miss', 'fetch',),
 		( ),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('stale_obj.status',
 		'INT',
  		( 'error', 'miss', 'fetch',),
 		( ),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('stale_obj.response',
 		'STRING',
  		( 'error', 'miss', 'fetch',),
 		( ),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('stale_obj.hits',
 		'INT',
  		( 'error', 'miss', 'fetch',),
 		( ),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('stale_obj.http.',
 		'HDR_STALE_OBJ',
  		( 'error', 'miss', 'fetch',),
 		( ),		# XXX ?
-		'const struct sess *'
+		'const struct req *'
 	),
 	('stale_obj.ttl',
 		'DURATION',
  		( 'error', 'miss', 'fetch',),
 		( ),
-		'struct sess *'
+		'const struct req *'
 	),
 	('stale_obj.grace',
 		'DURATION',
  		( 'error', 'miss', 'fetch',),
 		( ),
-		'struct sess *'
+		'const struct req *'
 	),
 	('stale_obj.lastuse',
 		'DURATION',
  		( 'error', 'miss', 'fetch',),
 		( ),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('stale_obj.keep',
 		'DURATION',
  		( 'error', 'miss', 'fetch',),
 		( ),
-		'struct sess *'
+		'const struct req *'
 	),
 	('resp.proto',
 		'STRING',
 		( 'deliver',),
 		( 'deliver',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('resp.status',
 		'INT',
 		( 'deliver',),
 		( 'deliver',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('resp.response',
 		'STRING',
 		( 'deliver',),
 		( 'deliver',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('resp.http.',
 		'HDR_RESP',
 		( 'deliver',),
 		( 'deliver',),
-		'const struct sess *'
+		'const struct req *'
 	),
 	('now',
 		'TIME',
 		( 'all',),
 		( ),
-		'const struct sess *'
+		'const struct req *'
 	),
 )
 
@@ -776,11 +776,12 @@ file_header(fo)
 
 fo.write("""
 struct sess;
+struct req;
 struct cli;
 
 typedef int vcl_init_f(struct cli *);
 typedef void vcl_fini_f(struct cli *);
-typedef int vcl_func_f(struct sess *sp);
+typedef int vcl_func_f(struct req *req);
 """)
 
 
@@ -890,15 +891,15 @@ for i in sp_variables:
 	fo.write("\t{ \"%s\", %s, %d,\n" % (i[0], typ, len(i[0])))
 
 	if len(i[2]) > 0:
-		fo.write('\t    "VRT_r_%s(sp)",\n' % cnam)
+		fo.write('\t    "VRT_r_%s(req)",\n' % cnam)
 		if typ != "HEADER":
-			fh.write(ctyp + " VRT_r_%s(%s);\n" % (cnam, i[4]))
+			fh.write(ctyp + " VRT_r_%s(const %s);\n" % (cnam, i[4]))
 	else:
 		fo.write('\t    NULL,\t/* No reads allowed */\n')
 	restrict(fo, i[2])
 
 	if len(i[3]) > 0:
-		fo.write('\t    "VRT_l_%s(sp, ",\n' % cnam)
+		fo.write('\t    "VRT_l_%s(req, ",\n' % cnam)
 		if typ != "HEADER":
 			fh.write("void VRT_l_%s(%s, " % (cnam, i[4]))
 			if typ != "STRING":

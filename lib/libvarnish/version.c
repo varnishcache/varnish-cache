@@ -36,11 +36,13 @@
 #include "vcs.h"
 #include "vcs_version.h"
 
+const char *VCS_version =
+    PACKAGE_TARNAME "-" PACKAGE_VERSION " revision " VCS_Version;
+
 void
 VCS_Message(const char *progname)
 {
-	fprintf(stderr, "%s (%s-%s revision %s)\n", progname,
-		PACKAGE_TARNAME, PACKAGE_VERSION, VCS_Version);
+	fprintf(stderr, "%s (%s)\n", progname, VCS_version);
 	fprintf(stderr, "Copyright (c) 2006 Verdens Gang AS\n");
 	fprintf(stderr, "Copyright (c) 2006-2011 Varnish Software AS\n");
 }

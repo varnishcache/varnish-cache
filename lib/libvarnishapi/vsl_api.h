@@ -89,4 +89,3 @@ struct vsl {
 };
 
 struct vsl *vsl_Setup(struct VSM_data *vd);
-

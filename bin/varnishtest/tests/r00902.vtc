@@ -15,7 +15,7 @@ server s1 {
 varnish v1 -vcl+backend {
 } -start 
 
-varnish v1 -cliok "param.set diag_bitmap 1"
+varnish v1 -cliok "param.set debug +req_state"
 
 client c1 {
 	txreq  -hdr "foo: /foo"

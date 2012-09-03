@@ -69,17 +69,24 @@ const void *pick(const struct choice *cp, const char *which, const char *kind);
 /* mgt_param.c */
 void MCF_ParamInit(struct cli *);
 void MCF_ParamSet(struct cli *, const char *param, const char *val);
-void MCF_DumpRst(void);
+void MCF_ParamProtect(struct cli *, const char *arg);
+void MCF_DumpRstParam(void);
 extern struct params mgt_param;
 
 /* mgt_sandbox.c */
-void mgt_sandbox(void);
+enum sandbox_e {
+	SANDBOX_VCC = 1,
+	SANDBOX_CC = 2,
+	SANDBOX_VCLLOAD = 3,
+	SANDBOX_WORKER = 4,
+};
+
+typedef void mgt_sandbox_f(enum sandbox_e);
+extern mgt_sandbox_f *mgt_sandbox;
 
 /* mgt_sandbox_solaris.c */
 #ifdef HAVE_SETPPRIV
-void mgt_sandbox_solaris_init(void);
-void mgt_sandbox_solaris_fini(void);
-void mgt_sandbox_solaris_privsep(void);
+mgt_sandbox_f mgt_sandbox_solaris;
 #endif
 
 /* mgt_shmem.c */
@@ -104,6 +111,8 @@ extern char *mgt_cc_cmd;
 extern const char *mgt_vcl_dir;
 extern const char *mgt_vmod_dir;
 extern unsigned mgt_vcc_err_unref;
+extern unsigned mgt_vcc_allow_inline_c;
+extern unsigned mgt_vcc_unsafe_path;
 
 #define REPORT0(pri, fmt)				\
 	do {						\

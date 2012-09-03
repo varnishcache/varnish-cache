@@ -409,5 +409,3 @@ VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv)
 #undef VSC_F
 #undef VSC_DO
 #undef VSC_DONE
-
-

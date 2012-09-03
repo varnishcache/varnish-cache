@@ -70,7 +70,7 @@ vcc_AddSymbol(struct vcc *tl, const char *nb, int l, enum symkind kind)
 	}
 	ALLOC_OBJ(sym, SYMBOL_MAGIC);
 	AN(sym);
-	sym->name = malloc(l + 1);
+	sym->name = malloc(l + 1L);
 	AN(sym->name);
 	memcpy(sym->name, nb, l);
 	sym->name[l] = '\0';
@@ -118,7 +118,7 @@ VCC_FindSymbol(struct vcc *tl, const struct token *t, enum symkind kind)
 		if (sym->kind == SYM_WILDCARD &&
 		   (t->e - t->b > sym->nlen) &&
 		   !memcmp(sym->name, t->b, sym->nlen)) {
-			AN (sym->wildcard);
+			AN(sym->wildcard);
 			return (sym->wildcard(tl, t, sym));
 		}
 		if (kind != SYM_NONE && kind != sym->kind)

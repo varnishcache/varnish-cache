@@ -9,24 +9,24 @@ server s1 {
 	txresp -body "foobar"
 } -start 
 
-varnish v1 -vcl+backend {} -start
+varnish v1 -arg "-p accept_filter=false" -vcl+backend {} -start
 
 client c1 {
-	send "GET /foo HTTP/1.1\n\nGET "
+	send "GET /foo HTTP/1.1\r\n\r\nGET "
 	rxresp
 	expect resp.status == 200
-	expect resp.http.content-length == 3
+	expect resp.bodylen == 3
 	expect resp.http.x-varnish == "1001"
 	send "/bar HTTP/1.1\n\nGET /bar "
 	rxresp
 	expect resp.status == 200
-	expect resp.http.content-length == 6
-	expect resp.http.x-varnish == "1002"
+	expect resp.bodylen == 6
+	expect resp.http.x-varnish == "1003"
 	send "HTTP/1.1\n\n"
 	rxresp
 	expect resp.status == 200
-	expect resp.http.content-length == 6
-	expect resp.http.x-varnish == "1003 1002"
+	expect resp.bodylen == 6
+	expect resp.http.x-varnish == "1005 1004"
 } -run
 
 varnish v1 -expect sess_readahead == 2

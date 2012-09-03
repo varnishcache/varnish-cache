@@ -80,7 +80,7 @@ vwk_kq_sess(struct vwk *vwk, struct sess *sp, short arm)
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	assert(sp->fd >= 0);
-	DSL(0x04, SLT_Debug, sp->vsl_id, "KQ: EV_SET sp %p arm %x", sp, arm);
+	DSL(DBG_WAITER, sp->vxid, "KQ: EV_SET sp %p arm %x", sp, arm);
 	EV_SET(&vwk->ki[vwk->nki], sp->fd, EVFILT_READ, arm, 0, 0, sp);
 	if (++vwk->nki == NKEV)
 		vwk_kq_flush(vwk);
@@ -121,22 +121,20 @@ vwk_sess_ev(struct vwk *vwk, const struct kevent *kp, double now)
 	AN(kp->udata);
 	assert(kp->udata != vwk->pipes);
 	CAST_OBJ_NOTNULL(sp, kp->udata, SESS_MAGIC);
-	DSL(0x04, SLT_Debug, sp->vsl_id, "KQ: sp %p kev data %lu flags 0x%x%s",
+	DSL(DBG_WAITER, sp->vxid, "KQ: sp %p kev data %lu flags 0x%x%s",
 	    sp, (unsigned long)kp->data, kp->flags,
 	    (kp->flags & EV_EOF) ? " EOF" : "");
 
-	assert((sp->vsl_id & VSL_IDENTMASK) == kp->ident);
-	assert((sp->vsl_id & VSL_IDENTMASK) == sp->fd);
 	if (kp->data > 0) {
 		VTAILQ_REMOVE(&vwk->sesshead, sp, list);
 		SES_Handle(sp, now);
 		return;
 	} else if (kp->flags & EV_EOF) {
 		VTAILQ_REMOVE(&vwk->sesshead, sp, list);
-		SES_Delete(sp, "EOF", now);
+		SES_Delete(sp, SC_REM_CLOSE, now);
 		return;
 	} else {
-		VSL(SLT_Debug, sp->vsl_id,
+		VSL(SLT_Debug, sp->vxid,
 		    "KQ: sp %p kev data %lu flags 0x%x%s",
 		    sp, (unsigned long)kp->data, kp->flags,
 		    (kp->flags & EV_EOF) ? " EOF" : "");
@@ -204,7 +202,7 @@ vwk_thread(void *priv)
 				break;
 			VTAILQ_REMOVE(&vwk->sesshead, sp, list);
 			// XXX: not yet (void)VTCP_linger(sp->fd, 0);
-			SES_Delete(sp, "timeout", now);
+			SES_Delete(sp, SC_RX_TIMEOUT, now);
 		}
 	}
 }

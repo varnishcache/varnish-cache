@@ -147,53 +147,57 @@ VSC_F(backend_retry,		uint64_t, 0, 'a',
 	""
 )
 
-VSC_F(fetch_head,		uint64_t, 1, 'a',
-    "Fetch head",
-	""
+/*---------------------------------------------------------------------
+ * Backend fetch statistics
+ */
+
+VSC_F(fetch_head,		uint64_t, 1, 'c',
+    "Fetch no body (HEAD)",
+	"beresp with no body because the request is HEAD."
 )
-VSC_F(fetch_length,		uint64_t, 1, 'a',
+VSC_F(fetch_length,		uint64_t, 1, 'c',
     "Fetch with Length",
-	""
+	"beresp with Content-Length."
 )
-VSC_F(fetch_chunked,		uint64_t, 1, 'a',
+VSC_F(fetch_chunked,		uint64_t, 1, 'c',
     "Fetch chunked",
-	""
+	"beresp with Chunked."
 )
-VSC_F(fetch_eof,		uint64_t, 1, 'a',
+VSC_F(fetch_eof,		uint64_t, 1, 'c',
     "Fetch EOF",
-	""
+	"beresp with EOF from lack of other info."
 )
-VSC_F(fetch_bad,		uint64_t, 1, 'a',
-    "Fetch had bad headers",
-	""
+VSC_F(fetch_bad,		uint64_t, 1, 'c',
+    "Fetch bad T-E",
+	"beresp failed due to unknown Transfer-Encoding."
 )
-VSC_F(fetch_close,		uint64_t, 1, 'a',
+VSC_F(fetch_close,		uint64_t, 1, 'c',
     "Fetch wanted close",
-	""
+	"beresp with EOF due to Connection: Close."
 )
-VSC_F(fetch_oldhttp,		uint64_t, 1, 'a',
+VSC_F(fetch_oldhttp,		uint64_t, 1, 'c',
     "Fetch pre HTTP/1.1 closed",
-	""
+	"beresp with EOF due to HTTP < 1.1"
 )
-VSC_F(fetch_zero,		uint64_t, 1, 'a',
-    "Fetch zero len",
-	""
+VSC_F(fetch_zero,		uint64_t, 1, 'c',
+    "Fetch zero len body",
+	"beresp with EOF due to keep-live but neither Chunked or Len."
 )
-VSC_F(fetch_failed,		uint64_t, 1, 'a',
-    "Fetch failed",
-	""
-)
-VSC_F(fetch_1xx,		uint64_t, 1, 'a',
+VSC_F(fetch_1xx,		uint64_t, 1, 'c',
     "Fetch no body (1xx)",
-	""
+	"beresp with no body because of 1XX response."
 )
-VSC_F(fetch_204,		uint64_t, 1, 'a',
+VSC_F(fetch_204,		uint64_t, 1, 'c',
     "Fetch no body (204)",
-	""
+	"beresp with no body because of 204 response."
 )
-VSC_F(fetch_304,		uint64_t, 1, 'a',
+VSC_F(fetch_304,		uint64_t, 1, 'c',
     "Fetch no body (304)",
-	""
+	"beresp with no body because of 304 response."
+)
+VSC_F(fetch_failed,		uint64_t, 1, 'c',
+    "Fetch body failed",
+	"beresp body fetch failed."
 )
 VSC_F(fetch_not_validated,	uint64_t, 1, 'c',
     "Non-validating responses",
@@ -247,6 +251,18 @@ VSC_F(thread_queue_len,		uint64_t, 0, 'g',
 	"Length of session queue waiting for threads."
 	"  NB: Only updates once per second."
 	"  See also param queue_max."
+)
+
+VSC_F(busy_sleep,		uint64_t, 1, 'c',
+    "Number of requests sent to sleep on busy objhdr",
+	"Number of requests sent to sleep without a worker threads because"
+	" they found a busy object."
+)
+
+VSC_F(busy_wakeup,		uint64_t, 1, 'c',
+    "Number of requests woken after sleep on busy objhdr",
+	"Number of requests taken of the busy object sleep list and"
+	" and rescheduled."
 )
 
 VSC_F(sess_queued,		uint64_t, 0, 'c',
@@ -305,22 +321,6 @@ VSC_F(n_lru_moved,		uint64_t, 0, 'i',
 
 VSC_F(losthdr,			uint64_t, 0, 'a',
     "HTTP header overflows",
-	""
-)
-
-VSC_F(n_objsendfile,		uint64_t, 0, 'a',
-    "Objects sent with sendfile",
-	"The number of objects sent with the sendfile system call. If enabled "
-	"sendfile will be used on object larger than a certain size."
-)
-VSC_F(n_objwrite,		uint64_t, 0, 'a',
-    "Objects sent with write",
-	"The number of objects sent with regular write calls."
-	"Writes are used when the objects are too small for sendfile "
-	"or if the sendfile call has been disabled"
-)
-VSC_F(n_objoverflow,		uint64_t, 1, 'a',
-    "Objects overflowing workspace",
 	""
 )
 
@@ -474,7 +474,7 @@ VSC_F(bans_dups,		uint64_t, 0, 'c',
 
 /**********************************************************************/
 
-VSC_F(hcb_nolock,		uint64_t, 0, 'a',
+VSC_F(hcb_nolock,		uint64_t, 1, 'a',
     "HCB Lookups without lock",
 	""
 )

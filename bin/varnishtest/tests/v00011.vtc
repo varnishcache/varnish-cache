@@ -27,13 +27,13 @@ client c1 {
 client c1 {
 	txreq -req "PURGE"
 	rxresp
-	expect resp.http.X-Varnish == "1002"
+	expect resp.http.X-Varnish == "1004"
 	expect resp.status == 209
 } -run
 
 client c1 {
 	txreq
 	rxresp
-	expect resp.http.X-Varnish == "1003"
+	expect resp.http.X-Varnish == "1007"
 
 } -run

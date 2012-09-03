@@ -103,7 +103,7 @@ vfp_esi_bytes_uu(struct busyobj *bo, const struct vef_priv *vef,
 			return (wl);
 		VEP_Parse(bo, (const char *)st->ptr + st->len, wl);
 		st->len += wl;
-		bo->fetch_obj->len += wl;
+		VFP_update_length(bo, wl);
 		bytes -= wl;
 	}
 	return (1);
@@ -119,7 +119,7 @@ vfp_esi_bytes_gu(struct busyobj *bo, const struct vef_priv *vef,
 {
 	struct vgz *vg;
 	ssize_t wl;
-	int i;
+	enum vgzret_e vr;
 	size_t dl;
 	const void *dp;
 
@@ -137,10 +137,13 @@ vfp_esi_bytes_gu(struct busyobj *bo, const struct vef_priv *vef,
 		}
 		if (VGZ_ObufStorage(bo, vg))
 			return(-1);
-		i = VGZ_Gunzip(vg, &dp, &dl);
-		xxxassert(i == VGZ_OK || i == VGZ_END);
-		VEP_Parse(bo, dp, dl);
-		bo->fetch_obj->len += dl;
+		vr = VGZ_Gunzip(vg, &dp, &dl);
+		if (vr < VGZ_OK)
+			return (-1);
+		if (dl > 0) {
+			VEP_Parse(bo, dp, dl);
+			VFP_update_length(bo, dl);
+		}
 	}
 	return (1);
 }
@@ -217,7 +220,7 @@ vfp_vep_callback(struct busyobj *bo, ssize_t l, enum vgz_flag flg)
 		}
 		i = VGZ_Gzip(vef->vgz, &dp, &dl, flg);
 		vef->tot += dl;
-		bo->fetch_obj->len += dl;
+		VFP_update_length(bo, dl);
 	} while (!VGZ_IbufEmpty(vef->vgz) ||
 	    (flg != VGZ_NORMAL && VGZ_ObufFull(vef->vgz)));
 	assert(VGZ_IbufEmpty(vef->vgz));
@@ -265,7 +268,7 @@ vfp_esi_bytes_gg(const struct busyobj *bo, struct vef_priv *vef,
 	ssize_t wl;
 	size_t dl;
 	const void *dp;
-	int i;
+	enum vgzret_e vr;
 
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -280,9 +283,9 @@ vfp_esi_bytes_gg(const struct busyobj *bo, struct vef_priv *vef,
 		do {
 			wl = vef->ibuf_sz - (vef->ibuf_i - vef->ibuf);
 			VGZ_Obuf(bo->vgz_rx, vef->ibuf_i, wl);
-			i = VGZ_Gunzip(bo->vgz_rx, &dp, &dl);
-			/* XXX: check i */
-			assert(i >= VGZ_OK);
+			vr = VGZ_Gunzip(bo->vgz_rx, &dp, &dl);
+			if (vr < VGZ_OK)
+				return (-1);
 			if (dl > 0 && vfp_vep_inject(bo, vef, dl))
 				return (-1);
 		} while (!VGZ_IbufEmpty(bo->vgz_rx));
@@ -346,7 +349,6 @@ vfp_esi_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 	vef = bo->vef_priv;
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 
-	AZ(bo->fetch_failed);
 	AN(bo->vep);
 	assert(&bo->htc == htc);
 	if (bo->is_gzip && bo->do_gunzip)
@@ -367,12 +369,13 @@ vfp_esi_end(struct busyobj *bo)
 	struct vsb *vsb;
 	struct vef_priv *vef;
 	ssize_t l;
-	int retval;
+	int retval = 0;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	AN(bo->vep);
 
-	retval = bo->fetch_failed;
+	if (bo->state == BOS_FAILED)
+		retval = -1;
 
 	if (bo->vgz_rx != NULL && VGZ_Destroy(&bo->vgz_rx) != VGZ_END)
 		retval = FetchError(bo, "Gunzip+ESI Failed at the very end");

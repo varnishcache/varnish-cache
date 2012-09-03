@@ -1,0 +1,29 @@
+varnishtest "Test inclide vs. unsafe_path"
+
+server s1 {
+	rxreq 
+	txresp -hdr "foo: bAr" -hdr "bar: fOo" -bodylen 4
+} -start
+
+shell "echo > ${pwd}/_.c00053"
+
+varnish v1 -vcl+backend {
+	include "${pwd}/_.c00053";
+}
+
+varnish v1 -cliok "param.set vcc_unsafe_path off"
+
+varnish v1 -badvcl {
+	backend default {
+		.host = "${s1_sock}";
+	}
+	include "${pwd}/_.c00053";
+}
+
+varnish v1 -cliok "param.set vcl_dir ${pwd}"
+
+varnish v1 -vcl+backend {
+	include "_.c00053";
+}
+
+shell "rm -f ${pwd}/_.c00053"

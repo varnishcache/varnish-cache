@@ -39,6 +39,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+#include "common/params.h"
 #include "mgt/mgt.h"
 
 #include "libvcl.h"
@@ -63,6 +64,8 @@ char *mgt_cc_cmd;
 const char *mgt_vcl_dir;
 const char *mgt_vmod_dir;
 unsigned mgt_vcc_err_unref;
+unsigned mgt_vcc_allow_inline_c;
+unsigned mgt_vcc_unsafe_path;
 
 static struct vcc *vcc;
 
@@ -134,11 +137,14 @@ run_vcc(void *priv)
 	int fd, i, l;
 
 	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
+	mgt_sandbox(SANDBOX_VCC);
 	sb = VSB_new_auto();
 	XXXAN(sb);
 	VCC_VCL_dir(vcc, mgt_vcl_dir);
 	VCC_VMOD_dir(vcc, mgt_vmod_dir);
 	VCC_Err_Unref(vcc, mgt_vcc_err_unref);
+	VCC_Allow_InlineC(vcc, mgt_vcc_allow_inline_c);
+	VCC_Unsafe_Path(vcc, mgt_vcc_unsafe_path);
 	csrc = VCC_Compile(vcc, sb, vp->vcl);
 	AZ(VSB_finish(sb));
 	if (VSB_len(sb))
@@ -170,6 +176,7 @@ run_vcc(void *priv)
 static void
 run_cc(void *priv)
 {
+	mgt_sandbox(SANDBOX_CC);
 	(void)execl("/bin/sh", "/bin/sh", "-c", priv, NULL);
 }
 
@@ -186,7 +193,9 @@ run_dlopen(void *priv)
 
 	of = priv;
 
-	/* Try to load the object into the management process */
+	mgt_sandbox(SANDBOX_VCLLOAD);
+
+	/* Try to load the object into this sub-process */
 	if ((dlh = dlopen(of, RTLD_NOW | RTLD_LOCAL)) == NULL) {
 		fprintf(stderr,
 		    "Compiled VCL program failed to load:\n  %s\n",
@@ -235,7 +244,9 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 		VSB_printf(sb, "Failed to create %s: %s", sf, strerror(errno));
 		return (NULL);
 	}
+	(void)fchown(sfd, mgt_param.uid, mgt_param.gid);
 	AZ(close(sfd));
+
 
 	/* Run the VCC compiler in a sub-process */
 	memset(&vp, 0, sizeof vp);
@@ -261,6 +272,16 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 	of[sizeof sf - 1] = 'o';
 	of[sizeof sf] = '\0';
 
+	i = open(of, O_WRONLY|O_CREAT|O_TRUNC, 0600);
+	if (i < 0) {
+		VSB_printf(sb, "Failed to create %s: %s",
+		    of, strerror(errno));
+		(void)unlink(sf);
+		return (NULL);
+	}
+	(void)fchown(i, mgt_param.uid, mgt_param.gid);
+	AZ(close(i));
+
 	/* Build the C-compiler command line */
 	cmdsb = mgt_make_cc_cmd(sf, of);
 
@@ -278,7 +299,7 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 		i = chmod(of, 0755);
 		if (i)
 			VSB_printf(sb, "Failed to set permissions on %s: %s",
-				   of, strerror(errno));
+			    of, strerror(errno));
 	}
 
 	if (i) {
@@ -394,18 +415,16 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, char *vcl, int C_flag)
 	if (VSB_len(sb) > 0)
 		fprintf(stderr, "%s", VSB_data(sb));
 	VSB_delete(sb);
-	if (C_flag) {
-		if (vf != NULL)
-			AZ(unlink(vf));
-		return (0);
-	}
+	if (C_flag && vf != NULL)
+		AZ(unlink(vf));
 	if (vf == NULL) {
 		fprintf(stderr, "\nVCL compilation failed\n");
 		return (1);
+	} else {
+		vp = mgt_vcc_add(buf, vf);
+		vp->active = 1;
+		return (0);
 	}
-	vp = mgt_vcc_add(buf, vf);
-	vp->active = 1;
-	return (0);
 }
 
 /*--------------------------------------------------------------------*/

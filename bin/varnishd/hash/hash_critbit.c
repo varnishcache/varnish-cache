@@ -168,16 +168,15 @@ hcb_l_y(uintptr_t u)
  */
 
 static unsigned
-hcb_crit_bit(const struct objhead *oh1, const struct objhead *oh2,
-    struct hcb_y *y)
+hcb_crit_bit(const uint8_t *digest, const struct objhead *oh2, struct hcb_y *y)
 {
 	unsigned char u, r;
 
 	CHECK_OBJ_NOTNULL(y, HCB_Y_MAGIC);
-	for (u = 0; u < DIGEST_LEN && oh1->digest[u] == oh2->digest[u]; u++)
+	for (u = 0; u < DIGEST_LEN && digest[u] == oh2->digest[u]; u++)
 		;
 	assert(u < DIGEST_LEN);
-	r = hcb_bits(oh1->digest[u], oh2->digest[u]);
+	r = hcb_bits(digest[u], oh2->digest[u]);
 	y->ptr = u;
 	y->bitmask = 0x80 >> r;
 	y->critbit = u * 8 + r;
@@ -191,8 +190,8 @@ hcb_crit_bit(const struct objhead *oh1, const struct objhead *oh2,
  */
 
 static struct objhead *
-hcb_insert(struct worker *wrk, struct hcb_root *root, struct objhead *oh,
-    int has_lock)
+hcb_insert(struct worker *wrk, struct hcb_root *root, const uint8_t *digest,
+    struct objhead **noh)
 {
 	volatile uintptr_t *p;
 	uintptr_t pp;
@@ -203,17 +202,20 @@ hcb_insert(struct worker *wrk, struct hcb_root *root, struct objhead *oh,
 	p = &root->origo;
 	pp = *p;
 	if (pp == 0) {
-		if (!has_lock)
+		if (noh == NULL)
 			return (NULL);
-		*p = hcb_r_node(oh);
-		return (oh);
+		oh2 = *noh;
+		*noh = NULL;
+		memcpy(oh2->digest, digest, sizeof oh2->digest);
+		*p = hcb_r_node(oh2);
+		return (oh2);
 	}
 
 	while(hcb_is_y(pp)) {
 		y = hcb_l_y(pp);
 		CHECK_OBJ_NOTNULL(y, HCB_Y_MAGIC);
 		assert(y->ptr < DIGEST_LEN);
-		s = (oh->digest[y->ptr] & y->bitmask) != 0;
+		s = (digest[y->ptr] & y->bitmask) != 0;
 		assert(s < 2);
 		p = &y->leaf[s];
 		pp = *p;
@@ -221,7 +223,7 @@ hcb_insert(struct worker *wrk, struct hcb_root *root, struct objhead *oh,
 
 	if (pp == 0) {
 		/* We raced hcb_delete and got a NULL pointer */
-		assert(!has_lock);
+		assert(noh == NULL);
 		return (NULL);
 	}
 
@@ -230,20 +232,23 @@ hcb_insert(struct worker *wrk, struct hcb_root *root, struct objhead *oh,
 	/* We found a node, does it match ? */
 	oh2 = hcb_l_node(pp);
 	CHECK_OBJ_NOTNULL(oh2, OBJHEAD_MAGIC);
-	if (!memcmp(oh2->digest, oh->digest, DIGEST_LEN))
+	if (!memcmp(oh2->digest, digest, DIGEST_LEN))
 		return (oh2);
 
-	if (!has_lock)
+	if (noh == NULL)
 		return (NULL);
 
 	/* Insert */
 
 	CAST_OBJ_NOTNULL(y2, wrk->nhashpriv, HCB_Y_MAGIC);
 	wrk->nhashpriv = NULL;
-	(void)hcb_crit_bit(oh, oh2, y2);
-	s2 = (oh->digest[y2->ptr] & y2->bitmask) != 0;
+	(void)hcb_crit_bit(digest, oh2, y2);
+	s2 = (digest[y2->ptr] & y2->bitmask) != 0;
 	assert(s2 < 2);
-	y2->leaf[s2] = hcb_r_node(oh);
+	oh2 = *noh;
+	*noh = NULL;
+	memcpy(oh2->digest, digest, sizeof oh2->digest);
+	y2->leaf[s2] = hcb_r_node(oh2);
 	s2 = 1-s2;
 
 	p = &root->origo;
@@ -256,14 +261,14 @@ hcb_insert(struct worker *wrk, struct hcb_root *root, struct objhead *oh,
 		if (y->critbit > y2->critbit)
 			break;
 		assert(y->ptr < DIGEST_LEN);
-		s = (oh->digest[y->ptr] & y->bitmask) != 0;
+		s = (digest[y->ptr] & y->bitmask) != 0;
 		assert(s < 2);
 		p = &y->leaf[s];
 	}
 	y2->leaf[s2] = *p;
 	VWMB();
 	*p = hcb_r_y(y2);
-	return(oh);
+	return(oh2);
 }
 
 /*--------------------------------------------------------------------*/
@@ -345,10 +350,9 @@ static struct cli_proto hcb_cmds[] = {
 /*--------------------------------------------------------------------*/
 
 static void * __match_proto__(bgthread_t)
-hcb_cleaner(struct sess *sp, void *priv)
+hcb_cleaner(struct worker *wrk, void *priv)
 {
 	struct hcb_y *y, *y2;
-	struct worker *wrk = sp->wrk;
 	struct objhead *oh, *oh2;
 
 	(void)priv;
@@ -373,7 +377,7 @@ hcb_cleaner(struct sess *sp, void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static void
+static void __match_proto__(hash_start_f)
 hcb_start(void)
 {
 	struct objhead *oh = NULL;
@@ -387,7 +391,7 @@ hcb_start(void)
 	hcb_build_bittbl();
 }
 
-static int
+static int __match_proto__(hash_deref_f)
 hcb_deref(struct objhead *oh)
 {
 	int r;
@@ -412,70 +416,79 @@ hcb_deref(struct objhead *oh)
 	return (r);
 }
 
-static struct objhead *
-hcb_lookup(const struct sess *sp, struct objhead *noh)
+static struct objhead * __match_proto__(hash_lookup_f)
+hcb_lookup(struct worker *wrk, const void *digest, struct objhead **noh)
 {
 	struct objhead *oh;
 	struct hcb_y *y;
 	unsigned u;
-	unsigned with_lock;
 
-	(void)sp;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	AN(digest);
+	if (noh != NULL) {
+		CHECK_OBJ_NOTNULL(*noh, OBJHEAD_MAGIC);
+		assert((*noh)->refcnt == 1);
+	}
 
-	with_lock = 0;
-	while (1) {
-		if (with_lock) {
-			CAST_OBJ_NOTNULL(y, sp->wrk->nhashpriv, HCB_Y_MAGIC);
-			Lck_Lock(&hcb_mtx);
-			VSC_C_main->hcb_lock++;
-			assert(noh->refcnt == 1);
-			oh = hcb_insert(sp->wrk, &hcb_root, noh, 1);
-			Lck_Unlock(&hcb_mtx);
-		} else {
-			VSC_C_main->hcb_nolock++;
-			oh = hcb_insert(sp->wrk, &hcb_root, noh, 0);
-		}
+	/* First try in read-only mode without holding a lock */
 
-		if (oh != NULL && oh == noh) {
-			/* Assert that we only muck with the tree with a lock */
-			assert(with_lock);
-			VSC_C_main->hcb_insert++;
-			assert(oh->refcnt > 0);
-			return (oh);
-		}
-
-		if (oh == NULL) {
-			assert(!with_lock);
-			/* Try again, with lock */
-			with_lock = 1;
-			continue;
-		}
-
-		CHECK_OBJ_NOTNULL(noh, OBJHEAD_MAGIC);
+	wrk->stats.hcb_nolock++;
+	oh = hcb_insert(wrk, &hcb_root, digest, NULL);
+	if (oh != NULL) {
 		Lck_Lock(&oh->mtx);
 		/*
 		 * A refcount of zero indicates that the tree changed
 		 * under us, so fall through and try with the lock held.
 		 */
 		u = oh->refcnt;
-		if (u > 0)
+		if (u > 0) {
 			oh->refcnt++;
-		else
-			with_lock = 1;
-		Lck_Unlock(&oh->mtx);
-		if (u > 0)
 			return (oh);
+		}
+		Lck_Unlock(&oh->mtx);
+	}
+
+	while (1) {
+		/* No luck, try with lock held, so we can modify tree */
+		CAST_OBJ_NOTNULL(y, wrk->nhashpriv, HCB_Y_MAGIC);
+		Lck_Lock(&hcb_mtx);
+		VSC_C_main->hcb_lock++;
+		oh = hcb_insert(wrk, &hcb_root, digest, noh);
+		Lck_Unlock(&hcb_mtx);
+
+		if (oh == NULL)
+			return (NULL);
+
+		Lck_Lock(&oh->mtx);
+
+		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+		if (noh != NULL && *noh == NULL) {
+			assert(oh->refcnt > 0);
+			VSC_C_main->hcb_insert++;
+			return (oh);
+		}
+		/*
+		 * A refcount of zero indicates that the tree changed
+		 * under us, so fall through and try with the lock held.
+		 */
+		u = oh->refcnt;
+		if (u > 0) {
+			oh->refcnt++;
+			return (oh);
+		}
+		Lck_Unlock(&oh->mtx);
 	}
 }
 
-static void
-hcb_prep(const struct sess *sp)
+static void __match_proto__(hash_prep_f)
+hcb_prep(struct worker *wrk)
 {
 	struct hcb_y *y;
 
-	if (sp->wrk->nhashpriv == NULL) {
+	if (wrk->nhashpriv == NULL) {
 		ALLOC_OBJ(y, HCB_Y_MAGIC);
-		sp->wrk->nhashpriv = y;
+		AN(y);
+		wrk->nhashpriv = y;
 	}
 }
 

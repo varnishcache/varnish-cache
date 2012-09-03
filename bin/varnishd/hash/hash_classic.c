@@ -54,7 +54,7 @@ static struct hcl_hd		*hcl_head;
  * The ->init method allows the management process to pass arguments
  */
 
-static void
+static void __match_proto__(hash_init_f)
 hcl_init(int ac, char * const *av)
 {
 	int i;
@@ -86,7 +86,7 @@ hcl_init(int ac, char * const *av)
  * initialization to happen before the first lookup.
  */
 
-static void
+static void __match_proto__(hash_start_f)
 hcl_start(void)
 {
 	unsigned u;
@@ -110,50 +110,64 @@ hcl_start(void)
  * rare and collisions even rarer.
  */
 
-static struct objhead *
-hcl_lookup(const struct sess *sp, struct objhead *noh)
+static struct objhead * __match_proto__(hash_lookup_f)
+hcl_lookup(struct worker *wrk, const void *digest, struct objhead **noh)
 {
 	struct objhead *oh;
 	struct hcl_hd *hp;
-	unsigned u1, digest;
+	unsigned u1, hdigest;
 	int i;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(noh, OBJHEAD_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	AN(digest);
+	if (noh != NULL)
+		CHECK_OBJ_NOTNULL(*noh, OBJHEAD_MAGIC);
 
-	assert(sizeof noh->digest > sizeof digest);
-	memcpy(&digest, noh->digest, sizeof digest);
-	u1 = digest % hcl_nhash;
+	assert(sizeof oh->digest >= sizeof hdigest);
+	memcpy(&hdigest, digest, sizeof hdigest);
+	u1 = hdigest % hcl_nhash;
 	hp = &hcl_head[u1];
 
 	Lck_Lock(&hp->mtx);
 	VTAILQ_FOREACH(oh, &hp->head, hoh_list) {
-		i = memcmp(oh->digest, noh->digest, sizeof oh->digest);
+		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+		i = memcmp(oh->digest, digest, sizeof oh->digest);
 		if (i < 0)
 			continue;
 		if (i > 0)
 			break;
 		oh->refcnt++;
 		Lck_Unlock(&hp->mtx);
+		Lck_Lock(&oh->mtx);
 		return (oh);
 	}
 
-	if (oh != NULL)
-		VTAILQ_INSERT_BEFORE(oh, noh, hoh_list);
-	else
-		VTAILQ_INSERT_TAIL(&hp->head, noh, hoh_list);
+	if (noh == NULL) {
+		Lck_Unlock(&hp->mtx);
+		return (NULL);
+	}
 
-	noh->hoh_head = hp;
+	if (oh != NULL)
+		VTAILQ_INSERT_BEFORE(oh, *noh, hoh_list);
+	else
+		VTAILQ_INSERT_TAIL(&hp->head, *noh, hoh_list);
+
+	oh = *noh;
+	*noh = NULL;
+	memcpy(oh->digest, digest, sizeof oh->digest);
+
+	oh->hoh_head = hp;
 
 	Lck_Unlock(&hp->mtx);
-	return (noh);
+	Lck_Lock(&oh->mtx);
+	return (oh);
 }
 
 /*--------------------------------------------------------------------
  * Dereference and if no references are left, free.
  */
 
-static int
+static int __match_proto__(hash_deref_f)
 hcl_deref(struct objhead *oh)
 {
 	struct hcl_hd *hp;

@@ -23,7 +23,7 @@ varnishd [-a address[:port]] [-b host[:port]] [-d] [-F] [-f config]
 	 [-g group] [-h type[,options]] [-i identity]
 	 [-l shmlogsize] [-n name] [-P file] [-p param=value] 
 	 [-s type[,options]] [-T address[:port]] [-t ttl]
-	 [-u user] [-V] [-w min[,max[,timeout]]]
+	 [-r param[,param...]] [-u user] [-V] 
 
 DESCRIPTION
 ===========
@@ -93,7 +93,8 @@ OPTIONS
             Use the specified storage backend.  See Storage Types for a list of supported storage
             types.  This option can be used multiple times to specify multiple storage files. You
  	    can name the different backends. Varnish will then reference that backend with the 
-	    given name in logs, statistics, etc.
+	    given name in logs, statistics, etc. You will also be able to ask Varnish to use
+            these named backends specifically through VCL by setting backend.storage in vcl_fetch.
 
 -T address[:port]
             Offer a management interface on the specified address and port.  See Management
@@ -110,6 +111,14 @@ OPTIONS
             documents.  This is a shortcut for specifying the
             default_ttl run-time parameter.
 
+-r param[,param...]
+            Make the listed parameters read only. This gives the
+            system administrator a way to limit what the Varnish CLI can do.
+            Consider making parameters such as *user*, *group*, *cc_command*,
+            *vcc_allow_inline_c* read only as these can potentially be used
+            to escalate privileges from the CLI.
+            Protecting *listen_address* may also be a good idea.
+
 -u user     Specifies the name of an unprivileged user to which the child
             process should switch before it starts accepting
             connections.  This is a shortcut for specifying the user
@@ -119,20 +128,6 @@ OPTIONS
             specified first.
 
 -V          Display the version number and exit.
-
--w min[,max[,timeout]]
-
-            Start at least min but no more than max worker threads
-            with the specified idle timeout.  This is a shortcut for
-            specifying the thread_pool_min, thread_pool_max and
-            thread_pool_timeout run-time parameters.
-
-            If only one number is specified, thread_pool_min and
-            thread_pool_max are both set to this number, and
-            thread_pool_timeout has no effect.
-
-
-
 
 
 Hash Algorithms
@@ -161,10 +156,16 @@ Storage Types
 The following storage types are available:
 
 malloc[,size]
-      Storage for each object is allocated with malloc(3).
 
-      The size parameter specifies the maximum amount of memory varnishd will allocate.  The size is assumed to
-      be in bytes, unless followed by one of the following suffixes:
+      Malloc is a memory based backend. Each object will be allocated
+      from memory. If your system runs low on memory swap will be
+      used. Be aware that the size limitation only limits the actual
+      storage and that approximately 1k of memory per object will be
+      used for various internal structures.
+
+      The size parameter specifies the maximum amount of memory
+      varnishd will allocate.  The size is assumed to be in bytes,
+      unless followed by one of the following suffixes:
 
       K, k    The size is expressed in kibibytes.
 
@@ -174,16 +175,24 @@ malloc[,size]
 
       T, t    The size is expressed in tebibytes.
 
-      The default size is unlimited.
+      The default size is unlimited. 
+
+      Mallocs performance is bound by memory speed so it is very fast. 
 
 file[,path[,size[,granularity]]]
-      Storage for each object is allocated from an arena backed by a file.  This is the default.
 
-      The path parameter specifies either the path to the backing file or the path to a directory in which
-      varnishd will create the backing file.  The default is /tmp.
+      The file backend stores objects in memory backed by a file on
+      disk with mmap. This is the default storage backend and unless
+      you specify another storage this one will used along with
+      Transient storage.
 
-      The size parameter specifies the size of the backing file.  The size is assumed to be in bytes, unless fol‐
-      lowed by one of the following suffixes:
+      The path parameter specifies either the path to the backing file
+      or the path to a directory in which varnishd will create the
+      backing file.  The default is /tmp.
+
+      The size parameter specifies the size of the backing file.  The
+      size is assumed to be in bytes, unless fol‐ lowed by one of the
+      following suffixes:
 
       K, k    The size is expressed in kibibytes.
 
@@ -193,21 +202,29 @@ file[,path[,size[,granularity]]]
 
       T, t    The size is expressed in tebibytes.
 
-      %       The size is expressed as a percentage of the free space on the file system where it resides.
+      %       The size is expressed as a percentage of the free space on the
+              file system where it resides.
 
       The default size is 50%.
 
-      If the backing file already exists, it will be truncated or expanded to the specified size.
+      If the backing file already exists, it will be truncated or
+      expanded to the specified size.
 
-      Note that if varnishd has to create or expand the file, it will not pre-allocate the added space, leading
-      to fragmentation, which may adversely impact performance.  Pre-creating the storage file using dd(1) will
-      reduce fragmentation to a minimum.
+      Note that if varnishd has to create or expand the file, it will
+      not pre-allocate the added space, leading to fragmentation,
+      which may adversely impact performance.  Pre-creating the
+      storage file using dd(1) will reduce fragmentation to a minimum.
 
-      The granularity parameter specifies the granularity of allocation.  All allocations are rounded up to this
-      size.  The size is assumed to be in bytes, unless followed by one of the suffixes described for size except
-      for %.
+      The granularity parameter specifies the granularity of
+      allocation.  All allocations are rounded up to this size.  The
+      size is assumed to be in bytes, unless followed by one of the
+      suffixes described for size except for %.
 
-      The default size is the VM page size.  The size should be reduced if you have many small objects.
+      The default size is the VM page size.  The size should be
+      reduced if you have many small objects.
+
+      File performance is typically limited by the write speed of the
+      device, and depending on use, the seek time.
 
 persistent,path,size {experimental}
 
@@ -246,38 +263,47 @@ Transient Storage
 Management Interface
 --------------------
 
-If the -T option was specified, varnishd will offer a command-line management interface on the specified address
-and port.  The recommended way of connecting to the command-line management interface is through varnishadm(1).
+If the -T option was specified, varnishd will offer a command-line
+management interface on the specified address and port.  The
+recommended way of connecting to the command-line management interface
+is through varnishadm(1).
 
 The commands available are documented in varnish(7).
 
 Run-Time Parameters
 -------------------
 
-Runtime parameters are marked with shorthand flags to avoid repeating the same text over and over in the table
-below.  The meaning of the flags are:
+Runtime parameters are marked with shorthand flags to avoid repeating
+the same text over and over in the table below.  The meaning of the
+flags are:
 
 experimental
-      We have no solid information about good/bad/optimal values for this parameter.  Feedback with experience
-      and observations are most welcome.
+      We have no solid information about good/bad/optimal values for
+      this parameter.  Feedback with experience and observations are
+      most welcome.
 
 delayed
-      This parameter can be changed on the fly, but will not take effect immediately.
+      This parameter can be changed on the fly, but will not take
+      effect immediately.
 
 restart
-      The worker process must be stopped and restarted, before this parameter takes effect.
+      The worker process must be stopped and restarted, before this
+      parameter takes effect.
 
 reload
       The VCL programs must be reloaded for this parameter to take effect.
 
-Here is a list of all parameters, current as of last time we remembered to update the manual page.  This text is
-produced from the same text you will find in the CLI if you use the param.show command, so should there be a new
-parameter which is not listed here, you can find the description using the CLI commands.
+Here is a list of all parameters, current as of last time we
+remembered to update the manual page.  This text is produced from the
+same text you will find in the CLI if you use the param.show command,
+so should there be a new parameter which is not listed here, you can
+find the description using the CLI commands.
 
 Be aware that on 32 bit systems, certain default values, such as
-workspace_client (=16k), thread_pool_workspace (=16k), http_resp_size (=8k),
-http_req_size (=12k), gzip_stack_buffer (=4k) and thread_pool_stack (=64k) are
-reduced relative to the values listed here, in order to conserve VM space.
+workspace_client (=16k), thread_pool_workspace (=16k), http_resp_size
+(=8k), http_req_size (=12k), gzip_stack_buffer (=4k) and
+thread_pool_stack (=64k) are reduced relative to the values listed
+here, in order to conserve VM space.
 
 .. include:: params.rst
 

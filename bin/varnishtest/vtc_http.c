@@ -190,6 +190,8 @@ cmd_var_resolve(struct http *hp, char *spec)
 		return(hp->chunklen);
 	if (!strcmp(spec, "resp.bodylen"))
 		return(hp->bodylen);
+	if (!strcmp(spec, "resp.body"))
+		return(hp->body != NULL ? hp->body : spec);
 	if (!memcmp(spec, "req.http.", 9)) {
 		hh = hp->req;
 		hdr = spec + 9;

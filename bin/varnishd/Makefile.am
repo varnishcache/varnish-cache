@@ -17,7 +17,6 @@ varnishd_SOURCES = \
 	cache/cache_backend_poll.c \
 	cache/cache_ban.c \
 	cache/cache_busyobj.c \
-	cache/cache_center.c \
 	cache/cache_cli.c \
 	cache/cache_dir.c \
 	cache/cache_dir_dns.c \
@@ -31,6 +30,7 @@ varnishd_SOURCES = \
 	cache/cache_gzip.c \
 	cache/cache_hash.c \
 	cache/cache_http.c \
+	cache/cache_http1_fsm.c \
 	cache/cache_httpconn.c \
 	cache/cache_lck.c \
 	cache/cache_main.c \
@@ -38,6 +38,7 @@ varnishd_SOURCES = \
 	cache/cache_panic.c \
 	cache/cache_pipe.c \
 	cache/cache_pool.c \
+	cache/cache_req_fsm.c \
 	cache/cache_response.c \
 	cache/cache_rfc2616.c \
 	cache/cache_session.c \
@@ -60,6 +61,7 @@ varnishd_SOURCES = \
 	mgt/mgt_cli.c \
 	mgt/mgt_main.c \
 	mgt/mgt_param.c \
+	mgt/mgt_param_bits.c \
 	mgt/mgt_pool.c \
 	mgt/mgt_sandbox.c \
 	mgt/mgt_sandbox_solaris.c \
@@ -84,12 +86,9 @@ varnishd_SOURCES = \
 	waiter/cache_waiter_ports.c 
 
 noinst_HEADERS = \
-	cache/cache.h \
 	cache/cache_backend.h \
 	cache/cache_esi.h \
-	common/common.h \
 	common/heritage.h \
-	common/params.h \
 	default_vcl.h \
 	hash/hash_slinger.h \
 	mgt/mgt.h \
@@ -98,6 +97,13 @@ noinst_HEADERS = \
 	storage/storage.h \
 	storage/storage_persistent.h \
 	waiter/waiter.h
+
+# Headers for use with vmods
+pkgdataincludedir = $(pkgdatadir)/include
+nobase_pkgdatainclude_HEADERS = \
+	cache/cache.h \
+	common/common.h \
+	common/params.h
 
 varnishd_CFLAGS = \
 	@PCRE_CFLAGS@ \

@@ -1,0 +1,8 @@
+varnishtest "Test case for #1035"
+
+varnish v1 -arg "-a 127.0.0.1:80 -b 127.0.0.1:8080"
+varnish v1 -cliok "param.set listen_address 127.0.0.1:80"
+varnish v1 -clierr 106 "param.set listen_address 127.0.0.1:65540"
+varnish v1 -clierr 106 "param.set listen_address 127.0.0.1:65536"
+varnish v1 -clierr 106 "param.set listen_address 127.0.0.1:-1"
+varnish v1 -cliok "param.set listen_address 127.0.0.1:65535"

@@ -130,32 +130,45 @@ VTCP_hisname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 
 /*--------------------------------------------------------------------*/
 
+#ifdef HAVE_ACCEPT_FILTERS
+
 int
 VTCP_filter_http(int sock)
 {
-#ifdef HAVE_ACCEPT_FILTERS
+	int retval;
 	struct accept_filter_arg afa;
-	int i;
 
 	memset(&afa, 0, sizeof(afa));
 	strcpy(afa.af_name, "httpready");
-	errno = 0;
-	i = setsockopt(sock, SOL_SOCKET, SO_ACCEPTFILTER,
-	    &afa, sizeof(afa));
-	/* XXX ugly */
-	if (i)
-		printf("Acceptfilter(%d, httpready): %d %s\n",
-		    sock, i, strerror(errno));
-	return (i);
-#elif defined(__linux)
-	int defer = 1;
-	setsockopt(sock, SOL_TCP,TCP_DEFER_ACCEPT,(char *) &defer, sizeof(int));
-	return (0);
-#else
-	(void)sock;
-	return (0);
-#endif
+	retval = setsockopt(sock, SOL_SOCKET, SO_ACCEPTFILTER,
+	    &afa, sizeof afa );
+	return (retval);
 }
+
+#elif defined(__linux)
+
+int
+VTCP_filter_http(int sock)
+{
+	int retval;
+	int defer = 1;
+
+	retval = setsockopt(sock, SOL_TCP,TCP_DEFER_ACCEPT,
+	    &defer, sizeof defer);
+	return (retval);
+}
+
+#else
+
+int
+VTCP_filter_http(int sock)
+{
+	errno = EOPNOTSUPP;
+	(void)sock;
+	return (-1);
+}
+
+#endif
 
 /*--------------------------------------------------------------------
  * Functions for controlling NONBLOCK mode.
@@ -255,7 +268,7 @@ VTCP_close(int *s)
 
 	i = close(*s);
 
-	assert (VTCP_Check(i));
+	assert(VTCP_Check(i));
 	*s = -1;
 }
 
