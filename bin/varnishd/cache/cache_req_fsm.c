@@ -776,6 +776,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	struct objcore *oc;
 	struct object *o;
 	struct objhead *oh;
+	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -792,8 +793,8 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		/*
 		 * We lost the session to a busy object, disembark the
 		 * worker thread.   We return to STP_LOOKUP when the busy
-		 * object has been unbusied, and still have the hash digest
-		 * around to do the lookup with.
+		 * object has been unbusied, and still have the objhead
+		 * around to restart the lookup with.
 		 */
 		return (2);
 	}
@@ -805,21 +806,27 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	/* If we inserted a new object it's a miss */
 	if (oc->flags & OC_F_BUSY) {
-		CHECK_OBJ_NOTNULL(oc->busyobj, BUSYOBJ_MAGIC);
-		assert(oc->busyobj == req->busyobj);
-		wrk->stats.cache_miss++;
-
+		AZ(req->busyobj);
+		bo = VBO_GetBusyObj(wrk);
+		req->busyobj = bo;
+		/* One ref for req, one for FetchBody */
+		bo->refcount = 2;
+		VRY_Validate(req->vary_b);
 		if (req->vary_l != NULL) {
-			assert(oc->busyobj->vary == req->vary_b);
-			VRY_Validate(oc->busyobj->vary);
-			WS_ReleaseP(req->ws, (void*)req->vary_l);
-		} else {
-			AZ(oc->busyobj->vary);
-			WS_Release(req->ws, 0);
-		}
+			bo->vary = (void*)WS_Copy(bo->ws,
+			    (void*)req->vary_b, req->vary_l - req->vary_b);
+			AN(bo->vary);
+			VRY_Validate(bo->vary);
+		} else
+			bo->vary = NULL;
+
+		WS_Release(req->ws, 0);
 		req->vary_b = NULL;
 		req->vary_l = NULL;
 		req->vary_e = NULL;
+
+		oc->busyobj = bo;
+		wrk->stats.cache_miss++;
 
 		req->objcore = oc;
 		req->req_step = R_STP_MISS;

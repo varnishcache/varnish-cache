@@ -60,7 +60,6 @@
 
 
 #include "hash/hash_slinger.h"
-#include "vmb.h"
 #include "vsha256.h"
 
 static const struct hash_slinger *hash;
@@ -445,19 +444,6 @@ HSH_Lookup(struct req *req)
 	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
 	/* NB: do not deref objhead the new object inherits our reference */
 	Lck_Unlock(&oh->mtx);
-
-	AZ(req->busyobj);
-	req->busyobj = VBO_GetBusyObj(wrk);
-	req->busyobj->refcount = 2;	/* One for req, one for FetchBody */
-
-	VRY_Validate(req->vary_b);
-	if (req->vary_l != NULL)
-		req->busyobj->vary = req->vary_b;
-	else
-		req->busyobj->vary = NULL;
-
-	VMB();
-	oc->busyobj = req->busyobj;
 	return (oc);
 }
 
