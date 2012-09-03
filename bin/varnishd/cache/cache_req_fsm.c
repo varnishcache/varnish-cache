@@ -811,19 +811,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		req->busyobj = bo;
 		/* One ref for req, one for FetchBody */
 		bo->refcount = 2;
-		VRY_Validate(req->vary_b);
-		if (req->vary_l != NULL) {
-			bo->vary = (void*)WS_Copy(bo->ws,
-			    (void*)req->vary_b, req->vary_l - req->vary_b);
-			AN(bo->vary);
-			VRY_Validate(bo->vary);
-		} else
-			bo->vary = NULL;
-
-		WS_Release(req->ws, 0);
-		req->vary_b = NULL;
-		req->vary_l = NULL;
-		req->vary_e = NULL;
+		VRY_Finish(req, bo);
 
 		oc->busyobj = bo;
 		wrk->stats.cache_miss++;
@@ -840,10 +828,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	req->obj = o;
 
-	WS_Release(req->ws, 0);
-	req->vary_b = NULL;
-	req->vary_l = NULL;
-	req->vary_e = NULL;
+	VRY_Finish(req, NULL);
 
 	if (oc->flags & OC_F_PASS) {
 		wrk->stats.cache_hitpass++;

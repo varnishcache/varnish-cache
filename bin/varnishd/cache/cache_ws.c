@@ -116,8 +116,8 @@ WS_Alloc(struct ws *ws, unsigned bytes)
 	return (r);
 }
 
-char *
-WS_Copy(struct ws *ws, const char *str, int len)
+void *
+WS_Copy(struct ws *ws, const void *str, int len)
 {
 	char *r;
 	unsigned bytes;

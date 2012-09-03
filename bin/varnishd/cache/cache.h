@@ -987,6 +987,7 @@ struct vsb *VRY_Create(struct req *sp, const struct http *hp);
 int VRY_Match(struct req *, const uint8_t *vary);
 void VRY_Validate(const uint8_t *vary);
 void VRY_Prep(struct req *);
+void VRY_Finish(struct req *req, struct busyobj *bo);
 
 /* cache_vcl.c */
 void VCL_Init(void);
@@ -1034,7 +1035,7 @@ void WS_ReleaseP(struct ws *ws, char *ptr);
 void WS_Assert(const struct ws *ws);
 void WS_Reset(struct ws *ws, char *p);
 char *WS_Alloc(struct ws *ws, unsigned bytes);
-char *WS_Copy(struct ws *ws, const char *str, int len);
+void *WS_Copy(struct ws *ws, const void *str, int len);
 char *WS_Snapshot(struct ws *ws);
 
 /* rfc2616.c */
