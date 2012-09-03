@@ -617,9 +617,9 @@ cnt_fetchbody(struct worker *wrk, struct req *req)
 		req->obj->gziped = 1;
 
 	if (vary != NULL) {
-		req->obj->vary = (void *)WS_Alloc(req->obj->http->ws, varyl);
+		req->obj->vary = (void *)WS_Copy(req->obj->http->ws,
+		    VSB_data(vary), varyl);
 		AN(req->obj->vary);
-		memcpy(req->obj->vary, VSB_data(vary), varyl);
 		VRY_Validate(req->obj->vary);
 		VSB_delete(vary);
 	}

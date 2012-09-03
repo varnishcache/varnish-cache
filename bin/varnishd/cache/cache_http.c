@@ -888,10 +888,9 @@ http_CopyHome(const struct http *hp)
 			continue;
 		}
 		l = Tlen(hp->hd[u]);
-		p = WS_Alloc(hp->ws, l + 1);
+		p = WS_Copy(hp->ws, hp->hd[u].b, l + 1L);
 		if (p != NULL) {
 			http_VSLH(hp, u);
-			memcpy(p, hp->hd[u].b, l + 1L);
 			hp->hd[u].b = p;
 			hp->hd[u].e = p + l;
 		} else {

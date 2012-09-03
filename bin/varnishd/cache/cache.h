@@ -1034,6 +1034,7 @@ void WS_ReleaseP(struct ws *ws, char *ptr);
 void WS_Assert(const struct ws *ws);
 void WS_Reset(struct ws *ws, char *p);
 char *WS_Alloc(struct ws *ws, unsigned bytes);
+char *WS_Copy(struct ws *ws, const char *str, int len);
 char *WS_Snapshot(struct ws *ws);
 
 /* rfc2616.c */

@@ -117,6 +117,33 @@ WS_Alloc(struct ws *ws, unsigned bytes)
 }
 
 char *
+WS_Copy(struct ws *ws, const char *str, int len)
+{
+	char *r;
+	unsigned bytes;
+
+	WS_Assert(ws);
+	assert(ws->r == NULL);
+
+	if (len == -1)
+		len = strlen(str) + 1;
+	assert(len >= 0);
+
+	bytes = PRNDUP((unsigned)len);
+	if (ws->f + bytes > ws->e) {
+		ws->overflow++;
+		WS_Assert(ws);
+		return(NULL);
+	}
+	r = ws->f;
+	ws->f += bytes;
+	memcpy(r, str, len);
+	DSL(DBG_WORKSPACE, 0, "WS_Copy(%p, %d) = %p", ws, len, r);
+	WS_Assert(ws);
+	return (r);
+}
+
+char *
 WS_Snapshot(struct ws *ws)
 {
 
@@ -174,15 +201,3 @@ WS_ReleaseP(struct ws *ws, char *ptr)
 	ws->r = NULL;
 	WS_Assert(ws);
 }
-
-#if 0
-/* XXX: not used anywhere (yet) */
-void
-WS_Return(struct ws *ws, char *s, char *e)
-{
-
-	WS_Assert(ws);
-	if (e == ws->f)
-		ws->f = s;
-}
-#endif
