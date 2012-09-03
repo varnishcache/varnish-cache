@@ -26,11 +26,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * This file contains the two central state machine for pushing HTTP
- * requests through their paces.
- *
- * The second part of the file, entrypoint CNT_Request() and below the
- * ==== separator, is intended to (over time) be(ome) protocol agnostic.
+ * This file contains the request-handling state engine, which is intended to
+ * (over time) be(ome) protocol agnostic.
  * We already use this now with ESI:includes, which are for all relevant
  * purposes a different "protocol"
  *
@@ -54,9 +51,11 @@ DOT acceptor [
 DOT	shape=hexagon
 DOT	label="Request received"
 DOT ]
+DOT ESI_REQ [ shape=hexagon ]
+DOT ESI_REQ -> recv
 DOT ERROR [shape=plaintext]
 DOT RESTART [shape=plaintext]
-DOT acceptor -> start [style=bold,color=green]
+DOT acceptor -> recv [style=bold,color=green]
  */
 
 #include "config.h"
@@ -1039,6 +1038,8 @@ DOT	]
 DOT }
 DOT RESTART -> restart [color=purple]
 DOT restart -> recv [color=purple]
+DOT restart -> err_restart
+DOT err_restart [label="ERROR",shape=plaintext]
  */
 
 static int
@@ -1077,8 +1078,6 @@ DOT		shape=record
 DOT		label="{cnt_recv:|{vcl_hash\{\}|req.*}}"
 DOT	]
 DOT }
-DOT ESI_REQ [ shape=hexagon ]
-DOT ESI_REQ -> recv
 DOT recv:pipe -> pipe [style=bold,color=orange]
 DOT recv:pass -> pass [style=bold,color=red]
 #DOT recv:error -> err_recv
