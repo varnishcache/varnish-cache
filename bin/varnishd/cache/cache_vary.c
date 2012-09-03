@@ -261,7 +261,7 @@ VRY_Match(struct req *req, const uint8_t *vary)
 			vsp[ln + 1] = 0xff;
 			vsp[ln + 2] = 0;
 			VRY_Validate(vsp);
-			req->vary_l = vsp + 3;
+			req->vary_l = vsp + ln + 3;
 
 			i = vry_cmp(vary, vsp);
 			assert(i == 0 || i == 2);
