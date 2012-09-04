@@ -33,8 +33,10 @@
 #include "miniobj.h"
 #include "vre.h"
 
-#ifndef PCRE_STUDY_JIT_COMPILE
-#define PCRE_STUDY_JIT_COMPILE 0
+#if USE_PCRE_JIT
+#define VRE_STUDY_JIT_COMPILE PCRE_STUDY_JIT_COMPILE
+#else
+#define VRE_STUDY_JIT_COMPILE 0
 #endif
 
 #if PCRE_MAJOR < 8 || (PCRE_MAJOR == 8 && PCRE_MINOR < 20)
@@ -74,7 +76,7 @@ VRE_compile(const char *pattern, int options,
 		VRE_free(&v);
 		return (NULL);
 	}
-	v->re_extra = pcre_study(v->re, PCRE_STUDY_JIT_COMPILE, errptr);
+	v->re_extra = pcre_study(v->re, VRE_STUDY_JIT_COMPILE, errptr);
 	if (*errptr != NULL) {
 		VRE_free(&v);
 		return (NULL);
