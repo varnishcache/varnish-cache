@@ -29,6 +29,8 @@
  * This file contains the heritage passed when mgt forks cache
  */
 
+#include <stdint.h>
+
 #include "vre.h"
 
 #define VSM_CLASS_PARAM		"Params"
