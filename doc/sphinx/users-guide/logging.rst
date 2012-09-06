@@ -1,4 +1,4 @@
-.. _tutorial-logging:
+.. _users-guide-logging:
 
 Logging in Varnish
 ------------------

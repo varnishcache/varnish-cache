@@ -1,4 +1,4 @@
-.. _tutorial-compression:
+.. _users-guide-compression:
 
 Compression
 ~~~~~~~~~~~

@@ -1,4 +1,4 @@
-.. _tutorial-handling_misbehaving_servers:
+.. _users-guide-handling_misbehaving_servers:
 
 Misbehaving servers
 -------------------
@@ -42,7 +42,7 @@ request. Lets us say that we accept serving 15s old object.::
 
 You might wonder why we should keep the objects in the cache for 30
 minutes if we are unable to serve them? Well, if you have enabled
-:ref:`tutorial-advanced_backend_servers-health` you can check if the
+:ref:`users-guide-advanced_backend_servers-health` you can check if the
 backend is sick and if it is we can serve the stale content for a bit
 longer.::
 

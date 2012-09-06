@@ -10,17 +10,15 @@ server and have basic knowledge of the HTTP protocol. The reader
 should have Varnish Cache up and running with the default
 configuration.
 
-The tutorial is split into short chapters, each chapter taking on a
+The guide is split into short chapters, each chapter taking on a
 separate topic. Good luck.
 
 .. toctree:: :maxdepth: 1
 
-        introduction
+        command_line
 	backend_servers
-        starting_varnish
 	logging
         sizing_your_cache
-        putting_varnish_on_port_80
 	vcl
         statistics
         increasing_your_hitrate

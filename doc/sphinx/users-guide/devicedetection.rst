@@ -1,4 +1,4 @@
-.. _tutorial-devicedetect:
+.. _users-guide-devicedetect:
 
 Device detection
 ~~~~~~~~~~~~~~~~

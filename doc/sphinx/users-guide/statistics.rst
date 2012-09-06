@@ -1,4 +1,4 @@
-.. _tutorial-statistics:
+.. _users-guide-statistics:
 
 
 Statistics

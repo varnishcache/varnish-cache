@@ -1,4 +1,4 @@
-.. _tutorial-purging:
+.. _users-guide-purging:
 
 =====================
  Purging and banning

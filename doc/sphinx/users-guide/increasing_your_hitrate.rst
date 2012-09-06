@@ -1,4 +1,4 @@
-.. _tutorial-increasing_your_hitrate:
+.. _users-guide-increasing_your_hitrate:
 
 Achieving a high hitrate
 ------------------------
@@ -24,7 +24,7 @@ Tool: varnishtop
 
 You can use varnishtop to identify what URLs are hitting the backend
 the most. ``varnishtop -i txurl`` is an essential command. You can see
-some other examples of varnishtop usage in :ref:`tutorial-statistics`.
+some other examples of varnishtop usage in :ref:`users-guide-statistics`.
 
 
 Tool: varnishlog
@@ -36,7 +36,7 @@ backend you can use varnishlog to have a look at the request.
 coming from the client (-c) matching /foo/bar.
 
 For more information on how varnishlog works please see
-:ref:`tutorial-logging` or man :ref:`ref-varnishlog`.
+:ref:`users-guide-logging` or man :ref:`ref-varnishlog`.
 
 For extended diagnostics headers, see
 http://www.varnish-cache.org/trac/wiki/VCLExampleHitMissHeader
@@ -206,8 +206,8 @@ Ways of increasing your hitrate even more
 The following chapters should give your ways of further increasing
 your hitrate, especially the chapter on Cookies.
 
- * :ref:`tutorial-cookies`
- * :ref:`tutorial-vary`
- * :ref:`tutorial-purging`
- * :ref:`tutorial-esi`
+ * :ref:`users-guide-cookies`
+ * :ref:`users-guide-vary`
+ * :ref:`users-guide-purging`
+ * :ref:`users-guide-esi`
 

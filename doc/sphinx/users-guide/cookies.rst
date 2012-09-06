@@ -1,4 +1,4 @@
-.. _tutorial-cookies:
+.. _users-guide-cookies:
 
 Cookies
 -------
@@ -90,6 +90,6 @@ Cookies coming from the backend
 
 If your backend server sets a cookie using the Set-Cookie header
 Varnish will not cache the page in the default configuration.  A
-hit-for-pass object (see :ref:`tutorial-vcl_fetch_actions`) is created.
+hit-for-pass object (see :ref:`users-guide-vcl_fetch_actions`) is created.
 So, if the backend server acts silly and sets unwanted cookies just unset
 the Set-Cookie header and all should be fine. 

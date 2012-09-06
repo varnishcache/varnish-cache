@@ -20,6 +20,7 @@ Contents:
 
    installation/index.rst
    tutorial/index.rst
+   users-guide/index.rst
    reference/index.rst
    phk/index.rst
    glossary/index.rst

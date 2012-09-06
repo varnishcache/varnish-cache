@@ -1,4 +1,4 @@
-.. _tutorial-esi:
+.. _users-guide-esi:
 
 Edge Side Includes
 ------------------

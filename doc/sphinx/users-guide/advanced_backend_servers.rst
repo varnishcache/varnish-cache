@@ -40,7 +40,7 @@ really arbitrary data. You want to send mobile devices to a different
 backend? No problem. if (req.User-agent ~ /mobile/) .... should do the
 trick. 
 
-.. _tutorial-advanced_backend_servers-directors:
+.. _users-guide-advanced_backend_servers-directors:
 
 Directors
 ---------
@@ -80,7 +80,7 @@ But what if one of your servers goes down? Can Varnish direct all the
 requests to the healthy server? Sure it can. This is where the Health
 Checks come into play.
 
-.. _tutorial-advanced_backend_servers-health:
+.. _users-guide-advanced_backend_servers-health:
 
 Health checks
 -------------
@@ -148,7 +148,7 @@ Now we define the director.::
 You use this director just as you would use any other director or
 backend. Varnish will not send traffic to hosts that are marked as
 unhealthy. Varnish can also serve stale content if all the backends are
-down. See :ref:`tutorial-handling_misbehaving_servers` for more
+down. See :ref:`users-guide-handling_misbehaving_servers` for more
 information on how to enable this.
 
 Please note that Varnish will keep probes active for all loaded

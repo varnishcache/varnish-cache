@@ -95,5 +95,5 @@ filtering capabilities and explanation of the various options.
 Varnish doesn't cache
 ~~~~~~~~~~~~~~~~~~~~~
 
-See :ref:`tutorial-increasing_your_hitrate`.
+See :ref:`users-guide-increasing_your_hitrate`.
 

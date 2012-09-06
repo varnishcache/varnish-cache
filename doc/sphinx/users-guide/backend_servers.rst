@@ -1,4 +1,4 @@
-.. _tutorial-backend_servers:
+.. _users-guide-backend_servers:
 
 Backend servers
 ---------------
@@ -19,8 +19,7 @@ Somewhere in the top there will be a section that looks a bit like this.::
 	  #     .port = "8080";
 	  # }
 
-We comment in this bit of text and change the port setting from 8080
-to 80, making the text look like.::
+We comment in this bit of text making the text look like.::
 
           backend default {
                 .host = "127.0.0.1";
@@ -29,11 +28,9 @@ to 80, making the text look like.::
 
 Now, this piece of configuration defines a backend in Varnish called
 *default*. When Varnish needs to get content from this backend it will
-connect to port 80 on localhost (127.0.0.1).
+connect to port 8080 on localhost (127.0.0.1).
 
 Varnish can have several backends defined and can you can even join
 several backends together into clusters of backends for load balancing
-purposes. 
+purposes.  XXX: ref
 
-Now that we have the basic Varnish configuration done, let us start up
-Varnish on port 8080 so we can do some fundamental testing on it.

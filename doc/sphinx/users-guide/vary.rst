@@ -1,4 +1,4 @@
-.. _tutorial-vary:
+.. _users-guide-vary:
 
 Vary
 ~~~~

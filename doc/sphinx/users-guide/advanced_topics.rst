@@ -1,12 +1,12 @@
-.. _tutorial-advanced_topics:
+.. _users-guide-advanced_topics:
 
 Advanced topics
 ---------------
 
-This tutorial has covered the basics in Varnish. If you read through
+This guide has covered the basics in Varnish. If you read through
 it all you should now have the skills to run Varnish.
 
-Here is a short overview of topics that we haven't covered in the tutorial. 
+Here is a short overview of topics that we haven't covered in the guide. 
 
 More VCL
 ~~~~~~~~
