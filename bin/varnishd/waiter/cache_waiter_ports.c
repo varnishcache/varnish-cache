@@ -154,7 +154,8 @@ vws_thread(void *priv)
 
 	while (1) {
 		port_event_t ev[MAX_EVENTS];
-		int nevents, ei, ret;
+		u_int nevents;
+		int ei, ret;
 		double now, deadline;
 
 		/*
@@ -239,6 +240,7 @@ vws_thread(void *priv)
 			timeout = &max_ts;
 		}
 	}
+	return(0);
 }
 
 /*--------------------------------------------------------------------*/

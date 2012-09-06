@@ -102,13 +102,15 @@ mgt_sandbox_solaris_add_inheritable(priv_set_t *pset, enum sandbox_e who)
 {
 	switch (who) {
 	case SANDBOX_VCC:
+		/* for /etc/resolv.conf and /etc/hosts */
+		AZ(priv_addset(pset, "file_read"));
 		break;
 	case SANDBOX_CC:
-		priv_addset(pset, "proc_exec");
-		priv_addset(pset, "proc_fork");
+		AZ(priv_addset(pset, "proc_exec"));
+		AZ(priv_addset(pset, "proc_fork"));
 		/* PSARC/2009/378 - 63678502e95e - onnv_140 */
-		priv_addset(pset, "file_read");
-		priv_addset(pset, "file_write");
+		AZ(priv_addset(pset, "file_read"));
+		AZ(priv_addset(pset, "file_write"));
 		break;
 	case SANDBOX_VCLLOAD:
 		break;
@@ -131,19 +133,19 @@ mgt_sandbox_solaris_add_effective(priv_set_t *pset, enum sandbox_e who)
 	switch (who) {
 	case SANDBOX_VCC:
 		/* PSARC/2009/378 - 63678502e95e - onnv_140 */
-		priv_addset(pset, "file_write");
+		AZ(priv_addset(pset, "file_write"));
 		break;
 	case SANDBOX_CC:
 		break;
 	case SANDBOX_VCLLOAD:
 		/* PSARC/2009/378 - 63678502e95e - onnv_140 */
-		priv_addset(pset, "file_read");
+		AZ(priv_addset(pset, "file_read"));
 	case SANDBOX_WORKER:
 		/* PSARC/2009/685 - 8eca52188202 - onnv_132 */
-		priv_addset(pset, "net_access");
+		AZ(priv_addset(pset, "net_access"));
 		/* PSARC/2009/378 - 63678502e95e - onnv_140 */
-		priv_addset(pset, "file_read");
-		priv_addset(pset, "file_write");
+		AZ(priv_addset(pset, "file_read"));
+		AZ(priv_addset(pset, "file_write"));
 		break;
 	default:
 		REPORT(LOG_ERR, "INCOMPLETE AT: %s(%d)\n", __func__, __LINE__);
@@ -166,7 +168,7 @@ mgt_sandbox_solaris_add_permitted(priv_set_t *pset, enum sandbox_e who)
 		break;
 	case SANDBOX_WORKER:
 		/* for raising limits in cache_waiter_ports.c */
-		priv_addset(pset, PRIV_SYS_RESOURCE);
+		AZ(priv_addset(pset, PRIV_SYS_RESOURCE));
 		break;
 	default:
 		REPORT(LOG_ERR, "INCOMPLETE AT: %s(%d)\n", __func__, __LINE__);
@@ -184,7 +186,7 @@ mgt_sandbox_solaris_add_initial(priv_set_t *pset, enum sandbox_e who)
 	(void)who;
 
 	/* for setgid/setuid */
-	priv_addset(pset, PRIV_PROC_SETID);
+	AZ(priv_addset(pset, PRIV_PROC_SETID));
 }
 
 /*
