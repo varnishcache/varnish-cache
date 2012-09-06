@@ -178,7 +178,7 @@ smp_mgt_init(struct stevedore *parent, int ac, char * const *av)
 	else
 		target = NULL;
 
-	sc->base = mmap(target, sc->mediasize, PROT_READ|PROT_WRITE,
+	sc->base = (void*)mmap(target, sc->mediasize, PROT_READ|PROT_WRITE,
 	    MAP_NOCORE | MAP_NOSYNC | MAP_SHARED, sc->fd, 0);
 
 	if (sc->base == MAP_FAILED)

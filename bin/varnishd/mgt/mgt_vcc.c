@@ -177,7 +177,7 @@ static void
 run_cc(void *priv)
 {
 	mgt_sandbox(SANDBOX_CC);
-	(void)execl("/bin/sh", "/bin/sh", "-c", priv, NULL);
+	(void)execl("/bin/sh", "/bin/sh", "-c", priv, (char*)0);
 }
 
 /*--------------------------------------------------------------------
