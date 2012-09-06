@@ -321,7 +321,7 @@ smp_open(const struct stevedore *st)
 	/* We trust the parent to give us a valid silo, for good measure: */
 	AZ(smp_valid_silo(sc));
 
-	AZ(mprotect(sc->base, 4096, PROT_READ));
+	AZ(mprotect((void*)sc->base, 4096, PROT_READ));
 
 	sc->ident = SIGN_DATA(&sc->idn);
 

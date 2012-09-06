@@ -159,7 +159,8 @@ vca_main(void *arg)
 
 	while (1) {
 		port_event_t ev[MAX_EVENTS];
-		int nevents, ei, ret;
+		uint_t nevents;
+		int ei, ret;
 		double now, deadline;
 
 		/*
@@ -242,6 +243,7 @@ vca_main(void *arg)
 			timeout = &max_ts;
 		}
 	}
+	NEEDLESS_RETURN(NULL);
 }
 
 static void

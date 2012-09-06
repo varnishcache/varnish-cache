@@ -390,10 +390,10 @@ varnish_launch(struct varnish *v)
 		AZ(close(v->fds[3]));
 		for (i = 3; i <getdtablesize(); i++)
 			(void)close(i);
-		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(vsb), NULL));
+		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(vsb), (char*)0));
 		exit(1);
 	} else {
-		vtc_log(v->vl, 3, "PID: %d", v->pid);
+		vtc_log(v->vl, 3, "PID: %ld", (long)v->pid);
 	}
 	AZ(close(v->fds[0]));
 	AZ(close(v->fds[3]));
