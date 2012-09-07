@@ -137,6 +137,8 @@ list size. Setting a value of 0 disables saint mode checking entirely
 for that backend.  The value in the backend declaration overrides the
 parameter.
 
+.. _reference-vcl-director:
+
 Directors
 ---------
 
