@@ -3,14 +3,12 @@
 Edge Side Includes
 ------------------
 
-*Edge Side Includes* is a language to include *fragments* of web pages
-in other web pages. Think of it as HTML include statement that works
-over HTTP. 
-
-On most web sites a lot of content is shared between
-pages. Regenerating this content for every page view is wasteful and
-ESI tries to address that letting you decide the cache policy for
-each fragment individually.
+Varnish can cache create web pages by putting different pages
+together. These *fragments* can have individual cache policies. If you
+have a web site with a list showing the 5 most popular articles on
+your site, this list can probably be cached as a fragment and included
+in all the other pages. Used properly it can dramatically increase
+your hit rate and reduce the load on your servers. 
 
 In Varnish we've only implemented a small subset of ESI. As of 2.1 we
 have three ESI statements:
@@ -20,7 +18,8 @@ have three ESI statements:
  * <!--esi ...-->
 
 Content substitution based on variables and cookies is not implemented
-but is on the roadmap. 
+but is on the roadmap. At least if you look at the roadmap from a
+certain angle. During a full moon.
 
 Varnish will not process ESI instructions in HTML comments.
 
@@ -77,3 +76,11 @@ For example::
   <p>The full text of the license:</p>
   <esi:include src="http://example.com/LICENSE" />
   -->
+
+Doing ESI on JSON and other non-XMLish content
+----------------------------------------------
+
+Please note that Varnish will peek at the included content. If it
+doesn't start with a "<" Varnish assumes you didn't really mean to
+include it and disregard it. You can alter this behaviour by setting
+the esi_syntax parameter (see ref:`ref-varnishd`).

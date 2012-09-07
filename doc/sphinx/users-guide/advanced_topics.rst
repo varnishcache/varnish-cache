@@ -19,6 +19,8 @@ page - ref:`reference-vcl`.
 Using In-line C to extend Varnish
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+(Here there be dragons)
+
 You can use *in-line C* to extend Varnish. Please note that you can
 seriously mess up Varnish this way. The C code runs within the Varnish
 Cache process so if your code generates a segfault the cache will crash.
@@ -37,27 +39,3 @@ One of the first uses I saw of In-line C was logging to syslog.::
         }
 
 
-Edge Side Includes
-~~~~~~~~~~~~~~~~~~
-
-Varnish can cache create web pages by putting different pages
-together. These *fragments* can have individual cache policies. If you
-have a web site with a list showing the 5 most popular articles on
-your site, this list can probably be cached as a fragment and included
-in all the other pages. Used properly it can dramatically increase
-your hit rate and reduce the load on your servers. ESI looks like this::
-
-  <HTML>
-  <BODY>
-  The time is: <esi:include src="/cgi-bin/date.cgi"/>
-  at this very moment.
-  </BODY>
-  </HTML>
-
-ESI is processed in vcl_fetch by setting *do_esi* to true.::
-
-  sub vcl_fetch {
-      if (req.url == "/test.html") {
-	  set beresp.do_esi = true;  /* Do ESI processing */
-      }
-  }

@@ -1,5 +1,7 @@
 .. _users-guide-command-line:
 
+XXX: Total rewrite of this
+
 Starting Varnish
 ----------------
 

@@ -12,10 +12,10 @@ task. A few things to consider:
    to only cache images a little while or not to cache them at all if
    they are cheap to serve from the backend and you have a limited
    amount of memory.
- * Watch the n_lru_nuked counter with :ref:`reference-varnishstat` or some other
-   tool. If you have a lot of LRU activity then your cache is evicting
-   objects due to space constraints and you should consider increasing
-   the size of the cache.
+ * Watch the n_lru_nuked counter with :ref:`reference-varnishstat` or
+   some other tool. If you have a lot of LRU activity then your cache
+   is evicting objects due to space constraints and you should
+   consider increasing the size of the cache.
 
 Be aware that every object that is stored also carries overhead that
 is kept outside the actually storage area. So, even if you specify -s

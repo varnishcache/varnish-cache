@@ -5,13 +5,10 @@ Using Varnish
 %%%%%%%%%%%%%
 
 This guide is intended for system administrators managing Varnish
-Cache. The reader should know how to configure her web- or application
-server and have basic knowledge of the HTTP protocol. The reader
-should have Varnish Cache up and running with the default
-configuration.
+Cache. 
 
-The guide is split into short chapters, each chapter taking on a
-separate topic. Good luck.
+The guide is split into short chapters, each chapter explaining a
+separate topic.
 
 .. toctree:: :maxdepth: 1
 
@@ -24,13 +21,13 @@ separate topic. Good luck.
         increasing_your_hitrate
 	cookies
 	vary
+        hashing
 	purging
 	compression
 	esi
 	virtualized
 	websockets
 	devicedetection
-	advanced_backend_servers
         handling_misbehaving_servers
         advanced_topics
 	troubleshooting

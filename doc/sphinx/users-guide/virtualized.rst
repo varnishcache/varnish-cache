@@ -1,4 +1,6 @@
 
+XXX: What is this doing here?
+
 Running Varnish in a virtualized environment
 --------------------------------------------
 

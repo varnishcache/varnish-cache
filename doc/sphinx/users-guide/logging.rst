@@ -7,7 +7,8 @@ One of the really nice features in Varnish is how logging
 works. Instead of logging to normal log file Varnish logs to a shared
 memory segment. When the end of the segment is reached we start over,
 overwriting old data. This is much, much faster then logging to a file
-and it doesn't require disk space.
+and it doesn't require disk space. Besides it gives you much, much
+more information when you need it.
 
 The flip side is that if you forget to have a program actually write the
 logs to disk they will disappear.
@@ -64,5 +65,4 @@ want to know are:
  Only list transactions where the tag matches a regular expression. If
  it matches you will get the whole transaction.
 
-Now that Varnish seem to work OK it's time to put Varnish on port 80
-while we tune it.
+For more information on this topic please see ref:`ref-varnishlog`.
