@@ -6,16 +6,8 @@ Storage backends
 Intro
 ~~~~~
 
-Malloc
-~~~~~~
+Varnish has pluggable storage backends. It can store data in various
+backends which have different performance characteristics.
 
-File
-~~~~
-
-Persistent
-~~~~~~~~~~
-
-Transient
-~~~~~~~~~
-
+.. include:: ../include/storage_backends.rst
 
