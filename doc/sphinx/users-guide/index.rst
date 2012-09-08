@@ -1,8 +1,8 @@
 .. _users-guide-index:
 
-%%%%%%%%%%%%%
-Using Varnish
-%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Using Varnish - A Users Guide
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 This guide is intended for system administrators managing Varnish
 Cache. 
@@ -10,13 +10,24 @@ Cache.
 The guide is split into short chapters, each chapter explaining a
 separate topic.
 
-.. toctree:: :maxdepth: 1
+.. toctree::
+   :maxdepth: 3
 
+   configuration
+   vcl
+   operation
+   troubleshooting
+
+.. customizing (which is a non ideal title)
+
+.. No longer used:
+
+        configuration
         command_line
+        VCL
 	backend_servers
 	logging
         sizing_your_cache
-	vcl
         statistics
         increasing_your_hitrate
 	cookies

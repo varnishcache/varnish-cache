@@ -1,7 +1,7 @@
 .. _tutorial-intro:
 
 What is Varnish?
--------------
+----------------
 
 Varnish Cache is a web application accelerator. It can also be called
 a HTTP reverse proxy. The next chapter :ref:`tutorial-web-accelerator`
@@ -27,14 +27,14 @@ where you want to get the content and how the request or response
 should be altered. 
 
 Supported plattforms
------------------
+--------------------
 
 Varnish is written to run on modern versions of Linux and FreeBSD and
 the best experience is had on those plattforms. Thanks to our
 contributors it also runs on NetBSD, OpenBSD and OS X.
 
 About the Varnish development process
--------------------------------
+-------------------------------------
 
 Varnish is a community driven project. The development is overseen by
 the Varnish Governing Board which currently consist of Poul-Henning
@@ -42,7 +42,7 @@ Kamp (Architect), Rogier Mulhuijzen (Fastly) and Kristian Lyngstøl
 (Varnish Software).
 
 Getting in touch
--------------
+----------------
 
 You can get in touch with us trough many channels. For real time chat
 you can reach us on IRC trough the server irc.linpro.net on the

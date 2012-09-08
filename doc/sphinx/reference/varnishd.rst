@@ -31,6 +31,8 @@ DESCRIPTION
 The varnishd daemon accepts HTTP requests from clients, passes them on to a backend server and caches the
 returned documents to better satisfy future requests for the same document.
 
+.. _ref-varnishd-options:
+
 OPTIONS
 =======
 

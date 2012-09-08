@@ -1,14 +1,15 @@
 Troubleshooting Varnish
------------------------
+=======================
 
 Sometimes Varnish misbehaves. In order for you to understand whats
 going on there are a couple of places you can check. varnishlog,
 /var/log/syslog, /var/log/messages are all places where varnish might
-leave clues of whats going on.
+leave clues of whats going on. This chapter will guide you through
+basic troubleshooting in Varnish.
 
 
 When Varnish won't start
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
 Sometimes Varnish wont start. There is a plethora of reasons why
 Varnish wont start on your machine. We've seen everything from wrong
@@ -18,7 +19,7 @@ Starting Varnish in debug mode to see what is going on.
 
 Try to start varnish by::
 
-    # varnishd -f /usr/local/etc/varnish/default.vcl -s malloc,1G -T 127.0.0.1:2000  -a 0.0.0.0:8080 -d
+    # varnishd -f /usr/local/etc/varnish/default.vcl -s malloc,1G -T 127.0.0.1: 2000  -a 0.0.0.0:8080 -d
 
 Notice the -d option. It will give you some more information on what
 is going on. Let us see how Varnish will react to something else
@@ -51,7 +52,7 @@ on IRC.
 
 
 Varnish is crashing
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 When varnish goes bust the child processes crashes. Usually the mother
 process will manage this by restarting the child process again. Any
@@ -70,7 +71,7 @@ XXX: Describe crashing child process and crashing mother process here too.
 XXX: panic.show
 
 Varnish gives me Guru meditation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------
 
 First find the relevant log entries in varnishlog. That will probably
 give you a clue. Since varnishlog logs so much data it might be hard
@@ -90,7 +91,7 @@ filtering capabilities and explanation of the various options.
 
 
 Varnish doesn't cache
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
 
 See :ref:`users-guide-increasing_your_hitrate`.
 

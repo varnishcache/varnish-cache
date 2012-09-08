@@ -38,11 +38,11 @@ In vcl_recv::
 
   set req.http.X-Country-Code = geoip.lookup(client.ip);
 
-And then add a vcl_hash:
+And then add a vcl_hash::
 
-sub vcl_hash {
-  hash_data(req.http.X-Country-Code);
-}
+ sub vcl_hash {
+   hash_data(req.http.X-Country-Code);
+ }
 
 As the default VCL will take care of adding the host and URL to the
 hash we don't have to do anything else. Be careful calling

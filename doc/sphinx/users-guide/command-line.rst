@@ -2,8 +2,8 @@
 
 XXX: Total rewrite of this
 
-Starting Varnish
-----------------
+Command Line options
+--------------------
 
 I assume varnishd is in your path. You might want to run ``pkill
 varnishd`` to make sure varnishd isn't running. 
@@ -39,17 +39,6 @@ I added a few options, lets go through them:
  HTTP requests. For a production environment you would probably make
  Varnish listen on port 80, which is the default.
 
-Now you have Varnish running. Let us make sure that it works
-properly. Use your browser to go to http://192.168.2.2:8080/
-(obviously, you should replace the IP address with one on your own
-system) - you should now see your web application running there.
+For a complete list of the command line parameters please see
+:ref:`ref-varnishd-options`.
 
-Whether or not the application actually goes faster when run through
-Varnish depends on a few factors. If you application uses cookies for
-every session (a lot of PHP and Java applications seem to send a
-session cookie if it is needed or not) or if it uses authentication
-chances are Varnish won't do much caching. Ignore that for the moment,
-we come back to that in :ref:`users-guide-increasing_your_hitrate`.
-
-Lets make sure that Varnish really does do something to your web
-site. To do that we'll take a look at the logs.
