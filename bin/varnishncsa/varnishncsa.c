@@ -140,13 +140,18 @@ isprefix(const char *str, const char *prefix, const char *end,
 
 /*
  * Returns a copy of the first consecutive sequence of non-space
- * characters in the string.
+ * characters in the string in dst. dst will be free'd first if non-NULL.
  */
-static char *
-trimfield(const char *str, const char *end)
+static void
+trimfield(char **dst, const char *str, const char *end)
 {
 	size_t len;
-	char *p;
+
+	/* free if already set */
+	if (*dst != NULL) {
+		free(*dst);
+		*dst = NULL;
+	}
 
 	/* skip leading space */
 	while (str < end && *str && *str == ' ')
@@ -158,22 +163,26 @@ trimfield(const char *str, const char *end)
 			break;
 
 	/* copy and return */
-	p = malloc(len + 1);
-	assert(p != NULL);
-	memcpy(p, str, len);
-	p[len] = '\0';
-	return (p);
+	*dst = malloc(len + 1);
+	assert(*dst != NULL);
+	memcpy(*dst, str, len);
+	(*dst)[len] = '\0';
 }
 
 /*
  * Returns a copy of the entire string with leading and trailing spaces
- * trimmed.
+ * trimmed in dst. dst will be free'd first if non-NULL.
  */
-static char *
-trimline(const char *str, const char *end)
+static void
+trimline(char **dst, const char *str, const char *end)
 {
 	size_t len;
-	char *p;
+
+	/* free if already set */
+	if (*dst != NULL) {
+		free(*dst);
+		*dst = NULL;
+	}
 
 	/* skip leading space */
 	while (str < end && *str && *str == ' ')
@@ -188,11 +197,10 @@ trimline(const char *str, const char *end)
 		--len;
 
 	/* copy and return */
-	p = malloc(len + 1);
-	assert(p != NULL);
-	memcpy(p, str, len);
-	p[len] = '\0';
-	return (p);
+	*dst = malloc(len + 1);
+	assert(*dst != NULL);
+	memcpy(*dst, str, len);
+	(*dst)[len] = '\0';
 }
 
 static char *
@@ -288,9 +296,9 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		}
 		lp->active = 1;
 		if (isprefix(ptr, "default", end, &next))
-			lp->df_h = trimfield(next, end);
+			trimfield(&lp->df_h, next, end);
 		else
-			lp->df_h = trimfield(ptr, end);
+			trimfield(&lp->df_h, ptr, end);
 		break;
 
 	case SLT_BereqRequest:
@@ -300,7 +308,7 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			clean_logline(lp);
 			break;
 		}
-		lp->df_m = trimline(ptr, end);
+		trimline(&lp->df_m, ptr, end);
 		break;
 
 	case SLT_BereqURL: {
@@ -314,10 +322,10 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		}
 		qs = memchr(ptr, '?', len);
 		if (qs) {
-			lp->df_U = trimline(ptr, qs);
-			lp->df_q = trimline(qs, end);
+			trimline(&lp->df_U, ptr, qs);
+			trimline(&lp->df_q, qs, end);
 		} else {
-			lp->df_U = trimline(ptr, end);
+			trimline(&lp->df_U, ptr, end);
 		}
 		break;
 	}
@@ -329,7 +337,7 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			clean_logline(lp);
 			break;
 		}
-		lp->df_H = trimline(ptr, end);
+		trimline(&lp->df_H, ptr, end);
 		break;
 
 	case SLT_BerespStatus:
@@ -339,14 +347,14 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			clean_logline(lp);
 			break;
 		}
-		lp->df_s = trimline(ptr, end);
+		trimline(&lp->df_s, ptr, end);
 		break;
 
 	case SLT_BerespHeader:
 		if (!lp->active)
 			break;
 		if (isprefix(ptr, "content-length:", end, &next))
-			lp->df_b = trimline(next, end);
+			trimline(&lp->df_b, next, end);
 		else if (isprefix(ptr, "date:", end, &next) &&
 			 strptime(next, "%a, %d %b %Y %T", &lp->df_t) == NULL) {
 			clean_logline(lp);
@@ -361,16 +369,16 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			break;
 		if (isprefix(ptr, "authorization:", end, &next) &&
 		    isprefix(next, "basic", end, &next)) {
-			lp->df_u = trimline(next, end);
+			trimline(&lp->df_u, next, end);
 		} else {
 			struct hdr *h;
 			size_t l;
-			h = malloc(sizeof(struct hdr));
+			h = calloc(1, sizeof(struct hdr));
 			AN(h);
 			AN(split);
 			l = strlen(split);
-			h->key = trimline(ptr, split-1);
-			h->value = trimline(split+1, split+l-1);
+			trimline(&h->key, ptr, split-1);
+			trimline(&h->value, split+1, split+l-1);
 			VTAILQ_INSERT_HEAD(&lp->req_headers, h, list);
 		}
 		break;
@@ -409,7 +417,7 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			clean_logline(lp);
 		}
 		lp->active = 1;
-		lp->df_h = trimfield(ptr, end);
+		trimfield(&lp->df_h, ptr, end);
 		break;
 
 	case SLT_ReqRequest:
@@ -419,7 +427,7 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			clean_logline(lp);
 			break;
 		}
-		lp->df_m = trimline(ptr, end);
+		trimline(&lp->df_m, ptr, end);
 		break;
 
 	case SLT_ReqURL: {
@@ -433,10 +441,10 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		}
 		qs = memchr(ptr, '?', len);
 		if (qs) {
-			lp->df_U = trimline(ptr, qs);
-			lp->df_q = trimline(qs, end);
+			trimline(&lp->df_U, ptr, qs);
+			trimline(&lp->df_q, qs, end);
 		} else {
-			lp->df_U = trimline(ptr, end);
+			trimline(&lp->df_U, ptr, end);
 		}
 		break;
 	}
@@ -448,7 +456,7 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			clean_logline(lp);
 			break;
 		}
-		lp->df_H = trimline(ptr, end);
+		trimline(&lp->df_H, ptr, end);
 		break;
 
 	case SLT_ObjStatus:
@@ -457,7 +465,7 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		if (lp->df_s != NULL)
 			clean_logline(lp);
 		else
-			lp->df_s = trimline(ptr, end);
+			trimline(&lp->df_s, ptr, end);
 		break;
 
 	case SLT_ObjHeader:
@@ -470,15 +478,14 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		if (tag == SLT_ReqHeader &&
 		    isprefix(ptr, "authorization:", end, &next) &&
 		    isprefix(next, "basic", end, &next)) {
-			free(lp->df_u);
-			lp->df_u = trimline(next, end);
+			trimline(&lp->df_u, next, end);
 		} else {
 			struct hdr *h;
-			h = malloc(sizeof(struct hdr));
+			h = calloc(1, sizeof(struct hdr));
 			AN(h);
 			AN(split);
-			h->key = trimline(ptr, split);
-			h->value = trimline(split+1, end);
+			trimline(&h->key, ptr, split);
+			trimline(&h->value, split+1, end);
 			if (tag == SLT_ReqHeader)
 				VTAILQ_INSERT_HEAD(&lp->req_headers, h, list);
 			else
@@ -495,12 +502,12 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			break;
 
 		struct hdr *h;
-		h = malloc(sizeof(struct hdr));
+		h = calloc(1, sizeof(struct hdr));
 		AN(h);
 		AN(split);
 
-		h->key = trimline(ptr, split);
-		h->value = trimline(split+1, end);
+		trimline(&h->key, ptr, split);
+		trimline(&h->value, split+1, end);
 
 		VTAILQ_INSERT_HEAD(&lp->vcl_log, h, list);
 		break;
@@ -532,7 +539,7 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			clean_logline(lp);
 			break;
 		}
-		lp->df_b = trimline(ptr, end);
+		trimline(&lp->df_b, ptr, end);
 		break;
 
 	case SLT_SessClose:
@@ -556,6 +563,8 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			clean_logline(lp);
 			break;
 		}
+		if (lp->df_ttfb != NULL)
+			free(lp->df_ttfb);
 		lp->df_ttfb = strdup(ttfb);
 		t = l;
 		localtime_r(&t, &lp->df_t);
