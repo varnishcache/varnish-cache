@@ -41,6 +41,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+
 #include "vcli.h"
 #include "cli_priv.h"
 #include "cache.h"
@@ -91,7 +94,8 @@ static const struct linger linger = {
 	.l_onoff	=	0,
 };
 
-static unsigned char	need_sndtimeo, need_rcvtimeo, need_linger, need_test;
+static unsigned char	need_sndtimeo, need_rcvtimeo, need_linger, need_test,
+			need_tcpnodelay;
 
 int vca_pipes[2] = { -1, -1 };
 
@@ -101,7 +105,7 @@ sock_test(int fd)
 	struct linger lin;
 	struct timeval tv;
 	socklen_t l;
-	int i;
+	int i, tcp_nodelay;
 
 	l = sizeof lin;
 	i = getsockopt(fd, SOL_SOCKET, SO_LINGER, &lin, &l);
@@ -145,6 +149,16 @@ sock_test(int fd)
 	(void)need_rcvtimeo;
 #endif
 
+	l = sizeof tcp_nodelay;
+	i = getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &tcp_nodelay, &l);
+	if (i) {
+		VTCP_Assert(i);
+		return;
+	}
+	assert(l == sizeof tcp_nodelay);
+	if (!tcp_nodelay)
+		need_tcpnodelay = 1;
+
 	need_test = 0;
 }
 
@@ -158,6 +172,7 @@ VCA_Prep(struct sess *sp)
 {
 	char addr[VTCP_ADDRBUFSIZE];
 	char port[VTCP_PORTBUFSIZE];
+	int tcp_nodelay = 1;
 
 	VTCP_name(sp->sockaddr, sp->sockaddrlen,
 	    addr, sizeof addr, port, sizeof port);
@@ -189,6 +204,9 @@ VCA_Prep(struct sess *sp)
 		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_RCVTIMEO,
 		    &tv_rcvtimeo, sizeof tv_rcvtimeo));
 #endif
+	if (need_tcpnodelay)
+		VTCP_Assert(setsockopt(sp->fd, IPPROTO_TCP, TCP_NODELAY,
+		    &tcp_nodelay, sizeof tcp_nodelay));
 }
 
 /*--------------------------------------------------------------------*/
@@ -206,6 +224,7 @@ vca_acct(void *arg)
 #ifdef SO_SNDTIMEO_WORKS
 	double send_timeout = 0;
 #endif
+	int tcp_nodelay = 1;
 	int i;
 	struct pollfd *pfd;
 	struct listen_sock *ls;
@@ -225,6 +244,8 @@ vca_acct(void *arg)
 		AZ(listen(ls->sock, params->listen_depth));
 		AZ(setsockopt(ls->sock, SOL_SOCKET, SO_LINGER,
 		    &linger, sizeof linger));
+		AZ(setsockopt(ls->sock, IPPROTO_TCP, TCP_NODELAY,
+		    &tcp_nodelay, sizeof tcp_nodelay));
 		pfd[i].events = POLLIN;
 		pfd[i++].fd = ls->sock;
 	}
