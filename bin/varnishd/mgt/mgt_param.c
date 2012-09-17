@@ -839,7 +839,7 @@ static const struct parspec input_parspec[] = {
 		EXPERIMENTAL,
 		"50", "allocations" },
 	{ "fetch_chunksize",
-		tweak_bytes_u,
+		tweak_bytes,
 		    &mgt_param.fetch_chunksize, 4 * 1024, UINT_MAX,
 		"The default chunksize used by fetcher. "
 		"This should be bigger than the majority of objects with "
@@ -849,7 +849,7 @@ static const struct parspec input_parspec[] = {
 		EXPERIMENTAL,
 		"128k", "bytes" },
 	{ "fetch_maxchunksize",
-		tweak_bytes_u,
+		tweak_bytes,
 		    &mgt_param.fetch_maxchunksize, 64 * 1024, UINT_MAX,
 		"The maximum chunksize we attempt to allocate from storage. "
 		"Making this too large may cause delays and storage "
