@@ -41,6 +41,9 @@
 
 #include "config.h"
 
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+
 #include "cache.h"
 #include "common/heritage.h"
 
@@ -66,7 +69,8 @@ static const struct linger linger = {
 	.l_onoff	=	0,
 };
 
-static unsigned char	need_sndtimeo, need_rcvtimeo, need_linger, need_test;
+static unsigned char	need_sndtimeo, need_rcvtimeo, need_linger, need_test,
+			need_tcpnodelay;
 
 /*--------------------------------------------------------------------
  * Some kernels have bugs/limitations with respect to which options are
@@ -80,7 +84,7 @@ sock_test(int fd)
 	struct linger lin;
 	struct timeval tv;
 	socklen_t l;
-	int i;
+	int i, tcp_nodelay;
 
 	l = sizeof lin;
 	i = getsockopt(fd, SOL_SOCKET, SO_LINGER, &lin, &l);
@@ -123,6 +127,16 @@ sock_test(int fd)
 	(void)tv_rcvtimeo;
 	(void)need_rcvtimeo;
 #endif
+
+	l = sizeof tcp_nodelay;
+	i = getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &tcp_nodelay, &l);
+	if (i) {
+		VTCP_Assert(i);
+		return;
+	}
+	assert(l == sizeof tcp_nodelay);
+	if (!tcp_nodelay)
+		need_tcpnodelay = 1;
 
 	need_test = 0;
 }
@@ -246,6 +260,7 @@ VCA_SetupSess(struct worker *wrk, struct sess *sp)
 {
 	struct wrk_accept *wa;
 	const char *retval;
+	int tcp_nodelay = 1;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -275,6 +290,9 @@ VCA_SetupSess(struct worker *wrk, struct sess *sp)
 		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_RCVTIMEO,
 		    &tv_rcvtimeo, sizeof tv_rcvtimeo));
 #endif
+	if (need_tcpnodelay)
+		VTCP_Assert(setsockopt(sp->fd, IPPROTO_TCP, TCP_NODELAY,
+		    &tcp_nodelay, sizeof tcp_nodelay));
 	return (retval);
 }
 
@@ -289,6 +307,7 @@ vca_acct(void *arg)
 #ifdef SO_SNDTIMEO_WORKS
 	double send_timeout = 0;
 #endif
+	int tcp_nodelay = 1;
 	struct listen_sock *ls;
 	double t0, now;
 	int i;
@@ -302,6 +321,8 @@ vca_acct(void *arg)
 		AZ(listen(ls->sock, cache_param->listen_depth));
 		AZ(setsockopt(ls->sock, SOL_SOCKET, SO_LINGER,
 		    &linger, sizeof linger));
+		AZ(setsockopt(ls->sock, IPPROTO_TCP, TCP_NODELAY,
+		    &tcp_nodelay, sizeof tcp_nodelay));
 		if (cache_param->accept_filter) {
 			i = VTCP_filter_http(ls->sock);
 			if (i)
