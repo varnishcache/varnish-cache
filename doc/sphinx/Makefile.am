@@ -127,23 +127,45 @@ EXTRA_DIST = \
 	reference/vmod.rst \
 	reference/vmod_std.rst \
 	reference/vsm.rst \
-	tutorial/advanced_backend_servers.rst \
-	tutorial/advanced_topics.rst \
-	tutorial/backend_servers.rst \
-	tutorial/cookies.rst \
-	tutorial/esi.rst \
-	tutorial/handling_misbehaving_servers.rst \
-	tutorial/increasing_your_hitrate.rst \
 	tutorial/index.rst \
-	tutorial/logging.rst \
-	tutorial/purging.rst \
-	tutorial/putting_varnish_on_port_80.rst \
-	tutorial/sizing_your_cache.rst \
+	tutorial/introduction.rst \
+	tutorial/web_accelerator.rst \
 	tutorial/starting_varnish.rst \
-	tutorial/statistics.rst \
-	tutorial/troubleshooting.rst \
-	tutorial/vary.rst \
-	tutorial/vcl.rst
+	tutorial/putting_varnish_on_port_80.rst \
+	tutorial/backend_servers.rst \
+	tutorial/now_what.rst \
+	users-guide/command-line.rst \
+	users-guide/compression.rst \
+	users-guide/configuration.rst \
+	users-guide/cookies.rst \
+	users-guide/devicedetection.rst \
+	users-guide/esi.rst \
+	users-guide/increasing-your-hitrate.rst \
+	users-guide/index.rst \
+	users-guide/operation-cli.rst \
+	users-guide/operation-logging.rst \
+	users-guide/operation.rst \
+	users-guide/operation-statistics.rst \
+	users-guide/params.rst \
+	users-guide/purging.rst \
+	users-guide/sizing-your-cache.rst \
+	users-guide/storage-backends.rst \
+	users-guide/troubleshooting.rst \
+	users-guide/vary.rst \
+	users-guide/vcl-actions.rst \
+	users-guide/vcl-backends.rst \
+	users-guide/vcl-examples.rst \
+	users-guide/vcl-hashing.rst \
+	users-guide/vcl-inline-c.rst \
+	users-guide/vcl-intro.rst \
+	users-guide/vcl.rst \
+	users-guide/vcl-saint-and-grace.rst \
+	users-guide/vcl-subs.rst \
+	users-guide/vcl-syntax.rst \
+	users-guide/vcl-variables.rst \
+	users-guide/virtualized.rst \
+	users-guide/websockets.rst
+
 
 dist-hook:
 	$(MAKE) html
