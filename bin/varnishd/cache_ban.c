@@ -81,8 +81,7 @@ struct ban_test {
 	const void		*arg2_spec;
 };
 
-/* XXX phk thinks he knows why this is a good idea */
-static volatile VTAILQ_HEAD(banhead_s,ban) ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
+static VTAILQ_HEAD(banhead_s,ban) ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
 static struct lock ban_mtx;
 static struct ban *ban_magic;
 static pthread_t ban_thread;
