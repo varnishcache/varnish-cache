@@ -6,7 +6,7 @@ Logging in Varnish
 One of the really nice features in Varnish is how logging
 works. Instead of logging to normal log file Varnish logs to a shared
 memory segment. When the end of the segment is reached we start over,
-overwriting old data. This is much, much faster then logging to a file
+overwriting old data. This is much, much faster than logging to a file
 and it doesn't require disk space. Besides it gives you much, much
 more information when you need it.
 
