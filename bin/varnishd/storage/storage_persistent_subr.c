@@ -179,6 +179,64 @@ smp_new_sign(const struct smp_sc *sc, struct smp_signctx *ctx,
 }
 
 /*--------------------------------------------------------------------
+ * Define a signature space by location, size and identifier
+ */
+
+void
+smp_def_signspace(const struct smp_sc *sc, struct smp_signspace *spc,
+		  uint64_t off, uint64_t size, const char *id)
+{
+	smp_def_sign(sc, &spc->ctx, off, id);
+	spc->start = SIGN_DATA(&spc->ctx);
+	spc->size = size - SMP_SIGN_SPACE;
+}
+
+/*--------------------------------------------------------------------
+ * Check that a signspace's signature space is good, leave state ready
+ * for append
+ */
+
+int
+smp_chk_signspace(struct smp_signspace *spc)
+{
+	return (smp_chk_sign(&spc->ctx));
+}
+
+/*--------------------------------------------------------------------
+ * Append data to a signature space
+ */
+
+void
+smp_append_signspace(struct smp_signspace *spc, uint32_t len)
+{
+	assert(len <= SIGNSPACE_FREE(spc));
+	smp_append_sign(&spc->ctx, SIGNSPACE_FRONT(spc), len);
+}
+
+/*--------------------------------------------------------------------
+ * Reset a signature space to empty, prepare for appending.
+ */
+
+void
+smp_reset_signspace(struct smp_signspace *spc)
+{
+	smp_reset_sign(&spc->ctx);
+}
+
+/*--------------------------------------------------------------------
+ * Create a new signature space and force the signature to backing store.
+ */
+
+static void
+smp_new_signspace(const struct smp_sc *sc, struct smp_signspace *spc,
+		  uint64_t off, uint64_t size, const char *id)
+{
+	smp_new_sign(sc, &spc->ctx, off, id);
+	spc->start = SIGN_DATA(&spc->ctx);
+	spc->size = size - SMP_SIGN_SPACE;
+}
+
+/*--------------------------------------------------------------------
  * Initialize a Silo with a valid but empty structure.
  *
  * XXX: more intelligent sizing of things.
@@ -220,10 +278,14 @@ smp_newsilo(struct smp_sc *sc)
 	si->stuff[SMP_END_STUFF] = si->mediasize;
 	assert(si->stuff[SMP_SPC_STUFF] < si->stuff[SMP_END_STUFF]);
 
-	smp_new_sign(sc, &sc->ban1, si->stuff[SMP_BAN1_STUFF], "BAN 1");
-	smp_new_sign(sc, &sc->ban2, si->stuff[SMP_BAN2_STUFF], "BAN 2");
-	smp_new_sign(sc, &sc->seg1, si->stuff[SMP_SEG1_STUFF], "SEG 1");
-	smp_new_sign(sc, &sc->seg2, si->stuff[SMP_SEG2_STUFF], "SEG 2");
+	smp_new_signspace(sc, &sc->ban1, si->stuff[SMP_BAN1_STUFF],
+			  smp_stuff_len(sc, SMP_BAN1_STUFF), "BAN 1");
+	smp_new_signspace(sc, &sc->ban2, si->stuff[SMP_BAN2_STUFF],
+			  smp_stuff_len(sc, SMP_BAN2_STUFF), "BAN 2");
+	smp_new_signspace(sc, &sc->seg1, si->stuff[SMP_SEG1_STUFF],
+			  smp_stuff_len(sc, SMP_SEG1_STUFF), "SEG 1");
+	smp_new_signspace(sc, &sc->seg2, si->stuff[SMP_SEG2_STUFF],
+			  smp_stuff_len(sc, SMP_SEG2_STUFF), "SEG 2");
 
 	smp_append_sign(&sc->idn, si, sizeof *si);
 	smp_sync_sign(&sc->idn);
@@ -282,20 +344,24 @@ smp_valid_silo(struct smp_sc *sc)
 	assert(smp_stuff_len(sc, SMP_BAN1_STUFF) ==
 	  smp_stuff_len(sc, SMP_BAN2_STUFF));
 
-	smp_def_sign(sc, &sc->ban1, si->stuff[SMP_BAN1_STUFF], "BAN 1");
-	smp_def_sign(sc, &sc->ban2, si->stuff[SMP_BAN2_STUFF], "BAN 2");
-	smp_def_sign(sc, &sc->seg1, si->stuff[SMP_SEG1_STUFF], "SEG 1");
-	smp_def_sign(sc, &sc->seg2, si->stuff[SMP_SEG2_STUFF], "SEG 2");
+	smp_def_signspace(sc, &sc->ban1, si->stuff[SMP_BAN1_STUFF],
+			  smp_stuff_len(sc, SMP_BAN1_STUFF), "BAN 1");
+	smp_def_signspace(sc, &sc->ban2, si->stuff[SMP_BAN2_STUFF],
+			  smp_stuff_len(sc, SMP_BAN2_STUFF), "BAN 2");
+	smp_def_signspace(sc, &sc->seg1, si->stuff[SMP_SEG1_STUFF],
+			  smp_stuff_len(sc, SMP_SEG1_STUFF), "SEG 1");
+	smp_def_signspace(sc, &sc->seg2, si->stuff[SMP_SEG2_STUFF],
+			  smp_stuff_len(sc, SMP_SEG2_STUFF), "SEG 2");
 
 	/* We must have one valid BAN table */
-	i = smp_chk_sign(&sc->ban1);
-	j = smp_chk_sign(&sc->ban2);
+	i = smp_chk_signspace(&sc->ban1);
+	j = smp_chk_signspace(&sc->ban2);
 	if (i && j)
 		return (100 + i * 10 + j);
 
 	/* We must have one valid SEG table */
-	i = smp_chk_sign(&sc->seg1);
-	j = smp_chk_sign(&sc->seg2);
+	i = smp_chk_signspace(&sc->seg1);
+	j = smp_chk_signspace(&sc->seg2);
 	if (i && j)
 		return (200 + i * 10 + j);
 	return (0);

@@ -58,15 +58,15 @@
  */
 
 static void
-smp_save_seg(const struct smp_sc *sc, struct smp_signctx *ctx)
+smp_save_seg(const struct smp_sc *sc, struct smp_signspace *spc)
 {
 	struct smp_segptr *ss;
 	struct smp_seg *sg;
 	uint64_t length;
 
 	Lck_AssertHeld(&sc->mtx);
-	smp_reset_sign(ctx);
-	ss = SIGN_DATA(ctx);
+	smp_reset_signspace(spc);
+	ss = SIGNSPACE_DATA(spc);
 	length = 0;
 	VTAILQ_FOREACH(sg, &sc->segments, list) {
 		assert(sg->p.offset < sc->mediasize);
@@ -75,8 +75,8 @@ smp_save_seg(const struct smp_sc *sc, struct smp_signctx *ctx)
 		ss++;
 		length += sizeof *ss;
 	}
-	smp_append_sign(ctx, SIGN_DATA(ctx), length);
-	smp_sync_sign(ctx);
+	smp_append_signspace(spc, length);
+	smp_sync_sign(&spc->ctx);
 }
 
 void

@@ -68,13 +68,14 @@ static VTAILQ_HEAD(,smp_sc)	silos = VTAILQ_HEAD_INITIALIZER(silos);
  */
 
 static void
-smp_appendban(struct smp_sc *sc, struct smp_signctx *ctx,
+smp_appendban(struct smp_sc *sc, struct smp_signspace *spc,
     uint32_t len, const uint8_t *ban)
 {
 	uint8_t *ptr, *ptr2;
 
 	(void)sc;
-	ptr = ptr2 = SIGN_END(ctx);
+	ptr = ptr2 = SIGNSPACE_FRONT(spc);
+	assert(SIGNSPACE_FREE(spc) >= 4 + 4 + len);
 
 	memcpy(ptr, "BAN", 4);
 	ptr += 4;
@@ -85,7 +86,7 @@ smp_appendban(struct smp_sc *sc, struct smp_signctx *ctx,
 	memcpy(ptr, ban, len);
 	ptr += len;
 
-	smp_append_sign(ctx, ptr2, ptr - ptr2);
+	smp_append_signspace(spc, ptr - ptr2);
 }
 
 /* Trust that cache_ban.c takes care of locking */
@@ -106,7 +107,7 @@ SMP_NewBan(const uint8_t *ban, unsigned ln)
  */
 
 static int
-smp_open_bans(struct smp_sc *sc, struct smp_signctx *ctx)
+smp_open_bans(struct smp_sc *sc, struct smp_signspace *spc)
 {
 	uint8_t *ptr, *pe;
 	uint32_t length;
@@ -114,11 +115,11 @@ smp_open_bans(struct smp_sc *sc, struct smp_signctx *ctx)
 
 	ASSERT_CLI();
 	(void)sc;
-	i = smp_chk_sign(ctx);
+	i = smp_chk_signspace(spc);
 	if (i)
 		return (i);
-	ptr = SIGN_DATA(ctx);
-	pe = ptr + ctx->ss->length;
+	ptr = SIGNSPACE_DATA(spc);
+	pe = SIGNSPACE_FRONT(spc);
 
 	while (ptr < pe) {
 		if (memcmp(ptr, "BAN", 4)) {
@@ -148,7 +149,7 @@ smp_open_bans(struct smp_sc *sc, struct smp_signctx *ctx)
  */
 
 static int
-smp_open_segs(struct smp_sc *sc, struct smp_signctx *ctx)
+smp_open_segs(struct smp_sc *sc, struct smp_signspace *spc)
 {
 	uint64_t length, l;
 	struct smp_segptr *ss, *se;
@@ -156,12 +157,12 @@ smp_open_segs(struct smp_sc *sc, struct smp_signctx *ctx)
 	int i, n = 0;
 
 	ASSERT_CLI();
-	i = smp_chk_sign(ctx);
+	i = smp_chk_signspace(spc);
 	if (i)
 		return (i);
 
-	ss = SIGN_DATA(ctx);
-	length = ctx->ss->length;
+	ss = SIGNSPACE_DATA(spc);
+	length = SIGNSPACE_LEN(spc);
 
 	if (length == 0) {
 		/* No segments */

@@ -55,6 +55,21 @@ struct smp_signctx {
 	const char		*id;
 };
 
+/*
+ * A space wrapped by a signature
+ *
+ * A signspace is a chunk of the silo that is wrapped by a
+ * signature. It has attributes for size, so range checking can be
+ * performed.
+ *
+ */
+
+struct smp_signspace {
+	struct smp_signctx	ctx;
+	uint8_t			*start;
+	uint64_t		size;
+};
+
 struct smp_sc;
 
 /* XXX: name confusion with on-media version ? */
@@ -116,10 +131,10 @@ struct smp_sc {
 	VTAILQ_ENTRY(smp_sc)	list;
 
 	struct smp_signctx	idn;
-	struct smp_signctx	ban1;
-	struct smp_signctx	ban2;
-	struct smp_signctx	seg1;
-	struct smp_signctx	seg2;
+	struct smp_signspace	ban1;
+	struct smp_signspace	ban2;
+	struct smp_signspace	seg1;
+	struct smp_signspace	seg2;
 
 	struct ban		*tailban;
 
@@ -161,6 +176,11 @@ struct smp_sc {
 #define SIGN_DATA(ctx)	((void *)((ctx)->ss + 1))
 #define SIGN_END(ctx)	((void *)((int8_t *)SIGN_DATA(ctx) + (ctx)->ss->length))
 
+#define SIGNSPACE_DATA(spc)	(SIGN_DATA(&(spc)->ctx))
+#define SIGNSPACE_FRONT(spc)	(SIGN_END(&(spc)->ctx))
+#define SIGNSPACE_LEN(spc)	((spc)->ctx.ss->length)
+#define SIGNSPACE_FREE(spc)	((spc)->size - SIGNSPACE_LEN(spc))
+
 /* storage_persistent_mgt.c */
 
 void smp_mgt_init(struct stevedore *parent, int ac, char * const *av);
@@ -181,6 +201,13 @@ int smp_chk_sign(struct smp_signctx *ctx);
 void smp_append_sign(struct smp_signctx *ctx, const void *ptr, uint32_t len);
 void smp_reset_sign(struct smp_signctx *ctx);
 void smp_sync_sign(const struct smp_signctx *ctx);
+
+void smp_def_signspace(const struct smp_sc *sc, struct smp_signspace *spc,
+		       uint64_t off, uint64_t size, const char *id);
+int smp_chk_signspace(struct smp_signspace *spc);
+void smp_append_signspace(struct smp_signspace *spc, uint32_t len);
+void smp_reset_signspace(struct smp_signspace *spc);
+
 void smp_newsilo(struct smp_sc *sc);
 int smp_valid_silo(struct smp_sc *sc);
 
