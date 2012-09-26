@@ -489,7 +489,8 @@ vcl_recv
   lookup  
     Look up the requested object in the cache.  Control will
     eventually pass to vcl_hit or vcl_miss, depending on whether the
-    object is in the cache.
+    object is in the cache.  The ``bereq.request`` value will be set
+    to ``GET`` regardless of the value of ``req.request``.
 
 vcl_pipe
   Called upon entering pipe mode.  In this mode, the request is passed
