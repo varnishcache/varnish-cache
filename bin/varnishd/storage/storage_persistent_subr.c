@@ -156,13 +156,7 @@ smp_reset_sign(struct smp_signctx *ctx)
 void
 smp_sync_sign(const struct smp_signctx *ctx)
 {
-	int i;
-
-	/* XXX: round to pages */
-	i = msync((void*)ctx->ss, ctx->ss->length + SMP_SIGN_SPACE, MS_SYNC);
-	if (i && 0)
-		fprintf(stderr, "SyncSign(%p %s) = %d %s\n",
-		    ctx->ss, ctx->id, i, strerror(errno));
+	smp_msync(ctx->ss, SMP_SIGN_SPACE + ctx->ss->length);
 }
 
 /*--------------------------------------------------------------------
@@ -265,6 +259,25 @@ smp_new_signspace(const struct smp_sc *sc, struct smp_signspace *spc,
 	smp_new_sign(sc, &spc->ctx, off, id);
 	spc->start = SIGN_DATA(&spc->ctx);
 	spc->size = size - SMP_SIGN_SPACE;
+}
+
+/*--------------------------------------------------------------------
+ * Force a write of a memory block (rounded to nearest pages) to
+ * the backing store.
+ */
+
+void
+smp_msync(void *addr, size_t length)
+{
+	uintptr_t start, end;
+	int pagesize;
+
+	pagesize = getpagesize();
+	assert(pagesize > 0 && PWR2(pagesize));
+	start = RDN2((uintptr_t)addr, pagesize);
+	end = RUP2((uintptr_t)addr + length, pagesize);
+	assert(start < end);
+	AZ(msync((void *)start, end - start, MS_SYNC));
 }
 
 /*--------------------------------------------------------------------

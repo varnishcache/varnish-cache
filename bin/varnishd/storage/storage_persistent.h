@@ -210,6 +210,7 @@ void smp_reset_signspace(struct smp_signspace *spc);
 void smp_copy_signspace(struct smp_signspace *dst,
 			const struct smp_signspace *src);
 void smp_trunc_signspace(struct smp_signspace *spc, uint32_t len);
+void smp_msync(void *addr, size_t length);
 
 void smp_newsilo(struct smp_sc *sc);
 int smp_valid_silo(struct smp_sc *sc);
