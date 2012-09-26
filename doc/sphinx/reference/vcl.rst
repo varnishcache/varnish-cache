@@ -211,7 +211,7 @@ This is useful is you are using Varnish to load balance in front of
 other Varnish caches or other web accelerators as objects won't be
 duplicated across caches.
 
-It will use the value of req.hash, just as the normal cache-lookup methods.
+It will use the value of req.hash, just as the normal cache lookup methods.
 
 
 The round-robin director
