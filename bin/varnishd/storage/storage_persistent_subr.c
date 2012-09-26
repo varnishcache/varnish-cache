@@ -224,6 +224,37 @@ smp_reset_signspace(struct smp_signspace *spc)
 }
 
 /*--------------------------------------------------------------------
+ * Copy the contents of one signspace to another. Prepare for
+ * appending.
+ */
+
+void
+smp_copy_signspace(struct smp_signspace *dst, const struct smp_signspace *src)
+{
+	assert(SIGNSPACE_LEN(src) <= dst->size);
+	smp_reset_signspace(dst);
+	memcpy(SIGNSPACE_DATA(dst), SIGNSPACE_DATA(src), SIGNSPACE_LEN(src));
+	smp_append_signspace(dst, SIGNSPACE_LEN(src));
+	assert(SIGNSPACE_LEN(src) == SIGNSPACE_LEN(dst));
+}
+
+/*--------------------------------------------------------------------
+ * Reapplies the sign over the len first bytes of the
+ * signspace. Prepares for appending.
+ */
+
+void
+smp_trunc_signspace(struct smp_signspace *spc, uint32_t len)
+{
+	assert(len <= SIGNSPACE_LEN(spc));
+	spc->ctx.ss->length = 0;
+	SHA256_Init(&spc->ctx.ctx);
+	SHA256_Update(&spc->ctx.ctx, spc->ctx.ss,
+		      offsetof(struct smp_sign, length));
+	smp_append_signspace(spc, len);
+}
+
+/*--------------------------------------------------------------------
  * Create a new signature space and force the signature to backing store.
  */
 
