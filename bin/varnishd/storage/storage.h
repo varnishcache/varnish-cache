@@ -47,6 +47,7 @@ typedef void storage_free_f(struct storage *);
 typedef struct object *storage_allocobj_f(struct stevedore *, struct busyobj *,
     struct objcore **, unsigned ltot, const struct stv_objsecrets *);
 typedef void storage_close_f(const struct stevedore *);
+typedef void storage_signal_close_f(const struct stevedore *);
 
 /* Prototypes for VCL variable responders */
 #define VRTSTVTYPE(ct) typedef ct storage_var_##ct(const struct stevedore *);
@@ -69,6 +70,7 @@ struct stevedore {
 	storage_free_f		*free;		/* --//-- */
 	storage_close_f		*close;		/* --//-- */
 	storage_allocobj_f	*allocobj;	/* --//-- */
+	storage_signal_close_f	*signal_close;	/* --//-- */
 
 	struct lru		*lru;
 

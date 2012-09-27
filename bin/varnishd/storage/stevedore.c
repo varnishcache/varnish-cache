@@ -436,6 +436,15 @@ STV_close(void)
 {
 	struct stevedore *stv;
 
+	/* Signal intent to close */
+	VTAILQ_FOREACH(stv, &stv_stevedores, list)
+		if (stv->signal_close != NULL)
+			stv->signal_close(stv);
+	stv = stv_transient;
+	if (stv->signal_close != NULL)
+		stv->signal_close(stv);
+
+	/* Close each in turn */
 	VTAILQ_FOREACH(stv, &stv_stevedores, list)
 		if (stv->close != NULL)
 			stv->close(stv);
