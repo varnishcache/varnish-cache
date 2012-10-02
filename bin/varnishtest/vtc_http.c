@@ -1043,7 +1043,7 @@ cmd_http_expect_close(CMD_ARGS)
 	vtc_log(vl, 4, "Expecting close (fd = %d)", hp->fd);
 	while (1) {
 		fds[0].fd = hp->fd;
-		fds[0].events = POLLIN | POLLHUP | POLLERR;
+		fds[0].events = POLLIN | POLLERR;
 		fds[0].revents = 0;
 		i = poll(fds, 1, 1000);
 		if (i == 0)
