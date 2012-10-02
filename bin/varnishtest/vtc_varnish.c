@@ -408,7 +408,7 @@ varnish_launch(struct varnish *v)
 	fd[0].fd = v->cli_fd;
 	fd[0].events = POLLIN;
 	fd[1].fd = v->fds[0];
-	fd[1].events = POLLHUP;
+	fd[1].events = 0; /* Only care about POLLHUP, which is output-only */
 	i = poll(fd, 2, 10000);
 	vtc_log(v->vl, 4, "CLIPOLL %d 0x%x 0x%x",
 	    i, fd[0].revents, fd[1].revents);
