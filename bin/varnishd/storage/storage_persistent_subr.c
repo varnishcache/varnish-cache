@@ -128,7 +128,6 @@ smp_append_sign(struct smp_signctx *ctx, const void *ptr, uint32_t len)
 	SHA256_Update(&cx, &ctx->ss->length, sizeof(ctx->ss->length));
 	SHA256_Final(sign, &cx);
 	memcpy(SIGN_END(ctx), sign, sizeof sign);
-XXXAZ(smp_chk_sign(ctx));
 }
 
 /*--------------------------------------------------------------------
