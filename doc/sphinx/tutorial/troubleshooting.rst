@@ -65,7 +65,7 @@ errors will be logged in syslog. It might look like this::
 
 Specifically if you see the "Error in munmap" error on Linux you might
 want to increase the amount of maps available. Linux is limited to a
-maximum of 64k maps. Setting vm.max_max_count i sysctl.conf will
+maximum of 64k maps. Setting vm.max_map_count in sysctl.conf will
 enable you to increase this limit. You can inspect the number of maps
 your program is consuming by counting the lines in /proc/$PID/maps
 
