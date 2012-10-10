@@ -38,7 +38,6 @@ struct busyobj;
 struct objcore;
 struct worker;
 struct lru;
-enum baninfo;
 
 typedef void storage_init_f(struct stevedore *, int ac, char * const *av);
 typedef void storage_open_f(const struct stevedore *);

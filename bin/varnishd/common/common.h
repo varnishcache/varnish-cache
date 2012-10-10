@@ -40,6 +40,16 @@
 #include "vqueue.h"
 #include "vsb.h"
 
+/*
+ * Enums cannot be forward declared (any more...) so put it here
+ * to make everybody see it.
+ */
+
+enum baninfo {
+	BI_NEW,
+	BI_DROP
+};
+
 struct cli;
 
 /**********************************************************************

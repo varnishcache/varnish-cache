@@ -192,11 +192,6 @@ enum httpwhence {
  * Ban info event types
  */
 
-enum baninfo {
-	BI_NEW,
-	BI_DROP
-};
-
 /* NB: remember to update http_Copy() if you add fields */
 struct http {
 	unsigned		magic;
