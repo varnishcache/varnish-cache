@@ -98,7 +98,7 @@ VRT_DO_HDR(beresp,  response,	req->busyobj->beresp,	HTTP_HDR_RESPONSE)
 
 #define VRT_DO_STATUS(obj, http)				\
 void								\
-VRT_l_##obj##_status(const struct req *req, int num)		\
+VRT_l_##obj##_status(const struct req *req, long num)	\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
@@ -106,7 +106,7 @@ VRT_l_##obj##_status(const struct req *req, int num)		\
 	http->status = (uint16_t)num;				\
 }								\
 								\
-int								\
+long								\
 VRT_r_##obj##_status(const struct req *req)			\
 {								\
 								\
@@ -271,7 +271,7 @@ VRT_r_beresp_backend_ip(const struct req *req)
 	return(req->busyobj->vbc->addr);
 }
 
-int
+long
 VRT_r_beresp_backend_port(const struct req *req)
 {
 
@@ -342,7 +342,7 @@ VRT_r_req_esi(const struct req *req)
 	return (!req->disable_esi);
 }
 
-int
+long
 VRT_r_req_esi_level(const struct req *req)
 {
 
@@ -363,7 +363,7 @@ VRT_r_req_can_gzip(const struct req *req)
 
 /*--------------------------------------------------------------------*/
 
-int
+long
 VRT_r_req_restarts(const struct req *req)
 {
 
@@ -517,7 +517,7 @@ VRT_r_server_hostname(const struct req *req)
  * XXX: This is pessimistically silly
  */
 
-int
+long
 VRT_r_server_port(const struct req *req)
 {
 	int i;
@@ -533,7 +533,7 @@ VRT_r_server_port(const struct req *req)
 
 /*--------------------------------------------------------------------*/
 
-int
+long
 VRT_r_obj_hits(const struct req *req)
 {
 

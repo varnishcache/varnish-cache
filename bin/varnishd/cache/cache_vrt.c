@@ -315,20 +315,20 @@ VRT_IP_string(const struct req *req, const struct sockaddr_storage *sa)
 }
 
 char *
-VRT_int_string(const struct req *req, int num)
+VRT_INT_string(const struct req *req, long num)
 {
 	char *p;
 	int size;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	size = snprintf(NULL, 0, "%d", num) + 1;
+	size = snprintf(NULL, 0, "%ld", num) + 1;
 	AN(p = WS_Alloc(req->http->ws, size));
-	assert(snprintf(p, size, "%d", num) < size);
+	assert(snprintf(p, size, "%ld", num) < size);
 	return (p);
 }
 
 char *
-VRT_double_string(const struct req *req, double num)
+VRT_REAL_string(const struct req *req, double num)
 {
 	char *p;
 	int size;
@@ -341,7 +341,7 @@ VRT_double_string(const struct req *req, double num)
 }
 
 char *
-VRT_time_string(const struct req *req, double t)
+VRT_TIME_string(const struct req *req, double t)
 {
 	char *p;
 
@@ -353,7 +353,7 @@ VRT_time_string(const struct req *req, double t)
 }
 
 const char *
-VRT_backend_string(const struct req *req, const struct director *d)
+VRT_BACKEND_string(const struct req *req, const struct director *d)
 {
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	if (d == NULL)
@@ -364,7 +364,7 @@ VRT_backend_string(const struct req *req, const struct director *d)
 }
 
 const char *
-VRT_bool_string(const struct req *req, unsigned val)
+VRT_BOOL_string(const struct req *req, unsigned val)
 {
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);

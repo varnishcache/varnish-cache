@@ -46,12 +46,13 @@
 #include "vcc_if.h"
 
 void __match_proto__(td_std_set_ip_tos)
-vmod_set_ip_tos(struct req *req, int tos)
+vmod_set_ip_tos(struct req *req, long tos)
 {
+	int itos = tos;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	VTCP_Assert(setsockopt(req->sp->fd,
-	    IPPROTO_IP, IP_TOS, &tos, sizeof(tos)));
+	    IPPROTO_IP, IP_TOS, &itos, sizeof(itos)));
 }
 
 static const char *
@@ -150,7 +151,7 @@ vmod_log(struct req *req, const char *fmt, ...)
 }
 
 void __match_proto__(td_std_syslog)
-vmod_syslog(struct req *req, int fac, const char *fmt, ...)
+vmod_syslog(struct req *req, long fac, const char *fmt, ...)
 {
 	char *p;
 	unsigned u;
@@ -163,7 +164,7 @@ vmod_syslog(struct req *req, int fac, const char *fmt, ...)
 	p = VRT_StringList(p, u, fmt, ap);
 	va_end(ap);
 	if (p != NULL)
-		syslog(fac, "%s", p);
+		syslog((int)fac, "%s", p);
 	WS_Release(req->ws, 0);
 }
 

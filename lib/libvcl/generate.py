@@ -482,7 +482,7 @@ vcltypes = {
 	'TIME':		"double",
 	'DURATION':	"double",
 	'BYTES':	"double",
-	'INT':		"int",
+	'INT':		"long",
 	'HEADER':	"const char *",
 }
 

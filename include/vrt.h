@@ -208,11 +208,11 @@ int VRT_Stv(const char *nm);
 /* Convert things to string */
 
 char *VRT_IP_string(const struct req *, const struct sockaddr_storage *sa);
-char *VRT_int_string(const struct req *, int);
-char *VRT_double_string(const struct req *, double);
-char *VRT_time_string(const struct req *, double);
-const char *VRT_bool_string(const struct req *, unsigned);
-const char *VRT_backend_string(const struct req *, const struct director *d);
+char *VRT_INT_string(const struct req *, long);
+char *VRT_REAL_string(const struct req *, double);
+char *VRT_TIME_string(const struct req *, double);
+const char *VRT_BOOL_string(const struct req *, unsigned);
+const char *VRT_BACKEND_string(const struct req *, const struct director *d);
 
 #define VRT_done(req, hand)			\
 	do {					\

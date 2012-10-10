@@ -113,6 +113,9 @@
 -emacro(436, SLTM)
 
 //////////////
++libh netinet/tcp.h
+-elib(46)
+//////////////
 
 +libh mgt_event.h
 

@@ -423,15 +423,15 @@ vcc_expr_tostring(struct expr **e, enum var_type fmt)
 
 	p = NULL;
 	switch((*e)->fmt) {
-	case BACKEND:	p = "VRT_backend_string(req, \v1)"; break;
-	case BOOL:	p = "VRT_bool_string(req, \v1)"; break;
-	case DURATION:	p = "VRT_double_string(req, \v1)"; break;
+	case BACKEND:	p = "VRT_BACKEND_string(req, \v1)"; break;
+	case BOOL:	p = "VRT_BOOL_string(req, \v1)"; break;
+	case DURATION:	p = "VRT_REAL_string(req, \v1)"; break;
 			 /* XXX: should DURATION insist on "s" suffix ? */
-	case INT:	p = "VRT_int_string(req, \v1)"; break;
+	case INT:	p = "VRT_INT_string(req, \v1)"; break;
 	case IP:	p = "VRT_IP_string(req, \v1)"; break;
-	case BYTES:	p = "VRT_double_string(req, \v1)"; break; /* XXX */
-	case REAL:	p = "VRT_double_string(req, \v1)"; break;
-	case TIME:	p = "VRT_time_string(req, \v1)"; break;
+	case BYTES:	p = "VRT_REAL_string(req, \v1)"; break; /* XXX */
+	case REAL:	p = "VRT_REAL_string(req, \v1)"; break;
+	case TIME:	p = "VRT_TIME_string(req, \v1)"; break;
 	default:	break;
 	}
 	if (p != NULL) {

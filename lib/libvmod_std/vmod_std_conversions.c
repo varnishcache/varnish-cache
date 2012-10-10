@@ -88,11 +88,11 @@ vmod_duration(struct req *req, const char *p, double d)
 	return (r);
 }
 
-int __match_proto__()
-vmod_integer(struct req *req, const char *p, int i)
+long __match_proto__()
+vmod_integer(struct req *req, const char *p, long i)
 {
 	char *e;
-	int r;
+	long r;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
