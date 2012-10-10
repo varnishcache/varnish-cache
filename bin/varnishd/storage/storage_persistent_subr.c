@@ -269,8 +269,7 @@ smp_new_signspace(const struct smp_sc *sc, struct smp_signspace *spc,
 void
 smp_msync(void *addr, size_t length)
 {
-	uintptr_t start, end;
-	int pagesize;
+	uintptr_t start, end, pagesize;
 
 	pagesize = getpagesize();
 	assert(pagesize > 0 && PWR2(pagesize));

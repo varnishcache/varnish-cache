@@ -76,7 +76,7 @@ smp_appendban(struct smp_sc *sc, struct smp_signspace *spc,
 
 	(void)sc;
 	ptr = ptr2 = SIGNSPACE_FRONT(spc);
-	assert(SIGNSPACE_FREE(spc) >= 4 + 4 + len);
+	assert(SIGNSPACE_FREE(spc) >= 4L + 4 + len);
 
 	memcpy(ptr, "BAN", 4);
 	ptr += 4;
@@ -412,7 +412,7 @@ smp_close(const struct stevedore *st)
 
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
 
-	pthread_join(sc->bgthread, &status);
+	AZ(pthread_join(sc->bgthread, &status));
 	AZ(status);
 }
 

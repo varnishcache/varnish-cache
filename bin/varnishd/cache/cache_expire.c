@@ -477,6 +477,8 @@ EXP_NukeLRU(struct worker *wrk, struct vsl_log *vsl, struct lru *lru)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
+	memset(oc_array, 0, sizeof oc_array);
+
 	t = VTIM_real();
 	Lck_Lock(&lru->mtx);
 	while (!VTAILQ_EMPTY(&lru->lru_head)) {
