@@ -847,6 +847,9 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 		ERRCHK(tl);
 		if (tk->tok == '-' && (*e)->fmt == TIME && e2->fmt == TIME) {
 			/* OK */
+		} else if ((*e)->fmt == TIME && e2->fmt == DURATION) {
+			f2 = TIME;
+			/* OK */
 		} else if (tk->tok == '-' &&
 		    (*e)->fmt == BYTES && e2->fmt == BYTES) {
 			/* OK */

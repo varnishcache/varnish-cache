@@ -1,0 +1,22 @@
+varnishtest "TIME +/- DURATION -> TIME"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_deliver {
+		set resp.http.bar = now + 4 d;
+		set resp.http.foo = now - 4 d;
+	}
+
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.bar ~ "..., .. ... 20[1-9][0-9] ..:..:.. GMT"
+	expect resp.http.foo ~ "..., .. ... 20[1-9][0-9] ..:..:.. GMT"
+} -run
