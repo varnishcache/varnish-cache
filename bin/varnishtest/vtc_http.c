@@ -40,6 +40,7 @@
 
 #include "vct.h"
 #include "vgz.h"
+#include "vre.h"
 #include "vtcp.h"
 
 #define MAX_HDR		50
@@ -213,6 +214,10 @@ cmd_http_expect(CMD_ARGS)
 	const char *lhs;
 	char *cmp;
 	const char *rhs;
+	vre_t *vre;
+	const char *error;
+	int erroroffset;
+	int i;
 
 	(void)cmd;
 	(void)vl;
@@ -241,6 +246,19 @@ cmd_http_expect(CMD_ARGS)
 		else
 			vtc_log(hp->vl, 4, "EXPECT %s (%s) %s %s (%s) match",
 			    av[0], lhs, av[1], av[2], rhs);
+	} else if (!strcmp(cmp, "~") || !strcmp(cmp, "!~")) {
+		vre = VRE_compile(rhs, 0, &error, &erroroffset);
+		if (vre == NULL)
+			vtc_log(hp->vl, 0, "REGEXP error: %s (@%d) (%s)",
+			    error, erroroffset, rhs);
+		i = VRE_exec(vre, lhs, strlen(lhs), 0, 0, NULL, 0, 0);
+		if ((i >= 0 && *cmp == '~') || (i < 0 && *cmp == '!')) 
+			vtc_log(hp->vl, 4, "EXPECT %s (%s) %s \"%s\" match",
+			    av[0], lhs, cmp, rhs);
+		else
+			vtc_log(hp->vl, 0, "EXPECT %s (%s) %s \"%s\" failed",
+			    av[0], lhs, cmp, rhs);
+		VRE_free(&vre);
 	} else {
 		vtc_log(hp->vl, 0,
 		    "EXPECT %s (%s) %s %s (%s) test not implemented",
