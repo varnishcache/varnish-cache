@@ -87,3 +87,8 @@ TAGS
 
 # NetBeans insists on this
 /nbproject/private/
+
+# Test droppings
+bin/varnishtest/tests/*.log
+bin/varnishtest/tests/*.log-t
+bin/varnishtest/test-suite.log
