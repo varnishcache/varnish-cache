@@ -316,7 +316,7 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			clean_logline(lp);
 			break;
 		}
-		qs = index(ptr, '?');
+		qs = memchr(ptr, '?', len);
 		if (qs) {
 			trimline(&lp->df_U, ptr, qs);
 			trimline(&lp->df_q, qs, end);
@@ -360,7 +360,7 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 	case SLT_TxHeader:
 		if (!lp->active)
 			break;
-		split = strchr(ptr, ':');
+		split = memchr(ptr, ':', len);
 		if (split == NULL)
 			break;
 		if (isprefix(ptr, "authorization:", end, &next) &&
@@ -435,7 +435,7 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			clean_logline(lp);
 			break;
 		}
-		qs = index(ptr, '?');
+		qs = memchr(ptr, '?', len);
 		if (qs) {
 			trimline(&lp->df_U, ptr, qs);
 			trimline(&lp->df_q, qs, end);
@@ -468,7 +468,7 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 	case SLT_RxHeader:
 		if (!lp->active)
 			break;
-		split = strchr(ptr, ':');
+		split = memchr(ptr, ':', len);
 		if (split == NULL)
 			break;
 		if (tag == SLT_RxHeader &&
@@ -493,7 +493,7 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		if(!lp->active)
 			break;
 
-		split = strchr(ptr, ':');
+		split = memchr(ptr, ':', len);
 		if (split == NULL)
 			break;
 
