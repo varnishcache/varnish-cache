@@ -326,6 +326,7 @@ regsuball(str, regex, sub)
   As regsub() but this replaces all occurrences.
 
 ban(ban expression)
+  Bans all objects in cache that match the expression.
 
 ban_url(regex)
   Bans all objects in cache whose URLs match regex.
