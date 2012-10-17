@@ -1,0 +1,105 @@
+-passes=3
+
+-ffc			// No automatic custody
+
+-printf(2, VSB_printf)
+
+
+///////////////////////////////////////////////////////////////////////
+// Weirdness relating to varnish includes etc.
+
+-header(../../config.h)
++libh ../../config.h
+-efile(451, ../../config.h)	// No include guard
+
+-efile(451, "tbl/*.h")		// No include guard
+
+///////////////////////////////////////////////////////////////////////
+// assert() support, common to libvarnish and libvarnishapi
+-sem(VAS_Fail, r_no)
+-emacro(506, assert)    // constant value boolean
+-emacro(827, assert)    // loop not reachable
+-emacro(774, assert)    // booelan always true
+-emacro(731, assert)    // booelan arg to eq/non-eq
+-emacro(731, xxxassert)	// arg to eq/non-eq
+-emacro(527, WRONG)     // unreachable code
+
+///////////////////////////////////////////////////////////////////////
+// <vqueue.h>
+
+-esym(755, VLIST_*)	// Global macro not ref.
+-esym(755, VSLIST_*)
+-esym(755, VSTAILQ_*)
+-esym(755, VTAILQ_*)
+
+-emacro((826), VTAILQ_LAST) // Suspicious pointer-to-pointer conversion (area too small)
+-emacro((826), VTAILQ_PREV) // Suspicious pointer-to-pointer conversion (area too small)
+-emacro(506, VTAILQ_FOREACH_SAFE) // constant value boolean
+-emacro(506, VSTAILQ_FOREACH_SAFE) // constant value boolean
+-emacro(740, VTAILQ_LAST) // Unusual pointer cast (incompatible indirect types)
+-emacro(740, VTAILQ_PREV) // Unusual pointer cast (incompatible indirect types)
+-esym(755, VTAILQ_*)
+
+///////////////////////////////////////////////////////////////////////
+// miniobj
+
+// -emacro(755, CAST_OBJ)		// glob macro not ref
+-emacro(779, REPLACE)		// string constant !=
+-emacro(774, REPLACE)		// if(bool) always true
+-emacro(506, REPLACE)		// const bool
+
+///////////////////////////////////////////////////////////////////////
+// VMB
+-emacro(755, VMB)		// glob macro not ref
+-emacro(755, VRMB)		// glob macro not ref
+-emacro(755, VWMB)		// glob macro not ref
+
+///////////////////////////////////////////////////////////////////////
+// VSB
+
+-esym(759, VSB_*)	// header decl could be moved
+-esym(765, VSB_*)	// exten could be made static
+-esym(714, VSB_*)	// symb not ref
+-sem(VSB_new, @p == (1p ? 1p : malloc(1)))
+-sem(VSB_delete, custodial(1))
+
+-esym(534, VSB_cat)	// Ignore retval
+-esym(534, VSB_bcat)
+-esym(534, VSB_putc)
+-esym(534, VSB_printf)
+-esym(534, VSB_vprintf)
+-esym(534, VSB_putc)
+
+///////////////////////////////////////////////////////////////////////
+// System library/POSIX related
+///////////////////////////////////////////////////////////////////////
+
+// vararg simulation is imperfect (XXX: why ??)
+-emacro((???), va_arg)	// 415, 416, 416, 661, 662, 796, 797 ...
+
+// Fix strchr() semtics, it can only return NULL if arg2 != 0
+-sem(strchr, 1p, type(1), 2n == 0 ? (@p < 1p) : (@p < 1p || @p == 0 ))
+
+-esym(534, printf)	// Ignore retval
+-esym(534, fprintf)
+-esym(534, sprintf)
+
+-esym(534, memset)
+-esym(534, memcpy)
+-esym(534, memmove)
+
+-esym(534, strcat)
+-esym(534, strcpy)
+-esym(534, strlcpy)
+
++typename(844)
+-etype(844, struct pthread *)
+-sem(pthread_create, custodial(4))
+-emacro(413, offsetof)  // likely null pointer
+-emacro(736, isnan)  // loss of prec.
+
++libh(/usr/include/curses.h)
+-elib(659)		// no tokens after struct def.
+-elib(123)		// macro def. with arg at, (just warn)
+
+-emacro(702, WEXITSTATUS)	// signed shift right 
