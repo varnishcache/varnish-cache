@@ -1,0 +1,48 @@
+varnishtest "Pass shouldn't honor IMS/INM if the backend doesn't"
+
+server s1 {
+	rxreq
+	txresp -bodylen 6
+
+	rxreq
+	txresp -hdr "ETag: 123456789" \
+	    -bodylen 7
+
+	rxreq
+	txresp -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+	    -bodylen 8
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return(pass);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 6
+
+	txreq -hdr "If-None-Match: 123456789"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 7
+
+	txreq -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:01 GMT"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 8
+} -run
+
+server s1 -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		set beresp.do_pass = true;
+	}
+}
+
+client c1 -run
+

@@ -108,6 +108,7 @@ RES_BuildHttp(struct req *req)
 	char time_str[30];
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 
 	http_ClrHeader(req->resp);
 	http_FilterResp(req->obj->http, req->resp, 0);
@@ -122,7 +123,9 @@ RES_BuildHttp(struct req *req)
 	if (req->res_mode & RES_GUNZIP)
 		http_Unset(req->resp, H_Content_Encoding);
 
-	if (req->obj->response == 200
+	if (req->obj->objcore != NULL
+	    && !(req->obj->objcore->flags & OC_F_PASS)
+	    && req->obj->response == 200
 	    && req->http->conds && RFC2616_Do_Cond(req)) {
 		req->wantbody = 0;
 		http_SetResp(req->resp, "HTTP/1.1", 304, "Not Modified");
