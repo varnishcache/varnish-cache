@@ -529,6 +529,7 @@ void
 vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 {
 	const char *p, *r;
+	const struct var *v;
 	struct expr *e1, *e2;
 	enum var_type fmt;
 	char buf[32];
@@ -581,7 +582,7 @@ vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 			if (*p != '\0')
 				SkipToken(tl, ',');
 		} else if (fmt == HEADER) {
-			const struct var *v;
+			ExpectErr(tl, ID);
 			sym = VCC_FindSymbol(tl, tl->t, SYM_NONE);
 			ERRCHK(tl);
 			SkipToken(tl, ID);
