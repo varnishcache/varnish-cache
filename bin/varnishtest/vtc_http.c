@@ -252,7 +252,7 @@ cmd_http_expect(CMD_ARGS)
 			vtc_log(hp->vl, 0, "REGEXP error: %s (@%d) (%s)",
 			    error, erroroffset, rhs);
 		i = VRE_exec(vre, lhs, strlen(lhs), 0, 0, NULL, 0, 0);
-		if ((i >= 0 && *cmp == '~') || (i < 0 && *cmp == '!')) 
+		if ((i >= 0 && *cmp == '~') || (i < 0 && *cmp == '!'))
 			vtc_log(hp->vl, 4, "EXPECT %s (%s) %s \"%s\" match",
 			    av[0], lhs, cmp, rhs);
 		else
