@@ -1205,8 +1205,15 @@ CNT_Request(struct worker *wrk, struct req *req)
 		 */
 		CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
-		WS_Assert(wrk->aws);
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+		/*
+		 * We don't want the thread workspace to be used for
+		 * anything of long duration, so mandate that it be
+		 * empty on state-transitions.
+		 */
+		WS_Assert(wrk->aws);
+		assert(wrk->aws->s == wrk->aws->f);
 
 		switch (req->req_step) {
 #define REQ_STEP(l,u,arg) \
