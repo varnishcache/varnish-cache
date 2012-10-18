@@ -56,7 +56,7 @@ ctypes = {
 	'REAL':		"double",
 	'DURATION':	"double",
 	'INT':		"long",
-	'HEADER':	"enum gethdr_e, const char *",
+	'HEADER':	"const struct gethdr_s *",
 	'PRIV_VCL':	"struct vmod_priv *",
 	'PRIV_CALL':	"struct vmod_priv *",
 	'VOID':		"void",

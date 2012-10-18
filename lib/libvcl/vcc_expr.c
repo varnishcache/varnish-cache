@@ -605,7 +605,8 @@ vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 				vcc_ErrWhere(tl, tl->t);
 				return;
 			}
-			e1 = vcc_mk_expr(VOID, "%s, \"%s\"", v->http, v->hdr);
+			e1 = vcc_mk_expr(VOID, "VRT_MkGethdr(req, %s, \"%s\")",
+			    v->http, v->hdr);
 			if (*p != '\0')
 				SkipToken(tl, ',');
 		} else {

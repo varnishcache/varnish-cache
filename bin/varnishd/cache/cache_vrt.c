@@ -53,6 +53,22 @@ const void * const vrt_magic_string_end = &vrt_magic_string_end;
 
 /*--------------------------------------------------------------------*/
 
+const struct gethdr_s *
+VRT_MkGethdr(struct req *req, enum gethdr_e where, const char *what)
+{
+	struct gethdr_s *retval;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	retval = (void*)WS_Alloc(req->wrk->aws, sizeof *retval);
+	AN(retval);
+	retval->where = where;
+	retval->what = what;
+	return (retval);
+}
+
+
+/*--------------------------------------------------------------------*/
+
 void
 VRT_error(struct req *req, unsigned code, const char *reason)
 {

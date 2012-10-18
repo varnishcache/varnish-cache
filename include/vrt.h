@@ -38,6 +38,13 @@ struct director;
 struct VCL_conf;
 struct sockaddr_storage;
 
+enum gethdr_e { HDR_REQ, HDR_RESP, HDR_OBJ, HDR_BEREQ, HDR_BERESP };
+
+struct gethdr_s {
+	enum gethdr_e	where;
+	const char	*what;
+};
+
 /*
  * A backend probe specification
  */
@@ -158,7 +165,7 @@ int VRT_rewrite(const char *, const char *);
 void VRT_error(struct req *, unsigned, const char *);
 int VRT_switch_config(const char *);
 
-enum gethdr_e { HDR_REQ, HDR_RESP, HDR_OBJ, HDR_BEREQ, HDR_BERESP };
+const struct gethdr_s *VRT_MkGethdr(struct req *,enum gethdr_e, const char *);
 char *VRT_GetHdr(const struct req *, enum gethdr_e where, const char *);
 void VRT_SetHdr(struct req *, enum gethdr_e where, const char *,
     const char *, ...);

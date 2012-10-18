@@ -169,12 +169,12 @@ vmod_syslog(struct req *req, long fac, const char *fmt, ...)
 }
 
 void __match_proto__(td_std_collect)
-vmod_collect(struct req *req, enum gethdr_e e, const char *h)
+vmod_collect(struct req *req, const struct gethdr_s *hdr)
 {
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	if (e == HDR_REQ)
-		http_CollectHdr(req->http, h);
-	else if (e == HDR_BERESP && req->busyobj != NULL)
-		http_CollectHdr(req->busyobj->beresp, h);
+	if (hdr->where == HDR_REQ)
+		http_CollectHdr(req->http, hdr->what);
+	else if (hdr->where == HDR_BERESP && req->busyobj != NULL)
+		http_CollectHdr(req->busyobj->beresp, hdr->what);
 }
