@@ -337,10 +337,12 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 void									\
 VCL_##func##_method(struct req *req)					\
 {									\
+	char *aws;							\
 									\
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);				\
 	CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);				\
 	AN(req->sp);							\
+	aws = WS_Snapshot(req->wrk->aws);				\
 	req->handling = 0;						\
 	req->cur_method = VCL_MET_ ## upper;				\
 	VSLb(req->vsl, SLT_VCL_call, "%s", #func);			\
@@ -350,6 +352,7 @@ VCL_##func##_method(struct req *req)					\
 	req->cur_method = 0;						\
 	assert((1U << req->handling) & bitmap);				\
 	assert(!((1U << req->handling) & ~bitmap));			\
+	WS_Reset(req->wrk->aws, aws);					\
 }
 
 #include "tbl/vcl_returns.h"
