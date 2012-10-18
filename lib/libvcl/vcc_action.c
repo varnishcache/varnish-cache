@@ -170,7 +170,7 @@ parse_unset(struct vcc *tl)
 		return;
 	}
 	ERRCHK(tl);
-	Fb(tl, 1, "%s0);\n", vp->lname);
+	Fb(tl, 1, "%svrt_magic_string_unset);\n", vp->lname);
 	vcc_NextToken(tl);
 }
 

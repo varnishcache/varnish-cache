@@ -51,6 +51,7 @@
 #include "cache_backend.h"
 
 const void * const vrt_magic_string_end = &vrt_magic_string_end;
+const void * const vrt_magic_string_unset = &vrt_magic_string_unset;
 
 /*--------------------------------------------------------------------*/
 
@@ -224,7 +225,7 @@ VRT_SetHdr(const struct sess *sp , enum gethdr_e where, const char *hdr,
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	hp = vrt_selecthttp(sp, where);
 	va_start(ap, p);
-	if (p == NULL) {
+	if (p == vrt_magic_string_unset) {
 		http_Unset(hp, hdr);
 	} else {
 		b = VRT_String(hp->ws, hdr + 1, p, ap);

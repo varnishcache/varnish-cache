@@ -43,6 +43,7 @@ struct sockaddr_storage;
  */
 
 extern const void * const vrt_magic_string_end;
+extern const void * const vrt_magic_string_unset;
 
 struct vrt_backend_probe {
 	const char	*url;
