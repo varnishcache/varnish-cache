@@ -50,6 +50,7 @@
 #include "vtim.h"
 
 const void * const vrt_magic_string_end = &vrt_magic_string_end;
+const void * const vrt_magic_string_unset = &vrt_magic_string_unset;
 
 /*--------------------------------------------------------------------*/
 
@@ -239,7 +240,7 @@ VRT_SetHdr(struct req *req , enum gethdr_e where, const char *hdr,
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	hp = vrt_selecthttp(req, where);
 	va_start(ap, p);
-	if (p == NULL) {
+	if (p == vrt_magic_string_unset) {
 		http_Unset(hp, hdr);
 	} else {
 		b = VRT_String(hp->ws, hdr + 1, p, ap);
