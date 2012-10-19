@@ -120,7 +120,8 @@ parse_set(struct vcc *tl)
 	vp = vcc_FindVar(tl, tl->t, 1, "cannot be set");
 	ERRCHK(tl);
 	assert(vp != NULL);
-	Fb(tl, 1, "%s", vp->lname);
+	Fb(tl, 1, "%s\n", vp->lname);
+	tl->indent += INDENT;
 	vcc_NextToken(tl);
 	fmt = vp->fmt;
 	for (ap = arith; ap->type != VOID; ap++) {
@@ -129,7 +130,7 @@ parse_set(struct vcc *tl)
 		if (ap->oper != tl->t->tok)
 			continue;
 		if (ap->oper != '=')
-			Fb(tl, 0, "%s %c ", vp->rname, *tl->t->b);
+			Fb(tl, 1, "%s %c ", vp->rname, *tl->t->b);
 		vcc_NextToken(tl);
 		fmt = ap->want;
 		break;
@@ -141,6 +142,7 @@ parse_set(struct vcc *tl)
 	} else {
 		vcc_Expr(tl, fmt);
 	}
+	tl->indent -= INDENT;
 	Fb(tl, 1, ");\n");
 }
 
