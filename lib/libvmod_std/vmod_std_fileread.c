@@ -82,8 +82,8 @@ free_frfile(void *ptr)
 	}
 }
 
-const char * __match_proto__(td_std_fileread)
-vmod_fileread(struct req *req, struct vmod_priv *priv, const char *file_name)
+VCL_STRING __match_proto__(td_std_fileread)
+vmod_fileread(struct req *req, struct vmod_priv *priv, VCL_STRING file_name)
 {
 	struct frfile *frf = NULL;
 	char *s;

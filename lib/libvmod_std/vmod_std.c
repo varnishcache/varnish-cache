@@ -45,8 +45,8 @@
 
 #include "vcc_if.h"
 
-void __match_proto__(td_std_set_ip_tos)
-vmod_set_ip_tos(struct req *req, long tos)
+VCL_VOID __match_proto__(td_std_set_ip_tos)
+vmod_set_ip_tos(struct req *req, VCL_INT tos)
 {
 	int itos = tos;
 
@@ -91,7 +91,7 @@ vmod_updown(struct req *req, int up, const char *s, va_list ap)
 	}
 }
 
-const char * __match_proto__(td_std_toupper)
+VCL_STRING __match_proto__(td_std_toupper)
 vmod_toupper(struct req *req, const char *s, ...)
 {
 	const char *p;
@@ -104,7 +104,7 @@ vmod_toupper(struct req *req, const char *s, ...)
 	return (p);
 }
 
-const char * __match_proto__(td_std_tolower)
+VCL_STRING __match_proto__(td_std_tolower)
 vmod_tolower(struct req *req, const char *s, ...)
 {
 	const char *p;
@@ -117,8 +117,8 @@ vmod_tolower(struct req *req, const char *s, ...)
 	return (p);
 }
 
-double __match_proto__(td_std_random)
-vmod_random(struct req *req, double lo, double hi)
+VCL_REAL __match_proto__(td_std_random)
+vmod_random(struct req *req, VCL_REAL lo, VCL_REAL hi)
 {
 	double a;
 
@@ -129,7 +129,7 @@ vmod_random(struct req *req, double lo, double hi)
 	return (a);
 }
 
-void __match_proto__(td_std_log)
+VCL_VOID __match_proto__(td_std_log)
 vmod_log(struct req *req, const char *fmt, ...)
 {
 	unsigned u;
@@ -150,8 +150,8 @@ vmod_log(struct req *req, const char *fmt, ...)
 	WS_Release(req->ws, 0);
 }
 
-void __match_proto__(td_std_syslog)
-vmod_syslog(struct req *req, long fac, const char *fmt, ...)
+VCL_VOID __match_proto__(td_std_syslog)
+vmod_syslog(struct req *req, VCL_INT fac, const char *fmt, ...)
 {
 	char *p;
 	unsigned u;
@@ -168,7 +168,7 @@ vmod_syslog(struct req *req, long fac, const char *fmt, ...)
 	WS_Release(req->ws, 0);
 }
 
-void __match_proto__(td_std_collect)
+VCL_VOID __match_proto__(td_std_collect)
 vmod_collect(struct req *req, const struct gethdr_s *hdr)
 {
 
