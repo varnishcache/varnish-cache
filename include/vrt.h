@@ -38,6 +38,26 @@ struct director;
 struct VCL_conf;
 struct sockaddr_storage;
 
+/***********************************************************************
+ * This is the central definition of the mapping from VCL types to
+ * C-types.  The python scripts read these from here.
+ */
+
+typedef struct director *		VCL_BACKEND;
+typedef unsigned			VCL_BOOL;
+typedef double				VCL_BYTES;
+typedef double				VCL_DURATION;
+typedef const char *			VCL_ENUM;
+typedef const char *			VCL_HEADER;
+typedef long				VCL_INT;
+typedef struct sockaddr_storage *	VCL_IP;
+typedef double				VCL_REAL;
+typedef const char *			VCL_STRING;
+typedef double				VCL_TIME;
+typedef void				VCL_VOID;
+
+/***********************************************************************/
+
 enum gethdr_e { HDR_REQ, HDR_RESP, HDR_OBJ, HDR_BEREQ, HDR_BERESP };
 
 struct gethdr_s {

@@ -475,20 +475,24 @@ stv_variables = (
 # VCL to C type conversion
 
 vcltypes = {
-	'IP':		"struct sockaddr_storage *",
-	'STRING':	"const char *",
-	'BOOL':		"unsigned",
-	'BACKEND':	"struct director *",
-	'TIME':		"double",
-	'DURATION':	"double",
-	'BYTES':	"double",
-	'INT':		"long",
-	'HEADER':	"const char *",
-	'VOID':		"void",
-	'REAL':		"double",
 	'STRING_LIST':	"void*",
-	'ENUM':		"const char *",
 }
+
+fi = open(buildroot + "/include/vrt.h")
+
+for i in fi:
+	j = i.split();
+	if len(j) < 3:
+		continue
+	if j[0] != "typedef":
+		continue
+	if j[-1][-1] != ";":
+		continue
+	if j[-1][:4] != "VCL_":
+		continue
+	d = " ".join(j[1:-1])
+	vcltypes[j[-1][4:-1]] = d
+fi.close()
 
 #######################################################################
 # Nothing is easily configurable below this line.
