@@ -484,6 +484,10 @@ vcltypes = {
 	'BYTES':	"double",
 	'INT':		"long",
 	'HEADER':	"const char *",
+	'VOID':		"void",
+	'REAL':		"double",
+	'STRING_LIST':	"void*",
+	'ENUM':		"const char *",
 }
 
 #######################################################################
@@ -897,6 +901,19 @@ fo.write("""
 """)
 
 fo.close()
+
+#######################################################################
+ft = open(buildroot + "/include/tbl/vcc_types.h", "w")
+file_header(ft)
+
+ft.write("/*lint -save -e525 -e539 */\n")
+
+i = list(vcltypes.keys())
+i.sort()
+for j in i:
+	ft.write("VCC_TYPE(" + j + ")\n")
+ft.write("/*lint -restore */\n")
+ft.close()
 
 #######################################################################
 
