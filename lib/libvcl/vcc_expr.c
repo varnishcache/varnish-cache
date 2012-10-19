@@ -258,6 +258,7 @@ vcc_new_expr(void)
 	AN(e);
 	e->vsb = VSB_new_auto();
 	e->fmt = VOID;
+	e->constant = EXPR_VAR;
 	return (e);
 }
 
@@ -319,38 +320,27 @@ vcc_expr_edit(enum var_type fmt, const char *p, struct expr *e1,
 
 	e = vcc_new_expr();
 	while (*p != '\0') {
-		if (*p == '\n') {
-			if (!nl)
-				VSB_putc(e->vsb, *p);
-			nl = 1;
-			p++;
-			continue;
-		}
-		nl = 0;
 		if (*p != '\v') {
-			VSB_putc(e->vsb, *p);
+			if (*p != '\n' || !nl)
+				VSB_putc(e->vsb, *p);
+			nl = (*p == '\n');
 			p++;
 			continue;
 		}
 		assert(*p == '\v');
-		p++;
-		switch(*p) {
+		switch(*++p) {
 		case '+': VSB_cat(e->vsb, "\v+"); break;
 		case '-': VSB_cat(e->vsb, "\v-"); break;
 		case '1':
+			AN(e1);
+			VSB_cat(e->vsb, VSB_data(e1->vsb));
+			break;
 		case '2':
-			if (*p == '1') {
-				AN(e1);
-				AN(e1->constant);
-				VSB_cat(e->vsb, VSB_data(e1->vsb));
-			} else {
-				AN(e2);
-				AN(e2->constant);
-				VSB_cat(e->vsb, VSB_data(e2->vsb));
-			}
+			AN(e2);
+			VSB_cat(e->vsb, VSB_data(e2->vsb));
 			break;
 		default:
-			assert(__LINE__ == 0);
+			WRONG("Illegal edit in VCC expression");
 		}
 		p++;
 	}
@@ -360,13 +350,9 @@ vcc_expr_edit(enum var_type fmt, const char *p, struct expr *e1,
 	else if (e2 != NULL)
 		e->t1 = e2->t1;
 	if (e2 != NULL)
-		e->t2 = e2->t1;
+		e->t2 = e2->t2;
 	else if (e1 != NULL)
-		e->t1 = e1->t1;
-	if ((e1 == NULL || vcc_isconst(e1)) && (e2 == NULL || vcc_isconst(e2)))
-		e->constant = EXPR_CONST;
-	else
-		e->constant = EXPR_VAR;
+		e->t2 = e1->t2;
 	vcc_delete_expr(e1);
 	vcc_delete_expr(e2);
 	e->fmt = fmt;
@@ -543,7 +529,6 @@ vcc_Eval_Var(struct vcc *tl, struct expr **e, const struct symbol *sym)
 	ERRCHK(tl);
 	assert(vp != NULL);
 	*e = vcc_mk_expr(vp->fmt, "%s", vp->rname);
-	(*e)->constant = EXPR_VAR;
 	vcc_NextToken(tl);
 }
 
@@ -566,7 +551,6 @@ vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 	SkipToken(tl, '(');
 	p = sym->args;
 	e2 = vcc_mk_expr(vcc_arg_type(&p), "%s(req\v+", sym->cfunc);
-	e2->constant = EXPR_VAR;
 	while (*p != '\0') {
 		e1 = NULL;
 		fmt = vcc_arg_type(&p);
@@ -575,13 +559,11 @@ vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 			AN(r);
 			e1 = vcc_mk_expr(VOID, "&vmod_priv_%.*s",
 			    (int) (r - sym->name), sym->name);
-			e1->constant = EXPR_VAR;
 			p += strlen(p) + 1;
 		} else if (fmt == VOID && !strcmp(p, "PRIV_CALL")) {
 			bprintf(buf, "vmod_priv_%u", tl->nvmodpriv++);
 			Fh(tl, 0, "struct vmod_priv %s;\n", buf);
 			e1 = vcc_mk_expr(VOID, "&%s", buf);
-			e1->constant = EXPR_VAR;
 			p += strlen(p) + 1;
 		} else if (fmt == ENUM) {
 			ExpectErr(tl, ID);
@@ -603,7 +585,6 @@ vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 				return;
 			}
 			e1 = vcc_mk_expr(VOID, "\"%.*s\"", PF(tl->t));
-			e1->constant = EXPR_VAR;
 			while (*p != '\0')
 				p += strlen(p) + 1;
 			p++;
@@ -636,7 +617,6 @@ vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 			}
 			e1 = vcc_mk_expr(VOID, "VRT_MkGethdr(req, %s, \"%s\")",
 			    v->http, v->hdr);
-			e1->constant = EXPR_VAR;
 			if (*p != '\0')
 				SkipToken(tl, ',');
 		} else {
@@ -661,12 +641,10 @@ vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 				SkipToken(tl, ',');
 		}
 		e2 = vcc_expr_edit(e2->fmt, "\v1,\n\v2", e2, e1);
-		e2->constant = EXPR_VAR;
 	}
 	SkipToken(tl, ')');
 	e2 = vcc_expr_edit(e2->fmt, "\v1\n)\v-", e2, NULL);
 	*e = e2;
-	(*e)->constant = EXPR_VAR;
 }
 
 /*--------------------------------------------------------------------
@@ -830,7 +808,6 @@ vcc_expr_string_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 	struct expr  *e2;
 	enum var_type f2;
 
-	AN((*e)->constant);
 	f2 = (*e)->fmt;
 
 	while (tl->t->tok == '+') {
@@ -842,9 +819,6 @@ vcc_expr_string_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 		ERRCHK(tl);
 		assert(e2->fmt == STRING || e2->fmt == STRING_LIST);
 
-		AN((*e)->constant);
-		AN(e2->constant);
-
 		if (vcc_isconst(*e) && vcc_isconst(e2)) {
 			assert((*e)->fmt == STRING);
 			assert(e2->fmt == STRING);
@@ -855,7 +829,7 @@ vcc_expr_string_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 			assert((*e)->fmt == STRING_LIST);
 			assert(e2->fmt == STRING);
 			*e = vcc_expr_edit(STRING_LIST, "\v1\n\v2", *e, e2);
-			(*e)->constant |= EXPR_STR_CONST;
+			(*e)->constant = EXPR_VAR | EXPR_STR_CONST;
 		} else if (e2->fmt == STRING && vcc_isconst(e2)) {
 			*e = vcc_expr_edit(STRING_LIST, "\v1,\n\v2", *e, e2);
 			(*e)->constant = EXPR_VAR | EXPR_STR_CONST;
@@ -864,16 +838,12 @@ vcc_expr_string_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 			(*e)->constant = EXPR_VAR;
 		}
 	}
-	AN((*e)->constant);
-	if (fmt != STRING_LIST && (*e)->fmt == STRING_LIST) {
+	if (fmt != STRING_LIST && (*e)->fmt == STRING_LIST)
 		*e = vcc_expr_edit(STRING,
 		    "\v+VRT_ReqString(req,\n\v1,\nvrt_magic_string_end)",
 		    *e, NULL);
-		(*e)->constant = EXPR_VAR;
-	} if (fmt == STRING_LIST && (*e)->fmt == STRING) {
+	if (fmt == STRING_LIST && (*e)->fmt == STRING)
 		(*e)->fmt = STRING_LIST;
-	}
-	AN((*e)->constant);
 }
 
 static void
