@@ -297,7 +297,7 @@ vsc_build_pt_list(struct VSM_data *vd)
 
 	vsc_delete_pts(vsc);
 
-	VSM_FOREACH_SAFE(&vf, vd) {
+	VSM_FOREACH(&vf, vd) {
 		if (strcmp(vf.chunk->class, VSC_CLASS))
 			continue;
 		/*lint -save -e525 -e539 */

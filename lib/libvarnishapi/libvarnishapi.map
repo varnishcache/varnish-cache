@@ -89,5 +89,6 @@ LIBVARNISHAPI_1.3 {
   global:
 	# Functions:
 	VSM_Abandoned;
+	VSM_ResetError;
 	# Variables:
 } LIBVARNISHAPI_1.0;

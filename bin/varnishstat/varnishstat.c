@@ -290,6 +290,10 @@ main(int argc, char * const *argv)
 		}
 	}
 
+	if (VSM_Open(vd)) {
+		fprintf(stderr, "%s\n", VSM_Error(vd));
+		exit(1);
+	}
 	VSC_C_main = VSC_Main(vd);
 	AN(VSC_C_main);
 

@@ -35,6 +35,8 @@
 #ifndef VAPI_VSM_H_INCLUDED
 #define VAPI_VSM_H_INCLUDED
 
+#include "vsm_int.h"
+
 struct VSM_chunk;
 struct VSM_data;
 
@@ -47,6 +49,9 @@ struct VSM_fantom {
 	void			*b;		/* first byte of payload */
 	void			*e;		/* first byte past payload */
 	uintptr_t		priv;		/* VSM private */
+	char			class[VSM_MARKER_LEN];
+	char			type[VSM_MARKER_LEN];
+	char			ident[VSM_IDENT_LEN];
 };
 
 /*---------------------------------------------------------------------
@@ -75,6 +80,11 @@ const char *VSM_Error(const struct VSM_data *vd);
 	 * Return the latest error message.
 	 */
 
+void VSM_ResetError(struct VSM_data *vd);
+	/*
+	 * Reset any error message.
+	 */
+
 #define VSM_n_USAGE	"[-n varnish_name]"
 
 int VSM_n_Arg(struct VSM_data *vd, const char *n_arg);
@@ -94,9 +104,9 @@ const char *VSM_Name(const struct VSM_data *vd);
 int VSM_Open(struct VSM_data *vd);
 	/*
 	 * Attempt to open and map the VSM file.
-	 * If diag is non-zero, diagnostics are emitted.
+	 *
 	 * Returns:
-	 *	0 on success
+	 *	0 on success, or the VSM log was already open
 	 *	<0 on failure, VSM_Error() returns diagnostic string
 	 */
 
@@ -121,7 +131,7 @@ void VSM_Close(struct VSM_data *vd);
 void VSM__iter0(const struct VSM_data *vd, struct VSM_fantom *vf);
 int VSM__itern(const struct VSM_data *vd, struct VSM_fantom *vf);
 
-#define VSM_FOREACH_SAFE(vf, vd) \
+#define VSM_FOREACH(vf, vd) \
     for(VSM__iter0((vd), (vf)); VSM__itern((vd), (vf));)
 	/*
 	 * Iterate over all chunks in shared memory

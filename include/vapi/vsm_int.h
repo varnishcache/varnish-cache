@@ -97,20 +97,22 @@
 #define VSM_INT_H_INCLUDED
 
 #define VSM_FILENAME		"_.vsm"
+#define VSM_MARKER_LEN	8
+#define VSM_IDENT_LEN	128
 
 struct VSM_chunk {
 #define VSM_CHUNK_MARKER	"VSMCHUNK"
-	char			marker[8];
+	char			marker[VSM_MARKER_LEN];
 	ssize_t			len;		/* Incl VSM_chunk */
 	ssize_t			next;		/* Offset in shmem */
-	char			class[8];
-	char			type[8];
-	char			ident[128];
+	char			class[VSM_MARKER_LEN];
+	char			type[VSM_MARKER_LEN];
+	char			ident[VSM_IDENT_LEN];
 };
 
 struct VSM_head {
 #define VSM_HEAD_MARKER		"VSMHEAD0"	/* Incr. as version# */
-	char			marker[8];
+	char			marker[VSM_MARKER_LEN];
 	ssize_t			hdrsize;
 	ssize_t			shm_size;
 	ssize_t			first;		/* Offset, first chunk */
