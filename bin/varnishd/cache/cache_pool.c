@@ -163,6 +163,13 @@ pool_accept(struct worker *wrk, void *arg)
 		wrk2->task.func = SES_pool_accept_task;
 		wrk2->task.priv = pp->sesspool;
 		AZ(pthread_cond_signal(&wrk2->cond));
+
+		/*
+		 * We were able to hand off, so release this threads VCL
+		 * reference (if any) so we don't hold on to discarded VCLs.
+		 */
+		if (wrk->vcl != NULL)
+			VCL_Rel(&wrk->vcl);
 	}
 }
 
