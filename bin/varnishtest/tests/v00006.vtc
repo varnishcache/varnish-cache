@@ -1,23 +1,32 @@
 varnishtest "VCL: Test backend retirement"
+#
+# This case is quite sensitive to ordering of the worker threads because
+# it has so little actual traffic.  In a real world setting, this should
+# not be an issue.
+#
 
 # First do one request to get a work-thread that holds a VCL reference
 
 server s1 {
 	rxreq
+	expect req.url == "/bar"
 	txresp
 } -start
 
 # Only one pool, to avoid getting more than one work thread
-varnish v1 -arg "-p thread_pools=1" -vcl+backend {
-} -start
+varnish v1 -arg "-p thread_pools=1" -vcl+backend { } -start
+
+# Give the varnishd a chance to start and create workers etc.
+# NB: This is important for to avoid mis-ordering of the workers.
+delay 1
 
 client c1 {
-	txreq
+	txreq -url /bar
 	rxresp
-} -start
+	expect resp.status == 200
+} -run
 
 server s1 -wait
-client c1 -wait
 
 varnish v1 -expect n_backend == 1
 varnish v1 -expect n_vcl_avail == 1
@@ -27,6 +36,7 @@ varnish v1 -expect n_vcl_discard == 0
 
 server s2 {
 	rxreq
+	expect req.url == "/foo"
 	txresp
 } -start
 
@@ -59,7 +69,10 @@ varnish v1 -expect n_vcl_discard == 1
 client c1 {
 	txreq -url /foo
 	rxresp
+	expect resp.status == 200
 } -run
+
+server s2 -wait
 
 # The workthread should have released its VCL reference now
 # but we need to tickle the CLI to notice
