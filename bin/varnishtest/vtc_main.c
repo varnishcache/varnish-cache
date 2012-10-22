@@ -405,6 +405,9 @@ main(int argc, char * const *argv)
 		if (!VTAILQ_EMPTY(&tst_head) && njob < npar) {
 			start_test();
 			njob++;
+			/* Stagger ramp-up */
+			if (njob < npar)
+				(void)usleep(random() % 100000L);
 			i = 1;
 			continue;
 		}
