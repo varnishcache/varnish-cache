@@ -78,37 +78,40 @@ static int f_flag = 0;
 
 static unsigned maxfieldlen = 0;
 
-static void
-accumulate(uint32_t * const p)
+static int
+accumulate(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
+    unsigned spec, const char *ptr, uint64_t bm)
 {
 	struct top *tp, *tp2;
 	const char *q;
-	unsigned int u, l;
-	uint8_t t;
+	unsigned int u;
 	int i;
 
+	(void)priv;
+	(void)fd;
+	(void)spec;
+	(void)bm;
 	// fprintf(stderr, "%p %08x %08x\n", p, p[0], p[1]);
 
 	u = 0;
-	q = VSL_DATA(p);
-	l = VSL_LEN(p);
-	t = VSL_TAG(p);
-	for (i = 0; i < l; i++, q++) {
+	q = ptr;
+	for (i = 0; i < len; i++, q++) {
 		if (f_flag && (*q == ':' || isspace(*q))) {
-			l = q - VSL_DATA(p);
+			len = q - ptr;
 			break;
 		}
 		u += *q;
 	}
 
+	AZ(pthread_mutex_lock(&mtx));
 	VTAILQ_FOREACH(tp, &top_head, list) {
 		if (tp->hash != u)
 			continue;
-		if (tp->tag != t)
+		if (tp->tag != tag)
 			continue;
-		if (tp->clen != l)
+		if (tp->clen != len)
 			continue;
-		if (memcmp(VSL_DATA(p), tp->rec_data, l))
+		if (memcmp(ptr, tp->rec_data, len))
 			continue;
 		tp->count += 1.0;
 		break;
@@ -117,14 +120,14 @@ accumulate(uint32_t * const p)
 		ntop++;
 		tp = calloc(sizeof *tp, 1);
 		assert(tp != NULL);
-		tp->rec_data = calloc(l + 1, 1);
+		tp->rec_data = calloc(len + 1, 1);
 		assert(tp->rec_data != NULL);
 		tp->hash = u;
 		tp->count = 1.0;
-		tp->clen = l;
-		tp->tag = t;
-		memcpy(tp->rec_data, VSL_DATA(p), l);
-		tp->rec_data[l] = '\0';
+		tp->clen = len;
+		tp->tag = tag;
+		memcpy(tp->rec_data, ptr, len);
+		tp->rec_data[len] = '\0';
 		VTAILQ_INSERT_TAIL(&top_head, tp, list);
 	}
 	while (1) {
@@ -141,6 +144,9 @@ accumulate(uint32_t * const p)
 		VTAILQ_REMOVE(&top_head, tp2, list);
 		VTAILQ_INSERT_BEFORE(tp, tp2, list);
 	}
+	AZ(pthread_mutex_unlock(&mtx));
+
+	return (0);
 }
 
 static void
@@ -190,22 +196,15 @@ static void *
 accumulate_thread(void *arg)
 {
 	struct VSM_data *vd = arg;
-	uint32_t *p;
 	int i;
 
 	for (;;) {
 
-		i = VSL_NextSLT(vd, &p, NULL);
+		i = VSL_Dispatch(vd, accumulate, NULL);
 		if (i < 0)
 			break;
-		if (i == 0) {
-			AZ(usleep(50000));
-			continue;
-		}
-
-		AZ(pthread_mutex_lock(&mtx));
-		accumulate(p);
-		AZ(pthread_mutex_unlock(&mtx));
+		if (i == 0)
+			usleep(50000);
 	}
 	return (arg);
 }
@@ -290,10 +289,8 @@ dump(void)
 static void
 do_once(struct VSM_data *vd)
 {
-	uint32_t *p;
-
-	while (VSL_NextSLT(vd, &p, NULL) > 0)
-		accumulate(p);
+	while (VSL_Dispatch(vd, accumulate, NULL) > 0)
+		;
 	dump();
 }
 
