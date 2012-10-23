@@ -50,19 +50,19 @@ vcc_Var_Wildcard(struct vcc *tl, const struct token *t, const struct symbol *wc)
 	v = TlAlloc(tl, sizeof *v);
 	AN(v);
 
+	assert(vh->fmt == HEADER);
 	v->name = TlDupTok(tl, t);
 	v->r_methods = vh->r_methods;
 	v->w_methods = vh->w_methods;
-	v->fmt = STRING;
+	v->fmt = vh->fmt;
 	v->http = vh->http;
 	l = strlen(v->name + vh->len) + 1;
 
 	bprintf(buf, "\\%03o%s:", (unsigned)l, v->name + vh->len);
 	v->hdr = TlDup(tl, buf);
-	bprintf(buf, "VRT_GetHdr(req, %s, \"%s\")", v->http, v->hdr);
+	bprintf(buf, "%s\"%s\")", vh->rname, v->hdr);
 	v->rname = TlDup(tl, buf);
-
-	bprintf(buf, "VRT_SetHdr(req, %s, \"%s\", ", v->http, v->hdr);
+	bprintf(buf, "%s\"%s\"), ", vh->lname, v->hdr);
 	v->lname = TlDup(tl, buf);
 
 	sym = VCC_AddSymbolTok(tl, t, SYM_VAR);
@@ -108,7 +108,6 @@ vcc_FindVar(struct vcc *tl, const struct token *t, int wr_access,
 		} else {
 			vcc_AddUses(tl, t, v->r_methods, use);
 		}
-		assert(v->fmt != HEADER);
 		return (v);
 	}
 	VSB_printf(tl->sb, "Unknown variable ");

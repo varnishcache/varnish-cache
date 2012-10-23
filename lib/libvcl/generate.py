@@ -158,7 +158,7 @@ sp_variables = (
 		'const struct req *'
 	),
 	('req.http.',
-		'HDR_REQ',
+		'HEADER',
 		( 'proc',),
 		( 'proc',),
 		'const struct req *'
@@ -254,7 +254,7 @@ sp_variables = (
 		'const struct req *'
 	),
 	('bereq.http.',
-		'HDR_BEREQ',
+		'HEADER',
 		( 'pipe', 'pass', 'miss', 'fetch',),
 		( 'pipe', 'pass', 'miss', 'fetch',),
 		'const struct req *'
@@ -302,7 +302,7 @@ sp_variables = (
 		'const struct req *'
 	),
 	('beresp.http.',
-		'HDR_BERESP',
+		'HEADER',
 		( 'fetch',),
 		( 'fetch',),
 		'const struct req *'
@@ -404,7 +404,7 @@ sp_variables = (
 		'const struct req *'
 	),
 	('obj.http.',
-		'HDR_OBJ',
+		'HEADER',
 		( 'hit', 'error',),
 		( 'error',),		# XXX ?
 		'const struct req *'
@@ -452,7 +452,7 @@ sp_variables = (
 		'const struct req *'
 	),
 	('resp.http.',
-		'HDR_RESP',
+		'HEADER',
 		( 'deliver',),
 		( 'deliver',),
 		'const struct req *'
@@ -787,7 +787,7 @@ fo.close()
 
 def restrict(fo, spec):
 	if len(spec) == 0:
-		fo.write("\t    0,\n")
+		fo.write("\t\t0,\n")
 		return
 	if spec[0] == 'all':
 		spec = vcls
@@ -803,7 +803,7 @@ def restrict(fo, spec):
 			fo.write("\n")
 			n = 0
 		if n == 0:
-			fo.write("\t    ")
+			fo.write("\t\t")
 		n += 1
 		fo.write(p + "VCL_MET_" + j.upper())
 		p = " | "
@@ -830,38 +830,38 @@ const struct var vcc_vars[] = {
 
 for i in sp_variables:
 	typ = i[1]
-	if typ[:4] == "HDR_":
-		typ = "HEADER"
-
 	cnam = i[0].replace(".", "_")
 	ctyp = vcltypes[typ]
 
 	fo.write("\t{ \"%s\", %s, %d,\n" % (i[0], typ, len(i[0])))
 
-	if len(i[2]) > 0:
-		fo.write('\t    "VRT_r_%s(req)",\n' % cnam)
-		if typ != "HEADER":
-			fh.write(ctyp + " VRT_r_%s(const %s);\n" % (cnam, i[4]))
-	else:
+	if len(i[2]) == 0:
 		fo.write('\t    NULL,\t/* No reads allowed */\n')
+	elif typ == "HEADER":
+		fo.write('\t    "VRT_MkGethdr(req, HDR_')
+		fo.write(i[0].split(".")[0].upper())
+		fo.write(', ",\n')
+	else:
+		fo.write('\t    "VRT_r_%s(req)",\n' % cnam)
+		fh.write(ctyp + " VRT_r_%s(const %s);\n" % (cnam, i[4]))
 	restrict(fo, i[2])
 
-	if len(i[3]) > 0:
-		fo.write('\t    "VRT_l_%s(req, ",\n' % cnam)
-		if typ != "HEADER":
-			fh.write("void VRT_l_%s(%s, " % (cnam, i[4]))
-			if typ != "STRING":
-				fh.write(ctyp + ");\n")
-			else:
-				fh.write(ctyp + ", ...);\n")
-	else:
+	if len(i[3]) == 0:
 		fo.write('\t    NULL,\t/* No writes allowed */\n')
+	elif typ == "HEADER":
+		fo.write('\t    "VRT_SetHdr(req, VRT_MkGethdr(req, HDR_')
+		fo.write(i[0].split(".")[0].upper())
+		fo.write(', ",\n')
+	else:
+		fo.write('\t    "VRT_l_%s(req, ",\n' % cnam)
+		fh.write("void VRT_l_%s(%s, " % (cnam, i[4]))
+		if typ != "STRING":
+			fh.write(ctyp + ");\n")
+		else:
+			fh.write(ctyp + ", ...);\n")
 	restrict(fo, i[3])
 
-	if typ == "HEADER":
-		fo.write('\t    "%s",\n' % i[1])
-	else:
-		fo.write('\t    0,\n')		# XXX: shoule be NULL
+	fo.write('\t    0,\n')		# XXX: shoule be NULL
 	fo.write("\t},\n")
 
 fo.write("\t{ NULL }\n};\n")

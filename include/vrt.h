@@ -187,9 +187,8 @@ void VRT_error(struct req *, unsigned, const char *);
 int VRT_switch_config(const char *);
 
 const struct gethdr_s *VRT_MkGethdr(struct req *,enum gethdr_e, const char *);
-char *VRT_GetHdr(const struct req *, enum gethdr_e where, const char *);
-void VRT_SetHdr(struct req *, enum gethdr_e where, const char *,
-    const char *, ...);
+char *VRT_GetHdr(const struct req *, const struct gethdr_s *);
+void VRT_SetHdr(struct req *, const struct gethdr_s *, const char *, ...);
 void VRT_handling(struct req *, unsigned hand);
 
 void VRT_hashdata(struct req *, const char *str, ...);

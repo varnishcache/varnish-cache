@@ -137,7 +137,9 @@ parse_set(struct vcc *tl)
 	}
 	if (ap->type == VOID)
 		SkipToken(tl, ap->oper);
-	if (fmt == STRING) {
+	if (fmt == HEADER) {
+		vcc_Expr(tl, STRING_LIST);
+	} else if (fmt == STRING) {
 		vcc_Expr(tl, STRING_LIST);
 	} else {
 		vcc_Expr(tl, fmt);
@@ -153,12 +155,13 @@ parse_unset(struct vcc *tl)
 {
 	const struct var *vp;
 
+	/* XXX: Wrong, should use VCC_Expr(HEADER) */
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
 	vp = vcc_FindVar(tl, tl->t, 1, "cannot be unset");
 	ERRCHK(tl);
 	assert(vp != NULL);
-	if (vp->fmt != STRING || vp->http == NULL) {
+	if (vp->fmt != HEADER) {
 		VSB_printf(tl->sb,
 		    "Only http header variables can be unset.\n");
 		vcc_ErrWhere(tl, tl->t);
