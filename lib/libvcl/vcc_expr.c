@@ -877,6 +877,7 @@ vcc_expr_strfold(struct vcc *tl, struct expr **e, enum var_type fmt)
 {
 
 	vcc_expr_add(tl, e, fmt);
+	ERRCHK(tl);
 
 	if (fmt != STRING_LIST && (*e)->fmt == STRING_LIST)
 		*e = vcc_expr_edit(STRING,
