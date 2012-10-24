@@ -819,22 +819,18 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 		return;
 
 	switch(f2) {
-	case STRING:		break;
-	case STRING_LIST:	break;
+	case STRING:
+	case STRING_LIST:
+		vcc_expr_string_add(tl, e);
+		return;
 	case INT:		break;
 	case TIME:		break;
 	case DURATION:		break;
 	case BYTES:		break;
-	case HEADER:		break;
 	default:
 		VSB_printf(tl->sb, "Operator %.*s not possible on type %s.\n",
 		    PF(tl->t), vcc_Type(f2));
 		vcc_ErrWhere(tl, tl->t);
-		return;
-	}
-
-	if (f2 == STRING || f2 == STRING_LIST) {
-		vcc_expr_string_add(tl, e);
 		return;
 	}
 
