@@ -99,91 +99,130 @@ varnish v1 -vcl {
 }
 
 varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = "foo" - "bar";
 	}
 }
 
 varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = now + "foo";
 	}
 }
 
 varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = now + now;
 	}
 }
 
 varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = now + 1;
 	}
 }
 
 varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = 1 + "foo";
 	}
 }
 
 varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = 1 + now;
 	}
 }
 
 varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = 1 + 1s;
 	}
 }
 
 varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = 1s;
 	}
 }
 
 varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = 1s + 1;
 	}
 }
 
 varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = 1s + now;
 	}
 }
 
 varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = 1s + "foo";
 	}
 }
 
 varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = "foo" + 1s;
 	}
 }
 
 varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.ttl = 1s + 1;
 	}
 }
 
 varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.ttl = 1s + now;
 	}
 }
 
 varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.ttl = 1s + "foo";
+	}
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch {
+		if (req.url || beresp.ttl) {
+		}
+	}
+}
+
+varnish v1 -badvcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch {
+		if (req.url && beresp.ttl) {
+		}
+	}
+}
+
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_fetch {
+		if (!req.url) {
+		}
 	}
 }
