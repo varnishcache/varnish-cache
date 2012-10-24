@@ -33,6 +33,7 @@
 #include <string.h>
 
 #include "vcc_compile.h"
+#include "vct.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -42,8 +43,10 @@ vcc_Var_Wildcard(struct vcc *tl, const struct token *t, const struct symbol *wc)
 	struct symbol *sym;
 	struct var *v;
 	const struct var *vh;
-	int l;
+	int l, i;
+	char c;
 	char buf[258];
+	char cnam[256];
 
 	vh = wc->var;
 
@@ -55,14 +58,27 @@ vcc_Var_Wildcard(struct vcc *tl, const struct token *t, const struct symbol *wc)
 	v->r_methods = vh->r_methods;
 	v->w_methods = vh->w_methods;
 	v->fmt = vh->fmt;
-	v->http = vh->http;
-	l = strlen(v->name + vh->len) + 1;
 
-	bprintf(buf, "\\%03o%s:", (unsigned)l, v->name + vh->len);
-	v->hdr = TlDup(tl, buf);
-	bprintf(buf, "%s\"%s\")", vh->rname, v->hdr);
+	/* Create a C-name version of the header name */
+	l = strlen(v->name + vh->len) + 1;
+	for (i = 0; i < l - 1; i++) {
+		c = *(v->name + vh->len + i);
+		if (vct_isalpha(c) || vct_isdigit(c))
+			cnam[i] = c;
+		else
+			cnam[i] = '_';
+	}
+	cnam[i] = '\0';
+
+	/* Create the static identifier */
+	Fh(tl, 0, "static const struct gethdr_s VGC_%s_%s =\n",
+	    vh->rname, cnam);
+	Fh(tl, 0, "    { %s, \"\\%03o%s:\"};\n",
+	    vh->rname, (unsigned)l, v->name + vh->len);
+
+	bprintf(buf, "&VGC_%s_%s", vh->rname, cnam);
 	v->rname = TlDup(tl, buf);
-	bprintf(buf, "%s\"%s\"), ", vh->lname, v->hdr);
+	bprintf(buf, "VRT_SetHdr(req, %s, ", v->rname);
 	v->lname = TlDup(tl, buf);
 
 	sym = VCC_AddSymbolTok(tl, t, SYM_VAR);

@@ -205,8 +205,6 @@ struct var {
 	unsigned		r_methods;
 	const char		*lname;
 	unsigned		w_methods;
-	const char		*http;
-	const char		*hdr;
 };
 
 struct method {

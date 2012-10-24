@@ -838,9 +838,9 @@ for i in sp_variables:
 	if len(i[2]) == 0:
 		fo.write('\t    NULL,\t/* No reads allowed */\n')
 	elif typ == "HEADER":
-		fo.write('\t    "VRT_MkGethdr(req, HDR_')
+		fo.write('\t    "HDR_')
 		fo.write(i[0].split(".")[0].upper())
-		fo.write(', ",\n')
+		fo.write('",\n')
 	else:
 		fo.write('\t    "VRT_r_%s(req)",\n' % cnam)
 		fh.write(ctyp + " VRT_r_%s(const %s);\n" % (cnam, i[4]))
@@ -849,9 +849,9 @@ for i in sp_variables:
 	if len(i[3]) == 0:
 		fo.write('\t    NULL,\t/* No writes allowed */\n')
 	elif typ == "HEADER":
-		fo.write('\t    "VRT_SetHdr(req, VRT_MkGethdr(req, HDR_')
+		fo.write('\t    "HDR_')
 		fo.write(i[0].split(".")[0].upper())
-		fo.write(', ",\n')
+		fo.write('",\n')
 	else:
 		fo.write('\t    "VRT_l_%s(req, ",\n' % cnam)
 		fh.write("void VRT_l_%s(%s, " % (cnam, i[4]))
@@ -861,7 +861,6 @@ for i in sp_variables:
 			fh.write(ctyp + ", ...);\n")
 	restrict(fo, i[3])
 
-	fo.write('\t    0,\n')		# XXX: shoule be NULL
 	fo.write("\t},\n")
 
 fo.write("\t{ NULL }\n};\n")
