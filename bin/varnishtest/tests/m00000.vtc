@@ -29,14 +29,14 @@ client c1 {
 	expect resp.http.bar == "foo"
 } -run
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Wrong enum value.  Expected one of:} {
 	import debug from "${topbuild}/lib/libvmod_debug/.libs/libvmod_debug.so" ;
 	sub vcl_deliver {
 		set resp.http.who = debug.author(jfk);
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Wrong argument type.  Expected REAL.  Got STRING.} {
 	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
 	sub vcl_deliver {
 		set resp.http.who = std.random("foo", "bar");

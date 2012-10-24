@@ -26,6 +26,6 @@ client c1 {
 	expect resp.http.bar == "foo"
 } -run
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Expected 'from path...'} {
 	import std to;
 }

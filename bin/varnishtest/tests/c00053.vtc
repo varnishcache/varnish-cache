@@ -13,7 +13,7 @@ varnish v1 -vcl+backend {
 
 varnish v1 -cliok "param.set vcc_unsafe_path off"
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Include path is unsafe} {
 	backend default {
 		.host = "${s1_sock}";
 	}

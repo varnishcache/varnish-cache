@@ -15,14 +15,14 @@ varnish v1 -vcl+backend {
 
 varnish v1 -cliok "param.set vcc_allow_inline_c false"
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Inline-C not allowed} {
 	backend default {
 		.host = "${s1_sock}";
 	}
 	C{ getpid(); }C
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Inline-C not allowed} {
 	backend default {
 		.host = "${s1_sock}";
 	}
