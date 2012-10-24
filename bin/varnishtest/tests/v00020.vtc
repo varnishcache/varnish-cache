@@ -7,9 +7,20 @@ varnish v1 -vcl {
 	}C
 }
 
-varnish v1 -badvcl { 0; }
+varnish v1 -errvcl {Found: '0' at} { 0; }
 
-varnish v1 -badvcl " sub vcl_recv { { } { "
+# The next test issues a quite confusing error message:
+#   Expected an action, 'if', '{' or '}'\n
+#   ('Default' Line 42 Pos 1)\n
+#   sub vcl_recv {\n
+#   ###-----------\n
+#   \n
+# It's actually complaining about the first token in
+# the default.vcl which is appended after the proffered
+# VCLs tokenstream.
+# XXX: A better error message would be desirable
+
+varnish v1 -errvcl {Expected an action, 'if', } " sub vcl_recv { { } { "
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
@@ -23,7 +34,7 @@ varnish v1 -vcl {
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Comparison of different types: INT '!=' STRING} {
 	sub vcl_recv {
 		if (!req.restarts != req.url) {
 			set req.http.foo = "foo";
@@ -32,13 +43,14 @@ varnish v1 -badvcl {
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Symbol not found: 'vcl_recv' (expected type STRING_LIST)} {
 	sub vcl_recv {
 		set req.http.foo = vcl_recv;
 	}
 }
 
-varnish v1 -badvcl {
+# XXX: not obvious if this actually fails for the desired reason ?
+varnish v1 -errvcl {Unknown token '-' when looking for DURATION} {
 	sub vcl_recv {
 		if (req.grace < -3s || req.grace) {
 			set req.http.foo = vcl_recv;
@@ -46,7 +58,7 @@ varnish v1 -badvcl {
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {'&&' must be followed by BOOL, found DURATION.} {
 	sub vcl_recv {
 		if (req.grace < 3s && req.grace) {
 			set req.http.foo = vcl_recv;
@@ -54,26 +66,26 @@ varnish v1 -badvcl {
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Operator * not possible on type STRING.} {
 	sub vcl_recv {
 		set req.http.foo = "bla" * "foo";
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {DURATION + INT not possible.} {
 	sub vcl_fetch {
 		set req.http.foo = req.grace + beresp.status;
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {'!' must be followed by BOOL, found DURATION.} {
 	sub vcl_fetch {
 		if (! req.grace) {
 		}
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Operator + not possible on type BOOL.} {
 	sub vcl_fetch {
 		if (beresp.do_gzip + beresp.do_gunzip) {
 		}
@@ -98,112 +110,121 @@ varnish v1 -vcl {
 	}
 }
 
-varnish v1 -badvcl {
+# XXX: not the most clear error message
+varnish v1 -errvcl {Expected ';' got '-'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = "foo" - "bar";
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {TIME + STRING not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = now + "foo";
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {TIME + TIME not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = now + now;
 	}
 }
 
-varnish v1 -badvcl {
+# XXX: error message should say something about DURATION
+varnish v1 -errvcl {Expected ID got ';'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = now + 1;
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {INT + STRING not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = 1 + "foo";
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {INT + TIME not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = 1 + now;
 	}
 }
 
-varnish v1 -badvcl {
+# XXX: error message should spot DURATION
+varnish v1 -errvcl {Expected ';' got 's'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = 1 + 1s;
 	}
 }
 
-varnish v1 -badvcl {
+# XXX: should spot DURATION
+varnish v1 -errvcl {Expected ';' got 's'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = 1s;
 	}
 }
 
-varnish v1 -badvcl {
+# XXX: should spot DURATION
+varnish v1 -errvcl {Expected ';' got 's'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = 1s + 1;
 	}
 }
 
-varnish v1 -badvcl {
+# XXX: should spot DURATION
+varnish v1 -errvcl {Expected ';' got 's'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = 1s + now;
 	}
 }
 
-varnish v1 -badvcl {
+# XXX: should spot DURATION
+varnish v1 -errvcl {Expected ';' got 's'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = 1s + "foo";
 	}
 }
 
-varnish v1 -badvcl {
+# XXX: should spot DURATION
+varnish v1 -errvcl {Expected ';' got 's'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = "foo" + 1s;
 	}
 }
 
-varnish v1 -badvcl {
+# XXX: should spot DURATION
+varnish v1 -errvcl {Expected ID got ';'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.ttl = 1s + 1;
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {DURATION + TIME not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.ttl = 1s + now;
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {DURATION + STRING not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.ttl = 1s + "foo";
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {'||' must be followed by BOOL, found DURATION.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_fetch {
 		if (req.url || beresp.ttl) {
@@ -211,7 +232,7 @@ varnish v1 -badvcl {
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {'&&' must be followed by BOOL, found DURATION.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_fetch {
 		if (req.url && beresp.ttl) {
