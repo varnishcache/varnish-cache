@@ -91,8 +91,7 @@ vcc_ParseImport(struct vcc *tl)
 			return;
 		}
 		if (!vcc_IdIs(tl->t, "from")) {
-			VSB_printf(tl->sb, "Expected 'from path...' at ");
-			vcc_ErrToken(tl, tl->t);
+			VSB_printf(tl->sb, "Expected 'from path...'\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}

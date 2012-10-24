@@ -160,7 +160,7 @@ vcc_Compound(struct vcc *tl)
 				vcc_NextToken(tl);
 			} else {
 				VSB_printf(tl->sb,
-				    "Inline-C not allowed");
+				    "Inline-C not allowed\n");
 				vcc_ErrWhere(tl, tl->t);
 			}
 			break;
@@ -287,7 +287,7 @@ vcc_Parse(struct vcc *tl)
 				vcc_NextToken(tl);
 			} else {
 				VSB_printf(tl->sb,
-				    "Inline-C not allowed");
+				    "Inline-C not allowed\n");
 				vcc_ErrWhere(tl, tl->t);
 			}
 			break;
