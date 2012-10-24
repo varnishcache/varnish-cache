@@ -154,26 +154,7 @@ vcc_DoubleVal(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 void
-vcc_RTimeVal(struct vcc *tl, double *d)
-{
-	double v, sc;
-	int sign = 1;
-
-	if (tl->t->tok == '-') {
-		sign *= -1;
-		vcc_NextToken(tl);
-	}
-	v = vcc_DoubleVal(tl);
-	ERRCHK(tl);
-	ExpectErr(tl, ID);
-	sc = vcc_TimeUnit(tl);
-	*d = sign * v * sc;
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-vcc_TimeVal(struct vcc *tl, double *d)
+vcc_Duration(struct vcc *tl, double *d)
 {
 	double v, sc;
 
@@ -318,6 +299,7 @@ vcc_expr_edit(enum var_type fmt, const char *p, struct expr *e1,
 	struct expr *e;
 	int nl = 1;
 
+	AN(e1);
 	e = vcc_new_expr();
 	while (*p != '\0') {
 		if (*p != '\v') {
@@ -332,7 +314,6 @@ vcc_expr_edit(enum var_type fmt, const char *p, struct expr *e1,
 		case '+': VSB_cat(e->vsb, "\v+"); break;
 		case '-': VSB_cat(e->vsb, "\v-"); break;
 		case '1':
-			AN(e1);
 			VSB_cat(e->vsb, VSB_data(e1->vsb));
 			break;
 		case '2':
@@ -345,14 +326,10 @@ vcc_expr_edit(enum var_type fmt, const char *p, struct expr *e1,
 		p++;
 	}
 	AZ(VSB_finish(e->vsb));
-	if (e1 != NULL)
-		e->t1 = e1->t1;
-	else if (e2 != NULL)
-		e->t1 = e2->t1;
+	e->t1 = e1->t1;
+	e->t2 = e1->t2;
 	if (e2 != NULL)
 		e->t2 = e2->t2;
-	else if (e1 != NULL)
-		e->t2 = e1->t2;
 	vcc_delete_expr(e1);
 	vcc_delete_expr(e2);
 	e->fmt = fmt;
@@ -392,7 +369,7 @@ vcc_expr_fmt(struct vsb *d, int ind, const struct expr *e1)
 		case '+': ind += 2; break;
 		case '-': ind -= 2; break;
 		default:
-			assert(__LINE__ == 0);
+			WRONG("Illegal format in VCC expression");
 		}
 		p++;
 	}
@@ -491,7 +468,7 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym)
 		return;
 	if (e2->fmt != STRING)
 		vcc_expr_tostring(&e2, STRING);
-	*e = vcc_expr_edit(STRING, "\v1,\n\v2)\v-",*e, e2);
+	*e = vcc_expr_edit(STRING, "\v1,\n\v2)\v-", *e, e2);
 	SkipToken(tl, ')');
 }
 
@@ -700,7 +677,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		 */
 		assert(fmt != VOID);
 		if (fmt == DURATION) {
-			vcc_RTimeVal(tl, &d);
+			vcc_Duration(tl, &d);
 			ERRCHK(tl);
 			e1 = vcc_mk_expr(DURATION, "%g", d);
 		} else if (fmt == BYTES) {

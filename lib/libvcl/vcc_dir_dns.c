@@ -194,17 +194,17 @@ vcc_dir_dns_parse_backend_options(struct vcc *tl)
 			vcc_NextToken(tl);
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "connect_timeout")) {
-			vcc_TimeVal(tl, &t);
+			vcc_Duration(tl, &t);
 			ERRCHK(tl);
 			b_defaults.connect_timeout = t;
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "first_byte_timeout")) {
-			vcc_TimeVal(tl, &t);
+			vcc_Duration(tl, &t);
 			ERRCHK(tl);
 			b_defaults.first_byte_timeout = t;
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "between_bytes_timeout")) {
-			vcc_TimeVal(tl, &t);
+			vcc_Duration(tl, &t);
 			ERRCHK(tl);
 			b_defaults.between_bytes_timeout = t;
 			SkipToken(tl, ';');
@@ -333,7 +333,7 @@ vcc_ParseDnsDirector(struct vcc *tl)
 				vcc_NextToken(tl);
 				ExpectErr(tl, ';');
 			} else if (vcc_IdIs(t_field, "ttl")) {
-				vcc_RTimeVal(tl, &ttl);
+				vcc_Duration(tl, &ttl);
 				ExpectErr(tl, ';');
 			} else if (vcc_IdIs(t_field, "list")) {
 				vcc_dir_dns_parse_list(tl,&nelem);
