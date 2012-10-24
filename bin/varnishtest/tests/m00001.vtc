@@ -48,12 +48,12 @@ varnish v1 -cliok "vcl.list"
 varnish v1 -cliok "debug.vmod"
 
 varnish v1 -badvcl {
-	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so.1" ;
-	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so.1" ;
+	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
+	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
 }
 
 varnish v1 -badvcl {
-	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so.1" ;
+	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
 
 	sub vcl_recv {
 		if (std == 2) {
