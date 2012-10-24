@@ -594,7 +594,7 @@ varnish_cli(struct varnish *v, const char *cli, unsigned exp)
  */
 
 static void
-varnish_vcl(struct varnish *v, const char *vcl, enum VCLI_status_e expect)
+varnish_vcl(struct varnish *v, const char *vcl, enum VCLI_status_e expect, char **resp)
 {
 	struct vsb *vsb;
 	enum VCLI_status_e u;
@@ -610,7 +610,7 @@ varnish_vcl(struct varnish *v, const char *vcl, enum VCLI_status_e expect)
 	    ++v->vcl_nbr, NONSENSE, vcl, NONSENSE);
 	AZ(VSB_finish(vsb));
 
-	u = varnish_ask_cli(v, VSB_data(vsb), NULL);
+	u = varnish_ask_cli(v, VSB_data(vsb), resp);
 	if (u != expect) {
 		VSB_delete(vsb);
 		vtc_log(v->vl, 0,
@@ -857,13 +857,30 @@ cmd_varnish(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-badvcl")) {
 			AN(av[1]);
-			varnish_vcl(v, av[1], CLIS_PARAM);
+			varnish_vcl(v, av[1], CLIS_PARAM, NULL);
 			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-errvcl")) {
+			char *r = NULL;
+			AN(av[1]);
+			AN(av[2]);
+			varnish_vcl(v, av[2], CLIS_PARAM, &r);
+			if (strstr(r, av[1]) == NULL)
+				vtc_log(v->vl, 0,
+				    "Did not find expected string: (\"%s\")",
+				    av[1]);
+			else
+				vtc_log(v->vl, 3,
+				    "Found expected string: (\"%s\")",
+				    av[1]);
+			free(r);
+			av += 2;
 			continue;
 		}
 		if (!strcmp(*av, "-vcl")) {
 			AN(av[1]);
-			varnish_vcl(v, av[1], CLIS_OK);
+			varnish_vcl(v, av[1], CLIS_OK, NULL);
 			av++;
 			continue;
 		}
