@@ -1,12 +1,12 @@
 varnishtest "VCL compiler coverage test: vcc_acl.c"
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Too wide mask (33) for IPv4 address} {
 	backend b { .host = "127.0.0.1"; }
 	acl a { "10.1.2.3"/33; }
 	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Too wide mask (129) for IPv6 address} {
 	backend b { .host = "127.0.0.1"; }
 	acl a { "1::2"/129; }
 	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
@@ -21,7 +21,7 @@ varnish v1 -vcl {
 	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Conflicting ACL entries:} {
 	backend b { .host = "127.0.0.1"; }
 	acl a {
 		"1.2.3.4";
@@ -30,25 +30,25 @@ varnish v1 -badvcl {
 	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {DNS lookup(...com): } {
 	backend b { .host = "127.0.0.1"; }
 	acl a { "...com"; }
 	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {DNS lookup(10.1.2.): } {
 	backend b { .host = "127.0.0.1"; }
 	acl a { "10.1.2."; }
 	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Expected ')' got ';'} {
 	backend b { .host = "127.0.0.1"; }
 	acl a { ( "10.1.2"; }
 	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Expected ';' got ')'} {
 	backend b { .host = "127.0.0.1"; }
 	acl a { "10.1.2" ); }
 	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
@@ -70,7 +70,7 @@ varnish v1 -vcl {
 	sub vcl_miss { if (client.ip != "127.0.0.1") { return(pass); } }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Operator > not possible on IP} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv { if (client.ip > "127.0.0.1") { return(pass); } }
 }

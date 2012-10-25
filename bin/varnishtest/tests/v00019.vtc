@@ -1,6 +1,6 @@
 varnishtest "VCL compiler coverage test: vcc_token.c"
 
-varnish v1 -badvcl " C{ "
+varnish v1 -errvcl {Unterminated inline C source, starting at} " C{ "
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
@@ -8,17 +8,17 @@ varnish v1 -vcl {
 	sub vcl_recv { set req.url = "x"; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Unterminated /* ... */ comment, starting at} {
 	backend b { .host = "127.0.0.1"; }
 	/*
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Unterminated long-string, starting at} {
 	backend b { .host = "127.0.0.1"; }
 	{" }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Unterminated string at} {
 	backend b { .host = "127.0.0.1"; }
 	"
 }
@@ -28,12 +28,12 @@ varnish v1 -vcl {
 	sub vcl_recv { C{ int i; (void)i; }C }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Syntax error at} {
 	backend b { .host = "127.0.0.1"; }
 	?
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Comparison of different types: STRING '==' INT} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		if ("foo" + "bar" == 777) {
@@ -42,7 +42,7 @@ varnish v1 -badvcl {
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Comparison of different types: STRING '==' INT} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		if ("foo" + "bar" ==
@@ -52,7 +52,7 @@ varnish v1 -badvcl {
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Comparison of different types: STRING '==' INT} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		if ("foo" + "bar" ==

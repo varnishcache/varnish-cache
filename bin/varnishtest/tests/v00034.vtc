@@ -7,19 +7,19 @@ server s1 {
 
 varnish v1 -vcl+backend { } -start
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Function c1 redefined} {
 	backend foo { .host = "127.0.0.1"; }
 	sub c1 { }
 	sub c1 { }
 	sub vcl_recv { call c1; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Backend s1 redefined} {
 	backend s1 { .host = "127.0.0.1"; }
 	backend s1 { .host = "127.0.0.1"; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Probe p1 redefined} {
 	backend s1 { .host = "127.0.0.1"; .probe = p1;}
 	probe p1 { }
 	probe p1 { }

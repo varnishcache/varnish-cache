@@ -1,6 +1,6 @@
 varnishtest "DNS director bad VCL tests"
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Expected '.' got '192'} {
        director directorname dns {
                .list = {
                        192.168.15.0/24;
@@ -8,7 +8,7 @@ varnish v1 -badvcl {
        }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl "Expected '.' got '}'" {
        director directorname dns {
                .list = {
                        .host_header = "www.example.com";
@@ -18,7 +18,7 @@ varnish v1 -badvcl {
        }
 }
 
-varnish v9 -badvcl {
+varnish v9 -errvcl {Unknown field: 'host_hdr' at} {
        director directorname dns {
                .list = {
                        .host_hdr = "192.168.1.1";
@@ -26,7 +26,7 @@ varnish v9 -badvcl {
                }
        }
 }
-varnish v1 -badvcl {
+varnish v1 -errvcl {Unknown field: 'host_hdr' at} {
        director directorname dns {
                .list = {
                        .host_hdr = "www.example.com";
@@ -35,7 +35,7 @@ varnish v1 -badvcl {
        }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Expected CSTR got '80'} {
        director directorname dns {
                .list = {
                        .port = 80;
@@ -43,7 +43,9 @@ varnish v1 -badvcl {
                }
        }
 }
-varnish v1 -badvcl {
+
+# XXX: reported token should be improved
+varnish v1 -errvcl {IP and network mask not compatible: ';' at} {
        director directorname dns {
                .list = {
                        "192.168.15.0"/33;
@@ -51,7 +53,8 @@ varnish v1 -badvcl {
        }
 }
 
-varnish v1 -badvcl {
+# XXX: reported token should be improved
+varnish v1 -errvcl {IP and network mask not compatible: ';' at} {
        director directorname dns {
                .list = {
                        "192.168.16.255"/24;

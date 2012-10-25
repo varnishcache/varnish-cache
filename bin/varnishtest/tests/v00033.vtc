@@ -37,13 +37,13 @@ client c1 {
 	expect resp.http.bar == true
 } -run
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Expected BYTES unit (B, KB, MB...) got '"X"'} {
 	sub vcl_recv {
 		if (storage.nowhere.free_space > 4 "X") {
 		}
 	}
 }
-varnish v1 -badvcl {
+varnish v1 -errvcl {Unknown BYTES unit 'X'.  Legal are 'B', 'KB', 'MB', 'GB' and 'TB'} {
 	sub vcl_recv {
 		if (storage.nowhere.free_space > 4 X) {
 		}

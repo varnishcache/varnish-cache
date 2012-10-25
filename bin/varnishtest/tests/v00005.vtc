@@ -33,7 +33,7 @@ varnish v1 -vcl {
 }
 
 # Check redefinition
-varnish v1 -badvcl {
+varnish v1 -errvcl {Probe request redefinition at:} {
 	backend b1 {
 		.host = "127.0.0.1";
 		.probe = {
@@ -46,7 +46,7 @@ varnish v1 -badvcl {
 }
 
 # Check redefinition the other way
-varnish v1 -badvcl {
+varnish v1 -errvcl {Probe request redefinition at:} {
 	backend b1 {
 		.host = "127.0.0.1";
 		.probe = {

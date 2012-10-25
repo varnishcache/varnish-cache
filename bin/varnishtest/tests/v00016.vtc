@@ -7,14 +7,14 @@ varnish v1 -vcl {
 	include "${tmpdir}/_varnishtest_empty_file" ;
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {include <string> not followed by semicolon.} {
 	backend b { .host = "127.0.0.1"; }
 	include "${tmpdir}/_varnishtest_empty_file" |
 }
 
 shell "rm -f ${tmpdir}/_varnishtest_empty_file"
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {include not followed by string constant.} {
 	backend b { .host = "127.0.0.1"; }
 	include <<
 }
@@ -29,7 +29,7 @@ varnish v1 -vcl {
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {include not followed by string constant.} {
 	/* token test */
         error lookup hash pipe pass fetch deliver discard keep restart
         include 
@@ -73,22 +73,22 @@ varnish v1 -vcl {
 	
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Unknown time unit 'k'.  Legal are 's', 'm', 'h' and 'd'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_fetch { set obj.ttl = 1. k; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Expression has type DURATION, expected BOOL} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_fetch { if (obj.ttl *= 2) { } }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Operator > not possible on BACKEND} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv { if (req.backend > b) { } }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Symbol not found: 'req.hash' (expected type BOOL):} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_hash { if (req.hash != "foo") { } }
 }
