@@ -18,7 +18,7 @@ varnish v1 -vcl {
 	sub vcl_fetch { error beresp.status req.url; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Variable 'server.port' is read only.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_miss { set server.port = 1000; }
 }
@@ -28,28 +28,28 @@ varnish v1 -vcl {
 	sub vcl_fetch { set beresp.ttl /= 2; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Expected '=' got '>>'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_fetch { set beresp.ttl >>= 2; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Expected '=' got '+='} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv { set req.backend += b; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Expected '=' got '+='} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv { set req.url += server.port; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Expected ';' got 'if'} {
 	backend b { .host = "127.0.0.1"; }
 	/* XXX: This should not really be an error */
 	sub vcl_recv { set req.url = "foo" if "bar"; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Symbol not found: 'req.hash' (expected type STRING_LIST):} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_hash { hash_data(req.hash); }
 }
@@ -59,7 +59,7 @@ varnish v1 -vcl {
 	sub vcl_recv { set req.url = 1; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Expected '=' got '+='} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_fetch { set beresp.do_gzip += 1; }
 }
@@ -74,22 +74,22 @@ varnish v1 -vcl {
 	sub vcl_fetch { set beresp.do_gzip = false; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Symbol not found: 'mu' (expected type BOOL):} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_fetch { set beresp.do_gzip = mu; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Only http header variables can be unset.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_fetch { unset beresp.do_gzip; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Unknown token 'if' when looking for STRING} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv { ban_url (if); }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Expected an action, 'if', '{' or '}'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv { ban_hash (if); }
 }
@@ -99,13 +99,12 @@ varnish v1 -vcl {
 	sub vcl_recv { ban_url ("foo"); }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Expected an action, 'if', '{' or '}'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv { kluf ; }
 }
 
-
-varnish v1 -badvcl {
+varnish v1 -errvcl {Unknown token 'if' when looking for STRING_LIST} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_error { synthetic if "foo"; }
 }
