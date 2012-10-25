@@ -855,12 +855,6 @@ cmd_varnish(CMD_ARGS)
 			av++;
 			continue;
 		}
-		if (!strcmp(*av, "-badvcl")) {
-			AN(av[1]);
-			varnish_vcl(v, av[1], CLIS_PARAM, NULL);
-			av++;
-			continue;
-		}
 		if (!strcmp(*av, "-errvcl")) {
 			char *r = NULL;
 			AN(av[1]);
