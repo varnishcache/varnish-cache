@@ -5,7 +5,7 @@ server s1 {
 	txresp
 } -start
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {'synthetic': not a valid action in method 'vcl_recv'} {
 	backend foo { .host = "127.0.0.1"; }
 
 	sub vcl_recv {

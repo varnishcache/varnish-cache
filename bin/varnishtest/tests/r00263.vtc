@@ -1,6 +1,6 @@
 varnishtest "Test refcounting backends from director"
 
-varnish v1  -vcl+backend {
+varnish v1  -vcl {
 	backend node1 { .host = "10.0.0.1"; .port = "80"; }
 	backend node2 { .host = "10.0.0.2"; .port = "80"; }
 	backend node3 { .host = "10.0.0.3"; .port = "80"; }

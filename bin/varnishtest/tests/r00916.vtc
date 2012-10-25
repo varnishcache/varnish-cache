@@ -5,7 +5,8 @@ server s1 {
 	txresp -body "FOO"
 } -start
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Symbol not found: 's-1' (expected type BACKEND)} {
+	backend b { .host = "127.0.0.1"; }
 	sub s1 {
 	}
 	sub vcl_fetch {

@@ -24,7 +24,7 @@ client c1 {
 	expect resp.status == 200
 } -run
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Expected ID got '0'} {
 	backend 0fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
 	{
 		.host = "127.0.0.1";

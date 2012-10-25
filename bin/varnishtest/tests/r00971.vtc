@@ -1,7 +1,7 @@
 
 varnishtest "Test DNS director order"
 
-varnish v1 -vcl+backend {
+varnish v1 -vcl {
 	
 	backend test {
 		.host = "192.168.0.1";

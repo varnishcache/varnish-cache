@@ -1,7 +1,6 @@
 varnishtest "Test nested /*...*/ comments "
 
-
-varnish v1 -badvcl {
+varnish v1 -errvcl {/* ... */ comment contains /*} {
 
 	/* foo
 		/* bar
