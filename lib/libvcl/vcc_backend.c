@@ -651,7 +651,7 @@ vcc_DefBackend(struct vcc *tl, const struct token *nm)
 	sym = VCC_GetSymbolTok(tl, nm, SYM_BACKEND);
 	AN(sym);
 	if (sym->ndef > 0) {
-		VSB_printf(tl->sb, "Backend %.*s redefined\n", PF(tl->t));
+		VSB_printf(tl->sb, "Backend %.*s redefined\n", PF(nm));
 		vcc_ErrWhere(tl, nm);
 		return;
 	}
