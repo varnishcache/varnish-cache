@@ -38,7 +38,7 @@
 void
 vcc_ParseRandomDirector(struct vcc *tl)
 {
-	struct token *t_field, *t_be;
+	struct token *t_field, *t_be, *t_x;
 	int nelem;
 	struct fld_spec *fs, *mfs;
 	unsigned u, retries;
@@ -86,15 +86,14 @@ vcc_ParseRandomDirector(struct vcc *tl)
 				    first, p);
 			} else if (vcc_IdIs(t_field, "weight")) {
 				ExpectErr(tl, CNUM);
+				t_x = tl->t;
 				u = vcc_UintVal(tl);
 				ERRCHK(tl);
 				if (u == 0) {
 					VSB_printf(tl->sb,
 					    "The .weight must be higher "
-					    "than zero.");
-					vcc_ErrToken(tl, tl->t);
-					VSB_printf(tl->sb, " at\n");
-					vcc_ErrWhere(tl, tl->t);
+					    "than zero.\n");
+					vcc_ErrWhere(tl, t_x);
 					return;
 				}
 				Fc(tl, 0, "%s .weight = %u", first, u);
