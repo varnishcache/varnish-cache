@@ -1,38 +1,38 @@
 varnishtest "VCL compiler coverage test: vcc_xref.c"
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {'obj.ttl': cannot be set in method 'vcl_recv'.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv { set obj.ttl = 1 w; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {'obj.ttl': cannot be set from method 'foo'.} {
 	backend b { .host = "127.0.0.1"; }
 
 	sub foo { set obj.ttl = 1 w; }
 	sub vcl_recv { call foo ; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl "Expected an action, 'if', '{' or '}'" {
 	backend b { .host = "127.0.0.1"; }
 
 	sub vcl_recv { discard; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl "Expected an action, 'if', '{' or '}'" {
 	backend b { .host = "127.0.0.1"; }
 
 	sub foo { discard; }
 	sub vcl_recv { call foo; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl "Function recurses on" {
 	backend b { .host = "127.0.0.1"; }
 
 	sub foo { call foo; }
 	sub vcl_recv { call foo; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl "Function recurses on" {
 	backend b { .host = "127.0.0.1"; }
 
 	sub bar { call foo; }
@@ -41,14 +41,14 @@ varnish v1 -badvcl {
 }
 
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Unused acl foo, defined:} {
 	backend b { .host = "127.0.0.1"; }
 
 	acl foo { "localhost"; }
 
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Unused sub foo, defined:} {
 	backend b { .host = "127.0.0.1"; }
 
 	sub foo {
@@ -56,7 +56,7 @@ varnish v1 -badvcl {
 }
 
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Invalid return "deliver"} {
 	backend b { .host = "127.0.0.1"; }
 
 	sub vcl_recv {

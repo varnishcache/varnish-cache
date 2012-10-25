@@ -1,11 +1,11 @@
 varnishtest "VCL: test syntax/semantic checks on backend decls. (vcc_backend.c)"
 
 # Missing backend
-varnish v1 -badvcl {
+varnish v1 -errvcl {No backends or directors found in VCL program} {
 }
 
 # Reference to non-existent backend
-varnish v1 -badvcl {
+varnish v1 -errvcl {Symbol not found: 'b2' (expected type BACKEND):} {
 	backend b1 {
 		.host = "127.0.0.1";
 	}
@@ -15,14 +15,14 @@ varnish v1 -badvcl {
 }
 
 # Missing .host
-varnish v1 -badvcl {
+varnish v1 -errvcl {Mandatory field 'host' missing.} {
 	backend b1 {
 		.port = "http";
 	}
 }
 
 # Too many .host
-varnish v1 -badvcl {
+varnish v1 -errvcl {Field 'host' redefined at:} {
 	backend b1 {
 		.host = "foo";
 		.host = "bar";
@@ -30,7 +30,7 @@ varnish v1 -badvcl {
 }
 
 # Too many .port
-varnish v1 -badvcl {
+varnish v1 -errvcl {Field 'port' redefined at:} {
 	backend b1 {
 		.host = "foo";
 		.port = "http";
@@ -39,7 +39,7 @@ varnish v1 -badvcl {
 }
 
 # Too many .connect_timeout
-varnish v1 -badvcl {
+varnish v1 -errvcl {Field 'connect_timeout' redefined at:} {
 	backend b1 {
 		.host = "foo";
 		.connect_timeout = 1m;
@@ -48,7 +48,7 @@ varnish v1 -badvcl {
 }
 
 # unknown field
-varnish v1 -badvcl {
+varnish v1 -errvcl {Unknown field: 'foobar' at} {
 	backend b1 {
 		.host = "127.0.0.1";
 		.foobar = 123;
@@ -56,7 +56,7 @@ varnish v1 -badvcl {
 }
 
 # Check backend reference by name
-varnish v1 -badvcl {
+varnish v1 -errvcl {Expected a backend host specification here, either by name or by {...}} {
 	backend b1 { .host = "${bad_ip}"; }
 	director r1 random {
 		{ .weight = 1; .backend = b1; }
@@ -66,18 +66,18 @@ varnish v1 -badvcl {
 }
 
 # Check backend reference by name
-varnish v1 -badvcl {
+varnish v1 -errvcl "Expected '{' got 'b1'" {
 	backend b1 { .host = "${bad_ip}"; }
 	backend b2 b1;
 }
 
 # Check backend reference by non-C-compat name
-varnish v1 -badvcl {
+varnish v1 -errvcl {Identifier 'b-1' contains illegal characters, use [0-9a-zA-Z_] only.} {
 	backend b-1 { .host = "${bad_ip}"; }
 }
 
 # Check backend reference by non-C-compat name
-varnish v1 -badvcl {
+varnish v1 -errvcl {Symbol not found: 'b-1' (expected type BACKEND):} {
 	backend b1 { .host = "${bad_ip}"; }
 	sub vcl_recv {
 		set req.backend = b-1;
@@ -85,52 +85,52 @@ varnish v1 -badvcl {
 }
 
 # Old backend syntax
-varnish v1 -badvcl {
+varnish v1 -errvcl {Remove "set" and "backend" in front of backend fields.} {
 	backend b1 {
 		set host = "127.0.0.1";
 	}
 }
 
 # Too many .connect_timeout
-varnish v1 -badvcl {
+varnish v1 -errvcl {Unknown time unit 'q'.  Legal are 's', 'm', 'h' and 'd'} {
 	backend b1 {
-		.host = k"foo";
+		.host = "foo";
 		.connect_timeout = 1 q;
 	}
 }
 
 # Two clashing backends
-varnish v1 -badvcl {
+varnish v1 -errvcl {Backend b1 redefined} {
 	backend b1 { .host = "127.0.0.1"; }
 	backend b1 { .host = "127.0.0.1"; }
 }
 
 # Unknown director policy
-varnish v1 -badvcl {
+varnish v1 -errvcl {Unknown director policy: 'anarchy' at} {
 	director r1 anarchy { .host = "127.0.0.1"; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Backend host "v00002.freebsd.dk": resolves to multiple IPv4 addresses.} {
 	/* too many IP numbers */
 	backend b1 { .host = "v00002.freebsd.dk"; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Backend host '"////."' could not be resolved to an IP address:} {
 	backend b1 { .host = "////."; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Backend host '"127.0.0.1"' could not be resolved to an IP address:} {
 	backend b1 { .host = "127.0.0.1"; .port = "////."; }
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Unknown field: 'foobar' at} {
 	backend b1 {
 		.host = "127.0.0.1";
 		.foobar = "foo";
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Unknown field: 'ice' at} {
 	backend b1 {
 		.host = "127.0.0.1";
 		.probe = {
@@ -139,14 +139,14 @@ varnish v1 -badvcl {
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Must specify .threshold with .window} {
 	backend b1 {
 		.host = "127.0.0.1";
 		.probe = { .window = 8; }
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Threshold must be 64 or less.} {
 	backend b1 {
 		.host = "127.0.0.1";
 		.probe = { .threshold = 65; }
@@ -160,13 +160,12 @@ varnish v1 -vcl {
 	}
 }
 
-varnish v1 -badvcl {
+varnish v1 -errvcl {Window must be 64 or less.} {
 	backend b1 {
 		.host = "127.0.0.1";
 		.probe = { .threshold = 32; .window = 65; }
 	}
 }
-
 
 varnish v1 -vcl {
 	backend b1 {
@@ -175,16 +174,14 @@ varnish v1 -vcl {
 	}
 }
 
-
-varnish v1 -badvcl {
+varnish v1 -errvcl {Threshold can not be greater than window.} {
 	backend b1 {
 		.host = "127.0.0.1";
 		.probe = { .threshold = 32; .window = 31; }
 	}
 }
 
-
-varnish v1 -badvcl {
+varnish v1 -errvcl {Must specify .expected_response with exactly three digits (100 <= x <= 999)} {
 	backend b1 {
 		.host = "127.0.0.1";
 		.probe = { .expected_response = 13; }
