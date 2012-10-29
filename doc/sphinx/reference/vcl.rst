@@ -276,7 +276,7 @@ which can later be used to match client addresses:
   }
 
 If an ACL entry specifies a host name which Varnish is unable to
-resolve, it will match any address it is com‐ pared to.  Consequently,
+resolve, it will match any address it is compared to.  Consequently,
 if it is preceded by a negation mark, it will reject any address it is
 compared to, which may not be what you intended.  If the entry is
 enclosed in parentheses, however, it will simply be ignored.
@@ -407,8 +407,8 @@ vcl_pipe
 vcl_pass
   Called upon entering pass mode.  In this mode, the request is passed
   on to the backend, and the backend's response is passed on to the
-  client, but is not entered into the cache.  Subsequent requests sub‐
-  mitted over the same client connection are handled normally.
+  client, but is not entered into the cache.  Subsequent requests
+  submitted over the same client connection are handled normally.
   
   The vcl_pass subroutine may terminate with calling return() with one of
   the following keywords:
