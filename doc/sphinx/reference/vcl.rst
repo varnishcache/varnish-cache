@@ -817,6 +817,9 @@ beresp.do_gunzip
   Boolean. Unzip the object before storing it in the cache.  Defaults
   to false.
 
+beresp.http.header
+  The corresponding HTTP header.
+
 beresp.proto
   The HTTP protocol version used the backend replied with.
 
