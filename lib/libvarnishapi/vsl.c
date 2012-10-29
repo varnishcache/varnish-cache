@@ -145,6 +145,7 @@ vsl_open(struct VSM_data *vd)
 	}
 	if (vsl->log_ptr >= vsl->log_end)
 		vsl->log_ptr = vsl->log_start + 1;
+	vsl->last_seq = vsl->log_start[0];
 	return (0);
 }
 
