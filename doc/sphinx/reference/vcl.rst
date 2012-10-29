@@ -512,9 +512,6 @@ vcl_deliver
   deliver
     Deliver the object to the client.
 
-  error code [reason]
-    Return the specified error code to the client and abandon the request.
-
   restart
     Restart the transaction. Increases the restart counter. If the number 
     of restarts is higher than *max_restarts* varnish emits a guru meditation 
