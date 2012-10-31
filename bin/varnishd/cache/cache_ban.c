@@ -1132,8 +1132,6 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 
 	VCLI_Out(cli, "Present bans:\n");
 	VTAILQ_FOREACH(b, &ban_head, list) {
-		if (b == bl && !DO_DEBUG(DBG_LURKER))
-			break;
 		VCLI_Out(cli, "%10.6f %5u%s\t", ban_time(b->spec),
 		    bl == b ? b->refcount - 1 : b->refcount,
 		    b->flags & BAN_F_GONE ? "G" : " ");
