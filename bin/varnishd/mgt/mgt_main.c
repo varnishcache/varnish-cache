@@ -385,7 +385,7 @@ main(int argc, char * const *argv)
 		 * Adjust default parameters for 32 bit systems to conserve
 		 * VM space.
 		 */
-		MCF_ParamSet(cli, "workspace_client", "16k");
+		MCF_ParamSet(cli, "workspace_client", "24k");
 		cli_check(cli);
 
 		MCF_ParamSet(cli, "workspace_backend", "16k");
