@@ -52,13 +52,132 @@
 /*--------------------------------------------------------------------
  * SOLARIS PRIVILEGES: Note on use of symbolic PRIV_* constants
  *
- * For privileges which existed in Solaris 10 FCS, we may use the constants from
- * sys/priv_names.h
+ * We assume backwards compatibility only for Solaris Releases after the
+ * OpenSolaris Launch. For privileges which existed at the time of the
+ * OpenSolaris Launch, we use the constants from sys/priv_names.h and assert
+ * that priv_addset must succeed.
  *
- * For privileges which have been added later, we need to use strings in order
- * not to break builds of varnish on these platforms. To remain binary
- * compatible, we need to silently ignore errors from priv_addset when using
- * these strings.
+ * For privileges which have been added later, we need to use priv strings in
+ * order not to break builds of varnish on these platforms. To remain binary
+ * compatible, we can't assert that priv_addset succeeds, but we may assert that
+ * it either succeeds or fails with EINVAL.
+ */
+
+/* for priv_delset() and priv_addset() */
+static inline int
+priv_setop_check(int a) {
+	if (a == 0)
+		return (1);
+	if (errno == EINVAL)
+		return (1);
+	return (0);
+}
+
+#define priv_setop_assert(a) assert(priv_setop_check(a))
+
+/*
+ * we try to add all possible privileges to waive them later.
+ *
+ * when doing so, we need to expect EPERM
+ */
+
+/* for setppriv */
+static inline int
+setppriv_check(int a) {
+	if (a == 0)
+		return (1);
+	if (errno == EPERM)
+		return (1);
+	return (0);
+}
+
+#define setppriv_assert(a) assert(setppriv_check(a))
+
+
+/*
+ * brief histroy of introduction of privileges since OpenSolaris Launch
+ *
+ * (from hg log -gp usr/src/uts/common/os/priv_defs)
+ *
+ * ARC cases are not necessarily accurate (induced from commit msg)
+ * (marked with ?)
+ *
+ * privileges used here marked with *
+ *
+ *
+ * ARC case	    hg commit	   first release
+ *
+ * PSARC/2006/155?  37f4a3e2bd99   onnv_37
+ * - file_downgrade_sl
+ * - file_upgrade_sl
+ * - net_bindmlp
+ * - net_mac_aware
+ * - sys_trans_label
+ * - win_colormap
+ * - win_config
+ * - win_dac_read
+ * - win_dac_write
+ * - win_devices
+ * - win_dga
+ * - win_downgrade_sl
+ * - win_fontpath
+ * - win_mac_read
+ * - win_mac_write
+ * - win_selection
+ * - win_upgrade_sl
+ *
+ * PSARC/2006/218   5dbf296c1e57   onnv_39
+ * - graphics_access
+ * - graphics_map
+ *
+ * PSARC/2006/366   aaf16568054b   onnv_57
+ * - net_config
+ *
+ * PSARC/2007/315?  3047ad28a67b   onnv_77
+ * - file_flag_set  
+ *
+ * PSARC/2007/560?  3047ad28a67b   onnv_77
+ * - sys_smb
+ *
+ * PSARC 2008/046   47f6aa7a8077   onnv_85
+ * - contract_identify
+ *
+ * PSARC 2008/289   79a9dac325d9   onnv_92
+ * - virt_manage
+ * - xvm_control
+ *
+ * PSARC 2008/473   eff7960d93cd   onnv_98
+ * - sys_dl_config
+ *
+ * PSARC/2006/475   faf256d5c16c   onnv_103
+ * - net_observability
+ *
+ * PSARC/2009/317   8e29565352fc   onnv_117
+ * - sys_ppp_config
+ *
+ * PSARC/2009/373   3be00c4a6835   onnv_125
+ * - sys_iptun_config
+ *
+ * PSARC/2008/252   e209937a4f19   onnv_128
+ * - net_mac_implicit 
+ * 
+ * PSARC/2009/685   8eca52188202   onnv_132
+ * * net_access
+ *
+ * PSARC/2009/378   63678502e95e   onnv_140
+ * * file_read
+ * * file_write
+ *
+ * PSARC/2010/181   15439b11d535   onnv_142
+ * - sys_res_bind
+ *
+ * unknown	    unknown	   Solaris11
+ * - sys_flow_config
+ * - sys_share
+ *
+ *
+ * SOLARIS PRIVILEGES: Note on introtiction of new privileges (forward
+ * 		       compatibility)
  *
  * For optimal build and binary forward comatibility, we could use subtractive
  * set specs like
@@ -103,14 +222,13 @@ mgt_sandbox_solaris_add_inheritable(priv_set_t *pset, enum sandbox_e who)
 	switch (who) {
 	case SANDBOX_VCC:
 		/* for /etc/resolv.conf and /etc/hosts */
-		AZ(priv_addset(pset, "file_read"));
+		priv_setop_assert(priv_addset(pset, "file_read"));
 		break;
 	case SANDBOX_CC:
-		AZ(priv_addset(pset, "proc_exec"));
-		AZ(priv_addset(pset, "proc_fork"));
-		/* PSARC/2009/378 - 63678502e95e - onnv_140 */
-		AZ(priv_addset(pset, "file_read"));
-		AZ(priv_addset(pset, "file_write"));
+		priv_setop_assert(priv_addset(pset, PRIV_PROC_EXEC));
+		priv_setop_assert(priv_addset(pset, PRIV_PROC_FORK));
+		priv_setop_assert(priv_addset(pset, "file_read"));
+		priv_setop_assert(priv_addset(pset, "file_write"));
 		break;
 	case SANDBOX_VCLLOAD:
 		break;
@@ -132,20 +250,16 @@ mgt_sandbox_solaris_add_effective(priv_set_t *pset, enum sandbox_e who)
 {
 	switch (who) {
 	case SANDBOX_VCC:
-		/* PSARC/2009/378 - 63678502e95e - onnv_140 */
-		AZ(priv_addset(pset, "file_write"));
+		priv_setop_assert(priv_addset(pset, "file_write"));
 		break;
 	case SANDBOX_CC:
 		break;
 	case SANDBOX_VCLLOAD:
-		/* PSARC/2009/378 - 63678502e95e - onnv_140 */
-		AZ(priv_addset(pset, "file_read"));
+		priv_setop_assert(priv_addset(pset, "file_read"));
 	case SANDBOX_WORKER:
-		/* PSARC/2009/685 - 8eca52188202 - onnv_132 */
-		AZ(priv_addset(pset, "net_access"));
-		/* PSARC/2009/378 - 63678502e95e - onnv_140 */
-		AZ(priv_addset(pset, "file_read"));
-		AZ(priv_addset(pset, "file_write"));
+		priv_setop_assert(priv_addset(pset, "net_access"));
+		priv_setop_assert(priv_addset(pset, "file_read"));
+		priv_setop_assert(priv_addset(pset, "file_write"));
 		break;
 	default:
 		REPORT(LOG_ERR, "INCOMPLETE AT: %s(%d)\n", __func__, __LINE__);
@@ -218,9 +332,10 @@ mgt_sandbox_solaris_init(enum sandbox_e who)
 	mgt_sandbox_solaris_add_permitted(priv_all, who);
 	mgt_sandbox_solaris_add_initial(priv_all, who);
 
-	setppriv(PRIV_ON, PRIV_PERMITTED, priv_all);
-	setppriv(PRIV_ON, PRIV_EFFECTIVE, priv_all);
-	setppriv(PRIV_ON, PRIV_INHERITABLE, priv_all);
+	/* try to get all possible privileges, expect EPERM here */
+	setppriv_assert(setppriv(PRIV_ON, PRIV_PERMITTED, priv_all));
+	setppriv_assert(setppriv(PRIV_ON, PRIV_EFFECTIVE, priv_all));
+	setppriv_assert(setppriv(PRIV_ON, PRIV_INHERITABLE, priv_all));
 
 	priv_freeset(priv_all);
 }
@@ -292,18 +407,10 @@ mgt_sandbox_solaris_waive(enum sandbox_e who)
 	priv_inverse(effective);
 	priv_inverse(permitted);
 
-#define SETPPRIV(which, set)						\
-	if (setppriv(PRIV_OFF, which, set))				\
-		REPORT(LOG_ERR,						\
-		    "Sandbox warning: "					\
-		    " Waiving privileges failed on %s: errno=%d (%s)",	\
-		    #which, errno, strerror(errno));
-
-	SETPPRIV(PRIV_LIMIT, permitted);
-	SETPPRIV(PRIV_PERMITTED, permitted);
-	SETPPRIV(PRIV_EFFECTIVE, effective);
-	SETPPRIV(PRIV_INHERITABLE, inheritable);
-#undef SETPPRIV
+	AZ(setppriv(PRIV_OFF, PRIV_LIMIT, permitted));
+	AZ(setppriv(PRIV_OFF, PRIV_PERMITTED, permitted));
+	AZ(setppriv(PRIV_OFF, PRIV_EFFECTIVE, effective));
+	AZ(setppriv(PRIV_OFF, PRIV_INHERITABLE, inheritable));
 
 	priv_freeset(inheritable);
 	priv_freeset(effective);
