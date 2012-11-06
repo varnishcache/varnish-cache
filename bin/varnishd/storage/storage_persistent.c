@@ -88,13 +88,12 @@ smp_baninfo(struct stevedore *stv, enum baninfo event,
 {
 	struct smp_sc *sc;
 
-	(void)stv;
+	CAST_OBJ_NOTNULL(sc, stv->priv, SMP_SC_MAGIC);
+
 	switch (event) {
 	case BI_NEW:
-		VTAILQ_FOREACH(sc, &silos, list) {
-			smp_appendban(sc, &sc->ban1, len, ban);
-			smp_appendban(sc, &sc->ban2, len, ban);
-		}
+		smp_appendban(sc, &sc->ban1, len, ban);
+		smp_appendban(sc, &sc->ban2, len, ban);
 		break;
 	default:
 		/* Ignored */
