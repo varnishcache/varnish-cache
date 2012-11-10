@@ -90,7 +90,7 @@ I already can hear some of you amazing VCL wizards say "Well,
 if you inline-C grab a refcount, then restart and ..." but lets
 be honest, that's not how it should look.
 
-You should be able to do something like:
+You should be able to do something like:::
 
 	if (req.proto == "SPDY" && req.url ~ "index.html") {
 		req.obj1 = lookup(backend1, "/main.css")
