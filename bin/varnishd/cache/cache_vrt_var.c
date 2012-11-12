@@ -555,6 +555,12 @@ unsigned
 VRT_r_req_backend_healthy(const struct req *req)
 {
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	/*
+	 * XXX: Not optimal, but we do not have a backend in vcl_deliver
+	 * XXX: and we have to return something.
+	 */
+	if (req->director == NULL)
+		return (0);
 	CHECK_OBJ_NOTNULL(req->director, DIRECTOR_MAGIC);
 	return (VDI_Healthy(req->director, req));
 }
