@@ -109,7 +109,10 @@ static bgthread_t ban_lurker;
  * BAN string defines & magic markers
  */
 
+#define BANS_TIMESTAMP	0
+#define BANS_LENGTH	8
 #define BANS_FLAGS	12
+#define BANS_HEAD_LEN	13
 #define BANS_FLAG_REQ	0x01
 
 #define BANS_OPER_EQ	0x10
@@ -213,7 +216,7 @@ ban_time(const uint8_t *banspec)
 {
 	double t;
 
-	assert(sizeof t == 8);
+	assert(sizeof t == (BANS_LENGTH - BANS_TIMESTAMP));
 	memcpy(&t, banspec, sizeof t);
 	return (t);
 }
@@ -223,8 +226,22 @@ ban_len(const uint8_t *banspec)
 {
 	unsigned u;
 
-	u = vbe32dec(banspec + 8);
+	u = vbe32dec(banspec + BANS_LENGTH);
 	return (u);
+}
+
+static int
+ban_equal(const uint8_t *bs1, const uint8_t *bs2)
+{
+	unsigned u;
+
+	/*
+	 * Compare two ban-strings.
+	 * The memcmp() is safe because the first field we compare is the
+	 * length and that is part of the fixed header structure.
+	 */
+	u = vbe32dec(bs1 + BANS_LENGTH);
+	return (!memcmp(bs1 + BANS_LENGTH, bs2 + BANS_LENGTH, u - BANS_LENGTH));
 }
 
 /*--------------------------------------------------------------------
@@ -390,15 +407,15 @@ BAN_Insert(struct ban *b)
 	ln = VSB_len(b->vsb);
 	assert(ln >= 0);
 
-	b->spec = malloc(ln + 13L);	/* XXX */
+	b->spec = malloc(ln + BANS_HEAD_LEN);
 	XXXAN(b->spec);
 
 	t0 = VTIM_real();
-	memcpy(b->spec, &t0, sizeof t0);
+	memcpy(b->spec + BANS_TIMESTAMP, &t0, sizeof t0);
 	b->spec[BANS_FLAGS] = (b->flags & BAN_F_REQ) ? BANS_FLAG_REQ : 0;
-	memcpy(b->spec + 13, VSB_data(b->vsb), ln);
-	ln += 13;
-	vbe32enc(b->spec + 8, ln);
+	memcpy(b->spec + BANS_HEAD_LEN, VSB_data(b->vsb), ln);
+	ln += BANS_HEAD_LEN;
+	vbe32enc(b->spec + BANS_LENGTH, ln);
 
 	VSB_delete(b->vsb);
 	b->vsb = NULL;
@@ -430,8 +447,7 @@ BAN_Insert(struct ban *b)
 		bi = VTAILQ_NEXT(bi, list);
 		if (bi->flags & BAN_F_GONE)
 			continue;
-		/* Safe because the length is part of the fixed size hdr */
-		if (memcmp(b->spec + 8, bi->spec + 8, ln - 8))
+		if (!ban_equal(b->spec, bi->spec))
 			continue;
 		bi->flags |= BAN_F_GONE;
 		VSC_C_main->bans_gone++;
@@ -538,7 +554,7 @@ BAN_Reload(const uint8_t *ban, unsigned len)
 		}
 		if (t1 < t0)
 			break;
-		if (!memcmp(b->spec + 8, ban + 8, len - 8)) {
+		if (ban_equal(b->spec, ban)) {
 			gone |= BAN_F_GONE;
 			VSC_C_main->bans_dups++;
 			VSC_C_main->bans_gone++;
@@ -567,7 +583,7 @@ BAN_Reload(const uint8_t *ban, unsigned len)
 	for (b = VTAILQ_NEXT(b2, list); b != NULL; b = VTAILQ_NEXT(b, list)) {
 		if (b->flags & BAN_F_GONE)
 			continue;
-		if (!memcmp(b->spec + 8, ban + 8, len - 8)) {
+		if (ban_equal(b->spec, ban)) {
 			b->flags |= BAN_F_GONE;
 			VSC_C_main->bans_dups++;
 			VSC_C_main->bans_gone++;
@@ -1061,7 +1077,7 @@ ban_render(struct cli *cli, const uint8_t *bs)
 	const uint8_t *be;
 
 	be = bs + ban_len(bs);
-	bs += 13;
+	bs += BANS_HEAD_LEN;
 	while (bs < be) {
 		ban_iter(&bs, &bt);
 		switch (bt.arg1) {
