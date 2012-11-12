@@ -44,10 +44,10 @@
  *	1 byte - flags: 0x01: BAN_F_REQ
  *	N tests
  * A test have this form:
- *	1 byte - arg (see ban_vars.h col 3 "BAN_ARG_XXX")
+ *	1 byte - arg (see ban_vars.h col 3 "BANS_ARG_XXX")
  *	(n bytes) - http header name, canonical encoding
  *	lump - comparison arg
- *	1 byte - operation (BAN_OPER_)
+ *	1 byte - operation (BANS_OPER_)
  *	(lump) - compiled regexp
  * A lump is:
  *	4 bytes - be32: length
@@ -106,18 +106,21 @@ static struct ban * volatile ban_start;
 static bgthread_t ban_lurker;
 
 /*--------------------------------------------------------------------
- * BAN string magic markers
+ * BAN string defines & magic markers
  */
 
-#define	BAN_OPER_EQ	0x10
-#define	BAN_OPER_NEQ	0x11
-#define	BAN_OPER_MATCH	0x12
-#define	BAN_OPER_NMATCH	0x13
+#define BANS_FLAGS	12
+#define BANS_FLAG_REQ	0x01
 
-#define BAN_ARG_URL		0x18
-#define BAN_ARG_REQHTTP		0x19
-#define BAN_ARG_OBJHTTP		0x1a
-#define BAN_ARG_OBJSTATUS	0x1b
+#define BANS_OPER_EQ	0x10
+#define BANS_OPER_NEQ	0x11
+#define BANS_OPER_MATCH	0x12
+#define BANS_OPER_NMATCH	0x13
+
+#define BANS_ARG_URL		0x18
+#define BANS_ARG_REQHTTP		0x19
+#define BANS_ARG_OBJHTTP		0x1a
+#define BANS_ARG_OBJSTATUS	0x1b
 
 /*--------------------------------------------------------------------
  * Variables we can purge on
@@ -261,13 +264,13 @@ ban_iter(const uint8_t **bs, struct ban_test *bt)
 
 	memset(bt, 0, sizeof *bt);
 	bt->arg1 = *(*bs)++;
-	if (bt->arg1 == BAN_ARG_REQHTTP || bt->arg1 == BAN_ARG_OBJHTTP) {
+	if (bt->arg1 == BANS_ARG_REQHTTP || bt->arg1 == BANS_ARG_OBJHTTP) {
 		bt->arg1_spec = (const char *)*bs;
 		(*bs) += (*bs)[0] + 2;
 	}
 	bt->arg2 = ban_get_lump(bs);
 	bt->oper = *(*bs)++;
-	if (bt->oper == BAN_OPER_MATCH || bt->oper == BAN_OPER_NMATCH)
+	if (bt->oper == BANS_OPER_MATCH || bt->oper == BANS_OPER_NMATCH)
 		bt->arg2_spec = ban_get_lump(bs);
 }
 
@@ -345,19 +348,19 @@ BAN_AddTest(struct cli *cli, struct ban *b, const char *a1, const char *a2,
 
 	ban_add_lump(b, a3, strlen(a3) + 1);
 	if (!strcmp(a2, "~")) {
-		VSB_putc(b->vsb, BAN_OPER_MATCH);
+		VSB_putc(b->vsb, BANS_OPER_MATCH);
 		i = ban_parse_regexp(cli, b, a3);
 		if (i)
 			return (i);
 	} else if (!strcmp(a2, "!~")) {
-		VSB_putc(b->vsb, BAN_OPER_NMATCH);
+		VSB_putc(b->vsb, BANS_OPER_NMATCH);
 		i = ban_parse_regexp(cli, b, a3);
 		if (i)
 			return (i);
 	} else if (!strcmp(a2, "==")) {
-		VSB_putc(b->vsb, BAN_OPER_EQ);
+		VSB_putc(b->vsb, BANS_OPER_EQ);
 	} else if (!strcmp(a2, "!=")) {
-		VSB_putc(b->vsb, BAN_OPER_NEQ);
+		VSB_putc(b->vsb, BANS_OPER_NEQ);
 	} else {
 		VCLI_Out(cli,
 		    "expected conditional (~, !~, == or !=) got \"%s\"", a2);
@@ -392,7 +395,7 @@ BAN_Insert(struct ban *b)
 
 	t0 = VTIM_real();
 	memcpy(b->spec, &t0, sizeof t0);
-	b->spec[12] = (b->flags & BAN_F_REQ) ? 1 : 0;
+	b->spec[BANS_FLAGS] = (b->flags & BAN_F_REQ) ? BANS_FLAG_REQ : 0;
 	memcpy(b->spec + 13, VSB_data(b->vsb), ln);
 	ln += 13;
 	vbe32enc(b->spec + 8, ln);
@@ -551,8 +554,10 @@ BAN_Reload(const uint8_t *ban, unsigned len)
 	AN(b2->spec);
 	memcpy(b2->spec, ban, len);
 	b2->flags |= gone;
-	if (ban[12])
+	if (ban[BANS_FLAGS] & BANS_FLAG_REQ) {
+		VSC_C_main->bans_req++;
 		b2->flags |= BAN_F_REQ;
+	}
 	if (b == NULL)
 		VTAILQ_INSERT_TAIL(&ban_head, b2, list);
 	else
@@ -623,18 +628,18 @@ ban_evaluate(const uint8_t *bs, const struct http *objhttp,
 		ban_iter(&bs, &bt);
 		arg1 = NULL;
 		switch (bt.arg1) {
-		case BAN_ARG_URL:
+		case BANS_ARG_URL:
 			AN(reqhttp);
 			arg1 = reqhttp->hd[HTTP_HDR_URL].b;
 			break;
-		case BAN_ARG_REQHTTP:
+		case BANS_ARG_REQHTTP:
 			AN(reqhttp);
 			(void)http_GetHdr(reqhttp, bt.arg1_spec, &arg1);
 			break;
-		case BAN_ARG_OBJHTTP:
+		case BANS_ARG_OBJHTTP:
 			(void)http_GetHdr(objhttp, bt.arg1_spec, &arg1);
 			break;
-		case BAN_ARG_OBJSTATUS:
+		case BANS_ARG_OBJSTATUS:
 			arg1 = buf;
 			sprintf(buf, "%d", objhttp->status);
 			break;
@@ -643,21 +648,21 @@ ban_evaluate(const uint8_t *bs, const struct http *objhttp,
 		}
 
 		switch (bt.oper) {
-		case BAN_OPER_EQ:
+		case BANS_OPER_EQ:
 			if (arg1 == NULL || strcmp(arg1, bt.arg2))
 				return (0);
 			break;
-		case BAN_OPER_NEQ:
+		case BANS_OPER_NEQ:
 			if (arg1 != NULL && !strcmp(arg1, bt.arg2))
 				return (0);
 			break;
-		case BAN_OPER_MATCH:
+		case BANS_OPER_MATCH:
 			if (arg1 == NULL ||
 			    pcre_exec(bt.arg2_spec, NULL, arg1, strlen(arg1),
 			    0, 0, NULL, 0) < 0)
 				return (0);
 			break;
-		case BAN_OPER_NMATCH:
+		case BANS_OPER_NMATCH:
 			if (arg1 != NULL &&
 			    pcre_exec(bt.arg2_spec, NULL, arg1, strlen(arg1),
 			    0, 0, NULL, 0) >= 0)
@@ -1060,14 +1065,14 @@ ban_render(struct cli *cli, const uint8_t *bs)
 	while (bs < be) {
 		ban_iter(&bs, &bt);
 		switch (bt.arg1) {
-		case BAN_ARG_URL:
+		case BANS_ARG_URL:
 			VCLI_Out(cli, "req.url");
 			break;
-		case BAN_ARG_REQHTTP:
+		case BANS_ARG_REQHTTP:
 			VCLI_Out(cli, "req.http.%.*s",
 			    bt.arg1_spec[0] - 1, bt.arg1_spec + 1);
 			break;
-		case BAN_ARG_OBJHTTP:
+		case BANS_ARG_OBJHTTP:
 			VCLI_Out(cli, "obj.http.%.*s",
 			    bt.arg1_spec[0] - 1, bt.arg1_spec + 1);
 			break;
@@ -1075,10 +1080,10 @@ ban_render(struct cli *cli, const uint8_t *bs)
 			INCOMPL();
 		}
 		switch (bt.oper) {
-		case BAN_OPER_EQ:	VCLI_Out(cli, " == "); break;
-		case BAN_OPER_NEQ:	VCLI_Out(cli, " != "); break;
-		case BAN_OPER_MATCH:	VCLI_Out(cli, " ~ "); break;
-		case BAN_OPER_NMATCH:	VCLI_Out(cli, " !~ "); break;
+		case BANS_OPER_EQ:	VCLI_Out(cli, " == "); break;
+		case BANS_OPER_NEQ:	VCLI_Out(cli, " != "); break;
+		case BANS_OPER_MATCH:	VCLI_Out(cli, " ~ "); break;
+		case BANS_OPER_NMATCH:	VCLI_Out(cli, " !~ "); break;
 		default:
 			INCOMPL();
 		}

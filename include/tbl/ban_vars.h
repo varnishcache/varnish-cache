@@ -32,7 +32,7 @@
 #define PVAR_HTTP	1
 #define PVAR_REQ	2
 
-PVAR("req.url",		PVAR_REQ,		BAN_ARG_URL)
-PVAR("req.http.",	PVAR_REQ|PVAR_HTTP,	BAN_ARG_REQHTTP)
-PVAR("obj.http.",	PVAR_HTTP,		BAN_ARG_OBJHTTP)
-PVAR("obj.status",	0,			BAN_ARG_OBJSTATUS)
+PVAR("req.url",		PVAR_REQ,		BANS_ARG_URL)
+PVAR("req.http.",	PVAR_REQ|PVAR_HTTP,	BANS_ARG_REQHTTP)
+PVAR("obj.http.",	PVAR_HTTP,		BANS_ARG_OBJHTTP)
+PVAR("obj.status",	0,			BANS_ARG_OBJSTATUS)
