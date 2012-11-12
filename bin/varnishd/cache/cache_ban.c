@@ -72,6 +72,7 @@
 #include "vcli.h"
 #include "vcli_priv.h"
 #include "vend.h"
+#include "vmb.h"
 #include "vtim.h"
 
 struct ban {
@@ -114,6 +115,7 @@ static bgthread_t ban_lurker;
 #define BANS_FLAGS	12
 #define BANS_HEAD_LEN	13
 #define BANS_FLAG_REQ	0x01
+#define BANS_FLAG_GONE	0x02
 
 #define BANS_OPER_EQ	0x10
 #define BANS_OPER_NEQ	0x11
@@ -242,6 +244,18 @@ ban_equal(const uint8_t *bs1, const uint8_t *bs2)
 	 */
 	u = vbe32dec(bs1 + BANS_LENGTH);
 	return (!memcmp(bs1 + BANS_LENGTH, bs2 + BANS_LENGTH, u - BANS_LENGTH));
+}
+
+static void
+ban_mark_gone(struct ban *b)
+{
+
+	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
+	b->flags |= BAN_F_GONE;
+	b->spec[BANS_FLAGS] |= BANS_FLAG_GONE;
+	VWMB();
+	vbe32enc(b->spec + BANS_LENGTH, 0);
+	VSC_C_main->bans_gone++;
 }
 
 /*--------------------------------------------------------------------
@@ -449,8 +463,7 @@ BAN_Insert(struct ban *b)
 			continue;
 		if (!ban_equal(b->spec, bi->spec))
 			continue;
-		bi->flags |= BAN_F_GONE;
-		VSC_C_main->bans_gone++;
+		ban_mark_gone(bi);
 		VSC_C_main->bans_dups++;
 	}
 	be->refcount--;
@@ -584,9 +597,8 @@ BAN_Reload(const uint8_t *ban, unsigned len)
 		if (b->flags & BAN_F_GONE)
 			continue;
 		if (ban_equal(b->spec, ban)) {
-			b->flags |= BAN_F_GONE;
+			ban_mark_gone(b);
 			VSC_C_main->bans_dups++;
-			VSC_C_main->bans_gone++;
 		}
 	}
 	Lck_Unlock(&ban_mtx);
@@ -950,10 +962,8 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl, unsigned pass)
 		}
 		Lck_AssertHeld(&ban_mtx);
 		if (!(b->flags & BAN_F_REQ)) {
-			if (!(b->flags & BAN_F_GONE)) {
-				b->flags |= BAN_F_GONE;
-				VSC_C_main->bans_gone++;
-			}
+			if (!(b->flags & BAN_F_GONE))
+				ban_mark_gone(b);
 			if (DO_DEBUG(DBG_LURKER))
 				VSLb(vsl, SLT_Debug, "lurker BAN %f now gone",
 				    ban_time(b->spec));
