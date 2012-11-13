@@ -48,7 +48,7 @@
 #include "vapi/vsm.h"
 #include "vas.h"
 #include "vcs.h"
-#include "vqueue.h"
+#include "vtree.h"
 #include "vsb.h"
 
 #if 0
@@ -62,11 +62,14 @@ struct top {
 	char			*rec_data;
 	int			clen;
 	unsigned		hash;
-	VTAILQ_ENTRY(top)	list;
+	VRB_ENTRY(top)		entry;
 	double			count;
 };
 
-static VTAILQ_HEAD(tophead, top) top_head = VTAILQ_HEAD_INITIALIZER(top_head);
+static int top_cmp(const struct top *tp, const struct top *tp2);
+
+static VRB_HEAD(top_tree, top) top_tree_head = VRB_INITIALIZER(&top_tree_head);
+VRB_PROTOTYPE(top_tree, top, entry, top_cmp);
 
 static unsigned ntop;
 
@@ -78,12 +81,40 @@ static int f_flag = 0;
 
 static unsigned maxfieldlen = 0;
 
+VRB_GENERATE(top_tree, top, entry, top_cmp);
+
+static int top_cmp(const struct top *tp, const struct top *tp2)
+{
+	if (tp->count == tp2->count || tp->count == 0.0) {
+		if (tp->hash == tp2->hash) {
+			if (tp->tag == tp2->tag) {
+				if (tp->clen == tp2->clen) {
+					return (memcmp(tp->rec_data, tp2->rec_data, tp->clen));
+				} else {
+					return (tp->clen - tp2->clen);
+				}
+			} else {
+				return (tp->tag - tp2->tag);
+			}
+		} else {
+			return (tp->hash - tp2->hash);
+		}
+	} else {
+		if (tp->count > tp2->count)
+			return -1;
+		else
+			return 1;
+	}
+}
+
+
 static int
 accumulate(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
     unsigned spec, const char *ptr, uint64_t bm)
 {
-	struct top *tp, *tp2;
+	struct top *tp, t;
 	const char *q;
+	char *rd;
 	unsigned int u;
 	int i;
 
@@ -102,21 +133,22 @@ accumulate(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
 		}
 		u += *q;
 	}
+	t.hash = u;
+	t.tag = tag;
+	t.clen = len;
+	rd = malloc(len);
+	AN(rd);
+	memcpy(rd, ptr, len);
+	t.rec_data = rd;
 
 	AZ(pthread_mutex_lock(&mtx));
-	VTAILQ_FOREACH(tp, &top_head, list) {
-		if (tp->hash != u)
-			continue;
-		if (tp->tag != tag)
-			continue;
-		if (tp->clen != len)
-			continue;
-		if (memcmp(ptr, tp->rec_data, len))
-			continue;
+	tp = VRB_FIND(top_tree, &top_tree_head, &t);
+	if (tp) {
+		VRB_REMOVE(top_tree, &top_tree_head, tp);
 		tp->count += 1.0;
-		break;
-	}
-	if (tp == NULL) {
+		/* Reinsert to rebalance */
+		VRB_INSERT(top_tree, &top_tree_head, tp);
+	} else {
 		ntop++;
 		tp = calloc(sizeof *tp, 1);
 		assert(tp != NULL);
@@ -128,21 +160,7 @@ accumulate(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
 		tp->tag = tag;
 		memcpy(tp->rec_data, ptr, len);
 		tp->rec_data[len] = '\0';
-		VTAILQ_INSERT_TAIL(&top_head, tp, list);
-	}
-	while (1) {
-		tp2 = VTAILQ_PREV(tp, tophead, list);
-		if (tp2 == NULL || tp2->count >= tp->count)
-			break;
-		VTAILQ_REMOVE(&top_head, tp2, list);
-		VTAILQ_INSERT_AFTER(&top_head, tp, tp2, list);
-	}
-	while (1) {
-		tp2 = VTAILQ_NEXT(tp, list);
-		if (tp2 == NULL || tp2->count <= tp->count)
-			break;
-		VTAILQ_REMOVE(&top_head, tp2, list);
-		VTAILQ_INSERT_BEFORE(tp, tp2, list);
+		VRB_INSERT(top_tree, &top_tree_head, tp);
 	}
 	AZ(pthread_mutex_unlock(&mtx));
 
@@ -170,7 +188,8 @@ update(const struct VSM_data *vd, int period)
 	AC(erase());
 	AC(mvprintw(0, 0, "%*s", COLS - 1, VSM_Name(vd)));
 	AC(mvprintw(0, 0, "list length %u", ntop));
-	VTAILQ_FOREACH_SAFE(tp, &top_head, list, tp2) {
+	for (tp = VRB_MIN(top_tree, &top_tree_head); tp != NULL; tp = tp2) {
+		tp2 = VRB_NEXT(top_tree, &top_tree_head, tp);
 		if (++l < LINES) {
 			len = tp->clen;
 			if (len > COLS - 20)
@@ -183,7 +202,7 @@ update(const struct VSM_data *vd, int period)
 		}
 		tp->count += (1.0/3.0 - tp->count) / (double)n;
 		if (tp->count * 10 < t || l > LINES * 10) {
-			VTAILQ_REMOVE(&top_head, tp, list);
+			VRB_REMOVE(top_tree, &top_tree_head, tp);
 			free(tp->rec_data);
 			free(tp);
 			ntop--;
@@ -276,10 +295,12 @@ static void
 dump(void)
 {
 	struct top *tp, *tp2;
-
-	VTAILQ_FOREACH_SAFE(tp, &top_head, list, tp2) {
+	printf("%d\n", ntop);
+	printf("%p\n", VRB_MIN(top_tree, &top_tree_head));
+	for (tp = VRB_MIN(top_tree, &top_tree_head); tp != NULL; tp = tp2) {
+		tp2 = VRB_NEXT(top_tree, &top_tree_head, tp);
 		if (tp->count <= 1.0)
-			break;
+		break;
 		printf("%9.2f %s %*.*s\n",
 		    tp->count, VSL_tags[tp->tag],
 		    tp->clen, tp->clen, tp->rec_data);
