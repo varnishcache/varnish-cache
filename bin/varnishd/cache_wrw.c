@@ -142,7 +142,7 @@ WRW_Flush(struct worker *w)
 			}
 
 			WSL(w, SLT_Debug, *wrw->wfd,
-			    "Hit send timeout, wrote = %ld/%ld; retrying",
+			    "Hit idle send timeout, wrote = %ld/%ld; retrying",
 			    i, wrw->liov);
 
 			for (int j = 0; j < wrw->niov; j++) {
