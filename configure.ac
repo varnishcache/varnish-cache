@@ -148,6 +148,7 @@ PKG_CHECK_MODULES([LIBEDIT], [libedit],
 	[AC_DEFINE([HAVE_LIBEDIT], [1], [Define we have libedit])],
 	[AC_CHECK_HEADERS([readline/readline.h])
 	 AC_CHECK_HEADERS([edit/readline/readline.h])
+	 AC_CHECK_HEADERS([readline/history.h])
 	 AC_CHECK_LIB(edit, el_init,
 	        [ AC_DEFINE([HAVE_LIBEDIT], [1], [Define we have libedit])
 		  LIBEDIT_CFLAGS=""
@@ -171,7 +172,7 @@ AC_CHECK_HEADERS([sys/vfs.h])
 AC_CHECK_HEADERS([endian.h])
 AC_CHECK_HEADERS([execinfo.h])
 AC_CHECK_HEADERS([netinet/in.h])
-AC_CHECK_HEADERS([pthread_np.h])
+AC_CHECK_HEADERS([pthread_np.h], [], [], [#include <pthread.h>])
 AC_CHECK_HEADERS([stddef.h])
 AC_CHECK_HEADERS([stdlib.h])
 AC_CHECK_HEADERS([unistd.h])

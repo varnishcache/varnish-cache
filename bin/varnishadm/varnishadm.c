@@ -41,6 +41,9 @@
 #  else
 #    include <editline/readline.h>
 #  endif
+#  ifdef HAVE_READLINE_HISTORY_H
+#    include <readline/history.h>
+#  endif
 #endif
 
 #include <errno.h>
