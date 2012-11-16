@@ -190,7 +190,7 @@ WRW_Flush(const struct worker *wrk)
 			}
 
 			VSLb(wrw->vsl, SLT_Debug,
-			    "Hit send timeout, wrote = %zd/%zd; retrying",
+			    "Hit idle send timeout, wrote = %zd/%zd; retrying",
 			    i, wrw->liov);
 
 			wrw_prune(wrw, i);
