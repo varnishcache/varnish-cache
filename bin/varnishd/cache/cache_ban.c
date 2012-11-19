@@ -573,29 +573,25 @@ BAN_RefBan(struct objcore *oc, double t0, const struct ban *tail)
  * mark any older bans, with the same condition, GONE as well.
  */
 
-void
-BAN_Reload(const uint8_t *ban, unsigned len)
+static void
+ban_reload(const uint8_t *ban, unsigned len)
 {
 	struct ban *b, *b2;
 	int gone = 0;
 	double t0, t1, t2 = 9e99;
 
 	ASSERT_CLI();
-	AZ(ban_shutdown);
+	Lck_AssertHeld(&ban_mtx);
 
 	t0 = ban_time(ban);
 	assert(len == ban_len(ban));
-
-	Lck_Lock(&ban_mtx);
 
 	VTAILQ_FOREACH(b, &ban_head, list) {
 		t1 = ban_time(b->spec);
 		assert(t1 < t2);
 		t2 = t1;
-		if (t1 == t0) {
-			Lck_Unlock(&ban_mtx);
+		if (t1 == t0)
 			return;
-		}
 		if (t1 < t0)
 			break;
 		if (ban_equal(b->spec, ban)) {
@@ -631,6 +627,30 @@ BAN_Reload(const uint8_t *ban, unsigned len)
 			ban_mark_gone(b);
 			VSC_C_main->bans_dups++;
 		}
+	}
+}
+
+/*--------------------------------------------------------------------
+ * Reload a series of persisted ban specs
+ */
+
+void
+BAN_Reload(const uint8_t *ptr, unsigned len)
+{
+	const uint8_t *pe;
+	unsigned l;
+
+	AZ(ban_shutdown);
+	pe = ptr + len;
+	Lck_Lock(&ban_mtx);
+	while (ptr < pe) {
+		/* XXX: This can be optimized by traversing the live
+		 * ban list together with the reload list (combining
+		 * the loops in BAN_Reload and ban_reload). */
+		l = ban_len(ptr);
+		assert(ptr + l <= pe);
+		ban_reload(ptr, l);
+		ptr += l;
 	}
 	Lck_Unlock(&ban_mtx);
 }
