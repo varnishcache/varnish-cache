@@ -72,22 +72,12 @@ static void
 smp_appendban(struct smp_sc *sc, struct smp_signspace *spc,
     uint32_t len, const uint8_t *ban)
 {
-	uint8_t *ptr, *ptr2;
 
 	(void)sc;
-	ptr = ptr2 = SIGNSPACE_FRONT(spc);
-	assert(SIGNSPACE_FREE(spc) >= 4L + 4 + len);
+	assert(SIGNSPACE_FREE(spc) >=  len);
 
-	memcpy(ptr, "BAN", 4);
-	ptr += 4;
-
-	vbe32enc(ptr, len);
-	ptr += 4;
-
-	memcpy(ptr, ban, len);
-	ptr += len;
-
-	smp_append_signspace(spc, ptr - ptr2);
+	memcpy(SIGNSPACE_FRONT(spc), ban, len);
+	smp_append_signspace(spc, len);
 }
 
 /* Trust that cache_ban.c takes care of locking */
@@ -120,38 +110,19 @@ static int
 smp_open_bans(struct smp_sc *sc, struct smp_signspace *spc)
 {
 	uint8_t *ptr, *pe;
-	uint32_t length;
-	int i, retval = 0;
+	int i;
 
 	ASSERT_CLI();
 	(void)sc;
 	i = smp_chk_signspace(spc);
 	if (i)
 		return (i);
+
 	ptr = SIGNSPACE_DATA(spc);
 	pe = SIGNSPACE_FRONT(spc);
+	BAN_Reload(ptr, pe - ptr);
 
-	while (ptr < pe) {
-		if (memcmp(ptr, "BAN", 4)) {
-			retval = 1001;
-			break;
-		}
-		ptr += 4;
-
-		length = vbe32dec(ptr);
-		ptr += 4;
-
-		if (ptr + length > pe) {
-			retval = 1003;
-			break;
-		}
-
-		BAN_Reload(ptr, length);
-
-		ptr += length;
-	}
-	assert(ptr <= pe);
-	return (retval);
+	return (0);
 }
 
 /*--------------------------------------------------------------------
