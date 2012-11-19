@@ -232,6 +232,7 @@ child_main(void)
 
 	CLI_Run();
 
+	BAN_Shutdown();
 	STV_close();
 
 	printf("Child dies\n");

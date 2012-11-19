@@ -746,8 +746,9 @@ struct ban *BAN_New(void);
 int BAN_AddTest(struct cli *, struct ban *, const char *, const char *,
     const char *);
 void BAN_Free(struct ban *b);
-void BAN_Insert(struct ban *b);
+int BAN_Insert(struct ban *b);
 void BAN_Init(void);
+void BAN_Shutdown(void);
 void BAN_NewObjCore(struct objcore *oc);
 void BAN_DestroyObj(struct objcore *oc);
 int BAN_CheckObject(struct object *o, struct req *sp);

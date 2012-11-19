@@ -105,6 +105,7 @@ static struct ban *ban_magic;
 static pthread_t ban_thread;
 static struct ban * volatile ban_start;
 static bgthread_t ban_lurker;
+static int ban_shutdown = 0;
 
 /*--------------------------------------------------------------------
  * BAN string defines & magic markers
@@ -417,9 +418,14 @@ BAN_AddTest(struct cli *cli, struct ban *b, const char *a1, const char *a2,
  * as a separate variable from the VTAILQ, to avoid depending on the
  * internals of the VTAILQ macros.  We tacitly assume that a pointer
  * write is always atomic in doing so.
+ *
+ * Returns:
+ *   0: Ban successfully inserted
+ *  -1: Ban not inserted due to shutdown in progress. The ban has been
+ *      deleted.
  */
 
-void
+int
 BAN_Insert(struct ban *b)
 {
 	struct ban  *bi, *be;
@@ -427,6 +433,11 @@ BAN_Insert(struct ban *b)
 	double t0;
 
 	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
+
+	if (ban_shutdown) {
+		BAN_Free(b);
+		return (-1);
+	}
 
 	AZ(VSB_finish(b->vsb));
 	ln = VSB_len(b->vsb);
@@ -446,6 +457,12 @@ BAN_Insert(struct ban *b)
 	b->vsb = NULL;
 
 	Lck_Lock(&ban_mtx);
+	if (ban_shutdown) {
+		/* Check again, we might have raced */
+		Lck_Unlock(&ban_mtx);
+		BAN_Free(b);
+		return (-1);
+	}
 	VTAILQ_INSERT_HEAD(&ban_head, b, list);
 	ban_start = b;
 	VSC_C_main->bans++;
@@ -463,12 +480,12 @@ BAN_Insert(struct ban *b)
 	Lck_Unlock(&ban_mtx);
 
 	if (be == NULL)
-		return;
+		return (0);
 
 	/* Hunt down duplicates, and mark them as gone */
 	bi = b;
 	Lck_Lock(&ban_mtx);
-	while(bi != be) {
+	while(!ban_shutdown && bi != be) {
 		bi = VTAILQ_NEXT(bi, list);
 		if (bi->flags & BAN_F_GONE)
 			continue;
@@ -479,6 +496,8 @@ BAN_Insert(struct ban *b)
 	}
 	be->refcount--;
 	Lck_Unlock(&ban_mtx);
+
+	return (0);
 }
 
 /*--------------------------------------------------------------------
@@ -562,6 +581,7 @@ BAN_Reload(const uint8_t *ban, unsigned len)
 	double t0, t1, t2 = 9e99;
 
 	ASSERT_CLI();
+	AZ(ban_shutdown);
 
 	t0 = ban_time(ban);
 	assert(len == ban_len(ban));
@@ -639,6 +659,7 @@ BAN_Compile(void)
 {
 
 	ASSERT_CLI();
+	AZ(ban_shutdown);
 
 	/* Notify stevedores */
 	STV_BanInfo(BI_NEW, ban_magic->spec, ban_len(ban_magic->spec));
@@ -891,6 +912,8 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 			    ban_time(b->spec), b->refcount);
 		while (1) {
 			Lck_Lock(&ban_mtx);
+			if (ban_shutdown)
+				break;
 			oc = VTAILQ_FIRST(&b->objcore);
 			if (oc == NULL)
 				break;
@@ -974,6 +997,8 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 				    ban_time(b->spec));
 		}
 		Lck_Unlock(&ban_mtx);
+		if (ban_shutdown)
+			break;
 		VTIM_sleep(cache_param->ban_lurker_sleep);
 		if (b == b0)
 			break;
@@ -995,13 +1020,13 @@ ban_lurker(struct worker *wrk, void *priv)
 	VSL_Setup(&vsl, NULL, 0);
 
 	(void)priv;
-	while (1) {
+	while (!ban_shutdown) {
 		d = cache_param->ban_lurker_sleep;
 		if (d > 0.0) {
 			i = ban_lurker_work(wrk, &vsl);
 			VSL_Flush(&vsl, 0);
 			WRK_SumStat(wrk);
-			if (i) {
+			if (i && !ban_shutdown) {
 				VTIM_sleep(d);
 				if (++n > 10) {
 					ban_cleantail();
@@ -1011,8 +1036,13 @@ ban_lurker(struct worker *wrk, void *priv)
 			}
 		}
 		ban_cleantail();
+		if (ban_shutdown)
+			break;
 		VTIM_sleep(0.609);	// Random, non-magic
 	}
+
+	pthread_exit(0);
+
 	NEEDLESS_RETURN(NULL);
 }
 
@@ -1055,7 +1085,11 @@ ccf_ban(struct cli *cli, const char * const *av, void *priv)
 			BAN_Free(b);
 			return;
 		}
-	BAN_Insert(b);
+	if (BAN_Insert(b) < 0) {
+		VCLI_Out(cli, "Shutdown in progress");
+		VCLI_SetResult(cli, CLIS_CANT);
+		return;
+	}
 }
 
 static void
@@ -1150,4 +1184,25 @@ BAN_Init(void)
 	ban_magic->flags |= BAN_F_GONE;
 	VSC_C_main->bans_gone++;
 	BAN_Insert(ban_magic);
+}
+
+/*--------------------------------------------------------------------
+ * Shutdown of the ban system.
+ *
+ * When this function returns, no new bans will be accepted, and no
+ * bans will be dropped (ban lurker thread stopped), so that no
+ * STV_BanInfo calls will be executed.
+ */
+
+void
+BAN_Shutdown(void)
+{
+	void *status;
+
+	Lck_Lock(&ban_mtx);
+	ban_shutdown = 1;
+	Lck_Unlock(&ban_mtx);
+
+	AZ(pthread_join(ban_thread, &status));
+	AZ(status);
 }

@@ -459,10 +459,9 @@ VRT_ban(const struct req *req, char *cmds, ...)
 		good = 1;
 	}
 	if (!good)
-		/* XXX: report error how ? */
-		BAN_Free(b);
+		BAN_Free(b);		/* XXX: report error how ? */
 	else
-		BAN_Insert(b);
+		(void)BAN_Insert(b);	/* XXX: report error how ? */
 }
 
 /*--------------------------------------------------------------------*/
@@ -506,10 +505,9 @@ VRT_ban_string(const struct req *req, const char *str)
 			break;
 	}
 	if (!good)
-		/* XXX: report error how ? */
-		BAN_Free(b);
+		BAN_Free(b);		/* XXX: report error how ? */
 	else
-		BAN_Insert(b);
+		(void)BAN_Insert(b);	/* XXX: report error how ? */
 	VAV_Free(av);
 }
 
