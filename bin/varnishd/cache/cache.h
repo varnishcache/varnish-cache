@@ -940,6 +940,7 @@ void PipeRequest(struct req *req);
 
 /* cache_pool.c */
 void Pool_Init(void);
+void Pool_Accept(void);
 void Pool_Work_Thread(void *priv, struct worker *w);
 int Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how);
 
