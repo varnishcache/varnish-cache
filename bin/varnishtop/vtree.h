@@ -86,7 +86,7 @@ struct {								\
 	VSPLAY_RIGHT(tmp, field) = (head)->sph_root;			\
 	(head)->sph_root = tmp;						\
 } while (/*CONSTCOND*/ 0)
-	
+
 #define VSPLAY_ROTATE_LEFT(head, tmp, field) do {			\
 	VSPLAY_RIGHT((head)->sph_root, field) = VSPLAY_LEFT(tmp, field);	\
 	VSPLAY_LEFT(tmp, field) = (head)->sph_root;			\
