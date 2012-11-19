@@ -66,7 +66,8 @@ struct top {
 	double			count;
 };
 
-static int top_cmp(const struct top *tp, const struct top *tp2);
+static int
+top_cmp(const struct top *tp, const struct top *tp2);
 
 static VRB_HEAD(top_tree, top) top_tree_head = VRB_INITIALIZER(&top_tree_head);
 VRB_PROTOTYPE(top_tree, top, entry, top_cmp);
@@ -83,22 +84,18 @@ static unsigned maxfieldlen = 0;
 
 VRB_GENERATE(top_tree, top, entry, top_cmp);
 
-static int top_cmp(const struct top *tp, const struct top *tp2)
+static int
+top_cmp(const struct top *tp, const struct top *tp2)
 {
 	if (tp->count == tp2->count || tp->count == 0.0) {
-		if (tp->hash == tp2->hash) {
-			if (tp->tag == tp2->tag) {
-				if (tp->clen == tp2->clen) {
-					return (memcmp(tp->rec_data, tp2->rec_data, tp->clen));
-				} else {
-					return (tp->clen - tp2->clen);
-				}
-			} else {
-				return (tp->tag - tp2->tag);
-			}
-		} else {
+		if (tp->hash != tp2->hash)
 			return (tp->hash - tp2->hash);
-		}
+		if (tp->tag != tp2->tag)
+			return (tp->tag - tp2->tag);
+		if (tp->clen != tp2->clen)
+			return (tp->clen - tp2->clen);
+		else
+			return (memcmp(tp->rec_data, tp2->rec_data, tp->clen));
 	} else {
 		if (tp->count > tp2->count)
 			return -1;
