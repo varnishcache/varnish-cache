@@ -38,11 +38,11 @@
 #    include <edit/readline/readline.h>
 #  elif HAVE_READLINE_READLINE_H
 #    include <readline/readline.h>
+#    ifdef HAVE_READLINE_HISTORY_H
+#      include <readline/history.h>
+#    endif
 #  else
 #    include <editline/readline.h>
-#  endif
-#  ifdef HAVE_READLINE_HISTORY_H
-#    include <readline/history.h>
 #  endif
 #endif
 
