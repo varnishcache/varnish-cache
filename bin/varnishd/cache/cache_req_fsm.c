@@ -267,7 +267,7 @@ cnt_error(struct worker *wrk, struct req *req)
 	AZ(req->obj);
 	AZ(req->busyobj);
 
-	bo = VBO_GetBusyObj(wrk);
+	bo = VBO_GetBusyObj(wrk, req);
 	req->busyobj = bo;
 	AZ(bo->stats);
 	bo->stats = &wrk->stats;
@@ -807,7 +807,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	/* If we inserted a new object it's a miss */
 	if (oc->flags & OC_F_BUSY) {
 		AZ(req->busyobj);
-		bo = VBO_GetBusyObj(wrk);
+		bo = VBO_GetBusyObj(wrk, req);
 		req->busyobj = bo;
 		/* One ref for req, one for FetchBody */
 		bo->refcount = 2;
@@ -943,7 +943,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 	AZ(req->obj);
 	AZ(req->busyobj);
 
-	req->busyobj = VBO_GetBusyObj(wrk);
+	req->busyobj = VBO_GetBusyObj(wrk, req);
 	bo = req->busyobj;
 	bo->refcount = 2;
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
@@ -1002,7 +1002,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	AZ(req->busyobj);
 
 	req->acct_req.pipe++;
-	req->busyobj = VBO_GetBusyObj(wrk);
+	req->busyobj = VBO_GetBusyObj(wrk, req);
 	bo = req->busyobj;
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
 	http_FilterReq(req, 0);
@@ -1090,7 +1090,6 @@ cnt_recv(const struct worker *wrk, struct req *req)
 	AZ(req->obj);
 	AZ(req->busyobj);
 
-	/* Assign XID and log */
 	VSLb(req->vsl, SLT_ReqStart, "%s %s", req->sp->addr, req->sp->port);
 
 	if (req->err_code) {

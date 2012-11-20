@@ -156,3 +156,11 @@ SLTM(VCL_Log, "Log statement from VCL", "")
 SLTM(VCL_Error, "", "")
 
 SLTM(Gzip, "G(un)zip performed on object", "")
+
+SLTM(Link, "Linkage between different VXIDs",
+	"Links this records VXID to its parent VXID\n"
+	"The first field gives the type of the parent:\n"
+	"    req     Request\n"
+	"    sess    Session\n"
+	"The second field gives the VXID if the parent.\n"
+)
