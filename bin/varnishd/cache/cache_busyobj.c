@@ -87,7 +87,7 @@ VBO_Free(struct busyobj **bop)
 }
 
 struct busyobj *
-VBO_GetBusyObj(struct worker *wrk, const struct req *req)
+VBO_GetBusyObj(struct worker *wrk, struct req *req)
 {
 	struct busyobj *bo = NULL;
 	uint16_t nhttp;
@@ -130,6 +130,7 @@ VBO_GetBusyObj(struct worker *wrk, const struct req *req)
 	VSL_Setup(bo->vsl, p, sz);
 	bo->vsl->wid = VXID_Get(&wrk->vxid_pool) | VSL_BACKENDMARKER;
 	VSLb(bo->vsl, SLT_Link, "req %u", req->vsl->wid & VSL_IDENTMASK);
+	VSLb(req->vsl, SLT_Link, "bereq %u", bo->vsl->wid & VSL_IDENTMASK);
 	p += sz;
 	p = (void*)PRNDUP(p);
 	assert(p < bo->end);

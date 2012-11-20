@@ -162,5 +162,7 @@ SLTM(Link, "Linkage between different VXIDs",
 	"The first field gives the type of the parent:\n"
 	"    req     Request\n"
 	"    sess    Session\n"
+	"    bereq   Backend request\n"
+	"    esireq  ESI subrequest\n"
 	"The second field gives the VXID if the parent.\n"
 )
