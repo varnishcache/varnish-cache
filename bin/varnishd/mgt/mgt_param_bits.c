@@ -137,12 +137,12 @@ tweak_vsl_mask(struct cli *cli, const struct parspec *par, const char *arg)
 			(void)bit(mgt_param.vsl_mask, SLT_Hash, BSET);
 		} else {
 			bit_tweak(cli, mgt_param.vsl_mask,
-			    SLT_Reserved, arg, VSL_tags,
+			    SLT__Reserved, arg, VSL_tags,
 			    "VSL tag", "-");
 		}
 	} else {
 		s = "";
-		for (j = 0; j < (unsigned)SLT_Reserved; j++) {
+		for (j = 0; j < (unsigned)SLT__Reserved; j++) {
 			if (bit(mgt_param.vsl_mask, j, BTST)) {
 				VCLI_Out(cli, "%s-%s", s, VSL_tags[j]);
 				s = ",";

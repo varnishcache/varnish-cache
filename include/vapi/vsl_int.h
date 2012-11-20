@@ -68,19 +68,19 @@
 #define VSL_BACKEND(ptr)	(((ptr)[1]) & VSL_BACKENDMARKER)
 #define VSL_DATA(ptr)		((char*)((ptr)+2))
 
-#define VSL_ENDMARKER	(((uint32_t)SLT_Reserved << 24) | 0x454545) /* "EEE" */
-#define VSL_WRAPMARKER	(((uint32_t)SLT_Reserved << 24) | 0x575757) /* "WWW" */
+#define VSL_ENDMARKER	(((uint32_t)SLT__Reserved << 24) | 0x454545) /* "EEE" */
+#define VSL_WRAPMARKER	(((uint32_t)SLT__Reserved << 24) | 0x575757) /* "WWW" */
 
 /*
  * The identifiers in shmlogtag are "SLT_" + XML tag.  A script may be run
  * on this file to extract the table rather than handcode it
  */
 enum VSL_tag_e {
-	SLT_Bogus = 0,
+	SLT__Bogus = 0,
 #define SLTM(foo,sdesc,ldesc)	SLT_##foo,
 #include "tbl/vsl_tags.h"
 #undef SLTM
-	SLT_Reserved = 255
+	SLT__Reserved = 255
 };
 
 #endif /* VAPI_VSL_FMT_H_INCLUDED */

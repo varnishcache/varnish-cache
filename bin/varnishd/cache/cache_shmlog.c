@@ -60,7 +60,8 @@ vsl_tag_is_masked(enum VSL_tag_e tag)
 	volatile uint8_t *bm = &cache_param->vsl_mask[0];
 	uint8_t b;
 
-	assert(tag < SLT_Reserved);
+	assert(tag > SLT__Bogus);
+	assert(tag < SLT__Reserved);
 	bm += ((unsigned)tag >> 3);
 	b = (0x80 >> ((unsigned)tag & 7));
 	return (*bm & b);
@@ -75,8 +76,8 @@ vsl_hdr(enum VSL_tag_e tag, uint32_t *p, unsigned len, uint32_t vxid)
 {
 
 	assert(((uintptr_t)p & 0x3) == 0);
-	assert(tag > SLT_Bogus);
-	assert(tag < SLT_Reserved);
+	assert(tag > SLT__Bogus);
+	assert(tag < SLT__Reserved);
 	AZ(len & ~VSL_LENMASK);
 
 	p[1] = vxid;
