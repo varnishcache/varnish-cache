@@ -328,7 +328,7 @@ vca_acct(void *arg)
 			i = VTCP_filter_http(ls->sock);
 			if (i)
 				VSL(SLT_Error, ls->sock,
-				    "Kernel filtering: sock=%d, ret=%d %s\n",
+				    "Kernel filtering: sock=%d, ret=%d %s",
 				    ls->sock, i, strerror(errno));
 		}
 	}
