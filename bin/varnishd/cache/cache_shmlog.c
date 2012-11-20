@@ -217,11 +217,12 @@ VSL_Flush(struct vsl_log *vsl, int overflow)
 
 	assert(l >= 8);
 
-	p = vsl_get(l - 8, vsl->wlr, overflow);
+	p = vsl_get(l, vsl->wlr, overflow);
 
-	memcpy(p + 1, vsl->wlb + 1, l - 4);
+	memcpy(p + 2, vsl->wlb, l);
+	p[1] = l;
 	VWMB();
-	p[0] = vsl->wlb[0];
+	p[0] = ((((unsigned)SLT__Batch & 0xff) << 24) | 0);
 	vsl->wlp = vsl->wlb;
 	vsl->wlr = 0;
 }

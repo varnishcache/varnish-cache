@@ -80,7 +80,8 @@ enum VSL_tag_e {
 #define SLTM(foo,sdesc,ldesc)	SLT_##foo,
 #include "tbl/vsl_tags.h"
 #undef SLTM
-	SLT__Reserved = 255
+	SLT__Reserved = 254,
+	SLT__Batch = 255
 };
 
 #endif /* VAPI_VSL_FMT_H_INCLUDED */

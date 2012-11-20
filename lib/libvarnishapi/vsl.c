@@ -270,7 +270,9 @@ VSL_NextSLT(struct VSM_data *vd, uint32_t **pp, uint64_t *bits)
 		}
 
 		t = VSL_TAG(p);
-		if (vbit_test(vsl->vbm_select, t)) {
+		if (t == SLT__Batch) {
+			continue;
+		} else if (vbit_test(vsl->vbm_select, t)) {
 			/* nothing */
 		} else if (vbit_test(vsl->vbm_supress, t)) {
 			continue;
