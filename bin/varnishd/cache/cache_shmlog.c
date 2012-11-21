@@ -313,7 +313,7 @@ VSLb(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, ...)
 }
 
 /*--------------------------------------------------------------------
- * Allocate a VSL buffer
+ * Setup a VSL buffer, allocate space if none provided.
  */
 
 void
