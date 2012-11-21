@@ -110,7 +110,7 @@ varnish v1 -errvcl {Unknown director policy: 'anarchy' at} {
 	director r1 anarchy { .host = "127.0.0.1"; }
 }
 
-varnish v1 -errvcl {Backend host "v00002.freebsd.dk": resolves to multiple IPv4 addresses.} {
+varnish v1 -errvcl {Backend host "v00002.freebsd.dk": resolves to multiple ipv4 addresses.} {
 	/* too many IP numbers */
 	backend b1 { .host = "v00002.freebsd.dk"; }
 }
