@@ -36,7 +36,6 @@ separate topic.
 	purging
 	compression
 	esi
-	virtualized
 	websockets
 	devicedetection
         handling_misbehaving_servers

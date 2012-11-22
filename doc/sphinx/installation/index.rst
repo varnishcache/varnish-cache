@@ -16,5 +16,6 @@ move traffic.
 	help.rst
 	bugs.rst
 	upgrade.rst
+	platformnotes.rst
 
 
