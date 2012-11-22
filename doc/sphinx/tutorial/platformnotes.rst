@@ -3,17 +3,16 @@ Platform specific notes
 ------------------------
 
 Transparent hugepages on Redhat Linux 6
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 On RHEL6 Transparent Hugepage kernel support is enabled by default.
 This is known to cause sporadic crashes of Varnish.
 
-It is recommended to disable transparent hugepages on affected systems:
+It is recommended to disable transparent hugepages on affected systems::
 
     $ echo "never" > /sys/kernel/mm/redhat_transparent_hugepage/enabled
 
-On Debian/Ubuntu systems running 3.2 kernels the value is "madvise", which does
-not need to be changed.
+On Debian/Ubuntu systems running 3.2 kernels the default value is "madvise" and does not need to changed.
 
 
 OpenVZ

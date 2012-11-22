@@ -28,7 +28,7 @@ separate topic. Good luck.
 	purging
 	compression
 	esi
-	virtualised
+	platformnotes
 	websockets
 	devicedetection
 	advanced_backend_servers
