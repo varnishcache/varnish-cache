@@ -2,8 +2,8 @@
 Platform specific notes
 ------------------------
 
-Transparent hugepages on Redhat Linux 6
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Transparent hugepages on Redhat Enterprise Linux 6
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 On RHEL6 Transparent Hugepage kernel support is enabled by default.
 This is known to cause sporadic crashes of Varnish.
