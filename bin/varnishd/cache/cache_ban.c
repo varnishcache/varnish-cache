@@ -844,12 +844,13 @@ ban_CheckLast(void)
  */
 
 static int
-ban_lurker_work(struct worker *wrk, struct vsl_log *vsl, unsigned pass)
+ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 {
 	struct ban *b, *b0, *b2;
 	struct objhead *oh;
 	struct objcore *oc, *oc2;
 	struct object *o;
+	static unsigned pass = 1 << LURK_SHIFT;
 	int i;
 
 	AN(pass & BAN_F_LURK);
@@ -984,6 +985,10 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl, unsigned pass)
 		if (b == b0)
 			break;
 	}
+	pass += (1 << LURK_SHIFT);
+	pass &= BAN_F_LURK;
+	if (pass == 0)
+		pass += (1 << LURK_SHIFT);
 	return (1);
 }
 
@@ -991,7 +996,6 @@ static void * __match_proto__(bgthread_t)
 ban_lurker(struct worker *wrk, void *priv)
 {
 	struct ban *bf;
-	unsigned pass = (1 << LURK_SHIFT);
 	struct vsl_log vsl;
 
 	int i = 0;
@@ -1018,14 +1022,10 @@ ban_lurker(struct worker *wrk, void *priv)
 				VTIM_sleep(1.0);
 		}
 
-		i = ban_lurker_work(wrk, &vsl, pass);
+		i = ban_lurker_work(wrk, &vsl);
 		VSL_Flush(&vsl, 0);
 		WRK_SumStat(wrk);
 		if (i) {
-			pass += (1 << LURK_SHIFT);
-			pass &= BAN_F_LURK;
-			if (pass == 0)
-				pass += (1 << LURK_SHIFT);
 			VTIM_sleep(cache_param->ban_lurker_sleep);
 		} else {
 			VTIM_sleep(1.0);
