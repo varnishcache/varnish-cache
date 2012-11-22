@@ -146,20 +146,31 @@ static const struct pvar {
  * Storage handling of bans
  */
 
+static struct ban *
+ban_alloc(void)
+{
+	struct ban *b;
+
+	ALLOC_OBJ(b, BAN_MAGIC);
+	if (b != NULL)
+		VTAILQ_INIT(&b->objcore);
+	return (b);
+}
+
 struct ban *
 BAN_New(void)
 {
 	struct ban *b;
 
-	ALLOC_OBJ(b, BAN_MAGIC);
-	if (b == NULL)
-		return (b);
-	b->vsb = VSB_new_auto();
-	if (b->vsb == NULL) {
-		FREE_OBJ(b);
-		return (NULL);
+	b = ban_alloc();
+	if (b != NULL) {
+		b->vsb = VSB_new_auto();
+		if (b->vsb == NULL) {
+			FREE_OBJ(b);
+			return (NULL);
+		}
+		VTAILQ_INIT(&b->objcore);
 	}
-	VTAILQ_INIT(&b->objcore);
 	return (b);
 }
 
@@ -577,7 +588,7 @@ BAN_Reload(const uint8_t *ban, unsigned len)
 	VSC_C_main->bans++;
 	VSC_C_main->bans_added++;
 
-	b2 = BAN_New();
+	b2 = ban_alloc();
 	AN(b2);
 	b2->spec = malloc(len);
 	AN(b2->spec);
