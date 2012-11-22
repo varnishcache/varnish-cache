@@ -110,21 +110,21 @@ static bgthread_t ban_lurker;
  * BAN string defines & magic markers
  */
 
-#define BANS_TIMESTAMP	0
-#define BANS_LENGTH	8
-#define BANS_FLAGS	12
-#define BANS_HEAD_LEN	13
-#define BANS_FLAG_REQ	0x01
-#define BANS_FLAG_GONE	0x02
+#define BANS_TIMESTAMP		0
+#define BANS_LENGTH		8
+#define BANS_FLAGS		12
+#define BANS_HEAD_LEN		13
+#define BANS_FLAG_REQ		0x01
+#define BANS_FLAG_GONE		0x02
 
-#define BANS_OPER_EQ	0x10
-#define BANS_OPER_NEQ	0x11
-#define BANS_OPER_MATCH	0x12
+#define BANS_OPER_EQ		0x10
+#define BANS_OPER_NEQ		0x11
+#define BANS_OPER_MATCH		0x12
 #define BANS_OPER_NMATCH	0x13
 
 #define BANS_ARG_URL		0x18
-#define BANS_ARG_REQHTTP		0x19
-#define BANS_ARG_OBJHTTP		0x1a
+#define BANS_ARG_REQHTTP	0x19
+#define BANS_ARG_OBJHTTP	0x1a
 #define BANS_ARG_OBJSTATUS	0x1b
 
 /*--------------------------------------------------------------------
