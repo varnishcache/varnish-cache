@@ -846,7 +846,7 @@ ban_CheckLast(void)
 static int
 ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 {
-	struct ban *b, *b0, *b2;
+	struct ban *b, *b0;
 	struct objhead *oh;
 	struct objcore *oc, *oc2;
 	struct object *o;
@@ -855,18 +855,6 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 
 	AN(pass & BAN_F_LURK);
 	AZ(pass & ~BAN_F_LURK);
-
-	/* First route the last ban(s) */
-	do {
-		Lck_Lock(&ban_mtx);
-		b2 = ban_CheckLast();
-		if (b2 != NULL)
-			/* Notify stevedores */
-			STV_BanInfo(BI_DROP, b2->spec, ban_len(b2->spec));
-		Lck_Unlock(&ban_mtx);
-		if (b2 != NULL)
-			BAN_Free(b2);
-	} while (b2 != NULL);
 
 	/*
 	 * Find out if we have any bans we can do something about
@@ -1004,7 +992,7 @@ ban_lurker(struct worker *wrk, void *priv)
 	(void)priv;
 	while (1) {
 
-		while (cache_param->ban_lurker_sleep == 0.0) {
+		do {
 			/*
 			 * Ban-lurker is disabled:
 			 * Clean the last ban, if possible, and sleep
@@ -1018,18 +1006,19 @@ ban_lurker(struct worker *wrk, void *priv)
 			Lck_Unlock(&ban_mtx);
 			if (bf != NULL)
 				BAN_Free(bf);
-			else
-				VTIM_sleep(1.0);
-		}
+		} while (bf != NULL);
 
-		i = ban_lurker_work(wrk, &vsl);
-		VSL_Flush(&vsl, 0);
-		WRK_SumStat(wrk);
-		if (i) {
-			VTIM_sleep(cache_param->ban_lurker_sleep);
-		} else {
-			VTIM_sleep(1.0);
+		if (cache_param->ban_lurker_sleep != 0.0) {
+			do {
+				i = ban_lurker_work(wrk, &vsl);
+				VSL_Flush(&vsl, 0);
+				WRK_SumStat(wrk);
+				if (i)
+					VTIM_sleep(
+					    cache_param->ban_lurker_sleep);
+			} while (i);
 		}
+		VTIM_sleep(0.609);	// Random, non-magic
 	}
 	NEEDLESS_RETURN(NULL);
 }
