@@ -33,7 +33,7 @@
  *
  *	req.url == "/foo"
  *	req.url ~ ".iso" && obj.size > 10MB
- *	req.http.host ~ "web1.com" && obj.set-cookie ~ "USER=29293"
+ *	req.http.host ~ "web1.com" && obj.http.set-cookie ~ "USER=29293"
  *
  * We make the "&&" mandatory from the start, leaving the syntax space
  * for latter handling of "||" as well.
