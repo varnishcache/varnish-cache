@@ -86,7 +86,7 @@ varnish v1 -errvcl {Only http header variables can be unset.} {
 
 varnish v1 -errvcl {Unknown token 'if' when looking for STRING} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { ban_url (if); }
+	sub vcl_recv { ban (if); }
 }
 
 varnish v1 -errvcl {Expected an action, 'if', '{' or '}'} {
@@ -96,7 +96,7 @@ varnish v1 -errvcl {Expected an action, 'if', '{' or '}'} {
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { ban_url ("foo"); }
+	sub vcl_recv { ban ("req.url ~ foo"); }
 }
 
 varnish v1 -errvcl {Expected an action, 'if', '{' or '}'} {

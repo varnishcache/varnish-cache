@@ -327,9 +327,6 @@ regsuball(str, regex, sub)
 ban(ban expression)
   Bans all objects in cache that match the expression.
 
-ban_url(regex)
-  Bans all objects in cache whose URLs match regex.
-
 Subroutines
 ~~~~~~~~~~~
 
@@ -574,7 +571,7 @@ Example:
 	sub vcl_recv {
 	  if (client.ip ~ admin_network) {
 	    if (req.http.Cache-Control ~ "no-cache") {
-	      ban_url(req.url);
+	      ban("req.url ~ " + req.url);
 	    }
 	  }
 	}

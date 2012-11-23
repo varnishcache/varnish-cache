@@ -13,7 +13,7 @@ server s1 {
 
 varnish v1 -vcl+backend {} -start
 
-varnish v1 -cliok "ban.url FOO"
+varnish v1 -cliok "ban req.url ~ FOO"
 
 # There is one "magic" ban from boot
 varnish v1 -expect bans_added == 2
@@ -35,7 +35,7 @@ varnish v1 -expect bans_tested == 0
 varnish v1 -expect bans_tests_tested == 0
 
 # Add another ban
-varnish v1 -cliok "ban.url FOO"
+varnish v1 -cliok "ban req.url ~ FOO"
 varnish v1 -expect bans_added == 3
 varnish v1 -cliok "ban.list"
 
@@ -60,15 +60,15 @@ client c1 {
 
 
 # Now add another two bans, Kilroy should not be hit
-varnish v1 -cliok "ban.url KILROY"
-varnish v1 -cliok "ban.url FOO"
+varnish v1 -cliok "ban req.url ~ KILROY"
+varnish v1 -cliok "ban req.url ~ FOO"
 varnish v1 -expect bans_added == 5
 
 # Enable dup removal of bans
 varnish v1 -cliok "param.set ban_dups on"
 
 # This should incapacitate the two previous FOO bans.
-varnish v1 -cliok "ban.url FOO"
+varnish v1 -cliok "ban req.url ~ FOO"
 varnish v1 -expect bans_added == 6
 varnish v1 -expect bans_dups == 3
 varnish v1 -cliok "ban.list"
@@ -87,4 +87,4 @@ varnish v1 -cliok "ban.list"
 
 # Test a bogus regexp
 
-varnish v1 -clierr 106 "ban.url [[["
+varnish v1 -clierr 106 "ban req.url ~ [[["

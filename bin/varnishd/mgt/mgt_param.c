@@ -683,7 +683,7 @@ static const struct parspec input_parspec[] = {
 		"Objects already cached will not be affected by changes "
 		"made until they are fetched from the backend again.\n"
 		"To force an immediate effect at the expense of a total "
-		"flush of the cache use \"ban.url .\"",
+		"flush of the cache use \"ban obj.http.date ~ .\"",
 		0,
 		"120", "seconds" },
 	{ "workspace_client",

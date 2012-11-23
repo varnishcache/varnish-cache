@@ -11,7 +11,7 @@ server s1 {
 varnish v1 -vcl+backend { 
 	sub vcl_recv {
 		if (req.request == "PURGE") {
-			ban_url("^/$");
+			ban("req.url ~ ^/$");
 			error 209 "foo";
 		}
 	}

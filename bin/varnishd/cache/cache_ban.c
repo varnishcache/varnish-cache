@@ -1059,21 +1059,6 @@ ccf_ban(struct cli *cli, const char * const *av, void *priv)
 }
 
 static void
-ccf_ban_url(struct cli *cli, const char * const *av, void *priv)
-{
-	const char *aav[6];
-
-	(void)priv;
-	aav[0] = NULL;
-	aav[1] = "ban";
-	aav[2] = "req.url";
-	aav[3] = "~";
-	aav[4] = av[2];
-	aav[5] = NULL;
-	ccf_ban(cli, aav, priv);
-}
-
-static void
 ban_render(struct cli *cli, const uint8_t *bs)
 {
 	struct ban_test bt;
@@ -1145,7 +1130,6 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 }
 
 static struct cli_proto ban_cmds[] = {
-	{ CLI_BAN_URL,				"", ccf_ban_url },
 	{ CLI_BAN,				"", ccf_ban },
 	{ CLI_BAN_LIST,				"", ccf_ban_list },
 	{ NULL }

@@ -195,24 +195,6 @@ parse_ban(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_ban_url(struct vcc *tl)
-{
-
-	vcc_NextToken(tl);
-	ExpectErr(tl, '(');
-	vcc_NextToken(tl);
-
-	Fb(tl, 1, "VRT_ban(req, \"req.url\", \"~\", ");
-	vcc_Expr(tl, STRING);
-	ERRCHK(tl);
-	ExpectErr(tl, ')');
-	vcc_NextToken(tl);
-	Fb(tl, 0, ", 0);\n");
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
 parse_new_syntax(struct vcc *tl)
 {
 
@@ -324,7 +306,6 @@ static struct action_table {
 	{ "call",		parse_call },
 	{ "hash_data",		parse_hash_data, VCL_MET_HASH },
 	{ "ban",		parse_ban },
-	{ "ban_url",		parse_ban_url },
 	{ "remove",		parse_unset }, /* backward compatibility */
 	{ "return",		parse_return },
 	{ "rollback",		parse_rollback },

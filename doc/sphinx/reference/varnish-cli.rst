@@ -118,13 +118,6 @@ ban.list
 
       Then follows the actual ban it self.
 
-ban.url regexp
-      Immediately invalidate all documents whose URL matches the
-      specified regular expression. Please note that the Host part of
-      the URL is ignored, so if you have several virtual hosts all of
-      them will be banned. Use *ban* to specify a complete ban if you
-      need to narrow it down.
-
 help [command]
       Display a list of available commands.
       If the command is specified, display help for this command.
