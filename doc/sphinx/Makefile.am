@@ -98,6 +98,7 @@ EXTRA_DIST = \
 	installation/install.rst \
 	installation/prerequisites.rst \
 	installation/upgrade.rst \
+	installation/platformnotes.rst \
 	phk/autocrap.rst \
 	phk/backends.rst \
 	phk/barriers.rst \
@@ -163,7 +164,6 @@ EXTRA_DIST = \
 	users-guide/vcl-subs.rst \
 	users-guide/vcl-syntax.rst \
 	users-guide/vcl-variables.rst \
-	users-guide/virtualized.rst \
 	users-guide/websockets.rst
 
 
