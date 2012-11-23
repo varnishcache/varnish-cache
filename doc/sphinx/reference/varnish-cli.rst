@@ -76,121 +76,118 @@ be entered with the \\xnn syntax.
 Commands
 --------
 
-.. glossary:: 
-  :sorted:
+backend.list
+      Lists the defined backends including health state.
 
-  help [command]
-      Display a list of available commands.
-      If the command is specified, display help for this command.
-  
-  param.set param value
-      Set the parameter specified by param to the specified value.
-      See Run-Time Parameters for a list of parame‐ ters.
+backend.set_health matcher state
+      Sets the health state on a specific backend. This is useful if
+      you want to take a certain backend out of sirculations.
 
-  param.show [-l] [param]
-      Display a list if run-time parameters and their values.
-      
-      If the -l option is specified, the list includes a brief
-      explanation of each parameter.
-      
-      If a param is specified, display only the value and explanation
-      for this parameter.
-
-  ping  [timestamp]
-      Ping the Varnish cache process, keeping the connection alive.
-
-  ban   *field operator argument* [&& field operator argument [...]]
+ban   *field operator argument* [&& field operator argument [...]]
       Immediately invalidate all documents matching the ban
       expression.  See *Ban Expressions* for more documentation and
       examples.
 
-  ban.list
+ban.list
       All requests for objects from the cache are matched against
       items on the ban list.  If an object in the cache is older than
       a matching ban list item, it is considered "banned", and will be
       fetched from the backend instead.
-      
+
       When a ban expression is older than all the objects in the
       cache, it is removed from the list.
-      
+
       ban.list displays the ban list. The output looks something like
-      this (broken into two lines):
-      
-      0x7fea4fcb0580 1303835108.618863   131G   req.http.host ~ 
-      www.myhost.com && req.url ~ /some/url
-      
-      The first field is the address of the ban. 
-      
+      this::
+
+        0x7fea4fcb0580 1303835108.618863   131G   req.url ~ /some/url
+
+      The first field is the address of the ban.
+
       The second is the time of entry into the list, given
       as a high precision timestamp.
-      
+
       The third field describes many objects point to this ban. When
       an object is compared to a ban the object is marked with a
       reference to the newest ban it was tested against. This isn't
       really useful unless you're debugging.
-      
+
       A "G" marks that the ban is "Gone". Meaning it has been marked
       as a duplicate or it is no longer valid. It stays in the list
       for effiency reasons.
-      
+
       Then follows the actual ban it self.
 
-  ban.url regexp
+ban.url regexp
       Immediately invalidate all documents whose URL matches the
       specified regular expression. Please note that the Host part of
       the URL is ignored, so if you have several virtual hosts all of
       them will be banned. Use *ban* to specify a complete ban if you
       need to narrow it down.
 
-  quit
+help [command]
+      Display a list of available commands.
+      If the command is specified, display help for this command.
+
+param.set param value
+      Set the parameter specified by param to the specified value.
+      See Run-Time Parameters for a list of parame‐ ters.
+
+param.show [-l] [param]
+      Display a list if run-time parameters and their values.
+
+      If the -l option is specified, the list includes a brief
+      explanation of each parameter.
+
+      If a param is specified, display only the value and explanation
+      for this parameter.
+
+ping  [timestamp]
+      Ping the Varnish cache process, keeping the connection alive.
+
+quit
       Close the connection to the varnish admin port.
 
-  start
+start
       Start the Varnish cache process if it is not already running.
 
-  status
+status
       Check the status of the Varnish cache process.
 
-  stop
+stop
       Stop the Varnish cache process.
 
-  vcl.discard configname
+storage.list
+      Lists the defined storage backends.
+
+vcl.discard configname
       Discard the configuration specified by configname.  This will
       have no effect if the specified configuration has a non-zero
       reference count.
 
-  vcl.inline configname vcl
+vcl.inline configname vcl
       Create a new configuration named configname with the VCL code
       specified by vcl, which must be a quoted string.
 
-  vcl.list
+vcl.list
       List available configurations and their respective reference
       counts.  The active configuration is indicated with an asterisk
       ("*").
 
-  vcl.load configname filename
+vcl.load configname filename
       Create a new configuration named configname with the contents of
       the specified file.
 
-  vcl.show configname
+vcl.show configname
       Display the source code for the specified configuration.
 
-  vcl.use configname
+vcl.use configname
       Start using the configuration specified by configname for all
       new requests.  Existing requests will con‐ tinue using whichever
       configuration was in use when they arrived.
 
-  storage.list
-      Lists the defined storage backends.
 
-  backend.list
-      Lists the defined backends including health state.
-      
-  backend.set_health matcher state
-      Sets the health state on a specific backend. This is useful if
-      you want to take a certain backend out of sirculations.
 
-  
 Ban Expressions
 ---------------
 
