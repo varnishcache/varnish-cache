@@ -1280,4 +1280,9 @@ BAN_Shutdown(void)
 
 	AZ(pthread_join(ban_thread, &status));
 	AZ(status);
+
+	Lck_Lock(&ban_mtx);
+	/* Export the ban list to compact it */
+	ban_export();
+	Lck_Unlock(&ban_mtx);
 }
