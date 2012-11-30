@@ -99,6 +99,7 @@ struct ban_test {
 	const void		*arg2_spec;
 };
 
+static void ban_info(enum baninfo event, const uint8_t *ban, unsigned len);
 static VTAILQ_HEAD(banhead_s,ban) ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
 static struct lock ban_mtx;
 static struct ban *ban_magic;
@@ -484,7 +485,7 @@ BAN_Insert(struct ban *b)
 	 * can have entered the cache (thus no objects in the mean
 	 * time depending on ban_magic in the list) */
 	if (b != ban_magic)
-		AZ(STV_BanInfo(BI_NEW, b->spec, ln)); /* Notify stevedores */
+		ban_info(BI_NEW, b->spec, ln); /* Notify stevedores */
 	Lck_Unlock(&ban_mtx);
 
 	if (be == NULL)
@@ -594,6 +595,21 @@ ban_export(void)
 	AZ(VSB_finish(&vsb));
 	STV_BanExport((const uint8_t *)VSB_data(&vsb), VSB_len(&vsb));
 	VSB_delete(&vsb);
+}
+
+static void
+ban_info(enum baninfo event, const uint8_t *ban, unsigned len)
+{
+	if (STV_BanInfo(event, ban, len)) {
+		/* One or more stevedores reported failure. Export the
+		 * list instead. The exported list should take up less
+		 * space due to drops being purged and gones being
+		 * truncated. */
+		/* XXX: Keep some measure of how much space can be
+		 * saved, and only export if it's worth it. Assert if
+		 * not */
+		ban_export();
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -914,7 +930,7 @@ ban_cleantail(void)
 			VSC_C_main->bans--;
 			VSC_C_main->bans_deleted++;
 			VTAILQ_REMOVE(&ban_head, b, list);
-			AZ(STV_BanInfo(BI_DROP, b->spec, ban_len(b->spec)));
+			ban_info(BI_DROP, b->spec, ban_len(b->spec));
 		} else {
 			b = NULL;
 		}
