@@ -1061,6 +1061,7 @@ void STV_open(void);
 void STV_close(void);
 void STV_Freestore(struct object *o);
 int STV_BanInfo(enum baninfo event, const uint8_t *ban, unsigned len);
+void STV_BanExport(const uint8_t *bans, unsigned len);
 
 /* storage_synth.c */
 struct vsb *SMS_Makesynth(struct object *obj);

@@ -574,6 +574,29 @@ BAN_RefBan(struct objcore *oc, double t0, const struct ban *tail)
 }
 
 /*--------------------------------------------------------------------
+ * Compile a full ban list and export this area to the stevedores for
+ * persistence.
+ */
+
+static void
+ban_export(void)
+{
+	struct ban *b;
+	struct vsb vsb;
+
+	Lck_AssertHeld(&ban_mtx);
+	/* XXX: Use the ban entry size measurements to hit the target
+	 * and avoid multiple allocations */
+	AN(VSB_new(&vsb, NULL, 64 * VSC_C_main->bans, VSB_AUTOEXTEND));
+	VTAILQ_FOREACH_REVERSE(b, &ban_head, banhead_s, list) {
+		AZ(VSB_bcat(&vsb, b->spec, ban_len(b->spec)));
+	}
+	AZ(VSB_finish(&vsb));
+	STV_BanExport((const uint8_t *)VSB_data(&vsb), VSB_len(&vsb));
+	VSB_delete(&vsb);
+}
+
+/*--------------------------------------------------------------------
  * Put a skeleton ban in the list, unless there is an identical,
  * time & condition, ban already in place.
  *
@@ -689,8 +712,16 @@ BAN_Compile(void)
 	ASSERT_CLI();
 	AZ(ban_shutdown);
 
+	Lck_Lock(&ban_mtx);
+
 	/* Do late reporting of ban_magic */
 	AZ(STV_BanInfo(BI_NEW, ban_magic->spec, ban_len(ban_magic->spec)));
+
+	/* All bans have been read from all persistent stevedores. Export
+	   the compiled list */
+	ban_export();
+
+	Lck_Unlock(&ban_mtx);
 
 	ban_start = VTAILQ_FIRST(&ban_head);
 	WRK_BgThread(&ban_thread, "ban-lurker", ban_lurker, NULL);

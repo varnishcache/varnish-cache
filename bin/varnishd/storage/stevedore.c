@@ -472,6 +472,22 @@ STV_BanInfo(enum baninfo event, const uint8_t *ban, unsigned len)
 	return (r);
 }
 
+/*-------------------------------------------------------------------
+ * Export a complete ban list to the stevedores for persistence.
+ * The stevedores should clear any previous ban lists and replace
+ * them with this list.
+ */
+
+void
+STV_BanExport(const uint8_t *bans, unsigned len)
+{
+	struct stevedore *stv;
+
+	VTAILQ_FOREACH(stv, &stv_stevedores, list)
+		if (stv->banexport != NULL)
+			stv->banexport(stv, bans, len);
+}
+
 /*--------------------------------------------------------------------
  * VRT functions for stevedores
  */

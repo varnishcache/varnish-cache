@@ -107,6 +107,26 @@ smp_baninfo(struct stevedore *stv, enum baninfo event,
 	return (r);
 }
 
+static void
+smp_banexport_spc(struct smp_signspace *spc, const uint8_t *bans, unsigned len)
+{
+	smp_reset_signspace(spc);
+	assert(SIGNSPACE_FREE(spc) >= len);
+	memcpy(SIGNSPACE_DATA(spc), bans, len);
+	smp_append_signspace(spc, len);
+	smp_sync_sign(&spc->ctx);
+}
+
+static void
+smp_banexport(struct stevedore *stv, const uint8_t *bans, unsigned len)
+{
+	struct smp_sc *sc;
+
+	CAST_OBJ_NOTNULL(sc, stv->priv, SMP_SC_MAGIC);
+	smp_banexport_spc(&sc->ban1, bans, len);
+	smp_banexport_spc(&sc->ban2, bans, len);
+}
+
 /*--------------------------------------------------------------------
  * Attempt to open and read in a ban list
  */
@@ -579,6 +599,7 @@ const struct stevedore smp_stevedore = {
 	.free	=	smp_free,
 	.signal_close = smp_signal_close,
 	.baninfo =	smp_baninfo,
+	.banexport =	smp_banexport,
 };
 
 /*--------------------------------------------------------------------
