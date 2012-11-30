@@ -68,37 +68,43 @@ static VTAILQ_HEAD(,smp_sc)	silos = VTAILQ_HEAD_INITIALIZER(silos);
  * Add bans to silos
  */
 
-static void
+static int
 smp_appendban(struct smp_sc *sc, struct smp_signspace *spc,
     uint32_t len, const uint8_t *ban)
 {
 
 	(void)sc;
-	assert(SIGNSPACE_FREE(spc) >=  len);
+	if (SIGNSPACE_FREE(spc) < len)
+		return (-1);
 
 	memcpy(SIGNSPACE_FRONT(spc), ban, len);
 	smp_append_signspace(spc, len);
+
+	return (0);
 }
 
 /* Trust that cache_ban.c takes care of locking */
 
-static void
+static int
 smp_baninfo(struct stevedore *stv, enum baninfo event,
 	    const uint8_t *ban, unsigned len)
 {
 	struct smp_sc *sc;
+	int r = 0;
 
 	CAST_OBJ_NOTNULL(sc, stv->priv, SMP_SC_MAGIC);
 
 	switch (event) {
 	case BI_NEW:
-		smp_appendban(sc, &sc->ban1, len, ban);
-		smp_appendban(sc, &sc->ban2, len, ban);
+		r |= smp_appendban(sc, &sc->ban1, len, ban);
+		r |= smp_appendban(sc, &sc->ban2, len, ban);
 		break;
 	default:
 		/* Ignored */
 		break;
 	}
+
+	return (r);
 }
 
 /*--------------------------------------------------------------------

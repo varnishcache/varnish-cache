@@ -48,7 +48,7 @@ typedef struct object *storage_allocobj_f(struct stevedore *, struct busyobj *,
     struct objcore **, unsigned ltot, const struct stv_objsecrets *);
 typedef void storage_close_f(const struct stevedore *);
 typedef void storage_signal_close_f(const struct stevedore *);
-typedef void storage_baninfo_f(struct stevedore *, enum baninfo event,
+typedef int storage_baninfo_f(struct stevedore *, enum baninfo event,
     const uint8_t *ban, unsigned len);
 
 /* Prototypes for VCL variable responders */

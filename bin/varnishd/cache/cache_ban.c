@@ -484,7 +484,7 @@ BAN_Insert(struct ban *b)
 	 * can have entered the cache (thus no objects in the mean
 	 * time depending on ban_magic in the list) */
 	if (b != ban_magic)
-		STV_BanInfo(BI_NEW, b->spec, ln); /* Notify stevedores */
+		AZ(STV_BanInfo(BI_NEW, b->spec, ln)); /* Notify stevedores */
 	Lck_Unlock(&ban_mtx);
 
 	if (be == NULL)
@@ -690,7 +690,7 @@ BAN_Compile(void)
 	AZ(ban_shutdown);
 
 	/* Do late reporting of ban_magic */
-	STV_BanInfo(BI_NEW, ban_magic->spec, ban_len(ban_magic->spec));
+	AZ(STV_BanInfo(BI_NEW, ban_magic->spec, ban_len(ban_magic->spec)));
 
 	ban_start = VTAILQ_FIRST(&ban_head);
 	WRK_BgThread(&ban_thread, "ban-lurker", ban_lurker, NULL);
@@ -883,7 +883,7 @@ ban_cleantail(void)
 			VSC_C_main->bans--;
 			VSC_C_main->bans_deleted++;
 			VTAILQ_REMOVE(&ban_head, b, list);
-			STV_BanInfo(BI_DROP, b->spec, ban_len(b->spec));
+			AZ(STV_BanInfo(BI_DROP, b->spec, ban_len(b->spec)));
 		} else {
 			b = NULL;
 		}

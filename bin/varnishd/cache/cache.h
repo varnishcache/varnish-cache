@@ -1060,7 +1060,7 @@ void STV_free(struct storage *st);
 void STV_open(void);
 void STV_close(void);
 void STV_Freestore(struct object *o);
-void STV_BanInfo(enum baninfo event, const uint8_t *ban, unsigned len);
+int STV_BanInfo(enum baninfo event, const uint8_t *ban, unsigned len);
 
 /* storage_synth.c */
 struct vsb *SMS_Makesynth(struct object *obj);
