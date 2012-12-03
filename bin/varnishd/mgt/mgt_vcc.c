@@ -607,6 +607,7 @@ mcf_config_use(struct cli *cli, const char * const *av, void *priv)
 		VCLI_SetResult(cli, status);
 		VCLI_Out(cli, "%s", p);
 	} else {
+		VCLI_Out(cli, "VCL '%s' now active", av[2]);
 		vp->active = 2;
 		VTAILQ_FOREACH(vp, &vclhead, list) {
 			if (vp->active == 1)
