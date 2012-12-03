@@ -324,8 +324,11 @@ regsub(str, regex, sub)
 regsuball(str, regex, sub)
   As regsub() but this replaces all occurrences.
 
-ban(ban expression)
-  Bans all objects in cache that match the expression.
+ban(ban expression [, ttl= $ttl][, grace= $grace][, keep= $keep])
+  Sets the given ttl, grace and keep for objects matching the ban
+  expression.  If none of ttl, grace or keep are given, they all get
+  set to -1, definitively removing the object from cache.  See *Ban
+  Expressions* in varnish-cli(7) for more documentation and examples.
 
 Subroutines
 ~~~~~~~~~~~
@@ -956,11 +959,34 @@ for object invalidation:
     }
   }
 
+TTL, grace and keep – when are objects removed from the cache?
+--------------------------------------------------------------
+
+There are two mechanisms that remove objects from the cache: LRU,
+which happens when the cache is full, and expiry.
+
+Objects exist in one of multiple states:
+
+ * Valid: The TTL has not yet expired and the object is served as normal
+ * Graced: The TTL has expired, but its grace period has not expired.
+     It is a grace candidate and might be delivered to clients.  See grace.
+ * Kept: The TTL has expired, but the keep period has not yet
+     expired. The object is a candidate to be used for conditional
+     requests to the backend.
+
+The keep and grace intervals run in parallel, so an object will be
+kept in the cache until the time period specified by the maximum of
+TTL + grace and TTL + keep has expired.  Once all the timers have
+expired, the object will be removed from the cache and any requests
+for it will cause a completely new object to be fetched from the
+backend.
+
 SEE ALSO
 ========
 
 * varnishd(1)
 * vmod_std(7)
+* varnish-cli(7)
 
 HISTORY
 =======

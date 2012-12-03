@@ -83,10 +83,11 @@ backend.set_health matcher state
       Sets the health state on a specific backend. This is useful if
       you want to take a certain backend out of sirculations.
 
-ban   *field operator argument* [&& field operator argument [...]]
-      Immediately invalidate all documents matching the ban
-      expression.  See *Ban Expressions* for more documentation and
-      examples.
+ban [-t ttl] [-g grace] [-k keep] *field operator argument* [&& field operator argument [...]]
+      Sets the given ttl, grace and keep for objects matching the ban
+      expression.  If none of ttl, grace or keep are given, they all
+      get set to -1, definitively removing the object from cache.  See
+      *Ban Expressions* for more documentation and examples.
 
 ban.list
       All requests for objects from the cache are matched against
@@ -199,7 +200,6 @@ The argument could be a quoted string, a regexp, or an integer.
 Integers can have "KB", "MB", "GB" or "TB" appended for size related
 fields.
 
-
 Scripting
 ---------
 
@@ -295,18 +295,23 @@ EXAMPLES
 Simple example: All requests where req.url exactly matches the string
 /news are banned from the cache::
 
-    req.url == "/news"
+    ban req.url == "/news"
 
-Example: Ban all documents where the name does not end with ".ogg",
-and where the size of the object is greater than 10 megabytes::
+Example: Same as above, but explicit in what the TTL, grace and keep
+values are set to.
 
-    req.url !~ "\.ogg$" && obj.size > 10MB
+    ban -t -1s -g -1s -k -1s req.url == "/news"
+
+Example: Set grace for all objects whose URL end with `.ogg` to 60
+seconds.  Does not change the TTL or the keep of the objects.
+
+    ban -g 60s req.url !~ "\.ogg$"
 
 Example: Ban all documents where the serving host is "example.com"
 or "www.example.com", and where the Set-Cookie header received from
 the backend contains "USERID=1663"::
 
-    req.http.host ~ "^(?i)(www\.)example.com$" && obj.http.set-cookie ~ "USERID=1663"
+    ban req.http.host ~ "^(?i)(www\.)example.com$" && obj.http.set-cookie ~ "USERID=1663"
 
 SEE ALSO
 ========
