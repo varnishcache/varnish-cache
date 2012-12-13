@@ -476,7 +476,15 @@ BAN_Insert(struct ban *b)
 	else
 		be = NULL;
 
-	STV_BanInfo(BI_NEW, b->spec, ln);	/* Notify stevedores */
+	/* ban_magic is magic, and needs to be inserted early to give
+	 * a handle to grab a ref on. We don't report it here as the
+	 * stevedores will not be opened and ready to accept it
+	 * yet. Instead it is reported on BAN_Compile, which is after
+	 * the stevedores has been opened, but before any new objects
+	 * can have entered the cache (thus no objects in the mean
+	 * time depending on ban_magic in the list) */
+	if (b != ban_magic)
+		STV_BanInfo(BI_NEW, b->spec, ln); /* Notify stevedores */
 	Lck_Unlock(&ban_mtx);
 
 	if (be == NULL)
@@ -681,7 +689,7 @@ BAN_Compile(void)
 	ASSERT_CLI();
 	AZ(ban_shutdown);
 
-	/* Notify stevedores */
+	/* Do late reporting of ban_magic */
 	STV_BanInfo(BI_NEW, ban_magic->spec, ban_len(ban_magic->spec));
 
 	ban_start = VTAILQ_FIRST(&ban_head);
