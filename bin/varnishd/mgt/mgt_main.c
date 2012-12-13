@@ -465,6 +465,7 @@ main(int argc, char * const *argv)
 			AN(p);
 			*p++ = '\0';
 			MCF_ParamSet(cli, optarg, p);
+			*--p = '=';
 			cli_check(cli);
 			break;
 		case 'r':
