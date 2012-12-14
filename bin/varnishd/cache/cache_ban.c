@@ -262,13 +262,16 @@ ban_equal(const uint8_t *bs1, const uint8_t *bs2)
 static void
 ban_mark_gone(struct ban *b)
 {
+	unsigned ln;
 
 	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
+	ln = ban_len(b->spec);
 	b->flags |= BAN_F_GONE;
 	b->spec[BANS_FLAGS] |= BANS_FLAG_GONE;
 	VWMB();
 	vbe32enc(b->spec + BANS_LENGTH, 0);
 	VSC_C_main->bans_gone++;
+	VSC_C_main->bans_persisted_fragmentation += ln - ban_len(b->spec);
 }
 
 /*--------------------------------------------------------------------
@@ -484,6 +487,7 @@ BAN_Insert(struct ban *b)
 	 * the stevedores has been opened, but before any new objects
 	 * can have entered the cache (thus no objects in the mean
 	 * time depending on ban_magic in the list) */
+	VSC_C_main->bans_persisted_bytes += ln;
 	if (b != ban_magic)
 		ban_info(BI_NEW, b->spec, ln); /* Notify stevedores */
 	Lck_Unlock(&ban_mtx);
@@ -584,17 +588,21 @@ ban_export(void)
 {
 	struct ban *b;
 	struct vsb vsb;
+	unsigned ln;
 
 	Lck_AssertHeld(&ban_mtx);
-	/* XXX: Use the ban entry size measurements to hit the target
-	 * and avoid multiple allocations */
-	AN(VSB_new(&vsb, NULL, 64 * VSC_C_main->bans, VSB_AUTOEXTEND));
+	ln = VSC_C_main->bans_persisted_bytes -
+	    VSC_C_main->bans_persisted_fragmentation;
+	AN(VSB_new(&vsb, NULL, ln, VSB_AUTOEXTEND));
 	VTAILQ_FOREACH_REVERSE(b, &ban_head, banhead_s, list) {
 		AZ(VSB_bcat(&vsb, b->spec, ban_len(b->spec)));
 	}
 	AZ(VSB_finish(&vsb));
+	assert(VSB_len(&vsb) == ln);
 	STV_BanExport((const uint8_t *)VSB_data(&vsb), VSB_len(&vsb));
 	VSB_delete(&vsb);
+	VSC_C_main->bans_persisted_bytes = ln;
+	VSC_C_main->bans_persisted_fragmentation = 0;
 }
 
 static void
@@ -665,6 +673,7 @@ ban_reload(const uint8_t *ban, unsigned len)
 		VTAILQ_INSERT_TAIL(&ban_head, b2, list);
 	else
 		VTAILQ_INSERT_BEFORE(b, b2, list);
+	VSC_C_main->bans_persisted_bytes += len;
 
 	/* Hunt down older duplicates */
 	for (b = VTAILQ_NEXT(b2, list); b != NULL; b = VTAILQ_NEXT(b, list)) {
@@ -930,6 +939,8 @@ ban_cleantail(void)
 			VSC_C_main->bans--;
 			VSC_C_main->bans_deleted++;
 			VTAILQ_REMOVE(&ban_head, b, list);
+			VSC_C_main->bans_persisted_fragmentation +=
+			    ban_len(b->spec);
 			ban_info(BI_DROP, b->spec, ban_len(b->spec));
 		} else {
 			b = NULL;

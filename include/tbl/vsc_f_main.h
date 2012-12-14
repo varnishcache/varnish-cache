@@ -505,6 +505,15 @@ VSC_F(bans_dups,		uint64_t, 0, 'c',
     "Bans superseded by other bans",
 	"Count of bans replaced by later identical bans."
 )
+VSC_F(bans_persisted_bytes,	uint64_t, 0, 'g',
+    "Bytes used by the persisted ban lists",
+        "Number of bytes used by the persisted ban lists."
+)
+VSC_F(bans_persisted_fragmentation,	uint64_t, 0, 'g',
+    "Extra bytes in persisted ban lists due to fragmentation",
+        "Number of extra bytes accumulated through dropped and"
+	" gone bans in the persistent ban lists."
+)
 
 /*--------------------------------------------------------------------*/
 
