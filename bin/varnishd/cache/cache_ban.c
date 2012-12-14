@@ -269,7 +269,7 @@ ban_mark_gone(struct ban *b)
 	b->flags |= BAN_F_GONE;
 	b->spec[BANS_FLAGS] |= BANS_FLAG_GONE;
 	VWMB();
-	vbe32enc(b->spec + BANS_LENGTH, 0);
+	vbe32enc(b->spec + BANS_LENGTH, BANS_HEAD_LEN);
 	VSC_C_main->bans_gone++;
 	VSC_C_main->bans_persisted_fragmentation += ln - ban_len(b->spec);
 }
