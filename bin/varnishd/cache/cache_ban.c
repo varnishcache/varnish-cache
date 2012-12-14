@@ -265,6 +265,8 @@ ban_mark_gone(struct ban *b)
 	unsigned ln;
 
 	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
+	AN(b->spec);
+	AZ(b->flags & BAN_F_GONE);
 	ln = ban_len(b->spec);
 	b->flags |= BAN_F_GONE;
 	b->spec[BANS_FLAGS] |= BANS_FLAG_GONE;
@@ -1267,9 +1269,8 @@ BAN_Init(void)
 
 	ban_magic = BAN_New();
 	AN(ban_magic);
-	ban_magic->flags |= BAN_F_GONE;
-	VSC_C_main->bans_gone++;
 	AZ(BAN_Insert(ban_magic));
+	ban_mark_gone(ban_magic);
 }
 
 /*--------------------------------------------------------------------
