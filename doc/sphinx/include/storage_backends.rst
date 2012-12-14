@@ -105,6 +105,11 @@ open at any given point in time. Full silos are *sealed*. When Varnish
 starts after a shutdown it will discard the content of any silo that
 isn't sealed.
 
+Note that taking persistent silos offline and at the same time using
+bans can cause problems. This because bans added while the silo was
+offline will not be applied to the silo when it reenters the cache,
+and can make previously banned objects reappear.
+
 Transient Storage
 -----------------
       
