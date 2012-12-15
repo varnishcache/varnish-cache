@@ -49,7 +49,6 @@
 #include "hash/hash_slinger.h"
 #include "vcli.h"
 #include "vcli_priv.h"
-#include "vend.h"
 #include "vsha256.h"
 #include "vtim.h"
 
@@ -86,7 +85,7 @@ smp_appendban(struct smp_sc *sc, struct smp_signspace *spc,
 /* Trust that cache_ban.c takes care of locking */
 
 static int
-smp_baninfo(struct stevedore *stv, enum baninfo event,
+smp_baninfo(const struct stevedore *stv, enum baninfo event,
 	    const uint8_t *ban, unsigned len)
 {
 	struct smp_sc *sc;
@@ -118,7 +117,7 @@ smp_banexport_spc(struct smp_signspace *spc, const uint8_t *bans, unsigned len)
 }
 
 static void
-smp_banexport(struct stevedore *stv, const uint8_t *bans, unsigned len)
+smp_banexport(const struct stevedore *stv, const uint8_t *bans, unsigned len)
 {
 	struct smp_sc *sc;
 
