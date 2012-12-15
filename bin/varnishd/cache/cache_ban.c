@@ -1258,7 +1258,7 @@ BAN_Init(void)
 	AN(ban_magic);
 	ban_magic->flags |= BAN_F_GONE;
 	VSC_C_main->bans_gone++;
-	BAN_Insert(ban_magic);
+	AZ(BAN_Insert(ban_magic));
 }
 
 /*--------------------------------------------------------------------
