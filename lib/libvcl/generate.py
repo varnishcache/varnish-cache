@@ -843,7 +843,10 @@ for i in sp_variables:
 		fo.write('",\n')
 	else:
 		fo.write('\t    "VRT_r_%s(req)",\n' % cnam)
-		fh.write(ctyp + " VRT_r_%s(const %s);\n" % (cnam, i[4]))
+		if i[4][:5] != "const":
+			fh.write(ctyp + " VRT_r_%s(const %s);\n" % (cnam, i[4]))
+		else:
+			fh.write(ctyp + " VRT_r_%s(%s);\n" % (cnam, i[4]))
 	restrict(fo, i[2])
 
 	if len(i[3]) == 0:
