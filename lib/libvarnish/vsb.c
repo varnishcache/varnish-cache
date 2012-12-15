@@ -77,7 +77,7 @@ __FBSDID("$FreeBSD: head/sys/kern/subr_vsb.c 222004 2011-05-17 06:36:32Z phk $")
  */
 #if !defined(NDEBUG)
 static void
-_assert_VSB_integrity(const char *fun, struct vsb *s)
+_assert_VSB_integrity(const char *fun, const struct vsb *s)
 {
 
 	(void)fun;
@@ -93,7 +93,7 @@ _assert_VSB_integrity(const char *fun, struct vsb *s)
 }
 
 static void
-_assert_VSB_state(const char *fun, struct vsb *s, int state)
+_assert_VSB_state(const char *fun, const struct vsb *s, int state)
 {
 
 	(void)fun;
@@ -490,7 +490,7 @@ VSB_finish(struct vsb *s)
  * Return a pointer to the vsb data.
  */
 char *
-VSB_data(struct vsb *s)
+VSB_data(const struct vsb *s)
 {
 
 	assert_VSB_integrity(s);
@@ -503,7 +503,7 @@ VSB_data(struct vsb *s)
  * Return the length of the vsb data.
  */
 ssize_t
-VSB_len(struct vsb *s)
+VSB_len(const struct vsb *s)
 {
 
 	assert_VSB_integrity(s);
