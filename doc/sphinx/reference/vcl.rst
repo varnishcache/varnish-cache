@@ -483,7 +483,7 @@ vcl_fetch
 
   hit_for_pass 
     Pass in fetch. Passes the object without caching it. This will
-    create a socalled hit_for_pass object which has the side effect
+    create a so-called hit_for_pass object which has the side effect
     that the decision not to cache will be cached. This is to allow
     would-be uncachable requests to be passed to the backend at the
     same time. The same logic is not necessary in vcl_recv because
@@ -545,7 +545,7 @@ default code.
 
 Multiple subroutines
 ~~~~~~~~~~~~~~~~~~~~
-If multiple subroutines with the the name of one of the builtin
+If multiple subroutines with the name of one of the builtin
 ones are defined, they are concatenated in the order in which they
 appear in the source.
 The default versions distributed with Varnish will be implicitly
