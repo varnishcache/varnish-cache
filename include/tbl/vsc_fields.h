@@ -65,6 +65,31 @@ VSC_F(uptime,			uint64_t, 0, 'c',
     "Management process uptime",
 	"Uptime in seconds of the management process"
 )
+VSC_F(child_start,		uint64_t, 0, 'c',
+    "Child process started",
+	"Number of times the child process has been started"
+)
+VSC_F(child_exit,		uint64_t, 0, 'c',
+    "Child process normal exit",
+	"Number of times the child process has been cleanly stopped"
+)
+VSC_F(child_stop,		uint64_t, 0, 'c',
+    "Child process unexpected exit",
+	"Number of times the child process has exited with an unexpected"
+	" return code"
+)
+VSC_F(child_died,		uint64_t, 0, 'c',
+    "Child process died (signal)",
+	"Number of times the child process has died due to signals"
+)
+VSC_F(child_dump,		uint64_t, 0, 'c',
+    "Child process core dumped",
+	"Number of times the child process has produced core dumps"
+)
+VSC_F(child_panic,		uint64_t, 0, 'c',
+    "Child process panic",
+	"Number of times the management process has caught a child panic"
+)
 
 #endif
 

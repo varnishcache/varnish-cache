@@ -401,6 +401,7 @@ mgt_launch_child(struct cli *cli)
 	}
 	assert(pid > 1);
 	REPORT(LOG_NOTICE, "child (%jd) Started", (intmax_t)pid);
+	VSC_C_mgt->child_start = ++static_VSC_C_mgt.child_start;
 
 	/* Close stuff the child got */
 	closex(&heritage.std_fd);
@@ -511,15 +512,21 @@ mgt_reap_child(void)
 	if (WIFEXITED(status) && WEXITSTATUS(status)) {
 		VSB_printf(vsb, " status=%d", WEXITSTATUS(status));
 		exit_status |= 0x20;
+		if (WEXITSTATUS(status) == 1)
+			VSC_C_mgt->child_exit = ++static_VSC_C_mgt.child_exit;
+		else
+			VSC_C_mgt->child_stop = ++static_VSC_C_mgt.child_stop;
 	}
 	if (WIFSIGNALED(status)) {
 		VSB_printf(vsb, " signal=%d", WTERMSIG(status));
 		exit_status |= 0x40;
+		VSC_C_mgt->child_died = ++static_VSC_C_mgt.child_died;
 	}
 #ifdef WCOREDUMP
 	if (WCOREDUMP(status)) {
 		VSB_printf(vsb, " (core dumped)");
 		exit_status |= 0x80;
+		VSC_C_mgt->child_dump = ++static_VSC_C_mgt.child_dump;
 	}
 #endif
 	AZ(VSB_finish(vsb));
@@ -530,6 +537,7 @@ mgt_reap_child(void)
 	if (heritage.panic_str[0] != '\0') {
 		mgt_panic_record(r);
 		mgt_SHM_Destroy(1);
+		VSC_C_mgt->child_panic = ++static_VSC_C_mgt.child_panic;
 	} else {
 		mgt_SHM_Destroy(0);
 	}
