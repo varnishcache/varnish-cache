@@ -43,7 +43,7 @@ the IP address of the client against an ACL with the match operator.::
   }
   
   sub vcl_recv {
-    if (req.request == "PURGE") {
+    if (req.method == "PURGE") {
       if (client.ip ~ local) {
          return(lookup);
       }
@@ -51,14 +51,14 @@ the IP address of the client against an ACL with the match operator.::
   }
   
   sub vcl_hit {
-     if (req.request == "PURGE") {
+     if (req.method == "PURGE") {
        set obj.ttl = 0s;
        error 200 "Purged.";
       }
   }
 
   sub vcl_miss {
-    if (req.request == "PURGE") {
+    if (req.method == "PURGE") {
       error 404 "Not in cache.";
     }
   }

@@ -9,8 +9,8 @@ server s1 {
 
 varnish v1 -vcl+backend { 
 	sub vcl_recv {
-		if (req.request == "POST") {
-			set req.request = "GET";
+		if (req.method == "POST") {
+			set req.method = "GET";
 		}
 	}
 } -start 

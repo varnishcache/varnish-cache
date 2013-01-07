@@ -42,11 +42,11 @@
 #undef HTTPH
 
 static const enum VSL_tag_e foo[] = {
-	[HTTP_Req]	= SLT_ReqRequest,
-	[HTTP_Resp]	= SLT_RespRequest,
-	[HTTP_Bereq]	= SLT_BereqRequest,
-	[HTTP_Beresp]	= SLT_BerespRequest,
-	[HTTP_Obj]	= SLT_ObjRequest,
+	[HTTP_Method]	= SLT_ReqMethod,
+	[HTTP_Resp]	= SLT_RespMethod,
+	[HTTP_Bereq]	= SLT_BereqMethod,
+	[HTTP_Beresp]	= SLT_BerespMethod,
+	[HTTP_Obj]	= SLT_ObjMethod,
 };
 
 static enum VSL_tag_e
@@ -56,8 +56,8 @@ http2shmlog(const struct http *hp, int t)
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	if (t > HTTP_HDR_FIRST)
 		t = HTTP_HDR_FIRST;
-	assert(hp->logtag >= HTTP_Req && hp->logtag <= HTTP_Obj); /*lint !e685*/
-	assert(t >= HTTP_HDR_REQ && t <= HTTP_HDR_FIRST);
+	assert(hp->logtag >= HTTP_Method && hp->logtag <= HTTP_Obj); /*lint !e685*/
+	assert(t >= HTTP_HDR_METHOD && t <= HTTP_HDR_FIRST);
 	return ((enum VSL_tag_e)(foo[hp->logtag] + t));
 }
 
@@ -473,8 +473,8 @@ const char *
 http_GetReq(const struct http *hp)
 {
 
-	Tcheck(hp->hd[HTTP_HDR_REQ]);
-	return (hp->hd[HTTP_HDR_REQ].b);
+	Tcheck(hp->hd[HTTP_HDR_METHOD]);
+	return (hp->hd[HTTP_HDR_METHOD].b);
 }
 
 /*--------------------------------------------------------------------
@@ -664,7 +664,7 @@ http_DissectRequest(struct req *req)
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
 	retval = http_splitline(hp, htc,
-	    HTTP_HDR_REQ, HTTP_HDR_URL, HTTP_HDR_PROTO);
+	    HTTP_HDR_METHOD, HTTP_HDR_URL, HTTP_HDR_PROTO);
 	if (retval != 0) {
 		VSLbt(req->vsl, SLT_HttpGarbage, htc->rxbuf);
 		return (retval);
@@ -757,7 +757,7 @@ void
 http_ForceGet(const struct http *to)
 {
 	if (strcmp(http_GetReq(to), "GET"))
-		http_SetH(to, HTTP_HDR_REQ, "GET");
+		http_SetH(to, HTTP_HDR_METHOD, "GET");
 }
 
 void
@@ -845,7 +845,7 @@ http_FilterReq(const struct req *req, unsigned how)
 	hp = req->busyobj->bereq;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
-	http_linkh(hp, req->http, HTTP_HDR_REQ);
+	http_linkh(hp, req->http, HTTP_HDR_METHOD);
 	http_linkh(hp, req->http, HTTP_HDR_URL);
 	if (how == HTTPH_R_FETCH)
 		http_SetH(hp, HTTP_HDR_PROTO, "HTTP/1.1");
@@ -1068,8 +1068,8 @@ http_Write(const struct worker *w, const struct http *hp, int resp)
 		http_VSLH(hp, HTTP_HDR_RESPONSE);
 	} else {
 		AN(hp->hd[HTTP_HDR_URL].b);
-		l = WRW_WriteH(w, &hp->hd[HTTP_HDR_REQ], " ");
-		http_VSLH(hp, HTTP_HDR_REQ);
+		l = WRW_WriteH(w, &hp->hd[HTTP_HDR_METHOD], " ");
+		http_VSLH(hp, HTTP_HDR_METHOD);
 		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_URL], " ");
 		http_VSLH(hp, HTTP_HDR_URL);
 		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_PROTO], "\r\n");

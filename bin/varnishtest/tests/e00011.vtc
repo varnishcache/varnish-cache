@@ -2,14 +2,14 @@ varnishtest "Make sure that PASS'ed ESI requests use GET for includes"
 
 server s1 {
 	rxreq 
-	expect req.request == POST
+	expect req.method == POST
 	expect req.url == /foobar
 	txresp -body {<HTML>
 		FOO
 		<esi:include src="/bar"/>
 	}
 	rxreq
-	expect req.request == GET
+	expect req.method == GET
 	txresp -hdr "Set-Cookie: Foo=bar" -body {<HTML>
 		BAR
 	}

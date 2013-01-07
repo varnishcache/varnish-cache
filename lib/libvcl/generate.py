@@ -139,6 +139,12 @@ sp_variables = (
 		( ),
 		'struct req *'
 	),
+	('req.method',
+		'STRING',
+		( 'proc',),
+		( 'proc',),
+		'const struct req *'
+	),
 	('req.request',
 		'STRING',
 		( 'proc',),
@@ -234,6 +240,12 @@ sp_variables = (
 		( 'recv',),
 		( 'recv',),
 		'struct req *'
+	),
+	('bereq.method',
+		'STRING',
+		( 'pipe', 'pass', 'miss', 'fetch',),
+		( 'pipe', 'pass', 'miss', 'fetch',),
+		'const struct req *'
 	),
 	('bereq.request',
 		'STRING',

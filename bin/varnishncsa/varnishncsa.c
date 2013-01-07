@@ -301,7 +301,7 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			trimfield(&lp->df_h, ptr, end);
 		break;
 
-	case SLT_BereqRequest:
+	case SLT_BereqMethod:
 		if (!lp->active)
 			break;
 		if (lp->df_m != NULL) {
@@ -420,7 +420,7 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		trimfield(&lp->df_h, ptr, end);
 		break;
 
-	case SLT_ReqRequest:
+	case SLT_ReqMethod:
 		if (!lp->active)
 			break;
 		if (lp->df_m != NULL) {

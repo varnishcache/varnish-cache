@@ -1132,7 +1132,7 @@ cnt_recv(const struct worker *wrk, struct req *req)
 	SHA256_Final(req->digest, req->sha256ctx);
 	req->sha256ctx = NULL;
 
-	if (!strcmp(req->http->hd[HTTP_HDR_REQ].b, "HEAD"))
+	if (!strcmp(req->http->hd[HTTP_HDR_METHOD].b, "HEAD"))
 		req->wantbody = 0;
 	else
 		req->wantbody = 1;

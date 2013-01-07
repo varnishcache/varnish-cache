@@ -382,8 +382,8 @@ vcl_recv
   lookup  
     Look up the requested object in the cache.  Control will
     eventually pass to vcl_hit or vcl_miss, depending on whether the
-    object is in the cache.  The ``bereq.request`` value will be set
-    to ``GET`` regardless of the value of ``req.request``.
+    object is in the cache.  The ``bereq.method`` value will be set
+    to ``GET`` regardless of the value of ``req.method``.
 
 vcl_pipe
   Called upon entering pipe mode.  In this mode, the request is passed
@@ -619,8 +619,11 @@ server.ip
 server.port
   The port number of the socket on which the client connection was received.
 
-req.request
+req.method
   The request type (e.g. "GET", "HEAD").
+
+req.request
+  Outdated way to spell req.method.
 
 req.url
   The requested URL.
@@ -670,8 +673,11 @@ req.xid
 The following variables are available while preparing a backend
 request (either for a cache miss or for pass or pipe mode):
 
-bereq.request
+bereq.method
   The request type (e.g. "GET", "HEAD").
+
+bereq.request
+  Outdated way to spell bereq.method.
 
 bereq.url
   The requested URL.
@@ -913,7 +919,7 @@ documents even when cookies are present:
 ::
 
   sub vcl_recv {
-    if (req.request == "GET" && req.http.cookie) {
+    if (req.method == "GET" && req.http.cookie) {
        return(lookup);
     }
   }
@@ -934,7 +940,7 @@ for object invalidation:
   }
 
   sub vcl_recv {
-    if (req.request == "PURGE") {
+    if (req.method == "PURGE") {
       if (!client.ip ~ purge) {
         error 405 "Not allowed.";
       }
@@ -943,14 +949,14 @@ for object invalidation:
   }
 
   sub vcl_hit {
-    if (req.request == "PURGE") {
+    if (req.method == "PURGE") {
       purge;
       error 200 "Purged.";
     }
   }
 
   sub vcl_miss {
-    if (req.request == "PURGE") {
+    if (req.method == "PURGE") {
       purge;
       error 200 "Purged.";
     }

@@ -181,7 +181,7 @@ struct ws {
  */
 
 enum httpwhence {
-	HTTP_Req	= 1,
+	HTTP_Method	= 1,
 	HTTP_Resp,
 	HTTP_Bereq,
 	HTTP_Beresp,

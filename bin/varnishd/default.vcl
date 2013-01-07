@@ -48,17 +48,17 @@ sub vcl_recv {
 	    set req.http.X-Forwarded-For = client.ip;
 	}
     }
-    if (req.request != "GET" &&
-      req.request != "HEAD" &&
-      req.request != "PUT" &&
-      req.request != "POST" &&
-      req.request != "TRACE" &&
-      req.request != "OPTIONS" &&
-      req.request != "DELETE") {
+    if (req.method != "GET" &&
+      req.method != "HEAD" &&
+      req.method != "PUT" &&
+      req.method != "POST" &&
+      req.method != "TRACE" &&
+      req.method != "OPTIONS" &&
+      req.method != "DELETE") {
         /* Non-RFC2616 or CONNECT which is weird. */
         return (pipe);
     }
-    if (req.request != "GET" && req.request != "HEAD") {
+    if (req.method != "GET" && req.method != "HEAD") {
         /* We only deal with GET and HEAD by default */
         return (pass);
     }

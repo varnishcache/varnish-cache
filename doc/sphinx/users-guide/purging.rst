@@ -35,7 +35,7 @@ following VCL in place::
   sub vcl_recv {
       	  # allow PURGE from localhost and 192.168.55...
 
-	  if (req.request == "PURGE") {
+	  if (req.method == "PURGE") {
 		  if (!client.ip ~ purge) {
 			  error 405 "Not allowed.";
 		  }
@@ -44,14 +44,14 @@ following VCL in place::
   }
   
   sub vcl_hit {
-	  if (req.request == "PURGE") {
+	  if (req.method == "PURGE") {
 	          purge;
 		  error 200 "Purged.";
 	  }
   }
   
   sub vcl_miss {
-	  if (req.request == "PURGE") {
+	  if (req.method == "PURGE") {
 	          purge;
 		  error 200 "Purged.";
 	  }
@@ -110,7 +110,7 @@ impact CPU usage and thereby performance.
 You can also add bans to Varnish via HTTP. Doing so requires a bit of VCL::
 
   sub vcl_recv {
-	  if (req.request == "BAN") {
+	  if (req.method == "BAN") {
                   # Same ACL check as above:
 		  if (!client.ip ~ purge) {
 			  error 405 "Not allowed.";
@@ -142,7 +142,7 @@ You can use the following template to write ban lurker friendly bans::
   }
 
   sub vcl_recv {
-    if (req.request == "PURGE") {
+    if (req.method == "PURGE") {
       if (client.ip !~ purge) {
         error 401 "Not allowed";
       }

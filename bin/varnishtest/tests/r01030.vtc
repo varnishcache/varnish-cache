@@ -14,7 +14,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
-		if (req.request == "BAN") {
+		if (req.method == "BAN") {
 			ban("obj.http.url ~ /");
 			error 201 "banned";
 		}

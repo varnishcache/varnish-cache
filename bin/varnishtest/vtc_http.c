@@ -175,7 +175,7 @@ cmd_var_resolve(struct http *hp, char *spec)
 {
 	char **hh, *hdr;
 
-	if (!strcmp(spec, "req.request"))
+	if (!strcmp(spec, "req.method"))
 		return(hp->req[0]);
 	if (!strcmp(spec, "req.url"))
 		return(hp->req[1]);

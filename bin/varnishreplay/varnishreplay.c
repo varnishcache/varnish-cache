@@ -515,7 +515,7 @@ replay_thread(void *arg)
 		thread_log(2, 0, "%s(%s)", VSL_tags[tag], msg->ptr);
 
 		switch (tag) {
-		case SLT_ReqRequest:
+		case SLT_ReqMethod:
 			if (thr->method != NULL)
 				thr->bogus = 1;
 			else
