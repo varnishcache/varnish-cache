@@ -86,6 +86,7 @@ static struct vev	*ev_listen;
 static struct vlu	*child_std_vlu;
 
 static struct vsb *child_panic = NULL;
+static double mgt_uptime_t0 = 0.;
 
 /* XXX: Doesn't really belong here, but only place we use it */
 static inline int
@@ -649,6 +650,20 @@ mgt_sigint(const struct vev *e, int what)
 	exit (2);
 }
 
+/*--------------------------------------------------------------------*/
+
+static int __match_proto__(vev_cb_f)
+mgt_uptime(const struct vev *e, int what)
+{
+
+	(void)e;
+	(void)what;
+	AN(VSC_C_mgt);
+	VSC_C_mgt->uptime = static_VSC_C_mgt.uptime =
+	    VTIM_mono() - mgt_uptime_t0;
+	return (0);
+}
+
 /*=====================================================================
  * This thread is the master thread in the management process.
  * The relatively simple task is to start and stop the child process
@@ -661,6 +676,14 @@ MGT_Run(void)
 	struct sigaction sac;
 	struct vev *e;
 	int i;
+
+	mgt_uptime_t0 = VTIM_mono();
+	e = vev_new();
+	XXXAN(e);
+	e->callback = mgt_uptime;
+	e->timeout = 1.0;
+	e->name = "mgt_uptime";
+	AZ(vev_add(mgt_evb, e));
 
 	e = vev_new();
 	XXXAN(e);

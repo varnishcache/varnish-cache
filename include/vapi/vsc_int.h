@@ -30,6 +30,7 @@
 
 #define VSC_CLASS		"Stat"
 
+#define VSC_TYPE_MGT		"MGT"
 #define VSC_TYPE_MAIN		""
 #define VSC_TYPE_SMA		"SMA"
 #define VSC_TYPE_SMF		"SMF"

@@ -28,6 +28,11 @@
  */
 
 
+VSC_DO(MGT, mgt, VSC_TYPE_MGT)
+#define VSC_DO_MGT
+#include "tbl/vsc_fields.h"
+#undef VSC_DO_MGT
+VSC_DONE(MGT, mgt, VSC_TYPE_MGT)
 
 VSC_DO(LCK, lck, VSC_TYPE_LCK)
 #define VSC_DO_LCK

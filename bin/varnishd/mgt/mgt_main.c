@@ -69,6 +69,8 @@ pid_t			mgt_pid;
 struct vev_base		*mgt_evb;
 int			exit_status = 0;
 struct vsb		*vident;
+struct VSC_C_mgt	static_VSC_C_mgt;
+struct VSC_C_mgt	*VSC_C_mgt;
 
 /*--------------------------------------------------------------------*/
 
@@ -329,6 +331,10 @@ main(int argc, char * const *argv)
 	char *dirname;
 	char **av;
 	unsigned clilim;
+
+	/* Set up the mgt counters */
+	memset(&static_VSC_C_mgt, 0, sizeof static_VSC_C_mgt);
+	VSC_C_mgt = &static_VSC_C_mgt;
 
 	/*
 	 * Start out by closing all unwanted file descriptors we might

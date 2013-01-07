@@ -59,6 +59,17 @@
 
 /**********************************************************************/
 
+#ifdef VSC_DO_MGT
+
+VSC_F(uptime,			uint64_t, 0, 'c',
+    "Management process uptime",
+	"Uptime in seconds of the management process"
+)
+
+#endif
+
+/**********************************************************************/
+
 #ifdef VSC_DO_LCK
 
 VSC_F(creat,			uint64_t, 0, 'a',

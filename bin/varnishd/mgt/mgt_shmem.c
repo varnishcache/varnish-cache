@@ -45,7 +45,6 @@
 #include "common/params.h"
 
 #include "flopen.h"
-#include "vapi/vsc_int.h"
 #include "vapi/vsm_int.h"
 #include "vmb.h"
 
@@ -240,6 +239,12 @@ mgt_SHM_Create(void)
 	    heritage.panic_str_len, PAN_CLASS, "", "");
 	AN(heritage.panic_str);
 
+	/* Copy management counters to shm and update pointer */
+	VSC_C_mgt = VSM_common_alloc(heritage.vsm,
+	    sizeof *VSC_C_mgt, VSC_CLASS, VSC_TYPE_MGT, "");
+	AN(VSC_C_mgt);
+	*VSC_C_mgt = static_VSC_C_mgt;
+
 	if (rename(fnbuf, VSM_FILENAME)) {
 		fprintf(stderr, "Rename failed %s -> %s: %s\n",
 		    fnbuf, VSM_FILENAME, strerror(errno));
@@ -260,6 +265,9 @@ mgt_SHM_Create(void)
 void
 mgt_SHM_Destroy(int keep)
 {
+
+	/* Point mgt counters back at static version */
+	VSC_C_mgt = &static_VSC_C_mgt;
 
 	AN(heritage.vsm);
 	if (keep)

@@ -30,6 +30,7 @@
 
 #include <stdint.h>
 
+#include "vapi/vsc_int.h"
 #include "common/common.h"
 
 struct cli;
@@ -62,6 +63,8 @@ void mgt_cli_secret(const char *S_arg);
 void mgt_cli_close_all(void);
 
 /* mgt_main.c */
+extern struct VSC_C_mgt	*VSC_C_mgt;
+extern struct VSC_C_mgt static_VSC_C_mgt;
 struct choice {
 	const char      *name;
 	const void	*ptr;
