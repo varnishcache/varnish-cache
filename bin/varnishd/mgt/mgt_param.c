@@ -879,16 +879,42 @@ MCF_SetDefaults(struct cli *cli)
 /*--------------------------------------------------------------------*/
 
 void
-MCF_ParamInit(struct cli *cli)
+MCF_CollectParams(void)
 {
 
 	MCF_AddParams(mgt_parspec);
 	MCF_AddParams(WRK_parspec);
 	MCF_AddParams(VSL_parspec);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+MCF_InitParams(struct cli *cli)
+{
 
 	/* XXX: We do this twice, to get past any interdependencies */
 	MCF_SetDefaults(NULL);
 	MCF_SetDefaults(cli);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+MCF_SetDefault(const char *param, const char *def)
+{
+	struct parspec *pn;
+	int i;
+
+	for (i = 0; i < nparspec; i++)
+		if (!strcmp(parspecs[i]->name, param))
+			break;
+	assert(i < nparspec);
+	pn = malloc(sizeof *pn);
+	AN(pn);
+	*pn  = *(parspecs[i]);
+	pn->def = def;
+	parspecs[i] = pn;
 }
 
 /*--------------------------------------------------------------------*/
