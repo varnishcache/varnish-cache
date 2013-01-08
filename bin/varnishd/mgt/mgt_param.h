@@ -77,8 +77,6 @@ extern const struct parspec VSL_parspec[];
 /* mgt_pool.c */
 extern const struct parspec WRK_parspec[];
 
-#define MAGIC_INIT_STRING	"\001"
-
 #define MEMPOOL_TEXT							\
 	"The three numbers are:\n"					\
 	"   min_pool -- minimum size of free pool.\n"			\

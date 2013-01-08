@@ -388,36 +388,25 @@ void
 tweak_user(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	struct passwd *pw;
-	struct group *gr;
 
 	(void)par;
 	if (arg != NULL) {
-		if (!strcmp(arg, MAGIC_INIT_STRING)) {
-			pw = getpwnam("nobody");
+		if (*arg != '\0') {
+			pw = getpwnam(arg);
 			if (pw == NULL) {
-				mgt_param.uid = getuid();
+				VCLI_Out(cli, "Unknown user");
+				VCLI_SetResult(cli, CLIS_PARAM);
 				return;
 			}
-		} else
-			pw = getpwnam(arg);
-		if (pw == NULL) {
-			VCLI_Out(cli, "Unknown user");
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
+			REPLACE(mgt_param.user, pw->pw_name);
+			mgt_param.uid = pw->pw_uid;
+		} else {
+			mgt_param.uid = getuid();
 		}
-		REPLACE(mgt_param.user, pw->pw_name);
-		mgt_param.uid = pw->pw_uid;
-		mgt_param.gid = pw->pw_gid;
-
-		/* set group to user's primary group */
-		if ((gr = getgrgid(pw->pw_gid)) != NULL &&
-		    (gr = getgrnam(gr->gr_name)) != NULL &&
-		    gr->gr_gid == pw->pw_gid)
-			REPLACE(mgt_param.group, gr->gr_name);
 	} else if (mgt_param.user) {
 		VCLI_Out(cli, "%s (%d)", mgt_param.user, (int)mgt_param.uid);
 	} else {
-		VCLI_Out(cli, "%d", (int)mgt_param.uid);
+		VCLI_Out(cli, "UID %d", (int)mgt_param.uid);
 	}
 }
 
@@ -432,27 +421,22 @@ tweak_group(struct cli *cli, const struct parspec *par, const char *arg)
 
 	(void)par;
 	if (arg != NULL) {
-		if (!strcmp(arg, MAGIC_INIT_STRING)) {
-			gr = getgrnam("nogroup");
+		if (*arg != '\0') {
+			gr = getgrnam(arg);
 			if (gr == NULL) {
-				/* Only replace if tweak_user didn't */
-				if (mgt_param.gid == 0)
-					mgt_param.gid = getgid();
+				VCLI_Out(cli, "Unknown group");
+				VCLI_SetResult(cli, CLIS_PARAM);
 				return;
 			}
-		} else
-			gr = getgrnam(arg);
-		if (gr == NULL) {
-			VCLI_Out(cli, "Unknown group");
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
+			REPLACE(mgt_param.group, gr->gr_name);
+			mgt_param.gid = gr->gr_gid;
+		} else {
+			mgt_param.gid = getgid();
 		}
-		REPLACE(mgt_param.group, gr->gr_name);
-		mgt_param.gid = gr->gr_gid;
 	} else if (mgt_param.group) {
 		VCLI_Out(cli, "%s (%d)", mgt_param.group, (int)mgt_param.gid);
 	} else {
-		VCLI_Out(cli, "%d", (int)mgt_param.gid);
+		VCLI_Out(cli, "GID %d", (int)mgt_param.gid);
 	}
 }
 
@@ -885,6 +869,12 @@ MCF_CollectParams(void)
 	MCF_AddParams(mgt_parspec);
 	MCF_AddParams(WRK_parspec);
 	MCF_AddParams(VSL_parspec);
+
+	/* If we have nobody/nogroup, use them as defaults */
+	if (getpwnam("nobody") != NULL)
+		MCF_SetDefault("user", "nobody");
+	if (getgrnam("nogroup") != NULL)
+		MCF_SetDefault("group", "nogroup");
 }
 
 /*--------------------------------------------------------------------*/
@@ -933,8 +923,7 @@ MCF_DumpRstParam(void)
 		printf("%s\n", pp->name);
 		if (pp->units != NULL && *pp->units != '\0')
 			printf("\t- Units: %s\n", pp->units);
-		printf("\t- Default: %s\n",
-		    strcmp(pp->def,MAGIC_INIT_STRING) == 0 ? "magic" : pp->def);
+		printf("\t- Default: %s\n", pp->def);
 		/*
 		 * XXX: we should mark the params with one/two flags
 		 * XXX: that say if ->min/->max are valid, so we

@@ -46,14 +46,13 @@
 
 const struct parspec mgt_parspec[] = {
 	{ "user", tweak_user, NULL, 0, 0,
-		"The unprivileged user to run as.  Setting this will "
-		"also set \"group\" to the specified user's primary group.",
+		"The unprivileged user to run as.",
 		MUST_RESTART,
-		MAGIC_INIT_STRING },
+		"" },
 	{ "group", tweak_group, NULL, 0, 0,
 		"The unprivileged group to run as.",
 		MUST_RESTART,
-		MAGIC_INIT_STRING },
+		"" },
 	{ "default_ttl", tweak_timeout_double, &mgt_param.default_ttl,
 		0, UINT_MAX,
 		"The TTL assigned to objects if neither the backend nor "
