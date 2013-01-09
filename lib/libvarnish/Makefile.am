@@ -1,4 +1,4 @@
-INCLUDES = -I$(top_srcdir)/include @PCRE_CFLAGS@
+AM_CPPFLAGS = -I$(top_srcdir)/include @PCRE_CFLAGS@
 
 AM_LDFLAGS  = $(AM_LT_LDFLAGS)
 

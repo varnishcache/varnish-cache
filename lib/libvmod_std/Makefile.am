@@ -2,7 +2,7 @@
 
 AM_LDFLAGS  = $(AM_LT_LDFLAGS)
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/bin/varnishd \
 	-I$(top_builddir)/include

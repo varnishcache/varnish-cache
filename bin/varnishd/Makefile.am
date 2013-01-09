@@ -1,6 +1,6 @@
 #
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/lib/libvgz \
 	-I$(top_builddir)/bin/varnishd \
