@@ -14,9 +14,14 @@ noinst_LTLIBRARIES = libvmod_debug.la
 libvmod_debug_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-version -rpath /nowhere
 
 libvmod_debug_la_SOURCES = \
-	vcc_if.c \
-	vcc_if.h \
 	vmod_debug.c
+
+nodist_libvmod_debug_la_SOURCES = \
+	vcc_if.c \
+	vcc_if.h
+
+# BUILT_SOURCES is only a hack and dependency tracking does not help for the first build
+vmod_debug.lo: vcc_if.h
 
 vcc_if.c vcc_if.h: $(vmodtool) $(vmod_srcdir)/vmod.vcc
 	@PYTHON@ $(vmodtool) $(vmod_srcdir)/vmod.vcc
