@@ -66,6 +66,7 @@ struct vsm_sc {
 	char				*b;
 	ssize_t				len;
 	struct VSM_head			*head;
+	double				t0;
 	VTAILQ_HEAD(,vsm_range)		r_used;
 	VTAILQ_HEAD(,vsm_range)		r_cooling;
 	VTAILQ_HEAD(,vsm_range)		r_free;
@@ -139,6 +140,7 @@ VSM_common_new(void *p, ssize_t l)
 	VTAILQ_INIT(&sc->r_bogus);
 	sc->b = p;
 	sc->len = l;
+	sc->t0 = VTIM_mono();
 
 	sc->head = (void *)sc->b;
 	/* This should not be necessary, but just in case...*/
@@ -376,4 +378,16 @@ VSM_common_copy(struct vsm_sc *to, const struct vsm_sc *from)
 		AN(p);
 		memcpy(p, vr->chunk + 1, vr->chunk->len);
 	}
+}
+
+/*--------------------------------------------------------------------
+ * Update age
+ */
+
+void
+VSM_common_ageupdate(struct vsm_sc *sc)
+{
+
+	CHECK_OBJ_NOTNULL(sc, VSM_SC_MAGIC);
+	sc->head->age = VTIM_mono() - sc->t0;
 }

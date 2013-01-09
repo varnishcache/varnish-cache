@@ -84,3 +84,10 @@ LIBVARNISHAPI_1.2 {
 	VSM_Get;
 	# Variables:
 } LIBVARNISHAPI_1.0;
+
+LIBVARNISHAPI_1.3 {
+  global:
+	# Functions:
+	VSM_Abandoned;
+	# Variables:
+} LIBVARNISHAPI_1.0;

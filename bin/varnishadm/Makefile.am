@@ -17,7 +17,7 @@ varnishadm_CFLAGS = @LIBEDIT_CFLAGS@
 varnishadm_LDADD = \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
-	${PTHREAD_LIBS} ${NET_LIBS} @LIBEDIT_LIBS@ ${LIBM}
+	${PTHREAD_LIBS} ${RT_LIBS} ${NET_LIBS} @LIBEDIT_LIBS@ ${LIBM}
 
 varnishadm.1: $(top_srcdir)/doc/sphinx/reference/varnishadm.rst
 if HAVE_RST2MAN

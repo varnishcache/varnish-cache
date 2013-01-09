@@ -15,7 +15,7 @@ varnishreplay_SOURCES = \
 varnishreplay_LDADD = \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
-	${PTHREAD_LIBS} ${NET_LIBS} ${LIBM}
+	${RT_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${LIBM}
 
 varnishreplay.1: $(top_srcdir)/doc/sphinx/reference/varnishreplay.rst
 if HAVE_RST2MAN

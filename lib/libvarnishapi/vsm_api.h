@@ -47,6 +47,9 @@ struct VSM_data {
 	char			*b;
 	char			*e;
 
+	uint64_t		age_ok;
+	double			t_ok;
+
 	struct vsc		*vsc;
 	struct vsl		*vsl;
 };

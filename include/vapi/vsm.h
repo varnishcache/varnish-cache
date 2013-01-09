@@ -100,7 +100,7 @@ int VSM_Open(struct VSM_data *vd);
 	 *	<0 on failure, VSM_Error() returns diagnostic string
 	 */
 
-int VSM_Abandoned(const struct VSM_data *vd);
+int VSM_Abandoned(struct VSM_data *vd);
 	/*
 	 * Find out if the VSM file has been abandoned or closed and should
 	 * be reopened.  This function calls stat(2) and should only be

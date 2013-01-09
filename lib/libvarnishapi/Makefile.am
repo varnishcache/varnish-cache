@@ -22,6 +22,7 @@ libvarnishapi_la_SOURCES = \
 	../libvarnish/vmb.c \
 	../libvarnish/vre.c \
 	../libvarnish/vsb.c \
+	../libvarnish/vtim.c \
 	../libvarnish/vsha256.c \
 	vsm.c \
 	vsl_arg.c \

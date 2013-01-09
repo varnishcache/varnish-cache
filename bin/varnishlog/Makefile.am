@@ -17,7 +17,7 @@ varnishlog_SOURCES = \
 varnishlog_LDADD = \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
-	${PTHREAD_LIBS}
+	${RT_LIBS} ${LIBM} ${PTHREAD_LIBS}
 
 varnishlog.1: $(top_srcdir)/doc/sphinx/reference/varnishlog.rst
 if HAVE_RST2MAN

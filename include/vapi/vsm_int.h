@@ -53,11 +53,12 @@
  *	If a manager is started and finds and old abandoned VSM segment
  *	it will zero the alloc_seq in it, before replacing the file.
  *
- * Subscribers will have to monitor two things to make sure they have
- * the current VSM instance:  The alloc_seq field and the dev+inode
- * of the path-name.  The former check is by far the cheaper and the
- * latter check should only be employed when lack of activity in the
- * VSM segment raises suspicion that something has happened.
+ * Subscribers will have to monitor three things to make sure they look at
+ * the right thing: The alloc_seq field, the age counter and the dev+inode
+ * of the path-name.  The former check is by far the cheaper, the second
+ * can be used to check that Varnishd is still alive and the last check
+ * should only be employed when lack of activity in the VSM segment raises
+ * suspicion that something has happened.
  *
  * The allocations ("chunks") in the VSM forms a linked list, starting with
  * VSM_head->first, with the first/next fields being byte offsets relative
@@ -114,6 +115,7 @@ struct VSM_head {
 	ssize_t			shm_size;
 	ssize_t			first;		/* Offset, first chunk */
 	unsigned		alloc_seq;
+	uint64_t		age;
 };
 
 #endif /* VSM_INT_H_INCLUDED */

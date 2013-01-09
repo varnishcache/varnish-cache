@@ -48,6 +48,7 @@
 
 #include "vapi/vsm.h"
 #include "vapi/vsm_int.h"
+#include "vtim.h"
 #include "vin.h"
 #include "vsb.h"
 #include "vsm_api.h"
@@ -219,6 +220,8 @@ VSM_Open(struct VSM_data *vd)
 	vd->head = v;
 	vd->b = v;
 	vd->e = vd->b + slh.shm_size;
+	vd->age_ok = vd->head->age;
+	vd->t_ok = VTIM_mono();
 
 	return (0);
 }
@@ -246,23 +249,37 @@ VSM_Close(struct VSM_data *vd)
 /*--------------------------------------------------------------------*/
 
 int
-VSM_Abandoned(const struct VSM_data *vd)
+VSM_Abandoned(struct VSM_data *vd)
 {
 	struct stat st;
+	double now;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 
 	if (vd->head == NULL)
+		/* Not open */
 		return (1);
-
 	if (!vd->head->alloc_seq)
+		/* Flag of abandonment set by mgt */
 		return (1);
-	if (!stat(vd->fname, &st))
+	if (vd->head->age < vd->age_ok)
+		/* Age going backwards */
 		return (1);
-	if (st.st_dev != vd->fstat.st_dev)
-		return (1);
-	if (st.st_ino != vd->fstat.st_ino)
-		return (1);
+	now = VTIM_mono();
+	if (vd->head->age == vd->age_ok && now - vd->t_ok > 2.) {
+		/* No age change for 2 seconds, stat the file */
+		if (!stat(vd->fname, &st))
+			return (1);
+		if (st.st_dev != vd->fstat.st_dev)
+			return (1);
+		if (st.st_ino != vd->fstat.st_ino)
+			return (1);
+		vd->t_ok = now;
+	} else if (vd->head->age > vd->age_ok) {
+		/* It is aging, update timestamps */
+		vd->t_ok = now;
+		vd->age_ok = vd->head->age;
+	}
 	return (0);
 }
 

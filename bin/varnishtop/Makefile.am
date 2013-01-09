@@ -14,7 +14,7 @@ varnishtop_SOURCES = varnishtop.c \
 varnishtop_LDADD = \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
-	${CURSES_LIBS} ${PTHREAD_LIBS}
+	${CURSES_LIBS} ${RT_LIBS} ${LIBM} ${PTHREAD_LIBS}
 
 varnishtop.1: $(top_srcdir)/doc/sphinx/reference/varnishtop.rst
 if HAVE_RST2MAN
