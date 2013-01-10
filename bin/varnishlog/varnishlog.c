@@ -128,7 +128,7 @@ h_order(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
 		 * starting on the new one.
 		 */
 		if (last[fd] != SLT_SessClose)
-			VSB_printf(ob[fd], "%5d %-12s %c %s\n",
+			VSB_printf(ob[fd], "%5u %-12s %c %s\n",
 			    fd, "Interrupted", type, VSL_tags[tag]);
 		h_order_finish(fd, vd);
 	}
@@ -141,8 +141,8 @@ h_order(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
 			VSB_cat(ob[fd], "\n");
 		else
 			flg[fd] |= F_INVCL;
-		VSB_printf(ob[fd], "%5d %-12s %c %.*s",
-		    fd, VSL_tags[tag], type, len, ptr);
+		VSB_printf(ob[fd], "%5u %-12s %c %.*s",
+		    fd, VSL_tags[tag], type, (int)len, ptr);
 		return (0);
 	case SLT_VCL_trace:
 	case SLT_VCL_return:
@@ -159,8 +159,8 @@ h_order(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
 		VSB_cat(ob[fd], "\n");
 		flg[fd] &= ~F_INVCL;
 	}
-	VSB_printf(ob[fd], "%5d %-12s %c %.*s\n",
-	    fd, VSL_tags[tag], type, len, ptr);
+	VSB_printf(ob[fd], "%5u %-12s %c %.*s\n",
+	    fd, VSL_tags[tag], type, (int)len, ptr);
 	switch (tag) {
 	case SLT_ReqEnd:
 	case SLT_BackendClose:
