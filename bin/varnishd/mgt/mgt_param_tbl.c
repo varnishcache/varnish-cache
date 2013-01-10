@@ -556,7 +556,7 @@ const struct parspec mgt_parspec[] = {
 		"Disable this if you have very high hitrates and want"
 		"to save the memory of one busyobj per worker thread.",
 		0,
-		"false", ""},
+		"off", "bool"},
 
 	{ "pool_vbc", tweak_poolparam, &mgt_param.vbc_pool, 0, 10000,
 		"Parameters for backend connection memory pool.\n"
@@ -582,9 +582,9 @@ const struct parspec mgt_parspec[] = {
 
 	{ "obj_readonly", tweak_bool, &mgt_param.obj_readonly, 0, 0,
 		"If set, we do not update obj.hits and obj.lastuse to"
-		"avoid dirtying VM pages associated with cached objects.",
+		" avoid dirtying VM pages associated with cached objects.",
 		0,
-		"false", ""},
+		"false", "bool"},
 
 	{ NULL, NULL, NULL }
 };

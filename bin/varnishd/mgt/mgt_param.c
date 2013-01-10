@@ -187,9 +187,16 @@ tweak_generic_double(struct cli *cli, const struct parspec *par,
 
 /*--------------------------------------------------------------------*/
 
-static void
-tweak_generic_bool(struct cli *cli, volatile unsigned *dest, const char *arg)
+void
+tweak_bool(struct cli *cli, const struct parspec *par, const char *arg)
 {
+	volatile unsigned *dest;
+	int mode = 0;
+
+	if (!strcmp(par->def, "off") || !strcmp(par->def, "on"))
+		mode = 1;
+
+	dest = par->priv;
 	if (arg != NULL) {
 		if (!strcasecmp(arg, "off"))
 			*dest = 0;
@@ -208,23 +215,18 @@ tweak_generic_bool(struct cli *cli, volatile unsigned *dest, const char *arg)
 		else if (!strcasecmp(arg, "true"))
 			*dest = 1;
 		else {
-			VCLI_Out(cli, "use \"on\" or \"off\"\n");
+			VCLI_Out(cli,
+			    mode ? 
+				"use \"on\" or \"off\"\n" :
+				"use \"true\" or \"false\"\n");
 			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
 		}
-	} else
+	} else if (mode) {
 		VCLI_Out(cli, *dest ? "on" : "off");
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-tweak_bool(struct cli *cli, const struct parspec *par, const char *arg)
-{
-	volatile unsigned *dest;
-
-	dest = par->priv;
-	tweak_generic_bool(cli, dest, arg);
+	} else {
+		VCLI_Out(cli, *dest ? "true" : "false");
+	}
 }
 
 /*--------------------------------------------------------------------*/
