@@ -182,7 +182,7 @@ thread_log(int lvl, int errcode, const char *fmt, ...)
 	if (lvl > debug)
 		return;
 	pthread_mutex_lock(&log_mutex);
-	fprintf(stderr, "%p ", (void *)pthread_self());
+	fprintf(stderr, "%p ", (void *)(uintptr_t)pthread_self());
 	va_start(ap, fmt);
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
@@ -276,7 +276,7 @@ thread_get(int fd, void *(*thread_main)(void *))
 		} else {
 			threads[fd]->fd = fd;
 			thread_log(0, 0, "thread %p:%d started",
-			    (void *)threads[fd]->thread_id, fd);
+			    (void *)(uintptr_t)threads[fd]->thread_id, fd);
 		}
 	}
 	if (threads[fd] == THREAD_FAIL)
@@ -301,7 +301,7 @@ thread_close(int fd)
 	mailbox_close(&threads[fd]->mbox);
 	pthread_join(threads[fd]->thread_id, NULL);
 	thread_log(0, 0, "thread %p stopped",
-	    (void *)threads[fd]->thread_id);
+	    (void *)(uintptr_t)threads[fd]->thread_id);
 	thread_clear(threads[fd]);
 	mailbox_destroy(&threads[fd]->mbox);
 	freez(threads[fd]);
