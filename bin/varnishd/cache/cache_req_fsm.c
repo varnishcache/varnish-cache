@@ -274,7 +274,7 @@ cnt_error(struct worker *wrk, struct req *req)
 	req->objcore = HSH_NewObjCore(wrk);
 	req->obj = STV_NewObject(bo, &req->objcore,
 	    TRANSIENT_STORAGE, cache_param->http_resp_size,
-	    (uint16_t)cache_param->http_max_hdr);
+	    (uint16_t)cache_param->http_req_max_hdr);
 	bo->stats = NULL;
 	if (req->obj == NULL) {
 		req->doclose = SC_OVERLOAD;

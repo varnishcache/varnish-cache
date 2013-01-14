@@ -86,6 +86,7 @@ const struct parspec mgt_parspec[] = {
 		" just wastes the space.\n",
 		DELAYED_EFFECT,
 		"2048", "bytes" },
+
 	{ "http_req_hdr_len",
 		tweak_bytes_u, &mgt_param.http_req_hdr_len,
 		40, UINT_MAX,
@@ -104,6 +105,16 @@ const struct parspec mgt_parspec[] = {
 		"how much of that the request is allowed to take up.",
 		0,
 		"32k", "bytes" },
+	{ "http_req_max_hdr", tweak_uint, &mgt_param.http_req_max_hdr,
+		32, 65535,
+		"Maximum number of HTTP headers we will deal with in "
+		"client request.  "
+		"Note that the first line occupies five header fields.\n"
+		"This parameter does not influence storage consumption, "
+		"objects allocate exact space for the headers they store.\n",
+		0,
+		"64", "header lines" },
+
 	{ "http_resp_hdr_len",
 		tweak_bytes_u, &mgt_param.http_resp_hdr_len,
 		40, UINT_MAX,
@@ -122,14 +133,16 @@ const struct parspec mgt_parspec[] = {
 		"limits how much of that the request is allowed to take up.",
 		0,
 		"32k", "bytes" },
-	{ "http_max_hdr", tweak_uint, &mgt_param.http_max_hdr, 32, 65535,
+	{ "http_resp_max_hdr", tweak_uint, &mgt_param.http_resp_max_hdr,
+		32, 65535,
 		"Maximum number of HTTP headers we will deal with in "
-		"client request or backend reponses.  "
+		"backend response.  "
 		"Note that the first line occupies five header fields.\n"
 		"This parameter does not influence storage consumption, "
 		"objects allocate exact space for the headers they store.\n",
 		0,
 		"64", "header lines" },
+
 	{ "vsl_buffer",
 		tweak_bytes_u, &mgt_param.vsl_buffer, 1024, UINT_MAX,
 		"Bytes of (req-/backend-)workspace dedicated to buffering"
