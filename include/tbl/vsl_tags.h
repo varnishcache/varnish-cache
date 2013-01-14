@@ -130,7 +130,11 @@ SLTM(FetchError, "Error while fetching object", "")
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 
-SLTM(LostHeader, "", "")
+SLTM(BogoHeader, "Bogus HTTP received",
+	"Contains the first 20 characters of received HTTP headers we could"
+	" not make sense of.  Applies to both req.http and beres.http."
+)
+SLTM(LostHeader, "Failed attempt to set HTTP header", "")
 
 SLTM(TTL, "TTL set on object", "")
 SLTM(Fetch_Body, "Body fetched from backend", "")

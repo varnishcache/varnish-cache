@@ -518,8 +518,7 @@ http_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
 		}
 
 		if (q - p > htc->maxhdr) {
-			VSC_C_main->losthdr++;
-			VSLb(hp->vsl, SLT_LostHeader, "%.*s",
+			VSLb(hp->vsl, SLT_BogoHeader, "%.*s",
 			    (int)(q - p > 20 ? 20 : q - p), p);
 			return (413);
 		}
@@ -544,8 +543,7 @@ http_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
 			http_VSLH(hp, hp->nhd);
 			hp->nhd++;
 		} else {
-			VSC_C_main->losthdr++;
-			VSLb(hp->vsl, SLT_LostHeader, "%.*s",
+			VSLb(hp->vsl, SLT_BogoHeader, "%.*s",
 			    (int)(q - p > 20 ? 20 : q - p), p);
 			return (413);
 		}
@@ -558,10 +556,20 @@ http_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
  */
 
 static uint16_t
-http_splitline(struct http *hp,
-    const struct http_conn *htc, int h1, int h2, int h3)
+http_splitline(struct http *hp, const struct http_conn *htc, int req)
 {
 	char *p, *q;
+	int h1, h2, h3;
+
+	if (req) {
+		h1 = HTTP_HDR_METHOD;
+		h2 = HTTP_HDR_URL;
+		h3 = HTTP_HDR_PROTO;
+	} else {
+		h1 = HTTP_HDR_PROTO;
+		h2 = HTTP_HDR_STATUS;
+		h3 = HTTP_HDR_RESPONSE;
+	}
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
@@ -663,8 +671,7 @@ http_DissectRequest(struct req *req)
 	hp = req->http;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
-	retval = http_splitline(hp, htc,
-	    HTTP_HDR_METHOD, HTTP_HDR_URL, HTTP_HDR_PROTO);
+	retval = http_splitline(hp, htc, 1);
 	if (retval != 0) {
 		VSLbt(req->vsl, SLT_HttpGarbage, htc->rxbuf);
 		return (retval);
@@ -686,8 +693,7 @@ http_DissectResponse(struct http *hp, const struct http_conn *htc)
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
-	if (http_splitline(hp, htc,
-	    HTTP_HDR_PROTO, HTTP_HDR_STATUS, HTTP_HDR_RESPONSE))
+	if (http_splitline(hp, htc, 0))
 		retval = 503;
 
 	if (retval == 0 && memcmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.", 7))

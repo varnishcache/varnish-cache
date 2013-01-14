@@ -262,11 +262,10 @@ http1_dissect(struct worker *wrk, struct req *req)
 
 	/* If we could not even parse the request, just close */
 	if (req->err_code == 400) {
+		wrk->stats.client_req_400++;
 		SES_Close(req->sp, SC_RX_JUNK);
 		return (1);
 	}
-
-	wrk->stats.client_req++;
 	req->acct_req.req++;
 
 	req->ws_req = WS_Snapshot(req->ws);
@@ -275,12 +274,17 @@ http1_dissect(struct worker *wrk, struct req *req)
 	/* XXX: Expect headers are a mess */
 	if (req->err_code == 0 && http_GetHdr(req->http, H_Expect, &p)) {
 		if (strcasecmp(p, "100-continue")) {
+			wrk->stats.client_req_417++;
 			req->err_code = 417;
 		} else if (strlen(r) != write(req->sp->fd, r, strlen(r))) {
 			SES_Close(req->sp, SC_REM_CLOSE);
 			return (1);
 		}
-	}
+	} else if (req->err_code == 413)
+		wrk->stats.client_req_413++;
+	else
+		wrk->stats.client_req++;
+
 	http_Unset(req->http, H_Expect);
 	/* XXX: pull in req-body and make it available instead. */
 	req->reqbodydone = 0;

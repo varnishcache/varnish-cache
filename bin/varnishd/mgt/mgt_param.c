@@ -216,7 +216,7 @@ tweak_bool(struct cli *cli, const struct parspec *par, const char *arg)
 			*dest = 1;
 		else {
 			VCLI_Out(cli,
-			    mode ? 
+			    mode ?
 				"use \"on\" or \"off\"\n" :
 				"use \"true\" or \"false\"\n");
 			VCLI_SetResult(cli, CLIS_PARAM);

@@ -90,10 +90,28 @@ VSC_F(sess_fail,		uint64_t, 1, 'c',
 
 /*---------------------------------------------------------------------*/
 
+VSC_F(client_req_400,		uint64_t, 1, 'a',
+    "Client requests received, subject to 400 errors",
+	"400 means we couldn't make sense of the request, it was"
+	" malformed in some drastic way."
+)
+
+VSC_F(client_req_413,		uint64_t, 1, 'a',
+    "Client requests received, subject to 413 errors",
+	"413 means that HTTP headers execeeded length or count limits."
+)
+
+VSC_F(client_req_417,		uint64_t, 1, 'a',
+    "Client requests received, subject to 417 errors",
+	"417 means that something went wrong with an Expect: header."
+)
+
 VSC_F(client_req,		uint64_t, 1, 'a',
-    "Client requests received",
+    "Good Client requests received",
 	""
 )
+
+/*---------------------------------------------------------------------*/
 
 VSC_F(cache_hit,		uint64_t, 1, 'a',
     "Cache hits",
@@ -110,12 +128,15 @@ VSC_F(cache_hitpass,		uint64_t, 1, 'a',
 	"  cached in it self. This counts how many times the cached "
 	"  decision is being used."
 )
+
 VSC_F(cache_miss,		uint64_t, 1, 'a',
     "Cache misses",
 	"Count of misses"
 	"  A cache miss indicates the object was fetched from the"
 	"  backend before delivering it to the backend."
 )
+
+/*---------------------------------------------------------------------*/
 
 VSC_F(backend_conn,		uint64_t, 0, 'a',
     "Backend conn. success",
