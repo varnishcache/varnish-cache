@@ -113,7 +113,7 @@ VBO_GetBusyObj(struct worker *wrk, struct req *req)
 	p = (void*)PRNDUP(p);
 	assert(p < bo->end);
 
-	nhttp = (uint16_t)cache_param->http_resp_max_hdr;
+	nhttp = (uint16_t)cache_param->http_max_hdr;
 	sz = HTTP_estimate(nhttp);
 
 	bo->bereq = HTTP_create(p, nhttp);

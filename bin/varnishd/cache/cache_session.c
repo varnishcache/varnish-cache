@@ -362,7 +362,7 @@ SES_GetReq(struct worker *wrk, struct sess *sp)
 	p = (void*)PRNDUP(p);
 	assert(p < e);
 
-	nhttp = (uint16_t)cache_param->http_req_max_hdr;
+	nhttp = (uint16_t)cache_param->http_max_hdr;
 	hl = HTTP_estimate(nhttp);
 
 	req->http = HTTP_create(p, nhttp);
