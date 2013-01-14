@@ -257,7 +257,6 @@ SES_ScheduleReq(struct req *req)
 	sp->task.priv = req;
 
 	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT)) {
-		VSC_C_main->client_drop_late++;
 		AN (req->vcl);
 		VCL_Rel(&req->vcl);
 		SES_Delete(sp, SC_OVERLOAD, NAN);
@@ -281,10 +280,8 @@ SES_Handle(struct sess *sp, double now)
 	AN(pp->pool);
 	sp->task.func = ses_sess_pool_task;
 	sp->task.priv = sp;
-	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT)) {
-		VSC_C_main->client_drop_late++;
+	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT))
 		SES_Delete(sp, SC_OVERLOAD, now);
-	}
 }
 
 /*--------------------------------------------------------------------
