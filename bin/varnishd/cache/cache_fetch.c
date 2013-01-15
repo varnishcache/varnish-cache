@@ -380,42 +380,30 @@ fetch_eof(struct busyobj *bo, struct http_conn *htc)
 int
 FetchReqBody(struct req *req, int sendbody)
 {
-	unsigned long content_length;
 	char buf[8192];
-	char *ptr, *endp;
-	int rdcnt;
+	ssize_t l = 1234;
 
-	if (req->reqbodydone) {
+	if (req->req_body_status == REQ_BODY_DONE) {
 		AZ(sendbody);
 		return (0);
 	}
-
-	if (http_GetHdr(req->http, H_Content_Length, &ptr)) {
-		req->reqbodydone = 1;
-
-		content_length = strtoul(ptr, &endp, 10);
-		/* XXX should check result of conversion */
-		while (content_length) {
-			if (content_length > sizeof buf)
-				rdcnt = sizeof buf;
-			else
-				rdcnt = content_length;
-			rdcnt = HTC_Read(req->htc, buf, rdcnt);
-			if (rdcnt <= 0)
-				return (1);
-			content_length -= rdcnt;
-			if (sendbody) {
-				/* XXX: stats ? */
-				(void)WRW_Write(req->wrk, buf, rdcnt);
-				if (WRW_Flush(req->wrk))
-					return (2);
+	while (req->req_body_status != REQ_BODY_DONE &&
+	    req->req_body_status != REQ_BODY_NONE) {
+		l = HTTP1_GetReqBody(req, buf, sizeof buf);
+		if (l < 0) {
+			return (1);
+		} else if (l == 0) {
+			assert(req->req_body_status == REQ_BODY_DONE ||
+			    req->req_body_status == REQ_BODY_NONE);
+		} else if (sendbody) {
+			/* XXX: stats ? */
+			(void)WRW_Write(req->wrk, buf, l);
+			if (WRW_Flush(req->wrk)) {
+				/* XXX: Try to salvage client-conn ? */
+				req->req_body_status = REQ_BODY_DONE;
+				return (2);
 			}
 		}
-	}
-	if (http_GetHdr(req->http, H_Transfer_Encoding, NULL)) {
-		/* XXX: Handle chunked encoding. */
-		VSLb(req->vsl, SLT_Debug, "Transfer-Encoding in request");
-		return (1);
 	}
 	return (0);
 }
@@ -480,7 +468,7 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 
 	/* Deal with any message-body the request might have */
 	i = FetchReqBody(req, sendbody);
-	if (sendbody && req->reqbodydone)
+	if (sendbody && req->req_body_status == REQ_BODY_DONE)
 		retry = -1;
 	if (WRW_FlushRelease(wrk) || i > 0) {
 		VSLb(req->vsl, SLT_FetchError,

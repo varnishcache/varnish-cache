@@ -582,6 +582,14 @@ struct object {
 
 /*--------------------------------------------------------------------*/
 
+enum req_body_state_e {
+	REQ_BODY_INIT = 0,
+	REQ_BODY_CL,
+	// REQ_BODY_CHUNKED,
+	REQ_BODY_DONE,
+	REQ_BODY_NONE
+};
+
 struct req {
 	unsigned		magic;
 #define REQ_MAGIC		0x2751aaa1
@@ -612,8 +620,12 @@ struct req {
 	struct exp		exp;
 	unsigned		cur_method;
 	unsigned		handling;
-	unsigned char		reqbodydone;
+
 	unsigned char		wantbody;
+	enum req_body_state_e	req_body_status;
+	uint64_t		req_bodybytes;
+
+	uint64_t		resp_bodybytes;
 
 	uint16_t		err_code;
 	const char		*err_reason;
@@ -621,7 +633,6 @@ struct req {
 	struct director		*director;
 	struct VCL_conf		*vcl;
 
-	uint64_t		req_bodybytes;
 	char			*ws_req;	/* WS above request data */
 
 	double			t_req;
@@ -766,6 +777,7 @@ void VBO_DerefBusyObj(struct worker *wrk, struct busyobj **busyobj);
 void VBO_Free(struct busyobj **vbo);
 
 /* cache_http1_fsm.c [HTTP1] */
+ssize_t HTTP1_GetReqBody(struct req *, void *buf, ssize_t len);
 void HTTP1_Session(struct worker *, struct req *);
 
 /* cache_req_fsm.c [CNT] */

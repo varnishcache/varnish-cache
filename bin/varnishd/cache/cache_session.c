@@ -78,7 +78,7 @@ SES_Charge(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	a = &req->acct_req;
-	req->req_bodybytes += a->bodybytes;
+	req->resp_bodybytes += a->bodybytes;
 
 #define ACCT(foo)				\
 	wrk->stats.s_##foo += a->foo;		\

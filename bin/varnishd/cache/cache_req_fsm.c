@@ -1233,7 +1233,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 		/* XXX: Workaround for pipe */
 		if (req->sp->fd >= 0) {
 			VSLb(req->vsl, SLT_Length, "%ju",
-			    (uintmax_t)req->req_bodybytes);
+			    (uintmax_t)req->resp_bodybytes);
 		}
 		VSLb(req->vsl, SLT_ReqEnd, "%.9f %.9f %.9f %.9f %.9f",
 		    req->t_req,
