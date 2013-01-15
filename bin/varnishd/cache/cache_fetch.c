@@ -44,6 +44,8 @@
 
 static unsigned fetchfrag;
 
+static int fetchReqBody(struct req *req, int sendbody);
+
 /*--------------------------------------------------------------------
  * We want to issue the first error we encounter on fetching and
  * supress the rest.  This function does that.
@@ -377,8 +379,8 @@ fetch_eof(struct busyobj *bo, struct http_conn *htc)
  * to contain the complexity when we start handling chunked encoding.
  */
 
-int
-FetchReqBody(struct req *req, int sendbody)
+static int
+fetchReqBody(struct req *req, int sendbody)
 {
 	char buf[8192];
 	ssize_t l = 1234;
@@ -467,7 +469,7 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 	(void)http_Write(wrk, hp, 0);	/* XXX: stats ? */
 
 	/* Deal with any message-body the request might have */
-	i = FetchReqBody(req, sendbody);
+	i = fetchReqBody(req, sendbody);
 	if (sendbody && req->req_body_status == REQ_BODY_DONE)
 		retry = -1;
 	if (WRW_FlushRelease(wrk) || i > 0) {

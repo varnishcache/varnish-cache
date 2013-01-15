@@ -727,7 +727,7 @@ cnt_hit(struct worker *wrk, struct req *req)
 	if (req->handling == VCL_RET_DELIVER) {
 		//AZ(req->busyobj->bereq->ws);
 		//AZ(req->busyobj->beresp->ws);
-		(void)FetchReqBody(req, 0);
+		(void)HTTP1_DiscardReqBody(req);	// XXX: handle err
 		req->req_step = R_STP_PREPRESP;
 		return (0);
 	}

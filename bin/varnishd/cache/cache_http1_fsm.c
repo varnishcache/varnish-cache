@@ -375,6 +375,27 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 	}
 }
 
+/*
+ * XXX: DiscardReqBody() is a dedicated function, because we might
+ * XXX: be able to disuade or terminate its transmission in some protocols.
+ */ 
+
+int
+HTTP1_DiscardReqBody(struct req *req)
+{
+	char buf[8192];
+	ssize_t l;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	while (req->req_body_status != REQ_BODY_DONE &&
+	    req->req_body_status != REQ_BODY_NONE) {
+		l = HTTP1_GetReqBody(req, buf, sizeof buf);
+		if (l < 0)
+			return (-1);
+	}
+	return (0);
+}
+
 ssize_t
 HTTP1_GetReqBody(struct req *req, void *buf, ssize_t len)
 {

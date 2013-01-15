@@ -778,6 +778,7 @@ void VBO_Free(struct busyobj **vbo);
 
 /* cache_http1_fsm.c [HTTP1] */
 ssize_t HTTP1_GetReqBody(struct req *, void *buf, ssize_t len);
+int HTTP1_DiscardReqBody(struct req *req);
 void HTTP1_Session(struct worker *, struct req *);
 
 /* cache_req_fsm.c [CNT] */
@@ -815,7 +816,6 @@ int FetchError(struct busyobj *, const char *error);
 int FetchError2(struct busyobj *, const char *error, const char *more);
 int FetchHdr(struct req *req, int need_host_hdr, int sendbody);
 void FetchBody(struct worker *w, void *bo);
-int FetchReqBody(struct req *, int sendbody);
 void Fetch_Init(void);
 
 /* cache_gzip.c */
