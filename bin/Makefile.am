@@ -7,4 +7,5 @@ SUBDIRS = varnishd
 
 if HAVE_CURSES
 #SUBDIRS += varnishhist varnishstat varnishtop
+SUBDIRS += varnishstat
 endif

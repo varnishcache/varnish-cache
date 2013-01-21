@@ -74,11 +74,9 @@ struct VSC_desc {
 };
 
 struct VSC_point {
-	const char *class;		/* stat struct type		*/
-	const char *ident;		/* stat struct ident		*/
 	const struct VSC_desc *desc;	/* point description		*/
 	const volatile void *ptr;	/* field value			*/
-	struct VSM_fantom *vf;
+	struct VSM_fantom *fantom;
 };
 
 typedef int VSC_iter_f(void *priv, const struct VSC_point *const pt);

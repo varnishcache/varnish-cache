@@ -94,12 +94,12 @@ do_curses_cb(void *priv, const struct VSC_point * const sp)
 	pt->flag = sp->desc->flag;
 
 	*buf = '\0';
-	if (strcmp(sp->class, "")) {
-		strcat(buf, sp->class);
+	if (strcmp(sp->fantom->type, "")) {
+		strcat(buf, sp->fantom->type);
 		strcat(buf, ".");
 	}
-	if (strcmp(sp->ident, "")) {
-		strcat(buf, sp->ident);
+	if (strcmp(sp->fantom->ident, "")) {
+		strcat(buf, sp->fantom->ident);
 		strcat(buf, ".");
 	}
 	strcat(buf, sp->desc->name);

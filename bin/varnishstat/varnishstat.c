@@ -58,10 +58,10 @@ do_xml_cb(void *priv, const struct VSC_point * const pt)
 	val = *(const volatile uint64_t*)pt->ptr;
 
 	printf("\t<stat>\n");
-	if (strcmp(pt->class, ""))
-		printf("\t\t<type>%s</type>\n", pt->class);
-	if (strcmp(pt->ident, ""))
-		printf("\t\t<ident>%s</ident>\n", pt->ident);
+	if (strcmp(pt->fantom->type, ""))
+		printf("\t\t<type>%s</type>\n", pt->fantom->type);
+	if (strcmp(pt->fantom->ident, ""))
+		printf("\t\t<ident>%s</ident>\n", pt->fantom->ident);
 	printf("\t\t<name>%s</name>\n", pt->desc->name);
 	printf("\t\t<value>%ju</value>\n", val);
 	printf("\t\t<flag>%c</flag>\n", pt->desc->flag);
@@ -104,14 +104,16 @@ do_json_cb(void *priv, const struct VSC_point * const pt)
 
 	printf("\t\"");
 	/* build the JSON key name.  */
-	if (pt->class[0])
-		printf("%s.", pt->class);
-	if (pt->ident[0])
-		printf("%s.", pt->ident);
+	if (pt->fantom->type[0])
+		printf("%s.", pt->fantom->type);
+	if (pt->fantom->ident[0])
+		printf("%s.", pt->fantom->ident);
 	printf("%s\": {", pt->desc->name);
 
-	if (strcmp(pt->class, "")) printf("\"type\": \"%s\", ",  pt->class);
-	if (strcmp(pt->ident, "")) printf("\"ident\": \"%s\", ", pt->ident);
+	if (strcmp(pt->fantom->type, "")) printf("\"type\": \"%s\", ",
+	    pt->fantom->type);
+	if (strcmp(pt->fantom->ident, "")) printf("\"ident\": \"%s\", ",
+	    pt->fantom->ident);
 
 	printf("\"value\": %ju, ", val);
 
@@ -163,10 +165,10 @@ do_once_cb(void *priv, const struct VSC_point * const pt)
 	assert(!strcmp(pt->desc->fmt, "uint64_t"));
 	val = *(const volatile uint64_t*)pt->ptr;
 	i = 0;
-	if (strcmp(pt->class, ""))
-		i += printf("%s.", pt->class);
-	if (strcmp(pt->ident, ""))
-		i += printf("%s.", pt->ident);
+	if (strcmp(pt->fantom->type, ""))
+		i += printf("%s.", pt->fantom->type);
+	if (strcmp(pt->fantom->ident, ""))
+		i += printf("%s.", pt->fantom->ident);
 	i += printf("%s", pt->desc->name);
 	if (i >= op->pad)
 		op->pad = i + 1;
@@ -199,10 +201,10 @@ do_list_cb(void *priv, const struct VSC_point * const pt)
 
 	(void)priv;
 	i = 0;
-	if (strcmp(pt->class, ""))
-		i += fprintf(stderr, "%s.", pt->class);
-	if (strcmp(pt->ident, ""))
-		i += fprintf(stderr, "%s.", pt->ident);
+	if (strcmp(pt->fantom->type, ""))
+		i += fprintf(stderr, "%s.", pt->fantom->type);
+	if (strcmp(pt->fantom->ident, ""))
+		i += fprintf(stderr, "%s.", pt->fantom->ident);
 	i += fprintf(stderr, "%s", pt->desc->name);
 	if (i < 30)
 		fprintf(stderr, "%*s", i - 30, "");
