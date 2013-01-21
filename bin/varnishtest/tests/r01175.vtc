@@ -17,4 +17,4 @@ client c1 {
 	expect resp.status == 503
 } -run
 
-varnish v1 -expect SMA.test.c_fail < 5
+varnish v1 -expect SMA.test.c_fail < 50

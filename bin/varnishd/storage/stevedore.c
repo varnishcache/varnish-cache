@@ -180,7 +180,7 @@ stv_alloc(struct stevedore *stv, size_t size)
 		if (size <= cache_param->fetch_chunksize) 
 			break;
 
-		size >>= 1;
+		size <<= 1;
 	}
 	if (st != NULL)
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
