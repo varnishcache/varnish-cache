@@ -159,11 +159,42 @@ stv_pick_stevedore(struct vsl_log *vsl, const char **hint)
 /*-------------------------------------------------------------------*/
 
 static struct storage *
-stv_alloc(struct busyobj *bo, size_t size)
+stv_alloc(struct stevedore *stv, size_t size)
 {
 	struct storage *st;
+
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+
+	if (size > cache_param->fetch_maxchunksize)
+		size = cache_param->fetch_maxchunksize;
+
+	assert(size <= UINT_MAX);	/* field limit in struct storage */
+
+	for (;;) {
+		/* try to allocate from it */
+		AN(stv->alloc);
+		st = stv->alloc(stv, size);
+		if (st != NULL)
+			break;
+
+		if (size <= cache_param->fetch_chunksize) 
+			break;
+
+		size >>= 1;
+	}
+	if (st != NULL)
+		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+	return (st);
+}
+
+/*-------------------------------------------------------------------*/
+
+static struct storage *
+stv_alloc_obj(struct busyobj *bo, size_t size)
+{
+	struct storage *st = NULL;
 	struct stevedore *stv;
-	unsigned fail = 0;
+	unsigned fail;
 	struct object *obj;
 
 	/*
@@ -181,24 +212,16 @@ stv_alloc(struct busyobj *bo, size_t size)
 
 	assert(size <= UINT_MAX);	/* field limit in struct storage */
 
-	for (;;) {
+	for (fail = 0; fail <= cache_param->nuke_limit; fail++) {
 		/* try to allocate from it */
 		AN(stv->alloc);
-		st = stv->alloc(stv, size);
+		st = stv_alloc(stv, size);
 		if (st != NULL)
 			break;
 
-		if (size > cache_param->fetch_chunksize) {
-			size >>= 1;
-			continue;
-		}
-
 		/* no luck; try to free some space and keep trying */
-		if (EXP_NukeOne(bo, stv->lru) == -1)
-			break;
-
-		/* Enough is enough: try another if we have one */
-		if (++fail >= cache_param->nuke_limit)
+		if (fail < cache_param->nuke_limit &&
+		    EXP_NukeOne(bo, stv->lru) == -1)
 			break;
 	}
 	if (st != NULL)
@@ -390,7 +413,7 @@ struct storage *
 STV_alloc(struct busyobj *bo, size_t size)
 {
 
-	return (stv_alloc(bo, size));
+	return (stv_alloc_obj(bo, size));
 }
 
 void
