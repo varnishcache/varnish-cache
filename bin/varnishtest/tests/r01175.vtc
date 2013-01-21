@@ -1,4 +1,4 @@
-varnishtest "#1175 - -smalloc c_fail incremented by bytes"
+varnishtest "#1175 - -smalloc c_fail incremented by allocations, not bytes"
 
 server s1 {
 	rxreq
