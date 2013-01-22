@@ -448,6 +448,7 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 	ll = 0;
 	p = http_find_header(hh, "content-length");
 	if (p != NULL) {
+		hp->body = hp->rxbuf + hp->prxbuf;
 		l = strtoul(p, NULL, 0);
 		(void)http_rxchar(hp, l, 0);
 		vtc_dump(hp->vl, 4, "body", hp->body, l);
