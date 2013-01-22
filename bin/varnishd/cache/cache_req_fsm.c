@@ -430,7 +430,9 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	/* Clean up partial fetch */
 	AZ(bo->vbc);
 
-	if (req->objcore->objhead != NULL || req->handling == VCL_RET_ERROR) {
+	if (req->objcore->objhead != NULL ||
+	    req->handling == VCL_RET_RESTART ||
+	    req->handling == VCL_RET_ERROR) {
 		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
 		req->objcore = NULL;
@@ -1088,6 +1090,7 @@ cnt_recv(const struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 	AZ(req->obj);
+	AZ(req->objcore);
 	AZ(req->busyobj);
 
 	VSLb(req->vsl, SLT_ReqStart, "%s %s", req->sp->addr, req->sp->port);
