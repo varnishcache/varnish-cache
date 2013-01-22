@@ -584,6 +584,10 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 	const char *p;
 	struct vsb *os;
 
+	/* XXX: Ignore fd's outside 65536 */
+	if (fd >= 65536)
+		return (reopen);
+
 	if (fd >= nll) {
 		struct logline **newll = ll;
 		size_t newnll = nll;
