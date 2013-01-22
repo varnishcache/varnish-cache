@@ -512,6 +512,16 @@ VRT_ban_string(const struct req *req, const char *str)
 }
 
 /*--------------------------------------------------------------------
+ *
+ */
+
+int
+VRT_CacheReqBody(struct req *req, long long maxsize)
+{
+	return (HTTP1_CacheReqBody(req, maxsize));
+}
+
+/*--------------------------------------------------------------------
  * "real" purges
  */
 

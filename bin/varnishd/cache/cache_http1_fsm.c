@@ -80,7 +80,7 @@
 #include "vtcp.h"
 #include "vtim.h"
 
-/*--------------------------------------------------------------------
+/*----------------------------------------------------------------------
  * Collect a request from the client.
  */
 
@@ -161,7 +161,7 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 	return (1);
 }
 
-/*--------------------------------------------------------------------
+/*----------------------------------------------------------------------
  * This is the final state, figure out if we should close or recycle
  * the client connection
  */
@@ -235,7 +235,7 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	}
 }
 
-/*--------------------------------------------------------------------
+/*----------------------------------------------------------------------
  */
 
 static int
@@ -296,7 +296,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 	return (0);
 }
 
-/*--------------------------------------------------------------------
+/*----------------------------------------------------------------------
  */
 
 void
@@ -375,75 +375,225 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 	}
 }
 
-/*
- * XXX: DiscardReqBody() is a dedicated function, because we might
- * XXX: be able to disuade or terminate its transmission in some protocols.
- */ 
+/*----------------------------------------------------------------------
+ */
 
-int
-HTTP1_DiscardReqBody(struct req *req)
-{
-	char buf[8192];
-	ssize_t l;
+struct http1_r_b_s {
+	ssize_t			bytes_done;
+	ssize_t			yet;
+	enum {CL, CHUNKED}	mode;
+};
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	while (req->req_body_status != REQ_BODY_DONE &&
-	    req->req_body_status != REQ_BODY_NONE) {
-		l = HTTP1_GetReqBody(req, buf, sizeof buf);
-		if (l < 0)
-			return (-1);
-	}
-	return (0);
-}
-
-ssize_t
-HTTP1_GetReqBody(struct req *req, void *buf, ssize_t len)
+static int
+http1_setup_req_body(struct req *req, struct http1_r_b_s *rbs)
 {
 	char *ptr, *endp;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	memset(rbs, 0, sizeof *rbs);
 
-	if (req->req_body_status == REQ_BODY_INIT) {
-		if (http_GetHdr(req->http, H_Content_Length, &ptr)) {
-			AN(ptr);
-			if (*ptr == '\0') {
-				req->req_body_status = REQ_BODY_DONE;
-				return (-1);
-			}
-			req->req_bodybytes = strtoul(ptr, &endp, 10);
-			if (*endp != '\0' && !vct_islws(*endp)) {
-				req->req_body_status = REQ_BODY_DONE;
-				return (-1);
-			}
-			if (req->req_bodybytes == 0) {
-				req->req_body_status = REQ_BODY_DONE;
-				return (0);
-			}
-			req->req_body_status = REQ_BODY_CL;
-		} else if (http_GetHdr(req->http, H_Transfer_Encoding, NULL)) {
-			VSLb(req->vsl, SLT_Debug,
-			    "Transfer-Encoding in request");
-			req->req_body_status = REQ_BODY_DONE;
+	assert(req->req_body_status == REQ_BODY_INIT);
+	if (http_GetHdr(req->http, H_Content_Length, &ptr)) {
+		AN(ptr);
+		if (*ptr == '\0') {
+			req->req_body_status = REQ_BODY_FAIL;
 			return (-1);
-		} else {
+		}
+		req->req_bodybytes = strtoul(ptr, &endp, 10);
+		if (*endp != '\0' && !vct_islws(*endp)) {
+			req->req_body_status = REQ_BODY_FAIL;
+			return (-1);
+		}
+		if (req->req_bodybytes == 0) {
 			req->req_body_status = REQ_BODY_NONE;
 			return (0);
 		}
+		rbs->mode = CL;
+		rbs->yet = req->req_bodybytes - rbs->bytes_done;
+		return (0);
 	}
-	if (req->req_body_status == REQ_BODY_CL) {
-		if (req->req_bodybytes == 0) {
+
+	if (http_GetHdr(req->http, H_Transfer_Encoding, NULL)) {
+		rbs->mode = CHUNKED;
+		VSLb(req->vsl, SLT_Debug,
+		    "Transfer-Encoding in request");
+		req->req_body_status = REQ_BODY_DONE;
+		return (-1);
+	}
+
+	req->req_body_status = REQ_BODY_NONE;
+	req->req_bodybytes = 0;
+	return (0);
+}
+
+static ssize_t
+http1_iter_req_body(struct req *req, struct http1_r_b_s *rbs, void *buf,
+    ssize_t len)
+{
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	if (rbs->mode == CL) {
+		AN(req->req_bodybytes);
+		AN(len);
+		AN(buf);
+		if (len > req->req_bodybytes - rbs->bytes_done)
+			len = req->req_bodybytes - rbs->bytes_done;
+		if (len == 0) {
 			req->req_body_status = REQ_BODY_DONE;
 			return (0);
 		}
-		if (len > req->req_bodybytes)
-			len = req->req_bodybytes;
 		len = HTC_Read(req->htc, buf, len);
 		if (len <= 0) {
-			req->req_body_status = REQ_BODY_DONE;
+			req->req_body_status = REQ_BODY_FAIL;
 			return (-1);
 		}
-		req->req_bodybytes -= len;
+		rbs->bytes_done += len;
+		rbs->yet = req->req_bodybytes - rbs->bytes_done;
 		return (len);
 	}
+	INCOMPL();
+}
+
+/*----------------------------------------------------------------------
+ * Iterate over the req.body.
+ *
+ * This can be done exactly once if uncached, and multiple times if the
+ * req.body is cached.
+ */
+
+int
+HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv)
+{
+	char buf[8192];
+	struct storage *st;
+	ssize_t l;
+	int i;
+	struct http1_r_b_s	rbs;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AN(func);
+
+	if (req->req_body_status == REQ_BODY_CACHED) {
+		VTAILQ_FOREACH(st, &req->body, list) {
+			i = func(req, priv, st->ptr, st->len);
+			if (i)
+				return (i);
+		}
+		return (0);
+	}
+
+	if (req->req_body_status == REQ_BODY_NONE)
+		return (0);
+
+	if (req->req_body_status != REQ_BODY_INIT)
+		return (-1);
+
+	i = http1_setup_req_body(req, &rbs);
+	if (i < 0)
+		return (i);
+
+	if (req->req_body_status == REQ_BODY_NONE)
+		return (0);
+
+	do {
+		l = http1_iter_req_body(req, &rbs, buf, sizeof buf);
+		if (l < 0)
+			return (l);
+		if (l > 0) {
+			i = func(req, priv, buf, l);
+			if (i)
+				return (i);
+		}
+	} while (l > 0);
+	return(0);
+}
+
+/*----------------------------------------------------------------------
+ * DiscardReqBody() is a dedicated function, because we might
+ * be able to disuade or terminate its transmission in some protocols.
+ * For HTTP1 we have no such luck, and we just iterate it into oblivion.
+ */
+
+static int __match_proto__(req_body_iter_f)
+httpq_req_body_discard(struct req *req, void *priv, void *ptr, size_t len)
+{
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	(void)priv;
+	(void)ptr;
+	(void)len;
 	return (0);
+}
+
+int
+HTTP1_DiscardReqBody(struct req *req)
+{
+
+	return(HTTP1_IterateReqBody(req, httpq_req_body_discard, NULL));
+}
+
+/*----------------------------------------------------------------------
+ * Cache the req.body if it is smaller than the given size
+ */
+
+int
+HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
+{
+	struct storage *st;
+	ssize_t l;
+	int i;
+	struct http1_r_b_s	rbs;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	if (req->req_body_status == REQ_BODY_CACHED)
+		return (0);
+
+	if (req->req_body_status == REQ_BODY_NONE)
+		return (0);
+
+	if (req->req_body_status != REQ_BODY_INIT)
+		return (-1);
+
+	i = http1_setup_req_body(req, &rbs);
+	if (i < 0)
+		return (i);
+
+	if (req->req_bodybytes > maxsize) {
+		req->req_body_status = REQ_BODY_FAIL;
+		return (-1);
+	}
+
+	if (req->req_body_status == REQ_BODY_NONE)
+		return (0);
+
+	st = NULL;
+	do {
+		if (st == NULL) {
+			st = STV_alloc_transient(
+			    rbs.yet ? rbs.yet : cache_param->fetch_chunksize);
+			if (st == NULL) {
+				req->req_body_status = REQ_BODY_FAIL;
+				return (-1);
+			} else {
+				VTAILQ_INSERT_TAIL(&req->body, st, list);
+			}
+		}
+
+		l = st->space - st->len;
+		l = http1_iter_req_body(req, &rbs, st->ptr + st->len, l);
+		if (l < 0)
+			return (l);
+		if (req->req_bodybytes > maxsize) {
+			req->req_body_status = REQ_BODY_FAIL;
+			return (-1);
+		}
+		if (l > 0) {
+			st->len += l;
+			if (st->space == st->len)
+				st = NULL;
+		}
+	} while (l > 0);
+	req->req_body_status = REQ_BODY_CACHED;
+	return(0);
 }

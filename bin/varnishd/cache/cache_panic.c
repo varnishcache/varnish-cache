@@ -232,7 +232,7 @@ pan_busyobj(const struct busyobj *bo)
 static void
 pan_req(const struct req *req)
 {
-	const char *hand, *stp;
+	const char *hand, *stp, *body;
 
 	VSB_printf(pan_vsp, "req = %p {\n", req);
 
@@ -248,6 +248,18 @@ pan_req(const struct req *req)
 		VSB_printf(pan_vsp, "  step = %s,\n", stp);
 	else
 		VSB_printf(pan_vsp, "  step = 0x%x,\n", req->req_step);
+
+	switch (req->req_body_status) {
+#define REQ_BODY(U) case REQ_BODY_##U: body = "R_BODY_" #U; break;
+#include "tbl/req_body.h"
+#undef REQ_BODY
+		default: body = NULL;
+	}
+	if (body != NULL)
+		VSB_printf(pan_vsp, "  req_body = %s,\n", body);
+	else
+		VSB_printf(pan_vsp, "  req_body = 0x%x,\n",
+		    req->req_body_status);
 
 	hand = VCL_Return_Name(req->handling);
 	if (hand != NULL)

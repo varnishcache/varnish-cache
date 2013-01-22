@@ -177,7 +177,7 @@ stv_alloc(struct stevedore *stv, size_t size)
 		if (st != NULL)
 			break;
 
-		if (size <= cache_param->fetch_chunksize) 
+		if (size <= cache_param->fetch_chunksize)
 			break;
 
 		size <<= 1;
@@ -414,6 +414,13 @@ STV_alloc(struct busyobj *bo, size_t size)
 {
 
 	return (stv_alloc_obj(bo, size));
+}
+
+struct storage *
+STV_alloc_transient(size_t size)
+{
+
+	return (stv_alloc(stv_transient, size));
 }
 
 void

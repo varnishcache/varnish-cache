@@ -1,0 +1,30 @@
+varnishtest "test caching of req.body"
+
+server s1 {
+	rxreq
+	expect req.bodylen == 3
+	txresp -status 200 -hdr "Foo: BAR" -body "1234"
+	accept
+	rxreq
+	expect req.bodylen == 3
+	txresp -status 200 -hdr "Foo: Foo" -body "56"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		C{ VRT_CacheReqBody(req, 1000); }C
+		return (pass);
+	}
+	sub vcl_fetch {
+		if (beresp.http.foo == "BAR") {
+			return (restart);
+		}
+	}
+} -start
+
+client c1 {
+	txreq -body "FOO"
+	rxresp
+	expect resp.http.Foo == "Foo"
+	expect resp.bodylen == 2
+} -run

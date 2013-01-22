@@ -77,6 +77,14 @@ body_status(enum body_status e)
 
 /*--------------------------------------------------------------------*/
 
+enum req_body_state_e {
+#define REQ_BODY(U)	REQ_BODY_##U,
+#include <tbl/req_body.h>
+#undef REQ_BODY
+};
+
+/*--------------------------------------------------------------------*/
+
 enum sess_close {
 	SC_NULL = 0,
 #define SESS_CLOSE(nm, desc)	SC_##nm,
@@ -582,14 +590,6 @@ struct object {
 
 /*--------------------------------------------------------------------*/
 
-enum req_body_state_e {
-	REQ_BODY_INIT = 0,
-	REQ_BODY_CL,
-	// REQ_BODY_CHUNKED,
-	REQ_BODY_DONE,
-	REQ_BODY_NONE
-};
-
 struct req {
 	unsigned		magic;
 #define REQ_MAGIC		0x2751aaa1
@@ -604,6 +604,8 @@ struct req {
 	struct worker		*wrk;
 	enum req_step		req_step;
 	VTAILQ_ENTRY(req)	w_list;
+
+	struct storagehead	body;
 
 	/* The busy objhead we sleep on */
 	struct objhead		*hash_objhead;
@@ -777,9 +779,11 @@ void VBO_DerefBusyObj(struct worker *wrk, struct busyobj **busyobj);
 void VBO_Free(struct busyobj **vbo);
 
 /* cache_http1_fsm.c [HTTP1] */
-ssize_t HTTP1_GetReqBody(struct req *, void *buf, ssize_t len);
-int HTTP1_DiscardReqBody(struct req *req);
+typedef int (req_body_iter_f)(struct req *, void *priv, void *ptr, size_t);
 void HTTP1_Session(struct worker *, struct req *);
+int HTTP1_DiscardReqBody(struct req *req);
+int HTTP1_CacheReqBody(struct req *req, ssize_t maxsize);
+int HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv);
 
 /* cache_req_fsm.c [CNT] */
 int CNT_Request(struct worker *, struct req *);
@@ -1074,6 +1078,7 @@ void STV_close(void);
 void STV_Freestore(struct object *o);
 int STV_BanInfo(enum baninfo event, const uint8_t *ban, unsigned len);
 void STV_BanExport(const uint8_t *bans, unsigned len);
+struct storage *STV_alloc_transient(size_t size);
 
 /* storage_synth.c */
 struct vsb *SMS_Makesynth(struct object *obj);

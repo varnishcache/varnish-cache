@@ -44,8 +44,6 @@
 
 static unsigned fetchfrag;
 
-static int fetchReqBody(struct req *req, int sendbody);
-
 /*--------------------------------------------------------------------
  * We want to issue the first error we encounter on fetching and
  * supress the rest.  This function does that.
@@ -373,39 +371,20 @@ fetch_eof(struct busyobj *bo, struct http_conn *htc)
 }
 
 /*--------------------------------------------------------------------
- * Fetch any body attached to the incoming request, and either write it
- * to the backend (if we pass) or discard it (anything else).
- * This is mainly a separate function to isolate the stack buffer and
- * to contain the complexity when we start handling chunked encoding.
+ * Pass the request body to the backend
  */
 
-static int
-fetchReqBody(struct req *req, int sendbody)
+static int __match_proto__(req_body_iter_f)
+fetch_iter_req_body(struct req *req, void *priv, void *ptr, size_t l)
 {
-	char buf[8192];
-	ssize_t l = 1234;
 
-	if (req->req_body_status == REQ_BODY_DONE) {
-		AZ(sendbody);
-		return (0);
-	}
-	while (req->req_body_status != REQ_BODY_DONE &&
-	    req->req_body_status != REQ_BODY_NONE) {
-		l = HTTP1_GetReqBody(req, buf, sizeof buf);
-		if (l < 0) {
-			return (1);
-		} else if (l == 0) {
-			assert(req->req_body_status == REQ_BODY_DONE ||
-			    req->req_body_status == REQ_BODY_NONE);
-		} else if (sendbody) {
-			/* XXX: stats ? */
-			(void)WRW_Write(req->wrk, buf, l);
-			if (WRW_Flush(req->wrk)) {
-				/* XXX: Try to salvage client-conn ? */
-				req->req_body_status = REQ_BODY_DONE;
-				return (2);
-			}
-		}
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	(void)priv;
+
+	if (l > 0) {
+		(void)WRW_Write(req->wrk, ptr, l);
+		if (WRW_Flush(req->wrk))
+			return (-1);
 	}
 	return (0);
 }
@@ -468,11 +447,19 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 	WRW_Reserve(wrk, &vc->fd, bo->vsl, req->t_req);	/* XXX t_resp ? */
 	(void)http_Write(wrk, hp, 0);	/* XXX: stats ? */
 
-	/* Deal with any message-body the request might have */
-	i = fetchReqBody(req, sendbody);
-	if (sendbody && req->req_body_status == REQ_BODY_DONE)
-		retry = -1;
-	if (WRW_FlushRelease(wrk) || i > 0) {
+	/* Deal with any message-body the request might (still) have */
+	i = 0;
+
+	if (sendbody) {
+		i = HTTP1_IterateReqBody(req,
+		    fetch_iter_req_body, NULL);
+		if (req->req_body_status == REQ_BODY_DONE)
+			retry = -1;
+	} else {
+		i = HTTP1_DiscardReqBody(req);
+	}
+
+	if (WRW_FlushRelease(wrk) || i != 0) {
 		VSLb(req->vsl, SLT_FetchError,
 		    "backend write error: %d (%s)",
 		    errno, strerror(errno));

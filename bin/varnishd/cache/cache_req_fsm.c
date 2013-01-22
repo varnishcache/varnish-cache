@@ -1089,6 +1089,7 @@ cnt_recv(const struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
+	AZ(req->objcore);
 	AZ(req->obj);
 	AZ(req->objcore);
 	AZ(req->busyobj);

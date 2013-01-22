@@ -170,6 +170,10 @@ struct vrt_ref {
 
 void VRT_acl_log(struct req *, const char *msg);
 
+/* req related */
+
+int VRT_CacheReqBody(struct req *, long long maxsize);
+
 /* Regexp related */
 void VRT_re_init(void **, const char *);
 void VRT_re_fini(void *);
