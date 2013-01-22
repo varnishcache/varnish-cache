@@ -189,6 +189,8 @@ cmd_var_resolve(struct http *hp, char *spec)
 		return(hp->resp[2]);
 	if (!strcmp(spec, "resp.chunklen"))
 		return(hp->chunklen);
+	if (!strcmp(spec, "req.bodylen"))
+		return(hp->bodylen);
 	if (!strcmp(spec, "resp.bodylen"))
 		return(hp->bodylen);
 	if (!strcmp(spec, "resp.body"))
