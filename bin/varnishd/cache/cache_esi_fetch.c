@@ -103,7 +103,7 @@ vfp_esi_bytes_uu(struct busyobj *bo, const struct vef_priv *vef,
 			return (wl);
 		VEP_Parse(bo, (const char *)st->ptr + st->len, wl);
 		st->len += wl;
-		VFP_update_length(bo, wl);
+		VBO_extend(bo, wl);
 		bytes -= wl;
 	}
 	return (1);
@@ -142,7 +142,7 @@ vfp_esi_bytes_gu(struct busyobj *bo, const struct vef_priv *vef,
 			return (-1);
 		if (dl > 0) {
 			VEP_Parse(bo, dp, dl);
-			VFP_update_length(bo, dl);
+			VBO_extend(bo, dl);
 		}
 	}
 	return (1);
@@ -220,7 +220,7 @@ vfp_vep_callback(struct busyobj *bo, ssize_t l, enum vgz_flag flg)
 		}
 		i = VGZ_Gzip(vef->vgz, &dp, &dl, flg);
 		vef->tot += dl;
-		VFP_update_length(bo, dl);
+		VBO_extend(bo, dl);
 	} while (!VGZ_IbufEmpty(vef->vgz) ||
 	    (flg != VGZ_NORMAL && VGZ_ObufFull(vef->vgz)));
 	assert(VGZ_IbufEmpty(vef->vgz));

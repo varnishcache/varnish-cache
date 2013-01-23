@@ -113,18 +113,6 @@ VFP_End(struct busyobj *bo)
 		assert(bo->state == BOS_FAILED);
 }
 
-void
-VFP_update_length(const struct busyobj *bo, ssize_t l)
-{
-
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->fetch_obj, OBJECT_MAGIC);
-	if (l == 0)
-		return;
-	assert(l > 0);
-	bo->fetch_obj->len += l;
-}
-
 /*--------------------------------------------------------------------
  * VFP_NOP
  *
@@ -176,7 +164,7 @@ vfp_nop_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 		if (wl <= 0)
 			return (wl);
 		st->len += wl;
-		VFP_update_length(bo, wl);
+		VBO_extend(bo, wl);
 		bytes -= wl;
 	}
 	return (1);

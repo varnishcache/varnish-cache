@@ -189,3 +189,15 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 	else
 		VBO_Free(&bo);
 }
+
+void
+VBO_extend(const struct busyobj *bo, ssize_t l)
+{
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->fetch_obj, OBJECT_MAGIC);
+	if (l == 0)
+		return;
+	assert(l > 0);
+	bo->fetch_obj->len += l;
+}
