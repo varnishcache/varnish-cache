@@ -129,8 +129,11 @@ VFP_End(struct busyobj *bo)
  * as seen on the socket, or zero if unknown.
  */
 static void __match_proto__(vfp_begin_f)
-vfp_nop_begin(struct busyobj *bo, size_t estimate)
+vfp_nop_begin(void *priv, size_t estimate)
 {
+	struct busyobj *bo;
+
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 
 	if (estimate > 0)
 		(void)FetchStorage(bo, estimate);
@@ -148,10 +151,13 @@ vfp_nop_begin(struct busyobj *bo, size_t estimate)
  */
 
 static int __match_proto__(vfp_bytes_f)
-vfp_nop_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
+vfp_nop_bytes(void *priv, struct http_conn *htc, ssize_t bytes)
 {
 	ssize_t l, wl;
 	struct storage *st;
+	struct busyobj *bo;
+
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 
 	while (bytes > 0) {
 		st = FetchStorage(bo, 0);
@@ -180,10 +186,12 @@ vfp_nop_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
  */
 
 static int __match_proto__(vfp_end_f)
-vfp_nop_end(struct busyobj *bo)
+vfp_nop_end(void *priv)
 {
 	struct storage *st;
+	struct busyobj *bo;
 
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	st = VTAILQ_LAST(&bo->fetch_obj->store, storagehead);
 	if (st == NULL)
 		return (0);

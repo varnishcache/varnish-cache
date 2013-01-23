@@ -268,11 +268,9 @@ struct dstat {
 
 /* Fetch processors --------------------------------------------------*/
 
-void VBO_extend(const struct busyobj *, ssize_t);
-
-typedef void vfp_begin_f(struct busyobj *, size_t );
-typedef int vfp_bytes_f(struct busyobj *, struct http_conn *, ssize_t);
-typedef int vfp_end_f(struct busyobj *);
+typedef void vfp_begin_f(void *priv, size_t );
+typedef int vfp_bytes_f(void *priv, struct http_conn *, ssize_t);
+typedef int vfp_end_f(void *priv);
 
 struct vfp {
 	vfp_begin_f	*begin;
@@ -787,6 +785,7 @@ void VBO_Init(void);
 struct busyobj *VBO_GetBusyObj(struct worker *, struct req *);
 void VBO_DerefBusyObj(struct worker *wrk, struct busyobj **busyobj);
 void VBO_Free(struct busyobj **vbo);
+void VBO_extend(const struct busyobj *, ssize_t);
 
 /* cache_http1_fsm.c [HTTP1] */
 typedef int (req_body_iter_f)(struct req *, void *priv, void *ptr, size_t);

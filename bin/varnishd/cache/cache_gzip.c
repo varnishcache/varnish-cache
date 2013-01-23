@@ -441,25 +441,28 @@ VGZ_Destroy(struct vgz **vgp)
  */
 
 static void __match_proto__(vfp_begin_f)
-vfp_gunzip_begin(struct busyobj *bo, size_t estimate)
+vfp_gunzip_begin(void *priv, size_t estimate)
 {
+	struct busyobj *bo;
+
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	(void)estimate;
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	AZ(bo->vgz_rx);
 	bo->vgz_rx = VGZ_NewUngzip(bo->vsl, "U F -");
 	XXXAZ(vgz_getmbuf(bo->vgz_rx));
 }
 
 static int __match_proto__(vfp_bytes_f)
-vfp_gunzip_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
+vfp_gunzip_bytes(void *priv, struct http_conn *htc, ssize_t bytes)
 {
 	struct vgz *vg;
+	struct busyobj *bo;
 	ssize_t l, wl;
 	int i = -100;
 	size_t dl;
 	const void *dp;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	vg = bo->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
@@ -487,11 +490,12 @@ vfp_gunzip_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 }
 
 static int __match_proto__(vfp_end_f)
-vfp_gunzip_end(struct busyobj *bo)
+vfp_gunzip_end(void *priv)
 {
 	struct vgz *vg;
+	struct busyobj *bo;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	vg = bo->vgz_rx;
 	bo->vgz_rx = NULL;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
@@ -517,26 +521,28 @@ struct vfp vfp_gunzip = {
  */
 
 static void __match_proto__(vfp_begin_f)
-vfp_gzip_begin(struct busyobj *bo, size_t estimate)
+vfp_gzip_begin(void *priv, size_t estimate)
 {
 	(void)estimate;
+	struct busyobj *bo;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	AZ(bo->vgz_rx);
 	bo->vgz_rx = VGZ_NewGzip(bo->vsl, "G F -");
 	XXXAZ(vgz_getmbuf(bo->vgz_rx));
 }
 
 static int __match_proto__(vfp_bytes_f)
-vfp_gzip_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
+vfp_gzip_bytes(void *priv, struct http_conn *htc, ssize_t bytes)
 {
 	struct vgz *vg;
+	struct busyobj *bo;
 	ssize_t l, wl;
 	int i = -100;
 	size_t dl;
 	const void *dp;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	vg = bo->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
@@ -561,14 +567,15 @@ vfp_gzip_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 }
 
 static int __match_proto__(vfp_end_f)
-vfp_gzip_end(struct busyobj *bo)
+vfp_gzip_end(void *priv)
 {
 	struct vgz *vg;
+	struct busyobj *bo;
 	size_t dl;
 	const void *dp;
 	int i;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	vg = bo->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	bo->vgz_rx = NULL;
@@ -603,9 +610,11 @@ struct vfp vfp_gzip = {
  */
 
 static void __match_proto__(vfp_begin_f)
-vfp_testgzip_begin(struct busyobj *bo, size_t estimate)
+vfp_testgzip_begin(void *priv, size_t estimate)
 {
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	struct busyobj *bo;
+
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	(void)estimate;
 	bo->vgz_rx = VGZ_NewUngzip(bo->vsl, "u F -");
 	CHECK_OBJ_NOTNULL(bo->vgz_rx, VGZ_MAGIC);
@@ -613,16 +622,17 @@ vfp_testgzip_begin(struct busyobj *bo, size_t estimate)
 }
 
 static int __match_proto__(vfp_bytes_f)
-vfp_testgzip_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
+vfp_testgzip_bytes(void *priv, struct http_conn *htc, ssize_t bytes)
 {
 	struct vgz *vg;
+	struct busyobj *bo;
 	ssize_t l, wl;
 	int i = -100;
 	size_t dl;
 	const void *dp;
 	struct storage *st;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	vg = bo->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
@@ -656,11 +666,12 @@ vfp_testgzip_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 }
 
 static int __match_proto__(vfp_end_f)
-vfp_testgzip_end(struct busyobj *bo)
+vfp_testgzip_end(void *priv)
 {
 	struct vgz *vg;
+	struct busyobj *bo;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	vg = bo->vgz_rx;
 	bo->vgz_rx = NULL;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
