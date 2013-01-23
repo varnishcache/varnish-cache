@@ -57,6 +57,16 @@
 
 #include "common/params.h"
 
+/*--------------------------------------------------------------------*/
+
+enum req_fsm_nxt {
+	REQ_FSM_MORE,
+	REQ_FSM_DONE,
+	REQ_FSM_DISEMBARK,
+};
+
+/*--------------------------------------------------------------------*/
+
 enum body_status {
 #define BODYSTATUS(U,l)	BS_##U,
 #include "tbl/body_status.h"
@@ -786,7 +796,7 @@ int HTTP1_CacheReqBody(struct req *req, ssize_t maxsize);
 int HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv);
 
 /* cache_req_fsm.c [CNT] */
-int CNT_Request(struct worker *, struct req *);
+enum req_fsm_nxt CNT_Request(struct worker *, struct req *);
 
 /* cache_cli.c [CLI] */
 void CLI_Init(void);

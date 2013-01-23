@@ -91,7 +91,7 @@ DOT }
  *
  */
 
-static int
+static enum req_fsm_nxt
 cnt_prepresp(struct worker *wrk, struct req *req)
 {
 	struct busyobj *bo;
@@ -175,12 +175,12 @@ cnt_prepresp(struct worker *wrk, struct req *req)
 		AZ(req->obj);
 		http_Teardown(req->resp);
 		req->req_step = R_STP_RESTART;
-		return (0);
+		return (REQ_FSM_MORE);
 	default:
 		WRONG("Illegal action in vcl_deliver{}");
 	}
 	req->req_step = R_STP_DELIVER;
-	return (0);
+	return (REQ_FSM_MORE);
 }
 
 /*--------------------------------------------------------------------
@@ -198,7 +198,7 @@ DOT deliver -> DONE [style=bold,color=blue]
  *
  */
 
-static int
+static enum req_fsm_nxt
 cnt_deliver(struct worker *wrk, struct req *req)
 {
 	struct busyobj *bo;
@@ -219,7 +219,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 			VBO_DerefBusyObj(wrk, &req->busyobj);
 			req->err_code = 503;
 			req->req_step = R_STP_ERROR;
-			return (0);
+			return (REQ_FSM_MORE);
 		}
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 	}
@@ -237,7 +237,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	assert(WRW_IsReleased(wrk));
 	(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
 	http_Teardown(req->resp);
-	return (1);
+	return (REQ_FSM_DONE);
 }
 /*--------------------------------------------------------------------
  * Emit an error
@@ -254,7 +254,7 @@ DOT vcl_error-> rsterr [label="restart",color=purple]
 DOT rsterr [label="RESTART",shape=plaintext]
  */
 
-static int
+static enum req_fsm_nxt
 cnt_error(struct worker *wrk, struct req *req)
 {
 	struct http *h;
@@ -281,7 +281,7 @@ cnt_error(struct worker *wrk, struct req *req)
 		req->director = NULL;
 		http_Teardown(bo->beresp);
 		http_Teardown(bo->bereq);
-		return(1);
+		return (REQ_FSM_DONE);
 	}
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 	req->obj->vxid = bo->vsl->wid;
@@ -309,7 +309,7 @@ cnt_error(struct worker *wrk, struct req *req)
 		HSH_Drop(wrk, &req->obj);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		req->req_step = R_STP_RESTART;
-		return (0);
+		return (REQ_FSM_MORE);
 	} else if (req->handling == VCL_RET_RESTART)
 		req->handling = VCL_RET_DELIVER;
 
@@ -324,7 +324,7 @@ cnt_error(struct worker *wrk, struct req *req)
 	http_Teardown(bo->bereq);
 	VBO_DerefBusyObj(wrk, &req->busyobj);
 	req->req_step = R_STP_PREPRESP;
-	return (0);
+	return (REQ_FSM_MORE);
 }
 
 /*--------------------------------------------------------------------
@@ -340,7 +340,7 @@ DOT fetch -> fetchbody [style=bold,color=red]
 DOT fetch -> fetchbody [style=bold,color=blue]
  */
 
-static int
+static enum req_fsm_nxt
 cnt_fetch(struct worker *wrk, struct req *req)
 {
 	int i, need_host_hdr;
@@ -418,7 +418,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 		switch (req->handling) {
 		case VCL_RET_DELIVER:
 			req->req_step = R_STP_FETCHBODY;
-			return (0);
+			return (REQ_FSM_MORE);
 		default:
 			break;
 		}
@@ -446,10 +446,10 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	switch (req->handling) {
 	case VCL_RET_RESTART:
 		req->req_step = R_STP_RESTART;
-		return (0);
+		return (REQ_FSM_MORE);
 	case VCL_RET_ERROR:
 		req->req_step = R_STP_ERROR;
-		return (0);
+		return (REQ_FSM_MORE);
 	default:
 		WRONG("Illegal action in vcl_fetch{}");
 	}
@@ -468,7 +468,7 @@ DOT fetchbody:out -> prepresp [style=bold,color=red]
 DOT fetchbody:out -> prepresp [style=bold,color=blue]
  */
 
-static int
+static enum req_fsm_nxt
 cnt_fetchbody(struct worker *wrk, struct req *req)
 {
 	struct http *hp, *hp2;
@@ -606,7 +606,7 @@ cnt_fetchbody(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_ERROR;
 		VDI_CloseFd(&bo->vbc);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
-		return (0);
+		return (REQ_FSM_MORE);
 	}
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 
@@ -685,12 +685,12 @@ cnt_fetchbody(struct worker *wrk, struct req *req)
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		req->err_code = 503;
 		req->req_step = R_STP_ERROR;
-		return (0);
+		return (REQ_FSM_MORE);
 	}
 
 	assert(WRW_IsReleased(wrk));
 	req->req_step = R_STP_PREPRESP;
-	return (0);
+	return (REQ_FSM_MORE);
 }
 
 /*--------------------------------------------------------------------
@@ -711,7 +711,7 @@ DOT hit:pass -> pass [label=pass,style=bold,color=red]
 DOT hit:del -> prepresp [label="deliver",style=bold,color=green]
  */
 
-static int
+static enum req_fsm_nxt
 cnt_hit(struct worker *wrk, struct req *req)
 {
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -731,7 +731,7 @@ cnt_hit(struct worker *wrk, struct req *req)
 		//AZ(req->busyobj->beresp->ws);
 		(void)HTTP1_DiscardReqBody(req);	// XXX: handle err
 		req->req_step = R_STP_PREPRESP;
-		return (0);
+		return (REQ_FSM_MORE);
 	}
 
 	/* Drop our object, we won't need it */
@@ -741,13 +741,13 @@ cnt_hit(struct worker *wrk, struct req *req)
 	switch(req->handling) {
 	case VCL_RET_PASS:
 		req->req_step = R_STP_PASS;
-		return (0);
+		return (REQ_FSM_MORE);
 	case VCL_RET_ERROR:
 		req->req_step = R_STP_ERROR;
-		return (0);
+		return (REQ_FSM_MORE);
 	case VCL_RET_RESTART:
 		req->req_step = R_STP_RESTART;
-		return (0);
+		return (REQ_FSM_MORE);
 	default:
 		WRONG("Illegal action in vcl_hit{}");
 	}
@@ -772,7 +772,7 @@ DOT lookup:no -> hit [style=bold,color=green]
 DOT lookup:yes -> pass [style=bold,color=red]
  */
 
-static int
+static enum req_fsm_nxt
 cnt_lookup(struct worker *wrk, struct req *req)
 {
 	struct objcore *oc;
@@ -798,7 +798,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		 * object has been unbusied, and still have the objhead
 		 * around to restart the lookup with.
 		 */
-		return (2);
+		return (REQ_FSM_DISEMBARK);
 	}
 	AZ(req->objcore);
 
@@ -820,7 +820,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 		req->objcore = oc;
 		req->req_step = R_STP_MISS;
-		return (0);
+		return (REQ_FSM_MORE);
 	}
 
 	/* We are not prepared to do streaming yet */
@@ -838,13 +838,13 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
 		AZ(req->objcore);
 		req->req_step = R_STP_PASS;
-		return (0);
+		return (REQ_FSM_MORE);
 	}
 
 	wrk->stats.cache_hit++;
 	VSLb(req->vsl, SLT_Hit, "%u", req->obj->vxid);
 	req->req_step = R_STP_HIT;
-	return (0);
+	return (REQ_FSM_MORE);
 }
 
 /*--------------------------------------------------------------------
@@ -861,7 +861,7 @@ DOT miss:pass -> pass [label="pass",style=bold,color=red]
 DOT
  */
 
-static int
+static enum req_fsm_nxt
 cnt_miss(struct worker *wrk, struct req *req)
 {
 	struct busyobj *bo;
@@ -892,7 +892,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 	if (req->handling == VCL_RET_FETCH) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 		req->req_step = R_STP_FETCH;
-		return (0);
+		return (REQ_FSM_MORE);
 	}
 
 	AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
@@ -913,7 +913,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 	default:
 		WRONG("Illegal action in vcl_miss{}");
 	}
-	return (0);
+	return (REQ_FSM_MORE);
 }
 
 /*--------------------------------------------------------------------
@@ -933,7 +933,7 @@ XDOT pass:err -> err_pass [label="error"]
 XDOT err_pass [label="ERROR",shape=plaintext]
  */
 
-static int
+static enum req_fsm_nxt
 cnt_pass(struct worker *wrk, struct req *req)
 {
 	struct busyobj *bo;
@@ -957,7 +957,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 		http_Teardown(bo->bereq);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		req->req_step = R_STP_ERROR;
-		return (0);
+		return (REQ_FSM_MORE);
 	}
 	assert(req->handling == VCL_RET_PASS);
 	req->acct_req.pass++;
@@ -965,7 +965,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 
 	req->objcore = HSH_NewObjCore(wrk);
 	req->objcore->busyobj = bo;
-	return (0);
+	return (REQ_FSM_MORE);
 }
 
 /*--------------------------------------------------------------------
@@ -993,7 +993,7 @@ DOT vcl_pipe -> err_pipe [label="error"]
 DOT err_pipe [label="ERROR",shape=plaintext]
  */
 
-static int
+static enum req_fsm_nxt
 cnt_pipe(struct worker *wrk, struct req *req)
 {
 	struct busyobj *bo;
@@ -1019,7 +1019,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	assert(WRW_IsReleased(wrk));
 	http_Teardown(bo->bereq);
 	VBO_DerefBusyObj(wrk, &req->busyobj);
-	return (1);
+	return (REQ_FSM_DONE);
 }
 
 /*--------------------------------------------------------------------
@@ -1036,7 +1036,7 @@ DOT restart -> err_restart
 DOT err_restart [label="ERROR",shape=plaintext]
  */
 
-static int
+static enum req_fsm_nxt
 cnt_restart(const struct worker *wrk, struct req *req)
 {
 
@@ -1051,7 +1051,7 @@ cnt_restart(const struct worker *wrk, struct req *req)
 		req->err_code = 0;
 		req->req_step = R_STP_RECV;
 	}
-	return (0);
+	return (REQ_FSM_MORE);
 }
 
 /*--------------------------------------------------------------------
@@ -1080,7 +1080,7 @@ DOT recv:lookup -> hash [style=bold,color=green]
 DOT hash -> lookup [label="hash",style=bold,color=green]
  */
 
-static int
+static enum req_fsm_nxt
 cnt_recv(const struct worker *wrk, struct req *req)
 {
 	unsigned recv_handling;
@@ -1098,7 +1098,7 @@ cnt_recv(const struct worker *wrk, struct req *req)
 
 	if (req->err_code) {
 		req->req_step = R_STP_ERROR;
-		return (0);
+		return (REQ_FSM_MORE);
 	}
 
 	/* By default we use the first backend */
@@ -1144,21 +1144,21 @@ cnt_recv(const struct worker *wrk, struct req *req)
 	switch(recv_handling) {
 	case VCL_RET_LOOKUP:
 		req->req_step = R_STP_LOOKUP;
-		return (0);
+		return (REQ_FSM_MORE);
 	case VCL_RET_PIPE:
 		if (req->esi_level > 0) {
 			/* XXX: VSL something */
 			INCOMPL();
-			return (1);
+			return (REQ_FSM_DONE);
 		}
 		req->req_step = R_STP_PIPE;
-		return (0);
+		return (REQ_FSM_MORE);
 	case VCL_RET_PASS:
 		req->req_step = R_STP_PASS;
-		return (0);
+		return (REQ_FSM_MORE);
 	case VCL_RET_ERROR:
 		req->req_step = R_STP_ERROR;
-		return (0);
+		return (REQ_FSM_MORE);
 	default:
 		WRONG("Illegal action in vcl_recv{}");
 	}
@@ -1182,10 +1182,10 @@ cnt_diag(struct req *req, const char *state)
 	VSL_Flush(req->vsl, 0);
 }
 
-int
+enum req_fsm_nxt
 CNT_Request(struct worker *wrk, struct req *req)
 {
-	int done;
+	enum req_fsm_nxt nxt;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -1201,7 +1201,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 
 	req->wrk = wrk;
 
-	for (done = 0; !done; ) {
+	for (nxt = REQ_FSM_MORE; nxt == REQ_FSM_MORE; ) {
 		/*
 		 * This is a good place to be paranoid about the various
 		 * pointers still pointing to the things we expect.
@@ -1223,7 +1223,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 		    case R_STP_##u: \
 			if (DO_DEBUG(DBG_REQ_STATE)) \
 				cnt_diag(req, #u); \
-			done = cnt_##l arg; \
+			nxt = cnt_##l arg; \
 		        break;
 #include "tbl/steps.h"
 #undef REQ_STEP
@@ -1233,7 +1233,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 		WS_Assert(wrk->aws);
 		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 	}
-	if (done == 1) {
+	if (nxt == REQ_FSM_DONE) {
 		/* XXX: Workaround for pipe */
 		if (req->sp->fd >= 0) {
 			VSLb(req->vsl, SLT_Length, "%ju",
@@ -1259,7 +1259,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 	req->wrk = NULL;
 
 	assert(WRW_IsReleased(wrk));
-	return (done);
+	return (nxt);
 }
 
 /*

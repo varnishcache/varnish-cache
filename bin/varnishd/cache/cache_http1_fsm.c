@@ -84,7 +84,7 @@
  * Collect a request from the client.
  */
 
-static int
+static enum req_fsm_nxt
 http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 {
 	int j, tmo;
@@ -120,7 +120,7 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 		if (hs == HTC_COMPLETE) {
 			/* Got it, run with it */
 			req->t_req = now;
-			return (0);
+			return (REQ_FSM_MORE);
 		} else if (hs == HTC_ERROR_EOF) {
 			why = SC_REM_CLOSE;
 			break;
@@ -141,7 +141,7 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 				wrk->stats.sess_herd++;
 				SES_ReleaseReq(req);
 				WAIT_Enter(sp);
-				return (1);
+				return (REQ_FSM_DONE);
 			}
 		} else {
 			/* Working on it */
@@ -158,7 +158,7 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 	SES_ReleaseReq(req);
 	assert(why != SC_NULL);
 	SES_Delete(sp, why, now);
-	return (1);
+	return (REQ_FSM_DONE);
 }
 
 /*----------------------------------------------------------------------
@@ -238,7 +238,7 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 /*----------------------------------------------------------------------
  */
 
-static int
+static enum req_fsm_nxt
 http1_dissect(struct worker *wrk, struct req *req)
 {
 	const char *r = "HTTP/1.1 100 Continue\r\n\r\n";
@@ -266,7 +266,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 	if (req->err_code == 400) {
 		wrk->stats.client_req_400++;
 		SES_Close(req->sp, SC_RX_JUNK);
-		return (1);
+		return (REQ_FSM_DONE);
 	}
 	req->acct_req.req++;
 
@@ -280,7 +280,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 			req->err_code = 417;
 		} else if (strlen(r) != write(req->sp->fd, r, strlen(r))) {
 			SES_Close(req->sp, SC_REM_CLOSE);
-			return (1);
+			return (REQ_FSM_DONE);
 		}
 	} else if (req->err_code == 413)
 		wrk->stats.client_req_413++;
@@ -293,7 +293,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 
 	HTTP_Copy(req->http0, req->http);	// For ESI & restart
 
-	return (0);
+	return (REQ_FSM_MORE);
 }
 
 /*----------------------------------------------------------------------
@@ -302,7 +302,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 void
 HTTP1_Session(struct worker *wrk, struct req *req)
 {
-	int done = 0;
+	enum req_fsm_nxt nxt = REQ_FSM_MORE;
 	struct sess *sp;
 	enum http1_cleanup_ret sdr;
 
@@ -343,12 +343,12 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 
 		if (sp->sess_step == S_STP_WORKING) {
 			if (req->req_step == R_STP_RECV)
-				done = http1_dissect(wrk, req);
-			if (done == 0)
-				done = CNT_Request(wrk, req);
-			if (done == 2)
+				nxt = http1_dissect(wrk, req);
+			if (nxt == REQ_FSM_MORE)
+				nxt = CNT_Request(wrk, req);
+			if (nxt == REQ_FSM_DISEMBARK)
 				return;
-			assert(done == 1);
+			assert(nxt == REQ_FSM_DONE);
 			sdr = http1_cleanup(sp, wrk, req);
 			switch (sdr) {
 			case SESS_DONE_RET_GONE:
@@ -366,8 +366,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 		}
 
 		if (sp->sess_step == S_STP_NEWREQ) {
-			done = http1_wait(sp, wrk, req);
-			if (done)
+			nxt = http1_wait(sp, wrk, req);
+			if (nxt != REQ_FSM_MORE)
 				return;
 			sp->sess_step = S_STP_WORKING;
 			req->req_step = R_STP_RECV;
