@@ -1186,6 +1186,7 @@ enum req_fsm_nxt
 CNT_Request(struct worker *wrk, struct req *req)
 {
 	enum req_fsm_nxt nxt;
+	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -1245,6 +1246,12 @@ CNT_Request(struct worker *wrk, struct req *req)
 		    req->sp->t_idle - req->t_resp,
 		    req->t_resp - req->t_req,
 		    req->sp->t_idle - req->t_resp);
+
+		while (!VTAILQ_EMPTY(&req->body)) {
+			st = VTAILQ_FIRST(&req->body);
+			VTAILQ_REMOVE(&req->body, st, list);
+			STV_free(st);
+		}
 
 		/* done == 2 was charged by cache_hash.c */
 		SES_Charge(wrk, req);
