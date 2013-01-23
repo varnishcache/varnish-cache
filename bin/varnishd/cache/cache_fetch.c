@@ -276,7 +276,7 @@ fetch_straight(struct busyobj *bo, struct http_conn *htc, ssize_t cl)
 {
 	int i;
 
-	assert(bo->body_status == BS_LENGTH);
+	assert(htc->body_status == BS_LENGTH);
 
 	if (cl < 0) {
 		return (FetchError(bo, "straight length field bogus"));
@@ -303,7 +303,7 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 	unsigned u;
 	ssize_t cl;
 
-	assert(bo->body_status == BS_CHUNKED);
+	assert(htc->body_status == BS_CHUNKED);
 	do {
 		/* Skip leading whitespace */
 		do {
@@ -361,7 +361,7 @@ static void
 fetch_eof(struct busyobj *bo, struct http_conn *htc)
 {
 
-	assert(bo->body_status == BS_EOF);
+	assert(htc->body_status == BS_EOF);
 	if (VFP_Bytes(bo, htc, SSIZE_MAX) < 0)
 		(void)FetchError(bo,"eof socket fail");
 }
@@ -561,7 +561,7 @@ FetchBody(struct worker *wrk, void *priv)
 	/* XXX: pick up estimate from objdr ? */
 	cl = 0;
 	cls = 0;
-	switch (bo->body_status) {
+	switch (htc->body_status) {
 	case BS_NONE:
 		mklen = 0;
 		break;
@@ -611,7 +611,7 @@ FetchBody(struct worker *wrk, void *priv)
 	bo->vfp = NULL;
 
 	VSLb(bo->vsl, SLT_Fetch_Body, "%u(%s) cls %d mklen %d",
-	    bo->body_status, body_status(bo->body_status),
+	    htc->body_status, body_status(htc->body_status),
 	    cls, mklen);
 
 	http_Teardown(bo->bereq);

@@ -244,6 +244,7 @@ struct http_conn {
 	struct ws		*ws;
 	txt			rxbuf;
 	txt			pipeline;
+	enum body_status	body_status;
 };
 
 /*--------------------------------------------------------------------*/
@@ -532,7 +533,6 @@ struct busyobj {
 	struct exp		exp;
 	struct http_conn	htc;
 
-	enum body_status	body_status;
 	struct pool_task	fetch_task;
 
 	struct vef_priv		*vef_priv;

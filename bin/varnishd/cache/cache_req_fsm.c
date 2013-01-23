@@ -392,7 +392,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 		 * headers are adultered by VCL
 		 * NB: Also sets other wrk variables
 		 */
-		bo->body_status = RFC2616_Body(bo, &wrk->stats);
+		bo->htc.body_status = RFC2616_Body(bo, &wrk->stats);
 
 		req->err_code = http_GetStatus(bo->beresp);
 
@@ -557,7 +557,7 @@ cnt_fetchbody(struct worker *wrk, struct req *req)
 		bo->do_stream = 0;
 
 	/* No reason to try streaming a non-existing body */
-	if (bo->body_status == BS_NONE)
+	if (bo->htc.body_status == BS_NONE)
 		bo->do_stream = 0;
 
 	l = http_EstimateWS(bo->beresp,
