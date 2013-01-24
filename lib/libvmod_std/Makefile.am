@@ -14,7 +14,7 @@ vmod_srcdir = $(top_srcdir)/lib/libvmod_std
 vmodtool = $(top_srcdir)/lib/libvcl/vmodtool.py
 vmod_LTLIBRARIES = libvmod_std.la
 
-libvmod_std_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-version
+libvmod_std_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-version -shared
 
 libvmod_std_la_SOURCES = \
 	vmod_std.c \
