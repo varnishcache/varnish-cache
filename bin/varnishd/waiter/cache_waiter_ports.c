@@ -222,12 +222,6 @@ vws_thread(void *priv)
 			double tmo =
 			    (sp->t_idle + cache_param->timeout_idle) - now;
 
-			/*
-			 * we should have removed all sps whose timeout
-			 * has passed
-			 */
-			assert(tmo > 0.0);
-
 			if (tmo < min_t) {
 				timeout = &min_ts;
 			} else if (tmo > max_t) {
