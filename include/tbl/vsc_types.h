@@ -1,9 +1,9 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Varnish Software AS
+ * Copyright (c) 2006-2013 Varnish Software AS
  * All rights reserved.
  *
- * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Martin Blix Grydeland <martin@varnish-software.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -25,21 +25,37 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ */
+
+/*
+ * Fields (n, l, e, d):
+ *    n - Name:		Field name, in C-source
+ *    t - Type:		Type name, in shm chunk
+ *    l - Label:	Display name, in stats programs
+ *    e - Explanation:	Short description of this counter type
+ *    d - Description:	Long description of this counter type
  *
  */
 
-#define VSC_CLASS		"Stat"
 
-/* Forward declare the static vsc type names */
-#define VSC_TYPE_F(n,t,l,e,d)		extern const char *VSC_type_##n;
-#include "tbl/vsc_types.h"
-#undef VSC_TYPE_F
-
-/* Define the vsc type structs */
-#define VSC_DO(u,l,t)			struct VSC_C_##l {
-#define VSC_F(n,t,l,f,e,d)			t n;
-#define VSC_DONE(u,l,t)			};
-#include "tbl/vsc_all.h"
-#undef VSC_DO
-#undef VSC_F
-#undef VSC_DONE
+VSC_TYPE_F(main,	"MAIN",		"",		"Child",
+    "Child process main counters"
+)
+VSC_TYPE_F(mgt,		"MGT",		"MGT",		"Master",
+    "Management process counters"
+)
+VSC_TYPE_F(sma,		"SMA",		"SMA",		"Storage malloc",
+    "Malloc storage counters"
+)
+VSC_TYPE_F(smf,		"SMF",		"SMF",		"Storage file",
+    "File storage counters"
+)
+VSC_TYPE_F(lck,		"LCK",		"LCK",		"Lock",
+    "Mutex lock counters"
+)
+VSC_TYPE_F(mempool,	"MEMPOOL",	"MEMPOOL",	"Memory pool",
+    "Memory pool counters"
+)
+VSC_TYPE_F(vbe,		"VBE",		"VBE",		"Backend",
+    "Backend counters"
+)

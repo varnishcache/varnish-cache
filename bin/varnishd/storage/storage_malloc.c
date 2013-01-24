@@ -238,7 +238,7 @@ sma_open(const struct stevedore *st)
 	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
 	Lck_New(&sma_sc->sma_mtx, lck_sma);
 	sma_sc->stats = VSM_Alloc(sizeof *sma_sc->stats,
-	    VSC_CLASS, VSC_TYPE_SMA, st->ident);
+	    VSC_CLASS, VSC_type_sma, st->ident);
 	memset(sma_sc->stats, 0, sizeof *sma_sc->stats);
 	if (sma_sc->sma_max != SIZE_MAX)
 		sma_sc->stats->g_space = sma_sc->sma_max;

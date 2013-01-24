@@ -433,7 +433,7 @@ smf_open(const struct stevedore *st)
 
 	CAST_OBJ_NOTNULL(sc, st->priv, SMF_SC_MAGIC);
 	sc->stats = VSM_Alloc(sizeof *sc->stats,
-	    VSC_CLASS, VSC_TYPE_SMF, st->ident);
+	    VSC_CLASS, VSC_type_smf, st->ident);
 	Lck_New(&sc->mtx, lck_smf);
 	Lck_Lock(&sc->mtx);
 	smf_open_chunk(sc, sc->filesize, 0, &fail, &sum);

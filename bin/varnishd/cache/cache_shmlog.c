@@ -378,7 +378,7 @@ VSM_Init(void)
 	vsl_ptr = vsl_start + 1;
 
 	VSC_C_main = VSM_Alloc(sizeof *VSC_C_main,
-	    VSC_CLASS, VSC_TYPE_MAIN, "");
+	    VSC_CLASS, VSC_type_main, "");
 	AN(VSC_C_main);
 
 	vsl_wrap();

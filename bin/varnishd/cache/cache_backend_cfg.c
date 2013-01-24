@@ -206,7 +206,7 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	    vb->ipv4_addr == NULL ? "" : vb->ipv4_addr,
 	    vb->ipv6_addr == NULL ? "" : vb->ipv6_addr, vb->port);
 
-	b->vsc = VSM_Alloc(sizeof *b->vsc, VSC_CLASS, VSC_TYPE_VBE, buf);
+	b->vsc = VSM_Alloc(sizeof *b->vsc, VSC_CLASS, VSC_type_vbe, buf);
 	b->vsc->vcls++;
 
 	VTAILQ_INIT(&b->connlist);

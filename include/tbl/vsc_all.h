@@ -28,42 +28,42 @@
  */
 
 
-VSC_DO(MGT, mgt, VSC_TYPE_MGT)
+VSC_DO(MGT, mgt, VSC_type_mgt)
 #define VSC_DO_MGT
 #include "tbl/vsc_fields.h"
 #undef VSC_DO_MGT
-VSC_DONE(MGT, mgt, VSC_TYPE_MGT)
+VSC_DONE(MGT, mgt, VSC_type_mgt)
 
-VSC_DO(LCK, lck, VSC_TYPE_LCK)
+VSC_DO(LCK, lck, VSC_type_lck)
 #define VSC_DO_LCK
 #include "tbl/vsc_fields.h"
 #undef VSC_DO_LCK
-VSC_DONE(LCK, lck, VSC_TYPE_LCK)
+VSC_DONE(LCK, lck, VSC_type_lck)
 
-VSC_DO(MAIN, main, VSC_TYPE_MAIN)
+VSC_DO(MAIN, main, VSC_type_main)
 #include "tbl/vsc_f_main.h"
-VSC_DONE(MAIN, main, VSC_TYPE_MAIN)
+VSC_DONE(MAIN, main, VSC_type_main)
 
-VSC_DO(SMA, sma, VSC_TYPE_SMA)
+VSC_DO(SMA, sma, VSC_type_sma)
 #define VSC_DO_SMA
 #include "tbl/vsc_fields.h"
 #undef VSC_DO_SMA
-VSC_DONE(SMA, sma, VSC_TYPE_SMA)
+VSC_DONE(SMA, sma, VSC_type_sma)
 
-VSC_DO(SMF, smf, VSC_TYPE_SMF)
+VSC_DO(SMF, smf, VSC_type_smf)
 #define VSC_DO_SMF
 #include "tbl/vsc_fields.h"
 #undef VSC_DO_SMF
-VSC_DONE(SMF, smf, VSC_TYPE_SMF)
+VSC_DONE(SMF, smf, VSC_type_smf)
 
-VSC_DO(VBE, vbe, VSC_TYPE_VBE)
+VSC_DO(VBE, vbe, VSC_type_vbe)
 #define VSC_DO_VBE
 #include "tbl/vsc_fields.h"
 #undef VSC_DO_VBE
-VSC_DONE(VBE, vbe, VSC_TYPE_VBE)
+VSC_DONE(VBE, vbe, VSC_type_vbe)
 
-VSC_DO(MEMPOOL, mempool, VSC_TYPE_MEMPOOL)
+VSC_DO(MEMPOOL, mempool, VSC_type_mempool)
 #define VSC_DO_MEMPOOL
 #include "tbl/vsc_fields.h"
 #undef VSC_DO_MEMPOOL
-VSC_DONE(MEMPOOL, mempool, VSC_TYPE_MEMPOOL)
+VSC_DONE(MEMPOOL, mempool, VSC_type_mempool)

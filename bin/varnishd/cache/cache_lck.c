@@ -204,7 +204,7 @@ LCK_Init(void)
 	AZ(pthread_mutex_init(&lck_mtx, NULL));
 #define LOCK(nam)						\
 	lck_##nam = VSM_Alloc(sizeof(struct VSC_C_lck),		\
-	   VSC_CLASS, VSC_TYPE_LCK, #nam);
+	   VSC_CLASS, VSC_type_lck, #nam);
 #include "tbl/locks.h"
 #undef LOCK
 }

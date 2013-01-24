@@ -248,7 +248,7 @@ VSC_Main(struct VSM_data *vd)
 	struct vsc *vsc = vsc_setup(vd);
 
 	if (!VSM_StillValid(vd, &vsc->main_fantom) &&
-	    !VSM_Get(vd, &vsc->main_fantom, VSC_CLASS, "", ""))
+	    !VSM_Get(vd, &vsc->main_fantom, VSC_CLASS, VSC_type_main, ""))
 		return (NULL);
 	return ((void*)vsc->main_fantom.b);
 }
@@ -416,10 +416,19 @@ VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv)
  * Build the static point descriptions
  */
 
-#define VSC_F(n,t,l,f,d,e)	{#n,#t,f,d,e},
-#define VSC_DO(U,l,t) const struct VSC_desc VSC_desc_##l[] = {
-#define VSC_DONE(U,l,t) };
+#define VSC_TYPE_F(n,t,l,e,d)	const char *VSC_type_##n = t;
+#include "tbl/vsc_types.h"
+#undef VSC_TYPE_F
+
+#define VSC_TYPE_F(n,t,l,e,d)			\
+	const struct VSC_type_desc VSC_type_desc_##n = {l,e,d};
+#include "tbl/vsc_types.h"
+#undef VSC_TYPE_F
+
+#define VSC_DO(U,l,t)		const struct VSC_desc VSC_desc_##l[] = {
+#define VSC_F(n,t,l,f,d,e)		{#n,#t,f,d,e},
+#define VSC_DONE(U,l,t)		};
 #include "tbl/vsc_all.h"
-#undef VSC_F
 #undef VSC_DO
+#undef VSC_F
 #undef VSC_DONE

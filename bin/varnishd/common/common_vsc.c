@@ -1,9 +1,9 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2010 Varnish Software AS
+ * Copyright (c) 2006-2013 Varnish Software AS
  * All rights reserved.
  *
- * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Martin Blix Grydeland <martin@varnish-software.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,18 +28,7 @@
  *
  */
 
-#define VSC_CLASS		"Stat"
-
-/* Forward declare the static vsc type names */
-#define VSC_TYPE_F(n,t,l,e,d)		extern const char *VSC_type_##n;
+/* Build the static vsc type names */
+#define VSC_TYPE_F(n,t,l,e,d)		const char *VSC_type_##n = t;
 #include "tbl/vsc_types.h"
 #undef VSC_TYPE_F
-
-/* Define the vsc type structs */
-#define VSC_DO(u,l,t)			struct VSC_C_##l {
-#define VSC_F(n,t,l,f,e,d)			t n;
-#define VSC_DONE(u,l,t)			};
-#include "tbl/vsc_all.h"
-#undef VSC_DO
-#undef VSC_F
-#undef VSC_DONE

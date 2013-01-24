@@ -237,7 +237,7 @@ MPL_New(const char *name,
 	Lck_New(&mpl->mtx, lck_mempool);
 	/* XXX: prealloc min_pool */
 	mpl->vsc = VSM_Alloc(sizeof *mpl->vsc,
-	    VSC_CLASS, VSC_TYPE_MEMPOOL, mpl->name);
+	    VSC_CLASS, VSC_type_mempool, mpl->name);
 	AN(mpl->vsc);
 	AZ(pthread_create(&mpl->thread, NULL, mpl_guard, mpl));
 	AZ(pthread_detach(mpl->thread));

@@ -18,6 +18,7 @@ nobase_pkginclude_HEADERS = \
 	tbl/vcc_types.h \
 	tbl/vcl_returns.h \
 	tbl/vrt_stv_var.h \
+	tbl/vsc_types.h \
 	tbl/vsc_all.h \
 	tbl/vsc_fields.h \
 	tbl/vsc_f_main.h \

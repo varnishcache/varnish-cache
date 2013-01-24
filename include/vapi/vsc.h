@@ -65,6 +65,12 @@ struct VSC_C_main *VSC_Main(struct VSM_data *vd);
 	 * returns NULL until child has been started.
 	 */
 
+struct VSC_type_desc {
+	const char *label;		/* label */
+	const char *sdesc;		/* short description */
+	const char *ldesc;		/* long description */
+};
+
 struct VSC_desc {
 	const char *name;		/* field name			*/
 	const char *fmt;		/* field format ("uint64_t")	*/
@@ -96,14 +102,20 @@ int VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv);
 	 */
 
 /**********************************************************************
- * Precompiled VSC_desc's for all know VSCs.
+ * Precompiled VSC_type_desc's and VSC_desc's for all know VSCs.
  */
-#define VSC_F(n,t,l,f,d,e)
+
+#define VSC_TYPE_F(n,t,l,e,d) \
+	extern const struct VSC_type_desc VSC_type_desc_##n;
+#include "tbl/vsc_types.h"
+#undef VSC_TYPE_F
+
 #define VSC_DO(U,l,t) extern const struct VSC_desc VSC_desc_##l[];
+#define VSC_F(n,t,l,f,d,e)
 #define VSC_DONE(U,l,t)
 #include "tbl/vsc_all.h"
-#undef VSC_F
 #undef VSC_DO
+#undef VSC_F
 #undef VSC_DONE
 
 #endif /* VAPI_VSC_H_INCLUDED */

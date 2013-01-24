@@ -50,6 +50,7 @@ varnishd_SOURCES = \
 	cache/cache_wrw.c \
 	cache/cache_ws.c \
 	common/common_vsm.c \
+	common/common_vsc.c \
 	hash/hash_classic.c \
 	hash/hash_critbit.c \
 	hash/hash_mgt.c \
