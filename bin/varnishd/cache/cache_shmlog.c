@@ -115,10 +115,14 @@ static uint32_t *
 vsl_get(unsigned len, unsigned records, unsigned flushes)
 {
 	uint32_t *p;
+	int err;
 
-	if (pthread_mutex_trylock(&vsl_mtx)) {
+	err = pthread_mutex_trylock(&vsl_mtx);
+	if (err == EBUSY) {
 		AZ(pthread_mutex_lock(&vsl_mtx));
 		VSC_C_main->shm_cont++;
+	} else {
+		AZ(err);
 	}
 	assert(vsl_ptr < vsl_end);
 	assert(((uintptr_t)vsl_ptr & 0x3) == 0);
