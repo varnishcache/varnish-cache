@@ -2,12 +2,18 @@ varnishtest "test vtc gzip support"
 
 server s1 {
 	rxreq
+	expect req.http.content-length == "26"
+	expect req.bodylen == "26"
+	gunzip
+	expect req.bodylen == "3"
+	expect req.http.content-encoding == "gzip"
 	txresp -gzipbody FOO
 } -start
 
 client c1 -connect ${s1_sock} {
-	txreq 
+	txreq -gzipbody FOO
 	rxresp
+	expect resp.http.content-length == "26"
 	expect resp.bodylen == "26"
 	gunzip
 	expect resp.bodylen == "3"
