@@ -64,8 +64,7 @@ struct vef_priv {
  */
 
 static ssize_t
-vef_read(struct http_conn *htc, void *buf, ssize_t buflen,
-    ssize_t bytes)
+vef_read(struct http_conn *htc, void *buf, ssize_t buflen, ssize_t bytes)
 {
 	ssize_t d;
 
@@ -76,7 +75,7 @@ vef_read(struct http_conn *htc, void *buf, ssize_t buflen,
 		if (d < bytes)
 			bytes = d;
 	}
-	return (HTC_Read(htc, buf, bytes));
+	return (htc->read(htc, buf, bytes));
 }
 
 /*---------------------------------------------------------------------

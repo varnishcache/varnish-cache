@@ -114,20 +114,20 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 		assert(j >= 0);
 		now = VTIM_real();
 		if (j != 0)
-			hs = HTC_Rx(req->htc);
+			hs = HTTP1_Rx(req->htc);
 		else
-			hs = HTC_Complete(req->htc);
-		if (hs == HTC_COMPLETE) {
+			hs = HTTP1_Complete(req->htc);
+		if (hs == HTTP1_COMPLETE) {
 			/* Got it, run with it */
 			req->t_req = now;
 			return (REQ_FSM_MORE);
-		} else if (hs == HTC_ERROR_EOF) {
+		} else if (hs == HTTP1_ERROR_EOF) {
 			why = SC_REM_CLOSE;
 			break;
-		} else if (hs == HTC_OVERFLOW) {
+		} else if (hs == HTTP1_OVERFLOW) {
 			why = SC_RX_OVERFLOW;
 			break;
-		} else if (hs == HTC_ALL_WHITESPACE) {
+		} else if (hs == HTTP1_ALL_WHITESPACE) {
 			/* Nothing but whitespace */
 			when = sp->t_idle + cache_param->timeout_idle;
 			if (when < now) {
@@ -224,7 +224,7 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	WS_Reset(req->ws, NULL);
 	WS_Reset(wrk->aws, NULL);
 
-	if (HTC_Reinit(req->htc) == HTC_COMPLETE) {
+	if (HTTP1_Reinit(req->htc) == HTTP1_COMPLETE) {
 		req->t_req = sp->t_idle;
 		wrk->stats.sess_pipeline++;
 		return (SESS_DONE_RET_START);
@@ -260,7 +260,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 	wrk->vcl = NULL;
 
 	HTTP_Setup(req->http, req->ws, req->vsl, HTTP_Method);
-	req->err_code = HTC_DissectRequest(req);
+	req->err_code = HTTP1_DissectRequest(req);
 
 	/* If we could not even parse the request, just close */
 	if (req->err_code == 400) {
@@ -330,7 +330,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 	}
 
 	if (sp->sess_step == S_STP_NEWREQ) {
-		HTC_Init(req->htc, req->ws, sp->fd, req->vsl,
+		HTTP1_Init(req->htc, req->ws, sp->fd, req->vsl,
 		    cache_param->http_req_size,
 		    cache_param->http_req_hdr_len);
 	}
@@ -442,7 +442,7 @@ http1_iter_req_body(struct req *req, struct http1_r_b_s *rbs, void *buf,
 			req->req_body_status = REQ_BODY_DONE;
 			return (0);
 		}
-		len = HTC_Read(req->htc, buf, len);
+		len = HTTP1_Read(req->htc, buf, len);
 		if (len <= 0) {
 			req->req_body_status = REQ_BODY_FAIL;
 			return (-1);

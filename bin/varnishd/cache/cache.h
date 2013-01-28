@@ -112,6 +112,7 @@ struct busyobj;
 struct cli;
 struct cli_proto;
 struct director;
+struct http_conn;
 struct iovec;
 struct mempool;
 struct objcore;
@@ -207,11 +208,18 @@ struct http {
 
 /*--------------------------------------------------------------------
  * HTTP Protocol connection structure
+ *
+ * This is the protocol independent object for a HTTP connection, used
+ * both for backend and client sides.
+ *
  */
+
+typedef ssize_t htc_read(struct http_conn *, void *, size_t);
 
 struct http_conn {
 	unsigned		magic;
 #define HTTP_CONN_MAGIC		0x3e19edd1
+	htc_read		*read;
 
 	int			fd;
 	struct vsl_log		*vsl;
@@ -876,21 +884,21 @@ void http_VSLH(const struct http *hp, unsigned hdr);
 /* cache_http1_proto.c */
 
 enum htc_status_e {
-	HTC_ALL_WHITESPACE =	-3,
-	HTC_OVERFLOW =		-2,
-	HTC_ERROR_EOF =		-1,
-	HTC_NEED_MORE =		 0,
-	HTC_COMPLETE =		 1
+	HTTP1_ALL_WHITESPACE =	-3,
+	HTTP1_OVERFLOW =	-2,
+	HTTP1_ERROR_EOF =	-1,
+	HTTP1_NEED_MORE =	 0,
+	HTTP1_COMPLETE =	 1
 };
 
-void HTC_Init(struct http_conn *htc, struct ws *ws, int fd, struct vsl_log *,
+void HTTP1_Init(struct http_conn *htc, struct ws *ws, int fd, struct vsl_log *,
     unsigned maxbytes, unsigned maxhdr);
-enum htc_status_e HTC_Reinit(struct http_conn *htc);
-enum htc_status_e HTC_Rx(struct http_conn *htc);
-ssize_t HTC_Read(struct http_conn *htc, void *d, size_t len);
-enum htc_status_e HTC_Complete(struct http_conn *htc);
-uint16_t HTC_DissectRequest(struct req *);
-uint16_t HTC_DissectResponse(struct http *sp, const struct http_conn *htc);
+enum htc_status_e HTTP1_Reinit(struct http_conn *htc);
+enum htc_status_e HTTP1_Rx(struct http_conn *htc);
+ssize_t HTTP1_Read(struct http_conn *htc, void *d, size_t len);
+enum htc_status_e HTTP1_Complete(struct http_conn *htc);
+uint16_t HTTP1_DissectRequest(struct req *);
+uint16_t HTTP1_DissectResponse(struct http *sp, const struct http_conn *htc);
 
 #define HTTPH(a, b, c) extern char b[];
 #include "tbl/http_headers.h"

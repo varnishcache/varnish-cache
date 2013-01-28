@@ -46,11 +46,10 @@
 
 #include "vct.h"
 
-
 /*--------------------------------------------------------------------*/
 
 void
-HTC_Init(struct http_conn *htc, struct ws *ws, int fd, struct vsl_log *vsl,
+HTTP1_Init(struct http_conn *htc, struct ws *ws, int fd, struct vsl_log *vsl,
     unsigned maxbytes, unsigned maxhdr)
 {
 
@@ -60,6 +59,7 @@ HTC_Init(struct http_conn *htc, struct ws *ws, int fd, struct vsl_log *vsl,
 	htc->vsl = vsl;
 	htc->maxbytes = maxbytes;
 	htc->maxhdr = maxhdr;
+	htc->read = HTTP1_Read;
 
 	(void)WS_Reserve(htc->ws, htc->maxbytes);
 	htc->rxbuf.b = ws->f;
@@ -76,7 +76,7 @@ HTC_Init(struct http_conn *htc, struct ws *ws, int fd, struct vsl_log *vsl,
  */
 
 enum htc_status_e
-HTC_Reinit(struct http_conn *htc)
+HTTP1_Reinit(struct http_conn *htc)
 {
 	unsigned l;
 
@@ -92,7 +92,7 @@ HTC_Reinit(struct http_conn *htc)
 		htc->pipeline.e = NULL;
 	}
 	*htc->rxbuf.e = '\0';
-	return (HTC_Complete(htc));
+	return (HTTP1_Complete(htc));
 }
 
 /*--------------------------------------------------------------------
@@ -101,7 +101,7 @@ HTC_Reinit(struct http_conn *htc)
  */
 
 enum htc_status_e
-HTC_Complete(struct http_conn *htc)
+HTTP1_Complete(struct http_conn *htc)
 {
 	int i;
 	const char *p;
@@ -120,12 +120,12 @@ HTC_Complete(struct http_conn *htc)
 		/* All white space */
 		t->e = t->b;
 		*t->e = '\0';
-		return (HTC_ALL_WHITESPACE);
+		return (HTTP1_ALL_WHITESPACE);
 	}
 	while (1) {
 		p = strchr(p, '\n');
 		if (p == NULL)
-			return (HTC_NEED_MORE);
+			return (HTTP1_NEED_MORE);
 		p++;
 		if (*p == '\r')
 			p++;
@@ -142,7 +142,7 @@ HTC_Complete(struct http_conn *htc)
 		htc->pipeline.e = htc->rxbuf.e;
 		htc->rxbuf.e = htc->pipeline.b;
 	}
-	return (HTC_COMPLETE);
+	return (HTTP1_COMPLETE);
 }
 
 /*--------------------------------------------------------------------
@@ -150,7 +150,7 @@ HTC_Complete(struct http_conn *htc)
  */
 
 enum htc_status_e
-HTC_Rx(struct http_conn *htc)
+HTTP1_Rx(struct http_conn *htc)
 {
 	int i;
 
@@ -159,7 +159,7 @@ HTC_Rx(struct http_conn *htc)
 	i = (htc->ws->r - htc->rxbuf.e) - 1;	/* space for NUL */
 	if (i <= 0) {
 		WS_ReleaseP(htc->ws, htc->rxbuf.b);
-		return (HTC_OVERFLOW);
+		return (HTTP1_OVERFLOW);
 	}
 	i = read(htc->fd, htc->rxbuf.e, i);
 	if (i <= 0) {
@@ -168,11 +168,11 @@ HTC_Rx(struct http_conn *htc)
 		 * so consequently an EOF can not be OK
 		 */
 		WS_ReleaseP(htc->ws, htc->rxbuf.b);
-		return (HTC_ERROR_EOF);
+		return (HTTP1_ERROR_EOF);
 	}
 	htc->rxbuf.e += i;
 	*htc->rxbuf.e = '\0';
-	return (HTC_Complete(htc));
+	return (HTTP1_Complete(htc));
 }
 
 /*--------------------------------------------------------------------
@@ -180,7 +180,7 @@ HTC_Rx(struct http_conn *htc)
  */
 
 ssize_t
-HTC_Read(struct http_conn *htc, void *d, size_t len)
+HTTP1_Read(struct http_conn *htc, void *d, size_t len)
 {
 	size_t l;
 	unsigned char *p;
@@ -390,7 +390,7 @@ htc_proto_ver(struct http *hp)
 /*--------------------------------------------------------------------*/
 
 uint16_t
-HTC_DissectRequest(struct req *req)
+HTTP1_DissectRequest(struct req *req)
 {
 	struct http_conn *htc;
 	struct http *hp;
@@ -413,7 +413,7 @@ HTC_DissectRequest(struct req *req)
 /*--------------------------------------------------------------------*/
 
 uint16_t
-HTC_DissectResponse(struct http *hp, const struct http_conn *htc)
+HTTP1_DissectResponse(struct http *hp, const struct http_conn *htc)
 {
 	int j;
 	uint16_t retval = 0;

@@ -166,7 +166,7 @@ vfp_nop_bytes(void *priv, struct http_conn *htc, ssize_t bytes)
 		l = st->space - st->len;
 		if (l > bytes)
 			l = bytes;
-		wl = HTC_Read(htc, st->ptr + st->len, l);
+		wl = HTTP1_Read(htc, st->ptr + st->len, l);
 		if (wl <= 0)
 			return (wl);
 		st->len += wl;
@@ -307,7 +307,7 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 	do {
 		/* Skip leading whitespace */
 		do {
-			if (HTC_Read(htc, buf, 1) <= 0)
+			if (HTTP1_Read(htc, buf, 1) <= 0)
 				return (FetchError(bo, "chunked read err"));
 		} while (vct_islws(buf[0]));
 
@@ -317,7 +317,7 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 		/* Collect hex digits, skipping leading zeros */
 		for (u = 1; u < sizeof buf; u++) {
 			do {
-				if (HTC_Read(htc, buf + u, 1) <= 0)
+				if (HTTP1_Read(htc, buf + u, 1) <= 0)
 					return (FetchError(bo,
 					    "chunked read err"));
 			} while (u == 1 && buf[0] == '0' && buf[u] == '0');
@@ -330,7 +330,7 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 
 		/* Skip trailing white space */
 		while(vct_islws(buf[u]) && buf[u] != '\n')
-			if (HTC_Read(htc, buf + u, 1) <= 0)
+			if (HTTP1_Read(htc, buf + u, 1) <= 0)
 				return (FetchError(bo, "chunked read err"));
 
 		if (buf[u] != '\n')
@@ -344,10 +344,10 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 		if (cl > 0 && VFP_Bytes(bo, htc, cl) <= 0)
 			return (FetchError(bo, "chunked read err"));
 
-		i = HTC_Read(htc, buf, 1);
+		i = HTTP1_Read(htc, buf, 1);
 		if (i <= 0)
 			return (FetchError(bo, "chunked read err"));
-		if (buf[0] == '\r' && HTC_Read( htc, buf, 1) <= 0)
+		if (buf[0] == '\r' && HTTP1_Read( htc, buf, 1) <= 0)
 			return (FetchError(bo, "chunked read err"));
 		if (buf[0] != '\n')
 			return (FetchError(bo,"chunked tail no NL"));
@@ -469,7 +469,7 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 
 	/* Receive response */
 
-	HTC_Init(htc, bo->ws, vc->fd, vc->vsl,
+	HTTP1_Init(htc, bo->ws, vc->fd, vc->vsl,
 	    cache_param->http_resp_size,
 	    cache_param->http_resp_hdr_len);
 
@@ -477,8 +477,8 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 
 	first = 1;
 	do {
-		hs = HTC_Rx(htc);
-		if (hs == HTC_OVERFLOW) {
+		hs = HTTP1_Rx(htc);
+		if (hs == HTTP1_OVERFLOW) {
 			VSLb(req->vsl, SLT_FetchError,
 			    "http %sread error: overflow",
 			    first ? "first " : "");
@@ -486,7 +486,7 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 			/* XXX: other cleanup ? */
 			return (-1);
 		}
-		if (hs == HTC_ERROR_EOF) {
+		if (hs == HTTP1_ERROR_EOF) {
 			VSLb(req->vsl, SLT_FetchError,
 			    "http %sread error: EOF",
 			    first ? "first " : "");
@@ -500,11 +500,11 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 			VTCP_set_read_timeout(vc->fd,
 			    vc->between_bytes_timeout);
 		}
-	} while (hs != HTC_COMPLETE);
+	} while (hs != HTTP1_COMPLETE);
 
 	hp = bo->beresp;
 
-	if (HTC_DissectResponse(hp, htc)) {
+	if (HTTP1_DissectResponse(hp, htc)) {
 		VSLb(req->vsl, SLT_FetchError, "http format error");
 		VDI_CloseFd(&bo->vbc);
 		/* XXX: other cleanup ? */
