@@ -54,7 +54,6 @@
 #include <sys/epoll.h>
 #endif
 
-
 #include "common/params.h"
 
 /*--------------------------------------------------------------------*/
@@ -73,18 +72,6 @@ enum body_status {
 #undef BODYSTATUS
 };
 
-static inline const char *
-body_status(enum body_status e)
-{
-	switch(e) {
-#define BODYSTATUS(U,l)	case BS_##U: return (#l);
-#include "tbl/body_status.h"
-#undef BODYSTATUS
-	default:
-		return ("?");
-	}
-}
-
 /*--------------------------------------------------------------------*/
 
 enum req_body_state_e {
@@ -102,19 +89,6 @@ enum sess_close {
 #undef SESS_CLOSE
 };
 
-static inline const char *
-sess_close_str(enum sess_close sc, int want_desc)
-{
-	switch (sc) {
-	case SC_NULL:		return(want_desc ? "(null)": "NULL");
-#define SESS_CLOSE(nm, desc)	case SC_##nm: return(want_desc ? desc : #nm);
-#include "tbl/sess_close.h"
-#undef SESS_CLOSE
-
-	default:		return(want_desc ? "(invalid)" : "INVALID");
-	}
-}
-
 /*--------------------------------------------------------------------*/
 
 /*
@@ -128,6 +102,8 @@ enum {
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 };
+
+/*--------------------------------------------------------------------*/
 
 struct SHA256Context;
 struct VSC_C_lck;
@@ -960,6 +936,8 @@ void MPL_Free(struct mempool *mpl, void *item);
 
 /* cache_panic.c */
 void PAN_Init(void);
+const char *body_status_2str(enum body_status e);
+const char *sess_close_2str(enum sess_close sc, int want_desc);
 
 /* cache_pipe.c */
 void PipeRequest(struct req *req);

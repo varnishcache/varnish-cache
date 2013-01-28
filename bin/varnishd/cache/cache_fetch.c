@@ -611,7 +611,7 @@ FetchBody(struct worker *wrk, void *priv)
 	bo->vfp = NULL;
 
 	VSLb(bo->vsl, SLT_Fetch_Body, "%u(%s) cls %d mklen %d",
-	    htc->body_status, body_status(htc->body_status),
+	    htc->body_status, body_status_2str(htc->body_status),
 	    cls, mklen);
 
 	http_Teardown(bo->bereq);
