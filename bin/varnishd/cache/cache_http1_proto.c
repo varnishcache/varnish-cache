@@ -209,3 +209,259 @@ HTC_Read(struct http_conn *htc, void *d, size_t len)
 	}
 	return (i + l);
 }
+
+/*--------------------------------------------------------------------
+ * Dissect the headers of the HTTP protocol message.
+ * Detect conditionals (headers which start with '^[Ii][Ff]-')
+ */
+
+static uint16_t
+htc_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
+{
+	char *q, *r;
+	txt t = htc->rxbuf;
+
+	if (*p == '\r')
+		p++;
+
+	hp->nhd = HTTP_HDR_FIRST;
+	hp->conds = 0;
+	r = NULL;		/* For FlexeLint */
+	for (; p < t.e; p = r) {
+
+		/* Find end of next header */
+		q = r = p;
+		while (r < t.e) {
+			if (!vct_iscrlf(*r)) {
+				r++;
+				continue;
+			}
+			q = r;
+			assert(r < t.e);
+			r += vct_skipcrlf(r);
+			if (r >= t.e)
+				break;
+			/* If line does not continue: got it. */
+			if (!vct_issp(*r))
+				break;
+
+			/* Clear line continuation LWS to spaces */
+			while (vct_islws(*q))
+				*q++ = ' ';
+		}
+
+		if (q - p > htc->maxhdr) {
+			VSLb(hp->vsl, SLT_BogoHeader, "%.*s",
+			    (int)(q - p > 20 ? 20 : q - p), p);
+			return (413);
+		}
+
+		/* Empty header = end of headers */
+		if (p == q)
+			break;
+
+		if ((p[0] == 'i' || p[0] == 'I') &&
+		    (p[1] == 'f' || p[1] == 'F') &&
+		    p[2] == '-')
+			hp->conds = 1;
+
+		while (q > p && vct_issp(q[-1]))
+			q--;
+		*q = '\0';
+
+		if (hp->nhd < hp->shd) {
+			hp->hdf[hp->nhd] = 0;
+			hp->hd[hp->nhd].b = p;
+			hp->hd[hp->nhd].e = q;
+			http_VSLH(hp, hp->nhd);
+			hp->nhd++;
+		} else {
+			VSLb(hp->vsl, SLT_BogoHeader, "%.*s",
+			    (int)(q - p > 20 ? 20 : q - p), p);
+			return (413);
+		}
+	}
+	return (0);
+}
+
+/*--------------------------------------------------------------------
+ * Deal with first line of HTTP protocol message.
+ */
+
+static uint16_t
+htc_splitline(struct http *hp, const struct http_conn *htc, int req)
+{
+	char *p, *q;
+	int h1, h2, h3;
+
+	if (req) {
+		h1 = HTTP_HDR_METHOD;
+		h2 = HTTP_HDR_URL;
+		h3 = HTTP_HDR_PROTO;
+	} else {
+		h1 = HTTP_HDR_PROTO;
+		h2 = HTTP_HDR_STATUS;
+		h3 = HTTP_HDR_RESPONSE;
+	}
+
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+
+	/* XXX: Assert a NUL at rx.e ? */
+	Tcheck(htc->rxbuf);
+
+	/* Skip leading LWS */
+	for (p = htc->rxbuf.b ; vct_islws(*p); p++)
+		continue;
+
+	/* First field cannot contain SP, CRLF or CTL */
+	q = p;
+	for (; !vct_issp(*p); p++) {
+		if (vct_isctl(*p))
+			return (400);
+	}
+	hp->hd[h1].b = q;
+	hp->hd[h1].e = p;
+
+	/* Skip SP */
+	for (; vct_issp(*p); p++) {
+		if (vct_isctl(*p))
+			return (400);
+	}
+
+	/* Second field cannot contain LWS or CTL */
+	q = p;
+	for (; !vct_islws(*p); p++) {
+		if (vct_isctl(*p))
+			return (400);
+	}
+	hp->hd[h2].b = q;
+	hp->hd[h2].e = p;
+
+	if (!Tlen(hp->hd[h2]))
+		return (413);
+
+	/* Skip SP */
+	for (; vct_issp(*p); p++) {
+		if (vct_isctl(*p))
+			return (400);
+	}
+
+	/* Third field is optional and cannot contain CTL */
+	q = p;
+	if (!vct_iscrlf(*p)) {
+		for (; !vct_iscrlf(*p); p++)
+			if (!vct_issep(*p) && vct_isctl(*p))
+				return (400);
+	}
+	hp->hd[h3].b = q;
+	hp->hd[h3].e = p;
+
+	/* Skip CRLF */
+	p += vct_skipcrlf(p);
+
+	*hp->hd[h1].e = '\0';
+	http_VSLH(hp, h1);
+
+	*hp->hd[h2].e = '\0';
+	http_VSLH(hp, h2);
+
+	if (hp->hd[h3].e != NULL) {
+		*hp->hd[h3].e = '\0';
+		http_VSLH(hp, h3);
+	}
+
+	return (htc_dissect_hdrs(hp, p, htc));
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+htc_proto_ver(struct http *hp)
+{
+	if (!strcasecmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.0"))
+		hp->protover = 10;
+	else if (!strcasecmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.1"))
+		hp->protover = 11;
+	else
+		hp->protover = 9;
+}
+
+/*--------------------------------------------------------------------*/
+
+uint16_t
+HTC_DissectRequest(struct req *req)
+{
+	struct http_conn *htc;
+	struct http *hp;
+	uint16_t retval;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	htc = req->htc;
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	hp = req->http;
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+
+	retval = htc_splitline(hp, htc, 1);
+	if (retval != 0) {
+		VSLbt(req->vsl, SLT_HttpGarbage, htc->rxbuf);
+		return (retval);
+	}
+	htc_proto_ver(hp);
+	return (retval);
+}
+/*--------------------------------------------------------------------*/
+
+uint16_t
+HTC_DissectResponse(struct http *hp, const struct http_conn *htc)
+{
+	int j;
+	uint16_t retval = 0;
+	char *p;
+
+
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+
+	if (htc_splitline(hp, htc, 0))
+		retval = 503;
+
+	if (retval == 0 && memcmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.", 7))
+		retval = 503;
+
+	if (retval == 0 && Tlen(hp->hd[HTTP_HDR_STATUS]) != 3)
+		retval = 503;
+
+	if (retval == 0) {
+		hp->status = 0;
+		p = hp->hd[HTTP_HDR_STATUS].b;
+		for (j = 100; j != 0; j /= 10) {
+			if (!vct_isdigit(*p)) {
+				retval = 503;
+				break;
+			}
+			hp->status += (uint16_t)(j * (*p - '0'));
+			p++;
+		}
+		if (*p != '\0')
+			retval = 503;
+	}
+
+	if (retval != 0) {
+		VSLbt(hp->vsl, SLT_HttpGarbage, htc->rxbuf);
+		assert(retval >= 100 && retval <= 999);
+		hp->status = retval;
+	} else
+		htc_proto_ver(hp);
+
+	if (hp->hd[HTTP_HDR_RESPONSE].b == NULL ||
+	    !Tlen(hp->hd[HTTP_HDR_RESPONSE])) {
+		/* Backend didn't send a response string, use the standard */
+		hp->hd[HTTP_HDR_RESPONSE].b =
+		    TRUST_ME(http_StatusMessage(hp->status));
+		hp->hd[HTTP_HDR_RESPONSE].e =
+		    strchr(hp->hd[HTTP_HDR_RESPONSE].b, '\0');
+	}
+	return (retval);
+}
+

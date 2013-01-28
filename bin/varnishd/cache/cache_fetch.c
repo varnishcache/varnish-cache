@@ -504,7 +504,7 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 
 	hp = bo->beresp;
 
-	if (http_DissectResponse(hp, htc)) {
+	if (HTC_DissectResponse(hp, htc)) {
 		VSLb(req->vsl, SLT_FetchError, "http format error");
 		VDI_CloseFd(&bo->vbc);
 		/* XXX: other cleanup ? */

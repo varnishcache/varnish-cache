@@ -867,14 +867,14 @@ double http_GetHdrQ(const struct http *hp, const char *hdr, const char *field);
 uint16_t http_GetStatus(const struct http *hp);
 const char *http_GetReq(const struct http *hp);
 int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
-uint16_t http_DissectRequest(struct req *);
-uint16_t http_DissectResponse(struct http *sp, const struct http_conn *htc);
 enum sess_close http_DoConnection(const struct http *);
 void http_CopyHome(const struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
 void http_CollectHdr(struct http *hp, const char *hdr);
+void http_VSLH(const struct http *hp, unsigned hdr);
 
-/* cache_httpconn.c */
+/* cache_http1_proto.c */
+
 enum htc_status_e {
 	HTC_ALL_WHITESPACE =	-3,
 	HTC_OVERFLOW =		-2,
@@ -889,6 +889,8 @@ enum htc_status_e HTC_Reinit(struct http_conn *htc);
 enum htc_status_e HTC_Rx(struct http_conn *htc);
 ssize_t HTC_Read(struct http_conn *htc, void *d, size_t len);
 enum htc_status_e HTC_Complete(struct http_conn *htc);
+uint16_t HTC_DissectRequest(struct req *);
+uint16_t HTC_DissectResponse(struct http *sp, const struct http_conn *htc);
 
 #define HTTPH(a, b, c) extern char b[];
 #include "tbl/http_headers.h"

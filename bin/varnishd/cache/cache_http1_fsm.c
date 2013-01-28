@@ -260,7 +260,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 	wrk->vcl = NULL;
 
 	HTTP_Setup(req->http, req->ws, req->vsl, HTTP_Method);
-	req->err_code = http_DissectRequest(req);
+	req->err_code = HTC_DissectRequest(req);
 
 	/* If we could not even parse the request, just close */
 	if (req->err_code == 400) {
