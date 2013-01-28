@@ -75,45 +75,6 @@ FetchError(struct busyobj *bo, const char *error)
 }
 
 /*--------------------------------------------------------------------
- * VFP method functions
- */
-
-static void
-VFP_Begin(struct busyobj *bo, size_t estimate)
-{
-
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	AN(bo->vfp);
-
-	bo->vfp->begin(bo, estimate);
-}
-
-static int
-VFP_Bytes(struct busyobj *bo, struct http_conn *htc, ssize_t sz)
-{
-
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	AN(bo->vfp);
-	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	assert(bo->state == BOS_FETCHING);
-
-	return (bo->vfp->bytes(bo, htc, sz));
-}
-
-static void
-VFP_End(struct busyobj *bo)
-{
-	int i;
-
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	AN(bo->vfp);
-
-	i = bo->vfp->end(bo);
-	if (i)
-		assert(bo->state == BOS_FAILED);
-}
-
-/*--------------------------------------------------------------------
  * VFP_NOP
  *
  * This fetch-processor does nothing but store the object.
@@ -283,7 +244,7 @@ fetch_straight(struct busyobj *bo, struct http_conn *htc, ssize_t cl)
 	} else if (cl == 0)
 		return (0);
 
-	i = VFP_Bytes(bo, htc, cl);
+	i = bo->vfp->bytes(bo, htc, cl);
 	if (i <= 0)
 		return (FetchError(bo, "straight insufficient bytes"));
 	return (0);
@@ -341,7 +302,7 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 		if (cl < 0)
 			return (FetchError(bo,"chunked header number syntax"));
 
-		if (cl > 0 && VFP_Bytes(bo, htc, cl) <= 0)
+		if (cl > 0 && bo->vfp->bytes(bo, htc, cl) <= 0)
 			return (FetchError(bo, "chunked read err"));
 
 		i = HTTP1_Read(htc, buf, 1);
@@ -362,7 +323,7 @@ fetch_eof(struct busyobj *bo, struct http_conn *htc)
 {
 
 	assert(htc->body_status == BS_EOF);
-	if (VFP_Bytes(bo, htc, SSIZE_MAX) < 0)
+	if (bo->vfp->bytes(bo, htc, SSIZE_MAX) < 0)
 		(void)FetchError(bo,"eof socket fail");
 }
 
@@ -553,6 +514,7 @@ FetchBody(struct worker *wrk, void *priv)
 	if (bo->vfp == NULL)
 		bo->vfp = &vfp_nop;
 
+	AN(bo->vfp);
 	AZ(bo->vgz_rx);
 	AZ(VTAILQ_FIRST(&obj->store));
 
@@ -570,26 +532,30 @@ FetchBody(struct worker *wrk, void *priv)
 		break;
 	case BS_LENGTH:
 		cl = fetch_number(bo->h_content_length, 10);
-		VFP_Begin(bo, cl > 0 ? cl : 0);
+
+		bo->vfp->begin(bo, cl > 0 ? cl : 0);
 		if (bo->state == BOS_FETCHING)
 			cls = fetch_straight(bo, htc, cl);
 		mklen = 1;
-		VFP_End(bo);
+		if (bo->vfp->end(bo))
+			assert(bo->state == BOS_FAILED);
 		break;
 	case BS_CHUNKED:
-		VFP_Begin(bo, cl);
+		bo->vfp->begin(bo, cl > 0 ? cl : 0);
 		if (bo->state == BOS_FETCHING)
 			cls = fetch_chunked(bo, htc);
 		mklen = 1;
-		VFP_End(bo);
+		if (bo->vfp->end(bo))
+			assert(bo->state == BOS_FAILED);
 		break;
 	case BS_EOF:
-		VFP_Begin(bo, cl);
+		bo->vfp->begin(bo, cl > 0 ? cl : 0);
 		if (bo->state == BOS_FETCHING)
 			fetch_eof(bo, htc);
 		mklen = 1;
 		cls = 1;
-		VFP_End(bo);
+		if (bo->vfp->end(bo))
+			assert(bo->state == BOS_FAILED);
 		break;
 	case BS_ERROR:
 		cls = FetchError(bo, "error incompatible Transfer-Encoding");
