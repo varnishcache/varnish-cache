@@ -57,13 +57,12 @@
 
 #include "mgt_cli.h"
 
-pid_t		child_pid = -1;
-
+pid_t			child_pid = -1;
 
 static struct vbitmap	*fd_map;
 
 static int		child_cli_in = -1;
-static int		child_VCLI_Out = -1;
+static int		child_cli_out = -1;
 static int		child_output = -1;
 
 static enum {
@@ -84,10 +83,11 @@ static const char * const ch_state[] = {
 
 static struct vev	*ev_poker;
 static struct vev	*ev_listen;
-static struct vlu	*vlu;
+static struct vlu	*child_std_vlu;
 
 static struct vsb *child_panic = NULL;
 
+/* XXX: Doesn't really belong here, but only place we use it */
 static inline int
 MGT_FEATURE(enum feature_bits x)
 {
@@ -95,8 +95,82 @@ MGT_FEATURE(enum feature_bits x)
 	    (0x80U >> ((unsigned)x & 7)));
 }
 
+static void mgt_reap_child(void);
 
-/*--------------------------------------------------------------------
+/*---------------------------------------------------------------------
+ * A handy little function
+ */
+
+static inline void
+closex(int *fd)
+{
+
+	assert(*fd >= 0);
+	AZ(close(*fd));
+	*fd = -1;
+}
+
+/*=====================================================================
+ * Panic string evacuation and handling
+ */
+
+static void
+mgt_panic_record(pid_t r)
+{
+	char time_str[30];
+
+	AN(heritage.panic_str[0]);
+	REPORT(LOG_ERR, "Child (%jd) Panic message: %s",
+	    (intmax_t)r, heritage.panic_str);
+
+	if (child_panic != NULL)
+		VSB_delete(child_panic);
+	child_panic = VSB_new_auto();
+	AN(child_panic);
+	VTIM_format(VTIM_real(), time_str);
+	VSB_printf(child_panic, "Last panic at: %s\n", time_str);
+	VSB_cat(child_panic, heritage.panic_str);
+	AZ(VSB_finish(child_panic));
+}
+
+static void
+mgt_panic_clear(void)
+{
+	VSB_delete(child_panic);
+	child_panic = NULL;
+}
+
+void __match_proto__(cli_func_t)
+mcf_panic_show(struct cli *cli, const char * const *av, void *priv)
+{
+	(void)av;
+	(void)priv;
+
+	if (!child_panic) {
+		VCLI_SetResult(cli, CLIS_CANT);
+		VCLI_Out(cli,
+		    "Child has not panicked or panic has been cleared");
+		return;
+	}
+
+	VCLI_Out(cli, "%s\n", VSB_data(child_panic));
+}
+
+void __match_proto__(cli_func_t)
+mcf_panic_clear(struct cli *cli, const char * const *av, void *priv)
+{
+	(void)av;
+	(void)priv;
+
+	if (child_panic == NULL) {
+		VCLI_SetResult(cli, CLIS_CANT);
+		VCLI_Out(cli, "No panic to clear");
+		return;
+	}
+	mgt_panic_clear();
+}
+
+/*=====================================================================
  * Track the highest file descriptor the parent knows is being used.
  *
  * This allows the child process to clean/close only a small fraction
@@ -124,19 +198,6 @@ mgt_got_fd(int fd)
 }
 
 /*--------------------------------------------------------------------
- * A handy little function
- */
-
-static inline void
-closex(int *fd)
-{
-
-	assert(*fd >= 0);
-	AZ(close(*fd));
-	*fd = -1;
-}
-
-/*--------------------------------------------------------------------
  * Keep track of which filedescriptors the child should inherit and
  * which should be closed after fork()
  */
@@ -155,79 +216,11 @@ mgt_child_inherit(int fd, const char *what)
 		vbit_clr(fd_map, fd);
 }
 
-/*--------------------------------------------------------------------*/
-
-static int
-child_line(void *priv, const char *p)
-{
-	(void)priv;
-
-	REPORT(LOG_NOTICE, "Child (%jd) said %s", (intmax_t)child_pid, p);
-	return (0);
-}
-
-/*--------------------------------------------------------------------*/
-
-static int
-child_listener(const struct vev *e, int what)
-{
-
-	(void)e;
-	if ((what & ~EV_RD)) {
-		ev_listen = NULL;
-		return (1);
-	}
-	if (VLU_Fd(child_output, vlu)) {
-		ev_listen = NULL;
-		return (1);
-	}
-	return (0);
-}
-
-/*--------------------------------------------------------------------*/
-
-static int
-child_poker(const struct vev *e, int what)
-{
-
-	(void)e;
-	(void)what;
-	if (child_state != CH_RUNNING)
-		return (1);
-	if (child_pid < 0)
-		return (0);
-	if (!mgt_cli_askchild(NULL, NULL, "ping\n"))
-		return (0);
-	return (0);
-}
-
-/*--------------------------------------------------------------------
- * If CLI communications with the child process fails, there is nothing
- * for us to do but to drag it behind the barn and get it over with.
+/*=====================================================================
+ * Open and close the accept sockets.
  *
- * The typical case is where the child process fails to return a reply
- * before the cli_timeout expires.  This invalidates the CLI pipes for
- * all future use, as we don't know if the child was just slow and the
- * result gets piped later on, or if the child is catatonic.
+ * (The child is priv-sep'ed, so it can't do it.)
  */
-
-void
-MGT_Child_Cli_Fail(void)
-{
-
-	if (child_state != CH_RUNNING)
-		return;
-	if (child_pid < 0)
-		return;
-	REPORT(LOG_ERR, "Child (%jd) not responding to CLI, killing it.",
-	    (intmax_t)child_pid);
-	if (MGT_FEATURE(FEATURE_NO_COREDUMP))
-		(void)kill(child_pid, SIGKILL);
-	else
-		(void)kill(child_pid, SIGQUIT);
-}
-
-/*--------------------------------------------------------------------*/
 
 static int
 open_sockets(void)
@@ -268,10 +261,61 @@ close_sockets(void)
 	}
 }
 
-/*--------------------------------------------------------------------*/
+/*=====================================================================
+ * Listen to stdout+stderr from the child
+ */
+
+static int
+child_line(void *priv, const char *p)
+{
+	(void)priv;
+
+	REPORT(LOG_NOTICE, "Child (%jd) said %s", (intmax_t)child_pid, p);
+	return (0);
+}
+
+/*--------------------------------------------------------------------
+ * NB: Notice cleanup call from mgt_reap_child()
+ */
+
+static int __match_proto__(vev_cb_f)
+child_listener(const struct vev *e, int what)
+{
+
+	if ((what & ~EV_RD) || VLU_Fd(child_output, child_std_vlu)) {
+		ev_listen = NULL;
+		if (e != NULL)
+			mgt_reap_child();
+		return (1);
+	}
+	return (0);
+}
+
+/*=====================================================================
+ * Periodically poke the child, to see that it still lives
+ */
+
+static int __match_proto__(vev_cb_f)
+child_poker(const struct vev *e, int what)
+{
+
+	(void)e;
+	(void)what;
+	if (child_state != CH_RUNNING)
+		return (1);
+	if (child_pid < 0)
+		return (0);
+	if (!mgt_cli_askchild(NULL, NULL, "ping\n"))
+		return (0);
+	return (0);
+}
+
+/*=====================================================================
+ * Launch the child process
+ */
 
 static void
-start_child(struct cli *cli)
+mgt_launch_child(struct cli *cli)
 {
 	pid_t pid;
 	unsigned u;
@@ -300,7 +344,7 @@ start_child(struct cli *cli)
 	AZ(pipe(cp));
 	heritage.cli_in = cp[0];
 	mgt_child_inherit(heritage.cli_in, "cli_in");
-	child_VCLI_Out = cp[1];
+	child_cli_out = cp[1];
 
 	/* Open pipe for child->mgr CLI */
 	AZ(pipe(cp));
@@ -321,6 +365,7 @@ start_child(struct cli *cli)
 	AN(heritage.vsm);
 	AN(heritage.param);
 	if ((pid = fork()) < 0) {
+		/* XXX */
 		perror("Could not fork child");
 		exit(1);
 	}
@@ -334,6 +379,7 @@ start_child(struct cli *cli)
 
 		/* Close anything we shouldn't know about */
 		closelog();
+
 		for (i = STDERR_FILENO + 1; i < CLOSE_FD_UP_TO; i++) {
 			if (vbit_test(fd_map, i))
 				continue;
@@ -352,6 +398,7 @@ start_child(struct cli *cli)
 
 		exit(1);
 	}
+	assert(pid > 1);
 	REPORT(LOG_NOTICE, "child (%jd) Started", (intmax_t)pid);
 
 	/* Close stuff the child got */
@@ -365,8 +412,8 @@ start_child(struct cli *cli)
 
 	close_sockets();
 
-	vlu = VLU_New(NULL, child_line, 0);
-	AN(vlu);
+	child_std_vlu = VLU_New(NULL, child_line, 0);
+	AN(child_std_vlu);
 
 	AZ(ev_listen);
 	e = vev_new();
@@ -388,7 +435,7 @@ start_child(struct cli *cli)
 		ev_poker = e;
 	}
 
-	mgt_cli_start_child(child_cli_in, child_VCLI_Out);
+	mgt_cli_start_child(child_cli_in, child_cli_out);
 	child_pid = pid;
 	if (mgt_push_vcls_and_start(&u, &p)) {
 		REPORT(LOG_ERR, "Pushing vcls failed:\n%s", p);
@@ -399,81 +446,64 @@ start_child(struct cli *cli)
 		child_state = CH_RUNNING;
 }
 
-/*--------------------------------------------------------------------*/
-
-void
-mgt_stop_child(void)
-{
-
-	if (child_state != CH_RUNNING)
-		return;
-
-	child_state = CH_STOPPING;
-
-	REPORT0(LOG_DEBUG, "Stopping Child");
-	if (ev_poker != NULL) {
-		vev_del(mgt_evb, ev_poker);
-		free(ev_poker);
-	}
-	ev_poker = NULL;
-
-	mgt_cli_stop_child();
-
-	/* We tell the child to die gracefully by closing the CLI */
-	closex(&child_VCLI_Out);
-	closex(&child_cli_in);
-}
-
-/*--------------------------------------------------------------------*/
+/*=====================================================================
+ * Cleanup when child dies.
+ */
 
 static void
-mgt_handle_panicstr(pid_t r)
+mgt_reap_child(void)
 {
-	char time_str[30];
-
-	AN(heritage.panic_str[0]);
-	REPORT(LOG_ERR, "Child (%jd) Panic message: %s",
-	    (intmax_t)r, heritage.panic_str);
-
-	if (child_panic)
-		VSB_delete(child_panic);
-	child_panic = VSB_new_auto();
-	XXXAN(child_panic);
-	VTIM_format(VTIM_real(), time_str);
-	VSB_printf(child_panic, "Last panic at: %s\n", time_str);
-	VSB_cat(child_panic, heritage.panic_str);
-	AZ(VSB_finish(child_panic));
-}
-
-static void
-mgt_clear_panic(void)
-{
-	VSB_delete(child_panic);
-	child_panic = NULL;
-}
-
-/*--------------------------------------------------------------------*/
-
-static int
-mgt_sigchld(const struct vev *e, int what)
-{
+	int i;
 	int status;
 	struct vsb *vsb;
 	pid_t r;
 
-	(void)e;
-	(void)what;
+	assert(child_pid != -1);
 
+	/*
+	 * Close the CLI connections
+	 * This signals orderly shut down to child
+	 */
+	mgt_cli_stop_child();
+	if (child_cli_out >= 0)
+		closex(&child_cli_out);
+	if (child_cli_in >= 0)
+		closex(&child_cli_in);
+
+	/* Stop the poker */
 	if (ev_poker != NULL) {
 		vev_del(mgt_evb, ev_poker);
 		free(ev_poker);
 	}
 	ev_poker = NULL;
 
-	r = waitpid(child_pid, &status, WNOHANG);
-	if (r == 0 || (r == -1 && errno == ECHILD))
-		return (0);
+	/* Stop the listener */
+	if (ev_listen != NULL) {
+		vev_del(mgt_evb, ev_listen);
+		free(ev_listen);
+		ev_listen = NULL;
+	}
+
+	/* Wait 10 seconds for child to die */
+	for (i = 0; i < 10; i++) {
+		r = waitpid(child_pid, &status, WNOHANG);
+		if (r == child_pid)
+			break;
+		(void)sleep(1);
+	}
+	if (r == 0) {
+		/* Kick it Jim... */
+		if (MGT_FEATURE(FEATURE_NO_COREDUMP))
+			(void)kill(child_pid, SIGKILL);
+		else
+			(void)kill(child_pid, SIGQUIT);
+		r = waitpid(child_pid, &status, 0);
+	}
+	if (r != child_pid)
+		fprintf(stderr, "WAIT 0x%x\n", r);
 	assert(r == child_pid);
+
+	/* Compose obituary */
 	vsb = VSB_new_auto();
 	XXXAN(vsb);
 	VSB_printf(vsb, "Child (%ld) %s", (long)r, status ? "died" : "ended");
@@ -495,47 +525,118 @@ mgt_sigchld(const struct vev *e, int what)
 	REPORT(LOG_INFO, "%s", VSB_data(vsb));
 	VSB_delete(vsb);
 
+	/* Dispose of shared memory but evacuate panic messages first */
 	if (heritage.panic_str[0] != '\0') {
-		mgt_handle_panicstr(r);
+		mgt_panic_record(r);
 		mgt_SHM_Destroy(1);
 	} else {
 		mgt_SHM_Destroy(0);
 	}
 	mgt_SHM_Create();
 
-	child_pid = -1;
-
-	if (child_state == CH_RUNNING) {
+	if (child_state == CH_RUNNING)
 		child_state = CH_DIED;
-		mgt_cli_stop_child();
-		closex(&child_VCLI_Out);
-		closex(&child_cli_in);
-	}
 
-	if (ev_listen != NULL) {
-		vev_del(mgt_evb, ev_listen);
-		free(ev_listen);
-		ev_listen = NULL;
-	}
 	/* Pick up any stuff lingering on stdout/stderr */
 	(void)child_listener(NULL, EV_RD);
 	closex(&child_output);
+	VLU_Destroy(child_std_vlu);
+
+	child_pid = -1;
 
 	REPORT0(LOG_DEBUG, "Child cleanup complete");
 
 	if (child_state == CH_DIED && mgt_param.auto_restart)
-		start_child(NULL);
-	else if (child_state == CH_DIED) {
+		mgt_launch_child(NULL);
+	else if (child_state == CH_DIED)
 		child_state = CH_STOPPED;
-	} else if (child_state == CH_STOPPING)
+	else if (child_state == CH_STOPPING)
 		child_state = CH_STOPPED;
+}
 
-	return (0);
+/*=====================================================================
+ * If CLI communications with the child process fails, there is nothing
+ * for us to do but to drag it behind the barn and get it over with.
+ *
+ * The typical case is where the child process fails to return a reply
+ * before the cli_timeout expires.  This invalidates the CLI pipes for
+ * all future use, as we don't know if the child was just slow and the
+ * result gets piped later on, or if the child is catatonic.
+ */
+
+void
+MGT_Child_Cli_Fail(void)
+{
+
+	if (child_state != CH_RUNNING)
+		return;
+	if (child_pid < 0)
+		return;
+	REPORT(LOG_ERR, "Child (%jd) not responding to CLI, killing it.",
+	    (intmax_t)child_pid);
+	if (MGT_FEATURE(FEATURE_NO_COREDUMP))
+		(void)kill(child_pid, SIGKILL);
+	else
+		(void)kill(child_pid, SIGQUIT);
+}
+
+/*=====================================================================
+ * Controlled stop of child process
+ *
+ * Reaping the child asks for orderly shutdown
+ */
+
+void
+mgt_stop_child(void)
+{
+
+	if (child_state != CH_RUNNING)
+		return;
+
+	child_state = CH_STOPPING;
+
+	REPORT0(LOG_DEBUG, "Stopping Child");
+
+	mgt_reap_child();
+}
+
+/*=====================================================================
+ * CLI command to start/stop child
+ */
+
+void __match_proto__(cli_func_t)
+mcf_server_startstop(struct cli *cli, const char * const *av, void *priv)
+{
+
+	(void)av;
+	if (priv != NULL && child_state == CH_RUNNING)
+		mgt_stop_child();
+	else if (priv == NULL && child_state == CH_STOPPED) {
+		if (mgt_has_vcl()) {
+			mgt_launch_child(cli);
+		} else {
+			VCLI_SetResult(cli, CLIS_CANT);
+			VCLI_Out(cli, "No VCL available");
+		}
+	} else {
+		VCLI_SetResult(cli, CLIS_CANT);
+		VCLI_Out(cli, "Child in state %s", ch_state[child_state]);
+	}
 }
 
 /*--------------------------------------------------------------------*/
 
-static int
+void
+mcf_server_status(struct cli *cli, const char * const *av, void *priv)
+{
+	(void)av;
+	(void)priv;
+	VCLI_Out(cli, "Child in state %s", ch_state[child_state]);
+}
+
+/*--------------------------------------------------------------------*/
+
+static int __match_proto__(vev_cb_f)
 mgt_sigint(const struct vev *e, int what)
 {
 
@@ -548,7 +649,7 @@ mgt_sigint(const struct vev *e, int what)
 	exit (2);
 }
 
-/*--------------------------------------------------------------------
+/*=====================================================================
  * This thread is the master thread in the management process.
  * The relatively simple task is to start and stop the child process
  * and to reincarnate it in case of trouble.
@@ -575,14 +676,6 @@ MGT_Run(void)
 	e->name = "mgt_sigint";
 	AZ(vev_add(mgt_evb, e));
 
-	e = vev_new();
-	XXXAN(e);
-	e->sig = SIGCHLD;
-	e->sig_flags = SA_NOCLDSTOP;
-	e->callback = mgt_sigchld;
-	e->name = "mgt_sigchild";
-	AZ(vev_add(mgt_evb, e));
-
 #ifdef HAVE_SETPROCTITLE
 	setproctitle("Varnish-Mgr %s", heritage.name);
 #endif
@@ -597,7 +690,7 @@ MGT_Run(void)
 	if (!d_flag && !mgt_has_vcl())
 		REPORT0(LOG_ERR, "No VCL loaded yet");
 	else if (!d_flag) {
-		start_child(NULL);
+		mgt_launch_child(NULL);
 		if (child_state == CH_STOPPED) {
 			exit_status = 2;
 			return;
@@ -609,66 +702,4 @@ MGT_Run(void)
 		REPORT(LOG_ERR, "vev_schedule() = %d", i);
 
 	REPORT0(LOG_ERR, "manager dies");
-}
-
-/*--------------------------------------------------------------------*/
-
-void __match_proto__(cli_func_t)
-mcf_server_startstop(struct cli *cli, const char * const *av, void *priv)
-{
-
-	(void)av;
-	if (priv != NULL && child_state == CH_RUNNING)
-		mgt_stop_child();
-	else if (priv == NULL && child_state == CH_STOPPED) {
-		if (mgt_has_vcl()) {
-			start_child(cli);
-		} else {
-			VCLI_SetResult(cli, CLIS_CANT);
-			VCLI_Out(cli, "No VCL available");
-		}
-	} else {
-		VCLI_SetResult(cli, CLIS_CANT);
-		VCLI_Out(cli, "Child in state %s", ch_state[child_state]);
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-mcf_server_status(struct cli *cli, const char * const *av, void *priv)
-{
-	(void)av;
-	(void)priv;
-	VCLI_Out(cli, "Child in state %s", ch_state[child_state]);
-}
-
-void
-mcf_panic_show(struct cli *cli, const char * const *av, void *priv)
-{
-	(void)av;
-	(void)priv;
-
-	if (!child_panic) {
-	  VCLI_SetResult(cli, CLIS_CANT);
-	  VCLI_Out(cli, "Child has not panicked or panic has been cleared");
-	  return;
-	}
-
-	VCLI_Out(cli, "%s\n", VSB_data(child_panic));
-}
-
-void
-mcf_panic_clear(struct cli *cli, const char * const *av, void *priv)
-{
-	(void)av;
-	(void)priv;
-
-	if (!child_panic) {
-	  VCLI_SetResult(cli, CLIS_CANT);
-	  VCLI_Out(cli, "No panic to clear");
-	  return;
-	}
-
-	mgt_clear_panic();
 }
