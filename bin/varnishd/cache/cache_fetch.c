@@ -402,7 +402,7 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 
 	(void)VTCP_blocking(vc->fd);	/* XXX: we should timeout instead */
 	WRW_Reserve(wrk, &vc->fd, bo->vsl, req->t_req);	/* XXX t_resp ? */
-	(void)http_Write(wrk, hp, 0);	/* XXX: stats ? */
+	(void)HTTP1_Write(wrk, hp, 0);	/* XXX: stats ? */
 
 	/* Deal with any message-body the request might (still) have */
 	i = 0;

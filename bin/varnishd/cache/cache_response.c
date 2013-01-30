@@ -260,7 +260,7 @@ RES_WriteObj(struct req *req)
 	 */
 	if (!(req->res_mode & RES_ESI_CHILD))
 		req->acct_req.hdrbytes +=
-		    http_Write(req->wrk, req->resp, 1);
+		    HTTP1_Write(req->wrk, req->resp, 1);
 
 	if (!req->wantbody)
 		req->res_mode &= ~RES_CHUNKED;

@@ -851,7 +851,6 @@ const char *http_StatusMessage(unsigned);
 unsigned http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd);
 void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
-unsigned http_Write(const struct worker *w, const struct http *hp, int resp);
 void http_SetResp(struct http *to, const char *proto, uint16_t status,
     const char *response);
 void http_FilterReq(const struct req *, unsigned how);
@@ -899,6 +898,7 @@ ssize_t HTTP1_Read(struct http_conn *htc, void *d, size_t len);
 enum htc_status_e HTTP1_Complete(struct http_conn *htc);
 uint16_t HTTP1_DissectRequest(struct req *);
 uint16_t HTTP1_DissectResponse(struct http *sp, const struct http_conn *htc);
+unsigned HTTP1_Write(const struct worker *w, const struct http *hp, int resp);
 
 #define HTTPH(a, b, c) extern char b[];
 #include "tbl/http_headers.h"
