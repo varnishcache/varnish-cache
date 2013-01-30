@@ -389,12 +389,15 @@ htc_proto_ver(struct http *hp)
 
 /*--------------------------------------------------------------------*/
 
+#include <stdio.h>
+
 uint16_t
 HTTP1_DissectRequest(struct req *req)
 {
 	struct http_conn *htc;
 	struct http *hp;
 	uint16_t retval;
+	char *b, *e;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	htc = req->htc;
@@ -408,8 +411,22 @@ HTTP1_DissectRequest(struct req *req)
 		return (retval);
 	}
 	htc_proto_ver(hp);
+
+	/* RFC2616, section 5.2, point 1 */
+	if (!strncasecmp(hp->hd[HTTP_HDR_URL].b, "http://", 7)) {
+		b = e = hp->hd[HTTP_HDR_URL].b + 7;
+		while (*e != '/' && *e != '\0')
+			e++;
+		if (*e == '/') {
+			http_Unset(hp, H_Host);
+			http_PrintfHeader(hp, "Host: %.*s", (int)(e - b), b);
+			hp->hd[HTTP_HDR_URL].b = e;
+		}
+	}
+
 	return (retval);
 }
+
 /*--------------------------------------------------------------------*/
 
 uint16_t
