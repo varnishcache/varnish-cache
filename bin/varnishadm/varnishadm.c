@@ -223,6 +223,9 @@ pass(int sock)
 	fds[1].events = POLLIN;
 	while (1) {
 		i = poll(fds, 2, -1);
+		if (i == -1 && errno == EINTR) {
+			continue;
+		}
 		assert(i > 0);
 		if (fds[0].revents & POLLIN) {
 			/* Get rid of the prompt, kinda hackish */
