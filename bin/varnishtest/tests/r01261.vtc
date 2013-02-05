@@ -1,0 +1,29 @@
+varnishtest "#1261 - Test n_waitinglist counter"
+
+server s1 {
+	rxreq
+	sema r1 sync 2
+	delay 1
+	txresp
+} -start
+
+varnish v1 -arg "-p thread_pools=1 -w2,2,100" -vcl+backend {
+} -start
+
+client c1 {
+	txreq -url "/test1"
+	rxresp
+	expect resp.status == 200
+} -start
+
+client c2 {
+	txreq -url "/test1"
+	sema r1 sync 2
+	rxresp
+	expect resp.status == 200
+} -start
+
+client c1 -wait
+client c2 -wait
+
+varnish v1 -expect n_waitinglist == 2

@@ -138,6 +138,7 @@ HSH_Cleanup(struct worker *w)
 	if (w->nwaitinglist != NULL) {
 		FREE_OBJ(w->nwaitinglist);
 		w->nwaitinglist = NULL;
+		w->stats.n_waitinglist--;
 	}
 	if (w->nhashpriv != NULL) {
 		/* XXX: If needed, add slinger method for this */
@@ -486,12 +487,13 @@ HSH_Lookup(struct sess *sp, struct objhead **poh)
  */
 
 static void
-hsh_rush(struct objhead *oh)
+hsh_rush(struct dstat *ds, struct objhead *oh)
 {
 	unsigned u;
 	struct sess *sp;
 	struct waitinglist *wl;
 
+	AN(ds);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_AssertHeld(&oh->mtx);
 	wl = oh->waitinglist;
@@ -516,6 +518,7 @@ hsh_rush(struct objhead *oh)
 	if (VTAILQ_EMPTY(&wl->list)) {
 		oh->waitinglist = NULL;
 		FREE_OBJ(wl);
+		ds->n_waitinglist--;
 	}
 }
 
@@ -636,7 +639,7 @@ HSH_Unbusy(const struct sess *sp)
 	sp->wrk->nbusyobj = oc->busyobj;
 	oc->busyobj = NULL;
 	if (oh->waitinglist != NULL)
-		hsh_rush(oh);
+		hsh_rush(&sp->wrk->stats, oh);
 	AN(oc->ban);
 	Lck_Unlock(&oh->mtx);
 	assert(oc_getobj(sp->wrk, oc) == o);
@@ -714,7 +717,7 @@ HSH_Deref(struct worker *w, struct objcore *oc, struct object **oo)
 		AN(oc->methods);
 	}
 	if (oh->waitinglist != NULL)
-		hsh_rush(oh);
+		hsh_rush(&w->stats, oh);
 	Lck_Unlock(&oh->mtx);
 	if (r != 0)
 		return (r);
