@@ -14,7 +14,8 @@ noinst_LTLIBRARIES = libvmod_debug.la
 libvmod_debug_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-version -shared -rpath /nowhere
 
 libvmod_debug_la_SOURCES = \
-	vmod_debug.c
+	vmod_debug.c \
+	vmod_debug_obj.c
 
 nodist_libvmod_debug_la_SOURCES = \
 	vcc_if.c \

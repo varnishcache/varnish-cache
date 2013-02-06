@@ -91,6 +91,8 @@ class token(object):
 	def __repr__(self):
 		return "<@%d \"%s\">" % (self.ln, self.str)
 
+#######################################################################
+
 class vmod(object):
 	def __init__(self, nam):
 		if not is_c_name(nam):
@@ -99,6 +101,7 @@ class vmod(object):
 		self.init = None
 		self.fini = None
 		self.funcs = list()
+		self.objs = list()
 
 	def set_init(self, nam):
 		if self.init != None:
@@ -117,7 +120,12 @@ class vmod(object):
 	def add_func(self, fn):
 		self.funcs.append(fn)
 
+	def add_obj(self, fn):
+		self.objs.append(fn)
+
 	def c_proto(self, fo):
+		for o in self.objs:
+			o.c_proto(fo)
 		for f in self.funcs:
 			f.c_proto(fo)
 		if self.init != None:
@@ -130,105 +138,217 @@ class vmod(object):
 			    "(struct vmod_priv *, const struct VCL_conf *);\n")
 		fo.write("extern const void * const Vmod_Id;\n")
 
-	def c_typedefs(self, fo):
+	def c_typedefs_(self):
+		l = list()
+		for o in self.objs:
+			for t in o.c_typedefs(self.nam):
+				l.append(t)
+		l.append("")
+		l.append("/* Functions */")
 		for f in self.funcs:
-			fo.write(f.c_typedefs(fo, self.nam) + "\n")
+			l.append(f.c_typedef(self.nam))
+		return l
+
+	def c_typedefs(self, fo):
+		for i in self.c_typedefs_():
+			fo.write(i + "\n")
 
 	def c_vmod(self, fo):
 		fo.write('const char Vmod_Name[] = \"' + self.nam + '";\n')
 		fo.write("\n")
 
 		cs = self.c_struct()
-		fo.write("const " + cs + ' Vmod_Func = {\n')
+		fo.write("const " + cs + ' Vmod_Func = ')
+		fo.write(self.c_initializer())
+		fo.write("\n")
 
-		for f in self.funcs:
-			fo.write("\tvmod_" + f.nam + ",\n")
-		if self.init != None:
-			fo.write("\t" + self.init + ",\n")
-		if self.fini != None:
-			fo.write("\t" + self.fini + ",\n")
-		fo.write("};\n")
 		fo.write("\n")
 		fo.write("const int Vmod_Len = sizeof(Vmod_Func);\n")
 		fo.write("\n")
+
+
 		fo.write("const char Vmod_Proto[] =\n")
-		for f in self.funcs:
-			fo.write('\t"' + f.c_typedefs(fo, self.nam) + '\\n"\n')
+		for t in self.c_typedefs_():
+			fo.write('\t"' + t + '\\n"\n')
 		fo.write('\t"\\n"\n')
 		for i in (cs + " Vmod_Func_" + self.nam + ';').split("\n"):
 			fo.write('\n\t"' + i + '\\n"')
 		fo.write(";\n\n")
 
-		fo.write("const char * const Vmod_Spec[] = {\n")
-		for f in self.funcs:
-			fo.write('\t"' + f.strspec(self.nam) + '",\n')
-		if self.init != None:
-			fo.write(
-			    '\t"INIT\\0Vmod_Func_' + self.nam + '._init",\n')
-		if self.fini != None:
-			fo.write(
-			    '\t"FINI\\0Vmod_Func_' + self.nam + '._fini",\n')
-		fo.write("\t0\n")
-		fo.write("};\n")
+		fo.write(self.c_strspec())
+
 		fo.write("\n")
 		fo.write('const char Vmod_Varnish_ABI[] = VMOD_ABI_Version;\n')
 		fo.write("\n")
 		fo.write('const void * const Vmod_Id = &Vmod_Id;\n')
 
+	def c_initializer(self):
+		s = '{\n'
+		for o in self.objs:
+			s += o.c_initializer()
+
+		s += "\n\t/* Functions */\n"
+		for f in self.funcs:
+			s += f.c_initializer()
+
+		s += "\n\t/* Init/Fini */\n"
+		if self.init != None:
+			s += "\t" + self.init + ",\n"
+		if self.fini != None:
+			s += "\t" + self.fini + ",\n"
+		s += "};"
+
+		return s
+
 	def c_struct(self):
 		s = 'struct Vmod_Func_' + self.nam + ' {\n'
+		for o in self.objs:
+			s += o.c_struct(self.nam)
+
+		s += "\n\t/* Functions */\n"
 		for f in self.funcs:
-			s += '\ttd_' + self.nam + "_" + f.nam
-			s += "\t*" + f.nam + ";\n"
+			s += f.c_struct(self.nam)
+
+		s += "\n\t/* Init/Fini */\n"
 		if self.init != None:
 			s += "\tvmod_init_f\t*_init;\n"
 		if self.fini != None:
 			s += "\tvmod_fini_f\t*_fini;\n"
 		s += '}'
 		return s
-	
+
+	def c_strspec(self):
+		s = "const char * const Vmod_Spec[] = {\n"
+
+		for o in self.objs:
+			s += o.c_strspec(self.nam)
+
+		s += "\n\t/* Functions */\n"
+		for f in self.funcs:
+			s += '\t"' + f.c_strspec(self.nam) + '",\n'
+
+		s += "\n\t/* Init/Fini */\n"
+		if self.init != None:
+			s += '\t"INIT\\0Vmod_Func_' + self.nam + '._init",\n'
+		if self.fini != None:
+			s += '\t"FINI\\0Vmod_Func_' + self.nam + '._fini",\n'
+
+		s += "\t0\n"
+		s += "};\n"
+		return s
+
+#######################################################################
 
 class func(object):
 	def __init__(self, nam, retval, al):
-		if not is_c_name(nam):
-			raise Exception("Func name '%s' is illegal" % nam)
+		#if not is_c_name(nam):
+		#	raise Exception("Func name '%s' is illegal" % nam)
 		if retval not in ctypes:
 			raise Exception(
 			    "Return type '%s' not a valid type" % retval)
 		self.nam = nam
+		self.cnam = nam.replace(".", "__")
 		self.al = al
 		self.retval = retval
+		self.pfx = None
 
 	def __repr__(self):
 		return "<FUNC %s %s>" % (self.retval, self.nam)
 
+	def set_pfx(self, s):
+		self.pfx = s
+
 	def c_proto(self, fo):
 		fo.write(ctypes[self.retval])
-		fo.write(" vmod_" + self.nam)
+		fo.write(" vmod_" + self.cnam)
 		fo.write("(struct req *")
+		if self.pfx != None:
+			fo.write(self.pfx)
 		for a in self.al:
 			fo.write(", " + ctypes[a.typ])
 		fo.write(");\n")
 
-	def c_typedefs(self, fo, modname):
+	def c_typedef(self, modname):
 		s = "typedef "
 		s += ctypes[self.retval]
-		s += " td_" + modname + "_" + self.nam
+		s += " td_" + modname + "_" + self.cnam
 		s += "(struct req *"
+		if self.pfx != None:
+			s += self.pfx
 		for a in self.al:
 			s += ", " + ctypes[a.typ]
 		s += ");"
 		return s
 
-	def strspec(self, modname):
-		s = modname + "." + self.nam
+	def c_struct(self, modname):
+		s = '\ttd_' + modname + "_" + self.cnam
+		while len(s.expandtabs()) < 40:
+			s += "\t"
+		s += "*" + self.cnam + ";\n"
+		return s
+
+	def c_initializer(self):
+		return "\tvmod_" + self.cnam + ",\n"
+
+	def c_strspec(self, modnam):
+		s = modnam + "." + self.nam
 		s += "\\0"
-		s += "Vmod_Func_" + modname + "." + self.nam + "\\0"
+		s += "Vmod_Func_" + modnam + "." + self.cnam + "\\0"
 		s += self.retval + "\\0"
 		for a in self.al:
-			s += a.strspec()
+			s += a.c_strspec()
 		return s
 		
+#######################################################################
+
+class obj(object):
+	def __init__(self, nam):
+		self.nam = nam
+		self.init_fini = None
+		self.methods = list()
+
+	def set_init_fini(self, f):
+		self.init_fini = f
+
+	def add_method(self, m):
+		self.methods.append(m)
+
+	def c_typedefs(self, modname):
+		l = list()
+		l.append("/* Object " + self.nam + " */")
+		l.append(self.init_fini.c_typedef(modname) + "")
+		for m in self.methods:
+			l.append(m.c_typedef(modname) + "")
+		return l
+
+	def c_proto(self, fo):
+		fo.write("struct vmod_" + self.nam + ";\n")
+		self.init_fini.c_proto(fo)
+		for m in o.methods:
+			m.c_proto(fo)
+
+	def c_struct(self, modnam):
+		s = "\t/* Object " + self.nam + " */\n"
+		s += self.init_fini.c_struct(modnam)
+		for m in self.methods:
+			s += m.c_struct(modnam)
+		return s
+
+	def c_initializer(self):
+		s = "\t/* Object " + self.nam + " */\n"
+		s += self.init_fini.c_initializer()
+		for m in self.methods:
+			s += m.c_initializer()
+		return s
+
+	def c_strspec(self, modnam):
+		s = "\t/* Object " + self.nam + " */\n"
+		s += '\t"OBJ\\0' + self.init_fini.c_strspec(modnam) + '",\n'
+		for m in self.methods:
+			s += '\t"METHOD\\0' + m.c_strspec(modnam) + '",\n'
+		return s
+
+#######################################################################
 
 class arg(object):
 	def __init__(self, typ, nam = None, det = None):
@@ -239,12 +359,14 @@ class arg(object):
 	def __repr__(self):
 		return "<ARG %s %s %s>" % (self.nam, self.typ, str(self.det))
 
-	def strspec(self):
+	def c_strspec(self):
 		if self.det == None:
 			return self.typ + "\\0"
 		else:
 			return self.det
 		return "??"
+
+#######################################################################
 
 f = open(specfile, "r")
 tl = list()
@@ -285,6 +407,70 @@ def parse_enum2(tl):
 	return arg("ENUM", det=s)
 
 #######################################################################
+#
+#
+
+def parse_func(tl, rt_type = None, obj=None):
+	al = list()
+	if rt_type == None:
+		t = tl.pop(0)
+		rt_type = t.str
+	if rt_type not in ctypes:
+		raise Exception(
+		    "Return type '%s' not a valid type" % rt_type)
+
+	t = tl.pop(0)
+	fname = t.str
+	if obj != None and fname[0] == "." and is_c_name(fname[1:]):
+		fname = obj + fname
+	elif not is_c_name(fname):
+		raise Exception("Function name '%s' is illegal" % fname)
+
+	t = tl.pop(0)
+	if t.str != "(":
+		raise Exception("Expected \"(\" got \"%s\"", t.str)
+
+	while True:
+		t = tl.pop(0)
+		if t.str == ")":
+			break
+		if t.str == "ENUM":
+			al.append(parse_enum2(tl))
+		elif t.str in ctypes:
+			al.append(arg(t.str))
+		else:
+			raise Exception("ARG? %s" % t.str)
+		if tl[0].str == ",":
+			tl.pop(0)
+		elif tl[0].str != ")":
+			raise Exception("Expceted \")\" or \",\"")
+	if t.str != ")":
+		raise Exception("End Of Input looking for ')'")
+	f = func(fname, rt_type, al)
+	return f
+
+#######################################################################
+#
+#
+
+def parse_obj(tl):
+	o = obj(tl[0].str)
+	f = parse_func(tl, "VOID")
+	f.set_pfx(", struct vmod_" + o.nam + " **")
+	o.set_init_fini(f)
+	t = tl.pop(0)
+	assert t.str == "{"
+	while True:
+		t = tl.pop(0)
+		if t.str == "}":
+			break
+		assert t.str == "Method"
+		f = parse_func(tl, obj=o.nam)
+		f.set_pfx(", struct vmod_" + o.nam + " *")
+		o.add_method(f)
+	return o
+
+#######################################################################
 # The first thing in the file must be the Module declaration
 #
 
@@ -304,51 +490,17 @@ while len(tl) > 0:
 	if t.str == "Init":
 		t = tl.pop(0)
 		vmod.set_init(t.str)
-		continue
-
-	if t.str == "Fini":
+	elif t.str == "Fini":
 		t = tl.pop(0)
 		vmod.set_fini(t.str)
-		continue
-
-	if t.str == "Function":
-		al = list()
-		t = tl.pop(0)
-		rt_type = t.str
-		if rt_type not in ctypes:
-			raise Exception(
-			    "Return type '%s' not a valid type" % rt_type)
-
-		t = tl.pop(0)
-		fname = t.str
-		if not is_c_name(fname):
-			raise Exception("Function name '%s' is illegal" % fname)
-
-		t = tl.pop(0)
-		if t.str != "(":
-			raise Exception("Expected \"(\" got \"%s\"", t.str)
-
-		while True:
-			t = tl.pop(0)
-			if t.str == ")":
-				break
-			if t.str == "ENUM":
-				al.append(parse_enum2(tl))
-			elif t.str in ctypes:
-				al.append(arg(t.str))
-			else:
-				raise Exception("ARG? %s" % t.str)
-			if tl[0].str == ",":
-				tl.pop(0)
-			elif tl[0].str != ")":
-				raise Exception("Expceted \")\" or \",\"")
-		if t.str != ")":
-			raise Exception("End Of Input looking for ')'")
-		f = func(fname, rt_type, al)
+	elif t.str == "Function":
+		f = parse_func(tl)
 		vmod.add_func(f)
-		continue
-
-	raise Exception("Expected \"Init\", \"Fini\" or \"Function\"")
+	elif t.str == "Object":
+		o = parse_obj(tl)
+		vmod.add_obj(o)
+	else:
+		raise Exception("Expected \"Init\", \"Fini\" or \"Function\"")
 
 #######################################################################
 # Parsing done, now process
