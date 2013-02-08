@@ -110,6 +110,11 @@ struct params {
 	unsigned		pipe_timeout;
 	unsigned		send_timeout;
 	unsigned		idle_send_timeout;
+#ifdef HAVE_TCP_KEEP
+	unsigned		tcp_keepalive_time;
+	unsigned		tcp_keepalive_probes;
+	unsigned		tcp_keepalive_intvl;
+#endif
 
 	/* Management hints */
 	unsigned		auto_restart;
