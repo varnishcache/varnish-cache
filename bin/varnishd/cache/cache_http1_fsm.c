@@ -74,6 +74,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "hash/hash_slinger.h"
 
 #include "vcl.h"
 #include "vct.h"
@@ -324,6 +325,19 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			SES_Close(sp, SC_REM_CLOSE);
 		else
 			SES_Close(sp, SC_TX_ERROR);
+		sdr = http1_cleanup(sp, wrk, req);
+		assert(sdr == SESS_DONE_RET_GONE);
+		return;
+	}
+
+	/*
+	 * Return from waitinglist. Check to see if the remote has left.
+	 */
+	if (req->req_step == R_STP_LOOKUP && VTCP_check_hup(sp->fd)) {
+		AN(req->hash_objhead);
+		(void)HSH_DerefObjHead(&wrk->stats, &req->hash_objhead);
+		AZ(req->hash_objhead);
+		SES_Close(sp, SC_REM_CLOSE);
 		sdr = http1_cleanup(sp, wrk, req);
 		assert(sdr == SESS_DONE_RET_GONE);
 		return;
