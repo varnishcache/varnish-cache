@@ -248,7 +248,7 @@ class func(object):
 			raise Exception(
 			    "Return type '%s' not a valid type" % retval)
 		self.nam = nam
-		self.cnam = nam.replace(".", "__")
+		self.cnam = nam.replace(".", "_")
 		self.al = al
 		self.retval = retval
 		self.pfx = None
@@ -299,23 +299,28 @@ class func(object):
 		for a in self.al:
 			s += a.c_strspec()
 		return s
-		
+
 #######################################################################
 
 class obj(object):
 	def __init__(self, nam):
 		self.nam = nam
-		self.init_fini = None
+		self.init = None
+		self.fini = None
 		self.methods = list()
 
 	def set_modnam(self, modnam):
 		self.st = "struct vmod_" + modnam + "_" + self.nam
-		self.init_fini.set_pfx(", " + self.st + " **")
+		self.init.set_pfx(", " + self.st + " **")
+		self.fini.set_pfx(", " + self.st + " **")
 		for m in self.methods:
 			m.set_pfx(", " + self.st + " *")
 
-	def set_init_fini(self, f):
-		self.init_fini = f
+	def set_init(self, f):
+		self.init = f
+		self.fini = func(f.nam, "VOID", [])
+		self.init.cnam += "__init"
+		self.fini.cnam += "__fini"
 
 	def add_method(self, m):
 		self.methods.append(m)
@@ -324,38 +329,44 @@ class obj(object):
 		l = list()
 		l.append("/* Object " + self.nam + " */")
 		l.append(self.st + ";")
-		l.append(self.init_fini.c_typedef(modnam) + "")
+		l.append(self.init.c_typedef(modnam) + "")
+		l.append(self.fini.c_typedef(modnam) + "")
 		for m in self.methods:
 			l.append(m.c_typedef(modnam) + "")
 		return l
 
 	def c_proto(self, fo):
 		fo.write(self.st + ";\n")
-		self.init_fini.c_proto(fo)
+		self.init.c_proto(fo)
+		self.fini.c_proto(fo)
 		for m in o.methods:
 			m.c_proto(fo)
 
 	def c_struct(self, modnam):
 		s = "\t/* Object " + self.nam + " */\n"
-		s += self.init_fini.c_struct(modnam)
+		s += self.init.c_struct(modnam)
+		s += self.fini.c_struct(modnam)
 		for m in self.methods:
 			s += m.c_struct(modnam)
 		return s
 
 	def c_initializer(self):
 		s = "\t/* Object " + self.nam + " */\n"
-		s += self.init_fini.c_initializer()
+		s += self.init.c_initializer()
+		s += self.fini.c_initializer()
 		for m in self.methods:
 			s += m.c_initializer()
 		return s
 
 	def c_strspec(self, modnam):
 		s = "\t/* Object " + self.nam + " */\n"
-		s += '\t"OBJ\\0'
-		s += self.st + '\\0'
-		s += self.init_fini.c_strspec(modnam) + '",\n'
+		s += '\t"OBJ\\0"\n'
+		s += '\t\t"' + self.init.c_strspec(modnam) + '\\0"\n'
+		s += '\t\t"' + self.st + '\\0"\n'
+		s += '\t\t"' + self.fini.c_strspec(modnam) + '\\0"\n'
 		for m in self.methods:
-			s += '\t"METHOD\\0' + m.c_strspec(modnam) + '",\n'
+			s += '\t\t"' + m.c_strspec(modnam) + '\\0"\n'
+		s += '\t\t"\\0",\n'
 		return s
 
 #######################################################################
@@ -466,7 +477,7 @@ def parse_func(tl, rt_type = None, obj=None):
 def parse_obj(tl):
 	o = obj(tl[0].str)
 	f = parse_func(tl, "VOID")
-	o.set_init_fini(f)
+	o.set_init(f)
 	t = tl.pop(0)
 	assert t.str == "{"
 	while True:

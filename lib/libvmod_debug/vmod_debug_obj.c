@@ -42,28 +42,34 @@ struct vmod_debug_obj {
 };
 
 VCL_VOID
-vmod_obj(struct req *req, struct vmod_debug_obj **op, VCL_STRING s)
+vmod_obj__init(struct req *req, struct vmod_debug_obj **op, VCL_STRING s)
 {
 	struct vmod_debug_obj *o;
 
 	(void)req;
 	(void)s;
 	AN(op);
-	if (*op == NULL) {
-		/* INIT */
-		ALLOC_OBJ(o, VMOD_DEBUG_OBJ_MAGIC);
-		*op = o;
-		o->foobar = 42;
-		AN(*op);
-	} else {
-		/* FINI */
-		FREE_OBJ(*op);
-		*op = NULL;
-	}
+	AZ(*op);
+	ALLOC_OBJ(o, VMOD_DEBUG_OBJ_MAGIC);
+	AN(o);
+	*op = o;
+	o->foobar = 42;
+	AN(*op);
 }
 
-VCL_STRING
-vmod_obj__foo(struct req *req, struct vmod_debug_obj *o, VCL_STRING s)
+VCL_VOID
+vmod_obj__fini(struct req *req, struct vmod_debug_obj **op)
+{
+
+	(void)req;
+	AN(op);
+	AN(*op);
+	FREE_OBJ(*op);
+	*op = NULL;
+}
+
+VCL_STRING __match_proto__()
+vmod_obj_foo(struct req *req, struct vmod_debug_obj *o, VCL_STRING s)
 {
 	(void)req;
 	(void)s;
@@ -72,8 +78,8 @@ vmod_obj__foo(struct req *req, struct vmod_debug_obj *o, VCL_STRING s)
 	return ("BOO");
 }
 
-VCL_TIME
-vmod_obj__date(struct req *req, struct vmod_debug_obj *o)
+VCL_TIME __match_proto__()
+vmod_obj_date(struct req *req, struct vmod_debug_obj *o)
 {
 	(void)req;
 	CHECK_OBJ_NOTNULL(o, VMOD_DEBUG_OBJ_MAGIC);

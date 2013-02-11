@@ -519,30 +519,31 @@ vcc_Eval_Var(struct vcc *tl, struct expr **e, const struct symbol *sym)
 /*--------------------------------------------------------------------
  */
 
-void
-vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
+static void
+vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
+    const char *extra, const char *name, const char *args)
 {
 	const char *p, *r;
-	// const struct var *v;
 	struct expr *e1, *e2;
 	enum var_type fmt;
 	char buf[32];
 
-	assert(sym->kind == SYM_FUNC || sym->kind == SYM_PROC);
-	AN(sym->cfunc);
-	AN(sym->args);
-	SkipToken(tl, ID);
+	AN(cfunc);
+	AN(args);
+	AN(name);
 	SkipToken(tl, '(');
-	p = sym->args;
-	e2 = vcc_mk_expr(vcc_arg_type(&p), "%s(req\v+", sym->cfunc);
+	p = args;
+	if (extra == NULL)
+		extra = "";
+	e2 = vcc_mk_expr(vcc_arg_type(&p), "%s(req%s\v+", cfunc, extra);
 	while (*p != '\0') {
 		e1 = NULL;
 		fmt = vcc_arg_type(&p);
 		if (fmt == VOID && !strcmp(p, "PRIV_VCL")) {
-			r = strchr(sym->name, '.');
+			r = strchr(name, '.');
 			AN(r);
 			e1 = vcc_mk_expr(VOID, "&vmod_priv_%.*s",
-			    (int) (r - sym->name), sym->name);
+			    (int) (r - name), name);
 			p += strlen(p) + 1;
 		} else if (fmt == VOID && !strcmp(p, "PRIV_CALL")) {
 			bprintf(buf, "vmod_priv_%u", tl->nvmodpriv++);
@@ -573,7 +574,7 @@ vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 				p += strlen(p) + 1;
 			p++;
 			SkipToken(tl, ID);
-			if (*p != '\0')
+			if (*p != '\0')		/*lint !e448 */
 				SkipToken(tl, ',');
 		} else {
 			vcc_expr0(tl, &e1, fmt);
@@ -601,6 +602,42 @@ vcc_Eval_Func(struct vcc *tl, struct expr **e, const struct symbol *sym)
 	SkipToken(tl, ')');
 	e2 = vcc_expr_edit(e2->fmt, "\v1\n)\v-", e2, NULL);
 	*e = e2;
+}
+
+/*--------------------------------------------------------------------
+ */
+
+void
+vcc_Eval_Func(struct vcc *tl, const char *cfunc,
+    const char *extra, const char *name, const char *args)
+{
+	struct expr *e = NULL;
+	struct token *t1;
+
+	t1 = tl->t;
+	vcc_func(tl, &e, cfunc, extra, name, args);
+	if (!tl->err) {
+		vcc_expr_fmt(tl->fb, tl->indent, e);
+		VSB_cat(tl->fb, ";\n");
+	} else if (t1 != tl->t) {
+		vcc_ErrWhere2(tl, t1, tl->t);
+	}
+	vcc_delete_expr(e);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+void
+vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, const struct symbol *sym)
+{
+
+	assert(sym->kind == SYM_FUNC || sym->kind == SYM_PROC);
+	AN(sym->cfunc);
+	AN(sym->name);
+	AN(sym->args);
+	SkipToken(tl, ID);
+	vcc_func(tl, e, sym->cfunc, sym->extra, sym->name, sym->args);
 }
 
 /*--------------------------------------------------------------------
@@ -1170,7 +1207,7 @@ vcc_Expr_Call(struct vcc *tl, const struct symbol *sym)
 
 	t1 = tl->t;
 	e = NULL;
-	vcc_Eval_Func(tl, &e, sym);
+	vcc_Eval_SymFunc(tl, &e, sym);
 	if (!tl->err) {
 		vcc_expr_fmt(tl->fb, tl->indent, e);
 		VSB_cat(tl->fb, ";\n");

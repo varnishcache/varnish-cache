@@ -28,14 +28,16 @@
  */
 
 /*lint -save -e525 -e539 */
-VCC_SYMB(NONE,		none,		"undefined")
-VCC_SYMB(VAR,		var,		"variable")
-VCC_SYMB(FUNC,		func,		"function")	/* VMOD function */
-VCC_SYMB(PROC,		proc,		"procedure")	/* VMOD procedure */
-VCC_SYMB(VMOD,		vmod,		"vmod")
-VCC_SYMB(ACL,		acl,		"acl")
-VCC_SYMB(SUB,		sub,		"sub")		/* VCL subroutine */
-VCC_SYMB(BACKEND,	backend,	"backend")
-VCC_SYMB(PROBE,		probe,		"probe")
-VCC_SYMB(WILDCARD,	wildcard,	"wildcard")
+VCC_SYMB(NONE,		none)
+VCC_SYMB(VAR,		var)
+VCC_SYMB(FUNC,		func)		/* VMOD function */
+VCC_SYMB(PROC,		proc)		/* VMOD procedure */
+VCC_SYMB(VMOD,		vmod)
+VCC_SYMB(ACL,		acl)
+VCC_SYMB(SUB,		sub)		/* VCL subroutine */
+VCC_SYMB(BACKEND,	backend)
+VCC_SYMB(PROBE,		probe)
+VCC_SYMB(WILDCARD,	wildcard)
+VCC_SYMB(OBJECT,	object)
+VCC_SYMB(METHOD,	method)
 /*lint -restore */

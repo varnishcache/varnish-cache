@@ -168,10 +168,12 @@ vcc_ParseImport(struct vcc *tl)
 	for (; *spec != NULL; spec++) {
 		p = *spec;
 		if (!strcmp(p, "OBJ")) {
-			// Nothing yet
-		} else if (!strcmp(p, "METHOD")) {
-			// Nothing yet
+			p += strlen(p) + 1;
+			sym = VCC_AddSymbolStr(tl, p, SYM_OBJECT);
+			XXXAN(sym);
+			sym->args = p;
 		} else if (!strcmp(p, "FINI")) {
+			p += strlen(p) + 1;
 			// Nothing yet
 		} else if (!strcmp(p, "INIT")) {
 			p += strlen(p) + 1;
@@ -181,7 +183,7 @@ vcc_ParseImport(struct vcc *tl)
 			sym = VCC_AddSymbolStr(tl, p, SYM_FUNC);
 			ERRCHK(tl);
 			AN(sym);
-			sym->eval = vcc_Eval_Func;
+			sym->eval = vcc_Eval_SymFunc;
 			p += strlen(p) + 1;
 			sym->cfunc = p;
 			p += strlen(p) + 1;

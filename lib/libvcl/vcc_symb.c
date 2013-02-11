@@ -40,7 +40,7 @@ const char *
 VCC_SymKind(struct vcc *tl, const struct symbol *s)
 {
 	switch(s->kind) {
-#define VCC_SYMB(uu, ll, dd)	case SYM_##uu: return(dd);
+#define VCC_SYMB(uu, ll)	case SYM_##uu: return(#ll);
 #include "tbl/symbol_kind.h"
 #undef VCC_SYMB
 	default:
