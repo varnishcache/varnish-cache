@@ -120,8 +120,9 @@ class vmod(object):
 	def add_func(self, fn):
 		self.funcs.append(fn)
 
-	def add_obj(self, fn):
-		self.objs.append(fn)
+	def add_obj(self, obj):
+		self.objs.append(obj)
+		obj.set_modnam(self.nam)
 
 	def c_proto(self, fo):
 		for o in self.objs:
@@ -307,22 +308,28 @@ class obj(object):
 		self.init_fini = None
 		self.methods = list()
 
+	def set_modnam(self, modnam):
+		self.st = "struct vmod_" + modnam + "_" + self.nam
+		self.init_fini.set_pfx(", " + self.st + " **")
+		for m in self.methods:
+			m.set_pfx(", " + self.st + " *")
+
 	def set_init_fini(self, f):
 		self.init_fini = f
 
 	def add_method(self, m):
 		self.methods.append(m)
 
-	def c_typedefs(self, modname):
+	def c_typedefs(self, modnam):
 		l = list()
 		l.append("/* Object " + self.nam + " */")
-		l.append(self.init_fini.c_typedef(modname) + "")
+		l.append(self.init_fini.c_typedef(modnam) + "")
 		for m in self.methods:
-			l.append(m.c_typedef(modname) + "")
+			l.append(m.c_typedef(modnam) + "")
 		return l
 
 	def c_proto(self, fo):
-		fo.write("struct vmod_" + self.nam + ";\n")
+		fo.write(self.st + ";\n")
 		self.init_fini.c_proto(fo)
 		for m in o.methods:
 			m.c_proto(fo)
@@ -343,7 +350,9 @@ class obj(object):
 
 	def c_strspec(self, modnam):
 		s = "\t/* Object " + self.nam + " */\n"
-		s += '\t"OBJ\\0' + self.init_fini.c_strspec(modnam) + '",\n'
+		s += '\t"OBJ\\0'
+		s += self.st + '\\0'
+		s += self.init_fini.c_strspec(modnam) + '",\n'
 		for m in self.methods:
 			s += '\t"METHOD\\0' + m.c_strspec(modnam) + '",\n'
 		return s
@@ -456,7 +465,6 @@ def parse_func(tl, rt_type = None, obj=None):
 def parse_obj(tl):
 	o = obj(tl[0].str)
 	f = parse_func(tl, "VOID")
-	f.set_pfx(", struct vmod_" + o.nam + " **")
 	o.set_init_fini(f)
 	t = tl.pop(0)
 	assert t.str == "{"
@@ -466,7 +474,6 @@ def parse_obj(tl):
 			break
 		assert t.str == "Method"
 		f = parse_func(tl, obj=o.nam)
-		f.set_pfx(", struct vmod_" + o.nam + " *")
 		o.add_method(f)
 	return o
 

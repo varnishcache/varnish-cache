@@ -35,23 +35,23 @@
 #include "vrt.h"
 #include "vcc_if.h"
 
-struct vmod_obj {
+struct vmod_debug_obj {
 	unsigned		magic;
-#define VMOD_OBJ_MAGIC		0xccbd9b77
+#define VMOD_DEBUG_OBJ_MAGIC	0xccbd9b77
 	int foobar;
 };
 
 VCL_VOID
-vmod_obj(struct req *req, struct vmod_obj **op, VCL_STRING s)
+vmod_obj(struct req *req, struct vmod_debug_obj **op, VCL_STRING s)
 {
-	struct vmod_obj *o;
+	struct vmod_debug_obj *o;
 
 	(void)req;
 	(void)s;
 	AN(op);
 	if (*op == NULL) {
 		/* INIT */
-		ALLOC_OBJ(o, VMOD_OBJ_MAGIC);
+		ALLOC_OBJ(o, VMOD_DEBUG_OBJ_MAGIC);
 		*op = o;
 		o->foobar = 42;
 		AN(*op);
@@ -63,20 +63,20 @@ vmod_obj(struct req *req, struct vmod_obj **op, VCL_STRING s)
 }
 
 VCL_STRING
-vmod_obj__foo(struct req *req, struct vmod_obj *o, VCL_STRING s)
+vmod_obj__foo(struct req *req, struct vmod_debug_obj *o, VCL_STRING s)
 {
 	(void)req;
 	(void)s;
-	CHECK_OBJ_NOTNULL(o, VMOD_OBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(o, VMOD_DEBUG_OBJ_MAGIC);
 	assert(o->foobar == 42);
 	return ("BOO");
 }
 
 VCL_TIME
-vmod_obj__date(struct req *req, struct vmod_obj *o)
+vmod_obj__date(struct req *req, struct vmod_debug_obj *o)
 {
 	(void)req;
-	CHECK_OBJ_NOTNULL(o, VMOD_OBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(o, VMOD_DEBUG_OBJ_MAGIC);
 	assert(o->foobar == 42);
 	return (21.4);
 }
