@@ -84,37 +84,48 @@ static void
 vcc_IfStmt(struct vcc *tl)
 {
 
-	SkipToken(tl, T_IF);
+	SkipToken(tl, ID);
 	Fb(tl, 1, "if ");
 	vcc_Conditional(tl);
 	ERRCHK(tl);
 	L(tl, vcc_Compound(tl));
 	ERRCHK(tl);
-	while (1) {
-		switch (tl->t->tok) {
-		case T_ELSE:
+	while (tl->t->tok == ID) {
+		if (vcc_IdIs(tl->t, "else")) {
 			vcc_NextToken(tl);
-			if (tl->t->tok != T_IF) {
+			if (tl->t->tok == '{') {
 				Fb(tl, 1, "else\n");
 				L(tl, vcc_Compound(tl));
 				ERRCHK(tl);
 				return;
 			}
-			/* FALLTHROUGH */
-		case T_ELSEIF:
-		case T_ELSIF:
+			if (tl->t->tok != ID || !vcc_IdIs(tl->t, "if")) {
+				VSB_printf(tl->sb,
+				    "'else' must be followed by 'if' or '{'\n");
+				vcc_ErrWhere(tl, tl->t);
+				return;
+			}
 			Fb(tl, 1, "else if ");
 			vcc_NextToken(tl);
 			vcc_Conditional(tl);
 			ERRCHK(tl);
 			L(tl, vcc_Compound(tl));
 			ERRCHK(tl);
+			
+		} else if (vcc_IdIs(tl->t, "elseif") ||
+		     vcc_IdIs(tl->t, "elsif") ||
+		     vcc_IdIs(tl->t, "elif")) {
+			Fb(tl, 1, "else if ");
+			vcc_NextToken(tl);
+			vcc_Conditional(tl);
+			ERRCHK(tl);
+			L(tl, vcc_Compound(tl));
+			ERRCHK(tl);
+		} else {
 			break;
-		default:
-			C(tl, ";");
-			return;
 		}
 	}
+	C(tl, ";");
 }
 
 /*--------------------------------------------------------------------
@@ -144,9 +155,6 @@ vcc_Compound(struct vcc *tl)
 		case '{':
 			vcc_Compound(tl);
 			break;
-		case T_IF:
-			vcc_IfStmt(tl);
-			break;
 		case '}':
 			vcc_NextToken(tl);
 			tl->indent -= INDENT;
@@ -170,11 +178,16 @@ vcc_Compound(struct vcc *tl)
 			tl->err = 1;
 			return;
 		case ID:
-			i = vcc_ParseAction(tl);
-			ERRCHK(tl);
-			if (i) {
-				SkipToken(tl, ';');
+			if (vcc_IdIs(tl->t, "if")) {
+				vcc_IfStmt(tl);
 				break;
+			} else {
+				i = vcc_ParseAction(tl);
+				ERRCHK(tl);
+				if (i) {
+					SkipToken(tl, ';');
+					break;
+				}
 			}
 			/* FALLTHROUGH */
 		default:

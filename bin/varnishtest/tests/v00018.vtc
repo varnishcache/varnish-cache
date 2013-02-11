@@ -84,9 +84,9 @@ varnish v1 -errvcl {Only http header variables can be unset.} {
 	sub vcl_fetch { unset beresp.do_gzip; }
 }
 
-varnish v1 -errvcl {Unknown token 'if' when looking for STRING} {
+varnish v1 -errvcl {Unknown token '<<' when looking for STRING} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { ban (if); }
+	sub vcl_recv { ban (<<); }
 }
 
 varnish v1 -errvcl {Expected an action, 'if', '{' or '}'} {
@@ -104,7 +104,7 @@ varnish v1 -errvcl {Expected an action, 'if', '{' or '}'} {
 	sub vcl_recv { kluf ; }
 }
 
-varnish v1 -errvcl {Unknown token 'if' when looking for STRING_LIST} {
+varnish v1 -errvcl {Unknown token '<<' when looking for STRING_LIST} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_error { synthetic if "foo"; }
+	sub vcl_error { synthetic << "foo"; }
 }

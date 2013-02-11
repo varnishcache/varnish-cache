@@ -62,11 +62,6 @@ tokens = {
 	"T_MUL":	"*=",
 	"T_DIV":	"/=",
 	"T_NOMATCH":	"!~",
-	"T_INCLUDE":	"include",
-	"T_IF":		"if",
-	"T_ELSEIF":	"elseif",
-	"T_ELSIF":	"elsif",
-	"T_ELSE":	"else",
 
 	# Single char tokens, for convenience on one line
 	None:		"{}()*+-/%><=;!&.|~,",
