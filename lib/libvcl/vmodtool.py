@@ -37,8 +37,6 @@
 # as a string, suitable for inclusion in the C-source of the compile VCL
 # program.
 
-from __future__ import print_function
-
 import sys
 import re
 
