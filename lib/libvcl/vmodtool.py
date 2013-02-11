@@ -323,6 +323,7 @@ class obj(object):
 	def c_typedefs(self, modnam):
 		l = list()
 		l.append("/* Object " + self.nam + " */")
+		l.append(self.st + ";")
 		l.append(self.init_fini.c_typedef(modnam) + "")
 		for m in self.methods:
 			l.append(m.c_typedef(modnam) + "")
