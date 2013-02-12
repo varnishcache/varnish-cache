@@ -29,9 +29,9 @@ response should be altered. You can read more about this in our
 tutorial.
 
 
-Supported plattforms
+Supported platforms
 ~~~~~~~~~~~~~~~~~~~~
 
 Varnish is written to run on modern versions of Linux and FreeBSD and
-the best experience is had on those plattforms. Thanks to our
+the best experience is had on those platforms. Thanks to our
 contributors it also runs on NetBSD, OpenBSD and OS X.
