@@ -26,11 +26,11 @@ In such a policy you can decide what content you want to serve, from
 where you want to get the content and how the request or response
 should be altered. 
 
-Supported plattforms
+Supported platforms
 --------------------
 
 Varnish is written to run on modern versions of Linux and FreeBSD and
-the best experience is had on those plattforms. Thanks to our
+the best experience is had on those platforms. Thanks to our
 contributors it also runs on NetBSD, OpenBSD and OS X.
 
 About the Varnish development process
