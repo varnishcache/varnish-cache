@@ -44,6 +44,8 @@ void MGT_Run(void);
 void mgt_stop_child(void);
 void mgt_got_fd(int fd);
 void MGT_Child_Cli_Fail(void);
+int MGT_open_sockets(void);
+void MGT_close_sockets(void);
 
 /* mgt_cli.c */
 

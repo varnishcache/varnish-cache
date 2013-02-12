@@ -602,6 +602,15 @@ main(int argc, char * const *argv)
 	if (C_flag)
 		exit (0);
 
+	if (!d_flag) {
+		if (MGT_open_sockets()) {
+			fprintf(stderr,
+			    "Failed to open (any) accept sockets.\n");
+			exit(1);
+		}
+		MGT_close_sockets();
+	}
+
 	/* If no -s argument specified, process default -s argument */
 	if (!s_arg_given)
 		STV_Config(s_arg);
