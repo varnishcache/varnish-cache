@@ -634,7 +634,7 @@ static void
 ban_reload(const uint8_t *ban, unsigned len)
 {
 	struct ban *b, *b2;
-	int dup = 0;
+	int duplicate = 0;
 	double t0, t1, t2 = 9e99;
 
 	ASSERT_CLI();
@@ -652,7 +652,7 @@ ban_reload(const uint8_t *ban, unsigned len)
 		if (t1 < t0)
 			break;
 		if (ban_equal(b->spec, ban))
-			dup = 1;
+			duplicate = 1;
 	}
 
 	VSC_C_main->bans++;
@@ -667,9 +667,9 @@ ban_reload(const uint8_t *ban, unsigned len)
 		VSC_C_main->bans_req++;
 		b2->flags |= BAN_F_REQ;
 	}
-	if (dup)
+	if (duplicate)
 		VSC_C_main->bans_dups++;
-	if (dup || (ban[BANS_FLAGS] & BANS_FLAG_GONE))
+	if (duplicate || (ban[BANS_FLAGS] & BANS_FLAG_GONE))
 		ban_mark_gone(b2);
 	if (b == NULL)
 		VTAILQ_INSERT_TAIL(&ban_head, b2, list);
