@@ -10,9 +10,9 @@ Yes. Is great. Ja.
 
    vcl-intro
    vcl-syntax
+   vcl-built-in-subs
    vcl-variables
    vcl-actions
-   vcl-subs
    vcl-backends
    vcl-hashing
    vcl-saint-and-grace
