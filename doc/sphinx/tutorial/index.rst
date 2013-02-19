@@ -22,5 +22,6 @@ Then we hand things over to the user guide.
    starting_varnish
    putting_varnish_on_port_80
    backend_servers
+   peculiarities.rst
    now_what
 
