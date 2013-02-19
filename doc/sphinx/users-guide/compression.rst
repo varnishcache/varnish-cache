@@ -1,7 +1,7 @@
 .. _users-guide-compression:
 
 Compression
-~~~~~~~~~~~
+-----------
 
 New in Varnish 3.0 was native support for compression, using gzip
 encoding. *Before* 3.0, Varnish would never compress objects. 

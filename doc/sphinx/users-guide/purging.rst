@@ -15,7 +15,7 @@ banning and forced cache misses. First, let me explain the HTTP purges.
 
 
 HTTP Purges
------------
+~~~~~~~~~~~
 
 A *purge* is what happens when you pick out an object from the cache
 and discard it along with its variants. Usually a purge is invoked
@@ -75,7 +75,7 @@ And Varnish would then discard the front page. This will remove all
 variants as defined by Vary.
 
 Bans
-----
+~~~~
 
 There is another way to invalidate content: Bans. You can think of
 bans as a sort of a filter on objects already in the cache. You *ban*
@@ -164,7 +164,7 @@ be marked as Gone if it is a duplicate ban, but is still kept in the list
 for optimization purposes.
 
 Forcing a cache miss
---------------------
+~~~~~~~~~~~~~~~~~~~~
 
 The final way to invalidate an object is a method that allows you to
 refresh an object by forcing a hash miss for a single request. If you set
@@ -173,3 +173,4 @@ cache, thus forcing a fetch from the backend. This can in turn add the
 freshly fetched object to the cache, thus overriding the current one. The
 old object will stay in the cache until ttl expires or it is evicted by
 some other means.
+
