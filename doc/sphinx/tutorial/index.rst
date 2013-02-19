@@ -4,17 +4,12 @@
 The Varnish Tutorial
 %%%%%%%%%%%%%%%%%%%%
 
-What is a tutorial, anyway?
+This documents the basic concept. What is Varnish and how does it
+work? How can I get it up and running. Most likely you would want to
+continue with the users guide (:ref:`users-guide-index`) afterwards.
 
-Scope: Lets start off by explaining the basic concept. Cover the
-following points:
-- what is a cache. How does Varnish work?
-- how do I start it.  
-
-Then we hand things over to the user guide. 
-
-.. Let's start off by including some of the  stuff we chucked out of the
-.. previous tutorial - now "users guide"
+If you're reading this on the web note the "Next topic" and "Previous
+topic" on the right side.
 
 .. toctree:: :maxdepth: 1
 
