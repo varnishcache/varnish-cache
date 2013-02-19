@@ -9,7 +9,10 @@ Intro
 ~~~~~
 
 Varnish has pluggable storage backends. It can store data in various
-backends which have different performance characteristics.
+backends which have different performance characteristics. The default
+configuration is to use the malloc backend with a limited size. For a
+serious Varnish deployment you probably need to adjust the storage
+settings.
 
 malloc
 ~~~~~~
@@ -17,9 +20,10 @@ malloc
 syntax: malloc[,size]
 
 Malloc is a memory based backend. Each object will be allocated from
-memory. If your system runs low on memory swap will be used. Be aware
-that the size limitation only limits the actual storage and that
-approximately 1k of memory per object will be used for various
+memory. If your system runs low on memory swap will be used. 
+
+Be aware that the size limitation only limits the actual storage and
+that approximately 1k of memory per object will be used for various
 internal structures.
 
 The size parameter specifies the maximum amount of memory varnishd
@@ -34,7 +38,8 @@ one of the following suffixes:
 
       T, t    The size is expressed in tebibytes.
 
-The default size is unlimited. 
+If no size is given the malloc backend will not limit how much memory
+it can allocate.
 
 Mallocs performance is bound by memory speed so it is very fast. 
 
@@ -66,15 +71,15 @@ suffixes:
       %       The size is expressed as a percentage of the free space on the
               file system where it resides.
 
-The default size is 50%.
+The default size is to use 50% of the space available on the device.
 
 If the backing file already exists, it will be truncated or expanded
 to the specified size.
 
 Note that if varnishd has to create or expand the file, it will not
 pre-allocate the added space, leading to fragmentation, which may
-adversely impact performance.  Pre-creating the storage file using
-dd(1) will reduce fragmentation to a minimum.
+adversely impact performance on rotating hard drives.  Pre-creating
+the storage file using dd(1) will reduce fragmentation to a minimum.
 
 The granularity parameter specifies the granularity of
 allocation.  All allocations are rounded up to this size.  The
@@ -128,3 +133,6 @@ Transient Storage
 If you name any of your storage backend "Transient" it will be
 used for transient (short lived) objects. By default Varnish
 would use an unlimited malloc backend for this.
+
+Varnish will consider an object short lived if the TTL is below the
+parameter "shortlived".
