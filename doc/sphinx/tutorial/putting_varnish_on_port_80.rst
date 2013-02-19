@@ -3,23 +3,46 @@ Put Varnish on port 80
 ----------------------
 
 Until now we've been running with Varnish on a high port, for testing
-purposes. You should test your application and if it works OK we can
-switch, so Varnish will be running on port 80 and your web server on a
-high port.
+purposes. You probably don't want to do this in the long term so let's
+put Varnish on port 80.
 
-First we kill off varnishd::
+First we stop varnish::
 
-     # pkill varnishd
+     # service varnish stop
 
-and stop your web server. Edit the configuration for your web server
-and make it bind to port 8080 instead of 80. Now open the Varnish
-default.vcl and change the port of the *default* backend to 8080.
+Now we need to edit the configuration file that starts Varnish. 
 
-Start up your web server and then start varnish::
 
-      # varnishd -f /usr/local/etc/varnish/default.vcl -s malloc,1G -T 127.0.0.1:2000
+Debian/Ubuntu
+~~~~~~~~~~~~~
 
-Note that we've removed the -a option. Now Varnish, as its default
-setting dictates, will bind to the http port (80). Now everyone
-accessing your site will be accessing through Varnish.
+On Debian/Ubuntu this is /etc/default/varnish. In the file you'll find some text that looks like this::
+
+  DAEMON_OPTS="-a :6081 \
+               -T localhost:6082 \
+               -f /etc/varnish/default.vcl \
+               -S /etc/varnish/secret \
+               -s malloc,256m"
+
+Change it to::
+
+  DAEMON_OPTS="-a :80 \
+               -T localhost:6082 \
+               -f /etc/varnish/default.vcl \
+               -S /etc/varnish/secret \
+               -s malloc,256m"
+
+Red Hat EL / Centos
+~~~~~~~~~~~~~~~~~~~
+
+On Red Hat EL / Centos
+On Red Hat/Centos it is
+
+
+Restarting Varnish
+------------------
+
+Once the change is done. Restart varnish: ``service varnish
+restart``. Now everyone accessing your site will be accessing through
+Varnish.
 

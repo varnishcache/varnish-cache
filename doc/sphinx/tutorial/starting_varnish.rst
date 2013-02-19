@@ -1,35 +1,60 @@
 .. _tutorial-starting_varnish:
 
+
 Starting Varnish
 ----------------
 
-You might want to run ``pkill varnishd`` to make sure varnishd isn't
-already running. Become root and type:
+This tutorial will assume that you are either running Ubuntu, Debian,
+Red Hat Enterprise Linux or Centos. Those of you running on other
+platforms might have to do some mental translation exercises in order
+to follow me. Since you're on a "weird" platform you're probably used
+to it. :-)
 
-``# /usr/local/sbin/varnishd -f /usr/local/etc/varnish/default.vcl -s malloc,1G -a :80``
+I assume you have Varnish Cache installed.
 
-I added a few options, lets go through them:
-
-``-f /usr/local/etc/varnish/default.vcl``
- The -f options specifies what configuration varnishd should use. If
- you are on a Linux system and have installed Varnish through packages
- the configuration files might reside in ``/etc/varnish``.
-
-``-s malloc,1G``
- The -s options chooses the storage type Varnish should use for
- storing its content. I used the type *malloc*, which uses memory for
- storage. There are other backends as well, described in
- :ref:`user-guide-storage`. 1G specifies how much memory should be
- allocated - one gigabyte. 
+You start Varnish with ``service varnish start``.  This will start
+Varnish if it isn't already running.
 
 Now you have Varnish running. Let us make sure that it works
-properly. Use your browser to go to http://192.168.2.2/
+properly. Use your browser to go to http://127.0.0.1:6081/
 (obviously, you should replace the IP address with one on your own
-system) - you should now see your web application running there.
+system). 
 
-There are many command line options available for Varnish. For a walk
-through the most important ones see :ref:`users-guide-command-line` or
-for a complete list see :ref:`ref-varnishd`. 
+The default configuration will try to forward requests to a web
+service running on the same computer as Varnish was installed at,
+port 8080.
 
-Ignore that for the moment, we'll revisit that topic in the Users
-Guide :ref:`users-guide-increasing_your_hitrate`.
+If there is no web application being served up there Varnish will
+issue an error. Varnish Cache is very conservative about telling the
+world what is wrong so whenever something is amiss it will issue the
+same generic "Error 503 Service Unavilable".
+
+You might have a web application running on some other port or some
+other computer. Let's edit the configuration and make it point to
+something that actually works.
+
+Fire up your favorite editor and edit /etc/varnish/default.vcl. Most
+of it is commented out but there is some text that is not. It will
+probably look like this::
+
+  backend default {
+      .host = "127.0.0.1";
+      .port = "8080";
+  }
+
+We'll change it and make it point to something that works. Hopefully
+www.varnish-cache.org is up. Let's use that. Replace the text with::
+
+  backend default {
+      .host = "www.varnish-cache.org";
+      .port = "80";
+  }
+
+
+Now issue ``service varnish reload`` to make Varnish reload it's
+configuration. If that succeeded visit http://127.0.0.1:6081/ in your
+browser and you should see some directory listing. It works! The
+reason you're not seeing the Varnish official website is because your
+client isn't sending the appropriate Host: header in the request and
+it ends up showing a listing of the default webfolder on the machine
+usually serving up varnish-cache.org.

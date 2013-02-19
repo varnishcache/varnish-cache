@@ -13,13 +13,12 @@ following points:
 
 Then we hand things over to the user guide. 
 
-Let's start off by including some of the  stuff we chucked out of the
-previous tutorial - now "users guide"
+.. Let's start off by including some of the  stuff we chucked out of the
+.. previous tutorial - now "users guide"
 
 .. toctree:: :maxdepth: 1
 
    introduction
-   web_accelerator
    starting_varnish
    putting_varnish_on_port_80
    backend_servers
