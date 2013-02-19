@@ -1,4 +1,3 @@
-
 Hashing
 -------
 
@@ -7,7 +6,7 @@ key to find the object again. In the default setup this key is
 calculated based on the content of the *Host* header or the IP adress
 of the server and the URL.
 
-Behold the default vcl.::
+Behold the default vcl::
 
  sub vcl_hash {
      hash_data(req.url);
