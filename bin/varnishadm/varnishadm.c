@@ -186,6 +186,41 @@ static void send_line(char *l)
 		RL_EXIT(0);
 	}
 }
+
+static char *commands[256];
+static char *
+command_generator (const char *text, int state)
+{
+	static int list_index, len;
+	const char *name;
+
+	/* If this is a new word to complete, initialize now.  This
+	   includes saving the length of TEXT for efficiency, and
+	   initializing the index variable to 0. */
+	if (!state) {
+		list_index = 0;
+		len = strlen(text);
+	}
+
+	while ((name = commands[list_index]) != NULL) {
+		list_index++;
+		if (strncmp (name, text, len) == 0)
+			return (strdup(name));
+	}
+	/* If no names matched, then return NULL. */
+	return (NULL);
+}
+
+static char **
+varnishadm_completion (const char *text, int start, int end)
+{
+	char **matches;
+	(void)end;
+	matches = (char **)NULL;
+	if (start == 0)
+		matches = rl_completion_matches(text, command_generator);
+	return (matches);
+}
 #endif
 
 /*
@@ -212,13 +247,42 @@ pass(int sock)
 	} else {
 		rl_callback_handler_install("", send_line);
 	}
+	rl_attempted_completion_function = varnishadm_completion;
 #endif
 
-	cli_write(sock, "banner\n");
 	fds[0].fd = sock;
 	fds[0].events = POLLIN;
 	fds[1].fd = 0;
 	fds[1].events = POLLIN;
+
+	/* Grab the commands, for completion */
+	cli_write(sock, "help\n");
+	u = VCLI_ReadResult(fds[0].fd, &status, &answer, timeout);
+	if (!u) {
+		char *t, c[128];
+		if (status == CLIS_COMMS) {
+			RL_EXIT(0);
+		}
+		t = answer;
+
+		i = 0;
+		while (*t) {
+			if (sscanf(t, "%127s", c) == 1) {
+				commands[i++] = strdup(c);
+				while (*t != '\n' && *t != '\0')
+					t++;
+				if (*t == '\n')
+					t++;
+			} else {
+				/* what? */
+				fprintf(stderr, "Unknown command '%s' parsing "
+					"help output. Tab completion may be "
+					"broken\n", t);
+				break;
+			}
+		}
+	}
+	cli_write(sock, "banner\n");
 	while (1) {
 		i = poll(fds, 2, -1);
 		if (i == -1 && errno == EINTR) {
