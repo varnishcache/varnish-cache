@@ -61,8 +61,6 @@
 		exit(status); \
 	} while (0)
 
-void send_line(char *l);
-
 #else
 #define RL_EXIT(status) exit(status)
 #endif
@@ -178,7 +176,7 @@ do_args(int sock, int argc, char * const *argv)
  * to have a global variable.
  */
 static int _line_sock;
-void send_line(char *l)
+static void send_line(char *l)
 {
 	if (l) {
 		cli_write(_line_sock, l);
