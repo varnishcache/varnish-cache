@@ -56,6 +56,10 @@ start() {
 	# Varnish wants to lock shared memory log in memory. 
 	ulimit -l ${MEMLOCK:-82000}
 
+	# Maximum number of threads (default in CentOS is 1024, which
+	# is often too small for varnish)
+	ulimit -u ${NPROCS:-unlimited}
+
         # $DAEMON_OPTS is set in /etc/sysconfig/varnish. At least, one
         # has to set up a backend, or /tmp will be used, which is a bad idea.
 	if [ "$DAEMON_OPTS" = "" ]; then
