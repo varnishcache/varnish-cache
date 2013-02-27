@@ -48,12 +48,20 @@
 #include "vqueue.h"
 #include "vsm_api.h"
 
+enum {
+#define VSC_TYPE_F(n,t,l,e,d) \
+	VSC_type_order_##n,
+#include "tbl/vsc_types.h"
+#undef VSC_TYPE_F
+};
+
 struct vsc_vf {
 	unsigned		magic;
 #define VSC_VF_MAGIC		0x516519f8
 	VTAILQ_ENTRY(vsc_vf)	list;
 	struct VSM_fantom	fantom;
 	struct VSC_section	section;
+	int			order;
 };
 
 struct vsc_pt {
@@ -269,17 +277,27 @@ VSC_Main(struct VSM_data *vd)
 
 static void
 vsc_add_vf(struct vsc *vsc, struct VSM_fantom *fantom,
-    const struct VSC_type_desc *desc)
+    const struct VSC_type_desc *desc, int order)
 {
-	struct vsc_vf *vf;
+	struct vsc_vf *vf, *vf2;
 
 	ALLOC_OBJ(vf, VSC_VF_MAGIC);
 	AN(vf);
 	vf->fantom = *fantom;
+	vf->section.type = vf->fantom.type;
+	vf->section.ident = vf->fantom.ident;
 	vf->section.desc = desc;
 	vf->section.fantom = &vf->fantom;
+	vf->order = order;
 
-	VTAILQ_INSERT_TAIL(&vsc->vf_list, vf, list);
+	VTAILQ_FOREACH(vf2, &vsc->vf_list, list) {
+		if (vf->order < vf2->order)
+			break;
+	}
+	if (vf2 != NULL)
+		VTAILQ_INSERT_BEFORE(vf2, vf, list);
+	else
+		VTAILQ_INSERT_TAIL(&vsc->vf_list, vf, list);
 }
 
 static void
@@ -336,10 +354,10 @@ vsc_build_vf_list(struct VSM_data *vd)
 	VSM_FOREACH(&fantom, vd) {
 		if (strcmp(fantom.class, VSC_CLASS))
 			continue;
-#define VSC_TYPE_F(n,t,l,e,d)					\
-		if (!strcmp(fantom.type, t))			\
-			vsc_add_vf(vsc, &fantom,		\
-			    &VSC_type_desc_##n);
+#define VSC_TYPE_F(n,t,l,e,d)						\
+		if (!strcmp(fantom.type, t))				\
+			vsc_add_vf(vsc, &fantom, &VSC_type_desc_##n,	\
+			    VSC_type_order_##n);
 #include "tbl/vsc_types.h"
 #undef VSC_TYPE_F
 	}
@@ -391,7 +409,6 @@ vsc_filter_pt_list(struct VSM_data *vd)
 	struct vsc *vsc = vsc_setup(vd);
 	struct vsc_sf *sf;
 	struct vsc_pt *pt, *pt2;
-	const struct VSC_section *sec;
 	VTAILQ_HEAD(, vsc_pt)	pt_list;
 
 	if (VTAILQ_EMPTY(&vsc->sf_list))
@@ -402,11 +419,10 @@ vsc_filter_pt_list(struct VSM_data *vd)
 		CHECK_OBJ_NOTNULL(sf, VSC_SF_MAGIC);
 		VTAILQ_FOREACH_SAFE(pt, &vsc->pt_list, list, pt2) {
 			CHECK_OBJ_NOTNULL(pt, VSC_PT_MAGIC);
-			sec = pt->point.section;
-			if (iter_test(sf->type, sec->fantom->type,
+			if (iter_test(sf->type, pt->point.section->type,
 			    sf->flags & VSC_SF_TY_WC))
 				continue;
-			if (iter_test(sf->ident, sec->fantom->ident,
+			if (iter_test(sf->ident, pt->point.section->ident,
 			    sf->flags & VSC_SF_ID_WC))
 				continue;
 			if (iter_test(sf->name, pt->point.desc->name,

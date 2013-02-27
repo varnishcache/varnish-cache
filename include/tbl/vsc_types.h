@@ -35,6 +35,9 @@
  *    e - Explanation:	Short description of this counter type
  *    d - Description:	Long description of this counter type
  *
+ * The order in which the types are defined in this file determines the
+ * order in which counters are reported in the API, and then also the
+ * display order in varnishstat.
  */
 
 
@@ -44,18 +47,18 @@ VSC_TYPE_F(main,	"MAIN",		"",		"Child",
 VSC_TYPE_F(mgt,		"MGT",		"MGT",		"Master",
     "Management process counters"
 )
+VSC_TYPE_F(mempool,	"MEMPOOL",	"MEMPOOL",	"Memory pool",
+    "Memory pool counters"
+)
 VSC_TYPE_F(sma,		"SMA",		"SMA",		"Storage malloc",
     "Malloc storage counters"
 )
 VSC_TYPE_F(smf,		"SMF",		"SMF",		"Storage file",
     "File storage counters"
 )
-VSC_TYPE_F(lck,		"LCK",		"LCK",		"Lock",
-    "Mutex lock counters"
-)
-VSC_TYPE_F(mempool,	"MEMPOOL",	"MEMPOOL",	"Memory pool",
-    "Memory pool counters"
-)
 VSC_TYPE_F(vbe,		"VBE",		"VBE",		"Backend",
     "Backend counters"
+)
+VSC_TYPE_F(lck,		"LCK",		"LCK",		"Lock",
+    "Mutex lock counters"
 )

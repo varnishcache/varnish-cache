@@ -77,9 +77,10 @@ struct VSC_type_desc {
 };
 
 struct VSC_section {
+	const char *type;
+	const char *ident;
 	const struct VSC_type_desc *desc;
 	struct VSM_fantom *fantom;
-	const struct VSC_point * const *points;
 };
 
 struct VSC_desc {
