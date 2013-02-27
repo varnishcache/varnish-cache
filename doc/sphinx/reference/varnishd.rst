@@ -157,7 +157,30 @@ Storage Types
 
 The following storage types are available:
 
-.. include:: ../include/storage_backends.rst
+malloc
+~~~~~~
+
+syntax: malloc[,size]
+
+malloc is a memory based backend.
+
+file
+~~~~
+
+syntax: file[,path[,size[,granularity]]]
+
+The file backend stores data in a file on disk. The file will be accessed using mmap.
+
+persistent (experimental)
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+syntax: persistent,path,size
+
+Persistent storage. Varnish will store objects in a file in a manner
+that will secure the survival of *most* of the objects in the event of
+a planned or unplanned shutdown of Varnish.
+
+
 
 Management Interface
 --------------------
