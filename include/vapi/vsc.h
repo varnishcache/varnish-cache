@@ -65,10 +65,21 @@ struct VSC_C_main *VSC_Main(struct VSM_data *vd);
 	 * returns NULL until child has been started.
 	 */
 
+struct VSC_type_desc;
+struct VSC_section;
+struct VSC_desc;
+struct VSC_point;
+
 struct VSC_type_desc {
 	const char *label;		/* label */
 	const char *sdesc;		/* short description */
 	const char *ldesc;		/* long description */
+};
+
+struct VSC_section {
+	const struct VSC_type_desc *desc;
+	struct VSM_fantom *fantom;
+	const struct VSC_point * const *points;
 };
 
 struct VSC_desc {
@@ -82,7 +93,7 @@ struct VSC_desc {
 struct VSC_point {
 	const struct VSC_desc *desc;	/* point description		*/
 	const volatile void *ptr;	/* field value			*/
-	struct VSM_fantom *fantom;
+	const struct VSC_section *section;
 };
 
 typedef int VSC_iter_f(void *priv, const struct VSC_point *const pt);

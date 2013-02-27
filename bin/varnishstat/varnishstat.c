@@ -50,18 +50,20 @@ static int
 do_xml_cb(void *priv, const struct VSC_point * const pt)
 {
 	uint64_t val;
+	const struct VSC_section *sec;
 
 	(void)priv;
 	if (pt == NULL)
 		return (0);
 	assert(!strcmp(pt->desc->fmt, "uint64_t"));
 	val = *(const volatile uint64_t*)pt->ptr;
+	sec = pt->section;
 
 	printf("\t<stat>\n");
-	if (strcmp(pt->fantom->type, ""))
-		printf("\t\t<type>%s</type>\n", pt->fantom->type);
-	if (strcmp(pt->fantom->ident, ""))
-		printf("\t\t<ident>%s</ident>\n", pt->fantom->ident);
+	if (strcmp(sec->fantom->type, ""))
+		printf("\t\t<type>%s</type>\n", sec->fantom->type);
+	if (strcmp(sec->fantom->ident, ""))
+		printf("\t\t<ident>%s</ident>\n", sec->fantom->ident);
 	printf("\t\t<name>%s</name>\n", pt->desc->name);
 	printf("\t\t<value>%ju</value>\n", val);
 	printf("\t\t<flag>%c</flag>\n", pt->desc->flag);
@@ -92,6 +94,7 @@ do_json_cb(void *priv, const struct VSC_point * const pt)
 {
 	uint64_t val;
 	int *jp;
+	const struct VSC_section *sec;
 
 	if (pt == NULL)
 		return (0);
@@ -99,21 +102,22 @@ do_json_cb(void *priv, const struct VSC_point * const pt)
 	jp = priv;
 	assert(!strcmp(pt->desc->fmt, "uint64_t"));
 	val = *(const volatile uint64_t*)pt->ptr;
+	sec = pt->section;
 
 	if (*jp) *jp = 0; else printf(",\n");
 
 	printf("\t\"");
 	/* build the JSON key name.  */
-	if (pt->fantom->type[0])
-		printf("%s.", pt->fantom->type);
-	if (pt->fantom->ident[0])
-		printf("%s.", pt->fantom->ident);
+	if (sec->fantom->type[0])
+		printf("%s.", sec->fantom->type);
+	if (sec->fantom->ident[0])
+		printf("%s.", sec->fantom->ident);
 	printf("%s\": {", pt->desc->name);
 
-	if (strcmp(pt->fantom->type, "")) printf("\"type\": \"%s\", ",
-	    pt->fantom->type);
-	if (strcmp(pt->fantom->ident, "")) printf("\"ident\": \"%s\", ",
-	    pt->fantom->ident);
+	if (strcmp(sec->fantom->type, "")) printf("\"type\": \"%s\", ",
+	    sec->fantom->type);
+	if (strcmp(sec->fantom->ident, "")) printf("\"ident\": \"%s\", ",
+	    sec->fantom->ident);
 
 	printf("\"value\": %ju, ", val);
 
@@ -158,17 +162,19 @@ do_once_cb(void *priv, const struct VSC_point * const pt)
 	struct once_priv *op;
 	uint64_t val;
 	int i;
+	const struct VSC_section *sec;
 
 	if (pt == NULL)
 		return (0);
 	op = priv;
 	assert(!strcmp(pt->desc->fmt, "uint64_t"));
 	val = *(const volatile uint64_t*)pt->ptr;
+	sec = pt->section;
 	i = 0;
-	if (strcmp(pt->fantom->type, ""))
-		i += printf("%s.", pt->fantom->type);
-	if (strcmp(pt->fantom->ident, ""))
-		i += printf("%s.", pt->fantom->ident);
+	if (strcmp(sec->fantom->type, ""))
+		i += printf("%s.", sec->fantom->type);
+	if (strcmp(sec->fantom->ident, ""))
+		i += printf("%s.", sec->fantom->ident);
 	i += printf("%s", pt->desc->name);
 	if (i >= op->pad)
 		op->pad = i + 1;
@@ -198,13 +204,15 @@ static int
 do_list_cb(void *priv, const struct VSC_point * const pt)
 {
 	int i;
+	const struct VSC_section * sec;
 
 	(void)priv;
+	sec = pt->section;
 	i = 0;
-	if (strcmp(pt->fantom->type, ""))
-		i += fprintf(stderr, "%s.", pt->fantom->type);
-	if (strcmp(pt->fantom->ident, ""))
-		i += fprintf(stderr, "%s.", pt->fantom->ident);
+	if (strcmp(sec->fantom->type, ""))
+		i += fprintf(stderr, "%s.", sec->fantom->type);
+	if (strcmp(sec->fantom->ident, ""))
+		i += fprintf(stderr, "%s.", sec->fantom->ident);
 	i += fprintf(stderr, "%s", pt->desc->name);
 	if (i < 30)
 		fprintf(stderr, "%*s", i - 30, "");
