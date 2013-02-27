@@ -13,17 +13,15 @@ are executed at different times. One is executed when we get the
 request, another when files are fetched from the backend server.
 
 Varnish will execute these subroutines of code at different stages of
-its work. Because it is code it is execute line by line precedence
-isn't a problem. At some point you call an action in this subroutine
-and then the execution of the subroutine stops.
+its work. At some point you call an action in this subroutine and then
+the execution of that subroutine stops.
 
 If you don't call an action in your subroutine and it reaches the end
-Varnish will execute some built in VCL code. You will see this VCL
+Varnish will execute the built in VCL code. You will see this VCL
 code commented out in default.vcl.
 
 99% of all the changes you'll need to do will be done in two of these
 subroutines. *vcl_recv* and *vcl_fetch*.
-
 
 .. _users-guide-vcl_fetch_actions:
 
