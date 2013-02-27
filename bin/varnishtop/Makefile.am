@@ -1,6 +1,6 @@
 #
 
-INCLUDES = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include
 
 bin_PROGRAMS = varnishtop
 
@@ -8,7 +8,8 @@ dist_man_MANS = varnishtop.1
 
 varnishtop_SOURCES = varnishtop.c \
 	$(top_builddir)/lib/libvarnish/vas.c \
-	$(top_builddir)/lib/libvarnish/version.c
+	$(top_builddir)/lib/libvarnish/version.c \
+	vtree.h
 
 varnishtop_LDADD = \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \

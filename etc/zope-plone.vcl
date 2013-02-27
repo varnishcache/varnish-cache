@@ -38,15 +38,15 @@ sub vcl_recv {
         }
 
         # Handle special requests
-        if (req.request != "GET" && req.request != "HEAD") {
+        if (req.method != "GET" && req.method != "HEAD") {
 
                 # POST - Logins and edits
-                if (req.request == "POST") {
+                if (req.method == "POST") {
                         return(pass);
                 }
                 
                 # PURGE - The CacheFu product can invalidate updated URLs
-                if (req.request == "PURGE") {
+                if (req.method == "PURGE") {
                         if (!client.ip ~ purge) {
                                 error 405 "Not allowed.";
                         }
@@ -75,13 +75,13 @@ sub vcl_recv {
 
 # Do the PURGE thing
 sub vcl_hit {
-        if (req.request == "PURGE") {
+        if (req.method == "PURGE") {
                 purge;
                 error 200 "Purged";
         }
 }
 sub vcl_miss {
-        if (req.request == "PURGE") {
+        if (req.method == "PURGE") {
                 purge;
                 error 200 "Purged";
         }

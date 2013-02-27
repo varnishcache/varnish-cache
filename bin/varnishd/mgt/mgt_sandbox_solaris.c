@@ -134,7 +134,7 @@ setppriv_check(int a) {
  * - net_config
  *
  * PSARC/2007/315?  3047ad28a67b   onnv_77
- * - file_flag_set  
+ * - file_flag_set
  *
  * PSARC/2007/560?  3047ad28a67b   onnv_77
  * - sys_smb
@@ -159,8 +159,8 @@ setppriv_check(int a) {
  * - sys_iptun_config
  *
  * PSARC/2008/252   e209937a4f19   onnv_128
- * - net_mac_implicit 
- * 
+ * - net_mac_implicit
+ *
  * PSARC/2009/685   8eca52188202   onnv_132
  * * net_access
  *
@@ -177,7 +177,7 @@ setppriv_check(int a) {
  *
  *
  * SOLARIS PRIVILEGES: Note on introtiction of new privileges (forward
- * 		       compatibility)
+ *		       compatibility)
  *
  * For optimal build and binary forward comatibility, we could use subtractive
  * set specs like

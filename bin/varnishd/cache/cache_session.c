@@ -78,7 +78,7 @@ SES_Charge(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	a = &req->acct_req;
-	req->req_bodybytes += a->bodybytes;
+	req->resp_bodybytes += a->bodybytes;
 
 #define ACCT(foo)				\
 	wrk->stats.s_##foo += a->foo;		\
@@ -257,7 +257,6 @@ SES_ScheduleReq(struct req *req)
 	sp->task.priv = req;
 
 	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT)) {
-		VSC_C_main->client_drop_late++;
 		AN (req->vcl);
 		VCL_Rel(&req->vcl);
 		SES_Delete(sp, SC_OVERLOAD, NAN);
@@ -281,10 +280,8 @@ SES_Handle(struct sess *sp, double now)
 	AN(pp->pool);
 	sp->task.func = ses_sess_pool_task;
 	sp->task.priv = sp;
-	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT)) {
-		VSC_C_main->client_drop_late++;
+	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT))
 		SES_Delete(sp, SC_OVERLOAD, now);
-	}
 }
 
 /*--------------------------------------------------------------------
@@ -330,7 +327,7 @@ SES_Delete(struct sess *sp, enum sess_close reason, double now)
 
 	b = &sp->acct_ses;
 	VSL(SLT_SessClose, sp->vxid, "%s %.3f %ju %ju %ju %ju %ju %ju",
-	    sess_close_str(sp->reason, 0), now - sp->t_open, b->req,
+	    sess_close_2str(sp->reason, 0), now - sp->t_open, b->req,
 	    b->pipe, b->pass, b->fetch, b->hdrbytes, b->bodybytes);
 
 	MPL_Free(pp->mpl_sess, sp);
@@ -386,6 +383,7 @@ SES_GetReq(struct worker *wrk, struct sess *sp)
 	sz = cache_param->workspace_thread;
 	VSL_Setup(req->vsl, p, sz);
 	req->vsl->wid = VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER;
+	VSLb(req->vsl, SLT_Link, "sess %u", sp->vxid & VSL_IDENTMASK);
 	p += sz;
 	p = (void*)PRNDUP(p);
 
@@ -395,6 +393,8 @@ SES_GetReq(struct worker *wrk, struct sess *sp)
 
 	req->t_req = NAN;
 	req->t_resp = NAN;
+
+	VTAILQ_INIT(&req->body);
 
 	return (req);
 }

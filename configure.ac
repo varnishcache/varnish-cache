@@ -4,7 +4,9 @@ Copyright (c) 2006-2011 Varnish Software AS])
 AC_REVISION([$Id$])
 AC_INIT([Varnish], [trunk], [varnish-dev@varnish-cache.org])
 AC_CONFIG_SRCDIR(include/miniobj.h)
-AM_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_MACRO_DIR([m4])
+AC_USE_SYSTEM_EXTENSIONS
 
 # save command line CFLAGS for use in VCC_CC (to pass through things like -m64)
 OCFLAGS="$CFLAGS"
@@ -148,6 +150,7 @@ PKG_CHECK_MODULES([LIBEDIT], [libedit],
 	[AC_DEFINE([HAVE_LIBEDIT], [1], [Define we have libedit])],
 	[AC_CHECK_HEADERS([readline/readline.h])
 	 AC_CHECK_HEADERS([edit/readline/readline.h])
+	 AC_CHECK_HEADERS([readline/history.h])
 	 AC_CHECK_LIB(edit, el_init,
 	        [ AC_DEFINE([HAVE_LIBEDIT], [1], [Define we have libedit])
 		  LIBEDIT_CFLAGS=""
@@ -171,7 +174,7 @@ AC_CHECK_HEADERS([sys/vfs.h])
 AC_CHECK_HEADERS([endian.h])
 AC_CHECK_HEADERS([execinfo.h])
 AC_CHECK_HEADERS([netinet/in.h])
-AC_CHECK_HEADERS([pthread_np.h])
+AC_CHECK_HEADERS([pthread_np.h], [], [], [#include <pthread.h>])
 AC_CHECK_HEADERS([stddef.h])
 AC_CHECK_HEADERS([stdlib.h])
 AC_CHECK_HEADERS([unistd.h])
@@ -417,6 +420,38 @@ fi
 if test "$ac_cv_so_rcvtimeo_works" = no ||
    test "$ac_cv_so_sndtimeo_works" = no; then
 	AC_MSG_WARN([connection timeouts will not work])
+fi
+LIBS="${save_LIBS}"
+
+# Check if the OS supports TCP_KEEP(CNT|IDLE|INTVL) socket options
+save_LIBS="${LIBS}"
+LIBS="${LIBS} ${NET_LIBS}"
+AC_CACHE_CHECK([for TCP_KEEP(CNT|IDLE|INTVL) socket options],
+  [ac_cv_have_tcp_keep],
+  [AC_RUN_IFELSE(
+    [AC_LANG_PROGRAM([[
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+    ]],[[
+int s = socket(AF_INET, SOCK_STREAM, 0);
+int i;
+i = 5;
+if (setsockopt(s, IPPROTO_TCP, TCP_KEEPCNT, &i, sizeof i))
+  return (1);
+if (setsockopt(s, IPPROTO_TCP, TCP_KEEPIDLE, &i, sizeof i))
+  return (1);
+if (setsockopt(s, IPPROTO_TCP, TCP_KEEPINTVL, &i, sizeof i))
+  return (1);
+return (0);
+    ]])],
+    [ac_cv_have_tcp_keep=yes],
+    [ac_cv_have_tcp_keep=no])
+  ])
+if test "$ac_cv_have_tcp_keep" = yes; then
+   AC_DEFINE([HAVE_TCP_KEEP], [1], [Define if OS supports TCP_KEEP* socket options])
 fi
 LIBS="${save_LIBS}"
 

@@ -12,11 +12,11 @@ varnish v1 -vcl+backend {
 	sub vcl_recv {
 		set req.http.foobar =
 		    req.url +
-		    req.request +
+		    req.method +
 		    req.proto;
 		set req.url = "/";
 		set req.proto = "HTTP/1.2";
-		set req.request = "GET";
+		set req.method = "GET";
 	}
 	sub vcl_miss {
 		set bereq.http.foobar =
@@ -24,7 +24,7 @@ varnish v1 -vcl+backend {
 		    bereq.proto;
 		set bereq.url = "/";
 		set bereq.proto = "HTTP/1.2";
-		set bereq.request = "GET";
+		set bereq.method = "GET";
 	}
 	sub vcl_fetch {
 		set beresp.http.foobar =

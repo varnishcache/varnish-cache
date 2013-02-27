@@ -49,7 +49,6 @@
 #include "hash/hash_slinger.h"
 #include "vcli.h"
 #include "vcli_priv.h"
-#include "vend.h"
 #include "vsha256.h"
 #include "vtim.h"
 
@@ -68,48 +67,63 @@ static VTAILQ_HEAD(,smp_sc)	silos = VTAILQ_HEAD_INITIALIZER(silos);
  * Add bans to silos
  */
 
-static void
+static int
 smp_appendban(struct smp_sc *sc, struct smp_signspace *spc,
     uint32_t len, const uint8_t *ban)
 {
-	uint8_t *ptr, *ptr2;
 
 	(void)sc;
-	ptr = ptr2 = SIGNSPACE_FRONT(spc);
-	assert(SIGNSPACE_FREE(spc) >= 4L + 4 + len);
+	if (SIGNSPACE_FREE(spc) < len)
+		return (-1);
 
-	memcpy(ptr, "BAN", 4);
-	ptr += 4;
+	memcpy(SIGNSPACE_FRONT(spc), ban, len);
+	smp_append_signspace(spc, len);
 
-	vbe32enc(ptr, len);
-	ptr += 4;
-
-	memcpy(ptr, ban, len);
-	ptr += len;
-
-	smp_append_signspace(spc, ptr - ptr2);
+	return (0);
 }
 
 /* Trust that cache_ban.c takes care of locking */
 
-static void
-smp_baninfo(struct stevedore *stv, enum baninfo event,
+static int
+smp_baninfo(const struct stevedore *stv, enum baninfo event,
 	    const uint8_t *ban, unsigned len)
 {
 	struct smp_sc *sc;
+	int r = 0;
 
-	(void)stv;
+	CAST_OBJ_NOTNULL(sc, stv->priv, SMP_SC_MAGIC);
+
 	switch (event) {
 	case BI_NEW:
-		VTAILQ_FOREACH(sc, &silos, list) {
-			smp_appendban(sc, &sc->ban1, len, ban);
-			smp_appendban(sc, &sc->ban2, len, ban);
-		}
+		r |= smp_appendban(sc, &sc->ban1, len, ban);
+		r |= smp_appendban(sc, &sc->ban2, len, ban);
 		break;
 	default:
 		/* Ignored */
 		break;
 	}
+
+	return (r);
+}
+
+static void
+smp_banexport_spc(struct smp_signspace *spc, const uint8_t *bans, unsigned len)
+{
+	smp_reset_signspace(spc);
+	assert(SIGNSPACE_FREE(spc) >= len);
+	memcpy(SIGNSPACE_DATA(spc), bans, len);
+	smp_append_signspace(spc, len);
+	smp_sync_sign(&spc->ctx);
+}
+
+static void
+smp_banexport(const struct stevedore *stv, const uint8_t *bans, unsigned len)
+{
+	struct smp_sc *sc;
+
+	CAST_OBJ_NOTNULL(sc, stv->priv, SMP_SC_MAGIC);
+	smp_banexport_spc(&sc->ban1, bans, len);
+	smp_banexport_spc(&sc->ban2, bans, len);
 }
 
 /*--------------------------------------------------------------------
@@ -120,38 +134,19 @@ static int
 smp_open_bans(struct smp_sc *sc, struct smp_signspace *spc)
 {
 	uint8_t *ptr, *pe;
-	uint32_t length;
-	int i, retval = 0;
+	int i;
 
 	ASSERT_CLI();
 	(void)sc;
 	i = smp_chk_signspace(spc);
 	if (i)
 		return (i);
+
 	ptr = SIGNSPACE_DATA(spc);
 	pe = SIGNSPACE_FRONT(spc);
+	BAN_Reload(ptr, pe - ptr);
 
-	while (ptr < pe) {
-		if (memcmp(ptr, "BAN", 4)) {
-			retval = 1001;
-			break;
-		}
-		ptr += 4;
-
-		length = vbe32dec(ptr);
-		ptr += 4;
-
-		if (ptr + length > pe) {
-			retval = 1003;
-			break;
-		}
-
-		BAN_Reload(ptr, length);
-
-		ptr += length;
-	}
-	assert(ptr <= pe);
-	return (retval);
+	return (0);
 }
 
 /*--------------------------------------------------------------------
@@ -603,6 +598,7 @@ const struct stevedore smp_stevedore = {
 	.free	=	smp_free,
 	.signal_close = smp_signal_close,
 	.baninfo =	smp_baninfo,
+	.banexport =	smp_banexport,
 };
 
 /*--------------------------------------------------------------------

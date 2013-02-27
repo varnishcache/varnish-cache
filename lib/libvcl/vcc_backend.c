@@ -77,7 +77,7 @@ emit_sockaddr(struct vcc *tl, void *sa, unsigned sal)
 	AN(sa);
 	AN(sal);
 	assert(sal < 256);
-	Fh(tl, 0, "\nstatic const unsigned char sockaddr%u[%d] = {\n",
+	Fh(tl, 0, "\nstatic const unsigned char sockaddr_%u[%d] = {\n",
 	    tl->unique, sal + 1);
 	Fh(tl, 0, "    %3u, /* Length */\n",  sal);
 	u = sa;
@@ -100,16 +100,28 @@ emit_sockaddr(struct vcc *tl, void *sa, unsigned sal)
  * and put it in an official sockaddr when we load the VCL.
  */
 
+struct foo_proto {
+	const char		*name;
+	int			family;
+	struct sockaddr_storage	sa;
+	socklen_t		l;
+};
+
 void
 Emit_Sockaddr(struct vcc *tl, const struct token *t_host, const char *port)
 {
+	struct foo_proto protos[3], *pp;
 	struct addrinfo *res, *res0, *res1, hint;
-	int n4, n6, error, retval, x;
-	const char *emit, *multiple;
+	int error, retval, x;
 	char hbuf[NI_MAXHOST];
 	char *hop, *pop;
 
 	AN(t_host->dec);
+
+	memset(protos, 0, sizeof protos);
+	protos[0].name = "ipv4"; protos[0].family = PF_INET;
+	protos[1].name = "ipv6"; protos[1].family = PF_INET6;
+
 	retval = 0;
 	memset(&hint, 0, sizeof hint);
 	hint.ai_family = PF_UNSPEC;
@@ -139,33 +151,32 @@ Emit_Sockaddr(struct vcc *tl, const struct token *t_host, const char *port)
 		vcc_ErrWhere(tl, t_host);
 		return;
 	}
-	AZ(error);
-	n4 = n6 = 0;
-	multiple = NULL;
 
 	for (res = res0; res; res = res->ai_next) {
-		emit = NULL;
-		if (res->ai_family == PF_INET) {
-			if (n4++ == 0)
-				emit = "ipv4";
-			else
-				multiple = "IPv4";
-		} else if (res->ai_family == PF_INET6) {
-			if (n6++ == 0)
-				emit = "ipv6";
-			else
-				multiple = "IPv6";
-		} else
+		for (pp = protos; pp->name != NULL; pp++)
+			if (res->ai_family == pp->family)
+				break;
+		if (pp->name == NULL) {
+			/* Unknown proto, ignore */
 			continue;
+		}
+		if (pp->l == res->ai_addrlen &&
+		    !memcmp(&pp->sa, res->ai_addr, pp->l)) {
+			/*
+			 * Same address we already emitted.
+			 * This can happen using /etc/hosts
+			 */
+			continue;
+		}
 
-		if (multiple != NULL) {
+		if (pp->l > 0) {
 			VSB_printf(tl->sb,
 			    "Backend host %.*s: resolves to "
 			    "multiple %s addresses.\n"
 			    "Only one address is allowed.\n"
 			    "Please specify which exact address "
 			    "you want to use, we found these:\n",
-			    PF(t_host), multiple);
+			    PF(t_host), pp->name);
 			for (res1 = res0; res1 != NULL; res1 = res1->ai_next) {
 				error = getnameinfo(res1->ai_addr,
 				    res1->ai_addrlen, hbuf, sizeof hbuf,
@@ -173,17 +184,21 @@ Emit_Sockaddr(struct vcc *tl, const struct token *t_host, const char *port)
 				AZ(error);
 				VSB_printf(tl->sb, "\t%s\n", hbuf);
 			}
+			freeaddrinfo(res0);
 			vcc_ErrWhere(tl, t_host);
 			return;
 		}
-		AN(emit);
+
+		pp->l =  res->ai_addrlen;
+		memcpy(&pp->sa, res->ai_addr, pp->l);
+
 		x = emit_sockaddr(tl, res->ai_addr, res->ai_addrlen);
-		Fb(tl, 0, "\t.%s_sockaddr = sockaddr%u,\n", emit, x);
+		Fb(tl, 0, "\t.%s_sockaddr = sockaddr_%u,\n", pp->name, x);
 		error = getnameinfo(res->ai_addr,
 		    res->ai_addrlen, hbuf, sizeof hbuf,
 		    NULL, 0, NI_NUMERICHOST);
 		AZ(error);
-		Fb(tl, 0, "\t.%s_addr = \"%s\",\n", emit, hbuf);
+		Fb(tl, 0, "\t.%s_addr = \"%s\",\n", pp->name, hbuf);
 		retval++;
 	}
 	if (res0 != NULL) {

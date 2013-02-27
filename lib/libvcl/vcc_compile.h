@@ -98,7 +98,7 @@ struct token {
 };
 
 enum symkind {
-#define VCC_SYMB(uu, ll, dd)	SYM_##uu,
+#define VCC_SYMB(uu, ll)	SYM_##uu,
 #include "tbl/symbol_kind.h"
 #undef VCC_SYMB
 };
@@ -131,6 +131,7 @@ struct symbol {
 
 	/* SYM_PROC, SYM_FUNC */
 	const char			*cfunc;
+	const char			*extra;
 	const char			*args;
 
 	/* SYM_VAR */
@@ -278,7 +279,9 @@ void vcc_Expr(struct vcc *tl, enum var_type typ);
 void vcc_Expr_Call(struct vcc *tl, const struct symbol *sym);
 void vcc_Expr_Init(struct vcc *tl);
 sym_expr_t vcc_Eval_Var;
-sym_expr_t vcc_Eval_Func;
+sym_expr_t vcc_Eval_SymFunc;
+void vcc_Eval_Func(struct vcc *tl, const char *cfunc, const char *extra,
+    const char *name, const char *args);
 sym_expr_t vcc_Eval_Backend;
 
 /* vcc_dir_dns.c */

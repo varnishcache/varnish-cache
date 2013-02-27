@@ -64,8 +64,7 @@ struct vef_priv {
  */
 
 static ssize_t
-vef_read(struct http_conn *htc, void *buf, ssize_t buflen,
-    ssize_t bytes)
+vef_read(struct http_conn *htc, void *buf, ssize_t buflen, ssize_t bytes)
 {
 	ssize_t d;
 
@@ -76,7 +75,7 @@ vef_read(struct http_conn *htc, void *buf, ssize_t buflen,
 		if (d < bytes)
 			bytes = d;
 	}
-	return (HTC_Read(htc, buf, bytes));
+	return (htc->read(htc, buf, bytes));
 }
 
 /*---------------------------------------------------------------------
@@ -103,7 +102,7 @@ vfp_esi_bytes_uu(struct busyobj *bo, const struct vef_priv *vef,
 			return (wl);
 		VEP_Parse(bo, (const char *)st->ptr + st->len, wl);
 		st->len += wl;
-		VFP_update_length(bo, wl);
+		VBO_extend(bo, wl);
 		bytes -= wl;
 	}
 	return (1);
@@ -142,7 +141,7 @@ vfp_esi_bytes_gu(struct busyobj *bo, const struct vef_priv *vef,
 			return (-1);
 		if (dl > 0) {
 			VEP_Parse(bo, dp, dl);
-			VFP_update_length(bo, dl);
+			VBO_extend(bo, dl);
 		}
 	}
 	return (1);
@@ -220,7 +219,7 @@ vfp_vep_callback(struct busyobj *bo, ssize_t l, enum vgz_flag flg)
 		}
 		i = VGZ_Gzip(vef->vgz, &dp, &dl, flg);
 		vef->tot += dl;
-		VFP_update_length(bo, dl);
+		VBO_extend(bo, dl);
 	} while (!VGZ_IbufEmpty(vef->vgz) ||
 	    (flg != VGZ_NORMAL && VGZ_ObufFull(vef->vgz)));
 	assert(VGZ_IbufEmpty(vef->vgz));
@@ -296,12 +295,13 @@ vfp_esi_bytes_gg(const struct busyobj *bo, struct vef_priv *vef,
 /*---------------------------------------------------------------------*/
 
 static void __match_proto__(vfp_begin_f)
-vfp_esi_begin(struct busyobj *bo, size_t estimate)
+vfp_esi_begin(void *priv, size_t estimate)
 {
+	struct busyobj *bo;
 	struct vef_priv *vef;
 
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	(void)estimate;
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	ALLOC_OBJ(vef, VEF_MAGIC);
 	XXXAN(vef);
@@ -340,12 +340,13 @@ vfp_esi_begin(struct busyobj *bo, size_t estimate)
 }
 
 static int __match_proto__(vfp_bytes_f)
-vfp_esi_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
+vfp_esi_bytes(void *priv, struct http_conn *htc, ssize_t bytes)
 {
+	struct busyobj *bo;
 	struct vef_priv *vef;
 	int i;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	vef = bo->vef_priv;
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 
@@ -364,14 +365,15 @@ vfp_esi_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 }
 
 static int __match_proto__(vfp_end_f)
-vfp_esi_end(struct busyobj *bo)
+vfp_esi_end(void *priv)
 {
+	struct busyobj *bo;
 	struct vsb *vsb;
 	struct vef_priv *vef;
 	ssize_t l;
 	int retval = 0;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	AN(bo->vep);
 
 	if (bo->state == BOS_FAILED)

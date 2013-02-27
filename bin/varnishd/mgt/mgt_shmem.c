@@ -247,8 +247,10 @@ mgt_SHM_Create(void)
 		exit (-1);
 	}
 
+#ifdef OpenBSD
 	/* Commit changes, for OS's without coherent VM/buf */
 	AZ(msync(p, getpagesize(), MS_SYNC));
+#endif
 }
 
 /*--------------------------------------------------------------------

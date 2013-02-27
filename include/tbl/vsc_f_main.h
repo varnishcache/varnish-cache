@@ -57,19 +57,28 @@
  *
  */
 
+/*--------------------------------------------------------------------
+ * Globals, not related to traffic
+ */
+
+VSC_F(uptime,			uint64_t, 0, 'a',
+    "Child process uptime",
+	""
+)
+
+
 /*---------------------------------------------------------------------
  * Sessions
- *    see: cache_acceptor.c and cache_pool.c
  */
 
 VSC_F(sess_conn,		uint64_t, 1, 'c',
     "Sessions accepted",
 	"Count of sessions succesfully accepted"
 )
+
 VSC_F(sess_drop,		uint64_t, 1, 'c',
     "Sessions dropped",
-	"Count of sessions silently dropped due to lack of session memory."
-	"  See parameter 'max_sess'."
+	"Count of sessions silently dropped due to lack of worker thread."
 )
 
 VSC_F(sess_fail,		uint64_t, 1, 'c',
@@ -81,10 +90,28 @@ VSC_F(sess_fail,		uint64_t, 1, 'c',
 
 /*---------------------------------------------------------------------*/
 
+VSC_F(client_req_400,		uint64_t, 1, 'a',
+    "Client requests received, subject to 400 errors",
+	"400 means we couldn't make sense of the request, it was"
+	" malformed in some drastic way."
+)
+
+VSC_F(client_req_413,		uint64_t, 1, 'a',
+    "Client requests received, subject to 413 errors",
+	"413 means that HTTP headers execeeded length or count limits."
+)
+
+VSC_F(client_req_417,		uint64_t, 1, 'a',
+    "Client requests received, subject to 417 errors",
+	"417 means that something went wrong with an Expect: header."
+)
+
 VSC_F(client_req,		uint64_t, 1, 'a',
-    "Client requests received",
+    "Good Client requests received",
 	""
 )
+
+/*---------------------------------------------------------------------*/
 
 VSC_F(cache_hit,		uint64_t, 1, 'a',
     "Cache hits",
@@ -101,12 +128,15 @@ VSC_F(cache_hitpass,		uint64_t, 1, 'a',
 	"  cached in it self. This counts how many times the cached "
 	"  decision is being used."
 )
+
 VSC_F(cache_miss,		uint64_t, 1, 'a',
     "Cache misses",
 	"Count of misses"
 	"  A cache miss indicates the object was fetched from the"
 	"  backend before delivering it to the backend."
 )
+
+/*---------------------------------------------------------------------*/
 
 VSC_F(backend_conn,		uint64_t, 0, 'a',
     "Backend conn. success",
@@ -366,6 +396,8 @@ VSC_F(sess_herd,		uint64_t, 1, 'a',
 	""
 )
 
+/*--------------------------------------------------------------------*/
+
 VSC_F(shm_records,		uint64_t, 0, 'a',
     "SHM records",
 	""
@@ -386,6 +418,8 @@ VSC_F(shm_cycles,		uint64_t, 0, 'a',
     "SHM cycles through buffer",
 	""
 )
+
+/*--------------------------------------------------------------------*/
 
 VSC_F(sms_nreq,			uint64_t, 0, 'a',
     "SMS allocator requests",
@@ -408,10 +442,14 @@ VSC_F(sms_bfree,		uint64_t, 0, 'i',
 	""
 )
 
+/*--------------------------------------------------------------------*/
+
 VSC_F(backend_req,		uint64_t, 0, 'a',
     "Backend requests made",
 	""
 )
+
+/*--------------------------------------------------------------------*/
 
 VSC_F(n_vcl,			uint64_t, 0, 'a',
     "N vcl total",
@@ -426,7 +464,7 @@ VSC_F(n_vcl_discard,		uint64_t, 0, 'a',
 	""
 )
 
-/**********************************************************************/
+/*--------------------------------------------------------------------*/
 
 VSC_F(bans,			uint64_t, 0, 'g',
    "Count of bans",
@@ -467,8 +505,17 @@ VSC_F(bans_dups,		uint64_t, 0, 'c',
     "Bans superseded by other bans",
 	"Count of bans replaced by later identical bans."
 )
+VSC_F(bans_persisted_bytes,	uint64_t, 0, 'g',
+    "Bytes used by the persisted ban lists",
+        "Number of bytes used by the persisted ban lists."
+)
+VSC_F(bans_persisted_fragmentation,	uint64_t, 0, 'g',
+    "Extra bytes in persisted ban lists due to fragmentation",
+        "Number of extra bytes accumulated through dropped and"
+	" gone bans in the persistent ban lists."
+)
 
-/**********************************************************************/
+/*--------------------------------------------------------------------*/
 
 VSC_F(hcb_nolock,		uint64_t, 1, 'a',
     "HCB Lookups without lock",
@@ -483,6 +530,8 @@ VSC_F(hcb_insert,		uint64_t, 0, 'a',
 	""
 )
 
+/*--------------------------------------------------------------------*/
+
 VSC_F(esi_errors,		uint64_t, 0, 'a',
     "ESI parse errors (unlock)",
 	""
@@ -491,14 +540,8 @@ VSC_F(esi_warnings,		uint64_t, 0, 'a',
     "ESI parse warnings (unlock)",
 	""
 )
-VSC_F(client_drop_late,		uint64_t, 0, 'a',
-    "Connection dropped late",
-	""
-)
-VSC_F(uptime,			uint64_t, 0, 'a',
-    "Client uptime",
-	""
-)
+
+/*--------------------------------------------------------------------*/
 
 VSC_F(dir_dns_lookups,		uint64_t, 0, 'a',
     "DNS director lookups",
@@ -517,10 +560,14 @@ VSC_F(dir_dns_cache_full,	uint64_t, 0, 'a',
 	""
 )
 
+/*--------------------------------------------------------------------*/
+
 VSC_F(vmods,			uint64_t, 0, 'i',
     "Loaded VMODs",
 	""
 )
+
+/*--------------------------------------------------------------------*/
 
 VSC_F(n_gzip,			uint64_t, 0, 'a',
     "Gzip operations",
@@ -531,7 +578,7 @@ VSC_F(n_gunzip,			uint64_t, 0, 'a',
 	""
 )
 
-/**********************************************************************/
+/*--------------------------------------------------------------------*/
 
 VSC_F(vsm_free,			uint64_t, 0, 'g',
     "Free VSM space",

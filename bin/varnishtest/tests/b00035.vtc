@@ -1,0 +1,26 @@
+varnishtest "{be}req.request compat check"
+
+server s1 {
+	rxreq
+	expect req.method == "GETABCD"
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_recv {
+		set req.method = req.request + "A";
+		set req.request = req.method + "B";
+		return (pass);
+	}
+
+	sub vcl_pass {
+		set bereq.method = bereq.request + "C";
+		set bereq.request = bereq.method + "D";
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run

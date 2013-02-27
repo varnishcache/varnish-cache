@@ -282,6 +282,7 @@ ccf_config_discard(struct cli *cli, const char * const *av, void *priv)
 
 	ASSERT_CLI();
 	AZ(priv);
+	(void)priv;
 	vcl = vcl_find(av[2]);
 	if (vcl == NULL) {
 		VCLI_SetResult(cli, CLIS_PARAM);

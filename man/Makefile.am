@@ -6,7 +6,7 @@ endif
 vsc2rst_SOURCES = vsc2rst.c \
 	$(top_srcdir)/include/tbl/vsc_fields.h
 
-INCLUDES = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include
 
 dist_man_MANS = vcl.7 varnish-cli.7 varnish-counters.7
 MAINTAINERCLEANFILES = $(dist_man_MANS)

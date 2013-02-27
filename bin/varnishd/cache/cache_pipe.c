@@ -82,7 +82,7 @@ PipeRequest(struct req *req)
 	(void)VTCP_blocking(vc->fd);
 
 	WRW_Reserve(wrk, &vc->fd, bo->vsl, req->t_req);
-	req->acct_req.hdrbytes += http_Write(wrk, bo->bereq, 0);
+	req->acct_req.hdrbytes += HTTP1_Write(wrk, bo->bereq, 0);
 
 	if (req->htc->pipeline.b != NULL)
 		req->acct_req.bodybytes +=

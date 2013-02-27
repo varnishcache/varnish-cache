@@ -50,40 +50,44 @@ static uint32_t			*vsl_ptr;
 
 struct VSC_C_main       *VSC_C_main;
 
+/*--------------------------------------------------------------------
+ * Check if the VSL_tag is masked by parameter bitmap
+ */
+
 static inline int
 vsl_tag_is_masked(enum VSL_tag_e tag)
 {
 	volatile uint8_t *bm = &cache_param->vsl_mask[0];
 	uint8_t b;
 
-	assert(tag < SLT_Reserved);
+	assert(tag > SLT__Bogus);
+	assert(tag < SLT__Reserved);
 	bm += ((unsigned)tag >> 3);
 	b = (0x80 >> ((unsigned)tag & 7));
 	return (*bm & b);
 }
 
-static inline uint32_t
-vsl_w0(uint32_t type, uint32_t length)
-{
+/*--------------------------------------------------------------------
+ * Lay down a header fields, and return pointer to the next record
+ */
 
-	assert(length < 0x10000);
-        return (((type & 0xff) << 24) | length);
-}
-
-/*--------------------------------------------------------------------*/
-
-static inline void
+static inline uint32_t *
 vsl_hdr(enum VSL_tag_e tag, uint32_t *p, unsigned len, uint32_t vxid)
 {
 
 	assert(((uintptr_t)p & 0x3) == 0);
+	assert(tag > SLT__Bogus);
+	assert(tag < SLT__Reserved);
+	AZ(len & ~VSL_LENMASK);
 
 	p[1] = vxid;
-	VMB();
-	p[0] = vsl_w0(tag, len);
+	p[0] = ((((unsigned)tag & 0xff) << 24) | len);
+	return (VSL_END(p, len));
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Wrap the VSL buffer
+ */
 
 static void
 vsl_wrap(void)
@@ -111,10 +115,14 @@ static uint32_t *
 vsl_get(unsigned len, unsigned records, unsigned flushes)
 {
 	uint32_t *p;
+	int err;
 
-	if (pthread_mutex_trylock(&vsl_mtx)) {
+	err = pthread_mutex_trylock(&vsl_mtx);
+	if (err == EBUSY) {
 		AZ(pthread_mutex_lock(&vsl_mtx));
 		VSC_C_main->shm_cont++;
+	} else {
+		AZ(err);
 	}
 	assert(vsl_ptr < vsl_end);
 	assert(((uintptr_t)vsl_ptr & 0x3) == 0);
@@ -140,8 +148,7 @@ vsl_get(unsigned len, unsigned records, unsigned flushes)
 }
 
 /*--------------------------------------------------------------------
- * This variant copies a byte-range directly to the log, without
- * taking the detour over sprintf()
+ * Stick a finished record into VSL.
  */
 
 static void
@@ -159,10 +166,22 @@ vslr(enum VSL_tag_e tag, uint32_t vxid, const char *b, unsigned len)
 	p = vsl_get(len, 1, 0);
 
 	memcpy(p + 2, b, len);
-	vsl_hdr(tag, p, len, vxid);
+
+	/*
+	 * vsl_hdr() writes p[1] again, but we want to make sure it
+	 * has hit memory because we work on the live buffer here.
+	 */
+	p[1] = vxid;
+	VWMB();
+	(void)vsl_hdr(tag, p, len, vxid);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Add a unbuffered record to VSL
+ *
+ * NB: This variant should be used sparingly and only for low volume
+ * NB: since it significantly adds to the mutex load on the VSL.
+ */
 
 void
 VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
@@ -171,20 +190,21 @@ VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
 	unsigned n, mlen = cache_param->shm_reclen;
 	char buf[mlen];
 
+	AN(fmt);
 	if (vsl_tag_is_masked(tag))
 		return;
-	AN(fmt);
-	va_start(ap, fmt);
+
 
 	if (strchr(fmt, '%') == NULL) {
 		vslr(tag, vxid, fmt, strlen(fmt));
 	} else {
+		va_start(ap, fmt);
 		n = vsnprintf(buf, mlen, fmt, ap);
+		va_end(ap);
 		if (n > mlen)
 			n = mlen;
 		vslr(tag, vxid, buf, n);
 	}
-	va_end(ap);
 }
 
 /*--------------------------------------------------------------------*/
@@ -201,33 +221,34 @@ VSL_Flush(struct vsl_log *vsl, int overflow)
 
 	assert(l >= 8);
 
-	p = vsl_get(l - 8, vsl->wlr, overflow);
+	p = vsl_get(l, vsl->wlr, overflow);
 
-	memcpy(p + 1, vsl->wlb + 1, l - 4);
+	memcpy(p + 2, vsl->wlb, l);
+	p[1] = l;
 	VWMB();
-	p[0] = vsl->wlb[0];
+	p[0] = ((((unsigned)SLT__Batch & 0xff) << 24) | 0);
 	vsl->wlp = vsl->wlb;
 	vsl->wlr = 0;
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * VSL-buffered-txt
+ */
 
-static void
-wslr(struct vsl_log *vsl, enum VSL_tag_e tag, int id, txt t)
+void
+VSLbt(struct vsl_log *vsl, enum VSL_tag_e tag, txt t)
 {
 	unsigned l, mlen;
 
 	Tcheck(t);
-	if (id == -1)
-		id = vsl->wid;
+	if (vsl_tag_is_masked(tag))
+		return;
 	mlen = cache_param->shm_reclen;
 
 	/* Truncate */
 	l = Tlen(t);
-	if (l > mlen) {
+	if (l > mlen)
 		l = mlen;
-		t.e = t.b + l;
-	}
 
 	assert(vsl->wlp < vsl->wle);
 
@@ -236,51 +257,10 @@ wslr(struct vsl_log *vsl, enum VSL_tag_e tag, int id, txt t)
 		VSL_Flush(vsl, 1);
 	assert(VSL_END(vsl->wlp, l) < vsl->wle);
 	memcpy(VSL_DATA(vsl->wlp), t.b, l);
-	vsl_hdr(tag, vsl->wlp, l, id);
-	vsl->wlp = VSL_END(vsl->wlp, l);
+	vsl->wlp = vsl_hdr(tag, vsl->wlp, l, vsl->wid);
 	assert(vsl->wlp < vsl->wle);
 	vsl->wlr++;
-	if (DO_DEBUG(DBG_SYNCVSL))
-		VSL_Flush(vsl, 0);
-}
 
-/*--------------------------------------------------------------------*/
-
-static void
-wsl(struct vsl_log *, enum VSL_tag_e tag, int id, const char *fmt, va_list ap)
-    __printflike(4, 0);
-
-static void
-wsl(struct vsl_log *vsl, enum VSL_tag_e tag, int id, const char *fmt,
-    va_list ap)
-{
-	char *p;
-	unsigned n, mlen;
-	txt t;
-
-	AN(fmt);
-	mlen = cache_param->shm_reclen;
-
-	if (strchr(fmt, '%') == NULL) {
-		t.b = TRUST_ME(fmt);
-		t.e = strchr(t.b, '\0');
-		wslr(vsl, tag, id, t);
-	} else {
-		assert(vsl->wlp < vsl->wle);
-
-		/* Wrap if we cannot fit a full size record */
-		if (VSL_END(vsl->wlp, mlen) >= vsl->wle)
-			VSL_Flush(vsl, 1);
-
-		p = VSL_DATA(vsl->wlp);
-		n = vsnprintf(p, mlen, fmt, ap);
-		if (n > mlen)
-			n = mlen;	/* we truncate long fields */
-		vsl_hdr(tag, vsl->wlp, n, id);
-		vsl->wlp = VSL_END(vsl->wlp, n);
-		assert(vsl->wlp < vsl->wle);
-		vsl->wlr++;
-	}
 	if (DO_DEBUG(DBG_SYNCVSL))
 		VSL_Flush(vsl, 0);
 }
@@ -292,30 +272,53 @@ wsl(struct vsl_log *vsl, enum VSL_tag_e tag, int id, const char *fmt,
 void
 VSLb(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, ...)
 {
+	char *p;
+	const char *u, *f;
+	unsigned n, mlen;
 	va_list ap;
+	txt t;
 
 	AN(fmt);
 	if (vsl_tag_is_masked(tag))
 		return;
+
+	/*
+	 * If there are no printf-expansions, don't waste time expanding them
+	 */
+	f = NULL;
+	for (u = fmt; *u != '\0'; u++)
+		if (*u == '%')
+			f = u;
+	if (f == NULL) {
+		t.b = TRUST_ME(fmt);
+		t.e = TRUST_ME(u);
+		VSLbt(vsl, tag, t);
+		return;
+	}
+
+	mlen = cache_param->shm_reclen;
+
+	/* Wrap if we cannot fit a full size record */
+	if (VSL_END(vsl->wlp, mlen) >= vsl->wle)
+		VSL_Flush(vsl, 1);
+
+	p = VSL_DATA(vsl->wlp);
 	va_start(ap, fmt);
-	wsl(vsl, tag, vsl->wid, fmt, ap);
+	n = vsnprintf(p, mlen, fmt, ap);
 	va_end(ap);
+	if (n > mlen)
+		n = mlen;	/* we truncate long fields */
+	vsl->wlp = vsl_hdr(tag, vsl->wlp, n, vsl->wid);
+	assert(vsl->wlp < vsl->wle);
+	vsl->wlr++;
+
+	if (DO_DEBUG(DBG_SYNCVSL))
+		VSL_Flush(vsl, 0);
 }
 
 /*--------------------------------------------------------------------
- * VSL-buffered-txt
+ * Setup a VSL buffer, allocate space if none provided.
  */
-
-void
-VSLbt(struct vsl_log *vsl, enum VSL_tag_e tag, txt t)
-{
-
-	if (vsl_tag_is_masked(tag))
-		return;
-	wslr(vsl, tag, -1, t);
-}
-
-/*--------------------------------------------------------------------*/
 
 void
 VSL_Setup(struct vsl_log *vsl, void *ptr, size_t len)

@@ -228,8 +228,11 @@ child_main(void)
 	if (FEATURE(FEATURE_WAIT_SILO))
 		SMP_Ready();
 
+	Pool_Accept();
+
 	CLI_Run();
 
+	BAN_Shutdown();
 	STV_close();
 
 	printf("Child dies\n");

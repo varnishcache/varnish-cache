@@ -60,13 +60,15 @@ ved_include(struct req *preq, const char *src, const char *host)
 	wrk_ws_wm = WS_Snapshot(wrk->aws); /* XXX ? */
 
 	req = SES_GetReq(wrk, preq->sp);
+	VSLb(req->vsl, SLT_Link, "req %u", preq->vsl->wid & VSL_IDENTMASK);
+	VSLb(preq->vsl, SLT_Link, "esireq %u", req->vsl->wid & VSL_IDENTMASK);
 	req->esi_level = preq->esi_level + 1;
 
 	HTTP_Copy(req->http0, preq->http0);
 
 	req->http0->conds = 0;
 
-	HTTP_Setup(req->http, req->ws, req->vsl, HTTP_Req);
+	HTTP_Setup(req->http, req->ws, req->vsl, HTTP_Method);
 
 	http_SetH(req->http0, HTTP_HDR_URL, src);
 	if (host != NULL && *host != '\0')  {

@@ -169,7 +169,7 @@ VCL::
     }
 
     sub append_ua {
-        if ((req.http.X-UA-Device) && (req.request == "GET")) {
+        if ((req.http.X-UA-Device) && (req.method == "GET")) {
             # if there are existing GET arguments;
             if (req.url ~ "\?") {
                 set req.http.X-get-devicetype = "&devicetype=" + req.http.X-UA-Device;

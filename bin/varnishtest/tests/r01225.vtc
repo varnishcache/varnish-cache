@@ -1,0 +1,62 @@
+varnishtest "Test bans_req counter on persistent reload - #1225"
+
+shell "rm -f ${tmpdir}/_.per"
+
+server s1 {
+	rxreq 
+	expect req.url == "/"
+	txresp -hdr "Foo: foo"
+} -start
+
+varnish v1 \
+	-arg "-pfeature=+wait_silo" \
+	-storage "-spersistent,${tmpdir}/_.per,10m" \
+	-arg "-pban_lurker_sleep=0.01" \
+	-vcl+backend { } -start 
+
+varnish v1 -cliok ban.list
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == "foo"
+} -run
+
+# Count of 1 here (magic ban only)
+varnish v1 -expect bans == 1
+varnish v1 -cliok "ban req.url == /"
+varnish v1 -cliok ban.list
+
+# Count of 2 here (our + magic ban)
+varnish v1 -expect bans == 2
+varnish v1 -expect bans_req == 1
+varnish v1 -stop
+server s1 -wait
+
+server s1 {
+	rxreq 
+	expect req.url == "/"
+	txresp -hdr "Foo: bar"
+} -start
+
+varnish v1 -start
+
+varnish v1 -cliok ban.list
+
+# Count of >2 here, ours plus magic bans from 2 startups
+varnish v1 -expect bans >= 2
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == "bar"
+} -run
+
+varnish v1 -cliok ban.list
+# Count of 1 here
+varnish v1 -expect bans == 1
+varnish v1 -expect bans_req == 0
+
+varnish v1 -stop

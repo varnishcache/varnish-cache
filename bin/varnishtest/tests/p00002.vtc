@@ -10,8 +10,7 @@ server s1 {
 varnish v1 \
 	-arg "-pfeature=+wait_silo" \
 	-arg "-pban_lurker_sleep=0" \
-	-storage "-spersistent,${tmpdir}/_.per1,10m" \
-	-storage "-spersistent,${tmpdir}/_.per2,10m" \
+	-storage "-spersistent,${tmpdir}/_.per1,10m -spersistent,${tmpdir}/_.per2,10m" \
 	-vcl+backend { } -start 
 
 client c1 {

@@ -62,11 +62,6 @@ tokens = {
 	"T_MUL":	"*=",
 	"T_DIV":	"/=",
 	"T_NOMATCH":	"!~",
-	"T_INCLUDE":	"include",
-	"T_IF":		"if",
-	"T_ELSEIF":	"elseif",
-	"T_ELSIF":	"elsif",
-	"T_ELSE":	"else",
 
 	# Single char tokens, for convenience on one line
 	None:		"{}()*+-/%><=;!&.|~,",
@@ -138,6 +133,12 @@ sp_variables = (
 		( 'proc',),
 		( ),
 		'struct req *'
+	),
+	('req.method',
+		'STRING',
+		( 'proc',),
+		( 'proc',),
+		'const struct req *'
 	),
 	('req.request',
 		'STRING',
@@ -234,6 +235,12 @@ sp_variables = (
 		( 'recv',),
 		( 'recv',),
 		'struct req *'
+	),
+	('bereq.method',
+		'STRING',
+		( 'pipe', 'pass', 'miss', 'fetch',),
+		( 'pipe', 'pass', 'miss', 'fetch',),
+		'const struct req *'
 	),
 	('bereq.request',
 		'STRING',
@@ -843,7 +850,10 @@ for i in sp_variables:
 		fo.write('",\n')
 	else:
 		fo.write('\t    "VRT_r_%s(req)",\n' % cnam)
-		fh.write(ctyp + " VRT_r_%s(const %s);\n" % (cnam, i[4]))
+		if i[4][:5] != "const":
+			fh.write(ctyp + " VRT_r_%s(const %s);\n" % (cnam, i[4]))
+		else:
+			fh.write(ctyp + " VRT_r_%s(%s);\n" % (cnam, i[4]))
 	restrict(fo, i[2])
 
 	if len(i[3]) == 0:

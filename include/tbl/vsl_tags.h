@@ -130,7 +130,11 @@ SLTM(FetchError, "Error while fetching object", "")
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 
-SLTM(LostHeader, "", "")
+SLTM(BogoHeader, "Bogus HTTP received",
+	"Contains the first 20 characters of received HTTP headers we could"
+	" not make sense of.  Applies to both req.http and beres.http."
+)
+SLTM(LostHeader, "Failed attempt to set HTTP header", "")
 
 SLTM(TTL, "TTL set on object", "")
 SLTM(Fetch_Body, "Body fetched from backend", "")
@@ -156,3 +160,13 @@ SLTM(VCL_Log, "Log statement from VCL", "")
 SLTM(VCL_Error, "", "")
 
 SLTM(Gzip, "G(un)zip performed on object", "")
+
+SLTM(Link, "Linkage between different VXIDs",
+	"Links this records VXID to its parent VXID\n"
+	"The first field gives the type of the parent:\n"
+	"    req     Request\n"
+	"    sess    Session\n"
+	"    bereq   Backend request\n"
+	"    esireq  ESI subrequest\n"
+	"The second field gives the VXID if the parent.\n"
+)

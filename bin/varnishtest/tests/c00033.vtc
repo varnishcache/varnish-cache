@@ -18,19 +18,19 @@ server s1 {
 varnish v1 -vcl+backend {
 
 	sub vcl_recv {
-		if (req.request == "PURGE") {
+		if (req.method == "PURGE") {
 			return (lookup);
 		}
 	}
 
 	sub vcl_hit {
-		if (req.request == "PURGE") {
+		if (req.method == "PURGE") {
 			C{ VRT_purge(req, 0, 0); }C
 			error 456 "got it";
 		}
 	}
 	sub vcl_miss {
-		if (req.request == "PURGE") {
+		if (req.method == "PURGE") {
 			C{ VRT_purge(req, 0, 0); }C
 			error 456 "got it";
 		}

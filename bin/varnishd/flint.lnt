@@ -77,7 +77,6 @@
 -e459	// unlocked access from func-ptr
 -e454	// mutex not released (...ReleaseLocked)
 -e457	// unprotected access
--e835	// A zero has been given as ___ argument to operator '___'  (<<)
 -e777	// float equality comparison
 -e679	// Suspicious Truncation in arithmetic expression combining with pointer
 
@@ -130,11 +129,9 @@
 -e455	// thread lock
 -e458	// unprotected read
 -e763	// Redundant declaration for symbol '...' previously declared
--e726	// Extraneous comma ignored
 -e728	// Symbol ... not explicitly initialized
 -e716	// while(1) ... 
 -e785	// Too few initializers for aggregate 
--e786	// String concatenation within initializer
 
 -esym(765, vcc_ProcAction) // could be made static
 -esym(759, vcc_ProcAction) // could be moved to module

@@ -103,3 +103,10 @@
 -elib(123)		// macro def. with arg at, (just warn)
 
 -emacro(702, WEXITSTATUS)	// signed shift right 
+
+-e786	// String concatenation within initializer
+-e726	// Extraneous comma ignored
+
+-e825	// control flows into case/default without -fallthrough comment
+-e835	// A zero has been given as ___ argument to operator '___'  (<<)
+

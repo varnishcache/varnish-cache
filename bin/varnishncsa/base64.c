@@ -6,10 +6,6 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-
-#include <stdio.h>		// for test-prog
-
 #include "base64.h"
 
 static const char b64[] =
@@ -62,6 +58,8 @@ VB64_decode(char *d, unsigned dlen, const char *s)
 }
 
 #ifdef TEST_DRIVER
+
+#include <stdio.h>		// for test-prog
 
 const char *test1 =
 "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlz"

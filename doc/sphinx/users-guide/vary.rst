@@ -1,7 +1,7 @@
 .. _users-guide-vary:
 
-Vary
-~~~~
+HTTP Vary
+---------
 
 The Vary header is sent by the web server to indicate what makes a
 HTTP object Vary. This makes a lot of sense with headers like

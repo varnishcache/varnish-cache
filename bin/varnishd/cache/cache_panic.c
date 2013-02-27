@@ -61,6 +61,35 @@ static void pan_sess(const struct sess *sp);
 
 /*--------------------------------------------------------------------*/
 
+const char *
+body_status_2str(enum body_status e)
+{
+	switch(e) {
+#define BODYSTATUS(U,l)	case BS_##U: return (#l);
+#include "tbl/body_status.h"
+#undef BODYSTATUS
+	default:
+		return ("?");
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
+const char *
+sess_close_2str(enum sess_close sc, int want_desc)
+{
+	switch (sc) {
+	case SC_NULL:		return(want_desc ? "(null)": "NULL");
+#define SESS_CLOSE(nm, desc)	case SC_##nm: return(want_desc ? desc : #nm);
+#include "tbl/sess_close.h"
+#undef SESS_CLOSE
+
+	default:		return(want_desc ? "(invalid)" : "INVALID");
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
 static void
 pan_ws(const struct ws *ws, int indent)
 {
@@ -216,7 +245,7 @@ pan_busyobj(const struct busyobj *bo)
 	if (bo->do_stream)	VSB_printf(pan_vsp, "    do_stream\n");
 	if (bo->should_close)	VSB_printf(pan_vsp, "    should_close\n");
 	VSB_printf(pan_vsp, "    bodystatus = %d (%s),\n",
-	    bo->body_status, body_status(bo->body_status));
+	    bo->htc.body_status, body_status_2str(bo->htc.body_status));
 	VSB_printf(pan_vsp, "    },\n");
 	if (VALID_OBJ(bo->vbc, BACKEND_MAGIC))
 		pan_vbc(bo->vbc);
@@ -232,7 +261,7 @@ pan_busyobj(const struct busyobj *bo)
 static void
 pan_req(const struct req *req)
 {
-	const char *hand, *stp;
+	const char *hand, *stp, *body;
 
 	VSB_printf(pan_vsp, "req = %p {\n", req);
 
@@ -248,6 +277,18 @@ pan_req(const struct req *req)
 		VSB_printf(pan_vsp, "  step = %s,\n", stp);
 	else
 		VSB_printf(pan_vsp, "  step = 0x%x,\n", req->req_step);
+
+	switch (req->req_body_status) {
+#define REQ_BODY(U) case REQ_BODY_##U: body = "R_BODY_" #U; break;
+#include "tbl/req_body.h"
+#undef REQ_BODY
+		default: body = NULL;
+	}
+	if (body != NULL)
+		VSB_printf(pan_vsp, "  req_body = %s,\n", body);
+	else
+		VSB_printf(pan_vsp, "  req_body = 0x%x,\n",
+		    req->req_body_status);
 
 	hand = VCL_Return_Name(req->handling);
 	if (hand != NULL)

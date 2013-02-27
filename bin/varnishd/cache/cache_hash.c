@@ -399,7 +399,7 @@ HSH_Lookup(struct req *req)
 		assert(oc->objhead == oh);
 		oc->refcnt++;
 		Lck_Unlock(&oh->mtx);
-		assert(hash->deref(oh));
+		assert(HSH_DerefObjHead(&wrk->stats, &oh));
 		o = oc_getobj(&wrk->stats, oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		if (!cache_param->obj_readonly && o->hits < INT_MAX)
@@ -694,11 +694,28 @@ HSH_Deref(struct dstat *ds, struct objcore *oc, struct object **oo)
 	if (oh != NULL) {
 		/* Drop our ref on the objhead */
 		assert(oh->refcnt > 0);
-		if (hash->deref(oh))
-			return (0);
-		HSH_DeleteObjHead(ds, oh);
+		(void)HSH_DerefObjHead(ds, &oh);
 	}
 	return (0);
+}
+
+int
+HSH_DerefObjHead(struct dstat *ds, struct objhead **poh)
+{
+	struct objhead *oh;
+	int r;
+
+	AN(ds);
+	AN(poh);
+	oh = *poh;
+	*poh = NULL;
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+
+	assert(oh->refcnt > 0);
+	r = hash->deref(oh);
+	if (!r)
+		HSH_DeleteObjHead(ds, oh);
+	return (r);
 }
 
 void

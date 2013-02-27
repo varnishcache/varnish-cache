@@ -1,3 +1,4 @@
+.. _guide-storage:
 
 Storage backends
 ----------------
@@ -6,10 +7,11 @@ Storage backends
 Intro
 ~~~~~
 
-When you configure Varnish you need to give it some place to store
-data. Varnish has pluggable storage backends. It can store data in
-various backends which have different characteristics with regards to
-semantics and performance.
+Varnish has pluggable storage backends. It can store data in various
+backends which have different performance characteristics. The default
+configuration is to use the malloc backend with a limited size. For a
+serious Varnish deployment you probably need to adjust the storage
+settings.
 
 malloc
 ~~~~~~
@@ -68,7 +70,7 @@ suffixes:
       %       The size is expressed as a percentage of the free space on the
               file system where it resides.
 
-The default size is 50%.
+The default size is to use 50% of the space available on the device.
 
 If the backing file already exists, it will be truncated or expanded
 to the specified size.
@@ -119,6 +121,11 @@ open at any given point in time. Full silos are *sealed*. When Varnish
 starts after a shutdown it will discard the content of any silo that
 isn't sealed.
 
+Note that taking persistent silos offline and at the same time using
+bans can cause problems. This because bans added while the silo was
+offline will not be applied to the silo when it reenters the cache,
+and can make previously banned objects reappear.
+
 Transient Storage
 -----------------
       
@@ -126,3 +133,5 @@ If you name any of your storage backend "Transient" it will be
 used for transient (short lived) objects. By default Varnish
 would use an unlimited malloc backend for this.
 
+Varnish will consider an object short lived if the TTL is below the
+parameter "shortlived".

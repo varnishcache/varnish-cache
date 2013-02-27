@@ -74,16 +74,18 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "hash/hash_slinger.h"
 
 #include "vcl.h"
+#include "vct.h"
 #include "vtcp.h"
 #include "vtim.h"
 
-/*--------------------------------------------------------------------
+/*----------------------------------------------------------------------
  * Collect a request from the client.
  */
 
-static int
+static enum req_fsm_nxt
 http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 {
 	int j, tmo;
@@ -113,20 +115,20 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 		assert(j >= 0);
 		now = VTIM_real();
 		if (j != 0)
-			hs = HTC_Rx(req->htc);
+			hs = HTTP1_Rx(req->htc);
 		else
-			hs = HTC_Complete(req->htc);
-		if (hs == HTC_COMPLETE) {
+			hs = HTTP1_Complete(req->htc);
+		if (hs == HTTP1_COMPLETE) {
 			/* Got it, run with it */
 			req->t_req = now;
-			return (0);
-		} else if (hs == HTC_ERROR_EOF) {
+			return (REQ_FSM_MORE);
+		} else if (hs == HTTP1_ERROR_EOF) {
 			why = SC_REM_CLOSE;
 			break;
-		} else if (hs == HTC_OVERFLOW) {
+		} else if (hs == HTTP1_OVERFLOW) {
 			why = SC_RX_OVERFLOW;
 			break;
-		} else if (hs == HTC_ALL_WHITESPACE) {
+		} else if (hs == HTTP1_ALL_WHITESPACE) {
 			/* Nothing but whitespace */
 			when = sp->t_idle + cache_param->timeout_idle;
 			if (when < now) {
@@ -140,7 +142,7 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 				wrk->stats.sess_herd++;
 				SES_ReleaseReq(req);
 				WAIT_Enter(sp);
-				return (1);
+				return (REQ_FSM_DONE);
 			}
 		} else {
 			/* Working on it */
@@ -157,10 +159,10 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 	SES_ReleaseReq(req);
 	assert(why != SC_NULL);
 	SES_Delete(sp, why, now);
-	return (1);
+	return (REQ_FSM_DONE);
 }
 
-/*--------------------------------------------------------------------
+/*----------------------------------------------------------------------
  * This is the final state, figure out if we should close or recycle
  * the client connection
  */
@@ -200,7 +202,8 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	req->t_req = NAN;
 	req->t_resp = NAN;
 
-	req->req_bodybytes = 0;
+	// req->req_bodybytes = 0;
+	req->resp_bodybytes = 0;
 
 	req->hash_always_miss = 0;
 	req->hash_ignore_busy = 0;
@@ -222,7 +225,7 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	WS_Reset(req->ws, NULL);
 	WS_Reset(wrk->aws, NULL);
 
-	if (HTC_Reinit(req->htc) == HTC_COMPLETE) {
+	if (HTTP1_Reinit(req->htc) == HTTP1_COMPLETE) {
 		req->t_req = sp->t_idle;
 		wrk->stats.sess_pipeline++;
 		return (SESS_DONE_RET_START);
@@ -233,10 +236,10 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	}
 }
 
-/*--------------------------------------------------------------------
+/*----------------------------------------------------------------------
  */
 
-static int
+static enum req_fsm_nxt
 http1_dissect(struct worker *wrk, struct req *req)
 {
 	const char *r = "HTTP/1.1 100 Continue\r\n\r\n";
@@ -257,16 +260,15 @@ http1_dissect(struct worker *wrk, struct req *req)
 	req->vcl = wrk->vcl;
 	wrk->vcl = NULL;
 
-	HTTP_Setup(req->http, req->ws, req->vsl, HTTP_Req);
-	req->err_code = http_DissectRequest(req);
+	HTTP_Setup(req->http, req->ws, req->vsl, HTTP_Method);
+	req->err_code = HTTP1_DissectRequest(req);
 
 	/* If we could not even parse the request, just close */
 	if (req->err_code == 400) {
+		wrk->stats.client_req_400++;
 		SES_Close(req->sp, SC_RX_JUNK);
-		return (1);
+		return (REQ_FSM_DONE);
 	}
-
-	wrk->stats.client_req++;
 	req->acct_req.req++;
 
 	req->ws_req = WS_Snapshot(req->ws);
@@ -275,28 +277,33 @@ http1_dissect(struct worker *wrk, struct req *req)
 	/* XXX: Expect headers are a mess */
 	if (req->err_code == 0 && http_GetHdr(req->http, H_Expect, &p)) {
 		if (strcasecmp(p, "100-continue")) {
+			wrk->stats.client_req_417++;
 			req->err_code = 417;
 		} else if (strlen(r) != write(req->sp->fd, r, strlen(r))) {
 			SES_Close(req->sp, SC_REM_CLOSE);
-			return (1);
+			return (REQ_FSM_DONE);
 		}
-	}
+	} else if (req->err_code == 413)
+		wrk->stats.client_req_413++;
+	else
+		wrk->stats.client_req++;
+
 	http_Unset(req->http, H_Expect);
 	/* XXX: pull in req-body and make it available instead. */
-	req->reqbodydone = 0;
+	req->req_body_status = REQ_BODY_INIT;
 
 	HTTP_Copy(req->http0, req->http);	// For ESI & restart
 
-	return (0);
+	return (REQ_FSM_MORE);
 }
 
-/*--------------------------------------------------------------------
+/*----------------------------------------------------------------------
  */
 
 void
 HTTP1_Session(struct worker *wrk, struct req *req)
 {
-	int done = 0;
+	enum req_fsm_nxt nxt = REQ_FSM_MORE;
 	struct sess *sp;
 	enum http1_cleanup_ret sdr;
 
@@ -323,8 +330,21 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 		return;
 	}
 
+	/*
+	 * Return from waitinglist. Check to see if the remote has left.
+	 */
+	if (req->req_step == R_STP_LOOKUP && VTCP_check_hup(sp->fd)) {
+		AN(req->hash_objhead);
+		(void)HSH_DerefObjHead(&wrk->stats, &req->hash_objhead);
+		AZ(req->hash_objhead);
+		SES_Close(sp, SC_REM_CLOSE);
+		sdr = http1_cleanup(sp, wrk, req);
+		assert(sdr == SESS_DONE_RET_GONE);
+		return;
+	}
+
 	if (sp->sess_step == S_STP_NEWREQ) {
-		HTC_Init(req->htc, req->ws, sp->fd, req->vsl,
+		HTTP1_Init(req->htc, req->ws, sp->fd, req->vsl,
 		    cache_param->http_req_size,
 		    cache_param->http_req_hdr_len);
 	}
@@ -337,12 +357,12 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 
 		if (sp->sess_step == S_STP_WORKING) {
 			if (req->req_step == R_STP_RECV)
-				done = http1_dissect(wrk, req);
-			if (done == 0)
-				done = CNT_Request(wrk, req);
-			if (done == 2)
+				nxt = http1_dissect(wrk, req);
+			if (nxt == REQ_FSM_MORE)
+				nxt = CNT_Request(wrk, req);
+			if (nxt == REQ_FSM_DISEMBARK)
 				return;
-			assert(done == 1);
+			assert(nxt == REQ_FSM_DONE);
 			sdr = http1_cleanup(sp, wrk, req);
 			switch (sdr) {
 			case SESS_DONE_RET_GONE:
@@ -360,11 +380,234 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 		}
 
 		if (sp->sess_step == S_STP_NEWREQ) {
-			done = http1_wait(sp, wrk, req);
-			if (done)
+			nxt = http1_wait(sp, wrk, req);
+			if (nxt != REQ_FSM_MORE)
 				return;
 			sp->sess_step = S_STP_WORKING;
 			req->req_step = R_STP_RECV;
 		}
 	}
+}
+
+/*----------------------------------------------------------------------
+ */
+
+struct http1_r_b_s {
+	ssize_t			bytes_done;
+	ssize_t			yet;
+	enum {CL, CHUNKED}	mode;
+};
+
+static int
+http1_setup_req_body(struct req *req, struct http1_r_b_s *rbs)
+{
+	char *ptr, *endp;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	memset(rbs, 0, sizeof *rbs);
+
+	assert(req->req_body_status == REQ_BODY_INIT);
+	if (http_GetHdr(req->http, H_Content_Length, &ptr)) {
+		AN(ptr);
+		if (*ptr == '\0') {
+			req->req_body_status = REQ_BODY_FAIL;
+			return (-1);
+		}
+		req->req_bodybytes = strtoul(ptr, &endp, 10);
+		if (*endp != '\0' && !vct_islws(*endp)) {
+			req->req_body_status = REQ_BODY_FAIL;
+			return (-1);
+		}
+		if (req->req_bodybytes == 0) {
+			req->req_body_status = REQ_BODY_NONE;
+			return (0);
+		}
+		rbs->mode = CL;
+		rbs->yet = req->req_bodybytes - rbs->bytes_done;
+		return (0);
+	}
+
+	if (http_GetHdr(req->http, H_Transfer_Encoding, NULL)) {
+		rbs->mode = CHUNKED;
+		VSLb(req->vsl, SLT_Debug,
+		    "Transfer-Encoding in request");
+		req->req_body_status = REQ_BODY_DONE;
+		return (-1);
+	}
+
+	req->req_body_status = REQ_BODY_NONE;
+	req->req_bodybytes = 0;
+	return (0);
+}
+
+static ssize_t
+http1_iter_req_body(struct req *req, struct http1_r_b_s *rbs, void *buf,
+    ssize_t len)
+{
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	if (rbs->mode == CL) {
+		AN(req->req_bodybytes);
+		AN(len);
+		AN(buf);
+		if (len > req->req_bodybytes - rbs->bytes_done)
+			len = req->req_bodybytes - rbs->bytes_done;
+		if (len == 0) {
+			req->req_body_status = REQ_BODY_DONE;
+			return (0);
+		}
+		len = HTTP1_Read(req->htc, buf, len);
+		if (len <= 0) {
+			req->req_body_status = REQ_BODY_FAIL;
+			return (-1);
+		}
+		rbs->bytes_done += len;
+		rbs->yet = req->req_bodybytes - rbs->bytes_done;
+		return (len);
+	}
+	INCOMPL();
+}
+
+/*----------------------------------------------------------------------
+ * Iterate over the req.body.
+ *
+ * This can be done exactly once if uncached, and multiple times if the
+ * req.body is cached.
+ */
+
+int
+HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv)
+{
+	char buf[8192];
+	struct storage *st;
+	ssize_t l;
+	int i;
+	struct http1_r_b_s	rbs;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AN(func);
+
+	if (req->req_body_status == REQ_BODY_CACHED) {
+		VTAILQ_FOREACH(st, &req->body, list) {
+			i = func(req, priv, st->ptr, st->len);
+			if (i)
+				return (i);
+		}
+		return (0);
+	}
+
+	if (req->req_body_status == REQ_BODY_NONE)
+		return (0);
+
+	if (req->req_body_status != REQ_BODY_INIT)
+		return (-1);
+
+	i = http1_setup_req_body(req, &rbs);
+	if (i < 0)
+		return (i);
+
+	if (req->req_body_status == REQ_BODY_NONE)
+		return (0);
+
+	do {
+		l = http1_iter_req_body(req, &rbs, buf, sizeof buf);
+		if (l < 0)
+			return (l);
+		if (l > 0) {
+			i = func(req, priv, buf, l);
+			if (i)
+				return (i);
+		}
+	} while (l > 0);
+	return(0);
+}
+
+/*----------------------------------------------------------------------
+ * DiscardReqBody() is a dedicated function, because we might
+ * be able to disuade or terminate its transmission in some protocols.
+ * For HTTP1 we have no such luck, and we just iterate it into oblivion.
+ */
+
+static int __match_proto__(req_body_iter_f)
+httpq_req_body_discard(struct req *req, void *priv, void *ptr, size_t len)
+{
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	(void)priv;
+	(void)ptr;
+	(void)len;
+	return (0);
+}
+
+int
+HTTP1_DiscardReqBody(struct req *req)
+{
+
+	return(HTTP1_IterateReqBody(req, httpq_req_body_discard, NULL));
+}
+
+/*----------------------------------------------------------------------
+ * Cache the req.body if it is smaller than the given size
+ */
+
+int
+HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
+{
+	struct storage *st;
+	ssize_t l;
+	int i;
+	struct http1_r_b_s	rbs;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	if (req->req_body_status == REQ_BODY_CACHED)
+		return (0);
+
+	if (req->req_body_status == REQ_BODY_NONE)
+		return (0);
+
+	if (req->req_body_status != REQ_BODY_INIT)
+		return (-1);
+
+	i = http1_setup_req_body(req, &rbs);
+	if (i < 0)
+		return (i);
+
+	if (req->req_bodybytes > maxsize) {
+		req->req_body_status = REQ_BODY_FAIL;
+		return (-1);
+	}
+
+	if (req->req_body_status == REQ_BODY_NONE)
+		return (0);
+
+	st = NULL;
+	do {
+		if (st == NULL) {
+			st = STV_alloc_transient(
+			    rbs.yet ? rbs.yet : cache_param->fetch_chunksize);
+			if (st == NULL) {
+				req->req_body_status = REQ_BODY_FAIL;
+				return (-1);
+			} else {
+				VTAILQ_INSERT_TAIL(&req->body, st, list);
+			}
+		}
+
+		l = st->space - st->len;
+		l = http1_iter_req_body(req, &rbs, st->ptr + st->len, l);
+		if (l < 0)
+			return (l);
+		if (req->req_bodybytes > maxsize) {
+			req->req_body_status = REQ_BODY_FAIL;
+			return (-1);
+		}
+		if (l > 0) {
+			st->len += l;
+			if (st->space == st->len)
+				st = NULL;
+		}
+	} while (l > 0);
+	req->req_body_status = REQ_BODY_CACHED;
+	return(0);
 }

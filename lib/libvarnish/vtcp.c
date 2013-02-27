@@ -308,3 +308,22 @@ VTCP_linger(int sock, int linger)
 	VTCP_Assert(i);
 	return (i);
 }
+
+/*--------------------------------------------------------------------
+ * Do a poll to check for remote HUP
+ */
+
+int
+VTCP_check_hup(int sock)
+{
+	struct pollfd pfd;
+
+	assert(sock > 0);
+	pfd.fd = sock;
+	pfd.events = POLLOUT;
+	pfd.revents = 0;
+
+	if (poll(&pfd, 1, 0) == 1 && pfd.revents & POLLHUP)
+		return (1);
+        return (0);
+}

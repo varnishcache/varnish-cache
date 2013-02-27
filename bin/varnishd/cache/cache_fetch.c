@@ -75,57 +75,6 @@ FetchError(struct busyobj *bo, const char *error)
 }
 
 /*--------------------------------------------------------------------
- * VFP method functions
- */
-
-static void
-VFP_Begin(struct busyobj *bo, size_t estimate)
-{
-
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	AN(bo->vfp);
-
-	bo->vfp->begin(bo, estimate);
-}
-
-static int
-VFP_Bytes(struct busyobj *bo, struct http_conn *htc, ssize_t sz)
-{
-
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	AN(bo->vfp);
-	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	assert(bo->state == BOS_FETCHING);
-
-	return (bo->vfp->bytes(bo, htc, sz));
-}
-
-static void
-VFP_End(struct busyobj *bo)
-{
-	int i;
-
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	AN(bo->vfp);
-
-	i = bo->vfp->end(bo);
-	if (i)
-		assert(bo->state == BOS_FAILED);
-}
-
-void
-VFP_update_length(const struct busyobj *bo, ssize_t l)
-{
-
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->fetch_obj, OBJECT_MAGIC);
-	if (l == 0)
-		return;
-	assert(l > 0);
-	bo->fetch_obj->len += l;
-}
-
-/*--------------------------------------------------------------------
  * VFP_NOP
  *
  * This fetch-processor does nothing but store the object.
@@ -141,8 +90,11 @@ VFP_update_length(const struct busyobj *bo, ssize_t l)
  * as seen on the socket, or zero if unknown.
  */
 static void __match_proto__(vfp_begin_f)
-vfp_nop_begin(struct busyobj *bo, size_t estimate)
+vfp_nop_begin(void *priv, size_t estimate)
 {
+	struct busyobj *bo;
+
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 
 	if (estimate > 0)
 		(void)FetchStorage(bo, estimate);
@@ -160,10 +112,13 @@ vfp_nop_begin(struct busyobj *bo, size_t estimate)
  */
 
 static int __match_proto__(vfp_bytes_f)
-vfp_nop_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
+vfp_nop_bytes(void *priv, struct http_conn *htc, ssize_t bytes)
 {
 	ssize_t l, wl;
 	struct storage *st;
+	struct busyobj *bo;
+
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 
 	while (bytes > 0) {
 		st = FetchStorage(bo, 0);
@@ -172,11 +127,11 @@ vfp_nop_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 		l = st->space - st->len;
 		if (l > bytes)
 			l = bytes;
-		wl = HTC_Read(htc, st->ptr + st->len, l);
+		wl = HTTP1_Read(htc, st->ptr + st->len, l);
 		if (wl <= 0)
 			return (wl);
 		st->len += wl;
-		VFP_update_length(bo, wl);
+		VBO_extend(bo, wl);
 		bytes -= wl;
 	}
 	return (1);
@@ -192,10 +147,12 @@ vfp_nop_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
  */
 
 static int __match_proto__(vfp_end_f)
-vfp_nop_end(struct busyobj *bo)
+vfp_nop_end(void *priv)
 {
 	struct storage *st;
+	struct busyobj *bo;
 
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	st = VTAILQ_LAST(&bo->fetch_obj->store, storagehead);
 	if (st == NULL)
 		return (0);
@@ -280,14 +237,14 @@ fetch_straight(struct busyobj *bo, struct http_conn *htc, ssize_t cl)
 {
 	int i;
 
-	assert(bo->body_status == BS_LENGTH);
+	assert(htc->body_status == BS_LENGTH);
 
 	if (cl < 0) {
 		return (FetchError(bo, "straight length field bogus"));
 	} else if (cl == 0)
 		return (0);
 
-	i = VFP_Bytes(bo, htc, cl);
+	i = bo->vfp->bytes(bo, htc, cl);
 	if (i <= 0)
 		return (FetchError(bo, "straight insufficient bytes"));
 	return (0);
@@ -307,11 +264,11 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 	unsigned u;
 	ssize_t cl;
 
-	assert(bo->body_status == BS_CHUNKED);
+	assert(htc->body_status == BS_CHUNKED);
 	do {
 		/* Skip leading whitespace */
 		do {
-			if (HTC_Read(htc, buf, 1) <= 0)
+			if (HTTP1_Read(htc, buf, 1) <= 0)
 				return (FetchError(bo, "chunked read err"));
 		} while (vct_islws(buf[0]));
 
@@ -321,7 +278,7 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 		/* Collect hex digits, skipping leading zeros */
 		for (u = 1; u < sizeof buf; u++) {
 			do {
-				if (HTC_Read(htc, buf + u, 1) <= 0)
+				if (HTTP1_Read(htc, buf + u, 1) <= 0)
 					return (FetchError(bo,
 					    "chunked read err"));
 			} while (u == 1 && buf[0] == '0' && buf[u] == '0');
@@ -334,7 +291,7 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 
 		/* Skip trailing white space */
 		while(vct_islws(buf[u]) && buf[u] != '\n')
-			if (HTC_Read(htc, buf + u, 1) <= 0)
+			if (HTTP1_Read(htc, buf + u, 1) <= 0)
 				return (FetchError(bo, "chunked read err"));
 
 		if (buf[u] != '\n')
@@ -345,13 +302,13 @@ fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 		if (cl < 0)
 			return (FetchError(bo,"chunked header number syntax"));
 
-		if (cl > 0 && VFP_Bytes(bo, htc, cl) <= 0)
+		if (cl > 0 && bo->vfp->bytes(bo, htc, cl) <= 0)
 			return (FetchError(bo, "chunked read err"));
 
-		i = HTC_Read(htc, buf, 1);
+		i = HTTP1_Read(htc, buf, 1);
 		if (i <= 0)
 			return (FetchError(bo, "chunked read err"));
-		if (buf[0] == '\r' && HTC_Read( htc, buf, 1) <= 0)
+		if (buf[0] == '\r' && HTTP1_Read( htc, buf, 1) <= 0)
 			return (FetchError(bo, "chunked read err"));
 		if (buf[0] != '\n')
 			return (FetchError(bo,"chunked tail no NL"));
@@ -365,57 +322,26 @@ static void
 fetch_eof(struct busyobj *bo, struct http_conn *htc)
 {
 
-	assert(bo->body_status == BS_EOF);
-	if (VFP_Bytes(bo, htc, SSIZE_MAX) < 0)
+	assert(htc->body_status == BS_EOF);
+	if (bo->vfp->bytes(bo, htc, SSIZE_MAX) < 0)
 		(void)FetchError(bo,"eof socket fail");
 }
 
 /*--------------------------------------------------------------------
- * Fetch any body attached to the incoming request, and either write it
- * to the backend (if we pass) or discard it (anything else).
- * This is mainly a separate function to isolate the stack buffer and
- * to contain the complexity when we start handling chunked encoding.
+ * Pass the request body to the backend
  */
 
-int
-FetchReqBody(struct req *req, int sendbody)
+static int __match_proto__(req_body_iter_f)
+fetch_iter_req_body(struct req *req, void *priv, void *ptr, size_t l)
 {
-	unsigned long content_length;
-	char buf[8192];
-	char *ptr, *endp;
-	int rdcnt;
 
-	if (req->reqbodydone) {
-		AZ(sendbody);
-		return (0);
-	}
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	(void)priv;
 
-	if (http_GetHdr(req->http, H_Content_Length, &ptr)) {
-		req->reqbodydone = 1;
-
-		content_length = strtoul(ptr, &endp, 10);
-		/* XXX should check result of conversion */
-		while (content_length) {
-			if (content_length > sizeof buf)
-				rdcnt = sizeof buf;
-			else
-				rdcnt = content_length;
-			rdcnt = HTC_Read(req->htc, buf, rdcnt);
-			if (rdcnt <= 0)
-				return (1);
-			content_length -= rdcnt;
-			if (sendbody) {
-				/* XXX: stats ? */
-				(void)WRW_Write(req->wrk, buf, rdcnt);
-				if (WRW_Flush(req->wrk))
-					return (2);
-			}
-		}
-	}
-	if (http_GetHdr(req->http, H_Transfer_Encoding, NULL)) {
-		/* XXX: Handle chunked encoding. */
-		VSLb(req->vsl, SLT_Debug, "Transfer-Encoding in request");
-		return (1);
+	if (l > 0) {
+		(void)WRW_Write(req->wrk, ptr, l);
+		if (WRW_Flush(req->wrk))
+			return (-1);
 	}
 	return (0);
 }
@@ -476,13 +402,21 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 
 	(void)VTCP_blocking(vc->fd);	/* XXX: we should timeout instead */
 	WRW_Reserve(wrk, &vc->fd, bo->vsl, req->t_req);	/* XXX t_resp ? */
-	(void)http_Write(wrk, hp, 0);	/* XXX: stats ? */
+	(void)HTTP1_Write(wrk, hp, 0);	/* XXX: stats ? */
 
-	/* Deal with any message-body the request might have */
-	i = FetchReqBody(req, sendbody);
-	if (sendbody && req->reqbodydone)
-		retry = -1;
-	if (WRW_FlushRelease(wrk) || i > 0) {
+	/* Deal with any message-body the request might (still) have */
+	i = 0;
+
+	if (sendbody) {
+		i = HTTP1_IterateReqBody(req,
+		    fetch_iter_req_body, NULL);
+		if (req->req_body_status == REQ_BODY_DONE)
+			retry = -1;
+	} else {
+		i = HTTP1_DiscardReqBody(req);
+	}
+
+	if (WRW_FlushRelease(wrk) || i != 0) {
 		VSLb(req->vsl, SLT_FetchError,
 		    "backend write error: %d (%s)",
 		    errno, strerror(errno));
@@ -496,7 +430,7 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 
 	/* Receive response */
 
-	HTC_Init(htc, bo->ws, vc->fd, vc->vsl,
+	HTTP1_Init(htc, bo->ws, vc->fd, vc->vsl,
 	    cache_param->http_resp_size,
 	    cache_param->http_resp_hdr_len);
 
@@ -504,8 +438,8 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 
 	first = 1;
 	do {
-		hs = HTC_Rx(htc);
-		if (hs == HTC_OVERFLOW) {
+		hs = HTTP1_Rx(htc);
+		if (hs == HTTP1_OVERFLOW) {
 			VSLb(req->vsl, SLT_FetchError,
 			    "http %sread error: overflow",
 			    first ? "first " : "");
@@ -513,7 +447,7 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 			/* XXX: other cleanup ? */
 			return (-1);
 		}
-		if (hs == HTC_ERROR_EOF) {
+		if (hs == HTTP1_ERROR_EOF) {
 			VSLb(req->vsl, SLT_FetchError,
 			    "http %sread error: EOF",
 			    first ? "first " : "");
@@ -527,11 +461,11 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 			VTCP_set_read_timeout(vc->fd,
 			    vc->between_bytes_timeout);
 		}
-	} while (hs != HTC_COMPLETE);
+	} while (hs != HTTP1_COMPLETE);
 
 	hp = bo->beresp;
 
-	if (http_DissectResponse(hp, htc)) {
+	if (HTTP1_DissectResponse(hp, htc)) {
 		VSLb(req->vsl, SLT_FetchError, "http format error");
 		VDI_CloseFd(&bo->vbc);
 		/* XXX: other cleanup ? */
@@ -580,6 +514,7 @@ FetchBody(struct worker *wrk, void *priv)
 	if (bo->vfp == NULL)
 		bo->vfp = &vfp_nop;
 
+	AN(bo->vfp);
 	AZ(bo->vgz_rx);
 	AZ(VTAILQ_FIRST(&obj->store));
 
@@ -588,7 +523,7 @@ FetchBody(struct worker *wrk, void *priv)
 	/* XXX: pick up estimate from objdr ? */
 	cl = 0;
 	cls = 0;
-	switch (bo->body_status) {
+	switch (htc->body_status) {
 	case BS_NONE:
 		mklen = 0;
 		break;
@@ -597,26 +532,30 @@ FetchBody(struct worker *wrk, void *priv)
 		break;
 	case BS_LENGTH:
 		cl = fetch_number(bo->h_content_length, 10);
-		VFP_Begin(bo, cl > 0 ? cl : 0);
+
+		bo->vfp->begin(bo, cl > 0 ? cl : 0);
 		if (bo->state == BOS_FETCHING)
 			cls = fetch_straight(bo, htc, cl);
 		mklen = 1;
-		VFP_End(bo);
+		if (bo->vfp->end(bo))
+			assert(bo->state == BOS_FAILED);
 		break;
 	case BS_CHUNKED:
-		VFP_Begin(bo, cl);
+		bo->vfp->begin(bo, cl > 0 ? cl : 0);
 		if (bo->state == BOS_FETCHING)
 			cls = fetch_chunked(bo, htc);
 		mklen = 1;
-		VFP_End(bo);
+		if (bo->vfp->end(bo))
+			assert(bo->state == BOS_FAILED);
 		break;
 	case BS_EOF:
-		VFP_Begin(bo, cl);
+		bo->vfp->begin(bo, cl > 0 ? cl : 0);
 		if (bo->state == BOS_FETCHING)
 			fetch_eof(bo, htc);
 		mklen = 1;
 		cls = 1;
-		VFP_End(bo);
+		if (bo->vfp->end(bo))
+			assert(bo->state == BOS_FAILED);
 		break;
 	case BS_ERROR:
 		cls = FetchError(bo, "error incompatible Transfer-Encoding");
@@ -638,7 +577,7 @@ FetchBody(struct worker *wrk, void *priv)
 	bo->vfp = NULL;
 
 	VSLb(bo->vsl, SLT_Fetch_Body, "%u(%s) cls %d mklen %d",
-	    bo->body_status, body_status(bo->body_status),
+	    htc->body_status, body_status_2str(htc->body_status),
 	    cls, mklen);
 
 	http_Teardown(bo->bereq);

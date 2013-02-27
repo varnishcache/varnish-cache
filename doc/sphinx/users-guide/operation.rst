@@ -14,4 +14,3 @@ Operation
    esi
    vary
    cookies
-   virtualized

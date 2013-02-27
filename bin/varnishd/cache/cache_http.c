@@ -42,11 +42,11 @@
 #undef HTTPH
 
 static const enum VSL_tag_e foo[] = {
-	[HTTP_Req]	= SLT_ReqRequest,
-	[HTTP_Resp]	= SLT_RespRequest,
-	[HTTP_Bereq]	= SLT_BereqRequest,
-	[HTTP_Beresp]	= SLT_BerespRequest,
-	[HTTP_Obj]	= SLT_ObjRequest,
+	[HTTP_Method]	= SLT_ReqMethod,
+	[HTTP_Resp]	= SLT_RespMethod,
+	[HTTP_Bereq]	= SLT_BereqMethod,
+	[HTTP_Beresp]	= SLT_BerespMethod,
+	[HTTP_Obj]	= SLT_ObjMethod,
 };
 
 static enum VSL_tag_e
@@ -56,12 +56,12 @@ http2shmlog(const struct http *hp, int t)
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	if (t > HTTP_HDR_FIRST)
 		t = HTTP_HDR_FIRST;
-	assert(hp->logtag >= HTTP_Req && hp->logtag <= HTTP_Obj); /*lint !e685*/
-	assert(t >= HTTP_HDR_REQ && t <= HTTP_HDR_FIRST);
+	assert(hp->logtag >= HTTP_Method && hp->logtag <= HTTP_Obj); /*lint !e685*/
+	assert(t >= HTTP_HDR_METHOD && t <= HTTP_HDR_FIRST);
 	return ((enum VSL_tag_e)(foo[hp->logtag] + t));
 }
 
-static void
+void
 http_VSLH(const struct http *hp, unsigned hdr)
 {
 
@@ -473,261 +473,8 @@ const char *
 http_GetReq(const struct http *hp)
 {
 
-	Tcheck(hp->hd[HTTP_HDR_REQ]);
-	return (hp->hd[HTTP_HDR_REQ].b);
-}
-
-/*--------------------------------------------------------------------
- * Dissect the headers of the HTTP protocol message.
- * Detect conditionals (headers which start with '^[Ii][Ff]-')
- */
-
-static uint16_t
-http_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
-{
-	char *q, *r;
-	txt t = htc->rxbuf;
-
-	if (*p == '\r')
-		p++;
-
-	hp->nhd = HTTP_HDR_FIRST;
-	hp->conds = 0;
-	r = NULL;		/* For FlexeLint */
-	for (; p < t.e; p = r) {
-
-		/* Find end of next header */
-		q = r = p;
-		while (r < t.e) {
-			if (!vct_iscrlf(*r)) {
-				r++;
-				continue;
-			}
-			q = r;
-			assert(r < t.e);
-			r += vct_skipcrlf(r);
-			if (r >= t.e)
-				break;
-			/* If line does not continue: got it. */
-			if (!vct_issp(*r))
-				break;
-
-			/* Clear line continuation LWS to spaces */
-			while (vct_islws(*q))
-				*q++ = ' ';
-		}
-
-		if (q - p > htc->maxhdr) {
-			VSC_C_main->losthdr++;
-			VSLb(hp->vsl, SLT_LostHeader, "%.*s",
-			    (int)(q - p > 20 ? 20 : q - p), p);
-			return (413);
-		}
-
-		/* Empty header = end of headers */
-		if (p == q)
-			break;
-
-		if ((p[0] == 'i' || p[0] == 'I') &&
-		    (p[1] == 'f' || p[1] == 'F') &&
-		    p[2] == '-')
-			hp->conds = 1;
-
-		while (q > p && vct_issp(q[-1]))
-			q--;
-		*q = '\0';
-
-		if (hp->nhd < hp->shd) {
-			hp->hdf[hp->nhd] = 0;
-			hp->hd[hp->nhd].b = p;
-			hp->hd[hp->nhd].e = q;
-			http_VSLH(hp, hp->nhd);
-			hp->nhd++;
-		} else {
-			VSC_C_main->losthdr++;
-			VSLb(hp->vsl, SLT_LostHeader, "%.*s",
-			    (int)(q - p > 20 ? 20 : q - p), p);
-			return (413);
-		}
-	}
-	return (0);
-}
-
-/*--------------------------------------------------------------------
- * Deal with first line of HTTP protocol message.
- */
-
-static uint16_t
-http_splitline(struct http *hp,
-    const struct http_conn *htc, int h1, int h2, int h3)
-{
-	char *p, *q;
-
-	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-
-	/* XXX: Assert a NUL at rx.e ? */
-	Tcheck(htc->rxbuf);
-
-	/* Skip leading LWS */
-	for (p = htc->rxbuf.b ; vct_islws(*p); p++)
-		continue;
-
-	/* First field cannot contain SP, CRLF or CTL */
-	q = p;
-	for (; !vct_issp(*p); p++) {
-		if (vct_isctl(*p))
-			return (400);
-	}
-	hp->hd[h1].b = q;
-	hp->hd[h1].e = p;
-
-	/* Skip SP */
-	for (; vct_issp(*p); p++) {
-		if (vct_isctl(*p))
-			return (400);
-	}
-
-	/* Second field cannot contain LWS or CTL */
-	q = p;
-	for (; !vct_islws(*p); p++) {
-		if (vct_isctl(*p))
-			return (400);
-	}
-	hp->hd[h2].b = q;
-	hp->hd[h2].e = p;
-
-	if (!Tlen(hp->hd[h2]))
-		return (413);
-
-	/* Skip SP */
-	for (; vct_issp(*p); p++) {
-		if (vct_isctl(*p))
-			return (400);
-	}
-
-	/* Third field is optional and cannot contain CTL */
-	q = p;
-	if (!vct_iscrlf(*p)) {
-		for (; !vct_iscrlf(*p); p++)
-			if (!vct_issep(*p) && vct_isctl(*p))
-				return (400);
-	}
-	hp->hd[h3].b = q;
-	hp->hd[h3].e = p;
-
-	/* Skip CRLF */
-	p += vct_skipcrlf(p);
-
-	*hp->hd[h1].e = '\0';
-	http_VSLH(hp, h1);
-
-	*hp->hd[h2].e = '\0';
-	http_VSLH(hp, h2);
-
-	if (hp->hd[h3].e != NULL) {
-		*hp->hd[h3].e = '\0';
-		http_VSLH(hp, h3);
-	}
-
-	return (http_dissect_hdrs(hp, p, htc));
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-http_ProtoVer(struct http *hp)
-{
-
-	if (!strcasecmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.0"))
-		hp->protover = 10;
-	else if (!strcasecmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.1"))
-		hp->protover = 11;
-	else
-		hp->protover = 9;
-}
-
-
-/*--------------------------------------------------------------------*/
-
-uint16_t
-http_DissectRequest(struct req *req)
-{
-	struct http_conn *htc;
-	struct http *hp;
-	uint16_t retval;
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	htc = req->htc;
-	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	hp = req->http;
-	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-
-	retval = http_splitline(hp, htc,
-	    HTTP_HDR_REQ, HTTP_HDR_URL, HTTP_HDR_PROTO);
-	if (retval != 0) {
-		VSLbt(req->vsl, SLT_HttpGarbage, htc->rxbuf);
-		return (retval);
-	}
-	http_ProtoVer(hp);
-	return (retval);
-}
-
-/*--------------------------------------------------------------------*/
-
-uint16_t
-http_DissectResponse(struct http *hp, const struct http_conn *htc)
-{
-	int j;
-	uint16_t retval = 0;
-	char *p;
-
-
-	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-
-	if (http_splitline(hp, htc,
-	    HTTP_HDR_PROTO, HTTP_HDR_STATUS, HTTP_HDR_RESPONSE))
-		retval = 503;
-
-	if (retval == 0 && memcmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.", 7))
-		retval = 503;
-
-	if (retval == 0 && Tlen(hp->hd[HTTP_HDR_STATUS]) != 3)
-		retval = 503;
-
-	if (retval == 0) {
-		hp->status = 0;
-		p = hp->hd[HTTP_HDR_STATUS].b;
-		for (j = 100; j != 0; j /= 10) {
-			if (!vct_isdigit(*p)) {
-				retval = 503;
-				break;
-			}
-			hp->status += (uint16_t)(j * (*p - '0'));
-			p++;
-		}
-		if (*p != '\0')
-			retval = 503;
-	}
-
-	if (retval != 0) {
-		VSLbt(hp->vsl, SLT_HttpGarbage, htc->rxbuf);
-		assert(retval >= 100 && retval <= 999);
-		hp->status = retval;
-	} else {
-		http_ProtoVer(hp);
-	}
-
-	if (hp->hd[HTTP_HDR_RESPONSE].b == NULL ||
-	    !Tlen(hp->hd[HTTP_HDR_RESPONSE])) {
-		/* Backend didn't send a response string, use the standard */
-		hp->hd[HTTP_HDR_RESPONSE].b =
-		    TRUST_ME(http_StatusMessage(hp->status));
-		hp->hd[HTTP_HDR_RESPONSE].e =
-		    strchr(hp->hd[HTTP_HDR_RESPONSE].b, '\0');
-	}
-	return (retval);
+	Tcheck(hp->hd[HTTP_HDR_METHOD]);
+	return (hp->hd[HTTP_HDR_METHOD].b);
 }
 
 /*--------------------------------------------------------------------*/
@@ -757,7 +504,7 @@ void
 http_ForceGet(const struct http *to)
 {
 	if (strcmp(http_GetReq(to), "GET"))
-		http_SetH(to, HTTP_HDR_REQ, "GET");
+		http_SetH(to, HTTP_HDR_METHOD, "GET");
 }
 
 void
@@ -845,7 +592,7 @@ http_FilterReq(const struct req *req, unsigned how)
 	hp = req->busyobj->bereq;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
-	http_linkh(hp, req->http, HTTP_HDR_REQ);
+	http_linkh(hp, req->http, HTTP_HDR_METHOD);
 	http_linkh(hp, req->http, HTTP_HDR_URL);
 	if (how == HTTPH_R_FETCH)
 		http_SetH(hp, HTTP_HDR_PROTO, "HTTP/1.1");
@@ -1042,49 +789,6 @@ HTTP_Copy(struct http *to, const struct http * const fm)
 	assert(fm->nhd <= to->shd);
 	memcpy(to->hd, fm->hd, fm->nhd * sizeof *to->hd);
 	memcpy(to->hdf, fm->hdf, fm->nhd * sizeof *to->hdf);
-}
-
-/*--------------------------------------------------------------------*/
-
-unsigned
-http_Write(const struct worker *w, const struct http *hp, int resp)
-{
-	unsigned u, l;
-
-	if (resp) {
-		l = WRW_WriteH(w, &hp->hd[HTTP_HDR_PROTO], " ");
-		http_VSLH(hp, HTTP_HDR_PROTO);
-
-		hp->hd[HTTP_HDR_STATUS].b = WS_Alloc(hp->ws, 4);
-		AN(hp->hd[HTTP_HDR_STATUS].b);
-
-		sprintf(hp->hd[HTTP_HDR_STATUS].b, "%3d", hp->status);
-		hp->hd[HTTP_HDR_STATUS].e = hp->hd[HTTP_HDR_STATUS].b + 3;
-
-		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_STATUS], " ");
-		http_VSLH(hp, HTTP_HDR_STATUS);
-
-		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_RESPONSE], "\r\n");
-		http_VSLH(hp, HTTP_HDR_RESPONSE);
-	} else {
-		AN(hp->hd[HTTP_HDR_URL].b);
-		l = WRW_WriteH(w, &hp->hd[HTTP_HDR_REQ], " ");
-		http_VSLH(hp, HTTP_HDR_REQ);
-		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_URL], " ");
-		http_VSLH(hp, HTTP_HDR_URL);
-		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_PROTO], "\r\n");
-		http_VSLH(hp, HTTP_HDR_PROTO);
-	}
-	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
-		if (hp->hd[u].b == NULL)
-			continue;
-		AN(hp->hd[u].b);
-		AN(hp->hd[u].e);
-		l += WRW_WriteH(w, &hp->hd[u], "\r\n");
-		http_VSLH(hp, u);
-	}
-	l += WRW_Write(w, "\r\n", -1);
-	return (l);
 }
 
 /*--------------------------------------------------------------------*/

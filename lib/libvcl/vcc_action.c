@@ -32,6 +32,8 @@
 
 #include "config.h"
 
+#include <string.h>
+
 #include "vcc_compile.h"
 
 /*--------------------------------------------------------------------*/
@@ -175,6 +177,76 @@ parse_unset(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 static void
+parse_new(struct vcc *tl)
+{
+	struct symbol *sy1, *sy2, *sy3;
+	const char *p, *s_obj, *s_init, *s_struct, *s_fini;
+	char buf1[128];
+	char buf2[128];
+
+	vcc_NextToken(tl);
+	ExpectErr(tl, ID);
+	sy1 = VCC_FindSymbol(tl, tl->t, SYM_NONE);
+	XXXAZ(sy1);
+
+	sy1 = VCC_AddSymbolTok(tl, tl->t, SYM_NONE);	// XXX: NONE ?
+	XXXAN(sy1);
+	vcc_NextToken(tl);
+
+	ExpectErr(tl, '=');
+	vcc_NextToken(tl);
+
+	ExpectErr(tl, ID);
+	sy2 = VCC_FindSymbol(tl, tl->t, SYM_OBJECT);
+	XXXAN(sy2);
+
+	/*lint -save -e448 */
+	/* Split the first three args */
+	p = sy2->args;
+	s_obj = p;
+	p += strlen(p) + 1;
+	s_init = p;
+	while (p[0] != '\0' || p[1] != '\0')
+		p++;
+	p += 2;
+	s_struct = p;
+	p += strlen(p) + 1;
+	s_fini = p + strlen(p) + 1;
+	while (p[0] != '\0' || p[1] != '\0')
+		p++;
+	p += 2;
+
+	Fh(tl, 0, "static %s *%s;\n\n", s_struct, sy1->name);
+
+	vcc_NextToken(tl);
+
+	bprintf(buf1, ", &%s", sy1->name);
+	vcc_Eval_Func(tl, s_init, buf1, "ASDF", s_init + strlen(s_init) + 1);
+	Ff(tl, 0, "\t%s((struct req*)0, &%s);\n", s_fini, sy1->name);
+	ExpectErr(tl, ';');
+
+	bprintf(buf1, ", %s", sy1->name);
+	/* Split the methods from the args */
+	while (*p != '\0') {
+		p += strlen(s_obj);
+		bprintf(buf2, "%s%s", sy1->name, p);
+		sy3 = VCC_AddSymbolStr(tl, buf2, SYM_FUNC);
+		sy3->eval = vcc_Eval_SymFunc;
+		p += strlen(p) + 1;
+		sy3->cfunc = p;
+		p += strlen(p) + 1;
+		sy3->args = p;
+		sy3->extra = TlDup(tl, buf1);
+		while (p[0] != '\0' || p[1] != '\0')
+			p++;
+		p += 2;
+	}
+	/*lint -restore */
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 parse_ban(struct vcc *tl)
 {
 
@@ -190,24 +262,6 @@ parse_ban(struct vcc *tl)
 
 	ExpectErr(tl, ')');
 	vcc_NextToken(tl);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-parse_ban_url(struct vcc *tl)
-{
-
-	vcc_NextToken(tl);
-	ExpectErr(tl, '(');
-	vcc_NextToken(tl);
-
-	Fb(tl, 1, "VRT_ban(req, \"req.url\", \"~\", ");
-	vcc_Expr(tl, STRING);
-	ERRCHK(tl);
-	ExpectErr(tl, ')');
-	vcc_NextToken(tl);
-	Fb(tl, 0, ", 0);\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -324,7 +378,6 @@ static struct action_table {
 	{ "call",		parse_call },
 	{ "hash_data",		parse_hash_data, VCL_MET_HASH },
 	{ "ban",		parse_ban },
-	{ "ban_url",		parse_ban_url },
 	{ "remove",		parse_unset }, /* backward compatibility */
 	{ "return",		parse_return },
 	{ "rollback",		parse_rollback },
@@ -332,6 +385,7 @@ static struct action_table {
 	{ "synthetic",		parse_synthetic, VCL_MET_ERROR },
 	{ "unset",		parse_unset },
 	{ "purge",		parse_purge, VCL_MET_MISS | VCL_MET_HIT },
+	{ "new",		parse_new, VCL_MET_INIT},
 	{ NULL,			NULL }
 };
 

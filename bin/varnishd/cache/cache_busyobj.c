@@ -87,7 +87,7 @@ VBO_Free(struct busyobj **bop)
 }
 
 struct busyobj *
-VBO_GetBusyObj(struct worker *wrk)
+VBO_GetBusyObj(struct worker *wrk, struct req *req)
 {
 	struct busyobj *bo = NULL;
 	uint16_t nhttp;
@@ -129,6 +129,8 @@ VBO_GetBusyObj(struct worker *wrk)
 	sz = cache_param->vsl_buffer;
 	VSL_Setup(bo->vsl, p, sz);
 	bo->vsl->wid = VXID_Get(&wrk->vxid_pool) | VSL_BACKENDMARKER;
+	VSLb(bo->vsl, SLT_Link, "req %u", req->vsl->wid & VSL_IDENTMASK);
+	VSLb(req->vsl, SLT_Link, "bereq %u", bo->vsl->wid & VSL_IDENTMASK);
 	p += sz;
 	p = (void*)PRNDUP(p);
 	assert(p < bo->end);
@@ -186,4 +188,16 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 		wrk->nbo = bo;
 	else
 		VBO_Free(&bo);
+}
+
+void
+VBO_extend(const struct busyobj *bo, ssize_t l)
+{
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->fetch_obj, OBJECT_MAGIC);
+	if (l == 0)
+		return;
+	assert(l > 0);
+	bo->fetch_obj->len += l;
 }

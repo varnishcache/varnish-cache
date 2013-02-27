@@ -50,6 +50,17 @@ struct parspec {
 	const char	*units;
 };
 
+tweak_t tweak_user;
+tweak_t tweak_group;
+tweak_t tweak_string;
+tweak_t tweak_bool;
+tweak_t tweak_waiter;
+tweak_t tweak_bytes_u;
+tweak_t tweak_listen_address;
+tweak_t tweak_timeout;
+tweak_t tweak_generic_double;
+tweak_t tweak_poolparam;
+
 int tweak_generic_uint(struct cli *cli,
     volatile unsigned *dest, const char *arg, unsigned min, unsigned max);
 void tweak_uint(struct cli *cli, const struct parspec *par, const char *arg);
@@ -57,8 +68,18 @@ void tweak_timeout_double(struct cli *cli,
     const struct parspec *par, const char *arg);
 void tweak_bytes(struct cli *cli, const struct parspec *par, const char *arg);
 
+/* mgt_param_tbl.c */
+extern const struct parspec mgt_parspec[];
+
 /* mgt_param_vsl.c */
 extern const struct parspec VSL_parspec[];
 
 /* mgt_pool.c */
 extern const struct parspec WRK_parspec[];
+
+#define MEMPOOL_TEXT							\
+	"The three numbers are:\n"					\
+	"   min_pool -- minimum size of free pool.\n"			\
+	"   max_pool -- maximum size of free pool.\n"			\
+	"   max_age -- max age of free element.\n"
+

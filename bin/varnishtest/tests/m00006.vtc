@@ -6,6 +6,10 @@ server s1 {
 	expect req.http.foo == "1, 2"
 	txresp -hdr "bar: a" -hdr "bar: b" -bodylen 1
 
+	rxreq
+	expect req.url == "/2"
+	expect req.http.baz == "1, 2"
+	txresp -hdr "qux: a" -hdr "qux: b" -bodylen 1
 } -start
 
 varnish v1 -vcl+backend {
@@ -14,8 +18,14 @@ varnish v1 -vcl+backend {
 	sub vcl_recv {
 		std.collect(req.http.foo);
 	}
+	sub vcl_miss {
+		std.collect(bereq.http.baz);
+	}
 	sub vcl_fetch {
 		std.collect(beresp.http.bar);
+	}
+	sub vcl_deliver {
+		std.collect(resp.http.qux);
 	}
 } -start
 
@@ -23,6 +33,12 @@ client c1 {
 	txreq  -url "/1" -hdr "Foo: 1" -hdr "Foo: 2"
 	rxresp 
 	expect resp.http.bar == "a, b"
+	expect resp.status == 200
+	expect resp.bodylen == 1
+
+	txreq -url "/2" -hdr "Baz: 1" -hdr "Baz: 2"
+	rxresp
+	expect resp.http.qux == "a, b"
 	expect resp.status == 200
 	expect resp.bodylen == 1
 } -run

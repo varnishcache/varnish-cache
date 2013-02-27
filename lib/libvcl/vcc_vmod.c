@@ -167,7 +167,15 @@ vcc_ParseImport(struct vcc *tl)
 	Fh(tl, 0, "static struct vmod_priv vmod_priv_%.*s;\n", PF(mod));
 	for (; *spec != NULL; spec++) {
 		p = *spec;
-		if (!strcmp(p, "INIT")) {
+		if (!strcmp(p, "OBJ")) {
+			p += strlen(p) + 1;
+			sym = VCC_AddSymbolStr(tl, p, SYM_OBJECT);
+			XXXAN(sym);
+			sym->args = p;
+		} else if (!strcmp(p, "FINI")) {
+			p += strlen(p) + 1;
+			// Nothing yet
+		} else if (!strcmp(p, "INIT")) {
 			p += strlen(p) + 1;
 			Fi(tl, 0, "\t%s(&vmod_priv_%.*s, &VCL_conf);\n",
 			    p, PF(mod));
@@ -175,7 +183,7 @@ vcc_ParseImport(struct vcc *tl)
 			sym = VCC_AddSymbolStr(tl, p, SYM_FUNC);
 			ERRCHK(tl);
 			AN(sym);
-			sym->eval = vcc_Eval_Func;
+			sym->eval = vcc_Eval_SymFunc;
 			p += strlen(p) + 1;
 			sym->cfunc = p;
 			p += strlen(p) + 1;

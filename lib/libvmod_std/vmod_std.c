@@ -175,6 +175,15 @@ vmod_collect(struct req *req, const struct gethdr_s *hdr)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	if (hdr->where == HDR_REQ)
 		http_CollectHdr(req->http, hdr->what);
-	else if (hdr->where == HDR_BERESP && req->busyobj != NULL)
+	else if (hdr->where == HDR_BEREQ) {
+		AN(req->busyobj);
+		http_CollectHdr(req->busyobj->bereq, hdr->what);
+	}
+	else if (hdr->where == HDR_BERESP) {
+		AN(req->busyobj);
 		http_CollectHdr(req->busyobj->beresp, hdr->what);
+	}
+	else if (hdr->where == HDR_RESP) {
+		http_CollectHdr(req->resp, hdr->what);
+	}
 }

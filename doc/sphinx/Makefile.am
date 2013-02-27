@@ -98,6 +98,7 @@ EXTRA_DIST = \
 	installation/install.rst \
 	installation/prerequisites.rst \
 	installation/upgrade.rst \
+	installation/platformnotes.rst \
 	phk/autocrap.rst \
 	phk/backends.rst \
 	phk/barriers.rst \
@@ -129,7 +130,6 @@ EXTRA_DIST = \
 	reference/vsm.rst \
 	tutorial/index.rst \
 	tutorial/introduction.rst \
-	tutorial/web_accelerator.rst \
 	tutorial/starting_varnish.rst \
 	tutorial/putting_varnish_on_port_80.rst \
 	tutorial/backend_servers.rst \
@@ -157,13 +157,10 @@ EXTRA_DIST = \
 	users-guide/vcl-examples.rst \
 	users-guide/vcl-hashing.rst \
 	users-guide/vcl-inline-c.rst \
-	users-guide/vcl-intro.rst \
 	users-guide/vcl.rst \
 	users-guide/vcl-saint-and-grace.rst \
-	users-guide/vcl-subs.rst \
 	users-guide/vcl-syntax.rst \
 	users-guide/vcl-variables.rst \
-	users-guide/virtualized.rst \
 	users-guide/websockets.rst
 
 

@@ -2,7 +2,7 @@ varnishtest "basic default HTTP transactions with expect"
 
 server s1 {
 	rxreq
-	expect req.request == GET
+	expect req.method == GET
 	expect req.proto == HTTP/1.1
 	expect req.url == "/"
 	txresp 

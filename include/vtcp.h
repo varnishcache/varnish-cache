@@ -62,6 +62,7 @@ int VTCP_filter_http(int sock);
 int VTCP_blocking(int sock);
 int VTCP_nonblocking(int sock);
 int VTCP_linger(int sock, int linger);
+int VTCP_check_hup(int sock);
 
 #ifdef SOL_SOCKET
 int VTCP_port(const struct sockaddr_storage *addr);

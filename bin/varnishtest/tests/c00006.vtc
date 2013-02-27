@@ -20,7 +20,7 @@ client c1 {
 
 client c1 -run
 
-varnish v1 -cli "ban.url foo"
+varnish v1 -cli "ban req.url ~ foo"
 
 client c1 {
 	txreq -url "/foo"

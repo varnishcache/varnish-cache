@@ -1,0 +1,19 @@
+varnishtest "Test RFC2616 5.2 compliance"
+
+server s1 {
+	rxreq
+	txresp -hdr "Foo: 1"
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_deliver {
+		set resp.http.rxhost = req.http.host;
+	}
+} -start
+
+client c1 {
+	txreq -url http://www.example.com/bar
+	rxresp
+	expect resp.http.rxhost == www.example.com
+} -run

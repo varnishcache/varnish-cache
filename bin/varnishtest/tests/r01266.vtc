@@ -1,0 +1,41 @@
+varnishtest "#1266 - Check persisted truncated gone bans"
+
+# Test that bans which has been gone'd, truncated and persisted works
+
+shell "rm -f ${tmpdir}/_.per1"
+
+server s1 {
+	rxreq
+	txresp -hdr "x-foo: foo"
+} -start
+
+varnish v1 \
+	-arg "-pfeature=+wait_silo" \
+	-arg "-pban_lurker_sleep=0.01" \
+	-storage "-sper1=persistent,${tmpdir}/_.per1,10m" \
+	-vcl+backend {
+	}
+varnish v1 -start
+
+# Add a ban that will (with lurker help) become a truncated gone ban last
+# in the list
+varnish v1 -cliok "ban obj.http.x-foo == bar"
+delay 1
+
+# Add an object that will point to our ban
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.x-foo == "foo"
+} -run
+
+# Force a reload
+varnish v1 -stop
+varnish v1 -start
+
+# Check that our object is still there
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.x-foo == "foo"
+} -run

@@ -1,6 +1,6 @@
 #
 
-INCLUDES = \
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/lib/libvgz \
 	-I$(top_builddir)/bin/varnishd \
@@ -31,7 +31,7 @@ varnishd_SOURCES = \
 	cache/cache_hash.c \
 	cache/cache_http.c \
 	cache/cache_http1_fsm.c \
-	cache/cache_httpconn.c \
+	cache/cache_http1_proto.c \
 	cache/cache_lck.c \
 	cache/cache_main.c \
 	cache/cache_mempool.c \
@@ -61,6 +61,7 @@ varnishd_SOURCES = \
 	mgt/mgt_cli.c \
 	mgt/mgt_main.c \
 	mgt/mgt_param.c \
+	mgt/mgt_param_tbl.c \
 	mgt/mgt_param_bits.c \
 	mgt/mgt_pool.c \
 	mgt/mgt_sandbox.c \

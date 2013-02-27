@@ -175,7 +175,7 @@ cmd_var_resolve(struct http *hp, char *spec)
 {
 	char **hh, *hdr;
 
-	if (!strcmp(spec, "req.request"))
+	if (!strcmp(spec, "req.method"))
 		return(hp->req[0]);
 	if (!strcmp(spec, "req.url"))
 		return(hp->req[1]);
@@ -189,6 +189,8 @@ cmd_var_resolve(struct http *hp, char *spec)
 		return(hp->resp[2]);
 	if (!strcmp(spec, "resp.chunklen"))
 		return(hp->chunklen);
+	if (!strcmp(spec, "req.bodylen"))
+		return(hp->bodylen);
 	if (!strcmp(spec, "resp.bodylen"))
 		return(hp->bodylen);
 	if (!strcmp(spec, "resp.body"))
@@ -446,6 +448,7 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 	ll = 0;
 	p = http_find_header(hh, "content-length");
 	if (p != NULL) {
+		hp->body = hp->rxbuf + hp->prxbuf;
 		l = strtoul(p, NULL, 0);
 		(void)http_rxchar(hp, l, 0);
 		vtc_dump(hp->vl, 4, "body", hp->body, l);
@@ -559,13 +562,14 @@ cmd_http_gunzip_body(CMD_ARGS)
 	char *p;
 	unsigned l;
 
+	(void)av;
 	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
-	ONLY_CLIENT(hp, av);
 
 	memset(&vz, 0, sizeof vz);
 
+	AN(hp->body);
 	if (hp->body[0] != (char)0x1f || hp->body[1] != (char)0x8b)
 		vtc_log(hp->vl, hp->fatal,
 		    "Gunzip error: Body lacks gzip magics");
@@ -647,51 +651,20 @@ gzip_body(const struct http *hp, const char *txt, char **body, int *bodylen)
 }
 
 /**********************************************************************
- * Transmit a response
+ * Handle common arguments of a transmited request or response
  */
 
-static void
-cmd_http_txresp(CMD_ARGS)
+static char* const *
+http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
+    char* body)
 {
-	struct http *hp;
-	const char *proto = "HTTP/1.1";
-	const char *status = "200";
-	const char *msg = "Ok";
 	int bodylen = 0;
 	char *b, *c;
-	char *body = NULL, *nullbody;
+	char *nullbody = NULL;
 	int nolen = 0;
 
-
-	(void)cmd;
 	(void)vl;
-	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
-	ONLY_SERVER(hp, av);
-	assert(!strcmp(av[0], "txresp"));
-	av++;
-
-	VSB_clear(hp->vsb);
-
-	/* send a "Content-Length: 0" header unless something else happens */
-	REPLACE(body, "");
 	nullbody = body;
-
-	for(; *av != NULL; av++) {
-		if (!strcmp(*av, "-proto")) {
-			proto = av[1];
-			av++;
-		} else if (!strcmp(*av, "-status")) {
-			status = av[1];
-			av++;
-		} else if (!strcmp(*av, "-msg")) {
-			msg = av[1];
-			av++;
-			continue;
-		} else
-			break;
-	}
-
-	VSB_printf(hp->vsb, "%s %s %s%s", proto, status, msg, nl);
 
 	for(; *av != NULL; av++) {
 		if (!strcmp(*av, "-nolen")) {
@@ -747,13 +720,60 @@ cmd_http_txresp(CMD_ARGS)
 		} else
 			break;
 	}
-	if (*av != NULL)
-		vtc_log(hp->vl, 0, "Unknown http txresp spec: %s\n", *av);
 	if (body != NULL && !nolen)
 		VSB_printf(hp->vsb, "Content-Length: %d%s", bodylen, nl);
 	VSB_cat(hp->vsb, nl);
 	if (body != NULL)
 		VSB_bcat(hp->vsb, body, bodylen);
+	return av;
+}
+
+/**********************************************************************
+ * Transmit a response
+ */
+
+static void
+cmd_http_txresp(CMD_ARGS)
+{
+	struct http *hp;
+	const char *proto = "HTTP/1.1";
+	const char *status = "200";
+	const char *msg = "Ok";
+	char* body = NULL;
+
+	(void)cmd;
+	(void)vl;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	ONLY_SERVER(hp, av);
+	assert(!strcmp(av[0], "txresp"));
+	av++;
+
+	VSB_clear(hp->vsb);
+
+	for(; *av != NULL; av++) {
+		if (!strcmp(*av, "-proto")) {
+			proto = av[1];
+			av++;
+		} else if (!strcmp(*av, "-status")) {
+			status = av[1];
+			av++;
+		} else if (!strcmp(*av, "-msg")) {
+			msg = av[1];
+			av++;
+			continue;
+		} else
+			break;
+	}
+
+	VSB_printf(hp->vsb, "%s %s %s%s", proto, status, msg, nl);
+
+	/* send a "Content-Length: 0" header unless something else happens */
+	REPLACE(body, "");
+
+	av = http_tx_parse_args(av, vl, hp, body);
+	if (*av != NULL)
+		vtc_log(hp->vl, 0, "Unknown http txresp spec: %s\n", *av);
+
 	http_write(hp, 4, "txresp");
 }
 
@@ -777,6 +797,7 @@ cmd_http_rxreq(CMD_ARGS)
 		vtc_log(hp->vl, 0, "Unknown http rxreq spec: %s\n", *av);
 	http_rxhdr(hp);
 	http_splitheader(hp, 1);
+	hp->body = hp->rxbuf + hp->prxbuf;
 	http_swallow_body(hp, hp->req, 0);
 	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
 }
@@ -848,7 +869,6 @@ cmd_http_txreq(CMD_ARGS)
 	const char *req = "GET";
 	const char *url = "/";
 	const char *proto = "HTTP/1.1";
-	const char *body = NULL;
 
 	(void)cmd;
 	(void)vl;
@@ -873,35 +893,10 @@ cmd_http_txreq(CMD_ARGS)
 			break;
 	}
 	VSB_printf(hp->vsb, "%s %s %s%s", req, url, proto, nl);
-	for(; *av != NULL; av++) {
-		if (!strcmp(*av, "-hdr")) {
-			VSB_printf(hp->vsb, "%s%s", av[1], nl);
-			av++;
-		} else
-			break;
-	}
-	for(; *av != NULL; av++) {
-		if (!strcmp(*av, "-body")) {
-			AZ(body);
-			body = av[1];
-			av++;
-		} else if (!strcmp(*av, "-bodylen")) {
-			AZ(body);
-			body = synth_body(av[1], 0);
-			av++;
-		} else
-			break;
-	}
+
+	av = http_tx_parse_args(av, vl, hp, NULL);
 	if (*av != NULL)
 		vtc_log(hp->vl, 0, "Unknown http txreq spec: %s\n", *av);
-	if (body != NULL)
-		VSB_printf(hp->vsb, "Content-Length: %ju%s",
-		    (uintmax_t)strlen(body), nl);
-	VSB_cat(hp->vsb, nl);
-	if (body != NULL) {
-		VSB_cat(hp->vsb, body);
-		VSB_cat(hp->vsb, nl);
-	}
 	http_write(hp, 4, "txreq");
 }
 

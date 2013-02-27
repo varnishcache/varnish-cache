@@ -2,7 +2,7 @@ varnishtest "dual independent HTTP transactions"
 
 server s1 {
 	rxreq
-	expect req.request == PUT
+	expect req.method == PUT
 	expect req.proto == HTTP/1.0
 	expect req.url == "/foo"
 	txresp -proto HTTP/1.2 -status 201 -msg Foo
@@ -10,7 +10,7 @@ server s1 {
 
 server s2 {
 	rxreq
-	expect req.request == GET
+	expect req.method == GET
 	expect req.proto == HTTP/1.1
 	expect req.url == "/"
 	txresp 

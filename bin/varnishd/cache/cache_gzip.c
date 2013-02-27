@@ -441,25 +441,28 @@ VGZ_Destroy(struct vgz **vgp)
  */
 
 static void __match_proto__(vfp_begin_f)
-vfp_gunzip_begin(struct busyobj *bo, size_t estimate)
+vfp_gunzip_begin(void *priv, size_t estimate)
 {
+	struct busyobj *bo;
+
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	(void)estimate;
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	AZ(bo->vgz_rx);
 	bo->vgz_rx = VGZ_NewUngzip(bo->vsl, "U F -");
 	XXXAZ(vgz_getmbuf(bo->vgz_rx));
 }
 
 static int __match_proto__(vfp_bytes_f)
-vfp_gunzip_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
+vfp_gunzip_bytes(void *priv, struct http_conn *htc, ssize_t bytes)
 {
 	struct vgz *vg;
+	struct busyobj *bo;
 	ssize_t l, wl;
 	int i = -100;
 	size_t dl;
 	const void *dp;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	vg = bo->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
@@ -468,7 +471,7 @@ vfp_gunzip_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 			l = vg->m_sz;
 			if (l > bytes)
 				l = bytes;
-			wl = HTC_Read(htc, vg->m_buf, l);
+			wl = htc->read(htc, vg->m_buf, l);
 			if (wl <= 0)
 				return (wl);
 			VGZ_Ibuf(vg, vg->m_buf, wl);
@@ -480,18 +483,19 @@ vfp_gunzip_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 		i = VGZ_Gunzip(vg, &dp, &dl);
 		if (i != VGZ_OK && i != VGZ_END)
 			return(FetchError(bo, "Gunzip data error"));
-		VFP_update_length(bo, dl);
+		VBO_extend(bo, dl);
 	}
 	assert(i == Z_OK || i == Z_STREAM_END);
 	return (1);
 }
 
 static int __match_proto__(vfp_end_f)
-vfp_gunzip_end(struct busyobj *bo)
+vfp_gunzip_end(void *priv)
 {
 	struct vgz *vg;
+	struct busyobj *bo;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	vg = bo->vgz_rx;
 	bo->vgz_rx = NULL;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
@@ -517,26 +521,28 @@ struct vfp vfp_gunzip = {
  */
 
 static void __match_proto__(vfp_begin_f)
-vfp_gzip_begin(struct busyobj *bo, size_t estimate)
+vfp_gzip_begin(void *priv, size_t estimate)
 {
 	(void)estimate;
+	struct busyobj *bo;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	AZ(bo->vgz_rx);
 	bo->vgz_rx = VGZ_NewGzip(bo->vsl, "G F -");
 	XXXAZ(vgz_getmbuf(bo->vgz_rx));
 }
 
 static int __match_proto__(vfp_bytes_f)
-vfp_gzip_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
+vfp_gzip_bytes(void *priv, struct http_conn *htc, ssize_t bytes)
 {
 	struct vgz *vg;
+	struct busyobj *bo;
 	ssize_t l, wl;
 	int i = -100;
 	size_t dl;
 	const void *dp;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	vg = bo->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
@@ -545,7 +551,7 @@ vfp_gzip_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 			l = vg->m_sz;
 			if (l > bytes)
 				l = bytes;
-			wl = HTC_Read(htc, vg->m_buf, l);
+			wl = htc->read(htc, vg->m_buf, l);
 			if (wl <= 0)
 				return (wl);
 			VGZ_Ibuf(vg, vg->m_buf, wl);
@@ -555,20 +561,21 @@ vfp_gzip_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 			return(-1);
 		i = VGZ_Gzip(vg, &dp, &dl, VGZ_NORMAL);
 		assert(i == Z_OK);
-		VFP_update_length(bo, dl);
+		VBO_extend(bo, dl);
 	}
 	return (1);
 }
 
 static int __match_proto__(vfp_end_f)
-vfp_gzip_end(struct busyobj *bo)
+vfp_gzip_end(void *priv)
 {
 	struct vgz *vg;
+	struct busyobj *bo;
 	size_t dl;
 	const void *dp;
 	int i;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	vg = bo->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	bo->vgz_rx = NULL;
@@ -581,7 +588,7 @@ vfp_gzip_end(struct busyobj *bo)
 		if (VGZ_ObufStorage(bo, vg))
 			return(-1);
 		i = VGZ_Gzip(vg, &dp, &dl, VGZ_FINISH);
-		VFP_update_length(bo, dl);
+		VBO_extend(bo, dl);
 	} while (i != Z_STREAM_END);
 	VGZ_UpdateObj(vg, bo->fetch_obj);
 	if (VGZ_Destroy(&vg) != VGZ_END)
@@ -603,9 +610,11 @@ struct vfp vfp_gzip = {
  */
 
 static void __match_proto__(vfp_begin_f)
-vfp_testgzip_begin(struct busyobj *bo, size_t estimate)
+vfp_testgzip_begin(void *priv, size_t estimate)
 {
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	struct busyobj *bo;
+
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	(void)estimate;
 	bo->vgz_rx = VGZ_NewUngzip(bo->vsl, "u F -");
 	CHECK_OBJ_NOTNULL(bo->vgz_rx, VGZ_MAGIC);
@@ -613,16 +622,17 @@ vfp_testgzip_begin(struct busyobj *bo, size_t estimate)
 }
 
 static int __match_proto__(vfp_bytes_f)
-vfp_testgzip_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
+vfp_testgzip_bytes(void *priv, struct http_conn *htc, ssize_t bytes)
 {
 	struct vgz *vg;
+	struct busyobj *bo;
 	ssize_t l, wl;
 	int i = -100;
 	size_t dl;
 	const void *dp;
 	struct storage *st;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	vg = bo->vgz_rx;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
@@ -633,13 +643,13 @@ vfp_testgzip_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 		l = st->space - st->len;
 		if (l > bytes)
 			l = bytes;
-		wl = HTC_Read(htc, st->ptr + st->len, l);
+		wl = htc->read(htc, st->ptr + st->len, l);
 		if (wl <= 0)
 			return (wl);
 		bytes -= wl;
 		VGZ_Ibuf(vg, st->ptr + st->len, wl);
 		st->len += wl;
-		VFP_update_length(bo, wl);
+		VBO_extend(bo, wl);
 
 		while (!VGZ_IbufEmpty(vg)) {
 			VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
@@ -656,11 +666,12 @@ vfp_testgzip_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 }
 
 static int __match_proto__(vfp_end_f)
-vfp_testgzip_end(struct busyobj *bo)
+vfp_testgzip_end(void *priv)
 {
 	struct vgz *vg;
+	struct busyobj *bo;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	vg = bo->vgz_rx;
 	bo->vgz_rx = NULL;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);

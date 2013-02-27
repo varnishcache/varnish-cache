@@ -378,28 +378,21 @@ main(int argc, char * const *argv)
 
 	VTAILQ_INIT(&heritage.socks);
 
-	MCF_ParamInit(cli);
+	MCF_CollectParams();
 
 	if (sizeof(void *) < 8) {
 		/*
 		 * Adjust default parameters for 32 bit systems to conserve
 		 * VM space.
 		 */
-		MCF_ParamSet(cli, "workspace_client", "24k");
-		cli_check(cli);
-
-		MCF_ParamSet(cli, "workspace_backend", "16k");
-		cli_check(cli);
-
-		MCF_ParamSet(cli, "http_resp_size", "8k");
-		cli_check(cli);
-
-		MCF_ParamSet(cli, "http_req_size", "12k");
-		cli_check(cli);
-
-		MCF_ParamSet(cli, "gzip_buffer", "4k");
-		cli_check(cli);
+		MCF_SetDefault("workspace_client", "24k");
+		MCF_SetDefault("workspace_backend", "16k");
+		MCF_SetDefault("http_resp_size", "8k");
+		MCF_SetDefault("http_req_size", "12k");
+		MCF_SetDefault("gzip_buffer", "4k");
 	}
+
+	MCF_InitParams(cli);
 
 	cli_check(cli);
 
@@ -465,6 +458,7 @@ main(int argc, char * const *argv)
 			AN(p);
 			*p++ = '\0';
 			MCF_ParamSet(cli, optarg, p);
+			*--p = '=';
 			cli_check(cli);
 			break;
 		case 'r':
@@ -608,6 +602,15 @@ main(int argc, char * const *argv)
 	if (C_flag)
 		exit (0);
 
+	if (!d_flag) {
+		if (MGT_open_sockets()) {
+			fprintf(stderr,
+			    "Failed to open (any) accept sockets.\n");
+			exit(1);
+		}
+		MGT_close_sockets();
+	}
+
 	/* If no -s argument specified, process default -s argument */
 	if (!s_arg_given)
 		STV_Config(s_arg);
@@ -655,7 +658,3 @@ main(int argc, char * const *argv)
 		(void)VPF_Remove(pfh);
 	exit(exit_status);
 }
-
-#if defined(PTHREAD_CANCELED) || defined(PTHREAD_MUTEX_DEFAULT)
-#error "Keep pthreads out of in manager process"
-#endif

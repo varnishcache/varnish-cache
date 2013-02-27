@@ -77,7 +77,6 @@
 #include "vcs.h"
 #include "vpf.h"
 #include "vqueue.h"
-#include "vre.h"
 #include "vsb.h"
 
 #include "compat/daemon.h"
@@ -112,13 +111,14 @@ static struct logline {
 	VTAILQ_HEAD(, hdr) vcl_log;     /* VLC_Log entries */
 } **ll;
 
-struct VSM_data *vd;
+static struct VSM_data *vd;
 
 static size_t nll;
 
 static int m_flag = 0;
 
-static const char *format;
+static const char *c_format;
+static const char *b_format;
 
 static int
 isprefix(const char *str, const char *prefix, const char *end,
@@ -210,7 +210,6 @@ req_header(struct logline *l, const char *name)
 	VTAILQ_FOREACH(h, &l->req_headers, list) {
 		if (strcasecmp(h->key, name) == 0) {
 			return (h->value);
-			break;
 		}
 	}
 	return (NULL);
@@ -223,7 +222,6 @@ resp_header(struct logline *l, const char *name)
 	VTAILQ_FOREACH(h, &l->resp_headers, list) {
 		if (strcasecmp(h->key, name) == 0) {
 			return (h->value);
-			break;
 		}
 	}
 	return (NULL);
@@ -236,7 +234,6 @@ vcl_log(struct logline *l, const char *name)
 	VTAILQ_FOREACH(h, &l->vcl_log, list) {
 		if (strcasecmp(h->key, name) == 0) {
 			return (h->value);
-			break;
 		}
 	}
 	return (NULL);
@@ -283,6 +280,8 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
     const char *ptr, unsigned len)
 {
 	const char *end, *next, *split;
+	struct hdr *h;
+	size_t l;
 
 	assert(spec & VSL_S_BACKEND);
 	end = ptr + len;
@@ -301,7 +300,7 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 			trimfield(&lp->df_h, ptr, end);
 		break;
 
-	case SLT_BereqRequest:
+	case SLT_BereqMethod:
 		if (!lp->active)
 			break;
 		if (lp->df_m != NULL) {
@@ -350,38 +349,36 @@ collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		trimline(&lp->df_s, ptr, end);
 		break;
 
-	case SLT_BerespHeader:
-		if (!lp->active)
-			break;
-		if (isprefix(ptr, "content-length:", end, &next))
-			trimline(&lp->df_b, next, end);
-		else if (isprefix(ptr, "date:", end, &next) &&
-			 strptime(next, "%a, %d %b %Y %T", &lp->df_t) == NULL) {
-			clean_logline(lp);
-		}
-		break;
-
 	case SLT_BereqHeader:
+	case SLT_BerespHeader:
 		if (!lp->active)
 			break;
 		split = memchr(ptr, ':', len);
 		if (split == NULL)
 			break;
-		if (isprefix(ptr, "authorization:", end, &next) &&
-		    isprefix(next, "basic", end, &next)) {
-			trimline(&lp->df_u, next, end);
+		if (tag == SLT_BerespHeader) {
+			if (isprefix(ptr, "content-length:", end, &next))
+				trimline(&lp->df_b, next, end);
+			else if (isprefix(ptr, "date:", end, &next) &&
+				 strptime(next, "%a, %d %b %Y %T", &lp->df_t) == NULL) {
+				clean_logline(lp);
+			}
 		} else {
-			struct hdr *h;
-			size_t l;
-			h = calloc(1, sizeof(struct hdr));
-			AN(h);
-			AN(split);
-			l = strlen(split);
-			trimline(&h->key, ptr, split-1);
-			trimline(&h->value, split+1, split+l-1);
-			VTAILQ_INSERT_HEAD(&lp->req_headers, h, list);
+			if (isprefix(ptr, "authorization:", end, &next) &&
+			    isprefix(next, "basic", end, &next)) {
+				trimline(&lp->df_u, next, end);
+			}
 		}
-		break;
+		h = calloc(1, sizeof(struct hdr));
+		AN(h);
+		AN(split);
+		l = strlen(split);
+		trimline(&h->key, ptr, split-1);
+		trimline(&h->value, split+1, split+l-1);
+		if (tag == SLT_BereqHeader)
+			VTAILQ_INSERT_HEAD(&lp->req_headers, h, list);
+		else
+			VTAILQ_INSERT_HEAD(&lp->resp_headers, h, list);
 
 	case SLT_BackendReuse:
 	case SLT_BackendClose:
@@ -420,7 +417,7 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		trimfield(&lp->df_h, ptr, end);
 		break;
 
-	case SLT_ReqRequest:
+	case SLT_ReqMethod:
 		if (!lp->active)
 			break;
 		if (lp->df_m != NULL) {
@@ -589,6 +586,11 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 	char *q, tbuf[64];
 	const char *p;
 	struct vsb *os;
+	const char *format;
+
+	/* XXX: Ignore fd's outside 65536 */
+	if (fd >= 65536)
+		return (reopen);
 
 	if (fd >= nll) {
 		struct logline **newll = ll;
@@ -607,11 +609,12 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 		assert(ll[fd] != NULL);
 	}
 	lp = ll[fd];
-
 	if (spec & VSL_S_BACKEND) {
 		collect_backend(lp, tag, spec, ptr, len);
+		format = b_format;
 	} else if (spec & VSL_S_CLIENT) {
 		collect_client(lp, tag, spec, ptr, len);
+		format = c_format;
 	} else {
 		/* huh? */
 		return (reopen);
@@ -796,6 +799,7 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 					p = tmp;
 					break;
 				}
+				/* FALLTHROUGH */
 			default:
 				fprintf(stderr,
 				    "Unknown format starting at: %s\n", --p);
@@ -862,38 +866,45 @@ int
 main(int argc, char *argv[])
 {
 	int c;
-	int a_flag = 0, D_flag = 0, format_flag = 0;
+	int a_flag = 0, D_flag = 0, format_flag = 0, b_flag = 0;
 	const char *P_arg = NULL;
 	const char *w_arg = NULL;
 	struct vpf_fh *pfh = NULL;
 	FILE *of;
-	format = "%h %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-agent}i\"";
+	c_format = "%h %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-agent}i\"";
+	b_format = "%h %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-agent}i\"";
 
 	vd = VSM_New();
 
-	while ((c = getopt(argc, argv, VSL_ARGS "aDP:Vw:fF:")) != -1) {
+	while ((c = getopt(argc, argv, VSL_ARGS "aDP:Vw:fF:B:C:")) != -1) {
 		switch (c) {
 		case 'a':
 			a_flag = 1;
 			break;
 		case 'f':
-			if (format_flag) {
-				fprintf(stderr,
-				    "-f and -F can not be combined\n");
-				exit(1);
-			}
-			format = "%{X-Forwarded-For}i %l %u %t \"%r\""
-			    " %s %b \"%{Referer}i\" \"%{User-agent}i\"";
-			format_flag = 1;
-			break;
 		case 'F':
 			if (format_flag) {
 				fprintf(stderr,
-				    "-f and -F can not be combined\n");
+				    "-f, -F, -B or -C can not be combined\n");
 				exit(1);
 			}
 			format_flag = 1;
-			format = optarg;
+			switch (c) {
+			case 'f':
+				b_format = c_format =
+					"%{X-Forwarded-For}i %l %u %t \"%r\""
+					" %s %b \"%{Referer}i\" \"%{User-agent}i\"";
+				break;
+			case 'F':
+				b_format = c_format = optarg;
+				break;
+			case 'B':
+				b_format = optarg;
+				break;
+			case 'C':
+				c_format = optarg;
+				break;
+			}
 			break;
 		case 'D':
 			D_flag = 1;
@@ -908,8 +919,10 @@ main(int argc, char *argv[])
 			w_arg = optarg;
 			break;
 		case 'b':
-			fprintf(stderr, "-b is not valid for varnishncsa\n");
-			exit(1);
+			b_flag = 1;
+			if (VSL_Arg(vd, c, optarg) > 0)
+				break;
+			usage();
 			break;
 		case 'i':
 			fprintf(stderr, "-i is not valid for varnishncsa\n");
@@ -923,7 +936,8 @@ main(int argc, char *argv[])
 			/* XXX: Silently ignored: it's required anyway */
 			break;
 		case 'm':
-			m_flag = 1; /* Fall through */
+			m_flag = 1;
+			/* FALLTHOUGH */
 		default:
 			if (VSL_Arg(vd, c, optarg) > 0)
 				break;
@@ -931,7 +945,8 @@ main(int argc, char *argv[])
 		}
 	}
 
-	VSL_Arg(vd, 'c', optarg);
+	if (! b_flag)
+		VSL_Arg(vd, 'c', optarg);
 
 	if (VSM_Open(vd)) {
 		fprintf(stderr, "%s\n", VSM_Error(vd));

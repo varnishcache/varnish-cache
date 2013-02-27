@@ -81,10 +81,12 @@ VRT_r_##obj##_##hdr(const struct req *req)			\
 	return (http->hd[fld].b);				\
 }
 
-VRT_DO_HDR(req,   request,	req->http,		HTTP_HDR_REQ)
+VRT_DO_HDR(req,   method,	req->http,		HTTP_HDR_METHOD)
+VRT_DO_HDR(req,   request,	req->http,		HTTP_HDR_METHOD)
 VRT_DO_HDR(req,   url,		req->http,		HTTP_HDR_URL)
 VRT_DO_HDR(req,   proto,	req->http,		HTTP_HDR_PROTO)
-VRT_DO_HDR(bereq, request,	req->busyobj->bereq,	HTTP_HDR_REQ)
+VRT_DO_HDR(bereq, method,	req->busyobj->bereq,	HTTP_HDR_METHOD)
+VRT_DO_HDR(bereq, request,	req->busyobj->bereq,	HTTP_HDR_METHOD)
 VRT_DO_HDR(bereq, url,		req->busyobj->bereq,	HTTP_HDR_URL)
 VRT_DO_HDR(bereq, proto,	req->busyobj->bereq,	HTTP_HDR_PROTO)
 VRT_DO_HDR(obj,   proto,	req->obj->http,		HTTP_HDR_PROTO)
@@ -555,6 +557,12 @@ unsigned
 VRT_r_req_backend_healthy(const struct req *req)
 {
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	/*
+	 * XXX: Not optimal, but we do not have a backend in vcl_deliver
+	 * XXX: and we have to return something.
+	 */
+	if (req->director == NULL)
+		return (0);
 	CHECK_OBJ_NOTNULL(req->director, DIRECTOR_MAGIC);
 	return (VDI_Healthy(req->director, req));
 }

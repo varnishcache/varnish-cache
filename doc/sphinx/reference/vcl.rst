@@ -291,9 +291,8 @@ To match an IP address against an ACL, simply use the match operator:
 Regular Expressions
 -------------------
 
-In Varnish 2.1.0 Varnish switched to using PCRE - Perl-compatible
-regular expressions. For a complete description of PCRE please see the
-PCRE(3) man page.
+Varnish uses PCRE - Perl-compatible regular expressions. For a
+complete description of PCRE please see the pcre(3) man page.
 
 To send flags to the PCRE engine, such as to turn on *case
 insensitivity* add the flag within parens following a question mark,
@@ -327,9 +326,6 @@ regsuball(str, regex, sub)
 
 ban(ban expression)
   Bans all objects in cache that match the expression.
-
-ban_url(regex)
-  Bans all objects in cache whose URLs match regex.
 
 Subroutines
 ~~~~~~~~~~~
@@ -386,8 +382,8 @@ vcl_recv
   lookup  
     Look up the requested object in the cache.  Control will
     eventually pass to vcl_hit or vcl_miss, depending on whether the
-    object is in the cache.  The ``bereq.request`` value will be set
-    to ``GET`` regardless of the value of ``req.request``.
+    object is in the cache.  The ``bereq.method`` value will be set
+    to ``GET`` regardless of the value of ``req.method``.
 
 vcl_pipe
   Called upon entering pipe mode.  In this mode, the request is passed
@@ -487,7 +483,7 @@ vcl_fetch
 
   hit_for_pass 
     Pass in fetch. Passes the object without caching it. This will
-    create a socalled hit_for_pass object which has the side effect
+    create a so-called hit_for_pass object which has the side effect
     that the decision not to cache will be cached. This is to allow
     would-be uncachable requests to be passed to the backend at the
     same time. The same logic is not necessary in vcl_recv because
@@ -549,7 +545,7 @@ default code.
 
 Multiple subroutines
 ~~~~~~~~~~~~~~~~~~~~
-If multiple subroutines with the the name of one of the builtin
+If multiple subroutines with the name of one of the builtin
 ones are defined, they are concatenated in the order in which they
 appear in the source.
 The default versions distributed with Varnish will be implicitly
@@ -575,7 +571,7 @@ Example:
 	sub vcl_recv {
 	  if (client.ip ~ admin_network) {
 	    if (req.http.Cache-Control ~ "no-cache") {
-	      ban_url(req.url);
+	      ban("req.url ~ " + req.url);
 	    }
 	  }
 	}
@@ -623,8 +619,11 @@ server.ip
 server.port
   The port number of the socket on which the client connection was received.
 
-req.request
+req.method
   The request type (e.g. "GET", "HEAD").
+
+req.request
+  Outdated way to spell req.method.
 
 req.url
   The requested URL.
@@ -674,8 +673,11 @@ req.xid
 The following variables are available while preparing a backend
 request (either for a cache miss or for pass or pipe mode):
 
-bereq.request
+bereq.method
   The request type (e.g. "GET", "HEAD").
+
+bereq.request
+  Outdated way to spell bereq.method.
 
 bereq.url
   The requested URL.
@@ -917,7 +919,7 @@ documents even when cookies are present:
 ::
 
   sub vcl_recv {
-    if (req.request == "GET" && req.http.cookie) {
+    if (req.method == "GET" && req.http.cookie) {
        return(lookup);
     }
   }
@@ -938,7 +940,7 @@ for object invalidation:
   }
 
   sub vcl_recv {
-    if (req.request == "PURGE") {
+    if (req.method == "PURGE") {
       if (!client.ip ~ purge) {
         error 405 "Not allowed.";
       }
@@ -947,14 +949,14 @@ for object invalidation:
   }
 
   sub vcl_hit {
-    if (req.request == "PURGE") {
+    if (req.method == "PURGE") {
       purge;
       error 200 "Purged.";
     }
   }
 
   sub vcl_miss {
-    if (req.request == "PURGE") {
+    if (req.method == "PURGE") {
       purge;
       error 200 "Purged.";
     }

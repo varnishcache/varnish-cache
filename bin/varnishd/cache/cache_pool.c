@@ -76,6 +76,7 @@ struct pool {
 
 static struct lock		pool_mtx;
 static pthread_t		thr_pool_herder;
+static unsigned			pool_accepting = 0;
 
 /*--------------------------------------------------------------------
  */
@@ -128,6 +129,12 @@ pool_accept(struct worker *wrk, void *arg)
 	CHECK_OBJ_NOTNULL(ps->lsock, LISTEN_SOCK_MAGIC);
 	assert(sizeof *wa == WS_Reserve(wrk->aws, sizeof *wa));
 	wa = (void*)wrk->aws->f;
+
+	/* Delay until we are ready (flag is set when all
+	 * initialization has finished) */
+	while (!pool_accepting)
+		VTIM_sleep(.1);
+
 	while (1) {
 		memset(wa, 0, sizeof *wa);
 		wa->magic = WRK_ACCEPT_MAGIC;
@@ -482,6 +489,14 @@ pool_poolherder(void *priv)
 }
 
 /*--------------------------------------------------------------------*/
+
+void
+Pool_Accept(void)
+{
+
+	ASSERT_CLI();
+	pool_accepting = 1;
+}
 
 void
 Pool_Init(void)
