@@ -678,7 +678,7 @@ varnish_vclbackend(struct varnish *v, const char *vcl)
  */
 
 struct stat_priv {
-	const char *target;
+	char target[256];
 	uintmax_t val;
 };
 
@@ -691,18 +691,18 @@ do_stat_cb(void *priv, const struct VSC_point * const pt)
 
 	if (pt == NULL)
 		return(0);
-	if (strcmp(pt->class, "")) {
-		i = strlen(pt->class);
-		if (memcmp(pt->class, p, i))
+	if (strcmp(pt->section->type, "")) {
+		i = strlen(pt->section->type);
+		if (memcmp(pt->section->type, p, i))
 			return (0);
 		p += i;
 		if (*p != '.')
 			return (0);
 		p++;
 	}
-	if (strcmp(pt->ident, "")) {
-		i = strlen(pt->ident);
-		if (memcmp(pt->ident, p, i))
+	if (strcmp(pt->section->ident, "")) {
+		i = strlen(pt->section->ident);
+		if (memcmp(pt->section->ident, p, i))
 			return (0);
 		p += i;
 		if (*p != '.')
@@ -722,32 +722,32 @@ varnish_expect(const struct varnish *v, char * const *av) {
 	uint64_t ref;
 	int good;
 	char *p;
-	int i, j;
+	int i;
+	const char *prefix = "";
 	struct stat_priv sp;
 
-	good = -1;
-
-	sp.target = av[0];
+	if (NULL == strchr(av[0], '.'))
+		prefix = "MAIN.";
+	snprintf(sp.target, sizeof sp.target, "%s%s", prefix, av[0]);
+	sp.target[sizeof sp.target - 1] = '\0';
 	sp.val = 0;
 	ref = 0;
+	good = 0;
 	for (i = 0; i < 10; i++, (void)usleep(100000)) {
+		if (VSM_Abandoned(v->vd)) {
+			VSM_Close(v->vd);
+			good = VSM_Open(v->vd);
+		}
+		if (good < 0)
+			continue;
 
 		good = VSC_Iter(v->vd, do_stat_cb, &sp);
-		if (good < 0) {
-			VSM_Close(v->vd);
-			j = VSM_Open(v->vd);
-			if (j == 0)
-				continue;
-			do {
-				(void)usleep(100000);
-				j = VSM_Open(v->vd);
-				i++;
-			} while(i < 10 && j < 0);
-			if (j < 0)
-				break;
+		if (!good) {
+			good = -2;
+			continue;
 		}
-		good = 0;
 
+		good = 0;
 		ref = strtoumax(av[2], &p, 0);
 		if (ref == UINTMAX_MAX || *p)
 			vtc_log(v->vl, 0, "Syntax error in number (%s)", av[2]);
@@ -764,6 +764,9 @@ varnish_expect(const struct varnish *v, char * const *av) {
 			break;
 	}
 	if (good == -1) {
+		vtc_log(v->vl, 0, "VSM error: %s", VSM_Error(v->vd));
+		VSM_ResetError(v->vd);
+	} else if (good == -2) {
 		vtc_log(v->vl, 0, "stats field %s unknown", av[0]);
 	} else if (good) {
 		vtc_log(v->vl, 2, "as expected: %s (%ju) %s %s",

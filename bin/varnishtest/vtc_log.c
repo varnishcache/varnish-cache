@@ -88,6 +88,8 @@ vtc_logclose(struct vtclog *vl)
 {
 
 	CHECK_OBJ_NOTNULL(vl, VTCLOG_MAGIC);
+	if (pthread_getspecific(log_key) == vl)
+		AZ(pthread_setspecific(log_key, NULL));
 	VSB_delete(vl->vsb);
 	AZ(pthread_mutex_destroy(&vl->mtx));
 	FREE_OBJ(vl);
