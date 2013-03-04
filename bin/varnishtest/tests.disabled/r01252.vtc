@@ -37,7 +37,7 @@ varnish v1 -cliok "param.show tcp_keepalive_intvl"
 varnish v1 -cliok "param.set tcp_keepalive_intvl 1s"
 
 varnish v1 -cliok "param.show first_byte_timeout"
-varnish v1 -cliok "param.set first_byte_timeout 70s"
+varnish v1 -cliok "param.set first_byte_timeout 70"
 
 client c1 {
 	timeout 70
