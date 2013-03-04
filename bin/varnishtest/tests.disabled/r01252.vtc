@@ -19,13 +19,25 @@ server s2 {
 	txresp
 } -start
 
-varnish v1 -arg "-p debug=+waitinglist -p tcp_keepalive_time=1s -p tcp_keepalive_probes=1 -p tcp_keepalive_intvl=1s -p first_byte_timeout=70" -vcl+backend {
+varnish v1 -arg "-p debug=+waitinglist" -vcl+backend {
 	sub vcl_recv {
 		if (req.http.x-client == "2") {
 			set req.backend = s2;
 		}
 	}
 } -start
+
+varnish v1 -cliok "param.show tcp_keepalive_time"
+varnish v1 -cliok "param.set tcp_keepalive_time 1s"
+
+varnish v1 -cliok "param.show tcp_keepalive_probes"
+varnish v1 -cliok "param.set tcp_keepalive_probes 1"
+
+varnish v1 -cliok "param.show tcp_keepalive_intvl"
+varnish v1 -cliok "param.set tcp_keepalive_intvl 1s"
+
+varnish v1 -cliok "param.show first_byte_timeout"
+varnish v1 -cliok "param.set first_byte_timeout 70s"
 
 client c1 {
 	timeout 70
@@ -42,3 +54,4 @@ client c2 {
 
 client c1 -wait
 client c2 -wait
+server s2 -wait
