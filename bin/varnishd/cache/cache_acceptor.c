@@ -41,6 +41,7 @@
 
 #include "config.h"
 
+#include <stdlib.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -54,11 +55,46 @@
 #include "vtim.h"
 
 static pthread_t	VCA_thread;
-static struct timeval	tv_sndtimeo;
-static struct timeval	tv_rcvtimeo;
 static int hack_ready;
 static double vca_pace = 0.0;
 static struct lock pace_mtx;
+
+/*--------------------------------------------------------------------
+ * TCP options we want to control
+ */
+
+static struct tcp_opt {
+	int		level;
+	int		optname;
+	const char	*strname;
+	socklen_t	sz;
+	void		*ptr;
+	int		need;
+} tcp_opts[] = {
+#define TCPO(lvl, nam, sz) { lvl, nam, #nam, sizeof(sz), 0, 0},
+
+	TCPO(SOL_SOCKET, SO_LINGER, struct linger)
+	TCPO(SOL_SOCKET, SO_KEEPALIVE, int)
+	TCPO(IPPROTO_TCP, TCP_NODELAY, int)
+
+#ifdef SO_SNDTIMEO_WORKS
+	TCPO(SOL_SOCKET, SO_SNDTIMEO, struct timeval)
+#endif
+
+#ifdef SO_RCVTIMEO_WORKS
+	TCPO(SOL_SOCKET, SO_RCVTIMEO, struct timeval)
+#endif
+
+#ifdef HAVE_TCP_KEEP
+	TCPO(IPPROTO_TCP, TCP_KEEPIDLE, int)
+	TCPO(IPPROTO_TCP, TCP_KEEPCNT, int)
+	TCPO(IPPROTO_TCP, TCP_KEEPINTVL, int)
+#endif
+
+#undef TCPO
+};
+
+static const int n_tcp_opts = sizeof tcp_opts / sizeof tcp_opts[0];
 
 /*--------------------------------------------------------------------
  * We want to get out of any kind of trouble-hit TCP connections as fast
@@ -74,22 +110,8 @@ static const struct linger linger = {
  * We turn on keepalives by default to assist in detecting clients that have
  * hung up on connections returning from waitinglists
  */
-static const int keepalive = 1;
 
-static unsigned char	need_sndtimeo, need_rcvtimeo, need_linger, need_test,
-			need_tcpnodelay;
-static unsigned char	need_keepalive = 0;
-#ifdef HAVE_TCP_KEEP
-static unsigned char	need_ka_time = 0;
-static unsigned char	need_ka_probes = 0;
-static unsigned char	need_ka_intvl = 0;
-static int		ka_time_cur = 0;
-static int		ka_probes_cur = 0;
-static int		ka_intvl_cur = 0;
-static int		ka_time, ka_time_sys;
-static int		ka_probes, ka_probes_sys;
-static int		ka_intvl, ka_intvl_sys;
-#endif
+static unsigned		need_test;
 
 /*--------------------------------------------------------------------
  * Some kernels have bugs/limitations with respect to which options are
@@ -97,113 +119,106 @@ static int		ka_intvl, ka_intvl_sys;
  * which, if any, sockopts we have to set on the accepted socket.
  */
 
-static void
-sock_test(int fd)
+static int
+vca_tcp_opt_init()
 {
-	struct linger lin;
-	int tka;
-#ifdef HAVE_TCP_KEEP
-	int tka_time, tka_probes, tka_intvl;
-#endif
+	int n, x;
+	int one = 1;
+	// int zero = 0;
+	struct tcp_opt *to;
 	struct timeval tv;
-	socklen_t l;
-	int i, tcp_nodelay;
+	int chg = 0;
 
-	l = sizeof lin;
-	i = getsockopt(fd, SOL_SOCKET, SO_LINGER, &lin, &l);
-	if (i) {
-		VTCP_Assert(i);
-		return;
-	}
-	assert(l == sizeof lin);
-	if (memcmp(&lin, &linger, l))
-		need_linger = 1;
-
-	l = sizeof tka;
-	i = getsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &tka, &l);
-	if (i) {
-		VTCP_Assert(i);
-		return;
-	}
-	assert(l == sizeof tka);
-	if (tka != keepalive)
-		need_keepalive = 1;
-
-#ifdef HAVE_TCP_KEEP
-	l = sizeof tka_time;
-	i = getsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &tka_time, &l);
-	if (i) {
-		VTCP_Assert(i);
-		return;
-	}
-	assert(l == sizeof tka_time);
-	if (tka_time != ka_time_cur)
-		need_ka_time = 1;
-
-	l = sizeof tka_probes;
-	i = getsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &tka_probes, &l);
-	if (i) {
-		VTCP_Assert(i);
-		return;
-	}
-	assert(l == sizeof tka_probes);
-	if (tka_probes != ka_probes_cur)
-		need_ka_probes = 1;
-
-	l = sizeof tka_intvl;
-	i = getsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &tka_intvl, &l);
-	if (i) {
-		VTCP_Assert(i);
-		return;
-	}
-	assert(l == sizeof tka_intvl);
-	if (tka_intvl != ka_intvl_cur)
-		need_ka_intvl = 1;
-#endif
+	for (n = 0; n < n_tcp_opts; n++) {
+		to = &tcp_opts[n];
+		if (to->ptr == NULL)
+			to->ptr = calloc(to->sz, 1);
+		AN(to->ptr);
+		if (!strcmp(to->strname, "SO_LINGER")) {
+			assert(to->sz == sizeof linger);
+			memcpy(to->ptr, &linger, sizeof linger);
+			to->need = 1;
+		} else if (!strcmp(to->strname, "TCP_NODELAY")) {
+			assert(to->sz == sizeof one);
+			memcpy(to->ptr, &one, sizeof one);
+			to->need = 1;
+		} else if (!strcmp(to->strname, "SO_KEEPALIVE")) {
+			assert(to->sz == sizeof one);
+			memcpy(to->ptr, &one, sizeof one);
+			to->need = 1;
+#define NEW_VAL(to, xx)						\
+	do {							\
+		assert(to->sz == sizeof xx);			\
+		if (memcmp(to->ptr, &(xx), sizeof xx)) {	\
+			memcpy(to->ptr, &(xx), sizeof xx);	\
+			to->need = 1;				\
+			chg = 1;				\
+			need_test = 1;				\
+		}						\
+	} while (0)
 
 #ifdef SO_SNDTIMEO_WORKS
-	l = sizeof tv;
-	i = getsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, &l);
-	if (i) {
-		VTCP_Assert(i);
-		return;
-	}
-	assert(l == sizeof tv);
-	if (memcmp(&tv, &tv_sndtimeo, l))
-		need_sndtimeo = 1;
-#else
-	(void)tv;
-	(void)tv_sndtimeo;
-	(void)need_sndtimeo;
+		} else if (!strcmp(to->strname, "SO_SNDTIMEO")) {
+			tv = VTIM_timeval(cache_param->idle_send_timeout);
+			NEW_VAL(to, tv);
 #endif
-
 #ifdef SO_RCVTIMEO_WORKS
-	l = sizeof tv;
-	i = getsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, &l);
-	if (i) {
-		VTCP_Assert(i);
-		return;
-	}
-	assert(l == sizeof tv);
-	if (memcmp(&tv, &tv_rcvtimeo, l))
-		need_rcvtimeo = 1;
-#else
-	(void)tv;
-	(void)tv_rcvtimeo;
-	(void)need_rcvtimeo;
+		} else if (!strcmp(to->strname, "SO_RCVTIMEO")) {
+			tv = VTIM_timeval(cache_param->timeout_idle);
+			NEW_VAL(to, tv);
 #endif
-
-	l = sizeof tcp_nodelay;
-	i = getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &tcp_nodelay, &l);
-	if (i) {
-		VTCP_Assert(i);
-		return;
+#ifdef HAVE_TCP_KEEP
+		} else if (!strcmp(to->strname, "TCP_KEEPIDLE")) {
+			x = cache_param->tcp_keepalive_time;
+			NEW_VAL(to, x);
+		} else if (!strcmp(to->strname, "TCP_KEEPCNT")) {
+			x = cache_param->tcp_keepalive_probes;
+			NEW_VAL(to, x);
+		} else if (!strcmp(to->strname, "TCP_KEEPINTVL")) {
+			x = cache_param->tcp_keepalive_intvl;
+			NEW_VAL(to, x);
+#endif
+		}
 	}
-	assert(l == sizeof tcp_nodelay);
-	if (!tcp_nodelay)
-		need_tcpnodelay = 1;
+	return (chg);
+}
 
-	need_test = 0;
+static void
+vca_tcp_opt_test(int sock)
+{
+	int i, n;
+	struct tcp_opt *to;
+	socklen_t l;
+	void *ptr;
+
+	for (n = 0; n < n_tcp_opts; n++) {
+		to = &tcp_opts[n];
+		to->need = 1;
+		ptr = calloc(to->sz, 1);
+		AN(ptr);
+		l = to->sz;
+		i = getsockopt(sock, to->level, to->optname, ptr, &l);
+		if (i == 0 && !memcmp(ptr, to->ptr, to->sz))
+			to->need = 0;
+		free(ptr);
+		if (i && errno != ENOPROTOOPT)
+			VTCP_Assert(i);
+	}
+}
+
+static void
+vca_tcp_opt_set(int sock, int force)
+{
+	int n;
+	struct tcp_opt *to;
+
+	for (n = 0; n < n_tcp_opts; n++) {
+		to = &tcp_opts[n];
+		if (to->need || force) {
+			VTCP_Assert(setsockopt(sock,
+			    to->level, to->optname, to->ptr, to->sz));
+		}
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -325,7 +340,6 @@ VCA_SetupSess(struct worker *wrk, struct sess *sp)
 {
 	struct wrk_accept *wa;
 	const char *retval;
-	int tcp_nodelay = 1;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -340,123 +354,55 @@ VCA_SetupSess(struct worker *wrk, struct sess *sp)
 	wrk->stats.sess_conn++;
 	WS_Release(wrk->aws, 0);
 
-	if (need_test)
-		sock_test(sp->fd);
-	if (need_linger)
-		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_LINGER,
-		    &linger, sizeof linger));
-	if (need_keepalive)
-		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_KEEPALIVE,
-		    &keepalive, sizeof keepalive));
-#ifdef HAVE_TCP_KEEP
-	AN(ka_time);
-	if (need_ka_time)
-		VTCP_Assert(setsockopt(sp->fd, IPPROTO_TCP, TCP_KEEPIDLE,
-			&ka_time_cur, sizeof ka_time_cur));
-	if (need_ka_probes)
-		VTCP_Assert(setsockopt(sp->fd, IPPROTO_TCP, TCP_KEEPCNT,
-			&ka_probes_cur, sizeof ka_probes_cur));
-	if (need_ka_intvl)
-		VTCP_Assert(setsockopt(sp->fd, IPPROTO_TCP, TCP_KEEPINTVL,
-			&ka_intvl_cur, sizeof ka_intvl_cur));
-#endif
-
-#ifdef SO_SNDTIMEO_WORKS
-	if (need_sndtimeo)
-		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_SNDTIMEO,
-		    &tv_sndtimeo, sizeof tv_sndtimeo));
-#endif
-#ifdef SO_RCVTIMEO_WORKS
-	if (need_rcvtimeo)
-		VTCP_Assert(setsockopt(sp->fd, SOL_SOCKET, SO_RCVTIMEO,
-		    &tv_rcvtimeo, sizeof tv_rcvtimeo));
-#endif
-	if (need_tcpnodelay)
-		VTCP_Assert(setsockopt(sp->fd, IPPROTO_TCP, TCP_NODELAY,
-		    &tcp_nodelay, sizeof tcp_nodelay));
+	if (need_test) {
+		vca_tcp_opt_test(sp->fd);
+		need_test = 0;
+	}
+	vca_tcp_opt_set(sp->fd, 0);
 	return (retval);
 }
 
 /*--------------------------------------------------------------------*/
 
+#ifdef HAVE_TCP_KEEP
+static void
+vca_tcp_keep_probe(int sock, int nam, volatile unsigned *dst)
+{
+	int i, x;
+	socklen_t l;
+
+	l = sizeof x;
+	i = getsockopt(sock, IPPROTO_TCP, nam, &x, &l);
+	if (i == 0 && x < *dst)
+		*dst = x;
+}
+#endif
+
 static void *
 vca_acct(void *arg)
 {
-#ifdef SO_RCVTIMEO_WORKS
-	double timeout_idle = 0;
-#endif
-#ifdef SO_SNDTIMEO_WORKS
-	double send_timeout = 0;
-#endif
-	int tcp_nodelay = 1;
 	struct listen_sock *ls;
 	double t0, now;
 	int i;
-#ifdef HAVE_TCP_KEEP
-	socklen_t len;
-#endif
 
 	THR_SetName("cache-acceptor");
 	(void)arg;
 
-#ifdef HAVE_TCP_KEEP
-	ka_time = cache_param->tcp_keepalive_time;
-	ka_probes = cache_param->tcp_keepalive_probes;
-	ka_intvl = cache_param->tcp_keepalive_intvl;
-#endif
+	(void)vca_tcp_opt_init();
 
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (ls->sock < 0)
 			continue;
 		AZ(listen(ls->sock, cache_param->listen_depth));
-		AZ(setsockopt(ls->sock, SOL_SOCKET, SO_LINGER,
-		    &linger, sizeof linger));
-		AZ(setsockopt(ls->sock, IPPROTO_TCP, TCP_NODELAY,
-		    &tcp_nodelay, sizeof tcp_nodelay));
-		AZ(setsockopt(ls->sock, SOL_SOCKET, SO_KEEPALIVE,
-		    &keepalive, sizeof keepalive));
 #ifdef HAVE_TCP_KEEP
-		if (!ka_time_cur) {
-			len = sizeof ka_time_sys;
-			AZ(getsockopt(ls->sock, IPPROTO_TCP, TCP_KEEPIDLE,
-				&ka_time_sys, &len));
-			assert(len == sizeof ka_time_sys);
-			AN(ka_time_sys);
-			ka_time_cur = ka_time =
-			    (ka_time_sys < cache_param->tcp_keepalive_time ?
-				ka_time_sys : cache_param->tcp_keepalive_time);
-		}
-		AZ(setsockopt(ls->sock, IPPROTO_TCP, TCP_KEEPIDLE,
-		    &ka_time_cur, sizeof ka_time_cur));
-
-		if (!ka_probes_cur) {
-			len = sizeof ka_probes_sys;
-			AZ(getsockopt(ls->sock, IPPROTO_TCP, TCP_KEEPCNT,
-			    &ka_probes_sys, &len));
-			assert(len == sizeof ka_probes_sys);
-			AN(ka_probes_sys);
-			ka_probes_cur = ka_probes =
-			    (ka_probes_sys < cache_param->tcp_keepalive_probes ?
-				ka_probes_sys :
-				cache_param->tcp_keepalive_probes);
-		}
-		AZ(setsockopt(ls->sock, IPPROTO_TCP, TCP_KEEPCNT,
-		    &ka_probes_cur, sizeof ka_probes_cur));
-
-		if (!ka_intvl_cur) {
-			len = sizeof ka_intvl_sys;
-			AZ(getsockopt(ls->sock, IPPROTO_TCP, TCP_KEEPINTVL,
-			    &ka_intvl_sys, &len));
-			assert(len == sizeof ka_intvl_sys);
-			AN(ka_intvl_sys);
-			ka_intvl_cur = ka_intvl =
-			    (ka_intvl_sys < cache_param->tcp_keepalive_intvl ?
-				ka_intvl_sys :
-				cache_param->tcp_keepalive_intvl);
-		}
-		AZ(setsockopt(ls->sock, IPPROTO_TCP, TCP_KEEPINTVL,
-		    &ka_intvl_cur, sizeof ka_intvl_cur));
+		vca_tcp_keep_probe(ls->sock,
+		    TCP_KEEPIDLE, &cache_param->tcp_keepalive_time);
+		vca_tcp_keep_probe(ls->sock,
+		    TCP_KEEPCNT, &cache_param->tcp_keepalive_probes);
+		vca_tcp_keep_probe(ls->sock,
+		    TCP_KEEPINTVL, &cache_param->tcp_keepalive_intvl);
 #endif
+		vca_tcp_opt_set(ls->sock, 1);
 		if (cache_param->accept_filter) {
 			i = VTCP_filter_http(ls->sock);
 			if (i)
@@ -472,63 +418,13 @@ vca_acct(void *arg)
 	t0 = VTIM_real();
 	while (1) {
 		(void)sleep(1);
-#ifdef HAVE_TCP_KEEP
-		ka_time = (ka_time_sys < cache_param->tcp_keepalive_time ?
-		    ka_time_sys : cache_param->tcp_keepalive_time);
-		ka_probes = (ka_probes_sys < cache_param->tcp_keepalive_probes ?
-		    ka_probes_sys : cache_param->tcp_keepalive_probes);
-		ka_intvl = (ka_intvl_sys < cache_param->tcp_keepalive_intvl ?
-		    ka_intvl_sys : cache_param->tcp_keepalive_intvl);
-		if (ka_time_cur != ka_time ||
-		    ka_probes_cur != ka_probes ||
-		    ka_intvl_cur != ka_intvl) {
-			need_test = 1;
-			ka_time_cur = ka_time;
-			ka_probes_cur = ka_probes;
-			ka_intvl_cur = ka_intvl;
+		if (vca_tcp_opt_init()) {
 			VTAILQ_FOREACH(ls, &heritage.socks, list) {
 				if (ls->sock < 0)
 					continue;
-				AZ(setsockopt(ls->sock, IPPROTO_TCP,
-				    TCP_KEEPIDLE,
-				    &ka_time_cur, sizeof ka_time_cur));
-				AZ(setsockopt(ls->sock, IPPROTO_TCP,
-				    TCP_KEEPCNT,
-				    &ka_probes_cur, sizeof ka_probes_cur));
-				AZ(setsockopt(ls->sock, IPPROTO_TCP,
-				    TCP_KEEPINTVL,
-				    &ka_intvl_cur, sizeof ka_intvl_cur));
+				vca_tcp_opt_set(ls->sock, 1);
 			}
 		}
-#endif
-#ifdef SO_SNDTIMEO_WORKS
-		if (cache_param->idle_send_timeout != send_timeout) {
-			need_test = 1;
-			send_timeout = cache_param->idle_send_timeout;
-			tv_sndtimeo = VTIM_timeval(send_timeout);
-			VTAILQ_FOREACH(ls, &heritage.socks, list) {
-				if (ls->sock < 0)
-					continue;
-				AZ(setsockopt(ls->sock, SOL_SOCKET,
-				    SO_SNDTIMEO,
-				    &tv_sndtimeo, sizeof tv_sndtimeo));
-			}
-		}
-#endif
-#ifdef SO_RCVTIMEO_WORKS
-		if (cache_param->timeout_idle != timeout_idle) {
-			need_test = 1;
-			timeout_idle = cache_param->timeout_idle;
-			tv_rcvtimeo = VTIM_timeval(timeout_idle);
-			VTAILQ_FOREACH(ls, &heritage.socks, list) {
-				if (ls->sock < 0)
-					continue;
-				AZ(setsockopt(ls->sock, SOL_SOCKET,
-				    SO_RCVTIMEO,
-				    &tv_rcvtimeo, sizeof tv_rcvtimeo));
-			}
-		}
-#endif
 		now = VTIM_real();
 		VSC_C_main->uptime = (uint64_t)(now - t0);
 	}
