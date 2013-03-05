@@ -2,7 +2,7 @@ varnishtest "#1252 - Drop remote closed connections returning from waitinglists"
 
 # This test case is disabled because it will only pass on platforms
 # where the tcp_keepalive_* runtime arguments are available, and also
-# because it requires "-t 75" argument to varnishtest (remote closed
+# because it requires "-t 80" argument to varnishtest (remote closed
 # state will only be detected after FIN timeout has passed (60s))
 
 server s1 {
@@ -39,11 +39,14 @@ varnish v1 -cliok "param.set tcp_keepalive_intvl 1s"
 varnish v1 -cliok "param.show first_byte_timeout"
 varnish v1 -cliok "param.set first_byte_timeout 70"
 
+delay 2
+
 client c1 {
 	timeout 70
 	txreq -hdr "X-Client: 1"
 	rxresp
 	expect resp.status == 503
+	delay 2
 } -start
 
 client c2 {
@@ -54,4 +57,3 @@ client c2 {
 
 client c1 -wait
 client c2 -wait
-server s2 -wait
