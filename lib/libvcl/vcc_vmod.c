@@ -172,9 +172,6 @@ vcc_ParseImport(struct vcc *tl)
 			sym = VCC_AddSymbolStr(tl, p, SYM_OBJECT);
 			XXXAN(sym);
 			sym->args = p;
-		} else if (!strcmp(p, "FINI")) {
-			p += strlen(p) + 1;
-			// Nothing yet
 		} else if (!strcmp(p, "INIT")) {
 			p += strlen(p) + 1;
 			Fi(tl, 0, "\t%s(&vmod_priv_%.*s, &VCL_conf);\n",
