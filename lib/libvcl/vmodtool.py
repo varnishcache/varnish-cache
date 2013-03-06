@@ -321,7 +321,7 @@ class obj(object):
 		fo.write(self.st + ";\n")
 		self.init.c_proto(fo)
 		self.fini.c_proto(fo)
-		for m in o.methods:
+		for m in self.methods:
 			m.c_proto(fo)
 
 	def c_struct(self, modnam):
