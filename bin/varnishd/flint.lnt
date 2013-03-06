@@ -56,19 +56,19 @@
 -efunc(838, VRT_purge_string)
 
 // Stuff in VMODs which is used through dl*(3) functions
--esym(754, Vmod_Func*)
--esym(765, Vmod_Func)
--esym(552, Vmod_Func)
--esym(765, Vmod_Len)
--esym(714, Vmod_Len)
--esym(765, Vmod_Name)
--esym(714, Vmod_Name)
--esym(765, Vmod_Proto)
--esym(714, Vmod_Proto)
--esym(765, Vmod_Spec)
--esym(714, Vmod_Spec)
--esym(765, Vmod_Varnish_ABI)
--esym(714, Vmod_Varnish_ABI)
+-esym(754, Vmod_*_Func::*)
+-esym(765, Vmod_*_Func)
+-esym(552, Vmod_*_Func)
+-esym(765, Vmod_*_Len)
+-esym(714, Vmod_*_Len)
+-esym(765, Vmod_*_Name)
+-esym(714, Vmod_*_Name)
+-esym(765, Vmod_*_Proto)
+-esym(714, Vmod_*_Proto)
+-esym(765, Vmod_*_Spec)
+-esym(714, Vmod_*_Spec)
+-esym(765, Vmod_*_ABI)
+-esym(714, Vmod_*_ABI)
 
 
 //-sem (pthread_mutex_lock, thread_lock)
@@ -158,16 +158,6 @@
 -e641	// Converting enum 'cli_status_e' to int
 
 -e441	//  for clause irregularity: loop variable '___' not found in 2nd for expression
-
-// Vmod instantiation symbols are defined in all vmods
-
--esym(14, Vmod_Name)
--esym(14, Vmod_Func)
--esym(14, Vmod_Len)
--esym(14, Vmod_Proto)
--esym(14, Vmod_Spec)
--esym(14, Vmod_Varnish_ABI)
--esym(14, Vmod_Id)
 
 // Review all below this line ///////////////////////////////////////////////
 

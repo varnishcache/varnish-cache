@@ -125,8 +125,8 @@ class vmod(object):
 			fo.write("int " + self.init)
 			fo.write(
 			    "(struct vmod_priv *, const struct VCL_conf *);\n")
-		fo.write("\n")
-		fo.write("extern const void * const Vmod_Id;\n")
+		#fo.write("\n")
+		#fo.write("extern const void * const Vmod_" + self.nam + "_Id;\n")
 
 	def c_typedefs_(self):
 		l = list()
@@ -145,33 +145,36 @@ class vmod(object):
 			fo.write(i + "\n")
 
 	def c_vmod(self, fo):
-		fo.write('const char Vmod_Name[] = \"' + self.nam + '";\n')
+		fo.write('const char Vmod_' + self.nam + '_Name[] =')
+		fo.write(' \"' + self.nam + '";\n')
 		fo.write("\n")
 
 		cs = self.c_struct()
-		fo.write("const " + cs + ' Vmod_Func = ')
+		fo.write("const " + cs + ' Vmod_' + self.nam + '_Func = ')
 		fo.write(self.c_initializer())
 		fo.write("\n")
 
 		fo.write("\n")
-		fo.write("const int Vmod_Len = sizeof(Vmod_Func);\n")
+		fo.write("const int Vmod_" + self.nam + '_Len =')
+		fo.write(" sizeof(Vmod_" + self.nam + "_Func);\n")
 		fo.write("\n")
 
-
-		fo.write("const char Vmod_Proto[] =\n")
+		fo.write("const char Vmod_" + self.nam + "_Proto[] =\n")
 		for t in self.c_typedefs_():
 			fo.write('\t"' + t + '\\n"\n')
 		fo.write('\t"\\n"\n')
-		for i in (cs + " Vmod_Func_" + self.nam + ';').split("\n"):
+		for i in (cs + " Vmod_" + self.nam + '_Func;').split("\n"):
 			fo.write('\n\t"' + i + '\\n"')
 		fo.write(";\n\n")
 
 		fo.write(self.c_strspec())
 
 		fo.write("\n")
-		fo.write('const char Vmod_Varnish_ABI[] = VMOD_ABI_Version;\n')
-		fo.write("\n")
-		fo.write('const void * const Vmod_Id = &Vmod_Id;\n')
+		fo.write('const char Vmod_' + self.nam + '_ABI[] =')
+		fo.write(' VMOD_ABI_Version;\n')
+		#fo.write("\n")
+		#fo.write('const void * const Vmod_' + self.nam + '_Id =')
+		#fo.write(' &Vmod_' + self.nam + '_Id;\n')
 
 	def c_initializer(self):
 		s = '{\n'
@@ -190,7 +193,7 @@ class vmod(object):
 		return s
 
 	def c_struct(self):
-		s = 'struct Vmod_Func_' + self.nam + ' {\n'
+		s = 'struct Vmod_' + self.nam + '_Func {\n'
 		for o in self.objs:
 			s += o.c_struct(self.nam)
 
@@ -205,7 +208,7 @@ class vmod(object):
 		return s
 
 	def c_strspec(self):
-		s = "const char * const Vmod_Spec[] = {\n"
+		s = "const char * const Vmod_" + self.nam + "_Spec[] = {\n"
 
 		for o in self.objs:
 			s += o.c_strspec(self.nam)
@@ -216,7 +219,7 @@ class vmod(object):
 
 		s += "\n\t/* Init/Fini */\n"
 		if self.init != None:
-			s += '\t"INIT\\0Vmod_Func_' + self.nam + '._init",\n'
+			s += '\t"INIT\\0Vmod_' + self.nam + '_Func._init",\n'
 
 		s += "\t0\n"
 		s += "};\n"
@@ -280,7 +283,7 @@ class func(object):
 	def c_strspec(self, modnam):
 		s = modnam + "." + self.nam
 		s += "\\0"
-		s += "Vmod_Func_" + modnam + "." + self.cnam + "\\0"
+		s += "Vmod_" + modnam + "_Func." + self.cnam + "\\0"
 		s += self.retval + "\\0"
 		for a in self.al:
 			s += a.c_strspec()

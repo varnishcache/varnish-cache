@@ -111,7 +111,6 @@ vcc_IfStmt(struct vcc *tl)
 			ERRCHK(tl);
 			L(tl, vcc_Compound(tl));
 			ERRCHK(tl);
-			
 		} else if (vcc_IdIs(tl->t, "elseif") ||
 		     vcc_IdIs(tl->t, "elsif") ||
 		     vcc_IdIs(tl->t, "elif")) {

@@ -32,12 +32,14 @@
 #include "config.h"
 
 #include <dlfcn.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "cache.h"
 
 #include "vcli_priv.h"
 #include "vrt.h"
+#include "vmod_abi.h"
 
 /*--------------------------------------------------------------------
  * Modules stuff
@@ -56,7 +58,6 @@ struct vmod {
 	void			*hdl;
 	const void		*funcs;
 	int			funclen;
-	const void		*idptr;
 };
 
 static VTAILQ_HEAD(,vmod)	vmods = VTAILQ_HEAD_INITIALIZER(vmods);
@@ -67,6 +68,7 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
 {
 	struct vmod *v;
 	void *x, *y, *z, *w;
+	char buf[256];
 
 	ASSERT_CLI();
 
@@ -86,10 +88,14 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
 			return (1);
 		}
 
-		x = dlsym(v->hdl, "Vmod_Name");
-		y = dlsym(v->hdl, "Vmod_Len");
-		z = dlsym(v->hdl, "Vmod_Func");
-		w = dlsym(v->hdl, "Vmod_Id");
+		bprintf(buf, "Vmod_%s_Name", nm);
+		x = dlsym(v->hdl, buf);
+		bprintf(buf, "Vmod_%s_Len", nm);
+		y = dlsym(v->hdl, buf);
+		bprintf(buf, "Vmod_%s_Func", nm);
+		z = dlsym(v->hdl, buf);
+		bprintf(buf, "Vmod_%s_ABI", nm);
+		w = dlsym(v->hdl, buf);
 		if (x == NULL || y == NULL || z == NULL || w == NULL) {
 			VCLI_Out(cli, "Loading VMOD %s from %s:\n", nm, path);
 			VCLI_Out(cli, "VMOD symbols not found\n");
@@ -112,6 +118,18 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
 			return (1);
 		}
 
+		if (strcmp(w, VMOD_ABI_Version)) {
+			VCLI_Out(cli, "Loading VMOD %s from %s:\n", nm, path);
+			VCLI_Out(cli, "VMOD ABI (%s)", w);
+			VCLI_Out(cli, " incompatible with varnish ABI (%s)\n",
+			    VMOD_ABI_Version);
+			(void)dlclose(v->hdl);
+			FREE_OBJ(v);
+			return (1);
+		}
+
+		// XXX: Check w for ABI version compatibility
+
 		v->funclen = *(const int *)y;
 		v->funcs = z;
 
@@ -120,7 +138,6 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
 
 		VSC_C_main->vmods++;
 		VTAILQ_INSERT_TAIL(&vmods, v, list);
-		v->idptr = w;
 	}
 
 	assert(len == v->funclen);

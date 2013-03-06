@@ -41,6 +41,7 @@ vcc_ParseImport(struct vcc *tl)
 {
 	void *hdl;
 	char fn[1024];
+	char buf[256];
 	struct token *mod, *t1;
 	const char *modname;
 	const char *proto;
@@ -106,8 +107,8 @@ vcc_ParseImport(struct vcc *tl)
 	Fh(tl, 0, "static void *VGC_vmod_%.*s;\n", PF(mod));
 
 	Fi(tl, 0, "\tif (VRT_Vmod_Init(&VGC_vmod_%.*s,\n", PF(mod));
-	Fi(tl, 0, "\t    &Vmod_Func_%.*s,\n", PF(mod));
-	Fi(tl, 0, "\t    sizeof(Vmod_Func_%.*s),\n", PF(mod));
+	Fi(tl, 0, "\t    &Vmod_%.*s_Func,\n", PF(mod));
+	Fi(tl, 0, "\t    sizeof(Vmod_%.*s_Func),\n", PF(mod));
 	Fi(tl, 0, "\t    \"%.*s\",\n", PF(mod));
 	Fi(tl, 0, "\t    ");
 	EncString(tl->fi, fn, NULL, 0);
@@ -125,7 +126,8 @@ vcc_ParseImport(struct vcc *tl)
 		return;
 	}
 
-	modname = dlsym(hdl, "Vmod_Name");
+	bprintf(buf, "Vmod_%.*s_Name", PF(mod));
+	modname = dlsym(hdl, buf);
 	if (modname == NULL) {
 		VSB_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n",
 		    PF(mod), fn, "Symbol Vmod_Name not found");
@@ -140,7 +142,8 @@ vcc_ParseImport(struct vcc *tl)
 		return;
 	}
 
-	abi = dlsym(hdl, "Vmod_Varnish_ABI");
+	bprintf(buf, "Vmod_%.*s_ABI", PF(mod));
+	abi = dlsym(hdl, buf);
 	if (abi == NULL || strcmp(abi, VMOD_ABI_Version) != 0) {
 		VSB_printf(tl->sb, "Could not load module %.*s\n\t%s\n",
 		    PF(mod), fn);
@@ -150,14 +153,16 @@ vcc_ParseImport(struct vcc *tl)
 		return;
 	}
 
-	proto = dlsym(hdl, "Vmod_Proto");
+	bprintf(buf, "Vmod_%.*s_Proto", PF(mod));
+	proto = dlsym(hdl, buf);
 	if (proto == NULL) {
 		VSB_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n",
 		    PF(mod), fn, "Symbol Vmod_Proto not found");
 		vcc_ErrWhere(tl, mod);
 		return;
 	}
-	spec = dlsym(hdl, "Vmod_Spec");
+	bprintf(buf, "Vmod_%.*s_Spec", PF(mod));
+	spec = dlsym(hdl, buf);
 	if (spec == NULL) {
 		VSB_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n",
 		    PF(mod), fn, "Symbol Vmod_Spec not found");
