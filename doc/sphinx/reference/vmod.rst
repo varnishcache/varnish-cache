@@ -50,7 +50,7 @@ The first line gives the name of the module, nothing special there.
 The second line specifies an optional "Init" function, which will
 be called whenever a VCL program which imports this VMOD is loaded.
 This gives a chance to initialize the module before any of the
-functions it implements are called.
+functions it implements are called.  More on this below.
 
 The next three lines specify two functions in the VMOD, along with the
 types of the arguments, and that is probably where the hardest bit
@@ -235,5 +235,43 @@ pointer points to.
 When a VCL program is discarded, all private pointers are checked
 to see if both the "priv" and "free" elements are non-NULL, and if
 they are, the "free" function will be called with the "priv" pointer
-as only argument.  The "per vcl" pointers is guaranteed to be the
-last one inspected.
+as only argument.
+
+The per-call vmod_privs are freed before the per-vcl vmod_priv.
+
+Init functions
+==============
+
+VMODs can have an "init" method which is called when a VCL
+which imports the VMOD is initialized.
+
+The first argument to the init function is the vmod_priv specific
+to this particular VCL, and if necessary, a VCL specific VMOD "fini"
+function can be attached to its "free" hook.
+
+(The second argument is a pointer to the VCL's config structure,
+it is not at all obvious what you can use this for in practice,
+but we provide it just in case.)
+
+Please notice that there is no "global" fini method.
+
+If the VMOD has private global state, which includes any sockets
+or files opened, any memory allocated to global or private variables
+in the C-code etc, it is the VMODs own responsibility to track how
+many VCLs have called init (& fini) and free this global state
+when the count reaches zero.
+
+When to lock, and when not to lock
+==================================
+
+Varnish is heavily multithreaded, so by default VMODs must implement
+their own locking to protect shared resources.
+
+When a VCL is loaded or unloaded, the initializtion and teardown
+is run sequentially in a single thread, and there is guaranteed
+to be no other activity related to this particular VCL, nor are
+there  init/fini activity in any other VCL or VMOD at this time.
+
+That means that the VMOD init, and any object init/fini functions
+are already serialized in sensible order, and won't need any locking,
+unless they access VMOD specific global state, shared with other VCLs.
