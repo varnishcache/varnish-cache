@@ -32,6 +32,6 @@ Function STRING author(ENUM { phk, des, kristian, mithrandir })
 Function VOID test_priv_call(PRIV_CALL)
 Function VOID test_priv_vcl(PRIV_VCL)
 Object obj(STRING) {
-	Method STRING .foo(STRING)
+	Method STRING .foo(STRING why)
 	Method TIME .date()
 }

@@ -265,6 +265,8 @@ class func(object):
 			fo.write(self.pfx)
 		for a in self.al:
 			fo.write(", " + ctypes[a.typ])
+			if a.nam != None:
+				fo.write(" " + a.nam)
 		fo.write(");\n")
 
 	def c_typedef(self, modname):
@@ -459,6 +461,9 @@ def parse_func(tl, rt_type = None, obj=None):
 			al.append(arg(t.str))
 		else:
 			raise Exception("ARG? %s" % t.str)
+		if is_c_name(tl[0].str):
+			al[-1].nam = tl[0].str
+			t = tl.pop(0)
 		if tl[0].str == ",":
 			tl.pop(0)
 		elif tl[0].str != ")":
