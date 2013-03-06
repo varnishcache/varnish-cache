@@ -97,7 +97,6 @@ class vmod(object):
 			raise Exception("Module name '%s' is illegal" % nam)
 		self.nam = nam
 		self.init = None
-		self.fini = None
 		self.funcs = list()
 		self.objs = list()
 
@@ -107,13 +106,6 @@ class vmod(object):
 		if not is_c_name(nam):
 			raise Exception("Init name '%s' is illegal" % nam)
 		self.init = nam
-
-	def set_fini(self, nam):
-		if self.fini != None:
-			raise Exception("Module %s already has Fini" % self.nam)
-		if not is_c_name(nam):
-			raise Exception("Fini name '%s' is illegal" % nam)
-		self.fini = nam
 
 	def add_func(self, fn):
 		self.funcs.append(fn)
@@ -129,10 +121,6 @@ class vmod(object):
 			f.c_proto(fo)
 		if self.init != None:
 			fo.write("int " + self.init)
-			fo.write(
-			    "(struct vmod_priv *, const struct VCL_conf *);\n")
-		if self.fini != None:
-			fo.write("int " + self.fini)
 			fo.write(
 			    "(struct vmod_priv *, const struct VCL_conf *);\n")
 		fo.write("extern const void * const Vmod_Id;\n")
@@ -193,8 +181,6 @@ class vmod(object):
 		s += "\n\t/* Init/Fini */\n"
 		if self.init != None:
 			s += "\t" + self.init + ",\n"
-		if self.fini != None:
-			s += "\t" + self.fini + ",\n"
 		s += "};"
 
 		return s
@@ -211,8 +197,6 @@ class vmod(object):
 		s += "\n\t/* Init/Fini */\n"
 		if self.init != None:
 			s += "\tvmod_init_f\t*_init;\n"
-		if self.fini != None:
-			s += "\tvmod_fini_f\t*_fini;\n"
 		s += '}'
 		return s
 
@@ -229,8 +213,6 @@ class vmod(object):
 		s += "\n\t/* Init/Fini */\n"
 		if self.init != None:
 			s += '\t"INIT\\0Vmod_Func_' + self.nam + '._init",\n'
-		if self.fini != None:
-			s += '\t"FINI\\0Vmod_Func_' + self.nam + '._fini",\n'
 
 		s += "\t0\n"
 		s += "};\n"
@@ -512,9 +494,6 @@ while len(tl) > 0:
 	if t.str == "Init":
 		t = tl.pop(0)
 		vmod.set_init(t.str)
-	elif t.str == "Fini":
-		t = tl.pop(0)
-		vmod.set_fini(t.str)
 	elif t.str == "Function":
 		f = parse_func(tl)
 		vmod.add_func(f)
