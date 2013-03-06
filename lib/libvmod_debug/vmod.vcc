@@ -35,3 +35,8 @@ Object obj(STRING) {
 	Method STRING .foo(STRING why)
 	Method TIME .date()
 }
+
+Object rr() {
+	Method VOID .add_backend(BACKEND)
+	Method BACKEND .select()
+}

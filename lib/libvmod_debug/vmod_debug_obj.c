@@ -86,3 +86,86 @@ vmod_obj_date(struct req *req, struct vmod_debug_obj *o)
 	assert(o->foobar == 42);
 	return (21.4);
 }
+
+/*----------------------------------------------------------------------*/
+
+struct vmod_debug_rr_entry {
+	unsigned				magic;
+#define VMOD_DEBUG_RR_ENTRY_MAGIC		0xa80970cf
+	VTAILQ_ENTRY(vmod_debug_rr_entry)	list;
+	VCL_BACKEND				be;
+};
+
+struct vmod_debug_rr {
+	unsigned				magic;
+#define VMOD_DEBUG_RR_MAGIC			0x99f4b726
+	VTAILQ_HEAD(, vmod_debug_rr_entry)	listhead;
+	pthread_mutex_t				mtx;
+};
+
+VCL_VOID
+vmod_rr__init(struct req *req, struct vmod_debug_rr **rrp)
+{
+	struct vmod_debug_rr *rr;
+
+	(void)req;
+
+	AN(rrp);
+	AZ(*rrp);
+	ALLOC_OBJ(rr, VMOD_DEBUG_RR_MAGIC);
+	AN(rr);
+	*rrp = rr;
+	AZ(pthread_mutex_init(&rr->mtx, NULL));
+	VTAILQ_INIT(&rr->listhead);
+}
+
+VCL_VOID
+vmod_rr__fini(struct req *req, struct vmod_debug_rr **rrp)
+{
+	struct vmod_debug_rr *rr;
+	struct vmod_debug_rr_entry *ep;
+
+	(void)req;
+
+	rr = *rrp;
+	*rrp = NULL;
+	CHECK_OBJ_NOTNULL(rr, VMOD_DEBUG_RR_MAGIC);
+
+	AZ(pthread_mutex_destroy(&rr->mtx));
+	while (!VTAILQ_EMPTY(&rr->listhead)) {
+		ep = VTAILQ_FIRST(&rr->listhead);
+		VTAILQ_REMOVE(&rr->listhead, ep, list);
+		FREE_OBJ(ep);
+	}
+	FREE_OBJ(*rrp);
+}
+
+VCL_VOID
+vmod_rr_add_backend(struct req *req, struct vmod_debug_rr * rr, VCL_BACKEND be)
+{
+	struct vmod_debug_rr_entry *ep;
+	(void)req;
+
+	ALLOC_OBJ(ep, VMOD_DEBUG_RR_ENTRY_MAGIC);
+	AN(ep);
+	ep->be = be;
+	AZ(pthread_mutex_lock(&rr->mtx));
+	VTAILQ_INSERT_TAIL(&rr->listhead, ep, list);
+	AZ(pthread_mutex_unlock(&rr->mtx));
+}
+
+VCL_BACKEND
+vmod_rr_select(struct req *req, struct vmod_debug_rr *rr)
+{
+	struct vmod_debug_rr_entry *ep;
+
+	(void)req;
+
+	CHECK_OBJ_NOTNULL(rr, VMOD_DEBUG_RR_MAGIC);
+	AZ(pthread_mutex_lock(&rr->mtx));
+	ep = VTAILQ_FIRST(&rr->listhead);
+	VTAILQ_REMOVE(&rr->listhead, ep, list);
+	VTAILQ_INSERT_TAIL(&rr->listhead, ep, list);
+	AZ(pthread_mutex_unlock(&rr->mtx));
+	return (ep->be);
+}
