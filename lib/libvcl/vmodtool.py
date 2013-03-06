@@ -117,12 +117,15 @@ class vmod(object):
 	def c_proto(self, fo):
 		for o in self.objs:
 			o.c_proto(fo)
+			fo.write("\n")
 		for f in self.funcs:
 			f.c_proto(fo)
 		if self.init != None:
+			fo.write("\n")
 			fo.write("int " + self.init)
 			fo.write(
 			    "(struct vmod_priv *, const struct VCL_conf *);\n")
+		fo.write("\n")
 		fo.write("extern const void * const Vmod_Id;\n")
 
 	def c_typedefs_(self):
@@ -130,10 +133,11 @@ class vmod(object):
 		for o in self.objs:
 			for t in o.c_typedefs(self.nam):
 				l.append(t)
-		l.append("")
+			l.append("")
 		l.append("/* Functions */")
 		for f in self.funcs:
 			l.append(f.c_typedef(self.nam))
+		l.append("")
 		return l
 
 	def c_typedefs(self, fo):
@@ -530,7 +534,6 @@ fc.write("""#include "config.h"
 """)
 
 vmod.c_typedefs(fc)
-fc.write("\n")
 vmod.c_vmod(fc)
 
 fc.close()
