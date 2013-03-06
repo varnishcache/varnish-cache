@@ -231,10 +231,16 @@ parse_new(struct vcc *tl)
 		p += strlen(s_obj);
 		bprintf(buf2, "%s%s", sy1->name, p);
 		sy3 = VCC_AddSymbolStr(tl, buf2, SYM_FUNC);
+		AN(sy3);
 		sy3->eval = vcc_Eval_SymFunc;
 		p += strlen(p) + 1;
 		sy3->cfunc = p;
 		p += strlen(p) + 1;
+
+		/* Functions which return VOID are procedures */
+		if (!memcmp(p, "VOID\0", 5))
+			sy3->kind = SYM_PROC;
+
 		sy3->args = p;
 		sy3->extra = TlDup(tl, buf1);
 		while (p[0] != '\0' || p[1] != '\0')
