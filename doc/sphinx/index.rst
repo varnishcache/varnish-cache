@@ -1,6 +1,21 @@
 .. Varnish documentation master file, created by
    sphinx-quickstart on Tue Apr 20 13:02:15 2010.
 
+.. We use the following header indicators
+
+.. For titles:
+
+.. H1
+.. %%%%%
+.. Title
+.. %%%%%
+
+.. H2 - H5
+.. ====================== 
+.. ----------------------
+.. ~~~~~~~~~~~~~~~~~~~~~~
+.. ...................... 
+
 Welcome to Varnish's documentation!
 ===================================
 

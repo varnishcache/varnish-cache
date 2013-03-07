@@ -7,7 +7,7 @@ In order for you to install Varnish you must have the following:
   * A fairly modern and 64 bit version of either
     - Linux
     - FreeBSD
-    - Solaris
+    - Solaris (x86 only)
   * root access to said system
 
 
@@ -19,4 +19,5 @@ time, said to work on:
   * OS X
   * NetBSD
   * OpenBSD
+  * Windows with Cygwin
 

@@ -11,14 +11,14 @@ are most comfortable with.
 
 
 Source or packages?
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 Installing Varnish on most relevant operating systems can usually 
 be done with with the systems package manager, typical examples
 being:
 
 FreeBSD
-~~~~~~~
+-------
 
 From source:
 		``cd /usr/ports/varnish && make install clean``
@@ -26,7 +26,7 @@ Binary package:
 		``pkg_add -r varnish``
 
 CentOS/RedHat
-~~~~~~~~~~~~~
+-------------
 
 We try to keep the latest version available as prebuilt RPMs (el5) on
 `repo.varnish-cache.org <http://repo.varnish-cache.org/>`.  See the
@@ -42,7 +42,7 @@ the latest version there is Varnish 2.0.6.
 EPEL6 should have Varnish 2.1 available once it releases. 
 
 Debian/Ubuntu
-~~~~~~~~~~~~~
+-------------
 
 Varnish is distributed with both Debian and Ubuntu. In order to get
 Varnish up and running type `sudo apt-get install varnish`. Please
@@ -53,7 +53,7 @@ instructions for `Debian
 <http://www.varnish-cache.org/installation/ubuntu>`.
 
 Other systems
-~~~~~~~~~~~~~
+-------------
 
 You are probably best of compiling your own code. See `Compiling
 Varnish from source`_.
@@ -82,7 +82,7 @@ Please note that a git checkout will need some more build-dependencies
 than listed below, in particular the Python Docutils and Sphinx.
 
 Build dependencies on Debian / Ubuntu 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------
 
 In order to build Varnish from source you need a number of packages
 installed. On a Debian or Ubuntu system these are:
@@ -97,7 +97,7 @@ installed. On a Debian or Ubuntu system these are:
 * pkg-config
 
 Build dependencies on Red Hat / CentOS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------
 
 To build Varnish on a Red Hat or CentOS system you need the following
 packages installed:
@@ -111,7 +111,7 @@ packages installed:
 * pkgconfig
 
 Configuring and compiling
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
 Next, configuration: The configuration will need the dependencies
 above satisfied. Once that is taken care of::
@@ -137,7 +137,7 @@ fails, something is horribly wrong, and you will get nowhere without
 figuring out what.
 
 Installing
-~~~~~~~~~~
+----------
 
 And finally, the true test of a brave heart::
 
