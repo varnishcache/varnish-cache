@@ -134,7 +134,7 @@ vmod_round_robin__fini(struct req *req, struct vmod_directors_round_robin **rrp)
 		VTAILQ_REMOVE(&rr->listhead, ep, list);
 		FREE_OBJ(ep);
 	}
-	REPLACE(rr->dir->vcl_name, NULL);
+	free(rr->dir->vcl_name);
 	FREE_OBJ(rr->dir);
 	FREE_OBJ(rr);
 }

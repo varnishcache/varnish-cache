@@ -120,7 +120,7 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
 
 		if (strcmp(w, VMOD_ABI_Version)) {
 			VCLI_Out(cli, "Loading VMOD %s from %s:\n", nm, path);
-			VCLI_Out(cli, "VMOD ABI (%s)", w);
+			VCLI_Out(cli, "VMOD ABI (%s)", (char*)w);
 			VCLI_Out(cli, " incompatible with varnish ABI (%s)\n",
 			    VMOD_ABI_Version);
 			(void)dlclose(v->hdl);

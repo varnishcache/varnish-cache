@@ -120,7 +120,7 @@ static unsigned		need_test;
  */
 
 static int
-vca_tcp_opt_init()
+vca_tcp_opt_init(void)
 {
 	int n, x;
 	int one = 1;
