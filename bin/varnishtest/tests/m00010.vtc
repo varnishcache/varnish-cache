@@ -27,15 +27,21 @@ varnish v1 -vcl+backend {
 
 	import debug from "${topbuild}/lib/libvmod_debug/.libs/libvmod_debug.so" ;
 	sub vcl_init {
-		new rr = debug.rr();
-		rr.add_backend(s1);
-		rr.add_backend(s2);
-		rr.add_backend(s3);
-		rr.add_backend(s4);
+		new rr1 = debug.rr();
+		rr1.add_backend(s1);
+		rr1.add_backend(s3);
+
+		new rr2 = debug.rr();
+		rr2.add_backend(s2);
+		rr2.add_backend(s4);
+
+		new rr3 = debug.rr();
+		rr3.add_backend(rr1.backend());
+		rr3.add_backend(rr2.backend());
 	}
 
 	sub vcl_recv {
-		set req.backend = rr.backend();
+		set req.backend = rr3.backend();
 	}
 } -start
 

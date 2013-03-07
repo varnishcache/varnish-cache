@@ -31,6 +31,7 @@
 #include <stdlib.h>
 
 #include "cache/cache.h"
+#include "cache/cache_backend.h"
 
 #include "vrt.h"
 #include "vcc_if.h"
@@ -46,8 +47,51 @@ struct vmod_debug_rr {
 	unsigned				magic;
 #define VMOD_DEBUG_RR_MAGIC			0x99f4b726
 	VTAILQ_HEAD(, vmod_debug_rr_entry)	listhead;
+	int					nbe;
 	pthread_mutex_t				mtx;
+	struct director				*dir;
 };
+
+static unsigned
+vmod_rr_healthy(const struct director *dir, const struct req *req)
+{
+	struct vmod_debug_rr_entry *ep;
+	struct vmod_debug_rr *rr;
+	unsigned retval = 0;
+
+	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DEBUG_RR_MAGIC);
+	AZ(pthread_mutex_lock(&rr->mtx));
+	VTAILQ_FOREACH(ep, &rr->listhead, list) {
+		if (ep->be->healthy(ep->be, req)) {
+			retval = 1;
+			break;
+		}
+	}
+	AZ(pthread_mutex_unlock(&rr->mtx));
+	return (retval);
+}
+
+static struct vbc *
+vmod_rr_getfd(const struct director *dir, struct req *req)
+{
+	struct vmod_debug_rr_entry *ep = NULL;
+	struct vmod_debug_rr *rr;
+	int i;
+
+	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DEBUG_RR_MAGIC);
+	AZ(pthread_mutex_lock(&rr->mtx));
+	for (i = 0; i < rr->nbe; i++) {
+		ep = VTAILQ_FIRST(&rr->listhead);
+		VTAILQ_REMOVE(&rr->listhead, ep, list);
+		VTAILQ_INSERT_TAIL(&rr->listhead, ep, list);
+		if (ep->be->healthy(ep->be, req))
+			break;
+	}
+	AZ(pthread_mutex_unlock(&rr->mtx));
+	if (i == rr->nbe || ep == NULL)
+		return (NULL);
+	return (ep->be->getfd(ep->be, req));
+}
 
 VCL_VOID
 vmod_rr__init(struct req *req, struct vmod_debug_rr **rrp, const char *vcl_name)
@@ -55,7 +99,6 @@ vmod_rr__init(struct req *req, struct vmod_debug_rr **rrp, const char *vcl_name)
 	struct vmod_debug_rr *rr;
 
 	(void)req;
-	(void)vcl_name;
 
 	AN(rrp);
 	AZ(*rrp);
@@ -64,6 +107,12 @@ vmod_rr__init(struct req *req, struct vmod_debug_rr **rrp, const char *vcl_name)
 	*rrp = rr;
 	AZ(pthread_mutex_init(&rr->mtx, NULL));
 	VTAILQ_INIT(&rr->listhead);
+	ALLOC_OBJ(rr->dir, DIRECTOR_MAGIC);
+	AN(rr->dir);
+	REPLACE(rr->dir->vcl_name, vcl_name);
+	rr->dir->priv = rr;
+	rr->dir->healthy = vmod_rr_healthy;
+	rr->dir->getfd = vmod_rr_getfd;
 }
 
 VCL_VOID
@@ -84,7 +133,9 @@ vmod_rr__fini(struct req *req, struct vmod_debug_rr **rrp)
 		VTAILQ_REMOVE(&rr->listhead, ep, list);
 		FREE_OBJ(ep);
 	}
-	FREE_OBJ(*rrp);
+	REPLACE(rr->dir->vcl_name, NULL);
+	FREE_OBJ(rr->dir);
+	FREE_OBJ(rr);
 }
 
 VCL_VOID
@@ -98,21 +149,13 @@ vmod_rr_add_backend(struct req *req, struct vmod_debug_rr * rr, VCL_BACKEND be)
 	ep->be = be;
 	AZ(pthread_mutex_lock(&rr->mtx));
 	VTAILQ_INSERT_TAIL(&rr->listhead, ep, list);
+	rr->nbe++;
 	AZ(pthread_mutex_unlock(&rr->mtx));
 }
 
-VCL_BACKEND
-vmod_rr_select(struct req *req, struct vmod_debug_rr *rr)
+VCL_BACKEND __match_proto__()
+vmod_rr_backend(struct req *req, struct vmod_debug_rr *rr)
 {
-	struct vmod_debug_rr_entry *ep;
-
 	(void)req;
-
-	CHECK_OBJ_NOTNULL(rr, VMOD_DEBUG_RR_MAGIC);
-	AZ(pthread_mutex_lock(&rr->mtx));
-	ep = VTAILQ_FIRST(&rr->listhead);
-	VTAILQ_REMOVE(&rr->listhead, ep, list);
-	VTAILQ_INSERT_TAIL(&rr->listhead, ep, list);
-	AZ(pthread_mutex_unlock(&rr->mtx));
-	return (ep->be);
+	return (rr->dir);
 }

@@ -38,5 +38,5 @@ Object obj(STRING) {
 
 Object rr() {
 	Method VOID .add_backend(BACKEND)
-	Method BACKEND .select()
+	Method BACKEND .backend()
 }
