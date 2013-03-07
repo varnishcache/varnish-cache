@@ -7,8 +7,9 @@ capabilites of the VCL language.
 
 .. toctree::
 
-  vcl-example1-manipulating-headers
-  vcl-example2-manipulating-responses
-  vcl-example3-acls
+  vcl-example-manipulating-headers
+  vcl-example-manipulating-responses
+  vcl-example-acls
+  vcl-example-websockets
 
 

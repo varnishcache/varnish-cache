@@ -7,10 +7,7 @@ Varnish has a concept of "backend" or "origin" servers. A backend
 server is the server providing the content Varnish will accelerate.
 
 Our first task is to tell Varnish where it can find its content. Start
-your favorite text editor and open the varnish default configuration
-file. If you installed from source this is
-/usr/local/etc/varnish/default.vcl, if you installed from a package it
-is probably /etc/varnish/default.vcl.
+your favorite text editor and open the relevant VCL file.
 
 Somewhere in the top there will be a section that looks a bit like this.::
 

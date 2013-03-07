@@ -1,6 +1,6 @@
 
-Using Websockets 
-----------------
+Implementing websocket support
+------------------------------
 
 Websockets is a technology for creating a bidirectional stream-based channel over HTTP.
 

@@ -27,7 +27,7 @@ When a new configuration is loaded, the varnishd management process
 translates the VCL code to C and compiles it to a shared object which
 is then dynamically linked into the server process.
 
-.. include:: ../include/vcl-syntax.rst
+.. .. include:: ../include/vcl-syntax.rst
 
 .. include:: ../include/vcl-backends.rst
 

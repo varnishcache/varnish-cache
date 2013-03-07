@@ -27,7 +27,7 @@ code commented out in default.vcl that ships with Varnish Cache.
 .. _users-guide-vcl_fetch_actions:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    vcl-syntax
    vcl-built-in-subs
