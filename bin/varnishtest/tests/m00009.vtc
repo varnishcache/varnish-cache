@@ -1,4 +1,4 @@
-varnishtest "Test vmod.debug round robin director"
+varnishtest "Test vmod.directors round robin director"
 
 
 server s1 {
@@ -25,9 +25,9 @@ server s4 {
 
 varnish v1 -vcl+backend {
 
-	import debug from "${topbuild}/lib/libvmod_debug/.libs/libvmod_debug.so" ;
+	import directors from "${topbuild}/lib/libvmod_directors/.libs/libvmod_directors.so" ;
 	sub vcl_init {
-		new rr = debug.rr();
+		new rr = directors.round_robin();
 		rr.add_backend(s1);
 		rr.add_backend(s2);
 		rr.add_backend(s3);

@@ -7,22 +7,21 @@ AM_CPPFLAGS = \
 	-I$(top_builddir)/include
 
 vmoddir = $(pkglibdir)/vmods
-vmod_srcdir = $(top_srcdir)/lib/libvmod_debug
+vmod_srcdir = $(top_srcdir)/lib/libvmod_directors
 vmodtool = $(top_srcdir)/lib/libvcl/vmodtool.py
-noinst_LTLIBRARIES = libvmod_debug.la
+noinst_LTLIBRARIES = libvmod_directors.la
 
-libvmod_debug_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-version -shared -rpath /nowhere
+libvmod_directors_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-version -shared -rpath /nowhere
 
-libvmod_debug_la_SOURCES = \
-	vmod_debug.c \
-	vmod_debug_obj.c
+libvmod_directors_la_SOURCES = \
+	round_robin.c
 
-nodist_libvmod_debug_la_SOURCES = \
+nodist_libvmod_directors_la_SOURCES = \
 	vcc_if.c \
 	vcc_if.h
 
 # BUILT_SOURCES is only a hack and dependency tracking does not help for the first build
-vmod_debug.lo: vcc_if.h
+vmod_directors.lo: vcc_if.h
 
 vcc_if.c vcc_if.h: $(vmodtool) $(vmod_srcdir)/vmod.vcc
 	@PYTHON@ $(vmodtool) $(vmod_srcdir)/vmod.vcc

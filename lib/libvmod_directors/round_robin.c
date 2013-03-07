@@ -36,17 +36,17 @@
 #include "vrt.h"
 #include "vcc_if.h"
 
-struct vmod_debug_rr_entry {
+struct rr_entry {
 	unsigned				magic;
-#define VMOD_DEBUG_RR_ENTRY_MAGIC		0xa80970cf
-	VTAILQ_ENTRY(vmod_debug_rr_entry)	list;
+#define RR_ENTRY_MAGIC				0xa80970cf
+	VTAILQ_ENTRY(rr_entry)			list;
 	VCL_BACKEND				be;
 };
 
-struct vmod_debug_rr {
+struct vmod_directors_round_robin {
 	unsigned				magic;
 #define VMOD_DEBUG_RR_MAGIC			0x99f4b726
-	VTAILQ_HEAD(, vmod_debug_rr_entry)	listhead;
+	VTAILQ_HEAD(, rr_entry)			listhead;
 	int					nbe;
 	pthread_mutex_t				mtx;
 	struct director				*dir;
@@ -55,8 +55,8 @@ struct vmod_debug_rr {
 static unsigned
 vmod_rr_healthy(const struct director *dir, const struct req *req)
 {
-	struct vmod_debug_rr_entry *ep;
-	struct vmod_debug_rr *rr;
+	struct rr_entry *ep;
+	struct vmod_directors_round_robin *rr;
 	unsigned retval = 0;
 
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DEBUG_RR_MAGIC);
@@ -74,8 +74,8 @@ vmod_rr_healthy(const struct director *dir, const struct req *req)
 static struct vbc *
 vmod_rr_getfd(const struct director *dir, struct req *req)
 {
-	struct vmod_debug_rr_entry *ep = NULL;
-	struct vmod_debug_rr *rr;
+	struct rr_entry *ep = NULL;
+	struct vmod_directors_round_robin *rr;
 	int i;
 
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DEBUG_RR_MAGIC);
@@ -94,9 +94,10 @@ vmod_rr_getfd(const struct director *dir, struct req *req)
 }
 
 VCL_VOID
-vmod_rr__init(struct req *req, struct vmod_debug_rr **rrp, const char *vcl_name)
+vmod_round_robin__init(struct req *req, struct vmod_directors_round_robin **rrp,
+    const char *vcl_name)
 {
-	struct vmod_debug_rr *rr;
+	struct vmod_directors_round_robin *rr;
 
 	(void)req;
 
@@ -116,10 +117,10 @@ vmod_rr__init(struct req *req, struct vmod_debug_rr **rrp, const char *vcl_name)
 }
 
 VCL_VOID
-vmod_rr__fini(struct req *req, struct vmod_debug_rr **rrp)
+vmod_round_robin__fini(struct req *req, struct vmod_directors_round_robin **rrp)
 {
-	struct vmod_debug_rr *rr;
-	struct vmod_debug_rr_entry *ep;
+	struct vmod_directors_round_robin *rr;
+	struct rr_entry *ep;
 
 	(void)req;
 
@@ -139,12 +140,13 @@ vmod_rr__fini(struct req *req, struct vmod_debug_rr **rrp)
 }
 
 VCL_VOID
-vmod_rr_add_backend(struct req *req, struct vmod_debug_rr * rr, VCL_BACKEND be)
+vmod_round_robin_add_backend(struct req *req, struct vmod_directors_round_robin * rr,
+    VCL_BACKEND be)
 {
-	struct vmod_debug_rr_entry *ep;
+	struct rr_entry *ep;
 	(void)req;
 
-	ALLOC_OBJ(ep, VMOD_DEBUG_RR_ENTRY_MAGIC);
+	ALLOC_OBJ(ep, RR_ENTRY_MAGIC);
 	AN(ep);
 	ep->be = be;
 	AZ(pthread_mutex_lock(&rr->mtx));
@@ -154,7 +156,7 @@ vmod_rr_add_backend(struct req *req, struct vmod_debug_rr * rr, VCL_BACKEND be)
 }
 
 VCL_BACKEND __match_proto__()
-vmod_rr_backend(struct req *req, struct vmod_debug_rr *rr)
+vmod_round_robin_backend(struct req *req, struct vmod_directors_round_robin *rr)
 {
 	(void)req;
 	return (rr->dir);
