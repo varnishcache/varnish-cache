@@ -300,7 +300,7 @@ class obj(object):
 
 	def set_modnam(self, modnam):
 		self.st = "struct vmod_" + modnam + "_" + self.nam
-		self.init.set_pfx(", " + self.st + " **")
+		self.init.set_pfx(", " + self.st + " **, const char *")
 		self.fini.set_pfx(", " + self.st + " **")
 		for m in self.methods:
 			m.set_pfx(", " + self.st + " *")

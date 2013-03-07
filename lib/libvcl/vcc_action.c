@@ -220,7 +220,7 @@ parse_new(struct vcc *tl)
 
 	vcc_NextToken(tl);
 
-	bprintf(buf1, ", &%s", sy1->name);
+	bprintf(buf1, ", &%s, \"%s\"", sy1->name, sy1->name);
 	vcc_Eval_Func(tl, s_init, buf1, "ASDF", s_init + strlen(s_init) + 1);
 	Ff(tl, 0, "\t%s((struct req*)0, &%s);\n", s_fini, sy1->name);
 	ExpectErr(tl, ';');
