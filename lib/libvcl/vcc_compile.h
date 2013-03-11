@@ -269,9 +269,6 @@ void EncString(struct vsb *sb, const char *b, const char *e, int mode);
 /* vcc_dir_random.c */
 parsedirector_f vcc_ParseRandomDirector;
 
-/* vcc_dir_round_robin.c */
-parsedirector_f vcc_ParseRoundRobinDirector;
-
 /* vcc_expr.c */
 void vcc_Duration(struct vcc *tl, double *);
 unsigned vcc_UintVal(struct vcc *tl);

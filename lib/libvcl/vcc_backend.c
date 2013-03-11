@@ -696,6 +696,7 @@ vcc_ParseSimpleDirector(struct vcc *tl)
  * Parse directors and backends
  */
 
+
 static const struct dirlist {
 	const char	*name;
 	parsedirector_f	*func;
@@ -703,8 +704,8 @@ static const struct dirlist {
 	{ "hash",		vcc_ParseRandomDirector },
 	{ "random",		vcc_ParseRandomDirector },
 	{ "client",		vcc_ParseRandomDirector },
-	{ "round-robin",	vcc_ParseRoundRobinDirector },
-	{ "fallback",		vcc_ParseRoundRobinDirector },
+	{ "round-robin",	NULL },
+	{ "fallback",		NULL },
 	{ "dns",		vcc_ParseDnsDirector },
 	{ NULL,		NULL }
 };
@@ -750,6 +751,13 @@ vcc_ParseDirector(struct vcc *tl)
 			VSB_printf(tl->sb, "Unknown director policy: ");
 			vcc_ErrToken(tl, tl->t_policy);
 			VSB_printf(tl->sb, " at\n");
+			vcc_ErrWhere(tl, tl->t_policy);
+			return;
+		}
+		if (dl->func == NULL) {
+			VSB_printf(tl->sb,
+			    "\n%.*s director are now in VMOD.directors\n",
+				PF(tl->t_policy));
 			vcc_ErrWhere(tl, tl->t_policy);
 			return;
 		}

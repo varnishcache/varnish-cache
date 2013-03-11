@@ -122,20 +122,6 @@ struct vrt_dir_random {
 };
 
 /*
- * A director with round robin selection
- */
-
-struct vrt_dir_round_robin_entry {
-	int					host;
-};
-
-struct vrt_dir_round_robin {
-	const char				*name;
-	unsigned				nmember;
-	const struct vrt_dir_round_robin_entry	*members;
-};
-
-/*
  * A director with dns-based selection
  */
 

@@ -21,7 +21,6 @@ varnishd_SOURCES = \
 	cache/cache_dir.c \
 	cache/cache_dir_dns.c \
 	cache/cache_dir_random.c \
-	cache/cache_dir_round_robin.c \
 	cache/cache_esi_deliver.c \
 	cache/cache_esi_fetch.c \
 	cache/cache_esi_parse.c \
