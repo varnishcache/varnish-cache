@@ -267,6 +267,7 @@ cnt_error(struct worker *wrk, struct req *req)
 	AZ(req->obj);
 	AZ(req->busyobj);
 
+	req->acct_req.error++;
 	bo = VBO_GetBusyObj(wrk, req);
 	req->busyobj = bo;
 	AZ(bo->stats);

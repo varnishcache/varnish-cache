@@ -15,3 +15,5 @@ client c1 {
 	expect resp.status == 888
 	expect resp.http.connection == close
 } -run
+
+varnish v1 -expect s_error == 1
