@@ -521,6 +521,11 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 		} else if (strncmp(ptr, "pass", len) == 0) {
 			lp->df_hitmiss = "miss";
 			lp->df_handling = "pass";
+		} else if (strncmp(ptr, "error", len) == 0) {
+			/* Arguably, error isn't a hit or a miss, but
+			 miss is less wrong */
+			lp->df_hitmiss = "miss";
+			lp->df_handling = "error";
 		} else if (strncmp(ptr, "pipe", len) == 0) {
 			/* Just skip piped requests, since we can't
 			 * print their status code */
