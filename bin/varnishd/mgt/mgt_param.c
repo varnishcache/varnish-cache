@@ -950,6 +950,10 @@ MCF_DumpRstParam(void)
 				printf("%sexperimental", q);
 				q = ", ";
 			}
+			if (pp->flags & WIZARD) {
+				printf("%swizard", q);
+				q = ", ";
+			}
 			printf("\n");
 		}
 		printf("\n\t");
