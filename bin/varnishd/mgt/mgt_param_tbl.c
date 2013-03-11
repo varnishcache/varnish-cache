@@ -193,7 +193,7 @@ const struct parspec mgt_parspec[] = {
 	{ "send_timeout", tweak_timeout, &mgt_param.send_timeout, 0, 0,
 		"Send timeout for client connections. "
 		"If the HTTP response hasn't been transmitted in this many\n"
-                "seconds the session is closed. \n"
+                "seconds the session is closed.\n"
 		"See setsockopt(2) under SO_SNDTIMEO for more information.",
 		DELAYED_EFFECT,
 		"600", "seconds" },
@@ -201,7 +201,7 @@ const struct parspec mgt_parspec[] = {
 		0, 0,
 		"Time to wait with no data sent. "
 		"If no data has been transmitted in this many\n"
-                "seconds the session is closed. \n"
+                "seconds the session is closed.\n"
 		"See setsockopt(2) under SO_SNDTIMEO for more information.",
 		DELAYED_EFFECT,
 		"60", "seconds" },
