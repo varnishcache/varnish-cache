@@ -977,5 +977,4 @@ MCF_DumpRstParam(void)
 		}
 		printf("\n\n");
 	}
-	printf("\n");
 }
