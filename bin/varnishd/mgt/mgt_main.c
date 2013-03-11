@@ -180,7 +180,7 @@ usage(void)
 	fprintf(stderr, FMT, "-T address:port",
 	    "Telnet listen address and port");
 	fprintf(stderr, FMT, "-V", "version");
-	fprintf(stderr, FMT, "-u user", "Priviledge separation user id");
+	fprintf(stderr, FMT, "-u user", "Privilege separation user id");
 #undef FMT
 	exit(1);
 }

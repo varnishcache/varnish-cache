@@ -725,7 +725,7 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 }
 
 /*--------------------------------------------------------------------
- * Mark paramters as protected
+ * Mark parameters as protected
  */
 
 void
