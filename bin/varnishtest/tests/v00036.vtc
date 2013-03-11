@@ -19,7 +19,7 @@ varnish v1 -vcl+backend {
 	import directors from "${topbuild}/lib/libvmod_directors/.libs/libvmod_directors.so" ;
 
 	sub vcl_init {
-		new fb1 = directors.fall_back();
+		new fb1 = directors.fallback();
 		fb1.add_backend(s1);
 		fb1.add_backend(s2);
 		fb1.add_backend(s3);

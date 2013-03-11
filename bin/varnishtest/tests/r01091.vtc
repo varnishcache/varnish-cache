@@ -14,12 +14,16 @@ server s2 {
 } -start
 
 varnish v1 -vcl+backend {
-        director f1 fallback {
-                { .backend = s1; }
-                { .backend = s2; }
-        }
+	import directors from "${topbuild}/lib/libvmod_directors/.libs/libvmod_directors.so" ;
+
+	sub vcl_init {
+		new f1 = directors.fallback();
+		f1.add_backend(s1);
+		f1.add_backend(s2);
+	}
+
         sub vcl_recv {
-                set req.backend = f1;
+                set req.backend = f1.backend();
         }
         sub vcl_fetch {
                 if(req.restarts < 1) {

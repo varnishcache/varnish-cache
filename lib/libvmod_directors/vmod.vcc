@@ -32,7 +32,7 @@ Object round_robin() {
 	Method BACKEND .backend()
 }
 
-Object fall_back() {
+Object fallback() {
 	Method VOID .add_backend(BACKEND)
 	Method BACKEND .backend()
 }
