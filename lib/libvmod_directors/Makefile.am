@@ -14,6 +14,7 @@ noinst_LTLIBRARIES = libvmod_directors.la
 libvmod_directors_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-version -shared -rpath /nowhere
 
 libvmod_directors_la_SOURCES = \
+	vdir.c \
 	round_robin.c
 
 nodist_libvmod_directors_la_SOURCES = \
