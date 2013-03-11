@@ -23,15 +23,18 @@ server s4 {
 
 
 varnish v1 -vcl+backend {
-	director batman round-robin {
-		{ .backend = s1; }
-		{ .backend = s2; }
-		{ .backend = s3; }
-		{ .backend = s4; }
+	import directors from "${topbuild}/lib/libvmod_directors/.libs/libvmod_directors.so" ;
+
+	sub vcl_init {
+		new batman = directors.round_robin();
+		batman.add_backend(s1);
+		batman.add_backend(s2);
+		batman.add_backend(s3);
+		batman.add_backend(s4);
 	}
 
 	sub vcl_recv {
-		set req.backend = batman;
+		set req.backend = batman.backend();
 	}
 } -start
 

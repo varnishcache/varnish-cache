@@ -16,6 +16,7 @@ libvmod_directors_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-vers
 libvmod_directors_la_SOURCES = \
 	vdir.c \
 	vdir.h \
+	fall_back.c \
 	round_robin.c
 
 nodist_libvmod_directors_la_SOURCES = \

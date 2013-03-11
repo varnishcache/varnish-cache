@@ -46,13 +46,17 @@ client c1 {
 } -run
 
 varnish v1 -vcl { 
-	director baz round-robin {
-		 { .backend = {
-		 	.host = "${bad_ip}"; .port = "9080";
-		} }
+	import directors from "${topbuild}/lib/libvmod_directors/.libs/libvmod_directors.so" ;
+	backend b1 {
+		.host = "${bad_ip}"; .port = "9080";
+	}
+	sub vcl_init {
+		new baz = directors.round_robin();
+		baz.add_backend(b1);
 	}
 
 	sub vcl_recv {
+	    set req.backend = baz.backend();
 	    error 200 "ok";
 	}
 

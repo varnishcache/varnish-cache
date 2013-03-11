@@ -31,3 +31,8 @@ Object round_robin() {
 	Method VOID .add_backend(BACKEND)
 	Method BACKEND .backend()
 }
+
+Object fall_back() {
+	Method VOID .add_backend(BACKEND)
+	Method BACKEND .backend()
+}

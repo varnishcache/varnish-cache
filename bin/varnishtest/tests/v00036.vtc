@@ -15,32 +15,25 @@ server s3 {
         txresp -hdr "Foo: 3"
 } -start
 
-varnish v1 -vcl {
-        backend b1 {
-                .host = "${s1_addr}";
-                .port = "${s1_port}";
-        }
-        backend b2 {
-                .host = "${s2_addr}";
-                .port = "${s2_port}";
-        }
-        backend b3 {
-                .host = "${s3_addr}";
-                .port = "${s3_port}";
-        }
-        director f1 fallback {
-                { .backend = b1; }
-                { .backend = b2; }
-                { .backend = b3; }
-        }
+varnish v1 -vcl+backend {
+	import directors from "${topbuild}/lib/libvmod_directors/.libs/libvmod_directors.so" ;
+
+	sub vcl_init {
+		new fb1 = directors.fall_back();
+		fb1.add_backend(s1);
+		fb1.add_backend(s2);
+		fb1.add_backend(s3);
+	}
+
         sub vcl_recv {
-                set req.backend = f1;
+                set req.backend = fb1.backend();
                 return (pass);
         }
+
 } -start
 
-varnish v1 -cliok "backend.set_health b1 sick"
-varnish v1 -cliok "backend.set_health b2 sick"
+varnish v1 -cliok "backend.set_health s1 sick"
+varnish v1 -cliok "backend.set_health s2 sick"
 
 client c1 {
         # s1 & s2 are both sick, expect response from s3
@@ -49,7 +42,7 @@ client c1 {
         expect resp.http.foo == "3"
 } -run
 
-varnish v1 -cliok "backend.set_health b2 healthy"
+varnish v1 -cliok "backend.set_health s2 healthy"
 
 client c1 {
         txreq
@@ -57,7 +50,7 @@ client c1 {
         expect resp.http.foo == "2"
 } -run
 
-varnish v1 -cliok "backend.set_health b1 healthy"
+varnish v1 -cliok "backend.set_health s1 healthy"
 
 client c1 {
         txreq
