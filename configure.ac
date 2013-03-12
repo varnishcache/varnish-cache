@@ -156,7 +156,7 @@ PKG_CHECK_MODULES([LIBEDIT], [libedit],
 		  LIBEDIT_CFLAGS=""
 		  LIBEDIT_LIBS="-ledit ${CURSES_LIBS}"
 		],
-               [AC_MSG_WARN([libedit not found, disabling libedit support])],
+               [AC_MSG_ERROR([libedit or readline not found])],
                [${CURSES_LIBS}])])
 
 # Checks for header files.

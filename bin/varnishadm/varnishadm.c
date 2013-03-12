@@ -37,15 +37,15 @@
 #include <string.h>
 #include <sys/socket.h>
 
-#ifdef HAVE_LIBEDIT
-#  include <stdio.h>
-#  ifdef HAVE_EDIT_READLINE_READLINE_H
-#    include <edit/readline/readline.h>
-#  elif HAVE_READLINE_READLINE_H
-#    include <readline/readline.h>
-#  else
-#    include <editline/readline.h>
+#ifdef HAVE_EDIT_READLINE_READLINE_H
+#  include <edit/readline/readline.h>
+#elif HAVE_READLINE_READLINE_H
+#  include <readline/readline.h>
+#  ifdef HAVE_READLINE_HISTORY_H
+#    include <readline/history.h>
 #  endif
+#else
+#  include <editline/readline.h>
 #endif
 
 #include "vcli.h"
@@ -54,16 +54,12 @@
 #include "varnishapi.h"
 #include "vss.h"
 
-#ifdef HAVE_LIBEDIT
 #define RL_EXIT(status) \
 	do { \
 		rl_callback_handler_remove(); \
 		exit(status); \
 	} while (0)
 
-#else
-#define RL_EXIT(status) exit(status)
-#endif
 
 static double timeout = 5;
 
@@ -171,7 +167,6 @@ do_args(int sock, int argc, char * const *argv)
 	exit(1);
 }
 
-#ifdef HAVE_LIBEDIT
 /* Callback for readline, doesn't take a private pointer, so we need
  * to have a global variable.
  */
@@ -221,7 +216,6 @@ varnishadm_completion (const char *text, int start, int end)
 		matches = rl_completion_matches(text, command_generator);
 	return (matches);
 }
-#endif
 
 /*
  * No arguments given, simply pass bytes on stdin/stdout and CLI socket
@@ -235,11 +229,6 @@ pass(int sock)
 	int i;
 	char *answer = NULL;
 	unsigned u, status;
-#ifndef HAVE_LIBEDIT
-	int n;
-#endif
-
-#ifdef HAVE_LIBEDIT
 	_line_sock = sock;
 	rl_already_prompted = 1;
 	if (isatty(0)) {
@@ -248,7 +237,6 @@ pass(int sock)
 		rl_callback_handler_install("", send_line);
 	}
 	rl_attempted_completion_function = varnishadm_completion;
-#endif
 
 	fds[0].fd = sock;
 	fds[0].events = POLLIN;
@@ -309,25 +297,10 @@ pass(int sock)
 				free(answer);
 				answer = NULL;
 			}
-#ifdef HAVE_LIBEDIT
 			rl_forced_update_display();
-#endif
 		}
 		if (fds[1].revents & POLLIN) {
-#ifdef HAVE_LIBEDIT
 			rl_callback_read_char();
-#else
-			n = read(fds[1].fd, buf, sizeof buf);
-			if (n == 0) {
-				AZ(shutdown(sock, SHUT_WR));
-				fds[1].fd = -1;
-			} else if (n < 0) {
-				RL_EXIT(0);
-			} else {
-				buf[n] = '\0';
-				cli_write(sock, buf);
-			}
-#endif
 		}
 	}
 }
