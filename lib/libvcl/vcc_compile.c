@@ -190,6 +190,19 @@ Fi(const struct vcc *tl, int indent, const char *fmt, ...)
 }
 
 void
+Fd(const struct vcc *tl, int indent, const char *fmt, ...)
+{
+	va_list ap;
+
+	if (indent)
+		VSB_printf(tl->fd, "%*.*s", tl->findent, tl->findent, "");
+	va_start(ap, fmt);
+	VSB_vprintf(tl->fd, fmt, ap);
+	va_end(ap);
+}
+
+
+void
 Ff(const struct vcc *tl, int indent, const char *fmt, ...)
 {
 	va_list ap;
@@ -315,6 +328,9 @@ EmitFiniFunc(const struct vcc *tl)
 	unsigned u;
 
 	Fc(tl, 0, "\nstatic void\nVGC_Fini(struct cli *cli)\n{\n\n");
+
+	AZ(VSB_finish(tl->fd));
+	VSB_cat(tl->fc, VSB_data(tl->fd));
 
 	/*
 	 * We do this here, so we are sure they happen before any
@@ -516,6 +532,10 @@ vcc_NewVcc(const struct vcc *tl0)
 	/* Init C code */
 	tl->fi = VSB_new_auto();
 	assert(tl->fi != NULL);
+
+	/* Destroy Objects */
+	tl->fd = VSB_new_auto();
+	assert(tl->fd != NULL);
 
 	/* Finish C code */
 	tl->ff = VSB_new_auto();

@@ -170,6 +170,7 @@ struct vcc {
 	struct vsb		*fc;		/* C-code */
 	struct vsb		*fh;		/* H-code (before C-code) */
 	struct vsb		*fi;		/* Init func code */
+	struct vsb		*fd;		/* Object destructors */
 	struct vsb		*ff;		/* Finish func code */
 	struct vsb		*fb;		/* Body of current sub
 						 * NULL otherwise
@@ -257,6 +258,8 @@ void Fb(const struct vcc *tl, int indent, const char *fmt, ...)
 void Fi(const struct vcc *tl, int indent, const char *fmt, ...)
     __printflike(3, 4);
 void Ff(const struct vcc *tl, int indent, const char *fmt, ...)
+    __printflike(3, 4);
+void Fd(const struct vcc *tl, int indent, const char *fmt, ...)
     __printflike(3, 4);
 void EncToken(struct vsb *sb, const struct token *t);
 int IsMethod(const struct token *t);
