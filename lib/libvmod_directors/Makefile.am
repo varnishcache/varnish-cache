@@ -17,6 +17,7 @@ libvmod_directors_la_SOURCES = \
 	vdir.c \
 	vdir.h \
 	fall_back.c \
+	random.c \
 	round_robin.c
 
 nodist_libvmod_directors_la_SOURCES = \

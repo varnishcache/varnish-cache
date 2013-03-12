@@ -34,6 +34,7 @@
 #include "cache/cache_backend.h"
 
 #include "vrt.h"
+#include "vbm.h"
 
 #include "vdir.h"
 
@@ -118,6 +119,7 @@ vdir_add_backend(struct vdir *vd, VCL_BACKEND be, double weight)
 	u = vd->n_backend++;
 	vd->backend[u] = be;
 	vd->weight[u] = weight;
+	vd->total_weight += weight;
 	vdir_unlock(vd);
 	return (u);
 }
@@ -142,3 +144,24 @@ vdir_any_healthy(struct vdir *vd, const struct req *req)
 	vdir_unlock(vd);
 	return (retval);
 }
+
+unsigned
+vdir_pick_by_weight(const struct vdir *vd, double w,
+    const struct vbitmap *blacklist)
+{
+	double a = 0.0;
+	VCL_BACKEND be = NULL;
+	unsigned u;
+
+	for (u = 0; u < vd->n_backend; u++) {
+		be = vd->backend[u];
+		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
+		if (blacklist != NULL && vbit_test(blacklist, u))
+			continue;
+		a += vd->weight[u];
+		if (w < a)
+			return (u);
+	}
+	WRONG("");
+}
+

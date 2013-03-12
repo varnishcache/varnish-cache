@@ -36,3 +36,8 @@ Object fallback() {
 	Method VOID .add_backend(BACKEND)
 	Method BACKEND .backend()
 }
+
+Object random() {
+	Method VOID .add_backend(BACKEND, REAL)
+	Method BACKEND .backend()
+}

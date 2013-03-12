@@ -8,13 +8,16 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	director foo random {
-		{ .backend = s1; .weight = 1; }
-		{ .weight = 1; .backend = s1; }
+	import directors from "${topbuild}/lib/libvmod_directors/.libs/libvmod_directors.so";
+
+	sub vcl_init {
+		new foo = directors.random();
+		foo.add_backend(s1, 1);
+		foo.add_backend(s1, 1);
 	}
 
 	sub vcl_recv {
-		set req.backend = foo;
+		set req.backend = foo.backend();
 	}
 } -start
 

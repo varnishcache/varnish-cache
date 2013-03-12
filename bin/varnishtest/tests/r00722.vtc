@@ -6,18 +6,33 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	director foo random {
-		{ .backend = s1; .weight = 1; }
-		{ .backend = { .host = "${s1_addr}"; .port = "${s1_port}";} .weight =1; }
-		{ .backend = { .host = "${s1_addr}"; .port = "${s1_port}";} .weight =1; }
+	import directors from "${topbuild}/lib/libvmod_directors/.libs/libvmod_directors.so" ;
+
+	backend b2 {
+		.host = "${s1_addr}"; .port = "${s1_port}";
+	}
+
+	backend b3 {
+		.host = "${s1_addr}"; .port = "${s1_port}";
+	}
+
+	sub vcl_init {
+		new foo = directors.random();
+		foo.add_backend(s1, 1);
+		foo.add_backend(b2, 1);
+		foo.add_backend(b3, 1);
 	}
 	sub vcl_recv {
-		set req.backend = foo;
+		set req.backend = foo.backend();
 	}
 } -start
 
+varnish v1 -cliok "vcl.list"
+varnish v1 -cliok "backend.list"
 
 varnish v1 -vcl+backend { }
+varnish v1 -cliok "vcl.list"
+varnish v1 -cliok "backend.list"
 
 varnish v1 -cliok "vcl.list"
 varnish v1 -cliok "vcl.discard vcl1"

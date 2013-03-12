@@ -21,21 +21,23 @@ client c1 {
 } -run
 
 varnish v1 -vcl { 
-	director bar random {
-		{
-		.backend = {
-		 	.host = "${bad_ip}"; .port = "9080";
-		}
-		.weight = 1;
-		}
+	import directors from "${topbuild}/lib/libvmod_directors/.libs/libvmod_directors.so" ;
+
+	backend b1 {
+		.host = "${bad_ip}"; .port = "9080";
+	}
+	sub vcl_init {
+		new bar = directors.random();
+		bar.add_backend(b1, 1);
 	}
 
 	sub vcl_recv {
-	    error 200 "ok";
+		set req.backend = bar.backend();
+		error 200 "ok";
 	}
 
 	sub vcl_error {
-	    set obj.http.X-Backend-Name = req.backend;
+		set obj.http.X-Backend-Name = req.backend;
 	}
 }
 
