@@ -149,15 +149,10 @@ AC_SUBST(PCRE_LIBS)
 
 PKG_CHECK_MODULES([LIBEDIT], [libedit], 
 	[AC_DEFINE([HAVE_LIBEDIT], [1], [Define we have libedit])],
-	[AC_CHECK_HEADERS([readline/readline.h])
-	 AC_CHECK_HEADERS([edit/readline/readline.h])
-	 AC_CHECK_LIB(edit, el_init,
-	        [ AC_DEFINE([HAVE_LIBEDIT], [1], [Define we have libedit])
-		  LIBEDIT_CFLAGS=""
-		  LIBEDIT_LIBS="-ledit ${CURSES_LIBS}"
-		],
-               [AC_MSG_ERROR([libedit or readline not found])],
-               [${CURSES_LIBS}])])
+	[AX_LIB_READLINE])
+if test "$ac_cv_have_readline" = no; then
+  AC_MSG_ERROR([libedit or readline not found])
+fi
 
 # Checks for header files.
 AC_HEADER_STDC
