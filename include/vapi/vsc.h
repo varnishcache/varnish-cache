@@ -59,6 +59,12 @@ int VSC_Arg(struct VSM_data *vd, int arg, const char *opt);
 	 *	 1 Handled.
 	 */
 
+struct VSC_C_mgt *VSC_Mgt(struct VSM_data *vd);
+	/*
+	 * return Management stats structure
+	 * returns NULL until management process has finished initialization.
+	 */
+
 struct VSC_C_main *VSC_Main(struct VSM_data *vd);
 	/*
 	 * return Main stats structure
@@ -111,6 +117,37 @@ int VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv);
 	 *	!=0:	func returned non-zero
 	 *	-1:	No VSC's available
 	 *	0:	Done
+	 */
+
+int VSC_MgtValid(struct VSM_data *vd);
+	/*
+	 * Call VSM_StillValid on the fantom used to find the management
+	 * counters
+	 *
+	 * Returns:
+	 *	0: fantom is not valid any more
+	 *	1: fantom is still the same.
+	 *	2: a fantom with same dimensions exist.
+	 */
+
+int VSC_MainValid(struct VSM_data *vd);
+	/*
+	 * Call VSM_StillValid on the fantom used to find the main counters.
+	 *
+	 * Returns:
+	 *	0: fantom is not valid any more
+	 *	1: fantom is still the same.
+	 *	2: a fantom with same dimensions exist.
+	 */
+
+int VSC_IterValid(struct VSM_data *vd);
+	/*
+	 * Call VSM_StillValid on the fantom used to produce the last
+	 * VSC_Iter results.
+	 *
+	 * Returns:
+	 *	0: fantom is not valid any more
+	 *	1: fantom is still the same.
 	 */
 
 /**********************************************************************

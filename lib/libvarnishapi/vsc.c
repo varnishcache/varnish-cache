@@ -92,6 +92,7 @@ struct vsc {
 	VTAILQ_HEAD(, vsc_vf)	vf_list;
 	VTAILQ_HEAD(, vsc_pt)	pt_list;
 	VTAILQ_HEAD(, vsc_sf)	sf_list;
+	struct VSM_fantom	mgt_fantom;
 	struct VSM_fantom	main_fantom;
 	struct VSM_fantom	iter_fantom;
 };
@@ -261,6 +262,19 @@ VSC_Arg(struct VSM_data *vd, int arg, const char *opt)
 
 /*--------------------------------------------------------------------*/
 
+struct VSC_C_mgt *
+VSC_Mgt(struct VSM_data *vd)
+{
+	struct vsc *vsc = vsc_setup(vd);
+
+	if (!VSM_StillValid(vd, &vsc->mgt_fantom) &&
+	    !VSM_Get(vd, &vsc->mgt_fantom, VSC_CLASS, VSC_type_mgt, ""))
+		return (NULL);
+	return ((void*)vsc->mgt_fantom.b);
+}
+
+/*--------------------------------------------------------------------*/
+
 struct VSC_C_main *
 VSC_Main(struct VSM_data *vd)
 {
@@ -276,7 +290,7 @@ VSC_Main(struct VSM_data *vd)
  */
 
 static void
-vsc_add_vf(struct vsc *vsc, struct VSM_fantom *fantom,
+vsc_add_vf(struct vsc *vsc, const struct VSM_fantom *fantom,
     const struct VSC_type_desc *desc, int order)
 {
 	struct vsc_vf *vf, *vf2;
@@ -346,18 +360,17 @@ static void
 vsc_build_vf_list(struct VSM_data *vd)
 {
 	struct vsc *vsc = vsc_setup(vd);
-	struct VSM_fantom fantom;
 
 	vsc_delete_pt_list(vsc);
 	vsc_delete_vf_list(vsc);
 
-	VSM_FOREACH(&fantom, vd) {
-		if (strcmp(fantom.class, VSC_CLASS))
+	VSM_FOREACH(&vsc->iter_fantom, vd) {
+		if (strcmp(vsc->iter_fantom.class, VSC_CLASS))
 			continue;
 #define VSC_TYPE_F(n,t,l,e,d)						\
-		if (!strcmp(fantom.type, t))				\
-			vsc_add_vf(vsc, &fantom, &VSC_type_desc_##n,	\
-			    VSC_type_order_##n);
+		if (!strcmp(vsc->iter_fantom.type, t))			\
+			vsc_add_vf(vsc, &vsc->iter_fantom,		\
+			    &VSC_type_desc_##n, VSC_type_order_##n);
 #include "tbl/vsc_types.h"
 #undef VSC_TYPE_F
 	}
@@ -463,6 +476,47 @@ VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv)
 			return (i);
 	}
 	return (0);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+int
+VSC_MgtValid(struct VSM_data *vd)
+{
+	struct vsc *vsc = vsc_setup(vd);
+	fprintf(stderr, "VSC_MgtValid called priv=%ju\n",
+		vsc->mgt_fantom.priv);
+	return (VSM_StillValid(vd, &vsc->mgt_fantom));
+}
+
+int
+VSC_MainValid(struct VSM_data *vd)
+{
+	struct vsc *vsc = vsc_setup(vd);
+	fprintf(stderr, "VSC_MainValid called priv=%ju\n",
+		vsc->main_fantom.priv);
+	return (VSM_StillValid(vd, &vsc->main_fantom));
+}
+
+int
+VSC_IterValid(struct VSM_data *vd)
+{
+	struct vsc *vsc = vsc_setup(vd);
+	int v;
+	fprintf(stderr, "VSC_IterValid called priv=%ju\n",
+		vsc->iter_fantom.priv);
+	v = VSM_StillValid(vd, &vsc->iter_fantom);
+	if (v == 2) {
+		/* There's been changes, reiteration needed. Clear fantom
+		   so subsequent calls will also fail */
+		memset(&vsc->iter_fantom, 0, sizeof vsc->iter_fantom);
+		v = 0;
+	}
+	fprintf(stderr, "VSC_IterValid returns %d priv=%ju\n", v,
+		vsc->iter_fantom.priv);
+
+	return (v);
 }
 
 /*--------------------------------------------------------------------
