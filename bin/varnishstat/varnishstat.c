@@ -192,7 +192,8 @@ do_once(struct VSM_data *vd, const struct VSC_C_main *VSC_C_main)
 	struct once_priv op;
 
 	memset(&op, 0, sizeof op);
-	op.up = VSC_C_main->uptime;
+	if (VSC_C_main != NULL)
+		op.up = VSC_C_main->uptime;
 	op.pad = 18;
 
 	(void)VSC_Iter(vd, do_once_cb, &op);
@@ -267,7 +268,6 @@ main(int argc, char * const *argv)
 {
 	int c;
 	struct VSM_data *vd;
-	const struct VSC_C_main *VSC_C_main;
 	int delay = 1, once = 0, xml = 0, json = 0, do_repeat = 0;
 
 	vd = VSM_New();
@@ -304,11 +304,8 @@ main(int argc, char * const *argv)
 		fprintf(stderr, "%s\n", VSM_Error(vd));
 		exit(1);
 	}
-	VSC_C_main = VSC_Main(vd);
-	AN(VSC_C_main);
-
 	if (!(xml || json || once)) {
-		do_curses(vd, VSC_C_main, delay);
+		do_curses(vd, delay);
 		exit(0);
 	}
 
@@ -318,7 +315,7 @@ main(int argc, char * const *argv)
 		else if (json)
 			do_json(vd);
 		else if (once)
-			do_once(vd, VSC_C_main);
+			do_once(vd, VSC_Main(vd));
 		else {
 			assert(0);
 		}
