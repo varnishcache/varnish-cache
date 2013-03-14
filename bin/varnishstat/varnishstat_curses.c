@@ -113,6 +113,7 @@ static WINDOW *w_points = NULL;
 static WINDOW *w_bar_b = NULL;
 static WINDOW *w_info = NULL;
 
+static int verbosity = VSC_level_info;
 static int keep_running = 1;
 static int show_info = 1;
 static int hide_unseen = 1;
@@ -197,6 +198,8 @@ build_pt_array(void)
 	VTAILQ_FOREACH(pt, &ptlist, list) {
 		CHECK_OBJ_NOTNULL(pt, PT_MAGIC);
 		if (!pt->seen && hide_unseen)
+			continue;
+		if (pt->vpt->desc->level->verbosity > verbosity)
 			continue;
 		assert(n_ptarray < n_ptlist);
 		ptarray[n_ptarray++] = pt;
@@ -722,17 +725,26 @@ draw_points(void)
 static void
 draw_bar_b(void)
 {
-	int x;
+	int x, X;
+	const struct VSC_level_desc *level;
 
 	AN(w_bar_b);
 
 	x = 0;
+	X = getmaxx(w_bar_b);
 	werase(w_bar_b);
 	if (page_start + l_points < n_ptarray)
 		mvwaddch(w_bar_b, 0, x, ACS_DARROW);
 	x += 2;
 	if (current < n_ptarray - 1)
 		mvwprintw(w_bar_b, 0, x, "%s", ptarray[current]->name);
+
+	level = VSC_LevelDesc(verbosity);
+	if (level != NULL)
+		mvwprintw(w_bar_b, 0, X - 7, "%7s", level->label);
+	X -= 7;
+	if (!hide_unseen)
+		mvwprintw(w_bar_b, 0, X - 6, "%6s", "UNSEEN");
 
 	wnoutrefresh(w_bar_b);
 }
@@ -799,6 +811,12 @@ handle_keypress(int ch)
 		break;
 	case 'h':
 		hide_unseen = 1 - hide_unseen;
+		rebuild = 1;
+		break;
+	case 'v':
+		verbosity++;
+		if (VSC_LevelDesc(verbosity) == NULL)
+			verbosity = 0;
 		rebuild = 1;
 		break;
 	case 'q':
