@@ -243,7 +243,7 @@ struct acct {
 
 #define L0(t, n)
 #define L1(t, n)		t n;
-#define VSC_F(n, t, l, f, e,d)	L##l(t, n)
+#define VSC_F(n,t,l,f,v,e,d)	L##l(t, n)
 struct dstat {
 #include "tbl/vsc_f_main.h"
 };

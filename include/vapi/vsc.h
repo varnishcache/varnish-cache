@@ -71,10 +71,18 @@ struct VSC_C_main *VSC_Main(struct VSM_data *vd);
 	 * returns NULL until child has been started.
 	 */
 
+struct VSC_level_desc;
 struct VSC_type_desc;
 struct VSC_section;
 struct VSC_desc;
 struct VSC_point;
+
+struct VSC_level_desc {
+	unsigned verbosity;
+	const char *label;		/* label */
+	const char *sdesc;		/* short description */
+	const char *ldesc;		/* long description */
+};
 
 struct VSC_type_desc {
 	const char *label;		/* label */
@@ -95,6 +103,7 @@ struct VSC_desc {
 	int flag;			/* 'c' = counter, 'g' = gauge	*/
 	const char *sdesc;		/* short description		*/
 	const char *ldesc;		/* long description		*/
+	const struct VSC_level_desc *level;
 };
 
 struct VSC_point {
@@ -150,9 +159,16 @@ int VSC_IterValid(struct VSM_data *vd);
 	 *	1: fantom is still the same.
 	 */
 
+const struct VSC_level_desc *VSC_LevelDesc(unsigned level);
+
 /**********************************************************************
  * Precompiled VSC_type_desc's and VSC_desc's for all know VSCs.
  */
+
+#define VSC_LEVEL_F(v,l,e,d) \
+	extern const struct VSC_level_desc VSC_level_desc_##v;
+#include "tbl/vsc_levels.h"
+#undef VSC_LEVEL_F
 
 #define VSC_TYPE_F(n,t,l,e,d) \
 	extern const struct VSC_type_desc VSC_type_desc_##n;
@@ -160,7 +176,7 @@ int VSC_IterValid(struct VSM_data *vd);
 #undef VSC_TYPE_F
 
 #define VSC_DO(U,l,t) extern const struct VSC_desc VSC_desc_##l[];
-#define VSC_F(n,t,l,f,d,e)
+#define VSC_F(n,t,l,f,v,d,e)
 #define VSC_DONE(U,l,t)
 #include "tbl/vsc_all.h"
 #undef VSC_DO

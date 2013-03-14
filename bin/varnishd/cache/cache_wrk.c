@@ -49,7 +49,7 @@ wrk_sumstat(struct worker *w)
 	Lck_AssertHeld(&wstat_mtx);
 #define L0(n)
 #define L1(n) (VSC_C_main->n += w->stats.n)
-#define VSC_F(n, t, l, f, d, e) L##l(n);
+#define VSC_F(n, t, l, f, v, d, e) L##l(n);
 #include "tbl/vsc_f_main.h"
 #undef VSC_F
 #undef L0

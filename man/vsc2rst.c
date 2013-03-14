@@ -3,8 +3,17 @@
 
 #include <stdio.h>
 
-#define P(x, ...) printf(x "\n", ##__VA_ARGS__)
-#define VSC_F(n, t, l, f, e, d) printf("%s – %s\n\t%s\n\n", #n, e, d);
+#define VSC_LEVEL_F(v,l,e,d)		\
+	static const char VSC_level_##v[] = l;
+#include "tbl/vsc_levels.h"
+#undef VSC_LEVEL_F
+
+#define P(x, ...)			\
+	printf(x "\n", ##__VA_ARGS__)
+#define VSC_LEVEL_F(v,l,e,d)		\
+	printf("%s – %s\n\t%s\n\n", l, e, d);
+#define VSC_F(n, t, l, f, v, e, d)	\
+	printf("%s – %s (%s)\n\t%s\n\n", #n, e, VSC_level_##v, d);
 
 int main(int argc, char **argv)
 {
@@ -25,6 +34,12 @@ int main(int argc, char **argv)
 	P(":Manual section: 7");
 	P("");
 
+	P("COUNTER LEVELS");
+	P("==============");
+	P("");
+#include "tbl/vsc_levels.h"
+
+	P("");
 	P("MAIN COUNTERS");
 	P("=============");
 	P("");

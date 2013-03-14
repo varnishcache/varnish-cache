@@ -1,8 +1,9 @@
 /*-
- * Copyright (c) 2011 Varnish Software AS
+ * Copyright (c) 2006 Verdens Gang AS
+ * Copyright (c) 2006-2013 Varnish Software AS
  * All rights reserved.
  *
- * Author: Tollef Fog Heen <tfheen@varnish-software.com> 
+ * Author: Martin Blix Grydeland <martin@varnish-software.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,74 +27,17 @@
  * SUCH DAMAGE.
  */
 
-LIBVARNISHAPI_1.0 {
-  global:
-	# Functions
-	VSM_New;
-	VSM_Diag;
-	VSM_n_Arg;
-	VSM_Name;
-	VSM_Delete;
-	VSM_Open;
-	VSM_ReOpen;
-	VSM_Seq;
-	VSM_Head;
-	VSM_Find_Chunk;
-	VSM_Close;
-	VSM_iter0;
-	VSM_intern;
-	
-	VSC_Setup;
-	VSC_Arg;
-	VSC_Open;
-	VSC_Main;
-	VSC_Iter;
+/*
+ * Fields (v, l, e, d):
+ *    v - Verbosity lvl:	Field name, in C-source
+ *    l - Label:		Display name, in stats programs
+ *    e - Explanation:		Short description of this counter type
+ *    d - Description:		Long description of this counter type
+ */
 
-	VSL_Setup;
-	VSL_Open;
-	VSL_Arg;
-	VSL_H_Print;
-	VSL_Select;
-	VSL_NonBlocking;
-	VSL_Dispatch;
-	VSL_NextLog;
-	VSL_Matched;
-
-	VCLI_WriteResult;
-	VCLI_ReadResult;
-	VCLI_AuthResponse;
-
-	# Variables
-	VSL_tags;
-  local:
-	*;
-};
-
-LIBVARNISHAPI_1.1 {
-  global:
-	# Functions:
-	VSL_Name2Tag;
-	# Variables:
-} LIBVARNISHAPI_1.0;
-
-LIBVARNISHAPI_1.2 {
-  global:
-	# Functions:
-	VSL_NextSLT;
-	VSM_Error;
-	VSM_Get;
-	# Variables:
-} LIBVARNISHAPI_1.0;
-
-LIBVARNISHAPI_1.3 {
-  global:
-	# Functions:
-	VSM_Abandoned;
-	VSM_ResetError;
-	VSC_Mgt;
-	VSC_MgtValid;
-	VSC_MainValid;
-	VSC_IterValid;
-	VSC_LevelDesc;
-	# Variables:
-} LIBVARNISHAPI_1.0;
+VSC_LEVEL_F(info,	"INFO",		"Informational counters",
+    "Counters giving runtime information")
+VSC_LEVEL_F(diag,	"DIAG",		"Diagnostic counters",
+    "Counters giving diagnostic information")
+VSC_LEVEL_F(debug,	"DEBUG",	"Debug counters",
+    "Counters giving Varnish internals debug information")

@@ -340,7 +340,7 @@ vsc_add_pt(struct vsc *vsc, const volatile void *ptr,
 		CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);			\
 		st = vf->fantom.b;
 
-#define VSC_F(nn,tt,ll,ff,dd,ee)					\
+#define VSC_F(nn,tt,ll,ff,vv,dd,ee)			\
 		vsc_add_pt(vsc, &st->nn, descs++, vf);
 
 #define VSC_DONE(U,l,t)							\
@@ -390,7 +390,7 @@ vsc_build_pt_list(struct VSM_data *vd)
 		CHECK_OBJ_NOTNULL(vf, VSC_VF_MAGIC);		\
 		if (!strcmp(vf->fantom.type, t))		\
 			iter_##l(vsc, VSC_desc_##l, vf);
-#define VSC_F(n,t,l,f,d,e)
+#define VSC_F(n,t,l,f,v,d,e)
 #define VSC_DONE(a,b,c)
 #include "tbl/vsc_all.h"
 #undef VSC_DO
@@ -519,9 +519,29 @@ VSC_IterValid(struct VSM_data *vd)
 	return (v);
 }
 
+const struct VSC_level_desc *
+VSC_LevelDesc(unsigned level)
+{
+	switch (level) {
+#define VSC_LEVEL_F(v,l,e,d)	\
+	case VSC_level_##v:	\
+		return (&VSC_level_desc_##v);
+#include "tbl/vsc_levels.h"
+#undef VSC_LEVEL_F
+	default:
+		return (NULL);
+	}
+}
+
 /*--------------------------------------------------------------------
- * Build the static type and point descriptions
+ * Build the static level, type and point descriptions
  */
+
+#define VSC_LEVEL_F(v,l,e,d)			\
+	const struct VSC_level_desc VSC_level_desc_##v = \
+		{VSC_level_##v, l, e, d};
+#include "tbl/vsc_levels.h"
+#undef VSC_LEVEL_F
 
 #define VSC_TYPE_F(n,t,l,e,d)	const char *VSC_type_##n = t;
 #include "tbl/vsc_types.h"
@@ -533,7 +553,7 @@ VSC_IterValid(struct VSM_data *vd)
 #undef VSC_TYPE_F
 
 #define VSC_DO(U,l,t)		const struct VSC_desc VSC_desc_##l[] = {
-#define VSC_F(n,t,l,f,d,e)		{#n,#t,f,d,e},
+#define VSC_F(n,t,l,f,v,d,e)		{#n,#t,f,d,e,&VSC_level_desc_##v},
 #define VSC_DONE(U,l,t)		};
 #include "tbl/vsc_all.h"
 #undef VSC_DO

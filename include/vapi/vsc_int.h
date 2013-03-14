@@ -30,6 +30,15 @@
 
 #define VSC_CLASS		"Stat"
 
+/* vsc levels */
+enum VSC_level_e {
+#define VSC_LEVEL_F(v,l,e,d)		\
+	VSC_level_##v,
+#include "tbl/vsc_levels.h"
+#undef VSC_LEVEL_F
+	VSC_level_MAX,
+};
+
 /* Forward declare the static vsc type names */
 #define VSC_TYPE_F(n,t,l,e,d)		extern const char *VSC_type_##n;
 #include "tbl/vsc_types.h"
@@ -37,7 +46,7 @@
 
 /* Define the vsc type structs */
 #define VSC_DO(u,l,t)			struct VSC_C_##l {
-#define VSC_F(n,t,l,f,e,d)			t n;
+#define VSC_F(n,t,l,f,v,e,d)			t n;
 #define VSC_DONE(u,l,t)			};
 #include "tbl/vsc_all.h"
 #undef VSC_DO
