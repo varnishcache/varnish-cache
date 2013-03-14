@@ -16,13 +16,16 @@ server s2 {
 
 
 varnish v1 -vcl+backend {
-	director h1 hash {
-		{ .backend = s1; .weight = 1; }
-		{ .backend = s2; .weight = 1; }
+	import directors from "${topbuild}/lib/libvmod_directors/.libs/libvmod_directors.so" ;
+
+	sub vcl_init {
+		new h1 = directors.hash();
+		h1.add_backend(s1, 1);
+		h1.add_backend(s2, 1);
 	}
 
 	sub vcl_recv {
-		set req.backend = h1;
+		set req.backend = h1.backend(req.url);
 		return(pass);
 	}
 
@@ -30,11 +33,11 @@ varnish v1 -vcl+backend {
 
 
 client c1 {
-	txreq -url /12
+	txreq -url /1
 	rxresp
 	expect resp.http.foo == "1"
 
-	txreq -url /1
+	txreq -url /3
 	rxresp
 	expect resp.http.foo == "2"
 
@@ -42,7 +45,7 @@ client c1 {
 	rxresp
 	expect resp.http.foo == "3"
 
-	txreq -url /15
+	txreq -url /8
 	rxresp
 	expect resp.http.foo == "4"
 

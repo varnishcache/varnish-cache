@@ -38,6 +38,7 @@ struct vdir {
 	double					*weight;
 	double					total_weight;
 	struct director				*dir;
+	struct vbitmap				*vbm;
 };
 
 void vdir_new(struct vdir **vdp, const char *vcl_name, vdi_healthy *healthy,
@@ -47,5 +48,5 @@ void vdir_lock(struct vdir *vd);
 void vdir_unlock(struct vdir *vd);
 unsigned vdir_add_backend(struct vdir *vd, VCL_BACKEND be, double weight);
 unsigned vdir_any_healthy(struct vdir *vd, const struct req *);
-unsigned vdir_pick_by_weight(const struct vdir *vd, double w,
-    const struct vbitmap *blacklist);
+VCL_BACKEND vdir_pick_be(struct vdir *vd, const struct req *req, double w,
+    unsigned nloops);

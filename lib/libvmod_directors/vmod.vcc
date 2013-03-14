@@ -41,3 +41,8 @@ Object random() {
 	Method VOID .add_backend(BACKEND, REAL)
 	Method BACKEND .backend()
 }
+
+Object hash() {
+	Method VOID .add_backend(BACKEND, REAL)
+	Method BACKEND .backend(STRING_LIST)
+}

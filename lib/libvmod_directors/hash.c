@@ -36,89 +36,88 @@
 
 #include "vrt.h"
 #include "vbm.h"
+#include "vend.h"
+#include "vsha256.h"
 
 #include "vdir.h"
 
 #include "vcc_if.h"
 
-struct vmod_directors_random {
+struct vmod_directors_hash {
 	unsigned				magic;
-#define VMOD_DIRECTORS_RANDOM_MAGIC		0x4732d092
+#define VMOD_DIRECTORS_HASH_MAGIC		0xc08dd611
 	struct vdir				*vd;
 	unsigned				nloops;
 	struct vbitmap				*vbm;
 };
 
-static unsigned __match_proto__(vdi_healthy)
-vmod_rr_healthy(const struct director *dir, const struct req *req)
-{
-	struct vmod_directors_random *rr;
-
-	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_RANDOM_MAGIC);
-	return (vdir_any_healthy(rr->vd, req));
-}
-
-static struct vbc * __match_proto__(vdi_getfd_f)
-vmod_rr_getfd(const struct director *dir, struct req *req)
-{
-	struct vmod_directors_random *rr;
-	VCL_BACKEND be;
-	double r;
-
-	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_RANDOM_MAGIC);
-	r = scalbn(random(), -31);
-	be = vdir_pick_be(rr->vd, req, r, rr->nloops);
-	if (be == NULL)
-		return (NULL);
-	return (be->getfd(be, req));
-}
-
 VCL_VOID __match_proto__()
-vmod_random__init(struct req *req, struct vmod_directors_random **rrp,
+vmod_hash__init(struct req *req, struct vmod_directors_hash **rrp,
     const char *vcl_name)
 {
-	struct vmod_directors_random *rr;
+	struct vmod_directors_hash *rr;
 
 	AZ(req);
 	AN(rrp);
 	AZ(*rrp);
-	ALLOC_OBJ(rr, VMOD_DIRECTORS_RANDOM_MAGIC);
+	ALLOC_OBJ(rr, VMOD_DIRECTORS_HASH_MAGIC);
 	AN(rr);
 	rr->vbm = vbit_init(8);
 	AN(rr->vbm);
 	rr->nloops = 3; //
 	*rrp = rr;
-	vdir_new(&rr->vd, vcl_name, vmod_rr_healthy, vmod_rr_getfd, rr);
+	vdir_new(&rr->vd, vcl_name, NULL, NULL, rr);
 }
 
 VCL_VOID __match_proto__()
-vmod_random__fini(struct req *req, struct vmod_directors_random **rrp)
+vmod_hash__fini(struct req *req, struct vmod_directors_hash **rrp)
 {
-	struct vmod_directors_random *rr;
+	struct vmod_directors_hash *rr;
 
 	AZ(req);
 	rr = *rrp;
 	*rrp = NULL;
-	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_RANDOM_MAGIC);
+	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_HASH_MAGIC);
 	vdir_delete(&rr->vd);
 	vbit_destroy(rr->vbm);
 	FREE_OBJ(rr);
 }
 
 VCL_VOID __match_proto__()
-vmod_random_add_backend(struct req *req,
-    struct vmod_directors_random *rr, VCL_BACKEND be, double w)
+vmod_hash_add_backend(struct req *req,
+    struct vmod_directors_hash *rr, VCL_BACKEND be, double w)
 {
 
 	(void)req;
-	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_RANDOM_MAGIC);
+	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_HASH_MAGIC);
 	(void)vdir_add_backend(rr->vd, be, w);
 }
 
 VCL_BACKEND __match_proto__()
-vmod_random_backend(struct req *req, struct vmod_directors_random *rr)
+vmod_hash_backend(struct req *req, struct vmod_directors_hash *rr, const char *arg, ...)
 {
+	struct SHA256Context ctx;
+	va_list ap;
+	const char *p;
+	unsigned char sha256[SHA256_LEN];
+	VCL_BACKEND be;
+	double r;
+
 	(void)req;
-	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_RANDOM_MAGIC);
-	return (rr->vd->dir);
+
+	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_HASH_MAGIC);
+	SHA256_Init(&ctx);
+	va_start(ap, arg);
+	p = arg;
+	while (p != vrt_magic_string_end) {
+		SHA256_Update(&ctx, arg, strlen(arg));
+		p = va_arg(ap, const char *);
+	}
+	va_end(ap);
+	SHA256_Final(sha256, &ctx);
+
+	r = vbe32dec(sha256);
+	r = scalbn(r, -32);
+	be = vdir_pick_be(rr->vd, req, r, rr->nloops);
+	return (be);
 }
