@@ -134,7 +134,11 @@ VRY_Create(const struct sess *sp, const struct http *hp, struct vsb **psb)
 			q++;
 		if (*q == '\0')
 			break;
-		xxxassert(*q == ',');
+		if (*q != ',') {
+			WSP(sp, SLT_Error, "Malformed Vary header");
+			error = 1;
+			break;
+		}
 		p = q;
 	}
 
