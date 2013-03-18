@@ -110,6 +110,7 @@ EXTRA_DIST = \
 	phk/thoughts.rst \
 	phk/three-zero.rst \
 	phk/vcl_expr.rst \
+	phk/wanton_destruction.rst \
 	reference/index.rst \
 	reference/params.rst \
 	reference/varnishadm.rst \

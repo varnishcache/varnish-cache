@@ -9,6 +9,7 @@ You may or may not want to know what Poul-Henning thinks.
 .. toctree::
 	:maxdepth: 1
 
+	wanton_destruction.rst
 	spdy.rst
 	http20.rst
 	varnish_does_not_hash.rst
