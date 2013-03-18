@@ -764,12 +764,21 @@ cnt_fetchbody(struct sess *sp)
 	/* Create Vary instructions */
 	if (sp->objcore != NULL) {
 		CHECK_OBJ_NOTNULL(sp->objcore, OBJCORE_MAGIC);
-		vary = VRY_Create(sp, sp->wrk->beresp);
-		if (vary != NULL) {
-			varyl = VSB_len(vary);
-			assert(varyl > 0);
+		varyl = VRY_Create(sp, sp->wrk->beresp, &vary);
+		if (varyl > 0) {
+			AN(vary);
+			assert(varyl == VSB_len(vary));
 			l += varyl;
-		}
+		} else if (varyl < 0) {
+			/* Vary parse error */
+			AZ(vary);
+			sp->err_code = 503;
+			sp->step = STP_ERROR;
+			VDI_CloseFd(sp);
+			return (0);
+		} else
+			/* No vary */
+			AZ(vary);
 	}
 
 	/*
