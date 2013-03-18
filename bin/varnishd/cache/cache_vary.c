@@ -93,11 +93,6 @@ VRY_Create(struct req *req, const struct http *hp, struct vsb **psb)
 	sbh = VSB_new_auto();
 	AN(sbh);
 
-	if (*v == ':') {
-		VSLb(req->vsl, SLT_Error,
-		    "Vary header had extra ':', fix backend");
-		v++;
-	}
 	for (p = v; *p; p++) {
 
 		/* Find next header-name */
