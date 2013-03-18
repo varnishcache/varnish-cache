@@ -167,7 +167,6 @@ struct vbc {
 
 /* cache_backend.c */
 void VBE_ReleaseConn(struct vbc *vc);
-struct backend *vdi_get_backend_if_simple(const struct director *d);
 
 /* cache_backend_cfg.c */
 void VBE_DropRefConn(struct backend *);
@@ -184,7 +183,3 @@ void VBP_Summary(struct cli *cli, const struct vbp_target *vt);
 /* Init functions for directors */
 typedef void dir_init_f(struct cli *, struct director **, int , const void*);
 dir_init_f VRT_init_dir_simple;
-dir_init_f VRT_init_dir_dns;
-dir_init_f VRT_init_dir_hash;
-dir_init_f VRT_init_dir_random;
-dir_init_f VRT_init_dir_client;

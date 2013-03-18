@@ -107,7 +107,7 @@ struct foo_proto {
 	socklen_t		l;
 };
 
-void
+static void
 Emit_Sockaddr(struct vcc *tl, const struct token *t_host, const char *port)
 {
 	struct foo_proto protos[3], *pp;
@@ -586,68 +586,6 @@ vcc_ParseHostDef(struct vcc *tl, int serial, const char *vgcname)
 }
 
 /*--------------------------------------------------------------------
- * Parse and emit a backend host specification.
- *
- * The syntax is the following:
- *
- * backend_spec:
- *	name_of_backend		# by reference
- *	'{' be_elements '}'	# by specification
- *
- * The struct vrt_backend is emitted to Fh().
- */
-
-void
-vcc_ParseBackendHost(struct vcc *tl, int serial, char **nm)
-{
-	struct host *h;
-	struct token *t;
-	char vgcname[BUFSIZ];
-
-	AN(nm);
-	*nm = NULL;
-	if (tl->t->tok == ID) {
-		VTAILQ_FOREACH(h, &tl->hosts, list) {
-			if (vcc_Teq(h->name, tl->t))
-				break;
-		}
-		if (h == NULL) {
-			VSB_printf(tl->sb, "Reference to unknown backend ");
-			vcc_ErrToken(tl, tl->t);
-			VSB_printf(tl->sb, " at\n");
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		}
-		vcc_AddRef(tl, h->name, SYM_BACKEND);
-		vcc_NextToken(tl);
-		SkipToken(tl, ';');
-		*nm = h->vgcname;
-	} else if (tl->t->tok == '{') {
-		t = tl->t;
-
-		sprintf(vgcname, "%.*s_%d", PF(tl->t_dir), serial);
-
-		vcc_ParseHostDef(tl, serial, vgcname);
-		if (tl->err) {
-			VSB_printf(tl->sb,
-			    "\nIn backend host specification starting at:\n");
-			vcc_ErrWhere(tl, t);
-		}
-		*nm = strdup(vgcname);	 /* XXX */
-
-		return;
-	} else {
-		VSB_printf(tl->sb,
-		    "Expected a backend host specification here, "
-		    "either by name or by {...}\n");
-		vcc_ErrToken(tl, tl->t);
-		VSB_printf(tl->sb, " at\n");
-		vcc_ErrWhere(tl, tl->t);
-		return;
-	}
-}
-
-/*--------------------------------------------------------------------
  * Tell rest of compiler about a backend
  */
 
@@ -696,25 +634,10 @@ vcc_ParseSimpleDirector(struct vcc *tl)
  * Parse directors and backends
  */
 
-
-static const struct dirlist {
-	const char	*name;
-	parsedirector_f	*func;
-} dirlist[] = {
-	{ "hash",		vcc_ParseRandomDirector },
-	{ "random",		vcc_ParseRandomDirector },
-	{ "client",		vcc_ParseRandomDirector },
-	{ "round-robin",	NULL },
-	{ "fallback",		NULL },
-	{ "dns",		vcc_ParseDnsDirector },
-	{ NULL,		NULL }
-};
-
 void
 vcc_ParseDirector(struct vcc *tl)
 {
 	struct token *t_first;
-	struct dirlist const *dl;
 	int isfirst;
 
 	t_first = tl->t;
@@ -738,45 +661,10 @@ vcc_ParseDirector(struct vcc *tl)
 		tl->t_policy = t_first;
 		vcc_ParseSimpleDirector(tl);
 	} else {
-		vcc_DefBackend(tl, tl->t_dir);
-		ERRCHK(tl);
-		ExpectErr(tl, ID);		/* ID: policy */
-		tl->t_policy = tl->t;
-		vcc_NextToken(tl);
-
-		for (dl = dirlist; dl->name != NULL; dl++)
-			if (vcc_IdIs(tl->t_policy, dl->name))
-				break;
-		if (dl->name == NULL) {
-			VSB_printf(tl->sb, "Unknown director policy: ");
-			vcc_ErrToken(tl, tl->t_policy);
-			VSB_printf(tl->sb, " at\n");
-			vcc_ErrWhere(tl, tl->t_policy);
-			return;
-		}
-		if (dl->func == NULL) {
-			VSB_printf(tl->sb,
-			    "\n%.*s director are now in VMOD.directors\n",
-				PF(tl->t_policy));
-			vcc_ErrWhere(tl, tl->t_policy);
-			return;
-		}
-		Ff(tl, 0, "\tVRT_fini_dir(cli, VGCDIR(_%.*s));\n",
-		    PF(tl->t_dir));
-		SkipToken(tl, '{');
-		dl->func(tl);
-		if (!tl->err)
-			SkipToken(tl, '}');
-		Fh(tl, 1, "\n#define VGC_backend__%.*s %d\n",
-		    PF(tl->t_dir), tl->ndirector);
-		tl->ndirector++;
-		Fi(tl, 0,
-		    "\tVRT_init_dir(cli, VCL_conf.director, \"%.*s\",\n",
-		    PF(tl->t_policy));
-		Fi(tl, 0, "\t    VGC_backend__%.*s, &vgc_dir_priv_%.*s);\n",
-		    PF(tl->t_dir), PF(tl->t_dir));
-
-
+		VSB_printf(tl->sb,
+		    "\ndirectors are now in VMOD.directors\n");
+		vcc_ErrWhere(tl, tl->t_policy);
+		return;
 	}
 	if (tl->err) {
 		VSB_printf(tl->sb,

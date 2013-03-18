@@ -251,14 +251,6 @@ VRT_init_dir(struct cli *cli, struct director **dir, const char *name,
 	ASSERT_CLI();
 	if (!strcmp(name, "simple"))
 		VRT_init_dir_simple(cli, dir, idx, priv);
-	else if (!strcmp(name, "hash"))
-		VRT_init_dir_hash(cli, dir, idx, priv);
-	else if (!strcmp(name, "random"))
-		VRT_init_dir_random(cli, dir, idx, priv);
-	else if (!strcmp(name, "dns"))
-		VRT_init_dir_dns(cli, dir, idx, priv);
-	else if (!strcmp(name, "client"))
-		VRT_init_dir_client(cli, dir, idx, priv);
 	else
 		INCOMPL();
 }

@@ -51,7 +51,7 @@ struct fld_spec {
 	struct token	*found;
 };
 
-void
+static void
 vcc_ResetFldSpec(struct fld_spec *f)
 {
 

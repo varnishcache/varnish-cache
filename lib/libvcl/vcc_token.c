@@ -272,18 +272,6 @@ vcc__Expect(struct vcc *tl, unsigned tok, unsigned line)
 }
 
 /*--------------------------------------------------------------------
- * Compare token to token
- */
-
-int
-vcc_Teq(const struct token *t1, const struct token *t2)
-{
-	if (t1->e - t1->b != t2->e - t2->b)
-		return (0);
-	return (!memcmp(t1->b, t2->b, t1->e - t1->b));
-}
-
-/*--------------------------------------------------------------------
  * Compare ID token to string, return true of match
  */
 
