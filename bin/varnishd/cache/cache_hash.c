@@ -682,7 +682,8 @@ HSH_Deref(struct dstat *ds, struct objcore *oc, struct object **oo)
 
 		BAN_DestroyObj(oc);
 		AZ(oc->ban);
-	}
+	} else
+		AZ(oc->refcnt);
 
 	if (oc->methods != NULL) {
 		oc_freeobj(oc);

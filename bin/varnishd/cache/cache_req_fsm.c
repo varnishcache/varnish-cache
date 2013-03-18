@@ -280,11 +280,16 @@ cnt_error(struct worker *wrk, struct req *req)
 	if (req->obj == NULL) {
 		req->doclose = SC_OVERLOAD;
 		req->director = NULL;
+		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
+		req->objcore = NULL;
 		http_Teardown(bo->beresp);
 		http_Teardown(bo->bereq);
+		VBO_DerefBusyObj(wrk, &req->busyobj);
+		AZ(req->busyobj);
 		return (REQ_FSM_DONE);
 	}
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
+	AZ(req->objcore);
 	req->obj->vxid = bo->vsl->wid;
 	req->obj->exp.entered = req->t_req;
 
