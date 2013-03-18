@@ -572,12 +572,24 @@ cnt_fetchbody(struct worker *wrk, struct req *req)
 
 	/* Create Vary instructions */
 	if (req->objcore->objhead != NULL) {
-		vary = VRY_Create(req, bo->beresp);
-		if (vary != NULL) {
-			varyl = VSB_len(vary);
-			assert(varyl > 0);
+		varyl = VRY_Create(req, bo->beresp, &vary);
+		if (varyl > 0) {
+			AN(vary);
+			assert(varyl == VSB_len(vary));
 			l += varyl;
-		}
+		} else if (varyl < 0) {
+			/* Vary parse error */
+			AZ(vary);
+			req->err_code = 503;
+			req->req_step = R_STP_ERROR;
+			AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
+			req->objcore = NULL;
+			VDI_CloseFd(&bo->vbc);
+			VBO_DerefBusyObj(wrk, &req->busyobj);
+			return (REQ_FSM_MORE);
+		} else
+			/* No vary */
+			AZ(vary);
 	}
 
 	/*
