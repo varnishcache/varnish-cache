@@ -1,0 +1,14 @@
+varnishtest "#1275 - panic with malformed Vary header"
+
+server s1 {
+       rxreq
+       txresp -hdr "Vary: foo bar"
+} -start
+
+varnish v1 -vcl+backend { } -start
+
+client c1 {
+       txreq
+       rxresp
+       expect resp.status == 503
+} -run

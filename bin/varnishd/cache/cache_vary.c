@@ -130,7 +130,11 @@ VRY_Create(struct req *req, const struct http *hp, struct vsb **psb)
 			q++;
 		if (*q == '\0')
 			break;
-		xxxassert(*q == ',');
+		if (*q != ',') {
+			VSLb(req->vsl, SLT_Error, "Malformed Vary header");
+			error = 1;
+			break;
+		}
 		p = q;
 	}
 
