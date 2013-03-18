@@ -1,0 +1,43 @@
+varnishtest "#1284 - Test resource cleanup after STV_NewObject fail in fetch"
+
+server s1 {
+	rxreq
+	expect req.url == "/obj1"
+	txresp -bodylen 1048000
+	rxreq
+	expect req.url == "/obj2"
+	txresp -hdr "Long: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" -hdr "Long2: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+} -start
+
+varnish v1 -arg "-p nuke_limit=0" -storage "-sTransient=malloc,1m" -vcl+backend {
+	sub vcl_fetch {
+		set beresp.storage = "Transient";
+	}
+} -start
+
+client c1 {
+	# Fill transient
+	txreq -url "/obj1"
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -expect SMA.Transient.g_bytes > 1048000
+varnish v1 -expect SMA.Transient.g_space < 200
+
+client c1 {
+	# No space for this object (more than 256 bytes in headers). Don't wait
+	# for reply as Varnish will not send one due to Transient full.
+	txreq -url "/obj2"
+	delay 1
+} -run
+
+# Two failures, one for obj2 and two for the attempts at sending error
+varnish v1 -expect SMA.Transient.c_fail == 3
+
+client c1 {
+	# Check that Varnish is still alive
+	txreq -url "/obj1"
+	rxresp
+	expect resp.status == 200
+} -run

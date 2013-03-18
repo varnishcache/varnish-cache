@@ -487,6 +487,7 @@ cnt_fetchbody(struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	bo = req->busyobj;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
@@ -571,7 +572,6 @@ cnt_fetchbody(struct worker *wrk, struct req *req)
 
 	/* Create Vary instructions */
 	if (req->objcore->objhead != NULL) {
-		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 		vary = VRY_Create(req, bo->beresp);
 		if (vary != NULL) {
 			varyl = VSB_len(vary);
@@ -610,6 +610,8 @@ cnt_fetchbody(struct worker *wrk, struct req *req)
 	if (req->obj == NULL) {
 		req->err_code = 503;
 		req->req_step = R_STP_ERROR;
+		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
+		req->objcore = NULL;
 		VDI_CloseFd(&bo->vbc);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		return (REQ_FSM_MORE);
