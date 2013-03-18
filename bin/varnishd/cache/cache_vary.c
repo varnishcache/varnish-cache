@@ -101,6 +101,13 @@ VRY_Create(struct req *req, const struct http *hp, struct vsb **psb)
 		for (q = p; *q && !vct_issp(*q) && *q != ','; q++)
 			continue;
 
+		if (q - p > INT8_MAX) {
+			VSLb(req->vsl, SLT_Error,
+			    "Vary header name length exceeded");
+			error = 1;
+			break;
+		}
+
 		/* Build a header-matching string out of it */
 		VSB_clear(sbh);
 		VSB_printf(sbh, "%c%.*s:%c",
