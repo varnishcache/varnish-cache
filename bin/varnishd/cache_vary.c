@@ -125,7 +125,12 @@ VRY_Create(const struct sess *sp, const struct http *hp, struct vsb **psb)
 				e--;
 			/* Encode two byte length and contents */
 			l = e - h;
-			assert(!(l & ~0xffff));
+			if (l > 0xffff - 1) {
+				WSP(sp, SLT_Error,
+				    "Vary header maximum length exceeded");
+				error = 1;
+				break;
+			}
 		} else {
 			e = h;
 			l = 0xffff;
