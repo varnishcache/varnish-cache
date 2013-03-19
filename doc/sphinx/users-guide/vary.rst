@@ -42,6 +42,14 @@ following VCL code will normalize the Accept-Encoding headers::
 The code sets the Accept-Encoding header from the client to either
 gzip, deflate with a preference for gzip.
 
+Vary parse errors
+~~~~~~~~~~~~~~~~~
+
+Varnish will return a 503 internal server error page when it fails to
+parse the Vary server header, or if any of the client headers listed
+in the Vary header exceeds the limit of 65k characters. An SLT_Error
+log entry is added in these cases.
+
 Pitfall - Vary: User-Agent
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
