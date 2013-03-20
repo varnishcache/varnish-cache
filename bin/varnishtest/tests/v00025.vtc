@@ -41,7 +41,7 @@ sub vcl_hit {
 	}
 }
 
-sub vcl_miss {
+sub vcl_fetch {
 	if (bereq.between_bytes_timeout < 10s) {
 		set bereq.http.quick = "please";
 	}

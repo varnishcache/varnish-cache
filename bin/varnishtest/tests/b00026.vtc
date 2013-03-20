@@ -34,7 +34,7 @@ varnish v1 -vcl {
 		}
 		set req.backend = b2;
 	}
-	sub vcl_miss {
+	sub vcl_fetch {
 		set bereq.first_byte_timeout = 2s;
 	}
 } -start

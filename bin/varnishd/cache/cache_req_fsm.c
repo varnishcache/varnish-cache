@@ -907,6 +907,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 		http_SetHeader(bo->bereq, "Accept-Encoding: gzip");
 	}
 
+	VCL_fetch_method(req);
 	VCL_miss_method(req);
 
 	if (req->handling == VCL_RET_FETCH) {
@@ -971,6 +972,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
 	http_FilterReq(req, HTTPH_R_PASS);
 
+	VCL_fetch_method(req);
 	VCL_pass_method(req);
 
 	if (req->handling == VCL_RET_ERROR) {
