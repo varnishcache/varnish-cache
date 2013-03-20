@@ -461,7 +461,7 @@ vbp_new_vcl(const struct vrt_backend_probe *p, const char *hosthdr)
 	if (vcl->probe.exp_status == 0)
 		vcl->probe.exp_status = 200;
 
-	if (vcl->probe.threshold == ~0U)
+	if (vcl->probe.initial == ~0U)
 		vcl->probe.initial = vcl->probe.threshold - 1;
 
 	if (vcl->probe.initial > vcl->probe.threshold)

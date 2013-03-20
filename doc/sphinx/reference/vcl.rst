@@ -201,8 +201,10 @@ Probes take the following parameters:
   the backend healthy.
   Defaults to 3.
 .initial
-  How many of the probes are considered good when Varnish starts.
-  Defaults to the same amount as the threshold.
+  How many of the polls in .window are considered good when Varnish
+  starts. Defaults to the value of threshold - 1. In this case, the
+  backend starts as sick and requires one single poll to be considered
+  healthy.
 .expected_response
   The expected backend HTTP response code.
   Defaults to 200.
