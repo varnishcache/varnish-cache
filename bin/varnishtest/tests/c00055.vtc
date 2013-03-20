@@ -15,7 +15,7 @@ varnish v1 -vcl+backend {
 		C{ VRT_CacheReqBody(req, 1000); }C
 		return (pass);
 	}
-	sub vcl_fetch {
+	sub vcl_response {
 		if (beresp.http.foo == "BAR") {
 			return (restart);
 		}

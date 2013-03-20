@@ -11,7 +11,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	sub vcl_fetch {
+	sub vcl_response {
 		set beresp.do_stream = true;
 	}
 	sub vcl_deliver {

@@ -25,7 +25,7 @@ varnish v1 -vcl+backend {
         sub vcl_recv {
                 set req.backend = f1.backend();
         }
-        sub vcl_fetch {
+        sub vcl_response {
                 if(req.restarts < 1) {
                         set beresp.saintmode = 1h;
                         return(restart);

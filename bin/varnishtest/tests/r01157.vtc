@@ -12,7 +12,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_recv { return (pass); }
-	sub vcl_fetch {	set beresp.do_stream = true; }
+	sub vcl_response {	set beresp.do_stream = true; }
 } -start
 
 client c1 {

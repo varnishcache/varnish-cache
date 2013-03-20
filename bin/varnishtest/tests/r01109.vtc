@@ -22,7 +22,7 @@ server s1 {
 } -start
 
 varnish v1 -arg "-pfetch_chunksize=4k" -arg "-pgzip_level=0" -arg "-pthread_pool_stack=131072" -vcl+backend {
-	sub vcl_fetch {
+	sub vcl_response {
 		if (req.url ~ "/test") {
 			set beresp.do_esi = true;
 		}

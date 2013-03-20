@@ -6,7 +6,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	sub vcl_fetch {
+	sub vcl_response {
 		set beresp.http.has_s0 = storage.s0;
 		set beresp.http.has_foo = storage.foo;
 		set beresp.http.has_Transient = storage.Transient;

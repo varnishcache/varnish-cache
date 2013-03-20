@@ -19,7 +19,7 @@ server s1 {
 
 varnish v1 -cliok "param.set http_gzip_support true" -vcl+backend {
 
-	sub vcl_fetch {
+	sub vcl_response {
 		set beresp.do_gunzip = true;
 		if (req.url == "/foobar") {
 			set beresp.do_gzip = true;

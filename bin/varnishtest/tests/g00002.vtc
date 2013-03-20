@@ -17,7 +17,7 @@ varnish v1 \
 	-cliok "param.set gzip_memlevel 1" \
 	-vcl+backend {
 
-	sub vcl_fetch {
+	sub vcl_response {
 		set beresp.do_esi = true;
 	}
 } -start

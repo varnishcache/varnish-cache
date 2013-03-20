@@ -31,7 +31,7 @@ varnish v1 -vcl+backend {
 		}
 	}
 
-	sub vcl_fetch {
+	sub vcl_response {
 		set beresp.do_esi = true;
 	}
 } -start

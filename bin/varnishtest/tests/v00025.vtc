@@ -16,7 +16,7 @@ sub vcl_deliver {
 	set resp.http.server_port = server.port;
 }
 
-sub vcl_fetch {
+sub vcl_response {
 	if (req.esi) {
 		set beresp.http.esi = "yes";
 	}

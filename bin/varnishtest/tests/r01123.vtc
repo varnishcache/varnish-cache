@@ -9,7 +9,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	sub vcl_fetch {
+	sub vcl_response {
 		if (req.url == "/") {
 			set beresp.do_esi = true;
 		}

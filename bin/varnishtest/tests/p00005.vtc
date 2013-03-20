@@ -11,7 +11,7 @@ varnish v1 \
 	-storage "-spersistent,${tmpdir}/_.per,10m" \
 	-arg "-pban_lurker_sleep=0" \
 	-vcl+backend { 
-		sub vcl_fetch {
+		sub vcl_response {
 			set beresp.ttl = 3s;
 		}
 	} -start 
@@ -37,7 +37,7 @@ server s1 -wait {
 } -start
 
 varnish v1 -vcl+backend {
-		sub vcl_fetch {
+		sub vcl_response {
 			set beresp.ttl = 3s;
 		}
 	} -start

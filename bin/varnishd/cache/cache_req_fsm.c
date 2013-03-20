@@ -416,7 +416,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 		AZ(bo->do_esi);
 		AZ(bo->do_pass);
 
-		VCL_fetch_method(req);
+		VCL_response_method(req);
 
 		if (bo->do_pass)
 			req->objcore->flags |= OC_F_PASS;

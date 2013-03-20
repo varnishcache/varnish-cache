@@ -90,7 +90,7 @@ sub vcl_miss {
 # Enforce a minimum TTL, since we can PURGE changed objects actively
 # from Zope by using the CacheFu product
 
-sub vcl_fetch {
+sub vcl_response {
         if (beresp.ttl < 3600s) {
                 set beresp.ttl = 3600s;
         }

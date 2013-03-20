@@ -8,14 +8,14 @@ varnish v1 -vcl {
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_fetch { error beresp.status ; }
+	sub vcl_response { error beresp.status ; }
 }
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_miss { error 100 req.url ; }
 	sub vcl_pass { error 100 "the butter please" ; }
-	sub vcl_fetch { error beresp.status req.url; }
+	sub vcl_response { error beresp.status req.url; }
 }
 
 varnish v1 -errvcl {Variable 'server.port' is read only.} {
@@ -25,12 +25,12 @@ varnish v1 -errvcl {Variable 'server.port' is read only.} {
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_fetch { set beresp.ttl /= 2; }
+	sub vcl_response { set beresp.ttl /= 2; }
 }
 
 varnish v1 -errvcl {Expected '=' got '>>'} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_fetch { set beresp.ttl >>= 2; }
+	sub vcl_response { set beresp.ttl >>= 2; }
 }
 
 varnish v1 -errvcl {Expected '=' got '+='} {
@@ -61,27 +61,27 @@ varnish v1 -vcl {
 
 varnish v1 -errvcl {Expected '=' got '+='} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_fetch { set beresp.do_gzip += 1; }
+	sub vcl_response { set beresp.do_gzip += 1; }
 }
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_fetch { set beresp.do_gzip = true; }
+	sub vcl_response { set beresp.do_gzip = true; }
 }
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_fetch { set beresp.do_gzip = false; }
+	sub vcl_response { set beresp.do_gzip = false; }
 }
 
 varnish v1 -errvcl {Symbol not found: 'mu' (expected type BOOL):} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_fetch { set beresp.do_gzip = mu; }
+	sub vcl_response { set beresp.do_gzip = mu; }
 }
 
 varnish v1 -errvcl {Only http header variables can be unset.} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_fetch { unset beresp.do_gzip; }
+	sub vcl_response { unset beresp.do_gzip; }
 }
 
 varnish v1 -errvcl {Unknown token '<<' when looking for STRING} {

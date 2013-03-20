@@ -1,4 +1,4 @@
-varnishtest "restarting a pass in vcl_fetch should not panic"
+varnishtest "restarting a pass in vcl_response should not panic"
 
 server s1 {
 	rxreq
@@ -12,7 +12,7 @@ varnish v1 -vcl+backend {
 	sub vcl_recv {
 		return (pass);
 	}
-	sub vcl_fetch {
+	sub vcl_response {
 		if (beresp.status != 200) {
 			return (restart);
 		}

@@ -25,7 +25,7 @@ varnish v1 -storage "-smalloc,1m" -vcl+backend {
 
 	import debug from "${topbuild}/lib/libvmod_debug/.libs/libvmod_debug.so";
 
-	sub vcl_fetch {
+	sub vcl_response {
 		if (beresp.http.panic == "fetch") {
 			debug.panic("Had Panic header: " + beresp.http.panic);
 		}

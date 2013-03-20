@@ -10,7 +10,7 @@ server s1 {
 } -start
 
 varnish v1 -storage "-smalloc,1m -smalloc,1m, -smalloc,1m" -vcl+backend {
-	sub vcl_fetch {
+	sub vcl_response {
 		set beresp.storage = "s0";
 	}
 } -start

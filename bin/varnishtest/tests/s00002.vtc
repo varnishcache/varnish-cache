@@ -47,7 +47,7 @@ varnish v1 -vcl {
 			.initial = 0;
 			} 
 		}
-	sub vcl_fetch { 
+	sub vcl_response { 
 		set beresp.ttl = 1s; 
 		set beresp.grace = 1m; 
 	}

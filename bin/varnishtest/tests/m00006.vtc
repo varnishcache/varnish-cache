@@ -21,7 +21,7 @@ varnish v1 -vcl+backend {
 	sub vcl_miss {
 		std.collect(bereq.http.baz);
 	}
-	sub vcl_fetch {
+	sub vcl_response {
 		std.collect(beresp.http.bar);
 	}
 	sub vcl_deliver {

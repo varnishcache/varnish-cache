@@ -11,7 +11,7 @@ varnish v1 -vcl+backend {
 			error 700;
 		}
 	}
-	sub vcl_fetch {
+	sub vcl_response {
 		set beresp.status = 404;
 		set beresp.http.X-status = beresp.status;
 		return (deliver);

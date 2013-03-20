@@ -12,7 +12,7 @@ varnish v1 \
 	-storage "-spersistent,${tmpdir}/_.per,10m" \
 	-vcl+backend { 
 
-	sub vcl_fetch {
+	sub vcl_response {
 		error(751);
 	}
 } -start 

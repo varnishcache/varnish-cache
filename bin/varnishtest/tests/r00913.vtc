@@ -7,7 +7,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	sub vcl_fetch {
+	sub vcl_response {
 		if (beresp.http.bar ~ "$") {
 			set beresp.http.foo = regsub(beresp.http.bar, "$", "XXX");
 		}
