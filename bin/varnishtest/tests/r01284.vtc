@@ -3,7 +3,7 @@ varnishtest "#1284 - Test resource cleanup after STV_NewObject fail in fetch"
 server s1 {
 	rxreq
 	expect req.url == "/obj1"
-	txresp -bodylen 1048000
+	txresp -bodylen 1048070
 	rxreq
 	expect req.url == "/obj2"
 	txresp -hdr "Long: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" -hdr "Long2: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
