@@ -225,7 +225,7 @@ vca_main(void *arg)
 
 		if (sp) {
 			double tmo =
-			    (sp->t_end + cache_param->timeout_idle) - now;
+			    (sp->t_end + params->sess_timeout) - now;
 
 			/* we should have removed all sps whose timeout has passed */
 			assert(tmo > 0.0);
