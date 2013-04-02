@@ -500,7 +500,7 @@ mgt_reap_child(void)
 		r = waitpid(child_pid, &status, 0);
 	}
 	if (r != child_pid)
-		fprintf(stderr, "WAIT 0x%x\n", r);
+		fprintf(stderr, "WAIT 0x%jx\n", (uintmax_t)r);
 	assert(r == child_pid);
 
 	/* Compose obituary */
