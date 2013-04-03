@@ -202,6 +202,7 @@ VBERESP(beresp, unsigned, do_gzip, busyobj->do_gzip)
 VBERESP(beresp, unsigned, do_gunzip, busyobj->do_gunzip)
 VBERESP(beresp, unsigned, do_stream, busyobj->do_stream)
 VBERESP(beresp, unsigned, do_pass, busyobj->do_pass)
+VBERESP(beresp, unsigned, uncacheable, busyobj->do_pass)
 
 /*--------------------------------------------------------------------*/
 
@@ -551,6 +552,14 @@ VRT_r_obj_lastuse(const struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);	/* XXX */
 	return (VTIM_real() - req->obj->last_use);
+}
+
+unsigned
+VRT_r_obj_uncacheable(const struct req *req)
+{
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
+	return (req->obj->objcore->flags & OC_F_PASS ? 1 : 0);
 }
 
 unsigned

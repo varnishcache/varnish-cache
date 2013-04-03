@@ -40,7 +40,7 @@ server s1 -start
 
 varnish v1 -vcl+backend {
 	sub vcl_response {
-		set beresp.do_pass = true;
+		set beresp.uncacheable = true;
 	}
 }
 

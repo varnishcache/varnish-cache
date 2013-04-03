@@ -345,6 +345,12 @@ sp_variables = (
 		( 'response',),
 		'const struct req *'
 	),
+	('beresp.uncacheable',
+		'BOOL',
+		( 'response',),
+		( 'response',),
+		'const struct req *'
+	),
 	('beresp.ttl',
 		'DURATION',
 		( 'response',),
@@ -437,6 +443,12 @@ sp_variables = (
 	),
 	('obj.lastuse',
 		'DURATION',
+		( 'lookup', 'deliver', 'error',),
+		( ),
+		'const struct req *'
+	),
+	('obj.uncacheable',
+		'BOOL',
 		( 'lookup', 'deliver', 'error',),
 		( ),
 		'const struct req *'
