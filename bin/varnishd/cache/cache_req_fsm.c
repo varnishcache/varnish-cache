@@ -793,24 +793,24 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	VRY_Finish(req, NULL);
 
-	if (oc->flags & OC_F_PASS) {
+	if (oc->flags & OC_F_PASS)
 		wrk->stats.cache_hitpass++;
-		VSLb(req->vsl, SLT_HitPass, "%u", req->obj->vxid);
-		(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
-		AZ(req->objcore);
-		req->req_step = R_STP_PASS;
-		return (REQ_FSM_MORE);
-	}
-
-	wrk->stats.cache_hit++;
+	else
+		wrk->stats.cache_hit++;
 	VSLb(req->vsl, SLT_Hit, "%u", req->obj->vxid);
 
 	AZ(req->objcore);
 	AZ(req->busyobj);
 
-	assert(!(req->obj->objcore->flags & OC_F_PASS));
-
 	VCL_lookup_method(req);
+
+	if ((req->obj->objcore->flags & OC_F_PASS) &&
+	    req->handling == VCL_RET_DELIVER) {
+		VSLb(req->vsl, SLT_VCL_Error,
+		    "obj.uncacheable set, but vcl_lookup{} returned 'deliver'"
+		    ", changing to 'pass'");
+		req->handling = VCL_RET_PASS;
+	}
 
 	if (req->handling == VCL_RET_DELIVER) {
 		//AZ(req->busyobj->bereq->ws);

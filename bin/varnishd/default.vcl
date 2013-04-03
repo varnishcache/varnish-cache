@@ -94,6 +94,9 @@ sub vcl_hash {
 }
 
 sub vcl_lookup {
+    if (obj.uncacheable) {
+	return (pass);
+    }
     return (deliver);
 }
 
