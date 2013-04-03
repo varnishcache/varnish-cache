@@ -435,9 +435,10 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 
 	if (!FEATURE(FEATURE_SHORT_PANIC)) {
 		req = THR_GetRequest();
-		if (req != NULL)
+		if (req != NULL) {
 			pan_req(req);
 			VSL_Flush(req->vsl, 0);
+		}
 	}
 	VSB_printf(pan_vsp, "\n");
 	VSB_bcat(pan_vsp, "", 1);	/* NUL termination */
