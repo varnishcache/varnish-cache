@@ -60,7 +60,7 @@ THR_SetRequest(const struct req *req)
 	AZ(pthread_setspecific(req_key, req));
 }
 
-const struct req *
+struct req *
 THR_GetRequest(void)
 {
 

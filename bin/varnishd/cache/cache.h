@@ -910,7 +910,7 @@ extern volatile struct params * cache_param;
 void THR_SetName(const char *name);
 const char* THR_GetName(void);
 void THR_SetRequest(const struct req *);
-const struct req * THR_GetRequest(void);
+struct req * THR_GetRequest(void);
 
 /* cache_lck.c */
 
