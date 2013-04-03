@@ -713,65 +713,6 @@ cnt_fetchbody(struct worker *wrk, struct req *req)
 	return (REQ_FSM_MORE);
 }
 
-/*--------------------------------------------------------------------
- * HIT
- * We had a cache hit.  Ask VCL, then march off as instructed.
- *
-DOT subgraph xcluster_hit {
-DOT	hit [
-DOT		shape=record
-DOT		label="{cnt_hit:|{vcl_hit()|{req.|obj.}}|{<err>error?|<rst>restart?}|{<del>deliver?|<pass>pass?}}"
-DOT	]
-DOT }
-XDOT hit:err -> err_hit [label="error"]
-XDOT err_hit [label="ERROR",shape=plaintext]
-XDOT hit:rst -> rst_hit [label="restart",color=purple]
-XDOT rst_hit [label="RESTART",shape=plaintext]
-DOT hit:pass -> pass [label=pass,style=bold,color=red]
-DOT hit:del -> prepresp [label="deliver",style=bold,color=green]
- */
-
-static enum req_fsm_nxt
-cnt_hit(struct worker *wrk, struct req *req)
-{
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-
-	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
-	AZ(req->objcore);
-	AZ(req->busyobj);
-
-	assert(!(req->obj->objcore->flags & OC_F_PASS));
-
-	VCL_lookup_method(req);
-
-	if (req->handling == VCL_RET_DELIVER) {
-		//AZ(req->busyobj->bereq->ws);
-		//AZ(req->busyobj->beresp->ws);
-		(void)HTTP1_DiscardReqBody(req);	// XXX: handle err
-		req->req_step = R_STP_PREPRESP;
-		return (REQ_FSM_MORE);
-	}
-
-	/* Drop our object, we won't need it */
-	(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
-	req->objcore = NULL;
-
-	switch(req->handling) {
-	case VCL_RET_PASS:
-		req->req_step = R_STP_PASS;
-		return (REQ_FSM_MORE);
-	case VCL_RET_ERROR:
-		req->req_step = R_STP_ERROR;
-		return (REQ_FSM_MORE);
-	case VCL_RET_RESTART:
-		req->req_step = R_STP_RESTART;
-		return (REQ_FSM_MORE);
-	default:
-		WRONG("Illegal action in vcl_hit{}");
-	}
-}
 
 /*--------------------------------------------------------------------
  * LOOKUP
@@ -863,7 +804,39 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	wrk->stats.cache_hit++;
 	VSLb(req->vsl, SLT_Hit, "%u", req->obj->vxid);
-	req->req_step = R_STP_HIT;
+
+	AZ(req->objcore);
+	AZ(req->busyobj);
+
+	assert(!(req->obj->objcore->flags & OC_F_PASS));
+
+	VCL_lookup_method(req);
+
+	if (req->handling == VCL_RET_DELIVER) {
+		//AZ(req->busyobj->bereq->ws);
+		//AZ(req->busyobj->beresp->ws);
+		(void)HTTP1_DiscardReqBody(req);	// XXX: handle err
+		req->req_step = R_STP_PREPRESP;
+		return (REQ_FSM_MORE);
+	}
+
+	/* Drop our object, we won't need it */
+	(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
+	req->objcore = NULL;
+
+	switch(req->handling) {
+	case VCL_RET_PASS:
+		req->req_step = R_STP_PASS;
+		break;
+	case VCL_RET_ERROR:
+		req->req_step = R_STP_ERROR;
+		break;
+	case VCL_RET_RESTART:
+		req->req_step = R_STP_RESTART;
+		break;
+	default:
+		WRONG("Illegal action in vcl_lookup{}");
+	}
 	return (REQ_FSM_MORE);
 }
 
