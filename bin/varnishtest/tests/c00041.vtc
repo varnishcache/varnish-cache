@@ -40,7 +40,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_miss { if (req.http.purge == "yes") { purge; } }
-	sub vcl_hit { if (req.http.purge == "yes") { purge; return(restart);} }
+	sub vcl_lookup { if (req.http.purge == "yes") { purge; return(restart);} }
 } -start
 
 client c1 {

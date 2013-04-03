@@ -25,7 +25,7 @@ varnish v1 -vcl+backend {
 			return (lookup);
 		}
 	}
-	sub vcl_hit {
+	sub vcl_lookup {
 		if (req.method == "POST") {
 			/* Get rid of this object */
 			set obj.ttl = 0s;

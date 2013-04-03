@@ -744,7 +744,7 @@ cnt_hit(struct worker *wrk, struct req *req)
 
 	assert(!(req->obj->objcore->flags & OC_F_PASS));
 
-	VCL_hit_method(req);
+	VCL_lookup_method(req);
 
 	if (req->handling == VCL_RET_DELIVER) {
 		//AZ(req->busyobj->bereq->ws);

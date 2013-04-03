@@ -93,7 +93,7 @@ sub vcl_hash {
     return (hash);
 }
 
-sub vcl_hit {
+sub vcl_lookup {
     return (deliver);
 }
 

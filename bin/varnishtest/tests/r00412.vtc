@@ -19,7 +19,7 @@ varnish v1 -vcl+backend {
 			return (restart);
 		}
 	}
-	sub vcl_hit {
+	sub vcl_lookup {
 		if (obj.http.X-Magic-Redirect == "1") {
 			set req.url = obj.http.Location;
 			return (restart);

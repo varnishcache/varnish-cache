@@ -24,7 +24,7 @@ client c1 {
 varnish v1 -stop
 
 varnish v1 -vcl+backend {
-	sub vcl_hit {
+	sub vcl_lookup {
 		set obj.ttl = 1 s;
 	}
 }

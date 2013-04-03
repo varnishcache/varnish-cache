@@ -530,7 +530,7 @@ VRT_purge(struct req *req, double ttl, double grace)
 {
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	if (req->cur_method == VCL_MET_HIT)
+	if (req->cur_method == VCL_MET_LOOKUP)
 		HSH_Purge(req, req->obj->objcore->objhead, ttl, grace);
 	else if (req->cur_method == VCL_MET_MISS)
 		HSH_Purge(req, req->objcore->objhead, ttl, grace);
