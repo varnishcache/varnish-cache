@@ -713,6 +713,13 @@ vcc_ParseDirector(struct vcc *tl)
 
 	vcc_ExpectCid(tl);		/* ID: name */
 	ERRCHK(tl);
+       if (tl->t->e - tl->t->b > 64) {
+	       VSB_printf(tl->sb,
+			  "Name of %.*s too long (max 64, is %zd):\n",
+			  PF(t_first), (tl->t->e - tl->t->b));
+	       vcc_ErrWhere(tl, tl->t);
+	       return;
+       }
 	tl->t_dir = tl->t;
 	vcc_NextToken(tl);
 
