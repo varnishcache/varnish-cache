@@ -286,7 +286,7 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc)
  */
 
 struct objcore *
-HSH_Lookup(struct req *req)
+HSH_Lookup(struct req *req, int wait_for_busy)
 {
 	struct worker *wrk;
 	struct objhead *oh;
@@ -309,7 +309,7 @@ HSH_Lookup(struct req *req)
 
 	if (req->hash_objhead != NULL) {
 		/*
-		 * This sess came off the waiting list, and brings a
+		 * This req came off the waiting list, and brings an
 		 * oh refcnt with it.
 		 */
 		CHECK_OBJ_NOTNULL(req->hash_objhead, OBJHEAD_MAGIC);
@@ -409,7 +409,7 @@ HSH_Lookup(struct req *req)
 
 	if (busy_found) {
 		/* There are one or more busy objects, wait for them */
-		if (req->esi_level == 0) {
+		if (wait_for_busy) {
 			CHECK_OBJ_NOTNULL(wrk->nwaitinglist,
 			    WAITINGLIST_MAGIC);
 			if (oh->waitinglist == NULL) {
@@ -418,10 +418,14 @@ HSH_Lookup(struct req *req)
 			}
 			VTAILQ_INSERT_TAIL(&oh->waitinglist->list,
 			    req, w_list);
+			if (DO_DEBUG(DBG_WAITINGLIST))
+				VSLb(req->vsl, SLT_Debug,
+					"on waiting list <%p>", oh);
+		} else {
+			if (DO_DEBUG(DBG_WAITINGLIST))
+				VSLb(req->vsl, SLT_Debug,
+					"hit busy obj <%p>", oh);
 		}
-		if (DO_DEBUG(DBG_WAITINGLIST))
-			VSLb(req->vsl, SLT_Debug,
-				"on waiting list <%p>", oh);
 
 		wrk->stats.busy_sleep++;
 		SES_Charge(req->wrk, req);

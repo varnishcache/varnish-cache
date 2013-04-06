@@ -751,7 +751,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	VRY_Prep(req);
 
 	AZ(req->objcore);
-	oc = HSH_Lookup(req);
+	oc = HSH_Lookup(req, req->esi_level == 0 ? 1 : 0);
 	if (oc == NULL) {
 		/*
 		 * We lost the session to a busy object, disembark the
