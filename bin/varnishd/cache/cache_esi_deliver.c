@@ -47,7 +47,7 @@ ved_include(struct req *preq, const char *src, const char *host)
 	struct worker *wrk;
 	struct req *req;
 	char *wrk_ws_wm;
-	int i;
+	enum req_fsm_nxt s;
 
 	wrk = preq->wrk;
 
@@ -104,12 +104,12 @@ ved_include(struct req *preq, const char *src, const char *host)
 
 	while (1) {
 		req->wrk = wrk;
-		i = CNT_Request(wrk, req);
-		if (i == 1)
+		s = CNT_Request(wrk, req);
+		if (s == REQ_FSM_DONE)
 			break;
 		DSL(DBG_WAITINGLIST, req->vsl->wid,
-		    "loop waiting for ESI (%d)", i);
-		assert(i == 2);
+		    "loop waiting for ESI (%d)", (int)s);
+		assert(s == REQ_FSM_DISEMBARK);
 		AZ(req->wrk);
 		(void)usleep(10000);
 	}
