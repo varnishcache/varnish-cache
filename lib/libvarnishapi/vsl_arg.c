@@ -67,6 +67,10 @@ VSL_Name2Tag(const char *name, int l)
 	for (i = 0; i < 256; i++) {
 		if (VSL_tags[i] != NULL &&
 		    !strncasecmp(name, VSL_tags[i], l)) {
+			if (strlen(VSL_tags[i]) == l) {
+				/* Exact match */
+				return (i);
+			}
 			if (n == -1)
 				n = i;
 			else
