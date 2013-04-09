@@ -536,6 +536,12 @@ unsigned
 VRT_r_req_backend_healthy(const struct sess *sp)
 {
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+       /*
+        * XXX: Not optimal, but we do not have a backend in vcl_deliver
+        * XXX: and we have to return something.
+        */
+       if (sp->director == NULL)
+	       return (0);
 	CHECK_OBJ_NOTNULL(sp->director, DIRECTOR_MAGIC);
 	return (VDI_Healthy(sp->director, sp));
 }
