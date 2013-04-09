@@ -285,8 +285,50 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc)
 /*---------------------------------------------------------------------
  */
 
+static struct objcore *
+hsh_insert_busyobj(struct worker *wrk, struct objhead *oh)
+{
+	struct objcore *oc;
+
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+
+	oc = wrk->nobjcore;
+	wrk->nobjcore = NULL;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	AN(oc->flags & OC_F_BUSY);
+	oc->refcnt = 1;		/* Owned by busyobj */
+	oc->objhead = oh;
+	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
+	return (oc);
+}
+
+/*---------------------------------------------------------------------
+ * XXX: future action:
+ *
+ *	if (always_miss)
+ *		return (insert_busy_obj())
+ *      switch (Lookup()) {
+ *	case HIT:
+ *		return (object);
+ *	case BUSY_ONLY:
+ *		if (!ignore_body)
+ *			return (WAIT)
+ *		// fallthrough
+ *	case MISS:
+ *		return (insert_busy_obj())
+ *	case EXPIRED_AND_BUSY:
+ *		if (!ignore_body)
+ *			return (expired_object)
+ *		// fallthrough
+ *	case EXPIRED:
+ *		return (expired_object + insert_busy_obj())
+ *	}
+ *
+ */
+
 struct objcore *
-HSH_Lookup(struct req *req, int wait_for_busy)
+HSH_Lookup(struct req *req, int wait_for_busy, int always_insert)
 {
 	struct worker *wrk;
 	struct objhead *oh;
@@ -324,6 +366,14 @@ HSH_Lookup(struct req *req, int wait_for_busy)
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_AssertHeld(&oh->mtx);
 
+	if (always_insert) {
+		/* Insert new objcore in objecthead and release mutex */
+		oc = hsh_insert_busyobj(wrk, oh);
+		/* NB: no deref of objhead, new object inherits reference */
+		Lck_Unlock(&oh->mtx);
+		return (oc);
+	}
+
 	assert(oh->refcnt > 0);
 	busy_found = 0;
 	grace_oc = NULL;
@@ -336,7 +386,7 @@ HSH_Lookup(struct req *req, int wait_for_busy)
 
 		if (oc->flags & OC_F_BUSY || oc->busyobj != NULL) {
 			CHECK_OBJ_ORNULL(oc->busyobj, BUSYOBJ_MAGIC);
-			if (req->hash_ignore_busy || req->hash_always_miss)
+			if (req->hash_ignore_busy)
 				continue;
 
 			if (oc->busyobj != NULL &&
@@ -393,7 +443,7 @@ HSH_Lookup(struct req *req, int wait_for_busy)
 		oc = grace_oc;
 	}
 
-	if (oc != NULL && !req->hash_always_miss) {
+	if (oc != NULL) {
 		/* We found an object we like */
 		assert(oh->refcnt > 1);
 		assert(oc->objhead == oh);
@@ -440,13 +490,8 @@ HSH_Lookup(struct req *req, int wait_for_busy)
 	}
 
 	/* Insert (precreated) objcore in objecthead and release mutex */
-	oc = wrk->nobjcore;
-	wrk->nobjcore = NULL;
-	AN(oc->flags & OC_F_BUSY);
-	oc->refcnt = 1;		/* Owned by busyobj */
-	oc->objhead = oh;
-	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
-	/* NB: do not deref objhead the new object inherits our reference */
+	oc = hsh_insert_busyobj(wrk, oh);
+	/* NB: no deref of objhead, new object inherits reference */
 	Lck_Unlock(&oh->mtx);
 	return (oc);
 }
