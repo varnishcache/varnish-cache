@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <math.h>
 
 #include "cache/cache.h"
 
@@ -76,4 +77,17 @@ WAIT_Enter(struct sess *sp)
 	if (VTCP_nonblocking(sp->fd))
 		SES_Close(sp, SC_REM_CLOSE);
 	waiter->pass(waiter_priv, sp);
+}
+
+void
+WAIT_Write_Session(struct sess *sp, int fd)
+{
+	ssize_t written;
+	written = write(fd, &sp, sizeof sp);
+	if (written != sizeof sp && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+		VSC_C_main->sess_pipe_overflow++;
+		SES_Delete(sp, SC_SESS_PIPE_OVERFLOW, NAN);
+		return;
+	}
+	assert (written == sizeof sp);
 }

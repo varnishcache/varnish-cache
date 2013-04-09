@@ -38,7 +38,6 @@
 #include <sys/types.h>
 #include <sys/event.h>
 
-#include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -46,6 +45,7 @@
 
 #include "waiter/waiter.h"
 #include "vtim.h"
+#include "vfil.h"
 
 #define NKEV	100
 
@@ -210,12 +210,13 @@ vwk_thread(void *priv)
 /*--------------------------------------------------------------------*/
 
 static void
-vwk_pass(void *priv, const struct sess *sp)
+vwk_pass(void *priv, struct sess *sp)
 {
 	struct vwk *vwk;
 
 	CAST_OBJ_NOTNULL(vwk, priv, VWK_MAGIC);
-	assert(sizeof sp == write(vwk->pipes[1], &sp, sizeof sp));
+
+	WAIT_Write_Session(sp, vwk->pipes[1]);
 }
 
 /*--------------------------------------------------------------------*/
@@ -223,7 +224,6 @@ vwk_pass(void *priv, const struct sess *sp)
 static void *
 vwk_init(void)
 {
-	int i;
 	struct vwk *vwk;
 
 	ALLOC_OBJ(vwk, VWK_MAGIC);
@@ -232,11 +232,8 @@ vwk_init(void)
 	VTAILQ_INIT(&vwk->sesshead);
 	AZ(pipe(vwk->pipes));
 
-	i = fcntl(vwk->pipes[0], F_GETFL);
-	assert(i != -1);
-	i |= O_NONBLOCK;
-	i = fcntl(vwk->pipes[0], F_SETFL, i);
-	assert(i != -1);
+	AZ(VFIL_nonblocking(vwk->pipes[0]));
+	AZ(VFIL_nonblocking(vwk->pipes[1]));
 
 	AZ(pthread_create(&vwk->thread, NULL, vwk_thread, vwk));
 	return (vwk);

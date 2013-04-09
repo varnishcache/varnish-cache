@@ -240,14 +240,18 @@ vws_thread(void *priv)
 /*--------------------------------------------------------------------*/
 
 static void
-vws_pass(void *priv, const struct sess *sp)
+vws_pass(void *priv, struct sess *sp)
 {
 	int r;
 	struct vws *vws;
 
 	CAST_OBJ_NOTNULL(vws, priv, VWS_MAGIC);
-	while((r = port_send(vws->dport, 0, TRUST_ME(sp))) == -1 &&
-		errno == EAGAIN);
+	r = port_send(vws->dport, 0, TRUST_ME(sp));
+	if (r == -1 && errno == EAGAIN) {
+		VSC_C_main->sess_pipe_overflow++;
+		SES_Delete(sp, SC_SESS_PIPE_OVERFLOW, NAN);
+		return;
+	}
 	AZ(r);
 }
 

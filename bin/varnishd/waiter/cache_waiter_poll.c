@@ -30,6 +30,7 @@
 
 #include "config.h"
 
+#include <fcntl.h>
 #include <poll.h>
 #include <stdlib.h>
 
@@ -37,6 +38,7 @@
 
 #include "waiter/waiter.h"
 #include "vtim.h"
+#include "vfil.h"
 
 #define NEEV	128
 
@@ -191,13 +193,13 @@ vwp_main(void *priv)
 /*--------------------------------------------------------------------*/
 
 static void
-vwp_poll_pass(void *priv, const struct sess *sp)
+vwp_poll_pass(void *priv, struct sess *sp)
 {
 	struct vwp *vwp;
 
 	CAST_OBJ_NOTNULL(vwp, priv, VWP_MAGIC);
 
-	assert(sizeof sp == write(vwp->pipes[1], &sp, sizeof sp));
+	WAIT_Write_Session(sp, vwp->pipes[1]);
 }
 
 /*--------------------------------------------------------------------*/
@@ -211,6 +213,9 @@ vwp_poll_init(void)
 	AN(vwp);
 	VTAILQ_INIT(&vwp->sesshead);
 	AZ(pipe(vwp->pipes));
+
+	AZ(VFIL_nonblocking(vwp->pipes[1]));
+
 	vwp_pollspace(vwp, 256);
 	AZ(pthread_create(&vwp->poll_thread, NULL, vwp_main, vwp));
 	return (vwp);

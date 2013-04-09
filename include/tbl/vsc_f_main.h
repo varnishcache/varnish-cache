@@ -88,6 +88,11 @@ VSC_F(sess_fail,		uint64_t, 1, 'c',
 	" some resource like filedescriptors."
 )
 
+VSC_F(sess_pipe_overflow,		uint64_t, 1, 'c',
+    "Session pipe overflow",
+	"Count of sessions dropped due to the session pipe overflowing."
+)
+
 /*---------------------------------------------------------------------*/
 
 VSC_F(client_req_400,		uint64_t, 1, 'a',

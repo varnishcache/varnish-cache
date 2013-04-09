@@ -37,19 +37,19 @@
 
 #include <sys/epoll.h>
 
-#include <fcntl.h>
 #include <stdlib.h>
 
 #include "cache/cache.h"
 
 #include "waiter/waiter.h"
 #include "vtim.h"
+#include "vfil.h"
 
 #ifndef EPOLLRDHUP
 #  define EPOLLRDHUP 0
 #endif
 
-#define NEEV	100
+#define NEEV	8192
 
 struct vwe {
 	unsigned		magic;
@@ -220,12 +220,13 @@ vwe_timeout_idle_ticker(void *priv)
 /*--------------------------------------------------------------------*/
 
 static void
-vwe_pass(void *priv, const struct sess *sp)
+vwe_pass(void *priv, struct sess *sp)
 {
 	struct vwe *vwe;
 
 	CAST_OBJ_NOTNULL(vwe, priv, VWE_MAGIC);
-	assert(sizeof sp == write(vwe->pipes[1], &sp, sizeof sp));
+
+	WAIT_Write_Session(sp, vwe->pipes[1]);
 }
 
 /*--------------------------------------------------------------------*/
@@ -233,7 +234,6 @@ vwe_pass(void *priv, const struct sess *sp)
 static void *
 vwe_init(void)
 {
-	int i;
 	struct vwe *vwe;
 
 	ALLOC_OBJ(vwe, VWE_MAGIC);
@@ -242,17 +242,9 @@ vwe_init(void)
 	AZ(pipe(vwe->pipes));
 	AZ(pipe(vwe->timer_pipes));
 
-	i = fcntl(vwe->pipes[0], F_GETFL);
-	assert(i != -1);
-	i |= O_NONBLOCK;
-	i = fcntl(vwe->pipes[0], F_SETFL, i);
-	assert(i != -1);
-
-	i = fcntl(vwe->timer_pipes[0], F_GETFL);
-	assert(i != -1);
-	i |= O_NONBLOCK;
-	i = fcntl(vwe->timer_pipes[0], F_SETFL, i);
-	assert(i != -1);
+	AZ(VFIL_nonblocking(vwe->pipes[0]));
+	AZ(VFIL_nonblocking(vwe->pipes[1]));
+	AZ(VFIL_nonblocking(vwe->timer_pipes[0]));
 
 	AZ(pthread_create(&vwe->timer_thread,
 	    NULL, vwe_timeout_idle_ticker, vwe));

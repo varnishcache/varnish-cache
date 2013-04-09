@@ -1039,6 +1039,7 @@ void VMOD_Init(void);
 void WAIT_Enter(struct sess *sp);
 void WAIT_Init(void);
 const char *WAIT_GetName(void);
+void WAIT_Write_Session(struct sess *sp, int fd);
 
 /* cache_wrk.c */
 
