@@ -250,9 +250,14 @@ static void
 vca_ports_pass(struct sess *sp)
 {
 	int r;
-	while((r = port_send(solaris_dport, 0, sp)) == -1 &&
-		errno == EAGAIN);
-	AZ(r);
+       r = port_send(vws->dport, 0, TRUST_ME(sp));
+       if (r == -1 && errno == EAGAIN) {
+	       VSC_C_main->sess_pipe_overflow++;
+	       vca_close_session(sp, "session pipe overflow");
+	       SES_Delete(sp);
+	       return;
+       }
+       AZ(r);
 }
 
 /*--------------------------------------------------------------------*/

@@ -112,6 +112,7 @@ int seed_random(void);
 int vtmpfile(char *);
 char *vreadfile(const char *pfx, const char *fn, ssize_t *sz);
 char *vreadfd(int fd, ssize_t *sz);
+int vnonblocking(int fd);
 
 /* Safe printf into a fixed-size buffer */
 #define bprintf(buf, fmt, ...)						\

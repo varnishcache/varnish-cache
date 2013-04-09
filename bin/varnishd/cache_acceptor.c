@@ -394,6 +394,7 @@ vca_close_session(struct sess *sp, const char *why)
 void
 vca_return_session(struct sess *sp)
 {
+	int written = 0;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AZ(sp->obj);
@@ -406,8 +407,16 @@ vca_return_session(struct sess *sp)
 	if (VTCP_nonblocking(sp->fd)) {
 		vca_close_session(sp, "remote closed");
 		SES_Delete(sp);
-	} else if (vca_act->pass == NULL)
-		assert(sizeof sp == write(vca_pipes[1], &sp, sizeof sp));
+	} else if (vca_act->pass == NULL) {
+		written = write(vca_pipes[1], &sp, sizeof sp);
+		if (written != sizeof sp && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+			VSC_C_main->sess_pipe_overflow++;
+			vca_close_session(sp, "session pipe overflow");
+			SES_Delete(sp);
+			return;
+		}
+		assert (written == sizeof sp);
+	}
 	else
 		vca_act->pass(sp);
 }
