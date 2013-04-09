@@ -333,9 +333,9 @@ HSH_Lookup(struct req *req, int wait_for_busy, int always_insert)
 	struct worker *wrk;
 	struct objhead *oh;
 	struct objcore *oc;
-	struct objcore *grace_oc;
-	struct object *o;
-	double grace_ttl;
+	struct objcore *exp_oc;
+	struct object *o, *exp_o;
+	double exp_entered;
 	int busy_found;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -376,8 +376,10 @@ HSH_Lookup(struct req *req, int wait_for_busy, int always_insert)
 
 	assert(oh->refcnt > 0);
 	busy_found = 0;
-	grace_oc = NULL;
-	grace_ttl = NAN;
+	exp_o = NULL;
+	exp_oc = NULL;
+	exp_entered = 0.0;
+	o = NULL;
 	VTAILQ_FOREACH(oc, &oh->objcs, list) {
 		/* Must be at least our own ref + the objcore we examine */
 		assert(oh->refcnt > 1);
@@ -408,20 +410,14 @@ HSH_Lookup(struct req *req, int wait_for_busy, int always_insert)
 		if (o->vary != NULL && !VRY_Match(req, o->vary))
 			continue;
 
-		/* If still valid, use it */
-		if (EXP_Ttl(req, o) >= req->t_req)
+		if (EXP_Ttl(req, o) >= req->t_req) {
+			/* If still valid, use it */
 			break;
-
-		/*
-		 * Remember any matching objects inside their grace period
-		 * and if there are several, use the least expired one.
-		 */
-		if (EXP_Grace(req, o) >= req->t_req) {
-			if (grace_oc == NULL ||
-			    grace_ttl < o->exp.entered + o->exp.ttl) {
-				grace_oc = oc;
-				grace_ttl = o->exp.entered + o->exp.ttl;
-			}
+		} else if (o->exp.entered > exp_entered) {
+			/* record the newest object */
+			exp_oc = oc;
+			exp_o = o;
+			exp_entered = o->exp.entered;
 		}
 	}
 
@@ -434,24 +430,22 @@ HSH_Lookup(struct req *req, int wait_for_busy, int always_insert)
 
 	AZ(req->objcore);
 	if (oc == NULL			/* We found no live object */
-	    && grace_oc != NULL		/* There is a grace candidate */
+	    && exp_oc != NULL		/* There is a grace candidate */
 	    && (busy_found		/* Somebody else is already busy */
 	    || !VDI_Healthy(req->director, req))) {
 					/* Or it is impossible to fetch */
-		o = oc_getobj(&wrk->stats, grace_oc);
-		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-		oc = grace_oc;
+		oc = exp_oc;
+		o = exp_o;
 	}
 
 	if (oc != NULL) {
+		AN(o);
 		/* We found an object we like */
 		assert(oh->refcnt > 1);
 		assert(oc->objhead == oh);
 		oc->refcnt++;
 		Lck_Unlock(&oh->mtx);
 		assert(HSH_DerefObjHead(&wrk->stats, &oh));
-		o = oc_getobj(&wrk->stats, oc);
-		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		if (!cache_param->obj_readonly && o->hits < INT_MAX)
 			o->hits++;
 		return (oc);
