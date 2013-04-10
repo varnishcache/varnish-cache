@@ -30,6 +30,8 @@
 
 struct sess;
 struct req;
+struct objcore;
+struct busyobj;
 struct worker;
 struct object;
 
@@ -51,9 +53,19 @@ struct hash_slinger {
 	hash_deref_f		*deref;
 };
 
+enum lookup_e {
+	HSH_MISS,
+	HSH_BUSY,
+	HSH_HIT,
+	HSH_EXP,
+	HSH_EXPBUSY
+};
+
 /* cache_hash.c */
 void HSH_Cleanup(struct worker *w);
-struct objcore *HSH_Lookup(struct req *, int wait_for_busy, int always_insert);
+enum lookup_e HSH_Lookup(struct req *, struct objcore **, struct busyobj **,
+    int wait_for_busy, int always_insert);
+// struct objcore *HSH_Lookup(struct req *, int wait_for_busy, int always_insert);
 void HSH_Ref(struct objcore *o);
 void HSH_Drop(struct worker *, struct object **);
 void HSH_Init(const struct hash_slinger *slinger);

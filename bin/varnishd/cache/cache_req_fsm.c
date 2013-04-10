@@ -740,6 +740,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	struct object *o;
 	struct objhead *oh;
 	struct busyobj *bo;
+	enum lookup_e lr;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -751,11 +752,11 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	VRY_Prep(req);
 
 	AZ(req->objcore);
-	oc = HSH_Lookup(req,
+	lr = HSH_Lookup(req, &oc, &bo,
 	    req->esi_level == 0 ? 1 : 0,
 	    req->hash_always_miss ? 1 : 0
 	);
-	if (oc == NULL) {
+	if (lr == HSH_BUSY) {
 		/*
 		 * We lost the session to a busy object, disembark the
 		 * worker thread.   We return to STP_LOOKUP when the busy

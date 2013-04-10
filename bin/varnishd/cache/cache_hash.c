@@ -327,8 +327,9 @@ hsh_insert_busyobj(struct worker *wrk, struct objhead *oh)
  *
  */
 
-struct objcore *
-HSH_Lookup(struct req *req, int wait_for_busy, int always_insert)
+enum lookup_e
+HSH_Lookup(struct req *req, struct objcore **ocp, struct busyobj **bop,
+    int wait_for_busy, int always_insert)
 {
 	struct worker *wrk;
 	struct objhead *oh;
@@ -337,6 +338,11 @@ HSH_Lookup(struct req *req, int wait_for_busy, int always_insert)
 	struct object *o, *exp_o;
 	double exp_entered;
 	int busy_found;
+
+	AN(ocp);
+	*ocp = NULL;
+	AN(bop);
+	*bop = NULL;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	wrk = req->wrk;
@@ -368,10 +374,10 @@ HSH_Lookup(struct req *req, int wait_for_busy, int always_insert)
 
 	if (always_insert) {
 		/* Insert new objcore in objecthead and release mutex */
-		oc = hsh_insert_busyobj(wrk, oh);
+		*ocp = hsh_insert_busyobj(wrk, oh);
 		/* NB: no deref of objhead, new object inherits reference */
 		Lck_Unlock(&oh->mtx);
-		return (oc);
+		return (HSH_MISS);
 	}
 
 	assert(oh->refcnt > 0);
@@ -448,7 +454,8 @@ HSH_Lookup(struct req *req, int wait_for_busy, int always_insert)
 		assert(HSH_DerefObjHead(&wrk->stats, &oh));
 		if (!cache_param->obj_readonly && o->hits < INT_MAX)
 			o->hits++;
-		return (oc);
+		*ocp = oc;
+		return (HSH_HIT);
 	}
 
 	if (busy_found) {
@@ -480,14 +487,14 @@ HSH_Lookup(struct req *req, int wait_for_busy, int always_insert)
 		 */
 		req->hash_objhead = oh;
 		Lck_Unlock(&oh->mtx);
-		return (NULL);
+		return (HSH_BUSY);
 	}
 
 	/* Insert (precreated) objcore in objecthead and release mutex */
-	oc = hsh_insert_busyobj(wrk, oh);
+	*ocp = hsh_insert_busyobj(wrk, oh);
 	/* NB: no deref of objhead, new object inherits reference */
 	Lck_Unlock(&oh->mtx);
-	return (oc);
+	return (HSH_MISS);
 }
 
 /*---------------------------------------------------------------------
