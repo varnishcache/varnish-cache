@@ -34,15 +34,27 @@
 #ifndef VAPI_VSL_FMT_H_INCLUDED
 #define VAPI_VSL_FMT_H_INCLUDED
 
+#include "vapi/vsm_int.h"
+
 #define VSL_CLASS		"Log"
+#define VSL_SEGMENTS		8
 
 /*
  * Shared memory log format
  *
- * The log is structured as an array of 32bit unsigned integers.
+ * The segments array has index values providing safe entry points into
+ * the log, where each element N gives the index of the first log record
+ * in the Nth fraction of the log. An index value of -1 indicated that no
+ * log records in this fraction exists.
  *
- * The first integer contains a non-zero serial number, which changes
- * whenever writing the log starts from the front.
+ * The segment member shows the current segment where Varnish is currently
+ * appending log data.
+ *
+ * The seq member contains a non-zero seq number randomly initialized,
+ * which increases whenever writing the log starts from the front.
+ *
+ * The log member points to an array of 32bit unsigned integers containing
+ * log records.
  *
  * Each logrecord consist of:
  *	[n]		= ((type & 0xff) << 24) | (length & 0xffff)
@@ -52,6 +64,15 @@
  * Notice that the constants in these macros cannot be changed without
  * changing corresponding magic numbers in varnishd/cache/cache_shmlog.c
  */
+
+struct VSL_head {
+#define VSL_HEAD_MARKER		"VSLHEAD0"	/* Incr. as version# */
+	char			marker[VSM_MARKER_LEN];
+	ssize_t			segments[VSL_SEGMENTS];
+	unsigned		segment;	/* Current varnishd segment */
+	unsigned		seq;		/* Non-zero seq number */
+	uint32_t		log[];
+};
 
 #define VSL_CLIENTMARKER	(1U<<30)
 #define VSL_BACKENDMARKER	(1U<<31)

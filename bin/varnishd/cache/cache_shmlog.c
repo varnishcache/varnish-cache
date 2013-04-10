@@ -44,9 +44,12 @@
 static pthread_mutex_t vsl_mtx;
 static pthread_mutex_t vsm_mtx;
 
-static uint32_t			*vsl_start;
+static struct VSL_head		*vsl_head;
 static const uint32_t		*vsl_end;
 static uint32_t			*vsl_ptr;
+static unsigned			vsl_segment;
+static ssize_t			vsl_segsize;
+static unsigned			vsl_seq;
 
 struct VSC_C_main       *VSC_C_main;
 
@@ -93,17 +96,21 @@ static void
 vsl_wrap(void)
 {
 
-	assert(vsl_ptr >= vsl_start + 1);
+	assert(vsl_ptr >= vsl_head->log);
 	assert(vsl_ptr < vsl_end);
-	vsl_start[1] = VSL_ENDMARKER;
+	vsl_head->log[0] = VSL_ENDMARKER;
 	do
-		vsl_start[0]++;
-	while (vsl_start[0] == 0);
+		vsl_seq++;
+	while (vsl_seq == 0);
+	vsl_head->seq = vsl_seq;
+	vsl_head->segments[0] = 0;
 	VWMB();
-	if (vsl_ptr != vsl_start + 1) {
+	if (vsl_ptr != vsl_head->log) {
 		*vsl_ptr = VSL_WRAPMARKER;
-		vsl_ptr = vsl_start + 1;
+		vsl_ptr = vsl_head->log;
 	}
+	vsl_segment = 0;
+	vsl_head->segment = vsl_segment;
 	VSC_C_main->shm_cycles++;
 }
 
@@ -116,6 +123,7 @@ vsl_get(unsigned len, unsigned records, unsigned flushes)
 {
 	uint32_t *p;
 	int err;
+	unsigned old_segment;
 
 	err = pthread_mutex_trylock(&vsl_mtx);
 	if (err == EBUSY) {
@@ -137,11 +145,25 @@ vsl_get(unsigned len, unsigned records, unsigned flushes)
 
 	p = vsl_ptr;
 	vsl_ptr = VSL_END(vsl_ptr, len);
+	assert(vsl_ptr < vsl_end);
+	assert(((uintptr_t)vsl_ptr & 0x3) == 0);
 
 	*vsl_ptr = VSL_ENDMARKER;
 
-	assert(vsl_ptr < vsl_end);
-	assert(((uintptr_t)vsl_ptr & 0x3) == 0);
+	old_segment = vsl_segment;
+	while ((vsl_ptr - vsl_head->log) / vsl_segsize > vsl_segment) {
+		if (vsl_segment == VSL_SEGMENTS - 1)
+			break;
+		vsl_segment++;
+		vsl_head->segments[vsl_segment] = vsl_ptr - vsl_head->log;
+	}
+	if (old_segment != vsl_segment) {
+		/* Write memory barrier to ensure ENDMARKER and new table
+		   values are seen before new segment number */
+		VWMB();
+		vsl_head->segment = vsl_segment;
+	}
+
 	AZ(pthread_mutex_unlock(&vsl_mtx));
 
 	return (p);
@@ -252,7 +274,7 @@ VSLbt(struct vsl_log *vsl, enum VSL_tag_e tag, txt t)
 
 	assert(vsl->wlp < vsl->wle);
 
-	/* Wrap if necessary */
+	/* Flush if necessary */
 	if (VSL_END(vsl->wlp, l) >= vsl->wle)
 		VSL_Flush(vsl, 1);
 	assert(VSL_END(vsl->wlp, l) < vsl->wle);
@@ -298,7 +320,7 @@ VSLb(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, ...)
 
 	mlen = cache_param->shm_reclen;
 
-	/* Wrap if we cannot fit a full size record */
+	/* Flush if we cannot fit a full size record */
 	if (VSL_END(vsl->wlp, mlen) >= vsl->wle)
 		VSL_Flush(vsl, 1);
 
@@ -357,34 +379,37 @@ vsm_cleaner(void *priv)
 void
 VSM_Init(void)
 {
-	uint32_t *vsl_log_start;
+	int i;
 	pthread_t tp;
 
 	AZ(pthread_mutex_init(&vsl_mtx, NULL));
 	AZ(pthread_mutex_init(&vsm_mtx, NULL));
 
-	vsl_log_start = VSM_Alloc(cache_param->vsl_space, VSL_CLASS, "", "");
-	AN(vsl_log_start);
-	vsl_log_start[1] = VSL_ENDMARKER;
+	vsl_head = VSM_Alloc(cache_param->vsl_space, VSL_CLASS, "", "");
+	AN(vsl_head);
+	vsl_end = vsl_head->log +
+	    (cache_param->vsl_space - sizeof *vsl_head) / sizeof *vsl_end;
+	vsl_segsize = (vsl_end - vsl_head->log) / VSL_SEGMENTS;
+
+	memset(vsl_head, 0, sizeof *vsl_head);
+	memcpy(vsl_head->marker, VSL_HEAD_MARKER, sizeof vsl_head->marker);
+	vsl_head->segments[0] = 0;
+	for (i = 1; i < VSL_SEGMENTS; i++)
+		vsl_head->segments[i] = -1;
+	vsl_ptr = vsl_head->log;
+	*vsl_ptr = VSL_ENDMARKER;
+
 	VWMB();
 	do
-		*vsl_log_start = random() & 0xffff;
-	while (*vsl_log_start == 0);
+		vsl_seq = random();
+	while (vsl_seq == 0);
+	vsl_head->seq = vsl_seq;
 	VWMB();
-
-	vsl_start = vsl_log_start;
-	vsl_end = vsl_start +
-	    cache_param->vsl_space / (unsigned)sizeof *vsl_end;
-	vsl_ptr = vsl_start + 1;
 
 	VSC_C_main = VSM_Alloc(sizeof *VSC_C_main,
 	    VSC_CLASS, VSC_type_main, "");
 	AN(VSC_C_main);
-
-	vsl_wrap();
-	// VSM_head->starttime = (intmax_t)VTIM_real();
 	memset(VSC_C_main, 0, sizeof *VSC_C_main);
-	// VSM_head->child_pid = getpid();
 
 	AZ(pthread_create(&tp, NULL, vsm_cleaner, NULL));
 }
