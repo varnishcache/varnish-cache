@@ -95,5 +95,15 @@ LIBVARNISHAPI_1.3 {
 	VSC_MainValid;
 	VSC_IterValid;
 	VSC_LevelDesc;
+	VSL_New;
+	VSL_Delete;
+	VSL_Error;
+	VSL_ResetError;
+	VSL_CursorVSM;
+	VSL_CursorFile;
+	VSL_DeleteCursor;
+	VSL_Next;
+	VSL_Match;
+	VSL_Print;
 	# Variables:
 } LIBVARNISHAPI_1.0;

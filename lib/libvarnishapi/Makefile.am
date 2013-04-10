@@ -26,6 +26,7 @@ libvarnishapi_la_SOURCES = \
 	../libvarnish/vsha256.c \
 	vsm.c \
 	vsl_arg.c \
+	vsl_cursor.c \
 	vsl.c \
 	vsc.c \
 	libvarnishapi.map

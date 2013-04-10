@@ -1,9 +1,10 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2006-2013 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Martin Blix Grydeland <martin@varnish-software.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,6 +34,7 @@
 #include <sys/types.h>
 
 #include <errno.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,12 +45,14 @@
 #include "vas.h"
 #include "vdef.h"
 
-#include "vapi/vsl.h"
 #include "vapi/vsm.h"
+#include "vapi/vsl.h"
 #include "vapi/vsm_int.h"
+#include "vin.h"
 #include "vbm.h"
 #include "vmb.h"
 #include "vre.h"
+#include "vsb.h"
 #include "vsl_api.h"
 #include "vsm_api.h"
 
@@ -60,334 +64,139 @@ const char *VSL_tags[256] = {
 #  undef SLTM
 };
 
-/*--------------------------------------------------------------------*/
-
-struct vsl *
-vsl_Setup(struct VSM_data *vd)
+int
+vsl_diag(struct VSL_data *vsl, const char *fmt, ...)
 {
-	struct vsl *vsl;
+	va_list ap;
 
-	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	if (vd->vsl == NULL) {
-		ALLOC_OBJ(vd->vsl, VSL_MAGIC);
-		AN(vd->vsl);
-		vsl = vd->vsl;
-		vsl->regflags = 0;
-		vsl->vbm_supress = vbit_init(256);
-		vsl->vbm_select = vbit_init(256);
-		vsl->r_fd = -1;
-		vsl->num_matchers = 0;
-		VTAILQ_INIT(&vsl->matchers);
-	}
-	CHECK_OBJ_NOTNULL(vd->vsl, VSL_MAGIC);
-	return (vd->vsl);
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+	AN(fmt);
+
+	if (vsl->diag == NULL)
+		vsl->diag = VSB_new_auto();
+	AN(vsl->diag);
+	VSB_clear(vsl->diag);
+	va_start(ap, fmt);
+	VSB_vprintf(vsl->diag, fmt, ap);
+	va_end(ap);
+	AZ(VSB_finish(vsl->diag));
+	return (-1);
 }
 
-/*--------------------------------------------------------------------
- * Called from VSM_Delete()
- */
+struct VSL_data *
+VSL_New(void)
+{
+	struct VSL_data *vsl;
+
+	ALLOC_OBJ(vsl, VSL_MAGIC);
+	if (vsl == NULL)
+		return (NULL);
+
+	vsl->vbm_select = vbit_init(256);
+	vsl->vbm_supress = vbit_init(256);
+
+	return (vsl);
+}
 
 void
-VSL_Delete(struct VSM_data *vd)
+VSL_Delete(struct VSL_data *vsl)
 {
-	struct vsl *vsl;
 
-	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	vsl = vd->vsl;
-	vd->vsl = NULL;
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 
-	if (vsl->r_fd > STDIN_FILENO)
-		(void)close(vsl->r_fd);
-	vbit_destroy(vsl->vbm_supress);
 	vbit_destroy(vsl->vbm_select);
-	free(vsl->rbuf);
+	vbit_destroy(vsl->vbm_supress);
+	VSL_ResetError(vsl);
 	FREE_OBJ(vsl);
 }
 
-/*--------------------------------------------------------------------*/
+const char *
+VSL_Error(const struct VSL_data *vsl)
+{
+
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+
+	if (vsl->diag == NULL)
+		return (NULL);
+	else
+		return (VSB_data(vsl->diag));
+}
 
 void
-VSL_Select(struct VSM_data *vd, enum VSL_tag_e tag)
+VSL_ResetError(struct VSL_data *vsl)
 {
-	struct vsl *vsl = vsl_Setup(vd);
 
-	vbit_set(vsl->vbm_select, (int)tag);
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+
+	if (vsl->diag == NULL)
+		return;
+	VSB_delete(vsl->diag);
+	vsl->diag = NULL;
 }
 
-/*--------------------------------------------------------------------
- */
-
-static int
-vsl_open(struct VSM_data *vd)
+int
+VSL_Match(struct VSL_data *vsl, const struct VSL_cursor *c)
 {
-	struct vsl *vsl = vsl_Setup(vd);
-	int i;
+	enum VSL_tag_e tag;
 
-	assert(vsl->r_fd < 0);
-	if (vd->head == NULL) {
-		i = VSM_Open(vd);
-		if (i)
-			return (i);
-	}
-	if (!VSM_Get(vd, &vsl->vf, VSL_CLASS, NULL, NULL)) {
-		VSM_Close(vd);
-		return (vsm_diag(vd, "No VSL chunk found "
-		    " (child not started ?)\n"));
-	}
-	vsl->log_start = vsl->vf.b;
-	vsl->log_end = vsl->vf.e;
-	vsl->log_ptr = vsl->log_start + 1;
-	if (!vsl->d_opt) {
-		while (vsl->log_ptr < vsl->log_end &&
-		    *vsl->log_ptr != VSL_ENDMARKER)
-			vsl->log_ptr = VSL_NEXT(vsl->log_ptr);
-	}
-	if (vsl->log_ptr >= vsl->log_end)
-		vsl->log_ptr = vsl->log_start + 1;
-	vsl->last_seq = vsl->log_start[0];
-	return (0);
-}
-
-/*--------------------------------------------------------------------
- */
-
-static void
-vsl_close(struct VSM_data *vd)
-{
-	struct vsl *vsl = vsl_Setup(vd);
-
-	assert(vsl->r_fd < 0);
-	VSM_Close(vd);
-	memset(&vsl->vf, 0, sizeof vsl->vf);
-	vsl->log_start = NULL;
-	vsl->log_end = NULL;
-	vsl->log_ptr = NULL;
-}
-
-/*--------------------------------------------------------------------
- * Return the next log record, if there is one
- *
- * Return:
- *	<0: error
- *	0: no record
- *	>0: record available at pp
- */
-
-static int
-vsl_nextslt(struct VSM_data *vd, uint32_t **pp)
-{
-	struct vsl *vsl = vsl_Setup(vd);
-	unsigned l;
-	uint32_t t;
-	int i;
-
-	*pp = NULL;
-	if (vsl->r_fd != -1) {
-		assert(vsl->rbuflen >= 8);
-		i = read(vsl->r_fd, vsl->rbuf, 8);
-		if (i == 0)
-			return (-2);
-		if (i != 8)
-			return (-1);
-		l = 2 + VSL_WORDS(VSL_LEN(vsl->rbuf));
-		if (vsl->rbuflen < l) {
-			l += 256;
-			vsl->rbuf = realloc(vsl->rbuf, l * 4L);
-			assert(vsl->rbuf != NULL);
-			vsl->rbuflen = l;
-		}
-		i = read(vsl->r_fd, vsl->rbuf + 2, l * 4L - 8L);
-		if (i != (l * 4L - 8L))
-			return (-1);
-		*pp = vsl->rbuf;
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+	if (c == NULL || c->ptr == NULL)
+		return (0);
+	tag = VSL_TAG(c->ptr);
+	if (tag <= SLT__Bogus || tag >= SLT__Reserved)
+		return (0);
+	if (vbit_test(vsl->vbm_select, tag))
 		return (1);
-	}
-
-	if (vsl->log_ptr == NULL && vsl_open(vd))
+	else if (vbit_test(vsl->vbm_supress, tag))
 		return (0);
 
-	while (1) {
-		assert(vsl->log_ptr >= vsl->log_start + 1);
-		assert(vsl->log_ptr < vsl->log_end);
-		t = *vsl->log_ptr;
-
-		if (t == VSL_WRAPMARKER) {
-			/* Wrap around not possible at front */
-			if (vsl->log_ptr == vsl->log_start + 1)
-				return (-1);
-			vsl->log_ptr = vsl->log_start + 1;
-			continue;
-		}
-
-		if (t == VSL_ENDMARKER) {
-			if (vsl->log_ptr != vsl->log_start + 1 &&
-			    vsl->last_seq != vsl->log_start[0]) {
-				/* ENDMARKER not at front and seq wrapped */
-				vsl->log_ptr = vsl->log_start + 1;
-				continue;
-			}
-			return (0);
-		}
-
-		if (t == 0) {
-			/* Uninitialized VSL */
-			return (0);
-		}
-
-		if (vsl->log_ptr == vsl->log_start + 1)
-			vsl->last_seq = vsl->log_start[0];
-
-		*pp = (void*)(uintptr_t)vsl->log_ptr; /* Loose volatile */
-		vsl->log_ptr = VSL_NEXT(vsl->log_ptr);
-		return (1);
-	}
+	/* Default show */
+	return (1);
 }
 
 int
-VSL_NextSLT(struct VSM_data *vd, uint32_t **pp, uint64_t *bits)
+VSL_Print(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
 {
-	struct vsl *vsl = vsl_Setup(vd);
-	uint32_t *p;
-	unsigned char t;
-	int i;
-	struct vsl_re_match *vrm;
-	int j;
-
-	if (bits != NULL)
-		*bits = 0;
-
-	while (1) {
-		i = vsl_nextslt(vd, &p);
-		if (i < 0)
-			return (i);
-		if (i == 0) {
-			if (vsl->d_opt || vsl->r_fd >= 0)
-				return (i);
-			if (!VSM_StillValid(vd, &vsl->vf))
-				vsl_close(vd);
-			return (i);
-		}
-
-		t = VSL_TAG(p);
-		if (t == SLT__Batch) {
-			continue;
-		} else if (vbit_test(vsl->vbm_select, t)) {
-			/* nothing */
-		} else if (vbit_test(vsl->vbm_supress, t)) {
-			continue;
-		} else if (vsl->b_opt && !VSL_BACKEND(p)) {
-			continue;
-		} else if (vsl->c_opt && !VSL_CLIENT(p)) {
-			continue;
-		} else if (vsl->regincl != NULL) {
-			i = VRE_exec(vsl->regincl, VSL_DATA(p), VSL_LEN(p),
-			    0, 0, NULL, 0, NULL);
-			if (i == VRE_ERROR_NOMATCH)
-				continue;
-		} else if (vsl->regexcl != NULL) {
-			i = VRE_exec(vsl->regexcl, VSL_DATA(p), VSL_LEN(p),
-			    0, 0, NULL, 0, NULL);
-			if (i != VRE_ERROR_NOMATCH)
-				continue;
-		}
-
-		if (vsl->skip) {
-			--vsl->skip;
-			continue;
-		} else if (vsl->keep) {
-			if (--vsl->keep == 0)
-				return (-2);
-		}
-
-		if (bits != NULL) {
-			j = 0;
-			VTAILQ_FOREACH(vrm, &vsl->matchers, next) {
-				if (vrm->tag == t) {
-					i = VRE_exec(vrm->re, VSL_DATA(p),
-					    VSL_LEN(p), 0, 0, NULL, 0, NULL);
-					if (i >= 0)	/* XXX ?? */
-						*bits |= (uintmax_t)1 << j;
-				}
-				j++;
-			}
-		}
-		*pp = p;
-		return (1);
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
-int
-VSL_Dispatch(struct VSM_data *vd, VSL_handler_f *func, void *priv)
-{
-	int i;
-	unsigned u, l, s;
-	uint32_t *p;
-	uint64_t bitmap;
-
-	while (1) {
-		i = VSL_NextSLT(vd, &p, &bitmap);
-		if (i <= 0)
-			return (i);
-		u = VSL_ID(p);
-		l = VSL_LEN(p);
-		s = 0;
-		if (VSL_CLIENT(p))
-			s |= VSL_S_CLIENT;
-		if (VSL_BACKEND(p))
-			s |= VSL_S_BACKEND;
-		i = func(priv, (enum VSL_tag_e)VSL_TAG(p),
-		    u, l, s, VSL_DATA(p), bitmap);
-		if (i)
-			return (i);
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
-int
-VSL_H_Print(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
-    unsigned spec, const char *ptr, uint64_t bitmap)
-{
-	FILE *fo = priv;
+	enum VSL_tag_e tag;
+	uint32_t vxid;
+	unsigned len;
+	const char *data;
 	int type;
+	int i;
 
-	(void) bitmap;
-	assert(fo != NULL);
-
-	type = (spec & VSL_S_CLIENT) ? 'c' :
-	    (spec & VSL_S_BACKEND) ? 'b' : '-';
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+	if (c == NULL || c->ptr == NULL)
+		return (0);
+	if (fo == NULL)
+		fo = stdout;
+	tag = VSL_TAG(c->ptr);
+	vxid = VSL_ID(c->ptr);
+	len = VSL_LEN(c->ptr);
+	type = VSL_CLIENT(c->ptr) ? 'c' : VSL_BACKEND(c->ptr) ? 'b' : '-';
+	data = VSL_CDATA(c->ptr);
 
 	if (tag == SLT_Debug) {
-		fprintf(fo, "%5u %-12s %c \"", fd, VSL_tags[tag], type);
+		i = fprintf(fo, "%10u %-15s %c \"", vxid, VSL_tags[tag], type);
+		if (i < 0)
+			return (-5);
 		while (len-- > 0) {
-			if (*ptr >= ' ' && *ptr <= '~')
-				fprintf(fo, "%c", *ptr);
+			if (*data >= ' ' && *data <= '~')
+				i = fprintf(fo, "%c", *data);
 			else
-				fprintf(fo, "%%%02x", (unsigned char)*ptr);
-			ptr++;
+				i = fprintf(fo, "%%%02x", (unsigned char)*data);
+			if (i < 0)
+				return (-5);
+			data++;
 		}
-		fprintf(fo, "\"\n");
+		i = fprintf(fo, "\"\n");
+		if (i < 0)
+			return (-5);
 		return (0);
 	}
-	fprintf(fo, "%5u %-12s %c %.*s\n",
-	    fd, VSL_tags[tag], type, (int)len, ptr);
+
+	i = fprintf(fo, "%10u %-15s %c %.*s\n",
+	    vxid, VSL_tags[tag], type, (int)len, data);
+	if (i < 0)
+		return (-5);
 	return (0);
-}
-
-/*--------------------------------------------------------------------*/
-
-int
-VSL_Matched(struct VSM_data *vd, uint64_t bitmap)
-{
-	struct vsl *vsl = vsl_Setup(vd);
-
-	if (vsl->num_matchers > 0) {
-		uint64_t t;
-		t = vsl->num_matchers | (vsl->num_matchers - 1);
-		return (bitmap == t);
-	}
-	return (1);
 }

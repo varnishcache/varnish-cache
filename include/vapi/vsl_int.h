@@ -88,6 +88,7 @@ struct VSL_head {
 #define VSL_CLIENT(ptr)		(((ptr)[1]) & VSL_CLIENTMARKER)
 #define VSL_BACKEND(ptr)	(((ptr)[1]) & VSL_BACKENDMARKER)
 #define VSL_DATA(ptr)		((char*)((ptr)+2))
+#define VSL_CDATA(ptr)		((const char*)((ptr)+2))
 
 #define VSL_ENDMARKER	(((uint32_t)SLT__Reserved << 24) | 0x454545) /* "EEE" */
 #define VSL_WRAPMARKER	(((uint32_t)SLT__Reserved << 24) | 0x575757) /* "WWW" */

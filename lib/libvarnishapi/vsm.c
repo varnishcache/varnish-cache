@@ -163,8 +163,7 @@ VSM_Delete(struct VSM_data *vd)
 	free(vd->fname);
 	if (vd->vsc != NULL)
 		VSC_Delete(vd);
-	if (vd->vsl != NULL)
-		VSL_Delete(vd);
+	VSM_ResetError(vd);
 	FREE_OBJ(vd);
 }
 

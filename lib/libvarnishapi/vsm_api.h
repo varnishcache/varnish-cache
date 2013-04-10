@@ -57,4 +57,3 @@ struct VSM_data {
 int vsm_diag(struct VSM_data *vd, const char *fmt, ...)
     __printflike(2, 3);
 void VSC_Delete(struct VSM_data *vd);
-void VSL_Delete(struct VSM_data *vd);

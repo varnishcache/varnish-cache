@@ -28,116 +28,34 @@
  *
  * This is the public API for the VSL access.
  *
- * VSL is a "subclass" of VSM.
- *
- * VSL can either read from VSM or from a file.
- *
- * When reading from a file, the filename is passed in with:
- *	VSL_Arg(vd, "r", "/some/file");
- * and once VSL_Dispatch()/VSL_NextSLT() will indicate EOF by returning -2.
- * Another file can then be opened with VSL_Arg() and processed.
- *
  */
 
 #ifndef VAPI_VSL_H_INCLUDED
 #define VAPI_VSL_H_INCLUDED
 
+#include <stdio.h>
+
+#include "vapi/vsm.h"
 #include "vapi/vsl_int.h"
 
-struct VSM_data;
+#define VSL_ARGS	"i:x:"
 
-/*---------------------------------------------------------------------
- * VSL level access functions
- */
-
-#define VSL_ARGS	"bCcdI:i:k:n:r:s:X:x:m:"
-#define VSL_b_USAGE	"[-b]"
-#define VSL_c_USAGE	"[-c]"
-#define VSL_C_USAGE	"[-C]"
-#define VSL_d_USAGE	"[-d]"
 #define VSL_i_USAGE	"[-i tag]"
-#define VSL_I_USAGE	"[-I regexp]"
-#define VSL_k_USAGE	"[-k keep]"
-#define VSL_m_USAGE	"[-m tag:regex]"
-#define VSL_n_USAGE	VSM_n_USAGE
-#define VSL_r_USAGE	"[-r file]"
-#define VSL_s_USAGE	"[-s skip]"
 #define VSL_x_USAGE	"[-x tag]"
-#define VSL_X_USAGE	"[-X regexp]"
 
-#define VSL_USAGE	"[-bCcd] "		\
+#define VSL_USAGE	"[...] "		\
 			VSL_i_USAGE " "		\
-			VSL_I_USAGE " "		\
-			VSL_k_USAGE " "		\
-			VSL_m_USAGE " "		\
-			VSL_n_USAGE " "		\
-			VSL_r_USAGE " "		\
-			VSL_s_USAGE " "		\
-			VSL_X_USAGE " "		\
 			VSL_x_USAGE
 
-int VSL_Arg(struct VSM_data *vd, int arg, const char *opt);
-	/*
-	 * Handle standard log-presenter arguments
-	 * Return:
-	 *	-1 error, VSM_Error() returns diagnostic string
-	 *	 0 not handled
-	 *	 1 Handled.
-	 */
+struct VSL_data;
 
-typedef int VSL_handler_f(void *priv, enum VSL_tag_e tag, unsigned fd,
-    unsigned len, unsigned spec, const char *ptr, uint64_t bitmap);
-	/*
-	 * This is the call-back function you must provide.
-	 *	priv is whatever you asked for it to be.
-	 *	tag is the SLT_mumble tag
-	 *	fd is the filedescriptor associated with this record
-	 *	len is the length of the data at ptr
-	 *	spec are the VSL_S_* flags
-	 *	ptr points to the data, beware of non-printables.
-	 *	bitmap is XXX ???
-	 */
+struct VSL_cursor {
+	const uint32_t		*ptr; /* Record pointer */
+};
 
-#define VSL_S_CLIENT	(1 << 0)
-#define VSL_S_BACKEND	(1 << 1)
-
-VSL_handler_f VSL_H_Print;
+extern const char *VSL_tags[256];
 	/*
-	 * This call-back function will printf() the record to the FILE *
-	 * specified in priv.
-	 */
-
-void VSL_Select(struct VSM_data *vd, enum VSL_tag_e tag);
-	/*
-	 * This adds tags which shall always be selected, similar to using
-	 * the '-i' option.
-	 * VSL_Select()/-i takes precedence over all other filtering.
-	 */
-
-int VSL_Dispatch(struct VSM_data *vd, VSL_handler_f *func, void *priv);
-	/*
-	 * Call func(priv, ...) for all filtered VSL records.
-	 *
-	 * Return values:
-	 *	!=0:	Non-zero return value from func()
-	 *	0:	no VSL records.
-	 *	-1:	VSL chunk was abandoned.
-	 *	-2:	End of file (-r) / -k arg exhausted / "done"
-	 */
-
-int VSL_NextSLT(struct VSM_data *lh, uint32_t **pp, uint64_t *bitmap);
-	/*
-	 * Return raw pointer to next filtered VSL record.
-	 *
-	 * Return values:
-	 *	1:	Valid VSL record at *pp
-	 *	0:	no VSL records
-	 *	-1:	VSL chunk was abandoned
-	 *	-2:	End of file (-r) / -k arg exhausted / "done"
-	 */
-
-int VSL_Matched(struct VSM_data *vd, uint64_t bitmap);
-	/*
+	 * Tag to string array.  Contains NULL for invalid tags.
 	 */
 
 int VSL_Name2Tag(const char *name, int l);
@@ -150,9 +68,89 @@ int VSL_Name2Tag(const char *name, int l);
 	 *	-2:	Multiple tags match substring
 	 */
 
-extern const char *VSL_tags[256];
+struct VSL_data *VSL_New(void);
+int VSL_Arg(struct VSL_data *vsl, int opt, const char *arg);
 	/*
-	 * Tag to string array.  Contains NULL for invalid tags.
+	 * Handle standard log-presenter arguments
+	 * Return:
+	 *	-1 error, VSL_Error() returns diagnostic string
+	 *	 0 not handled
+	 *	 1 Handled.
+	 */
+
+void VSL_Delete(struct VSL_data *vsl);
+	/*
+	 * Delete a VSL context, freeing up the resources
+	 */
+
+const char *VSL_Error(const struct VSL_data *vsl);
+	/*
+	 * Return the latest error message.
+	 */
+
+void VSL_ResetError(struct VSL_data *vsl);
+	/*
+	 * Reset any error message.
+	 */
+
+struct VSL_cursor *VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm,
+    int tail);
+       /*
+        * Set the cursor pointed to by cursor up as a raw cursor in the
+        * log. If tail is non-zero, it will point to the tail of the
+        * log. Is tail is zero, it will point close to the head of the
+        * log, at least 2 segments away from the head.
+	*
+	* Return values:
+	* non-NULL: Pointer to cursor
+	*     NULL: Error, see VSL_Error
+        */
+
+struct VSL_cursor *VSL_CursorFile(struct VSL_data *vsl, const char *name);
+	/*
+	 * Create a cursor pointing to the beginning of the binary VSL log
+	 * in file name. If name is '-' reads from stdin.
+	 *
+	 * Return values:
+	 * non-NULL: Pointer to cursor
+	 *     NULL: Error, see VSL_Error
+	 */
+
+void VSL_DeleteCursor(struct VSL_cursor *c);
+	/*
+	 * Delete the cursor pointed to by c
+	 */
+
+int VSL_Next(struct VSL_cursor *c);
+	/*
+	 * Return raw pointer to next VSL record.
+	 *
+	 * Return values:
+	 *	1:	Cursor points to next log record
+	 *	0:	End of log
+	 *     -1:	End of file (-r) (XXX / -k arg exhausted / "done")
+	 *     -2:	Remote abandoned or closed
+	 *     -3:	Overrun
+	 *     -4:	I/O read error - see errno
+	 */
+
+int VSL_Match(struct VSL_data *vsl, const struct VSL_cursor *c);
+	/*
+	 * Returns true if the record pointed to by cursor matches the
+	 * record current record selectors
+	 *
+	 * Return value:
+	 *	1:	Match
+	 *	0:	No match
+	 */
+
+int VSL_Print(struct VSL_data *vsl, const struct VSL_cursor *c, void *file);
+	/*
+	 * Print the log record pointed to by cursor to stream.
+	 *
+	 * Return values:
+	 *	0:	OK
+	 *     -5:	I/O write error - see errno
 	 */
 
 #endif /* VAPI_VSL_H_INCLUDED */

@@ -1,9 +1,10 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2006-2013 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Martin Blix Grydeland <martin@varnish-software.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,64 +29,38 @@
  *
  */
 
+#include "vdef.h"
 #include "vqueue.h"
+#include "vapi/vsm.h"
 
-#define	SLEEP_USEC			(50*1000)
-#define	TIMEOUT_USEC			(5*1000*1000)
+#define VSL_FILE_HEAD			"VSL"
 
+int vsl_diag(struct VSL_data *vsl, const char *fmt, ...)
+    __printflike(2, 3);
 
-struct vsl_re_match {
+typedef void vslc_delete_f(void *);
+typedef int vslc_next_f(void *);
+
+struct vslc {
+	struct VSL_cursor		c;
 	unsigned			magic;
-#define VSL_RE_MATCH_MAGIC		0x4013151e
-	int				tag;
-	vre_t				*re;
-	VTAILQ_ENTRY(vsl_re_match)	next;
+#define VSLC_MAGIC			0x5007C0DE
+
+	vslc_delete_f			*delete;
+	vslc_next_f			*next;
 };
 
-struct vsl {
-	unsigned		magic;
-#define VSL_MAGIC		0x7a31db38
+struct VSL_data {
+	unsigned			magic;
+#undef VSL_MAGIC
+#define VSL_MAGIC			0x8E6C92AA
 
-	struct VSM_fantom	vf;
+	struct vsb			*diag;
 
-	/* Stuff relating the log records below here */
+	unsigned			flags;
+#define F_SEEN_ix			(1 << 0)
 
-	volatile uint32_t	*log_start;
-	volatile uint32_t	*log_end;
-	volatile uint32_t	*log_ptr;
-
-	volatile uint32_t	last_seq;
-
-	/* for -r option */
-	int			r_fd;
-	unsigned		rbuflen;
-	uint32_t		*rbuf;
-
-	int			b_opt;
-	int			c_opt;
-	int			d_opt;
-
-	unsigned		flags;
-#define F_SEEN_IX		(1 << 0)
-
-	/*
-	 * Bit map of programatically selected tags, that cannot be suppressed.
-	 * This way programs can make sure they will see certain tags, even
-	 * if the user tries to supress them with -x/-X
-	 */
-	struct vbitmap		*vbm_select;	/* index: tag */
-
-	/* Bit map of tags selected/supressed with -[iIxX] options */
-	struct vbitmap		*vbm_supress;	/* index: tag */
-
-	int			regflags;
-	vre_t			*regincl;
-	vre_t			*regexcl;
-	int			num_matchers;
-	VTAILQ_HEAD(, vsl_re_match) matchers;
-
-	unsigned long		skip;
-	unsigned long		keep;
+	/* Bitmaps of -ix selected tags */
+	struct vbitmap			*vbm_select;
+	struct vbitmap			*vbm_supress;
 };
-
-struct vsl *vsl_Setup(struct VSM_data *vd);

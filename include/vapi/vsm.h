@@ -148,7 +148,8 @@ int VSM_StillValid(const struct VSM_data *vd, struct VSM_fantom *vf);
 	 * Return:
 	 *	0: fantom is not valid any more.
 	 *	1: fantom is still the same.
-	 *	2: a fantom with same dimensions exist, check class/type/ident
+	 *	2: a fantom with same dimensions exist in same position,
+	 *	   check class/type/ident
 	 */
 
 int VSM_Get(const struct VSM_data *vd, struct VSM_fantom *vf,
