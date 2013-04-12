@@ -304,31 +304,10 @@ hsh_insert_busyobj(struct worker *wrk, struct objhead *oh)
 }
 
 /*---------------------------------------------------------------------
- * XXX: future action:
- *
- *	if (always_miss)
- *		return (insert_busy_obj())
- *      switch (Lookup()) {
- *	case HIT:
- *		return (object);
- *	case BUSY_ONLY:
- *		if (!ignore_body)
- *			return (WAIT)
- *		// fallthrough
- *	case MISS:
- *		return (insert_busy_obj())
- *	case EXPIRED_AND_BUSY:
- *		if (!ignore_body)
- *			return (expired_object)
- *		// fallthrough
- *	case EXPIRED:
- *		return (expired_object + insert_busy_obj())
- *	}
- *
  */
 
 enum lookup_e
-HSH_Lookup(struct req *req, struct objcore **ocp, struct busyobj **bop,
+HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
     int wait_for_busy, int always_insert)
 {
 	struct worker *wrk;
@@ -338,11 +317,12 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct busyobj **bop,
 	struct object *o, *exp_o;
 	double exp_entered;
 	int busy_found;
+	enum lookup_e retval;
 
 	AN(ocp);
 	*ocp = NULL;
-	AN(bop);
-	*bop = NULL;
+	AN(bocp);
+	*bocp = NULL;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	wrk = req->wrk;
@@ -374,7 +354,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct busyobj **bop,
 
 	if (always_insert) {
 		/* Insert new objcore in objecthead and release mutex */
-		*ocp = hsh_insert_busyobj(wrk, oh);
+		*bocp = hsh_insert_busyobj(wrk, oh);
 		/* NB: no deref of objhead, new object inherits reference */
 		Lck_Unlock(&oh->mtx);
 		return (HSH_MISS);
@@ -418,8 +398,17 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct busyobj **bop,
 
 		if (EXP_Ttl(req, o) >= req->t_req) {
 			/* If still valid, use it */
-			break;
-		} else if (o->exp.entered > exp_entered) {
+			assert(oh->refcnt > 1);
+			assert(oc->objhead == oh);
+			oc->refcnt++;
+			Lck_Unlock(&oh->mtx);
+			assert(HSH_DerefObjHead(&wrk->stats, &oh));
+			if (!cache_param->obj_readonly && o->hits < INT_MAX)
+				o->hits++;
+			*ocp = oc;
+			return (HSH_HIT);
+		}
+		if (o->exp.entered > exp_entered) {
 			/* record the newest object */
 			exp_oc = oc;
 			exp_o = o;
@@ -427,74 +416,66 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct busyobj **bop,
 		}
 	}
 
-	/*
-	 * If we have seen a busy object or the backend is unhealthy, and
-	 * we have an object in grace, use it, if req.grace is also
-	 * satisified.
-	 * XXX: VDI_Healty() call with oh->mtx is not so cool.
-	 */
-
-	AZ(req->objcore);
-	if (oc == NULL			/* We found no live object */
-	    && exp_oc != NULL		/* There is a grace candidate */
-	    && (busy_found		/* Somebody else is already busy */
-	    || !VDI_Healthy(req->director, req))) {
-					/* Or it is impossible to fetch */
-		oc = exp_oc;
-		o = exp_o;
-	}
-
-	if (oc != NULL) {
-		AN(o);
-		/* We found an object we like */
+	if (exp_oc != NULL) {
+		AN(exp_o);
 		assert(oh->refcnt > 1);
-		assert(oc->objhead == oh);
-		oc->refcnt++;
-		Lck_Unlock(&oh->mtx);
-		assert(HSH_DerefObjHead(&wrk->stats, &oh));
-		if (!cache_param->obj_readonly && o->hits < INT_MAX)
-			o->hits++;
-		*ocp = oc;
-		return (HSH_HIT);
-	}
+		assert(exp_oc->objhead == oh);
+		exp_oc->refcnt++;
 
-	if (busy_found) {
-		/* There are one or more busy objects, wait for them */
-		if (wait_for_busy) {
-			CHECK_OBJ_NOTNULL(wrk->nwaitinglist,
-			    WAITINGLIST_MAGIC);
-			if (oh->waitinglist == NULL) {
-				oh->waitinglist = wrk->nwaitinglist;
-				wrk->nwaitinglist = NULL;
-			}
-			VTAILQ_INSERT_TAIL(&oh->waitinglist->list,
-			    req, w_list);
-			if (DO_DEBUG(DBG_WAITINGLIST))
-				VSLb(req->vsl, SLT_Debug,
-					"on waiting list <%p>", oh);
+		if (!busy_found) {
+			AZ(req->hash_ignore_busy);
+			*bocp = hsh_insert_busyobj(wrk, oh);
+			retval = HSH_EXPBUSY;
 		} else {
-			if (DO_DEBUG(DBG_WAITINGLIST))
-				VSLb(req->vsl, SLT_Debug,
-					"hit busy obj <%p>", oh);
+			retval = HSH_EXP;
 		}
 
-		wrk->stats.busy_sleep++;
-		SES_Charge(req->wrk, req);
-		/*
-		 * The objhead reference transfers to the sess, we get it
-		 * back when the sess comes off the waiting list and
-		 * calls us again
-		 */
-		req->hash_objhead = oh;
 		Lck_Unlock(&oh->mtx);
-		return (HSH_BUSY);
+		if (retval == HSH_EXP)
+			assert(HSH_DerefObjHead(&wrk->stats, &oh));
+		if (!cache_param->obj_readonly && exp_o->hits < INT_MAX)
+			exp_o->hits++;
+		*ocp = exp_oc;
+		return (retval);
 	}
 
-	/* Insert (precreated) objcore in objecthead and release mutex */
-	*ocp = hsh_insert_busyobj(wrk, oh);
-	/* NB: no deref of objhead, new object inherits reference */
+	if (!busy_found) {
+		/* Insert objcore in objecthead and release mutex */
+		*bocp = hsh_insert_busyobj(wrk, oh);
+		/* NB: no deref of objhead, new object inherits reference */
+		Lck_Unlock(&oh->mtx);
+		return (HSH_MISS);
+	}
+
+	/* There are one or more busy objects, wait for them */
+
+	AZ(req->hash_ignore_busy);
+
+	if (wait_for_busy) {
+		CHECK_OBJ_NOTNULL(wrk->nwaitinglist, WAITINGLIST_MAGIC);
+		if (oh->waitinglist == NULL) {
+			oh->waitinglist = wrk->nwaitinglist;
+			wrk->nwaitinglist = NULL;
+		}
+		VTAILQ_INSERT_TAIL(&oh->waitinglist->list,
+		    req, w_list);
+		if (DO_DEBUG(DBG_WAITINGLIST))
+			VSLb(req->vsl, SLT_Debug, "on waiting list <%p>", oh);
+	} else {
+		if (DO_DEBUG(DBG_WAITINGLIST))
+			VSLb(req->vsl, SLT_Debug, "hit busy obj <%p>", oh);
+	}
+
+	wrk->stats.busy_sleep++;
+	SES_Charge(req->wrk, req);
+	/*
+	 * The objhead reference transfers to the sess, we get it
+	 * back when the sess comes off the waiting list and
+	 * calls us again
+	 */
+	req->hash_objhead = oh;
 	Lck_Unlock(&oh->mtx);
-	return (HSH_MISS);
+	return (HSH_BUSY);
 }
 
 /*---------------------------------------------------------------------

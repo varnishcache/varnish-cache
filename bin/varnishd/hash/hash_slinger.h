@@ -63,7 +63,7 @@ enum lookup_e {
 
 /* cache_hash.c */
 void HSH_Cleanup(struct worker *w);
-enum lookup_e HSH_Lookup(struct req *, struct objcore **, struct busyobj **,
+enum lookup_e HSH_Lookup(struct req *, struct objcore **, struct objcore **,
     int wait_for_busy, int always_insert);
 // struct objcore *HSH_Lookup(struct req *, int wait_for_busy, int always_insert);
 void HSH_Ref(struct objcore *o);

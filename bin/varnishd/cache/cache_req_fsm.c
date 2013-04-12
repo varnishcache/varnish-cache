@@ -736,7 +736,7 @@ DOT lookup:yes -> pass [style=bold,color=red]
 static enum req_fsm_nxt
 cnt_lookup(struct worker *wrk, struct req *req)
 {
-	struct objcore *oc;
+	struct objcore *oc, *boc;
 	struct object *o;
 	struct objhead *oh;
 	struct busyobj *bo;
@@ -752,7 +752,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	VRY_Prep(req);
 
 	AZ(req->objcore);
-	lr = HSH_Lookup(req, &oc, &bo,
+	lr = HSH_Lookup(req, &oc, &boc,
 	    req->esi_level == 0 ? 1 : 0,
 	    req->hash_always_miss ? 1 : 0
 	);
@@ -766,6 +766,45 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		return (REQ_FSM_DISEMBARK);
 	}
 	AZ(req->objcore);
+
+
+	switch (lr) {
+	case HSH_EXP:
+VSLb(req->vsl, SLT_Debug, "XXXX EXP\n");
+		AN(oc);
+		AZ(boc);
+		break;
+	case HSH_EXPBUSY:
+VSLb(req->vsl, SLT_Debug, "XXXX EXPBUSY\n");
+		AN(oc);
+		AN(boc);
+		if (VDI_Healthy(req->director, req)) {
+VSLb(req->vsl, SLT_Debug, "deref oc\n");
+			(void)HSH_Deref(&wrk->stats, oc, NULL);
+			oc = boc;
+			boc = NULL;
+		} else {
+VSLb(req->vsl, SLT_Debug, "drop boc\n");
+			(void)HSH_Deref(&wrk->stats, boc, NULL);
+			boc = NULL;
+		}
+		break;
+	case HSH_MISS:
+VSLb(req->vsl, SLT_Debug, "XXXX MISS\n");
+		AZ(oc);
+		AN(boc);
+		oc = boc;
+		boc = NULL;
+		AN(oc->flags & OC_F_BUSY);
+		break;
+	case HSH_HIT:
+VSLb(req->vsl, SLT_Debug, "XXXX HIT\n");
+		AN(oc);
+		AZ(boc);
+		break;
+	default:
+		INCOMPL();
+	}
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	oh = oc->objhead;
