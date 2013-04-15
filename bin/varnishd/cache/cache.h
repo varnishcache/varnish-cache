@@ -1016,7 +1016,7 @@ void VCL_Rel(struct VCL_conf **vcc);
 void VCL_Poll(void);
 const char *VCL_Return_Name(unsigned method);
 
-#define VCL_MET_MAC(l,u,b) void VCL_##l##_method(struct req *);
+#define VCL_MET_MAC(l,u,b) void VCL_##l##_method(struct worker *, struct req *);
 #include "tbl/vcl_returns.h"
 #undef VCL_MET_MAC
 

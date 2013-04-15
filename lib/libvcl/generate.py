@@ -746,10 +746,11 @@ fo.write("""
 struct sess;
 struct req;
 struct cli;
+struct worker;
 
 typedef int vcl_init_f(struct cli *);
 typedef void vcl_fini_f(struct cli *);
-typedef int vcl_func_f(struct req *req);
+typedef int vcl_func_f(struct worker *wrk, struct req *req);
 """)
 
 
