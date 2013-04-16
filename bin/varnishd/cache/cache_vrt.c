@@ -303,7 +303,7 @@ VRT_r_now(const struct req *req)
 /*--------------------------------------------------------------------*/
 
 char *
-VRT_IP_string(const struct req *req, const struct sockaddr_storage *sa)
+VRT_IP_string(struct ws *ws, const struct sockaddr_storage *sa)
 {
 	char *p;
 	const struct sockaddr_in *si4;
@@ -311,7 +311,7 @@ VRT_IP_string(const struct req *req, const struct sockaddr_storage *sa)
 	const void *addr;
 	int len;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
 	switch (sa->ss_family) {
 	case AF_INET:
 		len = INET_ADDRSTRLEN;
@@ -327,65 +327,62 @@ VRT_IP_string(const struct req *req, const struct sockaddr_storage *sa)
 		INCOMPL();
 	}
 	XXXAN(len);
-	AN(p = WS_Alloc(req->http->ws, len));
+	AN(p = WS_Alloc(ws, len));
 	AN(inet_ntop(sa->ss_family, addr, p, len));
 	return (p);
 }
 
 char *
-VRT_INT_string(const struct req *req, long num)
+VRT_INT_string(struct ws *ws, long num)
 {
 	char *p;
 	int size;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
 	size = snprintf(NULL, 0, "%ld", num) + 1;
-	AN(p = WS_Alloc(req->http->ws, size));
+	AN(p = WS_Alloc(ws, size));
 	assert(snprintf(p, size, "%ld", num) < size);
 	return (p);
 }
 
 char *
-VRT_REAL_string(const struct req *req, double num)
+VRT_REAL_string(struct ws *ws, double num)
 {
 	char *p;
 	int size;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
 	size = snprintf(NULL, 0, "%.3f", num) + 1;
-	AN(p = WS_Alloc(req->http->ws, size));
+	AN(p = WS_Alloc(ws, size));
 	assert(snprintf(p, size, "%.3f", num) < size);
 	return (p);
 }
 
 char *
-VRT_TIME_string(const struct req *req, double t)
+VRT_TIME_string(struct ws *ws, double t)
 {
 	char *p;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	p = WS_Alloc(req->http->ws, VTIM_FORMAT_SIZE);
+	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
+	p = WS_Alloc(ws, VTIM_FORMAT_SIZE);
 	if (p != NULL)
 		VTIM_format(t, p);
 	return (p);
 }
 
 const char *
-VRT_BACKEND_string(const struct req *req, const struct director *d)
+VRT_BACKEND_string(const struct director *d)
 {
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	if (d == NULL)
-		d = req->director;
 	if (d == NULL)
 		return (NULL);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	return (d->vcl_name);
 }
 
 const char *
-VRT_BOOL_string(const struct req *req, unsigned val)
+VRT_BOOL_string(unsigned val)
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	return (val ? "true" : "false");
 }
 

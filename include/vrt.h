@@ -32,6 +32,7 @@
  */
 
 struct req;
+struct ws;
 struct vsb;
 struct cli;
 struct director;
@@ -224,12 +225,12 @@ int VRT_Stv(const char *nm);
 
 /* Convert things to string */
 
-char *VRT_IP_string(const struct req *, const struct sockaddr_storage *sa);
-char *VRT_INT_string(const struct req *, long);
-char *VRT_REAL_string(const struct req *, double);
-char *VRT_TIME_string(const struct req *, double);
-const char *VRT_BOOL_string(const struct req *, unsigned);
-const char *VRT_BACKEND_string(const struct req *, const struct director *d);
+char *VRT_IP_string(struct ws *, const struct sockaddr_storage *sa);
+char *VRT_INT_string(struct ws *, long);
+char *VRT_REAL_string(struct ws *, double);
+char *VRT_TIME_string(struct ws *, double);
+const char *VRT_BOOL_string(unsigned);
+const char *VRT_BACKEND_string(const struct director *d);
 
 #define VRT_done(req, hand)			\
 	do {					\

@@ -402,22 +402,22 @@ vcc_expr_tostring(struct expr **e, enum var_type fmt)
 
 	p = NULL;
 	switch((*e)->fmt) {
-	case BACKEND:	p = "VRT_BACKEND_string(req, \v1)"; break;
-	case BOOL:	p = "VRT_BOOL_string(req, \v1)"; break;
-	case DURATION:	p = "VRT_REAL_string(req, \v1)"; break;
+	case BACKEND:	p = "VRT_BACKEND_string(\v1)"; break;
+	case BOOL:	p = "VRT_BOOL_string(\v1)"; break;
+	case DURATION:	p = "VRT_REAL_string(ws, \v1)"; break;
 			 /* XXX: should DURATION insist on "s" suffix ? */
 	case INT:
 		if (vcc_isconst(*e)) {
 			p = "\"\v1\"";
 			constant = EXPR_CONST;
 		} else {
-			p = "VRT_INT_string(req, \v1)";
+			p = "VRT_INT_string(ws, \v1)";
 		}
 		break;
-	case IP:	p = "VRT_IP_string(req, \v1)"; break;
-	case BYTES:	p = "VRT_REAL_string(req, \v1)"; break; /* XXX */
-	case REAL:	p = "VRT_REAL_string(req, \v1)"; break;
-	case TIME:	p = "VRT_TIME_string(req, \v1)"; break;
+	case IP:	p = "VRT_IP_string(ws, \v1)"; break;
+	case BYTES:	p = "VRT_REAL_string(ws, \v1)"; break; /* XXX */
+	case REAL:	p = "VRT_REAL_string(ws, \v1)"; break;
+	case TIME:	p = "VRT_TIME_string(ws, \v1)"; break;
 	case HEADER:	p = "VRT_GetHdr(req, \v1)"; break;
 	case ENUM:
 	case STRING:
