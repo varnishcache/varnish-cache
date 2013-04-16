@@ -232,8 +232,8 @@ VRT_l_client_identity(struct req *req, const char *str, ...)
 /*--------------------------------------------------------------------*/
 
 #define BEREQ_TIMEOUT(which)					\
-void __match_proto__()						\
-VRT_l_bereq_##which(struct req *req, double num)		\
+void 								\
+VRT_l_bereq_##which(const struct req *req, double num)		\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\

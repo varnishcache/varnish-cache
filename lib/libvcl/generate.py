@@ -103,385 +103,385 @@ sp_variables = (
 		'IP',
 		( 'proc',),
 		( ),
-		'struct req *'
+		'R'
 	),
 	('client.identity',
 		'STRING',
 		( 'proc',),
 		( 'proc',),
-		'struct req *'
+		'R'
 	),
 	('server.ip',
 		'IP',
 		( 'proc',),
 		( ),
-		'struct req *'
+		'R'
 	),
 	('server.hostname',
 		'STRING',
 		( 'proc',),
 		( ),
-		'struct req *'
+		'R'
 	),
 	('server.identity',
 		'STRING',
 		( 'proc',),
 		( ),
-		'struct req *'
+		'R'
 	),
 	('server.port',
 		'INT',
 		( 'proc',),
 		( ),
-		'struct req *'
+		'R'
 	),
 	('req.method',
 		'STRING',
 		( 'proc',),
 		( 'proc',),
-		'const struct req *'
+		'cR'
 	),
 	('req.request',
 		'STRING',
 		( 'proc',),
 		( 'proc',),
-		'const struct req *'
+		'cR'
 	),
 	('req.url',
 		'STRING',
 		( 'proc',),
 		( 'proc',),
-		'const struct req *'
+		'cR'
 	),
 	('req.proto',
 		'STRING',
 		( 'proc',),
 		( 'proc',),
-		'const struct req *'
+		'cR'
 	),
 	('req.http.',
 		'HEADER',
 		( 'proc',),
 		( 'proc',),
-		'const struct req *'
+		'cR'
 	),
 	('req.backend',
 		'BACKEND',
 		( 'proc',),
 		( 'proc',),
-		'struct req *'
+		'R'
 	),
 	('req.restarts',
 		'INT',
 		( 'proc',),
 		( ),
-		'const struct req *'
+		'cR'
 	),
 	('req.esi_level',
 		'INT',
 		( 'proc',),
 		( ),
-		'const struct req *'
+		'cR'
 	),
 	('req.ttl',
 		'DURATION',
 		( 'proc',),
 		( 'proc',),
-		'struct req *'
+		'R'
 	),
 	('req.grace',
 		'DURATION',
 		( 'proc',),
 		( 'proc',),
-		'struct req *'
+		'R'
 	),
 	('req.keep',
 		'DURATION',
 		( 'proc',),
 		( 'proc',),
-		'struct req *'
+		'R'
 	),
 	('req.xid',
 		'STRING',
 		( 'proc',),
 		( ),
-		'struct req *'
+		'R'
 	),
 	('req.esi',
 		'BOOL',
 		( 'recv', 'response', 'deliver', 'error',),
 		( 'recv', 'response', 'deliver', 'error',),
-		'struct req *'
+		'R'
 	),
 	('req.can_gzip',
 		'BOOL',
 		( 'proc',),
 		( ),
-		'struct req *'
+		'R'
 	),
 	('req.backend.healthy',
 		'BOOL',
 		( 'proc',),
 		( ),
-		'struct req *'
+		'R'
 	),
 	('req.hash_ignore_busy',
 		'BOOL',
 		( 'recv',),
 		( 'recv',),
-		'struct req *'
+		'R'
 	),
 	('req.hash_always_miss',
 		'BOOL',
 		( 'recv',),
 		( 'recv',),
-		'struct req *'
+		'R'
 	),
 	('bereq.method',
 		'STRING',
 		( 'pipe', 'fetch', 'pass', 'miss', 'response',),
 		( 'pipe', 'fetch', 'pass', 'miss', 'response',),
-		'const struct req *'
+		'cR'
 	),
 	('bereq.request',
 		'STRING',
 		( 'pipe', 'fetch', 'pass', 'miss', 'response',),
 		( 'pipe', 'fetch', 'pass', 'miss', 'response',),
-		'const struct req *'
+		'cR'
 	),
 	('bereq.url',
 		'STRING',
 		( 'pipe', 'fetch', 'pass', 'miss', 'response',),
 		( 'pipe', 'fetch', 'pass', 'miss', 'response',),
-		'const struct req *'
+		'cR'
 	),
 	('bereq.proto',
 		'STRING',
 		( 'pipe', 'fetch', 'pass', 'miss', 'response',),
 		( 'pipe', 'fetch', 'pass', 'miss', 'response',),
-		'const struct req *'
+		'cR'
 	),
 	('bereq.http.',
 		'HEADER',
 		( 'pipe', 'fetch', 'pass', 'miss', 'response',),
 		( 'pipe', 'fetch', 'pass', 'miss', 'response',),
-		'const struct req *'
+		'cR'
 	),
 	('bereq.connect_timeout',
 		'DURATION',
 		( 'pipe', 'fetch', 'pass', 'miss',),
 		( 'pipe', 'fetch', 'pass', 'miss',),
-		'struct req *'
+		'cR'
 	),
 	('bereq.first_byte_timeout',
 		'DURATION',
 		( 'fetch', 'pass', 'miss',),
 		( 'fetch', 'pass', 'miss',),
-		'struct req *'
+		'cR'
 	),
 	('bereq.between_bytes_timeout',
 		'DURATION',
 		( 'fetch', 'pass', 'miss',),
 		( 'fetch', 'pass', 'miss',),
-		'struct req *'
+		'cR'
 	),
 	('beresp.proto',
 		'STRING',
 		( 'response',),
 		( 'response',),
-		'const struct req *'
+		'cR'
 	),
 	('beresp.saintmode',
 		'DURATION',
 		( ),
 		( 'response',),
-		'const struct req *'
+		'cR'
 	),
 	('beresp.status',
 		'INT',
 		( 'response',),
 		( 'response',),
-		'const struct req *'
+		'cR'
 	),
 	('beresp.response',
 		'STRING',
 		( 'response',),
 		( 'response',),
-		'const struct req *'
+		'cR'
 	),
 	('beresp.http.',
 		'HEADER',
 		( 'response',),
 		( 'response',),
-		'const struct req *'
+		'cR'
 	),
 	('beresp.do_esi',
 		'BOOL',
 		( 'response',),
 		( 'response',),
-		'const struct req *'
+		'cR'
 	),
 	('beresp.do_stream',
 		'BOOL',
 		( 'response',),
 		( 'response',),
-		'const struct req *'
+		'cR'
 	),
 	('beresp.do_gzip',
 		'BOOL',
 		( 'response',),
 		( 'response',),
-		'const struct req *'
+		'cR'
 	),
 	('beresp.do_gunzip',
 		'BOOL',
 		( 'response',),
 		( 'response',),
-		'const struct req *'
+		'cR'
 	),
 	('beresp.do_pass',
 		'BOOL',
 		( 'response',),
 		( 'response',),
-		'const struct req *'
+		'cR'
 	),
 	('beresp.uncacheable',
 		'BOOL',
 		( 'response',),
 		( 'response',),
-		'const struct req *'
+		'cR'
 	),
 	('beresp.ttl',
 		'DURATION',
 		( 'response',),
 		( 'response',),
-		'struct req *'
+		'R'
 	),
 	('beresp.grace',
 		'DURATION',
 		( 'response',),
 		( 'response',),
-		'struct req *'
+		'R'
 	),
 	('beresp.keep',
 		'DURATION',
 		( 'response',),
 		( 'response',),
-		'struct req *'
+		'R'
 	),
 	('beresp.backend.name',
 		'STRING',
 		( 'response',),
 		( ),
-		'const struct req *'
+		'cR'
 	),
 	('beresp.backend.ip',
 		'IP',
 		( 'response',),
 		( ),
-		'const struct req *'
+		'cR'
 	),
 	('beresp.backend.port',
 		'INT',
 		( 'response',),
 		( ),
-		'const struct req *'
+		'cR'
 	),
 	('beresp.storage',
 		'STRING',
 		( 'response',),
 		( 'response',),
-		'struct req *'
+		'R'
 	),
 	('obj.proto',
 		'STRING',
 		( 'lookup', 'error',),
 		( 'lookup', 'error',),
-		'const struct req *'
+		'cR'
 	),
 	('obj.status',
 		'INT',
 		( 'error',),
 		( 'error',),
-		'const struct req *'
+		'cR'
 	),
 	('obj.response',
 		'STRING',
 		( 'error',),
 		( 'error',),
-		'const struct req *'
+		'cR'
 	),
 	('obj.hits',
 		'INT',
 		( 'lookup', 'deliver',),
 		( ),
-		'const struct req *'
+		'cR'
 	),
 	('obj.http.',
 		'HEADER',
 		( 'lookup', 'error',),
 		( 'error',),		# XXX ?
-		'const struct req *'
+		'cR'
 	),
 	('obj.ttl',
 		'DURATION',
 		( 'lookup', 'error',),
 		( 'lookup', 'error',),
-		'struct req *'
+		'R'
 	),
 	('obj.grace',
 		'DURATION',
 		( 'lookup', 'error',),
 		( 'lookup', 'error',),
-		'struct req *'
+		'R'
 	),
 	('obj.keep',
 		'DURATION',
 		( 'lookup', 'error',),
 		( 'lookup', 'error',),
-		'struct req *'
+		'R'
 	),
 	('obj.lastuse',
 		'DURATION',
 		( 'lookup', 'deliver', 'error',),
 		( ),
-		'const struct req *'
+		'cR'
 	),
 	('obj.uncacheable',
 		'BOOL',
 		( 'lookup', 'deliver', 'error',),
 		( ),
-		'const struct req *'
+		'cR'
 	),
 	('resp.proto',
 		'STRING',
 		( 'deliver',),
 		( 'deliver',),
-		'const struct req *'
+		'cR'
 	),
 	('resp.status',
 		'INT',
 		( 'deliver',),
 		( 'deliver',),
-		'const struct req *'
+		'cR'
 	),
 	('resp.response',
 		'STRING',
 		( 'deliver',),
 		( 'deliver',),
-		'const struct req *'
+		'cR'
 	),
 	('resp.http.',
 		'HEADER',
 		( 'deliver',),
 		( 'deliver',),
-		'const struct req *'
+		'cR'
 	),
 	('now',
 		'TIME',
 		( 'all',),
 		( ),
-		'const struct req *'
+		'cR'
 	),
 )
 
@@ -849,6 +849,17 @@ fo.write("""
 const struct var vcc_vars[] = {
 """)
 
+def mk_proto(c, r=False):
+	s = ""
+	for i in c:
+		if i == "c" and not r:
+			s += " const"
+		if i == "R":
+			if r:
+				s += " const"
+			s += " struct req *"
+	return s[1:]
+
 for i in sp_variables:
 	typ = i[1]
 	cnam = i[0].replace(".", "_")
@@ -864,10 +875,7 @@ for i in sp_variables:
 		fo.write('",\n')
 	else:
 		fo.write('\t    "VRT_r_%s(req)",\n' % cnam)
-		if i[4][:5] != "const":
-			fh.write(ctyp + " VRT_r_%s(const %s);\n" % (cnam, i[4]))
-		else:
-			fh.write(ctyp + " VRT_r_%s(%s);\n" % (cnam, i[4]))
+		fh.write(ctyp + " VRT_r_%s(%s);\n" % (cnam, mk_proto(i[4], True)))
 	restrict(fo, i[2])
 
 	if len(i[3]) == 0:
@@ -878,7 +886,7 @@ for i in sp_variables:
 		fo.write('",\n')
 	else:
 		fo.write('\t    "VRT_l_%s(req, ",\n' % cnam)
-		fh.write("void VRT_l_%s(%s, " % (cnam, i[4]))
+		fh.write("void VRT_l_%s(%s, " % (cnam, mk_proto(i[4], False)))
 		if typ != "STRING":
 			fh.write(ctyp + ");\n")
 		else:
