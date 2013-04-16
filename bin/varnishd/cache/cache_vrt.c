@@ -293,10 +293,9 @@ VRT_hashdata(struct req *req, const char *str, ...)
 /*--------------------------------------------------------------------*/
 
 double
-VRT_r_now(const struct req *req)
+VRT_r_now()
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	return (VTIM_real());
 }
 
@@ -430,41 +429,7 @@ VRT_synth_page(const struct req *req, unsigned flags, const char *str, ...)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_ban(const struct req *req, char *cmds, ...)
-{
-	char *a1, *a2, *a3;
-	va_list ap;
-	struct ban *b;
-	int good;
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	b = BAN_New();
-	va_start(ap, cmds);
-	a1 = cmds;
-	good = 0;
-	while (a1 != NULL) {
-		good = 0;
-		a2 = va_arg(ap, char *);
-		if (a2 == NULL)
-			break;
-		a3 = va_arg(ap, char *);
-		if (a3 == NULL)
-			break;
-		if (BAN_AddTest(NULL, b, a1, a2, a3))
-			break;
-		a1 = va_arg(ap, char *);
-		good = 1;
-	}
-	if (!good)
-		BAN_Free(b);		/* XXX: report error how ? */
-	else
-		(void)BAN_Insert(b);	/* XXX: report error how ? */
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-VRT_ban_string(const struct req *req, const char *str)
+VRT_ban_string(const char *str)
 {
 	char *a1, *a2, *a3;
 	char **av;
@@ -472,7 +437,6 @@ VRT_ban_string(const struct req *req, const char *str)
 	int good;
 	int i;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	av = VAV_Parse(str, NULL, ARGV_NOESC);
 	if (av[0] != NULL) {
 		/* XXX: report error how ? */

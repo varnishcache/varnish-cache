@@ -481,7 +481,7 @@ sp_variables = (
 		'TIME',
 		( 'all',),
 		( ),
-		'cR'
+		''
 	),
 )
 
@@ -851,6 +851,8 @@ const struct var vcc_vars[] = {
 """)
 
 def mk_proto(c, r=False):
+	if c == "":
+		return "void"
 	s = ""
 	for i in c:
 		if i == "c" and not r:
@@ -860,6 +862,20 @@ def mk_proto(c, r=False):
 				s += " const"
 			s += " struct req *"
 	return s[1:]
+
+
+def mk_args(c, r=False):
+	if c == "":
+		return ""
+	s = ""
+	for i in c:
+		if i == "c":
+			continue;
+		if i == "R":
+			s += "req"
+	if s != "" and not r:
+		s += ","
+	return s
 
 for i in sp_variables:
 	typ = i[1]
@@ -875,8 +891,10 @@ for i in sp_variables:
 		fo.write(i[0].split(".")[0].upper())
 		fo.write('",\n')
 	else:
-		fo.write('\t    "VRT_r_%s(req)",\n' % cnam)
-		fh.write(ctyp + " VRT_r_%s(%s);\n" % (cnam, mk_proto(i[4], True)))
+		fo.write('\t    "VRT_r_%s(%s)",\n' %
+		    (cnam, mk_args(i[4], True)))
+		fh.write(ctyp + " VRT_r_%s(%s);\n" %
+		    (cnam, mk_proto(i[4], True)))
 	restrict(fo, i[2])
 
 	if len(i[3]) == 0:
@@ -886,7 +904,8 @@ for i in sp_variables:
 		fo.write(i[0].split(".")[0].upper())
 		fo.write('",\n')
 	else:
-		fo.write('\t    "VRT_l_%s(req, ",\n' % cnam)
+		fo.write('\t    "VRT_l_%s(%s",\n' %
+		    (cnam, mk_args(i[4], False)))
 		fh.write("void VRT_l_%s(%s, " % (cnam, mk_proto(i[4], False)))
 		if typ != "STRING":
 			fh.write(ctyp + ");\n")

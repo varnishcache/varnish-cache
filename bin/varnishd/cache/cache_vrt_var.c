@@ -232,7 +232,7 @@ VRT_l_client_identity(struct req *req, const char *str, ...)
 /*--------------------------------------------------------------------*/
 
 #define BEREQ_TIMEOUT(which)					\
-void 								\
+void								\
 VRT_l_bereq_##which(const struct req *req, double num)		\
 {								\
 								\

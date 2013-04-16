@@ -261,7 +261,7 @@ parse_ban(struct vcc *tl)
 	ExpectErr(tl, '(');
 	vcc_NextToken(tl);
 
-	Fb(tl, 1, "VRT_ban_string(req, ");
+	Fb(tl, 1, "VRT_ban_string(");
 	vcc_Expr(tl, STRING);
 	ERRCHK(tl);
 	Fb(tl, 0, ");\n");
