@@ -380,11 +380,21 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 		vsl = bo->vsl;
 	}
+	if (method == VCL_MET_BACKEND_FETCH ||
+	    method == VCL_MET_PASS ||
+	    method == VCL_MET_MISS ||
+	    method == VCL_MET_PIPE ||
+	    method == VCL_MET_BACKEND_RESPONSE) {
+		/* XXX: temporary workaround */
+		AN(req);
+		bo = req->busyobj;
+		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	}
 	aws = WS_Snapshot(wrk->aws);
 	wrk->handling = 0;
 	wrk->cur_method = method;
 	VSLb(vsl, SLT_VCL_call, "%s", VCL_Method_Name(method));
-	(void)func(wrk, req, NULL, ws);
+	(void)func(wrk, req, bo, ws);
 	VSLb(vsl, SLT_VCL_return, "%s", VCL_Return_Name(wrk->handling));
 	wrk->cur_method = 0;
 	WS_Reset(wrk->aws, aws);
