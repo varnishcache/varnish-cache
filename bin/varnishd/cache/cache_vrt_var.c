@@ -386,10 +386,10 @@ VRT_r_req_restarts(const struct req *req)
 #define VRT_DO_EXP(which, exp, fld, offset, extra)		\
 								\
 void								\
-VRT_l_##which##_##fld(struct req *req, double a)		\
+VRT_l_##which##_##fld(struct CPAR *px, double a)		\
 {								\
 								\
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
+	CHECK_OBJ_NOTNULL(px, CMAGIC);				\
 	if (a > 0.)						\
 		a += offset;					\
 	EXP_Set_##fld(&exp, a);					\
@@ -397,10 +397,10 @@ VRT_l_##which##_##fld(struct req *req, double a)		\
 }								\
 								\
 double								\
-VRT_r_##which##_##fld(const struct req *req)			\
+VRT_r_##which##_##fld(const struct CPAR *px)			\
 {								\
 								\
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
+	CHECK_OBJ_NOTNULL(px, CMAGIC);				\
 	return(EXP_Get_##fld(&exp) - offset);			\
 }
 
@@ -414,30 +414,38 @@ vrt_wsp_exp(struct vsl_log *vsl, unsigned xid, double now, const struct exp *e)
 	    xid, e->ttl - dt, e->grace, e->keep, now, e->age + dt);
 }
 
-VRT_DO_EXP(req, req->exp, ttl, 0, )
-VRT_DO_EXP(req, req->exp, grace, 0, )
-VRT_DO_EXP(req, req->exp, keep, 0, )
+#define CPAR req
+#define CMAGIC REQ_MAGIC
+VRT_DO_EXP(req, px->exp, ttl, 0, )
+VRT_DO_EXP(req, px->exp, grace, 0, )
+VRT_DO_EXP(req, px->exp, keep, 0, )
 
-VRT_DO_EXP(obj, req->obj->exp, grace, 0,
-   EXP_Rearm(req->obj);
-   vrt_wsp_exp(req->vsl, req->obj->vxid, req->t_req, &req->obj->exp);)
-VRT_DO_EXP(obj, req->obj->exp, ttl,
-   (req->t_req - req->obj->exp.entered),
-   EXP_Rearm(req->obj);
-   vrt_wsp_exp(req->vsl, req->obj->vxid, req->t_req, &req->obj->exp);)
-VRT_DO_EXP(obj, req->obj->exp, keep, 0,
-   EXP_Rearm(req->obj);
-   vrt_wsp_exp(req->vsl, req->obj->vxid, req->t_req, &req->obj->exp);)
+VRT_DO_EXP(obj, px->obj->exp, grace, 0,
+   EXP_Rearm(px->obj);
+   vrt_wsp_exp(px->vsl, px->obj->vxid, px->t_req, &px->obj->exp);)
+VRT_DO_EXP(obj, px->obj->exp, ttl,
+   (px->t_req - px->obj->exp.entered),
+   EXP_Rearm(px->obj);
+   vrt_wsp_exp(px->vsl, px->obj->vxid, px->t_req, &px->obj->exp);)
+VRT_DO_EXP(obj, px->obj->exp, keep, 0,
+   EXP_Rearm(px->obj);
+   vrt_wsp_exp(px->vsl, px->obj->vxid, px->t_req, &px->obj->exp);)
+#undef CPAR
+#undef CMAGIC
 
-VRT_DO_EXP(beresp, req->busyobj->exp, grace, 0,
-   vrt_wsp_exp(req->vsl, req->vsl->wid & VSL_IDENTMASK,
-	req->busyobj->exp.entered, &req->busyobj->exp);)
-VRT_DO_EXP(beresp, req->busyobj->exp, ttl, 0,
-   vrt_wsp_exp(req->vsl, req->vsl->wid & VSL_IDENTMASK,
-	req->busyobj->exp.entered, &req->busyobj->exp);)
-VRT_DO_EXP(beresp, req->busyobj->exp, keep, 0,
-   vrt_wsp_exp(req->vsl, req->vsl->wid & VSL_IDENTMASK,
-	req->busyobj->exp.entered, &req->busyobj->exp);)
+#define CPAR busyobj
+#define CMAGIC BUSYOBJ_MAGIC
+VRT_DO_EXP(beresp, px->exp, grace, 0,
+   vrt_wsp_exp(px->vsl, px->vsl->wid & VSL_IDENTMASK,
+	px->exp.entered, &px->exp);)
+VRT_DO_EXP(beresp, px->exp, ttl, 0,
+   vrt_wsp_exp(px->vsl, px->vsl->wid & VSL_IDENTMASK,
+	px->exp.entered, &px->exp);)
+VRT_DO_EXP(beresp, px->exp, keep, 0,
+   vrt_wsp_exp(px->vsl, px->vsl->wid & VSL_IDENTMASK,
+	px->exp.entered, &px->exp);)
+#undef CPAR
+#undef CMAGIC
 
 /*--------------------------------------------------------------------
  * req.xid

@@ -355,19 +355,19 @@ sp_variables = (
 		'DURATION',
 		( 'backend_response',),
 		( 'backend_response',),
-		'R'
+		'B'
 	),
 	('beresp.grace',
 		'DURATION',
 		( 'backend_response',),
 		( 'backend_response',),
-		'R'
+		'B'
 	),
 	('beresp.keep',
 		'DURATION',
 		( 'backend_response',),
 		( 'backend_response',),
-		'R'
+		'B'
 	),
 	('beresp.backend.name',
 		'STRING',
