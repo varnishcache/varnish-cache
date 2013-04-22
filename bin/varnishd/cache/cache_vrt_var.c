@@ -405,12 +405,13 @@ VRT_r_##which##_##fld(const struct req *req)			\
 }
 
 static void
-vrt_wsp_exp(struct req *req, unsigned xid, const struct exp *e)
+vrt_wsp_exp(struct vsl_log *vsl, unsigned xid, double now, const struct exp *e)
 {
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	VSLb(req->vsl, SLT_TTL, "%u VCL %.0f %.0f %.0f %.0f %.0f",
-	    xid, e->ttl - (req->t_req - e->entered), e->grace, e->keep,
-	    req->t_req, e->age + (req->t_req - e->entered));
+	double dt;
+
+	dt = now - e->entered;
+	VSLb(vsl, SLT_TTL, "%u VCL %.0f %.0f %.0f %.0f %.0f",
+	    xid, e->ttl - dt, e->grace, e->keep, now, e->age + dt);
 }
 
 VRT_DO_EXP(req, req->exp, ttl, 0, )
@@ -419,21 +420,24 @@ VRT_DO_EXP(req, req->exp, keep, 0, )
 
 VRT_DO_EXP(obj, req->obj->exp, grace, 0,
    EXP_Rearm(req->obj);
-   vrt_wsp_exp(req, req->obj->vxid, &req->obj->exp);)
+   vrt_wsp_exp(req->vsl, req->obj->vxid, req->t_req, &req->obj->exp);)
 VRT_DO_EXP(obj, req->obj->exp, ttl,
    (req->t_req - req->obj->exp.entered),
    EXP_Rearm(req->obj);
-   vrt_wsp_exp(req, req->obj->vxid, &req->obj->exp);)
+   vrt_wsp_exp(req->vsl, req->obj->vxid, req->t_req, &req->obj->exp);)
 VRT_DO_EXP(obj, req->obj->exp, keep, 0,
    EXP_Rearm(req->obj);
-   vrt_wsp_exp(req, req->obj->vxid, &req->obj->exp);)
+   vrt_wsp_exp(req->vsl, req->obj->vxid, req->t_req, &req->obj->exp);)
 
 VRT_DO_EXP(beresp, req->busyobj->exp, grace, 0,
-   vrt_wsp_exp(req, req->vsl->wid & VSL_IDENTMASK, &req->busyobj->exp);)
+   vrt_wsp_exp(req->vsl, req->vsl->wid & VSL_IDENTMASK,
+	req->busyobj->exp.entered, &req->busyobj->exp);)
 VRT_DO_EXP(beresp, req->busyobj->exp, ttl, 0,
-   vrt_wsp_exp(req, req->vsl->wid & VSL_IDENTMASK, &req->busyobj->exp);)
+   vrt_wsp_exp(req->vsl, req->vsl->wid & VSL_IDENTMASK,
+	req->busyobj->exp.entered, &req->busyobj->exp);)
 VRT_DO_EXP(beresp, req->busyobj->exp, keep, 0,
-   vrt_wsp_exp(req, req->vsl->wid & VSL_IDENTMASK, &req->busyobj->exp);)
+   vrt_wsp_exp(req->vsl, req->vsl->wid & VSL_IDENTMASK,
+	req->busyobj->exp.entered, &req->busyobj->exp);)
 
 /*--------------------------------------------------------------------
  * req.xid
