@@ -362,7 +362,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	AN(req->director);
 	AZ(bo->vbc);
 	AZ(bo->should_close);
-	AZ(req->storage_hint);
+	AZ(bo->storage_hint);
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, HTTP_Beresp);
 
@@ -445,10 +445,10 @@ cnt_fetch(struct worker *wrk, struct req *req)
 		req->objcore = NULL;
 	}
 	assert(bo->refcount == 2);
+	bo->storage_hint = NULL;
 	VBO_DerefBusyObj(wrk, &bo);
 	VBO_DerefBusyObj(wrk, &req->busyobj);
 	req->director = NULL;
-	req->storage_hint = NULL;
 
 	switch (wrk->handling) {
 	case VCL_RET_RESTART:
@@ -601,11 +601,11 @@ cnt_fetchbody(struct worker *wrk, struct req *req)
 
 	if (bo->exp.ttl < cache_param->shortlived ||
 	    req->objcore == NULL)
-		req->storage_hint = TRANSIENT_STORAGE;
+		bo->storage_hint = TRANSIENT_STORAGE;
 
 	AZ(bo->stats);
 	bo->stats = &wrk->stats;
-	req->obj = STV_NewObject(bo, &req->objcore, req->storage_hint, l,
+	req->obj = STV_NewObject(bo, &req->objcore, bo->storage_hint, l,
 	    nhttp);
 	if (req->obj == NULL) {
 		/*
@@ -631,7 +631,7 @@ cnt_fetchbody(struct worker *wrk, struct req *req)
 	}
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 
-	req->storage_hint = NULL;
+	bo->storage_hint = NULL;
 
 	AZ(bo->fetch_obj);
 	bo->fetch_obj = req->obj;

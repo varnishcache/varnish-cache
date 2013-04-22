@@ -288,26 +288,26 @@ VRT_r_beresp_backend_port(const struct req *req)
 }
 
 const char *
-VRT_r_beresp_storage(const struct req *req)
+VRT_r_beresp_storage(const struct busyobj *bo)
 {
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	if (req->storage_hint != NULL)
-		return (req->storage_hint);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	if (bo->storage_hint != NULL)
+		return (bo->storage_hint);
 	else
 		return (NULL);
 }
 
 void
-VRT_l_beresp_storage(struct req *req, const char *str, ...)
+VRT_l_beresp_storage(struct busyobj *bo, const char *str, ...)
 {
 	va_list ap;
 	char *b;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	va_start(ap, str);
-	b = VRT_String(req->busyobj->ws, NULL, str, ap);
+	b = VRT_String(bo->ws, NULL, str, ap);
 	va_end(ap);
-	req->storage_hint = b;
+	bo->storage_hint = b;
 }
 
 /*--------------------------------------------------------------------*/

@@ -537,6 +537,8 @@ struct busyobj {
 	double			first_byte_timeout;
 	double			between_bytes_timeout;
 
+	const char		*storage_hint;
+
 	struct vsl_log		vsl[1];
 	struct dstat		*stats;
 };
@@ -645,8 +647,6 @@ struct req {
 	struct objcore		*objcore;
 	/* Lookup stuff */
 	struct SHA256Context	*sha256ctx;
-	/* This is only here so VRT can find it */
-	const char		*storage_hint;
 
 	/* ESI delivery stuff */
 	int			gzip_resp;

@@ -391,7 +391,7 @@ sp_variables = (
 		'STRING',
 		( 'backend_response',),
 		( 'backend_response',),
-		'R'
+		'B'
 	),
 	('obj.proto',
 		'STRING',
