@@ -9,7 +9,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	sub vcl_fetch {
+	sub vcl_backend_fetch {
 		set bereq.first_byte_timeout = 1s;	
 	}
 } -start

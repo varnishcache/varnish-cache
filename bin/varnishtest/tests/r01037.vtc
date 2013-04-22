@@ -15,7 +15,7 @@ server s1 {
 } -start
 
 varnish v1 -arg "-smalloc,1M" -arg "-pgzip_level=0" -vcl+backend {
-	sub vcl_response {
+	sub vcl_backend_response {
 		set beresp.do_esi = true;
 		set beresp.do_gzip = true;
 	}

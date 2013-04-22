@@ -60,7 +60,7 @@ varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
 
 	/* test time and backend comparison */
-	sub vcl_response {
+	sub vcl_backend_response {
 		if (beresp.ttl > 1d) {
 			set beresp.ttl = 1d;
 		}
@@ -75,12 +75,12 @@ varnish v1 -vcl {
 
 varnish v1 -errvcl {Unknown time unit 'k'.  Legal are 's', 'm', 'h' and 'd'} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_response { set obj.ttl = 1. k; }
+	sub vcl_backend_response { set obj.ttl = 1. k; }
 }
 
 varnish v1 -errvcl {Expression has type DURATION, expected BOOL} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_response { if (obj.ttl *= 2) { } }
+	sub vcl_backend_response { if (obj.ttl *= 2) { } }
 }
 
 varnish v1 -errvcl {Operator > not possible on BACKEND} {

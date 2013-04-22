@@ -23,7 +23,7 @@ server s1 {
 
 varnish v1 \
 	-vcl+backend {
-		sub vcl_response {
+		sub vcl_backend_response {
 			if (req.url == "/1" || req.url == "/2") {
 				set beresp.do_esi = true;
 				set beresp.do_gzip = true;

@@ -19,7 +19,7 @@ server s1 -repeat 2 {
 
 varnish v1 \
 	-vcl+backend {
-	sub vcl_response {
+	sub vcl_backend_response {
 		set beresp.do_stream = false;
 
 		if (req.url == "/gunzip") {

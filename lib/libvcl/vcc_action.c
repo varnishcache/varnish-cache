@@ -374,7 +374,7 @@ static struct action_table {
 } action_table[] = {
 	{ "error",		parse_error,
 	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH |
-            VCL_MET_MISS | VCL_MET_LOOKUP | VCL_MET_RESPONSE
+            VCL_MET_MISS | VCL_MET_LOOKUP | VCL_MET_BACKEND_RESPONSE
 	},
 
 #define VCL_RET_MAC(l, U, B)						\

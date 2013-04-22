@@ -9,7 +9,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend { 
-	sub vcl_response {
+	sub vcl_backend_response {
 		set beresp.http.Snafu1 = regsub(beresp.http.Foobar, "ar", "\0\0");
 		set beresp.http.Snafu2 =
 		    regsub(beresp.http.Foobar, "(b)(a)(r)(f)", "\4\3\2p");

@@ -20,7 +20,7 @@ varnish v1 -vcl+backend {
 		}
 		return (lookup);
 	}
-	sub vcl_response {
+	sub vcl_backend_response {
 		set beresp.http.url = req.url;
 	}
 } -start

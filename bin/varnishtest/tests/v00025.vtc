@@ -16,7 +16,7 @@ sub vcl_deliver {
 	set resp.http.server_port = server.port;
 }
 
-sub vcl_response {
+sub vcl_backend_response {
 	if (req.esi) {
 		set beresp.http.esi = "yes";
 	}
@@ -41,7 +41,7 @@ sub vcl_lookup {
 	}
 }
 
-sub vcl_fetch {
+sub vcl_backend_fetch {
 	if (bereq.between_bytes_timeout < 10s) {
 		set bereq.http.quick = "please";
 	}

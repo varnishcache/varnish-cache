@@ -22,7 +22,7 @@ varnish v1 -vcl+backend {
 			set req.url = req.url + req.esi_level;
 		}
 	}
-	sub vcl_response {
+	sub vcl_backend_response {
 		if (req.url == "/") {
 			set beresp.do_esi = true;
 		}

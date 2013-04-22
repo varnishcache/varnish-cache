@@ -7,7 +7,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 
-	sub vcl_response {
+	sub vcl_backend_response {
 		if (beresp.http.foo ~ "bar") {
 			set beresp.http.foo1 = "1";
 		} else {

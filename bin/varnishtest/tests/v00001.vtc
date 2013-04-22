@@ -18,7 +18,7 @@ varnish v1 -vcl+backend {
 		set req.proto = "HTTP/1.2";
 		set req.method = "GET";
 	}
-	sub vcl_fetch {
+	sub vcl_backend_fetch {
 		set bereq.http.foobar =
 		    bereq.url +
 		    bereq.proto;
@@ -26,7 +26,7 @@ varnish v1 -vcl+backend {
 		set bereq.proto = "HTTP/1.2";
 		set bereq.method = "GET";
 	}
-	sub vcl_response {
+	sub vcl_backend_response {
 		set beresp.http.foobar =
 		    beresp.proto + beresp.response + beresp.status;
 		set beresp.proto = "HTTP/1.2";

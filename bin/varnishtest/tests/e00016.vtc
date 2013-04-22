@@ -27,7 +27,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	sub vcl_response {
+	sub vcl_backend_response {
  	    	set req.esi = true;	
 	    	if(req.url == "/body") {
 		   set req.esi = false;

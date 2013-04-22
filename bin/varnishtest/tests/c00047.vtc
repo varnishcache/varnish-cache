@@ -8,7 +8,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend { 
-	sub vcl_response {
+	sub vcl_backend_response {
 		set beresp.http.baz1 = regsuball(beresp.http.foo, "barb", "zz");
 		set beresp.http.baz2 = regsuball(beresp.http.foo, "ar", "zz");
 		set beresp.http.baz3 = regsuball(beresp.http.foo, "^", "baz");

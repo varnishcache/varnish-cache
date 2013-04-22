@@ -44,7 +44,7 @@ varnish v1 -arg "-p saintmode_threshold=10" -vcl {
 		set req.grace = 1h;
 	}
 
-	sub vcl_response {
+	sub vcl_backend_response {
 		if (beresp.http.X-Saint == "yes") {
 			set beresp.saintmode = 20s;
 			return (restart);

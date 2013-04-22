@@ -18,7 +18,7 @@ varnish v1 \
 	-arg "-pban_lurker_sleep=0" \
 	-storage "-sper1=persistent,${tmpdir}/_.per1,10m -sper2=persistent,${tmpdir}/_.per2,10m" \
 	-vcl+backend {
-		sub vcl_response {
+		sub vcl_backend_response {
 			set beresp.storage = "per1";
 			if (req.url ~ "silo2") {
 				set beresp.storage = "per2";

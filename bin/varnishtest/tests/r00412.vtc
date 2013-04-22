@@ -11,7 +11,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	sub vcl_response {
+	sub vcl_backend_response {
 		if (beresp.status == 303) {
 			set beresp.ttl = 60 s;
 			set beresp.http.X-Magic-Redirect = "1";

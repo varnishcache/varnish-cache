@@ -24,7 +24,7 @@ varnish v1 -errvcl {Expected an action, 'if', } " sub vcl_recv { { } { "
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_response {
+	sub vcl_backend_response {
 		set beresp.ttl = 1w;
 		set beresp.ttl *= 1.5;
 		set beresp.ttl = 1.5 s * 2.5;
@@ -73,20 +73,20 @@ varnish v1 -errvcl {Operator * not possible on type STRING.} {
 }
 
 varnish v1 -errvcl {DURATION + INT not possible.} {
-	sub vcl_response {
+	sub vcl_backend_response {
 		set req.http.foo = req.grace + beresp.status;
 	}
 }
 
 varnish v1 -errvcl {'!' must be followed by BOOL, found DURATION.} {
-	sub vcl_response {
+	sub vcl_backend_response {
 		if (! req.grace) {
 		}
 	}
 }
 
 varnish v1 -errvcl {Operator + not possible on type BOOL.} {
-	sub vcl_response {
+	sub vcl_backend_response {
 		if (beresp.do_gzip + beresp.do_gunzip) {
 		}
 	}
@@ -226,7 +226,7 @@ varnish v1 -errvcl {DURATION + STRING not possible.} {
 
 varnish v1 -errvcl {'||' must be followed by BOOL, found DURATION.} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_response {
+	sub vcl_backend_response {
 		if (req.url || beresp.ttl) {
 		}
 	}
@@ -234,7 +234,7 @@ varnish v1 -errvcl {'||' must be followed by BOOL, found DURATION.} {
 
 varnish v1 -errvcl {'&&' must be followed by BOOL, found DURATION.} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_response {
+	sub vcl_backend_response {
 		if (req.url && beresp.ttl) {
 		}
 	}
@@ -242,7 +242,7 @@ varnish v1 -errvcl {'&&' must be followed by BOOL, found DURATION.} {
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_response {
+	sub vcl_backend_response {
 		if (!req.url) {
 		}
 	}

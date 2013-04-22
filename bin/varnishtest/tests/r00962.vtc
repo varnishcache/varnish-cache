@@ -14,7 +14,7 @@ varnish v1 \
 	-arg "-pfeature=+wait_silo" \
 	-storage "-spersistent,${tmpdir}/_.per1,10m -spersistent,${tmpdir}/_.per2,10m" \
 	-vcl+backend { 
-	sub vcl_response {
+	sub vcl_backend_response {
 		set beresp.storage = "s0";
 	}
 } -start 

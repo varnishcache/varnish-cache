@@ -9,7 +9,7 @@ varnish v1 -errvcl {Symbol not found: 's-1' (expected type BACKEND)} {
 	backend b { .host = "127.0.0.1"; }
 	sub s1 {
 	}
-	sub vcl_response {
+	sub vcl_backend_response {
 	    if (req.backend == s-1){
 		set req.backend = s-1;
 	    }

@@ -11,7 +11,7 @@ varnish v1 -arg "-p nuke_limit=0" -storage "-sTransient=malloc,1m" -vcl+backend 
 			error 500;
 		}
 	}
-	sub vcl_response {
+	sub vcl_backend_response {
 		set beresp.storage = "Transient";
 	}
 } -start

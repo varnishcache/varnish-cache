@@ -9,7 +9,7 @@ varnish v1 -vcl+backend {
 	sub vcl_recv {
 		set req.url = req.http.foo;
 	}
-	sub vcl_fetch {
+	sub vcl_backend_fetch {
 		set bereq.url = req.http.foo;
 	}
 } -start
