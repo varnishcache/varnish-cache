@@ -319,37 +319,37 @@ sp_variables = (
 		'BOOL',
 		( 'backend_response',),
 		( 'backend_response',),
-		'cR'
+		'B'
 	),
 	('beresp.do_stream',
 		'BOOL',
 		( 'backend_response',),
 		( 'backend_response',),
-		'cR'
+		'B'
 	),
 	('beresp.do_gzip',
 		'BOOL',
 		( 'backend_response',),
 		( 'backend_response',),
-		'cR'
+		'B'
 	),
 	('beresp.do_gunzip',
 		'BOOL',
 		( 'backend_response',),
 		( 'backend_response',),
-		'cR'
+		'B'
 	),
 	('beresp.do_pass',
 		'BOOL',
 		( 'backend_response',),
 		( 'backend_response',),
-		'cR'
+		'B'
 	),
 	('beresp.uncacheable',
 		'BOOL',
 		( 'backend_response',),
 		( 'backend_response',),
-		'cR'
+		'B'
 	),
 	('beresp.ttl',
 		'DURATION',

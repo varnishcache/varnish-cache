@@ -190,25 +190,25 @@ VRT_l_beresp_saintmode(const struct req *req, double a)
 
 #define VBERESP(dir, type, onm, field)					\
 void									\
-VRT_l_##dir##_##onm(const struct req *req, type a)			\
+VRT_l_##dir##_##onm(struct busyobj *bo, type a)				\
 {									\
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);				\
-	req->field = a;							\
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);				\
+	bo->field = a;							\
 }									\
 									\
 type									\
-VRT_r_##dir##_##onm(const struct req *req)				\
+VRT_r_##dir##_##onm(const struct busyobj *bo)				\
 {									\
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);				\
-	return (req->field);						\
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);				\
+	return (bo->field);						\
 }
 
-VBERESP(beresp, unsigned, do_esi, busyobj->do_esi)
-VBERESP(beresp, unsigned, do_gzip, busyobj->do_gzip)
-VBERESP(beresp, unsigned, do_gunzip, busyobj->do_gunzip)
-VBERESP(beresp, unsigned, do_stream, busyobj->do_stream)
-VBERESP(beresp, unsigned, do_pass, busyobj->do_pass)
-VBERESP(beresp, unsigned, uncacheable, busyobj->do_pass)
+VBERESP(beresp, unsigned, do_esi,	do_esi)
+VBERESP(beresp, unsigned, do_gzip,	do_gzip)
+VBERESP(beresp, unsigned, do_gunzip,	do_gunzip)
+VBERESP(beresp, unsigned, do_stream,	do_stream)
+VBERESP(beresp, unsigned, do_pass,	do_pass)
+VBERESP(beresp, unsigned, uncacheable,	do_pass)
 
 /*--------------------------------------------------------------------*/
 
