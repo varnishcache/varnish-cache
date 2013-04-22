@@ -239,21 +239,19 @@ VRT_l_client_identity(struct req *req, const char *str, ...)
 
 #define BEREQ_TIMEOUT(which)					\
 void								\
-VRT_l_bereq_##which(const struct req *req, double num)		\
+VRT_l_bereq_##which(struct busyobj *bo, double num)		\
 {								\
 								\
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
-	CHECK_OBJ_NOTNULL(req->busyobj, BUSYOBJ_MAGIC);		\
-	req->busyobj->which = (num > 0.0 ? num : 0.0);		\
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);			\
+	bo->which = (num > 0.0 ? num : 0.0);			\
 }								\
 								\
 double								\
-VRT_r_bereq_##which(const struct req *req)			\
+VRT_r_bereq_##which(const struct busyobj *bo)			\
 {								\
 								\
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
-	CHECK_OBJ_NOTNULL(req->busyobj, BUSYOBJ_MAGIC);		\
-	return(req->busyobj->which);				\
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);			\
+	return (bo->which);					\
 }
 
 BEREQ_TIMEOUT(connect_timeout)

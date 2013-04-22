@@ -271,19 +271,19 @@ sp_variables = (
 		'DURATION',
 		( 'pipe', 'backend_fetch', 'pass', 'miss',),
 		( 'pipe', 'backend_fetch', 'pass', 'miss',),
-		'cR'
+		'B'
 	),
 	('bereq.first_byte_timeout',
 		'DURATION',
 		( 'backend_fetch', 'pass', 'miss',),
 		( 'backend_fetch', 'pass', 'miss',),
-		'cR'
+		'B'
 	),
 	('bereq.between_bytes_timeout',
 		'DURATION',
 		( 'backend_fetch', 'pass', 'miss',),
 		( 'backend_fetch', 'pass', 'miss',),
-		'cR'
+		'B'
 	),
 	('beresp.proto',
 		'STRING',
