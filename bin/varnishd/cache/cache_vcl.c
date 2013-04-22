@@ -355,7 +355,12 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 		VBE_UseHealth(vcl->conf->director[i]);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Method functions to call into VCL programs.
+ *
+ * Either the request or busyobject must be specified, but not both.
+ * The workspace argument is where random VCL stuff gets space from.
+ */
 
 static void
 vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
@@ -391,6 +396,7 @@ VCL_##func##_method(struct VCL_conf *vcl, struct worker *wrk,		\
      struct req *req, struct busyobj *bo, struct ws *ws)		\
 {									\
 									\
+	CHECK_OBJ_NOTNULL(vcl, VCL_CONF_MAGIC);				\
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);				\
 	vcl_call_method(wrk, req, bo, ws, VCL_MET_ ## upper,		\
 	    vcl->func##_func);						\
