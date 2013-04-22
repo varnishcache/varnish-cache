@@ -1019,7 +1019,8 @@ const char *VCL_Return_Name(unsigned);
 const char *VCL_Method_Name(unsigned);
 
 #define VCL_MET_MAC(l,u,b) \
-    void VCL_##l##_method(struct worker *, struct req *, struct ws *);
+    void VCL_##l##_method(struct VCL_conf *, struct worker *, struct req *, \
+	struct busyobj *bo, struct ws *);
 #include "tbl/vcl_returns.h"
 #undef VCL_MET_MAC
 

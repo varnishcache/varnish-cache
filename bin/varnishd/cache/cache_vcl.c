@@ -358,33 +358,42 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 /*--------------------------------------------------------------------*/
 
 static void
-vcl_call_method(struct worker *wrk, struct req *req, struct ws *ws,
-    unsigned method, vcl_func_f *func)
+vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
+    struct ws *ws, unsigned method, vcl_func_f *func)
 {
 	char *aws;
+	struct vsl_log *vsl;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
-	AN(req->sp);
+	if (req != NULL) {
+		AZ(bo);
+		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+		CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
+		vsl = req->vsl;
+	} else {
+		AZ(req);
+		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+		vsl = bo->vsl;
+	}
 	aws = WS_Snapshot(wrk->aws);
 	wrk->handling = 0;
 	wrk->cur_method = method;
-	VSLb(req->vsl, SLT_VCL_call, "%s", VCL_Method_Name(method));
+	VSLb(vsl, SLT_VCL_call, "%s", VCL_Method_Name(method));
 	(void)func(wrk, req, NULL, ws);
-	VSLb(req->vsl, SLT_VCL_return, "%s", VCL_Return_Name(wrk->handling));
+	VSLb(vsl, SLT_VCL_return, "%s", VCL_Return_Name(wrk->handling));
 	wrk->cur_method = 0;
 	WS_Reset(wrk->aws, aws);
 }
 
 #define VCL_MET_MAC(func, upper, bitmap)				\
 void									\
-VCL_##func##_method(struct worker *wrk, struct req *req, struct ws *ws)	\
+VCL_##func##_method(struct VCL_conf *vcl, struct worker *wrk,		\
+     struct req *req, struct busyobj *bo, struct ws *ws)		\
 {									\
 									\
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);				\
-	vcl_call_method(wrk, req, ws, VCL_MET_ ## upper,		\
-	    req->vcl->func##_func);					\
+	vcl_call_method(wrk, req, bo, ws, VCL_MET_ ## upper,		\
+	    vcl->func##_func);						\
 	assert((1U << wrk->handling) & bitmap);				\
 	assert(!((1U << wrk->handling) & ~bitmap));			\
 }
