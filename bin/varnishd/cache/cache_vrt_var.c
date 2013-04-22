@@ -81,6 +81,24 @@ VRT_r_##obj##_##hdr(const struct CPAR *px)			\
 	return (http->hd[fld].b);				\
 }
 
+#define VRT_DO_STATUS(obj, http)				\
+void								\
+VRT_l_##obj##_status(const struct CPAR *px, long num)		\
+{								\
+								\
+	CHECK_OBJ_NOTNULL(px, CMAGIC);				\
+	assert(num >= 100 && num <= 999);			\
+	http->status = (uint16_t)num;				\
+}								\
+								\
+long								\
+VRT_r_##obj##_status(const struct CPAR *px)			\
+{								\
+								\
+	CHECK_OBJ_NOTNULL(px, CMAGIC);				\
+	return(http->status);					\
+}
+
 #define CPAR req
 #define CMAGIC REQ_MAGIC
 VRT_DO_HDR(req,    method,	px->http,	HTTP_HDR_METHOD)
@@ -89,9 +107,11 @@ VRT_DO_HDR(req,    url,		px->http,	HTTP_HDR_URL)
 VRT_DO_HDR(req,    proto,	px->http,	HTTP_HDR_PROTO)
 VRT_DO_HDR(obj,    proto,	px->obj->http,	HTTP_HDR_PROTO)
 VRT_DO_HDR(obj,    response,	px->obj->http,	HTTP_HDR_RESPONSE)
+VRT_DO_STATUS(obj,		px->obj->http)
 VRT_DO_HDR(resp,   proto,	px->resp,	HTTP_HDR_PROTO)
 VRT_DO_HDR(resp,   response,	px->resp,	HTTP_HDR_RESPONSE)
-#undef CPAR 
+VRT_DO_STATUS(resp,		px->resp)
+#undef CPAR
 #undef CMAGIC
 
 #define CPAR busyobj
@@ -102,32 +122,9 @@ VRT_DO_HDR(bereq,  url,		px->bereq,	HTTP_HDR_URL)
 VRT_DO_HDR(bereq,  proto,	px->bereq,	HTTP_HDR_PROTO)
 VRT_DO_HDR(beresp, proto,	px->beresp,	HTTP_HDR_PROTO)
 VRT_DO_HDR(beresp, response,	px->beresp,	HTTP_HDR_RESPONSE)
-#undef CPAR 
+VRT_DO_STATUS(beresp,		px->beresp)
+#undef CPAR
 #undef CMAGIC
-
-/*--------------------------------------------------------------------*/
-
-#define VRT_DO_STATUS(obj, http)				\
-void								\
-VRT_l_##obj##_status(const struct req *req, long num)	\
-{								\
-								\
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
-	assert(num >= 100 && num <= 999);			\
-	http->status = (uint16_t)num;				\
-}								\
-								\
-long								\
-VRT_r_##obj##_status(const struct req *req)			\
-{								\
-								\
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
-	return(http->status);					\
-}
-
-VRT_DO_STATUS(obj, req->obj->http)
-VRT_DO_STATUS(beresp, req->busyobj->beresp)
-VRT_DO_STATUS(resp, req->resp)
 
 /*--------------------------------------------------------------------*/
 

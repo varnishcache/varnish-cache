@@ -301,7 +301,7 @@ sp_variables = (
 		'INT',
 		( 'backend_response',),
 		( 'backend_response',),
-		'cR'
+		'cB'
 	),
 	('beresp.response',
 		'STRING',
