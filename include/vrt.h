@@ -32,6 +32,7 @@
  */
 
 struct req;
+struct worker;
 struct ws;
 struct vsb;
 struct cli;
@@ -179,7 +180,7 @@ int VRT_switch_config(const char *);
 const struct gethdr_s *VRT_MkGethdr(struct req *,enum gethdr_e, const char *);
 char *VRT_GetHdr(const struct req *, const struct gethdr_s *);
 void VRT_SetHdr(struct req *, const struct gethdr_s *, const char *, ...);
-void VRT_handling(struct req *, unsigned hand);
+void VRT_handling(struct worker *, unsigned hand);
 
 void VRT_hashdata(struct req *, const char *str, ...);
 
@@ -230,11 +231,5 @@ char *VRT_REAL_string(struct ws *, double);
 char *VRT_TIME_string(struct ws *, double);
 const char *VRT_BOOL_string(unsigned);
 const char *VRT_BACKEND_string(const struct director *d);
-
-#define VRT_done(req, hand)			\
-	do {					\
-		VRT_handling(req, hand);	\
-		return (1);			\
-	} while (0)
 
 const char *VRT_ReqString(struct req *, const char *p, ...);

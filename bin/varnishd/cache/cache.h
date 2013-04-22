@@ -349,6 +349,7 @@ struct worker {
 
 	struct vxid_pool	vxid_pool;
 
+	unsigned		handling;
 };
 
 /* LRU ---------------------------------------------------------------*/
@@ -613,7 +614,6 @@ struct req {
 	enum sess_close		doclose;
 	struct exp		exp;
 	unsigned		cur_method;
-	unsigned		handling;
 
 	unsigned char		wantbody;
 	enum req_body_state_e	req_body_status;

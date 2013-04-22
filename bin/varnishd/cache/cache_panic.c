@@ -225,9 +225,15 @@ pan_vcl(const struct VCL_conf *vcl)
 static void
 pan_wrk(const struct worker *wrk)
 {
+	const char *hand;
 
 	VSB_printf(pan_vsp, "  worker = %p {\n", wrk);
 	pan_ws(wrk->aws, 4);
+	hand = VCL_Return_Name(wrk->handling);
+	if (hand != NULL)
+		VSB_printf(pan_vsp, "  handling = %s,\n", hand);
+	else
+		VSB_printf(pan_vsp, "  handling = 0x%x,\n", wrk->handling);
 	VSB_printf(pan_vsp, "  },\n");
 }
 
@@ -261,7 +267,7 @@ pan_busyobj(const struct busyobj *bo)
 static void
 pan_req(const struct req *req)
 {
-	const char *hand, *stp, *body;
+	const char *stp, *body;
 
 	VSB_printf(pan_vsp, "req = %p {\n", req);
 
@@ -290,11 +296,6 @@ pan_req(const struct req *req)
 		VSB_printf(pan_vsp, "  req_body = 0x%x,\n",
 		    req->req_body_status);
 
-	hand = VCL_Return_Name(req->handling);
-	if (hand != NULL)
-		VSB_printf(pan_vsp, "  handling = %s,\n", hand);
-	else
-		VSB_printf(pan_vsp, "  handling = 0x%x,\n", req->handling);
 	if (req->err_code)
 		VSB_printf(pan_vsp,
 		    "  err_code = %d, err_reason = %s,\n", req->err_code,

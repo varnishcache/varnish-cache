@@ -159,7 +159,7 @@ cnt_prepresp(struct worker *wrk, struct req *req)
 	RES_BuildHttp(req);
 
 	VCL_deliver_method(wrk, req, req->http->ws);
-	switch (req->handling) {
+	switch (wrk->handling) {
 	case VCL_RET_DELIVER:
 		break;
 	case VCL_RET_RESTART:
@@ -310,21 +310,21 @@ cnt_error(struct worker *wrk, struct req *req)
 		http_PutResponse(h, http_StatusMessage(req->err_code));
 	VCL_error_method(wrk, req, req->http->ws);
 
-	if (req->handling == VCL_RET_RESTART &&
+	if (wrk->handling == VCL_RET_RESTART &&
 	    req->restarts <  cache_param->max_restarts) {
 		HSH_Drop(wrk, &req->obj);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		req->req_step = R_STP_RESTART;
 		return (REQ_FSM_MORE);
-	} else if (req->handling == VCL_RET_RESTART)
-		req->handling = VCL_RET_DELIVER;
+	} else if (wrk->handling == VCL_RET_RESTART)
+		wrk->handling = VCL_RET_DELIVER;
 
 
 	/* We always close when we take this path */
 	req->doclose = SC_TX_ERROR;
 	req->wantbody = 1;
 
-	assert(req->handling == VCL_RET_DELIVER);
+	assert(wrk->handling == VCL_RET_DELIVER);
 	req->err_code = 0;
 	req->err_reason = NULL;
 	http_Teardown(bo->bereq);
@@ -382,7 +382,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	}
 
 	if (i) {
-		req->handling = VCL_RET_ERROR;
+		wrk->handling = VCL_RET_ERROR;
 		req->err_code = 503;
 	} else {
 		/*
@@ -421,7 +421,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 		if (bo->do_pass)
 			req->objcore->flags |= OC_F_PASS;
 
-		switch (req->handling) {
+		switch (wrk->handling) {
 		case VCL_RET_DELIVER:
 			req->req_step = R_STP_FETCHBODY;
 			return (REQ_FSM_MORE);
@@ -437,8 +437,8 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	AZ(bo->vbc);
 
 	if (req->objcore->objhead != NULL ||
-	    req->handling == VCL_RET_RESTART ||
-	    req->handling == VCL_RET_ERROR) {
+	    wrk->handling == VCL_RET_RESTART ||
+	    wrk->handling == VCL_RET_ERROR) {
 		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
 		req->objcore = NULL;
@@ -449,7 +449,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	req->director = NULL;
 	req->storage_hint = NULL;
 
-	switch (req->handling) {
+	switch (wrk->handling) {
 	case VCL_RET_RESTART:
 		req->req_step = R_STP_RESTART;
 		return (REQ_FSM_MORE);
@@ -491,7 +491,7 @@ cnt_fetchbody(struct worker *wrk, struct req *req)
 	bo = req->busyobj;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	assert(req->handling == VCL_RET_DELIVER);
+	assert(wrk->handling == VCL_RET_DELIVER);
 
 	if (req->objcore->objhead == NULL) {
 		/* This is a pass from vcl_recv */
@@ -848,14 +848,14 @@ VSLb(req->vsl, SLT_Debug, "XXXX HIT\n");
 	VCL_lookup_method(wrk, req, req->http->ws);
 
 	if ((req->obj->objcore->flags & OC_F_PASS) &&
-	    req->handling == VCL_RET_DELIVER) {
+	    wrk->handling == VCL_RET_DELIVER) {
 		VSLb(req->vsl, SLT_VCL_Error,
 		    "obj.uncacheable set, but vcl_lookup{} returned 'deliver'"
 		    ", changing to 'pass'");
-		req->handling = VCL_RET_PASS;
+		wrk->handling = VCL_RET_PASS;
 	}
 
-	if (req->handling == VCL_RET_DELIVER) {
+	if (wrk->handling == VCL_RET_DELIVER) {
 		//AZ(req->busyobj->bereq->ws);
 		//AZ(req->busyobj->beresp->ws);
 		(void)HTTP1_DiscardReqBody(req);	// XXX: handle err
@@ -867,7 +867,7 @@ VSLb(req->vsl, SLT_Debug, "XXXX HIT\n");
 	(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
 	req->objcore = NULL;
 
-	switch(req->handling) {
+	switch(wrk->handling) {
 	case VCL_RET_PASS:
 		req->req_step = R_STP_PASS;
 		break;
@@ -926,7 +926,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 	VCL_fetch_method(wrk, req, req->http->ws);
 	VCL_miss_method(wrk, req, req->http->ws);
 
-	if (req->handling == VCL_RET_FETCH) {
+	if (wrk->handling == VCL_RET_FETCH) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 		req->req_step = R_STP_FETCH;
 		return (REQ_FSM_MORE);
@@ -937,7 +937,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 	http_Teardown(bo->bereq);
 	VBO_DerefBusyObj(wrk, &req->busyobj);
 
-	switch(req->handling) {
+	switch(wrk->handling) {
 	case VCL_RET_ERROR:
 		req->req_step = R_STP_ERROR;
 		break;
@@ -991,13 +991,13 @@ cnt_pass(struct worker *wrk, struct req *req)
 	VCL_fetch_method(wrk, req, req->http->ws);
 	VCL_pass_method(wrk, req, req->http->ws);
 
-	if (req->handling == VCL_RET_ERROR) {
+	if (wrk->handling == VCL_RET_ERROR) {
 		http_Teardown(bo->bereq);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		req->req_step = R_STP_ERROR;
 		return (REQ_FSM_MORE);
 	}
-	assert(req->handling == VCL_RET_PASS);
+	assert(wrk->handling == VCL_RET_PASS);
 	req->acct_req.pass++;
 	req->req_step = R_STP_FETCH;
 
@@ -1049,9 +1049,9 @@ cnt_pipe(struct worker *wrk, struct req *req)
 
 	VCL_pipe_method(wrk, req, req->http->ws);
 
-	if (req->handling == VCL_RET_ERROR)
+	if (wrk->handling == VCL_RET_ERROR)
 		INCOMPL();
-	assert(req->handling == VCL_RET_PIPE);
+	assert(wrk->handling == VCL_RET_PIPE);
 
 	PipeRequest(req);
 	assert(WRW_IsReleased(wrk));
@@ -1154,7 +1154,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 	http_CollectHdr(req->http, H_Cache_Control);
 
 	VCL_recv_method(wrk, req, req->http->ws);
-	recv_handling = req->handling;
+	recv_handling = wrk->handling;
 
 	if (cache_param->http_gzip_support &&
 	     (recv_handling != VCL_RET_PIPE) &&
@@ -1170,7 +1170,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 	req->sha256ctx = &sha256ctx;	/* so HSH_AddString() can find it */
 	SHA256_Init(req->sha256ctx);
 	VCL_hash_method(wrk, req, req->http->ws);
-	assert(req->handling == VCL_RET_HASH);
+	assert(wrk->handling == VCL_RET_HASH);
 	SHA256_Final(req->digest, req->sha256ctx);
 	req->sha256ctx = NULL;
 

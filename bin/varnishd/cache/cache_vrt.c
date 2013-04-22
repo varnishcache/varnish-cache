@@ -258,16 +258,16 @@ VRT_SetHdr(struct req *req , const struct gethdr_s *hs, const char *p, ...)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_handling(struct req *req, unsigned hand)
+VRT_handling(struct worker *wrk, unsigned hand)
 {
 
-	if (req == NULL) {
+	if (wrk == NULL) {
 		assert(hand == VCL_RET_OK);
 		return;
 	}
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	assert(hand < VCL_RET_MAX);
-	req->handling = hand;
+	wrk->handling = hand;
 }
 
 /*--------------------------------------------------------------------

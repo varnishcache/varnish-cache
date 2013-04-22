@@ -345,15 +345,15 @@ VCL_##func##_method(struct worker *wrk, struct req *req, struct ws *ws)	\
 	CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);				\
 	AN(req->sp);							\
 	aws = WS_Snapshot(wrk->aws);					\
-	req->handling = 0;						\
+	wrk->handling = 0;						\
 	req->cur_method = VCL_MET_ ## upper;				\
 	VSLb(req->vsl, SLT_VCL_call, "%s", #func);			\
 	(void)req->vcl->func##_func(wrk, req, NULL, ws);		\
 	VSLb(req->vsl, SLT_VCL_return, "%s",				\
-	    VCL_Return_Name(req->handling));				\
+	    VCL_Return_Name(wrk->handling));				\
 	req->cur_method = 0;						\
-	assert((1U << req->handling) & bitmap);				\
-	assert(!((1U << req->handling) & ~bitmap));			\
+	assert((1U << wrk->handling) & bitmap);				\
+	assert(!((1U << wrk->handling) & ~bitmap));			\
 	WS_Reset(wrk->aws, aws);					\
 }
 
