@@ -63,38 +63,47 @@ vrt_do_string(const struct http *hp, int fld,
 
 #define VRT_DO_HDR(obj, hdr, http, fld)				\
 void								\
-VRT_l_##obj##_##hdr(const struct req *req, const char *p, ...)	\
+VRT_l_##obj##_##hdr(const struct CPAR *px, const char *p, ...)	\
 {								\
 	va_list ap;						\
 								\
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
+	CHECK_OBJ_NOTNULL(px, CMAGIC);				\
 	va_start(ap, p);					\
 	vrt_do_string(http, fld, #obj "." #hdr, p, ap);		\
 	va_end(ap);						\
 }								\
 								\
 const char *							\
-VRT_r_##obj##_##hdr(const struct req *req)			\
+VRT_r_##obj##_##hdr(const struct CPAR *px)			\
 {								\
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
+	CHECK_OBJ_NOTNULL(px, CMAGIC);				\
 	CHECK_OBJ_NOTNULL(http, HTTP_MAGIC);			\
 	return (http->hd[fld].b);				\
 }
 
-VRT_DO_HDR(req,   method,	req->http,		HTTP_HDR_METHOD)
-VRT_DO_HDR(req,   request,	req->http,		HTTP_HDR_METHOD)
-VRT_DO_HDR(req,   url,		req->http,		HTTP_HDR_URL)
-VRT_DO_HDR(req,   proto,	req->http,		HTTP_HDR_PROTO)
-VRT_DO_HDR(bereq, method,	req->busyobj->bereq,	HTTP_HDR_METHOD)
-VRT_DO_HDR(bereq, request,	req->busyobj->bereq,	HTTP_HDR_METHOD)
-VRT_DO_HDR(bereq, url,		req->busyobj->bereq,	HTTP_HDR_URL)
-VRT_DO_HDR(bereq, proto,	req->busyobj->bereq,	HTTP_HDR_PROTO)
-VRT_DO_HDR(obj,   proto,	req->obj->http,		HTTP_HDR_PROTO)
-VRT_DO_HDR(obj,   response,	req->obj->http,		HTTP_HDR_RESPONSE)
-VRT_DO_HDR(resp,  proto,	req->resp,		HTTP_HDR_PROTO)
-VRT_DO_HDR(resp,  response,	req->resp,		HTTP_HDR_RESPONSE)
-VRT_DO_HDR(beresp,  proto,	req->busyobj->beresp,	HTTP_HDR_PROTO)
-VRT_DO_HDR(beresp,  response,	req->busyobj->beresp,	HTTP_HDR_RESPONSE)
+#define CPAR req
+#define CMAGIC REQ_MAGIC
+VRT_DO_HDR(req,    method,	px->http,	HTTP_HDR_METHOD)
+VRT_DO_HDR(req,    request,	px->http,	HTTP_HDR_METHOD)
+VRT_DO_HDR(req,    url,		px->http,	HTTP_HDR_URL)
+VRT_DO_HDR(req,    proto,	px->http,	HTTP_HDR_PROTO)
+VRT_DO_HDR(obj,    proto,	px->obj->http,	HTTP_HDR_PROTO)
+VRT_DO_HDR(obj,    response,	px->obj->http,	HTTP_HDR_RESPONSE)
+VRT_DO_HDR(resp,   proto,	px->resp,	HTTP_HDR_PROTO)
+VRT_DO_HDR(resp,   response,	px->resp,	HTTP_HDR_RESPONSE)
+#undef CPAR 
+#undef CMAGIC
+
+#define CPAR busyobj
+#define CMAGIC BUSYOBJ_MAGIC
+VRT_DO_HDR(bereq,  method,	px->bereq,	HTTP_HDR_METHOD)
+VRT_DO_HDR(bereq,  request,	px->bereq,	HTTP_HDR_METHOD)
+VRT_DO_HDR(bereq,  url,		px->bereq,	HTTP_HDR_URL)
+VRT_DO_HDR(bereq,  proto,	px->bereq,	HTTP_HDR_PROTO)
+VRT_DO_HDR(beresp, proto,	px->beresp,	HTTP_HDR_PROTO)
+VRT_DO_HDR(beresp, response,	px->beresp,	HTTP_HDR_RESPONSE)
+#undef CPAR 
+#undef CMAGIC
 
 /*--------------------------------------------------------------------*/
 

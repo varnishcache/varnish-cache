@@ -241,25 +241,25 @@ sp_variables = (
 		'STRING',
 		( 'pipe', 'backend_fetch', 'pass', 'miss', 'backend_response',),
 		( 'pipe', 'backend_fetch', 'pass', 'miss', 'backend_response',),
-		'cR'
+		'cB'
 	),
 	('bereq.request',
 		'STRING',
 		( 'pipe', 'backend_fetch', 'pass', 'miss', 'backend_response',),
 		( 'pipe', 'backend_fetch', 'pass', 'miss', 'backend_response',),
-		'cR'
+		'cB'
 	),
 	('bereq.url',
 		'STRING',
 		( 'pipe', 'backend_fetch', 'pass', 'miss', 'backend_response',),
 		( 'pipe', 'backend_fetch', 'pass', 'miss', 'backend_response',),
-		'cR'
+		'cB'
 	),
 	('bereq.proto',
 		'STRING',
 		( 'pipe', 'backend_fetch', 'pass', 'miss', 'backend_response',),
 		( 'pipe', 'backend_fetch', 'pass', 'miss', 'backend_response',),
-		'cR'
+		'cB'
 	),
 	('bereq.http.',
 		'HEADER',
@@ -289,7 +289,7 @@ sp_variables = (
 		'STRING',
 		( 'backend_response',),
 		( 'backend_response',),
-		'cR'
+		'cB'
 	),
 	('beresp.saintmode',
 		'DURATION',
@@ -307,7 +307,7 @@ sp_variables = (
 		'STRING',
 		( 'backend_response',),
 		( 'backend_response',),
-		'cR'
+		'cB'
 	),
 	('beresp.http.',
 		'HEADER',
@@ -859,10 +859,19 @@ def mk_proto(c, r=False):
 	for i in c:
 		if i == "c" and not r:
 			s += " const"
-		if i == "R":
+		elif i == "c":
+			pass
+		elif i == "R":
 			if r:
 				s += " const"
 			s += " struct req *"
+		elif i == "B":
+			if r:
+				s += " const"
+			s += " struct busyobj *"
+		else:
+			print("Unknown args-spec char '%s'" % i)
+			exit(1)
 	return s[1:]
 
 
@@ -873,8 +882,13 @@ def mk_args(c, r=False):
 	for i in c:
 		if i == "c":
 			continue;
-		if i == "R":
+		elif i == "R":
 			s += "req"
+		elif i == "B":
+			s += "bo"
+		else:
+			print("Unknown args-spec char '%s'" % i)
+			exit(1)
 	if s != "" and not r:
 		s += ","
 	return s
