@@ -122,6 +122,16 @@ VCL_Refresh(struct VCL_conf **vcc)
 }
 
 void
+VCL_Ref(struct VCL_conf *vc)
+{
+
+	Lck_Lock(&vcl_mtx);
+	assert(vc->busy > 0);
+	vc->busy++;
+	Lck_Unlock(&vcl_mtx);
+}
+
+void
 VCL_Rel(struct VCL_conf **vcc)
 {
 	struct VCL_conf *vc;
@@ -347,27 +357,36 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 
 /*--------------------------------------------------------------------*/
 
+static void
+vcl_call_method(struct worker *wrk, struct req *req, struct ws *ws,
+    unsigned method, vcl_func_f *func)
+{
+	char *aws;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
+	AN(req->sp);
+	aws = WS_Snapshot(wrk->aws);
+	wrk->handling = 0;
+	wrk->cur_method = method;
+	VSLb(req->vsl, SLT_VCL_call, "%s", VCL_Method_Name(method));
+	(void)func(wrk, req, NULL, ws);
+	VSLb(req->vsl, SLT_VCL_return, "%s", VCL_Return_Name(wrk->handling));
+	wrk->cur_method = 0;
+	WS_Reset(wrk->aws, aws);
+}
+
 #define VCL_MET_MAC(func, upper, bitmap)				\
 void									\
 VCL_##func##_method(struct worker *wrk, struct req *req, struct ws *ws)	\
 {									\
-	char *aws;							\
 									\
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);				\
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);				\
-	CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);				\
-	AN(req->sp);							\
-	aws = WS_Snapshot(wrk->aws);					\
-	wrk->handling = 0;						\
-	wrk->cur_method = VCL_MET_ ## upper;				\
-	VSLb(req->vsl, SLT_VCL_call, "%s", #func);			\
-	(void)req->vcl->func##_func(wrk, req, NULL, ws);		\
-	VSLb(req->vsl, SLT_VCL_return, "%s",				\
-	    VCL_Return_Name(wrk->handling));				\
-	wrk->cur_method = 0;						\
+	vcl_call_method(wrk, req, ws, VCL_MET_ ## upper,		\
+	    req->vcl->func##_func);					\
 	assert((1U << wrk->handling) & bitmap);				\
 	assert(!((1U << wrk->handling) & ~bitmap));			\
-	WS_Reset(wrk->aws, aws);					\
 }
 
 #include "tbl/vcl_returns.h"

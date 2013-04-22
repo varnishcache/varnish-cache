@@ -1012,6 +1012,7 @@ void VRY_Finish(struct req *req, struct busyobj *bo);
 /* cache_vcl.c */
 void VCL_Init(void);
 void VCL_Refresh(struct VCL_conf **vcc);
+void VCL_Ref(struct VCL_conf *vcc);
 void VCL_Rel(struct VCL_conf **vcc);
 void VCL_Poll(void);
 const char *VCL_Return_Name(unsigned);
