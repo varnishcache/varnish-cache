@@ -349,6 +349,7 @@ struct worker {
 
 	struct vxid_pool	vxid_pool;
 
+	unsigned		cur_method;
 	unsigned		handling;
 };
 
@@ -613,7 +614,6 @@ struct req {
 
 	enum sess_close		doclose;
 	struct exp		exp;
-	unsigned		cur_method;
 
 	unsigned char		wantbody;
 	enum req_body_state_e	req_body_status;
@@ -1014,7 +1014,8 @@ void VCL_Init(void);
 void VCL_Refresh(struct VCL_conf **vcc);
 void VCL_Rel(struct VCL_conf **vcc);
 void VCL_Poll(void);
-const char *VCL_Return_Name(unsigned method);
+const char *VCL_Return_Name(unsigned);
+const char *VCL_Method_Name(unsigned);
 
 #define VCL_MET_MAC(l,u,b) \
     void VCL_##l##_method(struct worker *, struct req *, struct ws *);

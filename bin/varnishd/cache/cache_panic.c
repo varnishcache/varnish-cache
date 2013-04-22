@@ -229,11 +229,17 @@ pan_wrk(const struct worker *wrk)
 
 	VSB_printf(pan_vsp, "  worker = %p {\n", wrk);
 	pan_ws(wrk->aws, 4);
+
+	hand = VCL_Method_Name(wrk->cur_method);
+	if (hand != NULL)
+		VSB_printf(pan_vsp, "  VCL::method = %s,\n", hand);
+	else
+		VSB_printf(pan_vsp, "  VCL::method = 0x%x,\n", wrk->cur_method);
 	hand = VCL_Return_Name(wrk->handling);
 	if (hand != NULL)
-		VSB_printf(pan_vsp, "  handling = %s,\n", hand);
+		VSB_printf(pan_vsp, "  VCL::return = %s,\n", hand);
 	else
-		VSB_printf(pan_vsp, "  handling = 0x%x,\n", wrk->handling);
+		VSB_printf(pan_vsp, "  VCL::return = 0x%x,\n", wrk->handling);
 	VSB_printf(pan_vsp, "  },\n");
 }
 

@@ -170,7 +170,7 @@ const char *VRT_regsub(struct req *, int all, const char *,
     void *, const char *);
 
 void VRT_ban_string(const char *);
-void VRT_purge(struct req *, double ttl, double grace);
+void VRT_purge(const struct worker *, struct req *, double ttl, double grace);
 
 void VRT_count(struct req *, unsigned);
 int VRT_rewrite(const char *, const char *);

@@ -347,7 +347,7 @@ parse_purge(struct vcc *tl)
 {
 
 	vcc_NextToken(tl);
-	Fb(tl, 1, "VRT_purge(req, 0, 0);\n");
+	Fb(tl, 1, "VRT_purge(wrk, req, 0, 0);\n");
 }
 
 /*--------------------------------------------------------------------*/

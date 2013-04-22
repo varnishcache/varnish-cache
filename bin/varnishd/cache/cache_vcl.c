@@ -65,13 +65,26 @@ static struct vcls		*vcl_active; /* protected by vcl_mtx */
 /*--------------------------------------------------------------------*/
 
 const char *
-VCL_Return_Name(unsigned method)
+VCL_Return_Name(unsigned r)
 {
 
-	switch (method) {
+	switch (r) {
 #define VCL_RET_MAC(l, U, B) case VCL_RET_##U: return(#l);
 #include "tbl/vcl_returns.h"
 #undef VCL_RET_MAC
+	default:
+		return (NULL);
+	}
+}
+
+const char *
+VCL_Method_Name(unsigned m)
+{
+
+	switch (m) {
+#define VCL_MET_MAC(func, upper, bitmap) case VCL_MET_##upper: return (#upper);
+#include "tbl/vcl_returns.h"
+#undef VCL_MET_MAC
 	default:
 		return (NULL);
 	}
@@ -346,12 +359,12 @@ VCL_##func##_method(struct worker *wrk, struct req *req, struct ws *ws)	\
 	AN(req->sp);							\
 	aws = WS_Snapshot(wrk->aws);					\
 	wrk->handling = 0;						\
-	req->cur_method = VCL_MET_ ## upper;				\
+	wrk->cur_method = VCL_MET_ ## upper;				\
 	VSLb(req->vsl, SLT_VCL_call, "%s", #func);			\
 	(void)req->vcl->func##_func(wrk, req, NULL, ws);		\
 	VSLb(req->vsl, SLT_VCL_return, "%s",				\
 	    VCL_Return_Name(wrk->handling));				\
-	req->cur_method = 0;						\
+	wrk->cur_method = 0;						\
 	assert((1U << wrk->handling) & bitmap);				\
 	assert(!((1U << wrk->handling) & ~bitmap));			\
 	WS_Reset(wrk->aws, aws);					\
