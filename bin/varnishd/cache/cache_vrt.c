@@ -215,14 +215,14 @@ VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
  */
 
 const char *
-VRT_ReqString(struct req *req, const char *p, ...)
+VRT_CollectString(struct ws *ws, const char *p, ...)
 {
 	va_list ap;
 	char *b;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
 	va_start(ap, p);
-	b = VRT_String(req->ws, NULL, p, ap);
+	b = VRT_String(ws, NULL, p, ap);
 	va_end(ap);
 	return (b);
 }

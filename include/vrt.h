@@ -232,4 +232,4 @@ char *VRT_TIME_string(struct ws *, double);
 const char *VRT_BOOL_string(unsigned);
 const char *VRT_BACKEND_string(const struct director *d);
 
-const char *VRT_ReqString(struct req *, const char *p, ...);
+const char *VRT_CollectString(struct ws *, const char *p, ...);
