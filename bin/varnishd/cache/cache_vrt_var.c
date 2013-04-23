@@ -261,30 +261,30 @@ BEREQ_TIMEOUT(between_bytes_timeout)
 /*--------------------------------------------------------------------*/
 
 const char *
-VRT_r_beresp_backend_name(const struct req *req)
+VRT_r_beresp_backend_name(const struct busyobj *bo)
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->busyobj->vbc, VBC_MAGIC);
-	return(req->busyobj->vbc->backend->vcl_name);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->vbc, VBC_MAGIC);
+	return(bo->vbc->backend->vcl_name);
 }
 
 struct sockaddr_storage *
-VRT_r_beresp_backend_ip(const struct req *req)
+VRT_r_beresp_backend_ip(const struct busyobj *bo)
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->busyobj->vbc, VBC_MAGIC);
-	return(req->busyobj->vbc->addr);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->vbc, VBC_MAGIC);
+	return(bo->vbc->addr);
 }
 
 long
-VRT_r_beresp_backend_port(const struct req *req)
+VRT_r_beresp_backend_port(const struct busyobj *bo)
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->busyobj->vbc, VBC_MAGIC);
-	return (VTCP_port(req->busyobj->vbc->addr));
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->vbc, VBC_MAGIC);
+	return (VTCP_port(bo->vbc->addr));
 }
 
 const char *

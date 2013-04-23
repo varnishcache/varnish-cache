@@ -373,19 +373,19 @@ sp_variables = (
 		'STRING',
 		( 'backend_response',),
 		( ),
-		'cR'
+		'cB'
 	),
 	('beresp.backend.ip',
 		'IP',
 		( 'backend_response',),
 		( ),
-		'cR'
+		'cB'
 	),
 	('beresp.backend.port',
 		'INT',
 		( 'backend_response',),
 		( ),
-		'cR'
+		'cB'
 	),
 	('beresp.storage',
 		'STRING',
