@@ -262,10 +262,12 @@ parse_ban(struct vcc *tl)
 	ExpectErr(tl, '(');
 	vcc_NextToken(tl);
 
-	Fb(tl, 1, "VRT_ban_string(");
+	Fb(tl, 1, "VRT_ban_string(\n");
+	tl->indent += INDENT;
 	vcc_Expr(tl, STRING);
+	tl->indent -= INDENT;
 	ERRCHK(tl);
-	Fb(tl, 0, ");\n");
+	Fb(tl, 1, ");\n");
 
 	ExpectErr(tl, ')');
 	vcc_NextToken(tl);
