@@ -169,6 +169,23 @@ vslc_vsm_reset(void *cursor)
 	return (0);
 }
 
+static int
+vslc_vsm_skip(void *cursor, ssize_t words)
+{
+	struct vslc_vsm *c;
+
+	CAST_OBJ_NOTNULL(c, cursor, VSLC_VSM_MAGIC);
+	if (words < 0)
+		return (-1);
+
+	c->next += words;
+	assert(c->next >= c->head->log);
+	assert(c->next < c->end);
+	c->c.c.ptr = NULL;
+
+	return (0);
+}
+
 struct VSL_cursor *
 VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, int tail)
 {
@@ -199,10 +216,13 @@ VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, int tail)
 		vsl_diag(vsl, "Out of memory\n");
 		return (NULL);
 	}
+	c->c.c.vxid = -1;	/* N/A to this cursor type */
+	c->c.c.shmptr_ok = 1;
 	c->c.magic = VSLC_MAGIC;
 	c->c.delete = vslc_vsm_delete;
 	c->c.next = vslc_vsm_next;
 	c->c.reset = vslc_vsm_reset;
+	c->c.skip = vslc_vsm_skip;
 
 	c->vsm = vsm;
 	c->vf = vf;
@@ -347,6 +367,7 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name)
 		vsl_diag(vsl, "Out of memory\n");
 		return (NULL);
 	}
+	c->c.c.vxid = -1;	/* N/A to this cursor type */
 	c->c.magic = VSLC_MAGIC;
 	c->c.delete = vslc_file_delete;
 	c->c.next = vslc_file_next;
@@ -390,4 +411,15 @@ VSL_Next(struct VSL_cursor *cursor)
 	CAST_OBJ_NOTNULL(c, (void *)cursor, VSLC_MAGIC);
 	AN(c->next);
 	return ((c->next)(c));
+}
+
+int
+vsl_skip(struct VSL_cursor *cursor, ssize_t words)
+{
+	struct vslc *c;
+
+	CAST_OBJ_NOTNULL(c, (void *)cursor, VSLC_MAGIC);
+	if (c->skip == NULL)
+		return (-1);
+	return ((c->skip)(c, words));
 }

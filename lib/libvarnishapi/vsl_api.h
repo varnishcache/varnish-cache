@@ -37,10 +37,12 @@
 
 int vsl_diag(struct VSL_data *vsl, const char *fmt, ...)
     __printflike(2, 3);
+int vsl_skip(struct VSL_cursor *c, ssize_t words);
 
 typedef void vslc_delete_f(void *);
 typedef int vslc_next_f(void *);
 typedef int vslc_reset_f(void *);
+typedef int vslc_skip_f(void *, ssize_t words);
 
 struct vslc {
 	struct VSL_cursor		c;
@@ -50,6 +52,7 @@ struct vslc {
 	vslc_delete_f			*delete;
 	vslc_next_f			*next;
 	vslc_reset_f			*reset;
+	vslc_skip_f			*skip;
 };
 
 struct VSL_data {
@@ -66,3 +69,10 @@ struct VSL_data {
 	struct vbitmap			*vbm_select;
 	struct vbitmap			*vbm_supress;
 };
+
+/* vsl_query.c */
+struct vslq_query;
+struct vslq_query *vslq_newquery(struct VSL_data *vsl,
+    enum VSL_grouping_e grouping, const char *query);
+void vslq_deletequery(struct vslq_query **pquery);
+int vslq_runquery(struct vslq_query *query, struct VSL_cursor *cp[]);

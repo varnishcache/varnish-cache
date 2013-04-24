@@ -1,9 +1,10 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2006-2013 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Martin Blix Grydeland <martin@varnish-software.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -48,9 +49,27 @@
 			VSL_x_USAGE
 
 struct VSL_data;
+struct VSLQ;
 
 struct VSL_cursor {
 	const uint32_t		*ptr; /* Record pointer */
+
+	/* If not -1, the vxid of all records in this set */
+	int32_t			vxid;
+
+	/* For set cursors, the depth level of these records */
+	unsigned level;
+
+	/* Nonzero if pointer values from this cursor are still valid
+	   after next call to VSL_Next */
+	unsigned shmptr_ok;
+};
+
+enum VSL_grouping_e {
+	VSL_g_raw,
+	VSL_g_vxid,
+	VSL_g_request,
+	VSL_g_session,
 };
 
 extern const char *VSL_tags[256];
@@ -155,13 +174,138 @@ int VSL_Match(struct VSL_data *vsl, const struct VSL_cursor *c);
 	 *	0:	No match
 	 */
 
-int VSL_Print(struct VSL_data *vsl, const struct VSL_cursor *c, void *file);
+int VSL_PrintVXID(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
 	/*
 	 * Print the log record pointed to by cursor to stream.
+	 *
+	 * Format: <vxid> <tag> <type> <data>
+	 *
+	 * Arguments:
+	 *   vsl: The VSL_data context
+	 *     c: A VSL_cursor
+	 *    fo: A FILE* pointer
 	 *
 	 * Return values:
 	 *	0:	OK
 	 *     -5:	I/O write error - see errno
+	 */
+
+int VSL_PrintLevel(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
+	/*
+	 * Print the log record pointed to by cursor to stream.
+	 *
+	 * Format: <level> <tag> <type> <data>
+	 *
+	 * Arguments:
+	 *   vsl: The VSL_data context
+	 *     c: A VSL_cursor
+	 *    fo: A FILE* pointer
+	 *
+	 * Return values:
+	 *	0:	OK
+	 *     -5:	I/O write error - see errno
+	 */
+
+int VSL_PrintAll(struct VSL_data *vsl, struct VSL_cursor *c, void *fo);
+	/*
+	 * Calls VSL_Next on c until c is exhausted. In turn calls
+	 * prints all records where VSL_Match returns true.
+	 *
+	 * If c->vxid == -1, calls VSL_PrintVXID on each record. Else
+	 * prints a VXID header and calls VSL_PrintLevel on each record.
+	 *
+	 * Arguments:
+	 *   vsl: The VSL_data context
+	 *     c: A VSL_cursor
+	 *    fo: A FILE* pointer, stdout if NULL
+	 *
+	 * Return values:
+	 *	0:	OK
+	 *    !=0:	Return value from either VSL_Next or VSL_Print
+	 */
+
+int VSL_PrintSet(struct VSL_data *vsl, struct VSL_cursor *cp[], void *fo);
+	/*
+	 * Calls VSL_PrintAll on each cursor in cp[]. If any cursor in cp
+	 * has vxid != -1 it will end with a double line break as a set
+	 * delimeter.
+	 *
+	 * Arguments:
+	 *   vsl: The VSL_data context
+	 *    cp: A NULL-terminated array of VSL_cursor pointers
+	 *    fo: A FILE* pointer, stdout if NULL
+	 *
+	 * Return values:
+	 *	0:	OK
+	 *    !=0:	Return value from either VSL_Next or VSL_PrintAll
+	 */
+
+struct VSLQ *VSLQ_New(struct VSL_data *vsl, struct VSL_cursor **cp,
+    enum VSL_grouping_e grouping, const char *query);
+	/*
+	 * Create a new query context using cp. On success cp is NULLed,
+	 * and will be deleted when deleting the query.
+	 *
+	 * Arguments:
+	 *       vsl: The VSL_data context
+	 *        cp: The cursor to use
+	 *  grouping: VXID grouping to report on
+	 *     query: Query match expression
+	 *
+	 * Return values:
+	 *  non-NULL: OK
+	 *      NULL: Error - see VSL_Error
+	 */
+
+void VSLQ_Delete(struct VSLQ **pvslq);
+	/*
+	 * Delete the query pointed to by pvslq, freeing up the resources
+	 */
+
+typedef int VSLQ_dispatch_f(struct VSL_data *vsl, struct VSL_cursor *cp[],
+    void *priv);
+	/*
+	 * The callback function type for use with VSLQ_Dispatch.
+	 *
+	 * Arguments:
+	 *   vsl: The VSL_data context
+	 *  cp[]: A NULL terminated array of pointer to cursors. Each cursor
+	 *        will iterate over the log records of a single VXID
+	 *  priv: The priv argument from VSL_Dispatch
+	 *
+	 * Return value:
+	 *     0: OK - continue
+	 *   !=0: Makes VSLQ_Dispatch return with this return value immediatly
+	 */
+
+int VSLQ_Dispatch(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv);
+	/*
+	 * Process log and call func for each set matching the specified
+	 * query
+	 *
+	 * Arguments:
+	 *  vslq: The VSLQ query
+	 *  func: The callback function to call. Can be NULL to ignore records.
+	 *  priv: An argument passed to func
+	 *
+	 * Return values:
+	 *     0: No more log records available
+	 *   !=0: The return value from either VSL_Next() or func
+	 */
+
+int VSLQ_Flush(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv);
+	/*
+	 * Flush any pending record sets from the query.
+	 *
+	 * Arguments:
+	 *  vslq: The VSL context
+	 *  func: The callback function to call. Pass NULL to discard the
+	 *        pending messages
+	 *  priv: An argument passed to func
+	 *
+	 * Return values:
+	 *     0: OK
+	 *   !=0: The return value from func
 	 */
 
 #endif /* VAPI_VSL_H_INCLUDED */

@@ -155,7 +155,7 @@ VSL_Match(struct VSL_data *vsl, const struct VSL_cursor *c)
 }
 
 int
-VSL_Print(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
+VSL_PrintVXID(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
 {
 	enum VSL_tag_e tag;
 	uint32_t vxid;
@@ -198,5 +198,103 @@ VSL_Print(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
 	    vxid, VSL_tags[tag], type, (int)len, data);
 	if (i < 0)
 		return (-5);
+	return (0);
+}
+
+int
+VSL_PrintLevel(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
+{
+	enum VSL_tag_e tag;
+	unsigned len, lvl;
+	const char *data;
+	int type;
+	int i;
+
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+	if (c == NULL || c->ptr == NULL)
+		return (0);
+	if (fo == NULL)
+		fo = stdout;
+
+	tag = VSL_TAG(c->ptr);
+	len = VSL_LEN(c->ptr);
+	type = VSL_CLIENT(c->ptr) ? 'c' : VSL_BACKEND(c->ptr) ? 'b' : '-';
+	data = VSL_CDATA(c->ptr);
+	lvl = c->level;
+	if (tag == SLT_Debug) {
+		i = fprintf(fo, "%2u %-15s %c \"", lvl, VSL_tags[tag],
+		    type);
+		if (i < 0)
+			return (-5);
+		while (len-- > 0) {
+			if (*data >= ' ' && *data <= '~')
+				i = fprintf(fo, "%c", *data);
+			else
+				i = fprintf(fo, "%%%02x",
+				    (unsigned char)*data);
+			if (i < 0)
+				return (-5);
+			data++;
+		}
+		i = fprintf(fo, "\"\n");
+		if (i < 0)
+			return (-5);
+		return (0);
+	}
+	i = fprintf(fo, "%2u %-15s %c %.*s\n",
+	    lvl, VSL_tags[tag], type, (int)len, data);
+	if (i < 0)
+		return (-5);
+	return (0);
+}
+
+int
+VSL_PrintAll(struct VSL_data *vsl, struct VSL_cursor *c, void *fo)
+{
+	int i;
+
+	if (c == NULL)
+		return (0);
+	if (c->vxid >= 0) {
+		i = fprintf(fo, "vv VXID: %11u vv\n", c->vxid);
+		if (i < 0)
+			return (-5);
+	}
+	while (1) {
+		i = VSL_Next(c);
+		if (i <= 0)
+			return (i);
+		if (!VSL_Match(vsl, c))
+			continue;
+		if (c->vxid < 0)
+			i = VSL_PrintVXID(vsl, c, fo);
+		else
+			i = VSL_PrintLevel(vsl, c, fo);
+		if (i != 0)
+			return (i);
+	}
+}
+
+int
+VSL_PrintSet(struct VSL_data *vsl, struct VSL_cursor *cp[], void *fo)
+{
+	int i;
+	int delim = 0;
+	struct VSL_cursor *c;
+
+	c = cp[0];
+	while (c) {
+		if (c->vxid >= 0)
+			delim = 1;
+		i = VSL_PrintAll(vsl, c, fo);
+		if (i)
+			return (i);
+		c = *++cp;
+	}
+	if (delim) {
+		i = fprintf(fo, "\n");
+		if (i < 0)
+			return (-5);
+	}
 	return (0);
 }

@@ -57,7 +57,8 @@ nobase_noinst_HEADERS = \
 	vsub.h \
 	vss.h \
 	vtcp.h \
-	vtim.h
+	vtim.h \
+	vtree.h
 
 # Headers for use with vmods
 pkgdataincludedir = $(pkgdatadir)/include
