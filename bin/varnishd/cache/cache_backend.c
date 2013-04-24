@@ -271,10 +271,10 @@ vbe_Healthy(const struct vdi_simple *vs, const struct req *req)
 {
 	struct trouble *tr;
 	struct trouble *tr2;
-	struct trouble *old;
-	unsigned i = 0, retval;
+	unsigned retval;
 	unsigned int threshold;
 	struct backend *backend;
+	VTAILQ_HEAD(, trouble)  troublelist;
 	double now;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -299,42 +299,35 @@ vbe_Healthy(const struct vdi_simple *vs, const struct req *req)
 		threshold = UINT_MAX;
 
 	/* Saintmode is disabled, or list is empty */
-	if (threshold == 0 || VTAILQ_EMPTY(&backend->troublelist))
+	if (threshold == 0 || backend->n_trouble == 0)
 		return (1);
 
 	now = req->t_req;
 
-	old = NULL;
 	retval = 1;
+	VTAILQ_INIT(&troublelist);
 	Lck_Lock(&backend->mtx);
 	VTAILQ_FOREACH_SAFE(tr, &backend->troublelist, list, tr2) {
 		CHECK_OBJ_NOTNULL(tr, TROUBLE_MAGIC);
 
 		if (tr->timeout < now) {
 			VTAILQ_REMOVE(&backend->troublelist, tr, list);
-			old = tr;
-			retval = 1;
-			break;
+			VTAILQ_INSERT_HEAD(&troublelist, tr, list);
+			backend->n_trouble--;
+			continue;
 		}
 
 		if (!memcmp(tr->digest, req->digest, sizeof tr->digest)) {
 			retval = 0;
 			break;
 		}
-
-		/* If the threshold is at 1, a single entry on the list
-		 * will disable the backend. Since 0 is disable, ++i
-		 * instead of i++ to allow this behavior.
-		 */
-		if (++i >= threshold) {
-			retval = 0;
-			break;
-		}
 	}
+	if (threshold <= backend->n_trouble)
+		retval = 0;
 	Lck_Unlock(&backend->mtx);
 
-	if (old != NULL)
-		FREE_OBJ(old);
+	VTAILQ_FOREACH_SAFE(tr, &troublelist, list, tr2)
+		FREE_OBJ(tr);
 
 	return (retval);
 }
