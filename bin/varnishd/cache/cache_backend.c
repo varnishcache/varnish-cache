@@ -224,6 +224,38 @@ vbe_NewConn(void)
 }
 
 /*--------------------------------------------------------------------
+ * Add backend trouble item
+ */
+
+void
+VBE_AddTrouble(const struct req *req, double dt)
+{
+	struct trouble *tp;
+	struct vbc *vbc;
+	struct backend *be;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->busyobj, BUSYOBJ_MAGIC);
+	vbc = req->busyobj->vbc;
+	if (vbc == NULL)
+		return;
+	CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
+	be = vbc->backend;
+	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
+	if (dt <= 0.)
+		return;
+	ALLOC_OBJ(tp, TROUBLE_MAGIC);
+	if (tp == NULL)
+		return;
+	memcpy(tp->digest, req->digest, sizeof tp->digest);
+	tp->timeout = req->t_req + dt;
+	Lck_Lock(&vbc->backend->mtx);
+	VTAILQ_INSERT_HEAD(&be->troublelist, tp, list);
+	be->n_trouble++;
+	Lck_Unlock(&vbc->backend->mtx);
+}
+
+/*--------------------------------------------------------------------
  * It evaluates if a backend is healthy _for_a_specific_object_.
  * That means that it relies on req->objcore->objhead. This is mainly for
  * saint-mode, but also takes backend->healthy into account. If

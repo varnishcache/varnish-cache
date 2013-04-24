@@ -128,66 +128,6 @@ VRT_DO_STATUS(beresp,		px->beresp)
 
 /*--------------------------------------------------------------------*/
 
-/* XXX: review this */
-/* Add an objecthead to the saintmode list for the (hopefully) relevant
- * backend. Some double-up asserting here to avoid assert-errors when there
- * is no object.
- */
-void
-VRT_l_beresp_saintmode(const struct req *req, double a)
-{
-	struct trouble *new;
-	struct trouble *tr;
-	struct trouble *tr2;
-	struct vbc *vbc;
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->busyobj, BUSYOBJ_MAGIC);
-	vbc = req->busyobj->vbc;
-	if (!vbc)
-		return;
-	CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
-	if (!vbc->backend)
-		return;
-	CHECK_OBJ_NOTNULL(vbc->backend, BACKEND_MAGIC);
-	if (!req->objcore->objhead)
-		return;
-	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-
-	/* Setting a negative holdoff period is a mistake. Detecting this
-	 * when compiling the VCL would be better.
-	 */
-	assert(a > 0);
-
-	ALLOC_OBJ(new, TROUBLE_MAGIC);
-	AN(new);
-	memcpy(new->digest, req->digest, sizeof new->digest);
-	new->timeout = req->t_req + a;
-
-	/* Insert the new item on the list before the first item with a
-	 * timeout at a later date (ie: sort by which entry will time out
-	 * from the list
-	 */
-	Lck_Lock(&vbc->backend->mtx);
-	VTAILQ_FOREACH_SAFE(tr, &vbc->backend->troublelist, list, tr2) {
-		if (tr->timeout < new->timeout) {
-			VTAILQ_INSERT_BEFORE(tr, new, list);
-			new = NULL;
-			break;
-		}
-	}
-
-	/* Insert the item at the end if the list is empty or all other
-	 * items have a longer timeout.
-	 */
-	if (new)
-		VTAILQ_INSERT_TAIL(&vbc->backend->troublelist, new, list);
-
-	Lck_Unlock(&vbc->backend->mtx);
-}
-
-/*--------------------------------------------------------------------*/
-
 #define VBERESP(dir, type, onm, field)					\
 void									\
 VRT_l_##dir##_##onm(struct busyobj *bo, type a)				\

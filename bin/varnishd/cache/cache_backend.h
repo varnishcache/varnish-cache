@@ -138,6 +138,8 @@ struct backend {
 	struct vbp_target	*probe;
 	unsigned		healthy;
 	enum admin_health	admin_health;
+
+	unsigned		n_trouble;
 	VTAILQ_HEAD(, trouble)	troublelist;
 
 	struct VSC_C_vbe	*vsc;
@@ -167,6 +169,7 @@ struct vbc {
 
 /* cache_backend.c */
 void VBE_ReleaseConn(struct vbc *vc);
+void VBE_AddTrouble(const struct req *req, double dt);
 
 /* cache_backend_cfg.c */
 void VBE_DropRefConn(struct backend *);
