@@ -387,7 +387,7 @@ VRT_BOOL_string(unsigned val)
 
 /*--------------------------------------------------------------------
  * Add an objecthead to the saintmode list for the (hopefully) relevant
- * backend. 
+ * backend.
  */
 
 void
@@ -396,7 +396,6 @@ VRT_l_beresp_saintmode(const struct req *req, double a)
 
 	VBE_AddTrouble(req, a);
 }
-
 
 /*--------------------------------------------------------------------*/
 
