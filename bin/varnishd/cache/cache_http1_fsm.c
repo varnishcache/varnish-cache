@@ -252,8 +252,13 @@ http1_dissect(struct worker *wrk, struct req *req)
 	 * Cache_req_fsm zeros the vxid once a requests is processed.
 	 * Allocate a new one only now that we know will need it.
 	 */
-	if (req->vsl->wid == 0)
+	if (req->vsl->wid == 0) {
 		req->vsl->wid = VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER;
+		VSLb(req->vsl, SLT_Begin, "req %u",
+		    req->sp->vxid & VSL_IDENTMASK);
+		VSL(SLT_Link, req->sp->vxid, "req %u",
+		    req->vsl->wid & VSL_IDENTMASK);
+	}
 
 	/* Borrow VCL reference from worker thread */
 	VCL_Refresh(&wrk->vcl);

@@ -60,7 +60,7 @@ ved_include(struct req *preq, const char *src, const char *host)
 	wrk_ws_wm = WS_Snapshot(wrk->aws); /* XXX ? */
 
 	req = SES_GetReq(wrk, preq->sp);
-	VSLb(req->vsl, SLT_Link, "req %u", preq->vsl->wid & VSL_IDENTMASK);
+	VSLb(req->vsl, SLT_Begin, "esireq %u", preq->vsl->wid & VSL_IDENTMASK);
 	VSLb(preq->vsl, SLT_Link, "esireq %u", req->vsl->wid & VSL_IDENTMASK);
 	req->esi_level = preq->esi_level + 1;
 
@@ -113,6 +113,9 @@ ved_include(struct req *preq, const char *src, const char *host)
 		AZ(req->wrk);
 		(void)usleep(10000);
 	}
+
+	VSLb(req->vsl, SLT_End, "%s", "");
+	req->vsl->wid = 0;
 
 	/* Reset the workspace */
 	WS_Reset(wrk->aws, wrk_ws_wm);	/* XXX ? */

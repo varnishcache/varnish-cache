@@ -1349,6 +1349,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 		 * Nuke the VXID, cache_http1_fsm.c::http1_dissect() will
 		 * allocate a new one when necessary.
 		 */
+		VSLb(req->vsl, SLT_End, "%s", "");
 		req->vsl->wid = 0;
 	}
 

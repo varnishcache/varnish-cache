@@ -195,6 +195,7 @@ ses_vsl_socket(struct sess *sp, const char *lsockname)
 		strcpy(laddr, "-");
 		strcpy(lport, "-");
 	}
+	VSL(SLT_Begin, sp->vxid, "sess");
 	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s %.6f %d",
 	    sp->addr, sp->port, lsockname, laddr, lport, sp->t_open, sp->fd);
 }
@@ -329,6 +330,7 @@ SES_Delete(struct sess *sp, enum sess_close reason, double now)
 	VSL(SLT_SessClose, sp->vxid, "%s %.3f %ju %ju %ju %ju %ju %ju",
 	    sess_close_2str(sp->reason, 0), now - sp->t_open, b->req,
 	    b->pipe, b->pass, b->fetch, b->hdrbytes, b->bodybytes);
+	VSL(SLT_End, sp->vxid, "%s", "");
 
 	MPL_Free(pp->mpl_sess, sp);
 }
@@ -383,7 +385,8 @@ SES_GetReq(struct worker *wrk, struct sess *sp)
 	sz = cache_param->workspace_thread;
 	VSL_Setup(req->vsl, p, sz);
 	req->vsl->wid = VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER;
-	VSLb(req->vsl, SLT_Link, "sess %u", sp->vxid & VSL_IDENTMASK);
+	VSLb(req->vsl, SLT_Begin, "req %u", sp->vxid & VSL_IDENTMASK);
+	VSL(SLT_Link, req->sp->vxid, "req %u", req->vsl->wid & VSL_IDENTMASK);
 	p += sz;
 	p = (void*)PRNDUP(p);
 
@@ -417,6 +420,9 @@ SES_ReleaseReq(struct req *req)
 	AN(pp->pool);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	MPL_AssertSane(req);
+	if (req->vsl->wid != 0)
+		/* Non-released VXID - assume it was from a req */
+		VSLb(req->vsl, SLT_End, "%s", "");
 	VSL_Flush(req->vsl, 0);
 	req->sp = NULL;
 	MPL_Free(pp->mpl_req, req);

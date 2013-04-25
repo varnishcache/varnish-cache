@@ -129,7 +129,7 @@ VBO_GetBusyObj(struct worker *wrk, struct req *req)
 	sz = cache_param->vsl_buffer;
 	VSL_Setup(bo->vsl, p, sz);
 	bo->vsl->wid = VXID_Get(&wrk->vxid_pool) | VSL_BACKENDMARKER;
-	VSLb(bo->vsl, SLT_Link, "req %u", req->vsl->wid & VSL_IDENTMASK);
+	VSLb(bo->vsl, SLT_Begin, "bereq %u", req->vsl->wid & VSL_IDENTMASK);
 	VSLb(req->vsl, SLT_Link, "bereq %u", bo->vsl->wid & VSL_IDENTMASK);
 	p += sz;
 	p = (void*)PRNDUP(p);
@@ -182,6 +182,7 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 	if (r)
 		return;
 
+	VSLb(bo->vsl, SLT_End, "%s", "");
 	VSL_Flush(bo->vsl, 0);
 
 	if (oc != NULL) {

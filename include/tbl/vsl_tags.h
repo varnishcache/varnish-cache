@@ -161,12 +161,26 @@ SLTM(VCL_Error, "", "")
 
 SLTM(Gzip, "G(un)zip performed on object", "")
 
-SLTM(Link, "Linkage between different VXIDs",
-	"Links this records VXID to its parent VXID\n"
-	"The first field gives the type of the parent:\n"
+SLTM(Link, "Links to a child VXID",
+	"Links this VXID to any child VXID it initiates\n"
+	"The first field gives the type of the child:\n"
 	"    req     Request\n"
-	"    sess    Session\n"
 	"    bereq   Backend request\n"
 	"    esireq  ESI subrequest\n"
-	"The second field gives the VXID if the parent.\n"
+	"The second field gives the VXID of the child.\n"
+)
+
+SLTM(Begin, "Marks the start of a VXID",
+    "The first record of a VXID transaction.\n"
+    "The first field gives the type of the transaction:\n"
+    "    sess	Session\n"
+    "    req	Request\n"
+    "    bereq	Backend request\n"
+    "    esireq	ESI subrequest\n"
+    "The second field gives the VXID of the parent that initiated this"
+    " transaction. For Session transactions this field is blank.\n"
+)
+
+SLTM(End, "Marks the end of a VXID",
+    "The last record of a VXID transaction.\n"
 )
