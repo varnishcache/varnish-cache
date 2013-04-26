@@ -136,7 +136,7 @@ HTC_Reinit(struct http_conn *htc)
 }
 
 /*--------------------------------------------------------------------
- * Return 1 if we have a complete HTTP procol header
+ * Return 1 if we have a complete HTTP protocol header
  */
 
 int
