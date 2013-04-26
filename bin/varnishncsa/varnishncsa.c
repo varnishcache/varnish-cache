@@ -95,9 +95,11 @@ static struct logline {
 	char *df_h;			/* %h (host name / IP adress)*/
 	char *df_m;			/* %m, Request method*/
 	char *df_s;			/* %s, Status */
-	struct tm df_t;			/* %t, Date and time */
+	struct tm df_t;			/* %t, Date and time, received */
 	char *df_u;			/* %u, Remote user */
 	char *df_ttfb;			/* Time to first byte */
+	double df_D;			/* %D, time taken to serve the request,
+					   in microseconds, also used for %T */
 	const char *df_hitmiss;		/* Whether this is a hit or miss */
 	const char *df_handling;	/* How the request was handled (hit/miss/pass/pipe) */
 	int active;			/* Is log line in an active trans */
@@ -399,7 +401,6 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
     const char *ptr, unsigned len)
 {
 	const char *end, *next, *split;
-	long l;
 	time_t t;
 
 	assert(spec & VSL_S_CLIENT);
@@ -551,16 +552,19 @@ collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
 	case SLT_ReqEnd:
 	{
 		char ttfb[64];
+		double t_start, t_end;
 		if (!lp->active)
 			break;
-		if (lp->df_ttfb != NULL || sscanf(ptr, "%*u %*u.%*u %ld.%*u %*u.%*u %s", &l, ttfb) != 2) {
+		if (lp->df_ttfb != NULL ||
+		    sscanf(ptr, "%*u %lf %lf %*u.%*u %s", &t_start, &t_end, ttfb) != 3) {
 			clean_logline(lp);
 			break;
 		}
 		if (lp->df_ttfb != NULL)
 			free(lp->df_ttfb);
 		lp->df_ttfb = strdup(ttfb);
-		t = l;
+		lp->df_D = t_end - t_start;
+		t = t_start;
 		localtime_r(&t, &lp->df_t);
 		/* got it all */
 		lp->complete = 1;
@@ -659,6 +663,11 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 			VSB_cat(os, lp->df_b ? lp->df_b : "-");
 			break;
 
+		case 'D':
+			/* %D */
+			VSB_printf(os, "%f", lp->df_D);
+			break;
+
 		case 'H':
 			VSB_cat(os, lp->df_H ? lp->df_H : "HTTP/1.0");
 			break;
@@ -710,6 +719,11 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 			/* %t */
 			strftime(tbuf, sizeof tbuf, "[%d/%b/%Y:%T %z]", &lp->df_t);
 			VSB_cat(os, tbuf);
+			break;
+
+		case 'T':
+			/* %T */
+			VSB_printf(os, "%d", (int)lp->df_D);
 			break;
 
 		case 'U':
