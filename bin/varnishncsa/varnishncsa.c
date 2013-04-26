@@ -675,6 +675,7 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 		case 'D':
 			/* %D */
 			VSB_printf(os, "%f", lp->df_D);
+			break;
 
 		case 'H':
 			VSB_cat(os, lp->df_H ? lp->df_H : "HTTP/1.0");
