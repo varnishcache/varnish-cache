@@ -1,9 +1,10 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2006-2013 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Martin Blix Grydeland <martin@varnish-software.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,357 +32,154 @@
 
 #include "config.h"
 
-#include <errno.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <stdio.h>
 #include <unistd.h>
+#include <string.h>
+#include <errno.h>
+#include <stdarg.h>
+#include <stdint.h>
 
-#include "vapi/vsl.h"
 #include "vapi/vsm.h"
+#include "vapi/vsl.h"
 #include "vas.h"
 #include "vcs.h"
 #include "vpf.h"
 #include "vsb.h"
+#include "vtim.h"
 
 #include "compat/daemon.h"
 
-static int	b_flag = 0, c_flag = 0;
-
-/* Ordering-----------------------------------------------------------*/
-
-static struct vsb	*ob[65536];
-static unsigned char	flg[65536];
-static enum VSL_tag_e   last[65536];
-static uint64_t       bitmap[65536];
-#define F_INVCL		(1 << 0)
+static void error(int status, const char *fmt, ...)
+	__printflike(2, 3);
 
 static void
-h_order_finish(int fd, struct VSM_data *vd)
+error(int status, const char *fmt, ...)
 {
+	va_list ap;
 
-	AZ(VSB_finish(ob[fd]));
-	if (VSB_len(ob[fd]) > 1 && VSL_Matched(vd, bitmap[fd])) {
-		printf("%s", VSB_data(ob[fd]));
-	}
-	bitmap[fd] = 0;
-	VSB_clear(ob[fd]);
+	AN(fmt);
+	va_start(ap, fmt);
+	vfprintf(stderr, fmt, ap); /* XXX: syslog on daemon */
+	va_end(ap);
+
+	if (status)
+		exit(status);
 }
 
-static void
-clean_order(struct VSM_data *vd)
+static struct VSL_cursor *
+cursor_vsm(struct VSL_data *vsl, struct VSM_data *vsm, int status, int front)
 {
-	unsigned u;
+	struct VSL_cursor *c;
 
-	for (u = 0; u < 65536; u++) {
-		if (ob[u] == NULL)
-			continue;
-		AZ(VSB_finish(ob[u]));
-		if (VSB_len(ob[u]) > 1 && VSL_Matched(vd, bitmap[u])) {
-			printf("%s\n", VSB_data(ob[u]));
-		}
-		flg[u] = 0;
-		bitmap[u] = 0;
-		VSB_clear(ob[u]);
+	AN(vsm);
+	if (VSM_Open(vsm)) {
+		if (status)
+			error(status, "VSM: %s", VSM_Error(vsm));
+		VSM_ResetError(vsm);
+		return (NULL);
 	}
+	c = VSL_CursorVSM(vsl, vsm, front);
+	if (c == NULL) {
+		if (status)
+			error(status, "VSL: %s", VSL_Error(vsl));
+		VSL_ResetError(vsl);
+		return (NULL);
+	}
+	return (c);
 }
-
-static int
-h_order(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
-    unsigned spec, const char *ptr, uint64_t bm)
-{
-	char type;
-
-	struct VSM_data *vd = priv;
-
-	/* XXX: Just ignore any fd not inside the bitmap */
-	if (fd >= sizeof bitmap / sizeof bitmap[0])
-		return (0);
-
-	bitmap[fd] |= bm;
-
-	type = (spec & VSL_S_CLIENT) ? 'c' :
-	    (spec & VSL_S_BACKEND) ? 'b' : '-';
-
-	if (!(spec & (VSL_S_CLIENT|VSL_S_BACKEND))) {
-		if (!b_flag && !c_flag)
-			(void)VSL_H_Print(stdout, tag, fd, len, spec, ptr, bm);
-		return (0);
-	}
-	if (ob[fd] == NULL) {
-		ob[fd] = VSB_new_auto();
-		assert(ob[fd] != NULL);
-	}
-	if ((tag == SLT_BackendOpen || tag == SLT_SessOpen ||
-		(tag == SLT_ReqStart &&
-		    last[fd] != SLT_SessOpen &&
-		    last[fd] != SLT_VCL_acl) ||
-		(tag == SLT_BackendXID &&
-		    last[fd] != SLT_BackendOpen)) &&
-	    VSB_len(ob[fd]) != 0) {
-		/*
-		 * This is the start of a new request, yet we haven't seen
-		 * the end of the previous one.  Spit it out anyway before
-		 * starting on the new one.
-		 */
-		if (last[fd] != SLT_SessClose)
-			VSB_printf(ob[fd], "%5u %-12s %c %s\n",
-			    fd, "Interrupted", type, VSL_tags[tag]);
-		h_order_finish(fd, vd);
-	}
-
-	last[fd] = tag;
-
-	switch (tag) {
-	case SLT_VCL_call:
-		if (flg[fd] & F_INVCL)
-			VSB_cat(ob[fd], "\n");
-		else
-			flg[fd] |= F_INVCL;
-		VSB_printf(ob[fd], "%5u %-12s %c %.*s",
-		    fd, VSL_tags[tag], type, (int)len, ptr);
-		return (0);
-	case SLT_VCL_trace:
-	case SLT_VCL_return:
-		if (flg[fd] & F_INVCL) {
-			VSB_cat(ob[fd], " ");
-			VSB_bcat(ob[fd], ptr, len);
-			return (0);
-		}
-		break;
-	default:
-		break;
-	}
-	if (flg[fd] & F_INVCL) {
-		VSB_cat(ob[fd], "\n");
-		flg[fd] &= ~F_INVCL;
-	}
-	VSB_printf(ob[fd], "%5u %-12s %c %.*s\n",
-	    fd, VSL_tags[tag], type, (int)len, ptr);
-	switch (tag) {
-	case SLT_ReqEnd:
-	case SLT_BackendClose:
-	case SLT_BackendReuse:
-		h_order_finish(fd, vd);
-		break;
-	default:
-		break;
-	}
-	return (0);
-}
-
-static void
-do_order(struct VSM_data *vd)
-{
-	int i;
-
-	if (!b_flag) {
-		VSL_Select(vd, SLT_SessOpen);
-		VSL_Select(vd, SLT_SessClose);
-		VSL_Select(vd, SLT_ReqEnd);
-	}
-	if (!c_flag) {
-		VSL_Select(vd, SLT_BackendOpen);
-		VSL_Select(vd, SLT_BackendClose);
-		VSL_Select(vd, SLT_BackendReuse);
-	}
-	while (1) {
-		i = VSL_Dispatch(vd, h_order, vd);
-		if (i == 0) {
-			clean_order(vd);
-			AZ(fflush(stdout));
-		}
-		else if (i < 0)
-			break;
-	}
-	clean_order(vd);
-}
-
-/*--------------------------------------------------------------------*/
-
-static volatile sig_atomic_t reopen;
-
-static void
-sighup(int sig)
-{
-
-	(void)sig;
-	reopen = 1;
-}
-
-static int
-open_log(const char *w_arg, int a_flag)
-{
-	int fd, flags;
-
-	flags = (a_flag ? O_APPEND : O_TRUNC) | O_WRONLY | O_CREAT;
-#ifdef O_LARGEFILE
-	flags |= O_LARGEFILE;
-#endif
-	if (!strcmp(w_arg, "-"))
-		fd = STDOUT_FILENO;
-	else
-		fd = open(w_arg, flags, 0644);
-	if (fd < 0) {
-		perror(w_arg);
-		exit(1);
-	}
-	return (fd);
-}
-
-static void
-do_write(struct VSM_data *vd, const char *w_arg, int a_flag)
-{
-	int fd, i, l;
-	uint32_t *p;
-
-	fd = open_log(w_arg, a_flag);
-	XXXAN(fd >= 0);
-	(void)signal(SIGHUP, sighup);
-	while (1) {
-		i = VSL_NextSLT(vd, &p, NULL);
-		if (i < 0)
-			break;
-		if (i > 0) {
-			l = VSL_LEN(p);
-			i = write(fd, p, 8L + VSL_WORDS(l) * 4L);
-			if (i < 0) {
-				perror(w_arg);
-				exit(1);
-			}
-		}
-		if (reopen) {
-			AZ(close(fd));
-			fd = open_log(w_arg, a_flag);
-			XXXAN(fd >= 0);
-			reopen = 0;
-		}
-	}
-	exit(0);
-}
-
-/*--------------------------------------------------------------------*/
 
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: varnishlog "
-	    "%s [-aDV] [-o [tag regex]] [-n varnish_name]"
-	    " [-P file] [-w file]\n", VSL_USAGE);
+	fprintf(stderr, "usage: varnishlog ...\n");
 	exit(1);
+}
+
+static void
+do_raw(struct VSL_data *vsl, struct VSM_data *vsm)
+{
+	struct VSL_cursor *c;
+	int i;
+
+	c = cursor_vsm(vsl, vsm, 1, 1);
+	AN(c);
+
+	i = 0;
+	while (1) {
+		while (c == NULL) {
+			c = cursor_vsm(vsl, vsm, 0, 1);
+			if (c != NULL) {
+				error(0, "Log reopened\n");
+				break;
+			}
+			VTIM_sleep(1.);
+		}
+
+		i = VSL_Next(c);
+		if (i == 1) {
+			/* Got new record */
+			if (VSL_Match(vsl, c))
+				(void)VSL_Print(vsl, c, stdout);
+		} else if (i == 0) {
+			/* Nothing to do but wait */
+			VTIM_sleep(0.01);
+		} else if (i == -1) {
+			/* EOF */
+			break;
+		} else if (i == -2) {
+			/* Abandoned - try reconnect */
+			error(0, "Log abandoned, reopening\n");
+			VSL_DeleteCursor(c);
+			c = NULL;
+			VSM_Close(vsm);
+		} else if (i < -2) {
+			/* Overrun - bail */
+			error(1, "Log overrun\n");
+		}
+	}
+
+	VSL_DeleteCursor(c);
 }
 
 int
 main(int argc, char * const *argv)
 {
-	int c;
-	int a_flag = 0, D_flag = 0, O_flag = 0, u_flag = 0, m_flag = 0;
-	const char *P_arg = NULL;
-	const char *w_arg = NULL;
-	struct vpf_fh *pfh = NULL;
-	struct VSM_data *vd;
+	struct VSL_data *vsl;
+	struct VSM_data *vsm;
+	char c;
+	char *r_arg = NULL;
 
-	vd = VSM_New();
+	vsl = VSL_New();
+	AN(vsl);
+	vsm = VSM_New();
+	AN(vsm);
 
-	while ((c = getopt(argc, argv, VSL_ARGS "aDP:uVw:oO")) != -1) {
+	while ((c = getopt(argc, argv, "n:r:")) != -1) {
 		switch (c) {
-		case 'a':
-			a_flag = 1;
+		case 'r':
+			r_arg = optarg;
 			break;
-		case 'b':
-			b_flag = 1;
-			AN(VSL_Arg(vd, c, optarg));
-			break;
-		case 'c':
-			c_flag = 1;
-			AN(VSL_Arg(vd, c, optarg));
-			break;
-		case 'D':
-			D_flag = 1;
-			break;
-		case 'o': /* ignored for compatibility with older versions */
-			break;
-		case 'O':
-			O_flag = 1;
-			break;
-		case 'P':
-			P_arg = optarg;
-			break;
-		case 'u':
-			u_flag = 1;
-			break;
-		case 'V':
-			VCS_Message("varnishlog");
-			exit(0);
-		case 'w':
-			w_arg = optarg;
-			break;
-		case 'm':
-			m_flag = 1;
-			/* FALLTHROUGH */
-		default:
-			if (VSL_Arg(vd, c, optarg) > 0)
+		case 'n':
+			if (VSM_n_Arg(vsm, optarg) > 0)
 				break;
+		default:
 			usage();
 		}
 	}
 
-	/* If we're matching, we want either -b or -c, apply both if
-	 * none are given.  This prevents spurious noise in the log
-	 * output. */
-	if (b_flag == 0 && c_flag == 0 && m_flag) {
-		b_flag = 1;
-		AN(VSL_Arg(vd, 'b', NULL));
-		c_flag = 1;
-		AN(VSL_Arg(vd, 'c', NULL));
+	if (r_arg) {
+		/* XXX */
+	} else {
+		if (VSM_Open(vsm))
+			error(1, VSM_Error(vsm));
 	}
 
-	if (O_flag && m_flag)
-		usage();
+	do_raw(vsl, vsm);
 
-	if ((argc - optind) > 0)
-		usage();
+	VSL_Delete(vsl);
+	if (vsm)
+		VSM_Delete(vsm);
 
-	if (VSM_Open(vd)) {
-		fprintf(stderr, "%s\n", VSM_Error(vd));
-		exit(1);
-	}
-
-	if (P_arg && (pfh = VPF_Open(P_arg, 0644, NULL)) == NULL) {
-		perror(P_arg);
-		exit(1);
-	}
-
-	if (D_flag && varnish_daemon(0, 0) == -1) {
-		perror("daemon()");
-		if (pfh != NULL)
-			VPF_Remove(pfh);
-		exit(1);
-	}
-
-	if (pfh != NULL)
-		VPF_Write(pfh);
-
-	if (w_arg != NULL)
-		do_write(vd, w_arg, a_flag);
-
-	if (u_flag)
-		setbuf(stdout, NULL);
-
-	if (!O_flag)
-		do_order(vd);
-
-	while (VSL_Dispatch(vd, VSL_H_Print, stdout) >= 0) {
-		if (fflush(stdout) != 0) {
-			perror("stdout");
-			break;
-		}
-	}
-
-	if (pfh != NULL)
-		VPF_Remove(pfh);
 	exit(0);
 }

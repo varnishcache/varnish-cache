@@ -12,7 +12,8 @@ varnishlog_SOURCES = \
 	$(top_builddir)/lib/libvarnish/flopen.c \
 	$(top_builddir)/lib/libvarnish/version.c \
 	$(top_builddir)/lib/libvarnish/vsb.c \
-	$(top_builddir)/lib/libvarnish/vpf.c
+	$(top_builddir)/lib/libvarnish/vpf.c \
+	$(top_builddir)/lib/libvarnish/vtim.c
 
 varnishlog_LDADD = \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
