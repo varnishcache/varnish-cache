@@ -326,26 +326,29 @@ n_arg_sock(const char *n_arg)
 {
 	char *T_arg = NULL, *T_start = NULL;
 	char *S_arg = NULL;
-	struct VSM_data *vsd;
+	struct VSM_data *vsm;
 	char *p;
 	int sock;
 	struct VSM_fantom vt;
 
-	vsd = VSM_New();
-	assert(VSL_Arg(vsd, 'n', n_arg));
-	if (VSM_Open(vsd)) {
-		fprintf(stderr, "%s\n", VSM_Error(vsd));
+	vsm = VSM_New();
+	if (VSM_n_Arg(vsm, n_arg) < 0) {
+		fprintf(stderr, "%s\n", VSM_Error(vsm));
+		return (-1);
+	}
+	if (VSM_Open(vsm)) {
+		fprintf(stderr, "%s\n", VSM_Error(vsm));
 		return (-1);
 	}
 
-	if (!VSM_Get(vsd, &vt, "Arg", "-T", "")) {
+	if (!VSM_Get(vsm, &vt, "Arg", "-T", "")) {
 		fprintf(stderr, "No -T arg in shared memory\n");
 		return (-1);
 	}
 	AN(vt.b);
 	T_start = T_arg = strdup(vt.b);
 
-	if (VSM_Get(vsd, &vt, "Arg", "-S", "")) {
+	if (VSM_Get(vsm, &vt, "Arg", "-S", "")) {
 		AN(vt.b);
 		S_arg = strdup(vt.b);
 	}
