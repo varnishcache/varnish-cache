@@ -144,13 +144,37 @@ vslc_vsm_next(void *cursor)
 	}
 }
 
+static int
+vslc_vsm_reset(void *cursor)
+{
+	struct vslc_vsm *c;
+	unsigned segment;
+
+	CAST_OBJ_NOTNULL(c, cursor, VSLC_VSM_MAGIC);
+
+	/*
+	 * Starting (VSL_SEGMENTS - 3) behind varnishd. This way
+	 * even if varnishd wraps immediately, we'll still have a
+	 * full segment worth of log before the general constraint
+	 * of at least 2 segments apart will be broken
+	 */
+	segment = (c->head->segment + 3) % VSL_SEGMENTS;
+	if (c->head->segments[segment] < 0)
+		segment = 0;
+	assert(c->head->segments[segment] >= 0);
+	c->next = c->head->log + c->head->segments[segment];
+	c->seq = c->head->seq;
+	c->c.c.ptr = NULL;
+
+	return (0);
+}
+
 struct VSL_cursor *
 VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, int tail)
 {
 	struct vslc_vsm *c;
 	struct VSM_fantom vf;
 	struct VSL_head *head;
-	unsigned segment;
 
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 	CHECK_OBJ_NOTNULL(vsm, VSM_MAGIC);
@@ -178,6 +202,7 @@ VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, int tail)
 	c->c.magic = VSLC_MAGIC;
 	c->c.delete = vslc_vsm_delete;
 	c->c.next = vslc_vsm_next;
+	c->c.reset = vslc_vsm_reset;
 
 	c->vsm = vsm;
 	c->vf = vf;
@@ -190,20 +215,9 @@ VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, int tail)
 		c->next = c->head->log + c->head->segments[c->head->segment];
 		while (c->next < c->end && *c->next != VSL_ENDMARKER)
 			c->next = VSL_NEXT(c->next);
-	} else {
-		/*
-		 * Starting (VSL_SEGMENTS - 3) behind varnishd. This way
-		 * even if varnishd wraps immediately, we'll still have a
-		 * full segment worth of log before the general constraint
-		 * of at least 2 segments apart will be broken
-		 */
-		segment = (c->head->segment + 3) % VSL_SEGMENTS;
-		if (c->head->segments[segment] < 0)
-			segment = 0;
-		assert(c->head->segments[segment] >= 0);
-		c->next = c->head->log + c->head->segments[segment];
-	}
-	c->seq = c->head->seq;
+		c->seq = c->head->seq;
+	} else
+		AZ(vslc_vsm_reset(&c->c));
 
 	return (&c->c.c);
 }
@@ -284,6 +298,14 @@ vslc_file_next(void *cursor)
 	return (1);
 }
 
+static int
+vslc_file_reset(void *cursor)
+{
+	(void)cursor;
+	/* XXX: Implement me */
+	return (-1);
+}
+
 struct VSL_cursor *
 VSL_CursorFile(struct VSL_data *vsl, const char *name)
 {
@@ -328,6 +350,7 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name)
 	c->c.magic = VSLC_MAGIC;
 	c->c.delete = vslc_file_delete;
 	c->c.next = vslc_file_next;
+	c->c.reset = vslc_file_reset;
 
 	c->fd = fd;
 	c->buflen = BUFSIZ;
@@ -346,6 +369,17 @@ VSL_DeleteCursor(struct VSL_cursor *cursor)
 	if (c->delete == NULL)
 		return;
 	(c->delete)(c);
+}
+
+int
+VSL_ResetCursor(struct VSL_cursor *cursor)
+{
+	struct vslc *c;
+
+	CAST_OBJ_NOTNULL(c, (void *)cursor, VSLC_MAGIC);
+	if (c->reset == NULL)
+		return (-1);
+	return ((c->reset)(c));
 }
 
 int

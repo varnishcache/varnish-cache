@@ -40,6 +40,7 @@ int vsl_diag(struct VSL_data *vsl, const char *fmt, ...)
 
 typedef void vslc_delete_f(void *);
 typedef int vslc_next_f(void *);
+typedef int vslc_reset_f(void *);
 
 struct vslc {
 	struct VSL_cursor		c;
@@ -48,6 +49,7 @@ struct vslc {
 
 	vslc_delete_f			*delete;
 	vslc_next_f			*next;
+	vslc_reset_f			*reset;
 };
 
 struct VSL_data {

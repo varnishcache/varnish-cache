@@ -121,6 +121,17 @@ void VSL_DeleteCursor(struct VSL_cursor *c);
 	 * Delete the cursor pointed to by c
 	 */
 
+int VSL_ResetCursor(struct VSL_cursor *c);
+	/*
+	 * Reset the cursor position to the head, so that the next call to
+	 * VSL_Next returns the first record. For VSM cursor, it will
+	 * point close to the head of the log, but at least 2 segments away
+	 * from the tail.
+	 *
+	 * Return values:
+	 *    -1: Operation not supported
+	 */
+
 int VSL_Next(struct VSL_cursor *c);
 	/*
 	 * Return raw pointer to next VSL record.
