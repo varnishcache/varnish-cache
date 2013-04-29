@@ -88,10 +88,10 @@ VBE_ReleaseConn(struct vbc *vc)
 	MPL_Free(vbcpool, vc);
 }
 
-#define FIND_TMO(tmx, dst, req, be)					\
+#define FIND_TMO(tmx, dst, bo, be)					\
 	do {								\
-		CHECK_OBJ_NOTNULL(req->busyobj, BUSYOBJ_MAGIC);		\
-		dst = req->busyobj->tmx;				\
+		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);			\
+		dst = bo->tmx;						\
 		if (dst == 0.0)						\
 			dst = be->tmx;					\
 		if (dst == 0.0)						\
@@ -108,20 +108,21 @@ VBE_ReleaseConn(struct vbc *vc)
  */
 
 static int
-vbe_TryConnect(const struct req *req, int pf, const struct sockaddr_storage *sa,
-    socklen_t salen, const struct vdi_simple *vs)
+vbe_TryConnect(const struct busyobj *bo, int pf,
+    const struct sockaddr_storage *sa, socklen_t salen,
+    const struct vdi_simple *vs)
 {
 	int s, i, tmo;
 	double tmod;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
 
 	s = socket(pf, SOCK_STREAM, 0);
 	if (s < 0)
 		return (s);
 
-	FIND_TMO(connect_timeout, tmod, req, vs->vrt);
+	FIND_TMO(connect_timeout, tmod, bo, vs->vrt);
 
 	tmo = (int)(tmod * 1000.0);
 
@@ -138,13 +139,14 @@ vbe_TryConnect(const struct req *req, int pf, const struct sockaddr_storage *sa,
 /*--------------------------------------------------------------------*/
 
 static void
-bes_conn_try(struct req *req, struct vbc *vc, const struct vdi_simple *vs)
+bes_conn_try(struct busyobj *bo, struct vbc *vc, const struct vdi_simple *vs)
 {
 	int s;
 	struct backend *bp = vs->backend;
 	char abuf1[VTCP_ADDRBUFSIZE];
 	char pbuf1[VTCP_PORTBUFSIZE];
 
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
 
 	Lck_Lock(&bp->mtx);
@@ -158,17 +160,17 @@ bes_conn_try(struct req *req, struct vbc *vc, const struct vdi_simple *vs)
 	/* release lock during stuff that can take a long time */
 
 	if (cache_param->prefer_ipv6 && bp->ipv6 != NULL) {
-		s = vbe_TryConnect(req, PF_INET6, bp->ipv6, bp->ipv6len, vs);
+		s = vbe_TryConnect(bo, PF_INET6, bp->ipv6, bp->ipv6len, vs);
 		vc->addr = bp->ipv6;
 		vc->addrlen = bp->ipv6len;
 	}
 	if (s == -1 && bp->ipv4 != NULL) {
-		s = vbe_TryConnect(req, PF_INET, bp->ipv4, bp->ipv4len, vs);
+		s = vbe_TryConnect(bo, PF_INET, bp->ipv4, bp->ipv4len, vs);
 		vc->addr = bp->ipv4;
 		vc->addrlen = bp->ipv4len;
 	}
 	if (s == -1 && !cache_param->prefer_ipv6 && bp->ipv6 != NULL) {
-		s = vbe_TryConnect(req, PF_INET6, bp->ipv6, bp->ipv6len, vs);
+		s = vbe_TryConnect(bo, PF_INET6, bp->ipv6, bp->ipv6len, vs);
 		vc->addr = bp->ipv6;
 		vc->addrlen = bp->ipv6len;
 	}
@@ -183,10 +185,9 @@ bes_conn_try(struct req *req, struct vbc *vc, const struct vdi_simple *vs)
 		vc->addrlen = 0;
 	} else {
 		VTCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-		VSLb(req->vsl, SLT_BackendOpen, "%d %s %s %s ",
+		VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s ",
 		    vc->fd, vs->backend->display_name, abuf1, pbuf1);
 	}
-
 }
 
 /*--------------------------------------------------------------------
@@ -335,12 +336,12 @@ vbe_Healthy(const struct vdi_simple *vs, const uint8_t *digest)
  */
 
 static struct vbc *
-vbe_GetVbe(struct req *req, struct vdi_simple *vs)
+vbe_GetVbe(struct busyobj *bo, struct vdi_simple *vs)
 {
 	struct vbc *vc;
 	struct backend *bp;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
 	bp = vs->backend;
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
@@ -362,20 +363,20 @@ vbe_GetVbe(struct req *req, struct vdi_simple *vs)
 		if (vbe_CheckFd(vc->fd)) {
 			/* XXX locking of stats */
 			VSC_C_main->backend_reuse += 1;
-			VSLb(req->vsl, SLT_Backend, "%d %s %s",
-			    vc->fd, req->director->vcl_name,
+			VSLb(bo->vsl, SLT_Backend, "%d %s %s",
+			    vc->fd, bo->director->vcl_name,
 			    bp->display_name);
 			vc->vdis = vs;
 			vc->recycled = 1;
 			return (vc);
 		}
 		VSC_C_main->backend_toolate++;
-		VSLb(req->vsl, SLT_BackendClose, "%d %s toolate",
+		VSLb(bo->vsl, SLT_BackendClose, "%d %s toolate",
 		    vc->fd, bp->display_name);
 
 		/* Checkpoint log to flush all info related to this connection
 		   before the OS reuses the FD */
-		VSL_Flush(req->vsl, 0);
+		VSL_Flush(bo->vsl, 0);
 
 		VTCP_close(&vc->fd);
 		VBE_DropRefConn(bp);
@@ -383,7 +384,7 @@ vbe_GetVbe(struct req *req, struct vdi_simple *vs)
 		VBE_ReleaseConn(vc);
 	}
 
-	if (!vbe_Healthy(vs, req->digest)) {
+	if (!vbe_Healthy(vs, bo->digest)) {
 		VSC_C_main->backend_unhealthy++;
 		return (NULL);
 	}
@@ -397,7 +398,7 @@ vbe_GetVbe(struct req *req, struct vdi_simple *vs)
 	vc = vbe_NewConn();
 	assert(vc->fd == -1);
 	AZ(vc->backend);
-	bes_conn_try(req, vc, vs);
+	bes_conn_try(bo, vc, vs);
 	if (vc->fd < 0) {
 		VBE_ReleaseConn(vc);
 		VSC_C_main->backend_fail++;
@@ -405,8 +406,8 @@ vbe_GetVbe(struct req *req, struct vdi_simple *vs)
 	}
 	vc->backend = bp;
 	VSC_C_main->backend_conn++;
-	VSLb(req->vsl, SLT_Backend, "%d %s %s",
-	    vc->fd, req->director->vcl_name, bp->display_name);
+	VSLb(bo->vsl, SLT_Backend, "%d %s %s",
+	    vc->fd, bo->director->vcl_name, bp->display_name);
 	vc->vdis = vs;
 	return (vc);
 }
@@ -462,12 +463,12 @@ vdi_simple_getfd(const struct director *d, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
-	vc = vbe_GetVbe(req, vs);
+	vc = vbe_GetVbe(req->busyobj, vs);
 	if (vc != NULL) {
 		FIND_TMO(first_byte_timeout,
-		    vc->first_byte_timeout, req, vs->vrt);
+		    vc->first_byte_timeout, req->busyobj, vs->vrt);
 		FIND_TMO(between_bytes_timeout,
-		    vc->between_bytes_timeout, req, vs->vrt);
+		    vc->between_bytes_timeout, req->busyobj, vs->vrt);
 	}
 	return (vc);
 }
