@@ -123,10 +123,9 @@ VDI_GetFd(const struct director *d, struct req *req)
  */
 
 int
-VDI_Healthy(const struct director *d, const struct req *req)
+VDI_Healthy(const struct director *d, const uint8_t *digest)
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	return (d->healthy(d, req->digest));
+	return (d->healthy(d, digest));
 }

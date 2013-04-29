@@ -779,7 +779,7 @@ VSLb(req->vsl, SLT_Debug, "XXXX EXP\n");
 VSLb(req->vsl, SLT_Debug, "XXXX EXPBUSY\n");
 		AN(oc);
 		AN(boc);
-		if (VDI_Healthy(req->director, req)) {
+		if (VDI_Healthy(req->director, req->digest)) {
 VSLb(req->vsl, SLT_Debug, "deref oc\n");
 			(void)HSH_Deref(&wrk->stats, oc, NULL);
 			oc = boc;

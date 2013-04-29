@@ -735,7 +735,7 @@ void VBE_DiscardHealth(const struct director *vdi);
 
 
 struct vbc *VDI_GetFd(const struct director *, struct req *);
-int VDI_Healthy(const struct director *, const struct req *);
+int VDI_Healthy(const struct director *, const uint8_t *digest);
 void VDI_CloseFd(struct vbc **vbp);
 void VDI_RecycleFd(struct vbc **vbp);
 void VDI_AddHostHeader(struct http *to, const struct vbc *vbc);

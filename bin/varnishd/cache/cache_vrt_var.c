@@ -279,7 +279,7 @@ VRT_r_req_backend_healthy(const struct req *req)
 	if (req->director == NULL)
 		return (0);
 	CHECK_OBJ_NOTNULL(req->director, DIRECTOR_MAGIC);
-	return (VDI_Healthy(req->director, req));
+	return (VDI_Healthy(req->director, req->digest));
 }
 
 /*--------------------------------------------------------------------*/
@@ -308,8 +308,7 @@ VRT_r_bereq_backend_healthy(const struct busyobj *bo)
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->director, DIRECTOR_MAGIC);
-	//XXX return (VDI_Healthy(bo->director, req));
-	return (0);
+	return (VDI_Healthy(bo->director, bo->digest));
 }
 
 /*--------------------------------------------------------------------*/
