@@ -48,6 +48,7 @@
 #include "vcli.h"
 #include "vss.h"
 #include "vtcp.h"
+#include "vtim.h"
 
 struct varnish {
 	unsigned		magic;
@@ -172,44 +173,76 @@ wait_running(const struct varnish *v)
 }
 
 /**********************************************************************
- * Varnishlog gatherer + thread
+ * Varnishlog gatherer thread
  */
-
-static int
-h_addlog(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
-    unsigned spec, const char *ptr, uint64_t bitmap)
-{
-	struct varnish *v;
-	int type;
-
-	(void) bitmap;
-
-	type = (spec & VSL_S_CLIENT) ? 'c' :
-	    (spec & VSL_S_BACKEND) ? 'b' : '-';
-	CAST_OBJ_NOTNULL(v, priv, VARNISH_MAGIC);
-
-	v->vsl_tag_count[tag]++;
-
-	vtc_log(v->vl, 4, "vsl| %5u %-12s %c %.*s", fd,
-	    VSL_tags[tag], type, len, ptr);
-	v->vsl_sleep = 100;
-	return (0);
-}
 
 static void *
 varnishlog_thread(void *priv)
 {
 	struct varnish *v;
-	struct VSM_data	*vsl;
+	struct VSL_data *vsl;
+	struct VSM_data *vsm;
+	struct VSL_cursor *c;
+	enum VSL_tag_e tag;
+	uint32_t vxid;
+	unsigned len;
+	const char *data;
+	int type, i;
 
 	CAST_OBJ_NOTNULL(v, priv, VARNISH_MAGIC);
-	vsl = VSM_New();
-	(void)VSL_Arg(vsl, 'n', v->workdir);
+
+	vsl = VSL_New();
+	AN(vsl);
+	vsm = VSM_New();
+	AN(vsm);
+	(void)VSM_n_Arg(vsm, v->workdir);
+
+	c = NULL;
 	while (v->pid) {
-		if (VSL_Dispatch(vsl, h_addlog, v) <= 0)
-			usleep(100000);
+		if (c == NULL) {
+			VTIM_sleep(0.1);
+			if (VSM_Open(vsm)) {
+				VSM_ResetError(vsm);
+				continue;
+			}
+			c = VSL_CursorVSM(vsl, vsm, 1);
+			if (c == NULL) {
+				VSL_ResetError(vsl);
+				continue;
+			}
+		}
+		AN(c);
+
+		i = VSL_Next(c);
+		if (i == 0) {
+			/* Nothing to do but wait */
+			VTIM_sleep(0.01);
+			continue;
+		} else if (i == -2) {
+			/* Abandoned - try reconnect */
+			VSL_DeleteCursor(c);
+			c = NULL;
+			VSM_Close(vsm);
+			continue;
+		} else if (i != 1)
+			break;
+
+		tag = VSL_TAG(c->ptr);
+		vxid = VSL_ID(c->ptr);
+		len = VSL_LEN(c->ptr);
+		type = VSL_CLIENT(c->ptr) ? 'c' : VSL_BACKEND(c->ptr) ?
+		    'b' : '-';
+		data = VSL_CDATA(c->ptr);
+		v->vsl_tag_count[tag]++;
+		vtc_log(v->vl, 4, "vsl| %10u %-15s %c %.*s", vxid,
+		    VSL_tags[tag], type, (int)len, data);
 	}
-	VSM_Delete(vsl);
+
+	if (c)
+		VSL_DeleteCursor(c);
+	VSL_Delete(vsl);
+	VSM_Delete(vsm);
+
 	return (NULL);
 }
 
@@ -449,7 +482,7 @@ varnish_launch(struct varnish *v)
 		vtc_log(v->vl, 0, "CLI auth command failed: %u %s", u, r);
 	free(r);
 
-	(void)VSL_Arg(v->vd, 'n', v->workdir);
+	(void)VSM_n_Arg(v->vd, v->workdir);
 	AZ(VSM_Open(v->vd));
 }
 
