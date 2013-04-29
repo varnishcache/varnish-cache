@@ -128,5 +128,5 @@ VDI_Healthy(const struct director *d, const struct req *req)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	return (d->healthy(d, req));
+	return (d->healthy(d, req->digest));
 }

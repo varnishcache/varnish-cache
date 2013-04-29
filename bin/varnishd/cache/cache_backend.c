@@ -42,6 +42,7 @@
 #include "cache_backend.h"
 #include "vrt.h"
 #include "vtcp.h"
+#include "vtim.h"
 
 static struct mempool	*vbcpool;
 
@@ -264,7 +265,7 @@ VBE_AddTrouble(const struct busyobj *bo, double expires)
  */
 
 static unsigned int
-vbe_Healthy(const struct vdi_simple *vs, const struct req *req)
+vbe_Healthy(const struct vdi_simple *vs, const uint8_t *digest)
 {
 	struct trouble *tr;
 	struct trouble *tr2;
@@ -274,7 +275,7 @@ vbe_Healthy(const struct vdi_simple *vs, const struct req *req)
 	VTAILQ_HEAD(, trouble)  troublelist;
 	double now;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AN(digest);
 	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
 	backend = vs->backend;
 	CHECK_OBJ_NOTNULL(backend, BACKEND_MAGIC);
@@ -299,7 +300,7 @@ vbe_Healthy(const struct vdi_simple *vs, const struct req *req)
 	if (threshold == 0 || backend->n_trouble == 0)
 		return (1);
 
-	now = req->t_req;
+	now = VTIM_real();
 
 	retval = 1;
 	VTAILQ_INIT(&troublelist);
@@ -314,7 +315,7 @@ vbe_Healthy(const struct vdi_simple *vs, const struct req *req)
 			continue;
 		}
 
-		if (!memcmp(tr->digest, req->digest, sizeof tr->digest)) {
+		if (!memcmp(tr->digest, digest, sizeof tr->digest)) {
 			retval = 0;
 			break;
 		}
@@ -382,7 +383,7 @@ vbe_GetVbe(struct req *req, struct vdi_simple *vs)
 		VBE_ReleaseConn(vc);
 	}
 
-	if (!vbe_Healthy(vs, req)) {
+	if (!vbe_Healthy(vs, req->digest)) {
 		VSC_C_main->backend_unhealthy++;
 		return (NULL);
 	}
@@ -472,13 +473,13 @@ vdi_simple_getfd(const struct director *d, struct req *req)
 }
 
 static unsigned
-vdi_simple_healthy(const struct director *d, const struct req *req)
+vdi_simple_healthy(const struct director *d, const uint8_t *digest)
 {
 	struct vdi_simple *vs;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
-	return (vbe_Healthy(vs, req));
+	return (vbe_Healthy(vs, digest));
 }
 
 static void

@@ -128,7 +128,7 @@ vdir_add_backend(struct vdir *vd, VCL_BACKEND be, double weight)
 }
 
 unsigned
-vdir_any_healthy(struct vdir *vd, const struct req *req)
+vdir_any_healthy(struct vdir *vd, const uint8_t *digest)
 {
 	unsigned retval = 0;
 	VCL_BACKEND be;
@@ -139,7 +139,7 @@ vdir_any_healthy(struct vdir *vd, const struct req *req)
 	for (u = 0; u < vd->n_backend; u++) {
 		be = vd->backend[u];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		if (be->healthy(be, req)) {
+		if (be->healthy(be, digest)) {
 			retval = 1;
 			break;
 		}
@@ -185,7 +185,7 @@ vdir_pick_be(struct vdir *vd, const struct req *req, double w, unsigned nloops)
 		u = vdir_pick_by_weight(vd, w * tw, vbm);
 		be = vd->backend[u];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		if (be->healthy(be, req))
+		if (be->healthy(be, req->digest))
 			break;
 		if (l == 0) {
 			vbm = vd->vbm;

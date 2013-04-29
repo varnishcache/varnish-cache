@@ -90,7 +90,7 @@ struct objhead {
 	int			refcnt;
 	struct lock		mtx;
 	VTAILQ_HEAD(,objcore)	objcs;
-	unsigned char		digest[DIGEST_LEN];
+	uint8_t			digest[DIGEST_LEN];
 	struct waitinglist	*waitinglist;
 
 	/*----------------------------------------------------

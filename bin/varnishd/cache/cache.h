@@ -516,7 +516,7 @@ struct busyobj {
 	struct http		*bereq;
 	struct http		*beresp;
 	struct object		*fetch_obj;
-	unsigned char		digest[DIGEST_LEN];
+	uint8_t			digest[DIGEST_LEN];
 	struct exp		exp;
 	struct http_conn	htc;
 
@@ -615,7 +615,7 @@ struct req {
 	uint8_t			*vary_l;
 	uint8_t			*vary_e;
 
-	unsigned char		digest[DIGEST_LEN];
+	uint8_t			digest[DIGEST_LEN];
 
 	enum sess_close		doclose;
 	struct exp		exp;

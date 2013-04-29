@@ -77,7 +77,7 @@ struct vrt_backend_probe;
 
 typedef struct vbc *vdi_getfd_f(const struct director *, struct req *);
 typedef void vdi_fini_f(const struct director *);
-typedef unsigned vdi_healthy(const struct director *, const struct req *);
+typedef unsigned vdi_healthy(const struct director *, const uint8_t *digest);
 
 struct director {
 	unsigned		magic;
@@ -97,7 +97,7 @@ struct director {
 struct trouble {
 	unsigned		magic;
 #define TROUBLE_MAGIC		0x4211ab21
-	unsigned char		digest[DIGEST_LEN];
+	uint8_t			digest[DIGEST_LEN];
 	double			timeout;
 	VTAILQ_ENTRY(trouble)	list;
 };
