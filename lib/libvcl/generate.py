@@ -295,7 +295,7 @@ sp_variables = (
 		'DURATION',
 		( ),
 		( 'backend_response',),
-		'cR'
+		'cB'
 	),
 	('beresp.status',
 		'INT',

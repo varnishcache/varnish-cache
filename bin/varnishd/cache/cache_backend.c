@@ -228,27 +228,24 @@ vbe_NewConn(void)
  */
 
 void
-VBE_AddTrouble(const struct req *req, double dt)
+VBE_AddTrouble(const struct busyobj *bo, double expires)
 {
 	struct trouble *tp;
 	struct vbc *vbc;
 	struct backend *be;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->busyobj, BUSYOBJ_MAGIC);
-	vbc = req->busyobj->vbc;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	vbc = bo->vbc;
 	if (vbc == NULL)
 		return;
 	CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
 	be = vbc->backend;
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
-	if (dt <= 0.)
-		return;
 	ALLOC_OBJ(tp, TROUBLE_MAGIC);
 	if (tp == NULL)
 		return;
-	memcpy(tp->digest, req->digest, sizeof tp->digest);
-	tp->timeout = req->t_req + dt;
+	memcpy(tp->digest, bo->digest, sizeof tp->digest);
+	tp->timeout = expires;
 	Lck_Lock(&vbc->backend->mtx);
 	VTAILQ_INSERT_HEAD(&be->troublelist, tp, list);
 	be->n_trouble++;

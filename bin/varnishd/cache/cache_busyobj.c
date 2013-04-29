@@ -137,6 +137,8 @@ VBO_GetBusyObj(struct worker *wrk, struct req *req)
 
 	WS_Init(bo->ws, "bo", p, bo->end - p);
 
+	memcpy(bo->digest, req->digest, sizeof bo->digest);
+
 	bo->do_stream = 1;
 
 	return (bo);

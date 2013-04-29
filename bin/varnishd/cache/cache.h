@@ -516,6 +516,7 @@ struct busyobj {
 	struct http		*bereq;
 	struct http		*beresp;
 	struct object		*fetch_obj;
+	unsigned char		digest[DIGEST_LEN];
 	struct exp		exp;
 	struct http_conn	htc;
 

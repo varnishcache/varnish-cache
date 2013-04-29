@@ -169,7 +169,7 @@ struct vbc {
 
 /* cache_backend.c */
 void VBE_ReleaseConn(struct vbc *vc);
-void VBE_AddTrouble(const struct req *req, double dt);
+void VBE_AddTrouble(const struct busyobj *, double expires);
 
 /* cache_backend_cfg.c */
 void VBE_DropRefConn(struct backend *);
