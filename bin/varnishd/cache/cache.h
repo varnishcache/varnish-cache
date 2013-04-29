@@ -539,6 +539,8 @@ struct busyobj {
 	double			between_bytes_timeout;
 
 	const char		*storage_hint;
+	struct director		*director;
+	struct VCL_conf		*vcl;
 
 	struct vsl_log		vsl[1];
 	struct dstat		*stats;

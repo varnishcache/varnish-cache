@@ -141,6 +141,10 @@ VBO_GetBusyObj(struct worker *wrk, struct req *req)
 
 	bo->do_stream = 1;
 
+	bo->director = req->director;
+	bo->vcl = req->vcl;
+	VCL_Ref(bo->vcl);
+
 	return (bo);
 }
 
@@ -182,6 +186,8 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 		AN(wrk);
 		(void)HSH_Deref(&wrk->stats, NULL, &bo->fetch_obj);
 	}
+
+	VCL_Rel(&bo->vcl);
 
 	memset(&bo->refcount, 0,
 	    sizeof *bo - offsetof(struct busyobj, refcount));
