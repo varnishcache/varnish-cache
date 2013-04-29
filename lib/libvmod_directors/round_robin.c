@@ -55,7 +55,7 @@ vmod_rr_healthy(const struct director *dir, const uint8_t *digest)
 }
 
 static struct vbc * __match_proto__(vdi_getfd_f)
-vmod_rr_getfd(const struct director *dir, struct req *req)
+vmod_rr_getfd(const struct director *dir, struct busyobj *bo)
 {
 	struct vmod_directors_round_robin *rr;
 	unsigned u;
@@ -68,13 +68,13 @@ vmod_rr_getfd(const struct director *dir, struct req *req)
 		be = rr->vd->backend[rr->nxt];
 		rr->nxt++;
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		if (be->healthy(be, req->digest))
+		if (be->healthy(be, bo->digest))
 			break;
 	}
 	vdir_unlock(rr->vd);
 	if (u == rr->vd->n_backend || be == NULL)
 		return (NULL);
-	return (be->getfd(be, req));
+	return (be->getfd(be, bo));
 }
 
 VCL_VOID __match_proto__()

@@ -734,7 +734,7 @@ void VBE_UseHealth(const struct director *vdi);
 void VBE_DiscardHealth(const struct director *vdi);
 
 
-struct vbc *VDI_GetFd(const struct director *, struct req *);
+struct vbc *VDI_GetFd(const struct director *, struct busyobj *);
 int VDI_Healthy(const struct director *, const uint8_t *digest);
 void VDI_CloseFd(struct vbc **vbp);
 void VDI_RecycleFd(struct vbc **vbp);

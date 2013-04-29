@@ -75,7 +75,7 @@ PipeRequest(struct req *req)
 	bo = req->busyobj;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	vc = VDI_GetFd(NULL, req);
+	vc = VDI_GetFd(NULL, bo);
 	if (vc == NULL)
 		return;
 	bo->vbc = vc;		/* For panic dumping */

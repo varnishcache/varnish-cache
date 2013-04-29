@@ -169,7 +169,8 @@ vdir_pick_by_weight(const struct vdir *vd, double w,
 }
 
 VCL_BACKEND
-vdir_pick_be(struct vdir *vd, const struct req *req, double w, unsigned nloops)
+vdir_pick_be(struct vdir *vd, const struct busyobj *bo, double w,
+    unsigned nloops)
 {
 	struct vbitmap *vbm = NULL;
 	unsigned u, v, l;
@@ -185,7 +186,7 @@ vdir_pick_be(struct vdir *vd, const struct req *req, double w, unsigned nloops)
 		u = vdir_pick_by_weight(vd, w * tw, vbm);
 		be = vd->backend[u];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		if (be->healthy(be, req->digest))
+		if (be->healthy(be, bo->digest))
 			break;
 		if (l == 0) {
 			vbm = vd->vbm;

@@ -75,7 +75,7 @@ struct vrt_backend_probe;
  * backends to use.
  */
 
-typedef struct vbc *vdi_getfd_f(const struct director *, struct req *);
+typedef struct vbc *vdi_getfd_f(const struct director *, struct busyobj *);
 typedef void vdi_fini_f(const struct director *);
 typedef unsigned vdi_healthy(const struct director *, const uint8_t *digest);
 

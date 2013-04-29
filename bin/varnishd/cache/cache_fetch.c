@@ -383,7 +383,7 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 
 	hp = bo->bereq;
 
-	bo->vbc = VDI_GetFd(NULL, req);
+	bo->vbc = VDI_GetFd(NULL, bo);
 	if (bo->vbc == NULL) {
 		VSLb(req->vsl, SLT_FetchError, "no backend connection");
 		return (-1);

@@ -118,6 +118,6 @@ vmod_hash_backend(struct req *req, struct vmod_directors_hash *rr, const char *a
 
 	r = vbe32dec(sha256);
 	r = scalbn(r, -32);
-	be = vdir_pick_be(rr->vd, req, r, rr->nloops);
+	be = vdir_pick_be(rr->vd, req->busyobj, r, rr->nloops);
 	return (be);
 }

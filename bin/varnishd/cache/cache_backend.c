@@ -455,20 +455,20 @@ VBE_DiscardHealth(const struct director *vdi)
  */
 
 static struct vbc * __match_proto__(vdi_getfd_f)
-vdi_simple_getfd(const struct director *d, struct req *req)
+vdi_simple_getfd(const struct director *d, struct busyobj *bo)
 {
 	struct vdi_simple *vs;
 	struct vbc *vc;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
-	vc = vbe_GetVbe(req->busyobj, vs);
+	vc = vbe_GetVbe(bo, vs);
 	if (vc != NULL) {
 		FIND_TMO(first_byte_timeout,
-		    vc->first_byte_timeout, req->busyobj, vs->vrt);
+		    vc->first_byte_timeout, bo, vs->vrt);
 		FIND_TMO(between_bytes_timeout,
-		    vc->between_bytes_timeout, req->busyobj, vs->vrt);
+		    vc->between_bytes_timeout, bo, vs->vrt);
 	}
 	return (vc);
 }

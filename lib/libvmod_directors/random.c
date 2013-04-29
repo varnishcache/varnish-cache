@@ -59,7 +59,7 @@ vmod_rr_healthy(const struct director *dir, const uint8_t *digest)
 }
 
 static struct vbc * __match_proto__(vdi_getfd_f)
-vmod_rr_getfd(const struct director *dir, struct req *req)
+vmod_rr_getfd(const struct director *dir, struct busyobj *bo)
 {
 	struct vmod_directors_random *rr;
 	VCL_BACKEND be;
@@ -67,10 +67,10 @@ vmod_rr_getfd(const struct director *dir, struct req *req)
 
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_RANDOM_MAGIC);
 	r = scalbn(random(), -31);
-	be = vdir_pick_be(rr->vd, req, r, rr->nloops);
+	be = vdir_pick_be(rr->vd, bo, r, rr->nloops);
 	if (be == NULL)
 		return (NULL);
-	return (be->getfd(be, req));
+	return (be->getfd(be, bo));
 }
 
 VCL_VOID __match_proto__()

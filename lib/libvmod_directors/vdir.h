@@ -48,5 +48,5 @@ void vdir_lock(struct vdir *vd);
 void vdir_unlock(struct vdir *vd);
 unsigned vdir_add_backend(struct vdir *vd, VCL_BACKEND be, double weight);
 unsigned vdir_any_healthy(struct vdir *vd, const uint8_t *digest);
-VCL_BACKEND vdir_pick_be(struct vdir *vd, const struct req *req, double w,
+VCL_BACKEND vdir_pick_be(struct vdir *vd, const struct busyobj *, double w,
     unsigned nloops);
