@@ -22,7 +22,7 @@ varnish v1 \
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
 
-		if (req.url == "/gunzip") {
+		if (bereq.url == "/gunzip") {
 			set beresp.do_gunzip = true;
 		} 
 	}

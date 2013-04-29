@@ -22,7 +22,7 @@ varnish v1 -vcl+backend {
 		set beresp.http.Snafu6 =
 		    regsub(beresp.http.Foobar, "(b)(a)(r)(f)", "\4\&\3\2p\");
 		set beresp.http.Snafu7 =
-		    regsub(beresp.http.Foobar, "ar", req.http.nosuchheader);
+		    regsub(beresp.http.Foobar, "ar", bereq.http.nosuchheader);
 	}
 } -start 
 

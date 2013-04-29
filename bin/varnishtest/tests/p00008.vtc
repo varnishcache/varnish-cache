@@ -20,7 +20,7 @@ varnish v1 \
 	-vcl+backend {
 		sub vcl_backend_response {
 			set beresp.storage = "per1";
-			if (req.url ~ "silo2") {
+			if (bereq.url ~ "silo2") {
 				set beresp.storage = "per2";
 			}
 		}

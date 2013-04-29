@@ -78,126 +78,128 @@ tokens = {
 # Our methods and actions
 
 returns =(
-	('recv',		('error', 'pass', 'pipe', 'lookup',)),
-	('pipe',		('error', 'pipe',)),
-	('pass',		('error', 'restart', 'pass',)),
-	('hash',		('hash',)),
-	('miss',		('error', 'restart', 'pass', 'fetch',)),
-	('lookup',		('error', 'restart', 'pass', 'deliver',)),
-	('backend_fetch',	('error', 'fetch', 'pass',)),
-	('backend_response',	('error', 'restart', 'deliver',)),
-	('deliver',		('restart', 'deliver',)),
-	('error',		('restart', 'deliver',)),
-	('init',		('ok',)),
-	('fini',		('ok',)),
+	('recv',		"C", ('error', 'pass', 'pipe', 'lookup',)),
+	('pipe',		"C", ('error', 'pipe',)),
+	('pass',		"C", ('error', 'restart', 'pass',)),
+	('hash',		"C", ('hash',)),
+	('miss',		"C", ('error', 'restart', 'pass', 'fetch',)),
+	('lookup',		"C", ('error', 'restart', 'pass', 'deliver',)),
+	('backend_fetch',	"B", ('error', 'fetch', 'pass',)),
+	('backend_response',	"B", ('error', 'restart', 'deliver',)),
+	('deliver',		"C", ('restart', 'deliver',)),
+	('error',		"C", ('restart', 'deliver',)),
+	('init',		"", ('ok',)),
+	('fini',		"", ('ok',)),
 )
 
 #######################################################################
 # Variables available in sessions
 #
 # 'all' means all methods
-# 'proc' means all methods but 'init' and 'fini'
+# 'client' means all methods tagged "C"
+# 'backend' means all methods tagged "B"
+# 'both' means all methods tagged "B" or "C"
 
 sp_variables = (
 	('client.ip',
 		'IP',
-		( 'proc',),
+		( 'both',),
 		( ),
 		'R'
 	),
 	('client.identity',
 		'STRING',
-		( 'proc',),
-		( 'proc',),
+		( 'both',),
+		( 'both',),
 		'R'
 	),
 	('server.ip',
 		'IP',
-		( 'proc',),
+		( 'client',),
 		( ),
 		'R'
 	),
 	('server.hostname',
 		'STRING',
-		( 'proc',),
+		( 'client',),
 		( ),
 		'R'
 	),
 	('server.identity',
 		'STRING',
-		( 'proc',),
+		( 'client',),
 		( ),
 		'R'
 	),
 	('server.port',
 		'INT',
-		( 'proc',),
+		( 'client',),
 		( ),
 		'R'
 	),
 	('req.method',
 		'STRING',
-		( 'proc',),
-		( 'proc',),
+		( 'client',),
+		( 'client',),
 		'cR'
 	),
 	('req.request',
 		'STRING',
-		( 'proc',),
-		( 'proc',),
+		( 'client',),
+		( 'client',),
 		'cR'
 	),
 	('req.url',
 		'STRING',
-		( 'proc',),
-		( 'proc',),
+		( 'client',),
+		( 'client',),
 		'cR'
 	),
 	('req.proto',
 		'STRING',
-		( 'proc',),
-		( 'proc',),
+		( 'client',),
+		( 'client',),
 		'cR'
 	),
 	('req.http.',
 		'HEADER',
-		( 'proc',),
-		( 'proc',),
+		( 'client',),
+		( 'client',),
 		'cR'
 	),
 	('req.restarts',
 		'INT',
-		( 'proc',),
+		( 'client',),
 		( ),
 		'cR'
 	),
 	('req.esi_level',
 		'INT',
-		( 'proc',),
+		( 'client',),
 		( ),
 		'cR'
 	),
 	('req.ttl',
 		'DURATION',
-		( 'proc',),
-		( 'proc',),
+		( 'client',),
+		( 'client',),
 		'R'
 	),
 	('req.grace',
 		'DURATION',
-		( 'proc',),
-		( 'proc',),
+		( 'client',),
+		( 'client',),
 		'R'
 	),
 	('req.keep',
 		'DURATION',
-		( 'proc',),
-		( 'proc',),
+		( 'client',),
+		( 'client',),
 		'R'
 	),
 	('req.xid',
 		'STRING',
-		( 'proc',),
+		( 'client',),
 		( ),
 		'R'
 	),
@@ -209,19 +211,19 @@ sp_variables = (
 	),
 	('req.can_gzip',
 		'BOOL',
-		( 'proc',),
+		( 'client',),
 		( ),
 		'R'
 	),
 	('req.backend',
 		'BACKEND',
-		( 'proc',),
-		( 'proc',),
+		( 'client',),
+		( 'client',),
 		'R'
 	),
 	('req.backend.healthy',
 		'BOOL',
-		( 'proc',),
+		( 'client',),
 		( ),
 		'R'
 	),
@@ -239,13 +241,13 @@ sp_variables = (
 	),
 	('bereq.backend',
 		'BACKEND',
-		( 'backend_fetch', 'backend_response'),
-		( 'backend_fetch', 'backend_response'),
+		( 'backend', ),
+		( 'backend', ),
 		'B'
 	),
 	('bereq.backend.healthy',
 		'BOOL',
-		( 'backend_fetch', 'backend_response'),
+		( 'backend', ),
 		( ),
 		'B'
 	),
@@ -710,9 +712,16 @@ fo.close()
 
 rets = dict()
 vcls = list()
+vcls_client = list()
+vcls_backend = list()
 for i in returns:
 	vcls.append(i[0])
 	for j in i[1]:
+		if j == "B":
+			vcls_backend.append(i[0])
+		elif j == "C":
+			vcls_client.append(i[0])
+	for j in i[2]:
 		rets[j] = True
 
 #######################################################################
@@ -730,7 +739,7 @@ for i in l:
 	fo.write("VCL_RET_MAC(%s, %s" % (i.lower(), i.upper()))
 	s=", "
 	for j in returns:
-		if i in j[1]:
+		if i in j[2]:
 			fo.write("%sVCL_MET_%s" % (s, j[0].upper()))
 			s = " | "
 	fo.write(")\n")
@@ -740,7 +749,7 @@ fo.write("\n#ifdef VCL_MET_MAC\n")
 for i in returns:
 	fo.write("VCL_MET_MAC(%s,%s,\n" % (i[0].lower(), i[0].upper()))
 	p = " ("
-	for j in i[1]:
+	for j in i[2]:
 		fo.write("    %s(1U << VCL_RET_%s)\n" % (p, j.upper()))
 		p = "| "
 	fo.write("))\n")
@@ -827,11 +836,13 @@ def restrict(fo, spec):
 		return
 	if spec[0] == 'all':
 		spec = vcls
-	if spec[0] == 'proc':
-		spec = list()
-		for i in vcls:
-			if i != "init" and i != "fini":
-				spec.append(i)
+	if spec[0] == 'client':
+		spec = vcls_client
+	if spec[0] == 'backend':
+		spec = vcls_backend
+	if spec[0] == 'both':
+		spec = vcls_client
+		spec += vcls_backend
 	p = ""
 	n = 0
 	for j in spec:

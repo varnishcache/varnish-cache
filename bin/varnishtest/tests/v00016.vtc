@@ -64,9 +64,9 @@ varnish v1 -vcl {
 		if (beresp.ttl > 1d) {
 			set beresp.ttl = 1d;
 		}
-		if (req.backend == b) {
+		if (bereq.backend == b) {
 			set beresp.ttl = 1d;
-		} else if (req.backend != b) {
+		} else if (bereq.backend != b) {
 			set beresp.ttl = 1h;
 		}
 	}

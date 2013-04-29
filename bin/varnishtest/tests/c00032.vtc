@@ -20,8 +20,8 @@ varnish v1 -vcl+backend {
 		}
 	}
 
-	sub vcl_backend_response {
-		if (beresp.status == 400) {
+	sub vcl_deliver {
+		if (resp.status == 400) {
 			rollback;
 			set req.url = "/bar";
 			return (restart);
