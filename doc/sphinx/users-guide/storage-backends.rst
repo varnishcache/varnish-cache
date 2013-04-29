@@ -48,8 +48,7 @@ file
 syntax: file[,path[,size[,granularity]]]
 
 The file backend stores objects in memory backed by a file on disk
-with mmap. This is the default storage backend and unless you specify
-another storage this one will used along with Transient storage.
+with mmap. 
 
 The path parameter specifies either the path to the backing file or
 the path to a directory in which varnishd will create the backing
