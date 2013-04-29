@@ -268,6 +268,50 @@ VRT_r_req_backend(const struct req *req)
 	return (req->director);
 }
 
+unsigned
+VRT_r_req_backend_healthy(const struct req *req)
+{
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	/*
+	 * XXX: Not optimal, but we do not have a backend in vcl_deliver
+	 * XXX: and we have to return something.
+	 */
+	if (req->director == NULL)
+		return (0);
+	CHECK_OBJ_NOTNULL(req->director, DIRECTOR_MAGIC);
+	return (VDI_Healthy(req->director, req));
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VRT_l_bereq_backend(struct busyobj *bo, struct director *be)
+{
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AN(bo->director);
+	bo->director = be;
+}
+
+struct director *
+VRT_r_bereq_backend(const struct busyobj *bo)
+{
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AN(bo->director);
+	return (bo->director);
+}
+
+unsigned
+VRT_r_bereq_backend_healthy(const struct busyobj *bo)
+{
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->director, DIRECTOR_MAGIC);
+	//XXX return (VDI_Healthy(bo->director, req));
+	return (0);
+}
+
 /*--------------------------------------------------------------------*/
 
 void
@@ -516,18 +560,4 @@ VRT_r_obj_uncacheable(const struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 	return (req->obj->objcore->flags & OC_F_PASS ? 1 : 0);
-}
-
-unsigned
-VRT_r_req_backend_healthy(const struct req *req)
-{
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	/*
-	 * XXX: Not optimal, but we do not have a backend in vcl_deliver
-	 * XXX: and we have to return something.
-	 */
-	if (req->director == NULL)
-		return (0);
-	CHECK_OBJ_NOTNULL(req->director, DIRECTOR_MAGIC);
-	return (VDI_Healthy(req->director, req));
 }

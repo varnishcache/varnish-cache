@@ -165,12 +165,6 @@ sp_variables = (
 		( 'proc',),
 		'cR'
 	),
-	('req.backend',
-		'BACKEND',
-		( 'proc',),
-		( 'proc',),
-		'R'
-	),
 	('req.restarts',
 		'INT',
 		( 'proc',),
@@ -219,6 +213,12 @@ sp_variables = (
 		( ),
 		'R'
 	),
+	('req.backend',
+		'BACKEND',
+		( 'proc',),
+		( 'proc',),
+		'R'
+	),
 	('req.backend.healthy',
 		'BOOL',
 		( 'proc',),
@@ -236,6 +236,18 @@ sp_variables = (
 		( 'recv',),
 		( 'recv',),
 		'R'
+	),
+	('bereq.backend',
+		'BACKEND',
+		( 'backend_fetch', 'backend_response'),
+		( 'backend_fetch', 'backend_response'),
+		'B'
+	),
+	('bereq.backend.healthy',
+		'BOOL',
+		( 'backend_fetch', 'backend_response'),
+		( ),
+		'B'
 	),
 	('bereq.method',
 		'STRING',
