@@ -214,14 +214,15 @@ VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
  */
 
 const char *
-VRT_CollectString(struct ws *ws, const char *p, ...)
+VRT_CollectString(const struct vrt_ctx *ctx, const char *p, ...)
 {
 	va_list ap;
 	char *b;
 
-	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
 	va_start(ap, p);
-	b = VRT_String(ws, NULL, p, ap);
+	b = VRT_String(ctx->ws, NULL, p, ap);
 	va_end(ap);
 	return (b);
 }
@@ -303,7 +304,7 @@ VRT_r_now()
 /*--------------------------------------------------------------------*/
 
 char *
-VRT_IP_string(struct ws *ws, const struct sockaddr_storage *sa)
+VRT_IP_string(const struct vrt_ctx *ctx, const struct sockaddr_storage *sa)
 {
 	char *p;
 	const struct sockaddr_in *si4;
@@ -311,7 +312,7 @@ VRT_IP_string(struct ws *ws, const struct sockaddr_storage *sa)
 	const void *addr;
 	int len;
 
-	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	switch (sa->ss_family) {
 	case AF_INET:
 		len = INET_ADDRSTRLEN;
@@ -327,44 +328,44 @@ VRT_IP_string(struct ws *ws, const struct sockaddr_storage *sa)
 		INCOMPL();
 	}
 	XXXAN(len);
-	AN(p = WS_Alloc(ws, len));
+	AN(p = WS_Alloc(ctx->ws, len));
 	AN(inet_ntop(sa->ss_family, addr, p, len));
 	return (p);
 }
 
 char *
-VRT_INT_string(struct ws *ws, long num)
+VRT_INT_string(const struct vrt_ctx *ctx, long num)
 {
 	char *p;
 	int size;
 
-	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	size = snprintf(NULL, 0, "%ld", num) + 1;
-	AN(p = WS_Alloc(ws, size));
+	AN(p = WS_Alloc(ctx->ws, size));
 	assert(snprintf(p, size, "%ld", num) < size);
 	return (p);
 }
 
 char *
-VRT_REAL_string(struct ws *ws, double num)
+VRT_REAL_string(const struct vrt_ctx *ctx, double num)
 {
 	char *p;
 	int size;
 
-	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	size = snprintf(NULL, 0, "%.3f", num) + 1;
-	AN(p = WS_Alloc(ws, size));
+	AN(p = WS_Alloc(ctx->ws, size));
 	assert(snprintf(p, size, "%.3f", num) < size);
 	return (p);
 }
 
 char *
-VRT_TIME_string(struct ws *ws, double t)
+VRT_TIME_string(const struct vrt_ctx *ctx, double t)
 {
 	char *p;
 
-	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
-	p = WS_Alloc(ws, VTIM_FORMAT_SIZE);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	p = WS_Alloc(ctx->ws, VTIM_FORMAT_SIZE);
 	if (p != NULL)
 		VTIM_format(t, p);
 	return (p);

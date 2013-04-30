@@ -404,20 +404,20 @@ vcc_expr_tostring(struct expr **e, enum var_type fmt)
 	switch((*e)->fmt) {
 	case BACKEND:	p = "VRT_BACKEND_string(\v1)"; break;
 	case BOOL:	p = "VRT_BOOL_string(\v1)"; break;
-	case DURATION:	p = "VRT_REAL_string(ws, \v1)"; break;
+	case DURATION:	p = "VRT_REAL_string(ctx, \v1)"; break;
 			 /* XXX: should DURATION insist on "s" suffix ? */
 	case INT:
 		if (vcc_isconst(*e)) {
 			p = "\"\v1\"";
 			constant = EXPR_CONST;
 		} else {
-			p = "VRT_INT_string(ws, \v1)";
+			p = "VRT_INT_string(ctx, \v1)";
 		}
 		break;
-	case IP:	p = "VRT_IP_string(ws, \v1)"; break;
-	case BYTES:	p = "VRT_REAL_string(ws, \v1)"; break; /* XXX */
-	case REAL:	p = "VRT_REAL_string(ws, \v1)"; break;
-	case TIME:	p = "VRT_TIME_string(ws, \v1)"; break;
+	case IP:	p = "VRT_IP_string(ctx, \v1)"; break;
+	case BYTES:	p = "VRT_REAL_string(ctx, \v1)"; break; /* XXX */
+	case REAL:	p = "VRT_REAL_string(ctx, \v1)"; break;
+	case TIME:	p = "VRT_TIME_string(ctx, \v1)"; break;
 	case HEADER:	p = "VRT_GetHdr(ctx, \v1)"; break;
 	case ENUM:
 	case STRING:
@@ -914,7 +914,7 @@ vcc_expr_strfold(struct vcc *tl, struct expr **e, enum var_type fmt)
 
 	if (fmt != STRING_LIST && (*e)->fmt == STRING_LIST)
 		*e = vcc_expr_edit(STRING,
-		    "\v+VRT_CollectString(ws,\n\v1,\nvrt_magic_string_end)\v-",
+		    "\v+VRT_CollectString(ctx,\n\v1,\nvrt_magic_string_end)\v-",
 		    *e, NULL);
 	if (fmt == STRING_LIST && (*e)->fmt == STRING)
 		(*e)->fmt = STRING_LIST;
