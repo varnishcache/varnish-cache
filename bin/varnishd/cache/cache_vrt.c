@@ -98,10 +98,11 @@ VRT_count(const struct vrt_ctx *ctx, unsigned u)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_acl_log(struct req *req, const char *msg)
+VRT_acl_log(const struct vrt_ctx *ctx, const char *msg)
 {
 
-	VSLb(req->vsl, SLT_VCL_acl, "%s", msg);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	VSLb(ctx->vsl, SLT_VCL_acl, "%s", msg);
 }
 
 /*--------------------------------------------------------------------*/

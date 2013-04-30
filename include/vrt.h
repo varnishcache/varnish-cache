@@ -182,7 +182,7 @@ struct vrt_ref {
 /* ACL related */
 #define VRT_ACL_MAXADDR		16	/* max(IPv4, IPv6) */
 
-void VRT_acl_log(struct req *, const char *msg);
+void VRT_acl_log(const struct vrt_ctx *, const char *msg);
 
 /* req related */
 
