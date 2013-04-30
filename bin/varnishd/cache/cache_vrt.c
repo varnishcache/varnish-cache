@@ -86,14 +86,13 @@ VRT_error(struct req *req, unsigned code, const char *reason)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_count(struct req *req, unsigned u)
+VRT_count(const struct vrt_ctx *ctx, unsigned u)
 {
 
-	if (req == NULL)
-		return;
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	VSLb(req->vsl, SLT_VCL_trace, "%u %u.%u", u,
-	    req->vcl->ref[u].line, req->vcl->ref[u].pos);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (ctx->vsl != NULL)
+		VSLb(ctx->vsl, SLT_VCL_trace, "%u %u.%u", u,
+		    ctx->vcl->ref[u].line, ctx->vcl->ref[u].pos);
 }
 
 /*--------------------------------------------------------------------*/

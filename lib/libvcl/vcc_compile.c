@@ -693,7 +693,7 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	for (i = 0; i < VCL_MET_MAX; i++) {
 		Fc(tl, 1, "\nstatic int __match_proto__(vcl_func_f)\n");
 		Fc(tl, 1,
-		    "VGC_function_%s(struct worker *wrk,"
+		    "VGC_function_%s(struct vrt_ctx *ctx, struct worker *wrk,"
 		    " struct req *req, struct busyobj *bo, struct ws *ws)\n",
 		    method_tab[i].name);
 		AZ(VSB_finish(tl->fm[i]));

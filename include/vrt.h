@@ -32,7 +32,10 @@
  */
 
 struct req;
+struct busyobj;
 struct worker;
+struct vsl_log;
+struct http;
 struct ws;
 struct vsb;
 struct cli;
@@ -57,6 +60,29 @@ typedef double				VCL_REAL;
 typedef const char *			VCL_STRING;
 typedef double				VCL_TIME;
 typedef void				VCL_VOID;
+
+/***********************************************************************
+ * This is the composite argument we pass to compiled VCL and VRT
+ * functions.
+ */
+
+struct vrt_ctx {
+	unsigned			magic;
+#define VRT_CTX_MAGIC			0x6bb8f0db
+
+	struct vsl_log			*vsl;
+	struct VCL_conf			*vcl;
+	struct ws			*ws;
+
+	struct req			*req;
+	struct http			*http_req;
+	struct http			*http_obj;
+	struct http			*http_resp;
+
+	struct busyobj			*bo;
+	struct http			*http_bereq;
+	struct http			*http_beresp;
+};
 
 /***********************************************************************/
 
@@ -172,7 +198,7 @@ const char *VRT_regsub(struct req *, int all, const char *,
 void VRT_ban_string(const char *);
 void VRT_purge(const struct worker *, struct req *, double ttl, double grace);
 
-void VRT_count(struct req *, unsigned);
+void VRT_count(const struct vrt_ctx *, unsigned);
 int VRT_rewrite(const char *, const char *);
 void VRT_error(struct req *, unsigned, const char *);
 int VRT_switch_config(const char *);

@@ -47,7 +47,7 @@ static void vcc_Compound(struct vcc *tl);
 } while (0)
 
 #define C(tl, sep)	do {					\
-	Fb(tl, 1, "VRT_count(req, %u)%s\n", ++tl->cnt, sep);	\
+	Fb(tl, 1, "VRT_count(ctx, %u)%s\n", ++tl->cnt, sep);	\
 	tl->t->cnt = tl->cnt;					\
 } while (0)
 
@@ -237,10 +237,10 @@ vcc_Function(struct vcc *tl)
 		}
 		tl->curproc = vcc_AddProc(tl, tl->t);
 		Fh(tl, 0, "static int VGC_function_%.*s "
-		    "(struct req *);\n", PF(tl->t));
+		    "(struct vrt_ctx *ctx, struct req *);\n", PF(tl->t));
 		Fc(tl, 1, "\nstatic int __match_proto__(vcl_func_t)\n");
-		Fc(tl, 1, "VGC_function_%.*s(struct req *req)\n",
-		    PF(tl->t));
+		Fc(tl, 1, "VGC_function_%.*s(struct vrt_ctx *ctx, "
+		    "struct req *req)\n", PF(tl->t));
 	}
 	vcc_NextToken(tl);
 	tl->indent += INDENT;

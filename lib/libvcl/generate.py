@@ -765,6 +765,7 @@ file_header(fo)
 
 fo.write("""
 struct sess;
+struct vrt_ctx;
 struct req;
 struct busyobj;
 struct ws;
@@ -773,7 +774,7 @@ struct worker;
 
 typedef int vcl_init_f(struct cli *);
 typedef void vcl_fini_f(struct cli *);
-typedef int vcl_func_f(struct worker *, struct req *, struct busyobj *,
+typedef int vcl_func_f(struct vrt_ctx *ctx, struct worker *, struct req *, struct busyobj *,
     struct ws *);
 """)
 

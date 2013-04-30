@@ -39,6 +39,7 @@
 #include "cache.h"
 
 #include "vcl.h"
+#include "vrt.h"
 #include "vcli.h"
 #include "vcli_priv.h"
 
@@ -172,8 +173,13 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 {
 	struct vcls *vcl;
 	struct VCL_conf const *cnf;
+	struct vrt_ctx ctx;
 
 	ASSERT_CLI();
+
+	memset(&ctx, 0, sizeof ctx);
+	ctx.magic = VRT_CTX_MAGIC;
+
 	vcl = vcl_find(name);
 	if (vcl != NULL) {
 		VCLI_Out(cli, "Config '%s' already loaded", name);
@@ -214,7 +220,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	REPLACE(vcl->name, name);
 	VCLI_Out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
 	VTAILQ_INSERT_TAIL(&vcl_head, vcl, list);
-	(void)vcl->conf->init_func(NULL, NULL, NULL, NULL);
+	(void)vcl->conf->init_func(&ctx, NULL, NULL, NULL, NULL);
 	Lck_Lock(&vcl_mtx);
 	if (vcl_active == NULL)
 		vcl_active = vcl;
@@ -232,13 +238,16 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 static void
 VCL_Nuke(struct vcls *vcl)
 {
+	struct vrt_ctx ctx;
 
+	memset(&ctx, 0, sizeof ctx);
+	ctx.magic = VRT_CTX_MAGIC;
 	ASSERT_CLI();
 	assert(vcl != vcl_active);
 	assert(vcl->conf->discard);
 	assert(vcl->conf->busy == 0);
 	VTAILQ_REMOVE(&vcl_head, vcl, list);
-	(void)vcl->conf->fini_func(NULL, NULL, NULL, NULL);
+	(void)vcl->conf->fini_func(&ctx, NULL, NULL, NULL, NULL);
 	vcl->conf->fini_vcl(NULL);
 	free(vcl->name);
 	(void)dlclose(vcl->dlh);
@@ -368,18 +377,26 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 {
 	char *aws;
 	struct vsl_log *vsl;
+	struct vrt_ctx ctx;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	memset(&ctx, 0, sizeof ctx);
+	ctx.magic = VRT_CTX_MAGIC;
 	if (req != NULL) {
 		AZ(bo);
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
 		vsl = req->vsl;
+		ctx.vsl = vsl;
+		ctx.vcl = req->vcl;
 	} else {
 		AZ(req);
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 		vsl = bo->vsl;
+		ctx.vsl = vsl;
+		ctx.vcl = bo->vcl;
 	}
+	ctx.ws = ws;
 	if (method == VCL_MET_BACKEND_FETCH ||
 	    method == VCL_MET_PASS ||
 	    method == VCL_MET_MISS ||
@@ -394,7 +411,7 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	wrk->handling = 0;
 	wrk->cur_method = method;
 	VSLb(vsl, SLT_VCL_call, "%s", VCL_Method_Name(method));
-	(void)func(wrk, req, bo, ws);
+	(void)func(&ctx, wrk, req, bo, ws);
 	VSLb(vsl, SLT_VCL_return, "%s", VCL_Return_Name(wrk->handling));
 	wrk->cur_method = 0;
 	WS_Reset(wrk->aws, aws);
