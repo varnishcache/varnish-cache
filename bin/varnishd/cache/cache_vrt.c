@@ -295,9 +295,10 @@ VRT_hashdata(struct req *req, const char *str, ...)
 /*--------------------------------------------------------------------*/
 
 double
-VRT_r_now()
+VRT_r_now(const struct vrt_ctx *ctx)
 {
 
+	(void)ctx;
 	return (VTIM_real());
 }
 

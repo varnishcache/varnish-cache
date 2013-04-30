@@ -105,397 +105,331 @@ sp_variables = (
 		'IP',
 		( 'both',),
 		( ),
-		'R'
 	),
 	('client.identity',
 		'STRING',
 		( 'both',),
 		( 'both',),
-		'R'
 	),
 	('server.ip',
 		'IP',
 		( 'client',),
 		( ),
-		'R'
 	),
 	('server.hostname',
 		'STRING',
 		( 'client',),
 		( ),
-		'R'
 	),
 	('server.identity',
 		'STRING',
 		( 'client',),
 		( ),
-		'R'
 	),
 	('server.port',
 		'INT',
 		( 'client',),
 		( ),
-		'R'
 	),
 	('req.method',
 		'STRING',
 		( 'client',),
 		( 'client',),
-		'C'
 	),
 	('req.request',
 		'STRING',
 		( 'client',),
 		( 'client',),
-		'C'
 	),
 	('req.url',
 		'STRING',
 		( 'client',),
 		( 'client',),
-		'C'
 	),
 	('req.proto',
 		'STRING',
 		( 'client',),
 		( 'client',),
-		'C'
 	),
 	('req.http.',
 		'HEADER',
 		( 'client',),
 		( 'client',),
-		'C'
 	),
 	('req.restarts',
 		'INT',
 		( 'client',),
 		( ),
-		'cR'
 	),
 	('req.esi_level',
 		'INT',
 		( 'client',),
 		( ),
-		'cR'
 	),
 	('req.ttl',
 		'DURATION',
 		( 'client',),
 		( 'client',),
-		'C'
 	),
 	('req.grace',
 		'DURATION',
 		( 'client',),
 		( 'client',),
-		'C'
 	),
 	('req.keep',
 		'DURATION',
 		( 'client',),
 		( 'client',),
-		'C'
 	),
 	('req.xid',
 		'STRING',
 		( 'client',),
 		( ),
-		'R'
 	),
 	('req.esi',
 		'BOOL',
 		( 'recv', 'backend_response', 'deliver', 'error',),
 		( 'recv', 'backend_response', 'deliver', 'error',),
-		'R'
 	),
 	('req.can_gzip',
 		'BOOL',
 		( 'client',),
 		( ),
-		'R'
 	),
 	('req.backend',
 		'BACKEND',
 		( 'client',),
 		( 'client',),
-		'R'
 	),
 	('req.backend.healthy',
 		'BOOL',
 		( 'client',),
 		( ),
-		'R'
 	),
 	('req.hash_ignore_busy',
 		'BOOL',
 		( 'recv',),
 		( 'recv',),
-		'R'
 	),
 	('req.hash_always_miss',
 		'BOOL',
 		( 'recv',),
 		( 'recv',),
-		'R'
 	),
 	('bereq.backend',
 		'BACKEND',
 		( 'backend', ),
 		( 'backend', ),
-		'C'
 	),
 	('bereq.backend.healthy',
 		'BOOL',
 		( 'backend', ),
 		( ),
-		'C'
 	),
 	('bereq.method',
 		'STRING',
 		( 'pipe', 'backend_fetch', 'pass', 'miss', 'backend_response',),
 		( 'pipe', 'backend_fetch', 'pass', 'miss', 'backend_response',),
-		'C'
 	),
 	('bereq.request',
 		'STRING',
 		( 'pipe', 'backend_fetch', 'pass', 'miss', 'backend_response',),
 		( 'pipe', 'backend_fetch', 'pass', 'miss', 'backend_response',),
-		'C'
 	),
 	('bereq.url',
 		'STRING',
 		( 'pipe', 'backend_fetch', 'pass', 'miss', 'backend_response',),
 		( 'pipe', 'backend_fetch', 'pass', 'miss', 'backend_response',),
-		'C'
 	),
 	('bereq.proto',
 		'STRING',
 		( 'pipe', 'backend_fetch', 'pass', 'miss', 'backend_response',),
 		( 'pipe', 'backend_fetch', 'pass', 'miss', 'backend_response',),
-		'C'
 	),
 	('bereq.http.',
 		'HEADER',
 		( 'pipe', 'backend_fetch', 'pass', 'miss', 'backend_response',),
 		( 'pipe', 'backend_fetch', 'pass', 'miss', 'backend_response',),
-		'C'
 	),
 	('bereq.connect_timeout',
 		'DURATION',
 		( 'pipe', 'backend_fetch', 'pass', 'miss',),
 		( 'pipe', 'backend_fetch', 'pass', 'miss',),
-		'C'
 	),
 	('bereq.first_byte_timeout',
 		'DURATION',
 		( 'backend_fetch', 'pass', 'miss',),
 		( 'backend_fetch', 'pass', 'miss',),
-		'C'
 	),
 	('bereq.between_bytes_timeout',
 		'DURATION',
 		( 'backend_fetch', 'pass', 'miss',),
 		( 'backend_fetch', 'pass', 'miss',),
-		'C'
 	),
 	('beresp.proto',
 		'STRING',
 		( 'backend_response',),
 		( 'backend_response',),
-		'C'
 	),
 	('beresp.saintmode',
 		'DURATION',
 		( ),
 		( 'backend_response',),
-		'C'
 	),
 	('beresp.status',
 		'INT',
 		( 'backend_response',),
 		( 'backend_response',),
-		'C'
 	),
 	('beresp.response',
 		'STRING',
 		( 'backend_response',),
 		( 'backend_response',),
-		'C'
 	),
 	('beresp.http.',
 		'HEADER',
 		( 'backend_response',),
 		( 'backend_response',),
-		'C'
 	),
 	('beresp.do_esi',
 		'BOOL',
 		( 'backend_response',),
 		( 'backend_response',),
-		'C'
 	),
 	('beresp.do_stream',
 		'BOOL',
 		( 'backend_response',),
 		( 'backend_response',),
-		'C'
 	),
 	('beresp.do_gzip',
 		'BOOL',
 		( 'backend_response',),
 		( 'backend_response',),
-		'C'
 	),
 	('beresp.do_gunzip',
 		'BOOL',
 		( 'backend_response',),
 		( 'backend_response',),
-		'C'
 	),
 	('beresp.do_pass',
 		'BOOL',
 		( 'backend_response',),
 		( 'backend_response',),
-		'C'
 	),
 	('beresp.uncacheable',
 		'BOOL',
 		( 'backend_response',),
 		( 'backend_response',),
-		'C'
 	),
 	('beresp.ttl',
 		'DURATION',
 		( 'backend_response',),
 		( 'backend_response',),
-		'C'
 	),
 	('beresp.grace',
 		'DURATION',
 		( 'backend_response',),
 		( 'backend_response',),
-		'C'
 	),
 	('beresp.keep',
 		'DURATION',
 		( 'backend_response',),
 		( 'backend_response',),
-		'C'
 	),
 	('beresp.backend.name',
 		'STRING',
 		( 'backend_response',),
 		( ),
-		'C'
 	),
 	('beresp.backend.ip',
 		'IP',
 		( 'backend_response',),
 		( ),
-		'C'
 	),
 	('beresp.backend.port',
 		'INT',
 		( 'backend_response',),
 		( ),
-		'C'
 	),
 	('beresp.storage',
 		'STRING',
 		( 'backend_response',),
 		( 'backend_response',),
-		'C'
 	),
 	('obj.proto',
 		'STRING',
 		( 'lookup', 'error',),
 		( 'lookup', 'error',),
-		'C'
 	),
 	('obj.status',
 		'INT',
 		( 'error',),
 		( 'error',),
-		'C'
 	),
 	('obj.response',
 		'STRING',
 		( 'error',),
 		( 'error',),
-		'C'
 	),
 	('obj.hits',
 		'INT',
 		( 'lookup', 'deliver',),
 		( ),
-		'cR'
 	),
 	('obj.http.',
 		'HEADER',
 		( 'lookup', 'error',),
 		( 'error',),		# XXX ?
-		'C'
 	),
 	('obj.ttl',
 		'DURATION',
 		( 'lookup', 'error',),
 		( 'lookup', 'error',),
-		'C'
 	),
 	('obj.grace',
 		'DURATION',
 		( 'lookup', 'error',),
 		( 'lookup', 'error',),
-		'C'
 	),
 	('obj.keep',
 		'DURATION',
 		( 'lookup', 'error',),
 		( 'lookup', 'error',),
-		'C'
 	),
 	('obj.lastuse',
 		'DURATION',
 		( 'lookup', 'deliver', 'error',),
 		( ),
-		'cR'
 	),
 	('obj.uncacheable',
 		'BOOL',
 		( 'lookup', 'deliver', 'error',),
 		( ),
-		'cR'
 	),
 	('resp.proto',
 		'STRING',
 		( 'deliver',),
 		( 'deliver',),
-		'C'
 	),
 	('resp.status',
 		'INT',
 		( 'deliver',),
 		( 'deliver',),
-		'C'
 	),
 	('resp.response',
 		'STRING',
 		( 'deliver',),
 		( 'deliver',),
-		'C'
 	),
 	('resp.http.',
 		'HEADER',
 		( 'deliver',),
 		( 'deliver',),
-		'C'
 	),
 	('now',
 		'TIME',
 		( 'all',),
 		( ),
-		''
 	),
 )
 
@@ -875,45 +809,6 @@ fo.write("""
 const struct var vcc_vars[] = {
 """)
 
-def mk_proto(c, r=False):
-	if c == "":
-		return "void"
-	s = ""
-	for i in c:
-		if i == "c" and not r:
-			s += " const"
-		elif i == "c":
-			pass
-		elif i == "C":
-			s += " const struct vrt_ctx *"
-		elif i == "R":
-			if r:
-				s += " const"
-			s += " struct req *"
-		else:
-			print("Unknown args-spec char '%s'" % i)
-			exit(1)
-	return s[1:]
-
-
-def mk_args(c, r=False):
-	if c == "":
-		return ""
-	s = ""
-	for i in c:
-		if i == "c":
-			continue;
-		elif i == "R":
-			s += "req"
-		elif i == "C":
-			s += "ctx"
-		else:
-			print("Unknown args-spec char '%s'" % i)
-			exit(1)
-	if s != "" and not r:
-		s += ","
-	return s
-
 for i in sp_variables:
 	typ = i[1]
 	cnam = i[0].replace(".", "_")
@@ -928,10 +823,8 @@ for i in sp_variables:
 		fo.write(i[0].split(".")[0].upper())
 		fo.write('",\n')
 	else:
-		fo.write('\t    "VRT_r_%s(%s)",\n' %
-		    (cnam, mk_args(i[4], True)))
-		fh.write(ctyp + " VRT_r_%s(%s);\n" %
-		    (cnam, mk_proto(i[4], True)))
+		fo.write('\t    "VRT_r_%s(ctx)",\n' % cnam)
+		fh.write(ctyp + " VRT_r_%s(const struct vrt_ctx *);\n" % cnam )
 	restrict(fo, i[2])
 
 	if len(i[3]) == 0:
@@ -941,9 +834,8 @@ for i in sp_variables:
 		fo.write(i[0].split(".")[0].upper())
 		fo.write('",\n')
 	else:
-		fo.write('\t    "VRT_l_%s(%s",\n' %
-		    (cnam, mk_args(i[4], False)))
-		fh.write("void VRT_l_%s(%s, " % (cnam, mk_proto(i[4], False)))
+		fo.write('\t    "VRT_l_%s(ctx, ",\n' % cnam)
+		fh.write("void VRT_l_%s(const struct vrt_ctx *, " % cnam)
 		if typ != "STRING":
 			fh.write(ctyp + ");\n")
 		else:

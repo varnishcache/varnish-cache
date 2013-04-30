@@ -150,26 +150,30 @@ VBERESP(beresp, unsigned, uncacheable,	do_pass)
 /*--------------------------------------------------------------------*/
 
 const char *
-VRT_r_client_identity(const struct req *req)
+VRT_r_client_identity(const struct vrt_ctx *ctx)
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	if (req->client_identity != NULL)
-		return (req->client_identity);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	if (ctx->req->client_identity != NULL)
+		return (ctx->req->client_identity);
 	else
-		return (req->sp->addr);
+		return (ctx->req->sp->addr);
 }
 
 void
-VRT_l_client_identity(struct req *req, const char *str, ...)
+VRT_l_client_identity(const struct vrt_ctx *ctx, const char *str, ...)
 {
 	va_list ap;
 	char *b;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	va_start(ap, str);
-	b = VRT_String(req->http->ws, NULL, str, ap);
+	// XXX ?
+	b = VRT_String(ctx->req->http->ws, NULL, str, ap);
 	va_end(ap);
-	req->client_identity = b;
+	ctx->req->client_identity = b;
 }
 
 /*--------------------------------------------------------------------*/
@@ -257,33 +261,37 @@ VRT_l_beresp_storage(const struct vrt_ctx *ctx, const char *str, ...)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_l_req_backend(struct req *req, struct director *be)
+VRT_l_req_backend(const struct vrt_ctx *ctx, struct director *be)
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	req->director = be;
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	ctx->req->director = be;
 }
 
 struct director *
-VRT_r_req_backend(const struct req *req)
+VRT_r_req_backend(const struct vrt_ctx *ctx)
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	return (req->director);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	return (ctx->req->director);
 }
 
 unsigned
-VRT_r_req_backend_healthy(const struct req *req)
+VRT_r_req_backend_healthy(const struct vrt_ctx *ctx)
 {
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	/*
 	 * XXX: Not optimal, but we do not have a backend in vcl_deliver
 	 * XXX: and we have to return something.
 	 */
-	if (req->director == NULL)
+	if (ctx->req->director == NULL)
 		return (0);
-	CHECK_OBJ_NOTNULL(req->director, DIRECTOR_MAGIC);
-	return (VDI_Healthy(req->director, req->digest));
+	CHECK_OBJ_NOTNULL(ctx->req->director, DIRECTOR_MAGIC);
+	return (VDI_Healthy(ctx->req->director, ctx->req->digest));
 }
 
 /*--------------------------------------------------------------------*/
@@ -321,51 +329,58 @@ VRT_r_bereq_backend_healthy(const struct vrt_ctx *ctx)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_l_req_esi(struct req *req, unsigned process_esi)
+VRT_l_req_esi(const struct vrt_ctx *ctx, unsigned process_esi)
 {
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	/*
 	 * Only allow you to turn of esi in the main request
 	 * else everything gets confused
 	 */
-	if(req->esi_level == 0)
-		req->disable_esi = !process_esi;
+	if(ctx->req->esi_level == 0)
+		ctx->req->disable_esi = !process_esi;
 }
 
 unsigned
-VRT_r_req_esi(const struct req *req)
+VRT_r_req_esi(const struct vrt_ctx *ctx)
 {
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	return (!req->disable_esi);
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	return (!ctx->req->disable_esi);
 }
 
 long
-VRT_r_req_esi_level(const struct req *req)
+VRT_r_req_esi_level(const struct vrt_ctx *ctx)
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	return(req->esi_level);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	return(ctx->req->esi_level);
 }
 
 /*--------------------------------------------------------------------*/
 
 unsigned
-VRT_r_req_can_gzip(const struct req *req)
+VRT_r_req_can_gzip(const struct vrt_ctx *ctx)
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	return (RFC2616_Req_Gzip(req->http));
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	return (RFC2616_Req_Gzip(ctx->req->http));	// XXX ?
 }
 
 
 /*--------------------------------------------------------------------*/
 
 long
-VRT_r_req_restarts(const struct req *req)
+VRT_r_req_restarts(const struct vrt_ctx *ctx)
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	return (req->restarts);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	return (ctx->req->restarts);
 }
 
 /*--------------------------------------------------------------------
@@ -437,15 +452,17 @@ VRT_DO_EXP(beresp, ctx->bo->exp, keep, 0,
  */
 
 const char *
-VRT_r_req_xid(const struct req *req)
+VRT_r_req_xid(const struct vrt_ctx *ctx)
 {
 	char *p;
 	int size;
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 
-	size = snprintf(NULL, 0, "%u", req->vsl->wid & VSL_IDENTMASK) + 1;
-	AN(p = WS_Alloc(req->http->ws, size));
-	assert(snprintf(p, size, "%u", req->vsl->wid & VSL_IDENTMASK) < size);
+	// XXX ?
+	size = snprintf(NULL, 0, "%u", ctx->req->vsl->wid & VSL_IDENTMASK) + 1;
+	AN(p = WS_Alloc(ctx->req->http->ws, size));
+	assert(snprintf(p, size, "%u", ctx->req->vsl->wid & VSL_IDENTMASK) < size);
 	return (p);
 }
 
@@ -453,19 +470,21 @@ VRT_r_req_xid(const struct req *req)
 
 #define REQ_BOOL(hash_var)					\
 void								\
-VRT_l_req_##hash_var(struct req *req, unsigned val)		\
+VRT_l_req_##hash_var(const struct vrt_ctx *ctx, unsigned val)	\
 {								\
 								\
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
-	req->hash_var = val ? 1 : 0;				\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);			\
+	ctx->req->hash_var = val ? 1 : 0;			\
 }								\
 								\
 unsigned							\
-VRT_r_req_##hash_var(const struct req *req)			\
+VRT_r_req_##hash_var(const struct vrt_ctx *ctx)			\
 {								\
 								\
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);			\
-	return(req->hash_var);					\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);			\
+	return(ctx->req->hash_var);				\
 }
 
 REQ_BOOL(hash_ignore_busy)
@@ -474,33 +493,36 @@ REQ_BOOL(hash_always_miss)
 /*--------------------------------------------------------------------*/
 
 struct sockaddr_storage *
-VRT_r_client_ip(const struct req *req)
+VRT_r_client_ip(const struct vrt_ctx *ctx)
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	return (&req->sp->sockaddr);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	return (&ctx->req->sp->sockaddr);
 }
 
 struct sockaddr_storage *
-VRT_r_server_ip(const struct req *req)
+VRT_r_server_ip(const struct vrt_ctx *ctx)
 {
 	int i;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	if (req->sp->mysockaddr.ss_family == AF_UNSPEC) {
-		i = getsockname(req->sp->fd,
-		    (void*)&req->sp->mysockaddr, &req->sp->mysockaddrlen);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	if (ctx->req->sp->mysockaddr.ss_family == AF_UNSPEC) {
+		i = getsockname(ctx->req->sp->fd,
+		    (void*)&ctx->req->sp->mysockaddr,
+		    &ctx->req->sp->mysockaddrlen);
 		assert(VTCP_Check(i));
 	}
 
-	return (&req->sp->mysockaddr);
+	return (&ctx->req->sp->mysockaddr);
 }
 
 const char*
-VRT_r_server_identity(const struct req *req)
+VRT_r_server_identity(const struct vrt_ctx *ctx)
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (heritage.identity[0] != '\0')
 		return (heritage.identity);
 	else
@@ -508,10 +530,10 @@ VRT_r_server_identity(const struct req *req)
 }
 
 const char*
-VRT_r_server_hostname(const struct req *req)
+VRT_r_server_hostname(const struct vrt_ctx *ctx)
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (vrt_hostname[0] == '\0')
 		AZ(gethostname(vrt_hostname, sizeof(vrt_hostname)));
 	return (vrt_hostname);
@@ -522,43 +544,49 @@ VRT_r_server_hostname(const struct req *req)
  */
 
 long
-VRT_r_server_port(const struct req *req)
+VRT_r_server_port(const struct vrt_ctx *ctx)
 {
 	int i;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	if (req->sp->mysockaddr.ss_family == AF_UNSPEC) {
-		i = getsockname(req->sp->fd,
-		    (void*)&req->sp->mysockaddr, &req->sp->mysockaddrlen);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	if (ctx->req->sp->mysockaddr.ss_family == AF_UNSPEC) {
+		i = getsockname(ctx->req->sp->fd,
+		    (void*)&ctx->req->sp->mysockaddr,
+		    &ctx->req->sp->mysockaddrlen);
 		assert(VTCP_Check(i));
 	}
-	return (VTCP_port(&req->sp->mysockaddr));
+	return (VTCP_port(&ctx->req->sp->mysockaddr));
 }
 
 /*--------------------------------------------------------------------*/
 
 long
-VRT_r_obj_hits(const struct req *req)
+VRT_r_obj_hits(const struct vrt_ctx *ctx)
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);	/* XXX */
-	return (req->obj->hits);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req->obj, OBJECT_MAGIC);	/* XXX */
+	return (ctx->req->obj->hits);
 }
 
 double
-VRT_r_obj_lastuse(const struct req *req)
+VRT_r_obj_lastuse(const struct vrt_ctx *ctx)
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);	/* XXX */
-	return (VTIM_real() - req->obj->last_use);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req->obj, OBJECT_MAGIC);	/* XXX */
+	return (VTIM_real() - ctx->req->obj->last_use);
 }
 
 unsigned
-VRT_r_obj_uncacheable(const struct req *req)
+VRT_r_obj_uncacheable(const struct vrt_ctx *ctx)
 {
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
-	return (req->obj->objcore->flags & OC_F_PASS ? 1 : 0);
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req->obj, OBJECT_MAGIC);
+	return (ctx->req->obj->objcore->flags & OC_F_PASS ? 1 : 0);
 }
