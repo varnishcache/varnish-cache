@@ -62,31 +62,10 @@ error(int status, const char *fmt, ...)
 	va_start(ap, fmt);
 	vfprintf(stderr, fmt, ap); /* XXX: syslog on daemon */
 	va_end(ap);
+	fprintf(stderr, "\n");
 
 	if (status)
 		exit(status);
-}
-
-static struct VSL_cursor *
-cursor_vsm(struct VSL_data *vsl, struct VSM_data *vsm, int status, int front)
-{
-	struct VSL_cursor *c;
-
-	AN(vsm);
-	if (VSM_Open(vsm)) {
-		if (status)
-			error(status, "VSM: %s", VSM_Error(vsm));
-		VSM_ResetError(vsm);
-		return (NULL);
-	}
-	c = VSL_CursorVSM(vsl, vsm, front);
-	if (c == NULL) {
-		if (status)
-			error(status, "VSL: %s", VSL_Error(vsl));
-		VSL_ResetError(vsl);
-		return (NULL);
-	}
-	return (c);
 }
 
 static void
@@ -96,90 +75,128 @@ usage(void)
 	exit(1);
 }
 
-static void
-do_raw(struct VSL_data *vsl, struct VSM_data *vsm)
-{
-	struct VSL_cursor *c;
-	int i;
-
-	c = cursor_vsm(vsl, vsm, 1, 1);
-	AN(c);
-
-	i = 0;
-	while (1) {
-		while (c == NULL) {
-			c = cursor_vsm(vsl, vsm, 0, 1);
-			if (c != NULL) {
-				error(0, "Log reopened\n");
-				break;
-			}
-			VTIM_sleep(1.);
-		}
-
-		i = VSL_Next(c);
-		if (i == 1) {
-			/* Got new record */
-			if (VSL_Match(vsl, c))
-				(void)VSL_Print(vsl, c, stdout);
-		} else if (i == 0) {
-			/* Nothing to do but wait */
-			VTIM_sleep(0.01);
-		} else if (i == -1) {
-			/* EOF */
-			break;
-		} else if (i == -2) {
-			/* Abandoned - try reconnect */
-			error(0, "Log abandoned, reopening\n");
-			VSL_DeleteCursor(c);
-			c = NULL;
-			VSM_Close(vsm);
-		} else if (i < -2) {
-			/* Overrun - bail */
-			error(1, "Log overrun\n");
-		}
-	}
-
-	VSL_DeleteCursor(c);
-}
-
 int
 main(int argc, char * const *argv)
 {
+	char optchar;
+	int d_opt = 0;
+	char *g_arg = NULL;
+	char *r_arg = NULL;
+
 	struct VSL_data *vsl;
 	struct VSM_data *vsm;
-	char c;
-	char *r_arg = NULL;
+	struct VSL_cursor *c;
+	struct VSLQ *q;
+	enum VSL_grouping_e grouping = VSL_g_vxid;
+	int i;
 
 	vsl = VSL_New();
 	AN(vsl);
 	vsm = VSM_New();
 	AN(vsm);
 
-	while ((c = getopt(argc, argv, "n:r:")) != -1) {
-		switch (c) {
-		case 'r':
-			r_arg = optarg;
+	while ((optchar = getopt(argc, argv, "dg:n:r:")) != -1) {
+		switch (optchar) {
+		case 'd':
+			d_opt = 1;
+			break;
+		case 'g':
+			/* Grouping mode */
+			g_arg = optarg;
 			break;
 		case 'n':
+			/* Instance name */
 			if (VSM_n_Arg(vsm, optarg) > 0)
 				break;
+		case 'r':
+			/* Read from file */
+			r_arg = optarg;
+			break;
 		default:
 			usage();
 		}
 	}
 
-	if (r_arg) {
-		/* XXX */
-	} else {
-		if (VSM_Open(vsm))
-			error(1, VSM_Error(vsm));
+	if (g_arg) {
+		if (!strcmp(g_arg, "raw"))
+			grouping = VSL_g_raw;
+		else if (!strcmp(g_arg, "vxid"))
+			grouping = VSL_g_vxid;
+		else if (!strcmp(g_arg, "request"))
+			grouping = VSL_g_request;
+		else if (!strcmp(g_arg, "session"))
+			grouping = VSL_g_session;
+		else
+			error(1, "Wrong -g argument: %s", g_arg);
 	}
 
-	do_raw(vsl, vsm);
+	/* Create cursor */
+	if (r_arg) {
+		/* XXX */
+		error (1, "-r not implemented");
+	} else {
+		if (VSM_Open(vsm))
+			error(1, "VSM_Open: %s", VSM_Error(vsm));
+		if (!(c = VSL_CursorVSM(vsl, vsm, !d_opt)))
+			error(1, "VSL_CursorVSM: %s", VSL_Error(vsl));
+	}
+	AN(c);
 
+	/* Create query */
+	q = VSLQ_New(vsl, &c, grouping, argv[optind]);
+	if (q == NULL)
+		error(1, "VSLQ_New: %s", VSL_Error(vsl));
+	AZ(c);
+
+	while (1) {
+		while (!r_arg && q == NULL) {
+			VTIM_sleep(0.1);
+			if (VSM_Open(vsm)) {
+				VSM_ResetError(vsm);
+				continue;
+			}
+			c = VSL_CursorVSM(vsl, vsm, 1);
+			if (c == NULL) {
+				VSL_ResetError(vsl);
+				continue;
+			}
+			q = VSLQ_New(vsl, &c, grouping, argv[optind]);
+			AN(q);
+			AZ(c);
+		}
+
+		i = VSLQ_Dispatch(q, VSL_PrintSet, stdout);
+		if (i == 0) {
+			/* Nothing to do but wait */
+			VTIM_sleep(0.01);
+		} else if (i == -1) {
+			/* EOF */
+			break;
+		} else if (i <= -2) {
+			/* XXX: Make continuation optional */
+			VSLQ_Flush(q, VSL_PrintSet, stdout);
+			VSLQ_Delete(&q);
+			AZ(q);
+			if (i == -2) {
+				/* Abandoned */
+				error(0, "Log abandoned - reopening");
+				VSM_Close(vsm);
+			} else if (i < -2) {
+				/* Overrun */
+				error(0, "Log overrun");
+			}
+		} else {
+			error(1, "Unexpected: %d", i);
+		}
+	}
+
+	if (q != NULL) {
+		VSLQ_Flush(q, VSL_PrintSet, stdout);
+		VSLQ_Delete(&q);
+		AZ(q);
+	}
 	VSL_Delete(vsl);
-	if (vsm)
-		VSM_Delete(vsm);
+	VSM_Delete(vsm);
 
 	exit(0);
 }
