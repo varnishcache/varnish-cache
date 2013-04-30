@@ -418,7 +418,7 @@ vcc_expr_tostring(struct expr **e, enum var_type fmt)
 	case BYTES:	p = "VRT_REAL_string(ws, \v1)"; break; /* XXX */
 	case REAL:	p = "VRT_REAL_string(ws, \v1)"; break;
 	case TIME:	p = "VRT_TIME_string(ws, \v1)"; break;
-	case HEADER:	p = "VRT_GetHdr(req, \v1)"; break;
+	case HEADER:	p = "VRT_GetHdr(ctx, \v1)"; break;
 	case ENUM:
 	case STRING:
 	case STRING_LIST:

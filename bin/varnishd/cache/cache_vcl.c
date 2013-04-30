@@ -376,7 +376,7 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
     struct ws *ws, unsigned method, vcl_func_f *func)
 {
 	char *aws;
-	struct vsl_log *vsl;
+	struct vsl_log *vsl = NULL;
 	struct vrt_ctx ctx;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -389,14 +389,11 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		vsl = req->vsl;
 		ctx.vsl = vsl;
 		ctx.vcl = req->vcl;
-	} else {
-		AZ(req);
-		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-		vsl = bo->vsl;
-		ctx.vsl = vsl;
-		ctx.vcl = bo->vcl;
+		ctx.http_req = req->http;
+		ctx.http_resp = req->resp;
+		if (req->obj)
+			ctx.http_obj = req->obj->http;
 	}
-	ctx.ws = ws;
 	if (method == VCL_MET_BACKEND_FETCH ||
 	    method == VCL_MET_PASS ||
 	    method == VCL_MET_MISS ||
@@ -407,9 +404,20 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		bo = req->busyobj;
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	}
+	if (bo != NULL) {
+		// AZ(req);
+		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+		vsl = bo->vsl;
+		ctx.vsl = vsl;
+		ctx.vcl = bo->vcl;
+		ctx.http_bereq = bo->bereq;
+		ctx.http_beresp = bo->beresp;
+	}
+	ctx.ws = ws;
 	aws = WS_Snapshot(wrk->aws);
 	wrk->handling = 0;
 	wrk->cur_method = method;
+	AN(vsl);
 	VSLb(vsl, SLT_VCL_call, "%s", VCL_Method_Name(method));
 	(void)func(&ctx, wrk, req, bo, ws);
 	VSLb(vsl, SLT_VCL_return, "%s", VCL_Return_Name(wrk->handling));

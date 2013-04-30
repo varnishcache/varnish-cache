@@ -107,43 +107,42 @@ VRT_acl_log(struct req *req, const char *msg)
 /*--------------------------------------------------------------------*/
 
 static struct http *
-vrt_selecthttp(const struct req *req, enum gethdr_e where)
+vrt_selecthttp(const struct vrt_ctx *ctx, enum gethdr_e where)
 {
 	struct http *hp;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	switch (where) {
 	case HDR_REQ:
-		hp = req->http;
+		hp = ctx->http_req;
 		break;
 	case HDR_BEREQ:
-		hp = req->busyobj->bereq;
+		hp = ctx->http_bereq;
 		break;
 	case HDR_BERESP:
-		hp = req->busyobj->beresp;
+		hp = ctx->http_beresp;
 		break;
 	case HDR_RESP:
-		hp = req->resp;
+		hp = ctx->http_resp;
 		break;
 	case HDR_OBJ:
-		CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
-		hp = req->obj->http;
+		hp = ctx->http_obj;
 		break;
 	default:
 		INCOMPL();
 	}
-	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	return (hp);
 }
 
 char *
-VRT_GetHdr(const struct req *req, const struct gethdr_s *hs)
+VRT_GetHdr(const struct vrt_ctx *ctx, const struct gethdr_s *hs)
 {
 	char *p;
 	struct http *hp;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	hp = vrt_selecthttp(req, hs->where);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	hp = vrt_selecthttp(ctx, hs->where);
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	if (!http_GetHdr(hp, hs->what, &p))
 		return (NULL);
 	return (p);
@@ -229,23 +228,25 @@ VRT_CollectString(struct ws *ws, const char *p, ...)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_SetHdr(struct req *req , const struct gethdr_s *hs, const char *p, ...)
+VRT_SetHdr(const struct vrt_ctx *ctx , const struct gethdr_s *hs,
+    const char *p, ...)
 {
 	struct http *hp;
 	va_list ap;
 	char *b;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(hs);
 	AN(hs->what);
-	hp = vrt_selecthttp(req, hs->where);
+	hp = vrt_selecthttp(ctx, hs->where);
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	va_start(ap, p);
 	if (p == vrt_magic_string_unset) {
 		http_Unset(hp, hs->what);
 	} else {
 		b = VRT_String(hp->ws, hs->what + 1, p, ap);
 		if (b == NULL) {
-			VSLb(req->vsl, SLT_LostHeader, "%s", hs->what + 1);
+			VSLb(ctx->vsl, SLT_LostHeader, "%s", hs->what + 1);
 		} else {
 			http_Unset(hp, hs->what);
 			http_SetHeader(hp, b);

@@ -78,7 +78,7 @@ vcc_Var_Wildcard(struct vcc *tl, const struct token *t, const struct symbol *wc)
 
 	bprintf(buf, "&VGC_%s_%s", vh->rname, cnam);
 	v->rname = TlDup(tl, buf);
-	bprintf(buf, "VRT_SetHdr(req, %s, ", v->rname);
+	bprintf(buf, "VRT_SetHdr(ctx, %s, ", v->rname);
 	v->lname = TlDup(tl, buf);
 
 	sym = VCC_AddSymbolTok(tl, t, SYM_VAR);

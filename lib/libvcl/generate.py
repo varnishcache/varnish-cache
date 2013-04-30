@@ -165,7 +165,7 @@ sp_variables = (
 		'HEADER',
 		( 'client',),
 		( 'client',),
-		'cR'
+		'C'
 	),
 	('req.restarts',
 		'INT',
@@ -279,7 +279,7 @@ sp_variables = (
 		'HEADER',
 		( 'pipe', 'backend_fetch', 'pass', 'miss', 'backend_response',),
 		( 'pipe', 'backend_fetch', 'pass', 'miss', 'backend_response',),
-		'cR'
+		'C'
 	),
 	('bereq.connect_timeout',
 		'DURATION',
@@ -327,7 +327,7 @@ sp_variables = (
 		'HEADER',
 		( 'backend_response',),
 		( 'backend_response',),
-		'cR'
+		'C'
 	),
 	('beresp.do_esi',
 		'BOOL',
@@ -435,7 +435,7 @@ sp_variables = (
 		'HEADER',
 		( 'lookup', 'error',),
 		( 'error',),		# XXX ?
-		'cR'
+		'C'
 	),
 	('obj.ttl',
 		'DURATION',
@@ -489,7 +489,7 @@ sp_variables = (
 		'HEADER',
 		( 'deliver',),
 		( 'deliver',),
-		'cR'
+		'C'
 	),
 	('now',
 		'TIME',
@@ -885,6 +885,8 @@ def mk_proto(c, r=False):
 			s += " const"
 		elif i == "c":
 			pass
+		elif i == "C":
+			s += "const struct vrt_ctx *"
 		elif i == "R":
 			if r:
 				s += " const"
