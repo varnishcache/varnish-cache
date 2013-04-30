@@ -393,11 +393,12 @@ VRT_BOOL_string(unsigned val)
  */
 
 void
-VRT_l_beresp_saintmode(const struct busyobj *bo, double a)
+VRT_l_beresp_saintmode(const struct vrt_ctx *ctx, double a)
 {
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (a > 0.)
-		VBE_AddTrouble(bo, a + VTIM_real());
+		VBE_AddTrouble(ctx->bo, a + VTIM_real());
 }
 
 /*--------------------------------------------------------------------*/

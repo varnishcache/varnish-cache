@@ -37,6 +37,7 @@
 #include "common/heritage.h"
 
 #include "cache_backend.h"
+#include "vrt.h"
 #include "vrt_obj.h"
 #include "vtcp.h"
 #include "vtim.h"
@@ -61,86 +62,82 @@ vrt_do_string(const struct http *hp, int fld,
 	va_end(ap);
 }
 
-#define VRT_DO_HDR(obj, hdr, http, fld)				\
-void								\
-VRT_l_##obj##_##hdr(const struct CPAR *px, const char *p, ...)	\
-{								\
-	va_list ap;						\
-								\
-	CHECK_OBJ_NOTNULL(px, CMAGIC);				\
-	va_start(ap, p);					\
-	vrt_do_string(http, fld, #obj "." #hdr, p, ap);		\
-	va_end(ap);						\
-}								\
-								\
-const char *							\
-VRT_r_##obj##_##hdr(const struct CPAR *px)			\
-{								\
-	CHECK_OBJ_NOTNULL(px, CMAGIC);				\
-	CHECK_OBJ_NOTNULL(http, HTTP_MAGIC);			\
-	return (http->hd[fld].b);				\
+#define VRT_DO_HDR(obj, hdr, fld)					\
+void									\
+VRT_l_##obj##_##hdr(const struct vrt_ctx *ctx, const char *p, ...)	\
+{									\
+	va_list ap;							\
+									\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
+	va_start(ap, p);						\
+	vrt_do_string(ctx->http_##obj, fld, #obj "." #hdr, p, ap);	\
+	va_end(ap);							\
+}									\
+									\
+const char *								\
+VRT_r_##obj##_##hdr(const struct vrt_ctx *ctx)				\
+{									\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
+	CHECK_OBJ_NOTNULL(ctx->http_##obj, HTTP_MAGIC);			\
+	return (ctx->http_##obj->hd[fld].b);				\
 }
 
-#define VRT_DO_STATUS(obj, http)				\
-void								\
-VRT_l_##obj##_status(const struct CPAR *px, long num)		\
-{								\
-								\
-	CHECK_OBJ_NOTNULL(px, CMAGIC);				\
-	assert(num >= 100 && num <= 999);			\
-	http->status = (uint16_t)num;				\
-}								\
-								\
-long								\
-VRT_r_##obj##_status(const struct CPAR *px)			\
-{								\
-								\
-	CHECK_OBJ_NOTNULL(px, CMAGIC);				\
-	return(http->status);					\
+#define VRT_DO_STATUS(obj)						\
+void									\
+VRT_l_##obj##_status(const struct vrt_ctx *ctx, long num)		\
+{									\
+									\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
+	CHECK_OBJ_NOTNULL(ctx->http_##obj, HTTP_MAGIC);			\
+	assert(num >= 100 && num <= 999);				\
+	ctx->http_##obj->status = (uint16_t)num;			\
+}									\
+									\
+long									\
+VRT_r_##obj##_status(const struct vrt_ctx *ctx)				\
+{									\
+									\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
+	CHECK_OBJ_NOTNULL(ctx->http_##obj, HTTP_MAGIC);			\
+	return(ctx->http_##obj->status);				\
 }
 
-#define CPAR req
-#define CMAGIC REQ_MAGIC
-VRT_DO_HDR(req,    method,	px->http,	HTTP_HDR_METHOD)
-VRT_DO_HDR(req,    request,	px->http,	HTTP_HDR_METHOD)
-VRT_DO_HDR(req,    url,		px->http,	HTTP_HDR_URL)
-VRT_DO_HDR(req,    proto,	px->http,	HTTP_HDR_PROTO)
-VRT_DO_HDR(obj,    proto,	px->obj->http,	HTTP_HDR_PROTO)
-VRT_DO_HDR(obj,    response,	px->obj->http,	HTTP_HDR_RESPONSE)
-VRT_DO_STATUS(obj,		px->obj->http)
-VRT_DO_HDR(resp,   proto,	px->resp,	HTTP_HDR_PROTO)
-VRT_DO_HDR(resp,   response,	px->resp,	HTTP_HDR_RESPONSE)
-VRT_DO_STATUS(resp,		px->resp)
-#undef CPAR
-#undef CMAGIC
+VRT_DO_HDR(req,    method,	HTTP_HDR_METHOD)
+VRT_DO_HDR(req,    request,	HTTP_HDR_METHOD)
+VRT_DO_HDR(req,    url,		HTTP_HDR_URL)
+VRT_DO_HDR(req,    proto,	HTTP_HDR_PROTO)
+VRT_DO_HDR(obj,    proto,	HTTP_HDR_PROTO)
+VRT_DO_HDR(obj,    response,	HTTP_HDR_RESPONSE)
+VRT_DO_STATUS(obj)
+VRT_DO_HDR(resp,   proto,	HTTP_HDR_PROTO)
+VRT_DO_HDR(resp,   response,	HTTP_HDR_RESPONSE)
+VRT_DO_STATUS(resp)
 
-#define CPAR busyobj
-#define CMAGIC BUSYOBJ_MAGIC
-VRT_DO_HDR(bereq,  method,	px->bereq,	HTTP_HDR_METHOD)
-VRT_DO_HDR(bereq,  request,	px->bereq,	HTTP_HDR_METHOD)
-VRT_DO_HDR(bereq,  url,		px->bereq,	HTTP_HDR_URL)
-VRT_DO_HDR(bereq,  proto,	px->bereq,	HTTP_HDR_PROTO)
-VRT_DO_HDR(beresp, proto,	px->beresp,	HTTP_HDR_PROTO)
-VRT_DO_HDR(beresp, response,	px->beresp,	HTTP_HDR_RESPONSE)
-VRT_DO_STATUS(beresp,		px->beresp)
-#undef CPAR
-#undef CMAGIC
+VRT_DO_HDR(bereq,  method,	HTTP_HDR_METHOD)
+VRT_DO_HDR(bereq,  request,	HTTP_HDR_METHOD)
+VRT_DO_HDR(bereq,  url,		HTTP_HDR_URL)
+VRT_DO_HDR(bereq,  proto,	HTTP_HDR_PROTO)
+VRT_DO_HDR(beresp, proto,	HTTP_HDR_PROTO)
+VRT_DO_HDR(beresp, response,	HTTP_HDR_RESPONSE)
+VRT_DO_STATUS(beresp)
 
 /*--------------------------------------------------------------------*/
 
 #define VBERESP(dir, type, onm, field)					\
 void									\
-VRT_l_##dir##_##onm(struct busyobj *bo, type a)				\
+VRT_l_##dir##_##onm(const struct vrt_ctx *ctx, type a)			\
 {									\
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);				\
-	bo->field = a;							\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);			\
+	ctx->bo->field = a;						\
 }									\
 									\
 type									\
-VRT_r_##dir##_##onm(const struct busyobj *bo)				\
+VRT_r_##dir##_##onm(const struct vrt_ctx *ctx)				\
 {									\
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);				\
-	return (bo->field);						\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);			\
+	return (ctx->bo->field);					\
 }
 
 VBERESP(beresp, unsigned, do_esi,	do_esi)
@@ -179,19 +176,21 @@ VRT_l_client_identity(struct req *req, const char *str, ...)
 
 #define BEREQ_TIMEOUT(which)					\
 void								\
-VRT_l_bereq_##which(struct busyobj *bo, double num)		\
+VRT_l_bereq_##which(const struct vrt_ctx *ctx, double num)	\
 {								\
 								\
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);			\
-	bo->which = (num > 0.0 ? num : 0.0);			\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);		\
+	ctx->bo->which = (num > 0.0 ? num : 0.0);		\
 }								\
 								\
 double								\
-VRT_r_bereq_##which(const struct busyobj *bo)			\
+VRT_r_bereq_##which(const struct vrt_ctx *ctx)			\
 {								\
 								\
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);			\
-	return (bo->which);					\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);		\
+	return (ctx->bo->which);				\
 }
 
 BEREQ_TIMEOUT(connect_timeout)
@@ -201,53 +200,58 @@ BEREQ_TIMEOUT(between_bytes_timeout)
 /*--------------------------------------------------------------------*/
 
 const char *
-VRT_r_beresp_backend_name(const struct busyobj *bo)
+VRT_r_beresp_backend_name(const struct vrt_ctx *ctx)
 {
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->vbc, VBC_MAGIC);
-	return(bo->vbc->backend->vcl_name);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo->vbc, VBC_MAGIC);
+	return(ctx->bo->vbc->backend->vcl_name);
 }
 
 struct sockaddr_storage *
-VRT_r_beresp_backend_ip(const struct busyobj *bo)
+VRT_r_beresp_backend_ip(const struct vrt_ctx *ctx)
 {
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->vbc, VBC_MAGIC);
-	return(bo->vbc->addr);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo->vbc, VBC_MAGIC);
+	return(ctx->bo->vbc->addr);
 }
 
 long
-VRT_r_beresp_backend_port(const struct busyobj *bo)
+VRT_r_beresp_backend_port(const struct vrt_ctx *ctx)
 {
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->vbc, VBC_MAGIC);
-	return (VTCP_port(bo->vbc->addr));
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo->vbc, VBC_MAGIC);
+	return (VTCP_port(ctx->bo->vbc->addr));
 }
 
 const char *
-VRT_r_beresp_storage(const struct busyobj *bo)
+VRT_r_beresp_storage(const struct vrt_ctx *ctx)
 {
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	if (bo->storage_hint != NULL)
-		return (bo->storage_hint);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	if (ctx->bo->storage_hint != NULL)
+		return (ctx->bo->storage_hint);
 	else
 		return (NULL);
 }
 
 void
-VRT_l_beresp_storage(struct busyobj *bo, const char *str, ...)
+VRT_l_beresp_storage(const struct vrt_ctx *ctx, const char *str, ...)
 {
 	va_list ap;
 	char *b;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 	va_start(ap, str);
-	b = VRT_String(bo->ws, NULL, str, ap);
+	b = VRT_String(ctx->bo->ws, NULL, str, ap);	// XXX: ctx->ws ?
 	va_end(ap);
-	bo->storage_hint = b;
+	ctx->bo->storage_hint = b;
 }
 
 /*--------------------------------------------------------------------*/
@@ -285,30 +289,33 @@ VRT_r_req_backend_healthy(const struct req *req)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_l_bereq_backend(struct busyobj *bo, struct director *be)
+VRT_l_bereq_backend(const struct vrt_ctx *ctx, struct director *be)
 {
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	AN(bo->director);
-	bo->director = be;
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	AN(ctx->bo->director);
+	ctx->bo->director = be;
 }
 
 struct director *
-VRT_r_bereq_backend(const struct busyobj *bo)
+VRT_r_bereq_backend(const struct vrt_ctx *ctx)
 {
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	AN(bo->director);
-	return (bo->director);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	AN(ctx->bo->director);
+	return (ctx->bo->director);
 }
 
 unsigned
-VRT_r_bereq_backend_healthy(const struct busyobj *bo)
+VRT_r_bereq_backend_healthy(const struct vrt_ctx *ctx)
 {
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->director, DIRECTOR_MAGIC);
-	return (VDI_Healthy(bo->director, bo->digest));
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo->director, DIRECTOR_MAGIC);
+	return (VDI_Healthy(ctx->bo->director, ctx->bo->digest));
 }
 
 /*--------------------------------------------------------------------*/
@@ -369,10 +376,10 @@ VRT_r_req_restarts(const struct req *req)
 #define VRT_DO_EXP(which, exp, fld, offset, extra)		\
 								\
 void								\
-VRT_l_##which##_##fld(struct CPAR *px, double a)		\
+VRT_l_##which##_##fld(const struct vrt_ctx *ctx, double a)	\
 {								\
 								\
-	CHECK_OBJ_NOTNULL(px, CMAGIC);				\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
 	if (a > 0.)						\
 		a += offset;					\
 	EXP_Set_##fld(&exp, a);					\
@@ -380,10 +387,10 @@ VRT_l_##which##_##fld(struct CPAR *px, double a)		\
 }								\
 								\
 double								\
-VRT_r_##which##_##fld(const struct CPAR *px)			\
+VRT_r_##which##_##fld(const struct vrt_ctx *ctx)		\
 {								\
 								\
-	CHECK_OBJ_NOTNULL(px, CMAGIC);				\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
 	return(EXP_Get_##fld(&exp) - offset);			\
 }
 
@@ -397,38 +404,33 @@ vrt_wsp_exp(struct vsl_log *vsl, unsigned xid, double now, const struct exp *e)
 	    xid, e->ttl - dt, e->grace, e->keep, now, e->age + dt);
 }
 
-#define CPAR req
-#define CMAGIC REQ_MAGIC
-VRT_DO_EXP(req, px->exp, ttl, 0, )
-VRT_DO_EXP(req, px->exp, grace, 0, )
-VRT_DO_EXP(req, px->exp, keep, 0, )
+VRT_DO_EXP(req, ctx->req->exp, ttl, 0, )
+VRT_DO_EXP(req, ctx->req->exp, grace, 0, )
+VRT_DO_EXP(req, ctx->req->exp, keep, 0, )
 
-VRT_DO_EXP(obj, px->obj->exp, grace, 0,
-   EXP_Rearm(px->obj);
-   vrt_wsp_exp(px->vsl, px->obj->vxid, px->t_req, &px->obj->exp);)
-VRT_DO_EXP(obj, px->obj->exp, ttl,
-   (px->t_req - px->obj->exp.entered),
-   EXP_Rearm(px->obj);
-   vrt_wsp_exp(px->vsl, px->obj->vxid, px->t_req, &px->obj->exp);)
-VRT_DO_EXP(obj, px->obj->exp, keep, 0,
-   EXP_Rearm(px->obj);
-   vrt_wsp_exp(px->vsl, px->obj->vxid, px->t_req, &px->obj->exp);)
-#undef CPAR
-#undef CMAGIC
+VRT_DO_EXP(obj, ctx->req->obj->exp, grace, 0,
+   EXP_Rearm(ctx->req->obj);
+   vrt_wsp_exp(ctx->vsl, ctx->req->obj->vxid,
+	ctx->req->t_req, &ctx->req->obj->exp);)
+VRT_DO_EXP(obj, ctx->req->obj->exp, ttl,
+   (ctx->req->t_req - ctx->req->obj->exp.entered),
+   EXP_Rearm(ctx->req->obj);
+   vrt_wsp_exp(ctx->vsl, ctx->req->obj->vxid,
+	ctx->req->t_req, &ctx->req->obj->exp);)
+VRT_DO_EXP(obj, ctx->req->obj->exp, keep, 0,
+   EXP_Rearm(ctx->req->obj);
+   vrt_wsp_exp(ctx->vsl, ctx->req->obj->vxid,
+	ctx->req->t_req, &ctx->req->obj->exp);)
 
-#define CPAR busyobj
-#define CMAGIC BUSYOBJ_MAGIC
-VRT_DO_EXP(beresp, px->exp, grace, 0,
-   vrt_wsp_exp(px->vsl, px->vsl->wid & VSL_IDENTMASK,
-	px->exp.entered, &px->exp);)
-VRT_DO_EXP(beresp, px->exp, ttl, 0,
-   vrt_wsp_exp(px->vsl, px->vsl->wid & VSL_IDENTMASK,
-	px->exp.entered, &px->exp);)
-VRT_DO_EXP(beresp, px->exp, keep, 0,
-   vrt_wsp_exp(px->vsl, px->vsl->wid & VSL_IDENTMASK,
-	px->exp.entered, &px->exp);)
-#undef CPAR
-#undef CMAGIC
+VRT_DO_EXP(beresp, ctx->bo->exp, grace, 0,
+   vrt_wsp_exp(ctx->vsl, ctx->vsl->wid & VSL_IDENTMASK,
+	ctx->bo->exp.entered, &ctx->bo->exp);)
+VRT_DO_EXP(beresp, ctx->bo->exp, ttl, 0,
+   vrt_wsp_exp(ctx->vsl, ctx->vsl->wid & VSL_IDENTMASK,
+	ctx->bo->exp.entered, &ctx->bo->exp);)
+VRT_DO_EXP(beresp, ctx->bo->exp, keep, 0,
+   vrt_wsp_exp(ctx->vsl, ctx->vsl->wid & VSL_IDENTMASK,
+	ctx->bo->exp.entered, &ctx->bo->exp);)
 
 /*--------------------------------------------------------------------
  * req.xid

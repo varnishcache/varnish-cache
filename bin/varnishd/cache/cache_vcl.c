@@ -220,7 +220,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	REPLACE(vcl->name, name);
 	VCLI_Out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
 	VTAILQ_INSERT_TAIL(&vcl_head, vcl, list);
-	(void)vcl->conf->init_func(&ctx, NULL, NULL, NULL);
+	(void)vcl->conf->init_func(&ctx, NULL, NULL);
 	Lck_Lock(&vcl_mtx);
 	if (vcl_active == NULL)
 		vcl_active = vcl;
@@ -247,7 +247,7 @@ VCL_Nuke(struct vcls *vcl)
 	assert(vcl->conf->discard);
 	assert(vcl->conf->busy == 0);
 	VTAILQ_REMOVE(&vcl_head, vcl, list);
-	(void)vcl->conf->fini_func(&ctx, NULL, NULL, NULL);
+	(void)vcl->conf->fini_func(&ctx, NULL, NULL);
 	vcl->conf->fini_vcl(NULL);
 	free(vcl->name);
 	(void)dlclose(vcl->dlh);
@@ -391,6 +391,7 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		ctx.vcl = req->vcl;
 		ctx.http_req = req->http;
 		ctx.http_resp = req->resp;
+		ctx.req = req;
 		if (req->obj)
 			ctx.http_obj = req->obj->http;
 	}
@@ -412,6 +413,7 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		ctx.vcl = bo->vcl;
 		ctx.http_bereq = bo->bereq;
 		ctx.http_beresp = bo->beresp;
+		ctx.bo = bo;
 	}
 	ctx.ws = ws;
 	aws = WS_Snapshot(wrk->aws);
@@ -419,7 +421,7 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	wrk->cur_method = method;
 	AN(vsl);
 	VSLb(vsl, SLT_VCL_call, "%s", VCL_Method_Name(method));
-	(void)func(&ctx, wrk, req, bo);
+	(void)func(&ctx, wrk, req);
 	VSLb(vsl, SLT_VCL_return, "%s", VCL_Return_Name(wrk->handling));
 	wrk->cur_method = 0;
 	WS_Reset(wrk->aws, aws);
