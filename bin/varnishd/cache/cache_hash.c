@@ -155,20 +155,15 @@ HSH_DeleteObjHead(struct dstat *ds, struct objhead *oh)
 }
 
 void
-HSH_AddString(struct req *req, const char *str)
+HSH_AddString(const struct req *req, const char *str)
 {
-	int l;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	if (str == NULL)
-		str = "";
-	l = strlen(str);
-
 	AN(req->sha256ctx);
-	SHA256_Update(req->sha256ctx, str, l);
-	SHA256_Update(req->sha256ctx, "#", 1);
-
-	VSLb(req->vsl, SLT_Hash, "%s", str);
+	if (str != NULL)
+		SHA256_Update(req->sha256ctx, str, strlen(str));
+	else
+		SHA256_Update(req->sha256ctx, &str, sizeof str);
 }
 
 /*---------------------------------------------------------------------

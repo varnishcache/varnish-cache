@@ -69,7 +69,7 @@ enum lookup_e HSH_Lookup(struct req *, struct objcore **, struct objcore **,
 void HSH_Ref(struct objcore *o);
 void HSH_Drop(struct worker *, struct object **);
 void HSH_Init(const struct hash_slinger *slinger);
-void HSH_AddString(struct req *, const char *str);
+void HSH_AddString(const struct req *, const char *str);
 void HSH_Insert(struct worker *, const void *hash, struct objcore *);
 void HSH_Purge(struct req *, struct objhead *, double ttl, double grace);
 void HSH_config(const char *h_arg);

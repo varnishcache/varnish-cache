@@ -257,7 +257,7 @@ VRT_handling(const struct vrt_ctx *ctx, unsigned hand)
 }
 
 /*--------------------------------------------------------------------
- * Add an element to the array/list of hash bits.
+ * Feed data into the hash calculation
  */
 
 void
@@ -275,7 +275,13 @@ VRT_hashdata(const struct vrt_ctx *ctx, const char *str, ...)
 		if (p == vrt_magic_string_end)
 			break;
 		HSH_AddString(ctx->req, p);
+		VSLb(ctx->vsl, SLT_Hash, "%s", str);
 	}
+	/*
+	 * Add a 'field-separator' to make it more difficult to
+	 * manipulate the hash.
+	 */
+	HSH_AddString(ctx->req, NULL);
 }
 
 /*--------------------------------------------------------------------*/

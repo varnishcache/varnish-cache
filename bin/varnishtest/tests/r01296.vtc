@@ -1,0 +1,30 @@
+varnishtest "hash key depends on argument form to hash_data()"
+
+server s1 {
+	rxreq
+	txresp -hdr "OK: yes"
+	rxreq
+	txresp -hdr "OK: no"
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_hash {
+		if (req.http.foo == "1") {
+			hash_data("123");
+		} else {
+			hash_data("1" + req.http.foo + "3");
+		}
+		return (hash);
+	}
+} -start
+
+client c1 {
+	txreq -hdr "foo: 1"
+	rxresp
+	expect resp.http.ok == "yes"
+
+	txreq -hdr "foo: 2"
+	rxresp
+	expect resp.http.ok == "yes"
+} -run
