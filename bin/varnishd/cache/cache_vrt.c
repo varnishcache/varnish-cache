@@ -264,16 +264,12 @@ VRT_SetHdr(const struct vrt_ctx *ctx , const struct gethdr_s *hs,
 /*--------------------------------------------------------------------*/
 
 void
-VRT_handling(struct worker *wrk, unsigned hand)
+VRT_handling(const struct vrt_ctx *ctx, unsigned hand)
 {
 
-	if (wrk == NULL) {
-		assert(hand == VCL_RET_OK);
-		return;
-	}
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	assert(hand < VCL_RET_MAX);
-	wrk->handling = hand;
+	*ctx->handling = hand;
 }
 
 /*--------------------------------------------------------------------
@@ -516,17 +512,15 @@ VRT_CacheReqBody(const struct vrt_ctx *ctx, long long maxsize)
  */
 
 void
-VRT_purge(const struct worker *wrk, const struct vrt_ctx *ctx, double ttl,
-    double grace)
+VRT_purge(const struct vrt_ctx *ctx, double ttl, double grace)
 {
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	if (wrk->cur_method == VCL_MET_LOOKUP)
+	if (ctx->method == VCL_MET_LOOKUP)
 		HSH_Purge(ctx->req, ctx->req->obj->objcore->objhead,
 		    ttl, grace);
-	else if (wrk->cur_method == VCL_MET_MISS)
+	else if (ctx->method == VCL_MET_MISS)
 		HSH_Purge(ctx->req, ctx->req->objcore->objhead,
 		    ttl, grace);
 }
