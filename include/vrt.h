@@ -260,5 +260,4 @@ char *VRT_REAL_string(const struct vrt_ctx *, double);
 char *VRT_TIME_string(const struct vrt_ctx *, double);
 const char *VRT_BOOL_string(unsigned);
 const char *VRT_BACKEND_string(const struct director *d);
-
 const char *VRT_CollectString(const struct vrt_ctx *, const char *p, ...);

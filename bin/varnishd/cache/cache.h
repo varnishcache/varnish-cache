@@ -638,7 +638,7 @@ struct req {
 	double			t_resp;
 
 	struct http_conn	htc[1];
-	char			*client_identity;
+	const char		*client_identity;
 
 	/* HTTP request */
 	struct http		*http;
@@ -1029,7 +1029,11 @@ const char *VCL_Method_Name(unsigned);
 
 /* cache_vrt.c */
 
-char *VRT_String(struct ws *ws, const char *h, const char *p, va_list ap);
+/*
+ * These prototypes go here, because we do not want to pollute vrt.h
+ * with va_list.  VCC never generates direct calls to them.
+ */
+const char *VRT_String(struct ws *ws, const char *h, const char *p, va_list ap);
 char *VRT_StringList(char *d, unsigned dl, const char *p, va_list ap);
 
 void ESI_Deliver(struct req *);

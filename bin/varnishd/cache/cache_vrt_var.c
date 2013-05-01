@@ -50,7 +50,7 @@ static void
 vrt_do_string(const struct http *hp, int fld,
     const char *err, const char *p, va_list ap)
 {
-	char *b;
+	const char *b;
 
 	AN(hp);
 	b = VRT_String(hp->ws, NULL, p, ap);
@@ -165,7 +165,7 @@ void
 VRT_l_client_identity(const struct vrt_ctx *ctx, const char *str, ...)
 {
 	va_list ap;
-	char *b;
+	const char *b;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
@@ -248,7 +248,7 @@ void
 VRT_l_beresp_storage(const struct vrt_ctx *ctx, const char *str, ...)
 {
 	va_list ap;
-	char *b;
+	const char *b;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);

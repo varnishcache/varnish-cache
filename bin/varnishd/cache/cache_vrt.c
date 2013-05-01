@@ -116,10 +116,12 @@ vrt_selecthttp(const struct vrt_ctx *ctx, enum gethdr_e where)
 		hp = ctx->http_obj;
 		break;
 	default:
-		INCOMPL();
+		WRONG("vrt_selecthttp 'where' invalid");
 	}
 	return (hp);
 }
+
+/*--------------------------------------------------------------------*/
 
 char *
 VRT_GetHdr(const struct vrt_ctx *ctx, const struct gethdr_s *hs)
@@ -136,7 +138,7 @@ VRT_GetHdr(const struct vrt_ctx *ctx, const struct gethdr_s *hs)
 }
 
 /*--------------------------------------------------------------------
- * XXX: Optimize the single element case ?
+ * Collapse a STRING_LIST in the space provided, or return NULL
  */
 
 char *
@@ -163,10 +165,10 @@ VRT_StringList(char *d, unsigned dl, const char *p, va_list ap)
 }
 
 /*--------------------------------------------------------------------
- * XXX: Optimize the single element case ?
+ * Copy and merge a STRING_LIST into a workspace.
  */
 
-char *
+const char *
 VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
 {
 	char *b, *e;
@@ -196,14 +198,14 @@ VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
 }
 
 /*--------------------------------------------------------------------
- * Build a string on the request workspace
+ * Copy and merge a STRING_LIST on the current workspace
  */
 
 const char *
 VRT_CollectString(const struct vrt_ctx *ctx, const char *p, ...)
 {
 	va_list ap;
-	char *b;
+	const char *b;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->ws, WS_MAGIC);
@@ -221,7 +223,7 @@ VRT_SetHdr(const struct vrt_ctx *ctx , const struct gethdr_s *hs,
 {
 	struct http *hp;
 	va_list ap;
-	char *b;
+	const char *b;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(hs);

@@ -39,7 +39,7 @@ VCL_VOID __match_proto__(td_debug_panic)
 vmod_panic(const struct vrt_ctx *ctx, const char *str, ...)
 {
 	va_list ap;
-	char *b;
+	const char *b;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	va_start(ap, str);
