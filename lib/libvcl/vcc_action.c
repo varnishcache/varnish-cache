@@ -46,7 +46,7 @@ parse_call(struct vcc *tl)
 	ExpectErr(tl, ID);
 	vcc_AddCall(tl, tl->t);
 	vcc_AddRef(tl, tl->t, SYM_SUB);
-	Fb(tl, 1, "if (VGC_function_%.*s(ctx, req))\n", PF(tl->t));
+	Fb(tl, 1, "if (VGC_function_%.*s(ctx))\n", PF(tl->t));
 	Fb(tl, 1, "\treturn (1);\n");
 	vcc_NextToken(tl);
 	return;
@@ -59,7 +59,7 @@ parse_error(struct vcc *tl)
 {
 
 	vcc_NextToken(tl);
-	Fb(tl, 1, "VRT_error(req,\n");
+	Fb(tl, 1, "VRT_error(ctx,\n");
 	if (tl->t->tok == '(') {
 		vcc_NextToken(tl);
 		vcc_Expr(tl, INT);
@@ -223,7 +223,7 @@ parse_new(struct vcc *tl)
 
 	bprintf(buf1, ", &%s, \"%s\"", sy1->name, sy1->name);
 	vcc_Eval_Func(tl, s_init, buf1, "ASDF", s_init + strlen(s_init) + 1);
-	Fd(tl, 0, "\t%s((struct req*)0, &%s);\n", s_fini, sy1->name);
+	Fd(tl, 0, "\t%s(&%s);\n", s_fini, sy1->name);
 	ExpectErr(tl, ';');
 
 	bprintf(buf1, ", %s", sy1->name);
@@ -292,7 +292,7 @@ parse_hash_data(struct vcc *tl)
 	vcc_NextToken(tl);
 	SkipToken(tl, '(');
 
-	Fb(tl, 1, "VRT_hashdata(req, ");
+	Fb(tl, 1, "VRT_hashdata(ctx, ");
 	vcc_Expr(tl, STRING_LIST);
 	ERRCHK(tl);
 	Fb(tl, 0, ");\n");
@@ -339,7 +339,7 @@ parse_rollback(struct vcc *tl)
 {
 
 	vcc_NextToken(tl);
-	Fb(tl, 1, "VRT_Rollback(req);\n");
+	Fb(tl, 1, "VRT_Rollback(ctx);\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -349,7 +349,7 @@ parse_purge(struct vcc *tl)
 {
 
 	vcc_NextToken(tl);
-	Fb(tl, 1, "VRT_purge(wrk, req, 0, 0);\n");
+	Fb(tl, 1, "VRT_purge(wrk, ctx, 0, 0);\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -359,7 +359,7 @@ parse_synthetic(struct vcc *tl)
 {
 	vcc_NextToken(tl);
 
-	Fb(tl, 1, "VRT_synth_page(req, 0, ");
+	Fb(tl, 1, "VRT_synth_page(ctx, 0, ");
 	vcc_Expr(tl, STRING_LIST);
 	ERRCHK(tl);
 	Fb(tl, 0, ");\n");

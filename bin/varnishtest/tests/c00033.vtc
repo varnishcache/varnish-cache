@@ -25,13 +25,13 @@ varnish v1 -vcl+backend {
 
 	sub vcl_lookup {
 		if (req.method == "PURGE") {
-			C{ VRT_purge(wrk, req, 0, 0); }C
+			C{ VRT_purge(wrk, ctx, 0, 0); }C
 			error 456 "got it";
 		}
 	}
 	sub vcl_miss {
 		if (req.method == "PURGE") {
-			C{ VRT_purge(wrk, req, 0, 0); }C
+			C{ VRT_purge(wrk, ctx, 0, 0); }C
 			error 456 "got it";
 		}
 	}

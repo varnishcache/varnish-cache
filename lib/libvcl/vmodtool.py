@@ -246,27 +246,37 @@ class func(object):
 	def set_pfx(self, s):
 		self.pfx = s
 
-	def c_proto(self, fo):
+	def c_proto(self, fo, fini=False):
 		fo.write(ctypes[self.retval])
-		fo.write(" vmod_" + self.cnam)
-		fo.write("(struct req *")
+		fo.write(" vmod_" + self.cnam + "(")
+		p = ""
+		if not fini:
+			fo.write("const struct vrt_ctx *")
+			p = ", "
 		if self.pfx != None:
-			fo.write(self.pfx)
+			fo.write(p + self.pfx)
+			p = ", "
 		for a in self.al:
-			fo.write(", " + ctypes[a.typ])
+			fo.write(p + ctypes[a.typ])
+			p = ", "
 			if a.nam != None:
 				fo.write(" " + a.nam)
 		fo.write(");\n")
 
-	def c_typedef(self, modname):
+	def c_typedef(self, modname, fini=False):
 		s = "typedef "
 		s += ctypes[self.retval]
-		s += " td_" + modname + "_" + self.cnam
-		s += "(struct req *"
+		s += " td_" + modname + "_" + self.cnam + "("
+		p = ""
+		if not fini:
+			s += "const struct vrt_ctx *"
+			p = ", "
 		if self.pfx != None:
-			s += self.pfx
+			s += p + self.pfx
+			p = ", "
 		for a in self.al:
-			s += ", " + ctypes[a.typ]
+			s += p + ctypes[a.typ]
+			p = ", "
 		s += ");"
 		return s
 
@@ -300,10 +310,10 @@ class obj(object):
 
 	def set_modnam(self, modnam):
 		self.st = "struct vmod_" + modnam + "_" + self.nam
-		self.init.set_pfx(", " + self.st + " **, const char *")
-		self.fini.set_pfx(", " + self.st + " **")
+		self.init.set_pfx(self.st + " **, const char *")
+		self.fini.set_pfx(self.st + " **")
 		for m in self.methods:
-			m.set_pfx(", " + self.st + " *")
+			m.set_pfx(self.st + " *")
 
 	def set_init(self, f):
 		self.init = f
@@ -319,7 +329,7 @@ class obj(object):
 		l.append("/* Object " + self.nam + " */")
 		l.append(self.st + ";")
 		l.append(self.init.c_typedef(modnam) + "")
-		l.append(self.fini.c_typedef(modnam) + "")
+		l.append(self.fini.c_typedef(modnam, fini=True) + "")
 		for m in self.methods:
 			l.append(m.c_typedef(modnam) + "")
 		return l
@@ -327,7 +337,7 @@ class obj(object):
 	def c_proto(self, fo):
 		fo.write(self.st + ";\n")
 		self.init.c_proto(fo)
-		self.fini.c_proto(fo)
+		self.fini.c_proto(fo, fini = True)
 		for m in self.methods:
 			m.c_proto(fo)
 
@@ -520,7 +530,7 @@ fh = open("vcc_if.h", "w")
 file_header(fc)
 file_header(fh)
 
-fh.write('struct req;\n')
+fh.write('struct vrt_ctx;\n')
 fh.write('struct VCL_conf;\n')
 fh.write('struct vmod_priv;\n')
 fh.write("\n");

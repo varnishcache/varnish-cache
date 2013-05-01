@@ -83,12 +83,12 @@ free_frfile(void *ptr)
 }
 
 VCL_STRING __match_proto__(td_std_fileread)
-vmod_fileread(struct req *req, struct vmod_priv *priv, VCL_STRING file_name)
+vmod_fileread(const struct vrt_ctx *ctx, struct vmod_priv *priv, VCL_STRING file_name)
 {
 	struct frfile *frf = NULL;
 	char *s;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(priv);
 
 	if (priv->priv != NULL) {

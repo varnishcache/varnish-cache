@@ -78,12 +78,12 @@ vmod_rr_getfd(const struct director *dir, struct busyobj *bo)
 }
 
 VCL_VOID __match_proto__()
-vmod_round_robin__init(struct req *req, struct vmod_directors_round_robin **rrp,
-    const char *vcl_name)
+vmod_round_robin__init(const struct vrt_ctx *ctx,
+    struct vmod_directors_round_robin **rrp, const char *vcl_name)
 {
 	struct vmod_directors_round_robin *rr;
 
-	AZ(req);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(rrp);
 	AZ(*rrp);
 	ALLOC_OBJ(rr, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
@@ -93,11 +93,10 @@ vmod_round_robin__init(struct req *req, struct vmod_directors_round_robin **rrp,
 }
 
 VCL_VOID __match_proto__()
-vmod_round_robin__fini(struct req *req, struct vmod_directors_round_robin **rrp)
+vmod_round_robin__fini(struct vmod_directors_round_robin **rrp)
 {
 	struct vmod_directors_round_robin *rr;
 
-	AZ(req);
 	rr = *rrp;
 	*rrp = NULL;
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
@@ -106,19 +105,21 @@ vmod_round_robin__fini(struct req *req, struct vmod_directors_round_robin **rrp)
 }
 
 VCL_VOID __match_proto__()
-vmod_round_robin_add_backend(struct req *req,
+vmod_round_robin_add_backend(const struct vrt_ctx *ctx,
     struct vmod_directors_round_robin *rr, VCL_BACKEND be)
 {
 
-	(void)req;
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
 	(void)vdir_add_backend(rr->vd, be, 0.0);
 }
 
 VCL_BACKEND __match_proto__()
-vmod_round_robin_backend(struct req *req, struct vmod_directors_round_robin *rr)
+vmod_round_robin_backend(const struct vrt_ctx *ctx,
+    struct vmod_directors_round_robin *rr)
 {
-	(void)req;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
 	return (rr->vd->dir);
 }

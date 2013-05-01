@@ -42,12 +42,12 @@ struct vmod_debug_obj {
 };
 
 VCL_VOID
-vmod_obj__init(struct req *req, struct vmod_debug_obj **op,
+vmod_obj__init(const struct vrt_ctx *ctx, struct vmod_debug_obj **op,
     const char *vcl_name, VCL_STRING s)
 {
 	struct vmod_debug_obj *o;
 
-	(void)req;
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	(void)vcl_name;
 	(void)s;
 	AN(op);
@@ -60,10 +60,9 @@ vmod_obj__init(struct req *req, struct vmod_debug_obj **op,
 }
 
 VCL_VOID
-vmod_obj__fini(struct req *req, struct vmod_debug_obj **op)
+vmod_obj__fini(struct vmod_debug_obj **op)
 {
 
-	(void)req;
 	AN(op);
 	AN(*op);
 	FREE_OBJ(*op);
@@ -71,9 +70,10 @@ vmod_obj__fini(struct req *req, struct vmod_debug_obj **op)
 }
 
 VCL_STRING __match_proto__()
-vmod_obj_foo(struct req *req, struct vmod_debug_obj *o, VCL_STRING s)
+vmod_obj_foo(const struct vrt_ctx *ctx, struct vmod_debug_obj *o, VCL_STRING s)
 {
-	(void)req;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	(void)s;
 	CHECK_OBJ_NOTNULL(o, VMOD_DEBUG_OBJ_MAGIC);
 	assert(o->foobar == 42);
@@ -81,9 +81,10 @@ vmod_obj_foo(struct req *req, struct vmod_debug_obj *o, VCL_STRING s)
 }
 
 VCL_TIME __match_proto__()
-vmod_obj_date(struct req *req, struct vmod_debug_obj *o)
+vmod_obj_date(const struct vrt_ctx *ctx, struct vmod_debug_obj *o)
 {
-	(void)req;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(o, VMOD_DEBUG_OBJ_MAGIC);
 	assert(o->foobar == 42);
 	return (21.4);

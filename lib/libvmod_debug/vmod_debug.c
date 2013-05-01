@@ -36,23 +36,23 @@
 #include "vcc_if.h"
 
 VCL_VOID __match_proto__(td_debug_panic)
-vmod_panic(struct req *req, const char *str, ...)
+vmod_panic(const struct vrt_ctx *ctx, const char *str, ...)
 {
 	va_list ap;
 	char *b;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	va_start(ap, str);
-	b = VRT_String(req->http->ws, "PANIC: ", str, ap);
+	b = VRT_String(ctx->ws, "PANIC: ", str, ap);
 	va_end(ap);
 	VAS_Fail("VCL", "", 0, b, 0, VAS_VCL);
 }
 
 VCL_STRING __match_proto__(td_debug_author)
-vmod_author(struct req *req, VCL_ENUM id)
+vmod_author(const struct vrt_ctx *ctx, VCL_ENUM id)
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (!strcmp(id, "phk"))
 		return ("Poul-Henning");
 	if (!strcmp(id, "des"))
@@ -75,10 +75,10 @@ init_function(struct vmod_priv *priv, const struct VCL_conf *cfg)
 }
 
 VCL_VOID __match_proto__(td_debug_test_priv_call)
-vmod_test_priv_call(struct req *req, struct vmod_priv *priv)
+vmod_test_priv_call(const struct vrt_ctx *ctx, struct vmod_priv *priv)
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (priv->priv == NULL) {
 		priv->priv = strdup("BAR");
 		priv->free = free;
@@ -88,9 +88,9 @@ vmod_test_priv_call(struct req *req, struct vmod_priv *priv)
 }
 
 VCL_VOID __match_proto__(td_debug_test_priv_vcl)
-vmod_test_priv_vcl(struct req *req, struct vmod_priv *priv)
+vmod_test_priv_vcl(const struct vrt_ctx *ctx, struct vmod_priv *priv)
 {
 
-        CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
         assert(!strcmp(priv->priv, "FOO"));
 }

@@ -186,38 +186,40 @@ void VRT_acl_log(const struct vrt_ctx *, const char *msg);
 
 /* req related */
 
-int VRT_CacheReqBody(struct req *, long long maxsize);
+int VRT_CacheReqBody(const struct vrt_ctx *, long long maxsize);
 
 /* Regexp related */
 void VRT_re_init(void **, const char *);
 void VRT_re_fini(void *);
-int VRT_re_match(struct req *, const char *, void *re);
-const char *VRT_regsub(struct req *, int all, const char *,
+int VRT_re_match(const struct vrt_ctx *, const char *, void *re);
+const char *VRT_regsub(const struct vrt_ctx *, int all, const char *,
     void *, const char *);
 
 void VRT_ban_string(const char *);
-void VRT_purge(const struct worker *, struct req *, double ttl, double grace);
+void VRT_purge(const struct worker *, const struct vrt_ctx *, double ttl,
+    double grace);
 
 void VRT_count(const struct vrt_ctx *, unsigned);
 int VRT_rewrite(const char *, const char *);
-void VRT_error(struct req *, unsigned, const char *);
+void VRT_error(const struct vrt_ctx *, unsigned, const char *);
 int VRT_switch_config(const char *);
 
-const struct gethdr_s *VRT_MkGethdr(struct req *,enum gethdr_e, const char *);
+const struct gethdr_s *VRT_MkGethdr(const struct vrt_ctx *,enum gethdr_e,
+    const char *);
 char *VRT_GetHdr(const struct vrt_ctx *, const struct gethdr_s *);
 void VRT_SetHdr(const struct vrt_ctx *, const struct gethdr_s *, const char *, ...);
 void VRT_handling(struct worker *, unsigned hand);
 
-void VRT_hashdata(struct req *, const char *str, ...);
+void VRT_hashdata(const struct vrt_ctx *, const char *str, ...);
 
 /* Simple stuff */
 int VRT_strcmp(const char *s1, const char *s2);
 void VRT_memmove(void *dst, const void *src, unsigned len);
 
-void VRT_Rollback(struct req *);
+void VRT_Rollback(const struct vrt_ctx *);
 
 /* Synthetic pages */
-void VRT_synth_page(const struct req *, unsigned flags, const char *, ...);
+void VRT_synth_page(const struct vrt_ctx *, unsigned flags, const char *, ...);
 
 /* Backend related */
 void VRT_init_dir(struct cli *, struct director **, const char *name,

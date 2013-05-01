@@ -12,7 +12,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
-		C{ VRT_CacheReqBody(req, 1000); }C
+		C{ VRT_CacheReqBody(ctx, 1000); }C
 		return (pass);
 	}
 	sub vcl_backend_response {

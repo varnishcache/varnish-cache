@@ -62,12 +62,12 @@ VRT_re_fini(void *rep)
 }
 
 int
-VRT_re_match(struct req *req, const char *s, void *re)
+VRT_re_match(const struct vrt_ctx *ctx, const char *s, void *re)
 {
 	vre_t *t;
 	int i;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (s == NULL)
 		s = "";
 	AN(re);
@@ -76,12 +76,12 @@ VRT_re_match(struct req *req, const char *s, void *re)
 	if (i >= 0)
 		return (1);
 	if (i < VRE_ERROR_NOMATCH )
-		VSLb(req->vsl, SLT_VCL_Error, "Regexp matching returned %d", i);
+		VSLb(ctx->vsl, SLT_VCL_Error, "Regexp matching returned %d", i);
 	return (0);
 }
 
 const char *
-VRT_regsub(struct req *req, int all, const char *str, void *re,
+VRT_regsub(const struct vrt_ctx *ctx, int all, const char *str, void *re,
     const char *sub)
 {
 	int ovector[30];
@@ -94,7 +94,7 @@ VRT_regsub(struct req *req, int all, const char *str, void *re,
 	int options = 0;
 	size_t len;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(re);
 	if (str == NULL)
 		str = "";
@@ -110,12 +110,12 @@ VRT_regsub(struct req *req, int all, const char *str, void *re,
 	if (i == VRE_ERROR_NOMATCH)
 		return(str);
 	if (i < VRE_ERROR_NOMATCH ) {
-		VSLb(req->vsl, SLT_VCL_Error, "Regexp matching returned %d", i);
+		VSLb(ctx->vsl, SLT_VCL_Error, "Regexp matching returned %d", i);
 		return(str);
 	}
 
-	u = WS_Reserve(req->http->ws, 0);
-	res.e = res.b = b0 = req->http->ws->f;
+	u = WS_Reserve(ctx->ws, 0);
+	res.e = res.b = b0 = ctx->ws->f;
 	res.e += u;
 
 	do {
@@ -147,8 +147,8 @@ VRT_regsub(struct req *req, int all, const char *str, void *re,
 		i = VRE_exec(t, str, len, 0, options, ovector, 30,
 		    &cache_param->vre_limits);
 		if (i < VRE_ERROR_NOMATCH ) {
-			WS_Release(req->http->ws, 0);
-			VSLb(req->vsl, SLT_VCL_Error,
+			WS_Release(ctx->ws, 0);
+			VSLb(ctx->vsl, SLT_VCL_Error,
 			    "Regexp matching returned %d", i);
 			return(str);
 		}
@@ -157,10 +157,10 @@ VRT_regsub(struct req *req, int all, const char *str, void *re,
 	/* Copy suffix to match */
 	Tadd(&res, str, len+1);
 	if (res.b >= res.e) {
-		WS_Release(req->http->ws, 0);
+		WS_Release(ctx->ws, 0);
 		return (str);
 	}
 	Tcheck(res);
-	WS_ReleaseP(req->http->ws, res.b);
+	WS_ReleaseP(ctx->ws, res.b);
 	return (b0);
 }

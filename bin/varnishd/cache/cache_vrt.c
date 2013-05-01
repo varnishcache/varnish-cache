@@ -55,12 +55,14 @@ const void * const vrt_magic_string_unset = &vrt_magic_string_unset;
 /*--------------------------------------------------------------------*/
 
 const struct gethdr_s *
-VRT_MkGethdr(struct req *req, enum gethdr_e where, const char *what)
+VRT_MkGethdr(const struct vrt_ctx *ctx, enum gethdr_e where, const char *what)
 {
 	struct gethdr_s *retval;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	retval = (void*)WS_Alloc(req->wrk->aws, sizeof *retval);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	// XXX ?
+	retval = (void*)WS_Alloc(ctx->req->wrk->aws, sizeof *retval);
 	AN(retval);
 	retval->where = where;
 	retval->what = what;
@@ -71,16 +73,18 @@ VRT_MkGethdr(struct req *req, enum gethdr_e where, const char *what)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_error(struct req *req, unsigned code, const char *reason)
+VRT_error(const struct vrt_ctx *ctx, unsigned code, const char *reason)
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	VSLb(req->vsl, SLT_Debug, "VCL_error(%u, %s)", code,
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	VSLb(ctx->vsl, SLT_Debug, "VCL_error(%u, %s)", code,
 	    reason ?  reason : "(null)");
 	if (code < 100 || code > 999)
 		code = 503;
-	req->err_code = (uint16_t)code;
-	req->err_reason = reason ? reason : http_StatusMessage(req->err_code);
+	ctx->req->err_code = (uint16_t)code;
+	ctx->req->err_reason =
+	    reason ? reason : http_StatusMessage(ctx->req->err_code);
 }
 
 /*--------------------------------------------------------------------*/
@@ -277,18 +281,20 @@ VRT_handling(struct worker *wrk, unsigned hand)
  */
 
 void
-VRT_hashdata(struct req *req, const char *str, ...)
+VRT_hashdata(const struct vrt_ctx *ctx, const char *str, ...)
 {
 	va_list ap;
 	const char *p;
 
-	HSH_AddString(req, str);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	HSH_AddString(ctx->req, str);
 	va_start(ap, str);
 	while (1) {
 		p = va_arg(ap, const char *);
 		if (p == vrt_magic_string_end)
 			break;
-		HSH_AddString(req, p);
+		HSH_AddString(ctx->req, p);
 	}
 }
 
@@ -405,27 +411,29 @@ VRT_l_beresp_saintmode(const struct vrt_ctx *ctx, double a)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_Rollback(struct req *req)
+VRT_Rollback(const struct vrt_ctx *ctx)
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	HTTP_Copy(req->http, req->http0);
-	WS_Reset(req->ws, req->ws_req);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	HTTP_Copy(ctx->req->http, ctx->req->http0);
+	WS_Reset(ctx->req->ws, ctx->req->ws_req);
 }
 
 /*--------------------------------------------------------------------*/
 
 void
-VRT_synth_page(const struct req *req, unsigned flags, const char *str, ...)
+VRT_synth_page(const struct vrt_ctx *ctx, unsigned flags, const char *str, ...)
 {
 	va_list ap;
 	const char *p;
 	struct vsb *vsb;
 
 	(void)flags;
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
-	vsb = SMS_Makesynth(req->obj);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req->obj, OBJECT_MAGIC);
+	vsb = SMS_Makesynth(ctx->req->obj);
 	AN(vsb);
 
 	VSB_cat(vsb, str);
@@ -438,9 +446,10 @@ VRT_synth_page(const struct req *req, unsigned flags, const char *str, ...)
 		p = va_arg(ap, const char *);
 	}
 	va_end(ap);
-	SMS_Finish(req->obj);
-	http_Unset(req->obj->http, H_Content_Length);
-	http_PrintfHeader(req->obj->http, "Content-Length: %zd", req->obj->len);
+	SMS_Finish(ctx->req->obj);
+	http_Unset(ctx->req->obj->http, H_Content_Length);
+	http_PrintfHeader(ctx->req->obj->http,
+	    "Content-Length: %zd", ctx->req->obj->len);
 }
 
 /*--------------------------------------------------------------------*/
@@ -494,9 +503,12 @@ VRT_ban_string(const char *str)
  */
 
 int
-VRT_CacheReqBody(struct req *req, long long maxsize)
+VRT_CacheReqBody(const struct vrt_ctx *ctx, long long maxsize)
 {
-	return (HTTP1_CacheReqBody(req, maxsize));
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	return (HTTP1_CacheReqBody(ctx->req, maxsize));
 }
 
 /*--------------------------------------------------------------------
@@ -504,15 +516,19 @@ VRT_CacheReqBody(struct req *req, long long maxsize)
  */
 
 void
-VRT_purge(const struct worker *wrk, struct req *req, double ttl, double grace)
+VRT_purge(const struct worker *wrk, const struct vrt_ctx *ctx, double ttl,
+    double grace)
 {
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	if (wrk->cur_method == VCL_MET_LOOKUP)
-		HSH_Purge(req, req->obj->objcore->objhead, ttl, grace);
+		HSH_Purge(ctx->req, ctx->req->obj->objcore->objhead,
+		    ttl, grace);
 	else if (wrk->cur_method == VCL_MET_MISS)
-		HSH_Purge(req, req->objcore->objhead, ttl, grace);
+		HSH_Purge(ctx->req, ctx->req->objcore->objhead,
+		    ttl, grace);
 }
 
 /*--------------------------------------------------------------------

@@ -75,12 +75,12 @@ vmod_rr_getfd(const struct director *dir, struct busyobj *bo)
 }
 
 VCL_VOID __match_proto__()
-vmod_fallback__init(struct req *req, struct vmod_directors_fallback **rrp,
-    const char *vcl_name)
+vmod_fallback__init(const struct vrt_ctx *ctx,
+    struct vmod_directors_fallback **rrp, const char *vcl_name)
 {
 	struct vmod_directors_fallback *rr;
 
-	AZ(req);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(rrp);
 	AZ(*rrp);
 	ALLOC_OBJ(rr, VMOD_DIRECTORS_FALLBACK_MAGIC);
@@ -90,11 +90,10 @@ vmod_fallback__init(struct req *req, struct vmod_directors_fallback **rrp,
 }
 
 VCL_VOID __match_proto__()
-vmod_fallback__fini(struct req *req, struct vmod_directors_fallback **rrp)
+vmod_fallback__fini(struct vmod_directors_fallback **rrp)
 {
 	struct vmod_directors_fallback *rr;
 
-	AZ(req);
 	rr = *rrp;
 	*rrp = NULL;
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_FALLBACK_MAGIC);
@@ -103,19 +102,20 @@ vmod_fallback__fini(struct req *req, struct vmod_directors_fallback **rrp)
 }
 
 VCL_VOID __match_proto__()
-vmod_fallback_add_backend(struct req *req,
+vmod_fallback_add_backend(const struct vrt_ctx *ctx,
     struct vmod_directors_fallback *rr, VCL_BACKEND be)
 {
 
-	(void)req;
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_FALLBACK_MAGIC);
 	(void)vdir_add_backend(rr->vd, be, 0.0);
 }
 
 VCL_BACKEND __match_proto__()
-vmod_fallback_backend(struct req *req, struct vmod_directors_fallback *rr)
+vmod_fallback_backend(const struct vrt_ctx *ctx,
+    struct vmod_directors_fallback *rr)
 {
-	(void)req;
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_FALLBACK_MAGIC);
 	return (rr->vd->dir);
 }

@@ -459,7 +459,7 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym)
 	p = vcc_regexp(tl);
 	vcc_NextToken(tl);
 
-	bprintf(buf, "VRT_regsub(req, %d,\v+\n\v1,\n%s", all, p);
+	bprintf(buf, "VRT_regsub(ctx, %d,\v+\n\v1,\n%s", all, p);
 	*e = vcc_expr_edit(STRING, buf, e2, *e);
 
 	SkipToken(tl, ',');
@@ -535,7 +535,7 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
 	p = args;
 	if (extra == NULL)
 		extra = "";
-	e2 = vcc_mk_expr(vcc_arg_type(&p), "%s(req%s\v+", cfunc, extra);
+	e2 = vcc_mk_expr(vcc_arg_type(&p), "%s(ctx%s\v+", cfunc, extra);
 	while (*p != '\0') {
 		e1 = NULL;
 		fmt = vcc_arg_type(&p);
@@ -1002,7 +1002,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 		re = vcc_regexp(tl);
 		ERRCHK(tl);
 		vcc_NextToken(tl);
-		bprintf(buf, "%sVRT_re_match(req, \v1, %s)", not, re);
+		bprintf(buf, "%sVRT_re_match(ctx, \v1, %s)", not, re);
 		*e = vcc_expr_edit(BOOL, buf, *e, NULL);
 		return;
 	}

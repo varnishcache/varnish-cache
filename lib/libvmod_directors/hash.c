@@ -52,12 +52,12 @@ struct vmod_directors_hash {
 };
 
 VCL_VOID __match_proto__()
-vmod_hash__init(struct req *req, struct vmod_directors_hash **rrp,
+vmod_hash__init(const struct vrt_ctx *ctx, struct vmod_directors_hash **rrp,
     const char *vcl_name)
 {
 	struct vmod_directors_hash *rr;
 
-	AZ(req);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(rrp);
 	AZ(*rrp);
 	ALLOC_OBJ(rr, VMOD_DIRECTORS_HASH_MAGIC);
@@ -70,11 +70,10 @@ vmod_hash__init(struct req *req, struct vmod_directors_hash **rrp,
 }
 
 VCL_VOID __match_proto__()
-vmod_hash__fini(struct req *req, struct vmod_directors_hash **rrp)
+vmod_hash__fini(struct vmod_directors_hash **rrp)
 {
 	struct vmod_directors_hash *rr;
 
-	AZ(req);
 	rr = *rrp;
 	*rrp = NULL;
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_HASH_MAGIC);
@@ -84,40 +83,41 @@ vmod_hash__fini(struct req *req, struct vmod_directors_hash **rrp)
 }
 
 VCL_VOID __match_proto__()
-vmod_hash_add_backend(struct req *req,
+vmod_hash_add_backend(const struct vrt_ctx *ctx,
     struct vmod_directors_hash *rr, VCL_BACKEND be, double w)
 {
 
-	(void)req;
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_HASH_MAGIC);
 	(void)vdir_add_backend(rr->vd, be, w);
 }
 
 VCL_BACKEND __match_proto__()
-vmod_hash_backend(struct req *req, struct vmod_directors_hash *rr, const char *arg, ...)
+vmod_hash_backend(const struct vrt_ctx *ctx, struct vmod_directors_hash *rr,
+    const char *arg, ...)
 {
-	struct SHA256Context ctx;
+	struct SHA256Context sha_ctx;
 	va_list ap;
 	const char *p;
 	unsigned char sha256[SHA256_LEN];
 	VCL_BACKEND be;
 	double r;
 
-	(void)req;
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_HASH_MAGIC);
-	SHA256_Init(&ctx);
+	SHA256_Init(&sha_ctx);
 	va_start(ap, arg);
 	p = arg;
 	while (p != vrt_magic_string_end) {
-		SHA256_Update(&ctx, arg, strlen(arg));
+		SHA256_Update(&sha_ctx, arg, strlen(arg));
 		p = va_arg(ap, const char *);
 	}
 	va_end(ap);
-	SHA256_Final(sha256, &ctx);
+	SHA256_Final(sha256, &sha_ctx);
 
 	r = vbe32dec(sha256);
 	r = scalbn(r, -32);
-	be = vdir_pick_be(rr->vd, req->busyobj, r, rr->nloops);
+	be = vdir_pick_be(rr->vd, ctx->bo, r, rr->nloops);
 	return (be);
 }

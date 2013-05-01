@@ -698,7 +698,6 @@ fo = open(buildroot + "/include/vcl.h", "w")
 file_header(fo)
 
 fo.write("""
-struct sess;
 struct vrt_ctx;
 struct req;
 struct busyobj;
@@ -708,7 +707,7 @@ struct worker;
 
 typedef int vcl_init_f(struct cli *);
 typedef void vcl_fini_f(struct cli *);
-typedef int vcl_func_f(const struct vrt_ctx *ctx, struct worker *, struct req *);
+typedef int vcl_func_f(const struct vrt_ctx *ctx, struct worker *);
 """)
 
 
