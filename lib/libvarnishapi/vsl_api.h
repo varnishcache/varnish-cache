@@ -51,16 +51,20 @@ typedef int vslc_skip_f(void *, ssize_t words);
 typedef int vslc_ref_f(void *, struct vslc_shmptr *ptr);
 typedef int vslc_check_f(const void *, const struct VSLC_ptr *ptr);
 
-struct vslc {
-	struct VSL_cursor		c;
-	unsigned			magic;
-#define VSLC_MAGIC			0x5007C0DE
-
+struct vslc_tbl {
 	vslc_delete_f			*delete;
 	vslc_next_f			*next;
 	vslc_reset_f			*reset;
 	vslc_skip_f			*skip;
 	vslc_check_f			*check;
+};
+
+struct vslc {
+	struct VSL_cursor		c;
+	unsigned			magic;
+#define VSLC_MAGIC			0x5007C0DE
+
+	const struct vslc_tbl		*tbl;
 };
 
 struct VSL_data {

@@ -203,6 +203,14 @@ vslc_raw_reset(void *cursor)
 	return (0);
 }
 
+static struct vslc_tbl vslc_raw_tbl = {
+	.delete	= NULL,
+	.next	= vslc_raw_next,
+	.reset	= vslc_raw_reset,
+	.skip	= NULL,
+	.check	= NULL,
+};
+
 static int
 vslc_vtx_next(void *cursor)
 {
@@ -235,6 +243,14 @@ vslc_vtx_reset(void *cursor)
 	return (0);
 }
 
+static struct vslc_tbl vslc_vtx_tbl = {
+	.delete	= NULL,
+	.next	= vslc_vtx_next,
+	.reset	= vslc_vtx_reset,
+	.skip	= NULL,
+	.check	= NULL,
+};
+
 static void
 vslc_vtx_setup(struct vslc_vtx *c, struct vtx *vtx, unsigned level)
 {
@@ -245,8 +261,7 @@ vslc_vtx_setup(struct vslc_vtx *c, struct vtx *vtx, unsigned level)
 	c->c.c.vxid = vtx->key.vxid;
 	c->c.c.level = level;
 	c->c.magic = VSLC_MAGIC;
-	c->c.next = vslc_vtx_next;
-	c->c.reset = vslc_vtx_reset;
+	c->c.tbl = &vslc_vtx_tbl;
 
 	c->magic = VSLC_VTX_MAGIC;
 	c->vtx = vtx;
@@ -780,8 +795,7 @@ vslq_raw(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 	memset(&rawc, 0, sizeof rawc);
 	rawc.c.c.vxid = -1;
 	rawc.c.magic = VSLC_MAGIC;
-	rawc.c.next = vslc_raw_next;
-	rawc.c.reset = vslc_raw_reset;
+	rawc.c.tbl = &vslc_raw_tbl;
 	rawc.magic = VSLC_RAW_MAGIC;
 	pc[0] = &rawc.c.c;
 	pc[1] = NULL;

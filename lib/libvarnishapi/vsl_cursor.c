@@ -212,6 +212,14 @@ vslc_vsm_skip(void *cursor, ssize_t words)
 	return (0);
 }
 
+static struct vslc_tbl vslc_vsm_tbl = {
+	.delete		= vslc_vsm_delete,
+	.next		= vslc_vsm_next,
+	.reset		= vslc_vsm_reset,
+	.skip		= vslc_vsm_skip,
+	.check		= vslc_vsm_check,
+};
+
 struct VSL_cursor *
 VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, int tail)
 {
@@ -245,11 +253,7 @@ VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, int tail)
 	c->c.c.vxid = -1;	/* N/A to this cursor type */
 	c->c.c.shmptr_ok = 1;
 	c->c.magic = VSLC_MAGIC;
-	c->c.delete = vslc_vsm_delete;
-	c->c.next = vslc_vsm_next;
-	c->c.reset = vslc_vsm_reset;
-	c->c.skip = vslc_vsm_skip;
-	c->c.check = vslc_vsm_check;
+	c->c.tbl = & vslc_vsm_tbl;
 
 	c->vsm = vsm;
 	c->vf = vf;
@@ -356,6 +360,14 @@ vslc_file_reset(void *cursor)
 	return (-1);
 }
 
+static struct vslc_tbl vslc_file_tbl = {
+	.delete		= vslc_file_delete,
+	.next		= vslc_file_next,
+	.reset		= vslc_file_reset,
+	.skip		= NULL,
+	.check		= NULL,
+};
+
 struct VSL_cursor *
 VSL_CursorFile(struct VSL_data *vsl, const char *name)
 {
@@ -399,9 +411,7 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name)
 	}
 	c->c.c.vxid = -1;	/* N/A to this cursor type */
 	c->c.magic = VSLC_MAGIC;
-	c->c.delete = vslc_file_delete;
-	c->c.next = vslc_file_next;
-	c->c.reset = vslc_file_reset;
+	c->c.tbl = &vslc_file_tbl;
 
 	c->fd = fd;
 	c->buflen = BUFSIZ;
@@ -417,9 +427,9 @@ VSL_DeleteCursor(struct VSL_cursor *cursor)
 	struct vslc *c;
 
 	CAST_OBJ_NOTNULL(c, (void *)cursor, VSLC_MAGIC);
-	if (c->delete == NULL)
+	if (c->tbl->delete == NULL)
 		return;
-	(c->delete)(c);
+	(c->tbl->delete)(c);
 }
 
 int
@@ -428,9 +438,9 @@ VSL_ResetCursor(struct VSL_cursor *cursor)
 	struct vslc *c;
 
 	CAST_OBJ_NOTNULL(c, (void *)cursor, VSLC_MAGIC);
-	if (c->reset == NULL)
+	if (c->tbl->reset == NULL)
 		return (-1);
-	return ((c->reset)(c));
+	return ((c->tbl->reset)(c));
 }
 
 int
@@ -439,8 +449,8 @@ VSL_Next(struct VSL_cursor *cursor)
 	struct vslc *c;
 
 	CAST_OBJ_NOTNULL(c, (void *)cursor, VSLC_MAGIC);
-	AN(c->next);
-	return ((c->next)(c));
+	AN(c->tbl->next);
+	return ((c->tbl->next)(c));
 }
 
 int
@@ -449,9 +459,9 @@ vsl_skip(struct VSL_cursor *cursor, ssize_t words)
 	struct vslc *c;
 
 	CAST_OBJ_NOTNULL(c, (void *)cursor, VSLC_MAGIC);
-	if (c->skip == NULL)
+	if (c->tbl->skip == NULL)
 		return (-1);
-	return ((c->skip)(c, words));
+	return ((c->tbl->skip)(c, words));
 }
 
 int
@@ -460,7 +470,7 @@ VSL_Check(const struct VSL_cursor *cursor, const struct VSLC_ptr *ptr)
 	const struct vslc *c;
 
 	CAST_OBJ_NOTNULL(c, (const void *)cursor, VSLC_MAGIC);
-	if (c->check == NULL)
+	if (c->tbl->check == NULL)
 		return (-1);
-	return ((c->check)(c, ptr));
+	return ((c->tbl->check)(c, ptr));
 }
