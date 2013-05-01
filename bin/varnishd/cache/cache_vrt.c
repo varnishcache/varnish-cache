@@ -54,24 +54,6 @@ const void * const vrt_magic_string_unset = &vrt_magic_string_unset;
 
 /*--------------------------------------------------------------------*/
 
-const struct gethdr_s *
-VRT_MkGethdr(const struct vrt_ctx *ctx, enum gethdr_e where, const char *what)
-{
-	struct gethdr_s *retval;
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	// XXX ?
-	retval = (void*)WS_Alloc(ctx->req->wrk->aws, sizeof *retval);
-	AN(retval);
-	retval->where = where;
-	retval->what = what;
-	return (retval);
-}
-
-
-/*--------------------------------------------------------------------*/
-
 void
 VRT_error(const struct vrt_ctx *ctx, unsigned code, const char *reason)
 {
