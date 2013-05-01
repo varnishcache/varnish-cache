@@ -181,7 +181,7 @@ vslc_raw_next(void *cursor)
 	assert(c->next >= c->start);
 	assert(c->next <= c->start + c->len);
 	if (c->next < c->start + c->len) {
-		c->c.c.ptr = c->next;
+		c->c.c.rec.ptr = c->next;
 		c->next = VSL_NEXT(c->next);
 		return (1);
 	}
@@ -198,7 +198,7 @@ vslc_raw_reset(void *cursor)
 	assert(c->next >= c->start);
 	assert(c->next <= c->start + c->len);
 	c->next = c->start;
-	c->c.c.ptr = NULL;
+	c->c.c.rec.ptr = NULL;
 
 	return (0);
 }
@@ -213,7 +213,7 @@ vslc_vtx_next(void *cursor)
 	assert(c->next >= c->vtx->start);
 	assert(c->next <= c->vtx->start + c->vtx->len);
 	if (c->next < c->vtx->start + c->vtx->len) {
-		c->c.c.ptr = c->next;
+		c->c.c.rec.ptr = c->next;
 		c->next = VSL_NEXT(c->next);
 		return (1);
 	}
@@ -230,7 +230,7 @@ vslc_vtx_reset(void *cursor)
 	assert(c->next >= c->vtx->start);
 	assert(c->next <= c->vtx->start + c->vtx->len);
 	c->next = c->vtx->start;
-	c->c.c.ptr = NULL;
+	c->c.c.rec.ptr = NULL;
 
 	return (0);
 }
@@ -790,13 +790,13 @@ vslq_raw(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 		i = VSL_Next(c);
 		if (i <= 0)
 			break;
-		AN(c->ptr);
+		AN(c->rec.ptr);
 		if (func == NULL)
 			continue;
-		rawc.start = c->ptr;
-		rawc.len = VSL_NEXT(c->ptr) - c->ptr;
+		rawc.start = c->rec.ptr;
+		rawc.len = VSL_NEXT(c->rec.ptr) - c->rec.ptr;
 		rawc.next = rawc.start;
-		rawc.c.c.ptr = NULL;
+		rawc.c.c.rec.ptr = NULL;
 
 		/* Query check goes here */
 		i = 0;
@@ -831,13 +831,13 @@ VSLQ_Dispatch(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 		i = VSL_Next(c);
 		if (i != 1)
 			break;
-		tag = VSL_TAG(c->ptr);
+		tag = VSL_TAG(c->rec.ptr);
 		if (tag == SLT__Batch) {
-			ptr = VSL_NEXT(c->ptr);
-			len = VSL_WORDS(c->ptr[1]);
+			ptr = VSL_NEXT(c->rec.ptr);
+			len = VSL_WORDS(c->rec.ptr[1]);
 			AZ(vsl_skip(c, len));
 		} else {
-			ptr = c->ptr;
+			ptr = c->rec.ptr;
 			len = VSL_NEXT(ptr) - ptr;
 		}
 		vxid = VSL_ID(ptr);

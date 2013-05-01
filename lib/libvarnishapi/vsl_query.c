@@ -104,9 +104,9 @@ vslq_runquery(struct vslq_query *query, struct VSL_cursor *cp[])
 			if (i == 0)
 				break;
 			assert(i == 1);
-			AN(c->ptr);
-			len = VSL_LEN(c->ptr);
-			data = VSL_CDATA(c->ptr);
+			AN(c->rec.ptr);
+			len = VSL_LEN(c->rec.ptr);
+			data = VSL_CDATA(c->rec.ptr);
 			i = VRE_exec(query->regex, data, len, 0, 0, NULL, 0,
 			    NULL);
 			if (i != VRE_ERROR_NOMATCH) {

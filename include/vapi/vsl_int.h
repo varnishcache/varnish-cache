@@ -68,9 +68,9 @@
 struct VSL_head {
 #define VSL_HEAD_MARKER		"VSLHEAD0"	/* Incr. as version# */
 	char			marker[VSM_MARKER_LEN];
-	ssize_t			segments[VSL_SEGMENTS];
-	unsigned		segment;	/* Current varnishd segment */
-	unsigned		seq;		/* Non-zero seq number */
+	volatile ssize_t	segments[VSL_SEGMENTS];
+	volatile unsigned	segment;	/* Current varnishd segment */
+	volatile unsigned	seq;		/* Non-zero seq number */
 	uint32_t		log[];
 };
 

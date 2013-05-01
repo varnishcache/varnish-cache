@@ -51,8 +51,14 @@
 struct VSL_data;
 struct VSLQ;
 
-struct VSL_cursor {
+struct VSLC_ptr {
 	const uint32_t		*ptr; /* Record pointer */
+	unsigned		priv;
+};
+
+struct VSL_cursor {
+	/* The record this cursor points to */
+	struct VSLC_ptr		rec;
 
 	/* If not -1, the vxid of all records in this set */
 	int32_t			vxid;
@@ -149,6 +155,18 @@ int VSL_ResetCursor(struct VSL_cursor *c);
 	 *
 	 * Return values:
 	 *    -1: Operation not supported
+	 */
+
+int VSL_Check(const struct VSL_cursor *c, const struct VSLC_ptr *ptr);
+	/*
+	 * Check if the VSLC_ptr structure points to a value that is still
+	 * valid:
+	 *
+	 * Return values:
+	 *    -1: Operation not supported
+	 *     0: Not valid
+	 *     1: Valid - warning level
+	 *     2: Valid
 	 */
 
 int VSL_Next(struct VSL_cursor *c);

@@ -55,11 +55,10 @@ struct vslc_vsm {
 	struct VSM_data			*vsm;
 	struct VSM_fantom		vf;
 
-	volatile const struct VSL_head	*head;
-	volatile const uint32_t		*next;
+	const struct VSL_head		*head;
 	const uint32_t			*end;
 	ssize_t				segsize;
-	unsigned			seq;
+	struct VSLC_ptr			next;
 };
 
 static void
@@ -72,74 +71,101 @@ vslc_vsm_delete(void *cursor)
 }
 
 static int
+vslc_vsm_check(const void *cursor, const struct VSLC_ptr *ptr)
+{
+	const struct vslc_vsm *c;
+	unsigned seqdiff, segment, segdiff;
+
+	CAST_OBJ_NOTNULL(c, cursor, VSLC_VSM_MAGIC);
+
+	if (ptr->ptr == NULL)
+		return (0);
+
+	/* Check sequence number */
+	seqdiff = c->head->seq - ptr->priv;
+	if (c->head->seq < ptr->priv)
+		/* Wrap around skips 0 */
+		seqdiff -= 1;
+	if (seqdiff > 1)
+		/* Too late */
+		return (0);
+
+	/* Check overrun */
+	segment = (ptr->ptr - c->head->log) / c->segsize;
+	if (segment >= VSL_SEGMENTS)
+		/* Rounding error spills to last segment */
+		segment = VSL_SEGMENTS - 1;
+	segdiff = (segment - c->head->segment) % VSL_SEGMENTS;
+	if (segdiff == 0 && seqdiff == 0)
+		/* In same segment, but close to tail */
+		return (2);
+	if (segdiff <= 2)
+		/* Too close to continue */
+		return (0);
+	if (segdiff <= 4)
+		/* Warning level */
+		return (1);
+	/* Safe */
+	return (2);
+}
+
+static int
 vslc_vsm_next(void *cursor)
 {
 	struct vslc_vsm *c;
-	int diff;
-	unsigned segment;
+	int i;
 	uint32_t t;
 
 	CAST_OBJ_NOTNULL(c, cursor, VSLC_VSM_MAGIC);
 	CHECK_OBJ_NOTNULL(c->vsm, VSM_MAGIC);
 
 	/* Assert pointers */
-	AN(c->next);
-	assert(c->next >= c->head->log);
-	assert(c->next < c->end);
+	AN(c->next.ptr);
+	assert(c->next.ptr >= c->head->log);
+	assert(c->next.ptr < c->end);
 
-	/* Check sequence number */
-	diff = c->head->seq - c->seq;
-	if (c->head->seq < c->seq)
-		/* Wrap around skips 0 */
-		diff -= 1;
-	if (diff > 1)
-		return (-3);
-
-	/* Check overrun */
-	segment = (c->next - c->head->log) / c->segsize;
-	if (segment >= VSL_SEGMENTS)
-		segment = VSL_SEGMENTS - 1;
-	diff = (segment - c->head->segment) % VSL_SEGMENTS;
-	if (0 < diff && diff <= 2)
+	i = vslc_vsm_check(c, &c->next);
+	if (i <= 0)
+		/* Overrun */
 		return (-3);
 
 	/* Check VSL fantom and abandonment */
-	if (*c->next == VSL_ENDMARKER) {
+	if (*(volatile const uint32_t *)c->next.ptr == VSL_ENDMARKER) {
 		if (!VSM_StillValid(c->vsm, &c->vf) ||
 		    VSM_Abandoned(c->vsm))
 			return (-2);
 	}
 
 	while (1) {
-		assert(c->next >= c->head->log);
-		assert(c->next < c->end);
+		assert(c->next.ptr >= c->head->log);
+		assert(c->next.ptr < c->end);
 		AN(c->head->seq);
-		t = *c->next;
+		t = *(volatile const uint32_t *)c->next.ptr;
 		AN(t);
 
 		if (t == VSL_WRAPMARKER) {
 			/* Wrap around not possible at front */
-			assert(c->next != c->head->log);
-			c->next = c->head->log;
+			assert(c->next.ptr != c->head->log);
+			c->next.ptr = c->head->log;
 			continue;
 		}
 
 		if (t == VSL_ENDMARKER) {
-			if (c->next != c->head->log &&
-			    c->seq != c->head->seq) {
+			if (c->next.ptr != c->head->log &&
+			    c->next.priv != c->head->seq) {
 				/* ENDMARKER not at front and seq wrapped */
 				/* XXX: assert on this? */
-				c->next = c->head->log;
+				c->next.ptr = c->head->log;
 				continue;
 			}
 			return (0);
 		}
 
-		if (c->next == c->head->log)
-			c->seq = c->head->seq;
+		if (c->next.ptr == c->head->log)
+			c->next.priv = c->head->seq;
 
-		c->c.c.ptr = (void*)(uintptr_t)c->next; /* Loose volatile */
-		c->next = VSL_NEXT(c->next);
+		c->c.c.rec = c->next;
+		c->next.ptr = VSL_NEXT(c->next.ptr);
 		return (1);
 	}
 }
@@ -162,9 +188,9 @@ vslc_vsm_reset(void *cursor)
 	if (c->head->segments[segment] < 0)
 		segment = 0;
 	assert(c->head->segments[segment] >= 0);
-	c->next = c->head->log + c->head->segments[segment];
-	c->seq = c->head->seq;
-	c->c.c.ptr = NULL;
+	c->next.ptr = c->head->log + c->head->segments[segment];
+	c->next.priv = c->head->seq;
+	c->c.c.rec.ptr = NULL;
 
 	return (0);
 }
@@ -178,10 +204,10 @@ vslc_vsm_skip(void *cursor, ssize_t words)
 	if (words < 0)
 		return (-1);
 
-	c->next += words;
-	assert(c->next >= c->head->log);
-	assert(c->next < c->end);
-	c->c.c.ptr = NULL;
+	c->next.ptr += words;
+	assert(c->next.ptr >= c->head->log);
+	assert(c->next.ptr < c->end);
+	c->c.c.rec.ptr = NULL;
 
 	return (0);
 }
@@ -223,6 +249,7 @@ VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, int tail)
 	c->c.next = vslc_vsm_next;
 	c->c.reset = vslc_vsm_reset;
 	c->c.skip = vslc_vsm_skip;
+	c->c.check = vslc_vsm_check;
 
 	c->vsm = vsm;
 	c->vf = vf;
@@ -232,10 +259,12 @@ VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, int tail)
 
 	if (tail) {
 		/* Locate tail of log */
-		c->next = c->head->log + c->head->segments[c->head->segment];
-		while (c->next < c->end && *c->next != VSL_ENDMARKER)
-			c->next = VSL_NEXT(c->next);
-		c->seq = c->head->seq;
+		c->next.ptr = c->head->log +
+		    c->head->segments[c->head->segment];
+		while (c->next.ptr < c->end &&
+		    *(volatile const uint32_t *)c->next.ptr != VSL_ENDMARKER)
+			c->next.ptr = VSL_NEXT(c->next.ptr);
+		c->next.priv = c->head->seq;
 	} else
 		AZ(vslc_vsm_reset(&c->c));
 
@@ -293,7 +322,7 @@ vslc_file_next(void *cursor)
 		return (c->error);
 
 	do {
-		c->c.c.ptr = NULL;
+		c->c.c.rec.ptr = NULL;
 		assert(c->buflen >= 2 * 4);
 		i = vslc_file_readn(c->fd, c->buf, 2 * 4);
 		if (i < 0)
@@ -313,8 +342,9 @@ vslc_file_next(void *cursor)
 		if (i == 0)
 			return (-1);	/* EOF */
 		assert(i == l - 2 * 4);
-		c->c.c.ptr = c->buf;
-	} while (c->c.c.ptr != NULL && VSL_TAG(c->c.c.ptr) == SLT__Batch);
+		c->c.c.rec.ptr = c->buf;
+	} while (c->c.c.rec.ptr != NULL &&
+	    VSL_TAG(c->c.c.rec.ptr) == SLT__Batch);
 	return (1);
 }
 
@@ -422,4 +452,15 @@ vsl_skip(struct VSL_cursor *cursor, ssize_t words)
 	if (c->skip == NULL)
 		return (-1);
 	return ((c->skip)(c, words));
+}
+
+int
+VSL_Check(const struct VSL_cursor *cursor, const struct VSLC_ptr *ptr)
+{
+	const struct vslc *c;
+
+	CAST_OBJ_NOTNULL(c, (const void *)cursor, VSLC_MAGIC);
+	if (c->check == NULL)
+		return (-1);
+	return ((c->check)(c, ptr));
 }

@@ -35,6 +35,11 @@
 
 #define VSL_FILE_HEAD			"VSL"
 
+struct vslc_shmptr {
+	uint32_t	*ptr;
+	unsigned	priv;
+};
+
 int vsl_diag(struct VSL_data *vsl, const char *fmt, ...)
     __printflike(2, 3);
 int vsl_skip(struct VSL_cursor *c, ssize_t words);
@@ -43,6 +48,8 @@ typedef void vslc_delete_f(void *);
 typedef int vslc_next_f(void *);
 typedef int vslc_reset_f(void *);
 typedef int vslc_skip_f(void *, ssize_t words);
+typedef int vslc_ref_f(void *, struct vslc_shmptr *ptr);
+typedef int vslc_check_f(const void *, const struct VSLC_ptr *ptr);
 
 struct vslc {
 	struct VSL_cursor		c;
@@ -53,6 +60,7 @@ struct vslc {
 	vslc_next_f			*next;
 	vslc_reset_f			*reset;
 	vslc_skip_f			*skip;
+	vslc_check_f			*check;
 };
 
 struct VSL_data {

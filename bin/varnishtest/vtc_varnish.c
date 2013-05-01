@@ -227,12 +227,12 @@ varnishlog_thread(void *priv)
 		} else if (i != 1)
 			break;
 
-		tag = VSL_TAG(c->ptr);
-		vxid = VSL_ID(c->ptr);
-		len = VSL_LEN(c->ptr);
-		type = VSL_CLIENT(c->ptr) ? 'c' : VSL_BACKEND(c->ptr) ?
+		tag = VSL_TAG(c->rec.ptr);
+		vxid = VSL_ID(c->rec.ptr);
+		len = VSL_LEN(c->rec.ptr);
+		type = VSL_CLIENT(c->rec.ptr) ? 'c' : VSL_BACKEND(c->rec.ptr) ?
 		    'b' : '-';
-		data = VSL_CDATA(c->ptr);
+		data = VSL_CDATA(c->rec.ptr);
 		v->vsl_tag_count[tag]++;
 		vtc_log(v->vl, 4, "vsl| %10u %-15s %c %.*s", vxid,
 		    VSL_tags[tag], type, (int)len, data);
