@@ -600,7 +600,7 @@ cnt_fetchbody(struct worker *wrk, struct req *req)
 	l += strlen("Content-Length: XxxXxxXxxXxxXxxXxx") + sizeof(void *);
 
 	if (bo->exp.ttl < cache_param->shortlived ||
-	    req->objcore == NULL)
+	    pass == 1)
 		bo->storage_hint = TRANSIENT_STORAGE;
 
 	AZ(bo->stats);
