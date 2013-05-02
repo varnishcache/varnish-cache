@@ -55,6 +55,9 @@ The following options are available:
    	         In CLF format, i.e. a '-' rather than a 0 when no
    	         bytes are sent.
 
+	      %D
+	         Time taken to serve the request, in microseconds.
+
 	      %H 
 	         The request protocol. Defaults to HTTP/1.0 if not
                  known.
@@ -94,6 +97,9 @@ The following options are available:
 	         Time when the request was received, in the format
 		 specified by X.  The time specification format is the
 		 same as for strftime(3).
+
+	      %T
+	         Time taken to serve the request, in seconds.
 
 	      %U
 	         The request URL without any query string. Defaults to
