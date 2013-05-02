@@ -787,7 +787,7 @@ cnt_fetchbody(struct sess *sp)
 	 */
 	l += strlen("Content-Length: XxxXxxXxxXxxXxxXxx") + sizeof(void *);
 
-	if (sp->wrk->exp.ttl < params->shortlived || sp->objcore == NULL)
+	if (sp->wrk->exp.ttl < params->shortlived || pass == 1)
 		sp->wrk->storage_hint = TRANSIENT_STORAGE;
 
 	sp->obj = STV_NewObject(sp, sp->wrk->storage_hint, l,
