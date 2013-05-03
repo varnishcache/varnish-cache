@@ -391,7 +391,7 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	memset(&ctx, 0, sizeof ctx);
 	ctx.magic = VRT_CTX_MAGIC;
 	if (req != NULL) {
-		AZ(bo);
+		// AZ(bo);
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
 		vsl = req->vsl;
@@ -402,16 +402,6 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		ctx.req = req;
 		if (req->obj)
 			ctx.http_obj = req->obj->http;
-	}
-	if (method == VCL_MET_BACKEND_FETCH ||
-	    method == VCL_MET_PASS ||
-	    method == VCL_MET_MISS ||
-	    method == VCL_MET_PIPE ||
-	    method == VCL_MET_BACKEND_RESPONSE) {
-		/* XXX: temporary workaround */
-		AN(req);
-		bo = req->busyobj;
-		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	}
 	if (bo != NULL) {
 		// AZ(req);
