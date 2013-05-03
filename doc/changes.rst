@@ -1,3 +1,61 @@
+================================
+Changes from 3.0.3 to 3.0.4 rc 1
+================================
+
+varnishd
+--------
+
+- Fix error handling when uncompressing fetched objects for ESI
+  processing. `Bug #1184`
+- Be clearer about which timeout was reached in logs.
+- Correctly decrement n_waitinglist counter.  `Bug #1261`
+- Turn off Nagle/set TCP_NODELAY.
+- Avoid panic on malformed Vary headers.  `Bug #1275`
+- Increase the maximum length of backend names.  `Bug #1224`
+- Add support for banning on http.status.  `Bug #1076`
+- Make hit-for-pass correctly prefer the transient storage.
+
+.. _bug #1076: http://varnish-cache.org/trac/ticket/1076
+.. _bug #1184: http://varnish-cache.org/trac/ticket/1184
+.. _bug #1224: http://varnish-cache.org/trac/ticket/1224
+.. _bug #1261: http://varnish-cache.org/trac/ticket/1261
+.. _bug #1275: http://varnish-cache.org/trac/ticket/1275
+
+
+varnishlog
+----------
+
+- If -m, but neither -b or -c is given, assume both.  This filters out
+  a lot of noise when -m is used to filter.  `Bug #1071`
+
+.. _bug #1071: http://varnish-cache.org/trac/ticket/1071
+
+varnishadm
+----------
+
+- Improve tab completion and require libedit/readline to build.
+
+varnishtop
+----------
+
+- Reopen log file if Varnish is restarted.
+
+varnishncsa
+-----------
+
+- Handle file descriptors above 64k (by ignoring them).  Prevents a
+  crash in some cases with corrupted shared memory logs.
+- Add %D and %T support for more timing information.
+
+Other
+-----
+
+- Documentation updates.
+- Fixes for OSX
+- Disable PCRE JIT-er, since it's broken in some PCRE versions, at
+  least on i386.
+- Make libvarnish prefer exact hits when looking for VSL tags.
+
 ===========================
 Changes from 3.0.2 to 3.0.3
 ===========================
