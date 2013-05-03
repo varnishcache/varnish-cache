@@ -29,7 +29,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
-		if (req.url != "/foo") {
+		if (bereq.url != "/foo") {
 			set beresp.do_esi = true;
 		}
 	}

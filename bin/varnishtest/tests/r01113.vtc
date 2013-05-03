@@ -21,7 +21,7 @@ varnish v1 -vcl+backend {
 		}
 	}
 	sub vcl_backend_response {
-		if (req.url == "/fetch") {
+		if (bereq.url == "/fetch") {
 			return(restart);
 		}
 	}
