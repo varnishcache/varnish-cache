@@ -28,11 +28,13 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
+		set beresp.do_esi = true;
+	}
+	sub vcl_deliver {
  	    	set req.esi = true;	
 	    	if(req.url == "/body") {
 		   set req.esi = false;
 		} 
-		set beresp.do_esi = true;
 	}
 } -start
 
