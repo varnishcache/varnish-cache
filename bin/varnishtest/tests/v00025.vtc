@@ -17,10 +17,7 @@ sub vcl_deliver {
 }
 
 sub vcl_backend_response {
-	if (req.esi) {
-		set beresp.http.esi = "yes";
-	}
-	set beresp.http.backend = req.backend;
+	set beresp.http.backend = bereq.backend;
 	if (beresp.ttl > 3 s) {
 		set beresp.http.ttl = "long";
 	} else {
