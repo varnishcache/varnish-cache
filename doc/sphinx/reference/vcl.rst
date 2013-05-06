@@ -716,8 +716,10 @@ beresp.do_esi
   false. Set it to true to parse the object for ESI directives. Will
   only be honored if req.esi is true.
 
-beresp.do_gzip
-  Boolean. Gzip the object before storing it. Defaults to false.
+beresp.do_gzip 
+  Boolean. Gzip the object before storing it. Defaults to false. When
+  http_gzip_support is on Varnish will request already compressed
+  content from the backend and as such compression in Varnish is not needed.
 
 beresp.do_gunzip
   Boolean. Unzip the object before storing it in the cache.  Defaults
