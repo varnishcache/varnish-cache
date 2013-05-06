@@ -154,7 +154,7 @@ http_Teardown(struct http *hp)
 
 /*--------------------------------------------------------------------*/
 
-static int
+int
 http_IsHdr(const txt *hh, const char *hdr)
 {
 	unsigned l;

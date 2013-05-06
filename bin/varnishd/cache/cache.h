@@ -877,6 +877,7 @@ double http_GetHdrQ(const struct http *hp, const char *hdr, const char *field);
 uint16_t http_GetStatus(const struct http *hp);
 const char *http_GetReq(const struct http *hp);
 int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
+int http_IsHdr(const txt *hh, const char *hdr);
 enum sess_close http_DoConnection(const struct http *);
 void http_CopyHome(const struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
