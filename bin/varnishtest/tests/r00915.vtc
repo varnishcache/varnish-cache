@@ -13,7 +13,10 @@ varnish v1 \
 	-vcl+backend { 
 
 	sub vcl_backend_response {
-		error(751);
+		set beresp.uncacheable = false;
+		set beresp.ttl = 0s;
+		set beresp.status = 751;
+		return (deliver);
 	}
 } -start 
 
