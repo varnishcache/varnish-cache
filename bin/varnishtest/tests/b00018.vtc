@@ -1,4 +1,4 @@
-varnishtest "Check that error in vcl_backend_response works"
+varnishtest "Check that synth response in vcl_backend_response works"
 
 server s1 {
 	rxreq 
@@ -8,7 +8,11 @@ server s1 {
 varnish v1 -vcl+backend { 
 	sub vcl_backend_response {
 	    set beresp.http.Foo = "bar";
-	    error 523 "not ok";
+	    set beresp.status = 523;
+	    set beresp.response = "not ok";
+	    set beresp.uncacheable = true;
+	    set beresp.ttl = 0s;
+	    return (deliver);
 	}
 } -start
 
@@ -17,5 +21,7 @@ client c1 {
 	rxresp
 	expect resp.status == 523
 } -run
+
+delay 10
 
 varnish v1 -expect n_object == 0
