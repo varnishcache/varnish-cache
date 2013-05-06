@@ -458,8 +458,8 @@ const struct parspec mgt_parspec[] = {
 		0,
 		"on", "bool" },
 	{ "http_gzip_support", tweak_bool, &mgt_param.http_gzip_support, 0, 0,
-		"Enable gzip support. When enabled Varnish will compress "
-		"uncompressed objects before they are stored in the cache. "
+		"Enable gzip support. When enabled Varnish request compressed "
+		"objects from the backend and store them compressed. "
 		"If a client does not support gzip encoding Varnish will "
 		"uncompress compressed objects on demand. Varnish will also "
 		"rewrite the Accept-Encoding header of clients indicating "
@@ -469,7 +469,7 @@ const struct parspec mgt_parspec[] = {
 		"Accept-Encoding header removed. For more information on how "
 		"gzip is implemented please see the chapter on gzip in the "
 		"Varnish reference.",
-		EXPERIMENTAL,
+		0,
 		"on", "bool" },
 	{ "gzip_level", tweak_uint, &mgt_param.gzip_level, 0, 9,
 		"Gzip compression level: 0=debug, 1=fast, 9=best",
