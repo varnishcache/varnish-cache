@@ -23,6 +23,13 @@ varnish v1 -vcl+backend {
 
 	sub vcl_backend_response {
 		if (beresp.status != 200) {
+			set beresp.uncacheable = true;
+			set beresp.ttl = 0s;
+			return (deliver);
+		}
+	}
+	sub vcl_deliver {
+		if (resp.status != 200) {
 			return (restart);
 		}
 	}

@@ -20,11 +20,6 @@ varnish v1 -vcl+backend {
 			return(restart);
 		}
 	}
-	sub vcl_backend_response {
-		if (bereq.url == "/fetch") {
-			return(restart);
-		}
-	}
 	sub vcl_deliver {
 		if (req.url == "/deliver") {
 			return(restart);
@@ -47,11 +42,6 @@ client c1 {
 } -run
 client c1 {
 	txreq -url /miss
-	rxresp
-	expect resp.status == 503
-} -run
-client c1 {
-	txreq -url /fetch
 	rxresp
 	expect resp.status == 503
 } -run

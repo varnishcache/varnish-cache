@@ -22,9 +22,17 @@ varnish v1 -vcl+backend {
 		if (beresp.http.foo == "2")
 		{
 			set beresp.saintmode = 2s;
-			return (restart);
+			set beresp.status = 606;
+			set beresp.uncacheable = true;
+			set beresp.ttl = 0s;
+			return (deliver);
 		}
 		return(deliver);
+	}
+	sub vcl_deliver {
+		if (resp.status == 606) {
+			return (restart);
+		}
 	}
 } -start
 
