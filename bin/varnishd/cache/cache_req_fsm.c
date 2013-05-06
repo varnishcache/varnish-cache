@@ -417,7 +417,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 		AZ(bo->do_esi);
 		AZ(bo->do_pass);
 
-		VCL_backend_response_method(bo->vcl, wrk, req, bo,
+		VCL_backend_response_method(bo->vcl, wrk, NULL, bo,
 		    bo->beresp->ws);
 
 		if (bo->do_pass)

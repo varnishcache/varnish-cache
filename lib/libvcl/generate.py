@@ -85,7 +85,7 @@ returns =(
 	('miss',		"C", ('error', 'restart', 'pass', 'fetch',)),
 	('lookup',		"C", ('error', 'restart', 'pass', 'deliver',)),
 	('backend_fetch',	"B", ('error', 'fetch', 'pass',)),
-	('backend_response',	"B", ('error', 'restart', 'deliver',)),
+	('backend_response',	"B", ('deliver',)),
 	('deliver',		"C", ('restart', 'deliver',)),
 	('error',		"C", ('restart', 'deliver',)),
 	('init',		"", ('ok',)),
