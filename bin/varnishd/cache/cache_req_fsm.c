@@ -167,7 +167,8 @@ cnt_prepresp(struct worker *wrk, struct req *req)
 			break;
 		if (bo != NULL) {
 			AN(bo->do_stream);
-			(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
+			assert(req->obj == bo->fetch_obj);
+			req->obj = NULL;
 			VBO_DerefBusyObj(wrk, &req->busyobj);
 		} else {
 			(void)HSH_Deref(&wrk->stats, NULL, &req->obj);

@@ -15,12 +15,14 @@ varnish v1 -vcl+backend {
 		C{ VRT_CacheReqBody(ctx, 1000); }C
 		return (pass);
 	}
-	sub vcl_backend_response {
-		if (beresp.http.foo == "BAR") {
+	sub vcl_deliver {
+		if (resp.http.foo == "BAR") {
 			return (restart);
 		}
 	}
 } -start
+
+varnish v1 -cliok "param.set debug +syncvsl"
 
 client c1 {
 	txreq -body "FOO"
