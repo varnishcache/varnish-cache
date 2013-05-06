@@ -3,9 +3,6 @@ varnishtest "Test fallback director with saint mode"
 server s1 {
         rxreq
         txresp -hdr "Foo: 1"
-        accept
-        rxreq
-        txresp -hdr "Foo: 1"
 } -start
 
 server s2 {
@@ -26,11 +23,18 @@ varnish v1 -vcl+backend {
                 set req.backend = f1.backend();
         }
         sub vcl_backend_response {
-                if(req.restarts < 1) {
+		if (beresp.http.foo == "1") {
+                        set beresp.uncacheable = true;
                         set beresp.saintmode = 1h;
-                        return(restart);
+                        set beresp.status = 606;
+                        return(deliver);
                 }
         }
+	sub vcl_deliver {
+		if (resp.status == 606) {
+                        return(restart);
+		}
+	}
 } -start
 
 client c1 {
