@@ -21,7 +21,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	sub vcl_backend_response {
+	sub vcl_lookup {
 	       return (restart);
 	}
 
