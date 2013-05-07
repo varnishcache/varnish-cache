@@ -14,7 +14,7 @@ varnish v1 -vcl+backend {
 		return (pass);
 	}
 
-	sub vcl_pass {
+	sub vcl_backend_fetch {
 		set bereq.method = bereq.request + "C";
 		set bereq.request = bereq.method + "D";
 	}
