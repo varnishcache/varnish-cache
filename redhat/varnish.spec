@@ -1,3 +1,4 @@
+%define v_rc rc1
 Summary: High-performance HTTP accelerator
 Name: varnish
 Version: 3.0.4
