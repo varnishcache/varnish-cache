@@ -276,17 +276,6 @@ parse_ban(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_new_syntax(struct vcc *tl)
-{
-
-	VSB_printf(tl->sb, "Please change \"%.*s\" to \"return(%.*s)\".\n",
-	    PF(tl->t), PF(tl->t));
-	vcc_ErrWhere(tl, tl->t);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
 parse_hash_data(struct vcc *tl)
 {
 	vcc_NextToken(tl);
@@ -378,11 +367,6 @@ static struct action_table {
 	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH |
             VCL_MET_MISS | VCL_MET_LOOKUP | VCL_MET_BACKEND_RESPONSE
 	},
-
-#define VCL_RET_MAC(l, U, B)						\
-	{ #l,			parse_new_syntax },
-#include "tbl/vcl_returns.h"
-#undef VCL_RET_MAC
 
 	/* Keep list sorted from here */
 	{ "call",		parse_call },
