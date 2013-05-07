@@ -18,7 +18,7 @@ varnish v1 -vcl+backend {
 			ban("obj.http.url ~ /");
 			error 201 "banned";
 		}
-		return (lookup);
+		return (hash);
 	}
 	sub vcl_backend_response {
 		set beresp.http.url = bereq.url;

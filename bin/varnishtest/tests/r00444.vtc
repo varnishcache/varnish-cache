@@ -22,7 +22,7 @@ varnish v1 -vcl+backend {
 	sub vcl_recv {
 		if (req.method == "POST") {
 			/* Lookup so we find any cached object */
-			return (lookup);
+			return (hash);
 		}
 	}
 	sub vcl_lookup {

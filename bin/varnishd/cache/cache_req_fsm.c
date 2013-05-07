@@ -1172,7 +1172,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 	req->sha256ctx = &sha256ctx;	/* so HSH_AddString() can find it */
 	SHA256_Init(req->sha256ctx);
 	VCL_hash_method(req->vcl, wrk, req, NULL, req->http->ws);
-	assert(wrk->handling == VCL_RET_HASH);
+	assert(wrk->handling == VCL_RET_LOOKUP);
 	SHA256_Final(req->digest, req->sha256ctx);
 	req->sha256ctx = NULL;
 
@@ -1182,7 +1182,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 		req->wantbody = 1;
 
 	switch(recv_handling) {
-	case VCL_RET_LOOKUP:
+	case VCL_RET_HASH:
 		req->req_step = R_STP_LOOKUP;
 		return (REQ_FSM_MORE);
 	case VCL_RET_PIPE:

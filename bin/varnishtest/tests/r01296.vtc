@@ -15,7 +15,7 @@ varnish v1 -vcl+backend {
 		} else {
 			hash_data("1" + req.http.foo + "3");
 		}
-		return (hash);
+		return (lookup);
 	}
 } -start
 

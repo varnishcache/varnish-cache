@@ -66,7 +66,7 @@ sub vcl_recv {
         /* Not cacheable by default */
         return (pass);
     }
-    return (lookup);
+    return (hash);
 }
 
 sub vcl_pipe {
@@ -90,7 +90,7 @@ sub vcl_hash {
     } else {
         hash_data(server.ip);
     }
-    return (hash);
+    return (lookup);
 }
 
 sub vcl_lookup {

@@ -78,10 +78,10 @@ tokens = {
 # Our methods and actions
 
 returns =(
-	('recv',		"C", ('error', 'pass', 'pipe', 'lookup',)),
+	('recv',		"C", ('error', 'pass', 'pipe', 'hash',)),
 	('pipe',		"C", ('error', 'pipe',)),
 	('pass',		"C", ('error', 'restart', 'pass',)),
-	('hash',		"C", ('hash',)),
+	('hash',		"C", ('lookup',)),
 	('miss',		"C", ('error', 'restart', 'pass', 'fetch',)),
 	('lookup',		"C", ('error', 'restart', 'pass', 'deliver',)),
 	('backend_fetch',	"B", ('fetch', 'pass',)),

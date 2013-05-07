@@ -14,7 +14,7 @@ varnish v1 -vcl+backend {
 			if (req.http.x-pass) {
 				return (pass);
 			} else {
-				return (lookup);
+				return (hash);
 			}
 		}
 	}
@@ -23,7 +23,7 @@ varnish v1 -vcl+backend {
 		## Check if they have a ban in the cache, or if they are going to be banned in cache.
 		if (req.http.X-Banned) {
 			hash_data(client.ip);
-			return (hash);
+			return (lookup);
 		}
 	}
 
