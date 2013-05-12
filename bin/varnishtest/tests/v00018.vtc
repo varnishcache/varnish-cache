@@ -8,14 +8,8 @@ varnish v1 -vcl {
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_backend_response { error beresp.status ; }
-}
-
-varnish v1 -vcl {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_miss { error 100 req.url ; }
-	sub vcl_lookup { error 100 "the butter please" ; }
-	sub vcl_backend_response { error beresp.status req.url; }
+	sub vcl_miss { return(error(100,req.url)); }
+	sub vcl_lookup { return(error(100,"the butter please")); }
 }
 
 varnish v1 -errvcl {Variable 'server.port' is read only.} {
@@ -107,4 +101,14 @@ varnish v1 -errvcl {Expected an action, 'if', '{' or '}'} {
 varnish v1 -errvcl {Unknown token '<<' when looking for STRING_LIST} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_error { synthetic << "foo"; }
+}
+
+varnish v1 -errvcl {Syntax has changed, use:} {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv { error 200; }
+}
+
+varnish v1 -errvcl {Syntax has changed, use:} {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv { return(error); }
 }

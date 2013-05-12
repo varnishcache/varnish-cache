@@ -11,12 +11,12 @@ varnish v1 -vcl+backend {
 		if (beresp.http.foo ~ "bar") {
 			set beresp.http.foo1 = "1";
 		} else {
-			error 999;
+			set beresp.status = 999;
 		}
 		if (beresp.http.bar !~ "bar") {
 			set beresp.http.bar1 = "2";
 		} else {
-			error 999;
+			set beresp.status = 999;
 		}
 	}
 
@@ -25,6 +25,7 @@ varnish v1 -vcl+backend {
 client c1 {
 	txreq
 	rxresp
+	expect resp.status == "200"
 	expect resp.http.foo1 == "1"
 	expect resp.http.bar1 == "2"
 } -run

@@ -1,9 +1,9 @@
 varnishtest "Test if you can error in vcl_deliver"
 
-varnish v1 -errvcl {'error': not a valid action in method 'vcl_deliver'} {
+varnish v1 -errvcl {Invalid return "error"} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_deliver {
-		error 201 "ok";
+		return (error(201,"ok"));
 	}
 }
 

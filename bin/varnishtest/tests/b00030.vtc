@@ -10,7 +10,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
-		error 200 req.grace;
+		return (error(200,req.grace));
 	}
 	sub vcl_error {
 		set obj.http.x-timestamp = now;

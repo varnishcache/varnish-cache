@@ -8,7 +8,7 @@ server s1 {
 varnish v1 -vcl+backend {
 	sub vcl_recv {
 		if (req.url ~ "^/test1") {
-			error 700;
+			return (error(700));
 		}
 	}
 	sub vcl_backend_response {

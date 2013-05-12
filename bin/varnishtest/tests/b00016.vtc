@@ -6,7 +6,7 @@ varnish v1 -vcl {
 	}
 
 	sub vcl_recv {
-	    error 200 "ok";
+	    return(error(200,"ok"));
 	}
 
 	sub vcl_error {
@@ -33,7 +33,7 @@ varnish v1 -vcl {
 
 	sub vcl_recv {
 		set req.backend = bar.backend();
-		error 200 "ok";
+		return(error(200,"ok"));
 	}
 
 	sub vcl_error {
@@ -59,7 +59,7 @@ varnish v1 -vcl {
 
 	sub vcl_recv {
 	    set req.backend = baz.backend();
-	    error 200 "ok";
+	    return (error(200,"ok"));
 	}
 
 	sub vcl_error {

@@ -1,4 +1,5 @@
 varnishtest "error from vcl_recv{} has no numeric code"
+# XXX: V4 makes this an obsolete test ?
 
 
 server s1 {
@@ -6,7 +7,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
-		return (error);
+		return (error(501));
 	}
 } -start
 

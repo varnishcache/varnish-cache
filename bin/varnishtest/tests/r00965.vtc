@@ -32,11 +32,15 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_miss {
-		if (req.http.X-Banned == "check") { error 988 "restarting"; }
+		if (req.http.X-Banned == "check") {
+			return (error(988,"restarting"));
+		}
 	}
 
 	sub vcl_pass {
-		if (req.http.X-Banned == "check") { error 988 "restarting"; }
+		if (req.http.X-Banned == "check") {
+			return (error(988,"restarting"));
+		}
 	}
 } -start
 

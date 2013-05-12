@@ -26,9 +26,9 @@ varnish v1 -vcl {
 
 	sub vcl_recv {
 		if (req.backend.healthy) {
-			error 200 "Backend healthy";
+			return(error(200,"Backend healthy"));
 		} else {
-			error 500 "Backend sick";
+			return(error(500,"Backend sick"));
 		}
 	}
 } -start

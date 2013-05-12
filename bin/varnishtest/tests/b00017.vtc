@@ -5,7 +5,7 @@ varnish v1 -vcl {
 		.host = "${bad_ip}"; .port = "9080";
 	}
 	sub vcl_recv {
-		error 888;
+		return (error(888));
 	}
 } -start
 

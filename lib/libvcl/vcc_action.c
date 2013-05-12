@@ -58,29 +58,13 @@ static void
 parse_error(struct vcc *tl)
 {
 
-	vcc_NextToken(tl);
-	Fb(tl, 1, "VRT_error(ctx,\n");
-	if (tl->t->tok == '(') {
-		vcc_NextToken(tl);
-		vcc_Expr(tl, INT);
-		if (tl->t->tok == ',') {
-			Fb(tl, 1, ",\n");
-			vcc_NextToken(tl);
-			vcc_Expr(tl, STRING);
-		} else
-			Fb(tl, 1, ", 0\n");
-		SkipToken(tl, ')');
-	} else {
-		vcc_Expr(tl, INT);
-		if (tl->t->tok != ';') {
-			Fb(tl, 1, ",\n");
-			vcc_Expr(tl, STRING);
-		} else
-			Fb(tl, 1, ", 0\n");
-	}
-	Fb(tl, 1, ");\n");
-	Fb(tl, 1, "VRT_handling(ctx, VCL_RET_ERROR);\n");
-	Fb(tl, 1, "return(1);\n");
+	VSB_printf(tl->sb,
+	    "Syntax has changed, use:\n"
+	    "\treturn(error(999));\n"
+	    "or\n"
+	    "\treturn(error(999, \"Response text\"));\n");
+	vcc_ErrWhere(tl, tl->t);
+	return;
 }
 
 /*--------------------------------------------------------------------*/
@@ -300,6 +284,44 @@ parse_return(struct vcc *tl)
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
 
+	/* 'error' gets special handling, to allow optional status/response */
+	if (vcc_IdIs(tl->t, "error")) {
+		vcc_NextToken(tl);
+		if (tl->t->tok == ')') {
+			VSB_printf(tl->sb,
+			    "Syntax has changed, use:\n"
+			    "\treturn(error(999));\n"
+			    "or\n"
+			    "\treturn(error(999, \"Response text\"));\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
+		ExpectErr(tl, '(');
+		vcc_NextToken(tl);
+		Fb(tl, 1, "VRT_error(ctx,\n");
+		tl->indent += INDENT;
+		vcc_Expr(tl, INT);
+		ERRCHK(tl);
+		Fb(tl, 1, ",\n");
+		if (tl->t->tok == ',') {
+			vcc_NextToken(tl);
+			vcc_Expr(tl, STRING);
+			ERRCHK(tl);
+		} else {
+			Fb(tl, 1, "(const char*)0\n");
+		}
+		tl->indent -= INDENT;
+		ExpectErr(tl, ')');
+		vcc_NextToken(tl);
+		Fb(tl, 1, ");\n");
+		Fb(tl, 1, "VRT_handling(ctx, VCL_RET_ERROR);\n");
+		Fb(tl, 1, "return (1);\n");
+		vcc_ProcAction(tl->curproc, VCL_RET_ERROR, tl->t);
+		ExpectErr(tl, ')');
+		vcc_NextToken(tl);
+		return;
+	}
+
 #define VCL_RET_MAC(l, U, B)						\
 	do {								\
 		if (vcc_IdIs(tl->t, #l)) {				\
@@ -363,23 +385,19 @@ static struct action_table {
 	action_f		*func;
 	unsigned		bitmask;
 } action_table[] = {
-	{ "error",		parse_error,
-	    VCL_MET_RECV | VCL_MET_PIPE | VCL_MET_PASS | VCL_MET_HASH |
-            VCL_MET_MISS | VCL_MET_LOOKUP | VCL_MET_BACKEND_RESPONSE
-	},
-
 	/* Keep list sorted from here */
-	{ "call",		parse_call },
-	{ "hash_data",		parse_hash_data, VCL_MET_HASH },
 	{ "ban",		parse_ban },
+	{ "call",		parse_call },
+	{ "error",		parse_error },
+	{ "hash_data",		parse_hash_data, VCL_MET_HASH },
+	{ "new",		parse_new, VCL_MET_INIT},
+	{ "purge",		parse_purge, VCL_MET_MISS | VCL_MET_LOOKUP },
 	{ "remove",		parse_unset }, /* backward compatibility */
 	{ "return",		parse_return },
 	{ "rollback",		parse_rollback },
 	{ "set",		parse_set },
 	{ "synthetic",		parse_synthetic, VCL_MET_ERROR },
 	{ "unset",		parse_unset },
-	{ "purge",		parse_purge, VCL_MET_MISS | VCL_MET_LOOKUP },
-	{ "new",		parse_new, VCL_MET_INIT},
 	{ NULL,			NULL }
 };
 

@@ -22,11 +22,11 @@ varnish v1 -vcl+backend {
 	sub vcl_recv {
 		if (req.method == "PURGE") {
 			ban ("req.url == " + req.url);
-			error 410;
+			return (error(410));
 		}
 		if (req.method == "PURGESTR") {
 			ban ("" + req.http.ban);
-			error 410;
+			return (error(410));
 		}
 	}
 } -start
