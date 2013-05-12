@@ -348,6 +348,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 	Lck_AssertHeld(&oh->mtx);
 
 	if (always_insert) {
+		/* XXX: should we do predictive Vary in this case ? */
 		/* Insert new objcore in objecthead and release mutex */
 		*bocp = hsh_insert_busyobj(wrk, oh);
 		/* NB: no deref of objhead, new object inherits reference */

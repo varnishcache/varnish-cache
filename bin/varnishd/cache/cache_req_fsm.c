@@ -1182,6 +1182,9 @@ cnt_recv(struct worker *wrk, struct req *req)
 		req->wantbody = 1;
 
 	switch(recv_handling) {
+	case VCL_RET_PURGE:
+		req->req_step = R_STP_PURGE;
+		return (REQ_FSM_MORE);
 	case VCL_RET_HASH:
 		req->req_step = R_STP_LOOKUP;
 		return (REQ_FSM_MORE);
@@ -1202,6 +1205,44 @@ cnt_recv(struct worker *wrk, struct req *req)
 	default:
 		WRONG("Illegal action in vcl_recv{}");
 	}
+}
+
+/*--------------------------------------------------------------------
+ * PURGE
+ * Find the objhead, purge it and ask VCL if we should fetch or
+ * just return.
+ * XXX: fetching not implemented yet.
+ */
+
+static enum req_fsm_nxt
+cnt_purge(struct worker *wrk, struct req *req)
+{
+	struct objcore *oc, *boc;
+	enum lookup_e lr;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AZ(req->objcore);
+
+	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
+	AZ(req->busyobj);
+
+	VRY_Prep(req);
+
+	AZ(req->objcore);
+	lr = HSH_Lookup(req, &oc, &boc, 1, 1);
+	assert (lr == HSH_MISS);
+	AZ(oc);
+	CHECK_OBJ_NOTNULL(boc, OBJCORE_MAGIC);
+	VRY_Finish(req, NULL);
+
+	HSH_Purge(req, boc->objhead, 0, 0);
+
+	AZ(HSH_Deref(&wrk->stats, boc, NULL));
+
+	VCL_purge_method(req->vcl, wrk, req, NULL, req->http->ws);
+	req->req_step = R_STP_ERROR;
+	return (REQ_FSM_MORE);
 }
 
 /*--------------------------------------------------------------------

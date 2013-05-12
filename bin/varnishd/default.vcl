@@ -93,6 +93,10 @@ sub vcl_hash {
     return (lookup);
 }
 
+sub vcl_purge {
+    return (error(200, "Purged"));
+}
+
 sub vcl_lookup {
 /*
     if (!obj) {
