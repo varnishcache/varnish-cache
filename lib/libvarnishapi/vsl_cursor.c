@@ -131,7 +131,7 @@ vslc_vsm_next(void *cursor)
 
 	/* Check VSL fantom and abandonment */
 	if (*(volatile const uint32_t *)c->next.ptr == VSL_ENDMARKER) {
-		if (!VSM_StillValid(c->vsm, &c->vf) ||
+		if (VSM_invalid == VSM_StillValid(c->vsm, &c->vf) ||
 		    VSM_Abandoned(c->vsm))
 			return (-2);
 	}

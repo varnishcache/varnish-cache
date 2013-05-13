@@ -139,17 +139,23 @@ int VSM__itern(const struct VSM_data *vd, struct VSM_fantom *vf);
 	 * vd = "struct VSM_data *"
 	 */
 
-int VSM_StillValid(const struct VSM_data *vd, struct VSM_fantom *vf);
+enum VSM_valid_e {
+	VSM_invalid,
+	VSM_valid,
+	VSM_similar,
+};
+
+enum VSM_valid_e VSM_StillValid(const struct VSM_data *vd,
+    struct VSM_fantom *vf);
 	/*
 	 * This is a cheap syscall-less check to see if the fantom is still
 	 * valid.  Further checking with VSM_Abandoned() may be a good
 	 * idea.
 	 *
 	 * Return:
-	 *	0: fantom is not valid any more.
-	 *	1: fantom is still the same.
-	 *	2: a fantom with same dimensions exist in same position,
-	 *	   check class/type/ident
+	 *   VSM_invalid: fantom is not valid any more.
+	 *   VSM_valid:   fantom is still the same.
+	 *   VSM_similar: a fantom with same dimensions exist in same position.
 	 */
 
 int VSM_Get(const struct VSM_data *vd, struct VSM_fantom *vf,

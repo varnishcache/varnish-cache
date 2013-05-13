@@ -367,7 +367,7 @@ VSM__itern(const struct VSM_data *vd, struct VSM_fantom *vf)
 
 /*--------------------------------------------------------------------*/
 
-int
+enum VSM_valid_e
 VSM_StillValid(const struct VSM_data *vd, struct VSM_fantom *vf)
 {
 	struct VSM_fantom f2;
@@ -375,11 +375,11 @@ VSM_StillValid(const struct VSM_data *vd, struct VSM_fantom *vf)
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AN(vf);
 	if (!vd->head)
-		return (0);
+		return (VSM_invalid);
 	if (!vd->head->alloc_seq)
-		return (0);
+		return (VSM_invalid);
 	if (vf->priv == vd->head->alloc_seq)
-		return (1);
+		return (VSM_valid);
 	VSM_FOREACH(&f2, vd) {
 		if (f2.chunk != vf->chunk || f2.b != vf->b || f2.e != vf->e)
 			continue;
@@ -390,9 +390,9 @@ VSM_StillValid(const struct VSM_data *vd, struct VSM_fantom *vf)
 		if (strcmp(f2.ident, vf->ident))
 			continue;
 		vf->priv = vd->head->alloc_seq;
-		return (2);
+		return (VSM_similar);
 	}
-	return (0);
+	return (VSM_invalid);
 }
 
 int

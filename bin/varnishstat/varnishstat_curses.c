@@ -873,7 +873,7 @@ do_curses(struct VSM_data *vd, int delay)
 		}
 		VSC_C_mgt = VSC_Mgt(vd, &f_mgt);
 		VSC_C_main = VSC_Main(vd, &f_main);
-		if (VSM_StillValid(vd, &f_iter) != 1)
+		if (VSM_valid != VSM_StillValid(vd, &f_iter))
 			build_pt_list(vd, &f_iter);
 
 		now = VTIM_mono();

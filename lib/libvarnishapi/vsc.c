@@ -287,7 +287,7 @@ VSC_Get(struct VSM_data *vd, struct VSM_fantom *fantom, const char *type,
 
 	if (fantom == NULL)
 		fantom = &f2;
-	if (!VSM_StillValid(vd, fantom) &&
+	if (VSM_invalid == VSM_StillValid(vd, fantom) &&
 	    !VSM_Get(vd, fantom, VSC_CLASS, type, ident))
 		return (NULL);
 	return ((void*)fantom->b);
@@ -470,7 +470,7 @@ VSC_Iter(struct VSM_data *vd, struct VSM_fantom *fantom, VSC_iter_f *func,
 	struct vsc_pt *pt;
 	int i;
 
-	if (1 != VSM_StillValid(vd, &vsc->iter_fantom)) {
+	if (VSM_valid != VSM_StillValid(vd, &vsc->iter_fantom)) {
 		/* Tell app that list will be nuked */
 		(void)func(priv, NULL);
 		vsc_build_vf_list(vd);
