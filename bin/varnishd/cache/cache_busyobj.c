@@ -145,6 +145,8 @@ VBO_GetBusyObj(struct worker *wrk, struct req *req)
 	bo->vcl = req->vcl;
 	VCL_Ref(bo->vcl);
 
+	bo->t_fetch = req->t_req;
+
 	return (bo);
 }
 

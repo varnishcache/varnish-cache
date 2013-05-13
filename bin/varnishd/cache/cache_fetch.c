@@ -358,7 +358,7 @@ fetch_iter_req_body(struct req *req, void *priv, void *ptr, size_t l)
 
 int
 FetchHdr(struct worker *wrk, struct busyobj *bo, struct req *req,
-    int need_host_hdr, int sendbody)
+    int need_host_hdr)
 {
 	struct vbc *vc;
 	struct http *hp;
@@ -368,15 +368,11 @@ FetchHdr(struct worker *wrk, struct busyobj *bo, struct req *req,
 	struct http_conn *htc;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_ORNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	htc = &bo->htc;
 
-	AN(req->director);
-	AZ(req->obj);
-
-	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-	AN(req->objcore->flags & OC_F_BUSY);
+	AN(bo->director);
 
 	hp = bo->bereq;
 
@@ -398,18 +394,16 @@ FetchHdr(struct worker *wrk, struct busyobj *bo, struct req *req,
 		VDI_AddHostHeader(bo->bereq, vc);
 
 	(void)VTCP_blocking(vc->fd);	/* XXX: we should timeout instead */
-	WRW_Reserve(wrk, &vc->fd, bo->vsl, req->t_req);	/* XXX t_resp ? */
+	WRW_Reserve(wrk, &vc->fd, bo->vsl, bo->t_fetch);
 	(void)HTTP1_Write(wrk, hp, 0);	/* XXX: stats ? */
 
 	/* Deal with any message-body the request might (still) have */
 	i = 0;
 
-	if (sendbody) {
+	if (req != NULL) {
 		i = HTTP1_IterateReqBody(req, fetch_iter_req_body, NULL);
 		if (req->req_body_status == REQ_BODY_DONE)
 			retry = -1;
-	} else {
-		i = HTTP1_DiscardReqBody(req);
 	}
 
 	if (WRW_FlushRelease(wrk) || i != 0) {

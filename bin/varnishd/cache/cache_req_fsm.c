@@ -371,8 +371,8 @@ cnt_fetch(struct worker *wrk, struct req *req)
 
 	req->acct_req.fetch++;
 
-	i = FetchHdr(wrk, bo, req, need_host_hdr,
-	    req->objcore->objhead == NULL);
+	i = FetchHdr(wrk, bo, req->objcore->objhead == NULL ? req : NULL,
+	    need_host_hdr);
 	/*
 	 * If we recycle a backend connection, there is a finite chance
 	 * that the backend closed it before we get a request to it.
@@ -380,9 +380,12 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	 */
 	if (i == 1) {
 		VSC_C_main->backend_retry++;
-		i = FetchHdr(wrk, bo, req, need_host_hdr,
-		    req->objcore->objhead == NULL);
+		i = FetchHdr(wrk, bo,
+		    req->objcore->objhead == NULL ? req : NULL, need_host_hdr);
 	}
+
+	if (req->objcore->objhead != NULL)
+		(void)HTTP1_DiscardReqBody(req);	// XXX
 
 	if (i) {
 		wrk->handling = VCL_RET_ERROR;

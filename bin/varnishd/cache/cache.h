@@ -501,6 +501,7 @@ struct busyobj {
 	 * is recycled.
 	 */
 	unsigned		refcount;
+	double			t_fetch;
 
 	uint8_t			*vary;
 	unsigned		is_gzip;
@@ -815,7 +816,7 @@ struct storage *FetchStorage(struct busyobj *, ssize_t sz);
 int FetchError(struct busyobj *, const char *error);
 int FetchError2(struct busyobj *, const char *error, const char *more);
 int FetchHdr(struct worker *wrk, struct busyobj *bo, struct req *req,
-    int need_host_hdr, int sendbody);
+    int need_host_hdr);
 void FetchBody(struct worker *w, void *bo);
 void Fetch_Init(void);
 
