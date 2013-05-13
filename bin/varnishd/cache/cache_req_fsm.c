@@ -772,27 +772,27 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	switch (lr) {
 	case HSH_EXP:
-VSLb(req->vsl, SLT_Debug, "XXXX EXP\n");
+		VSLb(req->vsl, SLT_Debug, "XXXX EXP\n");
 		AN(oc);
 		AZ(boc);
 		break;
 	case HSH_EXPBUSY:
-VSLb(req->vsl, SLT_Debug, "XXXX EXPBUSY\n");
+		VSLb(req->vsl, SLT_Debug, "XXXX EXPBUSY\n");
 		AN(oc);
 		AN(boc);
 		if (VDI_Healthy(req->director, req->digest)) {
-VSLb(req->vsl, SLT_Debug, "deref oc\n");
+			VSLb(req->vsl, SLT_Debug, "XXX EXPBUSY deref oc\n");
 			(void)HSH_Deref(&wrk->stats, oc, NULL);
 			oc = boc;
 			boc = NULL;
 		} else {
-VSLb(req->vsl, SLT_Debug, "drop boc\n");
+			VSLb(req->vsl, SLT_Debug, "XXX EXPBUSY drop boc\n");
 			(void)HSH_Deref(&wrk->stats, boc, NULL);
 			boc = NULL;
 		}
 		break;
 	case HSH_MISS:
-VSLb(req->vsl, SLT_Debug, "XXXX MISS\n");
+		VSLb(req->vsl, SLT_Debug, "XXXX MISS\n");
 		AZ(oc);
 		AN(boc);
 		oc = boc;
@@ -800,7 +800,7 @@ VSLb(req->vsl, SLT_Debug, "XXXX MISS\n");
 		AN(oc->flags & OC_F_BUSY);
 		break;
 	case HSH_HIT:
-VSLb(req->vsl, SLT_Debug, "XXXX HIT\n");
+		VSLb(req->vsl, SLT_Debug, "XXXX HIT\n");
 		AN(oc);
 		AZ(boc);
 		break;
@@ -913,7 +913,9 @@ cnt_miss(struct worker *wrk, struct req *req)
 	AZ(req->obj);
 
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
-	http_FilterReq(req, HTTPH_R_FETCH);
+	http_FilterReq(bo->bereq, req->http, HTTPH_R_FETCH);
+	http_PrintfHeader(bo->bereq,
+	    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
 	http_ForceGet(bo->bereq);
 	if (cache_param->http_gzip_support) {
 		/*
@@ -988,7 +990,9 @@ cnt_pass(struct worker *wrk, struct req *req)
 	bo = req->busyobj;
 	bo->refcount = 2;
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
-	http_FilterReq(req, HTTPH_R_PASS);
+	http_FilterReq(bo->bereq, req->http, HTTPH_R_PASS);
+	http_PrintfHeader(bo->bereq,
+	    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
 
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
 	VCL_pass_method(bo->vcl, wrk, req, bo, bo->bereq->ws);
@@ -1047,7 +1051,9 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	req->busyobj = VBO_GetBusyObj(wrk, req);
 	bo = req->busyobj;
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
-	http_FilterReq(req, 0);
+	http_FilterReq(bo->bereq, req->http, 0);	// XXX: 0 ?
+	http_PrintfHeader(bo->bereq,
+	    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
 
 	VCL_pipe_method(req->vcl, wrk, req, NULL, req->http->ws);
 

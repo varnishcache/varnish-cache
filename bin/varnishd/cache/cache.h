@@ -856,7 +856,7 @@ void HTTP_Init(void);
 void http_ClrHeader(struct http *to);
 void http_SetResp(struct http *to, const char *proto, uint16_t status,
     const char *response);
-void http_FilterReq(const struct req *, unsigned how);
+void http_FilterReq(struct http *to, const struct http *fm, unsigned how);
 void http_FilterResp(const struct http *fm, struct http *to, unsigned how);
 void http_PutProtocol(const struct http *to, const char *protocol);
 void http_PutStatus(struct http *to, uint16_t status);
