@@ -92,8 +92,6 @@ struct vsc {
 	VTAILQ_HEAD(, vsc_vf)	vf_list;
 	VTAILQ_HEAD(, vsc_pt)	pt_list;
 	VTAILQ_HEAD(, vsc_sf)	sf_list;
-	struct VSM_fantom	mgt_fantom;
-	struct VSM_fantom	main_fantom;
 	struct VSM_fantom	iter_fantom;
 };
 
@@ -263,31 +261,39 @@ VSC_Arg(struct VSM_data *vd, int arg, const char *opt)
 /*--------------------------------------------------------------------*/
 
 struct VSC_C_mgt *
-VSC_Mgt(struct VSM_data *vd)
+VSC_Mgt(struct VSM_data *vd, struct VSM_fantom *fantom)
 {
-	struct vsc *vsc = vsc_setup(vd);
 
-	if (!VSM_StillValid(vd, &vsc->mgt_fantom) &&
-	    !VSM_Get(vd, &vsc->mgt_fantom, VSC_CLASS, VSC_type_mgt, ""))
-		return (NULL);
-	return ((void*)vsc->mgt_fantom.b);
+	return (VSC_Get(vd, fantom, VSC_type_mgt, ""));
 }
 
 /*--------------------------------------------------------------------*/
 
 struct VSC_C_main *
-VSC_Main(struct VSM_data *vd)
+VSC_Main(struct VSM_data *vd, struct VSM_fantom *fantom)
 {
-	struct vsc *vsc = vsc_setup(vd);
 
-	if (!VSM_StillValid(vd, &vsc->main_fantom) &&
-	    !VSM_Get(vd, &vsc->main_fantom, VSC_CLASS, VSC_type_main, ""))
-		return (NULL);
-	return ((void*)vsc->main_fantom.b);
+	return (VSC_Get(vd, fantom, VSC_type_main, ""));
 }
 
 /*--------------------------------------------------------------------
  */
+
+void *
+VSC_Get(struct VSM_data *vd, struct VSM_fantom *fantom, const char *type,
+    const char *ident)
+{
+	struct VSM_fantom f2;
+
+	if (fantom == NULL)
+		fantom = &f2;
+	if (!VSM_StillValid(vd, fantom) &&
+	    !VSM_Get(vd, fantom, VSC_CLASS, type, ident))
+		return (NULL);
+	return ((void*)fantom->b);
+}
+
+/*--------------------------------------------------------------------*/
 
 static void
 vsc_add_vf(struct vsc *vsc, const struct VSM_fantom *fantom,
@@ -457,7 +463,8 @@ vsc_filter_pt_list(struct VSM_data *vd)
  */
 
 int
-VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv)
+VSC_Iter(struct VSM_data *vd, struct VSM_fantom *fantom, VSC_iter_f *func,
+    void *priv)
 {
 	struct vsc *vsc = vsc_setup(vd);
 	struct vsc_pt *pt;
@@ -470,6 +477,8 @@ VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv)
 		vsc_build_pt_list(vd);
 		vsc_filter_pt_list(vd);
 	}
+	if (fantom != NULL)
+		*fantom = vsc->iter_fantom;
 	VTAILQ_FOREACH(pt, &vsc->pt_list, list) {
 		i = func(priv, &pt->point);
 		if (i)
@@ -480,44 +489,6 @@ VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv)
 
 /*--------------------------------------------------------------------
  */
-
-int
-VSC_MgtValid(struct VSM_data *vd)
-{
-	struct vsc *vsc = vsc_setup(vd);
-	fprintf(stderr, "VSC_MgtValid called priv=%ju\n",
-		vsc->mgt_fantom.priv);
-	return (VSM_StillValid(vd, &vsc->mgt_fantom));
-}
-
-int
-VSC_MainValid(struct VSM_data *vd)
-{
-	struct vsc *vsc = vsc_setup(vd);
-	fprintf(stderr, "VSC_MainValid called priv=%ju\n",
-		vsc->main_fantom.priv);
-	return (VSM_StillValid(vd, &vsc->main_fantom));
-}
-
-int
-VSC_IterValid(struct VSM_data *vd)
-{
-	struct vsc *vsc = vsc_setup(vd);
-	int v;
-	fprintf(stderr, "VSC_IterValid called priv=%ju\n",
-		vsc->iter_fantom.priv);
-	v = VSM_StillValid(vd, &vsc->iter_fantom);
-	if (v == 2) {
-		/* There's been changes, reiteration needed. Clear fantom
-		   so subsequent calls will also fail */
-		memset(&vsc->iter_fantom, 0, sizeof vsc->iter_fantom);
-		v = 0;
-	}
-	fprintf(stderr, "VSC_IterValid returns %d priv=%ju\n", v,
-		vsc->iter_fantom.priv);
-
-	return (v);
-}
 
 const struct VSC_level_desc *
 VSC_LevelDesc(unsigned level)

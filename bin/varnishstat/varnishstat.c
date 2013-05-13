@@ -82,7 +82,7 @@ do_xml(struct VSM_data *vd)
 	now = time(NULL);
 	(void)strftime(time_stamp, 20, "%Y-%m-%dT%H:%M:%S", localtime(&now));
 	printf("<varnishstat timestamp=\"%s\">\n", time_stamp);
-	(void)VSC_Iter(vd, do_xml_cb, NULL);
+	(void)VSC_Iter(vd, NULL, do_xml_cb, NULL);
 	printf("</varnishstat>\n");
 }
 
@@ -143,7 +143,7 @@ do_json(struct VSM_data *vd)
 
 	(void)strftime(time_stamp, 20, "%Y-%m-%dT%H:%M:%S", localtime(&now));
 	printf("\t\"timestamp\": \"%s\",\n", time_stamp);
-	(void)VSC_Iter(vd, do_json_cb, &jp);
+	(void)VSC_Iter(vd, NULL, do_json_cb, &jp);
 	printf("\n}\n");
 	fflush(stdout);
 }
@@ -196,7 +196,7 @@ do_once(struct VSM_data *vd, const struct VSC_C_main *VSC_C_main)
 		op.up = VSC_C_main->uptime;
 	op.pad = 18;
 
-	(void)VSC_Iter(vd, do_once_cb, &op);
+	(void)VSC_Iter(vd, NULL, do_once_cb, &op);
 }
 
 /*--------------------------------------------------------------------*/
@@ -228,7 +228,7 @@ list_fields(struct VSM_data *vd)
 	fprintf(stderr, "Field name                     Description\n");
 	fprintf(stderr, "----------                     -----------\n");
 
-	(void)VSC_Iter(vd, do_list_cb, NULL);
+	(void)VSC_Iter(vd, NULL, do_list_cb, NULL);
 }
 
 /*--------------------------------------------------------------------*/
@@ -315,7 +315,7 @@ main(int argc, char * const *argv)
 		else if (json)
 			do_json(vd);
 		else if (once)
-			do_once(vd, VSC_Main(vd));
+			do_once(vd, VSC_Main(vd, NULL));
 		else {
 			assert(0);
 		}

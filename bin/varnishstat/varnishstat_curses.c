@@ -318,7 +318,7 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 }
 
 static void
-build_pt_list(struct VSM_data *vd)
+build_pt_list(struct VSM_data *vd, struct VSM_fantom *fantom)
 {
 	struct pt_priv pt_priv;
 	int i;
@@ -334,7 +334,7 @@ build_pt_list(struct VSM_data *vd)
 	VTAILQ_INIT(&pt_priv.ptlist);
 	pt_priv.n_ptlist = 0;
 
-	(void)VSC_Iter(vd, build_pt_list_cb, &pt_priv);
+	(void)VSC_Iter(vd, fantom, build_pt_list_cb, &pt_priv);
 	delete_pt_list();
 	AN(VTAILQ_EMPTY(&ptlist));
 	AZ(n_ptlist);
@@ -841,6 +841,7 @@ do_curses(struct VSM_data *vd, int delay)
 	long timeout;
 	int ch;
 	double now;
+	struct VSM_fantom f_main, f_mgt, f_iter;
 
 	AN(freopen("errlog", "w", stderr));
 	setbuf(stderr, NULL);
@@ -859,8 +860,8 @@ do_curses(struct VSM_data *vd, int delay)
 	make_windows();
 	doupdate();
 
-	VSC_C_mgt = VSC_Mgt(vd);
-	VSC_C_main = VSC_Main(vd);
+	VSC_C_mgt = VSC_Mgt(vd, &f_mgt);
+	VSC_C_main = VSC_Main(vd, &f_main);
 	while (keep_running) {
 		if (VSM_Abandoned(vd)) {
 			fprintf(stderr, "abandoned\n");
@@ -870,13 +871,10 @@ do_curses(struct VSM_data *vd, int delay)
 				fprintf(stderr, "VSM_Open failed: %s\n",
 				    VSM_Error(vd));
 		}
-		VSC_C_mgt = VSC_Mgt(vd);
-		VSC_C_main = VSC_Main(vd);
-		if (!VSC_IterValid(vd)) {
-			fprintf(stderr, "iter not valid\n");
-			build_pt_list(vd);
-		} else
-			fprintf(stderr, "iter valid\n");
+		VSC_C_mgt = VSC_Mgt(vd, &f_mgt);
+		VSC_C_main = VSC_Main(vd, &f_main);
+		if (VSM_StillValid(vd, &f_iter) != 1)
+			build_pt_list(vd, &f_iter);
 
 		now = VTIM_mono();
 		if (now - t_sample > interval)

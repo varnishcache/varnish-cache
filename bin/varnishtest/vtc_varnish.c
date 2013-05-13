@@ -774,7 +774,7 @@ varnish_expect(const struct varnish *v, char * const *av) {
 		if (good < 0)
 			continue;
 
-		good = VSC_Iter(v->vd, do_stat_cb, &sp);
+		good = VSC_Iter(v->vd, NULL, do_stat_cb, &sp);
 		if (!good) {
 			good = -2;
 			continue;

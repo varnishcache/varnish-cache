@@ -90,10 +90,8 @@ LIBVARNISHAPI_1.3 {
 	# Functions:
 	VSM_Abandoned;
 	VSM_ResetError;
+	VSM_StillValid;
 	VSC_Mgt;
-	VSC_MgtValid;
-	VSC_MainValid;
-	VSC_IterValid;
 	VSC_LevelDesc;
 	VSL_New;
 	VSL_Delete;

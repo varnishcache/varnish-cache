@@ -59,16 +59,61 @@ int VSC_Arg(struct VSM_data *vd, int arg, const char *opt);
 	 *	 1 Handled.
 	 */
 
-struct VSC_C_mgt *VSC_Mgt(struct VSM_data *vd);
+struct VSC_C_mgt *VSC_Mgt(struct VSM_data *vd, struct VSM_fantom *fantom);
 	/*
-	 * return Management stats structure
-	 * returns NULL until management process has finished initialization.
+	 * Looks up and returns the management stats structure. If fantom
+	 * is non-NULL, it can if successful later be used with
+	 * VSM_StillValid. Returns NULL until the management process has
+	 * finished initialization.
+	 *
+	 * The returned structure is valid for at most 60 seconds after
+	 * VSM_StillValid(,fantom) starts returning VSM_invalid. Using the
+	 * pointer after this event gives undefined behavior.
+	 *
+	 * Arguments:
+	 *	    vd: The VSM_data context
+	 *	fantom: Pointer to a fantom. Can be NULL.
+	 *
+	 * Return values:
+	 *      NULL: Failure
+	 *  non-NULL: Success
 	 */
 
-struct VSC_C_main *VSC_Main(struct VSM_data *vd);
+struct VSC_C_main *VSC_Main(struct VSM_data *vd, struct VSM_fantom *fantom);
 	/*
-	 * return Main stats structure
-	 * returns NULL until child has been started.
+	 * Looks up and returns the main stats structure. If fantom is
+	 * non-NULL, it can if successful later be used with
+	 * VSM_StillValid. Returns NULL until child has been started.
+	 *
+	 * The returned structure is valid for at most 60 seconds after
+	 * VSM_StillValid(,fantom) starts returning VSM_invalid. Using the
+	 * pointer after this event gives undefined behavior.
+	 *
+	 * Arguments:
+	 *	    vd: The VSM_data context
+	 *	fantom: Pointer to a fantom. Can be NULL.
+	 *
+	 * Return values:
+	 *      NULL: Failure
+	 *  non-NULL: Success
+	 */
+
+void *VSC_Get(struct VSM_data *vd, struct VSM_fantom *fantom, const char *type,
+    const char *ident);
+	/*
+	 * Looks up the given VSC type and identifier. If fantom is
+	 * non-NULL, it can if successful later be used with
+	 * VSM_StillValid.
+	 *
+	 * Arguments:
+	 *	vd:	The VSM_data context
+	 *	fantom: Pointer to a fantom. Can be NULL.
+	 *	type:	The type of the counter segment
+	 *	ident:	The identifier of the counter segment
+	 *
+	 * Return values:
+	 *  NULL:	Failure
+	 *  non-NULL:	A void pointer to the stats structure.
 	 */
 
 struct VSC_level_desc;
@@ -114,49 +159,34 @@ struct VSC_point {
 
 typedef int VSC_iter_f(void *priv, const struct VSC_point *const pt);
 
-int VSC_Iter(struct VSM_data *vd, VSC_iter_f *func, void *priv);
+int VSC_Iter(struct VSM_data *vd, struct VSM_fantom *fantom, VSC_iter_f *func,
+    void *priv);
 	/*
 	 * Iterate over all statistics counters, calling "func" for
 	 * each counter not suppressed by any "-f" arguments.
 	 *
+	 * fantom points to a struct VSM_fantom. If non-NULL, it can be
+	 * used with VSM_StillValid to check the validity of the points
+	 * returned.
+	 *
+	 * The returned points are valid for at most 60 seconds after
+	 * VSM_StillValid(,fantom) starts returning anything but
+	 * VSM_valid, or until the next call to VSC_Iter. Using the point
+	 * values after any of these events gives undefined behavior.
+	 *
 	 * Func is called with pt == NULL, whenever VSM allocations
 	 * change (child restart, allocations/deallocations)
+	 *
+	 * Arguments:
+	 *	    vd: The VSM_data context
+	 *	fantom: Pointer to a fantom. Can be NULL.
+	 *	  func: The callback function
+	 *	  priv: Passed as argument to func
 	 *
 	 * Returns:
 	 *	!=0:	func returned non-zero
 	 *	-1:	No VSC's available
 	 *	0:	Done
-	 */
-
-int VSC_MgtValid(struct VSM_data *vd);
-	/*
-	 * Call VSM_StillValid on the fantom used to find the management
-	 * counters
-	 *
-	 * Returns:
-	 *	0: fantom is not valid any more
-	 *	1: fantom is still the same.
-	 *	2: a fantom with same dimensions exist.
-	 */
-
-int VSC_MainValid(struct VSM_data *vd);
-	/*
-	 * Call VSM_StillValid on the fantom used to find the main counters.
-	 *
-	 * Returns:
-	 *	0: fantom is not valid any more
-	 *	1: fantom is still the same.
-	 *	2: a fantom with same dimensions exist.
-	 */
-
-int VSC_IterValid(struct VSM_data *vd);
-	/*
-	 * Call VSM_StillValid on the fantom used to produce the last
-	 * VSC_Iter results.
-	 *
-	 * Returns:
-	 *	0: fantom is not valid any more
-	 *	1: fantom is still the same.
 	 */
 
 const struct VSC_level_desc *VSC_LevelDesc(unsigned level);
