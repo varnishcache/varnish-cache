@@ -777,8 +777,6 @@ draw_screen(void)
 static void
 handle_keypress(int ch)
 {
-	fprintf(stderr, "key: 0x%x\n", ch);
-
 	switch (ch) {
 	case KEY_UP:
 		if (current == 0)
@@ -843,9 +841,6 @@ do_curses(struct VSM_data *vd, int delay)
 	double now;
 	struct VSM_fantom f_main, f_mgt, f_iter;
 
-	AN(freopen("errlog", "w", stderr));
-	setbuf(stderr, NULL);
-
 	(void)delay;
 
 	initscr();
@@ -864,7 +859,6 @@ do_curses(struct VSM_data *vd, int delay)
 	VSC_C_main = VSC_Main(vd, &f_main);
 	while (keep_running) {
 		if (VSM_Abandoned(vd)) {
-			fprintf(stderr, "abandoned\n");
 			delete_pt_list();
 			VSM_Close(vd);
 			if (VSM_Open(vd) < 0)
@@ -904,6 +898,4 @@ do_curses(struct VSM_data *vd, int delay)
 	}
 	VSM_Close(vd);
 	AZ(endwin());
-
-	fclose(stderr);
 }
