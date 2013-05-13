@@ -357,21 +357,18 @@ fetch_iter_req_body(struct req *req, void *priv, void *ptr, size_t l)
  */
 
 int
-FetchHdr(struct req *req, int need_host_hdr, int sendbody)
+FetchHdr(struct worker *wrk, struct busyobj *bo, struct req *req,
+    int need_host_hdr, int sendbody)
 {
 	struct vbc *vc;
-	struct worker *wrk;
-	struct busyobj *bo;
 	struct http *hp;
 	enum htc_status_e hs;
 	int retry = -1;
 	int i, first;
 	struct http_conn *htc;
 
-	wrk = req->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	bo = req->busyobj;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	htc = &bo->htc;
 
@@ -385,7 +382,7 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 
 	bo->vbc = VDI_GetFd(NULL, bo);
 	if (bo->vbc == NULL) {
-		VSLb(req->vsl, SLT_FetchError, "no backend connection");
+		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 		return (-1);
 	}
 	vc = bo->vbc;
@@ -408,8 +405,7 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 	i = 0;
 
 	if (sendbody) {
-		i = HTTP1_IterateReqBody(req,
-		    fetch_iter_req_body, NULL);
+		i = HTTP1_IterateReqBody(req, fetch_iter_req_body, NULL);
 		if (req->req_body_status == REQ_BODY_DONE)
 			retry = -1;
 	} else {
@@ -417,8 +413,7 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 	}
 
 	if (WRW_FlushRelease(wrk) || i != 0) {
-		VSLb(req->vsl, SLT_FetchError,
-		    "backend write error: %d (%s)",
+		VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s)",
 		    errno, strerror(errno));
 		VDI_CloseFd(&bo->vbc);
 		/* XXX: other cleanup ? */
@@ -440,7 +435,7 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 	do {
 		hs = HTTP1_Rx(htc);
 		if (hs == HTTP1_OVERFLOW) {
-			VSLb(req->vsl, SLT_FetchError,
+			VSLb(bo->vsl, SLT_FetchError,
 			    "http %sread error: overflow",
 			    first ? "first " : "");
 			VDI_CloseFd(&bo->vbc);
@@ -448,8 +443,7 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 			return (-1);
 		}
 		if (hs == HTTP1_ERROR_EOF) {
-			VSLb(req->vsl, SLT_FetchError,
-			    "http %sread error: EOF",
+			VSLb(bo->vsl, SLT_FetchError, "http %sread error: EOF",
 			    first ? "first " : "");
 			VDI_CloseFd(&bo->vbc);
 			/* XXX: other cleanup ? */
@@ -466,7 +460,7 @@ FetchHdr(struct req *req, int need_host_hdr, int sendbody)
 	hp = bo->beresp;
 
 	if (HTTP1_DissectResponse(hp, htc)) {
-		VSLb(req->vsl, SLT_FetchError, "http format error");
+		VSLb(bo->vsl, SLT_FetchError, "http format error");
 		VDI_CloseFd(&bo->vbc);
 		/* XXX: other cleanup ? */
 		return (-1);

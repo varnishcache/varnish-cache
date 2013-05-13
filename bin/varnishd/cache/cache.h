@@ -814,7 +814,8 @@ void EXP_NukeLRU(struct worker *wrk, struct vsl_log *vsl, struct lru *lru);
 struct storage *FetchStorage(struct busyobj *, ssize_t sz);
 int FetchError(struct busyobj *, const char *error);
 int FetchError2(struct busyobj *, const char *error, const char *more);
-int FetchHdr(struct req *req, int need_host_hdr, int sendbody);
+int FetchHdr(struct worker *wrk, struct busyobj *bo, struct req *req,
+    int need_host_hdr, int sendbody);
 void FetchBody(struct worker *w, void *bo);
 void Fetch_Init(void);
 
