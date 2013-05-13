@@ -752,13 +752,18 @@ draw_bar_b(void)
 static void
 draw_info(void)
 {
-	int Y, X;
 
 	if (w_info == NULL)
 		return;
 
-	getmaxyx(w_info, Y, X);
-	mvwprintw(w_info, 0, 0, "infotest Y=%d X=%d", Y, X);
+	werase(w_info);
+	if (current < n_ptarray - 1) {
+		/* XXX: Word wrapping, and overflow handling? */
+		mvwprintw(w_info, 0, 0, "%s:",
+		    ptarray[current]->vpt->desc->sdesc);
+		mvwprintw(w_info, 1, 0, "%s",
+		    ptarray[current]->vpt->desc->ldesc);
+	}
 	wnoutrefresh(w_info);
 }
 
