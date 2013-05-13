@@ -357,8 +357,7 @@ fetch_iter_req_body(struct req *req, void *priv, void *ptr, size_t l)
  */
 
 int
-FetchHdr(struct worker *wrk, struct busyobj *bo, struct req *req,
-    int need_host_hdr)
+FetchHdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 {
 	struct vbc *vc;
 	struct http *hp;
@@ -366,6 +365,7 @@ FetchHdr(struct worker *wrk, struct busyobj *bo, struct req *req,
 	int retry = -1;
 	int i, first;
 	struct http_conn *htc;
+        int need_host_hdr;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_ORNULL(req, REQ_MAGIC);
@@ -373,6 +373,8 @@ FetchHdr(struct worker *wrk, struct busyobj *bo, struct req *req,
 	htc = &bo->htc;
 
 	AN(bo->director);
+
+	need_host_hdr = !http_GetHdr(bo->bereq, H_Host, NULL);
 
 	hp = bo->bereq;
 

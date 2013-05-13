@@ -350,7 +350,7 @@ DOT fetch -> fetchbody [style=bold,color=blue]
 static enum req_fsm_nxt
 cnt_fetch(struct worker *wrk, struct req *req)
 {
-	int i, need_host_hdr;
+	int i;
 	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -367,12 +367,9 @@ cnt_fetch(struct worker *wrk, struct req *req)
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, HTTP_Beresp);
 
-	need_host_hdr = !http_GetHdr(bo->bereq, H_Host, NULL);
-
 	req->acct_req.fetch++;
 
-	i = FetchHdr(wrk, bo, req->objcore->objhead == NULL ? req : NULL,
-	    need_host_hdr);
+	i = FetchHdr(wrk, bo, req->objcore->objhead == NULL ? req : NULL);
 	/*
 	 * If we recycle a backend connection, there is a finite chance
 	 * that the backend closed it before we get a request to it.
@@ -381,7 +378,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	if (i == 1) {
 		VSC_C_main->backend_retry++;
 		i = FetchHdr(wrk, bo,
-		    req->objcore->objhead == NULL ? req : NULL, need_host_hdr);
+		    req->objcore->objhead == NULL ? req : NULL);
 	}
 
 	if (req->objcore->objhead != NULL)
