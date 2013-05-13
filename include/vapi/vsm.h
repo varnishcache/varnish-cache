@@ -124,7 +124,10 @@ int VSM_Abandoned(struct VSM_data *vd);
 
 void VSM_Close(struct VSM_data *vd);
 	/*
-	 * Close and unmap shared memory, if open.
+	 * Close and unmap shared memory, if open. Any reference to
+	 * previously returned memory areas will cause segmentation
+	 * fault. This includes any VSC counter areas or any VSL SHM
+	 * record references.
 	 */
 
 
