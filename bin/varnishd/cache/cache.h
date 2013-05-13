@@ -1007,7 +1007,7 @@ void RES_BuildHttp(struct req *);
 void RES_WriteObj(struct req *);
 
 /* cache_vary.c */
-int VRY_Create(struct req *req, const struct http *hp, struct vsb **psb);
+int VRY_Create(struct busyobj *bo, struct vsb **psb);
 int VRY_Match(struct req *, const uint8_t *vary);
 void VRY_Validate(const uint8_t *vary);
 void VRY_Prep(struct req *);

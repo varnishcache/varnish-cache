@@ -576,7 +576,7 @@ cnt_fetchbody(struct worker *wrk, struct req *req)
 
 	/* Create Vary instructions */
 	if (req->objcore->objhead != NULL) {
-		varyl = VRY_Create(req, bo->beresp, &vary);
+		varyl = VRY_Create(bo, &vary);
 		if (varyl > 0) {
 			AN(vary);
 			assert(varyl == VSB_len(vary));

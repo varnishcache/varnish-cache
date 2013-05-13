@@ -71,18 +71,21 @@
  */
 
 int
-VRY_Create(struct req *req, const struct http *hp, struct vsb **psb)
+VRY_Create(struct busyobj *bo, struct vsb **psb)
 {
 	char *v, *p, *q, *h, *e;
 	struct vsb *sb, *sbh;
 	unsigned l;
 	int error = 0;
 
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->bereq, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->beresp, HTTP_MAGIC);
 	AN(psb);
 	AZ(*psb);
 
 	/* No Vary: header, no worries */
-	if (!http_GetHdr(hp, H_Vary, &v))
+	if (!http_GetHdr(bo->beresp, H_Vary, &v))
 		return (0);
 
 	/* For vary matching string */
@@ -102,7 +105,7 @@ VRY_Create(struct req *req, const struct http *hp, struct vsb **psb)
 			continue;
 
 		if (q - p > INT8_MAX) {
-			VSLb(req->vsl, SLT_Error,
+			VSLb(bo->vsl, SLT_Error,
 			    "Vary header name length exceeded");
 			error = 1;
 			break;
@@ -114,7 +117,7 @@ VRY_Create(struct req *req, const struct http *hp, struct vsb **psb)
 		    (char)(1 + (q - p)), (int)(q - p), p, 0);
 		AZ(VSB_finish(sbh));
 
-		if (http_GetHdr(req->http, VSB_data(sbh), &h)) {
+		if (http_GetHdr(bo->bereq, VSB_data(sbh), &h)) {
 			AZ(vct_issp(*h));
 			/* Trim trailing space */
 			e = strchr(h, '\0');
@@ -123,7 +126,7 @@ VRY_Create(struct req *req, const struct http *hp, struct vsb **psb)
 			/* Encode two byte length and contents */
 			l = e - h;
 			if (l > 0xffff - 1) {
-				VSLb(req->vsl, SLT_Error,
+				VSLb(bo->vsl, SLT_Error,
 				    "Vary header maximum length exceeded");
 				error = 1;
 				break;
@@ -143,7 +146,7 @@ VRY_Create(struct req *req, const struct http *hp, struct vsb **psb)
 		if (*q == '\0')
 			break;
 		if (*q != ',') {
-			VSLb(req->vsl, SLT_Error, "Malformed Vary header");
+			VSLb(bo->vsl, SLT_Error, "Malformed Vary header");
 			error = 1;
 			break;
 		}
