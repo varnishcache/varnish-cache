@@ -585,21 +585,18 @@ http_filterfields(struct http *to, const struct http *fm, unsigned how)
 /*--------------------------------------------------------------------*/
 
 void
-http_FilterReq(const struct req *req, unsigned how)
+http_FilterReq(struct http *to, const struct http *fm, unsigned how)
 {
-	struct http *hp;
+	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 
-	hp = req->busyobj->bereq;
-	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-
-	http_linkh(hp, req->http, HTTP_HDR_METHOD);
-	http_linkh(hp, req->http, HTTP_HDR_URL);
+	http_linkh(to, fm, HTTP_HDR_METHOD);
+	http_linkh(to, fm, HTTP_HDR_URL);
 	if (how == HTTPH_R_FETCH)
-		http_SetH(hp, HTTP_HDR_PROTO, "HTTP/1.1");
+		http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
 	else
-		http_linkh(hp, req->http, HTTP_HDR_PROTO);
-	http_filterfields(hp, req->http, how);
-	http_PrintfHeader(hp, "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
+		http_linkh(to, fm, HTTP_HDR_PROTO);
+	http_filterfields(to, fm, how);
 }
 
 /*--------------------------------------------------------------------*/
