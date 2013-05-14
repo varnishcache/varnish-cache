@@ -719,8 +719,7 @@ vslq_callback(struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
     void *priv)
 {
 	unsigned n = vtx->n_descend + 1;
-	struct vslc_vtx *cp[n];
-	struct VSL_cursor *CP[n + 1];
+	struct vslc_vtx *cp[n + 1];
 	unsigned i, j;
 
 	AN(vslq);
@@ -735,6 +734,7 @@ vslq_callback(struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
 	    vtx->type != vtx_t_req)
 		return (0);
 
+	/* Build cursor array */
 	i = j = 0;
 	cp[i] = &vtx->c;
 	vslc_vtx_reset(cp[i]);
@@ -753,17 +753,15 @@ vslq_callback(struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
 		j++;
 	}
 	assert(i == n);
-
-	/* Reverse order */
-	for (i = 0; i < n; i++)
-		CP[i] = &cp[n - i - 1]->c.c;
-	CP[i] = NULL;
+	cp[i] = NULL;
 
 	/* Query test goes here */
-	if (vslq->query == NULL ? 1 : vslq_runquery(vslq->query, CP))
-		return ((func)(vslq->vsl, CP, priv));
-	else
+	if (vslq->query != NULL &&
+	    vslq_runquery(vslq->query, (struct VSL_cursor **)cp))
 		return (0);
+
+	/* Callback */
+	return ((func)(vslq->vsl, (struct VSL_cursor **)cp, priv));
 }
 
 struct VSLQ *
