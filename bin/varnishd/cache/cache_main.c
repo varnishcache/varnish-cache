@@ -195,6 +195,7 @@ child_main(void)
 	cache_param = heritage.param;
 
 	AZ(pthread_key_create(&req_key, NULL));
+	AZ(pthread_key_create(&bo_key, NULL));
 	AZ(pthread_key_create(&name_key, NULL));
 
 	THR_SetName("cache-main");
