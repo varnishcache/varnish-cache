@@ -396,6 +396,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 {
 	const char *q;
 	struct req *req;
+	struct busyobj *bo;
 
 	AZ(pthread_mutex_lock(&panicstr_mtx)); /* Won't be released,
 						  we're going to die
@@ -445,6 +446,11 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 		if (req != NULL) {
 			pan_req(req);
 			VSL_Flush(req->vsl, 0);
+		}
+		bo = THR_GetBusyobj();
+		if (bo != NULL) {
+			pan_busyobj(bo);
+			VSL_Flush(bo->vsl, 0);
 		}
 	}
 	VSB_printf(pan_vsp, "\n");

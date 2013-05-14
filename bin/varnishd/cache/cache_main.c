@@ -52,6 +52,21 @@ volatile struct params	*cache_param;
  */
 
 static pthread_key_t req_key;
+static pthread_key_t bo_key;
+
+void
+THR_SetBusyobj(const struct busyobj *bo)
+{
+
+	AZ(pthread_setspecific(bo_key, bo));
+}
+
+struct busyobj *
+THR_GetBusyobj(void)
+{
+
+	return (pthread_getspecific(bo_key));
+}
 
 void
 THR_SetRequest(const struct req *req)

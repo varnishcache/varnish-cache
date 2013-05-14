@@ -913,6 +913,8 @@ uint32_t VXID_Get(struct vxid_pool *v);
 extern volatile struct params * cache_param;
 void THR_SetName(const char *name);
 const char* THR_GetName(void);
+void THR_SetBusyobj(const struct busyobj *);
+struct busyobj * THR_GetBusyobj(void);
 void THR_SetRequest(const struct req *);
 struct req * THR_GetRequest(void);
 
