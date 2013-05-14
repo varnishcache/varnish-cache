@@ -277,7 +277,7 @@ probably confuse people if we made the default case-insentive.
 
 To make a PCRE regex case insensitive, put ``(?i)`` at the start::
 
-	if (req.http.host ~ "?iexample.com$") {
+	if (req.http.host ~ "(?i)example.com$") {
 		...
 	}
 
