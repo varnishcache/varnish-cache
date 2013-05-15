@@ -495,18 +495,18 @@ vtx_check_ready(struct VSLQ *vslq, struct vtx *vtx)
 }
 
 static int
-vtx_parsetag_bl(const char *str, unsigned strlen, enum VSL_transaction_e *ptype,
+vtx_parsetag_bl(const char *str, unsigned len, enum VSL_transaction_e *ptype,
     unsigned *pvxid)
 {
-	char ibuf[strlen + 1];
+	char ibuf[len + 1];
 	char tbuf[7];
 	unsigned vxid;
 	int i;
 	enum VSL_transaction_e type = VSL_t_unknown;
 
 	AN(str);
-	memcpy(ibuf, str, strlen);
-	ibuf[strlen] = '\0';
+	memcpy(ibuf, str, len);
+	ibuf[len] = '\0';
 	i = sscanf(ibuf, "%6s %u", tbuf, &vxid);
 	if (i < 1)
 		return (-1);
