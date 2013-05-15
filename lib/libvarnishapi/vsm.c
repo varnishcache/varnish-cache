@@ -338,14 +338,14 @@ VSM__itern(const struct VSM_data *vd, struct VSM_fantom *vf)
 			return (0); /* free'd during iteration */
 		if (vf->chunk->next == 0)
 			return (0); /* last */
-		c = (struct VSM_chunk *)(vd->b + vf->chunk->next);
+		c = (struct VSM_chunk *)(void*)(vd->b + vf->chunk->next);
 		assert(c != vf->chunk);
 	} else if (vd->head->first == 0) {
 		return (0);	/* empty vsm */
 	} else {
 		/* get first chunk */
 		AZ(vf->chunk);
-		c = (struct VSM_chunk *)(vd->b + vd->head->first);
+		c = (struct VSM_chunk *)(void*)(vd->b + vd->head->first);
 	}
 	AN(c);
 	if (memcmp(c->marker, VSM_CHUNK_MARKER, sizeof c->marker))
