@@ -841,7 +841,7 @@ void
 do_curses(struct VSM_data *vd, int delay)
 {
 	struct pollfd pollfd;
-	long timeout;
+	long t;
 	int ch;
 	double now;
 	struct VSM_fantom f_main, f_mgt, f_iter;
@@ -885,9 +885,9 @@ do_curses(struct VSM_data *vd, int delay)
 		if (redraw)
 			draw_screen();
 
-		timeout = (t_sample + interval - now) * 1000;
-		if (timeout > 0)
-			(void)poll(&pollfd, 1, timeout);
+		t = (t_sample + interval - now) * 1000;
+		if (t > 0)
+			(void)poll(&pollfd, 1, t);
 
 		switch (ch = wgetch(w_status)) {
 		case ERR:
