@@ -95,7 +95,7 @@ main(int argc, char * const *argv)
 	vsm = VSM_New();
 	AN(vsm);
 
-	while ((optchar = getopt(argc, argv, "dg:n:r:")) != -1) {
+	while ((optchar = getopt(argc, argv, "dg:n:r:v")) != -1) {
 		switch (optchar) {
 		case 'd':
 			d_opt = 1;
@@ -113,7 +113,8 @@ main(int argc, char * const *argv)
 			r_arg = optarg;
 			break;
 		default:
-			usage();
+			if (!VSL_Arg(vsl, optchar, optarg))
+				usage();
 		}
 	}
 
@@ -165,7 +166,7 @@ main(int argc, char * const *argv)
 			AZ(c);
 		}
 
-		i = VSLQ_Dispatch(q, VSL_PrintSet, stdout);
+		i = VSLQ_Dispatch(q, VSL_PrintTransactions, stdout);
 		if (i == 0) {
 			/* Nothing to do but wait */
 			VTIM_sleep(0.01);
@@ -174,7 +175,7 @@ main(int argc, char * const *argv)
 			break;
 		} else if (i <= -2) {
 			/* XXX: Make continuation optional */
-			VSLQ_Flush(q, VSL_PrintSet, stdout);
+			VSLQ_Flush(q, VSL_PrintTransactions, stdout);
 			VSLQ_Delete(&q);
 			AZ(q);
 			if (i == -2) {
@@ -191,7 +192,7 @@ main(int argc, char * const *argv)
 	}
 
 	if (q != NULL) {
-		VSLQ_Flush(q, VSL_PrintSet, stdout);
+		VSLQ_Flush(q, VSL_PrintTransactions, stdout);
 		VSLQ_Delete(&q);
 		AZ(q);
 	}

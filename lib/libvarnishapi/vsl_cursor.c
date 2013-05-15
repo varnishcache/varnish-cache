@@ -250,8 +250,6 @@ VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, int tail)
 		vsl_diag(vsl, "Out of memory\n");
 		return (NULL);
 	}
-	c->c.c.vxid = -1;	/* N/A to this cursor type */
-	c->c.c.shmptr_ok = 1;
 	c->c.magic = VSLC_MAGIC;
 	c->c.tbl = & vslc_vsm_tbl;
 
@@ -409,7 +407,6 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name)
 		vsl_diag(vsl, "Out of memory\n");
 		return (NULL);
 	}
-	c->c.c.vxid = -1;	/* N/A to this cursor type */
 	c->c.magic = VSLC_MAGIC;
 	c->c.tbl = &vslc_file_tbl;
 

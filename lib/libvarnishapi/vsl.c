@@ -154,15 +154,30 @@ VSL_Match(struct VSL_data *vsl, const struct VSL_cursor *c)
 	return (1);
 }
 
+const char *VSL_transactions[256] = {
+	/*                 12345678901234 */
+	[VSL_t_unknown] = "<< Unknown  >>",
+	[VSL_t_sess]	= "<< Session  >>",
+	[VSL_t_req]	= "<< Request  >>",
+	[VSL_t_esireq]	= "<< ESI-req  >>",
+	[VSL_t_bereq]	= "<< BeReq    >>",
+	[VSL_t_raw]	= "<< Record   >>",
+};
+
+#define VSL_PRINT(...)					\
+	do {						\
+		if (0 > fprintf(__VA_ARGS__))		\
+			return (-5);			\
+	} while (0)
+
 int
-VSL_PrintVXID(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
+VSL_Print(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
 {
 	enum VSL_tag_e tag;
 	uint32_t vxid;
 	unsigned len;
 	const char *data;
 	int type;
-	int i;
 
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 	if (c == NULL || c->rec.ptr == NULL)
@@ -177,76 +192,51 @@ VSL_PrintVXID(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
 	data = VSL_CDATA(c->rec.ptr);
 
 	if (tag == SLT_Debug) {
-		i = fprintf(fo, "%10u %-15s %c \"", vxid, VSL_tags[tag], type);
-		if (i < 0)
-			return (-5);
+		VSL_PRINT(fo, "%10u %-14s %c \"", vxid, VSL_tags[tag], type);
 		while (len-- > 0) {
 			if (*data >= ' ' && *data <= '~')
-				i = fprintf(fo, "%c", *data);
+				VSL_PRINT(fo, "%c", *data);
 			else
-				i = fprintf(fo, "%%%02x", (unsigned char)*data);
-			if (i < 0)
-				return (-5);
+				VSL_PRINT(fo, "%%%02x", (unsigned char)*data);
 			data++;
 		}
-		i = fprintf(fo, "\"\n");
-		if (i < 0)
-			return (-5);
-		return (0);
-	}
+		VSL_PRINT(fo, "\"\n");
+	} else
+		VSL_PRINT(fo, "%10u %-14s %c %.*s\n", vxid, VSL_tags[tag],
+		    type, (int)len, data);
 
-	i = fprintf(fo, "%10u %-15s %c %.*s\n",
-	    vxid, VSL_tags[tag], type, (int)len, data);
-	if (i < 0)
-		return (-5);
 	return (0);
 }
 
 int
-VSL_PrintLevel(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
+VSL_PrintTerse(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
 {
 	enum VSL_tag_e tag;
-	unsigned len, lvl;
+	unsigned len;
 	const char *data;
-	int type;
-	int i;
 
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 	if (c == NULL || c->rec.ptr == NULL)
 		return (0);
 	if (fo == NULL)
 		fo = stdout;
-
 	tag = VSL_TAG(c->rec.ptr);
 	len = VSL_LEN(c->rec.ptr);
-	type = VSL_CLIENT(c->rec.ptr) ? 'c' : VSL_BACKEND(c->rec.ptr) ?
-	    'b' : '-';
 	data = VSL_CDATA(c->rec.ptr);
-	lvl = c->level;
+
 	if (tag == SLT_Debug) {
-		i = fprintf(fo, "%2u %-15s %c \"", lvl, VSL_tags[tag],
-		    type);
-		if (i < 0)
-			return (-5);
+		VSL_PRINT(fo, "%-14s \"", VSL_tags[tag]);
 		while (len-- > 0) {
 			if (*data >= ' ' && *data <= '~')
-				i = fprintf(fo, "%c", *data);
+				VSL_PRINT(fo, "%c", *data);
 			else
-				i = fprintf(fo, "%%%02x",
-				    (unsigned char)*data);
-			if (i < 0)
-				return (-5);
+				VSL_PRINT(fo, "%%%02x", (unsigned char)*data);
 			data++;
 		}
-		i = fprintf(fo, "\"\n");
-		if (i < 0)
-			return (-5);
-		return (0);
-	}
-	i = fprintf(fo, "%2u %-15s %c %.*s\n",
-	    lvl, VSL_tags[tag], type, (int)len, data);
-	if (i < 0)
-		return (-5);
+		VSL_PRINT(fo, "\"\n");
+	} else
+		VSL_PRINT(fo, "%-14s %.*s\n", VSL_tags[tag], (int)len, data);
+
 	return (0);
 }
 
@@ -257,46 +247,76 @@ VSL_PrintAll(struct VSL_data *vsl, struct VSL_cursor *c, void *fo)
 
 	if (c == NULL)
 		return (0);
-	if (c->vxid >= 0) {
-		i = fprintf(fo, "vv VXID: %11u vv\n", c->vxid);
-		if (i < 0)
-			return (-5);
-	}
 	while (1) {
 		i = VSL_Next(c);
 		if (i <= 0)
 			return (i);
 		if (!VSL_Match(vsl, c))
 			continue;
-		if (c->vxid < 0)
-			i = VSL_PrintVXID(vsl, c, fo);
-		else
-			i = VSL_PrintLevel(vsl, c, fo);
+		i = VSL_Print(vsl, c, fo);
 		if (i != 0)
 			return (i);
 	}
 }
 
 int
-VSL_PrintSet(struct VSL_data *vsl, struct VSL_cursor *cp[], void *fo)
+VSL_PrintTransactions(struct VSL_data *vsl, struct VSL_transaction *pt[],
+    void *fo)
 {
+	struct VSL_transaction *t;
 	int i;
 	int delim = 0;
-	struct VSL_cursor *c;
+	int verbose;
 
-	c = cp[0];
-	while (c) {
-		if (c->vxid >= 0)
+	(void)vsl;
+	if (pt[0] == NULL)
+		return (0);
+
+	t = pt[0];
+	while (t) {
+		verbose = 0;
+		if (t->level == 0 || vsl->v_opt)
+			verbose = 1;
+
+		if (t->level) {
+			/* Print header */
+			if (t->level > 3)
+				VSL_PRINT(fo, "*%1.1u* ", t->level);
+			else
+				VSL_PRINT(fo, "%-3.*s ", t->level, "***");
+			VSL_PRINT(fo, "%*.s%-14s %*.s%-10u\n",
+			    verbose ? 10 + 1 : 0, " ",
+			    VSL_transactions[t->type],
+			    verbose ? 1 + 1 : 0, " ",
+			    t->vxid);
 			delim = 1;
-		i = VSL_PrintAll(vsl, c, fo);
-		if (i)
-			return (i);
-		c = *++cp;
+		}
+
+		while (1) {
+			/* Print records */
+			i = VSL_Next(t->c);
+			if (i < 0)
+				return (i);
+			if (i == 0)
+				break;
+			if (!VSL_Match(vsl, t->c))
+				continue;
+			if (t->level > 3)
+				VSL_PRINT(fo, "-%1.1u- ", t->level);
+			else if (t->level)
+				VSL_PRINT(fo, "%-3.*s ", t->level, "---");
+			if (verbose)
+				i = VSL_Print(vsl, t->c, fo);
+			else
+				i = VSL_PrintTerse(vsl, t->c, fo);
+			if (i != 0)
+				return (i);
+		}
+		t = *++pt;
 	}
-	if (delim) {
-		i = fprintf(fo, "\n");
-		if (i < 0)
-			return (-5);
-	}
+
+	if (delim)
+		VSL_PRINT(fo, "\n");;
+
 	return (0);
 }

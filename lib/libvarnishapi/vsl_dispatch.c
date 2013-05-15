@@ -50,21 +50,6 @@
 
 struct vtx;
 
-enum vtx_type_e {
-	vtx_t_unknown,
-	vtx_t_sess,
-	vtx_t_req,
-	vtx_t_esireq,
-	vtx_t_bereq,
-};
-
-enum vtx_link_e {
-	vtx_l_sess,
-	vtx_l_req,
-	vtx_l_esireq,
-	vtx_l_bereq,
-};
-
 struct vslc_raw {
 	struct vslc		c;
 	unsigned		magic;
@@ -111,7 +96,7 @@ struct vtx {
 #define VTX_F_COMPLETE		0x1
 #define VTX_F_READY		0x2
 
-	enum vtx_type_e		type;
+	enum VSL_transaction_e	type;
 
 	struct vtx		*parent;
 	VTAILQ_HEAD(,vtx)	child;
@@ -307,7 +292,7 @@ vtx_new(struct VSLQ *vslq)
 	vtx->key.vxid = 0;
 	vtx->t_start = VTIM_mono();
 	vtx->flags = 0;
-	vtx->type = vtx_t_unknown;
+	vtx->type = VSL_t_unknown;
 	vtx->parent = NULL;
 	VTAILQ_INIT(&vtx->child);
 	vtx->n_child = 0;
@@ -399,7 +384,6 @@ vtx_lori(struct VSLQ *vslq, unsigned vxid)
 	vtx = vtx_new(vslq);
 	AN(vtx);
 	vtx->key.vxid = vxid;
-	vtx->c.c.c.vxid = vxid;
 	AZ(VRB_INSERT(vtx_tree, &vslq->tree, &vtx->key));
 	return (vtx);
 }
@@ -486,7 +470,7 @@ vtx_check_ready(struct VSLQ *vslq, struct vtx *vtx)
 	AN(vtx->flags & VTX_F_COMPLETE);
 	AZ(vtx->flags & VTX_F_READY);
 
-	if (vtx->type == vtx_t_unknown)
+	if (vtx->type == VSL_t_unknown)
 		vtx_diag(vtx, "vtx of unknown type marked complete");
 
 	ready = vtx;
@@ -511,14 +495,14 @@ vtx_check_ready(struct VSLQ *vslq, struct vtx *vtx)
 }
 
 static int
-vtx_parsetag_bl(const char *str, unsigned strlen, enum vtx_type_e *ptype,
+vtx_parsetag_bl(const char *str, unsigned strlen, enum VSL_transaction_e *ptype,
     unsigned *pvxid)
 {
 	char ibuf[strlen + 1];
 	char tbuf[7];
 	unsigned vxid;
 	int i;
-	enum vtx_type_e type = vtx_t_unknown;
+	enum VSL_transaction_e type = VSL_t_unknown;
 
 	AN(str);
 	memcpy(ibuf, str, strlen);
@@ -527,13 +511,13 @@ vtx_parsetag_bl(const char *str, unsigned strlen, enum vtx_type_e *ptype,
 	if (i < 1)
 		return (-1);
 	if (!strcmp(tbuf, "sess"))
-		type = vtx_t_sess;
+		type = VSL_t_sess;
 	else if (!strcmp(tbuf, "req"))
-		type = vtx_t_req;
+		type = VSL_t_req;
 	else if (!strcmp(tbuf, "esireq"))
-		type = vtx_t_esireq;
+		type = VSL_t_esireq;
 	else if (!strcmp(tbuf, "bereq"))
-		type = vtx_t_bereq;
+		type = VSL_t_bereq;
 	else
 		return (-1);
 	if (i == 1)
@@ -564,7 +548,7 @@ static int
 vtx_scan_begintag(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 {
 	int i;
-	enum vtx_type_e type;
+	enum VSL_transaction_e type;
 	unsigned p_vxid;
 	struct vtx *p_vtx;
 
@@ -578,8 +562,8 @@ vtx_scan_begintag(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 		return (vtx_diag_tag(vtx, ptr, "parse error"));
 
 	/* Check/set vtx type */
-	assert(type != vtx_t_unknown);
-	if (vtx->type != vtx_t_unknown && vtx->type != type)
+	assert(type != VSL_t_unknown);
+	if (vtx->type != VSL_t_unknown && vtx->type != type)
 		return (vtx_diag_tag(vtx, ptr, "type mismatch"));
 	vtx->type = type;
 
@@ -588,7 +572,7 @@ vtx_scan_begintag(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 
 	if (vslq->grouping == VSL_g_vxid)
 		return (0);	/* No links */
-	if (vslq->grouping == VSL_g_request && vtx->type == vtx_t_req)
+	if (vslq->grouping == VSL_g_request && vtx->type == VSL_t_req)
 		return (0);	/* No links */
 
 	/* Lookup and check parent vtx */
@@ -612,7 +596,7 @@ static int
 vtx_scan_linktag(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 {
 	int i;
-	enum vtx_type_e c_type;
+	enum VSL_transaction_e c_type;
 	unsigned c_vxid;
 	struct vtx *c_vtx;
 
@@ -628,7 +612,7 @@ vtx_scan_linktag(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 
 	if (vslq->grouping == VSL_g_vxid)
 		return (0);	/* No links */
-	if (vslq->grouping == VSL_g_request && vtx->type == vtx_t_sess)
+	if (vslq->grouping == VSL_g_request && vtx->type == VSL_t_sess)
 		return (0);	/* No links */
 
 	/* Lookup and check child vtx */
@@ -641,7 +625,7 @@ vtx_scan_linktag(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 		return (vtx_diag_tag(vtx, ptr, "duplicate link"));
 	if (c_vtx->flags & VTX_F_READY)
 		return (vtx_diag_tag(vtx, ptr, "link too late"));
-	if (c_vtx->type != vtx_t_unknown && c_vtx->type != c_type)
+	if (c_vtx->type != VSL_t_unknown && c_vtx->type != c_type)
 		return (vtx_diag_tag(vtx, ptr, "type mismatch"));
 	c_vtx->type = c_type;
 
@@ -669,7 +653,7 @@ vtx_scan(struct VSLQ *vslq, struct vtx *vtx)
 			continue;
 		}
 
-		if (vtx->type == vtx_t_unknown && tag != SLT_Begin)
+		if (vtx->type == VSL_t_unknown && tag != SLT_Begin)
 			vtx_diag_tag(vtx, ptr, "early log rec");
 
 		switch (tag) {
@@ -719,7 +703,9 @@ vslq_callback(struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
     void *priv)
 {
 	unsigned n = vtx->n_descend + 1;
-	struct vslc_vtx *cp[n + 1];
+	struct VSL_transaction trans[n];
+	struct VSL_transaction *ptrans[n + 1];
+	struct vslc_vtx *c;
 	unsigned i, j;
 
 	AN(vslq);
@@ -728,40 +714,46 @@ vslq_callback(struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
 	if (func == NULL)
 		return (0);
 	if (vslq->grouping == VSL_g_session &&
-	    vtx->type != vtx_t_sess)
+	    vtx->type != VSL_t_sess)
 		return (0);
 	if (vslq->grouping == VSL_g_request &&
-	    vtx->type != vtx_t_req)
+	    vtx->type != VSL_t_req)
 		return (0);
 
-	/* Build cursor array */
-	i = j = 0;
-	cp[i] = &vtx->c;
-	vslc_vtx_reset(cp[i]);
-	cp[i]->c.c.level = 0;
-	i++;
+	/* Build transaction array */
+	vslc_vtx_reset(&vtx->c);
+	trans[0].level = 1;
+	trans[0].vxid = vtx->key.vxid;
+	trans[0].type = vtx->type;
+	trans[0].c = &vtx->c.c.c;
+	i = 1;
+	j = 0;
 	while (j < i) {
-		vtx = VTAILQ_FIRST(&cp[j]->vtx->child);
-		while (vtx) {
+		CAST_OBJ_NOTNULL(c, (void *)trans[j].c, VSLC_VTX_MAGIC);
+		VTAILQ_FOREACH(vtx, &c->vtx->child, list_child) {
 			assert(i < n);
-			cp[i] = &vtx->c;
-			vslc_vtx_reset(cp[i]);
-			cp[i]->c.c.level = cp[j]->c.c.level + 1;
+			vslc_vtx_reset(&vtx->c);
+			trans[i].level = trans[j].level + 1;
+			trans[i].vxid = vtx->key.vxid;
+			trans[i].type = vtx->type;
+			trans[i].c = &vtx->c.c.c;
 			i++;
-			vtx = VTAILQ_NEXT(vtx, list_child);
 		}
 		j++;
 	}
 	assert(i == n);
-	cp[i] = NULL;
+
+	/* Build pointer array */
+	for (i = 0; i < n; i++)
+		ptrans[i] = &trans[i];
+	ptrans[i] = NULL;
 
 	/* Query test goes here */
-	if (vslq->query != NULL &&
-	    vslq_runquery(vslq->query, (struct VSL_cursor **)cp))
+	if (vslq->query != NULL && vslq_runquery(vslq->query, ptrans))
 		return (0);
 
 	/* Callback */
-	return ((func)(vslq->vsl, (struct VSL_cursor **)cp, priv));
+	return ((func)(vslq->vsl, ptrans, priv));
 }
 
 struct VSLQ *
@@ -835,20 +827,23 @@ static int
 vslq_raw(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 {
 	struct vslc_raw rawc;
+	struct VSL_transaction trans;
+	struct VSL_transaction *ptrans[2];
 	struct VSL_cursor *c;
-	struct VSL_cursor *pc[2];
 	int i;
 
 	assert(vslq->grouping == VSL_g_raw);
 	c = vslq->c;
 
 	memset(&rawc, 0, sizeof rawc);
-	rawc.c.c.vxid = -1;
 	rawc.c.magic = VSLC_MAGIC;
 	rawc.c.tbl = &vslc_raw_tbl;
 	rawc.magic = VSLC_RAW_MAGIC;
-	pc[0] = &rawc.c.c;
-	pc[1] = NULL;
+	trans.level = 0;
+	trans.type = VSL_t_raw;
+	trans.c = &rawc.c.c;
+	ptrans[0] = &trans;
+	ptrans[1] = NULL;
 
 	while (1) {
 		i = VSL_Next(c);
@@ -861,11 +856,14 @@ vslq_raw(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 		rawc.len = VSL_NEXT(c->rec.ptr) - c->rec.ptr;
 		rawc.next = rawc.start;
 		rawc.c.c.rec.ptr = NULL;
+		trans.vxid = VSL_ID(c->rec.ptr);
 
 		/* Query check goes here */
-		i = 0;
-		if (vslq->query == NULL ? 1 : vslq_runquery(vslq->query, pc))
-			i = (func)(vslq->vsl, pc, priv);
+		if (vslq->query != NULL && vslq_runquery(vslq->query, ptrans))
+			continue;
+
+		/* Callback */
+		i = (func)(vslq->vsl, ptrans, priv);
 		if (i)
 			break;
 	}

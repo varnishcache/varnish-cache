@@ -88,8 +88,9 @@ vslq_deletequery(struct vslq_query **pquery)
 }
 
 int
-vslq_runquery(struct vslq_query *query, struct VSL_cursor *cp[])
+vslq_runquery(struct vslq_query *query, struct VSL_transaction *ptrans[])
 {
+	struct VSL_transaction *t;
 	struct VSL_cursor *c;
 	int i, len;
 	const char *data;
@@ -97,8 +98,9 @@ vslq_runquery(struct vslq_query *query, struct VSL_cursor *cp[])
 	CHECK_OBJ_NOTNULL(query, VSLQ_QUERY_MAGIC);
 	AN(query->regex);
 
-	c = cp[0];
-	while (c) {
+	t = ptrans[0];
+	while (t) {
+		c = t->c;
 		while (1) {
 			i = VSL_Next(c);
 			if (i == 0)
@@ -115,7 +117,7 @@ vslq_runquery(struct vslq_query *query, struct VSL_cursor *cp[])
 			}
 		}
 		AZ(VSL_ResetCursor(c));
-		c = *++cp;
+		t = *++ptrans;
 	}
 
 	return (0);

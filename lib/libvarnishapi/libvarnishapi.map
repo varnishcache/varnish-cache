@@ -102,10 +102,10 @@ LIBVARNISHAPI_1.3 {
 	VSL_DeleteCursor;
 	VSL_Next;
 	VSL_Match;
-	VSL_PrintVXID;
-	VSL_PrintLevel;
+	VSL_Print;
+	VSL_PrintTerse;
 	VSL_PrintAll;
-	VSL_PrintSet;
+	VSL_PrintTransactions;
 	VSLQ_New;
 	VSLQ_Delete;
 	VSLQ_Dispatch;

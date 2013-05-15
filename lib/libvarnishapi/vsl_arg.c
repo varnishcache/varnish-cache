@@ -131,6 +131,7 @@ VSL_Arg(struct VSL_data *vsl, int opt, const char *arg)
 {
 	switch (opt) {
 	case 'i': case'x': return (vsl_ix_arg(vsl, opt, arg));
+	case 'v': vsl->v_opt = 1; return (1);
 	default:
 		return (0);
 	}

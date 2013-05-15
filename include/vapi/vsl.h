@@ -59,16 +59,22 @@ struct VSLC_ptr {
 struct VSL_cursor {
 	/* The record this cursor points to */
 	struct VSLC_ptr		rec;
+};
 
-	/* If not -1, the vxid of all records in this set */
+enum VSL_transaction_e {
+	VSL_t_unknown,
+	VSL_t_sess,
+	VSL_t_req,
+	VSL_t_esireq,
+	VSL_t_bereq,
+	VSL_t_raw,
+};
+
+struct VSL_transaction {
+	unsigned		level;
 	int32_t			vxid;
-
-	/* For set cursors, the depth level of these records */
-	unsigned level;
-
-	/* Nonzero if pointer values from this cursor are still valid
-	   after next call to VSL_Next */
-	unsigned shmptr_ok;
+	enum VSL_transaction_e	type;
+	struct VSL_cursor	*c;
 };
 
 enum VSL_grouping_e {
@@ -192,11 +198,13 @@ int VSL_Match(struct VSL_data *vsl, const struct VSL_cursor *c);
 	 *	0:	No match
 	 */
 
-int VSL_PrintVXID(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
+int VSL_Print(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
 	/*
 	 * Print the log record pointed to by cursor to stream.
 	 *
-	 * Format: <vxid> <tag> <type> <data>
+	 * Format: (t=type)
+	 * 1234567890 12345678901234 1 ...
+	 *       vxid tag            t content
 	 *
 	 * Arguments:
 	 *   vsl: The VSL_data context
@@ -208,11 +216,13 @@ int VSL_PrintVXID(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
 	 *     -5:	I/O write error - see errno
 	 */
 
-int VSL_PrintLevel(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
+int VSL_PrintTerse(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
 	/*
 	 * Print the log record pointed to by cursor to stream.
 	 *
-	 * Format: <level> <tag> <type> <data>
+	 * Format:
+	 * 12345678901234 ...
+	 * tag            content
 	 *
 	 * Arguments:
 	 *   vsl: The VSL_data context
@@ -227,10 +237,7 @@ int VSL_PrintLevel(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
 int VSL_PrintAll(struct VSL_data *vsl, struct VSL_cursor *c, void *fo);
 	/*
 	 * Calls VSL_Next on c until c is exhausted. In turn calls
-	 * prints all records where VSL_Match returns true.
-	 *
-	 * If c->vxid == -1, calls VSL_PrintVXID on each record. Else
-	 * prints a VXID header and calls VSL_PrintLevel on each record.
+	 * VSL_Print on all records where VSL_Match returns true.
 	 *
 	 * Arguments:
 	 *   vsl: The VSL_data context
@@ -242,11 +249,14 @@ int VSL_PrintAll(struct VSL_data *vsl, struct VSL_cursor *c, void *fo);
 	 *    !=0:	Return value from either VSL_Next or VSL_Print
 	 */
 
-int VSL_PrintSet(struct VSL_data *vsl, struct VSL_cursor *cp[], void *fo);
+int VSL_PrintTransactions(struct VSL_data *vsl,
+    struct VSL_transaction *ptrans[], void *fo);
 	/*
-	 * Calls VSL_PrintAll on each cursor in cp[]. If any cursor in cp
-	 * has vxid != -1 it will end with a double line break as a set
-	 * delimeter.
+	 * Prints out each transaction in the array ptrans. For
+	 * transactions of level > 0 it will print a header before the log
+	 * records. The records will for level == 0 (single records) or if
+	 * v_opt is set, be printed by VSL_Print. Else VSL_PrintTerse is
+	 * used.
 	 *
 	 * Arguments:
 	 *   vsl: The VSL_data context
@@ -255,7 +265,7 @@ int VSL_PrintSet(struct VSL_data *vsl, struct VSL_cursor *cp[], void *fo);
 	 *
 	 * Return values:
 	 *	0:	OK
-	 *    !=0:	Return value from either VSL_Next or VSL_PrintAll
+	 *    !=0:	Return value from either VSL_Next or VSL_Print
 	 */
 
 struct VSLQ *VSLQ_New(struct VSL_data *vsl, struct VSL_cursor **cp,
@@ -280,16 +290,15 @@ void VSLQ_Delete(struct VSLQ **pvslq);
 	 * Delete the query pointed to by pvslq, freeing up the resources
 	 */
 
-typedef int VSLQ_dispatch_f(struct VSL_data *vsl, struct VSL_cursor *cp[],
-    void *priv);
+typedef int VSLQ_dispatch_f(struct VSL_data *vsl,
+    struct VSL_transaction *trans[], void *priv);
 	/*
 	 * The callback function type for use with VSLQ_Dispatch.
 	 *
 	 * Arguments:
-	 *   vsl: The VSL_data context
-	 *  cp[]: A NULL terminated array of pointer to cursors. Each cursor
-	 *        will iterate over the log records of a single VXID
-	 *  priv: The priv argument from VSL_Dispatch
+	 *      vsl: The VSL_data context
+	 *  trans[]: A NULL terminated array of pointers to VSL_transaction.
+	 *     priv: The priv argument from VSL_Dispatch
 	 *
 	 * Return value:
 	 *     0: OK - continue
