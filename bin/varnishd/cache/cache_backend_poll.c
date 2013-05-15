@@ -225,7 +225,7 @@ vbp_poke(struct vbp_target *vt)
 
 	i = sscanf(vt->resp_buf, "HTTP/%*f %u %s", &resp, buf);
 
-	if (i == 2 && resp == vt->probe.exp_status)
+	if ((i == 1 || i == 2) && resp == vt->probe.exp_status)
 		vt->happy |= 1;
 }
 
