@@ -10,79 +10,321 @@ Display Varnish logs
 
 :Author: Dag-Erling Smørgrav
 :Author: Per Buer
-:Date:   2010-05-31
-:Version: 0.2
+:Author: Martin Blix Grydeland
+:Date:   2013-05-15
+:Version: 0.3
 :Manual section: 1
 
 
 SYNOPSIS
 ========
 
-varnishlog [-a] [-b] [-C] [-c] [-D] [-d] [-I regex] [-i tag] [-k keep] 
-[-n varnish_name] [-o] [-O] [-m tag:regex ...] [-P file] [-r file] [-s num] [-u] [-V]
-[-w file] [-X regex] [-x tag]
+varnishlog [-a] [-b] [-c] [-C] [-d] [-D] [-i tag] [-I [tag:]regex] [-k
+keep] [-n varnish_name] [-P file] [-r file] [--raw] [-s num] [-S] [-u]
+[-v] [-V] [-w file] [-x tag] [-X [tag:]regex] <query expression>
+
+OPTIONS
+=======
+
+The following options are available:
+
+-a
+
+	When writing to a file, append to it rather than overwrite it.
+
+	XXX: Not yet implemented
+
+-b
+
+	Only show backend transactions. If neither -b nor -c is
+	specified, varnishlog acts as if they both were specified.
+
+	XXX: Not yet implemented
+
+-c
+
+	Only show client transactions. If neither -b nor -c is
+	specified, varnishlog acts as if they both were present.
+
+	XXX: Not yet implemented
+
+-C
+
+	Ignore case when matching regular expressions.
+
+	XXX: Not yet implemented
+
+-D
+
+	Daemonize.
+
+	XXX: Not yet implemented
+
+-d
+
+	Process old log entries on startup. Nomally, varnishlog will
+	only process entries which are written to the log after it
+	starts.
+
+-g {session|request|vxid|raw}
+
+	The grouping of the log records. The default is to group by
+	request.
+
+-i tag
+
+	Output only this tag. Multiple -i options may be given.
+
+	If an -i option is the first of any -ix options, all tags are
+	disabled for output before -ix processing.
+
+-I [tag:]regex
+
+	Output only records matching this regular expression. If tag
+	is given, limit the regex matching to records of that
+	tag. Multiple -I options may be given.
+
+	XXX: Not yet implemented
+
+-k num
+
+	Only show the first num log transactions (or log records
+	in --raw mode)
+
+	XXX: Not yet implemented
+
+-n
+
+	Specifies the name of the varnishd instance to get logs
+	from. If -n is not specified, the host name is used.
+
+
+-P file
+
+	Write the process' PID to the specified file.
+
+	XXX: Not yet implemented
+
+-r file
+
+	Read log entries from file instaed of shared memory
+
+	XXX: Not yet implemented
+
+-s num
+
+	Skip the first num log transactions (or log records if
+	in --raw mode)
+
+	XXX: Not yet implemented
+
+-u
+
+	Unbuffered output.
+
+	XXX: Not yet implemented
+
+-v
+
+	Use verbose output on set output, giving the VXID on every log
+	line. Without this option, the VXID will only be given on the
+	header of that transaction.
+
+-V
+
+	Display the version number and exit.
+
+	XXX: Not yet implemented
+
+-w file
+
+	Write log entries to file instead of displaying them.  The
+   	file will be overwritten unless the -a option was
+   	specified. If varnishlog receives a SIGHUP while writing to a
+   	file, it will reopen the file, allowing the old one to be
+   	rotated away.
+
+	XXX: Not yet implemented
+
+-x tag
+
+	Exclude log records of this tag. Multiple -x options may be
+	given.
+
+	If an -x option is the first of any -ix options, all tags are
+	enabled for output before -ix processing.
+
+-X [tag:]regex
+
+	Do not output log records matching this regex. If tag is
+	given, limit the regex matching to records of that tag.
+	Multiple -X options may be given.
+
+	XXX: Not yet implemented
+
 
 DESCRIPTION
 ===========
 
+Varnishlog is a utility to extract and query the Varnish shared memory
+log.
 
-The varnishlog utility reads and presents varnishd(1) shared memory logs.
+Varnishlog operates on transactions. A transaction is a set of log
+lines that belongs together, e.g. a client request. Varnishlog will
+monitor the log, and collect all log records that make up a
+transaction before reporting on that transaction. Transactions can
+also be grouped, meaning backend transactions are reported together
+with the client transaction that initiated it.
 
-The following options are available:
+The grouping levels are:
 
--a          When writing to a file, append to it rather than overwrite it.
+* Session
 
--b          Include log entries which result from communication with a backend server.  
-	    If neither -b nor -c is specified, varnishlog acts as if they both were.
+  All transactions initiated by a client connection is reported
+  together. All log data is buffered until the client connection is
+  closed.
 
--C          Ignore case when matching regular expressions.
+* Request
 
--c          Include log entries which result from communication with a client.  
-	    If neither -b nor -c is specified, varnishlog acts as if they both were.
+  Transactions are grouped by request, where the set will include the
+  request itself, and any backend requests or ESI-subrequests. Session
+  data is not reported. This is the default.
 
--D          Daemonize.
+* VXID
 
--d          Process old log entries on startup.  Normally, varnishlog will only process entries 
-	    which are written to the log after it starts.
+  Transactions are not grouped, so each VXID is reported in it's
+  entirity. Sessions, requests, ESI-requests and backend requests are
+  all reported individually. Non-transactional data is not reported
+  (VXID == 0).
 
--I regex    Include log entries which match the specified regular expression.  If 
-   	    neither -I nor -i is specified, all log entries are included.
+* Raw
 
--i tag      Include log entries with the specified tag.  If neither -I nor -i is specified, 
-   	    all log entries are included.
+  Every log record will make up a transaction of it's own. All data,
+  including non-transactional data will be reported.
 
--k num      Only show the first num log records.
 
--m tag:regex only list transactions where tag matches regex. Multiple
-            -m options are AND-ed together. Can not be combined with 
-	    -O.
+Grouping
+========
 
--n          Specifies the name of the varnishd instance to get logs from.  If
-	    -n is not specified, the host name is used.
+When grouping transactions, there is a hirarchy structure showing
+which transaction initiated what. The level increases by one by a
+'initiated by' relation, so for example a backend transaction will
+have one higher level than the client transaction that initiated it on
+a cache miss.
 
--o          Ignored for compatibility with earlier versions.
+Example transaction hirarchy ::
 
--O          Do not group log entries by request ID.  Can not be
-            combined with -m.
+  Lvl 1: Client request (cache miss)
+    Lvl 2: Backend request
+    Lvl 2: ESI subrequest (cache miss)
+      Lvl 3: Backend request
+      Lvl 3: Backend request (VCL restart)
+      Lvl 3: ESI subrequest (cache miss)
+        Lvl 4: Backend request
+    Lvl 2: ESI subrequest (cache hit)
 
--P file     Write the process's PID to the specified file.
+Query operators will unless limited see a grouped set of transactions
+together, and matching will be done on any log line from the complete
+set. See QUERY LANGUAGE for how to limit a match to a specific part of
+the set.
 
--r file     Read log entries from file instead of shared memory.
+Running queries in session grouping mode can potentially consume a lot
+of memory.
 
--s num      Skip the first num log records.
 
--u          Unbuffered output.
+QUERY LANGUAGE
+==============
 
--V          Display the version number and exit.
+XXX: As a POC only a single string is accepted as a query expression,
+and this will be used as a regular expression that will be matched
+against any log line of the set. The rest of the query language is yet
+to be implemented.
 
--w file     Write log entries to file instead of displaying them.  The file 
-   	    will be overwritten unless the -a option was specified. If 
-	    varnishlog receives a SIGHUP while writing to a file, it will 
-	    reopen the file, allowing the old one to be rotated away.
+The query expression is given as a single command line
+argument. Additional arguments will give an error.
 
--X regex    Exclude log entries which match the specified regular expression.
+An expression consists of a single tag, or a comparison between a tag
+and a constant.
 
--x tag      Exclude log entries with the specified tag.
+A single tag expression is considered true if there is one or more
+records with that tag in the transaction.
+
+For all comparisons, the LHS must be a tag, and the RHS must be a
+constant.
+
+Constants must be quoted if they contain whitespace. You can use
+either single or double quotes.
+
+A comparison expression is true if the comparison is true for one or
+more records with that tag in the transaction.
+
+(be)?re(q|sp).(url|request|status|response) expands to their specific
+tags.
+
+(be)?re(q|sp).http.<header> expands to their corresponding
+(Ber|R)(eq|esp)Header tag, and for this comparison the value will be
+s/^(?i)<header>: //
+
+<tag>{n} will only match on a transaction at the nth level (see
+grouping). Levels starts counting at 0. If n is followed by a '+',
+it will only match at level n or higher. If n is followed by a '-', it
+will only match at level n or lower.
+
+<tag>[n] will consider the value of the tag to be a white-space
+separated field list, and extract the nth field for the comparison.
+
+<tag>#n adds a repetition counter to this match, and is true only if
+the match is true n times. n+ means n or more, n- means n or less.
+
+'==', '!=', '<', '<=', '>' and '>=' are numerical comparisons. Integer
+by default, or floating point if the RHS contains a dot. LHS will be
+transformed (atoi/atof) for comparison.
+
+'eq' and 'ne' are for string comparison.
+
+'~' and '!~' are PCRE regular expression comparisons.
+
+'not' is for negation
+
+'and' is concatenation
+
+'or' is alteration
+
+'not' has highest precedence, alternation and concatenation have equal
+precedence and associate left to right. Paranthesis can be used to
+group statements.
+
+QUERY EXAMPLES
+==============
+
+The following commands will list the entire client transaction of
+requests where the url is "/foo" ::
+
+	$ varnishlog -c 'req.url eq "/foo"'
+	$ varnishlog -c 'ReqURL eq "/foo"'
+
+The following command will list the URL of all requests that has a
+cookie-header ::
+
+	$ varnishlog -c -i ReqURL req.http.cookie
+	$ varnishlog -c -i ReqURL 'ReqHeader ~ "^Cookie: "'
+
+Report the User-Agent of logged in clients where the request delivery
+time exceeds exceeds 0.5 seconds ::
+
+	$ varnishlog -c -I RxHeader:User-Agent 'req.http.cookie ~
+	"logged_in" and ReqEnd[5] > 0.5'
+
+Report delivery status code of client requests that had one or more
+503 errors from backend requests ::
+
+	$ varnishlog -i TxStatus 'beresp.status == 503'
+
+Report transaction set on requests that has backend failures
+or long delivery time on their ESI subrequests ::
+
+	$ varnishlog 'beresp.status{2+} >= 500 or ReqEnd{1+}[5] > 0.5'
+
 
 TAGS
 ====
@@ -139,16 +381,6 @@ The following log entry tags are currently defined:
 * VCL_trace
 * WorkThread
 
-EXAMPLES
-========
-
-The following command line simply copies all log entries to a log file::
-
-    $ varnishlog -w /var/log/varnish.log
-
-The following command line reads that same log file and displays requests for the front page::
-
-    $ varnishlog -r /var/log/varnish.log -c -m 'RxURL:^/$'
 
 SEE ALSO
 ========
@@ -161,8 +393,10 @@ SEE ALSO
 HISTORY
 =======
 
-The varnishlog utility was developed by Poul-Henning Kamp ⟨phk@phk.freebsd.dk⟩ in cooperation with Verdens Gang
-AS, Varnish Software AS and Varnish Software.  This manual page was initially written by Dag-Erling Smørgrav.
+The varnishlog utility was developed by Poul-Henning Kamp
+⟨phk@phk.freebsd.dk⟩ in cooperation with Verdens Gang AS, Varnish
+Software AS and Varnish Software.  This manual page was initially
+written by Dag-Erling Smørgrav.
 
 
 COPYRIGHT
@@ -172,4 +406,4 @@ This document is licensed under the same licence as Varnish
 itself. See LICENCE for details.
 
 * Copyright (c) 2006 Verdens Gang AS
-* Copyright (c) 2006-2011 Varnish Software AS
+* Copyright (c) 2006-2013 Varnish Software AS
