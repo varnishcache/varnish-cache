@@ -21,6 +21,7 @@ nobase_pkginclude_HEADERS = \
 	tbl/vsc_types.h \
 	tbl/vsc_all.h \
 	tbl/vsc_fields.h \
+	tbl/vsc_levels.h \
 	tbl/vsc_f_main.h \
 	tbl/vsl_tags.h \
 	tbl/vsl_tags_http.h \

@@ -582,12 +582,8 @@ AC_CONFIG_FILES([
     bin/varnishadm/Makefile
     bin/varnishd/Makefile
     bin/varnishlog/Makefile
-    bin/varnishhist/Makefile
-    bin/varnishncsa/Makefile
-    bin/varnishreplay/Makefile
     bin/varnishstat/Makefile
     bin/varnishtest/Makefile
-    bin/varnishtop/Makefile
     doc/Makefile
     doc/sphinx/Makefile
     doc/sphinx/conf.py
