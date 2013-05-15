@@ -151,9 +151,28 @@ enum VSM_valid_e {
 enum VSM_valid_e VSM_StillValid(const struct VSM_data *vd,
     struct VSM_fantom *vf);
 	/*
-	 * This is a cheap syscall-less check to see if the fantom is still
-	 * valid.  Further checking with VSM_Abandoned() may be a good
-	 * idea.
+	 * Check the validity of a previously looked up VSM_fantom.
+	 *
+	 * VSM_invalid means that the SHM chunk this fantom points to does
+	 * not exist in the log file any longer. Using the fantom's
+	 * pointer gives undefined results. Further checking with
+	 * VSM_Abandoned() may be a good idea.
+	 *
+	 * VSM_valid means that the SHM structure has not changed since
+	 * the fantom was looked up or since the last call to
+	 * VSM_StillValid().
+	 *
+	 * VSM_similar means that the SHM structure has changed, but there
+	 * is still a valid chunk present with the same the same type and
+	 * identifier. The fantom's pointers and dimensions haven't
+	 * changed. The next call to VSM_StillValid() on this fantom will
+	 * return VSM_valid.
+	 *
+	 * Applications using the fantom to monitor a single chunk can
+	 * treat VSM_similar as equal to VSM_valid.  Applications using a
+	 * fantom to monitor the SHM file for new or removed chunks,
+	 * should reiterate over the chunks on VSM_similar as the
+	 * structure has changed.
 	 *
 	 * Return:
 	 *   VSM_invalid: fantom is not valid any more.

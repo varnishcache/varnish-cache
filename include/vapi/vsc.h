@@ -60,30 +60,12 @@ int VSC_Arg(struct VSM_data *vd, int arg, const char *opt);
 	 */
 
 struct VSC_C_mgt *VSC_Mgt(struct VSM_data *vd, struct VSM_fantom *fantom);
-	/*
-	 * Looks up and returns the management stats structure. If fantom
-	 * is non-NULL, it can if successful later be used with
-	 * VSM_StillValid. Returns NULL until the management process has
-	 * finished initialization.
-	 *
-	 * The returned structure is valid for at most 60 seconds after
-	 * VSM_StillValid(,fantom) starts returning VSM_invalid. Using the
-	 * pointer after this event gives undefined behavior.
-	 *
-	 * Arguments:
-	 *	    vd: The VSM_data context
-	 *	fantom: Pointer to a fantom. Can be NULL.
-	 *
-	 * Return values:
-	 *      NULL: Failure
-	 *  non-NULL: Success
-	 */
-
 struct VSC_C_main *VSC_Main(struct VSM_data *vd, struct VSM_fantom *fantom);
 	/*
-	 * Looks up and returns the main stats structure. If fantom is
-	 * non-NULL, it can if successful later be used with
-	 * VSM_StillValid. Returns NULL until child has been started.
+	 * Looks up and returns the management stats and the child main
+	 * stats structure. If fantom is non-NULL, it can later be used
+	 * with VSM_StillValid. Returns NULL until the management process
+	 * has finished initialization or the child has been started.
 	 *
 	 * The returned structure is valid for at most 60 seconds after
 	 * VSM_StillValid(,fantom) starts returning VSM_invalid. Using the
