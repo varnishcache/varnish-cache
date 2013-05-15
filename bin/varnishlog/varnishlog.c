@@ -81,7 +81,6 @@ main(int argc, char * const *argv)
 	char optchar;
 	int d_opt = 0;
 	char *g_arg = NULL;
-	char *r_arg = NULL;
 
 	struct VSL_data *vsl;
 	struct VSM_data *vsm;
@@ -108,10 +107,6 @@ main(int argc, char * const *argv)
 			/* Instance name */
 			if (VSM_n_Arg(vsm, optarg) > 0)
 				break;
-		case 'r':
-			/* Read from file */
-			r_arg = optarg;
-			break;
 		default:
 			if (!VSL_Arg(vsl, optchar, optarg))
 				usage();
@@ -132,16 +127,11 @@ main(int argc, char * const *argv)
 	}
 
 	/* Create cursor */
-	if (r_arg) {
-		/* XXX */
-		error (1, "-r not implemented");
-	} else {
-		if (VSM_Open(vsm))
-			error(1, "VSM_Open: %s", VSM_Error(vsm));
-		if (!(c = VSL_CursorVSM(vsl, vsm, !d_opt)))
-			error(1, "VSL_CursorVSM: %s", VSL_Error(vsl));
-	}
-	AN(c);
+	if (VSM_Open(vsm))
+		error(1, "VSM_Open: %s", VSM_Error(vsm));
+	c = VSL_CursorVSM(vsl, vsm, !d_opt);
+	if (c == NULL)
+		error(1, "VSL_CursorVSM: %s", VSL_Error(vsl));
 
 	/* Create query */
 	q = VSLQ_New(vsl, &c, grouping, argv[optind]);
@@ -150,7 +140,7 @@ main(int argc, char * const *argv)
 	AZ(c);
 
 	while (1) {
-		while (!r_arg && q == NULL) {
+		while (q == NULL) {
 			VTIM_sleep(0.1);
 			if (VSM_Open(vsm)) {
 				VSM_ResetError(vsm);
