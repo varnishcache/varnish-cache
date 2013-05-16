@@ -356,6 +356,7 @@ VSL_Setup(struct vsl_log *vsl, void *ptr, size_t len)
 	vsl->wle = ptr;
 	vsl->wle += len / sizeof(*vsl->wle);
 	vsl->wlr = 0;
+	vsl->wid = 0;
 }
 
 /*--------------------------------------------------------------------*/
