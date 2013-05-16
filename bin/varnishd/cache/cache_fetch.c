@@ -30,6 +30,7 @@
 #include "config.h"
 
 #include <inttypes.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -41,6 +42,7 @@
 #include "vcli_priv.h"
 #include "vct.h"
 #include "vtcp.h"
+#include "vtim.h"
 
 static unsigned fetchfrag;
 
@@ -472,7 +474,7 @@ FetchHdr(struct worker *wrk, struct busyobj *bo, struct req *req)
  * refcount on it, which we must release, when done fetching.
  */
 
-void
+static void
 FetchBody(struct worker *wrk, void *priv)
 {
 	int cls;
@@ -622,6 +624,240 @@ FetchBody(struct worker *wrk, void *priv)
 	bo->stats = NULL;
 	VBO_DerefBusyObj(wrk, &bo);
 }
+
+/*--------------------------------------------------------------------
+ */
+
+int
+VBF_Fetch(struct worker *wrk, struct req *req)
+{
+	struct http *hp, *hp2;
+	char *b;
+	uint16_t nhttp;
+	unsigned l;
+	struct vsb *vary = NULL;
+	int varyl = 0, pass;
+	struct busyobj *bo;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+	bo = req->busyobj;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	if (req->objcore->objhead == NULL) {
+		/* This is a pass from vcl_recv */
+		pass = 1;
+		/* VCL may have fiddled this, but that doesn't help */
+		bo->exp.ttl = -1.;
+	} else if (bo->do_pass) {
+		pass = 1;
+	} else {
+		/* regular object */
+		pass = 0;
+	}
+
+	/*
+	 * The VCL variables beresp.do_g[un]zip tells us how we want the
+	 * object processed before it is stored.
+	 *
+	 * The backend Content-Encoding header tells us what we are going
+	 * to receive, which we classify in the following three classes:
+	 *
+	 *	"Content-Encoding: gzip"	--> object is gzip'ed.
+	 *	no Content-Encoding		--> object is not gzip'ed.
+	 *	anything else			--> do nothing wrt gzip
+	 *
+	 */
+
+	/* We do nothing unless the param is set */
+	if (!cache_param->http_gzip_support)
+		bo->do_gzip = bo->do_gunzip = 0;
+
+	bo->is_gzip = http_HdrIs(bo->beresp, H_Content_Encoding, "gzip");
+
+	bo->is_gunzip = !http_GetHdr(bo->beresp, H_Content_Encoding, NULL);
+
+	/* It can't be both */
+	assert(bo->is_gzip == 0 || bo->is_gunzip == 0);
+
+	/* We won't gunzip unless it is gzip'ed */
+	if (bo->do_gunzip && !bo->is_gzip)
+		bo->do_gunzip = 0;
+
+	/* If we do gunzip, remove the C-E header */
+	if (bo->do_gunzip)
+		http_Unset(bo->beresp, H_Content_Encoding);
+
+	/* We wont gzip unless it is ungziped */
+	if (bo->do_gzip && !bo->is_gunzip)
+		bo->do_gzip = 0;
+
+	/* If we do gzip, add the C-E header */
+	if (bo->do_gzip)
+		http_SetHeader(bo->beresp, "Content-Encoding: gzip");
+
+	/* But we can't do both at the same time */
+	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
+
+	/* ESI takes precedence and handles gzip/gunzip itself */
+	if (bo->do_esi)
+		bo->vfp = &vfp_esi;
+	else if (bo->do_gunzip)
+		bo->vfp = &vfp_gunzip;
+	else if (bo->do_gzip)
+		bo->vfp = &vfp_gzip;
+	else if (bo->is_gzip)
+		bo->vfp = &vfp_testgzip;
+
+	if (bo->do_esi || req->esi_level > 0)
+		bo->do_stream = 0;
+	if (!req->wantbody)
+		bo->do_stream = 0;
+
+	/* No reason to try streaming a non-existing body */
+	if (bo->htc.body_status == BS_NONE)
+		bo->do_stream = 0;
+
+	l = http_EstimateWS(bo->beresp,
+	    pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
+
+	/* Create Vary instructions */
+	if (req->objcore->objhead != NULL) {
+		varyl = VRY_Create(bo, &vary);
+		if (varyl > 0) {
+			AN(vary);
+			assert(varyl == VSB_len(vary));
+			l += varyl;
+		} else if (varyl < 0) {
+			/* Vary parse error */
+			AZ(vary);
+			AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
+			req->objcore = NULL;
+			VDI_CloseFd(&bo->vbc);
+			VBO_DerefBusyObj(wrk, &req->busyobj);
+			return (-1);
+		} else
+			/* No vary */
+			AZ(vary);
+	}
+
+	/*
+	 * Space for producing a Content-Length: header including padding
+	 * A billion gigabytes is enough for anybody.
+	 */
+	l += strlen("Content-Length: XxxXxxXxxXxxXxxXxx") + sizeof(void *);
+
+	if (bo->exp.ttl < cache_param->shortlived ||
+	    pass == 1)
+		bo->storage_hint = TRANSIENT_STORAGE;
+
+	AZ(bo->stats);
+	bo->stats = &wrk->stats;
+	req->obj = STV_NewObject(bo, &req->objcore, bo->storage_hint, l,
+	    nhttp);
+	if (req->obj == NULL) {
+		/*
+		 * Try to salvage the transaction by allocating a
+		 * shortlived object on Transient storage.
+		 */
+		if (bo->exp.ttl > cache_param->shortlived)
+			bo->exp.ttl = cache_param->shortlived;
+		bo->exp.grace = 0.0;
+		bo->exp.keep = 0.0;
+		req->obj = STV_NewObject(bo, &req->objcore, TRANSIENT_STORAGE,
+		    l, nhttp);
+	}
+	bo->stats = NULL;
+	if (req->obj == NULL) {
+		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
+		req->objcore = NULL;
+		VDI_CloseFd(&bo->vbc);
+		VBO_DerefBusyObj(wrk, &req->busyobj);
+		return (-1);
+	}
+	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
+
+	bo->storage_hint = NULL;
+
+	AZ(bo->fetch_obj);
+	bo->fetch_obj = req->obj;
+
+	if (bo->do_gzip || (bo->is_gzip && !bo->do_gunzip))
+		req->obj->gziped = 1;
+
+	if (vary != NULL) {
+		req->obj->vary = (void *)WS_Copy(req->obj->http->ws,
+		    VSB_data(vary), varyl);
+		AN(req->obj->vary);
+		VRY_Validate(req->obj->vary);
+		VSB_delete(vary);
+	}
+
+	req->obj->vxid = bo->vsl->wid;
+	req->obj->response = req->err_code;
+	WS_Assert(req->obj->ws_o);
+
+	/* Filter into object */
+	hp = bo->beresp;
+	hp2 = req->obj->http;
+
+	hp2->logtag = HTTP_Obj;
+	http_FilterResp(hp, hp2, pass ? HTTPH_R_PASS : HTTPH_A_INS);
+	http_CopyHome(hp2);
+
+	if (http_GetHdr(hp, H_Last_Modified, &b))
+		req->obj->last_modified = VTIM_parse(b);
+	else
+		req->obj->last_modified = floor(bo->exp.entered);
+
+	assert(WRW_IsReleased(wrk));
+
+	/*
+	 * If we can deliver a 304 reply, we don't bother streaming.
+	 * Notice that vcl_deliver{} could still nuke the headers
+	 * that allow the 304, in which case we return 200 non-stream.
+	 */
+	if (req->obj->response == 200 &&
+	    req->http->conds &&
+	    RFC2616_Do_Cond(req))
+		bo->do_stream = 0;
+
+	/*
+	 * Ready to fetch the body
+	 */
+	bo->fetch_task.func = FetchBody;
+	bo->fetch_task.priv = bo;
+
+	assert(bo->refcount == 2);	/* one for each thread */
+
+	if (req->obj->objcore->objhead != NULL) {
+		EXP_Insert(req->obj);
+		AN(req->obj->objcore->ban);
+		AZ(req->obj->ws_o->overflow);
+		HSH_Unbusy(&wrk->stats, req->obj->objcore);
+	}
+
+	if (!bo->do_stream ||
+	    Pool_Task(wrk->pool, &bo->fetch_task, POOL_NO_QUEUE))
+		FetchBody(wrk, bo);
+
+	if (req->obj->objcore->objhead != NULL)
+		HSH_Ref(req->obj->objcore);
+
+	if (bo->state == BOS_FINISHED) {
+		VBO_DerefBusyObj(wrk, &req->busyobj);
+	} else if (bo->state == BOS_FAILED) {
+		/* handle early failures */
+		(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
+		VBO_DerefBusyObj(wrk, &req->busyobj);
+		return (-1);
+	}
+
+	assert(WRW_IsReleased(wrk));
+	return (0);
+}
+
 
 /*--------------------------------------------------------------------
  * Debugging aids
