@@ -110,5 +110,6 @@ LIBVARNISHAPI_1.3 {
 	VSLQ_Delete;
 	VSLQ_Dispatch;
 	VSLQ_Flush;
+	VSLQ_Name2Grouping;
 	# Variables:
 } LIBVARNISHAPI_1.0;

@@ -99,6 +99,17 @@ int VSL_Name2Tag(const char *name, int l);
 	 *	-2:	Multiple tags match substring
 	 */
 
+int VSLQ_Name2Grouping(const char *name, int l);
+	/*
+	 * Convert string to grouping (= enum VSL_grouping_e)
+	 *
+	 * Return values:
+	 *	>=0:	Grouping value
+	 *	-1:	No grouping type matches
+	 *	-2:	Multiple grouping types match substring
+	 */
+
+
 struct VSL_data *VSL_New(void);
 int VSL_Arg(struct VSL_data *vsl, int opt, const char *arg);
 	/*

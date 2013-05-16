@@ -80,13 +80,12 @@ main(int argc, char * const *argv)
 {
 	char optchar;
 	int d_opt = 0;
-	char *g_arg = NULL;
 
 	struct VSL_data *vsl;
 	struct VSM_data *vsm;
 	struct VSL_cursor *c;
 	struct VSLQ *q;
-	enum VSL_grouping_e grouping = VSL_g_vxid;
+	int grouping = VSL_g_vxid;
 	int i;
 
 	vsl = VSL_New();
@@ -101,7 +100,11 @@ main(int argc, char * const *argv)
 			break;
 		case 'g':
 			/* Grouping mode */
-			g_arg = optarg;
+			grouping = VSLQ_Name2Grouping(optarg, -1);
+			if (grouping == -2)
+				error(1, "Ambiguous grouping type: %s", optarg);
+			else if (grouping < 0)
+				error(1, "Unknown grouping type: %s", optarg);
 			break;
 		case 'n':
 			/* Instance name */
@@ -112,19 +115,7 @@ main(int argc, char * const *argv)
 				usage();
 		}
 	}
-
-	if (g_arg) {
-		if (!strcmp(g_arg, "raw"))
-			grouping = VSL_g_raw;
-		else if (!strcmp(g_arg, "vxid"))
-			grouping = VSL_g_vxid;
-		else if (!strcmp(g_arg, "request"))
-			grouping = VSL_g_request;
-		else if (!strcmp(g_arg, "session"))
-			grouping = VSL_g_session;
-		else
-			error(1, "Wrong -g argument: %s", g_arg);
-	}
+	assert(grouping >= 0 && grouping <= VSL_g_session);
 
 	/* Create cursor */
 	if (VSM_Open(vsm))

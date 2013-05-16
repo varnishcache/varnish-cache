@@ -83,6 +83,36 @@ VSL_Name2Tag(const char *name, int l)
 	return (n);
 }
 
+static const char *vsl_grouping[] = {
+	[VSL_g_raw]	= "raw",
+	[VSL_g_vxid]	= "vxid",
+	[VSL_g_request]	= "request",
+	[VSL_g_session]	= "session",
+};
+
+int
+VSLQ_Name2Grouping(const char *name, int l)
+{
+	int i, n;
+
+	if (l == -1)
+		l = strlen(name);
+	n = -1;
+	for (i = 0; i < sizeof vsl_grouping / sizeof vsl_grouping[0]; i++) {
+		if (!strncasecmp(name, vsl_grouping[i], l)) {
+			if (strlen(vsl_grouping[i]) == l) {
+				/* Exact match */
+				return (i);
+			}
+			if (n == -1)
+				n = i;
+			else
+				n = -2;
+		}
+	}
+	return (n);
+}
+
 static int
 vsl_ix_arg(struct VSL_data *vsl, int opt, const char *arg)
 {
