@@ -47,26 +47,7 @@
 #include "vpf.h"
 #include "vsb.h"
 #include "vtim.h"
-
-#include "compat/daemon.h"
-
-static void error(int status, const char *fmt, ...)
-	__printflike(2, 3);
-
-static void
-error(int status, const char *fmt, ...)
-{
-	va_list ap;
-
-	AN(fmt);
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap); /* XXX: syslog on daemon */
-	va_end(ap);
-	fprintf(stderr, "\n");
-
-	if (status)
-		exit(status);
-}
+#include "vut.h"
 
 static void
 usage(void)
@@ -78,56 +59,46 @@ usage(void)
 int
 main(int argc, char * const *argv)
 {
-	char optchar;
-	int d_opt = 0;
+	char opt;
 
+	struct VUT *vut;
 	struct VSL_data *vsl;
 	struct VSM_data *vsm;
 	struct VSL_cursor *c;
 	struct VSLQ *q;
-	int grouping = VSL_g_vxid;
 	int i;
 
+	vut = VUT_New();
+	AN(vut);
 	vsl = VSL_New();
 	AN(vsl);
 	vsm = VSM_New();
 	AN(vsm);
 
-	while ((optchar = getopt(argc, argv, "dg:n:r:v")) != -1) {
-		switch (optchar) {
-		case 'd':
-			d_opt = 1;
-			break;
-		case 'g':
-			/* Grouping mode */
-			grouping = VSLQ_Name2Grouping(optarg, -1);
-			if (grouping == -2)
-				error(1, "Ambiguous grouping type: %s", optarg);
-			else if (grouping < 0)
-				error(1, "Unknown grouping type: %s", optarg);
-			break;
+	while ((opt = getopt(argc, argv, "dg:n:r:v")) != -1) {
+		switch (opt) {
 		case 'n':
 			/* Instance name */
 			if (VSM_n_Arg(vsm, optarg) > 0)
 				break;
 		default:
-			if (!VSL_Arg(vsl, optchar, optarg))
+			if (!VSL_Arg(vsl, opt, optarg) &&
+			    !VUT_Arg(vut, opt, optarg))
 				usage();
 		}
 	}
-	assert(grouping >= 0 && grouping <= VSL_g_session);
 
 	/* Create cursor */
 	if (VSM_Open(vsm))
-		error(1, "VSM_Open: %s", VSM_Error(vsm));
-	c = VSL_CursorVSM(vsl, vsm, !d_opt);
+		VUT_Error(1, "VSM_Open: %s", VSM_Error(vsm));
+	c = VSL_CursorVSM(vsl, vsm, !vut->d_opt);
 	if (c == NULL)
-		error(1, "VSL_CursorVSM: %s", VSL_Error(vsl));
+		VUT_Error(1, "VSL_CursorVSM: %s", VSL_Error(vsl));
 
 	/* Create query */
-	q = VSLQ_New(vsl, &c, grouping, argv[optind]);
+	q = VSLQ_New(vsl, &c, vut->g_arg, argv[optind]);
 	if (q == NULL)
-		error(1, "VSLQ_New: %s", VSL_Error(vsl));
+		VUT_Error(1, "VSLQ_New: %s", VSL_Error(vsl));
 	AZ(c);
 
 	while (1) {
@@ -142,7 +113,7 @@ main(int argc, char * const *argv)
 				VSL_ResetError(vsl);
 				continue;
 			}
-			q = VSLQ_New(vsl, &c, grouping, argv[optind]);
+			q = VSLQ_New(vsl, &c, vut->g_arg, argv[optind]);
 			AN(q);
 			AZ(c);
 		}
@@ -161,14 +132,14 @@ main(int argc, char * const *argv)
 			AZ(q);
 			if (i == -2) {
 				/* Abandoned */
-				error(0, "Log abandoned - reopening");
+				VUT_Error(0, "Log abandoned - reopening");
 				VSM_Close(vsm);
 			} else if (i < -2) {
 				/* Overrun */
-				error(0, "Log overrun");
+				VUT_Error(0, "Log overrun");
 			}
 		} else {
-			error(1, "Unexpected: %d", i);
+			VUT_Error(1, "Unexpected: %d", i);
 		}
 	}
 
@@ -179,6 +150,7 @@ main(int argc, char * const *argv)
 	}
 	VSL_Delete(vsl);
 	VSM_Delete(vsm);
+	VUT_Delete(&vut);
 
 	exit(0);
 }
