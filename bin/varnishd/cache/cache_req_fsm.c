@@ -768,6 +768,16 @@ cnt_pass(struct worker *wrk, struct req *req)
 	AZ(req->obj);
 	AZ(req->busyobj);
 
+	VCL_pass_method(req->vcl, wrk, req, NULL, req->http->ws);
+	if (wrk->handling == VCL_RET_ERROR) {
+		req->req_step = R_STP_ERROR;
+		return (REQ_FSM_MORE);
+	}
+	if (wrk->handling == VCL_RET_RESTART) {
+		INCOMPL();
+	}
+	assert (wrk->handling == VCL_RET_FETCH);
+
 	req->busyobj = VBO_GetBusyObj(wrk, req);
 	bo = req->busyobj;
 	bo->refcount = 2;
@@ -777,15 +787,8 @@ cnt_pass(struct worker *wrk, struct req *req)
 	    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
 
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
-	VCL_pass_method(bo->vcl, wrk, req, bo, bo->bereq->ws);
 
-	if (wrk->handling == VCL_RET_ERROR) {
-		http_Teardown(bo->bereq);
-		VBO_DerefBusyObj(wrk, &req->busyobj);
-		req->req_step = R_STP_ERROR;
-		return (REQ_FSM_MORE);
-	}
-	assert(wrk->handling == VCL_RET_PASS);
+	assert (wrk->handling == VCL_RET_FETCH);
 	req->acct_req.pass++;
 	req->req_step = R_STP_FETCH;
 

@@ -80,7 +80,7 @@ sub vcl_pipe {
 }
 
 sub vcl_pass {
-    return (pass);
+    return (fetch);
 }
 
 sub vcl_hash {
