@@ -357,6 +357,8 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
+	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+
 	bo = req->busyobj;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
@@ -674,6 +676,7 @@ static enum req_fsm_nxt
 cnt_miss(struct worker *wrk, struct req *req)
 {
 	struct busyobj *bo;
+	int pass = 0;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -682,14 +685,41 @@ cnt_miss(struct worker *wrk, struct req *req)
 	AZ(req->obj);
 	AZ(req->busyobj);
 
+	/* We optimistically expect to need this most of the time */
 	bo = VBO_GetBusyObj(wrk, req);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	req->busyobj = bo;
+	VRY_Finish(req, bo);
+
+	VCL_miss_method(req->vcl, wrk, req, NULL, req->http->ws);
+	switch (wrk->handling) {
+	case VCL_RET_ERROR:
+		VBO_DerefBusyObj(wrk, &req->busyobj);
+		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
+		req->objcore = NULL;
+		req->req_step = R_STP_ERROR;
+		return (REQ_FSM_MORE);
+	case VCL_RET_RESTART:
+		VBO_DerefBusyObj(wrk, &req->busyobj);
+		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
+		req->objcore = NULL;
+		req->req_step = R_STP_RESTART;
+		return (REQ_FSM_MORE);
+	case VCL_RET_PASS:
+		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
+		req->objcore = HSH_NewObjCore(wrk);
+		pass = 1;
+		break;
+	case VCL_RET_FETCH:
+		break;
+	default:
+		WRONG("wrong return from vcl_miss{}");
+	}
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	/* One ref for req, one for FetchBody */
 	bo->refcount = 2;
 
-	VRY_Finish(req, bo);
-
+	AN (req->objcore);
 	req->objcore->busyobj = bo;
 	wrk->stats.cache_miss++;
 
@@ -697,44 +727,24 @@ cnt_miss(struct worker *wrk, struct req *req)
 	http_FilterReq(bo->bereq, req->http, HTTPH_R_FETCH);
 	http_PrintfHeader(bo->bereq,
 	    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
-	http_ForceGet(bo->bereq);
-	if (cache_param->http_gzip_support) {
-		/*
-		 * We always ask the backend for gzip, even if the
-		 * client doesn't grok it.  We will uncompress for
-		 * the minority of clients which don't.
-		 */
-		http_Unset(bo->bereq, H_Accept_Encoding);
-		http_SetHeader(bo->bereq, "Accept-Encoding: gzip");
+	if (!pass) {
+		http_ForceGet(bo->bereq);
+		if (cache_param->http_gzip_support) {
+			/*
+			 * We always ask the backend for gzip, even if the
+			 * client doesn't grok it.  We will uncompress for
+			 * the minority of clients which don't.
+			 */
+			http_Unset(bo->bereq, H_Accept_Encoding);
+			http_SetHeader(bo->bereq, "Accept-Encoding: gzip");
+		}
 	}
 
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
-	VCL_miss_method(req->vcl, wrk, req, NULL, req->http->ws);
 
-	if (wrk->handling == VCL_RET_FETCH) {
-		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-		req->req_step = R_STP_FETCH;
-		return (REQ_FSM_MORE);
-	}
-
-	AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
-	req->objcore = NULL;
-	http_Teardown(bo->bereq);
-	VBO_DerefBusyObj(wrk, &req->busyobj);
-
-	switch(wrk->handling) {
-	case VCL_RET_ERROR:
-		req->req_step = R_STP_ERROR;
-		break;
-	case VCL_RET_PASS:
-		req->req_step = R_STP_PASS;
-		break;
-	case VCL_RET_RESTART:
-		req->req_step = R_STP_RESTART;
-		break;
-	default:
-		WRONG("Illegal action in vcl_miss{}");
-	}
+	xxxassert(wrk->handling == VCL_RET_FETCH);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	req->req_step = R_STP_FETCH;
 	return (REQ_FSM_MORE);
 }
 
