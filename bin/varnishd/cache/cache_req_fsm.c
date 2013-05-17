@@ -367,6 +367,28 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	AZ(bo->should_close);
 	AZ(bo->storage_hint);
 
+	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
+	http_FilterReq(bo->bereq, req->http,
+	    bo->do_pass ? HTTPH_R_PASS : HTTPH_R_FETCH);
+	if (!bo->do_pass) {
+		http_ForceGet(bo->bereq);
+		if (cache_param->http_gzip_support) {
+			/*
+			 * We always ask the backend for gzip, even if the
+			 * client doesn't grok it.  We will uncompress for
+			 * the minority of clients which don't.
+			 */
+			http_Unset(bo->bereq, H_Accept_Encoding);
+			http_SetHeader(bo->bereq, "Accept-Encoding: gzip");
+		}
+	}
+
+	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
+	xxxassert (wrk->handling == VCL_RET_FETCH);
+
+	http_PrintfHeader(bo->bereq,
+	    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
+
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, HTTP_Beresp);
 
 	req->acct_req.fetch++;
@@ -419,7 +441,6 @@ cnt_fetch(struct worker *wrk, struct req *req)
 			bo->exp.ttl = -1.;
 
 		AZ(bo->do_esi);
-		AZ(bo->do_pass);
 
 		VCL_backend_response_method(bo->vcl, wrk, NULL, bo,
 		    bo->beresp->ws);
@@ -676,7 +697,6 @@ static enum req_fsm_nxt
 cnt_miss(struct worker *wrk, struct req *req)
 {
 	struct busyobj *bo;
-	int pass = 0;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -707,7 +727,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 	case VCL_RET_PASS:
 		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
 		req->objcore = HSH_NewObjCore(wrk);
-		pass = 1;
+		bo->do_pass = 1;
 		break;
 	case VCL_RET_FETCH:
 		break;
@@ -723,26 +743,6 @@ cnt_miss(struct worker *wrk, struct req *req)
 	req->objcore->busyobj = bo;
 	wrk->stats.cache_miss++;
 
-	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
-	http_FilterReq(bo->bereq, req->http, HTTPH_R_FETCH);
-	http_PrintfHeader(bo->bereq,
-	    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
-	if (!pass) {
-		http_ForceGet(bo->bereq);
-		if (cache_param->http_gzip_support) {
-			/*
-			 * We always ask the backend for gzip, even if the
-			 * client doesn't grok it.  We will uncompress for
-			 * the minority of clients which don't.
-			 */
-			http_Unset(bo->bereq, H_Accept_Encoding);
-			http_SetHeader(bo->bereq, "Accept-Encoding: gzip");
-		}
-	}
-
-	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
-
-	xxxassert(wrk->handling == VCL_RET_FETCH);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	req->req_step = R_STP_FETCH;
 	return (REQ_FSM_MORE);
@@ -786,23 +786,17 @@ cnt_pass(struct worker *wrk, struct req *req)
 		INCOMPL();
 	}
 	assert (wrk->handling == VCL_RET_FETCH);
+	req->acct_req.pass++;
 
 	req->busyobj = VBO_GetBusyObj(wrk, req);
 	bo = req->busyobj;
-	bo->refcount = 2;
-	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
-	http_FilterReq(bo->bereq, req->http, HTTPH_R_PASS);
-	http_PrintfHeader(bo->bereq,
-	    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
-
-	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
-
-	assert (wrk->handling == VCL_RET_FETCH);
-	req->acct_req.pass++;
-	req->req_step = R_STP_FETCH;
-
+	bo->do_pass = 1;
 	req->objcore = HSH_NewObjCore(wrk);
 	req->objcore->busyobj = bo;
+	bo->refcount = 2;
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	req->req_step = R_STP_FETCH;
 	return (REQ_FSM_MORE);
 }
 
