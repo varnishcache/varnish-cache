@@ -517,16 +517,16 @@ hsh_rush(struct dstat *ds, struct objhead *oh)
  */
 
 void
-HSH_Purge(struct req *req, struct objhead *oh, double ttl, double grace)
+HSH_Purge(struct worker *wrk, struct objhead *oh, double ttl, double grace)
 {
 	struct objcore *oc, **ocp;
 	unsigned spc, nobj, n;
 	struct object *o;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-	spc = WS_Reserve(req->ws, 0);
-	ocp = (void*)req->ws->f;
+	spc = WS_Reserve(wrk->aws, 0);
+	ocp = (void*)wrk->aws->f;
 	Lck_Lock(&oh->mtx);
 	assert(oh->refcnt > 0);
 	nobj = 0;
@@ -543,7 +543,7 @@ HSH_Purge(struct req *req, struct objhead *oh, double ttl, double grace)
 			continue;
 		}
 
-		(void)oc_getobj(&req->wrk->stats, oc);
+		(void)oc_getobj(&wrk->stats, oc);
 		    /* XXX: still needed ? */
 
 		xxxassert(spc >= sizeof *ocp);
@@ -561,16 +561,16 @@ HSH_Purge(struct req *req, struct objhead *oh, double ttl, double grace)
 	for (n = 0; n < nobj; n++) {
 		oc = ocp[n];
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-		o = oc_getobj(&req->wrk->stats, oc);
+		o = oc_getobj(&wrk->stats, oc);
 		if (o == NULL)
 			continue;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		o->exp.ttl = ttl;
 		o->exp.grace = grace;
 		EXP_Rearm(o);
-		(void)HSH_Deref(&req->wrk->stats, NULL, &o);
+		(void)HSH_Deref(&wrk->stats, NULL, &o);
 	}
-	WS_Release(req->ws, 0);
+	WS_Release(wrk->aws, 0);
 }
 
 

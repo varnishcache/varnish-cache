@@ -1026,7 +1026,7 @@ cnt_purge(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(boc, OBJCORE_MAGIC);
 	VRY_Finish(req, NULL);
 
-	HSH_Purge(req, boc->objhead, 0, 0);
+	HSH_Purge(wrk, boc->objhead, 0, 0);
 
 	AZ(HSH_Deref(&wrk->stats, boc, NULL));
 

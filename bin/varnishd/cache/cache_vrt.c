@@ -507,11 +507,12 @@ VRT_purge(const struct vrt_ctx *ctx, double ttl, double grace)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req->wrk, WORKER_MAGIC);
 	if (ctx->method == VCL_MET_LOOKUP)
-		HSH_Purge(ctx->req, ctx->req->obj->objcore->objhead,
+		HSH_Purge(ctx->req->wrk, ctx->req->obj->objcore->objhead,
 		    ttl, grace);
 	else if (ctx->method == VCL_MET_MISS)
-		HSH_Purge(ctx->req, ctx->req->objcore->objhead,
+		HSH_Purge(ctx->req->wrk, ctx->req->objcore->objhead,
 		    ttl, grace);
 }
 
