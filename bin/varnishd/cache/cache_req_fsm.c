@@ -523,7 +523,6 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	struct objcore *oc, *boc;
 	struct object *o;
 	struct objhead *oh;
-	struct busyobj *bo;
 	enum lookup_e lr;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -596,16 +595,6 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	/* If we inserted a new object it's a miss */
 	if (oc->flags & OC_F_BUSY) {
-		AZ(req->busyobj);
-		bo = VBO_GetBusyObj(wrk, req);
-		req->busyobj = bo;
-		/* One ref for req, one for FetchBody */
-		bo->refcount = 2;
-		VRY_Finish(req, bo);
-
-		oc->busyobj = bo;
-		wrk->stats.cache_miss++;
-
 		req->objcore = oc;
 		req->req_step = R_STP_MISS;
 		return (REQ_FSM_MORE);
@@ -690,9 +679,19 @@ cnt_miss(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-	bo = req->busyobj;
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	AZ(req->obj);
+	AZ(req->busyobj);
+
+	bo = VBO_GetBusyObj(wrk, req);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	req->busyobj = bo;
+	/* One ref for req, one for FetchBody */
+	bo->refcount = 2;
+
+	VRY_Finish(req, bo);
+
+	req->objcore->busyobj = bo;
+	wrk->stats.cache_miss++;
 
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
 	http_FilterReq(bo->bereq, req->http, HTTPH_R_FETCH);
