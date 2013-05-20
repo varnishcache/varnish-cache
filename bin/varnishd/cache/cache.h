@@ -816,7 +816,6 @@ int VBF_Fetch(struct worker *wrk, struct req *req);
 struct storage *FetchStorage(struct busyobj *, ssize_t sz);
 int FetchError(struct busyobj *, const char *error);
 int FetchError2(struct busyobj *, const char *error, const char *more);
-int FetchHdr(struct worker *wrk, struct busyobj *bo, struct req *req);
 void Fetch_Init(void);
 
 /* cache_gzip.c */

@@ -40,6 +40,7 @@
 
 #include "cache_backend.h"
 #include "vcli_priv.h"
+#include "vcl.h"
 #include "vct.h"
 #include "vtcp.h"
 #include "vtim.h"
@@ -358,7 +359,7 @@ fetch_iter_req_body(struct req *req, void *priv, void *ptr, size_t l)
  *	 1 failure which can be retried.
  */
 
-int
+static int
 FetchHdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 {
 	struct vbc *vc;
@@ -628,6 +629,146 @@ FetchBody(struct worker *wrk, void *priv)
 /*--------------------------------------------------------------------
  */
 
+static int
+cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
+{
+	int i;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	CHECK_OBJ_NOTNULL(bo->vcl, VCL_CONF_MAGIC);
+	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+
+	bo = req->busyobj;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	AN(req->director);
+	AZ(bo->vbc);
+	AZ(bo->should_close);
+	AZ(bo->storage_hint);
+
+	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
+	http_FilterReq(bo->bereq, req->http,
+	    bo->do_pass ? HTTPH_R_PASS : HTTPH_R_FETCH);
+	if (!bo->do_pass) {
+		http_ForceGet(bo->bereq);
+		if (cache_param->http_gzip_support) {
+			/*
+			 * We always ask the backend for gzip, even if the
+			 * client doesn't grok it.  We will uncompress for
+			 * the minority of clients which don't.
+			 */
+			http_Unset(bo->bereq, H_Accept_Encoding);
+			http_SetHeader(bo->bereq, "Accept-Encoding: gzip");
+		}
+	}
+
+	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
+	xxxassert (wrk->handling == VCL_RET_FETCH);
+
+	http_PrintfHeader(bo->bereq,
+	    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
+
+	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, HTTP_Beresp);
+
+	req->acct_req.fetch++;
+
+	i = FetchHdr(wrk, bo, req->objcore->objhead == NULL ? req : NULL);
+	/*
+	 * If we recycle a backend connection, there is a finite chance
+	 * that the backend closed it before we get a request to it.
+	 * Do a single retry in that case.
+	 */
+	if (i == 1) {
+		VSC_C_main->backend_retry++;
+		i = FetchHdr(wrk, bo,
+		    req->objcore->objhead == NULL ? req : NULL);
+	}
+
+	if (req->objcore->objhead != NULL)
+		(void)HTTP1_DiscardReqBody(req);	// XXX
+
+	if (i) {
+		wrk->handling = VCL_RET_ERROR;
+		req->err_code = 503;
+	} else {
+		/*
+		 * These two headers can be spread over multiple actual headers
+		 * and we rely on their content outside of VCL, so collect them
+		 * into one line here.
+		 */
+		http_CollectHdr(bo->beresp, H_Cache_Control);
+		http_CollectHdr(bo->beresp, H_Vary);
+
+		/*
+		 * Figure out how the fetch is supposed to happen, before the
+		 * headers are adultered by VCL
+		 * NB: Also sets other wrk variables
+		 */
+		bo->htc.body_status = RFC2616_Body(bo, &wrk->stats);
+
+		req->err_code = http_GetStatus(bo->beresp);
+
+		/*
+		 * What does RFC2616 think about TTL ?
+		 */
+		EXP_Clr(&bo->exp);
+		bo->exp.entered = W_TIM_real(wrk);
+		RFC2616_Ttl(bo);
+
+		/* pass from vclrecv{} has negative TTL */
+		if (req->objcore->objhead == NULL)
+			bo->exp.ttl = -1.;
+
+		AZ(bo->do_esi);
+
+		VCL_backend_response_method(bo->vcl, wrk, NULL, bo,
+		    bo->beresp->ws);
+
+		if (bo->do_pass)
+			req->objcore->flags |= OC_F_PASS;
+
+		switch (wrk->handling) {
+		case VCL_RET_DELIVER:
+			return (0);
+		default:
+			break;
+		}
+
+		/* We are not going to fetch the body, Close the connection */
+		VDI_CloseFd(&bo->vbc);
+	}
+
+	/* Clean up partial fetch */
+	AZ(bo->vbc);
+
+	if (req->objcore->objhead != NULL ||
+	    wrk->handling == VCL_RET_RESTART ||
+	    wrk->handling == VCL_RET_ERROR) {
+		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
+		req->objcore = NULL;
+	}
+	assert(bo->refcount == 2);
+	bo->storage_hint = NULL;
+	VBO_DerefBusyObj(wrk, &bo);
+	VBO_DerefBusyObj(wrk, &req->busyobj);
+	req->director = NULL;
+
+	switch (wrk->handling) {
+	case VCL_RET_RESTART:
+		// req->req_step = R_STP_RESTART;
+		return (1);
+	case VCL_RET_ERROR:
+		// req->req_step = R_STP_ERROR;
+		return (-1);
+	default:
+		WRONG("Illegal action in vcl_fetch{}");
+	}
+}
+
+
 int
 VBF_Fetch(struct worker *wrk, struct req *req)
 {
@@ -638,12 +779,17 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	struct vsb *vary = NULL;
 	int varyl = 0, pass;
 	struct busyobj *bo;
+	int i;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	bo = req->busyobj;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	i = cnt_fetch(wrk, req, bo);
+	if (i)
+		return (i);
 
 	if (req->objcore->objhead == NULL) {
 		/* This is a pass from vcl_recv */

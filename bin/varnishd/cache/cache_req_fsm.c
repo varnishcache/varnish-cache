@@ -335,160 +335,6 @@ cnt_error(struct worker *wrk, struct req *req)
 }
 
 /*--------------------------------------------------------------------
- * Fetch response headers from the backend
- *
-DOT subgraph xcluster_fetch {
-DOT	fetch [
-DOT		shape=record
-DOT		label="{cnt_fetch:|fetch hdr\nfrom backend|(find obj.ttl)|{vcl_fetch\{\}|{req.|bereq.|beresp.}}|{<err>error?|<rst>restart?}}"
-DOT	]
-DOT }
-DOT fetch -> fetchbody [style=bold,color=red]
-DOT fetch -> fetchbody [style=bold,color=blue]
- */
-
-static enum req_fsm_nxt
-cnt_fetch(struct worker *wrk, struct req *req)
-{
-	int i;
-	struct busyobj *bo;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-
-	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
-	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-
-	bo = req->busyobj;
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-
-	AN(req->director);
-	AZ(bo->vbc);
-	AZ(bo->should_close);
-	AZ(bo->storage_hint);
-
-	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
-	http_FilterReq(bo->bereq, req->http,
-	    bo->do_pass ? HTTPH_R_PASS : HTTPH_R_FETCH);
-	if (!bo->do_pass) {
-		http_ForceGet(bo->bereq);
-		if (cache_param->http_gzip_support) {
-			/*
-			 * We always ask the backend for gzip, even if the
-			 * client doesn't grok it.  We will uncompress for
-			 * the minority of clients which don't.
-			 */
-			http_Unset(bo->bereq, H_Accept_Encoding);
-			http_SetHeader(bo->bereq, "Accept-Encoding: gzip");
-		}
-	}
-
-	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
-	xxxassert (wrk->handling == VCL_RET_FETCH);
-
-	http_PrintfHeader(bo->bereq,
-	    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
-
-	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, HTTP_Beresp);
-
-	req->acct_req.fetch++;
-
-	i = FetchHdr(wrk, bo, req->objcore->objhead == NULL ? req : NULL);
-	/*
-	 * If we recycle a backend connection, there is a finite chance
-	 * that the backend closed it before we get a request to it.
-	 * Do a single retry in that case.
-	 */
-	if (i == 1) {
-		VSC_C_main->backend_retry++;
-		i = FetchHdr(wrk, bo,
-		    req->objcore->objhead == NULL ? req : NULL);
-	}
-
-	if (req->objcore->objhead != NULL)
-		(void)HTTP1_DiscardReqBody(req);	// XXX
-
-	if (i) {
-		wrk->handling = VCL_RET_ERROR;
-		req->err_code = 503;
-	} else {
-		/*
-		 * These two headers can be spread over multiple actual headers
-		 * and we rely on their content outside of VCL, so collect them
-		 * into one line here.
-		 */
-		http_CollectHdr(bo->beresp, H_Cache_Control);
-		http_CollectHdr(bo->beresp, H_Vary);
-
-		/*
-		 * Figure out how the fetch is supposed to happen, before the
-		 * headers are adultered by VCL
-		 * NB: Also sets other wrk variables
-		 */
-		bo->htc.body_status = RFC2616_Body(bo, &wrk->stats);
-
-		req->err_code = http_GetStatus(bo->beresp);
-
-		/*
-		 * What does RFC2616 think about TTL ?
-		 */
-		EXP_Clr(&bo->exp);
-		bo->exp.entered = W_TIM_real(wrk);
-		RFC2616_Ttl(bo);
-
-		/* pass from vclrecv{} has negative TTL */
-		if (req->objcore->objhead == NULL)
-			bo->exp.ttl = -1.;
-
-		AZ(bo->do_esi);
-
-		VCL_backend_response_method(bo->vcl, wrk, NULL, bo,
-		    bo->beresp->ws);
-
-		if (bo->do_pass)
-			req->objcore->flags |= OC_F_PASS;
-
-		switch (wrk->handling) {
-		case VCL_RET_DELIVER:
-			req->req_step = R_STP_FETCHBODY;
-			return (REQ_FSM_MORE);
-		default:
-			break;
-		}
-
-		/* We are not going to fetch the body, Close the connection */
-		VDI_CloseFd(&bo->vbc);
-	}
-
-	/* Clean up partial fetch */
-	AZ(bo->vbc);
-
-	if (req->objcore->objhead != NULL ||
-	    wrk->handling == VCL_RET_RESTART ||
-	    wrk->handling == VCL_RET_ERROR) {
-		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
-		req->objcore = NULL;
-	}
-	assert(bo->refcount == 2);
-	bo->storage_hint = NULL;
-	VBO_DerefBusyObj(wrk, &bo);
-	VBO_DerefBusyObj(wrk, &req->busyobj);
-	req->director = NULL;
-
-	switch (wrk->handling) {
-	case VCL_RET_RESTART:
-		req->req_step = R_STP_RESTART;
-		return (REQ_FSM_MORE);
-	case VCL_RET_ERROR:
-		req->req_step = R_STP_ERROR;
-		return (REQ_FSM_MORE);
-	default:
-		WRONG("Illegal action in vcl_fetch{}");
-	}
-}
-
-/*--------------------------------------------------------------------
  * Prepare to fetch body from backend
  *
 DOT subgraph xcluster_body {
@@ -502,7 +348,7 @@ DOT fetchbody:out -> prepresp [style=bold,color=blue]
  */
 
 static enum req_fsm_nxt
-cnt_fetchbody(struct worker *wrk, struct req *req)
+cnt_fetch(struct worker *wrk, struct req *req)
 {
 	int i;
 
@@ -513,6 +359,8 @@ cnt_fetchbody(struct worker *wrk, struct req *req)
 	if (i < 0) {
 		req->err_code = 503;
 		req->req_step = R_STP_ERROR;
+	} else if (i == 1) {
+		req->req_step = R_STP_RESTART;
 	} else {
 		assert(WRW_IsReleased(wrk));
 		req->req_step = R_STP_PREPRESP;
@@ -705,8 +553,12 @@ cnt_miss(struct worker *wrk, struct req *req)
 	AZ(req->obj);
 	AZ(req->busyobj);
 
-	/* We optimistically expect to need this most of the time */
+	/*
+	 * We optimistically expect to need this most of the time
+	 * (This allows us to put the predictive Vary directly on the bo->ws)
+	 */
 	bo = VBO_GetBusyObj(wrk, req);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	req->busyobj = bo;
 	VRY_Finish(req, bo);
 
@@ -743,7 +595,6 @@ cnt_miss(struct worker *wrk, struct req *req)
 	req->objcore->busyobj = bo;
 	wrk->stats.cache_miss++;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	req->req_step = R_STP_FETCH;
 	return (REQ_FSM_MORE);
 }
@@ -788,14 +639,14 @@ cnt_pass(struct worker *wrk, struct req *req)
 	assert (wrk->handling == VCL_RET_FETCH);
 	req->acct_req.pass++;
 
-	req->busyobj = VBO_GetBusyObj(wrk, req);
-	bo = req->busyobj;
+	bo = VBO_GetBusyObj(wrk, req);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	req->busyobj = bo;
 	bo->do_pass = 1;
 	req->objcore = HSH_NewObjCore(wrk);
 	req->objcore->busyobj = bo;
 	bo->refcount = 2;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	req->req_step = R_STP_FETCH;
 	return (REQ_FSM_MORE);
 }
