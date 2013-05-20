@@ -753,7 +753,6 @@ cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 	assert(bo->refcount == 2);
 	bo->storage_hint = NULL;
 	VBO_DerefBusyObj(wrk, &bo);
-	VBO_DerefBusyObj(wrk, &req->busyobj);
 	req->director = NULL;
 
 	switch (wrk->handling) {
@@ -881,7 +880,6 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 			AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
 			req->objcore = NULL;
 			VDI_CloseFd(&bo->vbc);
-			VBO_DerefBusyObj(wrk, &req->busyobj);
 			return (-1);
 		} else
 			/* No vary */
@@ -919,7 +917,6 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
 		req->objcore = NULL;
 		VDI_CloseFd(&bo->vbc);
-		VBO_DerefBusyObj(wrk, &req->busyobj);
 		return (-1);
 	}
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
@@ -996,7 +993,6 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	} else if (bo->state == BOS_FAILED) {
 		/* handle early failures */
 		(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
-		VBO_DerefBusyObj(wrk, &req->busyobj);
 		return (-1);
 	}
 
