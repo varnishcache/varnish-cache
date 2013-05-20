@@ -627,23 +627,19 @@ FetchBody(struct worker *wrk, void *priv)
 }
 
 /*--------------------------------------------------------------------
+ * Copy req->bereq and run it by VCL::vcl_backend_fetch{}
  */
 
-static int
-cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
+static void
+vbf_make_bereq(struct worker *wrk, const struct req *req, struct busyobj *bo)
 {
-	int i;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-
-	CHECK_OBJ_NOTNULL(bo->vcl, VCL_CONF_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-
-	bo = req->busyobj;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	AN(req->director);
+	AN(bo->director);
 	AZ(bo->vbc);
 	AZ(bo->should_close);
 	AZ(bo->storage_hint);
@@ -652,6 +648,7 @@ cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 	http_FilterReq(bo->bereq, req->http,
 	    bo->do_pass ? HTTPH_R_PASS : HTTPH_R_FETCH);
 	if (!bo->do_pass) {
+		// XXX: Forcing GET should happen in vcl_miss{} ?
 		http_ForceGet(bo->bereq);
 		if (cache_param->http_gzip_support) {
 			/*
@@ -665,10 +662,18 @@ cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 	}
 
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
-	xxxassert (wrk->handling == VCL_RET_FETCH);
 
 	http_PrintfHeader(bo->bereq,
-	    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
+	    "X-Varnish: %u", bo->vsl->wid & VSL_IDENTMASK);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+static int
+cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
+{
+	int i;
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, HTTP_Beresp);
 
@@ -689,10 +694,7 @@ cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 	if (req->objcore->objhead != NULL)
 		(void)HTTP1_DiscardReqBody(req);	// XXX
 
-	if (i) {
-		wrk->handling = VCL_RET_ERROR;
-		req->err_code = 503;
-	} else {
+	if (!i) {
 		/*
 		 * These two headers can be spread over multiple actual headers
 		 * and we rely on their content outside of VCL, so collect them
@@ -729,15 +731,14 @@ cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 		if (bo->do_pass)
 			req->objcore->flags |= OC_F_PASS;
 
-		switch (wrk->handling) {
-		case VCL_RET_DELIVER:
+		if (wrk->handling == VCL_RET_DELIVER)
 			return (0);
-		default:
-			break;
-		}
 
 		/* We are not going to fetch the body, Close the connection */
 		VDI_CloseFd(&bo->vbc);
+	} else {
+		wrk->handling = VCL_RET_ERROR;
+		req->err_code = 503;
 	}
 
 	/* Clean up partial fetch */
@@ -752,21 +753,18 @@ cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 	}
 	assert(bo->refcount == 2);
 	bo->storage_hint = NULL;
+	bo->director = NULL;
 	VBO_DerefBusyObj(wrk, &bo);
-	req->director = NULL;
 
 	switch (wrk->handling) {
 	case VCL_RET_RESTART:
-		// req->req_step = R_STP_RESTART;
 		return (1);
 	case VCL_RET_ERROR:
-		// req->req_step = R_STP_ERROR;
 		return (-1);
 	default:
 		WRONG("Illegal action in vcl_fetch{}");
 	}
 }
-
 
 int
 VBF_Fetch(struct worker *wrk, struct req *req)
@@ -783,8 +781,14 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+
 	bo = req->busyobj;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	xxxassert(bo->refcount == 2);	// Req might abandon early ?
+	CHECK_OBJ_NOTNULL(bo->vcl, VCL_CONF_MAGIC);
+
+	vbf_make_bereq(wrk, req, bo);
+	xxxassert (wrk->handling == VCL_RET_FETCH);
 
 	i = cnt_fetch(wrk, req, bo);
 	if (i)
