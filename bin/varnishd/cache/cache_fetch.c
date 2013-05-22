@@ -763,10 +763,10 @@ cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 	VBO_DerefBusyObj(wrk, &bo);
 
 	switch (wrk->handling) {
-	case VCL_RET_RESTART:
-		return (1);
 	case VCL_RET_ERROR:
 		return (-1);
+	case VCL_RET_RESTART:
+		INCOMPL();
 	default:
 		WRONG("Illegal action in vcl_fetch{}");
 	}
