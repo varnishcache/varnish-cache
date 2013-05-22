@@ -990,12 +990,12 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 
 	FetchBody(wrk, bo);
 
+	assert(bo->refcount == 1);
+
 	if (req->obj->objcore->objhead != NULL)
 		HSH_Ref(req->obj->objcore);
 
-	if (bo->state == BOS_FINISHED) {
-		VBO_DerefBusyObj(wrk, &req->busyobj);
-	} else if (bo->state == BOS_FAILED) {
+	if (bo->state == BOS_FAILED) {
 		/* handle early failures */
 		(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
 		return (-1);

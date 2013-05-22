@@ -357,12 +357,15 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	i = VBF_Fetch(wrk, req);
+	AN(req->busyobj);
+	assert(req->busyobj->refcount > 0);
 	if (i < 0) {
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		req->err_code = 503;
 		req->req_step = R_STP_ERROR;
 	} else {
 		AZ(i);
+		VBO_DerefBusyObj(wrk, &req->busyobj);
 		assert(WRW_IsReleased(wrk));
 		req->req_step = R_STP_PREPRESP;
 	}
