@@ -320,3 +320,71 @@ VSL_PrintTransactions(struct VSL_data *vsl, struct VSL_transaction *pt[],
 
 	return (0);
 }
+
+FILE*
+VSL_WriteOpen(struct VSL_data *vsl, const char *name, int append, int unbuf)
+{
+	const char head[] = VSL_FILE_ID;
+	FILE* f;
+
+	f = fopen(name, append ? "a" : "w");
+	if (f == NULL) {
+		vsl_diag(vsl, "%s", strerror(errno));
+		return (NULL);
+	}
+	if (unbuf)
+		setbuf(f, NULL);
+	if (0 == ftell(f))
+		fwrite(head, 1, sizeof head, f);
+	return (f);
+}
+
+int
+VSL_Write(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
+{
+	size_t r;
+
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+	if (c == NULL || c->rec.ptr == NULL)
+		return (0);
+	if (fo == NULL)
+		fo = stdout;
+	r = fwrite(c->rec.ptr, sizeof *c->rec.ptr,
+	    VSL_NEXT(c->rec.ptr) - c->rec.ptr, fo);
+	if (r == 0)
+		return (-5);
+	return (0);
+}
+
+int
+VSL_WriteAll(struct VSL_data *vsl, struct VSL_cursor *c, void *fo)
+{
+	int i;
+
+	if (c == NULL)
+		return (0);
+	while (1) {
+		i = VSL_Next(c);
+		if (i <= 0)
+			return (i);
+		if (!VSL_Match(vsl, c))
+			continue;
+		i = VSL_Write(vsl, c, fo);
+		if (i != 0)
+			return (i);
+	}
+}
+
+int
+VSL_WriteTransactions(struct VSL_data *vsl, struct VSL_transaction *pt[],
+    void *fo)
+{
+	struct VSL_transaction *t;
+	int i;
+
+	if (pt == NULL)
+		return (0);
+	for (i = 0, t = pt[0]; i == 0 && t != NULL; t = *++pt)
+		i = VSL_WriteAll(vsl, t->c, fo);
+	return (i);
+}

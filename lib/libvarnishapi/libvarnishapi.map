@@ -106,6 +106,10 @@ LIBVARNISHAPI_1.3 {
 	VSL_PrintTerse;
 	VSL_PrintAll;
 	VSL_PrintTransactions;
+	VSL_WriteOpen;
+	VSL_Write;
+	VSL_WriteAll;
+	VSL_WriteTransactions;
 	VSLQ_New;
 	VSLQ_Delete;
 	VSLQ_Dispatch;

@@ -279,6 +279,52 @@ int VSL_PrintTransactions(struct VSL_data *vsl,
 	 *    !=0:	Return value from either VSL_Next or VSL_Print
 	 */
 
+FILE *VSL_WriteOpen(struct VSL_data *vsl, const char *name, int append,
+		    int unbuffered);
+	/*
+	 * Open file name for writing using the VSL_Write* functions. If
+	 * append is true, the file will be opened for appending.
+	 *
+	 * Arguments:
+	 *     vsl: The VSL data context
+	 *    name: The file name
+	 *  append: If true, the file will be appended instead of truncated
+	 *   unbuf: If true, use unbuffered mode
+	 *
+	 * Return values:
+	 *     NULL: Error - see VSL_Error
+	 * non-NULL: Success
+	 */
+
+
+int VSL_Write(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
+	/*
+	 * Write the currect record pointed to be c to the FILE* fo
+	 *
+	 * Return values:
+	 *    0: Success
+	 *   -5: I/O error - see VSL_Error
+	 */
+
+int VSL_WriteAll(struct VSL_data *vsl, struct VSL_cursor *c, void *fo);
+	/*
+	 * Calls VSL_Next on c until c is exhausted. In turn calls
+	 * VSL_Write on all records where VSL_Match returns true.
+	 *
+	 * Return values:
+	 *	0:	OK
+	 *    !=0:	Return value from either VSL_Next or VSL_Write
+	 */
+
+int VSL_WriteTransactions(struct VSL_data *vsl,
+    struct VSL_transaction *ptrans[], void *fo);
+	/*
+	 * Write all transactions in ptrans using VSL_WriteAll
+	 * Return values:
+	 *	0:	OK
+	 *    !=0:	Return value from either VSL_Next or VSL_Write
+	 */
+
 struct VSLQ *VSLQ_New(struct VSL_data *vsl, struct VSL_cursor **cp,
     enum VSL_grouping_e grouping, const char *query);
 	/*
