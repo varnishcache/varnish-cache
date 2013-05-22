@@ -633,6 +633,7 @@ FetchBody(struct worker *wrk, void *priv)
 static void
 vbf_make_bereq(struct worker *wrk, const struct req *req, struct busyobj *bo)
 {
+	int i;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -661,7 +662,10 @@ vbf_make_bereq(struct worker *wrk, const struct req *req, struct busyobj *bo)
 		}
 	}
 
+	// Don't let VCL reset do_pass
+	i = bo->do_pass;
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
+	bo->do_pass |= i;
 
 	http_PrintfHeader(bo->bereq,
 	    "X-Varnish: %u", bo->vsl->wid & VSL_IDENTMASK);
@@ -679,7 +683,7 @@ cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 
 	req->acct_req.fetch++;
 
-	i = FetchHdr(wrk, bo, req->objcore->objhead == NULL ? req : NULL);
+	i = FetchHdr(wrk, bo, bo->do_pass ? req : NULL);
 	/*
 	 * If we recycle a backend connection, there is a finite chance
 	 * that the backend closed it before we get a request to it.
@@ -687,8 +691,7 @@ cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 	 */
 	if (i == 1) {
 		VSC_C_main->backend_retry++;
-		i = FetchHdr(wrk, bo,
-		    req->objcore->objhead == NULL ? req : NULL);
+		i = FetchHdr(wrk, bo, bo->do_pass ? req : NULL);
 	}
 
 	if (req->objcore->objhead != NULL)
@@ -725,8 +728,11 @@ cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 
 		AZ(bo->do_esi);
 
+		// Don't let VCL reset do_pass
+		i = bo->do_pass;
 		VCL_backend_response_method(bo->vcl, wrk, NULL, bo,
 		    bo->beresp->ws);
+		bo->do_pass |= i;
 
 		if (bo->do_pass)
 			req->objcore->flags |= OC_F_PASS;
@@ -774,7 +780,7 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	uint16_t nhttp;
 	unsigned l;
 	struct vsb *vary = NULL;
-	int varyl = 0, pass;
+	int varyl = 0;
 	struct busyobj *bo;
 	int i;
 
@@ -795,15 +801,11 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 		return (i);
 
 	if (req->objcore->objhead == NULL) {
+		AN(bo->do_pass);
 		/* This is a pass from vcl_recv */
-		pass = 1;
+		bo->do_pass = 1;
 		/* VCL may have fiddled this, but that doesn't help */
-		bo->exp.ttl = -1.;
-	} else if (bo->do_pass) {
-		pass = 1;
-	} else {
-		/* regular object */
-		pass = 0;
+		// bo->exp.ttl = -1.;
 	}
 
 	/*
@@ -869,7 +871,7 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 		bo->do_stream = 0;
 
 	l = http_EstimateWS(bo->beresp,
-	    pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
+	    bo->do_pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
 
 	/* Create Vary instructions */
 	if (req->objcore->objhead != NULL) {
@@ -896,8 +898,7 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	 */
 	l += strlen("Content-Length: XxxXxxXxxXxxXxxXxx") + sizeof(void *);
 
-	if (bo->exp.ttl < cache_param->shortlived ||
-	    pass == 1)
+	if (bo->exp.ttl < cache_param->shortlived || bo->do_pass == 1)
 		bo->storage_hint = TRANSIENT_STORAGE;
 
 	AZ(bo->stats);
@@ -950,7 +951,7 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	hp2 = req->obj->http;
 
 	hp2->logtag = HTTP_Obj;
-	http_FilterResp(hp, hp2, pass ? HTTPH_R_PASS : HTTPH_A_INS);
+	http_FilterResp(hp, hp2, bo->do_pass ? HTTPH_R_PASS : HTTPH_A_INS);
 	http_CopyHome(hp2);
 
 	if (http_GetHdr(hp, H_Last_Modified, &b))
