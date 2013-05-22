@@ -377,7 +377,7 @@ htc_splitline(struct http *hp, const struct http_conn *htc, int req)
 /*--------------------------------------------------------------------*/
 
 static int
-htc_request_check_host_hdr(struct http *hp)
+htc_request_check_host_hdr(const struct http *hp)
 {
 	int u;
 	int seen_host = 0;
@@ -388,7 +388,8 @@ htc_request_check_host_hdr(struct http *hp)
 		AN(hp->hd[u].e);
 		if (http_IsHdr(&hp->hd[u], H_Host)) {
 			if (seen_host) {
-				VSLb(hp->vsl, SLT_Error, "Duplicated Host header");
+				VSLb(hp->vsl, SLT_Error,
+				    "Duplicated Host header");
 				return (400);
 			}
 			seen_host = 1;
@@ -396,7 +397,6 @@ htc_request_check_host_hdr(struct http *hp)
 	}
 	return (0);
 }
-
 
 /*--------------------------------------------------------------------*/
 
