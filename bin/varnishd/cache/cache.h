@@ -516,6 +516,7 @@ struct busyobj {
 	struct vbc		*vbc;
 	struct http		*bereq;
 	struct http		*beresp;
+	struct objcore		*fetch_objcore;
 	struct object		*fetch_obj;
 	uint8_t			digest[DIGEST_LEN];
 	struct exp		exp;
@@ -1080,7 +1081,7 @@ unsigned RFC2616_Req_Gzip(const struct http *);
 int RFC2616_Do_Cond(const struct req *sp);
 
 /* stevedore.c */
-struct object *STV_NewObject(struct busyobj *, struct objcore **,
+struct object *STV_NewObject(struct busyobj *,
     const char *hint, unsigned len, uint16_t nhttp);
 struct storage *STV_alloc(struct busyobj *, size_t size);
 void STV_trim(struct storage *st, size_t size, int move_ok);

@@ -45,7 +45,7 @@ typedef struct storage *storage_alloc_f(struct stevedore *, size_t size);
 typedef void storage_trim_f(struct storage *, size_t size, int move_ok);
 typedef void storage_free_f(struct storage *);
 typedef struct object *storage_allocobj_f(struct stevedore *, struct busyobj *,
-    struct objcore **, unsigned ltot, const struct stv_objsecrets *);
+    unsigned ltot, const struct stv_objsecrets *);
 typedef void storage_close_f(const struct stevedore *);
 typedef void storage_signal_close_f(const struct stevedore *);
 typedef int storage_baninfo_f(const struct stevedore *, enum baninfo event,
@@ -101,8 +101,7 @@ int STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx);
 uintmax_t STV_FileSize(int fd, const char *size, unsigned *granularity,
     const char *ctx);
 struct object *STV_MkObject(struct stevedore *stv, struct busyobj *bo,
-    struct objcore **ocp, void *ptr, unsigned ltot,
-    const struct stv_objsecrets *soc);
+    void *ptr, unsigned ltot, const struct stv_objsecrets *soc);
 
 struct lru *LRU_Alloc(void);
 void LRU_Free(struct lru *lru);

@@ -273,16 +273,16 @@ cnt_error(struct worker *wrk, struct req *req)
 	req->busyobj = bo;
 	AZ(bo->stats);
 	bo->stats = &wrk->stats;
-	req->objcore = HSH_NewObjCore(wrk);
-	req->obj = STV_NewObject(bo, &req->objcore,
+	bo->fetch_objcore = HSH_NewObjCore(wrk);
+	req->obj = STV_NewObject(bo,
 	    TRANSIENT_STORAGE, cache_param->http_resp_size,
 	    (uint16_t)cache_param->http_max_hdr);
 	bo->stats = NULL;
 	if (req->obj == NULL) {
 		req->doclose = SC_OVERLOAD;
 		req->director = NULL;
-		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
-		req->objcore = NULL;
+		AZ(HSH_Deref(&wrk->stats, bo->fetch_objcore, NULL));
+		bo->fetch_objcore = NULL;
 		http_Teardown(bo->beresp);
 		http_Teardown(bo->bereq);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
@@ -291,6 +291,7 @@ cnt_error(struct worker *wrk, struct req *req)
 	}
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 	AZ(req->objcore);
+	AZ(bo->fetch_objcore);
 	req->obj->vxid = bo->vsl->wid;
 	req->obj->exp.entered = req->t_req;
 

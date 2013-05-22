@@ -637,8 +637,8 @@ vbf_make_bereq(struct worker *wrk, const struct req *req, struct busyobj *bo)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
 
 	AN(bo->director);
 	AZ(bo->vbc);
@@ -694,7 +694,7 @@ cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 		i = FetchHdr(wrk, bo, bo->do_pass ? req : NULL);
 	}
 
-	if (req->objcore->objhead != NULL)
+	if (bo->fetch_objcore->objhead != NULL)
 		(void)HTTP1_DiscardReqBody(req);	// XXX
 
 	if (!i) {
@@ -723,7 +723,7 @@ cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 		RFC2616_Ttl(bo);
 
 		/* pass from vclrecv{} has negative TTL */
-		if (req->objcore->objhead == NULL)
+		if (bo->fetch_objcore->objhead == NULL)
 			bo->exp.ttl = -1.;
 
 		AZ(bo->do_esi);
@@ -735,7 +735,7 @@ cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 		bo->do_pass |= i;
 
 		if (bo->do_pass)
-			req->objcore->flags |= OC_F_PASS;
+			bo->fetch_objcore->flags |= OC_F_PASS;
 
 		if (wrk->handling == VCL_RET_DELIVER)
 			return (0);
@@ -750,12 +750,13 @@ cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 	/* Clean up partial fetch */
 	AZ(bo->vbc);
 
-	if (req->objcore->objhead != NULL ||
+	if (bo->fetch_objcore->objhead != NULL ||
 	    wrk->handling == VCL_RET_RESTART ||
 	    wrk->handling == VCL_RET_ERROR) {
-		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+		CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
 		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
 		req->objcore = NULL;
+		bo->fetch_objcore = NULL;
 	}
 	assert(bo->refcount == 2);
 	bo->storage_hint = NULL;
@@ -793,6 +794,8 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	xxxassert(bo->refcount == 2);	// Req might abandon early ?
 	CHECK_OBJ_NOTNULL(bo->vcl, VCL_CONF_MAGIC);
 
+	bo->fetch_objcore = req->objcore;
+
 	vbf_make_bereq(wrk, req, bo);
 	xxxassert (wrk->handling == VCL_RET_FETCH);
 
@@ -800,7 +803,7 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	if (i)
 		return (i);
 
-	if (req->objcore->objhead == NULL) {
+	if (bo->fetch_objcore->objhead == NULL) {
 		AN(bo->do_pass);
 		/* This is a pass from vcl_recv */
 		bo->do_pass = 1;
@@ -874,7 +877,7 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	    bo->do_pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
 
 	/* Create Vary instructions */
-	if (req->objcore->objhead != NULL) {
+	if (bo->fetch_objcore->objhead != NULL) {
 		varyl = VRY_Create(bo, &vary);
 		if (varyl > 0) {
 			AN(vary);
@@ -885,6 +888,7 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 			AZ(vary);
 			AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
 			req->objcore = NULL;
+			bo->fetch_objcore = NULL;
 			VDI_CloseFd(&bo->vbc);
 			return (-1);
 		} else
@@ -903,8 +907,7 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 
 	AZ(bo->stats);
 	bo->stats = &wrk->stats;
-	req->obj = STV_NewObject(bo, &req->objcore, bo->storage_hint, l,
-	    nhttp);
+	req->obj = STV_NewObject(bo, bo->storage_hint, l, nhttp);
 	if (req->obj == NULL) {
 		/*
 		 * Try to salvage the transaction by allocating a
@@ -914,18 +917,19 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 			bo->exp.ttl = cache_param->shortlived;
 		bo->exp.grace = 0.0;
 		bo->exp.keep = 0.0;
-		req->obj = STV_NewObject(bo, &req->objcore, TRANSIENT_STORAGE,
-		    l, nhttp);
+		req->obj = STV_NewObject(bo, TRANSIENT_STORAGE, l, nhttp);
 	}
 	bo->stats = NULL;
 	if (req->obj == NULL) {
 		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
 		req->objcore = NULL;
+		bo->fetch_objcore = NULL;
 		VDI_CloseFd(&bo->vbc);
 		return (-1);
 	}
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 
+	req->objcore = NULL;
 	bo->storage_hint = NULL;
 
 	AZ(bo->fetch_obj);
@@ -974,8 +978,6 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	/*
 	 * Ready to fetch the body
 	 */
-	bo->fetch_task.func = FetchBody;
-	bo->fetch_task.priv = bo;
 
 	assert(bo->refcount == 2);	/* one for each thread */
 
@@ -986,9 +988,7 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 		HSH_Unbusy(&wrk->stats, req->obj->objcore);
 	}
 
-	if (!bo->do_stream ||
-	    Pool_Task(wrk->pool, &bo->fetch_task, POOL_NO_QUEUE))
-		FetchBody(wrk, bo);
+	FetchBody(wrk, bo);
 
 	if (req->obj->objcore->objhead != NULL)
 		HSH_Ref(req->obj->objcore);
