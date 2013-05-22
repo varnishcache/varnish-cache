@@ -80,6 +80,7 @@ struct VSL_head {
 
 #define VSL_LENMASK		0xffff
 #define VSL_WORDS(len)		(((len) + 3) / 4)
+#define VSL_BYTES(words)	((words) * 4)
 #define VSL_END(ptr, len)	((ptr) + 2 + VSL_WORDS(len))
 #define VSL_NEXT(ptr)		VSL_END(ptr, VSL_LEN(ptr))
 #define VSL_LEN(ptr)		((ptr)[0] & VSL_LENMASK)

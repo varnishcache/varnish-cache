@@ -325,28 +325,30 @@ vslc_file_next(void *cursor)
 
 	do {
 		c->c.c.rec.ptr = NULL;
-		assert(c->buflen >= 2 * 4);
-		i = vslc_file_readn(c->fd, c->buf, 2 * 4);
+		assert(c->buflen >= VSL_BYTES(2));
+		i = vslc_file_readn(c->fd, c->buf, VSL_BYTES(2));
 		if (i < 0)
 			return (-4);	/* I/O error */
 		if (i == 0)
 			return (-1);	/* EOF */
-		assert(i == 2 * 4);
-		l = (2 + VSL_WORDS(VSL_LEN(c->buf))) * 4;
+		assert(i == VSL_BYTES(2));
+		l = VSL_BYTES(2 + VSL_WORDS(VSL_LEN(c->buf)));
 		if (c->buflen < l) {
 			c->buf = realloc(c->buf, 2 * l);
 			AN(c->buf);
 			c->buflen = 2 * l;
 		}
-		i = vslc_file_readn(c->fd, c->buf + 2, l - 2 * 4);
-		if (i < 0)
-			return (-4);	/* I/O error */
-		if (i == 0)
-			return (-1);	/* EOF */
-		assert(i == l - 2 * 4);
+		if (l > VSL_BYTES(2)) {
+			i = vslc_file_readn(c->fd, c->buf + 2,
+			    l - VSL_BYTES(2));
+			if (i < 0)
+				return (-4);	/* I/O error */
+			if (i == 0)
+				return (-1);	/* EOF */
+			assert(i == l - VSL_BYTES(2));
+		}
 		c->c.c.rec.ptr = c->buf;
-	} while (c->c.c.rec.ptr != NULL &&
-	    VSL_TAG(c->c.c.rec.ptr) == SLT__Batch);
+	} while (VSL_TAG(c->c.c.rec.ptr) == SLT__Batch);
 	return (1);
 }
 
@@ -371,18 +373,19 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name)
 {
 	struct vslc_file *c;
 	int fd;
-	char buf[4];
+	char buf[] = VSL_FILE_ID;
 	ssize_t i;
 
-	if (!strcmp(name, "-")) {
+	if (!strcmp(name, "-"))
+		fd = STDIN_FILENO;
+	else {
 		fd = open(name, O_RDONLY);
 		if (fd < 0) {
 			vsl_diag(vsl, "Could not open %s: %s\n", name,
 			    strerror(errno));
 			return (NULL);
 		}
-	} else
-		fd = STDIN_FILENO;
+	}
 
 	i = vslc_file_readn(fd, buf, sizeof buf);
 	if (i <= 0) {
@@ -393,7 +396,7 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name)
 		return (NULL);
 	}
 	assert(i == sizeof buf);
-	if (memcmp(buf, VSL_FILE_HEAD, sizeof buf)) {
+	if (memcmp(buf, VSL_FILE_ID, sizeof buf)) {
 		if (fd > STDIN_FILENO)
 			(void)close(fd);
 		vsl_diag(vsl, "Not a VSL file: %s\n", name);

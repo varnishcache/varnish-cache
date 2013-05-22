@@ -33,7 +33,7 @@
 #include "vqueue.h"
 #include "vapi/vsm.h"
 
-#define VSL_FILE_HEAD			"VSL"
+#define VSL_FILE_ID			"VSL"
 
 struct vslc_shmptr {
 	uint32_t	*ptr;
