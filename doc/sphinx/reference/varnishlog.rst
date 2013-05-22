@@ -32,8 +32,6 @@ The following options are available:
 
 	When writing to a file, append to it rather than overwrite it.
 
-	XXX: Not yet implemented
-
 -b
 
 	Only show backend transactions. If neither -b nor -c is
@@ -109,8 +107,6 @@ The following options are available:
 
 	Read log entries from file instaed of shared memory
 
-	XXX: Not yet implemented
-
 -s num
 
 	Skip the first num log transactions (or log records if
@@ -144,7 +140,7 @@ The following options are available:
    	file, it will reopen the file, allowing the old one to be
    	rotated away.
 
-	XXX: Not yet implemented
+	XXX: Log rotation not yet implemented
 
 -x tag
 

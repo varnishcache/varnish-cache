@@ -67,6 +67,10 @@ main(int argc, char * const *argv)
 	struct VSL_cursor *c;
 	struct VSLQ *q;
 	int i;
+	int a_opt = 0;
+	const char *w_arg = NULL;
+	FILE *fo = stdout;
+	VSLQ_dispatch_f *func;
 
 	vut = VUT_New();
 	AN(vut);
@@ -75,12 +79,18 @@ main(int argc, char * const *argv)
 	vsm = VSM_New();
 	AN(vsm);
 
-	while ((opt = getopt(argc, argv, "dg:n:r:v")) != -1) {
+	while ((opt = getopt(argc, argv, "adg:n:r:vw:")) != -1) {
 		switch (opt) {
+		case 'a':
+			a_opt = 1;
+			break;
 		case 'n':
 			/* Instance name */
 			if (VSM_n_Arg(vsm, optarg) > 0)
 				break;
+		case 'w':
+			w_arg = optarg;
+			break;
 		default:
 			if (!VSL_Arg(vsl, opt, optarg) &&
 			    !VUT_Arg(vut, opt, optarg))
@@ -88,21 +98,36 @@ main(int argc, char * const *argv)
 		}
 	}
 
+	func = VSL_PrintTransactions;
+	if (w_arg) {
+		fo = VSL_WriteOpen(vsl, w_arg, a_opt);
+		if (fo == NULL)
+			VUT_Error(1, "-w: %s", VSL_Error(vsl));
+		AZ(setvbuf(fo, NULL, _IONBF, 0));
+		func = VSL_WriteTransactions;
+	}
+	AN(fo);
+
 	/* Create cursor */
-	if (VSM_Open(vsm))
-		VUT_Error(1, "VSM_Open: %s", VSM_Error(vsm));
-	c = VSL_CursorVSM(vsl, vsm, !vut->d_opt);
+	if (vut->r_arg)
+		c = VSL_CursorFile(vsl, vut->r_arg);
+	else {
+		if (VSM_Open(vsm))
+			VUT_Error(1, "VSM_Open: %s", VSM_Error(vsm));
+		c = VSL_CursorVSM(vsl, vsm, !vut->d_opt);
+	}
 	if (c == NULL)
-		VUT_Error(1, "VSL_CursorVSM: %s", VSL_Error(vsl));
+		VUT_Error(1, "Can't open log: %s", VSL_Error(vsl));
 
 	/* Create query */
 	q = VSLQ_New(vsl, &c, vut->g_arg, argv[optind]);
 	if (q == NULL)
-		VUT_Error(1, "VSLQ_New: %s", VSL_Error(vsl));
+		VUT_Error(1, "Query error: %s", VSL_Error(vsl));
 	AZ(c);
 
 	while (1) {
 		while (q == NULL) {
+			AZ(vut->r_arg);
 			VTIM_sleep(0.1);
 			if (VSM_Open(vsm)) {
 				VSM_ResetError(vsm);
@@ -118,7 +143,7 @@ main(int argc, char * const *argv)
 			AZ(c);
 		}
 
-		i = VSLQ_Dispatch(q, VSL_PrintTransactions, stdout);
+		i = VSLQ_Dispatch(q, func, fo);
 		if (i == 0) {
 			/* Nothing to do but wait */
 			VTIM_sleep(0.01);
@@ -127,7 +152,7 @@ main(int argc, char * const *argv)
 			break;
 		} else if (i <= -2) {
 			/* XXX: Make continuation optional */
-			VSLQ_Flush(q, VSL_PrintTransactions, stdout);
+			VSLQ_Flush(q, func, fo);
 			VSLQ_Delete(&q);
 			AZ(q);
 			if (i == -2) {
@@ -144,7 +169,7 @@ main(int argc, char * const *argv)
 	}
 
 	if (q != NULL) {
-		VSLQ_Flush(q, VSL_PrintTransactions, stdout);
+		VSLQ_Flush(q, func, fo);
 		VSLQ_Delete(&q);
 		AZ(q);
 	}
