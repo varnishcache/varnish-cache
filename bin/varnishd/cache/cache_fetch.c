@@ -681,7 +681,7 @@ cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, HTTP_Beresp);
 
-	i = FetchHdr(wrk, bo, bo->do_pass ? req : NULL);
+	i = FetchHdr(wrk, bo, req);
 	/*
 	 * If we recycle a backend connection, there is a finite chance
 	 * that the backend closed it before we get a request to it.
@@ -689,11 +689,8 @@ cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 	 */
 	if (i == 1) {
 		VSC_C_main->backend_retry++;
-		i = FetchHdr(wrk, bo, bo->do_pass ? req : NULL);
+		i = FetchHdr(wrk, bo, req);
 	}
-
-	if (bo->fetch_objcore->objhead != NULL)
-		(void)HTTP1_DiscardReqBody(req);	// XXX
 
 	if (!i) {
 		/*
@@ -798,7 +795,8 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	vbf_make_bereq(wrk, req, bo);
 	xxxassert (wrk->handling == VCL_RET_FETCH);
 
-	i = cnt_fetch(wrk, req, bo);
+	i = cnt_fetch(wrk, bo->do_pass ? req : NULL, bo);
+
 	if (i)
 		return (i);
 
@@ -857,11 +855,6 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 		bo->vfp = &vfp_gzip;
 	else if (bo->is_gzip)
 		bo->vfp = &vfp_testgzip;
-
-	if (bo->do_esi || req->esi_level > 0)
-		bo->do_stream = 0;
-	if (!req->wantbody)
-		bo->do_stream = 0;
 
 	/* No reason to try streaming a non-existing body */
 	if (bo->htc.body_status == BS_NONE)
@@ -955,18 +948,6 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 		obj->last_modified = floor(bo->exp.entered);
 
 	assert(WRW_IsReleased(wrk));
-
-#if 0
-	/*
-	 * If we can deliver a 304 reply, we don't bother streaming.
-	 * Notice that vcl_deliver{} could still nuke the headers
-	 * that allow the 304, in which case we return 200 non-stream.
-	 */
-	if (obj->response == 200 &&
-	    req->http->conds &&
-	    RFC2616_Do_Cond(req))
-		bo->do_stream = 0;
-#endif
 
 	/*
 	 * Ready to fetch the body

@@ -362,6 +362,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	i = VBF_Fetch(wrk, req);
 	AN(req->busyobj);
 	assert(req->busyobj->refcount > 0);
+	(void)HTTP1_DiscardReqBody(req);
 	if (i < 0) {
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		req->err_code = 503;
