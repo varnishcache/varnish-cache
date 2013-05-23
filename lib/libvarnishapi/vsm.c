@@ -132,6 +132,11 @@ VSM_n_Arg(struct VSM_data *vd, const char *opt)
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AN(opt);
 
+	if (vd->fname) {
+		free(vd->fname);
+		vd->fname = NULL;
+	}
+	vd->N_opt = 0;
 	REPLACE(vd->n_opt, opt);
 	if (VIN_N_Arg(vd->n_opt, NULL, NULL, &vd->fname))
 		return (vsm_diag(vd, "Invalid instance name: %s\n",
@@ -148,6 +153,10 @@ VSM_N_Arg(struct VSM_data *vd, const char *opt)
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AN(opt);
 
+	if (vd->n_opt) {
+		free(vd->n_opt);
+		vd->n_opt = NULL;
+	}
 	REPLACE(vd->fname, opt);
 	vd->N_opt = 1;
 	return (1);
