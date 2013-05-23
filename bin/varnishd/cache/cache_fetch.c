@@ -674,6 +674,110 @@ vbf_make_bereq(struct worker *wrk, const struct req *req, struct busyobj *bo)
 /*--------------------------------------------------------------------
  */
 
+static void
+vbf_proc_resp(struct worker *wrk, struct busyobj *bo)
+{
+	int i;
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	/*
+	 * These two headers can be spread over multiple actual headers
+	 * and we rely on their content outside of VCL, so collect them
+	 * into one line here.
+	 */
+	http_CollectHdr(bo->beresp, H_Cache_Control);
+	http_CollectHdr(bo->beresp, H_Vary);
+
+	/*
+	 * Figure out how the fetch is supposed to happen, before the
+	 * headers are adultered by VCL
+	 * NB: Also sets other wrk variables
+	 */
+	bo->htc.body_status = RFC2616_Body(bo, &wrk->stats);
+
+	bo->err_code = http_GetStatus(bo->beresp);
+
+	/*
+	 * What does RFC2616 think about TTL ?
+	 */
+	EXP_Clr(&bo->exp);
+	bo->exp.entered = W_TIM_real(wrk);
+	RFC2616_Ttl(bo);
+
+	/* pass from vclrecv{} has negative TTL */
+	if (bo->fetch_objcore->objhead == NULL)
+		bo->exp.ttl = -1.;
+
+	AZ(bo->do_esi);
+
+	// Don't let VCL reset do_pass
+	i = bo->do_pass;
+	VCL_backend_response_method(bo->vcl, wrk, NULL, bo,
+	    bo->beresp->ws);
+	bo->do_pass |= i;
+
+	if (bo->do_pass)
+		bo->fetch_objcore->flags |= OC_F_PASS;
+
+	/*
+	 * The VCL variables beresp.do_g[un]zip tells us how we want the
+	 * object processed before it is stored.
+	 *
+	 * The backend Content-Encoding header tells us what we are going
+	 * to receive, which we classify in the following three classes:
+	 *
+	 *	"Content-Encoding: gzip"	--> object is gzip'ed.
+	 *	no Content-Encoding		--> object is not gzip'ed.
+	 *	anything else			--> do nothing wrt gzip
+	 *
+	 */
+
+	/* We do nothing unless the param is set */
+	if (!cache_param->http_gzip_support)
+		bo->do_gzip = bo->do_gunzip = 0;
+
+	bo->is_gzip = http_HdrIs(bo->beresp, H_Content_Encoding, "gzip");
+
+	bo->is_gunzip = !http_GetHdr(bo->beresp, H_Content_Encoding, NULL);
+
+	/* It can't be both */
+	assert(bo->is_gzip == 0 || bo->is_gunzip == 0);
+
+	/* We won't gunzip unless it is gzip'ed */
+	if (bo->do_gunzip && !bo->is_gzip)
+		bo->do_gunzip = 0;
+
+	/* If we do gunzip, remove the C-E header */
+	if (bo->do_gunzip)
+		http_Unset(bo->beresp, H_Content_Encoding);
+
+	/* We wont gzip unless it is ungziped */
+	if (bo->do_gzip && !bo->is_gunzip)
+		bo->do_gzip = 0;
+
+	/* If we do gzip, add the C-E header */
+	if (bo->do_gzip)
+		http_SetHeader(bo->beresp, "Content-Encoding: gzip");
+
+	/* But we can't do both at the same time */
+	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
+
+	/* ESI takes precedence and handles gzip/gunzip itself */
+	if (bo->do_esi)
+		bo->vfp = &vfp_esi;
+	else if (bo->do_gunzip)
+		bo->vfp = &vfp_gunzip;
+	else if (bo->do_gzip)
+		bo->vfp = &vfp_gzip;
+	else if (bo->is_gzip)
+		bo->vfp = &vfp_testgzip;
+
+}
+
+/*--------------------------------------------------------------------
+ */
+
 static int
 cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 {
@@ -693,44 +797,7 @@ cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 	}
 
 	if (!i) {
-		/*
-		 * These two headers can be spread over multiple actual headers
-		 * and we rely on their content outside of VCL, so collect them
-		 * into one line here.
-		 */
-		http_CollectHdr(bo->beresp, H_Cache_Control);
-		http_CollectHdr(bo->beresp, H_Vary);
-
-		/*
-		 * Figure out how the fetch is supposed to happen, before the
-		 * headers are adultered by VCL
-		 * NB: Also sets other wrk variables
-		 */
-		bo->htc.body_status = RFC2616_Body(bo, &wrk->stats);
-
-		bo->err_code = http_GetStatus(bo->beresp);
-
-		/*
-		 * What does RFC2616 think about TTL ?
-		 */
-		EXP_Clr(&bo->exp);
-		bo->exp.entered = W_TIM_real(wrk);
-		RFC2616_Ttl(bo);
-
-		/* pass from vclrecv{} has negative TTL */
-		if (bo->fetch_objcore->objhead == NULL)
-			bo->exp.ttl = -1.;
-
-		AZ(bo->do_esi);
-
-		// Don't let VCL reset do_pass
-		i = bo->do_pass;
-		VCL_backend_response_method(bo->vcl, wrk, NULL, bo,
-		    bo->beresp->ws);
-		bo->do_pass |= i;
-
-		if (bo->do_pass)
-			bo->fetch_objcore->flags |= OC_F_PASS;
+		vbf_proc_resp(wrk, bo);
 
 		if (wrk->handling == VCL_RET_DELIVER)
 			return (0);
@@ -803,59 +870,6 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	if (bo->fetch_objcore->objhead == NULL) 
 		AN(bo->do_pass);
 
-	/*
-	 * The VCL variables beresp.do_g[un]zip tells us how we want the
-	 * object processed before it is stored.
-	 *
-	 * The backend Content-Encoding header tells us what we are going
-	 * to receive, which we classify in the following three classes:
-	 *
-	 *	"Content-Encoding: gzip"	--> object is gzip'ed.
-	 *	no Content-Encoding		--> object is not gzip'ed.
-	 *	anything else			--> do nothing wrt gzip
-	 *
-	 */
-
-	/* We do nothing unless the param is set */
-	if (!cache_param->http_gzip_support)
-		bo->do_gzip = bo->do_gunzip = 0;
-
-	bo->is_gzip = http_HdrIs(bo->beresp, H_Content_Encoding, "gzip");
-
-	bo->is_gunzip = !http_GetHdr(bo->beresp, H_Content_Encoding, NULL);
-
-	/* It can't be both */
-	assert(bo->is_gzip == 0 || bo->is_gunzip == 0);
-
-	/* We won't gunzip unless it is gzip'ed */
-	if (bo->do_gunzip && !bo->is_gzip)
-		bo->do_gunzip = 0;
-
-	/* If we do gunzip, remove the C-E header */
-	if (bo->do_gunzip)
-		http_Unset(bo->beresp, H_Content_Encoding);
-
-	/* We wont gzip unless it is ungziped */
-	if (bo->do_gzip && !bo->is_gunzip)
-		bo->do_gzip = 0;
-
-	/* If we do gzip, add the C-E header */
-	if (bo->do_gzip)
-		http_SetHeader(bo->beresp, "Content-Encoding: gzip");
-
-	/* But we can't do both at the same time */
-	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
-
-	/* ESI takes precedence and handles gzip/gunzip itself */
-	if (bo->do_esi)
-		bo->vfp = &vfp_esi;
-	else if (bo->do_gunzip)
-		bo->vfp = &vfp_gunzip;
-	else if (bo->do_gzip)
-		bo->vfp = &vfp_gzip;
-	else if (bo->is_gzip)
-		bo->vfp = &vfp_testgzip;
-
 	/* No reason to try streaming a non-existing body */
 	if (bo->htc.body_status == BS_NONE)
 		bo->do_stream = 0;
@@ -882,14 +896,15 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 			AZ(vary);
 	}
 
+	if (bo->exp.ttl < cache_param->shortlived || bo->do_pass == 1)
+		bo->storage_hint = TRANSIENT_STORAGE;
+
+
 	/*
 	 * Space for producing a Content-Length: header including padding
 	 * A billion gigabytes is enough for anybody.
 	 */
 	l += strlen("Content-Length: XxxXxxXxxXxxXxxXxx") + sizeof(void *);
-
-	if (bo->exp.ttl < cache_param->shortlived || bo->do_pass == 1)
-		bo->storage_hint = TRANSIENT_STORAGE;
 
 	AZ(bo->stats);
 	bo->stats = &wrk->stats;
@@ -978,7 +993,6 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	assert(WRW_IsReleased(wrk));
 	return (0);
 }
-
 
 /*--------------------------------------------------------------------
  * Debugging aids
