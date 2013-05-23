@@ -36,6 +36,7 @@ Makefile.in
 /stamp-h1
 /varnishapi.pc
 TAGS
+cscope.*out
 
 # Default vcl made from bin/varnishd/default.vcl
 /bin/varnishd/default_vcl.h

@@ -7,6 +7,7 @@ SUBDIRS += redhat
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = varnishapi.pc
 
+CLEANFILES = cscope.in.out cscope.out cscope.po.out
 EXTRA_DIST = LICENSE autogen.sh varnishapi.pc.in
 
 DISTCHECK_CONFIGURE_FLAGS = \
@@ -34,3 +35,10 @@ distcheck-hook:
 distcleancheck_listfiles = \
 	find . -type f -exec sh -c 'test -f $(srcdir)/$$1 || echo $$1' \
 		sh '{}' ';'
+
+cscope:
+	-rm -f cscope*
+	find . -name '*.[hcS]' > cscope.files
+	cscope -b
+
+.PHONY: cscope
