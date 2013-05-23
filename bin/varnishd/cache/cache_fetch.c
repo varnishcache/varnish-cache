@@ -368,7 +368,6 @@ FetchHdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	int retry = -1;
 	int i, first;
 	struct http_conn *htc;
-        int need_host_hdr;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_ORNULL(req, REQ_MAGIC);
@@ -376,8 +375,6 @@ FetchHdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	htc = &bo->htc;
 
 	AN(bo->director);
-
-	need_host_hdr = !http_GetHdr(bo->bereq, H_Host, NULL);
 
 	hp = bo->bereq;
 
@@ -395,7 +392,7 @@ FetchHdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	 * header if one is necessary.  This cannot be done in the VCL
 	 * because the backend may be chosen by a director.
 	 */
-	if (need_host_hdr)
+	if (!http_GetHdr(bo->bereq, H_Host, NULL))
 		VDI_AddHostHeader(bo->bereq, vc);
 
 	(void)VTCP_blocking(vc->fd);	/* XXX: we should timeout instead */
@@ -898,7 +895,6 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 
 	if (bo->exp.ttl < cache_param->shortlived || bo->do_pass == 1)
 		bo->storage_hint = TRANSIENT_STORAGE;
-
 
 	/*
 	 * Space for producing a Content-Length: header including padding
