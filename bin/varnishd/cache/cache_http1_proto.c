@@ -376,7 +376,7 @@ htc_splitline(struct http *hp, const struct http_conn *htc, int req)
 
 /*--------------------------------------------------------------------*/
 
-static int
+static uint16_t
 htc_request_check_host_hdr(const struct http *hp)
 {
 	int u;
