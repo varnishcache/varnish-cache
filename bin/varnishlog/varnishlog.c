@@ -61,121 +61,22 @@ main(int argc, char * const *argv)
 {
 	char opt;
 
-	struct VUT *vut;
-	struct VSL_data *vsl;
-	struct VSM_data *vsm;
-	struct VSL_cursor *c;
-	struct VSLQ *q;
-	int i;
-	int a_opt = 0;
-	const char *w_arg = NULL;
-	FILE *fo = stdout;
-	VSLQ_dispatch_f *func;
+	VUT_Init();
 
-	vut = VUT_New();
-	AN(vut);
-	vsl = VSL_New();
-	AN(vsl);
-	vsm = VSM_New();
-	AN(vsm);
-
-	while ((opt = getopt(argc, argv, "adg:n:r:vw:")) != -1) {
+	while ((opt = getopt(argc, argv, "adg:n:r:uvw:")) != -1) {
 		switch (opt) {
-		case 'a':
-			a_opt = 1;
-			break;
-		case 'n':
-			/* Instance name */
-			if (VSM_n_Arg(vsm, optarg) > 0)
-				break;
-		case 'w':
-			w_arg = optarg;
-			break;
 		default:
-			if (!VSL_Arg(vsl, opt, optarg) &&
-			    !VUT_Arg(vut, opt, optarg))
+			if (!VUT_Arg(opt, optarg))
 				usage();
 		}
 	}
 
-	func = VSL_PrintTransactions;
-	if (w_arg) {
-		fo = VSL_WriteOpen(vsl, w_arg, a_opt);
-		if (fo == NULL)
-			VUT_Error(1, "-w: %s", VSL_Error(vsl));
-		AZ(setvbuf(fo, NULL, _IONBF, 0));
-		func = VSL_WriteTransactions;
-	}
-	AN(fo);
+	if (optind < argc)
+		VUT.query = argv[optind];
 
-	/* Create cursor */
-	if (vut->r_arg)
-		c = VSL_CursorFile(vsl, vut->r_arg);
-	else {
-		if (VSM_Open(vsm))
-			VUT_Error(1, "VSM_Open: %s", VSM_Error(vsm));
-		c = VSL_CursorVSM(vsl, vsm, !vut->d_opt);
-	}
-	if (c == NULL)
-		VUT_Error(1, "Can't open log: %s", VSL_Error(vsl));
-
-	/* Create query */
-	q = VSLQ_New(vsl, &c, vut->g_arg, argv[optind]);
-	if (q == NULL)
-		VUT_Error(1, "Query error: %s", VSL_Error(vsl));
-	AZ(c);
-
-	while (1) {
-		while (q == NULL) {
-			AZ(vut->r_arg);
-			VTIM_sleep(0.1);
-			if (VSM_Open(vsm)) {
-				VSM_ResetError(vsm);
-				continue;
-			}
-			c = VSL_CursorVSM(vsl, vsm, 1);
-			if (c == NULL) {
-				VSL_ResetError(vsl);
-				continue;
-			}
-			q = VSLQ_New(vsl, &c, vut->g_arg, argv[optind]);
-			AN(q);
-			AZ(c);
-		}
-
-		i = VSLQ_Dispatch(q, func, fo);
-		if (i == 0) {
-			/* Nothing to do but wait */
-			VTIM_sleep(0.01);
-		} else if (i == -1) {
-			/* EOF */
-			break;
-		} else if (i <= -2) {
-			/* XXX: Make continuation optional */
-			VSLQ_Flush(q, func, fo);
-			VSLQ_Delete(&q);
-			AZ(q);
-			if (i == -2) {
-				/* Abandoned */
-				VUT_Error(0, "Log abandoned - reopening");
-				VSM_Close(vsm);
-			} else if (i < -2) {
-				/* Overrun */
-				VUT_Error(0, "Log overrun");
-			}
-		} else {
-			VUT_Error(1, "Unexpected: %d", i);
-		}
-	}
-
-	if (q != NULL) {
-		VSLQ_Flush(q, func, fo);
-		VSLQ_Delete(&q);
-		AZ(q);
-	}
-	VSL_Delete(vsl);
-	VSM_Delete(vsm);
-	VUT_Delete(&vut);
+	VUT_Setup();
+	VUT_Main(NULL, NULL);
+	VUT_Fini();
 
 	exit(0);
 }

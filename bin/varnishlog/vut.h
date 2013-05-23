@@ -32,18 +32,35 @@
 #include "vdef.h"
 
 struct VUT {
-	int d_opt;
-	int g_arg;
-	char *r_arg;
+	/* Options */
+	int		a_opt;
+	int		d_opt;
+	int		g_arg;
+	char		*r_arg;
+	int		u_opt;
+	char		*w_arg;
+	const char	*query;
+
+	/* State */
+	struct VSL_data	*vsl;
+	struct VSM_data	*vsm;
+	struct VSLQ	*vslq;
+	FILE		*fo;
 };
+
+extern struct VUT VUT;
 
 void VUT_Error(int status, const char *fmt, ...)
 	__printflike(2, 3);
 
-struct VUT *VUT_New(void);
+int VUT_g_Arg(const char *arg);
 
-void VUT_Delete(struct VUT **pvut);
+int VUT_Arg(int opt, const char *arg);
 
-int VUT_g_Arg(struct VUT *vut, const char *arg);
+void VUT_Setup(void);
 
-int VUT_Arg(struct VUT *vut, int opt, const char *arg);
+void VUT_Init(void);
+
+void VUT_Fini(void);
+
+int VUT_Main(VSLQ_dispatch_f *func, void *priv);
