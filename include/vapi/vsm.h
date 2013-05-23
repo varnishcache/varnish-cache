@@ -96,6 +96,20 @@ int VSM_n_Arg(struct VSM_data *vd, const char *n_arg);
 	 *	 <0 on failure, VSM_Error() returns diagnostic string
 	 */
 
+#define VSM_N_USAGE	"[-N filename]"
+
+int VSM_N_Arg(struct VSM_data *vd, const char *N_arg);
+	/*
+	 * Configure the library to use the specified VSM file name. This
+	 * bypasses abandonment checks and allows looking at stale VSM
+	 * files without a running Varnish instance.
+	 *
+	 * Can also be, and normally is done through VSC_Arg()/VSL_Arg().
+	 *
+	 * Returns:
+	 *	1 on success
+	 */
+
 const char *VSM_Name(const struct VSM_data *vd);
 	/*
 	 * Return the instance name.

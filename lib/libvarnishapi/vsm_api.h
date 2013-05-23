@@ -39,6 +39,7 @@ struct VSM_data {
 
 	char			*n_opt;
 	char			*fname;
+	int			N_opt;
 
 	struct stat		fstat;
 

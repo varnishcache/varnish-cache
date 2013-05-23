@@ -19,7 +19,7 @@ Varnish Cache statistics
 SYNOPSIS
 ========
 
-varnishstat [-1] [-x] [-j] [-f field_list] [-l] [-n varnish_name] [-V] [-w delay]
+varnishstat [-1] [-x] [-j] [-f field_list] [-l] [-n varnish_name] [-N filename] [-V] [-w delay]
 
 DESCRIPTION
 ===========
@@ -37,6 +37,9 @@ The following options are available:
 
 -n          Specifies the name of the varnishd instance to get logs from.  If -n is not specified, the host name
 	    is used.
+
+-N          Specify a the filename of a stale VSM instance. When using this
+            option the abandonment checking is disabled.
 
 -V          Display the version number and exit.
 

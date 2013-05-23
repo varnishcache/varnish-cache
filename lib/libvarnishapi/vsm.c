@@ -141,6 +141,20 @@ VSM_n_Arg(struct VSM_data *vd, const char *opt)
 
 /*--------------------------------------------------------------------*/
 
+int
+VSM_N_Arg(struct VSM_data *vd, const char *opt)
+{
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	AN(opt);
+
+	REPLACE(vd->fname, opt);
+	vd->N_opt = 1;
+	return (1);
+}
+
+/*--------------------------------------------------------------------*/
+
 const char *
 VSM_Name(const struct VSM_data *vd)
 {
@@ -191,7 +205,7 @@ VSM_Open(struct VSM_data *vd)
 		/* Already open */
 		return (0);
 
-	if (!vd->n_opt)
+	if (!vd->n_opt && !vd->N_opt)
 		(void)VSM_n_Arg(vd, "");
 
 	AZ(vd->head);
@@ -224,7 +238,7 @@ VSM_Open(struct VSM_data *vd)
 		return (vsm_diag(vd, "Not a VSM file %s\n", vd->fname));
 	}
 
-	if (slh.alloc_seq == 0) {
+	if (!vd->N_opt && slh.alloc_seq == 0) {
 		AZ(close(vd->vsm_fd));
 		vd->vsm_fd = -1;
 		return (vsm_diag(vd,
@@ -282,6 +296,9 @@ VSM_Abandoned(struct VSM_data *vd)
 	if (vd->head == NULL)
 		/* Not open */
 		return (1);
+	if (vd->N_opt)
+		/* No abandonment check should be done */
+		return (0);
 	if (!vd->head->alloc_seq)
 		/* Flag of abandonment set by mgt */
 		return (1);
@@ -328,11 +345,11 @@ VSM__itern(const struct VSM_data *vd, struct VSM_fantom *vf)
 
 	if (!vd->head)
 		return (0);	/* Not open */
-	if (vd->head->alloc_seq == 0)
+	if (!vd->N_opt && vd->head->alloc_seq == 0)
 		return (0);	/* abandoned VSM */
-	else if (vf->priv != 0) {
+	else if (vf->chunk != NULL) {
 		/* get next chunk */
-		if (vf->priv != vd->head->alloc_seq)
+		if (!vd->N_opt && vf->priv != vd->head->alloc_seq)
 			return (0); /* changes during iteration */
 		if (vf->chunk->len == 0)
 			return (0); /* free'd during iteration */
@@ -376,7 +393,9 @@ VSM_StillValid(const struct VSM_data *vd, struct VSM_fantom *vf)
 	AN(vf);
 	if (!vd->head)
 		return (VSM_invalid);
-	if (!vd->head->alloc_seq)
+	if (!vd->N_opt && !vd->head->alloc_seq)
+		return (VSM_invalid);
+	if (vf->chunk == NULL)
 		return (VSM_invalid);
 	if (vf->priv == vd->head->alloc_seq)
 		return (VSM_valid);
