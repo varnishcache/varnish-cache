@@ -367,6 +367,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_ERROR;
 	} else {
 		AZ(i);
+		req->obj = req->busyobj->fetch_obj;
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		assert(WRW_IsReleased(wrk));
 		req->req_step = R_STP_PREPRESP;

@@ -783,6 +783,7 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	struct vsb *vary = NULL;
 	int varyl = 0;
 	struct busyobj *bo;
+	struct object *obj;
 	int i;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -802,6 +803,7 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	i = cnt_fetch(wrk, req, bo);
 	if (i)
 		return (i);
+	req->objcore = NULL;
 
 	if (bo->fetch_objcore->objhead == NULL) 
 		AN(bo->do_pass);
@@ -881,8 +883,7 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 		} else if (varyl < 0) {
 			/* Vary parse error */
 			AZ(vary);
-			AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
-			req->objcore = NULL;
+			AZ(HSH_Deref(&wrk->stats, bo->fetch_objcore, NULL));
 			bo->fetch_objcore = NULL;
 			VDI_CloseFd(&bo->vbc);
 			return (-1);
@@ -902,8 +903,8 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 
 	AZ(bo->stats);
 	bo->stats = &wrk->stats;
-	req->obj = STV_NewObject(bo, bo->storage_hint, l, nhttp);
-	if (req->obj == NULL) {
+	obj = STV_NewObject(bo, bo->storage_hint, l, nhttp);
+	if (obj == NULL) {
 		/*
 		 * Try to salvage the transaction by allocating a
 		 * shortlived object on Transient storage.
@@ -912,63 +913,63 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 			bo->exp.ttl = cache_param->shortlived;
 		bo->exp.grace = 0.0;
 		bo->exp.keep = 0.0;
-		req->obj = STV_NewObject(bo, TRANSIENT_STORAGE, l, nhttp);
+		obj = STV_NewObject(bo, TRANSIENT_STORAGE, l, nhttp);
 	}
 	bo->stats = NULL;
-	if (req->obj == NULL) {
-		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
-		req->objcore = NULL;
+	if (obj == NULL) {
+		AZ(HSH_Deref(&wrk->stats, bo->fetch_objcore, NULL));
 		bo->fetch_objcore = NULL;
 		VDI_CloseFd(&bo->vbc);
 		return (-1);
 	}
-	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 
-	req->objcore = NULL;
 	bo->storage_hint = NULL;
 
 	AZ(bo->fetch_obj);
-	bo->fetch_obj = req->obj;
+	bo->fetch_obj = obj;
 
 	if (bo->do_gzip || (bo->is_gzip && !bo->do_gunzip))
-		req->obj->gziped = 1;
+		obj->gziped = 1;
 
 	if (vary != NULL) {
-		req->obj->vary = (void *)WS_Copy(req->obj->http->ws,
+		obj->vary = (void *)WS_Copy(obj->http->ws,
 		    VSB_data(vary), varyl);
-		AN(req->obj->vary);
-		VRY_Validate(req->obj->vary);
+		AN(obj->vary);
+		VRY_Validate(obj->vary);
 		VSB_delete(vary);
 	}
 
-	req->obj->vxid = bo->vsl->wid;
-	req->obj->response = req->err_code;
-	WS_Assert(req->obj->ws_o);
+	obj->vxid = bo->vsl->wid;
+	obj->response = req->err_code;
+	WS_Assert(obj->ws_o);
 
 	/* Filter into object */
 	hp = bo->beresp;
-	hp2 = req->obj->http;
+	hp2 = obj->http;
 
 	hp2->logtag = HTTP_Obj;
 	http_FilterResp(hp, hp2, bo->do_pass ? HTTPH_R_PASS : HTTPH_A_INS);
 	http_CopyHome(hp2);
 
 	if (http_GetHdr(hp, H_Last_Modified, &b))
-		req->obj->last_modified = VTIM_parse(b);
+		obj->last_modified = VTIM_parse(b);
 	else
-		req->obj->last_modified = floor(bo->exp.entered);
+		obj->last_modified = floor(bo->exp.entered);
 
 	assert(WRW_IsReleased(wrk));
 
+#if 0
 	/*
 	 * If we can deliver a 304 reply, we don't bother streaming.
 	 * Notice that vcl_deliver{} could still nuke the headers
 	 * that allow the 304, in which case we return 200 non-stream.
 	 */
-	if (req->obj->response == 200 &&
+	if (obj->response == 200 &&
 	    req->http->conds &&
 	    RFC2616_Do_Cond(req))
 		bo->do_stream = 0;
+#endif
 
 	/*
 	 * Ready to fetch the body
@@ -976,23 +977,23 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 
 	assert(bo->refcount == 2);	/* one for each thread */
 
-	if (req->obj->objcore->objhead != NULL) {
-		EXP_Insert(req->obj);
-		AN(req->obj->objcore->ban);
-		AZ(req->obj->ws_o->overflow);
-		HSH_Unbusy(&wrk->stats, req->obj->objcore);
+	if (obj->objcore->objhead != NULL) {
+		EXP_Insert(obj);
+		AN(obj->objcore->ban);
+		AZ(obj->ws_o->overflow);
+		HSH_Unbusy(&wrk->stats, obj->objcore);
 	}
 
 	FetchBody(wrk, bo);
 
 	assert(bo->refcount == 1);
 
-	if (req->obj->objcore->objhead != NULL)
-		HSH_Ref(req->obj->objcore);
+	if (obj->objcore->objhead != NULL)
+		HSH_Ref(obj->objcore);
 
 	if (bo->state == BOS_FAILED) {
 		/* handle early failures */
-		(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
+		(void)HSH_Deref(&wrk->stats, NULL, &obj);
 		return (-1);
 	}
 
