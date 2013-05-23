@@ -502,6 +502,7 @@ struct busyobj {
 	 */
 	unsigned		refcount;
 	double			t_fetch;
+	uint16_t		err_code;
 
 	uint8_t			*vary;
 	unsigned		is_gzip;

@@ -358,6 +358,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 
 	AN(req->busyobj);
 	AN(req->objcore);
+	req->acct_req.fetch++;
 	i = VBF_Fetch(wrk, req);
 	AN(req->busyobj);
 	assert(req->busyobj->refcount > 0);
@@ -367,6 +368,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_ERROR;
 	} else {
 		AZ(i);
+		req->err_code = req->busyobj->err_code;
 		req->obj = req->busyobj->fetch_obj;
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		assert(WRW_IsReleased(wrk));

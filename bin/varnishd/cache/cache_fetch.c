@@ -681,8 +681,6 @@ cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, HTTP_Beresp);
 
-	req->acct_req.fetch++;
-
 	i = FetchHdr(wrk, bo, bo->do_pass ? req : NULL);
 	/*
 	 * If we recycle a backend connection, there is a finite chance
@@ -713,7 +711,7 @@ cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 		 */
 		bo->htc.body_status = RFC2616_Body(bo, &wrk->stats);
 
-		req->err_code = http_GetStatus(bo->beresp);
+		bo->err_code = http_GetStatus(bo->beresp);
 
 		/*
 		 * What does RFC2616 think about TTL ?
@@ -744,7 +742,7 @@ cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 		VDI_CloseFd(&bo->vbc);
 	} else {
 		wrk->handling = VCL_RET_ERROR;
-		req->err_code = 503;
+		bo->err_code = 503;
 	}
 
 	/* Clean up partial fetch */
@@ -754,8 +752,7 @@ cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
 	    wrk->handling == VCL_RET_RESTART ||
 	    wrk->handling == VCL_RET_ERROR) {
 		CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
-		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
-		req->objcore = NULL;
+		AZ(HSH_Deref(&wrk->stats, bo->fetch_objcore, NULL));
 		bo->fetch_objcore = NULL;
 	}
 	assert(bo->refcount == 2);
@@ -796,6 +793,7 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(bo->vcl, VCL_CONF_MAGIC);
 
 	bo->fetch_objcore = req->objcore;
+	req->objcore = NULL;
 
 	vbf_make_bereq(wrk, req, bo);
 	xxxassert (wrk->handling == VCL_RET_FETCH);
@@ -803,7 +801,6 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	i = cnt_fetch(wrk, req, bo);
 	if (i)
 		return (i);
-	req->objcore = NULL;
 
 	if (bo->fetch_objcore->objhead == NULL) 
 		AN(bo->do_pass);
@@ -941,7 +938,7 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	}
 
 	obj->vxid = bo->vsl->wid;
-	obj->response = req->err_code;
+	obj->response = bo->err_code;
 	WS_Assert(obj->ws_o);
 
 	/* Filter into object */
