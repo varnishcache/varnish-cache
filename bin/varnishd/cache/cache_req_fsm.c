@@ -356,6 +356,8 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
+	AN(req->busyobj);
+	AN(req->objcore);
 	i = VBF_Fetch(wrk, req);
 	AN(req->busyobj);
 	assert(req->busyobj->refcount > 0);

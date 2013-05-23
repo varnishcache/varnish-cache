@@ -791,7 +791,7 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 
 	bo = req->busyobj;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	xxxassert(bo->refcount == 2);	// Req might abandon early ?
+	assert(bo->refcount == 2);
 	CHECK_OBJ_NOTNULL(bo->vcl, VCL_CONF_MAGIC);
 
 	bo->fetch_objcore = req->objcore;
@@ -803,13 +803,8 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	if (i)
 		return (i);
 
-	if (bo->fetch_objcore->objhead == NULL) {
+	if (bo->fetch_objcore->objhead == NULL) 
 		AN(bo->do_pass);
-		/* This is a pass from vcl_recv */
-		bo->do_pass = 1;
-		/* VCL may have fiddled this, but that doesn't help */
-		// bo->exp.ttl = -1.;
-	}
 
 	/*
 	 * The VCL variables beresp.do_g[un]zip tells us how we want the
