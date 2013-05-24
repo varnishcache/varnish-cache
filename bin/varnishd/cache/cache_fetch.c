@@ -772,38 +772,49 @@ vbf_proc_resp(struct worker *wrk, struct busyobj *bo)
 
 }
 
-int
-VBF_Fetch(struct worker *wrk, struct req *req)
+struct vbf_secret_handshake {
+	unsigned		magic;
+#define VBF_SECRET_HANDSHAKE_MAGIC	0x98c95172
+	struct busyobj		*bo;
+	struct req		**reqp;
+};
+
+static void
+vbf_fetch_thread(struct worker *wrk, void *priv)
 {
+	struct vbf_secret_handshake *vsh;
+	struct busyobj *bo;
+	struct req *req;
+	int i;
 	struct http *hp, *hp2;
 	char *b;
 	uint16_t nhttp;
 	unsigned l;
 	struct vsb *vary = NULL;
 	int varyl = 0;
-	struct busyobj *bo;
 	struct object *obj;
-	int i;
+
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CAST_OBJ_NOTNULL(vsh, priv, VBF_SECRET_HANDSHAKE_MAGIC);
+	AN(vsh->reqp);
+	req = *vsh->reqp;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
-	bo = req->busyobj;
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	assert(bo->refcount == 2);
-	CHECK_OBJ_NOTNULL(bo->vcl, VCL_CONF_MAGIC);
-
-	bo->fetch_objcore = req->objcore;
-	req->objcore = NULL;
+	bo = vsh->bo;
 
 	vbf_make_bereq(wrk, req, bo);
 	xxxassert (wrk->handling == VCL_RET_FETCH);
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, HTTP_Beresp);
 
-	if (!bo->do_pass)
+	if (!bo->do_pass) {
+		AN(req);
+		AN(vsh);
 		req = NULL;
+		*vsh->reqp = NULL;
+		vsh = NULL;
+	}
 
 	i = vbf_fetch_hdr(wrk, bo, req);
 	/*
@@ -816,9 +827,15 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 		i = vbf_fetch_hdr(wrk, bo, req);
 	}
 
-	if (bo->do_pass)
+	if (bo->do_pass) {
+		AN(req);
+		AN(vsh);
 		req = NULL;
+		*vsh->reqp = NULL;
+		vsh = NULL;
+	}
 	AZ(req);
+	AZ(vsh);
 
 	if (i) {
 		wrk->handling = VCL_RET_ERROR;
@@ -843,11 +860,12 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 		assert(bo->refcount == 2);
 		bo->storage_hint = NULL;
 		bo->director = NULL;
-		VBO_DerefBusyObj(wrk, &bo);
 
 		switch (wrk->handling) {
 		case VCL_RET_ERROR:
-			return (-1);
+			bo->state = BOS_FAILED;
+			VBO_DerefBusyObj(wrk, &bo);
+			return;
 		case VCL_RET_RESTART:
 			INCOMPL();
 		default:
@@ -878,7 +896,8 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 			AZ(HSH_Deref(&wrk->stats, bo->fetch_objcore, NULL));
 			bo->fetch_objcore = NULL;
 			VDI_CloseFd(&bo->vbc);
-			return (-1);
+			bo->state = BOS_FAILED;
+			return;
 		} else
 			/* No vary */
 			AZ(vary);
@@ -912,7 +931,8 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 		AZ(HSH_Deref(&wrk->stats, bo->fetch_objcore, NULL));
 		bo->fetch_objcore = NULL;
 		VDI_CloseFd(&bo->vbc);
-		return (-1);
+		bo->state = BOS_FAILED;
+		return;
 	}
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 
@@ -974,11 +994,43 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	if (bo->state == BOS_FAILED) {
 		/* handle early failures */
 		(void)HSH_Deref(&wrk->stats, NULL, &obj);
-		return (-1);
+		return;
 	}
 
 	assert(WRW_IsReleased(wrk));
-	return (0);
+}
+
+void
+VBF_Fetch(struct worker *wrk, struct req *req)
+{
+	struct vbf_secret_handshake vsh;
+	struct busyobj *bo;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+
+	bo = req->busyobj;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	assert(bo->refcount == 2);
+	CHECK_OBJ_NOTNULL(bo->vcl, VCL_CONF_MAGIC);
+
+	bo->fetch_objcore = req->objcore;
+	req->objcore = NULL;
+
+	vsh.magic = VBF_SECRET_HANDSHAKE_MAGIC;
+	vsh.bo = bo;
+	vsh.reqp = &req;
+
+	bo->fetch_task.priv = &vsh;
+	bo->fetch_task.func = vbf_fetch_thread;
+
+	// if (Pool_Task(wrk->pool, &bo->fetch_task, POOL_QUEUE_FRONT))
+		vbf_fetch_thread(wrk, &vsh);
+	while (req != NULL) {
+		printf("XXX\n");
+		(void)usleep(100000);
+	}
 }
 
 /*--------------------------------------------------------------------

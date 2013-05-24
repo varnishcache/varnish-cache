@@ -351,7 +351,6 @@ DOT fetchbody:out -> prepresp [style=bold,color=blue]
 static enum req_fsm_nxt
 cnt_fetch(struct worker *wrk, struct req *req)
 {
-	int i;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -359,17 +358,21 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	AN(req->busyobj);
 	AN(req->objcore);
 	req->acct_req.fetch++;
-	i = VBF_Fetch(wrk, req);
+	VBF_Fetch(wrk, req);
 	AN(req->busyobj);
 	AZ(req->objcore);
 	assert(req->busyobj->refcount > 0);
 	(void)HTTP1_DiscardReqBody(req);
-	if (i < 0) {
+	while (req->busyobj->state < BOS_FAILED) {
+		printf("YYY\n");
+		(void)usleep(100000);
+	}
+	if (req->busyobj->state == BOS_FAILED) {
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		req->err_code = 503;
 		req->req_step = R_STP_ERROR;
 	} else {
-		AZ(i);
+		assert (req->busyobj->state == BOS_FINISHED);
 		req->err_code = req->busyobj->err_code;
 		req->obj = req->busyobj->fetch_obj;
 		VBO_DerefBusyObj(wrk, &req->busyobj);
