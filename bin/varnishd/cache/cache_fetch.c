@@ -802,6 +802,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	bo = vsh->bo;
+	THR_SetBusyobj(bo);
 
 	vbf_make_bereq(wrk, req, bo);
 	xxxassert (wrk->handling == VCL_RET_FETCH);
@@ -865,6 +866,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 		case VCL_RET_ERROR:
 			bo->state = BOS_FAILED;
 			VBO_DerefBusyObj(wrk, &bo);
+			THR_SetBusyobj(NULL);
 			return;
 		case VCL_RET_RESTART:
 			INCOMPL();
@@ -897,6 +899,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 			bo->fetch_objcore = NULL;
 			VDI_CloseFd(&bo->vbc);
 			bo->state = BOS_FAILED;
+			THR_SetBusyobj(NULL);
 			return;
 		} else
 			/* No vary */
@@ -932,6 +935,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 		bo->fetch_objcore = NULL;
 		VDI_CloseFd(&bo->vbc);
 		bo->state = BOS_FAILED;
+		THR_SetBusyobj(NULL);
 		return;
 	}
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
@@ -994,10 +998,12 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	if (bo->state == BOS_FAILED) {
 		/* handle early failures */
 		(void)HSH_Deref(&wrk->stats, NULL, &obj);
+		THR_SetBusyobj(NULL);
 		return;
 	}
 
 	assert(WRW_IsReleased(wrk));
+	THR_SetBusyobj(NULL);
 }
 
 void
