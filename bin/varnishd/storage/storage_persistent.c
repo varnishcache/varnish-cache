@@ -506,7 +506,7 @@ smp_allocx(struct stevedore *st, size_t min_size, size_t max_size,
  */
 
 static struct object *
-smp_allocobj(struct stevedore *stv, struct busyobj *bo, 
+smp_allocobj(struct stevedore *stv, struct busyobj *bo,
     unsigned ltot, const struct stv_objsecrets *soc)
 {
 	struct object *o;

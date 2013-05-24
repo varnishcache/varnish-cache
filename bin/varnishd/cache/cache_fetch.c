@@ -772,65 +772,6 @@ vbf_proc_resp(struct worker *wrk, struct busyobj *bo)
 
 }
 
-/*--------------------------------------------------------------------
- */
-
-static int
-cnt_fetch(struct worker *wrk, struct req *req, struct busyobj *bo)
-{
-	int i;
-
-	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, HTTP_Beresp);
-
-	i = FetchHdr(wrk, bo, req);
-	/*
-	 * If we recycle a backend connection, there is a finite chance
-	 * that the backend closed it before we get a request to it.
-	 * Do a single retry in that case.
-	 */
-	if (i == 1) {
-		VSC_C_main->backend_retry++;
-		i = FetchHdr(wrk, bo, req);
-	}
-
-	if (!i) {
-		vbf_proc_resp(wrk, bo);
-
-		if (wrk->handling == VCL_RET_DELIVER)
-			return (0);
-
-		/* We are not going to fetch the body, Close the connection */
-		VDI_CloseFd(&bo->vbc);
-	} else {
-		wrk->handling = VCL_RET_ERROR;
-		bo->err_code = 503;
-	}
-
-	/* Clean up partial fetch */
-	AZ(bo->vbc);
-
-	if (bo->fetch_objcore->objhead != NULL ||
-	    wrk->handling == VCL_RET_RESTART ||
-	    wrk->handling == VCL_RET_ERROR) {
-		CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
-		AZ(HSH_Deref(&wrk->stats, bo->fetch_objcore, NULL));
-		bo->fetch_objcore = NULL;
-	}
-	assert(bo->refcount == 2);
-	bo->storage_hint = NULL;
-	bo->director = NULL;
-	VBO_DerefBusyObj(wrk, &bo);
-
-	switch (wrk->handling) {
-	case VCL_RET_ERROR:
-		return (-1);
-	case VCL_RET_RESTART:
-		INCOMPL();
-	default:
-		WRONG("Illegal action in vcl_fetch{}");
-	}
-}
-
 int
 VBF_Fetch(struct worker *wrk, struct req *req)
 {
@@ -859,12 +800,58 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	vbf_make_bereq(wrk, req, bo);
 	xxxassert (wrk->handling == VCL_RET_FETCH);
 
-	i = cnt_fetch(wrk, bo->do_pass ? req : NULL, bo);
+	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, HTTP_Beresp);
 
-	if (i)
-		return (i);
+	if (!bo->do_pass)
+		req = NULL;
 
-	if (bo->fetch_objcore->objhead == NULL) 
+	i = FetchHdr(wrk, bo, req);
+	/*
+	 * If we recycle a backend connection, there is a finite chance
+	 * that the backend closed it before we get a request to it.
+	 * Do a single retry in that case.
+	 */
+	if (i == 1) {
+		VSC_C_main->backend_retry++;
+		i = FetchHdr(wrk, bo, req);
+	}
+
+	if (i) {
+		wrk->handling = VCL_RET_ERROR;
+		bo->err_code = 503;
+	} else {
+		vbf_proc_resp(wrk, bo);
+		if (wrk->handling != VCL_RET_DELIVER)
+			VDI_CloseFd(&bo->vbc);
+	}
+
+	if (wrk->handling != VCL_RET_DELIVER) {
+		/* Clean up partial fetch */
+		AZ(bo->vbc);
+
+		if (bo->fetch_objcore->objhead != NULL ||
+		    wrk->handling == VCL_RET_RESTART ||
+		    wrk->handling == VCL_RET_ERROR) {
+			CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
+			AZ(HSH_Deref(&wrk->stats, bo->fetch_objcore, NULL));
+			bo->fetch_objcore = NULL;
+		}
+		assert(bo->refcount == 2);
+		bo->storage_hint = NULL;
+		bo->director = NULL;
+		VBO_DerefBusyObj(wrk, &bo);
+
+		switch (wrk->handling) {
+		case VCL_RET_ERROR:
+			return (-1);
+		case VCL_RET_RESTART:
+			INCOMPL();
+		default:
+			WRONG("Illegal action in vcl_fetch{}");
+		}
+	}
+
+	if (bo->fetch_objcore->objhead == NULL)
 		AN(bo->do_pass);
 
 	/* No reason to try streaming a non-existing body */
