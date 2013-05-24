@@ -1,0 +1,15 @@
+varnishtest "Error on multiple Host headers"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+} -start
+
+client c1 {
+	txreq -hdr "Host: foo" -hdr "Host: bar"
+} -run
+
+varnish v1 -expect client_req_400 == 1
