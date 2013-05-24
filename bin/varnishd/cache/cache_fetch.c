@@ -1032,7 +1032,7 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	bo->fetch_task.priv = &vsh;
 	bo->fetch_task.func = vbf_fetch_thread;
 
-	if (Pool_Task(wrk->pool, &bo->fetch_task, POOL_QUEUE_FRONT))
+	// if (Pool_Task(wrk->pool, &bo->fetch_task, POOL_QUEUE_FRONT))
 		vbf_fetch_thread(wrk, &vsh);
 	while (req != NULL) {
 		printf("XXX\n");
