@@ -3,7 +3,6 @@
  * Copyright (c) 2006-2013 Varnish Software AS
  * All rights reserved.
  *
- * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
  * Author: Martin Blix Grydeland <martin@varnish-software.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,67 +25,57 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * Log tailer for Varnish
  */
 
-#include "config.h"
+/*
+ * Legend: VOPT(o,s,r,d,l) where
+ *   o: Option string part
+ *   s: Synopsis
+ *   d: Description
+ *   l: Long description
+ */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <errno.h>
-#include <stdarg.h>
-#include <stdint.h>
+#ifdef VOPT_OPTSTRING
+#define VOPT(o,s,d,l) o
+const char vopt_optstring[] =
+#include VOPT_INC
+    ;
+#undef VOPT
+#endif
 
-#include "vapi/vsm.h"
-#include "vapi/vsl.h"
-#include "vas.h"
-#include "vcs.h"
-#include "vpf.h"
-#include "vsb.h"
-#include "vtim.h"
-#include "vut.h"
+#ifdef VOPT_SYNOPSIS
+#define VOPT(o,s,d,l) " " s
+const char vopt_synopsis[] =
+#include VOPT_INC
+    ;
+#undef VOPT
+#endif
 
-#define VOPT_OPTSTRING
-#define VOPT_SYNOPSIS
-#define VOPT_USAGE
-#define VOPT_INC "varnishlog_options.h"
-#include "vapi/voptget.h"
+#ifdef VOPT_USAGE
+#define VOPT(o,s,d,l) s, d,
+const char *vopt_usage[] = {
+#include VOPT_INC
+	NULL, NULL,
+};
+#undef VOPT
+#endif
 
-static void
-usage(void)
-{
-	const char **opt;
-	fprintf(stderr, "Usage: varnishlog <options> [query expression]\n\n");
-	fprintf(stderr, "Options:\n");
-	for (opt = vopt_usage; *opt != NULL; opt += 2)
-		fprintf(stderr, "  %-25s %s\n", *opt, *(opt + 1));
-	exit(1);
-}
+#ifndef VOPTGET_H
+#define VOPTGET_H
 
-int
-main(int argc, char * const *argv)
-{
-	char opt;
+struct vopt_full {
+	const char *option;
+	const char *synopsis;
+	const char *desc;
+	const char *ldesc;
+};
 
-	VUT_Init();
+#endif
 
-	while ((opt = getopt(argc, argv, vopt_optstring)) != -1) {
-		switch (opt) {
-		default:
-			if (!VUT_Arg(opt, optarg))
-				usage();
-		}
-	}
-
-	if (optind < argc)
-		VUT.query = argv[optind];
-
-	VUT_Setup();
-	VUT_Main(NULL, NULL);
-	VUT_Fini();
-
-	exit(0);
-}
+#ifdef VOPT_FULL
+#define VOPT(o,s,d,l) { o,s,d,l },
+const struct vopt_full vopt_full[] = {
+#include VOPT_INC
+};
+#undef VOPT
+#endif

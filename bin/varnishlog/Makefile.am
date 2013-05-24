@@ -8,6 +8,7 @@ dist_man_MANS = varnishlog.1
 
 varnishlog_SOURCES = \
 	varnishlog.c \
+	varnishlog_options.h \
 	vut.c \
 	vut.h \
 	$(top_builddir)/lib/libvarnish/vas.c \

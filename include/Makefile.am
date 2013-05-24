@@ -31,6 +31,8 @@ nobase_pkginclude_HEADERS = \
 	vapi/vsc_int.h \
 	vapi/vsl.h \
 	vapi/vsl_int.h \
+	vapi/voptget.h \
+	vapi/vapi_options.h \
 	vcli.h
 
 # Private headers
