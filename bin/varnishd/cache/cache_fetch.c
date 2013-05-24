@@ -337,13 +337,14 @@ vbf_fetch_eof(struct busyobj *bo, struct http_conn *htc)
 static int __match_proto__(req_body_iter_f)
 vbf_iter_req_body(struct req *req, void *priv, void *ptr, size_t l)
 {
+	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	(void)priv;
+	CAST_OBJ_NOTNULL(wrk, priv, WORKER_MAGIC);
 
 	if (l > 0) {
-		(void)WRW_Write(req->wrk, ptr, l);
-		if (WRW_Flush(req->wrk))
+		(void)WRW_Write(wrk, ptr, l);
+		if (WRW_Flush(wrk))
 			return (-1);
 	}
 	return (0);
@@ -403,7 +404,7 @@ vbf_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	i = 0;
 
 	if (req != NULL) {
-		i = HTTP1_IterateReqBody(req, vbf_iter_req_body, NULL);
+		i = HTTP1_IterateReqBody(req, vbf_iter_req_body, wrk);
 		if (req->req_body_status == REQ_BODY_DONE)
 			retry = -1;
 	}
@@ -1031,7 +1032,7 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	bo->fetch_task.priv = &vsh;
 	bo->fetch_task.func = vbf_fetch_thread;
 
-	// if (Pool_Task(wrk->pool, &bo->fetch_task, POOL_QUEUE_FRONT))
+	if (Pool_Task(wrk->pool, &bo->fetch_task, POOL_QUEUE_FRONT))
 		vbf_fetch_thread(wrk, &vsh);
 	while (req != NULL) {
 		printf("XXX\n");
