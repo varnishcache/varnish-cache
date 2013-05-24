@@ -28,9 +28,7 @@ OPTIONS
 
 The following options are available:
 
--a
-
-	When writing to a file, append to it rather than overwrite it.
+.. include:: ../../../bin/varnishlog/varnishlog_options.rst
 
 -b
 
@@ -58,24 +56,6 @@ The following options are available:
 
 	XXX: Not yet implemented
 
--d
-
-	Process old log entries on startup. Nomally, varnishlog will
-	only process entries which are written to the log after it
-	starts.
-
--g {session|request|vxid|raw}
-
-	The grouping of the log records. The default is to group by
-	request.
-
--i tag
-
-	Output only this tag. Multiple -i options may be given.
-
-	If an -i option is the first of any -ix options, all tags are
-	disabled for output before -ix processing.
-
 -I [tag:]regex
 
 	Output only records matching this regular expression. If tag
@@ -91,21 +71,11 @@ The following options are available:
 
 	XXX: Not yet implemented
 
--n
-
-	Specifies the name of the varnishd instance to get logs
-	from. If -n is not specified, the host name is used.
-
-
 -P file
 
 	Write the process' PID to the specified file.
 
 	XXX: Not yet implemented
-
--r file
-
-	Read log entries from file instaed of shared memory
 
 -s num
 
@@ -120,35 +90,12 @@ The following options are available:
 
 	XXX: Not yet implemented
 
--v
-
-	Use verbose output on set output, giving the VXID on every log
-	line. Without this option, the VXID will only be given on the
-	header of that transaction.
-
 -V
 
 	Display the version number and exit.
 
 	XXX: Not yet implemented
 
--w file
-
-	Write log entries to file instead of displaying them.  The
-   	file will be overwritten unless the -a option was
-   	specified. If varnishlog receives a SIGHUP while writing to a
-   	file, it will reopen the file, allowing the old one to be
-   	rotated away.
-
-	XXX: Log rotation not yet implemented
-
--x tag
-
-	Exclude log records of this tag. Multiple -x options may be
-	given.
-
-	If an -x option is the first of any -ix options, all tags are
-	enabled for output before -ix processing.
 
 -X [tag:]regex
 
