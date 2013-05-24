@@ -598,7 +598,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 	}
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	/* One ref for req, one for FetchBody */
+	/* One ref for req, one for vbf_fetch_body */
 	bo->refcount = 2;
 
 	AN (req->objcore);
