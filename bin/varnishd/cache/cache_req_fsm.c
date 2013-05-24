@@ -361,6 +361,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	req->acct_req.fetch++;
 	i = VBF_Fetch(wrk, req);
 	AN(req->busyobj);
+	AZ(req->objcore);
 	assert(req->busyobj->refcount > 0);
 	(void)HTTP1_DiscardReqBody(req);
 	if (i < 0) {

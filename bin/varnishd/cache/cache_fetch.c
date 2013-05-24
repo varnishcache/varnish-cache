@@ -816,6 +816,10 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 		i = vbf_fetch_hdr(wrk, bo, req);
 	}
 
+	if (bo->do_pass)
+		req = NULL;
+	AZ(req);
+
 	if (i) {
 		wrk->handling = VCL_RET_ERROR;
 		bo->err_code = 503;
