@@ -9,8 +9,7 @@ dist_man_MANS = varnishlog.1
 varnishlog_SOURCES = \
 	varnishlog.c \
 	varnishlog_options.h \
-	vut.c \
-	vut.h \
+	$(top_builddir)/lib/libvarnishtools/vut.c \
 	$(top_builddir)/lib/libvarnish/vas.c \
 	$(top_builddir)/lib/libvarnish/flopen.c \
 	$(top_builddir)/lib/libvarnish/version.c \
@@ -26,7 +25,7 @@ varnishlog_LDADD = \
 noinst_PROGRAMS = varnishlog_opt2rst
 varnishlog_opt2rst_CFLAGS = -DOPT2RST_INC="varnishlog_options.h"
 varnishlog_opt2rst_SOURCES = \
-	opt2rst.c
+	$(top_builddir)/lib/libvarnishtools/opt2rst.c
 
 BUILT_SOURCES = varnishlog_options.rst
 

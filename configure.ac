@@ -588,6 +588,7 @@ AC_CONFIG_FILES([
     lib/Makefile
     lib/libvarnish/Makefile
     lib/libvarnishapi/Makefile
+    lib/libvarnishtools/Makefile
     lib/libvarnishcompat/Makefile
     lib/libvcl/Makefile
     lib/libvgz/Makefile

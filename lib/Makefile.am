@@ -4,6 +4,7 @@ SUBDIRS = \
 	libvarnishcompat \
 	libvarnish \
 	libvarnishapi \
+	libvarnishtools \
 	libvcl \
 	libvgz \
 	libvmod_debug \
@@ -14,6 +15,7 @@ DIST_SUBDIRS = 	\
 	libvarnishcompat \
 	libvarnish \
 	libvarnishapi \
+	libvarnishtools \
 	libvcl \
 	libvgz \
 	libvmod_debug \
