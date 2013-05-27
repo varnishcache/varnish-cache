@@ -49,6 +49,8 @@ struct VUT {
 	struct VSLQ	*vslq;
 	FILE		*fo;
 	struct vpf_fh	*pfh;
+	int		sighup;
+	int		sigint;
 };
 
 extern struct VUT VUT;

@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <signal.h>
 
 #include "compat/daemon.h"
 #include "vpf.h"
@@ -59,6 +60,20 @@ vut_vpf_remove(void)
 		VPF_Remove(VUT.pfh);
 		VUT.pfh = NULL;
 	}
+}
+
+static void
+vut_sighup(int sig)
+{
+	(void)sig;
+	VUT.sighup = 1;
+}
+
+static void
+vut_sigint(int sig)
+{
+	(void)sig;
+	VUT.sigint = 1;
 }
 
 void
@@ -186,6 +201,11 @@ VUT_Setup(void)
 		VUT_Error(1, "Query parse error (%s)", VSL_Error(VUT.vsl));
 	AZ(c);
 
+	/* Signal handlers */
+	(void)signal(SIGHUP, vut_sighup);
+	(void)signal(SIGINT, vut_sigint);
+	(void)signal(SIGTERM, vut_sigint);
+
 	/* Open PID file */
 	if (VUT.P_arg) {
 		AZ(VUT.pfh);
@@ -238,8 +258,8 @@ VUT_Main(VSLQ_dispatch_f *func, void *priv)
 		priv = VUT.fo;
 	}
 
-	while (1) {
-		while (VUT.vslq == NULL) {
+	while (!VUT.sigint) {
+		if (VUT.vslq == NULL) {
 			AZ(VUT.r_arg);
 			AN(VUT.vsm);
 			VTIM_sleep(0.1);
