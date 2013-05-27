@@ -259,6 +259,18 @@ VUT_Main(VSLQ_dispatch_f *func, void *priv)
 	}
 
 	while (!VUT.sigint) {
+		if (VUT.w_arg && VUT.sighup) {
+			/* Rotate log */
+			VUT.sighup = 0;
+			AN(VUT.fo);
+			fclose(VUT.fo);
+			VUT.fo = VSL_WriteOpen(VUT.vsl, VUT.w_arg, 0,
+			    VUT.u_opt);
+			if (VUT.fo == NULL)
+				VUT_Error(1, "Can't open output file (%s)",
+				    VSL_Error(VUT.vsl));
+		}
+
 		if (VUT.vslq == NULL) {
 			AZ(VUT.r_arg);
 			AN(VUT.vsm);

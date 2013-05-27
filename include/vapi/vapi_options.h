@@ -92,9 +92,7 @@
 	    " them. The file will be overwritten unless the -a option"	\
 	    " was specified. If the application receives a SIGHUP"	\
 	    " while writing to a file, it will reopen the file"		\
-	    " allowing the old one to be rotated away.\n"		\
-	    "\n"							\
-	    "XXX: Log rotation not yet implemented"			\
+	    " allowing the old one to be rotated away."			\
 	)
 
 #define VSL_OPT_x							\
