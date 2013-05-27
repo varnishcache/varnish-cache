@@ -29,6 +29,8 @@
  * Common functions for the utilities
  */
 
+#include "config.h"
+
 #include <stdint.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -38,6 +40,7 @@
 #include <string.h>
 
 #include "compat/daemon.h"
+#include "vpf.h"
 #include "vapi/vsm.h"
 #include "vapi/vsc.h"
 #include "vapi/vsl.h"
@@ -48,6 +51,15 @@
 #include "vut.h"
 
 struct VUT VUT;
+
+static void
+vut_vpf_remove(void)
+{
+	if (VUT.pfh) {
+		VPF_Remove(VUT.pfh);
+		VUT.pfh = NULL;
+	}
+}
 
 void
 VUT_Error(int status, const char *fmt, ...)
@@ -84,6 +96,17 @@ VUT_Arg(int opt, const char *arg)
 		/* Binary file append */
 		VUT.a_opt = 1;
 		return (1);
+	case 'd':
+		/* Head */
+		VUT.d_opt = 1;
+		return (1);
+	case 'D':
+		/* Daemon mode */
+		VUT.D_opt = 1;
+		return (1);
+	case 'g':
+		/* Grouping */
+		return (VUT_g_Arg(arg));
 	case 'n':
 		/* Varnish instance */
 		if (VUT.vsm == NULL)
@@ -92,13 +115,10 @@ VUT_Arg(int opt, const char *arg)
 		if (VSM_n_Arg(VUT.vsm, arg) <= 0)
 			VUT_Error(1, "%s", VSM_Error(VUT.vsm));
 		return (1);
-	case 'd':
-		/* Head */
-		VUT.d_opt = 1;
+	case 'P':
+		/* PID file */
+		REPLACE(VUT.P_arg, arg);
 		return (1);
-	case 'g':
-		/* Grouping */
-		return (VUT_g_Arg(arg));
 	case 'r':
 		/* Binary file input */
 		REPLACE(VUT.r_arg, arg);
@@ -165,12 +185,34 @@ VUT_Setup(void)
 	if (VUT.vslq == NULL)
 		VUT_Error(1, "Query parse error (%s)", VSL_Error(VUT.vsl));
 	AZ(c);
+
+	/* Open PID file */
+	if (VUT.P_arg) {
+		AZ(VUT.pfh);
+		VUT.pfh = VPF_Open(VUT.P_arg, 0644, NULL);
+		if (VUT.pfh == NULL)
+			VUT_Error(1, "%s: %s", VUT.P_arg, strerror(errno));
+	}
+
+	/* Daemon mode */
+	if (VUT.D_opt && varnish_daemon(0, 0) == -1)
+		VUT_Error(1, "Daemon mode: %s", strerror(errno));
+
+	/* Write PID and setup exit handler */
+	if (VUT.pfh != NULL) {
+		VPF_Write(VUT.pfh);
+		AZ(atexit(&vut_vpf_remove));
+	}
 }
 
 void
 VUT_Fini(void)
 {
 	free(VUT.r_arg);
+	free(VUT.P_arg);
+
+	vut_vpf_remove();
+	AZ(VUT.pfh);
 
 	if (VUT.vslq)
 		VSLQ_Delete(&VUT.vslq);

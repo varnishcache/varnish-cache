@@ -35,7 +35,9 @@ struct VUT {
 	/* Options */
 	int		a_opt;
 	int		d_opt;
+	int		D_opt;
 	int		g_arg;
+	char		*P_arg;
 	char		*r_arg;
 	int		u_opt;
 	char		*w_arg;
@@ -46,6 +48,7 @@ struct VUT {
 	struct VSM_data	*vsm;
 	struct VSLQ	*vslq;
 	FILE		*fo;
+	struct vpf_fh	*pfh;
 };
 
 extern struct VUT VUT;

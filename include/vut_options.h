@@ -27,19 +27,14 @@
  * SUCH DAMAGE.
  */
 
-#include "vapi/vapi_options.h"
-#include "vut_options.h"
+/* VUT options */
 
-VSL_OPT_a
-VSL_OPT_d
-VUT_OPT_D
-VSL_OPT_g
-VSL_OPT_i
-VSM_OPT_n
-VSM_OPT_N
-VUT_OPT_P
-VSL_OPT_r
-VSL_OPT_u
-VSL_OPT_v
-VSL_OPT_w
-VSL_OPT_x
+#define VUT_OPT_D							\
+	VOPT("D", "[-D]", "Daemonize",					\
+	    "Daemonize."						\
+	)
+
+#define VUT_OPT_P							\
+	VOPT("P:", "[-P file]", "PID file",				\
+		"Write the process' PID to the specified file."		\
+	)
