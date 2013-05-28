@@ -49,12 +49,6 @@ The following options are available:
 
 	XXX: Not yet implemented
 
--D
-
-	Daemonize.
-
-	XXX: Not yet implemented
-
 -I [tag:]regex
 
 	Output only records matching this regular expression. If tag
@@ -67,12 +61,6 @@ The following options are available:
 
 	Only show the first num log transactions (or log records
 	in --raw mode)
-
-	XXX: Not yet implemented
-
--P file
-
-	Write the process' PID to the specified file.
 
 	XXX: Not yet implemented
 
