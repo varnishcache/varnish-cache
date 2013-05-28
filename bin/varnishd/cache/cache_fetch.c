@@ -621,7 +621,6 @@ vbf_fetch_body(struct worker *wrk, void *priv)
 	if (obj->objcore->objhead != NULL)
 		HSH_Complete(obj->objcore);
 	bo->stats = NULL;
-	VBO_DerefBusyObj(wrk, &bo);
 }
 
 /*--------------------------------------------------------------------
@@ -711,8 +710,7 @@ vbf_proc_resp(struct worker *wrk, struct busyobj *bo)
 
 	// Don't let VCL reset do_pass
 	i = bo->do_pass;
-	VCL_backend_response_method(bo->vcl, wrk, NULL, bo,
-	    bo->beresp->ws);
+	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, bo->beresp->ws);
 	bo->do_pass |= i;
 
 	if (bo->do_pass)
@@ -866,7 +864,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 		switch (wrk->handling) {
 		case VCL_RET_ERROR:
 			bo->state = BOS_FAILED;
-			VBO_DerefBusyObj(wrk, &bo);
+			VBO_DerefBusyObj(wrk, &bo);	// XXX ?
 			THR_SetBusyobj(NULL);
 			return;
 		case VCL_RET_RESTART:
@@ -900,6 +898,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 			bo->fetch_objcore = NULL;
 			VDI_CloseFd(&bo->vbc);
 			bo->state = BOS_FAILED;
+VSL_Flush(bo->vsl, 0);
 			THR_SetBusyobj(NULL);
 			return;
 		} else
@@ -936,6 +935,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 		bo->fetch_objcore = NULL;
 		VDI_CloseFd(&bo->vbc);
 		bo->state = BOS_FAILED;
+		VBO_DerefBusyObj(wrk, &bo);	// XXX ?
 		THR_SetBusyobj(NULL);
 		return;
 	}
@@ -980,7 +980,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	 * Ready to fetch the body
 	 */
 
-	assert(bo->refcount == 2);	/* one for each thread */
+	assert(bo->refcount >= 2);	/* one for each thread */
 
 	if (obj->objcore->objhead != NULL) {
 		EXP_Insert(obj);
@@ -991,18 +991,20 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	vbf_fetch_body(wrk, bo);
 
-	assert(bo->refcount == 1);
+	assert(bo->refcount >= 1);
 
 	if (obj->objcore->objhead != NULL)
 		HSH_Ref(obj->objcore);
 
 	if (bo->state == BOS_FAILED) {
 		/* handle early failures */
+		VBO_DerefBusyObj(wrk, &bo);	// XXX ?
 		(void)HSH_Deref(&wrk->stats, NULL, &obj);
 		THR_SetBusyobj(NULL);
 		return;
 	}
 
+	VBO_DerefBusyObj(wrk, &bo);	// XXX ?
 	assert(WRW_IsReleased(wrk));
 	THR_SetBusyobj(NULL);
 }
