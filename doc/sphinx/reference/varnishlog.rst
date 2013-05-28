@@ -71,12 +71,6 @@ The following options are available:
 
 	XXX: Not yet implemented
 
--u
-
-	Unbuffered output.
-
-	XXX: Not yet implemented
-
 -V
 
 	Display the version number and exit.
