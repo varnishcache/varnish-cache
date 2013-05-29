@@ -25,68 +25,11 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * Option definitions for varnishlog
  */
 
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
+#define VOPT_DEFINITION
+#define VOPT_INC "varnishlog_options.h"
 #include "vapi/voptget.h"
-
-static void
-print_nobrackets(const char *s)
-{
-	for (; *s; s++) {
-		if (strchr("[]", *s))
-			continue;
-		printf("%c", *s);
-	}
-}
-
-static void
-print_tabbed(const char *string, int tabs)
-{
-	int i;
-	const char *c;
-
-	for (c = string; *c; c++) {
-		if (c == string || *(c - 1) == '\n')
-			for (i = 0; i < tabs; i++)
-				printf("\t");
-		printf("%c", *c);
-	}
-}
-
-static void
-print_opt(const struct vopt_list *opt)
-{
-	print_nobrackets(opt->synopsis);
-	printf("\n\n");
-	print_tabbed(opt->ldesc, 1);
-	printf("\n\n");
-}
-
-static void
-usage(void)
-{
-	fprintf(stderr, "Usage: opt2rst {synopsis|options}\n");
-	exit(1);
-}
-
-int
-main(int argc, char * const *argv)
-{
-	int i;
-
-	if (argc != 2)
-		usage();
-	if (!strcmp(argv[1], "synopsis"))
-		printf(".. |synopsis| replace:: %s\n", vopt_synopsis);
-	else if (!strcmp(argv[1], "options"))
-		for (i = 0; i < vopt_list_n; i++)
-			print_opt(&vopt_list[i]);
-	else
-		usage();
-
-	return (0);
-}

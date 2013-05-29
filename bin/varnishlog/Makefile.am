@@ -9,6 +9,7 @@ dist_man_MANS = varnishlog.1
 varnishlog_SOURCES = \
 	varnishlog.c \
 	varnishlog_options.h \
+	varnishlog_options.c \
 	$(top_builddir)/lib/libvarnishtools/vut.c \
 	$(top_builddir)/lib/libvarnish/vas.c \
 	$(top_builddir)/lib/libvarnish/flopen.c \
@@ -23,20 +24,23 @@ varnishlog_LDADD = \
 	${RT_LIBS} ${LIBM} ${PTHREAD_LIBS}
 
 noinst_PROGRAMS = varnishlog_opt2rst
-varnishlog_opt2rst_CFLAGS = -DOPT2RST_INC="varnishlog_options.h"
 varnishlog_opt2rst_SOURCES = \
 	varnishlog_options.h \
+	varnishlog_options.c \
 	$(top_builddir)/lib/libvarnishtools/opt2rst.c
 
 BUILT_SOURCES = varnishlog_options.rst varnishlog_synopsis.rst
-
-EXTRA_DIST = varnishlog_options.rst varnishlog_synopsis.rst
+EXTRA_DIST = $(BUILT_SOURCES)
 MAINTAINERCLEANFILES = $(EXTRA_DIST)
 
-varnishlog_options.rst: varnishlog_options.h | varnishlog_opt2rst
+varnishlog_options.rst:
 	./varnishlog_opt2rst options > $@
-varnishlog_synopsis.rst: varnishlog_options.h | varnishlog_opt2rst
+varnishlog_synopsis.rst:
 	./varnishlog_opt2rst synopsis > $@
+
+if HAVE_RST2MAN
+varnishlog_options.rst varnishlog_synopsis.rst: varnishlog_opt2rst
+endif
 
 varnishlog.1: \
 	$(top_srcdir)/doc/sphinx/reference/varnishlog.rst \

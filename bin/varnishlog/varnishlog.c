@@ -42,18 +42,13 @@
 
 #include "vapi/vsm.h"
 #include "vapi/vsl.h"
+#include "vapi/voptget.h"
 #include "vas.h"
 #include "vcs.h"
 #include "vpf.h"
 #include "vsb.h"
 #include "vtim.h"
 #include "vut.h"
-
-#define VOPT_OPTSTRING
-#define VOPT_SYNOPSIS
-#define VOPT_USAGE
-#define VOPT_INC "varnishlog_options.h"
-#include "vapi/voptget.h"
 
 static void
 usage(void)
