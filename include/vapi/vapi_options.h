@@ -43,6 +43,10 @@
 
 /* VSL options */
 
+#define VSL_iI_PS							\
+	"If a tag include option is the first of any tag selection"	\
+	" options, all tags are first marked excluded."
+
 #define VSL_OPT_a							\
 	VOPT("a", "[-a]", "Append binary file output",			\
 	    "When writing binary output to a file, append to it rather"	\
@@ -63,10 +67,19 @@
 
 #define VSL_OPT_i							\
 	VOPT("i:", "[-i tag]", "Include tag",				\
-	    "Output only this tag. Multiple -i options may be given."	\
+	    "Include log records of this tag in output. Multiple -i"	\
+	    " options may be given.\n"					\
 	    "\n"							\
-	    "If an -i option is the first of any -ix options, all tags"	\
-	    " are disabled before -ix processing."			\
+	    VSL_iI_PS							\
+	)
+
+#define VSL_OPT_I							\
+	VOPT("I:", "[-I [tag:]regex]", "Include by regex",		\
+	    "Include by regex matching. Output only records matching"	\
+	    " tag and regular expression. Applies to any tag if tag"	\
+	    " is * or empty.\n"						\
+	    "\n"							\
+	    VSL_iI_PS							\
 	)
 
 #define VSL_OPT_r							\
@@ -97,9 +110,13 @@
 
 #define VSL_OPT_x							\
 	VOPT("x:", "[-x tag]", "Exclude tag",				\
-	    "Exclude log records of this tag. Multiple -x options"	\
-	    " may be given.\n"						\
-	    "\n"							\
-	    "If an -x option is the first of any -ix options, all tags"	\
-	    " are enabled for output before -ix processing."		\
+	    "Exclude log records of this tag in output. Multiple -x"	\
+	    " options may be given."					\
+	)
+
+#define VSL_OPT_X							\
+	VOPT("X:", "[-X [tag:]regex]", "Exclude by regex",		\
+	    "Exclude by regex matching. Do not output records matching"	\
+	    " tag and regular expression. Applies to any tag if tag"	\
+	    " is * or empty."						\
 	)

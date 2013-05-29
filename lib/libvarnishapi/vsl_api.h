@@ -31,6 +31,7 @@
 
 #include "vdef.h"
 #include "vqueue.h"
+#include "vre.h"
 #include "vapi/vsm.h"
 
 #define VSL_FILE_ID			"VSL"
@@ -67,6 +68,17 @@ struct vslc {
 	const struct vslc_tbl		*tbl;
 };
 
+struct vslf {
+	unsigned			magic;
+#define VSLF_MAGIC			0x08650B39
+	VTAILQ_ENTRY(vslf)		list;
+
+	int				tag;
+	vre_t				*vre;
+};
+
+typedef VTAILQ_HEAD(,vslf)		vslf_list;
+
 struct VSL_data {
 	unsigned			magic;
 #undef VSL_MAGIC
@@ -75,11 +87,15 @@ struct VSL_data {
 	struct vsb			*diag;
 
 	unsigned			flags;
-#define F_SEEN_ix			(1 << 0)
+#define F_SEEN_ixIX			(1 << 0)
 
 	/* Bitmaps of -ix selected tags */
 	struct vbitmap			*vbm_select;
 	struct vbitmap			*vbm_supress;
+
+	/* Lists of -IX filters */
+	vslf_list			vslf_select;
+	vslf_list			vslf_suppress;
 
 	int				v_opt;
 };

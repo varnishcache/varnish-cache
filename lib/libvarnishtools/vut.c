@@ -106,6 +106,8 @@ VUT_g_Arg(const char *arg)
 int
 VUT_Arg(int opt, const char *arg)
 {
+	int i;
+
 	switch (opt) {
 	case 'a':
 		/* Binary file append */
@@ -148,7 +150,10 @@ VUT_Arg(int opt, const char *arg)
 		return (1);
 	default:
 		AN(VUT.vsl);
-		return (VSL_Arg(VUT.vsl, opt, arg));
+		i = VSL_Arg(VUT.vsl, opt, arg);
+		if (i < 0)
+			VUT_Error(1, "%s", VSL_Error(VUT.vsl));
+		return (i);
 	}
 }
 

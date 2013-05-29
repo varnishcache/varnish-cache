@@ -49,14 +49,6 @@ The following options are available:
 
 	XXX: Not yet implemented
 
--I [tag:]regex
-
-	Output only records matching this regular expression. If tag
-	is given, limit the regex matching to records of that
-	tag. Multiple -I options may be given.
-
-	XXX: Not yet implemented
-
 -k num
 
 	Only show the first num log transactions (or log records
@@ -74,15 +66,6 @@ The following options are available:
 -V
 
 	Display the version number and exit.
-
-	XXX: Not yet implemented
-
-
--X [tag:]regex
-
-	Do not output log records matching this regex. If tag is
-	given, limit the regex matching to records of that tag.
-	Multiple -X options may be given.
 
 	XXX: Not yet implemented
 

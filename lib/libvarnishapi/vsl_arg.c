@@ -120,11 +120,7 @@ vsl_ix_arg(struct VSL_data *vsl, int opt, const char *arg)
 	const char *b, *e;
 
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
-	/* If first option is 'i', set all bits for supression */
-	if (opt == 'i' && !(vsl->flags & F_SEEN_ix))
-		for (i = 0; i < 256; i++)
-			vbit_set(vsl->vbm_supress, i);
-	vsl->flags |= F_SEEN_ix;
+	vsl->flags |= F_SEEN_ixIX;
 
 	for (b = arg; *b; b = e) {
 		while (isspace(*b))
@@ -156,11 +152,80 @@ vsl_ix_arg(struct VSL_data *vsl, int opt, const char *arg)
 	return (1);
 }
 
+static int
+vsl_IX_arg(struct VSL_data *vsl, int opt, const char *arg)
+{
+	int i, l, off;
+	const char *b, *e, *err;
+	vre_t *vre;
+	struct vslf *vslf;
+
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+	vsl->flags |= F_SEEN_ixIX;
+
+	l = 0;
+	b = arg;
+	e = strchr(b, ':');
+	if (e) {
+		while (isspace(*b))
+			b++;
+		l = e - b;
+		while (l > 0 && isspace(b[l - 1]))
+			l--;
+	}
+	if (l > 0 && strncmp(b, "*", l))
+		i = VSL_Name2Tag(b, l);
+	else
+		i = -3;
+	if (i == -2)
+		return (vsl_diag(vsl,
+			"-%c: \"%*.*s\" matches multiple tags\n",
+			(char)opt, l, l, b));
+	else if (i == -1)
+		return (vsl_diag(vsl,
+			"-%c: Could not match \"%*.*s\" to any tag\n",
+			(char)opt, l, l, b));
+	assert(i >= -3);
+
+	if (e)
+		b = e + 1;
+	vre = VRE_compile(b, 0, &err, &off);
+	if (vre == NULL)
+		return (vsl_diag(vsl, "-%c: Regex error at position %d (%s)\n",
+			(char)opt, off, err));
+
+	ALLOC_OBJ(vslf, VSLF_MAGIC);
+	if (vslf == NULL) {
+		VRE_free(&vre);
+		return (vsl_diag(vsl, "Out of memory"));
+	}
+	vslf->tag = i;
+	vslf->vre = vre;
+
+	if (opt == 'I')
+		VTAILQ_INSERT_TAIL(&vsl->vslf_select, vslf, list);
+	else {
+		assert(opt == 'X');
+		VTAILQ_INSERT_TAIL(&vsl->vslf_suppress, vslf, list);
+	}
+
+	return (1);
+}
+
 int
 VSL_Arg(struct VSL_data *vsl, int opt, const char *arg)
 {
+	int i;
+
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+	/* If first option is 'i', set all bits for supression */
+	if ((opt == 'i' || opt == 'I') && !(vsl->flags & F_SEEN_ixIX))
+		for (i = 0; i < 256; i++)
+			vbit_set(vsl->vbm_supress, i);
+
 	switch (opt) {
-	case 'i': case'x': return (vsl_ix_arg(vsl, opt, arg));
+	case 'i': case 'x': return (vsl_ix_arg(vsl, opt, arg));
+	case 'I': case 'X': return (vsl_IX_arg(vsl, opt, arg));
 	case 'v': vsl->v_opt = 1; return (1);
 	default:
 		return (0);

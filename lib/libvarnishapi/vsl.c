@@ -94,8 +94,25 @@ VSL_New(void)
 
 	vsl->vbm_select = vbit_init(256);
 	vsl->vbm_supress = vbit_init(256);
+	VTAILQ_INIT(&vsl->vslf_select);
+	VTAILQ_INIT(&vsl->vslf_suppress);
 
 	return (vsl);
+}
+
+static void
+vsl_IX_free(vslf_list *list)
+{
+	struct vslf *vslf;
+
+	while (!VTAILQ_EMPTY(list)) {
+		vslf = VTAILQ_FIRST(list);
+		CHECK_OBJ_NOTNULL(vslf, VSLF_MAGIC);
+		VTAILQ_REMOVE(list, vslf, list);
+		AN(vslf->vre);
+		VRE_free(&vslf->vre);
+		AZ(vslf->vre);
+	}
 }
 
 void
@@ -106,6 +123,8 @@ VSL_Delete(struct VSL_data *vsl)
 
 	vbit_destroy(vsl->vbm_select);
 	vbit_destroy(vsl->vbm_supress);
+	vsl_IX_free(&vsl->vslf_select);
+	vsl_IX_free(&vsl->vslf_suppress);
 	VSL_ResetError(vsl);
 	FREE_OBJ(vsl);
 }
@@ -134,6 +153,29 @@ VSL_ResetError(struct VSL_data *vsl)
 	vsl->diag = NULL;
 }
 
+static int
+vsl_match_IX(struct VSL_data *vsl, vslf_list *list, const struct VSL_cursor *c)
+{
+	enum VSL_tag_e tag;
+	const char *cdata;
+	int len;
+	const struct vslf *vslf;
+
+	(void)vsl;
+	tag = VSL_TAG(c->rec.ptr);
+	cdata = VSL_CDATA(c->rec.ptr);
+	len = VSL_LEN(c->rec.ptr);
+
+	VTAILQ_FOREACH(vslf, list, list) {
+		CHECK_OBJ_NOTNULL(vslf, VSLF_MAGIC);
+		if (vslf->tag >= 0 && vslf->tag != tag)
+			continue;
+		if (VRE_exec(vslf->vre, cdata, len, 0, 0, NULL, 0, NULL) >= 0)
+			return (1);
+	}
+	return (0);
+}
+
 int
 VSL_Match(struct VSL_data *vsl, const struct VSL_cursor *c)
 {
@@ -145,8 +187,14 @@ VSL_Match(struct VSL_data *vsl, const struct VSL_cursor *c)
 	tag = VSL_TAG(c->rec.ptr);
 	if (tag <= SLT__Bogus || tag >= SLT__Reserved)
 		return (0);
-	if (vbit_test(vsl->vbm_select, tag))
+	if (!VTAILQ_EMPTY(&vsl->vslf_select) &&
+	    vsl_match_IX(vsl, &vsl->vslf_select, c))
 		return (1);
+	else if (vbit_test(vsl->vbm_select, tag))
+		return (1);
+	else if (!VTAILQ_EMPTY(&vsl->vslf_suppress) &&
+	    vsl_match_IX(vsl, &vsl->vslf_suppress, c))
+		return (0);
 	else if (vbit_test(vsl->vbm_supress, tag))
 		return (0);
 
@@ -268,7 +316,9 @@ VSL_PrintTransactions(struct VSL_data *vsl, struct VSL_transaction *pt[],
 	int delim = 0;
 	int verbose;
 
-	(void)vsl;
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+	if (fo == NULL)
+		fo = stdout;
 	if (pt[0] == NULL)
 		return (0);
 
