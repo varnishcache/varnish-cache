@@ -27,6 +27,7 @@
  * SUCH DAMAGE.
  */
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -75,15 +76,27 @@ print_opt(const struct vopt_full *opt)
 	printf("\n\n");
 }
 
+static void
+usage(void)
+{
+	fprintf(stderr, "Usage: opt2rst {synopsis|options}\n");
+	exit(1);
+}
+
 int
 main(int argc, char * const *argv)
 {
 	int i;
 
-	(void)argc;
-	(void)argv;
-	for (i = 0; i < sizeof vopt_full / sizeof vopt_full[0]; i++)
-		print_opt(&vopt_full[i]);
+	if (argc != 2)
+		usage();
+	if (!strcmp(argv[1], "synopsis"))
+		printf(".. |synopsis| replace:: %s\n", vopt_synopsis);
+	else if (!strcmp(argv[1], "options"))
+		for (i = 0; i < sizeof vopt_full / sizeof vopt_full[0]; i++)
+			print_opt(&vopt_full[i]);
+	else
+		usage();
 
 	return (0);
 }

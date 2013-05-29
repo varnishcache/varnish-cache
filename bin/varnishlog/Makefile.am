@@ -25,18 +25,23 @@ varnishlog_LDADD = \
 noinst_PROGRAMS = varnishlog_opt2rst
 varnishlog_opt2rst_CFLAGS = -DOPT2RST_INC="varnishlog_options.h"
 varnishlog_opt2rst_SOURCES = \
+	varnishlog_options.h \
 	$(top_builddir)/lib/libvarnishtools/opt2rst.c
 
-BUILT_SOURCES = varnishlog_options.rst
+BUILT_SOURCES = varnishlog_options.rst varnishlog_synopsis.rst
 
-EXTRA_DIST = varnishlog_options.rst
+EXTRA_DIST = varnishlog_options.rst varnishlog_synopsis.rst
+MAINTAINERCLEANFILES = $(EXTRA_DIST)
 
-varnishlog_options.rst: varnishlog_opt2rst
-	./varnishlog_opt2rst > $@
+varnishlog_options.rst: varnishlog_options.h | varnishlog_opt2rst
+	./varnishlog_opt2rst options > $@
+varnishlog_synopsis.rst: varnishlog_options.h | varnishlog_opt2rst
+	./varnishlog_opt2rst synopsis > $@
 
 varnishlog.1: \
 	$(top_srcdir)/doc/sphinx/reference/varnishlog.rst \
-	varnishlog_options.rst
+	varnishlog_options.rst \
+	varnishlog_synopsis.rst
 if HAVE_RST2MAN
 	${RST2MAN} $< $@
 else

@@ -19,9 +19,8 @@ Display Varnish logs
 SYNOPSIS
 ========
 
-varnishlog [-a] [-b] [-c] [-C] [-d] [-D] [-i tag] [-I [tag:]regex] [-k
-keep] [-n varnish_name] [-P file] [-r file] [--raw] [-s num] [-S] [-u]
-[-v] [-V] [-w file] [-x tag] [-X [tag:]regex] <query expression>
+.. include:: ../../../bin/varnishlog/varnishlog_synopsis.rst
+varnishlog |synopsis| <query expression>
 
 OPTIONS
 =======
