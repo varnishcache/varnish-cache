@@ -196,7 +196,8 @@ macro_expand(struct vtclog *vl, const char *text)
 		m = macro_get(p, q);
 		if (m == NULL) {
 			VSB_delete(vsb);
-			vtc_log(vl, 0, "Macro ${%s} not found", p);
+			vtc_log(vl, 0, "Macro ${%.*s} not found", (int)(q - p),
+			    p);
 			return (NULL);
 		}
 		VSB_printf(vsb, "%s", m);
