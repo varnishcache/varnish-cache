@@ -535,6 +535,7 @@ static const struct cmds cmds[] = {
 	{ "sema",	cmd_sema },
 	{ "random",	cmd_random },
 	{ "feature",	cmd_feature },
+	{ "logexpect",	cmd_logexp },
 	{ NULL,		NULL }
 };
 

@@ -63,6 +63,7 @@ cmd_f cmd_server;
 cmd_f cmd_client;
 cmd_f cmd_varnish;
 cmd_f cmd_sema;
+cmd_f cmd_logexp;
 
 extern volatile sig_atomic_t vtc_error; /* Error, bail out */
 extern int vtc_stop;		/* Abandon current test, no error */

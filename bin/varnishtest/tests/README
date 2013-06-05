@@ -18,6 +18,7 @@ Naming scheme
 	id ~ [c] --> Complex functionality tests
 	id ~ [e] --> ESI tests
 	id ~ [g] --> GZIP tests
+	id ~ [l] --> VSL tests
 	id ~ [m] --> VMOD tests
 	id ~ [p] --> Persistent tests
 	id ~ [r] --> Regression tests, same number as ticket
