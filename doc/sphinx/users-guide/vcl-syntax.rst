@@ -88,4 +88,5 @@ To call a subroutine, use the call keyword followed by the subroutine's name:
 
 call pipe_if_local;
 
-Varnish has quite a few built in subroutines that are called for each transaction as it flows through Varnish. See :ref:`vcl-built-in-subs`.
+Varnish has quite a few built in subroutines that are called for each
+transaction as it flows through Varnish. See :ref:`vcl-built-in-subs`.

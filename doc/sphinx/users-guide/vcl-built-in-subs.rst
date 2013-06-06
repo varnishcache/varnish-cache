@@ -1,5 +1,5 @@
 
-.. vcl-built-in-subs_
+.. _vcl-built-in-subs:
 
 Built in subroutines
 --------------------
