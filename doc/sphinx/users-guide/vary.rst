@@ -8,9 +8,10 @@ misunderstood HTTP header.*
 
 The Vary header is sent by the web server to indicate what makes a
 HTTP object Vary. This makes a lot of sense with headers like
-Accept-Language. When a server issues a "Vary: Accept-Accept" it tells
-Varnish that its needs to cache a separate version for every different
-Accept-Language that is coming from the clients. 
+Accept-Language. When a backend server issues a "Vary:
+Accept-Language" it tells Varnish that its needs to cache a separate
+version for every different Accept-Language that is coming from the
+clients.
 
 If two clients say they accept the languages "en-us, en-uk" and "da, de" 
 respectively, Varnish will cache and serve two different versions of 
