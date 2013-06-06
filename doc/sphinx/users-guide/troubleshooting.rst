@@ -67,8 +67,20 @@ errors will be logged in syslog. It might look like this::
 In this situation the mother process assumes that the cache died and
 killed it off.
 
-XXX: Describe crashing child process and crashing mother process here too.
-XXX: panic.show
+In certain situation the child process might crash itself. This might
+happen because internal integrity checks fail as a result of a bug.
+
+In these situations the child will start back up again right away but
+the cache will be cleared. A panic is logged with the mother
+process. You can inspect the stack trace with the CLI command
+panic.show.
+
+Some of these situations might be caused by bugs, other by
+misconfigations. Often we see varnish running out of session
+workspace, which will result in the child aborting its execution.
+
+In a rare event you might also see a segmentation fault or bus
+error. These are either bugs, kernel- or hardware failures.
 
 Varnish gives me Guru meditation
 --------------------------------
