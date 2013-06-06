@@ -2,13 +2,8 @@
 Requests, responses and objects
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In VCL, there are three important data structures. The request, coming
-from the client, the response coming from the backend server and the
-object, stored in cache.
+In VCL, there several important objects.
 
-In VCL you should know the following structures.
-
-.. XXX: Needs verification
 
 *req*
  The request object. When Varnish has received the request the req object is 
@@ -24,5 +19,7 @@ In VCL you should know the following structures.
  do on the beresp object.
 
 *resp*
- The cached object. Mostly a read only object that resides in memory. 
- resp.ttl is writable, the rest is read only.
+ The HTTP response right before it is delivered to the client. 
+
+*obj* 
+ The object as it is stored in cache. Mostly read only.
