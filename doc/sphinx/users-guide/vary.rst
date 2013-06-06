@@ -3,8 +3,8 @@
 HTTP Vary
 ---------
 
-_HTTP Vary is not a trivial concept. It is by far the most
-misunderstood HTTP header._
+*HTTP Vary is not a trivial concept. It is by far the most
+misunderstood HTTP header.*
 
 The Vary header is sent by the web server to indicate what makes a
 HTTP object Vary. This makes a lot of sense with headers like
@@ -12,19 +12,22 @@ Accept-Language. When a server issues a "Vary: Accept-Accept" it tells
 Varnish that its needs to cache a separate version for every different
 Accept-Language that is coming from the clients. 
 
-So, if a client says it accepts the languages "en-us, en-uk" Varnish
-will serve a different version to a client that says it accepts the
-languages "da, de".
+If two clients say they accept the languages "en-us, en-uk" and "da, de" 
+respectively, Varnish will cache and serve two different versions of 
+the page.
+
+So, if a client says it accepts the languages "en-us, en-uk", Varnish
+will serve a different version to another client that says it accepts
+the languages "da, de".
 
 Please note that the headers that Vary refer to need to match
-_exactly_ for there to be a match. So Varnish will keep two copies of
+*exactly* for there to be a match. So Varnish will keep two copies of
 a page if one of them was created for "en-us, en-uk" and the other for
 "en-us,en-uk". 
 
 To achieve a high hitrate whilst using Vary is there therefor crucial
 to normalize the headers the backends varies on. Remember, just a
-differce in case can force different cache entries.
-
+difference in case can force different cache entries.
 
 The following VCL code will normalize the Accept-Language headers, to
 one of either "en","de" or "fr"::
