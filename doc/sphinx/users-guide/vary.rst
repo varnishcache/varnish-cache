@@ -3,39 +3,43 @@
 HTTP Vary
 ---------
 
+_HTTP Vary is not a trivial concept. It is by far the most
+misunderstood HTTP header._
+
 The Vary header is sent by the web server to indicate what makes a
 HTTP object Vary. This makes a lot of sense with headers like
-Accept-Encoding. When a server issues a "Vary: Accept-Encoding" it
-tells Varnish that its needs to cache a separate version for every
-different Accept-Encoding that is coming from the clients. So, if a
-clients only accepts gzip encoding Varnish won't serve the version of
-the page encoded with the deflate encoding.
+Accept-Language. When a server issues a "Vary: Accept-Accept" it tells
+Varnish that its needs to cache a separate version for every different
+Accept-Language that is coming from the clients. 
 
-The problem is that the Accept-Encoding field contains a lot of
-different encodings. If one browser sends::
+So, if a client says it accepts the languages "en-us, en-uk" Varnish
+will serve a different version to a client that says it accepts the
+languages "da, de".
 
-  Accept-Encoding: gzip,deflate
+Please note that the headers that Vary refer to need to match
+_exactly_ for there to be a match. So Varnish will keep two copies of
+a page if one of them was created for "en-us, en-uk" and the other for
+"en-us,en-uk". 
 
-And another one sends::
+To achieve a high hitrate whilst using Vary is there therefor crucial
+to normalize the headers the backends varies on. Remember, just a
+differce in case can force different cache entries.
 
-  Accept-Encoding: deflate,gzip
 
-Varnish will keep two variants of the page requested due to the
-different Accept-Encoding headers. Normalizing the accept-encoding
-header will sure that you have as few variants as possible. The
-following VCL code will normalize the Accept-Encoding headers::
+The following VCL code will normalize the Accept-Language headers, to
+one of either "en","de" or "fr"::
 
-    if (req.http.Accept-Encoding) {
-        if (req.url ~ "\.(jpg|png|gif|gz|tgz|bz2|tbz|mp3|ogg)$") {
-            # No point in compressing these
-            remove req.http.Accept-Encoding;
-        } elsif (req.http.Accept-Encoding ~ "gzip") {
-            set req.http.Accept-Encoding = "gzip";
-        } elsif (req.http.Accept-Encoding ~ "deflate") {
-            set req.http.Accept-Encoding = "deflate";
+    if (req.http.Accept-Language) {
+        if (req.http.Accept-Language ~ "en") {
+            set req.http.Accept-Language = "en";
+        } elsif (req.http.Accept-Language ~ "de") {
+            set req.http.Accept-Language = "de";
+        } elsif (req.http.Accept-Language ~ "fr") {
+            set req.http.Accept-Language = "fr";
         } else {
-            # unknown algorithm
-            remove req.http.Accept-Encoding;
+            # unknown language. Remove the accept-language header and 
+	    # use the backend default.
+            remove req.http.Accept-Language
         }
     }
 
