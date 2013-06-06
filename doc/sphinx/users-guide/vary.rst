@@ -16,14 +16,11 @@ If two clients say they accept the languages "en-us, en-uk" and "da, de"
 respectively, Varnish will cache and serve two different versions of 
 the page.
 
-So, if a client says it accepts the languages "en-us, en-uk", Varnish
-will serve a different version to another client that says it accepts
-the languages "da, de".
-
 Please note that the headers that Vary refer to need to match
 *exactly* for there to be a match. So Varnish will keep two copies of
 a page if one of them was created for "en-us, en-uk" and the other for
-"en-us,en-uk". 
+"en-us,en-uk". Just the lack of space will force Varnish to cache
+another version.
 
 To achieve a high hitrate whilst using Vary is there therefor crucial
 to normalize the headers the backends varies on. Remember, just a
