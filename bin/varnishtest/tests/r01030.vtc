@@ -39,7 +39,7 @@ client c1 {
 	expect resp.status == 201
 } -run
 
-delay 0.1
+#delay 0.1
 varnish v1 -expect bans_tests_tested == 0
 
 delay 1.0
@@ -57,7 +57,7 @@ client c2 {
 	expect resp.status == 201
 } -run
 
-delay 0.1
+#delay 0.1
 varnish v1 -expect bans_tests_tested == 1
 
 delay 1.1
