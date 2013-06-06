@@ -25,9 +25,17 @@ function shown above.  The full contents of the "std" module is
 documented in vmod_std(7).
 
 This part of the manual is about how you go about writing your own
-VMOD, how the language interface between C and VCC works etc.  This
-explanation will use the "std" VMOD as example, having a varnish
-source tree handy may be a good idea.
+VMOD, how the language interface between C and VCC works, where you 
+can find contributed VMODs etc. This explanation will use the "std"
+VMOD as example, having a varnish source tree handy may be a good
+idea.
+
+VMOD Directory
+==============
+
+The VMOD directory is an up-to-date compilation of maintained
+extensions written for Varnish Cache:
+ https://www.varnish-cache.org/vmods
 
 The vmod.vcc file
 =================
