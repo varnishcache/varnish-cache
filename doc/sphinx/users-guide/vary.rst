@@ -6,16 +6,22 @@ HTTP Vary
 *HTTP Vary is not a trivial concept. It is by far the most
 misunderstood HTTP header.*
 
-The Vary header is sent by the web server to indicate what makes a
-HTTP object Vary. This makes a lot of sense with headers like
-Accept-Language. When a backend server issues a "Vary:
-Accept-Language" it tells Varnish that its needs to cache a separate
-version for every different Accept-Language that is coming from the
-clients.
+A lot of the response headers tell the client something about the HTTP
+object being delivered. Clients can request different variants a an
+HTTP object, based on their preference. Their preferences might cover
+stuff like encoding or language. When a client prefers UK English this
+is indicated through "Accept-Language: en-uk". Caches need to keep
+these different variants apart and this is done through the HTTP
+response header "Vary".
 
-If two clients say they accept the languages "en-us, en-uk" and "da, de" 
-respectively, Varnish will cache and serve two different versions of 
-the page.
+When a backend server issues a "Vary: Accept-Language" it tells
+Varnish that its needs to cache a separate version for every different
+Accept-Language that is coming from the clients.
+
+If two clients say they accept the languages "en-us, en-uk" and "da,
+de" respectively, Varnish will cache and serve two different versions
+of the page if the backend indicated that Varnish needs to vary on the
+Accept-Language header.
 
 Please note that the headers that Vary refer to need to match
 *exactly* for there to be a match. So Varnish will keep two copies of
