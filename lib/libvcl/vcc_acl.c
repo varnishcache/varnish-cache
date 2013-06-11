@@ -381,7 +381,7 @@ vcc_acl_emit(const struct vcc *tl, const char *acln, int anon)
 	VTAILQ_FOREACH(ae, &tl->acl, list) {
 
 		/* Find how much common prefix we have */
-		for (l = 0; l <= depth && l * 8 < ae->mask; l++) {
+		for (l = 0; l <= depth && l * 8 < ae->mask - 7; l++) {
 			assert(l >= 0);
 			if (ae->data[l] != at[l])
 				break;
@@ -392,11 +392,11 @@ vcc_acl_emit(const struct vcc *tl, const char *acln, int anon)
 		while (l <= depth) {
 			Fh(tl, 0, "\t%*s}\n", -depth, "");
 			depth--;
-			oc = "else ";
 		}
 
 		m = ae->mask;
 		m -= l * 8;
+		assert(m >= 0);
 
 		/* Do whole byte compares */
 		for (i = l; m >= 8; m -= 8, i++) {
