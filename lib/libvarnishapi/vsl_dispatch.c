@@ -749,7 +749,7 @@ vslq_callback(struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
 	ptrans[i] = NULL;
 
 	/* Query test goes here */
-	if (vslq->query != NULL && vslq_runquery(vslq->query, ptrans))
+	if (vslq->query != NULL && !vslq_runquery(vslq->query, ptrans))
 		return (0);
 
 	/* Callback */
@@ -859,7 +859,7 @@ vslq_raw(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 		trans.vxid = VSL_ID(c->rec.ptr);
 
 		/* Query check goes here */
-		if (vslq->query != NULL && vslq_runquery(vslq->query, ptrans))
+		if (vslq->query != NULL && !vslq_runquery(vslq->query, ptrans))
 			continue;
 
 		/* Callback */
