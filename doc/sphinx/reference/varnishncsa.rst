@@ -112,7 +112,8 @@ The following options are available:
 	         Extended variables.  Supported variables are:
 
 		   Varnish:time_firstbyte
-		     Time to the first byte from the backend arrived
+		     Time from when the request processing starts
+		     until the first byte is sent to the client.
 
 		   Varnish:hitmiss
 		     Whether the request was a cache hit or miss. Pipe
