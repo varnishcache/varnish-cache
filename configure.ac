@@ -230,7 +230,6 @@ fi
 CFLAGS="${save_CFLAGS}" 
 
 # Use jemalloc on Linux
-JEMALLOC_SUBDIR=
 JEMALLOC_LDADD=
 AC_ARG_WITH([jemalloc],
             [AS_HELP_STRING([--with-jemalloc],
@@ -243,13 +242,10 @@ case $target in
         if test "x$with_jemalloc" != xno; then
             AC_CHECK_LIB([jemalloc], [malloc_conf],
                   [JEMALLOC_LDADD="-ljemalloc"],
-                  [AC_MSG_NOTICE([No system jemalloc found, using bundled version])
-                   JEMALLOC_SUBDIR=libjemalloc
-                   JEMALLOC_LDADD='$(top_builddir)/lib/libjemalloc/libjemalloc_mt.la'])
+                  [AC_MSG_WARN([No system jemalloc found, using system malloc])])
 	fi
 	;;
 esac
-AC_SUBST(JEMALLOC_SUBDIR)
 AC_SUBST(JEMALLOC_LDADD)
 
 # Userland slab allocator, available only on Solaris
@@ -598,7 +594,6 @@ AC_CONFIG_FILES([
     lib/libvmod_debug/Makefile
     lib/libvmod_std/Makefile
     lib/libvmod_directors/Makefile
-    lib/libjemalloc/Makefile
     man/Makefile
     redhat/Makefile
     varnishapi.pc

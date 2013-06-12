@@ -8,8 +8,7 @@ SUBDIRS = \
 	libvgz \
 	libvmod_debug \
 	libvmod_std \
-	libvmod_directors \
-	@JEMALLOC_SUBDIR@
+	libvmod_directors
 
 DIST_SUBDIRS = 	\
 	libvarnishcompat \
@@ -19,5 +18,4 @@ DIST_SUBDIRS = 	\
 	libvgz \
 	libvmod_debug \
 	libvmod_std \
-	libvmod_directors \
-	libjemalloc
+	libvmod_directors
