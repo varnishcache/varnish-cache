@@ -21,14 +21,14 @@ without interrupting the running service.
 The CLI can be used for the following tasks:
 
 configuration
-     You can upload, change and delete VCL files from the CLI. 
+     You can upload, change and delete VCL files from the CLI.
 
-parameters 
+parameters
      You can inspect and change the various parameters Varnish has
      available through the CLI. The individual parameters are
      documented in the varnishd(1) man page.
 
-bans 
+bans
      Bans are filters that are applied to keep Varnish from serving
      stale content. When you issue a ban Varnish will not serve any
      *banned* object from cache, but rather re-fetch it from its
@@ -233,13 +233,13 @@ An authenticated session looks like this::
    Trying 127.0.0.1...
    Connected to localhost.
    Escape character is '^]'.
-   107 59      
+   107 59
    ixslvvxrgkjptxmcgnnsdxsvdmvfympg
-   
+
    Authentication required.
-   
+
    auth 455ce847f0073c7ab3b1465f74507b75d3dc064c1e7de3b71e00de9092fdc89a
-   200 193     
+   200 193
    -----------------------------
    Varnish HTTP accelerator CLI.
    -----------------------------
@@ -280,7 +280,7 @@ In the above example, the secret file contained foo\n and thus::
    00000030  70 74 78 6d 63 67 6e 6e  73 64 78 73 76 64 6d 76  |ptxmcgnnsdxsvdmv|
    00000040  66 79 6d 70 67 0a                                 |fympg.|
    00000046
-   critter phk> sha256 _ 
+   critter phk> sha256 _
    SHA256 (_) = 455ce847f0073c7ab3b1465f74507b75d3dc064c1e7de3b71e00de9092fdc89a
    critter phk> openssl dgst -sha256 < _
    455ce847f0073c7ab3b1465f74507b75d3dc064c1e7de3b71e00de9092fdc89a
