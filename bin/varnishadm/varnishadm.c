@@ -222,7 +222,7 @@ varnishadm_completion (const char *text, int start, int end)
  * Send a "banner" to varnish, to provoke a welcome message.
  */
 static void
-pass(int sock)
+interactive(int sock)
 {
 	struct pollfd fds[2];
 	char buf[1024];
@@ -231,11 +231,7 @@ pass(int sock)
 	unsigned u, status;
 	_line_sock = sock;
 	rl_already_prompted = 1;
-	if (isatty(0)) {
-		rl_callback_handler_install("varnish> ", send_line);
-	} else {
-		rl_callback_handler_install("", send_line);
-	}
+	rl_callback_handler_install("varnish> ", send_line);
 	rl_attempted_completion_function = varnishadm_completion;
 
 	fds[0].fd = sock;
@@ -304,6 +300,65 @@ pass(int sock)
 		}
 	}
 }
+
+/*
+ * No arguments given, simply pass bytes on stdin/stdout and CLI socket
+ */
+static void
+pass(int sock)
+{
+	struct pollfd fds[2];
+	char buf[1024];
+	int i;
+	char *answer = NULL;
+	unsigned u, status;
+	ssize_t n;
+
+	fds[0].fd = sock;
+	fds[0].events = POLLIN;
+	fds[1].fd = 0;
+	fds[1].events = POLLIN;
+	while (1) {
+		i = poll(fds, 2, -1);
+		if (i == -1 && errno == EINTR) {
+			continue;
+		}
+		assert(i > 0);
+		if (fds[0].revents & POLLIN) {
+			u = VCLI_ReadResult(fds[0].fd, &status, &answer,
+			    timeout);
+			if (u) {
+				if (status == CLIS_COMMS)
+					RL_EXIT(0);
+				if (answer)
+					fprintf(stderr, "%s\n", answer);
+				RL_EXIT(1);
+			}
+
+			sprintf(buf, "%u\n", status);
+			u = write(1, buf, strlen(buf));
+			if (answer) {
+				u = write(1, answer, strlen(answer));
+				u = write(1, "\n", 1);
+				free(answer);
+				answer = NULL;
+			}
+		}
+		if (fds[1].revents & POLLIN || fds[1].revents & POLLHUP) {
+			n = read(fds[1].fd, buf, sizeof buf);
+			if (n == 0) {
+				AZ(shutdown(sock, SHUT_WR));
+				fds[1].fd = -1;
+			} else if (n < 0) {
+				RL_EXIT(0);
+			} else {
+				buf[n] = '\0';
+				cli_write(sock, buf);
+			}
+		}
+	}
+}
+
 
 static void
 usage(void)
@@ -404,8 +459,12 @@ main(int argc, char * const *argv)
 
 	if (argc > 0)
 		do_args(sock, argc, argv);
-	else
-		pass(sock);
-
+	else {
+		if (isatty(0)) {
+			interactive(sock);
+		} else {
+			pass(sock);
+		}
+	}
 	exit(0);
 }
