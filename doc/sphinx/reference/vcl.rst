@@ -197,9 +197,12 @@ Probes take the following parameters:
   How many of the latest polls we examine to determine backend health.
   Defaults to 8.
 .threshold 
-  How many of the polls in .window must have succeeded for us to consider
-  the backend healthy.
-  Defaults to 3.
+  How many of the polls in .window must have succeeded for us to
+  consider the backend healthy. If this is set to more than or equal
+  to the threshold, the backend starts as healthy. Defaults to the
+  value of threshold - 1. In this case, the backend starts as sick and
+  requires one poll to pass to become healthy.
+  Defaults to threshold - 1.
 .initial
   How many of the polls in .window are considered good when Varnish
   starts. Defaults to the value of threshold - 1. In this case, the
