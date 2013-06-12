@@ -14,7 +14,7 @@ Varnish does not hash, at least not by default, and
 even if it does, it's still as immune to the attacks as can be.
 
 To understand what is going on, I have to introduce a concept from
-Shannons information theory: "entropy."
+Shannon's information theory: "entropy."
 
 Entropy is hard to explain, and according to legend, that is exactly
 why Shannon recycled that term from thermodynamics.
@@ -35,10 +35,10 @@ storing the objects in an array indexed by that key.
 
 Typically, but not always, the key is a string and the index is a
 (smallish) integer, and the job of the hash-function is to squeeze
-the key into the integer, without loosing any of the entropy.
+the key into the integer, without losing any of the entropy.
 
 Needless to say, the more entropy you have to begin with, the more
-of it you can afford to loose, and loose some you almost invariably
+of it you can afford to lose, and lose some you almost invariably
 will.
 
 There are two families of hash-functions, the fast ones, and the good
@@ -64,12 +64,12 @@ What Varnish Does
 -----------------
 
 The way to avoid having hash-collisions is to not use a hash:  Use a
-tree instead, there every object has its own place and there are no
+tree instead. There every object has its own place and there are no
 collisions.
 
 Varnish does that, but with a twist.
 
-The "keys" in varnish can be very long, by default they consist of::
+The "keys" in Varnish can be very long; by default they consist of::
 
 	sub vcl_hash {
 	    hash_data(req.url);
@@ -98,7 +98,7 @@ each object in the far too common case seen above.
 But furthermore, we want the tree to be very fast to do lookups in,
 preferably it should be lockless for lookups, and that means that
 we cannot (realistically) use any of the "smart" trees which
-automatically balance themselves etc.
+automatically balance themselves, etc.
 
 You (generally) don't need a "smart" tree if your keys look
 like random data in the order they arrive, but we can pretty
@@ -109,8 +109,8 @@ But we can make the keys look random, and make them small and fixed
 size at the same time, and the perfect functions designed for just
 that task are the "good" hash-functions, the cryptographic ones.
 
-So what Varnish does is "key-compression":  All the strings hash_data()
-are fed, are pushed through a cryptographic hash algorithm called
+So what Varnish does is "key-compression":  All the strings fed to
+hash_data() are pushed through a cryptographic hash algorithm called
 SHA256, which, as the name says, always spits out 256 bits (= 32
 bytes), no matter how many bits you feed it.
 
@@ -134,8 +134,8 @@ That should be random enough.
 
 But the key-compression does introduce a risk of collisions, since
 not even SHA256 can guarantee different outputs for all possible
-inputs:  Try pushing all the possible 33 bytes long files through
-SHA256 and sooner or later you will get collisions.
+inputs:  Try pushing all the possible 33-byte files through SHA256
+and sooner or later you will get collisions.
 
 The risk of collision is very small however, and I can all but
 promise you, that you will be fully offset in fame and money for
