@@ -156,7 +156,7 @@ http_Setup(struct http *hp, struct ws *ws)
 
 /*--------------------------------------------------------------------*/
 
-static int
+int
 http_IsHdr(const txt *hh, const char *hdr)
 {
 	unsigned l;
@@ -638,6 +638,28 @@ http_splitline(struct worker *w, int fd, struct http *hp,
 
 /*--------------------------------------------------------------------*/
 
+static int
+htc_request_check_host_hdr(struct http *hp)
+{
+	int u;
+	int seen_host = 0;
+	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
+		if (hp->hd[u].b == NULL)
+			continue;
+		AN(hp->hd[u].b);
+		AN(hp->hd[u].e);
+		if (http_IsHdr(&hp->hd[u], H_Host)) {
+			if (seen_host) {
+				return (400);
+			}
+			seen_host = 1;
+		}
+	}
+	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
 static void
 http_ProtoVer(struct http *hp)
 {
@@ -675,6 +697,12 @@ http_DissectRequest(struct sess *sp)
 		return (retval);
 	}
 	http_ProtoVer(hp);
+
+	retval = htc_request_check_host_hdr(hp);
+	if (retval != 0) {
+		WSP(sp, SLT_Error, "Duplicated Host header");
+		return (retval);
+	}
 	return (retval);
 }
 
