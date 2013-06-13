@@ -205,8 +205,6 @@ vca_kqueue_main(void *arg)
 static void
 vca_kqueue_init(void)
 {
-	int i;
-
 	AZ(vnonblocking(vca_pipes[0]));
 	AZ(vnonblocking(vca_pipes[1]));
 
