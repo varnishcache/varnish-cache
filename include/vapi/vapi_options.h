@@ -60,7 +60,7 @@
 	)
 
 #define VSL_OPT_g							\
-	VOPT("g:", "[-g {session|request|vxid|raw}]", "Grouping mode",	\
+	VOPT("g:", "[-g <session|request|vxid|raw>]", "Grouping mode",	\
 	    "The grouping of the log records. The default is to group"	\
 	    " by request."						\
 	)
@@ -74,7 +74,7 @@
 	)
 
 #define VSL_OPT_I							\
-	VOPT("I:", "[-I [tag:]regex]", "Include by regex",		\
+	VOPT("I:", "[-I <[tag:]regex>]", "Include by regex",		\
 	    "Include by regex matching. Output only records matching"	\
 	    " tag and regular expression. Applies to any tag if tag"	\
 	    " is * or empty.\n"						\
@@ -115,7 +115,7 @@
 	)
 
 #define VSL_OPT_X							\
-	VOPT("X:", "[-X [tag:]regex]", "Exclude by regex",		\
+	VOPT("X:", "[-X <[tag:]regex>]", "Exclude by regex",		\
 	    "Exclude by regex matching. Do not output records matching"	\
 	    " tag and regular expression. Applies to any tag if tag"	\
 	    " is * or empty."						\

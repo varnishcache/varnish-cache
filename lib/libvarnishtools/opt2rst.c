@@ -30,17 +30,29 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "vapi/voptget.h"
 
 static void
 print_nobrackets(const char *s)
 {
-	for (; *s; s++) {
-		if (strchr("[]", *s))
-			continue;
-		printf("%c", *s);
+	const char *e;
+
+	/* Remove whitespace */
+	while (isspace(*s))
+		s++;
+	e = s + strlen(s);
+	while (e > s && isspace(e[-1]))
+		e--;
+
+	/* Remove outer layer brackets if present */
+	if (e > s && *s == '[' && e[-1] == ']') {
+		s++;
+		e--;
 	}
+
+	printf("%.*s", (int)(e - s), s);
 }
 
 static void
