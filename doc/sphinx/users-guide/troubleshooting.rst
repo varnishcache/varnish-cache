@@ -51,36 +51,51 @@ of Varnish. If this doesn't help try strace or truss or come find us
 on IRC.
 
 
-Varnish is crashing
--------------------
+Varnish is crashing - panics
+----------------------------
 
-When varnish goes bust the child processes crashes. Usually the mother
-process will manage this by restarting the child process again. Any
-errors will be logged in syslog. It might look like this::
+When Varnish goes bust the child processes crashes. Most of the
+crashes are caught by one of the many consistency checks spread around
+the Varnish source code. When Varnish hits one of these the caching
+process it will crash itself in a controlled manner, leaving a nice
+stack trace with the mother process.
 
-       Mar  8 13:23:38 smoke varnishd[15670]: Child (15671) not responding to CLI, killing it.
-       Mar  8 13:23:43 smoke varnishd[15670]: last message repeated 2 times
-       Mar  8 13:23:43 smoke varnishd[15670]: Child (15671) died signal=3
-       Mar  8 13:23:43 smoke varnishd[15670]: Child cleanup complete
-       Mar  8 13:23:43 smoke varnishd[15670]: child (15697) Started
+You can inspect any panic messages by typing panic.show in the CLI.
 
-In this situation the mother process assumes that the cache died and
-killed it off.
+| panic.show
+| Last panic at: Tue, 15 Mar 2011 13:09:05 GMT
+| Assert error in ESI_Deliver(), cache_esi_deliver.c line 354:
+|   Condition(i == Z_OK || i == Z_STREAM_END) not true.
+| thread = (cache-worker)
+| ident = Linux,2.6.32-28-generic,x86_64,-sfile,-smalloc,-hcritbit,epoll
+| Backtrace:
+|   0x42cbe8: pan_ic+b8
+|   0x41f778: ESI_Deliver+438
+|   0x42f838: RES_WriteObj+248
+|   0x416a70: cnt_deliver+230
+|   0x4178fd: CNT_Session+31d
+|   (..)
 
-In certain situation the child process might crash itself. This might
-happen because internal integrity checks fail as a result of a bug.
+The crash might be due to misconfiguration or a bug. If you suspect it
+is a bug you can use the output in a bug report.
 
-In these situations the child will start back up again right away but
-the cache will be cleared. A panic is logged with the mother
-process. You can inspect the stack trace with the CLI command
-panic.show.
+Varnish is crashing - segfaults
+-------------------------------
 
-Some of these situations might be caused by bugs, other by
-misconfigations. Often we see varnish running out of session
-workspace, which will result in the child aborting its execution.
+Sometimes the bug escapes the consistency checks and Varnish get hit
+with a segmentation error. When this happens with the child process it
+is logged, the core is dumped and the child process starts up again.
 
-In a rare event you might also see a segmentation fault or bus
-error. These are either bugs, kernel- or hardware failures.
+A core dumped is usually due to a bug in Varnish. However, in order to
+debug a segfault the developers need you to provide a fair bit of
+data.
+
+ * Make sure you have Varnish installed with symbols
+ * Make sure core dumps are enabled (ulimit)
+
+Once you have the core you open it with gdb and issue the command "bt"
+to get a stack trace of the thread that caused the segfault.
+
 
 Varnish gives me Guru meditation
 --------------------------------
