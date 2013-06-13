@@ -36,7 +36,7 @@ Red Hat EL / Centos
 ~~~~~~~~~~~~~~~~~~~
 
 On Red Hat EL / Centos
-On Red Hat/Centos it is
+On Red Hat/Centos it is /etc/sysconfig/varnish
 
 
 Restarting Varnish
