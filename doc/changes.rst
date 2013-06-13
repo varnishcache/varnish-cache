@@ -1,4 +1,20 @@
 ================================
+Changes from 3.0.4 rc 1 to 3.0.4
+================================
+
+varnishd
+--------
+
+- Set the waiter pipe as non-blocking and record overflows.  `Bug
+  #1285`
+- Fix up a bug in the ACL compile code that could lead to false
+  negatives.  CVE-2013-4090.    `Bug #1312`
+- Return an error if the client sends multiple Host headers.
+
+.. _bug #1285: http://varnish-cache.org/trac/ticket/1285
+.. _bug #1312: http://varnish-cache.org/trac/ticket/1312
+
+================================
 Changes from 3.0.3 to 3.0.4 rc 1
 ================================
 
