@@ -47,7 +47,7 @@ varnishlog.1: \
 	varnishlog_options.rst \
 	varnishlog_synopsis.rst
 if HAVE_RST2MAN
-	cat $? | ${RST2MAN} - $@
+	${RST2MAN} $(top_srcdir)/doc/sphinx/reference/varnishlog.rst $@
 else
 	@echo "========================================"
 	@echo "You need rst2man installed to make dist"
