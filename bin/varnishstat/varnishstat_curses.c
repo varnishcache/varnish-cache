@@ -54,12 +54,18 @@
 
 #include "varnishstat.h"
 
-#ifdef HAVE_NCURSES_CURSES_H
+#if defined HAVE_NCURSESW_CURSES_H
+#  include <ncursesw/curses.h>
+#elif defined HAVE_NCURSESW_H
+#  include <ncursesw.h>
+#elif defined HAVE_NCURSES_CURSES_H
 #  include <ncurses/curses.h>
+#elif defined HAVE_NCURSES_H
+#  include <ncurses.h>
+#elif defined HAVE_CURSES_H
+#  include <curses.h>
 #else
-#  ifdef HAVE_CURSES_H
-#    include <curses.h>
-#  endif
+#  error "SysV or X/Open-compatible Curses header file required"
 #endif
 
 #define LINES_STATUS		3
@@ -892,10 +898,12 @@ do_curses(struct VSM_data *vd, int delay)
 		switch (ch = wgetch(w_status)) {
 		case ERR:
 			break;
+#ifdef KEY_RESIZE /* sigh, Solaris lacks this.. */
 		case KEY_RESIZE:
 			make_windows();
 			update_position();
 			break;
+#endif
 		default:
 			handle_keypress(ch);
 			break;

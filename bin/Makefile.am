@@ -5,7 +5,7 @@
 #SUBDIRS = varnishadm varnishd varnishlog varnishncsa varnishreplay varnishtest
 SUBDIRS = varnishadm varnishd varnishlog varnishtest
 
-if HAVE_CURSES
+if VARNISH_CURSES
 #SUBDIRS += varnishhist varnishstat varnishtop
 SUBDIRS += varnishstat
 endif

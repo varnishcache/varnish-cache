@@ -84,18 +84,8 @@ DL_LIBS="${LIBS}"
 LIBS="${save_LIBS}"
 AC_SUBST(DL_LIBS)
 
-save_LIBS="${LIBS}"
-LIBS=""
-AC_SEARCH_LIBS(initscr, [curses ncurses],
-	[have_curses=yes], [have_curses=no])
-CURSES_LIBS="${LIBS}"
-LIBS="${save_LIBS}"
-AC_SUBST(CURSES_LIBS)
-if test "$have_curses" = no; then
-	AC_MSG_WARN([curses not found; some tools will not be built])
-fi
-AC_CHECK_HEADERS([ncurses/curses.h curses.h])
-AM_CONDITIONAL([HAVE_CURSES], [test x$have_curses = xyes])
+AX_WITH_CURSES
+AM_CONDITIONAL(VARNISH_CURSES, test x$ax_cv_curses = xyes)
 
 save_LIBS="${LIBS}"
 LIBS=""

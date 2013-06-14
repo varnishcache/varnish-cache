@@ -14,7 +14,7 @@ varnishhist_LDADD = \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
 	-lm \
-	${CURSES_LIBS} ${RT_LIBS} ${PTHREAD_LIBS}
+	@CURSES_LIB@ ${RT_LIBS} ${PTHREAD_LIBS}
 
 varnishhist.1: $(top_srcdir)/doc/sphinx/reference/varnishhist.rst
 if HAVE_RST2MAN
