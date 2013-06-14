@@ -447,7 +447,7 @@ vcltypes = {
 	'STRING_LIST':	"void*",
 }
 
-fi = open(buildroot + "/include/vrt.h")
+fi = open(srcroot + "/include/vrt.h")
 
 for i in fi:
 	j = i.split();

@@ -161,7 +161,8 @@ EXTRA_DIST = \
 	users-guide/vcl-saint-and-grace.rst \
 	users-guide/vcl-syntax.rst \
 	users-guide/vcl-variables.rst \
-	users-guide/websockets.rst
+	users-guide/websockets.rst \
+	include/vcl-backends.rst
 
 
 dist-hook:
