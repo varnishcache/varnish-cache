@@ -293,7 +293,7 @@ vcc_IdIs(const struct token *t, const char *p)
  * Check that we have a C-identifier
  */
 
-static int
+int
 vcc_isCid(const struct token *t)
 {
 	const char *q;

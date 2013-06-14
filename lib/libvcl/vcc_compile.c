@@ -133,6 +133,10 @@ IsMethod(const struct token *t)
 		if (vcc_IdIs(t, m->name))
 			return (m - method_tab);
 	}
+	if ((t->b[0] == 'v'|| t->b[0] == 'V') &&
+	    (t->b[1] == 'c'|| t->b[1] == 'C') &&
+	    (t->b[2] == 'l'|| t->b[2] == 'L'))
+		return (-2);
 	return (-1);
 }
 

@@ -472,6 +472,12 @@ vcc_Acl(struct vcc *tl)
 	VTAILQ_INIT(&tl->acl);
 
 	ExpectErr(tl, ID);
+	if (!vcc_isCid(tl->t)) {
+		VSB_printf(tl->sb,
+		    "Names of VCL acl's cannot contain '-'\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
 	an = tl->t;
 	vcc_NextToken(tl);
 

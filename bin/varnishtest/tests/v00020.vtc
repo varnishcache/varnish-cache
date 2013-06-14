@@ -247,3 +247,31 @@ varnish v1 -vcl {
 		}
 	}
 }
+
+varnish v1 -errvcl {Names of VCL sub's cannot contain '-'} {
+	backend b { .host = "127.0.0.1"; }
+	sub foo-bar {
+	}
+	sub vcl_recv {
+		call foo-bar;
+	}
+}
+
+varnish v1 -errvcl {VCL sub's named 'vcl*' are reserved names.} {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_bar {
+	}
+	sub vcl_recv {
+		call vcl_bar;
+	}
+}
+
+varnish v1 -errvcl {Names of VCL acl's cannot contain '-'} {
+	backend b { .host = "127.0.0.1"; }
+	acl foo-bar {
+	}
+	sub vcl_recv {
+		if (client.ip ~ foo.bar) {
+		}
+	}
+}

@@ -171,6 +171,12 @@ parse_new(struct vcc *tl)
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
+	if (!vcc_isCid(tl->t)) {
+		VSB_printf(tl->sb,
+		    "Names of VCL objects cannot contain '-'\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
 	sy1 = VCC_FindSymbol(tl, tl->t, SYM_NONE);
 	XXXAZ(sy1);
 

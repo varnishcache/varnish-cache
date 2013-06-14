@@ -212,9 +212,23 @@ vcc_Function(struct vcc *tl)
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
+	if (!vcc_isCid(tl->t)) {
+		VSB_printf(tl->sb,
+		    "Names of VCL sub's cannot contain '-'\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
 
 	m = IsMethod(tl->t);
-	if (m != -1) {
+	if (m == -2) {
+		VSB_printf(tl->sb,
+		    "VCL sub's named 'vcl*' are reserved names.\n");
+		vcc_ErrWhere(tl, tl->t);
+		VSB_printf(tl->sb, "Valid vcl_* methods are:\n");
+		for (i = 0; method_tab[i].name != NULL; i++)
+			VSB_printf(tl->sb, "\t%s\n", method_tab[i].name);
+		return;
+	} else if (m != -1) {
 		assert(m < VCL_MET_MAX);
 		tl->fb = tl->fm[m];
 		if (tl->mprocs[m] == NULL) {
