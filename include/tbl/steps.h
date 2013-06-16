@@ -48,4 +48,11 @@ REQ_STEP(prepresp,	PREPRESP,	(wrk, req))
 REQ_STEP(deliver,	DELIVER,	(wrk, req))
 REQ_STEP(error,		ERROR,		(wrk, req))
 #endif
+
+#ifdef FETCH_STEP
+FETCH_STEP(fetch,	FETCH,		(wrk, bo, reqp))
+FETCH_STEP(abandon,	ABANDON,	(wrk, bo))
+FETCH_STEP(done,	DONE,		())
+#endif
+
 /*lint -restore */

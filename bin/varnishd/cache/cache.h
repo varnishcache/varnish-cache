@@ -153,6 +153,12 @@ enum req_step {
 #undef REQ_STEP
 };
 
+enum fetch_step {
+#define FETCH_STEP(l, U, arg)	F_STP_##U,
+#include "tbl/steps.h"
+#undef FETCH_STEP
+};
+
 /*--------------------------------------------------------------------*/
 struct lock { void *priv; };	// Opaque
 
@@ -495,6 +501,7 @@ struct busyobj {
 #define BUSYOBJ_MAGIC		0x23b95567
 	struct lock		mtx;
 	char			*end;
+	enum fetch_step		step;
 
 	/*
 	 * All fields from refcount and down are zeroed when the busyobj

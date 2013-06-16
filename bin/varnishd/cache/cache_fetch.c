@@ -771,21 +771,15 @@ vbf_proc_resp(struct worker *wrk, struct busyobj *bo)
 
 }
 
-struct vbf_secret_handshake {
-	unsigned		magic;
-#define VBF_SECRET_HANDSHAKE_MAGIC	0x98c95172
-	struct busyobj		*bo;
-	struct req		**reqp;
-};
+/*--------------------------------------------------------------------
+ */
 
-static void
-vbf_fetch_thread(struct worker *wrk, void *priv)
+static enum fetch_step
+vbf_stp_fetch(struct worker *wrk, struct busyobj *bo, struct req **reqp)
 {
-	struct vbf_secret_handshake *vsh;
-	struct busyobj *bo;
-	struct req *req;
 	int i;
 	struct http *hp, *hp2;
+	struct req *req;
 	char *b;
 	uint16_t nhttp;
 	unsigned l;
@@ -795,13 +789,10 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CAST_OBJ_NOTNULL(vsh, priv, VBF_SECRET_HANDSHAKE_MAGIC);
-	AN(vsh->reqp);
-	req = *vsh->reqp;
+	AN(reqp);
+	req = *reqp;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-
-	bo = vsh->bo;
-	THR_SetBusyobj(bo);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	vbf_make_bereq(wrk, req, bo);
 	xxxassert (wrk->handling == VCL_RET_FETCH);
@@ -810,10 +801,8 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	if (!bo->do_pass) {
 		AN(req);
-		AN(vsh);
 		req = NULL;
-		*vsh->reqp = NULL;
-		vsh = NULL;
+		*reqp = NULL;
 	}
 
 	i = vbf_fetch_hdr(wrk, bo, req);
@@ -829,13 +818,10 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	if (bo->do_pass) {
 		AN(req);
-		AN(vsh);
 		req = NULL;
-		*vsh->reqp = NULL;
-		vsh = NULL;
+		*reqp = NULL;
 	}
 	AZ(req);
-	AZ(vsh);
 
 	if (i) {
 		wrk->handling = VCL_RET_ERROR;
@@ -865,8 +851,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 		case VCL_RET_ERROR:
 			bo->state = BOS_FAILED;
 			VBO_DerefBusyObj(wrk, &bo);	// XXX ?
-			THR_SetBusyobj(NULL);
-			return;
+			return (F_STP_DONE);
 		case VCL_RET_RESTART:
 			INCOMPL();
 		default:
@@ -897,10 +882,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 			AZ(HSH_Deref(&wrk->stats, bo->fetch_objcore, NULL));
 			bo->fetch_objcore = NULL;
 			VDI_CloseFd(&bo->vbc);
-			bo->state = BOS_FAILED;
-VSL_Flush(bo->vsl, 0);
-			THR_SetBusyobj(NULL);
-			return;
+			return (F_STP_ABANDON);
 		} else
 			/* No vary */
 			AZ(vary);
@@ -934,10 +916,7 @@ VSL_Flush(bo->vsl, 0);
 		AZ(HSH_Deref(&wrk->stats, bo->fetch_objcore, NULL));
 		bo->fetch_objcore = NULL;
 		VDI_CloseFd(&bo->vbc);
-		bo->state = BOS_FAILED;
-		VBO_DerefBusyObj(wrk, &bo);	// XXX ?
-		THR_SetBusyobj(NULL);
-		return;
+		return (F_STP_ABANDON);
 	}
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 
@@ -998,16 +977,82 @@ VSL_Flush(bo->vsl, 0);
 
 	if (bo->state == BOS_FAILED) {
 		/* handle early failures */
-		VBO_DerefBusyObj(wrk, &bo);	// XXX ?
 		(void)HSH_Deref(&wrk->stats, NULL, &obj);
-		THR_SetBusyobj(NULL);
-		return;
+		return (F_STP_ABANDON);
 	}
 
 	VBO_DerefBusyObj(wrk, &bo);	// XXX ?
+	return (F_STP_DONE);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+static enum fetch_step
+vbf_stp_abandon(struct worker *wrk, struct busyobj *bo)
+{
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	bo->state = BOS_FAILED;
+	VBO_DerefBusyObj(wrk, &bo);	// XXX ?
+	return (F_STP_DONE);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+static enum fetch_step
+vbf_stp_done(void)
+{
+	WRONG("Just plain wrong");
+}
+
+/*--------------------------------------------------------------------
+ */
+
+struct vbf_secret_handshake {
+	unsigned		magic;
+#define VBF_SECRET_HANDSHAKE_MAGIC	0x98c95172
+	struct busyobj		*bo;
+	struct req		**reqp;
+};
+
+static void
+vbf_fetch_thread(struct worker *wrk, void *priv)
+{
+	struct vbf_secret_handshake *vsh;
+	struct busyobj *bo;
+	struct req **reqp;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CAST_OBJ_NOTNULL(vsh, priv, VBF_SECRET_HANDSHAKE_MAGIC);
+	AN(vsh->reqp);
+	reqp = vsh->reqp;
+	CHECK_OBJ_NOTNULL((*vsh->reqp), REQ_MAGIC);
+
+	bo = vsh->bo;
+	THR_SetBusyobj(bo);
+	bo->step = F_STP_FETCH;
+
+	while (bo->step != F_STP_DONE) {
+		switch(bo->step) {
+#define FETCH_STEP(l, U, arg)						\
+		case F_STP_##U:						\
+			bo->step = vbf_stp_##l arg;			\
+			break;
+#include "tbl/steps.h"
+#undef FETCH_STEP
+		default:
+			WRONG("Illegal fetch_step");
+		}
+	}
 	assert(WRW_IsReleased(wrk));
 	THR_SetBusyobj(NULL);
 }
+
+/*--------------------------------------------------------------------
+ */
 
 void
 VBF_Fetch(struct worker *wrk, struct req *req)
