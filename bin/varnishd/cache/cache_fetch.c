@@ -486,7 +486,8 @@ vbf_fetch_body(struct worker *wrk, void *priv)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->vbc, VBC_MAGIC);
+	htc = &bo->htc;
+	CHECK_OBJ_ORNULL(bo->vbc, VBC_MAGIC);
 	obj = bo->fetch_obj;
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(obj->http, HTTP_MAGIC);
@@ -500,7 +501,6 @@ vbf_fetch_body(struct worker *wrk, void *priv)
 	AZ(bo->stats);
 	bo->stats = &wrk->stats;
 
-	htc = &bo->htc;
 
 	if (bo->vfp == NULL)
 		bo->vfp = &vfp_nop;
@@ -513,7 +513,7 @@ vbf_fetch_body(struct worker *wrk, void *priv)
 
 	/* XXX: pick up estimate from objdr ? */
 	cl = 0;
-	cls = 0;
+	cls = bo->should_close;
 	switch (htc->body_status) {
 	case BS_NONE:
 		mklen = 0;
@@ -526,7 +526,7 @@ vbf_fetch_body(struct worker *wrk, void *priv)
 
 		bo->vfp->begin(bo, cl);
 		if (bo->state == BOS_FETCHING && cl > 0)
-			cls = vbf_fetch_straight(bo, htc, cl);
+			cls |= vbf_fetch_straight(bo, htc, cl);
 		mklen = 1;
 		if (bo->vfp->end(bo))
 			assert(bo->state == BOS_FAILED);
@@ -534,7 +534,7 @@ vbf_fetch_body(struct worker *wrk, void *priv)
 	case BS_CHUNKED:
 		bo->vfp->begin(bo, cl > 0 ? cl : 0);
 		if (bo->state == BOS_FETCHING)
-			cls = vbf_fetch_chunked(bo, htc);
+			cls |= vbf_fetch_chunked(bo, htc);
 		mklen = 1;
 		if (bo->vfp->end(bo))
 			assert(bo->state == BOS_FAILED);
@@ -549,11 +549,10 @@ vbf_fetch_body(struct worker *wrk, void *priv)
 			assert(bo->state == BOS_FAILED);
 		break;
 	case BS_ERROR:
-		cls = VBF_Error(bo, "error incompatible Transfer-Encoding");
+		cls |= VBF_Error(bo, "error incompatible Transfer-Encoding");
 		mklen = 0;
 		break;
 	default:
-		cls = 0;
 		mklen = 0;
 		INCOMPL();
 	}
@@ -574,17 +573,20 @@ vbf_fetch_body(struct worker *wrk, void *priv)
 	http_Teardown(bo->bereq);
 	http_Teardown(bo->beresp);
 
+	if (bo->vbc != NULL) {
+		if (cls)
+			VDI_CloseFd(&bo->vbc);
+		else
+			VDI_RecycleFd(&bo->vbc);
+	}
+
 	if (bo->state == BOS_FAILED) {
 		wrk->stats.fetch_failed++;
-		VDI_CloseFd(&bo->vbc);
 		obj->len = 0;
 		EXP_Clr(&obj->exp);
 		EXP_Rearm(obj);
 	} else {
 		assert(bo->state == BOS_FETCHING);
-
-		if (cls == 0 && bo->should_close)
-			cls = 1;
 
 		VSLb(bo->vsl, SLT_Length, "%zd", obj->len);
 
@@ -609,12 +611,6 @@ vbf_fetch_body(struct worker *wrk, void *priv)
 			    "Content-Length: %zd", obj->len);
 		}
 
-		if (cls)
-			VDI_CloseFd(&bo->vbc);
-		else
-			VDI_RecycleFd(&bo->vbc);
-
-
 		/* XXX: Atomic assignment, needs volatile/membar ? */
 		bo->state = BOS_FINISHED;
 	}
@@ -627,15 +623,14 @@ vbf_fetch_body(struct worker *wrk, void *priv)
  * Copy req->bereq and run it by VCL::vcl_backend_fetch{}
  */
 
-static void
-vbf_make_bereq(struct worker *wrk, const struct req *req, struct busyobj *bo)
+static enum fetch_step
+vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo, const struct req *req)
 {
 	int i;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
 
 	AN(bo->director);
 	AZ(bo->vbc);
@@ -666,17 +661,53 @@ vbf_make_bereq(struct worker *wrk, const struct req *req, struct busyobj *bo)
 
 	http_PrintfHeader(bo->bereq,
 	    "X-Varnish: %u", bo->vsl->wid & VSL_IDENTMASK);
+	return (F_STP_FETCHHDR);
 }
-
 /*--------------------------------------------------------------------
  */
 
-static void
-vbf_proc_resp(struct worker *wrk, struct busyobj *bo)
+static enum fetch_step
+vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo, struct req **reqp)
 {
 	int i;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	AN(reqp);
+	CHECK_OBJ_NOTNULL((*reqp), REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	xxxassert (wrk->handling == VCL_RET_FETCH);
+
+	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, HTTP_Beresp);
+
+	if (!bo->do_pass)
+		*reqp = NULL;
+
+	i = vbf_fetch_hdr(wrk, bo, *reqp);
+	/*
+	 * If we recycle a backend connection, there is a finite chance
+	 * that the backend closed it before we get a request to it.
+	 * Do a single retry in that case.
+	 */
+	if (i == 1) {
+		VSC_C_main->backend_retry++;
+		i = vbf_fetch_hdr(wrk, bo, *reqp);
+	}
+
+	if (bo->do_pass)
+		*reqp = NULL;
+
+	if (i) {
+		AZ(bo->vbc);
+		bo->err_code = 503;
+		http_SetH(bo->beresp, HTTP_HDR_PROTO, "HTTP/1.1");
+		http_SetResp(bo->beresp,
+		    "HTTP/1.1", 503, "Backend fetch failed");
+		http_SetHeader(bo->beresp, "Content-Length: 0");
+		http_SetHeader(bo->beresp, "Connection: close");
+	} else {
+		AN(bo->vbc);
+	}
 
 	/*
 	 * These two headers can be spread over multiple actual headers
@@ -727,6 +758,7 @@ vbf_proc_resp(struct worker *wrk, struct busyobj *bo)
 	 *	no Content-Encoding		--> object is not gzip'ed.
 	 *	anything else			--> do nothing wrt gzip
 	 *
+	 * XXX: BS_NONE/cl==0 should avoid gzip/gunzip
 	 */
 
 	/* We do nothing unless the param is set */
@@ -769,17 +801,18 @@ vbf_proc_resp(struct worker *wrk, struct busyobj *bo)
 	else if (bo->is_gzip)
 		bo->vfp = &vfp_testgzip;
 
+	if (wrk->handling != VCL_RET_DELIVER)
+		return (F_STP_NOTYET);
+	return (F_STP_FETCH);
 }
 
 /*--------------------------------------------------------------------
  */
 
 static enum fetch_step
-vbf_stp_fetch(struct worker *wrk, struct busyobj *bo, struct req **reqp)
+vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 {
-	int i;
 	struct http *hp, *hp2;
-	struct req *req;
 	char *b;
 	uint16_t nhttp;
 	unsigned l;
@@ -789,48 +822,10 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo, struct req **reqp)
 
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	AN(reqp);
-	req = *reqp;
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	vbf_make_bereq(wrk, req, bo);
-	xxxassert (wrk->handling == VCL_RET_FETCH);
-
-	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, HTTP_Beresp);
-
-	if (!bo->do_pass) {
-		AN(req);
-		req = NULL;
-		*reqp = NULL;
-	}
-
-	i = vbf_fetch_hdr(wrk, bo, req);
-	/*
-	 * If we recycle a backend connection, there is a finite chance
-	 * that the backend closed it before we get a request to it.
-	 * Do a single retry in that case.
-	 */
-	if (i == 1) {
-		VSC_C_main->backend_retry++;
-		i = vbf_fetch_hdr(wrk, bo, req);
-	}
-
-	if (bo->do_pass) {
-		AN(req);
-		req = NULL;
-		*reqp = NULL;
-	}
-	AZ(req);
-
-	if (i) {
-		wrk->handling = VCL_RET_ERROR;
-		bo->err_code = 503;
-	} else {
-		vbf_proc_resp(wrk, bo);
-		if (wrk->handling != VCL_RET_DELIVER)
-			VDI_CloseFd(&bo->vbc);
-	}
+	if (wrk->handling != VCL_RET_DELIVER)
+		VDI_CloseFd(&bo->vbc);
 
 	if (wrk->handling != VCL_RET_DELIVER) {
 		/* Clean up partial fetch */
@@ -1003,6 +998,12 @@ vbf_stp_abandon(struct worker *wrk, struct busyobj *bo)
  */
 
 static enum fetch_step
+vbf_stp_notyet(void)
+{
+	WRONG("Patience, grashopper, patience...");
+}
+
+static enum fetch_step
 vbf_stp_done(void)
 {
 	WRONG("Just plain wrong");
@@ -1033,7 +1034,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	bo = vsh->bo;
 	THR_SetBusyobj(bo);
-	bo->step = F_STP_FETCH;
+	bo->step = F_STP_MKBEREQ;
 
 	while (bo->step != F_STP_DONE) {
 		switch(bo->step) {

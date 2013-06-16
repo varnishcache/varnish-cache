@@ -15,35 +15,50 @@ client c1 {
 	expect resp.http.X-varnish == "1001"
 } -run
 
+delay .1
+
 client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 503
-	expect resp.http.X-varnish == "1005"
+	expect resp.http.X-varnish == "1004"
 } -run
 
-# Then check that an cacheable error from the backend is 
+delay .1
+
+# Then check that a cacheable error from the backend is 
+
+varnish v1 -cliok "ban req.url ~ .*"
 
 server s1 {
 	rxreq
 	txresp -status 302
 } -start
 
-varnish v1 -vcl+backend { }
+varnish v1 -vcl+backend { 
+	sub vcl_backend_response {
+		set beresp.http.ttl = beresp.ttl;
+		set beresp.http.uncacheable = beresp.uncacheable;
+	}
+}
 
 client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 302
-	expect resp.http.X-varnish == "1009"
+	expect resp.http.X-varnish == "1007"
 } -run
+
+delay .1
 
 client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 302
-	expect resp.http.X-varnish == "1012 1010"
+	expect resp.http.X-varnish == "1010 1008"
 } -run
+
+delay .1
 
 # Then check that a non-cacheable error from the backend can be
 
@@ -64,12 +79,16 @@ client c1 {
 	txreq -url "/2"
 	rxresp
 	expect resp.status == 502
-	expect resp.http.X-varnish == "1014"
+	expect resp.http.X-varnish == "1012"
 } -run
+
+delay .1
 
 client c1 {
 	txreq -url "/2"
 	rxresp
 	expect resp.status == 502
-	expect resp.http.X-varnish == "1017 1015"
+	expect resp.http.X-varnish == "1015 1013"
 } -run
+
+delay .1
