@@ -524,8 +524,8 @@ vbf_fetch_body(struct worker *wrk, void *priv)
 	case BS_LENGTH:
 		cl = vbf_fetch_number(bo->h_content_length, 10);
 
-		bo->vfp->begin(bo, cl > 0 ? cl : 0);
-		if (bo->state == BOS_FETCHING)
+		bo->vfp->begin(bo, cl);
+		if (bo->state == BOS_FETCHING && cl > 0)
 			cls = vbf_fetch_straight(bo, htc, cl);
 		mklen = 1;
 		if (bo->vfp->end(bo))
