@@ -240,8 +240,7 @@ RFC2616_Body(struct busyobj *bo, struct dstat *stats)
 		return (BS_ERROR);
 	}
 
-	if (http_GetHdr(hp, H_Content_Length,
-	    &bo->h_content_length)) {
+	if (http_GetHdr(hp, H_Content_Length, &bo->h_content_length)) {
 		stats->fetch_length++;
 		return (BS_LENGTH);
 	}
