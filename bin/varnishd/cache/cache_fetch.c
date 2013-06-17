@@ -474,7 +474,7 @@ vbf_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
  */
 
 static void
-vbf_fetch_body(struct worker *wrk, void *priv)
+vbf_fetch_body(struct worker *wrk, struct busyobj *bo)
 {
 	int cls;
 	struct storage *st;
@@ -482,10 +482,9 @@ vbf_fetch_body(struct worker *wrk, void *priv)
 	ssize_t cl;
 	struct http_conn *htc;
 	struct object *obj;
-	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	htc = &bo->htc;
 	CHECK_OBJ_ORNULL(bo->vbc, VBC_MAGIC);
 	obj = bo->fetch_obj;
@@ -661,6 +660,7 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo, const struct req *req)
 
 	http_PrintfHeader(bo->bereq,
 	    "X-Varnish: %u", bo->vsl->wid & VSL_IDENTMASK);
+	/* XXX: Missing ABANDON */
 	return (F_STP_FETCHHDR);
 }
 /*--------------------------------------------------------------------
@@ -801,9 +801,10 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo, struct req **reqp)
 	else if (bo->is_gzip)
 		bo->vfp = &vfp_testgzip;
 
-	if (wrk->handling != VCL_RET_DELIVER)
-		return (F_STP_NOTYET);
-	return (F_STP_FETCH);
+	if (wrk->handling == VCL_RET_DELIVER)
+		return (F_STP_FETCH);
+
+	return (F_STP_NOTYET);
 }
 
 /*--------------------------------------------------------------------
@@ -824,6 +825,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
+	assert(wrk->handling == VCL_RET_DELIVER);
+#if 0
 	if (wrk->handling != VCL_RET_DELIVER)
 		VDI_CloseFd(&bo->vbc);
 
@@ -853,6 +856,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 			WRONG("Illegal action in vcl_fetch{}");
 		}
 	}
+#endif
 
 	if (bo->fetch_objcore->objhead == NULL)
 		AN(bo->do_pass);
