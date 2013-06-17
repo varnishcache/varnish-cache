@@ -206,7 +206,7 @@ VGZ_ObufStorage(struct busyobj *bo, struct vgz *vg)
 {
 	struct storage *st;
 
-	st = VBF_GetStorage(bo, 0);
+	st = VFP_GetStorage(bo, 0);
 	if (st == NULL)
 		return (-1);
 
@@ -482,7 +482,7 @@ vfp_gunzip_bytes(void *priv, struct http_conn *htc, ssize_t bytes)
 			return(-1);
 		i = VGZ_Gunzip(vg, &dp, &dl);
 		if (i != VGZ_OK && i != VGZ_END)
-			return(VBF_Error(bo, "Gunzip data error"));
+			return(VFP_Error(bo, "Gunzip data error"));
 		VBO_extend(bo, dl);
 	}
 	assert(i == Z_OK || i == Z_STREAM_END);
@@ -504,7 +504,7 @@ vfp_gunzip_end(void *priv)
 		return(0);
 	}
 	if (VGZ_Destroy(&vg) != VGZ_END)
-		return(VBF_Error(bo, "Gunzip error at the very end"));
+		return(VFP_Error(bo, "Gunzip error at the very end"));
 	return (0);
 }
 
@@ -592,7 +592,7 @@ vfp_gzip_end(void *priv)
 	} while (i != Z_STREAM_END);
 	VGZ_UpdateObj(vg, bo->fetch_obj);
 	if (VGZ_Destroy(&vg) != VGZ_END)
-		return(VBF_Error(bo, "Gzip error at the very end"));
+		return(VFP_Error(bo, "Gzip error at the very end"));
 	return (0);
 }
 
@@ -637,7 +637,7 @@ vfp_testgzip_bytes(void *priv, struct http_conn *htc, ssize_t bytes)
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AZ(vg->vz.avail_in);
 	while (bytes > 0) {
-		st = VBF_GetStorage(bo, 0);
+		st = VFP_GetStorage(bo, 0);
 		if (st == NULL)
 			return(-1);
 		l = st->space - st->len;
@@ -655,9 +655,9 @@ vfp_testgzip_bytes(void *priv, struct http_conn *htc, ssize_t bytes)
 			VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 			i = VGZ_Gunzip(vg, &dp, &dl);
 			if (i == VGZ_END && !VGZ_IbufEmpty(vg))
-				return(VBF_Error(bo, "Junk after gzip data"));
+				return(VFP_Error(bo, "Junk after gzip data"));
 			if (i != VGZ_OK && i != VGZ_END)
-				return(VBF_Error2(bo,
+				return(VFP_Error2(bo,
 				    "Invalid Gzip data", vg->vz.msg));
 		}
 	}
@@ -681,7 +681,7 @@ vfp_testgzip_end(void *priv)
 	}
 	VGZ_UpdateObj(vg, bo->fetch_obj);
 	if (VGZ_Destroy(&vg) != VGZ_END)
-		return(VBF_Error(bo, "TestGunzip error at the very end"));
+		return(VFP_Error(bo, "TestGunzip error at the very end"));
 	return (0);
 }
 

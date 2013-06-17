@@ -93,7 +93,7 @@ vfp_esi_bytes_uu(struct busyobj *bo, const struct vef_priv *vef,
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 
 	while (bytes > 0) {
-		st = VBF_GetStorage(bo, 0);
+		st = VFP_GetStorage(bo, 0);
 		if (st == NULL)
 			return (-1);
 		wl = vef_read(htc,
@@ -380,7 +380,7 @@ vfp_esi_end(void *priv)
 		retval = -1;
 
 	if (bo->vgz_rx != NULL && VGZ_Destroy(&bo->vgz_rx) != VGZ_END)
-		retval = VBF_Error(bo, "Gunzip+ESI Failed at the very end");
+		retval = VFP_Error(bo, "Gunzip+ESI Failed at the very end");
 
 	vsb = VEP_Finish(bo);
 
@@ -395,7 +395,7 @@ vfp_esi_end(void *priv)
 				    VSB_data(vsb), l);
 				bo->fetch_obj->esidata->len = l;
 			} else {
-				retval = VBF_Error(bo,
+				retval = VFP_Error(bo,
 				    "Could not allocate storage for esidata");
 			}
 		}
@@ -408,7 +408,7 @@ vfp_esi_end(void *priv)
 	if (vef->vgz != NULL) {
 		VGZ_UpdateObj(vef->vgz, bo->fetch_obj);
 		if (VGZ_Destroy(&vef->vgz) != VGZ_END)
-			retval = VBF_Error(bo,
+			retval = VFP_Error(bo,
 			    "ESI+Gzip Failed at the very end");
 	}
 	if (vef->ibuf != NULL)

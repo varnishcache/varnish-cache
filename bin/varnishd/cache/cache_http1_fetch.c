@@ -76,13 +76,13 @@ vbf_fetch_straight(struct busyobj *bo, struct http_conn *htc, ssize_t cl)
 	assert(htc->body_status == BS_LENGTH);
 
 	if (cl < 0) {
-		return (VBF_Error(bo, "straight length field bogus"));
+		return (VFP_Error(bo, "straight length field bogus"));
 	} else if (cl == 0)
 		return (0);
 
 	i = bo->vfp->bytes(bo, htc, cl);
 	if (i <= 0)
-		return (VBF_Error(bo, "straight insufficient bytes"));
+		return (VFP_Error(bo, "straight insufficient bytes"));
 	return (0);
 }
 
@@ -105,17 +105,17 @@ vbf_fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 		/* Skip leading whitespace */
 		do {
 			if (HTTP1_Read(htc, buf, 1) <= 0)
-				return (VBF_Error(bo, "chunked read err"));
+				return (VFP_Error(bo, "chunked read err"));
 		} while (vct_islws(buf[0]));
 
 		if (!vct_ishex(buf[0]))
-			return (VBF_Error(bo, "chunked header non-hex"));
+			return (VFP_Error(bo, "chunked header non-hex"));
 
 		/* Collect hex digits, skipping leading zeros */
 		for (u = 1; u < sizeof buf; u++) {
 			do {
 				if (HTTP1_Read(htc, buf + u, 1) <= 0)
-					return (VBF_Error(bo,
+					return (VFP_Error(bo,
 					    "chunked read err"));
 			} while (u == 1 && buf[0] == '0' && buf[u] == '0');
 			if (!vct_ishex(buf[u]))
@@ -123,31 +123,31 @@ vbf_fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 		}
 
 		if (u >= sizeof buf)
-			return (VBF_Error(bo,"chunked header too long"));
+			return (VFP_Error(bo,"chunked header too long"));
 
 		/* Skip trailing white space */
 		while(vct_islws(buf[u]) && buf[u] != '\n')
 			if (HTTP1_Read(htc, buf + u, 1) <= 0)
-				return (VBF_Error(bo, "chunked read err"));
+				return (VFP_Error(bo, "chunked read err"));
 
 		if (buf[u] != '\n')
-			return (VBF_Error(bo,"chunked header no NL"));
+			return (VFP_Error(bo,"chunked header no NL"));
 
 		buf[u] = '\0';
 		cl = vbf_fetch_number(buf, 16);
 		if (cl < 0)
-			return (VBF_Error(bo,"chunked header number syntax"));
+			return (VFP_Error(bo,"chunked header number syntax"));
 
 		if (cl > 0 && bo->vfp->bytes(bo, htc, cl) <= 0)
-			return (VBF_Error(bo, "chunked read err"));
+			return (VFP_Error(bo, "chunked read err"));
 
 		i = HTTP1_Read(htc, buf, 1);
 		if (i <= 0)
-			return (VBF_Error(bo, "chunked read err"));
+			return (VFP_Error(bo, "chunked read err"));
 		if (buf[0] == '\r' && HTTP1_Read( htc, buf, 1) <= 0)
-			return (VBF_Error(bo, "chunked read err"));
+			return (VFP_Error(bo, "chunked read err"));
 		if (buf[0] != '\n')
-			return (VBF_Error(bo,"chunked tail no NL"));
+			return (VFP_Error(bo,"chunked tail no NL"));
 	} while (cl > 0);
 	return (0);
 }
@@ -160,7 +160,7 @@ vbf_fetch_eof(struct busyobj *bo, struct http_conn *htc)
 
 	assert(htc->body_status == BS_EOF);
 	if (bo->vfp->bytes(bo, htc, SSIZE_MAX) < 0)
-		(void)VBF_Error(bo,"eof socket fail");
+		(void)VFP_Error(bo,"eof socket fail");
 }
 
 /*--------------------------------------------------------------------
@@ -377,7 +377,7 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 			assert(bo->state == BOS_FAILED);
 		break;
 	case BS_ERROR:
-		cls |= VBF_Error(bo, "error incompatible Transfer-Encoding");
+		cls |= VFP_Error(bo, "error incompatible Transfer-Encoding");
 		mklen = 0;
 		break;
 	default:

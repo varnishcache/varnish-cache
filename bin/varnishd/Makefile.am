@@ -24,6 +24,7 @@ varnishd_SOURCES = \
 	cache/cache_esi_parse.c \
 	cache/cache_expire.c \
 	cache/cache_fetch.c \
+	cache/cache_fetch_proc.c \
 	cache/cache_gzip.c \
 	cache/cache_hash.c \
 	cache/cache_http.c \

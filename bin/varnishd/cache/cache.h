@@ -826,10 +826,13 @@ void EXP_NukeLRU(struct worker *wrk, struct vsl_log *vsl, struct lru *lru);
 
 /* cache_fetch.c */
 void VBF_Fetch(struct worker *wrk, struct req *req);
-struct storage *VBF_GetStorage(struct busyobj *, ssize_t sz);
-int VBF_Error(struct busyobj *, const char *error);
-int VBF_Error2(struct busyobj *, const char *error, const char *more);
-void VBF_Init(void);
+
+/* cache_fetch_proc.c */
+struct storage *VFP_GetStorage(struct busyobj *, ssize_t sz);
+int VFP_Error2(struct busyobj *, const char *error, const char *more);
+int VFP_Error(struct busyobj *, const char *error);
+void VFP_Init(void);
+extern struct vfp VFP_nop;
 
 /* cache_gzip.c */
 struct vgz;
