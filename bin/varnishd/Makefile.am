@@ -27,6 +27,7 @@ varnishd_SOURCES = \
 	cache/cache_gzip.c \
 	cache/cache_hash.c \
 	cache/cache_http.c \
+	cache/cache_http1_fetch.c \
 	cache/cache_http1_fsm.c \
 	cache/cache_http1_proto.c \
 	cache/cache_lck.c \
