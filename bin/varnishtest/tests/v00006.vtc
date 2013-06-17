@@ -41,7 +41,7 @@ varnish v1 -expect n_backend == 2
 varnish v1 -expect n_vcl_avail == 2
 varnish v1 -expect n_vcl_discard == 0
 
-varnish v1 -cli "debug.backend" -cli "vcl.list"
+varnish v1 -cli "vcl.list"
 
 # Discard the first VCL
 
@@ -64,7 +64,7 @@ client c1 {
 # The workthread should have released its VCL reference now
 # but we need to tickle the CLI to notice
 
-varnish v1 -cli "debug.backend" -cli "vcl.list"
+varnish v1 -cli "vcl.list"
 
 varnish v1 -expect n_backend == 1
 varnish v1 -expect n_vcl_avail == 1

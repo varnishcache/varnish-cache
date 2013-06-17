@@ -211,7 +211,7 @@ This is useful is you are using Varnish to load balance in front of
 other Varnish caches or other web accelerators as objects won't be
 duplicated across caches.
 
-It will use the value of req.hash, just as the normal cache-lookup methods.
+It will use the value of req.hash, just as the normal cache lookup methods.
 
 
 The round-robin director
@@ -380,7 +380,7 @@ which can later be used to match client addresses:
   }
 
 If an ACL entry specifies a host name which Varnish is unable to
-resolve, it will match any address it is com‐ pared to.  Consequently,
+resolve, it will match any address it is compared to.  Consequently,
 if it is preceded by a negation mark, it will reject any address it is
 compared to, which may not be what you intended.  If the entry is
 enclosed in parentheses, however, it will simply be ignored.
@@ -395,16 +395,16 @@ To match an IP address against an ACL, simply use the match operator:
 Regular Expressions
 -------------------
 
-In Varnish 2.1.0 Varnish switched to using PCRE - Perl-compatible
-regular expressions. For a complete description of PCRE please see the
-PCRE(3) man page.
+Varnish uses PCRE - Perl-compatible regular expressions. For a
+complete description of PCRE please see the pcre(3) man page.
 
 To send flags to the PCRE engine, such as to turn on *case
 insensitivity* add the flag within parens following a question mark,
 like this:
 ::
 
-  if (req.http.host ~ "(?i)example.com$") {
+  # If host is NOT example dot com..
+  if (req.http.host !~ "(?i)example.com$") {
           ...
   }
 
@@ -429,6 +429,7 @@ regsuball(str, regex, sub)
   As regsuball() but this replaces all occurrences.
 
 ban(ban expression)
+  Bans all objects in cache that match the expression.
 
 ban_url(regex)
   Bans all objects in cache whose URLs match regex.
@@ -488,7 +489,8 @@ vcl_recv
   lookup  
     Look up the requested object in the cache.  Control will
     eventually pass to vcl_hit or vcl_miss, depending on whether the
-    object is in the cache.
+    object is in the cache.  The ``bereq.request`` value will be set
+    to ``GET`` regardless of the value of ``req.request``.
 
 vcl_pipe
   Called upon entering pipe mode.  In this mode, the request is passed
@@ -508,8 +510,8 @@ vcl_pipe
 vcl_pass
   Called upon entering pass mode.  In this mode, the request is passed
   on to the backend, and the backend's response is passed on to the
-  client, but is not entered into the cache.  Subsequent requests sub‐
-  mitted over the same client connection are handled normally.
+  client, but is not entered into the cache.  Subsequent requests
+  submitted over the same client connection are handled normally.
   
   The vcl_pass subroutine may terminate with calling return() with one of
   the following keywords:
@@ -606,9 +608,6 @@ vcl_deliver
 
   deliver
     Deliver the object to the client.
-
-  error code [reason]
-    Return the specified error code to the client and abandon the request.
 
   restart
     Restart the transaction. Increases the restart counter. If the number 
@@ -816,6 +815,9 @@ beresp.do_gzip
 beresp.do_gunzip
   Boolean. Unzip the object before storing it in the cache.  Defaults
   to false.
+
+beresp.http.header
+  The corresponding HTTP header.
 
 beresp.proto
   The HTTP protocol version used the backend replied with.

@@ -140,3 +140,16 @@ vreadfile(const char *pfx, const char *fn, ssize_t *sz)
 	errno = err;
 	return (r);
 }
+
+int
+vnonblocking(int fd)
+{
+	int i;
+
+	i = fcntl(fd, F_GETFL);
+	assert(i != -1);
+	i |= O_NONBLOCK;
+	i = fcntl(fd, F_SETFL, i);
+	assert(i != -1);
+	return (i);
+}

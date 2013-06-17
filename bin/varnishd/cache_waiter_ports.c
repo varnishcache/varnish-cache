@@ -159,7 +159,8 @@ vca_main(void *arg)
 
 	while (1) {
 		port_event_t ev[MAX_EVENTS];
-		int nevents, ei, ret;
+		uint_t nevents;
+		int ei, ret;
 		double now, deadline;
 
 		/*
@@ -225,7 +226,7 @@ vca_main(void *arg)
 
 		if (sp) {
 			double tmo =
-			    (sp->t_end + cache_param->timeout_idle) - now;
+			    (sp->t_end + params->sess_timeout) - now;
 
 			/* we should have removed all sps whose timeout has passed */
 			assert(tmo > 0.0);
@@ -242,15 +243,21 @@ vca_main(void *arg)
 			timeout = &max_ts;
 		}
 	}
+	NEEDLESS_RETURN(NULL);
 }
 
 static void
 vca_ports_pass(struct sess *sp)
 {
 	int r;
-	while((r = port_send(solaris_dport, 0, sp)) == -1 &&
-		errno == EAGAIN);
-	AZ(r);
+       r = port_send(solaris_dport, 0, TRUST_ME(sp));
+       if (r == -1 && errno == EAGAIN) {
+	       VSC_C_main->sess_pipe_overflow++;
+	       vca_close_session(sp, "session pipe overflow");
+	       SES_Delete(sp);
+	       return;
+       }
+       AZ(r);
 }
 
 /*--------------------------------------------------------------------*/

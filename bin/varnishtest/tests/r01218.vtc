@@ -1,0 +1,20 @@
+varnishtest "regression for NULL string concatenation"
+
+server s1 {
+	rxreq
+	expect req.http.Candy == "FOOBAR"
+	expect req.http.Cookie == "FOOBAR"
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		set req.http.Candy = " FOOBAR" + req.http.Cookie;
+		set req.http.Cookie = req.http.Cookie + " FOOBAR";
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run

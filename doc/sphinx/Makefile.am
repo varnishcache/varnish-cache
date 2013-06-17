@@ -91,11 +91,6 @@ doctest:
 EXTRA_DIST = \
 	conf.py \
 	index.rst \
-	faq/configuration.rst \
-	faq/general.rst \
-	faq/http.rst \
-	faq/index.rst \
-	faq/logging.rst \
 	glossary/index.rst \
 	installation/bugs.rst \
 	installation/help.rst \

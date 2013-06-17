@@ -2,7 +2,7 @@ AC_PREREQ(2.59)
 AC_COPYRIGHT([Copyright (c) 2006 Verdens Gang AS
 Copyright (c) 2006-2011 Varnish Software AS])
 AC_REVISION([$Id$])
-AC_INIT([Varnish], [3.0.3], [varnish-dev@varnish-cache.org])
+AC_INIT([Varnish], [3.0.4], [varnish-dev@varnish-cache.org])
 AC_CONFIG_SRCDIR(include/varnishapi.h)
 AM_CONFIG_HEADER(config.h)
 
@@ -149,15 +149,10 @@ AC_SUBST(PCRE_LIBS)
 
 PKG_CHECK_MODULES([LIBEDIT], [libedit], 
 	[AC_DEFINE([HAVE_LIBEDIT], [1], [Define we have libedit])],
-	[AC_CHECK_HEADERS([readline/readline.h])
-	 AC_CHECK_HEADERS([edit/readline/readline.h])
-	 AC_CHECK_LIB(edit, el_init,
-	        [ AC_DEFINE([HAVE_LIBEDIT], [1], [Define we have libedit])
-		  LIBEDIT_CFLAGS=""
-		  LIBEDIT_LIBS="-ledit ${CURSES_LIBS}"
-		],
-               [AC_MSG_WARN([libedit not found, disabling libedit support])],
-               [${CURSES_LIBS}])])
+	[AX_LIB_READLINE])
+if test "$ac_cv_have_readline" = no; then
+  AC_MSG_ERROR([libedit or readline not found])
+fi
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -555,6 +550,17 @@ else
 fi
 
 AC_DEFINE_UNQUOTED([VCC_CC],"$VCC_CC",[C compiler command line for VCL code])
+
+# --enable-pcre-jit
+AC_ARG_ENABLE(pcre-jit,
+    AS_HELP_STRING([--enable-pcre-jit],
+	[use the PCRE JIT compiler (default is NO)]),
+    ,
+    [enable_pcre_jit=no])
+
+if test "$enable_pcre_jit" = yes; then
+   AC_DEFINE([USE_PCRE_JIT],[1],[use the PCRE JIT compiler])
+fi
 
 # Generate output
 AC_CONFIG_FILES([

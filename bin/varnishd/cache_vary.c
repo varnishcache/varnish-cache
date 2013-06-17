@@ -61,16 +61,29 @@
 #include "vend.h"
 #include "vct.h"
 
-struct vsb *
-VRY_Create(const struct sess *sp, const struct http *hp)
+/**********************************************************************
+ * Create a Vary matching string from a Vary header
+ *
+ * Return value:
+ * <0: Parse error
+ *  0: No Vary header on object
+ * >0: Length of Vary matching string in *psb
+ */
+
+int
+VRY_Create(const struct sess *sp, const struct http *hp, struct vsb **psb)
 {
 	char *v, *p, *q, *h, *e;
 	struct vsb *sb, *sbh;
 	int l;
+	int error = 0;
+
+	AN(psb);
+	AZ(*psb);
 
 	/* No Vary: header, no worries */
 	if (!http_GetHdr(hp, H_Vary, &v))
-		return (NULL);
+		return (0);
 
 	/* For vary matching string */
 	sb = VSB_new_auto();
@@ -80,10 +93,6 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 	sbh = VSB_new_auto();
 	AN(sbh);
 
-	if (*v == ':') {
-		WSP(sp, SLT_Error, "Vary header had extra ':', fix backend");
-		v++;
-	}
 	for (p = v; *p; p++) {
 
 		/* Find next header-name */
@@ -91,6 +100,12 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 			continue;
 		for (q = p; *q && !vct_issp(*q) && *q != ','; q++)
 			continue;
+
+		if (q - p > INT8_MAX) {
+			WSP(sp, SLT_Error, "Vary header name length exceeded");
+			error = 1;
+			break;
+		}
 
 		/* Build a header-matching string out of it */
 		VSB_clear(sbh);
@@ -106,7 +121,12 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 				e--;
 			/* Encode two byte length and contents */
 			l = e - h;
-			assert(!(l & ~0xffff));
+			if (l > 0xffff - 1) {
+				WSP(sp, SLT_Error,
+				    "Vary header maximum length exceeded");
+				error = 1;
+				break;
+			}
 		} else {
 			e = h;
 			l = 0xffff;
@@ -121,15 +141,27 @@ VRY_Create(const struct sess *sp, const struct http *hp)
 			q++;
 		if (*q == '\0')
 			break;
-		xxxassert(*q == ',');
+		if (*q != ',') {
+			WSP(sp, SLT_Error, "Malformed Vary header");
+			error = 1;
+			break;
+		}
 		p = q;
 	}
+
+	if (error) {
+		VSB_delete(sbh);
+		VSB_delete(sb);
+		return (-1);
+	}
+
 	/* Terminate vary matching string */
 	VSB_printf(sb, "%c%c%c", 0xff, 0xff, 0);
 
 	VSB_delete(sbh);
 	AZ(VSB_finish(sb));
-	return(sb);
+	*psb = sb;
+	return (VSB_len(sb));
 }
 
 /*

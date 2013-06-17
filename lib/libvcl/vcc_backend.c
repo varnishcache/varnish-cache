@@ -651,7 +651,7 @@ vcc_DefBackend(struct vcc *tl, const struct token *nm)
 	sym = VCC_GetSymbolTok(tl, nm, SYM_BACKEND);
 	AN(sym);
 	if (sym->ndef > 0) {
-		VSB_printf(tl->sb, "Backend %.*s redefined\n", PF(tl->t));
+		VSB_printf(tl->sb, "Backend %.*s redefined\n", PF(nm));
 		vcc_ErrWhere(tl, nm);
 		return;
 	}
@@ -713,6 +713,13 @@ vcc_ParseDirector(struct vcc *tl)
 
 	vcc_ExpectCid(tl);		/* ID: name */
 	ERRCHK(tl);
+	if (tl->t->e - tl->t->b > 64) {
+		VSB_printf(tl->sb,
+		    "Name of %.*s too long (max 64, is %zu):\n",
+		    PF(t_first), (size_t)(tl->t->e - tl->t->b));
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
 	tl->t_dir = tl->t;
 	vcc_NextToken(tl);
 

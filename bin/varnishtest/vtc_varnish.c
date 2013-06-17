@@ -390,10 +390,10 @@ varnish_launch(struct varnish *v)
 		AZ(close(v->fds[3]));
 		for (i = 3; i <getdtablesize(); i++)
 			(void)close(i);
-		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(vsb), NULL));
+		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(vsb), (char*)0));
 		exit(1);
 	} else {
-		vtc_log(v->vl, 3, "PID: %d", v->pid);
+		vtc_log(v->vl, 3, "PID: %ld", (long)v->pid);
 	}
 	AZ(close(v->fds[0]));
 	AZ(close(v->fds[3]));
@@ -408,7 +408,7 @@ varnish_launch(struct varnish *v)
 	fd[0].fd = v->cli_fd;
 	fd[0].events = POLLIN;
 	fd[1].fd = v->fds[0];
-	fd[1].events = POLLHUP;
+	fd[1].events = 0; /* Only care about POLLHUP, which is output-only */
 	i = poll(fd, 2, 10000);
 	vtc_log(v->vl, 4, "CLIPOLL %d 0x%x 0x%x",
 	    i, fd[0].revents, fd[1].revents);

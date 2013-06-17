@@ -274,7 +274,7 @@ Symbol_hack(const char *a0)
 	uintptr_t a;
 	struct symbols *s;
 
-	bprintf(buf, "nm -an %s 2>/dev/null", a0);
+	bprintf(buf, "nm -agn %s 2>/dev/null", a0);
 	fi = popen(buf, "r");
 	if (fi == NULL)
 		return;
@@ -480,6 +480,7 @@ main(int argc, char * const *argv)
 			AN(p);
 			*p++ = '\0';
 			MCF_ParamSet(cli, optarg, p);
+			*--p = '=';
 			cli_check(cli);
 			break;
 		case 's':

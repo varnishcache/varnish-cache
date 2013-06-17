@@ -174,7 +174,7 @@ run_vcc(void *priv)
 static void
 run_cc(void *priv)
 {
-	(void)execl("/bin/sh", "/bin/sh", "-c", priv, NULL);
+	(void)execl("/bin/sh", "/bin/sh", "-c", priv, (char*)0);
 }
 
 /*--------------------------------------------------------------------

@@ -33,7 +33,7 @@
  *
  *	req.url == "/foo"
  *	req.url ~ ".iso" && obj.size > 10MB
- *	req.http.host ~ "web1.com" && obj.set-cookie ~ "USER=29293"
+ *	req.http.host ~ "web1.com" && obj.http.set-cookie ~ "USER=29293"
  *
  * We make the "&&" mandatory from the start, leaving the syntax space
  * for latter handling of "||" as well.
@@ -97,9 +97,10 @@ static bgthread_t ban_lurker;
 #define	BAN_OPER_MATCH	0x12
 #define	BAN_OPER_NMATCH	0x13
 
-#define BAN_ARG_URL	0x18
-#define BAN_ARG_REQHTTP	0x19
-#define BAN_ARG_OBJHTTP	0x1a
+#define BAN_ARG_URL		0x18
+#define BAN_ARG_REQHTTP		0x19
+#define BAN_ARG_OBJHTTP		0x1a
+#define BAN_ARG_OBJSTATUS	0x1b
 
 /*--------------------------------------------------------------------
  * Variables we can purge on
@@ -582,6 +583,7 @@ ban_evaluate(const uint8_t *bs, const struct http *objhttp,
 	struct ban_test bt;
 	const uint8_t *be;
 	char *arg1;
+	char buf[10];
 
 	be = bs + ban_len(bs);
 	bs += 13;
@@ -598,6 +600,10 @@ ban_evaluate(const uint8_t *bs, const struct http *objhttp,
 			break;
 		case BAN_ARG_OBJHTTP:
 			(void)http_GetHdr(objhttp, bt.arg1_spec, &arg1);
+			break;
+		case BAN_ARG_OBJSTATUS:
+			arg1 = buf;
+			sprintf(buf, "%d", objhttp->status);
 			break;
 		default:
 			INCOMPL();

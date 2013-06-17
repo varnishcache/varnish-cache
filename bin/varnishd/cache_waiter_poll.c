@@ -199,6 +199,7 @@ vca_poll_init(void)
 {
 
 	vca_pollspace(256);
+	AZ(vnonblocking(vca_pipes[1]));
 	AZ(pthread_create(&vca_poll_thread, NULL, vca_main, NULL));
 }
 

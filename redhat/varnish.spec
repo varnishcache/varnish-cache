@@ -1,6 +1,6 @@
 Summary: High-performance HTTP accelerator
 Name: varnish
-Version: 3.0.3
+Version: 3.0.4
 Release: 1%{?dist}
 License: BSD
 Group: System Environment/Daemons

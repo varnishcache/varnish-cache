@@ -48,7 +48,7 @@
 #include "vsl.h"
 #include "varnishapi.h"
 
-static int	b_flag, c_flag;
+static int	b_flag = 0, c_flag = 0;
 
 /* Ordering-----------------------------------------------------------*/
 
@@ -327,6 +327,16 @@ main(int argc, char * const *argv)
 				break;
 			usage();
 		}
+	}
+
+	/* If we're matching, we want either -b or -c, apply both if
+	 * none are given.  This prevents spurious noise in the log
+	 * output. */
+	if (b_flag == 0 && c_flag == 0 && m_flag) {
+		b_flag = 1;
+		AN(VSL_Arg(vd, 'b', NULL));
+		c_flag = 1;
+		AN(VSL_Arg(vd, 'c', NULL));
 	}
 
 	if (O_flag && m_flag)

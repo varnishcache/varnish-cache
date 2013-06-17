@@ -1,0 +1,28 @@
+varnishtest "acl miscompile"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	acl foo {
+		"127.0.0.2";
+		"127.0.1"/19;
+	}
+	acl bar {
+		"127.0.1.2";
+		"127.0.1"/19;
+	}
+	sub vcl_deliver {
+		set resp.http.ACLfoo = client.ip ~ foo;
+		set resp.http.ACLbar = client.ip ~ bar;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.aclfoo == true
+	expect resp.http.aclbar == true
+} -run

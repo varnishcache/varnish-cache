@@ -275,6 +275,7 @@ smp_thread(struct sess *sp, void *priv)
 
 	(void)sp;
 	CAST_OBJ_NOTNULL(sc, priv, SMP_SC_MAGIC);
+	sc->thread = pthread_self();
 
 	/* First, load all the objects from all segments */
 	VTAILQ_FOREACH(sg, &sc->segments, list)
@@ -306,6 +307,7 @@ static void
 smp_open(const struct stevedore *st)
 {
 	struct smp_sc	*sc;
+	pthread_t pt;
 
 	ASSERT_CLI();
 
@@ -319,7 +321,7 @@ smp_open(const struct stevedore *st)
 	/* We trust the parent to give us a valid silo, for good measure: */
 	AZ(smp_valid_silo(sc));
 
-	AZ(mprotect(sc->base, 4096, PROT_READ));
+	AZ(mprotect((void*)sc->base, 4096, PROT_READ));
 
 	sc->ident = SIGN_DATA(&sc->idn);
 
@@ -347,7 +349,7 @@ smp_open(const struct stevedore *st)
 	smp_new_seg(sc);
 
 	/* Start the worker silo worker thread, it will load the objects */
-	WRK_BgThread(&sc->thread, "persistence", smp_thread, sc);
+	WRK_BgThread(&pt, "persistence", smp_thread, sc);
 
 	VTAILQ_INSERT_TAIL(&silos, sc, list);
 	Lck_Unlock(&sc->mtx);

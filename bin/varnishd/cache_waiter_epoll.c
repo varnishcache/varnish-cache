@@ -38,7 +38,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -224,20 +223,11 @@ vca_sess_timeout_ticker(void *arg)
 static void
 vca_epoll_init(void)
 {
-	int i;
-
-	i = fcntl(vca_pipes[0], F_GETFL);
-	assert(i != -1);
-	i |= O_NONBLOCK;
-	i = fcntl(vca_pipes[0], F_SETFL, i);
-	assert(i != -1);
-
 	AZ(pipe(dotimer_pipe));
-	i = fcntl(dotimer_pipe[0], F_GETFL);
-	assert(i != -1);
-	i |= O_NONBLOCK;
-	i = fcntl(dotimer_pipe[0], F_SETFL, i);
-	assert(i != -1);
+
+	AZ(vnonblocking(vca_pipes[0]));
+	AZ(vnonblocking(vca_pipes[1]));
+	AZ(vnonblocking(dotimer_pipe[0]));
 
 	AZ(pthread_create(&vca_epoll_timeout_thread,
 	    NULL, vca_sess_timeout_ticker, NULL));

@@ -12,6 +12,9 @@ Darwin)
 FreeBSD)
     LIBTOOLIZE=libtoolize
     ;;
+OpenBSD)
+    LIBTOOLIZE=libtoolize
+    ;;
 Linux)
     LIBTOOLIZE=libtoolize
     ;;
@@ -38,8 +41,8 @@ fi
 
 set -ex
 
-aclocal -I m4
 $LIBTOOLIZE --copy --force
+aclocal -I m4
 autoheader
 automake --add-missing --copy --foreign
 autoconf
