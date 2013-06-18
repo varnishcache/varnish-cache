@@ -275,7 +275,7 @@ When to lock, and when not to lock
 Varnish is heavily multithreaded, so by default VMODs must implement
 their own locking to protect shared resources.
 
-When a VCL is loaded or unloaded, the initializtion and teardown
+When a VCL is loaded or unloaded, the initialization and teardown
 is run sequentially in a single thread, and there is guaranteed
 to be no other activity related to this particular VCL, nor are
 there  init/fini activity in any other VCL or VMOD at this time.
