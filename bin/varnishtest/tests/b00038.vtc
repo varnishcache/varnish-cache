@@ -1,0 +1,18 @@
+varnishtest "vcl_backend_fetch abandon"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_fetch {
+		return (abandon);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run

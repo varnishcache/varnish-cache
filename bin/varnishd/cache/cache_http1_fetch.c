@@ -409,6 +409,7 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 		else
 			VDI_RecycleFd(&bo->vbc);
 	}
+	AZ(bo->vbc);
 
 	if (bo->state == BOS_FAILED) {
 		wrk->stats.fetch_failed++;

@@ -85,7 +85,7 @@ returns =(
 	('purge',		"C", ('error', 'fetch',)),
 	('miss',		"C", ('error', 'restart', 'pass', 'fetch',)),
 	('lookup',		"C", ('error', 'restart', 'pass', 'deliver',)),
-	('backend_fetch',	"B", ('fetch', 'error')),
+	('backend_fetch',	"B", ('fetch', 'abandon')),
 	('backend_response',	"B", ('deliver', 'restart', 'error')),
 	('deliver',		"C", ('restart', 'deliver',)),
 	('error',		"C", ('restart', 'deliver',)),

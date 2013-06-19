@@ -38,10 +38,20 @@
 
 #include "hash/hash_slinger.h"
 
-#include "cache_backend.h"
-#include "vcli_priv.h"
 #include "vcl.h"
 #include "vtim.h"
+
+/*--------------------------------------------------------------------
+ */
+
+static void
+vbf_release_req(struct req ***reqpp)
+{
+	if (*reqpp != NULL) {
+		**reqpp = NULL;
+		*reqpp = NULL;
+	}
+}
 
 /*--------------------------------------------------------------------
  * Copy req->bereq and run it by VCL::vcl_backend_fetch{}
@@ -86,19 +96,22 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo, const struct req *req)
 	http_PrintfHeader(bo->bereq,
 	    "X-Varnish: %u", bo->vsl->wid & VSL_IDENTMASK);
 	/* XXX: Missing ABANDON */
+	if (wrk->handling == VCL_RET_ABANDON) {
+		return (F_STP_ABANDON);
+	}
 	return (F_STP_FETCHHDR);
 }
+
 /*--------------------------------------------------------------------
  */
 
 static enum fetch_step
-vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo, struct req **reqp)
+vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo, struct req ***reqpp)
 {
 	int i;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	AN(reqp);
-	CHECK_OBJ_NOTNULL((*reqp), REQ_MAGIC);
+	AN(reqpp);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	xxxassert (wrk->handling == VCL_RET_FETCH);
@@ -106,9 +119,9 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo, struct req **reqp)
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, HTTP_Beresp);
 
 	if (!bo->do_pass)
-		*reqp = NULL;
+		vbf_release_req(reqpp);
 
-	i = V1F_fetch_hdr(wrk, bo, *reqp);
+	i = V1F_fetch_hdr(wrk, bo, *reqpp ? **reqpp : NULL);
 	/*
 	 * If we recycle a backend connection, there is a finite chance
 	 * that the backend closed it before we get a request to it.
@@ -116,11 +129,11 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo, struct req **reqp)
 	 */
 	if (i == 1) {
 		VSC_C_main->backend_retry++;
-		i = V1F_fetch_hdr(wrk, bo, *reqp);
+		i = V1F_fetch_hdr(wrk, bo, *reqpp ? **reqpp : NULL);
 	}
 
 	if (bo->do_pass)
-		*reqp = NULL;
+		vbf_release_req(reqpp);
 
 	if (i) {
 		AZ(bo->vbc);
@@ -251,6 +264,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	assert(wrk->handling == VCL_RET_DELIVER);
+
 #if 0
 	if (wrk->handling != VCL_RET_DELIVER)
 		VDI_CloseFd(&bo->vbc);
@@ -416,13 +430,15 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
  */
 
 static enum fetch_step
-vbf_stp_abandon(struct worker *wrk, struct busyobj *bo)
+vbf_stp_abandon(struct worker *wrk, struct busyobj *bo, struct req ***reqp)
 {
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AN(reqp);
 
 	bo->state = BOS_FAILED;
 	VBO_DerefBusyObj(wrk, &bo);	// XXX ?
+	vbf_release_req(reqp);
 	return (F_STP_DONE);
 }
 
@@ -434,6 +450,9 @@ vbf_stp_notyet(void)
 {
 	WRONG("Patience, grashopper, patience...");
 }
+
+/*--------------------------------------------------------------------
+ */
 
 static enum fetch_step
 vbf_stp_done(void)
@@ -450,6 +469,21 @@ struct vbf_secret_handshake {
 	struct busyobj		*bo;
 	struct req		**reqp;
 };
+
+static const char *
+vbf_step_name(enum fetch_step stp)
+{
+	switch (stp) {
+#define FETCH_STEP(l, U, arg)						\
+		case F_STP_##U:						\
+			return (#U);
+#include "tbl/steps.h"
+#undef FETCH_STEP
+	default:
+		return ("F-step ?");
+	}
+}
+
 
 static void
 vbf_fetch_thread(struct worker *wrk, void *priv)
@@ -473,6 +507,8 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 #define FETCH_STEP(l, U, arg)						\
 		case F_STP_##U:						\
 			bo->step = vbf_stp_##l arg;			\
+			VSLb(bo->vsl, SLT_Debug,			\
+			    "%s -> %s", #l, vbf_step_name(bo->step));	\
 			break;
 #include "tbl/steps.h"
 #undef FETCH_STEP
