@@ -449,6 +449,7 @@ static enum fetch_step
 vbf_stp_notyet(void)
 {
 	WRONG("Patience, grashopper, patience...");
+	NEEDLESS_RETURN(0);
 }
 
 /*--------------------------------------------------------------------
@@ -458,6 +459,7 @@ static enum fetch_step
 vbf_stp_done(void)
 {
 	WRONG("Just plain wrong");
+	NEEDLESS_RETURN(0);
 }
 
 /*--------------------------------------------------------------------
