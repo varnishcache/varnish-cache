@@ -383,6 +383,15 @@ VRT_r_req_restarts(const struct vrt_ctx *ctx)
 	return (ctx->req->restarts);
 }
 
+long
+VRT_r_bereq_retries(const struct vrt_ctx *ctx)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	return (ctx->bo->retries);
+}
+
 /*--------------------------------------------------------------------
  * NB: TTL is relative to when object was created, whereas grace and
  * keep are relative to ttl.

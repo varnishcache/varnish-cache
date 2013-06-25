@@ -507,6 +507,7 @@ struct busyobj {
 	 * All fields from refcount and down are zeroed when the busyobj
 	 * is recycled.
 	 */
+	int			retries;
 	unsigned		refcount;
 	double			t_fetch;
 	uint16_t		err_code;
