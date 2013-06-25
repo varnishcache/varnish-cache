@@ -95,10 +95,9 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo, const struct req *req)
 
 	http_PrintfHeader(bo->bereq,
 	    "X-Varnish: %u", bo->vsl->wid & VSL_IDENTMASK);
-	/* XXX: Missing ABANDON */
-	if (wrk->handling == VCL_RET_ABANDON) {
+	if (wrk->handling == VCL_RET_ABANDON)
 		return (F_STP_ABANDON);
-	}
+	assert (wrk->handling == VCL_RET_FETCH);
 	return (F_STP_FETCHHDR);
 }
 
@@ -182,6 +181,31 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo, struct req ***reqpp)
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, bo->beresp->ws);
 	bo->do_pass |= i;
 
+	if (wrk->handling == VCL_RET_DELIVER)
+		return (F_STP_FETCH);
+
+	return (F_STP_NOTYET);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+static enum fetch_step
+vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
+{
+	struct http *hp, *hp2;
+	char *b;
+	uint16_t nhttp;
+	unsigned l;
+	struct vsb *vary = NULL;
+	int varyl = 0;
+	struct object *obj;
+
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	assert(wrk->handling == VCL_RET_DELIVER);
 	if (bo->do_pass)
 		bo->fetch_objcore->flags |= OC_F_PASS;
 
@@ -239,31 +263,6 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo, struct req ***reqpp)
 	else if (bo->is_gzip)
 		bo->vfp = &vfp_testgzip;
 
-	if (wrk->handling == VCL_RET_DELIVER)
-		return (F_STP_FETCH);
-
-	return (F_STP_NOTYET);
-}
-
-/*--------------------------------------------------------------------
- */
-
-static enum fetch_step
-vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
-{
-	struct http *hp, *hp2;
-	char *b;
-	uint16_t nhttp;
-	unsigned l;
-	struct vsb *vary = NULL;
-	int varyl = 0;
-	struct object *obj;
-
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-
-	assert(wrk->handling == VCL_RET_DELIVER);
 
 #if 0
 	if (wrk->handling != VCL_RET_DELIVER)
@@ -449,7 +448,7 @@ static enum fetch_step
 vbf_stp_notyet(void)
 {
 	WRONG("Patience, grashopper, patience...");
-	NEEDLESS_RETURN(0);
+	NEEDLESS_RETURN(F_STP_NOTYET);
 }
 
 /*--------------------------------------------------------------------
@@ -459,7 +458,7 @@ static enum fetch_step
 vbf_stp_done(void)
 {
 	WRONG("Just plain wrong");
-	NEEDLESS_RETURN(0);
+	NEEDLESS_RETURN(F_STP_NOTYET);
 }
 
 /*--------------------------------------------------------------------
