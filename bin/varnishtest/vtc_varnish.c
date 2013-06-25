@@ -186,7 +186,7 @@ varnishlog_thread(void *priv)
 	enum VSL_tag_e tag;
 	uint32_t vxid;
 	unsigned len;
-	const char *data;
+	const char *tagname, *data;
 	int type, i;
 
 	CAST_OBJ_NOTNULL(v, priv, VARNISH_MAGIC);
@@ -229,13 +229,19 @@ varnishlog_thread(void *priv)
 
 		tag = VSL_TAG(c->rec.ptr);
 		vxid = VSL_ID(c->rec.ptr);
-		len = VSL_LEN(c->rec.ptr);
+		if (tag == SLT__Batch) {
+			tagname = "Batch";
+			len = 0;
+		} else {
+			tagname = VSL_tags[tag];
+			len = VSL_LEN(c->rec.ptr);
+		}
 		type = VSL_CLIENT(c->rec.ptr) ? 'c' : VSL_BACKEND(c->rec.ptr) ?
 		    'b' : '-';
 		data = VSL_CDATA(c->rec.ptr);
 		v->vsl_tag_count[tag]++;
-		vtc_log(v->vl, 4, "vsl| %10u %-15s %c %.*s", vxid,
-		    VSL_tags[tag], type, (int)len, data);
+		vtc_log(v->vl, 4, "vsl| %10u %-15s %c %.*s", vxid, tagname,
+		    type, (int)len, data);
 	}
 
 	if (c)
