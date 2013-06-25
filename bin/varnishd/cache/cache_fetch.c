@@ -60,7 +60,6 @@ vbf_release_req(struct req ***reqpp)
 static enum fetch_step
 vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo, const struct req *req)
 {
-	int i;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -71,22 +70,45 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo, const struct req *req)
 	AZ(bo->should_close);
 	AZ(bo->storage_hint);
 
-	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
-	http_FilterReq(bo->bereq, req->http,
+	HTTP_Setup(bo->bereq0, bo->ws, bo->vsl, HTTP_Bereq);
+	http_FilterReq(bo->bereq0, req->http,
 	    bo->do_pass ? HTTPH_R_PASS : HTTPH_R_FETCH);
 	if (!bo->do_pass) {
 		// XXX: Forcing GET should happen in vcl_miss{} ?
-		http_ForceGet(bo->bereq);
+		http_ForceGet(bo->bereq0);
 		if (cache_param->http_gzip_support) {
 			/*
 			 * We always ask the backend for gzip, even if the
 			 * client doesn't grok it.  We will uncompress for
 			 * the minority of clients which don't.
 			 */
-			http_Unset(bo->bereq, H_Accept_Encoding);
-			http_SetHeader(bo->bereq, "Accept-Encoding: gzip");
+			http_Unset(bo->bereq0, H_Accept_Encoding);
+			http_SetHeader(bo->bereq0, "Accept-Encoding: gzip");
 		}
 	}
+
+	return (F_STP_STARTFETCH);
+}
+
+/*--------------------------------------------------------------------
+ * Copy req->bereq and run it by VCL::vcl_backend_fetch{}
+ */
+
+static enum fetch_step
+vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
+{
+	int i;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	AN(bo->director);
+	AZ(bo->vbc);
+	AZ(bo->should_close);
+	AZ(bo->storage_hint);
+
+	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
+	HTTP_Copy(bo->bereq, bo->bereq0);
 
 	// Don't let VCL reset do_pass
 	i = bo->do_pass;

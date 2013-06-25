@@ -523,6 +523,7 @@ struct busyobj {
 
 	struct ws		ws[1];
 	struct vbc		*vbc;
+	struct http		*bereq0;
 	struct http		*bereq;
 	struct http		*beresp;
 	struct objcore		*fetch_objcore;
