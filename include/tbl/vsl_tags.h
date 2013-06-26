@@ -184,3 +184,8 @@ SLTM(Begin, "Marks the start of a VXID",
 SLTM(End, "Marks the end of a VXID",
     "The last record of a VXID transaction.\n"
 )
+
+SLTM(VSL, "Internally generated VSL API warnings and error message",
+    "Warnings and error messages genererated by the VSL API while reading the"
+    " shared memory log"
+)

@@ -135,6 +135,10 @@ struct VSLQ {
 	unsigned		n_cache;
 };
 
+static int vtx_diag(struct VSLQ *vslq, struct vtx *vtx, const char *fmt, ...);
+static int vtx_diag_tag(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr,
+    const char *reason);
+
 static inline int
 vtx_keycmp(const struct vtx_key *a, const struct vtx_key *b)
 {
@@ -147,29 +151,6 @@ vtx_keycmp(const struct vtx_key *a, const struct vtx_key *b)
 
 VRB_PROTOTYPE(vtx_tree, vtx_key, entry, vtx_keycmp);
 VRB_GENERATE(vtx_tree, vtx_key, entry, vtx_keycmp);
-
-static int
-vtx_diag(struct vtx *vtx, const char *fmt, ...)
-{
-	va_list ap;
-
-	/* XXX: Prepend diagnostic message on vtx as a synthetic log
-	   record. For now print to stderr */
-	fprintf(stderr, "vtx_diag <%u>: ", vtx->key.vxid);
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	fprintf(stderr, "\n");
-
-	return (-1);
-}
-
-static int
-vtx_diag_tag(struct vtx *vtx, const uint32_t *ptr, const char *reason)
-{
-	return (vtx_diag(vtx, "%s (%s: %.*s)", reason, VSL_tags[VSL_TAG(ptr)],
-		(int)VSL_LEN(ptr), VSL_CDATA(ptr)));
-}
 
 static int
 vslc_raw_next(void *cursor)
@@ -401,6 +382,7 @@ vtx_set_bufsize(struct vtx *vtx, ssize_t len)
 	while (vtx->bufsize < len)
 		vtx->bufsize *= 2;
 	vtx->buf = realloc(vtx->buf, sizeof (uint32_t) * vtx->bufsize);
+	AN(vtx->buf);
 }
 
 static void
@@ -471,7 +453,7 @@ vtx_check_ready(struct VSLQ *vslq, struct vtx *vtx)
 	AZ(vtx->flags & VTX_F_READY);
 
 	if (vtx->type == VSL_t_unknown)
-		vtx_diag(vtx, "vtx of unknown type marked complete");
+		vtx_diag(vslq, vtx, "vtx of unknown type marked complete");
 
 	ready = vtx;
 	while (1) {
@@ -555,16 +537,16 @@ vtx_scan_begintag(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 	assert(VSL_TAG(ptr) == SLT_Begin);
 
 	if (vtx->flags & VTX_F_READY)
-		return (vtx_diag_tag(vtx, ptr, "link too late"));
+		return (vtx_diag_tag(vslq, vtx, ptr, "link too late"));
 
 	i = vtx_parsetag_bl(VSL_CDATA(ptr), VSL_LEN(ptr), &type, &p_vxid);
 	if (i < 1)
-		return (vtx_diag_tag(vtx, ptr, "parse error"));
+		return (vtx_diag_tag(vslq, vtx, ptr, "parse error"));
 
 	/* Check/set vtx type */
 	assert(type != VSL_t_unknown);
 	if (vtx->type != VSL_t_unknown && vtx->type != type)
-		return (vtx_diag_tag(vtx, ptr, "type mismatch"));
+		return (vtx_diag_tag(vslq, vtx, ptr, "type mismatch"));
 	vtx->type = type;
 
 	if (i == 1 || p_vxid == 0)
@@ -583,9 +565,9 @@ vtx_scan_begintag(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 		return (0);
 
 	if (vtx->parent != NULL)
-		return (vtx_diag_tag(vtx, ptr, "duplicate link"));
+		return (vtx_diag_tag(vslq, vtx, ptr, "duplicate link"));
 	if (p_vtx->flags & VTX_F_READY)
-		return (vtx_diag_tag(vtx, ptr, "link too late"));
+		return (vtx_diag_tag(vslq, vtx, ptr, "link too late"));
 
 	vtx_set_parent(p_vtx, vtx);
 
@@ -603,11 +585,11 @@ vtx_scan_linktag(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 	assert(VSL_TAG(ptr) == SLT_Link);
 
 	if (vtx->flags & VTX_F_READY)
-		return (vtx_diag_tag(vtx, ptr, "link too late"));
+		return (vtx_diag_tag(vslq, vtx, ptr, "link too late"));
 
 	i = vtx_parsetag_bl(VSL_CDATA(ptr), VSL_LEN(ptr), &c_type, &c_vxid);
 	if (i < 2)
-		return (vtx_diag_tag(vtx, ptr, "parse error"));
+		return (vtx_diag_tag(vslq, vtx, ptr, "parse error"));
 	assert(i == 2);
 
 	if (vslq->grouping == VSL_g_vxid)
@@ -622,11 +604,11 @@ vtx_scan_linktag(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 		/* Link already exists */
 		return (0);
 	if (c_vtx->parent != NULL)
-		return (vtx_diag_tag(vtx, ptr, "duplicate link"));
+		return (vtx_diag_tag(vslq, vtx, ptr, "duplicate link"));
 	if (c_vtx->flags & VTX_F_READY)
-		return (vtx_diag_tag(vtx, ptr, "link too late"));
+		return (vtx_diag_tag(vslq, vtx, ptr, "link too late"));
 	if (c_vtx->type != VSL_t_unknown && c_vtx->type != c_type)
-		return (vtx_diag_tag(vtx, ptr, "type mismatch"));
+		return (vtx_diag_tag(vslq, vtx, ptr, "type mismatch"));
 	c_vtx->type = c_type;
 
 	vtx_set_parent(vtx, c_vtx);
@@ -648,13 +630,17 @@ vtx_scan(struct VSLQ *vslq, struct vtx *vtx)
 		if (tag == SLT__Batch)
 			continue;
 
+		if (tag == SLT_VSL)
+			/* Don't process these to avoid looping */
+			continue;
+
 		if (vtx->flags & VTX_F_COMPLETE) {
-			vtx_diag_tag(vtx, ptr, "late log rec");
+			vtx_diag_tag(vslq, vtx, ptr, "late log rec");
 			continue;
 		}
 
 		if (vtx->type == VSL_t_unknown && tag != SLT_Begin)
-			vtx_diag_tag(vtx, ptr, "early log rec");
+			vtx_diag_tag(vslq, vtx, ptr, "early log rec");
 
 		switch (tag) {
 		case SLT_Begin:
@@ -688,7 +674,7 @@ vtx_force(struct VSLQ *vslq, struct vtx *vtx, const char *reason)
 {
 	AZ(vtx->flags & VTX_F_COMPLETE);
 	AZ(vtx->flags & VTX_F_READY);
-	vtx_diag(vtx, reason);
+	vtx_diag(vslq, vtx, reason);
 
 	VTAILQ_REMOVE(&vslq->incomplete, vtx, list_incomplete);
 	vtx->flags |= VTX_F_COMPLETE;
@@ -754,6 +740,38 @@ vslq_callback(struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
 
 	/* Callback */
 	return ((func)(vslq->vsl, ptrans, priv));
+}
+
+static int
+vtx_diag(struct VSLQ *vslq, struct vtx *vtx, const char *fmt, ...)
+{
+	va_list ap;
+	uint32_t buf[256];
+	int i, len;
+	struct VSLC_ptr rec;
+
+	len = sizeof buf - 2 * sizeof (uint32_t);
+	va_start(ap, fmt);
+	i = vsnprintf((char *)&buf[2], len, fmt, ap);
+	assert(i >= 0);
+	va_end(ap);
+	if (i < len)
+		len = i;
+	buf[1] = vtx->key.vxid;
+	buf[0] = ((((unsigned)SLT_VSL & 0xff) << 24) | len);
+	rec.ptr = buf;
+	rec.priv = 0;
+	vtx_append(vslq, vtx, &rec, VSL_NEXT(rec.ptr) - rec.ptr, 1);
+
+	return (-1);
+}
+
+static int
+vtx_diag_tag(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr,
+    const char *reason)
+{
+	return (vtx_diag(vslq, vtx, "%s (%s: %.*s)", reason,
+		VSL_tags[VSL_TAG(ptr)],	(int)VSL_LEN(ptr), VSL_CDATA(ptr)));
 }
 
 struct VSLQ *
@@ -904,7 +922,7 @@ VSLQ_Dispatch(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 
 		i = VSL_Next(c);
 		if (i != 1)
-			return (i);
+			break;
 		tag = VSL_TAG(c->rec.ptr);
 		if (tag == SLT__Batch) {
 			vxid = VSL_BATCHID(c->rec.ptr);
@@ -928,7 +946,7 @@ VSLQ_Dispatch(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 			vtx_retire(vslq, &vtx);
 			AZ(vtx);
 			if (i)
-				return (i);
+				break;
 		}
 	}
 	if (i)
