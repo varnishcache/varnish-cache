@@ -319,6 +319,10 @@ const struct parspec mgt_parspec[] = {
 		"the backend, so don't increase thoughtlessly.\n",
 		0,
 		"4", "restarts" },
+	{ "max_retries", tweak_uint, &mgt_param.max_retries, 0, UINT_MAX,
+		"Upper limit on how many times a backend fetch can retry.\n",
+		0,
+		"4", "retries" },
 	{ "esi_syntax",
 		tweak_uint, &mgt_param.esi_syntax, 0, UINT_MAX,
 		"Bitmap controlling ESI parsing code:\n"

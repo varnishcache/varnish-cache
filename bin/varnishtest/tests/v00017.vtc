@@ -67,7 +67,7 @@ varnish v1 -vcl {
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv { if (client.ip == "127.0.0.1") { return(pass); } }
-	sub vcl_backend_response { if (client.ip != "127.0.0.1") { return(restart); } }
+	sub vcl_backend_response { if (client.ip != "127.0.0.1") { return(retry); } }
 }
 
 varnish v1 -errvcl {Operator > not possible on IP} {

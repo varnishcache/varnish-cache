@@ -143,6 +143,9 @@ struct params {
 	/* Maximum restarts allowed */
 	unsigned		max_restarts;
 
+	/* Maximum backend retriesallowed */
+	unsigned		max_retries;
+
 	/* Maximum esi:include depth allowed */
 	unsigned		max_esi_depth;
 

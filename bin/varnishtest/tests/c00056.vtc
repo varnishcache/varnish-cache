@@ -1,0 +1,50 @@
+varnishtest	"vcl_backend_response{} retry"
+
+server s1 {
+	rxreq
+	txresp -hdr "foo: 1"
+	accept
+	rxreq
+	txresp -hdr "foo: 2"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv { return (pass); }
+	sub vcl_backend_response {
+		set beresp.http.bar = bereq.retries;
+		if (beresp.http.foo != bereq.http.stop) {
+			return (retry);
+		}
+	}
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl"
+
+client c1 {
+	txreq -hdr "stop: 2"
+	rxresp
+	expect resp.http.foo == 2
+} -run
+
+delay .1
+
+server s1 {
+	rxreq
+	txresp -hdr "foo: 1"
+	accept
+	rxreq
+	txresp -hdr "foo: 2"
+	accept
+	rxreq
+	txresp -hdr "foo: 3"
+} -start
+
+varnish v1 -cliok "param.set max_retries 2"
+
+client c1 {
+	txreq -hdr "stop: 3"
+	rxresp
+	expect resp.http.foo == 3
+} -run
+
+# XXX: Add a test which exceeds max_retries and gets 503 back

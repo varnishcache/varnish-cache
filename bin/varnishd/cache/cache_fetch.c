@@ -58,7 +58,8 @@ vbf_release_req(struct req ***reqpp)
  */
 
 static enum fetch_step
-vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo, const struct req *req)
+vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo,
+    const struct req *req)
 {
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -205,6 +206,14 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo, struct req ***reqpp)
 
 	if (wrk->handling == VCL_RET_DELIVER)
 		return (F_STP_FETCH);
+	if (wrk->handling == VCL_RET_RETRY) {
+		bo->retries++;
+		if (bo->retries <= cache_param->max_retries) {
+			VDI_CloseFd(&bo->vbc);
+			return (F_STP_STARTFETCH);
+		}
+		// XXX: wrk->handling = VCL_RET_SYNTH;
+	}
 
 	return (F_STP_NOTYET);
 }
