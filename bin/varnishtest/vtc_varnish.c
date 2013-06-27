@@ -232,6 +232,7 @@ varnishlog_thread(void *priv)
 		if (tag == SLT__Batch) {
 			tagname = "Batch";
 			len = 0;
+			continue;
 		} else {
 			tagname = VSL_tags[tag];
 			len = VSL_LEN(c->rec.ptr);
