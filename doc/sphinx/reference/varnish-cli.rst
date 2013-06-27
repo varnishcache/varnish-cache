@@ -80,8 +80,11 @@ backend.list
       Lists the defined backends including health state.
 
 backend.set_health matcher state
-      Sets the health state on a specific backend. This is useful if
-      you want to take a certain backend out of circulation.
+      Sets the health state on a specific backend, overriding the state
+      determined by a probe.  This is useful if you want to take a
+      certain backend out of circulation.
+
+      *state* can be 'auto', 'sick' or 'healthy'.
 
 ban   *field operator argument* [&& field operator argument [...]]
       Immediately invalidate all documents matching the ban
