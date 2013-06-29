@@ -57,7 +57,6 @@
 #include "vapi/vsl.h"
 #include "vtim.h"
 #include "vqueue.h"
-#include "miniobj.h"
 #include "vas.h"
 #include "vre.h"
 
@@ -176,8 +175,9 @@ logexp_next(struct logexp *le)
 		vtc_log(le->vl, 3, "tst| %s", VSB_data(le->test->str));
 }
 
-static int
-logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction *pt[], void *priv)
+static int __match_proto__(VSLQ_dispatch_f)
+logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
+    void *priv)
 {
 	struct logexp *le;
 	struct VSL_transaction *t;
@@ -275,7 +275,7 @@ logexp_thread(void *priv)
 	AZ(le->test);
 	logexp_next(le);
 	while (le->test) {
-		i = VSLQ_Dispatch(le->vslq, &logexp_dispatch, le);
+		i = VSLQ_Dispatch(le->vslq, logexp_dispatch, le);
 		if (i < 0)
 			vtc_log(le->vl, 0, "dispatch: %d", i);
 		if (i == 0 && le->test)

@@ -307,8 +307,8 @@ VSL_PrintAll(struct VSL_data *vsl, struct VSL_cursor *c, void *fo)
 	}
 }
 
-int
-VSL_PrintTransactions(struct VSL_data *vsl, struct VSL_transaction *pt[],
+int __match_proto__(VSLQ_dispatch_f)
+VSL_PrintTransactions(struct VSL_data *vsl, struct VSL_transaction * const pt[],
     void *fo)
 {
 	struct VSL_transaction *t;
@@ -425,8 +425,8 @@ VSL_WriteAll(struct VSL_data *vsl, struct VSL_cursor *c, void *fo)
 	}
 }
 
-int
-VSL_WriteTransactions(struct VSL_data *vsl, struct VSL_transaction *pt[],
+int __match_proto__(VSLQ_dispatch_f)
+VSL_WriteTransactions(struct VSL_data *vsl, struct VSL_transaction * const pt[],
     void *fo)
 {
 	struct VSL_transaction *t;

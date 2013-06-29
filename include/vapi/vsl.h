@@ -84,6 +84,21 @@ enum VSL_grouping_e {
 	VSL_g_session,
 };
 
+typedef int VSLQ_dispatch_f(struct VSL_data *vsl,
+    struct VSL_transaction * const trans[], void *priv);
+	/*
+	 * The callback function type for use with VSLQ_Dispatch.
+	 *
+	 * Arguments:
+	 *      vsl: The VSL_data context
+	 *  trans[]: A NULL terminated array of pointers to VSL_transaction.
+	 *     priv: The priv argument from VSL_Dispatch
+	 *
+	 * Return value:
+	 *     0: OK - continue
+	 *   !=0: Makes VSLQ_Dispatch return with this return value immediatly
+	 */
+
 extern const char *VSL_tags[256];
 	/*
 	 * Tag to string array.  Contains NULL for invalid tags.
@@ -260,8 +275,7 @@ int VSL_PrintAll(struct VSL_data *vsl, struct VSL_cursor *c, void *fo);
 	 *    !=0:	Return value from either VSL_Next or VSL_Print
 	 */
 
-int VSL_PrintTransactions(struct VSL_data *vsl,
-    struct VSL_transaction *ptrans[], void *fo);
+VSLQ_dispatch_f VSL_PrintTransactions;
 	/*
 	 * Prints out each transaction in the array ptrans. For
 	 * transactions of level > 0 it will print a header before the log
@@ -316,8 +330,7 @@ int VSL_WriteAll(struct VSL_data *vsl, struct VSL_cursor *c, void *fo);
 	 *    !=0:	Return value from either VSL_Next or VSL_Write
 	 */
 
-int VSL_WriteTransactions(struct VSL_data *vsl,
-    struct VSL_transaction *ptrans[], void *fo);
+VSLQ_dispatch_f VSL_WriteTransactions;
 	/*
 	 * Write all transactions in ptrans using VSL_WriteAll
 	 * Return values:
@@ -345,21 +358,6 @@ struct VSLQ *VSLQ_New(struct VSL_data *vsl, struct VSL_cursor **cp,
 void VSLQ_Delete(struct VSLQ **pvslq);
 	/*
 	 * Delete the query pointed to by pvslq, freeing up the resources
-	 */
-
-typedef int VSLQ_dispatch_f(struct VSL_data *vsl,
-    struct VSL_transaction *trans[], void *priv);
-	/*
-	 * The callback function type for use with VSLQ_Dispatch.
-	 *
-	 * Arguments:
-	 *      vsl: The VSL_data context
-	 *  trans[]: A NULL terminated array of pointers to VSL_transaction.
-	 *     priv: The priv argument from VSL_Dispatch
-	 *
-	 * Return value:
-	 *     0: OK - continue
-	 *   !=0: Makes VSLQ_Dispatch return with this return value immediatly
 	 */
 
 int VSLQ_Dispatch(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv);

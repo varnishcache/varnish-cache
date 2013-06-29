@@ -270,6 +270,7 @@ VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, int tail)
 	} else
 		AZ(vslc_vsm_reset(&c->c));
 
+	/* XXX: How does 'c' ever get freed ? */
 	return (&c->c.c);
 }
 
