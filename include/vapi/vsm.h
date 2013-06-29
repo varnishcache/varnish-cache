@@ -54,6 +54,8 @@ struct VSM_fantom {
 	char			ident[VSM_IDENT_LEN];
 };
 
+#define VSM_FANTOM_NULL { 0, 0, 0, 0, {0}, {0}, {0} }
+
 /*---------------------------------------------------------------------
  * VSM level access functions
  */

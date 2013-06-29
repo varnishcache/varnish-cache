@@ -48,7 +48,6 @@
 #include "vapi/vsm.h"
 #include "vapi/vsl.h"
 #include "vapi/vsm_int.h"
-#include "vin.h"
 #include "vbm.h"
 #include "vmb.h"
 #include "vre.h"
@@ -154,7 +153,7 @@ VSL_ResetError(struct VSL_data *vsl)
 }
 
 static int
-vsl_match_IX(struct VSL_data *vsl, vslf_list *list, const struct VSL_cursor *c)
+vsl_match_IX(struct VSL_data *vsl, const vslf_list *list, const struct VSL_cursor *c)
 {
 	enum VSL_tag_e tag;
 	const char *cdata;
@@ -202,7 +201,7 @@ VSL_Match(struct VSL_data *vsl, const struct VSL_cursor *c)
 	return (1);
 }
 
-const char *VSL_transactions[256] = {
+static const char * const VSL_transactions[256] = {
 	/*                 12345678901234 */
 	[VSL_t_unknown] = "<< Unknown  >>",
 	[VSL_t_sess]	= "<< Session  >>",
@@ -219,7 +218,7 @@ const char *VSL_transactions[256] = {
 	} while (0)
 
 int
-VSL_Print(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
+VSL_Print(const struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
 {
 	enum VSL_tag_e tag;
 	uint32_t vxid;
@@ -257,7 +256,7 @@ VSL_Print(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
 }
 
 int
-VSL_PrintTerse(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
+VSL_PrintTerse(const struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
 {
 	enum VSL_tag_e tag;
 	unsigned len;
@@ -390,7 +389,7 @@ VSL_WriteOpen(struct VSL_data *vsl, const char *name, int append, int unbuf)
 }
 
 int
-VSL_Write(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
+VSL_Write(const struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
 {
 	size_t r;
 

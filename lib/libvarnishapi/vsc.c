@@ -39,7 +39,6 @@
 
 #include "miniobj.h"
 #include "vas.h"
-#include "vdef.h"
 
 #include "vapi/vsc.h"
 #include "vapi/vsm.h"
@@ -262,7 +261,7 @@ VSC_Arg(struct VSM_data *vd, int arg, const char *opt)
 /*--------------------------------------------------------------------*/
 
 struct VSC_C_mgt *
-VSC_Mgt(struct VSM_data *vd, struct VSM_fantom *fantom)
+VSC_Mgt(const struct VSM_data *vd, struct VSM_fantom *fantom)
 {
 
 	return (VSC_Get(vd, fantom, VSC_type_mgt, ""));
@@ -271,7 +270,7 @@ VSC_Mgt(struct VSM_data *vd, struct VSM_fantom *fantom)
 /*--------------------------------------------------------------------*/
 
 struct VSC_C_main *
-VSC_Main(struct VSM_data *vd, struct VSM_fantom *fantom)
+VSC_Main(const struct VSM_data *vd, struct VSM_fantom *fantom)
 {
 
 	return (VSC_Get(vd, fantom, VSC_type_main, ""));
@@ -281,10 +280,10 @@ VSC_Main(struct VSM_data *vd, struct VSM_fantom *fantom)
  */
 
 void *
-VSC_Get(struct VSM_data *vd, struct VSM_fantom *fantom, const char *type,
+VSC_Get(const struct VSM_data *vd, struct VSM_fantom *fantom, const char *type,
     const char *ident)
 {
-	struct VSM_fantom f2;
+	struct VSM_fantom f2 = VSM_FANTOM_NULL;
 
 	if (fantom == NULL)
 		fantom = &f2;
@@ -321,9 +320,10 @@ vsc_add_vf(struct vsc *vsc, const struct VSM_fantom *fantom,
 		VTAILQ_INSERT_TAIL(&vsc->vf_list, vf, list);
 }
 
+/*lint -esym(528, vsc_add_pt) */
 static void
 vsc_add_pt(struct vsc *vsc, const volatile void *ptr,
-    const struct VSC_desc *desc, struct vsc_vf *vf)
+    const struct VSC_desc *desc, const struct vsc_vf *vf)
 {
 	struct vsc_pt *pt;
 
@@ -347,7 +347,7 @@ vsc_add_pt(struct vsc *vsc, const volatile void *ptr,
 		CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);			\
 		st = vf->fantom.b;
 
-#define VSC_F(nn,tt,ll,ff,vv,dd,ee)			\
+#define VSC_F(nn,tt,ll,ff,vv,dd,ee)					\
 		vsc_add_pt(vsc, &st->nn, descs++, vf);
 
 #define VSC_DONE(U,l,t)							\

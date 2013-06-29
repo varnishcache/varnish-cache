@@ -224,7 +224,7 @@ int VSL_Match(struct VSL_data *vsl, const struct VSL_cursor *c);
 	 *	0:	No match
 	 */
 
-int VSL_Print(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
+int VSL_Print(const struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
 	/*
 	 * Print the log record pointed to by cursor to stream.
 	 *
@@ -242,7 +242,7 @@ int VSL_Print(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
 	 *     -5:	I/O write error - see errno
 	 */
 
-int VSL_PrintTerse(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
+int VSL_PrintTerse(const struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
 	/*
 	 * Print the log record pointed to by cursor to stream.
 	 *
@@ -311,7 +311,7 @@ FILE *VSL_WriteOpen(struct VSL_data *vsl, const char *name, int append,
 	 */
 
 
-int VSL_Write(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
+int VSL_Write(const struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
 	/*
 	 * Write the currect record pointed to be c to the FILE* fo
 	 *
