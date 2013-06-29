@@ -52,7 +52,6 @@ struct VSM_data {
 	double			t_ok;
 
 	struct vsc		*vsc;
-	struct vsl		*vsl;
 };
 
 int vsm_diag(struct VSM_data *vd, const char *fmt, ...)
