@@ -149,8 +149,8 @@ vtx_keycmp(const struct vtx_key *a, const struct vtx_key *b)
 	return (0);
 }
 
-VRB_PROTOTYPE(vtx_tree, vtx_key, entry, vtx_keycmp);
-VRB_GENERATE(vtx_tree, vtx_key, entry, vtx_keycmp);
+VRB_PROTOTYPE_STATIC(vtx_tree, vtx_key, entry, vtx_keycmp);
+VRB_GENERATE_STATIC(vtx_tree, vtx_key, entry, vtx_keycmp);
 
 static int
 vslc_raw_next(void *cursor)
