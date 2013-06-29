@@ -85,7 +85,6 @@ struct logexp {
 	char				*name;
 	struct vtclog			*vl;
 	char				run;
-	char				*spec;
 	VTAILQ_HEAD(,logexp_test)	tests;
 
 	struct logexp_test		*test;
