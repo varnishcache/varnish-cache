@@ -36,11 +36,7 @@
 
 #define VSL_FILE_ID			"VSL"
 
-struct vslc_shmptr {
-	uint32_t	*ptr;
-	unsigned	priv;
-};
-
+/*lint -esym(534, vsl_diag) */
 int vsl_diag(struct VSL_data *vsl, const char *fmt, ...)
     __printflike(2, 3);
 int vsl_skip(struct VSL_cursor *c, ssize_t words);
@@ -49,7 +45,6 @@ typedef void vslc_delete_f(void *);
 typedef int vslc_next_f(void *);
 typedef int vslc_reset_f(void *);
 typedef int vslc_skip_f(void *, ssize_t words);
-typedef int vslc_ref_f(void *, struct vslc_shmptr *ptr);
 typedef int vslc_check_f(const void *, const struct VSLC_ptr *ptr);
 
 struct vslc_tbl {
@@ -105,4 +100,4 @@ struct vslq_query;
 struct vslq_query *vslq_newquery(struct VSL_data *vsl,
     enum VSL_grouping_e grouping, const char *query);
 void vslq_deletequery(struct vslq_query **pquery);
-int vslq_runquery(struct vslq_query *query, struct VSL_transaction *ptrans[]);
+int vslq_runquery(const struct vslq_query *query, struct VSL_transaction * const ptrans[]);

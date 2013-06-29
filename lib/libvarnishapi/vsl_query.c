@@ -89,7 +89,7 @@ vslq_deletequery(struct vslq_query **pquery)
 }
 
 int
-vslq_runquery(struct vslq_query *query, struct VSL_transaction *ptrans[])
+vslq_runquery(const struct vslq_query *query, struct VSL_transaction * const ptrans[])
 {
 	struct VSL_transaction *t;
 	struct VSL_cursor *c;
