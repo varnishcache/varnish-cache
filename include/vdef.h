@@ -67,4 +67,16 @@
 # endif
 #endif
 
+/**********************************************************************
+ * FlexeLint and compiler shutuppery
+ */
+
+/*
+ * In OO-light situations, functions have to match their prototype
+ * even if that means not const'ing a const'able argument.
+ * The typedef should be specified as argument to the macro.
+ */
+#define __match_proto__(xxx)		/*lint -e{818} */
+
+
 #endif /* VDEF_H_INCLUDED */
