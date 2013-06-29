@@ -381,6 +381,7 @@ struct {								\
 #define	VRB_PROTOTYPE_STATIC(name, type, field, cmp)			\
 	VRB_PROTOTYPE_INTERNAL(name, type, field, cmp, __unused static)
 #define VRB_PROTOTYPE_INTERNAL(name, type, field, cmp, attr)		\
+/*lint -esym(528, name##_VRB_*) */					\
 attr void name##_VRB_INSERT_COLOR(struct name *, struct type *);	\
 attr void name##_VRB_REMOVE_COLOR(struct name *, struct type *, struct type *);\
 attr struct type *name##_VRB_REMOVE(struct name *, struct type *);	\
