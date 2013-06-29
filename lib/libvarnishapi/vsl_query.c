@@ -66,7 +66,8 @@ vslq_newquery(struct VSL_data *vsl, enum VSL_grouping_e grouping,
 	}
 
 	ALLOC_OBJ(query, VSLQ_QUERY_MAGIC);
-	query->regex = regex;
+	if (query != NULL)
+		query->regex = regex;
 	return (query);
 }
 
