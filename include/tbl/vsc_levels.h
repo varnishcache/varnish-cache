@@ -35,9 +35,11 @@
  *    d - Description:		Long description of this counter type
  */
 
+/*lint -save -e525 -e539 */
 VSC_LEVEL_F(info,	"INFO",		"Informational counters",
     "Counters giving runtime information")
 VSC_LEVEL_F(diag,	"DIAG",		"Diagnostic counters",
     "Counters giving diagnostic information")
 VSC_LEVEL_F(debug,	"DEBUG",	"Debug counters",
     "Counters giving Varnish internals debug information")
+/*lint -restore */

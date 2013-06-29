@@ -40,7 +40,7 @@
  * display order in varnishstat.
  */
 
-
+/*lint -save -e525 -e539 */
 VSC_TYPE_F(main,	"MAIN",		"",		"Child",
     "Child process main counters"
 )
@@ -62,3 +62,4 @@ VSC_TYPE_F(vbe,		"VBE",		"VBE",		"Backend",
 VSC_TYPE_F(lck,		"LCK",		"LCK",		"Lock",
     "Mutex lock counters"
 )
+/*lint -restore */
