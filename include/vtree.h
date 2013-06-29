@@ -584,8 +584,10 @@ name##_VRB_REMOVE(struct name *head, struct type *elm)			\
 	} else								\
 		VRB_ROOT(head) = child;					\
 color:									\
-	if (color == VRB_BLACK)						\
+	if (color == VRB_BLACK) {					\
+		AN(parent);						\
 		name##_VRB_REMOVE_COLOR(head, parent, child);		\
+	}								\
 	return (old);							\
 }									\
 									\
