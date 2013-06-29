@@ -91,6 +91,7 @@
 -esym(534, strcat)
 -esym(534, strcpy)
 -esym(534, strlcpy)
+-esym(534, strncpy)
 
 +typename(844)
 -etype(844, struct pthread *)
