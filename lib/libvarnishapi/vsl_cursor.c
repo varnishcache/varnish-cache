@@ -40,7 +40,6 @@
 #include <fcntl.h>
 
 #include "vas.h"
-#include "vdef.h"
 #include "miniobj.h"
 #include "vapi/vsm.h"
 #include "vsm_api.h"
@@ -212,7 +211,7 @@ vslc_vsm_skip(void *cursor, ssize_t words)
 	return (0);
 }
 
-static struct vslc_tbl vslc_vsm_tbl = {
+static const struct vslc_tbl vslc_vsm_tbl = {
 	.delete		= vslc_vsm_delete,
 	.next		= vslc_vsm_next,
 	.reset		= vslc_vsm_reset,
@@ -361,7 +360,7 @@ vslc_file_reset(void *cursor)
 	return (-1);
 }
 
-static struct vslc_tbl vslc_file_tbl = {
+static const struct vslc_tbl vslc_file_tbl = {
 	.delete		= vslc_file_delete,
 	.next		= vslc_file_next,
 	.reset		= vslc_file_reset,

@@ -43,7 +43,6 @@
 
 #include "miniobj.h"
 #include "vas.h"
-#include "vdef.h"
 
 #include "vapi/vsl.h"
 #include "vapi/vsm.h"
@@ -83,7 +82,7 @@ VSL_Name2Tag(const char *name, int l)
 	return (n);
 }
 
-static const char *vsl_grouping[] = {
+static const char * const vsl_grouping[] = {
 	[VSL_g_raw]	= "raw",
 	[VSL_g_vxid]	= "vxid",
 	[VSL_g_request]	= "request",
