@@ -62,7 +62,7 @@ struct name {								\
 	struct type *sph_root; /* root of the tree */			\
 }
 
-#define VSPLAY_INITIALIZER(root)						\
+#define VSPLAY_INITIALIZER(root)					\
 	{ NULL }
 
 #define VSPLAY_INIT(root) do {						\
@@ -82,13 +82,13 @@ struct {								\
 
 /* VSPLAY_ROTATE_{LEFT,RIGHT} expect that tmp hold VSPLAY_{RIGHT,LEFT} */
 #define VSPLAY_ROTATE_RIGHT(head, tmp, field) do {			\
-	VSPLAY_LEFT((head)->sph_root, field) = VSPLAY_RIGHT(tmp, field);	\
+	VSPLAY_LEFT((head)->sph_root, field) = VSPLAY_RIGHT(tmp, field);\
 	VSPLAY_RIGHT(tmp, field) = (head)->sph_root;			\
 	(head)->sph_root = tmp;						\
 } while (/*CONSTCOND*/ 0)
 
 #define VSPLAY_ROTATE_LEFT(head, tmp, field) do {			\
-	VSPLAY_RIGHT((head)->sph_root, field) = VSPLAY_LEFT(tmp, field);	\
+	VSPLAY_RIGHT((head)->sph_root, field) = VSPLAY_LEFT(tmp, field);\
 	VSPLAY_LEFT(tmp, field) = (head)->sph_root;			\
 	(head)->sph_root = tmp;						\
 } while (/*CONSTCOND*/ 0)
@@ -96,7 +96,7 @@ struct {								\
 #define VSPLAY_LINKLEFT(head, tmp, field) do {				\
 	VSPLAY_LEFT(tmp, field) = (head)->sph_root;			\
 	tmp = (head)->sph_root;						\
-	(head)->sph_root = VSPLAY_LEFT((head)->sph_root, field);		\
+	(head)->sph_root = VSPLAY_LEFT((head)->sph_root, field);	\
 } while (/*CONSTCOND*/ 0)
 
 #define VSPLAY_LINKRIGHT(head, tmp, field) do {				\
@@ -106,19 +106,19 @@ struct {								\
 } while (/*CONSTCOND*/ 0)
 
 #define VSPLAY_ASSEMBLE(head, node, left, right, field) do {		\
-	VSPLAY_RIGHT(left, field) = VSPLAY_LEFT((head)->sph_root, field);	\
+	VSPLAY_RIGHT(left, field) = VSPLAY_LEFT((head)->sph_root, field);\
 	VSPLAY_LEFT(right, field) = VSPLAY_RIGHT((head)->sph_root, field);\
-	VSPLAY_LEFT((head)->sph_root, field) = VSPLAY_RIGHT(node, field);	\
-	VSPLAY_RIGHT((head)->sph_root, field) = VSPLAY_LEFT(node, field);	\
+	VSPLAY_LEFT((head)->sph_root, field) = VSPLAY_RIGHT(node, field);\
+	VSPLAY_RIGHT((head)->sph_root, field) = VSPLAY_LEFT(node, field);\
 } while (/*CONSTCOND*/ 0)
 
 /* Generates prototypes and inline functions */
 
-#define VSPLAY_PROTOTYPE(name, type, field, cmp)				\
+#define VSPLAY_PROTOTYPE(name, type, field, cmp)			\
 void name##_VSPLAY(struct name *, struct type *);			\
 void name##_VSPLAY_MINMAX(struct name *, int);				\
-struct type *name##_VSPLAY_INSERT(struct name *, struct type *);		\
-struct type *name##_VSPLAY_REMOVE(struct name *, struct type *);		\
+struct type *name##_VSPLAY_INSERT(struct name *, struct type *);	\
+struct type *name##_VSPLAY_REMOVE(struct name *, struct type *);	\
 									\
 /* Finds the node with the same key as elm */				\
 static __inline struct type *						\
@@ -149,7 +149,7 @@ name##_VSPLAY_NEXT(struct name *head, struct type *elm)			\
 static __inline struct type *						\
 name##_VSPLAY_MIN_MAX(struct name *head, int val)			\
 {									\
-	name##_VSPLAY_MINMAX(head, val);					\
+	name##_VSPLAY_MINMAX(head, val);				\
         return (VSPLAY_ROOT(head));					\
 }
 
@@ -168,8 +168,8 @@ name##_VSPLAY_INSERT(struct name *head, struct type *elm)		\
 	    __comp = (cmp)(elm, (head)->sph_root);			\
 	    if(__comp < 0) {						\
 		    VSPLAY_LEFT(elm, field) = VSPLAY_LEFT((head)->sph_root, field);\
-		    VSPLAY_RIGHT(elm, field) = (head)->sph_root;		\
-		    VSPLAY_LEFT((head)->sph_root, field) = NULL;		\
+		    VSPLAY_RIGHT(elm, field) = (head)->sph_root;	\
+		    VSPLAY_LEFT((head)->sph_root, field) = NULL;	\
 	    } else if (__comp > 0) {					\
 		    VSPLAY_RIGHT(elm, field) = VSPLAY_RIGHT((head)->sph_root, field);\
 		    VSPLAY_LEFT(elm, field) = (head)->sph_root;		\
@@ -217,7 +217,7 @@ name##_VSPLAY(struct name *head, struct type *elm)			\
 			if (__tmp == NULL)				\
 				break;					\
 			if ((cmp)(elm, __tmp) < 0){			\
-				VSPLAY_ROTATE_RIGHT(head, __tmp, field);	\
+				VSPLAY_ROTATE_RIGHT(head, __tmp, field);\
 				if (VSPLAY_LEFT((head)->sph_root, field) == NULL)\
 					break;				\
 			}						\
@@ -253,7 +253,7 @@ void name##_VSPLAY_MINMAX(struct name *head, int __comp) \
 			if (__tmp == NULL)				\
 				break;					\
 			if (__comp < 0){				\
-				VSPLAY_ROTATE_RIGHT(head, __tmp, field);	\
+				VSPLAY_ROTATE_RIGHT(head, __tmp, field);\
 				if (VSPLAY_LEFT((head)->sph_root, field) == NULL)\
 					break;				\
 			}						\
@@ -320,15 +320,15 @@ struct {								\
 #define VRB_ROOT(head)			(head)->rbh_root
 #define VRB_EMPTY(head)			(VRB_ROOT(head) == NULL)
 
-#define VRB_SET(elm, parent, field) do {					\
-	VRB_PARENT(elm, field) = parent;					\
+#define VRB_SET(elm, parent, field) do {				\
+	VRB_PARENT(elm, field) = parent;				\
 	VRB_LEFT(elm, field) = VRB_RIGHT(elm, field) = NULL;		\
-	VRB_COLOR(elm, field) = VRB_RED;					\
+	VRB_COLOR(elm, field) = VRB_RED;				\
 } while (/*CONSTCOND*/ 0)
 
-#define VRB_SET_BLACKRED(black, red, field) do {				\
+#define VRB_SET_BLACKRED(black, red, field) do {			\
 	VRB_COLOR(black, field) = VRB_BLACK;				\
-	VRB_COLOR(red, field) = VRB_RED;					\
+	VRB_COLOR(red, field) = VRB_RED;				\
 } while (/*CONSTCOND*/ 0)
 
 #ifndef VRB_AUGMENT
@@ -338,14 +338,14 @@ struct {								\
 #define VRB_ROTATE_LEFT(head, elm, tmp, field) do {			\
 	(tmp) = VRB_RIGHT(elm, field);					\
 	if ((VRB_RIGHT(elm, field) = VRB_LEFT(tmp, field)) != NULL) {	\
-		VRB_PARENT(VRB_LEFT(tmp, field), field) = (elm);		\
+		VRB_PARENT(VRB_LEFT(tmp, field), field) = (elm);	\
 	}								\
 	VRB_AUGMENT(elm);						\
-	if ((VRB_PARENT(tmp, field) = VRB_PARENT(elm, field)) != NULL) {	\
+	if ((VRB_PARENT(tmp, field) = VRB_PARENT(elm, field)) != NULL) {\
 		if ((elm) == VRB_LEFT(VRB_PARENT(elm, field), field))	\
-			VRB_LEFT(VRB_PARENT(elm, field), field) = (tmp);	\
+			VRB_LEFT(VRB_PARENT(elm, field), field) = (tmp);\
 		else							\
-			VRB_RIGHT(VRB_PARENT(elm, field), field) = (tmp);	\
+			VRB_RIGHT(VRB_PARENT(elm, field), field) = (tmp);\
 	} else								\
 		(head)->rbh_root = (tmp);				\
 	VRB_LEFT(tmp, field) = (elm);					\
@@ -358,14 +358,14 @@ struct {								\
 #define VRB_ROTATE_RIGHT(head, elm, tmp, field) do {			\
 	(tmp) = VRB_LEFT(elm, field);					\
 	if ((VRB_LEFT(elm, field) = VRB_RIGHT(tmp, field)) != NULL) {	\
-		VRB_PARENT(VRB_RIGHT(tmp, field), field) = (elm);		\
+		VRB_PARENT(VRB_RIGHT(tmp, field), field) = (elm);	\
 	}								\
 	VRB_AUGMENT(elm);						\
-	if ((VRB_PARENT(tmp, field) = VRB_PARENT(elm, field)) != NULL) {	\
+	if ((VRB_PARENT(tmp, field) = VRB_PARENT(elm, field)) != NULL) {\
 		if ((elm) == VRB_LEFT(VRB_PARENT(elm, field), field))	\
-			VRB_LEFT(VRB_PARENT(elm, field), field) = (tmp);	\
+			VRB_LEFT(VRB_PARENT(elm, field), field) = (tmp);\
 		else							\
-			VRB_RIGHT(VRB_PARENT(elm, field), field) = (tmp);	\
+			VRB_RIGHT(VRB_PARENT(elm, field), field) = (tmp);\
 	} else								\
 		(head)->rbh_root = (tmp);				\
 	VRB_RIGHT(tmp, field) = (elm);					\
@@ -381,15 +381,15 @@ struct {								\
 #define	VRB_PROTOTYPE_STATIC(name, type, field, cmp)			\
 	VRB_PROTOTYPE_INTERNAL(name, type, field, cmp, __unused static)
 #define VRB_PROTOTYPE_INTERNAL(name, type, field, cmp, attr)		\
-attr void name##_VRB_INSERT_COLOR(struct name *, struct type *);		\
+attr void name##_VRB_INSERT_COLOR(struct name *, struct type *);	\
 attr void name##_VRB_REMOVE_COLOR(struct name *, struct type *, struct type *);\
 attr struct type *name##_VRB_REMOVE(struct name *, struct type *);	\
 attr struct type *name##_VRB_INSERT(struct name *, struct type *);	\
-attr struct type *name##_VRB_FIND(struct name *, struct type *);		\
+attr struct type *name##_VRB_FIND(struct name *, struct type *);	\
 attr struct type *name##_VRB_NFIND(struct name *, struct type *);	\
 attr struct type *name##_VRB_NEXT(struct type *);			\
 attr struct type *name##_VRB_PREV(struct type *);			\
-attr struct type *name##_VRB_MINMAX(struct name *, int);			\
+attr struct type *name##_VRB_MINMAX(struct name *, int);		\
 									\
 
 /* Main rb operation.
@@ -408,7 +408,7 @@ name##_VRB_INSERT_COLOR(struct name *head, struct type *elm)		\
 	    VRB_COLOR(parent, field) == VRB_RED) {			\
 		gparent = VRB_PARENT(parent, field);			\
 		if (parent == VRB_LEFT(gparent, field)) {		\
-			tmp = VRB_RIGHT(gparent, field);			\
+			tmp = VRB_RIGHT(gparent, field);		\
 			if (tmp && VRB_COLOR(tmp, field) == VRB_RED) {	\
 				VRB_COLOR(tmp, field) = VRB_BLACK;	\
 				VRB_SET_BLACKRED(parent, gparent, field);\
@@ -461,9 +461,9 @@ name##_VRB_REMOVE_COLOR(struct name *head, struct type *parent, struct type *elm
 			    VRB_COLOR(VRB_LEFT(tmp, field), field) == VRB_BLACK) &&\
 			    (VRB_RIGHT(tmp, field) == NULL ||		\
 			    VRB_COLOR(VRB_RIGHT(tmp, field), field) == VRB_BLACK)) {\
-				VRB_COLOR(tmp, field) = VRB_RED;		\
+				VRB_COLOR(tmp, field) = VRB_RED;	\
 				elm = parent;				\
-				parent = VRB_PARENT(elm, field);		\
+				parent = VRB_PARENT(elm, field);	\
 			} else {					\
 				if (VRB_RIGHT(tmp, field) == NULL ||	\
 				    VRB_COLOR(VRB_RIGHT(tmp, field), field) == VRB_BLACK) {\
@@ -471,7 +471,7 @@ name##_VRB_REMOVE_COLOR(struct name *head, struct type *parent, struct type *elm
 					if ((oleft = VRB_LEFT(tmp, field)) \
 					    != NULL)			\
 						VRB_COLOR(oleft, field) = VRB_BLACK;\
-					VRB_COLOR(tmp, field) = VRB_RED;	\
+					VRB_COLOR(tmp, field) = VRB_RED;\
 					VRB_ROTATE_RIGHT(head, tmp, oleft, field);\
 					tmp = VRB_RIGHT(parent, field);	\
 				}					\
@@ -494,9 +494,9 @@ name##_VRB_REMOVE_COLOR(struct name *head, struct type *parent, struct type *elm
 			    VRB_COLOR(VRB_LEFT(tmp, field), field) == VRB_BLACK) &&\
 			    (VRB_RIGHT(tmp, field) == NULL ||		\
 			    VRB_COLOR(VRB_RIGHT(tmp, field), field) == VRB_BLACK)) {\
-				VRB_COLOR(tmp, field) = VRB_RED;		\
+				VRB_COLOR(tmp, field) = VRB_RED;	\
 				elm = parent;				\
-				parent = VRB_PARENT(elm, field);		\
+				parent = VRB_PARENT(elm, field);	\
 			} else {					\
 				if (VRB_LEFT(tmp, field) == NULL ||	\
 				    VRB_COLOR(VRB_LEFT(tmp, field), field) == VRB_BLACK) {\
@@ -504,7 +504,7 @@ name##_VRB_REMOVE_COLOR(struct name *head, struct type *parent, struct type *elm
 					if ((oright = VRB_RIGHT(tmp, field)) \
 					    != NULL)			\
 						VRB_COLOR(oright, field) = VRB_BLACK;\
-					VRB_COLOR(tmp, field) = VRB_RED;	\
+					VRB_COLOR(tmp, field) = VRB_RED;\
 					VRB_ROTATE_LEFT(head, tmp, oright, field);\
 					tmp = VRB_LEFT(parent, field);	\
 				}					\
@@ -537,13 +537,13 @@ name##_VRB_REMOVE(struct name *head, struct type *elm)			\
 		while ((left = VRB_LEFT(elm, field)) != NULL)		\
 			elm = left;					\
 		child = VRB_RIGHT(elm, field);				\
-		parent = VRB_PARENT(elm, field);				\
+		parent = VRB_PARENT(elm, field);			\
 		color = VRB_COLOR(elm, field);				\
 		if (child)						\
 			VRB_PARENT(child, field) = parent;		\
 		if (parent) {						\
 			if (VRB_LEFT(parent, field) == elm)		\
-				VRB_LEFT(parent, field) = child;		\
+				VRB_LEFT(parent, field) = child;	\
 			else						\
 				VRB_RIGHT(parent, field) = child;	\
 			VRB_AUGMENT(parent);				\
@@ -571,13 +571,13 @@ name##_VRB_REMOVE(struct name *head, struct type *elm)			\
 		}							\
 		goto color;						\
 	}								\
-	parent = VRB_PARENT(elm, field);					\
+	parent = VRB_PARENT(elm, field);				\
 	color = VRB_COLOR(elm, field);					\
 	if (child)							\
 		VRB_PARENT(child, field) = parent;			\
 	if (parent) {							\
 		if (VRB_LEFT(parent, field) == elm)			\
-			VRB_LEFT(parent, field) = child;			\
+			VRB_LEFT(parent, field) = child;		\
 		else							\
 			VRB_RIGHT(parent, field) = child;		\
 		VRB_AUGMENT(parent);					\
@@ -674,7 +674,7 @@ name##_VRB_NEXT(struct type *elm)					\
 		    (elm == VRB_LEFT(VRB_PARENT(elm, field), field)))	\
 			elm = VRB_PARENT(elm, field);			\
 		else {							\
-			while (VRB_PARENT(elm, field) &&			\
+			while (VRB_PARENT(elm, field) &&		\
 			    (elm == VRB_RIGHT(VRB_PARENT(elm, field), field)))\
 				elm = VRB_PARENT(elm, field);		\
 			elm = VRB_PARENT(elm, field);			\
@@ -696,7 +696,7 @@ name##_VRB_PREV(struct type *elm)					\
 		    (elm == VRB_RIGHT(VRB_PARENT(elm, field), field)))	\
 			elm = VRB_PARENT(elm, field);			\
 		else {							\
-			while (VRB_PARENT(elm, field) &&			\
+			while (VRB_PARENT(elm, field) &&		\
 			    (elm == VRB_LEFT(VRB_PARENT(elm, field), field)))\
 				elm = VRB_PARENT(elm, field);		\
 			elm = VRB_PARENT(elm, field);			\
