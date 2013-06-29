@@ -103,8 +103,6 @@ struct logexp {
 	pthread_t			tp;
 };
 
-#define VSL_SLEEP_USEC			(50*1000)
-
 static VTAILQ_HEAD(, logexp)		logexps =
 	VTAILQ_HEAD_INITIALIZER(logexps);
 

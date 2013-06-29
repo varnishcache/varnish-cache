@@ -78,8 +78,6 @@ struct varnish {
 
 #define NONSENSE	"%XJEIFLH|)Xspa8P"
 
-#define VSL_SLEEP_USEC	(50*1000)
-
 static VTAILQ_HEAD(, varnish)	varnishes =
     VTAILQ_HEAD_INITIALIZER(varnishes);
 
