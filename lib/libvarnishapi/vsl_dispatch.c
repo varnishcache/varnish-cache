@@ -135,7 +135,9 @@ struct VSLQ {
 	unsigned		n_cache;
 };
 
+/*lint -esym(534, vtx_diag) */
 static int vtx_diag(struct VSLQ *vslq, struct vtx *vtx, const char *fmt, ...);
+/*lint -esym(534, vtx_diag_tag) */
 static int vtx_diag_tag(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr,
     const char *reason);
 
@@ -149,8 +151,8 @@ vtx_keycmp(const struct vtx_key *a, const struct vtx_key *b)
 	return (0);
 }
 
-VRB_PROTOTYPE_STATIC(vtx_tree, vtx_key, entry, vtx_keycmp);
-VRB_GENERATE_STATIC(vtx_tree, vtx_key, entry, vtx_keycmp);
+VRB_PROTOTYPE_STATIC(vtx_tree, vtx_key, entry, vtx_keycmp)
+VRB_GENERATE_STATIC(vtx_tree, vtx_key, entry, vtx_keycmp)
 
 static int
 vslc_raw_next(void *cursor)
@@ -184,7 +186,7 @@ vslc_raw_reset(void *cursor)
 	return (0);
 }
 
-static struct vslc_tbl vslc_raw_tbl = {
+static const struct vslc_tbl vslc_raw_tbl = {
 	.delete	= NULL,
 	.next	= vslc_raw_next,
 	.reset	= vslc_raw_reset,
@@ -242,7 +244,7 @@ vslc_vtx_reset(void *cursor)
 	return (0);
 }
 
-static struct vslc_tbl vslc_vtx_tbl = {
+static const struct vslc_tbl vslc_vtx_tbl = {
 	.delete	= NULL,
 	.next	= vslc_vtx_next,
 	.reset	= vslc_vtx_reset,
@@ -281,7 +283,7 @@ vtx_new(struct VSLQ *vslq)
 	vtx->n_descend = 0;
 	(void)vslc_vtx_reset(&vtx->c);
 	vtx->len = 0;
-	memset(&vtx->chunk, 0, sizeof vtx->chunk);
+	memset(vtx->chunk, 0, sizeof vtx->chunk);
 	vtx->n_chunk = 0;
 
 	VTAILQ_INSERT_TAIL(&vslq->incomplete, vtx, list_incomplete);
@@ -401,7 +403,7 @@ vtx_buffer(struct VSLQ *vslq, struct vtx *vtx)
 		memcpy(vtx->buf + vtx->chunk[i].offset, vtx->chunk[i].start.ptr,
 		    sizeof (uint32_t) * vtx->chunk[i].len);
 
-	memset(&vtx->chunk, 0, sizeof vtx->chunk);
+	memset(vtx->chunk, 0, sizeof vtx->chunk);
 	VTAILQ_REMOVE(&vslq->shmlist, vtx, list_shm);
 	vtx->n_chunk = 0;
 }
@@ -685,7 +687,7 @@ vtx_force(struct VSLQ *vslq, struct vtx *vtx, const char *reason)
 }
 
 static int
-vslq_callback(struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
+vslq_callback(const struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
     void *priv)
 {
 	unsigned n = vtx->n_descend + 1;
@@ -707,7 +709,7 @@ vslq_callback(struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
 		return (0);
 
 	/* Build transaction array */
-	vslc_vtx_reset(&vtx->c);
+	(void)vslc_vtx_reset(&vtx->c);
 	trans[0].level = 1;
 	trans[0].vxid = vtx->key.vxid;
 	trans[0].type = vtx->type;
@@ -718,7 +720,7 @@ vslq_callback(struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
 		CAST_OBJ_NOTNULL(c, (void *)trans[j].c, VSLC_VTX_MAGIC);
 		VTAILQ_FOREACH(vtx, &c->vtx->child, list_child) {
 			assert(i < n);
-			vslc_vtx_reset(&vtx->c);
+			(void)vslc_vtx_reset(&vtx->c);
 			trans[i].level = trans[j].level + 1;
 			trans[i].vxid = vtx->key.vxid;
 			trans[i].type = vtx->type;
@@ -842,7 +844,7 @@ VSLQ_Delete(struct VSLQ **pvslq)
 }
 
 static int
-vslq_raw(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
+vslq_raw(const struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 {
 	struct vslc_raw rawc;
 	struct VSL_transaction trans;
