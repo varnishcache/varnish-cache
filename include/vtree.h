@@ -386,11 +386,11 @@ attr void name##_VRB_INSERT_COLOR(struct name *, struct type *);	\
 attr void name##_VRB_REMOVE_COLOR(struct name *, struct type *, struct type *);\
 attr struct type *name##_VRB_REMOVE(struct name *, struct type *);	\
 attr struct type *name##_VRB_INSERT(struct name *, struct type *);	\
-attr struct type *name##_VRB_FIND(struct name *, struct type *);	\
-attr struct type *name##_VRB_NFIND(struct name *, struct type *);	\
+attr struct type *name##_VRB_FIND(const struct name *, const struct type *);	\
+attr struct type *name##_VRB_NFIND(const struct name *, const struct type *);	\
 attr struct type *name##_VRB_NEXT(struct type *);			\
 attr struct type *name##_VRB_PREV(struct type *);			\
-attr struct type *name##_VRB_MINMAX(struct name *, int);		\
+attr struct type *name##_VRB_MINMAX(const struct name *, int);		\
 									\
 
 /* Main rb operation.
@@ -451,6 +451,7 @@ name##_VRB_REMOVE_COLOR(struct name *head, struct type *parent, struct type *elm
 	struct type *tmp;						\
 	while ((elm == NULL || VRB_COLOR(elm, field) == VRB_BLACK) &&	\
 	    elm != VRB_ROOT(head)) {					\
+		AN(parent);						\
 		if (VRB_LEFT(parent, field) == elm) {			\
 			tmp = VRB_RIGHT(parent, field);			\
 			if (VRB_COLOR(tmp, field) == VRB_RED) {		\
@@ -586,7 +587,6 @@ name##_VRB_REMOVE(struct name *head, struct type *elm)			\
 		VRB_ROOT(head) = child;					\
 color:									\
 	if (color == VRB_BLACK) {					\
-		AN(parent);						\
 		name##_VRB_REMOVE_COLOR(head, parent, child);		\
 	}								\
 	return (old);							\
@@ -625,7 +625,7 @@ name##_VRB_INSERT(struct name *head, struct type *elm)			\
 									\
 /* Finds the node with the same key as elm */				\
 attr struct type *							\
-name##_VRB_FIND(struct name *head, struct type *elm)			\
+name##_VRB_FIND(const struct name *head, const struct type *elm)	\
 {									\
 	struct type *tmp = VRB_ROOT(head);				\
 	int comp;							\
@@ -643,7 +643,7 @@ name##_VRB_FIND(struct name *head, struct type *elm)			\
 									\
 /* Finds the first node greater than or equal to the search key */	\
 attr struct type *							\
-name##_VRB_NFIND(struct name *head, struct type *elm)			\
+name##_VRB_NFIND(const struct name *head, const struct type *elm)	\
 {									\
 	struct type *tmp = VRB_ROOT(head);				\
 	struct type *res = NULL;					\
@@ -707,7 +707,7 @@ name##_VRB_PREV(struct type *elm)					\
 }									\
 									\
 attr struct type *							\
-name##_VRB_MINMAX(struct name *head, int val)				\
+name##_VRB_MINMAX(const struct name *head, int val)			\
 {									\
 	struct type *tmp = VRB_ROOT(head);				\
 	struct type *parent = NULL;					\
