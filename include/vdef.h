@@ -67,6 +67,14 @@
 # endif
 #endif
 
+#ifndef __unused
+# if __GNUC_PREREQ(2, 95) || defined(__INTEL_COMPILER)
+#  define __unused __attribute__((__unused__))
+# else
+#  define __unused
+# endif
+#endif
+
 /**********************************************************************
  * FlexeLint and compiler shutuppery
  */
