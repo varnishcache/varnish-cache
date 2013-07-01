@@ -28,6 +28,8 @@
  *
  */
 
+#include <vdef.h>
+
 struct vsc;
 struct vsb;
 
