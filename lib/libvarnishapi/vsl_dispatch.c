@@ -51,9 +51,10 @@
 struct vtx;
 
 struct vslc_raw {
-	struct vslc		c;
 	unsigned		magic;
 #define VSLC_RAW_MAGIC		0x247EBD44
+
+	struct VSL_cursor	cursor;
 
 	const uint32_t		*start;
 	ssize_t			len;
@@ -67,9 +68,10 @@ struct vtx_chunk {
 };
 
 struct vslc_vtx {
-	struct vslc		c;
 	unsigned		magic;
 #define VSLC_VTX_MAGIC		0x74C6523F
+
+	struct VSL_cursor	cursor;
 
 	struct vtx		*vtx;
 
@@ -155,16 +157,17 @@ VRB_PROTOTYPE_STATIC(vtx_tree, vtx_key, entry, vtx_keycmp)
 VRB_GENERATE_STATIC(vtx_tree, vtx_key, entry, vtx_keycmp)
 
 static int
-vslc_raw_next(void *cursor)
+vslc_raw_next(struct VSL_cursor *cursor)
 {
 	struct vslc_raw *c;
 
-	CAST_OBJ_NOTNULL(c, cursor, VSLC_RAW_MAGIC);
+	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_RAW_MAGIC);
+	assert(&c->cursor == cursor);
 
 	assert(c->next >= c->start);
 	assert(c->next <= c->start + c->len);
 	if (c->next < c->start + c->len) {
-		c->c.c.rec.ptr = c->next;
+		c->cursor.rec.ptr = c->next;
 		c->next = VSL_NEXT(c->next);
 		return (1);
 	}
@@ -172,21 +175,23 @@ vslc_raw_next(void *cursor)
 }
 
 static int
-vslc_raw_reset(void *cursor)
+vslc_raw_reset(struct VSL_cursor *cursor)
 {
 	struct vslc_raw *c;
 
-	CAST_OBJ_NOTNULL(c, cursor, VSLC_RAW_MAGIC);
+	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_RAW_MAGIC);
+	assert(&c->cursor == cursor);
 
 	assert(c->next >= c->start);
 	assert(c->next <= c->start + c->len);
 	c->next = c->start;
-	c->c.c.rec.ptr = NULL;
+	c->cursor.rec.ptr = NULL;
 
 	return (0);
 }
 
 static const struct vslc_tbl vslc_raw_tbl = {
+	.magic	= VSLC_TBL_MAGIC,
 	.delete	= NULL,
 	.next	= vslc_raw_next,
 	.reset	= vslc_raw_reset,
@@ -195,12 +200,14 @@ static const struct vslc_tbl vslc_raw_tbl = {
 };
 
 static int
-vslc_vtx_next(void *cursor)
+vslc_vtx_next(struct VSL_cursor *cursor)
 {
 	struct vslc_vtx *c;
 	struct vtx_chunk *chunk;
 
-	CAST_OBJ_NOTNULL(c, cursor, VSLC_VTX_MAGIC);
+	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_VTX_MAGIC);
+	assert(&c->cursor == cursor);
+	CHECK_OBJ_NOTNULL(c->vtx, VTX_MAGIC);
 
 	assert (c->offset <= c->vtx->len);
 	if (c->offset == c->vtx->len)
@@ -210,8 +217,8 @@ vslc_vtx_next(void *cursor)
 		/* Buffer */
 		AN(c->vtx->buf);
 		assert(c->offset < c->vtx->bufsize);
-		c->c.c.rec.ptr = c->vtx->buf + c->offset;
-		c->offset += VSL_NEXT(c->c.c.rec.ptr) - c->c.c.rec.ptr;
+		c->cursor.rec.ptr = c->vtx->buf + c->offset;
+		c->offset += VSL_NEXT(c->cursor.rec.ptr) - c->cursor.rec.ptr;
 		return (1);
 	}
 
@@ -225,26 +232,28 @@ vslc_vtx_next(void *cursor)
 		chunk = &c->vtx->chunk[c->chunk];
 	}
 	AN(chunk->start.ptr);
-	c->c.c.rec.ptr = chunk->start.ptr + c->offset - chunk->offset;
-	c->offset += VSL_NEXT(c->c.c.rec.ptr) - c->c.c.rec.ptr;
+	c->cursor.rec.ptr = chunk->start.ptr + c->offset - chunk->offset;
+	c->offset += VSL_NEXT(c->cursor.rec.ptr) - c->cursor.rec.ptr;
 
 	return (1);
 }
 
 static int
-vslc_vtx_reset(void *cursor)
+vslc_vtx_reset(struct VSL_cursor *cursor)
 {
 	struct vslc_vtx *c;
 
-	CAST_OBJ_NOTNULL(c, cursor, VSLC_VTX_MAGIC);
+	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_VTX_MAGIC);
+	assert(&c->cursor == cursor);
 	c->chunk = 0;
 	c->offset = 0;
-	c->c.c.rec.ptr = NULL;
+	c->cursor.rec.ptr = NULL;
 
 	return (0);
 }
 
 static const struct vslc_tbl vslc_vtx_tbl = {
+	.magic	= VSLC_TBL_MAGIC,
 	.delete	= NULL,
 	.next	= vslc_vtx_next,
 	.reset	= vslc_vtx_reset,
@@ -266,10 +275,10 @@ vtx_new(struct VSLQ *vslq)
 	} else {
 		ALLOC_OBJ(vtx, VTX_MAGIC);
 		AN(vtx);
-		vtx->c.c.magic = VSLC_MAGIC;
-		vtx->c.c.tbl = &vslc_vtx_tbl;
 		vtx->c.magic = VSLC_VTX_MAGIC;
 		vtx->c.vtx = vtx;
+		vtx->c.cursor.priv_tbl = &vslc_vtx_tbl;
+		vtx->c.cursor.priv_data = &vtx->c;
 	}
 
 	vtx->key.vxid = 0;
@@ -281,7 +290,7 @@ vtx_new(struct VSLQ *vslq)
 	vtx->n_child = 0;
 	vtx->n_childready = 0;
 	vtx->n_descend = 0;
-	(void)vslc_vtx_reset(&vtx->c);
+	(void)vslc_vtx_reset(&vtx->c.cursor);
 	vtx->len = 0;
 	memset(vtx->chunk, 0, sizeof vtx->chunk);
 	vtx->n_chunk = 0;
@@ -625,8 +634,8 @@ vtx_scan(struct VSLQ *vslq, struct vtx *vtx)
 	enum VSL_tag_e tag;
 	struct vtx *ret = NULL;
 
-	while (vslc_vtx_next(&vtx->c) == 1) {
-		ptr = vtx->c.c.c.rec.ptr;
+	while (vslc_vtx_next(&vtx->c.cursor) == 1) {
+		ptr = vtx->c.cursor.rec.ptr;
 		tag = VSL_TAG(ptr);
 
 		if (tag == SLT__Batch)
@@ -691,9 +700,9 @@ vslq_callback(const struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
     void *priv)
 {
 	unsigned n = vtx->n_descend + 1;
+	struct vtx *vtxs[n];
 	struct VSL_transaction trans[n];
 	struct VSL_transaction *ptrans[n + 1];
-	struct vslc_vtx *c;
 	unsigned i, j;
 
 	AN(vslq);
@@ -709,22 +718,23 @@ vslq_callback(const struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
 		return (0);
 
 	/* Build transaction array */
-	(void)vslc_vtx_reset(&vtx->c);
+	(void)vslc_vtx_reset(&vtx->c.cursor);
+	vtxs[0] = vtx;
 	trans[0].level = 1;
 	trans[0].vxid = vtx->key.vxid;
 	trans[0].type = vtx->type;
-	trans[0].c = &vtx->c.c.c;
+	trans[0].c = &vtx->c.cursor;
 	i = 1;
 	j = 0;
 	while (j < i) {
-		CAST_OBJ_NOTNULL(c, (void *)trans[j].c, VSLC_VTX_MAGIC);
-		VTAILQ_FOREACH(vtx, &c->vtx->child, list_child) {
+		VTAILQ_FOREACH(vtx, &vtxs[j]->child, list_child) {
 			assert(i < n);
-			(void)vslc_vtx_reset(&vtx->c);
+			(void)vslc_vtx_reset(&vtx->c.cursor);
+			vtxs[i] = vtx;
 			trans[i].level = trans[j].level + 1;
 			trans[i].vxid = vtx->key.vxid;
 			trans[i].type = vtx->type;
-			trans[i].c = &vtx->c.c.c;
+			trans[i].c = &vtx->c.cursor;
 			i++;
 		}
 		j++;
@@ -856,12 +866,12 @@ vslq_raw(const struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 	c = vslq->c;
 
 	memset(&rawc, 0, sizeof rawc);
-	rawc.c.magic = VSLC_MAGIC;
-	rawc.c.tbl = &vslc_raw_tbl;
 	rawc.magic = VSLC_RAW_MAGIC;
+	rawc.cursor.priv_tbl = &vslc_raw_tbl;
+	rawc.cursor.priv_data = &rawc;
 	trans.level = 0;
 	trans.type = VSL_t_raw;
-	trans.c = &rawc.c.c;
+	trans.c = &rawc.cursor;
 	ptrans[0] = &trans;
 	ptrans[1] = NULL;
 
@@ -875,7 +885,7 @@ vslq_raw(const struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 		rawc.start = c->rec.ptr;
 		rawc.len = VSL_NEXT(c->rec.ptr) - c->rec.ptr;
 		rawc.next = rawc.start;
-		rawc.c.c.rec.ptr = NULL;
+		rawc.cursor.rec.ptr = NULL;
 		trans.vxid = VSL_ID(c->rec.ptr);
 
 		/* Query check goes here */

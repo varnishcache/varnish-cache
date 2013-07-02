@@ -41,15 +41,17 @@
 
 #include "vas.h"
 #include "miniobj.h"
+#include "vdef.h"
 #include "vapi/vsm.h"
 #include "vsm_api.h"
 #include "vapi/vsl.h"
 #include "vsl_api.h"
 
 struct vslc_vsm {
-	struct vslc			c;
 	unsigned			magic;
 #define VSLC_VSM_MAGIC			0x4D3903A6
+
+	struct VSL_cursor		cursor;
 
 	struct VSM_data			*vsm;
 	struct VSM_fantom		vf;
@@ -61,21 +63,23 @@ struct vslc_vsm {
 };
 
 static void
-vslc_vsm_delete(void *cursor)
+vslc_vsm_delete(struct VSL_cursor *cursor)
 {
 	struct vslc_vsm *c;
 
-	CAST_OBJ_NOTNULL(c, (void *)cursor, VSLC_VSM_MAGIC);
+	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_VSM_MAGIC);
+	assert(&c->cursor == cursor);
 	FREE_OBJ(c);
 }
 
 static int
-vslc_vsm_check(const void *cursor, const struct VSLC_ptr *ptr)
+vslc_vsm_check(const struct VSL_cursor *cursor, const struct VSLC_ptr *ptr)
 {
 	const struct vslc_vsm *c;
 	unsigned seqdiff, segment, segdiff;
 
-	CAST_OBJ_NOTNULL(c, cursor, VSLC_VSM_MAGIC);
+	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_VSM_MAGIC);
+	assert(&c->cursor == cursor);
 
 	if (ptr->ptr == NULL)
 		return (0);
@@ -109,13 +113,14 @@ vslc_vsm_check(const void *cursor, const struct VSLC_ptr *ptr)
 }
 
 static int
-vslc_vsm_next(void *cursor)
+vslc_vsm_next(struct VSL_cursor *cursor)
 {
 	struct vslc_vsm *c;
 	int i;
 	uint32_t t;
 
-	CAST_OBJ_NOTNULL(c, cursor, VSLC_VSM_MAGIC);
+	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_VSM_MAGIC);
+	assert(&c->cursor == cursor);
 	CHECK_OBJ_NOTNULL(c->vsm, VSM_MAGIC);
 
 	/* Assert pointers */
@@ -123,7 +128,7 @@ vslc_vsm_next(void *cursor)
 	assert(c->next.ptr >= c->head->log);
 	assert(c->next.ptr < c->end);
 
-	i = vslc_vsm_check(c, &c->next);
+	i = vslc_vsm_check(&c->cursor, &c->next);
 	if (i <= 0)
 		/* Overrun */
 		return (-3);
@@ -163,19 +168,20 @@ vslc_vsm_next(void *cursor)
 		if (c->next.ptr == c->head->log)
 			c->next.priv = c->head->seq;
 
-		c->c.c.rec = c->next;
+		c->cursor.rec = c->next;
 		c->next.ptr = VSL_NEXT(c->next.ptr);
 		return (1);
 	}
 }
 
 static int
-vslc_vsm_reset(void *cursor)
+vslc_vsm_reset(struct VSL_cursor *cursor)
 {
 	struct vslc_vsm *c;
 	unsigned segment;
 
-	CAST_OBJ_NOTNULL(c, cursor, VSLC_VSM_MAGIC);
+	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_VSM_MAGIC);
+	assert(&c->cursor == cursor);
 
 	/*
 	 * Starting (VSL_SEGMENTS - 3) behind varnishd. This way
@@ -189,29 +195,31 @@ vslc_vsm_reset(void *cursor)
 	assert(c->head->segments[segment] >= 0);
 	c->next.ptr = c->head->log + c->head->segments[segment];
 	c->next.priv = c->head->seq;
-	c->c.c.rec.ptr = NULL;
+	c->cursor.rec.ptr = NULL;
 
 	return (0);
 }
 
 static int
-vslc_vsm_skip(void *cursor, ssize_t words)
+vslc_vsm_skip(struct VSL_cursor *cursor, ssize_t words)
 {
 	struct vslc_vsm *c;
 
-	CAST_OBJ_NOTNULL(c, cursor, VSLC_VSM_MAGIC);
+	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_VSM_MAGIC);
+	assert(&c->cursor == cursor);
 	if (words < 0)
 		return (-1);
 
 	c->next.ptr += words;
 	assert(c->next.ptr >= c->head->log);
 	assert(c->next.ptr < c->end);
-	c->c.c.rec.ptr = NULL;
+	c->cursor.rec.ptr = NULL;
 
 	return (0);
 }
 
 static const struct vslc_tbl vslc_vsm_tbl = {
+	.magic		= VSLC_TBL_MAGIC,
 	.delete		= vslc_vsm_delete,
 	.next		= vslc_vsm_next,
 	.reset		= vslc_vsm_reset,
@@ -249,8 +257,8 @@ VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, int tail)
 		vsl_diag(vsl, "Out of memory\n");
 		return (NULL);
 	}
-	c->c.magic = VSLC_MAGIC;
-	c->c.tbl = & vslc_vsm_tbl;
+	c->cursor.priv_tbl = &vslc_vsm_tbl;
+	c->cursor.priv_data = c;
 
 	c->vsm = vsm;
 	c->vf = vf;
@@ -267,16 +275,16 @@ VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, int tail)
 			c->next.ptr = VSL_NEXT(c->next.ptr);
 		c->next.priv = c->head->seq;
 	} else
-		AZ(vslc_vsm_reset(&c->c));
+		AZ(vslc_vsm_reset(&c->cursor));
 
-	/* XXX: How does 'c' ever get freed ? */
-	return (&c->c.c);
+	return (&c->cursor);
 }
 
 struct vslc_file {
-	struct vslc			c;
 	unsigned			magic;
 #define VSLC_FILE_MAGIC			0x1D65FFEF
+
+	struct VSL_cursor		cursor;
 
 	int				error;
 	int				fd;
@@ -285,11 +293,12 @@ struct vslc_file {
 };
 
 static void
-vslc_file_delete(void *cursor)
+vslc_file_delete(struct VSL_cursor *cursor)
 {
 	struct vslc_file *c;
 
-	CAST_OBJ_NOTNULL(c, cursor, VSLC_FILE_MAGIC);
+	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_FILE_MAGIC);
+	assert(&c->cursor == cursor);
 	if (c->fd > STDIN_FILENO)
 		(void)close(c->fd);
 	if (c->buf != NULL)
@@ -313,18 +322,19 @@ vslc_file_readn(int fd, void *buf, size_t n)
 }
 
 static int
-vslc_file_next(void *cursor)
+vslc_file_next(struct VSL_cursor *cursor)
 {
 	struct vslc_file *c;
 	ssize_t i, l;
 
-	CAST_OBJ_NOTNULL(c, cursor, VSLC_FILE_MAGIC);
+	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_FILE_MAGIC);
+	assert(&c->cursor == cursor);
 
 	if (c->error)
 		return (c->error);
 
 	do {
-		c->c.c.rec.ptr = NULL;
+		c->cursor.rec.ptr = NULL;
 		assert(c->buflen >= VSL_BYTES(2));
 		i = vslc_file_readn(c->fd, c->buf, VSL_BYTES(2));
 		if (i < 0)
@@ -347,13 +357,13 @@ vslc_file_next(void *cursor)
 				return (-1);	/* EOF */
 			assert(i == l - VSL_BYTES(2));
 		}
-		c->c.c.rec.ptr = c->buf;
-	} while (VSL_TAG(c->c.c.rec.ptr) == SLT__Batch);
+		c->cursor.rec.ptr = c->buf;
+	} while (VSL_TAG(c->cursor.rec.ptr) == SLT__Batch);
 	return (1);
 }
 
 static int
-vslc_file_reset(void *cursor)
+vslc_file_reset(struct VSL_cursor *cursor)
 {
 	(void)cursor;
 	/* XXX: Implement me */
@@ -361,6 +371,7 @@ vslc_file_reset(void *cursor)
 }
 
 static const struct vslc_tbl vslc_file_tbl = {
+	.magic		= VSLC_TBL_MAGIC,
 	.delete		= vslc_file_delete,
 	.next		= vslc_file_next,
 	.reset		= vslc_file_reset,
@@ -410,67 +421,67 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name)
 		vsl_diag(vsl, "Out of memory\n");
 		return (NULL);
 	}
-	c->c.magic = VSLC_MAGIC;
-	c->c.tbl = &vslc_file_tbl;
+	c->cursor.priv_tbl = &vslc_file_tbl;
+	c->cursor.priv_data = c;
 
 	c->fd = fd;
 	c->buflen = BUFSIZ;
 	c->buf = malloc(c->buflen);
 	AN(c->buf);
 
-	return (&c->c.c);
+	return (&c->cursor);
 }
 
 void
 VSL_DeleteCursor(struct VSL_cursor *cursor)
 {
-	struct vslc *c;
+	const struct vslc_tbl *tbl;
 
-	CAST_OBJ_NOTNULL(c, (void *)cursor, VSLC_MAGIC);
-	if (c->tbl->delete == NULL)
+	CAST_OBJ_NOTNULL(tbl, cursor->priv_tbl, VSLC_TBL_MAGIC);
+	if (tbl->delete == NULL)
 		return;
-	(c->tbl->delete)(c);
+	(tbl->delete)(cursor);
 }
 
 int
 VSL_ResetCursor(struct VSL_cursor *cursor)
 {
-	struct vslc *c;
+	const struct vslc_tbl *tbl;
 
-	CAST_OBJ_NOTNULL(c, (void *)cursor, VSLC_MAGIC);
-	if (c->tbl->reset == NULL)
+	CAST_OBJ_NOTNULL(tbl, cursor->priv_tbl, VSLC_TBL_MAGIC);
+	if (tbl->reset == NULL)
 		return (-1);
-	return ((c->tbl->reset)(c));
+	return ((tbl->reset)(cursor));
 }
 
 int
 VSL_Next(struct VSL_cursor *cursor)
 {
-	struct vslc *c;
+	const struct vslc_tbl *tbl;
 
-	CAST_OBJ_NOTNULL(c, (void *)cursor, VSLC_MAGIC);
-	AN(c->tbl->next);
-	return ((c->tbl->next)(c));
+	CAST_OBJ_NOTNULL(tbl, cursor->priv_tbl, VSLC_TBL_MAGIC);
+	AN(tbl->next);
+	return ((tbl->next)(cursor));
 }
 
 int
 vsl_skip(struct VSL_cursor *cursor, ssize_t words)
 {
-	struct vslc *c;
+	const struct vslc_tbl *tbl;
 
-	CAST_OBJ_NOTNULL(c, (void *)cursor, VSLC_MAGIC);
-	if (c->tbl->skip == NULL)
+	CAST_OBJ_NOTNULL(tbl, cursor->priv_tbl, VSLC_TBL_MAGIC);
+	if (tbl->skip == NULL)
 		return (-1);
-	return ((c->tbl->skip)(c, words));
+	return ((tbl->skip)(cursor, words));
 }
 
 int
 VSL_Check(const struct VSL_cursor *cursor, const struct VSLC_ptr *ptr)
 {
-	const struct vslc *c;
+	const struct vslc_tbl *tbl;
 
-	CAST_OBJ_NOTNULL(c, (const void *)cursor, VSLC_MAGIC);
-	if (c->tbl->check == NULL)
+	CAST_OBJ_NOTNULL(tbl, cursor->priv_tbl, VSLC_TBL_MAGIC);
+	if (tbl->check == NULL)
 		return (-1);
-	return ((c->tbl->check)(c, ptr));
+	return ((tbl->check)(cursor, ptr));
 }

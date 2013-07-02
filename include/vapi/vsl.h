@@ -59,6 +59,10 @@ struct VSLC_ptr {
 struct VSL_cursor {
 	/* The record this cursor points to */
 	struct VSLC_ptr		rec;
+
+	/* Private data */
+	const void		*priv_tbl;
+	void			*priv_data;
 };
 
 enum VSL_transaction_e {

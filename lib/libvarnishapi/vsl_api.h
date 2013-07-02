@@ -41,26 +41,21 @@ int vsl_diag(struct VSL_data *vsl, const char *fmt, ...)
     __printflike(2, 3);
 int vsl_skip(struct VSL_cursor *c, ssize_t words);
 
-typedef void vslc_delete_f(void *);
-typedef int vslc_next_f(void *);
-typedef int vslc_reset_f(void *);
-typedef int vslc_skip_f(void *, ssize_t words);
-typedef int vslc_check_f(const void *, const struct VSLC_ptr *ptr);
+typedef void vslc_delete_f(struct VSL_cursor *);
+typedef int vslc_next_f(struct VSL_cursor *);
+typedef int vslc_reset_f(struct VSL_cursor *);
+typedef int vslc_skip_f(struct VSL_cursor *, ssize_t words);
+typedef int vslc_check_f(const struct VSL_cursor *, const struct VSLC_ptr *);
 
 struct vslc_tbl {
+	unsigned			magic;
+#define VSLC_TBL_MAGIC			0x5007C0DE
+
 	vslc_delete_f			*delete;
 	vslc_next_f			*next;
 	vslc_reset_f			*reset;
 	vslc_skip_f			*skip;
 	vslc_check_f			*check;
-};
-
-struct vslc {
-	struct VSL_cursor		c;
-	unsigned			magic;
-#define VSLC_MAGIC			0x5007C0DE
-
-	const struct vslc_tbl		*tbl;
 };
 
 struct vslf {
