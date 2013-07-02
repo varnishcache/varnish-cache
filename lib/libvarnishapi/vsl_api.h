@@ -71,7 +71,6 @@ typedef VTAILQ_HEAD(,vslf)		vslf_list;
 
 struct VSL_data {
 	unsigned			magic;
-#undef VSL_MAGIC
 #define VSL_MAGIC			0x8E6C92AA
 
 	struct vsb			*diag;

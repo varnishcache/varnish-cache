@@ -39,15 +39,6 @@
 #include "vapi/vsm.h"
 #include "vapi/vsl_int.h"
 
-#define VSL_ARGS	"i:x:"
-
-#define VSL_i_USAGE	"[-i tag]"
-#define VSL_x_USAGE	"[-x tag]"
-
-#define VSL_USAGE	"[...] "		\
-			VSL_i_USAGE " "		\
-			VSL_x_USAGE
-
 struct VSL_data;
 struct VSLQ;
 
