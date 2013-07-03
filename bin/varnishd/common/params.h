@@ -210,6 +210,9 @@ struct params {
 
 	unsigned		bo_cache;
 
+	/* Install a SIGSEGV handler */
+	unsigned		sigsegv_handler;
+
 	/* VSM dimensions */
 	ssize_t			vsm_space;
 	ssize_t			vsl_space;

@@ -312,6 +312,25 @@ child_poker(const struct vev *e, int what)
 }
 
 /*=====================================================================
+ * SIGSEGV handler
+ */
+
+static void mgt_sigsegv_handler(int s, siginfo_t *si, void *c) {
+	char buf[1024];
+
+	(void)s;
+	(void)c;
+
+	sprintf(buf, "Segmentation fault by instruction at %p", si->si_addr);
+	VAS_Fail(__func__,
+		 __FILE__,
+		 __LINE__,
+		 buf,
+		 errno,
+		 0);
+}
+
+/*=====================================================================
  * Launch the child process
  */
 
@@ -323,6 +342,7 @@ mgt_launch_child(struct cli *cli)
 	char *p;
 	struct vev *e;
 	int i, cp[2];
+	struct sigaction sa;
 
 	if (child_state != CH_STOPPED && child_state != CH_DIED)
 		return;
@@ -390,6 +410,11 @@ mgt_launch_child(struct cli *cli)
 		setproctitle("Varnish-Chld %s", heritage.name);
 #endif
 
+		if (mgt_param.sigsegv_handler) {
+			sa.sa_sigaction = mgt_sigsegv_handler;
+			sa.sa_flags = SA_SIGINFO;
+			(void)sigaction(SIGSEGV, &sa, NULL);
+		}
 		(void)signal(SIGINT, SIG_DFL);
 		(void)signal(SIGTERM, SIG_DFL);
 

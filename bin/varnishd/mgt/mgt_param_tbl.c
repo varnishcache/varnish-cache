@@ -507,6 +507,11 @@ const struct parspec mgt_parspec[] = {
 		"on the cooloff list.\n",
 		WIZARD,
 		"180.0", "s" },
+	{ "sigsegv_handler", tweak_bool, &mgt_param.sigsegv_handler, 0, 0,
+		"Install a signal handler which tries to dump debug information "
+		"on segmentation faults.\n",
+		MUST_RESTART,
+		"off", "bool" },
 	{ "vcl_dir", tweak_string, &mgt_vcl_dir, 0, 0,
 		"Directory from which relative VCL filenames (vcl.load and "
 		"include) are opened.",

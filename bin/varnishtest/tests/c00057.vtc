@@ -1,0 +1,19 @@
+varnishtest	"test sigsegv handler"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -cliok "param.set sigsegv_handler on" -vcl+backend {
+	C{
+#include <signal.h>
+}C
+	sub vcl_recv { C{ raise(SIGSEGV); }C }
+} -start
+
+client c1 {
+	txreq
+} -run
+
+varnish v1 -cliok "panic.show"
