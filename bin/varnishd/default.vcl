@@ -135,7 +135,7 @@ sub vcl_backend_response {
 		 * Mark as "Hit-For-Pass" for the next 2 minutes
 		 */
 		set beresp.ttl = 120 s;
-		set beresp.do_pass = true;
+		set beresp.uncacheable = true;
     }
     return (deliver);
 }

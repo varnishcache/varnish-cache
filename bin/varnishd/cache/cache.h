@@ -543,7 +543,10 @@ struct busyobj {
 	unsigned		do_gzip;
 	unsigned		do_gunzip;
 	unsigned		do_stream;
+
+	/* do_pass is our intent, uncacheable is the result */
 	unsigned		do_pass;
+	unsigned		uncacheable;
 
 	/* Timeouts */
 	double			connect_timeout;

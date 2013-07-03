@@ -54,7 +54,7 @@ vbf_release_req(struct req ***reqpp)
 }
 
 /*--------------------------------------------------------------------
- * Copy req->bereq and run it by VCL::vcl_backend_fetch{}
+ * Copy req->bereq
  */
 
 static enum fetch_step
@@ -92,13 +92,12 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo,
 }
 
 /*--------------------------------------------------------------------
- * Copy req->bereq and run it by VCL::vcl_backend_fetch{}
+ * Copy run bereq by VCL::vcl_backend_fetch{}
  */
 
 static enum fetch_step
 vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 {
-	int i;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -111,10 +110,9 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
 	HTTP_Copy(bo->bereq, bo->bereq0);
 
-	// Don't let VCL reset do_pass
-	i = bo->do_pass;
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
-	bo->do_pass |= i;
+
+	bo->uncacheable = bo->do_pass;
 
 	http_PrintfHeader(bo->bereq,
 	    "X-Varnish: %u", bo->vsl->wid & VSL_IDENTMASK);
@@ -199,10 +197,7 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo, struct req ***reqpp)
 
 	AZ(bo->do_esi);
 
-	// Don't let VCL reset do_pass
-	i = bo->do_pass;
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, bo->beresp->ws);
-	bo->do_pass |= i;
 
 	if (wrk->handling == VCL_RET_DELIVER)
 		return (F_STP_FETCH);
@@ -237,7 +232,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	assert(wrk->handling == VCL_RET_DELIVER);
-	if (bo->do_pass)
+	if (bo->uncacheable)
 		bo->fetch_objcore->flags |= OC_F_PASS;
 
 	/*
@@ -294,48 +289,15 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	else if (bo->is_gzip)
 		bo->vfp = &vfp_testgzip;
 
-
-#if 0
-	if (wrk->handling != VCL_RET_DELIVER)
-		VDI_CloseFd(&bo->vbc);
-
-	if (wrk->handling != VCL_RET_DELIVER) {
-		/* Clean up partial fetch */
-		AZ(bo->vbc);
-
-		if (bo->fetch_objcore->objhead != NULL ||
-		    wrk->handling == VCL_RET_RESTART ||
-		    wrk->handling == VCL_RET_ERROR) {
-			CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
-			AZ(HSH_Deref(&wrk->stats, bo->fetch_objcore, NULL));
-			bo->fetch_objcore = NULL;
-		}
-		assert(bo->refcount == 2);
-		bo->storage_hint = NULL;
-		bo->director = NULL;
-
-		switch (wrk->handling) {
-		case VCL_RET_ERROR:
-			bo->state = BOS_FAILED;
-			VBO_DerefBusyObj(wrk, &bo);	// XXX ?
-			return (F_STP_DONE);
-		case VCL_RET_RESTART:
-			INCOMPL();
-		default:
-			WRONG("Illegal action in vcl_fetch{}");
-		}
-	}
-#endif
-
 	if (bo->fetch_objcore->objhead == NULL)
-		AN(bo->do_pass);
+		AN(bo->uncacheable);
 
 	/* No reason to try streaming a non-existing body */
 	if (bo->htc.body_status == BS_NONE)
 		bo->do_stream = 0;
 
 	l = http_EstimateWS(bo->beresp,
-	    bo->do_pass ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
+	    bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
 
 	/* Create Vary instructions */
 	if (bo->fetch_objcore->objhead != NULL) {
@@ -356,7 +318,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 			AZ(vary);
 	}
 
-	if (bo->exp.ttl < cache_param->shortlived || bo->do_pass == 1)
+	if (bo->exp.ttl < cache_param->shortlived || bo->uncacheable == 1)
 		bo->storage_hint = TRANSIENT_STORAGE;
 
 	/*
@@ -413,7 +375,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	hp2 = obj->http;
 
 	hp2->logtag = HTTP_Obj;
-	http_FilterResp(hp, hp2, bo->do_pass ? HTTPH_R_PASS : HTTPH_A_INS);
+	http_FilterResp(hp, hp2, bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS);
 	http_CopyHome(hp2);
 
 	if (http_GetHdr(hp, H_Last_Modified, &b))

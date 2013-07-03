@@ -144,8 +144,52 @@ VBERESP(beresp, unsigned, do_esi,	do_esi)
 VBERESP(beresp, unsigned, do_gzip,	do_gzip)
 VBERESP(beresp, unsigned, do_gunzip,	do_gunzip)
 VBERESP(beresp, unsigned, do_stream,	do_stream)
-VBERESP(beresp, unsigned, do_pass,	do_pass)
-VBERESP(beresp, unsigned, uncacheable,	do_pass)
+
+/*--------------------------------------------------------------------*/
+
+void
+VRT_l_bereq_uncacheable(const struct vrt_ctx *ctx, unsigned a)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+
+	if (ctx->bo->do_pass && !a) {
+		VSLb(ctx->vsl, SLT_VCL_Error,
+		    "Ignoring attempt to reset bereq.uncacheable");
+	} else if (a) {
+		ctx->bo->do_pass = a;
+	}
+}
+
+unsigned
+VRT_r_bereq_uncacheable(const struct vrt_ctx *ctx)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	return (ctx->bo->do_pass);
+}
+
+void
+VRT_l_beresp_uncacheable(const struct vrt_ctx *ctx, unsigned a)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+
+	if (ctx->bo->uncacheable && !a) {
+		VSLb(ctx->vsl, SLT_VCL_Error,
+		    "Ignoring attempt to reset beresp.uncacheable");
+	} else if (a) {
+		ctx->bo->uncacheable = a;
+	}
+}
+
+unsigned
+VRT_r_beresp_uncacheable(const struct vrt_ctx *ctx)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	return (ctx->bo->uncacheable);
+}
 
 /*--------------------------------------------------------------------*/
 
