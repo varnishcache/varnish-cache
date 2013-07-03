@@ -16,4 +16,6 @@ client c1 {
 	txreq
 } -run
 
+delay 1
+
 varnish v1 -cliok "panic.show"
