@@ -312,10 +312,11 @@ child_poker(const struct vev *e, int what)
 }
 
 /*=====================================================================
- * SIGSEGV handler
+ * SIGSEGV handler for child process
  */
 
-static void mgt_sigsegv_handler(int s, siginfo_t *si, void *c) {
+static void __match_proto__()
+mgt_sigsegv_handler(int s, siginfo_t *si, void *c) {
 	char buf[1024];
 
 	(void)s;
@@ -327,7 +328,7 @@ static void mgt_sigsegv_handler(int s, siginfo_t *si, void *c) {
 		 __LINE__,
 		 buf,
 		 errno,
-		 0);
+		 VAS_ASSERT);
 }
 
 /*=====================================================================
