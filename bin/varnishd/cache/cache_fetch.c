@@ -45,12 +45,10 @@
  */
 
 static void
-vbf_release_req(struct req ***reqpp)
+vbf_release_req(struct busyobj *bo)
 {
-	if (*reqpp != NULL) {
-		**reqpp = NULL;
-		*reqpp = NULL;
-	}
+	if (bo->req != NULL)
+		bo->req = NULL;
 }
 
 /*--------------------------------------------------------------------
@@ -58,13 +56,12 @@ vbf_release_req(struct req ***reqpp)
  */
 
 static enum fetch_step
-vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo,
-    const struct req *req)
+vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 {
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->req, REQ_MAGIC);
 
 	AN(bo->director);
 	AZ(bo->vbc);
@@ -72,7 +69,7 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo,
 	AZ(bo->storage_hint);
 
 	HTTP_Setup(bo->bereq0, bo->ws, bo->vsl, HTTP_Bereq);
-	http_FilterReq(bo->bereq0, req->http,
+	http_FilterReq(bo->bereq0, bo->req->http,
 	    bo->do_pass ? HTTPH_R_PASS : HTTPH_R_FETCH);
 	if (!bo->do_pass) {
 		// XXX: Forcing GET should happen in vcl_miss{} ?
@@ -126,12 +123,11 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
  */
 
 static enum fetch_step
-vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo, struct req ***reqpp)
+vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 {
 	int i;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	AN(reqpp);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	xxxassert (wrk->handling == VCL_RET_FETCH);
@@ -139,9 +135,9 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo, struct req ***reqpp)
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, HTTP_Beresp);
 
 	if (!bo->do_pass)
-		vbf_release_req(reqpp);
+		vbf_release_req(bo); /* XXX: retry ?? */
 
-	i = V1F_fetch_hdr(wrk, bo, *reqpp ? **reqpp : NULL);
+	i = V1F_fetch_hdr(wrk, bo, bo->req);
 	/*
 	 * If we recycle a backend connection, there is a finite chance
 	 * that the backend closed it before we get a request to it.
@@ -149,11 +145,13 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo, struct req ***reqpp)
 	 */
 	if (i == 1) {
 		VSC_C_main->backend_retry++;
-		i = V1F_fetch_hdr(wrk, bo, *reqpp ? **reqpp : NULL);
+		i = V1F_fetch_hdr(wrk, bo, bo->req);
 	}
 
 	if (bo->do_pass)
-		vbf_release_req(reqpp);
+		vbf_release_req(bo); /* XXX : retry ?? */
+
+	AZ(bo->req);
 
 	if (i) {
 		AZ(bo->vbc);
@@ -426,15 +424,14 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
  */
 
 static enum fetch_step
-vbf_stp_abandon(struct worker *wrk, struct busyobj *bo, struct req ***reqp)
+vbf_stp_abandon(struct worker *wrk, struct busyobj *bo)
 {
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	AN(reqp);
 
 	bo->state = BOS_FAILED;
+	vbf_release_req(bo);
 	VBO_DerefBusyObj(wrk, &bo);	// XXX ?
-	vbf_release_req(reqp);
 	return (F_STP_DONE);
 }
 
@@ -461,13 +458,6 @@ vbf_stp_done(void)
 /*--------------------------------------------------------------------
  */
 
-struct vbf_secret_handshake {
-	unsigned		magic;
-#define VBF_SECRET_HANDSHAKE_MAGIC	0x98c95172
-	struct busyobj		*bo;
-	struct req		**reqp;
-};
-
 static const char *
 vbf_step_name(enum fetch_step stp)
 {
@@ -486,17 +476,12 @@ vbf_step_name(enum fetch_step stp)
 static void
 vbf_fetch_thread(struct worker *wrk, void *priv)
 {
-	struct vbf_secret_handshake *vsh;
 	struct busyobj *bo;
-	struct req **reqp;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CAST_OBJ_NOTNULL(vsh, priv, VBF_SECRET_HANDSHAKE_MAGIC);
-	AN(vsh->reqp);
-	reqp = vsh->reqp;
-	CHECK_OBJ_NOTNULL((*vsh->reqp), REQ_MAGIC);
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->req, REQ_MAGIC);
 
-	bo = vsh->bo;
 	THR_SetBusyobj(bo);
 	bo->step = F_STP_MKBEREQ;
 
@@ -524,7 +509,6 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 void
 VBF_Fetch(struct worker *wrk, struct req *req)
 {
-	struct vbf_secret_handshake vsh;
 	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -536,19 +520,19 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 	assert(bo->refcount == 2);
 	CHECK_OBJ_NOTNULL(bo->vcl, VCL_CONF_MAGIC);
 
+	AZ(bo->fetch_objcore);
 	bo->fetch_objcore = req->objcore;
 	req->objcore = NULL;
 
-	vsh.magic = VBF_SECRET_HANDSHAKE_MAGIC;
-	vsh.bo = bo;
-	vsh.reqp = &req;
+	AZ(bo->req);
+	bo->req = req;
 
-	bo->fetch_task.priv = &vsh;
+	bo->fetch_task.priv = bo;
 	bo->fetch_task.func = vbf_fetch_thread;
 
 	if (Pool_Task(wrk->pool, &bo->fetch_task, POOL_QUEUE_FRONT))
-		vbf_fetch_thread(wrk, &vsh);
-	while (req != NULL) {
+		vbf_fetch_thread(wrk, bo);
+	while (bo->req != NULL) {
 		printf("XXX\n");
 		(void)usleep(100000);
 	}
