@@ -10,5 +10,5 @@ varnish v1 -vcl+backend { } -start
 client c1 {
        txreq
        rxresp
-       expect resp.status == 503
+       expect resp.status == 200
 } -run

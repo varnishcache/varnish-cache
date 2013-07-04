@@ -3,7 +3,10 @@ varnishtest "#1274 - panic when Vary field-name is too large to fit in a signed 
 server s1 {
        rxreq
        # Vary header more than 127 characters long
-       txresp -hdr "Vary: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" 
+       txresp -hdr "Vary: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" -bodylen 9
+       rxreq
+       # Vary header more than 127 characters long
+       txresp -hdr "Vary: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" -bodylen 8
 } -start
 
 varnish v1 -vcl+backend { } -start
@@ -11,5 +14,10 @@ varnish v1 -vcl+backend { } -start
 client c1 {
        txreq
        rxresp
-       expect resp.status == 503
+       expect resp.status == 200
+       expect resp.bodylen == 9
+       txreq
+       rxresp
+       expect resp.status == 200
+       expect resp.bodylen == 8
 } -run

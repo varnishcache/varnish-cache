@@ -3,6 +3,8 @@ varnishtest "Vary header with extra colon"
 server s1 {
 	rxreq
 	txresp -hdr "Vary:: foo" -hdr "Foo: bar" -bodylen 9
+	rxreq
+	txresp -hdr "Vary:: foo" -hdr "Foo: bar" -bodylen 8
 } -start
 
 varnish v1 -vcl+backend {} -start
@@ -10,5 +12,10 @@ varnish v1 -vcl+backend {} -start
 client c1 {
 	txreq
 	rxresp
-	expect resp.status == 503
+	expect resp.status == 200
+	expect resp.bodylen == 9
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 8
 } -run

@@ -232,8 +232,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	assert(wrk->handling == VCL_RET_DELIVER);
-	if (bo->uncacheable)
-		bo->fetch_objcore->flags |= OC_F_PASS;
 
 	/*
 	 * The VCL variables beresp.do_g[un]zip tells us how we want the
@@ -307,16 +305,22 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 			assert(varyl == VSB_len(vary));
 			l += varyl;
 		} else if (varyl < 0) {
-			/* Vary parse error */
+			/*
+			 * Vary parse error
+			 * Complain about it, and make this a pass.
+			 */
+			VSLb(bo->vsl, SLT_Error,
+			    "Illegal 'Vary' header from backend, "
+			    "making this a pass.");
+			bo->uncacheable = 1;
 			AZ(vary);
-			AZ(HSH_Deref(&wrk->stats, bo->fetch_objcore, NULL));
-			bo->fetch_objcore = NULL;
-			VDI_CloseFd(&bo->vbc);
-			return (F_STP_ABANDON);
 		} else
 			/* No vary */
 			AZ(vary);
 	}
+
+	if (bo->uncacheable)
+		bo->fetch_objcore->flags |= OC_F_PASS;
 
 	if (bo->exp.ttl < cache_param->shortlived || bo->uncacheable == 1)
 		bo->storage_hint = TRANSIENT_STORAGE;
