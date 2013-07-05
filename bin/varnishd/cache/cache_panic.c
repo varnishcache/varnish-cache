@@ -76,6 +76,20 @@ body_status_2str(enum body_status e)
 /*--------------------------------------------------------------------*/
 
 const char *
+reqbody_status_2str(enum req_body_state_e e)
+{
+	switch (e) {
+#define REQ_BODY(U) case REQ_BODY_##U: return("R_BODY_" #U); break;
+#include "tbl/req_body.h"
+#undef REQ_BODY
+	default:
+		return("?");
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
+const char *
 sess_close_2str(enum sess_close sc, int want_desc)
 {
 	switch (sc) {
@@ -273,7 +287,7 @@ pan_busyobj(const struct busyobj *bo)
 static void
 pan_req(const struct req *req)
 {
-	const char *stp, *body;
+	const char *stp;
 
 	VSB_printf(pan_vsp, "req = %p {\n", req);
 
@@ -290,17 +304,8 @@ pan_req(const struct req *req)
 	else
 		VSB_printf(pan_vsp, "  step = 0x%x,\n", req->req_step);
 
-	switch (req->req_body_status) {
-#define REQ_BODY(U) case REQ_BODY_##U: body = "R_BODY_" #U; break;
-#include "tbl/req_body.h"
-#undef REQ_BODY
-		default: body = NULL;
-	}
-	if (body != NULL)
-		VSB_printf(pan_vsp, "  req_body = %s,\n", body);
-	else
-		VSB_printf(pan_vsp, "  req_body = 0x%x,\n",
-		    req->req_body_status);
+	VSB_printf(pan_vsp, "  req_body = %s,\n", 
+	    reqbody_status_2str(req->req_body_status));
 
 	if (req->err_code)
 		VSB_printf(pan_vsp,
