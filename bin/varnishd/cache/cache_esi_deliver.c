@@ -60,6 +60,7 @@ ved_include(struct req *preq, const char *src, const char *host)
 	wrk_ws_wm = WS_Snapshot(wrk->aws); /* XXX ? */
 
 	req = SES_GetReq(wrk, preq->sp);
+	req->req_body_status = REQ_BODY_NONE;
 	VSLb(req->vsl, SLT_Begin, "esireq %u", preq->vsl->wid & VSL_IDENTMASK);
 	VSLb(preq->vsl, SLT_Link, "esireq %u", req->vsl->wid & VSL_IDENTMASK);
 	req->esi_level = preq->esi_level + 1;

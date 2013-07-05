@@ -79,7 +79,7 @@ const char *
 reqbody_status_2str(enum req_body_state_e e)
 {
 	switch (e) {
-#define REQ_BODY(U) case REQ_BODY_##U: return("R_BODY_" #U); break;
+#define REQ_BODY(U) case REQ_BODY_##U: return("R_BODY_" #U);
 #include "tbl/req_body.h"
 #undef REQ_BODY
 	default:

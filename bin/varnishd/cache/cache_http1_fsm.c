@@ -201,6 +201,7 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 
 	req->t_req = NAN;
 	req->t_resp = NAN;
+	req->req_body_status = REQ_BODY_INIT;
 
 	// req->req_bodybytes = 0;
 	req->resp_bodybytes = 0;
@@ -239,6 +240,38 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 /*----------------------------------------------------------------------
  */
 
+static enum req_body_state_e
+http1_req_body_status(struct req *req)
+{
+	char *ptr, *endp;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	if (http_GetHdr(req->http, H_Content_Length, &ptr)) {
+		AN(ptr);
+		if (*ptr == '\0')
+			return (REQ_BODY_FAIL);
+		req->req_bodybytes = strtoul(ptr, &endp, 10);
+		if (*endp != '\0' && !vct_islws(*endp))
+			return (REQ_BODY_FAIL);
+		if (req->req_bodybytes == 0)
+			return (REQ_BODY_NONE);
+		req->h1.mode = CL;
+		req->h1.bytes_yet = req->req_bodybytes - req->h1.bytes_done;
+		return (REQ_BODY_PRESENT);
+	}
+
+	if (http_GetHdr(req->http, H_Transfer_Encoding, NULL)) {
+		req->h1.mode = CHUNKED;
+		VSLb(req->vsl, SLT_Debug, "Transfer-Encoding in request");
+		return (REQ_BODY_FAIL);
+	}
+	return (REQ_BODY_NONE);
+}
+
+/*----------------------------------------------------------------------
+ */
+
 static enum req_fsm_nxt
 http1_dissect(struct worker *wrk, struct req *req)
 {
@@ -247,6 +280,8 @@ http1_dissect(struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	memset(&req->h1, 0, sizeof req->h1);
 
 	/*
 	 * Cache_req_fsm zeros the vxid once a requests is processed.
@@ -294,8 +329,12 @@ http1_dissect(struct worker *wrk, struct req *req)
 		wrk->stats.client_req++;
 
 	http_Unset(req->http, H_Expect);
-	/* XXX: pull in req-body and make it available instead. */
-	req->req_body_status = REQ_BODY_INIT;
+	if (req->req_body_status == REQ_BODY_INIT)
+		req->req_body_status = http1_req_body_status(req);
+	else
+		assert(req->req_body_status == REQ_BODY_NONE);
+
+	assert(req->req_body_status != REQ_BODY_INIT);
 
 	HTTP_Copy(req->http0, req->http);	// For ESI & restart
 
@@ -394,55 +433,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 	}
 }
 
-/*----------------------------------------------------------------------
- */
-
-static int
-http1_setup_req_body(struct req *req)
-{
-	char *ptr, *endp;
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	memset(&req->h1, 0, sizeof req->h1);
-
-	assert(req->req_body_status == REQ_BODY_INIT);
-	if (http_GetHdr(req->http, H_Content_Length, &ptr)) {
-		AN(ptr);
-		if (*ptr == '\0') {
-			req->req_body_status = REQ_BODY_FAIL;
-			return (-1);
-		}
-		req->req_bodybytes = strtoul(ptr, &endp, 10);
-		if (*endp != '\0' && !vct_islws(*endp)) {
-			req->req_body_status = REQ_BODY_FAIL;
-			return (-1);
-		}
-		if (req->req_bodybytes == 0) {
-			req->req_body_status = REQ_BODY_NONE;
-			return (0);
-		}
-		req->h1.mode = CL;
-		req->h1.bytes_yet = req->req_bodybytes - req->h1.bytes_done;
-		req->req_body_status = REQ_BODY_PRESENT;
-		return (0);
-	}
-
-	if (http_GetHdr(req->http, H_Transfer_Encoding, NULL)) {
-		req->h1.mode = CHUNKED;
-		VSLb(req->vsl, SLT_Debug,
-		    "Transfer-Encoding in request");
-		req->req_body_status = REQ_BODY_FAIL;
-		return (-1);
-	}
-
-	req->req_body_status = REQ_BODY_NONE;
-	req->req_bodybytes = 0;
-	return (0);
-}
-
 static ssize_t
-http1_iter_req_body(struct req *req, void *buf,
-    ssize_t len)
+http1_iter_req_body(struct req *req, void *buf, ssize_t len)
 {
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
@@ -486,36 +478,31 @@ HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(func);
 
-	if (req->req_body_status == REQ_BODY_CACHED) {
+	switch(req->req_body_status) {
+	case REQ_BODY_CACHED:
 		VTAILQ_FOREACH(st, &req->body, list) {
 			i = func(req, priv, st->ptr, st->len);
 			if (i)
 				return (i);
 		}
 		return (0);
+	case REQ_BODY_NONE:
+		return (0);
+	case REQ_BODY_PRESENT:
+		break;
+	default:
+		WRONG("Wrong req_body_status in HTTP1_IterateReqBody()");
 	}
-
-	if (req->req_body_status == REQ_BODY_NONE)
-		return (0);
-
-	if (req->req_body_status != REQ_BODY_INIT)
-		return (-1);
-
-	i = http1_setup_req_body(req);
-	if (i < 0)
-		return (i);
-
-	if (req->req_body_status == REQ_BODY_NONE)
-		return (0);
-
 	do {
 		l = http1_iter_req_body(req, buf, sizeof buf);
-		if (l < 0)
+		if (l < 0) {
 			return (l);
+		}
 		if (l > 0) {
 			i = func(req, priv, buf, l);
-			if (i)
+			if (i) {
 				return (i);
+			}
 		}
 	} while (l > 0);
 	return(0);
@@ -542,6 +529,8 @@ int
 HTTP1_DiscardReqBody(struct req *req)
 {
 
+	if (req->req_body_status == REQ_BODY_DONE)
+		return(0);
 	return(HTTP1_IterateReqBody(req, httpq_req_body_discard, NULL));
 }
 
@@ -554,30 +543,23 @@ HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
 {
 	struct storage *st;
 	ssize_t l;
-	int i;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	if (req->req_body_status == REQ_BODY_CACHED)
+	switch(req->req_body_status) {
+	case REQ_BODY_CACHED:
+	case REQ_BODY_NONE:
 		return (0);
-
-	if (req->req_body_status == REQ_BODY_NONE)
-		return (0);
-
-	if (req->req_body_status != REQ_BODY_INIT)
-		return (-1);
-
-	i = http1_setup_req_body(req);
-	if (i < 0)
-		return (i);
+	case REQ_BODY_PRESENT:
+		break;
+	default:
+		WRONG("Wrong req_body_status in HTTP1_CacheReqBody()");
+	}
 
 	if (req->req_bodybytes > maxsize) {
 		req->req_body_status = REQ_BODY_FAIL;
 		return (-1);
 	}
-
-	if (req->req_body_status == REQ_BODY_NONE)
-		return (0);
 
 	st = NULL;
 	do {
