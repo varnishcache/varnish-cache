@@ -620,7 +620,14 @@ struct req {
 	enum req_step		req_step;
 	VTAILQ_ENTRY(req)	w_list;
 
+	enum req_body_state_e	req_body_status;
 	struct storagehead	body;
+
+	struct {
+		ssize_t			bytes_done;
+		ssize_t			bytes_yet;
+		enum {CL, CHUNKED}	mode;
+	}				h1;	/* HTTP1 specific */
 
 	/* The busy objhead we sleep on */
 	struct objhead		*hash_objhead;
@@ -637,7 +644,6 @@ struct req {
 	struct exp		exp;
 
 	unsigned char		wantbody;
-	enum req_body_state_e	req_body_status;
 	uint64_t		req_bodybytes;
 
 	uint64_t		resp_bodybytes;
