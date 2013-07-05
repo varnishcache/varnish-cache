@@ -429,6 +429,7 @@ http1_setup_req_body(struct req *req, struct http1_r_b_s *rbs)
 		}
 		rbs->mode = CL;
 		rbs->yet = req->req_bodybytes - rbs->bytes_done;
+		req->req_body_status = REQ_BODY_PRESENT;
 		return (0);
 	}
 
@@ -436,7 +437,7 @@ http1_setup_req_body(struct req *req, struct http1_r_b_s *rbs)
 		rbs->mode = CHUNKED;
 		VSLb(req->vsl, SLT_Debug,
 		    "Transfer-Encoding in request");
-		req->req_body_status = REQ_BODY_DONE;
+		req->req_body_status = REQ_BODY_FAIL;
 		return (-1);
 	}
 
