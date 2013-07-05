@@ -30,7 +30,10 @@
 /*lint -save -e525 -e539 */
 
 REQ_BODY(INIT)
+REQ_BODY(PRESENT)
 REQ_BODY(CACHED)
 REQ_BODY(DONE)
 REQ_BODY(FAIL)
 REQ_BODY(NONE)
+
+/*lint -restore */
