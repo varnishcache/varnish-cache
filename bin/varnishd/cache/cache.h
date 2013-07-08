@@ -709,6 +709,7 @@ struct sess {
 #define SESS_MAGIC		0x2c2f9c5a
 
 	enum sess_step		sess_step;
+	struct lock		mtx;
 	int			fd;
 	enum sess_close		reason;
 	uint32_t		vxid;

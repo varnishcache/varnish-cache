@@ -102,6 +102,7 @@ ses_setup(struct sess *sp)
 	sp->sockaddr.ss_family = sp->mysockaddr.ss_family = PF_UNSPEC;
 	sp->t_open = NAN;
 	sp->t_idle = NAN;
+	Lck_New(&sp->mtx, lck_sess);
 }
 
 /*--------------------------------------------------------------------
@@ -332,6 +333,7 @@ SES_Delete(struct sess *sp, enum sess_close reason, double now)
 	    b->pipe, b->pass, b->fetch, b->hdrbytes, b->bodybytes);
 	VSL(SLT_End, sp->vxid, "%s", "");
 
+	Lck_Delete(&sp->mtx);
 	MPL_Free(pp->mpl_sess, sp);
 }
 
