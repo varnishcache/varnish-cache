@@ -494,6 +494,11 @@ VRT_CacheReqBody(const struct vrt_ctx *ctx, long long maxsize)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	if (ctx->method != VCL_MET_RECV) {
+		VSLb(ctx->vsl, SLT_VCL_Error,
+		    "req.body can only be cached in vcl_recv{}");
+		return (0);
+	}
 	return (HTTP1_CacheReqBody(ctx->req, maxsize));
 }
 

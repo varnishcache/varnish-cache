@@ -620,7 +620,7 @@ struct req {
 	enum req_step		req_step;
 	VTAILQ_ENTRY(req)	w_list;
 
-	enum req_body_state_e	req_body_status;
+	volatile enum req_body_state_e	req_body_status;
 	struct storagehead	body;
 
 	struct {

@@ -490,9 +490,27 @@ HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv)
 		return (0);
 	case REQ_BODY_PRESENT:
 		break;
+	case REQ_BODY_DONE:
+	case REQ_BODY_TAKEN:
+		VSLb(req->vsl, SLT_VCL_Error,
+		    "Uncached req.body can only be consumed once.");
+		return (-1);
 	default:
 		WRONG("Wrong req_body_status in HTTP1_IterateReqBody()");
 	}
+	Lck_Lock(&req->sp->mtx);
+	if (req->req_body_status == REQ_BODY_PRESENT) {
+		req->req_body_status = REQ_BODY_TAKEN;
+		i = 0;
+	} else
+		i = -1;
+	Lck_Unlock(&req->sp->mtx);
+	if (i) {
+		VSLb(req->vsl, SLT_VCL_Error,
+		    "Multiple attempts to access non-cached req.body");
+		return (i);
+	}
+	
 	do {
 		l = http1_iter_req_body(req, buf, sizeof buf);
 		if (l < 0) {
@@ -531,11 +549,16 @@ HTTP1_DiscardReqBody(struct req *req)
 
 	if (req->req_body_status == REQ_BODY_DONE)
 		return(0);
+	if (req->req_body_status == REQ_BODY_TAKEN)
+		return(0);
 	return(HTTP1_IterateReqBody(req, httpq_req_body_discard, NULL));
 }
 
 /*----------------------------------------------------------------------
  * Cache the req.body if it is smaller than the given size
+ *
+ * This function must be called before any backend fetches are kicked
+ * off to prevent parallelism.
  */
 
 int
