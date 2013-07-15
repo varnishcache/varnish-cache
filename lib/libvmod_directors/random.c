@@ -67,6 +67,7 @@ vmod_rr_getfd(const struct director *dir, struct busyobj *bo)
 
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_RANDOM_MAGIC);
 	r = scalbn(random(), -31);
+	assert(r >= 0 && r < 1.0);
 	be = vdir_pick_be(rr->vd, bo, r, rr->nloops);
 	if (be == NULL)
 		return (NULL);

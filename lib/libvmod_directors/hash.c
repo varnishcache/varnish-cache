@@ -118,6 +118,7 @@ vmod_hash_backend(const struct vrt_ctx *ctx, struct vmod_directors_hash *rr,
 
 	r = vbe32dec(sha256);
 	r = scalbn(r, -32);
+	assert(r >= 0 && r <= 1.0);
 	be = vdir_pick_be(rr->vd, ctx->bo, r, rr->nloops);
 	return (be);
 }
