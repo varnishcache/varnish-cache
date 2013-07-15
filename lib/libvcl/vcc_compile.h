@@ -191,7 +191,6 @@ struct vcc {
 	int			defaultdir;
 	struct token		*t_defaultdir;
 	struct token		*t_dir;
-	struct token		*t_policy;
 
 	unsigned		unique;
 	unsigned		nvmodpriv;

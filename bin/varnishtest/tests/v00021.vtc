@@ -54,8 +54,6 @@ varnish v1 -errvcl {Unused sub foo, defined:} {
 	sub foo {
 	}
 }
-
-
 varnish v1 -errvcl {Invalid return "deliver"} {
 	backend b { .host = "127.0.0.1"; }
 
@@ -65,5 +63,17 @@ varnish v1 -errvcl {Invalid return "deliver"} {
 
 	sub foo {
 		return (deliver);
+	}
+}
+
+varnish v1 -errvcl {directors are now in VMOD.directors} {
+	backend b { .host = "127.0.0.1"; }
+
+	director d1 random {
+		.backend b;
+	}
+
+	sub vcl_recv {
+		set req.backend = d1;
 	}
 }

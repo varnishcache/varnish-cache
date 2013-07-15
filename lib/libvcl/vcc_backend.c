@@ -658,12 +658,11 @@ vcc_ParseDirector(struct vcc *tl)
 
 	isfirst = tl->ndirector;
 	if (vcc_IdIs(t_first, "backend")) {
-		tl->t_policy = t_first;
 		vcc_ParseSimpleDirector(tl);
 	} else {
 		VSB_printf(tl->sb,
 		    "\ndirectors are now in VMOD.directors\n");
-		vcc_ErrWhere(tl, tl->t_policy);
+		vcc_ErrWhere(tl, t_first);
 		return;
 	}
 	if (tl->err) {
@@ -678,6 +677,5 @@ vcc_ParseDirector(struct vcc *tl)
 		tl->t_defaultdir = tl->t_dir;
 	}
 
-	tl->t_policy = NULL;
 	tl->t_dir = NULL;
 }
