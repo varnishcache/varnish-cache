@@ -422,9 +422,8 @@ VRT_synth_page(const struct vrt_ctx *ctx, unsigned flags, const char *str, ...)
 	vsb = SMS_Makesynth(ctx->req->obj);
 	AN(vsb);
 
-	VSB_cat(vsb, str);
 	va_start(ap, str);
-	p = va_arg(ap, const char *);
+	p = str;
 	while (p != vrt_magic_string_end) {
 		if (p == NULL)
 			p = "(null)";
