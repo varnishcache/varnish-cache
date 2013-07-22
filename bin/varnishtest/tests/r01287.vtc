@@ -1,0 +1,21 @@
+varnishtest "#1287 - check NULL as first pointer to VRT_synth_page"
+
+server s1 {
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		error 200 "OK";
+	}
+	sub vcl_error {
+		synthetic obj.http.blank;
+		return (deliver);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "(null)"
+} -run
