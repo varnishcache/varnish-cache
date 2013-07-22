@@ -201,7 +201,6 @@ vep_warn(const struct vep_state *vep, const char *p)
 
 	VSC_C_main->esi_warnings++;
 	l = (intmax_t)(vep->ver_p - vep->hack_p);
-	printf("WARNING at %jd %s\n", l, p);
 	VSLb(vep->bo->vsl, SLT_ESI_xmlerror, "WARN at %jd %s", l, p);
 
 }
