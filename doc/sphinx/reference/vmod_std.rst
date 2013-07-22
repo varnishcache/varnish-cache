@@ -95,9 +95,10 @@ Prototype
 Return value
 	Void
 Description
-	Logs *string* to syslog marked with *priority*.
+	Logs *string* to syslog marked with *priority*.  See your
+	system's syslog.h file for the legal values of *priority*.
 Example
-	std.syslog( LOG_USER|LOG_ALERT, "There is serious troble");
+	std.syslog(8 + 1, "Something is wrong");
 
 fileread
 --------
