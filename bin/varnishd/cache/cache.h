@@ -514,6 +514,7 @@ struct busyobj {
 	struct req		*req;
 
 	uint8_t			*vary;
+	uint8_t			*key;
 	unsigned		is_gzip;
 	unsigned		is_gunzip;
 
@@ -576,6 +577,7 @@ struct object {
 	struct ws		ws_o[1];
 
 	uint8_t			*vary;
+	uint8_t			*key;
 	unsigned		hits;
 	uint16_t		response;
 
@@ -632,6 +634,11 @@ struct req {
 	/* The busy objhead we sleep on */
 	struct objhead		*hash_objhead;
 	struct busyobj		*busyobj;
+
+	/* Built Key string */
+	uint8_t			*key_b;
+	uint8_t			*key_l;
+	uint8_t			*key_e;
 
 	/* Built Vary string */
 	uint8_t			*vary_b;

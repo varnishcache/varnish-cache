@@ -217,10 +217,13 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 static enum fetch_step
 vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 {
+	printf("    vbf_stp_fetch(wrk: %p, bo: %p)\n", wrk, bo);
 	struct http *hp, *hp2;
 	char *b;
 	uint16_t nhttp;
 	unsigned l;
+	struct vsb *key = NULL;
+	int keyl = 0;
 	struct vsb *vary = NULL;
 	int varyl = 0;
 	struct object *obj;
@@ -297,24 +300,30 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	/* Create Vary instructions */
 	if (bo->fetch_objcore->objhead != NULL) {
-		varyl = VRY_Create(bo, &vary);
-		if (varyl > 0) {
-			AN(vary);
-			assert(varyl == VSB_len(vary));
-			l += varyl;
-		} else if (varyl < 0) {
-			/*
-			 * Vary parse error
-			 * Complain about it, and make this a pass.
-			 */
-			VSLb(bo->vsl, SLT_Error,
-			    "Illegal 'Vary' header from backend, "
-			    "making this a pass.");
-			bo->uncacheable = 1;
-			AZ(vary);
-		} else
-			/* No vary */
-			AZ(vary);
+		keyl = KEY_Create(bo, &key);
+		if (keyl <= 0) {
+			varyl = VRY_Create(bo, &vary);
+			if (varyl > 0) {
+				AN(vary);
+				assert(varyl == VSB_len(vary));
+				l += varyl;
+			} else if (varyl < 0) {
+				/*
+				 * Vary parse error
+				 * Complain about it, and make this a pass.
+				 */
+				VSLb(bo->vsl, SLT_Error,
+				    "Illegal 'Vary' header from backend, "
+				    "making this a pass.");
+				bo->uncacheable = 1;
+				AZ(vary);
+			} else
+				/* No vary */
+				AZ(vary);
+		} else {
+			vary = NULL;
+			varyl = 0;
+		}
 	}
 
 	if (bo->uncacheable)
@@ -359,6 +368,14 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->do_gzip || (bo->is_gzip && !bo->do_gunzip))
 		obj->gziped = 1;
+
+	if (key != NULL) {
+		obj->key = (void *)WS_Copy(obj->http->ws,
+		    VSB_data(key), keyl);
+		AN(obj->key);
+		//KEY_Validate(obj->key);
+		VSB_delete(key);
+	}
 
 	if (vary != NULL) {
 		obj->vary = (void *)WS_Copy(obj->http->ws,
@@ -417,6 +434,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	}
 
 	VBO_DerefBusyObj(wrk, &bo);	// XXX ?
+	printf("    vbf_stp_fetch(wrk: %p, bo: %p) = F_STP_DONE\n", wrk, bo);
 	return (F_STP_DONE);
 }
 
@@ -509,6 +527,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 void
 VBF_Fetch(struct worker *wrk, struct req *req)
 {
+	printf("  VBF_Fetch(wrk: %p, req: %p)\n", wrk, req);
 	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -536,4 +555,5 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 		printf("XXX\n");
 		(void)usleep(100000);
 	}
+	printf("  VBF_Fetch(wrk: %p, req: %p) = void\n", wrk, req);
 }

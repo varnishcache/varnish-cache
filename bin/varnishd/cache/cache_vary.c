@@ -73,6 +73,7 @@
 int
 VRY_Create(struct busyobj *bo, struct vsb **psb)
 {
+	printf("      VRY_Create(bo: %p, psb: %p)\n", bo, *psb);
 	char *v, *p, *q, *h, *e;
 	struct vsb *sb, *sbh;
 	unsigned l;
@@ -165,6 +166,7 @@ VRY_Create(struct busyobj *bo, struct vsb **psb)
 	VSB_delete(sbh);
 	AZ(VSB_finish(sb));
 	*psb = sb;
+	printf("      VRY_Create(bo: %p, psb: %p) = %d\n", bo, *psb, VSB_len(sb));
 	return (VSB_len(sb));
 }
 
@@ -218,6 +220,10 @@ vry_cmp(const uint8_t *v1, const uint8_t *v2)
 void
 VRY_Prep(struct req *req)
 {
+	printf("  VRY_Prep(req: %p)\n", req);
+	printf("   - vary_b %p\n", req->vary_b);
+	printf("   - vary_l %p\n", req->vary_l);
+	printf("   - vary_e %p\n", req->vary_e);
 	if (req->hash_objhead == NULL) {
 		/* Not a waiting list return */
 		AZ(req->vary_b);
@@ -231,6 +237,10 @@ VRY_Prep(struct req *req)
 	req->vary_e = (void*)req->ws->r;
 	if (req->vary_b + 2 < req->vary_e)
 		req->vary_b[2] = '\0';
+	printf("   - vary_b %p\n", req->vary_b);
+	printf("   - vary_l %p\n", req->vary_l);
+	printf("   - vary_e %p\n", req->vary_e);
+	printf("  VRY_Prep(req: %p) = void\n", req);
 }
 
 /**********************************************************************
@@ -240,7 +250,10 @@ VRY_Prep(struct req *req)
 void
 VRY_Finish(struct req *req, struct busyobj *bo)
 {
-
+	printf("  VRY_Finish(req: %p, bo: %p)\n", req, bo);
+	printf("   - vary_b %p\n", req->vary_b);
+	printf("   - vary_l %p\n", req->vary_l);
+	printf("   - vary_e %p\n", req->vary_e);
 	if (bo != NULL) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 		VRY_Validate(req->vary_b);
@@ -256,6 +269,10 @@ VRY_Finish(struct req *req, struct busyobj *bo)
 	req->vary_b = NULL;
 	req->vary_l = NULL;
 	req->vary_e = NULL;
+	printf("   - vary_b %p\n", req->vary_b);
+	printf("   - vary_l %p\n", req->vary_l);
+	printf("   - vary_e %p\n", req->vary_e);
+	printf("  VRY_Finish(req: %p, bo: %p) = void\n", req, bo);
 }
 
 /**********************************************************************
@@ -268,7 +285,9 @@ VRY_Finish(struct req *req, struct busyobj *bo)
 int
 VRY_Match(struct req *req, const uint8_t *vary)
 {
+	printf("    VRY_Match(req: %p, vary: %p)\n", req, vary);
 	uint8_t *vsp = req->vary_b;
+	printf("     - vsp: %p\n", vsp);
 	char *h, *e;
 	unsigned lh, ln;
 	int i, oflo = 0;

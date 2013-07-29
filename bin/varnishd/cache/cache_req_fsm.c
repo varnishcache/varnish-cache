@@ -418,6 +418,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	AZ(req->busyobj);
 
 	VRY_Prep(req);
+	KEY_Prep(req);
 
 	AZ(req->objcore);
 	lr = HSH_Lookup(req, &oc, &boc,
@@ -492,6 +493,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	req->obj = o;
 
+	KEY_Finish(req, NULL);
 	VRY_Finish(req, NULL);
 
 	if (oc->flags & OC_F_PASS)
@@ -574,6 +576,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 	bo = VBO_GetBusyObj(wrk, req);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	req->busyobj = bo;
+	KEY_Finish(req, bo);
 	VRY_Finish(req, bo);
 
 	VCL_miss_method(req->vcl, wrk, req, NULL, req->http->ws);
@@ -887,12 +890,14 @@ cnt_purge(struct worker *wrk, struct req *req)
 	AZ(req->busyobj);
 
 	VRY_Prep(req);
+	KEY_Prep(req);
 
 	AZ(req->objcore);
 	lr = HSH_Lookup(req, &oc, &boc, 1, 1);
 	assert (lr == HSH_MISS);
 	AZ(oc);
 	CHECK_OBJ_NOTNULL(boc, OBJCORE_MAGIC);
+	KEY_Finish(req, NULL);
 	VRY_Finish(req, NULL);
 
 	HSH_Purge(wrk, boc->objhead, 0, 0);
@@ -925,6 +930,7 @@ cnt_diag(struct req *req, const char *state)
 enum req_fsm_nxt
 CNT_Request(struct worker *wrk, struct req *req)
 {
+	printf("CNT_Request(wrk: %p, req: %p)\n", wrk, req);
 	enum req_fsm_nxt nxt;
 	struct storage *st;
 
@@ -1007,6 +1013,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 	req->wrk = NULL;
 
 	assert(WRW_IsReleased(wrk));
+	printf("CNT_Request(wrk: %p, req: %p) = %d\n", wrk, req, nxt);
 	return (nxt);
 }
 
