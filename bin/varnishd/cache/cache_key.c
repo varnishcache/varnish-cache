@@ -44,12 +44,12 @@ KEY_Finish(struct req *req, struct busyobj *bo)
 	printf("   - key_e %p\n", req->key_e);
 	if (bo != NULL) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-		VRY_Validate(req->key_b);
+		//KEY_Validate(req->key_b);
 		if (req->key_l != NULL) {
 			bo->key = WS_Copy(bo->ws,
 			    req->key_b, req->key_l - req->key_b);
 			AN(bo->key);
-			//VRY_Validate(bo->key);
+			//KEY_Validate(bo->key);
 		} else
 			bo->key = NULL;
 	}
@@ -64,7 +64,7 @@ KEY_Finish(struct req *req, struct busyobj *bo)
 }
 
 int
-KEY_Match(struct req *req, const uint8_t *vary)
+KEY_Match(struct req *req, const uint8_t *key)
 {
 	printf("    KEY_Match()\n");
 	return 0;
