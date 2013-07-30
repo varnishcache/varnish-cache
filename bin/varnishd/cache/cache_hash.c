@@ -305,7 +305,6 @@ enum lookup_e
 HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
     int wait_for_busy, int always_insert)
 {
-	printf("  HSH_Lookup(req: %p, *ocp: %p, *bocp: %p, wait_for_busy: %d, always_insert: %d)\n", req, *ocp, *bocp, wait_for_busy, always_insert);
 	struct worker *wrk;
 	struct objhead *oh;
 	struct objcore *oc;
@@ -354,7 +353,6 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		*bocp = hsh_insert_busyobj(wrk, oh);
 		/* NB: no deref of objhead, new object inherits reference */
 		Lck_Unlock(&oh->mtx);
-		printf("  HSH_Lookup(req: %p, *ocp: %p, *bocp: %p, wait_for_busy: %d, always_insert: %d) = HSH_MISS\n", req, *ocp, *bocp, wait_for_busy, always_insert);
 		return (HSH_MISS);
 	}
 
@@ -415,7 +413,6 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			if (!cache_param->obj_readonly && o->hits < INT_MAX)
 				o->hits++;
 			*ocp = oc;
-			printf("  HSH_Lookup(req: %p, *ocp: %p, *bocp: %p, wait_for_busy: %d, always_insert: %d) = HSH_HIT\n", req, *ocp, *bocp, wait_for_busy, always_insert);
 			return (HSH_HIT);
 		}
 		if (o->exp.entered > exp_entered) {
@@ -454,7 +451,6 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		*bocp = hsh_insert_busyobj(wrk, oh);
 		/* NB: no deref of objhead, new object inherits reference */
 		Lck_Unlock(&oh->mtx);
-		printf("  HSH_Lookup(req: %p, *ocp: %p, *bocp: %p, wait_for_busy: %d, always_insert: %d) = HSH_MISS\n", req, *ocp, *bocp, wait_for_busy, always_insert);
 		return (HSH_MISS);
 	}
 
@@ -486,7 +482,6 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 	 */
 	req->hash_objhead = oh;
 	Lck_Unlock(&oh->mtx);
-	printf("  HSH_Lookup(req: %p, *ocp: %p, *bocp: %p, wait_for_busy: %d, always_insert: %d) = HSH_BUSY\n", req, *ocp, *bocp, wait_for_busy, always_insert);
 	return (HSH_BUSY);
 }
 

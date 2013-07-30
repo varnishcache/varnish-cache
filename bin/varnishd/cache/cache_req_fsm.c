@@ -940,7 +940,6 @@ cnt_diag(struct req *req, const char *state)
 enum req_fsm_nxt
 CNT_Request(struct worker *wrk, struct req *req)
 {
-	printf("CNT_Request(wrk: %p, req: %p)\n", wrk, req);
 	enum req_fsm_nxt nxt;
 	struct storage *st;
 
@@ -1023,7 +1022,6 @@ CNT_Request(struct worker *wrk, struct req *req)
 	req->wrk = NULL;
 
 	assert(WRW_IsReleased(wrk));
-	printf("CNT_Request(wrk: %p, req: %p) = %d\n", wrk, req, nxt);
 	return (nxt);
 }
 

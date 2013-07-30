@@ -217,7 +217,6 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 static enum fetch_step
 vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 {
-	printf("    vbf_stp_fetch(wrk: %p, bo: %p)\n", wrk, bo);
 	struct http *hp, *hp2;
 	char *b;
 	uint16_t nhttp;
@@ -440,7 +439,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	}
 
 	VBO_DerefBusyObj(wrk, &bo);	// XXX ?
-	printf("    vbf_stp_fetch(wrk: %p, bo: %p) = F_STP_DONE\n", wrk, bo);
 	return (F_STP_DONE);
 }
 
@@ -533,7 +531,6 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 void
 VBF_Fetch(struct worker *wrk, struct req *req)
 {
-	printf("  VBF_Fetch(wrk: %p, req: %p)\n", wrk, req);
 	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -561,5 +558,4 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 		printf("XXX\n");
 		(void)usleep(100000);
 	}
-	printf("  VBF_Fetch(wrk: %p, req: %p) = void\n", wrk, req);
 }

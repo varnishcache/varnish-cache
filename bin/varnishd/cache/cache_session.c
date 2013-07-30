@@ -344,7 +344,6 @@ SES_Delete(struct sess *sp, enum sess_close reason, double now)
 struct req *
 SES_GetReq(struct worker *wrk, struct sess *sp)
 {
-	printf("SES_GetReq(wrk: %p, sp: %p)\n", wrk, sp);
 	struct sesspool *pp;
 	struct req *req;
 	uint16_t nhttp;
@@ -402,12 +401,6 @@ SES_GetReq(struct worker *wrk, struct sess *sp)
 
 	VTAILQ_INIT(&req->body);
 
-	printf(" - Start:   %p\n", req->ws->s);
-	printf(" - Free:    %p\n", req->ws->f);
-	printf(" - Reserve: %p\n", req->ws->r);
-	printf(" - End:     %p\n", req->ws->e);
-	printf("            %dKB\n", (req->ws->e - req->ws->s) / 1024);
-	printf("SES_GetReq(wrk: %p, sp: %p) = %p\n", wrk, sp, req);
 	return (req);
 }
 
