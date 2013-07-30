@@ -9,7 +9,9 @@ datarootdir=@datarootdir@
 datadir=@datadir@
 pkgdatadir=${datadir}/@PACKAGE@
 pkgdataincludedir=${pkgdatadir}/include
+vmodincludedir=${pkgdataincludedir}
 vmoddir=${libdir}/@PACKAGE@/vmods
+vmodtool=${pkgdatadir}/vmodtool.py
 
 Name: VarnishAPI
 Description: Varnish API
