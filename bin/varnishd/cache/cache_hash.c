@@ -375,10 +375,12 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			if (req->hash_ignore_busy)
 				continue;
 
+#ifdef KEY_HEADER
 			if (oc->busyobj != NULL &&
 			    oc->busyobj->key != NULL &&
 			    !KEY_Match(req, oc->busyobj->key))
 				continue;
+#endif
 
 			if (oc->busyobj != NULL &&
 			    oc->busyobj->vary != NULL &&
@@ -396,8 +398,10 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			continue;
 		if (BAN_CheckObject(o, req))
 			continue;
+#ifdef KEY_HEADER
 		if (o->key != NULL && !KEY_Match(req, o->key))
 			continue;
+#endif
 		if (o->vary != NULL && !VRY_Match(req, o->vary))
 			continue;
 

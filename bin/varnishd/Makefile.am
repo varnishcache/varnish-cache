@@ -31,7 +31,6 @@ varnishd_SOURCES = \
 	cache/cache_http1_fetch.c \
 	cache/cache_http1_fsm.c \
 	cache/cache_http1_proto.c \
-	cache/cache_key.c \
 	cache/cache_lck.c \
 	cache/cache_main.c \
 	cache/cache_mempool.c \
@@ -86,6 +85,10 @@ varnishd_SOURCES = \
 	waiter/cache_waiter_kqueue.c \
 	waiter/cache_waiter_poll.c \
 	waiter/cache_waiter_ports.c 
+
+if ENABLE_KEY_HEADER
+varnishd_SOURCES += cache/cache_key.c
+endif
 
 noinst_HEADERS = \
 	cache/cache_backend.h \

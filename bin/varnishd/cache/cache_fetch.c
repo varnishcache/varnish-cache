@@ -300,8 +300,10 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	/* Create Vary instructions */
 	if (bo->fetch_objcore->objhead != NULL) {
+#ifdef KEY_HEADER
 		keyl = KEY_Create(bo, &key);
 		if (keyl <= 0) {
+#endif
 			varyl = VRY_Create(bo, &vary);
 			if (varyl > 0) {
 				AN(vary);
@@ -320,10 +322,12 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 			} else
 				/* No vary */
 				AZ(vary);
+#ifdef KEY_HEADER
 		} else {
 			vary = NULL;
 			varyl = 0;
 		}
+#endif
 	}
 
 	if (bo->uncacheable)
@@ -369,6 +373,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->do_gzip || (bo->is_gzip && !bo->do_gunzip))
 		obj->gziped = 1;
 
+#ifdef KEY_HEADER
 	if (key != NULL) {
 		obj->key = (void *)WS_Copy(obj->http->ws,
 		    VSB_data(key), keyl);
@@ -376,6 +381,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		//KEY_Validate(obj->key);
 		VSB_delete(key);
 	}
+#endif
 
 	if (vary != NULL) {
 		obj->vary = (void *)WS_Copy(obj->http->ws,

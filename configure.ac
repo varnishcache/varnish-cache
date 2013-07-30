@@ -486,6 +486,12 @@ if test "x$enable_stack_protector" != "xno"; then
 		    CFLAGS="$save_CFLAGS"])
 fi
 
+# --enable-key-header
+AC_ARG_ENABLE(key-header,
+	AS_HELP_STRING([--enable-key-header],[enable key header support (default is NO)]),
+	CFLAGS="${CFLAGS} -DKEY_HEADER")
+AM_CONDITIONAL([ENABLE_KEY_HEADER], [test x$enable_key_header = xyes])
+
 # --enable-stack-protector
 AC_ARG_ENABLE(stack-protector,
 	AS_HELP_STRING([--enable-stack-protector],[enable stack protector (default is NO)]),

@@ -514,7 +514,9 @@ struct busyobj {
 	struct req		*req;
 
 	uint8_t			*vary;
+#ifdef KEY_HEADER
 	uint8_t			*key;
+#endif
 	unsigned		is_gzip;
 	unsigned		is_gunzip;
 
@@ -577,7 +579,9 @@ struct object {
 	struct ws		ws_o[1];
 
 	uint8_t			*vary;
+#ifdef KEY_HEADER
 	uint8_t			*key;
+#endif
 	unsigned		hits;
 	uint16_t		response;
 
@@ -635,10 +639,12 @@ struct req {
 	struct objhead		*hash_objhead;
 	struct busyobj		*busyobj;
 
+#ifdef KEY_HEADER
 	/* Built Key string */
 	uint8_t			*key_b;
 	uint8_t			*key_l;
 	uint8_t			*key_e;
+#endif
 
 	/* Built Vary string */
 	uint8_t			*vary_b;

@@ -418,7 +418,9 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	AZ(req->busyobj);
 
 	VRY_Prep(req);
+#ifdef KEY_HEADER
 	KEY_Prep(req);
+#endif
 
 	AZ(req->objcore);
 	lr = HSH_Lookup(req, &oc, &boc,
@@ -493,7 +495,9 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	req->obj = o;
 
+#ifdef KEY_HEADER
 	KEY_Finish(req, NULL);
+#endif
 	VRY_Finish(req, NULL);
 
 	if (oc->flags & OC_F_PASS)
@@ -576,7 +580,9 @@ cnt_miss(struct worker *wrk, struct req *req)
 	bo = VBO_GetBusyObj(wrk, req);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	req->busyobj = bo;
+#ifdef KEY_HEADER
 	KEY_Finish(req, bo);
+#endif
 	VRY_Finish(req, bo);
 
 	VCL_miss_method(req->vcl, wrk, req, NULL, req->http->ws);
@@ -890,14 +896,18 @@ cnt_purge(struct worker *wrk, struct req *req)
 	AZ(req->busyobj);
 
 	VRY_Prep(req);
+#ifdef KEY_HEADER
 	KEY_Prep(req);
+#endif
 
 	AZ(req->objcore);
 	lr = HSH_Lookup(req, &oc, &boc, 1, 1);
 	assert (lr == HSH_MISS);
 	AZ(oc);
 	CHECK_OBJ_NOTNULL(boc, OBJCORE_MAGIC);
+#ifdef KEY_HEADER
 	KEY_Finish(req, NULL);
+#endif
 	VRY_Finish(req, NULL);
 
 	HSH_Purge(wrk, boc->objhead, 0, 0);
