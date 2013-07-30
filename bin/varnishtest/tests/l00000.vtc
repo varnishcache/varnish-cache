@@ -29,7 +29,7 @@ logexpect l1 -v v1 -g session {
 } -start
 
 # Check with a query (this selects only the backend request)
-logexpect l2 -v v1 -g vxid -q "bereq 1001" {
+logexpect l2 -v v1 -g vxid -q "Begin eq 'bereq 1001'" {
 	expect 0 1002	Begin
 	expect * =	End
 } -start

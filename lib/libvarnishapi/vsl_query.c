@@ -32,42 +32,121 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "vas.h"
 #include "miniobj.h"
 #include "vre.h"
+#include "vsb.h"
 
 #include "vapi/vsl.h"
 #include "vsl_api.h"
+#include "vxp.h"
+
+#define NEEDLESS_RETURN(foo) return(foo)
 
 struct vslq_query {
 	unsigned		magic;
 #define VSLQ_QUERY_MAGIC	0x122322A5
 
-	vre_t			*regex;
+	struct vex		*vex;
 };
+
+static int
+vslq_test(const struct vex *vex, struct VSL_transaction * const ptrans[])
+{
+	struct VSL_transaction *t;
+	int i, reclen, vallen;
+	const char *recdata;
+
+	CHECK_OBJ_NOTNULL(vex, VEX_MAGIC);
+	CHECK_OBJ_NOTNULL(vex->tag, VEX_TAG_MAGIC);
+	CHECK_OBJ_NOTNULL(vex->val, VEX_VAL_MAGIC);
+	AN(vex->val->val_string);
+
+	vallen = strlen(vex->val->val_string);
+	for (t = ptrans[0]; t != NULL; t = *++ptrans) {
+		AZ(VSL_ResetCursor(t->c));
+		while (1) {
+			i = VSL_Next(t->c);
+			if (i < 0)
+				return (i);
+			if (i == 0)
+				break;
+			assert(i == 1);
+			AN(t->c->rec.ptr);
+
+			if (vex->tag->tag != VSL_TAG(t->c->rec.ptr))
+				continue;
+
+			reclen = VSL_LEN(t->c->rec.ptr);
+			recdata = VSL_CDATA(t->c->rec.ptr);
+			if (reclen == vallen &&
+			    !strncmp(vex->val->val_string, recdata, reclen))
+				return (1);
+		}
+	}
+
+	return (0);
+}
+
+static int
+vslq_exec(const struct vex *vex, struct VSL_transaction * const ptrans[])
+{
+	int r;
+
+	CHECK_OBJ_NOTNULL(vex, VEX_MAGIC);
+
+	switch (vex->tok) {
+	case T_OR:
+		AN(vex->a);
+		AN(vex->b);
+		r = vslq_exec(vex->a, ptrans);
+		if (r != 0)
+			return (r);
+		return (vslq_exec(vex->b, ptrans));
+	case T_AND:
+		AN(vex->a);
+		AN(vex->b);
+		r = vslq_exec(vex->a, ptrans);
+		if (r <= 0)
+			return (r);
+		return (vslq_exec(vex->b, ptrans));
+	case T_NOT:
+		AN(vex->a);
+		AZ(vex->b);
+		r = vslq_exec(vex->a, ptrans);
+		if (r < 0)
+			return (r);
+		return (!r);
+	default:
+		return (vslq_test(vex, ptrans));
+	}
+	NEEDLESS_RETURN(0);
+}
 
 struct vslq_query *
 vslq_newquery(struct VSL_data *vsl, enum VSL_grouping_e grouping,
     const char *querystring)
 {
-	struct vslq_query *query;
-	const char *error;
-	int pos;
-	vre_t *regex;
+	struct vsb *vsb;
+	struct vex *vex;
+	struct vslq_query *query = NULL;
 
 	(void)grouping;
 	AN(querystring);
-	regex = VRE_compile(querystring, 0, &error, &pos);
-	if (regex == NULL) {
-		vsl_diag(vsl, "failed to compile regex at pos %d: %s",
-		    pos, error);
-		return (NULL);
-	}
 
-	ALLOC_OBJ(query, VSLQ_QUERY_MAGIC);
-	if (query != NULL)
-		query->regex = regex;
+	vsb = VSB_new_auto();
+	AN(vsb);
+	vex = vex_New(querystring, vsb);
+	VSB_finish(vsb);
+	if (vex == NULL)
+		vsl_diag(vsl, "Query expression error:\n%s", VSB_data(vsb));
+	else {
+		ALLOC_OBJ(query, VSLQ_QUERY_MAGIC);
+		query->vex = vex;
+	}
+	VSB_delete(vsb);
 	return (query);
 }
 
@@ -81,45 +160,24 @@ vslq_deletequery(struct vslq_query **pquery)
 	*pquery = NULL;
 	CHECK_OBJ_NOTNULL(query, VSLQ_QUERY_MAGIC);
 
-	AN(query->regex);
-	VRE_free(&query->regex);
-	AZ(query->regex);
+	AN(query->vex);
+	vex_Free(&query->vex);
+	AZ(query->vex);
 
 	FREE_OBJ(query);
 }
 
 int
-vslq_runquery(const struct vslq_query *query, struct VSL_transaction * const ptrans[])
+vslq_runquery(const struct vslq_query *query,
+    struct VSL_transaction * const ptrans[])
 {
 	struct VSL_transaction *t;
-	struct VSL_cursor *c;
-	int i, len;
-	const char *data;
+	int r;
 
 	CHECK_OBJ_NOTNULL(query, VSLQ_QUERY_MAGIC);
-	AN(query->regex);
 
-	t = ptrans[0];
-	while (t) {
-		c = t->c;
-		while (1) {
-			i = VSL_Next(c);
-			if (i == 0)
-				break;
-			assert(i == 1);
-			AN(c->rec.ptr);
-			len = VSL_LEN(c->rec.ptr);
-			data = VSL_CDATA(c->rec.ptr);
-			i = VRE_exec(query->regex, data, len, 0, 0, NULL, 0,
-			    NULL);
-			if (i != VRE_ERROR_NOMATCH) {
-				AZ(VSL_ResetCursor(c));
-				return (1);
-			}
-		}
-		AZ(VSL_ResetCursor(c));
-		t = *++ptrans;
-	}
-
-	return (0);
+	r = vslq_exec(query->vex, ptrans);
+	for (t = ptrans[0]; t != NULL; t = *++ptrans)
+		AZ(VSL_ResetCursor(t->c));
+	return (r);
 }

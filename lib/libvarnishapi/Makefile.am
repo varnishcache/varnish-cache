@@ -11,6 +11,8 @@ libvarnishapi_la_LDFLAGS = $(AM_LDFLAGS) -version-info 1:0:0
 libvarnishapi_la_SOURCES = \
 	vsm_api.h \
 	vsl_api.h \
+	vxp.h \
+	vxp_tokens.h \
 	\
 	../libvarnish/vas.c \
 	../libvarnish/vav.c \
@@ -31,6 +33,10 @@ libvarnishapi_la_SOURCES = \
 	vsl_query.c \
 	vsl.c \
 	vsc.c \
+	vxp.c \
+	vxp_parse.c \
+	vxp_lexer.c \
+	vxp_fixed_token.c \
 	libvarnishapi.map
 
 libvarnishapi_la_CFLAGS = \
@@ -43,3 +49,31 @@ libvarnishapi_la_LDFLAGS += -Wl,--version-script=$(srcdir)/libvarnishapi.map
 else
 libvarnishapi_la_LDFLAGS += -export-symbols-regex '^V'
 endif
+
+EXTRA_DIST = \
+	generate.py
+
+BUILT_SOURCES = \
+	vxp_fixed_token.c \
+	vxp_tokens.h
+
+CLEANFILES = \
+	$(builddir)/vxp_fixed_token.c \
+	$(builddir)/vxp_tokens.h
+
+vxp_fixed_token.c vxp_tokens.h: \
+	$(srcdir)/generate.py
+	@PYTHON@ $(srcdir)/generate.py $(srcdir) $(top_builddir)
+
+EXTRA_PROGRAMS = vxp_test
+
+vxp_test_LDADD = @PCRE_LIBS@ \
+	${RT_LIBS} ${LIBM} ${PTHREAD_LIBS}
+
+vxp_test_CFLAGS = \
+	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
+	-DVXP_DEBUG
+
+vxp_test_SOURCES = \
+	$(libvarnishapi_la_SOURCES) \
+	vxp_test.c
