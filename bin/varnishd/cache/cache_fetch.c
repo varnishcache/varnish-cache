@@ -221,8 +221,10 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	char *b;
 	uint16_t nhttp;
 	unsigned l;
+#ifdef KEY_HEADER
 	struct vsb *key = NULL;
 	int keyl = 0;
+#endif
 	struct vsb *vary = NULL;
 	int varyl = 0;
 	struct object *obj;

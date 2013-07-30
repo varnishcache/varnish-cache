@@ -240,6 +240,7 @@ VRY_Prep(struct req *req)
 void
 VRY_Finish(struct req *req, struct busyobj *bo)
 {
+
 	if (bo != NULL) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 		VRY_Validate(req->vary_b);
