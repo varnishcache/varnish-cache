@@ -376,7 +376,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 #ifdef KEY_HEADER
 			if (oc->busyobj != NULL &&
 			    oc->busyobj->key != NULL &&
-			    !KEY_Match(req, oc->busyobj->key))
+			    !KEY_Match(req->http, oc->busyobj->key))
 				continue;
 #endif
 
@@ -397,7 +397,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		if (BAN_CheckObject(o, req))
 			continue;
 #ifdef KEY_HEADER
-		if (o->key != NULL && !KEY_Match(req, o->key))
+		if (o->key != NULL && !KEY_Match(req->http, o->key))
 			continue;
 #endif
 		if (o->vary != NULL && !VRY_Match(req, o->vary))

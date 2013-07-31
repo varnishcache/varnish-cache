@@ -244,6 +244,12 @@ KEY_Create(struct busyobj *bo, struct vsb **psb)
 
 	VSB_delete(sbh);
 	AZ(VSB_finish(sb));
+
+	if (KEY_Match(bo->bereq, VSB_data(sb)) == 0) {
+	    printf("That doesn't match this req wth\n");
+	    return -1;
+	}
+
 	*psb = sb;
 	DEBUG && printf("KEY_Create(bo: %p, psb: %p) = %zu\n", bo, *psb, VSB_len(sb));
 	DEBUG && hexDump("key", VSB_data(sb), VSB_len(sb));
@@ -279,9 +285,9 @@ int word_match(char *param, char *string) {
 }
 
 int
-KEY_Match(struct req *req, const uint8_t *key)
+KEY_Match(struct http *http, const uint8_t *key)
 {
-	DEBUG && printf("KEY_Match(req: %p, key: %p)\n", req, key);
+	DEBUG && printf("KEY_Match(http: %p, key: %p)\n", http, key);
 
 	char *h;
 	int i;
@@ -297,7 +303,7 @@ KEY_Match(struct req *req, const uint8_t *key)
 
 			DEBUG && printf(" Header (Exact): %s\n", key + 4);
 
-			i = http_GetHdr(req->http, (const char*)(key+3), &h);
+			i = http_GetHdr(http, (const char*)(key+3), &h);
 
 			if (l == 0xFFFF) {
 			    // Expect missing
@@ -351,7 +357,7 @@ KEY_Match(struct req *req, const uint8_t *key)
 			char *e;
 			unsigned l = vbe16dec(key);
 
-			i = http_GetHdr(req->http, (const char*)(key+3), &h);
+			i = http_GetHdr(http, (const char*)(key+3), &h);
 
 			// TODO: Perhaps not matcher should allow this
 			if (i == 0)
@@ -381,6 +387,6 @@ KEY_Match(struct req *req, const uint8_t *key)
 		key += key_len(key);
 	}
 
-	DEBUG && printf("KEY_Match(req: %p, key: %p) = 1\n", req, key);
+	DEBUG && printf("KEY_Match(http: %p, key: %p) = 1\n", http, key);
 	return 1;
 }

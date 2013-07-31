@@ -315,7 +315,9 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 			VSLb(bo->vsl, SLT_Error,
 			    "Illegal 'Key' header from backend, "
 			    "making this a pass.");
-			bo->uncacheable = 1;
+
+			// We're willing to try again
+			bo->exp.ttl = 0;
 			AZ(key);
 		} else {
 #endif
