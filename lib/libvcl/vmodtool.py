@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 #-
 # Copyright (c) 2010-2011 Varnish Software AS
 # All rights reserved.
