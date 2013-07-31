@@ -53,9 +53,6 @@ start() {
 	# Open files (usually 1024, which is way too small for varnish)
 	ulimit -n ${NFILES:-131072}
 
-	# Open processes/threads (usually 1024 on rhel6, which is too little for varnish)
-	ulimit -u ${NPROC:-10000}
-
 	# Varnish wants to lock shared memory log in memory. 
 	ulimit -l ${MEMLOCK:-82000}
 
