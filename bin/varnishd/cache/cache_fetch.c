@@ -303,7 +303,11 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->fetch_objcore->objhead != NULL) {
 #ifdef KEY_HEADER
 		keyl = KEY_Create(bo, &key);
-		if (keyl <= 0) {
+		if (keyl > 0) {
+			AN(key);
+			assert(keyl == VSB_len(key));
+			l += keyl;
+		} else {
 #endif
 			varyl = VRY_Create(bo, &vary);
 			if (varyl > 0) {
@@ -324,9 +328,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 				/* No vary */
 				AZ(vary);
 #ifdef KEY_HEADER
-		} else {
-			vary = NULL;
-			varyl = 0;
 		}
 #endif
 	}
@@ -379,7 +380,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		obj->key = (void *)WS_Copy(obj->http->ws,
 		    VSB_data(key), keyl);
 		AN(obj->key);
-		//KEY_Validate(obj->key);
+		KEY_Validate(obj->key);
 		VSB_delete(key);
 	}
 #endif
