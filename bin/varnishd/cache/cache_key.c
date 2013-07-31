@@ -17,7 +17,8 @@
 #define M_CASE		5
 #define M_NOT		6
 
-#define DEBUG 1
+#define DEBUG_CREATE 0
+#define DEBUG_MATCH 1
 
 int hexDump (char *desc, void *addr, int len) {
     int i;
@@ -74,35 +75,35 @@ key_ParseMatcher(const char *s, struct vsb **sb) {
 		p++;
 
 		if (strncmp(p, "w=\"", 3) == 0) {
-			printf("   WORD: (");
+			DEBUG_CREATE && printf("   WORD: (");
 			p += 3;
 			for (e = p; *e != '\"'; e++)
 				continue;
-			printf("%.*s)\n", (int)(e - p), p);
+			DEBUG_CREATE && printf("%.*s)\n", (int)(e - p), p);
 			VSB_printf(*sb, "%c%.*s%c", M_WORD, (int)(e -p), p, 0);
 			p = e + 1;
 		} else if (strncmp(p, "s=\"", 3) == 0) {
-			printf("   SUBSTRING: (");
+			DEBUG_CREATE && printf("   SUBSTRING: (");
 			p += 3;
 			for (e = p; *e != '\"'; e++)
 				continue;
-			printf("%.*s)\n", (int)(e - p), p);
+			DEBUG_CREATE && printf("%.*s)\n", (int)(e - p), p);
 			VSB_printf(*sb, "%c%.*s%c", M_SUBSTRING, (int)(e -p), p, 0);
 			p = e + 1;
 		} else if (strncmp(p, "b=\"", 3) == 0) {
-			printf("   BEGINNING SUBSTRING: (");
+			DEBUG_CREATE && printf("   BEGINNING SUBSTRING: (");
 			p += 3;
 			for (e = p; *e != '\"'; e++)
 				continue;
-			printf("%.*s)\n", (int)(e - p), p);
+			DEBUG_CREATE && printf("%.*s)\n", (int)(e - p), p);
 			VSB_printf(*sb, "%c%.*s%c", M_BEGINNING, (int)(e -p), p, 0);
 			p = e + 1;
 		} else if (*p == 'c') {
-			printf("   CASE\n");
+			DEBUG_CREATE && printf("   CASE\n");
 			VSB_printf(*sb, "%c", M_CASE);
 			p++;
 		} else if (*p == 'n') {
-			printf("   NOT\n");
+			DEBUG_CREATE && printf("   NOT\n");
 			VSB_printf(*sb, "%c", M_NOT);
 			p++;
 		} else {
@@ -127,7 +128,7 @@ key_len(const uint8_t *p)
 int
 KEY_Create(struct busyobj *bo, struct vsb **psb)
 {
-	DEBUG && printf("KEY_Create(bo: %p, psb: %p)\n", bo, *psb);
+	DEBUG_CREATE && printf("KEY_Create(bo: %p, psb: %p)\n", bo, *psb);
 	char *v, *h, *e, *p, *q, *m, *mm, *me;
 	struct vsb *sb, *sbh, *sbm;
 	unsigned l;
@@ -174,7 +175,7 @@ KEY_Create(struct busyobj *bo, struct vsb **psb)
 		    (char)(1 + (q - p)), (int)(q - p), p, 0);
 		AZ(VSB_finish(sbh));
 
-		DEBUG && printf(" - Entry: %.*s\n", (int)(q - p), p);
+		DEBUG_CREATE && printf(" - Entry: %.*s\n", (int)(q - p), p);
 
 		// Using matchers
 		if (*q == ';') {
@@ -250,20 +251,18 @@ KEY_Create(struct busyobj *bo, struct vsb **psb)
 	AZ(VSB_finish(sb));
 
 	if (KEY_Match(bo->bereq, VSB_data(sb)) == 0) {
-	    printf("That doesn't match this req wth\n");
 	    return -1;
 	}
 
 	*psb = sb;
-	DEBUG && printf("KEY_Create(bo: %p, psb: %p) = %zu\n", bo, *psb, VSB_len(sb));
-	DEBUG && hexDump("key", VSB_data(sb), VSB_len(sb));
+	DEBUG_CREATE && printf("KEY_Create(bo: %p, psb: %p) = %zu\n", bo, *psb, VSB_len(sb));
+	DEBUG_CREATE && hexDump("key", VSB_data(sb), VSB_len(sb));
 	return (VSB_len(sb));
 }
 
 void
 KEY_Validate(const uint8_t *key)
 {
-	DEBUG && hexDump("key", key, 32);
 	while (key[3] != 0) {
 		assert(strlen((const char*)key+4) == key[3]);
 		key += key_len(key);
@@ -288,13 +287,27 @@ int word_match(char *param, char *string) {
   return 1;
 }
 
+int beginning_substring_match(char *param, char *string) {
+  char *p = strstr(string, param);
+
+  if (p == 0)
+    return 0;
+
+  if (p != string)
+    if (p[-1] != ' ' && p[-1] != ',')
+      return 0;
+
+  return 1;
+}
+
 int
 KEY_Match(struct http *http, const uint8_t *key)
 {
-	DEBUG && printf("KEY_Match(http: %p, key: %p)\n", http, key);
+	DEBUG_MATCH && printf("KEY_Match(http: %p, key: %p)\n", http, key);
 
 	char *h;
 	int i;
+	int result = 1;
 
 	while (key[3]) {
 		// Exception for gzip
@@ -305,7 +318,7 @@ KEY_Match(struct http *http, const uint8_t *key)
 			char *e;
 			unsigned l = vbe16dec(key);
 
-			DEBUG && printf(" Header (Exact): %s\n", key + 4);
+			DEBUG_MATCH && printf(" Header (Exact): %s\n", key + 4);
 
 			i = http_GetHdr(http, (const char*)(key+3), &h);
 
@@ -313,24 +326,24 @@ KEY_Match(struct http *http, const uint8_t *key)
 			    // Expect missing
 			    if (i == 0) {
 				// Expected missing, is missing
-				DEBUG && printf("   * Expected missing, is missing\n");
+				DEBUG_MATCH && printf("   * Expected missing, is missing\n");
 			    } else {
 				// Expected missing, is present
-				DEBUG && printf("   * Expected missing, is present\n");
-				return 0;
+				DEBUG_MATCH && printf("   * Expected missing, is present\n");
+				result = 0;
 			    }
 			} else {
 			    // Expect present
 			    const char *value = key + 4 + key[3] + 1;
-			    DEBUG && printf(" - Value: %.*s\n", l, value);
+			    DEBUG_MATCH && printf(" - Value: %.*s\n", l, value);
 
 			    if (i == 0) {
 				// Expected present, is missing
-				DEBUG && printf("   * Expected present, is missing\n");
-				return 0;
+				DEBUG_MATCH && printf("   * Expected present, is missing\n");
+				result = 0;
 			    } else {
 				// Expected present, is present
-				DEBUG && printf("   * Expected present, is present\n");
+				DEBUG_MATCH && printf("   * Expected present, is present\n");
 
 				AZ(vct_issp(*h));
 				/* Trim trailing space */
@@ -340,16 +353,16 @@ KEY_Match(struct http *http, const uint8_t *key)
 
 				if (l != (int)(e - h)) {
 				    // Different lengths, no match
-				    DEBUG && printf("   * Different lengths, no match\n");
-				    return 0;
+				    DEBUG_MATCH && printf("   * Different lengths, no match\n");
+				    result = 0;
 				} else {
 				    if (memcmp(h, value, l) == 0) {
 					// Same length, match
-					DEBUG && printf("   * Same length, match\n");
+					DEBUG_MATCH && printf("   * Same length, match\n");
 				    } else {
 					// Same length, no match
-					DEBUG && printf("   * Same length, no match\n");
-					return 0;
+					DEBUG_MATCH && printf("   * Same length, no match\n");
+					result = 0;
 				    }
 				}
 			    }
@@ -357,9 +370,10 @@ KEY_Match(struct http *http, const uint8_t *key)
 
 		// Matcher match
 		} else if (key[2] == 1) {
-			DEBUG && printf(" Header (Matcher): %s\n", key + 4);
+			DEBUG_MATCH && printf(" Header (Matcher): %s\n", key + 4);
 			char *e;
 			unsigned l = vbe16dec(key);
+			int not_flag = 1;
 
 			i = http_GetHdr(http, (const char*)(key+3), &h);
 
@@ -371,19 +385,33 @@ KEY_Match(struct http *http, const uint8_t *key)
 
 			while (*matcher != 0 && *matcher != -1) {
 			    if (*matcher == M_WORD) {
-				DEBUG && printf("  - Word: %s ", matcher + 1);
-				if (word_match(matcher + 1, h) != 1) {
-				    printf("NG\n");
-				    return 0;
+				DEBUG_MATCH && printf("  - %sWord: \"%s\" ", not_flag ? "" : "Not ", matcher + 1);
+				if (word_match(matcher + 1, h) ^ not_flag) {
+				    DEBUG_MATCH && printf("NG\n");
+				    result = 0;
+				} else {
+				    DEBUG_MATCH && printf("OK\n");
 				}
-				printf("OK\n");
+				matcher += strlen(matcher) + 1;
+			    } else if (*matcher == M_BEGINNING) {
+				DEBUG_MATCH && printf("  - %sBeginning: \"%s\" ", not_flag ? "" : "Not ", matcher + 1);
+				if (beginning_substring_match(matcher + 1, h) ^ not_flag) {
+				    DEBUG_MATCH && printf("NG\n");
+				    result = 0;
+				} else {
+				    DEBUG_MATCH && printf("OK\n");
+				}
 				matcher += strlen(matcher) + 1;
 			    } else if (*matcher == M_CASE) {
-				DEBUG && printf("  - Case\n");
+				DEBUG_MATCH && printf("  - Case\n");
+				matcher++;
+			    } else if (*matcher == M_NOT) {
+				DEBUG_MATCH && printf("  - Not\n");
+				not_flag = 0;
 				matcher++;
 			    } else {
-				DEBUG && printf("UNKNOWN MATCHER (%d)\n", *matcher);
-				return 0;
+				DEBUG_MATCH && printf("UNKNOWN MATCHER (%d)\n", *matcher);
+				result = 0;
 			    }
 			}
 		}
@@ -391,6 +419,6 @@ KEY_Match(struct http *http, const uint8_t *key)
 		key += key_len(key);
 	}
 
-	DEBUG && printf("KEY_Match(http: %p, key: %p) = 1\n", http, key);
-	return 1;
+	DEBUG_MATCH && printf("KEY_Match(http: %p, key: %p) = 1\n", http, key);
+	return result;
 }
