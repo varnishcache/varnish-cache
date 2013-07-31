@@ -260,6 +260,24 @@ KEY_Validate(const uint8_t *key)
 	}
 }
 
+int word_match(char *param, char *string) {
+  char *p = strstr(string, param);
+
+  if (p == 0)
+    return 0;
+
+  if (p != string)
+    if (p[-1] != ' ' && p[-1] != ',')
+      return 0;
+
+  char *r = p + strlen(param);
+  if (r < string + strlen(string))
+    if (r[0] != ' ' && r[0] != ',')
+      return 0;
+
+  return 1;
+}
+
 int
 KEY_Match(struct req *req, const uint8_t *key)
 {
@@ -329,12 +347,40 @@ KEY_Match(struct req *req, const uint8_t *key)
 
 		// Matcher match
 		} else if (key[2] == 1) {
-			DEBUG && printf(" - Matcher: %s\n", key+4);
+			DEBUG && printf(" Header (Matcher): %s\n", key + 4);
+			char *e;
+			unsigned l = vbe16dec(key);
+
+			i = http_GetHdr(req->http, (const char*)(key+3), &h);
+
+			// TODO: Perhaps not matcher should allow this
+			if (i == 0)
+			    return 0;
+
+			const char *matcher = key + 4 + key[3] + 1;
+
+			while (*matcher != 0 && *matcher != -1) {
+			    if (*matcher == M_WORD) {
+				DEBUG && printf("  - Word: %s ", matcher + 1);
+				if (word_match(matcher + 1, h) != 1) {
+				    printf("NG\n");
+				    return 0;
+				}
+				printf("OK\n");
+				matcher += strlen(matcher) + 1;
+			    } else if (*matcher == M_CASE) {
+				DEBUG && printf("  - Case\n");
+				matcher++;
+			    } else {
+				DEBUG && printf("UNKNOWN MATCHER (%d)\n", *matcher);
+				return 0;
+			    }
+			}
 		}
 
 		key += key_len(key);
 	}
 
-	DEBUG && printf("KEY_Match(req: %p, key: %p) = 0\n", req, key);
+	DEBUG && printf("KEY_Match(req: %p, key: %p) = 1\n", req, key);
 	return 1;
 }

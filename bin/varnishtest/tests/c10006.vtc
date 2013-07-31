@@ -1,0 +1,44 @@
+varnishtest "Test Key matcher functionality (WORD)"
+
+server s1 {
+	rxreq
+	expect req.http.foobar == "A B C"
+	txresp -hdr "Key: Foobar;w=\"A\"" -hdr "Snafu: 1" -body "1111\n"
+	rxreq
+	expect req.http.foobar == "CAB"
+	txresp -hdr "Key: Foobar;w=\"CAB\"" -hdr "Snafu: 2" -body "2222\n"
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq -hdr "Foobar: A B C"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1001"
+	expect resp.http.snafu == "1"
+
+	txreq -hdr "Foobar: B C A"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1003 1002"
+	expect resp.http.snafu == "1"
+
+	txreq -hdr "Foobar: C A B"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1004 1002"
+	expect resp.http.snafu == "1"
+
+	txreq -hdr "Foobar: CAB"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1005"
+	expect resp.http.snafu == "2"
+
+	txreq -hdr "Foobar: A CAB RIDE"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1007 1006"
+	expect resp.http.snafu == "2"
+} -run
