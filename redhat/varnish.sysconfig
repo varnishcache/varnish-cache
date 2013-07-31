@@ -7,6 +7,9 @@
 # Maximum number of open files (for ulimit -n)
 NFILES=131072
 
+# Maximum number of processes/threads (for ulimit -u)
+NPROC=10000
+
 # Locked shared memory (for ulimit -l)
 # Default log size is 82MB + header
 MEMLOCK=82000
