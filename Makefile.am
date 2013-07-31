@@ -7,8 +7,11 @@ SUBDIRS += redhat
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = varnishapi.pc
 
+m4dir = $(datadir)/aclocal
+m4_DATA = varnish.m4
+
 CLEANFILES = cscope.in.out cscope.out cscope.po.out
-EXTRA_DIST = LICENSE autogen.sh varnishapi.pc.in
+EXTRA_DIST = LICENSE autogen.sh varnishapi.pc.in varnish.m4
 
 DISTCHECK_CONFIGURE_FLAGS = \
     --enable-developer-warnings \
