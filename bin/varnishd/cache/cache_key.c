@@ -1,3 +1,4 @@
+#include <stdio.h>
 //#include "config.h"
 
 #include "cache.h"
@@ -12,7 +13,9 @@
 #define M_CASE		5
 #define M_NOT		6
 
-void hexDump (char *desc, void *addr, int len) {
+#define DEBUG 1
+
+int hexDump (char *desc, void *addr, int len) {
     int i;
     unsigned char buff[17];
     unsigned char *pc = addr;
@@ -53,12 +56,13 @@ void hexDump (char *desc, void *addr, int len) {
 
     // And print the final ASCII bit.
     printf ("  %s\n", buff);
+    return 0;
 }
 
 int
 key_ParseMatcher(const char *s, struct vsb **sb) {
-	char *p = s;
-	char *e;
+	const char *p = s;
+	const char *e;
 	while (*p == ';') {
 		if (*p != ';')
 			return -1;
@@ -105,14 +109,26 @@ key_ParseMatcher(const char *s, struct vsb **sb) {
 	return p - s;
 }
 
+/*
+ * Find length of a key entry
+ */
+static unsigned
+key_len(const uint8_t *p)
+{
+	unsigned l = vbe16dec(p);
+
+	return (3 + p[3] + 2 + (l == 0xffff ? 0 : l));
+}
+
 int
 KEY_Create(struct busyobj *bo, struct vsb **psb)
 {
-	printf("KEY_Create(bo: %p, psb: %p)\n", bo, *psb);
+	DEBUG && printf("KEY_Create(bo: %p, psb: %p)\n", bo, *psb);
 	char *v, *h, *e, *p, *q, *m, *mm, *me;
 	struct vsb *sb, *sbh, *sbm;
 	unsigned l;
 	int matcher = 0;
+	int error = 0;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->bereq, HTTP_MAGIC);
@@ -141,13 +157,20 @@ KEY_Create(struct busyobj *bo, struct vsb **psb)
 		for (q = p; *q && !vct_issp(*q) && *q != ',' && *q != ';'; q++)
 			continue;
 
+		if (q - p > INT8_MAX) {
+			VSLb(bo->vsl, SLT_Error,
+			    "Key header name length exceeded");
+			error = 1;
+			break;
+		}
+
 		/* Build header matching string */
 		VSB_clear(sbh);
 		VSB_printf(sbh, "%c%.*s:%c",
 		    (char)(1 + (q - p)), (int)(q - p), p, 0);
 		AZ(VSB_finish(sbh));
 
-		printf(" - Entry: %.*s\n", (int)(q - p), p);
+		DEBUG && printf(" - Entry: %.*s\n", (int)(q - p), p);
 
 		// Using matchers
 		if (*q == ';') {
@@ -158,6 +181,7 @@ KEY_Create(struct busyobj *bo, struct vsb **psb)
 			else {
 			    // TODO: Cleanup allocations
 			    printf("ERROR\n");
+			    error = 1;
 			    return 0;
 			}
 			AZ(VSB_finish(sbm));
@@ -200,143 +224,117 @@ KEY_Create(struct busyobj *bo, struct vsb **psb)
 
 		if (*q == '\0')
 			break;
+		if (*q != ',') {
+			VSLb(bo->vsl, SLT_Error, "Malformed Key header");
+			error = 1;
+			break;
+		}
 
 		p = q;
 	}
 
+	if (error) {
+		VSB_delete(sbh);
+		VSB_delete(sb);
+		return (-1);
+	}
+
 	/* Terminate key matching string */
-	VSB_printf(sb, "%c%c%c", 0xff, 0xff, 0);
+	VSB_printf(sb, "%c%c%c%c", 0xff, 0xff, 0, 0);
 
 	VSB_delete(sbh);
 	AZ(VSB_finish(sb));
 	*psb = sb;
-	printf("KEY_Create(bo: %p, psb: %p) = %d\n", bo, *psb, VSB_len(sb));
-	hexDump("key", VSB_data(sb), VSB_len(sb));
+	DEBUG && printf("KEY_Create(bo: %p, psb: %p) = %zu\n", bo, *psb, VSB_len(sb));
+	DEBUG && hexDump("key", VSB_data(sb), VSB_len(sb));
 	return (VSB_len(sb));
-}
-
-void
-KEY_Prep(struct req *req)
-{
-	req->key_b = req->vary_b;
-	req->key_l = req->vary_l;
-	req->key_e = req->vary_e;
-}
-
-void
-KEY_Finish(struct req *req, struct busyobj *bo)
-{
-	if (bo != NULL) {
-		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-		KEY_Validate(req->key_b);
-		if (req->key_l != NULL) {
-			bo->key = WS_Copy(bo->ws,
-			    req->key_b, req->key_l - req->key_b);
-			AN(bo->key);
-			KEY_Validate(bo->key);
-		} else
-			bo->key = NULL;
-	}
-	//WS_Release(req->ws, 0);
-	req->key_b = NULL;
-	req->key_l = NULL;
-	req->key_e = NULL;
-}
-
-/*
- * Find length of a key entry
- */
-static unsigned
-key_len(const uint8_t *p)
-{
-	unsigned l = vbe16dec(p);
-
-	return (3 + p[3] + 2 + (l == 0xffff ? 0 : l));
-}
-
-/*
- * Compare two key entries
- */
-static int
-key_cmp(const uint8_t *v1, const uint8_t *v2)
-{
-	unsigned retval = 0;
-
-	//hexDump("key_cmp(v1)", v1, key_len(v1));
-	//hexDump("key_cmp(v2)", v2, key_len(v2));
-
-	if (!memcmp(v1, v2, key_len(v1))) {
-		printf("    same same\n");
-		/* Same same */
-		retval = 0;
-	} else if (memcmp(v1 + 2, v2 + 2, v1[3] + 2)) {
-		printf("    diff header\n");
-		/* Different header */
-		retval = 1;
-	} else if (cache_param->http_gzip_support &&
-	    !strcasecmp(H_Accept_Encoding, (const char*) v1 + 2)) {
-		printf("    accept enc\n");
-		/*
-		 * If we do gzip processing, we do not key on Accept-Encoding,
-		 * because we want everybody to get the gzip'ed object, and
-		 * varnish will gunzip as necessary.  We implement the skip at
-		 * check time, rather than create time, so that object in
-		 * persistent storage can be used with either setting of
-		 * http_gzip_support.
-		 */
-		retval = 0;
-	} else {
-		printf("    same header diff content\n");
-		/* Same header, different content */
-		retval = 2;
-	}
-
-	return retval;
-}
-
-int
-KEY_Match(struct req *req, const uint8_t *key)
-{
-	printf("KEY_Match(req: %p, key: %p)\n", req, key);
-
-	uint8_t *vsp = req->key_b;
-	char *h;
-	int i;
-
-	AN(vsp);
-	while (key[3]) {
-		// Exact match
-		if (key[2] == 0) {
-			printf(" - Exact: %s\n", key+4);
-			i = key_cmp(key, vsp);
-			if (i == 1) {
-				/*
-				 * Different header, build a new entry,
-				 * then compare again with that new entry.
-				 */
-
-				//ln = 2 + key[3] + 2;
-				i = http_GetHdr(req->http, (const char*)(key+3), &h);
-				printf("    - Got %d bytes of %s\n", i, h);
-			}
-		// Matcher match
-		} else if (key[2] == 1) {
-			printf(" - Matcher: %s\n", key+4);
-		}
-
-		key += key_len(key);
-	}
-
-	printf("KEY_Match(req: %p, key: %p) = 0\n", req, key);
-	return 0;
 }
 
 void
 KEY_Validate(const uint8_t *key)
 {
-
+	DEBUG && hexDump("key", key, 32);
 	while (key[3] != 0) {
 		assert(strlen((const char*)key+4) == key[3]);
 		key += key_len(key);
 	}
+}
+
+int
+KEY_Match(struct req *req, const uint8_t *key)
+{
+	DEBUG && printf("KEY_Match(req: %p, key: %p)\n", req, key);
+
+	char *h;
+	int i;
+
+	while (key[3]) {
+		// Exception for gzip
+		if (cache_param->http_gzip_support &&
+		    !strcasecmp(H_Accept_Encoding, (const char*) key + 3)) {
+		// Exact match
+		} else if (key[2] == 0) {
+			char *e;
+			unsigned l = vbe16dec(key);
+
+			DEBUG && printf(" Header (Exact): %s\n", key + 4);
+
+			i = http_GetHdr(req->http, (const char*)(key+3), &h);
+
+			if (l == 0xFFFF) {
+			    // Expect missing
+			    if (i == 0) {
+				// Expected missing, is missing
+				DEBUG && printf("   * Expected missing, is missing\n");
+			    } else {
+				// Expected missing, is present
+				DEBUG && printf("   * Expected missing, is present\n");
+				return 0;
+			    }
+			} else {
+			    // Expect present
+			    const char *value = key + 4 + key[3] + 1;
+			    DEBUG && printf(" - Value: %.*s\n", l, value);
+
+			    if (i == 0) {
+				// Expected present, is missing
+				DEBUG && printf("   * Expected present, is missing\n");
+				return 0;
+			    } else {
+				// Expected present, is present
+				DEBUG && printf("   * Expected present, is present\n");
+
+				AZ(vct_issp(*h));
+				/* Trim trailing space */
+				e = strchr(h, '\0');
+				while (e > h && vct_issp(e[-1]))
+					e--;
+
+				if (l != (int)(e - h)) {
+				    // Different lengths, no match
+				    DEBUG && printf("   * Different lengths, no match\n");
+				    return 0;
+				} else {
+				    if (memcmp(h, value, l) == 0) {
+					// Same length, match
+					DEBUG && printf("   * Same length, match\n");
+				    } else {
+					// Same length, no match
+					DEBUG && printf("   * Same length, no match\n");
+					return 0;
+				    }
+				}
+			    }
+			}
+
+		// Matcher match
+		} else if (key[2] == 1) {
+			DEBUG && printf(" - Matcher: %s\n", key+4);
+		}
+
+		key += key_len(key);
+	}
+
+	DEBUG && printf("KEY_Match(req: %p, key: %p) = 0\n", req, key);
+	return 1;
 }

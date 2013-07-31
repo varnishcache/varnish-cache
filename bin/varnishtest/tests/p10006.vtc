@@ -1,0 +1,55 @@
+varnishtest "Check that Key headers are stored"
+
+shell "rm -f ${tmpdir}/_.per"
+
+server s1 {
+	rxreq 
+	txresp -hdr "Foo: foo1" -hdr "Key: foo, bar"
+	rxreq 
+	txresp -hdr "Foo: foo2" -hdr "Key: foo, bar"
+} -start
+
+
+varnish v1 \
+	-storage "-spersistent,${tmpdir}/_.per,10m" \
+	-arg "-pban_lurker_sleep=0" \
+	-vcl+backend { } -start 
+
+client c1 {
+	txreq -url "/foo" -hdr "foo: 1" -hdr "bar: 2"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1001"
+	expect resp.http.foo == "foo1"
+
+	txreq -url "/foo" -hdr "foo: 2" -hdr "bar: 1"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1003"
+	expect resp.http.foo == "foo2"
+
+} -run
+
+varnish v1 -expect n_object == 2
+server s1 -wait
+
+varnish v1 -stop
+varnish v1 -start
+varnish v1 -cliok "debug.xid 1999"
+
+varnish v1 -expect n_vampireobject == 2
+
+client c1 {
+	txreq -url "/foo" -hdr "foo: 1" -hdr "bar: 2"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "2001 1002"
+	expect resp.http.foo == "foo1"
+
+	txreq -url "/foo" -hdr "foo: 2" -hdr "bar: 1"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "2002 1004"
+	expect resp.http.foo == "foo2"
+
+} -run

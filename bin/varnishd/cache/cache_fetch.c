@@ -307,6 +307,16 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 			AN(key);
 			assert(keyl == VSB_len(key));
 			l += keyl;
+		} else if (keyl < 0) {
+			/*
+			 * Key parse error
+			 * Complain about it, and make this a pass.
+			 */
+			VSLb(bo->vsl, SLT_Error,
+			    "Illegal 'Key' header from backend, "
+			    "making this a pass.");
+			bo->uncacheable = 1;
+			AZ(key);
 		} else {
 #endif
 			varyl = VRY_Create(bo, &vary);
