@@ -1,3 +1,7 @@
+// 
+// http://tools.ietf.org/html/draft-fielding-http-key-00
+//
+
 #include <stdio.h>
 //#include "config.h"
 
