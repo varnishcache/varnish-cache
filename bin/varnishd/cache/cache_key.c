@@ -257,13 +257,17 @@ KEY_Create(struct busyobj *bo, struct vsb **psb)
 			int size;
 			while (read = enum_matchers(q, &type, &match, &size)) {
 			    if (read < 0) {
-				// TODO: Cleanup allocations
+				VSLb(bo->vsl, SLT_Error, "Malformed Key header modifier");
 				error = 1;
-				return -1;
+				break;
+			    } else {
+				VSB_printf(sbm, "%c%.*s%c", type, size, match, 0);
+				q += read;
 			    }
-			    VSB_printf(sbm, "%c%.*s%c", type, size, match, 0);
-			    q += read;
 			}
+
+			if (error == 1)
+			    break;
 
 			AZ(VSB_finish(sbm));
 			l = VSB_len(sbm);
@@ -312,6 +316,7 @@ KEY_Create(struct busyobj *bo, struct vsb **psb)
 
 	if (error) {
 		VSB_delete(sbh);
+		VSB_delete(sbm);
 		VSB_delete(sb);
 		return (-1);
 	}
@@ -320,9 +325,11 @@ KEY_Create(struct busyobj *bo, struct vsb **psb)
 	VSB_printf(sb, "%c%c%c%c", 0xff, 0xff, 0, 0);
 
 	VSB_delete(sbh);
+	VSB_delete(sbm);
 	AZ(VSB_finish(sb));
 
 	if (KEY_Match(bo->bereq, VSB_data(sb)) == 0) {
+	    VSLb(bo->vsl, SLT_Error, "Cache key doesn't match request");
 	    return -1;
 	}
 
@@ -384,7 +391,7 @@ KEY_Match(struct http *http, const uint8_t *key)
 		} else if (key[2] == 1) {
 			char *e;
 			unsigned l = vbe16dec(key);
-			int not_flag = 1;
+			int not_flag = 0;
 			int case_flag = 0;
 
 			i = http_GetHdr(http, (const char*)(key+3), &h);
@@ -396,27 +403,31 @@ KEY_Match(struct http *http, const uint8_t *key)
 			const char *matcher = key + 4 + key[3] + 1;
 
 			while (*matcher != 0 && *matcher != -1) {
-			    if (*matcher == M_WORD) {
-				if (word_matcher(matcher + 1, h, strlen(matcher + 1), case_flag) ^ not_flag)
+			    char *m = matcher + 1;
+			    switch (matcher[0]) {
+				case M_WORD:
+				    if (!word_matcher(m, h, strlen(m), case_flag) ^ not_flag)
+					result = 0;
+				    break;
+				case M_SUBSTRING:
+				    if (!substring_matcher(m, h, strlen(m), case_flag) ^ not_flag)
+					result = 0;
+				    break;
+				case M_BEGINNING:
+				    if (!beginning_substring_matcher(m, h, strlen(m), case_flag) ^ not_flag)
+					result = 0;
+				    break;
+				case M_CASE:
+				    case_flag = 1;
+				    break;
+				case M_NOT:
+				    not_flag = 1;
+				    break;
+				default:
 				    result = 0;
-				matcher += strlen(matcher) + 1;
-			    } else if (*matcher == M_SUBSTRING) {
-				if (substring_matcher(matcher + 1, h, strlen(matcher + 1), case_flag) ^ not_flag)
-				    result = 0;
-				matcher += strlen(matcher) + 1;
-			    } else if (*matcher == M_BEGINNING) {
-				if (beginning_substring_matcher(matcher + 1, h, strlen(matcher + 1), case_flag) ^ not_flag)
-				    result = 0;
-				matcher += strlen(matcher) + 1;
-			    } else if (*matcher == M_CASE) {
-				case_flag = 1;
-				matcher += strlen(matcher) + 1;
-			    } else if (*matcher == M_NOT) {
-				not_flag = 0;
-				matcher += strlen(matcher) + 1;
-			    } else {
-				result = 0;
+				    break;
 			    }
+			    matcher += strlen(m) + 2;
 			}
 		}
 
