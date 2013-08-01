@@ -1,2 +1,4 @@
 ---
 script: 'make check'
+before_install:
+  - ./autogen.sh
