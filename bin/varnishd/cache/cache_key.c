@@ -135,10 +135,10 @@ int enum_fields(const char *fv, const char **m, int *s) {
 }
 
 int cmp_func(const char *str1, const char *str2, int size, int case_sensitive) {
-      if (case_sensitive == 1)
-	    return strncmp(str1, str2, size);
-      else
-	    return strncasecmp(str1, str2, size);
+	if (case_sensitive == 1)
+		return strncmp(str1, str2, size);
+	else
+		return strncasecmp(str1, str2, size);
 }
 
 int word_matcher(const char *p, const char *fv, int ps, int case_sensitive) {
