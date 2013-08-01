@@ -2,3 +2,4 @@
 script: 'make check'
 before_install:
   - ./autogen.sh
+  - ./configure --enable-key-header
