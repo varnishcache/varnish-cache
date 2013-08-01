@@ -15,194 +15,56 @@
 #define M_CASE		4
 #define M_NOT		5
 
-int
-key_ParseMatcher(const char *s, struct vsb **sb) {
-	const char *p = s;
+int enum_matchers(const char *matcher, int *type, const char **param, int *s) {
+	const char *p = matcher;
 	const char *e;
-	while (*p == ';') {
-		if (*p != ';')
-			return -1;
 
+	if (*p != ';')
+		return 0;
+
+	p++;
+
+	if (strncmp(p, "w=\"", 3) == 0) {
+		p += 3;
+		for (e = p; *e != '\"' || e[-1] == '\\'; e++)
+			continue;
+		*param = p;
+		*s = (int)(e-p);
+		*type = M_WORD;
+		p = e + 1;
+	} else if (strncmp(p, "s=\"", 3) == 0) {
+		p += 3;
+		for (e = p; *e != '\"' || e[-1] == '\\'; e++)
+			continue;
+		*param = p;
+		*s = (int)(e-p);
+		*type = M_SUBSTRING;
+		p = e + 1;
+	} else if (strncmp(p, "b=\"", 3) == 0) {
+		p += 3;
+		for (e = p; *e != '\"' || e[-1] == '\\'; e++)
+			continue;
+		*param = p;
+		*s = (int)(e-p);
+		*type = M_BEGINNING;
+		p = e + 1;
+	} else if (*p == 'c') {
+		*s = 0;
+		*type = M_CASE;
 		p++;
-
-		if (strncmp(p, "w=\"", 3) == 0) {
-			p += 3;
-			for (e = p; *e != '\"'; e++)
-				continue;
-			VSB_printf(*sb, "%c%.*s%c", M_WORD, (int)(e -p), p, 0);
-			p = e + 1;
-		} else if (strncmp(p, "s=\"", 3) == 0) {
-			p += 3;
-			for (e = p; *e != '\"'; e++)
-				continue;
-			VSB_printf(*sb, "%c%.*s%c", M_SUBSTRING, (int)(e -p), p, 0);
-			p = e + 1;
-		} else if (strncmp(p, "b=\"", 3) == 0) {
-			p += 3;
-			for (e = p; *e != '\"'; e++)
-				continue;
-			VSB_printf(*sb, "%c%.*s%c", M_BEGINNING, (int)(e -p), p, 0);
-			p = e + 1;
-		} else if (*p == 'c') {
-			VSB_printf(*sb, "%c", M_CASE);
-			p++;
-		} else if (*p == 'n') {
-			VSB_printf(*sb, "%c", M_NOT);
-			p++;
-		} else {
-			// Invalid matcher
-			return -1;
-		}
+	} else if (*p == 'n') {
+		*s = 0;
+		*type = M_NOT;
+		p++;
+	} else {
+		// Invalid matcher
+		return -1;
 	}
-	return p - s;
-}
-
-/*
- * Find length of a key entry
- */
-static unsigned
-key_len(const uint8_t *p)
-{
-	unsigned l = vbe16dec(p);
-
-	return (3 + p[3] + 2 + (l == 0xffff ? 0 : l));
-}
-
-int
-KEY_Create(struct busyobj *bo, struct vsb **psb)
-{
-	char *v, *h, *e, *p, *q;
-	struct vsb *sb, *sbh, *sbm;
-	unsigned l;
-	int matcher = 0;
-	int error = 0;
-
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->bereq, HTTP_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->beresp, HTTP_MAGIC);
-	AN(psb);
-	AZ(*psb);
-
-	if (!http_GetHdr(bo->beresp, "\4Key:", &v))
-		return (0);
-
-	sb = VSB_new_auto();
-	AN(sb);
-
-	/* For header matching strings */
-	sbh = VSB_new_auto();
-	AN(sbh);
-
-	/* For matcher strings */
-	sbm = VSB_new_auto();
-	AN(sbm);
-
-	for (p = v; *p; p++) {
-		/* Find next header-name */
-		if (vct_issp(*p))
-			continue;
-		for (q = p; *q && !vct_issp(*q) && *q != ',' && *q != ';'; q++)
-			continue;
-
-		if (q - p > INT8_MAX) {
-			VSLb(bo->vsl, SLT_Error,
-			    "Key header name length exceeded");
-			error = 1;
-			break;
-		}
-
-		/* Build header matching string */
-		VSB_clear(sbh);
-		VSB_printf(sbh, "%c%.*s:%c",
-		    (char)(1 + (q - p)), (int)(q - p), p, 0);
-		AZ(VSB_finish(sbh));
-
-		if (*q == ';') {
-			VSB_clear(sbm);
-			int ksize = key_ParseMatcher(q, &sbm);
-			if (ksize > 0)
-			    q += ksize;
-			else {
-			    // TODO: Cleanup allocations
-			    error = 1;
-			    return 0;
-			}
-			AZ(VSB_finish(sbm));
-			l = VSB_len(sbm);
-			e = h;
-			matcher = 1;
-		} else {
-			matcher = 0;
-			if (http_GetHdr(bo->bereq, VSB_data(sbh), &h)) {
-				AZ(vct_issp(*h));
-				/* Trim trailing space */
-				e = strchr(h, '\0');
-				while (e > h && vct_issp(e[-1]))
-					e--;
-				/* Encode two byte length and contents */
-				l = e - h;
-				if (l > 0xffff - 1) {
-					VSLb(bo->vsl, SLT_Error,
-					    "Vary header maximum length exceeded");
-					error = 1;
-					break;
-				}
-			} else {
-				e = h;
-				l = 0xffff;
-			}
-		}
-
-		VSB_printf(sb, "%c%c", (int)(l >> 8), (int)(l & 0xff));
-		VSB_printf(sb, "%c", matcher);
-		VSB_bcat(sb, VSB_data(sbh), VSB_len(sbh));
-		if (e != h)
-			VSB_bcat(sb, h, e - h);
-		if (matcher == 1)
-			VSB_bcat(sb, VSB_data(sbm), VSB_len(sbm));
-
-		if (*q == '\0')
-			break;
-		if (*q != ',') {
-			VSLb(bo->vsl, SLT_Error, "Malformed Key header");
-			error = 1;
-			break;
-		}
-
-		p = q;
-	}
-
-	if (error) {
-		VSB_delete(sbh);
-		VSB_delete(sb);
-		return (-1);
-	}
-
-	/* Terminate key matching string */
-	VSB_printf(sb, "%c%c%c%c", 0xff, 0xff, 0, 0);
-
-	VSB_delete(sbh);
-	AZ(VSB_finish(sb));
-
-	if (KEY_Match(bo->bereq, VSB_data(sb)) == 0) {
-	    return -1;
-	}
-
-	*psb = sb;
-	return (VSB_len(sb));
-}
-
-void
-KEY_Validate(const uint8_t *key)
-{
-	while (key[3] != 0) {
-		assert(strlen((const char*)key+4) == key[3]);
-		key += key_len(key);
-	}
+	return p - matcher;
 }
 
 int enum_fields(const char *fv, const char **m, int *s) {
-    const char *f = 0, *b = 0;
+    const char *f, *b;
     enum state {
 	start,
 	skip_space,
@@ -321,6 +183,156 @@ int beginning_substring_matcher(const char *p, const char *fv, int case_sensitiv
     return 0;
 }
 
+/*
+ * Find length of a key entry
+ */
+static unsigned
+key_len(const uint8_t *p)
+{
+	unsigned l = vbe16dec(p);
+
+	return (3 + p[3] + 2 + (l == 0xffff ? 0 : l));
+}
+
+int
+KEY_Create(struct busyobj *bo, struct vsb **psb)
+{
+	char *v, *h, *e, *p, *q;
+	struct vsb *sb, *sbh, *sbm;
+	unsigned l;
+	int matcher = 0;
+	int error = 0;
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->bereq, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->beresp, HTTP_MAGIC);
+	AN(psb);
+	AZ(*psb);
+
+	if (!http_GetHdr(bo->beresp, "\4Key:", &v))
+		return (0);
+
+	sb = VSB_new_auto();
+	AN(sb);
+
+	/* For header matching strings */
+	sbh = VSB_new_auto();
+	AN(sbh);
+
+	/* For matcher strings */
+	sbm = VSB_new_auto();
+	AN(sbm);
+
+	for (p = v; *p; p++) {
+		/* Find next header-name */
+		if (vct_issp(*p))
+			continue;
+		for (q = p; *q && !vct_issp(*q) && *q != ',' && *q != ';'; q++)
+			continue;
+
+		if (q - p > INT8_MAX) {
+			VSLb(bo->vsl, SLT_Error,
+			    "Key header name length exceeded");
+			error = 1;
+			break;
+		}
+
+		/* Build header matching string */
+		VSB_clear(sbh);
+		VSB_printf(sbh, "%c%.*s:%c",
+		    (char)(1 + (q - p)), (int)(q - p), p, 0);
+		AZ(VSB_finish(sbh));
+
+		if (*q == ';') {
+			VSB_clear(sbm);
+			int read;
+			int type;
+			const char *match;
+			int size;
+			while (read = enum_matchers(q, &type, &match, &size)) {
+			    if (read < 0) {
+				// TODO: Cleanup allocations
+				error = 1;
+				return 0;
+			    }
+			    VSB_printf(sbm, "%c%.*s%c", type, size, match, 0);
+			    q += read;
+			}
+
+			AZ(VSB_finish(sbm));
+			l = VSB_len(sbm);
+			e = h;
+			matcher = 1;
+		} else {
+			matcher = 0;
+			if (http_GetHdr(bo->bereq, VSB_data(sbh), &h)) {
+				AZ(vct_issp(*h));
+				/* Trim trailing space */
+				e = strchr(h, '\0');
+				while (e > h && vct_issp(e[-1]))
+					e--;
+				/* Encode two byte length and contents */
+				l = e - h;
+				if (l > 0xffff - 1) {
+					VSLb(bo->vsl, SLT_Error,
+					    "Vary header maximum length exceeded");
+					error = 1;
+					break;
+				}
+			} else {
+				e = h;
+				l = 0xffff;
+			}
+		}
+
+		VSB_printf(sb, "%c%c", (int)(l >> 8), (int)(l & 0xff));
+		VSB_printf(sb, "%c", matcher);
+		VSB_bcat(sb, VSB_data(sbh), VSB_len(sbh));
+		if (e != h)
+			VSB_bcat(sb, h, e - h);
+		if (matcher == 1)
+			VSB_bcat(sb, VSB_data(sbm), VSB_len(sbm));
+
+		if (*q == '\0')
+			break;
+		if (*q != ',') {
+			VSLb(bo->vsl, SLT_Error, "Malformed Key header");
+			error = 1;
+			break;
+		}
+
+		p = q;
+	}
+
+	if (error) {
+		VSB_delete(sbh);
+		VSB_delete(sb);
+		return (-1);
+	}
+
+	/* Terminate key matching string */
+	VSB_printf(sb, "%c%c%c%c", 0xff, 0xff, 0, 0);
+
+	VSB_delete(sbh);
+	AZ(VSB_finish(sb));
+
+	if (KEY_Match(bo->bereq, VSB_data(sb)) == 0) {
+	    return -1;
+	}
+
+	*psb = sb;
+	return (VSB_len(sb));
+}
+
+void
+KEY_Validate(const uint8_t *key)
+{
+	while (key[3] != 0) {
+		assert(strlen((const char*)key+4) == key[3]);
+		key += key_len(key);
+	}
+}
+
 int
 KEY_Match(struct http *http, const uint8_t *key)
 {
@@ -392,10 +404,10 @@ KEY_Match(struct http *http, const uint8_t *key)
 				matcher += strlen(matcher) + 1;
 			    } else if (*matcher == M_CASE) {
 				case_flag = 1;
-				matcher++;
+				matcher += strlen(matcher) + 1;
 			    } else if (*matcher == M_NOT) {
 				not_flag = 0;
-				matcher++;
+				matcher += strlen(matcher) + 1;
 			    } else {
 				result = 0;
 			    }
