@@ -1,8 +1,7 @@
-// 
+//
 // http://tools.ietf.org/html/draft-fielding-http-key-00
 //
 
-#include <stdio.h>
 //#include "config.h"
 
 #include "cache.h"
@@ -13,12 +12,8 @@
 #define M_WORD		1
 #define M_SUBSTRING	2
 #define M_BEGINNING	3
-#define M_PARAMETER	4
-#define M_CASE		5
-#define M_NOT		6
-
-#define DEBUG_CREATE 0
-#define DEBUG_MATCH 0
+#define M_CASE		4
+#define M_NOT		5
 
 int
 key_ParseMatcher(const char *s, struct vsb **sb) {
@@ -31,35 +26,27 @@ key_ParseMatcher(const char *s, struct vsb **sb) {
 		p++;
 
 		if (strncmp(p, "w=\"", 3) == 0) {
-			DEBUG_CREATE && printf("   WORD: (");
 			p += 3;
 			for (e = p; *e != '\"'; e++)
 				continue;
-			DEBUG_CREATE && printf("%.*s)\n", (int)(e - p), p);
 			VSB_printf(*sb, "%c%.*s%c", M_WORD, (int)(e -p), p, 0);
 			p = e + 1;
 		} else if (strncmp(p, "s=\"", 3) == 0) {
-			DEBUG_CREATE && printf("   SUBSTRING: (");
 			p += 3;
 			for (e = p; *e != '\"'; e++)
 				continue;
-			DEBUG_CREATE && printf("%.*s)\n", (int)(e - p), p);
 			VSB_printf(*sb, "%c%.*s%c", M_SUBSTRING, (int)(e -p), p, 0);
 			p = e + 1;
 		} else if (strncmp(p, "b=\"", 3) == 0) {
-			DEBUG_CREATE && printf("   BEGINNING SUBSTRING: (");
 			p += 3;
 			for (e = p; *e != '\"'; e++)
 				continue;
-			DEBUG_CREATE && printf("%.*s)\n", (int)(e - p), p);
 			VSB_printf(*sb, "%c%.*s%c", M_BEGINNING, (int)(e -p), p, 0);
 			p = e + 1;
 		} else if (*p == 'c') {
-			DEBUG_CREATE && printf("   CASE\n");
 			VSB_printf(*sb, "%c", M_CASE);
 			p++;
 		} else if (*p == 'n') {
-			DEBUG_CREATE && printf("   NOT\n");
 			VSB_printf(*sb, "%c", M_NOT);
 			p++;
 		} else {
@@ -84,8 +71,7 @@ key_len(const uint8_t *p)
 int
 KEY_Create(struct busyobj *bo, struct vsb **psb)
 {
-	DEBUG_CREATE && printf("KEY_Create(bo: %p, psb: %p)\n", bo, *psb);
-	char *v, *h, *e, *p, *q, *m, *mm, *me;
+	char *v, *h, *e, *p, *q;
 	struct vsb *sb, *sbh, *sbm;
 	unsigned l;
 	int matcher = 0;
@@ -131,9 +117,6 @@ KEY_Create(struct busyobj *bo, struct vsb **psb)
 		    (char)(1 + (q - p)), (int)(q - p), p, 0);
 		AZ(VSB_finish(sbh));
 
-		DEBUG_CREATE && printf(" - Entry: %.*s\n", (int)(q - p), p);
-
-		// Using matchers
 		if (*q == ';') {
 			VSB_clear(sbm);
 			int ksize = key_ParseMatcher(q, &sbm);
@@ -141,7 +124,6 @@ KEY_Create(struct busyobj *bo, struct vsb **psb)
 			    q += ksize;
 			else {
 			    // TODO: Cleanup allocations
-			    printf("ERROR\n");
 			    error = 1;
 			    return 0;
 			}
@@ -149,7 +131,6 @@ KEY_Create(struct busyobj *bo, struct vsb **psb)
 			l = VSB_len(sbm);
 			e = h;
 			matcher = 1;
-		// Exact match
 		} else {
 			matcher = 0;
 			if (http_GetHdr(bo->bereq, VSB_data(sbh), &h)) {
@@ -163,7 +144,7 @@ KEY_Create(struct busyobj *bo, struct vsb **psb)
 				if (l > 0xffff - 1) {
 					VSLb(bo->vsl, SLT_Error,
 					    "Vary header maximum length exceeded");
-					//error = 1;
+					error = 1;
 					break;
 				}
 			} else {
@@ -172,11 +153,8 @@ KEY_Create(struct busyobj *bo, struct vsb **psb)
 			}
 		}
 
-		// Length
 		VSB_printf(sb, "%c%c", (int)(l >> 8), (int)(l & 0xff));
-		// Type
 		VSB_printf(sb, "%c", matcher);
-		/* Append to key matching string */
 		VSB_bcat(sb, VSB_data(sbh), VSB_len(sbh));
 		if (e != h)
 			VSB_bcat(sb, h, e - h);
@@ -211,7 +189,6 @@ KEY_Create(struct busyobj *bo, struct vsb **psb)
 	}
 
 	*psb = sb;
-	DEBUG_CREATE && printf("KEY_Create(bo: %p, psb: %p) = %zu\n", bo, *psb, VSB_len(sb));
 	return (VSB_len(sb));
 }
 
@@ -225,7 +202,7 @@ KEY_Validate(const uint8_t *key)
 }
 
 int enum_fields(const char *fv, const char **m, int *s) {
-    const char *f, *b;
+    const char *f = 0, *b = 0;
     enum state {
 	start,
 	skip_space,
@@ -296,7 +273,7 @@ int cmp_func(const char *str1, const char *str2, int size, int case_sensitive) {
     return strncasecmp(str1, str2, size);
 }
 
-int word_matcher(char *p, char *fv, int case_sensitive) {
+int word_matcher(const char *p, const char *fv, int case_sensitive) {
     int read, size, offset = 0;
     const char *match;
 
@@ -311,7 +288,7 @@ int word_matcher(char *p, char *fv, int case_sensitive) {
     return 0;
 }
 
-int substring_matcher(char *p, char *fv, int case_sensitive) {
+int substring_matcher(const char *p, const char *fv, int case_sensitive) {
     int read, size, offset = 0;
     const char *match;
 
@@ -329,7 +306,7 @@ int substring_matcher(char *p, char *fv, int case_sensitive) {
     return 0;
 }
 
-int beginning_substring_matcher(char *p, char *fv, int case_sensitive) {
+int beginning_substring_matcher(const char *p, const char *fv, int case_sensitive) {
     int read, size, offset = 0;
     const char *match;
 
@@ -347,8 +324,6 @@ int beginning_substring_matcher(char *p, char *fv, int case_sensitive) {
 int
 KEY_Match(struct http *http, const uint8_t *key)
 {
-	DEBUG_MATCH && printf("KEY_Match(http: %p, key: %p)\n", http, key);
-
 	char *h;
 	int i;
 	int result = 1;
@@ -362,59 +337,33 @@ KEY_Match(struct http *http, const uint8_t *key)
 			char *e;
 			unsigned l = vbe16dec(key);
 
-			DEBUG_MATCH && printf(" Header (Exact): %s\n", key + 4);
-
 			i = http_GetHdr(http, (const char*)(key+3), &h);
 
 			if (l == 0xFFFF) {
-			    // Expect missing
-			    if (i == 0) {
-				// Expected missing, is missing
-				DEBUG_MATCH && printf("   * Expected missing, is missing\n");
-			    } else {
-				// Expected missing, is present
-				DEBUG_MATCH && printf("   * Expected missing, is present\n");
+			    if (i != 0)
 				result = 0;
-			    }
 			} else {
-			    // Expect present
 			    const char *value = key + 4 + key[3] + 1;
-			    DEBUG_MATCH && printf(" - Value: %.*s\n", l, value);
 
 			    if (i == 0) {
-				// Expected present, is missing
-				DEBUG_MATCH && printf("   * Expected present, is missing\n");
 				result = 0;
 			    } else {
-				// Expected present, is present
-				DEBUG_MATCH && printf("   * Expected present, is present\n");
-
 				AZ(vct_issp(*h));
 				/* Trim trailing space */
 				e = strchr(h, '\0');
 				while (e > h && vct_issp(e[-1]))
 					e--;
 
-				if (l != (int)(e - h)) {
-				    // Different lengths, no match
-				    DEBUG_MATCH && printf("   * Different lengths, no match\n");
+				if (l != (int)(e - h))
 				    result = 0;
-				} else {
-				    if (memcmp(h, value, l) == 0) {
-					// Same length, match
-					DEBUG_MATCH && printf("   * Same length, match\n");
-				    } else {
-					// Same length, no match
-					DEBUG_MATCH && printf("   * Same length, no match\n");
+				else
+				    if (memcmp(h, value, l) != 0)
 					result = 0;
-				    }
-				}
 			    }
 			}
 
 		// Matcher match
 		} else if (key[2] == 1) {
-			DEBUG_MATCH && printf(" Header (Matcher): %s\n", key + 4);
 			char *e;
 			unsigned l = vbe16dec(key);
 			int not_flag = 1;
@@ -430,42 +379,24 @@ KEY_Match(struct http *http, const uint8_t *key)
 
 			while (*matcher != 0 && *matcher != -1) {
 			    if (*matcher == M_WORD) {
-				DEBUG_MATCH && printf("  - %sWord: \"%s\" ", not_flag ? "" : "Not ", matcher + 1);
-				if (word_matcher(matcher + 1, h, case_flag) ^ not_flag) {
-				    DEBUG_MATCH && printf("NG\n");
+				if (word_matcher(matcher + 1, h, case_flag) ^ not_flag)
 				    result = 0;
-				} else {
-				    DEBUG_MATCH && printf("OK\n");
-				}
 				matcher += strlen(matcher) + 1;
 			    } else if (*matcher == M_SUBSTRING) {
-				DEBUG_MATCH && printf("  - %sSubstring: \"%s\" ", not_flag ? "" : "Not ", matcher + 1);
-				if (substring_matcher(matcher + 1, h, case_flag) ^ not_flag) {
-				    DEBUG_MATCH && printf("NG\n");
+				if (substring_matcher(matcher + 1, h, case_flag) ^ not_flag)
 				    result = 0;
-				} else {
-				    DEBUG_MATCH && printf("OK\n");
-				}
 				matcher += strlen(matcher) + 1;
 			    } else if (*matcher == M_BEGINNING) {
-				DEBUG_MATCH && printf("  - %sBeginning: \"%s\" ", not_flag ? "" : "Not ", matcher + 1);
-				if (beginning_substring_matcher(matcher + 1, h, case_flag) ^ not_flag) {
-				    DEBUG_MATCH && printf("NG\n");
+				if (beginning_substring_matcher(matcher + 1, h, case_flag) ^ not_flag)
 				    result = 0;
-				} else {
-				    DEBUG_MATCH && printf("OK\n");
-				}
 				matcher += strlen(matcher) + 1;
 			    } else if (*matcher == M_CASE) {
-				DEBUG_MATCH && printf("  - Case\n");
 				case_flag = 1;
 				matcher++;
 			    } else if (*matcher == M_NOT) {
-				DEBUG_MATCH && printf("  - Not\n");
 				not_flag = 0;
 				matcher++;
 			    } else {
-				DEBUG_MATCH && printf("UNKNOWN MATCHER (%d)\n", *matcher);
 				result = 0;
 			    }
 			}
@@ -474,6 +405,5 @@ KEY_Match(struct http *http, const uint8_t *key)
 		key += key_len(key);
 	}
 
-	DEBUG_MATCH && printf("KEY_Match(http: %p, key: %p) = 1\n", http, key);
 	return result;
 }
