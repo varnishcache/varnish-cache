@@ -14,6 +14,7 @@
 #define M_BEGINNING	3
 #define M_CASE		4
 #define M_NOT		5
+#define M_PARAMETER	6
 
 int enum_matchers(const char *matcher, int *type, const char **param, int *s) {
 	const char *p = matcher;
@@ -53,6 +54,16 @@ int enum_matchers(const char *matcher, int *type, const char **param, int *s) {
 		*param = p;
 		*s = (int)(e-p);
 		*type = M_BEGINNING;
+		p = e + 1;
+	} else if (strncmp(p, "p=\"", 3) == 0) {
+		p += 3;
+		for (e = p; *e && (*e != '\"' || e[-1] == '\\'); e++)
+			continue;
+		if (!*e)
+			return -1;
+		*param = p;
+		*s = (int)(e-p);
+		*type = M_PARAMETER;
 		p = e + 1;
 	} else if (*p == 'c') {
 		*s = 0;
@@ -182,6 +193,25 @@ int beginning_substring_matcher(const char *p, const char *fv, int ps, int case_
 		if (ps <= size) {
 			if (cmp_func(match, p, ps, case_sensitive) == 0) {
 				return 1;
+			}
+		}
+		offset += read;
+	}
+	return 0;
+}
+
+int parameter_prefix_matcher(const char *p, const char *fv, int ps, int case_sensitive) {
+	int read, size, offset = 0;
+	const char *match;
+
+	while (read = enum_fields(fv + offset, &match, &size)) {
+		if (ps <= size) {
+			if (cmp_func(match, p, ps, case_sensitive) == 0) {
+				char *r;
+				for (r = match + ps; r < match + size && *r == ' '; r++)
+					continue;
+				if (*r == ';' || r == match + size)
+					return 1;
 			}
 		}
 		offset += read;
