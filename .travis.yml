@@ -1,6 +1,6 @@
 ---
 script: 'make check'
 before_install:
-  - sudo apt-get install python-docutilst
+  - sudo apt-get install python-docutils
   - ./autogen.sh
   - ./configure --enable-key-header
