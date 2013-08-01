@@ -207,7 +207,7 @@ int parameter_prefix_matcher(const char *p, const char *fv, int ps, int case_sen
 	while (read = enum_fields(fv + offset, &match, &size)) {
 		if (ps <= size) {
 			if (cmp_func(match, p, ps, case_sensitive) == 0) {
-				char *r;
+				const char *r;
 				for (r = match + ps; r < match + size && *r == ' '; r++)
 					continue;
 				if (*r == ';' || r == match + size)
