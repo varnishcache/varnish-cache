@@ -1,5 +1,5 @@
 //
-// http://tools.ietf.org/html/draft-fielding-http-key-00
+// http://tools.ietf.org/html/draft-fielding-http-key-01
 //
 
 #include "config.h"
@@ -446,6 +446,10 @@ KEY_Match(struct http *http, const uint8_t *key)
 						break;
 					case M_BEGINNING:
 						if (!beginning_substring_matcher(m, h, strlen(m), case_flag) ^ not_flag)
+							result = 0;
+						break;
+					case M_PARAMETER:
+						if (!parameter_prefix_matcher(m, h, strlen(m), case_flag) ^ not_flag)
 							result = 0;
 						break;
 					case M_CASE:
