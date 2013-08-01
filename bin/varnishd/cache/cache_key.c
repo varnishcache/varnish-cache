@@ -269,35 +269,124 @@ KEY_Validate(const uint8_t *key)
 	}
 }
 
-int word_match(char *param, char *string) {
-  char *p = strstr(string, param);
+int enum_fields(const char *fv, const char **m, int *s) {
+    const char *f, *b;
+    enum state {
+	start,
+	skip_space,
+	scan,
+	scan_quote,
+	scan_back,
+	done,
+	end
+    } cur_state = start;
 
-  if (p == 0)
+    do {
+	switch (cur_state) {
+	    case start:
+		f = fv;
+		cur_state = skip_space;
+		break;
+	    case skip_space:
+		if (*f == '\0')
+		    cur_state = end;
+		else if (*f == ' ' || *f == ',')
+		    f++;
+		else if (*f == '"') {
+		    b = f;
+		    cur_state = scan_quote;
+		} else {
+		    b = f;
+		    cur_state = scan;
+		}
+		break;
+	    case scan:
+		b++;
+		if (*b == '\0')
+		    cur_state = scan_back;
+		else if (*b == '"')
+		    cur_state = scan_quote;
+		else if (*b == ',')
+		    cur_state = scan_back;
+		break;
+	    case scan_quote:
+		b++;
+		if (*b == '\0')
+		    cur_state = scan_back;
+		else if (*b == '\\' && b[1] != '\0')
+		    b += 2;
+		else if (*b == '"')
+		    cur_state = scan;
+		break;
+	    case scan_back:
+		b--;
+		if (*b != ' ')
+		    cur_state = done;
+		break;
+	    case done:
+		*m = f;
+		*s = (int)(b-f)+1;
+		return b - fv + 1;
+		break;
+	}
+    } while (cur_state != end);
+
     return 0;
-
-  if (p != string)
-    if (p[-1] != ' ' && p[-1] != ',')
-      return 0;
-
-  char *r = p + strlen(param);
-  if (r < string + strlen(string))
-    if (r[0] != ' ' && r[0] != ',')
-      return 0;
-
-  return 1;
 }
 
-int beginning_substring_match(char *param, char *string) {
-  char *p = strstr(string, param);
+int cmp_func(const char *str1, const char *str2, int size, int case_sensitive) {
+  if (case_sensitive == 1)
+    return strncmp(str1, str2, size);
+  else
+    return strncasecmp(str1, str2, size);
+}
 
-  if (p == 0)
+int word_matcher(char *p, char *fv, int case_sensitive) {
+    int read, size, offset = 0;
+    const char *match;
+
+    while (read = enum_fields(fv + offset, &match, &size)) {
+	if (strlen(p) == size) {
+	    if (cmp_func(match, p, size, case_sensitive) == 0) {
+		return 1;
+	    }
+	}
+	offset += read;
+    }
     return 0;
+}
 
-  if (p != string)
-    if (p[-1] != ' ' && p[-1] != ',')
-      return 0;
+int substring_matcher(char *p, char *fv, int case_sensitive) {
+    int read, size, offset = 0;
+    const char *match;
 
-  return 1;
+    while (read = enum_fields(fv + offset, &match, &size)) {
+	if (strlen(p) <= size) {
+	    const char *s;
+	    for (s = match; s <= match + size - strlen(p); s++) {
+		if (cmp_func(s, p, strlen(p), case_sensitive) == 0) {
+		    return 1;
+		}
+	    }
+	}
+	offset += read;
+    }
+    return 0;
+}
+
+int beginning_substring_matcher(char *p, char *fv, int case_sensitive) {
+    int read, size, offset = 0;
+    const char *match;
+
+    while (read = enum_fields(fv + offset, &match, &size)) {
+	if (strlen(p) <= size) {
+	    if (cmp_func(match, p, strlen(p), case_sensitive) == 0) {
+		return 1;
+	    }
+	}
+	offset += read;
+    }
+    return 0;
 }
 
 int
@@ -374,6 +463,7 @@ KEY_Match(struct http *http, const uint8_t *key)
 			char *e;
 			unsigned l = vbe16dec(key);
 			int not_flag = 1;
+			int case_flag = 0;
 
 			i = http_GetHdr(http, (const char*)(key+3), &h);
 
@@ -386,7 +476,16 @@ KEY_Match(struct http *http, const uint8_t *key)
 			while (*matcher != 0 && *matcher != -1) {
 			    if (*matcher == M_WORD) {
 				DEBUG_MATCH && printf("  - %sWord: \"%s\" ", not_flag ? "" : "Not ", matcher + 1);
-				if (word_match(matcher + 1, h) ^ not_flag) {
+				if (word_matcher(matcher + 1, h, case_flag) ^ not_flag) {
+				    DEBUG_MATCH && printf("NG\n");
+				    result = 0;
+				} else {
+				    DEBUG_MATCH && printf("OK\n");
+				}
+				matcher += strlen(matcher) + 1;
+			    } else if (*matcher == M_SUBSTRING) {
+				DEBUG_MATCH && printf("  - %sSubstring: \"%s\" ", not_flag ? "" : "Not ", matcher + 1);
+				if (substring_matcher(matcher + 1, h, case_flag) ^ not_flag) {
 				    DEBUG_MATCH && printf("NG\n");
 				    result = 0;
 				} else {
@@ -395,7 +494,7 @@ KEY_Match(struct http *http, const uint8_t *key)
 				matcher += strlen(matcher) + 1;
 			    } else if (*matcher == M_BEGINNING) {
 				DEBUG_MATCH && printf("  - %sBeginning: \"%s\" ", not_flag ? "" : "Not ", matcher + 1);
-				if (beginning_substring_match(matcher + 1, h) ^ not_flag) {
+				if (beginning_substring_matcher(matcher + 1, h, case_flag) ^ not_flag) {
 				    DEBUG_MATCH && printf("NG\n");
 				    result = 0;
 				} else {
@@ -404,6 +503,7 @@ KEY_Match(struct http *http, const uint8_t *key)
 				matcher += strlen(matcher) + 1;
 			    } else if (*matcher == M_CASE) {
 				DEBUG_MATCH && printf("  - Case\n");
+				case_flag = 1;
 				matcher++;
 			    } else if (*matcher == M_NOT) {
 				DEBUG_MATCH && printf("  - Not\n");

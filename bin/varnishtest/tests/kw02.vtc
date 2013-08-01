@@ -1,0 +1,20 @@
+varnishtest "Test Key matcher functionality (WORD)"
+
+server s1 {
+	rxreq
+	txresp -hdr "Key: Foobar;w=\"A\";w=\"B\";w=\"C\""
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq -hdr "Foobar: A,B,C"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1001"
+
+	txreq -hdr "Foobar: C,A,B"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1003 1002"
+} -run
