@@ -2,20 +2,20 @@ varnishtest "Test Key matcher functionality"
 
 server s1 {
 	rxreq
-	txresp -hdr "Key: Foobar;w=\"\\a\""
+	txresp -hdr "Key: Foobar;w=\"a\""
 	rxreq
-	txresp -hdr "Key: Foobar;w=\"\\a\""
+	txresp -hdr "Key: Foobar;w=\"a\""
 } -start
 
 varnish v1 -vcl+backend {} -start
 
 client c1 {
-	txreq -hdr "Foobar: \\a"
+	txreq -hdr "Foobar: a,b"
 	rxresp
 	expect resp.status == 200
 	expect resp.http.X-Varnish == "1001"
 
-	txreq -hdr "Foobar: \\a"
+	txreq -hdr "Foobar: a,b"
 	rxresp
 	expect resp.status == 200
 	expect resp.http.X-Varnish == "1003 1002"

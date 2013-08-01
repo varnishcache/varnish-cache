@@ -219,6 +219,33 @@ int parameter_prefix_matcher(const char *p, const char *fv, int ps, int case_sen
 	return 0;
 }
 
+int unescape(char *dst, const char *src, int len) {
+	int i, j;
+	i = j = 0;
+	while (i < len) {
+		switch (src[i]) {
+			case '\\':
+				switch(src[++i]) {
+					case '\"':
+						dst[j++] = '\"';
+						i++;
+						break;
+					default:
+						dst[j++] = '\\';
+						dst[j] = src[i];
+						break;
+				}
+				break;
+			default:
+				dst[j] = src[i];
+				i++;
+				j++;
+				break;
+		}
+	}
+	return j;
+}
+
 /*
  * Find length of a key entry
  */
@@ -291,7 +318,15 @@ KEY_Create(struct busyobj *bo, struct vsb **psb)
 					error = 1;
 					break;
 				} else {
-					VSB_printf(sbm, "%c%.*s%c", type, size, match, 0);
+					// Crazy complicated unescape
+					struct vsb *sbtmp = VSB_new_auto();
+					AN(sbtmp);
+					VSB_printf(sbtmp, "%.*s", size, match);
+					AZ(VSB_finish(sbtmp));
+					int ms = unescape(VSB_data(sbtmp), VSB_data(sbtmp), size);
+					VSB_printf(sbm, "%c%.*s%c", type, ms, VSB_data(sbtmp), 0);
+					VSB_delete(sbtmp);
+
 					q += read;
 				}
 			}
