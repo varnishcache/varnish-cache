@@ -2,7 +2,7 @@
 // http://tools.ietf.org/html/draft-fielding-http-key-00
 //
 
-//#include "config.h"
+#include "config.h"
 
 #include "cache.h"
 
@@ -330,6 +330,7 @@ KEY_Create(struct busyobj *bo, struct vsb **psb)
 
 	if (KEY_Match(bo->bereq, VSB_data(sb)) == 0) {
 	    VSLb(bo->vsl, SLT_Error, "Cache key doesn't match request");
+	    VSB_delete(sb);
 	    return -1;
 	}
 
