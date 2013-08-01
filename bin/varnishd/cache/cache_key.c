@@ -70,123 +70,123 @@ int enum_matchers(const char *matcher, int *type, const char **param, int *s) {
 }
 
 int enum_fields(const char *fv, const char **m, int *s) {
-    const char *f, *b;
-    enum state {
-	start,
-	skip_space,
-	scan,
-	scan_quote,
-	scan_back,
-	done,
-	end
-    } cur_state = start;
+	const char *f, *b;
+	enum state {
+		start,
+		skip_space,
+		scan,
+		scan_quote,
+		scan_back,
+		done,
+		end
+	} cur_state = start;
 
-    do {
-	switch (cur_state) {
-	    case start:
-		f = fv;
-		cur_state = skip_space;
-		break;
-	    case skip_space:
-		if (*f == '\0')
-		    cur_state = end;
-		else if (*f == ' ' || *f == ',')
-		    f++;
-		else if (*f == '"') {
-		    b = f;
-		    cur_state = scan_quote;
-		} else {
-		    b = f;
-		    cur_state = scan;
+	do {
+		switch (cur_state) {
+			case start:
+				f = fv;
+				cur_state = skip_space;
+				break;
+			case skip_space:
+				if (*f == '\0')
+					cur_state = end;
+				else if (*f == ' ' || *f == ',')
+					f++;
+				else if (*f == '"') {
+					b = f;
+					cur_state = scan_quote;
+				} else {
+					b = f;
+					cur_state = scan;
+				}
+				break;
+			case scan:
+				b++;
+				if (*b == '\0')
+					cur_state = scan_back;
+				else if (*b == '"')
+					cur_state = scan_quote;
+				else if (*b == ',')
+					cur_state = scan_back;
+				break;
+			case scan_quote:
+				b++;
+				if (*b == '\0')
+					cur_state = scan_back;
+				else if (*b == '\\' && b[1] != '\0')
+					b++;
+				else if (*b == '"')
+					cur_state = scan;
+				break;
+			case scan_back:
+				b--;
+				if (*b != ' ')
+					cur_state = done;
+				break;
+			case done:
+				*m = f;
+				*s = (int)(b-f)+1;
+				return b - fv + 1;
+				break;
 		}
-		break;
-	    case scan:
-		b++;
-		if (*b == '\0')
-		    cur_state = scan_back;
-		else if (*b == '"')
-		    cur_state = scan_quote;
-		else if (*b == ',')
-		    cur_state = scan_back;
-		break;
-	    case scan_quote:
-		b++;
-		if (*b == '\0')
-		    cur_state = scan_back;
-		else if (*b == '\\' && b[1] != '\0')
-		    b++;
-		else if (*b == '"')
-		    cur_state = scan;
-		break;
-	    case scan_back:
-		b--;
-		if (*b != ' ')
-		    cur_state = done;
-		break;
-	    case done:
-		*m = f;
-		*s = (int)(b-f)+1;
-		return b - fv + 1;
-		break;
-	}
-    } while (cur_state != end);
+	} while (cur_state != end);
 
-    return 0;
+	return 0;
 }
 
 int cmp_func(const char *str1, const char *str2, int size, int case_sensitive) {
-  if (case_sensitive == 1)
-    return strncmp(str1, str2, size);
-  else
-    return strncasecmp(str1, str2, size);
+      if (case_sensitive == 1)
+	    return strncmp(str1, str2, size);
+      else
+	    return strncasecmp(str1, str2, size);
 }
 
 int word_matcher(const char *p, const char *fv, int ps, int case_sensitive) {
-    int read, size, offset = 0;
-    const char *match;
+	int read, size, offset = 0;
+	const char *match;
 
-    while (read = enum_fields(fv + offset, &match, &size)) {
-	if (ps == size) {
-	    if (cmp_func(match, p, size, case_sensitive) == 0) {
-		return 1;
-	    }
+	while (read = enum_fields(fv + offset, &match, &size)) {
+		if (ps == size) {
+			if (cmp_func(match, p, size, case_sensitive) == 0) {
+				return 1;
+			}
+		}
+		offset += read;
 	}
-	offset += read;
-    }
-    return 0;
+	return 0;
 }
 
 int substring_matcher(const char *p, const char *fv, int ps, int case_sensitive) {
-    int read, size, offset = 0;
-    const char *match;
+	int read, size, offset = 0;
+	const char *match;
 
-    while (read = enum_fields(fv + offset, &match, &size)) {
-	if (strlen(p) <= size) {
-	    const char *s;
-	    for (s = match; s <= match + size - ps; s++) {
-		if (cmp_func(s, p, ps, case_sensitive) == 0) {
-		    return 1;
+	while (read = enum_fields(fv + offset, &match, &size)) {
+		if (strlen(p) <= size) {
+			const char *s;
+			for (s = match; s <= match + size - ps; s++) {
+				if (cmp_func(s, p, ps, case_sensitive) == 0) {
+					return 1;
+				}
+			}
 		}
-	    }
+		offset += read;
 	}
-	offset += read;
-    }
-    return 0;
+	return 0;
 }
 
 int beginning_substring_matcher(const char *p, const char *fv, int ps, int case_sensitive) {
-    int read, size, offset = 0;
-    const char *match;
+	int read, size, offset = 0;
+	const char *match;
 
-    while (read = enum_fields(fv + offset, &match, &size)) {
-	if (ps <= size) {
-	    if (cmp_func(match, p, ps, case_sensitive) == 0) {
-		return 1;
-	    }
+	while (read = enum_fields(fv + offset, &match, &size)) {
+		if (ps <= size) {
+			if (cmp_func(match, p, ps, case_sensitive) == 0) {
+				return 1;
+			}
+		}
+		offset += read;
 	}
-	offset += read;
-    }
-    return 0;
+	return 0;
 }
 
 /*
@@ -256,18 +256,18 @@ KEY_Create(struct busyobj *bo, struct vsb **psb)
 			const char *match;
 			int size;
 			while (read = enum_matchers(q, &type, &match, &size)) {
-			    if (read < 0) {
-				VSLb(bo->vsl, SLT_Error, "Malformed Key header modifier");
-				error = 1;
-				break;
-			    } else {
-				VSB_printf(sbm, "%c%.*s%c", type, size, match, 0);
-				q += read;
-			    }
+				if (read < 0) {
+					VSLb(bo->vsl, SLT_Error, "Malformed Key header modifier");
+					error = 1;
+					break;
+				} else {
+					VSB_printf(sbm, "%c%.*s%c", type, size, match, 0);
+					q += read;
+				}
 			}
 
 			if (error == 1)
-			    break;
+				break;
 
 			AZ(VSB_finish(sbm));
 			l = VSB_len(sbm);
@@ -329,9 +329,9 @@ KEY_Create(struct busyobj *bo, struct vsb **psb)
 	AZ(VSB_finish(sb));
 
 	if (KEY_Match(bo->bereq, VSB_data(sb)) == 0) {
-	    VSLb(bo->vsl, SLT_Error, "Cache key doesn't match request");
-	    VSB_delete(sb);
-	    return -1;
+		VSLb(bo->vsl, SLT_Error, "Cache key doesn't match request");
+		VSB_delete(sb);
+		return -1;
 	}
 
 	*psb = sb;
@@ -366,26 +366,26 @@ KEY_Match(struct http *http, const uint8_t *key)
 			i = http_GetHdr(http, (const char*)(key+3), &h);
 
 			if (l == 0xFFFF) {
-			    if (i != 0)
-				result = 0;
-			} else {
-			    const char *value = key + 4 + key[3] + 1;
-
-			    if (i == 0) {
-				result = 0;
-			    } else {
-				AZ(vct_issp(*h));
-				/* Trim trailing space */
-				e = strchr(h, '\0');
-				while (e > h && vct_issp(e[-1]))
-					e--;
-
-				if (l != (int)(e - h))
-				    result = 0;
-				else
-				    if (memcmp(h, value, l) != 0)
+				if (i != 0)
 					result = 0;
-			    }
+			} else {
+				const char *value = key + 4 + key[3] + 1;
+
+				if (i == 0) {
+					result = 0;
+				} else {
+					AZ(vct_issp(*h));
+					/* Trim trailing space */
+					e = strchr(h, '\0');
+					while (e > h && vct_issp(e[-1]))
+						e--;
+
+					if (l != (int)(e - h))
+						result = 0;
+					else
+						if (memcmp(h, value, l) != 0)
+							result = 0;
+				}
 			}
 
 		// Matcher match
@@ -399,36 +399,36 @@ KEY_Match(struct http *http, const uint8_t *key)
 
 			// TODO: Perhaps not matcher should allow this
 			if (i == 0)
-			    return 0;
+				return 0;
 
 			const char *matcher = key + 4 + key[3] + 1;
 
 			while (*matcher != 0 && *matcher != -1) {
-			    char *m = matcher + 1;
-			    switch (matcher[0]) {
-				case M_WORD:
-				    if (!word_matcher(m, h, strlen(m), case_flag) ^ not_flag)
-					result = 0;
-				    break;
-				case M_SUBSTRING:
-				    if (!substring_matcher(m, h, strlen(m), case_flag) ^ not_flag)
-					result = 0;
-				    break;
-				case M_BEGINNING:
-				    if (!beginning_substring_matcher(m, h, strlen(m), case_flag) ^ not_flag)
-					result = 0;
-				    break;
-				case M_CASE:
-				    case_flag = 1;
-				    break;
-				case M_NOT:
-				    not_flag = 1;
-				    break;
-				default:
-				    result = 0;
-				    break;
-			    }
-			    matcher += strlen(m) + 2;
+				char *m = matcher + 1;
+				switch (matcher[0]) {
+					case M_WORD:
+						if (!word_matcher(m, h, strlen(m), case_flag) ^ not_flag)
+							result = 0;
+						break;
+					case M_SUBSTRING:
+						if (!substring_matcher(m, h, strlen(m), case_flag) ^ not_flag)
+							result = 0;
+						break;
+					case M_BEGINNING:
+						if (!beginning_substring_matcher(m, h, strlen(m), case_flag) ^ not_flag)
+							result = 0;
+						break;
+					case M_CASE:
+						case_flag = 1;
+						break;
+					case M_NOT:
+						not_flag = 1;
+						break;
+					default:
+						result = 0;
+						break;
+				}
+				matcher += strlen(m) + 2;
 			}
 		}
 
