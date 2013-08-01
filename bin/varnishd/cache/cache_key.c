@@ -18,51 +18,7 @@
 #define M_NOT		6
 
 #define DEBUG_CREATE 0
-#define DEBUG_MATCH 1
-
-int hexDump (char *desc, void *addr, int len) {
-    int i;
-    unsigned char buff[17];
-    unsigned char *pc = addr;
-
-    // Output description if given.
-    if (desc != NULL)
-        printf ("%s:\n", desc);
-
-    // Process every byte in the data.
-    for (i = 0; i < len; i++) {
-        // Multiple of 16 means new line (with line offset).
-
-        if ((i % 16) == 0) {
-            // Just don't print ASCII for the zeroth line.
-            if (i != 0)
-                printf ("  %s\n", buff);
-
-            // Output the offset.
-            printf ("  %04x ", i);
-        }
-
-        // Now the hex code for the specific character.
-        printf (" %02x", pc[i]);
-
-        // And store a printable ASCII character for later.
-        if ((pc[i] < 0x20) || (pc[i] > 0x7e))
-            buff[i % 16] = '.';
-        else
-            buff[i % 16] = pc[i];
-        buff[(i % 16) + 1] = '\0';
-    }
-
-    // Pad out last line if not exactly 16 characters.
-    while ((i % 16) != 0) {
-        printf ("   ");
-        i++;
-    }
-
-    // And print the final ASCII bit.
-    printf ("  %s\n", buff);
-    return 0;
-}
+#define DEBUG_MATCH 0
 
 int
 key_ParseMatcher(const char *s, struct vsb **sb) {
@@ -256,7 +212,6 @@ KEY_Create(struct busyobj *bo, struct vsb **psb)
 
 	*psb = sb;
 	DEBUG_CREATE && printf("KEY_Create(bo: %p, psb: %p) = %zu\n", bo, *psb, VSB_len(sb));
-	DEBUG_CREATE && hexDump("key", VSB_data(sb), VSB_len(sb));
 	return (VSB_len(sb));
 }
 
