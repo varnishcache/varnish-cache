@@ -1044,6 +1044,11 @@ void VSL_Flush(struct vsl_log *, int overflow);
 void RES_BuildHttp(struct req *);
 void RES_WriteObj(struct req *);
 
+/* cache_key.c */
+int KEY_Create(struct busyobj *bo, struct vsb **psb);
+int KEY_Match(struct http *, const uint8_t *key);
+void KEY_Validate(const uint8_t *key);
+
 /* cache_vary.c */
 int VRY_Create(struct busyobj *bo, struct vsb **psb);
 int VRY_Match(struct req *, const uint8_t *vary);
