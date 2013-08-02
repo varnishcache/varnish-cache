@@ -459,32 +459,39 @@ KEY_Match(struct http *http, const uint8_t *key)
 			unsigned l = vbe16dec(key);
 			int not_flag = 0;
 			int case_flag = 0;
-
-			i = http_GetHdr(http, (const char*)(key+3), &h);
-
-			// TODO: Perhaps not matcher should allow this
-			if (i == 0)
-				return 0;
-
 			const char *matcher = key + 4 + key[3] + 1;
 
 			while (*matcher != 0 && *matcher != -1) {
 				char *m = matcher + 1;
+				unsigned u = 0;
+				int subresult = 0;
 				switch (matcher[0]) {
 					case M_WORD:
-						if (!word_matcher(m, h, strlen(m), case_flag) ^ not_flag)
+						while (u = http_EnumHdr(http, u, (const char*)(key+3), &h)) {
+							subresult |= word_matcher(m, h, strlen(m), case_flag);
+						}
+						if (!(subresult ^ not_flag))
 							result = 0;
 						break;
 					case M_SUBSTRING:
-						if (!substring_matcher(m, h, strlen(m), case_flag) ^ not_flag)
+						while (u = http_EnumHdr(http, u, (const char*)(key+3), &h)) {
+							subresult |= substring_matcher(m, h, strlen(m), case_flag);
+						}
+						if (!(subresult ^ not_flag))
 							result = 0;
 						break;
 					case M_BEGINNING:
-						if (!beginning_substring_matcher(m, h, strlen(m), case_flag) ^ not_flag)
+						while (u = http_EnumHdr(http, u, (const char*)(key+3), &h)) {
+							subresult |= beginning_substring_matcher(m, h, strlen(m), case_flag);
+						}
+						if (!(subresult ^ not_flag))
 							result = 0;
 						break;
 					case M_PARAMETER:
-						if (!parameter_prefix_matcher(m, h, strlen(m), case_flag) ^ not_flag)
+						while (u = http_EnumHdr(http, u, (const char*)(key+3), &h)) {
+							subresult |= parameter_prefix_matcher(m, h, strlen(m), case_flag);
+						}
+						if (!(subresult ^ not_flag))
 							result = 0;
 						break;
 					case M_CASE:

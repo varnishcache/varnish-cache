@@ -279,6 +279,32 @@ http_GetHdr(const struct http *hp, const char *hdr, char **ptr)
 	return (1);
 }
 
+unsigned
+http_EnumHdr(const struct http *hp, int offset, const char *hdr, char **ptr)
+{
+	unsigned u, l;
+	char *p;
+
+	l = hdr[0];
+	diagnostic(l == strlen(hdr + 1));
+	assert(hdr[l] == ':');
+
+	for (u = offset == 0 ? HTTP_HDR_FIRST : offset; u < hp->nhd; u++) {
+		if (u < hp->nhd && http_IsHdr(&hp->hd[u], hdr)) {
+		    Tcheck(hp->hd[u]);
+		    p = hp->hd[u].b + l;
+		    while (vct_issp(*p))
+			    p++;
+		    *ptr = p;
+		    return u+1;
+		}
+
+	}
+
+	*ptr = NULL;
+	return 0;
+}
+
 
 /*--------------------------------------------------------------------
  * Find a given data element in a header according to RFC2616's #rule
