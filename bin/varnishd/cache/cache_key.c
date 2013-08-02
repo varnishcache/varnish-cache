@@ -9,12 +9,13 @@
 #include "vct.h"
 #include "vend.h"
 
-#define M_WORD		1
-#define M_SUBSTRING	2
-#define M_BEGINNING	3
-#define M_CASE		4
-#define M_NOT		5
-#define M_PARAMETER	6
+#define M_WORD		    1
+#define M_SUBSTRING	    2
+#define M_BEGINNING	    3
+#define M_CASE		    4
+#define M_NOT		    5
+#define M_PARAMETER	    6
+#define M_PARAMETER_RANGE   7
 
 int enum_matchers(const char *matcher, int *type, const char **param, int *s) {
 	const char *p = matcher;
@@ -64,6 +65,20 @@ int enum_matchers(const char *matcher, int *type, const char **param, int *s) {
 		*param = p;
 		*s = (int)(e-p);
 		*type = M_PARAMETER;
+		p = e + 1;
+	} else if (strncmp(p, "pr=", 3) == 0) {
+		p += 3;
+		for (e = p; *e && *e != '[' && *e != ';'; e++)
+			continue;
+		if (*e != '[')
+			return -1;
+		for (e = p; *e && *e != ']' && *e != ';'; e++)
+			continue;
+		if (*e != ']')
+			return -1;
+		*param = p;
+		*s = (int)(e-p) + 1;
+		*type = M_PARAMETER_RANGE;
 		p = e + 1;
 	} else if (*p == 'c') {
 		*s = 0;
@@ -212,6 +227,51 @@ int parameter_prefix_matcher(const char *p, const char *fv, int ps, int case_sen
 					continue;
 				if (*r == ';' || r == match + size)
 					return 1;
+			}
+		}
+		offset += read;
+	}
+	return 0;
+}
+
+int parameter_range_matcher(const char *p, const char *fv, int ps, int case_sensitive) {
+	case_sensitive = 0; // Always case insensitive
+	int read, size, offset = 0;
+	const char *match;
+
+	int min = 99, max = 0;
+	int has_min = 1, has_max = 1;
+	char *x = p;
+	for (x = p; *x && *x != '['; x++)
+		continue;
+	char *prefix = x - 1;
+	ps = (int)(prefix - p) + 1;
+
+	if (strncmp(x, "[:", 2)) {
+		if (!sscanf(x, "[%d:", &min)) {
+			return 0;
+		} else
+			has_min = 0;
+	}
+	for (; *x && *x != ':'; x++)
+		continue;
+	if (strncmp(x, ":]", 2)) {
+		if (!sscanf(x, ":%d]", &max)) {
+			return 0;
+		} else
+			has_max = 0;
+	}
+
+	while (read = enum_fields(fv + offset, &match, &size)) {
+		if (ps <= size) {
+			if (cmp_func(match, p, ps, case_sensitive) == 0) {
+				if (match[ps] == '=') {
+					int value;
+					if (sscanf(match + ps + 1, "%d", &value)) {
+					    if ((has_min || (value >= min)) && (has_max || (value <= max)))
+						    return 1;
+					}
+				}
 			}
 		}
 		offset += read;
@@ -490,6 +550,13 @@ KEY_Match(struct http *http, const uint8_t *key)
 					case M_PARAMETER:
 						while (u = http_EnumHdr(http, u, (const char*)(key+3), &h)) {
 							subresult |= parameter_prefix_matcher(m, h, strlen(m), case_flag);
+						}
+						if (!(subresult ^ not_flag))
+							result = 0;
+						break;
+					case M_PARAMETER_RANGE:
+						while (u = http_EnumHdr(http, u, (const char*)(key+3), &h)) {
+							subresult |= parameter_range_matcher(m, h, strlen(m), case_flag);
 						}
 						if (!(subresult ^ not_flag))
 							result = 0;
