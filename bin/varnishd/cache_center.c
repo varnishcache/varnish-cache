@@ -1077,7 +1077,9 @@ DOT	lookup2 [
 DOT		shape=diamond
 DOT		label="obj.f.pass ?"
 DOT	]
-DOT	hash -> lookup [label="hash",style=bold,color=green]
+DOT	hash -> lookup [style=bold,color=green]
+DOT	hash -> pipe [style=bold,color=orange]
+DOT	hash -> pass2 [style=bold,color=red]
 DOT	lookup -> lookup2 [label="yes",style=bold,color=green]
 DOT }
 DOT lookup2 -> hit [label="no", style=bold,color=green]
@@ -1364,11 +1366,11 @@ DOT		label="vcl_recv()|req."
 DOT	]
 DOT }
 DOT RESTART -> recv
-DOT recv -> pipe [label="pipe",style=bold,color=orange]
-DOT recv -> pass2 [label="pass",style=bold,color=red]
+DOT recv -> hash [label="lookup",style=bold,color=green]
+DOT recv -> hash [label="pass",style=bold,color=red]
+DOT recv -> hash [label="pipe",style=bold,color=orange]
 DOT recv -> err_recv [label="error"]
 DOT err_recv [label="ERROR",shape=plaintext]
-DOT recv -> hash [label="lookup",style=bold,color=green]
  */
 
 static int
