@@ -109,8 +109,7 @@ VBE_ReleaseConn(struct vbc *vc)
 
 static int
 vbe_TryConnect(const struct busyobj *bo, int pf,
-    const struct sockaddr_storage *sa, socklen_t salen,
-    const struct vdi_simple *vs)
+    const struct sockaddr_storage *sa, const struct vdi_simple *vs)
 {
 	int s, i, tmo;
 	double tmod;
@@ -126,7 +125,7 @@ vbe_TryConnect(const struct busyobj *bo, int pf,
 
 	tmo = (int)(tmod * 1000.0);
 
-	i = VTCP_connect(s, sa, salen, tmo);
+	i = VTCP_connect(s, sa, tmo);
 
 	if (i != 0) {
 		AZ(close(s));
@@ -160,19 +159,16 @@ bes_conn_try(struct busyobj *bo, struct vbc *vc, const struct vdi_simple *vs)
 	/* release lock during stuff that can take a long time */
 
 	if (cache_param->prefer_ipv6 && bp->ipv6 != NULL) {
-		s = vbe_TryConnect(bo, PF_INET6, bp->ipv6, bp->ipv6len, vs);
+		s = vbe_TryConnect(bo, PF_INET6, bp->ipv6, vs);
 		vc->addr = bp->ipv6;
-		vc->addrlen = bp->ipv6len;
 	}
 	if (s == -1 && bp->ipv4 != NULL) {
-		s = vbe_TryConnect(bo, PF_INET, bp->ipv4, bp->ipv4len, vs);
+		s = vbe_TryConnect(bo, PF_INET, bp->ipv4, vs);
 		vc->addr = bp->ipv4;
-		vc->addrlen = bp->ipv4len;
 	}
 	if (s == -1 && !cache_param->prefer_ipv6 && bp->ipv6 != NULL) {
-		s = vbe_TryConnect(bo, PF_INET6, bp->ipv6, bp->ipv6len, vs);
+		s = vbe_TryConnect(bo, PF_INET6, bp->ipv6, vs);
 		vc->addr = bp->ipv6;
-		vc->addrlen = bp->ipv6len;
 	}
 
 	vc->fd = s;
@@ -182,7 +178,6 @@ bes_conn_try(struct busyobj *bo, struct vbc *vc, const struct vdi_simple *vs)
 		bp->refcount--;		/* Only keep ref on success */
 		Lck_Unlock(&bp->mtx);
 		vc->addr = NULL;
-		vc->addrlen = 0;
 	} else {
 		VTCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
 		VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s ",

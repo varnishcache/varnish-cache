@@ -41,6 +41,7 @@
 #include "cache_backend.h"
 #include "vcli.h"
 #include "vcli_priv.h"
+#include "vsa.h"
 #include "vrt.h"
 
 /*
@@ -149,15 +150,14 @@ VBE_DropRefConn(struct backend *b)
  */
 
 static void
-copy_sockaddr(struct sockaddr_storage **sa, socklen_t *len,
-    const unsigned char *src)
+copy_sockaddr(struct sockaddr_storage **sa, const unsigned char *src)
 {
 
 	assert(*src > 0);
 	*sa = calloc(sizeof **sa, 1);
 	XXXAN(*sa);
 	memcpy(*sa, src + 1, *src);
-	*len = *src;
+	assert(VSA_Sane(*sa));
 }
 
 /*--------------------------------------------------------------------
@@ -182,13 +182,11 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 		if (strcmp(b->vcl_name, vb->vcl_name))
 			continue;
-		if (vb->ipv4_sockaddr != NULL && (
-		    b->ipv4len != vb->ipv4_sockaddr[0] ||
-		    memcmp(b->ipv4, vb->ipv4_sockaddr + 1, b->ipv4len)))
+		if (vb->ipv4_sockaddr != NULL &&
+		    VSA_Compare(b->ipv4, vb->ipv4_sockaddr + 1))
 			continue;
-		if (vb->ipv6_sockaddr != NULL && (
-		    b->ipv6len != vb->ipv6_sockaddr[0] ||
-		    memcmp(b->ipv6, vb->ipv6_sockaddr + 1, b->ipv6len)))
+		if (vb->ipv6_sockaddr != NULL &&
+		    VSA_Compare(b->ipv6, vb->ipv6_sockaddr + 1))
 			continue;
 		b->refcount++;
 		b->vsc->vcls++;
@@ -227,9 +225,9 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	 * Copy over the sockaddrs
 	 */
 	if (vb->ipv4_sockaddr != NULL)
-		copy_sockaddr(&b->ipv4, &b->ipv4len, vb->ipv4_sockaddr);
+		copy_sockaddr(&b->ipv4, vb->ipv4_sockaddr);
 	if (vb->ipv6_sockaddr != NULL)
-		copy_sockaddr(&b->ipv6, &b->ipv6len, vb->ipv6_sockaddr);
+		copy_sockaddr(&b->ipv6, vb->ipv6_sockaddr);
 
 	assert(b->ipv4 != NULL || b->ipv6 != NULL);
 

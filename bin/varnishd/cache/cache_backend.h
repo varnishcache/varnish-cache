@@ -128,9 +128,7 @@ struct backend {
 	char			*port;
 
 	struct sockaddr_storage	*ipv4;
-	socklen_t		ipv4len;
 	struct sockaddr_storage	*ipv6;
-	socklen_t		ipv6len;
 
 	unsigned		n_conn;
 	VTAILQ_HEAD(, vbc)	connlist;
@@ -158,7 +156,6 @@ struct vbc {
 	int			fd;
 
 	struct sockaddr_storage	*addr;
-	socklen_t		addrlen;
 
 	uint8_t			recycled;
 

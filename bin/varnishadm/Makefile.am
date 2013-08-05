@@ -9,6 +9,7 @@ dist_man_MANS = varnishadm.1
 varnishadm_SOURCES = \
 	varnishadm.c \
 	$(top_builddir)/lib/libvarnish/vas.c \
+	$(top_builddir)/lib/libvarnish/vsa.c \
 	$(top_builddir)/lib/libvarnish/vtcp.c \
 	$(top_builddir)/lib/libvarnish/vss.c
 

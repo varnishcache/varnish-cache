@@ -39,6 +39,7 @@
 #include "cache_backend.h"
 #include "vrt.h"
 #include "vrt_obj.h"
+#include "vsa.h"
 #include "vtcp.h"
 #include "vtim.h"
 
@@ -274,7 +275,7 @@ VRT_r_beresp_backend_port(const struct vrt_ctx *ctx)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo->vbc, VBC_MAGIC);
-	return (VTCP_port(ctx->bo->vbc->addr));
+	return (VSA_Port(ctx->bo->vbc->addr));
 }
 
 const char *
@@ -609,7 +610,7 @@ VRT_r_server_port(const struct vrt_ctx *ctx)
 		    &ctx->req->sp->mysockaddrlen);
 		assert(VTCP_Check(i));
 	}
-	return (VTCP_port(&ctx->req->sp->mysockaddr));
+	return (VSA_Port(&ctx->req->sp->mysockaddr));
 }
 
 /*--------------------------------------------------------------------*/

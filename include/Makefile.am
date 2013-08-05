@@ -80,6 +80,7 @@ nobase_pkgdatainclude_HEADERS = \
 	vdef.h \
 	vrt.h \
 	vrt_obj.h \
+	vsa.h \
 	vsb.h \
 	vsha256.h
 

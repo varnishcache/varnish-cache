@@ -105,7 +105,7 @@ static struct lock			vbp_mtx;
  */
 
 static int
-vbp_connect(int pf, const struct sockaddr_storage *sa, socklen_t salen, int tmo)
+vbp_connect(int pf, const struct sockaddr_storage *sa, int tmo)
 {
 	int s, i;
 
@@ -113,7 +113,7 @@ vbp_connect(int pf, const struct sockaddr_storage *sa, socklen_t salen, int tmo)
 	if (s < 0)
 		return (s);
 
-	i = VTCP_connect(s, sa, salen, tmo);
+	i = VTCP_connect(s, sa, tmo);
 	if (i == 0)
 		return (s);
 	VTCP_close(&s);
@@ -139,21 +139,21 @@ vbp_poke(struct vbp_target *vt)
 
 	s = -1;
 	if (cache_param->prefer_ipv6 && bp->ipv6 != NULL) {
-		s = vbp_connect(PF_INET6, bp->ipv6, bp->ipv6len, tmo);
+		s = vbp_connect(PF_INET6, bp->ipv6, tmo);
 		t_now = VTIM_real();
 		tmo = (int)round((t_end - t_now) * 1e3);
 		if (s >= 0)
 			vt->good_ipv6 |= 1;
 	}
 	if (tmo > 0 && s < 0 && bp->ipv4 != NULL) {
-		s = vbp_connect(PF_INET, bp->ipv4, bp->ipv4len, tmo);
+		s = vbp_connect(PF_INET, bp->ipv4, tmo);
 		t_now = VTIM_real();
 		tmo = (int)round((t_end - t_now) * 1e3);
 		if (s >= 0)
 			vt->good_ipv4 |= 1;
 	}
 	if (tmo > 0 && s < 0 && bp->ipv6 != NULL) {
-		s = vbp_connect(PF_INET6, bp->ipv6, bp->ipv6len, tmo);
+		s = vbp_connect(PF_INET6, bp->ipv6, tmo);
 		t_now = VTIM_real();
 		tmo = (int)round((t_end - t_now) * 1e3);
 		if (s >= 0)

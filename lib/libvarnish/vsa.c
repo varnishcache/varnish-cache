@@ -1,6 +1,5 @@
 /*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2013 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -26,48 +25,74 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * Struct sockaddr_* is not even close to a convenient API.
+ *
+ * These functions try to mitigate the madness, at the cost of actually
+ * knowing something about address families.
  */
 
-/* from libvarnish/tcp.c */
-/* NI_MAXHOST and NI_MAXSERV are ridiculously long for numeric format */
-#define VTCP_ADDRBUFSIZE		64
-#define VTCP_PORTBUFSIZE		16
+#include "config.h"
 
-static inline int
-VTCP_Check(int a)
+#include <errno.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+#include "vas.h"
+#include "vsa.h"
+
+int
+VSA_Sane(const struct sockaddr_storage *ss)
 {
-	if (a == 0)
-		return (1);
-	if (errno == ECONNRESET || errno == ENOTCONN)
-		return (1);
-#if (defined (__SVR4) && defined (__sun)) || defined (__NetBSD__)
-	/*
-	 * Solaris returns EINVAL if the other end unexepectedly reset the
-	 * connection.
-	 * This is a bug in Solaris and documented behaviour on NetBSD.
-	 */
-	if (errno == EINVAL || errno == ETIMEDOUT)
-		return (1);
-#endif
-	return (0);
+	switch(ss->ss_family) {
+		case PF_INET:
+		case PF_INET6:
+			return (1);
+		default:
+			return (0);
+	}
 }
 
-#define VTCP_Assert(a) assert(VTCP_Check(a))
+socklen_t
+VSA_Len(const struct sockaddr_storage *ss)
+{
+	switch(ss->ss_family) {
+		case PF_INET:
+			return (sizeof(struct sockaddr_in));
+		case PF_INET6:
+			return (sizeof(struct sockaddr_in6));
+		default:
+			WRONG("Illegal socket family");
+	}
+}
 
-void VTCP_myname(int sock, char *abuf, unsigned alen,
-    char *pbuf, unsigned plen);
-void VTCP_hisname(int sock, char *abuf, unsigned alen,
-    char *pbuf, unsigned plen);
-int VTCP_filter_http(int sock);
-int VTCP_blocking(int sock);
-int VTCP_nonblocking(int sock);
-int VTCP_linger(int sock, int linger);
-int VTCP_check_hup(int sock);
+int
+VSA_Compare(const struct sockaddr_storage *ss1, const void *ss2)
+{
+	switch(ss1->ss_family) {
+		case PF_INET:
+		case PF_INET6:
+			return (memcmp(ss1, ss2, VSA_Len(ss1)));
+		default:
+			return (-1);
+	}
+}
 
-#ifdef SOL_SOCKET
-void VTCP_name(const struct sockaddr_storage *addr, unsigned l, char *abuf,
-    unsigned alen, char *pbuf, unsigned plen);
-int VTCP_connect(int s, const struct sockaddr_storage *name, int msec);
-void VTCP_close(int *s);
-void VTCP_set_read_timeout(int s, double seconds);
-#endif
+unsigned
+VSA_Port(const struct sockaddr_storage *ss)
+{
+	switch(ss->ss_family) {
+		case PF_INET:
+			{
+			const struct sockaddr_in *ain = (const void *)ss;
+			return (ntohs((ain->sin_port)));
+			}
+		case PF_INET6:
+			{
+			const struct sockaddr_in6 *ain = (const void *)ss;
+			return (ntohs((ain->sin6_port)));
+			}
+		default:
+			WRONG("Illegal socket family");
+	}
+}

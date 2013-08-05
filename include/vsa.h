@@ -1,6 +1,5 @@
 /*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2013 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -28,46 +27,12 @@
  *
  */
 
-/* from libvarnish/tcp.c */
-/* NI_MAXHOST and NI_MAXSERV are ridiculously long for numeric format */
-#define VTCP_ADDRBUFSIZE		64
-#define VTCP_PORTBUFSIZE		16
+#ifndef VSA_H_INCLUDED
+#define VSA_H_INCLUDED
 
-static inline int
-VTCP_Check(int a)
-{
-	if (a == 0)
-		return (1);
-	if (errno == ECONNRESET || errno == ENOTCONN)
-		return (1);
-#if (defined (__SVR4) && defined (__sun)) || defined (__NetBSD__)
-	/*
-	 * Solaris returns EINVAL if the other end unexepectedly reset the
-	 * connection.
-	 * This is a bug in Solaris and documented behaviour on NetBSD.
-	 */
-	if (errno == EINVAL || errno == ETIMEDOUT)
-		return (1);
-#endif
-	return (0);
-}
+int VSA_Sane(const struct sockaddr_storage *ss);
+socklen_t VSA_Len(const struct sockaddr_storage *ss);
+unsigned VSA_Port(const struct sockaddr_storage *ss);
+int VSA_Compare(const struct sockaddr_storage *ss1, const void *ss2);
 
-#define VTCP_Assert(a) assert(VTCP_Check(a))
-
-void VTCP_myname(int sock, char *abuf, unsigned alen,
-    char *pbuf, unsigned plen);
-void VTCP_hisname(int sock, char *abuf, unsigned alen,
-    char *pbuf, unsigned plen);
-int VTCP_filter_http(int sock);
-int VTCP_blocking(int sock);
-int VTCP_nonblocking(int sock);
-int VTCP_linger(int sock, int linger);
-int VTCP_check_hup(int sock);
-
-#ifdef SOL_SOCKET
-void VTCP_name(const struct sockaddr_storage *addr, unsigned l, char *abuf,
-    unsigned alen, char *pbuf, unsigned plen);
-int VTCP_connect(int s, const struct sockaddr_storage *name, int msec);
-void VTCP_close(int *s);
-void VTCP_set_read_timeout(int s, double seconds);
 #endif

@@ -27,6 +27,7 @@ libvarnish_la_SOURCES = \
 	vmb.c \
 	vpf.c \
 	vre.c \
+	vsa.c \
 	vsb.c \
 	vsha256.c \
 	vss.c

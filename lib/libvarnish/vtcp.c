@@ -51,25 +51,8 @@
 #include <unistd.h>
 
 #include "vas.h"
+#include "vsa.h"
 #include "vtcp.h"
-
-/*--------------------------------------------------------------------*/
-
-int
-VTCP_port(const struct sockaddr_storage *addr)
-{
-
-	if (addr->ss_family == AF_INET) {
-		const struct sockaddr_in *ain = (const void *)addr;
-		return (ntohs((ain->sin_port)));
-	}
-	if (addr->ss_family == AF_INET6) {
-		const struct sockaddr_in6 *ain = (const void *)addr;
-		return (ntohs((ain->sin6_port)));
-	}
-	return (-1);
-}
-
 
 /*--------------------------------------------------------------------*/
 
@@ -212,8 +195,7 @@ VTCP_nonblocking(int sock)
  */
 
 int
-VTCP_connect(int s, const struct sockaddr_storage *name, socklen_t namelen,
-    int msec)
+VTCP_connect(int s, const struct sockaddr_storage *name, int msec)
 {
 	int i, k;
 	socklen_t l;
@@ -226,7 +208,8 @@ VTCP_connect(int s, const struct sockaddr_storage *name, socklen_t namelen,
 		(void)VTCP_nonblocking(s);
 
 	/* Attempt the connect */
-	i = connect(s, (const void *)name, namelen);
+	assert(VSA_Sane(name));
+	i = connect(s, (const void *)name, VSA_Len(name));
 	if (i == 0 || errno != EINPROGRESS)
 		return (i);
 
