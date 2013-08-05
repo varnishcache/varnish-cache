@@ -762,7 +762,7 @@ cnt_restart(const struct worker *wrk, struct req *req)
 DOT subgraph xcluster_recv {
 DOT	recv [
 DOT		shape=record
-DOT		label="{cnt_recv:|{vcl_recv\{\}|req.*}|{<pipe>pipe?|<pass>pass?|<error>error?|<lookup>lookup?}}"
+DOT		label="{cnt_recv:|{vcl_recv\{\}|req.*}|{<pass>pass?|<lookup>lookup?|<pipe>pipe?|<error>error?}}"
 DOT	]
 DOT }
 DOT subgraph xcluster_hash {
@@ -771,12 +771,14 @@ DOT		shape=record
 DOT		label="{cnt_recv:|{vcl_hash\{\}|req.*}}"
 DOT	]
 DOT }
-DOT recv:pipe -> pipe [style=bold,color=orange]
-DOT recv:pass -> pass [style=bold,color=red]
+DOT recv:pipe -> hash [style=bold,color=orange]
+DOT recv:pass -> hash [style=bold,color=red]
 #DOT recv:error -> err_recv
 #DOT err_recv [label="ERROR",shape=plaintext]
 DOT recv:lookup -> hash [style=bold,color=green]
-DOT hash -> lookup [label="hash",style=bold,color=green]
+DOT hash -> lookup [style=bold,color=green]
+DOT hash -> pipe [style=bold,color=orange]
+DOT hash -> pass [style=bold,color=red]
  */
 
 static enum req_fsm_nxt
