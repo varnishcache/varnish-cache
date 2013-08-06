@@ -286,7 +286,8 @@ void vcc_Parse(struct vcc *tl);
 sym_wildcard_t vcc_Stv_Wildcard;
 
 /* vcc_string.c */
-char *vcc_regexp(struct vcc *tl);
+const char *vcc_regexp(struct vcc *tl);
+const char *vcc_sockaddr(struct vcc *tl, const void *sa, unsigned sal);
 
 /* vcc_symb.c */
 struct symbol *VCC_AddSymbolStr(struct vcc *tl, const char *name, enum symkind);

@@ -441,7 +441,7 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym)
 {
 	struct expr *e2;
 	int all = sym->eval_priv == NULL ? 0 : 1;
-	char *p;
+	const char *p;
 	char buf[128];
 
 	vcc_delete_expr(*e);
@@ -963,7 +963,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 	struct expr *e2;
 	const struct cmps *cp;
 	char buf[256];
-	char *re;
+	const char *re;
 	const char *not;
 	struct token *tk;
 
