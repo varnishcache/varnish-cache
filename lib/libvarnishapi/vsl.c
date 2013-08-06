@@ -252,9 +252,9 @@ VSL_NextLog(const struct VSM_data *vd, uint32_t **pp, uint64_t *bits)
 		}
 		if (vbit_test(vsl->vbm_supress, t))
 			continue;
-		if (vsl->b_opt && !vbit_test(vsl->vbm_backend, u))
+		if (vsl->b_opt && !vbit_test(vsl->vbm_backend, u) && !vsl->c_opt)
 			continue;
-		if (vsl->c_opt && !vbit_test(vsl->vbm_client, u))
+		if (vsl->c_opt && !vbit_test(vsl->vbm_client, u) && !vsl->b_opt)
 			continue;
 		if (vsl->regincl != NULL) {
 			i = VRE_exec(vsl->regincl, VSL_DATA(p), VSL_LEN(p),
