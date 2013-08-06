@@ -55,7 +55,7 @@ typedef double				VCL_DURATION;
 typedef const char *			VCL_ENUM;
 typedef const char *			VCL_HEADER;
 typedef long				VCL_INT;
-typedef struct sockaddr_storage *	VCL_IP;
+typedef const void *			VCL_IP;
 typedef double				VCL_REAL;
 typedef const char *			VCL_STRING;
 typedef double				VCL_TIME;
@@ -125,7 +125,7 @@ struct vrt_backend {
 	const char			*port;
 
 	const void			*ipv4_sockaddr;
-	const void 			*ipv6_sockaddr;
+	const void			*ipv6_sockaddr;
 
 	const char			*hosthdr;
 

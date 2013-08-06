@@ -50,6 +50,7 @@
 
 struct vsb;
 struct token;
+struct sockaddr_storage;
 
 #define isident1(c) (isalpha(c))
 #define isident(c) (isalpha(c) || isdigit(c) || (c) == '_' || (c) == '-')
@@ -285,9 +286,12 @@ void vcc_Parse(struct vcc *tl);
 /* vcc_storage.c */
 sym_wildcard_t vcc_Stv_Wildcard;
 
-/* vcc_string.c */
+/* vcc_utils.c */
 const char *vcc_regexp(struct vcc *tl);
-const char *vcc_sockaddr(struct vcc *tl, const void *sa, unsigned sal);
+void Resolve_Sockaddr(struct vcc *tl, const char *host, const char *port, \
+    const char **ipv4, const char **ipv4_ascii, const char **ipv6, \
+    const char **ipv6_ascii, const char **p_ascii, int maxips,
+    const struct token *t_err, const char *errid);
 
 /* vcc_symb.c */
 struct symbol *VCC_AddSymbolStr(struct vcc *tl, const char *name, enum symkind);

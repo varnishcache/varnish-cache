@@ -50,11 +50,7 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-#include <sys/socket.h>
-
 #include <limits.h>
-#include <netdb.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -75,33 +71,13 @@ struct host {
  * and put it in an official sockaddr when we load the VCL.
  */
 
-struct foo_proto {
-	const char		*name;
-	int			family;
-	struct sockaddr_storage	sa;
-	socklen_t		l;
-};
-
 static void
 Emit_Sockaddr(struct vcc *tl, const struct token *t_host, const char *port)
 {
-	struct foo_proto protos[3], *pp;
-	struct addrinfo *res, *res0, *res1, hint;
-	int error, retval;
-	char hbuf[NI_MAXHOST];
+	const char *ipv4, *ipv4a, *ipv6, *ipv6a, *pa;
 	char *hop, *pop;
-	const char *sa;
 
 	AN(t_host->dec);
-
-	memset(protos, 0, sizeof protos);
-	protos[0].name = "ipv4"; protos[0].family = PF_INET;
-	protos[1].name = "ipv6"; protos[1].family = PF_INET6;
-
-	retval = 0;
-	memset(&hint, 0, sizeof hint);
-	hint.ai_family = PF_UNSPEC;
-	hint.ai_socktype = SOCK_STREAM;
 
 	if (VSS_parse(t_host->dec, &hop, &pop)) {
 		VSB_printf(tl->sb,
@@ -110,88 +86,20 @@ Emit_Sockaddr(struct vcc *tl, const struct token *t_host, const char *port)
 		vcc_ErrWhere(tl, t_host);
 		return;
 	}
-	error = getaddrinfo(
+	Resolve_Sockaddr(tl,
 	    hop != NULL ? hop : t_host->dec,
 	    pop != NULL ? pop : port,
-	    &hint, &res0);
-	free(hop);
-	free(pop);
-	if (error) {
-		VSB_printf(tl->sb,
-		    "Backend host '%.*s'"
-		    " could not be resolved to an IP address:\n", PF(t_host));
-		VSB_printf(tl->sb,
-		    "\t%s\n"
-		    "(Sorry if that error message is gibberish.)\n",
-		    gai_strerror(error));
-		vcc_ErrWhere(tl, t_host);
-		return;
+	    &ipv4, &ipv4a, &ipv6, &ipv6a, &pa, 2, t_host, "Backend host");
+	ERRCHK(tl);
+	if (ipv4 != NULL) {
+		Fb(tl, 0, "\t.ipv4_sockaddr = %s,\n", ipv4);
+		Fb(tl, 0, "\t.ipv4_addr = \"%s\",\n", ipv4a);
 	}
-
-	for (res = res0; res; res = res->ai_next) {
-		for (pp = protos; pp->name != NULL; pp++)
-			if (res->ai_family == pp->family)
-				break;
-		if (pp->name == NULL) {
-			/* Unknown proto, ignore */
-			continue;
-		}
-		if (pp->l == res->ai_addrlen &&
-		    !memcmp(&pp->sa, res->ai_addr, pp->l)) {
-			/*
-			 * Same address we already emitted.
-			 * This can happen using /etc/hosts
-			 */
-			continue;
-		}
-
-		if (pp->l > 0) {
-			VSB_printf(tl->sb,
-			    "Backend host %.*s: resolves to "
-			    "multiple %s addresses.\n"
-			    "Only one address is allowed.\n"
-			    "Please specify which exact address "
-			    "you want to use, we found these:\n",
-			    PF(t_host), pp->name);
-			for (res1 = res0; res1 != NULL; res1 = res1->ai_next) {
-				error = getnameinfo(res1->ai_addr,
-				    res1->ai_addrlen, hbuf, sizeof hbuf,
-				    NULL, 0, NI_NUMERICHOST);
-				AZ(error);
-				VSB_printf(tl->sb, "\t%s\n", hbuf);
-			}
-			freeaddrinfo(res0);
-			vcc_ErrWhere(tl, t_host);
-			return;
-		}
-
-		pp->l =  res->ai_addrlen;
-		memcpy(&pp->sa, res->ai_addr, pp->l);
-
-		sa = vcc_sockaddr(tl, res->ai_addr, res->ai_addrlen);
-		Fb(tl, 0, "\t.%s_sockaddr = %s,\n", pp->name, sa);
-		error = getnameinfo(res->ai_addr,
-		    res->ai_addrlen, hbuf, sizeof hbuf,
-		    NULL, 0, NI_NUMERICHOST);
-		AZ(error);
-		Fb(tl, 0, "\t.%s_addr = \"%s\",\n", pp->name, hbuf);
-		retval++;
+	if (ipv6 != NULL) {
+		Fb(tl, 0, "\t.ipv6_sockaddr = %s,\n", ipv6);
+		Fb(tl, 0, "\t.ipv6_addr = \"%s\",\n", ipv6a);
 	}
-	if (res0 != NULL) {
-		error = getnameinfo(res0->ai_addr,
-		    res0->ai_addrlen, NULL, 0, hbuf, sizeof hbuf,
-		    NI_NUMERICSERV);
-		AZ(error);
-		Fb(tl, 0, "\t.port = \"%s\",\n", hbuf);
-	}
-	freeaddrinfo(res0);
-	if (retval == 0) {
-		VSB_printf(tl->sb,
-		    "Backend host '%.*s': resolves to "
-		    "neither IPv4 nor IPv6 addresses.\n",
-		    PF(t_host) );
-		vcc_ErrWhere(tl, t_host);
-	}
+	Fb(tl, 0, "\t.port = \"%s\",\n", pa);
 }
 
 /*--------------------------------------------------------------------

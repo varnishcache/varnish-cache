@@ -31,7 +31,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
 #include <sys/socket.h>
+#include <netdb.h>
 
 #include "vcc_compile.h"
 
@@ -87,7 +89,7 @@ vcc_regexp(struct vcc *tl)
  * will ensure good enough alignment.
  */
 
-const char *
+static const char *
 vcc_sockaddr(struct vcc *tl, const void *sa, unsigned sal)
 {
 	unsigned n = (sal + 7) / 8, len;
@@ -97,13 +99,13 @@ vcc_sockaddr(struct vcc *tl, const void *sa, unsigned sal)
 	assert(VSA_Sane(sa));
 	AN(sa);
 	AN(sal);
-	assert(sal < 256);
+	assert(sal < sizeof(struct sockaddr_storage));
 	assert(sizeof(unsigned long long) == 8);
 
 	p = TlAlloc(tl, 20);
 	sprintf(p, "sockaddr_%u", tl->unique++);
 
-	Fh(tl, 0, "\nstatic const unsigned long long");
+	Fh(tl, 0, "static const unsigned long long");
 	Fh(tl, 0, " %s[%d] = {\n", p, n);
 	memcpy(b, sa, sal);
 	for (len = 0; len <n; len++) {
@@ -113,4 +115,141 @@ vcc_sockaddr(struct vcc *tl, const void *sa, unsigned sal)
 	}
 	Fh(tl, 0, "\n};\n");
 	return (p);
+}
+
+/*--------------------------------------------------------------------
+ * This routine is a monster, but at least we only have one such monster.
+ * Look up a IP number, and return IPv4/IPv6 address as VGC produced names
+ * and optionally ascii strings.
+ *
+ * For IP compile time constants we only want one IP#, but it can be
+ * IPv4 or IPv6.
+ *
+ * For backends, we accept up to one IPv4 and one IPv6.
+ */
+
+struct foo_proto {
+	const char		*name;
+	int			family;
+	struct sockaddr_storage	sa;
+	socklen_t		l;
+	const char		**dst;
+	const char		**dst_ascii;
+};
+
+void
+Resolve_Sockaddr(struct vcc *tl,
+    const char *host,
+    const char *port,
+    const char **ipv4,
+    const char **ipv4_ascii,
+    const char **ipv6,
+    const char **ipv6_ascii,
+    const char **p_ascii,
+    int maxips,
+    const struct token *t_err,
+    const char *errid)
+{
+	struct foo_proto protos[3], *pp;
+	struct addrinfo *res, *res0, *res1, hint;
+	int error, retval;
+	char hbuf[NI_MAXHOST];
+
+	memset(protos, 0, sizeof protos);
+	protos[0].name = "ipv4";
+	protos[0].family = PF_INET;
+	protos[0].dst = ipv4;
+	protos[0].dst_ascii = ipv4_ascii;
+	*ipv4 = NULL;
+
+	protos[1].name = "ipv6";
+	protos[1].family = PF_INET6;
+	protos[1].dst = ipv6;
+	protos[1].dst_ascii = ipv6_ascii;
+	*ipv6 = NULL;
+
+	retval = 0;
+	memset(&hint, 0, sizeof hint);
+	hint.ai_family = PF_UNSPEC;
+	hint.ai_socktype = SOCK_STREAM;
+
+	error = getaddrinfo(host, port, &hint, &res0);
+	if (error) {
+		VSB_printf(tl->sb,
+		    "%s '%.*s' could not be resolved to an IP address:\n",
+		    errid, PF(t_err));
+		VSB_printf(tl->sb,
+		    "\t%s\n"
+		    "(Sorry if that error message is gibberish.)\n",
+		    gai_strerror(error));
+		vcc_ErrWhere(tl, t_err);
+		return;
+	}
+
+	for (res = res0; res; res = res->ai_next) {
+		for (pp = protos; pp->name != NULL; pp++)
+			if (res->ai_family == pp->family)
+				break;
+		if (pp->name == NULL) {
+			/* Unknown proto, ignore */
+			continue;
+		}
+		if (pp->l == res->ai_addrlen &&
+		    !memcmp(&pp->sa, res->ai_addr, pp->l)) {
+			/*
+			 * Same address we already emitted.
+			 * This can happen using /etc/hosts
+			 */
+			continue;
+		}
+
+		if (pp->l != 0 || retval == maxips) {
+			VSB_printf(tl->sb,
+			    "%s %.*s: resolves to too many addresses.\n"
+			    "Only one IPv4 %s IPv6 are allowed.\n"
+			    "Please specify which exact address "
+			    "you want to use, we found all of these:\n",
+			    errid, PF(t_err),
+			    maxips > 1 ? "and one" :  "or");
+			for (res1 = res0; res1 != NULL; res1 = res1->ai_next) {
+				error = getnameinfo(res1->ai_addr,
+				    res1->ai_addrlen, hbuf, sizeof hbuf,
+				    NULL, 0, NI_NUMERICHOST);
+				AZ(error);
+				VSB_printf(tl->sb, "\t%s\n", hbuf);
+			}
+			freeaddrinfo(res0);
+			vcc_ErrWhere(tl, t_err);
+			return;
+		}
+
+		pp->l =  res->ai_addrlen;
+		assert(pp->l < sizeof(struct sockaddr_storage));
+		memcpy(&pp->sa, res->ai_addr, pp->l);
+
+		error = getnameinfo(res->ai_addr, res->ai_addrlen,
+		    hbuf, sizeof hbuf, NULL, 0, NI_NUMERICHOST);
+		AZ(error);
+
+		Fh(tl, 0, "\n/* \"%s\" -> %s */\n", host, hbuf);
+		*(pp->dst) = vcc_sockaddr(tl, &pp->sa, pp->l);
+		if (pp->dst_ascii != NULL) {
+			*pp->dst_ascii = TlDup(tl, hbuf);
+		}
+		retval++;
+	}
+	if (p_ascii != NULL) {
+		error = getnameinfo(res0->ai_addr,
+		    res0->ai_addrlen, NULL, 0, hbuf, sizeof hbuf,
+		    NI_NUMERICSERV);
+		AZ(error);
+		*p_ascii = TlDup(tl, hbuf);
+	}
+	if (retval == 0) {
+		VSB_printf(tl->sb,
+		    "%s '%.*s': resolves to "
+		    "neither IPv4 nor IPv6 addresses.\n",
+		    errid, PF(t_err) );
+		vcc_ErrWhere(tl, t_err);
+	}
 }

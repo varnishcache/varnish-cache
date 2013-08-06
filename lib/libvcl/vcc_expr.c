@@ -652,6 +652,7 @@ static void
 vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 {
 	struct expr *e1, *e2;
+	const char *ip;
 	const struct symbol *sym;
 	double d;
 
@@ -698,13 +699,22 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		return;
 	case CSTR:
 		assert(fmt != VOID);
-		e1 = vcc_new_expr();
-		EncToken(e1->vsb, tl->t);
-		e1->fmt = STRING;
+		if (fmt == IP) {
+			Resolve_Sockaddr(tl, tl->t->dec, "80",
+			    &ip, NULL, &ip, NULL, NULL, 1,
+			    tl->t, "IP constant");
+			ERRCHK(tl);
+			e1 = vcc_mk_expr(IP, "%s", ip);
+			ERRCHK(tl);
+		} else {
+			e1 = vcc_new_expr();
+			EncToken(e1->vsb, tl->t);
+			e1->fmt = STRING;
+			AZ(VSB_finish(e1->vsb));
+		}
 		e1->t1 = tl->t;
 		e1->constant = EXPR_CONST;
 		vcc_NextToken(tl);
-		AZ(VSB_finish(e1->vsb));
 		*e = e1;
 		break;
 	case CNUM:

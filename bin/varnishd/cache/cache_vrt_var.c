@@ -258,7 +258,7 @@ VRT_r_beresp_backend_name(const struct vrt_ctx *ctx)
 	return(ctx->bo->vbc->backend->vcl_name);
 }
 
-struct sockaddr_storage *
+const void *
 VRT_r_beresp_backend_ip(const struct vrt_ctx *ctx)
 {
 
@@ -546,7 +546,7 @@ REQ_BOOL(hash_always_miss)
 
 /*--------------------------------------------------------------------*/
 
-struct sockaddr_storage *
+const void *
 VRT_r_client_ip(const struct vrt_ctx *ctx)
 {
 
@@ -555,7 +555,7 @@ VRT_r_client_ip(const struct vrt_ctx *ctx)
 	return (&ctx->req->sp->sockaddr);
 }
 
-struct sockaddr_storage *
+const void *
 VRT_r_server_ip(const struct vrt_ctx *ctx)
 {
 	int i;
