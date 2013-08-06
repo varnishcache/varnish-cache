@@ -124,8 +124,8 @@ struct vrt_backend {
 	const char			*ipv6_addr;
 	const char			*port;
 
-	const unsigned char		*ipv4_sockaddr;
-	const unsigned char		*ipv6_sockaddr;
+	const void			*ipv4_sockaddr;
+	const void 			*ipv6_sockaddr;
 
 	const char			*hosthdr;
 

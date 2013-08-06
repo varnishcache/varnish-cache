@@ -61,6 +61,7 @@
 #include "vcc_compile.h"
 
 #include "vss.h"
+#include "vsa.h"
 
 struct host {
 	VTAILQ_ENTRY(host)      list;
@@ -68,27 +69,38 @@ struct host {
 	char			*vgcname;
 };
 
-static int
-emit_sockaddr(struct vcc *tl, void *sa, unsigned sal)
-{
-	unsigned len;
-	uint8_t *u;
+/*
+ * The IPv6 crew royally screwed up the entire idea behind
+ * struct sockaddr, and combined with various other incomptency
+ * in the OS business, that means that there is no sane or even
+ * remotely portable way to initialize a sockaddr at compile time.
+ *
+ * In our case it is slightly more tricky than that, because we don't
+ * even want to #include the struct sockaddr* definitions.
+ *
+ * Instead we make sure the sockaddr is sane (for our values of sane)
+ * and dump it in binary, using a 64 bit integertype, hoping that this
+ * will ensure good enough alignment.
+ */
 
+static int
+emit_sockaddr(struct vcc *tl, const void *sa, unsigned sal)
+{
+	unsigned n = (sal + 7) / 8, len;
+	uint64_t b[n];
+
+	assert(VSA_Sane(sa));
 	AN(sa);
 	AN(sal);
 	assert(sal < 256);
-	Fh(tl, 0, "\nstatic const unsigned char sockaddr_%u[%d] = {\n",
-	    tl->unique, sal + 1);
-	Fh(tl, 0, "    %3u, /* Length */\n",  sal);
-	u = sa;
-	for (len = 0; len <sal; len++) {
-		if ((len % 8) == 0)
-			Fh(tl, 0, "   ");
-		Fh(tl, 0, " %3u", u[len]);
-		if (len + 1 < sal)
-			Fh(tl, 0, ",");
-		if ((len % 8) == 7)
-			Fh(tl, 0, "\n");
+	assert(sizeof(unsigned long long) == 8);
+	Fh(tl, 0, "\nstatic const unsigned long long");
+	Fh(tl, 0, " sockaddr_%u[%d] = {\n", tl->unique, n);
+	memcpy(b, sa, sal);
+	for (len = 0; len <n; len++) {
+		Fh(tl, 0, "%s    0x%016jx",
+		    len ? ",\n" : "",
+		    (uintmax_t)b[len]);
 	}
 	Fh(tl, 0, "\n};\n");
 	return (tl->unique++);

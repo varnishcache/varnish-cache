@@ -150,13 +150,13 @@ VBE_DropRefConn(struct backend *b)
  */
 
 static void
-copy_sockaddr(struct sockaddr_storage **sa, const unsigned char *src)
+copy_sockaddr(struct sockaddr_storage **sa, const void *src)
 {
 
-	assert(*src > 0);
+	assert(VSA_Sane(src));
 	*sa = calloc(sizeof **sa, 1);
 	XXXAN(*sa);
-	memcpy(*sa, src + 1, *src);
+	memcpy(*sa, src, VSA_Len(src));
 	assert(VSA_Sane(*sa));
 }
 
@@ -183,10 +183,10 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 		if (strcmp(b->vcl_name, vb->vcl_name))
 			continue;
 		if (vb->ipv4_sockaddr != NULL &&
-		    VSA_Compare(b->ipv4, vb->ipv4_sockaddr + 1))
+		    VSA_Compare(b->ipv4, vb->ipv4_sockaddr))
 			continue;
 		if (vb->ipv6_sockaddr != NULL &&
-		    VSA_Compare(b->ipv6, vb->ipv6_sockaddr + 1))
+		    VSA_Compare(b->ipv6, vb->ipv6_sockaddr))
 			continue;
 		b->refcount++;
 		b->vsc->vcls++;
