@@ -30,9 +30,9 @@
 #ifndef VSA_H_INCLUDED
 #define VSA_H_INCLUDED
 
-int VSA_Sane(const struct sockaddr_storage *ss);
-socklen_t VSA_Len(const struct sockaddr_storage *ss);
-unsigned VSA_Port(const struct sockaddr_storage *ss);
-int VSA_Compare(const struct sockaddr_storage *ss1, const void *ss2);
+int VSA_Sane(const void *);
+socklen_t VSA_Len(const void *);
+unsigned VSA_Port(const void *);
+int VSA_Compare(const void *, const void *);
 
 #endif

@@ -33,9 +33,14 @@
 #include <math.h>
 #include <stdlib.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+
 #include "cache/cache.h"
 
 #include "vrt.h"
+#include "vsa.h"
 #include "vcc_if.h"
 
 VCL_DURATION __match_proto__()
@@ -116,4 +121,38 @@ vmod_integer(const struct vrt_ctx *ctx, const char *p, VCL_INT i)
 		return (i);
 
 	return (r);
+}
+
+VCL_IP
+vmod_ip(const struct vrt_ctx *ctx, VCL_STRING s, VCL_IP d)
+{
+	struct addrinfo hints, *res0;
+	const struct addrinfo *res;
+	int error;
+	char *p;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(d);
+	assert(VSA_Sane(d));
+
+	if (s != NULL) {
+		memset(&hints, 0, sizeof(hints));
+		hints.ai_family = PF_UNSPEC;
+		hints.ai_socktype = SOCK_STREAM;
+		error = getaddrinfo(s, "80", &hints, &res0);
+		if (!error) {
+			for (res = res0; res != NULL; res = res->ai_next) {
+				if (VSA_Sane(res->ai_addr) &&
+				    res->ai_addrlen >= VSA_Len(res->ai_addr)) {
+					d = res->ai_addr;
+					break;
+				}
+			}
+		}
+	}
+	AN(d);
+	p = WS_Alloc(ctx->ws, VSA_Len(d));
+	AN(p);
+	memcpy(p, d, VSA_Len(d));
+	return (p);
 }

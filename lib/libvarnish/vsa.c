@@ -42,9 +42,11 @@
 #include "vsa.h"
 
 int
-VSA_Sane(const struct sockaddr_storage *ss)
+VSA_Sane(const void *s)
 {
-	switch(ss->ss_family) {
+	const struct sockaddr *sa = s;
+
+	switch(sa->sa_family) {
 		case PF_INET:
 		case PF_INET6:
 			return (1);
@@ -54,9 +56,11 @@ VSA_Sane(const struct sockaddr_storage *ss)
 }
 
 socklen_t
-VSA_Len(const struct sockaddr_storage *ss)
+VSA_Len(const void *s)
 {
-	switch(ss->ss_family) {
+	const struct sockaddr *sa = s;
+
+	switch(sa->sa_family) {
 		case PF_INET:
 			return (sizeof(struct sockaddr_in));
 		case PF_INET6:
@@ -67,29 +71,33 @@ VSA_Len(const struct sockaddr_storage *ss)
 }
 
 int
-VSA_Compare(const struct sockaddr_storage *ss1, const void *ss2)
+VSA_Compare(const void *s1, const void *s2)
 {
-	switch(ss1->ss_family) {
+	const struct sockaddr *sa = s1;
+
+	switch(sa->sa_family) {
 		case PF_INET:
 		case PF_INET6:
-			return (memcmp(ss1, ss2, VSA_Len(ss1)));
+			return (memcmp(s1, s2, VSA_Len(s1)));
 		default:
 			return (-1);
 	}
 }
 
 unsigned
-VSA_Port(const struct sockaddr_storage *ss)
+VSA_Port(const void *s)
 {
-	switch(ss->ss_family) {
+	const struct sockaddr *sa = s;
+
+	switch(sa->sa_family) {
 		case PF_INET:
 			{
-			const struct sockaddr_in *ain = (const void *)ss;
+			const struct sockaddr_in *ain = s;
 			return (ntohs((ain->sin_port)));
 			}
 		case PF_INET6:
 			{
-			const struct sockaddr_in6 *ain = (const void *)ss;
+			const struct sockaddr_in6 *ain = s;
 			return (ntohs((ain->sin6_port)));
 			}
 		default:

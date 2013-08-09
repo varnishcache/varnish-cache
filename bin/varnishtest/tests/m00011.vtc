@@ -1,0 +1,28 @@
+varnishtest "Test std.ip"
+
+
+server s1 {
+	rxreq
+	txresp -body "1"
+} -start
+
+
+varnish v1 -vcl+backend {
+
+	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
+	sub vcl_deliver {
+		set resp.http.foo0 = std.ip("8.8.8.*", client.ip);
+		set resp.http.foo1 = std.ip("9.9.9.*", server.ip);
+		set resp.http.foo2 = std.ip("1.2.3.*", "127.0.0.2");
+		set resp.http.foo3 = std.ip("1.2.3.5", "127.0.0.3");
+	}
+} -start
+
+client c1 {
+	txreq -url "/foo1"
+	rxresp
+	expect resp.http.foo0 == "127.0.0.1"
+	expect resp.http.foo1 == "127.0.0.1"
+	expect resp.http.foo2 == "127.0.0.2"
+	expect resp.http.foo3 == "1.2.3.5"
+} -run
