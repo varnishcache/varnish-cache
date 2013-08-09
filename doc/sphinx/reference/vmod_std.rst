@@ -63,7 +63,7 @@ Description
 	utilize it.
 Example
 	| if (req.url ~ ^/slow/) {
-	|    std.set_up_tos(0x0);
+	|    std.set_ip_tos(0x0);
 	| }
 
 random
