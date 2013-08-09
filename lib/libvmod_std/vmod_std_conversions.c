@@ -126,7 +126,7 @@ vmod_integer(const struct vrt_ctx *ctx, const char *p, VCL_INT i)
 VCL_IP
 vmod_ip(const struct vrt_ctx *ctx, VCL_STRING s, VCL_IP d)
 {
-	struct addrinfo hints, *res0;
+	struct addrinfo hints, *res0 = NULL;
 	const struct addrinfo *res;
 	int error;
 	char *p;
@@ -154,5 +154,7 @@ vmod_ip(const struct vrt_ctx *ctx, VCL_STRING s, VCL_IP d)
 	p = WS_Alloc(ctx->ws, VSA_Len(d));
 	AN(p);
 	memcpy(p, d, VSA_Len(d));
+	if (res0 != NULL)
+		freeaddrinfo(res0);
 	return (p);
 }
