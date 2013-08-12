@@ -393,13 +393,19 @@ cnt_fetch(struct worker *wrk, struct req *req)
 DOT subgraph xcluster_lookup {
 DOT	lookup [
 DOT		shape=record
-DOT		label="{<top>cnt_lookup:|hash lookup|{<busy>busy?|exp|expbusy|hit|miss}|{vcl_lookup\{\}|{xx|xx}}|{<no>no|obj.f.pass?|<yes>yes}}"
+DOT		label="{<top>cnt_lookup:|hash lookup|{<busy>busy?|<e>exp?|<eb>expbusy?|<h>hit?|<miss>miss?|<hfp>hit-for-pass?}}"
+DOT	]
+DOT	lookup2 [
+DOT		shape=record
+DOT		label="{<top>cnt_lookup:|{vcl_lookup\{\}|{xx|xx}}}"
 DOT	]
 DOT }
 DOT lookup:busy:w -> lookup:top:w [label="(waitinglist)"]
-DOT lookup:miss -> miss [style=bold,color=blue]
-DOT lookup:no -> hit [style=bold,color=green]
-DOT lookup:yes -> pass [style=bold,color=red]
+DOT lookup:miss:s -> miss [style=bold,color=blue]
+DOT lookup:hfp:s -> pass [style=bold,color=red]
+DOT lookup:e:s -> lookup2 [style=bold,color=green]
+DOT lookup:eb:s -> lookup2 [style=bold,color=green]
+DOT lookup:h:s -> lookup2 [style=bold,color=green]
  */
 
 static enum req_fsm_nxt
@@ -446,8 +452,10 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		return (REQ_FSM_MORE);
 	}
 
-	AN(oc);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ (oc->flags & OC_F_BUSY);
+	AZ(req->objcore);
+	AZ(req->busyobj);
 
 	if (oc->flags & OC_F_PASS) {
 		/* Found a hit-for-pass */
@@ -494,8 +502,6 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		INCOMPL();
 	}
 
-
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	oh = oc->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
@@ -508,14 +514,8 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	VRY_Finish(req, NULL);
 
-	if (oc->flags & OC_F_PASS)
-		wrk->stats.cache_hitpass++;
-	else
-		wrk->stats.cache_hit++;
+	wrk->stats.cache_hit++;
 	VSLb(req->vsl, SLT_Hit, "%u", req->obj->vxid);
-
-	AZ(req->objcore);
-	AZ(req->busyobj);
 
 	VCL_lookup_method(req->vcl, wrk, req, NULL, req->http->ws);
 
@@ -553,7 +553,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 DOT subgraph xcluster_miss {
 DOT	miss [
 DOT		shape=record
-DOT		label="{cnt_miss:|{vcl_miss\{\}|req.*}|{<err>error?|<rst>restart?}|{<pass>pass?|<fetch>fetch?}}"
+DOT		label="{cnt_miss:|{vcl_miss\{\}|req.*}|{<err>error?|<rst>restart?}|{<fetch>fetch?|<pass>pass?}}"
 DOT	]
 DOT }
 DOT miss:fetch -> fetch [label="fetch",style=bold,color=blue]
@@ -761,7 +761,7 @@ cnt_restart(const struct worker *wrk, struct req *req)
 DOT subgraph xcluster_recv {
 DOT	recv [
 DOT		shape=record
-DOT		label="{cnt_recv:|{vcl_recv\{\}|req.*}|{vcl_hash\{\}|req.*}|{<pass>pass?|<lookup>lookup?|<pipe>pipe?|<error>error?|<purge>purge?}}"
+DOT		label="{cnt_recv:|{vcl_recv\{\}|req.*}|{vcl_hash\{\}|req.*}|{<lookup>lookup?|<pass>pass?|<pipe>pipe?|<error>error?|<purge>purge?}}"
 DOT	]
 DOT }
 DOT recv:pipe -> pipe [style=bold,color=orange]
