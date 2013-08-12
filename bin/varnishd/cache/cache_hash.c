@@ -404,7 +404,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			*ocp = oc;
 			return (HSH_HIT);
 		}
-		if (o->exp.entered > exp_entered) {
+		if (o->exp.entered > exp_entered &&
+		    !(oc->flags & OC_F_PASS)) {
 			/* record the newest object */
 			exp_oc = oc;
 			exp_o = o;

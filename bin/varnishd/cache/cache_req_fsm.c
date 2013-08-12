@@ -433,57 +433,71 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		 */
 		return (REQ_FSM_DISEMBARK);
 	}
-	AZ(req->objcore);
 
+	AZ(req->objcore);
+	if (lr == HSH_MISS) {
+		/* Found nothing */
+		VSLb(req->vsl, SLT_Debug, "XXXX MISS\n");
+		AZ(oc);
+		AN(boc);
+		AN(boc->flags & OC_F_BUSY);
+		req->objcore = boc;
+		req->req_step = R_STP_MISS;
+		return (REQ_FSM_MORE);
+	}
+
+	AN(oc);
+	AZ (oc->flags & OC_F_BUSY);
+
+	if (oc->flags & OC_F_PASS) {
+		/* Found a hit-for-pass */
+		VSLb(req->vsl, SLT_Debug, "XXXX HIT-FOR-PASS\n");
+		AZ(boc);
+		(void)HSH_Deref(&wrk->stats, oc, NULL);
+		req->objcore = NULL;
+		VRY_Finish(req, NULL);
+		wrk->stats.cache_hitpass++;
+		req->req_step = R_STP_PASS;
+		return (REQ_FSM_MORE);
+	}
+
+	if (boc != NULL)
+		AN(boc->flags & OC_F_BUSY);
 
 	switch (lr) {
 	case HSH_EXP:
+		/* Found expired object, and a busy already exists too */
 		VSLb(req->vsl, SLT_Debug, "XXXX EXP\n");
-		AN(oc);
 		AZ(boc);
 		break;
 	case HSH_EXPBUSY:
+		/* Found expired object, inserted busy objcore */
 		VSLb(req->vsl, SLT_Debug, "XXXX EXPBUSY\n");
-		AN(oc);
 		AN(boc);
 		if (VDI_Healthy(req->director, req->digest)) {
 			VSLb(req->vsl, SLT_Debug, "XXX EXPBUSY deref oc\n");
 			(void)HSH_Deref(&wrk->stats, oc, NULL);
-			oc = boc;
-			boc = NULL;
-		} else {
-			VSLb(req->vsl, SLT_Debug, "XXX EXPBUSY drop boc\n");
-			(void)HSH_Deref(&wrk->stats, boc, NULL);
-			boc = NULL;
+			req->objcore = boc;
+			req->req_step = R_STP_MISS;
+			return (REQ_FSM_MORE);
 		}
-		break;
-	case HSH_MISS:
-		VSLb(req->vsl, SLT_Debug, "XXXX MISS\n");
-		AZ(oc);
-		AN(boc);
-		oc = boc;
+		VSLb(req->vsl, SLT_Debug, "XXX EXPBUSY drop boc\n");
+		(void)HSH_Deref(&wrk->stats, boc, NULL);
 		boc = NULL;
-		AN(oc->flags & OC_F_BUSY);
 		break;
 	case HSH_HIT:
+		/* Found hit */
 		VSLb(req->vsl, SLT_Debug, "XXXX HIT\n");
-		AN(oc);
 		AZ(boc);
 		break;
 	default:
 		INCOMPL();
 	}
 
+
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	oh = oc->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-
-	/* If we inserted a new object it's a miss */
-	if (oc->flags & OC_F_BUSY) {
-		req->objcore = oc;
-		req->req_step = R_STP_MISS;
-		return (REQ_FSM_MORE);
-	}
 
 	/* We are not prepared to do streaming yet */
 	XXXAZ(req->busyobj);
@@ -504,14 +518,6 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	AZ(req->busyobj);
 
 	VCL_lookup_method(req->vcl, wrk, req, NULL, req->http->ws);
-
-	if ((req->obj->objcore->flags & OC_F_PASS) &&
-	    wrk->handling == VCL_RET_DELIVER) {
-		VSLb(req->vsl, SLT_VCL_Error,
-		    "obj.uncacheable set, but vcl_lookup{} returned 'deliver'"
-		    ", changing to 'pass'");
-		wrk->handling = VCL_RET_PASS;
-	}
 
 	if (wrk->handling == VCL_RET_DELIVER) {
 		//AZ(req->busyobj->bereq->ws);
