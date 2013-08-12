@@ -32,6 +32,8 @@ Function STRING author(ENUM { phk, des, kristian, mithrandir })
 Function VOID test_priv_call(PRIV_CALL)
 Function VOID test_priv_vcl(PRIV_VCL)
 Object obj(STRING) {
+	# NOTE: .enum before .foo as part of test r01332.vtc
+	Method VOID .enum(ENUM { phk, des, kristian, mithrandir, martin })
 	Method STRING .foo(STRING why)
 	Method TIME .date()
 }

@@ -69,6 +69,15 @@ vmod_obj__fini(struct vmod_debug_obj **op)
 	*op = NULL;
 }
 
+VCL_VOID __match_proto__()
+vmod_obj_enum(const struct vrt_ctx *ctx, struct vmod_debug_obj *o, VCL_ENUM e)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(o, VMOD_DEBUG_OBJ_MAGIC);
+	assert(!strcmp(e, "martin"));
+}
+
 VCL_STRING __match_proto__()
 vmod_obj_foo(const struct vrt_ctx *ctx, struct vmod_debug_obj *o, VCL_STRING s)
 {

@@ -234,8 +234,19 @@ parse_new(struct vcc *tl)
 
 		sy3->args = p;
 		sy3->extra = TlDup(tl, buf1);
-		while (p[0] != '\0' || p[1] != '\0')
+		while (p[0] != '\0' || p[1] != '\0') {
+			if (!memcmp(p, "ENUM\0", 5)) {
+				/* XXX: Special case for ENUM that has
+				   it's own \0\0 end marker. Not exactly
+				   elegant, we should consider
+				   alternatives here. Maybe runlength
+				   encode the entire block? */
+				p += strlen(p) + 1;
+				while (p[0] != '\0' || p[1] != '\0')
+					p++;
+			}
 			p++;
+		}
 		p += 2;
 	}
 	/*lint -restore */

@@ -1,0 +1,26 @@
+varnishtest "#1332 - Check enum as argument in vmod object"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import debug from "${topbuild}/lib/libvmod_debug/.libs/libvmod_debug.so";
+
+	sub vcl_init {
+		new obj = debug.obj("don't care");
+	}
+
+	sub vcl_deliver {
+		obj.enum(martin);
+		set resp.http.foo = obj.foo("");
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == "BOO"
+} -run
