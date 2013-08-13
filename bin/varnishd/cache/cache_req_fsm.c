@@ -397,7 +397,7 @@ DOT		label="{<top>cnt_lookup:|hash lookup|{<busy>busy?|<e>exp?|<eb>expbusy?|<h>h
 DOT	]
 DOT	lookup2 [
 DOT		shape=record
-DOT		label="{<top>cnt_lookup:|{vcl_lookup\{\}|{xx|xx}}}"
+DOT		label="{<top>cnt_lookup:|{vcl_lookup\{\}|{req.*|obj.*|obj_stale.*}}}"
 DOT	]
 DOT }
 DOT lookup:busy:w -> lookup:top:w [label="(waitinglist)"]
@@ -440,10 +440,12 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		return (REQ_FSM_DISEMBARK);
 	}
 
-	if (boc == NULL)
+	if (boc == NULL) {
 		VRY_Finish(req, DISCARD);
-	else
+	} else {
+		AN(boc->flags & OC_F_BUSY);
 		VRY_Finish(req, KEEP);
+	}
 
 	AZ(req->objcore);
 	if (lr == HSH_MISS) {
@@ -473,41 +475,6 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		return (REQ_FSM_MORE);
 	}
 
-	if (boc != NULL)
-		AN(boc->flags & OC_F_BUSY);
-
-	switch (lr) {
-	case HSH_EXP:
-		/* Found expired object, and a busy already exists too */
-		VSLb(req->vsl, SLT_Debug, "XXXX EXP\n");
-		AZ(boc);
-		break;
-	case HSH_EXPBUSY:
-		/* Found expired object, inserted busy objcore */
-		VSLb(req->vsl, SLT_Debug, "XXXX EXPBUSY\n");
-		AN(boc);
-		if (VDI_Healthy(req->director, req->digest)) {
-			VSLb(req->vsl, SLT_Debug, "XXX EXPBUSY deref oc\n");
-			(void)HSH_Deref(&wrk->stats, oc, NULL);
-			req->objcore = boc;
-			req->req_step = R_STP_MISS;
-			return (REQ_FSM_MORE);
-		}
-		VSLb(req->vsl, SLT_Debug, "XXX EXPBUSY drop boc\n");
-		(void)HSH_Deref(&wrk->stats, boc, NULL);
-		boc = NULL;
-		free(req->vary_b);
-		req->vary_b = NULL;
-		break;
-	case HSH_HIT:
-		/* Found hit */
-		VSLb(req->vsl, SLT_Debug, "XXXX HIT\n");
-		AZ(boc);
-		break;
-	default:
-		INCOMPL();
-	}
-
 	oh = oc->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
@@ -518,36 +485,56 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	req->obj = o;
 
-	wrk->stats.cache_hit++;
 	VSLb(req->vsl, SLT_Hit, "%u", req->obj->vxid);
 
 	VCL_lookup_method(req->vcl, wrk, req, NULL, req->http->ws);
 
-	if (wrk->handling == VCL_RET_DELIVER) {
-		//AZ(req->busyobj->bereq->ws);
-		//AZ(req->busyobj->beresp->ws);
+	switch (wrk->handling) {
+	case VCL_RET_DELIVER:
+		if (boc != NULL && VDI_Healthy(req->director, req->digest)) {
+			// XXX: Start bg-fetch */
+			(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
+			req->objcore = boc;
+			req->req_step = R_STP_MISS;
+			return (REQ_FSM_MORE);
+		} else if (boc != NULL) {
+			(void)HSH_Deref(&wrk->stats, boc, NULL);
+			free(req->vary_b);
+			req->vary_b = NULL;
+		}
+		wrk->stats.cache_hit++;
 		(void)HTTP1_DiscardReqBody(req);	// XXX: handle err
 		req->req_step = R_STP_PREPRESP;
 		return (REQ_FSM_MORE);
+	case VCL_RET_FETCH:
+		(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
+		req->objcore = boc;
+		req->req_step = R_STP_MISS;
+		return (REQ_FSM_MORE);
+	case VCL_RET_RESTART:
+		req->req_step = R_STP_RESTART;
+		break;
+	case VCL_RET_ERROR:
+		req->req_step = R_STP_ERROR;
+		break;
+	case VCL_RET_PASS:
+		wrk->stats.cache_hit++;
+		req->req_step = R_STP_PASS;
+		break;
+	default:
+		INCOMPL();
 	}
 
 	/* Drop our object, we won't need it */
 	(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
 	req->objcore = NULL;
 
-	switch(wrk->handling) {
-	case VCL_RET_PASS:
-		req->req_step = R_STP_PASS;
-		break;
-	case VCL_RET_ERROR:
-		req->req_step = R_STP_ERROR;
-		break;
-	case VCL_RET_RESTART:
-		req->req_step = R_STP_RESTART;
-		break;
-	default:
-		WRONG("Illegal action in vcl_lookup{}");
+	if (boc != NULL) {
+		(void)HSH_Deref(&wrk->stats, boc, NULL);
+		free(req->vary_b);
+		req->vary_b = NULL;
 	}
+
 	return (REQ_FSM_MORE);
 }
 

@@ -98,21 +98,17 @@ sub vcl_purge {
 }
 
 sub vcl_lookup {
-/*
-    if (!obj) {
-	    return (deliver);
-    }
-    if (obj.uncacheable) {
-	return (pass);
-    }
     if (obj.ttl >= 0s) {
+	// A pure unadultered hit, deliver it
 	return (deliver);
     }
     if (obj.ttl + obj.grace > 0s) {
-	return (deliver_stale);
+	// Object is in grace, delive it
+	// Automatically triggers a background fetch
+	return (deliver);
     }
-*/
-    return (deliver);
+    // fetch & deliver once we get the result
+    return (fetch);
 }
 
 sub vcl_miss {

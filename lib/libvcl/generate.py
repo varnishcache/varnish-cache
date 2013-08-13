@@ -84,7 +84,7 @@ returns =(
 	('hash',		"C", ('lookup',)),
 	('purge',		"C", ('error', 'fetch',)),
 	('miss',		"C", ('error', 'restart', 'pass', 'fetch',)),
-	('lookup',		"C", ('error', 'restart', 'pass', 'deliver',)),
+	('lookup',		"C", ('error', 'restart', 'pass', 'fetch', 'deliver',)),
 	('backend_fetch',	"B", ('fetch', 'abandon')),
 	('backend_response',	"B", ('deliver', 'retry', 'abandon')),
 	('deliver',		"C", ('restart', 'deliver',)),
