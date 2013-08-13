@@ -56,6 +56,8 @@
 
 #include "config.h"
 
+#include <stdlib.h>
+
 #include "cache.h"
 
 #include "vct.h"
@@ -213,6 +215,9 @@ vry_cmp(const uint8_t *v1, const uint8_t *v2)
 
 /**********************************************************************
  * Prepare predictive vary string
+ *
+ * XXX: Strictly speaking vary_b and vary_e could be replaced with
+ * XXX: req->ws->{f,r}.   Space in struct req vs. code-readability...
  */
 
 void
@@ -238,24 +243,22 @@ VRY_Prep(struct req *req)
  */
 
 void
-VRY_Finish(struct req *req, struct busyobj *bo)
+VRY_Finish(struct req *req, enum vry_finish_flag flg)
 {
+	uint8_t *p = NULL;
 
-	if (bo != NULL) {
-		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-		VRY_Validate(req->vary_b);
-		if (req->vary_l != NULL) {
-			bo->vary = WS_Copy(bo->ws,
-			    req->vary_b, req->vary_l - req->vary_b);
-			AN(bo->vary);
-			VRY_Validate(bo->vary);
-		} else
-			bo->vary = NULL;
+	VRY_Validate(req->vary_b);
+	if (flg == KEEP && req->vary_l != NULL) {
+		p = malloc(req->vary_l - req->vary_b);
+		if (p != NULL) {
+			memcpy(p, req->vary_b, req->vary_l - req->vary_b);
+			VRY_Validate(p);
+		}
 	}
 	WS_Release(req->ws, 0);
-	req->vary_b = NULL;
 	req->vary_l = NULL;
 	req->vary_e = NULL;
+	req->vary_b = p;
 }
 
 /**********************************************************************

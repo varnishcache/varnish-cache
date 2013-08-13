@@ -440,6 +440,11 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		return (REQ_FSM_DISEMBARK);
 	}
 
+	if (boc == NULL)
+		VRY_Finish(req, DISCARD);
+	else
+		VRY_Finish(req, KEEP);
+
 	AZ(req->objcore);
 	if (lr == HSH_MISS) {
 		/* Found nothing */
@@ -463,7 +468,6 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		AZ(boc);
 		(void)HSH_Deref(&wrk->stats, oc, NULL);
 		req->objcore = NULL;
-		VRY_Finish(req, NULL);
 		wrk->stats.cache_hitpass++;
 		req->req_step = R_STP_PASS;
 		return (REQ_FSM_MORE);
@@ -492,6 +496,8 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		VSLb(req->vsl, SLT_Debug, "XXX EXPBUSY drop boc\n");
 		(void)HSH_Deref(&wrk->stats, boc, NULL);
 		boc = NULL;
+		free(req->vary_b);
+		req->vary_b = NULL;
 		break;
 	case HSH_HIT:
 		/* Found hit */
@@ -511,8 +517,6 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	o = oc_getobj(&wrk->stats, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	req->obj = o;
-
-	VRY_Finish(req, NULL);
 
 	wrk->stats.cache_hit++;
 	VSLb(req->vsl, SLT_Hit, "%u", req->obj->vxid);
@@ -580,7 +584,8 @@ cnt_miss(struct worker *wrk, struct req *req)
 	bo = VBO_GetBusyObj(wrk, req);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	req->busyobj = bo;
-	VRY_Finish(req, bo);
+	bo->vary = req->vary_b;
+	req->vary_b = NULL;
 
 	VCL_miss_method(req->vcl, wrk, req, NULL, req->http->ws);
 	switch (wrk->handling) {
@@ -886,7 +891,7 @@ cnt_purge(struct worker *wrk, struct req *req)
 	assert (lr == HSH_MISS);
 	AZ(oc);
 	CHECK_OBJ_NOTNULL(boc, OBJCORE_MAGIC);
-	VRY_Finish(req, NULL);
+	VRY_Finish(req, DISCARD);
 
 	HSH_Purge(wrk, boc->objhead, 0, 0);
 

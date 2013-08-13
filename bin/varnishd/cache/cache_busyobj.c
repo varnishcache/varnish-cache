@@ -197,6 +197,9 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 
 	VCL_Rel(&bo->vcl);
 
+	if (bo->vary != NULL)
+		free(bo->vary);
+
 	memset(&bo->refcount, 0,
 	    sizeof *bo - offsetof(struct busyobj, refcount));
 

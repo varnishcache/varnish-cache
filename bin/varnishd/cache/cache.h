@@ -1043,7 +1043,8 @@ int VRY_Create(struct busyobj *bo, struct vsb **psb);
 int VRY_Match(struct req *, const uint8_t *vary);
 void VRY_Validate(const uint8_t *vary);
 void VRY_Prep(struct req *);
-void VRY_Finish(struct req *req, struct busyobj *bo);
+enum vry_finish_flag { KEEP, DISCARD };
+void VRY_Finish(struct req *req, enum vry_finish_flag);
 
 /* cache_vcl.c */
 void VCL_Init(void);
