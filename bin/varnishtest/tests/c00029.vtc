@@ -1,5 +1,7 @@
 varnishtest "Test that saintmode_threshold correctly marks a backend as sick"
 
+feature OldSaintMode
+
 server s1 {
 	rxreq
 	txresp

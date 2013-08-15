@@ -1,5 +1,7 @@
 varnishtest "Test that saintmode_threshold in VCL"
 
+feature OldSaintMode
+
 server s1 {
 	rxreq
 	txresp

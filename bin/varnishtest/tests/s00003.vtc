@@ -1,5 +1,7 @@
 varnishtest "Check saint mode with sick pages"
 
+feature OldSaintMode
+
 server s1 {
 	timeout 10
 

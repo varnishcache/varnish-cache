@@ -1,4 +1,4 @@
-varnishtest "using req.ttl to force fetch"
+varnishtest "using req.hash_always_miss to force fetch"
 
 server s1 {
 	rxreq
@@ -13,8 +13,7 @@ server s1 {
 varnish v1 -vcl+backend {
 	sub vcl_recv {
 		if (req.http.short) {
-			set req.ttl = 1s;
-			set req.grace = 0s;
+			set req.hash_always_miss = true;
 		}
 	}
 } -start
@@ -29,8 +28,6 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 1
-
-	delay 2
 
 	txreq -url "/1" -hdr "short: yes"
 	rxresp

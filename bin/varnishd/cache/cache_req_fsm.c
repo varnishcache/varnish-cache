@@ -487,19 +487,13 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	switch (wrk->handling) {
 	case VCL_RET_DELIVER:
-		if (boc != NULL && VDI_Healthy(req->director, req->digest)) {
-			// XXX: Start bg-fetch */
-			(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
-			req->objcore = boc;
-			req->req_step = R_STP_MISS;
-			return (REQ_FSM_MORE);
-		} else if (boc != NULL) {
-			(void)HSH_Deref(&wrk->stats, boc, NULL);
-			free(req->vary_b);
-			req->vary_b = NULL;
+		if (boc != NULL) {
+			req->busyobj = VBF_Fetch(wrk, req, boc, 0);
+			VBO_DerefBusyObj(wrk, &req->busyobj);
+		} else {
+			(void)HTTP1_DiscardReqBody(req);// XXX: handle err
 		}
 		wrk->stats.cache_hit++;
-		(void)HTTP1_DiscardReqBody(req);	// XXX: handle err
 		req->req_step = R_STP_PREPRESP;
 		return (REQ_FSM_MORE);
 	case VCL_RET_FETCH:
