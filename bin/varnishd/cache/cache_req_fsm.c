@@ -336,7 +336,7 @@ cnt_error(struct worker *wrk, struct req *req)
 }
 
 /*--------------------------------------------------------------------
- * Prepare to fetch body from backend
+ * Initiated a fetch (pass/miss) which we intend to deliver
  *
 DOT subgraph xcluster_body {
 DOT	fetch [
@@ -355,12 +355,8 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	AN(req->busyobj);
-	AN(req->objcore);
 	req->acct_req.fetch++;
-	VBF_Fetch(wrk, req);
 	AN(req->busyobj);
-	AZ(req->objcore);
 	assert(req->busyobj->refcount > 0);
 	(void)HTTP1_DiscardReqBody(req);
 	while (req->busyobj->state < BOS_FAILED) {
@@ -555,7 +551,6 @@ DOT
 static enum req_fsm_nxt
 cnt_miss(struct worker *wrk, struct req *req)
 {
-	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -564,32 +559,22 @@ cnt_miss(struct worker *wrk, struct req *req)
 	AZ(req->obj);
 	AZ(req->busyobj);
 
-	/*
-	 * We optimistically expect to need this most of the time
-	 * (This allows us to put the predictive Vary directly on the bo->ws)
-	 */
-	bo = VBO_GetBusyObj(wrk, req);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	req->busyobj = bo;
-	bo->vary = req->vary_b;
-	req->vary_b = NULL;
-
 	VCL_miss_method(req->vcl, wrk, req, NULL, req->http->ws);
 	switch (wrk->handling) {
 	case VCL_RET_ERROR:
-		VBO_DerefBusyObj(wrk, &req->busyobj);
+		free(req->vary_b);
 		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
 		req->objcore = NULL;
 		req->req_step = R_STP_ERROR;
 		return (REQ_FSM_MORE);
 	case VCL_RET_RESTART:
-		VBO_DerefBusyObj(wrk, &req->busyobj);
+		free(req->vary_b);
 		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
 		req->objcore = NULL;
 		req->req_step = R_STP_RESTART;
 		return (REQ_FSM_MORE);
 	case VCL_RET_PASS:
-		VBO_DerefBusyObj(wrk, &req->busyobj);
+		free(req->vary_b);
 		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
 		req->objcore = NULL;
 		req->req_step = R_STP_PASS;
@@ -600,13 +585,11 @@ cnt_miss(struct worker *wrk, struct req *req)
 		WRONG("wrong return from vcl_miss{}");
 	}
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-
-	AN (req->objcore);
 	wrk->stats.cache_miss++;
 
-	req->objcore->busyobj = bo;
-	bo->refcount = 2;	/* One ref for req, one for vbf_fetch_body */
+	AN (req->objcore);
+	req->busyobj = VBF_Fetch(wrk, req, req->objcore, 0);
+	req->objcore = NULL;
 	req->req_step = R_STP_FETCH;
 	return (REQ_FSM_MORE);
 }
@@ -631,7 +614,6 @@ XDOT err_pass [label="ERROR",shape=plaintext]
 static enum req_fsm_nxt
 cnt_pass(struct worker *wrk, struct req *req)
 {
-	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -651,14 +633,10 @@ cnt_pass(struct worker *wrk, struct req *req)
 	assert (wrk->handling == VCL_RET_FETCH);
 	req->acct_req.pass++;
 
-	bo = VBO_GetBusyObj(wrk, req);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	req->busyobj = bo;
-	bo->do_pass = 1;
 	req->objcore = HSH_NewObjCore(wrk);
-
-	req->objcore->busyobj = bo;
-	bo->refcount = 2;	/* One ref for req, one for vbf_fetch_body */
+	AN(req->objcore);
+	req->busyobj = VBF_Fetch(wrk, req, req->objcore, 1);
+	req->objcore = NULL;
 	req->req_step = R_STP_FETCH;
 	return (REQ_FSM_MORE);
 }

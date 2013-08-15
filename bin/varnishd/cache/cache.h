@@ -838,7 +838,7 @@ int EXP_NukeOne(struct busyobj *, struct lru *lru);
 void EXP_NukeLRU(struct worker *wrk, struct vsl_log *vsl, struct lru *lru);
 
 /* cache_fetch.c */
-void VBF_Fetch(struct worker *wrk, struct req *req);
+struct busyobj *VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc, int pass);
 
 /* cache_fetch_proc.c */
 struct storage *VFP_GetStorage(struct busyobj *, ssize_t sz);

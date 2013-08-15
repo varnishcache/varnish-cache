@@ -506,23 +506,31 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 /*--------------------------------------------------------------------
  */
 
-void
-VBF_Fetch(struct worker *wrk, struct req *req)
+struct busyobj *
+VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc, int pass)
 {
 	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	bo = req->busyobj;
+	bo = VBO_GetBusyObj(wrk, req);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	assert(bo->refcount == 2);
+	bo->refcount = 2;
+
+	oc->busyobj = bo;
+
+	assert(bo->refcount >= 1);
 	CHECK_OBJ_NOTNULL(bo->vcl, VCL_CONF_MAGIC);
 
+	bo->do_pass = pass;
+
+	bo->vary = req->vary_b;
+	req->vary_b = NULL;
+
 	AZ(bo->fetch_objcore);
-	bo->fetch_objcore = req->objcore;
-	req->objcore = NULL;
+	bo->fetch_objcore = oc;
 
 	AZ(bo->req);
 	bo->req = req;
@@ -536,4 +544,5 @@ VBF_Fetch(struct worker *wrk, struct req *req)
 		printf("XXX\n");
 		(void)usleep(100000);
 	}
+	return (bo);
 }
