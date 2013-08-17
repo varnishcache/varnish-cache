@@ -1,0 +1,38 @@
+varnishtest "Test v4 grace"
+
+server s1 {
+	rxreq
+	txresp -bodylen 3
+	rxreq
+	txresp -bodylen 6
+	sema r2 sync 2
+} -start
+
+varnish v1 -vcl+backend { 
+	sub vcl_backend_response {
+		set beresp.ttl = 0.1s;
+		set beresp.grace = 10s;
+	}
+} -start
+
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 3
+
+	delay 1
+
+	# We still get old object
+	txreq
+	rxresp
+	expect resp.bodylen == 3
+
+	# But bg fetch was kicked off
+	sema r2 sync 2
+
+	# And now we get the new object
+	txreq
+	rxresp
+	expect resp.bodylen == 6
+} -run
