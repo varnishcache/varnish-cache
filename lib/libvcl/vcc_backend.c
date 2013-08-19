@@ -75,14 +75,15 @@ static void
 Emit_Sockaddr(struct vcc *tl, const struct token *t_host, const char *port)
 {
 	const char *ipv4, *ipv4a, *ipv6, *ipv6a, *pa;
+	const char *err;
 	char *hop, *pop;
 
 	AN(t_host->dec);
 
-	if (VSS_parse(t_host->dec, &hop, &pop)) {
+	err = VSS_parse(t_host->dec, &hop, &pop);
+	if (err != NULL) {
 		VSB_printf(tl->sb,
-		    "Backend host '%.*s': wrong syntax (unbalanced [...] ?)\n",
-		    PF(t_host) );
+		    "Backend host '%.*s': %s\n", PF(t_host), err);
 		vcc_ErrWhere(tl, t_host);
 		return;
 	}
@@ -416,7 +417,7 @@ vcc_ParseHostDef(struct vcc *tl, int serial, const char *vgcname)
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "probe")) {
 			VSB_printf(tl->sb,
-			    "Expected '{' or name of probe.");
+			    "Expected '{' or name of probe, got ");
 			vcc_ErrToken(tl, tl->t);
 			VSB_printf(tl->sb, " at\n");
 			vcc_ErrWhere(tl, tl->t);

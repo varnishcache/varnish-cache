@@ -71,7 +71,7 @@ struct vss_addr {
  * See also RFC5952
  */
 
-int
+const char *
 VSS_parse(const char *str, char **addr, char **port)
 {
 	const char *p;
@@ -83,7 +83,7 @@ VSS_parse(const char *str, char **addr, char **port)
 		if ((p = strchr(str, ']')) == NULL ||
 		    p == str + 1 ||
 		    (p[1] != '\0' && p[1] != ':'))
-			return (-1);
+			return ("IPv6 address [] wrong.");
 		*addr = strdup(str + 1);
 		XXXAN(*addr);
 		(*addr)[p - (str + 1)] = '\0';
@@ -109,7 +109,7 @@ VSS_parse(const char *str, char **addr, char **port)
 			XXXAN(*port);
 		}
 	}
-	return (0);
+	return (NULL);
 }
 
 /*
@@ -143,8 +143,7 @@ VSS_resolve(const char *addr, const char *port, struct vss_addr ***vap)
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 
-	ret = VSS_parse(addr, &hop, &adp);
-	if (ret)
+	if (VSS_parse(addr, &hop, &adp) != NULL)
 		return (0);
 
 	if (adp == NULL)

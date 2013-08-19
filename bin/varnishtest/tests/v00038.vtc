@@ -1,4 +1,4 @@
-varnishtest "VCL compiler coverage test: vcc_backend.c
+varnishtest "VCL compiler coverage test: vcc_backend.c"
 
 varnish v1 -errvcl "IPv6 address [] wrong" {
 	backend b1 {
@@ -59,7 +59,7 @@ varnish v1 -errvcl "NB: Backend Syntax has changed:" {
 	}
 }
 
-varnish v1 -errvcl "Expected '{' or name of probe." {
+varnish v1 -errvcl "Expected '{' or name of probe, got" {
 	backend b1 {
 		.host = "127.0.0.1";
 		.probe = "NONE";
