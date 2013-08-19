@@ -47,8 +47,12 @@
 static void
 vbf_release_req(struct busyobj *bo)
 {
-	if (bo->req != NULL)
-		bo->req = NULL;
+	if (bo->req == NULL)
+		return;
+	Lck_Lock(&bo->mtx);
+	bo->req = NULL;
+	AZ(pthread_cond_signal(&bo->cond));
+	Lck_Unlock(&bo->mtx);
 }
 
 /*--------------------------------------------------------------------
@@ -391,7 +395,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	 * Ready to fetch the body
 	 */
 
-	assert(bo->refcount >= 2);	/* one for each thread */
+	assert(bo->refcount >= 1);
 
 	if (obj->objcore->objhead != NULL) {
 		EXP_Insert(obj);
@@ -477,27 +481,31 @@ static void
 vbf_fetch_thread(struct worker *wrk, void *priv)
 {
 	struct busyobj *bo;
+	enum fetch_step stp;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->req, REQ_MAGIC);
 
 	THR_SetBusyobj(bo);
-	bo->step = F_STP_MKBEREQ;
+	stp = F_STP_MKBEREQ;
 
-	while (bo->step != F_STP_DONE) {
-		switch(bo->step) {
+	while (stp != F_STP_DONE) {
+		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+		bo->step = stp;
+		switch(stp) {
 #define FETCH_STEP(l, U, arg)						\
 		case F_STP_##U:						\
-			bo->step = vbf_stp_##l arg;			\
-			VSLb(bo->vsl, SLT_Debug,			\
-			    "%s -> %s", #l, vbf_step_name(bo->step));	\
+			stp = vbf_stp_##l arg;				\
 			break;
 #include "tbl/steps.h"
 #undef FETCH_STEP
 		default:
 			WRONG("Illegal fetch_step");
 		}
+		if (stp != F_STP_DONE)				
+			VSLb(bo->vsl, SLT_Debug, "%s -> %s",
+			    vbf_step_name(bo->step), vbf_step_name(stp));
 	}
 	assert(WRW_IsReleased(wrk));
 	THR_SetBusyobj(NULL);
@@ -521,7 +529,6 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc, int pass)
 
 	oc->busyobj = bo;
 
-	assert(bo->refcount >= 1);
 	CHECK_OBJ_NOTNULL(bo->vcl, VCL_CONF_MAGIC);
 
 	bo->do_pass = pass;
@@ -540,9 +547,12 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc, int pass)
 
 	if (Pool_Task(wrk->pool, &bo->fetch_task, POOL_QUEUE_FRONT))
 		vbf_fetch_thread(wrk, bo);
-	while (bo->req != NULL) {
-		printf("XXX\n");
-		(void)usleep(100000);
+	Lck_Lock(&bo->mtx);
+	while (1) {
+		if (bo->req == NULL) 
+			break;
+		(void)Lck_CondWait(&bo->cond, &bo->mtx, NULL);
 	}
+	Lck_Unlock(&bo->mtx);
 	return (bo);
 }

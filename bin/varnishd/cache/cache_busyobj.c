@@ -69,6 +69,7 @@ vbo_New(void)
 	bo->magic = BUSYOBJ_MAGIC;
 	bo->end = (char *)bo + sz;
 	Lck_New(&bo->mtx, lck_busyobj);
+	AZ(pthread_cond_init(&bo->cond, NULL));
 	return (bo);
 }
 
@@ -82,6 +83,7 @@ VBO_Free(struct busyobj **bop)
 	*bop = NULL;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	AZ(bo->refcount);
+	AZ(pthread_cond_destroy(&bo->cond));
 	Lck_Delete(&bo->mtx);
 	MPL_Free(vbopool, bo);
 }

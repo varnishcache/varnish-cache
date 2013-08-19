@@ -500,6 +500,7 @@ struct busyobj {
 	unsigned		magic;
 #define BUSYOBJ_MAGIC		0x23b95567
 	struct lock		mtx;
+	pthread_cond_t		cond;
 	char			*end;
 	enum fetch_step		step;
 
