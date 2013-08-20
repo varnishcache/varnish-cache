@@ -536,7 +536,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 DOT subgraph xcluster_miss {
 DOT	miss [
 DOT		shape=record
-DOT		label="{cnt_miss:|{vcl_miss\{\}|req.*, bereq.*}|{<fetch>fetch?|<err>error?|<rst>restart?|<pass>pass?}}"
+DOT		label="{cnt_miss:|{vcl_miss\{\}|req.*}|{<fetch>fetch?|<err>error?|<rst>restart?|<pass>pass?}}"
 DOT	]
 DOT }
 DOT miss:fetch:s -> fetch [label="fetch",style=bold,color=blue]
@@ -597,7 +597,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 DOT subgraph xcluster_pass {
 DOT	pass [
 DOT		shape=record
-DOT		label="{cnt_pass:|{vcl_pass\{\}|req.*, bereq.*}|{<fetch>fetch?|<err>error?|<rst>restart?}}"
+DOT		label="{cnt_pass:|{vcl_pass\{\}|req.*}|{<fetch>fetch?|<err>error?|<rst>restart?}}"
 DOT	]
 DOT }
 DOT pass:fetch:s -> fetch:n [style=bold, color=red]

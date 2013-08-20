@@ -101,7 +101,7 @@ returns =(
 # 'backend' means all methods tagged "B"
 # 'both' means all methods tagged "B" or "C"
 
-sp_variables = (
+sp_variables = [
 	('client.ip',
 		'IP',
 		( 'both',),
@@ -224,58 +224,58 @@ sp_variables = (
 	),
 	('bereq.backend',
 		'BACKEND',
-		( 'backend', ),
-		( 'backend', ),
+		( 'pipe', 'backend', ),
+		( 'pipe', 'backend', ),
 	),
 	('bereq.backend.healthy',
 		'BOOL',
-		( 'backend', ),
+		( 'pipe', 'backend', ),
 		( ),
 	),
 	('bereq.method',
 		'STRING',
-		( 'pipe', 'backend_fetch', 'miss', 'backend_response',),
-		( 'pipe', 'backend_fetch', 'miss', 'backend_response',),
+		( 'pipe', 'backend', ),
+		( 'pipe', 'backend', ),
 	),
 	('bereq.request',
 		'STRING',
-		( 'pipe', 'backend_fetch', 'miss', 'backend_response',),
-		( 'pipe', 'backend_fetch', 'miss', 'backend_response',),
+		( 'pipe', 'backend', ),
+		( 'pipe', 'backend', ),
 	),
 	('bereq.url',
 		'STRING',
-		( 'pipe', 'backend_fetch', 'miss', 'backend_response',),
-		( 'pipe', 'backend_fetch', 'miss', 'backend_response',),
+		( 'pipe', 'backend', ),
+		( 'pipe', 'backend', ),
 	),
 	('bereq.proto',
 		'STRING',
-		( 'pipe', 'backend_fetch', 'miss', 'backend_response',),
-		( 'pipe', 'backend_fetch', 'miss', 'backend_response',),
+		( 'pipe', 'backend', ),
+		( 'pipe', 'backend', ),
 	),
 	('bereq.http.',
 		'HEADER',
-		( 'pipe', 'backend_fetch', 'miss', 'backend_response',),
-		( 'pipe', 'backend_fetch', 'miss', 'backend_response',),
+		( 'pipe', 'backend', ),
+		( 'pipe', 'backend', ),
 	),
 	('bereq.uncacheable',
 		'BOOL',
-		( 'backend_fetch', 'backend_response',),
-		( 'backend_fetch', 'backend_response',),
+		( 'backend', ),
+		( 'backend', ),
 	),
 	('bereq.connect_timeout',
 		'DURATION',
-		( 'pipe', 'backend_fetch', 'miss',),
-		( 'pipe', 'backend_fetch', 'miss',),
+		( 'pipe', 'backend', ),
+		( 'pipe', 'backend', ),
 	),
 	('bereq.first_byte_timeout',
 		'DURATION',
-		( 'backend_fetch', 'miss',),
-		( 'backend_fetch', 'miss',),
+		( 'pipe', 'backend', ),
+		( 'pipe', 'backend', ),
 	),
 	('bereq.between_bytes_timeout',
 		'DURATION',
-		( 'backend_fetch', 'miss',),
-		( 'backend_fetch', 'miss',),
+		( 'pipe', 'backend', ),
+		( 'pipe', 'backend', ),
 	),
 	('beresp.proto',
 		'STRING',
@@ -437,7 +437,7 @@ sp_variables = (
 		( 'all',),
 		( ),
 	),
-)
+]
 
 stv_variables = (
 	('free_space',	'BYTES',	"0."),
@@ -770,30 +770,41 @@ fo.close()
 #######################################################################
 
 def restrict(fo, spec):
-	if len(spec) == 0:
-		fo.write("\t\t0,\n")
-		return
-	if spec[0] == 'all':
-		spec = vcls
-	if spec[0] == 'client':
-		spec = vcls_client
-	if spec[0] == 'backend':
-		spec = vcls_backend
-	if spec[0] == 'both':
-		spec = vcls_client
-		spec += vcls_backend
+	d = dict()
+	for j in spec:
+		if j == 'all':
+			for i in vcls:
+				d[i] = True
+		elif j == 'backend':
+			for i in vcls_backend:
+				d[i] = True
+		elif j == 'client':
+			for i in vcls_client:
+				d[i] = True
+		elif j == 'both':
+			for i in vcls_client:
+				d[i] = True
+			for i in vcls_backend:
+				d[i] = True
+		else:
+			assert j in vcls
+			d[j] = True
 	p = ""
 	n = 0
-	for j in spec:
-		if n == 4:
-			fo.write("\n")
-			n = 0
-		if n == 0:
-			fo.write("\t\t")
-		n += 1
-		fo.write(p + "VCL_MET_" + j.upper())
+	l = list(d.keys())
+	l.sort()
+	w = 0
+	fo.write("\t\t")
+	for j in l:
+		x = p + "VCL_MET_" + j.upper()
+		if w + len(x) > 60:
+			fo.write("\n\t\t")
+			w = 0
+		fo.write(x)
+		w += len(x)
 		p = " | "
-
+	if len(d) == 0:
+		fo.write("0")
 	fo.write(",\n")
 
 #######################################################################
@@ -814,6 +825,7 @@ fo.write("""
 const struct var vcc_vars[] = {
 """)
 
+sp_variables.sort()
 for i in sp_variables:
 	typ = i[1]
 	cnam = i[0].replace(".", "_")

@@ -242,7 +242,7 @@ varnish v1 -errvcl {'&&' must be followed by BOOL, found DURATION.} {
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_backend_response {
+	sub vcl_miss {
 		if (!req.url) {
 		}
 	}
