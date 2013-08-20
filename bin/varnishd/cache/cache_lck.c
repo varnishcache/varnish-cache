@@ -128,7 +128,7 @@ Lck__Assert(const struct lock *lck, int held)
 {
 	struct ilck *ilck;
 
-	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC); 
+	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	if (held) {
 		assert(ilck->held);
 		assert(pthread_equal(ilck->owner, pthread_self()));

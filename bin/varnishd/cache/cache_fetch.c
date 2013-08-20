@@ -503,7 +503,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 		default:
 			WRONG("Illegal fetch_step");
 		}
-		if (stp != F_STP_DONE)				
+		if (stp != F_STP_DONE)
 			VSLb(bo->vsl, SLT_Debug, "%s -> %s",
 			    vbf_step_name(bo->step), vbf_step_name(stp));
 	}
@@ -549,7 +549,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc, int pass)
 		vbf_fetch_thread(wrk, bo);
 	Lck_Lock(&bo->mtx);
 	while (1) {
-		if (bo->req == NULL) 
+		if (bo->req == NULL)
 			break;
 		(void)Lck_CondWait(&bo->cond, &bo->mtx, NULL);
 	}

@@ -344,8 +344,8 @@ DOT		shape=record
 DOT		label="{cnt_fetch:|start fetch_thread}"
 DOT	]
 DOT }
-DOT fetch:out -> prepresp [style=bold,color=red]
-DOT fetch:out -> prepresp [style=bold,color=blue]
+DOT fetch -> prepresp [style=bold,color=red]
+DOT fetch -> prepresp [style=bold,color=blue]
  */
 
 static enum req_fsm_nxt
@@ -378,7 +378,6 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	return (REQ_FSM_MORE);
 }
 
-
 /*--------------------------------------------------------------------
  * LOOKUP
  * Hash things together and look object up in hash-table.
@@ -389,11 +388,11 @@ cnt_fetch(struct worker *wrk, struct req *req)
 DOT subgraph xcluster_lookup {
 DOT	lookup [
 DOT		shape=record
-DOT		label="{<top>cnt_lookup:|hash lookup|{<busy>busy?|<e>exp?|<eb>expbusy?|<h>hit?|<miss>miss?|<hfp>hit-for-pass?}}"
+DOT		label="{<top>cnt_lookup:|hash lookup|{<busy>busy?|<e>exp?|<eb>exp+busy?|<h>hit?|<miss>miss?|<hfp>hit-for-pass?}}"
 DOT	]
 DOT	lookup2 [
 DOT		shape=record
-DOT		label="{<top>cnt_lookup:|{vcl_lookup\{\}|{req.*|obj.*|obj_stale.*}}}"
+DOT		label="{<top>cnt_lookup:|{vcl_lookup\{\}|req.*, obj.*}|{<deliver>deliver?|error?|restart?|<fetch>fetch?|<pass>pass?}}"
 DOT	]
 DOT }
 DOT lookup:busy:w -> lookup:top:w [label="(waitinglist)"]
@@ -402,6 +401,9 @@ DOT lookup:hfp:s -> pass [style=bold,color=red]
 DOT lookup:e:s -> lookup2 [style=bold,color=green]
 DOT lookup:eb:s -> lookup2 [style=bold,color=green]
 DOT lookup:h:s -> lookup2 [style=bold,color=green]
+DOT lookup2:pass:s -> pass [style=bold,color=red]
+DOT lookup2:fetch:s -> miss [style=bold,color=blue]
+DOT lookup2:deliver:s -> prepresp:nw [style=bold,color=green]
  */
 
 static enum req_fsm_nxt
@@ -534,11 +536,11 @@ cnt_lookup(struct worker *wrk, struct req *req)
 DOT subgraph xcluster_miss {
 DOT	miss [
 DOT		shape=record
-DOT		label="{cnt_miss:|{vcl_miss\{\}|req.*}|{<err>error?|<rst>restart?}|{<fetch>fetch?|<pass>pass?}}"
+DOT		label="{cnt_miss:|{vcl_miss\{\}|req.*, bereq.*}|{<fetch>fetch?|<err>error?|<rst>restart?|<pass>pass?}}"
 DOT	]
 DOT }
-DOT miss:fetch -> fetch [label="fetch",style=bold,color=blue]
-DOT miss:pass -> pass [label="pass",style=bold,color=red]
+DOT miss:fetch:s -> fetch [label="fetch",style=bold,color=blue]
+DOT miss:pass:s -> pass [label="pass",style=bold,color=red]
 DOT
  */
 
@@ -595,10 +597,10 @@ cnt_miss(struct worker *wrk, struct req *req)
 DOT subgraph xcluster_pass {
 DOT	pass [
 DOT		shape=record
-DOT		label="{cnt_pass:|{vcl_pass\{\}|req.*}|{<err>error?|<rst>restart?}|<pass>create anon obj}"
+DOT		label="{cnt_pass:|{vcl_pass\{\}|req.*, bereq.*}|{<fetch>fetch?|<err>error?|<rst>restart?}}"
 DOT	]
 DOT }
-DOT pass:pass -> fetch [style=bold, color=red]
+DOT pass:fetch:s -> fetch:n [style=bold, color=red]
 XDOT pass:rst -> rst_pass [label="restart",color=purple]
 XDOT rst_pass [label="RESTART",shape=plaintext]
 XDOT pass:err -> err_pass [label="error"]
@@ -608,6 +610,7 @@ XDOT err_pass [label="ERROR",shape=plaintext]
 static enum req_fsm_nxt
 cnt_pass(struct worker *wrk, struct req *req)
 {
+	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -627,10 +630,9 @@ cnt_pass(struct worker *wrk, struct req *req)
 	assert (wrk->handling == VCL_RET_FETCH);
 	req->acct_req.pass++;
 
-	req->objcore = HSH_NewObjCore(wrk);
-	AN(req->objcore);
-	req->busyobj = VBF_Fetch(wrk, req, req->objcore, 1);
-	req->objcore = NULL;
+	oc = HSH_NewObjCore(wrk);
+	AN(oc);
+	req->busyobj = VBF_Fetch(wrk, req, oc, 1);
 	req->req_step = R_STP_FETCH;
 	return (REQ_FSM_MORE);
 }
@@ -642,7 +644,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 DOT subgraph xcluster_pipe {
 DOT	pipe [
 DOT		shape=record
-DOT		label="{cnt_pipe:|filter req.*-\>bereq.*|{vcl_pipe()|req.*\nbereq\.*}|{<pipe>pipe?|<error>error?}}"
+DOT		label="{cnt_pipe:|filter req.*-\>bereq.*|{vcl_pipe()|req.*, bereq\.*}|{<pipe>pipe?|<error>error?}}"
 DOT	]
 DOT	pipe_do [
 DOT		shape=ellipse
@@ -730,8 +732,8 @@ DOT	]
 DOT }
 DOT recv:pipe -> pipe [style=bold,color=orange]
 DOT recv:pass -> pass [style=bold,color=red]
-DOT recv:lookup -> lookup [style=bold,color=green]
-DOT recv:purge -> purge [style=bold,color=purple]
+DOT recv:lookup:s -> lookup [style=bold,color=green]
+DOT recv:purge:s -> purge [style=bold,color=purple]
 #DOT recv:error -> err_recv
 #DOT err_recv [label="ERROR",shape=plaintext]
  */

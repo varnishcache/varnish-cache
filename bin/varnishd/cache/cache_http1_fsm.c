@@ -510,7 +510,7 @@ HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv)
 		    "Multiple attempts to access non-cached req.body");
 		return (i);
 	}
-	
+
 	do {
 		l = http1_iter_req_body(req, buf, sizeof buf);
 		if (l < 0) {

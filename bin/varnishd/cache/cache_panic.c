@@ -304,7 +304,7 @@ pan_req(const struct req *req)
 	else
 		VSB_printf(pan_vsp, "  step = 0x%x,\n", req->req_step);
 
-	VSB_printf(pan_vsp, "  req_body = %s,\n", 
+	VSB_printf(pan_vsp, "  req_body = %s,\n",
 	    reqbody_status_2str(req->req_body_status));
 
 	if (req->err_code)
