@@ -490,10 +490,10 @@ oc_getlru(const struct objcore *oc)
  */
 
 enum busyobj_state_e {
-	BOS_INVALID = 0,
-	BOS_FETCHING,
-	BOS_FAILED,
-	BOS_FINISHED
+	BOS_INVALID = 0,	/* don't touch (yet) */
+	BOS_FETCHING,		/* beresp.* can be examined */
+	BOS_FINISHED,		/* object is complete */
+	BOS_FAILED,		/* something went wrong */
 };
 
 struct busyobj {
@@ -797,6 +797,9 @@ struct busyobj *VBO_GetBusyObj(struct worker *, struct req *);
 void VBO_DerefBusyObj(struct worker *wrk, struct busyobj **busyobj);
 void VBO_Free(struct busyobj **vbo);
 void VBO_extend(const struct busyobj *, ssize_t);
+void VBO_setstate(struct busyobj *bo, enum busyobj_state_e next);
+void VBO_waitstate(struct busyobj *bo, enum busyobj_state_e want);
+
 
 /* cache_http1_fetch.c [V1F] */
 int V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req);

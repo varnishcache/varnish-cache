@@ -324,7 +324,7 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(obj->http, HTTP_MAGIC);
 
-	assert(bo->state == BOS_INVALID);
+	assert(bo->state == BOS_FETCHING);
 
 	/*
 	 * XXX: The busyobj needs a dstat, but it is not obvious which one
@@ -336,8 +336,6 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 	AN(bo->vfp);
 	AZ(bo->vgz_rx);
 	AZ(VTAILQ_FIRST(&obj->store));
-
-	bo->state = BOS_FETCHING;
 
 	/* XXX: pick up estimate from objdr ? */
 	cl = 0;
@@ -441,9 +439,6 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 			http_PrintfHeader(obj->http,
 			    "Content-Length: %zd", obj->len);
 		}
-
-		/* XXX: Atomic assignment, needs volatile/membar ? */
-		bo->state = BOS_FINISHED;
 	}
 	if (obj->objcore->objhead != NULL)
 		HSH_Complete(obj->objcore);

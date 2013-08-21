@@ -117,9 +117,8 @@ cnt_stream(struct worker *wrk, struct req *req)
 	}
 	assert(wrk->handling == VCL_RET_DELIVER);
 
-	while (bo->state < BOS_FAILED)
-		(void)usleep(10000);
-	assert(bo->state >= BOS_FAILED);
+	VBO_waitstate(bo, BOS_FINISHED);
+	assert(bo->state >= BOS_FINISHED);
 
 	if (bo->state == BOS_FAILED) {
 		(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
@@ -369,7 +368,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	AN(req->busyobj);
 	assert(req->busyobj->refcount > 0);
 	(void)HTTP1_DiscardReqBody(req);
-	while (req->busyobj->state < BOS_FAILED) {
+	while (req->busyobj->state < BOS_FINISHED) {
 		printf("YYY\n");
 		(void)usleep(100000);
 	}

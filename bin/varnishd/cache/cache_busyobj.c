@@ -222,3 +222,26 @@ VBO_extend(const struct busyobj *bo, ssize_t l)
 	assert(l > 0);
 	bo->fetch_obj->len += l;
 }
+
+void
+VBO_setstate(struct busyobj *bo, enum busyobj_state_e next)
+{
+	Lck_Lock(&bo->mtx);
+	VSLb(bo->vsl, SLT_Debug, "XXX: %d -> %d", bo->state, next);
+	assert(next > bo->state);
+	bo->state = next;
+	AZ(pthread_cond_signal(&bo->cond));
+	Lck_Unlock(&bo->mtx);
+}
+
+void
+VBO_waitstate(struct busyobj *bo, enum busyobj_state_e want)
+{
+	Lck_Lock(&bo->mtx);
+	while (1) {
+		if (bo->state >= want)
+			break;
+		(void)Lck_CondWait(&bo->cond, &bo->mtx, NULL);
+	}
+	Lck_Unlock(&bo->mtx);
+}

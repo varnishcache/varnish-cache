@@ -57,7 +57,7 @@ VFP_Error2(struct busyobj *bo, const char *error, const char *more)
 {
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	if (bo->state == BOS_FETCHING) {
+	if (bo->state < BOS_FAILED) {
 		if (more == NULL)
 			VSLb(bo->vsl, SLT_FetchError, "%s", error);
 		else

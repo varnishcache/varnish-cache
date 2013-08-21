@@ -117,8 +117,10 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	http_PrintfHeader(bo->bereq,
 	    "X-Varnish: %u", bo->vsl->wid & VSL_IDENTMASK);
-	if (wrk->handling == VCL_RET_ABANDON)
+	if (wrk->handling == VCL_RET_ABANDON) {
+		VBO_setstate(bo, BOS_FAILED);
 		return (F_STP_ABANDON);
+	}
 	assert (wrk->handling == VCL_RET_FETCH);
 	return (F_STP_FETCHHDR);
 }
@@ -140,6 +142,8 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 
 	if (!bo->do_pass)
 		vbf_release_req(bo); /* XXX: retry ?? */
+
+	assert(bo->state == BOS_INVALID);
 
 	i = V1F_fetch_hdr(wrk, bo, bo->req);
 	/*
@@ -204,6 +208,7 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 	if (wrk->handling == VCL_RET_DELIVER)
 		return (F_STP_FETCH);
 	if (wrk->handling == VCL_RET_RETRY) {
+		assert(bo->state == BOS_INVALID);
 		bo->retries++;
 		if (bo->retries <= cache_param->max_retries) {
 			VDI_CloseFd(&bo->vbc);
@@ -352,6 +357,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		AZ(HSH_Deref(&wrk->stats, bo->fetch_objcore, NULL));
 		bo->fetch_objcore = NULL;
 		VDI_CloseFd(&bo->vbc);
+		VBO_setstate(bo, BOS_FAILED);
 		return (F_STP_ABANDON);
 	}
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
@@ -407,6 +413,9 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->vfp == NULL)
 		bo->vfp = &VFP_nop;
 
+	assert(bo->state == BOS_INVALID);
+	VBO_setstate(bo, BOS_FETCHING);
+
 	V1F_fetch_body(wrk, bo);
 
 	assert(bo->refcount >= 1);
@@ -419,6 +428,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		(void)HSH_Deref(&wrk->stats, NULL, &obj);
 		return (F_STP_ABANDON);
 	}
+	VBO_setstate(bo, BOS_FINISHED);
 
 	VBO_DerefBusyObj(wrk, &bo);	// XXX ?
 	return (F_STP_DONE);
@@ -433,7 +443,7 @@ vbf_stp_abandon(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	bo->state = BOS_FAILED;
+	assert(bo->state == BOS_FAILED);
 	vbf_release_req(bo);
 	VBO_DerefBusyObj(wrk, &bo);	// XXX ?
 	return (F_STP_DONE);
