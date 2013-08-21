@@ -44,7 +44,7 @@ REQ_STEP(lookup,	LOOKUP,		(wrk, req))
 REQ_STEP(purge,		PURGE,		(wrk, req))
 REQ_STEP(miss,		MISS,		(wrk, req))
 REQ_STEP(fetch,		FETCH,		(wrk, req))
-REQ_STEP(prepresp,	PREPRESP,	(wrk, req))
+REQ_STEP(stream,	STREAM,		(wrk, req))
 REQ_STEP(deliver,	DELIVER,	(wrk, req))
 REQ_STEP(error,		ERROR,		(wrk, req))
 #endif
