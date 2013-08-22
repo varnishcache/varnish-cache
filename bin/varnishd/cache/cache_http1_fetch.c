@@ -384,13 +384,18 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 	}
 	AZ(bo->vgz_rx);
 
-#if 0
 	/*
-	 * We always call vfp_nop_end() to ditch or trim the last storage
-	 * segment, to avoid having to replicate that code in all vfp's.
+	 * Trim or delete the last segment, if any
 	 */
-	AZ(vfp_nop_end(bo));
-#endif
+
+	st = VTAILQ_LAST(&bo->fetch_obj->store, storagehead);
+	if (st != NULL) {
+		if (st->len == 0) {
+			VTAILQ_REMOVE(&bo->fetch_obj->store, st, list);
+			STV_free(st);
+		} else if (st->len < st->space)
+			STV_trim(st, st->len, 1);
+	}
 
 	bo->vfp = NULL;
 
