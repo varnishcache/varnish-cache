@@ -796,7 +796,8 @@ void VBO_Init(void);
 struct busyobj *VBO_GetBusyObj(struct worker *, struct req *);
 void VBO_DerefBusyObj(struct worker *wrk, struct busyobj **busyobj);
 void VBO_Free(struct busyobj **vbo);
-void VBO_extend(const struct busyobj *, ssize_t);
+void VBO_extend(struct busyobj *, ssize_t);
+ssize_t VBO_waitlen(struct busyobj *bo, ssize_t l);
 void VBO_setstate(struct busyobj *bo, enum busyobj_state_e next);
 void VBO_waitstate(struct busyobj *bo, enum busyobj_state_e want);
 

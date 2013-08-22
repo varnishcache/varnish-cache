@@ -212,7 +212,7 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 }
 
 void
-VBO_extend(const struct busyobj *bo, ssize_t l)
+VBO_extend(struct busyobj *bo, ssize_t l)
 {
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -220,7 +220,25 @@ VBO_extend(const struct busyobj *bo, ssize_t l)
 	if (l == 0)
 		return;
 	assert(l > 0);
+	Lck_Lock(&bo->mtx);
 	bo->fetch_obj->len += l;
+	AZ(pthread_cond_signal(&bo->cond));
+	Lck_Unlock(&bo->mtx);
+}
+
+ssize_t
+VBO_waitlen(struct busyobj *bo, ssize_t l)
+{
+	Lck_Lock(&bo->mtx);
+	while (1) {
+		if (bo->fetch_obj->len > l || bo->state >= BOS_FINISHED) {
+			l = bo->fetch_obj->len;
+			break;
+		}
+		(void)Lck_CondWait(&bo->cond, &bo->mtx, NULL);
+	}
+	Lck_Unlock(&bo->mtx);
+	return (l);
 }
 
 void
