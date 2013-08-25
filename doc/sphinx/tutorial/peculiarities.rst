@@ -6,6 +6,15 @@ There are a couple of things that are different with Varnish Cache, as
 opposed to other programs. One thing you've already seen - VCL. I'll
 just give you a very quick tour of the other pecularities.
 
+Configuration
+~~~~~~~~~~~~~
+
+The Varnish Configuration is written in VCL. When Varnish is ran this
+configuration is transformed into C code and then fed into a C
+compiler, loaded and run. So, as opposed to declaring various
+settings, you write polices on how the incomming traffic should be
+handled.
+
 
 varnishadm
 ~~~~~~~~~~

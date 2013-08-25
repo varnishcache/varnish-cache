@@ -12,28 +12,32 @@ file. If you installed from source this is
 /usr/local/etc/varnish/default.vcl, if you installed from a package it
 is probably /etc/varnish/default.vcl.
 
-Somewhere in the top there will be a section that looks a bit like this.::
+If you've been following the tutorial there is probably a section of
+the configuration that looks like this:::
 
-	  # backend default {
-	  #     .host = "127.0.0.1";
-	  #     .port = "8080";
-	  # }
+  backend default {
+      .host = "www.varnish-cache.org";
+      .port = "80";
+  }
 
-We comment in this bit of text and change the port setting from 8080
-to 80, making the text look like.::
+Since you probably don't want to be mirroring varnish-cache.org we
+need to get Varnish to fetch content from your own origin
+server. We've already bound Varnish to the public port 80 on the
+server so now we need to tie it to the origin.
+
+For this example, let's pretend the origin server is running on
+localhost, port 8080.
 
           backend default {
                 .host = "127.0.0.1";
-    		.port = "80";
+    		.port = "8080";
 	  }
-
-Now, this piece of configuration defines a backend in Varnish called
-*default*. When Varnish needs to get content from this backend it will
-connect to port 80 on localhost (127.0.0.1).
 
 Varnish can have several backends defined and can you can even join
 several backends together into clusters of backends for load balancing
-purposes. 
+purposes, having Varnish pick one backend based on different
+algorithms. 
 
-Now that we have the basic Varnish configuration done, let us start up
-Varnish on port 8080 so we can do some fundamental testing on it.
+A lot of the power of Varnish Cache comes from it's design, which
+might not be what you are expecting. Next, let's have a look at some of
+them.
