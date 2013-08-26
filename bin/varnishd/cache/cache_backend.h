@@ -77,7 +77,7 @@ struct vrt_backend_probe;
 
 typedef struct vbc *vdi_getfd_f(const struct director *, struct busyobj *);
 typedef void vdi_fini_f(const struct director *);
-typedef unsigned vdi_healthy(const struct director *, const uint8_t *digest);
+typedef unsigned vdi_healthy(const struct director *);
 
 struct director {
 	unsigned		magic;
@@ -88,18 +88,6 @@ struct director {
 	vdi_fini_f		*fini;
 	vdi_healthy		*healthy;
 	void			*priv;
-};
-
-/*--------------------------------------------------------------------
- * List of objectheads that have recently been rejected by VCL.
- */
-
-struct trouble {
-	unsigned		magic;
-#define TROUBLE_MAGIC		0x4211ab21
-	uint8_t			digest[DIGEST_LEN];
-	double			timeout;
-	VTAILQ_ENTRY(trouble)	list;
 };
 
 /*--------------------------------------------------------------------
@@ -137,9 +125,6 @@ struct backend {
 	unsigned		healthy;
 	enum admin_health	admin_health;
 
-	unsigned		n_trouble;
-	VTAILQ_HEAD(, trouble)	troublelist;
-
 	struct VSC_C_vbe	*vsc;
 };
 
@@ -166,7 +151,6 @@ struct vbc {
 
 /* cache_backend.c */
 void VBE_ReleaseConn(struct vbc *vc);
-void VBE_AddTrouble(const struct busyobj *, double expires);
 
 /* cache_backend_cfg.c */
 void VBE_DropRefConn(struct backend *);

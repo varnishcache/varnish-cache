@@ -102,8 +102,6 @@ cnt_stream(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 
-	// req->res_mode = 0;
-
 	AZ(bo->do_esi);
 
 	if (wrk->handling == VCL_RET_RESTART) {

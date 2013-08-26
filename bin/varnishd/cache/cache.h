@@ -530,7 +530,6 @@ struct busyobj {
 	struct http		*beresp;
 	struct objcore		*fetch_objcore;
 	struct object		*fetch_obj;
-	uint8_t			digest[DIGEST_LEN];
 	struct exp		exp;
 	struct http_conn	htc;
 
@@ -759,7 +758,7 @@ void VBE_DiscardHealth(const struct director *vdi);
 
 
 struct vbc *VDI_GetFd(const struct director *, struct busyobj *);
-int VDI_Healthy(const struct director *, const uint8_t *digest);
+int VDI_Healthy(const struct director *);
 void VDI_CloseFd(struct vbc **vbp);
 void VDI_RecycleFd(struct vbc **vbp);
 void VDI_AddHostHeader(struct http *to, const struct vbc *vbc);

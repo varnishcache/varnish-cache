@@ -336,7 +336,7 @@ VRT_r_req_backend_healthy(const struct vrt_ctx *ctx)
 	if (ctx->req->director == NULL)
 		return (0);
 	CHECK_OBJ_NOTNULL(ctx->req->director, DIRECTOR_MAGIC);
-	return (VDI_Healthy(ctx->req->director, ctx->req->digest));
+	return (VDI_Healthy(ctx->req->director));
 }
 
 /*--------------------------------------------------------------------*/
@@ -368,7 +368,7 @@ VRT_r_bereq_backend_healthy(const struct vrt_ctx *ctx)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo->director, DIRECTOR_MAGIC);
-	return (VDI_Healthy(ctx->bo->director, ctx->bo->digest));
+	return (VDI_Healthy(ctx->bo->director));
 }
 
 /*--------------------------------------------------------------------*/

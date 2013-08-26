@@ -50,7 +50,6 @@
 
 #include "config.h"
 
-#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -300,7 +299,6 @@ vcc_ParseHostDef(struct vcc *tl, int serial, const char *vgcname)
 	struct token *t_host = NULL;
 	struct token *t_port = NULL;
 	struct token *t_hosthdr = NULL;
-	unsigned saint = UINT_MAX;
 	struct fld_spec *fs;
 	struct vsb *vsb;
 	unsigned u;
@@ -317,7 +315,6 @@ vcc_ParseHostDef(struct vcc *tl, int serial, const char *vgcname)
 	    "?between_bytes_timeout",
 	    "?probe",
 	    "?max_connections",
-	    "?saintmode_threshold",
 	    NULL);
 
 	SkipToken(tl, '{');
@@ -391,21 +388,6 @@ vcc_ParseHostDef(struct vcc *tl, int serial, const char *vgcname)
 			ERRCHK(tl);
 			SkipToken(tl, ';');
 			Fb(tl, 0, "\t.max_connections = %u,\n", u);
-		} else if (vcc_IdIs(t_field, "saintmode_threshold")) {
-			u = vcc_UintVal(tl);
-			/* UINT_MAX == magic number to mark as unset, so
-			 * not allowed here.
-			 */
-			if (u == UINT_MAX) {
-				VSB_printf(tl->sb,
-				    "Value outside allowed range: ");
-				vcc_ErrToken(tl, tl->t);
-				VSB_printf(tl->sb, " at\n");
-				vcc_ErrWhere(tl, tl->t);
-			}
-			ERRCHK(tl);
-			saint = u;
-			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "probe") && tl->t->tok == '{') {
 			Fb(tl, 0, "\t.probe = &vgc_probe__%d,\n", tl->nprobe);
 			vcc_ParseProbeSpec(tl);
@@ -451,8 +433,6 @@ vcc_ParseHostDef(struct vcc *tl, int serial, const char *vgcname)
 	else
 		EncToken(tl->fb, t_host);
 	Fb(tl, 0, ",\n");
-
-	Fb(tl, 0, "\t.saintmode_threshold = %d,\n",saint);
 
 	/* Close the struct */
 	Fb(tl, 0, "};\n");

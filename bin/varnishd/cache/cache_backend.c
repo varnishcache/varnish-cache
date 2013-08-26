@@ -42,7 +42,6 @@
 #include "cache_backend.h"
 #include "vrt.h"
 #include "vtcp.h"
-#include "vtim.h"
 
 static struct mempool	*vbcpool;
 
@@ -221,35 +220,6 @@ vbe_NewConn(void)
 }
 
 /*--------------------------------------------------------------------
- * Add backend trouble item
- */
-
-void
-VBE_AddTrouble(const struct busyobj *bo, double expires)
-{
-	struct trouble *tp;
-	struct vbc *vbc;
-	struct backend *be;
-
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	vbc = bo->vbc;
-	if (vbc == NULL)
-		return;
-	CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
-	be = vbc->backend;
-	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
-	ALLOC_OBJ(tp, TROUBLE_MAGIC);
-	if (tp == NULL)
-		return;
-	memcpy(tp->digest, bo->digest, sizeof tp->digest);
-	tp->timeout = expires;
-	Lck_Lock(&vbc->backend->mtx);
-	VTAILQ_INSERT_HEAD(&be->troublelist, tp, list);
-	be->n_trouble++;
-	Lck_Unlock(&vbc->backend->mtx);
-}
-
-/*--------------------------------------------------------------------
  * It evaluates if a backend is healthy _for_a_specific_object_.
  * That means that it relies on req->objcore->objhead. This is mainly for
  * saint-mode, but also takes backend->healthy into account. If
@@ -261,17 +231,10 @@ VBE_AddTrouble(const struct busyobj *bo, double expires)
  */
 
 static unsigned int
-vbe_Healthy(const struct vdi_simple *vs, const uint8_t *digest)
+vbe_Healthy(const struct vdi_simple *vs)
 {
-	struct trouble *tr;
-	struct trouble *tr2;
-	unsigned retval;
-	unsigned int threshold;
 	struct backend *backend;
-	VTAILQ_HEAD(, trouble)  troublelist;
-	double now;
 
-	AN(digest);
 	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
 	backend = vs->backend;
 	CHECK_OBJ_NOTNULL(backend, BACKEND_MAGIC);
@@ -282,48 +245,7 @@ vbe_Healthy(const struct vdi_simple *vs, const uint8_t *digest)
 	if (backend->admin_health == ah_sick)
 		return (0);
 
-	/* VRT/VCC sets threshold to UINT_MAX to mark that it's not
-	 * specified by VCL (thus use param).
-	 */
-	threshold = vs->vrt->saintmode_threshold;
-	if (threshold == UINT_MAX)
-		threshold = cache_param->saintmode_threshold;
-
-	if (backend->admin_health == ah_healthy)
-		threshold = UINT_MAX;
-
-	/* Saintmode is disabled, or list is empty */
-	if (threshold == 0 || backend->n_trouble == 0)
-		return (1);
-
-	now = VTIM_real();
-
-	retval = 1;
-	VTAILQ_INIT(&troublelist);
-	Lck_Lock(&backend->mtx);
-	VTAILQ_FOREACH_SAFE(tr, &backend->troublelist, list, tr2) {
-		CHECK_OBJ_NOTNULL(tr, TROUBLE_MAGIC);
-
-		if (tr->timeout < now) {
-			VTAILQ_REMOVE(&backend->troublelist, tr, list);
-			VTAILQ_INSERT_HEAD(&troublelist, tr, list);
-			backend->n_trouble--;
-			continue;
-		}
-
-		if (!memcmp(tr->digest, digest, sizeof tr->digest)) {
-			retval = 0;
-			break;
-		}
-	}
-	if (threshold <= backend->n_trouble)
-		retval = 0;
-	Lck_Unlock(&backend->mtx);
-
-	VTAILQ_FOREACH_SAFE(tr, &troublelist, list, tr2)
-		FREE_OBJ(tr);
-
-	return (retval);
+	return (1);
 }
 
 /*--------------------------------------------------------------------
@@ -379,7 +301,7 @@ vbe_GetVbe(struct busyobj *bo, struct vdi_simple *vs)
 		VBE_ReleaseConn(vc);
 	}
 
-	if (!vbe_Healthy(vs, bo->digest)) {
+	if (!vbe_Healthy(vs)) {
 		VSC_C_main->backend_unhealthy++;
 		return (NULL);
 	}
@@ -469,13 +391,13 @@ vdi_simple_getfd(const struct director *d, struct busyobj *bo)
 }
 
 static unsigned
-vdi_simple_healthy(const struct director *d, const uint8_t *digest)
+vdi_simple_healthy(const struct director *d)
 {
 	struct vdi_simple *vs;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
-	return (vbe_Healthy(vs, digest));
+	return (vbe_Healthy(vs));
 }
 
 static void

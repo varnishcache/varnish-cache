@@ -123,9 +123,9 @@ VDI_GetFd(const struct director *d, struct busyobj *bo)
  */
 
 int
-VDI_Healthy(const struct director *d, const uint8_t *digest)
+VDI_Healthy(const struct director *d)
 {
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	return (d->healthy(d, digest));
+	return (d->healthy(d));
 }

@@ -46,12 +46,12 @@ struct vmod_directors_round_robin {
 };
 
 static unsigned __match_proto__(vdi_healthy)
-vmod_rr_healthy(const struct director *dir, const uint8_t *digest)
+vmod_rr_healthy(const struct director *dir)
 {
 	struct vmod_directors_round_robin *rr;
 
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
-	return (vdir_any_healthy(rr->vd, digest));
+	return (vdir_any_healthy(rr->vd));
 }
 
 static struct vbc * __match_proto__(vdi_getfd_f)
@@ -68,7 +68,7 @@ vmod_rr_getfd(const struct director *dir, struct busyobj *bo)
 		be = rr->vd->backend[rr->nxt];
 		rr->nxt++;
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		if (be->healthy(be, bo->digest))
+		if (be->healthy(be))
 			break;
 	}
 	vdir_unlock(rr->vd);

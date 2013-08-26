@@ -50,12 +50,12 @@ struct vmod_directors_random {
 };
 
 static unsigned __match_proto__(vdi_healthy)
-vmod_rr_healthy(const struct director *dir, const uint8_t *digest)
+vmod_rr_healthy(const struct director *dir)
 {
 	struct vmod_directors_random *rr;
 
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_RANDOM_MAGIC);
-	return (vdir_any_healthy(rr->vd, digest));
+	return (vdir_any_healthy(rr->vd));
 }
 
 static struct vbc * __match_proto__(vdi_getfd_f)
@@ -68,7 +68,7 @@ vmod_rr_getfd(const struct director *dir, struct busyobj *bo)
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_RANDOM_MAGIC);
 	r = scalbn(random(), -31);
 	assert(r >= 0 && r < 1.0);
-	be = vdir_pick_be(rr->vd, bo, r, rr->nloops);
+	be = vdir_pick_be(rr->vd, r, rr->nloops);
 	if (be == NULL)
 		return (NULL);
 	return (be->getfd(be, bo));
