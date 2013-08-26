@@ -12,7 +12,7 @@ Configuration
 The Varnish Configuration is written in VCL. When Varnish is ran this
 configuration is transformed into C code and then fed into a C
 compiler, loaded and run. So, as opposed to declaring various
-settings, you write polices on how the incomming traffic should be
+settings, you write polices on how the incoming traffic should be
 handled.
 
 
