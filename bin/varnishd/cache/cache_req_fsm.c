@@ -99,12 +99,10 @@ cnt_stream(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	AN(bo->do_stream);
 
-	INCOMPL();
-
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 
-	req->res_mode = 0;
+	// req->res_mode = 0;
 
 	AZ(bo->do_esi);
 
@@ -225,7 +223,6 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		wrk->handling = VCL_RET_DELIVER;
 
 	if (req->busyobj != NULL) {
-		VBO_waitstate(req->busyobj, BOS_FINISHED);
 		/* Don't stream if already finished */
 		if (req->busyobj->state != BOS_FINISHED) {
 			AN(req->busyobj->do_stream);
@@ -394,7 +391,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 
 	assert (bo->state >= BOS_FETCHING);
 	req->err_code = bo->err_code;
-	req->obj = bo->fetch_obj;
+	req->obj = bo->fetch_obj;			// XXX: recnt ?
 	if (bo->state == BOS_FINISHED)
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 	assert(WRW_IsReleased(wrk));
