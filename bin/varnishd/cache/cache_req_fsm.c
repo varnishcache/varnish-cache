@@ -174,7 +174,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		/* In ESI mode, we can't know the aggregate length */
 		req->res_mode &= ~RES_LEN;
 		req->res_mode |= RES_ESI;
-	} else {
+	} else if (req->busyobj == NULL) {
 		req->res_mode |= RES_LEN;
 	}
 
@@ -225,14 +225,16 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		wrk->handling = VCL_RET_DELIVER;
 
 	if (req->busyobj != NULL) {
-		AN(req->busyobj->do_stream);
+		VBO_waitstate(req->busyobj, BOS_FINISHED);
 		/* Don't stream if already finished */
 		if (req->busyobj->state != BOS_FINISHED) {
+			AN(req->busyobj->do_stream);
 			req->req_step = R_STP_STREAM;
 			return (REQ_FSM_MORE);
 		}
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 	}
+	AZ(req->busyobj);
 
 	if (wrk->handling == VCL_RET_RESTART) {
 		(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
@@ -377,11 +379,11 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	assert(bo->refcount > 0);
 	(void)HTTP1_DiscardReqBody(req);
 
-	/* If we are not allowed to stream, don't. */
-	if (1 || !bo->do_stream)  			// XXX
+	VBO_waitstate(bo, BOS_FETCHING);
+
+	/* bo->do_stream is not valid until after vcl_backend_response{} */
+	if (!bo->do_stream)
 		VBO_waitstate(bo, BOS_FINISHED);
-	else
-		VBO_waitstate(bo, BOS_FETCHING);
 
 	if (bo->state == BOS_FAILED) {
 		VBO_DerefBusyObj(wrk, &req->busyobj);
@@ -393,7 +395,8 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	assert (bo->state >= BOS_FETCHING);
 	req->err_code = bo->err_code;
 	req->obj = bo->fetch_obj;
-	VBO_DerefBusyObj(wrk, &req->busyobj);
+	if (bo->state == BOS_FINISHED)
+		VBO_DerefBusyObj(wrk, &req->busyobj);
 	assert(WRW_IsReleased(wrk));
 	req->req_step = R_STP_DELIVER;
 	return (REQ_FSM_MORE);

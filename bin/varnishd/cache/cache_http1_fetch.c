@@ -390,11 +390,11 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 
 	st = VTAILQ_LAST(&bo->fetch_obj->store, storagehead);
 	if (st != NULL) {
+		/* XXX: is any of this safe under streaming ? */
 		if (st->len == 0) {
 			VTAILQ_REMOVE(&bo->fetch_obj->store, st, list);
 			STV_free(st);
 		} else if (st->len < st->space) {
-			/* XXX: is this safe under streaming ? */
 			STV_trim(st, st->len, 1);
 		}
 	}

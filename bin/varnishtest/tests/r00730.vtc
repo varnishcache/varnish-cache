@@ -8,6 +8,9 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_stream = false;
+	}
 } -start
 
 client c1 {
@@ -20,6 +23,9 @@ client c1 {
 varnish v1 -vcl+backend {
 	sub vcl_recv {
 		return (pass);
+	}
+	sub vcl_backend_response {
+		set beresp.do_stream = false;
 	}
 } 
 

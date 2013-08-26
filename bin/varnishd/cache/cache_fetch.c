@@ -205,6 +205,9 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, bo->beresp->ws);
 
+	if (bo->do_esi)
+		bo->do_stream = 0;
+
 	if (wrk->handling == VCL_RET_DELIVER)
 		return (F_STP_FETCH);
 	if (wrk->handling == VCL_RET_RETRY) {
