@@ -129,6 +129,7 @@ struct vsb;
 struct waitinglist;
 struct worker;
 struct wrw;
+struct objiter;
 
 #define DIGEST_LEN		32
 
@@ -982,6 +983,11 @@ struct mempool * MPL_New(const char *name, volatile struct poolparam *pp,
 void MPL_Destroy(struct mempool **mpp);
 void *MPL_Get(struct mempool *mpl, unsigned *size);
 void MPL_Free(struct mempool *mpl, void *item);
+
+/* cache_obj.c */
+struct objiter *ObjIterBegin(struct object *);
+int ObjIter(struct objiter *, void **, ssize_t *);
+void ObjIterEnd(struct objiter **);
 
 /* cache_panic.c */
 void PAN_Init(void);

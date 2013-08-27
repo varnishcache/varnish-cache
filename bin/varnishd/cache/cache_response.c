@@ -161,9 +161,11 @@ RES_BuildHttp(struct req *req)
 static void
 res_WriteGunzipObj(struct req *req)
 {
-	struct storage *st;
 	unsigned u = 0;
 	struct vgz *vg;
+	struct objiter *oi;
+	void *ptr;
+	ssize_t len;
 	int i;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -171,18 +173,21 @@ res_WriteGunzipObj(struct req *req)
 	vg = VGZ_NewUngzip(req->vsl, "U D -");
 	AZ(VGZ_WrwInit(vg));
 
-	VTAILQ_FOREACH(st, &req->obj->store, list) {
-		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-		u += st->len;
+	oi = ObjIterBegin(req->obj);
+	XXXAN(oi);
 
-		i = VGZ_WrwGunzip(req, vg, st->ptr, st->len);
+	while (ObjIter(oi, &ptr, &len)) {
+		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+		u += len;
+
+		i = VGZ_WrwGunzip(req, vg, ptr, len);
 		/* XXX: error check */
 		(void)i;
 	}
 	VGZ_WrwFlush(req, vg);
 	(void)VGZ_Destroy(&vg);
 	assert(u == req->obj->len);
+	ObjIterEnd(&oi);
 }
 
 /*--------------------------------------------------------------------*/
@@ -191,39 +196,41 @@ static void
 res_WriteDirObj(struct req *req, ssize_t low, ssize_t high)
 {
 	ssize_t u = 0;
-	size_t ptr, off, len;
-	struct storage *st;
+	ssize_t idx, skip, len;
+	struct objiter *oi;
+	void *ptr;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	ptr = 0;
-	VTAILQ_FOREACH(st, &req->obj->store, list) {
-		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-		u += st->len;
-		len = st->len;
-		off = 0;
-		if (ptr + len <= low) {
+	oi = ObjIterBegin(req->obj);
+	XXXAN(oi);
+
+	idx = 0;
+	while (ObjIter(oi, &ptr, &len)) {
+		u += len;
+		skip = 0;
+		if (idx + len <= low) {
 			/* This segment is too early */
-			ptr += len;
+			idx += len;
 			continue;
 		}
-		if (ptr < low) {
+		if (idx < low) {
 			/* Chop front of segment off */
-			off += (low - ptr);
-			len -= (low - ptr);
-			ptr += (low - ptr);
+			skip += (low - idx);
+			len -= (low - idx);
+			idx += (low - idx);
 		}
-		if (ptr + len > high)
+		if (idx + len > high)
 			/* Chop tail of segment off */
-			len = 1 + high - ptr;
+			len = 1 + high - idx;
 
-		ptr += len;
+		idx += len;
 
 		req->acct_req.bodybytes += len;
-		(void)WRW_Write(req->wrk, st->ptr + off, len);
+		(void)WRW_Write(req->wrk, (char*)ptr + skip, len);
 	}
 	assert(u == req->obj->len);
+	ObjIterEnd(&oi);
 }
 
 /*--------------------------------------------------------------------

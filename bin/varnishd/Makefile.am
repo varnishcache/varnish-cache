@@ -34,6 +34,7 @@ varnishd_SOURCES = \
 	cache/cache_lck.c \
 	cache/cache_main.c \
 	cache/cache_mempool.c \
+	cache/cache_obj.c \
 	cache/cache_panic.c \
 	cache/cache_pipe.c \
 	cache/cache_pool.c \
