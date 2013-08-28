@@ -685,23 +685,22 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	AZ(req->busyobj);
 
 	req->acct_req.pipe++;
-	req->busyobj = VBO_GetBusyObj(wrk, req);
-	bo = req->busyobj;
+	bo = VBO_GetBusyObj(wrk, req);
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
 	http_FilterReq(bo->bereq, req->http, 0);	// XXX: 0 ?
 	http_PrintfHeader(bo->bereq,
 	    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
 
-	VCL_pipe_method(req->vcl, wrk, req, NULL, req->http->ws);
+	VCL_pipe_method(req->vcl, wrk, req, bo, req->http->ws);
 
 	if (wrk->handling == VCL_RET_ERROR)
 		INCOMPL();
 	assert(wrk->handling == VCL_RET_PIPE);
 
-	PipeRequest(req);
+	PipeRequest(req, bo);
 	assert(WRW_IsReleased(wrk));
 	http_Teardown(bo->bereq);
-	VBO_DerefBusyObj(wrk, &req->busyobj);
+	VBO_DerefBusyObj(wrk, &bo);
 	return (REQ_FSM_DONE);
 }
 

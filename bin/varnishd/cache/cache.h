@@ -996,7 +996,7 @@ const char *reqbody_status_2str(enum req_body_state_e e);
 const char *sess_close_2str(enum sess_close sc, int want_desc);
 
 /* cache_pipe.c */
-void PipeRequest(struct req *req);
+void PipeRequest(struct req *req, struct busyobj *bo);
 
 /* cache_pool.c */
 void Pool_Init(void);

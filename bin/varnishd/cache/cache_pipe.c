@@ -60,19 +60,17 @@ rdf(int fd0, int fd1)
 }
 
 void
-PipeRequest(struct req *req)
+PipeRequest(struct req *req, struct busyobj *bo)
 {
 	struct vbc *vc;
 	struct worker *wrk;
 	struct pollfd fds[2];
-	struct busyobj *bo;
 	int i;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
 	wrk = req->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	bo = req->busyobj;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	vc = VDI_GetFd(NULL, bo);
