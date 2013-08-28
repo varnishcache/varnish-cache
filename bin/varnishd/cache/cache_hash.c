@@ -63,6 +63,7 @@
 #include "vsha256.h"
 
 static const struct hash_slinger *hash;
+static struct objhead *private_oh;
 
 /*---------------------------------------------------------------------*/
 
@@ -79,11 +80,25 @@ HSH_NewObjCore(struct worker *wrk)
 }
 
 /*---------------------------------------------------------------------*/
+
+static struct objhead *
+hsh_newobjhead(void)
+{
+	struct objhead *oh;
+
+	ALLOC_OBJ(oh, OBJHEAD_MAGIC);
+	XXXAN(oh);
+	oh->refcnt = 1;
+	VTAILQ_INIT(&oh->objcs);
+	Lck_New(&oh->mtx, lck_objhdr);
+	return (oh);
+}
+
+/*---------------------------------------------------------------------*/
 /* Precreate an objhead and object for later use */
 static void
 hsh_prealloc(struct worker *wrk)
 {
-	struct objhead *oh;
 	struct waitinglist *wl;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -93,12 +108,7 @@ hsh_prealloc(struct worker *wrk)
 	CHECK_OBJ_NOTNULL(wrk->nobjcore, OBJCORE_MAGIC);
 
 	if (wrk->nobjhead == NULL) {
-		ALLOC_OBJ(oh, OBJHEAD_MAGIC);
-		XXXAN(oh);
-		oh->refcnt = 1;
-		VTAILQ_INIT(&oh->objcs);
-		Lck_New(&oh->mtx, lck_objhdr);
-		wrk->nobjhead = oh;
+		wrk->nobjhead = hsh_newobjhead();
 		wrk->stats.n_objecthead++;
 	}
 	CHECK_OBJ_NOTNULL(wrk->nobjhead, OBJHEAD_MAGIC);
@@ -116,6 +126,28 @@ hsh_prealloc(struct worker *wrk)
 		hash->prep(wrk);
 }
 
+/*---------------------------------------------------------------------*/
+
+struct objcore *
+HSH_Private(struct worker *wrk)
+{
+	struct objcore *oc;
+
+	CHECK_OBJ_NOTNULL(private_oh, OBJHEAD_MAGIC);
+
+	oc = HSH_NewObjCore(wrk);
+	AN(oc);
+	oc->refcnt = 1;
+	oc->objhead = private_oh;
+	oc->flags |= OC_F_PRIVATE;
+	Lck_Lock(&private_oh->mtx);
+	VTAILQ_INSERT_TAIL(&private_oh->objcs, oc, list);
+	private_oh->refcnt++;
+	Lck_Unlock(&private_oh->mtx);
+	return (oc);
+}
+
+/*---------------------------------------------------------------------*/
 void
 HSH_Cleanup(struct worker *wrk)
 {
@@ -286,6 +318,7 @@ hsh_insert_busyobj(struct worker *wrk, struct objhead *oh)
 	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	Lck_AssertHeld(&oh->mtx);
 
 	oc = wrk->nobjcore;
 	wrk->nobjcore = NULL;
@@ -687,44 +720,34 @@ HSH_Deref(struct dstat *ds, struct objcore *oc, struct object **oo)
 	}
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	assert(oc->refcnt > 0);
 
 	oh = oc->objhead;
-	if (oh != NULL) {
-		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
-		Lck_Lock(&oh->mtx);
-		assert(oh->refcnt > 0);
-		assert(oc->refcnt > 0);
-		r = --oc->refcnt;
-		if (!r)
-			VTAILQ_REMOVE(&oh->objcs, oc, list);
-		else {
-			/* Must have an object */
-			AN(oc->methods);
-		}
-		if (oh->waitinglist != NULL)
-			hsh_rush(ds, oh);
-		Lck_Unlock(&oh->mtx);
-		if (r != 0)
-			return (r);
+	Lck_Lock(&oh->mtx);
+	assert(oh->refcnt > 0);
+	r = --oc->refcnt;
+	if (!r)
+		VTAILQ_REMOVE(&oh->objcs, oc, list);
+	if (oh->waitinglist != NULL)
+		hsh_rush(ds, oh);
+	Lck_Unlock(&oh->mtx);
+	if (r != 0)
+		return (r);
 
-		BAN_DestroyObj(oc);
-		AZ(oc->ban);
-	} else
-		AZ(oc->refcnt);
+	BAN_DestroyObj(oc);
+	AZ(oc->ban);
 
-	if (oc->methods != NULL) {
+	if (oc->methods != NULL)
 		oc_freeobj(oc);
-		ds->n_object--;
-	}
+	ds->n_object--;
 	FREE_OBJ(oc);
 
 	ds->n_objectcore--;
-	if (oh != NULL) {
-		/* Drop our ref on the objhead */
-		assert(oh->refcnt > 0);
-		(void)HSH_DerefObjHead(ds, &oh);
-	}
+	/* Drop our ref on the objhead */
+	assert(oh->refcnt > 0);
+	(void)HSH_DerefObjHead(ds, &oh);
 	return (0);
 }
 
@@ -739,6 +762,14 @@ HSH_DerefObjHead(struct dstat *ds, struct objhead **poh)
 	oh = *poh;
 	*poh = NULL;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+
+	if (oh == private_oh) {
+		Lck_Lock(&oh->mtx);
+		assert(oh->refcnt > 1);
+		oh->refcnt--;
+		Lck_Unlock(&oh->mtx);
+		return(1);
+	}
 
 	assert(oh->refcnt > 0);
 	r = hash->deref(oh);
@@ -755,4 +786,6 @@ HSH_Init(const struct hash_slinger *slinger)
 	hash = slinger;
 	if (hash->start != NULL)
 		hash->start();
+	private_oh = hsh_newobjhead();
+	private_oh->refcnt = 1;
 }

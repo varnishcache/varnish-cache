@@ -161,7 +161,10 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(req->obj->objcore, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
+
+	assert(req->obj->objcore->refcnt > 0);
 
 	req->res_mode = 0;
 
@@ -247,6 +250,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		STV_Freestore(req->obj);
 
 	assert(WRW_IsReleased(wrk));
+VSLb(req->vsl, SLT_Debug, "XXX REF %d", req->obj->objcore->refcnt);
 	(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
 	http_Teardown(req->resp);
 	return (REQ_FSM_DONE);
@@ -283,7 +287,7 @@ cnt_error(struct worker *wrk, struct req *req)
 	req->busyobj = bo;
 	AZ(bo->stats);
 	bo->stats = &wrk->stats;
-	bo->fetch_objcore = HSH_NewObjCore(wrk);
+	bo->fetch_objcore = HSH_Private(wrk);
 	req->obj = STV_NewObject(bo,
 	    TRANSIENT_STORAGE, cache_param->http_resp_size,
 	    (uint16_t)cache_param->http_max_hdr);
@@ -467,7 +471,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	AZ(req->objcore);
 	if (lr == HSH_MISS) {
 		/* Found nothing */
-		VSLb(req->vsl, SLT_Debug, "XXXX MISS\n");
+		VSLb(req->vsl, SLT_Debug, "XXXX MISS");
 		AZ(oc);
 		AN(boc);
 		AN(boc->flags & OC_F_BUSY);
@@ -483,7 +487,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	if (oc->flags & OC_F_PASS) {
 		/* Found a hit-for-pass */
-		VSLb(req->vsl, SLT_Debug, "XXXX HIT-FOR-PASS\n");
+		VSLb(req->vsl, SLT_Debug, "XXXX HIT-FOR-PASS");
 		AZ(boc);
 		(void)HSH_Deref(&wrk->stats, oc, NULL);
 		req->objcore = NULL;
@@ -649,7 +653,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 	assert (wrk->handling == VCL_RET_FETCH);
 	req->acct_req.pass++;
 
-	oc = HSH_NewObjCore(wrk);
+	oc = HSH_Private(wrk);
 	AN(oc);
 	req->busyobj = VBF_Fetch(wrk, req, oc, 1);
 	req->req_step = R_STP_FETCH;

@@ -243,7 +243,7 @@ void
 VBO_setstate(struct busyobj *bo, enum busyobj_state_e next)
 {
 	Lck_Lock(&bo->mtx);
-	VSLb(bo->vsl, SLT_Debug, "XXX: %d -> %d", bo->state, next);
+	VSLb(bo->vsl, SLT_Debug, "XXX BOS: %d -> %d", bo->state, next);
 	assert(next > bo->state);
 	bo->state = next;
 	AZ(pthread_cond_signal(&bo->cond));

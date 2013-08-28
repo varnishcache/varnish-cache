@@ -207,6 +207,8 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->do_esi)
 		bo->do_stream = 0;
+	if (bo->do_pass)
+		bo->fetch_objcore->flags |= OC_F_PASS;
 
 	if (wrk->handling == VCL_RET_DELIVER)
 		return (F_STP_FETCH);
@@ -357,7 +359,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	}
 	bo->stats = NULL;
 	if (obj == NULL) {
-		AZ(HSH_Deref(&wrk->stats, bo->fetch_objcore, NULL));
+		(void)HSH_Deref(&wrk->stats, bo->fetch_objcore, NULL);
 		bo->fetch_objcore = NULL;
 		VDI_CloseFd(&bo->vbc);
 		VBO_setstate(bo, BOS_FAILED);
@@ -406,12 +408,13 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	assert(bo->refcount >= 1);
 
-	if (obj->objcore->objhead != NULL) {
+	if (!(bo->fetch_obj->objcore->flags & OC_F_PRIVATE)) {
 		EXP_Insert(obj);
 		AN(obj->objcore->ban);
-		AZ(obj->ws_o->overflow);
-		HSH_Unbusy(&wrk->stats, obj->objcore);
 	}
+
+	AZ(obj->ws_o->overflow);
+	HSH_Unbusy(&wrk->stats, obj->objcore);
 
 	if (bo->vfp == NULL)
 		bo->vfp = &VFP_nop;
@@ -423,9 +426,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	assert(bo->refcount >= 1);
 
-	if (obj->objcore->objhead != NULL)
-		HSH_Ref(obj->objcore);
-
 	if (bo->state == BOS_FAILED) {
 		/* handle early failures */
 		(void)HSH_Deref(&wrk->stats, NULL, &obj);
@@ -433,6 +433,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	}
 	VBO_setstate(bo, BOS_FINISHED);
 
+VSLb(bo->vsl, SLT_Debug, "YYY REF %d %d", bo->refcount, bo->fetch_obj->objcore->refcnt);
 	VBO_DerefBusyObj(wrk, &bo);	// XXX ?
 	return (F_STP_DONE);
 }
@@ -550,6 +551,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc, int pass)
 	req->vary_b = NULL;
 
 	AZ(bo->fetch_objcore);
+	HSH_Ref(oc);
 	bo->fetch_objcore = oc;
 
 	AZ(bo->req);
