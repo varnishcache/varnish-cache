@@ -378,8 +378,6 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	assert(bo->refcount > 0);
 	(void)HTTP1_DiscardReqBody(req);
 
-	VBO_waitstate(bo, BOS_FETCHING);
-
 	/* bo->do_stream is not valid until after vcl_backend_response{} */
 	if (!bo->do_stream)
 		VBO_waitstate(bo, BOS_FINISHED);
@@ -499,9 +497,6 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	oh = oc->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
-	/* We are not prepared to do streaming yet */
-	XXXAZ(req->busyobj);
-
 	o = oc_getobj(&wrk->stats, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	req->obj = o;
@@ -513,8 +508,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	switch (wrk->handling) {
 	case VCL_RET_DELIVER:
 		if (boc != NULL) {
-			req->busyobj = VBF_Fetch(wrk, req, boc, 0);
-			VBO_DerefBusyObj(wrk, &req->busyobj);
+			AZ(VBF_Fetch(wrk, req, boc, VBF_BACKGROUND));
 		} else {
 			(void)HTTP1_DiscardReqBody(req);// XXX: handle err
 		}
@@ -607,7 +601,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 	wrk->stats.cache_miss++;
 
 	AN (req->objcore);
-	req->busyobj = VBF_Fetch(wrk, req, req->objcore, 0);
+	req->busyobj = VBF_Fetch(wrk, req, req->objcore, VBF_NORMAL);
 	req->objcore = NULL;
 	req->req_step = R_STP_FETCH;
 	return (REQ_FSM_MORE);
@@ -655,7 +649,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 
 	oc = HSH_Private(wrk);
 	AN(oc);
-	req->busyobj = VBF_Fetch(wrk, req, oc, 1);
+	req->busyobj = VBF_Fetch(wrk, req, oc, VBF_PASS);
 	req->req_step = R_STP_FETCH;
 	return (REQ_FSM_MORE);
 }

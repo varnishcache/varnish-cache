@@ -528,7 +528,8 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
  */
 
 struct busyobj *
-VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc, int pass)
+VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
+    enum vbf_fetch_mode_e mode)
 {
 	struct busyobj *bo;
 
@@ -544,7 +545,8 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc, int pass)
 
 	CHECK_OBJ_NOTNULL(bo->vcl, VCL_CONF_MAGIC);
 
-	bo->do_pass = pass;
+	if (mode == VBF_PASS)
+		bo->do_pass = 1;
 
 	bo->vary = req->vary_b;
 	req->vary_b = NULL;
@@ -561,6 +563,11 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc, int pass)
 
 	if (Pool_Task(wrk->pool, &bo->fetch_task, POOL_QUEUE_FRONT))
 		vbf_fetch_thread(wrk, bo);
-	VBO_waitstate(bo, BOS_REQ_DONE);
+	if (mode == VBF_BACKGROUND) {
+		VBO_waitstate(bo, BOS_REQ_DONE);
+		VBO_DerefBusyObj(wrk, &bo);
+		return (NULL);
+	}
+	VBO_waitstate(bo, BOS_FETCHING);
 	return (bo);
 }
