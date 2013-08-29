@@ -47,12 +47,10 @@
 static void
 vbf_release_req(struct busyobj *bo)
 {
-	if (bo->req == NULL)
-		return;
-	Lck_Lock(&bo->mtx);
+	assert(bo->state == BOS_INVALID);
+	AN(bo->req);
 	bo->req = NULL;
-	AZ(pthread_cond_signal(&bo->cond));
-	Lck_Unlock(&bo->mtx);
+	VBO_setstate(bo, BOS_REQ_DONE);
 }
 
 /*--------------------------------------------------------------------
@@ -118,6 +116,8 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	http_PrintfHeader(bo->bereq,
 	    "X-Varnish: %u", bo->vsl->wid & VSL_IDENTMASK);
 	if (wrk->handling == VCL_RET_ABANDON) {
+		if (bo->req != NULL)
+			vbf_release_req(bo);
 		VBO_setstate(bo, BOS_FAILED);
 		return (F_STP_ABANDON);
 	}
@@ -140,10 +140,10 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, HTTP_Beresp);
 
-	if (!bo->do_pass)
+	if (!bo->do_pass && bo->req != NULL)
 		vbf_release_req(bo); /* XXX: retry ?? */
 
-	assert(bo->state == BOS_INVALID);
+	assert(bo->state <= BOS_REQ_DONE);
 
 	i = V1F_fetch_hdr(wrk, bo, bo->req);
 	/*
@@ -156,7 +156,7 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 		i = V1F_fetch_hdr(wrk, bo, bo->req);
 	}
 
-	if (bo->do_pass)
+	if (bo->do_pass && bo->req != NULL)
 		vbf_release_req(bo); /* XXX : retry ?? */
 
 	AZ(bo->req);
@@ -213,7 +213,7 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 	if (wrk->handling == VCL_RET_DELIVER)
 		return (F_STP_FETCH);
 	if (wrk->handling == VCL_RET_RETRY) {
-		assert(bo->state == BOS_INVALID);
+		assert(bo->state == BOS_REQ_DONE);
 		bo->retries++;
 		if (bo->retries <= cache_param->max_retries) {
 			VDI_CloseFd(&bo->vbc);
@@ -419,7 +419,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->vfp == NULL)
 		bo->vfp = &VFP_nop;
 
-	assert(bo->state == BOS_INVALID);
+	assert(bo->state == BOS_REQ_DONE);
 	VBO_setstate(bo, BOS_FETCHING);
 
 	V1F_fetch_body(wrk, bo);
@@ -448,7 +448,6 @@ vbf_stp_abandon(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	assert(bo->state == BOS_FAILED);
-	vbf_release_req(bo);
 	VBO_DerefBusyObj(wrk, &bo);	// XXX ?
 	return (F_STP_DONE);
 }
@@ -562,12 +561,6 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc, int pass)
 
 	if (Pool_Task(wrk->pool, &bo->fetch_task, POOL_QUEUE_FRONT))
 		vbf_fetch_thread(wrk, bo);
-	Lck_Lock(&bo->mtx);
-	while (1) {
-		if (bo->req == NULL)
-			break;
-		(void)Lck_CondWait(&bo->cond, &bo->mtx, NULL);
-	}
-	Lck_Unlock(&bo->mtx);
+	VBO_waitstate(bo, BOS_REQ_DONE);
 	return (bo);
 }
