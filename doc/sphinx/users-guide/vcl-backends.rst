@@ -31,6 +31,7 @@ Varnish can have several backends defined and can you can even join
 several backends together into clusters of backends for load balancing
 purposes. 
 
+
 Multiple backends
 -----------------
 
@@ -73,7 +74,41 @@ really arbitrary data. You want to send mobile devices to a different
 backend? No problem. if (req.User-agent ~ /mobile/) .. should do the
 trick. 
 
+
+Backends and virtual hosts in Varnish
+-------------------------------------
+
+Varnish fully supports virtual hosts. They might work in a somewhat
+counter intuitive fashion since they are never declared
+explicitly. You set up the routing of incoming HTTP requests in
+vcl_recv. If you want this routing to be done on the basis of virtual
+hosts you just need to inspect req.http.host.
+
+You can have something like this:::
+
+  sub vcl_recv {
+     if (req.http.host ~ "foo.com") {
+       set req.backend = foo;
+     } elsif (req.http.host ~ "bar.com") {
+       set req.backend = bar;
+     }
+  }
+
+Note that the first regular expressions will match foo.com,
+www.foo.com, zoop.foo.com and any other host ending in foo.com. In
+this example this is intentional but you might want it to be a bit
+more tight, maybe relying on the == operator in stead, like this:::
+
+
+  sub vcl_recv {
+    if (req.http.host == "foo.com" or req.http.host == "www.foo.com") {
+      set req.backend = foo;
+    }
+  } 
+
+
 .. _users-guide-advanced_backend_servers-directors:
+
 
 Directors
 ---------
