@@ -95,7 +95,7 @@ cnt_stream(struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	bo = req->busyobj;
+	bo = req->obj->objcore->busyobj;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	AN(bo->do_stream);
 
@@ -107,7 +107,7 @@ cnt_stream(struct worker *wrk, struct req *req)
 	if (wrk->handling == VCL_RET_RESTART) {
 		assert(req->obj == bo->fetch_obj);
 		req->obj = NULL;
-		VBO_DerefBusyObj(wrk, &req->busyobj);
+		VBO_DerefBusyObj(wrk, &bo);
 		AZ(req->obj);
 		http_Teardown(req->resp);
 		req->req_step = R_STP_RESTART;
@@ -120,14 +120,14 @@ cnt_stream(struct worker *wrk, struct req *req)
 
 	if (bo->state == BOS_FAILED) {
 		(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
-		VBO_DerefBusyObj(wrk, &req->busyobj);
+		VBO_DerefBusyObj(wrk, &bo);
 		req->err_code = 503;
 		req->req_step = R_STP_ERROR;
 		return (REQ_FSM_MORE);
 	}
-	VBO_DerefBusyObj(wrk, &req->busyobj);
+	VBO_DerefBusyObj(wrk, &bo);
 
-	AZ(req->busyobj);
+	AZ(bo);
 
 	RES_WriteObj(req);
 
@@ -170,11 +170,10 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	req->res_mode = 0;
 
 	if (!req->disable_esi && req->obj->esidata != NULL) {
-		AZ(req->busyobj);
 		/* In ESI mode, we can't know the aggregate length */
 		req->res_mode &= ~RES_LEN;
 		req->res_mode |= RES_ESI;
-	} else if (req->busyobj == NULL) {
+	} else if (req->obj->objcore->busyobj == NULL) {
 		req->res_mode |= RES_LEN;
 	}
 
@@ -205,6 +204,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 			req->doclose = SC_TX_EOF;
 		}
 	}
+	VSLb(req->vsl, SLT_Debug, "RES_MODE %x", req->res_mode);
 
 	req->t_resp = W_TIM_real(wrk);
 	if (!(req->obj->objcore->flags & OC_F_PRIVATE)) {
@@ -220,20 +220,15 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	VCL_deliver_method(req->vcl, wrk, req, NULL, req->http->ws);
 
+	while (req->obj->objcore->busyobj) {
+		VSLb(req->vsl, SLT_Debug, "HERE %s %d", __func__, __LINE__);
+		(void)usleep(10000);
+	}
+
+
 	/* Stop the insanity before it turns "Hotel California" on us */
 	if (req->restarts >= cache_param->max_restarts)
 		wrk->handling = VCL_RET_DELIVER;
-
-	if (req->busyobj != NULL) {
-		/* Don't stream if already finished */
-		if (req->busyobj->state != BOS_FINISHED) {
-			AN(req->busyobj->do_stream);
-			req->req_step = R_STP_STREAM;
-			return (REQ_FSM_MORE);
-		}
-		VBO_DerefBusyObj(wrk, &req->busyobj);
-	}
-	AZ(req->busyobj);
 
 	if (wrk->handling == VCL_RET_RESTART) {
 		(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
@@ -281,11 +276,9 @@ cnt_error(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AZ(req->objcore);
 	AZ(req->obj);
-	AZ(req->busyobj);
 
 	req->acct_req.error++;
 	bo = VBO_GetBusyObj(wrk, req);
-	req->busyobj = bo;
 	AZ(bo->stats);
 	bo->stats = &wrk->stats;
 	bo->fetch_objcore = HSH_Private(wrk);
@@ -301,8 +294,7 @@ cnt_error(struct worker *wrk, struct req *req)
 		bo->fetch_objcore = NULL;
 		http_Teardown(bo->beresp);
 		http_Teardown(bo->bereq);
-		VBO_DerefBusyObj(wrk, &req->busyobj);
-		AZ(req->busyobj);
+		VBO_DerefBusyObj(wrk, &bo);
 		return (REQ_FSM_DONE);
 	}
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
@@ -335,7 +327,7 @@ cnt_error(struct worker *wrk, struct req *req)
 		wrk->handling = VCL_RET_DELIVER;
 
 	if (wrk->handling == VCL_RET_RESTART) {
-		VBO_DerefBusyObj(wrk, &req->busyobj);
+		VBO_DerefBusyObj(wrk, &bo);
 		HSH_Drop(wrk, &req->obj);
 		req->req_step = R_STP_RESTART;
 		return (REQ_FSM_MORE);
@@ -351,7 +343,7 @@ cnt_error(struct worker *wrk, struct req *req)
 	req->err_reason = NULL;
 	http_Teardown(bo->bereq);
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
-	VBO_DerefBusyObj(wrk, &req->busyobj);
+	VBO_DerefBusyObj(wrk, &bo);
 	req->req_step = R_STP_DELIVER;
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 	return (REQ_FSM_MORE);
@@ -374,31 +366,26 @@ DOT fetch:err:s -> vcl_error
 static enum req_fsm_nxt
 cnt_fetch(struct worker *wrk, struct req *req)
 {
-	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	bo = req->busyobj;
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	req->acct_req.fetch++;
-	assert(bo->refcount > 0);
+	//assert(bo->refcount > 0);
 	(void)HTTP1_DiscardReqBody(req);
 
 	if (req->objcore->flags & OC_F_FAILED) {
-		VBO_DerefBusyObj(wrk, &req->busyobj);
 		req->err_code = 503;
 		req->req_step = R_STP_ERROR;
 		req->objcore = NULL;
 		return (REQ_FSM_MORE);
 	}
 
-	assert (bo->state >= BOS_FETCHING);
-	req->err_code = bo->err_code;
-	req->obj = bo->fetch_obj;			// XXX: recnt ?
+	//assert (bo->state >= BOS_FETCHING);
+	req->obj = oc_getobj(&wrk->stats, req->objcore);
+	//assert(req->obj == bo->fetch_obj);
 	req->objcore = NULL;
-	if (bo->state == BOS_FINISHED)
-		VBO_DerefBusyObj(wrk, &req->busyobj);
+	req->err_code = req->obj->response;
 	assert(WRW_IsReleased(wrk));
 	req->req_step = R_STP_DELIVER;
 	return (REQ_FSM_MORE);
@@ -445,7 +432,6 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	AZ(req->objcore);
 
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
-	AZ(req->busyobj);
 
 	VRY_Prep(req);
 
@@ -486,7 +472,6 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ (oc->flags & OC_F_BUSY);
 	AZ(req->objcore);
-	AZ(req->busyobj);
 
 	if (oc->flags & OC_F_PASS) {
 		/* Found a hit-for-pass */
@@ -513,7 +498,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	switch (wrk->handling) {
 	case VCL_RET_DELIVER:
 		if (boc != NULL) {
-			AZ(VBF_Fetch(wrk, req, boc, VBF_BACKGROUND));
+			VBF_Fetch(wrk, req, boc, VBF_BACKGROUND);
 		} else {
 			(void)HTTP1_DiscardReqBody(req);// XXX: handle err
 		}
@@ -575,7 +560,6 @@ cnt_miss(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	AZ(req->obj);
-	AZ(req->busyobj);
 
 	VCL_miss_method(req->vcl, wrk, req, NULL, req->http->ws);
 	switch (wrk->handling) {
@@ -606,7 +590,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 	wrk->stats.cache_miss++;
 
 	AN (req->objcore);
-	req->busyobj = VBF_Fetch(wrk, req, req->objcore, VBF_NORMAL);
+	VBF_Fetch(wrk, req, req->objcore, VBF_NORMAL);
 	req->req_step = R_STP_FETCH;
 	return (REQ_FSM_MORE);
 }
@@ -637,7 +621,6 @@ cnt_pass(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 	AZ(req->objcore);
 	AZ(req->obj);
-	AZ(req->busyobj);
 
 	VCL_pass_method(req->vcl, wrk, req, NULL, req->http->ws);
 	if (wrk->handling == VCL_RET_ERROR) {
@@ -652,7 +635,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 
 	req->objcore = HSH_Private(wrk);
 	AN(req->objcore);
-	req->busyobj = VBF_Fetch(wrk, req, req->objcore, VBF_PASS);
+	VBF_Fetch(wrk, req, req->objcore, VBF_PASS);
 	req->req_step = R_STP_FETCH;
 	return (REQ_FSM_MORE);
 }
@@ -683,7 +666,6 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
-	AZ(req->busyobj);
 
 	req->acct_req.pipe++;
 	bo = VBO_GetBusyObj(wrk, req);
@@ -769,7 +751,6 @@ cnt_recv(struct worker *wrk, struct req *req)
 	AZ(req->objcore);
 	AZ(req->obj);
 	AZ(req->objcore);
-	AZ(req->busyobj);
 
 	VSLb(req->vsl, SLT_ReqStart, "%s %s", req->sp->addr, req->sp->port);
 
@@ -862,7 +843,6 @@ cnt_purge(struct worker *wrk, struct req *req)
 	AZ(req->objcore);
 
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
-	AZ(req->busyobj);
 
 	VRY_Prep(req);
 

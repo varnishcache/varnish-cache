@@ -329,11 +329,11 @@ pan_req(const struct req *req)
 	if (VALID_OBJ(req->vcl, VCL_CONF_MAGIC))
 		pan_vcl(req->vcl);
 
-	if (req->busyobj != NULL)
-		pan_busyobj(req->busyobj);
-
-	if (VALID_OBJ(req->obj, OBJECT_MAGIC))
+	if (VALID_OBJ(req->obj, OBJECT_MAGIC)) {
+		if (req->obj->objcore->busyobj != NULL)
+			pan_busyobj(req->obj->objcore->busyobj);
 		pan_object(req->obj);
+	}
 
 	VSB_printf(pan_vsp, "},\n");
 }

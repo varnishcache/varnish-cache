@@ -635,7 +635,6 @@ struct req {
 
 	/* The busy objhead we sleep on */
 	struct objhead		*hash_objhead;
-	struct busyobj		*busyobj;
 
 	/* Built Vary string */
 	uint8_t			*vary_b;
@@ -851,7 +850,7 @@ enum vbf_fetch_mode_e {
 	VBF_PASS = 1,
 	VBF_BACKGROUND = 2,
 };
-struct busyobj *VBF_Fetch(struct worker *wrk, struct req *req,
+void VBF_Fetch(struct worker *wrk, struct req *req,
     struct objcore *oc, enum vbf_fetch_mode_e);
 
 /* cache_fetch_proc.c */

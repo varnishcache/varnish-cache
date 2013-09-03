@@ -527,7 +527,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 /*--------------------------------------------------------------------
  */
 
-struct busyobj *
+void
 VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
     enum vbf_fetch_mode_e mode)
 {
@@ -565,12 +565,11 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 		vbf_fetch_thread(wrk, bo);
 	if (mode == VBF_BACKGROUND) {
 		VBO_waitstate(bo, BOS_REQ_DONE);
-		VBO_DerefBusyObj(wrk, &bo);
-		return (NULL);
+	} else {
+		VBO_waitstate(bo, BOS_FETCHING);
+		if (!bo->do_stream)
+			VBO_waitstate(bo, BOS_FINISHED);
+		assert(bo->state != BOS_FAILED || (oc->flags & OC_F_FAILED));
 	}
-	VBO_waitstate(bo, BOS_FETCHING);
-	if (!bo->do_stream)
-		VBO_waitstate(bo, BOS_FINISHED);
-	assert(bo->state != BOS_FAILED || (oc->flags & OC_F_FAILED));
-	return (bo);
+	VBO_DerefBusyObj(wrk, &bo);
 }

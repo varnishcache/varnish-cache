@@ -183,7 +183,6 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_ORNULL(req->vcl, VCL_CONF_MAGIC);
 
 	AZ(req->obj);
-	AZ(req->busyobj);
 	req->director = NULL;
 	req->restarts = 0;
 
