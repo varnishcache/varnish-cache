@@ -108,6 +108,7 @@ struct objhead {
 #define hoh_head _u.n.u_n_hoh_head
 };
 
+void HSH_Fail(struct objcore *);
 void HSH_Unbusy(struct dstat *, struct objcore *);
 void HSH_Complete(struct objcore *oc);
 void HSH_DeleteObjHead(struct dstat *, struct objhead *oh);

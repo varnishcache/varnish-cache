@@ -118,7 +118,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	if (wrk->handling == VCL_RET_ABANDON) {
 		if (bo->req != NULL)
 			vbf_release_req(bo);
-		VBO_setstate(bo, BOS_FAILED);
+		(void)VFP_Error(bo, "Abandonned in vcl_backend_fetch");
 		return (F_STP_ABANDON);
 	}
 	assert (wrk->handling == VCL_RET_FETCH);
@@ -360,10 +360,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	}
 	bo->stats = NULL;
 	if (obj == NULL) {
-		(void)HSH_Deref(&wrk->stats, bo->fetch_objcore, NULL);
-		bo->fetch_objcore = NULL;
+		(void)VFP_Error(bo, "Could not get storage");
 		VDI_CloseFd(&bo->vbc);
-		VBO_setstate(bo, BOS_FAILED);
 		return (F_STP_ABANDON);
 	}
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
@@ -428,12 +426,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	assert(bo->refcount >= 1);
 
-	if (bo->state == BOS_FAILED) {
-		/* handle early failures */
-		(void)HSH_Deref(&wrk->stats, NULL, &obj);
-		return (F_STP_ABANDON);
-	}
-	VBO_setstate(bo, BOS_FINISHED);
+	if (bo->state != BOS_FAILED)
+		VBO_setstate(bo, BOS_FINISHED);
 
 VSLb(bo->vsl, SLT_Debug, "YYY REF %d %d", bo->refcount, bo->fetch_obj->objcore->refcnt);
 	VBO_DerefBusyObj(wrk, &bo);	// XXX ?
@@ -450,6 +444,7 @@ vbf_stp_abandon(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	assert(bo->state == BOS_FAILED);
+	assert(bo->fetch_objcore->flags & OC_F_FAILED);
 	VBO_DerefBusyObj(wrk, &bo);	// XXX ?
 	return (F_STP_DONE);
 }
@@ -571,5 +566,8 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 		return (NULL);
 	}
 	VBO_waitstate(bo, BOS_FETCHING);
+	if (!bo->do_stream)
+		VBO_waitstate(bo, BOS_FINISHED);
+	assert(bo->state != BOS_FAILED || (oc->flags & OC_F_FAILED));
 	return (bo);
 }

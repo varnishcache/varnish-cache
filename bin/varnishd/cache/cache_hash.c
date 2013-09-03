@@ -401,6 +401,9 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 		assert(oc->objhead == oh);
 
+		if (oc->flags & OC_F_FAILED)
+			continue;
+
 		if (oc->flags & OC_F_BUSY || oc->busyobj != NULL) {
 			CHECK_OBJ_ORNULL(oc->busyobj, BUSYOBJ_MAGIC);
 			if (req->hash_ignore_busy)
@@ -621,6 +624,24 @@ HSH_Drop(struct worker *wrk, struct object **oo)
 	CHECK_OBJ_NOTNULL(*oo, OBJECT_MAGIC);
 	(*oo)->exp.ttl = -1.;
 	AZ(HSH_Deref(&wrk->stats, NULL, oo));
+}
+
+/*---------------------------------------------------------------------
+ * Fail an objcore
+ */
+
+void
+HSH_Fail(struct objcore *oc)
+{
+	struct objhead *oh;
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	oh = oc->objhead;
+	CHECK_OBJ(oh, OBJHEAD_MAGIC);
+
+	Lck_Lock(&oh->mtx);
+	oc->flags |= OC_F_FAILED;
+	Lck_Unlock(&oh->mtx);
 }
 
 /*---------------------------------------------------------------------

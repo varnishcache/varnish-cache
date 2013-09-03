@@ -62,6 +62,8 @@ VFP_Error2(struct busyobj *bo, const char *error, const char *more)
 			VSLb(bo->vsl, SLT_FetchError, "%s", error);
 		else
 			VSLb(bo->vsl, SLT_FetchError, "%s: %s", error, more);
+		if (bo->fetch_objcore != NULL)
+			HSH_Fail(bo->fetch_objcore);
 		VBO_setstate(bo, BOS_FAILED);
 	}
 	return (-1);

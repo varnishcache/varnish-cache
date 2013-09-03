@@ -385,20 +385,18 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	assert(bo->refcount > 0);
 	(void)HTTP1_DiscardReqBody(req);
 
-	/* bo->do_stream is not valid until after vcl_backend_response{} */
-	if (!bo->do_stream)
-		VBO_waitstate(bo, BOS_FINISHED);
-
-	if (bo->state == BOS_FAILED) {
+	if (req->objcore->flags & OC_F_FAILED) {
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 		req->err_code = 503;
 		req->req_step = R_STP_ERROR;
+		req->objcore = NULL;
 		return (REQ_FSM_MORE);
 	}
 
 	assert (bo->state >= BOS_FETCHING);
 	req->err_code = bo->err_code;
 	req->obj = bo->fetch_obj;			// XXX: recnt ?
+	req->objcore = NULL;
 	if (bo->state == BOS_FINISHED)
 		VBO_DerefBusyObj(wrk, &req->busyobj);
 	assert(WRW_IsReleased(wrk));
@@ -609,7 +607,6 @@ cnt_miss(struct worker *wrk, struct req *req)
 
 	AN (req->objcore);
 	req->busyobj = VBF_Fetch(wrk, req, req->objcore, VBF_NORMAL);
-	req->objcore = NULL;
 	req->req_step = R_STP_FETCH;
 	return (REQ_FSM_MORE);
 }
@@ -634,7 +631,6 @@ XDOT err_pass [label="ERROR",shape=plaintext]
 static enum req_fsm_nxt
 cnt_pass(struct worker *wrk, struct req *req)
 {
-	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -654,9 +650,9 @@ cnt_pass(struct worker *wrk, struct req *req)
 	assert (wrk->handling == VCL_RET_FETCH);
 	req->acct_req.pass++;
 
-	oc = HSH_Private(wrk);
-	AN(oc);
-	req->busyobj = VBF_Fetch(wrk, req, oc, VBF_PASS);
+	req->objcore = HSH_Private(wrk);
+	AN(req->objcore);
+	req->busyobj = VBF_Fetch(wrk, req, req->objcore, VBF_PASS);
 	req->req_step = R_STP_FETCH;
 	return (REQ_FSM_MORE);
 }
