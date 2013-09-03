@@ -447,7 +447,5 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 			    "Content-Length: %zd", obj->len);
 		}
 	}
-	if (obj->objcore->objhead != NULL)
-		HSH_Complete(obj->objcore);
 	bo->stats = NULL;
 }

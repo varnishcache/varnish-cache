@@ -197,8 +197,8 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 	bo->exp.entered = W_TIM_real(wrk);
 	RFC2616_Ttl(bo);
 
-	/* pass from vclrecv{} has negative TTL */
-	if (bo->fetch_objcore->objhead == NULL)
+	/* private objects have negative TTL */
+	if (bo->fetch_objcore->flags & OC_F_PRIVATE)
 		bo->exp.ttl = -1.;
 
 	AZ(bo->do_esi);
@@ -299,7 +299,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	else if (bo->is_gzip)
 		bo->vfp = &vfp_testgzip;
 
-	if (bo->fetch_objcore->objhead == NULL)
+	if (bo->fetch_objcore->flags & OC_F_PRIVATE)
 		AN(bo->uncacheable);
 
 	/* No reason to try streaming a non-existing body */
@@ -310,7 +310,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	    bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
 
 	/* Create Vary instructions */
-	if (bo->fetch_objcore->objhead != NULL) {
+	if (!(bo->fetch_objcore->flags & OC_F_PRIVATE)) {
 		varyl = VRY_Create(bo, &vary);
 		if (varyl > 0) {
 			AN(vary);
@@ -423,6 +423,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	VBO_setstate(bo, BOS_FETCHING);
 
 	V1F_fetch_body(wrk, bo);
+	HSH_Complete(obj->objcore);
 
 	assert(bo->refcount >= 1);
 
