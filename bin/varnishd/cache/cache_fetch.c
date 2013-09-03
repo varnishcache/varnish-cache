@@ -345,6 +345,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	AZ(bo->stats);
 	bo->stats = &wrk->stats;
+	AN(bo->fetch_objcore);
 	obj = STV_NewObject(bo, bo->storage_hint, l, nhttp);
 	if (obj == NULL) {
 		/*

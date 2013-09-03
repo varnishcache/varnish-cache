@@ -162,6 +162,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(req->obj->objcore, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(req->obj->objcore->objhead, OBJHEAD_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 
 	assert(req->obj->objcore->refcnt > 0);
@@ -288,9 +289,10 @@ cnt_error(struct worker *wrk, struct req *req)
 	AZ(bo->stats);
 	bo->stats = &wrk->stats;
 	bo->fetch_objcore = HSH_Private(wrk);
-	req->obj = STV_NewObject(bo,
+	bo->fetch_obj = STV_NewObject(bo,
 	    TRANSIENT_STORAGE, cache_param->http_resp_size,
 	    (uint16_t)cache_param->http_max_hdr);
+	req->obj = bo->fetch_obj;
 	bo->stats = NULL;
 	if (req->obj == NULL) {
 		req->doclose = SC_OVERLOAD;
@@ -305,7 +307,6 @@ cnt_error(struct worker *wrk, struct req *req)
 	}
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 	AZ(req->objcore);
-	AZ(bo->fetch_objcore);
 	req->obj->vxid = bo->vsl->wid;
 	req->obj->exp.entered = req->t_req;
 
@@ -320,6 +321,9 @@ cnt_error(struct worker *wrk, struct req *req)
 	http_PrintfHeader(h, "Date: %s", date);
 	http_SetHeader(h, "Server: Varnish");
 
+	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
+	HSH_Ref(req->obj->objcore);
+
 	if (req->err_reason != NULL)
 		http_PutResponse(h, req->err_reason);
 	else
@@ -331,11 +335,12 @@ cnt_error(struct worker *wrk, struct req *req)
 		wrk->handling = VCL_RET_DELIVER;
 
 	if (wrk->handling == VCL_RET_RESTART) {
-		HSH_Drop(wrk, &req->obj);
 		VBO_DerefBusyObj(wrk, &req->busyobj);
+		HSH_Drop(wrk, &req->obj);
 		req->req_step = R_STP_RESTART;
 		return (REQ_FSM_MORE);
 	}
+	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 
 	/* We always close when we take this path */
 	req->doclose = SC_TX_ERROR;
@@ -345,8 +350,10 @@ cnt_error(struct worker *wrk, struct req *req)
 	req->err_code = 0;
 	req->err_reason = NULL;
 	http_Teardown(bo->bereq);
+	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 	VBO_DerefBusyObj(wrk, &req->busyobj);
 	req->req_step = R_STP_DELIVER;
+	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 	return (REQ_FSM_MORE);
 }
 
