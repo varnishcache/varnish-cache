@@ -413,7 +413,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	}
 
 	AZ(obj->ws_o->overflow);
-	HSH_Unbusy(&wrk->stats, obj->objcore);
+	if (bo->do_stream)
+		HSH_Unbusy(&wrk->stats, obj->objcore);
 
 	if (bo->vfp == NULL)
 		bo->vfp = &VFP_nop;
@@ -422,6 +423,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	VBO_setstate(bo, BOS_FETCHING);
 
 	V1F_fetch_body(wrk, bo);
+	if (!bo->do_stream)
+		HSH_Unbusy(&wrk->stats, obj->objcore);
 	HSH_Complete(obj->objcore);
 
 	assert(bo->refcount >= 1);
