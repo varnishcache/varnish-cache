@@ -655,7 +655,10 @@ HSH_Unbusy(struct dstat *ds, struct objcore *oc)
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
 
 	AN(oc->flags & OC_F_BUSY);
-	AN(oc->ban);
+	if (oc->flags & OC_F_PRIVATE)
+		AZ(oc->ban);
+	else
+		AN(oc->ban);
 	assert(oh->refcnt > 0);
 
 	/* XXX: pretouch neighbors on oh->objcs to prevent page-on under mtx */

@@ -289,7 +289,7 @@ STV_MkObject(struct stevedore *stv, struct busyobj *bo,
 
 	o->objcore = bo->fetch_objcore;
 	bo->fetch_objcore = NULL;     /* refcnt follows pointer. */
-	if (o->objcore->objhead != NULL)
+	if (!(o->objcore->flags & OC_F_PRIVATE))
 		BAN_NewObjCore(o->objcore);
 
 	o->objcore->methods = &default_oc_methods;
