@@ -605,7 +605,7 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, double ttl, double grace)
 		o->exp.ttl = ttl;
 		o->exp.grace = grace;
 		EXP_Rearm(o);
-		(void)HSH_Deref(&wrk->stats, NULL, &o);
+		(void)HSH_DerefObj(&wrk->stats, &o);
 	}
 	WS_Release(wrk->aws, 0);
 }
@@ -623,7 +623,7 @@ HSH_Drop(struct worker *wrk, struct object **oo)
 	AN(oo);
 	CHECK_OBJ_NOTNULL(*oo, OBJECT_MAGIC);
 	(*oo)->exp.ttl = -1.;
-	AZ(HSH_Deref(&wrk->stats, NULL, oo));
+	AZ(HSH_DerefObj(&wrk->stats, oo));
 }
 
 /*---------------------------------------------------------------------
@@ -727,21 +727,30 @@ HSH_Ref(struct objcore *oc)
  */
 
 int
-HSH_Deref(struct dstat *ds, struct objcore *oc, struct object **oo)
+HSH_DerefObj(struct dstat *ds, struct object **oo)
 {
-	struct object *o = NULL;
+	struct object *o;
+	struct objcore *oc;
+
+	AN(oo);
+	o = *oo;
+	*oo = NULL;
+
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	oc = o->objcore;
+	return (HSH_DerefObjCore(ds, &oc));
+}
+
+int
+HSH_DerefObjCore(struct dstat *ds, struct objcore **ocp)
+{
+	struct objcore *oc;
 	struct objhead *oh;
 	unsigned r;
 
-	/* Only one arg at a time */
-	assert(oc == NULL || oo == NULL);
-
-	if (oo != NULL) {
-		o = *oo;
-		*oo = NULL;
-		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-		oc = o->objcore;
-	}
+	AN(ocp);
+	oc = *ocp;
+	*ocp = NULL;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	assert(oc->refcnt > 0);

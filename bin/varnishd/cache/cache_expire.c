@@ -411,7 +411,7 @@ exp_timer(struct worker *wrk, void *priv)
 		VSLb(&vsl, SLT_ExpKill, "%u %.0f",
 		    oc_getxid(&wrk->stats, oc) & VSL_IDENTMASK,
 		    EXP_Ttl(NULL, o) - t);
-		(void)HSH_Deref(&wrk->stats, oc, NULL);
+		(void)HSH_DerefObjCore(&wrk->stats, &oc);
 	}
 	NEEDLESS_RETURN(NULL);
 }
@@ -457,7 +457,7 @@ EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 	/* XXX: bad idea for -spersistent */
 	VSLb(bo->vsl, SLT_ExpKill, "%u LRU",
 	    oc_getxid(bo->stats, oc) & VSL_IDENTMASK);
-	(void)HSH_Deref(bo->stats, oc, NULL);
+	(void)HSH_DerefObjCore(bo->stats, &oc);
 	return (1);
 }
 
@@ -513,7 +513,7 @@ EXP_NukeLRU(struct worker *wrk, struct vsl_log *vsl, struct lru *lru)
 			    oc_getxid(&wrk->stats, oc) & VSL_IDENTMASK,
 			    EXP_Ttl(NULL, o) - t);
 			EXP_Set_ttl(&o->exp, 0.);
-			(void)HSH_Deref(&wrk->stats, oc, NULL);
+			(void)HSH_DerefObjCore(&wrk->stats, &oc);
 		}
 
 		Lck_Lock(&lru->mtx);

@@ -113,7 +113,8 @@ void HSH_Unbusy(struct dstat *, struct objcore *);
 void HSH_Complete(struct objcore *oc);
 void HSH_DeleteObjHead(struct dstat *, struct objhead *oh);
 int HSH_DerefObjHead(struct dstat *, struct objhead **poh);
-int HSH_Deref(struct dstat *, struct objcore *oc, struct object **o);
+int HSH_DerefObjCore(struct dstat *, struct objcore **ocp);
+int HSH_DerefObj(struct dstat *, struct object **o);
 #endif /* VARNISH_CACHE_CHILD */
 
 extern const struct hash_slinger hsl_slinger;

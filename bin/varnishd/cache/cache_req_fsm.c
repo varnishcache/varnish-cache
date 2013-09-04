@@ -119,7 +119,7 @@ cnt_stream(struct worker *wrk, struct req *req)
 	assert(bo->state >= BOS_FINISHED);
 
 	if (bo->state == BOS_FAILED) {
-		(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
+		(void)HSH_DerefObj(&wrk->stats, &req->obj);
 		VBO_DerefBusyObj(wrk, &bo);
 		req->err_code = 503;
 		req->req_step = R_STP_ERROR;
@@ -136,7 +136,7 @@ cnt_stream(struct worker *wrk, struct req *req)
 		STV_Freestore(req->obj);
 
 	assert(WRW_IsReleased(wrk));
-	(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
+	(void)HSH_DerefObj(&wrk->stats, &req->obj);
 	http_Teardown(req->resp);
 	return (REQ_FSM_DONE);
 }
@@ -164,6 +164,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->obj->objcore, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(req->obj->objcore->objhead, OBJHEAD_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
+	assert(WRW_IsReleased(wrk));
 
 	assert(req->obj->objcore->refcnt > 0);
 
@@ -231,7 +232,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		wrk->handling = VCL_RET_DELIVER;
 
 	if (wrk->handling == VCL_RET_RESTART) {
-		(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
+		(void)HSH_DerefObj(&wrk->stats, &req->obj);
 		AZ(req->obj);
 		http_Teardown(req->resp);
 		req->req_step = R_STP_RESTART;
@@ -247,7 +248,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	assert(WRW_IsReleased(wrk));
 VSLb(req->vsl, SLT_Debug, "XXX REF %d", req->obj->objcore->refcnt);
-	(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
+	(void)HSH_DerefObj(&wrk->stats, &req->obj);
 	http_Teardown(req->resp);
 	return (REQ_FSM_DONE);
 }
@@ -290,7 +291,7 @@ cnt_error(struct worker *wrk, struct req *req)
 	if (req->obj == NULL) {
 		req->doclose = SC_OVERLOAD;
 		req->director = NULL;
-		AZ(HSH_Deref(&wrk->stats, bo->fetch_objcore, NULL));
+		AZ(HSH_DerefObjCore(&wrk->stats, &bo->fetch_objcore));
 		bo->fetch_objcore = NULL;
 		http_Teardown(bo->beresp);
 		http_Teardown(bo->bereq);
@@ -369,24 +370,22 @@ cnt_fetch(struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AZ(req->obj);
 
 	req->acct_req.fetch++;
-	//assert(bo->refcount > 0);
 	(void)HTTP1_DiscardReqBody(req);
 
 	if (req->objcore->flags & OC_F_FAILED) {
 		req->err_code = 503;
 		req->req_step = R_STP_ERROR;
+		//XXX ? AZ(HSH_DerefObjCore(&wrk->stats, &req->objcore));
 		req->objcore = NULL;
 		return (REQ_FSM_MORE);
 	}
 
-	//assert (bo->state >= BOS_FETCHING);
 	req->obj = oc_getobj(&wrk->stats, req->objcore);
-	//assert(req->obj == bo->fetch_obj);
 	req->objcore = NULL;
 	req->err_code = req->obj->response;
-	assert(WRW_IsReleased(wrk));
 	req->req_step = R_STP_DELIVER;
 	return (REQ_FSM_MORE);
 }
@@ -477,7 +476,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		/* Found a hit-for-pass */
 		VSLb(req->vsl, SLT_Debug, "XXXX HIT-FOR-PASS");
 		AZ(boc);
-		(void)HSH_Deref(&wrk->stats, oc, NULL);
+		(void)HSH_DerefObjCore(&wrk->stats, &oc);
 		req->objcore = NULL;
 		wrk->stats.cache_hitpass++;
 		req->req_step = R_STP_PASS;
@@ -506,7 +505,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_DELIVER;
 		return (REQ_FSM_MORE);
 	case VCL_RET_FETCH:
-		(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
+		(void)HSH_DerefObj(&wrk->stats, &req->obj);
 		req->objcore = boc;
 		req->req_step = R_STP_MISS;
 		return (REQ_FSM_MORE);
@@ -525,11 +524,11 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	}
 
 	/* Drop our object, we won't need it */
-	(void)HSH_Deref(&wrk->stats, NULL, &req->obj);
+	(void)HSH_DerefObj(&wrk->stats, &req->obj);
 	req->objcore = NULL;
 
 	if (boc != NULL) {
-		(void)HSH_Deref(&wrk->stats, boc, NULL);
+		(void)HSH_DerefObjCore(&wrk->stats, &boc);
 		free(req->vary_b);
 		req->vary_b = NULL;
 	}
@@ -563,35 +562,25 @@ cnt_miss(struct worker *wrk, struct req *req)
 
 	VCL_miss_method(req->vcl, wrk, req, NULL, req->http->ws);
 	switch (wrk->handling) {
-	case VCL_RET_ERROR:
-		free(req->vary_b);
-		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
-		req->objcore = NULL;
-		req->req_step = R_STP_ERROR;
-		return (REQ_FSM_MORE);
-	case VCL_RET_RESTART:
-		free(req->vary_b);
-		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
-		req->objcore = NULL;
-		req->req_step = R_STP_RESTART;
-		return (REQ_FSM_MORE);
-	case VCL_RET_PASS:
-		free(req->vary_b);
-		AZ(HSH_Deref(&wrk->stats, req->objcore, NULL));
-		req->objcore = NULL;
-		req->req_step = R_STP_PASS;
-		return (REQ_FSM_MORE);
 	case VCL_RET_FETCH:
+		wrk->stats.cache_miss++;
+		VBF_Fetch(wrk, req, req->objcore, VBF_NORMAL);
+		req->req_step = R_STP_FETCH;
+		return (REQ_FSM_MORE);
+	case VCL_RET_ERROR:
+		req->req_step = R_STP_ERROR;
+		break;
+	case VCL_RET_RESTART:
+		req->req_step = R_STP_RESTART;
+		break;
+	case VCL_RET_PASS:
+		req->req_step = R_STP_PASS;
 		break;
 	default:
-		WRONG("wrong return from vcl_miss{}");
+		WRONG("Illegal return from vcl_miss{}");
 	}
-
-	wrk->stats.cache_miss++;
-
-	AN (req->objcore);
-	VBF_Fetch(wrk, req, req->objcore, VBF_NORMAL);
-	req->req_step = R_STP_FETCH;
+	free(req->vary_b);
+	AZ(HSH_DerefObjCore(&wrk->stats, &req->objcore));
 	return (REQ_FSM_MORE);
 }
 
@@ -623,20 +612,23 @@ cnt_pass(struct worker *wrk, struct req *req)
 	AZ(req->obj);
 
 	VCL_pass_method(req->vcl, wrk, req, NULL, req->http->ws);
-	if (wrk->handling == VCL_RET_ERROR) {
+	switch (wrk->handling) {
+	case VCL_RET_ERROR:
 		req->req_step = R_STP_ERROR;
-		return (REQ_FSM_MORE);
+		break;
+	case VCL_RET_RESTART:
+		req->req_step = R_STP_RESTART;
+		break;
+	case VCL_RET_FETCH:
+		req->acct_req.pass++;
+		req->objcore = HSH_Private(wrk);
+		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+		VBF_Fetch(wrk, req, req->objcore, VBF_PASS);
+		req->req_step = R_STP_FETCH;
+		break;
+	default:
+		WRONG("Illegal return from cnt_pass{}");
 	}
-	if (wrk->handling == VCL_RET_RESTART) {
-		INCOMPL();
-	}
-	assert (wrk->handling == VCL_RET_FETCH);
-	req->acct_req.pass++;
-
-	req->objcore = HSH_Private(wrk);
-	AN(req->objcore);
-	VBF_Fetch(wrk, req, req->objcore, VBF_PASS);
-	req->req_step = R_STP_FETCH;
 	return (REQ_FSM_MORE);
 }
 
@@ -807,13 +799,15 @@ cnt_recv(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_LOOKUP;
 		return (REQ_FSM_MORE);
 	case VCL_RET_PIPE:
-		if (req->esi_level > 0) {
-			/* XXX: VSL something */
-			INCOMPL();
-			return (REQ_FSM_DONE);
+		if (req->esi_level == 0) {
+			req->req_step = R_STP_PIPE;
+			return (REQ_FSM_MORE);
 		}
-		req->req_step = R_STP_PIPE;
-		return (REQ_FSM_MORE);
+		VSLb(req->vsl, SLT_VCL_Error,
+		    "vcl_recv{} returns pipe for ESI included object."
+		    "  Doing pass.");
+		req->req_step = R_STP_PASS;
+		return (REQ_FSM_DONE);
 	case VCL_RET_PASS:
 		req->req_step = R_STP_PASS;
 		return (REQ_FSM_MORE);
@@ -821,7 +815,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_ERROR;
 		return (REQ_FSM_MORE);
 	default:
-		WRONG("Illegal action in vcl_recv{}");
+		WRONG("Illegal return from vcl_recv{}");
 	}
 }
 
@@ -855,7 +849,7 @@ cnt_purge(struct worker *wrk, struct req *req)
 
 	HSH_Purge(wrk, boc->objhead, 0, 0);
 
-	AZ(HSH_Deref(&wrk->stats, boc, NULL));
+	AZ(HSH_DerefObjCore(&wrk->stats, &boc));
 
 	VCL_purge_method(req->vcl, wrk, req, NULL, req->http->ws);
 	req->req_step = R_STP_ERROR;

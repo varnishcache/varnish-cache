@@ -192,7 +192,7 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 
 	if (bo->fetch_objcore != NULL) {
 		AN(wrk);
-		(void)HSH_Deref(&wrk->stats, bo->fetch_objcore, NULL);
+		(void)HSH_DerefObjCore(&wrk->stats, &bo->fetch_objcore);
 	}
 
 	VCL_Rel(&bo->vcl);

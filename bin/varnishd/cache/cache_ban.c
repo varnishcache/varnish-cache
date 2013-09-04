@@ -1073,7 +1073,7 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 			if (DO_DEBUG(DBG_LURKER))
 				VSLb(vsl, SLT_Debug, "lurker done: %p %u %u",
 				    oc, oc->flags & OC_F_LURK, pass);
-			(void)HSH_Deref(&wrk->stats, NULL, &o);
+			(void)HSH_DerefObj(&wrk->stats, &o);
 			VTIM_sleep(cache_param->ban_lurker_sleep);
 		}
 		Lck_AssertHeld(&ban_mtx);
