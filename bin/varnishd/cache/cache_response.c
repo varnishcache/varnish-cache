@@ -108,12 +108,56 @@ RES_BuildHttp(struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 
-	if (!(req->res_mode & RES_LEN)) {
-		http_Unset(req->resp, H_Content_Length);
-	} else if (cache_param->http_range_support) {
-		/* We only accept ranges if we know the length */
-		http_SetHeader(req->resp, "Accept-Ranges: bytes");
+	req->res_mode = 0;
+
+	if (!req->disable_esi && req->obj->esidata != NULL) {
+		/* In ESI mode, we can't know the aggregate length */
+		req->res_mode &= ~RES_LEN;
+		req->res_mode |= RES_ESI;
+	} else if (req->obj->objcore->busyobj == NULL) {
+		/* XXX: Not happy with this convoluted test */
+		req->res_mode |= RES_LEN;
+		if (!(req->obj->objcore->flags & OC_F_PASS) ||
+		    req->obj->len != 0) {
+			http_Unset(req->resp, H_Content_Length);
+			http_PrintfHeader(req->resp,
+			    "Content-Length: %zd", req->obj->len);
+		}
+		if (cache_param->http_range_support)
+			http_SetHeader(req->resp, "Accept-Ranges: bytes");
 	}
+
+	if (req->esi_level > 0) {
+		/* Included ESI object, always CHUNKED or EOF */
+		req->res_mode &= ~RES_LEN;
+		req->res_mode |= RES_ESI_CHILD;
+	}
+
+	if (cache_param->http_gzip_support && req->obj->gziped &&
+	    !RFC2616_Req_Gzip(req->http)) {
+		/*
+		 * We don't know what it uncompresses to
+		 * XXX: we could cache that
+		 */
+		req->res_mode &= ~RES_LEN;
+		req->res_mode |= RES_GUNZIP;
+	}
+
+	if (!(req->res_mode & (RES_LEN|RES_CHUNKED|RES_EOF))) {
+		/* We havn't chosen yet, do so */
+		if (!req->wantbody) {
+			/* Nothing */
+		} else if (req->http->protover >= 11) {
+			req->res_mode |= RES_CHUNKED;
+		} else {
+			req->res_mode |= RES_EOF;
+			req->doclose = SC_TX_EOF;
+		}
+	}
+	VSLb(req->vsl, SLT_Debug, "RES_MODE %x", req->res_mode);
+
+	if (!(req->res_mode & RES_LEN))
+		http_Unset(req->resp, H_Content_Length);
 
 	if (req->res_mode & RES_GUNZIP)
 		http_Unset(req->resp, H_Content_Encoding);

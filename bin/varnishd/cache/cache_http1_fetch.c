@@ -311,7 +311,6 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 {
 	int cls;
 	struct storage *st;
-	int mklen;
 	ssize_t cl;
 	struct http_conn *htc;
 	struct object *obj;
@@ -342,10 +341,8 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 	cls = bo->should_close;
 	switch (htc->body_status) {
 	case BS_NONE:
-		mklen = 0;
 		break;
 	case BS_ZERO:
-		mklen = 1;
 		break;
 	case BS_LENGTH:
 		cl = vbf_fetch_number(bo->h_content_length, 10);
@@ -353,7 +350,6 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 		bo->vfp->begin(bo, cl);
 		if (bo->state == BOS_FETCHING && cl > 0)
 			cls |= vbf_fetch_straight(bo, htc, cl);
-		mklen = 1;
 		if (bo->vfp->end(bo))
 			assert(bo->state == BOS_FAILED);
 		break;
@@ -361,7 +357,6 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 		bo->vfp->begin(bo, cl > 0 ? cl : 0);
 		if (bo->state == BOS_FETCHING)
 			cls |= vbf_fetch_chunked(bo, htc);
-		mklen = 1;
 		if (bo->vfp->end(bo))
 			assert(bo->state == BOS_FAILED);
 		break;
@@ -369,17 +364,14 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 		bo->vfp->begin(bo, cl > 0 ? cl : 0);
 		if (bo->state == BOS_FETCHING)
 			vbf_fetch_eof(bo, htc);
-		mklen = 1;
 		cls = 1;
 		if (bo->vfp->end(bo))
 			assert(bo->state == BOS_FAILED);
 		break;
 	case BS_ERROR:
 		cls |= VFP_Error(bo, "error incompatible Transfer-Encoding");
-		mklen = 0;
 		break;
 	default:
-		mklen = 0;
 		INCOMPL();
 	}
 	AZ(bo->vgz_rx);
@@ -401,9 +393,8 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 
 	bo->vfp = NULL;
 
-	VSLb(bo->vsl, SLT_Fetch_Body, "%u(%s) cls %d mklen %d",
-	    htc->body_status, body_status_2str(htc->body_status),
-	    cls, mklen);
+	VSLb(bo->vsl, SLT_Fetch_Body, "%u(%s) cls %d",
+	    htc->body_status, body_status_2str(htc->body_status), cls);
 
 	http_Teardown(bo->bereq);
 	http_Teardown(bo->beresp);
@@ -439,12 +430,6 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 
 			else
 				assert(uu == obj->len);
-		}
-
-		if (mklen > 0) {
-			http_Unset(obj->http, H_Content_Length);
-			http_PrintfHeader(obj->http,
-			    "Content-Length: %zd", obj->len);
 		}
 	}
 	bo->stats = NULL;

@@ -306,8 +306,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->htc.body_status == BS_NONE)
 		bo->do_stream = 0;
 
-	l = http_EstimateWS(bo->beresp,
-	    bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
+	l = 0;
 
 	/* Create Vary instructions */
 	if (!(bo->fetch_objcore->flags & OC_F_PRIVATE)) {
@@ -331,17 +330,14 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 			AZ(vary);
 	}
 
+	l += http_EstimateWS(bo->beresp,
+	    bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
+
 	if (bo->uncacheable)
 		bo->fetch_objcore->flags |= OC_F_PASS;
 
 	if (bo->exp.ttl < cache_param->shortlived || bo->uncacheable == 1)
 		bo->storage_hint = TRANSIENT_STORAGE;
-
-	/*
-	 * Space for producing a Content-Length: header including padding
-	 * A billion gigabytes is enough for anybody.
-	 */
-	l += strlen("Content-Length: XxxXxxXxxXxxXxxXxx") + sizeof(void *);
 
 	AZ(bo->stats);
 	bo->stats = &wrk->stats;

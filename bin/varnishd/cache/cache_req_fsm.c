@@ -169,45 +169,6 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	assert(req->obj->objcore->refcnt > 0);
 
-	req->res_mode = 0;
-
-	if (!req->disable_esi && req->obj->esidata != NULL) {
-		/* In ESI mode, we can't know the aggregate length */
-		req->res_mode &= ~RES_LEN;
-		req->res_mode |= RES_ESI;
-	} else if (req->obj->objcore->busyobj == NULL) {
-		req->res_mode |= RES_LEN;
-	}
-
-	if (req->esi_level > 0) {
-		/* Included ESI object, always CHUNKED or EOF */
-		req->res_mode &= ~RES_LEN;
-		req->res_mode |= RES_ESI_CHILD;
-	}
-
-	if (cache_param->http_gzip_support && req->obj->gziped &&
-	    !RFC2616_Req_Gzip(req->http)) {
-		/*
-		 * We don't know what it uncompresses to
-		 * XXX: we could cache that
-		 */
-		req->res_mode &= ~RES_LEN;
-		req->res_mode |= RES_GUNZIP;
-	}
-
-	if (!(req->res_mode & (RES_LEN|RES_CHUNKED|RES_EOF))) {
-		/* We havn't chosen yet, do so */
-		if (!req->wantbody) {
-			/* Nothing */
-		} else if (req->http->protover >= 11) {
-			req->res_mode |= RES_CHUNKED;
-		} else {
-			req->res_mode |= RES_EOF;
-			req->doclose = SC_TX_EOF;
-		}
-	}
-	VSLb(req->vsl, SLT_Debug, "RES_MODE %x", req->res_mode);
-
 	req->t_resp = W_TIM_real(wrk);
 	if (!(req->obj->objcore->flags & OC_F_PRIVATE)) {
 		if ((req->t_resp - req->obj->last_lru) >
@@ -224,7 +185,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	http_FilterResp(req->obj->http, req->resp, 0);
 
 	http_Unset(req->resp, H_Date);
-	VTIM_format(VTIM_real(), time_str);
+	VTIM_format(req->t_resp, time_str);
 	http_PrintfHeader(req->resp, "Date: %s", time_str);
 
 	if (req->wrk->stats.cache_hit)
@@ -239,17 +200,15 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	    req->obj->exp.age + req->t_resp - req->obj->exp.entered);
 
 	http_SetHeader(req->resp, "Via: 1.1 varnish");
-	
 
 	VCL_deliver_method(req->vcl, wrk, req, NULL, req->http->ws);
-
-	RES_BuildHttp(req);
 
 	while (req->obj->objcore->busyobj) {
 		VSLb(req->vsl, SLT_Debug, "HERE %s %d", __func__, __LINE__);
 		(void)usleep(10000);
 	}
 
+	RES_BuildHttp(req);
 
 	/* Stop the insanity before it turns "Hotel California" on us */
 	if (req->restarts >= cache_param->max_restarts)

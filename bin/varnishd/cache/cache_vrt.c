@@ -419,8 +419,6 @@ VRT_synth_page(const struct vrt_ctx *ctx, unsigned flags, const char *str, ...)
 	va_end(ap);
 	SMS_Finish(ctx->req->obj);
 	http_Unset(ctx->req->obj->http, H_Content_Length);
-	http_PrintfHeader(ctx->req->obj->http,
-	    "Content-Length: %zd", ctx->req->obj->len);
 }
 
 /*--------------------------------------------------------------------*/
