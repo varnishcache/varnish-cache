@@ -370,6 +370,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	AZ(req->obj);
 
 	req->acct_req.fetch++;
@@ -378,7 +379,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	if (req->objcore->flags & OC_F_FAILED) {
 		req->err_code = 503;
 		req->req_step = R_STP_ERROR;
-		//XXX ? AZ(HSH_DerefObjCore(&wrk->stats, &req->objcore));
+		(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
 		req->objcore = NULL;
 		return (REQ_FSM_MORE);
 	}

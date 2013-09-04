@@ -22,6 +22,9 @@ client c1 {
 	expect resp.status == 503
 } -run
 
+varnish v1 -expect n_object == 0
+varnish v1 -expect n_objectcore == 0
+
 server s1 {
 	rxreq
 	send "HTTP/1.1 200 Ok\r\nConnection: close\r\n\r\n"
@@ -36,3 +39,7 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 } -run
+
+varnish v1 -expect n_object == 1
+varnish v1 -expect n_objectcore == 1
+
