@@ -32,7 +32,6 @@
 #include "cache.h"
 
 #include "vct.h"
-#include "vtim.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -105,13 +104,9 @@ res_dorange(const struct req *req, const char *r, ssize_t *plow, ssize_t *phigh)
 void
 RES_BuildHttp(struct req *req)
 {
-	char time_str[30];
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
-
-	http_ClrHeader(req->resp);
-	http_FilterResp(req->obj->http, req->resp, 0);
 
 	if (!(req->res_mode & RES_LEN)) {
 		http_Unset(req->resp, H_Content_Length);
@@ -133,21 +128,6 @@ RES_BuildHttp(struct req *req)
 	} else if (req->res_mode & RES_CHUNKED)
 		http_SetHeader(req->resp, "Transfer-Encoding: chunked");
 
-	http_Unset(req->resp, H_Date);
-	VTIM_format(VTIM_real(), time_str);
-	http_PrintfHeader(req->resp, "Date: %s", time_str);
-
-	if (req->wrk->stats.cache_hit)
-		http_PrintfHeader(req->resp,
-		    "X-Varnish: %u %u", req->vsl->wid & VSL_IDENTMASK,
-		    req->obj->vxid & VSL_IDENTMASK);
-	else
-		http_PrintfHeader(req->resp,
-		    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
-	http_PrintfHeader(req->resp, "Age: %.0f",
-	    req->obj->exp.age + req->t_resp -
-	    req->obj->exp.entered);
-	http_SetHeader(req->resp, "Via: 1.1 varnish");
 	http_PrintfHeader(req->resp, "Connection: %s",
 	    req->doclose ? "close" : "keep-alive");
 }

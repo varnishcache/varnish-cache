@@ -157,6 +157,7 @@ DOT deliver:stream:s -> stream [style=bold,color=blue]
 static enum req_fsm_nxt
 cnt_deliver(struct worker *wrk, struct req *req)
 {
+	char time_str[30];
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -216,10 +217,33 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		if (!cache_param->obj_readonly)
 			req->obj->last_use = req->t_resp; /* XXX: locking ? */
 	}
+
 	HTTP_Setup(req->resp, req->ws, req->vsl, HTTP_Resp);
-	RES_BuildHttp(req);
+
+	http_ClrHeader(req->resp);
+	http_FilterResp(req->obj->http, req->resp, 0);
+
+	http_Unset(req->resp, H_Date);
+	VTIM_format(VTIM_real(), time_str);
+	http_PrintfHeader(req->resp, "Date: %s", time_str);
+
+	if (req->wrk->stats.cache_hit)
+		http_PrintfHeader(req->resp,
+		    "X-Varnish: %u %u", req->vsl->wid & VSL_IDENTMASK,
+		    req->obj->vxid & VSL_IDENTMASK);
+	else
+		http_PrintfHeader(req->resp,
+		    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
+
+	http_PrintfHeader(req->resp, "Age: %.0f",
+	    req->obj->exp.age + req->t_resp - req->obj->exp.entered);
+
+	http_SetHeader(req->resp, "Via: 1.1 varnish");
+	
 
 	VCL_deliver_method(req->vcl, wrk, req, NULL, req->http->ws);
+
+	RES_BuildHttp(req);
 
 	while (req->obj->objcore->busyobj) {
 		VSLb(req->vsl, SLT_Debug, "HERE %s %d", __func__, __LINE__);
