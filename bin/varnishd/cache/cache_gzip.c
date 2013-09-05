@@ -315,7 +315,7 @@ VGZ_WrwInit(struct vgz *vg)
  */
 
 int __match_proto__(vdp_bytes)
-VDP_gunzip(struct req *req, enum vdp_action act, void *ptr, ssize_t len)
+VDP_gunzip(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 {
 	enum vgzret_e vr;
 	size_t dl;

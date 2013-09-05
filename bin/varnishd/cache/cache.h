@@ -283,7 +283,8 @@ enum vdp_action {
 	VDP_FLUSH,
 	VDP_FINISH,
 };
-typedef int vdp_bytes(struct req *, enum vdp_action, void *ptr, ssize_t len);
+typedef int vdp_bytes(struct req *, enum vdp_action, const void *ptr,
+    ssize_t len);
 
 /*--------------------------------------------------------------------*/
 
@@ -842,7 +843,7 @@ int HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv);
 void V1D_Deliver(struct req *);
 
 static inline int
-VDP_bytes(struct req *req, enum vdp_action act, void *ptr, ssize_t len)
+VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 {
 	int i, retval;
 
