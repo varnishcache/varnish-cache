@@ -696,13 +696,17 @@ struct req {
 #define RES_GUNZIP		(1<<6)
 
 	/* Deliver pipeline */
-	vdp_bytes		*vdps[5];
+#define	N_VDPS			5
+	vdp_bytes		*vdps[N_VDPS];
 	int			vdp_nxt;
 
 	/* Range */
 	ssize_t			range_low;
 	ssize_t			range_high;
 	ssize_t			range_off;
+
+	/* Gunzip */
+	struct vgz		*vgz;
 
 	/* Transaction VSL buffer */
 	struct vsl_log		vsl[1];
@@ -833,15 +837,42 @@ int HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv);
 void V1D_Deliver(struct req *);
 
 static inline int
-VDP(struct req *req, int flush, void *ptr, ssize_t len)
+VDP_bytes(struct req *req, int flush, void *ptr, ssize_t len)
 {
 	int i, retval;
 
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
 	/* Call the present layer, while pointing to the next layer down */
 	i = req->vdp_nxt--;
+	assert(i >= 0 && i < N_VDPS);
 	retval = req->vdps[i](req, flush, ptr, len);
 	req->vdp_nxt++;
 	return (retval);
+}
+
+static inline void
+VDP_push(struct req *req, vdp_bytes *func)
+{
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AN(func);
+
+	/* Push another layer */
+	assert(req->vdp_nxt >= 0);
+	assert(req->vdp_nxt + 1 < N_VDPS);
+	req->vdps[++req->vdp_nxt] = func;
+}
+
+static inline void
+VDP_pop(struct req *req, vdp_bytes *func)
+{
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	/* Pop top layer */
+	assert(req->vdp_nxt >= 1);
+	assert(req->vdp_nxt < N_VDPS);
+	assert(req->vdps[req->vdp_nxt] == func);
+	req->vdp_nxt--;
 }
 
 /* cache_req_fsm.c [CNT] */
@@ -911,6 +942,7 @@ enum vgzret_e VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
 enum vgzret_e VGZ_Gunzip(struct vgz *, const void **, size_t *len);
 enum vgzret_e VGZ_Destroy(struct vgz **);
 void VGZ_UpdateObj(const struct vgz*, struct object *);
+vdp_bytes VDP_gunzip;
 
 int VGZ_WrwInit(struct vgz *vg);
 enum vgzret_e VGZ_WrwGunzip(struct req *, struct vgz *, const void *ibuf,

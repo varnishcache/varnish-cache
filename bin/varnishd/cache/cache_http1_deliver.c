@@ -77,7 +77,7 @@ v1d_range_bytes(struct req *req, int flush, void *ptr, ssize_t len)
 	if (l > len)
 		l = len;
 	if (flush || l > 0)
-		retval = VDP(req, flush, p, l);
+		retval = VDP_bytes(req, flush, p, l);
 	req->range_off += len;
 	return (retval);
 }
@@ -147,45 +147,7 @@ v1d_dorange(struct req *req, const char *r)
 	req->range_off = 0;
 	req->range_low = low;
 	req->range_high = high + 1;
-	req->vdps[++req->vdp_nxt] = v1d_range_bytes;
-}
-
-/*--------------------------------------------------------------------
- * We have a gzip'ed object and need to ungzip it for a client which
- * does not understand gzip.
- * XXX: handle invalid gzip data better (how ?)
- */
-
-static void
-v1d_WriteGunzipObj(struct req *req)
-{
-	unsigned u = 0;
-	struct vgz *vg;
-	struct objiter *oi;
-	void *ptr;
-	ssize_t len;
-	int i;
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-
-	vg = VGZ_NewUngzip(req->vsl, "U D -");
-	AZ(VGZ_WrwInit(vg));
-
-	oi = ObjIterBegin(req->obj);
-	XXXAN(oi);
-
-	while (ObjIter(oi, &ptr, &len)) {
-		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-		u += len;
-
-		i = VGZ_WrwGunzip(req, vg, ptr, len);
-		/* XXX: error check */
-		(void)i;
-	}
-	VGZ_WrwFlush(req, vg);
-	(void)VGZ_Destroy(&vg);
-	assert(u == req->obj->len);
-	ObjIterEnd(&oi);
+	VDP_push(req, v1d_range_bytes);
 }
 
 /*--------------------------------------------------------------------*/
@@ -203,9 +165,10 @@ v1d_WriteDirObj(struct req *req)
 	XXXAN(oi);
 
 	while (ObjIter(oi, &ptr, &len)) {
-		if (VDP(req, 0,  ptr, len))
+		if (VDP_bytes(req, 0,  ptr, len))
 			break;
 	}
+	(void)VDP_bytes(req, 1,  NULL, 0);
 	ObjIterEnd(&oi);
 }
 
@@ -329,9 +292,19 @@ V1D_Deliver(struct req *req)
 		ESI_DeliverChild(req);
 	} else if (req->res_mode & RES_ESI_CHILD &&
 	    !req->gzip_resp && req->obj->gziped) {
-		v1d_WriteGunzipObj(req);
+		VDP_push(req, VDP_gunzip);
+		req->vgz = VGZ_NewUngzip(req->vsl, "U D -");
+		AZ(VGZ_WrwInit(req->vgz));
+		v1d_WriteDirObj(req);
+		(void)VGZ_Destroy(&req->vgz);
+		VDP_pop(req, VDP_gunzip);
 	} else if (req->res_mode & RES_GUNZIP) {
-		v1d_WriteGunzipObj(req);
+		VDP_push(req, VDP_gunzip);
+		req->vgz = VGZ_NewUngzip(req->vsl, "U D -");
+		AZ(VGZ_WrwInit(req->vgz));
+		v1d_WriteDirObj(req);
+		(void)VGZ_Destroy(&req->vgz);
+		VDP_pop(req, VDP_gunzip);
 	} else {
 		v1d_WriteDirObj(req);
 	}

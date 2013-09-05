@@ -311,6 +311,53 @@ VGZ_WrwInit(struct vgz *vg)
 }
 
 /*--------------------------------------------------------------------
+ * VDP for gunzip'ing
+ */
+
+int __match_proto__(vdp_bytes)
+VDP_gunzip(struct req *req, int flush, void *ptr, ssize_t len)
+{
+	enum vgzret_e vr;
+	size_t dl;
+	const void *dp;
+	struct worker *wrk;
+	struct vgz *vg;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	wrk = req->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	vg = req->vgz;
+	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+	AN(vg->m_buf);
+
+	if (len == 0) {
+		AN(flush);
+		return (VDP_bytes(req, 1, vg->m_buf, vg->m_len));
+	}
+
+	VGZ_Ibuf(vg, ptr, len);
+	do {
+		if (vg->m_len == vg->m_sz)
+			vr = VGZ_STUCK;
+		else {
+			vr = VGZ_Gunzip(vg, &dp, &dl);
+			vg->m_len += dl;
+		}
+		if (vr < VGZ_OK)
+			return (-1);
+		if (vg->m_len == vg->m_sz || vr == VGZ_STUCK) {
+			if (VDP_bytes(req, 1, vg->m_buf, vg->m_len))
+				return (-1);
+			vg->m_len = 0;
+			VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
+		}
+	} while (!VGZ_IbufEmpty(vg));
+	assert(vr == VGZ_STUCK || vr == VGZ_OK || vr == VGZ_END);
+	return (0);
+}
+
+
+/*--------------------------------------------------------------------
  * Gunzip ibuf into outb, if it runs full, emit it with WRW.
  * Leave flushing to caller, more data may be coming.
  */
@@ -342,7 +389,7 @@ VGZ_WrwGunzip(struct req *req, struct vgz *vg, const void *ibuf,
 		if (vr < VGZ_OK)
 			return (vr);
 		if (vg->m_len == vg->m_sz || vr == VGZ_STUCK) {
-			(void)VDP(req, 1, vg->m_buf, vg->m_len);
+			(void)VDP_bytes(req, 1, vg->m_buf, vg->m_len);
 			vg->m_len = 0;
 			VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 		}
@@ -367,7 +414,7 @@ VGZ_WrwFlush(struct req *req, struct vgz *vg)
 	if (vg->m_len ==  0)
 		return;
 
-	(void)VDP(req, 1, vg->m_buf, vg->m_len);
+	(void)VDP_bytes(req, 1, vg->m_buf, vg->m_len);
 	vg->m_len = 0;
 	VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 }
