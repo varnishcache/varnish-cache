@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2006-2013 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -36,7 +36,7 @@
 /*--------------------------------------------------------------------*/
 
 static void
-res_dorange(const struct req *req, const char *r, ssize_t *plow, ssize_t *phigh)
+v1d_dorange(const struct req *req, const char *r, ssize_t *plow, ssize_t *phigh)
 {
 	ssize_t low, high, has_low;
 
@@ -102,7 +102,7 @@ res_dorange(const struct req *req, const char *r, ssize_t *plow, ssize_t *phigh)
 /*--------------------------------------------------------------------*/
 
 static void
-RES_BuildHttp(struct req *req)
+v1d_BuildHttp(struct req *req)
 {
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -183,7 +183,7 @@ RES_BuildHttp(struct req *req)
  */
 
 static void
-res_WriteGunzipObj(struct req *req)
+v1d_WriteGunzipObj(struct req *req)
 {
 	unsigned u = 0;
 	struct vgz *vg;
@@ -217,7 +217,7 @@ res_WriteGunzipObj(struct req *req)
 /*--------------------------------------------------------------------*/
 
 static void
-res_WriteDirObj(struct req *req, ssize_t low, ssize_t high)
+v1d_WriteDirObj(struct req *req, ssize_t low, ssize_t high)
 {
 	ssize_t u = 0;
 	ssize_t idx, skip, len;
@@ -263,7 +263,7 @@ res_WriteDirObj(struct req *req, ssize_t low, ssize_t high)
  */
 
 static void
-RES_WriteObj(struct req *req)
+v1d_WriteObj(struct req *req)
 {
 	char *r;
 	ssize_t low, high;
