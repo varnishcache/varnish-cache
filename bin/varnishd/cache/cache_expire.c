@@ -216,7 +216,7 @@ EXP_Inject(struct objcore *oc, struct lru *lru, double when)
  */
 
 void
-EXP_Insert(struct object *o)
+EXP_Insert(const struct object *o)
 {
 	struct objcore *oc;
 	struct lru *lru;
@@ -227,7 +227,7 @@ EXP_Insert(struct object *o)
 	HSH_Ref(oc);
 
 	assert(o->exp.entered != 0 && !isnan(o->exp.entered));
-	o->last_lru = o->exp.entered;
+	oc->last_lru = o->exp.entered;
 
 	lru = oc_getlru(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);

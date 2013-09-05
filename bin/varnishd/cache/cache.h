@@ -428,6 +428,7 @@ struct objcore {
 	unsigned		timer_idx;
 	VTAILQ_ENTRY(objcore)	list;
 	VTAILQ_ENTRY(objcore)	lru_list;
+	double			last_lru;
 	VTAILQ_ENTRY(objcore)	ban_list;
 	struct ban		*ban;
 };
@@ -595,7 +596,6 @@ struct object {
 	struct exp		exp;
 
 	double			last_modified;
-	double			last_lru;
 
 	struct http		*http;
 
@@ -836,7 +836,7 @@ void EXP_Set_keep(struct exp *e, double v);
 
 double EXP_Ttl(const struct req *, const struct object*);
 double EXP_Grace(const struct req *, const struct object*);
-void EXP_Insert(struct object *o);
+void EXP_Insert(const struct object *o);
 void EXP_Inject(struct objcore *oc, struct lru *lru, double when);
 void EXP_Init(void);
 void EXP_Rearm(const struct object *o);
