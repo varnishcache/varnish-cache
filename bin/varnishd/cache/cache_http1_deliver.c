@@ -188,6 +188,7 @@ V1D_Deliver(struct req *req)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(req->obj->objcore, OBJCORE_MAGIC);
 
 	while (req->obj->objcore->busyobj)
 		(void)usleep(10000);
@@ -221,7 +222,8 @@ V1D_Deliver(struct req *req)
 	    !RFC2616_Req_Gzip(req->http)) {
 		/*
 		 * We don't know what it uncompresses to
-		 * XXX: we could cache that
+		 * XXX: we could cache that, but would still deliver
+		 * XXX: with multiple writes because of the gunzip buffer
 		 */
 		req->res_mode &= ~RES_LEN;
 		req->res_mode |= RES_GUNZIP;
@@ -246,8 +248,7 @@ V1D_Deliver(struct req *req)
 	if (req->res_mode & RES_GUNZIP)
 		http_Unset(req->resp, H_Content_Encoding);
 
-	if (req->obj->objcore != NULL
-	    && !(req->obj->objcore->flags & OC_F_PASS)
+	if (!(req->obj->objcore->flags & OC_F_PASS)
 	    && req->obj->response == 200
 	    && req->http->conds && RFC2616_Do_Cond(req)) {
 		req->wantbody = 0;
@@ -256,14 +257,15 @@ V1D_Deliver(struct req *req)
 	} else if (req->res_mode & RES_CHUNKED)
 		http_SetHeader(req->resp, "Transfer-Encoding: chunked");
 
-	http_PrintfHeader(req->resp, "Connection: %s",
-	    req->doclose ? "close" : "keep-alive");
+	http_SetHeader(req->resp,
+	    req->doclose ? "Connection: close" : "Connection: keep-alive");
 
 	/*
 	 * If nothing special planned, we can attempt Range support
 	 */
 	low = 0;
 	high = req->obj->len - 1;
+
 	if (
 	    req->wantbody &&
 	    (req->res_mode & RES_LEN) &&
@@ -279,8 +281,7 @@ V1D_Deliver(struct req *req)
 	 * Send HTTP protocol header, unless interior ESI object
 	 */
 	if (!(req->res_mode & RES_ESI_CHILD))
-		req->acct_req.hdrbytes +=
-		    HTTP1_Write(req->wrk, req->resp, 1);
+		req->acct_req.hdrbytes += HTTP1_Write(req->wrk, req->resp, 1);
 
 	if (!req->wantbody)
 		req->res_mode &= ~RES_CHUNKED;
