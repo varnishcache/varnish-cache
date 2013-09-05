@@ -277,11 +277,11 @@ STV_MkObject(struct stevedore *stv, struct busyobj *bo,
 	assert(l >= soc->wsl);
 
 	o->http = HTTP_create(o + 1, soc->nhttp);
-	WS_Init(o->ws_o, "obj", (char *)(o + 1) + soc->lhttp, soc->wsl);
-	WS_Assert(o->ws_o);
-	assert(o->ws_o->e <= (char*)ptr + ltot);
+	WS_Init(bo->ws_o, "obj", (char *)(o + 1) + soc->lhttp, soc->wsl);
+	WS_Assert(bo->ws_o);
+	assert(bo->ws_o->e <= (char*)ptr + ltot);
 
-	HTTP_Setup(o->http, o->ws_o, bo->vsl, HTTP_Obj);
+	HTTP_Setup(o->http, bo->ws_o, bo->vsl, HTTP_Obj);
 	o->http->magic = HTTP_MAGIC;
 	o->exp = bo->exp;
 	VTAILQ_INIT(&o->store);

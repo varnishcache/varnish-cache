@@ -565,6 +565,9 @@ struct busyobj {
 
 	struct vsl_log		vsl[1];
 	struct dstat		*stats;
+
+	/* Workspace for object only needed during fetch */
+	struct ws		ws_o[1];
 };
 
 /* Object structure --------------------------------------------------*/
@@ -577,8 +580,6 @@ struct object {
 	uint32_t		vxid;
 	struct storage		*objstore;
 	struct objcore		*objcore;
-
-	struct ws		ws_o[1];
 
 	uint8_t			*vary;
 	unsigned		hits;
@@ -604,7 +605,6 @@ struct object {
 	struct storage		*esidata;
 
 	double			last_use;
-
 };
 
 /*--------------------------------------------------------------------*/

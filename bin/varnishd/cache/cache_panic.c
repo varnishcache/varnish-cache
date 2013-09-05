@@ -208,7 +208,6 @@ pan_object(const struct object *o)
 
 	VSB_printf(pan_vsp, "  obj = %p {\n", o);
 	VSB_printf(pan_vsp, "    vxid = %u,\n", o->vxid);
-	pan_ws(o->ws_o, 4);
 	pan_http("obj", o->http, 4);
 	VSB_printf(pan_vsp, "    len = %jd,\n", (intmax_t)o->len);
 	VSB_printf(pan_vsp, "    store = {\n");
@@ -279,6 +278,7 @@ pan_busyobj(const struct busyobj *bo)
 		pan_http("bereq", bo->bereq, 4);
 	if (bo->beresp->ws != NULL)
 		pan_http("beresp", bo->beresp, 4);
+	pan_ws(bo->ws_o, 4);
 	VSB_printf(pan_vsp, "  }\n");
 }
 

@@ -380,7 +380,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	obj->vxid = bo->vsl->wid;
 	obj->response = bo->err_code;
-	WS_Assert(obj->ws_o);
+	WS_Assert(bo->ws_o);
 
 	/* Filter into object */
 	hp = bo->beresp;
@@ -408,7 +408,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		AN(obj->objcore->ban);
 	}
 
-	AZ(obj->ws_o->overflow);
+	AZ(bo->ws_o->overflow);
 	if (bo->do_stream)
 		HSH_Unbusy(&wrk->stats, obj->objcore);
 
