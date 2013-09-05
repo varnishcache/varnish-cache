@@ -36,7 +36,7 @@
 /*--------------------------------------------------------------------*/
 
 static int __match_proto__(vdp_bytes)
-v1d_bytes(struct req *req, int flush, void *ptr, ssize_t len)
+v1d_bytes(struct req *req, enum vdp_action act, void *ptr, ssize_t len)
 {
 	ssize_t wl = 0;
 
@@ -48,7 +48,7 @@ v1d_bytes(struct req *req, int flush, void *ptr, ssize_t len)
 		wl = WRW_Write(req->wrk, ptr, len);
 	if (wl > 0)
 		req->acct_req.bodybytes += wl;
-	if (flush && WRW_Flush(req->wrk))
+	if (act > VDP_NULL && WRW_Flush(req->wrk))
 		return (-1);
 	if (len != wl)
 		return (-1);
@@ -58,7 +58,7 @@ v1d_bytes(struct req *req, int flush, void *ptr, ssize_t len)
 /*--------------------------------------------------------------------*/
 
 static int __match_proto__(vdp_bytes)
-v1d_range_bytes(struct req *req, int flush, void *ptr, ssize_t len)
+v1d_range_bytes(struct req *req, enum vdp_action act, void *ptr, ssize_t len)
 {
 	int retval = 0;
 	ssize_t l;
@@ -76,8 +76,8 @@ v1d_range_bytes(struct req *req, int flush, void *ptr, ssize_t len)
 	l = req->range_high - req->range_off;
 	if (l > len)
 		l = len;
-	if (flush || l > 0)
-		retval = VDP_bytes(req, flush, p, l);
+	if (act > VDP_NULL || l > 0)
+		retval = VDP_bytes(req, act, p, l);
 	req->range_off += len;
 	return (retval);
 }
@@ -165,10 +165,10 @@ v1d_WriteDirObj(struct req *req)
 	XXXAN(oi);
 
 	while (ObjIter(oi, &ptr, &len)) {
-		if (VDP_bytes(req, 0,  ptr, len))
+		if (VDP_bytes(req, VDP_NULL,  ptr, len))
 			break;
 	}
-	(void)VDP_bytes(req, 1,  NULL, 0);
+	(void)VDP_bytes(req, VDP_FINISH,  NULL, 0);
 	ObjIterEnd(&oi);
 }
 
@@ -290,15 +290,9 @@ V1D_Deliver(struct req *req)
 		ESI_Deliver(req);
 	} else if (req->res_mode & RES_ESI_CHILD && req->gzip_resp) {
 		ESI_DeliverChild(req);
-	} else if (req->res_mode & RES_ESI_CHILD &&
-	    !req->gzip_resp && req->obj->gziped) {
-		VDP_push(req, VDP_gunzip);
-		req->vgz = VGZ_NewUngzip(req->vsl, "U D -");
-		AZ(VGZ_WrwInit(req->vgz));
-		v1d_WriteDirObj(req);
-		(void)VGZ_Destroy(&req->vgz);
-		VDP_pop(req, VDP_gunzip);
-	} else if (req->res_mode & RES_GUNZIP) {
+	} else if (req->res_mode & RES_GUNZIP ||
+	    (req->res_mode & RES_ESI_CHILD &&
+	    !req->gzip_resp && req->obj->gziped)) {
 		VDP_push(req, VDP_gunzip);
 		req->vgz = VGZ_NewUngzip(req->vsl, "U D -");
 		AZ(VGZ_WrwInit(req->vgz));

@@ -315,7 +315,7 @@ VGZ_WrwInit(struct vgz *vg)
  */
 
 int __match_proto__(vdp_bytes)
-VDP_gunzip(struct req *req, int flush, void *ptr, ssize_t len)
+VDP_gunzip(struct req *req, enum vdp_action act, void *ptr, ssize_t len)
 {
 	enum vgzret_e vr;
 	size_t dl;
@@ -331,8 +331,8 @@ VDP_gunzip(struct req *req, int flush, void *ptr, ssize_t len)
 	AN(vg->m_buf);
 
 	if (len == 0) {
-		AN(flush);
-		return (VDP_bytes(req, 1, vg->m_buf, vg->m_len));
+		AN(act > VDP_NULL);
+		return (VDP_bytes(req, act, vg->m_buf, vg->m_len));
 	}
 
 	VGZ_Ibuf(vg, ptr, len);
@@ -346,7 +346,7 @@ VDP_gunzip(struct req *req, int flush, void *ptr, ssize_t len)
 		if (vr < VGZ_OK)
 			return (-1);
 		if (vg->m_len == vg->m_sz || vr == VGZ_STUCK) {
-			if (VDP_bytes(req, 1, vg->m_buf, vg->m_len))
+			if (VDP_bytes(req, VDP_FLUSH, vg->m_buf, vg->m_len))
 				return (-1);
 			vg->m_len = 0;
 			VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
@@ -389,7 +389,7 @@ VGZ_WrwGunzip(struct req *req, struct vgz *vg, const void *ibuf,
 		if (vr < VGZ_OK)
 			return (vr);
 		if (vg->m_len == vg->m_sz || vr == VGZ_STUCK) {
-			(void)VDP_bytes(req, 1, vg->m_buf, vg->m_len);
+			(void)VDP_bytes(req, VDP_FLUSH, vg->m_buf, vg->m_len);
 			vg->m_len = 0;
 			VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 		}
@@ -414,7 +414,7 @@ VGZ_WrwFlush(struct req *req, struct vgz *vg)
 	if (vg->m_len ==  0)
 		return;
 
-	(void)VDP_bytes(req, 1, vg->m_buf, vg->m_len);
+	(void)VDP_bytes(req, VDP_FLUSH, vg->m_buf, vg->m_len);
 	vg->m_len = 0;
 	VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 }

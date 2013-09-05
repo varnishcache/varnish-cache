@@ -278,7 +278,12 @@ extern struct vfp vfp_esi;
 
 /* Deliver processors ------------------------------------------------*/
 
-typedef int vdp_bytes(struct req *, int flush, void *ptr, ssize_t len);
+enum vdp_action {
+	VDP_NULL,
+	VDP_FLUSH,
+	VDP_FINISH,
+};
+typedef int vdp_bytes(struct req *, enum vdp_action, void *ptr, ssize_t len);
 
 /*--------------------------------------------------------------------*/
 
@@ -837,7 +842,7 @@ int HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv);
 void V1D_Deliver(struct req *);
 
 static inline int
-VDP_bytes(struct req *req, int flush, void *ptr, ssize_t len)
+VDP_bytes(struct req *req, enum vdp_action act, void *ptr, ssize_t len)
 {
 	int i, retval;
 
@@ -846,7 +851,7 @@ VDP_bytes(struct req *req, int flush, void *ptr, ssize_t len)
 	/* Call the present layer, while pointing to the next layer down */
 	i = req->vdp_nxt--;
 	assert(i >= 0 && i < N_VDPS);
-	retval = req->vdps[i](req, flush, ptr, len);
+	retval = req->vdps[i](req, act, ptr, len);
 	req->vdp_nxt++;
 	return (retval);
 }
