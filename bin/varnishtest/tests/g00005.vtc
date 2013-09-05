@@ -1,0 +1,30 @@
+varnishtest "test gunzip for client + Range"
+
+server s1 {
+	rxreq
+	expect req.http.accept-encoding == "gzip"
+	txresp -gzipbody FOOBARBARF
+} -start
+
+varnish v1 -cliok "param.set http_gzip_support true" -vcl+backend {
+} -start
+
+client c1 {
+	txreq 
+	rxresp
+	expect resp.bodylen == "10"
+	expect resp.http.content-encoding == <undef>
+
+	txreq -hdr "Accept-encoding: gzip;q=0.1"
+	rxresp
+	expect resp.http.content-encoding == "gzip"
+	gunzip
+	expect resp.bodylen == "10"
+
+	txreq -hdr "Range: bytes=3-5"
+	rxresp
+	expect resp.http.content-encoding == "<undef>"
+	expect resp.bodylen == "3"
+	expect resp.body == "BAR"
+
+} -run

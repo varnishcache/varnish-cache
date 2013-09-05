@@ -342,9 +342,7 @@ VGZ_WrwGunzip(struct req *req, struct vgz *vg, const void *ibuf,
 		if (vr < VGZ_OK)
 			return (vr);
 		if (vg->m_len == vg->m_sz || vr == VGZ_STUCK) {
-			req->acct_req.bodybytes += vg->m_len;
-			(void)WRW_Write(wrk, vg->m_buf, vg->m_len);
-			(void)WRW_Flush(wrk);
+			(void)VDP(req, 1, vg->m_buf, vg->m_len);
 			vg->m_len = 0;
 			VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 		}
@@ -369,9 +367,7 @@ VGZ_WrwFlush(struct req *req, struct vgz *vg)
 	if (vg->m_len ==  0)
 		return;
 
-	req->acct_req.bodybytes += vg->m_len;
-	(void)WRW_Write(wrk, vg->m_buf, vg->m_len);
-	(void)WRW_Flush(wrk);
+	(void)VDP(req, 1, vg->m_buf, vg->m_len);
 	vg->m_len = 0;
 	VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 }

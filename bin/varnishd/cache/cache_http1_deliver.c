@@ -35,8 +35,57 @@
 
 /*--------------------------------------------------------------------*/
 
+static int __match_proto__(vdp_bytes)
+v1d_bytes(struct req *req, int flush, void *ptr, ssize_t len)
+{
+	ssize_t wl = 0;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	assert(req->vdp_nxt == -1);	/* always at the bottom of the pile */
+
+	if (len > 0)
+		wl = WRW_Write(req->wrk, ptr, len);
+	if (wl > 0)
+		req->acct_req.bodybytes += wl;
+	if (flush && WRW_Flush(req->wrk))
+		return (-1);
+	if (len != wl)
+		return (-1);
+	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
+static int __match_proto__(vdp_bytes)
+v1d_range_bytes(struct req *req, int flush, void *ptr, ssize_t len)
+{
+	int retval = 0;
+	ssize_t l;
+	char *p = ptr;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	l = req->range_low - req->range_off;
+	if (l > 0) {
+		if (l > len)
+			l = len;
+		req->range_off += l;
+		p += l;
+		len -= l;
+	}
+	l = req->range_high - req->range_off;
+	if (l > len)
+		l = len;
+	if (flush || l > 0)
+		retval = VDP(req, flush, p, l);
+	req->range_off += len;
+	return (retval);
+}
+
+/*--------------------------------------------------------------------*/
+
 static void
-v1d_dorange(const struct req *req, const char *r, ssize_t *plow, ssize_t *phigh)
+v1d_dorange(struct req *req, const char *r)
 {
 	ssize_t low, high, has_low;
 
@@ -90,13 +139,15 @@ v1d_dorange(const struct req *req, const char *r, ssize_t *plow, ssize_t *phigh)
 	http_PrintfHeader(req->resp, "Content-Range: bytes %jd-%jd/%jd",
 	    (intmax_t)low, (intmax_t)high, (intmax_t)req->obj->len);
 	http_Unset(req->resp, H_Content_Length);
-	assert(req->res_mode & RES_LEN);
-	http_PrintfHeader(req->resp, "Content-Length: %jd",
-	    (intmax_t)(1 + high - low));
+	if (req->res_mode & RES_LEN)
+		http_PrintfHeader(req->resp, "Content-Length: %jd",
+		    (intmax_t)(1 + high - low));
 	http_SetResp(req->resp, "HTTP/1.1", 206, "Partial Content");
 
-	*plow = low;
-	*phigh = high;
+	req->range_off = 0;
+	req->range_low = low;
+	req->range_high = high + 1;
+	req->vdps[++req->vdp_nxt] = v1d_range_bytes;
 }
 
 /*--------------------------------------------------------------------
@@ -140,10 +191,9 @@ v1d_WriteGunzipObj(struct req *req)
 /*--------------------------------------------------------------------*/
 
 static void
-v1d_WriteDirObj(struct req *req, ssize_t low, ssize_t high)
+v1d_WriteDirObj(struct req *req)
 {
-	ssize_t u = 0;
-	ssize_t idx, skip, len;
+	ssize_t len;
 	struct objiter *oi;
 	void *ptr;
 
@@ -152,31 +202,10 @@ v1d_WriteDirObj(struct req *req, ssize_t low, ssize_t high)
 	oi = ObjIterBegin(req->obj);
 	XXXAN(oi);
 
-	idx = 0;
 	while (ObjIter(oi, &ptr, &len)) {
-		u += len;
-		skip = 0;
-		if (idx + len <= low) {
-			/* This segment is too early */
-			idx += len;
-			continue;
-		}
-		if (idx < low) {
-			/* Chop front of segment off */
-			skip += (low - idx);
-			len -= (low - idx);
-			idx += (low - idx);
-		}
-		if (idx + len > high)
-			/* Chop tail of segment off */
-			len = 1 + high - idx;
-
-		idx += len;
-
-		req->acct_req.bodybytes += len;
-		(void)WRW_Write(req->wrk, (char*)ptr + skip, len);
+		if (VDP(req, 0,  ptr, len))
+			break;
 	}
-	assert(u == req->obj->len);
 	ObjIterEnd(&oi);
 }
 
@@ -184,7 +213,6 @@ void
 V1D_Deliver(struct req *req)
 {
 	char *r;
-	ssize_t low, high;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
@@ -263,17 +291,19 @@ V1D_Deliver(struct req *req)
 	/*
 	 * If nothing special planned, we can attempt Range support
 	 */
-	low = 0;
-	high = req->obj->len - 1;
+	req->range_low = 0;
+	req->range_high = req->obj->len - 1;
+
+	req->vdps[0] = v1d_bytes;
+	req->vdp_nxt = 0;
 
 	if (
 	    req->wantbody &&
-	    (req->res_mode & RES_LEN) &&
-	    !(req->res_mode & (RES_ESI|RES_ESI_CHILD|RES_GUNZIP)) &&
+	    !(req->res_mode & (RES_ESI|RES_ESI_CHILD)) &&
 	    cache_param->http_range_support &&
 	    req->obj->response == 200 &&
 	    http_GetHdr(req->http, H_Range, &r))
-		v1d_dorange(req, r, &low, &high);
+		v1d_dorange(req, r);
 
 	WRW_Reserve(req->wrk, &req->sp->fd, req->vsl, req->t_resp);
 
@@ -303,7 +333,7 @@ V1D_Deliver(struct req *req)
 	} else if (req->res_mode & RES_GUNZIP) {
 		v1d_WriteGunzipObj(req);
 	} else {
-		v1d_WriteDirObj(req, low, high);
+		v1d_WriteDirObj(req);
 	}
 
 	if (req->res_mode & RES_CHUNKED && !(req->res_mode & RES_ESI_CHILD))

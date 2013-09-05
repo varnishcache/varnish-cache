@@ -120,6 +120,7 @@ struct object;
 struct objhead;
 struct pool;
 struct poolparam;
+struct req;
 struct sess;
 struct sesspool;
 struct vbc;
@@ -274,6 +275,10 @@ extern struct vfp vfp_gunzip;
 extern struct vfp vfp_gzip;
 extern struct vfp vfp_testgzip;
 extern struct vfp vfp_esi;
+
+/* Deliver processors ------------------------------------------------*/
+
+typedef int vdp_bytes(struct req *, int flush, void *ptr, ssize_t len);
 
 /*--------------------------------------------------------------------*/
 
@@ -690,6 +695,15 @@ struct req {
 #define RES_ESI_CHILD		(1<<5)
 #define RES_GUNZIP		(1<<6)
 
+	/* Deliver pipeline */
+	vdp_bytes		*vdps[5];
+	int			vdp_nxt;
+
+	/* Range */
+	ssize_t			range_low;
+	ssize_t			range_high;
+	ssize_t			range_off;
+
 	/* Transaction VSL buffer */
 	struct vsl_log		vsl[1];
 
@@ -817,6 +831,18 @@ int HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv);
 
 /* cache_http1_deliver.c */
 void V1D_Deliver(struct req *);
+
+static inline int
+VDP(struct req *req, int flush, void *ptr, ssize_t len)
+{
+	int i, retval;
+
+	/* Call the present layer, while pointing to the next layer down */
+	i = req->vdp_nxt--;
+	retval = req->vdps[i](req, flush, ptr, len);
+	req->vdp_nxt++;
+	return (retval);
+}
 
 /* cache_req_fsm.c [CNT] */
 enum req_fsm_nxt CNT_Request(struct worker *, struct req *);
