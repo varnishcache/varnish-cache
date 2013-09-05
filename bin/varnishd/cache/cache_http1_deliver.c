@@ -252,12 +252,6 @@ V1D_Deliver(struct req *req)
 	http_SetHeader(req->resp,
 	    req->doclose ? "Connection: close" : "Connection: keep-alive");
 
-	/*
-	 * If nothing special planned, we can attempt Range support
-	 */
-	req->range_low = 0;
-	req->range_high = req->obj->len - 1;
-
 	req->vdps[0] = v1d_bytes;
 	req->vdp_nxt = 0;
 
