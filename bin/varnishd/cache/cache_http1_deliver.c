@@ -101,7 +101,7 @@ res_dorange(const struct req *req, const char *r, ssize_t *plow, ssize_t *phigh)
 
 /*--------------------------------------------------------------------*/
 
-void
+static void
 RES_BuildHttp(struct req *req)
 {
 
@@ -262,7 +262,7 @@ res_WriteDirObj(struct req *req, ssize_t low, ssize_t high)
  * Attempt optimizations like 304 and 206 here.
  */
 
-void
+static void
 RES_WriteObj(struct req *req)
 {
 	char *r;
@@ -322,4 +322,14 @@ RES_WriteObj(struct req *req)
 
 	if (WRW_FlushRelease(req->wrk) && req->sp->fd >= 0)
 		SES_Close(req->sp, SC_REM_CLOSE);
+}
+
+void
+V1D_Deliver(struct req *req)
+{
+	while (req->obj->objcore->busyobj)
+		(void)usleep(10000);
+	
+	RES_BuildHttp(req);
+	RES_WriteObj(req);
 }

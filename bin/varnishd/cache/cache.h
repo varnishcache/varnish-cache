@@ -815,6 +815,9 @@ int HTTP1_DiscardReqBody(struct req *req);
 int HTTP1_CacheReqBody(struct req *req, ssize_t maxsize);
 int HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv);
 
+/* cache_http1_deliver.c */
+void V1D_Deliver(struct req *);
+
 /* cache_req_fsm.c [CNT] */
 enum req_fsm_nxt CNT_Request(struct worker *, struct req *);
 
@@ -1051,10 +1054,6 @@ void VSLbt(struct vsl_log *, enum VSL_tag_e tag, txt t);
 void VSL_Flush(struct vsl_log *, int overflow);
 
 #endif
-
-/* cache_response.c */
-void RES_BuildHttp(struct req *);
-void RES_WriteObj(struct req *);
 
 /* cache_vary.c */
 int VRY_Create(struct busyobj *bo, struct vsb **psb);

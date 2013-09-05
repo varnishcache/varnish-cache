@@ -76,72 +76,6 @@ DOT acceptor -> recv [style=bold,color=green]
 #endif
 
 /*--------------------------------------------------------------------
- * We have a refcounted object on the session, and possibly the busyobj
- * which is fetching it, prepare a response.
- *
-DOT	stream [
-DOT		shape=record
-DOT		label="{cnt_stream:}"
-DOT	]
-DOT	stream:deliver:s -> DONE [style=bold,color=red]
-DOT	stream:deliver:s -> DONE [style=bold,color=blue]
- *
- */
-
-static enum req_fsm_nxt
-cnt_stream(struct worker *wrk, struct req *req)
-{
-	struct busyobj *bo;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	bo = req->obj->objcore->busyobj;
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	AN(bo->do_stream);
-
-	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
-
-	AZ(bo->do_esi);
-
-	if (wrk->handling == VCL_RET_RESTART) {
-		assert(req->obj == bo->fetch_obj);
-		req->obj = NULL;
-		VBO_DerefBusyObj(wrk, &bo);
-		AZ(req->obj);
-		http_Teardown(req->resp);
-		req->req_step = R_STP_RESTART;
-		return (REQ_FSM_MORE);
-	}
-	assert(wrk->handling == VCL_RET_DELIVER);
-
-	VBO_waitstate(bo, BOS_FINISHED);
-	assert(bo->state >= BOS_FINISHED);
-
-	if (bo->state == BOS_FAILED) {
-		(void)HSH_DerefObj(&wrk->stats, &req->obj);
-		VBO_DerefBusyObj(wrk, &bo);
-		req->err_code = 503;
-		req->req_step = R_STP_ERROR;
-		return (REQ_FSM_MORE);
-	}
-	VBO_DerefBusyObj(wrk, &bo);
-
-	AZ(bo);
-
-	RES_WriteObj(req);
-
-	/* No point in saving the body if it is hit-for-pass */
-	if (req->obj->objcore->flags & OC_F_PASS)
-		STV_Freestore(req->obj);
-
-	assert(WRW_IsReleased(wrk));
-	(void)HSH_DerefObj(&wrk->stats, &req->obj);
-	http_Teardown(req->resp);
-	return (REQ_FSM_DONE);
-}
-
-/*--------------------------------------------------------------------
  * Deliver an already stored object
  *
 DOT	deliver [
@@ -202,13 +136,6 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	VCL_deliver_method(req->vcl, wrk, req, NULL, req->http->ws);
 
-	while (req->obj->objcore->busyobj) {
-		VSLb(req->vsl, SLT_Debug, "HERE %s %d", __func__, __LINE__);
-		(void)usleep(10000);
-	}
-
-	RES_BuildHttp(req);
-
 	/* Stop the insanity before it turns "Hotel California" on us */
 	if (req->restarts >= cache_param->max_restarts)
 		wrk->handling = VCL_RET_DELIVER;
@@ -220,9 +147,10 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_RESTART;
 		return (REQ_FSM_MORE);
 	}
+
 	assert(wrk->handling == VCL_RET_DELIVER);
 
-	RES_WriteObj(req);
+	V1D_Deliver(req);
 
 	/* No point in saving the body if it is hit-for-pass */
 	if (req->obj->objcore->flags & OC_F_PASS)
