@@ -99,83 +99,6 @@ v1d_dorange(const struct req *req, const char *r, ssize_t *plow, ssize_t *phigh)
 	*phigh = high;
 }
 
-/*--------------------------------------------------------------------*/
-
-static void
-v1d_BuildHttp(struct req *req)
-{
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
-
-	req->res_mode = 0;
-
-	if (!req->disable_esi && req->obj->esidata != NULL) {
-		/* In ESI mode, we can't know the aggregate length */
-		req->res_mode &= ~RES_LEN;
-		req->res_mode |= RES_ESI;
-	} else if (req->obj->objcore->busyobj == NULL) {
-		/* XXX: Not happy with this convoluted test */
-		req->res_mode |= RES_LEN;
-		if (!(req->obj->objcore->flags & OC_F_PASS) ||
-		    req->obj->len != 0) {
-			http_Unset(req->resp, H_Content_Length);
-			http_PrintfHeader(req->resp,
-			    "Content-Length: %zd", req->obj->len);
-		}
-		if (cache_param->http_range_support)
-			http_SetHeader(req->resp, "Accept-Ranges: bytes");
-	}
-
-	if (req->esi_level > 0) {
-		/* Included ESI object, always CHUNKED or EOF */
-		req->res_mode &= ~RES_LEN;
-		req->res_mode |= RES_ESI_CHILD;
-	}
-
-	if (cache_param->http_gzip_support && req->obj->gziped &&
-	    !RFC2616_Req_Gzip(req->http)) {
-		/*
-		 * We don't know what it uncompresses to
-		 * XXX: we could cache that
-		 */
-		req->res_mode &= ~RES_LEN;
-		req->res_mode |= RES_GUNZIP;
-	}
-
-	if (!(req->res_mode & (RES_LEN|RES_CHUNKED|RES_EOF))) {
-		/* We havn't chosen yet, do so */
-		if (!req->wantbody) {
-			/* Nothing */
-		} else if (req->http->protover >= 11) {
-			req->res_mode |= RES_CHUNKED;
-		} else {
-			req->res_mode |= RES_EOF;
-			req->doclose = SC_TX_EOF;
-		}
-	}
-	VSLb(req->vsl, SLT_Debug, "RES_MODE %x", req->res_mode);
-
-	if (!(req->res_mode & RES_LEN))
-		http_Unset(req->resp, H_Content_Length);
-
-	if (req->res_mode & RES_GUNZIP)
-		http_Unset(req->resp, H_Content_Encoding);
-
-	if (req->obj->objcore != NULL
-	    && !(req->obj->objcore->flags & OC_F_PASS)
-	    && req->obj->response == 200
-	    && req->http->conds && RFC2616_Do_Cond(req)) {
-		req->wantbody = 0;
-		http_SetResp(req->resp, "HTTP/1.1", 304, "Not Modified");
-		http_Unset(req->resp, H_Content_Length);
-	} else if (req->res_mode & RES_CHUNKED)
-		http_SetHeader(req->resp, "Transfer-Encoding: chunked");
-
-	http_PrintfHeader(req->resp, "Connection: %s",
-	    req->doclose ? "close" : "keep-alive");
-}
-
 /*--------------------------------------------------------------------
  * We have a gzip'ed object and need to ungzip it for a client which
  * does not understand gzip.
@@ -257,18 +180,84 @@ v1d_WriteDirObj(struct req *req, ssize_t low, ssize_t high)
 	ObjIterEnd(&oi);
 }
 
-/*--------------------------------------------------------------------
- * Deliver an object.
- * Attempt optimizations like 304 and 206 here.
- */
-
-static void
-v1d_WriteObj(struct req *req)
+void
+V1D_Deliver(struct req *req)
 {
 	char *r;
 	ssize_t low, high;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
+
+	while (req->obj->objcore->busyobj)
+		(void)usleep(10000);
+
+	req->res_mode = 0;
+
+	if (!req->disable_esi && req->obj->esidata != NULL) {
+		/* In ESI mode, we can't know the aggregate length */
+		req->res_mode &= ~RES_LEN;
+		req->res_mode |= RES_ESI;
+	} else if (req->obj->objcore->busyobj == NULL) {
+		/* XXX: Not happy with this convoluted test */
+		req->res_mode |= RES_LEN;
+		if (!(req->obj->objcore->flags & OC_F_PASS) ||
+		    req->obj->len != 0) {
+			http_Unset(req->resp, H_Content_Length);
+			http_PrintfHeader(req->resp,
+			    "Content-Length: %zd", req->obj->len);
+		}
+		if (cache_param->http_range_support)
+			http_SetHeader(req->resp, "Accept-Ranges: bytes");
+	}
+
+	if (req->esi_level > 0) {
+		/* Included ESI object, always CHUNKED or EOF */
+		req->res_mode &= ~RES_LEN;
+		req->res_mode |= RES_ESI_CHILD;
+	}
+
+	if (cache_param->http_gzip_support && req->obj->gziped &&
+	    !RFC2616_Req_Gzip(req->http)) {
+		/*
+		 * We don't know what it uncompresses to
+		 * XXX: we could cache that
+		 */
+		req->res_mode &= ~RES_LEN;
+		req->res_mode |= RES_GUNZIP;
+	}
+
+	if (!(req->res_mode & (RES_LEN|RES_CHUNKED|RES_EOF))) {
+		/* We havn't chosen yet, do so */
+		if (!req->wantbody) {
+			/* Nothing */
+		} else if (req->http->protover >= 11) {
+			req->res_mode |= RES_CHUNKED;
+		} else {
+			req->res_mode |= RES_EOF;
+			req->doclose = SC_TX_EOF;
+		}
+	}
+	VSLb(req->vsl, SLT_Debug, "RES_MODE %x", req->res_mode);
+
+	if (!(req->res_mode & RES_LEN))
+		http_Unset(req->resp, H_Content_Length);
+
+	if (req->res_mode & RES_GUNZIP)
+		http_Unset(req->resp, H_Content_Encoding);
+
+	if (req->obj->objcore != NULL
+	    && !(req->obj->objcore->flags & OC_F_PASS)
+	    && req->obj->response == 200
+	    && req->http->conds && RFC2616_Do_Cond(req)) {
+		req->wantbody = 0;
+		http_SetResp(req->resp, "HTTP/1.1", 304, "Not Modified");
+		http_Unset(req->resp, H_Content_Length);
+	} else if (req->res_mode & RES_CHUNKED)
+		http_SetHeader(req->resp, "Transfer-Encoding: chunked");
+
+	http_PrintfHeader(req->resp, "Connection: %s",
+	    req->doclose ? "close" : "keep-alive");
 
 	/*
 	 * If nothing special planned, we can attempt Range support
@@ -316,20 +305,9 @@ v1d_WriteObj(struct req *req)
 		v1d_WriteDirObj(req, low, high);
 	}
 
-	if (req->res_mode & RES_CHUNKED &&
-	    !(req->res_mode & RES_ESI_CHILD))
+	if (req->res_mode & RES_CHUNKED && !(req->res_mode & RES_ESI_CHILD))
 		WRW_EndChunk(req->wrk);
 
 	if (WRW_FlushRelease(req->wrk) && req->sp->fd >= 0)
 		SES_Close(req->sp, SC_REM_CLOSE);
-}
-
-void
-V1D_Deliver(struct req *req)
-{
-	while (req->obj->objcore->busyobj)
-		(void)usleep(10000);
-	
-	v1d_BuildHttp(req);
-	v1d_WriteObj(req);
 }
