@@ -282,7 +282,7 @@ v1d_WriteObj(struct req *req)
 	    cache_param->http_range_support &&
 	    req->obj->response == 200 &&
 	    http_GetHdr(req->http, H_Range, &r))
-		res_dorange(req, r, &low, &high);
+		v1d_dorange(req, r, &low, &high);
 
 	WRW_Reserve(req->wrk, &req->sp->fd, req->vsl, req->t_resp);
 
@@ -309,11 +309,11 @@ v1d_WriteObj(struct req *req)
 		ESI_DeliverChild(req);
 	} else if (req->res_mode & RES_ESI_CHILD &&
 	    !req->gzip_resp && req->obj->gziped) {
-		res_WriteGunzipObj(req);
+		v1d_WriteGunzipObj(req);
 	} else if (req->res_mode & RES_GUNZIP) {
-		res_WriteGunzipObj(req);
+		v1d_WriteGunzipObj(req);
 	} else {
-		res_WriteDirObj(req, low, high);
+		v1d_WriteDirObj(req, low, high);
 	}
 
 	if (req->res_mode & RES_CHUNKED &&
@@ -330,6 +330,6 @@ V1D_Deliver(struct req *req)
 	while (req->obj->objcore->busyobj)
 		(void)usleep(10000);
 	
-	RES_BuildHttp(req);
-	RES_WriteObj(req);
+	v1d_BuildHttp(req);
+	v1d_WriteObj(req);
 }
