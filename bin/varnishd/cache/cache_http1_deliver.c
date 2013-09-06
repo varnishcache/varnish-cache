@@ -202,8 +202,6 @@ V1D_Deliver(struct req *req)
 			http_PrintfHeader(req->resp,
 			    "Content-Length: %zd", req->obj->len);
 		}
-		if (cache_param->http_range_support)
-			http_SetHeader(req->resp, "Accept-Ranges: bytes");
 	}
 
 	if (req->esi_level > 0) {
@@ -255,9 +253,11 @@ V1D_Deliver(struct req *req)
 	    req->wantbody &&
 	    !(req->res_mode & (RES_ESI|RES_ESI_CHILD)) &&
 	    cache_param->http_range_support &&
-	    req->obj->response == 200 &&
-	    http_GetHdr(req->http, H_Range, &r))
-		v1d_dorange(req, r);
+	    req->obj->response == 200) {
+		http_SetHeader(req->resp, "Accept-Ranges: bytes");
+		if (http_GetHdr(req->http, H_Range, &r))
+			v1d_dorange(req, r);
+	}
 
 	WRW_Reserve(req->wrk, &req->sp->fd, req->vsl, req->t_resp);
 
