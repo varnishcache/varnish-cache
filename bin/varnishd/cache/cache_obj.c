@@ -46,6 +46,8 @@ ObjIterBegin(struct object *obj)
 
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	ALLOC_OBJ(oi, OBJITER_MAGIC);
+	while (obj->objcore->busyobj != NULL)
+		usleep(10000);
 	if (oi != NULL)
 		oi->obj = obj;
 	return (oi);

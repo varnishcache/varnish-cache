@@ -184,9 +184,6 @@ V1D_Deliver(struct req *req)
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(req->obj->objcore, OBJCORE_MAGIC);
 
-	while (req->obj->objcore->busyobj)
-		(void)usleep(10000);
-
 	req->res_mode = 0;
 
 	if (!req->disable_esi && req->obj->esidata != NULL) {
@@ -275,11 +272,12 @@ V1D_Deliver(struct req *req)
 
 	if (!req->wantbody) {
 		/* This was a HEAD or conditional request */
-	} else if (req->obj->len == 0) {
-		/* Nothing to do here */
 	} else if (req->res_mode & RES_ESI) {
+		AZ(req->obj->objcore->busyobj);
 		ESI_Deliver(req);
 	} else if (req->res_mode & RES_ESI_CHILD && req->gzip_resp) {
+		while (req->obj->objcore->busyobj)
+			(void)usleep(10000);
 		ESI_DeliverChild(req);
 	} else if (req->res_mode & RES_GUNZIP ||
 	    (req->res_mode & RES_ESI_CHILD &&
