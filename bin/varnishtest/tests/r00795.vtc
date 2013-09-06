@@ -1,10 +1,13 @@
 varnishtest "Content-Length in pass'ed 304 does not trigger body fetch"
 
+# XXX: Description doesn't make sense relative to actual goings on...
+
 server s1 {
 	rxreq
 	txresp -hdr "Last-Modified: ${date}" -body "FOO"
 	rxreq
-	txresp -body "FOO"
+	expect req.url == "/bar"
+	txresp -body "FOOBAR"
 
 } -start
 
@@ -21,7 +24,7 @@ client c1 {
 	txreq -url "/bar"
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 3
+	expect resp.bodylen == 6
 } -run
 
 # Wait, so we know ${date} to be higher
@@ -29,12 +32,10 @@ delay 1
 
 client c1 {
 	txreq -hdr "If-Modified-Since: ${date}"
-	rxresp
+	rxresp -no_obj
 	expect resp.status == 304
-	expect resp.bodylen == 0
 
 	txreq -url "/bar" -hdr "If-Modified-Since: ${date}"
-	rxresp
+	rxresp -no_obj
 	expect resp.status == 304
-	expect resp.bodylen == 0
 } -run

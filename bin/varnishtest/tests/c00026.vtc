@@ -18,12 +18,12 @@ client c1 {
 
 	txreq -url "/foo" \
 	    -hdr "If-None-Match: 123456789"
-	rxresp
+	rxresp -no_obj
 	expect resp.status == 304
 
 	txreq -url "/foo" \
 	    -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:01 GMT"
-	rxresp
+	rxresp -no_obj
 	expect resp.status == 304
 
 	txreq -url "/foo" \
@@ -41,7 +41,7 @@ client c1 {
 	txreq -url "/foo" \
 	    -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:01 GMT" \
 	    -hdr "If-None-Match: 123456789"
-	rxresp
+	rxresp -no_obj
 	expect resp.status == 304
 
 } 

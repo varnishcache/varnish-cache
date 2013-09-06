@@ -13,9 +13,8 @@ varnish v1 -vcl+backend {
 
 client c1 {
 	txreq -hdr "If-None-Match: foo"
-	rxresp
+	rxresp -no_obj
 	expect resp.status == 304
 	expect resp.http.etag == "foo"
-	expect resp.bodylen == 0
 }  -run
 
