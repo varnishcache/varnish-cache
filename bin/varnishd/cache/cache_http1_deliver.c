@@ -77,8 +77,10 @@ v1d_range_bytes(struct req *req, enum vdp_action act, const void *ptr,
 	l = req->range_high - req->range_off;
 	if (l > len)
 		l = len;
-	if (act > VDP_NULL || l > 0)
+	if (l > 0)
 		retval = VDP_bytes(req, act, p, l);
+	else if (act > VDP_NULL)
+		retval = VDP_bytes(req, act, p, 0);
 	req->range_off += len;
 	return (retval);
 }
