@@ -242,13 +242,7 @@ V1D_Deliver(struct req *req)
 	if (req->res_mode & RES_GUNZIP)
 		http_Unset(req->resp, H_Content_Encoding);
 
-	if (!(req->obj->objcore->flags & OC_F_PASS)
-	    && req->obj->response == 200
-	    && req->http->conds && RFC2616_Do_Cond(req)) {
-		req->wantbody = 0;
-		http_SetResp(req->resp, "HTTP/1.1", 304, "Not Modified");
-		http_Unset(req->resp, H_Content_Length);
-	} else if (req->res_mode & RES_CHUNKED)
+	if (req->res_mode & RES_CHUNKED)
 		http_SetHeader(req->resp, "Transfer-Encoding: chunked");
 
 	http_SetHeader(req->resp,
