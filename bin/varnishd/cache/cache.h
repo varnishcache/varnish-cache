@@ -1060,7 +1060,7 @@ void *MPL_Get(struct mempool *mpl, unsigned *size);
 void MPL_Free(struct mempool *mpl, void *item);
 
 /* cache_obj.c */
-struct objiter *ObjIterBegin(struct object *);
+struct objiter *ObjIterBegin(struct worker *, struct object *);
 int ObjIter(struct objiter *, void **, ssize_t *);
 void ObjIterEnd(struct objiter **);
 

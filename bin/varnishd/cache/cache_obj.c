@@ -31,25 +31,31 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "hash/hash_slinger.h"
 
 struct objiter {
 	unsigned			magic;
 #define OBJITER_MAGIC			0x745fb151
+	struct busyobj			*bo;
 	struct object			*obj;
 	struct storage			*st;
+	struct worker			*wrk;
 };
 
 struct objiter *
-ObjIterBegin(struct object *obj)
+ObjIterBegin(struct worker *wrk, struct object *obj)
 {
 	struct objiter *oi;
 
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	ALLOC_OBJ(oi, OBJITER_MAGIC);
+	if (oi == NULL)
+		return (oi);
+	oi->obj = obj;
+	oi->wrk = wrk;
+	oi->bo = HSH_RefBusy(obj->objcore);
 	while (obj->objcore->busyobj != NULL)
-		usleep(10000);
-	if (oi != NULL)
-		oi->obj = obj;
+		(void)usleep(10000);
 	return (oi);
 }
 
@@ -77,6 +83,10 @@ void
 ObjIterEnd(struct objiter **oi)
 {
 
+	AN(oi);
 	CHECK_OBJ_NOTNULL((*oi), OBJITER_MAGIC);
+	if ((*oi)->bo != NULL)
+		VBO_DerefBusyObj((*oi)->wrk, &(*oi)->bo);
 	FREE_OBJ((*oi));
+	*oi = NULL;
 }

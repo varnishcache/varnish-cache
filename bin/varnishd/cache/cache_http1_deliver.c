@@ -164,7 +164,7 @@ v1d_WriteDirObj(struct req *req)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	oi = ObjIterBegin(req->obj);
+	oi = ObjIterBegin(req->wrk, req->obj);
 	XXXAN(oi);
 
 	while (ObjIter(oi, &ptr, &len)) {
