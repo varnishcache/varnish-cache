@@ -40,6 +40,7 @@ struct objiter {
 	struct object			*obj;
 	struct storage			*st;
 	struct worker			*wrk;
+	ssize_t				len;
 };
 
 struct objiter *
@@ -54,29 +55,49 @@ ObjIterBegin(struct worker *wrk, struct object *obj)
 	oi->obj = obj;
 	oi->wrk = wrk;
 	oi->bo = HSH_RefBusy(obj->objcore);
-	while (obj->objcore->busyobj != NULL)
-		(void)usleep(10000);
 	return (oi);
 }
 
 int
 ObjIter(struct objiter *oi, void **p, ssize_t *l)
 {
+	ssize_t ol;
+	ssize_t nl;
 
 	CHECK_OBJ_NOTNULL(oi, OBJITER_MAGIC);
 	AN(p);
 	AN(l);
 
-	if (oi->st == NULL)
-		oi->st = VTAILQ_FIRST(&oi->obj->store);
-	else
-		oi->st = VTAILQ_NEXT(oi->st, list);
-	if (oi->st != NULL) {
-		*p = oi->st->ptr;
-		*l = oi->st->len;
-		return (1);
+	if (oi->bo == NULL) {
+		if (oi->st == NULL)
+			oi->st = VTAILQ_FIRST(&oi->obj->store);
+		else
+			oi->st = VTAILQ_NEXT(oi->st, list);
+		if (oi->st != NULL) {
+			*p = oi->st->ptr;
+			*l = oi->st->len;
+			return (1);
+		}
+		return (0);
+	} else {
+		ol = oi->len;
+		nl = VBO_waitlen(oi->bo, ol);
+		VSL(SLT_Debug, 0, "STREAM %zd -> %zd", ol, nl);
+		if (nl == ol)
+			return (0);
+		VTAILQ_FOREACH(oi->st, &oi->obj->store, list) {
+			if (oi->st->len <= ol) {
+				ol -= oi->st->len;
+				nl -= oi->st->len;
+			} else {
+				*p = oi->st->ptr + ol;
+				*l = (nl - ol);
+				oi->len += (nl - ol);
+				return (2);
+			}
+		}
+		WRONG("ran off end");
 	}
-	return (0);
 }
 
 void

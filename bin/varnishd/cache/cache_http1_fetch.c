@@ -381,7 +381,8 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 	 */
 
 	st = VTAILQ_LAST(&bo->fetch_obj->store, storagehead);
-	if (st != NULL) {
+	/* XXX: Temporary:  Only trim if we are not streaming */
+	if (st != NULL && !bo->do_stream) {
 		/* XXX: is any of this safe under streaming ? */
 		if (st->len == 0) {
 			VTAILQ_REMOVE(&bo->fetch_obj->store, st, list);

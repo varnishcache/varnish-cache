@@ -158,6 +158,7 @@ v1d_dorange(struct req *req, const char *r)
 static void
 v1d_WriteDirObj(struct req *req)
 {
+	int i;
 	ssize_t len;
 	struct objiter *oi;
 	void *ptr;
@@ -167,10 +168,12 @@ v1d_WriteDirObj(struct req *req)
 	oi = ObjIterBegin(req->wrk, req->obj);
 	XXXAN(oi);
 
-	while (ObjIter(oi, &ptr, &len)) {
-		if (VDP_bytes(req, VDP_NULL,  ptr, len))
-			break;
-	}
+	do {
+		i = ObjIter(oi, &ptr, &len);
+		if (i != 0)
+			if (VDP_bytes(req, i == 2 ? VDP_FLUSH : VDP_NULL,  ptr, len))
+				break;
+	} while (i);
 	(void)VDP_bytes(req, VDP_FINISH,  NULL, 0);
 	ObjIterEnd(&oi);
 }

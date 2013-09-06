@@ -3,7 +3,13 @@ varnishtest "Test orderly connection closure"
 
 server s1 {
 	rxreq
-	txresp -bodylen 130000
+	txresp -nolen -hdr "Transfer-encoding: chunked"
+	delay .2
+	chunkedlen 30000
+	delay .2
+	chunkedlen 100000
+	delay .2
+	chunkedlen 0
 } -start
 
 varnish v1 -vcl+backend { } -start
