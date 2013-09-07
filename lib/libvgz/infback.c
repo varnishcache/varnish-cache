@@ -1,5 +1,5 @@
 /* infback.c -- inflate using a call-back interface
- * Copyright (C) 1995-2009 Mark Adler
+ * Copyright (C) 1995-2011 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
@@ -42,10 +42,19 @@ int stream_size;
         return Z_STREAM_ERROR;
     strm->msg = Z_NULL;                 /* in case we return an error */
     if (strm->zalloc == (alloc_func)0) {
+#ifdef Z_SOLO
+        return Z_STREAM_ERROR;
+#else
         strm->zalloc = zcalloc;
         strm->opaque = (voidpf)0;
+#endif
     }
-    if (strm->zfree == (free_func)0) strm->zfree = zcfree;
+    if (strm->zfree == (free_func)0)
+#ifdef Z_SOLO
+        return Z_STREAM_ERROR;
+#else
+    strm->zfree = zcfree;
+#endif
     state = (struct inflate_state FAR *)ZALLOC(strm, 1,
                                                sizeof(struct inflate_state));
     if (state == Z_NULL) return Z_MEM_ERROR;
@@ -246,7 +255,7 @@ out_func out;
 void FAR *out_desc;
 {
     struct inflate_state FAR *state;
-    unsigned char FAR *next;    /* next input */
+    z_const unsigned char FAR *next;    /* next input */
     unsigned char FAR *put;     /* next output */
     unsigned have, left;        /* available input and output */
     unsigned long hold;         /* bit buffer */
@@ -308,7 +317,7 @@ void FAR *out_desc;
                 state->mode = TABLE;
                 break;
             case 3:
-                strm->msg = "invalid block type";
+                strm->msg = (char *)"invalid block type";
                 state->mode = BAD;
             }
             DROPBITS(2);
@@ -319,7 +328,7 @@ void FAR *out_desc;
             BYTEBITS();                         /* go to byte boundary */
             NEEDBITS(32);
             if ((hold & 0xffff) != ((hold >> 16) ^ 0xffff)) {
-                strm->msg = "invalid stored block lengths";
+                strm->msg = (char *)"invalid stored block lengths";
                 state->mode = BAD;
                 break;
             }
@@ -357,7 +366,7 @@ void FAR *out_desc;
             DROPBITS(4);
 #ifndef PKZIP_BUG_WORKAROUND
             if (state->nlen > 286 || state->ndist > 30) {
-                strm->msg = "too many length or distance symbols";
+                strm->msg = (char *)"too many length or distance symbols";
                 state->mode = BAD;
                 break;
             }
@@ -379,7 +388,7 @@ void FAR *out_desc;
             ret = inflate_table(CODES, state->lens, 19, &(state->next),
                                 &(state->lenbits), state->work);
             if (ret) {
-                strm->msg = "invalid code lengths set";
+                strm->msg = (char *)"invalid code lengths set";
                 state->mode = BAD;
                 break;
             }
@@ -394,7 +403,6 @@ void FAR *out_desc;
                     PULLBYTE();
                 }
                 if (here.val < 16) {
-                    NEEDBITS(here.bits);
                     DROPBITS(here.bits);
                     state->lens[state->have++] = here.val;
                 }
@@ -403,7 +411,7 @@ void FAR *out_desc;
                         NEEDBITS(here.bits + 2);
                         DROPBITS(here.bits);
                         if (state->have == 0) {
-                            strm->msg = "invalid bit length repeat";
+                            strm->msg = (char *)"invalid bit length repeat";
                             state->mode = BAD;
                             break;
                         }
@@ -426,7 +434,7 @@ void FAR *out_desc;
                         DROPBITS(7);
                     }
                     if (state->have + copy > state->nlen + state->ndist) {
-                        strm->msg = "invalid bit length repeat";
+                        strm->msg = (char *)"invalid bit length repeat";
                         state->mode = BAD;
                         break;
                     }
@@ -440,7 +448,7 @@ void FAR *out_desc;
 
             /* check for end-of-block code (better have one) */
             if (state->lens[256] == 0) {
-                strm->msg = "invalid code -- missing end-of-block";
+                strm->msg = (char *)"invalid code -- missing end-of-block";
                 state->mode = BAD;
                 break;
             }
@@ -454,7 +462,7 @@ void FAR *out_desc;
             ret = inflate_table(LENS, state->lens, state->nlen, &(state->next),
                                 &(state->lenbits), state->work);
             if (ret) {
-                strm->msg = "invalid literal/lengths set";
+                strm->msg = (char *)"invalid literal/lengths set";
                 state->mode = BAD;
                 break;
             }
@@ -463,7 +471,7 @@ void FAR *out_desc;
             ret = inflate_table(DISTS, state->lens + state->nlen, state->ndist,
                             &(state->next), &(state->distbits), state->work);
             if (ret) {
-                strm->msg = "invalid distances set";
+                strm->msg = (char *)"invalid distances set";
                 state->mode = BAD;
                 break;
             }
@@ -521,7 +529,7 @@ void FAR *out_desc;
 
             /* invalid code */
             if (here.op & 64) {
-                strm->msg = "invalid literal/length code";
+                strm->msg = (char *)"invalid literal/length code";
                 state->mode = BAD;
                 break;
             }
@@ -553,7 +561,7 @@ void FAR *out_desc;
             }
             DROPBITS(here.bits);
             if (here.op & 64) {
-                strm->msg = "invalid distance code";
+                strm->msg = (char *)"invalid distance code";
                 state->mode = BAD;
                 break;
             }
@@ -568,7 +576,7 @@ void FAR *out_desc;
             }
             if (state->offset > state->wsize - (state->whave < state->wsize ?
                                                 left : 0)) {
-                strm->msg = "invalid distance too far back";
+                strm->msg = (char *)"invalid distance too far back";
                 state->mode = BAD;
                 break;
             }

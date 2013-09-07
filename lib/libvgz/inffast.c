@@ -1,5 +1,5 @@
 /* inffast.c -- fast decoding
- * Copyright (C) 1995-2008, 2010 Mark Adler
+ * Copyright (C) 1995-2008, 2010, 2013 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
@@ -69,8 +69,8 @@ z_streamp strm;
 unsigned start;         /* inflate()'s starting value for strm->avail_out */
 {
     struct inflate_state FAR *state;
-    unsigned char FAR *in;      /* local strm->next_in */
-    unsigned char FAR *last;    /* while in < last, enough input available */
+    z_const unsigned char FAR *in;      /* local strm->next_in */
+    z_const unsigned char FAR *last;    /* have enough input while in < last */
     unsigned char FAR *out;     /* local strm->next_out */
     unsigned char FAR *beg;     /* inflate()'s initial strm->next_out */
     unsigned char FAR *end;     /* while out < end, enough space available */
@@ -175,7 +175,7 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
                 dist += (unsigned)hold & ((1U << op) - 1);
 #ifdef INFLATE_STRICT
                 if (dist > dmax) {
-                    strm->msg = "invalid distance too far back";
+                    strm->msg = (char *)"invalid distance too far back";
                     state->mode = BAD;
                     break;
                 }
@@ -188,7 +188,8 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
                     op = dist - op;             /* distance back in window */
                     if (op > whave) {
                         if (state->sane) {
-                            strm->msg = "invalid distance too far back";
+                            strm->msg =
+                                (char *)"invalid distance too far back";
                             state->mode = BAD;
                             break;
                         }
@@ -284,7 +285,7 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
                 goto dodist;
             }
             else {
-                strm->msg = "invalid distance code";
+                strm->msg = (char *)"invalid distance code";
                 state->mode = BAD;
                 break;
             }
@@ -299,7 +300,7 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
             break;
         }
         else {
-            strm->msg = "invalid literal/length code";
+            strm->msg = (char *)"invalid literal/length code";
             state->mode = BAD;
             break;
         }
