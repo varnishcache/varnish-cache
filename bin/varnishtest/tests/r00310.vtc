@@ -1,9 +1,9 @@
-varnishtest "Test obj.http.x-cache in vcl_lookup"
+varnishtest "Test obj.http.x-cache in vcl_hit"
 
-varnish v1 -errvcl {'obj.http.x-cache': cannot be set in method 'vcl_lookup'.} {
+varnish v1 -errvcl {'obj.http.x-cache': cannot be set in method 'vcl_hit'.} {
 	backend foo { .host = "localhost"; }
 
-	sub vcl_lookup {
+	sub vcl_hit {
 		set obj.http.x-cache = "hit";
 	}
 }

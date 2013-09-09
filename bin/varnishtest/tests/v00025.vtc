@@ -25,7 +25,7 @@ sub vcl_backend_response {
 	}
 }
 
-sub vcl_lookup {
+sub vcl_hit {
 	if (obj.grace < 3m) {
 		set obj.grace = 1m;
 	} else {

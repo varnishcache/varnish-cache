@@ -10,7 +10,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend { 
-	sub vcl_lookup {
+	sub vcl_hit {
 		return(pass);
 	}
 } -start

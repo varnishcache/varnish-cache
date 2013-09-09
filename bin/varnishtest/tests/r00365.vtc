@@ -1,4 +1,4 @@
-varnishtest "Test restarts in vcl_lookup"
+varnishtest "Test restarts in vcl_hit"
 
 server s1 {
 	rxreq
@@ -10,7 +10,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend { 
-	sub vcl_lookup {
+	sub vcl_hit {
 		set obj.ttl = 0s;
 		return (restart);
 	}

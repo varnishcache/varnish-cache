@@ -2,14 +2,14 @@ varnishtest "VCL compiler coverage test: vcc_action.c"
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_lookup { return (restart) ; }
+	sub vcl_hit { return (restart) ; }
 	sub vcl_miss { rollback; return (restart); }
 }
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_miss { return(error(100,req.url)); }
-	sub vcl_lookup { return(error(100,"the butter please")); }
+	sub vcl_hit { return(error(100,"the butter please")); }
 }
 
 varnish v1 -errvcl {Variable 'server.port' is read only.} {

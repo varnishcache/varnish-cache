@@ -80,11 +80,11 @@ DOT acceptor -> recv [style=bold,color=green]
  *
 DOT	deliver [
 DOT		shape=record
-DOT		label="{cnt_deliver:|Filter obj.-\>resp.|{vcl_deliver\{\}|{req.|resp.}}|{<stream>deliver(stream)?|restart?|<deliver>deliver?}}"
+DOT		label="{cnt_deliver:|Filter obj.-\>resp.|{vcl_deliver\{\}|{req.|resp.}}|{restart?|<deliver>deliver?}}"
 DOT	]
 DOT deliver:deliver:s -> DONE [style=bold,color=green]
-DOT deliver:stream:s -> stream [style=bold,color=red]
-DOT deliver:stream:s -> stream [style=bold,color=blue]
+DOT deliver:deliver:s -> DONE [style=bold,color=red]
+DOT deliver:deliver:s -> DONE [style=bold,color=blue]
  *
  */
 
@@ -323,7 +323,7 @@ DOT		label="{<top>cnt_lookup:|hash lookup|{<busy>busy?|<e>exp?|<eb>exp+busy?|<h>
 DOT	]
 DOT	lookup2 [
 DOT		shape=record
-DOT		label="{<top>cnt_lookup:|{vcl_lookup\{\}|req.*, obj.*}|{<deliver>deliver?|error?|restart?|<fetch>fetch?|<pass>pass?}}"
+DOT		label="{<top>cnt_lookup:|{vcl_hit\{\}|req.*, obj.*}|{<deliver>deliver?|error?|restart?|<fetch>fetch?|<pass>pass?}}"
 DOT	]
 DOT }
 DOT lookup:busy:w -> lookup:top:w [label="(waitinglist)"]
@@ -411,7 +411,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	VSLb(req->vsl, SLT_Hit, "%u", req->obj->vxid);
 
-	VCL_lookup_method(req->vcl, wrk, req, NULL, req->http->ws);
+	VCL_hit_method(req->vcl, wrk, req, NULL, req->http->ws);
 
 	switch (wrk->handling) {
 	case VCL_RET_DELIVER:

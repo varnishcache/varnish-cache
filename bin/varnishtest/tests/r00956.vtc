@@ -11,7 +11,7 @@ varnish v1 -vcl+backend {
 		set beresp.http.fooB = beresp.ttl;
 		set beresp.http.barB = "xxx";
 	}
-	sub vcl_lookup {
+	sub vcl_hit {
 		set req.http.foo = obj.ttl;
 		set obj.ttl = 7s;
 		set obj.grace = 120s;

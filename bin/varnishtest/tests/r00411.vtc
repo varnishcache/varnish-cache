@@ -11,7 +11,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend { 
-	sub vcl_lookup {
+	sub vcl_hit {
 		if (obj.http.X-Magic-Redirect == "1") {
 			set req.url = obj.http.Location;
 			return (restart);

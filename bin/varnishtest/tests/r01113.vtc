@@ -15,7 +15,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	sub vcl_lookup {
+	sub vcl_hit {
 		if (req.url == "/hit") {
 			return(restart);
 		}

@@ -97,7 +97,7 @@ sub vcl_purge {
     return (error(200, "Purged"));
 }
 
-sub vcl_lookup {
+sub vcl_hit {
     if (obj.ttl >= 0s) {
 	// A pure unadultered hit, deliver it
 	return (deliver);
