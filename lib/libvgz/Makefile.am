@@ -13,6 +13,7 @@ libvgz_la_SOURCES = \
 	crc32.h \
 	deflate.c \
 	deflate.h \
+	gzguts.h \
 	infback.c \
 	inffast.c \
 	inffast.h \
