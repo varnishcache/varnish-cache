@@ -426,7 +426,18 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	case VCL_RET_FETCH:
 		(void)HSH_DerefObj(&wrk->stats, &req->obj);
 		req->objcore = boc;
-		req->req_step = R_STP_MISS;
+		if (req->objcore != NULL)
+			req->req_step = R_STP_MISS;
+		else {
+			/*
+			 * We don't have a busy object, so treat this
+			 * lige a pass
+			 */
+			VSLb(req->vsl, SLT_VCL_Error,
+			    "vcl_hit{} returns fetch without busy object."
+			    "  Doing pass.");
+			req->req_step = R_STP_PASS;
+		}
 		return (REQ_FSM_MORE);
 	case VCL_RET_RESTART:
 		req->req_step = R_STP_RESTART;

@@ -1,0 +1,25 @@
+varnishtest "#1335 fetch without busy object"
+
+server s1 {
+	rxreq
+	txresp -bodylen 5
+	rxreq
+	txresp -bodylen 6
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_hit {
+		if (req.http.two == "2") {
+			return (fetch);
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
+client c1 {
+	txreq -hdr "two: 2"
+	rxresp
+} -run
