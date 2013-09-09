@@ -68,6 +68,7 @@ enum VSL_transaction_e {
 struct VSL_transaction {
 	unsigned		level;
 	int32_t			vxid;
+	/* int32_t		vxid_parent; /\* XXX: Implement this *\/ */
 	enum VSL_transaction_e	type;
 	struct VSL_cursor	*c;
 };
