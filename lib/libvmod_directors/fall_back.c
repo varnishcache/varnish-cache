@@ -45,12 +45,12 @@ struct vmod_directors_fallback {
 };
 
 static unsigned __match_proto__(vdi_healthy)
-vmod_rr_healthy(const struct director *dir)
+vmod_rr_healthy(const struct director *dir, double *changed)
 {
 	struct vmod_directors_fallback *rr;
 
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_FALLBACK_MAGIC);
-	return (vdir_any_healthy(rr->vd));
+	return (vdir_any_healthy(rr->vd, changed));
 }
 
 static struct vbc * __match_proto__(vdi_getfd_f)
@@ -65,7 +65,7 @@ vmod_rr_getfd(const struct director *dir, struct busyobj *bo)
 	for (u = 0; u < rr->vd->n_backend; u++) {
 		be = rr->vd->backend[u];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		if (be->healthy(be))
+		if (be->healthy(be, NULL))
 			break;
 	}
 	vdir_unlock(rr->vd);

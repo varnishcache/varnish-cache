@@ -116,10 +116,6 @@ VDI_GetFd(const struct director *d, struct busyobj *bo)
 }
 
 /* Check health ------------------------------------------------------
- *
- * The target is really an objhead pointer, but since it can not be
- * dereferenced during health-checks, we pass it as uintptr_t, which
- * hopefully will make people investigate, before mucking about with it.
  */
 
 int
@@ -127,5 +123,5 @@ VDI_Healthy(const struct director *d)
 {
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	return (d->healthy(d));
+	return (d->healthy(d, NULL));
 }

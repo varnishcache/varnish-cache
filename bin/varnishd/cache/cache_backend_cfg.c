@@ -43,6 +43,7 @@
 #include "vcli_priv.h"
 #include "vsa.h"
 #include "vrt.h"
+#include "vtim.h"
 
 /*
  * The list of backends is not locked, it is only ever accessed from
@@ -230,6 +231,7 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	assert(b->ipv4 != NULL || b->ipv6 != NULL);
 
 	b->healthy = 1;
+	b->health_changed = VTIM_real();
 	b->admin_health = ah_probe;
 
 	VTAILQ_INSERT_TAIL(&backends, b, list);
@@ -415,6 +417,8 @@ do_list(struct cli *cli, struct backend *b, void *priv)
 		VBP_Summary(cli, b->probe);
 	}
 
+	/* XXX: report b->health_changed */
+
 	return (0);
 }
 
@@ -435,11 +439,16 @@ static int __match_proto__()
 do_set_health(struct cli *cli, struct backend *b, void *priv)
 {
 	enum admin_health state;
+	unsigned prev;
 
 	(void)cli;
 	state = *(enum admin_health*)priv;
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+	prev = VBE_Healthy(b, NULL);
 	b->admin_health = state;
+	if (prev != VBE_Healthy(b, NULL))
+		b->health_changed = VTIM_real();
+
 	return (0);
 }
 

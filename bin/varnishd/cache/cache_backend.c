@@ -230,14 +230,13 @@ vbe_NewConn(void)
  * items would never time out once the threshold is reached.
  */
 
-static unsigned int
-vbe_Healthy(const struct vdi_simple *vs)
+unsigned
+VBE_Healthy(const struct backend *backend, double *changed)
 {
-	struct backend *backend;
-
-	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
-	backend = vs->backend;
 	CHECK_OBJ_NOTNULL(backend, BACKEND_MAGIC);
+
+	if (changed != NULL)
+		*changed = backend->health_changed;
 
 	if (backend->admin_health == ah_probe && !backend->healthy)
 		return (0);
@@ -301,7 +300,7 @@ vbe_GetVbe(struct busyobj *bo, struct vdi_simple *vs)
 		VBE_ReleaseConn(vc);
 	}
 
-	if (!vbe_Healthy(vs)) {
+	if (!VBE_Healthy(bp, NULL)) {
 		VSC_C_main->backend_unhealthy++;
 		return (NULL);
 	}
@@ -391,13 +390,16 @@ vdi_simple_getfd(const struct director *d, struct busyobj *bo)
 }
 
 static unsigned
-vdi_simple_healthy(const struct director *d)
+vdi_simple_healthy(const struct director *d, double *changed)
 {
 	struct vdi_simple *vs;
+	struct backend *be;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
-	return (vbe_Healthy(vs));
+	be = vs->backend;
+	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
+	return (VBE_Healthy(be, changed));
 }
 
 static void

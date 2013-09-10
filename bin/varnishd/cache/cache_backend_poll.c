@@ -280,13 +280,16 @@ vbp_has_poked(struct vbp_target *vt)
 	if (vt->good >= vt->probe.threshold) {
 		if (vt->backend->healthy)
 			logmsg = "Still healthy";
-		else
+		else {
 			logmsg = "Back healthy";
+			vt->backend->health_changed = VTIM_real();
+		}
 		vt->backend->healthy = 1;
 	} else {
-		if (vt->backend->healthy)
+		if (vt->backend->healthy) {
 			logmsg = "Went sick";
-		else
+			vt->backend->health_changed = VTIM_real();
+		} else
 			logmsg = "Still sick";
 		vt->backend->healthy = 0;
 	}

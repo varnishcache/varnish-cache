@@ -77,7 +77,7 @@ struct vrt_backend_probe;
 
 typedef struct vbc *vdi_getfd_f(const struct director *, struct busyobj *);
 typedef void vdi_fini_f(const struct director *);
-typedef unsigned vdi_healthy(const struct director *);
+typedef unsigned vdi_healthy(const struct director *, double *changed);
 
 struct director {
 	unsigned		magic;
@@ -124,6 +124,7 @@ struct backend {
 	struct vbp_target	*probe;
 	unsigned		healthy;
 	enum admin_health	admin_health;
+	double			health_changed;
 
 	struct VSC_C_vbe	*vsc;
 };
@@ -156,6 +157,7 @@ void VBE_ReleaseConn(struct vbc *vc);
 void VBE_DropRefConn(struct backend *);
 void VBE_DropRefVcl(struct backend *);
 void VBE_DropRefLocked(struct backend *b);
+unsigned VBE_Healthy(const struct backend *b, double *changed);
 
 /* cache_backend_poll.c */
 void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,
