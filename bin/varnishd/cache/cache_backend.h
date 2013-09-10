@@ -76,7 +76,6 @@ struct vrt_backend_probe;
  */
 
 typedef struct vbc *vdi_getfd_f(const struct director *, struct busyobj *);
-typedef void vdi_fini_f(const struct director *);
 typedef unsigned vdi_healthy(const struct director *, double *changed);
 
 struct director {
@@ -85,7 +84,6 @@ struct director {
 	const char		*name;
 	char			*vcl_name;
 	vdi_getfd_f		*getfd;
-	vdi_fini_f		*fini;
 	vdi_healthy		*healthy;
 	void			*priv;
 };
@@ -165,7 +163,3 @@ void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,
 void VBP_Remove(struct backend *b, struct vrt_backend_probe const *p);
 void VBP_Use(const struct backend *b, const struct vrt_backend_probe *p);
 void VBP_Summary(struct cli *cli, const struct vbp_target *vt);
-
-/* Init functions for directors */
-typedef void dir_init_f(struct cli *, struct director **, int , const void*);
-dir_init_f VRT_init_dir_simple;

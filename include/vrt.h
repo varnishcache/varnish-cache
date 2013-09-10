@@ -222,8 +222,7 @@ void VRT_Rollback(const struct vrt_ctx *);
 void VRT_synth_page(const struct vrt_ctx *, unsigned flags, const char *, ...);
 
 /* Backend related */
-void VRT_init_dir(struct cli *, struct director **, const char *name,
-    int idx, const void *priv);
+void VRT_init_dir(struct cli *, struct director **, int idx, const void *priv);
 void VRT_fini_dir(struct cli *, struct director *);
 
 /* VMOD/Modules related */

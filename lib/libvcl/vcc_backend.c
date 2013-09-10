@@ -444,7 +444,7 @@ vcc_ParseHostDef(struct vcc *tl, int serial, const char *vgcname)
 	Fh(tl, 0, "%s", VSB_data(vsb));
 	VSB_delete(vsb);
 
-	Fi(tl, 0, "\tVRT_init_dir(cli, VCL_conf.director, \"simple\",\n"
+	Fi(tl, 0, "\tVRT_init_dir(cli, VCL_conf.director,\n"
 	    "\t    VGC_backend_%s, &vgc_dir_priv_%s);\n", vgcname, vgcname);
 	Ff(tl, 0, "\tVRT_fini_dir(cli, VGCDIR(%s));\n", vgcname);
 	tl->ndirector++;

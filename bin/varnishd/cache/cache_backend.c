@@ -402,11 +402,14 @@ vdi_simple_healthy(const struct director *d, double *changed)
 	return (VBE_Healthy(be, changed));
 }
 
-static void
-vdi_simple_fini(const struct director *d)
+/*--------------------------------------------------------------------*/
+
+void
+VRT_fini_dir(struct cli *cli, struct director *d)
 {
 	struct vdi_simple *vs;
 
+	(void)cli;
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
@@ -415,11 +418,11 @@ vdi_simple_fini(const struct director *d)
 	free(vs->dir.vcl_name);
 	vs->dir.magic = 0;
 	FREE_OBJ(vs);
+	d->priv = NULL;
 }
 
 void
-VRT_init_dir_simple(struct cli *cli, struct director **bp, int idx,
-    const void *priv)
+VRT_init_dir(struct cli *cli, struct director **bp, int idx, const void *priv)
 {
 	const struct vrt_backend *t;
 	struct vdi_simple *vs;
@@ -435,7 +438,6 @@ VRT_init_dir_simple(struct cli *cli, struct director **bp, int idx,
 	vs->dir.name = "simple";
 	REPLACE(vs->dir.vcl_name, t->vcl_name);
 	vs->dir.getfd = vdi_simple_getfd;
-	vs->dir.fini = vdi_simple_fini;
 	vs->dir.healthy = vdi_simple_healthy;
 
 	vs->vrt = t;

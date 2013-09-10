@@ -239,31 +239,6 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	return (b);
 }
 
-/*--------------------------------------------------------------------*/
-
-void
-VRT_init_dir(struct cli *cli, struct director **dir, const char *name,
-    int idx, const void *priv)
-{
-
-	ASSERT_CLI();
-	if (!strcmp(name, "simple"))
-		VRT_init_dir_simple(cli, dir, idx, priv);
-	else
-		INCOMPL();
-}
-
-void
-VRT_fini_dir(struct cli *cli, struct director *b)
-{
-
-	(void)cli;
-	ASSERT_CLI();
-	CHECK_OBJ_NOTNULL(b, DIRECTOR_MAGIC);
-	b->fini(b);
-	b->priv = NULL;
-}
-
 /*---------------------------------------------------------------------
  * String to admin_health
  */
