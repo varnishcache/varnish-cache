@@ -297,24 +297,26 @@ VRT_r_now(const struct vrt_ctx *ctx)
 /*--------------------------------------------------------------------*/
 
 char *
-VRT_IP_string(const struct vrt_ctx *ctx, const struct sockaddr_storage *sa)
+VRT_IP_string(const struct vrt_ctx *ctx, const VCL_IP ip)
 {
 	char *p;
+	const struct sockaddr *sa;
 	const struct sockaddr_in *si4;
 	const struct sockaddr_in6 *si6;
 	const void *addr;
 	int len;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	switch (sa->ss_family) {
+	sa = ip;
+	switch (sa->sa_family) {
 	case AF_INET:
 		len = INET_ADDRSTRLEN;
-		si4 = (const void *)sa;
+		si4 = ip;
 		addr = &(si4->sin_addr);
 		break;
 	case AF_INET6:
 		len = INET6_ADDRSTRLEN;
-		si6 = (const void *)sa;
+		si6 = ip;
 		addr = &(si6->sin6_addr);
 		break;
 	default:
@@ -322,7 +324,7 @@ VRT_IP_string(const struct vrt_ctx *ctx, const struct sockaddr_storage *sa)
 	}
 	XXXAN(len);
 	AN(p = WS_Alloc(ctx->ws, len));
-	AN(inet_ntop(sa->ss_family, addr, p, len));
+	AN(inet_ntop(sa->sa_family, addr, p, len));
 	return (p);
 }
 
@@ -364,8 +366,8 @@ VRT_TIME_string(const struct vrt_ctx *ctx, double t)
 	return (p);
 }
 
-const char *
-VRT_BACKEND_string(const struct director *d)
+const char * __match_proto__()
+VRT_BACKEND_string(VCL_BACKEND d)
 {
 	if (d == NULL)
 		return (NULL);

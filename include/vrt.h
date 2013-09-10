@@ -252,10 +252,10 @@ int VRT_Stv(const char *nm);
 
 /* Convert things to string */
 
-char *VRT_IP_string(const struct vrt_ctx *, const struct sockaddr_storage *sa);
-char *VRT_INT_string(const struct vrt_ctx *, long);
-char *VRT_REAL_string(const struct vrt_ctx *, double);
-char *VRT_TIME_string(const struct vrt_ctx *, double);
-const char *VRT_BOOL_string(unsigned);
-const char *VRT_BACKEND_string(const struct director *d);
+char *VRT_IP_string(const struct vrt_ctx *, VCL_IP);
+char *VRT_INT_string(const struct vrt_ctx *, VCL_INT);
+char *VRT_REAL_string(const struct vrt_ctx *, VCL_REAL);
+char *VRT_TIME_string(const struct vrt_ctx *, VCL_TIME);
+const char *VRT_BOOL_string(VCL_BOOL);
+const char *VRT_BACKEND_string(VCL_BACKEND);
 const char *VRT_CollectString(const struct vrt_ctx *, const char *p, ...);
