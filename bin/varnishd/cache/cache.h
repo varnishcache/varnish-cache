@@ -544,9 +544,10 @@ struct busyobj {
 	struct http		*bereq0;
 	struct http		*bereq;
 	struct http		*beresp;
-	struct objcore		*ims_objcore;
+	struct object		*ims_obj;
 	struct objcore		*fetch_objcore;
 	struct object		*fetch_obj;
+
 	struct exp		exp;
 	struct http_conn	htc;
 
@@ -918,7 +919,7 @@ enum vbf_fetch_mode_e {
 	VBF_BACKGROUND = 2,
 };
 void VBF_Fetch(struct worker *wrk, struct req *req,
-    struct objcore *oc, struct objcore *oldoc, enum vbf_fetch_mode_e);
+    struct objcore *oc, struct object *oldobj, enum vbf_fetch_mode_e);
 
 /* cache_fetch_proc.c */
 struct storage *VFP_GetStorage(struct busyobj *, ssize_t sz);
@@ -1127,6 +1128,7 @@ void VRY_Validate(const uint8_t *vary);
 void VRY_Prep(struct req *);
 enum vry_finish_flag { KEEP, DISCARD };
 void VRY_Finish(struct req *req, enum vry_finish_flag);
+unsigned VRY_Len(const uint8_t *);
 
 /* cache_vcl.c */
 void VCL_Init(void);

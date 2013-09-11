@@ -52,6 +52,7 @@ REQ_STEP(error,		ERROR,		(wrk, req))
 FETCH_STEP(mkbereq,	MKBEREQ,	(wrk, bo))
 FETCH_STEP(startfetch,	STARTFETCH,	(wrk, bo))
 FETCH_STEP(fetchhdr,	FETCHHDR,	(wrk, bo))
+FETCH_STEP(condfetch,	CONDFETCH,	(wrk, bo))
 FETCH_STEP(fetch,	FETCH,		(wrk, bo))
 FETCH_STEP(done,	DONE,		())
 #endif

@@ -60,6 +60,7 @@ vbf_release_req(struct busyobj *bo)
 static enum fetch_step
 vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 {
+	char *p;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -84,6 +85,17 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 			 */
 			http_Unset(bo->bereq0, H_Accept_Encoding);
 			http_SetHeader(bo->bereq0, "Accept-Encoding: gzip");
+		}
+	}
+	if (bo->ims_obj != NULL) {
+		if (http_GetHdr(bo->ims_obj->http, H_Last_Modified, &p)) {
+			http_PrintfHeader(bo->bereq0,
+			    "If-Modified-Since: %s", p);
+		} else if (http_GetHdr(bo->ims_obj->http, H_ETag, &p)) {
+			http_PrintfHeader(bo->bereq0,
+			    "If-None-Match: %s", p);
+		} else {
+			WRONG("Shouldn't have bo->ims_obj");
 		}
 	}
 
@@ -131,7 +143,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 static enum fetch_step
 vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 {
-	int i;
+	int i, do_ims;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -203,6 +215,14 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 
 	AZ(bo->do_esi);
 
+	if (bo->ims_obj != NULL && bo->beresp->status == 304) {
+		bo->beresp->status = 200;
+		http_PrintfHeader(bo->beresp, "Content-Length: %jd",
+		    bo->ims_obj->len);
+		do_ims = 1;
+	} else 
+		do_ims = 0;
+
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, bo->beresp->ws);
 
 	if (bo->do_esi)
@@ -211,7 +231,7 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 		bo->fetch_objcore->flags |= OC_F_PASS;
 
 	if (wrk->handling == VCL_RET_DELIVER)
-		return (F_STP_FETCH);
+		return (do_ims ? F_STP_CONDFETCH : F_STP_FETCH);
 	if (wrk->handling == VCL_RET_RETRY) {
 		assert(bo->state == BOS_REQ_DONE);
 		bo->retries++;
@@ -238,7 +258,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	struct vsb *vary = NULL;
 	int varyl = 0;
 	struct object *obj;
-
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -441,6 +460,99 @@ vbf_stp_done(void)
 /*--------------------------------------------------------------------
  */
 
+static enum fetch_step
+vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
+{
+	unsigned l;
+	uint16_t nhttp;
+	struct object *obj;
+	struct objiter *oi;
+	void *sp;
+	ssize_t sl, al, tl;
+	struct storage *st;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	l = 0;
+	if (bo->ims_obj->vary != NULL)
+		l += VRY_Len(bo->ims_obj->vary);
+	l += http_EstimateWS(bo->ims_obj->http, 0, &nhttp);
+
+	bo->stats = &wrk->stats;
+	obj = STV_NewObject(bo, bo->storage_hint, l, nhttp);
+	if (obj == NULL) {
+		(void)VFP_Error(bo, "Could not get storage");
+		VDI_CloseFd(&bo->vbc);
+		return (F_STP_DONE);
+	}
+	bo->stats = NULL;
+
+	AZ(bo->fetch_obj);
+	bo->fetch_obj = obj;
+
+	obj->gziped = bo->ims_obj->gziped;
+	obj->gzip_start = bo->ims_obj->gzip_start;
+	obj->gzip_last = bo->ims_obj->gzip_last;
+	obj->gzip_stop = bo->ims_obj->gzip_stop;
+
+	/* XXX: ESI */
+
+	if (bo->ims_obj->vary != NULL)
+		obj->vary = (void *)WS_Copy(obj->http->ws,
+		    bo->ims_obj->vary, VRY_Len(bo->ims_obj->vary));
+
+	obj->vxid = bo->vsl->wid;
+
+	obj->http->logtag = HTTP_Obj;
+	/* XXX: we should have our own HTTP_A_CONDFETCH */
+	http_FilterResp(bo->ims_obj->http, obj->http, HTTPH_A_INS);
+	http_CopyHome(obj->http);
+
+
+	if (!(bo->fetch_obj->objcore->flags & OC_F_PRIVATE)) {
+		EXP_Insert(obj);
+		AN(obj->objcore->ban);
+	}
+
+	AZ(bo->ws_o->overflow);
+	VBO_setstate(bo, BOS_FETCHING);
+	HSH_Unbusy(&wrk->stats, obj->objcore);
+
+	st = NULL;
+	al = 0;
+
+	oi = ObjIterBegin(wrk, bo->ims_obj);
+	while (1 == ObjIter(oi, &sp, &sl)) {
+		while (sl > 0) {
+			if (st == NULL) {
+				st = VFP_GetStorage(bo, bo->ims_obj->len - al);
+				XXXAN(st);
+			}
+			tl = sl;
+			if (tl > st->space - st->len)
+				tl = st->space - st->len;
+			memcpy(st->ptr + st->len, sp, tl);
+			st->len += tl;
+			al += tl;
+			sp = (char *)sp + tl;
+			sl -= tl;
+			VBO_extend(bo, al);
+			if (st->len == st->space)
+				st = NULL;
+		}
+	}
+	assert(al == bo->ims_obj->len);
+	assert(obj->len == al);
+	if (bo->state != BOS_FAILED)
+		VBO_setstate(bo, BOS_FINISHED);
+	HSH_Complete(obj->objcore);
+	return (F_STP_DONE);
+}
+
+/*--------------------------------------------------------------------
+ */
+
 static const char *
 vbf_step_name(enum fetch_step stp)
 {
@@ -490,8 +602,8 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	if (bo->state == BOS_FAILED)
 		assert(bo->fetch_objcore->flags & OC_F_FAILED);
 
-	if (bo->ims_objcore != NULL)
-		(void)HSH_DerefObjCore(&wrk->stats, &bo->ims_objcore);
+	if (bo->ims_obj != NULL)
+		(void)HSH_DerefObj(&wrk->stats, &bo->ims_obj);
 
 	VBO_DerefBusyObj(wrk, &bo);
 	THR_SetBusyobj(NULL);
@@ -502,14 +614,14 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 void
 VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
-    struct objcore *oldoc, enum vbf_fetch_mode_e mode)
+    struct object *oldobj, enum vbf_fetch_mode_e mode)
 {
 	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	CHECK_OBJ_ORNULL(oldoc, OBJCORE_MAGIC);
+	CHECK_OBJ_ORNULL(oldobj, OBJECT_MAGIC);
 
 	bo = VBO_GetBusyObj(wrk, req);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -528,9 +640,12 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	HSH_Ref(oc);
 	bo->fetch_objcore = oc;
 
-	if (oldoc != NULL) {
-		HSH_Ref(oldoc);
-		bo->ims_objcore = oldoc;
+	if (oldobj != NULL) {
+		if (http_GetHdr(oldobj->http, H_Last_Modified, NULL) ||
+		   http_GetHdr(oldobj->http, H_ETag, NULL)) {
+			HSH_Ref(oldobj->objcore);
+			bo->ims_obj = oldobj;
+		}
 	}
 
 	AZ(bo->req);

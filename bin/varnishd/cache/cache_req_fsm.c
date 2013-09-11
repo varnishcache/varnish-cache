@@ -416,7 +416,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	switch (wrk->handling) {
 	case VCL_RET_DELIVER:
 		if (boc != NULL) {
-			VBF_Fetch(wrk, req, boc, oc, VBF_BACKGROUND);
+			VBF_Fetch(wrk, req, boc, o, VBF_BACKGROUND);
 		} else {
 			(void)HTTP1_DiscardReqBody(req);// XXX: handle err
 		}

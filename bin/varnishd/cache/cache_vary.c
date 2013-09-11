@@ -173,8 +173,8 @@ VRY_Create(struct busyobj *bo, struct vsb **psb)
 /*
  * Find length of a vary entry
  */
-static unsigned
-vry_len(const uint8_t *p)
+unsigned
+VRY_Len(const uint8_t *p)
 {
 	unsigned l = vbe16dec(p);
 
@@ -189,7 +189,7 @@ vry_cmp(const uint8_t *v1, const uint8_t *v2)
 {
 	unsigned retval = 0;
 
-	if (!memcmp(v1, v2, vry_len(v1))) {
+	if (!memcmp(v1, v2, VRY_Len(v1))) {
 		/* Same same */
 		retval = 0;
 	} else if (memcmp(v1 + 2, v2 + 2, v1[2] + 2)) {
@@ -331,8 +331,8 @@ VRY_Match(struct req *req, const uint8_t *vary)
 		}
 		if (i == 0) {
 			/* Same header, same contents*/
-			vsp += vry_len(vsp);
-			vary += vry_len(vary);
+			vsp += VRY_Len(vsp);
+			vary += VRY_Len(vary);
 		} else if (i == 2) {
 			/* Same header, different contents, cannot match */
 			return (0);
@@ -358,6 +358,6 @@ VRY_Validate(const uint8_t *vary)
 
 	while (vary[2] != 0) {
 		assert(strlen((const char*)vary+3) == vary[2]);
-		vary += vry_len(vary);
+		vary += VRY_Len(vary);
 	}
 }
