@@ -517,7 +517,6 @@ vcc_NewVcc(const struct vcc *tl0)
 		tl->err_unref = 1;
 	}
 	VTAILQ_INIT(&tl->symbols);
-	VTAILQ_INIT(&tl->hosts);
 	VTAILQ_INIT(&tl->membits);
 	VTAILQ_INIT(&tl->tokens);
 	VTAILQ_INIT(&tl->sources);

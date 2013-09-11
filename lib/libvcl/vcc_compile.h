@@ -160,7 +160,6 @@ struct vcc {
 	struct tokenhead	tokens;
 	VTAILQ_HEAD(, source)	sources;
 	VTAILQ_HEAD(, membit)	membits;
-	VTAILQ_HEAD(, host)	hosts;
 	unsigned		nsources;
 	struct source		*src;
 	struct token		*t;
@@ -191,7 +190,6 @@ struct vcc {
 
 	int			defaultdir;
 	struct token		*t_defaultdir;
-	struct token		*t_dir;
 
 	unsigned		unique;
 	unsigned		nvmodpriv;
@@ -228,10 +226,11 @@ void vcc_Acl_Hack(struct vcc *tl, char *b);
 int vcc_ParseAction(struct vcc *tl);
 
 /* vcc_backend.c */
+#define MAX_BACKEND_NAME	64
 struct fld_spec;
 
 void vcc_ParseProbe(struct vcc *tl);
-void vcc_ParseDirector(struct vcc *tl);
+void vcc_ParseBackend(struct vcc *tl);
 struct fld_spec * vcc_FldSpec(struct vcc *tl, const char *first, ...);
 void vcc_IsField(struct vcc *tl, struct token **t, struct fld_spec *fs);
 void vcc_FieldsOk(struct vcc *tl, const struct fld_spec *fs);

@@ -26,26 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * A necessary explanation of a convoluted policy:
- *
- * In VCL we have backends and directors.
- *
- * In VRT we have directors which reference (a number of) backend hosts.
- *
- * A VCL backend therefore has an implicit director of type "simple" created
- * by the compiler, but not visible in VCL.
- *
- * A VCL backend is a "named host", these can be referenced by name from
- * VCL directors, but not from VCL backends.
- *
- * The reason for this quasimadness is that we want to collect statistics
- * for each actual kickable hardware backend machine, but we want to be
- * able to refer to them multiple times in different directors.
- *
- * At the same time, we do not want to force users to declare each backend
- * host with a name, if all they want to do is put it into a director, so
- * backend hosts can be declared inline in the director, in which case
- * its identity is the director and its numerical index therein.
  */
 
 #include "config.h"
@@ -56,13 +36,6 @@
 #include "vcc_compile.h"
 
 #include "vss.h"
-
-struct host {
-	VTAILQ_ENTRY(host)      list;
-	struct token            *name;
-	char			*vgcname;
-};
-
 
 /*--------------------------------------------------------------------
  * Struct sockaddr is not really designed to be a compile time
@@ -293,7 +266,7 @@ vcc_ParseProbe(struct vcc *tl)
  */
 
 static void
-vcc_ParseHostDef(struct vcc *tl, int serial, const char *vgcname)
+vcc_ParseHostDef(struct vcc *tl, const struct token *t_be)
 {
 	struct token *t_field;
 	struct token *t_host = NULL;
@@ -303,6 +276,9 @@ vcc_ParseHostDef(struct vcc *tl, int serial, const char *vgcname)
 	struct vsb *vsb;
 	unsigned u;
 	double t;
+	char vgcname[MAX_BACKEND_NAME + 8];
+
+	sprintf(vgcname, "_%.*s", PF(t_be));
 
 	Fh(tl, 1, "\n#define VGC_backend_%s %d\n", vgcname, tl->ndirector);
 
@@ -326,9 +302,7 @@ vcc_ParseHostDef(struct vcc *tl, int serial, const char *vgcname)
 	Fb(tl, 0, "\nstatic const struct vrt_backend vgc_dir_priv_%s = {\n",
 	    vgcname);
 
-	Fb(tl, 0, "\t.vcl_name = \"%.*s", PF(tl->t_dir));
-	if (serial >= 0)
-		Fb(tl, 0, "[%d]", serial);
+	Fb(tl, 0, "\t.vcl_name = \"%.*s", PF(t_be));
 	Fb(tl, 0, "\",\n");
 
 	/* Check for old syntax */
@@ -451,85 +425,51 @@ vcc_ParseHostDef(struct vcc *tl, int serial, const char *vgcname)
 }
 
 /*--------------------------------------------------------------------
- * Tell rest of compiler about a backend
+ * Parse directors and backends
  */
 
-static void
-vcc_DefBackend(struct vcc *tl, const struct token *nm)
+void
+vcc_ParseBackend(struct vcc *tl)
 {
+	struct token *t_first, *t_be;
+	int isfirst;
 	struct symbol *sym;
 
-	sym = VCC_GetSymbolTok(tl, nm, SYM_BACKEND);
+	t_first = tl->t;
+	vcc_NextToken(tl);		/* ID: backend */
+
+	vcc_ExpectCid(tl);		/* ID: name */
+	ERRCHK(tl);
+
+	if (tl->t->e - tl->t->b > MAX_BACKEND_NAME) {
+		VSB_printf(tl->sb,
+		    "Name of %.*s too long (max %d, is %zu):\n",
+		    PF(t_first), MAX_BACKEND_NAME,
+		    (size_t)(tl->t->e - tl->t->b));
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+
+	t_be = tl->t;
+	vcc_NextToken(tl);
+
+	isfirst = tl->ndirector;
+
+	sym = VCC_GetSymbolTok(tl, t_be, SYM_BACKEND);
 	AN(sym);
 	if (sym->ndef > 0) {
-		VSB_printf(tl->sb, "Backend %.*s redefined\n", PF(nm));
-		vcc_ErrWhere(tl, nm);
+		VSB_printf(tl->sb, "Backend %.*s redefined\n", PF(t_be));
+		vcc_ErrWhere(tl, t_be);
 		return;
 	}
 	sym->fmt = BACKEND;
 	sym->eval = vcc_Eval_Backend;
 	sym->ndef++;
-}
-
-/*--------------------------------------------------------------------
- * Parse a plain backend aka a simple director
- */
-
-static void
-vcc_ParseSimpleDirector(struct vcc *tl)
-{
-	struct host *h;
-	char vgcname[BUFSIZ];
-
-	h = TlAlloc(tl, sizeof *h);
-	h->name = tl->t_dir;
-	vcc_DefBackend(tl, tl->t_dir);
-	ERRCHK(tl);
-	sprintf(vgcname, "_%.*s", PF(h->name));
-	h->vgcname = TlAlloc(tl, strlen(vgcname) + 1);
-	strcpy(h->vgcname, vgcname);
-
-	vcc_ParseHostDef(tl, -1, vgcname);
 	ERRCHK(tl);
 
-	VTAILQ_INSERT_TAIL(&tl->hosts, h, list);
-}
-
-/*--------------------------------------------------------------------
- * Parse directors and backends
- */
-
-void
-vcc_ParseDirector(struct vcc *tl)
-{
-	struct token *t_first;
-	int isfirst;
-
-	t_first = tl->t;
-	vcc_NextToken(tl);		/* ID: director | backend */
-
-	vcc_ExpectCid(tl);		/* ID: name */
+	vcc_ParseHostDef(tl, t_be);
 	ERRCHK(tl);
-	if (tl->t->e - tl->t->b > 64) {
-		VSB_printf(tl->sb,
-		    "Name of %.*s too long (max 64, is %zu):\n",
-		    PF(t_first), (size_t)(tl->t->e - tl->t->b));
-		vcc_ErrWhere(tl, tl->t);
-		return;
-	}
-	tl->t_dir = tl->t;
-	vcc_NextToken(tl);
 
-
-	isfirst = tl->ndirector;
-	if (vcc_IdIs(t_first, "backend")) {
-		vcc_ParseSimpleDirector(tl);
-	} else {
-		VSB_printf(tl->sb,
-		    "\ndirectors are now in VMOD.directors\n");
-		vcc_ErrWhere(tl, t_first);
-		return;
-	}
 	if (tl->err) {
 		VSB_printf(tl->sb,
 		    "\nIn %.*s specification starting at:\n", PF(t_first));
@@ -537,10 +477,8 @@ vcc_ParseDirector(struct vcc *tl)
 		return;
 	}
 
-	if (isfirst == 1 || vcc_IdIs(tl->t_dir, "default")) {
+	if (isfirst == 1 || vcc_IdIs(t_be, "default")) {
 		tl->defaultdir = tl->ndirector - 1;
-		tl->t_defaultdir = tl->t_dir;
+		tl->t_defaultdir = t_be;
 	}
-
-	tl->t_dir = NULL;
 }

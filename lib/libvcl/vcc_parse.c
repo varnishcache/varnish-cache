@@ -274,6 +274,16 @@ vcc_Function(struct vcc *tl)
 }
 
 /*--------------------------------------------------------------------
+ */
+
+static void
+vcc_Director(struct vcc *tl)
+{
+	VSB_printf(tl->sb, "\ndirectors are now in directors VMOD.\n");
+	vcc_ErrWhere(tl, tl->t);
+}
+
+/*--------------------------------------------------------------------
  * Top level of parser, recognize:
  *	Inline C-code
  *	ACL definitions
@@ -290,8 +300,8 @@ static struct toplev {
 } toplev[] = {
 	{ "acl",		vcc_Acl },
 	{ "sub",		vcc_Function },
-	{ "backend",		vcc_ParseDirector },
-	{ "director",		vcc_ParseDirector },
+	{ "backend",		vcc_ParseBackend },
+	{ "director",		vcc_Director },
 	{ "probe",		vcc_ParseProbe },
 	{ "import",		vcc_ParseImport },
 	{ NULL, NULL }
