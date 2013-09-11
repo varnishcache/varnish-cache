@@ -1,7 +1,7 @@
 #!/usr/local/bin/python3.1
 #-
 # Copyright (c) 2006 Verdens Gang AS
-# Copyright (c) 2006-2011 Varnish Software AS
+# Copyright (c) 2006-2013 Varnish Software AS
 # All rights reserved.
 #
 # Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
