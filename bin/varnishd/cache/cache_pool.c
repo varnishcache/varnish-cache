@@ -404,8 +404,13 @@ pool_herder(void *priv)
 		}
 
 		Lck_Lock(&pp->mtx);
-		if (!pp->dry)
+		if (!pp->dry) {
 			(void)Lck_CondWait(&pp->herder_cond, &pp->mtx, NULL);
+		} else {
+			/* XXX: unsafe counters */
+			VSC_C_main->threads_limited++;
+			pp->dry = 0;
+		}
 		Lck_Unlock(&pp->mtx);
 	}
 	NEEDLESS_RETURN(NULL);
