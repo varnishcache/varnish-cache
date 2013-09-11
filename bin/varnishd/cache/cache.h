@@ -544,6 +544,7 @@ struct busyobj {
 	struct http		*bereq0;
 	struct http		*bereq;
 	struct http		*beresp;
+	struct objcore		*ims_objcore;
 	struct objcore		*fetch_objcore;
 	struct object		*fetch_obj;
 	struct exp		exp;
@@ -917,7 +918,7 @@ enum vbf_fetch_mode_e {
 	VBF_BACKGROUND = 2,
 };
 void VBF_Fetch(struct worker *wrk, struct req *req,
-    struct objcore *oc, enum vbf_fetch_mode_e);
+    struct objcore *oc, struct objcore *oldoc, enum vbf_fetch_mode_e);
 
 /* cache_fetch_proc.c */
 struct storage *VFP_GetStorage(struct busyobj *, ssize_t sz);

@@ -119,7 +119,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		if (bo->req != NULL)
 			vbf_release_req(bo);
 		(void)VFP_Error(bo, "Abandonned in vcl_backend_fetch");
-		return (F_STP_ABANDON);
+		return (F_STP_DONE);
 	}
 	assert (wrk->handling == VCL_RET_FETCH);
 	return (F_STP_FETCHHDR);
@@ -222,7 +222,7 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 		// XXX: wrk->handling = VCL_RET_SYNTH;
 	}
 
-	return (F_STP_NOTYET);
+	INCOMPL();
 }
 
 /*--------------------------------------------------------------------
@@ -358,7 +358,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (obj == NULL) {
 		(void)VFP_Error(bo, "Could not get storage");
 		VDI_CloseFd(&bo->vbc);
-		return (F_STP_ABANDON);
+		return (F_STP_DONE);
 	}
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 
@@ -429,43 +429,13 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		VBO_setstate(bo, BOS_FINISHED);
 
 VSLb(bo->vsl, SLT_Debug, "YYY REF %d %d", bo->refcount, bo->fetch_obj->objcore->refcnt);
-	VBO_DerefBusyObj(wrk, &bo);	// XXX ?
 	return (F_STP_DONE);
 }
-
-/*--------------------------------------------------------------------
- */
-
-static enum fetch_step
-vbf_stp_abandon(struct worker *wrk, struct busyobj *bo)
-{
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-
-	assert(bo->state == BOS_FAILED);
-	assert(bo->fetch_objcore->flags & OC_F_FAILED);
-	VBO_DerefBusyObj(wrk, &bo);	// XXX ?
-	return (F_STP_DONE);
-}
-
-/*--------------------------------------------------------------------
- */
-
-static enum fetch_step
-vbf_stp_notyet(void)
-{
-	WRONG("Patience, grashopper, patience...");
-	NEEDLESS_RETURN(F_STP_NOTYET);
-}
-
-/*--------------------------------------------------------------------
- */
 
 static enum fetch_step
 vbf_stp_done(void)
 {
 	WRONG("Just plain wrong");
-	NEEDLESS_RETURN(F_STP_NOTYET);
 }
 
 /*--------------------------------------------------------------------
@@ -512,11 +482,18 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 		default:
 			WRONG("Illegal fetch_step");
 		}
-		if (stp != F_STP_DONE)
-			VSLb(bo->vsl, SLT_Debug, "%s -> %s",
-			    vbf_step_name(bo->step), vbf_step_name(stp));
+		VSLb(bo->vsl, SLT_Debug, "%s -> %s",
+		    vbf_step_name(bo->step), vbf_step_name(stp));
 	}
 	assert(WRW_IsReleased(wrk));
+
+	if (bo->state == BOS_FAILED)
+		assert(bo->fetch_objcore->flags & OC_F_FAILED);
+
+	if (bo->ims_objcore != NULL)
+		(void)HSH_DerefObjCore(&wrk->stats, &bo->ims_objcore);
+
+	VBO_DerefBusyObj(wrk, &bo);
 	THR_SetBusyobj(NULL);
 }
 
@@ -525,13 +502,14 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 void
 VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
-    enum vbf_fetch_mode_e mode)
+    struct objcore *oldoc, enum vbf_fetch_mode_e mode)
 {
 	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_ORNULL(oldoc, OBJCORE_MAGIC);
 
 	bo = VBO_GetBusyObj(wrk, req);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -547,9 +525,13 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	bo->vary = req->vary_b;
 	req->vary_b = NULL;
 
-	AZ(bo->fetch_objcore);
 	HSH_Ref(oc);
 	bo->fetch_objcore = oc;
+
+	if (oldoc != NULL) {
+		HSH_Ref(oldoc);
+		bo->ims_objcore = oldoc;
+	}
 
 	AZ(bo->req);
 	bo->req = req;

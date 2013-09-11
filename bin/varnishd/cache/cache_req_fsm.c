@@ -416,7 +416,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	switch (wrk->handling) {
 	case VCL_RET_DELIVER:
 		if (boc != NULL) {
-			VBF_Fetch(wrk, req, boc, VBF_BACKGROUND);
+			VBF_Fetch(wrk, req, boc, oc, VBF_BACKGROUND);
 		} else {
 			(void)HTTP1_DiscardReqBody(req);// XXX: handle err
 		}
@@ -494,7 +494,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 	switch (wrk->handling) {
 	case VCL_RET_FETCH:
 		wrk->stats.cache_miss++;
-		VBF_Fetch(wrk, req, req->objcore, VBF_NORMAL);
+		VBF_Fetch(wrk, req, req->objcore, NULL, VBF_NORMAL);
 		req->req_step = R_STP_FETCH;
 		return (REQ_FSM_MORE);
 	case VCL_RET_ERROR:
@@ -553,7 +553,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 		req->acct_req.pass++;
 		req->objcore = HSH_Private(wrk);
 		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-		VBF_Fetch(wrk, req, req->objcore, VBF_PASS);
+		VBF_Fetch(wrk, req, req->objcore, NULL, VBF_PASS);
 		req->req_step = R_STP_FETCH;
 		break;
 	default:
