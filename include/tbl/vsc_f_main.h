@@ -552,25 +552,6 @@ VSC_F(esi_warnings,		uint64_t, 0, 'a', diag,
 
 /*--------------------------------------------------------------------*/
 
-VSC_F(dir_dns_lookups,		uint64_t, 0, 'a', diag,
-    "DNS director lookups",
-	""
-)
-VSC_F(dir_dns_failed,		uint64_t, 0, 'a', diag,
-    "DNS director failed lookups",
-	""
-)
-VSC_F(dir_dns_hit,		uint64_t, 0, 'a', diag,
-    "DNS director cached lookups hit",
-	""
-)
-VSC_F(dir_dns_cache_full,	uint64_t, 0, 'a', debug,
-    "DNS director full dnscache",
-	""
-)
-
-/*--------------------------------------------------------------------*/
-
 VSC_F(vmods,			uint64_t, 0, 'i', info,
     "Loaded VMODs",
 	""
