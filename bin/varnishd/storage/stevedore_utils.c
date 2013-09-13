@@ -204,8 +204,8 @@ STV_FileSize(int fd, const char *size, unsigned *granularity, const char *ctx)
 			ARGV_ERR("(%s) size \"%s\": %s\n", ctx, size, q);
 
 		if (l < 1024*1024)
-			ARGV_ERR("(-spersistent) size \"%s\": too small, "
-				 "did you forget to specify M or G?\n", size);
+			ARGV_ERR("(%s) size \"%s\": too small, "
+				 "did you forget to specify M or G?\n", ctx, size);
 	}
 
 	/*
