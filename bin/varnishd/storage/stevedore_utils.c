@@ -201,7 +201,7 @@ STV_FileSize(int fd, const char *size, unsigned *granularity, const char *ctx)
 		q = VNUM_2bytes(size, &l, fssize);
 
 		if (q != NULL)
-			ARGV_ERR("(%s) size \"%s\": %s\n", size, ctx, q);
+			ARGV_ERR("(%s) size \"%s\": %s\n", ctx, size, q);
 
 		if (l < 1024*1024)
 			ARGV_ERR("(-spersistent) size \"%s\": too small, "
