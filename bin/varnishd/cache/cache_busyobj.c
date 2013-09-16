@@ -228,7 +228,8 @@ ssize_t
 VBO_waitlen(struct busyobj *bo, ssize_t l)
 {
 	Lck_Lock(&bo->mtx);
-	assert(l <= bo->fetch_obj->len);
+	if (bo->state <= BOS_FINISHED)
+		assert(l <= bo->fetch_obj->len);
 	while (1) {
 		if (bo->fetch_obj->len > l || bo->state >= BOS_FINISHED) {
 			l = bo->fetch_obj->len;
