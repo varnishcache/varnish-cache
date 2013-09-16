@@ -220,7 +220,7 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 		http_PrintfHeader(bo->beresp, "Content-Length: %jd",
 		    bo->ims_obj->len);
 		do_ims = 1;
-	} else 
+	} else
 		do_ims = 0;
 
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, bo->beresp->ws);

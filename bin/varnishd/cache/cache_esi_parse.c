@@ -457,7 +457,6 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 			vep->include_src = NULL;
 			return;
 		}
-		XXXAZ(vep->include_src);	/* multiple src= */
 		vep->include_src = vep->attr_vsb;
 		return;
 	}
@@ -486,17 +485,34 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 	l = VSB_len(vep->include_src);
 	h = 0;
 
-	VSB_printf(vep->vsb, "%c", VEC_INCL);
 	if (l > 7 && !memcmp(p, "http://", 7)) {
 		h = p + 7;
 		p = strchr(h, '/');
 		AN(p);
 		Debug("HOST <%.*s> PATH <%s>\n", (int)(p-h),h, p);
-		VSB_printf(vep->vsb, "Host: %.*s%c",
-		    (int)(p-h), h, 0);
+		VSB_printf(vep->vsb, "%c", VEC_INCL);
+		VSB_printf(vep->vsb, "Host: %.*s%c", (int)(p-h), h, 0);
+	} else if (l > 8 && !memcmp(p, "https://", 8)) {
+		if (!FEATURE(FEATURE_ESI_IGNORE_HTTPS)) {
+			vep_warn(vep,
+			    "ESI 1.0 <esi:include> with https:// ignored");
+			vep->state = VEP_TAGERROR;
+			vep->attr_vsb = NULL;
+			vep->include_src = NULL;
+			return;
+		}
+		vep_warn(vep,
+		    "ESI 1.0 <esi:include> https:// treated as http://");
+		h = p + 8;
+		p = strchr(h, '/');
+		AN(p);
+		VSB_printf(vep->vsb, "%c", VEC_INCL);
+		VSB_printf(vep->vsb, "Host: %.*s%c", (int)(p-h), h, 0);
 	} else if (*p == '/') {
+		VSB_printf(vep->vsb, "%c", VEC_INCL);
 		VSB_printf(vep->vsb, "%c", 0);
 	} else {
+		VSB_printf(vep->vsb, "%c", VEC_INCL);
 		VSB_printf(vep->vsb, "%c", 0);
 		url = vep->bo->bereq->hd[HTTP_HDR_URL];
 		/* Look for the last / before a '?' */

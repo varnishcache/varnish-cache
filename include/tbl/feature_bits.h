@@ -41,3 +41,7 @@ FEATURE_BIT(NO_COREDUMP,	no_coredump,	"",
     "No coredumps.",
     "Don't attempt to coredump child process on panics."
 )
+FEATURE_BIT(ESI_IGNORE_HTTPS,	esi_ignore_https,	"",
+    "Treat HTTPS as HTTP in ESI:includes",
+    "Convert <esi:include src\"https://... to http://..."
+)

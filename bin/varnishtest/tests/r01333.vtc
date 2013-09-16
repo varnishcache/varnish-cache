@@ -1,0 +1,46 @@
+varnishtest "ESI:include with https"
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -body {
+		<html>
+		Before include
+		<!--esi <esi:include src="https://bozz/body"/> -->
+		After include
+	}
+
+	rxreq
+	expect req.url == "/foo"
+	txresp -body {
+		<html>
+		Before include
+		<!--esi <esi:include src="https://bozz/body"/> -->
+		After include
+	}
+	rxreq
+	expect req.url == "/body"
+	expect req.http.host == "bozz"
+	txresp -body BAR
+
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_esi = true;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 49
+} -run
+
+varnish v1 -cliok "param.set feature +esi_ignore_https"
+
+client c1 {
+	txreq -url /foo
+	rxresp
+	expect resp.bodylen == 52
+} -run
