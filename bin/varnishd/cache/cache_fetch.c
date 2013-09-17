@@ -455,6 +455,7 @@ static enum fetch_step
 vbf_stp_done(void)
 {
 	WRONG("Just plain wrong");
+	return (F_STP_DONE);
 }
 
 /*--------------------------------------------------------------------
