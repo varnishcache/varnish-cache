@@ -595,7 +595,6 @@ struct object {
 	struct objcore		*objcore;
 
 	uint8_t			*vary;
-	unsigned		hits;
 	uint16_t		response;
 
 	/* XXX: make bitmap */
@@ -609,6 +608,8 @@ struct object {
 
 	struct exp		exp;
 
+	/* VCL only variables */
+	long			hits;
 	double			last_modified;
 
 	struct http		*http;

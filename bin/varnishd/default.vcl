@@ -137,6 +137,13 @@ sub vcl_backend_response {
 }
 
 sub vcl_deliver {
+    /*
+     * These two write to the stored object causing extra page faults
+     * Enable them only if you need them.
+     *
+     * set obj.hits = obj.hits + 1;
+     * set obj.lastuse = now;
+     */
     return (deliver);
 }
 

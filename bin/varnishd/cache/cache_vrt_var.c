@@ -41,7 +41,6 @@
 #include "vrt_obj.h"
 #include "vsa.h"
 #include "vtcp.h"
-#include "vtim.h"
 
 static char vrt_hostname[255] = "";
 
@@ -609,25 +608,30 @@ VRT_r_server_port(const struct vrt_ctx *ctx)
 
 /*--------------------------------------------------------------------*/
 
-long
-VRT_r_obj_hits(const struct vrt_ctx *ctx)
-{
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->obj, OBJECT_MAGIC);	/* XXX */
-	return (ctx->req->obj->hits);
+#define VOBJ_L(type, field)						\
+void									\
+VRT_l_obj_##field(const struct vrt_ctx *ctx, type a)			\
+{									\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);				\
+	CHECK_OBJ_NOTNULL(ctx->req->obj, OBJECT_MAGIC);			\
+	ctx->req->obj->field = a;					\
 }
 
-double
-VRT_r_obj_lastuse(const struct vrt_ctx *ctx)
-{
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->obj, OBJECT_MAGIC);	/* XXX */
-	return (VTIM_real() - ctx->req->obj->last_use);
+#define VOBJ_R(type, field)						\
+type									\
+VRT_r_obj_##field(const struct vrt_ctx *ctx)				\
+{									\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);				\
+	CHECK_OBJ_NOTNULL(ctx->req->obj, OBJECT_MAGIC);			\
+	return (ctx->req->obj->field);					\
 }
+
+VOBJ_L(long, hits)
+VOBJ_R(long, hits)
+VOBJ_L(double, last_use)
+VOBJ_R(double, last_use)
 
 unsigned
 VRT_r_obj_uncacheable(const struct vrt_ctx *ctx)

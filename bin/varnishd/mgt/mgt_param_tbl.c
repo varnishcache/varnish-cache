@@ -603,11 +603,5 @@ const struct parspec mgt_parspec[] = {
 		0,
 		"10,100,10", ""},
 
-	{ "obj_readonly", tweak_bool, &mgt_param.obj_readonly, 0, 0,
-		"If set, we do not update obj.hits and obj.lastuse to"
-		" avoid dirtying VM pages associated with cached objects.",
-		0,
-		"false", "bool"},
-
 	{ NULL, NULL, NULL }
 };

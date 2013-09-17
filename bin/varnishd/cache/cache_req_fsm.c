@@ -108,8 +108,6 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		if ((req->t_resp - req->obj->objcore->last_lru) >
 		    cache_param->lru_timeout && EXP_Touch(req->obj->objcore))
 			req->obj->objcore->last_lru = req->t_resp;
-		if (!cache_param->obj_readonly)
-			req->obj->last_use = req->t_resp; /* XXX: locking ? */
 	}
 
 	HTTP_Setup(req->resp, req->ws, req->vsl, HTTP_Resp);

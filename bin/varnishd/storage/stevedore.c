@@ -284,6 +284,7 @@ STV_MkObject(struct stevedore *stv, struct busyobj *bo,
 	HTTP_Setup(o->http, bo->ws_o, bo->vsl, HTTP_Obj);
 	o->http->magic = HTTP_MAGIC;
 	o->exp = bo->exp;
+	o->last_use = bo->exp.entered;
 	VTAILQ_INIT(&o->store);
 	bo->stats->n_object++;
 

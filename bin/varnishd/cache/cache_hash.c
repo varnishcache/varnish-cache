@@ -435,8 +435,6 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			oc->refcnt++;
 			Lck_Unlock(&oh->mtx);
 			assert(HSH_DerefObjHead(&wrk->stats, &oh));
-			if (!cache_param->obj_readonly && o->hits < INT_MAX)
-				o->hits++;
 			*ocp = oc;
 			return (HSH_HIT);
 		}
