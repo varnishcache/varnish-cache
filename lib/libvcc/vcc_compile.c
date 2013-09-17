@@ -61,7 +61,7 @@
 
 #include "vcc_compile.h"
 
-#include "libvcl.h"
+#include "libvcc.h"
 #include "vfil.h"
 
 struct method method_tab[] = {

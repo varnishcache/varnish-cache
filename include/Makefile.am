@@ -42,7 +42,7 @@ nobase_noinst_HEADERS = \
 	compat/execinfo.h \
 	compat/srandomdev.h \
 	flopen.h \
-	libvcl.h \
+	libvcc.h \
 	persistent.h \
 	vcli_common.h \
 	vcli_priv.h \
@@ -84,9 +84,9 @@ nobase_pkgdatainclude_HEADERS = \
 	vsb.h \
 	vsha256.h
 
-tbl/vrt_stv_var.h tbl/vcl_returns.h tbl/vcc_types.h vcl.h vrt_obj.h: $(top_srcdir)/lib/libvcl/generate.py $(top_srcdir)/include/vrt.h
+tbl/vrt_stv_var.h tbl/vcl_returns.h tbl/vcc_types.h vcl.h vrt_obj.h: $(top_srcdir)/lib/libvcc/generate.py $(top_srcdir)/include/vrt.h
 	mkdir -p tbl
-	@PYTHON@ $(top_srcdir)/lib/libvcl/generate.py $(top_srcdir) $(top_builddir)
+	@PYTHON@ $(top_srcdir)/lib/libvcc/generate.py $(top_srcdir) $(top_builddir)
 
 BUILT_SOURCES = vcs_version.h vmod_abi.h
 MAINTAINERCLEANFILES = vcs_version.h 

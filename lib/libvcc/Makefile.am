@@ -4,11 +4,11 @@ AM_LDFLAGS  = $(AM_LT_LDFLAGS)
 
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include
 
-pkglib_LTLIBRARIES = libvcl.la
+pkglib_LTLIBRARIES = libvcc.la
 
-libvcl_la_LDFLAGS = $(AM_LDFLAGS) -avoid-version
+libvcc_la_LDFLAGS = $(AM_LDFLAGS) -avoid-version
 
-libvcl_la_SOURCES = \
+libvcc_la_SOURCES = \
 	vcc_compile.h \
 	vcc_token_defs.h \
 	\

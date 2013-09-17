@@ -42,7 +42,7 @@
 #include "common/params.h"
 #include "mgt/mgt.h"
 
-#include "libvcl.h"
+#include "libvcc.h"
 #include "vcl.h"
 #include "vcli.h"
 #include "vcli_priv.h"

@@ -118,7 +118,7 @@ varnishd_LDFLAGS = -export-dynamic
 varnishd_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
-	$(top_builddir)/lib/libvcl/libvcl.la \
+	$(top_builddir)/lib/libvcc/libvcc.la \
 	$(top_builddir)/lib/libvgz/libvgz.la \
 	@JEMALLOC_LDADD@ \
 	@PCRE_LIBS@ \

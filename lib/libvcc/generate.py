@@ -627,7 +627,7 @@ def file_header(fo):
 
 polish_tokens(tokens)
 
-fo = open(buildroot + "/lib/libvcl/vcc_token_defs.h", "w")
+fo = open(buildroot + "/lib/libvcc/vcc_token_defs.h", "w")
 
 file_header(fo)
 
@@ -807,7 +807,7 @@ def restrict(fo, spec):
 fh = open(buildroot + "/include/vrt_obj.h", "w")
 file_header(fh)
 
-fo = open(buildroot + "/lib/libvcl/vcc_obj.c", "w")
+fo = open(buildroot + "/lib/libvcc/vcc_obj.c", "w")
 file_header(fo)
 
 fo.write("""
@@ -866,7 +866,7 @@ fh.close()
 
 #######################################################################
 
-fo = open(buildroot + "/lib/libvcl/vcc_fixed_token.c", "w")
+fo = open(buildroot + "/lib/libvcc/vcc_fixed_token.c", "w")
 
 file_header(fo)
 fo.write("""

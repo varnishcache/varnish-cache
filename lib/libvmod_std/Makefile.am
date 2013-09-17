@@ -11,7 +11,7 @@ dist_man_MANS = vmod_std.3
 
 vmoddir = $(pkglibdir)/vmods
 vmod_srcdir = $(top_srcdir)/lib/libvmod_std
-vmodtool = $(top_srcdir)/lib/libvcl/vmodtool.py
+vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
 vmod_LTLIBRARIES = libvmod_std.la
 
 libvmod_std_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-version -shared

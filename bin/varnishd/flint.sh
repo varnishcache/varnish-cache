@@ -23,7 +23,7 @@ flexelint \
 	mgt/*.c \
 	../../lib/libvarnish/*.c \
 	../../lib/libvarnishcompat/execinfo.c \
-	../../lib/libvcl/*.c \
+	../../lib/libvcc/*.c \
 	../../lib/libvmod_std/*.c \
 	../../lib/libvmod_debug/*.c \
 	../../lib/libvmod_directors/*.c \

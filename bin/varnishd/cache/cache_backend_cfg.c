@@ -147,7 +147,7 @@ VBE_DropRefConn(struct backend *b)
 }
 
 /*--------------------------------------------------------------------
- * See lib/libvcl/vcc_backend.c::emit_sockaddr()
+ * See lib/libvcc/vcc_backend.c::emit_sockaddr()
  */
 
 static void
