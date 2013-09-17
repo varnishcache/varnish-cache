@@ -10,7 +10,7 @@ server s1 {
 
 varnish v1 -vcl+backend { 
 	sub vcl_backend_response {
-		set beresp.ttl = 0.1s;
+		set beresp.ttl = 0.5s;
 		set beresp.grace = 10s;
 	}
 } -start
@@ -30,6 +30,7 @@ client c1 {
 
 	# But bg fetch was kicked off
 	sema r2 sync 2
+	delay .2
 
 	# And now we get the new object
 	txreq
