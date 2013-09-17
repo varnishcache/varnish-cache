@@ -23,7 +23,7 @@ varnish v1 -arg "-p thread_pool_stack=262144" -vcl+backend {
 	}
 } -start 
 
-varnish v1 -cliok "param.set esi_syntax 0xc"
+varnish v1 -cliok "param.set debug +esi_chop"
 varnish v1 -cliok "param.set http_gzip_support true"
 varnish v1 -cliok "param.set gzip_memlevel 1"
 

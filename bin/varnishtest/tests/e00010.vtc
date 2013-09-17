@@ -15,7 +15,7 @@ varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_esi = true;
 	}
-} -start -cli "param.set esi_syntax 2"
+} -start -cli "param.set feature +esi_ignore_other_elements"
 
 client c1 {
 	txreq 

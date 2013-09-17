@@ -42,7 +42,8 @@ varnish v1 -vcl+backend {
 } -start 
 
 varnish v1 -cliok "param.set http_gzip_support true"
-varnish v1 -cliok "param.set esi_syntax 0x3e" 
+varnish v1 -cliok "param.set debug +esi_chop" 
+varnish v1 -cliok "param.set feature +esi_disable_xml_check" 
 
 varnish v1 -cliok "param.set debug +syncvsl"
 

@@ -268,9 +268,6 @@ static void
 vep_emit_skip(const struct vep_state *vep, ssize_t l)
 {
 
-	if (cache_param->esi_syntax & 0x20) {
-		Debug("---> SKIP(%jd)\n", (intmax_t)l);
-	}
 	vep_emit_len(vep, l, VEC_S1, VEC_S2, VEC_S8);
 }
 
@@ -279,9 +276,6 @@ vep_emit_verbatim(const struct vep_state *vep, ssize_t l, ssize_t l_crc)
 {
 	uint8_t buf[4];
 
-	if (cache_param->esi_syntax & 0x20) {
-		Debug("---> VERBATIM(%jd)\n", (intmax_t)l);
-	}
 	vep_emit_len(vep, l, VEC_V1, VEC_V2, VEC_V8);
 	if (vep->dogzip) {
 		vep_emit_len(vep, l_crc, VEC_C1, VEC_C2, VEC_C8);
@@ -600,7 +594,7 @@ VEP_Parse(const struct busyobj *bo, const char *p, size_t l)
 		 */
 
 		if (vep->state == VEP_START) {
-			if (cache_param->esi_syntax & 0x1)
+			if (FEATURE(FEATURE_ESI_DISABLE_XML_CHECK))
 				vep->state = VEP_NEXTTAG;
 			else
 				vep->state = VEP_TESTXML;
@@ -633,7 +627,7 @@ VEP_Parse(const struct busyobj *bo, const char *p, size_t l)
 		 */
 
 		} else if (vep->state == VEP_NOTMYTAG) {
-			if (cache_param->esi_syntax & 0x2) {
+			if (FEATURE(FEATURE_ESI_IGNORE_OTHER_ELEMENTS)) {
 				p++;
 				vep->state = VEP_NEXTTAG;
 			} else {

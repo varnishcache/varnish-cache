@@ -30,7 +30,7 @@ client c1 {
 	expect resp.bodylen == 57
 } -run
 
-varnish v1  -cli "param.set esi_syntax 1" 
+varnish v1  -cli "param.set feature +esi_disable_xml_check" 
 
 client c1 {
 	txreq -url bar

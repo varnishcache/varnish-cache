@@ -59,7 +59,7 @@ struct vef_priv {
 /*---------------------------------------------------------------------
  * Read some bytes.
  *
- * If the esi_syntax&8 bit is set, we read only a couple of bytes at
+ * If the DBG_ESI_CHOP is set, we read only a couple of bytes at
  * a time, in order to stress the parse/pending/callback code.
  */
 
@@ -70,7 +70,7 @@ vef_read(struct http_conn *htc, void *buf, ssize_t buflen, ssize_t bytes)
 
 	if (buflen < bytes)
 		bytes = buflen;
-	if (cache_param->esi_syntax & 0x8) {
+	if (DO_DEBUG(DBG_ESI_CHOP)) {
 		d = (random() & 3) + 1;
 		if (d < bytes)
 			bytes = d;

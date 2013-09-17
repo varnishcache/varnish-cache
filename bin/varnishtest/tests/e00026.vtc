@@ -35,7 +35,7 @@ varnish v1 -vcl+backend {
 	}
 } -start 
 
-varnish v1 -cliok "param.set esi_syntax 0x21" 
+varnish v1 -cliok "param.set feature +esi_disable_xml_check"
 
 varnish v1 -cliok "param.set debug +syncvsl"
 
