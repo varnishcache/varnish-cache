@@ -218,7 +218,7 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 	if (bo->ims_obj != NULL && bo->beresp->status == 304) {
 		bo->beresp->status = 200;
 		http_PrintfHeader(bo->beresp, "Content-Length: %jd",
-		    bo->ims_obj->len);
+		    (intmax_t)bo->ims_obj->len);
 		do_ims = 1;
 	} else
 		do_ims = 0;
