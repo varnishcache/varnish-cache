@@ -4,7 +4,7 @@ server s1 {
 	# This response should almost completely fill the storage
 	rxreq
 	expect req.url == /url1
-	txresp -bodylen 1048050
+	txresp -bodylen 1048100
 
 	# The next one should not fit in the storage, ending up in transient
 	# with zero ttl (=shortlived)
@@ -19,19 +19,33 @@ server s1 {
 } -start
 
 varnish v1 -arg "-p expiry_sleep=0.01 -p nuke_limit=0 -p shortlived=0" \
-	-storage "-smalloc,1m" -vcl+backend { } -start
+	-storage "-smalloc,1m" -vcl+backend { 
+	sub vcl_backend_response {
+		set beresp.do_stream = false;
+	}
+} -start
 
 client c1 {
 	txreq -url /url1
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 1048050
+	expect resp.bodylen == 1048100
+} -run
 
+delay .1
+
+varnish v1 -expect SMA.s0.g_space < 1000
+
+client c1 {
 	txreq -url /url2
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 1024
+} -run
 
+delay .1
+
+client c1 {
 	txreq -url /url2
 	rxresp
 	expect resp.status == 200
