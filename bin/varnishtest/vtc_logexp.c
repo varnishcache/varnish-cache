@@ -97,6 +97,7 @@ struct logexp {
 	char				*query;
 
 	struct VSM_data			*vsm;
+	struct vsb			*n_arg;
 	struct VSL_data			*vsl;
 	struct VSLQ			*vslq;
 	pthread_t			tp;
@@ -132,6 +133,8 @@ logexp_delete(struct logexp *le)
 	free(le->name);
 	free(le->query);
 	VSM_Delete(le->vsm);
+	if (le->n_arg)
+		VSB_delete(le->n_arg);
 	FREE_OBJ(le);
 }
 
@@ -308,6 +311,15 @@ logexp_start(struct logexp *le)
 	AZ(le->vsl);
 	AZ(le->vslq);
 
+	if (le->n_arg == NULL) {
+		vtc_log(le->vl, 0, "-v argument not given");
+		return;
+	}
+	if (VSM_n_Arg(le->vsm, VSB_data(le->n_arg)) <= 0) {
+		vtc_log(le->vl, 0, "-v argument error: %s",
+		    VSM_Error(le->vsm));
+		return;
+	}
 	if (VSM_Open(le->vsm)) {
 		vtc_log(le->vl, 0, "VSM_Open: %s", VSM_Error(le->vsm));
 		return;
@@ -453,7 +465,7 @@ cmd_logexp(CMD_ARGS)
 {
 	struct logexp *le, *le2;
 	const char tmpdir[] = "${tmpdir}";
-	struct vsb *vsb, *vsb2;
+	struct vsb *vsb;
 
 	(void)priv;
 	(void)cmd;
@@ -510,19 +522,18 @@ cmd_logexp(CMD_ARGS)
 				vtc_log(le->vl, 0, "Missing -v argument");
 				return;
 			}
+			if (le->n_arg != NULL) {
+				VSB_delete(le->n_arg);
+				le->n_arg = NULL;
+			}
 			vsb = VSB_new_auto();
+			AN(vsb);
 			AZ(VSB_printf(vsb, "%s/%s", tmpdir, av[1]));
 			AZ(VSB_finish(vsb));
-			vsb2 = macro_expand(le->vl, VSB_data(vsb));
+			le->n_arg = macro_expand(le->vl, VSB_data(vsb));
 			VSB_delete(vsb);
-			if (vsb2 == NULL)
+			if (le->n_arg == NULL)
 				return;
-			if (VSM_n_Arg(le->vsm, VSB_data(vsb2)) <= 0) {
-				vtc_log(le->vl, 0, "-v argument error: %s",
-				    VSM_Error(le->vsm));
-				return;
-			}
-			VSB_delete(vsb2);
 			av++;
 			continue;
 		}
