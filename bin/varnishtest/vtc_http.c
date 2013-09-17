@@ -220,7 +220,7 @@ cmd_http_expect(CMD_ARGS)
 	vre_t *vre;
 	const char *error;
 	int erroroffset;
-	int i;
+	int i, retval = -1;
 
 	(void)cmd;
 	(void)vl;
@@ -236,37 +236,33 @@ cmd_http_expect(CMD_ARGS)
 	cmp = av[1];
 	rhs = cmd_var_resolve(hp, av[2]);
 	if (!strcmp(cmp, "==")) {
-		if (strcmp(lhs, rhs))
-			vtc_log(hp->vl, 0, "EXPECT %s (%s) %s %s (%s) failed",
-			    av[0], lhs, av[1], av[2], rhs);
-		else
-			vtc_log(hp->vl, 4, "EXPECT %s (%s) %s %s (%s) match",
-			    av[0], lhs, av[1], av[2], rhs);
+		retval = strcmp(lhs, rhs) == 0;
+	} else if (!strcmp(cmp, "<")) {
+		retval = strcmp(lhs, rhs) < 0;
+	} else if (!strcmp(cmp, "<=")) {
+		retval = strcmp(lhs, rhs) <= 0;
+	} else if (!strcmp(cmp, ">=")) {
+		retval = strcmp(lhs, rhs) >= 0;
+	} else if (!strcmp(cmp, ">")) {
+		retval = strcmp(lhs, rhs) > 0;
 	} else if (!strcmp(cmp, "!=")) {
-		if (!strcmp(lhs, rhs))
-			vtc_log(hp->vl, 0, "EXPECT %s (%s) %s %s (%s) failed",
-			    av[0], lhs, av[1], av[2], rhs);
-		else
-			vtc_log(hp->vl, 4, "EXPECT %s (%s) %s %s (%s) match",
-			    av[0], lhs, av[1], av[2], rhs);
+		retval = strcmp(lhs, rhs) != 0;
 	} else if (!strcmp(cmp, "~") || !strcmp(cmp, "!~")) {
 		vre = VRE_compile(rhs, 0, &error, &erroroffset);
 		if (vre == NULL)
 			vtc_log(hp->vl, 0, "REGEXP error: %s (@%d) (%s)",
 			    error, erroroffset, rhs);
 		i = VRE_exec(vre, lhs, strlen(lhs), 0, 0, NULL, 0, 0);
-		if ((i >= 0 && *cmp == '~') || (i < 0 && *cmp == '!'))
-			vtc_log(hp->vl, 4, "EXPECT %s (%s) %s \"%s\" match",
-			    av[0], lhs, cmp, rhs);
-		else
-			vtc_log(hp->vl, 0, "EXPECT %s (%s) %s \"%s\" failed",
-			    av[0], lhs, cmp, rhs);
+		retval = (i >= 0 && *cmp == '~') || (i < 0 && *cmp == '!');
 		VRE_free(&vre);
-	} else {
+	}
+	if (retval == -1)
 		vtc_log(hp->vl, 0,
 		    "EXPECT %s (%s) %s %s (%s) test not implemented",
 		    av[0], lhs, av[1], av[2], rhs);
-	}
+	else
+		vtc_log(hp->vl, retval ? 4 : 0, "EXPECT %s (%s) %s \"%s\" %s",
+		    av[0], lhs, cmp, rhs, retval ? "match" : "failed");
 }
 
 /**********************************************************************
