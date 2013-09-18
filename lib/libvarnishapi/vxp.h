@@ -100,6 +100,7 @@ struct vex_val {
 	long long		val_int;
 	double			val_float;
 	char			*val_string;
+	size_t			val_stringlen;
 	vre_t			*val_regex;
 };
 

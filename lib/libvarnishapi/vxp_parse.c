@@ -134,6 +134,7 @@ vxp_expr_str(struct vxp *vxp, struct vex_val **pval)
 	(*pval)->type = VEX_STRING;
 	(*pval)->val_string = strdup(vxp->t->dec);
 	AN((*pval)->val_string);
+	(*pval)->val_stringlen = strlen((*pval)->val_string);
 	vxp_NextToken(vxp);
 }
 

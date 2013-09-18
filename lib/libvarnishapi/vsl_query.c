@@ -55,11 +55,14 @@ struct vslq_query {
 static int
 vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 {
+	const struct vex_val *val;
 	int reclen;
 	const char *recdata;
 
 	AN(vex);
 	AN(rec);
+	val = vex->val;
+	AN(val);
 
 	reclen = VSL_LEN(rec->ptr);
 	recdata = VSL_CDATA(rec->ptr);
@@ -67,13 +70,13 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	switch (vex->tok) {
 	case T_SEQ:		/* eq */
 		assert(vex->val->type == VEX_STRING);
-		if (reclen == strlen(vex->val->val_string) &&
+		if (reclen == val->val_stringlen &&
 		    !strncmp(vex->val->val_string, recdata, reclen))
 			return (1);
 		return (0);
 	case T_SNEQ:		/* ne */
 		assert(vex->val->type == VEX_STRING);
-		if (reclen != strlen(vex->val->val_string) ||
+		if (reclen != val->val_stringlen ||
 		    strncmp(vex->val->val_string, recdata, reclen))
 			return (1);
 		return (0);
