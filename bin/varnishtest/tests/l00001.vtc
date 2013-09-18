@@ -23,7 +23,8 @@ logexpect l1 -d 1 -g request -q "Begin eq 'req 1000'" {
 } -run
 
 # Test 'ne' operator
-logexpect l1 -d 1 -g request -q "Begin ne 'req 1001'" {
+logexpect l1 -d 1 -g request -q "ReqProtocol ne 'HTTP/1.0'" {
 	expect * *	Begin
 	expect * =	ReqEnd
 } -run
+
