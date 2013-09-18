@@ -273,6 +273,9 @@ logexp_thread(void *priv)
 
 	i = 0;
 	AZ(le->test);
+	vtc_log(le->vl, 4, "beg|");
+	if (le->query != NULL)
+		vtc_log(le->vl, 4, "qry| %s", le->query);
 	logexp_next(le);
 	while (le->test) {
 		i = VSLQ_Dispatch(le->vslq, logexp_dispatch, le);
@@ -281,7 +284,7 @@ logexp_thread(void *priv)
 		if (i == 0 && le->test)
 			VTIM_sleep(0.01);
 	}
-	vtc_log(le->vl, 4, "end of test script");
+	vtc_log(le->vl, 4, "end|");
 
 	return (NULL);
 }
