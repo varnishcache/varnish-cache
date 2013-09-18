@@ -1,0 +1,22 @@
+varnishtest "Test VSL query operators"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+} -start
+
+logexpect l1 -v v1
+
+client c1 {
+	txreq -hdr "Foo: bar"
+	rxresp
+	expect resp.status == 200
+} -run
+
+logexpect l1 -d 1 -g request -q "Begin eq 'req 1000'" {
+	expect * *	Begin
+	expect * =	ReqEnd
+} -run
