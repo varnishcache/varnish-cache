@@ -69,24 +69,26 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
 	struct vmod *v;
 	void *x, *y, *z, *w;
 	char buf[256];
+	void *dlhdl;
 
 	ASSERT_CLI();
 
+	dlhdl = dlopen(path, RTLD_NOW | RTLD_LOCAL);
+	if (dlhdl == NULL) {
+		VCLI_Out(cli, "Loading VMOD %s from %s:\n", nm, path);
+		VCLI_Out(cli, "dlopen() failed: %s\n", dlerror());
+		VCLI_Out(cli, "Check child process permissions.\n");
+		return (1);
+	}
+
 	VTAILQ_FOREACH(v, &vmods, list)
-		if (!strcmp(v->nm, nm))	// Also path, len ?
+		if (v->hdl == dlhdl)
 			break;
 	if (v == NULL) {
 		ALLOC_OBJ(v, VMOD_MAGIC);
 		AN(v);
 
-		v->hdl = dlopen(path, RTLD_NOW | RTLD_LOCAL);
-		if (v->hdl == NULL) {
-			VCLI_Out(cli, "Loading VMOD %s from %s:\n", nm, path);
-			VCLI_Out(cli, "dlopen() failed: %s\n", dlerror());
-			VCLI_Out(cli, "Check child process permissions.\n");
-			FREE_OBJ(v);
-			return (1);
-		}
+		v->hdl = dlhdl;
 
 		bprintf(buf, "Vmod_%s_Name", nm);
 		x = dlsym(v->hdl, buf);
@@ -158,11 +160,17 @@ VRT_Vmod_Fini(void **hdl)
 	AN(*hdl);
 	CAST_OBJ_NOTNULL(v, *hdl, VMOD_MAGIC);
 	*hdl = NULL;
-	if (--v->ref != 0)
-		return;
+
 #ifndef DONT_DLCLOSE_VMODS
+	/*
+	 * atexit(3) handlers are not called during dlclose(3).  We don't
+	 * normally use them, but we do when running GCOV.  This option
+	 * enables us to do that.
+	 */
 	AZ(dlclose(v->hdl));
 #endif
+	if (--v->ref != 0)
+		return;
 	free(v->nm);
 	free(v->path);
 	VTAILQ_REMOVE(&vmods, v, list);
