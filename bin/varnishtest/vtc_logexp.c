@@ -247,7 +247,7 @@ logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				logexp_next(le);
 				if (le->test == NULL)
 					/* End of test script */
-					return (0);
+					return (1);
 			}
 			if (skip)
 				le->skip_cnt++;
