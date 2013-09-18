@@ -6,7 +6,7 @@ server s1 {
 	rxreq
 	send "HTTP/1.1 200 Ok\r\nConnection: close\r\n\r\n"
 	delay 1.5
-	send "Baba\n"
+	# send "Baba\n"
 } -start
 
 varnish v1 -vcl+backend {
@@ -25,7 +25,7 @@ client c1 {
 varnish v1 -expect n_object == 0
 varnish v1 -expect n_objectcore == 0
 
-server s1 {
+server s1 -wait {
 	rxreq
 	send "HTTP/1.1 200 Ok\r\nConnection: close\r\n\r\n"
 	delay 0.5
