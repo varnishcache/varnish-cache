@@ -53,18 +53,48 @@ struct vslq_query {
 };
 
 static int
+vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
+{
+	int reclen;
+	const char *recdata;
+
+	AN(vex);
+	AN(rec);
+
+	reclen = VSL_LEN(rec->ptr);
+	recdata = VSL_CDATA(rec->ptr);
+
+	switch (vex->tok) {
+	case T_SEQ:		/* eq */
+		assert(vex->val->type == VEX_STRING);
+		if (reclen == strlen(vex->val->val_string) &&
+		    !strncmp(vex->val->val_string, recdata, reclen))
+			return (1);
+		return (0);
+	case T_SNEQ:		/* ne */
+		assert(vex->val->type == VEX_STRING);
+		if (reclen != strlen(vex->val->val_string) ||
+		    strncmp(vex->val->val_string, recdata, reclen))
+			return (1);
+		return (0);
+	default:
+		INCOMPL();
+	}
+
+	return (0);
+}
+
+static int
 vslq_test(const struct vex *vex, struct VSL_transaction * const ptrans[])
 {
 	struct VSL_transaction *t;
-	int i, reclen, vallen;
-	const char *recdata;
+	int i;
 
 	CHECK_OBJ_NOTNULL(vex, VEX_MAGIC);
 	CHECK_OBJ_NOTNULL(vex->tag, VEX_TAG_MAGIC);
 	CHECK_OBJ_NOTNULL(vex->val, VEX_VAL_MAGIC);
 	AN(vex->val->val_string);
 
-	vallen = strlen(vex->val->val_string);
 	for (t = ptrans[0]; t != NULL; t = *++ptrans) {
 		AZ(VSL_ResetCursor(t->c));
 		while (1) {
@@ -79,11 +109,11 @@ vslq_test(const struct vex *vex, struct VSL_transaction * const ptrans[])
 			if (vex->tag->tag != VSL_TAG(t->c->rec.ptr))
 				continue;
 
-			reclen = VSL_LEN(t->c->rec.ptr);
-			recdata = VSL_CDATA(t->c->rec.ptr);
-			if (reclen == vallen &&
-			    !strncmp(vex->val->val_string, recdata, reclen))
-				return (1);
+			i = vslq_test_rec(vex, &t->c->rec);
+			if (i)
+				return (i);
+
+
 		}
 	}
 

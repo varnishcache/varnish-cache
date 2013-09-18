@@ -16,7 +16,14 @@ client c1 {
 	expect resp.status == 200
 } -run
 
+# Test 'eq' operator
 logexpect l1 -d 1 -g request -q "Begin eq 'req 1000'" {
+	expect * *	Begin
+	expect * =	ReqEnd
+} -run
+
+# Test 'ne' operator
+logexpect l1 -d 1 -g request -q "Begin ne 'req 1001'" {
 	expect * *	Begin
 	expect * =	ReqEnd
 } -run
