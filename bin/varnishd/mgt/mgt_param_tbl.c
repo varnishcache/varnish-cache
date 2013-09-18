@@ -336,7 +336,7 @@ const struct parspec mgt_parspec[] = {
 		"VCL can override this default value for each backend and "
 		"backend request.",
 		0,
-		"0.7", "s" },
+		"3.5", "s" },
 	{ "first_byte_timeout", tweak_timeout_double,
 		&mgt_param.first_byte_timeout,0, UINT_MAX,
 		"Default timeout for receiving first byte from backend. "
