@@ -8,8 +8,9 @@ server s1 {
 varnish v1 -cliok "param.set sigsegv_handler on" -vcl+backend {
 	C{
 #include <signal.h>
+#include <stdlib.h>
 }C
-	sub vcl_recv { C{ raise(SIGSEGV); }C }
+	sub vcl_recv { C{ raise(SIGSEGV); sleep(2); }C }
 } -start
 
 client c1 {
