@@ -17,14 +17,22 @@ client c1 {
 } -run
 
 # Test 'eq' operator
-logexpect l1 -d 1 -g request -q "Begin eq 'req 1000'" {
-	expect * *	Begin
+logexpect l1 -d 1 -g vxid -q "Begin eq 'req 1000'" {
+	expect * *	Begin	req
 	expect * =	ReqEnd
+	expect * =	End
 } -run
 
 # Test 'ne' operator
-logexpect l1 -d 1 -g request -q "ReqProtocol ne 'HTTP/1.0'" {
-	expect * *	Begin
+logexpect l1 -d 1 -g vxid -q "ReqProtocol ne 'HTTP/1.0'" {
+	expect * *	Begin	req
 	expect * =	ReqEnd
+	expect * =	End
 } -run
 
+# Test '==' operator
+logexpect l1 -d 1 -g vxid -q "RespStatus == 200" {
+	expect * *	Begin	req
+	expect * =	ReqEnd
+	expect * =	End
+} -run

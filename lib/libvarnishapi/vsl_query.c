@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "vas.h"
 #include "miniobj.h"
@@ -58,6 +59,8 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	const struct vex_val *val;
 	int reclen;
 	const char *recdata;
+	long long recint;
+	char *endptr;
 
 	AN(vex);
 	AN(rec);
@@ -67,17 +70,49 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	reclen = VSL_LEN(rec->ptr);
 	recdata = VSL_CDATA(rec->ptr);
 
+	/* Prepare */
 	switch (vex->tok) {
+	case T_EQ:		/* == */
+	case T_NEQ:		/* != */
+	case '<':
+	case '>':
+	case T_LEQ:		/* <= */
+	case T_GEQ:		/* >= */
+		/* Numerical comparison */
+		switch (val->type) {
+		case VEX_INT:
+			recint = strtoll(recdata, &endptr, 0);
+			if (*endptr == '\0' || isspace(*endptr))
+				break;
+			/* Can't parse - no match */
+			return (0);
+		default:
+			INCOMPL();
+		}
+		break;
+	}
+
+	/* Compare */
+	switch (vex->tok) {
+	case T_EQ:		/* == */
+		switch (val->type) {
+		case VEX_INT:
+			if (val->val_int == recint)
+				return (1);
+			return (0);
+		default:
+			INCOMPL();
+		}
 	case T_SEQ:		/* eq */
-		assert(vex->val->type == VEX_STRING);
-		if (reclen == val->val_stringlen &&
-		    !strncmp(vex->val->val_string, recdata, reclen))
+		assert(val->type == VEX_STRING);
+		if (reclen == val->val_stringlen + 1 &&
+		    !strncmp(val->val_string, recdata, reclen))
 			return (1);
 		return (0);
 	case T_SNEQ:		/* ne */
-		assert(vex->val->type == VEX_STRING);
-		if (reclen != val->val_stringlen ||
-		    strncmp(vex->val->val_string, recdata, reclen))
+		assert(val->type == VEX_STRING);
+		if (reclen != val->val_stringlen + 1 ||
+		    strncmp(val->val_string, recdata, reclen))
 			return (1);
 		return (0);
 	default:
@@ -96,7 +131,6 @@ vslq_test(const struct vex *vex, struct VSL_transaction * const ptrans[])
 	CHECK_OBJ_NOTNULL(vex, VEX_MAGIC);
 	CHECK_OBJ_NOTNULL(vex->tag, VEX_TAG_MAGIC);
 	CHECK_OBJ_NOTNULL(vex->val, VEX_VAL_MAGIC);
-	AN(vex->val->val_string);
 
 	for (t = ptrans[0]; t != NULL; t = *++ptrans) {
 		AZ(VSL_ResetCursor(t->c));
