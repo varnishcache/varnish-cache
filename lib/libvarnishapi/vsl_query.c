@@ -103,6 +103,15 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 		default:
 			INCOMPL();
 		}
+	case T_NEQ:		/* != */
+		switch (val->type) {
+		case VEX_INT:
+			if (val->val_int != recint)
+				return (1);
+			return (0);
+		default:
+			INCOMPL();
+		}
 	case T_SEQ:		/* eq */
 		assert(val->type == VEX_STRING);
 		if (reclen == val->val_stringlen + 1 &&
