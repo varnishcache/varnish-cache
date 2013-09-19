@@ -60,6 +60,7 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	int reclen;
 	const char *recdata;
 	long long recint;
+	double recfloat;
 	char *endptr;
 
 	AN(vex);
@@ -86,6 +87,12 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 				break;
 			/* Can't parse - no match */
 			return (0);
+		case VEX_FLOAT:
+			recfloat = strtod(recdata, &endptr);
+			if (*endptr == '\0' || isspace(*endptr))
+				break;
+			/* Can't parse - no match */
+			return (0);
 		default:
 			INCOMPL();
 		}
@@ -100,8 +107,12 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 			if (val->val_int == recint)
 				return (1);
 			return (0);
+		case VEX_FLOAT:
+			if (val->val_float == recfloat)
+				return (1);
+			return (0);
 		default:
-			INCOMPL();
+			WRONG("Wrong value type");
 		}
 	case T_NEQ:		/* != */
 		switch (val->type) {
@@ -109,8 +120,12 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 			if (val->val_int != recint)
 				return (1);
 			return (0);
+		case VEX_FLOAT:
+			if (val->val_float != recfloat)
+				return (1);
+			return (0);
 		default:
-			INCOMPL();
+			WRONG("Wrong value type");
 		}
 	case T_SEQ:		/* eq */
 		assert(val->type == VEX_STRING);
