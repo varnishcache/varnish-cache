@@ -218,13 +218,14 @@ VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
 
 
 	if (strchr(fmt, '%') == NULL) {
-		vslr(tag, vxid, fmt, strlen(fmt));
+		vslr(tag, vxid, fmt, strlen(fmt) + 1);
 	} else {
 		va_start(ap, fmt);
 		n = vsnprintf(buf, mlen, fmt, ap);
 		va_end(ap);
-		if (n > mlen)
-			n = mlen;
+		if (n > mlen - 1)
+			n = mlen - 1;
+		buf[n++] = '\0'; /* NUL-terminated */
 		vslr(tag, vxid, buf, n);
 	}
 }
@@ -261,6 +262,7 @@ void
 VSLbt(struct vsl_log *vsl, enum VSL_tag_e tag, txt t)
 {
 	unsigned l, mlen;
+	char *p;
 
 	Tcheck(t);
 	if (vsl_tag_is_masked(tag))
@@ -269,16 +271,18 @@ VSLbt(struct vsl_log *vsl, enum VSL_tag_e tag, txt t)
 
 	/* Truncate */
 	l = Tlen(t);
-	if (l > mlen)
-		l = mlen;
+	if (l > mlen - 1)
+		l = mlen - 1;
 
 	assert(vsl->wlp < vsl->wle);
 
 	/* Flush if necessary */
-	if (VSL_END(vsl->wlp, l) >= vsl->wle)
+	if (VSL_END(vsl->wlp, l + 1) >= vsl->wle)
 		VSL_Flush(vsl, 1);
-	assert(VSL_END(vsl->wlp, l) < vsl->wle);
-	memcpy(VSL_DATA(vsl->wlp), t.b, l);
+	assert(VSL_END(vsl->wlp, l + 1) < vsl->wle);
+	p = VSL_DATA(vsl->wlp);
+	memcpy(p, t.b, l);
+	p[l++] = '\0';		/* NUL-terminated */
 	vsl->wlp = vsl_hdr(tag, vsl->wlp, l, vsl->wid);
 	assert(vsl->wlp < vsl->wle);
 	vsl->wlr++;
@@ -321,15 +325,16 @@ VSLb(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, ...)
 	mlen = cache_param->shm_reclen;
 
 	/* Flush if we cannot fit a full size record */
-	if (VSL_END(vsl->wlp, mlen) >= vsl->wle)
+	if (VSL_END(vsl->wlp, mlen + 1) >= vsl->wle)
 		VSL_Flush(vsl, 1);
 
 	p = VSL_DATA(vsl->wlp);
 	va_start(ap, fmt);
 	n = vsnprintf(p, mlen, fmt, ap);
 	va_end(ap);
-	if (n > mlen)
-		n = mlen;	/* we truncate long fields */
+	if (n > mlen - 1)
+		n = mlen - 1;	/* we truncate long fields */
+	p[n++] = '\0';		/* NUL-terminated */
 	vsl->wlp = vsl_hdr(tag, vsl->wlp, n, vsl->wid);
 	assert(vsl->wlp < vsl->wle);
 	vsl->wlr++;

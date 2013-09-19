@@ -60,7 +60,10 @@
  * Each logrecord consist of:
  *	[n]		= ((type & 0xff) << 24) | (length & 0xffff)
  *	[n + 1]		= ((marker & 0x03) << 30) | (identifier & 0x3fffffff)
- *	[n + 2] ... [m]	= content
+ *	[n + 2] ... [m]	= content (NUL-terminated)
+ *
+ * Logrecords are NUL-terminated so that string functions can be run
+ * directly on the shmlog data.
  *
  * Notice that the constants in these macros cannot be changed without
  * changing corresponding magic numbers in varnishd/cache/cache_shmlog.c
