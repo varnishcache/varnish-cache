@@ -199,6 +199,10 @@ vxp_expr_cmp(struct vxp *vxp, struct vex **pvex)
 
 	/* Valid operators */
 	case T_EQ:		/* == */
+	case '<':		/* < */
+	case '>':		/* > */
+	case T_GEQ:		/* >= */
+	case T_LEQ:		/* <= */
 	case T_NEQ:		/* != */
 	case T_SEQ:		/* eq */
 	case T_SNEQ:		/* ne */
@@ -222,6 +226,8 @@ vxp_expr_cmp(struct vxp *vxp, struct vex **pvex)
 	case '\0':
 		WRONG("Missing token");
 	case T_EQ:		/* == */
+	case '<':		/* < */
+	case '>':		/* > */
 	case T_GEQ:		/* >= */
 	case T_LEQ:		/* <= */
 	case T_NEQ:		/* != */

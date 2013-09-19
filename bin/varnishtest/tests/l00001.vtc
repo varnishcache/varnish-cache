@@ -57,3 +57,31 @@ logexpect l1 -d 1 -g vxid -q "RespStatus != 503." {
 	expect * =	ReqEnd
 	expect * =	End
 } -run
+
+# Test '<' operator on integers
+logexpect l1 -d 1 -g vxid -q "RespStatus < 201" {
+	expect * *	Begin	req
+	expect * =	ReqEnd
+	expect * =	End
+} -run
+
+# Test '<' operator on floats
+logexpect l1 -d 1 -g vxid -q "RespStatus < 201." {
+	expect * *	Begin	req
+	expect * =	ReqEnd
+	expect * =	End
+} -run
+
+# Test '>' operator on integers
+logexpect l1 -d 1 -g vxid -q "RespStatus > 199" {
+	expect * *	Begin	req
+	expect * =	ReqEnd
+	expect * =	End
+} -run
+
+# Test '>' operator on floats
+logexpect l1 -d 1 -g vxid -q "RespStatus > 199." {
+	expect * *	Begin	req
+	expect * =	ReqEnd
+	expect * =	End
+} -run

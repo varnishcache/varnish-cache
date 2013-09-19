@@ -104,11 +104,11 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	case T_EQ:		/* == */
 		switch (val->type) {
 		case VEX_INT:
-			if (val->val_int == recint)
+			if (recint == val->val_int)
 				return (1);
 			return (0);
 		case VEX_FLOAT:
-			if (val->val_float == recfloat)
+			if (recfloat == val->val_float)
 				return (1);
 			return (0);
 		default:
@@ -117,11 +117,37 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	case T_NEQ:		/* != */
 		switch (val->type) {
 		case VEX_INT:
-			if (val->val_int != recint)
+			if (recint != val->val_int)
 				return (1);
 			return (0);
 		case VEX_FLOAT:
-			if (val->val_float != recfloat)
+			if (recfloat != val->val_float)
+				return (1);
+			return (0);
+		default:
+			WRONG("Wrong value type");
+		}
+	case '<':		/* < */
+		switch (val->type) {
+		case VEX_INT:
+			if (recint < val->val_int)
+				return (1);
+			return (0);
+		case VEX_FLOAT:
+			if (recfloat < val->val_float)
+				return (1);
+			return (0);
+		default:
+			WRONG("Wrong value type");
+		}
+	case '>':
+		switch (val->type) {
+		case VEX_INT:
+			if (recint > val->val_int)
+				return (1);
+			return (0);
+		case VEX_FLOAT:
+			if (recfloat > val->val_float)
 				return (1);
 			return (0);
 		default:
@@ -130,13 +156,13 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	case T_SEQ:		/* eq */
 		assert(val->type == VEX_STRING);
 		if (reclen == val->val_stringlen + 1 &&
-		    !strncmp(val->val_string, recdata, reclen))
+		    !strncmp(recdata, val->val_string, reclen))
 			return (1);
 		return (0);
 	case T_SNEQ:		/* ne */
 		assert(val->type == VEX_STRING);
 		if (reclen != val->val_stringlen + 1 ||
-		    strncmp(val->val_string, recdata, reclen))
+		    strncmp(recdata, val->val_string, reclen))
 			return (1);
 		return (0);
 	default:
