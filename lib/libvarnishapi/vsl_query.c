@@ -153,6 +153,32 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 		default:
 			WRONG("Wrong value type");
 		}
+	case T_LEQ:		/* <= */
+		switch (val->type) {
+		case VEX_INT:
+			if (recint <= val->val_int)
+				return (1);
+			return (0);
+		case VEX_FLOAT:
+			if (recfloat <= val->val_float)
+				return (1);
+			return (0);
+		default:
+			WRONG("Wrong value type");
+		}
+	case T_GEQ:		/* >= */
+		switch (val->type) {
+		case VEX_INT:
+			if (recint >= val->val_int)
+				return (1);
+			return (0);
+		case VEX_FLOAT:
+			if (recfloat >= val->val_float)
+				return (1);
+			return (0);
+		default:
+			WRONG("Wrong value type");
+		}
 	case T_SEQ:		/* eq */
 		assert(val->type == VEX_STRING);
 		if (reclen == val->val_stringlen + 1 &&
