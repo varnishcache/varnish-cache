@@ -53,6 +53,20 @@ struct vslq_query {
 	struct vex		*vex;
 };
 
+#define VSLQ_TEST_NUMOP(TYPE, PRE_LHS, OP, PRE_RHS)	\
+	switch (TYPE) {					\
+	case VEX_INT:					\
+		if (PRE_LHS##_int OP PRE_RHS##_int)	\
+			return (1);			\
+		return (0);				\
+	case VEX_FLOAT:					\
+		if (PRE_LHS##_float OP PRE_RHS##_float)	\
+			return (1);			\
+		return (0);				\
+	default:					\
+		WRONG("Wrong RHS type");		\
+	}
+
 static int
 vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 {
@@ -100,83 +114,17 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	/* Compare */
 	switch (vex->tok) {
 	case T_EQ:		/* == */
-		switch (rhs->type) {
-		case VEX_INT:
-			if (lhs_int == rhs->val_int)
-				return (1);
-			return (0);
-		case VEX_FLOAT:
-			if (lhs_float == rhs->val_float)
-				return (1);
-			return (0);
-		default:
-			WRONG("Wrong RHS type");
-		}
+		VSLQ_TEST_NUMOP(rhs->type, lhs, ==, rhs->val);
 	case T_NEQ:		/* != */
-		switch (rhs->type) {
-		case VEX_INT:
-			if (lhs_int != rhs->val_int)
-				return (1);
-			return (0);
-		case VEX_FLOAT:
-			if (lhs_float != rhs->val_float)
-				return (1);
-			return (0);
-		default:
-			WRONG("Wrong RHS type");
-		}
+		VSLQ_TEST_NUMOP(rhs->type, lhs, !=, rhs->val);
 	case '<':		/* < */
-		switch (rhs->type) {
-		case VEX_INT:
-			if (lhs_int < rhs->val_int)
-				return (1);
-			return (0);
-		case VEX_FLOAT:
-			if (lhs_float < rhs->val_float)
-				return (1);
-			return (0);
-		default:
-			WRONG("Wrong RHS type");
-		}
+		VSLQ_TEST_NUMOP(rhs->type, lhs, <, rhs->val);
 	case '>':
-		switch (rhs->type) {
-		case VEX_INT:
-			if (lhs_int > rhs->val_int)
-				return (1);
-			return (0);
-		case VEX_FLOAT:
-			if (lhs_float > rhs->val_float)
-				return (1);
-			return (0);
-		default:
-			WRONG("Wrong RHS type");
-		}
+		VSLQ_TEST_NUMOP(rhs->type, lhs, >, rhs->val);
 	case T_LEQ:		/* <= */
-		switch (rhs->type) {
-		case VEX_INT:
-			if (lhs_int <= rhs->val_int)
-				return (1);
-			return (0);
-		case VEX_FLOAT:
-			if (lhs_float <= rhs->val_float)
-				return (1);
-			return (0);
-		default:
-			WRONG("Wrong RHS type");
-		}
+		VSLQ_TEST_NUMOP(rhs->type, lhs, <=, rhs->val);
 	case T_GEQ:		/* >= */
-		switch (rhs->type) {
-		case VEX_INT:
-			if (lhs_int >= rhs->val_int)
-				return (1);
-			return (0);
-		case VEX_FLOAT:
-			if (lhs_float >= rhs->val_float)
-				return (1);
-			return (0);
-		default:
-			WRONG("Wrong RHS type");
-		}
+		VSLQ_TEST_NUMOP(rhs->type, lhs, >=, rhs->val);
 	case T_SEQ:		/* eq */
 		assert(rhs->type == VEX_STRING);
 		if (!strcmp(lhs_string, rhs->val_string))
