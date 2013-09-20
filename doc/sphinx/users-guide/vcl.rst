@@ -1,5 +1,10 @@
+.. _users_vcl:
+
 VCL - Varnish Configuration Language
 ------------------------------------
+
+This section is about getting Varnish to do what you want to
+your HTTP traffic, using the Varnish Configuration Language.
 
 Varnish has a great configuration system. Most other systems use
 configuration directives, where you basically turn on and off lots of
@@ -29,6 +34,7 @@ code commented out in default.vcl that ships with Varnish Cache.
 .. toctree::
    :maxdepth: 1
 
+   vcl-intro
    vcl-syntax
    vcl-built-in-subs
    vcl-variables

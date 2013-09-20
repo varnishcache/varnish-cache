@@ -1,15 +1,13 @@
-Operation
-=========
+Orphans
+=======
+
+XXX: These are chapters which need to find a new home in the other sections.
 
 .. toctree::
    :maxdepth: 2
 
-   operation-logging
-   operation-statistics
    operation-cli
    purging
-   sizing-your-cache
-   increasing-your-hitrate
    compression
    esi
    vary

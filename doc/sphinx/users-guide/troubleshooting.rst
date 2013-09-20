@@ -1,10 +1,12 @@
+.. _users_trouble:
+
 Troubleshooting Varnish
 =======================
 
 Sometimes Varnish misbehaves. In order for you to understand whats
 going on there are a couple of places you can check. varnishlog,
 /var/log/syslog, /var/log/messages are all places where varnish might
-leave clues of whats going on. This chapter will guide you through
+leave clues of whats going on. This section will guide you through
 basic troubleshooting in Varnish.
 
 
