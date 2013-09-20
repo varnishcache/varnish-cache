@@ -11,6 +11,7 @@ securing and protecting Varnish against attacks.
 .. toctree::
    :maxdepth: 2
 
+   run_security
    command-line
    storage-backends
    params
