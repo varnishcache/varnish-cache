@@ -50,6 +50,7 @@ static void vxp_expr_or(struct vxp *vxp, struct vex **pvex);
 static void
 vxp_expr_lhs(struct vxp *vxp, struct vex_lhs **plhs)
 {
+	char *p;
 
 	/* XXX: Tag wildcards */
 	AN(plhs);
@@ -75,7 +76,27 @@ vxp_expr_lhs(struct vxp *vxp, struct vex_lhs **plhs)
 	}
 	vxp_NextToken(vxp);
 
-	/* XXX: Lhs limiting operators ([], {}) */
+	if (vxp->t->tok == '[') {
+		/* LHS field [] */
+		vxp_NextToken(vxp);
+		if (vxp->t->tok != VAL) {
+			VSB_printf(vxp->sb, "Expected integer got '%.*s' ",
+			    PF(vxp->t));
+			vxp_ErrWhere(vxp, vxp->t, -1);
+			return;
+		}
+		(*plhs)->field = (int)strtol(vxp->t->dec, &p, 0);
+		if (*p || (*plhs)->field <= 0) {
+			VSB_printf(vxp->sb, "Expected positive integer");
+			vxp_ErrWhere(vxp, vxp->t, -1);
+			return;
+		}
+		vxp_NextToken(vxp);
+		ExpectErr(vxp, ']');
+		vxp_NextToken(vxp);
+	}
+
+	/* XXX: LHS Level {} */
 }
 
 static void
@@ -460,6 +481,8 @@ vex_print(const struct vex *vex, int indent)
 	if (vex->lhs != NULL) {
 		CHECK_OBJ_NOTNULL(vex->lhs, VEX_LHS_MAGIC);
 		fprintf(stderr, " tag=%s", VSL_tags[vex->lhs->tag]);
+		if (vex->lhs->field >= 0)
+			fprintf(stderr, "[%d]", vex->lhs->field);
 	}
 	if (vex->rhs != NULL) {
 		fprintf(stderr, " ");

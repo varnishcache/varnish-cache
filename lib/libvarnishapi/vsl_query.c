@@ -73,8 +73,7 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	const struct vex_rhs *rhs;
 	long long lhs_int;
 	double lhs_float;
-	const char *lhs_string;
-	size_t lhs_stringlen;
+	const char *b, *e;
 	char *p;
 	int i;
 
@@ -83,8 +82,26 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	rhs = vex->rhs;
 	AN(rhs);
 
-	lhs_string = VSL_CDATA(rec->ptr);
-	lhs_stringlen = VSL_LEN(rec->ptr) - 1;
+	b = VSL_CDATA(rec->ptr);
+	e = b + VSL_LEN(rec->ptr) - 1;
+
+	/* Field */
+	if (vex->lhs->field > 0) {
+		for (e = b, i = 0; *e && i < vex->lhs->field; i++) {
+			b = e;
+			/* Skip ws */
+			while (*b && isspace(*b))
+				b++;
+			e = b;
+			/* Skip non-ws */
+			while (*e && !isspace(*e))
+				e++;
+		}
+		assert(b <= e);
+		if (*b == '\0' || i < vex->lhs->field)
+			/* Missing field - no match */
+			return (0);
+	}
 
 	/* Prepare */
 	switch (vex->tok) {
@@ -95,15 +112,18 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	case T_LEQ:		/* <= */
 	case T_GEQ:		/* >= */
 		/* Numerical comparison */
+		if (*b == '\0')
+			/* Empty string doesn't match */
+			return (0);
 		switch (rhs->type) {
 		case VEX_INT:
-			lhs_int = strtoll(lhs_string, &p, 0);
+			lhs_int = strtoll(b, &p, 0);
 			if (*p == '\0' || isspace(*p))
 				break;
 			/* Can't parse - no match */
 			return (0);
 		case VEX_FLOAT:
-			lhs_float = strtod(lhs_string, &p);
+			lhs_float = strtod(b, &p);
 			if (*p == '\0' || isspace(*p))
 				break;
 			/* Can't parse - no match */
@@ -130,27 +150,25 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 		VSLQ_TEST_NUMOP(rhs->type, lhs, >=, rhs->val);
 	case T_SEQ:		/* eq */
 		assert(rhs->type == VEX_STRING);
-		if (lhs_stringlen == rhs->val_stringlen &&
-		    !strncmp(lhs_string, rhs->val_string, lhs_stringlen))
+		if (e - b == rhs->val_stringlen &&
+		    !strncmp(b, rhs->val_string, e - b))
 			return (1);
 		return (0);
 	case T_SNEQ:		/* ne */
 		assert(rhs->type == VEX_STRING);
-		if (lhs_stringlen != rhs->val_stringlen ||
-		    strncmp(lhs_string, rhs->val_string, lhs_stringlen))
+		if (e - b != rhs->val_stringlen ||
+		    strncmp(b, rhs->val_string, e - b))
 			return (1);
 		return (0);
 	case '~':		/* ~ */
 		assert(rhs->type == VEX_REGEX && rhs->val_regex != NULL);
-		i = VRE_exec(rhs->val_regex, lhs_string, lhs_stringlen, 0, 0,
-		    NULL, 0, NULL);
+		i = VRE_exec(rhs->val_regex, b, e - b, 0, 0, NULL, 0, NULL);
 		if (i != VRE_ERROR_NOMATCH)
 			return (1);
 		return (0);
 	case T_NOMATCH:		/* !~ */
 		assert(rhs->type == VEX_REGEX && rhs->val_regex != NULL);
-		i = VRE_exec(rhs->val_regex, lhs_string, lhs_stringlen, 0, 0,
-		    NULL, 0, NULL);
+		i = VRE_exec(rhs->val_regex, b, e - b, 0, 0, NULL, 0, NULL);
 		if (i == VRE_ERROR_NOMATCH)
 			return (1);
 		return (0);

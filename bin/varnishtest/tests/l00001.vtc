@@ -6,6 +6,9 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	sub vcl_deliver {
+		set resp.http.x-test = "123 321";
+	}
 } -start
 
 logexpect l1 -v v1
@@ -158,6 +161,13 @@ logexpect l1 -d 1 -g vxid -q "(RespStatus == 200 or RespStatus == 404) and RespS
 
 # Test and/or precedence
 logexpect l1 -d 1 -g vxid -q "RespStatus == 200 or RespStatus == 503 and RespStatus == 404" {
+	  expect 0 *	Begin	req
+	  expect * =	ReqEnd
+	  expect * =	End
+} -run
+
+# Test field
+logexpect l1 -d 1 -g vxid -q "RespHeader[2] == 123" {
 	  expect 0 *	Begin	req
 	  expect * =	ReqEnd
 	  expect * =	End
