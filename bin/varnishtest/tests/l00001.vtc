@@ -148,3 +148,17 @@ logexpect l1 -d 1 -g vxid -q "RespStatus == 404 or !RespStatus ~ '^404$'" {
 	expect * =	ReqEnd
 	expect * =	End
 } -run
+
+# Test grouping
+logexpect l1 -d 1 -g vxid -q "(RespStatus == 200 or RespStatus == 404) and RespStatus == 200" {
+	expect 0 *	Begin	req
+	expect * =	ReqEnd
+	expect * =	End
+} -run
+
+# Test and/or precedence
+logexpect l1 -d 1 -g vxid -q "RespStatus == 200 or RespStatus == 503 and RespStatus == 404" {
+	  expect 0 *	Begin	req
+	  expect * =	ReqEnd
+	  expect * =	End
+} -run
