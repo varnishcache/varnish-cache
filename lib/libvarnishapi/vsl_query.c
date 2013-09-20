@@ -56,7 +56,7 @@ struct vslq_query {
 static int
 vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 {
-	const struct vex_val *val;
+	const struct vex_rhs *rhs;
 	int reclen;
 	const char *recdata;
 	long long recint;
@@ -65,8 +65,8 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 
 	AN(vex);
 	AN(rec);
-	val = vex->val;
-	AN(val);
+	rhs = vex->rhs;
+	AN(rhs);
 
 	reclen = VSL_LEN(rec->ptr);
 	recdata = VSL_CDATA(rec->ptr);
@@ -80,7 +80,7 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	case T_LEQ:		/* <= */
 	case T_GEQ:		/* >= */
 		/* Numerical comparison */
-		switch (val->type) {
+		switch (rhs->type) {
 		case VEX_INT:
 			recint = strtoll(recdata, &endptr, 0);
 			if (*endptr == '\0' || isspace(*endptr))
@@ -102,93 +102,93 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	/* Compare */
 	switch (vex->tok) {
 	case T_EQ:		/* == */
-		switch (val->type) {
+		switch (rhs->type) {
 		case VEX_INT:
-			if (recint == val->val_int)
+			if (recint == rhs->val_int)
 				return (1);
 			return (0);
 		case VEX_FLOAT:
-			if (recfloat == val->val_float)
+			if (recfloat == rhs->val_float)
 				return (1);
 			return (0);
 		default:
-			WRONG("Wrong value type");
+			WRONG("Wrong RHS type");
 		}
 	case T_NEQ:		/* != */
-		switch (val->type) {
+		switch (rhs->type) {
 		case VEX_INT:
-			if (recint != val->val_int)
+			if (recint != rhs->val_int)
 				return (1);
 			return (0);
 		case VEX_FLOAT:
-			if (recfloat != val->val_float)
+			if (recfloat != rhs->val_float)
 				return (1);
 			return (0);
 		default:
-			WRONG("Wrong value type");
+			WRONG("Wrong RHS type");
 		}
 	case '<':		/* < */
-		switch (val->type) {
+		switch (rhs->type) {
 		case VEX_INT:
-			if (recint < val->val_int)
+			if (recint < rhs->val_int)
 				return (1);
 			return (0);
 		case VEX_FLOAT:
-			if (recfloat < val->val_float)
+			if (recfloat < rhs->val_float)
 				return (1);
 			return (0);
 		default:
-			WRONG("Wrong value type");
+			WRONG("Wrong RHS type");
 		}
 	case '>':
-		switch (val->type) {
+		switch (rhs->type) {
 		case VEX_INT:
-			if (recint > val->val_int)
+			if (recint > rhs->val_int)
 				return (1);
 			return (0);
 		case VEX_FLOAT:
-			if (recfloat > val->val_float)
+			if (recfloat > rhs->val_float)
 				return (1);
 			return (0);
 		default:
-			WRONG("Wrong value type");
+			WRONG("Wrong RHS type");
 		}
 	case T_LEQ:		/* <= */
-		switch (val->type) {
+		switch (rhs->type) {
 		case VEX_INT:
-			if (recint <= val->val_int)
+			if (recint <= rhs->val_int)
 				return (1);
 			return (0);
 		case VEX_FLOAT:
-			if (recfloat <= val->val_float)
+			if (recfloat <= rhs->val_float)
 				return (1);
 			return (0);
 		default:
-			WRONG("Wrong value type");
+			WRONG("Wrong RHS type");
 		}
 	case T_GEQ:		/* >= */
-		switch (val->type) {
+		switch (rhs->type) {
 		case VEX_INT:
-			if (recint >= val->val_int)
+			if (recint >= rhs->val_int)
 				return (1);
 			return (0);
 		case VEX_FLOAT:
-			if (recfloat >= val->val_float)
+			if (recfloat >= rhs->val_float)
 				return (1);
 			return (0);
 		default:
-			WRONG("Wrong value type");
+			WRONG("Wrong RHS type");
 		}
 	case T_SEQ:		/* eq */
-		assert(val->type == VEX_STRING);
-		if (reclen == val->val_stringlen + 1 &&
-		    !strncmp(recdata, val->val_string, reclen))
+		assert(rhs->type == VEX_STRING);
+		if (reclen == rhs->val_stringlen + 1 &&
+		    !strncmp(recdata, rhs->val_string, reclen))
 			return (1);
 		return (0);
 	case T_SNEQ:		/* ne */
-		assert(val->type == VEX_STRING);
-		if (reclen != val->val_stringlen + 1 ||
-		    strncmp(recdata, val->val_string, reclen))
+		assert(rhs->type == VEX_STRING);
+		if (reclen != rhs->val_stringlen + 1 ||
+		    strncmp(recdata, rhs->val_string, reclen))
 			return (1);
 		return (0);
 	default:
@@ -205,8 +205,8 @@ vslq_test(const struct vex *vex, struct VSL_transaction * const ptrans[])
 	int i;
 
 	CHECK_OBJ_NOTNULL(vex, VEX_MAGIC);
-	CHECK_OBJ_NOTNULL(vex->tag, VEX_TAG_MAGIC);
-	CHECK_OBJ_NOTNULL(vex->val, VEX_VAL_MAGIC);
+	CHECK_OBJ_NOTNULL(vex->lhs, VEX_LHS_MAGIC);
+	CHECK_OBJ_NOTNULL(vex->rhs, VEX_RHS_MAGIC);
 
 	for (t = ptrans[0]; t != NULL; t = *++ptrans) {
 		AZ(VSL_ResetCursor(t->c));
@@ -219,7 +219,7 @@ vslq_test(const struct vex *vex, struct VSL_transaction * const ptrans[])
 			assert(i == 1);
 			AN(t->c->rec.ptr);
 
-			if (vex->tag->tag != VSL_TAG(t->c->rec.ptr))
+			if (vex->lhs->tag != VSL_TAG(t->c->rec.ptr))
 				continue;
 
 			i = vslq_test_rec(vex, &t->c->rec);

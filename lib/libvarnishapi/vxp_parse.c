@@ -48,26 +48,26 @@
 static void vxp_expr_or(struct vxp *vxp, struct vex **pvex);
 
 static void
-vxp_expr_tag(struct vxp *vxp, struct vex_tag **ptag)
+vxp_expr_lhs(struct vxp *vxp, struct vex_lhs **plhs)
 {
 
 	/* XXX: Tag wildcards */
-	AN(ptag);
-	AZ(*ptag);
+	AN(plhs);
+	AZ(*plhs);
 	if (vxp->t->tok != VAL) {
 		VSB_printf(vxp->sb, "Expected VSL tag got '%.*s' ", PF(vxp->t));
 		vxp_ErrWhere(vxp, vxp->t, -1);
 		return;
 	}
-	ALLOC_OBJ(*ptag, VEX_TAG_MAGIC);
-	AN(*ptag);
-	(*ptag)->tag = VSL_Name2Tag(vxp->t->dec, -1);
-	if ((*ptag)->tag == -1) {
+	ALLOC_OBJ(*plhs, VEX_LHS_MAGIC);
+	AN(*plhs);
+	(*plhs)->tag = VSL_Name2Tag(vxp->t->dec, -1);
+	if ((*plhs)->tag == -1) {
 		VSB_printf(vxp->sb, "Could not match '%.*s' to any tag ",
 		    PF(vxp->t));
 		vxp_ErrWhere(vxp, vxp->t, -1);
 		return;
-	} else if ((*ptag)->tag == -2) {
+	} else if ((*plhs)->tag == -2) {
 		VSB_printf(vxp->sb, "'%.*s' matches multiple tags ",
 		    PF(vxp->t));
 		vxp_ErrWhere(vxp, vxp->t, -1);
@@ -75,27 +75,27 @@ vxp_expr_tag(struct vxp *vxp, struct vex_tag **ptag)
 	}
 	vxp_NextToken(vxp);
 
-	/* XXX: Tag limiting operators ([], {}) */
+	/* XXX: Lhs limiting operators ([], {}) */
 }
 
 static void
-vxp_expr_num(struct vxp *vxp, struct vex_val **pval)
+vxp_expr_num(struct vxp *vxp, struct vex_rhs **prhs)
 {
 	char *endptr;
 
-	AN(pval);
-	AZ(*pval);
+	AN(prhs);
+	AZ(*prhs);
 	if (vxp->t->tok != VAL) {
 		VSB_printf(vxp->sb, "Expected number got '%.*s' ", PF(vxp->t));
 		vxp_ErrWhere(vxp, vxp->t, -1);
 		return;
 	}
 	AN(vxp->t->dec);
-	ALLOC_OBJ(*pval, VEX_VAL_MAGIC);
-	AN(*pval);
+	ALLOC_OBJ(*prhs, VEX_RHS_MAGIC);
+	AN(*prhs);
 	if (strchr(vxp->t->dec, '.')) {
-		(*pval)->type = VEX_FLOAT;
-		(*pval)->val_float = strtod(vxp->t->dec, &endptr);
+		(*prhs)->type = VEX_FLOAT;
+		(*prhs)->val_float = strtod(vxp->t->dec, &endptr);
 		while (isspace(*endptr))
 			endptr++;
 		if (*endptr != '\0') {
@@ -104,8 +104,8 @@ vxp_expr_num(struct vxp *vxp, struct vex_val **pval)
 			return;
 		}
 	} else {
-		(*pval)->type = VEX_INT;
-		(*pval)->val_int = strtoll(vxp->t->dec, &endptr, 0);
+		(*prhs)->type = VEX_INT;
+		(*prhs)->val_int = strtoll(vxp->t->dec, &endptr, 0);
 		while (isspace(*endptr))
 			endptr++;
 		if (*endptr != '\0') {
@@ -118,36 +118,36 @@ vxp_expr_num(struct vxp *vxp, struct vex_val **pval)
 }
 
 static void
-vxp_expr_str(struct vxp *vxp, struct vex_val **pval)
+vxp_expr_str(struct vxp *vxp, struct vex_rhs **prhs)
 {
 
-	AN(pval);
-	AZ(*pval);
+	AN(prhs);
+	AZ(*prhs);
 	if (vxp->t->tok != VAL) {
 		VSB_printf(vxp->sb, "Expected string got '%.*s' ", PF(vxp->t));
 		vxp_ErrWhere(vxp, vxp->t, -1);
 		return;
 	}
 	AN(vxp->t->dec);
-	ALLOC_OBJ(*pval, VEX_VAL_MAGIC);
-	AN(*pval);
-	(*pval)->type = VEX_STRING;
-	(*pval)->val_string = strdup(vxp->t->dec);
-	AN((*pval)->val_string);
-	(*pval)->val_stringlen = strlen((*pval)->val_string);
+	ALLOC_OBJ(*prhs, VEX_RHS_MAGIC);
+	AN(*prhs);
+	(*prhs)->type = VEX_STRING;
+	(*prhs)->val_string = strdup(vxp->t->dec);
+	AN((*prhs)->val_string);
+	(*prhs)->val_stringlen = strlen((*prhs)->val_string);
 	vxp_NextToken(vxp);
 }
 
 static void
-vxp_expr_regex(struct vxp *vxp, struct vex_val **pval)
+vxp_expr_regex(struct vxp *vxp, struct vex_rhs **prhs)
 {
 	const char *errptr;
 	int erroff;
 
 	/* XXX: Caseless option */
 
-	AN(pval);
-	AZ(*pval);
+	AN(prhs);
+	AZ(*prhs);
 	if (vxp->t->tok != VAL) {
 		VSB_printf(vxp->sb, "Expected regular expression got '%.*s' ",
 		    PF(vxp->t));
@@ -155,12 +155,12 @@ vxp_expr_regex(struct vxp *vxp, struct vex_val **pval)
 		return;
 	}
 	AN(vxp->t->dec);
-	ALLOC_OBJ(*pval, VEX_VAL_MAGIC);
-	AN(*pval);
-	(*pval)->type = VEX_REGEX;
-	(*pval)->val_string = strdup(vxp->t->dec);
-	(*pval)->val_regex = VRE_compile(vxp->t->dec, 0, &errptr, &erroff);
-	if ((*pval)->val_regex == NULL) {
+	ALLOC_OBJ(*prhs, VEX_RHS_MAGIC);
+	AN(*prhs);
+	(*prhs)->type = VEX_REGEX;
+	(*prhs)->val_string = strdup(vxp->t->dec);
+	(*prhs)->val_regex = VRE_compile(vxp->t->dec, 0, &errptr, &erroff);
+	if ((*prhs)->val_regex == NULL) {
 		AN(errptr);
 		VSB_printf(vxp->sb, "Regular expression error: %s ", errptr);
 		vxp_ErrWhere(vxp, vxp->t, erroff);
@@ -172,8 +172,8 @@ vxp_expr_regex(struct vxp *vxp, struct vex_val **pval)
 /*
  * SYNTAX:
  *   expr_cmp:
- *     tag
- *     tag <operator> num|str|regex
+ *     lhs
+ *     lhs <operator> num|str|regex
  */
 
 static void
@@ -184,13 +184,13 @@ vxp_expr_cmp(struct vxp *vxp, struct vex **pvex)
 	AZ(*pvex);
 	ALLOC_OBJ(*pvex, VEX_MAGIC);
 	AN(*pvex);
-	vxp_expr_tag(vxp, &(*pvex)->tag);
+	vxp_expr_lhs(vxp, &(*pvex)->lhs);
 	ERRCHK(vxp);
 
 	/* Test operator */
 	switch (vxp->t->tok) {
 
-	/* Single tag expressions don't take any more tokens */
+	/* Single lhs expressions don't take any more tokens */
 	case EOI:
 	case T_AND:
 	case T_OR:
@@ -231,15 +231,15 @@ vxp_expr_cmp(struct vxp *vxp, struct vex **pvex)
 	case T_GEQ:		/* >= */
 	case T_LEQ:		/* <= */
 	case T_NEQ:		/* != */
-		vxp_expr_num(vxp, &(*pvex)->val);
+		vxp_expr_num(vxp, &(*pvex)->rhs);
 		break;
 	case T_SEQ:		/* eq */
 	case T_SNEQ:		/* ne */
-		vxp_expr_str(vxp, &(*pvex)->val);
+		vxp_expr_str(vxp, &(*pvex)->rhs);
 		break;
 	case '~':		/* ~ */
 	case T_NOMATCH:		/* !~ */
-		vxp_expr_regex(vxp, &(*pvex)->val);
+		vxp_expr_regex(vxp, &(*pvex)->rhs);
 		break;
 	default:
 		INCOMPL();
@@ -401,14 +401,14 @@ void
 vex_Free(struct vex **pvex)
 {
 
-	if ((*pvex)->tag != NULL)
-		FREE_OBJ((*pvex)->tag);
-	if ((*pvex)->val != NULL) {
-		if ((*pvex)->val->val_string)
-			free((*pvex)->val->val_string);
-		if ((*pvex)->val->val_regex)
-			VRE_free(&(*pvex)->val->val_regex);
-		FREE_OBJ((*pvex)->val);
+	if ((*pvex)->lhs != NULL)
+		FREE_OBJ((*pvex)->lhs);
+	if ((*pvex)->rhs != NULL) {
+		if ((*pvex)->rhs->val_string)
+			free((*pvex)->rhs->val_string);
+		if ((*pvex)->rhs->val_regex)
+			VRE_free(&(*pvex)->rhs->val_regex);
+		FREE_OBJ((*pvex)->rhs);
 	}
 	if ((*pvex)->a != NULL) {
 		vex_Free(&(*pvex)->a);
@@ -425,28 +425,28 @@ vex_Free(struct vex **pvex)
 #ifdef VXP_DEBUG
 
 static void
-vex_print_val(const struct vex_val *val)
+vex_print_rhs(const struct vex_rhs *rhs)
 {
 
-	CHECK_OBJ_NOTNULL(val, VEX_VAL_MAGIC);
-	switch (val->type) {
+	CHECK_OBJ_NOTNULL(rhs, VEX_RHS_MAGIC);
+	switch (rhs->type) {
 	case VEX_INT:
-		fprintf(stderr, "INT=%jd", (intmax_t)val->val_int);
+		fprintf(stderr, "INT=%jd", (intmax_t)rhs->val_int);
 		break;
 	case VEX_FLOAT:
-		fprintf(stderr, "FLOAT=%f", val->val_float);
+		fprintf(stderr, "FLOAT=%f", rhs->val_float);
 		break;
 	case VEX_STRING:
-		AN(val->val_string);
-		fprintf(stderr, "STRING='%s'", val->val_string);
+		AN(rhs->val_string);
+		fprintf(stderr, "STRING='%s'", rhs->val_string);
 		break;
 	case VEX_REGEX:
-		AN(val->val_string);
-		AN(val->val_regex);
-		fprintf(stderr, "REGEX='%s'", val->val_string);
+		AN(rhs->val_string);
+		AN(rhs->val_regex);
+		fprintf(stderr, "REGEX='%s'", rhs->val_string);
 		break;
 	default:
-		WRONG("value type");
+		WRONG("rhs type");
 		break;
 	}
 }
@@ -457,13 +457,13 @@ vex_print(const struct vex *vex, int indent)
 	CHECK_OBJ_NOTNULL(vex, VEX_MAGIC);
 
 	fprintf(stderr, "%*s%s", indent, "", vxp_tnames[vex->tok]);
-	if (vex->tag != NULL) {
-		CHECK_OBJ_NOTNULL(vex->tag, VEX_TAG_MAGIC);
-		fprintf(stderr, " tag=%s", VSL_tags[vex->tag->tag]);
+	if (vex->lhs != NULL) {
+		CHECK_OBJ_NOTNULL(vex->lhs, VEX_LHS_MAGIC);
+		fprintf(stderr, " tag=%s", VSL_tags[vex->lhs->tag]);
 	}
-	if (vex->val != NULL) {
+	if (vex->rhs != NULL) {
 		fprintf(stderr, " ");
-		vex_print_val(vex->val);
+		vex_print_rhs(vex->rhs);
 	}
 	fprintf(stderr, "\n");
 	if (vex->a != NULL)

@@ -76,16 +76,19 @@ struct vxp {
 
 struct vex;
 
-struct vex_tag {
+struct vex_lhs {
+	/* Left-hand-side of a vex expression. Stores the information
+	   about which records and what parts of those records the
+	   expression should be applied to */
 	unsigned		magic;
-#define VEX_TAG_MAGIC		0x1AD3D78D
+#define VEX_LHS_MAGIC		0x1AD3D78D
 	int			tag;
 	int			field;
 	int			level_min;
 	int			level_max;
 };
 
-enum vex_val_e {
+enum vex_rhs_e {
 	VEX__UNSET,
 	VEX_INT,
 	VEX_FLOAT,
@@ -93,10 +96,12 @@ enum vex_val_e {
 	VEX_REGEX,
 };
 
-struct vex_val {
+struct vex_rhs {
+	/* Right-hand-side of a vex expression. Stores the value that the
+	   records from LHS should be matched against */
 	unsigned		magic;
-#define VEX_VAL_MAGIC		0x3F109965
-	enum vex_val_e		type;
+#define VEX_RHS_MAGIC		0x3F109965
+	enum vex_rhs_e		type;
 	long long		val_int;
 	double			val_float;
 	char			*val_string;
@@ -109,8 +114,8 @@ struct vex {
 #define VEX_MAGIC		0xC7DB792D
 	unsigned		tok;
 	struct vex		*a, *b;
-	struct vex_tag		*tag;
-	struct vex_val		*val;
+	struct vex_lhs		*lhs;
+	struct vex_rhs		*rhs;
 };
 
 /* VXP internals */
