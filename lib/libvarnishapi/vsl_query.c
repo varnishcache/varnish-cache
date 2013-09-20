@@ -74,7 +74,9 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	long long lhs_int;
 	double lhs_float;
 	const char *lhs_string;
+	size_t lhs_stringlen;
 	char *p;
+	int i;
 
 	AN(vex);
 	AN(rec);
@@ -82,6 +84,7 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	AN(rhs);
 
 	lhs_string = VSL_CDATA(rec->ptr);
+	lhs_stringlen = VSL_LEN(rec->ptr) - 1;
 
 	/* Prepare */
 	switch (vex->tok) {
@@ -127,16 +130,32 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 		VSLQ_TEST_NUMOP(rhs->type, lhs, >=, rhs->val);
 	case T_SEQ:		/* eq */
 		assert(rhs->type == VEX_STRING);
-		if (!strcmp(lhs_string, rhs->val_string))
+		if (lhs_stringlen == rhs->val_stringlen &&
+		    !strncmp(lhs_string, rhs->val_string, lhs_stringlen))
 			return (1);
 		return (0);
 	case T_SNEQ:		/* ne */
 		assert(rhs->type == VEX_STRING);
-		if (strcmp(lhs_string, rhs->val_string))
+		if (lhs_stringlen != rhs->val_stringlen ||
+		    strncmp(lhs_string, rhs->val_string, lhs_stringlen))
+			return (1);
+		return (0);
+	case '~':		/* ~ */
+		assert(rhs->type == VEX_REGEX && rhs->val_regex != NULL);
+		i = VRE_exec(rhs->val_regex, lhs_string, lhs_stringlen, 0, 0,
+		    NULL, 0, NULL);
+		if (i != VRE_ERROR_NOMATCH)
+			return (1);
+		return (0);
+	case T_NOMATCH:		/* !~ */
+		assert(rhs->type == VEX_REGEX && rhs->val_regex != NULL);
+		i = VRE_exec(rhs->val_regex, lhs_string, lhs_stringlen, 0, 0,
+		    NULL, 0, NULL);
+		if (i == VRE_ERROR_NOMATCH)
 			return (1);
 		return (0);
 	default:
-		INCOMPL();
+		WRONG("Bad expression token");
 	}
 
 	return (0);
