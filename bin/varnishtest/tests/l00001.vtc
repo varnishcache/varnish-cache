@@ -127,3 +127,24 @@ logexpect l1 -d 1 -g vxid -q "RespStatus !~ '^404$'" {
 	expect * =	ReqEnd
 	expect * =	End
 } -run
+
+# Test boolean and
+logexpect l1 -d 1 -g vxid -q "RespStatus == 200 and RespStatus ~ '^200$'" {
+	expect * *	Begin	req
+	expect * =	ReqEnd
+	expect * =	End
+} -run
+
+# Test boolean or
+logexpect l1 -d 1 -g vxid -q "RespStatus == 404 or RespStatus ~ '^200$'" {
+	expect * *	Begin	req
+	expect * =	ReqEnd
+	expect * =	End
+} -run
+
+# Test boolean !
+logexpect l1 -d 1 -g vxid -q "RespStatus == 404 or !RespStatus ~ '^404$'" {
+	expect * *	Begin	req
+	expect * =	ReqEnd
+	expect * =	End
+} -run

@@ -58,7 +58,6 @@ tokens = {
         "T_NOMATCH":    "!~",
 
         # Boolean operators
-        "T_NOT":        "not",
         "T_AND":        "and",
         "T_OR":         "or",
 

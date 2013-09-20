@@ -218,7 +218,7 @@ vslq_exec(const struct vex *vex, struct VSL_transaction * const ptrans[])
 		if (r <= 0)
 			return (r);
 		return (vslq_exec(vex->b, ptrans));
-	case T_NOT:
+	case '!':
 		AN(vex->a);
 		AZ(vex->b);
 		r = vslq_exec(vex->a, ptrans);
