@@ -57,19 +57,17 @@ static int
 vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 {
 	const struct vex_rhs *rhs;
-	int reclen;
-	const char *recdata;
-	long long recint;
-	double recfloat;
-	char *endptr;
+	long long lhs_int;
+	double lhs_float;
+	const char *lhs_string;
+	char *p;
 
 	AN(vex);
 	AN(rec);
 	rhs = vex->rhs;
 	AN(rhs);
 
-	reclen = VSL_LEN(rec->ptr);
-	recdata = VSL_CDATA(rec->ptr);
+	lhs_string = VSL_CDATA(rec->ptr);
 
 	/* Prepare */
 	switch (vex->tok) {
@@ -82,19 +80,19 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 		/* Numerical comparison */
 		switch (rhs->type) {
 		case VEX_INT:
-			recint = strtoll(recdata, &endptr, 0);
-			if (*endptr == '\0' || isspace(*endptr))
+			lhs_int = strtoll(lhs_string, &p, 0);
+			if (*p == '\0' || isspace(*p))
 				break;
 			/* Can't parse - no match */
 			return (0);
 		case VEX_FLOAT:
-			recfloat = strtod(recdata, &endptr);
-			if (*endptr == '\0' || isspace(*endptr))
+			lhs_float = strtod(lhs_string, &p);
+			if (*p == '\0' || isspace(*p))
 				break;
 			/* Can't parse - no match */
 			return (0);
 		default:
-			INCOMPL();
+			WRONG("Wrong RHS type");
 		}
 		break;
 	}
@@ -104,11 +102,11 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	case T_EQ:		/* == */
 		switch (rhs->type) {
 		case VEX_INT:
-			if (recint == rhs->val_int)
+			if (lhs_int == rhs->val_int)
 				return (1);
 			return (0);
 		case VEX_FLOAT:
-			if (recfloat == rhs->val_float)
+			if (lhs_float == rhs->val_float)
 				return (1);
 			return (0);
 		default:
@@ -117,11 +115,11 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	case T_NEQ:		/* != */
 		switch (rhs->type) {
 		case VEX_INT:
-			if (recint != rhs->val_int)
+			if (lhs_int != rhs->val_int)
 				return (1);
 			return (0);
 		case VEX_FLOAT:
-			if (recfloat != rhs->val_float)
+			if (lhs_float != rhs->val_float)
 				return (1);
 			return (0);
 		default:
@@ -130,11 +128,11 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	case '<':		/* < */
 		switch (rhs->type) {
 		case VEX_INT:
-			if (recint < rhs->val_int)
+			if (lhs_int < rhs->val_int)
 				return (1);
 			return (0);
 		case VEX_FLOAT:
-			if (recfloat < rhs->val_float)
+			if (lhs_float < rhs->val_float)
 				return (1);
 			return (0);
 		default:
@@ -143,11 +141,11 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	case '>':
 		switch (rhs->type) {
 		case VEX_INT:
-			if (recint > rhs->val_int)
+			if (lhs_int > rhs->val_int)
 				return (1);
 			return (0);
 		case VEX_FLOAT:
-			if (recfloat > rhs->val_float)
+			if (lhs_float > rhs->val_float)
 				return (1);
 			return (0);
 		default:
@@ -156,11 +154,11 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	case T_LEQ:		/* <= */
 		switch (rhs->type) {
 		case VEX_INT:
-			if (recint <= rhs->val_int)
+			if (lhs_int <= rhs->val_int)
 				return (1);
 			return (0);
 		case VEX_FLOAT:
-			if (recfloat <= rhs->val_float)
+			if (lhs_float <= rhs->val_float)
 				return (1);
 			return (0);
 		default:
@@ -169,11 +167,11 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	case T_GEQ:		/* >= */
 		switch (rhs->type) {
 		case VEX_INT:
-			if (recint >= rhs->val_int)
+			if (lhs_int >= rhs->val_int)
 				return (1);
 			return (0);
 		case VEX_FLOAT:
-			if (recfloat >= rhs->val_float)
+			if (lhs_float >= rhs->val_float)
 				return (1);
 			return (0);
 		default:
@@ -181,14 +179,12 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 		}
 	case T_SEQ:		/* eq */
 		assert(rhs->type == VEX_STRING);
-		if (reclen == rhs->val_stringlen + 1 &&
-		    !strncmp(recdata, rhs->val_string, reclen))
+		if (!strcmp(lhs_string, rhs->val_string))
 			return (1);
 		return (0);
 	case T_SNEQ:		/* ne */
 		assert(rhs->type == VEX_STRING);
-		if (reclen != rhs->val_stringlen + 1 ||
-		    strncmp(recdata, rhs->val_string, reclen))
+		if (strcmp(lhs_string, rhs->val_string))
 			return (1);
 		return (0);
 	default:
