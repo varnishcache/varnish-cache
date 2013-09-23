@@ -5,7 +5,8 @@ Security first
 
 If you are the only person involved in running Varnish, or if all
 the people involved are trusted to the same degree, you can skip
-this chapter.
+this chapter:  We have protected Varnish as well as we can from
+anything which can come in through HTTP socket.
 
 If parts of your web infrastructure are outsourced or otherwise
 partitioned along adminitrative lines, you need to think about
@@ -25,19 +26,21 @@ how and where the command comes into Varnish:
 Command line arguments
 ----------------------
 
-The top level security decisions is taken from the command line,
-in order to make them invulnerable to subsequent manipulation.
+The top level security decisions is taken on and from the command
+line, in order to make them invulnerable to subsequent manipulation.
 
 The important decisions to make are:
 
 #. Who should have access to the Command Line Interface ?
 
-#. Which parameters can the change ?
+#. Which parameters can they change ?
 
 #. Will inline-C code be allowed ?
 
-#. Will VMODs be restricted.
+#. If/how VMODs will be restricted ?
 
+CLI interface access
+^^^^^^^^^^^^^^^^^^^^
 
 The most important of these is the CLI interface:  Should it be
 accessible only on the local machine, or should it be accessible
@@ -47,82 +50,123 @@ No matter what you do, you should always protect the CLI with a
 Pre-Shared-Key (The -S argument).
 
 The way -S/PSK works is really simple:  You specify -S and filename,
-and only somebody who knows what is in that file can access the CLI.
+and only somebody who knows the exact contents of that file can
+access the CLI.  By protecting the secret file with suitable UNIX
+permissions, you can restrict CLI access
 
-They do not need to be able to read that specific file on that
-specific machine, as long as they know *exactly* what is in that file.
+The varnishadm(8) program knows how to do the -S/PSK protocol,
+both locally and remote.
 
-If the CLI should only be available on the local machine, bind the
-CLI port to a loopback IP number ("-T 127.0.0.1").
+(XXX ref: user-guide: setting up -S)
+
+The CLI port is a TCP socket, and it can be bound to any IP
+number+socket combination the kernel will accept::
+
+	-T 127.0.0.1:631
+	-T localhost:9999
+	-T 192.168.1.1:34
+	-T '[fe80::1]:8082'
 
 If you want to be able to use the CLI remotely, you can do it
-two ways:
+two ways.
 
 You can bind the CLI port to a reachable IP number, and connect
-directly.  This gives you no secrecy, the CLI commands will
-go across the network as ASCII test with no encryption.
+directly.  This gives you no secrecy, ie, the CLI commands will
+go across the network as ASCII text with no encryption, but
+using the -S option, you will get authentication.
 
-Or you can bind the CLI port locally, and give remote users access
-via a secure connection to the local machine (ssh, VPN, etc. etc.)
+Alternatively you can bind the CLI port to a 'localhost' address,
+and give remote users access via a secure connection to the local
+machine (ssh, VPN, etc. etc.)
 
-It is also possible to configure varnishd for "reverse mode", where
-varnishd will attempt to open a TCP connection to a specified
-address, and initiate a CLI connection on it.  This is meant to
-make it easier to manage a cluster of varnish machines from a single
-"cluster controller" process.
+It is also possible to configure varnishd for "reverse mode", using
+the '-M' argument,
 
-Other parameters to consider are the uid/gid of the child process.
+In this case varnishd will attempt to open a TCP connection to the
+specified address, and initiate a CLI connection on it.
+
+The connection is also in this case without secrecy, but if configured
+the remote end must still satisfy -S/PSK authentication.
+
+Parameters
+^^^^^^^^^^
+
+Parameters can be set from the command line, and made "read-only"
+(using -r) so they cannot subsequently be modified from the CLI
+interface.
+
+Pretty much any parameter can be used to totally mess up your
+HTTP service, but a few can do more damage than that::
+
+	user			-- access to local system via VCL
+	group			-- access to local system via VCL
+	listen_address		-- trojan other service ports (ssh!)
+	cc_command		-- execute arbitrary programs
+
+Furthermore you may want to look at::
+
+	syslog_cli_traffic	-- know what is going on
+	vcc_unsafe_path		-- retrict VCL/VMODS to vcl_dir+vmod_dir
+	vcl_dir			-- VCL include dir
+	vmod_dir		-- VMOD import dir
 
 The CLI interface
 -----------------
 
 The CLI interface in Varnish is very powerful, if you have
 access to the CLI interface, you can do almost anything to
-the varnish process.
+the Varnish process.
 
-Some restrictions can be put in place from the command line arguments,
-for instance specific parameters can be made Read-Only with the -r
-argument, which prevents changes to them from the CLI.
+As described above, some of the damage can be limited by restricting
+certain parameters, but that will only protect the local filesystem,
+and operating system, it will not protect your HTTP service.
 
 We do not currently have a way to restrict specific CLI commands
-to specific CLI connections.  (One way to get such an effect is to
-not "wrap" all CLI access in pre-approved scripts which use
-varnishadm(1) to submit the sanitized CLI commands, and restrict a
-remote user to only those scripts in sshd(8)'s configuration.)
+to specific CLI connections.   One way to get such an effect is to
+"wrap" all CLI access in pre-approved scripts which use varnishadm(1)
+to submit the sanitized CLI commands, and restrict a remote user
+to only those scripts in sshd(8)'s configuration.
 
 VCL programs
 ------------
 
-There are two "dangerous" mechnisms available in VCL code:  VMODs
+There are two "dangerous" mechanisms available in VCL code:  VMODs
 and inline-C.
 
 Both of these mechanisms allow execution of arbitrary code and will
-therefore allow a person to get shell access on the computer.
-(XXX: doc which privs)
+therefore allow a person to get access on the computer, with the
+privileges of the child process.
 
-Inline C can be disabled with the parameter "vcc_allow_inline_c",
-remember to make it read-only from the commandline if you don't
-trust the CLI wranglers to leave it alone.
+If varnishd is started as root/superuser, we sandbox the child
+process, using whatever facilities are available on the operating
+system, but if varnishd is not started as root/superuser, this is
+not possible.  No, don't ask me why you have to be superuser to
+lower the privilege of a child process...
 
-VMODs can be restricted to be loaded only from the path specified
-using parameter 'vmod_dir' using the 'vcc_unsafe_path' parameter.
-Again: remember to make the read-only.
+Inline-C is disabled by default starting with Varnish 4, so unless
+you enable it, you don't have to worry about it.
 
-If you do this, we belive that the integrity of the machine
-running varnishd, cannot be compromised from the VCL program,
-but it will be possible to read files available to the child
-process.
+The params mentioned above can restrict VMOD so they can only
+be imported from a designated directory, restricting VCL wranglers
+to a pre-approved subset of VMODs.
+
+If you do that, we belive that your local system cannot be compromised
+from VCL code.
 
 HTTP requests
 -------------
 
-We have gone to great lengths to make varnish resistant to anything
-coming in throught he socket where HTTP requests are received,
-but given that VCL is a programming language which lets you
+We have gone to great lengths to make Varnish resistant to anything
+coming in throught he socket where HTTP requests are received, and
+you should, generally speaking, not need to protect it any further.
+
+The caveat is that since VCL is a programming language which lets you
 decide exactly what to do about HTTP requests, you can also decide
-to do stupid things to them.
+to do exactly stupid things to them, including opening youself up
+to various kinds of attacks and subversive activities.
 
-VCL offers a IP based Access-Control-List facility which allows you
-to restrict certain requests, for instance PURGE, to certain IP
-numbers/ranges.
+If you have "administrative" HTTP requests, for instance PURGE
+requests, we recommend that you restrict them to trusted IP
+numbers/nets using VCL's Access Control Lists.
 
+(XXX: missing ref to ACL)

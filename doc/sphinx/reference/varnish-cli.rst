@@ -216,8 +216,10 @@ the NL character.
 For your reference the sourcefile lib/libvarnish/cli_common.h contains
 the functions varnish code uses to read and write CLI response.
 
-Details on authentication
--------------------------
+.. _ref_psk_auth:
+
+How -S/PSK Authentication Works
+-------------------------------
 
 If the -S secret-file is given as argument to varnishd, all network
 CLI connections must authenticate, by proving they know the contents
