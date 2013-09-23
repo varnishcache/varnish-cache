@@ -94,4 +94,5 @@ struct vslq_query;
 struct vslq_query *vslq_newquery(struct VSL_data *vsl,
     enum VSL_grouping_e grouping, const char *query);
 void vslq_deletequery(struct vslq_query **pquery);
-int vslq_runquery(const struct vslq_query *query, struct VSL_transaction * const ptrans[]);
+int vslq_runquery(const struct vslq_query *query,
+    struct VSL_transaction * const ptrans[]);
