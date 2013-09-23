@@ -5,7 +5,9 @@ server s1 {
 	txresp
 } -start
 
-varnish v1 -cliok "param.set sigsegv_handler on" -vcl+backend {
+varnish v1 -cliok "param.set vcc_allow_inline_c true"
+varnish v1 -cliok "param.set sigsegv_handler on"
+varnish v1 -vcl+backend {
 	C{
 #include <signal.h>
 #include <stdlib.h>

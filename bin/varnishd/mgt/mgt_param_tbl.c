@@ -522,7 +522,7 @@ const struct parspec mgt_parspec[] = {
 	{ "vcc_allow_inline_c", tweak_bool, &mgt_vcc_allow_inline_c, 0, 0,
 		"Allow inline C code in VCL.\n",
 		0,
-		"on", "bool" },
+		"off", "bool" },
 
 	{ "vcc_unsafe_path", tweak_bool, &mgt_vcc_unsafe_path, 0, 0,
 		"Allow '/' in vmod & include paths.\n"

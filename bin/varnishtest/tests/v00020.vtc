@@ -1,6 +1,6 @@
 varnishtest "VCL compiler coverage test: vcc_parse.c & vcc_expr.c"
 
-varnish v1 -vcl {
+varnish v1 -cliok "param.set vcc_allow_inline_c true" -vcl {
 	backend b { .host = "127.0.0.1"; }
 	C{
 	#include <stdio.h>

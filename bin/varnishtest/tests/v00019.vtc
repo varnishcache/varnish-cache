@@ -23,7 +23,7 @@ varnish v1 -errvcl {Unterminated string at} {
 	"
 }
 
-varnish v1 -vcl {
+varnish v1 -cliok "param.set vcc_allow_inline_c true" -vcl {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv { C{ int i; (void)i; }C }
 }

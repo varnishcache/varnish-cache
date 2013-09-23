@@ -5,7 +5,7 @@ server s1 {
 	txresp
 } -start
 
-varnish v1 -vcl+backend {
+varnish v1 -cliok "param.set vcc_allow_inline_c true" -vcl+backend {
 	C{
 	void foo(void)
 	{
