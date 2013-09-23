@@ -57,7 +57,7 @@
 
 /*--------------------------------------------------------------------*/
 
-const char *VSL_tags[256] = {
+const char *VSL_tags[SLT__MAX] = {
 #  define SLTM(foo,sdesc,ldesc)       [SLT_##foo] = #foo,
 #  include "tbl/vsl_tags.h"
 #  undef SLTM
@@ -91,8 +91,8 @@ VSL_New(void)
 	if (vsl == NULL)
 		return (NULL);
 
-	vsl->vbm_select = vbit_init(256);
-	vsl->vbm_supress = vbit_init(256);
+	vsl->vbm_select = vbit_init(SLT__MAX);
+	vsl->vbm_supress = vbit_init(SLT__MAX);
 	VTAILQ_INIT(&vsl->vslf_select);
 	VTAILQ_INIT(&vsl->vslf_suppress);
 

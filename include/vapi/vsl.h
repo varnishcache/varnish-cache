@@ -95,7 +95,7 @@ typedef int VSLQ_dispatch_f(struct VSL_data *vsl,
 	 *   !=0: Makes VSLQ_Dispatch return with this return value immediatly
 	 */
 
-extern const char *VSL_tags[256];
+extern const char *VSL_tags[SLT__MAX];
 	/*
 	 * Tag to string array.  Contains NULL for invalid tags.
 	 */

@@ -67,7 +67,7 @@ VSL_Name2Tag(const char *name, int l)
 	if (l == -1)
 		l = strlen(name);
 	n = -1;
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < SLT__MAX; i++) {
 		if (VSL_tags[i] != NULL &&
 		    !strncasecmp(name, VSL_tags[i], l)) {
 			if (strlen(VSL_tags[i]) == l) {
@@ -220,7 +220,7 @@ VSL_Arg(struct VSL_data *vsl, int opt, const char *arg)
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 	/* If first option is 'i', set all bits for supression */
 	if ((opt == 'i' || opt == 'I') && !(vsl->flags & F_SEEN_ixIX))
-		for (i = 0; i < 256; i++)
+		for (i = 0; i < SLT__MAX; i++)
 			vbit_set(vsl->vbm_supress, i);
 
 	switch (opt) {

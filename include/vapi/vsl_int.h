@@ -104,6 +104,7 @@ struct VSL_head {
  * The identifiers in shmlogtag are "SLT_" + XML tag.  A script may be run
  * on this file to extract the table rather than handcode it
  */
+#define SLT__MAX 256
 enum VSL_tag_e {
 	SLT__Bogus = 0,
 #define SLTM(foo,sdesc,ldesc)	SLT_##foo,
