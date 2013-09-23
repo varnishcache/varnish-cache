@@ -85,14 +85,13 @@ vcc_ParseImport(struct vcc *tl)
 	if (tl->t->tok == ID) {
 		if (!tl->unsafe_path) {
 			VSB_printf(tl->sb,
-			    "'import ... from path...'"
-			    " not allowed.\nAt:");
+			    "'import ... from path ...' not allowed.\nAt:");
 			vcc_ErrToken(tl, tl->t);
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
 		if (!vcc_IdIs(tl->t, "from")) {
-			VSB_printf(tl->sb, "Expected 'from path...'\n");
+			VSB_printf(tl->sb, "Expected 'from path ...'\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
