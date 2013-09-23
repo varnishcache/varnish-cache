@@ -220,14 +220,7 @@ vbe_NewConn(void)
 }
 
 /*--------------------------------------------------------------------
- * It evaluates if a backend is healthy _for_a_specific_object_.
- * That means that it relies on req->objcore->objhead. This is mainly for
- * saint-mode, but also takes backend->healthy into account. If
- * cache_param->saintmode_threshold is 0, this is basically just a test of
- * backend->healthy.
- *
- * The threshold has to be evaluated _after_ the timeout check, otherwise
- * items would never time out once the threshold is reached.
+ * Test if backend is healthy and report when it last changed
  */
 
 unsigned

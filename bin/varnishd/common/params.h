@@ -188,9 +188,6 @@ struct params {
 	/* How long time does the ban lurker sleep */
 	double			ban_lurker_sleep;
 
-	/* Max size of the saintmode list. 0 == no saint mode. */
-	unsigned		saintmode_threshold;
-
 	unsigned		syslog_cli_traffic;
 
 	unsigned		http_range_support;

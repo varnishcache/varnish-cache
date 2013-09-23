@@ -439,13 +439,6 @@ const struct parspec mgt_parspec[] = {
 		"A value of zero disables the ban lurker.",
 		0,
 		"0.01", "s" },
-	{ "saintmode_threshold", tweak_uint,
-		&mgt_param.saintmode_threshold, 0, UINT_MAX,
-		"The maximum number of objects held off by saint mode before "
-		"no further will be made to the backend until one times out.  "
-		"A value of 0 disables saintmode.",
-		EXPERIMENTAL,
-		"10", "objects" },
 	{ "http_range_support", tweak_bool, &mgt_param.http_range_support, 0, 0,
 		"Enable support for HTTP Range headers.\n",
 		0,
