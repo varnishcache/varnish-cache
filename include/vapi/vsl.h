@@ -63,6 +63,7 @@ enum VSL_transaction_e {
 	VSL_t_esireq,
 	VSL_t_bereq,
 	VSL_t_raw,
+	VSL_t__MAX,
 };
 
 struct VSL_transaction {

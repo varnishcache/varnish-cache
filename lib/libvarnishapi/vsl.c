@@ -201,7 +201,7 @@ VSL_Match(struct VSL_data *vsl, const struct VSL_cursor *c)
 	return (1);
 }
 
-static const char * const VSL_transactions[256] = {
+static const char * const VSL_transactions[VSL_t__MAX] = {
 	/*                 12345678901234 */
 	[VSL_t_unknown] = "<< Unknown  >>",
 	[VSL_t_sess]	= "<< Session  >>",
