@@ -206,7 +206,7 @@ vcc_Compound(struct vcc *tl)
  */
 
 static void
-vcc_Function(struct vcc *tl)
+vcc_ParseFunction(struct vcc *tl)
 {
 	int m, i;
 
@@ -277,10 +277,33 @@ vcc_Function(struct vcc *tl)
  */
 
 static void
-vcc_Director(struct vcc *tl)
+vcc_ParseDirector(struct vcc *tl)
 {
 	VSB_printf(tl->sb, "\ndirectors are now in directors VMOD.\n");
 	vcc_ErrWhere(tl, tl->t);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+static void
+vcc_ParseVcl(struct vcc *tl)
+{
+	double ver;
+	struct token *tok;
+
+	assert(vcc_IdIs(tl->t, "vcl"));
+	vcc_NextToken(tl);
+	tok = tl->t;
+	ver = vcc_DoubleVal(tl);
+	ERRCHK(tl);
+	if (ver != 4.0) {
+		VSB_printf(tl->sb, "VCL version %.1f not supported.\n", ver);
+		vcc_ErrWhere(tl, tok);
+		ERRCHK(tl);
+	}
+	ExpectErr(tl, ';');
+	vcc_NextToken(tl);
 }
 
 /*--------------------------------------------------------------------
@@ -288,7 +311,9 @@ vcc_Director(struct vcc *tl)
  *	Inline C-code
  *	ACL definitions
  *	Function definitions
- *	Backend & Director definitions
+ *	Backend definitions
+ * 	VMOD import directives
+ * 	VCL version declarations
  *	End of input
  */
 
@@ -298,12 +323,13 @@ static struct toplev {
 	const char	*name;
 	parse_f		*func;
 } toplev[] = {
-	{ "acl",		vcc_Acl },
-	{ "sub",		vcc_Function },
+	{ "acl",		vcc_ParseAcl },
+	{ "sub",		vcc_ParseFunction },
 	{ "backend",		vcc_ParseBackend },
-	{ "director",		vcc_Director },
+	{ "director",		vcc_ParseDirector },
 	{ "probe",		vcc_ParseProbe },
 	{ "import",		vcc_ParseImport },
+	{ "vcl",		vcc_ParseVcl },
 	{ NULL, NULL }
 };
 
@@ -312,6 +338,18 @@ vcc_Parse(struct vcc *tl)
 {
 	struct toplev *tp;
 
+	if (!vcc_IdIs(tl->t, "vcl")) {
+		VSB_printf(tl->sb,
+		    "VCL version declaration missing\n"
+		    "Update your VCL to Version 4 syntax, and add\n"
+		    "\tvcl 4.0;\n"
+		    "on the first line the VCL files.\n"
+		);
+		vcc_ErrWhere(tl, tl->t);
+		ERRCHK(tl);
+	}
+	vcc_ParseVcl(tl);
+	ERRCHK(tl);
 	while (tl->t->tok != EOI) {
 		ERRCHK(tl);
 		switch (tl->t->tok) {

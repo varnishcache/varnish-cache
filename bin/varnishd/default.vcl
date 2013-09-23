@@ -39,6 +39,8 @@
  * -b argument.
  */
 
+vcl 4.0;
+
 sub vcl_recv {
     if (req.restarts == 0) {
 	if (req.http.x-forwarded-for) {

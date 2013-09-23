@@ -402,6 +402,7 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, char *vcl, int C_flag)
 		 * XXX: again: we should check it here in the "trivial" case.
 		 */
 		bprintf(buf,
+		    "vcl 4.0;\n"
 		    "backend default {\n"
 		    "    .host = \"%s\";\n"
 		    "}\n", b_arg);

@@ -644,7 +644,7 @@ varnish_vcl(struct varnish *v, const char *vcl, enum VCLI_status_e expect, char 
 	vsb = VSB_new_auto();
 	AN(vsb);
 
-	VSB_printf(vsb, "vcl.inline vcl%d << %s\n%s\n%s\n",
+	VSB_printf(vsb, "vcl.inline vcl%d << %s\nvcl 4.0;\n%s\n%s\n",
 	    ++v->vcl_nbr, NONSENSE, vcl, NONSENSE);
 	AZ(VSB_finish(vsb));
 
@@ -688,7 +688,10 @@ varnish_vclbackend(struct varnish *v, const char *vcl)
 	vsb2 = VSB_new_auto();
 	AN(vsb2);
 
+	VSB_printf(vsb2, "vcl 4.0;\n");
+
 	cmd_server_genvcl(vsb2);
+
 	AZ(VSB_finish(vsb2));
 
 	VSB_printf(vsb, "vcl.inline vcl%d << %s\n%s\n%s\n%s\n",

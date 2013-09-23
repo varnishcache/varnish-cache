@@ -219,7 +219,7 @@ struct method {
 
 /* vcc_acl.c */
 
-void vcc_Acl(struct vcc *tl);
+void vcc_ParseAcl(struct vcc *tl);
 void vcc_Acl_Hack(struct vcc *tl, char *b);
 
 /* vcc_action.c */
@@ -265,6 +265,7 @@ char *TlDupTok(struct vcc *tl, const struct token *tok);
 void EncString(struct vsb *sb, const char *b, const char *e, int mode);
 
 /* vcc_expr.c */
+double vcc_DoubleVal(struct vcc *tl);
 void vcc_Duration(struct vcc *tl, double *);
 unsigned vcc_UintVal(struct vcc *tl);
 void vcc_Expr(struct vcc *tl, enum var_type typ);

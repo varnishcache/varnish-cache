@@ -462,7 +462,7 @@ vcc_Acl_Hack(struct vcc *tl, char *b)
 }
 
 void
-vcc_Acl(struct vcc *tl)
+vcc_ParseAcl(struct vcc *tl)
 {
 	struct token *an;
 	int i;
