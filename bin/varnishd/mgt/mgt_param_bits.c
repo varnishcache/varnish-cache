@@ -239,13 +239,13 @@ tweak_feature(struct cli *cli, const struct parspec *par, const char *arg)
 const struct parspec VSL_parspec[] = {
 	{ "vsl_mask", tweak_vsl_mask, NULL, 0, 0,
 		"Mask individual VSL messages from being logged.\n"
-		"\tdefault\tSet default value\n"
+		"\tdefault\tSet default value\n\n"
 		"Use +/- prefixe in front of VSL tag name, to mask/unmask "
 		"individual VSL messages.",
 		0, "default", "" },
 	{ "debug", tweak_debug, NULL, 0, 0,
 		"Enable/Disable various kinds of debugging.\n"
-		"\tnone\t\tDisable all debugging\n"
+		"\tnone\t\tDisable all debugging\n\n"
 		"Use +/- prefix to set/reset individual bits:\n"
 #define DEBUG_BIT(U, l, p, d) "\t" #l "\t" p d "\n"
 #include "tbl/debug_bits.h"
@@ -253,7 +253,7 @@ const struct parspec VSL_parspec[] = {
 		, 0, "none", "" },
 	{ "feature", tweak_feature, NULL, 0, 0,
 		"Enable/Disable various minor features.\n"
-		"\tnone\t\tDisable all features.\n"
+		"\tnone\t\tDisable all features.\n\n"
 		"Use +/- prefix to enable/disable individual feature:\n"
 #define FEATURE_BIT(U, l, p, d, ld) "\t" #l "\t" p d "\n"
 #include "tbl/feature_bits.h"
