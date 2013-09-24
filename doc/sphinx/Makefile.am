@@ -136,18 +136,21 @@ EXTRA_DIST = \
 	tutorial/now_what.rst \
 	users-guide/command-line.rst \
 	users-guide/compression.rst \
-	users-guide/configuration.rst \
 	users-guide/cookies.rst \
 	users-guide/devicedetection.rst \
 	users-guide/esi.rst \
 	users-guide/increasing-your-hitrate.rst \
 	users-guide/index.rst \
+	users-guide/intro.rst \
 	users-guide/operation-cli.rst \
 	users-guide/operation-logging.rst \
 	users-guide/operation.rst \
 	users-guide/operation-statistics.rst \
 	users-guide/params.rst \
+	users-guide/performance.rst \
 	users-guide/purging.rst \
+	users-guide/report.rst \
+	users-guide/running.rst \
 	users-guide/sizing-your-cache.rst \
 	users-guide/storage-backends.rst \
 	users-guide/troubleshooting.rst \
