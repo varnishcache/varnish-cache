@@ -96,19 +96,24 @@ Parameters can be set from the command line, and made "read-only"
 interface.
 
 Pretty much any parameter can be used to totally mess up your
-HTTP service, but a few can do more damage than that::
+HTTP service, but a few can do more damage than that:
 
-	user			-- access to local system via VCL
-	group			-- access to local system via VCL
-	listen_address		-- trojan other service ports (ssh!)
-	cc_command		-- execute arbitrary programs
+:ref:`ref_param_user` and :ref:`ref_param_group`
+	Access to local system via VCL
 
-Furthermore you may want to look at::
+:ref:`ref_param_listen_address`
+	Trojan other TCP sockets, like ssh
 
-	syslog_cli_traffic	-- know what is going on
-	vcc_unsafe_path		-- retrict VCL/VMODS to vcl_dir+vmod_dir
-	vcl_dir			-- VCL include dir
-	vmod_dir		-- VMOD import dir
+:ref:`ref_param_cc_command`
+	Execute arbitrary programs
+
+Furthermore you may want to look at and lock down:
+
+:ref:`ref_param_syslog_cli_traffic`
+	Log all CLI commands to syslog(8), so you know what goes on.
+
+:ref:`ref_param_vcc_unsafe_path`
+	Retrict VCL/VMODS to :ref:`ref_param_vcl_dir` and :ref:`ref_param_vmod_dir`
 
 The CLI interface
 -----------------
@@ -150,7 +155,7 @@ The params mentioned above can restrict VMOD so they can only
 be imported from a designated directory, restricting VCL wranglers
 to a pre-approved subset of VMODs.
 
-If you do that, we belive that your local system cannot be compromised
+If you do that, we believe that your local system cannot be compromised
 from VCL code.
 
 HTTP requests
