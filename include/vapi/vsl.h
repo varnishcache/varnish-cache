@@ -103,7 +103,13 @@ extern const char *VSL_tags[SLT__MAX];
 
 int VSL_Name2Tag(const char *name, int l);
 	/*
-	 * Convert string to tag number (= enum VSL_tag_e)
+	 * Convert string to tag number (= enum VSL_tag_e). Name can be a
+	 * substring from the beginning of a tag when that substring is
+	 * unique. Matching is case insensitive.
+	 *
+	 * Arguments:
+	 *    name:	A tag name (or substring) to match against
+	 *       l:	The length of name, or -1 to use strlen.
 	 *
 	 * Return values:
 	 *	>=0:	Tag number
