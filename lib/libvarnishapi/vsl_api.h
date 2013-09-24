@@ -63,7 +63,7 @@ struct vslf {
 #define VSLF_MAGIC			0x08650B39
 	VTAILQ_ENTRY(vslf)		list;
 
-	int				tag;
+	struct vbitmap			*tags;
 	vre_t				*vre;
 };
 

@@ -256,47 +256,46 @@ vsl_IX_arg(struct VSL_data *vsl, int opt, const char *arg)
 	const char *b, *e, *err;
 	vre_t *vre;
 	struct vslf *vslf;
+	struct vbitmap *tags = NULL;
 
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 	vsl->flags |= F_SEEN_ixIX;
 
-	l = 0;
 	b = arg;
 	e = strchr(b, ':');
 	if (e) {
-		while (isspace(*b))
-			b++;
+		tags = vbit_init(SLT__MAX);
+		AN(tags);
 		l = e - b;
-		while (l > 0 && isspace(b[l - 1]))
-			l--;
-	}
-	if (l > 0 && strncmp(b, "*", l))
-		i = VSL_Name2Tag(b, l);
-	else
-		i = -3;
-	if (i == -2)
-		return (vsl_diag(vsl,
-			"-%c: \"%*.*s\" matches multiple tags\n",
-			(char)opt, l, l, b));
-	else if (i == -1)
-		return (vsl_diag(vsl,
-			"-%c: Could not match \"%*.*s\" to any tag\n",
-			(char)opt, l, l, b));
-	assert(i >= -3);
-
-	if (e)
+		i = VSL_List2Tags(b, l, vsl_vbm_bitset, tags);
+		if (i < 0)
+			vbit_destroy(tags);
+		if (i == -1)
+			return (vsl_diag(vsl,
+				"-%c: \"%*.*s\" matches zero tags",
+				(char)opt, l, l, b));
+		else if (i == -2)
+			return (vsl_diag(vsl,
+				"-%c: \"%*.*s\" is ambiguous",
+				(char)opt, l, l, b));
+		else if (i == 3)
+			return (vsl_diag(vsl,
+				"-%c: Syntax error in \"%*.*s\"",
+				(char)opt, l, l, b));
 		b = e + 1;
+	}
+
 	vre = VRE_compile(b, 0, &err, &off);
-	if (vre == NULL)
+	if (vre == NULL) {
+		if (tags)
+			vbit_destroy(tags);
 		return (vsl_diag(vsl, "-%c: Regex error at position %d (%s)\n",
 			(char)opt, off, err));
+	}
 
 	ALLOC_OBJ(vslf, VSLF_MAGIC);
-	if (vslf == NULL) {
-		VRE_free(&vre);
-		return (vsl_diag(vsl, "Out of memory"));
-	}
-	vslf->tag = i;
+	AN(vslf);
+	vslf->tags = tags;
 	vslf->vre = vre;
 
 	if (opt == 'I')

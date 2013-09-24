@@ -75,10 +75,10 @@
 	)
 
 #define VSL_OPT_I							\
-	VOPT("I:", "[-I <[tag:]regex>]", "Include by regex",		\
+	VOPT("I:", "[-I <[taglist:]regex>]", "Include by regex",	\
 	    "Include by regex matching. Output only records matching"	\
-	    " tag and regular expression. Applies to any tag if tag"	\
-	    " is * or empty.\n"						\
+	    " taglist and regular expression. Applies to any tag if"	\
+	    " taglist is absent.\n"					\
 	    "\n"							\
 	    VSL_iI_PS							\
 	)
@@ -117,8 +117,8 @@
 	)
 
 #define VSL_OPT_X							\
-	VOPT("X:", "[-X <[tag:]regex>]", "Exclude by regex",		\
+	VOPT("X:", "[-X <[taglist:]regex>]", "Exclude by regex",	\
 	    "Exclude by regex matching. Do not output records matching"	\
-	    " tag and regular expression. Applies to any tag if tag"	\
-	    " is * or empty."						\
+	    " taglist and regular expression. Applies to any tag if"	\
+	    " taglist is absent."					\
 	)

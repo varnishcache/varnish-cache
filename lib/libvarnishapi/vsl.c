@@ -108,6 +108,8 @@ vsl_IX_free(vslf_list *list)
 		vslf = VTAILQ_FIRST(list);
 		CHECK_OBJ_NOTNULL(vslf, VSLF_MAGIC);
 		VTAILQ_REMOVE(list, vslf, list);
+		if (vslf->tags)
+			vbit_destroy(vslf->tags);
 		AN(vslf->vre);
 		VRE_free(&vslf->vre);
 		AZ(vslf->vre);
@@ -167,7 +169,7 @@ vsl_match_IX(struct VSL_data *vsl, const vslf_list *list, const struct VSL_curso
 
 	VTAILQ_FOREACH(vslf, list, list) {
 		CHECK_OBJ_NOTNULL(vslf, VSLF_MAGIC);
-		if (vslf->tag >= 0 && vslf->tag != tag)
+		if (vslf->tags != NULL && !vbit_test(vslf->tags, tag))
 			continue;
 		if (VRE_exec(vslf->vre, cdata, len, 0, 0, NULL, 0, NULL) >= 0)
 			return (1);
