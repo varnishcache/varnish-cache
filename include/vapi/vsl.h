@@ -96,13 +96,14 @@ typedef int VSLQ_dispatch_f(struct VSL_data *vsl,
 	 *   !=0: Makes VSLQ_Dispatch return with this return value immediatly
 	 */
 
-typedef void VSL_glob2tags_f(int tag, void *priv);
+typedef void VSL_tagfind_f(int tag, void *priv);
 	/*
-	 * The callback function type for use with VSL_Glob2Tags.
+	 * The callback function type for use with VSL_Glob2Tags and
+	 * VSL_List2Tags..
 	 *
 	 * Arguments:
 	 *    tag: Tag number (= enum VSL_tag_e)
-	 *   priv: The priv argument from VSL_Glob2Tag
+	 *   priv: The priv argument
 	 */
 
 extern const char *VSL_tags[SLT__MAX];
@@ -126,7 +127,7 @@ int VSL_Name2Tag(const char *name, int l);
 	 *	-2:	Multiple tags match substring
 	 */
 
-int VSL_Glob2Tags(const char *glob, int l, VSL_glob2tags_f *func, void *priv);
+int VSL_Glob2Tags(const char *glob, int l, VSL_tagfind_f *func, void *priv);
 	/*
 	 * Convert a string to multiple tag matches. The string can have
 	 * either a prefix or postfix wildcard (*) character. For each
@@ -142,6 +143,25 @@ int VSL_Glob2Tags(const char *glob, int l, VSL_glob2tags_f *func, void *priv);
 	 *     >0: Number of times func was called for matching tags.
 	 *     -1: No tag matches
 	 *     -2: Multiple tags match non-glob input
+	 *     -3: Syntax error
+	 */
+
+int VSL_List2Tags(const char *list, int l, VSL_tagfind_f *func, void *priv);
+	/*
+	 * Convert a comma-separated list of tag globs to tag
+	 * matches. Calls VSL_Glob2Tags for each comma-separated part of
+	 * list.
+	 *
+	 * Arguments:
+	 *   list: The list of globs
+	 *      l: The length of list. -1 to use strlen
+	 *   func: The function to call (can be NULL)
+	 *   priv: An argument that will be passed to func.
+	 *
+	 * Return valus:
+	 *     >0: Number of times func was called for matching tags.
+	 *     -1: No tag matches for list element
+	 *     -2: Multiple tags match non-glob list element
 	 *     -3: Syntax error
 	 */
 

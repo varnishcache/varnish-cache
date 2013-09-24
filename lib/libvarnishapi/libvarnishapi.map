@@ -116,5 +116,6 @@ LIBVARNISHAPI_1.3 {
 	VSLQ_Flush;
 	VSLQ_Name2Grouping;
 	VSL_Glob2Tags;
+	VSL_List2Tags;
 	# Variables:
 } LIBVARNISHAPI_1.0;

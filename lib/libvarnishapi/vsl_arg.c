@@ -84,7 +84,7 @@ VSL_Name2Tag(const char *name, int l)
 }
 
 int
-VSL_Glob2Tags(const char *glob, int l, VSL_glob2tags_f *func, void *priv)
+VSL_Glob2Tags(const char *glob, int l, VSL_tagfind_f *func, void *priv)
 {
 	int i, r, l2;
 	int pre = 0;
@@ -150,6 +150,36 @@ VSL_Glob2Tags(const char *glob, int l, VSL_glob2tags_f *func, void *priv)
 	if (r == 0)
 		return (-1);
 	return (r);
+}
+
+int
+VSL_List2Tags(const char *list, int l, VSL_tagfind_f *func, void *priv)
+{
+	const char *p, *q, *e;
+	int r, t;
+
+	if (l < 0)
+		l = strlen(list);
+	p = list;
+	e = p + l;
+	t = 0;
+	while (p < e) {
+		while (p < e && *p == ',')
+			p++;
+		if (p == e)
+			break;
+		q = p;
+		while (q < e && *q != ',')
+			q++;
+		r = VSL_Glob2Tags(p, q - p, func, priv);
+		if (r < 0)
+			return (r);
+		t += r;
+		p = q;
+	}
+	if (t == 0)
+		return (-1);
+	return (t);
 }
 
 static const char * const vsl_grouping[] = {
