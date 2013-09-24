@@ -5,6 +5,7 @@ The Varnish Reference Manual
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 .. toctree::
+	:maxdepth: 4
 
 	vcl.rst
 	varnish-cli.rst
