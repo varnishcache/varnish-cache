@@ -83,6 +83,75 @@ VSL_Name2Tag(const char *name, int l)
 	return (n);
 }
 
+int
+VSL_Glob2Tags(const char *glob, int l, VSL_glob2tags_f *func, void *priv)
+{
+	int i, r, l2;
+	int pre = 0;
+	int post = 0;
+	char buf[64];
+
+	AN(glob);
+	if (l < 0)
+		l = strlen(glob);
+	if (l == 0 || l > sizeof buf - 1)
+		return (-1);
+	if (strchr(glob, '*') != NULL) {
+		if (glob[0] == '*') {
+			/* Prefix wildcard */
+			pre = 1;
+			glob++;
+			l--;
+		}
+		if (l > 0 && glob[l - 1] == '*') {
+			/* Postfix wildcard */
+			post = 1;
+			l--;
+		}
+	}
+	if (pre && post)
+		/* Support only post or prefix wildcards */
+		return (-3);
+	memcpy(buf, glob, l);
+	buf[l] = '\0';
+	if (strchr(buf, '*') != NULL)
+		/* No multiple wildcards */
+		return (-3);
+	if (pre == 0 && post == 0) {
+		/* No wildcards, use VSL_Name2Tag */
+		i = VSL_Name2Tag(buf, l);
+		if (i < 0)
+			return (i);
+		if (func != NULL)
+			(func)(i, priv);
+		return (1);
+	}
+
+	r = 0;
+	for (i = 0; i < SLT__MAX; i++) {
+		if (VSL_tags[i] == NULL)
+			continue;
+		l2 = strlen(VSL_tags[i]);
+		if (l2 < l)
+			continue;
+		if (pre) {
+			/* Prefix wildcard match */
+			if (strcasecmp(buf, VSL_tags[i] + l2 - l))
+				continue;
+		} else {
+			/* Postfix wildcard match */
+			if (strncasecmp(buf, VSL_tags[i], l))
+				continue;
+		}
+		if (func != NULL)
+			(func)(i, priv);
+		r++;
+	}
+	if (r == 0)
+		return (-1);
+	return (r);
+}
+
 static const char * const vsl_grouping[] = {
 	[VSL_g_raw]	= "raw",
 	[VSL_g_vxid]	= "vxid",
