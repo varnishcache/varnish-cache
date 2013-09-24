@@ -212,42 +212,40 @@ VSLQ_Name2Grouping(const char *name, int l)
 	return (n);
 }
 
+static void
+vsl_vbm_bitset(int bit, void *priv)
+{
+
+	vbit_set((struct vbitmap *)priv, bit);
+}
+
+static void
+vsl_vbm_bitclr(int bit, void *priv)
+{
+
+	vbit_clr((struct vbitmap *)priv, bit);
+}
+
 static int
 vsl_ix_arg(struct VSL_data *vsl, int opt, const char *arg)
 {
-	int i, l;
-	const char *b, *e;
+	int i;
 
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 	vsl->flags |= F_SEEN_ixIX;
 
-	for (b = arg; *b; b = e) {
-		while (isspace(*b))
-			b++;
-		e = strchr(b, ',');
-		if (e == NULL)
-			e = strchr(b, '\0');
-		l = e - b;
-		if (*e == ',')
-			e++;
-		while (isspace(b[l - 1]))
-			l--;
-		i = VSL_Name2Tag(b, l);
-		if (i >= 0) {
-			if (opt == 'x')
-				vbit_set(vsl->vbm_supress, i);
-			else
-				vbit_clr(vsl->vbm_supress, i);
-		} else if (i == -2) {
-			return (vsl_diag(vsl,
-			    "-%c: \"%*.*s\" matches multiple tags\n",
-			    (char)opt, l, l, b));
-		} else {
-			return (vsl_diag(vsl,
-			    "-%c: Could not match \"%*.*s\" to any tag\n",
-			    (char)opt, l, l, b));
-		}
-	}
+	i = VSL_List2Tags(arg, -1, opt == 'x' ? vsl_vbm_bitset : vsl_vbm_bitclr,
+	    vsl->vbm_supress);
+	if (i == -1)
+		return (vsl_diag(vsl, "-%c: \"%s\" matches zero tags",
+			(char)opt, arg));
+	else if (i == -2)
+		return (vsl_diag(vsl, "-%c: \"%s\" is ambiguous",
+			(char)opt, arg));
+	else if (i == -3)
+		return (vsl_diag(vsl, "-%c: Syntax error in \"%s\"",
+			(char)opt, arg));
+
 	return (1);
 }
 

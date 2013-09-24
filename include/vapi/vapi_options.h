@@ -66,8 +66,9 @@
 	)
 
 #define VSL_OPT_i							\
-	VOPT("i:", "[-i tag]", "Include tag",				\
-	    "Include log records of this tag in output. Multiple -i"	\
+	VOPT("i:", "[-i taglist]", "Include tags",			\
+	    "Include log records of these tags in output. Taglist is"   \
+	    " a comma-separated list of tag globs. Multiple -i"		\
 	    " options may be given.\n"					\
 	    "\n"							\
 	    VSL_iI_PS							\
@@ -109,9 +110,10 @@
 	)
 
 #define VSL_OPT_x							\
-	VOPT("x:", "[-x tag]", "Exclude tag",				\
-	    "Exclude log records of this tag in output. Multiple -x"	\
-	    " options may be given."					\
+	VOPT("x:", "[-x taglist]", "Exclude tags",			\
+	    "Exclude log records of these tags in output. Taglist is"   \
+	    " a comma-separated list of tag globs. Multiple -x"		\
+	    " options may be given.\n"					\
 	)
 
 #define VSL_OPT_X							\
