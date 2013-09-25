@@ -35,8 +35,8 @@
 
 #include "vxp_tokens.h"
 
-#define isword(c) \
-	(isalpha(c) || isdigit(c) || (c) == '_' || (c) == '-' || (c) == '.')
+#define isword(c)  (isalpha(c) || isdigit(c) || (c) == '_' || (c) == '-' || \
+	    (c) == '.' || (c) == '*' || (c) == ',')
 
 #define PF(t)	(int)((t)->e - (t)->b), (t)->b
 
@@ -82,7 +82,7 @@ struct vex_lhs {
 	   expression should be applied to */
 	unsigned		magic;
 #define VEX_LHS_MAGIC		0x1AD3D78D
-	int			tag;
+	struct vbitmap		*tags;
 	int			field;
 	int			level_min;
 	int			level_max;

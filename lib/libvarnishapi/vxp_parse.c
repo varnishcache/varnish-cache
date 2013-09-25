@@ -40,8 +40,10 @@
 
 #include "vas.h"
 #include "vsb.h"
+#include "vbm.h"
 #include "miniobj.h"
 #include "vapi/vsl.h"
+#include "vsl_api.h"
 
 #include "vxp.h"
 
@@ -51,29 +53,36 @@ static void
 vxp_expr_lhs(struct vxp *vxp, struct vex_lhs **plhs)
 {
 	char *p;
+	int i;
 
-	/* XXX: Tag wildcards */
 	AN(plhs);
 	AZ(*plhs);
 	if (vxp->t->tok != VAL) {
-		VSB_printf(vxp->sb, "Expected VSL tag got '%.*s' ", PF(vxp->t));
+		VSB_printf(vxp->sb, "Expected VSL taglist got '%.*s' ",
+		    PF(vxp->t));
 		vxp_ErrWhere(vxp, vxp->t, -1);
 		return;
 	}
 	ALLOC_OBJ(*plhs, VEX_LHS_MAGIC);
 	AN(*plhs);
-	(*plhs)->tag = VSL_Name2Tag(vxp->t->dec, -1);
-	if ((*plhs)->tag == -1) {
-		VSB_printf(vxp->sb, "Could not match '%.*s' to any tag ",
-		    PF(vxp->t));
-		vxp_ErrWhere(vxp, vxp->t, -1);
-		return;
-	} else if ((*plhs)->tag == -2) {
-		VSB_printf(vxp->sb, "'%.*s' matches multiple tags ",
-		    PF(vxp->t));
+	(*plhs)->tags = vbit_init(SLT__MAX);
+	i = VSL_List2Tags(vxp->t->dec, -1, vsl_vbm_bitset, (*plhs)->tags);
+	if (i == -1) {
+		VSB_printf(vxp->sb, "Taglist matches zero tags");
 		vxp_ErrWhere(vxp, vxp->t, -1);
 		return;
 	}
+	if (i == -2) {
+		VSB_printf(vxp->sb, "Taglist is ambiguous");
+		vxp_ErrWhere(vxp, vxp->t, -1);
+		return;
+	}
+	if (i == -3) {
+		VSB_printf(vxp->sb, "Syntax error in taglist");
+		vxp_ErrWhere(vxp, vxp->t, -1);
+		return;
+	}
+	assert(i > 0);
 	vxp_NextToken(vxp);
 
 	if (vxp->t->tok == '[') {
@@ -422,8 +431,11 @@ void
 vex_Free(struct vex **pvex)
 {
 
-	if ((*pvex)->lhs != NULL)
+	if ((*pvex)->lhs != NULL) {
+		if ((*pvex)->lhs->tags != NULL)
+			vbit_destroy((*pvex)->lhs->tags);
 		FREE_OBJ((*pvex)->lhs);
+	}
 	if ((*pvex)->rhs != NULL) {
 		if ((*pvex)->rhs->val_string)
 			free((*pvex)->rhs->val_string);
@@ -473,6 +485,25 @@ vex_print_rhs(const struct vex_rhs *rhs)
 }
 
 static void
+vex_print_tags(const struct vbitmap *vbm)
+{
+	int i;
+	int first = 1;
+
+	for (i = 0; i < SLT__MAX; i++) {
+		if (VSL_tags[i] == NULL)
+			continue;
+		if (!vbit_test(vbm, i))
+			continue;
+		if (first)
+			first = 0;
+		else
+			fprintf(stderr, ",");
+		fprintf(stderr, "%s", VSL_tags[i]);
+	}
+}
+
+static void
 vex_print(const struct vex *vex, int indent)
 {
 	CHECK_OBJ_NOTNULL(vex, VEX_MAGIC);
@@ -480,7 +511,10 @@ vex_print(const struct vex *vex, int indent)
 	fprintf(stderr, "%*s%s", indent, "", vxp_tnames[vex->tok]);
 	if (vex->lhs != NULL) {
 		CHECK_OBJ_NOTNULL(vex->lhs, VEX_LHS_MAGIC);
-		fprintf(stderr, " tag=%s", VSL_tags[vex->lhs->tag]);
+		AN(vex->lhs->tags);
+		fprintf(stderr, " lhs=(");
+		vex_print_tags(vex->lhs->tags);
+		fprintf(stderr, ")");
 		if (vex->lhs->field >= 0)
 			fprintf(stderr, "[%d]", vex->lhs->field);
 	}

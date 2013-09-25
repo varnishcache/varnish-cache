@@ -39,6 +39,7 @@
 #include "miniobj.h"
 #include "vre.h"
 #include "vsb.h"
+#include "vbm.h"
 
 #include "vapi/vsl.h"
 #include "vsl_api.h"
@@ -187,6 +188,7 @@ vslq_test(const struct vex *vex, struct VSL_transaction * const ptrans[])
 
 	CHECK_OBJ_NOTNULL(vex, VEX_MAGIC);
 	CHECK_OBJ_NOTNULL(vex->lhs, VEX_LHS_MAGIC);
+	AN(vex->lhs->tags);
 	CHECK_OBJ_NOTNULL(vex->rhs, VEX_RHS_MAGIC);
 
 	for (t = ptrans[0]; t != NULL; t = *++ptrans) {
@@ -200,14 +202,12 @@ vslq_test(const struct vex *vex, struct VSL_transaction * const ptrans[])
 			assert(i == 1);
 			AN(t->c->rec.ptr);
 
-			if (vex->lhs->tag != VSL_TAG(t->c->rec.ptr))
+			if (!vbit_test(vex->lhs->tags, VSL_TAG(t->c->rec.ptr)))
 				continue;
 
 			i = vslq_test_rec(vex, &t->c->rec);
 			if (i)
 				return (i);
-
-
 		}
 	}
 

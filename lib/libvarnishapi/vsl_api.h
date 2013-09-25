@@ -40,6 +40,8 @@
 int vsl_diag(struct VSL_data *vsl, const char *fmt, ...)
     __printflike(2, 3);
 int vsl_skip(struct VSL_cursor *c, ssize_t words);
+void vsl_vbm_bitset(int bit, void *priv);
+void vsl_vbm_bitclr(int bit, void *priv);
 
 typedef void vslc_delete_f(struct VSL_cursor *);
 typedef int vslc_next_f(struct VSL_cursor *);
