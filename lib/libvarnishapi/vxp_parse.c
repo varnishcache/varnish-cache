@@ -304,7 +304,7 @@ vxp_expr_group(struct vxp *vxp, struct vex **pvex)
 /*
  * SYNTAX:
  *   expr_not:
- *     '!' expr_group
+ *     'not' expr_group
  *     expr_group
  */
 
@@ -315,7 +315,7 @@ vxp_expr_not(struct vxp *vxp, struct vex **pvex)
 	AN(pvex);
 	AZ(*pvex);
 
-	if (vxp->t->tok == '!') {
+	if (vxp->t->tok == T_NOT) {
 		ALLOC_OBJ(*pvex, VEX_MAGIC);
 		AN(*pvex);
 		(*pvex)->tok = vxp->t->tok;

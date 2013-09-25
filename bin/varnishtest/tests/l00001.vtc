@@ -145,8 +145,8 @@ logexpect l1 -d 1 -g vxid -q "RespStatus == 404 or RespStatus ~ '^200$'" {
 	expect * =	End
 } -run
 
-# Test boolean !
-logexpect l1 -d 1 -g vxid -q "RespStatus == 404 or !RespStatus ~ '^404$'" {
+# Test boolean not
+logexpect l1 -d 1 -g vxid -q "RespStatus == 404 or not RespStatus ~ '^404$'" {
 	expect 0 *	Begin	req
 	expect * =	ReqEnd
 	expect * =	End
