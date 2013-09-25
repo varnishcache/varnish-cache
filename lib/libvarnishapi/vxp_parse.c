@@ -68,17 +68,17 @@ vxp_expr_lhs(struct vxp *vxp, struct vex_lhs **plhs)
 	(*plhs)->tags = vbit_init(SLT__MAX);
 	i = VSL_List2Tags(vxp->t->dec, -1, vsl_vbm_bitset, (*plhs)->tags);
 	if (i == -1) {
-		VSB_printf(vxp->sb, "Taglist matches zero tags");
+		VSB_printf(vxp->sb, "Taglist matches zero tags ");
 		vxp_ErrWhere(vxp, vxp->t, -1);
 		return;
 	}
 	if (i == -2) {
-		VSB_printf(vxp->sb, "Taglist is ambiguous");
+		VSB_printf(vxp->sb, "Taglist is ambiguous ");
 		vxp_ErrWhere(vxp, vxp->t, -1);
 		return;
 	}
 	if (i == -3) {
-		VSB_printf(vxp->sb, "Syntax error in taglist");
+		VSB_printf(vxp->sb, "Syntax error in taglist ");
 		vxp_ErrWhere(vxp, vxp->t, -1);
 		return;
 	}
@@ -112,7 +112,7 @@ vxp_expr_lhs(struct vxp *vxp, struct vex_lhs **plhs)
 		}
 		(*plhs)->field = (int)strtol(vxp->t->dec, &p, 0);
 		if (*p || (*plhs)->field <= 0) {
-			VSB_printf(vxp->sb, "Expected positive integer");
+			VSB_printf(vxp->sb, "Expected positive integer ");
 			vxp_ErrWhere(vxp, vxp->t, -1);
 			return;
 		}
