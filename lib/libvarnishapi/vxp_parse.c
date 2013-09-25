@@ -85,6 +85,22 @@ vxp_expr_lhs(struct vxp *vxp, struct vex_lhs **plhs)
 	assert(i > 0);
 	vxp_NextToken(vxp);
 
+	if (vxp->t->tok == ':') {
+		/* Record prefix */
+		vxp_NextToken(vxp);
+		if (vxp->t->tok != VAL) {
+			VSB_printf(vxp->sb, "Expected string got '%.*s' ",
+			    PF(vxp->t));
+			vxp_ErrWhere(vxp, vxp->t, -1);
+			return;
+		}
+		AN(vxp->t->dec);
+		(*plhs)->prefix = strdup(vxp->t->dec);
+		AN((*plhs)->prefix);
+		(*plhs)->prefixlen = strlen((*plhs)->prefix);
+		vxp_NextToken(vxp);
+	}
+
 	if (vxp->t->tok == '[') {
 		/* LHS field [] */
 		vxp_NextToken(vxp);
@@ -434,6 +450,8 @@ vex_Free(struct vex **pvex)
 	if ((*pvex)->lhs != NULL) {
 		if ((*pvex)->lhs->tags != NULL)
 			vbit_destroy((*pvex)->lhs->tags);
+		if ((*pvex)->lhs->prefix != NULL)
+			free((*pvex)->lhs->prefix);
 		FREE_OBJ((*pvex)->lhs);
 	}
 	if ((*pvex)->rhs != NULL) {
@@ -462,21 +480,22 @@ vex_print_rhs(const struct vex_rhs *rhs)
 {
 
 	CHECK_OBJ_NOTNULL(rhs, VEX_RHS_MAGIC);
+	fprintf(stderr, "rhs=");
 	switch (rhs->type) {
 	case VEX_INT:
-		fprintf(stderr, "INT=%jd", (intmax_t)rhs->val_int);
+		fprintf(stderr, "INT(%jd)", (intmax_t)rhs->val_int);
 		break;
 	case VEX_FLOAT:
-		fprintf(stderr, "FLOAT=%f", rhs->val_float);
+		fprintf(stderr, "FLOAT(%f)", rhs->val_float);
 		break;
 	case VEX_STRING:
 		AN(rhs->val_string);
-		fprintf(stderr, "STRING='%s'", rhs->val_string);
+		fprintf(stderr, "STRING(%s)", rhs->val_string);
 		break;
 	case VEX_REGEX:
 		AN(rhs->val_string);
 		AN(rhs->val_regex);
-		fprintf(stderr, "REGEX='%s'", rhs->val_string);
+		fprintf(stderr, "REGEX(%s)", rhs->val_string);
 		break;
 	default:
 		WRONG("rhs type");
@@ -515,6 +534,10 @@ vex_print(const struct vex *vex, int indent)
 		fprintf(stderr, " lhs=(");
 		vex_print_tags(vex->lhs->tags);
 		fprintf(stderr, ")");
+		if (vex->lhs->prefix) {
+			assert(vex->lhs->prefixlen == strlen(vex->lhs->prefix));
+			fprintf(stderr, ":%s", vex->lhs->prefix);
+		}
 		if (vex->lhs->field >= 0)
 			fprintf(stderr, "[%d]", vex->lhs->field);
 	}

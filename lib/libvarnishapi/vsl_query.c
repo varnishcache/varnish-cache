@@ -86,6 +86,18 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	b = VSL_CDATA(rec->ptr);
 	e = b + VSL_LEN(rec->ptr) - 1;
 
+	/* Prefix */
+	if (vex->lhs->prefix != NULL) {
+		if (strncasecmp(b, vex->lhs->prefix, vex->lhs->prefixlen))
+			return (0);
+		if (b[vex->lhs->prefixlen] != ':')
+			return (0);
+		b += vex->lhs->prefixlen + 1;
+		/* Skip ws */
+		while (*b && isspace(*b))
+			b++;
+	}
+
 	/* Field */
 	if (vex->lhs->field > 0) {
 		for (e = b, i = 0; *e && i < vex->lhs->field; i++) {

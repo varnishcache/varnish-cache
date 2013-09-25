@@ -179,3 +179,10 @@ logexpect l1 -d 1 -g vxid -q "Debug,Resp* == 200" {
 	  expect * =	ReqEnd
 	  expect * =	End
 } -run
+
+# Test record prefix
+logexpect l1 -d 1 -g vxid -q "Resp*:x-test eq '123 321'" {
+	  expect 0 *	Begin	req
+	  expect * =	ReqEnd
+	  expect * =	End
+} -run

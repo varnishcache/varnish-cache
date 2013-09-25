@@ -83,6 +83,8 @@ struct vex_lhs {
 	unsigned		magic;
 #define VEX_LHS_MAGIC		0x1AD3D78D
 	struct vbitmap		*tags;
+	char			*prefix;
+	int			prefixlen;
 	int			field;
 	int			level_min;
 	int			level_max;
