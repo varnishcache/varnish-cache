@@ -68,6 +68,9 @@ tokens = {
         # These have handwritten recognizers
         "VAL":          None,
         "EOI":          None,
+
+	# Special
+	"T_TRUE":	None,
 }
 
 #######################################################################

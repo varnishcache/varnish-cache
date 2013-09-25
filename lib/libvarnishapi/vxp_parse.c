@@ -241,6 +241,7 @@ vxp_expr_cmp(struct vxp *vxp, struct vex **pvex)
 	case T_AND:
 	case T_OR:
 	case ')':
+		(*pvex)->tok = T_TRUE;
 		return;
 
 	/* Valid operators */

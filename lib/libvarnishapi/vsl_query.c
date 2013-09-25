@@ -80,8 +80,6 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 
 	AN(vex);
 	AN(rec);
-	rhs = vex->rhs;
-	AN(rhs);
 
 	b = VSL_CDATA(rec->ptr);
 	e = b + VSL_LEN(rec->ptr) - 1;
@@ -115,6 +113,13 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 			/* Missing field - no match */
 			return (0);
 	}
+
+	if (vex->tok == T_TRUE)
+		/* Always true */
+		return (1);
+
+	rhs = vex->rhs;
+	CHECK_OBJ_NOTNULL(rhs, VEX_RHS_MAGIC);
 
 	/* Prepare */
 	switch (vex->tok) {
@@ -201,7 +206,6 @@ vslq_test(const struct vex *vex, struct VSL_transaction * const ptrans[])
 	CHECK_OBJ_NOTNULL(vex, VEX_MAGIC);
 	CHECK_OBJ_NOTNULL(vex->lhs, VEX_LHS_MAGIC);
 	AN(vex->lhs->tags);
-	CHECK_OBJ_NOTNULL(vex->rhs, VEX_RHS_MAGIC);
 
 	for (t = ptrans[0]; t != NULL; t = *++ptrans) {
 		AZ(VSL_ResetCursor(t->c));
