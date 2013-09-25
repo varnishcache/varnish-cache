@@ -758,20 +758,23 @@ static int
 vtx_diag(struct VSLQ *vslq, struct vtx *vtx, const char *fmt, ...)
 {
 	va_list ap;
-	uint32_t buf[256];
-	int i, len;
+	uint32_t chunk[256];
+	char *buf;
+	int l, buflen;
 	struct VSLC_ptr rec;
 
-	len = sizeof buf - 2 * sizeof (uint32_t);
+	buf = (char *)&chunk[2];
+	buflen = sizeof chunk - 2 * sizeof (uint32_t);
 	va_start(ap, fmt);
-	i = vsnprintf((char *)&buf[2], len, fmt, ap);
-	assert(i >= 0);
+	l = vsnprintf(buf, buflen, fmt, ap);
+	assert(l >= 0);
 	va_end(ap);
-	if (i < len)
-		len = i;
-	buf[1] = vtx->key.vxid;
-	buf[0] = ((((unsigned)SLT_VSL & 0xff) << 24) | len);
-	rec.ptr = buf;
+	if (l > buflen - 1)
+		l = buflen - 1;
+	buf[l++] = '\0';	/* NUL-terminated */
+	chunk[1] = vtx->key.vxid;
+	chunk[0] = ((((unsigned)SLT_VSL & 0xff) << 24) | l);
+	rec.ptr = chunk;
 	rec.priv = 0;
 	vtx_append(vslq, vtx, &rec, VSL_NEXT(rec.ptr) - rec.ptr, 1);
 
