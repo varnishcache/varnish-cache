@@ -488,28 +488,25 @@ vtx_check_ready(struct VSLQ *vslq, struct vtx *vtx)
 }
 
 static int
-vtx_parsetag_bl(const char *str, unsigned len, enum VSL_transaction_e *ptype,
+vtx_parsetag_bl(const char *str, enum VSL_transaction_e *ptype,
     unsigned *pvxid)
 {
-	char ibuf[len + 1];
-	char tbuf[7];
+	char buf[7];
 	unsigned vxid;
 	int i;
 	enum VSL_transaction_e type = VSL_t_unknown;
 
 	AN(str);
-	memcpy(ibuf, str, len);
-	ibuf[len] = '\0';
-	i = sscanf(ibuf, "%6s %u", tbuf, &vxid);
+	i = sscanf(str, "%6s %u", buf, &vxid);
 	if (i < 1)
 		return (-1);
-	if (!strcmp(tbuf, "sess"))
+	if (!strcmp(buf, "sess"))
 		type = VSL_t_sess;
-	else if (!strcmp(tbuf, "req"))
+	else if (!strcmp(buf, "req"))
 		type = VSL_t_req;
-	else if (!strcmp(tbuf, "esireq"))
+	else if (!strcmp(buf, "esireq"))
 		type = VSL_t_esireq;
-	else if (!strcmp(tbuf, "bereq"))
+	else if (!strcmp(buf, "bereq"))
 		type = VSL_t_bereq;
 	else
 		return (-1);
@@ -550,7 +547,7 @@ vtx_scan_begintag(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 	if (vtx->flags & VTX_F_READY)
 		return (vtx_diag_tag(vslq, vtx, ptr, "link too late"));
 
-	i = vtx_parsetag_bl(VSL_CDATA(ptr), VSL_LEN(ptr), &type, &p_vxid);
+	i = vtx_parsetag_bl(VSL_CDATA(ptr), &type, &p_vxid);
 	if (i < 1)
 		return (vtx_diag_tag(vslq, vtx, ptr, "parse error"));
 
@@ -598,7 +595,7 @@ vtx_scan_linktag(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 	if (vtx->flags & VTX_F_READY)
 		return (vtx_diag_tag(vslq, vtx, ptr, "link too late"));
 
-	i = vtx_parsetag_bl(VSL_CDATA(ptr), VSL_LEN(ptr), &c_type, &c_vxid);
+	i = vtx_parsetag_bl(VSL_CDATA(ptr), &c_type, &c_vxid);
 	if (i < 2)
 		return (vtx_diag_tag(vslq, vtx, ptr, "parse error"));
 	assert(i == 2);
