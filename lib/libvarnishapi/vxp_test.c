@@ -30,12 +30,15 @@ main(int argc, char **argv)
 	if (vex == NULL) {
 		VSB_finish(vsb);
 		fprintf(stderr, "Error:\n%s", VSB_data(vsb));
+		VSB_delete(vsb);
+		free(s);
 		exit(1);
 	}
 	VSB_delete(vsb);
 
 	vex_Free(&vex);
 	AZ(vex);
+	free(s);
 
 	return (0);
 }
