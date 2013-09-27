@@ -67,6 +67,15 @@ struct vtx_chunk {
 	ssize_t			offset;
 };
 
+struct vtx_diag {
+	unsigned		magic;
+#define VTX_DIAG_MAGIC		0xC654479F
+
+	VTAILQ_ENTRY(vtx_diag)	list;
+	uint32_t		chunk[2 + 256 / sizeof (uint32_t)];
+};
+
+
 struct vslc_vtx {
 	unsigned		magic;
 #define VSLC_VTX_MAGIC		0x74C6523F
@@ -74,6 +83,8 @@ struct vslc_vtx {
 	struct VSL_cursor	cursor;
 
 	struct vtx		*vtx;
+
+	struct vtx_diag		*diag;	/* Current diag message pointer */
 
 	unsigned		chunk;	/* Current chunk */
 	ssize_t			offset; /* Offset of next record */
@@ -107,13 +118,16 @@ struct vtx {
 	unsigned		n_descend;
 
 	struct vslc_vtx		c;
-	ssize_t			len;
+
+	VTAILQ_HEAD(,vtx_diag)	diag;
 
 	struct vtx_chunk	chunk[VTX_CHUNKS];
 	unsigned		n_chunk;
 
 	uint32_t		*buf;
 	ssize_t			bufsize;
+
+	ssize_t			len;
 };
 
 struct VSLQ {
@@ -138,9 +152,9 @@ struct VSLQ {
 };
 
 /*lint -esym(534, vtx_diag) */
-static int vtx_diag(struct VSLQ *vslq, struct vtx *vtx, const char *fmt, ...);
+static int vtx_diag(struct vtx *vtx, const char *fmt, ...);
 /*lint -esym(534, vtx_diag_tag) */
-static int vtx_diag_tag(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr,
+static int vtx_diag_tag(struct vtx *vtx, const uint32_t *ptr,
     const char *reason);
 
 static inline int
@@ -209,6 +223,18 @@ vslc_vtx_next(struct VSL_cursor *cursor)
 	assert(&c->cursor == cursor);
 	CHECK_OBJ_NOTNULL(c->vtx, VTX_MAGIC);
 
+	if (c->diag == NULL && VTAILQ_FIRST(&c->vtx->diag) != NULL) {
+		/* Send first diag msg */
+		c->diag = VTAILQ_FIRST(&c->vtx->diag);
+		c->cursor.rec.ptr = c->diag->chunk;
+		return (1);
+	} else if (c->diag != NULL && VTAILQ_NEXT(c->diag, list) != NULL) {
+		/* Send next diag msg */
+		c->diag = VTAILQ_NEXT(c->diag, list);
+		c->cursor.rec.ptr = c->diag->chunk;
+		return (1);
+	}
+
 	assert (c->offset <= c->vtx->len);
 	if (c->offset == c->vtx->len)
 		return (0);
@@ -245,6 +271,7 @@ vslc_vtx_reset(struct VSL_cursor *cursor)
 
 	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_VTX_MAGIC);
 	assert(&c->cursor == cursor);
+	c->diag = NULL;
 	c->chunk = 0;
 	c->offset = 0;
 	c->cursor.rec.ptr = NULL;
@@ -290,10 +317,11 @@ vtx_new(struct VSLQ *vslq)
 	vtx->n_child = 0;
 	vtx->n_childready = 0;
 	vtx->n_descend = 0;
-	(void)vslc_vtx_reset(&vtx->c.cursor);
-	vtx->len = 0;
+	VTAILQ_INIT(&vtx->diag);
 	memset(vtx->chunk, 0, sizeof vtx->chunk);
 	vtx->n_chunk = 0;
+	vtx->len = 0;
+	(void)vslc_vtx_reset(&vtx->c.cursor);
 
 	VTAILQ_INSERT_TAIL(&vslq->incomplete, vtx, list_incomplete);
 	vslq->n_incomplete++;
@@ -319,6 +347,7 @@ vtx_retire(struct VSLQ *vslq, struct vtx **pvtx)
 {
 	struct vtx *vtx;
 	struct vtx *child;
+	struct vtx_diag *diag;
 
 	AN(vslq);
 	AN(pvtx);
@@ -346,6 +375,12 @@ vtx_retire(struct VSLQ *vslq, struct vtx **pvtx)
 	AZ(vtx->n_child);
 	AZ(vtx->n_descend);
 	AN(VRB_REMOVE(vtx_tree, &vslq->tree, &vtx->key));
+
+	while (!VTAILQ_EMPTY(&vtx->diag)) {
+		diag = VTAILQ_FIRST(&vtx->diag);
+		VTAILQ_REMOVE(&vtx->diag, diag, list);
+		FREE_OBJ(diag);
+	}
 
 	if (vtx->n_chunk)
 		VTAILQ_REMOVE(&vslq->shmlist, vtx, list_shm);
@@ -464,7 +499,7 @@ vtx_check_ready(struct VSLQ *vslq, struct vtx *vtx)
 	AZ(vtx->flags & VTX_F_READY);
 
 	if (vtx->type == VSL_t_unknown)
-		vtx_diag(vslq, vtx, "vtx of unknown type marked complete");
+		vtx_diag(vtx, "vtx of unknown type marked complete");
 
 	ready = vtx;
 	while (1) {
@@ -545,16 +580,16 @@ vtx_scan_begintag(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 	assert(VSL_TAG(ptr) == SLT_Begin);
 
 	if (vtx->flags & VTX_F_READY)
-		return (vtx_diag_tag(vslq, vtx, ptr, "link too late"));
+		return (vtx_diag_tag(vtx, ptr, "link too late"));
 
 	i = vtx_parsetag_bl(VSL_CDATA(ptr), &type, &p_vxid);
 	if (i < 1)
-		return (vtx_diag_tag(vslq, vtx, ptr, "parse error"));
+		return (vtx_diag_tag(vtx, ptr, "parse error"));
 
 	/* Check/set vtx type */
 	assert(type != VSL_t_unknown);
 	if (vtx->type != VSL_t_unknown && vtx->type != type)
-		return (vtx_diag_tag(vslq, vtx, ptr, "type mismatch"));
+		return (vtx_diag_tag(vtx, ptr, "type mismatch"));
 	vtx->type = type;
 
 	if (i == 1 || p_vxid == 0)
@@ -573,9 +608,9 @@ vtx_scan_begintag(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 		return (0);
 
 	if (vtx->parent != NULL)
-		return (vtx_diag_tag(vslq, vtx, ptr, "duplicate link"));
+		return (vtx_diag_tag(vtx, ptr, "duplicate link"));
 	if (p_vtx->flags & VTX_F_READY)
-		return (vtx_diag_tag(vslq, vtx, ptr, "link too late"));
+		return (vtx_diag_tag(vtx, ptr, "link too late"));
 
 	vtx_set_parent(p_vtx, vtx);
 
@@ -593,11 +628,11 @@ vtx_scan_linktag(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 	assert(VSL_TAG(ptr) == SLT_Link);
 
 	if (vtx->flags & VTX_F_READY)
-		return (vtx_diag_tag(vslq, vtx, ptr, "link too late"));
+		return (vtx_diag_tag(vtx, ptr, "link too late"));
 
 	i = vtx_parsetag_bl(VSL_CDATA(ptr), &c_type, &c_vxid);
 	if (i < 2)
-		return (vtx_diag_tag(vslq, vtx, ptr, "parse error"));
+		return (vtx_diag_tag(vtx, ptr, "parse error"));
 	assert(i == 2);
 
 	if (vslq->grouping == VSL_g_vxid)
@@ -612,11 +647,11 @@ vtx_scan_linktag(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 		/* Link already exists */
 		return (0);
 	if (c_vtx->parent != NULL)
-		return (vtx_diag_tag(vslq, vtx, ptr, "duplicate link"));
+		return (vtx_diag_tag(vtx, ptr, "duplicate link"));
 	if (c_vtx->flags & VTX_F_READY)
-		return (vtx_diag_tag(vslq, vtx, ptr, "link too late"));
+		return (vtx_diag_tag(vtx, ptr, "link too late"));
 	if (c_vtx->type != VSL_t_unknown && c_vtx->type != c_type)
-		return (vtx_diag_tag(vslq, vtx, ptr, "type mismatch"));
+		return (vtx_diag_tag(vtx, ptr, "type mismatch"));
 	c_vtx->type = c_type;
 
 	vtx_set_parent(vtx, c_vtx);
@@ -635,20 +670,16 @@ vtx_scan(struct VSLQ *vslq, struct vtx *vtx)
 		ptr = vtx->c.cursor.rec.ptr;
 		tag = VSL_TAG(ptr);
 
-		if (tag == SLT__Batch)
-			continue;
-
-		if (tag == SLT_VSL)
-			/* Don't process these to avoid looping */
+		if (tag == SLT__Batch || tag == SLT_VSL)
 			continue;
 
 		if (vtx->flags & VTX_F_COMPLETE) {
-			vtx_diag_tag(vslq, vtx, ptr, "late log rec");
+			vtx_diag_tag(vtx, ptr, "late log rec");
 			continue;
 		}
 
 		if (vtx->type == VSL_t_unknown && tag != SLT_Begin)
-			vtx_diag_tag(vslq, vtx, ptr, "early log rec");
+			vtx_diag_tag(vtx, ptr, "early log rec");
 
 		switch (tag) {
 		case SLT_Begin:
@@ -682,7 +713,7 @@ vtx_force(struct VSLQ *vslq, struct vtx *vtx, const char *reason)
 {
 	AZ(vtx->flags & VTX_F_COMPLETE);
 	AZ(vtx->flags & VTX_F_READY);
-	vtx_diag(vslq, vtx, reason);
+	vtx_diag(vtx, reason);
 
 	VTAILQ_REMOVE(&vslq->incomplete, vtx, list_incomplete);
 	vtx->flags |= VTX_F_COMPLETE;
@@ -752,16 +783,18 @@ vslq_callback(const struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
 }
 
 static int
-vtx_diag(struct VSLQ *vslq, struct vtx *vtx, const char *fmt, ...)
+vtx_diag(struct vtx *vtx, const char *fmt, ...)
 {
+	struct vtx_diag *diag;
 	va_list ap;
-	uint32_t chunk[256];
 	char *buf;
 	int l, buflen;
-	struct VSLC_ptr rec;
 
-	buf = (char *)&chunk[2];
-	buflen = sizeof chunk - 2 * sizeof (uint32_t);
+	ALLOC_OBJ(diag, VTX_DIAG_MAGIC);
+	AN(diag);
+
+	buf = (char *)&diag->chunk[2];
+	buflen = sizeof (diag->chunk) - 2 * sizeof (uint32_t);
 	va_start(ap, fmt);
 	l = vsnprintf(buf, buflen, fmt, ap);
 	assert(l >= 0);
@@ -769,20 +802,17 @@ vtx_diag(struct VSLQ *vslq, struct vtx *vtx, const char *fmt, ...)
 	if (l > buflen - 1)
 		l = buflen - 1;
 	buf[l++] = '\0';	/* NUL-terminated */
-	chunk[1] = vtx->key.vxid;
-	chunk[0] = ((((unsigned)SLT_VSL & 0xff) << 24) | l);
-	rec.ptr = chunk;
-	rec.priv = 0;
-	vtx_append(vslq, vtx, &rec, VSL_NEXT(rec.ptr) - rec.ptr, 1);
+	diag->chunk[1] = vtx->key.vxid;
+	diag->chunk[0] = ((((unsigned)SLT_VSL & 0xff) << 24) | l);
+	VTAILQ_INSERT_TAIL(&vtx->diag, diag, list);
 
 	return (-1);
 }
 
 static int
-vtx_diag_tag(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr,
-    const char *reason)
+vtx_diag_tag(struct vtx *vtx, const uint32_t *ptr, const char *reason)
 {
-	return (vtx_diag(vslq, vtx, "%s (%s: %.*s)", reason,
+	return (vtx_diag(vtx, "%s (%s: %.*s)", reason,
 		VSL_tags[VSL_TAG(ptr)],	(int)VSL_LEN(ptr), VSL_CDATA(ptr)));
 }
 
