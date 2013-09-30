@@ -57,7 +57,7 @@ following VCL in place::
 	  }
   }
 
-As you can see we have used to new VCL subroutines, vcl_hit and
+As you can see we have used two new VCL subroutines, vcl_hit and
 vcl_miss. When we call lookup Varnish will try to lookup the object in
 its cache. It will either hit an object or miss it and so the
 corresponding subroutine is called. In vcl_hit the object that is
