@@ -694,7 +694,7 @@ mgt_uptime(const struct vev *e, int what)
 	(void)what;
 	AN(VSC_C_mgt);
 	VSC_C_mgt->uptime = static_VSC_C_mgt.uptime =
-	    VTIM_mono() - mgt_uptime_t0;
+	    VTIM_real() - mgt_uptime_t0;
 	if (heritage.vsm != NULL)
 		VSM_common_ageupdate(heritage.vsm);
 	return (0);
@@ -713,7 +713,7 @@ MGT_Run(void)
 	struct vev *e;
 	int i;
 
-	mgt_uptime_t0 = VTIM_mono();
+	mgt_uptime_t0 = VTIM_real();
 	e = vev_new();
 	XXXAN(e);
 	e->callback = mgt_uptime;
