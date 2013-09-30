@@ -63,7 +63,7 @@ tokens = {
 	"T_NOT":	"not",
 
         # Miscellaneous
-        None:           "<>~[]{}():",
+        None:           "<>~[]{}():,",
 
         # These have handwritten recognizers
         "VAL":          None,

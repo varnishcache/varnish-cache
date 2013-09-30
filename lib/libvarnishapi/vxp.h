@@ -36,7 +36,7 @@
 #include "vxp_tokens.h"
 
 #define isword(c)  (isalpha(c) || isdigit(c) || (c) == '_' || (c) == '-' || \
-	    (c) == '.' || (c) == '*' || (c) == ',')
+	    (c) == '.' || (c) == '*')
 
 #define PF(t)	(int)((t)->e - (t)->b), (t)->b
 

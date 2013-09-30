@@ -57,33 +57,40 @@ vxp_expr_lhs(struct vxp *vxp, struct vex_lhs **plhs)
 
 	AN(plhs);
 	AZ(*plhs);
-	if (vxp->t->tok != VAL) {
-		VSB_printf(vxp->sb, "Expected VSL taglist got '%.*s' ",
-		    PF(vxp->t));
-		vxp_ErrWhere(vxp, vxp->t, -1);
-		return;
-	}
 	ALLOC_OBJ(*plhs, VEX_LHS_MAGIC);
 	AN(*plhs);
 	(*plhs)->tags = vbit_init(SLT__MAX);
-	i = VSL_List2Tags(vxp->t->dec, -1, vsl_vbm_bitset, (*plhs)->tags);
-	if (i == -1) {
-		VSB_printf(vxp->sb, "Taglist matches zero tags ");
-		vxp_ErrWhere(vxp, vxp->t, -1);
-		return;
+	while (1) {
+		/* The tags this expression applies to */
+		if (vxp->t->tok != VAL) {
+			VSB_printf(vxp->sb, "Expected VSL tag name got '%.*s' ",
+			    PF(vxp->t));
+			vxp_ErrWhere(vxp, vxp->t, -1);
+			return;
+		}
+		i = VSL_Glob2Tags(vxp->t->dec, -1, vsl_vbm_bitset,
+		    (*plhs)->tags);
+		if (i == -1) {
+			VSB_printf(vxp->sb, "Tag name matches zero tags ");
+			vxp_ErrWhere(vxp, vxp->t, -1);
+			return;
+		}
+		if (i == -2) {
+			VSB_printf(vxp->sb, "Tag name is ambiguous ");
+			vxp_ErrWhere(vxp, vxp->t, -1);
+			return;
+		}
+		if (i == -3) {
+			VSB_printf(vxp->sb, "Syntax error in tag name ");
+			vxp_ErrWhere(vxp, vxp->t, -1);
+			return;
+		}
+		assert(i > 0);
+		vxp_NextToken(vxp);
+		if (vxp->t->tok != ',')
+			break;
+		vxp_NextToken(vxp);
 	}
-	if (i == -2) {
-		VSB_printf(vxp->sb, "Taglist is ambiguous ");
-		vxp_ErrWhere(vxp, vxp->t, -1);
-		return;
-	}
-	if (i == -3) {
-		VSB_printf(vxp->sb, "Syntax error in taglist ");
-		vxp_ErrWhere(vxp, vxp->t, -1);
-		return;
-	}
-	assert(i > 0);
-	vxp_NextToken(vxp);
 
 	if (vxp->t->tok == ':') {
 		/* Record prefix */
