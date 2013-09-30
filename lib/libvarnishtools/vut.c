@@ -136,6 +136,10 @@ VUT_Arg(int opt, const char *arg)
 		/* PID file */
 		REPLACE(VUT.P_arg, arg);
 		return (1);
+	case 'q':
+		/* Query to use */
+		REPLACE(VUT.q_arg, arg);
+		return (1);
 	case 'r':
 		/* Binary file input */
 		REPLACE(VUT.r_arg, arg);
@@ -201,7 +205,7 @@ VUT_Setup(void)
 	}
 
 	/* Create query */
-	VUT.vslq = VSLQ_New(VUT.vsl, &c, VUT.g_arg, VUT.query);
+	VUT.vslq = VSLQ_New(VUT.vsl, &c, VUT.g_arg, VUT.q_arg);
 	if (VUT.vslq == NULL)
 		VUT_Error(1, "Query parse error (%s)", VSL_Error(VUT.vsl));
 	AZ(c);
@@ -289,7 +293,7 @@ VUT_Main(VSLQ_dispatch_f *func, void *priv)
 				VSL_ResetError(VUT.vsl);
 				continue;
 			}
-			VUT.vslq = VSLQ_New(VUT.vsl, &c, VUT.g_arg, VUT.query);
+			VUT.vslq = VSLQ_New(VUT.vsl, &c, VUT.g_arg, VUT.q_arg);
 			AN(VUT.vslq);
 			AZ(c);
 		}
@@ -339,7 +343,7 @@ VUT_Main(VSLQ_dispatch_f *func, void *priv)
 				VSL_ResetError(VUT.vsl);
 				continue;
 			}
-			VUT.vslq = VSLQ_New(VUT.vsl, &c, VUT.g_arg, VUT.query);
+			VUT.vslq = VSLQ_New(VUT.vsl, &c, VUT.g_arg, VUT.q_arg);
 			AN(VUT.vslq);
 			AZ(c);
 		}

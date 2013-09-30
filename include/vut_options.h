@@ -38,3 +38,8 @@
 	VOPT("P:", "[-P file]", "PID file",				\
 		"Write the process' PID to the specified file."		\
 	)
+
+#define VUT_OPT_q							\
+	VOPT("q:", "[-q query]", "VSL query",				\
+		"Specifies the VSL query to use."			\
+	)

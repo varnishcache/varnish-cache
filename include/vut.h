@@ -38,10 +38,10 @@ struct VUT {
 	int		D_opt;
 	int		g_arg;
 	char		*P_arg;
+	char		*q_arg;
 	char		*r_arg;
 	int		u_opt;
 	char		*w_arg;
-	const char	*query;
 
 	/* State */
 	struct VSL_data	*vsl;

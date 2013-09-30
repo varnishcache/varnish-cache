@@ -54,7 +54,7 @@ static void
 usage(void)
 {
 	const char **opt;
-	fprintf(stderr, "Usage: varnishlog <options> [query expression]\n\n");
+	fprintf(stderr, "Usage: varnishlog <options>\n\n");
 	fprintf(stderr, "Options:\n");
 	for (opt = vopt_usage; *opt != NULL; opt += 2)
 		fprintf(stderr, "  %-25s %s\n", *opt, *(opt + 1));
@@ -76,8 +76,8 @@ main(int argc, char * const *argv)
 		}
 	}
 
-	if (optind < argc)
-		VUT.query = argv[optind];
+	if (optind != argc)
+		usage();
 
 	VUT_Setup();
 	VUT_Main(NULL, NULL);

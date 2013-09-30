@@ -2,43 +2,56 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "vxp.h"
 #include "vas.h"
 #include "vsb.h"
+#include "miniobj.h"
+
+static void
+usage(void)
+{
+	fprintf(stderr, "Usage: vxp_test -q <query-expression>\n");
+	exit(1);
+}
 
 int
 main(int argc, char **argv)
 {
-	int i;
-	unsigned l;
-	char *s;
 	struct vsb *vsb;
 	struct vex *vex;
+	char *q_arg = NULL;
+	char opt;
 
-	l = 0;
-	for (i = 1; i < argc; i++)
-		l += strlen(argv[i]) + 1;
-	s = calloc(l + 1, sizeof (char));
-	for (i = 1; i < argc; strcat(s, " "), i++)
-		strcat(s, argv[i]);
+	while ((opt = getopt(argc, argv, "q:")) != -1) {
+		switch (opt) {
+		case 'q':
+			REPLACE(q_arg, optarg);
+			break;
+		default:
+			usage();
+		}
+	}
+	if (q_arg == NULL || optind != argc)
+		usage();
 
 	vsb = VSB_new_auto();
 	AN(vsb);
-	vex = vex_New(s, vsb);
+	vex = vex_New(q_arg, vsb);
 
 	if (vex == NULL) {
 		VSB_finish(vsb);
 		fprintf(stderr, "Error:\n%s", VSB_data(vsb));
 		VSB_delete(vsb);
-		free(s);
+		free(q_arg);
 		exit(1);
 	}
 	VSB_delete(vsb);
 
 	vex_Free(&vex);
 	AZ(vex);
-	free(s);
+	free(q_arg);
 
 	return (0);
 }
