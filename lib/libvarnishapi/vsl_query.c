@@ -208,6 +208,22 @@ vslq_test(const struct vex *vex, struct VSL_transaction * const ptrans[])
 	AN(vex->lhs->tags);
 
 	for (t = ptrans[0]; t != NULL; t = *++ptrans) {
+		if (vex->lhs->level >= 0) {
+			if (vex->lhs->level_pm < 0) {
+				/* OK if less than or equal */
+				if (t->level > vex->lhs->level)
+					continue;
+			} else if (vex->lhs->level_pm > 0) {
+				/* OK if greater than or equal */
+				if (t->level < vex->lhs->level)
+					continue;
+			} else {
+				/* OK if equal */
+				if (t->level != vex->lhs->level)
+					continue;
+			}
+		}
+
 		AZ(VSL_ResetCursor(t->c));
 		while (1) {
 			i = VSL_Next(t->c);

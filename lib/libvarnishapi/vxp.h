@@ -36,7 +36,7 @@
 #include "vxp_tokens.h"
 
 #define isword(c)  (isalpha(c) || isdigit(c) || (c) == '_' || (c) == '-' || \
-	    (c) == '.' || (c) == '*')
+	    (c) == '+' || (c) == '.' || (c) == '*')
 
 #define PF(t)	(int)((t)->e - (t)->b), (t)->b
 
@@ -86,8 +86,8 @@ struct vex_lhs {
 	char			*prefix;
 	int			prefixlen;
 	int			field;
-	int			level_min;
-	int			level_max;
+	int			level;
+	int			level_pm;
 };
 
 enum vex_rhs_e {

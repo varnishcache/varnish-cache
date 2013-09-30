@@ -193,3 +193,21 @@ logexpect l1 -d 1 -g vxid -q "RespStatus" {
 	  expect * =	ReqEnd
 	  expect * =	End
 } -run
+
+# Test level limits equal
+logexpect l1 -d 1 -g vxid -q "{1}Begin ~ req" {
+	  expect 0 *	Begin	req
+	  expect * =	End
+} -run
+
+# Test level limits less than or equal
+logexpect l1 -d 1 -g vxid -q "{2-}Begin ~ req" {
+	  expect 0 *	Begin	req
+	  expect * =	End
+} -run
+
+# Test level limits greater than or equal
+logexpect l1 -d 1 -g vxid -q "{0+}Begin ~ req" {
+	  expect 0 *	Begin	req
+	  expect * =	End
+} -run

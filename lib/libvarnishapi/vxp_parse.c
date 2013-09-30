@@ -60,6 +60,40 @@ vxp_expr_lhs(struct vxp *vxp, struct vex_lhs **plhs)
 	ALLOC_OBJ(*plhs, VEX_LHS_MAGIC);
 	AN(*plhs);
 	(*plhs)->tags = vbit_init(SLT__MAX);
+	(*plhs)->level = -1;
+
+	if (vxp->t->tok == '{') {
+		/* Transaction level limits */
+		vxp_NextToken(vxp);
+		if (vxp->t->tok != VAL) {
+			VSB_printf(vxp->sb, "Expected integer got '%.*s' ",
+			    PF(vxp->t));
+			vxp_ErrWhere(vxp, vxp->t, -1);
+			return;
+		}
+		(*plhs)->level = (int)strtol(vxp->t->dec, &p, 0);
+		if ((*plhs)->level < 0) {
+			VSB_printf(vxp->sb, "Expected positive integer ");
+			vxp_ErrWhere(vxp, vxp->t, -1);
+			return;
+		}
+		if (*p == '-') {
+			(*plhs)->level_pm = -1;
+			p++;
+		} else if (*p == '+') {
+			(*plhs)->level_pm = 1;
+			p++;
+		}
+		if (*p) {
+			VSB_printf(vxp->sb, "Syntax error in level limit ");
+			vxp_ErrWhere(vxp, vxp->t, -1);
+			return;
+		}
+		vxp_NextToken(vxp);
+		ExpectErr(vxp, '}');
+		vxp_NextToken(vxp);
+	}
+
 	while (1) {
 		/* The tags this expression applies to */
 		if (vxp->t->tok != VAL) {
@@ -127,8 +161,6 @@ vxp_expr_lhs(struct vxp *vxp, struct vex_lhs **plhs)
 		ExpectErr(vxp, ']');
 		vxp_NextToken(vxp);
 	}
-
-	/* XXX: LHS Level {} */
 }
 
 static void
@@ -539,14 +571,19 @@ vex_print(const struct vex *vex, int indent)
 	if (vex->lhs != NULL) {
 		CHECK_OBJ_NOTNULL(vex->lhs, VEX_LHS_MAGIC);
 		AN(vex->lhs->tags);
-		fprintf(stderr, " lhs=(");
+		fprintf(stderr, " lhs=");
+		if (vex->lhs->level >= 0)
+			fprintf(stderr, "{%d%s}", vex->lhs->level,
+			    vex->lhs->level_pm < 0 ? "-" :
+			    vex->lhs->level_pm > 0 ? "+" : "");
+		fprintf(stderr, "(");
 		vex_print_tags(vex->lhs->tags);
 		fprintf(stderr, ")");
 		if (vex->lhs->prefix) {
 			assert(vex->lhs->prefixlen == strlen(vex->lhs->prefix));
 			fprintf(stderr, ":%s", vex->lhs->prefix);
 		}
-		if (vex->lhs->field >= 0)
+		if (vex->lhs->field > 0)
 			fprintf(stderr, "[%d]", vex->lhs->field);
 	}
 	if (vex->rhs != NULL) {
