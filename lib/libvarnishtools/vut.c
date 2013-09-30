@@ -207,7 +207,7 @@ VUT_Setup(void)
 	/* Create query */
 	VUT.vslq = VSLQ_New(VUT.vsl, &c, VUT.g_arg, VUT.q_arg);
 	if (VUT.vslq == NULL)
-		VUT_Error(1, "Query parse error (%s)", VSL_Error(VUT.vsl));
+		VUT_Error(1, "Query expression error:\n%s", VSL_Error(VUT.vsl));
 	AZ(c);
 
 	/* Signal handlers */

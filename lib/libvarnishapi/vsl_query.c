@@ -297,7 +297,7 @@ vslq_newquery(struct VSL_data *vsl, enum VSL_grouping_e grouping,
 	vex = vex_New(querystring, vsb);
 	VSB_finish(vsb);
 	if (vex == NULL)
-		vsl_diag(vsl, "Query expression error:\n%s", VSB_data(vsb));
+		vsl_diag(vsl, "%s", VSB_data(vsb));
 	else {
 		ALLOC_OBJ(query, VSLQ_QUERY_MAGIC);
 		query->vex = vex;
