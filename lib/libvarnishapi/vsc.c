@@ -184,8 +184,11 @@ vsc_f_arg(struct VSM_data *vd, const char *opt)
 
 	av = VAV_Parse(opt, NULL, ARGV_COMMA);
 	AN(av);
-	if (av[0] != NULL)
-		return (vsm_diag(vd, "Parse error: %s", av[0]));
+	if (av[0] != NULL) {
+		i = vsm_diag(vd, "Parse error: %s", av[0]);
+		VAV_Free(av);
+		return (i);
+	}
 	for (i = 1; av[i] != NULL; i++) {
 		ALLOC_OBJ(sf, VSC_SF_MAGIC);
 		AN(sf);
