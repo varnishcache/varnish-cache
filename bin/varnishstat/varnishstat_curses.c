@@ -258,6 +258,7 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 	struct pt_priv *pt_priv;
 	struct pt *pt;
 	char buf[128];
+	size_t l;
 
 	if (vpt == NULL)
 		return (0);
@@ -290,16 +291,17 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 	pt->key = strdup(buf);
 	AN(pt->key);
 
+	l = sizeof buf;
 	*buf = '\0';
 	if (strcmp(vpt->section->type, "")) {
-		strcat(buf, vpt->section->type);
-		strcat(buf, ".");
+		strncat(buf, vpt->section->type, sizeof buf - strlen(buf) - 1);
+		strncat(buf, ".", sizeof buf - strlen(buf) - 1);
 	}
 	if (strcmp(vpt->section->ident, "")) {
-		strcat(buf, vpt->section->ident);
-		strcat(buf, ".");
+		strncat(buf, vpt->section->ident, sizeof buf - strlen(buf) - 1);
+		strncat(buf, ".", sizeof buf - strlen(buf) - 1);
 	}
-	strcat(buf, vpt->desc->name);
+	strncat(buf, vpt->desc->name, sizeof buf - strlen(buf) - 1);
 	pt->name = strdup(buf);
 	AN(pt->name);
 
@@ -667,7 +669,6 @@ draw_line_bitmap(WINDOW *w, int y, int x, int X, struct pt *pt)
 			}
 			break;
 		default:
-			x += COLW;
 			break;
 		}
 		col++;
