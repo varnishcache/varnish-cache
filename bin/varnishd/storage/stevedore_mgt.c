@@ -164,6 +164,7 @@ STV_Config(const char *spec)
 	} else {
 		VTAILQ_INSERT_TAIL(&stv_stevedores, stv, list);
 	}
+	/* NB: Do not free av, stevedore gets to keep it */
 }
 
 /*--------------------------------------------------------------------*/
