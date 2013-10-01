@@ -348,9 +348,7 @@ pan_sess(const struct sess *sp)
 	VSB_printf(pan_vsp, "  sp = %p {\n", sp);
 	VSB_printf(pan_vsp, "    fd = %d, vxid = %u,\n",
 	    sp->fd, sp->vxid & VSL_IDENTMASK);
-	VSB_printf(pan_vsp, "    client = %s %s,\n",
-	    sp->addr ? sp->addr : "?.?.?.?",
-	    sp->port ? sp->port : "?");
+	VSB_printf(pan_vsp, "    client = %s %s,\n", sp->addr, sp->port);
 	switch (sp->sess_step) {
 #define SESS_STEP(l, u) case S_STP_##u: stp = "S_STP_" #u; break;
 #include "tbl/steps.h"
