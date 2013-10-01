@@ -543,6 +543,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 				st = NULL;
 		}
 	}
+	ObjIterEnd(&oi);
 	assert(al == bo->ims_obj->len);
 	assert(obj->len == al);
 	if (bo->state != BOS_FAILED)
