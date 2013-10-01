@@ -412,6 +412,7 @@ mgt_launch_child(struct cli *cli)
 #endif
 
 		if (mgt_param.sigsegv_handler) {
+			memset(&sa, 0, sizeof sa);
 			sa.sa_sigaction = mgt_sigsegv_handler;
 			sa.sa_flags = SA_SIGINFO;
 			(void)sigaction(SIGSEGV, &sa, NULL);
