@@ -39,9 +39,9 @@ The following options are available:
 
 -k               Continue on test failure
 
--l               Leave /tmp/vtc.* if test fails
+-l               Leave temporary vtc.* if test fails
 
--L               Always leave /tmp/vtc.*
+-L               Always leave temporary vtc.*
 
 -n iterations    Run tests this many times
 
@@ -60,6 +60,8 @@ Macro definitions that can be overridden.
 
 varnishd         Path to varnishd to use [varnishd]
 
+If `TMPDIR` is set in the environment, varnishtest creates temporary
+`vtc.*` directories for each test in `$TMPDIR`, otherwise in `/tmp`.
 
 SCRIPTS
 =======

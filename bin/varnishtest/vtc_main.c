@@ -85,6 +85,7 @@ static int vtc_verbosity = 1;		/* Verbosity Level */
 static int vtc_good;
 static int vtc_fail;
 static int leave_temp;
+static char *tmppath;
 
 /**********************************************************************
  * Parse a -D option argument into a name/val pair, and insert
@@ -149,8 +150,8 @@ usage(void)
 	fprintf(stderr, FMT, "-i", "Find varnishd in build tree");
 	fprintf(stderr, FMT, "-j jobs", "Run this many tests in parallel");
 	fprintf(stderr, FMT, "-k", "Continue on test failure");
-	fprintf(stderr, FMT, "-l", "Leave /tmp/vtc.* if test fails");
-	fprintf(stderr, FMT, "-L", "Always leave /tmp/vtc.*");
+	fprintf(stderr, FMT, "-l", "Leave temporary vtc.* if test fails");
+	fprintf(stderr, FMT, "-L", "Always leave temporary vtc.*");
 	fprintf(stderr, FMT, "-n iterations", "Run tests this many times");
 	fprintf(stderr, FMT, "-q", "Quiet mode: report only failures");
 	fprintf(stderr, FMT, "-t duration", "Time tests out after this long");
@@ -268,7 +269,8 @@ start_test(void)
 	memset(jp->buf, 0, jp->bufsiz);
 
 	srandomdev();
-	bprintf(tmpdir, "/tmp/vtc.%d.%08x", (int)getpid(), (unsigned)random());
+	bprintf(tmpdir, "%s/vtc.%d.%08x", tmppath, (int)getpid(),
+		(unsigned)random());
 	AZ(mkdir(tmpdir, 0711));
 
 	tp = VTAILQ_FIRST(&tst_head);
@@ -332,6 +334,10 @@ main(int argc, char * const *argv)
 	char *p;
 
 	extmacro_def("varnishd", "varnishd"); /* Default to path lookup */
+	if (getenv("TMPDIR") != NULL)
+		tmppath = strdup(getenv("TMPDIR"));
+	else
+		tmppath = strdup("/tmp");
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
