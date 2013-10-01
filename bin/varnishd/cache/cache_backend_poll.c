@@ -349,6 +349,7 @@ vbp_wrk_poll_backend(void *priv)
 
 		vt->req = VSB_data(vt->vsb);
 		vt->req_len = VSB_len(vt->vsb);
+		assert(vt->req_len > 0);
 
 		vbp_start_poke(vt);
 		vbp_poke(vt);
