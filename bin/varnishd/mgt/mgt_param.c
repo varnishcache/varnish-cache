@@ -607,6 +607,7 @@ tweak_poolparam(struct cli *cli, const struct parspec *par, const char *arg)
 			}
 			*pp = px;
 		} while(0);
+		VAV_Free(av);
 	}
 }
 
