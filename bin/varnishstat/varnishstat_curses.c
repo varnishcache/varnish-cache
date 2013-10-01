@@ -860,7 +860,9 @@ do_curses(struct VSM_data *vd, int delay)
 	long t;
 	int ch;
 	double now;
-	struct VSM_fantom f_main, f_mgt, f_iter;
+	struct VSM_fantom f_main = VSM_FANTOM_NULL;
+	struct VSM_fantom f_mgt = VSM_FANTOM_NULL;
+	struct VSM_fantom f_iter = VSM_FANTOM_NULL;
 
 	(void)delay;
 
