@@ -288,6 +288,7 @@ struct vslc_file {
 
 	int				error;
 	int				fd;
+	int				close_fd;
 	ssize_t				buflen;
 	uint32_t			*buf;
 };
@@ -299,7 +300,7 @@ vslc_file_delete(struct VSL_cursor *cursor)
 
 	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_FILE_MAGIC);
 	assert(&c->cursor == cursor);
-	if (c->fd > STDIN_FILENO)
+	if (c->close_fd)
 		(void)close(c->fd);
 	if (c->buf != NULL)
 		free(c->buf);
@@ -387,6 +388,7 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name)
 {
 	struct vslc_file *c;
 	int fd;
+	int close_fd = 0;
 	char buf[] = VSL_FILE_ID;
 	ssize_t i;
 
@@ -399,11 +401,12 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name)
 			    strerror(errno));
 			return (NULL);
 		}
+		close_fd = 1;
 	}
 
 	i = vslc_file_readn(fd, buf, sizeof buf);
 	if (i <= 0) {
-		if (fd > STDIN_FILENO)
+		if (close_fd)
 			(void)close(fd);
 		vsl_diag(vsl, "VSL file read error: %s\n",
 		    i < 0 ? strerror(errno) : "EOF");
@@ -411,7 +414,7 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name)
 	}
 	assert(i == sizeof buf);
 	if (memcmp(buf, VSL_FILE_ID, sizeof buf)) {
-		if (fd > STDIN_FILENO)
+		if (close_fd)
 			(void)close(fd);
 		vsl_diag(vsl, "Not a VSL file: %s\n", name);
 		return (NULL);
@@ -419,7 +422,7 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name)
 
 	ALLOC_OBJ(c, VSLC_FILE_MAGIC);
 	if (c == NULL) {
-		if (fd > STDIN_FILENO)
+		if (close_fd)
 			(void)close(fd);
 		vsl_diag(vsl, "Out of memory\n");
 		return (NULL);
@@ -428,6 +431,7 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name)
 	c->cursor.priv_data = c;
 
 	c->fd = fd;
+	c->close_fd = close_fd;
 	c->buflen = VSL_WORDS(BUFSIZ);
 	c->buf = malloc(VSL_BYTES(c->buflen));
 	AN(c->buf);
