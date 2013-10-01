@@ -277,6 +277,7 @@ VRT_hashdata(const struct vrt_ctx *ctx, const char *str, ...)
 		HSH_AddString(ctx->req, p);
 		VSLb(ctx->vsl, SLT_Hash, "%s", str);
 	}
+	va_end(ap);
 	/*
 	 * Add a 'field-separator' to make it more difficult to
 	 * manipulate the hash.
