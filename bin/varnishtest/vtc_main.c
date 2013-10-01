@@ -127,6 +127,7 @@ read_file(const char *fn)
 	s = read(fd, buf, sz - 1);
 	if (s <= 0) {
 		free(buf);
+		(void)close(fd);
 		return (NULL);
 	}
 	AZ(close (fd));
