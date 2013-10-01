@@ -768,6 +768,7 @@ cmd_http_txresp(CMD_ARGS)
 	REPLACE(body, "");
 
 	av = http_tx_parse_args(av, vl, hp, body);
+	free(body);
 	if (*av != NULL)
 		vtc_log(hp->vl, 0, "Unknown http txresp spec: %s\n", *av);
 
