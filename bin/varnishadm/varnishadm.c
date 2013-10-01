@@ -351,7 +351,7 @@ pass(int sock)
 			}
 		}
 		if (fds[1].revents & POLLIN || fds[1].revents & POLLHUP) {
-			n = read(fds[1].fd, buf, sizeof buf);
+			n = read(fds[1].fd, buf, sizeof buf - 1);
 			if (n == 0) {
 				AZ(shutdown(sock, SHUT_WR));
 				fds[1].fd = -1;
