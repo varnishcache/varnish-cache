@@ -387,17 +387,21 @@ n_arg_sock(const char *n_arg)
 	struct VSM_fantom vt;
 
 	vsm = VSM_New();
+	AN(vsm);
 	if (VSM_n_Arg(vsm, n_arg) < 0) {
 		fprintf(stderr, "%s\n", VSM_Error(vsm));
+		VSM_Delete(vsm);
 		return (-1);
 	}
 	if (VSM_Open(vsm)) {
 		fprintf(stderr, "%s\n", VSM_Error(vsm));
+		VSM_Delete(vsm);
 		return (-1);
 	}
 
 	if (!VSM_Get(vsm, &vt, "Arg", "-T", "")) {
 		fprintf(stderr, "No -T arg in shared memory\n");
+		VSM_Delete(vsm);
 		return (-1);
 	}
 	AN(vt.b);
@@ -407,6 +411,8 @@ n_arg_sock(const char *n_arg)
 		AN(vt.b);
 		S_arg = strdup(vt.b);
 	}
+
+	VSM_Delete(vsm);
 
 	sock = -1;
 	while (*T_arg) {
