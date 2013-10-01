@@ -306,6 +306,7 @@ vslc_file_delete(struct VSL_cursor *cursor)
 	FREE_OBJ(c);
 }
 
+/* Read n bytes from fd into buf */
 static ssize_t
 vslc_file_readn(int fd, void *buf, size_t n)
 {
@@ -325,7 +326,8 @@ static int
 vslc_file_next(struct VSL_cursor *cursor)
 {
 	struct vslc_file *c;
-	ssize_t i, l;
+	ssize_t i;
+	size_t l;
 
 	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_FILE_MAGIC);
 	assert(&c->cursor == cursor);
@@ -335,27 +337,28 @@ vslc_file_next(struct VSL_cursor *cursor)
 
 	do {
 		c->cursor.rec.ptr = NULL;
-		assert(c->buflen >= VSL_BYTES(2));
+		assert(c->buflen >= 2);
 		i = vslc_file_readn(c->fd, c->buf, VSL_BYTES(2));
 		if (i < 0)
 			return (-4);	/* I/O error */
 		if (i == 0)
 			return (-1);	/* EOF */
 		assert(i == VSL_BYTES(2));
-		l = VSL_BYTES(2 + VSL_WORDS(VSL_LEN(c->buf)));
+		l = 2 + VSL_WORDS(VSL_LEN(c->buf));
 		if (c->buflen < l) {
-			c->buf = realloc(c->buf, 2 * l);
+			while (c->buflen < l)
+				c->buflen = 2 * l;
+			c->buf = realloc(c->buf, VSL_BYTES(c->buflen));
 			AN(c->buf);
-			c->buflen = 2 * l;
 		}
-		if (l > VSL_BYTES(2)) {
+		if (l > 2) {
 			i = vslc_file_readn(c->fd, c->buf + 2,
-			    l - VSL_BYTES(2));
+			    VSL_BYTES(l - 2));
 			if (i < 0)
 				return (-4);	/* I/O error */
 			if (i == 0)
 				return (-1);	/* EOF */
-			assert(i == l - VSL_BYTES(2));
+			assert(i == VSL_BYTES(l - 2));
 		}
 		c->cursor.rec.ptr = c->buf;
 	} while (VSL_TAG(c->cursor.rec.ptr) == SLT__Batch);
@@ -425,8 +428,8 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name)
 	c->cursor.priv_data = c;
 
 	c->fd = fd;
-	c->buflen = BUFSIZ;
-	c->buf = malloc(c->buflen);
+	c->buflen = VSL_WORDS(BUFSIZ);
+	c->buf = malloc(VSL_BYTES(c->buflen));
 	AN(c->buf);
 
 	return (&c->cursor);
