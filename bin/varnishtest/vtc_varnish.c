@@ -377,6 +377,7 @@ varnish_launch(struct varnish *v)
 	nap = VSS_resolve("127.0.0.1", "0", &ap);
 	AN(nap);
 	v->cli_fd = VSS_listen(ap[0], 1);
+	assert(v->cli_fd > 0);
 	VTCP_myname(v->cli_fd, abuf, sizeof abuf, pbuf, sizeof pbuf);
 
 	AZ(VSB_finish(v->args));
