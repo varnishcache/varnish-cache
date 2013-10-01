@@ -60,7 +60,7 @@ tokens = {
         # Boolean operators
         "T_AND":        "and",
         "T_OR":         "or",
-	"T_NOT":	"not",
+        "T_NOT":        "not",
 
         # Miscellaneous
         None:           "<>~[]{}():,",
@@ -69,8 +69,8 @@ tokens = {
         "VAL":          None,
         "EOI":          None,
 
-	# Special
-	"T_TRUE":	None,
+        # Special
+        "T_TRUE":       None,
 }
 
 #######################################################################
@@ -106,19 +106,19 @@ vxp_fixed_token(const char *p, const char **q)
                         if (j[0] != last_initial):
                                 continue
 
-			fo.write("\t\tif (")
-			k = 1
-			l = len(j)
-			while (k < l):
-				fo.write("p[%d] == '%s'" % (k, j[k]))
-				fo.write(" &&\n\t\t    ")
-				k += 1
-			fo.write("(isword(p[%d]) ? !isword(p[%d]) : 1)) {\n" %
-				 (l - 1, l))
-			fo.write("\t\t\t*q = p + %d;\n" % l)
-			fo.write("\t\t\treturn (%s);\n" % emit[j])
-			fo.write("\t\t}\n");
-		fo.write("\t\treturn (0);\n")
+                        fo.write("\t\tif (")
+                        k = 1
+                        l = len(j)
+                        while (k < l):
+                                fo.write("p[%d] == '%s'" % (k, j[k]))
+                                fo.write(" &&\n\t\t    ")
+                                k += 1
+                        fo.write("(isword(p[%d]) ? !isword(p[%d]) : 1)) {\n" %
+                                 (l - 1, l))
+                        fo.write("\t\t\t*q = p + %d;\n" % l)
+                        fo.write("\t\t\treturn (%s);\n" % emit[j])
+                        fo.write("\t\t}\n");
+                fo.write("\t\treturn (0);\n")
 
         fo.write("\tdefault:\n\t\treturn (0);\n\t}\n}\n")
 
