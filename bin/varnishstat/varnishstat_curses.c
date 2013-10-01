@@ -878,9 +878,7 @@ do_curses(struct VSM_data *vd, int delay)
 		if (VSM_Abandoned(vd)) {
 			delete_pt_list();
 			VSM_Close(vd);
-			if (VSM_Open(vd) < 0)
-				fprintf(stderr, "VSM_Open failed: %s\n",
-				    VSM_Error(vd));
+			VSM_Open(vd);
 		}
 		VSC_C_mgt = VSC_Mgt(vd, &f_mgt);
 		VSC_C_main = VSC_Main(vd, &f_main);
