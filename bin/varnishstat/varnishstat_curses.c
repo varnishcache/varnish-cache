@@ -497,6 +497,7 @@ draw_status(void)
 {
 	time_t up_mgt = 0;
 	time_t up_chld = 0;
+	static const char discon[] = "*** DISCONNECTED ***";
 
 	AN(w_status);
 
@@ -512,6 +513,9 @@ draw_status(void)
 	mvwprintw(w_status, 1, 0, "Uptime child: %d+%02d:%02d:%02d",
 	    up_chld / 86400, (up_chld % 86400) / 3600, (up_chld % 3600) / 60,
 	    up_chld % 60);
+
+	if (VSC_C_mgt == NULL)
+		mvwprintw(w_status, 0, COLS - strlen(discon), discon);
 
 	wnoutrefresh(w_status);
 }
