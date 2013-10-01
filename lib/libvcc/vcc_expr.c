@@ -535,20 +535,20 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
 	p = args;
 	if (extra == NULL)
 		extra = "";
-	e2 = vcc_mk_expr(vcc_arg_type(&p), "%s(ctx%s\v+", cfunc, extra);
+	e1 = vcc_mk_expr(vcc_arg_type(&p), "%s(ctx%s\v+", cfunc, extra);
 	while (*p != '\0') {
-		e1 = NULL;
+		e2 = NULL;
 		fmt = vcc_arg_type(&p);
 		if (fmt == VOID && !strcmp(p, "PRIV_VCL")) {
 			r = strchr(name, '.');
 			AN(r);
-			e1 = vcc_mk_expr(VOID, "&vmod_priv_%.*s",
+			e2 = vcc_mk_expr(VOID, "&vmod_priv_%.*s",
 			    (int) (r - name), name);
 			p += strlen(p) + 1;
 		} else if (fmt == VOID && !strcmp(p, "PRIV_CALL")) {
 			bprintf(buf, "vmod_priv_%u", tl->nvmodpriv++);
 			Fh(tl, 0, "struct vmod_priv %s;\n", buf);
-			e1 = vcc_mk_expr(VOID, "&%s", buf);
+			e2 = vcc_mk_expr(VOID, "&%s", buf);
 			p += strlen(p) + 1;
 		} else if (fmt == ENUM) {
 			ExpectErr(tl, ID);
@@ -569,7 +569,7 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
 				vcc_ErrWhere(tl, tl->t);
 				return;
 			}
-			e1 = vcc_mk_expr(VOID, "\"%.*s\"", PF(tl->t));
+			e2 = vcc_mk_expr(VOID, "\"%.*s\"", PF(tl->t));
 			while (*p != '\0')
 				p += strlen(p) + 1;
 			p++;
@@ -577,31 +577,31 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
 			if (*p != '\0')		/*lint !e448 */
 				SkipToken(tl, ',');
 		} else {
-			vcc_expr0(tl, &e1, fmt);
+			vcc_expr0(tl, &e2, fmt);
 			ERRCHK(tl);
-			if (e1->fmt != fmt) {
+			if (e2->fmt != fmt) {
 				VSB_printf(tl->sb, "Wrong argument type.");
 				VSB_printf(tl->sb, "  Expected %s.",
 					vcc_Type(fmt));
 				VSB_printf(tl->sb, "  Got %s.\n",
-					vcc_Type(e1->fmt));
-				vcc_ErrWhere2(tl, e1->t1, tl->t);
+					vcc_Type(e2->fmt));
+				vcc_ErrWhere2(tl, e2->t1, tl->t);
 				return;
 			}
-			assert(e1->fmt == fmt);
-			if (e1->fmt == STRING_LIST) {
-				e1 = vcc_expr_edit(STRING_LIST,
+			assert(e2->fmt == fmt);
+			if (e2->fmt == STRING_LIST) {
+				e2 = vcc_expr_edit(STRING_LIST,
 				    "\v+\n\v1,\nvrt_magic_string_end\v-",
-				    e1, NULL);
+				    e2, NULL);
 			}
 			if (*p != '\0')
 				SkipToken(tl, ',');
 		}
-		e2 = vcc_expr_edit(e2->fmt, "\v1,\n\v2", e2, e1);
+		e1 = vcc_expr_edit(e1->fmt, "\v1,\n\v2", e1, e2);
 	}
 	SkipToken(tl, ')');
-	e2 = vcc_expr_edit(e2->fmt, "\v1\n)\v-", e2, NULL);
-	*e = e2;
+	e1 = vcc_expr_edit(e1->fmt, "\v1\n)\v-", e1, NULL);
+	*e = e1;
 }
 
 /*--------------------------------------------------------------------
