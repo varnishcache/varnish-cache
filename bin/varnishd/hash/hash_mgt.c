@@ -80,4 +80,5 @@ HSH_config(const char *h_arg)
 	else if (ac > 0)
 		ARGV_ERR("Hash method \"%s\" takes no arguments\n",
 		    hp->name);
+	/* NB: Don't free av, the hasher is allowed to keep it. */
 }
