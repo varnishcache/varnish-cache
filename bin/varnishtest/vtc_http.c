@@ -720,9 +720,11 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 	if (body != NULL && !nolen)
 		VSB_printf(hp->vsb, "Content-Length: %d%s", bodylen, nl);
 	VSB_cat(hp->vsb, nl);
-	if (body != NULL)
+	if (body != NULL) {
 		VSB_bcat(hp->vsb, body, bodylen);
-	return av;
+		free(body);
+	}
+	return (av);
 }
 
 /**********************************************************************
@@ -768,7 +770,6 @@ cmd_http_txresp(CMD_ARGS)
 	REPLACE(body, "");
 
 	av = http_tx_parse_args(av, vl, hp, body);
-	free(body);
 	if (*av != NULL)
 		vtc_log(hp->vl, 0, "Unknown http txresp spec: %s\n", *av);
 
