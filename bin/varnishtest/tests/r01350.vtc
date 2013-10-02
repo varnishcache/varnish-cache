@@ -1,0 +1,31 @@
+varnishtest "IMS + Vary panic"
+
+server s1 {
+	rxreq
+	txresp -hdr "Vary: Accept-Encoding" -hdr "Last-Modified: Wed, 10 May 2006 07:22:58 GMT" -body "IMS"
+	rxreq
+	txresp -status 304 -body ""
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.ttl = 2s;
+		set beresp.grace = 1m;
+		set beresp.keep = 1m;
+		return(deliver);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+delay 3
+	txreq
+	rxresp
+	expect resp.status == 200
+delay 1
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run

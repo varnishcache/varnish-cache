@@ -173,7 +173,7 @@ VRY_Create(struct busyobj *bo, struct vsb **psb)
 /*
  * Find length of a vary entry
  */
-unsigned
+static unsigned
 VRY_Len(const uint8_t *p)
 {
 	unsigned l = vbe16dec(p);
@@ -247,12 +247,12 @@ VRY_Finish(struct req *req, enum vry_finish_flag flg)
 {
 	uint8_t *p = NULL;
 
-	VRY_Validate(req->vary_b);
+	(void)VRY_Validate(req->vary_b);
 	if (flg == KEEP && req->vary_l != NULL) {
 		p = malloc(req->vary_l - req->vary_b);
 		if (p != NULL) {
 			memcpy(p, req->vary_b, req->vary_l - req->vary_b);
-			VRY_Validate(p);
+			(void)VRY_Validate(p);
 		}
 	}
 	WS_Release(req->ws, 0);
@@ -323,7 +323,7 @@ VRY_Match(struct req *req, const uint8_t *vary)
 			vsp[ln + 0] = 0xff;
 			vsp[ln + 1] = 0xff;
 			vsp[ln + 2] = 0;
-			VRY_Validate(vsp);
+			(void)VRY_Validate(vsp);
 			req->vary_l = vsp + ln + 3;
 
 			i = vry_cmp(vary, vsp);
@@ -352,12 +352,19 @@ VRY_Match(struct req *req, const uint8_t *vary)
 	}
 }
 
-void
+/*
+ * Check the validity of a Vary string and return its total length
+ */
+
+unsigned
 VRY_Validate(const uint8_t *vary)
 {
+	unsigned retval = 0;
 
 	while (vary[2] != 0) {
 		assert(strlen((const char*)vary+3) == vary[2]);
+		retval += VRY_Len(vary);
 		vary += VRY_Len(vary);
 	}
+	return (retval + 3);
 }

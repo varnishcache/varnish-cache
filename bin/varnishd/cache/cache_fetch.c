@@ -393,7 +393,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		obj->vary = (void *)WS_Copy(obj->http->ws,
 		    VSB_data(vary), varyl);
 		AN(obj->vary);
-		VRY_Validate(obj->vary);
+		(void)VRY_Validate(obj->vary);
 		VSB_delete(vary);
 	}
 
@@ -469,15 +469,18 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	struct object *obj;
 	struct objiter *oi;
 	void *sp;
-	ssize_t sl, al, tl;
+	ssize_t sl, al, tl, vl;
 	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	l = 0;
-	if (bo->ims_obj->vary != NULL)
-		l += VRY_Len(bo->ims_obj->vary);
+	if (bo->ims_obj->vary != NULL) {
+		vl = VRY_Validate(bo->ims_obj->vary);
+		l += vl;
+	} else
+		vl = 0;
 	l += http_EstimateWS(bo->ims_obj->http, 0, &nhttp);
 
 	bo->stats = &wrk->stats;
@@ -499,9 +502,11 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 
 	/* XXX: ESI */
 
-	if (bo->ims_obj->vary != NULL)
+	if (bo->ims_obj->vary != NULL) {
 		obj->vary = (void *)WS_Copy(obj->http->ws,
-		    bo->ims_obj->vary, VRY_Len(bo->ims_obj->vary));
+		    bo->ims_obj->vary, vl);
+		assert(vl == VRY_Validate(obj->vary));
+	}
 
 	obj->vxid = bo->vsl->wid;
 

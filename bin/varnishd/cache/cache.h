@@ -1125,11 +1125,10 @@ void VSL_Flush(struct vsl_log *, int overflow);
 /* cache_vary.c */
 int VRY_Create(struct busyobj *bo, struct vsb **psb);
 int VRY_Match(struct req *, const uint8_t *vary);
-void VRY_Validate(const uint8_t *vary);
+unsigned VRY_Validate(const uint8_t *vary);
 void VRY_Prep(struct req *);
 enum vry_finish_flag { KEEP, DISCARD };
 void VRY_Finish(struct req *req, enum vry_finish_flag);
-unsigned VRY_Len(const uint8_t *);
 
 /* cache_vcl.c */
 void VCL_Init(void);
