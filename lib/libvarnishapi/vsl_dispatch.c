@@ -750,6 +750,7 @@ vslq_callback(const struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
 	vtxs[0] = vtx;
 	trans[0].level = 1;
 	trans[0].vxid = vtx->key.vxid;
+	trans[0].vxid_parent = 0;
 	trans[0].type = vtx->type;
 	trans[0].c = &vtx->c.cursor;
 	i = 1;
@@ -761,6 +762,7 @@ vslq_callback(const struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
 			vtxs[i] = vtx;
 			trans[i].level = trans[j].level + 1;
 			trans[i].vxid = vtx->key.vxid;
+			trans[i].vxid_parent = trans[j].vxid;
 			trans[i].type = vtx->type;
 			trans[i].c = &vtx->c.cursor;
 			i++;
