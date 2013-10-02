@@ -278,7 +278,7 @@ vsl_IX_arg(struct VSL_data *vsl, int opt, const char *arg)
 			return (vsl_diag(vsl,
 				"-%c: \"%*.*s\" is ambiguous",
 				(char)opt, l, l, b));
-		else if (i == 3)
+		else if (i <= -3)
 			return (vsl_diag(vsl,
 				"-%c: Syntax error in \"%*.*s\"",
 				(char)opt, l, l, b));
