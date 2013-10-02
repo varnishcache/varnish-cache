@@ -259,6 +259,8 @@ VUT_Main(VSLQ_dispatch_f *func, void *priv)
 	struct VSL_cursor *c;
 	int i;
 
+	AN(VUT.vslq);
+
 	if (func == NULL) {
 		if (VUT.w_arg)
 			func = VSL_WriteTransactions;
@@ -281,6 +283,7 @@ VUT_Main(VSLQ_dispatch_f *func, void *priv)
 		}
 
 		if (VUT.vslq == NULL) {
+			/* Reconnect VSM */
 			AZ(VUT.r_arg);
 			AN(VUT.vsm);
 			VTIM_sleep(0.1);
@@ -291,6 +294,7 @@ VUT_Main(VSLQ_dispatch_f *func, void *priv)
 			c = VSL_CursorVSM(VUT.vsl, VUT.vsm, 1);
 			if (c == NULL) {
 				VSL_ResetError(VUT.vsl);
+				VSM_Close(VUT.vsm);
 				continue;
 			}
 			VUT.vslq = VSLQ_New(VUT.vsl, &c, VUT.g_arg, VUT.q_arg);
@@ -327,25 +331,6 @@ VUT_Main(VSLQ_dispatch_f *func, void *priv)
 		} else if (i < -2) {
 			/* Overrun */
 			VUT_Error(0, "Log overrun");
-		}
-
-		/* Reconnect VSM */
-		while (VUT.vslq == NULL) {
-			AZ(VUT.r_arg);
-			AN(VUT.vsm);
-			VTIM_sleep(0.1);
-			if (VSM_Open(VUT.vsm)) {
-				VSM_ResetError(VUT.vsm);
-				continue;
-			}
-			c = VSL_CursorVSM(VUT.vsl, VUT.vsm, 1);
-			if (c == NULL) {
-				VSL_ResetError(VUT.vsl);
-				continue;
-			}
-			VUT.vslq = VSLQ_New(VUT.vsl, &c, VUT.g_arg, VUT.q_arg);
-			AN(VUT.vslq);
-			AZ(c);
 		}
 	}
 
