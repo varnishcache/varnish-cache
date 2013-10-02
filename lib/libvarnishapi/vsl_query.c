@@ -295,7 +295,7 @@ vslq_newquery(struct VSL_data *vsl, enum VSL_grouping_e grouping,
 	vsb = VSB_new_auto();
 	AN(vsb);
 	vex = vex_New(querystring, vsb);
-	VSB_finish(vsb);
+	AZ(VSB_finish(vsb));
 	if (vex == NULL)
 		vsl_diag(vsl, "%s", VSB_data(vsb));
 	else {
