@@ -139,6 +139,7 @@ smp_reset_sign(struct smp_signctx *ctx)
 {
 
 	memset(ctx->ss, 0, sizeof *ctx->ss);
+	assert(strlen(ctx->id) < sizeof *ctx->ss);
 	strcpy(ctx->ss->ident, ctx->id);
 	ctx->ss->unique = ctx->unique;
 	ctx->ss->mapped = (uintptr_t)ctx->ss;

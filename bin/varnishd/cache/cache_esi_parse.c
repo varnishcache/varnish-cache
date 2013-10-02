@@ -926,6 +926,7 @@ VEP_Parse(const struct busyobj *bo, const char *p, size_t l)
 			 * Match against a table while split over input
 			 * sections.
 			 */
+			AN(vep->match);
 			do {
 				if (*p == '>') {
 					for (vm = vep->match;
