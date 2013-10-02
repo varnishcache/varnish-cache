@@ -258,7 +258,6 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 	struct pt_priv *pt_priv;
 	struct pt *pt;
 	char buf[128];
-	size_t l;
 
 	if (vpt == NULL)
 		return (0);
@@ -291,7 +290,6 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 	pt->key = strdup(buf);
 	AN(pt->key);
 
-	l = sizeof buf;
 	*buf = '\0';
 	if (strcmp(vpt->section->type, "")) {
 		strncat(buf, vpt->section->type, sizeof buf - strlen(buf) - 1);
