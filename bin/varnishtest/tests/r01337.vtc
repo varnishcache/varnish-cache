@@ -2,21 +2,78 @@ varnishtest "Bogus backend status"
 
 server s1 {
 	rxreq
+	expect req.url == /small
+	txresp -status 99
+
+	accept
+	rxreq
 	expect req.url == /low
 	txresp -status 099
+
 	accept
 	rxreq
 	expect req.url == /high
 	txresp -status 1000
+
+	accept
+	rxreq
+	expect req.url == /X
+	txresp -status X99
+
+	accept
+	rxreq
+	expect req.url == /Y
+	txresp -status 9X9
+
+	accept
+	rxreq
+	expect req.url == /Z
+	txresp -status 99X
+
+	accept
+	rxreq
+	expect req.url == /x
+	txresp -status %99
+
+	accept
+	rxreq
+	expect req.url == /y
+	txresp -status 9%9
+
+	accept
+	rxreq
+	expect req.url == /z
+	txresp -status 99%
 } -start
 
 varnish v1 -vcl+backend {} -start
 
 client c1 {
+	txreq -url /small
+	rxresp
+	expect resp.status == 503
 	txreq -url /low
 	rxresp
 	expect resp.status == 503
 	txreq -url /high
+	rxresp
+	expect resp.status == 503
+	txreq -url /X
+	rxresp
+	expect resp.status == 503
+	txreq -url /Y
+	rxresp
+	expect resp.status == 503
+	txreq -url /Z
+	rxresp
+	expect resp.status == 503
+	txreq -url /x
+	rxresp
+	expect resp.status == 503
+	txreq -url /y
+	rxresp
+	expect resp.status == 503
+	txreq -url /z
 	rxresp
 	expect resp.status == 503
 } -run
