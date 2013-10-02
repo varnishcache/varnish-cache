@@ -461,7 +461,6 @@ HTTP1_DissectRequest(struct req *req)
 uint16_t
 HTTP1_DissectResponse(struct http *hp, const struct http_conn *htc)
 {
-	int j;
 	uint16_t retval = 0;
 	char *p;
 
@@ -481,16 +480,22 @@ HTTP1_DissectResponse(struct http *hp, const struct http_conn *htc)
 	if (retval == 0) {
 		hp->status = 0;
 		p = hp->hd[HTTP_HDR_STATUS].b;
-		for (j = 100; j != 0; j /= 10) {
-			if (!vct_isdigit(*p)) {
-				retval = 503;
-				break;
-			}
-			hp->status += (uint16_t)(j * (*p - '0'));
-			p++;
-		}
-		if (*p != '\0')
+
+		if (p[0] < '1' || p[0] > '9')
 			retval = 503;
+		else
+			hp->status += 100 * (p[0] - '0');
+
+		if (p[1] < '0' || p[1] > '9')
+			retval = 503;
+		else
+			hp->status += 10 * (p[1] - '0');
+
+		if (p[2] < '0' || p[2] > '9')
+			retval = 503;
+		else
+			hp->status += (p[2] - '0');
+		assert(hp->status <= 999);
 	}
 
 	if (retval != 0) {

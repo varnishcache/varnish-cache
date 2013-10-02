@@ -1,0 +1,22 @@
+varnishtest "Bogus backend status"
+
+server s1 {
+	rxreq
+	expect req.url == /low
+	txresp -status 099
+	accept
+	rxreq
+	expect req.url == /high
+	txresp -status 1000
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq -url /low
+	rxresp
+	expect resp.status == 503
+	txreq -url /high
+	rxresp
+	expect resp.status == 503
+} -run
