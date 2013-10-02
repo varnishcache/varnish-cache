@@ -29,20 +29,6 @@ The following options are available:
 
 .. include:: ../../../bin/varnishlog/varnishlog_options.rst
 
--b
-
-	Only show backend transactions. If neither -b nor -c is
-	specified, varnishlog acts as if they both were specified.
-
-	XXX: Not yet implemented
-
--c
-
-	Only show client transactions. If neither -b nor -c is
-	specified, varnishlog acts as if they both were present.
-
-	XXX: Not yet implemented
-
 -C
 
 	Ignore case when matching regular expressions.

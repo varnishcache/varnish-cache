@@ -31,6 +31,8 @@
 #include "vut_options.h"
 
 VSL_OPT_a
+VSL_OPT_b
+VSL_OPT_c
 VSL_OPT_d
 VUT_OPT_D
 VSL_OPT_g
