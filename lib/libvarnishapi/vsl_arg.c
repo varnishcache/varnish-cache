@@ -320,6 +320,8 @@ VSL_Arg(struct VSL_data *vsl, int opt, const char *arg)
 			vbit_set(vsl->vbm_supress, i);
 
 	switch (opt) {
+	case 'b': vsl->b_opt = 1; return (1);
+	case 'c': vsl->c_opt = 1; return (1);
 	case 'i': case 'x': return (vsl_ix_arg(vsl, opt, arg));
 	case 'I': case 'X': return (vsl_IX_arg(vsl, opt, arg));
 	case 'v': vsl->v_opt = 1; return (1);

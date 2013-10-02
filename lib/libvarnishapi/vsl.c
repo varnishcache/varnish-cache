@@ -188,6 +188,10 @@ VSL_Match(struct VSL_data *vsl, const struct VSL_cursor *c)
 	tag = VSL_TAG(c->rec.ptr);
 	if (tag <= SLT__Bogus || tag >= SLT__Reserved)
 		return (0);
+	if (vsl->c_opt && !VSL_CLIENT(c->rec.ptr))
+		return (0);
+	if (vsl->b_opt && !VSL_BACKEND(c->rec.ptr))
+		return (0);
 	if (!VTAILQ_EMPTY(&vsl->vslf_select) &&
 	    vsl_match_IX(vsl, &vsl->vslf_select, c))
 		return (1);
@@ -323,8 +327,25 @@ VSL_PrintTransactions(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	if (pt[0] == NULL)
 		return (0);
 
-	t = pt[0];
-	while (t) {
+	for (t = pt[0]; t != NULL; t = *++pt) {
+		if (vsl->c_opt || vsl->b_opt) {
+			switch (t->type) {
+			case VSL_t_req:
+			case VSL_t_esireq:
+				if (!vsl->c_opt)
+					continue;
+				break;
+			case VSL_t_bereq:
+				if (!vsl->b_opt)
+					continue;
+				break;
+			case VSL_t_raw:
+				break;
+			default:
+				continue;
+			}
+		}
+
 		verbose = 0;
 		if (t->level == 0 || vsl->v_opt)
 			verbose = 1;
@@ -363,7 +384,6 @@ VSL_PrintTransactions(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			if (i != 0)
 				return (i);
 		}
-		t = *++pt;
 	}
 
 	if (delim)

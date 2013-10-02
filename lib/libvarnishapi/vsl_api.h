@@ -88,6 +88,8 @@ struct VSL_data {
 	vslf_list			vslf_select;
 	vslf_list			vslf_suppress;
 
+	int				b_opt;
+	int				c_opt;
 	int				v_opt;
 };
 

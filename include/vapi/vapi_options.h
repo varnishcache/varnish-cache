@@ -53,6 +53,18 @@
 	    " than overwrite it."					\
 	)
 
+#define VSL_OPT_b							\
+	VOPT("b", "[-b]", "Only display backend records",		\
+	    "Only display transactions and log records coming from"	\
+	    " backend communication."					\
+	)
+
+#define VSL_OPT_c							\
+	VOPT("c", "[-c]", "Only display client records",		\
+	    "Only display transactions and log records coming from"	\
+	    " client communication."					\
+	)
+
 #define VSL_OPT_d \
 	VOPT("d", "[-d]", "Process old log entries on startup",		\
 	    "Start processing log records at the head of the log"	\
