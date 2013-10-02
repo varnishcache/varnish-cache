@@ -311,6 +311,7 @@ vxp_expr_cmp(struct vxp *vxp, struct vex **pvex)
 	switch((*pvex)->tok) {
 	case '\0':
 		WRONG("Missing token");
+		break;
 	case T_EQ:		/* == */
 	case '<':		/* < */
 	case '>':		/* > */
