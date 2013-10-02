@@ -100,14 +100,14 @@ VSL_New(void)
 }
 
 static void
-vsl_IX_free(vslf_list *list)
+vsl_IX_free(vslf_list *filters)
 {
 	struct vslf *vslf;
 
-	while (!VTAILQ_EMPTY(list)) {
-		vslf = VTAILQ_FIRST(list);
+	while (!VTAILQ_EMPTY(filters)) {
+		vslf = VTAILQ_FIRST(filters);
 		CHECK_OBJ_NOTNULL(vslf, VSLF_MAGIC);
-		VTAILQ_REMOVE(list, vslf, list);
+		VTAILQ_REMOVE(filters, vslf, list);
 		if (vslf->tags)
 			vbit_destroy(vslf->tags);
 		AN(vslf->vre);
