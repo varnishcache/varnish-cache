@@ -803,6 +803,17 @@ vtx_diag(struct vtx *vtx, const char *fmt, ...)
 		l = buflen - 1;
 	buf[l++] = '\0';	/* NUL-terminated */
 	diag->chunk[1] = vtx->key.vxid;
+	switch (vtx->type) {
+	case VSL_t_req:
+	case VSL_t_esireq:
+		diag->chunk[1] |= VSL_CLIENTMARKER;
+		break;
+	case VSL_t_bereq:
+		diag->chunk[1] |= VSL_BACKENDMARKER;
+		break;
+	default:
+		break;
+	}
 	diag->chunk[0] = ((((unsigned)SLT_VSL & 0xff) << 24) | l);
 	VTAILQ_INSERT_TAIL(&vtx->diag, diag, list);
 
