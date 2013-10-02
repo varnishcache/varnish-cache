@@ -293,7 +293,8 @@ int VSL_Print(const struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
 	 *     -5:	I/O write error - see errno
 	 */
 
-int VSL_PrintTerse(const struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
+int VSL_PrintTerse(const struct VSL_data *vsl, const struct VSL_cursor *c,
+    void *fo);
 	/*
 	 * Print the log record pointed to by cursor to stream.
 	 *
