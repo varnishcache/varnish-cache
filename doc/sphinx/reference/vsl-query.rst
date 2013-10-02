@@ -80,7 +80,8 @@ QUERY LANGUAGE
 ==============
 
 A query expression consists of a record selection criteria, and
-optionally an operator and a value to match against ::
+optionally an operator and a value to match against the selected
+records. ::
 
   <record selection criteria> <operator> <operand>
 
@@ -232,4 +233,4 @@ QUERY EXPRESSION EXAMPLES
 * Transactions that has backend failures or long delivery time on
   their ESI subrequests. (Assumes request grouping mode). ::
 
-    BerespStatus >= 500 or {1+}ReqEnd[5] > 1.
+    BerespStatus >= 500 or {2+}ReqEnd[5] > 1.
