@@ -2,7 +2,7 @@ varnishtest "#1283 - Test failure to allocate object for error (transient full)"
 
 server s1 {
 	rxreq
-	txresp -bodylen 1048140
+	txresp -bodylen 1048148
 } -start
 
 varnish v1 -arg "-p nuke_limit=0" -storage "-sTransient=malloc,1m" -vcl+backend {
