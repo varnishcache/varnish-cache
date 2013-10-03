@@ -343,7 +343,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 	struct objcore *oc;
 	struct objcore *exp_oc;
 	struct object *o, *exp_o;
-	double exp_entered;
+	double exp_t_origin;
 	int busy_found;
 	enum lookup_e retval;
 
@@ -393,7 +393,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 	busy_found = 0;
 	exp_o = NULL;
 	exp_oc = NULL;
-	exp_entered = 0.0;
+	exp_t_origin = 0.0;
 	o = NULL;
 	VTAILQ_FOREACH(oc, &oh->objcs, list) {
 		/* Must be at least our own ref + the objcore we examine */
@@ -438,12 +438,12 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			*ocp = oc;
 			return (HSH_HIT);
 		}
-		if (o->exp.entered > exp_entered &&
+		if (o->exp.t_origin > exp_t_origin &&
 		    !(oc->flags & OC_F_PASS)) {
 			/* record the newest object */
 			exp_oc = oc;
 			exp_o = o;
-			exp_entered = o->exp.entered;
+			exp_t_origin = o->exp.t_origin;
 		}
 	}
 

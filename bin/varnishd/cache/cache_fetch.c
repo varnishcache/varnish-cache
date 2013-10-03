@@ -206,7 +206,7 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 	 * What does RFC2616 think about TTL ?
 	 */
 	EXP_Clr(&bo->exp);
-	RFC2616_Ttl(bo, W_TIM_real(wrk));
+	RFC2616_Ttl(bo);
 
 	/* private objects have negative TTL */
 	if (bo->fetch_objcore->flags & OC_F_PRIVATE)
@@ -411,7 +411,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (http_GetHdr(hp, H_Last_Modified, &b))
 		obj->last_modified = VTIM_parse(b);
 	else
-		obj->last_modified = floor(bo->exp.entered);
+		obj->last_modified = floor(bo->exp.t_origin);
 
 	assert(WRW_IsReleased(wrk));
 
@@ -422,7 +422,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	assert(bo->refcount >= 1);
 
 	if (!(bo->fetch_obj->objcore->flags & OC_F_PRIVATE)) {
-		EXP_Insert(obj);
+		EXP_Insert(obj, bo->t_fetch);
 		AN(obj->objcore->ban);
 	}
 
@@ -517,7 +517,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 
 
 	if (!(bo->fetch_obj->objcore->flags & OC_F_PRIVATE)) {
-		EXP_Insert(obj);
+		EXP_Insert(obj, bo->t_fetch);
 		AN(obj->objcore->ban);
 	}
 

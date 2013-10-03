@@ -77,8 +77,7 @@ EXP_Clr(struct exp *e)
 	e->ttl = -1;
 	e->grace = -1;
 	e->keep = -1;
-	e->age = 0;
-	e->entered = 0;
+	e->t_origin = 0;
 }
 
 #define EXP_ACCESS(fld, low_val, extra)				\
@@ -142,7 +141,7 @@ EXP_Ttl(const struct req *req, const struct object *o)
 	r = o->exp.ttl;
 	if (req != NULL && req->exp.ttl > 0. && req->exp.ttl < r)
 		r = req->exp.ttl;
-	return (o->exp.entered + r);
+	return (o->exp.t_origin + r);
 }
 
 /*--------------------------------------------------------------------
@@ -216,7 +215,7 @@ EXP_Inject(struct objcore *oc, struct lru *lru, double when)
  */
 
 void
-EXP_Insert(const struct object *o)
+EXP_Insert(const struct object *o, double now)
 {
 	struct objcore *oc;
 	struct lru *lru;
@@ -226,8 +225,8 @@ EXP_Insert(const struct object *o)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	HSH_Ref(oc);
 
-	assert(o->exp.entered != 0 && !isnan(o->exp.entered));
-	oc->last_lru = o->exp.entered;
+	assert(o->exp.t_origin != 0 && !isnan(o->exp.t_origin));
+	oc->last_lru = now;
 
 	lru = oc_getlru(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);

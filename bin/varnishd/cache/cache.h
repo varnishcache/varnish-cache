@@ -292,8 +292,7 @@ struct exp {
 	double			ttl;
 	double			grace;
 	double			keep;
-	double			age;
-	double			entered;
+	double			t_origin;
 };
 
 /*--------------------------------------------------------------------*/
@@ -610,6 +609,8 @@ struct object {
 
 	/* VCL only variables */
 	long			hits;
+	double			last_use;
+
 	double			last_modified;
 
 	struct http		*http;
@@ -618,7 +619,6 @@ struct object {
 
 	struct storage		*esidata;
 
-	double			last_use;
 };
 
 /*--------------------------------------------------------------------*/
@@ -905,7 +905,7 @@ void EXP_Set_keep(struct exp *e, double v);
 
 double EXP_Ttl(const struct req *, const struct object*);
 double EXP_Grace(const struct req *, const struct object*);
-void EXP_Insert(const struct object *o);
+void EXP_Insert(const struct object *o, double now);
 void EXP_Inject(struct objcore *oc, struct lru *lru, double when);
 void EXP_Init(void);
 void EXP_Rearm(const struct object *o);
@@ -1195,7 +1195,7 @@ void *WS_Copy(struct ws *ws, const void *str, int len);
 char *WS_Snapshot(struct ws *ws);
 
 /* rfc2616.c */
-void RFC2616_Ttl(struct busyobj *, double now);
+void RFC2616_Ttl(struct busyobj *);
 enum body_status RFC2616_Body(struct busyobj *, struct dstat *);
 unsigned RFC2616_Req_Gzip(const struct http *);
 int RFC2616_Do_Cond(const struct req *sp);

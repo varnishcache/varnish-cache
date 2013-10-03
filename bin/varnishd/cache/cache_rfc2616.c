@@ -63,7 +63,7 @@
  */
 
 void
-RFC2616_Ttl(struct busyobj *bo, double now)
+RFC2616_Ttl(struct busyobj *bo)
 {
 	unsigned max_age, age;
 	double h_date, h_expires;
@@ -76,8 +76,8 @@ RFC2616_Ttl(struct busyobj *bo, double now)
 
 	hp = bo->beresp;
 
-	assert(now != 0.0 && !isnan(now));
-	expp->entered = now;
+	assert(bo->t_fetch != 0.0 && !isnan(bo->t_fetch));
+	expp->t_origin = bo->t_fetch;
 
 	/* If all else fails, cache using default ttl */
 	expp->ttl = cache_param->default_ttl;
@@ -92,8 +92,13 @@ RFC2616_Ttl(struct busyobj *bo, double now)
 	 */
 
 	if (http_GetHdr(hp, H_Age, &p)) {
-		age = strtoul(p, NULL, 0);
-		expp->age = age;
+		/*
+		 * We deliberately run with partial results, rather than
+		 * reject the Age: header outright.  This will be future
+		 * compatible with fractional seconds.
+		 */
+		age = strtoul(p, NULL, 10);
+		expp->t_origin -= age;
 	}
 
 	if (http_GetHdr(hp, H_Expires, &p))
@@ -147,16 +152,16 @@ RFC2616_Ttl(struct busyobj *bo, double now)
 		}
 
 		if (h_date == 0 ||
-		    fabs(h_date - now) < cache_param->clock_skew) {
+		    fabs(h_date - bo->t_fetch) < cache_param->clock_skew) {
 			/*
 			 * If we have no Date: header or if it is
 			 * sufficiently close to our clock we will
 			 * trust Expires: relative to our own clock.
 			 */
-			if (h_expires < now)
+			if (h_expires < bo->t_fetch)
 				expp->ttl = 0;
 			else
-				expp->ttl = h_expires - now;
+				expp->ttl = h_expires - bo->t_fetch;
 			break;
 		} else {
 			/*
@@ -172,8 +177,8 @@ RFC2616_Ttl(struct busyobj *bo, double now)
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
 	VSLb(bo->vsl, SLT_TTL,
 	    "RFC %.0f %.0f %.0f %.0f %.0f %.0f %.0f %u",
-	    expp->ttl, -1., -1., now,
-	    expp->age, h_date, h_expires, max_age);
+	    expp->ttl, -1., -1., bo->t_fetch,
+	    expp->t_origin, h_date, h_expires, max_age);
 }
 
 /*--------------------------------------------------------------------

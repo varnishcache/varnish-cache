@@ -128,7 +128,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
 
 	http_PrintfHeader(req->resp, "Age: %.0f",
-	    req->obj->exp.age + req->t_resp - req->obj->exp.entered);
+	    req->t_resp - req->obj->exp.t_origin);
 
 	http_SetHeader(req->resp, "Via: 1.1 varnish");
 
@@ -217,7 +217,7 @@ cnt_error(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 	AZ(req->objcore);
 	req->obj->vxid = bo->vsl->wid;
-	req->obj->exp.entered = req->t_req;
+	req->obj->exp.t_origin = req->t_req;
 
 	h = req->obj->http;
 
