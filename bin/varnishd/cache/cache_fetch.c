@@ -206,8 +206,7 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 	 * What does RFC2616 think about TTL ?
 	 */
 	EXP_Clr(&bo->exp);
-	bo->exp.entered = W_TIM_real(wrk);
-	RFC2616_Ttl(bo);
+	RFC2616_Ttl(bo, W_TIM_real(wrk));
 
 	/* private objects have negative TTL */
 	if (bo->fetch_objcore->flags & OC_F_PRIVATE)

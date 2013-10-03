@@ -63,7 +63,7 @@
  */
 
 void
-RFC2616_Ttl(struct busyobj *bo)
+RFC2616_Ttl(struct busyobj *bo, double now)
 {
 	unsigned max_age, age;
 	double h_date, h_expires;
@@ -76,7 +76,9 @@ RFC2616_Ttl(struct busyobj *bo)
 
 	hp = bo->beresp;
 
-	assert(expp->entered != 0.0 && !isnan(expp->entered));
+	assert(now != 0.0 && !isnan(now));
+	expp->entered = now;
+
 	/* If all else fails, cache using default ttl */
 	expp->ttl = cache_param->default_ttl;
 
@@ -93,6 +95,7 @@ RFC2616_Ttl(struct busyobj *bo)
 		age = strtoul(p, NULL, 0);
 		expp->age = age;
 	}
+
 	if (http_GetHdr(hp, H_Expires, &p))
 		h_expires = VTIM_parse(p);
 
@@ -144,17 +147,16 @@ RFC2616_Ttl(struct busyobj *bo)
 		}
 
 		if (h_date == 0 ||
-		    fabs(h_date - expp->entered) < cache_param->clock_skew) {
+		    fabs(h_date - now) < cache_param->clock_skew) {
 			/*
 			 * If we have no Date: header or if it is
 			 * sufficiently close to our clock we will
 			 * trust Expires: relative to our own clock.
 			 */
-			if (h_expires < expp->entered)
+			if (h_expires < now)
 				expp->ttl = 0;
 			else
-				expp->ttl = h_expires -
-				    expp->entered;
+				expp->ttl = h_expires - now;
 			break;
 		} else {
 			/*
@@ -170,7 +172,7 @@ RFC2616_Ttl(struct busyobj *bo)
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
 	VSLb(bo->vsl, SLT_TTL,
 	    "RFC %.0f %.0f %.0f %.0f %.0f %.0f %.0f %u",
-	    expp->ttl, -1., -1., expp->entered,
+	    expp->ttl, -1., -1., now,
 	    expp->age, h_date, h_expires, max_age);
 }
 

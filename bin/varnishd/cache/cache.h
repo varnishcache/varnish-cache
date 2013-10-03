@@ -1195,7 +1195,7 @@ void *WS_Copy(struct ws *ws, const void *str, int len);
 char *WS_Snapshot(struct ws *ws);
 
 /* rfc2616.c */
-void RFC2616_Ttl(struct busyobj *);
+void RFC2616_Ttl(struct busyobj *, double now);
 enum body_status RFC2616_Body(struct busyobj *, struct dstat *);
 unsigned RFC2616_Req_Gzip(const struct http *);
 int RFC2616_Do_Cond(const struct req *sp);
