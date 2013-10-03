@@ -240,6 +240,9 @@ VUT_Fini(void)
 	free(VUT.r_arg);
 	free(VUT.P_arg);
 
+	if (VUT.fo != NULL)
+		fflush(VUT.fo);
+
 	vut_vpf_remove();
 	AZ(VUT.pfh);
 
