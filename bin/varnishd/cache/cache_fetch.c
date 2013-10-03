@@ -471,6 +471,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	void *sp;
 	ssize_t sl, al, tl, vl;
 	struct storage *st;
+	enum objiter_status ois;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -529,7 +530,8 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	al = 0;
 
 	oi = ObjIterBegin(wrk, bo->ims_obj);
-	while (1 == ObjIter(oi, &sp, &sl)) {
+	do {
+		ois = ObjIter(oi, &sp, &sl);
 		while (sl > 0) {
 			if (st == NULL) {
 				st = VFP_GetStorage(bo, bo->ims_obj->len - al);
@@ -547,7 +549,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 			if (st->len == st->space)
 				st = NULL;
 		}
-	}
+	} while (ois == OIS_DATA || ois == OIS_STREAM);
 	ObjIterEnd(&oi);
 	assert(al == bo->ims_obj->len);
 	assert(obj->len == al);

@@ -1063,8 +1063,14 @@ void *MPL_Get(struct mempool *mpl, unsigned *size);
 void MPL_Free(struct mempool *mpl, void *item);
 
 /* cache_obj.c */
+enum objiter_status {
+	OIS_DONE,
+	OIS_DATA,
+	OIS_STREAM,
+	OIS_ERROR,
+};
 struct objiter *ObjIterBegin(struct worker *, struct object *);
-int ObjIter(struct objiter *, void **, ssize_t *);
+enum objiter_status ObjIter(struct objiter *, void **, ssize_t *);
 void ObjIterEnd(struct objiter **);
 
 /* cache_panic.c */

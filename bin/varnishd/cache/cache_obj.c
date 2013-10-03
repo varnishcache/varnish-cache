@@ -58,7 +58,7 @@ ObjIterBegin(struct worker *wrk, struct object *obj)
 	return (oi);
 }
 
-int
+enum objiter_status
 ObjIter(struct objiter *oi, void **p, ssize_t *l)
 {
 	ssize_t ol;
@@ -67,6 +67,8 @@ ObjIter(struct objiter *oi, void **p, ssize_t *l)
 	CHECK_OBJ_NOTNULL(oi, OBJITER_MAGIC);
 	AN(p);
 	AN(l);
+	*p = NULL;
+	*l = 0;
 
 	if (oi->bo == NULL) {
 		if (oi->st == NULL)
@@ -76,15 +78,21 @@ ObjIter(struct objiter *oi, void **p, ssize_t *l)
 		if (oi->st != NULL) {
 			*p = oi->st->ptr;
 			*l = oi->st->len;
-			return (1);
+			return (OIS_DATA);
 		}
-		return (0);
+		return (OIS_DONE);
 	} else {
 		ol = oi->len;
-		nl = VBO_waitlen(oi->bo, ol);
-		VSL(SLT_Debug, 0, "STREAM %zd -> %zd", ol, nl);
-		if (nl == ol)
-			return (0);
+		while (1) {
+			nl = VBO_waitlen(oi->bo, ol);
+			VSL(SLT_Debug, 0, "STREAM %zd -> %zd", ol, nl);
+			if (nl != ol)
+				break;
+			if (oi->bo->state == BOS_FINISHED)
+				return (OIS_DONE);
+			if (oi->bo->state == BOS_FAILED)
+				return (OIS_ERROR);
+		}
 		VTAILQ_FOREACH(oi->st, &oi->obj->store, list) {
 			if (oi->st->len <= ol) {
 				ol -= oi->st->len;
@@ -92,8 +100,8 @@ ObjIter(struct objiter *oi, void **p, ssize_t *l)
 			} else {
 				*p = oi->st->ptr + ol;
 				*l = (nl - ol);
-				oi->len += (nl - ol);
-				return (2);
+				oi->len += *l;
+				return (OIS_STREAM);
 			}
 		}
 		WRONG("ran off end");
