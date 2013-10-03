@@ -478,24 +478,15 @@ HTTP1_DissectResponse(struct http *hp, const struct http_conn *htc)
 		retval = 503;
 
 	if (retval == 0) {
-		hp->status = 0;
 		p = hp->hd[HTTP_HDR_STATUS].b;
 
-		if (p[0] < '1' || p[0] > '9')
-			retval = 503;
+		if (p[0] >= '1' && p[0] <= '9' &&
+		    p[1] >= '0' && p[1] <= '9' &&
+		    p[2] >= '0' && p[2] <= '9')
+			hp->status =
+			    100 * (p[0] - '0') + 10 * (p[1] - '0') + p[2] - '0';
 		else
-			hp->status += 100 * (p[0] - '0');
-
-		if (p[1] < '0' || p[1] > '9')
 			retval = 503;
-		else
-			hp->status += 10 * (p[1] - '0');
-
-		if (p[2] < '0' || p[2] > '9')
-			retval = 503;
-		else
-			hp->status += (p[2] - '0');
-		assert(hp->status <= 999);
 	}
 
 	if (retval != 0) {
