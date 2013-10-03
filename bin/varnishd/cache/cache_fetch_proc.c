@@ -189,7 +189,9 @@ VFP_GetStorage(struct busyobj *bo, ssize_t sz)
 		return (NULL);
 	}
 	AZ(st->len);
+	Lck_Lock(&bo->mtx);
 	VTAILQ_INSERT_TAIL(&obj->store, st, list);
+	Lck_Unlock(&bo->mtx);
 	return (st);
 }
 

@@ -334,7 +334,7 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 
 	AN(bo->vfp);
 	AZ(bo->vgz_rx);
-	AZ(VTAILQ_FIRST(&obj->store));
+	assert(VTAILQ_EMPTY(&obj->store));
 
 	/* XXX: pick up estimate from objdr ? */
 	cl = 0;

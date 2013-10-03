@@ -93,18 +93,20 @@ ObjIter(struct objiter *oi, void **p, ssize_t *l)
 			if (oi->bo->state == BOS_FAILED)
 				return (OIS_ERROR);
 		}
+		Lck_Lock(&oi->bo->mtx);
 		VTAILQ_FOREACH(oi->st, &oi->obj->store, list) {
-			if (oi->st->len <= ol) {
-				ol -= oi->st->len;
-				nl -= oi->st->len;
-			} else {
+			if (oi->st->len > ol) {
 				*p = oi->st->ptr + ol;
 				*l = (nl - ol);
 				oi->len += *l;
-				return (OIS_STREAM);
+				break;
 			}
+			ol -= oi->st->len;
+			nl -= oi->st->len;
 		}
-		WRONG("ran off end");
+		Lck_Unlock(&oi->bo->mtx);
+		assert(*l > 0);
+		return (OIS_STREAM);
 	}
 }
 
