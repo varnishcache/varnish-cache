@@ -476,7 +476,7 @@ smp_allocx(struct stevedore *st, size_t min_size, size_t max_size,
 			/* Render this smp_object mostly harmless */
 			(*so)->ttl = 0.;
 			(*so)->ban = 0.;
-			(*so)->ptr = 0;;
+			(*so)->ptr = 0;
 			sg->objs = *so;
 			*idx = ++sg->p.lobjlist;
 		}

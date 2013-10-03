@@ -550,7 +550,7 @@ mgt_cli_telnet(const char *T_arg)
 		tn->ev->fd = sock;
 		tn->ev->fd_flags = POLLIN;
 		tn->ev->callback = telnet_accept;
-		tn->ev->priv = tn;;
+		tn->ev->priv = tn;
 		AZ(vev_add(mgt_evb, tn->ev));
 		free(ta[i]);
 		ta[i] = NULL;

@@ -312,8 +312,8 @@ vcc_ParseVcl(struct vcc *tl)
  *	ACL definitions
  *	Function definitions
  *	Backend definitions
- * 	VMOD import directives
- * 	VCL version declarations
+ *	VMOD import directives
+ *	VCL version declarations
  *	End of input
  */
 
