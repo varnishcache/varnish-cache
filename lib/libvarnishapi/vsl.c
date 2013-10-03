@@ -91,6 +91,8 @@ VSL_New(void)
 	if (vsl == NULL)
 		return (NULL);
 
+	vsl->L_opt = 1000;
+	vsl->T_opt = 120.;
 	vsl->vbm_select = vbit_init(SLT__MAX);
 	vsl->vbm_supress = vbit_init(SLT__MAX);
 	VTAILQ_INIT(&vsl->vslf_select);

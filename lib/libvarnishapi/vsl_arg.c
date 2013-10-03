@@ -41,6 +41,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include "miniobj.h"
 #include "vas.h"
@@ -312,6 +313,9 @@ int
 VSL_Arg(struct VSL_data *vsl, int opt, const char *arg)
 {
 	int i;
+	char *p;
+	double d;
+	long l;
 
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 	/* If first option is 'i', set all bits for supression */
@@ -324,6 +328,26 @@ VSL_Arg(struct VSL_data *vsl, int opt, const char *arg)
 	case 'c': vsl->c_opt = 1; return (1);
 	case 'i': case 'x': return (vsl_ix_arg(vsl, opt, arg));
 	case 'I': case 'X': return (vsl_IX_arg(vsl, opt, arg));
+	case 'L':
+		l = strtol(arg, &p, 0);
+		while (isspace(*p))
+			p++;
+		if (*p != '\0')
+			return (vsl_diag(vsl, "-L: Syntax error"));
+		if (l < 0 || l > INT_MAX)
+			return (vsl_diag(vsl, "-L: Range error"));
+		vsl->L_opt = (int)l;
+		return (1);
+	case 'T':
+		d = strtod(arg, &p);
+		while (isspace(*p))
+			p++;
+		if (*p != '\0')
+			return (vsl_diag(vsl, "-P: Syntax error"));
+		if (d < 0.)
+			return (vsl_diag(vsl, "-L: Range error"));
+		vsl->T_opt = d;
+		return (1);
 	case 'v': vsl->v_opt = 1; return (1);
 	default:
 		return (0);

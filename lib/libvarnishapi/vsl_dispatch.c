@@ -1009,9 +1009,7 @@ VSLQ_Dispatch(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 
 	now = VTIM_mono();
 	while ((vtx = VTAILQ_FIRST(&vslq->incomplete)) &&
-	    now - vtx->t_start > 120.) {
-		/* XXX: Make timeout configurable through options and
-		   provide a sane default */
+	    now - vtx->t_start > vslq->vsl->T_opt) {
 		AZ(vtx->flags & VTX_F_COMPLETE);
 		vtx = vtx_force(vslq, vtx, "incomplete - timeout");
 		if (vtx) {
@@ -1026,9 +1024,7 @@ VSLQ_Dispatch(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 	if (i)
 		return (i);
 
-	while (vslq->n_incomplete > 1000) {
-		/* XXX: Make limit configurable through options and
-		   provide a sane default */
+	while (vslq->n_incomplete > vslq->vsl->L_opt) {
 		vtx = VTAILQ_FIRST(&vslq->incomplete);
 		AN(vtx);
 		AZ(vtx->flags & VTX_F_COMPLETE);

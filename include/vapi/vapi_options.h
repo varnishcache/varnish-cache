@@ -95,9 +95,27 @@
 	    VSL_iI_PS							\
 	)
 
+#define VSL_OPT_L							\
+	VOPT("L:", "[-L limit]", "Incomplete transaction limit",	\
+	    "Sets the upper limit of incomplete transactions kept"	\
+	    " before the oldest transaction is force completed. A"	\
+	    " warning record is synthesized when this happens. This"	\
+	    " setting keeps an upper bound on the memory usage of"	\
+	    " running queries. Defaults to 1000 transactions."		\
+	)
+
 #define VSL_OPT_r							\
 	VOPT("r:", "[-r filename]", "Binary file input",		\
 	    "Read log in binary file format from this file."		\
+	)
+
+#define VSL_OPT_T							\
+	VOPT("T:", "[-T seconds]", "Transaction end timeout",		\
+	    "Sets the transaction timeout in seconds. This defines the"	\
+	    " maximum number of seconds elapsed between a Begin tag"	\
+	    " and the End tag. If the timeout expires, a warning"	\
+	    " record is synthesized and the transaction is force"	\
+	    " completed. Defaults to 120 seconds."			\
 	)
 
 #define VSL_OPT_u							\
