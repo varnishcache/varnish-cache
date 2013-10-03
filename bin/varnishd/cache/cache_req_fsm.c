@@ -882,10 +882,10 @@ CNT_Request(struct worker *wrk, struct req *req)
 		 */
 		VSLb(req->vsl, SLT_End, "%s", "");
 		req->vsl->wid = 0;
+		req->wrk = NULL;
 	}
 
-	req->wrk = NULL;
-
+	AZ(req->wrk);
 	assert(WRW_IsReleased(wrk));
 	return (nxt);
 }

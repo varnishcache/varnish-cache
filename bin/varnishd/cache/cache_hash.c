@@ -492,7 +492,6 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		    req, w_list);
 		if (DO_DEBUG(DBG_WAITINGLIST))
 			VSLb(req->vsl, SLT_Debug, "on waiting list <%p>", oh);
-		req->wrk = NULL;
 	} else {
 		if (DO_DEBUG(DBG_WAITINGLIST))
 			VSLb(req->vsl, SLT_Debug, "hit busy obj <%p>", oh);
@@ -506,6 +505,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 	 * calls us again
 	 */
 	req->hash_objhead = oh;
+	req->wrk = NULL;
 	Lck_Unlock(&oh->mtx);
 	return (HSH_BUSY);
 }
