@@ -79,8 +79,9 @@ RFC2616_Ttl(struct busyobj *bo)
 	assert(bo->t_fetch != 0.0 && !isnan(bo->t_fetch));
 	expp->t_origin = bo->t_fetch;
 
-	/* If all else fails, cache using default ttl */
 	expp->ttl = cache_param->default_ttl;
+	expp->grace = cache_param->default_grace;
+	expp->keep = cache_param->default_keep;
 
 	max_age = age = 0;
 	h_expires = 0;

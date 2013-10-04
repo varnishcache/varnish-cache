@@ -107,28 +107,6 @@ EXP_ACCESS(keep, 0.,)
  * adjusted for defaults and by per-session limits.
  */
 
-static double
-EXP_Keep(const struct req *req, const struct object *o)
-{
-	double r;
-
-	r = (double)cache_param->default_keep;
-	if (o->exp.keep > 0.)
-		r = o->exp.keep;
-	return (EXP_Ttl(req, o) + r);
-}
-
-double
-EXP_Grace(const struct req *req, const struct object *o)
-{
-	double r;
-
-	r = (double)cache_param->default_grace;
-	if (o->exp.grace >= 0.)
-		r = o->exp.grace;
-	return (EXP_Ttl(req, o) + r);
-}
-
 double
 EXP_Ttl(const struct req *req, const struct object *o)
 {
@@ -148,17 +126,14 @@ static int
 update_object_when(const struct object *o)
 {
 	struct objcore *oc;
-	double when, w2;
+	double when;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oc = o->objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	Lck_AssertHeld(&exp_mtx);
 
-	when = EXP_Keep(NULL, o);
-	w2 = EXP_Grace(NULL, o);
-	if (w2 > when)
-		when = w2;
+	when = o->exp.t_origin + o->exp.ttl + o->exp.grace + o->exp.keep;
 	assert(!isnan(when));
 	if (when == oc->timer_when)
 		return (0);

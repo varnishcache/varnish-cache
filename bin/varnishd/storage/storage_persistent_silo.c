@@ -480,7 +480,6 @@ smp_oc_updatemeta(struct objcore *oc)
 	struct object *o;
 	struct smp_seg *sg;
 	struct smp_object *so;
-	double mttl;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	o = smp_oc_getobj(NULL, oc);
@@ -490,17 +489,15 @@ smp_oc_updatemeta(struct objcore *oc)
 	CHECK_OBJ_NOTNULL(sg->sc, SMP_SC_MAGIC);
 	so = smp_find_so(sg, oc->priv2);
 
-	mttl = EXP_Grace(NULL, o);
-
 	if (sg == sg->sc->cur_seg) {
 		/* Lock necessary, we might race close_seg */
 		Lck_Lock(&sg->sc->mtx);
 		so->ban = BAN_Time(oc->ban);
-		so->ttl = mttl;
+		so->ttl = oc->timer_when;
 		Lck_Unlock(&sg->sc->mtx);
 	} else {
 		so->ban = BAN_Time(oc->ban);
-		so->ttl = mttl;
+		so->ttl = oc->timer_when;
 	}
 }
 

@@ -547,7 +547,7 @@ smp_allocobj(struct stevedore *stv, struct busyobj *bo,
 	/* We have to do this somewhere, might as well be here... */
 	assert(sizeof so->hash == DIGEST_LEN);
 	memcpy(so->hash, oc->objhead->digest, DIGEST_LEN);
-	so->ttl = EXP_Grace(NULL, o);
+	so->ttl = oc->timer_when;
 	so->ptr = (uint8_t*)o - sc->base;
 	so->ban = BAN_Time(oc->ban);
 

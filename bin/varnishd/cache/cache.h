@@ -904,7 +904,6 @@ void EXP_Set_grace(struct exp *e, double v);
 void EXP_Set_keep(struct exp *e, double v);
 
 double EXP_Ttl(const struct req *, const struct object*);
-double EXP_Grace(const struct req *, const struct object*);
 void EXP_Insert(const struct object *o, double now);
 void EXP_Inject(struct objcore *oc, struct lru *lru, double when);
 void EXP_Init(void);

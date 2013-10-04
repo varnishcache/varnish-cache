@@ -13,6 +13,9 @@ varnish v1 \
 	-storage "-spersistent,${tmpdir}/_.per,10m" \
 	-vcl+backend { } -start 
 
+varnish v1 -cliok "param.set default_grace 0"
+varnish v1 -cliok "param.set default_keep 0"
+
 client c1 {
 	txreq -url "/"
 	rxresp
