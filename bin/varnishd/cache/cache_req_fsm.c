@@ -884,7 +884,6 @@ CNT_Request(struct worker *wrk, struct req *req)
 		req->wrk = NULL;
 	}
 
-	AZ(req->wrk);
 	assert(WRW_IsReleased(wrk));
 	return (nxt);
 }
