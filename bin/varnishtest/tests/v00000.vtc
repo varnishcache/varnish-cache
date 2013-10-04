@@ -10,7 +10,7 @@ server s1 -start
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
-		set req.grace += 1 s;
+		set req.ttl += 1 s;
 	}
 	sub vcl_backend_response {
 		set beresp.ttl += 1 m;
@@ -22,10 +22,5 @@ client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 200
-}
+} -run
 
-client c1 -run
-
-server s1 -wait
-
-varnish v1 -stop

@@ -473,8 +473,6 @@ vrt_wsp_exp(struct vsl_log *vsl, double now, const struct exp *e)
 }
 
 VRT_DO_EXP(req, ctx->req->exp, ttl, 0, )
-VRT_DO_EXP(req, ctx->req->exp, grace, 0, )
-VRT_DO_EXP(req, ctx->req->exp, keep, 0, )
 
 VRT_DO_EXP(obj, ctx->req->obj->exp, grace, 0,
    EXP_Rearm(ctx->req->obj);

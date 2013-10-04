@@ -52,7 +52,7 @@ varnish v1 -errvcl {Symbol not found: 'vcl_recv' (expected type STRING_LIST)} {
 # XXX: not obvious if this actually fails for the desired reason ?
 varnish v1 -errvcl {Unknown token '-' when looking for DURATION} {
 	sub vcl_recv {
-		if (req.grace < -3s || req.grace) {
+		if (req.ttl < -3s || req.ttl) {
 			set req.http.foo = vcl_recv;
 		}
 	}
@@ -60,7 +60,7 @@ varnish v1 -errvcl {Unknown token '-' when looking for DURATION} {
 
 varnish v1 -errvcl {'&&' must be followed by BOOL, found DURATION.} {
 	sub vcl_recv {
-		if (req.grace < 3s && req.grace) {
+		if (req.ttl < 3s && req.ttl) {
 			set req.http.foo = vcl_recv;
 		}
 	}
@@ -74,13 +74,13 @@ varnish v1 -errvcl {Operator * not possible on type STRING.} {
 
 varnish v1 -errvcl {DURATION + INT not possible.} {
 	sub vcl_backend_response {
-		set req.http.foo = req.grace + beresp.status;
+		set req.http.foo = req.ttl + beresp.status;
 	}
 }
 
 varnish v1 -errvcl {'!' must be followed by BOOL, found DURATION.} {
 	sub vcl_backend_response {
-		if (! req.grace) {
+		if (! req.ttl) {
 		}
 	}
 }

@@ -10,7 +10,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
-		return (error(200,req.grace));
+		return (error(200,req.ttl));
 	}
 	sub vcl_error {
 		set obj.http.x-timestamp = now;
@@ -20,5 +20,5 @@ varnish v1 -vcl+backend {
 client c1 {
 	txreq
 	rxresp
-	expect resp.msg == "0.000"
+	expect resp.msg == "-1.000"
 } -run

@@ -115,8 +115,6 @@ EXP_Keep(const struct req *req, const struct object *o)
 	r = (double)cache_param->default_keep;
 	if (o->exp.keep > 0.)
 		r = o->exp.keep;
-	if (req != NULL && req->exp.keep > 0. && req->exp.keep < r)
-		r = req->exp.keep;
 	return (EXP_Ttl(req, o) + r);
 }
 
@@ -128,8 +126,6 @@ EXP_Grace(const struct req *req, const struct object *o)
 	r = (double)cache_param->default_grace;
 	if (o->exp.grace >= 0.)
 		r = o->exp.grace;
-	if (req != NULL && req->exp.grace > 0. && req->exp.grace < r)
-		r = req->exp.grace;
 	return (EXP_Ttl(req, o) + r);
 }
 
