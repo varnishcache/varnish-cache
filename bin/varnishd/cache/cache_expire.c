@@ -135,8 +135,8 @@ EXP_Ttl(const struct req *req, const struct object *o)
 	double r;
 
 	r = o->exp.ttl;
-	if (req != NULL && req->exp.ttl > 0. && req->exp.ttl < r)
-		r = req->exp.ttl;
+	if (req != NULL && req->d_ttl > 0. && req->d_ttl < r)
+		r = req->d_ttl;
 	return (o->exp.t_origin + r);
 }
 

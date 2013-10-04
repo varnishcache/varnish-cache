@@ -304,23 +304,31 @@ VRT_l_beresp_storage(const struct vrt_ctx *ctx, const char *str, ...)
 
 /*--------------------------------------------------------------------*/
 
-void
-VRT_l_req_backend(const struct vrt_ctx *ctx, struct director *be)
-{
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	ctx->req->director = be;
+#define REQ_VAR_L(nm, elem, type,extra)					\
+									\
+void									\
+VRT_l_req_##nm(const struct vrt_ctx *ctx, type arg)			\
+{									\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);				\
+	extra;								\
+	ctx->req->elem = arg;						\
 }
 
-struct director *
-VRT_r_req_backend(const struct vrt_ctx *ctx)
-{
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	return (ctx->req->director);
+#define REQ_VAR_R(nm, elem, type)					\
+									\
+type									\
+VRT_r_req_##nm(const struct vrt_ctx *ctx)				\
+{									\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);				\
+	return(ctx->req->elem);						\
 }
+
+REQ_VAR_L(backend, director, struct director *,)
+REQ_VAR_R(backend, director, struct director *)
+REQ_VAR_L(ttl, d_ttl, double, if (!(arg>0.0)) arg = 0;)
+REQ_VAR_R(ttl, d_ttl, double)
 
 unsigned
 VRT_r_req_backend_healthy(const struct vrt_ctx *ctx)
@@ -471,8 +479,6 @@ vrt_wsp_exp(struct vsl_log *vsl, double now, const struct exp *e)
 	VSLb(vsl, SLT_TTL, "VCL %.0f %.0f %.0f %.0f %.0f",
 	    e->ttl - dt, e->grace, e->keep, now, dt);
 }
-
-VRT_DO_EXP(req, ctx->req->exp, ttl, 0, )
 
 VRT_DO_EXP(obj, ctx->req->obj->exp, grace, 0,
    EXP_Rearm(ctx->req->obj);

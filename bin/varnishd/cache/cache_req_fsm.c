@@ -684,8 +684,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 	req->director = req->vcl->director[0];
 	AN(req->director);
 
-	EXP_Clr(&req->exp);
-
+	req->d_ttl = -1;
 	req->disable_esi = 0;
 	req->hash_always_miss = 0;
 	req->hash_ignore_busy = 0;

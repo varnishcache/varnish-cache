@@ -658,7 +658,7 @@ struct req {
 	uint8_t			digest[DIGEST_LEN];
 
 	enum sess_close		doclose;
-	struct exp		exp;
+	double			d_ttl;
 
 	unsigned char		wantbody;
 	uint64_t		req_bodybytes;
