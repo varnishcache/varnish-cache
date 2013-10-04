@@ -46,6 +46,7 @@ struct parspec {
 #define MUST_RELOAD	(1<<3)
 #define WIZARD		(1<<4)
 #define PROTECTED	(1<<5)
+#define OBJ_STICKY	(1<<6)
 	const char	*def;
 	const char	*units;
 };

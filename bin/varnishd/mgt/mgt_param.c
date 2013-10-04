@@ -618,6 +618,10 @@ tweak_poolparam(struct cli *cli, const struct parspec *par, const char *arg)
  * formatting will go haywire.
  */
 
+#define OBJ_STICKY_TEXT \
+	"\nNB: This parameter is evaluated only when objects are created." \
+	"To change it for all objects, restart or ban everything."
+
 #define DELAYED_EFFECT_TEXT \
 	"\nNB: This parameter may take quite some time to take (full) effect."
 
@@ -701,6 +705,8 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 			VCLI_Out(cli, "%-*s Default is %s\n",
 			    margin, "", pp->def);
 			mcf_wrap(cli, pp->descr);
+			if (pp->flags & OBJ_STICKY)
+				mcf_wrap(cli, OBJ_STICKY_TEXT);
 			if (pp->flags & DELAYED_EFFECT)
 				mcf_wrap(cli, DELAYED_EFFECT_TEXT);
 			if (pp->flags & EXPERIMENTAL)

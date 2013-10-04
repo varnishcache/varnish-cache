@@ -56,13 +56,25 @@ const struct parspec mgt_parspec[] = {
 	{ "default_ttl", tweak_timeout_double, &mgt_param.default_ttl,
 		0, UINT_MAX,
 		"The TTL assigned to objects if neither the backend nor "
-		"the VCL code assigns one.\n"
-		"Objects already cached will not be affected by changes "
-		"made until they are fetched from the backend again.\n"
-		"To force an immediate effect at the expense of a total "
-		"flush of the cache use \"ban obj.http.date ~ .\"",
-		0,
+		"the VCL code assigns one.\n",
+		OBJ_STICKY,
 		"120", "seconds" },
+	{ "default_grace", tweak_timeout_double, &mgt_param.default_grace,
+		0, UINT_MAX,
+		"Default grace period.  We will deliver an object "
+		"this long after it has expired, provided another thread "
+		"is attempting to get a new copy.\n",
+		OBJ_STICKY,
+		"10", "seconds" },
+	{ "default_keep", tweak_timeout_double, &mgt_param.default_keep,
+		0, UINT_MAX,
+		"Default keep period.  We will keep a useless object "
+		"around this long, making it available for conditional "
+		"backend fetches.  "
+		"That means that the object will be removed from the "
+		"cache at the end of ttl+grace+keep.",
+		OBJ_STICKY,
+		"0", "seconds" },
 	{ "workspace_client",
 		tweak_bytes_u, &mgt_param.workspace_client, 3072, UINT_MAX,
 		"Bytes of HTTP protocol workspace for clients HTTP req/resp."
@@ -148,24 +160,6 @@ const struct parspec mgt_parspec[] = {
 		"Maximum is 65535 bytes.",
 		0,
 		"255", "bytes" },
-	{ "default_grace", tweak_timeout_double, &mgt_param.default_grace,
-		0, UINT_MAX,
-		"Default grace period.  We will deliver an object "
-		"this long after it has expired, provided another thread "
-		"is attempting to get a new copy.\n"
-		"Objects already cached will not be affected by changes "
-		"made until they are fetched from the backend again.\n",
-		DELAYED_EFFECT,
-		"10", "seconds" },
-	{ "default_keep", tweak_timeout_double, &mgt_param.default_keep,
-		0, UINT_MAX,
-		"Default keep period.  We will keep a useless object "
-		"around this long, making it available for conditional "
-		"backend fetches.  "
-		"That means that the object will be removed from the "
-		"cache at the end of ttl+grace+keep.",
-		DELAYED_EFFECT,
-		"0", "seconds" },
 	{ "timeout_idle", tweak_timeout_double, &mgt_param.timeout_idle,
 		0, UINT_MAX,
 		"Idle timeout for client connections.\n"
