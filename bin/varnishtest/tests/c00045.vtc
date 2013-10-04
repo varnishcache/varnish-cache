@@ -2,11 +2,11 @@ varnishtest	"Object/LRU/Stevedores with hinting"
 
 server s1 {
 	rxreq
-	txresp -bodylen 1048180
+	txresp -bodylen 1048188
 	rxreq
-	txresp -bodylen 1048181
+	txresp -bodylen 1048189
 	rxreq
-	txresp -bodylen 1048182
+	txresp -bodylen 1048190
 } -start
 
 varnish v1 -storage "-smalloc,1m -smalloc,1m, -smalloc,1m" -vcl+backend {
@@ -21,7 +21,7 @@ client c1 {
 	txreq -url /foo
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 1048180
+	expect resp.bodylen == 1048188
 } -run
 
 varnish v1 -expect SMA.Transient.g_bytes == 0
@@ -36,7 +36,7 @@ client c1 {
 	txreq -url /bar
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 1048181
+	expect resp.bodylen == 1048189
 } -run
 
 varnish v1 -expect n_lru_nuked == 1
@@ -52,7 +52,7 @@ client c1 {
 	txreq -url /foo
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 1048182
+	expect resp.bodylen == 1048190
 } -run
 
 varnish v1 -expect n_lru_nuked == 2

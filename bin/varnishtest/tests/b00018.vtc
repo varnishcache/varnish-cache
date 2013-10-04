@@ -16,12 +16,15 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
+varnish v1 -cliok "param.set default_grace 0"
+varnish v1 -cliok "param.set default_keep 0"
+
 client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 523
 } -run
 
-delay 10
+delay 4
 
 varnish v1 -expect n_object == 0
