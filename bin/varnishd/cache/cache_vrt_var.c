@@ -449,17 +449,22 @@ VRT_r_bereq_retries(const struct vrt_ctx *ctx)
  * keep are relative to ttl.
  */
 
-#define VRT_DO_EXP(which, exp, fld, offset, extra)		\
+#define VRT_DO_EXP(which, sexp, fld, offset, now, extra)	\
 								\
 void								\
 VRT_l_##which##_##fld(const struct vrt_ctx *ctx, double a)	\
 {								\
+	double dt;						\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-	if (a > 0.)						\
-		a += offset;					\
-	EXP_Set_##fld(&exp, a);					\
+	if (a > 0.0)						\
+		sexp.fld = a + offset;				\
+	else							\
+		sexp.fld = 0;					\
 	extra;							\
+	dt = now - sexp.t_origin;				\
+	VSLb(ctx->vsl, SLT_TTL, "VCL %.0f %.0f %.0f %.0f %.0f",	\
+	    sexp.ttl - dt, sexp.grace, sexp.keep, now, dt);	\
 }								\
 								\
 double								\
@@ -467,36 +472,22 @@ VRT_r_##which##_##fld(const struct vrt_ctx *ctx)		\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-	return(EXP_Get_##fld(&exp) - offset);			\
+	if (sexp.fld > 0.0)					\
+		return(sexp.fld - offset);			\
+	return(0.0);						\
 }
 
-static void
-vrt_wsp_exp(struct vsl_log *vsl, double now, const struct exp *e)
-{
-	double dt;
-
-	dt = now - e->t_origin;
-	VSLb(vsl, SLT_TTL, "VCL %.0f %.0f %.0f %.0f %.0f",
-	    e->ttl - dt, e->grace, e->keep, now, dt);
-}
-
-VRT_DO_EXP(obj, ctx->req->obj->exp, grace, 0,
-   EXP_Rearm(ctx->req->obj);
-   vrt_wsp_exp(ctx->vsl, ctx->req->t_req, &ctx->req->obj->exp);)
+VRT_DO_EXP(obj, ctx->req->obj->exp, grace, 0, ctx->req->t_req,
+   EXP_Rearm(ctx->req->obj);)
 VRT_DO_EXP(obj, ctx->req->obj->exp, ttl,
-   (ctx->req->t_req - ctx->req->obj->exp.t_origin),
-   EXP_Rearm(ctx->req->obj);
-   vrt_wsp_exp(ctx->vsl, ctx->req->t_req, &ctx->req->obj->exp);)
-VRT_DO_EXP(obj, ctx->req->obj->exp, keep, 0,
-   EXP_Rearm(ctx->req->obj);
-   vrt_wsp_exp(ctx->vsl, ctx->req->t_req, &ctx->req->obj->exp);)
+   (ctx->req->t_req - ctx->req->obj->exp.t_origin), ctx->req->t_req,
+   EXP_Rearm(ctx->req->obj);)
+VRT_DO_EXP(obj, ctx->req->obj->exp, keep, 0, ctx->req->t_req,
+   EXP_Rearm(ctx->req->obj);)
 
-VRT_DO_EXP(beresp, ctx->bo->exp, grace, 0,
-   vrt_wsp_exp(ctx->vsl, ctx->bo->exp.t_origin, &ctx->bo->exp);)
-VRT_DO_EXP(beresp, ctx->bo->exp, ttl, 0,
-   vrt_wsp_exp(ctx->vsl, ctx->bo->exp.t_origin, &ctx->bo->exp);)
-VRT_DO_EXP(beresp, ctx->bo->exp, keep, 0,
-   vrt_wsp_exp(ctx->vsl, ctx->bo->exp.t_origin, &ctx->bo->exp);)
+VRT_DO_EXP(beresp, ctx->bo->exp, grace, 0, ctx->bo->exp.t_origin,)
+VRT_DO_EXP(beresp, ctx->bo->exp, ttl, 0, ctx->bo->exp.t_origin,)
+VRT_DO_EXP(beresp, ctx->bo->exp, keep, 0, ctx->bo->exp.t_origin,)
 
 /*--------------------------------------------------------------------
  * req.xid

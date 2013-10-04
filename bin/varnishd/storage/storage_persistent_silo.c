@@ -460,7 +460,7 @@ smp_oc_getobj(struct dstat *ds, struct objcore *oc)
 			bad |= 0x100;
 
 		if(bad) {
-			EXP_Set_ttl(&o->exp, -1);
+			o->exp.ttl = -1;
 			so->ttl = 0;
 		}
 

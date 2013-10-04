@@ -35,18 +35,6 @@
  *
  * We hold a single object reference for both data structures.
  *
- * An attempted overview:
- *
- *	                        EXP_Ttl()      EXP_Grace()   EXP_Keep()
- *				   |                |            |
- *      entered                    v                v            |
- *         |                       +--------------->+            |
- *         v                       |      grace                  |
- *         +---------------------->+                             |
- *                  ttl            |                             v
- *                                 +---------------------------->+
- *                                     keep
- *
  */
 
 #include "config.h"
@@ -65,9 +53,6 @@ static struct lock exp_mtx;
 
 /*--------------------------------------------------------------------
  * struct exp manipulations
- *
- * The Get/Set functions encapsulate the mutual magic between the
- * fields in one single place.
  */
 
 void
@@ -75,36 +60,14 @@ EXP_Clr(struct exp *e)
 {
 
 	e->ttl = -1;
-	e->grace = -1;
-	e->keep = -1;
+	e->grace = 0;
+	e->keep = 0;
 	e->t_origin = 0;
 }
 
-#define EXP_ACCESS(fld, low_val, extra)				\
-	double							\
-	EXP_Get_##fld(const struct exp *e)			\
-	{							\
-		return (e->fld > 0. ? e->fld : low_val);	\
-	}							\
-								\
-	void							\
-	EXP_Set_##fld(struct exp *e, double v)			\
-	{							\
-		if (v > 0.)					\
-			e->fld = v;				\
-		else {						\
-			e->fld = -1.;				\
-			extra;					\
-		}						\
-	}							\
-
-EXP_ACCESS(ttl, -1., (e->grace = e->keep = -1.))
-EXP_ACCESS(grace, 0., )
-EXP_ACCESS(keep, 0.,)
-
 /*--------------------------------------------------------------------
- * Calculate an objects effective keep, grace or ttl time, suitably
- * adjusted for defaults and by per-session limits.
+ * Calculate an objects effective ttl time, taking req.ttl into account
+ * if it is available.
  */
 
 double
@@ -482,7 +445,7 @@ EXP_NukeLRU(struct worker *wrk, struct vsl_log *vsl, struct lru *lru)
 			VSLb(vsl, SLT_ExpKill, "%u %.0f LRU",
 			    oc_getxid(&wrk->stats, oc) & VSL_IDENTMASK,
 			    EXP_Ttl(NULL, o) - t);
-			EXP_Set_ttl(&o->exp, 0.);
+			o->exp.ttl = 0.0;
 			(void)HSH_DerefObjCore(&wrk->stats, &oc);
 		}
 

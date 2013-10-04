@@ -170,4 +170,4 @@
 -e840	// Use of nul character in a string literal (see: vcc_if.c)
 -e663	// Suspicious array to pointer conversion
 -e778   // Constant expression evaluates to 0 in operation '___'
-
+-e736	// Loss of precision (___) (___ bits to ___ bits)

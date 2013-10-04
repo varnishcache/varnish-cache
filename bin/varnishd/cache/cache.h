@@ -289,10 +289,10 @@ typedef int vdp_bytes(struct req *, enum vdp_action, const void *ptr,
 /*--------------------------------------------------------------------*/
 
 struct exp {
-	double			ttl;
-	double			grace;
-	double			keep;
 	double			t_origin;
+	float			ttl;
+	float			grace;
+	float			keep;
 };
 
 /*--------------------------------------------------------------------*/
@@ -896,12 +896,6 @@ extern pthread_t cli_thread;
 
 /* cache_expiry.c */
 void EXP_Clr(struct exp *e);
-double EXP_Get_ttl(const struct exp *e);
-double EXP_Get_grace(const struct exp *e);
-double EXP_Get_keep(const struct exp *e);
-void EXP_Set_ttl(struct exp *e, double v);
-void EXP_Set_grace(struct exp *e, double v);
-void EXP_Set_keep(struct exp *e, double v);
 
 double EXP_Ttl(const struct req *, const struct object*);
 void EXP_Insert(const struct object *o, double now);
