@@ -104,9 +104,12 @@ ObjIter(struct objiter *oi, void **p, ssize_t *l)
 			ol -= oi->st->len;
 			nl -= oi->st->len;
 		}
+		oi->st = VTAILQ_NEXT(oi->st, list);
+		if (oi->st != NULL && oi->st->len == 0)
+			oi->st = NULL;
 		Lck_Unlock(&oi->bo->mtx);
 		assert(*l > 0);
-		return (OIS_STREAM);
+		return (oi->st ? OIS_DATA : OIS_STREAM);
 	}
 }
 
