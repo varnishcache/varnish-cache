@@ -401,7 +401,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 		assert(oc->objhead == oh);
 
-		if (oc->flags & OC_F_FAILED)
+		if (oc->flags & (OC_F_FAILED | OC_F_DYING))
 			continue;
 
 		if (oc->flags & OC_F_BUSY || oc->busyobj != NULL) {
