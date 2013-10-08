@@ -54,6 +54,7 @@ struct exp_priv {
 	struct lock			mtx;
 	VTAILQ_HEAD(,objcore)		inbox;
 	struct binheap			*heap;
+	pthread_cond_t			condvar;
 };
 
 static struct exp_priv *exphdl;
@@ -111,22 +112,6 @@ update_object_when(const struct object *o)
 	return (1);
 }
 
-/*--------------------------------------------------------------------*/
-
-static void
-exp_insert(struct objcore *oc, struct lru *lru)
-{
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
-
-	Lck_AssertHeld(&lru->mtx);
-	Lck_AssertHeld(&exphdl->mtx);
-	assert(oc->timer_idx == BINHEAP_NOIDX);
-	binheap_insert(exphdl->heap, oc);
-	assert(oc->timer_idx != BINHEAP_NOIDX);
-	VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
-}
-
 /*--------------------------------------------------------------------
  * Object has been added to cache, record in lru & binheap.
  *
@@ -141,11 +126,15 @@ EXP_Inject(struct objcore *oc, struct lru *lru, double when)
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
 	Lck_Lock(&lru->mtx);
+	lru->n_objcore++;
+	Lck_Unlock(&lru->mtx);
+
 	Lck_Lock(&exphdl->mtx);
 	oc->timer_when = when;
-	exp_insert(oc, lru);
+	oc->flags |= OC_F_OFFLRU;
+	VTAILQ_INSERT_TAIL(&exphdl->inbox, oc, lru_list);
+	AZ(pthread_cond_signal(&exphdl->condvar));
 	Lck_Unlock(&exphdl->mtx);
-	Lck_Unlock(&lru->mtx);
 }
 
 /*--------------------------------------------------------------------
@@ -172,11 +161,16 @@ EXP_Insert(const struct object *o, double now)
 	lru = oc_getlru(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 	Lck_Lock(&lru->mtx);
+	lru->n_objcore++;
+	Lck_Unlock(&lru->mtx);
+
 	Lck_Lock(&exphdl->mtx);
 	(void)update_object_when(o);
-	exp_insert(oc, lru);
+	oc->flags |= OC_F_OFFLRU;
+	VTAILQ_INSERT_TAIL(&exphdl->inbox, oc, lru_list);
+	AZ(pthread_cond_signal(&exphdl->condvar));
 	Lck_Unlock(&exphdl->mtx);
-	Lck_Unlock(&lru->mtx);
+
 	oc_updatemeta(oc);
 }
 
@@ -214,7 +208,9 @@ EXP_Touch(struct objcore *oc)
 	if (Lck_Trylock(&lru->mtx))
 		return (0);
 
-	if (oc->timer_idx != BINHEAP_NOIDX) {
+	if (oc->flags & OC_F_OFFLRU) {
+		/* Cannot move it while it's in the inbox */
+	} else if (oc->timer_idx != BINHEAP_NOIDX) {
 		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 		VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
 		VSC_C_main->n_lru_moved++;
@@ -254,6 +250,7 @@ EXP_Rearm(const struct object *o)
 		assert(oc->timer_idx != BINHEAP_NOIDX);
 		binheap_reorder(exphdl->heap, oc->timer_idx);
 		assert(oc->timer_idx != BINHEAP_NOIDX);
+		AZ(pthread_cond_signal(&exphdl->condvar)); // XXX
 	}
 	Lck_Unlock(&exphdl->mtx);
 	Lck_Unlock(&lru->mtx);
@@ -274,24 +271,55 @@ exp_timer(struct worker *wrk, void *priv)
 	struct object *o;
 	struct vsl_log vsl;
 	struct exp_priv *ep;
-
+	struct timespec ts;
+	int idle;
 
 	CAST_OBJ_NOTNULL(ep, priv, EXP_PRIV_MAGIC);
 	VSL_Setup(&vsl, NULL, 0);
 	t = VTIM_real();
 	oc = NULL;
+	idle = 0;
 	while (1) {
-		if (oc == NULL) {
+		Lck_Lock(&ep->mtx);
+
+		if (idle) {
 			VSL_Flush(&vsl, 0);
 			WRK_SumStat(wrk);
-			VTIM_sleep(cache_param->expiry_sleep);
+			oc = binheap_root(ep->heap);
+			if (oc != NULL && oc->timer_when > 0.0) {
+				ts.tv_nsec = modf(oc->timer_when, &t) * 1e9;
+				ts.tv_sec = t;
+				(void)Lck_CondWait(&ep->condvar, &ep->mtx, &ts);
+			} else if (oc == NULL) {
+				(void)Lck_CondWait(&ep->condvar, &ep->mtx,NULL);
+			} else {
+				/* We're behind, don't sleep */
+			}
 			t = VTIM_real();
 		}
 
-		Lck_Lock(&exphdl->mtx);
-		oc = binheap_root(exphdl->heap);
+		oc = VTAILQ_FIRST(&ep->inbox);
+		if (oc != NULL) {
+			VTAILQ_REMOVE(&ep->inbox, oc, lru_list);
+			assert(oc->timer_idx == BINHEAP_NOIDX);
+			binheap_insert(exphdl->heap, oc);
+			assert(oc->timer_idx != BINHEAP_NOIDX);
+			Lck_Unlock(&ep->mtx);
+
+			lru = oc_getlru(oc);
+			Lck_Lock(&lru->mtx);
+			VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
+			oc->flags &= ~OC_F_OFFLRU;
+			oc->last_lru = t;
+			Lck_Unlock(&lru->mtx);
+			idle = 0;
+			continue;
+		}
+
+		oc = binheap_root(ep->heap);
 		if (oc == NULL) {
-			Lck_Unlock(&exphdl->mtx);
+			Lck_Unlock(&ep->mtx);
+			idle = 1;
 			continue;
 		}
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -303,22 +331,22 @@ exp_timer(struct worker *wrk, void *priv)
 		if (oc->timer_when > t)
 			t = VTIM_real();
 		if (oc->timer_when > t) {
-			Lck_Unlock(&exphdl->mtx);
-			oc = NULL;
+			Lck_Unlock(&ep->mtx);
+			idle = 1;
 			continue;
 		}
 
 		/* If the object is busy, we have to wait for it */
 		if (oc->flags & OC_F_BUSY) {
-			Lck_Unlock(&exphdl->mtx);
-			oc = NULL;
+			Lck_Unlock(&ep->mtx);
+			idle = 1;
 			continue;
 		}
 
 		/*
 		 * It's time...
-		 * Technically we should drop the exphdl->mtx, get the lru->mtx
-		 * get the exphdl->mtx again and then check that the oc is still
+		 * Technically we should drop the ep->mtx, get the lru->mtx
+		 * get the ep->mtx again and then check that the oc is still
 		 * on the binheap.  We take the shorter route and try to
 		 * get the lru->mtx and punt if we fail.
 		 */
@@ -326,21 +354,21 @@ exp_timer(struct worker *wrk, void *priv)
 		lru = oc_getlru(oc);
 		CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 		if (Lck_Trylock(&lru->mtx)) {
-			Lck_Unlock(&exphdl->mtx);
-			oc = NULL;
+			Lck_Unlock(&ep->mtx);
+			idle = 1;
 			continue;
 		}
 
 		/* Remove from binheap */
 		assert(oc->timer_idx != BINHEAP_NOIDX);
-		binheap_delete(exphdl->heap, oc->timer_idx);
+		binheap_delete(ep->heap, oc->timer_idx);
 		assert(oc->timer_idx == BINHEAP_NOIDX);
 
 		/* And from LRU */
 		lru = oc_getlru(oc);
 		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 
-		Lck_Unlock(&exphdl->mtx);
+		Lck_Unlock(&ep->mtx);
 		Lck_Unlock(&lru->mtx);
 
 		VSC_C_main->n_expired++;
@@ -499,6 +527,7 @@ EXP_Init(void)
 	AN(ep);
 
 	Lck_New(&ep->mtx, lck_exp);
+	AZ(pthread_cond_init(&ep->condvar, NULL));
 	ep->heap = binheap_new(NULL, object_cmp, object_update);
 	AN(ep->heap);
 	VTAILQ_INIT(&ep->inbox);

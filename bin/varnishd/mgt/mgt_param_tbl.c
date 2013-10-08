@@ -173,11 +173,6 @@ const struct parspec mgt_parspec[] = {
 		" from first non-white-space character to double CRNL.",
 		0,
 		"2", "seconds" },
-	{ "expiry_sleep", tweak_timeout_double, &mgt_param.expiry_sleep, 0, 60,
-		"How long the expiry thread sleeps when there is nothing "
-		"for it to do.\n",
-		0,
-		"1", "seconds" },
 	{ "pipe_timeout", tweak_timeout, &mgt_param.pipe_timeout, 0, 0,
 		"Idle timeout for PIPE sessions. "
 		"If nothing have been received in either direction for "
