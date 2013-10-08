@@ -303,6 +303,7 @@ VUT_Main(VSLQ_dispatch_f *func, void *priv)
 			VUT.vslq = VSLQ_New(VUT.vsl, &c, VUT.g_arg, VUT.q_arg);
 			AN(VUT.vslq);
 			AZ(c);
+			VUT_Error(0, "Log reaquired");
 		}
 
 		i = VSLQ_Dispatch(VUT.vslq, func, priv);
@@ -329,7 +330,7 @@ VUT_Main(VSLQ_dispatch_f *func, void *priv)
 
 		if (i == -2) {
 			/* Abandoned */
-			VUT_Error(0, "Log abandoned - reopening");
+			VUT_Error(0, "Log abandoned");
 			VSM_Close(VUT.vsm);
 		} else if (i < -2) {
 			/* Overrun */
