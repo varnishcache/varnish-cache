@@ -152,7 +152,7 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 			continue;
 		ALLOC_OBJ(oc, OBJCORE_MAGIC);
 		AN(oc);
-		oc->flags |= OC_F_NEEDFIXUP | OC_F_LRUDONTMOVE;
+		oc->flags |= OC_F_NEEDFIXUP;
 		oc->flags &= ~OC_F_BUSY;
 		smp_init_oc(oc, sg, no);
 		oc->ban = BAN_RefBan(oc, so->ban, sc->tailban);
@@ -215,6 +215,7 @@ smp_new_seg(struct smp_sc *sc)
 	*sg = tmpsg;
 	sg->lru = LRU_Alloc();
 	CHECK_OBJ_NOTNULL(sg->lru, LRU_MAGIC);
+	sg->lru->flags |= LRU_F_DONTMOVE;
 
 	sg->p.offset = IRNUP(sc, sg->p.offset);
 	sg->p.length = IRNDN(sc, sg->p.length);

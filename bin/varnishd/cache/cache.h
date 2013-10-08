@@ -377,6 +377,10 @@ struct lru {
 #define LRU_MAGIC		0x3fec7bb0
 	VTAILQ_HEAD(,objcore)	lru_head;
 	struct lock		mtx;
+	unsigned		flags;
+#define LRU_F_DONTMOVE		(1<<1)
+#define LRU_F_CONDEMMED		(1<<2)
+	unsigned		n_objcore;
 };
 
 /* Storage -----------------------------------------------------------*/
@@ -430,7 +434,7 @@ struct objcore {
 	unsigned		flags;
 #define OC_F_BUSY		(1<<1)
 #define OC_F_PASS		(1<<2)
-#define OC_F_LRUDONTMOVE	(1<<4)
+// #define OC_F_LRUDONTMOVE	(1<<4)
 #define OC_F_PRIV		(1<<5)		/* Stevedore private flag */
 #define OC_F_LURK		(3<<6)		/* Ban-lurker-color */
 #define OC_F_PRIVATE		(1<<8)

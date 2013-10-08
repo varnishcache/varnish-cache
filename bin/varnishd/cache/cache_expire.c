@@ -40,6 +40,7 @@
 #include "config.h"
 
 #include <math.h>
+#include <stdlib.h>
 
 #include "cache.h"
 
@@ -47,9 +48,15 @@
 #include "hash/hash_slinger.h"
 #include "vtim.h"
 
-static pthread_t exp_thread;
-static struct binheap *exp_heap;
-static struct lock exp_mtx;
+struct exp_priv {
+	unsigned			magic;
+#define EXP_PRIV_MAGIC			0x9db22482
+	struct lock			mtx;
+	VTAILQ_HEAD(,objcore)		inbox;
+	struct binheap			*heap;
+};
+
+static struct exp_priv *exphdl;
 
 /*--------------------------------------------------------------------
  * struct exp manipulations
@@ -94,7 +101,7 @@ update_object_when(const struct object *o)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oc = o->objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	Lck_AssertHeld(&exp_mtx);
+	Lck_AssertHeld(&exphdl->mtx);
 
 	when = o->exp.t_origin + o->exp.ttl + o->exp.grace + o->exp.keep;
 	assert(!isnan(when));
@@ -113,9 +120,9 @@ exp_insert(struct objcore *oc, struct lru *lru)
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
 	Lck_AssertHeld(&lru->mtx);
-	Lck_AssertHeld(&exp_mtx);
+	Lck_AssertHeld(&exphdl->mtx);
 	assert(oc->timer_idx == BINHEAP_NOIDX);
-	binheap_insert(exp_heap, oc);
+	binheap_insert(exphdl->heap, oc);
 	assert(oc->timer_idx != BINHEAP_NOIDX);
 	VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
 }
@@ -134,10 +141,10 @@ EXP_Inject(struct objcore *oc, struct lru *lru, double when)
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
 	Lck_Lock(&lru->mtx);
-	Lck_Lock(&exp_mtx);
+	Lck_Lock(&exphdl->mtx);
 	oc->timer_when = when;
 	exp_insert(oc, lru);
-	Lck_Unlock(&exp_mtx);
+	Lck_Unlock(&exphdl->mtx);
 	Lck_Unlock(&lru->mtx);
 }
 
@@ -165,10 +172,10 @@ EXP_Insert(const struct object *o, double now)
 	lru = oc_getlru(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 	Lck_Lock(&lru->mtx);
-	Lck_Lock(&exp_mtx);
+	Lck_Lock(&exphdl->mtx);
 	(void)update_object_when(o);
 	exp_insert(oc, lru);
-	Lck_Unlock(&exp_mtx);
+	Lck_Unlock(&exphdl->mtx);
 	Lck_Unlock(&lru->mtx);
 	oc_updatemeta(oc);
 }
@@ -176,7 +183,7 @@ EXP_Insert(const struct object *o, double now)
 /*--------------------------------------------------------------------
  * Object was used, move to tail of LRU list.
  *
- * To avoid the exp_mtx becoming a hotspot, we only attempt to move
+ * To avoid the exphdl->mtx becoming a hotspot, we only attempt to move
  * objects if they have not been moved recently and if the lock is available.
  * This optimization obviously leaves the LRU list imperfectly sorted.
  */
@@ -188,18 +195,15 @@ EXP_Touch(struct objcore *oc)
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	/*
-	 * For -spersistent we don't move objects on the lru list.  Each
-	 * segment has its own LRU list, and the order on it is not material
-	 * for anything.  The code below would move the objects to the
-	 * LRU list of the currently open segment, which would prevent
-	 * the cleaner from doing its job.
-	 */
-	if (oc->flags & OC_F_LRUDONTMOVE)
-		return (0);
-
 	lru = oc_getlru(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
+
+	/*
+	 * For -spersistent (and possibly other stevedores, we don't move
+	 * objects on the lru list, since LRU doesn't really help much.
+	 */
+	if (lru->flags & LRU_F_DONTMOVE)
+		return (0);
 
 	/*
 	 * We only need the LRU lock here.  The locking order is LRU->EXP
@@ -241,17 +245,17 @@ EXP_Rearm(const struct object *o)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	lru = oc_getlru(oc);
 	Lck_Lock(&lru->mtx);
-	Lck_Lock(&exp_mtx);
+	Lck_Lock(&exphdl->mtx);
 	/*
 	 * The hang-man might have this object of the binheap while
 	 * tending to a timer.  If so, we do not muck with it here.
 	 */
 	if (oc->timer_idx != BINHEAP_NOIDX && update_object_when(o)) {
 		assert(oc->timer_idx != BINHEAP_NOIDX);
-		binheap_reorder(exp_heap, oc->timer_idx);
+		binheap_reorder(exphdl->heap, oc->timer_idx);
 		assert(oc->timer_idx != BINHEAP_NOIDX);
 	}
-	Lck_Unlock(&exp_mtx);
+	Lck_Unlock(&exphdl->mtx);
 	Lck_Unlock(&lru->mtx);
 	oc_updatemeta(oc);
 }
@@ -269,8 +273,10 @@ exp_timer(struct worker *wrk, void *priv)
 	double t;
 	struct object *o;
 	struct vsl_log vsl;
+	struct exp_priv *ep;
 
-	(void)priv;
+
+	CAST_OBJ_NOTNULL(ep, priv, EXP_PRIV_MAGIC);
 	VSL_Setup(&vsl, NULL, 0);
 	t = VTIM_real();
 	oc = NULL;
@@ -282,10 +288,10 @@ exp_timer(struct worker *wrk, void *priv)
 			t = VTIM_real();
 		}
 
-		Lck_Lock(&exp_mtx);
-		oc = binheap_root(exp_heap);
+		Lck_Lock(&exphdl->mtx);
+		oc = binheap_root(exphdl->heap);
 		if (oc == NULL) {
-			Lck_Unlock(&exp_mtx);
+			Lck_Unlock(&exphdl->mtx);
 			continue;
 		}
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -297,22 +303,22 @@ exp_timer(struct worker *wrk, void *priv)
 		if (oc->timer_when > t)
 			t = VTIM_real();
 		if (oc->timer_when > t) {
-			Lck_Unlock(&exp_mtx);
+			Lck_Unlock(&exphdl->mtx);
 			oc = NULL;
 			continue;
 		}
 
 		/* If the object is busy, we have to wait for it */
 		if (oc->flags & OC_F_BUSY) {
-			Lck_Unlock(&exp_mtx);
+			Lck_Unlock(&exphdl->mtx);
 			oc = NULL;
 			continue;
 		}
 
 		/*
 		 * It's time...
-		 * Technically we should drop the exp_mtx, get the lru->mtx
-		 * get the exp_mtx again and then check that the oc is still
+		 * Technically we should drop the exphdl->mtx, get the lru->mtx
+		 * get the exphdl->mtx again and then check that the oc is still
 		 * on the binheap.  We take the shorter route and try to
 		 * get the lru->mtx and punt if we fail.
 		 */
@@ -320,21 +326,21 @@ exp_timer(struct worker *wrk, void *priv)
 		lru = oc_getlru(oc);
 		CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 		if (Lck_Trylock(&lru->mtx)) {
-			Lck_Unlock(&exp_mtx);
+			Lck_Unlock(&exphdl->mtx);
 			oc = NULL;
 			continue;
 		}
 
 		/* Remove from binheap */
 		assert(oc->timer_idx != BINHEAP_NOIDX);
-		binheap_delete(exp_heap, oc->timer_idx);
+		binheap_delete(exphdl->heap, oc->timer_idx);
 		assert(oc->timer_idx == BINHEAP_NOIDX);
 
 		/* And from LRU */
 		lru = oc_getlru(oc);
 		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 
-		Lck_Unlock(&exp_mtx);
+		Lck_Unlock(&exphdl->mtx);
 		Lck_Unlock(&lru->mtx);
 
 		VSC_C_main->n_expired++;
@@ -362,7 +368,7 @@ EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 
 	/* Find the first currently unused object on the LRU.  */
 	Lck_Lock(&lru->mtx);
-	Lck_Lock(&exp_mtx);
+	Lck_Lock(&exphdl->mtx);
 	VTAILQ_FOREACH(oc, &lru->lru_head, lru_list) {
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 		assert(oc->timer_idx != BINHEAP_NOIDX);
@@ -377,11 +383,11 @@ EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 	}
 	if (oc != NULL) {
 		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
-		binheap_delete(exp_heap, oc->timer_idx);
+		binheap_delete(exphdl->heap, oc->timer_idx);
 		assert(oc->timer_idx == BINHEAP_NOIDX);
 		VSC_C_main->n_lru_nuked++;
 	}
-	Lck_Unlock(&exp_mtx);
+	Lck_Unlock(&exphdl->mtx);
 	Lck_Unlock(&lru->mtx);
 
 	if (oc == NULL)
@@ -417,7 +423,7 @@ EXP_NukeLRU(struct worker *wrk, struct vsl_log *vsl, struct lru *lru)
 	t = VTIM_real();
 	Lck_Lock(&lru->mtx);
 	while (!VTAILQ_EMPTY(&lru->lru_head)) {
-		Lck_Lock(&exp_mtx);
+		Lck_Lock(&exphdl->mtx);
 		n = 0;
 		while (n < NUKEBUF) {
 			oc = VTAILQ_FIRST(&lru->lru_head);
@@ -429,14 +435,14 @@ EXP_NukeLRU(struct worker *wrk, struct vsl_log *vsl, struct lru *lru)
 			/* Remove from the LRU and binheap */
 			VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 			assert(oc->timer_idx != BINHEAP_NOIDX);
-			binheap_delete(exp_heap, oc->timer_idx);
+			binheap_delete(exphdl->heap, oc->timer_idx);
 			assert(oc->timer_idx == BINHEAP_NOIDX);
 
 			oc_array[n++] = oc;
 			VSC_C_main->n_lru_nuked++;
 		}
 		assert(n > 0);
-		Lck_Unlock(&exp_mtx);
+		Lck_Unlock(&exphdl->mtx);
 		Lck_Unlock(&lru->mtx);
 
 		for (i = 0; i < n; i++) {
@@ -486,9 +492,16 @@ object_update(void *priv, void *p, unsigned u)
 void
 EXP_Init(void)
 {
+	struct exp_priv *ep;
+	pthread_t pt;
 
-	Lck_New(&exp_mtx, lck_exp);
-	exp_heap = binheap_new(NULL, object_cmp, object_update);
-	XXXAN(exp_heap);
-	WRK_BgThread(&exp_thread, "cache-timeout", exp_timer, NULL);
+	ALLOC_OBJ(ep, EXP_PRIV_MAGIC);
+	AN(ep);
+
+	Lck_New(&ep->mtx, lck_exp);
+	ep->heap = binheap_new(NULL, object_cmp, object_update);
+	AN(ep->heap);
+	VTAILQ_INIT(&ep->inbox);
+	exphdl = ep;
+	WRK_BgThread(&pt, "cache-timeout", exp_timer, ep);
 }

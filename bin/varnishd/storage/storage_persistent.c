@@ -538,7 +538,6 @@ smp_allocobj(struct stevedore *stv, struct busyobj *bo,
 
 	oc = o->objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	oc->flags |= OC_F_LRUDONTMOVE;
 
 	Lck_Lock(&sc->mtx);
 	sg->nfixed++;
