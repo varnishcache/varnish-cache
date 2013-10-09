@@ -276,6 +276,9 @@ EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 	VTAILQ_FOREACH(oc, &lru->lru_head, lru_list) {
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
+		VSLb(bo->vsl, SLT_ExpKill, "LRU_Cand %p f=0x%x r=%d",
+		    oc, oc->flags, oc->refcnt);
+
 		AZ(oc->flags & OC_F_DYING);
 
 		/*

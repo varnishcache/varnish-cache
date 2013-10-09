@@ -4,9 +4,9 @@ server s1 {
 	rxreq
 	txresp -bodylen 1048188
 	rxreq
-	txresp -bodylen 1048189
+	txresp -bodylen 1047189
 	rxreq
-	txresp -bodylen 1048190
+	txresp -bodylen 1047190
 } -start
 
 varnish v1 -storage "-smalloc,1m -smalloc,1m, -smalloc,1m" -vcl+backend {
@@ -36,13 +36,13 @@ client c1 {
 	txreq -url /bar
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 1048189
+	expect resp.bodylen == 1047189
 } -run
 
 varnish v1 -expect n_lru_nuked == 1
 varnish v1 -expect SMA.Transient.g_bytes == 0
 varnish v1 -expect SMA.s0.g_bytes > 1000000
-varnish v1 -expect SMA.s0.g_space < 170
+varnish v1 -expect SMA.s0.g_space < 1171
 varnish v1 -expect SMA.s1.g_bytes == 0
 varnish v1 -expect SMA.s1.g_space > 1000000
 varnish v1 -expect SMA.s2.g_bytes == 0
@@ -52,13 +52,13 @@ client c1 {
 	txreq -url /foo
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 1048190
+	expect resp.bodylen == 1047190
 } -run
 
 varnish v1 -expect n_lru_nuked == 2
 varnish v1 -expect SMA.Transient.g_bytes == 0
 varnish v1 -expect SMA.s0.g_bytes > 1000000
-varnish v1 -expect SMA.s0.g_space < 170
+varnish v1 -expect SMA.s0.g_space < 1172
 varnish v1 -expect SMA.s1.g_bytes == 0
 varnish v1 -expect SMA.s1.g_space > 1000000
 varnish v1 -expect SMA.s2.g_bytes == 0
