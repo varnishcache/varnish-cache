@@ -423,8 +423,9 @@ int VSLQ_Dispatch(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv);
 	 *  priv: An argument passed to func
 	 *
 	 * Return values:
+	 *     1: Call again
 	 *     0: No more log records available
-	 *   !=0: The return value from either VSL_Next() or func
+	 *   !=0: The error code from VSL_Next() or func returned non-zero
 	 */
 
 int VSLQ_Flush(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv);

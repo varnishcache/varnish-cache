@@ -307,14 +307,16 @@ VUT_Main(VSLQ_dispatch_f *func, void *priv)
 		}
 
 		i = VSLQ_Dispatch(VUT.vslq, func, priv);
-		if (i == 0) {
+		if (i == 1)
+			/* Call again */
+			continue;
+		else if (i == 0) {
 			/* Nothing to do but wait */
 			if (VUT.fo)
 				fflush(VUT.fo);
 			VTIM_sleep(0.01);
 			continue;
-		}
-		if (i == -1) {
+		} else if (i == -1) {
 			/* EOF */
 			break;
 		}
