@@ -203,7 +203,8 @@ VUT_Setup(void)
 		if (VUT.fo == NULL)
 			VUT_Error(1, "Can't open output file (%s)",
 			    VSL_Error(VUT.vsl));
-	}
+	} else
+		VUT.fo = stdout;
 
 	/* Create query */
 	VUT.vslq = VSLQ_New(VUT.vsl, &c, VUT.g_arg, VUT.q_arg);
@@ -270,6 +271,7 @@ VUT_Main(VSLQ_dispatch_f *func, void *priv)
 			func = VSL_WriteTransactions;
 		else
 			func = VSL_PrintTransactions;
+		AN(VUT.fo);
 		priv = VUT.fo;
 	}
 
@@ -344,6 +346,8 @@ VUT_Main(VSLQ_dispatch_f *func, void *priv)
 
 	if (VUT.vslq != NULL)
 		VSLQ_Flush(VUT.vslq, func, priv);
+	if (VUT.fo)
+		fflush(VUT.fo);
 
 	return (i);
 }
