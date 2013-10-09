@@ -201,23 +201,29 @@ void VSL_ResetError(struct VSL_data *vsl);
 	 * Reset any error message.
 	 */
 
+#define VSL_COPT_TAIL	(1 << 0)
 struct VSL_cursor *VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm,
-    int tail);
+    unsigned options);
        /*
         * Set the cursor pointed to by cursor up as a raw cursor in the
-        * log. If tail is non-zero, it will point to the tail of the
-        * log. Is tail is zero, it will point close to the head of the
-        * log, at least 2 segments away from the head.
+        * log. Cursor points at the current log head.
+	*
+	* Options:
+	*   VSL_COPT_TAIL	Start cursor at log tail
 	*
 	* Return values:
 	* non-NULL: Pointer to cursor
 	*     NULL: Error, see VSL_Error
         */
 
-struct VSL_cursor *VSL_CursorFile(struct VSL_data *vsl, const char *name);
+struct VSL_cursor *VSL_CursorFile(struct VSL_data *vsl, const char *name,
+    unsigned options);
 	/*
 	 * Create a cursor pointing to the beginning of the binary VSL log
 	 * in file name. If name is '-' reads from stdin.
+	 *
+	 * Options:
+	 *   NONE
 	 *
 	 * Return values:
 	 * non-NULL: Pointer to cursor

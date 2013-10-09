@@ -181,7 +181,7 @@ VUT_Setup(void)
 	if (VUT.r_arg && VUT.vsm)
 		VUT_Error(1, "Can't have both -n and -r options");
 	if (VUT.r_arg)
-		c = VSL_CursorFile(VUT.vsl, VUT.r_arg);
+		c = VSL_CursorFile(VUT.vsl, VUT.r_arg, 0);
 	else {
 		if (VUT.vsm == NULL)
 			/* Default uses VSM with n=hostname */
@@ -190,7 +190,8 @@ VUT_Setup(void)
 		if (VSM_Open(VUT.vsm))
 			VUT_Error(1, "Can't open VSM file (%s)",
 			    VSM_Error(VUT.vsm));
-		c = VSL_CursorVSM(VUT.vsl, VUT.vsm, !VUT.d_opt);
+		c = VSL_CursorVSM(VUT.vsl, VUT.vsm,
+		    VUT.d_opt ? 0 : VSL_COPT_TAIL);
 	}
 	if (c == NULL)
 		VUT_Error(1, "Can't open log (%s)", VSL_Error(VUT.vsl));
@@ -294,7 +295,7 @@ VUT_Main(VSLQ_dispatch_f *func, void *priv)
 				VSM_ResetError(VUT.vsm);
 				continue;
 			}
-			c = VSL_CursorVSM(VUT.vsl, VUT.vsm, 1);
+			c = VSL_CursorVSM(VUT.vsl, VUT.vsm, VSL_COPT_TAIL);
 			if (c == NULL) {
 				VSL_ResetError(VUT.vsl);
 				VSM_Close(VUT.vsm);

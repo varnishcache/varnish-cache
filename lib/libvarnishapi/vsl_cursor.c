@@ -53,6 +53,8 @@ struct vslc_vsm {
 
 	struct VSL_cursor		cursor;
 
+	unsigned			options;
+
 	struct VSM_data			*vsm;
 	struct VSM_fantom		vf;
 
@@ -228,7 +230,7 @@ static const struct vslc_tbl vslc_vsm_tbl = {
 };
 
 struct VSL_cursor *
-VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, int tail)
+VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, unsigned options)
 {
 	struct vslc_vsm *c;
 	struct VSM_fantom vf;
@@ -260,13 +262,14 @@ VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, int tail)
 	c->cursor.priv_tbl = &vslc_vsm_tbl;
 	c->cursor.priv_data = c;
 
+	c->options = options;
 	c->vsm = vsm;
 	c->vf = vf;
 	c->head = head;
 	c->end = vf.e;
 	c->segsize = (c->end - c->head->log) / VSL_SEGMENTS;
 
-	if (tail) {
+	if (c->options & VSL_COPT_TAIL) {
 		/* Locate tail of log */
 		c->next.ptr = c->head->log +
 		    c->head->segments[c->head->segment];
@@ -384,13 +387,17 @@ static const struct vslc_tbl vslc_file_tbl = {
 };
 
 struct VSL_cursor *
-VSL_CursorFile(struct VSL_data *vsl, const char *name)
+VSL_CursorFile(struct VSL_data *vsl, const char *name, unsigned options)
 {
 	struct vslc_file *c;
 	int fd;
 	int close_fd = 0;
 	char buf[] = VSL_FILE_ID;
 	ssize_t i;
+
+	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+	AN(name);
+	(void)options;
 
 	if (!strcmp(name, "-"))
 		fd = STDIN_FILENO;
