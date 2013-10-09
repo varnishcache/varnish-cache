@@ -122,9 +122,10 @@ exp_mail_it(struct objcore *oc)
 }
 
 /*--------------------------------------------------------------------
- * Object has been added to cache, record in lru & binheap.
+ * Inject an object with a reference into the lru/binheap.
  *
- * The objcore comes with a reference, which we inherit.
+ * This can either come from a stevedore (persistent) during startup
+ * or from EXP_Insert() below.
  */
 
 void
@@ -132,55 +133,40 @@ EXP_Inject(struct objcore *oc, struct lru *lru, double when)
 {
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
 	AZ(oc->flags & OC_F_OFFLRU);
+	AZ(oc->flags & OC_F_BUSY);
+
+	if (lru == NULL)
+		lru = oc_getlru(oc);
+	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
 	Lck_Lock(&lru->mtx);
 	lru->n_objcore++;
-	oc->flags |= OC_F_OFFLRU | OC_F_INSERT;
+	oc->flags |= OC_F_OFFLRU | OC_F_INSERT | OC_F_EXP;
+	if (when < 0)
+		oc->flags |= OC_F_MOVE;
+	else
+		oc->timer_when = when;
 	Lck_Unlock(&lru->mtx);
-
-	oc->timer_when = when;
 
 	exp_mail_it(oc);
 }
 
 /*--------------------------------------------------------------------
- * Object has been added to cache, record in lru & binheap.
+ * Insert new object.
  *
  * We grab a reference to the object, which will keep it around until
  * we decide its time to let it go.
  */
 
 void
-EXP_Insert(const struct object *o, double now)
+EXP_Insert(struct objcore *oc)
 {
-	struct objcore *oc;
-	struct lru *lru;
 
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	oc = o->objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	HSH_Ref(oc);
-
-	assert(o->exp.t_origin != 0 && !isnan(o->exp.t_origin));
-	oc->last_lru = now;
-
-	AZ(oc->flags & OC_F_OFFLRU);
-
-	lru = oc_getlru(oc);
-	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
-
-	Lck_Lock(&lru->mtx);
-	lru->n_objcore++;
-	oc->flags |= OC_F_OFFLRU | OC_F_INSERT;
-	Lck_Unlock(&lru->mtx);
-
-	oc->timer_when = exp_when(o);
-	oc_updatemeta(oc);
-
-	exp_mail_it(oc);
+	EXP_Inject(oc, NULL, -1);
 }
 
 /*--------------------------------------------------------------------
@@ -210,6 +196,8 @@ EXP_Touch(struct objcore *oc)
 
 	if (Lck_Trylock(&lru->mtx))
 		return (0);
+
+	AN(oc->flags & OC_F_EXP);
 
 	if (!(oc->flags & OC_F_OFFLRU)) {
 		/* Can only it while it's actually on the LRU list */
@@ -251,6 +239,7 @@ EXP_Rearm(const struct object *o)
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
 	Lck_Lock(&lru->mtx);
+	AN(oc->flags & OC_F_EXP);
 
 	if (when < 0)
 		oc->flags |= OC_F_DYING;

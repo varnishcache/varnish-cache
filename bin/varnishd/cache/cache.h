@@ -442,6 +442,7 @@ struct objcore {
 #define OC_F_FAILED		(1<<9)
 #define OC_F_MOVE		(1<<10)
 #define OC_F_INSERT		(1<<11)
+#define OC_F_EXP		(1<<12)
 	unsigned		timer_idx;
 	VTAILQ_ENTRY(objcore)	list;
 	VTAILQ_ENTRY(objcore)	lru_list;
@@ -905,7 +906,7 @@ extern pthread_t cli_thread;
 void EXP_Clr(struct exp *e);
 
 double EXP_Ttl(const struct req *, const struct object*);
-void EXP_Insert(const struct object *o, double now);
+void EXP_Insert(struct objcore *oc);
 void EXP_Inject(struct objcore *oc, struct lru *lru, double when);
 void EXP_Init(void);
 void EXP_Rearm(const struct object *o);
