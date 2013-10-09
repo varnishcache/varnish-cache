@@ -27,31 +27,11 @@
  * SUCH DAMAGE.
  */
 
-/* VSM options */
-
-#define VSM_OPT_n							\
-	VOPT("n:", "[-n name]", "Varnish instance name",		\
-	    "Specify the name of the varnishd instance to get logs"	\
-	    " from. If -n is not specified, the host name is used."	\
-	)
-
-#define VSM_OPT_N							\
-	VOPT("N:", "[-N filename]", "VSM filename",			\
-	    "Specify the filename of a stale VSM instance. When using"	\
-	    " this option the abandonment checking is disabled."	\
-	)
-
 /* VSL options */
 
 #define VSL_iI_PS							\
 	"If a tag include option is the first of any tag selection"	\
 	" options, all tags are first marked excluded."
-
-#define VSL_OPT_a							\
-	VOPT("a", "[-a]", "Append binary file output",			\
-	    "When writing binary output to a file, append to it rather"	\
-	    " than overwrite it."					\
-	)
 
 #define VSL_OPT_b							\
 	VOPT("b", "[-b]", "Only display backend records",		\
@@ -63,18 +43,6 @@
 	VOPT("c", "[-c]", "Only display client records",		\
 	    "Only display transactions and log records coming from"	\
 	    " client communication."					\
-	)
-
-#define VSL_OPT_d \
-	VOPT("d", "[-d]", "Process old log entries on startup",		\
-	    "Start processing log records at the head of the log"	\
-	    " instead of the tail."					\
-	)
-
-#define VSL_OPT_g							\
-	VOPT("g:", "[-g <session|request|vxid|raw>]", "Grouping mode",	\
-	    "The grouping of the log records. The default is to group"	\
-	    " by request."						\
 	)
 
 #define VSL_OPT_i							\
@@ -104,11 +72,6 @@
 	    " running queries. Defaults to 1000 transactions."		\
 	)
 
-#define VSL_OPT_r							\
-	VOPT("r:", "[-r filename]", "Binary file input",		\
-	    "Read log in binary file format from this file."		\
-	)
-
 #define VSL_OPT_T							\
 	VOPT("T:", "[-T seconds]", "Transaction end timeout",		\
 	    "Sets the transaction timeout in seconds. This defines the"	\
@@ -118,25 +81,11 @@
 	    " completed. Defaults to 120 seconds."			\
 	)
 
-#define VSL_OPT_u							\
-	VOPT("u", "[-u]", "Binary file output unbuffered",		\
-	    "Unbuffered binary file output mode."			\
-	)
-
 #define VSL_OPT_v							\
 	VOPT("v", "[-v]", "Verbose record printing",			\
 	    "Use verbose output on record set printing, giving the"	\
 	    " VXID on every log line. Without this option, the VXID"	\
 	    " will only be given on the header of that transaction."	\
-	)
-
-#define VSL_OPT_w							\
-	VOPT("w:", "[-w filename]", "Binary output filename",		\
-	    "Write log entries to this file instead of displaying"	\
-	    " them. The file will be overwritten unless the -a option"	\
-	    " was specified. If the application receives a SIGHUP"	\
-	    " while writing to a file, it will reopen the file"		\
-	    " allowing the old one to be rotated away."			\
 	)
 
 #define VSL_OPT_x							\

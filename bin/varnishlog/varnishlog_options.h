@@ -30,23 +30,23 @@
 #include "vapi/vapi_options.h"
 #include "vut_options.h"
 
-VSL_OPT_a
+VUT_OPT_a
 VSL_OPT_b
 VSL_OPT_c
-VSL_OPT_d
+VUT_OPT_d
 VUT_OPT_D
-VSL_OPT_g
+VUT_OPT_g
 VSL_OPT_i
 VSL_OPT_I
 VSL_OPT_L
-VSM_OPT_n
-VSM_OPT_N
+VUT_OPT_n
+VUT_OPT_N
 VUT_OPT_P
 VUT_OPT_q
-VSL_OPT_r
+VUT_OPT_r
 VSL_OPT_T
-VSL_OPT_u
+VUT_OPT_u
 VSL_OPT_v
-VSL_OPT_w
+VUT_OPT_w
 VSL_OPT_x
 VSL_OPT_X

@@ -29,9 +29,39 @@
 
 /* VUT options */
 
+#define VUT_OPT_a							\
+	VOPT("a", "[-a]", "Append binary file output",			\
+	    "When writing binary output to a file, append to it rather"	\
+	    " than overwrite it."					\
+	)
+
+#define VUT_OPT_d \
+	VOPT("d", "[-d]", "Process old log entries on startup",		\
+	    "Start processing log records at the head of the log"	\
+	    " instead of the tail."					\
+	)
+
 #define VUT_OPT_D							\
 	VOPT("D", "[-D]", "Daemonize",					\
 	    "Daemonize."						\
+	)
+
+#define VUT_OPT_g							\
+	VOPT("g:", "[-g <session|request|vxid|raw>]", "Grouping mode",	\
+	    "The grouping of the log records. The default is to group"	\
+	    " by request."						\
+	)
+
+#define VUT_OPT_n							\
+	VOPT("n:", "[-n name]", "Varnish instance name",		\
+	    "Specify the name of the varnishd instance to get logs"	\
+	    " from. If -n is not specified, the host name is used."	\
+	)
+
+#define VUT_OPT_N							\
+	VOPT("N:", "[-N filename]", "VSM filename",			\
+	    "Specify the filename of a stale VSM instance. When using"	\
+	    " this option the abandonment checking is disabled."	\
 	)
 
 #define VUT_OPT_P							\
@@ -42,4 +72,23 @@
 #define VUT_OPT_q							\
 	VOPT("q:", "[-q query]", "VSL query",				\
 		"Specifies the VSL query to use."			\
+	)
+
+#define VUT_OPT_r							\
+	VOPT("r:", "[-r filename]", "Binary file input",		\
+	    "Read log in binary file format from this file."		\
+	)
+
+#define VUT_OPT_u							\
+	VOPT("u", "[-u]", "Binary file output unbuffered",		\
+	    "Unbuffered binary file output mode."			\
+	)
+
+#define VUT_OPT_w							\
+	VOPT("w:", "[-w filename]", "Binary output filename",		\
+	    "Write log entries to this file instead of displaying"	\
+	    " them. The file will be overwritten unless the -a option"	\
+	    " was specified. If the application receives a SIGHUP"	\
+	    " while writing to a file, it will reopen the file"		\
+	    " allowing the old one to be rotated away."			\
 	)
