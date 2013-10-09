@@ -55,6 +55,17 @@ The following options are available:
 
 	XXX: Not yet implemented
 
+SIGNALS
+=======
+
+* SIGHUP
+
+  Rotate the log file (see -w option)
+
+* SIGUSR1
+
+  Flush any outstanding transactions
+
 TAGS
 ====
 The following log entry tags are currently defined:
