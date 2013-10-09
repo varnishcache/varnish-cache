@@ -202,6 +202,7 @@ void VSL_ResetError(struct VSL_data *vsl);
 	 */
 
 #define VSL_COPT_TAIL	(1 << 0)
+#define VSL_COPT_BATCH	(1 << 1)
 struct VSL_cursor *VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm,
     unsigned options);
        /*
@@ -210,6 +211,7 @@ struct VSL_cursor *VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm,
 	*
 	* Options:
 	*   VSL_COPT_TAIL	Start cursor at log tail
+	*   VSL_COPT_BATCH	Return batch records
 	*
 	* Return values:
 	* non-NULL: Pointer to cursor

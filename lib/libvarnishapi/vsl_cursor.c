@@ -172,6 +172,15 @@ vslc_vsm_next(struct VSL_cursor *cursor)
 
 		c->cursor.rec = c->next;
 		c->next.ptr = VSL_NEXT(c->next.ptr);
+		if (VSL_TAG(c->cursor.rec.ptr) == SLT__Batch) {
+			if (!(c->options & VSL_COPT_BATCH))
+				/* Skip the batch record */
+				continue;
+			/* Next call will point to the first record past
+			   the batch */
+			c->next.ptr +=
+			    VSL_WORDS(VSL_BATCHLEN(c->cursor.rec.ptr));
+		}
 		return (1);
 	}
 }

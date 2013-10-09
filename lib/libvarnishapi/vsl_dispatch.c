@@ -1116,6 +1116,7 @@ vslq_raw(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 		vslq->raw.c.cursor.rec.ptr = NULL;
 		vslq->raw.trans.vxid = VSL_ID(vslq->raw.c.ptr);
 		vslq->raw.offset += VSL_NEXT(vslq->raw.c.ptr) - vslq->raw.c.ptr;
+		assert(VSL_TAG(vslq->raw.c.ptr) != SLT__Batch);
 	} while (VSL_TAG(vslq->raw.c.ptr) == SLT__Batch);
 
 	if (func == NULL)
@@ -1181,6 +1182,7 @@ vslq_next(struct VSLQ *vslq)
 		return (i);
 
 	tag = VSL_TAG(c->rec.ptr);
+	assert(tag != SLT__Batch);
 	if (tag == SLT__Batch) {
 		batch = 1;
 		vxid = VSL_BATCHID(c->rec.ptr);
