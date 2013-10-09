@@ -191,7 +191,7 @@ VUT_Setup(void)
 			VUT_Error(1, "Can't open VSM file (%s)",
 			    VSM_Error(VUT.vsm));
 		c = VSL_CursorVSM(VUT.vsl, VUT.vsm,
-		    VUT.d_opt ? 0 : VSL_COPT_TAIL);
+		    (VUT.d_opt ? 0 : VSL_COPT_TAIL) | VSL_COPT_BATCH);
 	}
 	if (c == NULL)
 		VUT_Error(1, "Can't open log (%s)", VSL_Error(VUT.vsl));
@@ -295,7 +295,8 @@ VUT_Main(VSLQ_dispatch_f *func, void *priv)
 				VSM_ResetError(VUT.vsm);
 				continue;
 			}
-			c = VSL_CursorVSM(VUT.vsl, VUT.vsm, VSL_COPT_TAIL);
+			c = VSL_CursorVSM(VUT.vsl, VUT.vsm,
+			    VSL_COPT_TAIL | VSL_COPT_BATCH);
 			if (c == NULL) {
 				VSL_ResetError(VUT.vsl);
 				VSM_Close(VUT.vsm);

@@ -1106,8 +1106,13 @@ vslq_raw(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 				return (i);
 			AN(vslq->c->rec.ptr);
 			vslq->raw.start = vslq->c->rec;
-			vslq->raw.len = VSL_NEXT(vslq->raw.start.ptr) -
-			    vslq->raw.start.ptr;
+			if (VSL_TAG(vslq->c->rec.ptr) == SLT__Batch)
+				vslq->raw.len = VSL_END(vslq->c->rec.ptr,
+				    VSL_BATCHLEN(vslq->c->rec.ptr)) -
+				    vslq->c->rec.ptr;
+			else
+				vslq->raw.len = VSL_NEXT(vslq->raw.start.ptr) -
+				    vslq->raw.start.ptr;
 			assert(vslq->raw.len > 0);
 			vslq->raw.offset = 0;
 		}
@@ -1116,7 +1121,6 @@ vslq_raw(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 		vslq->raw.c.cursor.rec.ptr = NULL;
 		vslq->raw.trans.vxid = VSL_ID(vslq->raw.c.ptr);
 		vslq->raw.offset += VSL_NEXT(vslq->raw.c.ptr) - vslq->raw.c.ptr;
-		assert(VSL_TAG(vslq->raw.c.ptr) != SLT__Batch);
 	} while (VSL_TAG(vslq->raw.c.ptr) == SLT__Batch);
 
 	if (func == NULL)
@@ -1170,7 +1174,7 @@ static int
 vslq_next(struct VSLQ *vslq)
 {
 	struct VSL_cursor *c;
-	int i, batch;
+	int i;
 	enum VSL_tag_e tag;
 	ssize_t len;
 	unsigned vxid;
@@ -1182,9 +1186,7 @@ vslq_next(struct VSLQ *vslq)
 		return (i);
 
 	tag = VSL_TAG(c->rec.ptr);
-	assert(tag != SLT__Batch);
 	if (tag == SLT__Batch) {
-		batch = 1;
 		vxid = VSL_BATCHID(c->rec.ptr);
 		len = VSL_END(c->rec.ptr, VSL_BATCHLEN(c->rec.ptr)) -
 		    c->rec.ptr;
@@ -1192,7 +1194,6 @@ vslq_next(struct VSLQ *vslq)
 			return (i);
 		tag = VSL_TAG(VSL_NEXT(c->rec.ptr));
 	} else {
-		batch = 0;
 		vxid = VSL_ID(c->rec.ptr);
 		len = VSL_NEXT(c->rec.ptr) - c->rec.ptr;
 	}
@@ -1210,8 +1211,6 @@ vslq_next(struct VSLQ *vslq)
 		vtx_append(vslq, vtx, &c->rec, len);
 		vtx_scan(vslq, vtx);
 	}
-	if (batch)
-		AZ(vsl_skip(c, VSL_WORDS(VSL_BATCHLEN(c->rec.ptr))));
 
 	return (i);
 }
