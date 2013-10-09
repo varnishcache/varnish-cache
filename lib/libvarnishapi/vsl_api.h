@@ -39,14 +39,12 @@
 /*lint -esym(534, vsl_diag) */
 int vsl_diag(struct VSL_data *vsl, const char *fmt, ...)
     __printflike(2, 3);
-int vsl_skip(struct VSL_cursor *c, ssize_t words);
 void vsl_vbm_bitset(int bit, void *priv);
 void vsl_vbm_bitclr(int bit, void *priv);
 
 typedef void vslc_delete_f(struct VSL_cursor *);
 typedef int vslc_next_f(struct VSL_cursor *);
 typedef int vslc_reset_f(struct VSL_cursor *);
-typedef int vslc_skip_f(struct VSL_cursor *, ssize_t words);
 typedef int vslc_check_f(const struct VSL_cursor *, const struct VSLC_ptr *);
 
 struct vslc_tbl {
@@ -56,7 +54,6 @@ struct vslc_tbl {
 	vslc_delete_f			*delete;
 	vslc_next_f			*next;
 	vslc_reset_f			*reset;
-	vslc_skip_f			*skip;
 	vslc_check_f			*check;
 };
 

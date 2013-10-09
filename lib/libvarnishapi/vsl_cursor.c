@@ -211,30 +211,11 @@ vslc_vsm_reset(struct VSL_cursor *cursor)
 	return (0);
 }
 
-static int
-vslc_vsm_skip(struct VSL_cursor *cursor, ssize_t words)
-{
-	struct vslc_vsm *c;
-
-	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_VSM_MAGIC);
-	assert(&c->cursor == cursor);
-	if (words < 0)
-		return (-1);
-
-	c->next.ptr += words;
-	assert(c->next.ptr >= c->head->log);
-	assert(c->next.ptr < c->end);
-	c->cursor.rec.ptr = NULL;
-
-	return (0);
-}
-
 static const struct vslc_tbl vslc_vsm_tbl = {
 	.magic		= VSLC_TBL_MAGIC,
 	.delete		= vslc_vsm_delete,
 	.next		= vslc_vsm_next,
 	.reset		= vslc_vsm_reset,
-	.skip		= vslc_vsm_skip,
 	.check		= vslc_vsm_check,
 };
 
@@ -391,7 +372,6 @@ static const struct vslc_tbl vslc_file_tbl = {
 	.delete		= vslc_file_delete,
 	.next		= vslc_file_next,
 	.reset		= vslc_file_reset,
-	.skip		= NULL,
 	.check		= NULL,
 };
 
@@ -485,17 +465,6 @@ VSL_Next(struct VSL_cursor *cursor)
 	CAST_OBJ_NOTNULL(tbl, cursor->priv_tbl, VSLC_TBL_MAGIC);
 	AN(tbl->next);
 	return ((tbl->next)(cursor));
-}
-
-int
-vsl_skip(struct VSL_cursor *cursor, ssize_t words)
-{
-	const struct vslc_tbl *tbl;
-
-	CAST_OBJ_NOTNULL(tbl, cursor->priv_tbl, VSLC_TBL_MAGIC);
-	if (tbl->skip == NULL)
-		return (-1);
-	return ((tbl->skip)(cursor, words));
 }
 
 int

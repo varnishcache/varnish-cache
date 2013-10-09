@@ -245,7 +245,6 @@ static const struct vslc_tbl vslc_raw_tbl = {
 	.delete	= NULL,
 	.next	= vslc_raw_next,
 	.reset	= vslc_raw_reset,
-	.skip	= NULL,
 	.check	= NULL,
 };
 
@@ -322,7 +321,6 @@ static const struct vslc_tbl vslc_vtx_tbl = {
 	.delete	= NULL,
 	.next	= vslc_vtx_next,
 	.reset	= vslc_vtx_reset,
-	.skip	= NULL,
 	.check	= NULL,
 };
 
