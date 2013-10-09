@@ -30,6 +30,7 @@
  */
 #include "config.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -478,12 +479,12 @@ VRT_r_##which##_##fld(const struct vrt_ctx *ctx)		\
 }
 
 VRT_DO_EXP(obj, ctx->req->obj->exp, grace, 0, ctx->req->t_req,
-   EXP_Rearm(ctx->req->obj);)
+   EXP_Rearm(ctx->req->obj, ctx->req->t_req, NAN, NAN, NAN);)
 VRT_DO_EXP(obj, ctx->req->obj->exp, ttl,
    (ctx->req->t_req - ctx->req->obj->exp.t_origin), ctx->req->t_req,
-   EXP_Rearm(ctx->req->obj);)
+   EXP_Rearm(ctx->req->obj, ctx->req->t_req, NAN, NAN, NAN);)
 VRT_DO_EXP(obj, ctx->req->obj->exp, keep, 0, ctx->req->t_req,
-   EXP_Rearm(ctx->req->obj);)
+   EXP_Rearm(ctx->req->obj, ctx->req->t_req, NAN, NAN, NAN);)
 
 VRT_DO_EXP(beresp, ctx->bo->exp, grace, 0, ctx->bo->exp.t_origin,)
 VRT_DO_EXP(beresp, ctx->bo->exp, ttl, 0, ctx->bo->exp.t_origin,)

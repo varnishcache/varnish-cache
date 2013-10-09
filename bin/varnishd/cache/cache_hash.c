@@ -61,6 +61,7 @@
 
 #include "hash/hash_slinger.h"
 #include "vsha256.h"
+#include "vtim.h"
 
 static const struct hash_slinger *hash;
 static struct objhead *private_oh;
@@ -558,6 +559,7 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, double ttl, double grace)
 	struct objcore *oc, **ocp;
 	unsigned spc, nobj, n;
 	struct object *o;
+	double now;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
@@ -566,10 +568,11 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, double ttl, double grace)
 	Lck_Lock(&oh->mtx);
 	assert(oh->refcnt > 0);
 	nobj = 0;
+	now = VTIM_real();
 	VTAILQ_FOREACH(oc, &oh->objcs, list) {
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 		assert(oc->objhead == oh);
-		if (oc->flags & OC_F_BUSY) {
+		if (oc->flags & (OC_F_BUSY|OC_F_DYING)) {
 			/*
 			 * We cannot purge busy objects here, because their
 			 * owners have special rights to them, and may nuke
@@ -578,6 +581,7 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, double ttl, double grace)
 			 */
 			continue;
 		}
+		xxxassert(spc > sizeof *ocp);
 
 		(void)oc_getobj(&wrk->stats, oc);
 		    /* XXX: still needed ? */
@@ -589,11 +593,6 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, double ttl, double grace)
 	}
 	Lck_Unlock(&oh->mtx);
 
-	/* NB: inverse test to catch NAN also */
-	if (!(ttl > 0.))
-		ttl = -1.;
-	if (!(grace > 0.))
-		grace = -1.;
 	for (n = 0; n < nobj; n++) {
 		oc = ocp[n];
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -601,9 +600,7 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, double ttl, double grace)
 		if (o == NULL)
 			continue;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-		o->exp.ttl = ttl;
-		o->exp.grace = grace;
-		EXP_Rearm(o);
+		EXP_Rearm(o, now, ttl, grace, NAN);	// XXX: Keep ?
 		(void)HSH_DerefObj(&wrk->stats, &o);
 	}
 	WS_Release(wrk->aws, 0);

@@ -909,7 +909,8 @@ double EXP_Ttl(const struct req *, const struct object*);
 void EXP_Insert(struct objcore *oc);
 void EXP_Inject(struct objcore *oc, struct lru *lru, double when);
 void EXP_Init(void);
-void EXP_Rearm(const struct object *o);
+void EXP_Rearm(struct object *o, double now, double ttl, double grace,
+    double keep);
 int EXP_Touch(struct objcore *oc);
 int EXP_NukeOne(struct busyobj *, struct lru *lru);
 void EXP_NukeLRU(struct worker *wrk, struct vsl_log *vsl, struct lru *lru);

@@ -215,7 +215,7 @@ EXP_Touch(struct objcore *oc)
  */
 
 void
-EXP_Rearm(const struct object *o)
+EXP_Rearm(struct object *o, double now, double ttl, double grace, double keep)
 {
 	struct objcore *oc;
 	struct lru *lru;
@@ -226,6 +226,13 @@ EXP_Rearm(const struct object *o)
 	if (oc == NULL)
 		return;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	if (!isnan(ttl))
+		o->exp.ttl = now + ttl - o->exp.t_origin;
+	if (!isnan(grace))
+		o->exp.grace = grace;
+	if (!isnan(keep))
+		o->exp.keep = keep;
 
 	when = exp_when(o);
 
@@ -241,7 +248,7 @@ EXP_Rearm(const struct object *o)
 	Lck_Lock(&lru->mtx);
 	AN(oc->flags & OC_F_EXP);
 
-	if (when < 0)
+	if (!isnan(now) && when <= now)
 		oc->flags |= OC_F_DYING;
 	else
 		oc->flags |= OC_F_MOVE;
@@ -422,9 +429,13 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 	Lck_Unlock(&lru->mtx);
 
 	if (flags & OC_F_DYING) {
-		assert(oc->timer_idx != BINHEAP_NOIDX);
-		binheap_delete(ep->heap, oc->timer_idx);
-		assert(oc->timer_idx == BINHEAP_NOIDX);
+		VSLb(&ep->vsl, SLT_ExpKill, "EXP_KILL %p %.9f 0x%x", oc,
+		    oc->timer_when, oc->flags);
+		if (!(flags & OC_F_INSERT)) {
+			assert(oc->timer_idx != BINHEAP_NOIDX);
+			binheap_delete(ep->heap, oc->timer_idx);
+			assert(oc->timer_idx == BINHEAP_NOIDX);
+		}
 		(void)HSH_DerefObjCore(&ep->wrk->stats, &oc);
 		return;
 	}
@@ -437,7 +448,7 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 	}
 
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_WHEN %p %.9f 0x%x", oc,
-	    oc->timer_when, oc->flags);
+	    oc->timer_when, flags);
 
 	/*
 	 * XXX: There are some pathological cases here, were we

@@ -62,6 +62,7 @@
 
 #include "config.h"
 
+#include <math.h>
 #include <pcre.h>
 #include <stdio.h>
 
@@ -907,13 +908,9 @@ ban_check_object(struct object *o, struct vsl_log *vsl,
 		oc_updatemeta(oc);
 		return (0);
 	} else {
-		EXP_Clr(&o->exp);
 		oc->ban = NULL;
-		oc_updatemeta(oc);
-		/* BAN also changed, but that is not important any more */
-		/* XXX: no req in lurker */
 		VSLb(vsl, SLT_ExpBan, "%u was banned", o->vxid);
-		EXP_Rearm(o);
+		EXP_Rearm(o, o->exp.t_origin, 0, 0, 0);	// XXX fake now
 		return (1);
 	}
 }

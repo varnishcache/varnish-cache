@@ -34,6 +34,7 @@
 
 #include "config.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -471,7 +472,7 @@ smp_oc_getobj(struct dstat *ds, struct objcore *oc)
 		oc->flags &= ~OC_F_NEEDFIXUP;
 	}
 	Lck_Unlock(&sg->sc->mtx);
-	EXP_Rearm(o);
+	EXP_Rearm(o, NAN, NAN, NAN, NAN); 	// XXX: Shouldn't be needed
 	return (o);
 }
 
