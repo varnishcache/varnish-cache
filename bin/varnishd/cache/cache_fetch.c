@@ -437,7 +437,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	VBO_setstate(bo, BOS_FETCHING);
 
 	V1F_fetch_body(wrk, bo);
-	if (!bo->do_stream) {
+	if (!bo->do_stream && bo->state != BOS_FAILED) {
 		HSH_Unbusy(&wrk->stats, obj->objcore);
 		if (!(bo->fetch_obj->objcore->flags & OC_F_PRIVATE)) {
 			EXP_Insert(obj->objcore);
