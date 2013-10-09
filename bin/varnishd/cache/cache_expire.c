@@ -284,11 +284,8 @@ EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 		/*
 		 * It wont release any space if we cannot release the last
 		 * reference, besides, if somebody else has a reference,
-		 * it's a bad idea to nuke this object anyway. Also do not
-		 * touch busy objects.
+		 * it's a bad idea to nuke this object anyway. 
 		 */
-		if (oc->flags & OC_F_BUSY)
-			continue;
 		if (oc->refcnt > 1)
 			continue;
 		oh = oc->objhead;
@@ -409,6 +406,8 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_INBOX %p %.9f 0x%x", oc,
 	    oc->timer_when, oc->flags);
 
+	AZ(oc->flags & OC_F_BUSY);
+
 	lru = oc_getlru(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
@@ -482,15 +481,12 @@ exp_expire(struct exp_priv *ep, double now)
 	if (oc->timer_when > now)
 		return (oc->timer_when);
 
-	/* If the object is busy, we have to wait for it */
-	if (oc->flags & OC_F_BUSY)
-		return (now + 0.01);		// XXX ?
-
 	VSC_C_main->n_expired++;
 
 	lru = oc_getlru(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 	Lck_Lock(&lru->mtx);
+	AZ(oc->flags & OC_F_BUSY);
 	oc->flags |= OC_F_DYING;
 	if (oc->flags & OC_F_OFFLRU)
 		oc = NULL;
