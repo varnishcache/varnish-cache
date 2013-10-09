@@ -51,6 +51,7 @@ struct VUT {
 	struct vpf_fh	*pfh;
 	int		sighup;
 	int		sigint;
+	int		sigusr1;
 };
 
 extern struct VUT VUT;

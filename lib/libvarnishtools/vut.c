@@ -76,6 +76,13 @@ vut_sigint(int sig)
 	VUT.sigint = 1;
 }
 
+static void
+vut_sigusr1(int sig)
+{
+	(void)sig;
+	VUT.sigusr1 = 1;
+}
+
 void
 VUT_Error(int status, const char *fmt, ...)
 {
@@ -216,6 +223,7 @@ VUT_Setup(void)
 	(void)signal(SIGHUP, vut_sighup);
 	(void)signal(SIGINT, vut_sigint);
 	(void)signal(SIGTERM, vut_sigint);
+	(void)signal(SIGUSR1, vut_sigusr1);
 
 	/* Open PID file */
 	if (VUT.P_arg) {
@@ -288,6 +296,13 @@ VUT_Main(VSLQ_dispatch_f *func, void *priv)
 				    VSL_Error(VUT.vsl));
 		}
 
+		if (VUT.sigusr1) {
+			/* Flush and report any incomplete records */
+			VUT.sigusr1 = 0;
+			if (VUT.vslq != NULL)
+				VSLQ_Flush(VUT.vslq, func, priv);
+		}
+
 		if (VUT.vslq == NULL) {
 			/* Reconnect VSM */
 			AZ(VUT.r_arg);
@@ -344,8 +359,6 @@ VUT_Main(VSLQ_dispatch_f *func, void *priv)
 		}
 	}
 
-	if (VUT.vslq != NULL)
-		VSLQ_Flush(VUT.vslq, func, priv);
 	if (VUT.fo)
 		fflush(VUT.fo);
 
