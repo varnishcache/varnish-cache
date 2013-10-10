@@ -213,7 +213,8 @@ VUT_Setup(void)
 			VUT_Error(1, "Can't open VSM file (%s)",
 			    VSM_Error(VUT.vsm));
 		c = VSL_CursorVSM(VUT.vsl, VUT.vsm,
-		    (VUT.d_opt ? 0 : VSL_COPT_TAIL) | VSL_COPT_BATCH);
+		    (VUT.d_opt ? VSL_COPT_TAILSTOP : VSL_COPT_TAIL)
+		    | VSL_COPT_BATCH);
 	}
 	if (c == NULL)
 		VUT_Error(1, "Can't open log (%s)", VSL_Error(VUT.vsl));
