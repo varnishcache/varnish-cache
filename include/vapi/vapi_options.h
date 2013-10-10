@@ -45,6 +45,11 @@
 	    " client communication."					\
 	)
 
+#define VSL_OPT_C							\
+	VOPT("C", "[-C]", "Caseless regular expressions",		\
+	    "Do all regular expression and string matching caseless."	\
+	)
+
 #define VSL_OPT_i							\
 	VOPT("i:", "[-i taglist]", "Include tags",			\
 	    "Include log records of these tags in output. Taglist is"   \

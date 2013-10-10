@@ -49,6 +49,17 @@
 
 static void vxp_expr_or(struct vxp *vxp, struct vex **pvex);
 
+static struct vex *
+vex_alloc(struct vxp *vxp)
+{
+	struct vex *vex;
+
+	ALLOC_OBJ(vex, VEX_MAGIC);
+	AN(vex);
+	vex->options = vxp->vex_options;
+	return (vex);
+}
+
 static void
 vxp_expr_lhs(struct vxp *vxp, struct vex_lhs **plhs)
 {
@@ -244,7 +255,8 @@ vxp_expr_regex(struct vxp *vxp, struct vex_rhs **prhs)
 	AN(*prhs);
 	(*prhs)->type = VEX_REGEX;
 	(*prhs)->val_string = strdup(vxp->t->dec);
-	(*prhs)->val_regex = VRE_compile(vxp->t->dec, 0, &errptr, &erroff);
+	(*prhs)->val_regex = VRE_compile(vxp->t->dec, vxp->vre_options,
+	    &errptr, &erroff);
 	if ((*prhs)->val_regex == NULL) {
 		AN(errptr);
 		VSB_printf(vxp->sb, "Regular expression error: %s ", errptr);
@@ -267,7 +279,7 @@ vxp_expr_cmp(struct vxp *vxp, struct vex **pvex)
 
 	AN(pvex);
 	AZ(*pvex);
-	ALLOC_OBJ(*pvex, VEX_MAGIC);
+	*pvex = vex_alloc(vxp);
 	AN(*pvex);
 	vxp_expr_lhs(vxp, &(*pvex)->lhs);
 	ERRCHK(vxp);
@@ -373,7 +385,7 @@ vxp_expr_not(struct vxp *vxp, struct vex **pvex)
 	AZ(*pvex);
 
 	if (vxp->t->tok == T_NOT) {
-		ALLOC_OBJ(*pvex, VEX_MAGIC);
+		*pvex = vex_alloc(vxp);
 		AN(*pvex);
 		(*pvex)->tok = vxp->t->tok;
 		vxp_NextToken(vxp);
@@ -402,7 +414,7 @@ vxp_expr_and(struct vxp *vxp, struct vex **pvex)
 	ERRCHK(vxp);
 	while (vxp->t->tok == T_AND) {
 		a = *pvex;
-		ALLOC_OBJ(*pvex, VEX_MAGIC);
+		*pvex = vex_alloc(vxp);
 		AN(*pvex);
 		(*pvex)->tok = vxp->t->tok;
 		(*pvex)->a = a;
@@ -430,7 +442,7 @@ vxp_expr_or(struct vxp *vxp, struct vex **pvex)
 	ERRCHK(vxp);
 	while (vxp->t->tok == T_OR) {
 		a = *pvex;
-		ALLOC_OBJ(*pvex, VEX_MAGIC);
+		*pvex = vex_alloc(vxp);
 		AN(*pvex);
 		(*pvex)->tok = vxp->t->tok;
 		(*pvex)->a = a;

@@ -168,15 +168,27 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 		VSLQ_TEST_NUMOP(rhs->type, lhs, >=, rhs->val);
 	case T_SEQ:		/* eq */
 		assert(rhs->type == VEX_STRING);
-		if (e - b == rhs->val_stringlen &&
-		    !strncmp(b, rhs->val_string, e - b))
-			return (1);
-		return (0);
+		if (e - b != rhs->val_stringlen)
+			return (0);
+		if (vex->options & VEX_OPT_CASELESS) {
+			if (strncasecmp(b, rhs->val_string, e - b))
+				return (0);
+		} else {
+			if (strncmp(b, rhs->val_string, e - b))
+				return (0);
+		}
+		return (1);
 	case T_SNEQ:		/* ne */
 		assert(rhs->type == VEX_STRING);
-		if (e - b != rhs->val_stringlen ||
-		    strncmp(b, rhs->val_string, e - b))
+		if (e - b != rhs->val_stringlen)
 			return (1);
+		if (vex->options & VEX_OPT_CASELESS) {
+			if (strncasecmp(b, rhs->val_string, e - b))
+				return (1);
+		} else {
+			if (strncmp(b, rhs->val_string, e - b))
+				return (1);
+		}
 		return (0);
 	case '~':		/* ~ */
 		assert(rhs->type == VEX_REGEX && rhs->val_regex != NULL);
@@ -294,7 +306,7 @@ vslq_newquery(struct VSL_data *vsl, enum VSL_grouping_e grouping,
 
 	vsb = VSB_new_auto();
 	AN(vsb);
-	vex = vex_New(querystring, vsb);
+	vex = vex_New(querystring, vsb, vsl->C_opt ? VEX_OPT_CASELESS : 0);
 	AZ(VSB_finish(vsb));
 	if (vex == NULL)
 		vsl_diag(vsl, "%s", VSB_data(vsb));

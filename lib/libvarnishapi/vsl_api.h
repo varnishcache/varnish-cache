@@ -87,6 +87,7 @@ struct VSL_data {
 
 	int				b_opt;
 	int				c_opt;
+	int				C_opt;
 	int				L_opt;
 	double				T_opt;
 	int				v_opt;

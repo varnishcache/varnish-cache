@@ -70,6 +70,9 @@ struct vxp {
 	VTAILQ_HEAD(, membit)	membits;
 	struct token		*t;
 
+	unsigned		vex_options;
+	int			vre_options;
+
 	struct vsb		*sb;
 	int			err;
 };
@@ -115,6 +118,7 @@ struct vex {
 	unsigned		magic;
 #define VEX_MAGIC		0xC7DB792D
 	unsigned		tok;
+	unsigned		options;
 	struct vex		*a, *b;
 	struct vex_lhs		*lhs;
 	struct vex_rhs		*rhs;
@@ -137,8 +141,8 @@ void vxp_Lexer(struct vxp *vxp);
 struct vex * vxp_Parse(struct vxp *vxp);
 
 /* API internal interface */
-
-struct vex * vex_New(const char *query, struct vsb *sb);
+#define VEX_OPT_CASELESS	(1 << 0)
+struct vex * vex_New(const char *query, struct vsb *sb, unsigned options);
 void vex_Free(struct vex **pvex);
 
 /* Debug routines */

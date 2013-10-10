@@ -29,12 +29,6 @@ The following options are available:
 
 .. include:: ../../../bin/varnishlog/varnishlog_options.rst
 
--C
-
-	Ignore case when matching regular expressions.
-
-	XXX: Not yet implemented
-
 -k num
 
 	Only show the first num log transactions (or log records

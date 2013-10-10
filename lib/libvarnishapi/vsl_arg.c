@@ -286,7 +286,7 @@ vsl_IX_arg(struct VSL_data *vsl, int opt, const char *arg)
 		b = e + 1;
 	}
 
-	vre = VRE_compile(b, 0, &err, &off);
+	vre = VRE_compile(b, vsl->C_opt ? VRE_CASELESS : 0, &err, &off);
 	if (vre == NULL) {
 		if (tags)
 			vbit_destroy(tags);
@@ -326,6 +326,10 @@ VSL_Arg(struct VSL_data *vsl, int opt, const char *arg)
 	switch (opt) {
 	case 'b': vsl->b_opt = 1; return (1);
 	case 'c': vsl->c_opt = 1; return (1);
+	case 'C':
+		/* Caseless regular expressions */
+		vsl->C_opt = 1;
+		return (1);
 	case 'i': case 'x': return (vsl_ix_arg(vsl, opt, arg));
 	case 'I': case 'X': return (vsl_IX_arg(vsl, opt, arg));
 	case 'L':

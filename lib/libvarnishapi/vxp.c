@@ -195,7 +195,7 @@ vxp_Delete(struct vxp **pvxp)
 }
 
 struct vex *
-vex_New(const char *query, struct vsb *sb)
+vex_New(const char *query, struct vsb *sb, unsigned options)
 {
 	struct vxp *vxp;
 	struct vex *vex;
@@ -205,6 +205,9 @@ vex_New(const char *query, struct vsb *sb)
 	vxp = vxp_New(sb);
 	vxp->b = query;
 	vxp->e = query + strlen(query);
+	vxp->vex_options = options;
+	if (options & VEX_OPT_CASELESS)
+		vxp->vre_options |= VRE_CASELESS;
 
 	vxp_Lexer(vxp);
 
