@@ -164,7 +164,11 @@ vslc_vsm_next(struct VSL_cursor *cursor)
 				c->next.ptr = c->head->log;
 				continue;
 			}
-			return (0);
+			if (c->options & VSL_COPT_TAILSTOP)
+				/* EOF */
+				return (-1);
+			else
+				return (0);
 		}
 
 		if (c->next.ptr == c->head->log)

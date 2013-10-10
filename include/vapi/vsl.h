@@ -201,8 +201,9 @@ void VSL_ResetError(struct VSL_data *vsl);
 	 * Reset any error message.
 	 */
 
-#define VSL_COPT_TAIL	(1 << 0)
-#define VSL_COPT_BATCH	(1 << 1)
+#define VSL_COPT_TAIL		(1 << 0)
+#define VSL_COPT_BATCH		(1 << 1)
+#define VSL_COPT_TAILSTOP	(1 << 2)
 struct VSL_cursor *VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm,
     unsigned options);
        /*
@@ -212,6 +213,7 @@ struct VSL_cursor *VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm,
 	* Options:
 	*   VSL_COPT_TAIL	Start cursor at log tail
 	*   VSL_COPT_BATCH	Return batch records
+	*   VSL_COPT_TAILSTOP	Return EOF when reaching the log tail
 	*
 	* Return values:
 	* non-NULL: Pointer to cursor
@@ -267,7 +269,7 @@ int VSL_Next(struct VSL_cursor *c);
 	 * Return values:
 	 *	1:	Cursor points to next log record
 	 *	0:	End of log
-	 *     -1:	End of file (-r) (XXX / -k arg exhausted / "done")
+	 *     -1:	End of file
 	 *     -2:	Remote abandoned or closed
 	 *     -3:	Overrun
 	 *     -4:	I/O read error - see errno
