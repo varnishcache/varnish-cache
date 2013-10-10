@@ -43,12 +43,6 @@ The following options are available:
 
 	XXX: Not yet implemented
 
--V
-
-	Display the version number and exit.
-
-	XXX: Not yet implemented
-
 SIGNALS
 =======
 

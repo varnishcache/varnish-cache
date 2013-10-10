@@ -48,6 +48,7 @@
 #include "vtim.h"
 #include "vas.h"
 #include "miniobj.h"
+#include "vcs.h"
 
 #include "vut.h"
 
@@ -164,6 +165,10 @@ VUT_Arg(int opt, const char *arg)
 		/* Unbuffered binary output */
 		VUT.u_opt = 1;
 		return (1);
+	case 'V':
+		/* Print version number and exit */
+		VCS_Message(VUT.progname);
+		exit(1);
 	case 'w':
 		/* Binary file output */
 		REPLACE(VUT.w_arg, arg);
@@ -178,8 +183,9 @@ VUT_Arg(int opt, const char *arg)
 }
 
 void
-VUT_Init(void)
+VUT_Init(const char *progname)
 {
+	VUT.progname = progname;
 	VUT.g_arg = VSL_g_vxid;
 	AZ(VUT.vsl);
 	VUT.vsl = VSL_New();

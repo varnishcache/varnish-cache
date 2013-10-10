@@ -50,11 +50,13 @@
 #include "vtim.h"
 #include "vut.h"
 
+static const char progname[] = "varnishlog";
+
 static void
 usage(void)
 {
 	const char **opt;
-	fprintf(stderr, "Usage: varnishlog <options>\n\n");
+	fprintf(stderr, "Usage: %s <options>\n\n", progname);
 	fprintf(stderr, "Options:\n");
 	for (opt = vopt_usage; *opt != NULL; opt += 2)
 		fprintf(stderr, "  %-25s %s\n", *opt, *(opt + 1));
@@ -66,7 +68,7 @@ main(int argc, char * const *argv)
 {
 	char opt;
 
-	VUT_Init();
+	VUT_Init(progname);
 
 	while ((opt = getopt(argc, argv, vopt_optstring)) != -1) {
 		switch (opt) {

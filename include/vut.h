@@ -32,6 +32,8 @@
 #include "vdef.h"
 
 struct VUT {
+	const char	*progname;
+
 	/* Options */
 	int		a_opt;
 	int		d_opt;
@@ -65,7 +67,7 @@ int VUT_Arg(int opt, const char *arg);
 
 void VUT_Setup(void);
 
-void VUT_Init(void);
+void VUT_Init(const char *progname);
 
 void VUT_Fini(void);
 

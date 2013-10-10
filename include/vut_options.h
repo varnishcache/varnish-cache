@@ -84,6 +84,11 @@
 	    "Unbuffered binary file output mode."			\
 	)
 
+#define VUT_OPT_V							\
+	VOPT("V", "[-V]", "Version",					\
+	    "Print version information and exit."			\
+	)
+
 #define VUT_OPT_w							\
 	VOPT("w:", "[-w filename]", "Binary output filename",		\
 	    "Write log entries to this file instead of displaying"	\
