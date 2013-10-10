@@ -139,6 +139,15 @@ VUT_Arg(int opt, const char *arg)
 		if (VSM_n_Arg(VUT.vsm, arg) <= 0)
 			VUT_Error(1, "%s", VSM_Error(VUT.vsm));
 		return (1);
+	case 'N':
+		/* Varnish stale VSM file */
+		if (VUT.vsm == NULL)
+			VUT.vsm = VSM_New();
+		AN(VUT.vsm);
+		if (VSM_N_Arg(VUT.vsm, arg) <= 0)
+			VUT_Error(1, "%s", VSM_Error(VUT.vsm));
+		VUT.d_opt = 1;	/* Enforces -d */
+		return (1);
 	case 'P':
 		/* PID file */
 		REPLACE(VUT.P_arg, arg);
