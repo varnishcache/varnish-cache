@@ -301,7 +301,7 @@ start_test(void)
 			(void)close(sfd);
 		retval = exec_file(jp->tst->filename, jp->tst->script,
 		    jp->tmpdir, jp->buf, jp->bufsiz);
-		_exit(retval);
+		exit(retval);
 	}
 	AZ(close(p[1]));
 
