@@ -217,6 +217,8 @@ logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 					ok = 0;
 			}
 			if (le->test->vre &&
+			    le->test->tag >= 0 &&
+			    le->test->tag == tag &&
 			    VRE_ERROR_NOMATCH == VRE_exec(le->test->vre, data,
 				len, 0, 0, NULL, 0, NULL))
 				ok = 0;
