@@ -52,6 +52,11 @@
 	    " by request."						\
 	)
 
+#define VUT_OPT_h							\
+	VOPT("h", "[-h]", "Usage help",					\
+	    "Print program usage and exit"				\
+	)
+
 #define VUT_OPT_n							\
 	VOPT("n:", "[-n name]", "Varnish instance name",		\
 	    "Specify the name of the varnishd instance to get logs"	\

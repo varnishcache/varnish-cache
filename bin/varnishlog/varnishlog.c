@@ -53,14 +53,14 @@
 static const char progname[] = "varnishlog";
 
 static void
-usage(void)
+usage(int status)
 {
 	const char **opt;
 	fprintf(stderr, "Usage: %s <options>\n\n", progname);
 	fprintf(stderr, "Options:\n");
 	for (opt = vopt_usage; *opt != NULL; opt += 2)
 		fprintf(stderr, "  %-25s %s\n", *opt, *(opt + 1));
-	exit(1);
+	exit(status);
 }
 
 int
@@ -72,14 +72,16 @@ main(int argc, char * const *argv)
 
 	while ((opt = getopt(argc, argv, vopt_optstring)) != -1) {
 		switch (opt) {
+		case 'h':
+			usage(0);
 		default:
 			if (!VUT_Arg(opt, optarg))
-				usage();
+				usage(1);
 		}
 	}
 
 	if (optind != argc)
-		usage();
+		usage(1);
 
 	VUT_Setup();
 	VUT_Main(NULL, NULL);
