@@ -49,7 +49,7 @@
 #define VUT_OPT_g							\
 	VOPT("g:", "[-g <session|request|vxid|raw>]", "Grouping mode",	\
 	    "The grouping of the log records. The default is to group"	\
-	    " by request."						\
+	    " by vxid."							\
 	)
 
 #define VUT_OPT_h							\
