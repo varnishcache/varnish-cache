@@ -234,6 +234,9 @@ rm -rf %{buildroot}
 %dir %{_includedir}/varnish
 %{_includedir}/varnish/*
 %{_libdir}/pkgconfig/varnishapi.pc
+/usr/share/varnish
+/usr/share/aclocal
+
 %doc LICENSE
 
 %files docs
