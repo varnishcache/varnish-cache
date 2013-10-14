@@ -1255,11 +1255,13 @@ VSLQ_Dispatch(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 	/* Check shmref list and buffer if necessary */
 	r = vslq_shmref_check(vslq);
 	if (r)
+		/* Buffering of shm ref failed */
 		return (r);
 
 	/* Process next cursor input */
 	i = vslq_next(vslq);
-	if (i)
+	if (i < 0)
+		/* Cursor reports error condition */
 		return (i);
 
 	/* Check vtx timeout */
@@ -1285,8 +1287,10 @@ VSLQ_Dispatch(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 	if (!VTAILQ_EMPTY(&vslq->ready))
 		r = vslq_process_ready(vslq, func, priv);
 	if (r)
+		/* User return code */
 		return (r);
 
+	/* Return cursor return value */
 	return (i);
 }
 
