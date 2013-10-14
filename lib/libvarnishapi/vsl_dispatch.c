@@ -172,7 +172,7 @@ struct VSLQ {
 	struct vtx_tree		tree;
 	VTAILQ_HEAD(,vtx)	ready;
 	VTAILQ_HEAD(,vtx)	incomplete;
-	unsigned		n_incomplete;
+	unsigned		n_outstanding;
 	struct chunkhead	shmrefs;
 	VTAILQ_HEAD(,vtx)	cache;
 	unsigned		n_cache;
@@ -558,6 +558,8 @@ vtx_retire(struct VSLQ *vslq, struct vtx **pvtx)
 		}
 	}
 	vtx->len = 0;
+	AN(vslq->n_outstanding);
+	vslq->n_outstanding--;
 
 	if (vslq->n_cache < VTX_CACHE) {
 		VTAILQ_INSERT_HEAD(&vslq->cache, vtx, list_child);
@@ -596,7 +598,7 @@ vtx_add(struct VSLQ *vslq, unsigned vxid)
 	vtx->key.vxid = vxid;
 	AZ(VRB_INSERT(vtx_tree, &vslq->tree, &vtx->key));
 	VTAILQ_INSERT_TAIL(&vslq->incomplete, vtx, list_vtx);
-	vslq->n_incomplete++;
+	vslq->n_outstanding++;
 	return (vtx);
 }
 
@@ -615,8 +617,6 @@ vtx_mark_complete(struct VSLQ *vslq, struct vtx *vtx)
 
 	vtx->flags |= VTX_F_COMPLETE;
 	VTAILQ_REMOVE(&vslq->incomplete, vtx, list_vtx);
-	AN(vslq->n_incomplete);
-	vslq->n_incomplete--;
 
 	while (1) {
 		AZ(vtx->flags & VTX_F_READY);
@@ -1058,7 +1058,7 @@ VSLQ_Delete(struct VSLQ **pvslq)
 	CHECK_OBJ_NOTNULL(vslq, VSLQ_MAGIC);
 
 	(void)VSLQ_Flush(vslq, NULL, NULL);
-	AZ(vslq->n_incomplete);
+	AN(VTAILQ_EMPTY(&vslq->incomplete));
 
 	while (!VTAILQ_EMPTY(&vslq->ready)) {
 		vtx = VTAILQ_FIRST(&vslq->ready);
@@ -1067,6 +1067,7 @@ VSLQ_Delete(struct VSLQ **pvslq)
 		AN(vtx->flags & VTX_F_READY);
 		vtx_retire(vslq, &vtx);
 	}
+	AZ(vslq->n_outstanding);
 
 	VSL_DeleteCursor(vslq->c);
 	vslq->c = NULL;
@@ -1276,19 +1277,24 @@ VSLQ_Dispatch(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 	}
 
 	/* Check store limit */
-	while (vslq->n_incomplete > vslq->vsl->L_opt) {
+	while (vslq->n_outstanding > vslq->vsl->L_opt) {
 		vtx = VTAILQ_FIRST(&vslq->incomplete);
 		CHECK_OBJ_NOTNULL(vtx, VTX_MAGIC);
 		vtx_force(vslq, vtx, "store overflow");
 		AN(vtx->flags & VTX_F_COMPLETE);
+		r = vslq_process_ready(vslq, func, priv);
+		if (r)
+			/* User return code */
+			return (r);
 	}
 
 	/* Check ready list */
-	if (!VTAILQ_EMPTY(&vslq->ready))
+	if (!VTAILQ_EMPTY(&vslq->ready)) {
 		r = vslq_process_ready(vslq, func, priv);
-	if (r)
-		/* User return code */
-		return (r);
+		if (r)
+			/* User return code */
+			return (r);
+	}
 
 	/* Return cursor return value */
 	return (i);
@@ -1303,7 +1309,7 @@ VSLQ_Flush(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 
 	CHECK_OBJ_NOTNULL(vslq, VSLQ_MAGIC);
 
-	while (vslq->n_incomplete) {
+	while (!VTAILQ_EMPTY(&vslq->incomplete)) {
 		vtx = VTAILQ_FIRST(&vslq->incomplete);
 		CHECK_OBJ_NOTNULL(vtx, VTX_MAGIC);
 		AZ(vtx->flags & VTX_F_COMPLETE);
