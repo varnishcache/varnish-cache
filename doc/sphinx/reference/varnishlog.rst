@@ -54,62 +54,6 @@ SIGNALS
 
   Flush any outstanding transactions
 
-TAGS
-====
-The following log entry tags are currently defined:
-
-* Backend
-* BackendClose
-* BackendOpen
-* BackendReuse
-* BackendXID
-* CLI
-* ClientAddr
-* Debug
-* Error
-* ExpBan
-* ExpKill
-* ExpPick
-* Hit
-* HitPass
-* HttpError
-* HttpGarbage
-* Length
-* ObjHeader
-* ObjLostHeader
-* ObjProtocol
-* ObjRequest
-* ObjResponse
-* ObjStatus
-* ObjURL
-* ReqEnd
-* ReqStart
-* RxHeader
-* RxLostHeader
-* RxProtocol
-* RxRequest
-* RxResponse
-* RxStatus
-* RxURL
-* SessionClose
-* SessionOpen
-* StatAddr
-* StatSess
-* TTL
-* TxHeader
-* TxLostHeader
-* TxProtocol
-* TxRequest
-* TxResponse
-* TxStatus
-* TxURL
-* VCL_acl
-* VCL_call
-* VCL_return
-* VCL_trace
-* WorkThread
-
-
 SEE ALSO
 ========
 * varnishd(1)
@@ -117,6 +61,7 @@ SEE ALSO
 * varnishncsa(1)
 * varnishstat(1)
 * varnishtop(1)
+* vsl(7)
 * vsl-query(7)
 
 HISTORY
