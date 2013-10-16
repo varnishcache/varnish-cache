@@ -55,7 +55,6 @@ SLTM(CLI, "CLI communication",
 
 SLTM(ReqEnd, "Client request end",
 	"Marks the end of client request.\n\n"
-	"xid\n    Transaction id.\n\n"
 	"Trxd\n     Timestamp when the request started.\n\n"
 	"Tidle\n    Timestamp when the request ended.\n\n"
 	"dTrx\n    Time to receive request\n\n"
