@@ -72,8 +72,8 @@ static int
 vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 {
 	const struct vex_rhs *rhs;
-	long long lhs_int;
-	double lhs_float;
+	long long lhs_int = 0;
+	double lhs_float = 0.;
 	const char *b, *e;
 	char *p;
 	int i;
