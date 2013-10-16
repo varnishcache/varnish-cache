@@ -20,11 +20,6 @@ to do the "count-the-backslashes" polka:::
 
   regsub("barf", "(b)(a)(r)(f)", "\4\3\2p") -> "frap"
 
-Given that we have never been able to come up with a valid need for
-any escaped characters apart from that, we decided that %22 for " and
-%25 for %, was much less suffering than doubling all backslashes in
-regexp/regsub contexts.
-
 Long strings are enclosed in {" ... "}. They may contain any character
 including ", newline and other control characters except for the NUL
 (0x00) character. If you really want NUL characters in a string there
