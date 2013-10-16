@@ -139,7 +139,36 @@ SLTM(BogoHeader, "Bogus HTTP received",
 )
 SLTM(LostHeader, "Failed attempt to set HTTP header", "")
 
-SLTM(TTL, "TTL set on object", "")
+SLTM(TTL, "TTL set on object",
+	"A TTL record is emitted whenever the ttl, grace or keep\n"
+	"values for an object is set.\n"
+	"\n"
+	"The format is:\n"
+	"\n"
+	"%u %s %d %d %d %d %d [ %d %u %u ]\n"
+	"|  |  |  |  |  |  |    |  |  |\n"
+	"|  |  |  |  |  |  |    |  |  +- Max-Age from Cache-Control header\n"
+	"|  |  |  |  |  |  |    |  +---- Expires header\n"
+	"|  |  |  |  |  |  |    +------- Date header\n"
+	"|  |  |  |  |  |  +------------ Age (incl Age: header value)\n"
+	"|  |  |  |  |  +--------------- Reference time for TTL\n"
+	"|  |  |  |  +------------------ Keep\n"
+	"|  |  |  +--------------------- Grace\n"
+	"|  |  +------------------------ TTL\n"
+	"|  +--------------------------- \"RFC\" or \"VCL\"\n"
+	"+------------------------------ object XID\n"
+	"\n"
+	"The last three fields are only present in \"RFC\" headers.\n"
+	"\n"
+	"Examples:\n"
+	"\n"
+	"1001 RFC 19 -1 -1 1312966109 4 0 0 23\n"
+	"1001 VCL 10 -1 -1 1312966109 4\n"
+	"1001 VCL 7 -1 -1 1312966111 6\n"
+	"1001 VCL 7 120 -1 1312966111 6\n"
+	"1001 VCL 7 120 3600 1312966111 6\n"
+	"1001 VCL 12 120 3600 1312966113 8\n"
+)
 SLTM(Fetch_Body, "Body fetched from backend", "")
 SLTM(VCL_acl, "", "")
 SLTM(VCL_call, "VCL method called", "")
@@ -162,7 +191,30 @@ SLTM(VCL_Debug, "Unused", "")
 SLTM(VCL_Log, "Log statement from VCL", "")
 SLTM(VCL_Error, "", "")
 
-SLTM(Gzip, "G(un)zip performed on object", "")
+SLTM(Gzip, "G(un)zip performed on object",
+	"A Gzip record is emitted for each instance of gzip or gunzip\n"
+	"work performed. Worst case, an ESI transaction stored in\n"
+	"gzip'ed objects but delivered gunziped, will run into many of\n"
+	"these.\n"
+	"\n"
+	"The format is:\n"
+	"\n"
+	"%c %c %c %d %d %d %d %d\n"
+	"|  |  |  |  |  |  |  |\n"
+	"|  |  |  |  |  |  |  +- Bit length of compressed data\n"
+	"|  |  |  |  |  |  +---- Bit location of 'last' bit\n"
+	"|  |  |  |  |  +------- Bit location of first deflate block\n"
+	"|  |  |  |  +---------- Bytes output\n"
+	"|  |  |  +------------- Bytes input\n"
+	"|  |  +---------------- 'E' = ESI, '-' = Plain object\n"
+	"|  +------------------- 'F' = Fetch, 'D' = Deliver\n"
+	"+---------------------- 'G' = Gzip, 'U' = Gunzip, 'u' = Gunzip-test\n"
+	"\n"
+	"Examples:\n"
+	"\n"
+	"U F E 182 159 80 80 1392\n"
+	"G F E 159 173 80 1304 1314\n"
+)
 
 SLTM(Link, "Links to a child VXID",
 	"Links this VXID to any child VXID it initiates\n\n"
