@@ -98,6 +98,11 @@ main(int argc, char *argv[])
 	for (i = 0; i < SLT__MAX; i++) {
 		if (ptags[i]->name == NULL || !strcmp(ptags[i]->name, ""))
 			continue;
+		if (ptags[i]->sdesc != NULL &&
+		    strstr(ptags[i]->sdesc, "(unused)"))
+			/* Don't list tags where the short description
+			   contains the string "(unused)" */
+			continue;
 		printf("%s", ptags[i]->name);
 		if (ptags[i]->sdesc != NULL && strcmp(ptags[i]->sdesc, ""))
 			printf(" - %s", ptags[i]->sdesc);

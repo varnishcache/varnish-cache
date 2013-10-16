@@ -192,7 +192,7 @@ SLTM(Hash, "Value added to hash", "")
 
 SLTM(Backend_health, "Backend health check", "")
 
-SLTM(VCL_Debug, "Unused", "")
+SLTM(VCL_Debug, "(unused)", "")
 SLTM(VCL_Log, "Log statement from VCL", "")
 SLTM(VCL_Error, "", "")
 
