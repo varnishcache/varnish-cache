@@ -30,12 +30,40 @@
  * The order of this table is not random, do not resort.
  * In particular, the FIRST and LOST entries must be last, in that order.
  *
+ * Arguments:
+ *	Tag-Name
+ *	struct http header index
+ *	1 if this header is used in requests
+ *	1 if this header is used in responses
+ *	short description postfix
+ *	long description (in RST "definition list" format)
+ *
  */
 
-SLTH(Method,	HTTP_HDR_METHOD)
-SLTH(URL,	HTTP_HDR_URL)
-SLTH(Protocol,	HTTP_HDR_PROTO)
-SLTH(Status,	HTTP_HDR_STATUS)
-SLTH(Response,	HTTP_HDR_RESPONSE)
-SLTH(Header,	HTTP_HDR_FIRST)
-SLTH(Lost,	HTTP_HDR_LOST)
+SLTH(Method,	HTTP_HDR_METHOD,	1, 0, "method",
+	"The HTTP request method used.\n\n"
+)
+SLTH(URL,	HTTP_HDR_URL,		1, 0, "URL",
+	"The HTTP request URL.\n\n"
+)
+SLTH(Protocol,	HTTP_HDR_PROTO,		1, 1, "protocol",
+	"The HTTP protocol version information.\n\n"
+)
+SLTH(Status,	HTTP_HDR_STATUS,	0, 1, "status",
+	"The HTTP status code received.\n\n"
+)
+SLTH(Response,	HTTP_HDR_RESPONSE,	0, 1, "response",
+	"The HTTP response string received.\n\n"
+)
+SLTH(Header,	HTTP_HDR_FIRST,		1, 1, "header",
+	"HTTP header contents.\n\n"
+	"The format is::\n\n"
+	"\t%s: %s\n"
+	"\t|   |\n"
+	"\t|   +- Header value\n"
+	"\t+----- Header name\n"
+	"\n"
+)
+SLTH(Lost,	HTTP_HDR_LOST,		1, 1, "(unused)",
+	""
+)

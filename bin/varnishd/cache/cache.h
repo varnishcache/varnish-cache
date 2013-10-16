@@ -98,7 +98,7 @@ enum sess_close {
 
 enum {
 	/* Fields from the first line of HTTP proto */
-#define SLTH(aa, bb)	bb,
+#define SLTH(tag, ind, req, resp, sdesc, ldesc)	ind,
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 };
