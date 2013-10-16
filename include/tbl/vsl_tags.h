@@ -42,39 +42,45 @@
  */
 
 SLTM(Debug, "Debug messages",
-	"Debug messages can normally be ignored, but are sometimes\n"
-	"helpful during trouble-shooting.  Most debug messages must\n"
-	"be explicitly enabled with parameters."
+	"Debug messages can normally be ignored, but are sometimes"
+	" helpful during trouble-shooting.  Most debug messages must"
+	" be explicitly enabled with parameters.\n\n"
 )
 SLTM(Error, "Error messages",
-	"Error messages are stuff you probably want to know."
+	"Error messages are stuff you probably want to know.\n\n"
 )
 SLTM(CLI, "CLI communication",
-	"CLI communication between master and child process."
+	"CLI communication between master and child process.\n\n"
 )
 
 SLTM(ReqEnd, "Client request end",
 	"Marks the end of client request.\n\n"
-	"Fields:\n"
-	"  Trxd     Timestamp when the request started.\n"
-	"  Tidle    Timestamp when the request ended.\n"
-	"  dTrx     Time to receive request.\n"
-	"  dTproc   Time to process request.\n"
-	"  dTtx     Time to transmit response.\n"
+	"The format is::\n\n"
+	"\t%f %f %f %f %f\n"
+	"\t|  |  |  |  |\n"
+	"\t|  |  |  |  +- Time to transmit response\n"
+	"\t|  |  |  +---- Time to process request\n"
+	"\t|  |  +------- Time to receive request\n"
+	"\t|  +---------- Timestamp (since epoch) when the request ended\n"
+	"\t+------------- Timestamp (since epoch) when the request started\n"
+	"\n"
 )
 
 /*---------------------------------------------------------------------*/
 
 SLTM(SessOpen, "Client connection opened",
-	"The first record for a client connection, with the\n"
-	"socket-endpoints of the connection.\n\n"
-	"Fields:\n"
-	"  caddr    Client IPv4/6 address.\n"
-	"  cport    Client TCP port.\n"
-	"  lsock    Listen socket.\n"
-	"  laddr    Local IPv4/6 address ('-' if !$log_local_addr).\n"
-	"  lport    Local TCP port ('-' if !$log_local_addr).\n"
-	"  fd       File descriptor number.\n"
+	"The first record for a client connection, with the socket-endpoints"
+	" of the connection.\n\n"
+	"The format is::\n\n"
+	"\t%s %d %s %s %s %d\n"
+	"\t|  |  |  |  |  |\n"
+	"\t|  |  |  |  |  +- File descriptor number\n"
+	"\t|  |  |  |  +---- Local TCP port ('-' if !$log_local_addr)\n"
+	"\t|  |  |  +------- Local IPv4/6 address ('-' if !$log_local_addr)\n"
+	"\t|  |  +---------- Listen socket\n"
+	"\t|  +------------- Client TCP socket\n"
+	"\t+---------------- Client IPv4/6 address\n"
+	"\n"
 )
 
 /*
@@ -89,15 +95,18 @@ SLTM(SessOpen, "Client connection opened",
 
 SLTM(SessClose, "Client connection closed",
 	"SessionClose is the last record for any client connection.\n\n"
-	"Fields:\n"
-	"  reason   Why the connection closed.\n"
-	"  duration How long the session were open.\n"
-	"  Nreq     How many requests on session.\n"
-	"  Npipe    If 'pipe' were used on session.\n"
-	"  Npass    Requests handled with pass.\n"
-	"  Nfetch   Backend fetches by session.\n"
-	"  Bhdr     Header bytes sent on session.\n"
-	"  Bbody    Body bytes sent on session.\n"
+	"The format is::\n\n"
+	"\t%s %f %u %u %u %u %u %u\n"
+	"\t|  |  |  |  |  |  |  |\n"
+	"\t|  |  |  |  |  |  |  +- Body bytes sent on session\n"
+	"\t|  |  |  |  |  |  +---- Header bytes sent on session\n"
+	"\t|  |  |  |  |  +------- Backend fetches by session\n"
+	"\t|  |  |  |  +---------- Requests handled with pass\n"
+	"\t|  |  |  +------------- If 'pipe' were used on session\n"
+	"\t|  |  +---------------- How many requests on session\n"
+	"\t|  +------------------- How long the session was open\n"
+	"\t+---------------------- Why the connection closed\n"
+	"\n"
 )
 
 /*---------------------------------------------------------------------*/
@@ -133,41 +142,37 @@ SLTM(FetchError, "Error while fetching object", "")
 #undef SLTH
 
 SLTM(BogoHeader, "Bogus HTTP received",
-	"Contains the first 20 characters of received HTTP headers we\n"
-	"could not make sense of.  Applies to both req.http and\n"
-	"beres.http.\n"
+	"Contains the first 20 characters of received HTTP headers we could"
+	" not make sense of.  Applies to both req.http and beres.http.\n\n"
 )
 SLTM(LostHeader, "Failed attempt to set HTTP header", "")
 
 SLTM(TTL, "TTL set on object",
-	"A TTL record is emitted whenever the ttl, grace or keep\n"
-	"values for an object is set.\n"
+	"A TTL record is emitted whenever the ttl, grace or keep"
+	" values for an object is set.\n\n"
+	"The format is::\n\n"
+	"\t%u %s %d %d %d %d %d [ %d %u %u ]\n"
+	"\t|  |  |  |  |  |  |    |  |  |\n"
+	"\t|  |  |  |  |  |  |    |  |  +- Max-Age from Cache-Control header\n"
+	"\t|  |  |  |  |  |  |    |  +---- Expires header\n"
+	"\t|  |  |  |  |  |  |    +------- Date header\n"
+	"\t|  |  |  |  |  |  +------------ Age (incl Age: header value)\n"
+	"\t|  |  |  |  |  +--------------- Reference time for TTL\n"
+	"\t|  |  |  |  +------------------ Keep\n"
+	"\t|  |  |  +--------------------- Grace\n"
+	"\t|  |  +------------------------ TTL\n"
+	"\t|  +--------------------------- \"RFC\" or \"VCL\"\n"
+	"\t+------------------------------ object XID\n"
 	"\n"
-	"The format is:\n"
+	"The last three fields are only present in \"RFC\" headers.\n\n"
+	"Examples::\n\n"
+	"\t1001 RFC 19 -1 -1 1312966109 4 0 0 23\n"
+	"\t1001 VCL 10 -1 -1 1312966109 4\n"
+	"\t1001 VCL 7 -1 -1 1312966111 6\n"
+	"\t1001 VCL 7 120 -1 1312966111 6\n"
+	"\t1001 VCL 7 120 3600 1312966111 6\n"
+	"\t1001 VCL 12 120 3600 1312966113 8\n"
 	"\n"
-	"%u %s %d %d %d %d %d [ %d %u %u ]\n"
-	"|  |  |  |  |  |  |    |  |  |\n"
-	"|  |  |  |  |  |  |    |  |  +- Max-Age from Cache-Control header\n"
-	"|  |  |  |  |  |  |    |  +---- Expires header\n"
-	"|  |  |  |  |  |  |    +------- Date header\n"
-	"|  |  |  |  |  |  +------------ Age (incl Age: header value)\n"
-	"|  |  |  |  |  +--------------- Reference time for TTL\n"
-	"|  |  |  |  +------------------ Keep\n"
-	"|  |  |  +--------------------- Grace\n"
-	"|  |  +------------------------ TTL\n"
-	"|  +--------------------------- \"RFC\" or \"VCL\"\n"
-	"+------------------------------ object XID\n"
-	"\n"
-	"The last three fields are only present in \"RFC\" headers.\n"
-	"\n"
-	"Examples:\n"
-	"\n"
-	"1001 RFC 19 -1 -1 1312966109 4 0 0 23\n"
-	"1001 VCL 10 -1 -1 1312966109 4\n"
-	"1001 VCL 7 -1 -1 1312966111 6\n"
-	"1001 VCL 7 120 -1 1312966111 6\n"
-	"1001 VCL 7 120 3600 1312966111 6\n"
-	"1001 VCL 12 120 3600 1312966113 8\n"
 )
 SLTM(Fetch_Body, "Body fetched from backend", "")
 SLTM(VCL_acl, "", "")
@@ -192,49 +197,53 @@ SLTM(VCL_Log, "Log statement from VCL", "")
 SLTM(VCL_Error, "", "")
 
 SLTM(Gzip, "G(un)zip performed on object",
-	"A Gzip record is emitted for each instance of gzip or gunzip\n"
-	"work performed. Worst case, an ESI transaction stored in\n"
-	"gzip'ed objects but delivered gunziped, will run into many of\n"
-	"these.\n"
+	"A Gzip record is emitted for each instance of gzip or gunzip"
+	" work performed. Worst case, an ESI transaction stored in"
+	" gzip'ed objects but delivered gunziped, will run into many of"
+	" these.\n\n"
+	"The format is::\n\n"
+	"\t%c %c %c %d %d %d %d %d\n"
+	"\t|  |  |  |  |  |  |  |\n"
+	"\t|  |  |  |  |  |  |  +- Bit length of compressed data\n"
+	"\t|  |  |  |  |  |  +---- Bit location of 'last' bit\n"
+	"\t|  |  |  |  |  +------- Bit location of first deflate block\n"
+	"\t|  |  |  |  +---------- Bytes output\n"
+	"\t|  |  |  +------------- Bytes input\n"
+	"\t|  |  +---------------- 'E': ESI, '-': Plain object\n"
+	"\t|  +------------------- 'F': Fetch, 'D': Deliver\n"
+	"\t+---------------------- 'G': Gzip, 'U': Gunzip, 'u': Gunzip-test\n"
 	"\n"
-	"The format is:\n"
+	"Examples::\n\n"
+	"\tU F E 182 159 80 80 1392\n"
+	"\tG F E 159 173 80 1304 1314\n"
 	"\n"
-	"%c %c %c %d %d %d %d %d\n"
-	"|  |  |  |  |  |  |  |\n"
-	"|  |  |  |  |  |  |  +- Bit length of compressed data\n"
-	"|  |  |  |  |  |  +---- Bit location of 'last' bit\n"
-	"|  |  |  |  |  +------- Bit location of first deflate block\n"
-	"|  |  |  |  +---------- Bytes output\n"
-	"|  |  |  +------------- Bytes input\n"
-	"|  |  +---------------- 'E' = ESI, '-' = Plain object\n"
-	"|  +------------------- 'F' = Fetch, 'D' = Deliver\n"
-	"+---------------------- 'G' = Gzip, 'U' = Gunzip, 'u' = Gunzip-test\n"
-	"\n"
-	"Examples:\n"
-	"\n"
-	"U F E 182 159 80 80 1392\n"
-	"G F E 159 173 80 1304 1314\n"
 )
 
 SLTM(Link, "Links to a child VXID",
-	"Links this VXID to any child VXID it initiates\n\n"
-	"Fields:\n"
-	"  ctype    Child type (req, bereq or esireq).\n"
-	"  cvxid    Child vxid.\n"
+	"Links this VXID to any child VXID it initiates.\n\n"
+	"The format is::\n\n"
+	"\t%s %d\n"
+	"\t|  |\n"
+	"\t|  +- Child vxid\n"
+	"\t+---- Child type (\"req\", \"bereq\" or \"esireq\")\n"
+	"\n"
 )
 
 SLTM(Begin, "Marks the start of a VXID",
 	"The first record of a VXID transaction.\n\n"
-	"Fields:\n"
-	"  type     Transaction type (sess, req, bereq or esireq).\n"
-	"  pvxid    Parent vxid.\n"
+	"The format is::\n\n"
+	"\t%s %d\n"
+	"\t|  |\n"
+	"\t|  +- Parent vxid\n"
+	"\t+---- Type (\"sess\", \"req\", \"bereq\" or \"esireq\")\n"
+	"\n"
 )
 
 SLTM(End, "Marks the end of a VXID",
-	"The last record of a VXID transaction.\n"
+	"The last record of a VXID transaction.\n\n"
 )
 
 SLTM(VSL, "VSL API warnings and error message",
-	"Warnings and error messages genererated by the VSL API while\n"
-	"reading the shared memory log.\n"
+	"Warnings and error messages genererated by the VSL API while"
+	" reading the shared memory log.\n\n"
 )

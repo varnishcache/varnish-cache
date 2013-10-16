@@ -17,6 +17,4 @@ Shared Memory Logging
 VSL tags
 ~~~~~~~~
 
-Alphabetical list of all the VSL log records with description:
-
 .. include:: ../../../lib/libvarnishapi/vsl-tags.rst

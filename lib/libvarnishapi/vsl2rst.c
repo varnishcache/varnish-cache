@@ -98,15 +98,14 @@ main(int argc, char *argv[])
 	for (i = 0; i < SLT__MAX; i++) {
 		if (ptags[i]->name == NULL || !strcmp(ptags[i]->name, ""))
 			continue;
-		printf("* %s", ptags[i]->name);
+		printf("%s", ptags[i]->name);
 		if (ptags[i]->sdesc != NULL && strcmp(ptags[i]->sdesc, ""))
-			printf(" (%s)", ptags[i]->sdesc);
-		printf("\n\n");
+			printf(" - %s", ptags[i]->sdesc);
+		printf("\n");
 		if (ptags[i]->ldesc != NULL && strcmp(ptags[i]->ldesc, "")) {
-			printf("\t::\n\n");
-			print_tabbed(ptags[i]->ldesc, 2);
-			printf("\n\n");
+			print_tabbed(ptags[i]->ldesc, 1);
 		}
+		printf("\n\n");
 	}
 
 	return (0);
