@@ -55,11 +55,12 @@ SLTM(CLI, "CLI communication",
 
 SLTM(ReqEnd, "Client request end",
 	"Marks the end of client request.\n\n"
-	"Trxd\n     Timestamp when the request started.\n\n"
-	"Tidle\n    Timestamp when the request ended.\n\n"
-	"dTrx\n    Time to receive request\n\n"
-	"dTproc\n    Time to process request\n\n"
-	"dTtx\n    Time to transmit response\n\n"
+	"Fields:\n"
+	"  Trxd     Timestamp when the request started.\n"
+	"  Tidle    Timestamp when the request ended.\n"
+	"  dTrx     Time to receive request.\n"
+	"  dTproc   Time to process request.\n"
+	"  dTtx     Time to transmit response.\n"
 )
 
 /*---------------------------------------------------------------------*/
@@ -67,12 +68,13 @@ SLTM(ReqEnd, "Client request end",
 SLTM(SessOpen, "Client connection opened",
 	"The first record for a client connection, with the\n"
 	"socket-endpoints of the connection.\n\n"
-	"caddr\n    Client IPv4/6 address\n\n"
-	"cport\n    Client TCP port\n\n"
-	"lsock\n    Listen socket\n\n"
-	"laddr\n    Local IPv4/6 address ('-' if !$log_local_addr)\n\n"
-	"lport\n    Local TCP port ('-' if !$log_local_addr)\n\n"
-	"fd\n    File descriptor number"
+	"Fields:\n"
+	"  caddr    Client IPv4/6 address.\n"
+	"  cport    Client TCP port.\n"
+	"  lsock    Listen socket.\n"
+	"  laddr    Local IPv4/6 address ('-' if !$log_local_addr).\n"
+	"  lport    Local TCP port ('-' if !$log_local_addr).\n"
+	"  fd       File descriptor number.\n"
 )
 
 /*
@@ -87,14 +89,15 @@ SLTM(SessOpen, "Client connection opened",
 
 SLTM(SessClose, "Client connection closed",
 	"SessionClose is the last record for any client connection.\n\n"
-	"reason\n    Why the connection closed.\n\n"
-	"duration\n    How long the session were open.\n\n"
-	"Nreq\n    How many requests on session.\n\n"
-	"Npipe\n    If 'pipe' were used on session.\n\n"
-	"Npass\n    Requests handled with pass.\n\n"
-	"Nfetch\n    Backend fetches by session.\n\n"
-	"Bhdr\n    Header bytes sent on session.\n\n"
-	"Bbody\n    Body bytes sent on session.\n\n"
+	"Fields:\n"
+	"  reason   Why the connection closed.\n"
+	"  duration How long the session were open.\n"
+	"  Nreq     How many requests on session.\n"
+	"  Npipe    If 'pipe' were used on session.\n"
+	"  Npass    Requests handled with pass.\n"
+	"  Nfetch   Backend fetches by session.\n"
+	"  Bhdr     Header bytes sent on session.\n"
+	"  Bbody    Body bytes sent on session.\n"
 )
 
 /*---------------------------------------------------------------------*/
@@ -130,8 +133,9 @@ SLTM(FetchError, "Error while fetching object", "")
 #undef SLTH
 
 SLTM(BogoHeader, "Bogus HTTP received",
-	"Contains the first 20 characters of received HTTP headers we could"
-	" not make sense of.  Applies to both req.http and beres.http."
+	"Contains the first 20 characters of received HTTP headers we\n"
+	"could not make sense of.  Applies to both req.http and\n"
+	"beres.http.\n"
 )
 SLTM(LostHeader, "Failed attempt to set HTTP header", "")
 
@@ -161,30 +165,24 @@ SLTM(VCL_Error, "", "")
 SLTM(Gzip, "G(un)zip performed on object", "")
 
 SLTM(Link, "Links to a child VXID",
-	"Links this VXID to any child VXID it initiates\n"
-	"The first field gives the type of the child:\n"
-	"    req     Request\n"
-	"    bereq   Backend request\n"
-	"    esireq  ESI subrequest\n"
-	"The second field gives the VXID of the child.\n"
+	"Links this VXID to any child VXID it initiates\n\n"
+	"Fields:\n"
+	"  ctype    Child type (req, bereq or esireq).\n"
+	"  cvxid    Child vxid.\n"
 )
 
 SLTM(Begin, "Marks the start of a VXID",
-    "The first record of a VXID transaction.\n"
-    "The first field gives the type of the transaction:\n"
-    "    sess	Session\n"
-    "    req	Request\n"
-    "    bereq	Backend request\n"
-    "    esireq	ESI subrequest\n"
-    "The second field gives the VXID of the parent that initiated this"
-    " transaction. For Session transactions this field is blank.\n"
+	"The first record of a VXID transaction.\n\n"
+	"Fields:\n"
+	"  type     Transaction type (sess, req, bereq or esireq).\n"
+	"  pvxid    Parent vxid.\n"
 )
 
 SLTM(End, "Marks the end of a VXID",
-    "The last record of a VXID transaction.\n"
+	"The last record of a VXID transaction.\n"
 )
 
-SLTM(VSL, "Internally generated VSL API warnings and error message",
-    "Warnings and error messages genererated by the VSL API while reading the"
-    " shared memory log"
+SLTM(VSL, "VSL API warnings and error message",
+	"Warnings and error messages genererated by the VSL API while\n"
+	"reading the shared memory log.\n"
 )
