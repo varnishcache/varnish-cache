@@ -180,7 +180,16 @@ SLTM(TTL, "TTL set on object",
 	"\t1001 VCL 12 120 3600 1312966113 8\n"
 	"\n"
 )
-SLTM(Fetch_Body, "Body fetched from backend", "")
+SLTM(Fetch_Body, "Body fetched from backend",
+	"Finished fetching body from backend.\n\n"
+	"The format is::\n\n"
+	"\t%d(%s) cls %d\n"
+	"\t|  |       |\n"
+	"\t|  |       +- 1 if the backend connection was closed\n"
+	"\t|  +--------- Text description of body status\n"
+	"\t+------------ Body status\n"
+	"\n"
+)
 SLTM(VCL_acl, "", "")
 SLTM(VCL_call, "VCL method called", "")
 SLTM(VCL_trace, "VCL trace data", "")
@@ -192,14 +201,35 @@ SLTM(ExpBan, "Object evicted due to ban", "")
 SLTM(ExpKill, "Object expired", "")
 SLTM(WorkThread, "", "")
 
-SLTM(ESI_xmlerror, "Error while parsing ESI tags", "")
+SLTM(ESI_xmlerror, "ESI parser error or warning message",
+	"An error or warning was generated during parsing of an ESI object."
+	" The log record describes the problem encountered."
+)
 
-SLTM(Hash, "Value added to hash", "")
+SLTM(Hash, "Value added to hash",
+	"This value was added to the object lookup hash."
+)
 
-SLTM(Backend_health, "Backend health check", "")
+SLTM(Backend_health, "Backend health check",
+	"The result of a backend health probe.\n\n"
+	"The format is::\n\n"
+	"\t%s %s %s %u %u %u %f %f %s\n"
+	"\t|  |  |  |  |  |  |  |  |\n"
+	"\t|  |  |  |  |  |  |  |  +- Probe HTTP response\n"
+	"\t|  |  |  |  |  |  |  +---- Average response time\n"
+	"\t|  |  |  |  |  |  +------- Response time\n"
+	"\t|  |  |  |  |  +---------- Probe window size\n"
+	"\t|  |  |  |  +------------- Probe threshold level\n"
+	"\t|  |  |  +---------------- Number of good probes in window\n"
+	"\t|  |  +------------------- Probe window bits\n"
+	"\t|  +---------------------- Status message\n"
+	"\t+------------------------- Backend name\n"
+)
 
 SLTM(VCL_Debug, "(unused)", "")
-SLTM(VCL_Log, "Log statement from VCL", "")
+SLTM(VCL_Log, "Log statement from VCL",
+	"User generated log messages insert from VCL through std.log()"
+)
 SLTM(VCL_Error, "", "")
 
 SLTM(Gzip, "G(un)zip performed on object",
