@@ -291,7 +291,7 @@ EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 		/*
 		 * It wont release any space if we cannot release the last
 		 * reference, besides, if somebody else has a reference,
-		 * it's a bad idea to nuke this object anyway. 
+		 * it's a bad idea to nuke this object anyway.
 		 */
 		if (oc->refcnt > 1)
 			continue;

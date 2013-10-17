@@ -91,6 +91,7 @@ mgt_sltm(const char *tag, const char *sdesc, const char *ldesc)
 
 }
 
+/*lint -e{506} constant value boolean */
 static void
 mgt_DumpRstVsl(void)
 {
