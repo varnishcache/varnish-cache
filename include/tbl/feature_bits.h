@@ -53,3 +53,8 @@ FEATURE_BIT(ESI_IGNORE_OTHER_ELEMENTS,	esi_ignore_other_elements, "",
     "Ignore non-esi XML-elements",
     "Allows syntax errors in the XML"
 )
+FEATURE_BIT(ESI_REMOVE_BOM,		esi_remove_bom, "",
+    "Remove UTF-8 BOM",
+    "Remove UTF-8 BOM from front of object."
+    "Ignore and remove the UTF-8 BOM (0xeb 0xbb 0xbf) from front of object."
+)

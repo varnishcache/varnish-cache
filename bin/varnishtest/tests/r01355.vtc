@@ -1,0 +1,52 @@
+varnishtest "Test ESI ignoring BOMs"
+
+server s1 {
+	rxreq
+	expect req.url == /1
+	txresp -body "\xeb\xbb\xbf    <html>   <esi:remove>blabla</esi:remove>"
+	rxreq
+	expect req.url == /2
+	txresp -body "\xeb\xbb\xbf    <html>   <esi:remove>blabla</esi:remove>"
+	rxreq
+	expect req.url == /3
+	txresp -body "\xeb\xbb\xbf\xeb\xbb\xbf    <html>   <esi:remove>blabla</esi:remove>"
+	rxreq
+	expect req.url == /4
+	txresp -body "\xeb\xbc    <html>   <esi:remove>blabla</esi:remove>"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_esi = true;
+	}
+} -start
+
+client c1 {
+	# No ESI processing
+	txreq -url /1
+	rxresp
+	expect resp.bodylen == 47
+} -run
+
+varnish v1 -cliok "param.set feature +esi_remove_bom"
+
+client c1 {
+	# BOM removed, ESI processing
+	txreq -url /2
+	rxresp
+	expect resp.bodylen == 13
+} -run
+
+client c1 {
+	# BOMs removed, ESI processing
+	txreq -url /3
+	rxresp
+	expect resp.bodylen == 13
+} -run
+
+client c1 {
+	# Not a BOM, no ESI processing
+	txreq -url /4
+	rxresp
+	expect resp.bodylen == 46
+} -run

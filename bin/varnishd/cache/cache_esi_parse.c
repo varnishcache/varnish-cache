@@ -121,6 +121,7 @@ struct vep_state {
 /*---------------------------------------------------------------------*/
 
 static const char * const VEP_START =		"[Start]";
+static const char * const VEP_BOM =		"[BOM]";
 static const char * const VEP_TESTXML =		"[TestXml]";
 static const char * const VEP_NOTXML =		"[NotXml]";
 
@@ -173,6 +174,13 @@ static struct vep_match vep_match_esi[] = {
 static struct vep_match vep_match_attr_include[] = {
 	{ "src=",	&VEP_ATTRGETVAL },
 	{ NULL,		&VEP_SKIPATTR }
+};
+
+/*---------------------------------------------------------------------*/
+
+static struct vep_match vep_match_bom[] = {
+	{ "\xeb\xbb\xbf",	&VEP_START },
+	{ NULL,			&VEP_BOM }
 };
 
 /*--------------------------------------------------------------------
@@ -594,6 +602,13 @@ VEP_Parse(const struct busyobj *bo, const char *p, size_t l)
 		 */
 
 		if (vep->state == VEP_START) {
+			if (FEATURE(FEATURE_ESI_REMOVE_BOM) && *p == '\xeb') {
+				vep->match = vep_match_bom;
+				vep->state = VEP_MATCH;
+			} else
+				vep->state = VEP_BOM;
+		} else if (vep->state == VEP_BOM) {
+			vep_mark_skip(vep, p);
 			if (FEATURE(FEATURE_ESI_DISABLE_XML_CHECK))
 				vep->state = VEP_NEXTTAG;
 			else
@@ -609,6 +624,12 @@ VEP_Parse(const struct busyobj *bo, const char *p, size_t l)
 			if (p < e && *p == '<') {
 				p++;
 				vep->state = VEP_STARTTAG;
+			} else if (p < e && *p == '\xeb') {
+				VSLb(vep->bo->vsl, SLT_ESI_xmlerror,
+				    "No ESI processing, first char not '<'"
+				    " (BOM? see feature esi_remove_bom)"
+				);
+				vep->state = VEP_NOTXML;
 			} else if (p < e) {
 				VSLb(vep->bo->vsl, SLT_ESI_xmlerror,
 				    "No ESI processing, first char not '<'");
