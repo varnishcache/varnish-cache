@@ -129,6 +129,7 @@ EXTRA_DIST = \
 	reference/vmod_std.rst \
 	reference/vsm.rst \
 	reference/vsl-query.rst \
+	reference/vsl.rst \
 	tutorial/index.rst \
 	tutorial/introduction.rst \
 	tutorial/starting_varnish.rst \
