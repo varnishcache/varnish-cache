@@ -94,12 +94,15 @@ VDI_RecycleFd(struct sess *sp)
 struct vbc *
 VDI_GetFd(const struct director *d, struct sess *sp)
 {
-
+	struct vbc *vbc;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	if (d == NULL)
 		d = sp->director;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	return (d->getfd(d, sp));
+	vbc = d->getfd(d, sp);
+	if (vbc)
+		WSL(sp->wrk, SLT_BackendXID, vbc->fd, "%d", sp->xid);
+	return (vbc);
 }
 
 /* Check health ------------------------------------------------------

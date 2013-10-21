@@ -2,7 +2,7 @@ varnishtest "r00979.vtc Test restart when do_stream in vcl_deliver"
 
 server s1 {
 	rxreq
-	txresp -status 200 -body "1"
+	txresp -status 200 -gzipbody "1"
 	expect_close
 
 	accept
