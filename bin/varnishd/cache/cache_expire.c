@@ -236,7 +236,7 @@ EXP_Rearm(struct object *o, double now, double ttl, double grace, double keep)
 
 	when = exp_when(o);
 
-	VSL(SLT_ExpKill, 0, "EXP_Rearm %p %.9f %.9f 0x%x", oc,
+	VSL(SLT_ExpKill, 0, "EXP_Rearm p=%p E=%.9f e=%.9f f=0x%x", oc,
 	    oc->timer_when, when, oc->flags);
 
 	if (oc->timer_when == when)
@@ -283,7 +283,7 @@ EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 	VTAILQ_FOREACH(oc, &lru->lru_head, lru_list) {
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-		VSLb(bo->vsl, SLT_ExpKill, "LRU_Cand %p f=0x%x r=%d",
+		VSLb(bo->vsl, SLT_ExpKill, "LRU_Cand p=%p f=0x%x r=%d",
 		    oc, oc->flags, oc->refcnt);
 
 		AZ(oc->flags & OC_F_DYING);
@@ -312,7 +312,7 @@ EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 	Lck_Unlock(&lru->mtx);
 
 	if (oc == NULL) {
-		VSLb(bo->vsl, SLT_ExpKill, "LRU failed");
+		VSLb(bo->vsl, SLT_ExpKill, "LRU_Fail");
 		return (-1);
 	}
 
@@ -323,7 +323,7 @@ EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 
 	exp_mail_it(oc);
 
-	VSLb(bo->vsl, SLT_ExpKill, "LRU %u",
+	VSLb(bo->vsl, SLT_ExpKill, "LRU x=%u",
 	    oc_getxid(bo->stats, oc) & VSL_IDENTMASK);
 	(void)HSH_DerefObjCore(bo->stats, &oc);
 	return (1);
@@ -379,7 +379,8 @@ EXP_NukeLRU(struct worker *wrk, struct vsl_log *vsl, struct lru *lru)
 		for (i = 0; i < n; i++) {
 			oc = oc_array[i];
 			o = oc_getobj(&wrk->stats, oc);
-			VSLb(vsl, SLT_ExpKill, "%u %.0f LRU",
+			/* XXX: Not documented in vsl_tags.h */
+			VSLb(vsl, SLT_ExpKill, "x=%u t=%.0f LRU",
 			    oc_getxid(&wrk->stats, oc) & VSL_IDENTMASK,
 			    EXP_Ttl(NULL, o) - t);
 			o->exp.ttl = 0.0;
@@ -410,7 +411,7 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 	CHECK_OBJ_NOTNULL(ep, EXP_PRIV_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	VSLb(&ep->vsl, SLT_ExpKill, "EXP_INBOX %p %.9f 0x%x", oc,
+	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Inbox p=%p e=%.9f f=0x%x", oc,
 	    oc->timer_when, oc->flags);
 
 	AZ(oc->flags & OC_F_BUSY);
@@ -429,7 +430,7 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 	Lck_Unlock(&lru->mtx);
 
 	if (flags & OC_F_DYING) {
-		VSLb(&ep->vsl, SLT_ExpKill, "EXP_KILL %p %.9f 0x%x", oc,
+		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Kill p=%p e=%.9f f=0x%x", oc,
 		    oc->timer_when, oc->flags);
 		if (!(flags & OC_F_INSERT)) {
 			assert(oc->timer_idx != BINHEAP_NOIDX);
@@ -447,7 +448,7 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 		oc_updatemeta(oc);
 	}
 
-	VSLb(&ep->vsl, SLT_ExpKill, "EXP_WHEN %p %.9f 0x%x", oc,
+	VSLb(&ep->vsl, SLT_ExpKill, "EXP_When p=%p e=%.9f f=0x%x", oc,
 	    oc->timer_when, flags);
 
 	/*
@@ -518,7 +519,7 @@ exp_expire(struct exp_priv *ep, double now)
 	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
 	o = oc_getobj(&ep->wrk->stats, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	VSLb(&ep->vsl, SLT_ExpKill, "%u %.0f",
+	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired x=%u t=%.0f",
 	    oc_getxid(&ep->wrk->stats, oc) & VSL_IDENTMASK,
 	    EXP_Ttl(NULL, o) - now);
 	(void)HSH_DerefObjCore(&ep->wrk->stats, &oc);

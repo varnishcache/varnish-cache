@@ -229,7 +229,47 @@ SLTM(ExpBan, "Object evicted due to ban",
 	"Logs the VXID when an object is banned.\n\n"
 )
 
-SLTM(ExpKill, "Object expired", "")
+SLTM(ExpKill, "Object expiry event",
+	"Logs events related to object expiry. The events are:\n\n"
+	"EXP_Rearm\n"
+	"\tLogged when the expiry time of an object changes.\n\n"
+	"EXP_Inbox\n"
+	"\tLogged when the expiry thread picks an object from the inbox for"
+	" processing.\n\n"
+	"EXP_Kill\n"
+	"\tLogged when the expiry thread kills an object from the inbox.\n\n"
+	"EXP_When\n"
+	"\tLogged when the expiry thread moves an object on the binheap.\n\n"
+	"EXP_Expired\n"
+	"\tLogged when the expiry thread expires an object.\n\n"
+	"LRU_Cand\n"
+	"\tLogged when an object is evaluated for LRU force expiry.\n\n"
+	"LRU\n"
+	"\tLogged when an object is force expired due to LRU.\n\n"
+	"LRU_Fail\n"
+	"\tLogged when no suitable candidate object is found for LRU force"
+	" expiry.\n\n"
+	"The format is::\n\n"
+	"\tEXP_Rearm p=%p E=%f e=%f f=0x%x\n"
+	"\tEXP_Inbox p=%p e=%f f=0x%x\n"
+	"\tEXP_Kill p=%p e=%f f=0x%x\n"
+	"\tEXP_When p=%p e=%f f=0x%x\n"
+	"\tEXP_Expired x=%u t=%f\n"
+	"\tLRU_Cand p=%p f=0x%x r=%d\n"
+	"\tLRU x=%u\n"
+	"\tLRU_Fail\n"
+	"\t\n"
+	"\tLegend:\n"
+	"\tp=%p         Objcore pointer\n"
+	"\tt=%f         Remaining TTL (s)\n"
+	"\te=%f         Expiry time (unix epoch)\n"
+	"\tE=%f         Old expiry time (unix epoch)\n"
+	"\tf=0x%x       Objcore flags\n"
+	"\tr=%d         Objcore refcount\n"
+	"\tx=%u         Object VXID\n"
+	"\n"
+)
+
 SLTM(WorkThread, "", "")
 
 SLTM(ESI_xmlerror, "ESI parser error or warning message",
@@ -255,6 +295,7 @@ SLTM(Backend_health, "Backend health check",
 	"\t|  |  +------------------- Probe window bits\n"
 	"\t|  +---------------------- Status message\n"
 	"\t+------------------------- Backend name\n"
+	"\n"
 )
 
 SLTM(VCL_Debug, "(unused)", "")
