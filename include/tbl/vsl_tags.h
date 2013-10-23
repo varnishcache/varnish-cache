@@ -200,14 +200,35 @@ SLTM(Fetch_Body, "Body fetched from backend",
 	"\t+------------ Body status\n"
 	"\n"
 )
-SLTM(VCL_acl, "", "")
+SLTM(VCL_acl, "VSL ACL check results",
+	"Logs VCL ACL evaluation results.\n\n"
+)
 SLTM(VCL_call, "VCL method called", "")
 SLTM(VCL_trace, "VCL trace data", "")
-SLTM(VCL_return, "VCL method return value", "")
-SLTM(ReqStart, "Client request start", "")
-SLTM(Hit, "Hit object in cache", "")
-SLTM(HitPass, "Hit for pass object in cache", "")
-SLTM(ExpBan, "Object evicted due to ban", "")
+SLTM(VCL_return, "VCL method return value",
+	"Logs the VCL method terminating statement.\n\n"
+)
+SLTM(ReqStart, "Client request start",
+	"Start of request processing. Logs the client IP address and port"
+	" number.\n\n"
+	"The format is::\n\n"
+	"\t%s %s\n"
+	"\t|  |\n"
+	"\t|  +- Port number\n"
+	"\t+---- IP address\n"
+	"\n"
+)
+
+SLTM(Hit, "Hit object in cache",
+	"Object looked up in cache. Shows the VXID of the object.\n\n"
+)
+
+SLTM(HitPass, "Hit for pass object in cache (unused)", "")
+
+SLTM(ExpBan, "Object evicted due to ban",
+	"Logs the VXID when an object is banned.\n\n"
+)
+
 SLTM(ExpKill, "Object expired", "")
 SLTM(WorkThread, "", "")
 
