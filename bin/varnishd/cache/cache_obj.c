@@ -97,7 +97,7 @@ ObjIter(struct objiter *oi, void **p, ssize_t *l)
 		VTAILQ_FOREACH(oi->st, &oi->obj->store, list) {
 			if (oi->st->len > ol) {
 				*p = oi->st->ptr + ol;
-				*l = (nl - ol);
+				*l = oi->st->len - ol;
 				oi->len += *l;
 				break;
 			}
@@ -108,8 +108,8 @@ ObjIter(struct objiter *oi, void **p, ssize_t *l)
 		if (oi->st != NULL && oi->st->len == 0)
 			oi->st = NULL;
 		Lck_Unlock(&oi->bo->mtx);
-		assert(*l > 0);
-		return (oi->st ? OIS_DATA : OIS_STREAM);
+		assert(*l > 0 || oi->bo->state == BOS_FINISHED);
+		return (oi->st != NULL ? OIS_DATA : OIS_STREAM);
 	}
 }
 
