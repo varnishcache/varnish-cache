@@ -131,25 +131,27 @@ SLTM(BackendReuse, "Backend connection put up for reuse",
 	"Logged when a backend connection is put up for reuse by a later"
 	" connection.\n\n"
 	"The format is::\n\n"
-	"%d %s\n"
-	"|  |\n"
-	"|  +- Backend display name\n"
-	"+---- Connection file descriptor\n"
+	"\t%d %s\n"
+	"\t|  |\n"
+	"\t|  +- Backend display name\n"
+	"\t+---- Connection file descriptor\n"
 	"\n"
 )
 
 SLTM(BackendClose, "Backend connection closed",
 	"Logged when a backend connection is closed.\n\n"
 	"The format is::\n\n"
-	"%d %s [ %s ]\n"
-	"|  |    |\n"
-	"|  |    +- Optional reason\n"
-	"|  +------ Backend display name\n"
-	"+--------- Connection file descriptor\n"
+	"\t%d %s [ %s ]\n"
+	"\t|  |    |\n"
+	"\t|  |    +- Optional reason\n"
+	"\t|  +------ Backend display name\n"
+	"\t+--------- Connection file descriptor\n"
 	"\n"
 )
 
-SLTM(HttpGarbage, "", "")
+SLTM(HttpGarbage, "Unparseable HTTP request",
+	"Logs the content of unparseable HTTP requests.\n\n"
+)
 
 SLTM(Backend, "Backend selected",
 	"Logged when a connection is selected for handling a backend"
@@ -163,7 +165,9 @@ SLTM(Backend, "Backend selected",
 	"\n"
 )
 
-SLTM(Length, "Size of object body", "")
+SLTM(Length, "Size of object body",
+	"Logs the size of a fetch object body.\n\n"
+)
 
 SLTM(BereqEnd, "Backend request end",
 	"Marks the end of a backend request.\n\n"
@@ -175,7 +179,9 @@ SLTM(BereqEnd, "Backend request end",
 	"dTresp\n    Time to receive the backend response (dThdr + dTbody)\n\n"
 )
 
-SLTM(FetchError, "Error while fetching object", "")
+SLTM(FetchError, "Error while fetching object",
+	"Logs the error message of a failed fetch operation.\n\n"
+)
 
 #define SLTH(tag, ind, req, resp, sdesc, ldesc) \
 	SLTM(Req##tag, (req ? "Client request " sdesc : "(unused)"), ldesc)
@@ -207,7 +213,10 @@ SLTM(BogoHeader, "Bogus HTTP received",
 	"Contains the first 20 characters of received HTTP headers we could"
 	" not make sense of.  Applies to both req.http and beres.http.\n\n"
 )
-SLTM(LostHeader, "Failed attempt to set HTTP header", "")
+SLTM(LostHeader, "Failed attempt to set HTTP header",
+	"Logs the header name of a failed HTTP header operation due to"
+	" resource exhaustion.\n\n"
+)
 
 SLTM(TTL, "TTL set on object",
 	"A TTL record is emitted whenever the ttl, grace or keep"
