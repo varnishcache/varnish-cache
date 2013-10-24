@@ -258,7 +258,7 @@ http1_req_body_status(struct req *req)
 		req->h1.bytes_yet = req->req_bodybytes - req->h1.bytes_done;
 		return (REQ_BODY_PRESENT);
 	}
-	if (http_GetHdr(req->http, H_Transfer_Encoding, NULL)) 
+	if (http_GetHdr(req->http, H_Transfer_Encoding, NULL))
 		return (REQ_BODY_FAIL);
 	return (REQ_BODY_NONE);
 }

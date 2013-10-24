@@ -119,6 +119,16 @@ SLTM(HttpGarbage, "", "")
 SLTM(Backend, "Backend selected", "")
 SLTM(Length, "Size of object body", "")
 
+SLTM(BereqEnd, "Backend request end",
+	"Marks the end of a backend request.\n\n"
+	"Tstart\n    Timestamp when the fetch started (epoch)\n\n"
+	"Tend\n    Timestamp when the fetch ended (epoch)\n\n"
+	"dTsend\n    Time to send the backend request\n\n"
+	"dThdr\n    Time to receive the backend response headers\n\n"
+	"dTbody\n    Time to receive the backend response body\n\n"
+	"dTresp\n    Time to receive the backend response (dThdr + dTbody)\n\n"
+)
+
 SLTM(FetchError, "Error while fetching object", "")
 
 #define SLTH(tag, ind, req, resp, sdesc, ldesc) \

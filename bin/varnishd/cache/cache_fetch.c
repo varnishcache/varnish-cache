@@ -586,6 +586,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 {
 	struct busyobj *bo;
 	enum fetch_step stp;
+	double t_hdr, t_body;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
@@ -593,6 +594,11 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	THR_SetBusyobj(bo);
 	stp = F_STP_MKBEREQ;
+	bo->t_start = VTIM_real();
+	bo->t_send = NAN;
+	bo->t_sent = NAN;
+	bo->t_hdr = NAN;
+	bo->t_body = NAN;
 
 	while (stp != F_STP_DONE) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -617,6 +623,14 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	if (bo->ims_obj != NULL)
 		(void)HSH_DerefObj(&wrk->stats, &bo->ims_obj);
+
+	t_hdr = bo->t_hdr - bo->t_sent;
+	t_body = bo->t_body - bo->t_hdr;
+	VSLb(bo->vsl, SLT_BereqEnd, "%.9f %.9f %.9f %.9f %.9f %.9f",
+	     bo->t_start,
+	     VTIM_real(),
+	     bo->t_sent - bo->t_send,
+	     t_hdr, t_body, t_hdr + t_body);
 
 	VBO_DerefBusyObj(wrk, &bo);
 	THR_SetBusyobj(NULL);

@@ -42,6 +42,7 @@
 #include "vcli_priv.h"
 #include "vct.h"
 #include "vtcp.h"
+#include "vtim.h"
 
 /*--------------------------------------------------------------------
  * Convert a string to a size_t safely
@@ -231,6 +232,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 
 	(void)VTCP_blocking(vc->fd);	/* XXX: we should timeout instead */
 	WRW_Reserve(wrk, &vc->fd, bo->vsl, bo->t_fetch);
+	bo->t_send = VTIM_mono();
 	(void)HTTP1_Write(wrk, hp, 0);	/* XXX: stats ? */
 
 	/* Deal with any message-body the request might (still) have */
@@ -257,8 +259,8 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 		return (retry);
 	}
 
-	/* XXX is this the right place? */
 	VSC_C_main->backend_req++;
+	bo->t_sent = VTIM_mono();
 
 	/* Receive response */
 
@@ -293,6 +295,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 			    vc->between_bytes_timeout);
 		}
 	} while (hs != HTTP1_COMPLETE);
+	bo->t_hdr = VTIM_mono();
 
 	hp = bo->beresp;
 
@@ -381,6 +384,7 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 	default:
 		INCOMPL();
 	}
+	bo->t_body = VTIM_mono();
 	AZ(bo->vgz_rx);
 
 	/*

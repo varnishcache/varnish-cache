@@ -579,6 +579,13 @@ struct busyobj {
 	double			first_byte_timeout;
 	double			between_bytes_timeout;
 
+	/* Timers */
+	double			t_start;
+	double			t_send;
+	double			t_sent;
+	double			t_hdr;
+	double			t_body;
+
 	const char		*storage_hint;
 	struct director		*director;
 	struct VCL_conf		*vcl;
