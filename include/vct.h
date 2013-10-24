@@ -44,9 +44,10 @@
 extern const uint16_t vct_typtab[256];
 
 static inline int
-vct_is(unsigned char x, uint16_t y)
+vct_is(int x, uint16_t y)
 {
 
+	x &= 0xff;
 	return (vct_typtab[x] & (y));
 }
 
