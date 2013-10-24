@@ -113,12 +113,56 @@ SLTM(SessClose, "Client connection closed",
 
 /*---------------------------------------------------------------------*/
 
-SLTM(BackendOpen, "Backend connection opened", "")
-SLTM(BackendXID, "The unique ID of the backend transaction", "")
-SLTM(BackendReuse, "Backend connection reused", "")
-SLTM(BackendClose, "Backend connection closed", "")
+SLTM(BackendOpen, "Backend connection opened",
+	"Logged when a new backend connection is opened.\n\n"
+	"The format is::\n\n"
+	"\t%d %s %s %s\n"
+	"\t|  |  |  |\n"
+	"\t|  |  |  +- Remote port\n"
+	"\t|  |  +---- Remote address\n"
+	"\t|  +------- Backend display name\n"
+	"\t+---------- Connection file descriptor\n"
+	"\n"
+)
+
+SLTM(BackendXID, "The unique ID of the backend transaction (unused)", "")
+
+SLTM(BackendReuse, "Backend connection put up for reuse",
+	"Logged when a backend connection is put up for reuse by a later"
+	" connection.\n\n"
+	"The format is::\n\n"
+	"%d %s\n"
+	"|  |\n"
+	"|  +- Backend display name\n"
+	"+---- Connection file descriptor\n"
+	"\n"
+)
+
+SLTM(BackendClose, "Backend connection closed",
+	"Logged when a backend connection is closed.\n\n"
+	"The format is::\n\n"
+	"%d %s [ %s ]\n"
+	"|  |    |\n"
+	"|  |    +- Optional reason\n"
+	"|  +------ Backend display name\n"
+	"+--------- Connection file descriptor\n"
+	"\n"
+)
+
 SLTM(HttpGarbage, "", "")
-SLTM(Backend, "Backend selected", "")
+
+SLTM(Backend, "Backend selected",
+	"Logged when a connection is selected for handling a backend"
+	" request.\n\n"
+	"The format is::\n\n"
+	"\t%d %s %s\n"
+	"\t|  |  |\n"
+	"\t|  |  +- Backend display name\n"
+	"\t|  +---- VCL name\n"
+	"\t+------- Connection file descriptor\n"
+	"\n"
+)
+
 SLTM(Length, "Size of object body", "")
 
 SLTM(BereqEnd, "Backend request end",

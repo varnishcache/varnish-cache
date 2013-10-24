@@ -54,7 +54,7 @@ VDI_CloseFd(struct vbc **vbp)
 
 	bp = vc->backend;
 
-	VSLb(vc->vsl, SLT_BackendClose, "%s", bp->display_name);
+	VSLb(vc->vsl, SLT_BackendClose, "%d %s", vc->fd, bp->display_name);
 
 	/*
 	 * Checkpoint log to flush all info related to this connection
@@ -86,7 +86,7 @@ VDI_RecycleFd(struct vbc **vbp)
 
 	bp = vc->backend;
 
-	VSLb(vc->vsl, SLT_BackendReuse, "%s", bp->display_name);
+	VSLb(vc->vsl, SLT_BackendReuse, "%d %s", vc->fd, bp->display_name);
 
 	/* XXX: revisit this hack */
 	VSL_Flush(vc->vsl, 0);
