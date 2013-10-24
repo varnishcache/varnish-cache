@@ -693,6 +693,11 @@ cnt_recv(struct worker *wrk, struct req *req)
 	http_CollectHdr(req->http, H_Cache_Control);
 
 	VCL_recv_method(req->vcl, wrk, req, NULL, req->http->ws);
+
+	/* Attempts to cache req.body may fail */
+	if (req->req_body_status == REQ_BODY_FAIL) {
+		return (REQ_FSM_DONE);
+	}
 	recv_handling = wrk->handling;
 
 	if (cache_param->http_gzip_support &&

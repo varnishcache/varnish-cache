@@ -240,6 +240,13 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 		i = HTTP1_IterateReqBody(req, vbf_iter_req_body, wrk);
 		if (req->req_body_status == REQ_BODY_DONE)
 			retry = -1;
+		if (req->req_body_status == REQ_BODY_FAIL) {
+			VSLb(bo->vsl, SLT_FetchError,
+			    "req.body read error: %d (%s)",
+			    errno, strerror(errno));
+			req->doclose = SC_RX_BODY;
+			retry = -1;
+		}
 	}
 
 	if (WRW_FlushRelease(wrk) || i != 0) {

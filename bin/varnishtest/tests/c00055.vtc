@@ -30,3 +30,19 @@ client c1 {
 	expect resp.http.Foo == "Foo"
 	expect resp.bodylen == 2
 } -run
+
+client c1 {
+	txreq -req POST -nolen -hdr "Content-Length: 52"
+	delay .3
+} -run
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+client c1 {
+	txreq -url "/is_varnish_still_running"
+	rxresp
+	expect resp.status == 200
+} -run

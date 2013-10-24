@@ -652,7 +652,6 @@ struct req {
 	struct {
 		ssize_t			bytes_done;
 		ssize_t			bytes_yet;
-		enum {CL, CHUNKED}	mode;
 	}				h1;	/* HTTP1 specific */
 
 	/* The busy objhead we sleep on */

@@ -32,6 +32,7 @@
 SESS_CLOSE(REM_CLOSE,	"Client Closed")
 SESS_CLOSE(REQ_CLOSE,	"Client requested close")
 SESS_CLOSE(REQ_HTTP10,	"proto < HTTP.1.1")
+SESS_CLOSE(RX_BODY,	"Failure receiving req.body")
 SESS_CLOSE(RX_JUNK,	"Received junk data")
 SESS_CLOSE(RX_OVERFLOW,	"Received buffer overflow")
 SESS_CLOSE(RX_TIMEOUT,	"Receive timeout")
