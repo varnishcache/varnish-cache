@@ -270,7 +270,14 @@ SLTM(ExpKill, "Object expiry event",
 	"\n"
 )
 
-SLTM(WorkThread, "", "")
+SLTM(WorkThread, "Logs thread start/stop events",
+	"Logs worker thread creation and termination events.\n\n"
+	"The format is::\n\n"
+	"\t%p %s\n"
+	"\t|  |\n"
+	"\t|  +- [start|end]\n"
+	"\t+---- Worker struct pointer"
+)
 
 SLTM(ESI_xmlerror, "ESI parser error or warning message",
 	"An error or warning was generated during parsing of an ESI object."
