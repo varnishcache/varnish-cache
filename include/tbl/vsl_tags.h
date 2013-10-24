@@ -41,6 +41,8 @@
  *	Long Description (in RST "definition list" format)
  */
 
+#define NODEF_NOTICE "Note: This log record is masked by default\n\n"
+
 SLTM(Debug, "Debug messages",
 	"Debug messages can normally be ignored, but are sometimes"
 	" helpful during trouble-shooting.  Most debug messages must"
@@ -277,6 +279,8 @@ SLTM(WorkThread, "Logs thread start/stop events",
 	"\t|  |\n"
 	"\t|  +- [start|end]\n"
 	"\t+---- Worker struct pointer"
+	"\n"
+	NODEF_NOTICE
 )
 
 SLTM(ESI_xmlerror, "ESI parser error or warning message",
@@ -285,7 +289,8 @@ SLTM(ESI_xmlerror, "ESI parser error or warning message",
 )
 
 SLTM(Hash, "Value added to hash",
-	"This value was added to the object lookup hash."
+	"This value was added to the object lookup hash.\n\n"
+	NODEF_NOTICE
 )
 
 SLTM(Backend_health, "Backend health check",
@@ -362,3 +367,5 @@ SLTM(VSL, "VSL API warnings and error message",
 	"Warnings and error messages genererated by the VSL API while"
 	" reading the shared memory log.\n\n"
 )
+
+#undef NODEF_NOTICE
