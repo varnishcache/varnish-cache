@@ -205,8 +205,20 @@ SLTM(Fetch_Body, "Body fetched from backend",
 SLTM(VCL_acl, "VSL ACL check results",
 	"Logs VCL ACL evaluation results.\n\n"
 )
-SLTM(VCL_call, "VCL method called", "")
-SLTM(VCL_trace, "VCL trace data", "")
+SLTM(VCL_call, "VCL method called",
+	"Logs the VCL method name when a VCL method is called.\n\n"
+)
+SLTM(VCL_trace, "VCL trace data",
+	"Logs VCL execution trace data.\n\n"
+	"The format is::\n\n"
+	"\t%u %u.%u\n"
+	"\t|  |  |\n"
+	"\t|  |  +- VCL program line position\n"
+	"\t|  +---- VCL program line number\n"
+	"\t+------- VCL trace point index\n"
+	"\n"
+	NODEF_NOTICE
+)
 SLTM(VCL_return, "VCL method return value",
 	"Logs the VCL method terminating statement.\n\n"
 )
@@ -314,7 +326,9 @@ SLTM(VCL_Debug, "(unused)", "")
 SLTM(VCL_Log, "Log statement from VCL",
 	"User generated log messages insert from VCL through std.log()"
 )
-SLTM(VCL_Error, "", "")
+SLTM(VCL_Error, "VCL execution error message",
+	"Logs error messages generated during VCL execution.\n\n"
+)
 
 SLTM(Gzip, "G(un)zip performed on object",
 	"A Gzip record is emitted for each instance of gzip or gunzip"
