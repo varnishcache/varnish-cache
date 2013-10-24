@@ -316,7 +316,8 @@ child_poker(const struct vev *e, int what)
  */
 
 static void __match_proto__()
-mgt_sigsegv_handler(int s, siginfo_t *si, void *c) {
+mgt_sigsegv_handler(int s, siginfo_t *si, void *c)
+{
 	char buf[1024];
 
 	(void)s;
