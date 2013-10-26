@@ -31,10 +31,6 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,6 +43,8 @@
 #include "vcl.h"
 #include "vrt.h"
 #include "vrt_obj.h"
+#include "vsa.h"
+#include "vtcp.h"
 #include "vtim.h"
 
 const void * const vrt_magic_string_end = &vrt_magic_string_end;
@@ -301,31 +299,13 @@ char *
 VRT_IP_string(const struct vrt_ctx *ctx, const VCL_IP ip)
 {
 	char *p;
-	const struct sockaddr *sa;
-	const struct sockaddr_in *si4;
-	const struct sockaddr_in6 *si6;
-	const void *addr;
-	int len;
+	unsigned len;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	sa = ip;
-	switch (sa->sa_family) {
-	case AF_INET:
-		len = INET_ADDRSTRLEN;
-		si4 = ip;
-		addr = &(si4->sin_addr);
-		break;
-	case AF_INET6:
-		len = INET6_ADDRSTRLEN;
-		si6 = ip;
-		addr = &(si6->sin6_addr);
-		break;
-	default:
-		INCOMPL();
-	}
-	XXXAN(len);
-	AN(p = WS_Alloc(ctx->ws, len));
-	AN(inet_ntop(sa->sa_family, addr, p, len));
+	len = WS_Reserve(ctx->ws, 0);
+	p = ctx->ws->r;
+	VTCP_name(ip, VSA_Len(ip), p, len, NULL, 0);
+	WS_Release(ctx->ws, strlen(p) + 1);
 	return (p);
 }
 
