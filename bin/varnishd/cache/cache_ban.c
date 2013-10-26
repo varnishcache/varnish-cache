@@ -791,7 +791,7 @@ ban_evaluate(const uint8_t *bs, const struct http *objhttp,
 			sprintf(buf, "%d", objhttp->status);
 			break;
 		default:
-			INCOMPL();
+			WRONG("Wrong BAN_ARG code");
 		}
 
 		switch (bt.oper) {
@@ -816,7 +816,7 @@ ban_evaluate(const uint8_t *bs, const struct http *objhttp,
 				return (0);
 			break;
 		default:
-			INCOMPL();
+			WRONG("Wrong BAN_OPER code");
 		}
 	}
 	return (1);
@@ -1199,8 +1199,11 @@ ban_render(struct cli *cli, const uint8_t *bs)
 			VCLI_Out(cli, "obj.http.%.*s",
 			    bt.arg1_spec[0] - 1, bt.arg1_spec + 1);
 			break;
+		case BANS_ARG_OBJSTATUS:
+			VCLI_Out(cli, "obj.status");
+			break;
 		default:
-			INCOMPL();
+			WRONG("Wrong BANS_ARG");
 		}
 		switch (bt.oper) {
 		case BANS_OPER_EQ:	VCLI_Out(cli, " == "); break;
@@ -1208,7 +1211,7 @@ ban_render(struct cli *cli, const uint8_t *bs)
 		case BANS_OPER_MATCH:	VCLI_Out(cli, " ~ "); break;
 		case BANS_OPER_NMATCH:	VCLI_Out(cli, " !~ "); break;
 		default:
-			INCOMPL();
+			WRONG("Wrong BANS_OPER");
 		}
 		VCLI_Out(cli, "%s", bt.arg2);
 		if (bs < be)
