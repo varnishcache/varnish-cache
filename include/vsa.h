@@ -30,6 +30,9 @@
 #ifndef VSA_H_INCLUDED
 #define VSA_H_INCLUDED
 
+struct suckaddr;
+extern const int vsa_suckaddr_len;
+
 int VSA_Sane(const void *);
 socklen_t VSA_Len(const void *);
 unsigned VSA_Port(const void *);

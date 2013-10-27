@@ -42,6 +42,7 @@ struct cli;
 struct director;
 struct VCL_conf;
 struct sockaddr_storage;
+struct suckaddr;
 
 /***********************************************************************
  * This is the central definition of the mapping from VCL types to
@@ -224,6 +225,9 @@ void VRT_synth_page(const struct vrt_ctx *, unsigned flags, const char *, ...);
 /* Backend related */
 void VRT_init_dir(struct cli *, struct director **, int idx, const void *priv);
 void VRT_fini_dir(struct cli *, struct director *);
+
+/* Suckaddr related */
+int VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst);
 
 /* VMOD/Modules related */
 int VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,

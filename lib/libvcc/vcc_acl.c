@@ -320,34 +320,6 @@ vcc_acl_entry(struct vcc *tl)
  * Emit a function to match the ACL we have collected
  */
 
-/*
- * XXX: this is semi-silly.  We try really hard to not depend in the
- * XXX: systems include files while compiling VCL, but we need to know
- * XXX: the size of the sa_familiy member.
- * XXX: FlexeLint complains about these antics, so isolate it in a
- * XXX: separate function.
- */
-
-/*lint -save -e506 -e774 -e550 */
-static void
-c_is_a_silly_language(const struct vcc *tl)
-{
-	struct sockaddr sa;
-
-	assert(sizeof (unsigned char) == 1);
-	assert(sizeof (unsigned short) == 2);
-	assert(sizeof (unsigned int) == 4);
-	if (sizeof sa.sa_family == 1)
-		Fh(tl, 0, "\tunsigned char fam;\n");
-	else if (sizeof sa.sa_family == 2)
-		Fh(tl, 0, "\tunsigned short fam;\n");
-	else if (sizeof sa.sa_family == 4)
-		Fh(tl, 0, "\tunsigned int fam;\n");
-	else
-		assert(0 == __LINE__);
-}
-/*lint -restore */
-
 static void
 vcc_acl_emit(const struct vcc *tl, const char *acln, int anon)
 {
@@ -357,21 +329,14 @@ vcc_acl_emit(const struct vcc *tl, const char *acln, int anon)
 	const char *oc;
 
 	Fh(tl, 0, "\nstatic int\n");
-	Fh(tl, 0, "match_acl_%s_%s(const struct vrt_ctx *ctx, const void *p)\n",
+	Fh(tl, 0, "match_acl_%s_%s(const struct vrt_ctx *ctx, const VCL_IP p)\n",
 	    anon ? "anon" : "named", acln);
 	Fh(tl, 0, "{\n");
 	Fh(tl, 0, "\tconst unsigned char *a;\n");
-	c_is_a_silly_language(tl);
-
+	Fh(tl, 0, "\tint fam;\n");
 	Fh(tl, 0, "\n");
-	Fh(tl, 0, "\ta = p;\n");
-	Fh(tl, 0, "\tVRT_memmove(&fam, a + %zd, sizeof fam);\n",
-	    offsetof(struct sockaddr, sa_family));
-	Fh(tl, 0, "\tif (fam == %d)\n", PF_INET);
-	Fh(tl, 0, "\t\ta += %zd;\n", offsetof(struct sockaddr_in, sin_addr));
-	Fh(tl, 0, "\telse if (fam == %d)\n", PF_INET6);
-	Fh(tl, 0, "\t\ta += %zd;\n", offsetof(struct sockaddr_in6, sin6_addr));
-	Fh(tl, 0, "\telse {\n");
+	Fh(tl, 0, "\tfam = VRT_VSA_GetPtr(p, &a);\n");
+	Fh(tl, 0, "\tif (fam < 0) {\n");
 	Fh(tl, 0, "\t\tVRT_acl_log(ctx, \"NO_FAM %s\");\n", acln);
 	Fh(tl, 0, "\t\treturn(0);\n");
 	Fh(tl, 0, "\t}\n\n");
