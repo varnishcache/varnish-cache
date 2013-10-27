@@ -258,7 +258,7 @@ VRT_r_beresp_backend_name(const struct vrt_ctx *ctx)
 	return(ctx->bo->vbc->backend->vcl_name);
 }
 
-const void *
+VCL_IP
 VRT_r_beresp_backend_ip(const struct vrt_ctx *ctx)
 {
 
@@ -535,7 +535,7 @@ REQ_BOOL(hash_always_miss)
 
 /*--------------------------------------------------------------------*/
 
-const void *
+VCL_IP
 VRT_r_client_ip(const struct vrt_ctx *ctx)
 {
 

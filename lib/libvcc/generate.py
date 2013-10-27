@@ -815,6 +815,7 @@ const struct var vcc_vars[] = {
 
 sp_variables.sort()
 for i in sp_variables:
+	fh.write("\n")
 	typ = i[1]
 	cnam = i[0].replace(".", "_")
 	ctyp = vcltypes[typ]
@@ -829,7 +830,7 @@ for i in sp_variables:
 		fo.write('",\n')
 	else:
 		fo.write('\t    "VRT_r_%s(ctx)",\n' % cnam)
-		fh.write(ctyp + " VRT_r_%s(const struct vrt_ctx *);\n" % cnam )
+		fh.write("VCL_" + typ + " VRT_r_%s(const struct vrt_ctx *);\n" % cnam )
 	restrict(fo, i[2])
 
 	if len(i[3]) == 0:
@@ -842,7 +843,7 @@ for i in sp_variables:
 		fo.write('\t    "VRT_l_%s(ctx, ",\n' % cnam)
 		fh.write("void VRT_l_%s(const struct vrt_ctx *, " % cnam)
 		if typ != "STRING":
-			fh.write(ctyp + ");\n")
+			fh.write("VCL_" + typ + ");\n")
 		else:
 			fh.write(ctyp + ", ...);\n")
 	restrict(fo, i[3])
@@ -851,6 +852,7 @@ for i in sp_variables:
 
 fo.write("\t{ NULL }\n};\n")
 
+fh.write("\n")
 for i in stv_variables:
 	fh.write(vcltypes[i[1]] + " VRT_Stv_" + i[0] + "(const char *);\n")
 
