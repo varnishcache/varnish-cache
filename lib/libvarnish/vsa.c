@@ -257,6 +257,24 @@ VSA_Build(void *d, const void *s, unsigned sal)
 	return (sua);
 }
 
+const struct sockaddr *
+VSA_Get_Sockaddr(const struct suckaddr *sua, socklen_t *sl)
+{
+	AN(sua);
+	AN(sl);
+	switch(sua->sa.sa_family) {
+		case PF_INET:
+			*sl = sizeof sua->sa4;
+			break;
+		case PF_INET6:
+			*sl = sizeof sua->sa6;
+			break;
+		default:
+			return (NULL);
+	}
+	return (&sua->sa);
+}
+
 int
 VSA_Sane(const void *s)
 {

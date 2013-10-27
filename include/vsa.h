@@ -38,6 +38,8 @@ socklen_t VSA_Len(const void *);
 unsigned VSA_Port(const void *);
 int VSA_Compare(const struct suckaddr *, const struct suckaddr *);
 
+const struct sockaddr *VSA_Get_Sockaddr(const struct suckaddr *, socklen_t *sl);
+
 /*
  * 's' is a sockaddr of some kind, 'sal' is its length
  */
