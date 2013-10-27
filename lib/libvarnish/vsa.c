@@ -259,17 +259,11 @@ VSA_Len(const void *s)
 }
 
 int
-VSA_Compare(const void *s1, const void *s2)
+VSA_Compare(const struct suckaddr *s1, const struct suckaddr *s2)
 {
-	const struct sockaddr *sa = s1;
-
-	switch(sa->sa_family) {
-		case PF_INET:
-		case PF_INET6:
-			return (memcmp(s1, s2, VSA_Len(s1)));
-		default:
-			return (-1);
-	}
+	AN(s1);
+	AN(s2);
+	return (memcmp(s1, s2, vsa_suckaddr_len));
 }
 
 unsigned

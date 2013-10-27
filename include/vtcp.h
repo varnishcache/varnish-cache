@@ -28,6 +28,8 @@
  *
  */
 
+struct suckaddr;
+
 /* from libvarnish/tcp.c */
 /* NI_MAXHOST and NI_MAXSERV are ridiculously long for numeric format */
 #define VTCP_ADDRBUFSIZE		64
@@ -67,7 +69,7 @@ int VTCP_check_hup(int sock);
 #ifdef SOL_SOCKET
 void VTCP_name(const struct sockaddr_storage *addr, unsigned l, char *abuf,
     unsigned alen, char *pbuf, unsigned plen);
-int VTCP_connect(int s, const struct sockaddr_storage *name, int msec);
+int VTCP_connect(int s, const struct suckaddr *name, int msec);
 void VTCP_close(int *s);
 void VTCP_set_read_timeout(int s, double seconds);
 #endif

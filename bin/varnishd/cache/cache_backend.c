@@ -108,7 +108,7 @@ VBE_ReleaseConn(struct vbc *vc)
 
 static int
 vbe_TryConnect(const struct busyobj *bo, int pf,
-    const struct sockaddr_storage *sa, const struct vdi_simple *vs)
+    const struct suckaddr *sa, const struct vdi_simple *vs)
 {
 	int s, i, tmo;
 	double tmod;

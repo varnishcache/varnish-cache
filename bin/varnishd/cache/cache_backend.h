@@ -113,8 +113,8 @@ struct backend {
 	char			*ipv6_addr;
 	char			*port;
 
-	struct sockaddr_storage	*ipv4;
-	struct sockaddr_storage	*ipv6;
+	struct suckaddr		*ipv4;
+	struct suckaddr		*ipv6;
 
 	unsigned		n_conn;
 	VTAILQ_HEAD(, vbc)	connlist;
@@ -139,7 +139,7 @@ struct vbc {
 	struct vsl_log		*vsl;
 	int			fd;
 
-	struct sockaddr_storage	*addr;
+	struct suckaddr		*addr;
 
 	uint8_t			recycled;
 

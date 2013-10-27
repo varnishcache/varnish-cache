@@ -36,7 +36,7 @@ extern const int vsa_suckaddr_len;
 int VSA_Sane(const void *);
 socklen_t VSA_Len(const void *);
 unsigned VSA_Port(const void *);
-int VSA_Compare(const void *, const void *);
+int VSA_Compare(const struct suckaddr *, const struct suckaddr *);
 
 struct suckaddr *VSA_Malloc(const void *s, unsigned  sal);
 

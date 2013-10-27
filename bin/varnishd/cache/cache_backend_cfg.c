@@ -151,13 +151,13 @@ VBE_DropRefConn(struct backend *b)
  */
 
 static void
-copy_sockaddr(struct sockaddr_storage **sa, const void *src)
+copy_sockaddr(struct suckaddr **sa, const struct suckaddr *src)
 {
 
 	assert(VSA_Sane(src));
-	*sa = calloc(sizeof **sa, 1);
+	*sa = calloc(1, vsa_suckaddr_len);
 	XXXAN(*sa);
-	memcpy(*sa, src, VSA_Len(src));
+	memcpy(*sa, src, vsa_suckaddr_len);
 	assert(VSA_Sane(*sa));
 }
 

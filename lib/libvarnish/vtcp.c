@@ -195,7 +195,7 @@ VTCP_nonblocking(int sock)
  */
 
 int
-VTCP_connect(int s, const struct sockaddr_storage *name, int msec)
+VTCP_connect(int s, const struct suckaddr *name, int msec)
 {
 	int i, k;
 	socklen_t l;
