@@ -174,7 +174,7 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	char buf[128];
 
 	AN(vb->vcl_name);
-	assert(vb->ipv4_sockaddr != NULL || vb->ipv6_sockaddr != NULL);
+	assert(vb->ipv4_suckaddr != NULL || vb->ipv6_suckaddr != NULL);
 	(void)cli;
 	ASSERT_CLI();
 
@@ -183,11 +183,11 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 		if (strcmp(b->vcl_name, vb->vcl_name))
 			continue;
-		if (vb->ipv4_sockaddr != NULL &&
-		    VSA_Compare(b->ipv4, vb->ipv4_sockaddr))
+		if (vb->ipv4_suckaddr != NULL &&
+		    VSA_Compare(b->ipv4, vb->ipv4_suckaddr))
 			continue;
-		if (vb->ipv6_sockaddr != NULL &&
-		    VSA_Compare(b->ipv6, vb->ipv6_sockaddr))
+		if (vb->ipv6_suckaddr != NULL &&
+		    VSA_Compare(b->ipv6, vb->ipv6_suckaddr))
 			continue;
 		b->refcount++;
 		b->vsc->vcls++;
@@ -223,10 +223,10 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	/*
 	 * Copy over the sockaddrs
 	 */
-	if (vb->ipv4_sockaddr != NULL)
-		copy_sockaddr(&b->ipv4, vb->ipv4_sockaddr);
-	if (vb->ipv6_sockaddr != NULL)
-		copy_sockaddr(&b->ipv6, vb->ipv6_sockaddr);
+	if (vb->ipv4_suckaddr != NULL)
+		copy_sockaddr(&b->ipv4, vb->ipv4_suckaddr);
+	if (vb->ipv6_suckaddr != NULL)
+		copy_sockaddr(&b->ipv6, vb->ipv6_suckaddr);
 
 	assert(b->ipv4 != NULL || b->ipv6 != NULL);
 

@@ -65,11 +65,13 @@ Emit_Sockaddr(struct vcc *tl, const struct token *t_host, const char *port)
 	    &ipv4, &ipv4a, &ipv6, &ipv6a, &pa, 2, t_host, "Backend host");
 	ERRCHK(tl);
 	if (ipv4 != NULL) {
-		Fb(tl, 0, "\t.ipv4_sockaddr = %s,\n", ipv4);
+		Fb(tl, 0, "\t.ipv4_suckaddr = (const struct suckaddr *)%s,\n",
+		    ipv4);
 		Fb(tl, 0, "\t.ipv4_addr = \"%s\",\n", ipv4a);
 	}
 	if (ipv6 != NULL) {
-		Fb(tl, 0, "\t.ipv6_sockaddr = %s,\n", ipv6);
+		Fb(tl, 0, "\t.ipv6_suckaddr = (const struct suckaddr *)%s,\n",
+		    ipv6);
 		Fb(tl, 0, "\t.ipv6_addr = \"%s\",\n", ipv6a);
 	}
 	Fb(tl, 0, "\t.port = \"%s\",\n", pa);
