@@ -31,6 +31,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -77,42 +78,47 @@ vcc_regexp(struct vcc *tl)
 
 /*
  * The IPv6 crew royally screwed up the entire idea behind
- * struct sockaddr, and combined with various other incomptency
- * in the OS business, that means that there is no sane or even
- * remotely portable way to initialize a sockaddr at compile time.
+ * struct sockaddr, see libvarnish/vsa.c for blow-by-blow account.
+ *
+ * There is no sane or even remotely portable way to initialize
+ * a sockaddr for random protocols at compile time.
  *
  * In our case it is slightly more tricky than that, because we don't
  * even want to #include the struct sockaddr* definitions.
  *
- * Instead we make sure the sockaddr is sane (for our values of sane)
- * and dump it in binary, using a 64 bit integertype, hoping that this
- * will ensure good enough alignment.
+ * Instead we make sure the sockaddr is sane (for our values of
+ * sane) and dump it as our own "struct suckaddr" type, in binary,
+ * using the widest integertype, hoping that this will ensure sufficient
+ * alignment.
  */
 
 static const char *
 vcc_sockaddr(struct vcc *tl, const void *sa, unsigned sal)
 {
-	unsigned n = (sal + 7) / 8, len;
-	uint64_t b[n];
+	unsigned n = (vsa_suckaddr_len + 7) / 8, len;
+	unsigned long long b[n];
+	struct suckaddr *sua;
 	char *p;
+
+	assert(sizeof(unsigned long long) == 8);
 
 	assert(VSA_Sane(sa));
 	AN(sa);
 	AN(sal);
-	assert(sal < sizeof(struct sockaddr_storage));
-	assert(sizeof(unsigned long long) == 8);
+
+	sua = VSA_Malloc(sa, sal);
+	AN(sua);
 
 	p = TlAlloc(tl, 20);
+	AN(p);
 	sprintf(p, "sockaddr_%u", tl->unique++);
 
 	Fh(tl, 0, "static const unsigned long long");
 	Fh(tl, 0, " %s[%d] = {\n", p, n);
-	memcpy(b, sa, sal);
-	for (len = 0; len <n; len++) {
-		Fh(tl, 0, "%s    0x%016jx",
-		    len ? ",\n" : "",
-		    (uintmax_t)b[len]);
-	}
+	memcpy(b, sua, vsa_suckaddr_len);
+	free(sua);
+	for (len = 0; len < n; len++)
+		Fh(tl, 0, "%s    0x%016llx", len ? ",\n" : "", b[len]);
 	Fh(tl, 0, "\n};\n");
 	return (p);
 }

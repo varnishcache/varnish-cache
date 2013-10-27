@@ -35,6 +35,7 @@
 
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
@@ -195,6 +196,37 @@ VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst)
 			*dst = NULL;
 			return (-1);
 	}
+}
+
+/*
+ * Malloc a suckaddr from a sockaddr of some kind.
+ */
+
+struct suckaddr *
+VSA_Malloc(const void *s, unsigned  sal)
+{
+	struct suckaddr *sua = NULL;
+	const struct sockaddr *sa = s;
+	unsigned l = 0;
+
+	switch(sa->sa_family) {
+		case PF_INET:
+			if (sal == sizeof sua->sa4)
+				l = sal;
+			break;
+		case PF_INET6:
+			if (sal == sizeof sua->sa6)
+				l = sal;
+			break;
+		default:
+			break;
+	}
+	if (l != 0) {
+		sua = calloc(1, sizeof *sua);
+		if (sua != NULL)
+			memcpy(&sua->sa, s, l);
+	}
+	return (sua);
 }
 
 int

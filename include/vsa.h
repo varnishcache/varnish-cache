@@ -38,4 +38,6 @@ socklen_t VSA_Len(const void *);
 unsigned VSA_Port(const void *);
 int VSA_Compare(const void *, const void *);
 
+struct suckaddr *VSA_Malloc(const void *s, unsigned  sal);
+
 #endif
