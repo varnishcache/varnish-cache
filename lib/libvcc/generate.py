@@ -542,7 +542,9 @@ def emit_vcl_tnames(fo, tokens):
 #######################################################################
 # Read a C-source file and spit out code that outputs it with VSB_cat()
 
-def emit_file(fo, fn):
+def emit_file(fo, fd, bn):
+	fn = fd + "/" + bn
+
 	fi = open(fn)
 	fc = fi.read()
 	fi.close()
@@ -553,6 +555,7 @@ def emit_file(fo, fn):
 	x = 0
 	l = 0
 	fo.write("\n\t/* %s */\n\n" % fn)
+	fo.write('\tVSB_cat(sb, "/* ---===### %s ###===--- */\\n");\n' % bn)
 	for c in fc:
 		if l == 0:
 			fo.write("\tVSB_cat(sb, \"")
@@ -878,9 +881,9 @@ vcl_output_lang_h(struct vsb *sb)
 {
 """)
 
-emit_file(fo, buildroot + "/include/vcl.h")
-emit_file(fo, srcroot + "/include/vrt.h")
-emit_file(fo, buildroot + "/include/vrt_obj.h")
+emit_file(fo, buildroot, "include/vcl.h")
+emit_file(fo, srcroot, "include/vrt.h")
+emit_file(fo, buildroot, "include/vrt_obj.h")
 
 fo.write("""
 }
