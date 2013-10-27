@@ -38,6 +38,15 @@ socklen_t VSA_Len(const void *);
 unsigned VSA_Port(const void *);
 int VSA_Compare(const struct suckaddr *, const struct suckaddr *);
 
+/*
+ * 's' is a sockaddr of some kind, 'sal' is its length
+ */
 struct suckaddr *VSA_Malloc(const void *s, unsigned  sal);
+
+/*
+ * 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage,
+ * 's' is a sockaddr of some kind, 'sal' is its length.
+ */
+struct suckaddr *VSA_Build(void *d, const void *s, unsigned sal);
 
 #endif

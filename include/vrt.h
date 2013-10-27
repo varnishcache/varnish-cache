@@ -56,6 +56,7 @@ typedef double				VCL_DURATION;
 typedef const char *			VCL_ENUM;
 typedef const char *			VCL_HEADER;
 typedef long				VCL_INT;
+//typedef const struct suckaddr *		VCL_IP;
 typedef const void *			VCL_IP;
 typedef double				VCL_REAL;
 typedef const char *			VCL_STRING;
