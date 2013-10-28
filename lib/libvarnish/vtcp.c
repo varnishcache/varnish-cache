@@ -55,14 +55,13 @@
 #include "vtcp.h"
 
 /*--------------------------------------------------------------------*/
-
-void
-VTCP_name(const struct sockaddr_storage *addr, unsigned l,
-    char *abuf, unsigned alen, char *pbuf, unsigned plen)
+static void
+vtcp_sa_to_ascii(const void *sa, socklen_t l, char *abuf, unsigned alen,
+    char *pbuf, unsigned plen)
 {
 	int i;
 
-	i = getnameinfo((const void *)addr, l, abuf, alen, pbuf, plen,
+	i = getnameinfo(sa, l, abuf, alen, pbuf, plen,
 	   NI_NUMERICHOST | NI_NUMERICSERV);
 	if (i) {
 		/*
@@ -85,6 +84,19 @@ VTCP_name(const struct sockaddr_storage *addr, unsigned l,
 /*--------------------------------------------------------------------*/
 
 void
+VTCP_name(const struct suckaddr *addr, char *abuf, unsigned alen,
+    char *pbuf, unsigned plen)
+{
+	const struct sockaddr *sa;
+	socklen_t sl;
+
+	sa = VSA_Get_Sockaddr(addr, &sl);
+	vtcp_sa_to_ascii(sa, sl, abuf, alen, pbuf, plen);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
 VTCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 {
 	struct sockaddr_storage addr_s;
@@ -92,8 +104,9 @@ VTCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 
 	l = sizeof addr_s;
 	AZ(getsockname(sock, (void *)&addr_s, &l));
-	VTCP_name(&addr_s, l, abuf, alen, pbuf, plen);
+	vtcp_sa_to_ascii(&addr_s, l, abuf, alen, pbuf, plen);
 }
+
 /*--------------------------------------------------------------------*/
 
 void
@@ -104,7 +117,7 @@ VTCP_hisname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 
 	l = sizeof addr_s;
 	if (!getpeername(sock, (void*)&addr_s, &l))
-		VTCP_name(&addr_s, l, abuf, alen, pbuf, plen);
+		vtcp_sa_to_ascii(&addr_s, l, abuf, alen, pbuf, plen);
 	else {
 		(void)snprintf(abuf, alen, "<none>");
 		(void)snprintf(pbuf, plen, "<none>");

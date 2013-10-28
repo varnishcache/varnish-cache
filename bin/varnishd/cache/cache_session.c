@@ -203,11 +203,11 @@ ses_vsl_socket(struct sess *sp, const char *lsockname)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AN(lsockname);
 
-	VTCP_name((const void *)sp->their_addr, vsa_suckaddr_len,
+	VTCP_name(sp->their_addr,
 	    sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
 	if (cache_param->log_local_addr) {
 		SES_Get_Our_Addr(sp);
-		VTCP_name((const void*)sp->our_addr, vsa_suckaddr_len,
+		VTCP_name(sp->our_addr,
 		    laddr, sizeof laddr, lport, sizeof lport);
 	} else {
 		strcpy(laddr, "-");

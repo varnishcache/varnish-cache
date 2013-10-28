@@ -43,7 +43,6 @@
 #include "vcl.h"
 #include "vrt.h"
 #include "vrt_obj.h"
-#include "vsa.h"
 #include "vtcp.h"
 #include "vtim.h"
 
@@ -304,7 +303,7 @@ VRT_IP_string(const struct vrt_ctx *ctx, VCL_IP ip)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	len = WS_Reserve(ctx->ws, 0);
 	p = ctx->ws->r;
-	VTCP_name(ip, VSA_Len(ip), p, len, NULL, 0);
+	VTCP_name(ip, p, len, NULL, 0);
 	WS_Release(ctx->ws, strlen(p) + 1);
 	return (p);
 }
