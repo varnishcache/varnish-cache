@@ -392,6 +392,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	if (oc->flags & OC_F_PASS) {
 		/* Found a hit-for-pass */
 		VSLb(req->vsl, SLT_Debug, "XXXX HIT-FOR-PASS");
+		VSLb(req->vsl, SLT_HitPass, "%u", req->obj->vxid);
 		AZ(boc);
 		(void)HSH_DerefObjCore(&wrk->stats, &oc);
 		req->objcore = NULL;

@@ -294,7 +294,10 @@ SLTM(Hit, "Hit object in cache",
 	"Object looked up in cache. Shows the VXID of the object.\n\n"
 )
 
-SLTM(HitPass, "Hit for pass object in cache (unused)", "")
+SLTM(HitPass, "Hit for pass object in cache.\n\n",
+	"Hit-for-pass object looked up in cache. Shows the VXID of the"
+	" hit-for-pass object.\n\n"
+)
 
 SLTM(ExpBan, "Object evicted due to ban",
 	"Logs the VXID when an object is banned.\n\n"
