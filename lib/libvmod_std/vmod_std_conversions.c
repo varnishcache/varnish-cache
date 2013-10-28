@@ -127,7 +127,7 @@ VCL_IP
 vmod_ip(const struct vrt_ctx *ctx, VCL_STRING s, VCL_IP d)
 {
 	struct addrinfo hints, *res0 = NULL;
-	const struct addrinfo *res, *best = NULL;
+	const struct addrinfo *res;
 	int error;
 	void *p;
 	struct suckaddr *r;
@@ -136,6 +136,10 @@ vmod_ip(const struct vrt_ctx *ctx, VCL_STRING s, VCL_IP d)
 	AN(d);
 	assert(VSA_Sane(d));
 
+	p = WS_Alloc(ctx->ws, vsa_suckaddr_len);
+	AN(p);
+	r = NULL;
+
 	if (s != NULL) {
 		memset(&hints, 0, sizeof(hints));
 		hints.ai_family = PF_UNSPEC;
@@ -143,19 +147,13 @@ vmod_ip(const struct vrt_ctx *ctx, VCL_STRING s, VCL_IP d)
 		error = getaddrinfo(s, "80", &hints, &res0);
 		if (!error) {
 			for (res = res0; res != NULL; res = res->ai_next) {
-				if (VSA_Sane(res->ai_addr) &&
-				    res->ai_addrlen >= VSA_Len(res->ai_addr)) {
-					best = res;
+				r = VSA_Build(p, res->ai_addr, res->ai_addrlen);
+				if (r != NULL)
 					break;
-				}
 			}
 		}
 	}
-	p = WS_Alloc(ctx->ws, vsa_suckaddr_len);
-	AN(p);
-	if (best != NULL)
-		r = VSA_Build(p, best->ai_addr, best->ai_addrlen);
-	else {
+	if (r == NULL) {
 		r = p;
 		memcpy(r, d, vsa_suckaddr_len);
 	}

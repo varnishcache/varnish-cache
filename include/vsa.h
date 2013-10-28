@@ -33,9 +33,9 @@
 struct suckaddr;
 extern const int vsa_suckaddr_len;
 
-int VSA_Sane(const void *);
-socklen_t VSA_Len(const void *);
-unsigned VSA_Port(const void *);
+int VSA_Sane(const struct suckaddr *);
+socklen_t VSA_Len(const struct suckaddr *);
+unsigned VSA_Port(const struct suckaddr *);
 int VSA_Compare(const struct suckaddr *, const struct suckaddr *);
 
 const struct sockaddr *VSA_Get_Sockaddr(const struct suckaddr *, socklen_t *sl);

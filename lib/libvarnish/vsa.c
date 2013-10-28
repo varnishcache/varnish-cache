@@ -252,9 +252,11 @@ VSA_Build(void *d, const void *s, unsigned sal)
 		default:
 			break;
 	}
-	if (l != 0)
+	if (l != 0) {
 		memcpy(&sua->sa, s, l);
-	return (sua);
+		return (sua);
+	}
+	return (NULL);
 }
 
 const struct sockaddr *
@@ -276,11 +278,10 @@ VSA_Get_Sockaddr(const struct suckaddr *sua, socklen_t *sl)
 }
 
 int
-VSA_Sane(const void *s)
+VSA_Sane(const struct suckaddr *s)
 {
-	const struct sockaddr *sa = s;
 
-	switch(sa->sa_family) {
+	switch(s->sa.sa_family) {
 		case PF_INET:
 		case PF_INET6:
 			return (1);
@@ -290,17 +291,16 @@ VSA_Sane(const void *s)
 }
 
 socklen_t
-VSA_Len(const void *s)
+VSA_Len(const struct suckaddr *s)
 {
-	const struct sockaddr *sa = s;
 
-	switch(sa->sa_family) {
+	switch(s->sa.sa_family) {
 		case PF_INET:
-			return (sizeof(struct sockaddr_in));
+			return (sizeof(s->sa4));
 		case PF_INET6:
-			return (sizeof(struct sockaddr_in6));
+			return (sizeof(s->sa6));
 		default:
-			WRONG("Illegal socket family");
+			return (0);
 	}
 }
 
@@ -313,22 +313,15 @@ VSA_Compare(const struct suckaddr *s1, const struct suckaddr *s2)
 }
 
 unsigned
-VSA_Port(const void *s)
+VSA_Port(const struct suckaddr *s)
 {
-	const struct sockaddr *sa = s;
 
-	switch(sa->sa_family) {
+	switch(s->sa.sa_family) {
 		case PF_INET:
-			{
-			const struct sockaddr_in *ain = s;
-			return (ntohs((ain->sin_port)));
-			}
+			return (ntohs(s->sa4.sin_port));
 		case PF_INET6:
-			{
-			const struct sockaddr_in6 *ain = s;
-			return (ntohs((ain->sin6_port)));
-			}
+			return (ntohs(s->sa6.sin6_port));
 		default:
-			WRONG("Illegal socket family");
+			return (0);
 	}
 }
