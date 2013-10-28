@@ -97,13 +97,19 @@ static struct sess *
 ses_new(struct sesspool *pp)
 {
 	struct sess *sp;
+	char *s;
 
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	sp = MPL_Get(pp->mpl_sess, NULL);
 	sp->magic = SESS_MAGIC;
 	sp->sesspool = pp;
-	sp->sockaddrlen = sizeof(sp->sockaddr);
-	sp->sockaddr.ss_family = PF_UNSPEC;
+
+	s = (char *)sp;
+	s += sizeof *sp;
+	s += vsa_suckaddr_len;
+	memset(s, 0, vsa_suckaddr_len);
+	sp->their_addr = (void*)s;
+
 	sp->t_open = NAN;
 	sp->t_idle = NAN;
 	sp->our_addr = NULL;
@@ -197,7 +203,7 @@ ses_vsl_socket(struct sess *sp, const char *lsockname)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AN(lsockname);
 
-	VTCP_name(&sp->sockaddr, sp->sockaddrlen,
+	VTCP_name((const void *)sp->their_addr, vsa_suckaddr_len,
 	    sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
 	if (cache_param->log_local_addr) {
 		SES_Get_Our_Addr(sp);

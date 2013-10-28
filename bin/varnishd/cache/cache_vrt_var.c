@@ -540,7 +540,7 @@ VRT_r_client_ip(const struct vrt_ctx *ctx)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	return (&ctx->req->sp->sockaddr);
+	return (ctx->req->sp->their_addr);
 }
 
 VCL_IP

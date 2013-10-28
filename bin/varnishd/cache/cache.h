@@ -767,8 +767,7 @@ struct sess {
 
 	/* Session related fields ------------------------------------*/
 
-	socklen_t		sockaddrlen;
-	struct sockaddr_storage sockaddr;
+	struct suckaddr		*their_addr;
 	struct suckaddr		*our_addr;
 
 	/* formatted ascii client address */
