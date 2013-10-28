@@ -213,6 +213,8 @@ VTCP_connect(int s, const struct suckaddr *name, int msec)
 	int i, k;
 	socklen_t l;
 	struct pollfd fds[1];
+	const struct sockaddr *sa;
+	socklen_t sl;
 
 	assert(s >= 0);
 
@@ -221,8 +223,9 @@ VTCP_connect(int s, const struct suckaddr *name, int msec)
 		(void)VTCP_nonblocking(s);
 
 	/* Attempt the connect */
-	assert(VSA_Sane(name));
-	i = connect(s, (const void *)name, VSA_Len(name));
+	AN(VSA_Sane(name));
+	sa = VSA_Get_Sockaddr(name, &sl);
+	i = connect(s, sa, sl);
 	if (i == 0 || errno != EINPROGRESS)
 		return (i);
 

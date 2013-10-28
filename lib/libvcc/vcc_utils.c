@@ -102,7 +102,6 @@ vcc_sockaddr(struct vcc *tl, const void *sa, unsigned sal)
 
 	assert(sizeof(unsigned long long) == 8);
 
-	assert(VSA_Sane(sa));
 	AN(sa);
 	AN(sal);
 
