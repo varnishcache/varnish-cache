@@ -42,6 +42,7 @@
 #include "vas.h"
 #include "vsa.h"
 #include "vrt.h"
+#include "miniobj.h"
 
 /*
  * Struct sockaddr{|_in|_in6|_storage} is absolutely the worst data
@@ -162,6 +163,8 @@
  */
 
 struct suckaddr {
+	unsigned			magic;
+#define SUCKADDR_MAGIC			0x4b1e9335
 	union {
 		struct sockaddr		sa;
 		struct sockaddr_in	sa4;
@@ -179,9 +182,11 @@ const int vsa_suckaddr_len = sizeof(struct suckaddr);
 int
 VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst)
 {
+
 	AN(dst);
 	if (sua == NULL)
 		return (-1);
+	CHECK_OBJ_NOTNULL(sua, SUCKADDR_MAGIC);
 
 	switch(sua->sa.sa_family) {
 		case PF_INET:
@@ -223,7 +228,7 @@ VSA_Malloc(const void *s, unsigned  sal)
 			break;
 	}
 	if (l != 0) {
-		sua = calloc(1, sizeof *sua);
+		ALLOC_OBJ(sua, SUCKADDR_MAGIC);
 		if (sua != NULL)
 			memcpy(&sua->sa, s, l);
 	}
@@ -253,6 +258,8 @@ VSA_Build(void *d, const void *s, unsigned sal)
 			break;
 	}
 	if (l != 0) {
+		memset(sua, 0, sizeof *sua);
+		sua->magic = SUCKADDR_MAGIC;
 		memcpy(&sua->sa, s, l);
 		return (sua);
 	}
@@ -262,7 +269,8 @@ VSA_Build(void *d, const void *s, unsigned sal)
 const struct sockaddr *
 VSA_Get_Sockaddr(const struct suckaddr *sua, socklen_t *sl)
 {
-	AN(sua);
+
+	CHECK_OBJ_NOTNULL(sua, SUCKADDR_MAGIC);
 	AN(sl);
 	switch(sua->sa.sa_family) {
 		case PF_INET:
@@ -278,10 +286,11 @@ VSA_Get_Sockaddr(const struct suckaddr *sua, socklen_t *sl)
 }
 
 int
-VSA_Sane(const struct suckaddr *s)
+VSA_Sane(const struct suckaddr *sua)
 {
+	CHECK_OBJ_NOTNULL(sua, SUCKADDR_MAGIC);
 
-	switch(s->sa.sa_family) {
+	switch(sua->sa.sa_family) {
 		case PF_INET:
 		case PF_INET6:
 			return (1);
@@ -291,36 +300,39 @@ VSA_Sane(const struct suckaddr *s)
 }
 
 socklen_t
-VSA_Len(const struct suckaddr *s)
+VSA_Len(const struct suckaddr *sua)
 {
+	CHECK_OBJ_NOTNULL(sua, SUCKADDR_MAGIC);
 
-	switch(s->sa.sa_family) {
+	switch(sua->sa.sa_family) {
 		case PF_INET:
-			return (sizeof(s->sa4));
+			return (sizeof(sua->sa4));
 		case PF_INET6:
-			return (sizeof(s->sa6));
+			return (sizeof(sua->sa6));
 		default:
 			return (0);
 	}
 }
 
 int
-VSA_Compare(const struct suckaddr *s1, const struct suckaddr *s2)
+VSA_Compare(const struct suckaddr *sua1, const struct suckaddr *sua2)
 {
-	AN(s1);
-	AN(s2);
-	return (memcmp(s1, s2, vsa_suckaddr_len));
+
+	CHECK_OBJ_NOTNULL(sua1, SUCKADDR_MAGIC);
+	CHECK_OBJ_NOTNULL(sua2, SUCKADDR_MAGIC);
+	return (memcmp(sua1, sua2, vsa_suckaddr_len));
 }
 
 unsigned
-VSA_Port(const struct suckaddr *s)
+VSA_Port(const struct suckaddr *sua)
 {
 
-	switch(s->sa.sa_family) {
+	CHECK_OBJ_NOTNULL(sua, SUCKADDR_MAGIC);
+	switch(sua->sa.sa_family) {
 		case PF_INET:
-			return (ntohs(s->sa4.sin_port));
+			return (ntohs(sua->sa4.sin_port));
 		case PF_INET6:
-			return (ntohs(s->sa6.sin6_port));
+			return (ntohs(sua->sa6.sin6_port));
 		default:
 			return (0);
 	}
