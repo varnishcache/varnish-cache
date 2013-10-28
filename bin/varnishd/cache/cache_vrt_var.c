@@ -41,7 +41,6 @@
 #include "vrt.h"
 #include "vrt_obj.h"
 #include "vsa.h"
-#include "vtcp.h"
 
 static char vrt_hostname[255] = "";
 
@@ -544,21 +543,14 @@ VRT_r_client_ip(const struct vrt_ctx *ctx)
 	return (&ctx->req->sp->sockaddr);
 }
 
-const void *
+VCL_IP
 VRT_r_server_ip(const struct vrt_ctx *ctx)
 {
-	int i;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	if (ctx->req->sp->mysockaddr.ss_family == AF_UNSPEC) {
-		i = getsockname(ctx->req->sp->fd,
-		    (void*)&ctx->req->sp->mysockaddr,
-		    &ctx->req->sp->mysockaddrlen);
-		assert(VTCP_Check(i));
-	}
-
-	return (&ctx->req->sp->mysockaddr);
+	SES_Get_Our_Addr(ctx->req->sp);
+	return (ctx->req->sp->our_addr);
 }
 
 const char*
@@ -589,17 +581,11 @@ VRT_r_server_hostname(const struct vrt_ctx *ctx)
 long
 VRT_r_server_port(const struct vrt_ctx *ctx)
 {
-	int i;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	if (ctx->req->sp->mysockaddr.ss_family == AF_UNSPEC) {
-		i = getsockname(ctx->req->sp->fd,
-		    (void*)&ctx->req->sp->mysockaddr,
-		    &ctx->req->sp->mysockaddrlen);
-		assert(VTCP_Check(i));
-	}
-	return (VSA_Port(&ctx->req->sp->mysockaddr));
+	SES_Get_Our_Addr(ctx->req->sp);
+	return (VSA_Port(ctx->req->sp->our_addr));
 }
 
 /*--------------------------------------------------------------------*/

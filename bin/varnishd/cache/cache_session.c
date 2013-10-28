@@ -47,10 +47,11 @@
 #include "cache.h"
 
 #include "waiter/waiter.h"
+#include "vsa.h"
 #include "vtcp.h"
 #include "vtim.h"
 
-static unsigned ses_size = sizeof (struct sess);
+static unsigned ses_size;
 
 /*--------------------------------------------------------------------*/
 
@@ -89,23 +90,6 @@ SES_Charge(struct worker *wrk, struct req *req)
 }
 
 /*--------------------------------------------------------------------
- * This prepares a session for use, based on its sessmem structure.
- */
-
-static void
-ses_setup(struct sess *sp)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	sp->sockaddrlen = sizeof(sp->sockaddr);
-	sp->mysockaddrlen = sizeof(sp->mysockaddr);
-	sp->sockaddr.ss_family = sp->mysockaddr.ss_family = PF_UNSPEC;
-	sp->t_open = NAN;
-	sp->t_idle = NAN;
-	Lck_New(&sp->mtx, lck_sess);
-}
-
-/*--------------------------------------------------------------------
  * Get a new session, preferably by recycling an already ready one
  */
 
@@ -118,7 +102,12 @@ ses_new(struct sesspool *pp)
 	sp = MPL_Get(pp->mpl_sess, NULL);
 	sp->magic = SESS_MAGIC;
 	sp->sesspool = pp;
-	ses_setup(sp);
+	sp->sockaddrlen = sizeof(sp->sockaddr);
+	sp->sockaddr.ss_family = PF_UNSPEC;
+	sp->t_open = NAN;
+	sp->t_idle = NAN;
+	sp->our_addr = NULL;
+	Lck_New(&sp->mtx, lck_sess);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	return (sp);
 }
@@ -167,6 +156,29 @@ ses_sess_pool_task(struct worker *wrk, void *arg)
 }
 
 /*--------------------------------------------------------------------
+ * Get the local socket address
+ */
+
+void
+SES_Get_Our_Addr(struct sess *sp)
+{
+	char *s;
+	struct sockaddr_storage ss;
+	socklen_t sl;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	if (sp->our_addr != NULL)
+		return;
+
+	sl = sizeof ss;
+	AZ(getsockname(sp->fd, (void*)&ss, &sl));
+	s = (char *)sp;
+	s += sizeof *sp;
+	sp->our_addr = VSA_Build(s, &ss, sl);
+	assert(VSA_Sane(sp->our_addr));
+}
+
+/*--------------------------------------------------------------------
  * VSL log the endpoints of the TCP connection.
  *
  * We use VSL() to get the sessions vxid and to make sure tha this
@@ -188,9 +200,8 @@ ses_vsl_socket(struct sess *sp, const char *lsockname)
 	VTCP_name(&sp->sockaddr, sp->sockaddrlen,
 	    sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
 	if (cache_param->log_local_addr) {
-		AZ(getsockname(sp->fd, (void*)&sp->mysockaddr,
-		    &sp->mysockaddrlen));
-		VTCP_name(&sp->mysockaddr, sp->mysockaddrlen,
+		SES_Get_Our_Addr(sp);
+		VTCP_name((const void*)sp->our_addr, vsa_suckaddr_len,
 		    laddr, sizeof laddr, lport, sizeof lport);
 	} else {
 		strcpy(laddr, "-");
@@ -447,6 +458,7 @@ SES_NewPool(struct pool *wp, unsigned pool_no)
 	pp->mpl_req = MPL_New(nb, &cache_param->req_pool,
 	    &cache_param->workspace_client);
 	bprintf(nb, "sess%u", pool_no);
+	ses_size = sizeof (struct sess) + vsa_suckaddr_len;
 	pp->mpl_sess = MPL_New(nb, &cache_param->sess_pool, &ses_size);
 	return (pp);
 }

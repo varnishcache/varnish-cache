@@ -768,9 +768,8 @@ struct sess {
 	/* Session related fields ------------------------------------*/
 
 	socklen_t		sockaddrlen;
-	socklen_t		mysockaddrlen;
-	struct sockaddr_storage	sockaddr;
-	struct sockaddr_storage	mysockaddr;
+	struct sockaddr_storage sockaddr;
+	struct suckaddr		*our_addr;
 
 	/* formatted ascii client address */
 	char			addr[ADDR_BUFSIZE];
@@ -1117,6 +1116,8 @@ struct req *SES_GetReq(struct worker *, struct sess *);
 void SES_Handle(struct sess *sp, double now);
 void SES_ReleaseReq(struct req *);
 pool_func_t SES_pool_accept_task;
+void SES_Get_Our_Addr(struct sess *sp);
+
 
 /* cache_shmlog.c */
 extern struct VSC_C_main *VSC_C_main;

@@ -296,7 +296,7 @@ VRT_r_now(const struct vrt_ctx *ctx)
 /*--------------------------------------------------------------------*/
 
 char *
-VRT_IP_string(const struct vrt_ctx *ctx, const VCL_IP ip)
+VRT_IP_string(const struct vrt_ctx *ctx, VCL_IP ip)
 {
 	char *p;
 	unsigned len;

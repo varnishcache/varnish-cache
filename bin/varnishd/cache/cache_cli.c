@@ -43,6 +43,7 @@
 
 #include "cache_backend.h"		// struct vbc
 #include "hash/hash_slinger.h"		// struct objhead
+#include "vsa.h"
 #include "vcli.h"
 #include "vcli_common.h"
 #include "vcli_priv.h"
@@ -139,6 +140,8 @@ cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
 	SZOF(struct VSC_C_main);
 	SZOF(struct lock);
 	SZOF(struct dstat);
+	VCLI_Out(cli, "sizeof(struct suckaddr) = %d = 0x%x\n",
+	    vsa_suckaddr_len, vsa_suckaddr_len);
 #if 0
 #define OFOF(foo, bar)	{ foo __foo; VCLI_Out(cli, \
     "%-30s = 0x%4zx @ 0x%4zx\n", \
