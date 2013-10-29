@@ -316,7 +316,7 @@ child_poker(const struct vev *e, int what)
  */
 
 static void __match_proto__()
-mgt_sigsegv_handler(int s, siginfo_t *si, void *c)
+child_sigsegv_handler(int s, siginfo_t *si, void *c)
 {
 	char buf[1024];
 
@@ -414,7 +414,7 @@ mgt_launch_child(struct cli *cli)
 
 		if (mgt_param.sigsegv_handler) {
 			memset(&sa, 0, sizeof sa);
-			sa.sa_sigaction = mgt_sigsegv_handler;
+			sa.sa_sigaction = child_sigsegv_handler;
 			sa.sa_flags = SA_SIGINFO;
 			(void)sigaction(SIGSEGV, &sa, NULL);
 		}
