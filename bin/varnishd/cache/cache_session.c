@@ -98,9 +98,10 @@ ses_new(struct sesspool *pp)
 {
 	struct sess *sp;
 	char *s;
+	unsigned sz;
 
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
-	sp = MPL_Get(pp->mpl_sess, NULL);
+	sp = MPL_Get(pp->mpl_sess, &sz);
 	sp->magic = SESS_MAGIC;
 	sp->sesspool = pp;
 
@@ -109,6 +110,8 @@ ses_new(struct sesspool *pp)
 	s += vsa_suckaddr_len;
 	memset(s, 0, vsa_suckaddr_len);
 	sp->their_addr = (void*)s;
+	s += vsa_suckaddr_len;
+	assert((char *)sp + sz == s);
 
 	sp->t_open = NAN;
 	sp->t_idle = NAN;

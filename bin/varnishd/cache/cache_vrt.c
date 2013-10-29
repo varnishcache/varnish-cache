@@ -302,7 +302,7 @@ VRT_IP_string(const struct vrt_ctx *ctx, VCL_IP ip)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	len = WS_Reserve(ctx->ws, 0);
-	p = ctx->ws->r;
+	p = ctx->ws->f;
 	VTCP_name(ip, p, len, NULL, 0);
 	WS_Release(ctx->ws, strlen(p) + 1);
 	return (p);
