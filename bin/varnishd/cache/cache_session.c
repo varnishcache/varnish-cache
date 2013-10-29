@@ -401,7 +401,7 @@ SES_GetReq(struct worker *wrk, struct sess *sp)
 	p = (void*)PRNDUP(p);
 	assert(p < e);
 
-	sz = cache_param->workspace_thread;
+	sz = cache_param->vsl_buffer;
 	VSL_Setup(req->vsl, p, sz);
 	req->vsl->wid = VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER;
 	VSLb(req->vsl, SLT_Begin, "req %u", sp->vxid & VSL_IDENTMASK);
