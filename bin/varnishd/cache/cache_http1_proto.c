@@ -251,9 +251,9 @@ htc_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
 		}
 
 		if (q - p > htc->maxhdr) {
-			VSLb(hp->vsl, SLT_BogoHeader, "%.*s",
+			VSLb(hp->vsl, SLT_BogoHeader, "Header too long: %.*s",
 			    (int)(q - p > 20 ? 20 : q - p), p);
-			return (413);
+			return (400);
 		}
 
 		/* Empty header = end of headers */
@@ -276,9 +276,9 @@ htc_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
 			http_VSLH(hp, hp->nhd);
 			hp->nhd++;
 		} else {
-			VSLb(hp->vsl, SLT_BogoHeader, "%.*s",
+			VSLb(hp->vsl, SLT_BogoHeader, "Too many headers: %.*s",
 			    (int)(q - p > 20 ? 20 : q - p), p);
-			return (413);
+			return (400);
 		}
 	}
 	return (0);
@@ -339,7 +339,7 @@ htc_splitline(struct http *hp, const struct http_conn *htc, int req)
 	hp->hd[h2].e = p;
 
 	if (!Tlen(hp->hd[h2]))
-		return (413);
+		return (400);
 
 	/* Skip SP */
 	for (; vct_issp(*p); p++) {

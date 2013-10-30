@@ -23,7 +23,7 @@ client c1 {
 	expect resp.status == 200
 	txreq -url "/1" -hdr "1...5....0....5....0....5....0....5....0."
 	rxresp
-	expect resp.status == 413
+	expect resp.status == 400
 } -run
 
 client c1 {
@@ -32,7 +32,7 @@ client c1 {
 	expect resp.status == 200
 	txreq -url "/2" -hdr "1...5....0....5\n ..0....5....0....5....0."
 	rxresp
-	expect resp.status == 413
+	expect resp.status == 400
 } -run
 
 client c1 {

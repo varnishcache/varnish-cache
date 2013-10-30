@@ -270,7 +270,9 @@ static enum req_fsm_nxt
 http1_dissect(struct worker *wrk, struct req *req)
 {
 	const char *r_100 = "HTTP/1.1 100 Continue\r\n\r\n";
+	const char *r_400 = "HTTP/1.1 400 Bad Request\r\n\r\n";
 	const char *r_411 = "HTTP/1.1 411 Length Required\r\n\r\n";
+	const char *r_417 = "HTTP/1.1 417 Expectation Failed\r\n\r\n";
 	char *p;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -299,8 +301,9 @@ http1_dissect(struct worker *wrk, struct req *req)
 	req->err_code = HTTP1_DissectRequest(req);
 
 	/* If we could not even parse the request, just close */
-	if (req->err_code == 400) {
+	if (req->err_code != 0) {
 		wrk->stats.client_req_400++;
+		(void)write(req->sp->fd, r_400, strlen(r_400));
 		SES_Close(req->sp, SC_RX_JUNK);
 		return (REQ_FSM_DONE);
 	}
@@ -317,25 +320,27 @@ http1_dissect(struct worker *wrk, struct req *req)
 		return (REQ_FSM_DONE);
 	}
 
-	req->acct_req.req++;
-
-	req->ws_req = WS_Snapshot(req->ws);
-	req->doclose = http_DoConnection(req->http);
-
-	/* XXX: Expect headers are a mess */
-	if (req->err_code == 0 && http_GetHdr(req->http, H_Expect, &p)) {
+	if (http_GetHdr(req->http, H_Expect, &p)) {
 		if (strcasecmp(p, "100-continue")) {
 			wrk->stats.client_req_417++;
 			req->err_code = 417;
-		} else if (strlen(r_100) !=
-		    write(req->sp->fd, r_100, strlen(r_100))) {
+			(void)write(req->sp->fd, r_417, strlen(r_417));
+			SES_Close(req->sp, SC_RX_JUNK);
+			return (REQ_FSM_DONE);
+		}
+		if (strlen(r_100) != write(req->sp->fd, r_100, strlen(r_100))) {
+			// XXX: stats counter ?
 			SES_Close(req->sp, SC_REM_CLOSE);
 			return (REQ_FSM_DONE);
 		}
-	} else if (req->err_code == 413)
-		wrk->stats.client_req_413++;
-	else
-		wrk->stats.client_req++;
+	}
+
+	wrk->stats.client_req++;
+
+	AZ(req->err_code);
+	req->acct_req.req++;
+	req->ws_req = WS_Snapshot(req->ws);
+	req->doclose = http_DoConnection(req->http);
 
 	http_Unset(req->http, H_Expect);
 
