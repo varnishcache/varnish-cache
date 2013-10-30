@@ -1050,7 +1050,6 @@ cmd_http_expect_close(CMD_ARGS)
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AZ(av[1]);
-	assert(hp->sfd != NULL);
 
 	vtc_log(vl, 4, "Expecting close (fd = %d)", hp->fd);
 	while (1) {
