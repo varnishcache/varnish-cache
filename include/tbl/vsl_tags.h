@@ -128,8 +128,6 @@ SLTM(BackendOpen, 0, "Backend connection opened",
 	"\n"
 )
 
-SLTM(BackendXID, SLT_F_UNUSED, "The unique ID of the backend transaction", "")
-
 SLTM(BackendReuse, 0, "Backend connection put up for reuse",
 	"Logged when a backend connection is put up for reuse by a later"
 	" connection.\n\n"
@@ -392,8 +390,6 @@ SLTM(Backend_health, 0, "Backend health check",
 	"\t+------------------------- Backend name\n"
 	"\n"
 )
-
-SLTM(VCL_Debug, SLT_F_UNUSED, "", "")
 
 SLTM(VCL_Log, 0, "Log statement from VCL",
 	"User generated log messages insert from VCL through std.log()"
