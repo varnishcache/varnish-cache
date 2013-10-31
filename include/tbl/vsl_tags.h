@@ -37,25 +37,28 @@
  *
  * Arguments:
  *	Tag-Name
+ *	Flags
  *	Short Description (1 line, max ? chars)
  *	Long Description (in RST "definition list" format)
  */
 
 #define NODEF_NOTICE "Note: This log record is masked by default\n\n"
 
-SLTM(Debug, "Debug messages",
+SLTM(Debug, SLT_F_BINARY, "Debug messages",
 	"Debug messages can normally be ignored, but are sometimes"
 	" helpful during trouble-shooting.  Most debug messages must"
 	" be explicitly enabled with parameters.\n\n"
 )
-SLTM(Error, "Error messages",
+
+SLTM(Error, 0, "Error messages",
 	"Error messages are stuff you probably want to know.\n\n"
 )
-SLTM(CLI, "CLI communication",
+
+SLTM(CLI, 0, "CLI communication",
 	"CLI communication between master and child process.\n\n"
 )
 
-SLTM(ReqEnd, "Client request end",
+SLTM(ReqEnd, 0, "Client request end",
 	"Marks the end of client request.\n\n"
 	"The format is::\n\n"
 	"\t%f %f %f %f %f\n"
@@ -70,7 +73,7 @@ SLTM(ReqEnd, "Client request end",
 
 /*---------------------------------------------------------------------*/
 
-SLTM(SessOpen, "Client connection opened",
+SLTM(SessOpen, 0, "Client connection opened",
 	"The first record for a client connection, with the socket-endpoints"
 	" of the connection.\n\n"
 	"The format is::\n\n"
@@ -95,7 +98,7 @@ SLTM(SessOpen, "Client connection opened",
 #undef SESS_CLOSE
 */
 
-SLTM(SessClose, "Client connection closed",
+SLTM(SessClose, 0, "Client connection closed",
 	"SessionClose is the last record for any client connection.\n\n"
 	"The format is::\n\n"
 	"\t%s %f %u %u %u %u %u %u\n"
@@ -113,7 +116,7 @@ SLTM(SessClose, "Client connection closed",
 
 /*---------------------------------------------------------------------*/
 
-SLTM(BackendOpen, "Backend connection opened",
+SLTM(BackendOpen, 0, "Backend connection opened",
 	"Logged when a new backend connection is opened.\n\n"
 	"The format is::\n\n"
 	"\t%d %s %s %s\n"
@@ -125,9 +128,9 @@ SLTM(BackendOpen, "Backend connection opened",
 	"\n"
 )
 
-SLTM(BackendXID, "The unique ID of the backend transaction (unused)", "")
+SLTM(BackendXID, SLT_F_UNUSED, "The unique ID of the backend transaction", "")
 
-SLTM(BackendReuse, "Backend connection put up for reuse",
+SLTM(BackendReuse, 0, "Backend connection put up for reuse",
 	"Logged when a backend connection is put up for reuse by a later"
 	" connection.\n\n"
 	"The format is::\n\n"
@@ -138,7 +141,7 @@ SLTM(BackendReuse, "Backend connection put up for reuse",
 	"\n"
 )
 
-SLTM(BackendClose, "Backend connection closed",
+SLTM(BackendClose, 0, "Backend connection closed",
 	"Logged when a backend connection is closed.\n\n"
 	"The format is::\n\n"
 	"\t%d %s [ %s ]\n"
@@ -149,11 +152,11 @@ SLTM(BackendClose, "Backend connection closed",
 	"\n"
 )
 
-SLTM(HttpGarbage, "Unparseable HTTP request",
+SLTM(HttpGarbage, SLT_F_BINARY, "Unparseable HTTP request",
 	"Logs the content of unparseable HTTP requests.\n\n"
 )
 
-SLTM(Backend, "Backend selected",
+SLTM(Backend, 0, "Backend selected",
 	"Logged when a connection is selected for handling a backend"
 	" request.\n\n"
 	"The format is::\n\n"
@@ -165,11 +168,11 @@ SLTM(Backend, "Backend selected",
 	"\n"
 )
 
-SLTM(Length, "Size of object body",
+SLTM(Length, 0, "Size of object body",
 	"Logs the size of a fetch object body.\n\n"
 )
 
-SLTM(BereqEnd, "Backend request end",
+SLTM(BereqEnd, 0, "Backend request end",
 	"Marks the end of a backend request.\n\n"
 	"The format is::\n\n"
 	"\t%f %f %f %f %f %f\n"
@@ -183,46 +186,48 @@ SLTM(BereqEnd, "Backend request end",
 	"\n"
 )
 
-SLTM(FetchError, "Error while fetching object",
+SLTM(FetchError, 0, "Error while fetching object",
 	"Logs the error message of a failed fetch operation.\n\n"
 )
 
 #define SLTH(tag, ind, req, resp, sdesc, ldesc) \
-	SLTM(Req##tag, (req ? "Client request " sdesc : "(unused)"), ldesc)
+	SLTM(Req##tag, req ? 0 : SLT_F_UNUSED, "Client request " sdesc, ldesc)
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 
 #define SLTH(tag, ind, req, resp, sdesc, ldesc) \
-	SLTM(Resp##tag, (resp ? "Client response " sdesc : "(unused)"), ldesc)
-#include "tbl/vsl_tags_http.h"
-#undef SLTH
-
-#define SLTH(tag, ind, req, resp, sdesc, ldesc) \
-	SLTM(Bereq##tag, (req ? "Backend request " sdesc : "(unused)"), ldesc)
-#include "tbl/vsl_tags_http.h"
-#undef SLTH
-
-#define SLTH(tag, ind, req, resp, sdesc, ldesc) \
-	SLTM(Beresp##tag, (resp ? "Backend response " sdesc : "(unused)"), \
+	SLTM(Resp##tag, resp ? 0 : SLT_F_UNUSED, "Client response " sdesc, \
 	    ldesc)
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 
 #define SLTH(tag, ind, req, resp, sdesc, ldesc) \
-	SLTM(Obj##tag, (resp ? "Object  " sdesc : "(unused)"), ldesc)
+	SLTM(Bereq##tag, req ? 0 : SLT_F_UNUSED, "Backend request " sdesc, \
+	    ldesc)
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 
-SLTM(BogoHeader, "Bogus HTTP received",
+#define SLTH(tag, ind, req, resp, sdesc, ldesc) \
+	SLTM(Beresp##tag, resp ? 0 : SLT_F_UNUSED, "Backend response " sdesc, \
+	    ldesc)
+#include "tbl/vsl_tags_http.h"
+#undef SLTH
+
+#define SLTH(tag, ind, req, resp, sdesc, ldesc) \
+	SLTM(Obj##tag, resp ? 0 : SLT_F_UNUSED, "Object  " sdesc, ldesc)
+#include "tbl/vsl_tags_http.h"
+#undef SLTH
+
+SLTM(BogoHeader, 0, "Bogus HTTP received",
 	"Contains the first 20 characters of received HTTP headers we could"
 	" not make sense of.  Applies to both req.http and beres.http.\n\n"
 )
-SLTM(LostHeader, "Failed attempt to set HTTP header",
+SLTM(LostHeader, 0, "Failed attempt to set HTTP header",
 	"Logs the header name of a failed HTTP header operation due to"
 	" resource exhaustion.\n\n"
 )
 
-SLTM(TTL, "TTL set on object",
+SLTM(TTL, 0, "TTL set on object",
 	"A TTL record is emitted whenever the ttl, grace or keep"
 	" values for an object is set.\n\n"
 	"The format is::\n\n"
@@ -249,7 +254,8 @@ SLTM(TTL, "TTL set on object",
 	"\t1001 VCL 12 120 3600 1312966113 8\n"
 	"\n"
 )
-SLTM(Fetch_Body, "Body fetched from backend",
+
+SLTM(Fetch_Body, 0, "Body fetched from backend",
 	"Finished fetching body from backend.\n\n"
 	"The format is::\n\n"
 	"\t%d(%s) cls %d\n"
@@ -259,13 +265,16 @@ SLTM(Fetch_Body, "Body fetched from backend",
 	"\t+------------ Body status\n"
 	"\n"
 )
-SLTM(VCL_acl, "VSL ACL check results",
+
+SLTM(VCL_acl, 0, "VSL ACL check results",
 	"Logs VCL ACL evaluation results.\n\n"
 )
-SLTM(VCL_call, "VCL method called",
+
+SLTM(VCL_call, 0, "VCL method called",
 	"Logs the VCL method name when a VCL method is called.\n\n"
 )
-SLTM(VCL_trace, "VCL trace data",
+
+SLTM(VCL_trace, 0, "VCL trace data",
 	"Logs VCL execution trace data.\n\n"
 	"The format is::\n\n"
 	"\t%u %u.%u\n"
@@ -276,10 +285,12 @@ SLTM(VCL_trace, "VCL trace data",
 	"\n"
 	NODEF_NOTICE
 )
-SLTM(VCL_return, "VCL method return value",
+
+SLTM(VCL_return, 0, "VCL method return value",
 	"Logs the VCL method terminating statement.\n\n"
 )
-SLTM(ReqStart, "Client request start",
+
+SLTM(ReqStart, 0, "Client request start",
 	"Start of request processing. Logs the client IP address and port"
 	" number.\n\n"
 	"The format is::\n\n"
@@ -290,20 +301,20 @@ SLTM(ReqStart, "Client request start",
 	"\n"
 )
 
-SLTM(Hit, "Hit object in cache",
+SLTM(Hit, 0, "Hit object in cache",
 	"Object looked up in cache. Shows the VXID of the object.\n\n"
 )
 
-SLTM(HitPass, "Hit for pass object in cache.\n\n",
+SLTM(HitPass, 0, "Hit for pass object in cache.\n\n",
 	"Hit-for-pass object looked up in cache. Shows the VXID of the"
 	" hit-for-pass object.\n\n"
 )
 
-SLTM(ExpBan, "Object evicted due to ban",
+SLTM(ExpBan, 0, "Object evicted due to ban",
 	"Logs the VXID when an object is banned.\n\n"
 )
 
-SLTM(ExpKill, "Object expiry event",
+SLTM(ExpKill, 0, "Object expiry event",
 	"Logs events related to object expiry. The events are:\n\n"
 	"EXP_Rearm\n"
 	"\tLogged when the expiry time of an object changes.\n\n"
@@ -344,28 +355,28 @@ SLTM(ExpKill, "Object expiry event",
 	"\n"
 )
 
-SLTM(WorkThread, "Logs thread start/stop events",
+SLTM(WorkThread, 0, "Logs thread start/stop events",
 	"Logs worker thread creation and termination events.\n\n"
 	"The format is::\n\n"
 	"\t%p %s\n"
 	"\t|  |\n"
 	"\t|  +- [start|end]\n"
-	"\t+---- Worker struct pointer"
+	"\t+---- Worker struct pointer\n"
 	"\n"
 	NODEF_NOTICE
 )
 
-SLTM(ESI_xmlerror, "ESI parser error or warning message",
+SLTM(ESI_xmlerror, 0, "ESI parser error or warning message",
 	"An error or warning was generated during parsing of an ESI object."
 	" The log record describes the problem encountered."
 )
 
-SLTM(Hash, "Value added to hash",
+SLTM(Hash, 0, "Value added to hash",
 	"This value was added to the object lookup hash.\n\n"
 	NODEF_NOTICE
 )
 
-SLTM(Backend_health, "Backend health check",
+SLTM(Backend_health, 0, "Backend health check",
 	"The result of a backend health probe.\n\n"
 	"The format is::\n\n"
 	"\t%s %s %s %u %u %u %f %f %s\n"
@@ -382,15 +393,17 @@ SLTM(Backend_health, "Backend health check",
 	"\n"
 )
 
-SLTM(VCL_Debug, "(unused)", "")
-SLTM(VCL_Log, "Log statement from VCL",
+SLTM(VCL_Debug, SLT_F_UNUSED, "", "")
+
+SLTM(VCL_Log, 0, "Log statement from VCL",
 	"User generated log messages insert from VCL through std.log()"
 )
-SLTM(VCL_Error, "VCL execution error message",
+
+SLTM(VCL_Error, 0, "VCL execution error message",
 	"Logs error messages generated during VCL execution.\n\n"
 )
 
-SLTM(Gzip, "G(un)zip performed on object",
+SLTM(Gzip, 0, "G(un)zip performed on object",
 	"A Gzip record is emitted for each instance of gzip or gunzip"
 	" work performed. Worst case, an ESI transaction stored in"
 	" gzip'ed objects but delivered gunziped, will run into many of"
@@ -413,7 +426,7 @@ SLTM(Gzip, "G(un)zip performed on object",
 	"\n"
 )
 
-SLTM(Link, "Links to a child VXID",
+SLTM(Link, 0, "Links to a child VXID",
 	"Links this VXID to any child VXID it initiates.\n\n"
 	"The format is::\n\n"
 	"\t%s %d\n"
@@ -423,7 +436,7 @@ SLTM(Link, "Links to a child VXID",
 	"\n"
 )
 
-SLTM(Begin, "Marks the start of a VXID",
+SLTM(Begin, 0, "Marks the start of a VXID",
 	"The first record of a VXID transaction.\n\n"
 	"The format is::\n\n"
 	"\t%s %d\n"
@@ -433,11 +446,11 @@ SLTM(Begin, "Marks the start of a VXID",
 	"\n"
 )
 
-SLTM(End, "Marks the end of a VXID",
+SLTM(End, 0, "Marks the end of a VXID",
 	"The last record of a VXID transaction.\n\n"
 )
 
-SLTM(VSL, "VSL API warnings and error message",
+SLTM(VSL, 0, "VSL API warnings and error message",
 	"Warnings and error messages genererated by the VSL API while"
 	" reading the shared memory log.\n\n"
 )

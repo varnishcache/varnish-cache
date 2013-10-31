@@ -115,7 +115,7 @@ bit_tweak(struct cli *cli, uint8_t *p, unsigned l, const char *arg,
  */
 
 static const char * const VSL_tags[256] = {
-#  define SLTM(foo,sdesc,ldesc) [SLT_##foo] = #foo,
+#  define SLTM(foo,flags,sdesc,ldesc) [SLT_##foo] = #foo,
 #  include "tbl/vsl_tags.h"
 #  undef SLTM
 	NULL

@@ -64,6 +64,6 @@ SLTH(Header,	HTTP_HDR_FIRST,		1, 1, "header",
 	"\t+----- Header name\n"
 	"\n"
 )
-SLTH(Lost,	HTTP_HDR_LOST,		1, 1, "(unused)",
+SLTH(Lost,	HTTP_HDR_LOST,		0, 0, "lost header",
 	""
 )

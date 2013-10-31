@@ -107,11 +107,15 @@ struct VSL_head {
 #define SLT__MAX 256
 enum VSL_tag_e {
 	SLT__Bogus = 0,
-#define SLTM(foo,sdesc,ldesc)	SLT_##foo,
+#define SLTM(foo,flags,sdesc,ldesc)	SLT_##foo,
 #include "tbl/vsl_tags.h"
 #undef SLTM
 	SLT__Reserved = 254,
 	SLT__Batch = 255
 };
+
+/* VSL tag flags */
+#define SLT_F_UNUSED		(1 << 0)
+#define SLT_F_BINARY		(1 << 1)
 
 #endif /* VAPI_VSL_FMT_H_INCLUDED */

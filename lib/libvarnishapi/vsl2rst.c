@@ -39,14 +39,15 @@
 
 struct SLT {
 	unsigned	tag;
+	unsigned	flags;
 	const char	*name;
 	const char	*sdesc;
 	const char	*ldesc;
 };
 
 static struct SLT tags[SLT__MAX] = {
-#define SLTM(name, sdesc, ldesc) \
-	[SLT_##name] = { SLT_##name, #name, sdesc, ldesc },
+#define SLTM(name, flags, sdesc, ldesc)				\
+	[SLT_##name] = { SLT_##name, flags, #name, sdesc, ldesc },
 #include "tbl/vsl_tags.h"
 #undef SLTM
 };
@@ -98,10 +99,7 @@ main(int argc, char *argv[])
 	for (i = 0; i < SLT__MAX; i++) {
 		if (ptags[i]->name == NULL || !strcmp(ptags[i]->name, ""))
 			continue;
-		if (ptags[i]->sdesc != NULL &&
-		    strstr(ptags[i]->sdesc, "(unused)"))
-			/* Don't list tags where the short description
-			   contains the string "(unused)" */
+		if (ptags[i]->flags & SLT_F_UNUSED)
 			continue;
 		printf("%s", ptags[i]->name);
 		if (ptags[i]->sdesc != NULL && strcmp(ptags[i]->sdesc, ""))
