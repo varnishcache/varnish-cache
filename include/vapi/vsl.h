@@ -111,6 +111,11 @@ extern const char *VSL_tags[SLT__MAX];
 	 * Tag to string array.  Contains NULL for invalid tags.
 	 */
 
+extern unsigned VSL_tagflags[SLT__MAX];
+	/*
+	 * Tag flags array.
+	 */
+
 int VSL_Name2Tag(const char *name, int l);
 	/*
 	 * Convert string to tag number (= enum VSL_tag_e). Name can be a
