@@ -389,12 +389,16 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	AZ (oc->flags & OC_F_BUSY);
 	AZ(req->objcore);
 
+	o = oc_getobj(&wrk->stats, oc);
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	req->obj = o;
+
 	if (oc->flags & OC_F_PASS) {
 		/* Found a hit-for-pass */
 		VSLb(req->vsl, SLT_Debug, "XXXX HIT-FOR-PASS");
 		VSLb(req->vsl, SLT_HitPass, "%u", req->obj->vxid);
 		AZ(boc);
-		(void)HSH_DerefObjCore(&wrk->stats, &oc);
+		(void)HSH_DerefObj(&wrk->stats, &req->obj);
 		req->objcore = NULL;
 		wrk->stats.cache_hitpass++;
 		req->req_step = R_STP_PASS;
@@ -403,10 +407,6 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	oh = oc->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-
-	o = oc_getobj(&wrk->stats, oc);
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	req->obj = o;
 
 	VSLb(req->vsl, SLT_Hit, "%u", req->obj->vxid);
 
