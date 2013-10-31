@@ -1,0 +1,43 @@
+varnishtest "test certain mailformed reqests"
+
+server s1 {
+	rxreq
+	# expect req.url == /3
+	txresp
+} -start
+
+varnish v1 -vcl+backend { } -start
+
+client c1 {
+	send "GET /1 HTTP/1.1\r\n"
+	send " Host: foo\r\n"
+	send "\r\n"
+	rxresp
+	expect resp.status == 400
+} -run
+delay .1
+
+client c1 {
+	send "GET /2 HTTP/1.1\r\n"
+	send " Host: foo\r\n"
+	send "\r\n"
+	rxresp
+	expect resp.status == 400
+} -run
+delay .1
+
+client c1 {
+	send "GET /3 HTTP/1.1\r\n"
+	send "\rHost: foo\r\n"
+	send "\r\n"
+	rxresp
+	expect resp.status == 400
+} -run
+delay .1
+
+client c1 {
+	send "GET /4 HTTP/1.1\r\n"
+	send "\r\n"
+	rxresp
+	expect resp.status == 200
+} -run

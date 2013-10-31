@@ -53,7 +53,6 @@ vct_is(int x, uint16_t y)
 
 #define vct_issp(x) vct_is(x, VCT_SP)
 #define vct_ishex(x) vct_is(x, VCT_HEX)
-#define vct_iscrlf(x) vct_is(x, VCT_CRLF)
 #define vct_islws(x) vct_is(x, VCT_LWS)
 #define vct_isctl(x) vct_is(x, VCT_CTL)
 #define vct_isdigit(x) vct_is(x, VCT_DIGIT)
@@ -63,5 +62,7 @@ vct_is(int x, uint16_t y)
 #define vct_isxmlnamestart(x) vct_is(x, VCT_XMLNAMESTART)
 #define vct_isxmlname(x) vct_is(x, VCT_XMLNAMESTART | VCT_XMLNAME)
 
+#define vct_iscrlf(p) (((p)[0] == '\r' && (p)[1] == '\n') || (p)[0] == '\n')
+
 /* NB: VCT always operate in ASCII, don't replace 0x0d with \r etc. */
-#define vct_skipcrlf(p) (p[0] == 0x0d && p[1] == 0x0a ? 2 : 1)
+#define vct_skipcrlf(p) ((p)[0] == 0x0d && (p)[1] == 0x0a ? 2 : 1)

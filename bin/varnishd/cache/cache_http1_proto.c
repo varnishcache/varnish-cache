@@ -37,6 +37,9 @@
  * and stops when we see the magic marker (double [CR]NL), and if we overshoot,
  * it keeps track of the "pipelined" data.
  *
+ * Until we see the magic marker, we have to keep the rxbuf NUL terminated
+ * because we use strchr(3) on it.
+ *
  * We use this both for client and backend connections.
  */
 
@@ -97,17 +100,17 @@ HTTP1_Reinit(struct http_conn *htc)
 
 /*--------------------------------------------------------------------
  * Check if we have a complete HTTP request or response yet
- *
  */
 
 enum htc_status_e
 HTTP1_Complete(struct http_conn *htc)
 {
-	int i;
-	const char *p;
+	char *p;
 	txt *t;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	AZ(htc->pipeline.b);
+	AZ(htc->pipeline.e);
 
 	t = &htc->rxbuf;
 	Tcheck(*t);
@@ -133,14 +136,11 @@ HTTP1_Complete(struct http_conn *htc)
 			break;
 	}
 	p++;
-	i = p - t->b;
-	WS_ReleaseP(htc->ws, htc->rxbuf.e);
-	AZ(htc->pipeline.b);
-	AZ(htc->pipeline.e);
-	if (htc->rxbuf.b + i < htc->rxbuf.e) {
-		htc->pipeline.b = htc->rxbuf.b + i;
-		htc->pipeline.e = htc->rxbuf.e;
-		htc->rxbuf.e = htc->pipeline.b;
+	WS_ReleaseP(htc->ws, t->e);
+	if (p < t->e) {
+		htc->pipeline.b = p;
+		htc->pipeline.e = t->e;
+		t->e = p;
 	}
 	return (HTTP1_COMPLETE);
 }
@@ -156,6 +156,8 @@ HTTP1_Rx(struct http_conn *htc)
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	AN(htc->ws->r);
+	AZ(htc->pipeline.b);
+	AZ(htc->pipeline.e);
 	i = (htc->ws->r - htc->rxbuf.e) - 1;	/* space for NUL */
 	if (i <= 0) {
 		WS_ReleaseP(htc->ws, htc->rxbuf.b);
@@ -221,9 +223,6 @@ htc_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
 	char *q, *r;
 	txt t = htc->rxbuf;
 
-	if (*p == '\r')
-		p++;
-
 	hp->nhd = HTTP_HDR_FIRST;
 	hp->conds = 0;
 	r = NULL;		/* For FlexeLint */
@@ -232,7 +231,7 @@ htc_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
 		/* Find end of next header */
 		q = r = p;
 		while (r < t.e) {
-			if (!vct_iscrlf(*r)) {
+			if (!vct_iscrlf(r)) {
 				r++;
 				continue;
 			}
@@ -259,6 +258,13 @@ htc_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
 		/* Empty header = end of headers */
 		if (p == q)
 			break;
+
+		if (vct_islws(*p)) {
+			VSLb(hp->vsl, SLT_BogoHeader,
+			    "1st header has white space: %.*s",
+			    (int)(q - p > 20 ? 20 : q - p), p);
+			return (400);
+		}
 
 		if ((p[0] == 'i' || p[0] == 'I') &&
 		    (p[1] == 'f' || p[1] == 'F') &&
@@ -291,8 +297,12 @@ htc_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
 static uint16_t
 htc_splitline(struct http *hp, const struct http_conn *htc, int req)
 {
-	char *p, *q;
+	char *p;
 	int h1, h2, h3;
+
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+	Tcheck(htc->rxbuf);
 
 	if (req) {
 		h1 = HTTP_HDR_METHOD;
@@ -304,38 +314,31 @@ htc_splitline(struct http *hp, const struct http_conn *htc, int req)
 		h3 = HTTP_HDR_RESPONSE;
 	}
 
-	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-
-	/* XXX: Assert a NUL at rx.e ? */
-	Tcheck(htc->rxbuf);
-
 	/* Skip leading LWS */
 	for (p = htc->rxbuf.b ; vct_islws(*p); p++)
 		continue;
+	hp->hd[h1].b = p;
 
-	/* First field cannot contain SP, CRLF or CTL */
-	q = p;
+	/* First field cannot contain SP or CTL */
 	for (; !vct_issp(*p); p++) {
 		if (vct_isctl(*p))
 			return (400);
 	}
-	hp->hd[h1].b = q;
 	hp->hd[h1].e = p;
+	assert(Tlen(hp->hd[h1]));
 
 	/* Skip SP */
 	for (; vct_issp(*p); p++) {
 		if (vct_isctl(*p))
 			return (400);
 	}
+	hp->hd[h2].b = p;
 
 	/* Second field cannot contain LWS or CTL */
-	q = p;
 	for (; !vct_islws(*p); p++) {
 		if (vct_isctl(*p))
 			return (400);
 	}
-	hp->hd[h2].b = q;
 	hp->hd[h2].e = p;
 
 	if (!Tlen(hp->hd[h2]))
@@ -346,15 +349,15 @@ htc_splitline(struct http *hp, const struct http_conn *htc, int req)
 		if (vct_isctl(*p))
 			return (400);
 	}
+	hp->hd[h3].b = p;
 
-	/* Third field is optional and cannot contain CTL */
-	q = p;
-	if (!vct_iscrlf(*p)) {
-		for (; !vct_iscrlf(*p); p++)
-			if (!vct_issep(*p) && vct_isctl(*p))
-				return (400);
+	/* Third field is optional and cannot contain CTL except TAB */
+	for (; !vct_iscrlf(p); p++) {
+		if (vct_isctl(*p) && !vct_issp(*p)) {
+			hp->hd[h3].b = NULL;
+			return (400);
+		}
 	}
-	hp->hd[h3].b = q;
 	hp->hd[h3].e = p;
 
 	/* Skip CRLF */

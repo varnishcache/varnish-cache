@@ -294,17 +294,17 @@ http_splitheader(struct http *hp, int req)
 	hh[n++] = p;
 	while (!vct_islws(*p))
 		p++;
-	assert(!vct_iscrlf(*p));
+	assert(!vct_iscrlf(p));
 	*p++ = '\0';
 
 	/* URL/STATUS */
 	while (vct_issp(*p))		/* XXX: H space only */
 		p++;
-	assert(!vct_iscrlf(*p));
+	assert(!vct_iscrlf(p));
 	hh[n++] = p;
 	while (!vct_islws(*p))
 		p++;
-	if (vct_iscrlf(*p)) {
+	if (vct_iscrlf(p)) {
 		hh[n++] = NULL;
 		q = p;
 		p += vct_skipcrlf(p);
@@ -315,7 +315,7 @@ http_splitheader(struct http *hp, int req)
 		while (vct_issp(*p))		/* XXX: H space only */
 			p++;
 		hh[n++] = p;
-		while (!vct_iscrlf(*p))
+		while (!vct_iscrlf(p))
 			p++;
 		q = p;
 		p += vct_skipcrlf(p);
@@ -325,10 +325,10 @@ http_splitheader(struct http *hp, int req)
 
 	while (*p != '\0') {
 		assert(n < MAX_HDR);
-		if (vct_iscrlf(*p))
+		if (vct_iscrlf(p))
 			break;
 		hh[n++] = p++;
-		while (*p != '\0' && !vct_iscrlf(*p))
+		while (*p != '\0' && !vct_iscrlf(p))
 			p++;
 		q = p;
 		p += vct_skipcrlf(p);
@@ -419,11 +419,11 @@ http_rxchunk(struct http *hp)
 	}
 	l = hp->prxbuf;
 	(void)http_rxchar(hp, 2, 0);
-	if(!vct_iscrlf(hp->rxbuf[l]))
+	if(!vct_iscrlf(hp->rxbuf + l))
 		vtc_log(hp->vl, hp->fatal,
 		    "Wrong chunk tail[0] = %02x",
 		    hp->rxbuf[l] & 0xff);
-	if(!vct_iscrlf(hp->rxbuf[l + 1]))
+	if(!vct_iscrlf(hp->rxbuf + l + 1))
 		vtc_log(hp->vl, hp->fatal,
 		    "Wrong chunk tail[1] = %02x",
 		    hp->rxbuf[l + 1] & 0xff);
