@@ -8,18 +8,22 @@ dist_man_MANS = varnishncsa.1
 
 varnishncsa_SOURCES = \
 	varnishncsa.c \
-	base64.c \
+	varnishncsa_options.h \
+	varnishncsa_options.c \
 	base64.h \
-	$(top_builddir)/lib/libvarnish/vas.c \
-	$(top_builddir)/lib/libvarnish/flopen.c \
-	$(top_builddir)/lib/libvarnish/version.c \
-	$(top_builddir)/lib/libvarnish/vsb.c \
-	$(top_builddir)/lib/libvarnish/vpf.c
+	base64.c \
+	$(top_srcdir)/lib/libvarnishtools/vut.c \
+	$(top_srcdir)/lib/libvarnish/vas.c \
+	$(top_srcdir)/lib/libvarnish/flopen.c \
+	$(top_srcdir)/lib/libvarnish/version.c \
+	$(top_srcdir)/lib/libvarnish/vpf.c \
+	$(top_srcdir)/lib/libvarnish/vtim.c \
+	$(top_srcdir)/lib/libvarnish/vsb.c
 
 varnishncsa_LDADD = \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
-	${RT_LIBS} ${LIBM} ${PTHREAD_LIBS}
+	${RT_LIBS} ${LIBM}
 
 varnishncsa.1: $(top_srcdir)/doc/sphinx/reference/varnishncsa.rst
 if HAVE_RST2MAN

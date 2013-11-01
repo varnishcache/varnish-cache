@@ -543,6 +543,7 @@ AC_CONFIG_FILES([
     bin/varnishlog/Makefile
     bin/varnishstat/Makefile
     bin/varnishtest/Makefile
+    bin/varnishncsa/Makefile
     doc/Makefile
     doc/sphinx/Makefile
     doc/sphinx/conf.py

@@ -6,6 +6,7 @@
  * Author: Anders Berg <andersb@vgnett.no>
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
  * Author: Tollef Fog Heen <tfheen@varnish-software.com>
+ * Author: Martin Blix Grydeland <mbgrydeland@varnish-software.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -54,73 +55,586 @@
  *	%q		Query string
  *	%H		Protocol version
  *
- * TODO:		- Maybe rotate/compress log
  */
 
 #include "config.h"
 
-#include <ctype.h>
-#include <errno.h>
-#include <signal.h>
-#include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <strings.h>
-#include <time.h>
+#include <stdio.h>
 #include <unistd.h>
+#include <string.h>
+#include <errno.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <ctype.h>
+#include <time.h>
 
 #include "base64.h"
-#include "vapi/vsl.h"
 #include "vapi/vsm.h"
+#include "vapi/vsl.h"
+#include "vapi/voptget.h"
 #include "vas.h"
 #include "vcs.h"
-#include "vpf.h"
-#include "vqueue.h"
 #include "vsb.h"
+#include "vut.h"
+#include "vqueue.h"
+#include "miniobj.h"
 
-#include "compat/daemon.h"
+#define TIME_FMT "[%d/%b/%Y:%T %z]"
+#define FORMAT "%h %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-agent}i\""
+static const char progname[] = "varnishncsa2";
 
-static volatile sig_atomic_t reopen;
+struct format;
+struct fragment;
 
-struct hdr {
-	char *key;
-	char *value;
-	VTAILQ_ENTRY(hdr) list;
+enum e_frag {
+	F_H,			/* %H Proto */
+	F_U,			/* %U URL path */
+	F_q,			/* %q Query string */
+	F_b,			/* %b Bytes */
+	F_h,			/* %h Host name / IP Address */
+	F_m,			/* %m Method */
+	F_s,			/* %s Status */
+	F_tstart,		/* Time start */
+	F_tend,			/* Time end */
+	F_ttfb,			/* %{Varnish:time_firstbyte}x */
+	F_host,			/* Host header */
+	F_auth,			/* Authorization header */
+	F__MAX,
 };
 
-static struct logline {
-	char *df_H;			/* %H, Protocol version */
-	char *df_U;			/* %U, URL path */
-	char *df_q;			/* %q, query string */
-	char *df_b;			/* %b, Bytes */
-	char *df_h;			/* %h (host name / IP adress)*/
-	char *df_m;			/* %m, Request method*/
-	char *df_s;			/* %s, Status */
-	struct tm df_t;			/* %t, Date and time, received */
-	char *df_u;			/* %u, Remote user */
-	char *df_ttfb;			/* Time to first byte */
-	double df_D;			/* %D, time taken to serve the request,
-					   in microseconds, also used for %T */
-	const char *df_hitmiss;		/* Whether this is a hit or miss */
-	const char *df_handling;	/* How the request was handled
-					   (hit/miss/pass/pipe) */
-	int active;			/* Is log line in an active trans */
-	int complete;			/* Is log line complete */
-	uint64_t bitmap;		/* Bitmap for regex matches */
-	VTAILQ_HEAD(, hdr) req_headers; /* Request headers */
-	VTAILQ_HEAD(, hdr) resp_headers; /* Response headers */
-	VTAILQ_HEAD(, hdr) vcl_log;     /* VLC_Log entries */
-} **ll;
+struct fragment {
+	unsigned		gen;
+	const char		*b, *e;
+};
 
-static struct VSM_data *vd;
+typedef int format_f(const struct format *format);
 
-static size_t nll;
+struct format {
+	unsigned		magic;
+#define FORMAT_MAGIC		0xC3119CDA
 
-static int m_flag = 0;
+	VTAILQ_ENTRY(format)	list;
+	format_f		*func;
+	struct fragment		*frag;
+	char			*string;
+	const char *const	*strptr;
+	char			time_type;
+	char			*time_fmt;
+};
 
-static const char *c_format;
-static const char *b_format;
+struct watch {
+	unsigned		magic;
+#define WATCH_MAGIC		0xA7D4005C
+
+	VTAILQ_ENTRY(watch)	list;
+	char			*key;
+	unsigned		keylen;
+	struct fragment		frag;
+};
+VTAILQ_HEAD(watch_head, watch);
+
+struct ctx {
+	/* Options */
+	int			a_opt;
+	char			*w_arg;
+
+	FILE			*fo;
+	struct vsb		*vsb;
+	unsigned		gen;
+	VTAILQ_HEAD(,format)	format;
+
+	/* State */
+	struct watch_head	watch_vcl_log;
+	struct watch_head	watch_reqhdr;
+	struct watch_head	watch_resphdr;
+	struct fragment		frag[F__MAX];
+	const char		*hitmiss;
+	const char		*handling;
+} CTX;
+
+static void
+usage(int status)
+{
+	const char **opt;
+
+	fprintf(stderr, "Usage: %s <options>\n\n", progname);
+	fprintf(stderr, "Options:\n");
+	for (opt = vopt_usage; *opt != NULL; opt += 2)
+		fprintf(stderr, " %-25s %s\n", *opt, *(opt + 1));
+	exit(status);
+}
+
+static void
+openout(int append)
+{
+
+	AN(CTX.w_arg);
+	CTX.fo = fopen(CTX.w_arg, append ? "a" : "w");
+	if (CTX.fo == NULL)
+		VUT_Error(1, "Can't open output file (%s)", strerror(errno));
+}
+
+static int __match_proto__(VUT_cb_f)
+rotateout(void)
+{
+
+	AN(CTX.w_arg);
+	AN(CTX.fo);
+	fclose(CTX.fo);
+	openout(0);
+	AN(CTX.fo);
+	return (0);
+}
+
+static int __match_proto__(VUT_cb_f)
+flushout(void)
+{
+
+	AN(CTX.fo);
+	if (fflush(CTX.fo))
+		return (-5);
+	return (0);
+}
+
+static inline int
+vsb_fcat(struct vsb *vsb, const struct fragment *f, const char *dflt)
+{
+
+	if (f->gen == CTX.gen) {
+		assert(f->b <= f->e);
+		return (VSB_bcat(vsb, f->b, f->e - f->b));
+	}
+	if (dflt)
+		return (VSB_cat(vsb, dflt));
+	return (-1);
+}
+
+static int __match_proto__(format_f)
+format_string(const struct format *format)
+{
+
+	CHECK_OBJ_NOTNULL(format, FORMAT_MAGIC);
+	AN(format->string);
+	AZ(VSB_cat(CTX.vsb, format->string));
+	return (1);
+}
+
+static int __match_proto__(format_f)
+format_strptr(const struct format *format)
+{
+
+	CHECK_OBJ_NOTNULL(format, FORMAT_MAGIC);
+	AN(format->strptr);
+	AN(*format->strptr);
+	AZ(VSB_cat(CTX.vsb, *format->strptr));
+	return (1);
+}
+
+static int __match_proto__(format_f)
+format_fragment(const struct format *format)
+{
+
+	CHECK_OBJ_NOTNULL(format, FORMAT_MAGIC);
+	AN(format->frag);
+
+	if (format->frag->gen != CTX.gen) {
+		if (format->string == NULL)
+			return (-1);
+		AZ(VSB_cat(CTX.vsb, format->string));
+		return (0);
+	}
+
+	AZ(vsb_fcat(CTX.vsb, format->frag, NULL));
+	return (1);
+}
+
+static int __match_proto__(format_f)
+format_time(const struct format *format)
+{
+	double t_start, t_end;
+	char *p;
+	char buf[64];
+	time_t t;
+	struct tm tm;
+
+	CHECK_OBJ_NOTNULL(format, FORMAT_MAGIC);
+	if (CTX.frag[F_tstart].gen != CTX.gen ||
+	    CTX.frag[F_tend].gen != CTX.gen) {
+		if (format->string == NULL)
+			return (-1);
+		AZ(VSB_cat(CTX.vsb, format->string));
+		return (0);
+	}
+
+	t_start = strtod(CTX.frag[F_tstart].b, &p);
+	if (p != CTX.frag[F_tstart].e)
+		return (-1);
+	t_end = strtod(CTX.frag[F_tend].b, &p);
+	if (p != CTX.frag[F_tend].e)
+		return (-1);
+
+	switch (format->time_type) {
+	case 'D':
+		AZ(VSB_printf(CTX.vsb, "%f", t_end - t_start));
+		break;
+	case 't':
+		AN(format->time_fmt);
+		t = t_start;
+		localtime_r(&t, &tm);
+		strftime(buf, sizeof buf, format->time_fmt, &tm);
+		AZ(VSB_cat(CTX.vsb, buf));
+		break;
+	case 'T':
+		AZ(VSB_printf(CTX.vsb, "%d", (int)(t_end - t_start)));
+		break;
+	default:
+		WRONG("Time format specifier");
+	}
+
+	return (1);
+}
+
+static int __match_proto__(format_f)
+format_requestline(const struct format *format)
+{
+
+	(void)format;
+	AZ(vsb_fcat(CTX.vsb, &CTX.frag[F_m], "-"));
+	AZ(VSB_putc(CTX.vsb, ' '));
+	if (CTX.frag[F_host].gen == CTX.gen) {
+		if (strncmp(CTX.frag[F_host].b, "http://", 7))
+			AZ(VSB_cat(CTX.vsb, "http://"));
+		AZ(vsb_fcat(CTX.vsb, &CTX.frag[F_host], NULL));
+	} else
+		AZ(VSB_cat(CTX.vsb, "http://localhost"));
+	AZ(vsb_fcat(CTX.vsb, &CTX.frag[F_U], "-"));
+	AZ(vsb_fcat(CTX.vsb, &CTX.frag[F_q], ""));
+	AZ(VSB_putc(CTX.vsb, ' '));
+	AZ(vsb_fcat(CTX.vsb, &CTX.frag[F_H], "HTTP/1.0"));
+	return (1);
+}
+
+static int __match_proto__(format_f)
+format_auth(const struct format *format)
+{
+	char buf[128];
+	char *q;
+
+	if (CTX.frag[F_auth].gen != CTX.gen ||
+	    VB64_decode(buf, sizeof buf, CTX.frag[F_auth].b,
+		CTX.frag[F_auth].e)) {
+		if (format->string == NULL)
+			return (-1);
+		AZ(VSB_cat(CTX.vsb, format->string));
+		return (0);
+	}
+	q = strchr(buf, ':');
+	if (q != NULL)
+		*q = '\0';
+	AZ(VSB_cat(CTX.vsb, buf));
+	return (1);
+}
+
+static int
+print(void)
+{
+	const struct format *f;
+	int i, r = 1;
+
+	VSB_clear(CTX.vsb);
+	VTAILQ_FOREACH(f, &CTX.format, list) {
+		i = (f->func)(f);
+		if (r > i)
+			r = i;
+	}
+	AZ(VSB_putc(CTX.vsb, '\n'));
+	AZ(VSB_finish(CTX.vsb));
+	if (r >= 0) {
+		i = fwrite(VSB_data(CTX.vsb), 1, VSB_len(CTX.vsb), CTX.fo);
+		if (i != VSB_len(CTX.vsb))
+			return (-5);
+	}
+	return (0);
+}
+
+static void
+addf_string(const char *str)
+{
+	struct format *f;
+
+	AN(str);
+	ALLOC_OBJ(f, FORMAT_MAGIC);
+	AN(f);
+	f->func = &format_string;
+	f->string = strdup(str);
+	AN(f->string);
+	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
+}
+
+static void
+addf_strptr(const char *const *strptr)
+{
+	struct format *f;
+
+	AN(strptr);
+	ALLOC_OBJ(f, FORMAT_MAGIC);
+	AN(f);
+	f->func = &format_strptr;
+	f->strptr = strptr;
+	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
+}
+
+static void
+addf_fragment(struct fragment *frag, const char *str)
+{
+	struct format *f;
+
+	AN(frag);
+	ALLOC_OBJ(f, FORMAT_MAGIC);
+	AN(f);
+	f->func = &format_fragment;
+	f->frag = frag;
+	if (str != NULL) {
+		f->string = strdup(str);
+		AN(f->string);
+	}
+	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
+}
+
+static void
+addf_time(char type, const char *fmt, const char *str)
+{
+	struct format *f;
+
+	ALLOC_OBJ(f, FORMAT_MAGIC);
+	AN(f);
+	f->func = &format_time;
+	f->time_type = type;
+	if (fmt != NULL) {
+		f->time_fmt = strdup(fmt);
+		AN(f->time_fmt);
+	}
+	if (str != NULL) {
+		f->string = strdup(str);
+		AN(f->string);
+	}
+	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
+}
+
+static void
+addf_requestline(void)
+{
+	struct format *f;
+
+	ALLOC_OBJ(f, FORMAT_MAGIC);
+	AN(f);
+	f->func = &format_requestline;
+	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
+}
+
+static void
+addf_vcl_log(const char *key, const char *str)
+{
+	struct watch *w;
+	struct format *f;
+
+	AN(key);
+	ALLOC_OBJ(w, WATCH_MAGIC);
+	AN(w);
+	w->key = strdup(key);
+	AN(w->key);
+	w->keylen = strlen(w->key);
+	VTAILQ_INSERT_TAIL(&CTX.watch_vcl_log, w, list);
+
+	ALLOC_OBJ(f, FORMAT_MAGIC);
+	AN(f);
+	f->func = &format_fragment;
+	f->frag = &w->frag;
+	if (str != NULL) {
+		f->string = strdup(str);
+		AN(f->string);
+	}
+	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
+}
+
+static void
+addf_hdr(struct watch_head *head, const char *key, const char *str)
+{
+	struct watch *w;
+	struct format *f;
+
+	AN(head);
+	AN(key);
+	ALLOC_OBJ(w, WATCH_MAGIC);
+	AN(w);
+	w->key = strdup(key);
+	AN(w->key);
+	w->keylen = strlen(w->key);
+	VTAILQ_INSERT_TAIL(head, w, list);
+
+	ALLOC_OBJ(f, FORMAT_MAGIC);
+	AN(f);
+	f->func = &format_fragment;
+	f->frag = &w->frag;
+	if (str != NULL) {
+		f->string = strdup(str);
+		AN(f->string);
+	}
+	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
+}
+
+static void
+addf_auth(const char *str)
+{
+	struct format *f;
+
+	ALLOC_OBJ(f, FORMAT_MAGIC);
+	f->func = &format_auth;
+	if (str != NULL) {
+		f->string = strdup(str);
+		AN(f->string);
+	}
+	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
+}
+
+static void
+parse_format(const char *format)
+{
+	const char *p, *q;
+	struct vsb *vsb;
+	char buf[256];
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+
+	for (p = format; *p != '\0'; p++) {
+
+		/* Allow the most essential escape sequences in format */
+		if (*p == '\\') {
+			p++;
+			if (*p == 't')
+				AZ(VSB_putc(vsb, '\t'));
+			else if (*p == 'n')
+				AZ(VSB_putc(vsb, '\n'));
+			else if (*p != '\0')
+				AZ(VSB_putc(vsb, *p));
+			continue;
+		}
+
+		if (*p != '%') {
+			AZ(VSB_putc(vsb, *p));
+			continue;
+		}
+
+		if (VSB_len(vsb) > 0) {
+			AZ(VSB_finish(vsb));
+			addf_string(VSB_data(vsb));
+			VSB_clear(vsb);
+		}
+
+		p++;
+		switch (*p) {
+		case 'b':	/* Bytes */
+			addf_fragment(&CTX.frag[F_b], "-");
+			break;
+		case 'D':	/* Float request time */
+			addf_time(*p, NULL, NULL);
+			break;
+		case 'h':	/* Client host name / IP Address */
+			addf_fragment(&CTX.frag[F_h], "-");
+			break;
+		case 'H':	/* Protocol */
+			addf_fragment(&CTX.frag[F_H], "HTTP/1.0");
+			break;
+		case 'l':	/* Client user ID (identd) always '-' */
+			AZ(VSB_putc(vsb, '-'));
+			break;
+		case 'm':	/* Method */
+			addf_fragment(&CTX.frag[F_m], "-");
+			break;
+		case 'q':	/* Query string */
+			addf_fragment(&CTX.frag[F_q], "");
+			break;
+		case 'r':	/* Request line */
+			addf_requestline();
+			break;
+		case 's':	/* Status code */
+			addf_fragment(&CTX.frag[F_s], "");
+			break;
+		case 't':	/* strftime */
+			addf_time(*p, TIME_FMT, NULL);
+			break;
+		case 'T':	/* Int request time */
+			addf_time(*p, NULL, NULL);
+			break;
+		case 'u':
+			addf_auth("-");
+			break;
+		case 'U':	/* URL */
+			addf_fragment(&CTX.frag[F_U], "-");
+			break;
+		case '{':
+			p++;
+			q = p;
+			while (*q && *q != '}')
+				q++;
+			if (!*q)
+				VUT_Error(1, "Unmatched bracket at: %s", p - 2);
+			assert(q - p < sizeof buf - 1);
+			strncpy(buf, p, q - p);
+			buf[q - p] = '\0';
+			q++;
+			switch (*q) {
+			case 'i':
+				strcat(buf, ":");
+				addf_hdr(&CTX.watch_reqhdr, buf, "-");
+				break;
+			case 'o':
+				strcat(buf, ":");
+				addf_hdr(&CTX.watch_resphdr, buf, "-");
+				break;
+			case 't':
+				addf_time(*q, buf, NULL);
+				break;
+			case 'x':
+				if (!strcmp(buf, "Varnish:time_firstbyte")) {
+					addf_fragment(&CTX.frag[F_ttfb], "");
+					break;
+				}
+				if (!strcmp(buf, "Varnish:hitmiss")) {
+					addf_strptr(&CTX.hitmiss);
+					break;
+				}
+				if (!strcmp(buf, "Varnish:handling")) {
+					addf_strptr(&CTX.handling);
+					break;
+				}
+				if (!strncmp(buf, "VCL_Log:", 8)) {
+					addf_vcl_log(buf + 8, "");
+					break;
+				}
+				/* FALLTHROUGH */
+			default:
+				VUT_Error(1, "Unknown format specifier at: %s",
+				    p - 2);
+			}
+			p = q;
+			break;
+		default:
+			VUT_Error(1, "Unknown format specifier at: %s", p - 1);
+		}
+	}
+
+	if (VSB_len(vsb) > 0) {
+		/* Add any remaining static */
+		AZ(VSB_finish(vsb));
+		addf_string(VSB_data(vsb));
+		VSB_clear(vsb);
+	}
+
+	VSB_delete(vsb);
+}
 
 static int
 isprefix(const char *str, const char *prefix, const char *end,
@@ -140,871 +654,261 @@ isprefix(const char *str, const char *prefix, const char *end,
 	return (1);
 }
 
-/*
- * Returns a copy of the first consecutive sequence of non-space
- * characters in the string in dst. dst will be free'd first if non-NULL.
- */
 static void
-trimfield(char **dst, const char *str, const char *end)
+frag_fields(const char *b, const char *e, ...)
 {
-	size_t len;
+	va_list ap;
+	const char *p, *q;
+	int n, field;
+	struct fragment *frag;
 
-	/* free if already set */
-	if (*dst != NULL) {
-		free(*dst);
-		*dst = NULL;
-	}
+	AN(b);
+	AN(e);
+	va_start(ap, e);
 
-	/* skip leading space */
-	while (str < end && *str && *str == ' ')
-		++str;
+	field = va_arg(ap, int);
+	frag = va_arg(ap, struct fragment *);
+	for (n = 1, q = b; q < e; n++) {
+		assert(field > 0);
+		AN(frag);
 
-	/* seek to end of field */
-	for (len = 0; &str[len] < end && str[len]; ++len)
-		if (str[len] == ' ')
-			break;
-
-	/* copy and return */
-	*dst = malloc(len + 1);
-	assert(*dst != NULL);
-	memcpy(*dst, str, len);
-	(*dst)[len] = '\0';
-}
-
-/*
- * Returns a copy of the entire string with leading and trailing spaces
- * trimmed in dst. dst will be free'd first if non-NULL.
- */
-static void
-trimline(char **dst, const char *str, const char *end)
-{
-	size_t len;
-
-	/* free if already set */
-	if (*dst != NULL) {
-		free(*dst);
-		*dst = NULL;
-	}
-
-	/* skip leading space */
-	while (str < end && *str && *str == ' ')
-		++str;
-
-	/* seek to end of string */
-	for (len = 0; &str[len] < end && str[len]; ++len)
-		 /* nothing */ ;
-
-	/* trim trailing space */
-	while (len && str[len - 1] == ' ')
-		--len;
-
-	/* copy and return */
-	*dst = malloc(len + 1);
-	assert(*dst != NULL);
-	memcpy(*dst, str, len);
-	(*dst)[len] = '\0';
-}
-
-static char *
-req_header(struct logline *l, const char *name)
-{
-	struct hdr *h;
-	VTAILQ_FOREACH(h, &l->req_headers, list) {
-		if (strcasecmp(h->key, name) == 0) {
-			return (h->value);
-		}
-	}
-	return (NULL);
-}
-
-static char *
-resp_header(struct logline *l, const char *name)
-{
-	struct hdr *h;
-	VTAILQ_FOREACH(h, &l->resp_headers, list) {
-		if (strcasecmp(h->key, name) == 0) {
-			return (h->value);
-		}
-	}
-	return (NULL);
-}
-
-static char *
-vcl_log(struct logline *l, const char *name)
-{
-	struct hdr *h;
-	VTAILQ_FOREACH(h, &l->vcl_log, list) {
-		if (strcasecmp(h->key, name) == 0) {
-			return (h->value);
-		}
-	}
-	return (NULL);
-}
-
-static void
-clean_logline(struct logline *lp)
-{
-	struct hdr *h, *h2;
-#define freez(x) do { if (x) free(x); x = NULL; } while (0);
-	freez(lp->df_H);
-	freez(lp->df_U);
-	freez(lp->df_q);
-	freez(lp->df_b);
-	freez(lp->df_h);
-	freez(lp->df_m);
-	freez(lp->df_s);
-	freez(lp->df_u);
-	freez(lp->df_ttfb);
-	VTAILQ_FOREACH_SAFE(h, &lp->req_headers, list, h2) {
-		VTAILQ_REMOVE(&lp->req_headers, h, list);
-		freez(h->key);
-		freez(h->value);
-		freez(h);
-	}
-	VTAILQ_FOREACH_SAFE(h, &lp->resp_headers, list, h2) {
-		VTAILQ_REMOVE(&lp->resp_headers, h, list);
-		freez(h->key);
-		freez(h->value);
-		freez(h);
-	}
-	VTAILQ_FOREACH_SAFE(h, &lp->vcl_log, list, h2) {
-		VTAILQ_REMOVE(&lp->vcl_log, h, list);
-		freez(h->key);
-		freez(h->value);
-		freez(h);
-	}
-#undef freez
-	memset(lp, 0, sizeof *lp);
-}
-
-static int
-collect_backend(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
-    const char *ptr, unsigned len)
-{
-	const char *end, *next, *split;
-	struct hdr *h;
-	size_t l;
-
-	assert(spec & VSL_S_BACKEND);
-	end = ptr + len;
-
-	switch (tag) {
-	case SLT_BackendOpen:
-		if (lp->active || lp->df_h != NULL) {
-			/* New start for active line,
-			   clean it and start from scratch */
-			clean_logline(lp);
-		}
-		lp->active = 1;
-		if (isprefix(ptr, "default", end, &next))
-			trimfield(&lp->df_h, next, end);
-		else
-			trimfield(&lp->df_h, ptr, end);
-		break;
-
-	case SLT_BereqMethod:
-		if (!lp->active)
-			break;
-		if (lp->df_m != NULL) {
-			clean_logline(lp);
-			break;
-		}
-		trimline(&lp->df_m, ptr, end);
-		break;
-
-	case SLT_BereqURL: {
-		char *qs;
-
-		if (!lp->active)
-			break;
-		if (lp->df_U != NULL || lp->df_q != NULL) {
-			clean_logline(lp);
-			break;
-		}
-		qs = memchr(ptr, '?', len);
-		if (qs) {
-			trimline(&lp->df_U, ptr, qs);
-			trimline(&lp->df_q, qs, end);
-		} else {
-			trimline(&lp->df_U, ptr, end);
-		}
-		break;
-	}
-
-	case SLT_BereqProtocol:
-		if (!lp->active)
-			break;
-		if (lp->df_H != NULL) {
-			clean_logline(lp);
-			break;
-		}
-		trimline(&lp->df_H, ptr, end);
-		break;
-
-	case SLT_BerespStatus:
-		if (!lp->active)
-			break;
-		if (lp->df_s != NULL) {
-			clean_logline(lp);
-			break;
-		}
-		trimline(&lp->df_s, ptr, end);
-		break;
-
-	case SLT_BereqHeader:
-	case SLT_BerespHeader:
-		if (!lp->active)
-			break;
-		split = memchr(ptr, ':', len);
-		if (split == NULL)
-			break;
-		if (tag == SLT_BerespHeader) {
-			if (isprefix(ptr, "content-length:", end, &next))
-				trimline(&lp->df_b, next, end);
-			else if (isprefix(ptr, "date:", end, &next) &&
-				 strptime(next, "%a, %d %b %Y %T", &lp->df_t) == NULL) {
-				clean_logline(lp);
-			}
-		} else {
-			if (isprefix(ptr, "authorization:", end, &next) &&
-			    isprefix(next, "basic", end, &next)) {
-				trimline(&lp->df_u, next, end);
-			}
-		}
-		h = calloc(1, sizeof(struct hdr));
-		AN(h);
-		AN(split);
-		l = strlen(split);
-		trimline(&h->key, ptr, split-1);
-		trimline(&h->value, split+1, split+l-1);
-		if (tag == SLT_BereqHeader)
-			VTAILQ_INSERT_HEAD(&lp->req_headers, h, list);
-		else
-			VTAILQ_INSERT_HEAD(&lp->resp_headers, h, list);
-
-	case SLT_BackendReuse:
-	case SLT_BackendClose:
-		if (!lp->active)
-			break;
-		/* got it all */
-		lp->complete = 1;
-		break;
-
-	default:
-		break;
-	}
-
-	return (1);
-}
-
-static int
-collect_client(struct logline *lp, enum VSL_tag_e tag, unsigned spec,
-    const char *ptr, unsigned len)
-{
-	const char *end, *next, *split;
-	time_t t;
-
-	assert(spec & VSL_S_CLIENT);
-	end = ptr + len;
-
-	switch (tag) {
-	case SLT_ReqStart:
-		if (lp->active || lp->df_h != NULL) {
-			/* New start for active line,
-			   clean it and start from scratch */
-			clean_logline(lp);
-		}
-		lp->active = 1;
-		trimfield(&lp->df_h, ptr, end);
-		break;
-
-	case SLT_ReqMethod:
-		if (!lp->active)
-			break;
-		if (lp->df_m != NULL) {
-			clean_logline(lp);
-			break;
-		}
-		trimline(&lp->df_m, ptr, end);
-		break;
-
-	case SLT_ReqURL: {
-		char *qs;
-
-		if (!lp->active)
-			break;
-		if (lp->df_U != NULL || lp->df_q != NULL) {
-			clean_logline(lp);
-			break;
-		}
-		qs = memchr(ptr, '?', len);
-		if (qs) {
-			trimline(&lp->df_U, ptr, qs);
-			trimline(&lp->df_q, qs, end);
-		} else {
-			trimline(&lp->df_U, ptr, end);
-		}
-		break;
-	}
-
-	case SLT_ReqProtocol:
-		if (!lp->active)
-			break;
-		if (lp->df_H != NULL) {
-			clean_logline(lp);
-			break;
-		}
-		trimline(&lp->df_H, ptr, end);
-		break;
-
-	case SLT_ObjStatus:
-		if (!lp->active)
-			break;
-		if (lp->df_s != NULL)
-			clean_logline(lp);
-		else
-			trimline(&lp->df_s, ptr, end);
-		break;
-
-	case SLT_ObjHeader:
-	case SLT_ReqHeader:
-		if (!lp->active)
-			break;
-		split = memchr(ptr, ':', len);
-		if (split == NULL)
-			break;
-		if (tag == SLT_ReqHeader &&
-		    isprefix(ptr, "authorization:", end, &next) &&
-		    isprefix(next, "basic", end, &next)) {
-			trimline(&lp->df_u, next, end);
-		} else {
-			struct hdr *h;
-			h = calloc(1, sizeof(struct hdr));
-			AN(h);
-			AN(split);
-			trimline(&h->key, ptr, split);
-			trimline(&h->value, split+1, end);
-			if (tag == SLT_ReqHeader)
-				VTAILQ_INSERT_HEAD(&lp->req_headers, h, list);
-			else
-				VTAILQ_INSERT_HEAD(&lp->resp_headers, h, list);
-		}
-		break;
-
-	case SLT_VCL_Log:
-		if(!lp->active)
-			break;
-
-		split = memchr(ptr, ':', len);
-		if (split == NULL)
-			break;
-
-		struct hdr *h;
-		h = calloc(1, sizeof(struct hdr));
-		AN(h);
-		AN(split);
-
-		trimline(&h->key, ptr, split);
-		trimline(&h->value, split+1, end);
-
-		VTAILQ_INSERT_HEAD(&lp->vcl_log, h, list);
-		break;
-
-	case SLT_VCL_call:
-		if(!lp->active)
-			break;
-		if (strncmp(ptr, "hit", len) == 0) {
-			lp->df_hitmiss = "hit";
-			lp->df_handling = "hit";
-		} else if (strncmp(ptr, "miss", len) == 0) {
-			lp->df_hitmiss = "miss";
-			lp->df_handling = "miss";
-		} else if (strncmp(ptr, "pass", len) == 0) {
-			lp->df_hitmiss = "miss";
-			lp->df_handling = "pass";
-		} else if (strncmp(ptr, "error", len) == 0) {
-			/* Arguably, error isn't a hit or a miss, but
-			 miss is less wrong */
-			lp->df_hitmiss = "miss";
-			lp->df_handling = "error";
-		} else if (strncmp(ptr, "pipe", len) == 0) {
-			/* Just skip piped requests, since we can't
-			 * print their status code */
-			clean_logline(lp);
-			break;
-		}
-		break;
-
-	case SLT_Length:
-		if (!lp->active)
-			break;
-		if (lp->df_b != NULL) {
-			clean_logline(lp);
-			break;
-		}
-		trimline(&lp->df_b, ptr, end);
-		break;
-
-	case SLT_SessClose:
-		if (!lp->active)
-			break;
-		if (strncmp(ptr, "TX_PIPE", len) == 0 ||
-		    strncmp(ptr, "TX_ERROR", len) == 0) {
-			clean_logline(lp);
-			break;
-		}
-		break;
-
-	case SLT_ReqEnd:
-	{
-		char ttfb[64];
-		double t_start, t_end;
-		if (!lp->active)
-			break;
-		if (lp->df_ttfb != NULL ||
-		    sscanf(ptr, "%*u %lf %lf %*u.%*u %s", &t_start, &t_end, ttfb)
-		    != 3) {
-			clean_logline(lp);
-			break;
-		}
-		if (lp->df_ttfb != NULL)
-			free(lp->df_ttfb);
-		lp->df_ttfb = strdup(ttfb);
-		lp->df_D = t_end - t_start;
-		t = t_start;
-		localtime_r(&t, &lp->df_t);
-		/* got it all */
-		lp->complete = 1;
-		break;
-	}
-
-	default:
-		break;
-	}
-
-	return (1);
-}
-
-static int
-h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
-    unsigned len, unsigned spec, const char *ptr, uint64_t bitmap)
-{
-	struct logline *lp;
-	FILE *fo = priv;
-	char *q, tbuf[64];
-	const char *p;
-	struct vsb *os;
-	const char *format;
-
-	/* XXX: Ignore fd's outside 65536 */
-	if (fd >= 65536)
-		return (reopen);
-
-	if (fd >= nll) {
-		struct logline **newll = ll;
-		size_t newnll = nll;
-
-		while (fd >= newnll)
-			newnll += newnll + 1;
-		newll = realloc(newll, newnll * sizeof *newll);
-		assert(newll != NULL);
-		memset(newll + nll, 0, (newnll - nll) * sizeof *newll);
-		ll = newll;
-		nll = newnll;
-	}
-	if (ll[fd] == NULL) {
-		ll[fd] = calloc(sizeof *ll[fd], 1);
-		assert(ll[fd] != NULL);
-	}
-	lp = ll[fd];
-	if (spec & VSL_S_BACKEND) {
-		collect_backend(lp, tag, spec, ptr, len);
-		format = b_format;
-	} else if (spec & VSL_S_CLIENT) {
-		collect_client(lp, tag, spec, ptr, len);
-		format = c_format;
-	} else {
-		/* huh? */
-		return (reopen);
-	}
-
-	lp->bitmap |= bitmap;
-
-	if (!lp->complete)
-		return (reopen);
-
-	if (m_flag && !VSL_Matched(vd, lp->bitmap))
-		/* -o is in effect matching rule failed. Don't display */
-		return (reopen);
-
-#if 0
-	/* non-optional fields */
-	if (!lp->df_m || !lp->df_U || !lp->df_H || !lp->df_s) {
-		clean_logline(lp);
-		return (reopen);
-	}
-#endif
-
-	/* We have a complete data set - log a line */
-
-	fo = priv;
-	os = VSB_new_auto();
-
-	for (p = format; *p != '\0'; p++) {
-
-		/* allow the most essential escape sequences in format. */
-		if (*p == '\\') {
+		p = q;
+		/* Skip WS */
+		while (p < e && isspace(*p))
 			p++;
-			if (*p == 't') VSB_putc(os, '\t');
-			if (*p == 'n') VSB_putc(os, '\n');
-			continue;
+		q = p;
+		/* Skip non-WS */
+		while (q < e && !isspace(*q))
+			q++;
+
+		if (field == n) {
+			frag->gen = CTX.gen;
+			frag->b = p;
+			frag->e = q;
+			field = va_arg(ap, int);
+			if (field == 0)
+				break;
+			frag = va_arg(ap, struct fragment *);
 		}
+	}
+	va_end(ap);
+}
 
-		if (*p != '%') {
-			VSB_putc(os, *p);
+static void
+frag_line(const char *b, const char *e, struct fragment *f)
+{
+
+	/* Skip leading space */
+	while (b < e && isspace(*b))
+		++b;
+
+	/* Skip trailing space */
+	while (e > b && isspace(*(e - 1)))
+		--e;
+
+	f->gen = CTX.gen;
+	f->b = b;
+	f->e = e;
+}
+
+static void
+process_hdr(const struct watch_head *head, const char *b, const char *e)
+{
+	struct watch *w;
+
+	VTAILQ_FOREACH(w, head, list) {
+		if (strncasecmp(b, w->key, w->keylen))
 			continue;
-		}
-		p++;
-		switch (*p) {
+		frag_line(b + w->keylen, e, &w->frag);
+	}
+}
 
-		case 'b':
-			/* %b */
-			VSB_cat(os, lp->df_b ? lp->df_b : "-");
-			break;
+static int __match_proto__(VSLQ_dispatch_f)
+dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
+    void *priv)
+{
+	struct VSL_transaction *t;
+	unsigned tag;
+	const char *b, *e, *p;
+	struct watch *w;
+	int i;
 
-		case 'D':
-			/* %D */
-			VSB_printf(os, "%f", lp->df_D);
-			break;
+	(void)vsl;
+	(void)priv;
 
-		case 'H':
-			VSB_cat(os, lp->df_H ? lp->df_H : "HTTP/1.0");
-			break;
+	for (t = pt[0]; t != NULL; t = *++pt) {
+		CTX.gen++;
+		if (t->type != VSL_t_req)
+			continue;
+		CTX.hitmiss = "-";
+		CTX.handling = "-";
+		while ((1 == VSL_Next(t->c))) {
+			tag = VSL_TAG(t->c->rec.ptr);
+			b = VSL_CDATA(t->c->rec.ptr);
+			e = b + VSL_LEN(t->c->rec.ptr);
 
-		case 'h':
-			if (!lp->df_h && spec & VSL_S_BACKEND)
-				VSB_cat(os, "127.0.0.1");
-			else
-				VSB_cat(os, lp->df_h ? lp->df_h : "-");
-			break;
-		case 'l':
-			VSB_putc(os, '-');
-			break;
-
-		case 'm':
-			VSB_cat(os, lp->df_m ? lp->df_m : "-");
-			break;
-
-		case 'q':
-			VSB_cat(os, lp->df_q ? lp->df_q : "");
-			break;
-
-		case 'r':
-			/*
-			 * Fake "%r".  This would be a lot easier if Varnish
-			 * normalized the request URL.
-			 */
-			VSB_cat(os, lp->df_m ? lp->df_m : "-");
-			VSB_putc(os, ' ');
-			if (req_header(lp, "Host")) {
-				if (strncmp(req_header(lp, "Host"),
-				    "http://", 7) != 0)
-					VSB_cat(os, "http://");
-				VSB_cat(os, req_header(lp, "Host"));
-			} else {
-				VSB_cat(os, "http://localhost");
-			}
-			VSB_cat(os, lp->df_U ? lp->df_U : "-");
-			VSB_cat(os, lp->df_q ? lp->df_q : "");
-			VSB_putc(os, ' ');
-			VSB_cat(os, lp->df_H ? lp->df_H : "HTTP/1.0");
-			break;
-
-		case 's':
-			/* %s */
-			VSB_cat(os, lp->df_s ? lp->df_s : "");
-			break;
-
-		case 't':
-			/* %t */
-			strftime(tbuf, sizeof tbuf,
-			    "[%d/%b/%Y:%T %z]", &lp->df_t);
-			VSB_cat(os, tbuf);
-			break;
-
-		case 'T':
-			/* %T */
-			VSB_printf(os, "%d", (int)lp->df_D);
-			break;
-
-		case 'U':
-			VSB_cat(os, lp->df_U ? lp->df_U : "-");
-			break;
-
-		case 'u':
-			/* %u: decode authorization string */
-			if (lp->df_u != NULL) {
-				char *rubuf;
-				size_t rulen;
-
-				VB64_init();
-				rulen = ((strlen(lp->df_u) + 3) * 4) / 3;
-				rubuf = malloc(rulen);
-				assert(rubuf != NULL);
-				VB64_decode(rubuf, rulen, lp->df_u);
-				q = strchr(rubuf, ':');
-				if (q != NULL)
-					*q = '\0';
-				VSB_cat(os, rubuf);
-				free(rubuf);
-			} else {
-				VSB_putc(os, '-');
-			}
-			break;
-
-		case '{': {
-			const char *h, *tmp;
-			char fname[100], type;
-			tmp = p;
-			type = 0;
-			while (*tmp != '\0' && *tmp != '}')
-				tmp++;
-			if (*tmp == '}') {
-				tmp++;
-				type = *tmp;
-				memcpy(fname, p+1, tmp-p-2);
-				fname[tmp-p-2] = 0;
-			}
-
-			switch (type) {
-			case 'i':
-				h = req_header(lp, fname);
-				VSB_cat(os, h ? h : "-");
-				p = tmp;
+			switch (tag) {
+			case SLT_ReqStart:
+				frag_fields(b, e, 1, &CTX.frag[F_h], 0, NULL);
 				break;
-			case 'o':
-				h = resp_header(lp, fname);
-				VSB_cat(os, h ? h : "-");
-				p = tmp;
+			case SLT_ReqMethod:
+				frag_line(b, e, &CTX.frag[F_m]);
 				break;
-			case 't':
-				strftime(tbuf, sizeof tbuf, fname, &lp->df_t);
-				VSB_cat(os, tbuf);
-				p = tmp;
+			case SLT_ReqURL:
+				p = memchr(b, '?', e - b);
+				if (p == NULL)
+					p = e;
+				frag_line(b, e, &CTX.frag[F_U]);
+				frag_line(b, e, &CTX.frag[F_q]);
 				break;
-			case 'x':
-				if (!strcmp(fname, "Varnish:time_firstbyte")) {
-					VSB_cat(os, lp->df_ttfb);
-					p = tmp;
-					break;
-				} else if (!strcmp(fname, "Varnish:hitmiss")) {
-					VSB_cat(os, (lp->df_hitmiss ?
-					    lp->df_hitmiss : "-"));
-					p = tmp;
-					break;
-				} else if (!strcmp(fname, "Varnish:handling")) {
-					VSB_cat(os, (lp->df_handling ?
-					    lp->df_handling : "-"));
-					p = tmp;
-					break;
-				} else if (!strncmp(fname, "VCL_Log:", 8)) {
-					// support pulling entries logged
-					// with std.log() into output.
-					// Format: %{VCL_Log:keyname}x
-					// Logging: std.log("keyname:value")
-					h = vcl_log(lp, fname+8);
-					VSB_cat(os, h ? h : "-");
-					p = tmp;
-					break;
+			case SLT_ReqProtocol:
+				frag_line(b, e, &CTX.frag[F_H]);
+				break;
+			case SLT_RespStatus:
+				frag_line(b, e, &CTX.frag[F_s]);
+				break;
+			case SLT_Length:
+				frag_line(b, e, &CTX.frag[F_b]);
+				break;
+			case SLT_ReqEnd:
+				frag_fields(b, e, 1, &CTX.frag[F_tstart],
+				    2, &CTX.frag[F_tend], 3, &CTX.frag[F_ttfb],
+				    0, NULL);
+				break;
+			case SLT_ReqHeader:
+				if (isprefix(b, e, "Host:", &p))
+					frag_line(p, e, &CTX.frag[F_host]);
+				else if (isprefix(b, "Authorization:", e, &p) &&
+				    isprefix(p, "basic", e, &p))
+					frag_line(p, e, &CTX.frag[F_auth]);
+				break;
+			case SLT_VCL_call:
+				if (!strcasecmp(b, "recv")) {
+					CTX.hitmiss = "-";
+					CTX.handling = "-";
+				} else if (!strcasecmp(b, "hit")) {
+					CTX.hitmiss = "hit";
+					CTX.handling = "hit";
+				} else if (!strcasecmp(b, "miss")) {
+					CTX.hitmiss = "miss";
+					CTX.handling = "miss";
+				} else if (!strcasecmp(b, "pass")) {
+					CTX.hitmiss = "miss";
+					CTX.handling = "pass";
+				} else if (!strcasecmp(b, "error")) {
+					/* Arguably, error isn't a hit or
+					   a miss, but miss is less
+					   wrong */
+					CTX.hitmiss = "miss";
+					CTX.handling = "error";
+				} else if (!strcasecmp(b, "pipe")) {
+					CTX.hitmiss = "miss";
+					CTX.handling = "pipe";
 				}
-				/* FALLTHROUGH */
+				break;
 			default:
-				fprintf(stderr,
-				    "Unknown format starting at: %s\n", --p);
-				exit(1);
+				break;
 			}
-			break;
+
+			if (tag == SLT_VCL_Log) {
+				VTAILQ_FOREACH(w, &CTX.watch_vcl_log, list) {
+					CHECK_OBJ_NOTNULL(w, WATCH_MAGIC);
+					if (strncmp(b, w->key, w->keylen))
+						continue;
+					p = b + w->keylen;
+					if (*p != ':')
+						continue;
+					p++;
+					if (p > e)
+						continue;
+					frag_line(p, e, &w->frag);
+				}
+			}
+			if (tag == SLT_ReqHeader)
+				process_hdr(&CTX.watch_reqhdr, b, e);
+			if (tag == SLT_RespHeader)
+				process_hdr(&CTX.watch_resphdr, b, e);
 		}
-			/* Fall through if we haven't handled something */
-			/* FALLTHROUGH*/
-		default:
-			fprintf(stderr,
-			    "Unknown format starting at: %s\n", --p);
-			exit(1);
-		}
+		i = print();
+		if (i)
+			return (i);
 	}
-	VSB_putc(os, '\n');
 
-	/* flush the stream */
-	VSB_finish(os);
-	fprintf(fo, "%s", VSB_data(os));
-	fflush(fo);
-
-	/* clean up */
-	clean_logline(lp);
-	VSB_delete(os);
-	return (reopen);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-sighup(int sig)
-{
-
-	(void)sig;
-	reopen = 1;
-}
-
-static FILE *
-open_log(const char *ofn, int append)
-{
-	FILE *of;
-
-	if ((of = fopen(ofn, append ? "a" : "w")) == NULL) {
-		perror(ofn);
-		exit(1);
-	}
-	return (of);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-usage(void)
-{
-
-	fprintf(stderr,
-	    "usage: varnishncsa %s [-afDV] [-n varnish_name] "
-	    "[-P file] [-w file] [-F format] \n", VSL_USAGE);
-	exit(1);
+	return (0);
 }
 
 int
-main(int argc, char *argv[])
+main(int argc, char * const *argv)
 {
-	int c;
-	int a_flag = 0, D_flag = 0, format_flag = 0, b_flag = 0;
-	const char *P_arg = NULL;
-	const char *w_arg = NULL;
-	struct vpf_fh *pfh = NULL;
-	FILE *of;
-	c_format = "%h %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-agent}i\"";
-	b_format = "%h %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-agent}i\"";
+	char opt;
+	char *format = NULL;
 
-	vd = VSM_New();
+	memset(&CTX, 0, sizeof CTX);
+	VTAILQ_INIT(&CTX.format);
+	VTAILQ_INIT(&CTX.watch_vcl_log);
+	VTAILQ_INIT(&CTX.watch_reqhdr);
+	VTAILQ_INIT(&CTX.watch_resphdr);
+	CTX.vsb = VSB_new_auto();
+	AN(CTX.vsb);
+	VB64_init();
+	VUT_Init(progname);
 
-	while ((c = getopt(argc, argv, VSL_ARGS "aDP:Vw:fF:B:C:")) != -1) {
-		switch (c) {
+	while ((opt = getopt(argc, argv, vopt_optstring)) != -1) {
+		switch (opt) {
 		case 'a':
-			a_flag = 1;
+			/* Append to file */
+			CTX.a_opt = 1;
 			break;
-		case 'f':
 		case 'F':
-			if (format_flag) {
-				fprintf(stderr,
-				    "-f, -F, -B or -C can not be combined\n");
-				exit(1);
-			}
-			format_flag = 1;
-			switch (c) {
-			case 'f':
-				b_format = c_format =
-					"%{X-Forwarded-For}i %l %u %t \"%r\""
-					" %s %b \"%{Referer}i\" \"%{User-agent}i\"";
-				break;
-			case 'F':
-				b_format = c_format = optarg;
-				break;
-			case 'B':
-				b_format = optarg;
-				break;
-			case 'C':
-				c_format = optarg;
-				break;
-			}
+			/* Format string */
+			if (format != NULL)
+				free(format);
+			format = strdup(optarg);
+			AN(format);
 			break;
-		case 'D':
-			D_flag = 1;
-			break;
-		case 'P':
-			P_arg = optarg;
-			break;
-		case 'V':
-			VCS_Message("varnishncsa");
-			exit(0);
+		case 'h':
+			/* Usage help */
+			usage(0);
 		case 'w':
-			w_arg = optarg;
+			/* Write to file */
+			REPLACE(CTX.w_arg, optarg);
 			break;
-		case 'b':
-			b_flag = 1;
-			if (VSL_Arg(vd, c, optarg) > 0)
-				break;
-			usage();
-			break;
-		case 'i':
-			fprintf(stderr, "-i is not valid for varnishncsa\n");
-			exit(1);
-			break;
-		case 'I':
-			fprintf(stderr, "-I is not valid for varnishncsa\n");
-			exit(1);
-			break;
-		case 'c':
-			/* XXX: Silently ignored: it's required anyway */
-			break;
-		case 'm':
-			m_flag = 1;
-			/* FALLTHOUGH */
 		default:
-			if (VSL_Arg(vd, c, optarg) > 0)
-				break;
-			usage();
+			if (!VUT_Arg(opt, optarg))
+				usage(1);
 		}
 	}
 
-	if (! b_flag)
-		VSL_Arg(vd, 'c', optarg);
+	if (optind != argc)
+		usage(1);
 
-	if (VSM_Open(vd)) {
-		fprintf(stderr, "%s\n", VSM_Error(vd));
-		return (-1);
-	}
+	/* Check for valid grouping mode */
+	assert(VUT.g_arg < VSL_g__MAX);
+	if (VUT.g_arg != VSL_g_vxid && VUT.g_arg != VSL_g_request)
+		VUT_Error(1, "Invalid grouping mode: %s",
+		    VSLQ_grouping[VUT.g_arg]);
 
-	if (P_arg && (pfh = VPF_Open(P_arg, 0644, NULL)) == NULL) {
-		perror(P_arg);
-		exit(1);
-	}
+	/* Prepare output format */
+	if (format == NULL)
+		format = strdup(FORMAT);
+	parse_format(format);
+	free(format);
+	format = NULL;
 
-	if (D_flag && varnish_daemon(0, 0) == -1) {
-		perror("daemon()");
-		if (pfh != NULL)
-			VPF_Remove(pfh);
-		exit(1);
-	}
+	/* Setup output */
+	VUT.dispatch_f = &dispatch_f;
+	VUT.dispatch_priv = NULL;
+	if (CTX.w_arg) {
+		openout(CTX.a_opt);
+		AN(CTX.fo);
+		VUT.sighup_f = &rotateout;
+	} else
+		CTX.fo = stdout;
+	VUT.idle_f = &flushout;
 
-	if (pfh != NULL)
-		VPF_Write(pfh);
-
-	if (w_arg) {
-		of = open_log(w_arg, a_flag);
-		signal(SIGHUP, sighup);
-	} else {
-		w_arg = "stdout";
-		of = stdout;
-	}
-
-	while (VSL_Dispatch(vd, h_ncsa, of) >= 0) {
-		if (fflush(of) != 0) {
-			perror(w_arg);
-			exit(1);
-		}
-		if (reopen && of != stdout) {
-			fclose(of);
-			of = open_log(w_arg, a_flag);
-			reopen = 0;
-		}
-	}
+	VUT_Setup();
+	VUT_Main();
+	VUT_Fini();
 
 	exit(0);
 }
