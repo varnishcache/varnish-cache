@@ -13,4 +13,5 @@ EXTRA_DIST =			\
 	varnish.params		\
 	varnish.service		\
 	varnishncsa.service	\
-	varnishlog.service
+	varnishlog.service	\
+	find-provides
