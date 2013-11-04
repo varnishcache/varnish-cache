@@ -222,9 +222,11 @@ vcc_Function(struct vcc *tl)
 			return;
 		}
 		tl->curproc = vcc_AddProc(tl, tl->t);
-		Fh(tl, 0, "static int VGC_function_%.*s (struct sess *sp);\n",
+		Fh(tl, 0, "int VGC_function_%.*s "
+		    "(struct sess *sp);\n", PF(tl->t));
+		Fc(tl, 1, "int VGC_function_%.*s(struct sess *sp);\n",
 		    PF(tl->t));
-		Fc(tl, 1, "\nstatic int\n");
+		Fc(tl, 1, "\nint\n");
 		Fc(tl, 1, "VGC_function_%.*s (struct sess *sp)\n", PF(tl->t));
 	}
 	vcc_NextToken(tl);
