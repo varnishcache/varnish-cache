@@ -250,9 +250,9 @@ vcc_ParseFunction(struct vcc *tl)
 			return;
 		}
 		tl->curproc = vcc_AddProc(tl, tl->t);
-		Fh(tl, 0, "static int VGC_function_%.*s "
+		Fh(tl, 0, "int VGC_function_%.*s "
 		    "(const struct vrt_ctx *ctx);\n", PF(tl->t));
-		Fc(tl, 1, "\nstatic int __match_proto__(vcl_func_t)\n");
+		Fc(tl, 1, "\nint __match_proto__(vcl_func_t)\n");
 		Fc(tl, 1, "VGC_function_%.*s(const struct vrt_ctx *ctx)\n",
 		    PF(tl->t));
 	}
