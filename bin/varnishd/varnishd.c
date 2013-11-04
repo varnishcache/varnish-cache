@@ -262,7 +262,9 @@ Symbol_Lookup(struct vsb *vsb, void *ptr)
 	}
 	if (s0 == NULL)
 		return (-1);
-	VSB_printf(vsb, "%p: %s+%jx", ptr, s0->n, (uintmax_t)pp - s0->a);
+	if (!strcmp(s0->n, "_end"))
+		return (-1);
+	VSB_printf(vsb, "%p: %s+0x%jx", ptr, s0->n, (uintmax_t)pp - s0->a);
 	return (0);
 }
 
@@ -274,7 +276,7 @@ Symbol_hack(const char *a0)
 	uintptr_t a;
 	struct symbols *s;
 
-	bprintf(buf, "nm -agn %s 2>/dev/null", a0);
+	bprintf(buf, "nm -an %s 2>/dev/null", a0);
 	fi = popen(buf, "r");
 	if (fi == NULL)
 		return;
