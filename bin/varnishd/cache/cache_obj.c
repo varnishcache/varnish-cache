@@ -63,6 +63,7 @@ ObjIter(struct objiter *oi, void **p, ssize_t *l)
 {
 	ssize_t ol;
 	ssize_t nl;
+	volatile unsigned u;
 
 	CHECK_OBJ_NOTNULL(oi, OBJITER_MAGIC);
 	CHECK_OBJ_NOTNULL(oi->obj, OBJECT_MAGIC);
@@ -97,14 +98,15 @@ ObjIter(struct objiter *oi, void **p, ssize_t *l)
 		Lck_Lock(&oi->bo->mtx);
 		AZ(VTAILQ_EMPTY(&oi->obj->store));
 		VTAILQ_FOREACH(oi->st, &oi->obj->store, list) {
-			if (oi->st->len > ol) {
+			u = (volatile unsigned)(oi->st->len);
+			if (u > ol) {
 				*p = oi->st->ptr + ol;
-				*l = oi->st->len - ol;
+				*l = u - ol;
 				oi->len += *l;
 				break;
 			}
-			ol -= oi->st->len;
-			nl -= oi->st->len;
+			ol -= u;
+			nl -= u;
 		}
 		CHECK_OBJ_NOTNULL(oi->obj, OBJECT_MAGIC);
 		CHECK_OBJ_NOTNULL(oi->st, STORAGE_MAGIC);
