@@ -328,6 +328,7 @@ cls_vlu(void *priv, const char *p)
 	char **av;
 
 	CAST_OBJ_NOTNULL(cfd, priv, VCLS_FD_MAGIC);
+	AN(p);
 
 	cli = cfd->cli;
 	CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
