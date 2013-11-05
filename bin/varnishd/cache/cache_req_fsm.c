@@ -105,7 +105,8 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	req->t_resp = W_TIM_real(wrk);
 	if (!(req->obj->objcore->flags & OC_F_PRIVATE)) {
-		if ((req->t_resp - req->obj->objcore->last_lru) >
+		if (req->obj->objcore->busyobj == NULL &&
+		    (req->t_resp - req->obj->objcore->last_lru) >
 		    cache_param->lru_timeout && EXP_Touch(req->obj->objcore))
 			req->obj->objcore->last_lru = req->t_resp;
 	}

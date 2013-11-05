@@ -94,6 +94,7 @@ ObjIter(struct objiter *oi, void **p, ssize_t *l)
 				return (OIS_ERROR);
 		}
 		Lck_Lock(&oi->bo->mtx);
+		AZ(VTAILQ_EMPTY(&oi->obj->store));
 		VTAILQ_FOREACH(oi->st, &oi->obj->store, list) {
 			if (oi->st->len > ol) {
 				*p = oi->st->ptr + ol;
@@ -104,6 +105,7 @@ ObjIter(struct objiter *oi, void **p, ssize_t *l)
 			ol -= oi->st->len;
 			nl -= oi->st->len;
 		}
+		CHECK_OBJ_NOTNULL(oi->st, STORAGE_MAGIC);
 		oi->st = VTAILQ_NEXT(oi->st, list);
 		if (oi->st != NULL && oi->st->len == 0)
 			oi->st = NULL;

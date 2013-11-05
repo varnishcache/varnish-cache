@@ -422,13 +422,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	assert(bo->refcount >= 1);
 
 	AZ(bo->ws_o->overflow);
-	if (bo->do_stream) {
+	if (bo->do_stream)
 		HSH_Unbusy(&wrk->stats, obj->objcore);
-		if (!(obj->objcore->flags & OC_F_PRIVATE)) {
-			EXP_Insert(obj->objcore);
-			AN(obj->objcore->ban);
-		}
-	}
 
 	if (bo->vfp == NULL)
 		bo->vfp = &VFP_nop;
@@ -437,13 +432,14 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	VBO_setstate(bo, BOS_FETCHING);
 
 	V1F_fetch_body(wrk, bo);
-	if (!bo->do_stream && bo->state != BOS_FAILED) {
+	if (!bo->do_stream && bo->state != BOS_FAILED)
 		HSH_Unbusy(&wrk->stats, obj->objcore);
-		if (!(bo->fetch_obj->objcore->flags & OC_F_PRIVATE)) {
-			EXP_Insert(obj->objcore);
-			AN(obj->objcore->ban);
-		}
+
+	if (bo->state != BOS_FAILED && !(obj->objcore->flags & OC_F_PRIVATE)) {
+		EXP_Insert(obj->objcore);
+		AN(obj->objcore->ban);
 	}
+
 	HSH_Complete(obj->objcore);
 
 	assert(bo->refcount >= 1);
