@@ -129,7 +129,6 @@ vfp_nop_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 		wl = HTTP1_Read(htc, st->ptr + st->len, l);
 		if (wl <= 0)
 			return (wl);
-		st->len += wl;
 		VBO_extend(bo, wl);
 		bytes -= wl;
 	}

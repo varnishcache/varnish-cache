@@ -541,7 +541,6 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 			if (tl > st->space - st->len)
 				tl = st->space - st->len;
 			memcpy(st->ptr + st->len, sp, tl);
-			st->len += tl;
 			al += tl;
 			sp = (char *)sp + tl;
 			sl -= tl;

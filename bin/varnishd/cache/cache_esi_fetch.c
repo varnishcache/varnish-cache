@@ -101,7 +101,6 @@ vfp_esi_bytes_uu(struct busyobj *bo, const struct vef_priv *vef,
 		if (wl <= 0)
 			return (wl);
 		VEP_Parse(bo, (const char *)st->ptr + st->len, wl);
-		st->len += wl;
 		VBO_extend(bo, wl);
 		bytes -= wl;
 	}

@@ -55,8 +55,6 @@ struct vgz {
 	char			*tmp_snapshot;
 	int			last_i;
 
-	struct storage		*st_obuf;
-
 	/* Wrw stuff */
 	char			*m_buf;
 	ssize_t			m_sz;
@@ -210,7 +208,6 @@ VGZ_ObufStorage(struct busyobj *bo, struct vgz *vg)
 	if (st == NULL)
 		return (-1);
 
-	vg->st_obuf = st;
 	VGZ_Obuf(vg, st->ptr + st->len, st->space - st->len);
 
 	return (0);
@@ -237,8 +234,6 @@ VGZ_Gunzip(struct vgz *vg, const void **pptr, size_t *plen)
 		*pptr = before;
 		l = (const uint8_t *)vg->vz.next_out - before;
 		*plen = l;
-		if (vg->st_obuf != NULL)
-			vg->st_obuf->len += l;
 	}
 	vg->last_i = i;
 	if (i == Z_OK)
@@ -280,8 +275,6 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, size_t *plen, enum vgz_flag flags)
 		*pptr = before;
 		l = (const uint8_t *)vg->vz.next_out - before;
 		*plen = l;
-		if (vg->st_obuf != NULL)
-			vg->st_obuf->len += l;
 	}
 	vg->last_i = i;
 	if (i == Z_OK)
@@ -683,7 +676,6 @@ vfp_testgzip_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 			return (wl);
 		bytes -= wl;
 		VGZ_Ibuf(vg, st->ptr + st->len, wl);
-		st->len += wl;
 		VBO_extend(bo, wl);
 
 		while (!VGZ_IbufEmpty(vg)) {
