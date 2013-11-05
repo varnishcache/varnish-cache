@@ -77,6 +77,7 @@ default_oc_freeobj(struct objcore *oc)
 	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
 	oc->priv = NULL;
 	oc->methods = NULL;
+	o->magic = 0;
 
 	STV_Freestore(o);
 	STV_free(o->objstore);

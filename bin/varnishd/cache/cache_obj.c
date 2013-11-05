@@ -65,6 +65,7 @@ ObjIter(struct objiter *oi, void **p, ssize_t *l)
 	ssize_t nl;
 
 	CHECK_OBJ_NOTNULL(oi, OBJITER_MAGIC);
+	CHECK_OBJ_NOTNULL(oi->obj, OBJECT_MAGIC);
 	AN(p);
 	AN(l);
 	*p = NULL;
@@ -105,6 +106,7 @@ ObjIter(struct objiter *oi, void **p, ssize_t *l)
 			ol -= oi->st->len;
 			nl -= oi->st->len;
 		}
+		CHECK_OBJ_NOTNULL(oi->obj, OBJECT_MAGIC);
 		CHECK_OBJ_NOTNULL(oi->st, STORAGE_MAGIC);
 		oi->st = VTAILQ_NEXT(oi->st, list);
 		if (oi->st != NULL && oi->st->len == 0)
@@ -121,6 +123,7 @@ ObjIterEnd(struct objiter **oi)
 
 	AN(oi);
 	CHECK_OBJ_NOTNULL((*oi), OBJITER_MAGIC);
+	CHECK_OBJ_NOTNULL((*oi)->obj, OBJECT_MAGIC);
 	if ((*oi)->bo != NULL)
 		VBO_DerefBusyObj((*oi)->wrk, &(*oi)->bo);
 	FREE_OBJ((*oi));

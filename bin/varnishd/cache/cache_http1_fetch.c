@@ -421,7 +421,6 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->state == BOS_FAILED) {
 		wrk->stats.fetch_failed++;
-		obj->len = 0;
 	} else {
 		assert(bo->state == BOS_FETCHING);
 
