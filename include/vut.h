@@ -31,11 +31,12 @@
 
 #include "vdef.h"
 
+typedef int VUT_cb_f(void);
+
 struct VUT {
 	const char	*progname;
 
 	/* Options */
-	int		a_opt;
 	int		d_opt;
 	int		D_opt;
 	int		g_arg;
@@ -43,17 +44,21 @@ struct VUT {
 	char		*q_arg;
 	char		*r_arg;
 	int		u_opt;
-	char		*w_arg;
 
 	/* State */
 	struct VSL_data	*vsl;
 	struct VSM_data	*vsm;
 	struct VSLQ	*vslq;
-	FILE		*fo;
 	struct vpf_fh	*pfh;
 	int		sighup;
 	int		sigint;
 	int		sigusr1;
+
+	/* Callback functions */
+	VUT_cb_f	*idle_f;
+	VUT_cb_f	*sighup_f;
+	VSLQ_dispatch_f	*dispatch_f;
+	void		*dispatch_priv;
 };
 
 extern struct VUT VUT;
@@ -71,4 +76,4 @@ void VUT_Init(const char *progname);
 
 void VUT_Fini(void);
 
-int VUT_Main(VSLQ_dispatch_f *func, void *priv);
+int VUT_Main(void);

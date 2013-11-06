@@ -49,8 +49,19 @@
 #include "vsb.h"
 #include "vtim.h"
 #include "vut.h"
+#include "miniobj.h"
 
 static const char progname[] = "varnishlog";
+
+struct log {
+	/* Options */
+	int		a_opt;
+	int		B_opt;
+	char		*w_arg;
+
+	/* State */
+	FILE		*fo;
+} LOG;
 
 static void
 usage(int status)
@@ -63,17 +74,68 @@ usage(int status)
 	exit(status);
 }
 
+static void
+openout(int append)
+{
+
+	AN(LOG.w_arg);
+	if (LOG.B_opt)
+		LOG.fo = VSL_WriteOpen(VUT.vsl, LOG.w_arg, append, VUT.u_opt);
+	else
+		LOG.fo = fopen(LOG.w_arg, append ? "a" : "w");
+	if (LOG.fo == NULL)
+		VUT_Error(1, "Can't open output file (%s)",
+		    LOG.B_opt ? VSL_Error(VUT.vsl) : strerror(errno));
+	VUT.dispatch_priv = LOG.fo;
+}
+
+static int __match_proto__(VUT_cb_f)
+rotateout(void)
+{
+
+	AN(LOG.w_arg);
+	AN(LOG.fo);
+	fclose(LOG.fo);
+	openout(0);
+	AN(LOG.fo);
+	return (0);
+}
+
+static int __match_proto__(VUT_cb_f)
+flushout(void)
+{
+
+	AN(LOG.fo);
+	if (fflush(LOG.fo))
+		return (-5);
+	return (0);
+}
+
 int
 main(int argc, char * const *argv)
 {
 	char opt;
 
+	memset(&LOG, 0, sizeof LOG);
 	VUT_Init(progname);
 
 	while ((opt = getopt(argc, argv, vopt_optstring)) != -1) {
 		switch (opt) {
+		case 'a':
+			/* Append to file */
+			LOG.a_opt = 1;
+			break;
+		case 'B':
+			/* Binary output */
+			LOG.B_opt = 1;
+			break;
 		case 'h':
+			/* Usage help */
 			usage(0);
+		case 'w':
+			/* Write to file */
+			REPLACE(LOG.w_arg, optarg);
+			break;
 		default:
 			if (!VUT_Arg(opt, optarg))
 				usage(1);
@@ -83,9 +145,24 @@ main(int argc, char * const *argv)
 	if (optind != argc)
 		usage(1);
 
+	/* Setup output */
+	if (LOG.B_opt)
+		VUT.dispatch_f = &VSL_WriteTransactions;
+	else
+		VUT.dispatch_f = &VSL_PrintTransactions;
+	if (LOG.w_arg) {
+		openout(LOG.a_opt);
+		AN(LOG.fo);
+		VUT.sighup_f = &rotateout;
+	} else
+		LOG.fo = stdout;
+	VUT.idle_f = &flushout;
+
 	VUT_Setup();
-	VUT_Main(NULL, NULL);
+	VUT_Main();
 	VUT_Fini();
+
+	(void)flushout();
 
 	exit(0);
 }

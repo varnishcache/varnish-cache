@@ -116,10 +116,6 @@ VUT_Arg(int opt, const char *arg)
 	int i;
 
 	switch (opt) {
-	case 'a':
-		/* Binary file append */
-		VUT.a_opt = 1;
-		return (1);
 	case 'd':
 		/* Head */
 		VUT.d_opt = 1;
@@ -168,10 +164,6 @@ VUT_Arg(int opt, const char *arg)
 		/* Print version number and exit */
 		VCS_Message(VUT.progname);
 		exit(1);
-	case 'w':
-		/* Binary file output */
-		REPLACE(VUT.w_arg, arg);
-		return (1);
 	default:
 		AN(VUT.vsl);
 		i = VSL_Arg(VUT.vsl, opt, arg);
@@ -218,16 +210,6 @@ VUT_Setup(void)
 	if (c == NULL)
 		VUT_Error(1, "Can't open log (%s)", VSL_Error(VUT.vsl));
 
-	/* Output */
-	if (VUT.w_arg) {
-		VUT.fo = VSL_WriteOpen(VUT.vsl, VUT.w_arg, VUT.a_opt,
-		    VUT.u_opt);
-		if (VUT.fo == NULL)
-			VUT_Error(1, "Can't open output file (%s)",
-			    VSL_Error(VUT.vsl));
-	} else
-		VUT.fo = stdout;
-
 	/* Create query */
 	VUT.vslq = VSLQ_New(VUT.vsl, &c, VUT.g_arg, VUT.q_arg);
 	if (VUT.vslq == NULL)
@@ -265,9 +247,6 @@ VUT_Fini(void)
 	free(VUT.r_arg);
 	free(VUT.P_arg);
 
-	if (VUT.fo != NULL)
-		fflush(VUT.fo);
-
 	vut_vpf_remove();
 	AZ(VUT.pfh);
 
@@ -282,40 +261,28 @@ VUT_Fini(void)
 }
 
 int
-VUT_Main(VSLQ_dispatch_f *func, void *priv)
+VUT_Main(void)
 {
 	struct VSL_cursor *c;
 	int i = -1;
 
 	AN(VUT.vslq);
 
-	if (func == NULL) {
-		if (VUT.w_arg)
-			func = VSL_WriteTransactions;
-		else
-			func = VSL_PrintTransactions;
-		AN(VUT.fo);
-		priv = VUT.fo;
-	}
-
 	while (!VUT.sigint) {
-		if (VUT.w_arg && VUT.sighup) {
-			/* Rotate log */
+		if (VUT.sighup && VUT.sighup_f) {
+			/* sighup callback */
 			VUT.sighup = 0;
-			AN(VUT.fo);
-			fclose(VUT.fo);
-			VUT.fo = VSL_WriteOpen(VUT.vsl, VUT.w_arg, 0,
-			    VUT.u_opt);
-			if (VUT.fo == NULL)
-				VUT_Error(1, "Can't open output file (%s)",
-				    VSL_Error(VUT.vsl));
+			i = (VUT.sighup_f)();
+			if (i)
+				break;
 		}
 
 		if (VUT.sigusr1) {
 			/* Flush and report any incomplete records */
 			VUT.sigusr1 = 0;
 			if (VUT.vslq != NULL)
-				VSLQ_Flush(VUT.vslq, func, priv);
+				VSLQ_Flush(VUT.vslq, VUT.dispatch_f,
+				    VUT.dispatch_priv);
 		}
 
 		if (VUT.vslq == NULL) {
@@ -340,14 +307,17 @@ VUT_Main(VSLQ_dispatch_f *func, void *priv)
 			VUT_Error(0, "Log reaquired");
 		}
 
-		i = VSLQ_Dispatch(VUT.vslq, func, priv);
+		i = VSLQ_Dispatch(VUT.vslq, VUT.dispatch_f, VUT.dispatch_priv);
 		if (i == 1)
 			/* Call again */
 			continue;
 		else if (i == 0) {
 			/* Nothing to do but wait */
-			if (VUT.fo)
-				fflush(VUT.fo);
+			if (VUT.idle_f) {
+				i = (VUT.idle_f)();
+				if (i)
+					break;
+			}
 			VTIM_sleep(0.01);
 			continue;
 		} else if (i == -1) {
@@ -360,7 +330,7 @@ VUT_Main(VSLQ_dispatch_f *func, void *priv)
 
 		/* XXX: Make continuation optional */
 
-		VSLQ_Flush(VUT.vslq, func, priv);
+		VSLQ_Flush(VUT.vslq, VUT.dispatch_f, VUT.dispatch_priv);
 		VSLQ_Delete(&VUT.vslq);
 		AZ(VUT.vslq);
 
@@ -373,9 +343,6 @@ VUT_Main(VSLQ_dispatch_f *func, void *priv)
 			VUT_Error(0, "Log overrun");
 		}
 	}
-
-	if (VUT.fo)
-		fflush(VUT.fo);
 
 	return (i);
 }

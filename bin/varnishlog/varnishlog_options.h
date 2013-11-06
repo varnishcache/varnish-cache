@@ -30,8 +30,28 @@
 #include "vapi/vapi_options.h"
 #include "vut_options.h"
 
-VUT_OPT_a
+#define LOG_OPT_a							\
+	VOPT("a", "[-a]", "Append to file",				\
+	    "When writing output to a file, append to it rather than"	\
+	    " overwrite it."						\
+	)
+
+#define LOG_OPT_B							\
+	VOPT("B", "[-B]", "Binary output",				\
+	    "Output binary data suitable for reading with -r."		\
+	)
+
+#define LOG_OPT_w							\
+	VOPT("w:", "[-w filename]", "Output filename",			\
+	    "Redirect output to file. The file will be overwritten"	\
+	    " unless the -a option was specified. If the application"	\
+	    " receives a SIGHUP the file will be reopened allowing"	\
+	    " the old one to be rotated away."				\
+	)
+
+LOG_OPT_a
 VSL_OPT_b
+LOG_OPT_B
 VSL_OPT_c
 VSL_OPT_C
 VUT_OPT_d
@@ -50,6 +70,6 @@ VSL_OPT_T
 VUT_OPT_u
 VSL_OPT_v
 VUT_OPT_V
-VUT_OPT_w
+LOG_OPT_w
 VSL_OPT_x
 VSL_OPT_X

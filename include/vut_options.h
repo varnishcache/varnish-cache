@@ -29,12 +29,6 @@
 
 /* VUT options */
 
-#define VUT_OPT_a							\
-	VOPT("a", "[-a]", "Append binary file output",			\
-	    "When writing binary output to a file, append to it rather"	\
-	    " than overwrite it."					\
-	)
-
 #define VUT_OPT_d \
 	VOPT("d", "[-d]", "Process old log entries on startup",		\
 	    "Start processing log records at the head of the log"	\
@@ -92,13 +86,4 @@
 #define VUT_OPT_V							\
 	VOPT("V", "[-V]", "Version",					\
 	    "Print version information and exit."			\
-	)
-
-#define VUT_OPT_w							\
-	VOPT("w:", "[-w filename]", "Binary output filename",		\
-	    "Write log entries to this file instead of displaying"	\
-	    " them. The file will be overwritten unless the -a option"	\
-	    " was specified. If the application receives a SIGHUP"	\
-	    " while writing to a file, it will reopen the file"		\
-	    " allowing the old one to be rotated away."			\
 	)
