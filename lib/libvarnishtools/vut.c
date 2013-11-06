@@ -156,10 +156,6 @@ VUT_Arg(int opt, const char *arg)
 		/* Binary file input */
 		REPLACE(VUT.r_arg, arg);
 		return (1);
-	case 'u':
-		/* Unbuffered binary output */
-		VUT.u_opt = 1;
-		return (1);
 	case 'V':
 		/* Print version number and exit */
 		VCS_Message(VUT.progname);

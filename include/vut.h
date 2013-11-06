@@ -43,7 +43,6 @@ struct VUT {
 	char		*P_arg;
 	char		*q_arg;
 	char		*r_arg;
-	int		u_opt;
 
 	/* State */
 	struct VSL_data	*vsl;

@@ -78,11 +78,6 @@
 	    "Read log in binary file format from this file."		\
 	)
 
-#define VUT_OPT_u							\
-	VOPT("u", "[-u]", "Binary file output unbuffered",		\
-	    "Unbuffered binary file output mode."			\
-	)
-
 #define VUT_OPT_V							\
 	VOPT("V", "[-V]", "Version",					\
 	    "Print version information and exit."			\

@@ -80,7 +80,7 @@ openout(int append)
 
 	AN(LOG.w_arg);
 	if (LOG.B_opt)
-		LOG.fo = VSL_WriteOpen(VUT.vsl, LOG.w_arg, append, VUT.u_opt);
+		LOG.fo = VSL_WriteOpen(VUT.vsl, LOG.w_arg, append, 0);
 	else
 		LOG.fo = fopen(LOG.w_arg, append ? "a" : "w");
 	if (LOG.fo == NULL)
