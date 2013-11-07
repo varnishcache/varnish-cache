@@ -80,13 +80,16 @@ and give remote users access via a secure connection to the local
 machine (ssh, VPN, etc. etc.)
 
 It is also possible to configure varnishd for "reverse mode", using
-the '-M' argument,
-
-In this case varnishd will attempt to open a TCP connection to the
-specified address, and initiate a CLI connection on it.
+the '-M' argument.  In that case varnishd will attempt to open a
+TCP connection to the specified address, and initiate a CLI connection
+to your central varnish management facility.
 
 The connection is also in this case without secrecy, but if configured
 the remote end must still satisfy -S/PSK authentication.
+
+Finally, if you run varnishd with the '-d' option, you get a CLI
+command on stdin/stdout, but since you started the process, it
+would be hard to prevent you getting CLI access, wouldn't it ?
 
 Parameters
 ^^^^^^^^^^
@@ -130,7 +133,7 @@ We do not currently have a way to restrict specific CLI commands
 to specific CLI connections.   One way to get such an effect is to
 "wrap" all CLI access in pre-approved scripts which use varnishadm(1)
 to submit the sanitized CLI commands, and restrict a remote user
-to only those scripts in sshd(8)'s configuration.
+to only those scripts, for instance using sshd(8)'s configuration.
 
 VCL programs
 ------------
@@ -151,7 +154,7 @@ lower the privilege of a child process...
 Inline-C is disabled by default starting with Varnish 4, so unless
 you enable it, you don't have to worry about it.
 
-The params mentioned above can restrict VMOD so they can only
+The parameters mentioned above can restrict VMOD, so they can only
 be imported from a designated directory, restricting VCL wranglers
 to a pre-approved subset of VMODs.
 
@@ -171,7 +174,7 @@ to do exactly stupid things to them, including opening youself up
 to various kinds of attacks and subversive activities.
 
 If you have "administrative" HTTP requests, for instance PURGE
-requests, we recommend that you restrict them to trusted IP
-numbers/nets using VCL's Access Control Lists.
+requests, we strongly recommend that you restrict them to trusted
+IP numbers/nets using VCL's Access Control Lists.
 
 (XXX: missing ref to ACL)
