@@ -259,8 +259,9 @@ mgt_cli_challenge(struct cli *cli)
 {
 	int i;
 
+	srandomdev();
 	for (i = 0; i + 2L < sizeof cli->challenge; i++)
-		cli->challenge[i] = (arc4random() % 26) + 'a';
+		cli->challenge[i] = (random() % 26) + 'a';
 	cli->challenge[i++] = '\n';
 	cli->challenge[i] = '\0';
 	VCLI_Out(cli, "%s", cli->challenge);

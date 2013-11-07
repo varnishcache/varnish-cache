@@ -316,6 +316,7 @@ make_secret(const char *dirname)
 {
 	char *fn;
 	int fd;
+	int i;
 	char buf[256];
 
 	assert(asprintf(&fn, "%s/_.secret", dirname) > 0);
@@ -326,7 +327,9 @@ make_secret(const char *dirname)
 		    dirname, strerror(errno));
 		exit(1);
 	}
-	arc4random_buf(buf, sizeof buf);
+	srandomdev();
+	for (i = 0; i < sizeof buf; i++)
+		buf[i] = random();
 	assert(sizeof buf == write(fd, buf, sizeof buf));
 	AZ(close(fd));
 	return (fn);
