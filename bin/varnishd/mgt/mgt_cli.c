@@ -260,7 +260,7 @@ mgt_cli_challenge(struct cli *cli)
 	int i;
 
 	for (i = 0; i + 2L < sizeof cli->challenge; i++)
-		cli->challenge[i] = (random() % 26) + 'a';
+		cli->challenge[i] = (arc4random() % 26) + 'a';
 	cli->challenge[i++] = '\n';
 	cli->challenge[i] = '\0';
 	VCLI_Out(cli, "%s", cli->challenge);
@@ -499,7 +499,6 @@ mgt_cli_secret(const char *S_arg)
 	/* Save in shmem */
 	mgt_SHM_static_alloc(S_arg, strlen(S_arg) + 1L, "Arg", "-S", "");
 
-	srandomdev();			/* XXX: why here ??? */
 	fd = open(S_arg, O_RDONLY);
 	if (fd < 0) {
 		fprintf(stderr, "Can not open secret-file \"%s\"\n", S_arg);

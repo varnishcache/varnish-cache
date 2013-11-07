@@ -311,6 +311,29 @@ cli_stdin_close(void *priv)
 
 /*--------------------------------------------------------------------*/
 
+static const char *
+make_secret(const char *dirname)
+{
+	char *fn;
+	int fd;
+	char buf[256];
+
+	assert(asprintf(&fn, "%s/_.secret", dirname) > 0);
+
+	fd = open(fn, O_RDWR|O_CREAT|O_TRUNC, 0600);
+	if (fd < 0) {
+		fprintf(stderr, "Cannot create secret-file in %s (%s)\n",
+		    dirname, strerror(errno));
+		exit(1);
+	}
+	arc4random_buf(buf, sizeof buf);
+	assert(sizeof buf == write(fd, buf, sizeof buf));
+	AZ(close(fd));
+	return (fn);
+}
+
+/*--------------------------------------------------------------------*/
+
 int
 main(int argc, char * const *argv)
 {
@@ -538,13 +561,17 @@ main(int argc, char * const *argv)
 		fprintf(stderr, "Only one of -b or -f can be specified\n");
 		usage();
 	}
-	if (S_arg == NULL && T_arg == NULL && d_flag == 0 && b_arg == NULL &&
+	if (T_arg == NULL && d_flag == 0 && b_arg == NULL &&
 	    f_arg == NULL && M_arg == NULL) {
 		fprintf(stderr,
-		    "At least one of -d, -b, -f, -M, -S or -T "
+		    "At least one of -d, -b, -f, -M or -T "
 		    "must be specified\n");
 		usage();
 	}
+
+	if (S_arg != NULL && *S_arg == '\0')
+		fprintf(stderr,
+		    "Warning: Empty -S argument, no CLI authentication.\n");
 
 	if (f_arg != NULL) {
 		vcl = VFIL_readfile(NULL, f_arg, NULL);
@@ -651,8 +678,14 @@ main(int argc, char * const *argv)
 
 	if (d_flag)
 		mgt_cli_setup(0, 1, 1, "debug", cli_stdin_close, NULL);
-	if (S_arg != NULL)
+
+	if (S_arg == NULL)
+		S_arg = make_secret(dirname);
+	AN(S_arg);
+
+	if (*S_arg != '\0')
 		mgt_cli_secret(S_arg);
+
 	if (M_arg != NULL)
 		mgt_cli_master(M_arg);
 	if (T_arg != NULL)
