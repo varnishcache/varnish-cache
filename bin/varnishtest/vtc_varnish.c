@@ -277,8 +277,7 @@ varnish_new(const char *name)
 	AN(v->workdir);
 	VSB_delete(vsb);
 
-	bprintf(buf, "rm -rf %s ; mkdir -p %s ; echo ' %ld' > %s/_S",
-	    v->workdir, v->workdir, random(), v->workdir);
+	bprintf(buf, "rm -rf %s ; mkdir -p %s", v->workdir, v->workdir);
 	AZ(system(buf));
 
 	if (*v->name != 'v')
@@ -390,7 +389,6 @@ varnish_launch(struct varnish *v)
 	VSB_printf(vsb, " -p auto_restart=off");
 	VSB_printf(vsb, " -p syslog_cli_traffic=off");
 	VSB_printf(vsb, " -a '%s'", "127.0.0.1:0");
-	VSB_printf(vsb, " -S %s/_S", v->workdir);
 	VSB_printf(vsb, " -M '%s %s'", abuf, pbuf);
 	VSB_printf(vsb, " -P %s/varnishd.pid", v->workdir);
 	VSB_printf(vsb, " %s", VSB_data(v->storage));
@@ -470,7 +468,7 @@ varnish_launch(struct varnish *v)
 	if (u != CLIS_AUTH)
 		vtc_log(v->vl, 0, "CLI auth demand expected: %u %s", u, r);
 
-	bprintf(abuf, "%s/_S", v->workdir);
+	bprintf(abuf, "%s/_.secret", v->workdir);
 	nfd = open(abuf, O_RDONLY);
 	assert(nfd >= 0);
 
