@@ -57,8 +57,6 @@ struct varnish {
 	struct vtclog		*vl;
 	VTAILQ_ENTRY(varnish)	list;
 
-	struct vsb		*storage;
-
 	struct vsb		*args;
 	int			fds[4];
 	pid_t			pid;
@@ -285,10 +283,6 @@ varnish_new(const char *name)
 
 	v->args = VSB_new_auto();
 
-	v->storage = VSB_new_auto();
-	VSB_printf(v->storage, "-sfile,%s,10M", v->workdir);
-	AZ(VSB_finish(v->storage));
-
 	v->cli_fd = -1;
 	VTAILQ_INSERT_TAIL(&varnishes, v, list);
 
@@ -391,7 +385,6 @@ varnish_launch(struct varnish *v)
 	VSB_printf(vsb, " -a '%s'", "127.0.0.1:0");
 	VSB_printf(vsb, " -M '%s %s'", abuf, pbuf);
 	VSB_printf(vsb, " -P %s/varnishd.pid", v->workdir);
-	VSB_printf(vsb, " %s", VSB_data(v->storage));
 	VSB_printf(vsb, " %s", VSB_data(v->args));
 	AZ(VSB_finish(vsb));
 	vtc_log(v->vl, 3, "CMD: %s", VSB_data(vsb));
@@ -854,13 +847,6 @@ cmd_varnish(CMD_ARGS)
 	for (; *av != NULL; av++) {
 		if (vtc_error)
 			break;
-		if (!strcmp(*av, "-storage")) {
-			VSB_clear(v->storage);
-			VSB_cat(v->storage, av[1]);
-			AZ(VSB_finish(v->storage));
-			av++;
-			continue;
-		}
 		if (!strcmp(*av, "-arg")) {
 			AN(av[1]);
 			AZ(v->pid);

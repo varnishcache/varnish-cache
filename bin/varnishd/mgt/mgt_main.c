@@ -166,8 +166,8 @@ usage(void)
 	fprintf(stderr, FMT, "-p param=value", "set parameter");
 	fprintf(stderr, FMT, "-r param[,param...]", "make parameter read-only");
 	fprintf(stderr, FMT,
-	    "-s kind[,storageoptions]", "Backend storage specification");
-	fprintf(stderr, FMT, "", "  -s malloc");
+	    "-s [name=]kind[,options]", "Backend storage specification");
+	fprintf(stderr, FMT, "", "  -s malloc[,<size>]");
 #ifdef HAVE_LIBUMEM
 	fprintf(stderr, FMT, "", "  -s umem");
 #endif
@@ -351,7 +351,7 @@ main(int argc, char * const *argv)
 	const char *n_arg = NULL;
 	const char *P_arg = NULL;
 	const char *S_arg = NULL;
-	const char *s_arg = "file";
+	const char *s_arg = "malloc,100m";
 	int s_arg_given = 0;
 	const char *T_arg = NULL;
 	char *p, *vcl = NULL;

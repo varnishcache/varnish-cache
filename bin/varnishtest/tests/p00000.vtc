@@ -9,7 +9,7 @@ shell "rm -f ${tmpdir}/_.per"
 
 varnish v1 \
 	-arg "-pfeature=+wait_silo" \
-	-storage "-spersistent,${tmpdir}/_.per,10m" \
+	-arg "-spersistent,${tmpdir}/_.per,10m" \
 	-vcl+backend { } -start
 
 varnish v1 -stop

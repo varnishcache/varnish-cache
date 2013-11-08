@@ -19,7 +19,7 @@ server s1 {
 } -start
 
 varnish v1 -arg "-p nuke_limit=0 -p shortlived=0" \
-	-storage "-smalloc,1m" -vcl+backend {
+	-arg "-smalloc,1m" -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
 	}

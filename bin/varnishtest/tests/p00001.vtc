@@ -10,7 +10,7 @@ server s1 {
 varnish v1 \
 	-arg "-pfeature=+wait_silo" \
 	-arg "-pban_lurker_sleep=0" \
-	-storage "-spersistent,${tmpdir}/_.per,10m" \
+	-arg "-spersistent,${tmpdir}/_.per,10m" \
 	-vcl+backend { } -start
 
 varnish v1 -cliok "param.set default_grace 0"

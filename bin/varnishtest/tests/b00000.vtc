@@ -5,7 +5,7 @@ server s1 {
 	txresp -body "012345\n"
 } -start
 
-varnish v1 -storage "-smalloc,1m" -vcl+backend {} -start
+varnish v1 -vcl+backend {} -start
 
 varnish v1 -cliok "param.set debug +workspace"
 

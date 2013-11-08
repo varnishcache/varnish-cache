@@ -16,7 +16,8 @@ server s1 {
 varnish v1 \
 	-arg "-pfeature=+wait_silo" \
 	-arg "-pban_lurker_sleep=0" \
-	-storage "-sper1=persistent,${tmpdir}/_.per1,10m -sper2=persistent,${tmpdir}/_.per2,10m" \
+	-arg "-sper1=persistent,${tmpdir}/_.per1,10m" \
+	-arg "-sper2=persistent,${tmpdir}/_.per2,10m" \
 	-vcl+backend {
 		sub vcl_backend_response {
 			set beresp.storage = "per1";
@@ -44,7 +45,7 @@ server s1 -wait
 varnish v2 \
 	-arg "-pfeature=+wait_silo" \
 	-arg "-pban_lurker_sleep=0" \
-	-storage "-spersistent,${tmpdir}/_.per1,10m" \
+	-arg "-spersistent,${tmpdir}/_.per1,10m" \
 	-vcl+backend { } -start
 varnish v2 -cliok "ban obj.http.x-foo == foo"
 varnish v2 -cliok "ban.list"
@@ -55,7 +56,8 @@ varnish v2 -stop
 varnish v3 \
 	-arg "-pfeature=+wait_silo" \
 	-arg "-pban_lurker_sleep=0" \
-	-storage "-spersistent,${tmpdir}/_.per1,10m -spersistent,${tmpdir}/_.per2,10m" \
+	-arg "-spersistent,${tmpdir}/_.per1,10m" \
+	-arg "-spersistent,${tmpdir}/_.per2,10m" \
 	-vcl+backend { } -start
 varnish v3 -cliok "ban.list"
 varnish v3 -stop
@@ -70,7 +72,7 @@ server s1 {
 varnish v4 \
 	-arg "-pfeature=+wait_silo" \
 	-arg "-pban_lurker_sleep=0" \
-	-storage "-spersistent,${tmpdir}/_.per2,10m" \
+	-arg "-spersistent,${tmpdir}/_.per2,10m" \
 	-vcl+backend { } -start
 client c1 -connect ${v4_sock} {
 	txreq -url "/silo2"

@@ -12,7 +12,8 @@ shell "rm -f ${tmpdir}/_.per?"
 
 varnish v1 \
 	-arg "-pfeature=+wait_silo" \
-	-storage "-spersistent,${tmpdir}/_.per1,10m -spersistent,${tmpdir}/_.per2,10m" \
+	-arg "-spersistent,${tmpdir}/_.per1,10m" \
+	-arg "-spersistent,${tmpdir}/_.per2,10m" \
 	-vcl+backend {
 	sub vcl_backend_response {
 		set beresp.storage = "s0";
@@ -43,7 +44,8 @@ server s1 {
 
 varnish v2 \
 	-arg "-pfeature=+wait_silo" \
-	-storage "-spersistent,${tmpdir}/_.per2,10m -spersistent,${tmpdir}/_.per1,10m" \
+	-arg "-spersistent,${tmpdir}/_.per2,10m" \
+	-arg "-spersistent,${tmpdir}/_.per1,10m" \
 	-vcl+backend { } -start
 
 client c1 -connect ${v2_sock} {

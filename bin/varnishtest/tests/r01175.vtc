@@ -5,7 +5,7 @@ server s1 {
 	txresp -nolen -hdr "Content-Length: 1048576"
 } -start
 
-varnish v1 -storage "-s test=malloc,1M" -vcl+backend {
+varnish v1 -arg "-s test=malloc,1M" -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.storage = "test";
 		set beresp.do_stream = false;

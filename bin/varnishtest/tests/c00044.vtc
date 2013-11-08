@@ -17,7 +17,11 @@ server s1 {
 	txresp -bodylen 1047194
 } -start
 
-varnish v1 -storage "-smalloc,1m -smalloc,1m, -smalloc,1m" -vcl+backend {
+varnish v1 \
+	-arg "-smalloc,1m" \
+	-arg "-smalloc,1m" \
+	-arg "-smalloc,1m" \
+ 	-vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
 		set beresp.storage = "invalid";

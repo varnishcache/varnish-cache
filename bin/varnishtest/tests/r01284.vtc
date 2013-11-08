@@ -11,7 +11,7 @@ server s1 {
 
 varnish v1 \
 	-arg "-p nuke_limit=0" \
-	-storage "-sTransient=malloc,1m" \
+	-arg "-sTransient=malloc,1m" \
 	-vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_stream = false;

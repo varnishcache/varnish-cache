@@ -12,7 +12,7 @@ server s1 {
 varnish v1 \
 	-arg "-pfeature=+wait_silo" \
 	-arg "-pban_lurker_sleep=0.01" \
-	-storage "-sper1=persistent,${tmpdir}/_.per1,10m" \
+	-arg "-sper1=persistent,${tmpdir}/_.per1,10m" \
 	-vcl+backend {
 	}
 varnish v1 -start
