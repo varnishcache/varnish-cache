@@ -42,54 +42,90 @@ The important decisions to make are:
 CLI interface access
 ^^^^^^^^^^^^^^^^^^^^
 
-The most important of these is the CLI interface:  Should it be
-accessible only on the local machine, or should it be accessible
-also from across the network ?
+The command line interface can be accessed three ways.
 
-No matter what you do, you should always protect the CLI with a
-Pre-Shared-Key (The -S argument).
-
-The way -S/PSK works is really simple:  You specify -S and filename,
-and only somebody who knows the exact contents of that file can
-access the CLI.  By protecting the secret file with suitable UNIX
-permissions, you can restrict CLI access
-
-The varnishadm(8) program knows how to do the -S/PSK protocol,
-both locally and remote.
-
-(XXX ref: user-guide: setting up -S)
-
-The CLI port is a TCP socket, and it can be bound to any IP
-number+socket combination the kernel will accept::
+Varnishd can be told til listen and offer CLI connections
+on a TCP socket.  You can bind the socket to pretty
+much anything the kernel will accept::
 
 	-T 127.0.0.1:631
 	-T localhost:9999
 	-T 192.168.1.1:34
 	-T '[fe80::1]:8082'
 
-If you want to be able to use the CLI remotely, you can do it
-two ways.
+By using a "localhost" address, you can restrict CLI access
+to the local machine.
 
-You can bind the CLI port to a reachable IP number, and connect
-directly.  This gives you no secrecy, ie, the CLI commands will
+You can also bind the CLI port to an IP number reachable across
+the net, and let other computers connect directly.
+
+This gives you no secrecy, ie, the CLI commands will
 go across the network as ASCII text with no encryption, but
-using the -S option, you will get authentication.
+the -S/PSK authentication requires the remote end to know
+the shared secret.
 
 Alternatively you can bind the CLI port to a 'localhost' address,
 and give remote users access via a secure connection to the local
-machine (ssh, VPN, etc. etc.)
+machine, using ssh/VPN or similar.
+
+If you use ssh you can restrict which commands each user can execute to
+just varnishadm, or even to wrapper scripts around varnishadm, which
+only allow specific CLI commands.
 
 It is also possible to configure varnishd for "reverse mode", using
 the '-M' argument.  In that case varnishd will attempt to open a
 TCP connection to the specified address, and initiate a CLI connection
 to your central varnish management facility.
 
-The connection is also in this case without secrecy, but if configured
+The connection is also in this case without secrecy, but 
 the remote end must still satisfy -S/PSK authentication.
 
 Finally, if you run varnishd with the '-d' option, you get a CLI
 command on stdin/stdout, but since you started the process, it
 would be hard to prevent you getting CLI access, wouldn't it ?
+
+CLI interface authentication
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default the CLI interface is protected with a simple,  yet
+strong "Pre Shared Key" authentication method, which do not provide
+secrecy (ie: The CLI commands and responses are not encrypted).
+
+The way -S/PSK works is really simple:  During startup a file is
+created with a random content and the file is only accessible to
+the user who started varnishd (or the superuser).
+
+To authenticate and use a CLI connection, you need to know the
+contents of that file, in order to answer the cryptographic
+challenge varnishd issues. (XXX: xref to algo in refman)
+
+The varnishadm program knows all about this, it will just work,
+provided it can read the secret file.
+
+If you want to allow other users on the local system or remote
+users, to be able to access CLI connections, you must create your
+own secret file and make it possible for (only!) these users to
+read it.
+
+A good way to create the secret file is::
+
+	dd if=/dev/random of=/etc/varnish_secret count=1
+
+When you start varnishd, you specify the filename with -S, and
+it goes without saying that the varnishd master process needs
+to be able to read the file too.
+
+You can change the contents of the secret file while varnishd
+runs, it is read every time a CLI connection is authenticated.
+
+On the local system, varnishadm can find the filename from
+shared memory, but on remote systems, you need to give it
+a copy of the secret file, with the -S argument.
+
+If you want to disable -S/PSK authentication, specify -S with
+an empty argument to varnishd::
+
+	varnishd [...] -S "" [...]
 
 Parameters
 ^^^^^^^^^^
