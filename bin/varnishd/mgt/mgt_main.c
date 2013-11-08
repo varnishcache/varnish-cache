@@ -317,7 +317,7 @@ make_secret(const char *dirname)
 	char *fn;
 	int fd;
 	int i;
-	char buf[256];
+	unsigned char buf[256];
 
 	assert(asprintf(&fn, "%s/_.secret", dirname) > 0);
 
@@ -329,7 +329,7 @@ make_secret(const char *dirname)
 	}
 	srandomdev();
 	for (i = 0; i < sizeof buf; i++)
-		buf[i] = random();
+		buf[i] = random() & 0xff;
 	assert(sizeof buf == write(fd, buf, sizeof buf));
 	AZ(close(fd));
 	return (fn);
