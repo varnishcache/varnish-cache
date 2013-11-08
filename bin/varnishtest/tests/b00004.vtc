@@ -4,7 +4,7 @@ server s1 {
 	rxreq
 } -start
 
-varnish v1 -vcl+backend { } 
+varnish v1 -vcl+backend { }
 
 varnish v1 -start
 varnish v1 -stop

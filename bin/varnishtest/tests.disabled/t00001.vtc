@@ -31,20 +31,20 @@ varnish v1 -vcl+backend {
 		}
 		set beresp.do_stream = true;
 	}
-} -start 
+} -start
 
 client c1 {
 	txreq  -url /bar
-	rxresp 
+	rxresp
 	expect resp.http.content-length == 6
 	expect resp.bodylen == 6
 	txreq  -url /bla
-	rxresp 
+	rxresp
 	expect resp.bodylen == 9
 	txreq  -url /foo
-	rxresp 
+	rxresp
 	expect resp.bodylen == 5
 	txreq  -url /barf
-	rxresp 
+	rxresp
 	expect resp.bodylen == 21
 } -run

@@ -1,6 +1,6 @@
 varnishtest "Check that we close one error"
 
-varnish v1 -vcl { 
+varnish v1 -vcl {
 	backend foo {
 		.host = "${bad_ip}"; .port = "9080";
 	}

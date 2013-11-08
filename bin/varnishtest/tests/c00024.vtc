@@ -1,24 +1,24 @@
 varnishtest "Test restart in vcl_error"
 
 server s1 {
-        rxreq 
-        txresp 
+        rxreq
+        txresp
 } -start
 
-varnish v1 -vcl+backend { 
+varnish v1 -vcl+backend {
 	sub vcl_recv {
 		if (req.restarts == 0) {
 			return (error(701, "FOO"));
 		}
 	}
-	sub vcl_error { 
-		if (req.restarts < 1) { 
-			return (restart); 
-		} else { 
-			set obj.status = 201; 
+	sub vcl_error {
+		if (req.restarts < 1) {
+			return (restart);
+		} else {
+			set obj.status = 201;
 		}
 	 }
- } -start 
+ } -start
 
 client c1 {
         txreq -url "/"

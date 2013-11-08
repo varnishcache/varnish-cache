@@ -15,6 +15,6 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 } -run

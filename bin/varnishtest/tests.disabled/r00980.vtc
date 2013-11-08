@@ -22,7 +22,7 @@ client c1 {
 	gunzip
 	expect resp.bodylen == 43
 
-	txreq -url /foobar 
+	txreq -url /foobar
 	rxresp
 	expect resp.http.content-encoding == <undef>
 	expect resp.bodylen == 43

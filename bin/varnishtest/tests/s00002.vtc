@@ -35,21 +35,21 @@ server s1 {
 } -start
 
 varnish v1 -vcl {
-	backend b { 
-		.host = "${s1_addr}"; 
-		.port = "${s1_port}"; 
-		.probe = { 
-			.url = "/"; 
-			.timeout = 30ms; 
-			.interval = 1s; 
-			.window = 2; 
-			.threshold = 1; 
+	backend b {
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
+		.probe = {
+			.url = "/";
+			.timeout = 30ms;
+			.interval = 1s;
+			.window = 2;
+			.threshold = 1;
 			.initial = 0;
-			} 
+			}
 		}
-	sub vcl_backend_response { 
-		set beresp.ttl = 1s; 
-		set beresp.grace = 1m; 
+	sub vcl_backend_response {
+		set beresp.ttl = 1s;
+		set beresp.grace = 1m;
 	}
 } -start
 

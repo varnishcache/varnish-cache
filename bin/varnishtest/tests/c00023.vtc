@@ -1,36 +1,36 @@
 varnishtest "Test -h critbit for digest edges"
 
 server s1 {
-        rxreq 
+        rxreq
 	expect req.url == "/1"
         txresp -body "\n"
-        rxreq 
+        rxreq
 	expect req.url == "/2"
         txresp -body "x\n"
-        rxreq 
+        rxreq
 	expect req.url == "/3"
         txresp -body "xx\n"
-        rxreq 
+        rxreq
 	expect req.url == "/4"
         txresp -body "xxx\n"
-        rxreq 
+        rxreq
 	expect req.url == "/5"
         txresp -body "xxxx\n"
-        rxreq 
+        rxreq
 	expect req.url == "/6"
         txresp -body "xxxxx\n"
-        rxreq 
+        rxreq
 	expect req.url == "/7"
         txresp -body "xxxxxx\n"
-        rxreq 
+        rxreq
 	expect req.url == "/8"
         txresp -body "xxxxxxx\n"
-        rxreq 
+        rxreq
 	expect req.url == "/9"
         txresp -body "xxxxxxxx\n"
 } -start
 
-varnish v1 -arg "-hcritbit" -vcl+backend { } -start 
+varnish v1 -arg "-hcritbit" -vcl+backend { } -start
 varnish v1 -cliok "param.set debug +hashedge"
 
 client c1 {

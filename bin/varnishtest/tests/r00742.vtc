@@ -1,7 +1,7 @@
 varnishtest "% escapes in VCL source and vcl.show"
 
 server s1 {
-	rxreq	
+	rxreq
 	txresp
 } -start
 

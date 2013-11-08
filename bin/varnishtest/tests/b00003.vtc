@@ -1,11 +1,11 @@
 varnishtest "Check that a cache fetch + hit transaction works"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -hdr "Connection: close" -body "012345\n"
 } -start
 
-varnish v1 -vcl+backend { } -start 
+varnish v1 -vcl+backend { } -start
 
 client c1 {
 	txreq -url "/"

@@ -2,7 +2,7 @@ varnishtest "ESI include with http://"
 
 
 server s1 {
-	rxreq 
+	rxreq
 	expect req.url == "/foo/bar"
 	txresp -body {
 		<html>

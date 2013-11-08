@@ -1,7 +1,7 @@
 varnishtest "Does anything get through at all ?"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -body "012345\n"
 } -start
 

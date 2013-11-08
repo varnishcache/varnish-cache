@@ -1,7 +1,7 @@
 varnishtest "Test that esi+gzip correctly bypasses Vary: accept-encoding"
 
 server s1 {
-	rxreq 
+	rxreq
 	expect req.http.accept-encoding == gzip
 	txresp -hdr "Vary: Accept-encoding" -gzipbody {FOO}
 } -start
@@ -16,7 +16,7 @@ client c1 {
 	gunzip
 	expect resp.bodylen == 3
 
-	txreq 
+	txreq
 	rxresp
 	expect resp.http.content-encoding == <undef>
 	expect resp.status == 200

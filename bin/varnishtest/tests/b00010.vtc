@@ -1,7 +1,7 @@
 varnishtest "Check simple list hasher"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -hdr "Connection: close" -body "012345\n"
 } -start
 

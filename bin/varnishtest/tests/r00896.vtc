@@ -1,7 +1,7 @@
 varnishtest "Ticket #896, strings over 256 bytes"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp
 } -start
 
@@ -11,10 +11,10 @@ varnish v1 -vcl+backend {
 		return (error(500,"not ok"));
 		}
 	}
-} -start 
+} -start
 
 client c1 {
-	txreq  
+	txreq
 	rxresp
 	expect resp.status == 200
 } -run

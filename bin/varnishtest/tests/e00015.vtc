@@ -1,21 +1,21 @@
 varnishtest "ESI requests turned off"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -body {
 		<html>
 		Before include
 		<esi:include src="/body"/>
 		After include
 	}
-	rxreq 
+	rxreq
 	txresp -body {
 		<html>
 		Before include
 		<esi:include src="/body"/>
 		After include
 	}
-	rxreq 
+	rxreq
 	expect req.url == "/body"
 	txresp -body {
 		Included file
@@ -24,8 +24,8 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
-	    	if(req.url == "/") {
- 	    	   set req.esi = false;
+		if(req.url == "/") {
+			set req.esi = false;
 		}
 	}
 	sub vcl_backend_response {

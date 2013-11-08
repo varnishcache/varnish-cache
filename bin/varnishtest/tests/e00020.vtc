@@ -2,7 +2,7 @@ varnishtest "ESI:remove"
 
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -gzipbody {
 		<esi:remove>
 		This is a test: Unseen University
@@ -18,12 +18,12 @@ varnish v1 -vcl+backend {
 		set beresp.do_esi = true;
 		set beresp.do_gunzip = true;
 	}
-} -start 
+} -start
 
 varnish v1 -cliok "param.set http_gzip_support true"
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 40

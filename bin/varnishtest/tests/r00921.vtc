@@ -1,18 +1,18 @@
 varnishtest "VCC type issue in regsub arg 1"
 
 server s1 {
-	rxreq 
+	rxreq
 	expect req.http.foo == "127.0.0.1"
 	expect req.http.bar == "127.0.0.1"
-	txresp 
+	txresp
 } -start
 
-varnish v1 -vcl+backend { 
+varnish v1 -vcl+backend {
 	sub vcl_recv {
 		set req.http.bar = regsub(req.url, ".*", client.ip);
 		set req.http.foo = regsub(client.ip, ":.*", client.ip);
 	}
-} -start 
+} -start
 
 client c1 {
 	txreq -url "/"

@@ -26,7 +26,7 @@ client c1 {
 	expect resp.http.smallerthanzero == false
 	expect resp.http.iszero == false
 	expect resp.http.converted == 1
-	
+
 	txreq -url "/1"  -hdr "foo: -1"
 	rxresp
 	expect resp.status == 200

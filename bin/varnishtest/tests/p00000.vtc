@@ -1,8 +1,8 @@
 varnishtest "Test Basic persistence"
 
 server s1 {
-	rxreq 
-	txresp 
+	rxreq
+	txresp
 } -start
 
 shell "rm -f ${tmpdir}/_.per"
@@ -10,7 +10,7 @@ shell "rm -f ${tmpdir}/_.per"
 varnish v1 \
 	-arg "-pfeature=+wait_silo" \
 	-storage "-spersistent,${tmpdir}/_.per,10m" \
-	-vcl+backend { } -start 
+	-vcl+backend { } -start
 
 varnish v1 -stop
 

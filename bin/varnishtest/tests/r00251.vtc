@@ -1,21 +1,21 @@
 varnishtest "Regression test for #251: segfault on regsub on missing http header"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp \
 		-hdr "Foobar: _barf_" \
 		-hdr "Connection: close" \
 		-body "012345\n"
 } -start
 
-varnish v1 -vcl+backend { 
+varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.http.Snafu1 =
 		    "zoom" +
 		    regsub(beresp.http.Foomble, "ar", "\0\0") +
 		    "box";
 	}
-} -start 
+} -start
 
 client c1 {
 	txreq -url "/"

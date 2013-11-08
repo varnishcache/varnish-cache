@@ -3,7 +3,7 @@ varnishtest "pass + HEAD"
 server s1 {
 	rxreq
 	expect req.method == "HEAD"
-	txresp 
+	txresp
 } -start
 
 varnish v1 -vcl+backend {} -start

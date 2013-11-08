@@ -4,8 +4,8 @@ varnishtest "Test address remapping"
 feature	not-OSX
 
 server s1 {
-	rxreq 
-	txresp 
+	rxreq
+	txresp
 } -start
 
 shell "rm -f ${tmpdir}/_.per?"
@@ -13,11 +13,11 @@ shell "rm -f ${tmpdir}/_.per?"
 varnish v1 \
 	-arg "-pfeature=+wait_silo" \
 	-storage "-spersistent,${tmpdir}/_.per1,10m -spersistent,${tmpdir}/_.per2,10m" \
-	-vcl+backend { 
+	-vcl+backend {
 	sub vcl_backend_response {
 		set beresp.storage = "s0";
 	}
-} -start 
+} -start
 
 varnish v1 -stop
 
@@ -36,7 +36,7 @@ varnish v1 -cliok "debug.persistent s0 sync"
 varnish v1 -stop
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -status 400 -msg "Persistent Object Not Found"
 } -start
 
@@ -44,7 +44,7 @@ server s1 {
 varnish v2 \
 	-arg "-pfeature=+wait_silo" \
 	-storage "-spersistent,${tmpdir}/_.per2,10m -spersistent,${tmpdir}/_.per1,10m" \
-	-vcl+backend { } -start 
+	-vcl+backend { } -start
 
 client c1 -connect ${v2_sock} {
 	txreq -url "/"

@@ -1,11 +1,11 @@
 varnishtest "Check that synth response in vcl_backend_response works"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -body "012345\n"
 } -start
 
-varnish v1 -vcl+backend { 
+varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 	    set beresp.http.Foo = "bar";
 	    set beresp.status = 523;

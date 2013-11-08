@@ -4,9 +4,9 @@ server s1 {
 	rxreq
 	expect req.url == "/"
 	txresp -body {
-		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove>
 		<esi:include src="/foo"/>
-		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove>
 	}
 
 	rxreq
@@ -27,5 +27,5 @@ client c1 {
 	txreq -proto HTTP/1.0 -hdr "Connection: kEep-alive"
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 18
+	expect resp.bodylen == 16
 } -run

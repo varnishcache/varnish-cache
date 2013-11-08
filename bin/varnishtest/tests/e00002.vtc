@@ -2,7 +2,7 @@ varnishtest "ESI CDATA"
 
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -body {
 		<esi:remove>
 		<![CDATA[</esi:remove>]]>
@@ -19,7 +19,7 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 35

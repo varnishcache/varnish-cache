@@ -1,9 +1,9 @@
 varnishtest "#345, ESI waitinglist trouble"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -body {<esi:include src="someurl">}
-	rxreq 
+	rxreq
 	sema r1 sync 2
 	delay 1
 	txresp -body {DATA}

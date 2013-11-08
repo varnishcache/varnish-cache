@@ -3,9 +3,9 @@ varnishtest "Check that Vary headers are stored"
 shell "rm -f ${tmpdir}/_.per"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -hdr "Foo: foo1" -hdr "Vary: foo, bar"
-	rxreq 
+	rxreq
 	txresp -hdr "Foo: foo2" -hdr "Vary: foo, bar"
 } -start
 
@@ -13,7 +13,7 @@ server s1 {
 varnish v1 \
 	-storage "-spersistent,${tmpdir}/_.per,10m" \
 	-arg "-pban_lurker_sleep=0" \
-	-vcl+backend { } -start 
+	-vcl+backend { } -start
 
 client c1 {
 	txreq -url "/foo" -hdr "foo: 1" -hdr "bar: 2"

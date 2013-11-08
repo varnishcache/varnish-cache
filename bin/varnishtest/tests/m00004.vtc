@@ -65,7 +65,7 @@ varnish v1 -vcl+backend {
 			set resp.http.three = std.fileread("${tmpdir}/m00004_file_three");
 		}
 	}
-} 
+}
 
 varnish v1 -cli "vcl.list"
 varnish v1 -cli "vcl.use vcl2"

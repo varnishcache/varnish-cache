@@ -9,7 +9,7 @@ server s1 {
 	txresp -body foobar1
 } -start
 
-varnish v1 -vcl+backend { 
+varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.uncacheable = true;
 	}
@@ -26,6 +26,6 @@ client c1 {
 	expect resp.status == 200
 	expect resp.bodylen == 7
 	expect resp.http.x-varnish == "1003"
-} 
+}
 
 client c1 -run

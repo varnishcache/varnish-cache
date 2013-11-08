@@ -5,7 +5,10 @@ server s1 {
 	txresp -bodylen 1048198
 } -start
 
-varnish v1 -arg "-p nuke_limit=0" -storage "-sTransient=malloc,1m" -vcl+backend {
+varnish v1 \
+	-arg "-p nuke_limit=0" \
+	-storage "-sTransient=malloc,1m" \
+	-vcl+backend {
 	sub vcl_recv {
 		if (req.http.x-do-error) {
 			return (error(500));

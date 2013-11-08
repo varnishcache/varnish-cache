@@ -4,7 +4,7 @@ server s1 {
 	rxreq
 	expect req.url == "/body"
 	txresp -hdr "Last-Modified: Tue, 25 Nov 2008 00:00:00 GMT" -body "BODY"
-	rxreq 
+	rxreq
 	expect req.url == "/"
 	txresp -body {<X><esi:include src="/body"/></X>}
 } -start

@@ -5,7 +5,7 @@ server s1 {
 	txresp -hdr "Cache-Control: foo" -hdr "Cache-control: bar" -bodylen 4
 } -start
 
-varnish v1 -vcl+backend { 
+varnish v1 -vcl+backend {
 	sub vcl_deliver {
 		set resp.http.Foo = req.http.cache-control;
 	}

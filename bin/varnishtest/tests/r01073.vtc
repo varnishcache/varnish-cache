@@ -1,7 +1,7 @@
 varnishtest "Test that hash_always_miss also implies hash_ignore_busy. Ticket #1073."
 
 server s1 {
-	rxreq 
+	rxreq
 	sema r1 sync 2
 	sema r2 sync 2
 	delay 1
@@ -14,7 +14,7 @@ server s2 {
 	txresp -hdr "Server: 2"
 } -start
 
-varnish v1 -vcl+backend { 
+varnish v1 -vcl+backend {
 	sub vcl_recv {
 		if (req.http.x-hash-always-miss == "1") {
 			set req.hash_always_miss = true;
@@ -26,7 +26,7 @@ varnish v1 -vcl+backend {
 			set req.backend = s2;
 		}
 	}
-} -start 
+} -start
 
 client c1 {
 	txreq -url "/" -hdr "x-client: 1"

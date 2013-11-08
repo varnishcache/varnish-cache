@@ -24,7 +24,7 @@ varnish v1 -vcl+backend {
 varnish v1 -cliok "debug.srandom 1"
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.http.rnd1 == 0.388
 	expect resp.http.rnd2 == 7.478

@@ -12,7 +12,7 @@ server s2 {
 
 varnish v1 -vcl {
 	backend s1 {
-		.host = "${s1_addr}"; 
+		.host = "${s1_addr}";
 		.port = "${s1_port}";
 	}
 	backend default {

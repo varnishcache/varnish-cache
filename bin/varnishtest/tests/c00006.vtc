@@ -16,7 +16,7 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 5
-} 
+}
 
 client c1 -run
 

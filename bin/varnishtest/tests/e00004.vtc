@@ -2,14 +2,14 @@ varnishtest "ESI commented include"
 
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -body {
 		<html>
 		Before include
 		<!--esi <esi:include src="/body"/> -->
 		After include
 	}
-	rxreq 
+	rxreq
 	expect req.url == "/body"
 	txresp -body {
 		Included file
@@ -23,7 +23,7 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 67

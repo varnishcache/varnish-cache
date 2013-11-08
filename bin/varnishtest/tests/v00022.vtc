@@ -54,34 +54,34 @@ varnish v1 -vcl+backend {
 varnish v1 -cliok "debug.srandom 1"
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.bodylen == 2
-	txreq 
+	txreq
 	rxresp
 	expect resp.bodylen == 4
-	txreq 
+	txreq
 	rxresp
 	expect resp.bodylen == 4
-	txreq 
+	txreq
 	rxresp
 	expect resp.bodylen == 4
-	txreq 
+	txreq
 	rxresp
 	expect resp.bodylen == 1
-	txreq 
+	txreq
 	rxresp
 	expect resp.bodylen == 2
-	txreq 
+	txreq
 	rxresp
 	expect resp.bodylen == 4
-	txreq 
+	txreq
 	rxresp
 	expect resp.bodylen == 2
-	txreq 
+	txreq
 	rxresp
 	expect resp.bodylen == 3
-	txreq 
+	txreq
 	rxresp
 	expect resp.bodylen == 2
 } -run

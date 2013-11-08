@@ -6,7 +6,7 @@ server s1 {
 		<esi:include src="/foo">
 		<esi:include src="/bar">
 		<esi:include src="/barf">
-	} 
+	}
 
 	rxreq
 	expect req.url == "/foo"

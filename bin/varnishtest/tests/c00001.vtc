@@ -1,14 +1,14 @@
 varnishtest "Test VCL regsub()"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp \
 		-hdr "Foobar: _barf_" \
 		-hdr "Connection: close" \
 		-body "012345\n"
 } -start
 
-varnish v1 -vcl+backend { 
+varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.http.Snafu1 = regsub(beresp.http.Foobar, "ar", "\0\0");
 		set beresp.http.Snafu2 =
@@ -24,7 +24,7 @@ varnish v1 -vcl+backend {
 		set beresp.http.Snafu7 =
 		    regsub(beresp.http.Foobar, "ar", bereq.http.nosuchheader);
 	}
-} -start 
+} -start
 
 client c1 {
 	txreq -url "/"

@@ -20,7 +20,7 @@ server s1 {
 varnish v1 -arg "-p workspace_client=3072" -vcl+backend {
 
 	sub vcl_recv {
-		set req.http.foo = 
+		set req.http.foo =
 			req.http.bar +
 			"0123456789abcdef" + "0123456789abcdef" +
 			"0123456789abcdef" + "0123456789abcdef" +
@@ -47,18 +47,18 @@ varnish v1 -arg "-p workspace_client=3072" -vcl+backend {
 
 client c1 {
 	# This should soak up all bytes but the last in the workspace
-	txreq -hdr "foo: x" -hdr "bar: A" 
+	txreq -hdr "foo: x" -hdr "bar: A"
 	rxresp
 	expect resp.status == 201
 
 	# This should soak up all bytes in the workspace
-	txreq -hdr "foo: x" -hdr "bar: AB" 
+	txreq -hdr "foo: x" -hdr "bar: AB"
 	rxresp
 	expect resp.status == 202
 
 	# This overcommits the workspace, failing the "bar" set,
 	# Thus allowing the "baz" set to work.
-	txreq -hdr "foo: x" -hdr "bar: ABC" 
+	txreq -hdr "foo: x" -hdr "bar: ABC"
 	rxresp
 	expect resp.status == 203
 

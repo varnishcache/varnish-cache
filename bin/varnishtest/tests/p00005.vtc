@@ -3,18 +3,18 @@ varnishtest "Check expiry of non-instantiated object"
 shell "rm -f ${tmpdir}/_.per"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -hdr "Foo: foo1"
 } -start
 
 varnish v1 \
 	-storage "-spersistent,${tmpdir}/_.per,10m" \
 	-arg "-pban_lurker_sleep=0" \
-	-vcl+backend { 
+	-vcl+backend {
 		sub vcl_backend_response {
 			set beresp.ttl = 3s;
 		}
-	} -start 
+	} -start
 
 varnish v1 -cliok "param.set debug +syncvsl"
 varnish v1 -cliok "param.set feature +wait_silo"
@@ -32,7 +32,7 @@ varnish v1 -expect n_object == 1
 varnish v1 -stop
 
 server s1 -wait {
-	rxreq 
+	rxreq
 	txresp -hdr "Foo: foo2"
 } -start
 

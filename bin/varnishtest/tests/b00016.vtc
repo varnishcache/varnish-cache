@@ -1,6 +1,6 @@
 varnishtest "Check naming of backends"
 
-varnish v1 -vcl { 
+varnish v1 -vcl {
 	backend foo {
 		.host = "${bad_ip}"; .port = "9080";
 	}
@@ -20,7 +20,7 @@ client c1 {
 	expect resp.http.X-Backend-Name == "foo"
 } -run
 
-varnish v1 -vcl { 
+varnish v1 -vcl {
 	import directors from "${topbuild}/lib/libvmod_directors/.libs/libvmod_directors.so" ;
 
 	backend b1 {
@@ -47,7 +47,7 @@ client c1 {
 	expect resp.http.X-Backend-Name == "bar"
 } -run
 
-varnish v1 -vcl { 
+varnish v1 -vcl {
 	import directors from "${topbuild}/lib/libvmod_directors/.libs/libvmod_directors.so" ;
 	backend b1 {
 		.host = "${bad_ip}"; .port = "9080";

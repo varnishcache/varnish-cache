@@ -24,7 +24,7 @@ client c1 {
 	    -hdr "If-None-Match: 123456789"
 	rxresp -no_obj
 	expect resp.status == 304
-} 
+}
 
 client c1 -run
 

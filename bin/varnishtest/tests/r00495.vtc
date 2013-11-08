@@ -30,13 +30,13 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.status == 201
-	txreq 
+	txreq
 	rxresp
 	expect resp.status == 202
-	txreq 
+	txreq
 	rxresp
 	expect resp.status == 203
-	txreq 
+	txreq
 	rxresp
 	expect resp.status == 205
 } -run

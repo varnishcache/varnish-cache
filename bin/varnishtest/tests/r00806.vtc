@@ -19,7 +19,7 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq 
+	txreq
 	rxresp -no_obj
 	expect resp.status == 304
 	expect resp.http.cl == 100

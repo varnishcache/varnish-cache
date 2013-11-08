@@ -1,14 +1,14 @@
 varnishtest "ESI binary detector"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -body {
 		Before include
 		<esi:remove>
 			bar
 		</esi:remove>
 	}
-	rxreq 
+	rxreq
 	txresp -body {
 		Before include
 		<esi:remove>
@@ -24,13 +24,13 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 57
 } -run
 
-varnish v1  -cli "param.set feature +esi_disable_xml_check" 
+varnish v1  -cli "param.set feature +esi_disable_xml_check"
 
 client c1 {
 	txreq -url bar

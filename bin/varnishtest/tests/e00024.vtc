@@ -1,7 +1,7 @@
 varnishtest "Test all 8 gzip stopbit residuals"
 
 server s1 {
-	rxreq 
+	rxreq
 	expect req.http.accept-encoding == gzip
 	txresp -gzipbody {
 		<html>					1
@@ -65,10 +65,10 @@ varnish v1 -vcl+backend {
 			set beresp.do_esi = true;
 		}
 	}
-} -start 
+} -start
 
 varnish v1 -cliok "param.set http_gzip_support true"
-varnish v1 -cliok "param.set debug +esi_chop" 
+varnish v1 -cliok "param.set debug +esi_chop"
 varnish v1 -cliok "param.set debug +syncvsl"
 
 client c1 {
@@ -79,7 +79,7 @@ client c1 {
 	expect resp.status == 200
 	expect resp.bodylen == 252
 
-	txreq 
+	txreq
 	rxresp
 	expect resp.http.content-encoding == <undef>
 	expect resp.status == 200

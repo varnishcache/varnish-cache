@@ -1,7 +1,7 @@
 varnishtest "Test std & debug vmod"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -hdr "foo: bAr" -hdr "bar: fOo" -bodylen 4
 } -start
 

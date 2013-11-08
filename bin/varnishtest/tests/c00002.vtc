@@ -1,11 +1,14 @@
 varnishtest "Check that all thread pools all get started and get minimum threads"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -hdr "Connection: close" -body "012345\n"
 } -start
 
-varnish v1 -arg "-p thread_pool_min=10 -p thread_pool_max=10 -p thread_pools=2"
+varnish v1 \
+	-arg "-p thread_pool_min=10" \
+	-arg "-p thread_pool_max=10" \
+	-arg "-p thread_pools=2"
 
 varnish v1 -vcl+backend {} -start
 

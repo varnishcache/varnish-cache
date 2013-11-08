@@ -29,7 +29,7 @@ varnish v1 -expect SMA.s0.g_space < 100000
 varnish v1 -expect SMA.s1.g_bytes == 0
 varnish v1 -expect SMA.s1.g_space > 1000000
 varnish v1 -expect SMA.s2.g_bytes == 0
-varnish v1 -expect SMA.s2.g_space > 1000000 
+varnish v1 -expect SMA.s2.g_space > 1000000
 
 client c1 {
 	txreq -url /bar
@@ -45,7 +45,7 @@ varnish v1 -expect SMA.s0.g_space < 100000
 varnish v1 -expect SMA.s1.g_bytes == 0
 varnish v1 -expect SMA.s1.g_space > 1000000
 varnish v1 -expect SMA.s2.g_bytes == 0
-varnish v1 -expect SMA.s2.g_space > 1000000 
+varnish v1 -expect SMA.s2.g_space > 1000000
 
 client c1 {
 	txreq -url /foo
@@ -61,4 +61,4 @@ varnish v1 -expect SMA.s0.g_space < 100000
 varnish v1 -expect SMA.s1.g_bytes == 0
 varnish v1 -expect SMA.s1.g_space > 1000000
 varnish v1 -expect SMA.s2.g_bytes == 0
-varnish v1 -expect SMA.s2.g_space > 1000000 
+varnish v1 -expect SMA.s2.g_space > 1000000

@@ -9,7 +9,7 @@ server s1 {
 	txresp -body "987654321\n"
 }
 
-server s1 -start 
+server s1 -start
 
 client c1 -connect ${s1_sock} {
 	txreq -url "/1" -req "POST" -body "abcdefghi\n"

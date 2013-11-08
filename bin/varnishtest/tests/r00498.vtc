@@ -12,7 +12,7 @@ varnish v1 -vcl+backend {
 varnish v1 -cliok "param.set http_resp_hdr_len 32768"
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.bodylen == 3
 } -run

@@ -34,7 +34,7 @@ varnish v1 -vcl {
 		.port = "${s2_port}";
 		.host_header = "FOObar";
 	}
-} 
+}
 
 client c1 {
 	txreq -url "/barf"

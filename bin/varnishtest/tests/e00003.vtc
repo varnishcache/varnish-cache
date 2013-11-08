@@ -2,14 +2,14 @@ varnishtest "ESI include"
 
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -body {
 		<html>
 		Before include
 		<esi:include src="/body" sr="foo"/>
 		After include
 	}
-	rxreq 
+	rxreq
 	expect req.url == "/body1"
 	txresp -body {
 		Included file
@@ -28,12 +28,12 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.bodylen == 65
 	expect resp.status == 200
 	# test that there is no difference on miss/hit
-	txreq 
+	txreq
 	rxresp
 	expect resp.bodylen == 65
 	expect resp.status == 200

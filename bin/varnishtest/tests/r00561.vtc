@@ -17,6 +17,6 @@ client c1 {
 } -run
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 } -run

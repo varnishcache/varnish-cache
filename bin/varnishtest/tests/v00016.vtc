@@ -32,7 +32,7 @@ varnish v1 -vcl {
 varnish v1 -errvcl {include not followed by string constant.} {
 	/* token test */
         error lookup hash pipe pass fetch deliver discard keep restart
-        include 
+        include
         if else elseif elsif
 	++ -- && || <= == != >= >> << += -= *= /=
 	{ } ( ) * + - / % > < = ; ! & . | ~ ,
@@ -70,7 +70,7 @@ varnish v1 -vcl {
 			set beresp.ttl = 1h;
 		}
 	}
-	
+
 }
 
 varnish v1 -errvcl {Unknown time unit 'k'.  Legal are 's', 'm', 'h' and 'd'} {

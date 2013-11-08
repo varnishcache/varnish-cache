@@ -14,12 +14,12 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq  -url "/1" 
-	rxresp 
+	txreq  -url "/1"
+	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 1
 
-	txreq -req "HEAD" -url "/1" 
+	txreq -req "HEAD" -url "/1"
 	rxresp -no_obj
 	expect resp.status == 200
 } -run

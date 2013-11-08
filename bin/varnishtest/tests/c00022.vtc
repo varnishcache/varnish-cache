@@ -18,7 +18,7 @@ server s1 {
 	txresp -hdr "foo: bar8" -body "1111111\n"
 } -start
 
-varnish v1 -vcl+backend { 
+varnish v1 -vcl+backend {
 	sub vcl_recv {
 		if (req.method == "PURGE") {
 			ban ("req.url == " + req.url);
@@ -65,7 +65,7 @@ client c1 {
 } -run
 varnish v1 -cliok "ban.list"
 
-# New obj 
+# New obj
 client c1 {
 	txreq -url "/foo"
 	rxresp
@@ -135,7 +135,7 @@ client c1 {
 varnish v1 -cliok "ban.list"
 
 client c1 {
-	txreq -url "/foo" -hdr "foo: barcheck" 
+	txreq -url "/foo" -hdr "foo: barcheck"
 	rxresp
 	expect resp.status == 200
 	expect resp.http.foo == bar8

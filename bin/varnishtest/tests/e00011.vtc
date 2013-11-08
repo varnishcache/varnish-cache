@@ -1,7 +1,7 @@
 varnishtest "Make sure that PASS'ed ESI requests use GET for includes"
 
 server s1 {
-	rxreq 
+	rxreq
 	expect req.method == POST
 	expect req.url == /foobar
 	txresp -body {<HTML>
@@ -20,7 +20,7 @@ varnish v1 -vcl+backend {
 		set beresp.uncacheable = true;
 		set beresp.do_esi = true;
 	}
-} -start 
+} -start
 
 client c1 {
 	txreq -req POST -url /foobar -body {

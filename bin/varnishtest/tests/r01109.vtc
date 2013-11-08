@@ -21,7 +21,11 @@ server s1 {
 	txresp -bodylen 4074
 } -start
 
-varnish v1 -arg "-pfetch_chunksize=4k" -arg "-pgzip_level=0" -arg "-pthread_pool_stack=131072" -vcl+backend {
+varnish v1 \
+	-arg "-pfetch_chunksize=4k" \
+	-arg "-pgzip_level=0" \
+	-arg "-pthread_pool_stack=131072" \
+	-vcl+backend {
 	sub vcl_backend_response {
 		if (bereq.url ~ "/test") {
 			set beresp.do_esi = true;

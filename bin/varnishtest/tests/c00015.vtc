@@ -9,14 +9,14 @@ server s1 {
 	txresp -body "foobar1"
 } -start
 
-varnish v1 -vcl+backend { 
+varnish v1 -vcl+backend {
 } -start
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
 		return (pass);
 	}
-} 
+}
 
 varnish v1 -cli "vcl.list"
 varnish v1 -cli "vcl.use vcl1"

@@ -1,7 +1,7 @@
 varnishtest "Push corners in new ESI parser"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -nolen -hdr "Transfer-encoding: chunked"
 	chunked {<1></esi:comment foo><1>}
 	chunked {<2><esi:comment / ><esi:comment doo><2>}
@@ -34,7 +34,7 @@ varnish v1 -vcl+backend {
 			set beresp.do_esi = true;
 		}
 	}
-} -start 
+} -start
 
 varnish v1 -cliok "param.set debug +esi_chop"
 varnish v1 -cliok "param.set debug +syncvsl"

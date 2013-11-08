@@ -29,7 +29,7 @@ varnish v1 \
 		sub vcl_backend_response {
 			set beresp.do_stream = false;
 		}
-} 
+}
 
 varnish v1 -cliok "param.set debug +syncvsl"
 varnish v1 -start

@@ -6,7 +6,7 @@ server s1 {
 	txresp -body "foobar"
 } -start
 
-varnish v1 -arg "-p vcc_err_unref=false" -vcl+backend { 
+varnish v1 -arg "-p vcc_err_unref=false" -vcl+backend {
 	sub foobar {
 		set req.http.foobar = "foobar";
 	}
@@ -14,6 +14,6 @@ varnish v1 -arg "-p vcc_err_unref=false" -vcl+backend {
 
 client c1 {
 	txreq  -url /bar
-	rxresp 
+	rxresp
 	expect resp.bodylen == 6
 } -run

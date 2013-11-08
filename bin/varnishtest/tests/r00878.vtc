@@ -1,7 +1,7 @@
 varnishtest "Loading vmods in subsequent VCLs"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -bodylen 4
 } -start
 

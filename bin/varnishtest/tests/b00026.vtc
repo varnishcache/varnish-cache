@@ -5,7 +5,7 @@ feature SO_RCVTIMEO_WORKS
 server s1 {
 	rxreq
 	expect req.url == "from_backend"
-	delay 1; 
+	delay 1;
 	txresp
 } -start
 server s2 {

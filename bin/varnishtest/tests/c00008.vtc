@@ -34,7 +34,7 @@ client c1 {
 	rxresp -no_obj
 	expect resp.status == 304
 	expect resp.http.etag == "foo"
-} 
+}
 
 client c1 -run
 

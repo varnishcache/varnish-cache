@@ -95,4 +95,4 @@ client c1 {
 varnish v1 -errvcl {'purge': not a valid action in method 'vcl_recv'.} {
 	backend s1 { .host = "${s1_addr}"; }
 	sub vcl_recv { if (req.http.purge == "yes") { purge; } }
-} 
+}

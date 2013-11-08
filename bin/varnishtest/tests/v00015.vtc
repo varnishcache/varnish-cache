@@ -5,7 +5,7 @@ server s1 {
 	expect req.url == "/"
 	expect req.http.foobar == "snafu"
 	txresp -body "slash"
-} -start 
+} -start
 
 varnish v1 -vcl+backend {
 

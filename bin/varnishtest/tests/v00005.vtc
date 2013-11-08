@@ -25,7 +25,7 @@ varnish v1 -vcl {
 	backend b1 {
 		.host = "127.0.0.1";
 		.probe = {
-			.request = 
+			.request =
 			    "GET / HTTP/1.1"
 			    "Host: foo.bar" ;
 		}
@@ -38,7 +38,7 @@ varnish v1 -errvcl {Probe request redefinition at:} {
 		.host = "127.0.0.1";
 		.probe = {
 			.url = "/";
-			.request = 
+			.request =
 			    "GET / HTTP/1.1"
 			    "Host: foo.bar" ;
 		}
@@ -50,7 +50,7 @@ varnish v1 -errvcl {Probe request redefinition at:} {
 	backend b1 {
 		.host = "127.0.0.1";
 		.probe = {
-			.request = 
+			.request =
 			    "GET / HTTP/1.1"
 			    "Host: foo.bar" ;
 			.url = "/";

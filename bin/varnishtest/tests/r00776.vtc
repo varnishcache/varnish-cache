@@ -12,6 +12,6 @@ varnish v1 \
 	-arg "-s malloc,1m" -vcl+backend { } -start
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 } -run

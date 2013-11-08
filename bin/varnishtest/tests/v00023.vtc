@@ -9,7 +9,7 @@ server s1 {
 	txresp -status 200 -body "22"
 } -start
 
-varnish v1 -vcl+backend { 
+varnish v1 -vcl+backend {
 	sub vcl_hit {
 		set obj.ttl = 0s;
 		return (restart);

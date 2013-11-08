@@ -4,16 +4,16 @@ server s1 {
         rxreq
 	expect req.url == "/"
 	txresp -body {a\0bc}
-} 
+}
 
-server s1 -start 
+server s1 -start
 
 client c1 -connect ${s1_sock} {
 
 	txreq
 	rxresp
 	expect resp.bodylen == 4
-} 
+}
 
 client c1 -run
 

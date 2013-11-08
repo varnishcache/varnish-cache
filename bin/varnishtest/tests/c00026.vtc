@@ -44,7 +44,7 @@ client c1 {
 	rxresp -no_obj
 	expect resp.status == 304
 
-} 
+}
 
 client c1 -run
 

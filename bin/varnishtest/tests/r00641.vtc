@@ -4,9 +4,9 @@ server s1 {
 	rxreq
 	expect req.url == "/"
 	txresp -proto HTTP/1.0 -body {
-		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove>
 		<_esi:include src="/foo"/>
-		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove>
 	}
 
 } -start
@@ -25,5 +25,5 @@ client c1 {
 	rxresp
 	# XXX this is the problem:  expect resp.proto == HTTP/1.1
 	expect resp.status == 200
-	expect resp.bodylen == 39
+	expect resp.bodylen == 37
 } -run

@@ -1,19 +1,19 @@
 varnishtest "Test POST->GET conversion"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp \
 		-hdr "Connection: close" \
 		-body "012345\n"
 } -start
 
-varnish v1 -vcl+backend { 
+varnish v1 -vcl+backend {
 	sub vcl_recv {
 		if (req.method == "POST") {
 			set req.method = "GET";
 		}
 	}
-} -start 
+} -start
 
 client c1 {
 	txreq -req POST -url "/" \

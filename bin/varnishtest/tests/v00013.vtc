@@ -41,4 +41,4 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.foo == 2
 	expect resp.http.bar >= 0.100
-} -run 
+} -run

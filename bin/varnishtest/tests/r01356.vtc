@@ -31,7 +31,7 @@ server s1 {
 } -start
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.status == 200
 } -run

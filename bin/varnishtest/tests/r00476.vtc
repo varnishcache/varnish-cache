@@ -6,7 +6,7 @@ server s1 {
 	txresp -body {<a><esi:include src="/bar"><b>\0c}
 	rxreq
 	expect req.url == "/bar"
-	txresp 
+	txresp
 	rxreq
 	expect req.url == "/comment"
 	txresp -body {<a><!--esi foo --><b>\0c}
@@ -22,7 +22,7 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.bodylen == 8
 	txreq -url /comment

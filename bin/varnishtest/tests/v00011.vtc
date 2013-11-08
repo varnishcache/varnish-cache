@@ -8,7 +8,7 @@ server s1 {
 	txresp -body "foo"
 } -start
 
-varnish v1 -vcl+backend { 
+varnish v1 -vcl+backend {
 	sub vcl_recv {
 		if (req.method == "PURGE") {
 			ban("req.url ~ ^/$");
@@ -19,7 +19,7 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.http.X-Varnish == "1001"
 } -run

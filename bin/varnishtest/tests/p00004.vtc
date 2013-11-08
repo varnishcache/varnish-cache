@@ -3,9 +3,9 @@ varnishtest "Check object references"
 shell "rm -f ${tmpdir}/_.per"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -hdr "Foo: foo"
-	rxreq 
+	rxreq
 	txresp -hdr "Bar: bar"
 } -start
 
@@ -13,7 +13,7 @@ varnish v1 \
 	-arg "-pfeature=+wait_silo" \
 	-storage "-spersistent,${tmpdir}/_.per,10m" \
 	-arg "-pban_lurker_sleep=0" \
-	-vcl+backend { } -start 
+	-vcl+backend { } -start
 
 client c1 {
 	txreq -url "/foo"
@@ -36,7 +36,7 @@ client c1 {
 varnish v1 -expect n_object == 2
 
 varnish v1 -stop
-varnish v1 -start 
+varnish v1 -start
 varnish v1 -cliok "debug.xid 1999"
 
 varnish v1 -expect n_vampireobject == 2

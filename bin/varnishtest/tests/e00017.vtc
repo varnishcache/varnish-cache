@@ -2,7 +2,7 @@ varnishtest "Aggressive use of ESI include"
 
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -body {
 		<html>
 		Before include
@@ -28,45 +28,45 @@ server s1 {
 		<esi:include src="/some/very/long/url/with/dozen/of/information/for/esi/subquery/to/munch/and/also/to/try/to/make/object/workspace/explode/by/dumping/a/core/in/some/obscure/directory/on/my/file/system/19"/>
 		After include
 	}
-	rxreq 
+	rxreq
 	txresp -body { Included file 00 }
-	rxreq 
+	rxreq
 	txresp -body { Included file 01 }
-	rxreq 
+	rxreq
 	txresp -body { Included file 02 }
-	rxreq 
+	rxreq
 	txresp -body { Included file 03 }
-	rxreq 
+	rxreq
 	txresp -body { Included file 04 }
-	rxreq 
+	rxreq
 	txresp -body { Included file 05 }
-	rxreq 
+	rxreq
 	txresp -body { Included file 06 }
 	rxreq
 	txresp -body { Included file 07 }
-	rxreq 
+	rxreq
 	txresp -body { Included file 08 }
-	rxreq 
+	rxreq
 	txresp -body { Included file 09 }
-	rxreq 
+	rxreq
 	txresp -body { Included file 10 }
-	rxreq 
+	rxreq
 	txresp -body { Included file 11 }
-	rxreq 
+	rxreq
 	txresp -body { Included file 12 }
-	rxreq 
+	rxreq
 	txresp -body { Included file 13 }
-	rxreq 
+	rxreq
 	txresp -body { Included file 14 }
-	rxreq 
+	rxreq
 	txresp -body { Included file 15 }
-	rxreq 
+	rxreq
 	txresp -body { Included file 16 }
 	rxreq
 	txresp -body { Included file 17 }
-	rxreq 
+	rxreq
 	txresp -body { Included file 18 }
-	rxreq 
+	rxreq
 	txresp -body { Included file 19 }
 } -start
 
@@ -77,7 +77,7 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.status == 200
 }

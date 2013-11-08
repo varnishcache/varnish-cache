@@ -19,6 +19,6 @@ varnish v1  -vcl {
 	sub vcl_recv {
 		set req.backend = cluster.backend();
 	}
-} -start 
+} -start
 
 varnish v1 -wait

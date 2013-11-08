@@ -15,7 +15,7 @@ server s1 {
 	txresp -body "foobar"
 } -start
 
-varnish v1 -vcl+backend { 
+varnish v1 -vcl+backend {
 
 	sub vcl_recv {
 		remove req.http.hdr1;

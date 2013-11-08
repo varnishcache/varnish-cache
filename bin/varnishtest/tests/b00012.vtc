@@ -1,13 +1,13 @@
 varnishtest "Check pipelining"
 
 server s1 {
-	rxreq 
+	rxreq
 	expect req.url == "/foo"
 	txresp -body "foo"
-	rxreq 
+	rxreq
 	expect req.url == "/bar"
 	txresp -body "foobar"
-} -start 
+} -start
 
 varnish v1 -vcl+backend {} -start
 

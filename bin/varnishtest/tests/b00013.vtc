@@ -1,13 +1,13 @@
 varnishtest "Check read-head / partial pipelining"
 
 server s1 {
-	rxreq 
+	rxreq
 	expect req.url == "/foo"
 	txresp -body "foo"
-	rxreq 
+	rxreq
 	expect req.url == "/bar"
 	txresp -body "foobar"
-} -start 
+} -start
 
 varnish v1 -arg "-p accept_filter=false" -vcl+backend {} -start
 

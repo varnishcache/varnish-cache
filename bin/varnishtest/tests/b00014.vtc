@@ -2,15 +2,15 @@ varnishtest "Check -f command line arg"
 
 
 server s1 {
-	rxreq 
+	rxreq
 	expect req.url == "/foo"
 	txresp -body "foo"
-	rxreq 
+	rxreq
 	expect req.url == "/bar"
 	txresp -body "bar"
 } -start
 
-shell "echo 'vcl 4.0; backend foo { .host = \"${s1_addr}\"; .port = \"${s1_port}\"; }' > ${tmpdir}/_b00014.vcl" 
+shell "echo 'vcl 4.0; backend foo { .host = \"${s1_addr}\"; .port = \"${s1_port}\"; }' > ${tmpdir}/_b00014.vcl"
 varnish v1 -arg "-f ${tmpdir}/_b00014.vcl" -start
 
 client c1 {

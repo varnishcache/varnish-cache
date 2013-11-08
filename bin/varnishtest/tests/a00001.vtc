@@ -5,13 +5,13 @@ server s1 {
 	expect req.method == GET
 	expect req.proto == HTTP/1.1
 	expect req.url == "/"
-	txresp 
+	txresp
 }
 
-server s1 -start 
+server s1 -start
 
 client c1 -connect ${s1_sock} {
-	txreq 
+	txreq
 	rxresp
 	expect resp.proto == HTTP/1.1
 	expect resp.status == 200

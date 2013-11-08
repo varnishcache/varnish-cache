@@ -22,7 +22,7 @@ server s1 {
 	txresp \
 		-hdr "1...5: ..0....5....0\n ..5....0....5....0." \
 		-bodylen 4
-	
+
 	accept
 	rxreq
 	expect req.url == "/5"
@@ -55,7 +55,7 @@ varnish v1 -cliok "param.set http_resp_size 256"
 varnish v1 -cliok "param.set http_resp_hdr_len 40"
 
 client c1 {
-	txreq -url "/1" 
+	txreq -url "/1"
 	rxresp
 	expect resp.status == 200
 	txreq -url "/2"

@@ -2,7 +2,7 @@ varnishtest "ESI:remove"
 
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -body {
 		<esi:remove>
 		This is a test: Unseen University
@@ -17,10 +17,10 @@ varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_esi = true;
 	}
-} -start 
+} -start
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 40

@@ -1,10 +1,10 @@
 varnishtest "Backend close retry"
 
 server s1 -repeat 1 {
-	rxreq 
+	rxreq
 	txresp -bodylen 5
 
-	rxreq 
+	rxreq
 	accept
 
 	rxreq
@@ -19,12 +19,12 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 5
 
-	txreq 
+	txreq
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 6

@@ -3,7 +3,7 @@ varnishtest "Ban a persistent object"
 shell "rm -f ${tmpdir}/_.per[12]"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -hdr "Foo: foo"
 } -start
 
@@ -11,7 +11,7 @@ varnish v1 \
 	-arg "-pfeature=+wait_silo" \
 	-arg "-pban_lurker_sleep=0" \
 	-storage "-spersistent,${tmpdir}/_.per1,10m -spersistent,${tmpdir}/_.per2,10m" \
-	-vcl+backend { } -start 
+	-vcl+backend { } -start
 
 client c1 {
 	txreq -url "/"
@@ -26,7 +26,7 @@ varnish v1 -stop
 server s1 -wait
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -hdr "Foo: bar"
 } -start
 

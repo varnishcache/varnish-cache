@@ -5,22 +5,22 @@ server s1 {
 	expect req.url == "/foo"
 	txresp -gzipbody {<h1>/////<h2>}
 
-	rxreq 
+	rxreq
 	expect req.url == "/1"
 	expect req.http.accept-encoding == gzip
 	txresp -gzipbody {B<esi:include src="/foo"/>A}
 
-	rxreq 
+	rxreq
 	expect req.url == "/2"
 	expect req.http.accept-encoding == gzip
 	txresp -gzipbody {B<esi:include src="/foo"/>}
 
-	rxreq 
+	rxreq
 	expect req.url == "/3"
 	expect req.http.accept-encoding == gzip
 	txresp -gzipbody {<esi:include src="/foo"/>A}
 
-	rxreq 
+	rxreq
 	expect req.url == "/4"
 	expect req.http.accept-encoding == gzip
 	txresp -gzipbody {<esi:include src="/foo"/>}
@@ -33,7 +33,7 @@ varnish v1 -vcl+backend {
 			set beresp.do_esi = true;
 		}
 	}
-} -start 
+} -start
 
 varnish v1 -cliok "param.set feature +esi_disable_xml_check"
 

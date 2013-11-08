@@ -31,7 +31,7 @@ varnish v1 -vcl+backend {
 
 client c1 {
 	txreq  -url "/1" -hdr "Foo: 1" -hdr "Foo: 2"
-	rxresp 
+	rxresp
 	expect resp.http.bar == "a, b"
 	expect resp.status == 200
 	expect resp.bodylen == 1

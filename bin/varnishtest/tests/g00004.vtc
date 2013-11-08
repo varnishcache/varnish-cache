@@ -24,9 +24,9 @@ varnish v1 \
 
 		if (bereq.url == "/gunzip") {
 			set beresp.do_gunzip = true;
-		} 
+		}
 	}
-} 
+}
 
 varnish v1 -cliok "param.set debug +syncvsl"
 

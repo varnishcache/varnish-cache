@@ -38,7 +38,7 @@ varnish v1 -expect bans_dups == 1
 # Expect ban_magic plus our 1 dup to be marked gone
 varnish v1 -expect bans_gone == 2
 
-# Restart 
+# Restart
 varnish v1 -stop
 varnish v1 -start
 varnish v1 -cliok "ban.list"

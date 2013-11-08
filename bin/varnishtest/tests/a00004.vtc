@@ -8,7 +8,7 @@ server s1 -repeat 2 {
 	txresp -proto HTTP/1.2 -status 201 -msg Foo
 }
 
-server s1 -start 
+server s1 -start
 
 client c1 -connect ${s1_sock} {
 	txreq -req PUT -proto HTTP/1.0 -url /foo

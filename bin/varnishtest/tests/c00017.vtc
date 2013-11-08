@@ -1,31 +1,31 @@
 varnishtest "Test Backend Polling"
 
 server s1 {
-	# Probes 
+	# Probes
 	loop 8 {
 		rxreq
 		expect req.url == "/"
-		txresp -hdr "Bar: foo" -body "foobar" 
+		txresp -hdr "Bar: foo" -body "foobar"
 		accept
 	}
 
 	loop 3 {
 		rxreq
 		expect req.url == "/"
-		txresp -status 404 -hdr "Bar: foo" -body "foobar" 
+		txresp -status 404 -hdr "Bar: foo" -body "foobar"
 		accept
 	}
 	loop 2 {
 		rxreq
 		expect req.url == "/"
-		txresp -proto "FROBOZ" -status 200 -hdr "Bar: foo" -body "foobar" 
+		txresp -proto "FROBOZ" -status 200 -hdr "Bar: foo" -body "foobar"
 		accept
 	}
 
 	sema r1 sync 2
 } -start
 
-varnish v1 -vcl { 
+varnish v1 -vcl {
 
 	backend foo {
 		.host = "${s1_addr}";
@@ -35,7 +35,7 @@ varnish v1 -vcl {
 			.interval = 0.1 s;
 		}
 	}
-	
+
 } -start
 
 sema r1 sync 2

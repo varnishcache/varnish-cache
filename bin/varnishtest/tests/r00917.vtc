@@ -10,7 +10,7 @@ varnish v1 -vcl+backend { } -start
 
 client c1 {
 	txreq  -url /bar
-	rxresp 
+	rxresp
 	expect resp.bodylen == 6
 } -run
 

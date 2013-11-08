@@ -1,7 +1,7 @@
 varnishtest "ESI parsing errors"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -body {
 		<html>					1
 		Before include				2
@@ -39,14 +39,14 @@ server s1 {
 		<esi:include  src="foofof />		33
 		<esi:include  foo=bar src=/body2 />	34
 	}
-	rxreq 
+	rxreq
 	expect req.url == "/body"
 	txresp -body {
 		Included file
 		<esi:remove>
 		<Aaa
 	}
-	rxreq 
+	rxreq
 	expect req.url == "/body2"
 	txresp -body {
 		Included file 2
@@ -59,14 +59,14 @@ varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_esi = true;
 	}
-} -start 
+} -start
 
-varnish v1 -cliok "param.set debug +esi_chop" 
+varnish v1 -cliok "param.set debug +esi_chop"
 
 varnish v1 -cliok "param.set debug +syncvsl"
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 385

@@ -1,7 +1,7 @@
 varnishtest "Ignoring non esi elements"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -body {
 		<f<esi?
 		<esi:remove>
@@ -18,7 +18,7 @@ varnish v1 -vcl+backend {
 } -start -cli "param.set feature +esi_ignore_other_elements"
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 21

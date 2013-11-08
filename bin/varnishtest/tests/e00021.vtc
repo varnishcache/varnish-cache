@@ -2,7 +2,7 @@ varnishtest "ESI ability to stitch gzip files together"
 
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -body {
 		<esi:remove>
 		This is a test: Unseen University
@@ -21,7 +21,7 @@ varnish v1 -vcl+backend {
 		set beresp.do_esi = true;
 		set beresp.do_gzip = true;
 	}
-} -start 
+} -start
 
 varnish v1 -cliok "param.set debug +esi_chop"
 varnish v1 -cliok "param.set http_gzip_support true"

@@ -3,7 +3,7 @@ varnishtest "Change TTL on persistent object"
 shell "rm -f ${tmpdir}/_.per"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -hdr "Foo: foo"
 } -start
 
@@ -11,7 +11,7 @@ varnish v1 \
 	-arg "-pfeature=+wait_silo" \
 	-arg "-pban_lurker_sleep=0" \
 	-storage "-spersistent,${tmpdir}/_.per,10m" \
-	-vcl+backend { } -start 
+	-vcl+backend { } -start
 
 varnish v1 -cliok "param.set default_grace 0"
 varnish v1 -cliok "param.set default_keep 0"
@@ -48,7 +48,7 @@ client c1 {
 varnish v1 -stop
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -hdr "Foo: bar"
 } -start
 

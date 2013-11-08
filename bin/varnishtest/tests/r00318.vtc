@@ -1,7 +1,7 @@
 varnishtest "ESI with no body in response"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -status 302
 } -start
 
@@ -13,7 +13,7 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.status == 302
 } -run

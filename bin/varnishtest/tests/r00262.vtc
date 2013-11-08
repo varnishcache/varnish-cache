@@ -1,13 +1,13 @@
 varnishtest "Test that inter-request whitespace trimming works"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp \
 		-hdr "Connection: close" \
 		-body "012345\n"
 } -start
 
-varnish v1 -arg "-p timeout_linger=20" -vcl+backend { } -start 
+varnish v1 -arg "-p timeout_linger=20" -vcl+backend { } -start
 
 client c1 {
 	send "GET / HTTP/1.1\r\n\r\n\r\n"

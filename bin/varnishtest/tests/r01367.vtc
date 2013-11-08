@@ -5,7 +5,7 @@ server s1 {
 	txresp
 } -start
 
-varnish v1 -vcl+backend { 
+varnish v1 -vcl+backend {
 	sub vcl_error {
 		return (restart);
 	}

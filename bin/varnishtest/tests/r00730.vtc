@@ -27,7 +27,7 @@ varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
 	}
-} 
+}
 
 client c1 {
 	txreq -req HEAD

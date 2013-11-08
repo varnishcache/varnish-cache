@@ -2,11 +2,11 @@ varnishtest "VCL/VRT: url/request/proto/response/status"
 
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -hdr "Connection: close" -body "012345\n"
 }
 
-server s1 -start 
+server s1 -start
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {

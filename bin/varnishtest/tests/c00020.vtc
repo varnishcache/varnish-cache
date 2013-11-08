@@ -1,12 +1,12 @@
 varnishtest "Test -h critbit a bit"
 
 server s1 {
-        rxreq 
+        rxreq
 	expect req.url == "/"
         txresp -hdr "Connection: close" -body "012345\n"
 } -start
 
-varnish v1 -arg "-hcritbit" -vcl+backend { } -start 
+varnish v1 -arg "-hcritbit" -vcl+backend { } -start
 
 client c1 {
         txreq -url "/"
@@ -23,10 +23,10 @@ client c2 {
 } -run
 
 server s1 {
-        rxreq 
+        rxreq
 	expect req.url == "/foo"
         txresp -body "012345\n"
-        rxreq 
+        rxreq
 	expect req.url == "/bar"
         txresp -body "012345\n"
 } -start

@@ -24,7 +24,7 @@ varnish v1 \
 				set beresp.storage = "per2";
 			}
 		}
-	} -start 
+	} -start
 client c1 {
 	txreq -url "/silo1"
 	rxresp
@@ -63,7 +63,7 @@ varnish v3 -stop
 # Only silo 2
 # Check that /silo2 is banned
 server s1 {
-	rxreq 
+	rxreq
 	expect req.url == "/silo2"
 	txresp -hdr "X-Foo: bar"
 } -start

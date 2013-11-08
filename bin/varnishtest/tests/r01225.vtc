@@ -3,7 +3,7 @@ varnishtest "Test bans_req counter on persistent reload - #1225"
 shell "rm -f ${tmpdir}/_.per"
 
 server s1 {
-	rxreq 
+	rxreq
 	expect req.url == "/"
 	txresp -hdr "Foo: foo"
 } -start
@@ -12,7 +12,7 @@ varnish v1 \
 	-arg "-pfeature=+wait_silo" \
 	-storage "-spersistent,${tmpdir}/_.per,10m" \
 	-arg "-pban_lurker_sleep=0.01" \
-	-vcl+backend { } -start 
+	-vcl+backend { } -start
 
 varnish v1 -cliok ban.list
 
@@ -35,7 +35,7 @@ varnish v1 -stop
 server s1 -wait
 
 server s1 {
-	rxreq 
+	rxreq
 	expect req.url == "/"
 	txresp -hdr "Foo: bar"
 } -start

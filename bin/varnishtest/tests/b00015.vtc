@@ -2,7 +2,7 @@ varnishtest "Check synthetic error page caching"
 
 # First test that an internally generated error is not cached
 
-varnish v1 -vcl { 
+varnish v1 -vcl {
 	backend foo {
 		.host = "${bad_ip}"; .port = "9080";
 	}
@@ -26,7 +26,7 @@ client c1 {
 
 delay .1
 
-# Then check that a cacheable error from the backend is 
+# Then check that a cacheable error from the backend is
 
 varnish v1 -cliok "ban req.url ~ .*"
 
@@ -35,7 +35,7 @@ server s1 {
 	txresp -status 302
 } -start
 
-varnish v1 -vcl+backend { 
+varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.http.ttl = beresp.ttl;
 		set beresp.http.uncacheable = beresp.uncacheable;

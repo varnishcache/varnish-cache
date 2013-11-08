@@ -1,7 +1,7 @@
 varnishtest "Ticket #873"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -nolen -hdr "Transfer-encoding: chunked"
 	chunked "<1>------------------------<1>\n"
 	sema r1 sync 2
@@ -18,7 +18,7 @@ varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_stream = true;
 	}
-} -start 
+} -start
 
 varnish v1 -cliok "param.set debug +req_state"
 

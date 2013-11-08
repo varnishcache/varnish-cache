@@ -1,7 +1,7 @@
 varnishtest "Check chunked encoding from backend works"
 
 server s1 {
-	rxreq 
+	rxreq
 	expect req.url == "/bar"
 	send "HTTP/1.1 200 Ok\r\n"
 	send "Transfer-encoding: chunked\r\n"
@@ -10,7 +10,7 @@ server s1 {
 	send "00000000\r\n"
 	send "\r\n"
 
-	rxreq 
+	rxreq
 	expect req.url == "/foo"
 	send "HTTP/1.1 200 Ok\r\n"
 	send "Transfer-encoding: chunked\r\n"

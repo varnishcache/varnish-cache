@@ -4,12 +4,12 @@ server s1 {
 	rxreq
 	expect req.url == "/foo"
 	expect req.http.Foo == "bar"
-	txresp -hdr "Bar: foo" -body "foobar" 
+	txresp -hdr "Bar: foo" -body "foobar"
 
 	rxreq
 	expect req.url == "/bar"
 	expect req.http.Foo == <undef>
-	txresp -hdr "Bar: fnry,glyf, FOO ,brok" -hdr "Connection: bar" -body "foobar" 
+	txresp -hdr "Bar: fnry,glyf, FOO ,brok" -hdr "Connection: bar" -body "foobar"
 } -start
 
 varnish v1 -vcl+backend { } -start

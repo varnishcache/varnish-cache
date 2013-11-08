@@ -6,7 +6,7 @@ server s1 {
 } -start
 
 
-varnish v1 -vcl+backend { 
+varnish v1 -vcl+backend {
 	sub vcl_deliver {
 		set resp.http.gzip = req.can_gzip;
 	}

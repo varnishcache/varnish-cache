@@ -1,7 +1,7 @@
 varnishtest "Ticket #902 http_CollectHdr() failure on consequitive headers"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp \
 		-hdr "Server: Microsoft-IIS/5.0" \
 		-hdr "Cache-Control: A" \
@@ -13,13 +13,13 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-} -start 
+} -start
 
 varnish v1 -cliok "param.set debug +req_state"
 
 client c1 {
 	txreq  -hdr "foo: /foo"
-	rxresp 
+	rxresp
 	expect resp.http.cache-control == "A, B, C, D"
 	expect resp.http.foo == "bar"
 } -run

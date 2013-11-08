@@ -4,50 +4,50 @@ server s1 {
 	rxreq
 	expect req.url == "/"
 	txresp -body {
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
-		<esi:remove> </esi:remove> 
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
+		<esi:remove> </esi:remove>
 		<esi:include src="/fooooooooooooo"/>
 	}
 
@@ -69,5 +69,5 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 184
+	expect resp.bodylen == 140
 } -run

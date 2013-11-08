@@ -1,7 +1,7 @@
 varnishtest "Check that a pipe transaction works"
 
 server s1 -repeat 1 {
-	rxreq 
+	rxreq
 	txresp -body "012345\n"
 } -start
 

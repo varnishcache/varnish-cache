@@ -1,20 +1,20 @@
 varnishtest "Ticket #887"
 
 server s1 {
-	rxreq 
+	rxreq
 	txresp -hdr "Cache-control: max-age=-1000" -body "FOO"
-	rxreq 
+	rxreq
 	txresp -body "FOOBAR"
 } -start
 
 varnish v1 -vcl+backend {
-} -start 
+} -start
 
 client c1 {
-	txreq  
+	txreq
 	rxresp
 	expect resp.bodylen == 3
-	txreq  
+	txreq
 	rxresp
 	expect resp.bodylen == 6
 } -run

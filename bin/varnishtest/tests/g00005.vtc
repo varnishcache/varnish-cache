@@ -10,7 +10,7 @@ varnish v1 -cliok "param.set http_gzip_support true" -vcl+backend {
 } -start
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.bodylen == "10"
 	expect resp.http.content-encoding == <undef>

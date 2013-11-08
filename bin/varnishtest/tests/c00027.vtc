@@ -19,8 +19,8 @@ server s1 {
 } -start
 
 varnish v1 -arg "-s malloc,1M" -vcl+backend {
-	sub vcl_backend_response { 
-		set beresp.ttl = 10m; 
+	sub vcl_backend_response {
+		set beresp.ttl = 10m;
 	}
 } -start
 
