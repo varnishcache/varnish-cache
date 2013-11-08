@@ -1,0 +1,41 @@
+varnishtest "Coverage test for -sfile"
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Transfer-encoding: chunked"
+	chunkedlen 65536
+	chunkedlen 65536
+	chunkedlen 65536
+	chunkedlen 65536
+	chunkedlen 1
+	chunkedlen 0
+
+	rxreq
+	txresp -nolen -hdr "Transfer-encoding: chunked"
+	chunkedlen 262
+	chunkedlen 0
+} -start
+
+varnish v1 \
+	-arg "-sfile,${tmpdir}/_.file,10m" \
+	-vcl+backend {
+		sub vcl_backend_response {
+			set beresp.do_stream = false;
+			set beresp.ttl = 0.1s;
+			set beresp.grace = 0.1s;
+			set beresp.keep = 0.1s;
+		}
+	} \
+	-start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 262145
+
+	delay 2
+
+	txreq
+	rxresp
+	expect resp.bodylen == 262
+} -run
