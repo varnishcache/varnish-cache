@@ -17,7 +17,7 @@ server s1 {
 } -start
 
 varnish v1 \
-	-arg "-sfile,${tmpdir}/_.file,10m" \
+	-arg "-sTransient=file,${tmpdir}/_.file,10m" \
 	-vcl+backend {
 		sub vcl_backend_response {
 			set beresp.do_stream = false;
