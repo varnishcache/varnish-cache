@@ -451,4 +451,13 @@ SLTM(VSL, 0, "VSL API warnings and error message",
 	" reading the shared memory log.\n\n"
 )
 
+SLTM(Storage, 0, "Where object is stored",
+	"Type and name of stevedore object is stored in.\n\n"
+	"The format is::\n\n"
+	"\t%s %s\n"
+	"\t|  |\n"
+	"\t|  +- Name of stevedore\n"
+	"\t+---- Type (\"malloc\", \"file\", \"persistent\" etc.)\n"
+	"\n"
+)
 #undef NODEF_NOTICE

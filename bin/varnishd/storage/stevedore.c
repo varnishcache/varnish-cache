@@ -296,6 +296,7 @@ STV_MkObject(struct stevedore *stv, struct busyobj *bo,
 	o->objcore->methods = &default_oc_methods;
 	o->objcore->priv = o;
 	o->objcore->priv2 = (uintptr_t)stv;
+	VSLb(bo->vsl, SLT_Storage, "%s %s", stv->name, stv->ident);
 	return (o);
 }
 
