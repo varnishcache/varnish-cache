@@ -86,6 +86,7 @@ static int vtc_good;
 static int vtc_fail;
 static int leave_temp;
 static char *tmppath;
+static char *cwd = NULL;
 
 /**********************************************************************
  * Parse a -D option argument into a name/val pair, and insert
@@ -147,7 +148,7 @@ usage(void)
 {
 	fprintf(stderr, "usage: varnishtest [options] file ...\n");
 #define FMT "    %-28s # %s\n"
-	fprintf(stderr, FMT, "-D name=val", "Define macro for use in scripts");
+	fprintf(stderr, FMT, "-D name=val", "Define macro");
 	fprintf(stderr, FMT, "-i", "Find varnishd in build tree");
 	fprintf(stderr, FMT, "-j jobs", "Run this many tests in parallel");
 	fprintf(stderr, FMT, "-k", "Continue on test failure");
@@ -158,8 +159,6 @@ usage(void)
 	fprintf(stderr, FMT, "-t duration", "Time tests out after this long");
 	fprintf(stderr, FMT, "-v", "Verbose mode: always report test log");
 	fprintf(stderr, "\n");
-	fprintf(stderr, "    Overridable macro definitions:\n");
-	fprintf(stderr, FMT, "varnishd", "Path to varnishd to use [varnishd]");
 	exit(1);
 }
 
@@ -323,6 +322,76 @@ start_test(void)
 }
 
 /**********************************************************************
+ * i-mode = "we're inside a src-tree"
+ *
+ * Find the abs path to top of source dir from Makefile
+ *
+ * Set path to all programs build directories
+ *
+ */
+
+static void
+i_mode(void)
+{
+	const char *sep;
+	struct vsb *vsb;
+	char *p;
+	char *topbuild;
+
+	/*
+	 * This code has a rather intimate knowledge of auto* generated
+	 * makefiles.
+	 */
+
+	p = read_file("Makefile");
+	if (p == NULL) {
+		fprintf(stderr, "No Makefile for -i flag\n");
+		exit(2);
+	}
+	p = strstr(p, "\nabs_top_builddir");
+	if (p == NULL) {
+		fprintf(stderr,
+		    "could not find 'abs_top_builddir' in Makefile\n");
+		exit(2);
+	}
+	topbuild =  strchr(p + 1, '\n');
+	if (topbuild == NULL) {
+		fprintf(stderr,
+		    "No NL after 'abs_top_builddir' in Makefile\n");
+		exit(2);
+	}
+	*topbuild = '\0';
+	topbuild = strchr(p, '/');
+	if (topbuild == NULL) {
+		fprintf(stderr, 
+		    "No '/' after 'abs_top_builddir' in Makefile\n");
+		exit(2);
+	}
+
+	extmacro_def("topbuild", "%s", topbuild);
+
+	/*
+	 * Build $PATH which can find all programs in the build tree
+	 */
+	vsb = VSB_new_auto();
+	AN(vsb);
+	VSB_printf(vsb, "PATH=");
+	sep = "";
+#define VTC_PROG(l) 							\
+	do {								\
+		VSB_printf(vsb, "%s%s/bin/%s/", sep, topbuild, #l); 	\
+		sep = ":"; 						\
+	} while (0);
+#include "programs.h"
+#undef VTC_PROG
+	VSB_printf(vsb, ":%s", getenv("PATH"));
+	AZ(VSB_finish(vsb));
+
+	AZ(putenv(strdup(VSB_data(vsb))));
+	VSB_delete(vsb);
+}
+
+/**********************************************************************
  * Main
  */
 
@@ -333,12 +402,20 @@ main(int argc, char * const *argv)
 	int ntest = 1;			/* Run tests this many times */
 	struct vtc_tst *tp;
 	char *p;
+	int iflg = 0;
 
-	extmacro_def("varnishd", "varnishd"); /* Default to path lookup */
+	/* Default names of programs */
+#define VTC_PROG(l)	extmacro_def(#l, #l);
+#include "programs.h"
+#undef VTC_PROG
+
 	if (getenv("TMPDIR") != NULL)
 		tmppath = strdup(getenv("TMPDIR"));
 	else
 		tmppath = strdup("/tmp");
+
+	cwd = getcwd(NULL, PATH_MAX);
+	extmacro_def("pwd", "%s", cwd);
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
@@ -352,8 +429,7 @@ main(int argc, char * const *argv)
 			}
 			break;
 		case 'i':
-			/* Look for varnishd relative to varnishtest */
-			extmacro_def("varnishd", "../varnishd/varnishd");
+			iflg = 1;
 			break;
 		case 'j':
 			npar = strtoul(optarg, NULL, 0);
@@ -404,6 +480,9 @@ main(int argc, char * const *argv)
 		tp->ntodo = ntest;
 		VTAILQ_INSERT_TAIL(&tst_head, tp, list);
 	}
+
+	if (iflg)
+		i_mode();
 
 	vb = vev_new_base();
 

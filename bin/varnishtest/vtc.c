@@ -545,7 +545,7 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
     char *logbuf, unsigned loglen)
 {
 	unsigned old_err;
-	char *cwd, *p;
+	char *p;
 	FILE *f;
 	struct extmacro *m;
 
@@ -561,11 +561,6 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	/* Apply extmacro definitions */
 	VTAILQ_FOREACH(m, &extmacro_list, list)
 		macro_def(vltop, NULL, m->name, "%s", m->val);
-
-	/* Other macro definitions */
-	cwd = getcwd(NULL, PATH_MAX);
-	macro_def(vltop, NULL, "pwd", "%s", cwd);
-	macro_def(vltop, NULL, "topbuild", "%s/%s", cwd, TOP_BUILDDIR);
 
 	/*
 	 * We need an IP number which will not repond, ever, and that is a

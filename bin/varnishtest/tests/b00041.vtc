@@ -1,0 +1,5 @@
+varnishtest "Test varnishadm and the Telnet CLI"
+
+varnish v1 -vcl {backend foo { .host = "127.0.0.1"; } } -start
+
+shell "${varnishadm} -n ${tmpdir}/v1 help > /dev/null"
