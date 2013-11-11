@@ -53,7 +53,11 @@ much anything the kernel will accept::
 	-T 192.168.1.1:34
 	-T '[fe80::1]:8082'
 
-By using a "localhost" address, you can restrict CLI access
+The default is '-T localhost:0' which will pick a random
+port number, which varnishadm(8) can learn in the shared
+memory.
+
+By using a "localhost" address, you restrict CLI access
 to the local machine.
 
 You can also bind the CLI port to an IP number reachable across
