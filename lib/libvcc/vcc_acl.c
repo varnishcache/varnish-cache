@@ -37,6 +37,7 @@
 #include <netdb.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "vcc_compile.h"
@@ -49,6 +50,7 @@ struct acl_e {
 	unsigned		mask;
 	unsigned		not;
 	unsigned		para;
+	char			*addr;
 	struct token		*t_addr;
 	struct token		*t_mask;
 };
@@ -171,12 +173,12 @@ vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 	memset(&hint, 0, sizeof hint);
 	hint.ai_family = PF_UNSPEC;
 	hint.ai_socktype = SOCK_STREAM;
-	error = getaddrinfo(ae->t_addr->dec, "0", &hint, &res0);
+	error = getaddrinfo(ae->addr, "0", &hint, &res0);
 	if (error) {
 		if (ae->para) {
 			VSB_printf(tl->sb,
 			    "Warning: %s ignored\n  -- %s\n",
-			    ae->t_addr->dec, gai_strerror(error));
+			    ae->addr, gai_strerror(error));
 			Fh(tl, 1, "/* Ignored ACL entry: %s%s",
 			    ae->para ? "\"(\" " : "", ae->not ? "\"!\" " : "");
 			EncToken(tl->fh, ae->t_addr);
@@ -188,7 +190,7 @@ vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 		} else {
 			VSB_printf(tl->sb,
 			    "DNS lookup(%s): %s\n",
-			    ae->t_addr->dec, gai_strerror(error));
+			    ae->addr, gai_strerror(error));
 			vcc_ErrWhere(tl, ae->t_addr);
 		}
 		return;
@@ -252,7 +254,7 @@ vcc_acl_try_netnotation(struct vcc *tl, struct acl_e *ae)
 	const char *p;
 
 	memset(b, 0, sizeof b);
-	p = ae->t_addr->dec;
+	p = ae->addr;
 	for (i = 0; i < 4; i++) {
 		j = sscanf(p, "%u%n", &u, &k);
 		if (j != 1)
@@ -276,6 +278,7 @@ static void
 vcc_acl_entry(struct vcc *tl)
 {
 	struct acl_e *ae;
+	char *sl, *e;
 
 	ae = TlAlloc(tl, sizeof *ae);
 	AN(ae);
@@ -297,9 +300,28 @@ vcc_acl_entry(struct vcc *tl)
 
 	ExpectErr(tl, CSTR);
 	ae->t_addr = tl->t;
+	ae->addr = strdup(ae->t_addr->dec);
+	AN(ae->addr);
 	vcc_NextToken(tl);
 
-	if (tl->t->tok == '/') {
+	if (strchr(ae->t_addr->dec, '/') != NULL) {
+		sl = strchr(ae->addr, '/');
+		AN(sl);
+		*sl++ = '\0';
+		e = NULL;
+		ae->mask = strtoul(sl, &e, 10);
+		if (*e != '\0') {
+			VSB_printf(tl->sb, ".../mask is not numeric.\n");
+			vcc_ErrWhere(tl, ae->t_addr);
+			return;
+		}
+		ae->t_mask = ae->t_addr;
+		if (tl->t->tok == '/') {
+			VSB_printf(tl->sb, "/mask only allowed once.\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
+	} else if (tl->t->tok == '/') {
 		vcc_NextToken(tl);
 		ae->t_mask = tl->t;
 		ExpectErr(tl, CNUM);
@@ -327,6 +349,7 @@ vcc_acl_emit(const struct vcc *tl, const char *acln, int anon)
 	int depth, l, m, i;
 	unsigned at[VRT_ACL_MAXADDR + 1];
 	const char *oc;
+	struct token *t;
 
 	Fh(tl, 0, "\nstatic int\n");
 	Fh(tl, 0, "match_acl_%s_%s(const struct vrt_ctx *ctx, const VCL_IP p)\n",
@@ -391,9 +414,19 @@ vcc_acl_emit(const struct vcc *tl, const char *acln, int anon)
 		if (!anon) {
 			Fh(tl, 0, "\t%*sVRT_acl_log(ctx, \"%sMATCH %s \" ",
 			    -i, "", ae->not ? "NEG_" : "", acln);
-			EncToken(tl->fh, ae->t_addr);
-			if (ae->t_mask != NULL)
-				Fh(tl, 0, " \"/%.*s\" ", PF(ae->t_mask));
+			t = ae->t_addr;
+			do {
+				if (t->tok == CSTR) {
+					Fh(tl, 0, " \"\\\"\" " );
+					EncToken(tl->fh, t);
+					Fh(tl, 0, " \"\\\"\" " );
+				} else
+					Fh(tl, 0, " \"%.*s\"", PF(t));
+				if (t == ae->t_mask)
+					break;
+				t = VTAILQ_NEXT(t, list);
+				AN(t);
+			} while (ae->t_mask != NULL);
 			Fh(tl, 0, ");\n");
 		}
 

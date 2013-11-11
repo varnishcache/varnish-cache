@@ -90,3 +90,19 @@ varnish v1 -vcl {
 	}
 	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
+
+varnish v1 -errvcl {.../mask is not numeric.} {
+	backend b { .host = "127.0.0.1"; }
+	acl a {
+		"10.0.1.0/1bc";
+	}
+	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
+}
+
+varnish v1 -errvcl {/mask only allowed once} {
+	backend b { .host = "127.0.0.1"; }
+	acl a {
+		"10.0.1.0/22" / 22;
+	}
+	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
+}
