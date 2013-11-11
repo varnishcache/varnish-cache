@@ -177,12 +177,18 @@ EXP_Insert(struct objcore *oc)
  * This optimization obviously leaves the LRU list imperfectly sorted.
  */
 
-int
-EXP_Touch(struct objcore *oc)
+void
+EXP_Touch(struct objcore *oc, double now)
 {
 	struct lru *lru;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	if (oc->busyobj != NULL)
+		return;
+
+	if (now - oc->last_lru < cache_param->lru_timeout)
+		return;
 
 	lru = oc_getlru(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
@@ -192,21 +198,21 @@ EXP_Touch(struct objcore *oc)
 	 * objects on the lru list, since LRU doesn't really help much.
 	 */
 	if (lru->flags & LRU_F_DONTMOVE)
-		return (0);
+		return;
 
 	if (Lck_Trylock(&lru->mtx))
-		return (0);
+		return;
 
 	AN(oc->flags & OC_F_EXP);
 
 	if (!(oc->flags & OC_F_OFFLRU)) {
-		/* Can only it while it's actually on the LRU list */
+		/* Can only touch it while it's actually on the LRU list */
 		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 		VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
 		VSC_C_main->n_lru_moved++;
 	}
+	oc->last_lru = now;
 	Lck_Unlock(&lru->mtx);
-	return (1);
 }
 
 /*--------------------------------------------------------------------
