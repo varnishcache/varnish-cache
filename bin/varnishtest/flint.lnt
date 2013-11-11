@@ -28,3 +28,5 @@
 -e786	// String concatenation within initializer
 -e788	// enum value not used in defaulted switch
 
+-efile(451, vmods.h)
+-efile(451, programs.h)

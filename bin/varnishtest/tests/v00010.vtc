@@ -23,7 +23,7 @@ server s1 {
 
 varnish v1 -arg "-smalloc,1m" -vcl+backend {
 
-	import debug from "${topbuild}/lib/libvmod_debug/.libs/libvmod_debug.so";
+	import ${vmod_debug};
 
 	sub vcl_backend_response {
 		if (beresp.http.panic == "fetch") {

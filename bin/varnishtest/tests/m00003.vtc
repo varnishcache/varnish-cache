@@ -1,5 +1,7 @@
 varnishtest "Test vmod_dir param"
 
+feature topbuild
+
 server s1 {
 	rxreq
 	txresp -hdr "foo: bAr" -hdr "bar: fOo" -bodylen 4

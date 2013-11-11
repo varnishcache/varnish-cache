@@ -23,7 +23,7 @@ server s4 {
 
 
 varnish v1 -vcl+backend {
-	import directors from "${topbuild}/lib/libvmod_directors/.libs/libvmod_directors.so" ;
+	import ${vmod_directors};
 
 	sub vcl_init {
 		new batman = directors.round_robin();

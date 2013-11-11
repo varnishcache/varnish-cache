@@ -14,10 +14,9 @@ server s1 {
 } -start
 
 varnish v1 \
-	-arg "-pvmod_dir=${topbuild}/lib/libvmod_std/.libs/" \
 	-arg "-pthread_pools=1" \
 	-vcl+backend {
-	import std;
+	import ${vmod_std};
 
 	sub vcl_deliver {
 		if (req.url == "/one") {
@@ -54,7 +53,7 @@ client c1 {
 } -run
 
 varnish v1 -vcl+backend {
-	import std;
+	import ${vmod_std};
 
 	sub vcl_deliver {
 		if (req.url == "/one") {

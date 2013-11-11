@@ -6,7 +6,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import debug from "${topbuild}/lib/libvmod_debug/.libs/libvmod_debug.so";
+	import ${vmod_debug};
 
 	sub vcl_init {
 		new obj = debug.obj("don't care");

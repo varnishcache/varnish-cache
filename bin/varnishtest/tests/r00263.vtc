@@ -3,7 +3,7 @@ varnishtest "Test refcounting backends from director"
 # XXX: This test is probably not relevant with VMOD.directors
 
 varnish v1  -vcl {
-	import directors from "${topbuild}/lib/libvmod_directors/.libs/libvmod_directors.so" ;
+	import ${vmod_directors};
 
 	backend node1 { .host = "10.0.0.1"; .port = "80"; }
 	backend node2 { .host = "10.0.0.2"; .port = "80"; }

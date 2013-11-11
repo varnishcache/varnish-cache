@@ -9,7 +9,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 
-	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
+	import ${vmod_std};
 	sub vcl_deliver {
 		set resp.http.foo0 = std.ip("8.8.8.*", client.ip);
 		set resp.http.foo1 = std.ip("9.9.9.*", server.ip);

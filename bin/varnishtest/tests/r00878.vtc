@@ -6,7 +6,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-        import debug from "${topbuild}/lib/libvmod_debug/.libs/libvmod_debug.so" ;
+        import ${vmod_debug};
 	sub vcl_deliver {
 		set resp.http.who = debug.author(phk);
 	}
@@ -18,7 +18,7 @@ client c1 {
 	rxresp
 } -run
 varnish v1 -vcl+backend {
-        import debug from "${topbuild}/lib/libvmod_debug/.libs/libvmod_debug.so" ;
+        import ${vmod_debug};
 	sub vcl_deliver {
 		set resp.http.who = debug.author(des);
 	}
@@ -30,7 +30,7 @@ client c1 {
 } -run
 
 varnish v1 -vcl+backend {
-        import debug from "${topbuild}/lib/libvmod_debug/.libs/libvmod_debug.so" ;
+        import ${vmod_debug};
 	sub vcl_deliver {
 		set resp.http.who = debug.author(kristian);
 	}

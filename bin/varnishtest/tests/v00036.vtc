@@ -16,7 +16,7 @@ server s3 {
 } -start
 
 varnish v1 -vcl+backend {
-	import directors from "${topbuild}/lib/libvmod_directors/.libs/libvmod_directors.so" ;
+	import ${vmod_directors};
 
 	sub vcl_init {
 		new fb1 = directors.fallback();

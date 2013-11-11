@@ -13,7 +13,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
+	import ${vmod_std};
 
 	sub vcl_recv {
 		std.collect(req.http.foo);
@@ -44,7 +44,7 @@ client c1 {
 } -run
 
 varnish v1 -errvcl {'beresp.http.bar': Not available in method 'vcl_recv'}  {
-	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
+	import ${vmod_std};
 
 	backend b { .host = "127.0.0.1"; }
 

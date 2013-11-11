@@ -75,6 +75,8 @@ struct vtc_job {
 	double			t0;
 };
 
+int iflg = 0;
+
 static VTAILQ_HEAD(, vtc_tst) tst_head = VTAILQ_HEAD_INITIALIZER(tst_head);
 static struct vev_base *vb;
 static int njob = 0;
@@ -363,7 +365,7 @@ i_mode(void)
 	*topbuild = '\0';
 	topbuild = strchr(p, '/');
 	if (topbuild == NULL) {
-		fprintf(stderr, 
+		fprintf(stderr,
 		    "No '/' after 'abs_top_builddir' in Makefile\n");
 		exit(2);
 	}
@@ -377,10 +379,10 @@ i_mode(void)
 	AN(vsb);
 	VSB_printf(vsb, "PATH=");
 	sep = "";
-#define VTC_PROG(l) 							\
+#define VTC_PROG(l)							\
 	do {								\
-		VSB_printf(vsb, "%s%s/bin/%s/", sep, topbuild, #l); 	\
-		sep = ":"; 						\
+		VSB_printf(vsb, "%s%s/bin/%s/", sep, topbuild, #l);	\
+		sep = ":";						\
 	} while (0);
 #include "programs.h"
 #undef VTC_PROG
@@ -388,6 +390,21 @@ i_mode(void)
 	AZ(VSB_finish(vsb));
 
 	AZ(putenv(strdup(VSB_data(vsb))));
+
+	/*
+	 * Redefine VMOD macros
+	 */
+#define VTC_VMOD(l)							\
+	do {								\
+		VSB_clear(vsb);						\
+		VSB_printf(vsb,						\
+		   "%s from \"%s/lib/libvmod_%s/.libs/libvmod_%s.so\"",	\
+		    #l, topbuild, #l, #l);				\
+		AZ(VSB_finish(vsb));					\
+	    extmacro_def("vmod_" #l, "%s", VSB_data(vsb));		\
+	} while (0);
+#include "vmods.h"
+#undef VTC_VMOD
 	VSB_delete(vsb);
 }
 
@@ -402,12 +419,16 @@ main(int argc, char * const *argv)
 	int ntest = 1;			/* Run tests this many times */
 	struct vtc_tst *tp;
 	char *p;
-	int iflg = 0;
 
 	/* Default names of programs */
 #define VTC_PROG(l)	extmacro_def(#l, #l);
 #include "programs.h"
 #undef VTC_PROG
+
+	/* Default import spec of vmods */
+#define VTC_VMOD(l)	extmacro_def("vmod_" #l, #l);
+#include "vmods.h"
+#undef VTC_VMOD
 
 	if (getenv("TMPDIR") != NULL)
 		tmppath = strdup(getenv("TMPDIR"));

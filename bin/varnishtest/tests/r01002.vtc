@@ -1,7 +1,7 @@
 varnishtest "Real relational comparisons"
 
 varnish v1 -vcl {
-	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
+	import ${vmod_std};
 
 	backend foo { .host = "${bad_ip}"; }
 	sub vcl_recv {

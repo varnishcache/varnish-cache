@@ -515,6 +515,8 @@ cmd_feature(CMD_ARGS)
 			continue;
 #endif
 		}
+		if (!strcmp(av[i], "topbuild") && iflg)
+			continue;
 
 		vtc_log(vl, 1, "SKIPPING test, missing feature: %s", av[i]);
 		vtc_stop = 1;

@@ -19,7 +19,7 @@ server s2 {
 
 varnish v1 -vcl {
 
-	import directors from "${topbuild}/lib/libvmod_directors/.libs/libvmod_directors.so" ;
+	import ${vmod_directors};
 
 	backend s1 {
 		.host = "${s1_addr}"; .port = "${s1_port}";

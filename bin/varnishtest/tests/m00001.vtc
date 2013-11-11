@@ -6,7 +6,7 @@ server s1 {
 } -start
 
 varnish v1 -arg "-pthread_pools=1" -vcl+backend {
-	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
+	import ${vmod_std};
 
 	sub vcl_deliver {
 		set resp.http.foo = std.toupper(resp.http.foo);
@@ -48,12 +48,12 @@ varnish v1 -cliok "vcl.list"
 varnish v1 -cliok "debug.vmod"
 
 varnish v1 -errvcl {Module std already imported.} {
-	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
-	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
+	import ${vmod_std};
+	import ${vmod_std};
 }
 
 varnish v1 -errvcl {Symbol not found: 'std' (expected type BOOL):} {
-	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
+	import ${vmod_std};
 
 	sub vcl_recv {
 		if (std == 2) {

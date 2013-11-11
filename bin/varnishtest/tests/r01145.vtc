@@ -15,7 +15,7 @@ server s1 {
 
 
 varnish v1 -vcl+backend {
-	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
+	import ${vmod_std};
 
 	sub vcl_deliver {
             set resp.http.foo = std.fileread("${tmpdir}" + req.url);

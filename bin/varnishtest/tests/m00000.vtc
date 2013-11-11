@@ -6,8 +6,8 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
-	import debug from "${topbuild}/lib/libvmod_debug/.libs/libvmod_debug.so" ;
+	import ${vmod_std};
+	import ${vmod_debug};
 
 	sub vcl_deliver {
 		set resp.http.foo = std.toupper(resp.http.foo);
@@ -30,14 +30,14 @@ client c1 {
 } -run
 
 varnish v1 -errvcl {Wrong enum value.  Expected one of:} {
-	import debug from "${topbuild}/lib/libvmod_debug/.libs/libvmod_debug.so" ;
+	import ${vmod_debug};
 	sub vcl_deliver {
 		set resp.http.who = debug.author(jfk);
 	}
 }
 
 varnish v1 -errvcl {Wrong argument type.  Expected REAL.  Got STRING.} {
-	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
+	import ${vmod_std};
 	sub vcl_deliver {
 		set resp.http.who = std.random("foo", "bar");
 	}

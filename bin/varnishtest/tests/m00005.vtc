@@ -8,7 +8,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import std from "${topbuild}/lib/libvmod_std/.libs/libvmod_std.so" ;
+	import ${vmod_std};
 
 	sub vcl_recv {
 		set req.ttl = 1000000s + std.duration(req.http.ttl, 1s);

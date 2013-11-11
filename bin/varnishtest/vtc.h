@@ -68,6 +68,7 @@ cmd_f cmd_logexp;
 extern volatile sig_atomic_t vtc_error; /* Error, bail out */
 extern int vtc_stop;		/* Abandon current test, no error */
 extern pthread_t	vtc_thread;
+extern int iflg;
 
 void init_sema(void);
 

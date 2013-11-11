@@ -21,7 +21,7 @@ varnish v1 \
 	-arg "-smalloc,1m" \
 	-arg "-smalloc,1m" \
 	-arg "-smalloc,1m" \
- 	-vcl+backend {
+	-vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
 		set beresp.storage = "invalid";

@@ -23,7 +23,7 @@ server s4 {
 } -start
 
 varnish v1 -errvcl {Names of VCL objects cannot contain '-'} {
-	import directors from "${topbuild}/lib/libvmod_directors/.libs/libvmod_directors.so" ;
+	import ${vmod_directors};
 	backend b1 { .host = "127.0.0.1"; .port = "8080";}
 	sub vcl_init {
 		new rr1-xx = directors.round_robin();
@@ -32,7 +32,7 @@ varnish v1 -errvcl {Names of VCL objects cannot contain '-'} {
 
 varnish v1 -vcl+backend {
 
-	import directors from "${topbuild}/lib/libvmod_directors/.libs/libvmod_directors.so" ;
+	import ${vmod_directors};
 	sub vcl_init {
 		new rr1 = directors.round_robin();
 		rr1.add_backend(s1);

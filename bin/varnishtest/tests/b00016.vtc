@@ -21,7 +21,7 @@ client c1 {
 } -run
 
 varnish v1 -vcl {
-	import directors from "${topbuild}/lib/libvmod_directors/.libs/libvmod_directors.so" ;
+	import ${vmod_directors};
 
 	backend b1 {
 		.host = "${bad_ip}"; .port = "9080";
@@ -48,7 +48,7 @@ client c1 {
 } -run
 
 varnish v1 -vcl {
-	import directors from "${topbuild}/lib/libvmod_directors/.libs/libvmod_directors.so" ;
+	import ${vmod_directors};
 	backend b1 {
 		.host = "${bad_ip}"; .port = "9080";
 	}
