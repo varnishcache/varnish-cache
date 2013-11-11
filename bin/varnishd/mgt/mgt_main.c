@@ -353,7 +353,7 @@ main(int argc, char * const *argv)
 	const char *S_arg = NULL;
 	const char *s_arg = "malloc,100m";
 	int s_arg_given = 0;
-	const char *T_arg = NULL;
+	const char *T_arg = "localhost:0";
 	char *p, *vcl = NULL;
 	struct cli cli[1];
 	struct vpf_fh *pfh = NULL;
@@ -511,7 +511,10 @@ main(int argc, char * const *argv)
 			S_arg = optarg;
 			break;
 		case 'T':
-			T_arg = optarg;
+			if (*optarg != '\0')
+				T_arg = optarg;
+			else
+				T_arg = NULL;
 			break;
 		case 'u':
 			MCF_ParamSet(cli, "user", optarg);
