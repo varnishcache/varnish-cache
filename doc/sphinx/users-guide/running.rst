@@ -13,6 +13,7 @@ securing and protecting Varnish against attacks.
 
    run_security
    command-line
+   run_cli
    storage-backends
    params
    sizing-your-cache
