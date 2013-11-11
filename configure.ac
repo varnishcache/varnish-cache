@@ -257,7 +257,7 @@ AC_SUBST(LIBUMEM)
 # are not available
 AC_CHECK_FUNCS([setproctitle])
 AC_CHECK_FUNCS([srandomdev])
-AC_CHECK_FUNCS([backtrace])
+AC_SEARCH_LIBS(backtrace, [execinfo],[AC_DEFINE([HAVE_BACKTRACE],[1],[Define to 1 if the backtrace function exists])])
 # white lie - we don't actually test it
 AC_MSG_CHECKING([whether daemon() works])
 case $target in
