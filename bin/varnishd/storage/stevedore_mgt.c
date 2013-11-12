@@ -39,10 +39,11 @@
 #include <unistd.h>
 
 #include "mgt/mgt.h"
+#include "vcli_priv.h"
+#include "mgt/mgt_cli.h"
 
 #include "storage/storage.h"
 #include "vav.h"
-#include "vcli_priv.h"
 
 struct stevedore_head stv_stevedores =
     VTAILQ_HEAD_INITIALIZER(stv_stevedores);
