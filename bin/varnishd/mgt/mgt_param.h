@@ -30,7 +30,7 @@
 
 struct parspec;
 
-typedef int tweak_t(struct cli *, const struct parspec *, const char *arg);
+typedef int tweak_t(struct vsb *, const struct parspec *, const char *arg);
 
 struct parspec {
 	const char	*name;
@@ -65,7 +65,7 @@ tweak_t tweak_uint;
 tweak_t tweak_user;
 tweak_t tweak_waiter;
 
-int tweak_generic_uint(struct cli *cli,
+int tweak_generic_uint(struct vsb *vsb,
     volatile unsigned *dest, const char *arg, unsigned min, unsigned max);
 
 /* mgt_param_tbl.c */

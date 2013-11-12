@@ -38,9 +38,6 @@
 #include "mgt/mgt_param.h"
 
 #include "vav.h"
-#include "vcli.h"
-#include "vcli_common.h"
-#include "vcli_priv.h"
 
 #include "vapi/vsl_int.h"
 
@@ -67,7 +64,7 @@ bit(uint8_t *p, unsigned no, enum bit_do act)
  */
 
 static int
-bit_tweak(struct cli *cli, uint8_t *p, unsigned l, const char *arg,
+bit_tweak(struct vsb *vsb, uint8_t *p, unsigned l, const char *arg,
     const char * const *tags, const char *desc, const char *sign)
 {
 	int i, n;
@@ -77,14 +74,14 @@ bit_tweak(struct cli *cli, uint8_t *p, unsigned l, const char *arg,
 
 	av = VAV_Parse(arg, &n, ARGV_COMMA);
 	if (av[0] != NULL) {
-		VCLI_Out(cli, "Cannot parse: %s\n", av[0]);
+		VSB_printf(vsb, "Cannot parse: %s\n", av[0]);
 		VAV_Free(av);
 		return (-1);
 	}
 	for (i = 1; av[i] != NULL; i++) {
 		s = av[i];
 		if (*s != '-' && *s != '+') {
-			VCLI_Out(cli, "Missing '+' or '-' (%s)\n", s);
+			VSB_printf(vsb, "Missing '+' or '-' (%s)\n", s);
 			VAV_Free(av);
 			return (-1);
 		}
@@ -93,7 +90,7 @@ bit_tweak(struct cli *cli, uint8_t *p, unsigned l, const char *arg,
 				break;
 		}
 		if (tags[j] == NULL) {
-			VCLI_Out(cli, "Unknown %s (%s)\n", desc, s);
+			VSB_printf(vsb, "Unknown %s (%s)\n", desc, s);
 			VAV_Free(av);
 			return (-1);
 		}
@@ -120,7 +117,7 @@ static const char * const VSL_tags[256] = {
 };
 
 static int
-tweak_vsl_mask(struct cli *cli, const struct parspec *par, const char *arg)
+tweak_vsl_mask(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	unsigned j;
 	const char *s;
@@ -134,7 +131,7 @@ tweak_vsl_mask(struct cli *cli, const struct parspec *par, const char *arg)
 			(void)bit(mgt_param.vsl_mask, SLT_WorkThread, BSET);
 			(void)bit(mgt_param.vsl_mask, SLT_Hash, BSET);
 		} else {
-			return (bit_tweak(cli, mgt_param.vsl_mask,
+			return (bit_tweak(vsb, mgt_param.vsl_mask,
 			    SLT__Reserved, arg, VSL_tags,
 			    "VSL tag", "-"));
 		}
@@ -142,12 +139,12 @@ tweak_vsl_mask(struct cli *cli, const struct parspec *par, const char *arg)
 		s = "";
 		for (j = 0; j < (unsigned)SLT__Reserved; j++) {
 			if (bit(mgt_param.vsl_mask, j, BTST)) {
-				VCLI_Out(cli, "%s-%s", s, VSL_tags[j]);
+				VSB_printf(vsb, "%s-%s", s, VSL_tags[j]);
 				s = ",";
 			}
 		}
 		if (*s == '\0')
-			VCLI_Out(cli, "(all enabled)");
+			VSB_printf(vsb, "(all enabled)");
 	}
 	return (0);
 }
@@ -164,7 +161,7 @@ static const char * const debug_tags[] = {
 };
 
 static int
-tweak_debug(struct cli *cli, const struct parspec *par, const char *arg)
+tweak_debug(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	const char *s;
 	unsigned j;
@@ -175,19 +172,19 @@ tweak_debug(struct cli *cli, const struct parspec *par, const char *arg)
 			memset(mgt_param.debug_bits,
 			    0, sizeof mgt_param.debug_bits);
 		} else {
-			return (bit_tweak(cli, mgt_param.debug_bits,
+			return (bit_tweak(vsb, mgt_param.debug_bits,
 			    DBG_Reserved, arg, debug_tags, "debug bit", "+"));
 		}
 	} else {
 		s = "";
 		for (j = 0; j < (unsigned)DBG_Reserved; j++) {
 			if (bit(mgt_param.debug_bits, j, BTST)) {
-				VCLI_Out(cli, "%s+%s", s, debug_tags[j]);
+				VSB_printf(vsb, "%s+%s", s, debug_tags[j]);
 				s = ",";
 			}
 		}
 		if (*s == '\0')
-			VCLI_Out(cli, "none");
+			VSB_printf(vsb, "none");
 	}
 	return (0);
 }
@@ -204,7 +201,7 @@ static const char * const feature_tags[] = {
 };
 
 static int
-tweak_feature(struct cli *cli, const struct parspec *par, const char *arg)
+tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	const char *s;
 	unsigned j;
@@ -215,7 +212,7 @@ tweak_feature(struct cli *cli, const struct parspec *par, const char *arg)
 			memset(mgt_param.feature_bits,
 			    0, sizeof mgt_param.feature_bits);
 		} else {
-			return (bit_tweak(cli, mgt_param.feature_bits,
+			return (bit_tweak(vsb, mgt_param.feature_bits,
 			    FEATURE_Reserved, arg, feature_tags,
 			    "feature bit", "+"));
 		}
@@ -223,12 +220,12 @@ tweak_feature(struct cli *cli, const struct parspec *par, const char *arg)
 		s = "";
 		for (j = 0; j < (unsigned)FEATURE_Reserved; j++) {
 			if (bit(mgt_param.feature_bits, j, BTST)) {
-				VCLI_Out(cli, "%s+%s", s, feature_tags[j]);
+				VSB_printf(vsb, "%s+%s", s, feature_tags[j]);
 				s = ",";
 			}
 		}
 		if (*s == '\0')
-			VCLI_Out(cli, "none");
+			VSB_printf(vsb, "none");
 	}
 	return (0);
 }

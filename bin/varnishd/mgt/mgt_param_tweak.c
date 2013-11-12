@@ -59,37 +59,37 @@
 /*--------------------------------------------------------------------*/
 
 static int
-tweak_generic_timeout(struct cli *cli, volatile unsigned *dst, const char *arg)
+tweak_generic_timeout(struct vsb *vsb, volatile unsigned *dst, const char *arg)
 {
 	unsigned u;
 
 	if (arg != NULL) {
 		u = strtoul(arg, NULL, 0);
 		if (u == 0) {
-			VCLI_Out(cli, "Timeout must be greater than zero\n");
+			VSB_printf(vsb, "Timeout must be greater than zero\n");
 			return (-1);
 		}
 		*dst = u;
 	} else
-		VCLI_Out(cli, "%u", *dst);
+		VSB_printf(vsb, "%u", *dst);
 	return (0);
 }
 
 /*--------------------------------------------------------------------*/
 
 int
-tweak_timeout(struct cli *cli, const struct parspec *par, const char *arg)
+tweak_timeout(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *dest;
 
 	dest = par->priv;
-	return (tweak_generic_timeout(cli, dest, arg));
+	return (tweak_generic_timeout(vsb, dest, arg));
 }
 
 /*--------------------------------------------------------------------*/
 
 static int
-tweak_generic_timeout_double(struct cli *cli, volatile double *dest,
+tweak_generic_timeout_double(struct vsb *vsb, volatile double *dest,
     const char *arg, double min, double max)
 {
 	double u;
@@ -99,40 +99,40 @@ tweak_generic_timeout_double(struct cli *cli, volatile double *dest,
 		p = NULL;
 		u = strtod(arg, &p);
 		if (*arg == '\0' || *p != '\0') {
-			VCLI_Out(cli, "Not a number(%s)\n", arg);
+			VSB_printf(vsb, "Not a number(%s)\n", arg);
 			return (-1);
 		}
 		if (u < min) {
-			VCLI_Out(cli,
+			VSB_printf(vsb,
 			    "Timeout must be greater or equal to %.g\n", min);
 			return (-1);
 		}
 		if (u > max) {
-			VCLI_Out(cli,
+			VSB_printf(vsb,
 			    "Timeout must be less than or equal to %.g\n", max);
 			return (-1);
 		}
 		*dest = u;
 	} else
-		VCLI_Out(cli, "%.6f", *dest);
+		VSB_printf(vsb, "%.6f", *dest);
 	return (0);
 }
 
 int
-tweak_timeout_double(struct cli *cli, const struct parspec *par,
+tweak_timeout_double(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
 	volatile double *dest;
 
 	dest = par->priv;
-	return (tweak_generic_timeout_double(cli, dest, arg,
+	return (tweak_generic_timeout_double(vsb, dest, arg,
 	    par->min, par->max));
 }
 
 /*--------------------------------------------------------------------*/
 
 int
-tweak_generic_double(struct cli *cli, const struct parspec *par,
+tweak_generic_double(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
 	volatile double *dest;
@@ -144,32 +144,32 @@ tweak_generic_double(struct cli *cli, const struct parspec *par,
 		p = NULL;
 		u = strtod(arg, &p);
 		if (*p != '\0') {
-			VCLI_Out(cli,
+			VSB_printf(vsb,
 			    "Not a number (%s)\n", arg);
 			return (-1);
 		}
 		if (u < par->min) {
-			VCLI_Out(cli,
+			VSB_printf(vsb,
 			    "Must be greater or equal to %.g\n",
 				 par->min);
 			return (-1);
 		}
 		if (u > par->max) {
-			VCLI_Out(cli,
+			VSB_printf(vsb,
 			    "Must be less than or equal to %.g\n",
 				 par->max);
 			return (-1);
 		}
 		*dest = u;
 	} else
-		VCLI_Out(cli, "%f", *dest);
+		VSB_printf(vsb, "%f", *dest);
 	return (0);
 }
 
 /*--------------------------------------------------------------------*/
 
 int
-tweak_bool(struct cli *cli, const struct parspec *par, const char *arg)
+tweak_bool(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *dest;
 	int mode = 0;
@@ -196,16 +196,16 @@ tweak_bool(struct cli *cli, const struct parspec *par, const char *arg)
 		else if (!strcasecmp(arg, "true"))
 			*dest = 1;
 		else {
-			VCLI_Out(cli,
+			VSB_printf(vsb, "%s",
 			    mode ?
 				"use \"on\" or \"off\"\n" :
 				"use \"true\" or \"false\"\n");
 			return (-1);
 		}
 	} else if (mode) {
-		VCLI_Out(cli, *dest ? "on" : "off");
+		VSB_printf(vsb, "%s", *dest ? "on" : "off");
 	} else {
-		VCLI_Out(cli, *dest ? "true" : "false");
+		VSB_printf(vsb, "%s", *dest ? "true" : "false");
 	}
 	return (0);
 }
@@ -213,7 +213,7 @@ tweak_bool(struct cli *cli, const struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 int
-tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg,
+tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest, const char *arg,
     unsigned min, unsigned max)
 {
 	unsigned u;
@@ -226,23 +226,23 @@ tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg,
 		else {
 			u = strtoul(arg, &p, 0);
 			if (*arg == '\0' || *p != '\0') {
-				VCLI_Out(cli, "Not a number (%s)\n", arg);
+				VSB_printf(vsb, "Not a number (%s)\n", arg);
 				return (-1);
 			}
 		}
 		if (u < min) {
-			VCLI_Out(cli, "Must be at least %u\n", min);
+			VSB_printf(vsb, "Must be at least %u\n", min);
 			return (-1);
 		}
 		if (u > max) {
-			VCLI_Out(cli, "Must be no more than %u\n", max);
+			VSB_printf(vsb, "Must be no more than %u\n", max);
 			return (-1);
 		}
 		*dest = u;
 	} else if (*dest == UINT_MAX) {
-		VCLI_Out(cli, "unlimited");
+		VSB_printf(vsb, "unlimited");
 	} else {
-		VCLI_Out(cli, "%u", *dest);
+		VSB_printf(vsb, "%u", *dest);
 	}
 	return (0);
 }
@@ -250,12 +250,12 @@ tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg,
 /*--------------------------------------------------------------------*/
 
 int
-tweak_uint(struct cli *cli, const struct parspec *par, const char *arg)
+tweak_uint(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *dest;
 
 	dest = par->priv;
-	(void)tweak_generic_uint(cli, dest, arg,
+	(void)tweak_generic_uint(vsb, dest, arg,
 	    (uint)par->min, (uint)par->max);
 	return (0);
 }
@@ -263,30 +263,30 @@ tweak_uint(struct cli *cli, const struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 static void
-fmt_bytes(struct cli *cli, uintmax_t t)
+fmt_bytes(struct vsb *vsb, uintmax_t t)
 {
 	const char *p;
 
 	if (t & 0xff) {
-		VCLI_Out(cli, "%jub", t);
+		VSB_printf(vsb, "%jub", t);
 		return;
 	}
 	for (p = "kMGTPEZY"; *p; p++) {
 		if (t & 0x300) {
-			VCLI_Out(cli, "%.2f%c", t / 1024.0, *p);
+			VSB_printf(vsb, "%.2f%c", t / 1024.0, *p);
 			return;
 		}
 		t /= 1024;
 		if (t & 0x0ff) {
-			VCLI_Out(cli, "%ju%c", t, *p);
+			VSB_printf(vsb, "%ju%c", t, *p);
 			return;
 		}
 	}
-	VCLI_Out(cli, "(bogus number)");
+	VSB_printf(vsb, "(bogus number)");
 }
 
 static int
-tweak_generic_bytes(struct cli *cli, volatile ssize_t *dest, const char *arg,
+tweak_generic_bytes(struct vsb *vsb, volatile ssize_t *dest, const char *arg,
     double min, double max)
 {
 	uintmax_t r;
@@ -295,32 +295,32 @@ tweak_generic_bytes(struct cli *cli, volatile ssize_t *dest, const char *arg,
 	if (arg != NULL) {
 		p = VNUM_2bytes(arg, &r, 0);
 		if (p != NULL) {
-			VCLI_Out(cli, "Could not convert to bytes.\n");
-			VCLI_Out(cli, "%s\n", p);
-			VCLI_Out(cli,
+			VSB_printf(vsb, "Could not convert to bytes.\n");
+			VSB_printf(vsb, "%s\n", p);
+			VSB_printf(vsb,
 			    "  Try something like '80k' or '120M'\n");
 			return (-1);
 		}
 		if ((uintmax_t)((ssize_t)r) != r) {
-			fmt_bytes(cli, r);
-			VCLI_Out(cli, " is too large for this architecture.\n");
+			fmt_bytes(vsb, r);
+			VSB_printf(vsb, " is too large for this architecture.\n");
 			return (-1);
 		}
 		if (max != 0. && r > max) {
-			VCLI_Out(cli, "Must be no more than ");
-			fmt_bytes(cli, (uintmax_t)max);
-			VCLI_Out(cli, "\n");
+			VSB_printf(vsb, "Must be no more than ");
+			fmt_bytes(vsb, (uintmax_t)max);
+			VSB_printf(vsb, "\n");
 			return (-1);
 		}
 		if (r < min) {
-			VCLI_Out(cli, "Must be at least ");
-			fmt_bytes(cli, (uintmax_t)min);
-			VCLI_Out(cli, "\n");
+			VSB_printf(vsb, "Must be at least ");
+			fmt_bytes(vsb, (uintmax_t)min);
+			VSB_printf(vsb, "\n");
 			return (-1);
 		}
 		*dest = r;
 	} else {
-		fmt_bytes(cli, *dest);
+		fmt_bytes(vsb, *dest);
 	}
 	return (0);
 }
@@ -328,20 +328,20 @@ tweak_generic_bytes(struct cli *cli, volatile ssize_t *dest, const char *arg,
 /*--------------------------------------------------------------------*/
 
 int
-tweak_bytes(struct cli *cli, const struct parspec *par, const char *arg)
+tweak_bytes(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile ssize_t *dest;
 
 	assert(par->min >= 0);
 	dest = par->priv;
-	return (tweak_generic_bytes(cli, dest, arg, par->min, par->max));
+	return (tweak_generic_bytes(vsb, dest, arg, par->min, par->max));
 }
 
 
 /*--------------------------------------------------------------------*/
 
 int
-tweak_bytes_u(struct cli *cli, const struct parspec *par, const char *arg)
+tweak_bytes_u(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *d1;
 	volatile ssize_t dest;
@@ -350,7 +350,7 @@ tweak_bytes_u(struct cli *cli, const struct parspec *par, const char *arg)
 	assert(par->min >= 0);
 	d1 = par->priv;
 	dest = *d1;
-	if (tweak_generic_bytes(cli, &dest, arg, par->min, par->max))
+	if (tweak_generic_bytes(vsb, &dest, arg, par->min, par->max))
 		return (-1);
 	*d1 = dest;
 	return (0);
@@ -365,7 +365,7 @@ tweak_bytes_u(struct cli *cli, const struct parspec *par, const char *arg)
  */
 
 int
-tweak_user(struct cli *cli, const struct parspec *par, const char *arg)
+tweak_user(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	struct passwd *pw;
 
@@ -374,7 +374,7 @@ tweak_user(struct cli *cli, const struct parspec *par, const char *arg)
 		if (*arg != '\0') {
 			pw = getpwnam(arg);
 			if (pw == NULL) {
-				VCLI_Out(cli, "Unknown user");
+				VSB_printf(vsb, "Unknown user");
 				return(-1);
 			}
 			REPLACE(mgt_param.user, pw->pw_name);
@@ -383,9 +383,9 @@ tweak_user(struct cli *cli, const struct parspec *par, const char *arg)
 			mgt_param.uid = getuid();
 		}
 	} else if (mgt_param.user) {
-		VCLI_Out(cli, "%s (%d)", mgt_param.user, (int)mgt_param.uid);
+		VSB_printf(vsb, "%s (%d)", mgt_param.user, (int)mgt_param.uid);
 	} else {
-		VCLI_Out(cli, "UID %d", (int)mgt_param.uid);
+		VSB_printf(vsb, "UID %d", (int)mgt_param.uid);
 	}
 	return (0);
 }
@@ -395,7 +395,7 @@ tweak_user(struct cli *cli, const struct parspec *par, const char *arg)
  */
 
 int
-tweak_group(struct cli *cli, const struct parspec *par, const char *arg)
+tweak_group(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	struct group *gr;
 
@@ -404,7 +404,7 @@ tweak_group(struct cli *cli, const struct parspec *par, const char *arg)
 		if (*arg != '\0') {
 			gr = getgrnam(arg);
 			if (gr == NULL) {
-				VCLI_Out(cli, "Unknown group");
+				VSB_printf(vsb, "Unknown group");
 				return(-1);
 			}
 			REPLACE(mgt_param.group, gr->gr_name);
@@ -413,9 +413,9 @@ tweak_group(struct cli *cli, const struct parspec *par, const char *arg)
 			mgt_param.gid = getgid();
 		}
 	} else if (mgt_param.group) {
-		VCLI_Out(cli, "%s (%d)", mgt_param.group, (int)mgt_param.gid);
+		VSB_printf(vsb, "%s (%d)", mgt_param.group, (int)mgt_param.gid);
 	} else {
-		VCLI_Out(cli, "GID %d", (int)mgt_param.gid);
+		VSB_printf(vsb, "GID %d", (int)mgt_param.gid);
 	}
 	return (0);
 }
@@ -437,7 +437,7 @@ clean_listen_sock_head(struct listen_sock_head *lsh)
 }
 
 int
-tweak_listen_address(struct cli *cli, const struct parspec *par,
+tweak_listen_address(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
 	char **av;
@@ -447,22 +447,22 @@ tweak_listen_address(struct cli *cli, const struct parspec *par,
 
 	(void)par;
 	if (arg == NULL) {
-		VCLI_Quote(cli, mgt_param.listen_address);
+		VSB_quote(vsb, mgt_param.listen_address, -1, 0);
 		return (0);
 	}
 
 	av = VAV_Parse(arg, NULL, ARGV_COMMA);
 	if (av == NULL) {
-		VCLI_Out(cli, "Parse error: out of memory");
+		VSB_printf(vsb, "Parse error: out of memory");
 		return(-1);
 	}
 	if (av[0] != NULL) {
-		VCLI_Out(cli, "Parse error: %s", av[0]);
+		VSB_printf(vsb, "Parse error: %s", av[0]);
 		VAV_Free(av);
 		return(-1);
 	}
 	if (av[1] == NULL) {
-		VCLI_Out(cli, "Empty listen address");
+		VSB_printf(vsb, "Empty listen address");
 		VAV_Free(av);
 		return(-1);
 	}
@@ -473,8 +473,8 @@ tweak_listen_address(struct cli *cli, const struct parspec *par,
 
 		n = VSS_resolve(av[i], "http", &ta);
 		if (n == 0) {
-			VCLI_Out(cli, "Invalid listen address ");
-			VCLI_Quote(cli, av[i]);
+			VSB_printf(vsb, "Invalid listen address ");
+			VSB_quote(vsb, av[i], -1, 0);
 			retval = -1;
 			break;
 		}
@@ -513,14 +513,14 @@ tweak_listen_address(struct cli *cli, const struct parspec *par,
 /*--------------------------------------------------------------------*/
 
 int
-tweak_string(struct cli *cli, const struct parspec *par, const char *arg)
+tweak_string(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	char **p = TRUST_ME(par->priv);
 
 	AN(p);
 	/* XXX should have tweak_generic_string */
 	if (arg == NULL) {
-		VCLI_Quote(cli, *p);
+		VSB_quote(vsb, *p, -1, 0);
 	} else {
 		REPLACE(*p, arg);
 	}
@@ -530,18 +530,18 @@ tweak_string(struct cli *cli, const struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 int
-tweak_waiter(struct cli *cli, const struct parspec *par, const char *arg)
+tweak_waiter(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 
 	/* XXX should have tweak_generic_string */
 	(void)par;
-	return (WAIT_tweak_waiter(cli, arg));
+	return (WAIT_tweak_waiter(vsb, arg));
 }
 
 /*--------------------------------------------------------------------*/
 
 int
-tweak_poolparam(struct cli *cli, const struct parspec *par, const char *arg)
+tweak_poolparam(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile struct poolparam *pp, px;
 	char **av;
@@ -549,38 +549,38 @@ tweak_poolparam(struct cli *cli, const struct parspec *par, const char *arg)
 
 	pp = par->priv;
 	if (arg == NULL) {
-		VCLI_Out(cli, "%u,%u,%g",
+		VSB_printf(vsb, "%u,%u,%g",
 		    pp->min_pool, pp->max_pool, pp->max_age);
 	} else {
 		av = VAV_Parse(arg, NULL, ARGV_COMMA);
 		do {
 			if (av[0] != NULL) {
-				VCLI_Out(cli, "Parse error: %s", av[0]);
+				VSB_printf(vsb, "Parse error: %s", av[0]);
 				retval = -1;
 				break;
 			}
 			if (av[1] == NULL || av[2] == NULL || av[3] == NULL) {
-				VCLI_Out(cli,
+				VSB_printf(vsb,
 				    "Three fields required:"
 				    " min_pool, max_pool and max_age\n");
 				retval = -1;
 				break;
 			}
 			px = *pp;
-			retval = tweak_generic_uint(cli, &px.min_pool, av[1],
+			retval = tweak_generic_uint(vsb, &px.min_pool, av[1],
 			    (uint)par->min, (uint)par->max);
 			if (retval)
 				break;
-			retval = tweak_generic_uint(cli, &px.max_pool, av[2],
+			retval = tweak_generic_uint(vsb, &px.max_pool, av[2],
 			    (uint)par->min, (uint)par->max);
 			if (retval)
 				break;
-			retval = tweak_generic_timeout_double(cli,
+			retval = tweak_generic_timeout_double(vsb,
 			    &px.max_age, av[3], 0, 1e6);
 			if (retval)
 				break;
 			if (px.min_pool > px.max_pool) {
-				VCLI_Out(cli,
+				VSB_printf(vsb,
 				    "min_pool cannot be larger"
 				    " than max_pool\n");
 				retval = -1;

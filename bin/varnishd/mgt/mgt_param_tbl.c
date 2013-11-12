@@ -65,7 +65,7 @@ const struct parspec mgt_parspec[] = {
 		"The TTL assigned to objects if neither the backend nor "
 		"the VCL code assigns one.",
 		OBJ_STICKY,
-		"120", "seconds" },
+		"20", "seconds" },
 	{ "default_grace", tweak_timeout_double, &mgt_param.default_grace,
 		0, UINT_MAX,
 		"Default grace period.  We will deliver an object "

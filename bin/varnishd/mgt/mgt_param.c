@@ -223,7 +223,7 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 		} else {
 			VCLI_Out(cli, "%-*s", margin2, pp->name);
 		}
-		if (pp->func(cli, pp, NULL))
+		if (pp->func(cli->sb, pp, NULL))
 			VCLI_SetResult(cli, CLIS_PARAM);
 		if (pp->units != NULL && *pp->units != '\0')
 			VCLI_Out(cli, " [%s]\n", pp->units);
@@ -311,7 +311,7 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 		VCLI_Out(cli, "parameter \"%s\" is protected.", param);
 		return;
 	}
-	if (pp->func(cli, pp, val))
+	if (pp->func(cli->sb, pp, val))
 		VCLI_SetResult(cli, CLIS_PARAM);
 
 	if (cli->result == CLIS_OK && heritage.param != NULL)
@@ -388,22 +388,37 @@ MCF_AddParams(const struct parspec *ps)
  * Set defaults for all parameters
  */
 
-static void
-MCF_SetDefaults(struct cli *cli)
+void
+MCF_InitParams(struct cli *cli)
 {
 	const struct parspec *pp;
-	int i;
+	int i, j, err;
+	struct vsb *vsb;
 
-	for (i = 0; i < nparspec; i++) {
-		pp = parspecs[i];
-		if (cli != NULL)
-			VCLI_Out(cli,
-			    "Set Default for %s = %s\n", pp->name, pp->def);
-		if (pp->func(cli, pp, pp->def))
-			VCLI_SetResult(cli, CLIS_PARAM);
-		if (cli != NULL && cli->result != CLIS_OK)
-			return;
+	/*
+	 * We try to set the default twice, and only failures the
+	 * second time around are fatal.  This allows for trivial
+	 * interdependencies.
+	 */
+	vsb = VSB_new_auto();
+	AN(vsb);
+	for (j = 0; j < 2; j++) {
+		err = 0;
+		for (i = 0; i < nparspec; i++) {
+			pp = parspecs[i];
+			VSB_clear(vsb);
+			VSB_printf(vsb,
+			    "FAILED to set default for param %s = %s\n",
+			    pp->name, pp->def);
+			err = pp->func(vsb, pp, pp->def);
+			AZ(VSB_finish(vsb));
+			if (err && j) {
+				VCLI_Out(cli, "%s", VSB_data(vsb));
+				VCLI_SetResult(cli, CLIS_CANT);
+			}
+		}
 	}
+	VSB_delete(vsb);
 }
 
 /*--------------------------------------------------------------------*/
@@ -415,17 +430,6 @@ MCF_CollectParams(void)
 	MCF_AddParams(mgt_parspec);
 	MCF_AddParams(WRK_parspec);
 	MCF_AddParams(VSL_parspec);
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-MCF_InitParams(struct cli *cli)
-{
-
-	/* XXX: We do this twice, to get past any interdependencies */
-	MCF_SetDefaults(NULL);
-	MCF_SetDefaults(cli);
 }
 
 /*--------------------------------------------------------------------*/

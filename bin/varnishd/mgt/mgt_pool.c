@@ -55,11 +55,11 @@
 /*--------------------------------------------------------------------*/
 
 static int
-tweak_thread_pool_min(struct cli *cli, const struct parspec *par,
+tweak_thread_pool_min(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
 
-	return (tweak_generic_uint(cli, &mgt_param.wthread_min, arg,
+	return (tweak_generic_uint(vsb, &mgt_param.wthread_min, arg,
 	    (unsigned)par->min, mgt_param.wthread_max));
 }
 
@@ -70,14 +70,14 @@ tweak_thread_pool_min(struct cli *cli, const struct parspec *par,
  */
 
 static int
-tweak_stack_size(struct cli *cli, const struct parspec *par,
+tweak_stack_size(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
 	ssize_t low;
 
 	low = sysconf(_SC_THREAD_STACK_MIN);
 
-	if (tweak_bytes(cli, par, arg))
+	if (tweak_bytes(vsb, par, arg))
 		return (-1);
 	if (mgt_param.wthread_stacksize < low)
 		mgt_param.wthread_stacksize = low;
@@ -87,12 +87,12 @@ tweak_stack_size(struct cli *cli, const struct parspec *par,
 /*--------------------------------------------------------------------*/
 
 static int
-tweak_thread_pool_max(struct cli *cli, const struct parspec *par,
+tweak_thread_pool_max(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
 
 	(void)par;
-	return (tweak_generic_uint(cli, &mgt_param.wthread_max, arg,
+	return (tweak_generic_uint(vsb, &mgt_param.wthread_max, arg,
 	    mgt_param.wthread_min, UINT_MAX));
 }
 

@@ -43,7 +43,7 @@ struct waiter {
 
 /* mgt_waiter.c */
 extern struct waiter const * waiter;
-int WAIT_tweak_waiter(struct cli *cli, const char *arg);
+int WAIT_tweak_waiter(struct vsb *vsb, const char *arg);
 
 #if defined(HAVE_EPOLL_CTL)
 extern const struct waiter waiter_epoll;

@@ -36,7 +36,6 @@
 #include "common/common.h"
 
 #include "waiter/waiter.h"
-#include "vcli_priv.h"
 
 static const struct waiter *const vca_waiters[] = {
     #if defined(HAVE_KQUEUE)
@@ -55,7 +54,7 @@ static const struct waiter *const vca_waiters[] = {
 struct waiter const *waiter;
 
 int
-WAIT_tweak_waiter(struct cli *cli, const char *arg)
+WAIT_tweak_waiter(struct vsb *vsb, const char *arg)
 {
 	int i;
 
@@ -63,15 +62,15 @@ WAIT_tweak_waiter(struct cli *cli, const char *arg)
 
 	if (arg == NULL) {
 		if (waiter == NULL)
-			VCLI_Out(cli, "default");
+			VSB_printf(vsb, "default");
 		else
-			VCLI_Out(cli, "%s", waiter->name);
+			VSB_printf(vsb, "%s", waiter->name);
 
-		VCLI_Out(cli, " (possible values: ");
+		VSB_printf(vsb, " (possible values: ");
 		for (i = 0; vca_waiters[i] != NULL; i++)
-			VCLI_Out(cli, "%s%s", i == 0 ? "" : ", ",
+			VSB_printf(vsb, "%s%s", i == 0 ? "" : ", ",
 			    vca_waiters[i]->name);
-		VCLI_Out(cli, ")");
+		VSB_printf(vsb, ")");
 		return(0);
 	}
 	if (!strcmp(arg, WAITER_DEFAULT)) {
@@ -84,6 +83,6 @@ WAIT_tweak_waiter(struct cli *cli, const char *arg)
 			return(0);
 		}
 	}
-	VCLI_Out(cli, "Unknown waiter");
+	VSB_printf(vsb, "Unknown waiter");
 	return (-1);
 }
