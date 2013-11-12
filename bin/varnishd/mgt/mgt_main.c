@@ -36,6 +36,8 @@
 
 #include <ctype.h>
 #include <fcntl.h>
+#include <grp.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -414,6 +416,12 @@ main(int argc, char * const *argv)
 	VTAILQ_INIT(&heritage.socks);
 
 	MCF_CollectParams();
+
+	/* If we have nobody/nogroup, use them as defaults */
+	if (getpwnam("nobody") != NULL)
+		MCF_SetDefault("user", "nobody");
+	if (getgrnam("nogroup") != NULL)
+		MCF_SetDefault("group", "nogroup");
 
 	if (sizeof(void *) < 8) {
 		/*

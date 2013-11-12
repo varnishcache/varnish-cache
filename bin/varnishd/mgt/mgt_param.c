@@ -30,10 +30,7 @@
 #include "config.h"
 
 #include <ctype.h>
-#include <grp.h>
-#include <limits.h>
 #include <math.h>
-#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -415,12 +412,6 @@ MCF_CollectParams(void)
 	MCF_AddParams(mgt_parspec);
 	MCF_AddParams(WRK_parspec);
 	MCF_AddParams(VSL_parspec);
-
-	/* If we have nobody/nogroup, use them as defaults */
-	if (getpwnam("nobody") != NULL)
-		MCF_SetDefault("user", "nobody");
-	if (getgrnam("nogroup") != NULL)
-		MCF_SetDefault("group", "nogroup");
 }
 
 /*--------------------------------------------------------------------*/
