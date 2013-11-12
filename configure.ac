@@ -446,71 +446,47 @@ AC_SUBST(varnishconfdir)
 # Check for linker script support
 gl_LD_VERSION_SCRIPT
 
+#######################################################################
 # Now that we're done using the compiler to look for functions and
 # libraries, set CFLAGS to what we want them to be for our own code
 
-# This corresponds to FreeBSD's WARNS level 6
-DEVELOPER_CFLAGS="-Wall -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wcast-align -Wunused-parameter -Wchar-subscripts -Winline -Wnested-externs -Wredundant-decls -Wformat"
+# This is a test to see how much havoc Jenkins exposes
+CFLAGS="${CFLAGS} -Wall -Werror"
+OCFLAGS="${OCFLAGS} -Wall -Werror"
 
-# Additional flags for GCC 4
-EXTRA_DEVELOPER_CFLAGS="-Wextra -Wno-missing-field-initializers -Wno-sign-compare"
+# This corresponds to FreeBSD's WARNS level 6
+DEVELOPER_CFLAGS="-fstack-protector -Wsystem-headers -Werror -Wall -Wno-format-y2k -W -Wno-unused-parameter -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wunused-parameter -Wcast-align -Wchar-subscripts -Winline -Wnested-externs -Wno-pointer-sign -Wno-empty-body -Wextra -Wno-missing-field-initializers -Wno-sign-compare"
+
+# These are not compliable yet
+DEVELOPER_GCC_CFLAGS="-Wold-style-definition -Wredundant-decls "
+#DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} ${DEVELOPER_GCC_CFLAGS}"
+
+# These are compilable
+DEVELOPER_CLANG_CFLAGS="-Wmissing-variable-declarations -Wno-string-plus-int"
+#DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} ${DEVELOPER_CLANG_CFLAGS}"
 
 # --enable-developer-warnings
 AC_ARG_ENABLE(developer-warnings,
 	AS_HELP_STRING([--enable-developer-warnings],[enable strict warnings (default is NO)]),
-	CFLAGS="${CFLAGS} ${DEVELOPER_CFLAGS}";
-	OCFLAGS="${OCFLAGS} ${DEVELOPER_CFLAGS} -Werror")
+	[],
+	[enable_developer_warnings=no])
+
+if test "x$enable_developer_warnings" != "xno"; then
+	CFLAGS="${CFLAGS} ${DEVELOPER_CFLAGS}"
+	OCFLAGS="${OCFLAGS} ${DEVELOPER_CFLAGS}"
+fi
 
 # --enable-debugging-symbols
 AC_ARG_ENABLE(debugging-symbols,
 	AS_HELP_STRING([--enable-debugging-symbols],[enable debugging symbols (default is NO)]),
 	CFLAGS="${CFLAGS} -O0 -g -fno-inline")
 
-# --enable-extra-developer-warnings
-AC_ARG_ENABLE(extra-developer-warnings,
-	AS_HELP_STRING([--enable-extra-developer-warnings],[enable even stricter warnings (default is NO)]),
-	[],
-	[enable_extra_developer_warnings=no])
-
-if test "x$enable_stack_protector" != "xno"; then
-	save_CFLAGS="$CFLAGS"
-	CFLAGS="${CFLAGS} ${EXTRA_DEVELOPER_CFLAGS}"
-	AC_COMPILE_IFELSE(
-		[AC_LANG_PROGRAM([],[],[])],
-		[],
-		[AC_MSG_WARN([All of ${EXTRA_DEVELOPER_CFLAGS} not supported, disabling])
-		    CFLAGS="$save_CFLAGS"])
-fi
-
-# --enable-stack-protector
-AC_ARG_ENABLE(stack-protector,
-	AS_HELP_STRING([--enable-stack-protector],[enable stack protector (default is NO)]),
-	[],
-	[enable_stack_protector=no])
-
-if test "x$enable_stack_protector" != "xno"; then
-	save_CFLAGS="$CFLAGS"
-	CFLAGS="${CFLAGS} -fstack-protector-all"
-	save_AM_LT_LDFLAGS="$AM_LT_LDFLAGS"
-	AM_LT_LDFLAGS="${AM_LT_LDFLAGS} -Wc,-fstack-protector"
-	AC_COMPILE_IFELSE(
-		[AC_LANG_PROGRAM([],[],[])],
-		[],
-		[AC_MSG_WARN([-fstack-protector not supported, disabling])
-		    CFLAGS="$save_CFLAGS"]
-		    AM_LT_LDFLAGS="$save_AM_LT_LDFLAGS")
-fi
 AC_SUBST(AM_LT_LDFLAGS)
 
 # --enable-tests
 AC_ARG_ENABLE(tests,
 	AS_HELP_STRING([--enable-tests],[build test programs (default is NO)]))
 AM_CONDITIONAL([ENABLE_TESTS], [test x$enable_tests = xyes])
-
-# --enable-werror
-AC_ARG_ENABLE(werror,
-	AS_HELP_STRING([--enable-werror],[use -Werror (default is NO)]),
-	CFLAGS="${CFLAGS} -Werror")
 
 # Command line for compiling VCL code.  I wish there were a simple way
 # to figure this out dynamically without introducing a run-time

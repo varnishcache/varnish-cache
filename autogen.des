@@ -9,12 +9,7 @@ make -k distclean > /dev/null 2>&1 || true
 # Prefer CLANG if we have it, and have not given preferences
 if [ -f /usr/bin/clang -a "x${CC}" = "x" ] ; then
 	CC=clang
-	CFLAGS="${CFLAGS} -Qunused-arguments"
-
-	# XXX: clang complains about -g in linker invocations
-	# XXX: so fall back to gcc for now...
-	# CC=gcc
-	export CC CFLAGS
+	export CC
 fi
 
 rm -f configure
@@ -27,10 +22,7 @@ export CONFIG_SHELL=/bin/sh
     --enable-developer-warnings \
     --enable-debugging-symbols \
     --enable-dependency-tracking \
-    --enable-extra-developer-warnings \
-    --enable-stack-protector \
     --enable-tests \
-    --enable-werror \
     --prefix=/opt/varnish \
     --mandir=/opt/varnish/man \
     "$@"
