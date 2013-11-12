@@ -28,7 +28,9 @@
  *
  */
 
+#include "common.h"
+
 /* Build the static vsc type names */
-#define VSC_TYPE_F(n,t,l,e,d)		const char *VSC_type_##n = t;
+#define VSC_TYPE_F(n,t,l,e,d) const char *VSC_type_##n = t;
 #include "tbl/vsc_types.h"
 #undef VSC_TYPE_F

@@ -30,7 +30,6 @@
 
 #include <stdint.h>
 
-#include "vapi/vsc_int.h"
 #include "common/common.h"
 
 struct cli;

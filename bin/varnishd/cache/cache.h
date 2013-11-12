@@ -36,7 +36,6 @@
 
 #include "common/common.h"
 
-#include "vapi/vsc_int.h"
 #include "vapi/vsl_int.h"
 
 #include <sys/socket.h>

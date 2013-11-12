@@ -39,6 +39,7 @@
 #include "vdef.h"
 #include "vqueue.h"
 #include "vsb.h"
+#include "vapi/vsc_int.h"
 
 /*
  * Enums cannot be forward declared (any more...) so put it here

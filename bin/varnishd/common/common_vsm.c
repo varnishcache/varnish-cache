@@ -43,7 +43,6 @@
 #include "common.h"
 
 #include "vapi/vsm_int.h"
-#include "vapi/vsc_int.h"
 #include "vmb.h"
 #include "vtim.h"
 
