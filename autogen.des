@@ -27,7 +27,6 @@ export CONFIG_SHELL=/bin/sh
     --enable-developer-warnings \
     --enable-debugging-symbols \
     --enable-dependency-tracking \
-    --enable-diagnostics \
     --enable-extra-developer-warnings \
     --enable-stack-protector \
     --enable-tests \

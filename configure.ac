@@ -466,11 +466,6 @@ AC_ARG_ENABLE(debugging-symbols,
 	AS_HELP_STRING([--enable-debugging-symbols],[enable debugging symbols (default is NO)]),
 	CFLAGS="${CFLAGS} -O0 -g -fno-inline")
 
-# --enable-diagnostics
-AC_ARG_ENABLE(diagnostics,
-	AS_HELP_STRING([--enable-diagnostics],[enable run-time diagnostics (default is NO)]),
-	CFLAGS="${CFLAGS} -DDIAGNOSTICS")
-
 # --enable-extra-developer-warnings
 AC_ARG_ENABLE(extra-developer-warnings,
 	AS_HELP_STRING([--enable-extra-developer-warnings],[enable even stricter warnings (default is NO)]),
