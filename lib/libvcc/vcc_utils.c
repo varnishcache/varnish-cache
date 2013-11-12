@@ -108,17 +108,19 @@ vcc_sockaddr(struct vcc *tl, const void *sa, unsigned sal)
 	sua = VSA_Malloc(sa, sal);
 	AN(sua);
 
-	p = TlAlloc(tl, 20);
-	AN(p);
-	sprintf(p, "sockaddr_%u", tl->unique++);
-
 	Fh(tl, 0, "static const unsigned long long");
-	Fh(tl, 0, " %s[%d] = {\n", p, n);
+	Fh(tl, 0, " sockaddr_%u[%d] = {\n", tl->unique, n);
 	memcpy(b, sua, vsa_suckaddr_len);
 	free(sua);
 	for (len = 0; len < n; len++)
 		Fh(tl, 0, "%s    0x%016llx", len ? ",\n" : "", b[len]);
 	Fh(tl, 0, "\n};\n");
+
+	p = TlAlloc(tl, 40);
+	AN(p);
+	sprintf(p, "(const void*)sockaddr_%u", tl->unique);
+
+	tl->unique++;
 	return (p);
 }
 
@@ -229,7 +231,7 @@ Resolve_Sockaddr(struct vcc *tl,
 		}
 
 		pp->l =  res->ai_addrlen;
-		assert(pp->l < sizeof(struct sockaddr_storage));
+		assert(pp->l <= sizeof(struct sockaddr_storage));
 		memcpy(&pp->sa, res->ai_addr, pp->l);
 
 		error = getnameinfo(res->ai_addr, res->ai_addrlen,
@@ -238,9 +240,8 @@ Resolve_Sockaddr(struct vcc *tl,
 
 		Fh(tl, 0, "\n/* \"%s\" -> %s */\n", host, hbuf);
 		*(pp->dst) = vcc_sockaddr(tl, &pp->sa, pp->l);
-		if (pp->dst_ascii != NULL) {
+		if (pp->dst_ascii != NULL)
 			*pp->dst_ascii = TlDup(tl, hbuf);
-		}
 		retval++;
 	}
 	if (p_ascii != NULL) {
