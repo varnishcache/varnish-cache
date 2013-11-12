@@ -66,7 +66,7 @@ bit(uint8_t *p, unsigned no, enum bit_do act)
 /*--------------------------------------------------------------------
  */
 
-static void
+static int
 bit_tweak(struct cli *cli, uint8_t *p, unsigned l, const char *arg,
     const char * const *tags, const char *desc, const char *sign)
 {
@@ -78,17 +78,15 @@ bit_tweak(struct cli *cli, uint8_t *p, unsigned l, const char *arg,
 	av = VAV_Parse(arg, &n, ARGV_COMMA);
 	if (av[0] != NULL) {
 		VCLI_Out(cli, "Cannot parse: %s\n", av[0]);
-		VCLI_SetResult(cli, CLIS_PARAM);
 		VAV_Free(av);
-		return;
+		return (-1);
 	}
 	for (i = 1; av[i] != NULL; i++) {
 		s = av[i];
 		if (*s != '-' && *s != '+') {
 			VCLI_Out(cli, "Missing '+' or '-' (%s)\n", s);
-			VCLI_SetResult(cli, CLIS_PARAM);
 			VAV_Free(av);
-			return;
+			return (-1);
 		}
 		for (j = 0; j < l; j++) {
 			if (tags[j] != NULL && !strcasecmp(s + 1, tags[j]))
@@ -96,9 +94,8 @@ bit_tweak(struct cli *cli, uint8_t *p, unsigned l, const char *arg,
 		}
 		if (tags[j] == NULL) {
 			VCLI_Out(cli, "Unknown %s (%s)\n", desc, s);
-			VCLI_SetResult(cli, CLIS_PARAM);
 			VAV_Free(av);
-			return;
+			return (-1);
 		}
 		assert(j < l);
 		if (s[0] == *sign)
@@ -107,6 +104,7 @@ bit_tweak(struct cli *cli, uint8_t *p, unsigned l, const char *arg,
 			(void)bit(p, j, BCLR);
 	}
 	VAV_Free(av);
+	return (0);
 }
 
 
@@ -121,7 +119,7 @@ static const char * const VSL_tags[256] = {
 	NULL
 };
 
-static void
+static int
 tweak_vsl_mask(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	unsigned j;
@@ -136,9 +134,9 @@ tweak_vsl_mask(struct cli *cli, const struct parspec *par, const char *arg)
 			(void)bit(mgt_param.vsl_mask, SLT_WorkThread, BSET);
 			(void)bit(mgt_param.vsl_mask, SLT_Hash, BSET);
 		} else {
-			bit_tweak(cli, mgt_param.vsl_mask,
+			return (bit_tweak(cli, mgt_param.vsl_mask,
 			    SLT__Reserved, arg, VSL_tags,
-			    "VSL tag", "-");
+			    "VSL tag", "-"));
 		}
 	} else {
 		s = "";
@@ -151,6 +149,7 @@ tweak_vsl_mask(struct cli *cli, const struct parspec *par, const char *arg)
 		if (*s == '\0')
 			VCLI_Out(cli, "(all enabled)");
 	}
+	return (0);
 }
 
 /*--------------------------------------------------------------------
@@ -164,7 +163,7 @@ static const char * const debug_tags[] = {
        NULL
 };
 
-static void
+static int
 tweak_debug(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	const char *s;
@@ -176,8 +175,8 @@ tweak_debug(struct cli *cli, const struct parspec *par, const char *arg)
 			memset(mgt_param.debug_bits,
 			    0, sizeof mgt_param.debug_bits);
 		} else {
-			bit_tweak(cli, mgt_param.debug_bits,
-			    DBG_Reserved, arg, debug_tags, "debug bit", "+");
+			return (bit_tweak(cli, mgt_param.debug_bits,
+			    DBG_Reserved, arg, debug_tags, "debug bit", "+"));
 		}
 	} else {
 		s = "";
@@ -190,6 +189,7 @@ tweak_debug(struct cli *cli, const struct parspec *par, const char *arg)
 		if (*s == '\0')
 			VCLI_Out(cli, "none");
 	}
+	return (0);
 }
 
 /*--------------------------------------------------------------------
@@ -203,7 +203,7 @@ static const char * const feature_tags[] = {
        NULL
 };
 
-static void
+static int
 tweak_feature(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	const char *s;
@@ -215,9 +215,9 @@ tweak_feature(struct cli *cli, const struct parspec *par, const char *arg)
 			memset(mgt_param.feature_bits,
 			    0, sizeof mgt_param.feature_bits);
 		} else {
-			bit_tweak(cli, mgt_param.feature_bits,
+			return (bit_tweak(cli, mgt_param.feature_bits,
 			    FEATURE_Reserved, arg, feature_tags,
-			    "feature bit", "+");
+			    "feature bit", "+"));
 		}
 	} else {
 		s = "";
@@ -230,6 +230,7 @@ tweak_feature(struct cli *cli, const struct parspec *par, const char *arg)
 		if (*s == '\0')
 			VCLI_Out(cli, "none");
 	}
+	return (0);
 }
 
 /*--------------------------------------------------------------------

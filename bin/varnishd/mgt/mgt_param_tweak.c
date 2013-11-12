@@ -58,7 +58,7 @@
 
 /*--------------------------------------------------------------------*/
 
-static void
+static int
 tweak_generic_timeout(struct cli *cli, volatile unsigned *dst, const char *arg)
 {
 	unsigned u;
@@ -67,23 +67,23 @@ tweak_generic_timeout(struct cli *cli, volatile unsigned *dst, const char *arg)
 		u = strtoul(arg, NULL, 0);
 		if (u == 0) {
 			VCLI_Out(cli, "Timeout must be greater than zero\n");
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
+			return (-1);
 		}
 		*dst = u;
 	} else
 		VCLI_Out(cli, "%u", *dst);
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
 
-void
+int
 tweak_timeout(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *dest;
 
 	dest = par->priv;
-	tweak_generic_timeout(cli, dest, arg);
+	return (tweak_generic_timeout(cli, dest, arg));
 }
 
 /*--------------------------------------------------------------------*/
@@ -100,19 +100,16 @@ tweak_generic_timeout_double(struct cli *cli, volatile double *dest,
 		u = strtod(arg, &p);
 		if (*arg == '\0' || *p != '\0') {
 			VCLI_Out(cli, "Not a number(%s)\n", arg);
-			VCLI_SetResult(cli, CLIS_PARAM);
 			return (-1);
 		}
 		if (u < min) {
 			VCLI_Out(cli,
 			    "Timeout must be greater or equal to %.g\n", min);
-			VCLI_SetResult(cli, CLIS_PARAM);
 			return (-1);
 		}
 		if (u > max) {
 			VCLI_Out(cli,
 			    "Timeout must be less than or equal to %.g\n", max);
-			VCLI_SetResult(cli, CLIS_PARAM);
 			return (-1);
 		}
 		*dest = u;
@@ -121,19 +118,20 @@ tweak_generic_timeout_double(struct cli *cli, volatile double *dest,
 	return (0);
 }
 
-void
+int
 tweak_timeout_double(struct cli *cli, const struct parspec *par,
     const char *arg)
 {
 	volatile double *dest;
 
 	dest = par->priv;
-	(void)tweak_generic_timeout_double(cli, dest, arg, par->min, par->max);
+	return (tweak_generic_timeout_double(cli, dest, arg,
+	    par->min, par->max));
 }
 
 /*--------------------------------------------------------------------*/
 
-void
+int
 tweak_generic_double(struct cli *cli, const struct parspec *par,
     const char *arg)
 {
@@ -148,31 +146,29 @@ tweak_generic_double(struct cli *cli, const struct parspec *par,
 		if (*p != '\0') {
 			VCLI_Out(cli,
 			    "Not a number (%s)\n", arg);
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
+			return (-1);
 		}
 		if (u < par->min) {
 			VCLI_Out(cli,
 			    "Must be greater or equal to %.g\n",
 				 par->min);
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
+			return (-1);
 		}
 		if (u > par->max) {
 			VCLI_Out(cli,
 			    "Must be less than or equal to %.g\n",
 				 par->max);
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
+			return (-1);
 		}
 		*dest = u;
 	} else
 		VCLI_Out(cli, "%f", *dest);
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
 
-void
+int
 tweak_bool(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *dest;
@@ -204,14 +200,14 @@ tweak_bool(struct cli *cli, const struct parspec *par, const char *arg)
 			    mode ?
 				"use \"on\" or \"off\"\n" :
 				"use \"true\" or \"false\"\n");
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
+			return (-1);
 		}
 	} else if (mode) {
 		VCLI_Out(cli, *dest ? "on" : "off");
 	} else {
 		VCLI_Out(cli, *dest ? "true" : "false");
 	}
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -231,18 +227,15 @@ tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg,
 			u = strtoul(arg, &p, 0);
 			if (*arg == '\0' || *p != '\0') {
 				VCLI_Out(cli, "Not a number (%s)\n", arg);
-				VCLI_SetResult(cli, CLIS_PARAM);
 				return (-1);
 			}
 		}
 		if (u < min) {
 			VCLI_Out(cli, "Must be at least %u\n", min);
-			VCLI_SetResult(cli, CLIS_PARAM);
 			return (-1);
 		}
 		if (u > max) {
 			VCLI_Out(cli, "Must be no more than %u\n", max);
-			VCLI_SetResult(cli, CLIS_PARAM);
 			return (-1);
 		}
 		*dest = u;
@@ -256,7 +249,7 @@ tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg,
 
 /*--------------------------------------------------------------------*/
 
-void
+int
 tweak_uint(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *dest;
@@ -264,6 +257,7 @@ tweak_uint(struct cli *cli, const struct parspec *par, const char *arg)
 	dest = par->priv;
 	(void)tweak_generic_uint(cli, dest, arg,
 	    (uint)par->min, (uint)par->max);
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -291,7 +285,7 @@ fmt_bytes(struct cli *cli, uintmax_t t)
 	VCLI_Out(cli, "(bogus number)");
 }
 
-static void
+static int
 tweak_generic_bytes(struct cli *cli, volatile ssize_t *dest, const char *arg,
     double min, double max)
 {
@@ -305,51 +299,48 @@ tweak_generic_bytes(struct cli *cli, volatile ssize_t *dest, const char *arg,
 			VCLI_Out(cli, "%s\n", p);
 			VCLI_Out(cli,
 			    "  Try something like '80k' or '120M'\n");
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
+			return (-1);
 		}
 		if ((uintmax_t)((ssize_t)r) != r) {
 			fmt_bytes(cli, r);
 			VCLI_Out(cli, " is too large for this architecture.\n");
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
+			return (-1);
 		}
 		if (max != 0. && r > max) {
 			VCLI_Out(cli, "Must be no more than ");
 			fmt_bytes(cli, (uintmax_t)max);
 			VCLI_Out(cli, "\n");
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
+			return (-1);
 		}
 		if (r < min) {
 			VCLI_Out(cli, "Must be at least ");
 			fmt_bytes(cli, (uintmax_t)min);
 			VCLI_Out(cli, "\n");
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
+			return (-1);
 		}
 		*dest = r;
 	} else {
 		fmt_bytes(cli, *dest);
 	}
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
 
-void
+int
 tweak_bytes(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	volatile ssize_t *dest;
 
 	assert(par->min >= 0);
 	dest = par->priv;
-	tweak_generic_bytes(cli, dest, arg, par->min, par->max);
+	return (tweak_generic_bytes(cli, dest, arg, par->min, par->max));
 }
 
 
 /*--------------------------------------------------------------------*/
 
-void
+int
 tweak_bytes_u(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *d1;
@@ -359,8 +350,10 @@ tweak_bytes_u(struct cli *cli, const struct parspec *par, const char *arg)
 	assert(par->min >= 0);
 	d1 = par->priv;
 	dest = *d1;
-	tweak_generic_bytes(cli, &dest, arg, par->min, par->max);
+	if (tweak_generic_bytes(cli, &dest, arg, par->min, par->max))
+		return (-1);
 	*d1 = dest;
+	return (0);
 }
 
 /*--------------------------------------------------------------------
@@ -371,7 +364,7 @@ tweak_bytes_u(struct cli *cli, const struct parspec *par, const char *arg)
  * XXX: The magic init string is a hack for this.
  */
 
-void
+int
 tweak_user(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	struct passwd *pw;
@@ -382,8 +375,7 @@ tweak_user(struct cli *cli, const struct parspec *par, const char *arg)
 			pw = getpwnam(arg);
 			if (pw == NULL) {
 				VCLI_Out(cli, "Unknown user");
-				VCLI_SetResult(cli, CLIS_PARAM);
-				return;
+				return(-1);
 			}
 			REPLACE(mgt_param.user, pw->pw_name);
 			mgt_param.uid = pw->pw_uid;
@@ -395,13 +387,14 @@ tweak_user(struct cli *cli, const struct parspec *par, const char *arg)
 	} else {
 		VCLI_Out(cli, "UID %d", (int)mgt_param.uid);
 	}
+	return (0);
 }
 
 /*--------------------------------------------------------------------
  * XXX: see comment for tweak_user, same thing here.
  */
 
-void
+int
 tweak_group(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	struct group *gr;
@@ -412,8 +405,7 @@ tweak_group(struct cli *cli, const struct parspec *par, const char *arg)
 			gr = getgrnam(arg);
 			if (gr == NULL) {
 				VCLI_Out(cli, "Unknown group");
-				VCLI_SetResult(cli, CLIS_PARAM);
-				return;
+				return(-1);
 			}
 			REPLACE(mgt_param.group, gr->gr_name);
 			mgt_param.gid = gr->gr_gid;
@@ -425,6 +417,7 @@ tweak_group(struct cli *cli, const struct parspec *par, const char *arg)
 	} else {
 		VCLI_Out(cli, "GID %d", (int)mgt_param.gid);
 	}
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -443,38 +436,35 @@ clean_listen_sock_head(struct listen_sock_head *lsh)
 	}
 }
 
-void
+int
 tweak_listen_address(struct cli *cli, const struct parspec *par,
     const char *arg)
 {
 	char **av;
-	int i;
+	int i, retval = 0;
 	struct listen_sock		*ls;
 	struct listen_sock_head		lsh;
 
 	(void)par;
 	if (arg == NULL) {
 		VCLI_Quote(cli, mgt_param.listen_address);
-		return;
+		return (0);
 	}
 
 	av = VAV_Parse(arg, NULL, ARGV_COMMA);
 	if (av == NULL) {
 		VCLI_Out(cli, "Parse error: out of memory");
-		VCLI_SetResult(cli, CLIS_PARAM);
-		return;
+		return(-1);
 	}
 	if (av[0] != NULL) {
 		VCLI_Out(cli, "Parse error: %s", av[0]);
-		VCLI_SetResult(cli, CLIS_PARAM);
 		VAV_Free(av);
-		return;
+		return(-1);
 	}
 	if (av[1] == NULL) {
 		VCLI_Out(cli, "Empty listen address");
-		VCLI_SetResult(cli, CLIS_PARAM);
 		VAV_Free(av);
-		return;
+		return(-1);
 	}
 	VTAILQ_INIT(&lsh);
 	for (i = 1; av[i] != NULL; i++) {
@@ -485,7 +475,7 @@ tweak_listen_address(struct cli *cli, const struct parspec *par,
 		if (n == 0) {
 			VCLI_Out(cli, "Invalid listen address ");
 			VCLI_Quote(cli, av[i]);
-			VCLI_SetResult(cli, CLIS_PARAM);
+			retval = -1;
 			break;
 		}
 		for (j = 0; j < n; ++j) {
@@ -500,9 +490,9 @@ tweak_listen_address(struct cli *cli, const struct parspec *par,
 		free(ta);
 	}
 	VAV_Free(av);
-	if (cli != NULL && cli->result != CLIS_OK) {
+	if (retval) {
 		clean_listen_sock_head(&lsh);
-		return;
+		return (-1);
 	}
 
 	REPLACE(mgt_param.listen_address, arg);
@@ -517,11 +507,12 @@ tweak_listen_address(struct cli *cli, const struct parspec *par,
 		VTAILQ_INSERT_TAIL(&heritage.socks, ls, list);
 		heritage.nsocks++;
 	}
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
 
-void
+int
 tweak_string(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	char **p = TRUST_ME(par->priv);
@@ -533,26 +524,28 @@ tweak_string(struct cli *cli, const struct parspec *par, const char *arg)
 	} else {
 		REPLACE(*p, arg);
 	}
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
 
-void
+int
 tweak_waiter(struct cli *cli, const struct parspec *par, const char *arg)
 {
 
 	/* XXX should have tweak_generic_string */
 	(void)par;
-	WAIT_tweak_waiter(cli, arg);
+	return (WAIT_tweak_waiter(cli, arg));
 }
 
 /*--------------------------------------------------------------------*/
 
-void
+int
 tweak_poolparam(struct cli *cli, const struct parspec *par, const char *arg)
 {
 	volatile struct poolparam *pp, px;
 	char **av;
+	int retval = 0;
 
 	pp = par->priv;
 	if (arg == NULL) {
@@ -563,35 +556,39 @@ tweak_poolparam(struct cli *cli, const struct parspec *par, const char *arg)
 		do {
 			if (av[0] != NULL) {
 				VCLI_Out(cli, "Parse error: %s", av[0]);
-				VCLI_SetResult(cli, CLIS_PARAM);
+				retval = -1;
 				break;
 			}
 			if (av[1] == NULL || av[2] == NULL || av[3] == NULL) {
 				VCLI_Out(cli,
 				    "Three fields required:"
 				    " min_pool, max_pool and max_age\n");
-				VCLI_SetResult(cli, CLIS_PARAM);
+				retval = -1;
 				break;
 			}
 			px = *pp;
-			if (tweak_generic_uint(cli, &px.min_pool, av[1],
-			    (uint)par->min, (uint)par->max))
+			retval = tweak_generic_uint(cli, &px.min_pool, av[1],
+			    (uint)par->min, (uint)par->max);
+			if (retval)
 				break;
-			if (tweak_generic_uint(cli, &px.max_pool, av[2],
-			    (uint)par->min, (uint)par->max))
+			retval = tweak_generic_uint(cli, &px.max_pool, av[2],
+			    (uint)par->min, (uint)par->max);
+			if (retval)
 				break;
-			if (tweak_generic_timeout_double(cli, &px.max_age,
-			    av[3], 0, 1e6))
+			retval = tweak_generic_timeout_double(cli,
+			    &px.max_age, av[3], 0, 1e6);
+			if (retval)
 				break;
 			if (px.min_pool > px.max_pool) {
 				VCLI_Out(cli,
 				    "min_pool cannot be larger"
 				    " than max_pool\n");
-				VCLI_SetResult(cli, CLIS_PARAM);
+				retval = -1;
 				break;
 			}
 			*pp = px;
 		} while(0);
 		VAV_Free(av);
 	}
+	return (retval);
 }

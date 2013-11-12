@@ -54,13 +54,13 @@
 
 /*--------------------------------------------------------------------*/
 
-static void
+static int
 tweak_thread_pool_min(struct cli *cli, const struct parspec *par,
     const char *arg)
 {
 
-	(void)tweak_generic_uint(cli, &mgt_param.wthread_min, arg,
-	    (unsigned)par->min, mgt_param.wthread_max);
+	return (tweak_generic_uint(cli, &mgt_param.wthread_min, arg,
+	    (unsigned)par->min, mgt_param.wthread_max));
 }
 
 /*--------------------------------------------------------------------
@@ -69,7 +69,7 @@ tweak_thread_pool_min(struct cli *cli, const struct parspec *par,
  * XXX: "32bit" is a magic marker for 32bit systems.
  */
 
-static void
+static int
 tweak_stack_size(struct cli *cli, const struct parspec *par,
     const char *arg)
 {
@@ -77,21 +77,23 @@ tweak_stack_size(struct cli *cli, const struct parspec *par,
 
 	low = sysconf(_SC_THREAD_STACK_MIN);
 
-	tweak_bytes(cli, par, arg);
+	if (tweak_bytes(cli, par, arg))
+		return (-1);
 	if (mgt_param.wthread_stacksize < low)
 		mgt_param.wthread_stacksize = low;
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
 
-static void
+static int
 tweak_thread_pool_max(struct cli *cli, const struct parspec *par,
     const char *arg)
 {
 
 	(void)par;
-	(void)tweak_generic_uint(cli, &mgt_param.wthread_max, arg,
-	    mgt_param.wthread_min, UINT_MAX);
+	return (tweak_generic_uint(cli, &mgt_param.wthread_max, arg,
+	    mgt_param.wthread_min, UINT_MAX));
 }
 
 /*--------------------------------------------------------------------*/

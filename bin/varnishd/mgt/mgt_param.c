@@ -223,7 +223,8 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 		} else {
 			VCLI_Out(cli, "%-*s", margin2, pp->name);
 		}
-		pp->func(cli, pp, NULL);
+		if (pp->func(cli, pp, NULL))
+			VCLI_SetResult(cli, CLIS_PARAM);
 		if (pp->units != NULL && *pp->units != '\0')
 			VCLI_Out(cli, " [%s]\n", pp->units);
 		else
@@ -310,7 +311,8 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 		VCLI_Out(cli, "parameter \"%s\" is protected.", param);
 		return;
 	}
-	pp->func(cli, pp, val);
+	if (pp->func(cli, pp, val))
+		VCLI_SetResult(cli, CLIS_PARAM);
 
 	if (cli->result == CLIS_OK && heritage.param != NULL)
 		*heritage.param = mgt_param;
@@ -397,7 +399,8 @@ MCF_SetDefaults(struct cli *cli)
 		if (cli != NULL)
 			VCLI_Out(cli,
 			    "Set Default for %s = %s\n", pp->name, pp->def);
-		pp->func(cli, pp, pp->def);
+		if (pp->func(cli, pp, pp->def))
+			VCLI_SetResult(cli, CLIS_PARAM);
 		if (cli != NULL && cli->result != CLIS_OK)
 			return;
 	}

@@ -30,7 +30,7 @@
 
 struct parspec;
 
-typedef void tweak_t(struct cli *, const struct parspec *, const char *arg);
+typedef int tweak_t(struct cli *, const struct parspec *, const char *arg);
 
 struct parspec {
 	const char	*name;
@@ -51,23 +51,22 @@ struct parspec {
 	const char	*units;
 };
 
-tweak_t tweak_user;
-tweak_t tweak_group;
-tweak_t tweak_string;
 tweak_t tweak_bool;
-tweak_t tweak_waiter;
+tweak_t tweak_bytes;
 tweak_t tweak_bytes_u;
-tweak_t tweak_listen_address;
-tweak_t tweak_timeout;
 tweak_t tweak_generic_double;
+tweak_t tweak_group;
+tweak_t tweak_listen_address;
 tweak_t tweak_poolparam;
+tweak_t tweak_string;
+tweak_t tweak_timeout;
+tweak_t tweak_timeout_double;
+tweak_t tweak_uint;
+tweak_t tweak_user;
+tweak_t tweak_waiter;
 
 int tweak_generic_uint(struct cli *cli,
     volatile unsigned *dest, const char *arg, unsigned min, unsigned max);
-void tweak_uint(struct cli *cli, const struct parspec *par, const char *arg);
-void tweak_timeout_double(struct cli *cli,
-    const struct parspec *par, const char *arg);
-void tweak_bytes(struct cli *cli, const struct parspec *par, const char *arg);
 
 /* mgt_param_tbl.c */
 extern const struct parspec mgt_parspec[];

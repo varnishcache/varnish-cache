@@ -36,7 +36,6 @@
 #include "common/common.h"
 
 #include "waiter/waiter.h"
-#include "vcli.h"
 #include "vcli_priv.h"
 
 static const struct waiter *const vca_waiters[] = {
@@ -55,7 +54,7 @@ static const struct waiter *const vca_waiters[] = {
 
 struct waiter const *waiter;
 
-void
+int
 WAIT_tweak_waiter(struct cli *cli, const char *arg)
 {
 	int i;
@@ -73,18 +72,18 @@ WAIT_tweak_waiter(struct cli *cli, const char *arg)
 			VCLI_Out(cli, "%s%s", i == 0 ? "" : ", ",
 			    vca_waiters[i]->name);
 		VCLI_Out(cli, ")");
-		return;
+		return(0);
 	}
 	if (!strcmp(arg, WAITER_DEFAULT)) {
 		waiter = vca_waiters[0];
-		return;
+		return(0);
 	}
 	for (i = 0; vca_waiters[i]; i++) {
 		if (!strcmp(arg, vca_waiters[i]->name)) {
 			waiter = vca_waiters[i];
-			return;
+			return(0);
 		}
 	}
 	VCLI_Out(cli, "Unknown waiter");
-	VCLI_SetResult(cli, CLIS_PARAM);
+	return (-1);
 }
