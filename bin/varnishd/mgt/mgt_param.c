@@ -216,7 +216,9 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 		lfmt = 1;
 	for (i = 0; i < nparspec; i++) {
 		pp = parspecs[i];
-		if (av[2] != NULL && !lfmt && strcmp(pp->name, av[2]))
+		if (av[2] != NULL &&
+		    strcmp(pp->name, av[2]) &&
+		    strcmp("-l", av[2]))
 			continue;
 		if (lfmt) {
 			VCLI_Out(cli, "%s\n", pp->name);
