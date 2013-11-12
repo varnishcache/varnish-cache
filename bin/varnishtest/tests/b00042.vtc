@@ -31,3 +31,8 @@ varnish v1 -clierr "106" {param.set thread_pool_min 111}
 varnish v1 -clierr "200" {param.set thread_pool_min 51}
 varnish v1 -clierr "106" {param.set thread_pool_max 50}
 varnish v1 -clierr "200" {param.set thread_pool_max 51}
+varnish v1 -clierr "200" {param.set thread_pool_max unlimited}
+varnish v1 -clierr "106" {param.show fofofofo}
+varnish v1 -cliok "param.show changed"
+varnish v1 -cliok "param.show "
+varnish v1 -cliok "param.show -l"

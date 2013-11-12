@@ -87,19 +87,14 @@ static const char PROTECTED_TEXT[] =
 /*--------------------------------------------------------------------*/
 
 static struct parspec *
-mcf_findpar(const char *name, int *idx)
+mcf_findpar(const char *name)
 {
 	int i;
 
 	AN(name);
 	for (i = 0; i < nparspec; i++)
-		if (!strcmp(parspecs[i]->name, name)) {
-			if (idx != NULL)
-				*idx = i;
+		if (!strcmp(parspecs[i]->name, name))
 			return (parspecs[i]);
-		}
-	if (idx != NULL)
-		*idx = -1;
 	return (NULL);
 }
 
@@ -199,7 +194,7 @@ mcf_wrap(struct cli *cli, const char *text)
 void
 mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 {
-	int i;
+	int i, n;
 	const struct parspec *pp;
 	int lfmt = 0, chg = 0;
 	struct vsb *vsb;
@@ -212,10 +207,12 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 	else if (av[2] != NULL)
 		lfmt = 1;
 
+	n = 0;
 	for (i = 0; i < nparspec; i++) {
 		pp = parspecs[i];
 		if (lfmt && strcmp(pp->name, av[2]) && strcmp("-l", av[2]))
 			continue;
+		n++;
 
 		VSB_clear(vsb);
 		if (pp->func(vsb, pp, NULL))
@@ -264,7 +261,7 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 			VCLI_Out(cli, "\n\n");
 		}
 	}
-	if (av[2] != NULL && !lfmt && !chg) {
+	if (av[2] != NULL && lfmt && strcmp(av[2], "-l") && n == 0) {
 		VCLI_SetResult(cli, CLIS_PARAM);
 		VCLI_Out(cli, "Unknown parameter \"%s\".", av[2]);
 	}
@@ -280,7 +277,7 @@ MCF_ParamProtect(struct cli *cli, const char *args)
 {
 	char **av;
 	struct parspec *pp;
-	int i, j;
+	int i;
 
 	av = VAV_Parse(args, NULL, ARGV_COMMA);
 	if (av[0] != NULL) {
@@ -290,7 +287,7 @@ MCF_ParamProtect(struct cli *cli, const char *args)
 		return;
 	}
 	for (i = 1; av[i] != NULL; i++) {
-		pp = mcf_findpar(av[i], &j);
+		pp = mcf_findpar(av[i]);
 		if (pp == NULL) {
 			VCLI_Out(cli, "Unknown parameter %s", av[i]);
 			VCLI_SetResult(cli, CLIS_PARAM);
@@ -309,7 +306,7 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 {
 	const struct parspec *pp;
 
-	pp = mcf_findpar(param, NULL);
+	pp = mcf_findpar(param);
 	if (pp == NULL) {
 		VCLI_SetResult(cli, CLIS_PARAM);
 		VCLI_Out(cli, "Unknown parameter \"%s\".", param);
@@ -377,7 +374,7 @@ MCF_AddParams(struct parspec *ps)
 			    "Param->descr has trailing space: %s\n", pp->name);
 			exit(2);
 		}
-		if (mcf_findpar(pp->name, NULL) != NULL) {
+		if (mcf_findpar(pp->name) != NULL) {
 			fprintf(stderr, "Duplicate param: %s\n", pp->name);
 			exit(2);
 		}
@@ -469,7 +466,7 @@ MCF_SetDefault(const char *param, const char *new_def)
 {
 	struct parspec *pp;
 
-	pp = mcf_findpar(param, NULL);
+	pp = mcf_findpar(param);
 	AN(pp);
 	pp->def = new_def;
 	AN(pp->def);
@@ -480,7 +477,7 @@ MCF_SetMinimum(const char *param, const char *new_min)
 {
 	struct parspec *pp;
 
-	pp = mcf_findpar(param, NULL);
+	pp = mcf_findpar(param);
 	AN(pp);
 	pp->min = new_min;
 	AN(pp->min);
@@ -491,7 +488,7 @@ MCF_SetMaximum(const char *param, const char *new_max)
 {
 	struct parspec *pp;
 
-	pp = mcf_findpar(param, NULL);
+	pp = mcf_findpar(param);
 	AN(pp);
 	pp->max = new_max;
 	AN(pp->max);
