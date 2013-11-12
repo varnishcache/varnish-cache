@@ -51,7 +51,7 @@
 
 struct params mgt_param;
 static int nparspec;
-static struct parspec const ** parspecs;
+static struct parspec ** parspecs;
 static const int margin1 = 8;
 static int margin2 = 0;
 static const int wrap_at = 72;
@@ -89,7 +89,7 @@ static const char PROTECTED_TEXT[] =
 
 /*--------------------------------------------------------------------*/
 
-static const struct parspec *
+static struct parspec *
 mcf_findpar(const char *name, int *idx)
 {
 	int i;
@@ -278,17 +278,14 @@ MCF_ParamProtect(struct cli *cli, const char *args)
 		return;
 	}
 	for (i = 1; av[i] != NULL; i++) {
-		if (mcf_findpar(av[i], &j) == NULL) {
+		pp = mcf_findpar(av[i], &j);
+		if (pp == NULL) {
 			VCLI_Out(cli, "Unknown parameter %s", av[i]);
 			VCLI_SetResult(cli, CLIS_PARAM);
 			VAV_Free(av);
 			return;
 		}
-		pp = calloc(sizeof *pp, 1L);
-		AN(pp);
-		memcpy(pp, parspecs[j], sizeof *pp);
 		pp->flags |= PROTECTED;
-		parspecs[j] = pp;
 	}
 	VAV_Free(av);
 }
@@ -353,9 +350,9 @@ mcf_parspec_cmp(const void *a, const void *b)
 }
 
 static void
-MCF_AddParams(const struct parspec *ps)
+MCF_AddParams(struct parspec *ps)
 {
-	const struct parspec *pp;
+	struct parspec *pp;
 	const char *s;
 	int n;
 
@@ -437,18 +434,11 @@ MCF_CollectParams(void)
 void
 MCF_SetDefault(const char *param, const char *def)
 {
-	struct parspec *pn;
-	int i;
+	struct parspec *pp;
 
-	for (i = 0; i < nparspec; i++)
-		if (!strcmp(parspecs[i]->name, param))
-			break;
-	assert(i < nparspec);
-	pn = malloc(sizeof *pn);
-	AN(pn);
-	*pn  = *(parspecs[i]);
-	pn->def = def;
-	parspecs[i] = pn;
+	pp = mcf_findpar(param, NULL);
+	AN(pp);
+	pp->def = def;
 }
 
 /*--------------------------------------------------------------------*/

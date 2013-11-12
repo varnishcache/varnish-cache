@@ -51,7 +51,7 @@
  * XXX: we should generate the relevant section of varnishd.1 from here.
  */
 
-const struct parspec mgt_parspec[] = {
+struct parspec mgt_parspec[] = {
 	{ "user", tweak_user, NULL, 0, 0,
 		"The unprivileged user to run as.",
 		MUST_RESTART,

@@ -234,7 +234,7 @@ tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
  * The parameter table itself
  */
 
-const struct parspec VSL_parspec[] = {
+struct parspec VSL_parspec[] = {
 	{ "vsl_mask", tweak_vsl_mask, NULL, 0, 0,
 		"Mask individual VSL messages from being logged.\n"
 		"\tdefault\tSet default value\n"

@@ -98,7 +98,7 @@ tweak_thread_pool_max(struct vsb *vsb, const struct parspec *par,
 
 /*--------------------------------------------------------------------*/
 
-const struct parspec WRK_parspec[] = {
+struct parspec WRK_parspec[] = {
 	{ "thread_pools", tweak_uint, &mgt_param.wthread_pools,
 		1, UINT_MAX,
 		"Number of worker thread pools.\n"
