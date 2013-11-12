@@ -547,7 +547,7 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
 			p += strlen(p) + 1;
 		} else if (fmt == VOID && !strcmp(p, "PRIV_CALL")) {
 			bprintf(buf, "vmod_priv_%u", tl->nvmodpriv++);
-			Fh(tl, 0, "struct vmod_priv %s;\n", buf);
+			Fh(tl, 0, "static struct vmod_priv %s;\n", buf);
 			e2 = vcc_mk_expr(VOID, "&%s", buf);
 			p += strlen(p) + 1;
 		} else if (fmt == ENUM) {

@@ -355,6 +355,7 @@ EmitStruct(const struct vcc *tl)
 {
 	struct source *sp;
 
+	Fc(tl, 0, "\nextern const char *srcname[];\n");
 	Fc(tl, 0, "\nconst char *srcname[%u] = {\n", tl->nsources);
 	VTAILQ_FOREACH(sp, &tl->sources, list) {
 		Fc(tl, 0, "\t");
@@ -363,6 +364,7 @@ EmitStruct(const struct vcc *tl)
 	}
 	Fc(tl, 0, "};\n");
 
+	Fc(tl, 0, "\nextern const char *srcbody[];\n");
 	Fc(tl, 0, "\nconst char *srcbody[%u] = {\n", tl->nsources);
 	VTAILQ_FOREACH(sp, &tl->sources, list) {
 		Fc(tl, 0, "    /* ");
