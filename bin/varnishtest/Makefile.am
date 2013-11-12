@@ -24,6 +24,8 @@ dist_man_MANS = varnishtest.1
 varnishtest_SOURCES = \
 		vtc.c \
 		vtc.h \
+		vmods.h \
+		programs.h \
 		vtc_client.c \
 		vtc_http.c \
 		vtc_main.c \
