@@ -56,14 +56,14 @@ const struct parspec mgt_parspec[] = {
 	{ "default_ttl", tweak_timeout_double, &mgt_param.default_ttl,
 		0, UINT_MAX,
 		"The TTL assigned to objects if neither the backend nor "
-		"the VCL code assigns one.\n",
+		"the VCL code assigns one.",
 		OBJ_STICKY,
 		"120", "seconds" },
 	{ "default_grace", tweak_timeout_double, &mgt_param.default_grace,
 		0, UINT_MAX,
 		"Default grace period.  We will deliver an object "
 		"this long after it has expired, provided another thread "
-		"is attempting to get a new copy.\n",
+		"is attempting to get a new copy.",
 		OBJ_STICKY,
 		"10", "seconds" },
 	{ "default_keep", tweak_timeout_double, &mgt_param.default_keep,
@@ -95,14 +95,14 @@ const struct parspec mgt_parspec[] = {
 		"One use is for the io-vectors for writing requests and"
 		" responses to sockets, having too little space will"
 		" result in more writev(2) system calls, having too much"
-		" just wastes the space.\n",
+		" just wastes the space.",
 		DELAYED_EFFECT,
 		"2048", "bytes" },
 	{ "http_req_hdr_len",
 		tweak_bytes_u, &mgt_param.http_req_hdr_len,
 		40, UINT_MAX,
 		"Maximum length of any HTTP client request header we will "
-		"allow.  The limit is inclusive its continuation lines.\n",
+		"allow.  The limit is inclusive its continuation lines.",
 		0,
 		"8k", "bytes" },
 	{ "http_req_size",
@@ -120,7 +120,7 @@ const struct parspec mgt_parspec[] = {
 		tweak_bytes_u, &mgt_param.http_resp_hdr_len,
 		40, UINT_MAX,
 		"Maximum length of any HTTP backend response header we will "
-		"allow.  The limit is inclusive its continuation lines.\n",
+		"allow.  The limit is inclusive its continuation lines.",
 		0,
 		"8k", "bytes" },
 	{ "http_resp_size",
@@ -139,7 +139,7 @@ const struct parspec mgt_parspec[] = {
 		"{req|resp|bereq|beresp}.http "
 		"(obj.http is autosized to the exact number of headers).\n"
 		"Cheap, ~20 bytes, in terms of workspace memory.\n"
-		"Note that the first line occupies five header lines.\n",
+		"Note that the first line occupies five header lines.",
 		0,
 		"64", "header lines" },
 	{ "vsl_buffer",
@@ -176,7 +176,7 @@ const struct parspec mgt_parspec[] = {
 	{ "pipe_timeout", tweak_timeout, &mgt_param.pipe_timeout, 0, 0,
 		"Idle timeout for PIPE sessions. "
 		"If nothing have been received in either direction for "
-		"this many seconds, the session is closed.\n",
+		"this many seconds, the session is closed.",
 		0,
 		"60", "seconds" },
 	{ "send_timeout", tweak_timeout, &mgt_param.send_timeout, 0, 0,
@@ -220,7 +220,7 @@ const struct parspec mgt_parspec[] = {
 		"5", "seconds" },
 #endif
 	{ "auto_restart", tweak_bool, &mgt_param.auto_restart, 0, 0,
-		"Restart child process automatically if it dies.\n",
+		"Restart child process automatically if it dies.",
 		0,
 		"on", "bool" },
 	{ "nuke_limit",
@@ -244,7 +244,7 @@ const struct parspec mgt_parspec[] = {
 		    &mgt_param.fetch_maxchunksize, 64 * 1024, UINT_MAX,
 		"The maximum chunksize we attempt to allocate from storage. "
 		"Making this too large may cause delays and storage "
-		"fragmentation.\n",
+		"fragmentation.",
 		EXPERIMENTAL,
 		"256m", "bytes" },
 	{ "accept_filter", tweak_bool, &mgt_param.accept_filter, 0, 0,
@@ -266,7 +266,7 @@ const struct parspec mgt_parspec[] = {
 		"Size of buffer for CLI command input."
 		"\nYou may need to increase this if you have big VCL files "
 		"and use the vcl.inline CLI command.\n"
-		"NB: Must be specified with -p to have effect.\n",
+		"NB: Must be specified with -p to have effect.",
 		0,
 		"8k", "bytes" },
 	{ "cli_limit",
@@ -305,16 +305,16 @@ const struct parspec mgt_parspec[] = {
 	{ "max_restarts", tweak_uint, &mgt_param.max_restarts, 0, UINT_MAX,
 		"Upper limit on how many times a request can restart."
 		"\nBe aware that restarts are likely to cause a hit against "
-		"the backend, so don't increase thoughtlessly.\n",
+		"the backend, so don't increase thoughtlessly.",
 		0,
 		"4", "restarts" },
 	{ "max_retries", tweak_uint, &mgt_param.max_retries, 0, UINT_MAX,
-		"Upper limit on how many times a backend fetch can retry.\n",
+		"Upper limit on how many times a backend fetch can retry.",
 		0,
 		"4", "retries" },
 	{ "max_esi_depth",
 		tweak_uint, &mgt_param.max_esi_depth, 0, UINT_MAX,
-		"Maximum depth of esi:include processing.\n",
+		"Maximum depth of esi:include processing.",
 		0,
 		"5", "levels" },
 	{ "connect_timeout", tweak_timeout_double,
@@ -386,7 +386,7 @@ const struct parspec mgt_parspec[] = {
 		"before just dropping connections.\n"
 		"This is mostly an anti-DoS measure, and setting it plenty "
 		"high should not hurt, as long as you have the memory for "
-		"it.\n",
+		"it.",
 		0,
 		"100000", "sessions" },
 	{ "timeout_linger", tweak_timeout_double, &mgt_param.timeout_linger,
@@ -405,19 +405,19 @@ const struct parspec mgt_parspec[] = {
 		"Log the local address on the TCP connection in the "
 		"SessionOpen VSL record.\n"
 		"Disabling this saves a getsockname(2) system call "
-		"per TCP connection.\n",
+		"per TCP connection.",
 		0,
 		"on", "bool" },
 	{ "waiter", tweak_waiter, NULL, 0, 0,
-		"Select the waiter kernel interface.\n",
+		"Select the waiter kernel interface.",
 		WIZARD | MUST_RESTART,
 		WAITER_DEFAULT, NULL },
 	{ "ban_dups", tweak_bool, &mgt_param.ban_dups, 0, 0,
-		"Detect and eliminate duplicate bans.\n",
+		"Detect and eliminate duplicate bans.",
 		0,
 		"on", "bool" },
 	{ "syslog_cli_traffic", tweak_bool, &mgt_param.syslog_cli_traffic, 0, 0,
-		"Log all CLI traffic to syslog(LOG_INFO).\n",
+		"Log all CLI traffic to syslog(LOG_INFO).",
 		0,
 		"on", "bool" },
 	{ "ban_lurker_sleep", tweak_timeout_double,
@@ -429,7 +429,7 @@ const struct parspec mgt_parspec[] = {
 		0,
 		"0.01", "s" },
 	{ "http_range_support", tweak_bool, &mgt_param.http_range_support, 0, 0,
-		"Enable support for HTTP Range headers.\n",
+		"Enable support for HTTP Range headers.",
 		0,
 		"on", "bool" },
 	{ "http_gzip_support", tweak_bool, &mgt_param.http_gzip_support, 0, 0,
@@ -469,18 +469,18 @@ const struct parspec mgt_parspec[] = {
 	{ "shortlived", tweak_timeout_double,
 		&mgt_param.shortlived, 0, UINT_MAX,
 		"Objects created with TTL shorter than this are always "
-		"put in transient storage.\n",
+		"put in transient storage.",
 		0,
 		"10.0", "s" },
 	{ "critbit_cooloff", tweak_timeout_double,
 		&mgt_param.critbit_cooloff, 60, 254,
 		"How long time the critbit hasher keeps deleted objheads "
-		"on the cooloff list.\n",
+		"on the cooloff list.",
 		WIZARD,
 		"180.0", "s" },
 	{ "sigsegv_handler", tweak_bool, &mgt_param.sigsegv_handler, 0, 0,
 		"Install a signal handler which tries to dump debug information "
-		"on segmentation faults.\n",
+		"on segmentation faults.",
 		MUST_RESTART,
 		"off", "bool" },
 	{ "vcl_dir", tweak_string, &mgt_vcl_dir, 0, 0,
@@ -504,18 +504,18 @@ const struct parspec mgt_parspec[] = {
 		NULL },
 
 	{ "vcc_err_unref", tweak_bool, &mgt_vcc_err_unref, 0, 0,
-		"Unreferenced VCL objects result in error.\n",
+		"Unreferenced VCL objects result in error.",
 		0,
 		"on", "bool" },
 
 	{ "vcc_allow_inline_c", tweak_bool, &mgt_vcc_allow_inline_c, 0, 0,
-		"Allow inline C code in VCL.\n",
+		"Allow inline C code in VCL.",
 		0,
 		"off", "bool" },
 
 	{ "vcc_unsafe_path", tweak_bool, &mgt_vcc_unsafe_path, 0, 0,
 		"Allow '/' in vmod & include paths.\n"
-		"Allow 'import ... from ...'.\n",
+		"Allow 'import ... from ...'.",
 		0,
 		"on", "bool" },
 
@@ -559,7 +559,7 @@ const struct parspec mgt_parspec[] = {
 		&mgt_param.bo_cache, 0, 0,
 		"Cache free busyobj per worker thread. "
 		"Disable this if you have very high hitrates and want "
-		"to save the memory of one busyobj per worker thread. ",
+		"to save the memory of one busyobj per worker thread.",
 		0,
 		"off", "bool"},
 

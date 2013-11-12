@@ -82,5 +82,5 @@ extern const struct parspec WRK_parspec[];
 	"The three numbers are:\n"					\
 	"   min_pool -- minimum size of free pool.\n"			\
 	"   max_pool -- maximum size of free pool.\n"			\
-	"   max_age -- max age of free element.\n"
+	"   max_age -- max age of free element."
 

@@ -29,31 +29,31 @@
  *
  */
 
-FEATURE_BIT(SHORT_PANIC,		short_panic, "",
+FEATURE_BIT(SHORT_PANIC,		short_panic,
     "Short panic message.",
     "Reduce level of detail for panic messages."
 )
-FEATURE_BIT(WAIT_SILO,			wait_silo, "",
+FEATURE_BIT(WAIT_SILO,			wait_silo,
     "Wait for persistent silo.",
     "Wait for persistent silos to load completely before serving requests."
 )
-FEATURE_BIT(NO_COREDUMP,		no_coredump, "",
+FEATURE_BIT(NO_COREDUMP,		no_coredump,
     "No coredumps.",
     "Don't attempt to coredump child process on panics."
 )
-FEATURE_BIT(ESI_IGNORE_HTTPS,		esi_ignore_https, "",
+FEATURE_BIT(ESI_IGNORE_HTTPS,		esi_ignore_https,
     "Treat HTTPS as HTTP in ESI:includes",
     "Convert <esi:include src\"https://... to http://..."
 )
-FEATURE_BIT(ESI_DISABLE_XML_CHECK,	esi_disable_xml_check, "",
+FEATURE_BIT(ESI_DISABLE_XML_CHECK,	esi_disable_xml_check,
     "Don't check of body looks like XML",
     "Allow ESI processing on any kind of object"
 )
-FEATURE_BIT(ESI_IGNORE_OTHER_ELEMENTS,	esi_ignore_other_elements, "",
+FEATURE_BIT(ESI_IGNORE_OTHER_ELEMENTS,	esi_ignore_other_elements,
     "Ignore non-esi XML-elements",
     "Allows syntax errors in the XML"
 )
-FEATURE_BIT(ESI_REMOVE_BOM,		esi_remove_bom, "",
+FEATURE_BIT(ESI_REMOVE_BOM,		esi_remove_bom,
     "Remove UTF-8 BOM",
     "Remove UTF-8 BOM from front of object."
     "Ignore and remove the UTF-8 BOM (0xeb 0xbb 0xbf) from front of object."

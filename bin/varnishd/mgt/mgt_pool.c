@@ -161,7 +161,7 @@ const struct parspec WRK_parspec[] = {
 		"Set this to a few milliseconds if you see the "
 		"'threads_failed' counter grow too much.\n"
 		"\n"
-		"Setting this too high results in insuffient worker threads.\n",
+		"Setting this too high results in insuffient worker threads.",
 		EXPERIMENTAL,
 		"0", "seconds" },
 	{ "thread_pool_fail_delay",
@@ -180,7 +180,7 @@ const struct parspec WRK_parspec[] = {
 		"\n"
 		"It may also help to increase thread_pool_timeout and "
 		"thread_pool_min, to reduce the rate at which treads are "
-		"destroyed and later recreated.\n",
+		"destroyed and later recreated.",
 		EXPERIMENTAL,
 		"0.2", "seconds" },
 	{ "thread_stats_rate",
@@ -190,7 +190,7 @@ const struct parspec WRK_parspec[] = {
 		"finish a request.\n"
 		"This parameters defines the maximum number of requests "
 		"a worker thread may handle, before it is forced to dump "
-		"its accumulated stats into the global counters.\n",
+		"its accumulated stats into the global counters.",
 		EXPERIMENTAL,
 		"10", "requests" },
 	{ "thread_queue_limit", tweak_uint, &mgt_param.wthread_queue_limit,
@@ -199,7 +199,7 @@ const struct parspec WRK_parspec[] = {
 		"\n"
 		"This sets the number of requests we will queue, waiting "
 		"for an available thread.  Above this limit sessions will "
-		"be dropped instead of queued.\n",
+		"be dropped instead of queued.",
 		EXPERIMENTAL,
 		"20", "" },
 	{ "rush_exponent", tweak_uint, &mgt_param.rush_exponent, 2, UINT_MAX,
@@ -214,7 +214,7 @@ const struct parspec WRK_parspec[] = {
 		tweak_stack_size, &mgt_param.wthread_stacksize, 0, UINT_MAX,
 		"Worker thread stack size.\n"
 		"This is likely rounded up to a multiple of 4k by the kernel.\n"
-		"The kernel/OS has a lower limit which will be enforced.\n",
+		"The kernel/OS has a lower limit which will be enforced.",
 		EXPERIMENTAL,
 		"48k", "bytes" },
 	{ NULL, NULL, NULL }

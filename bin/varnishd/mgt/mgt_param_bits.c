@@ -158,7 +158,7 @@ tweak_vsl_mask(struct cli *cli, const struct parspec *par, const char *arg)
  */
 
 static const char * const debug_tags[] = {
-#  define DEBUG_BIT(U,l,p,d) [DBG_##U] = #l,
+#  define DEBUG_BIT(U, l, d) [DBG_##U] = #l,
 #  include "tbl/debug_bits.h"
 #  undef DEBUG_BIT
        NULL
@@ -197,7 +197,7 @@ tweak_debug(struct cli *cli, const struct parspec *par, const char *arg)
  */
 
 static const char * const feature_tags[] = {
-#  define FEATURE_BIT(U,l,p,d, ld) [FEATURE_##U] = #l,
+#  define FEATURE_BIT(U, l, d, ld) [FEATURE_##U] = #l,
 #  include "tbl/feature_bits.h"
 #  undef FEATURE_BIT
        NULL
@@ -239,23 +239,23 @@ tweak_feature(struct cli *cli, const struct parspec *par, const char *arg)
 const struct parspec VSL_parspec[] = {
 	{ "vsl_mask", tweak_vsl_mask, NULL, 0, 0,
 		"Mask individual VSL messages from being logged.\n"
-		"\tdefault\tSet default value\n\n"
+		"\tdefault\tSet default value\n"
 		"Use +/- prefixe in front of VSL tag name, to mask/unmask "
 		"individual VSL messages.",
 		0, "default", "" },
 	{ "debug", tweak_debug, NULL, 0, 0,
 		"Enable/Disable various kinds of debugging.\n"
-		"\tnone\t\tDisable all debugging\n\n"
-		"Use +/- prefix to set/reset individual bits:\n"
-#define DEBUG_BIT(U, l, p, d) "\t" #l "\t" p d "\n"
+		"\tnone\tDisable all debugging\n\n"
+		"Use +/- prefix to set/reset individual bits:"
+#define DEBUG_BIT(U, l, d) "\n\t" #l "\t" d
 #include "tbl/debug_bits.h"
 #undef DEBUG_BIT
 		, 0, "none", "" },
 	{ "feature", tweak_feature, NULL, 0, 0,
 		"Enable/Disable various minor features.\n"
-		"\tnone\t\tDisable all features.\n\n"
-		"Use +/- prefix to enable/disable individual feature:\n"
-#define FEATURE_BIT(U, l, p, d, ld) "\t" #l "\t" p d "\n"
+		"\tnone\tDisable all features.\n\n"
+		"Use +/- prefix to enable/disable individual feature:"
+#define FEATURE_BIT(U, l, d, ld) "\n\t" #l "\t" d
 #include "tbl/feature_bits.h"
 #undef FEATURE_BIT
 		, 0, "none", "" },

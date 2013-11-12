@@ -29,6 +29,7 @@
 
 #include "config.h"
 
+#include <ctype.h>
 #include <grp.h>
 #include <limits.h>
 #include <math.h>
@@ -48,629 +49,158 @@
 #include "vcli.h"
 #include "vcli_common.h"
 #include "vcli_priv.h"
-#include "vnum.h"
-#include "vss.h"
 
 #include "mgt_cli.h"
 
 struct params mgt_param;
 static int nparspec;
 static struct parspec const ** parspecs;
-static int margin;
+static const int margin1 = 8;
+static int margin2 = 0;
+static const int wrap_at = 72;
+static const int tab0 = 3;
+
+/*--------------------------------------------------------------------*/
+
+static const char OBJ_STICKY_TEXT[] =
+	"\n\nNB: This parameter is evaluated only when objects are created."
+	"To change it for all objects, restart or ban everything.";
+
+static const char DELAYED_EFFECT_TEXT[] =
+	"\n\nNB: This parameter may take quite some time to take (full) effect.";
+
+static const char MUST_RESTART_TEXT[] =
+	"\n\nNB: This parameter will not take any effect until the "
+	"child process has been restarted.";
+
+static const char MUST_RELOAD_TEXT[] =
+	"\n\nNB: This parameter will not take any effect until the "
+	"VCL programs have been reloaded.";
+
+static const char EXPERIMENTAL_TEXT[] =
+	"\n\nNB: We do not know yet if it is a good idea to change "
+	"this parameter, or if the default value is even sensible.  "
+	"Caution is advised, and feedback is most welcome.";
+
+static const char WIZARD_TEXT[] =
+	"\n\nNB: Do not change this parameter, unless a developer tell "
+	"you to do so.";
+
+static const char PROTECTED_TEXT[] =
+	"\n\nNB: This parameter is protected and can not be changed.";
+
 
 /*--------------------------------------------------------------------*/
 
 static const struct parspec *
-mcf_findpar(const char *name)
+mcf_findpar(const char *name, int *idx)
 {
 	int i;
 
+	AN(name);
 	for (i = 0; i < nparspec; i++)
-		if (!strcmp(parspecs[i]->name, name))
+		if (!strcmp(parspecs[i]->name, name)) {
+			if (idx != NULL)
+				*idx = i;
 			return (parspecs[i]);
+		}
+	if (idx != NULL)
+		*idx = -1;
 	return (NULL);
 }
 
-/*--------------------------------------------------------------------*/
-
-static void
-tweak_generic_timeout(struct cli *cli, volatile unsigned *dst, const char *arg)
-{
-	unsigned u;
-
-	if (arg != NULL) {
-		u = strtoul(arg, NULL, 0);
-		if (u == 0) {
-			VCLI_Out(cli, "Timeout must be greater than zero\n");
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
-		}
-		*dst = u;
-	} else
-		VCLI_Out(cli, "%u", *dst);
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-tweak_timeout(struct cli *cli, const struct parspec *par, const char *arg)
-{
-	volatile unsigned *dest;
-
-	dest = par->priv;
-	tweak_generic_timeout(cli, dest, arg);
-}
-
-/*--------------------------------------------------------------------*/
-
-static int
-tweak_generic_timeout_double(struct cli *cli, volatile double *dest,
-    const char *arg, double min, double max)
-{
-	double u;
-	char *p;
-
-	if (arg != NULL) {
-		p = NULL;
-		u = strtod(arg, &p);
-		if (*arg == '\0' || *p != '\0') {
-			VCLI_Out(cli, "Not a number(%s)\n", arg);
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return (-1);
-		}
-		if (u < min) {
-			VCLI_Out(cli,
-			    "Timeout must be greater or equal to %.g\n", min);
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return (-1);
-		}
-		if (u > max) {
-			VCLI_Out(cli,
-			    "Timeout must be less than or equal to %.g\n", max);
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return (-1);
-		}
-		*dest = u;
-	} else
-		VCLI_Out(cli, "%.6f", *dest);
-	return (0);
-}
-
-void
-tweak_timeout_double(struct cli *cli, const struct parspec *par,
-    const char *arg)
-{
-	volatile double *dest;
-
-	dest = par->priv;
-	(void)tweak_generic_timeout_double(cli, dest, arg, par->min, par->max);
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-tweak_generic_double(struct cli *cli, const struct parspec *par,
-    const char *arg)
-{
-	volatile double *dest;
-	char *p;
-	double u;
-
-	dest = par->priv;
-	if (arg != NULL) {
-		p = NULL;
-		u = strtod(arg, &p);
-		if (*p != '\0') {
-			VCLI_Out(cli,
-			    "Not a number (%s)\n", arg);
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
-		}
-		if (u < par->min) {
-			VCLI_Out(cli,
-			    "Must be greater or equal to %.g\n",
-				 par->min);
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
-		}
-		if (u > par->max) {
-			VCLI_Out(cli,
-			    "Must be less than or equal to %.g\n",
-				 par->max);
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
-		}
-		*dest = u;
-	} else
-		VCLI_Out(cli, "%f", *dest);
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-tweak_bool(struct cli *cli, const struct parspec *par, const char *arg)
-{
-	volatile unsigned *dest;
-	int mode = 0;
-
-	if (!strcmp(par->def, "off") || !strcmp(par->def, "on"))
-		mode = 1;
-
-	dest = par->priv;
-	if (arg != NULL) {
-		if (!strcasecmp(arg, "off"))
-			*dest = 0;
-		else if (!strcasecmp(arg, "disable"))
-			*dest = 0;
-		else if (!strcasecmp(arg, "no"))
-			*dest = 0;
-		else if (!strcasecmp(arg, "false"))
-			*dest = 0;
-		else if (!strcasecmp(arg, "on"))
-			*dest = 1;
-		else if (!strcasecmp(arg, "enable"))
-			*dest = 1;
-		else if (!strcasecmp(arg, "yes"))
-			*dest = 1;
-		else if (!strcasecmp(arg, "true"))
-			*dest = 1;
-		else {
-			VCLI_Out(cli,
-			    mode ?
-				"use \"on\" or \"off\"\n" :
-				"use \"true\" or \"false\"\n");
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
-		}
-	} else if (mode) {
-		VCLI_Out(cli, *dest ? "on" : "off");
-	} else {
-		VCLI_Out(cli, *dest ? "true" : "false");
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
-int
-tweak_generic_uint(struct cli *cli, volatile unsigned *dest, const char *arg,
-    unsigned min, unsigned max)
-{
-	unsigned u;
-	char *p;
-
-	if (arg != NULL) {
-		p = NULL;
-		if (!strcasecmp(arg, "unlimited"))
-			u = UINT_MAX;
-		else {
-			u = strtoul(arg, &p, 0);
-			if (*arg == '\0' || *p != '\0') {
-				VCLI_Out(cli, "Not a number (%s)\n", arg);
-				VCLI_SetResult(cli, CLIS_PARAM);
-				return (-1);
-			}
-		}
-		if (u < min) {
-			VCLI_Out(cli, "Must be at least %u\n", min);
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return (-1);
-		}
-		if (u > max) {
-			VCLI_Out(cli, "Must be no more than %u\n", max);
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return (-1);
-		}
-		*dest = u;
-	} else if (*dest == UINT_MAX) {
-		VCLI_Out(cli, "unlimited");
-	} else {
-		VCLI_Out(cli, "%u", *dest);
-	}
-	return (0);
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-tweak_uint(struct cli *cli, const struct parspec *par, const char *arg)
-{
-	volatile unsigned *dest;
-
-	dest = par->priv;
-	(void)tweak_generic_uint(cli, dest, arg,
-	    (uint)par->min, (uint)par->max);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-fmt_bytes(struct cli *cli, uintmax_t t)
-{
-	const char *p;
-
-	if (t & 0xff) {
-		VCLI_Out(cli, "%jub", t);
-		return;
-	}
-	for (p = "kMGTPEZY"; *p; p++) {
-		if (t & 0x300) {
-			VCLI_Out(cli, "%.2f%c", t / 1024.0, *p);
-			return;
-		}
-		t /= 1024;
-		if (t & 0x0ff) {
-			VCLI_Out(cli, "%ju%c", t, *p);
-			return;
-		}
-	}
-	VCLI_Out(cli, "(bogus number)");
-}
-
-static void
-tweak_generic_bytes(struct cli *cli, volatile ssize_t *dest, const char *arg,
-    double min, double max)
-{
-	uintmax_t r;
-	const char *p;
-
-	if (arg != NULL) {
-		p = VNUM_2bytes(arg, &r, 0);
-		if (p != NULL) {
-			VCLI_Out(cli, "Could not convert to bytes.\n");
-			VCLI_Out(cli, "%s\n", p);
-			VCLI_Out(cli,
-			    "  Try something like '80k' or '120M'\n");
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
-		}
-		if ((uintmax_t)((ssize_t)r) != r) {
-			fmt_bytes(cli, r);
-			VCLI_Out(cli, " is too large for this architecture.\n");
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
-		}
-		if (max != 0. && r > max) {
-			VCLI_Out(cli, "Must be no more than ");
-			fmt_bytes(cli, (uintmax_t)max);
-			VCLI_Out(cli, "\n");
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
-		}
-		if (r < min) {
-			VCLI_Out(cli, "Must be at least ");
-			fmt_bytes(cli, (uintmax_t)min);
-			VCLI_Out(cli, "\n");
-			VCLI_SetResult(cli, CLIS_PARAM);
-			return;
-		}
-		*dest = r;
-	} else {
-		fmt_bytes(cli, *dest);
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-tweak_bytes(struct cli *cli, const struct parspec *par, const char *arg)
-{
-	volatile ssize_t *dest;
-
-	assert(par->min >= 0);
-	dest = par->priv;
-	tweak_generic_bytes(cli, dest, arg, par->min, par->max);
-}
-
-
-/*--------------------------------------------------------------------*/
-
-void
-tweak_bytes_u(struct cli *cli, const struct parspec *par, const char *arg)
-{
-	volatile unsigned *d1;
-	volatile ssize_t dest;
-
-	assert(par->max <= UINT_MAX);
-	assert(par->min >= 0);
-	d1 = par->priv;
-	dest = *d1;
-	tweak_generic_bytes(cli, &dest, arg, par->min, par->max);
-	*d1 = dest;
-}
-
 /*--------------------------------------------------------------------
- * XXX: slightly magic.  We want to initialize to "nobody" (XXX: shouldn't
- * XXX: that be something autocrap found for us ?) but we don't want to
- * XXX: fail initialization if that user doesn't exists, even though we
- * XXX: do want to fail it, in subsequent sets.
- * XXX: The magic init string is a hack for this.
+ * Wrap the text nicely.
+ * Lines are allowed to contain to TABS and we render that as a table
+ * taking the width of the first column into account.
  */
 
-void
-tweak_user(struct cli *cli, const struct parspec *par, const char *arg)
+static void
+mcf_wrap_line(struct cli *cli, const char *b, const char *e, int tabs, int m0)
 {
-	struct passwd *pw;
+	int n, hadtabs = 0;
+	const char *w;
 
-	(void)par;
-	if (arg != NULL) {
-		if (*arg != '\0') {
-			pw = getpwnam(arg);
-			if (pw == NULL) {
-				VCLI_Out(cli, "Unknown user");
-				VCLI_SetResult(cli, CLIS_PARAM);
+	n = m0;
+	VCLI_Out(cli, "%*s", n, "");
+
+	while (b < e) {
+		if (!isspace(*b)) {
+			VCLI_Out(cli, "%c", *b);
+			b++;
+			n++;
+		} else if (*b == '\t') {
+			assert(tabs);
+			assert(hadtabs < 2);
+			do {
+				VCLI_Out(cli, " ");
+				n++;
+			} while ((n % tabs) != (m0 + tab0) % tabs);
+			b++;
+			hadtabs++;
+		} else {
+			assert (*b == ' ');
+			for (w = b + 1; w < e; w++)
+				if (isspace(*w))
+					break;
+			if (n + (w - b) < wrap_at) {
+				VCLI_Out(cli, "%.*s", (int)(w - b), b);
+				n += (w - b);
+				b = w;
+			} else {
+				assert(hadtabs == 0 || hadtabs == 2);
+				VCLI_Out(cli, "\n");
+				mcf_wrap_line(cli, b + 1, e, 0,
+				    hadtabs ? m0 + tab0 + tabs : m0);
 				return;
 			}
-			REPLACE(mgt_param.user, pw->pw_name);
-			mgt_param.uid = pw->pw_uid;
-		} else {
-			mgt_param.uid = getuid();
 		}
-	} else if (mgt_param.user) {
-		VCLI_Out(cli, "%s (%d)", mgt_param.user, (int)mgt_param.uid);
-	} else {
-		VCLI_Out(cli, "UID %d", (int)mgt_param.uid);
 	}
+	assert(b == e);
 }
-
-/*--------------------------------------------------------------------
- * XXX: see comment for tweak_user, same thing here.
- */
-
-void
-tweak_group(struct cli *cli, const struct parspec *par, const char *arg)
-{
-	struct group *gr;
-
-	(void)par;
-	if (arg != NULL) {
-		if (*arg != '\0') {
-			gr = getgrnam(arg);
-			if (gr == NULL) {
-				VCLI_Out(cli, "Unknown group");
-				VCLI_SetResult(cli, CLIS_PARAM);
-				return;
-			}
-			REPLACE(mgt_param.group, gr->gr_name);
-			mgt_param.gid = gr->gr_gid;
-		} else {
-			mgt_param.gid = getgid();
-		}
-	} else if (mgt_param.group) {
-		VCLI_Out(cli, "%s (%d)", mgt_param.group, (int)mgt_param.gid);
-	} else {
-		VCLI_Out(cli, "GID %d", (int)mgt_param.gid);
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-clean_listen_sock_head(struct listen_sock_head *lsh)
-{
-	struct listen_sock *ls, *ls2;
-
-	VTAILQ_FOREACH_SAFE(ls, lsh, list, ls2) {
-		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
-		VTAILQ_REMOVE(lsh, ls, list);
-		free(ls->name);
-		free(ls->addr);
-		FREE_OBJ(ls);
-	}
-}
-
-void
-tweak_listen_address(struct cli *cli, const struct parspec *par,
-    const char *arg)
-{
-	char **av;
-	int i;
-	struct listen_sock		*ls;
-	struct listen_sock_head		lsh;
-
-	(void)par;
-	if (arg == NULL) {
-		VCLI_Quote(cli, mgt_param.listen_address);
-		return;
-	}
-
-	av = VAV_Parse(arg, NULL, ARGV_COMMA);
-	if (av == NULL) {
-		VCLI_Out(cli, "Parse error: out of memory");
-		VCLI_SetResult(cli, CLIS_PARAM);
-		return;
-	}
-	if (av[0] != NULL) {
-		VCLI_Out(cli, "Parse error: %s", av[0]);
-		VCLI_SetResult(cli, CLIS_PARAM);
-		VAV_Free(av);
-		return;
-	}
-	if (av[1] == NULL) {
-		VCLI_Out(cli, "Empty listen address");
-		VCLI_SetResult(cli, CLIS_PARAM);
-		VAV_Free(av);
-		return;
-	}
-	VTAILQ_INIT(&lsh);
-	for (i = 1; av[i] != NULL; i++) {
-		struct vss_addr **ta;
-		int j, n;
-
-		n = VSS_resolve(av[i], "http", &ta);
-		if (n == 0) {
-			VCLI_Out(cli, "Invalid listen address ");
-			VCLI_Quote(cli, av[i]);
-			VCLI_SetResult(cli, CLIS_PARAM);
-			break;
-		}
-		for (j = 0; j < n; ++j) {
-			ALLOC_OBJ(ls, LISTEN_SOCK_MAGIC);
-			AN(ls);
-			ls->sock = -1;
-			ls->addr = ta[j];
-			ls->name = strdup(av[i]);
-			AN(ls->name);
-			VTAILQ_INSERT_TAIL(&lsh, ls, list);
-		}
-		free(ta);
-	}
-	VAV_Free(av);
-	if (cli != NULL && cli->result != CLIS_OK) {
-		clean_listen_sock_head(&lsh);
-		return;
-	}
-
-	REPLACE(mgt_param.listen_address, arg);
-
-	clean_listen_sock_head(&heritage.socks);
-	heritage.nsocks = 0;
-
-	while (!VTAILQ_EMPTY(&lsh)) {
-		ls = VTAILQ_FIRST(&lsh);
-		VTAILQ_REMOVE(&lsh, ls, list);
-		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
-		VTAILQ_INSERT_TAIL(&heritage.socks, ls, list);
-		heritage.nsocks++;
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-tweak_string(struct cli *cli, const struct parspec *par, const char *arg)
-{
-	char **p = TRUST_ME(par->priv);
-
-	AN(p);
-	/* XXX should have tweak_generic_string */
-	if (arg == NULL) {
-		VCLI_Quote(cli, *p);
-	} else {
-		REPLACE(*p, arg);
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-tweak_waiter(struct cli *cli, const struct parspec *par, const char *arg)
-{
-
-	/* XXX should have tweak_generic_string */
-	(void)par;
-	WAIT_tweak_waiter(cli, arg);
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-tweak_poolparam(struct cli *cli, const struct parspec *par, const char *arg)
-{
-	volatile struct poolparam *pp, px;
-	char **av;
-
-	pp = par->priv;
-	if (arg == NULL) {
-		VCLI_Out(cli, "%u,%u,%g",
-		    pp->min_pool, pp->max_pool, pp->max_age);
-	} else {
-		av = VAV_Parse(arg, NULL, ARGV_COMMA);
-		do {
-			if (av[0] != NULL) {
-				VCLI_Out(cli, "Parse error: %s", av[0]);
-				VCLI_SetResult(cli, CLIS_PARAM);
-				break;
-			}
-			if (av[1] == NULL || av[2] == NULL || av[3] == NULL) {
-				VCLI_Out(cli,
-				    "Three fields required:"
-				    " min_pool, max_pool and max_age\n");
-				VCLI_SetResult(cli, CLIS_PARAM);
-				break;
-			}
-			px = *pp;
-			if (tweak_generic_uint(cli, &px.min_pool, av[1],
-			    (uint)par->min, (uint)par->max))
-				break;
-			if (tweak_generic_uint(cli, &px.max_pool, av[2],
-			    (uint)par->min, (uint)par->max))
-				break;
-			if (tweak_generic_timeout_double(cli, &px.max_age,
-			    av[3], 0, 1e6))
-				break;
-			if (px.min_pool > px.max_pool) {
-				VCLI_Out(cli,
-				    "min_pool cannot be larger"
-				    " than max_pool\n");
-				VCLI_SetResult(cli, CLIS_PARAM);
-				break;
-			}
-			*pp = px;
-		} while(0);
-		VAV_Free(av);
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
-/*
- * Make sure to end all lines with either a space or newline of the
- * formatting will go haywire.
- */
-
-#define OBJ_STICKY_TEXT \
-	"\nNB: This parameter is evaluated only when objects are created." \
-	"To change it for all objects, restart or ban everything."
-
-#define DELAYED_EFFECT_TEXT \
-	"\nNB: This parameter may take quite some time to take (full) effect."
-
-#define MUST_RESTART_TEXT \
-	"\nNB: This parameter will not take any effect until the " \
-	"child process has been restarted."
-
-#define MUST_RELOAD_TEXT \
-	"\nNB: This parameter will not take any effect until the " \
-	"VCL programs have been reloaded."
-
-#define EXPERIMENTAL_TEXT \
-	"\nNB: We do not know yet if it is a good idea to change " \
-	"this parameter, or if the default value is even sensible.  " \
-	"Caution is advised, and feedback is most welcome."
-
-#define WIZARD_TEXT \
-	"\nNB: Do not change this parameter, unless a developer tell " \
-	"you to do so."
-
-#define PROTECTED_TEXT \
-	"\nNB: This parameter is protected and can not be changed."
-
-/*--------------------------------------------------------------------*/
-
-#define WIDTH 76
 
 static void
 mcf_wrap(struct cli *cli, const char *text)
 {
-	const char *p, *q;
+	const char *p, *q, *r;
+	int tw = 0;
 
-	/* Format text to COLUMNS width */
+	if (strchr(text, '\t') != NULL) {
+		for (p = text; *p != '\0'; ) {
+			q = strstr(p, "\n\t");
+			if (q == NULL)
+				break;
+			q += 2;
+			r = strchr(q, '\t');
+			if (r == NULL) {
+				fprintf(stderr,
+				    "LINE with just one TAB: <%s>\n", text);
+				exit(2);
+			}
+			if (r - q > tw)
+				tw = r - q;
+			p = q;
+		}
+		tw += 2;
+		if (tw < 20)
+			tw = 20;
+	}
+
 	for (p = text; *p != '\0'; ) {
+		if (*p == '\n') {
+			VCLI_Out(cli, "\n");
+			p++;
+			continue;
+		}
 		q = strchr(p, '\n');
 		if (q == NULL)
 			q = strchr(p, '\0');
-		if (q > p + WIDTH - margin) {
-			q = p + WIDTH - margin;
-			while (q > p && *q != ' ')
-				q--;
-			AN(q);
-		}
-		VCLI_Out(cli, "%*s %.*s\n", margin, "", (int)(q - p), p);
+		mcf_wrap_line(cli, p, q, tw, margin1);
 		p = q;
-		if (*p == ' ' || *p == '\n')
-			p++;
 	}
 }
+
+/*--------------------------------------------------------------------*/
 
 void
 mcf_param_show(struct cli *cli, const char * const *av, void *priv)
@@ -680,7 +210,7 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 	int lfmt;
 
 	(void)priv;
-	if (av[2] == NULL || strcmp(av[2], "-l"))
+	if (av[2] == NULL)
 		lfmt = 0;
 	else
 		lfmt = 1;
@@ -688,13 +218,11 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 		pp = parspecs[i];
 		if (av[2] != NULL && !lfmt && strcmp(pp->name, av[2]))
 			continue;
-		VCLI_Out(cli, "%-*s ", margin, pp->name);
-		if (pp->func == NULL) {
-			VCLI_Out(cli, "Not implemented.\n");
-			if (av[2] != NULL && !lfmt)
-				return;
-			else
-				continue;
+		if (lfmt) {
+			VCLI_Out(cli, "%s\n", pp->name);
+			VCLI_Out(cli, "%-*sValue is: ", margin1, " ");
+		} else {
+			VCLI_Out(cli, "%-*s", margin2, pp->name);
 		}
 		pp->func(cli, pp, NULL);
 		if (pp->units != NULL && *pp->units != '\0')
@@ -702,8 +230,8 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 		else
 			VCLI_Out(cli, "\n");
 		if (av[2] != NULL) {
-			VCLI_Out(cli, "%-*s Default is %s\n",
-			    margin, "", pp->def);
+			VCLI_Out(cli, "%-*sDefault is: %s\n\n",
+			    margin1, "", pp->def);
 			mcf_wrap(cli, pp->descr);
 			if (pp->flags & OBJ_STICKY)
 				mcf_wrap(cli, OBJ_STICKY_TEXT);
@@ -722,7 +250,7 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 			if (!lfmt)
 				return;
 			else
-				VCLI_Out(cli, "\n");
+				VCLI_Out(cli, "\n\n");
 		}
 	}
 	if (av[2] != NULL && !lfmt) {
@@ -750,17 +278,14 @@ MCF_ParamProtect(struct cli *cli, const char *args)
 		return;
 	}
 	for (i = 1; av[i] != NULL; i++) {
-		for (j = 0; j < nparspec; j++)
-			if (!strcmp(parspecs[j]->name, av[i]))
-				break;
-		if (j == nparspec) {
+		if (mcf_findpar(av[i], &j) == NULL) {
 			VCLI_Out(cli, "Unknown parameter %s", av[i]);
 			VCLI_SetResult(cli, CLIS_PARAM);
 			VAV_Free(av);
 			return;
 		}
 		pp = calloc(sizeof *pp, 1L);
-		XXXAN(pp);
+		AN(pp);
 		memcpy(pp, parspecs[j], sizeof *pp);
 		pp->flags |= PROTECTED;
 		parspecs[j] = pp;
@@ -775,7 +300,7 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 {
 	const struct parspec *pp;
 
-	pp = mcf_findpar(param);
+	pp = mcf_findpar(param, NULL);
 	if (pp == NULL) {
 		VCLI_SetResult(cli, CLIS_PARAM);
 		VCLI_Out(cli, "Unknown parameter \"%s\".", param);
@@ -819,7 +344,7 @@ mcf_param_set(struct cli *cli, const char * const *av, void *priv)
  */
 
 static int
-parspec_cmp(const void *a, const void *b)
+mcf_parspec_cmp(const void *a, const void *b)
 {
 	struct parspec * const * pa = a;
 	struct parspec * const * pb = b;
@@ -830,14 +355,24 @@ static void
 MCF_AddParams(const struct parspec *ps)
 {
 	const struct parspec *pp;
+	const char *s;
 	int n;
 
 	n = 0;
 	for (pp = ps; pp->name != NULL; pp++) {
-		if (mcf_findpar(pp->name) != NULL)
+		AN(pp->func);
+		s = strchr(pp->descr, '\0');
+		if (isspace(s[-1])) {
+			fprintf(stderr,
+			    "Param->descr has trailing space: %s\n", pp->name);
+			exit(2);
+		}
+		if (mcf_findpar(pp->name, NULL) != NULL) {
 			fprintf(stderr, "Duplicate param: %s\n", pp->name);
-		if (strlen(pp->name) + 1 > margin)
-			margin = strlen(pp->name) + 1;
+			exit(2);
+		}
+		if (strlen(pp->name) + 1 > margin2)
+			margin2 = strlen(pp->name) + 1;
 		n++;
 	}
 	parspecs = realloc(parspecs, (1L + nparspec + n) * sizeof *parspecs);
@@ -845,7 +380,7 @@ MCF_AddParams(const struct parspec *ps)
 	for (pp = ps; pp->name != NULL; pp++)
 		parspecs[nparspec++] = pp;
 	parspecs[nparspec] = NULL;
-	qsort (parspecs, nparspec, sizeof parspecs[0], parspec_cmp);
+	qsort (parspecs, nparspec, sizeof parspecs[0], mcf_parspec_cmp);
 }
 
 /*--------------------------------------------------------------------

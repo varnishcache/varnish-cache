@@ -29,12 +29,12 @@
  *
  */
 
-DEBUG_BIT(REQ_STATE,		req_state,	"",  "VSL Request state engine")
-DEBUG_BIT(WORKSPACE,		workspace,	"",  "VSL Workspace operations")
-DEBUG_BIT(WAITER,		waiter,		"\t","VSL Waiter internals")
-DEBUG_BIT(WAITINGLIST,		waitinglist,	"",  "VSL Waitinglist events")
-DEBUG_BIT(SYNCVSL,		syncvsl,	"\t","Make VSL synchronous")
-DEBUG_BIT(HASHEDGE,		hashedge,	"",  "Edge cases in Hash")
-DEBUG_BIT(VCLREL,		vclrel,		"\t","Rapid VCL release")
-DEBUG_BIT(LURKER,		lurker,		"\t","VSL Ban lurker")
-DEBUG_BIT(ESI_CHOP,		esi_chop,	"",  "Chop ESI fetch to bits")
+DEBUG_BIT(REQ_STATE,		req_state,	"VSL Request state engine")
+DEBUG_BIT(WORKSPACE,		workspace,	"VSL Workspace operations")
+DEBUG_BIT(WAITER,		waiter,		"VSL Waiter internals")
+DEBUG_BIT(WAITINGLIST,		waitinglist,	"VSL Waitinglist events")
+DEBUG_BIT(SYNCVSL,		syncvsl,	"Make VSL synchronous")
+DEBUG_BIT(HASHEDGE,		hashedge,	"Edge cases in Hash")
+DEBUG_BIT(VCLREL,		vclrel,		"Rapid VCL release")
+DEBUG_BIT(LURKER,		lurker,		"VSL Ban lurker")
+DEBUG_BIT(ESI_CHOP,		esi_chop,	"Chop ESI fetch to bits")

@@ -36,14 +36,14 @@
 #define VSM_CLASS_PARAM		"Params"
 
 enum debug_bits {
-#define DEBUG_BIT(U, l, p, d) DBG_##U,
+#define DEBUG_BIT(U, l, d) DBG_##U,
 #include "tbl/debug_bits.h"
 #undef DEBUG_BIT
        DBG_Reserved
 };
 
 enum feature_bits {
-#define FEATURE_BIT(U, l, p, d, ld) FEATURE_##U,
+#define FEATURE_BIT(U, l, d, ld) FEATURE_##U,
 #include "tbl/feature_bits.h"
 #undef FEATURE_BIT
        FEATURE_Reserved
