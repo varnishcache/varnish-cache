@@ -55,7 +55,7 @@ AC_ARG_WITH([rst2man],
                [RST2MAN="$withval"],
                [AC_CHECK_PROGS(RST2MAN, [rst2man rst2man.py], "no")
 	        if test "x$RST2MAN" = "xno"; then
-		   AC_MSG_WARN([rst2man not found – not building man pages])
+		   AC_MSG_WARN([rst2man not found - not building man pages])
 		fi])
 AM_CONDITIONAL(HAVE_RST2MAN,[test "x$RST2MAN" != "xno"])
 
@@ -65,7 +65,7 @@ AC_ARG_WITH([rst2html],
                [RST2HTML="$withval"],
                [AC_CHECK_PROGS(RST2HTML, [rst2html rst2html.py], "no")
 	        if test "x$RST2HTML" = "xno"; then
-		   AC_MSG_WARN([rst2html not found – not building changelog])
+		   AC_MSG_WARN([rst2html not found - not building changelog])
 		fi])
 AM_CONDITIONAL(HAVE_RST2HTML,[test "x$RST2HTML" != "xno"])
 
@@ -458,7 +458,8 @@ EXTRA_DEVELOPER_CFLAGS="-Wextra -Wno-missing-field-initializers -Wno-sign-compar
 # --enable-developer-warnings
 AC_ARG_ENABLE(developer-warnings,
 	AS_HELP_STRING([--enable-developer-warnings],[enable strict warnings (default is NO)]),
-	CFLAGS="${CFLAGS} ${DEVELOPER_CFLAGS}")
+	CFLAGS="${CFLAGS} ${DEVELOPER_CFLAGS}";
+	OCFLAGS="${OCFLAGS} ${DEVELOPER_CFLAGS} -Werror")
 
 # --enable-debugging-symbols
 AC_ARG_ENABLE(debugging-symbols,
