@@ -8,11 +8,12 @@ server s1 {
 varnish v1 -cliok "param.set vcc_allow_inline_c true" -vcl+backend {
 	C{
 	#include <stdio.h>
-	void foo(void)
-	{
-		printf("%s %s %s", "foo", "bar", "barf");
-	}
 	}C
+	sub vcl_recv {
+		C{
+		printf("%s %s %s", "foo", "bar", "barf");
+		}C
+	}
 } -start
 
 client c1 {
