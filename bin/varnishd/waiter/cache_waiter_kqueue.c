@@ -205,6 +205,7 @@ vwk_thread(void *priv)
 			SES_Delete(sp, SC_RX_TIMEOUT, now);
 		}
 	}
+	NEEDLESS_RETURN(NULL);
 }
 
 /*--------------------------------------------------------------------*/
