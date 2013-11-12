@@ -36,8 +36,8 @@ struct parspec {
 	const char	*name;
 	tweak_t		*func;
 	volatile void	*priv;
-	double		min;
-	double		max;
+	const char	*min;
+	const char	*max;
 	const char	*descr;
 	int		 flags;
 #define DELAYED_EFFECT	(1<<0)
@@ -54,7 +54,7 @@ struct parspec {
 tweak_t tweak_bool;
 tweak_t tweak_bytes;
 tweak_t tweak_bytes_u;
-tweak_t tweak_generic_double;
+tweak_t tweak_double;
 tweak_t tweak_group;
 tweak_t tweak_listen_address;
 tweak_t tweak_poolparam;
@@ -65,8 +65,8 @@ tweak_t tweak_uint;
 tweak_t tweak_user;
 tweak_t tweak_waiter;
 
-int tweak_generic_uint(struct vsb *vsb,
-    volatile unsigned *dest, const char *arg, unsigned min, unsigned max);
+int tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest,
+    const char *arg, const char *min, const char *max);
 
 /* mgt_param_tbl.c */
 extern struct parspec mgt_parspec[];

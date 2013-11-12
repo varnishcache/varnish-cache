@@ -42,7 +42,6 @@
 
 #include "config.h"
 
-#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -60,7 +59,8 @@ tweak_thread_pool_min(struct vsb *vsb, const struct parspec *par,
 {
 
 	return (tweak_generic_uint(vsb, &mgt_param.wthread_min, arg,
-	    (unsigned)par->min, mgt_param.wthread_max));
+	    // par->min, mgt_param.wthread_max));
+	    par->min, NULL));
 }
 
 /*--------------------------------------------------------------------
@@ -93,14 +93,15 @@ tweak_thread_pool_max(struct vsb *vsb, const struct parspec *par,
 
 	(void)par;
 	return (tweak_generic_uint(vsb, &mgt_param.wthread_max, arg,
-	    mgt_param.wthread_min, UINT_MAX));
+	    //mgt_param.wthread_min, NULL));
+	    NULL, NULL));
 }
 
 /*--------------------------------------------------------------------*/
 
 struct parspec WRK_parspec[] = {
 	{ "thread_pools", tweak_uint, &mgt_param.wthread_pools,
-		1, UINT_MAX,
+		"1", NULL,
 		"Number of worker thread pools.\n"
 		"\n"
 		"Increasing number of worker pools decreases lock "
@@ -113,7 +114,8 @@ struct parspec WRK_parspec[] = {
 		"restart to take effect.",
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"2", "pools" },
-	{ "thread_pool_max", tweak_thread_pool_max, NULL, 10, 0,
+	{ "thread_pool_max", tweak_thread_pool_max, NULL,
+		"10", NULL,
 		"The maximum number of worker threads in each pool.\n"
 		"\n"
 		"Do not set this higher than you have to, since excess "
@@ -123,7 +125,8 @@ struct parspec WRK_parspec[] = {
 		"Minimum is 10 threads.",
 		DELAYED_EFFECT,
 		"5000", "threads" },
-	{ "thread_pool_min", tweak_thread_pool_min, NULL, 10, 0,
+	{ "thread_pool_min", tweak_thread_pool_min, NULL,
+		"10", NULL,
 		"The minimum number of worker threads in each pool.\n"
 		"\n"
 		"Increasing this may help ramp up faster from low load "
@@ -134,7 +137,7 @@ struct parspec WRK_parspec[] = {
 		"100", "threads" },
 	{ "thread_pool_timeout",
 		tweak_timeout_double, &mgt_param.wthread_timeout,
-		10, UINT_MAX,
+		"10", NULL,
 		"Thread idle threshold.\n"
 		"\n"
 		"Threads in excess of thread_pool_min, which have been idle "
@@ -145,7 +148,7 @@ struct parspec WRK_parspec[] = {
 		"300", "seconds" },
 	{ "thread_pool_destroy_delay",
 		tweak_timeout_double, &mgt_param.wthread_destroy_delay,
-		0.01, UINT_MAX,
+		"0.01", NULL,
 		"Wait this long after destroying a thread.\n"
 		"\n"
 		"This controls the decay of thread pools when idle(-ish).\n"
@@ -155,7 +158,7 @@ struct parspec WRK_parspec[] = {
 		"1", "seconds" },
 	{ "thread_pool_add_delay",
 		tweak_timeout_double, &mgt_param.wthread_add_delay,
-		0, UINT_MAX,
+		"0", NULL,
 		"Wait at least this long after creating a thread.\n"
 		"\n"
 		"Some (buggy) systems may need a short (sub-second) "
@@ -168,7 +171,7 @@ struct parspec WRK_parspec[] = {
 		"0", "seconds" },
 	{ "thread_pool_fail_delay",
 		tweak_timeout_double, &mgt_param.wthread_fail_delay,
-		10e-3, UINT_MAX,
+		"10e-3", NULL,
 		"Wait at least this long after a failed thread creation "
 		"before trying to create another thread.\n"
 		"\n"
@@ -186,7 +189,8 @@ struct parspec WRK_parspec[] = {
 		EXPERIMENTAL,
 		"0.2", "seconds" },
 	{ "thread_stats_rate",
-		tweak_uint, &mgt_param.wthread_stats_rate, 0, UINT_MAX,
+		tweak_uint, &mgt_param.wthread_stats_rate,
+		"0", NULL,
 		"Worker threads accumulate statistics, and dump these into "
 		"the global stats counters if the lock is free when they "
 		"finish a request.\n"
@@ -196,7 +200,7 @@ struct parspec WRK_parspec[] = {
 		EXPERIMENTAL,
 		"10", "requests" },
 	{ "thread_queue_limit", tweak_uint, &mgt_param.wthread_queue_limit,
-		0, UINT_MAX,
+		"0", NULL,
 		"Permitted queue length per thread-pool.\n"
 		"\n"
 		"This sets the number of requests we will queue, waiting "
@@ -204,7 +208,8 @@ struct parspec WRK_parspec[] = {
 		"be dropped instead of queued.",
 		EXPERIMENTAL,
 		"20", "" },
-	{ "rush_exponent", tweak_uint, &mgt_param.rush_exponent, 2, UINT_MAX,
+	{ "rush_exponent", tweak_uint, &mgt_param.rush_exponent,
+		"2", NULL,
 		"How many parked request we start for each completed "
 		"request on the object.\n"
 		"NB: Even with the implict delay of delivery, "
@@ -213,7 +218,8 @@ struct parspec WRK_parspec[] = {
 		EXPERIMENTAL,
 		"3", "requests per request" },
 	{ "thread_pool_stack",
-		tweak_stack_size, &mgt_param.wthread_stacksize, 0, UINT_MAX,
+		tweak_stack_size, &mgt_param.wthread_stacksize,
+		"0", NULL,
 		"Worker thread stack size.\n"
 		"This is likely rounded up to a multiple of 4k by the kernel.\n"
 		"The kernel/OS has a lower limit which will be enforced.",

@@ -56,22 +56,54 @@
 
 #include "mgt_cli.h"
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Generic handling of double typed parameters
+ */
 
 static int
-tweak_generic_timeout(struct vsb *vsb, volatile unsigned *dst, const char *arg)
+tweak_generic_double(struct vsb *vsb, volatile double *dest,
+    const char *arg, const char *min, const char *max, const char *fmt)
 {
-	unsigned u;
+	double u, minv = 0, maxv = 0;
+	char *p;
 
 	if (arg != NULL) {
-		u = strtoul(arg, NULL, 0);
-		if (u == 0) {
-			VSB_printf(vsb, "Timeout must be greater than zero\n");
+		if (min != NULL) {
+			p = NULL;
+			minv = strtod(min, &p);
+			if (*arg == '\0' || *p != '\0') {
+				VSB_printf(vsb, "Illegal Min: %s\n", min);
+				return (-1);
+			}
+		}
+		if (max != NULL) {
+			p = NULL;
+			maxv = strtod(max, &p);
+			if (*arg == '\0' || *p != '\0') {
+				VSB_printf(vsb, "Illegal Max: %s\n", max);
+				return (-1);
+			}
+		}
+
+		p = NULL;
+		u = strtod(arg, &p);
+		if (*arg == '\0' || *p != '\0') {
+			VSB_printf(vsb, "Not a number(%s)\n", arg);
 			return (-1);
 		}
-		*dst = u;
+		if (min != NULL && u < minv) {
+			VSB_printf(vsb,
+			    "Timeout must be greater or equal to %s\n", min);
+			return (-1);
+		}
+		if (max != NULL && u > maxv) {
+			VSB_printf(vsb,
+			    "Timeout must be less than or equal to %s\n", max);
+			return (-1);
+		}
+		*dest = u;
 	} else
-		VSB_printf(vsb, "%u", *dst);
+		VSB_printf(vsb, fmt, *dest);
 	return (0);
 }
 
@@ -80,43 +112,20 @@ tweak_generic_timeout(struct vsb *vsb, volatile unsigned *dst, const char *arg)
 int
 tweak_timeout(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
+	int i;
+	double d;
 	volatile unsigned *dest;
 
 	dest = par->priv;
-	return (tweak_generic_timeout(vsb, dest, arg));
+	d = *dest;
+	i = tweak_generic_double(vsb, &d, arg, par->min, par->max, "%.0f");
+	if (!i) {
+		*dest = (unsigned)ceil(d);
+	}
+	return (i);
 }
 
 /*--------------------------------------------------------------------*/
-
-static int
-tweak_generic_timeout_double(struct vsb *vsb, volatile double *dest,
-    const char *arg, double min, double max)
-{
-	double u;
-	char *p;
-
-	if (arg != NULL) {
-		p = NULL;
-		u = strtod(arg, &p);
-		if (*arg == '\0' || *p != '\0') {
-			VSB_printf(vsb, "Not a number(%s)\n", arg);
-			return (-1);
-		}
-		if (u < min) {
-			VSB_printf(vsb,
-			    "Timeout must be greater or equal to %.g\n", min);
-			return (-1);
-		}
-		if (u > max) {
-			VSB_printf(vsb,
-			    "Timeout must be less than or equal to %.g\n", max);
-			return (-1);
-		}
-		*dest = u;
-	} else
-		VSB_printf(vsb, "%.6f", *dest);
-	return (0);
-}
 
 int
 tweak_timeout_double(struct vsb *vsb, const struct parspec *par,
@@ -125,45 +134,20 @@ tweak_timeout_double(struct vsb *vsb, const struct parspec *par,
 	volatile double *dest;
 
 	dest = par->priv;
-	return (tweak_generic_timeout_double(vsb, dest, arg,
-	    par->min, par->max));
+	return (tweak_generic_double(vsb, dest, arg,
+	    par->min, par->max, "%.3f"));
 }
 
 /*--------------------------------------------------------------------*/
 
 int
-tweak_generic_double(struct vsb *vsb, const struct parspec *par,
-    const char *arg)
+tweak_double(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile double *dest;
-	char *p;
-	double u;
 
 	dest = par->priv;
-	if (arg != NULL) {
-		p = NULL;
-		u = strtod(arg, &p);
-		if (*p != '\0') {
-			VSB_printf(vsb,
-			    "Not a number (%s)\n", arg);
-			return (-1);
-		}
-		if (u < par->min) {
-			VSB_printf(vsb,
-			    "Must be greater or equal to %.g\n",
-				 par->min);
-			return (-1);
-		}
-		if (u > par->max) {
-			VSB_printf(vsb,
-			    "Must be less than or equal to %.g\n",
-				 par->max);
-			return (-1);
-		}
-		*dest = u;
-	} else
-		VSB_printf(vsb, "%f", *dest);
-	return (0);
+	return (tweak_generic_double(vsb, dest, arg,
+	    par->min, par->max, "%g"));
 }
 
 /*--------------------------------------------------------------------*/
@@ -214,12 +198,28 @@ tweak_bool(struct vsb *vsb, const struct parspec *par, const char *arg)
 
 int
 tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest, const char *arg,
-    unsigned min, unsigned max)
+    const char *min, const char *max)
 {
-	unsigned u;
+	unsigned u, minv = 0, maxv = 0;
 	char *p;
 
 	if (arg != NULL) {
+		if (min != NULL) {
+			p = NULL;
+			minv = strtoul(min, &p, 0);
+			if (*arg == '\0' || *p != '\0') {
+				VSB_printf(vsb, "Illegal Min: %s\n", min);
+				return (-1);
+			}
+		}
+		if (max != NULL) {
+			p = NULL;
+			maxv = strtoul(max, &p, 0);
+			if (*arg == '\0' || *p != '\0') {
+				VSB_printf(vsb, "Illegal Max: %s\n", max);
+				return (-1);
+			}
+		}
 		p = NULL;
 		if (!strcasecmp(arg, "unlimited"))
 			u = UINT_MAX;
@@ -230,12 +230,12 @@ tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest, const char *arg,
 				return (-1);
 			}
 		}
-		if (u < min) {
-			VSB_printf(vsb, "Must be at least %u\n", min);
+		if (min != NULL && u < minv) {
+			VSB_printf(vsb, "Must be at least %s\n", min);
 			return (-1);
 		}
-		if (u > max) {
-			VSB_printf(vsb, "Must be no more than %u\n", max);
+		if (max != NULL && u > maxv) {
+			VSB_printf(vsb, "Must be no more than %s\n", max);
 			return (-1);
 		}
 		*dest = u;
@@ -255,9 +255,7 @@ tweak_uint(struct vsb *vsb, const struct parspec *par, const char *arg)
 	volatile unsigned *dest;
 
 	dest = par->priv;
-	(void)tweak_generic_uint(vsb, dest, arg,
-	    (uint)par->min, (uint)par->max);
-	return (0);
+	return (tweak_generic_uint(vsb, dest, arg, par->min, par->max));
 }
 
 /*--------------------------------------------------------------------*/
@@ -287,12 +285,26 @@ fmt_bytes(struct vsb *vsb, uintmax_t t)
 
 static int
 tweak_generic_bytes(struct vsb *vsb, volatile ssize_t *dest, const char *arg,
-    double min, double max)
+    const char *min, const char *max)
 {
-	uintmax_t r;
+	uintmax_t r, rmin = 0, rmax = 0;
 	const char *p;
 
 	if (arg != NULL) {
+		if (min != NULL) {
+			p = VNUM_2bytes(min, &rmin, 0);
+			if (p != NULL) {
+				VSB_printf(vsb, "Invalid min-val: %s\n", min);
+				return (-1);
+			}
+		}
+		if (max != NULL) {
+			p = VNUM_2bytes(max, &rmax, 0);
+			if (p != NULL) {
+				VSB_printf(vsb, "Invalid max-val: %s\n", max);
+				return (-1);
+			}
+		}
 		p = VNUM_2bytes(arg, &r, 0);
 		if (p != NULL) {
 			VSB_printf(vsb, "Could not convert to bytes.\n");
@@ -303,19 +315,17 @@ tweak_generic_bytes(struct vsb *vsb, volatile ssize_t *dest, const char *arg,
 		}
 		if ((uintmax_t)((ssize_t)r) != r) {
 			fmt_bytes(vsb, r);
-			VSB_printf(vsb, " is too large for this architecture.\n");
+			VSB_printf(vsb,
+			    " is too large for this architecture.\n");
 			return (-1);
 		}
-		if (max != 0. && r > max) {
-			VSB_printf(vsb, "Must be no more than ");
-			fmt_bytes(vsb, (uintmax_t)max);
+		if (max != NULL && r > rmax) {
+			VSB_printf(vsb, "Must be no more than %s\n", max);
 			VSB_printf(vsb, "\n");
 			return (-1);
 		}
-		if (r < min) {
-			VSB_printf(vsb, "Must be at least ");
-			fmt_bytes(vsb, (uintmax_t)min);
-			VSB_printf(vsb, "\n");
+		if (min != NULL && r < rmin) {
+			VSB_printf(vsb, "Must be at least %s\n", min);
 			return (-1);
 		}
 		*dest = r;
@@ -332,11 +342,9 @@ tweak_bytes(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile ssize_t *dest;
 
-	assert(par->min >= 0);
 	dest = par->priv;
 	return (tweak_generic_bytes(vsb, dest, arg, par->min, par->max));
 }
-
 
 /*--------------------------------------------------------------------*/
 
@@ -346,8 +354,6 @@ tweak_bytes_u(struct vsb *vsb, const struct parspec *par, const char *arg)
 	volatile unsigned *d1;
 	volatile ssize_t dest;
 
-	assert(par->max <= UINT_MAX);
-	assert(par->min >= 0);
 	d1 = par->priv;
 	dest = *d1;
 	if (tweak_generic_bytes(vsb, &dest, arg, par->min, par->max))
@@ -568,15 +574,15 @@ tweak_poolparam(struct vsb *vsb, const struct parspec *par, const char *arg)
 			}
 			px = *pp;
 			retval = tweak_generic_uint(vsb, &px.min_pool, av[1],
-			    (uint)par->min, (uint)par->max);
+			    par->min, par->max);
 			if (retval)
 				break;
 			retval = tweak_generic_uint(vsb, &px.max_pool, av[2],
-			    (uint)par->min, (uint)par->max);
+			    par->min, par->max);
 			if (retval)
 				break;
-			retval = tweak_generic_timeout_double(vsb,
-			    &px.max_age, av[3], 0, 1e6);
+			retval = tweak_generic_double(vsb,
+			    &px.max_age, av[3], "0", "1e6", "%.0f");
 			if (retval)
 				break;
 			if (px.min_pool > px.max_pool) {

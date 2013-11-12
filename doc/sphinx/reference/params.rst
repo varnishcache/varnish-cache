@@ -15,7 +15,9 @@ Enable kernel accept-filters, if supported by the kernel.
 
 acceptor_sleep_decay
 ~~~~~~~~~~~~~~~~~~~~
-	* Default: 0.900
+	* Default: 0.9
+	* Minimum: 0
+	* Maximum: 1
 	* Flags: experimental
 
 If we run out of resources, such as file descriptors or worker threads, the acceptor will sleep between accepts.
@@ -26,7 +28,9 @@ This parameter (multiplicatively) reduce the sleep duration for each succesfull 
 acceptor_sleep_incr
 ~~~~~~~~~~~~~~~~~~~
 	* Units: s
-	* Default: 0.001
+	* Default: 0.001000
+	* Minimum: 0.000000
+	* Maximum: 1.000000
 	* Flags: experimental
 
 If we run out of resources, such as file descriptors or worker threads, the acceptor will sleep between accepts.
@@ -37,7 +41,9 @@ This parameter control how much longer we sleep, each time we fail to accept a n
 acceptor_sleep_max
 ~~~~~~~~~~~~~~~~~~
 	* Units: s
-	* Default: 0.050
+	* Default: 0.050000
+	* Minimum: 0.000000
+	* Maximum: 10.000000
 	* Flags: experimental
 
 If we run out of resources, such as file descriptors or worker threads, the acceptor will sleep between accepts.
@@ -66,7 +72,8 @@ Detect and eliminate duplicate bans.
 ban_lurker_sleep
 ~~~~~~~~~~~~~~~~
 	* Units: s
-	* Default: 0.01
+	* Default: 0.010000
+	* Minimum: 0.000000
 
 How long time does the ban lurker thread sleeps between successful attempts to push the last item up the ban  list.  It always sleeps a second when nothing can be done.
 A value of zero disables the ban lurker.
@@ -76,7 +83,8 @@ A value of zero disables the ban lurker.
 between_bytes_timeout
 ~~~~~~~~~~~~~~~~~~~~~
 	* Units: s
-	* Default: 60
+	* Default: 60.000000
+	* Minimum: 0.000000
 
 Default timeout between bytes when receiving data from backend. We only wait for this many seconds between bytes before giving up. A value of 0 means it will never time out. VCL can override this default value for each backend request and backend request. This parameter does not apply to pipe.
 
@@ -93,7 +101,7 @@ Cache free busyobj per worker thread. Disable this if you have very high hitrate
 
 cc_command
 ~~~~~~~~~~
-	* Default: exec clang -std=gnu99  -Qunused-arguments -D_THREAD_SAFE -pthread -fpic -shared -Wl,-x -o %o %s
+	* Default: "exec clang -std=gnu99  -Qunused-arguments -D_THREAD_SAFE -pthread -fpic -shared -Wl,-x -o %o %s"
 	* Flags: must_reload
 
 Command used for compiling the C source code to a dlopen(3) loadable object.  Any occurrence of %s in the string will be replaced with the source file name, and %o will be replaced with the output file name.
@@ -104,6 +112,7 @@ cli_buffer
 ~~~~~~~~~~
 	* Units: bytes
 	* Default: 8k
+	* Minimum: 4k
 
 Size of buffer for CLI command input.
 You may need to increase this if you have big VCL files and use the vcl.inline CLI command.
@@ -115,6 +124,8 @@ cli_limit
 ~~~~~~~~~
 	* Units: bytes
 	* Default: 48k
+	* Minimum: 128b
+	* Maximum: 99999999b
 
 Maximum size of CLI response.  If the response exceeds this limit, the reponse code will be 201 instead of 200 and the last line will indicate the truncation.
 
@@ -124,6 +135,7 @@ cli_timeout
 ~~~~~~~~~~~
 	* Units: seconds
 	* Default: 10
+	* Minimum: 0
 
 Timeout for the childs replies to CLI requests from the mgt_param.
 
@@ -133,6 +145,7 @@ clock_skew
 ~~~~~~~~~~
 	* Units: s
 	* Default: 10
+	* Minimum: 0
 
 How much clockskew we are willing to accept between the backend and our own clock.
 
@@ -141,7 +154,8 @@ How much clockskew we are willing to accept between the backend and our own cloc
 connect_timeout
 ~~~~~~~~~~~~~~~
 	* Units: s
-	* Default: 3.5
+	* Default: 3.500000
+	* Minimum: 0.000000
 
 Default connection timeout for backend connections. We only try to connect to the backend for this many seconds before giving up. VCL can override this default value for each backend and backend request.
 
@@ -150,7 +164,9 @@ Default connection timeout for backend connections. We only try to connect to th
 critbit_cooloff
 ~~~~~~~~~~~~~~~
 	* Units: s
-	* Default: 180.0
+	* Default: 180.000000
+	* Minimum: 60.000000
+	* Maximum: 254.000000
 	* Flags: wizard
 
 How long time the critbit hasher keeps deleted objheads on the cooloff list.
@@ -200,7 +216,8 @@ Use +/- prefix to set/reset individual bits:
 default_grace
 ~~~~~~~~~~~~~
 	* Units: seconds
-	* Default: 10
+	* Default: 10.000000
+	* Minimum: 0.000000
 	* Flags: 
 
 Default grace period.  We will deliver an object this long after it has expired, provided another thread is attempting to get a new copy.
@@ -210,7 +227,8 @@ Default grace period.  We will deliver an object this long after it has expired,
 default_keep
 ~~~~~~~~~~~~
 	* Units: seconds
-	* Default: 0
+	* Default: 0.000000
+	* Minimum: 0.000000
 	* Flags: 
 
 Default keep period.  We will keep a useless object around this long, making it available for conditional backend fetches.  That means that the object will be removed from the cache at the end of ttl+grace+keep.
@@ -220,7 +238,8 @@ Default keep period.  We will keep a useless object around this long, making it 
 default_ttl
 ~~~~~~~~~~~
 	* Units: seconds
-	* Default: 120
+	* Default: 20.000000
+	* Minimum: 0.000000
 	* Flags: 
 
 The TTL assigned to objects if neither the backend nor the VCL code assigns one.
@@ -265,6 +284,7 @@ fetch_chunksize
 ~~~~~~~~~~~~~~~
 	* Units: bytes
 	* Default: 128k
+	* Minimum: 4k
 	* Flags: experimental
 
 The default chunksize used by fetcher. This should be bigger than the majority of objects with short TTLs.
@@ -275,7 +295,8 @@ Internal limits in the storage_file module makes increases above 128kb a dubious
 fetch_maxchunksize
 ~~~~~~~~~~~~~~~~~~
 	* Units: bytes
-	* Default: 256m
+	* Default: 0.25G
+	* Minimum: 64k
 	* Flags: experimental
 
 The maximum chunksize we attempt to allocate from storage. Making this too large may cause delays and storage fragmentation.
@@ -285,7 +306,8 @@ The maximum chunksize we attempt to allocate from storage. Making this too large
 first_byte_timeout
 ~~~~~~~~~~~~~~~~~~
 	* Units: s
-	* Default: 60
+	* Default: 60.000000
+	* Minimum: 0.000000
 
 Default timeout for receiving first byte from backend. We only wait for this many seconds for the first byte before giving up. A value of 0 means it will never time out. VCL can override this default value for each backend and backend request. This parameter does not apply to pipe.
 
@@ -293,7 +315,7 @@ Default timeout for receiving first byte from backend. We only wait for this man
 
 group
 ~~~~~
-	* Default: nogroup
+	* Default: nogroup (65533)
 	* Flags: must_restart
 
 The unprivileged group to run as.
@@ -304,6 +326,7 @@ gzip_buffer
 ~~~~~~~~~~~
 	* Units: bytes
 	* Default: 32k
+	* Minimum: 2k
 	* Flags: experimental
 
 Size of malloc buffer used for gzip processing.
@@ -314,6 +337,8 @@ These buffers are used for in-transit data, for instance gunzip'ed data being se
 gzip_level
 ~~~~~~~~~~
 	* Default: 6
+	* Minimum: 0
+	* Maximum: 9
 
 Gzip compression level: 0=debug, 1=fast, 9=best
 
@@ -322,6 +347,8 @@ Gzip compression level: 0=debug, 1=fast, 9=best
 gzip_memlevel
 ~~~~~~~~~~~~~
 	* Default: 8
+	* Minimum: 1
+	* Maximum: 9
 
 Gzip memory level 1=slow/least, 9=fast/most compression.
 Memory impact is 1=1k, 2=2k, ... 9=256k.
@@ -344,6 +371,8 @@ http_max_hdr
 ~~~~~~~~~~~~
 	* Units: header lines
 	* Default: 64
+	* Minimum: 32
+	* Maximum: 65535
 
 Maximum number of HTTP header lines we allow in {req|resp|bereq|beresp}.http (obj.http is autosized to the exact number of headers).
 Cheap, ~20 bytes, in terms of workspace memory.
@@ -364,6 +393,7 @@ http_req_hdr_len
 ~~~~~~~~~~~~~~~~
 	* Units: bytes
 	* Default: 8k
+	* Minimum: 40b
 
 Maximum length of any HTTP client request header we will allow.  The limit is inclusive its continuation lines.
 
@@ -373,6 +403,7 @@ http_req_size
 ~~~~~~~~~~~~~
 	* Units: bytes
 	* Default: 32k
+	* Minimum: 0.25k
 
 Maximum number of bytes of HTTP client request we will deal with.  This is a limit on all bytes up to the double blank line which ends the HTTP request.
 The memory for the request is allocated from the client workspace (param: workspace_client) and this parameter limits how much of that the request is allowed to take up.
@@ -383,6 +414,7 @@ http_resp_hdr_len
 ~~~~~~~~~~~~~~~~~
 	* Units: bytes
 	* Default: 8k
+	* Minimum: 40b
 
 Maximum length of any HTTP backend response header we will allow.  The limit is inclusive its continuation lines.
 
@@ -392,6 +424,7 @@ http_resp_size
 ~~~~~~~~~~~~~~
 	* Units: bytes
 	* Default: 32k
+	* Minimum: 0.25k
 
 Maximum number of bytes of HTTP backend resonse we will deal with.  This is a limit on all bytes up to the double blank line which ends the HTTP request.
 The memory for the request is allocated from the worker workspace (param: thread_pool_workspace) and this parameter limits how much of that the request is allowed to take up.
@@ -402,6 +435,7 @@ idle_send_timeout
 ~~~~~~~~~~~~~~~~~
 	* Units: seconds
 	* Default: 60
+	* Minimum: 0
 	* Flags: delayed
 
 Time to wait with no data sent. If no data has been transmitted in this many
@@ -424,6 +458,7 @@ listen_depth
 ~~~~~~~~~~~~
 	* Units: connections
 	* Default: 1024
+	* Minimum: 0
 	* Flags: must_restart
 
 Listen queue depth.
@@ -444,6 +479,7 @@ lru_interval
 ~~~~~~~~~~~~
 	* Units: seconds
 	* Default: 2
+	* Minimum: 0
 	* Flags: experimental
 
 Grace period before object moves on LRU list.
@@ -455,6 +491,7 @@ max_esi_depth
 ~~~~~~~~~~~~~
 	* Units: levels
 	* Default: 5
+	* Minimum: 0
 
 Maximum depth of esi:include processing.
 
@@ -464,6 +501,7 @@ max_restarts
 ~~~~~~~~~~~~
 	* Units: restarts
 	* Default: 4
+	* Minimum: 0
 
 Upper limit on how many times a request can restart.
 Be aware that restarts are likely to cause a hit against the backend, so don't increase thoughtlessly.
@@ -474,6 +512,7 @@ max_retries
 ~~~~~~~~~~~
 	* Units: retries
 	* Default: 4
+	* Minimum: 0
 
 Upper limit on how many times a backend fetch can retry.
 
@@ -483,6 +522,7 @@ nuke_limit
 ~~~~~~~~~~
 	* Units: allocations
 	* Default: 50
+	* Minimum: 0
 	* Flags: experimental
 
 Maximum number of objects we attempt to nuke in orderto make space for a object body.
@@ -492,6 +532,7 @@ Maximum number of objects we attempt to nuke in orderto make space for a object 
 pcre_match_limit
 ~~~~~~~~~~~~~~~~
 	* Default: 10000
+	* Minimum: 1
 
 The limit for the  number of internal matching function calls in a pcre_exec() execution.
 
@@ -500,6 +541,7 @@ The limit for the  number of internal matching function calls in a pcre_exec() e
 pcre_match_limit_recursion
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 	* Default: 10000
+	* Minimum: 1
 
 The limit for the  number of internal matching function recursions in a pcre_exec() execution.
 
@@ -509,6 +551,7 @@ ping_interval
 ~~~~~~~~~~~~~
 	* Units: seconds
 	* Default: 3
+	* Minimum: 0
 	* Flags: must_restart
 
 Interval between pings from parent to child.
@@ -520,6 +563,7 @@ pipe_timeout
 ~~~~~~~~~~~~
 	* Units: seconds
 	* Default: 60
+	* Minimum: 0
 
 Idle timeout for PIPE sessions. If nothing have been received in either direction for this many seconds, the session is closed.
 
@@ -610,6 +654,7 @@ rush_exponent
 ~~~~~~~~~~~~~
 	* Units: requests per request
 	* Default: 3
+	* Minimum: 2
 	* Flags: experimental
 
 How many parked request we start for each completed request on the object.
@@ -621,6 +666,7 @@ send_timeout
 ~~~~~~~~~~~~
 	* Units: seconds
 	* Default: 600
+	* Minimum: 0
 	* Flags: delayed
 
 Send timeout for client connections. If the HTTP response hasn't been transmitted in this many
@@ -633,6 +679,7 @@ session_max
 ~~~~~~~~~~~
 	* Units: sessions
 	* Default: 100000
+	* Minimum: 1000
 
 Maximum number of sessions we will allocate from one pool before just dropping connections.
 This is mostly an anti-DoS measure, and setting it plenty high should not hurt, as long as you have the memory for it.
@@ -642,7 +689,9 @@ This is mostly an anti-DoS measure, and setting it plenty high should not hurt, 
 shm_reclen
 ~~~~~~~~~~
 	* Units: bytes
-	* Default: 255
+	* Default: 255b
+	* Minimum: 16b
+	* Maximum: 65535b
 
 Maximum number of bytes in SHM log record.
 Maximum is 65535 bytes.
@@ -652,7 +701,8 @@ Maximum is 65535 bytes.
 shortlived
 ~~~~~~~~~~
 	* Units: s
-	* Default: 10.0
+	* Default: 10.000000
+	* Minimum: 0.000000
 
 Objects created with TTL shorter than this are always put in transient storage.
 
@@ -681,6 +731,8 @@ tcp_keepalive_intvl
 ~~~~~~~~~~~~~~~~~~~
 	* Units: seconds
 	* Default: 5
+	* Minimum: 1
+	* Maximum: 100
 	* Flags: experimental
 
 The number of seconds between TCP keep-alive probes. Note that this setting will only take effect when it is less thanthe system default.
@@ -691,6 +743,8 @@ tcp_keepalive_probes
 ~~~~~~~~~~~~~~~~~~~~
 	* Units: probes
 	* Default: 5
+	* Minimum: 1
+	* Maximum: 100
 	* Flags: experimental
 
 The maximum number of TCP keep-alive probes to send before giving up and killing the connection if no response is obtained from the other end. Note that this setting will only take effect when it is less than the system default.
@@ -701,6 +755,8 @@ tcp_keepalive_time
 ~~~~~~~~~~~~~~~~~~
 	* Units: seconds
 	* Default: 600
+	* Minimum: 1
+	* Maximum: 7200
 	* Flags: experimental
 
 The number of seconds a connection needs to be idle before TCP begins sending out keep-alive probes. Note that this setting will only take effect when it is less than the system default.
@@ -710,7 +766,8 @@ The number of seconds a connection needs to be idle before TCP begins sending ou
 thread_pool_add_delay
 ~~~~~~~~~~~~~~~~~~~~~
 	* Units: seconds
-	* Default: 0
+	* Default: 0.000000
+	* Minimum: 0.000000
 	* Flags: experimental
 
 Wait at least this long after creating a thread.
@@ -725,7 +782,8 @@ Setting this too high results in insuffient worker threads.
 thread_pool_destroy_delay
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 	* Units: seconds
-	* Default: 1
+	* Default: 1.000000
+	* Minimum: 0.010000
 	* Flags: delayed, experimental
 
 Wait this long after destroying a thread.
@@ -739,7 +797,8 @@ Minimum is 0.01 second.
 thread_pool_fail_delay
 ~~~~~~~~~~~~~~~~~~~~~~
 	* Units: seconds
-	* Default: 0.2
+	* Default: 0.200000
+	* Minimum: 0.010000
 	* Flags: experimental
 
 Wait at least this long after a failed thread creation before trying to create another thread.
@@ -756,6 +815,7 @@ thread_pool_max
 ~~~~~~~~~~~~~~~
 	* Units: threads
 	* Default: 5000
+	* Minimum: 10
 	* Flags: delayed
 
 The maximum number of worker threads in each pool.
@@ -770,6 +830,7 @@ thread_pool_min
 ~~~~~~~~~~~~~~~
 	* Units: threads
 	* Default: 100
+	* Minimum: 10
 	* Flags: delayed
 
 The minimum number of worker threads in each pool.
@@ -784,6 +845,7 @@ thread_pool_stack
 ~~~~~~~~~~~~~~~~~
 	* Units: bytes
 	* Default: 48k
+	* Minimum: 2k
 	* Flags: experimental
 
 Worker thread stack size.
@@ -795,7 +857,8 @@ The kernel/OS has a lower limit which will be enforced.
 thread_pool_timeout
 ~~~~~~~~~~~~~~~~~~~
 	* Units: seconds
-	* Default: 300
+	* Default: 300.000000
+	* Minimum: 10.000000
 	* Flags: delayed, experimental
 
 Thread idle threshold.
@@ -810,6 +873,7 @@ thread_pools
 ~~~~~~~~~~~~
 	* Units: pools
 	* Default: 2
+	* Minimum: 1
 	* Flags: delayed, experimental
 
 Number of worker thread pools.
@@ -825,6 +889,7 @@ Can be increased on the fly, but decreases require a restart to take effect.
 thread_queue_limit
 ~~~~~~~~~~~~~~~~~~
 	* Default: 20
+	* Minimum: 0
 	* Flags: experimental
 
 Permitted queue length per thread-pool.
@@ -837,6 +902,7 @@ thread_stats_rate
 ~~~~~~~~~~~~~~~~~
 	* Units: requests
 	* Default: 10
+	* Minimum: 0
 	* Flags: experimental
 
 Worker threads accumulate statistics, and dump these into the global stats counters if the lock is free when they finish a request.
@@ -847,7 +913,8 @@ This parameters defines the maximum number of requests a worker thread may handl
 timeout_idle
 ~~~~~~~~~~~~
 	* Units: seconds
-	* Default: 5
+	* Default: 5.000000
+	* Minimum: 0.000000
 
 Idle timeout for client connections.
 A connection is considered idle, until we receive a non-white-space character on it.
@@ -857,7 +924,8 @@ A connection is considered idle, until we receive a non-white-space character on
 timeout_linger
 ~~~~~~~~~~~~~~
 	* Units: seconds
-	* Default: 0.050
+	* Default: 0.050000
+	* Minimum: 0.000000
 	* Flags: experimental
 
 How long time the workerthread lingers on an idle session before handing it over to the waiter.
@@ -869,7 +937,8 @@ Setting this too high results in worker threads not doing anything for their kee
 timeout_req
 ~~~~~~~~~~~
 	* Units: seconds
-	* Default: 2
+	* Default: 2.000000
+	* Minimum: 0.000000
 
 Max time to receive clients request header, measured from first non-white-space character to double CRNL.
 
@@ -877,7 +946,7 @@ Max time to receive clients request header, measured from first non-white-space 
 
 user
 ~~~~
-	* Default: nobody
+	* Default: nobody (65534)
 	* Flags: must_restart
 
 The unprivileged user to run as.
@@ -932,6 +1001,7 @@ vsl_buffer
 ~~~~~~~~~~
 	* Units: bytes
 	* Default: 4k
+	* Minimum: 1k
 
 Bytes of (req-/backend-)workspace dedicated to buffering VSL records.
 At a bare minimum, this must be longer than the longest HTTP header to be logged.
@@ -942,7 +1012,7 @@ Minimum is 1k bytes.
 
 vsl_mask
 ~~~~~~~~
-	* Default: default
+	* Default: -VCL_trace,-WorkThread,-Hash
 
 Mask individual VSL messages from being logged.
 
@@ -957,6 +1027,7 @@ vsl_space
 ~~~~~~~~~
 	* Units: bytes
 	* Default: 80M
+	* Minimum: 1M
 	* Flags: must_restart
 
 The amount of space to allocate for the VSL fifo buffer in the VSM memory segment.  If you make this too small, varnish{ncsa|log} etc will not be able to keep up.  Making it too large just costs memory resources.
@@ -967,6 +1038,7 @@ vsm_space
 ~~~~~~~~~
 	* Units: bytes
 	* Default: 1M
+	* Minimum: 1M
 	* Flags: must_restart
 
 The amount of space to allocate for stats counters in the VSM memory segment.  If you make this too small, some counters will be invisible.  Making it too large just costs memory resources.
@@ -975,7 +1047,7 @@ The amount of space to allocate for stats counters in the VSM memory segment.  I
 
 waiter
 ~~~~~~
-	* Default: platform dependent
+	* Default: kqueue (possible values: kqueue, poll)
 	* Flags: must_restart, wizard
 
 Select the waiter kernel interface.
@@ -986,6 +1058,7 @@ workspace_backend
 ~~~~~~~~~~~~~~~~~
 	* Units: bytes
 	* Default: 64k
+	* Minimum: 1k
 	* Flags: delayed
 
 Bytes of HTTP protocol workspace for backend HTTP req/resp.  If larger than 4k, use a multiple of 4k for VM efficiency.
@@ -996,6 +1069,7 @@ workspace_client
 ~~~~~~~~~~~~~~~~
 	* Units: bytes
 	* Default: 64k
+	* Minimum: 3k
 	* Flags: delayed
 
 Bytes of HTTP protocol workspace for clients HTTP req/resp.  If larger than 4k, use a multiple of 4k for VM efficiency.
@@ -1005,7 +1079,9 @@ Bytes of HTTP protocol workspace for clients HTTP req/resp.  If larger than 4k, 
 workspace_thread
 ~~~~~~~~~~~~~~~~
 	* Units: bytes
-	* Default: 2048
+	* Default: 2k
+	* Minimum: 0.25k
+	* Maximum: 8k
 	* Flags: delayed
 
 Bytes of auxillary workspace per thread.

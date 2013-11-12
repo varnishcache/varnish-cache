@@ -204,34 +204,51 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 {
 	int i;
 	const struct parspec *pp;
-	int lfmt;
+	int lfmt = 0, chg = 0;
+	struct vsb *vsb;
 
+	vsb = VSB_new_auto();
 	(void)priv;
-	if (av[2] == NULL)
-		lfmt = 0;
-	else
+
+	if (av[2] != NULL && !strcmp(av[2], "changed"))
+		chg = 1;
+	else if (av[2] != NULL)
 		lfmt = 1;
+
 	for (i = 0; i < nparspec; i++) {
 		pp = parspecs[i];
-		if (av[2] != NULL &&
-		    strcmp(pp->name, av[2]) &&
-		    strcmp("-l", av[2]))
+		if (lfmt && strcmp(pp->name, av[2]) && strcmp("-l", av[2]))
 			continue;
+
+		VSB_clear(vsb);
+		if (pp->func(vsb, pp, NULL))
+			VCLI_SetResult(cli, CLIS_PARAM);
+		AZ(VSB_finish(vsb));
+		if (chg && pp->def != NULL && !strcmp(pp->def, VSB_data(vsb)))
+			continue;
+
 		if (lfmt) {
 			VCLI_Out(cli, "%s\n", pp->name);
 			VCLI_Out(cli, "%-*sValue is: ", margin1, " ");
 		} else {
 			VCLI_Out(cli, "%-*s", margin2, pp->name);
 		}
-		if (pp->func(cli->sb, pp, NULL))
-			VCLI_SetResult(cli, CLIS_PARAM);
+		VCLI_Out(cli, "%s", VSB_data(vsb));
 		if (pp->units != NULL && *pp->units != '\0')
-			VCLI_Out(cli, " [%s]\n", pp->units);
-		else
-			VCLI_Out(cli, "\n");
-		if (av[2] != NULL) {
-			VCLI_Out(cli, "%-*sDefault is: %s\n\n",
+			VCLI_Out(cli, " [%s]", pp->units);
+		if (pp->def != NULL && !strcmp(pp->def, VSB_data(vsb)))
+			VCLI_Out(cli, " (default)");
+		VCLI_Out(cli, "\n");
+		if (lfmt) {
+			VCLI_Out(cli, "%-*sDefault is: %s\n",
 			    margin1, "", pp->def);
+			if (pp->min != NULL)
+				VCLI_Out(cli, "%-*sMinimum is: %s\n",
+				    margin1, "", pp->min);
+			if (pp->max != NULL)
+				VCLI_Out(cli, "%-*sMaximum is: %s\n",
+				    margin1, "", pp->max);
+			VCLI_Out(cli, "\n");
 			mcf_wrap(cli, pp->descr);
 			if (pp->flags & OBJ_STICKY)
 				mcf_wrap(cli, OBJ_STICKY_TEXT);
@@ -247,16 +264,14 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 				mcf_wrap(cli, WIZARD_TEXT);
 			if (pp->flags & PROTECTED)
 				mcf_wrap(cli, PROTECTED_TEXT);
-			if (!lfmt)
-				return;
-			else
-				VCLI_Out(cli, "\n\n");
+			VCLI_Out(cli, "\n\n");
 		}
 	}
-	if (av[2] != NULL && !lfmt) {
+	if (av[2] != NULL && !lfmt && !chg) {
 		VCLI_SetResult(cli, CLIS_PARAM);
 		VCLI_Out(cli, "Unknown parameter \"%s\".", av[2]);
 	}
+	VSB_delete(vsb);
 }
 
 /*--------------------------------------------------------------------
@@ -381,39 +396,60 @@ MCF_AddParams(struct parspec *ps)
 	qsort (parspecs, nparspec, sizeof parspecs[0], mcf_parspec_cmp);
 }
 
+
 /*--------------------------------------------------------------------
- * Set defaults for all parameters
+ * Wash a min/max/default value
+ */
+
+static void
+mcf_wash_param(struct cli *cli, const struct parspec *pp, const char **val,
+    const char *name, struct vsb *vsb)
+{
+	int err;
+
+	AN(*val);
+	VSB_clear(vsb);
+	VSB_printf(vsb, "FAILED to set %s for param %s = %s\n",
+	    name, pp->name, *val);
+	err = pp->func(vsb, pp, *val);
+	AZ(VSB_finish(vsb));
+	if (err) {
+		VCLI_Out(cli, "%s", VSB_data(vsb));
+		VCLI_SetResult(cli, CLIS_CANT);
+		return;
+	}
+	VSB_clear(vsb);
+	err = pp->func(vsb, pp, NULL);
+	AZ(err);
+	AZ(VSB_finish(vsb));
+	if (strcmp(*val, VSB_data(vsb))) {
+		*val = strdup(VSB_data(vsb));
+		AN(*val);
+	}
+}
+
+/*--------------------------------------------------------------------
+ * Wash the min/max/default values, and leave the default set.
  */
 
 void
 MCF_InitParams(struct cli *cli)
 {
-	const struct parspec *pp;
-	int i, j, err;
+	struct parspec *pp;
+	int i;
 	struct vsb *vsb;
 
-	/*
-	 * We try to set the default twice, and only failures the
-	 * second time around are fatal.  This allows for trivial
-	 * interdependencies.
-	 */
 	vsb = VSB_new_auto();
 	AN(vsb);
-	for (j = 0; j < 2; j++) {
-		err = 0;
-		for (i = 0; i < nparspec; i++) {
-			pp = parspecs[i];
-			VSB_clear(vsb);
-			VSB_printf(vsb,
-			    "FAILED to set default for param %s = %s\n",
-			    pp->name, pp->def);
-			err = pp->func(vsb, pp, pp->def);
-			AZ(VSB_finish(vsb));
-			if (err && j) {
-				VCLI_Out(cli, "%s", VSB_data(vsb));
-				VCLI_SetResult(cli, CLIS_CANT);
-			}
-		}
+	for (i = 0; i < nparspec; i++) {
+		pp = parspecs[i];
+
+		if (pp->min != NULL)
+			mcf_wash_param(cli, pp, &pp->min, "Minimum", vsb);
+		if (pp->max != NULL)
+			mcf_wash_param(cli, pp, &pp->max, "Maximum", vsb);
+		AN(pp->def);
+		mcf_wash_param(cli, pp, &pp->def, "Default", vsb);
 	}
 	VSB_delete(vsb);
 }
@@ -462,6 +498,10 @@ MCF_DumpRstParam(void)
 		if (pp->units != NULL && *pp->units != '\0')
 			printf("\t* Units: %s\n", pp->units);
 		printf("\t* Default: %s\n", pp->def);
+		if (pp->min != NULL)
+			printf("\t* Minimum: %s\n", pp->min);
+		if (pp->max != NULL)
+			printf("\t* Maximum: %s\n", pp->max);
 		/*
 		 * XXX: we should mark the params with one/two flags
 		 * XXX: that say if ->min/->max are valid, so we
