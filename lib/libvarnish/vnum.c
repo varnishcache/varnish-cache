@@ -113,7 +113,7 @@ VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 #ifdef NUM_C_TEST
 /* Compile with: "cc -o foo -DNUM_C_TEST -I../.. -I../../include num.c -lm" */
 
-struct test_case {
+static struct test_case {
 	const char *str;
 	uintmax_t rel;
 	uintmax_t val;
