@@ -95,12 +95,12 @@ vcc_regexp(struct vcc *tl)
 static const char *
 vcc_sockaddr(struct vcc *tl, const void *sa, unsigned sal)
 {
-	unsigned n = (vsa_suckaddr_len + 7) / 8, len;
+	const int sz = sizeof(unsigned long long);
+	const unsigned n = (vsa_suckaddr_len + sz - 1) / sz;
+	unsigned len;
 	unsigned long long b[n];
 	struct suckaddr *sua;
 	char *p;
-
-	assert(sizeof(unsigned long long) == 8);
 
 	AN(sa);
 	AN(sal);
@@ -113,7 +113,7 @@ vcc_sockaddr(struct vcc *tl, const void *sa, unsigned sal)
 	memcpy(b, sua, vsa_suckaddr_len);
 	free(sua);
 	for (len = 0; len < n; len++)
-		Fh(tl, 0, "%s    0x%016llx", len ? ",\n" : "", b[len]);
+		Fh(tl, 0, "%s    0x%0*llx", len ? ",\n" : "", sz * 2, b[len]);
 	Fh(tl, 0, "\n};\n");
 
 	p = TlAlloc(tl, 40);
