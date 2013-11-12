@@ -77,10 +77,3 @@ extern const struct parspec VSL_parspec[];
 
 /* mgt_pool.c */
 extern const struct parspec WRK_parspec[];
-
-#define MEMPOOL_TEXT							\
-	"The three numbers are:\n"					\
-	"   min_pool -- minimum size of free pool.\n"			\
-	"   max_pool -- maximum size of free pool.\n"			\
-	"   max_age -- max age of free element."
-

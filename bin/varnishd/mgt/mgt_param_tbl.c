@@ -38,6 +38,13 @@
 #include "mgt/mgt_param.h"
 #include "waiter/waiter.h"
 
+
+#define MEMPOOL_TEXT							\
+	"The three numbers are:\n"					\
+	"\tmin_pool\tminimum size of free pool.\n"			\
+	"\tmax_pool\tmaximum size of free pool.\n"			\
+	"\tmax_age\tmax age of free element."
+
 /*
  * Remember to update varnishd.1 whenever you add / remove a parameter or
  * change its default value.

@@ -175,3 +175,6 @@ dist-hook:
 
 distclean-local:
 	rm -rf $(BUILDDIR)
+
+reference/params.rst: $(top_builddir)/bin/varnishd/varnishd
+	$(top_builddir)/bin/varnishd/varnishd -x dumprstparam > reference/params.rst

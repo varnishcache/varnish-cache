@@ -5,965 +5,1010 @@
 
 accept_filter
 ~~~~~~~~~~~~~
-	- Units: bool
-	- Default: on
-	- Flags: must_restart
+	* Units: bool
+	* Default: on
+	* Flags: must_restart
 
-	Enable kernel accept-filters, if supported by the kernel.
+Enable kernel accept-filters, if supported by the kernel.
 
 .. _ref_param_acceptor_sleep_decay:
 
 acceptor_sleep_decay
 ~~~~~~~~~~~~~~~~~~~~
-	- Default: 0.900
-	- Flags: experimental
+	* Default: 0.900
+	* Flags: experimental
 
-	If we run out of resources, such as file descriptors or worker threads, the acceptor will sleep between accepts.
-	This parameter (multiplicatively) reduce the sleep duration for each succesfull accept. (ie: 0.9 = reduce by 10%)
+If we run out of resources, such as file descriptors or worker threads, the acceptor will sleep between accepts.
+This parameter (multiplicatively) reduce the sleep duration for each succesfull accept. (ie: 0.9 = reduce by 10%)
 
 .. _ref_param_acceptor_sleep_incr:
 
 acceptor_sleep_incr
 ~~~~~~~~~~~~~~~~~~~
-	- Units: s
-	- Default: 0.001
-	- Flags: experimental
+	* Units: s
+	* Default: 0.001
+	* Flags: experimental
 
-	If we run out of resources, such as file descriptors or worker threads, the acceptor will sleep between accepts.
-	This parameter control how much longer we sleep, each time we fail to accept a new connection.
+If we run out of resources, such as file descriptors or worker threads, the acceptor will sleep between accepts.
+This parameter control how much longer we sleep, each time we fail to accept a new connection.
 
 .. _ref_param_acceptor_sleep_max:
 
 acceptor_sleep_max
 ~~~~~~~~~~~~~~~~~~
-	- Units: s
-	- Default: 0.050
-	- Flags: experimental
+	* Units: s
+	* Default: 0.050
+	* Flags: experimental
 
-	If we run out of resources, such as file descriptors or worker threads, the acceptor will sleep between accepts.
-	This parameter limits how long it can sleep between attempts to accept new connections.
+If we run out of resources, such as file descriptors or worker threads, the acceptor will sleep between accepts.
+This parameter limits how long it can sleep between attempts to accept new connections.
 
 .. _ref_param_auto_restart:
 
 auto_restart
 ~~~~~~~~~~~~
-	- Units: bool
-	- Default: on
+	* Units: bool
+	* Default: on
 
-	Restart child process automatically if it dies.
+Restart child process automatically if it dies.
 
 .. _ref_param_ban_dups:
 
 ban_dups
 ~~~~~~~~
-	- Units: bool
-	- Default: on
+	* Units: bool
+	* Default: on
 
-	Detect and eliminate duplicate bans.
+Detect and eliminate duplicate bans.
 
 .. _ref_param_ban_lurker_sleep:
 
 ban_lurker_sleep
 ~~~~~~~~~~~~~~~~
-	- Units: s
-	- Default: 0.01
+	* Units: s
+	* Default: 0.01
 
-	How long time does the ban lurker thread sleeps between successful attempts to push the last item up the ban  list.  It always sleeps a second when nothing can be done.
-	A value of zero disables the ban lurker.
+How long time does the ban lurker thread sleeps between successful attempts to push the last item up the ban  list.  It always sleeps a second when nothing can be done.
+A value of zero disables the ban lurker.
 
 .. _ref_param_between_bytes_timeout:
 
 between_bytes_timeout
 ~~~~~~~~~~~~~~~~~~~~~
-	- Units: s
-	- Default: 60
+	* Units: s
+	* Default: 60
 
-	Default timeout between bytes when receiving data from backend. We only wait for this many seconds between bytes before giving up. A value of 0 means it will never time out. VCL can override this default value for each backend request and backend request. This parameter does not apply to pipe.
+Default timeout between bytes when receiving data from backend. We only wait for this many seconds between bytes before giving up. A value of 0 means it will never time out. VCL can override this default value for each backend request and backend request. This parameter does not apply to pipe.
 
 .. _ref_param_busyobj_worker_cache:
 
 busyobj_worker_cache
 ~~~~~~~~~~~~~~~~~~~~
-	- Units: bool
-	- Default: off
+	* Units: bool
+	* Default: off
 
-	Cache free busyobj per worker thread. Disable this if you have very high hitrates and want to save the memory of one busyobj per worker thread. 
+Cache free busyobj per worker thread. Disable this if you have very high hitrates and want to save the memory of one busyobj per worker thread.
 
 .. _ref_param_cc_command:
 
 cc_command
 ~~~~~~~~~~
-	- Default: exec clang -std=gnu99  -Qunused-arguments -D_THREAD_SAFE -pthread -fpic -shared -Wl,-x -o %o %s
-	- Flags: must_reload
+	* Default: exec clang -std=gnu99  -Qunused-arguments -D_THREAD_SAFE -pthread -fpic -shared -Wl,-x -o %o %s
+	* Flags: must_reload
 
-	Command used for compiling the C source code to a dlopen(3) loadable object.  Any occurrence of %s in the string will be replaced with the source file name, and %o will be replaced with the output file name.
+Command used for compiling the C source code to a dlopen(3) loadable object.  Any occurrence of %s in the string will be replaced with the source file name, and %o will be replaced with the output file name.
 
 .. _ref_param_cli_buffer:
 
 cli_buffer
 ~~~~~~~~~~
-	- Units: bytes
-	- Default: 8k
+	* Units: bytes
+	* Default: 8k
 
-	Size of buffer for CLI command input.
-	You may need to increase this if you have big VCL files and use the vcl.inline CLI command.
-	NB: Must be specified with -p to have effect.
+Size of buffer for CLI command input.
+You may need to increase this if you have big VCL files and use the vcl.inline CLI command.
+NB: Must be specified with -p to have effect.
 
 .. _ref_param_cli_limit:
 
 cli_limit
 ~~~~~~~~~
-	- Units: bytes
-	- Default: 48k
+	* Units: bytes
+	* Default: 48k
 
-	Maximum size of CLI response.  If the response exceeds this limit, the reponse code will be 201 instead of 200 and the last line will indicate the truncation.
+Maximum size of CLI response.  If the response exceeds this limit, the reponse code will be 201 instead of 200 and the last line will indicate the truncation.
 
 .. _ref_param_cli_timeout:
 
 cli_timeout
 ~~~~~~~~~~~
-	- Units: seconds
-	- Default: 10
+	* Units: seconds
+	* Default: 10
 
-	Timeout for the childs replies to CLI requests from the mgt_param.
+Timeout for the childs replies to CLI requests from the mgt_param.
 
 .. _ref_param_clock_skew:
 
 clock_skew
 ~~~~~~~~~~
-	- Units: s
-	- Default: 10
+	* Units: s
+	* Default: 10
 
-	How much clockskew we are willing to accept between the backend and our own clock.
+How much clockskew we are willing to accept between the backend and our own clock.
 
 .. _ref_param_connect_timeout:
 
 connect_timeout
 ~~~~~~~~~~~~~~~
-	- Units: s
-	- Default: 3.5
+	* Units: s
+	* Default: 3.5
 
-	Default connection timeout for backend connections. We only try to connect to the backend for this many seconds before giving up. VCL can override this default value for each backend and backend request.
+Default connection timeout for backend connections. We only try to connect to the backend for this many seconds before giving up. VCL can override this default value for each backend and backend request.
 
 .. _ref_param_critbit_cooloff:
 
 critbit_cooloff
 ~~~~~~~~~~~~~~~
-	- Units: s
-	- Default: 180.0
-	- Flags: wizard
+	* Units: s
+	* Default: 180.0
+	* Flags: wizard
 
-	How long time the critbit hasher keeps deleted objheads on the cooloff list.
+How long time the critbit hasher keeps deleted objheads on the cooloff list.
 
 .. _ref_param_debug:
 
 debug
 ~~~~~
-	- Default: none
+	* Default: none
 
-	Enable/Disable various kinds of debugging.
-		none		Disable all debugging
+Enable/Disable various kinds of debugging.
 
-	Use +/- prefix to set/reset individual bits::
+	*none*
+		Disable all debugging
 
-		req_state	VSL Request state engine
-		workspace	VSL Workspace operations
-		waiter		VSL Waiter internals
-		waitinglist	VSL Waitinglist events
-		syncvsl		Make VSL synchronous
-		hashedge	Edge cases in Hash
-		vclrel		Rapid VCL release
-		lurker		VSL Ban lurker
-		esi_chop	Chop ESI fetch to bits
+Use +/- prefix to set/reset individual bits:
+
+	*req_state*
+		VSL Request state engine
+
+	*workspace*
+		VSL Workspace operations
+
+	*waiter*
+		VSL Waiter internals
+
+	*waitinglist*
+		VSL Waitinglist events
+
+	*syncvsl*
+		Make VSL synchronous
+
+	*hashedge*
+		Edge cases in Hash
+
+	*vclrel*
+		Rapid VCL release
+
+	*lurker*
+		VSL Ban lurker
+
+	*esi_chop*
+		Chop ESI fetch to bits
 
 .. _ref_param_default_grace:
 
 default_grace
 ~~~~~~~~~~~~~
-	- Units: seconds
-	- Default: 10
-	- Flags: delayed
+	* Units: seconds
+	* Default: 10
+	* Flags: 
 
-	Default grace period.  We will deliver an object this long after it has expired, provided another thread is attempting to get a new copy.
-	Objects already cached will not be affected by changes made until they are fetched from the backend again.
+Default grace period.  We will deliver an object this long after it has expired, provided another thread is attempting to get a new copy.
 
 .. _ref_param_default_keep:
 
 default_keep
 ~~~~~~~~~~~~
-	- Units: seconds
-	- Default: 0
-	- Flags: delayed
+	* Units: seconds
+	* Default: 0
+	* Flags: 
 
-	Default keep period.  We will keep a useless object around this long, making it available for conditional backend fetches.  That means that the object will be removed from the cache at the end of ttl+grace+keep.
+Default keep period.  We will keep a useless object around this long, making it available for conditional backend fetches.  That means that the object will be removed from the cache at the end of ttl+grace+keep.
 
 .. _ref_param_default_ttl:
 
 default_ttl
 ~~~~~~~~~~~
-	- Units: seconds
-	- Default: 120
+	* Units: seconds
+	* Default: 120
+	* Flags: 
 
-	The TTL assigned to objects if neither the backend nor the VCL code assigns one.
-	Objects already cached will not be affected by changes made until they are fetched from the backend again.
-	To force an immediate effect at the expense of a total flush of the cache use "ban obj.http.date ~ ."
-
-.. _ref_param_expiry_sleep:
-
-expiry_sleep
-~~~~~~~~~~~~
-	- Units: seconds
-	- Default: 1
-
-	How long the expiry thread sleeps when there is nothing for it to do.
+The TTL assigned to objects if neither the backend nor the VCL code assigns one.
 
 .. _ref_param_feature:
 
 feature
 ~~~~~~~
-	- Default: none
+	* Default: none
 
-	Enable/Disable various minor features.
-		none		Disable all features.
+Enable/Disable various minor features.
 
-	Use +/- prefix to enable/disable individual feature::
+	*none*
+		Disable all features.
 
-		short_panic	Short panic message.
-		wait_silo	Wait for persistent silo.
-		no_coredump	No coredumps.
-		esi_ignore_https	Treat HTTPS as HTTP in ESI:includes
-		esi_disable_xml_check	Don't check of body looks like XML
-		esi_ignore_other_elements	Ignore non-esi XML-elements
+Use +/- prefix to enable/disable individual feature:
+
+	*short_panic*
+		Short panic message.
+
+	*wait_silo*
+		Wait for persistent silo.
+
+	*no_coredump*
+		No coredumps.
+
+	*esi_ignore_https*
+		Treat HTTPS as HTTP in ESI:includes
+
+	*esi_disable_xml_check*
+		Don't check of body looks like XML
+
+	*esi_ignore_other_elements*
+		Ignore non-esi XML-elements
+
+	*esi_remove_bom*
+		Remove UTF-8 BOM
 
 .. _ref_param_fetch_chunksize:
 
 fetch_chunksize
 ~~~~~~~~~~~~~~~
-	- Units: bytes
-	- Default: 128k
-	- Flags: experimental
+	* Units: bytes
+	* Default: 128k
+	* Flags: experimental
 
-	The default chunksize used by fetcher. This should be bigger than the majority of objects with short TTLs.
-	Internal limits in the storage_file module makes increases above 128kb a dubious idea.
+The default chunksize used by fetcher. This should be bigger than the majority of objects with short TTLs.
+Internal limits in the storage_file module makes increases above 128kb a dubious idea.
 
 .. _ref_param_fetch_maxchunksize:
 
 fetch_maxchunksize
 ~~~~~~~~~~~~~~~~~~
-	- Units: bytes
-	- Default: 256m
-	- Flags: experimental
+	* Units: bytes
+	* Default: 256m
+	* Flags: experimental
 
-	The maximum chunksize we attempt to allocate from storage. Making this too large may cause delays and storage fragmentation.
+The maximum chunksize we attempt to allocate from storage. Making this too large may cause delays and storage fragmentation.
 
 .. _ref_param_first_byte_timeout:
 
 first_byte_timeout
 ~~~~~~~~~~~~~~~~~~
-	- Units: s
-	- Default: 60
+	* Units: s
+	* Default: 60
 
-	Default timeout for receiving first byte from backend. We only wait for this many seconds for the first byte before giving up. A value of 0 means it will never time out. VCL can override this default value for each backend and backend request. This parameter does not apply to pipe.
+Default timeout for receiving first byte from backend. We only wait for this many seconds for the first byte before giving up. A value of 0 means it will never time out. VCL can override this default value for each backend and backend request. This parameter does not apply to pipe.
 
 .. _ref_param_group:
 
 group
 ~~~~~
-	- Default: nogroup
-	- Flags: must_restart
+	* Default: nogroup
+	* Flags: must_restart
 
-	The unprivileged group to run as.
+The unprivileged group to run as.
 
 .. _ref_param_gzip_buffer:
 
 gzip_buffer
 ~~~~~~~~~~~
-	- Units: bytes
-	- Default: 32k
-	- Flags: experimental
+	* Units: bytes
+	* Default: 32k
+	* Flags: experimental
 
-	Size of malloc buffer used for gzip processing.
-	These buffers are used for in-transit data, for instance gunzip'ed data being sent to a client.Making this space to small results in more overhead, writes to sockets etc, making it too big is probably just a waste of memory.
+Size of malloc buffer used for gzip processing.
+These buffers are used for in-transit data, for instance gunzip'ed data being sent to a client.Making this space to small results in more overhead, writes to sockets etc, making it too big is probably just a waste of memory.
 
 .. _ref_param_gzip_level:
 
 gzip_level
 ~~~~~~~~~~
-	- Default: 6
+	* Default: 6
 
-	Gzip compression level: 0=debug, 1=fast, 9=best
+Gzip compression level: 0=debug, 1=fast, 9=best
 
 .. _ref_param_gzip_memlevel:
 
 gzip_memlevel
 ~~~~~~~~~~~~~
-	- Default: 8
+	* Default: 8
 
-	Gzip memory level 1=slow/least, 9=fast/most compression.
-	Memory impact is 1=1k, 2=2k, ... 9=256k.
+Gzip memory level 1=slow/least, 9=fast/most compression.
+Memory impact is 1=1k, 2=2k, ... 9=256k.
 
 .. _ref_param_http_gzip_support:
 
 http_gzip_support
 ~~~~~~~~~~~~~~~~~
-	- Units: bool
-	- Default: on
+	* Units: bool
+	* Default: on
 
-	Enable gzip support. When enabled Varnish request compressed objects from the backend and store them compressed. If a client does not support gzip encoding Varnish will uncompress compressed objects on demand. Varnish will also rewrite the Accept-Encoding header of clients indicating support for gzip to::
+Enable gzip support. When enabled Varnish request compressed objects from the backend and store them compressed. If a client does not support gzip encoding Varnish will uncompress compressed objects on demand. Varnish will also rewrite the Accept-Encoding header of clients indicating support for gzip to:
+  Accept-Encoding: gzip
 
-	  Accept-Encoding: gzip
-
-	Clients that do not support gzip will have their Accept-Encoding header removed. For more information on how gzip is implemented please see the chapter on gzip in the Varnish reference.
+Clients that do not support gzip will have their Accept-Encoding header removed. For more information on how gzip is implemented please see the chapter on gzip in the Varnish reference.
 
 .. _ref_param_http_max_hdr:
 
 http_max_hdr
 ~~~~~~~~~~~~
-	- Units: header lines
-	- Default: 64
+	* Units: header lines
+	* Default: 64
 
-	Maximum number of HTTP header lines we allow in {req|resp|bereq|beresp}.http (obj.http is autosized to the exact number of headers).
-	Cheap, ~20 bytes, in terms of workspace memory.
-	Note that the first line occupies five header lines.
+Maximum number of HTTP header lines we allow in {req|resp|bereq|beresp}.http (obj.http is autosized to the exact number of headers).
+Cheap, ~20 bytes, in terms of workspace memory.
+Note that the first line occupies five header lines.
 
 .. _ref_param_http_range_support:
 
 http_range_support
 ~~~~~~~~~~~~~~~~~~
-	- Units: bool
-	- Default: on
+	* Units: bool
+	* Default: on
 
-	Enable support for HTTP Range headers.
+Enable support for HTTP Range headers.
 
 .. _ref_param_http_req_hdr_len:
 
 http_req_hdr_len
 ~~~~~~~~~~~~~~~~
-	- Units: bytes
-	- Default: 8k
+	* Units: bytes
+	* Default: 8k
 
-	Maximum length of any HTTP client request header we will allow.  The limit is inclusive its continuation lines.
+Maximum length of any HTTP client request header we will allow.  The limit is inclusive its continuation lines.
 
 .. _ref_param_http_req_size:
 
 http_req_size
 ~~~~~~~~~~~~~
-	- Units: bytes
-	- Default: 32k
+	* Units: bytes
+	* Default: 32k
 
-	Maximum number of bytes of HTTP client request we will deal with.  This is a limit on all bytes up to the double blank line which ends the HTTP request.
-	The memory for the request is allocated from the client workspace (param: workspace_client) and this parameter limits how much of that the request is allowed to take up.
+Maximum number of bytes of HTTP client request we will deal with.  This is a limit on all bytes up to the double blank line which ends the HTTP request.
+The memory for the request is allocated from the client workspace (param: workspace_client) and this parameter limits how much of that the request is allowed to take up.
 
 .. _ref_param_http_resp_hdr_len:
 
 http_resp_hdr_len
 ~~~~~~~~~~~~~~~~~
-	- Units: bytes
-	- Default: 8k
+	* Units: bytes
+	* Default: 8k
 
-	Maximum length of any HTTP backend response header we will allow.  The limit is inclusive its continuation lines.
+Maximum length of any HTTP backend response header we will allow.  The limit is inclusive its continuation lines.
 
 .. _ref_param_http_resp_size:
 
 http_resp_size
 ~~~~~~~~~~~~~~
-	- Units: bytes
-	- Default: 32k
+	* Units: bytes
+	* Default: 32k
 
-	Maximum number of bytes of HTTP backend resonse we will deal with.  This is a limit on all bytes up to the double blank line which ends the HTTP request.
-	The memory for the request is allocated from the worker workspace (param: thread_pool_workspace) and this parameter limits how much of that the request is allowed to take up.
+Maximum number of bytes of HTTP backend resonse we will deal with.  This is a limit on all bytes up to the double blank line which ends the HTTP request.
+The memory for the request is allocated from the worker workspace (param: thread_pool_workspace) and this parameter limits how much of that the request is allowed to take up.
 
 .. _ref_param_idle_send_timeout:
 
 idle_send_timeout
 ~~~~~~~~~~~~~~~~~
-	- Units: seconds
-	- Default: 60
-	- Flags: delayed
+	* Units: seconds
+	* Default: 60
+	* Flags: delayed
 
-	Time to wait with no data sent. If no data has been transmitted in this many
-	seconds the session is closed.
-	See setsockopt(2) under SO_SNDTIMEO for more information.
+Time to wait with no data sent. If no data has been transmitted in this many
+seconds the session is closed.
+See setsockopt(2) under SO_SNDTIMEO for more information.
 
 .. _ref_param_listen_address:
 
 listen_address
 ~~~~~~~~~~~~~~
-	- Default: :80
-	- Flags: must_restart
+	* Default: :80
+	* Flags: must_restart
 
-	Whitespace separated list of network endpoints where Varnish will accept requests.
-	Possible formats: host, host:port, :port
+Whitespace separated list of network endpoints where Varnish will accept requests.
+Possible formats: host, host:port, :port
 
 .. _ref_param_listen_depth:
 
 listen_depth
 ~~~~~~~~~~~~
-	- Units: connections
-	- Default: 1024
-	- Flags: must_restart
+	* Units: connections
+	* Default: 1024
+	* Flags: must_restart
 
-	Listen queue depth.
+Listen queue depth.
 
 .. _ref_param_log_local_address:
 
 log_local_address
 ~~~~~~~~~~~~~~~~~
-	- Units: bool
-	- Default: on
+	* Units: bool
+	* Default: on
 
-	Log the local address on the TCP connection in the SessionOpen VSL record.
-	Disabling this saves a getsockname(2) system call per TCP connection.
+Log the local address on the TCP connection in the SessionOpen VSL record.
+Disabling this saves a getsockname(2) system call per TCP connection.
 
 .. _ref_param_lru_interval:
 
 lru_interval
 ~~~~~~~~~~~~
-	- Units: seconds
-	- Default: 2
-	- Flags: experimental
+	* Units: seconds
+	* Default: 2
+	* Flags: experimental
 
-	Grace period before object moves on LRU list.
-	Objects are only moved to the front of the LRU list if they have not been moved there already inside this timeout period.  This reduces the amount of lock operations necessary for LRU list access.
+Grace period before object moves on LRU list.
+Objects are only moved to the front of the LRU list if they have not been moved there already inside this timeout period.  This reduces the amount of lock operations necessary for LRU list access.
 
 .. _ref_param_max_esi_depth:
 
 max_esi_depth
 ~~~~~~~~~~~~~
-	- Units: levels
-	- Default: 5
+	* Units: levels
+	* Default: 5
 
-	Maximum depth of esi:include processing.
+Maximum depth of esi:include processing.
 
 .. _ref_param_max_restarts:
 
 max_restarts
 ~~~~~~~~~~~~
-	- Units: restarts
-	- Default: 4
+	* Units: restarts
+	* Default: 4
 
-	Upper limit on how many times a request can restart.
-	Be aware that restarts are likely to cause a hit against the backend, so don't increase thoughtlessly.
+Upper limit on how many times a request can restart.
+Be aware that restarts are likely to cause a hit against the backend, so don't increase thoughtlessly.
 
 .. _ref_param_max_retries:
 
 max_retries
 ~~~~~~~~~~~
-	- Units: retries
-	- Default: 4
+	* Units: retries
+	* Default: 4
 
-	Upper limit on how many times a backend fetch can retry.
+Upper limit on how many times a backend fetch can retry.
 
 .. _ref_param_nuke_limit:
 
 nuke_limit
 ~~~~~~~~~~
-	- Units: allocations
-	- Default: 50
-	- Flags: experimental
+	* Units: allocations
+	* Default: 50
+	* Flags: experimental
 
-	Maximum number of objects we attempt to nuke in orderto make space for a object body.
+Maximum number of objects we attempt to nuke in orderto make space for a object body.
 
 .. _ref_param_pcre_match_limit:
 
 pcre_match_limit
 ~~~~~~~~~~~~~~~~
-	- Default: 10000
+	* Default: 10000
 
-	The limit for the  number of internal matching function calls in a pcre_exec() execution.
+The limit for the  number of internal matching function calls in a pcre_exec() execution.
 
 .. _ref_param_pcre_match_limit_recursion:
 
 pcre_match_limit_recursion
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-	- Default: 10000
+	* Default: 10000
 
-	The limit for the  number of internal matching function recursions in a pcre_exec() execution.
+The limit for the  number of internal matching function recursions in a pcre_exec() execution.
 
 .. _ref_param_ping_interval:
 
 ping_interval
 ~~~~~~~~~~~~~
-	- Units: seconds
-	- Default: 3
-	- Flags: must_restart
+	* Units: seconds
+	* Default: 3
+	* Flags: must_restart
 
-	Interval between pings from parent to child.
-	Zero will disable pinging entirely, which makes it possible to attach a debugger to the child.
+Interval between pings from parent to child.
+Zero will disable pinging entirely, which makes it possible to attach a debugger to the child.
 
 .. _ref_param_pipe_timeout:
 
 pipe_timeout
 ~~~~~~~~~~~~
-	- Units: seconds
-	- Default: 60
+	* Units: seconds
+	* Default: 60
 
-	Idle timeout for PIPE sessions. If nothing have been received in either direction for this many seconds, the session is closed.
+Idle timeout for PIPE sessions. If nothing have been received in either direction for this many seconds, the session is closed.
 
 .. _ref_param_pool_req:
 
 pool_req
 ~~~~~~~~
-	- Default: 10,100,10
+	* Default: 10,100,10
 
-	Parameters for per worker pool request memory pool.
-	The three numbers are::
+Parameters for per worker pool request memory pool.
+The three numbers are:
 
-	   min_pool -- minimum size of free pool.
-	   max_pool -- maximum size of free pool.
-	   max_age -- max age of free element.
+	*min_pool*
+		minimum size of free pool.
+
+	*max_pool*
+		maximum size of free pool.
+
+	*max_age*
+		max age of free element.
 
 .. _ref_param_pool_sess:
 
 pool_sess
 ~~~~~~~~~
-	- Default: 10,100,10
+	* Default: 10,100,10
 
-	Parameters for per worker pool session memory pool.
-	The three numbers are::
+Parameters for per worker pool session memory pool.
+The three numbers are:
 
-	   min_pool -- minimum size of free pool.
-	   max_pool -- maximum size of free pool.
-	   max_age -- max age of free element.
+	*min_pool*
+		minimum size of free pool.
+
+	*max_pool*
+		maximum size of free pool.
+
+	*max_age*
+		max age of free element.
 
 .. _ref_param_pool_vbc:
 
 pool_vbc
 ~~~~~~~~
-	- Default: 10,100,10
+	* Default: 10,100,10
 
-	Parameters for backend connection memory pool.
-	The three numbers are::
+Parameters for backend connection memory pool.
+The three numbers are:
 
-	   min_pool -- minimum size of free pool.
-	   max_pool -- maximum size of free pool.
-	   max_age -- max age of free element.
+	*min_pool*
+		minimum size of free pool.
+
+	*max_pool*
+		maximum size of free pool.
+
+	*max_age*
+		max age of free element.
 
 .. _ref_param_pool_vbo:
 
 pool_vbo
 ~~~~~~~~
-	- Default: 10,100,10
+	* Default: 10,100,10
 
-	Parameters for backend object fetch memory pool.
-	The three numbers are::
+Parameters for backend object fetch memory pool.
+The three numbers are:
 
-	   min_pool -- minimum size of free pool.
-	   max_pool -- maximum size of free pool.
-	   max_age -- max age of free element.
+	*min_pool*
+		minimum size of free pool.
+
+	*max_pool*
+		maximum size of free pool.
+
+	*max_age*
+		max age of free element.
 
 .. _ref_param_prefer_ipv6:
 
 prefer_ipv6
 ~~~~~~~~~~~
-	- Units: bool
-	- Default: off
+	* Units: bool
+	* Default: off
 
-	Prefer IPv6 address when connecting to backends which have both IPv4 and IPv6 addresses.
+Prefer IPv6 address when connecting to backends which have both IPv4 and IPv6 addresses.
 
 .. _ref_param_rush_exponent:
 
 rush_exponent
 ~~~~~~~~~~~~~
-	- Units: requests per request
-	- Default: 3
-	- Flags: experimental
+	* Units: requests per request
+	* Default: 3
+	* Flags: experimental
 
-	How many parked request we start for each completed request on the object.
-	NB: Even with the implict delay of delivery, this parameter controls an exponential increase in number of worker threads.
+How many parked request we start for each completed request on the object.
+NB: Even with the implict delay of delivery, this parameter controls an exponential increase in number of worker threads.
 
 .. _ref_param_send_timeout:
 
 send_timeout
 ~~~~~~~~~~~~
-	- Units: seconds
-	- Default: 600
-	- Flags: delayed
+	* Units: seconds
+	* Default: 600
+	* Flags: delayed
 
-	Send timeout for client connections. If the HTTP response hasn't been transmitted in this many
-	seconds the session is closed.
-	See setsockopt(2) under SO_SNDTIMEO for more information.
+Send timeout for client connections. If the HTTP response hasn't been transmitted in this many
+seconds the session is closed.
+See setsockopt(2) under SO_SNDTIMEO for more information.
 
 .. _ref_param_session_max:
 
 session_max
 ~~~~~~~~~~~
-	- Units: sessions
-	- Default: 100000
+	* Units: sessions
+	* Default: 100000
 
-	Maximum number of sessions we will allocate from one pool before just dropping connections.
-	This is mostly an anti-DoS measure, and setting it plenty high should not hurt, as long as you have the memory for it.
+Maximum number of sessions we will allocate from one pool before just dropping connections.
+This is mostly an anti-DoS measure, and setting it plenty high should not hurt, as long as you have the memory for it.
 
 .. _ref_param_shm_reclen:
 
 shm_reclen
 ~~~~~~~~~~
-	- Units: bytes
-	- Default: 255
+	* Units: bytes
+	* Default: 255
 
-	Maximum number of bytes in SHM log record.
-	Maximum is 65535 bytes.
+Maximum number of bytes in SHM log record.
+Maximum is 65535 bytes.
 
 .. _ref_param_shortlived:
 
 shortlived
 ~~~~~~~~~~
-	- Units: s
-	- Default: 10.0
+	* Units: s
+	* Default: 10.0
 
-	Objects created with TTL shorter than this are always put in transient storage.
+Objects created with TTL shorter than this are always put in transient storage.
 
 .. _ref_param_sigsegv_handler:
 
 sigsegv_handler
 ~~~~~~~~~~~~~~~
-	- Units: bool
-	- Default: off
-	- Flags: must_restart
+	* Units: bool
+	* Default: off
+	* Flags: must_restart
 
-	Install a signal handler which tries to dump debug information on segmentation faults.
+Install a signal handler which tries to dump debug information on segmentation faults.
 
 .. _ref_param_syslog_cli_traffic:
 
 syslog_cli_traffic
 ~~~~~~~~~~~~~~~~~~
-	- Units: bool
-	- Default: on
+	* Units: bool
+	* Default: on
 
-	Log all CLI traffic to syslog(LOG_INFO).
+Log all CLI traffic to syslog(LOG_INFO).
 
 .. _ref_param_tcp_keepalive_intvl:
 
 tcp_keepalive_intvl
 ~~~~~~~~~~~~~~~~~~~
-	- Units: seconds
-	- Default: 5
-	- Flags: experimental
+	* Units: seconds
+	* Default: 5
+	* Flags: experimental
 
-	The number of seconds between TCP keep-alive probes. Note that this setting will only take effect when it is less thanthe system default.
+The number of seconds between TCP keep-alive probes. Note that this setting will only take effect when it is less thanthe system default.
 
 .. _ref_param_tcp_keepalive_probes:
 
 tcp_keepalive_probes
 ~~~~~~~~~~~~~~~~~~~~
-	- Units: probes
-	- Default: 5
-	- Flags: experimental
+	* Units: probes
+	* Default: 5
+	* Flags: experimental
 
-	The maximum number of TCP keep-alive probes to send before giving up and killing the connection if no response is obtained from the other end. Note that this setting will only take effect when it is less than the system default.
+The maximum number of TCP keep-alive probes to send before giving up and killing the connection if no response is obtained from the other end. Note that this setting will only take effect when it is less than the system default.
 
 .. _ref_param_tcp_keepalive_time:
 
 tcp_keepalive_time
 ~~~~~~~~~~~~~~~~~~
-	- Units: seconds
-	- Default: 600
-	- Flags: experimental
+	* Units: seconds
+	* Default: 600
+	* Flags: experimental
 
-	The number of seconds a connection needs to be idle before TCP begins sending out keep-alive probes. Note that this setting will only take effect when it is less than the system default.
+The number of seconds a connection needs to be idle before TCP begins sending out keep-alive probes. Note that this setting will only take effect when it is less than the system default.
 
 .. _ref_param_thread_pool_add_delay:
 
 thread_pool_add_delay
 ~~~~~~~~~~~~~~~~~~~~~
-	- Units: seconds
-	- Default: 0
-	- Flags: experimental
+	* Units: seconds
+	* Default: 0
+	* Flags: experimental
 
-	Wait at least this long after creating a thread.
+Wait at least this long after creating a thread.
 
-	Some (buggy) systems may need a short (sub-second) delay between creating threads.
-	Set this to a few milliseconds if you see the 'threads_failed' counter grow too much.
+Some (buggy) systems may need a short (sub-second) delay between creating threads.
+Set this to a few milliseconds if you see the 'threads_failed' counter grow too much.
 
-	Setting this too high results in insuffient worker threads.
+Setting this too high results in insuffient worker threads.
 
 .. _ref_param_thread_pool_destroy_delay:
 
 thread_pool_destroy_delay
 ~~~~~~~~~~~~~~~~~~~~~~~~~
-	- Units: seconds
-	- Default: 1
-	- Flags: delayed, experimental
+	* Units: seconds
+	* Default: 1
+	* Flags: delayed, experimental
 
-	Wait this long after destroying a thread.
+Wait this long after destroying a thread.
 
-	This controls the decay of thread pools when idle(-ish).
+This controls the decay of thread pools when idle(-ish).
 
-	Minimum is 0.01 second.
+Minimum is 0.01 second.
 
 .. _ref_param_thread_pool_fail_delay:
 
 thread_pool_fail_delay
 ~~~~~~~~~~~~~~~~~~~~~~
-	- Units: seconds
-	- Default: 0.2
-	- Flags: experimental
+	* Units: seconds
+	* Default: 0.2
+	* Flags: experimental
 
-	Wait at least this long after a failed thread creation before trying to create another thread.
+Wait at least this long after a failed thread creation before trying to create another thread.
 
-	Failure to create a worker thread is often a sign that  the end is near, because the process is running out of some resource.  This delay tries to not rush the end on needlessly.
+Failure to create a worker thread is often a sign that  the end is near, because the process is running out of some resource.  This delay tries to not rush the end on needlessly.
 
-	If thread creation failures are a problem, check that thread_pool_max is not too high.
+If thread creation failures are a problem, check that thread_pool_max is not too high.
 
-	It may also help to increase thread_pool_timeout and thread_pool_min, to reduce the rate at which treads are destroyed and later recreated.
+It may also help to increase thread_pool_timeout and thread_pool_min, to reduce the rate at which treads are destroyed and later recreated.
 
 .. _ref_param_thread_pool_max:
 
 thread_pool_max
 ~~~~~~~~~~~~~~~
-	- Units: threads
-	- Default: 5000
-	- Flags: delayed
+	* Units: threads
+	* Default: 5000
+	* Flags: delayed
 
-	The maximum number of worker threads in each pool.
+The maximum number of worker threads in each pool.
 
-	Do not set this higher than you have to, since excess worker threads soak up RAM and CPU and generally just get in the way of getting work done.
+Do not set this higher than you have to, since excess worker threads soak up RAM and CPU and generally just get in the way of getting work done.
 
-	Minimum is 10 threads.
+Minimum is 10 threads.
 
 .. _ref_param_thread_pool_min:
 
 thread_pool_min
 ~~~~~~~~~~~~~~~
-	- Units: threads
-	- Default: 100
-	- Flags: delayed
+	* Units: threads
+	* Default: 100
+	* Flags: delayed
 
-	The minimum number of worker threads in each pool.
+The minimum number of worker threads in each pool.
 
-	Increasing this may help ramp up faster from low load situations or when threads have expired.
+Increasing this may help ramp up faster from low load situations or when threads have expired.
 
-	Minimum is 10 threads.
+Minimum is 10 threads.
 
 .. _ref_param_thread_pool_stack:
 
 thread_pool_stack
 ~~~~~~~~~~~~~~~~~
-	- Units: bytes
-	- Default: 48k
-	- Flags: experimental
+	* Units: bytes
+	* Default: 48k
+	* Flags: experimental
 
-	Worker thread stack size.
-	This is likely rounded up to a multiple of 4k by the kernel.
-	The kernel/OS has a lower limit which will be enforced.
+Worker thread stack size.
+This is likely rounded up to a multiple of 4k by the kernel.
+The kernel/OS has a lower limit which will be enforced.
 
 .. _ref_param_thread_pool_timeout:
 
 thread_pool_timeout
 ~~~~~~~~~~~~~~~~~~~
-	- Units: seconds
-	- Default: 300
-	- Flags: delayed, experimental
+	* Units: seconds
+	* Default: 300
+	* Flags: delayed, experimental
 
-	Thread idle threshold.
+Thread idle threshold.
 
-	Threads in excess of thread_pool_min, which have been idle for at least this long, will be destroyed.
+Threads in excess of thread_pool_min, which have been idle for at least this long, will be destroyed.
 
-	Minimum is 10 seconds.
+Minimum is 10 seconds.
 
 .. _ref_param_thread_pools:
 
 thread_pools
 ~~~~~~~~~~~~
-	- Units: pools
-	- Default: 2
-	- Flags: delayed, experimental
+	* Units: pools
+	* Default: 2
+	* Flags: delayed, experimental
 
-	Number of worker thread pools.
+Number of worker thread pools.
 
-	Increasing number of worker pools decreases lock contention.
+Increasing number of worker pools decreases lock contention.
 
-	Too many pools waste CPU and RAM resources, and more than one pool for each CPU is probably detrimal to performance.
+Too many pools waste CPU and RAM resources, and more than one pool for each CPU is probably detrimal to performance.
 
-	Can be increased on the fly, but decreases require a restart to take effect.
+Can be increased on the fly, but decreases require a restart to take effect.
 
 .. _ref_param_thread_queue_limit:
 
 thread_queue_limit
 ~~~~~~~~~~~~~~~~~~
-	- Default: 20
-	- Flags: experimental
+	* Default: 20
+	* Flags: experimental
 
-	Permitted queue length per thread-pool.
+Permitted queue length per thread-pool.
 
-	This sets the number of requests we will queue, waiting for an available thread.  Above this limit sessions will be dropped instead of queued.
+This sets the number of requests we will queue, waiting for an available thread.  Above this limit sessions will be dropped instead of queued.
 
 .. _ref_param_thread_stats_rate:
 
 thread_stats_rate
 ~~~~~~~~~~~~~~~~~
-	- Units: requests
-	- Default: 10
-	- Flags: experimental
+	* Units: requests
+	* Default: 10
+	* Flags: experimental
 
-	Worker threads accumulate statistics, and dump these into the global stats counters if the lock is free when they finish a request.
-	This parameters defines the maximum number of requests a worker thread may handle, before it is forced to dump its accumulated stats into the global counters.
+Worker threads accumulate statistics, and dump these into the global stats counters if the lock is free when they finish a request.
+This parameters defines the maximum number of requests a worker thread may handle, before it is forced to dump its accumulated stats into the global counters.
 
 .. _ref_param_timeout_idle:
 
 timeout_idle
 ~~~~~~~~~~~~
-	- Units: seconds
-	- Default: 5
+	* Units: seconds
+	* Default: 5
 
-	Idle timeout for client connections.
-	A connection is considered idle, until we receive a non-white-space character on it.
+Idle timeout for client connections.
+A connection is considered idle, until we receive a non-white-space character on it.
 
 .. _ref_param_timeout_linger:
 
 timeout_linger
 ~~~~~~~~~~~~~~
-	- Units: seconds
-	- Default: 0.050
-	- Flags: experimental
+	* Units: seconds
+	* Default: 0.050
+	* Flags: experimental
 
-	How long time the workerthread lingers on an idle session before handing it over to the waiter.
-	When sessions are reused, as much as half of all reuses happen within the first 100 msec of the previous request completing.
-	Setting this too high results in worker threads not doing anything for their keep, setting it too low just means that more sessions take a detour around the waiter.
+How long time the workerthread lingers on an idle session before handing it over to the waiter.
+When sessions are reused, as much as half of all reuses happen within the first 100 msec of the previous request completing.
+Setting this too high results in worker threads not doing anything for their keep, setting it too low just means that more sessions take a detour around the waiter.
 
 .. _ref_param_timeout_req:
 
 timeout_req
 ~~~~~~~~~~~
-	- Units: seconds
-	- Default: 2
+	* Units: seconds
+	* Default: 2
 
-	Max time to receive clients request header, measured from first non-white-space character to double CRNL.
+Max time to receive clients request header, measured from first non-white-space character to double CRNL.
 
 .. _ref_param_user:
 
 user
 ~~~~
-	- Default: nobody
-	- Flags: must_restart
+	* Default: nobody
+	* Flags: must_restart
 
-	The unprivileged user to run as.
+The unprivileged user to run as.
 
 .. _ref_param_vcc_allow_inline_c:
 
 vcc_allow_inline_c
 ~~~~~~~~~~~~~~~~~~
-	- Units: bool
-	- Default: off
+	* Units: bool
+	* Default: off
 
-	Allow inline C code in VCL.
+Allow inline C code in VCL.
 
 .. _ref_param_vcc_err_unref:
 
 vcc_err_unref
 ~~~~~~~~~~~~~
-	- Units: bool
-	- Default: on
+	* Units: bool
+	* Default: on
 
-	Unreferenced VCL objects result in error.
+Unreferenced VCL objects result in error.
 
 .. _ref_param_vcc_unsafe_path:
 
 vcc_unsafe_path
 ~~~~~~~~~~~~~~~
-	- Units: bool
-	- Default: on
+	* Units: bool
+	* Default: on
 
-	Allow '/' in vmod & include paths.
-	Allow 'import ... from ...'.
+Allow '/' in vmod & include paths.
+Allow 'import ... from ...'.
 
 .. _ref_param_vcl_dir:
 
 vcl_dir
 ~~~~~~~
-	- Default: /opt/varnish/etc/varnish
+	* Default: /opt/varnish/etc/varnish
 
-	Directory from which relative VCL filenames (vcl.load and include) are opened.
+Directory from which relative VCL filenames (vcl.load and include) are opened.
 
 .. _ref_param_vmod_dir:
 
 vmod_dir
 ~~~~~~~~
-	- Default: /opt/varnish/lib/varnish/vmods
+	* Default: /opt/varnish/lib/varnish/vmods
 
-	Directory where VCL modules are to be found.
+Directory where VCL modules are to be found.
 
 .. _ref_param_vsl_buffer:
 
 vsl_buffer
 ~~~~~~~~~~
-	- Units: bytes
-	- Default: 4k
+	* Units: bytes
+	* Default: 4k
 
-	Bytes of (req-/backend-)workspace dedicated to buffering VSL records.
-	At a bare minimum, this must be longer than the longest HTTP header to be logged.
-	Setting this too high costs memory, setting it too low will cause more VSL flushes and likely increase lock-contention on the VSL mutex.
-	Minimum is 1k bytes.
+Bytes of (req-/backend-)workspace dedicated to buffering VSL records.
+At a bare minimum, this must be longer than the longest HTTP header to be logged.
+Setting this too high costs memory, setting it too low will cause more VSL flushes and likely increase lock-contention on the VSL mutex.
+Minimum is 1k bytes.
 
 .. _ref_param_vsl_mask:
 
 vsl_mask
 ~~~~~~~~
-	- Default: default
+	* Default: default
 
-	Mask individual VSL messages from being logged.
-		default	Set default value
+Mask individual VSL messages from being logged.
 
-	Use +/- prefixe in front of VSL tag name, to mask/unmask individual VSL messages.
+	*default*
+		Set default value
+
+Use +/- prefixe in front of VSL tag name, to mask/unmask individual VSL messages.
 
 .. _ref_param_vsl_space:
 
 vsl_space
 ~~~~~~~~~
-	- Units: bytes
-	- Default: 80M
-	- Flags: must_restart
+	* Units: bytes
+	* Default: 80M
+	* Flags: must_restart
 
-	The amount of space to allocate for the VSL fifo buffer in the VSM memory segment.  If you make this too small, varnish{ncsa|log} etc will not be able to keep up.  Making it too large just costs memory resources.
+The amount of space to allocate for the VSL fifo buffer in the VSM memory segment.  If you make this too small, varnish{ncsa|log} etc will not be able to keep up.  Making it too large just costs memory resources.
 
 .. _ref_param_vsm_space:
 
 vsm_space
 ~~~~~~~~~
-	- Units: bytes
-	- Default: 1M
-	- Flags: must_restart
+	* Units: bytes
+	* Default: 1M
+	* Flags: must_restart
 
-	The amount of space to allocate for stats counters in the VSM memory segment.  If you make this too small, some counters will be invisible.  Making it too large just costs memory resources.
+The amount of space to allocate for stats counters in the VSM memory segment.  If you make this too small, some counters will be invisible.  Making it too large just costs memory resources.
 
 .. _ref_param_waiter:
 
 waiter
 ~~~~~~
-	- Default: platform dependent
-	- Flags: must_restart, wizard
+	* Default: platform dependent
+	* Flags: must_restart, wizard
 
-	Select the waiter kernel interface.
+Select the waiter kernel interface.
 
 .. _ref_param_workspace_backend:
 
 workspace_backend
 ~~~~~~~~~~~~~~~~~
-	- Units: bytes
-	- Default: 64k
-	- Flags: delayed
+	* Units: bytes
+	* Default: 64k
+	* Flags: delayed
 
-	Bytes of HTTP protocol workspace for backend HTTP req/resp.  If larger than 4k, use a multiple of 4k for VM efficiency.
+Bytes of HTTP protocol workspace for backend HTTP req/resp.  If larger than 4k, use a multiple of 4k for VM efficiency.
 
 .. _ref_param_workspace_client:
 
 workspace_client
 ~~~~~~~~~~~~~~~~
-	- Units: bytes
-	- Default: 64k
-	- Flags: delayed
+	* Units: bytes
+	* Default: 64k
+	* Flags: delayed
 
-	Bytes of HTTP protocol workspace for clients HTTP req/resp.  If larger than 4k, use a multiple of 4k for VM efficiency.
+Bytes of HTTP protocol workspace for clients HTTP req/resp.  If larger than 4k, use a multiple of 4k for VM efficiency.
 
 .. _ref_param_workspace_thread:
 
 workspace_thread
 ~~~~~~~~~~~~~~~~
-	- Units: bytes
-	- Default: 2048
-	- Flags: delayed
+	* Units: bytes
+	* Default: 2048
+	* Flags: delayed
 
-	Bytes of auxillary workspace per thread.
-	This workspace is used for certain temporary data structures during the operation of a worker thread.
-	One use is for the io-vectors for writing requests and responses to sockets, having too little space will result in more writev(2) system calls, having too much just wastes the space.
+Bytes of auxillary workspace per thread.
+This workspace is used for certain temporary data structures during the operation of a worker thread.
+One use is for the io-vectors for writing requests and responses to sockets, having too little space will result in more writev(2) system calls, having too much just wastes the space.
 
