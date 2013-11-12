@@ -8,6 +8,7 @@
 
 #define MAXBITS 15
 
+extern const char inflate_copyright[];
 const char inflate_copyright[] =
    " inflate 1.2.8 Copyright 1995-2013 Mark Adler ";
 /*
