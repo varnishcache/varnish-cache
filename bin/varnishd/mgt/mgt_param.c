@@ -330,14 +330,14 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 		*heritage.param = mgt_param;
 
 	if (cli->result != CLIS_OK) {
-		VCLI_Out(cli, "(attempting to set param %s to %s)\n",
+		VCLI_Out(cli, "\n(attempting to set param %s to %s)",
 		    pp->name, val);
 	} else if (child_pid >= 0 && pp->flags & MUST_RESTART) {
-		VCLI_Out(cli, "Change will take effect"
-		    " when child is restarted");
+		VCLI_Out(cli,
+		    "\nChange will take effect when child is restarted");
 	} else if (pp->flags & MUST_RELOAD) {
-		VCLI_Out(cli, "Change will take effect"
-		    " when VCL script is reloaded");
+		VCLI_Out(cli,
+		    "\nChange will take effect when VCL script is reloaded");
 	}
 }
 

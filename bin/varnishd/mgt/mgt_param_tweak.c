@@ -93,12 +93,12 @@ tweak_generic_double(struct vsb *vsb, volatile double *dest,
 		}
 		if (min != NULL && u < minv) {
 			VSB_printf(vsb,
-			    "Timeout must be greater or equal to %s\n", min);
+			    "Must be greater or equal to %s\n", min);
 			return (-1);
 		}
 		if (max != NULL && u > maxv) {
 			VSB_printf(vsb,
-			    "Timeout must be less than or equal to %s\n", max);
+			    "Must be less than or equal to %s\n", max);
 			return (-1);
 		}
 		*dest = u;

@@ -1,0 +1,28 @@
+varnishtest "param edge cases"
+
+varnish v1 -vcl {backend foo {.host = "127.0.0.1";}} -start
+
+
+varnish v1 -clierr "106" "param.set default_ttl -1"
+varnish v1 -clierr "106" "param.set acceptor_sleep_max 20"
+varnish v1 -clierr "200" "param.set prefer_ipv6 off"
+varnish v1 -clierr "200" "param.set prefer_ipv6 no"
+varnish v1 -clierr "200" "param.set prefer_ipv6 disable"
+varnish v1 -clierr "200" "param.set prefer_ipv6 false"
+varnish v1 -clierr "200" "param.set prefer_ipv6 on"
+varnish v1 -clierr "200" "param.set prefer_ipv6 yes"
+varnish v1 -clierr "200" "param.set prefer_ipv6 enable"
+varnish v1 -clierr "200" "param.set prefer_ipv6 true"
+varnish v1 -clierr "106" "param.set prefer_ipv6 foobar"
+varnish v1 -clierr "106" "param.set http_max_hdr 0"
+varnish v1 -clierr "106" "param.set http_max_hdr 1000000"
+varnish v1 -clierr "106" "param.set workspace_thread 1b"
+varnish v1 -clierr "106" "param.set workspace_thread 1b"
+varnish v1 -clierr "106" "param.set workspace_thread 1x"
+varnish v1 -clierr "106" "param.set workspace_thread x"
+varnish v1 -clierr "106" "param.set user ///"
+varnish v1 -clierr "106" "param.set user ///"
+varnish v1 -clierr "106" {param.set listen_address ""}
+varnish v1 -clierr "106" {param.set listen_address ",,"}
+varnish v1 -clierr "106" {param.set listen_address "\""}
+varnish v1 -clierr "106" {param.set pool_sess "\""}
