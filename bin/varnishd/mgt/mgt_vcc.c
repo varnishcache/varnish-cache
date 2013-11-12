@@ -431,7 +431,7 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, char *vcl, int C_flag)
 /*--------------------------------------------------------------------*/
 
 int
-mgt_has_vcl()
+mgt_has_vcl(void)
 {
 
 	return (!VTAILQ_EMPTY(&vclhead));

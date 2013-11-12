@@ -455,7 +455,7 @@ static struct cli_proto vcl_cmds[] = {
 };
 
 void
-VCL_Init()
+VCL_Init(void)
 {
 
 	CLI_AddFuncs(vcl_cmds);
