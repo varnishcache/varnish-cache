@@ -10,7 +10,6 @@ varnish v1 -cliok "param.set sigsegv_handler on"
 varnish v1 -vcl+backend {
 	C{
 #include <signal.h>
-#include <stdlib.h>
 #include <unistd.h>
 }C
 	sub vcl_recv { C{ raise(SIGSEGV); sleep(2); }C }
