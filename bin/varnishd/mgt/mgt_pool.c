@@ -43,58 +43,48 @@
 #include "config.h"
 
 #include <stdio.h>
-#include <string.h>
-#include <unistd.h>
 
 #include "mgt/mgt.h"
 #include "common/params.h"
 
 #include "mgt/mgt_param.h"
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * The min/max values automatically update the opposites appropriate
+ * limit, so they don't end up crossing.
+ */
+
+static char min_val[20];
+static char max_val[20];
 
 static int
 tweak_thread_pool_min(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
+	struct vsb v2;
 
-	return (tweak_generic_uint(vsb, &mgt_param.wthread_min, arg,
-	    // par->min, mgt_param.wthread_max));
-	    par->min, NULL));
-}
-
-/*--------------------------------------------------------------------
- * This is utterly ridiculous:  POSIX does not guarantee that the
- * minimum thread stack size is a compile time constant.
- * XXX: "32bit" is a magic marker for 32bit systems.
- */
-
-static int
-tweak_stack_size(struct vsb *vsb, const struct parspec *par,
-    const char *arg)
-{
-	ssize_t low;
-
-	low = sysconf(_SC_THREAD_STACK_MIN);
-
-	if (tweak_bytes(vsb, par, arg))
+	if (tweak_generic_uint(vsb, par->priv, arg, par->min, par->max))
 		return (-1);
-	if (mgt_param.wthread_stacksize < low)
-		mgt_param.wthread_stacksize = low;
+	AN(VSB_new(&v2, min_val, sizeof min_val, 0));
+	AZ(tweak_generic_uint(&v2, &mgt_param.wthread_min, NULL, NULL, NULL));
+	AZ(VSB_finish(&v2));
+	MCF_SetMinimum("thread_pool_max", min_val);
 	return (0);
 }
-
-/*--------------------------------------------------------------------*/
 
 static int
 tweak_thread_pool_max(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
+	struct vsb v2;
 
-	(void)par;
-	return (tweak_generic_uint(vsb, &mgt_param.wthread_max, arg,
-	    //mgt_param.wthread_min, NULL));
-	    NULL, NULL));
+	if (tweak_generic_uint(vsb, par->priv, arg, par->min, par->max))
+		return (-1);
+	AN(VSB_new(&v2, max_val, sizeof max_val, 0));
+	AZ(tweak_generic_uint(&v2, &mgt_param.wthread_max, NULL, NULL, NULL));
+	AZ(VSB_finish(&v2));
+	MCF_SetMaximum("thread_pool_min", max_val);
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -114,8 +104,8 @@ struct parspec WRK_parspec[] = {
 		"restart to take effect.",
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"2", "pools" },
-	{ "thread_pool_max", tweak_thread_pool_max, NULL,
-		"10", NULL,
+	{ "thread_pool_max", tweak_thread_pool_max, &mgt_param.wthread_max,
+		NULL, NULL,
 		"The maximum number of worker threads in each pool.\n"
 		"\n"
 		"Do not set this higher than you have to, since excess "
@@ -125,8 +115,8 @@ struct parspec WRK_parspec[] = {
 		"Minimum is 10 threads.",
 		DELAYED_EFFECT,
 		"5000", "threads" },
-	{ "thread_pool_min", tweak_thread_pool_min, NULL,
-		"10", NULL,
+	{ "thread_pool_min", tweak_thread_pool_min, &mgt_param.wthread_min,
+		NULL, NULL,
 		"The minimum number of worker threads in each pool.\n"
 		"\n"
 		"Increasing this may help ramp up faster from low load "
@@ -218,11 +208,11 @@ struct parspec WRK_parspec[] = {
 		EXPERIMENTAL,
 		"3", "requests per request" },
 	{ "thread_pool_stack",
-		tweak_stack_size, &mgt_param.wthread_stacksize,
-		"0", NULL,
+		tweak_bytes, &mgt_param.wthread_stacksize,
+		NULL, NULL,
 		"Worker thread stack size.\n"
-		"This is likely rounded up to a multiple of 4k by the kernel.\n"
-		"The kernel/OS has a lower limit which will be enforced.",
+		"This will likely be rounded up to a multiple of 4k"
+		" (or whatever the page_size might be) by the kernel.",
 		EXPERIMENTAL,
 		"48k", "bytes" },
 	{ NULL, NULL, NULL }

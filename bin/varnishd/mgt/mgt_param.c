@@ -30,18 +30,15 @@
 #include "config.h"
 
 #include <ctype.h>
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "mgt/mgt.h"
 #include "common/heritage.h"
 #include "common/params.h"
 
 #include "mgt/mgt_param.h"
-#include "waiter/waiter.h"
 #include "vav.h"
 #include "vcli.h"
 #include "vcli_common.h"
@@ -468,13 +465,36 @@ MCF_CollectParams(void)
 /*--------------------------------------------------------------------*/
 
 void
-MCF_SetDefault(const char *param, const char *def)
+MCF_SetDefault(const char *param, const char *new_def)
 {
 	struct parspec *pp;
 
 	pp = mcf_findpar(param, NULL);
 	AN(pp);
-	pp->def = def;
+	pp->def = new_def;
+	AN(pp->def);
+}
+
+void
+MCF_SetMinimum(const char *param, const char *new_min)
+{
+	struct parspec *pp;
+
+	pp = mcf_findpar(param, NULL);
+	AN(pp);
+	pp->min = new_min;
+	AN(pp->min);
+}
+
+void
+MCF_SetMaximum(const char *param, const char *new_max)
+{
+	struct parspec *pp;
+
+	pp = mcf_findpar(param, NULL);
+	AN(pp);
+	pp->max = new_max;
+	AN(pp->max);
 }
 
 /*--------------------------------------------------------------------*/

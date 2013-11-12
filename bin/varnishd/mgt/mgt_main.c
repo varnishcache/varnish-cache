@@ -339,6 +339,42 @@ make_secret(const char *dirname)
 
 /*--------------------------------------------------------------------*/
 
+static char stackmin[20];
+
+static void
+init_params(struct cli *cli)
+{
+	ssize_t low;
+
+	MCF_CollectParams();
+
+	/* If we have nobody/nogroup, use them as defaults */
+	if (getpwnam("nobody") != NULL)
+		MCF_SetDefault("user", "nobody");
+	if (getgrnam("nogroup") != NULL)
+		MCF_SetDefault("group", "nogroup");
+
+	if (sizeof(void *) < 8) {
+		/*
+		 * Adjust default parameters for 32 bit systems to conserve
+		 * VM space.
+		 */
+		MCF_SetDefault("workspace_client", "24k");
+		MCF_SetDefault("workspace_backend", "16k");
+		MCF_SetDefault("http_resp_size", "8k");
+		MCF_SetDefault("http_req_size", "12k");
+		MCF_SetDefault("gzip_buffer", "4k");
+	}
+
+	low = sysconf(_SC_THREAD_STACK_MIN);
+	bprintf(stackmin, "%jd", (intmax_t)low);
+	MCF_SetMinimum("thread_pool_stack", stackmin);
+
+	MCF_InitParams(cli);
+}
+
+/*--------------------------------------------------------------------*/
+
 int
 main(int argc, char * const *argv)
 {
@@ -388,6 +424,7 @@ main(int argc, char * const *argv)
 	/* for ASSERT_MGT() */
 	mgt_pid = getpid();
 
+
 	/*
 	 * Run in UTC timezone, on the off-chance that this operating
 	 * system does not have a timegm() function, and translates
@@ -415,28 +452,7 @@ main(int argc, char * const *argv)
 
 	VTAILQ_INIT(&heritage.socks);
 
-	MCF_CollectParams();
-
-	/* If we have nobody/nogroup, use them as defaults */
-	if (getpwnam("nobody") != NULL)
-		MCF_SetDefault("user", "nobody");
-	if (getgrnam("nogroup") != NULL)
-		MCF_SetDefault("group", "nogroup");
-
-	if (sizeof(void *) < 8) {
-		/*
-		 * Adjust default parameters for 32 bit systems to conserve
-		 * VM space.
-		 */
-		MCF_SetDefault("workspace_client", "24k");
-		MCF_SetDefault("workspace_backend", "16k");
-		MCF_SetDefault("http_resp_size", "8k");
-		MCF_SetDefault("http_req_size", "12k");
-		MCF_SetDefault("gzip_buffer", "4k");
-	}
-
-	MCF_InitParams(cli);
-
+	init_params(cli);
 	cli_check(cli);
 
 	while ((o = getopt(argc, argv,

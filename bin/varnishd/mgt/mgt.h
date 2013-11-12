@@ -75,6 +75,8 @@ const void *pick(const struct choice *cp, const char *which, const char *kind);
 void MCF_InitParams(struct cli *);
 void MCF_CollectParams(void);
 void MCF_SetDefault(const char *param, const char *def);
+void MCF_SetMinimum(const char *param, const char *def);
+void MCF_SetMaximum(const char *param, const char *def);
 void MCF_ParamSet(struct cli *, const char *param, const char *val);
 void MCF_ParamProtect(struct cli *, const char *arg);
 void MCF_DumpRstParam(void);

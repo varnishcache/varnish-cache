@@ -36,7 +36,6 @@
 #include <limits.h>
 #include <math.h>
 #include <pwd.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -48,13 +47,8 @@
 #include "mgt/mgt_param.h"
 #include "waiter/waiter.h"
 #include "vav.h"
-#include "vcli.h"
-#include "vcli_common.h"
-#include "vcli_priv.h"
 #include "vnum.h"
 #include "vss.h"
-
-#include "mgt_cli.h"
 
 /*--------------------------------------------------------------------
  * Generic handling of double typed parameters
@@ -156,10 +150,6 @@ int
 tweak_bool(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *dest;
-	int mode = 0;
-
-	if (!strcmp(par->def, "off") || !strcmp(par->def, "on"))
-		mode = 1;
 
 	dest = par->priv;
 	if (arg != NULL) {
@@ -180,16 +170,11 @@ tweak_bool(struct vsb *vsb, const struct parspec *par, const char *arg)
 		else if (!strcasecmp(arg, "true"))
 			*dest = 1;
 		else {
-			VSB_printf(vsb, "%s",
-			    mode ?
-				"use \"on\" or \"off\"\n" :
-				"use \"true\" or \"false\"\n");
+			VSB_printf(vsb, "use \"on\" or \"off\"\n");
 			return (-1);
 		}
-	} else if (mode) {
-		VSB_printf(vsb, "%s", *dest ? "on" : "off");
 	} else {
-		VSB_printf(vsb, "%s", *dest ? "true" : "false");
+		VSB_printf(vsb, "%s", *dest ? "on" : "off");
 	}
 	return (0);
 }
