@@ -92,7 +92,7 @@ BUILT_SOURCES = vcs_version.h vmod_abi.h
 MAINTAINERCLEANFILES = vcs_version.h 
 vcs_version.h: FORCE
 	@echo "PHK HACK BEGIN"
-	-@grep '^[ 	]*#[ 	]*define $(top_srcdir)/config.h
+	-@grep '^[ 	]*#[ 	]*define' $(top_srcdir)/config.h
 	@echo "PHK HACK END"
 	@if [ -d "$(top_srcdir)/.git" ]; then \
 		V="$$(git show -s --pretty=format:%h)" \
