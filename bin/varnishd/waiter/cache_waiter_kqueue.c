@@ -170,7 +170,12 @@ vwk_thread(void *priv)
 		dotimer = 0;
 		n = kevent(vwk->kq, vwk->ki, vwk->nki, ke, NKEV, NULL);
 		now = VTIM_real();
-		assert(n >= 1 && n <= NKEV);
+		assert(n <= NKEV);
+		if (n == 0) {
+			/* This happens on OSX in m00011.vtc */
+			dotimer = 1;
+			(void)usleep(10000);
+		}
 		vwk->nki = 0;
 		for (kp = ke, j = 0; j < n; j++, kp++) {
 			if (kp->filter == EVFILT_TIMER) {
