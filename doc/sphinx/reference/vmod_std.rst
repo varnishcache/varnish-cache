@@ -15,14 +15,21 @@ Varnish Standard Module
 SYNOPSIS
 ========
 
-import std
+import std [from "path"] ;
 
 DESCRIPTION
 ===========
 
-The Varnish standard module contains useful, generic function that
-don't quite fit in the VCL core, but are still considered very useful
-to a broad audience.
+Vmod_std contains basic functions which are part and parcel of Varnish,
+but which for reasons of architecture fit better in a VMOD.
+
+One specific class of functions in vmod_std is the conversions functions
+which all have the form::
+
+	TYPE type(STRING, TYPE)
+
+These functions attempt to convert STRING to the TYPE, and if that fails,
+they return the second argument, which must have the given TYPE.
 
 FUNCTIONS
 =========
@@ -31,9 +38,7 @@ toupper
 -------
 
 Prototype
-	toupper(STRING s)
-Return value
-	String
+	STRING toupper(STRING s)
 Description
 	Converts the string *s* to upper case.
 Example
@@ -42,9 +47,7 @@ Example
 tolower
 -------
 Prototype
-	tolower(STRING s)
-Return value
-	String
+	STRING tolower(STRING s)
 Description
 	Converts the string *s* to lower case.
 Example
@@ -53,9 +56,7 @@ Example
 set_ip_tos
 ----------
 Prototype
-	set_ip_tos(INT i)
-Return value
-	Void
+	VOID set_ip_tos(INT i)
 Description
 	Sets the Type-of-Service flag for the current session. Please
 	note that the TOS flag is not removed by the end of the
@@ -69,9 +70,7 @@ Example
 random
 ------
 Prototype
-	random(REAL a, REAL b)
-Return value
-	Real
+	REAL random(REAL a, REAL b)
 Description
 	Returns a random REAL number between *a* and *b*.
 Example
@@ -80,20 +79,16 @@ Example
 log
 ---
 Prototype
-	log(STRING string)
-Return value
-	Void
+	VOID log(STRING string)
 Description
-	Logs *string* to the shared memory log.
+	Logs *string* to the shared memory log, using VSL tag *SLT_VCL_Log*.
 Example
 	std.log("Something fishy is going on with the vhost " + req.host);
 
 syslog
 ------
 Prototype
-	syslog(INT priority, STRING string)
-Return value
-	Void
+	VOID syslog(INT priority, STRING string)
 Description
 	Logs *string* to syslog marked with *priority*.  See your
 	system's syslog.h file for the legal values of *priority*.
@@ -103,9 +98,7 @@ Example
 fileread
 --------
 Prototype
-	fileread(STRING filename)
-Return value
-	String
+	STRING fileread(STRING filename)
 Description
 	Reads a file and returns a string with the content. Please
 	note that it is not recommended to send variables to this
@@ -114,37 +107,10 @@ Description
 Example
 	set beresp.http.x-served-by = std.fileread("/etc/hostname");
 
-duration
---------
-Prototype
-	duration(STRING s, DURATION fallback)
-Return value
-	Duration
-Description
-	Converts the string *s* to seconds. *s* can be quantified with
-	the usual s (seconds), m (minutes), h (hours), d (days) and w
-	(weeks) units. If *s* fails to parse, *fallback* will be used.
-Example
-	set beresp.ttl = std.duration("1w", 3600s);
-
-integer
---------
-Prototype
-	integer(STRING s, INT fallback)
-Return value
-	Int
-Description
-	Converts the string *s* to an integer.  If *s* fails to parse,
-	*fallback* will be used
-Example
-	if (std.integer(beresp.http.x-foo, 0) > 5) { ... }
-
 collect
 -------
 Prototype
-	collect(HEADER header)
-Return value
-	Void
+	VOID collect(HEADER header)
 Description
 	Collapses the header, joining the headers into one.
 Example
@@ -152,6 +118,43 @@ Example
 	This will collapse several Cookie: headers into one, long
 	cookie header.
 
+
+CONVERSION FUNCTIONS
+====================
+
+duration
+--------
+Prototype
+	DURATION duration(STRING s, DURATION fallback)
+Description
+	Converts the string *s* to seconds. *s* can be quantified with
+	the usual s (seconds), m (minutes), h (hours), d (days) and w
+	(weeks) units. If *s* fails to parse, *fallback* will be returned.
+Example
+	set beresp.ttl = std.duration("1w", 3600s);
+
+integer
+--------
+Prototype
+	INT integer(STRING s, INT fallback)
+Description
+	Converts the string *s* to an integer.  If *s* fails to parse,
+	*fallback* will be returned.
+Example
+	if (std.integer(beresp.http.x-foo, 0) > 5) { ... }
+
+ip
+--
+Prototype
+	IP ip(STRING s, IP fallback)
+Description
+	Converts string *s* to the first IP number returned by
+	the system library function getaddrinfo(3).  If conversion
+	fails, *fallback* will be returned.
+Example:
+
+	if (std.ip(req.http.X-forwarded-for, "0.0.0.0") ~ my_acl) { ... }
+	
 	
 SEE ALSO
 ========
