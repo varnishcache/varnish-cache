@@ -54,7 +54,7 @@ typedef unsigned			VCL_BOOL;
 typedef double				VCL_BYTES;
 typedef double				VCL_DURATION;
 typedef const char *			VCL_ENUM;
-typedef const char *			VCL_HEADER;
+typedef const struct gethdr_s *		VCL_HEADER;
 typedef long				VCL_INT;
 typedef const struct suckaddr *		VCL_IP;
 typedef double				VCL_REAL;

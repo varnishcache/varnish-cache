@@ -169,7 +169,7 @@ vmod_syslog(const struct vrt_ctx *ctx, VCL_INT fac, const char *fmt, ...)
 }
 
 VCL_VOID __match_proto__(td_std_collect)
-vmod_collect(const struct vrt_ctx *ctx, const struct gethdr_s *hdr)
+vmod_collect(const struct vrt_ctx *ctx, VCL_HEADER hdr)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);

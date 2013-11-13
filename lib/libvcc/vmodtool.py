@@ -50,7 +50,7 @@ ctypes = {
 	'BOOL':		"VCL_BOOL",
 	'DURATION':	"VCL_DURATION",
 	'ENUM':		"VCL_ENUM",
-	'HEADER':	"const struct gethdr_s *",
+	'HEADER':	"VCL_HEADER",
 	'INT':		"VCL_INT",
 	'IP':		"VCL_IP",
 	'PRIV_CALL':	"struct vmod_priv *",
