@@ -101,8 +101,9 @@ VCL and C data types
 
 VCL data types are targeted at the job, so for instance, we have data
 types like "DURATION" and "HEADER", but they all have some kind of C
-language representation.  Here is a description of them, from simple
-to nasty.
+language representation.  Here is a description of them.
+
+All but the STRING_LIST type have typedefs:  VCL_INT, VCL_REAL etc.
 
 INT
 	C-type: ``int``
@@ -144,7 +145,7 @@ STRING
 	When used as a return value, the producing function is
 	responsible for arranging memory management.  Either by
 	freeing the string later by whatever means available or
-	by using storage allocated from the session or worker
+	by using storage allocated from the client or backend
 	workspaces.
 
 STRING_LIST
@@ -152,8 +153,8 @@ STRING_LIST
 
 	A multi-component text-string.  We try very hard to avoid
 	doing text-processing in Varnish, and this is one way we
-	do that, by not editing separate pieces of a sting together
-	to one string, until we need to.
+	to avoid that, by not editing separate pieces of a sting
+	together to one string, unless we have to.
 
 	Consider this contrived example::
 
@@ -179,7 +180,8 @@ STRING_LIST
 	a function, we may relax that at a latter time.
 
 	If you don't want to bother with STRING_LIST, just use STRING
-	and make sure your thread_pool_workspace param is big enough.
+	and make sure your workspace_client and workspace_backend params
+	are big enough.
 
 PRIV_VCL
 	See below
@@ -194,12 +196,22 @@ VOID
 	procedure.
 
 HEADER
-	C-type: ``enum gethdr_e, const char *``
+	C-type: ``const struct gethdr_s *''
 
-	XXX: explain me
+	These are VCL compiler generated constants referencing
+	a particular header in a particular HTTP entity, for instance
+	``req.http.cookie'' or ``beresp.http.last-modified''
 
-IP, BOOL
-	XXX: these types are not released for use in vmods yet.
+IP
+	C-type: ``const struct suckaddr *''
+
+	This is an opaque type, see the ``include/vsa.h`` file for
+	which primitives we support on this type.
+
+BOOL
+	C-type: ``unsigned''
+
+	Zero means false, anything else means true.
 
 
 Private Pointers
@@ -243,7 +255,24 @@ pointer points to.
 When a VCL program is discarded, all private pointers are checked
 to see if both the "priv" and "free" elements are non-NULL, and if
 they are, the "free" function will be called with the "priv" pointer
-as only argument.
+as the only argument.
+
+In the common case where a private data structure is allocated with
+malloc would look like this::
+
+	if (priv->priv == NULL) {
+		priv->priv = calloc(sizeof(struct myfoo), 1);
+		AN(priv->priv);
+		priv->priv = free;	/* free(3) */
+		mystate = priv->priv;
+		mystate->foo = 21;
+		...
+	} else {
+		mystate = priv->priv;
+	}
+	if (foo > 25) {
+		...
+	}
 
 The per-call vmod_privs are freed before the per-vcl vmod_priv.
 
@@ -251,15 +280,15 @@ Init functions
 ==============
 
 VMODs can have an "init" method which is called when a VCL
-which imports the VMOD is initialized.
+which imports the VMOD is loaded.
 
 The first argument to the init function is the vmod_priv specific
 to this particular VCL, and if necessary, a VCL specific VMOD "fini"
 function can be attached to its "free" hook.
 
-(The second argument is a pointer to the VCL's config structure,
-it is not at all obvious what you can use this for in practice,
-but we provide it just in case.)
+The second argument is a pointer to the VCL's config structure,
+which allows you to tell different VCLs which import this module
+apart.
 
 Please notice that there is no "global" fini method.
 
@@ -275,11 +304,14 @@ When to lock, and when not to lock
 Varnish is heavily multithreaded, so by default VMODs must implement
 their own locking to protect shared resources.
 
-When a VCL is loaded or unloaded, the initialization and teardown
-is run sequentially in a single thread, and there is guaranteed
+When a VCL is loaded or unloaded, the init and priv->free are
+run sequentially all in a single thread, and there is guaranteed
 to be no other activity related to this particular VCL, nor are
 there  init/fini activity in any other VCL or VMOD at this time.
 
 That means that the VMOD init, and any object init/fini functions
 are already serialized in sensible order, and won't need any locking,
 unless they access VMOD specific global state, shared with other VCLs.
+
+Trafic in other VCLs which also import this VMOD, will be happening
+while housekeeping is going on.
