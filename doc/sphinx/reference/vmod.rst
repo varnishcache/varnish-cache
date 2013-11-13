@@ -35,7 +35,7 @@ VMOD Directory
 
 The VMOD directory is an up-to-date compilation of maintained
 extensions written for Varnish Cache:
- https://www.varnish-cache.org/vmods
+https://www.varnish-cache.org/vmods
 
 The vmod.vcc file
 =================
@@ -196,20 +196,25 @@ VOID
 	procedure.
 
 HEADER
-	C-type: ``const struct gethdr_s *''
+	C-type: ``const struct gethdr_s *``
 
 	These are VCL compiler generated constants referencing
 	a particular header in a particular HTTP entity, for instance
-	``req.http.cookie'' or ``beresp.http.last-modified''
+	``req.http.cookie`` or ``beresp.http.last-modified``.
+	By passing a reference to the header, the VMOD code can
+	both read and write the header in question.
+
+	If the header was passed as STRING, the VMOD code only sees
+	the value, but not where it came from.
 
 IP
-	C-type: ``const struct suckaddr *''
+	C-type: ``const struct suckaddr *``
 
 	This is an opaque type, see the ``include/vsa.h`` file for
 	which primitives we support on this type.
 
 BOOL
-	C-type: ``unsigned''
+	C-type: ``unsigned``
 
 	Zero means false, anything else means true.
 
