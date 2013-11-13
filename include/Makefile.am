@@ -91,6 +91,9 @@ tbl/vrt_stv_var.h tbl/vcl_returns.h tbl/vcc_types.h vcl.h vrt_obj.h: $(top_srcdi
 BUILT_SOURCES = vcs_version.h vmod_abi.h
 MAINTAINERCLEANFILES = vcs_version.h 
 vcs_version.h: FORCE
+	@echo "PHK HACK BEGIN"
+	-@grep '^[ 	]*#[ 	]*define $(top_srcdir)/config.h
+	@echo "PHK HACK END"
 	@if [ -d "$(top_srcdir)/.git" ]; then \
 		V="$$(git show -s --pretty=format:%h)" \
 		H="$$(head -n 1 vcs_version.h 2>/dev/null || true)"; \
