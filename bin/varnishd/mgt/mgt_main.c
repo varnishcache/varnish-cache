@@ -268,6 +268,8 @@ Symbol_hack(const char *a0)
 			continue;
 		if (*p++ != ' ')
 			continue;
+		if (*p == '-')
+			continue;
 		p++;
 		if (*p++ != ' ')
 			continue;
