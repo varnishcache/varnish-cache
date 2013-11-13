@@ -113,7 +113,8 @@ vcc_sockaddr(struct vcc *tl, const void *sa, unsigned sal)
 	memcpy(b, sua, vsa_suckaddr_len);
 	free(sua);
 	for (len = 0; len < n; len++)
-		Fh(tl, 0, "%s    0x%0*llx", len ? ",\n" : "", sz * 2, b[len]);
+		Fh(tl, 0, "%s    0x%0*llxLL",
+		    len ? ",\n" : "", sz * 2, b[len]);
 	Fh(tl, 0, "\n};\n");
 
 	p = TlAlloc(tl, 40);

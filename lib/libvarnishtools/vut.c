@@ -43,7 +43,6 @@
 #include "compat/daemon.h"
 #include "vpf.h"
 #include "vapi/vsm.h"
-#include "vapi/vsc.h"
 #include "vapi/vsl.h"
 #include "vtim.h"
 #include "vas.h"
@@ -256,7 +255,7 @@ VUT_Setup(void)
 	/* Write PID and setup exit handler */
 	if (VUT.pfh != NULL) {
 		VPF_Write(VUT.pfh);
-		AZ(atexit(&vut_vpf_remove));
+		AZ(atexit(vut_vpf_remove));
 	}
 }
 
@@ -286,7 +285,7 @@ int
 VUT_Main(VSLQ_dispatch_f *func, void *priv)
 {
 	struct VSL_cursor *c;
-	int i;
+	int i = -1;
 
 	AN(VUT.vslq);
 
