@@ -17,4 +17,3 @@ Additional configure options of interest:
                           enable strict warnings (default is NO)
   --enable-debugging-symbols
                           enable debugging symbols (default is NO)
-  --enable-werror         use -Werror (default is NO)
