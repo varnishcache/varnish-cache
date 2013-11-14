@@ -326,7 +326,8 @@ start_test(void)
 /**********************************************************************
  * i-mode = "we're inside a src-tree"
  *
- * Find the abs path to top of source dir from Makefile
+ * Find the abs path to top of source dir from Makefile, if that
+ * fails, fall back on "../../"
  *
  * Set path to all programs build directories
  *
@@ -337,7 +338,7 @@ i_mode(void)
 {
 	const char *sep;
 	struct vsb *vsb;
-	char *p;
+	char *p, *q;
 	char *topbuild;
 
 	/*
@@ -345,37 +346,45 @@ i_mode(void)
 	 * makefiles.
 	 */
 
-	p = read_file("Makefile");
-	if (p == NULL) {
-		fprintf(stderr, "No Makefile for -i flag\n");
-		exit(2);
-	}
-	p = strstr(p, "\nabs_top_builddir");
-	if (p == NULL) {
-		fprintf(stderr,
-		    "could not find 'abs_top_builddir' in Makefile\n");
-		exit(2);
-	}
-	topbuild =  strchr(p + 1, '\n');
-	if (topbuild == NULL) {
-		fprintf(stderr,
-		    "No NL after 'abs_top_builddir' in Makefile\n");
-		exit(2);
-	}
-	*topbuild = '\0';
-	topbuild = strchr(p, '/');
-	if (topbuild == NULL) {
-		fprintf(stderr,
-		    "No '/' after 'abs_top_builddir' in Makefile\n");
-		exit(2);
-	}
+	vsb = VSB_new_auto();
 
+	q = p = read_file("Makefile_");
+	if (p == NULL) {
+		fprintf(stderr, "No Makefile to search for -i flag.\n");
+		VSB_printf(vsb, "%s/../..", cwd);
+		AZ(VSB_finish(vsb));
+		topbuild = strdup(VSB_data(vsb));
+		VSB_clear(vsb);
+	} else {
+		p = strstr(p, "\nabs_top_builddir");
+		if (p == NULL) {
+			fprintf(stderr,
+			    "could not find 'abs_top_builddir' in Makefile\n");
+			exit(2);
+		}
+		topbuild =  strchr(p + 1, '\n');
+		if (topbuild == NULL) {
+			fprintf(stderr,
+			    "No NL after 'abs_top_builddir' in Makefile\n");
+			exit(2);
+		}
+		*topbuild = '\0';
+		topbuild = strchr(p, '/');
+		if (topbuild == NULL) {
+			fprintf(stderr,
+			    "No '/' after 'abs_top_builddir' in Makefile\n");
+			exit(2);
+		}
+		topbuild = strdup(topbuild);
+		free(q);
+
+	}
+	AN(topbuild);
 	extmacro_def("topbuild", "%s", topbuild);
 
 	/*
 	 * Build $PATH which can find all programs in the build tree
 	 */
-	vsb = VSB_new_auto();
 	AN(vsb);
 	VSB_printf(vsb, "PATH=");
 	sep = "";
