@@ -1047,7 +1047,7 @@ void Lck__Assert(const struct lock *lck, int held);
 /* public interface: */
 void LCK_Init(void);
 void Lck_Delete(struct lock *lck);
-int Lck_CondWait(pthread_cond_t *cond, struct lock *lck, struct timespec *ts);
+int Lck_CondWait(pthread_cond_t *cond, struct lock *lck, double);
 
 #define Lck_New(a, b) Lck__New(a, b, #b)
 #define Lck_Lock(a) Lck__Lock(a, __func__, __FILE__, __LINE__)

@@ -246,6 +246,7 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 	struct pool *pp;
 	int stats_clean;
 	struct pool_task *tp;
+	int i;
 
 	CAST_OBJ_NOTNULL(pp, priv, POOL_MAGIC);
 	wrk->pool = pp;
@@ -277,7 +278,12 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 			VTAILQ_INSERT_HEAD(&pp->idle_queue, &wrk->task, list);
 			if (!stats_clean)
 				WRK_SumStat(wrk);
-			(void)Lck_CondWait(&wrk->cond, &pp->mtx, NULL);
+			do {
+				i = Lck_CondWait(&wrk->cond, &pp->mtx,
+				    wrk->vcl == NULL ?  0 : wrk->lastused+60.);
+				if (i == ETIMEDOUT)
+					VCL_Rel(&wrk->vcl);
+			} while (i);
 			tp = &wrk->task;
 		}
 		Lck_Unlock(&pp->mtx);
@@ -405,7 +411,7 @@ pool_herder(void *priv)
 
 		Lck_Lock(&pp->mtx);
 		if (!pp->dry) {
-			(void)Lck_CondWait(&pp->herder_cond, &pp->mtx, NULL);
+			(void)Lck_CondWait(&pp->herder_cond, &pp->mtx, 0);
 		} else {
 			/* XXX: unsafe counters */
 			VSC_C_main->threads_limited++;

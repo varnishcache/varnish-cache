@@ -235,7 +235,7 @@ VBO_waitlen(struct busyobj *bo, ssize_t l)
 	while (1) {
 		if (bo->fetch_obj->len > l || bo->state >= BOS_FINISHED)
 			break;
-		(void)Lck_CondWait(&bo->cond, &bo->mtx, NULL);
+		(void)Lck_CondWait(&bo->cond, &bo->mtx, 0);
 	}
 	l = bo->fetch_obj->len;
 	Lck_Unlock(&bo->mtx);
@@ -260,7 +260,7 @@ VBO_waitstate(struct busyobj *bo, enum busyobj_state_e want)
 	while (1) {
 		if (bo->state >= want)
 			break;
-		(void)Lck_CondWait(&bo->cond, &bo->mtx, NULL);
+		(void)Lck_CondWait(&bo->cond, &bo->mtx, 0);
 	}
 	Lck_Unlock(&bo->mtx);
 }

@@ -36,6 +36,7 @@
 #include "config.h"
 
 #include <stdlib.h>
+#include <math.h>
 
 #include "cache.h"
 
@@ -139,19 +140,23 @@ Lck__Assert(const struct lock *lck, int held)
 }
 
 int __match_proto__()
-Lck_CondWait(pthread_cond_t *cond, struct lock *lck, struct timespec *ts)
+Lck_CondWait(pthread_cond_t *cond, struct lock *lck, double when)
 {
 	struct ilck *ilck;
 	int retval = 0;
+	struct timespec ts;
+	double t;
 
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
 	AN(ilck->held);
 	assert(pthread_equal(ilck->owner, pthread_self()));
 	ilck->held = 0;
-	if (ts == NULL) {
+	if (when == 0) {
 		AZ(pthread_cond_wait(cond, &ilck->mtx));
 	} else {
-		retval = pthread_cond_timedwait(cond, &ilck->mtx, ts);
+		ts.tv_nsec = (long)(modf(when, &t) * 1e9);
+		ts.tv_sec = (long)t;
+		retval = pthread_cond_timedwait(cond, &ilck->mtx, &ts);
 		assert(retval == 0 || retval == ETIMEDOUT);
 	}
 	AZ(ilck->held);

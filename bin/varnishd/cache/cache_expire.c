@@ -564,7 +564,6 @@ exp_thread(struct worker *wrk, void *priv)
 	struct objcore *oc;
 	double t = 0, tnext = 0;
 	struct exp_priv *ep;
-	struct timespec ts;
 
 	CAST_OBJ_NOTNULL(ep, priv, EXP_PRIV_MAGIC);
 	ep->wrk = wrk;
@@ -581,9 +580,7 @@ exp_thread(struct worker *wrk, void *priv)
 		} else if (tnext > t) {
 			VSL_Flush(&ep->vsl, 0);
 			WRK_SumStat(wrk);
-			ts.tv_nsec = (long)(modf(tnext, &t) * 1e9);
-			ts.tv_sec = (long)t;
-			(void)Lck_CondWait(&ep->condvar, &ep->mtx, &ts);
+			(void)Lck_CondWait(&ep->condvar, &ep->mtx, tnext);
 		}
 		Lck_Unlock(&ep->mtx);
 
