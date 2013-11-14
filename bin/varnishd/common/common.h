@@ -94,7 +94,7 @@ void mgt_child_inherit(int fd, const char *what);
 	do {							\
 		fprintf(stderr, "Error: " __VA_ARGS__);		\
 		exit(2);					\
-	} while (0);
+	} while (0)
 
 #define NEEDLESS_RETURN(foo)	return (foo)
 

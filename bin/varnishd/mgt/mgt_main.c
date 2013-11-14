@@ -152,6 +152,7 @@ usage(void)
 	fprintf(stderr, FMT, "-d", "debug");
 	fprintf(stderr, FMT, "-f file", "VCL script");
 	fprintf(stderr, FMT, "-F", "Run in foreground");
+	fprintf(stderr, FMT, "-g group", "Privilege separation group id");
 	fprintf(stderr, FMT, "-h kind[,hashoptions]", "Hash specification");
 	fprintf(stderr, FMT, "", "  -h critbit [default]");
 	fprintf(stderr, FMT, "", "  -h simple_list");
@@ -458,7 +459,7 @@ main(int argc, char * const *argv)
 	cli_check(cli);
 
 	while ((o = getopt(argc, argv,
-	    "a:b:Cdf:Fg:h:i:l:L:M:n:P:p:r:S:s:T:t:u:Vx:w:")) != -1)
+	    "a:b:Cdf:Fg:h:i:l:M:n:P:p:r:S:s:T:u:Vx:")) != -1)
 		switch (o) {
 		case 'a':
 			MCF_ParamSet(cli, "listen_address", optarg);
@@ -560,8 +561,6 @@ main(int argc, char * const *argv)
 			}
 			usage();
 			break;
-		case 'w':
-			ARGV_ERR("-w has been removed, use -p instead\n");
 		default:
 			usage();
 		}
@@ -571,97 +570,79 @@ main(int argc, char * const *argv)
 
 	mgt_vcc_init();
 
-	if (argc != 0) {
-		fprintf(stderr, "Too many arguments (%s...)\n", argv[0]);
-		usage();
-	}
+	if (argc != 0)
+		ARGV_ERR("Too many arguments (%s...)\n", argv[0]);
 
 	/* XXX: we can have multiple CLI actions above, is this enough ? */
 	if (cli[0].result != CLIS_OK) {
-		fprintf(stderr, "Parameter errors:\n");
 		AZ(VSB_finish(cli[0].sb));
-		fprintf(stderr, "%s\n", VSB_data(cli[0].sb));
-		exit(1);
+		ARGV_ERR("Failed parameter creation:\n%s\n",
+		    VSB_data(cli[0].sb));
 	}
 
-	if (d_flag && F_flag) {
-		fprintf(stderr, "Only one of -d or -F can be specified\n");
-		usage();
-	}
+	if (d_flag && F_flag) 
+		ARGV_ERR("Only one of -d or -F can be specified\n");
 
-	if (b_arg != NULL && f_arg != NULL) {
-		fprintf(stderr, "Only one of -b or -f can be specified\n");
-		usage();
-	}
+	if (b_arg != NULL && f_arg != NULL)
+		ARGV_ERR("Only one of -b or -f can be specified\n");
+
 	if (T_arg == NULL && d_flag == 0 && b_arg == NULL &&
-	    f_arg == NULL && M_arg == NULL) {
-		fprintf(stderr,
-		    "At least one of -d, -b, -f, -M or -T "
+	    f_arg == NULL && M_arg == NULL)
+		ARGV_ERR("At least one of -d, -b, -f, -M or -T "
 		    "must be specified\n");
-		usage();
-	}
 
 	if (S_arg != NULL && *S_arg == '\0')
 		fprintf(stderr,
 		    "Warning: Empty -S argument, no CLI authentication.\n");
+	else if (S_arg != NULL) {
+		o = open(S_arg, O_RDONLY, 0);
+		if (o < 0)
+			ARGV_ERR("Cannot open -S file (%s): %s\n",
+			    S_arg, strerror(errno));
+		AZ(close(o));
+	}
 
 	if (f_arg != NULL) {
 		vcl = VFIL_readfile(NULL, f_arg, NULL);
-		if (vcl == NULL) {
-			fprintf(stderr, "Cannot read '%s': %s\n",
+		if (vcl == NULL)
+			ARGV_ERR("Cannot read -f file (%s): %s\n",
 			    f_arg, strerror(errno));
-			exit(1);
-		}
 	}
 
-	if (VIN_N_Arg(n_arg, &heritage.name, &dirname, NULL) != 0) {
-		fprintf(stderr, "Invalid instance name: %s\n",
-		    strerror(errno));
-		exit(1);
-	}
+	if (VIN_N_Arg(n_arg, &heritage.name, &dirname, NULL) != 0)
+		ARGV_ERR("Invalid instance (-n) name: %s\n", strerror(errno));
 
-	if (i_arg != NULL) {
-		if (snprintf(heritage.identity, sizeof heritage.identity,
-		    "%s", i_arg) > sizeof heritage.identity) {
-			fprintf(stderr, "Invalid identity name: %s\n",
-			    strerror(ENAMETOOLONG));
-			exit(1);
-		}
-	}
+	if (i_arg != NULL &&
+	    snprintf(heritage.identity, sizeof heritage.identity, "%s", i_arg)
+	    > sizeof heritage.identity)
+		ARGV_ERR("Invalid identity (-i) name: %s\n",
+		    strerror(ENAMETOOLONG));
 
 	if (n_arg != NULL)
 		openlog(n_arg, LOG_PID, LOG_LOCAL0);	/* XXX: i_arg ? */
 	else
 		openlog("varnishd", LOG_PID, LOG_LOCAL0);
 
-	if (mkdir(dirname, 0755) < 0 && errno != EEXIST) {
-		fprintf(stderr, "Cannot create working directory '%s': %s\n",
+	if (mkdir(dirname, 0755) < 0 && errno != EEXIST)
+		ARGV_ERR("Cannot create working directory '%s': %s\n",
 		    dirname, strerror(errno));
-		exit(1);
-	}
 
-	if (chdir(dirname) < 0) {
-		fprintf(stderr, "Cannot change to working directory '%s': %s\n",
+	if (chdir(dirname) < 0)
+		ARGV_ERR("Cannot change to working directory '%s': %s\n",
 		    dirname, strerror(errno));
-		exit(1);
-	}
 
 	fd = open("_.testfile", O_RDWR|O_CREAT|O_EXCL, 0600);
-	if (fd < 0) {
-		fprintf(stderr, "Cannot create test-file in %s (%s)\n",
+	if (fd < 0)
+		ARGV_ERR("Error: Cannot create test-file in %s (%s)\n"
+		    "Check permissions (or delete old directory)\n",
 		    dirname, strerror(errno));
-		fprintf(stderr,
-		    "Check permissions (or delete old directory)\n");
-		exit(1);
-	}
 	AZ(close(fd));
 	AZ(unlink("_.testfile"));
 
 	/* XXX: should this be relative to the -n arg ? */
-	if (P_arg && (pfh = VPF_Open(P_arg, 0644, NULL)) == NULL) {
-		perror(P_arg);
-		exit(1);
-	}
+	if (P_arg && (pfh = VPF_Open(P_arg, 0644, NULL)) == NULL)
+		ARGV_ERR("Could not open pid/lock (-P) file (%s): %s\n",
+		    P_arg, strerror(errno));
 
 	if (b_arg != NULL || f_arg != NULL)
 		if (mgt_vcc_default(b_arg, f_arg, vcl, C_flag))
@@ -671,11 +652,8 @@ main(int argc, char * const *argv)
 		exit (0);
 
 	if (!d_flag) {
-		if (MGT_open_sockets()) {
-			fprintf(stderr,
-			    "Failed to open (any) accept sockets.\n");
-			exit(1);
-		}
+		if (MGT_open_sockets())
+			ARGV_ERR("Failed to open (any) accept sockets.\n");
 		MGT_close_sockets();
 	}
 
@@ -695,15 +673,17 @@ main(int argc, char * const *argv)
 	if (!d_flag && !F_flag)
 		AZ(varnish_daemon(1, 0));
 
-	if (pfh != NULL && VPF_Write(pfh))
-		fprintf(stderr, "NOTE: Could not write PID file\n");
+	/**************************************************************
+	 * After this point diagnostics will only be seen with -d
+	 */
+
+	assert(pfh == NULL || !VPF_Write(pfh));
 
 	if (d_flag)
 		fprintf(stderr, "Platform: %s\n", VSB_data(vident) + 1);
 	syslog(LOG_NOTICE, "Platform: %s\n", VSB_data(vident) + 1);
 
-	/* Do this again after debugstunt and daemon has run */
-	mgt_pid = getpid();
+	mgt_pid = getpid();	/* daemon() changed this */
 
 	mgt_evb = vev_new_base();
 	XXXAN(mgt_evb);
