@@ -180,13 +180,13 @@ usage(void)
 	fprintf(stderr, FMT, "", "  -s persist{experimenta}");
 	fprintf(stderr, FMT, "",
 	    "  -s file,<dir_or_file>,<size>,<granularity>");
-	fprintf(stderr, FMT, "-t", "Default TTL");
 	fprintf(stderr, FMT, "-S secret-file",
 	    "Secret file for CLI authentication");
 	fprintf(stderr, FMT, "-T address:port",
 	    "Telnet listen address and port");
-	fprintf(stderr, FMT, "-V", "version");
+	fprintf(stderr, FMT, "-t", "Default TTL");
 	fprintf(stderr, FMT, "-u user", "Privilege separation user id");
+	fprintf(stderr, FMT, "-V", "version");
 #undef FMT
 	exit(1);
 }
@@ -459,7 +459,7 @@ main(int argc, char * const *argv)
 	cli_check(cli);
 
 	while ((o = getopt(argc, argv,
-	    "a:b:Cdf:Fg:h:i:l:M:n:P:p:r:S:s:T:u:Vx:")) != -1)
+	    "a:b:Cdf:Fg:h:i:l:M:n:P:p:r:S:s:T:t:u:Vx:")) != -1)
 		switch (o) {
 		case 'a':
 			MCF_ParamSet(cli, "listen_address", optarg);
@@ -580,7 +580,7 @@ main(int argc, char * const *argv)
 		    VSB_data(cli[0].sb));
 	}
 
-	if (d_flag && F_flag) 
+	if (d_flag && F_flag)
 		ARGV_ERR("Only one of -d or -F can be specified\n");
 
 	if (b_arg != NULL && f_arg != NULL)
