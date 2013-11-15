@@ -79,6 +79,7 @@ enum VSL_grouping_e {
 	VSL_g_vxid,
 	VSL_g_request,
 	VSL_g_session,
+	VSL_g__MAX,
 };
 
 typedef int VSLQ_dispatch_f(struct VSL_data *vsl,
@@ -168,6 +169,11 @@ int VSL_List2Tags(const char *list, int l, VSL_tagfind_f *func, void *priv);
 	 *     -1: No tag matches for list element
 	 *     -2: Multiple tags match non-glob list element
 	 *     -3: Syntax error
+	 */
+
+extern const char *VSLQ_grouping[VSL_g__MAX];
+	/*
+	 * Grouping mode to string array.
 	 */
 
 int VSLQ_Name2Grouping(const char *name, int l);

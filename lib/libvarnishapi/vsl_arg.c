@@ -183,7 +183,7 @@ VSL_List2Tags(const char *list, int l, VSL_tagfind_f *func, void *priv)
 	return (t);
 }
 
-static const char * const vsl_grouping[] = {
+const char *VSLQ_grouping[VSL_g__MAX] = {
 	[VSL_g_raw]	= "raw",
 	[VSL_g_vxid]	= "vxid",
 	[VSL_g_request]	= "request",
@@ -198,9 +198,9 @@ VSLQ_Name2Grouping(const char *name, int l)
 	if (l == -1)
 		l = strlen(name);
 	n = -1;
-	for (i = 0; i < sizeof vsl_grouping / sizeof vsl_grouping[0]; i++) {
-		if (!strncasecmp(name, vsl_grouping[i], l)) {
-			if (strlen(vsl_grouping[i]) == l) {
+	for (i = 0; i < VSL_g__MAX; i++) {
+		if (!strncasecmp(name, VSLQ_grouping[i], l)) {
+			if (strlen(VSLQ_grouping[i]) == l) {
 				/* Exact match */
 				return (i);
 			}

@@ -119,4 +119,5 @@ LIBVARNISHAPI_1.3 {
 	VSL_List2Tags;
 	VSM_N_Arg;
 	# Variables:
+	VSLQ_grouping;
 } LIBVARNISHAPI_1.0;
