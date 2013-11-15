@@ -1,4 +1,41 @@
 ================================
+Changes from 3.0.4 to 3.0.5 rc 1
+================================
+
+varnishd
+--------
+
+- Stop printing error messages on ESI parse errors
+- Fix a problem where Varnish would segfault if the first part of a
+  synthetic page was NULL.  `Bug #1287`
+- If streaming was used, you could in some cases end up with duplicate
+  content headers being sent to clients. `Bug #1272`
+- If we receive a completely garbled request, don't pass through
+  vcl_error, since we could then end up in vcl_recv through a restart
+  and things would go downhill from there. `Bug #1367`
+- Prettify backtraces on panic slightly.
+
+.. _bug #1287: http://varnish-cache.org/trac/ticket/1287
+.. _bug #1272: http://varnish-cache.org/trac/ticket/1272
+.. _bug #1367: http://varnish-cache.org/trac/ticket/1367
+
+varnishlog
+----------
+
+- Correct an error where -m, -c and -b would interact badly, leading
+  to lack of matches.  Also, emit BackendXID to signify the start of a
+  transaction. `Bug #1325`
+
+.. _bug #1325: http://varnish-cache.org/trac/ticket/1325
+
+varnishadm
+----------
+
+- Handle input from stdin properly. `Bug #1314`
+
+.. _bug #1314: http://varnish-cache.org/trac/ticket/1314
+
+================================
 Changes from 3.0.4 rc 1 to 3.0.4
 ================================
 
