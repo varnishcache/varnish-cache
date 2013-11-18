@@ -1,0 +1,96 @@
+varnishtest "GZIP, ESI and etags"
+
+server s1 {
+	rxreq
+	expect req.url == /1
+	expect req.http.accept-encoding == "gzip"
+	txresp -hdr {ETag: "foo"}  -gziplen 41
+
+	rxreq
+	expect req.url == /2
+	txresp -hdr {ETag: "foo2"}  -bodylen 42
+
+	rxreq
+	expect req.url == /3
+	txresp -hdr {ETag: "foo3"}  -body {<H1><esi:remove> foo </esi:remove><H2>}
+
+	rxreq
+	expect req.url == /4
+	txresp -hdr {ETag: "foo4"}  -gzipbody {<H11><esi:remove> foo </esi:remove><H22>}
+} -start
+
+varnish v1 -vcl+backend { 
+	sub vcl_backend_response {
+		if (bereq.url == "/2") {
+			set beresp.do_gzip = true;
+		}
+		if (bereq.url == "/3" || bereq.url == "/4") {
+			set beresp.do_esi = true;
+		}
+	}
+	sub vcl_deliver {
+		if (req.http.foo == "noesi") {
+			set req.esi = false;
+		}
+	}
+} -start
+
+client c1 {
+	# Straight through gzip, strong etag survives
+	txreq -url /1 -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.http.etag == {"foo"}
+	gunzip
+	expect resp.bodylen == 41
+
+	delay .2
+
+	# gzip in, gunzip out, weak etag
+	txreq -url /1
+	rxresp
+	expect resp.http.etag == {W/"foo"}
+	expect resp.bodylen == 41
+
+	delay .2
+
+	# Gzip on input, weak etag
+	txreq -url /2 -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.http.etag == {W/"foo2"}
+	gunzip
+	expect resp.bodylen == 42
+
+	delay .2
+
+	# Gzip on input, gunzip on output, weak etag
+	txreq -url /2
+	rxresp
+	expect resp.http.etag == {W/"foo2"}
+	expect resp.bodylen == 42
+
+	delay .2
+
+	# ESI expansion, weak etag
+	txreq -url /3
+	rxresp
+	expect resp.http.etag == {W/"foo3"}
+	expect resp.bodylen == 8
+
+	delay .2
+
+	# ESI parse, but no expansion, strong etag
+	txreq -url /3 -hdr "foo: noesi"
+	rxresp
+	expect resp.http.etag == {"foo3"}
+	expect resp.bodylen == 38
+
+	delay .2
+
+	# ESI parse, no expansion, but re-gzipping, weak etag
+	txreq -url /4 -hdr "foo: noesi" -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.http.etag == {W/"foo4"}
+	gunzip
+	expect resp.bodylen == 40
+
+} -run

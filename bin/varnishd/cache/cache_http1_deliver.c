@@ -261,6 +261,9 @@ V1D_Deliver(struct req *req)
 			v1d_dorange(req, r);
 	}
 
+	if (req->res_mode & RES_ESI)
+		RFC2616_Weaken_Etag(req->resp);
+
 	WRW_Reserve(req->wrk, &req->sp->fd, req->vsl, req->t_resp);
 
 	/*

@@ -129,6 +129,10 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	http_SetHeader(req->resp, "Via: 1.1 varnish");
 
+	if (cache_param->http_gzip_support && req->obj->gziped &&
+	    !RFC2616_Req_Gzip(req->http))
+		RFC2616_Weaken_Etag(req->resp);
+
 	VCL_deliver_method(req->vcl, wrk, req, NULL, req->http->ws);
 
 	/* Stop the insanity before it turns "Hotel California" on us */

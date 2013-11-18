@@ -346,3 +346,21 @@ RFC2616_Do_Cond(const struct req *req)
 
 	return (do_cond);
 }
+
+/*--------------------------------------------------------------------*/
+
+void
+RFC2616_Weaken_Etag(struct http *hp)
+{
+	char *p;
+
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+
+	if (!http_GetHdr(hp, H_ETag, &p))
+		return;
+	AN(p);
+	if (p[0] == 'W' && p[1] == '/')
+		return;
+	http_Unset(hp, H_ETag);
+	http_PrintfHeader(hp, "ETag: W/%s", p);
+}

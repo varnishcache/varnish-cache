@@ -308,14 +308,24 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
 
 	/* ESI takes precedence and handles gzip/gunzip itself */
-	if (bo->do_esi)
+	if (bo->do_esi) {
 		bo->vfp = &vfp_esi;
-	else if (bo->do_gunzip)
+		/*
+		 * The one case were we do not weaken Etag is where
+		 * incoming obj is not gzip'ed and we don't gzip either
+		 * If we ESI expand it on deliver, we weaken there.
+		 */
+		if (bo->is_gzip || bo->do_gzip | bo->do_gunzip)
+			RFC2616_Weaken_Etag(bo->beresp);
+	} else if (bo->do_gunzip) {
 		bo->vfp = &vfp_gunzip;
-	else if (bo->do_gzip)
+		RFC2616_Weaken_Etag(bo->beresp);
+	} else if (bo->do_gzip) {
 		bo->vfp = &vfp_gzip;
-	else if (bo->is_gzip)
+		RFC2616_Weaken_Etag(bo->beresp);
+	} else if (bo->is_gzip) {
 		bo->vfp = &vfp_testgzip;
+	}
 
 	if (bo->fetch_objcore->flags & OC_F_PRIVATE)
 		AN(bo->uncacheable);
