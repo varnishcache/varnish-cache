@@ -296,6 +296,7 @@ main(int argc, char * const *argv)
 		default:
 			if (VSC_Arg(vd, c, optarg) > 0)
 				break;
+			fprintf(stderr, "%s\n", VSM_Error(vd));
 			usage();
 		}
 	}

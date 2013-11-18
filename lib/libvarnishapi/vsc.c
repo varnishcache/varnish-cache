@@ -226,6 +226,9 @@ vsc_f_arg(struct VSM_data *vd, const char *opt)
 			if (q != NULL && q[1] == '\0') {
 				*q = '\0';
 				sf->flags |= VSC_SF_TY_WC;
+			} else if (q != NULL) {
+				i = -1;
+				break;
 			}
 		}
 		if (sf->ident != NULL) {
@@ -233,6 +236,9 @@ vsc_f_arg(struct VSM_data *vd, const char *opt)
 			if (q != NULL && q[1] == '\0') {
 				*q = '\0';
 				sf->flags |= VSC_SF_ID_WC;
+			} else if (q != NULL) {
+				i = -1;
+				break;
 			}
 		}
 		if (sf->name != NULL) {
@@ -240,11 +246,18 @@ vsc_f_arg(struct VSM_data *vd, const char *opt)
 			if (q != NULL && q[1] == '\0') {
 				*q = '\0';
 				sf->flags |= VSC_SF_NM_WC;
+			} else if (q != NULL) {
+				i = -1;
+				break;
 			}
 		}
 	}
+	if (i < 0)
+		i = vsm_diag(vd, "Wildcard error: %s", opt);
+	else
+		i = 1;
 	VAV_Free(av);
-	return (1);
+	return (i);
 }
 
 /*--------------------------------------------------------------------*/
