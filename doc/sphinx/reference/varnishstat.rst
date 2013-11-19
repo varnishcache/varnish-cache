@@ -30,8 +30,13 @@ The following options are available:
 
 -1          Instead of presenting of a continuously updated display, print the statistics to stdout.
 
--f          A comma separated list of the fields to display.  If it starts with '^' it is used as an exclusion
-	    list.
+-f          Field inclusion glob. A field glob consists of three
+            parts, type, ident and name, where ident is optional. Each
+            part can contain a '*' character at the end to match a
+            prefix. Use backslash to escape characters. If the
+            argument starts with '^' it is used as an exclusion
+            glob. Multiple -f arguments may be given, and they will be
+            applied in order.
 
 -l          Lists the available fields to use with the -f option.
 

@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include <stdio.h>
 #include <errno.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -44,7 +45,6 @@
 #include "vapi/vsc.h"
 #include "vapi/vsm.h"
 #include "vapi/vsm_int.h"
-#include "vav.h"
 #include "vqueue.h"
 #include "vsm_api.h"
 
@@ -179,85 +179,106 @@ vsc_f_arg(struct VSM_data *vd, const char *opt)
 {
 	struct vsc *vsc = vsc_setup(vd);
 	struct vsc_sf *sf;
-	char **av, *q, *p;
+	const char *error = NULL;
+	const char *p, *q;
+	char *r;
 	int i;
+	int flags = 0;
+	char *parts[3];
 
-	av = VAV_Parse(opt, NULL, ARGV_COMMA);
-	AN(av);
-	if (av[0] != NULL) {
-		i = vsm_diag(vd, "Parse error: %s", av[0]);
-		VAV_Free(av);
-		return (i);
+	AN(vd);
+	AN(opt);
+
+	if (opt[0] == '^') {
+		flags |= VSC_SF_EXCL;
+		opt++;
 	}
-	for (i = 1; av[i] != NULL; i++) {
-		ALLOC_OBJ(sf, VSC_SF_MAGIC);
-		AN(sf);
-		VTAILQ_INSERT_TAIL(&vsc->sf_list, sf, list);
 
-		p = av[i];
-		if (*p == '^') {
-			sf->flags |= VSC_SF_EXCL;
+	/* Split on '.' */
+	memset(parts, 0, sizeof parts);
+	for (i = 0, p = opt; *p != '\0'; i++) {
+		for (q = p; *q != '\0' && *q != '.'; q++)
+			if (*q == '\\')
+				q++;
+		if (i < 3) {
+			parts[i] = strndup(p, q - p);
+			AN(parts[i]);
+			p = r = parts[i];
+
+			/* Unescape */
+			while (1) {
+				if (*p == '\\')
+					p++;
+				if (*p == '\0')
+					break;
+				*r++ = *p++;
+			}
+			*r = '\0';
+		}
+		p = q;
+		if (*p == '.')
 			p++;
-		}
-
-		q = strchr(p, '.');
-		if (q != NULL) {
-			*q++ = '\0';
-			if (*p != '\0')
-				REPLACE(sf->type, p);
-			p = q;
-			if (*p != '\0') {
-				q = strchr(p, '.');
-				if (q != NULL) {
-					*q++ = '\0';
-					if (*p != '\0')
-						REPLACE(sf->ident, p);
-					p = q;
-				}
-			}
-		}
-		if (*p != '\0') {
-			REPLACE(sf->name, p);
-		}
-
-		/* Check for wildcards */
-		if (sf->type != NULL) {
-			q = strchr(sf->type, '*');
-			if (q != NULL && q[1] == '\0') {
-				*q = '\0';
-				sf->flags |= VSC_SF_TY_WC;
-			} else if (q != NULL) {
-				i = -1;
-				break;
-			}
-		}
-		if (sf->ident != NULL) {
-			q = strchr(sf->ident, '*');
-			if (q != NULL && q[1] == '\0') {
-				*q = '\0';
-				sf->flags |= VSC_SF_ID_WC;
-			} else if (q != NULL) {
-				i = -1;
-				break;
-			}
-		}
-		if (sf->name != NULL) {
-			q = strchr(sf->name, '*');
-			if (q != NULL && q[1] == '\0') {
-				*q = '\0';
-				sf->flags |= VSC_SF_NM_WC;
-			} else if (q != NULL) {
-				i = -1;
-				break;
-			}
-		}
 	}
-	if (i < 0)
-		i = vsm_diag(vd, "Wildcard error: %s", opt);
-	else
-		i = 1;
-	VAV_Free(av);
-	return (i);
+	if (i < 1 || i > 3) {
+		(void)vsm_diag(vd, "-f: Wrong number of elements");
+		for (i = 0; i < 3; i++)
+			free(parts[i]);
+		return (-1);
+	}
+
+	/* Set fields */
+	ALLOC_OBJ(sf, VSC_SF_MAGIC);
+	AN(sf);
+	sf->flags = flags;
+	AN(parts[0]);
+	sf->type = parts[0];
+	if (i == 2) {
+		AN(parts[1]);
+		sf->name = parts[1];
+	} else if (i == 3) {
+		AN(parts[1]);
+		sf->ident = parts[1];
+		AN(parts[2]);
+		sf->name = parts[2];
+	}
+
+	/* Check for wildcards */
+	if (sf->type != NULL) {
+		r = strchr(sf->type, '*');
+		if (r != NULL && r[1] == '\0') {
+			*r = '\0';
+			sf->flags |= VSC_SF_TY_WC;
+		} else if (r != NULL)
+			error = "-f: Wildcard not last";
+	}
+	if (sf->ident != NULL) {
+		r = strchr(sf->ident, '*');
+		if (r != NULL && r[1] == '\0') {
+			*r = '\0';
+			sf->flags |= VSC_SF_ID_WC;
+		} else if (r != NULL)
+			error = "-f: Wildcard not last";
+	}
+	if (sf->name != NULL) {
+		r = strchr(sf->name, '*');
+		if (r != NULL && r[1] == '\0') {
+			*r = '\0';
+			sf->flags |= VSC_SF_NM_WC;
+		} else if (r != NULL)
+			error = "-f: Wildcard not last";
+	}
+
+	if (error != NULL) {
+		(void)vsm_diag(vd, "%s", error);
+		free(sf->type);
+		free(sf->ident);
+		free(sf->name);
+		FREE_OBJ(sf);
+		return (-1);
+	}
+
+	VTAILQ_INSERT_TAIL(&vsc->sf_list, sf, list);
+	return (1);
 }
 
 /*--------------------------------------------------------------------*/

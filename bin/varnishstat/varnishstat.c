@@ -242,8 +242,7 @@ usage(void)
 	    VSC_n_USAGE " "
 	    "[-w delay]\n");
 	fprintf(stderr, FMT, "-1", "Print the statistics to stdout.");
-	fprintf(stderr, FMT, "-f field_list",
-	    "Comma separated list of fields to display. ");
+	fprintf(stderr, FMT, "-f field_list", "Field inclusion glob");
 	fprintf(stderr, FMT, "",
 	    "If it starts with '^' it is used as an exclusion list");
 	fprintf(stderr, FMT, "-l",
