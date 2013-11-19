@@ -29,4 +29,4 @@
  */
 
 void VB64_init(void);
-int VB64_decode(char *d, unsigned dlen, const char *s);
+int VB64_decode(char *d, unsigned dlen, const char *s, const char *e);
