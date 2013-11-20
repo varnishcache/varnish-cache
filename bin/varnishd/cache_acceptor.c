@@ -178,8 +178,8 @@ VCA_Prep(struct sess *sp)
 	    addr, sizeof addr, port, sizeof port);
 	sp->addr = WS_Dup(sp->ws, addr);
 	sp->port = WS_Dup(sp->ws, port);
+	AZ(getsockname(sp->fd, (void*)sp->mysockaddr, &sp->mysockaddrlen));
 	if (params->log_local_addr) {
-		AZ(getsockname(sp->fd, (void*)sp->mysockaddr, &sp->mysockaddrlen));
 		VTCP_name(sp->mysockaddr, sp->mysockaddrlen,
 		    addr, sizeof addr, port, sizeof port);
 		VSL(SLT_SessionOpen, sp->fd, "%s %s %s %s",

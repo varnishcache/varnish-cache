@@ -466,12 +466,6 @@ VRT_r_client_ip(const struct sess *sp)
 struct sockaddr_storage *
 VRT_r_server_ip(struct sess *sp)
 {
-	int i;
-
-	if (sp->mysockaddr->ss_family == AF_UNSPEC) {
-		i = getsockname(sp->fd, (void*)sp->mysockaddr, &sp->mysockaddrlen);
-		assert(VTCP_Check(i));
-	}
 
 	return (sp->mysockaddr);
 }
