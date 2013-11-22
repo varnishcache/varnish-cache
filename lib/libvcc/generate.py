@@ -157,13 +157,6 @@ The client's IP address.
 		The request type (e.g. "GET", "HEAD").
 		"""
 	),
-	('req.request',
-		'STRING',
-		( 'client',),
-		( 'client',), """
-		utdated way to spell req.method. (XXX: remove)
-		"""
-	),
 	('req.url',
 		'STRING',
 		( 'client',),
@@ -287,13 +280,6 @@ The client's IP address.
 		The request type (e.g. "GET", "HEAD").
 		"""
 	),
-	('bereq.request',
-		'STRING',
-		( 'pipe', 'backend', ),
-		( 'pipe', 'backend', ), """
-		XXX: remove
-		"""
-	),
 	('bereq.url',
 		'STRING',
 		( 'pipe', 'backend', ),
@@ -358,7 +344,7 @@ The client's IP address.
 		The HTTP status code returned by the server.
 		"""
 	),
-	('beresp.response',
+	('beresp.reason',
 		'STRING',
 		( 'backend_response',),
 		( 'backend_response',), """
@@ -481,7 +467,7 @@ The client's IP address.
 		The HTTP status code returned by the server.
 		"""
 	),
-	('obj.response',
+	('obj.reason',
 		'STRING',
 		( 'error',),
 		( 'error',), """
@@ -554,7 +540,7 @@ The client's IP address.
 		The HTTP status code that will be returned.
 		"""
 	),
-	('resp.response',
+	('resp.reason',
 		'STRING',
 		( 'deliver',),
 		( 'deliver',), """
@@ -576,6 +562,15 @@ The client's IP address.
 		used in string context it returns a formatted string.
 		"""
 	),
+]
+
+# Backwards compatibility:
+aliases = [
+	('req.request',		'req.method'),
+	('bereq.request',	'bereq.method'),
+	('beresp.response',	'beresp.reason'),
+	('resp.response',	'resp.reason'),
+	('obj.response',	'obj.reason'),
 ]
 
 stv_variables = (
@@ -967,42 +962,54 @@ fo.write("""
 const struct var vcc_vars[] = {
 """)
 
-sp_variables.sort()
-for i in sp_variables:
+def one_var(nm, spec):
 	fh.write("\n")
-	typ = i[1]
+	typ = spec[1]
 	cnam = i[0].replace(".", "_")
 	ctyp = vcltypes[typ]
 
-	fo.write("\t{ \"%s\", %s, %d,\n" % (i[0], typ, len(i[0])))
+	fo.write("\t{ \"%s\", %s, %d,\n" % (nm, typ, len(nm)))
 
-	if len(i[2]) == 0:
+	if len(spec[2]) == 0:
 		fo.write('\t    NULL,\t/* No reads allowed */\n')
 	elif typ == "HEADER":
 		fo.write('\t    "HDR_')
-		fo.write(i[0].split(".")[0].upper())
+		fo.write(nm.split(".")[0].upper())
 		fo.write('",\n')
 	else:
 		fo.write('\t    "VRT_r_%s(ctx)",\n' % cnam)
-		fh.write("VCL_" + typ + " VRT_r_%s(const struct vrt_ctx *);\n" % cnam )
-	restrict(fo, i[2])
+		if nm == i[0]:
+			fh.write("VCL_" + typ +
+			    " VRT_r_%s(const struct vrt_ctx *);\n" % cnam )
+	restrict(fo, spec[2])
 
-	if len(i[3]) == 0:
+	if len(spec[3]) == 0:
 		fo.write('\t    NULL,\t/* No writes allowed */\n')
 	elif typ == "HEADER":
 		fo.write('\t    "HDR_')
-		fo.write(i[0].split(".")[0].upper())
+		fo.write(nm.split(".")[0].upper())
 		fo.write('",\n')
 	else:
 		fo.write('\t    "VRT_l_%s(ctx, ",\n' % cnam)
-		fh.write("void VRT_l_%s(const struct vrt_ctx *, " % cnam)
-		if typ != "STRING":
-			fh.write("VCL_" + typ + ");\n")
-		else:
-			fh.write(ctyp + ", ...);\n")
-	restrict(fo, i[3])
+		if nm == i[0]:
+			fh.write(
+			    "void VRT_l_%s(const struct vrt_ctx *, " % cnam)
+			if typ != "STRING":
+				fh.write("VCL_" + typ + ");\n")
+			else:
+				fh.write(ctyp + ", ...);\n")
+	restrict(fo, spec[3])
 
 	fo.write("\t},\n")
+
+
+sp_variables.sort()
+aliases.sort()
+for i in sp_variables:
+	one_var(i[0], i)
+	for j in aliases:
+		if j[1] == i[0]:
+			one_var(j[0], i)
 
 fo.write("\t{ NULL }\n};\n")
 

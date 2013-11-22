@@ -103,22 +103,20 @@ VRT_r_##obj##_status(const struct vrt_ctx *ctx)				\
 }
 
 VRT_DO_HDR(req,    method,	HTTP_HDR_METHOD)
-VRT_DO_HDR(req,    request,	HTTP_HDR_METHOD)
 VRT_DO_HDR(req,    url,		HTTP_HDR_URL)
 VRT_DO_HDR(req,    proto,	HTTP_HDR_PROTO)
 VRT_DO_HDR(obj,    proto,	HTTP_HDR_PROTO)
-VRT_DO_HDR(obj,    response,	HTTP_HDR_RESPONSE)
+VRT_DO_HDR(obj,    reason,	HTTP_HDR_RESPONSE)
 VRT_DO_STATUS(obj)
 VRT_DO_HDR(resp,   proto,	HTTP_HDR_PROTO)
-VRT_DO_HDR(resp,   response,	HTTP_HDR_RESPONSE)
+VRT_DO_HDR(resp,   reason,	HTTP_HDR_RESPONSE)
 VRT_DO_STATUS(resp)
 
 VRT_DO_HDR(bereq,  method,	HTTP_HDR_METHOD)
-VRT_DO_HDR(bereq,  request,	HTTP_HDR_METHOD)
 VRT_DO_HDR(bereq,  url,		HTTP_HDR_URL)
 VRT_DO_HDR(bereq,  proto,	HTTP_HDR_PROTO)
 VRT_DO_HDR(beresp, proto,	HTTP_HDR_PROTO)
-VRT_DO_HDR(beresp, response,	HTTP_HDR_RESPONSE)
+VRT_DO_HDR(beresp, reason,	HTTP_HDR_RESPONSE)
 VRT_DO_STATUS(beresp)
 
 /*--------------------------------------------------------------------*/
