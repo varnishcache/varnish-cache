@@ -91,6 +91,11 @@ SES_Charge(struct worker *wrk, struct req *req)
 
 /*--------------------------------------------------------------------
  * Get a new session, preferably by recycling an already ready one
+ *
+ * Layout is:
+ *	struct sess
+ *	struct vsa (local_addr)
+ *	struct vsa (remote_addr)
  */
 
 static struct sess *
@@ -107,15 +112,19 @@ ses_new(struct sesspool *pp)
 
 	s = (char *)sp;
 	s += sizeof *sp;
-	s += vsa_suckaddr_len;
+
 	memset(s, 0, vsa_suckaddr_len);
-	sp->their_addr = (void*)s;
+	sp->local_addr = (void*)s;
 	s += vsa_suckaddr_len;
+
+	memset(s, 0, vsa_suckaddr_len);
+	sp->remote_addr = (void*)s;
+	s += vsa_suckaddr_len;
+
 	assert((char *)sp + sz == s);
 
 	sp->t_open = NAN;
 	sp->t_idle = NAN;
-	sp->our_addr = NULL;
 	Lck_New(&sp->mtx, lck_sess);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	return (sp);
@@ -165,29 +174,6 @@ ses_sess_pool_task(struct worker *wrk, void *arg)
 }
 
 /*--------------------------------------------------------------------
- * Get the local socket address
- */
-
-void
-SES_Get_Our_Addr(struct sess *sp)
-{
-	char *s;
-	struct sockaddr_storage ss;
-	socklen_t sl;
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	if (sp->our_addr != NULL)
-		return;
-
-	sl = sizeof ss;
-	AZ(getsockname(sp->fd, (void*)&ss, &sl));
-	s = (char *)sp;
-	s += sizeof *sp;
-	sp->our_addr = VSA_Build(s, &ss, sl);
-	assert(VSA_Sane(sp->our_addr));
-}
-
-/*--------------------------------------------------------------------
  * VSL log the endpoints of the TCP connection.
  *
  * We use VSL() to get the sessions vxid and to make sure tha this
@@ -200,22 +186,23 @@ SES_Get_Our_Addr(struct sess *sp)
 static void
 ses_vsl_socket(struct sess *sp, const char *lsockname)
 {
+	struct sockaddr_storage ss;
+	socklen_t sl;
 	char laddr[ADDR_BUFSIZE];
 	char lport[PORT_BUFSIZE];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AN(lsockname);
 
-	VTCP_name(sp->their_addr,
+	AN(sp->local_addr);
+	sl = sizeof ss;
+	AZ(getsockname(sp->fd, (void*)&ss, &sl));
+	AN(VSA_Build(sp->local_addr, &ss, sl));
+	assert(VSA_Sane(sp->local_addr));
+
+	VTCP_name(sp->remote_addr,
 	    sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
-	if (cache_param->log_local_addr) {
-		SES_Get_Our_Addr(sp);
-		VTCP_name(sp->our_addr,
-		    laddr, sizeof laddr, lport, sizeof lport);
-	} else {
-		strcpy(laddr, "-");
-		strcpy(lport, "-");
-	}
+	VTCP_name(sp->local_addr, laddr, sizeof laddr, lport, sizeof lport);
 	VSL(SLT_Begin, sp->vxid, "sess");
 	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s %.6f %d",
 	    sp->addr, sp->port, lsockname, laddr, lport, sp->t_open, sp->fd);

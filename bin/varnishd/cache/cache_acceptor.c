@@ -352,8 +352,7 @@ VCA_SetupSess(struct worker *wrk, struct sess *sp)
 	wa->acceptsock = -1;
 	retval = wa->acceptlsock->name;
 	assert(wa->acceptaddrlen <= vsa_suckaddr_len);
-	sp->their_addr = VSA_Build(sp->their_addr,
-	    &wa->acceptaddr, wa->acceptaddrlen);
+	AN(VSA_Build(sp->remote_addr, &wa->acceptaddr, wa->acceptaddrlen));
 	vca_pace_good();
 	wrk->stats.sess_conn++;
 	WS_Release(wrk->aws, 0);

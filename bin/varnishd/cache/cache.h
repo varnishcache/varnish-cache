@@ -766,8 +766,8 @@ struct sess {
 
 	/* Session related fields ------------------------------------*/
 
-	struct suckaddr		*their_addr;
-	struct suckaddr		*our_addr;
+	struct suckaddr		*remote_addr;
+	struct suckaddr		*local_addr;
 
 	/* formatted ascii client address */
 	char			addr[ADDR_BUFSIZE];
@@ -1114,7 +1114,6 @@ struct req *SES_GetReq(struct worker *, struct sess *);
 void SES_Handle(struct sess *sp, double now);
 void SES_ReleaseReq(struct req *);
 pool_func_t SES_pool_accept_task;
-void SES_Get_Our_Addr(struct sess *sp);
 
 
 /* cache_shmlog.c */

@@ -540,7 +540,7 @@ VRT_r_client_ip(const struct vrt_ctx *ctx)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	return (ctx->req->sp->their_addr);
+	return (ctx->req->sp->remote_addr);
 }
 
 VCL_IP
@@ -549,8 +549,8 @@ VRT_r_server_ip(const struct vrt_ctx *ctx)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	SES_Get_Our_Addr(ctx->req->sp);
-	return (ctx->req->sp->our_addr);
+	AN(ctx->req->sp->local_addr);
+	return (ctx->req->sp->local_addr);
 }
 
 const char*
@@ -584,8 +584,8 @@ VRT_r_server_port(const struct vrt_ctx *ctx)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	SES_Get_Our_Addr(ctx->req->sp);
-	return (VSA_Port(ctx->req->sp->our_addr));
+	AN(ctx->req->sp->local_addr);
+	return (VSA_Port(ctx->req->sp->local_addr));
 }
 
 /*--------------------------------------------------------------------*/

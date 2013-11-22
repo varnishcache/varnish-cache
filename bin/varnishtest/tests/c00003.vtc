@@ -8,7 +8,6 @@ server s1 {
 # This requires non-local binds to be disabled.  If you see this fail
 # and are on Linux, ensure /proc/net/ipv4/ip_nonlocal_bind is set to 0.
 varnish v1 -cliok "param.set listen_address ${bad_ip}:0"
-varnish v1 -cliok "param.set log_local_address off"
 varnish v1 -vcl+backend {} -clierr 300 start
 
 varnish v1 -cliok "param.set listen_address 127.0.0.1:0,${bad_ip}:9082"

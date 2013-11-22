@@ -436,14 +436,6 @@ struct parspec mgt_parspec[] = {
 		"more sessions take a detour around the waiter.",
 		EXPERIMENTAL,
 		"0.050", "seconds" },
-	{ "log_local_address", tweak_bool, &mgt_param.log_local_addr,
-		NULL, NULL,
-		"Log the local address on the TCP connection in the "
-		"SessionOpen VSL record.\n"
-		"Disabling this saves a getsockname(2) system call "
-		"per TCP connection.",
-		0,
-		"on", "bool" },
 	{ "waiter", tweak_waiter, NULL,
 		NULL, NULL,
 		"Select the waiter kernel interface.",

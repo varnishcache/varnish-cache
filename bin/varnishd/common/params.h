@@ -165,9 +165,6 @@ struct params {
 	/* CLI buffer size */
 	unsigned		cli_buffer;
 
-	/* Log local socket address to shm */
-	unsigned		log_local_addr;
-
 	/* Prefer IPv6 connections to backend*/
 	unsigned		prefer_ipv6;
 
