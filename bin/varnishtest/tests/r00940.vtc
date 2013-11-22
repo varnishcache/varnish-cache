@@ -19,7 +19,7 @@ server s1 {
 	txresp -hdr {ETag: "foo4"}  -gzipbody {<H11><esi:remove> foo </esi:remove><H22>}
 } -start
 
-varnish v1 -vcl+backend { 
+varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		if (bereq.url == "/2") {
 			set beresp.do_gzip = true;
