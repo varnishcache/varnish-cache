@@ -105,322 +105,476 @@ sp_variables = [
 	('client.ip',
 		'IP',
 		( 'both',),
-		( ),
+		( ), """
+The client's IP address.
+"""
 	),
 	('client.identity',
 		'STRING',
 		( 'both',),
-		( 'both',),
+		( 'both',), """
+		Identification of the client, used to load balance
+		in the client director.
+		"""
 	),
 	('server.ip',
 		'IP',
 		( 'client',),
-		( ),
+		( ), """
+		The IP address of the socket on which the client
+		connection was received.
+		"""
 	),
 	('server.hostname',
 		'STRING',
 		( 'client',),
-		( ),
+		( ), """
+		The host name of the server.
+		"""
 	),
 	('server.identity',
 		'STRING',
 		( 'client',),
-		( ),
+		( ), """
+		The identity of the server, as set by the -i
+		parameter.  If the -i parameter is not passed to varnishd,
+		server.identity will be set to the name of the instance, as
+		specified by the -n parameter.
+		"""
 	),
 	('server.port',
 		'INT',
 		( 'client',),
-		( ),
+		( ), """
+		The port number of the socket on which the client
+		connection was received.
+		"""
 	),
 	('req.method',
 		'STRING',
 		( 'client',),
-		( 'client',),
+		( 'client',), """
+		The request type (e.g. "GET", "HEAD").
+		"""
 	),
 	('req.request',
 		'STRING',
 		( 'client',),
-		( 'client',),
+		( 'client',), """
+		utdated way to spell req.method. (XXX: remove)
+		"""
 	),
 	('req.url',
 		'STRING',
 		( 'client',),
-		( 'client',),
+		( 'client',), """
+		The requested URL.
+		"""
 	),
 	('req.proto',
 		'STRING',
 		( 'client',),
-		( 'client',),
+		( 'client',), """
+		The HTTP protocol version used by the client.
+		"""
 	),
 	('req.http.',
 		'HEADER',
 		( 'client',),
-		( 'client',),
+		( 'client',), """
+		The corresponding HTTP header.
+		"""
 	),
 	('req.restarts',
 		'INT',
 		( 'client',),
-		( ),
+		( ), """
+		A count of how many times this request has been restarted.
+		"""
 	),
 	('req.esi_level',
 		'INT',
 		( 'client',),
-		( ),
+		( ), """
+		A count of how many levels of ESI requests we're currently at.
+		"""
 	),
 	('req.ttl',
 		'DURATION',
 		( 'client',),
-		( 'client',),
+		( 'client',), """
+		"""
 	),
 	('req.xid',
 		'STRING',
 		( 'client',),
-		( ),
+		( ), """
+		Unique ID of this request.
+		"""
 	),
 	('req.esi',
 		'BOOL',
 		( 'recv', 'backend_response', 'deliver', 'error',),
-		( 'recv', 'backend_response', 'deliver', 'error',),
+		( 'recv', 'backend_response', 'deliver', 'error',), """
+		Boolean. Set to false to disable ESI processing
+		regardless of any value in beresp.do_esi. Defaults
+		to true. This variable is subject to change in
+		future versions, you should avoid using it.
+		"""
 	),
 	('req.can_gzip',
 		'BOOL',
 		( 'client',),
-		( ),
+		( ), """
+		Does the client accept the gzip transfer encoding.
+		"""
 	),
 	('req.backend',
 		'BACKEND',
 		( 'client',),
-		( 'client',),
+		( 'client',), """
+		The backend to use to service the request.
+		"""
 	),
 	('req.backend.healthy',
 		'BOOL',
 		( 'client',),
-		( ),
+		( ), """
+		XXX: remove:  foo.healthy()
+		"""
 	),
 	('req.hash_ignore_busy',
 		'BOOL',
 		( 'recv',),
-		( 'recv',),
+		( 'recv',), """
+		Ignore any busy object during cache lookup. You
+		would want to do this if you have two server looking
+		up content from each other to avoid potential deadlocks.
+		"""
 	),
 	('req.hash_always_miss',
 		'BOOL',
 		( 'recv',),
-		( 'recv',),
+		( 'recv',), """
+		Force a cache miss for this request. If set to true
+		Varnish will disregard any existing objects and
+		always (re)fetch from the backend.
+		"""
 	),
 	('bereq.retries',
 		'INT',
 		( 'backend',),
-		( ),
+		( ), """
+		"""
 	),
 	('bereq.backend',
 		'BACKEND',
 		( 'pipe', 'backend', ),
-		( 'pipe', 'backend', ),
+		( 'pipe', 'backend', ), """
+		"""
 	),
 	('bereq.backend.healthy',
 		'BOOL',
 		( 'pipe', 'backend', ),
-		( ),
+		( ), """
+		XXX: remove:  foo.healthy()
+		"""
 	),
 	('bereq.method',
 		'STRING',
 		( 'pipe', 'backend', ),
-		( 'pipe', 'backend', ),
+		( 'pipe', 'backend', ), """
+		The request type (e.g. "GET", "HEAD").
+		"""
 	),
 	('bereq.request',
 		'STRING',
 		( 'pipe', 'backend', ),
-		( 'pipe', 'backend', ),
+		( 'pipe', 'backend', ), """
+		XXX: remove
+		"""
 	),
 	('bereq.url',
 		'STRING',
 		( 'pipe', 'backend', ),
-		( 'pipe', 'backend', ),
+		( 'pipe', 'backend', ), """
+		The requested URL.
+		"""
 	),
 	('bereq.proto',
 		'STRING',
 		( 'pipe', 'backend', ),
-		( 'pipe', 'backend', ),
+		( 'pipe', 'backend', ), """
+		The HTTP protocol version used to talk to the server.
+		"""
 	),
 	('bereq.http.',
 		'HEADER',
 		( 'pipe', 'backend', ),
-		( 'pipe', 'backend', ),
+		( 'pipe', 'backend', ), """
+		The corresponding HTTP header.
+		"""
 	),
 	('bereq.uncacheable',
 		'BOOL',
 		( 'backend', ),
-		( 'backend', ),
+		( 'backend', ), """
+		"""
 	),
 	('bereq.connect_timeout',
 		'DURATION',
 		( 'pipe', 'backend', ),
-		( 'pipe', 'backend', ),
+		( 'pipe', 'backend', ), """
+		The time in seconds to wait for a backend connection.
+		"""
 	),
 	('bereq.first_byte_timeout',
 		'DURATION',
 		( 'pipe', 'backend', ),
-		( 'pipe', 'backend', ),
+		( 'pipe', 'backend', ), """
+		The time in seconds to wait for the first byte from
+		the backend.  Not available in pipe mode.
+		"""
 	),
 	('bereq.between_bytes_timeout',
 		'DURATION',
 		( 'pipe', 'backend', ),
-		( 'pipe', 'backend', ),
+		( 'pipe', 'backend', ), """
+		The time in seconds to wait between each received byte from the
+		backend.  Not available in pipe mode.
+		"""
 	),
 	('beresp.proto',
 		'STRING',
 		( 'backend_response',),
-		( 'backend_response',),
+		( 'backend_response',), """
+		The HTTP protocol version used the backend replied with.
+		"""
 	),
 	('beresp.status',
 		'INT',
 		( 'backend_response',),
-		( 'backend_response',),
+		( 'backend_response',), """
+		The HTTP status code returned by the server.
+		"""
 	),
 	('beresp.response',
 		'STRING',
 		( 'backend_response',),
-		( 'backend_response',),
+		( 'backend_response',), """
+		The HTTP status message returned by the server.
+		"""
 	),
 	('beresp.http.',
 		'HEADER',
 		( 'backend_response',),
-		( 'backend_response',),
+		( 'backend_response',), """
+		The corresponding HTTP header.
+		"""
 	),
 	('beresp.do_esi',
 		'BOOL',
 		( 'backend_response',),
-		( 'backend_response',),
+		( 'backend_response',), """
+		Boolean. ESI-process the object after fetching it.
+		Defaults to false. Set it to true to parse the
+		object for ESI directives. Will only be honored if
+		req.esi is true.
+		"""
 	),
 	('beresp.do_stream',
 		'BOOL',
 		( 'backend_response',),
-		( 'backend_response',),
+		( 'backend_response',), """
+		Deliver the object to the client directly without
+		fetching the whole object into varnish. If this
+		request is pass'ed it will not be stored in memory.
+		As of Varnish Cache 3.0 the object will marked as busy
+		as it is delivered so only client can access the object.
+		"""
 	),
 	('beresp.do_gzip',
 		'BOOL',
 		( 'backend_response',),
-		( 'backend_response',),
+		( 'backend_response',), """
+		Boolean. Gzip the object before storing it. Defaults
+		to false. When http_gzip_support is on Varnish will
+		request already compressed content from the backend
+		and as such compression in Varnish is not needed.
+		"""
 	),
 	('beresp.do_gunzip',
 		'BOOL',
 		( 'backend_response',),
-		( 'backend_response',),
+		( 'backend_response',), """
+		Boolean. Unzip the object before storing it in the
+		cache.  Defaults to false.
+		"""
 	),
 	('beresp.uncacheable',
 		'BOOL',
 		( 'backend_response',),
-		( 'backend_response',),
+		( 'backend_response',), """
+		"""
 	),
 	('beresp.ttl',
 		'DURATION',
 		( 'backend_response',),
-		( 'backend_response',),
+		( 'backend_response',), """
+		The object's remaining time to live, in seconds.
+		beresp.ttl is writable.
+		"""
 	),
 	('beresp.grace',
 		'DURATION',
 		( 'backend_response',),
-		( 'backend_response',),
+		( 'backend_response',), """
+		Set to a period to enable grace.
+		"""
 	),
 	('beresp.keep',
 		'DURATION',
 		( 'backend_response',),
-		( 'backend_response',),
+		( 'backend_response',), """
+		"""
 	),
 	('beresp.backend.name',
 		'STRING',
 		( 'backend_response',),
-		( ),
+		( ), """
+		Name of the backend this response was fetched from.
+		"""
 	),
 	('beresp.backend.ip',
 		'IP',
 		( 'backend_response',),
-		( ),
+		( ), """
+		IP of the backend this response was fetched from.
+		"""
 	),
 	('beresp.backend.port',
 		'INT',
 		( 'backend_response',),
-		( ),
+		( ), """
+		Port of the backend this response was fetched from.
+		"""
 	),
 	('beresp.storage',
 		'STRING',
 		( 'backend_response',),
-		( 'backend_response',),
+		( 'backend_response',), """
+		Set to force Varnish to save this object to a
+		particular storage backend.
+		"""
 	),
 	('obj.proto',
 		'STRING',
 		( 'hit', 'error',),
-		( 'hit', 'error',),
+		( 'hit', 'error',), """
+		The HTTP protocol version used when the object was retrieved.
+		"""
 	),
 	('obj.status',
 		'INT',
 		( 'error',),
-		( 'error',),
+		( 'error',), """
+		The HTTP status code returned by the server.
+		"""
 	),
 	('obj.response',
 		'STRING',
 		( 'error',),
-		( 'error',),
+		( 'error',), """
+		The HTTP status message returned by the server.
+		"""
 	),
 	('obj.hits',
 		'INT',
 		( 'hit', 'deliver',),
-		( 'hit', 'deliver',),
+		( 'hit', 'deliver',), """
+		The approximate number of times the object has been
+		delivered. A value of 0 indicates a cache miss.
+		This variable is also available in vcl_deliver.
+		"""
 	),
 	('obj.http.',
 		'HEADER',
 		( 'hit', 'error',),
-		( 'error',),		# XXX ?
+		( 'error',), """
+		The corresponding HTTP header.
+		"""
 	),
 	('obj.ttl',
 		'DURATION',
 		( 'hit', 'error',),
-		( 'hit', 'error',),
+		( 'hit', 'error',), """
+		The object's remaining time to live, in seconds.
+		obj.ttl is writable.
+		"""
 	),
 	('obj.grace',
 		'DURATION',
 		( 'hit', 'error',),
-		( 'hit', 'error',),
+		( 'hit', 'error',), """
+		The object's grace period in seconds. obj.grace is writable.
+		"""
 	),
 	('obj.keep',
 		'DURATION',
 		( 'hit', 'error',),
-		( 'hit', 'error',),
+		( 'hit', 'error',), """
+		"""
 	),
 	('obj.last_use',
 		'TIME',
 		( 'hit', 'deliver',),
-		( 'hit', 'deliver',),
+		( 'hit', 'deliver',), """
+		The approximate time elapsed since the object was
+		last requests, in seconds. This variable is also
+		available in vcl_deliver.
+		"""
 	),
 	('obj.uncacheable',
 		'BOOL',
 		( 'hit', 'deliver', 'error',),
-		( ),
+		( ), """
+		"""
 	),
 	('resp.proto',
 		'STRING',
 		( 'deliver',),
-		( 'deliver',),
+		( 'deliver',), """
+		The HTTP protocol version to use for the response.
+		"""
 	),
 	('resp.status',
 		'INT',
 		( 'deliver',),
-		( 'deliver',),
+		( 'deliver',), """
+		The HTTP status code that will be returned.
+		"""
 	),
 	('resp.response',
 		'STRING',
 		( 'deliver',),
-		( 'deliver',),
+		( 'deliver',), """
+		The HTTP status message that will be returned.
+		"""
 	),
 	('resp.http.',
 		'HEADER',
 		( 'deliver',),
-		( 'deliver',),
+		( 'deliver',), """
+		The corresponding HTTP header.
+		"""
 	),
 	('now',
 		'TIME',
 		( 'all',),
-		( ),
+		( ), """
+		The current time, in seconds since the epoch. When
+		used in string context it returns a formatted string.
+		"""
 	),
 ]
 
@@ -945,3 +1099,50 @@ fo.write("""
 """)
 
 fo.close
+
+#######################################################################
+
+fo = open(buildroot + "/doc/sphinx/reference/vcl_var.rst", "w")
+
+l = list()
+for i in sp_variables:
+	l.append(i)
+
+l.sort()
+
+def rst_where(fo, h, l):
+	ll = list()
+	if len(l) == 0:
+		return
+	fo.write("\t" + h)
+	s = ""
+	for j in l:
+		if j == "both":
+			ll.append("client")
+			ll.append("backend")
+		elif j == "client":
+			ll.append(j)
+		elif j == "backend":
+			ll.append(j)
+		else:
+			ll.append("vcl_" + j)
+	for j in ll:
+		fo.write(s + j)
+		s = ", "
+	fo.write("\n\n")
+
+hdr=""
+for i in l:
+	j = i[0].split(".")
+	if j[0] != hdr:
+		fo.write("\n" + j[0] + "\n")
+		fo.write("~" * len(j[0]) + "\n")
+		hdr = j[0]
+	fo.write("\n" + i[0] + "\n\n")
+	fo.write("\tType: " + i[1] + "\n\n")
+	rst_where(fo, "Readable from: ", i[2])
+	rst_where(fo, "Writeable frome: ", i[3])
+	for j in i[4].split("\n"):
+		fo.write("\t" + j.strip() + "\n")
+
+fo.close()
