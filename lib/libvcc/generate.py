@@ -142,14 +142,6 @@ The client's IP address.
 		specified by the -n parameter.
 		"""
 	),
-	('server.port',
-		'INT',
-		( 'client',),
-		( ), """
-		The port number of the socket on which the client
-		connection was received.
-		"""
-	),
 	('req.method',
 		'STRING',
 		( 'client',),
@@ -422,13 +414,6 @@ The client's IP address.
 		( 'backend_response',),
 		( ), """
 		IP of the backend this response was fetched from.
-		"""
-	),
-	('beresp.backend.port',
-		'INT',
-		( 'backend_response',),
-		( ), """
-		Port of the backend this response was fetched from.
 		"""
 	),
 	('beresp.storage',

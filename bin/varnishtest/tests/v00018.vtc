@@ -12,9 +12,9 @@ varnish v1 -vcl {
 	sub vcl_hit { return(error(100,"the butter please")); }
 }
 
-varnish v1 -errvcl {Variable 'server.port' is read only.} {
+varnish v1 -errvcl {Variable 'now' is read only.} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_miss { set server.port = 1000; }
+	sub vcl_miss { set now = 1000; }
 }
 
 varnish v1 -vcl {
@@ -34,7 +34,7 @@ varnish v1 -errvcl {Expected '=' got '+='} {
 
 varnish v1 -errvcl {Expected '=' got '+='} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { set req.url += server.port; }
+	sub vcl_recv { set req.url += now; }
 }
 
 varnish v1 -errvcl {Expected ';' got 'if'} {

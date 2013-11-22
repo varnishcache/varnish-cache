@@ -40,6 +40,7 @@
 
 #include "vrt.h"
 #include "vtcp.h"
+#include "vsa.h"
 
 #include "cache/cache.h"
 #include "cache/cache_backend.h"
@@ -193,4 +194,13 @@ vmod_healthy(const struct vrt_ctx *ctx, VCL_BACKEND be)
 		return (0);
 	CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
 	return (VDI_Healthy(be));
+}
+
+VCL_INT __match_proto__(td_std_port)
+vmod_port(const struct vrt_ctx *ctx, VCL_IP ip)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (ip == NULL)
+		return (0);
+	return (VSA_Port(ip));
 }

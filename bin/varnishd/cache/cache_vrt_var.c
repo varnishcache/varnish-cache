@@ -40,7 +40,6 @@
 #include "cache_backend.h"
 #include "vrt.h"
 #include "vrt_obj.h"
-#include "vsa.h"
 
 static char vrt_hostname[255] = "";
 
@@ -263,16 +262,6 @@ VRT_r_beresp_backend_ip(const struct vrt_ctx *ctx)
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo->vbc, VBC_MAGIC);
 	return(ctx->bo->vbc->addr);
-}
-
-long
-VRT_r_beresp_backend_port(const struct vrt_ctx *ctx)
-{
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->bo->vbc, VBC_MAGIC);
-	return (VSA_Port(ctx->bo->vbc->addr));
 }
 
 const char *
@@ -544,20 +533,6 @@ VRT_r_server_hostname(const struct vrt_ctx *ctx)
 	if (vrt_hostname[0] == '\0')
 		AZ(gethostname(vrt_hostname, sizeof(vrt_hostname)));
 	return (vrt_hostname);
-}
-
-/*--------------------------------------------------------------------
- * XXX: This is pessimistically silly
- */
-
-long
-VRT_r_server_port(const struct vrt_ctx *ctx)
-{
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	AN(ctx->req->sp->local_addr);
-	return (VSA_Port(ctx->req->sp->local_addr));
 }
 
 /*--------------------------------------------------------------------*/

@@ -7,8 +7,10 @@ server s1 {
 
 varnish v1 -vcl+backend {
 
+	import ${vmod_std};
+
 	sub vcl_deliver {
-		set resp.http.server_port = server.port;
+		set resp.http.server_port = std.port(server.ip);
 	}
 
 	sub vcl_backend_response {
