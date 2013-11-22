@@ -6,8 +6,11 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+
+	import ${vmod_std};
+
 	sub vcl_deliver {
-	    set resp.http.x-foo = req.backend.healthy;
+	    set resp.http.x-foo = std.healthy(req.backend);
 	}
 } -start
 

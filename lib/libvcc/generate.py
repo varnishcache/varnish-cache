@@ -229,13 +229,6 @@ The client's IP address.
 		The backend to use to service the request.
 		"""
 	),
-	('req.backend.healthy',
-		'BOOL',
-		( 'client',),
-		( ), """
-		XXX: remove:  foo.healthy()
-		"""
-	),
 	('req.hash_ignore_busy',
 		'BOOL',
 		( 'recv',),
@@ -264,13 +257,6 @@ The client's IP address.
 		'BACKEND',
 		( 'pipe', 'backend', ),
 		( 'pipe', 'backend', ), """
-		"""
-	),
-	('bereq.backend.healthy',
-		'BOOL',
-		( 'pipe', 'backend', ),
-		( ), """
-		XXX: remove:  foo.healthy()
 		"""
 	),
 	('bereq.method',

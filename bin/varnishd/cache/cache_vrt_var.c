@@ -328,22 +328,6 @@ REQ_VAR_R(backend, director, struct director *)
 REQ_VAR_L(ttl, d_ttl, double, if (!(arg>0.0)) arg = 0;)
 REQ_VAR_R(ttl, d_ttl, double)
 
-unsigned
-VRT_r_req_backend_healthy(const struct vrt_ctx *ctx)
-{
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	/*
-	 * XXX: Not optimal, but we do not have a backend in vcl_deliver
-	 * XXX: and we have to return something.
-	 */
-	if (ctx->req->director == NULL)
-		return (0);
-	CHECK_OBJ_NOTNULL(ctx->req->director, DIRECTOR_MAGIC);
-	return (VDI_Healthy(ctx->req->director));
-}
-
 /*--------------------------------------------------------------------*/
 
 void
@@ -364,16 +348,6 @@ VRT_r_bereq_backend(const struct vrt_ctx *ctx)
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 	AN(ctx->bo->director);
 	return (ctx->bo->director);
-}
-
-unsigned
-VRT_r_bereq_backend_healthy(const struct vrt_ctx *ctx)
-{
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->bo->director, DIRECTOR_MAGIC);
-	return (VDI_Healthy(ctx->bo->director));
 }
 
 /*--------------------------------------------------------------------*/

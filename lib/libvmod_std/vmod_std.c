@@ -42,6 +42,7 @@
 #include "vtcp.h"
 
 #include "cache/cache.h"
+#include "cache/cache_backend.h"
 
 #include "vcc_if.h"
 
@@ -182,4 +183,14 @@ vmod_collect(const struct vrt_ctx *ctx, VCL_HEADER hdr)
 	} else if (hdr->where == HDR_RESP) {
 		http_CollectHdr(ctx->http_resp, hdr->what);
 	}
+}
+
+VCL_BOOL __match_proto__(td_std_healthy)
+vmod_healthy(const struct vrt_ctx *ctx, VCL_BACKEND be)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (be == NULL)
+		return (0);
+	CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
+	return (VDI_Healthy(be));
 }
