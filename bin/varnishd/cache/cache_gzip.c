@@ -349,7 +349,6 @@ VDP_gunzip(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 	return (0);
 }
 
-
 /*--------------------------------------------------------------------
  * Gunzip ibuf into outb, if it runs full, emit it with WRW.
  * Leave flushing to caller, more data may be coming.

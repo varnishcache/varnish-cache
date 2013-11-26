@@ -90,6 +90,7 @@ VFP_Error(struct busyobj *bo, const char *error)
  * 'estimate' is the estimate of the number of bytes we expect to receive,
  * as seen on the socket, or zero if unknown.
  */
+
 static void __match_proto__(vfp_begin_f)
 vfp_nop_begin(struct busyobj *bo, size_t estimate)
 {
