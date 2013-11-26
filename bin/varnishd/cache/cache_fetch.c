@@ -441,7 +441,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	assert(bo->state == BOS_REQ_DONE);
 	VBO_setstate(bo, BOS_FETCHING);
 
-	V1F_fetch_body(wrk, bo);
+	V1F_fetch_body(bo);
 
 	bo->vfp = NULL;
 

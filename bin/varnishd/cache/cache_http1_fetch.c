@@ -317,15 +317,13 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
  */
 
 void
-V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
+V1F_fetch_body(struct busyobj *bo)
 {
-	int cls;
 	struct storage *st;
 	ssize_t cl;
 	struct http_conn *htc;
 	struct object *obj;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	htc = &bo->htc;
 	CHECK_OBJ_ORNULL(bo->vbc, VBC_MAGIC);
@@ -335,20 +333,12 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 
 	assert(bo->state == BOS_FETCHING);
 
-	/*
-	 * XXX: The busyobj needs a dstat, but it is not obvious which one
-	 * XXX: it should be (own/borrowed).  For now borrow the wrk's.
-	 */
-	AZ(bo->stats);
-	bo->stats = &wrk->stats;
-
 	AN(bo->vfp);
 	AZ(bo->vgz_rx);
 	assert(VTAILQ_EMPTY(&obj->store));
 
 	/* XXX: pick up estimate from objdr ? */
 	cl = 0;
-	cls = bo->should_close;
 	switch (htc->body_status) {
 	case BS_NONE:
 		break;
@@ -359,14 +349,14 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 
 		bo->vfp->begin(bo, cl);
 		if (bo->state == BOS_FETCHING && cl > 0)
-			cls |= vbf_fetch_straight(bo, htc, cl);
+			bo->should_close |= vbf_fetch_straight(bo, htc, cl);
 		if (bo->vfp->end(bo))
 			assert(bo->state == BOS_FAILED);
 		break;
 	case BS_CHUNKED:
 		bo->vfp->begin(bo, cl > 0 ? cl : 0);
 		if (bo->state == BOS_FETCHING)
-			cls |= vbf_fetch_chunked(bo, htc);
+			bo->should_close |= vbf_fetch_chunked(bo, htc);
 		if (bo->vfp->end(bo))
 			assert(bo->state == BOS_FAILED);
 		break;
@@ -374,12 +364,13 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 		bo->vfp->begin(bo, cl > 0 ? cl : 0);
 		if (bo->state == BOS_FETCHING)
 			vbf_fetch_eof(bo, htc);
-		cls = 1;
+		bo->should_close = 1;
 		if (bo->vfp->end(bo))
 			assert(bo->state == BOS_FAILED);
 		break;
 	case BS_ERROR:
-		cls |= VFP_Error(bo, "error incompatible Transfer-Encoding");
+		bo->should_close |=
+		    VFP_Error(bo, "error incompatible Transfer-Encoding");
 		break;
 	default:
 		INCOMPL();
@@ -404,12 +395,10 @@ V1F_fetch_body(struct worker *wrk, struct busyobj *bo)
 	}
 
 	if (bo->vbc != NULL) {
-		if (cls)
+		if (bo->should_close)
 			VDI_CloseFd(&bo->vbc);
 		else
 			VDI_RecycleFd(&bo->vbc);
 	}
 	AZ(bo->vbc);
-
-	bo->stats = NULL;
 }
