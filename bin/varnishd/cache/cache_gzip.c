@@ -540,7 +540,7 @@ vfp_gunzip_end(struct busyobj *bo)
 	return (0);
 }
 
-struct vfp vfp_gunzip = {
+const struct vfp vfp_gunzip = {
         .begin  =       vfp_gunzip_begin,
         .bytes  =       vfp_gunzip_bytes,
         .end    =       vfp_gunzip_end,
@@ -625,7 +625,7 @@ vfp_gzip_end(struct busyobj *bo)
 	return (0);
 }
 
-struct vfp vfp_gzip = {
+const struct vfp vfp_gzip = {
         .begin  =       vfp_gzip_begin,
         .bytes  =       vfp_gzip_bytes,
         .end    =       vfp_gzip_end,
@@ -710,7 +710,7 @@ vfp_testgzip_end(struct busyobj *bo)
 	return (0);
 }
 
-struct vfp vfp_testgzip = {
+const struct vfp vfp_testgzip = {
         .begin  =       vfp_testgzip_begin,
         .bytes  =       vfp_testgzip_bytes,
         .end    =       vfp_testgzip_end,

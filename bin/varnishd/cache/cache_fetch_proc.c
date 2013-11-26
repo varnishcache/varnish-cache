@@ -153,7 +153,7 @@ vfp_nop_end(struct busyobj *bo)
 	return (0);
 }
 
-struct vfp VFP_nop = {
+const struct vfp VFP_nop = {
 	.begin	=	vfp_nop_begin,
 	.bytes	=	vfp_nop_bytes,
 	.end	=	vfp_nop_end,

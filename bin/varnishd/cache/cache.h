@@ -270,10 +270,10 @@ struct vfp {
 	vfp_end_f	*end;
 };
 
-extern struct vfp vfp_gunzip;
-extern struct vfp vfp_gzip;
-extern struct vfp vfp_testgzip;
-extern struct vfp vfp_esi;
+extern const struct vfp vfp_gunzip;
+extern const struct vfp vfp_gzip;
+extern const struct vfp vfp_testgzip;
+extern const struct vfp vfp_esi;
 
 /* Deliver processors ------------------------------------------------*/
 
@@ -540,7 +540,7 @@ struct busyobj {
 	unsigned		is_gzip;
 	unsigned		is_gunzip;
 
-	struct vfp		*vfp;
+	const struct vfp	*vfp;
 	struct vep_state	*vep;
 	enum busyobj_state_e	state;
 	struct vgz		*vgz_rx;
@@ -932,7 +932,7 @@ struct storage *VFP_GetStorage(struct busyobj *, ssize_t sz);
 int VFP_Error2(struct busyobj *, const char *error, const char *more);
 int VFP_Error(struct busyobj *, const char *error);
 void VFP_Init(void);
-extern struct vfp VFP_nop;
+extern const struct vfp VFP_nop;
 
 /* cache_gzip.c */
 struct vgz;

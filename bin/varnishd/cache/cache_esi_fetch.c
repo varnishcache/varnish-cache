@@ -415,7 +415,7 @@ vfp_esi_end(struct busyobj *bo)
 	return (retval);
 }
 
-struct vfp vfp_esi = {
+const struct vfp vfp_esi = {
         .begin  =       vfp_esi_begin,
         .bytes  =       vfp_esi_bytes,
         .end    =       vfp_esi_end,
