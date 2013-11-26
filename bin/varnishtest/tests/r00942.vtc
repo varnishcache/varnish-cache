@@ -1,9 +1,10 @@
 varnishtest "#942 junk after gzip from backend"
 
-server s1 {
+server s1 -repeat 2 {
 	rxreq
 	txresp -nolen \
 		-hdr "Content-Encoding: gzip" \
+		-hdr "Connection: close" \
 		-hdr "Transfer-Encoding: Chunked"
 	send "14\r\n"
 		# An empty gzip file:
@@ -21,13 +22,17 @@ server s1 {
 	chunked "FOOBAR"
 
 	chunkedlen 0
-
+	expect_close
+	accept
 } -start
 
 varnish v1 \
 	-vcl+backend {
 		sub vcl_backend_response {
 			set beresp.do_stream = false;
+			if (bereq.http.foo == "foo") {
+				set beresp.do_gunzip = true;
+			}
 		}
 }
 
@@ -35,7 +40,13 @@ varnish v1 -cliok "param.set debug +syncvsl"
 varnish v1 -start
 
 client c1 {
-	txreq
+	txreq -url /1
+	rxresp
+	expect resp.status == 503
+} -run
+
+client c1 {
+	txreq -url /2 -hdr "Foo: foo"
 	rxresp
 	expect resp.status == 503
 } -run

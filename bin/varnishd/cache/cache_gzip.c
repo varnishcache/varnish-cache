@@ -516,6 +516,8 @@ vfp_gunzip_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
 		i = VGZ_Gunzip(vg, &dp, &dl);
 		if (i != VGZ_OK && i != VGZ_END)
 			return(VFP_Error(bo, "Gunzip data error"));
+		if (i == VGZ_END && !VGZ_IbufEmpty(vg))
+			return(VFP_Error(bo, "Junk after gzip data"));
 		VBO_extend(bo, dl);
 	}
 	assert(i == Z_OK || i == Z_STREAM_END);
