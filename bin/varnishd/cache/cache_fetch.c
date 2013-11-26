@@ -442,6 +442,39 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	VBO_setstate(bo, BOS_FETCHING);
 
 	V1F_fetch_body(wrk, bo);
+
+	bo->vfp = NULL;
+
+	VSLb(bo->vsl, SLT_Fetch_Body, "%u(%s)",
+	    bo->htc.body_status, body_status_2str(bo->htc.body_status));
+
+	http_Teardown(bo->bereq);
+	http_Teardown(bo->beresp);
+
+	if (bo->state == BOS_FAILED) {
+		wrk->stats.fetch_failed++;
+	} else {
+		assert(bo->state == BOS_FETCHING);
+
+		VSLb(bo->vsl, SLT_Length, "%zd", obj->len);
+
+		{
+		/* Sanity check fetch methods accounting */
+			ssize_t uu;
+			struct storage *st;
+
+			uu = 0;
+			VTAILQ_FOREACH(st, &obj->store, list)
+				uu += st->len;
+			if (bo->do_stream)
+				/* Streaming might have started freeing stuff */
+				assert(uu <= obj->len);
+
+			else
+				assert(uu == obj->len);
+		}
+	}
+
 	if (!bo->do_stream && bo->state != BOS_FAILED)
 		HSH_Unbusy(&wrk->stats, obj->objcore);
 
