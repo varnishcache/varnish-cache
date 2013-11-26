@@ -259,7 +259,7 @@ RFC2616_Body(struct busyobj *bo, struct dstat *stats)
 		 * We assume a zero length body.
 		 */
 		stats->fetch_zero++;
-		return (BS_ZERO);
+		return (BS_NONE);
 	}
 
 	if (http_HdrIs(hp, H_Connection, "close")) {

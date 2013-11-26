@@ -199,6 +199,8 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 	 * NB: Also sets other wrk variables
 	 */
 	bo->htc.body_status = RFC2616_Body(bo, &wrk->stats);
+	if (i && bo->htc.body_status == BS_LENGTH)
+		bo->htc.body_status = BS_NONE;
 
 	bo->err_code = http_GetStatus(bo->beresp);
 

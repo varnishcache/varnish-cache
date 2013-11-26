@@ -30,7 +30,6 @@
 
 /*lint -save -e525 -e539 */
 BODYSTATUS(NONE, none)
-BODYSTATUS(ZERO, zero)
 BODYSTATUS(ERROR, error)
 BODYSTATUS(CHUNKED, chunked)
 BODYSTATUS(LENGTH, length)

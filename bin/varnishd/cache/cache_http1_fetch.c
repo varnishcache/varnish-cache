@@ -342,8 +342,6 @@ V1F_fetch_body(struct busyobj *bo)
 	switch (htc->body_status) {
 	case BS_NONE:
 		break;
-	case BS_ZERO:
-		break;
 	case BS_LENGTH:
 		cl = vbf_fetch_number(bo->h_content_length, 10);
 
