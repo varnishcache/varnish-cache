@@ -330,6 +330,7 @@ V1F_fetch_body(struct busyobj *bo)
 	obj = bo->fetch_obj;
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(obj->http, HTTP_MAGIC);
+	AN(bo->vbc);
 
 	assert(bo->state == BOS_FETCHING);
 
@@ -340,8 +341,6 @@ V1F_fetch_body(struct busyobj *bo)
 	/* XXX: pick up estimate from objdr ? */
 	cl = 0;
 	switch (htc->body_status) {
-	case BS_NONE:
-		break;
 	case BS_LENGTH:
 		cl = vbf_fetch_number(bo->h_content_length, 10);
 
@@ -366,14 +365,9 @@ V1F_fetch_body(struct busyobj *bo)
 		if (bo->vfp->end(bo))
 			assert(bo->state == BOS_FAILED);
 		break;
-	case BS_ERROR:
-		bo->should_close |=
-		    VFP_Error(bo, "error incompatible Transfer-Encoding");
-		break;
 	default:
-		INCOMPL();
+		WRONG("Wrong body_status");
 	}
-	bo->t_body = VTIM_mono();
 	AZ(bo->vgz_rx);
 
 	/*
@@ -391,12 +385,4 @@ V1F_fetch_body(struct busyobj *bo)
 			STV_trim(st, st->len, 1);
 		}
 	}
-
-	if (bo->vbc != NULL) {
-		if (bo->should_close)
-			VDI_CloseFd(&bo->vbc);
-		else
-			VDI_RecycleFd(&bo->vbc);
-	}
-	AZ(bo->vbc);
 }

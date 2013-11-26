@@ -443,7 +443,31 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	assert(bo->state == BOS_REQ_DONE);
 	VBO_setstate(bo, BOS_FETCHING);
 
-	V1F_fetch_body(bo);
+	switch (bo->htc.body_status) {
+	case BS_NONE:
+		break;
+	case BS_ERROR:
+		/* XXX: Why not earlier ? */
+		bo->should_close |=
+		    VFP_Error(bo, "error incompatible Transfer-Encoding");
+		break;
+	default:
+		if (bo->vbc == NULL)
+			(void)VFP_Error(bo, "Backend connection gone");
+		else
+			V1F_fetch_body(bo);
+		break;
+	}
+
+	bo->t_body = VTIM_mono();
+
+	if (bo->vbc != NULL) {
+		if (bo->should_close)
+			VDI_CloseFd(&bo->vbc);
+		else
+			VDI_RecycleFd(&bo->vbc);
+		AZ(bo->vbc);
+	}
 
 	bo->vfp = NULL;
 
