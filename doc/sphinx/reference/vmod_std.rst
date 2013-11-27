@@ -151,8 +151,7 @@ Description
 	Converts string *s* to the first IP number returned by
 	the system library function getaddrinfo(3).  If conversion
 	fails, *fallback* will be returned.
-Example:
-
+Example
 	if (std.ip(req.http.X-forwarded-for, "0.0.0.0") ~ my_acl) { ... }
 	
 	
