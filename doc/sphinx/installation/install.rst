@@ -29,7 +29,7 @@ CentOS/RedHat
 -------------
 
 We try to keep the latest version available as prebuilt RPMs (el5 and el6)
-on `repo.varnish-cache.org <http://repo.varnish-cache.org/>`.  See the
+on `repo.varnish-cache.org <http://repo.varnish-cache.org/>`_.  See the
 `RedHat installation instructions
 <http://www.varnish-cache.org/installation/redhat>`_ for more information.
 
@@ -76,13 +76,15 @@ In order to build Varnish from source you need a number of packages
 installed. On a Debian or Ubuntu system these are:
 
 * autotools-dev
-* automake1.9
+* automake1.11
 * libtool 
 * autoconf
 * libncurses-dev
 * groff-base
 * libpcre3-dev
 * pkg-config
+* make
+* libedit-dev
 
 Build dependencies on Red Hat / CentOS
 --------------------------------------
