@@ -21,7 +21,7 @@ acceptor_sleep_decay
 	* Flags: experimental
 
 If we run out of resources, such as file descriptors or worker threads, the acceptor will sleep between accepts.
-This parameter (multiplicatively) reduce the sleep duration for each succesfull accept. (ie: 0.9 = reduce by 10%)
+This parameter (multiplicatively) reduces the sleep duration for each succesfull accept. (ie: 0.9 = reduce by 10%)
 
 .. _ref_param_acceptor_sleep_incr:
 
@@ -34,7 +34,7 @@ acceptor_sleep_incr
 	* Flags: experimental
 
 If we run out of resources, such as file descriptors or worker threads, the acceptor will sleep between accepts.
-This parameter control how much longer we sleep, each time we fail to accept a new connection.
+This parameter control how much longer we sleep, each time we fail to accept a new connection in succession.
 
 .. _ref_param_acceptor_sleep_max:
 
@@ -56,7 +56,7 @@ auto_restart
 	* Units: bool
 	* Default: on
 
-Restart child process automatically if it dies.
+Restart child process automatically if it dies. This is not related to restarts in VCL.
 
 .. _ref_param_ban_dups:
 
@@ -75,7 +75,7 @@ ban_lurker_sleep
 	* Default: 0.010000
 	* Minimum: 0.000000
 
-How long time does the ban lurker thread sleeps between successful attempts to push the last item up the ban  list.  It always sleeps a second when nothing can be done.
+How long time does the ban lurker thread sleep between successful attempts to push the last item up the ban list.  It always sleeps a second when nothing can be done.
 A value of zero disables the ban lurker.
 
 .. _ref_param_between_bytes_timeout:
@@ -86,7 +86,7 @@ between_bytes_timeout
 	* Default: 60.000000
 	* Minimum: 0.000000
 
-Default timeout between bytes when receiving data from backend. We only wait for this many seconds between bytes before giving up. A value of 0 means it will never time out. VCL can override this default value for each backend request and backend request. This parameter does not apply to pipe.
+Default timeout between bytes when receiving data from backend. We only wait for this many seconds between bytes before giving up. A value of 0 means it will never time out. VCL can override this default value for each backend request and backend request. This parameter does not apply to pipe mode.
 
 .. _ref_param_busyobj_worker_cache:
 
@@ -116,7 +116,7 @@ cli_buffer
 
 Size of buffer for CLI command input.
 You may need to increase this if you have big VCL files and use the vcl.inline CLI command.
-NB: Must be specified with -p to have effect.
+NB: Must be specified with -p to have an effect.
 
 .. _ref_param_cli_limit:
 
@@ -137,7 +137,7 @@ cli_timeout
 	* Default: 10
 	* Minimum: 0
 
-Timeout for the childs replies to CLI requests from the mgt_param.
+Timeout for CLI requests from the parent to the child process. If this timeout expires before the child responds, the master process will terminate the child process. The setting of auto_restart determines if it will get restarted automatically.
 
 .. _ref_param_clock_skew:
 
