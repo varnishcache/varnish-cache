@@ -456,8 +456,13 @@ gl_LD_VERSION_SCRIPT
 # The reason for -Wno-error=unused-result is a glibc/gcc interaction
 # idiocy where write is marked as warn_unused_result, causing build
 # failures.
-CFLAGS="${CFLAGS} -Wall -Werror -Wno-error=unused-result"
-OCFLAGS="${OCFLAGS} -Wall -Werror  -Wno-error=unused-result"
+CFLAGS="${CFLAGS} -Wall -Werror"
+OCFLAGS="${OCFLAGS} -Wall -Werror"
+AX_CHECK_COMPILE_FLAG([-Wno-error=unused-result],
+    [CFLAGS="${CFLAGS} -Wno-error=warn-unused-result
+     OCFLAGS="${OCFLAGS} -Wno-error=warn-unused-result],
+    [CFLAGS="${CFLAGS} -Wno-unused-result"
+     OCFLAGS="${OCFLAGS} -Wno-unused-result"])
 
 # This corresponds to FreeBSD's WARNS level 6
 DEVELOPER_CFLAGS="-fstack-protector -Werror -Wall -Wno-format-y2k -W -Wno-unused-parameter -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wunused-parameter -Wcast-align -Wchar-subscripts -Winline -Wnested-externs -Wno-pointer-sign -Wextra -Wno-missing-field-initializers -Wno-sign-compare"
