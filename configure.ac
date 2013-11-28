@@ -451,9 +451,13 @@ gl_LD_VERSION_SCRIPT
 # Now that we're done using the compiler to look for functions and
 # libraries, set CFLAGS to what we want them to be for our own code
 
-# This is a test to see how much havoc Jenkins exposes
-CFLAGS="${CFLAGS} -Wall -Werror"
-OCFLAGS="${OCFLAGS} -Wall -Werror"
+# This is a test to see how much havoc Jenkins exposes.
+#
+# The reason for -Wno-error=unused-result is a glibc/gcc interaction
+# idiocy where write is marked as warn_unused_result, causing build
+# failures.
+CFLAGS="${CFLAGS} -Wall -Werror -Wno-error=unused-result"
+OCFLAGS="${OCFLAGS} -Wall -Werror  -Wno-error=unused-result"
 
 # This corresponds to FreeBSD's WARNS level 6
 DEVELOPER_CFLAGS="-fstack-protector -Werror -Wall -Wno-format-y2k -W -Wno-unused-parameter -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wunused-parameter -Wcast-align -Wchar-subscripts -Winline -Wnested-externs -Wno-pointer-sign -Wextra -Wno-missing-field-initializers -Wno-sign-compare"
