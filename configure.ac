@@ -459,8 +459,8 @@ gl_LD_VERSION_SCRIPT
 CFLAGS="${CFLAGS} -Wall -Werror"
 OCFLAGS="${OCFLAGS} -Wall -Werror"
 AX_CHECK_COMPILE_FLAG([-Wno-error=unused-result],
-    [CFLAGS="${CFLAGS} -Wno-error=warn-unused-result
-     OCFLAGS="${OCFLAGS} -Wno-error=warn-unused-result],
+    [CFLAGS="${CFLAGS} -Wno-error=unused-result"
+     OCFLAGS="${OCFLAGS} -Wno-error=unused-result"],
     [CFLAGS="${CFLAGS} -Wno-unused-result"
      OCFLAGS="${OCFLAGS} -Wno-unused-result"])
 
