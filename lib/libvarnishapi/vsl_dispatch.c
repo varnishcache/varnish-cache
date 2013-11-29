@@ -835,8 +835,8 @@ vtx_scan(struct VSLQ *vslq, struct vtx *vtx)
 
 		case SLT_End:
 			vtx->flags |= VTX_F_END;
-			return (vtx_mark_complete(vslq, vtx));
-
+			vtx_mark_complete(vslq, vtx);
+			break;
 		default:
 			break;
 		}
