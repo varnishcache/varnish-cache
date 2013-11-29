@@ -189,30 +189,30 @@ SLTM(FetchError, 0, "Error while fetching object",
 )
 
 #define SLTH(tag, ind, req, resp, sdesc, ldesc) \
-	SLTM(Req##tag, req ? 0 : SLT_F_UNUSED, "Client request " sdesc, ldesc)
+	SLTM(Req##tag, (req ? 0 : SLT_F_UNUSED), "Client request " sdesc, ldesc)
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 
 #define SLTH(tag, ind, req, resp, sdesc, ldesc) \
-	SLTM(Resp##tag, resp ? 0 : SLT_F_UNUSED, "Client response " sdesc, \
+	SLTM(Resp##tag, (resp ? 0 : SLT_F_UNUSED), "Client response " sdesc, \
 	    ldesc)
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 
 #define SLTH(tag, ind, req, resp, sdesc, ldesc) \
-	SLTM(Bereq##tag, req ? 0 : SLT_F_UNUSED, "Backend request " sdesc, \
+	SLTM(Bereq##tag, (req ? 0 : SLT_F_UNUSED), "Backend request " sdesc, \
 	    ldesc)
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 
 #define SLTH(tag, ind, req, resp, sdesc, ldesc) \
-	SLTM(Beresp##tag, resp ? 0 : SLT_F_UNUSED, "Backend response " sdesc, \
+	SLTM(Beresp##tag, (resp ? 0 : SLT_F_UNUSED), "Backend response " sdesc, \
 	    ldesc)
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 
 #define SLTH(tag, ind, req, resp, sdesc, ldesc) \
-	SLTM(Obj##tag, resp ? 0 : SLT_F_UNUSED, "Object  " sdesc, ldesc)
+	SLTM(Obj##tag, (resp ? 0 : SLT_F_UNUSED), "Object  " sdesc, ldesc)
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 
