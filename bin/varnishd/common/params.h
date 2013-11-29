@@ -149,9 +149,6 @@ struct params {
 	/* Maximum esi:include depth allowed */
 	unsigned		max_esi_depth;
 
-	/* ESI parser hints */
-	unsigned		esi_syntax;
-
 	/* Rush exponent */
 	unsigned		rush_exponent;
 
