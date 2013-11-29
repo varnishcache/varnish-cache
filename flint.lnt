@@ -3,3 +3,5 @@
  */
 
 -efile(451, "tbl/*.h")				// No include guard
+-esym(785,VSL_tags)				// Sparse array
+

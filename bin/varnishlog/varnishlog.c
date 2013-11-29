@@ -112,7 +112,7 @@ flushout(void)
 int
 main(int argc, char * const *argv)
 {
-	char opt;
+	int opt;
 
 	memset(&LOG, 0, sizeof LOG);
 	VUT_Init(progname);
@@ -130,6 +130,7 @@ main(int argc, char * const *argv)
 		case 'h':
 			/* Usage help */
 			usage(0);
+			break;
 		case 'w':
 			/* Write to file */
 			REPLACE(LOG.w_arg, optarg);

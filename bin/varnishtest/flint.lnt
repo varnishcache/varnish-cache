@@ -1,6 +1,5 @@
 
 -esym(850, av)
--esym(785, VSL_tags)
 -esym(528, iter_call)		// Flexelint bug
 
 -e712	// 14      Info    712     Loss of precision (___) (___ to ___)

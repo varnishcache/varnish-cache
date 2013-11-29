@@ -7,6 +7,7 @@ flexelint \
 	-I../../include \
 	-I../../lib/libvgz \
 	-I../.. \
+	../../flint.lnt \
 	../flint.lnt \
 	flint.lnt \
 	*.c \
