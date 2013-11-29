@@ -86,6 +86,11 @@ installed. On a Debian or Ubuntu system these are:
 * make
 * libedit-dev
 
+If you're building from git, you also need the following:
+
+* python-docutils
+* python-sphinx (optional, if you want the HTML docs built)
+
 Build dependencies on Red Hat / CentOS
 --------------------------------------
 
@@ -99,6 +104,12 @@ packages installed:
 * groff
 * pcre-devel
 * pkgconfig
+* libedit-devel
+
+If you're building from git, you also need the following:
+
+* docutils
+* python-sphinx (optional, if you want the HTML docs built)
 
 Configuring and compiling
 -------------------------
