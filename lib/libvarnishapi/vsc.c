@@ -201,8 +201,10 @@ vsc_f_arg(struct VSM_data *vd, const char *opt)
 			if (*q == '\\')
 				q++;
 		if (i < 3) {
-			parts[i] = strndup(p, q - p);
+			parts[i] = malloc(1 + q - p);
 			AN(parts[i]);
+			memcpy(parts[i], p, q - p);
+			parts[i][q - p] = '\0';
 			p = r = parts[i];
 
 			/* Unescape */
