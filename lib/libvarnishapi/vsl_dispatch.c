@@ -331,6 +331,7 @@ chunk_newbuf(struct vtx *vtx, const uint32_t *ptr, size_t len)
 	struct chunk *chunk;
 
 	ALLOC_OBJ(chunk, CHUNK_MAGIC);
+	XXXAN(chunk);
 	chunk->type = chunk_t_buf;
 	chunk->vtx = vtx;
 	chunk->buf.space = VTX_BUFSIZE_MIN;
