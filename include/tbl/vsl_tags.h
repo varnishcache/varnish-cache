@@ -42,7 +42,7 @@
  *	Long Description (in RST "definition list" format)
  */
 
-#define NODEF_NOTICE "Note: This log record is masked by default\n\n"
+#define NODEF_NOTICE "Note: This log record is masked by default and must be explicitly enabled\n\n"
 
 SLTM(Debug, SLT_F_BINARY, "Debug messages",
 	"Debug messages can normally be ignored, but are sometimes"
@@ -55,11 +55,11 @@ SLTM(Error, 0, "Error messages",
 )
 
 SLTM(CLI, 0, "CLI communication",
-	"CLI communication between master and child process.\n\n"
+	"CLI communication between varnishd master and child process.\n\n"
 )
 
 SLTM(ReqEnd, 0, "Client request end",
-	"Marks the end of client request.\n\n"
+	"Marks the end of a client request.\n\n"
 	"The format is::\n\n"
 	"\t%f %f %f %f %f\n"
 	"\t|  |  |  |  |\n"
@@ -218,11 +218,11 @@ SLTM(FetchError, 0, "Error while fetching object",
 
 SLTM(BogoHeader, 0, "Bogus HTTP received",
 	"Contains the first 20 characters of received HTTP headers we could"
-	" not make sense of.  Applies to both req.http and beres.http.\n\n"
+	" not make sense of.  Applies to both req.http and beresp.http.\n\n"
 )
 SLTM(LostHeader, 0, "Failed attempt to set HTTP header",
 	"Logs the header name of a failed HTTP header operation due to"
-	" resource exhaustion.\n\n"
+	" resource exhaustion or configured limits.\n\n"
 )
 
 SLTM(TTL, 0, "TTL set on object",
@@ -303,7 +303,7 @@ SLTM(Hit, 0, "Hit object in cache",
 	"Object looked up in cache. Shows the VXID of the object.\n\n"
 )
 
-SLTM(HitPass, 0, "Hit for pass object in cache.\n\n",
+SLTM(HitPass, 0, "Hit for pass object in cache.",
 	"Hit-for-pass object looked up in cache. Shows the VXID of the"
 	" hit-for-pass object.\n\n"
 )
@@ -452,11 +452,11 @@ SLTM(VSL, 0, "VSL API warnings and error message",
 )
 
 SLTM(Storage, 0, "Where object is stored",
-	"Type and name of stevedore object is stored in.\n\n"
+	"Type and name of the storage backend the object is stored in.\n\n"
 	"The format is::\n\n"
 	"\t%s %s\n"
 	"\t|  |\n"
-	"\t|  +- Name of stevedore\n"
+	"\t|  +- Name of storage backend\n"
 	"\t+---- Type (\"malloc\", \"file\", \"persistent\" etc.)\n"
 	"\n"
 )
