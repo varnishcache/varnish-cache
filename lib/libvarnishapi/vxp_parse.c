@@ -50,7 +50,7 @@
 static void vxp_expr_or(struct vxp *vxp, struct vex **pvex);
 
 static struct vex *
-vex_alloc(struct vxp *vxp)
+vex_alloc(const struct vxp *vxp)
 {
 	struct vex *vex;
 

@@ -209,7 +209,7 @@ VRB_PROTOTYPE_STATIC(vtx_tree, vtx_key, entry, vtx_keycmp)
 VRB_GENERATE_STATIC(vtx_tree, vtx_key, entry, vtx_keycmp)
 
 static int
-vslc_raw_next(struct VSL_cursor *cursor)
+vslc_raw_next(const struct VSL_cursor *cursor)
 {
 	struct vslc_raw *c;
 
@@ -227,7 +227,7 @@ vslc_raw_next(struct VSL_cursor *cursor)
 }
 
 static int
-vslc_raw_reset(struct VSL_cursor *cursor)
+vslc_raw_reset(const struct VSL_cursor *cursor)
 {
 	struct vslc_raw *c;
 
@@ -249,7 +249,7 @@ static const struct vslc_tbl vslc_raw_tbl = {
 };
 
 static int
-vslc_vtx_next(struct VSL_cursor *cursor)
+vslc_vtx_next(const struct VSL_cursor *cursor)
 {
 	struct vslc_vtx *c;
 	const uint32_t *ptr;
@@ -300,7 +300,7 @@ vslc_vtx_next(struct VSL_cursor *cursor)
 }
 
 static int
-vslc_vtx_reset(struct VSL_cursor *cursor)
+vslc_vtx_reset(const struct VSL_cursor *cursor)
 {
 	struct vslc_vtx *c;
 
@@ -573,7 +573,7 @@ vtx_retire(struct VSLQ *vslq, struct vtx **pvtx)
 
 /* Lookup a vtx by vxid from the managed list */
 static struct vtx *
-vtx_lookup(struct VSLQ *vslq, unsigned vxid)
+vtx_lookup(const struct VSLQ *vslq, unsigned vxid)
 {
 	struct vtx_key lkey, *key;
 	struct vtx *vtx;

@@ -17,7 +17,7 @@ usage(void)
 }
 
 int
-main(int argc, char **argv)
+main(int argc, char * const *argv)
 {
 	struct vsb *vsb;
 	struct vex *vex;

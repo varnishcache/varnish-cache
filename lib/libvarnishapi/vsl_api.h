@@ -42,9 +42,9 @@ int vsl_diag(struct VSL_data *vsl, const char *fmt, ...)
 void vsl_vbm_bitset(int bit, void *priv);
 void vsl_vbm_bitclr(int bit, void *priv);
 
-typedef void vslc_delete_f(struct VSL_cursor *);
-typedef int vslc_next_f(struct VSL_cursor *);
-typedef int vslc_reset_f(struct VSL_cursor *);
+typedef void vslc_delete_f(const struct VSL_cursor *);
+typedef int vslc_next_f(const struct VSL_cursor *);
+typedef int vslc_reset_f(const struct VSL_cursor *);
 typedef int vslc_check_f(const struct VSL_cursor *, const struct VSLC_ptr *);
 
 struct vslc_tbl {

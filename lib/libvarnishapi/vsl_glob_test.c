@@ -44,7 +44,7 @@ cb(int tag, void *priv)
 }
 
 int
-main(int argc, char *argv[])
+main(int argc, char * const *argv)
 {
 	int i;
 

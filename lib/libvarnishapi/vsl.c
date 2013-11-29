@@ -302,7 +302,7 @@ VSL_PrintTerse(const struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
 }
 
 int
-VSL_PrintAll(struct VSL_data *vsl, struct VSL_cursor *c, void *fo)
+VSL_PrintAll(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
 {
 	int i;
 
@@ -436,7 +436,7 @@ VSL_Write(const struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
 }
 
 int
-VSL_WriteAll(struct VSL_data *vsl, struct VSL_cursor *c, void *fo)
+VSL_WriteAll(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
 {
 	int i;
 

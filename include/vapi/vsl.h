@@ -245,12 +245,12 @@ struct VSL_cursor *VSL_CursorFile(struct VSL_data *vsl, const char *name,
 	 *     NULL: Error, see VSL_Error
 	 */
 
-void VSL_DeleteCursor(struct VSL_cursor *c);
+void VSL_DeleteCursor(const struct VSL_cursor *c);
 	/*
 	 * Delete the cursor pointed to by c
 	 */
 
-int VSL_ResetCursor(struct VSL_cursor *c);
+int VSL_ResetCursor(const struct VSL_cursor *c);
 	/*
 	 * Reset the cursor position to the head, so that the next call to
 	 * VSL_Next returns the first record. For VSM cursor, it will
@@ -273,7 +273,7 @@ int VSL_Check(const struct VSL_cursor *c, const struct VSLC_ptr *ptr);
 	 *     2: Valid
 	 */
 
-int VSL_Next(struct VSL_cursor *c);
+int VSL_Next(const struct VSL_cursor *c);
 	/*
 	 * Return raw pointer to next VSL record.
 	 *
@@ -333,7 +333,7 @@ int VSL_PrintTerse(const struct VSL_data *vsl, const struct VSL_cursor *c,
 	 *     -5:	I/O write error - see errno
 	 */
 
-int VSL_PrintAll(struct VSL_data *vsl, struct VSL_cursor *c, void *fo);
+int VSL_PrintAll(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
 	/*
 	 * Calls VSL_Next on c until c is exhausted. In turn calls
 	 * VSL_Print on all records where VSL_Match returns true.
@@ -393,7 +393,7 @@ int VSL_Write(const struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
 	 *   -5: I/O error - see VSL_Error
 	 */
 
-int VSL_WriteAll(struct VSL_data *vsl, struct VSL_cursor *c, void *fo);
+int VSL_WriteAll(struct VSL_data *vsl, const struct VSL_cursor *c, void *fo);
 	/*
 	 * Calls VSL_Next on c until c is exhausted. In turn calls
 	 * VSL_Write on all records where VSL_Match returns true.

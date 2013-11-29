@@ -64,7 +64,7 @@ struct vslc_vsm {
 };
 
 static void
-vslc_vsm_delete(struct VSL_cursor *cursor)
+vslc_vsm_delete(const struct VSL_cursor *cursor)
 {
 	struct vslc_vsm *c;
 
@@ -114,7 +114,7 @@ vslc_vsm_check(const struct VSL_cursor *cursor, const struct VSLC_ptr *ptr)
 }
 
 static int
-vslc_vsm_next(struct VSL_cursor *cursor)
+vslc_vsm_next(const struct VSL_cursor *cursor)
 {
 	struct vslc_vsm *c;
 	int i;
@@ -189,7 +189,7 @@ vslc_vsm_next(struct VSL_cursor *cursor)
 }
 
 static int
-vslc_vsm_reset(struct VSL_cursor *cursor)
+vslc_vsm_reset(const struct VSL_cursor *cursor)
 {
 	struct vslc_vsm *c;
 	unsigned segment;
@@ -290,7 +290,7 @@ struct vslc_file {
 };
 
 static void
-vslc_file_delete(struct VSL_cursor *cursor)
+vslc_file_delete(const struct VSL_cursor *cursor)
 {
 	struct vslc_file *c;
 
@@ -320,7 +320,7 @@ vslc_file_readn(int fd, void *buf, size_t n)
 }
 
 static int
-vslc_file_next(struct VSL_cursor *cursor)
+vslc_file_next(const struct VSL_cursor *cursor)
 {
 	struct vslc_file *c;
 	ssize_t i;
@@ -363,7 +363,7 @@ vslc_file_next(struct VSL_cursor *cursor)
 }
 
 static int
-vslc_file_reset(struct VSL_cursor *cursor)
+vslc_file_reset(const struct VSL_cursor *cursor)
 {
 	(void)cursor;
 	/* XXX: Implement me */
@@ -439,7 +439,7 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name, unsigned options)
 }
 
 void
-VSL_DeleteCursor(struct VSL_cursor *cursor)
+VSL_DeleteCursor(const struct VSL_cursor *cursor)
 {
 	const struct vslc_tbl *tbl;
 
@@ -450,7 +450,7 @@ VSL_DeleteCursor(struct VSL_cursor *cursor)
 }
 
 int
-VSL_ResetCursor(struct VSL_cursor *cursor)
+VSL_ResetCursor(const struct VSL_cursor *cursor)
 {
 	const struct vslc_tbl *tbl;
 
@@ -461,7 +461,7 @@ VSL_ResetCursor(struct VSL_cursor *cursor)
 }
 
 int
-VSL_Next(struct VSL_cursor *cursor)
+VSL_Next(const struct VSL_cursor *cursor)
 {
 	const struct vslc_tbl *tbl;
 

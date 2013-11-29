@@ -53,7 +53,8 @@ vxp_ErrToken(const struct vxp *vxp, const struct token *t)
 }
 
 static void
-vxp_Pos(struct vxp *vxp, struct vsb *vsb, const struct token *t, int tokoff)
+vxp_Pos(const struct vxp *vxp, struct vsb *vsb, const struct token *t,
+    int tokoff)
 {
 	unsigned pos;
 
@@ -68,7 +69,7 @@ vxp_Pos(struct vxp *vxp, struct vsb *vsb, const struct token *t, int tokoff)
 }
 
 static void
-vxp_quote(struct vxp *vxp, const char *b, const char *e, int tokoff)
+vxp_quote(const struct vxp *vxp, const char *b, const char *e, int tokoff)
 {
 	const char *p;
 	char c;
