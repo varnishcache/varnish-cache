@@ -96,6 +96,8 @@ cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
 	export PCRE_LIBS="`pcre-config --libs`"
 %endif
 
+export CFLAGS="$CFLAGS -Wp,-D_FORTIFY_SOURCE=0"
+
 # Remove "--disable static" if you want to build static libraries 
 # jemalloc is not compatible with Red Hat's ppc64 RHEL kernel :-(
 %ifarch ppc64 ppc
