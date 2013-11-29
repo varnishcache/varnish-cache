@@ -7,6 +7,7 @@ if [ "x$1" = "x-ok" -a -f _.fl ] ; then
 fi
 
 flexelint \
+	../../flint.lnt \
 	../flint.lnt \
 	flint.lnt \
 	-I. \

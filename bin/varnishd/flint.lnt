@@ -89,7 +89,6 @@
 //////////////
 -efunc(1791, pdiff)	// return last on line
 //////////////
--efile(451, "tbl/*.h")	// No include guard
 -efile(451, "vcc_types.h")	// No include guard
 -efile(451, "symbol_kind.h")	// No include guard
 -efile(451, "config.h")	// No include guard

@@ -1,0 +1,5 @@
+/*
+ * Toplevel control file for FlexeLint
+ */
+
+-efile(451, "tbl/*.h")				// No include guard
