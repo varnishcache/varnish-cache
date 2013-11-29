@@ -17,22 +17,22 @@ Varnish shared memory log, and perform queries on the transactions
 before reporting matches.
 
 A transaction is a set of log lines that belongs together, e.g. a
-client request. The API monitors the log, and collects all log records
-that make up a transaction before reporting on that
-transaction. Transactions can also be grouped, meaning backend
+client request or a backend request. The API monitors the log, and
+collects all log records that make up a transaction before reporting
+on that transaction. Transactions can also be grouped, meaning backend
 transactions are reported together with the client transaction that
 initiated it.
 
 A query is run on a group of transactions. A query expression is true
 if there is a log record within the group that satisfies the
-condition. It is false only if none of the log records satisfied the
+condition. It is false only if none of the log records satisfies the
 condition. Query expressions can be combined using boolean functions.
 
 GROUPING
 ========
 
 When grouping transactions, there is a hierarchy structure showing
-which transaction initiated what. The level increases by one by a
+which transaction initiated what. The level increases by one by an
 'initiated by' relation, so for example a backend transaction will
 have one higher level than the client transaction that initiated it on
 a cache miss. Levels start counting at 1, except when using raw where
@@ -42,7 +42,7 @@ The grouping modes are:
 
 * Session
 
-  All transactions initiated by a client connection is reported
+  All transactions initiated by a client connection are reported
   together. All log data is buffered until the client connection is
   closed, which can cause session grouping mode to potentially consume
   a lot of memory.
@@ -50,8 +50,8 @@ The grouping modes are:
 * Request
 
   Transactions are grouped by request, where the set will include the
-  request itself, and any backend requests or ESI-subrequests. Session
-  data is not reported. This is the default.
+  request itself as well as any backend requests or ESI-subrequests.
+  Session data is not reported. This is the default.
 
 * VXID
 
@@ -79,7 +79,7 @@ Example transaction hierarchy ::
 QUERY LANGUAGE
 ==============
 
-A query expression consists of a record selection criteria, and
+A query expression consists of record selection criteria, and
 optionally an operator and a value to match against the selected
 records. ::
 
@@ -96,23 +96,23 @@ transaction group the expression applies to. Syntax: ::
 Taglist is mandatory, the other components are optional.
 
 The level limits the expression to a transaction at that level. If
-left unspecified the expression is applied to transactions at all
+left unspecified, the expression is applied to transactions at all
 levels. Level is a positive integer or zero. If level is followed by a
 '+' character, it expresses greater than or equal. If level is
 followed by a '-', it expresses less than or equal.
 
 The taglist is a comma-separated list of VSL record tags that this
-expression should be applied against. Each list element can be a tag
+expression should be checked against. Each list element can be a tag
 name or a tag glob. Globs allow a '*' either in the beginning of
 the name or at the end, and will select all tags that match either the
 prefix or subscript. A single '*' will select all tags.
 
-The record prefix will further limit the record set matched against to
-those records that has this prefix as it's first part of the record
-content followed by a colon. The part of the log record matched
-against will then be limited to what follows the prefix and
-colon. This is useful when matching against specific HTTP headers. The
-record prefix matching is done case insensitive.
+The record prefix will further limit the matches to those records that
+has this prefix as it's first part of the record content followed by a
+colon. The part of the log record matched against will then be limited
+to what follows the prefix and colon. This is useful when matching
+against specific HTTP headers. The record prefix matching is done case
+insensitive.
 
 The field will, if present, treat the log record as a white space
 separated list of fields, and only the nth part of the record will be
@@ -230,7 +230,7 @@ QUERY EXPRESSION EXAMPLES
 
     ReqStatus == 304 and not ReqHeader:if-modified-since
 
-* Transactions that has backend failures or long delivery time on
+* Transactions that have had backend failures or long delivery time on
   their ESI subrequests. (Assumes request grouping mode). ::
 
     BerespStatus >= 500 or {2+}ReqEnd[5] > 1.
