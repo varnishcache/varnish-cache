@@ -312,6 +312,7 @@ vslq_newquery(struct VSL_data *vsl, enum VSL_grouping_e grouping,
 		vsl_diag(vsl, "%s", VSB_data(vsb));
 	else {
 		ALLOC_OBJ(query, VSLQ_QUERY_MAGIC);
+		XXXAN(query);
 		query->vex = vex;
 	}
 	VSB_delete(vsb);
