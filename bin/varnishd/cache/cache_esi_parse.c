@@ -626,13 +626,17 @@ VEP_Parse(const struct busyobj *bo, const char *p, size_t l)
 				vep->state = VEP_STARTTAG;
 			} else if (p < e && *p == '\xeb') {
 				VSLb(vep->bo->vsl, SLT_ESI_xmlerror,
-				    "No ESI processing, first char not '<'"
-				    " (BOM? see feature esi_remove_bom)"
+				    "No ESI processing, "
+				    "first char not '<' but BOM."
+				    " (See feature esi_remove_bom)"
 				);
 				vep->state = VEP_NOTXML;
 			} else if (p < e) {
 				VSLb(vep->bo->vsl, SLT_ESI_xmlerror,
-				    "No ESI processing, first char not '<'");
+				    "No ESI processing, "
+				    "first char not '<'."
+				    " (See feature esi_disable_xml_check)"
+				);
 				vep->state = VEP_NOTXML;
 			}
 		} else if (vep->state == VEP_NOTXML) {
