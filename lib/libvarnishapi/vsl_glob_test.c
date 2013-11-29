@@ -31,10 +31,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <string.h>
 
-#include "vas.h"
 #include "vapi/vsl.h"
 
 static void

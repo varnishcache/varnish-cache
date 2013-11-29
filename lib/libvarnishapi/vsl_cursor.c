@@ -41,7 +41,6 @@
 
 #include "vas.h"
 #include "miniobj.h"
-#include "vdef.h"
 #include "vapi/vsm.h"
 #include "vsm_api.h"
 #include "vapi/vsl.h"
