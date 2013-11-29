@@ -155,6 +155,7 @@ client c1 {
 		-hdr hdr68=68 \
 		-hdr hdr69=69
 	rxresp
+	expect resp.status == 400
 } -run
 
 client c1 {
