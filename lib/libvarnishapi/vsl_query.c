@@ -150,6 +150,8 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 			WRONG("Wrong RHS type");
 		}
 		break;
+	default:
+		break;
 	}
 
 	/* Compare */

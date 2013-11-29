@@ -93,7 +93,7 @@ main(int argc, char *argv[])
 	for (i = 0; i < SLT__MAX; i++)
 		ptags[i] = &tags[i];
 
-	qsort(&ptags, SLT__MAX, sizeof *ptags, &ptag_cmp);
+	qsort(ptags, SLT__MAX, sizeof *ptags, ptag_cmp);
 
 	for (i = 0; i < SLT__MAX; i++) {
 		if (ptags[i]->name == NULL || !strcmp(ptags[i]->name, ""))

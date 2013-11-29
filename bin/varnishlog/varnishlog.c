@@ -145,16 +145,16 @@ main(int argc, char * const *argv)
 
 	/* Setup output */
 	if (LOG.B_opt)
-		VUT.dispatch_f = &VSL_WriteTransactions;
+		VUT.dispatch_f = VSL_WriteTransactions;
 	else
-		VUT.dispatch_f = &VSL_PrintTransactions;
+		VUT.dispatch_f = VSL_PrintTransactions;
 	if (LOG.w_arg) {
 		openout(LOG.a_opt);
 		AN(LOG.fo);
-		VUT.sighup_f = &rotateout;
+		VUT.sighup_f = rotateout;
 	} else
 		LOG.fo = stdout;
-	VUT.idle_f = &flushout;
+	VUT.idle_f = flushout;
 
 	VUT_Setup();
 	VUT_Main();
