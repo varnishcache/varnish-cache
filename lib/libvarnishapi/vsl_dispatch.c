@@ -652,7 +652,7 @@ vtx_set_parent(struct vtx *parent, struct vtx *child)
 	parent->n_child++;
 	do
 		parent->n_descend += 1 + child->n_descend;
-	while ((parent = parent->parent));
+	while ((parent = parent->parent) != NULL);
 }
 
 /* Parse a begin or link record. Returns the number of elements that was
@@ -1150,7 +1150,7 @@ vslq_shmref_check(struct VSLQ *vslq)
 	struct chunk *chunk;
 	int i;
 
-	while ((chunk = VTAILQ_FIRST(&vslq->shmrefs))) {
+	while ((chunk = VTAILQ_FIRST(&vslq->shmrefs)) != NULL) {
 		CHECK_OBJ_NOTNULL(chunk, CHUNK_MAGIC);
 		assert(chunk->type == chunk_t_shm);
 		i = VSL_Check(vslq->c, &chunk->shm.start);
