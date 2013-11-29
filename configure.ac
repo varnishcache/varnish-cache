@@ -458,10 +458,10 @@ gl_LD_VERSION_SCRIPT
 # failures.
 CFLAGS="${CFLAGS} -Wall -Werror"
 OCFLAGS="${OCFLAGS} -Wall -Werror"
-AX_CHECK_COMPILE_FLAG([-Wno-error=unused-result],
+AX_CHECK_COMPILE_FLAG([-Werror=unused-result],
     [CFLAGS="${CFLAGS} -Wno-error=unused-result"
      OCFLAGS="${OCFLAGS} -Wno-error=unused-result"],
-    [AX_CHECK_COMPILE_FLAG([-Wno-unused-result],
+    [AX_CHECK_COMPILE_FLAG([-Wunused-result],
      [CFLAGS="${CFLAGS} -Wno-unused-result"
       OCFLAGS="${OCFLAGS} -Wno-unused-result"])])
 
