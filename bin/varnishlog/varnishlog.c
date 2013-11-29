@@ -44,10 +44,8 @@
 #include "vapi/vsl.h"
 #include "vapi/voptget.h"
 #include "vas.h"
-#include "vcs.h"
 #include "vpf.h"
 #include "vsb.h"
-#include "vtim.h"
 #include "vut.h"
 #include "miniobj.h"
 
