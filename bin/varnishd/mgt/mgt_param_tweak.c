@@ -104,25 +104,7 @@ tweak_generic_double(struct vsb *vsb, volatile double *dest,
 /*--------------------------------------------------------------------*/
 
 int
-tweak_timeout(struct vsb *vsb, const struct parspec *par, const char *arg)
-{
-	int i;
-	double d;
-	volatile unsigned *dest;
-
-	dest = par->priv;
-	d = *dest;
-	i = tweak_generic_double(vsb, &d, arg, par->min, par->max, "%.0f");
-	if (!i) {
-		*dest = (unsigned)ceil(d);
-	}
-	return (i);
-}
-
-/*--------------------------------------------------------------------*/
-
-int
-tweak_timeout_double(struct vsb *vsb, const struct parspec *par,
+tweak_timeout(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
 	volatile double *dest;

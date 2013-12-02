@@ -60,7 +60,6 @@ tweak_t tweak_listen_address;
 tweak_t tweak_poolparam;
 tweak_t tweak_string;
 tweak_t tweak_timeout;
-tweak_t tweak_timeout_double;
 tweak_t tweak_uint;
 tweak_t tweak_user;
 tweak_t tweak_waiter;

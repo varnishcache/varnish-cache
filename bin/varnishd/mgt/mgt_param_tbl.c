@@ -59,20 +59,20 @@ struct parspec mgt_parspec[] = {
 		"The unprivileged group to run as.",
 		MUST_RESTART,
 		"" },
-	{ "default_ttl", tweak_timeout_double, &mgt_param.default_ttl,
+	{ "default_ttl", tweak_timeout, &mgt_param.default_ttl,
 		"0", NULL,
 		"The TTL assigned to objects if neither the backend nor "
 		"the VCL code assigns one.",
 		OBJ_STICKY,
 		"20", "seconds" },
-	{ "default_grace", tweak_timeout_double, &mgt_param.default_grace,
+	{ "default_grace", tweak_timeout, &mgt_param.default_grace,
 		"0", NULL,
 		"Default grace period.  We will deliver an object "
 		"this long after it has expired, provided another thread "
 		"is attempting to get a new copy.",
 		OBJ_STICKY,
 		"10", "seconds" },
-	{ "default_keep", tweak_timeout_double, &mgt_param.default_keep,
+	{ "default_keep", tweak_timeout, &mgt_param.default_keep,
 		"0", NULL,
 		"Default keep period.  We will keep a useless object "
 		"around this long, making it available for conditional "
@@ -172,14 +172,14 @@ struct parspec mgt_parspec[] = {
 		"Maximum is 65535 bytes.",
 		0,
 		"255", "bytes" },
-	{ "timeout_idle", tweak_timeout_double, &mgt_param.timeout_idle,
+	{ "timeout_idle", tweak_timeout, &mgt_param.timeout_idle,
 		"0", NULL,
 		"Idle timeout for client connections.\n"
 		"A connection is considered idle, until we receive"
 		" a non-white-space character on it.",
 		0,
 		"5", "seconds" },
-	{ "timeout_req", tweak_timeout_double, &mgt_param.timeout_req,
+	{ "timeout_req", tweak_timeout, &mgt_param.timeout_req,
 		"0", NULL,
 		"Max time to receive clients request header, measured"
 		" from first non-white-space character to double CRNL.",
@@ -310,7 +310,7 @@ struct parspec mgt_parspec[] = {
 		"it possible to attach a debugger to the child.",
 		MUST_RESTART,
 		"3", "seconds" },
-	{ "lru_interval", tweak_timeout, &mgt_param.lru_timeout,
+	{ "lru_interval", tweak_timeout, &mgt_param.lru_interval,
 		"0", NULL,
 		"Grace period before object moves on LRU list.\n"
 		"Objects are only moved to the front of the LRU "
@@ -344,7 +344,7 @@ struct parspec mgt_parspec[] = {
 		"Maximum depth of esi:include processing.",
 		0,
 		"5", "levels" },
-	{ "connect_timeout", tweak_timeout_double, &mgt_param.connect_timeout,
+	{ "connect_timeout", tweak_timeout, &mgt_param.connect_timeout,
 		"0", NULL,
 		"Default connection timeout for backend connections. "
 		"We only try to connect to the backend for this many "
@@ -353,7 +353,7 @@ struct parspec mgt_parspec[] = {
 		"backend request.",
 		0,
 		"3.5", "s" },
-	{ "first_byte_timeout", tweak_timeout_double,
+	{ "first_byte_timeout", tweak_timeout,
 		&mgt_param.first_byte_timeout,
 		"0", NULL,
 		"Default timeout for receiving first byte from backend. "
@@ -364,7 +364,7 @@ struct parspec mgt_parspec[] = {
 		"backend request. This parameter does not apply to pipe.",
 		0,
 		"60", "s" },
-	{ "between_bytes_timeout", tweak_timeout_double,
+	{ "between_bytes_timeout", tweak_timeout,
 		&mgt_param.between_bytes_timeout,
 		"0", NULL,
 		"Default timeout between bytes when receiving data from "
@@ -375,7 +375,7 @@ struct parspec mgt_parspec[] = {
 		"and backend request. This parameter does not apply to pipe.",
 		0,
 		"60", "s" },
-	{ "acceptor_sleep_max", tweak_timeout_double,
+	{ "acceptor_sleep_max", tweak_timeout,
 		&mgt_param.acceptor_sleep_max,
 		"0", "10",
 		"If we run out of resources, such as file descriptors or "
@@ -384,7 +384,7 @@ struct parspec mgt_parspec[] = {
 		"attempts to accept new connections.",
 		EXPERIMENTAL,
 		"0.050", "s" },
-	{ "acceptor_sleep_incr", tweak_timeout_double,
+	{ "acceptor_sleep_incr", tweak_timeout,
 		&mgt_param.acceptor_sleep_incr,
 		"0", "1",
 		"If we run out of resources, such as file descriptors or "
@@ -424,7 +424,7 @@ struct parspec mgt_parspec[] = {
 		"it.",
 		0,
 		"100000", "sessions" },
-	{ "timeout_linger", tweak_timeout_double, &mgt_param.timeout_linger,
+	{ "timeout_linger", tweak_timeout, &mgt_param.timeout_linger,
 		"0", NULL,
 		"How long time the workerthread lingers on an idle session "
 		"before handing it over to the waiter.\n"
@@ -451,7 +451,7 @@ struct parspec mgt_parspec[] = {
 		"Log all CLI traffic to syslog(LOG_INFO).",
 		0,
 		"on", "bool" },
-	{ "ban_lurker_sleep", tweak_timeout_double,
+	{ "ban_lurker_sleep", tweak_timeout,
 		&mgt_param.ban_lurker_sleep,
 		"0", NULL,
 		"How long time does the ban lurker thread sleeps between "
@@ -502,14 +502,14 @@ struct parspec mgt_parspec[] = {
 		" just a waste of memory.",
 		EXPERIMENTAL,
 		"32k", "bytes" },
-	{ "shortlived", tweak_timeout_double,
+	{ "shortlived", tweak_timeout,
 		&mgt_param.shortlived,
 		"0", NULL,
 		"Objects created with TTL shorter than this are always "
 		"put in transient storage.",
 		0,
 		"10.0", "s" },
-	{ "critbit_cooloff", tweak_timeout_double,
+	{ "critbit_cooloff", tweak_timeout,
 		&mgt_param.critbit_cooloff,
 		"60", "254",
 		"How long time the critbit hasher keeps deleted objheads "

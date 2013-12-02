@@ -126,7 +126,7 @@ struct parspec WRK_parspec[] = {
 		DELAYED_EFFECT,
 		"100", "threads" },
 	{ "thread_pool_timeout",
-		tweak_timeout_double, &mgt_param.wthread_timeout,
+		tweak_timeout, &mgt_param.wthread_timeout,
 		"10", NULL,
 		"Thread idle threshold.\n"
 		"\n"
@@ -137,7 +137,7 @@ struct parspec WRK_parspec[] = {
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"300", "seconds" },
 	{ "thread_pool_destroy_delay",
-		tweak_timeout_double, &mgt_param.wthread_destroy_delay,
+		tweak_timeout, &mgt_param.wthread_destroy_delay,
 		"0.01", NULL,
 		"Wait this long after destroying a thread.\n"
 		"\n"
@@ -147,7 +147,7 @@ struct parspec WRK_parspec[] = {
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"1", "seconds" },
 	{ "thread_pool_add_delay",
-		tweak_timeout_double, &mgt_param.wthread_add_delay,
+		tweak_timeout, &mgt_param.wthread_add_delay,
 		"0", NULL,
 		"Wait at least this long after creating a thread.\n"
 		"\n"
@@ -160,7 +160,7 @@ struct parspec WRK_parspec[] = {
 		EXPERIMENTAL,
 		"0", "seconds" },
 	{ "thread_pool_fail_delay",
-		tweak_timeout_double, &mgt_param.wthread_fail_delay,
+		tweak_timeout, &mgt_param.wthread_fail_delay,
 		"10e-3", NULL,
 		"Wait at least this long after a failed thread creation "
 		"before trying to create another thread.\n"

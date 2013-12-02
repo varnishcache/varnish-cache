@@ -187,7 +187,7 @@ EXP_Touch(struct objcore *oc, double now)
 	if (oc->busyobj != NULL)
 		return;
 
-	if (now - oc->last_lru < cache_param->lru_timeout)
+	if (now - oc->last_lru < cache_param->lru_interval)
 		return;
 
 	lru = oc_getlru(oc);

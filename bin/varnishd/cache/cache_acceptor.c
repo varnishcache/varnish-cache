@@ -173,13 +173,13 @@ vca_tcp_opt_init(void)
 #endif
 #ifdef HAVE_TCP_KEEP
 		} else if (!strcmp(to->strname, "TCP_KEEPIDLE")) {
-			x = cache_param->tcp_keepalive_time;
+			x = (int)(cache_param->tcp_keepalive_time);
 			NEW_VAL(to, x);
 		} else if (!strcmp(to->strname, "TCP_KEEPCNT")) {
-			x = cache_param->tcp_keepalive_probes;
+			x = (int)(cache_param->tcp_keepalive_probes);
 			NEW_VAL(to, x);
 		} else if (!strcmp(to->strname, "TCP_KEEPINTVL")) {
-			x = cache_param->tcp_keepalive_intvl;
+			x = (int)(cache_param->tcp_keepalive_intvl);
 			NEW_VAL(to, x);
 #endif
 		}
@@ -386,6 +386,7 @@ vca_acct(void *arg)
 {
 	struct listen_sock *ls;
 	double t0, now;
+	unsigned u;
 	int i;
 
 	THR_SetName("cache-acceptor");
@@ -398,12 +399,12 @@ vca_acct(void *arg)
 			continue;
 		AZ(listen(ls->sock, cache_param->listen_depth));
 #ifdef HAVE_TCP_KEEP
-		vca_tcp_keep_probe(ls->sock,
-		    TCP_KEEPIDLE, &cache_param->tcp_keepalive_time);
+		vca_tcp_keep_probe(ls->sock, TCP_KEEPIDLE, &u);
+		cache_param->tcp_keepalive_time = u;
 		vca_tcp_keep_probe(ls->sock,
 		    TCP_KEEPCNT, &cache_param->tcp_keepalive_probes);
-		vca_tcp_keep_probe(ls->sock,
-		    TCP_KEEPINTVL, &cache_param->tcp_keepalive_intvl);
+		vca_tcp_keep_probe(ls->sock, TCP_KEEPINTVL, &u);
+		cache_param->tcp_keepalive_intvl = u;
 #endif
 		vca_tcp_opt_set(ls->sock, 1);
 		if (cache_param->accept_filter) {

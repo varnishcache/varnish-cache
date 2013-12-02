@@ -107,13 +107,13 @@ struct params {
 	double			timeout_linger;
 	double			timeout_idle;
 	double			timeout_req;
-	unsigned		pipe_timeout;
-	unsigned		send_timeout;
-	unsigned		idle_send_timeout;
+	double			pipe_timeout;
+	double			send_timeout;
+	double			idle_send_timeout;
 #ifdef HAVE_TCP_KEEP
-	unsigned		tcp_keepalive_time;
+	double			tcp_keepalive_time;
 	unsigned		tcp_keepalive_probes;
-	unsigned		tcp_keepalive_intvl;
+	double			tcp_keepalive_intvl;
 #endif
 
 	/* Management hints */
@@ -133,12 +133,12 @@ struct params {
 	unsigned		listen_depth;
 
 	/* CLI related */
-	unsigned		cli_timeout;
+	double			cli_timeout;
 	unsigned		cli_limit;
 	unsigned		ping_interval;
 
 	/* LRU list ordering interval */
-	unsigned		lru_timeout;
+	double			lru_interval;
 
 	/* Maximum restarts allowed */
 	unsigned		max_restarts;
