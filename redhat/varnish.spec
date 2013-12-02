@@ -111,7 +111,7 @@ export CFLAGS="$CFLAGS -Wp,-D_FORTIFY_SOURCE=0"
 #sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g;
 #	s|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
 
-make %{?_smp_mflags}
+make %{?_smp_mflags} V=1
 
 head -6 etc/default.vcl > redhat/default.vcl
 
@@ -153,7 +153,7 @@ rm -rf doc/sphinx/\=build
 	%endif
 %endif
 
-make check LD_LIBRARY_PATH="../../lib/libvarnish/.libs:../../lib/libvarnishcompat/.libs:../../lib/libvarnishapi/.libs:../../lib/libvcc/.libs:../../lib/libvgz/.libs"
+make check LD_LIBRARY_PATH="../../lib/libvarnish/.libs:../../lib/libvarnishcompat/.libs:../../lib/libvarnishapi/.libs:../../lib/libvcc/.libs:../../lib/libvgz/.libs" TESTS_PARALLELISM=1 VERBOSE=1
 
 %install
 rm -rf %{buildroot}
