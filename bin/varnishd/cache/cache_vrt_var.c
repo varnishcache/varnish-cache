@@ -199,7 +199,7 @@ VRT_r_client_identity(const struct vrt_ctx *ctx)
 	if (ctx->req->client_identity != NULL)
 		return (ctx->req->client_identity);
 	else
-		return (ctx->req->sp->addr);
+		return (ctx->req->sp->client_addr_str);
 }
 
 void

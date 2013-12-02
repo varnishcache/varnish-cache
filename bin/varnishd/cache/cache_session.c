@@ -192,12 +192,14 @@ ses_vsl_socket(struct sess *sp, const char *lsockname)
 	AN(VSA_Build(sp->local_addr, &ss, sl));
 	assert(VSA_Sane(sp->local_addr));
 
-	VTCP_name(sp->remote_addr,
-	    sp->addr, sizeof sp->addr, sp->port, sizeof sp->port);
+	VTCP_name(sp->remote_addr, laddr, sizeof laddr, lport, sizeof lport);
+	sp->client_addr_str = WS_Copy(sp->ws, laddr, -1);
+	sp->client_port_str = WS_Copy(sp->ws, lport, -1);
 	VTCP_name(sp->local_addr, laddr, sizeof laddr, lport, sizeof lport);
 	VSL(SLT_Begin, sp->vxid, "sess");
 	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s %.6f %d",
-	    sp->addr, sp->port, lsockname, laddr, lport, sp->t_open, sp->fd);
+	    sp->client_addr_str, sp->client_port_str, lsockname, laddr, lport,
+	    sp->t_open, sp->fd);
 }
 
 /*--------------------------------------------------------------------

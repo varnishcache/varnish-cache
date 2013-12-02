@@ -674,7 +674,8 @@ cnt_recv(struct worker *wrk, struct req *req)
 	AZ(req->obj);
 	AZ(req->objcore);
 
-	VSLb(req->vsl, SLT_ReqStart, "%s %s", req->sp->addr, req->sp->port);
+	VSLb(req->vsl, SLT_ReqStart, "%s %s",
+	    req->sp->client_addr_str, req->sp->client_port_str);
 
 	if (req->err_code) {
 		req->req_step = R_STP_ERROR;

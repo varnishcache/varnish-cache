@@ -772,8 +772,8 @@ struct sess {
 	struct suckaddr		*local_addr;
 
 	/* formatted ascii client address */
-	char			addr[ADDR_BUFSIZE];
-	char			port[PORT_BUFSIZE];
+	char			*client_addr_str;
+	char			*client_port_str;
 
 	struct acct		acct_ses;
 
