@@ -81,7 +81,7 @@ SES_Charge(struct worker *wrk, struct req *req)
 
 #define ACCT(foo)				\
 	wrk->stats.s_##foo += a->foo;		\
-	sp->acct_ses.foo += a->foo;		\
+	if (a->foo) sp->acct_bit.foo =1;	\
 	a->foo = 0;
 #include "tbl/acct_fields.h"
 #undef ACCT
@@ -312,7 +312,7 @@ SES_Close(struct sess *sp, enum sess_close reason)
 void
 SES_Delete(struct sess *sp, enum sess_close reason, double now)
 {
-	struct acct *b;
+	struct acct_bit *b;
 	struct sesspool *pp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -328,8 +328,8 @@ SES_Delete(struct sess *sp, enum sess_close reason, double now)
 		now = VTIM_real();
 	assert(!isnan(sp->t_open));
 
-	b = &sp->acct_ses;
-	VSL(SLT_SessClose, sp->vxid, "%s %.3f %ju %ju %ju %ju %ju %ju",
+	b = &sp->acct_bit;
+	VSL(SLT_SessClose, sp->vxid, "%s %.3f %u %u %u %u %u %u",
 	    sess_close_2str(sp->reason, 0), now - sp->t_open, b->req,
 	    b->pipe, b->pass, b->fetch, b->hdrbytes, b->bodybytes);
 	VSL(SLT_End, sp->vxid, "%s", "");

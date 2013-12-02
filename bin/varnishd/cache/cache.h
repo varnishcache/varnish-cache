@@ -246,6 +246,12 @@ struct acct {
 #undef ACCT
 };
 
+struct acct_bit {
+#define ACCT(foo)	unsigned int	foo : 1;
+#include "tbl/acct_fields.h"
+#undef ACCT
+};
+
 /*--------------------------------------------------------------------*/
 
 #define L0(t, n)
@@ -775,7 +781,7 @@ struct sess {
 	char			*client_addr_str;
 	char			*client_port_str;
 
-	struct acct		acct_ses;
+	struct acct_bit		acct_bit;
 
 	/* Timestamps, all on TIM_real() timescale */
 	double			t_open;		/* fd accepted */
