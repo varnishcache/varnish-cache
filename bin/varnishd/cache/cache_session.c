@@ -51,8 +51,6 @@
 #include "vtcp.h"
 #include "vtim.h"
 
-static unsigned ses_size;
-
 /*--------------------------------------------------------------------*/
 
 struct sesspool {
@@ -94,34 +92,28 @@ SES_Charge(struct worker *wrk, struct req *req)
  *
  * Layout is:
  *	struct sess
- *	struct vsa (local_addr)
- *	struct vsa (remote_addr)
+ *	workspace
  */
 
 static struct sess *
 ses_new(struct sesspool *pp)
 {
 	struct sess *sp;
-	char *s;
 	unsigned sz;
+	char *p, *e;
 
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	sp = MPL_Get(pp->mpl_sess, &sz);
 	sp->magic = SESS_MAGIC;
 	sp->sesspool = pp;
 
-	s = (char *)sp;
-	s += sizeof *sp;
-
-	memset(s, 0, vsa_suckaddr_len);
-	sp->local_addr = (void*)s;
-	s += vsa_suckaddr_len;
-
-	memset(s, 0, vsa_suckaddr_len);
-	sp->remote_addr = (void*)s;
-	s += vsa_suckaddr_len;
-
-	assert((char *)sp + sz == s);
+	e = (char*)sp + sz;
+	p = (char*)(sp + 1);
+	p = (void*)PRNDUP(p);
+	assert(p < e);
+	WS_Init(sp->ws, "sess", p, e - p);
+	sp->local_addr = (void*)WS_Alloc(sp->ws, vsa_suckaddr_len);
+	sp->remote_addr = (void*)WS_Alloc(sp->ws, vsa_suckaddr_len);
 
 	sp->t_open = NAN;
 	sp->t_idle = NAN;
@@ -454,8 +446,8 @@ SES_NewPool(struct pool *wp, unsigned pool_no)
 	pp->mpl_req = MPL_New(nb, &cache_param->req_pool,
 	    &cache_param->workspace_client);
 	bprintf(nb, "sess%u", pool_no);
-	ses_size = sizeof (struct sess) + vsa_suckaddr_len * 2L;
-	pp->mpl_sess = MPL_New(nb, &cache_param->sess_pool, &ses_size);
+	pp->mpl_sess = MPL_New(nb, &cache_param->sess_pool,
+	    &cache_param->workspace_session);
 	return (pp);
 }
 

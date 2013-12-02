@@ -81,6 +81,13 @@ struct parspec mgt_parspec[] = {
 		"cache at the end of ttl+grace+keep.",
 		OBJ_STICKY,
 		"0", "seconds" },
+	{ "workspace_session",
+		tweak_bytes_u, &mgt_param.workspace_session,
+		"256", NULL,
+		"Bytes of workspace for session and TCP connection addresses."
+		"  If larger than 4k, use a multiple of 4k for VM efficiency.",
+		DELAYED_EFFECT,
+		"512", "bytes" },
 	{ "workspace_client",
 		tweak_bytes_u, &mgt_param.workspace_client,
 		"3072", NULL,

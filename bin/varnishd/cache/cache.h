@@ -766,6 +766,8 @@ struct sess {
 
 	/* Session related fields ------------------------------------*/
 
+	struct ws		ws[1];
+
 	struct suckaddr		*remote_addr;
 	struct suckaddr		*local_addr;
 

@@ -89,8 +89,9 @@ struct params {
 	unsigned		wthread_queue_limit;
 
 	/* Memory allocation hints */
-	unsigned		workspace_client;
 	unsigned		workspace_backend;
+	unsigned		workspace_client;
+	unsigned		workspace_session;
 	unsigned		workspace_thread;
 
 	unsigned		vsl_buffer;
