@@ -8,4 +8,5 @@ SUBDIRS = varnishadm varnishd varnishlog varnishtest varnishncsa
 if VARNISH_CURSES
 #SUBDIRS += varnishhist varnishstat varnishtop
 SUBDIRS += varnishstat
+SUBDIRS += varnishtop
 endif

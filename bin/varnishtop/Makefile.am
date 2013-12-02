@@ -7,8 +7,14 @@ bin_PROGRAMS = varnishtop
 dist_man_MANS = varnishtop.1
 
 varnishtop_SOURCES = varnishtop.c \
-	$(top_builddir)/lib/libvarnish/vas.c \
-	$(top_builddir)/lib/libvarnish/version.c
+	$(top_srcdir)/lib/libvarnishtools/vut.c \
+	$(top_srcdir)/lib/libvarnish/vas.c \
+	$(top_srcdir)/lib/libvarnish/flopen.c \
+	$(top_srcdir)/lib/libvarnish/version.c \
+	$(top_srcdir)/lib/libvarnish/vpf.c \
+	$(top_srcdir)/lib/libvarnish/vtim.c \
+	$(top_srcdir)/lib/libvarnish/vsb.c
+
 
 varnishtop_LDADD = \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \

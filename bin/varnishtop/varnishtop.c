@@ -50,12 +50,16 @@
 #include "vcs.h"
 #include "vtree.h"
 #include "vsb.h"
+#include "vut.h"
 
 #if 0
 #define AC(x) assert((x) != ERR)
 #else
 #define AC(x) x
 #endif
+
+static const char progname[] = "varnishtop2";
+static float period = 60; /* seconds */
 
 struct top {
 	uint8_t			tag;
@@ -105,61 +109,63 @@ top_cmp(const struct top *tp, const struct top *tp2)
 }
 
 
-static int
-accumulate(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
-    unsigned spec, const char *ptr, uint64_t bm)
+static int __match_proto__(VSLQ_dispatch_f)
+accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
+	void *priv)
 {
 	struct top *tp, t;
-	const char *q;
 	char *rd;
 	unsigned int u;
-	int i;
+	unsigned tag;
+	const char *b, *e, *p;
+	unsigned len;
 
-	(void)priv;
-	(void)fd;
-	(void)spec;
-	(void)bm;
-	// fprintf(stderr, "%p %08x %08x\n", p, p[0], p[1]);
+	struct VSL_transaction *tr;
+	for (tr = pt[0]; tr != NULL; tr = *++pt) {
+		while ((1 == VSL_Next(tr->c))) {
+			tag = VSL_TAG(tr->c->rec.ptr);
+			b = VSL_CDATA(tr->c->rec.ptr);
+			len = VSL_LEN(tr->c->rec.ptr);
+			assert(len > 0);
+			e = b + len;
+			u = 0;
+			for (p = b; p <= e; p++) {
+				u += *p;
+			}
 
-	u = 0;
-	q = ptr;
-	for (i = 0; i < len; i++, q++) {
-		if (f_flag && (*q == ':' || isspace(*q))) {
-			len = q - ptr;
-			break;
+			t.hash = u;
+			t.tag = tag;
+			t.clen = len;
+			t.count = 0;
+			rd = calloc(len+1, 1);
+			AN(rd);
+			memcpy(rd, VSL_CDATA(tr->c->rec.ptr), len);
+            rd[len] = '\0';
+			t.rec_data = rd;
+
+			AZ(pthread_mutex_lock(&mtx));
+			tp = VRB_FIND(top_tree, &top_tree_head, &t);
+			if (tp) {
+				VRB_REMOVE(top_tree, &top_tree_head, tp);
+				tp->count += 1.0;
+				/* Reinsert to rebalance */
+				VRB_INSERT(top_tree, &top_tree_head, tp);
+                free(rd);
+			} else {
+				ntop++;
+				tp = calloc(sizeof *tp, 1);
+				assert(tp != NULL);
+				tp->hash = u;
+				tp->count = 1.0;
+				tp->clen = len;
+				tp->tag = tag;
+                tp->rec_data = rd;
+				VRB_INSERT(top_tree, &top_tree_head, tp);
+			}
+			AZ(pthread_mutex_unlock(&mtx));
+
 		}
-		u += *q;
 	}
-	t.hash = u;
-	t.tag = tag;
-	t.clen = len;
-	rd = malloc(len);
-	AN(rd);
-	memcpy(rd, ptr, len);
-	t.rec_data = rd;
-
-	AZ(pthread_mutex_lock(&mtx));
-	tp = VRB_FIND(top_tree, &top_tree_head, &t);
-	if (tp) {
-		VRB_REMOVE(top_tree, &top_tree_head, tp);
-		tp->count += 1.0;
-		/* Reinsert to rebalance */
-		VRB_INSERT(top_tree, &top_tree_head, tp);
-	} else {
-		ntop++;
-		tp = calloc(sizeof *tp, 1);
-		assert(tp != NULL);
-		tp->rec_data = calloc(len + 1, 1);
-		assert(tp->rec_data != NULL);
-		tp->hash = u;
-		tp->count = 1.0;
-		tp->clen = len;
-		tp->tag = tag;
-		memcpy(tp->rec_data, ptr, len);
-		tp->rec_data[len] = '\0';
-		VRB_INSERT(top_tree, &top_tree_head, tp);
-	}
-	AZ(pthread_mutex_unlock(&mtx));
 
 	return (0);
 }
@@ -187,16 +193,18 @@ update(const struct VSM_data *vd, int period)
 	AC(mvprintw(0, 0, "list length %u", ntop));
 	for (tp = VRB_MIN(top_tree, &top_tree_head); tp != NULL; tp = tp2) {
 		tp2 = VRB_NEXT(top_tree, &top_tree_head, tp);
+
 		if (++l < LINES) {
 			len = tp->clen;
 			if (len > COLS - 20)
 				len = COLS - 20;
 			AC(mvprintw(l, 0, "%9.2f %-*.*s %*.*s\n",
-			    tp->count, maxfieldlen, maxfieldlen,
-			    VSL_tags[tp->tag],
-			    len, len, tp->rec_data));
+				tp->count, maxfieldlen, maxfieldlen,
+				VSL_tags[tp->tag],
+				len, len, tp->rec_data));
 			t = tp->count;
 		}
+		(void)t;
 		tp->count += (1.0/3.0 - tp->count) / (double)n;
 		if (tp->count * 10 < t || l > LINES * 10) {
 			VRB_REMOVE(top_tree, &top_tree_head, tp);
@@ -209,38 +217,16 @@ update(const struct VSM_data *vd, int period)
 }
 
 static void *
-accumulate_thread(void *arg)
+do_curses(void *arg)
 {
-	struct VSM_data *vd = arg;
 	int i;
-
-	for (;;) {
-
-		i = VSL_Dispatch(vd, accumulate, NULL);
-		if (i < 0)
-			break;
-		if (i == 0)
-			usleep(50000);
-	}
-	return (arg);
-}
-
-static void
-do_curses(struct VSM_data *vd, int period)
-{
-	pthread_t thr;
-	int i;
+	struct VSM_data *vd = (struct VSM_data *)arg;
 
 	for (i = 0; i < 256; i++) {
 		if (VSL_tags[i] == NULL)
 			continue;
 		if (maxfieldlen < strlen(VSL_tags[i]))
 			maxfieldlen = strlen(VSL_tags[i]);
-	}
-
-	if (pthread_create(&thr, NULL, accumulate_thread, vd) != 0) {
-		fprintf(stderr, "pthread_create(): %s\n", strerror(errno));
-		exit(1);
 	}
 
 	(void)initscr();
@@ -269,54 +255,46 @@ do_curses(struct VSM_data *vd, int period)
 			AC(redrawwin(stdscr));
 			AC(refresh());
 			break;
-		case '\003': /* Ctrl-C */
-			AZ(raise(SIGINT));
-			break;
 		case '\032': /* Ctrl-Z */
 			AC(endwin());
 			AZ(raise(SIGTSTP));
 			break;
+		case '\003': /* Ctrl-C */
+			printf("got ctrl-C\r\n");
 		case '\021': /* Ctrl-Q */
 		case 'Q':
 		case 'q':
+			AZ(raise(SIGINT));
 			AC(endwin());
-			return;
+			return NULL;
 		default:
 			AC(beep());
 			break;
 		}
 	}
+	return NULL;
+
 }
 
 static void
 dump(void)
 {
 	struct top *tp, *tp2;
-	printf("%d\n", ntop);
-	printf("%p\n", VRB_MIN(top_tree, &top_tree_head));
 	for (tp = VRB_MIN(top_tree, &top_tree_head); tp != NULL; tp = tp2) {
 		tp2 = VRB_NEXT(top_tree, &top_tree_head, tp);
 		if (tp->count <= 1.0)
-		break;
+			break;
 		printf("%9.2f %s %*.*s\n",
-		    tp->count, VSL_tags[tp->tag],
-		    tp->clen, tp->clen, tp->rec_data);
+			tp->count, VSL_tags[tp->tag],
+			tp->clen, tp->clen, tp->rec_data);
 	}
-}
-
-static void
-do_once(struct VSM_data *vd)
-{
-	while (VSL_Dispatch(vd, accumulate, NULL) > 0)
-		;
-	dump();
 }
 
 static void
 usage(void)
 {
 	fprintf(stderr,
-	    "usage: varnishtop %s [-1fV] [-n varnish_name]\n", VSL_USAGE);
+		"usage: varnishtop [-1fV] [-n varnish_name]\n");
 	exit(1);
 }
 
@@ -325,14 +303,15 @@ main(int argc, char **argv)
 {
 	struct VSM_data *vd;
 	int o, once = 0;
-	float period = 60; /* seconds */
+	pthread_t thr;
 
 	vd = VSM_New();
+	VUT_Init(progname);
 
-	while ((o = getopt(argc, argv, VSL_ARGS "1fVp:")) != -1) {
+	while ((o = getopt(argc, argv, "1fVp:")) != -1) {
 		switch (o) {
 		case '1':
-			AN(VSL_Arg(vd, 'd', NULL));
+			VUT_Arg('d', NULL);
 			once = 1;
 			break;
 		case 'f':
@@ -343,7 +322,7 @@ main(int argc, char **argv)
 			period = strtol(optarg, NULL, 0);
 			if (errno != 0)  {
 				fprintf(stderr,
-				    "Syntax error, %s is not a number", optarg);
+					"Syntax error, %s is not a number", optarg);
 				exit(1);
 			}
 			break;
@@ -354,7 +333,7 @@ main(int argc, char **argv)
 			fprintf(stderr, "-m is not supported\n");
 			exit(1);
 		default:
-			if (VSL_Arg(vd, o, optarg) > 0)
+			if (!VUT_Arg(o, optarg))
 				break;
 			usage();
 		}
@@ -365,10 +344,20 @@ main(int argc, char **argv)
 		exit (1);
 	}
 
-	if (once) {
-		do_once(vd);
-	} else {
-		do_curses(vd, period);
+	VUT.dispatch_f = &accumulate;
+	VUT.dispatch_priv = NULL;
+	if (!once){
+		if (pthread_create(&thr, NULL, do_curses, vd) != 0) {
+			fprintf(stderr, "pthread_create(): %s\n", strerror(errno));
+			exit(1);
+		}
 	}
+	VUT_Setup();
+	VUT_Main();
+	VUT_Fini();
+	if (once)
+		dump();
+	else
+		pthread_join(thr, NULL);
 	exit(0);
 }
