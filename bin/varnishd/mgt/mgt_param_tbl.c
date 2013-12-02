@@ -87,7 +87,7 @@ struct parspec mgt_parspec[] = {
 		"Bytes of workspace for session and TCP connection addresses."
 		"  If larger than 4k, use a multiple of 4k for VM efficiency.",
 		DELAYED_EFFECT,
-		"256", "bytes" },
+		"384", "bytes" },
 	{ "workspace_client",
 		tweak_bytes_u, &mgt_param.workspace_client,
 		"3072", NULL,
