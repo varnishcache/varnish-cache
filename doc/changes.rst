@@ -1,4 +1,16 @@
 ================================
+Changes from 3.0.5 rc 1 to 3.0.5
+================================
+
+varnishd
+--------
+
+- Always check the local address of a socket.  This avoids a crash if
+  server.ip is accessed after a client has closed the connection. `Bug #1376`
+
+.. _bug #1376: http://varnish-cache.org/trac/ticket/1376
+
+================================
 Changes from 3.0.4 to 3.0.5 rc 1
 ================================
 
