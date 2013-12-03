@@ -112,8 +112,7 @@ ses_new(struct sesspool *pp)
 	p = (void*)PRNDUP(p);
 	assert(p < e);
 	WS_Init(sp->ws, "ses", p, e - p);
-	sp->local_addr = (void*)WS_Alloc(sp->ws, vsa_suckaddr_len);
-	sp->remote_addr = (void*)WS_Alloc(sp->ws, vsa_suckaddr_len);
+	sp->addrs = (void*)WS_Alloc(sp->ws, vsa_suckaddr_len * 2);
 
 	sp->t_open = NAN;
 	sp->t_idle = NAN;
@@ -186,16 +185,18 @@ ses_vsl_socket(struct sess *sp, const char *lsockname)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AN(lsockname);
 
-	AN(sp->local_addr);
+	AN(sp->addrs);
 	sl = sizeof ss;
 	AZ(getsockname(sp->fd, (void*)&ss, &sl));
-	AN(VSA_Build(sp->local_addr, &ss, sl));
-	assert(VSA_Sane(sp->local_addr));
+	AN(VSA_Build(sess_local_addr(sp), &ss, sl));
+	assert(VSA_Sane(sess_local_addr(sp)));
 
-	VTCP_name(sp->remote_addr, laddr, sizeof laddr, lport, sizeof lport);
+	VTCP_name(sess_remote_addr(sp), laddr, sizeof laddr,
+	    lport, sizeof lport);
 	sp->client_addr_str = WS_Copy(sp->ws, laddr, -1);
 	sp->client_port_str = WS_Copy(sp->ws, lport, -1);
-	VTCP_name(sp->local_addr, laddr, sizeof laddr, lport, sizeof lport);
+	VTCP_name(sess_local_addr(sp), laddr, sizeof laddr,
+	    lport, sizeof lport);
 	VSL(SLT_Begin, sp->vxid, "sess");
 	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s %.6f %d",
 	    sp->client_addr_str, sp->client_port_str, lsockname, laddr, lport,

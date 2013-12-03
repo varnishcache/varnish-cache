@@ -775,8 +775,15 @@ struct sess {
 
 	struct ws		ws[1];
 
-	struct suckaddr		*remote_addr;
-	struct suckaddr		*local_addr;
+	/*
+	 * This gets quite involved, but we don't want to waste space
+	 * on up to 4 pointers of 8 bytes in struct sess.
+	 */
+	char			*addrs;
+#define sess_remote_addr(sp) \
+	((struct suckaddr *)(void*)((sp)->addrs))
+#define sess_local_addr(sp) \
+	((struct suckaddr *)(void*)((sp)->addrs + vsa_suckaddr_len))
 
 	/* formatted ascii client address */
 	char			*client_addr_str;

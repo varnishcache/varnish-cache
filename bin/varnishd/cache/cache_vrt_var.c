@@ -40,6 +40,7 @@
 #include "cache_backend.h"
 #include "vrt.h"
 #include "vrt_obj.h"
+#include "vsa.h"
 
 static char vrt_hostname[255] = "";
 
@@ -501,7 +502,8 @@ VRT_r_client_ip(const struct vrt_ctx *ctx)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	return (ctx->req->sp->remote_addr);
+	CHECK_OBJ_NOTNULL(ctx->req->sp, SESS_MAGIC);
+	return (sess_remote_addr(ctx->req->sp));
 }
 
 VCL_IP
@@ -510,8 +512,8 @@ VRT_r_server_ip(const struct vrt_ctx *ctx)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	AN(ctx->req->sp->local_addr);
-	return (ctx->req->sp->local_addr);
+	CHECK_OBJ_NOTNULL(ctx->req->sp, SESS_MAGIC);
+	return (sess_local_addr(ctx->req->sp));
 }
 
 const char*
