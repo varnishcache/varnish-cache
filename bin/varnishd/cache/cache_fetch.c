@@ -562,7 +562,6 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		VDI_CloseFd(&bo->vbc);
 		return (F_STP_DONE);
 	}
-	bo->stats = NULL;
 
 	AZ(bo->fetch_obj);
 	bo->fetch_obj = obj;
@@ -621,6 +620,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		}
 	} while (ois == OIS_DATA || ois == OIS_STREAM);
 	ObjIterEnd(&oi);
+	bo->stats = NULL;
 	assert(al == bo->ims_obj->len);
 	assert(obj->len == al);
 	if (bo->state != BOS_FAILED)
