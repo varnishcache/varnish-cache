@@ -758,8 +758,8 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				p = memchr(b, '?', e - b);
 				if (p == NULL)
 					p = e;
-				frag_line(b, e, &CTX.frag[F_U]);
-				frag_line(b, e, &CTX.frag[F_q]);
+				frag_line(b, p, &CTX.frag[F_U]);
+				frag_line(p, e, &CTX.frag[F_q]);
 				break;
 			case SLT_ReqProtocol:
 				frag_line(b, e, &CTX.frag[F_H]);
