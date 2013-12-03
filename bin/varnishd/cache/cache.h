@@ -762,6 +762,8 @@ struct sess {
 	enum sess_close		reason;
 	uint32_t		vxid;
 
+	struct acct_bit		acct_bit;
+
 	/* Cross references ------------------------------------------*/
 
 	struct sesspool		*sesspool;
@@ -780,7 +782,6 @@ struct sess {
 	char			*client_addr_str;
 	char			*client_port_str;
 
-	struct acct_bit		acct_bit;
 
 	/* Timestamps, all on TIM_real() timescale */
 	double			t_open;		/* fd accepted */
