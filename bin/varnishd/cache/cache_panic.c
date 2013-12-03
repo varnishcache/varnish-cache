@@ -108,9 +108,10 @@ static void
 pan_ws(const struct ws *ws, int indent)
 {
 
-	VSB_printf(pan_vsp, "%*sws = %p { %s\n", indent, "",
-	    ws, ws->overflow ? "overflow" : "");
-	VSB_printf(pan_vsp, "%*sid = \"%s\",\n", indent + 2, "", ws->id);
+	VSB_printf(pan_vsp, "%*sws = %p {", indent, "", ws);
+	if (WS_Overflowed(ws))
+		VSB_printf(pan_vsp, " OVERFLOW");
+	VSB_printf(pan_vsp, "\n%*sid = \"%s\",\n", indent + 2, "", ws->id);
 	VSB_printf(pan_vsp, "%*s{s,f,r,e} = {%p", indent + 2, "", ws->s);
 	if (ws->f > ws->s)
 		VSB_printf(pan_vsp, ",+%ld", (long) (ws->f - ws->s));

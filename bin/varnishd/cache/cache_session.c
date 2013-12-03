@@ -111,7 +111,7 @@ ses_new(struct sesspool *pp)
 	p = (char*)(sp + 1);
 	p = (void*)PRNDUP(p);
 	assert(p < e);
-	WS_Init(sp->ws, "sess", p, e - p);
+	WS_Init(sp->ws, "ses", p, e - p);
 	sp->local_addr = (void*)WS_Alloc(sp->ws, vsa_suckaddr_len);
 	sp->remote_addr = (void*)WS_Alloc(sp->ws, vsa_suckaddr_len);
 

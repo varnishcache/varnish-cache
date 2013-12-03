@@ -433,7 +433,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	assert(bo->refcount >= 1);
 
-	AZ(bo->ws_o->overflow);
+	AZ(WS_Overflowed(bo->ws_o));
 	if (bo->do_stream)
 		HSH_Unbusy(&wrk->stats, obj->objcore);
 
@@ -587,7 +587,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	http_CopyHome(obj->http);
 
 
-	AZ(bo->ws_o->overflow);
+	AZ(WS_Overflowed(bo->ws_o));
 	VBO_setstate(bo, BOS_FETCHING);
 	HSH_Unbusy(&wrk->stats, obj->objcore);
 

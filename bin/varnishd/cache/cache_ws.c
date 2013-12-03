@@ -56,6 +56,11 @@ WS_Assert(const struct ws *ws)
 	}
 }
 
+/*
+ * NB: The id must be max 3 char and lower-case.
+ * (upper-case the first char to indicate overflow)
+ */
+
 void
 WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 {
@@ -70,8 +75,19 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 	ws->e = ws->s + len;
 	assert(PAOK(len));
 	ws->f = ws->s;
-	ws->id = id;
+	assert(id[0] & 0x40);
+	assert(strlen(id) < sizeof ws->id);
+	strcpy(ws->id, id);
 	WS_Assert(ws);
+}
+
+
+static void
+WS_MarkOverflow(struct ws *ws)
+{
+	WS_Assert(ws);
+
+	ws->id[0] &= ~0x40;		// Cheasy toupper()
 }
 
 /*
@@ -105,7 +121,7 @@ WS_Alloc(struct ws *ws, unsigned bytes)
 
 	assert(ws->r == NULL);
 	if (ws->f + bytes > ws->e) {
-		ws->overflow++;
+		WS_MarkOverflow(ws);
 		WS_Assert(ws);
 		return(NULL);
 	}
@@ -131,7 +147,7 @@ WS_Copy(struct ws *ws, const void *str, int len)
 
 	bytes = PRNDUP((unsigned)len);
 	if (ws->f + bytes > ws->e) {
-		ws->overflow++;
+		WS_MarkOverflow(ws);
 		WS_Assert(ws);
 		return(NULL);
 	}
@@ -200,4 +216,13 @@ WS_ReleaseP(struct ws *ws, char *ptr)
 	ws->f += PRNDUP(ptr - ws->f);
 	ws->r = NULL;
 	WS_Assert(ws);
+}
+int
+WS_Overflowed(const struct ws *ws)
+{
+	WS_Assert(ws);
+
+	if (ws->id[0] & 0x40)
+		return (0);
+	return (1);
 }

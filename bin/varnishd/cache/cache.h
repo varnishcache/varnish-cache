@@ -170,8 +170,7 @@ struct lock { void *priv; };	// Opaque
 struct ws {
 	unsigned		magic;
 #define WS_MAGIC		0x35fac554
-	unsigned		overflow;	/* workspace overflowed */
-	const char		*id;		/* identity */
+	char			id[4];		/* identity */
 	char			*s;		/* (S)tart of buffer */
 	char			*f;		/* (F)ree/front pointer */
 	char			*r;		/* (R)eserved length */
@@ -1207,6 +1206,7 @@ void WS_Reset(struct ws *ws, char *p);
 char *WS_Alloc(struct ws *ws, unsigned bytes);
 void *WS_Copy(struct ws *ws, const void *str, int len);
 char *WS_Snapshot(struct ws *ws);
+int WS_Overflowed(const struct ws *ws);
 
 /* rfc2616.c */
 void RFC2616_Ttl(struct busyobj *);
