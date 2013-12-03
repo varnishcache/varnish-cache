@@ -202,6 +202,7 @@ stv_alloc_obj(struct busyobj *bo, size_t size)
 	 * Always use the stevedore which allocated the object in order to
 	 * keep an object inside the same stevedore.
 	 */
+	AN(bo->stats);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	obj = bo->fetch_obj;
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);

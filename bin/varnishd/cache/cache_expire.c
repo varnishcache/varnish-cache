@@ -331,6 +331,8 @@ EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 
 	VSLb(bo->vsl, SLT_ExpKill, "LRU x=%u",
 	    oc_getxid(bo->stats, oc) & VSL_IDENTMASK);
+	AN(bo->stats);
+	AN(oc);
 	(void)HSH_DerefObjCore(bo->stats, &oc);
 	return (1);
 }

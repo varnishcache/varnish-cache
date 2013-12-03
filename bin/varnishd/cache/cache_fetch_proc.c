@@ -178,6 +178,7 @@ VFP_GetStorage(struct busyobj *bo, ssize_t sz)
 	if (st != NULL && st->len < st->space)
 		return (st);
 
+	AN(bo->stats);
 	l = fetchfrag;
 	if (l == 0)
 		l = sz;

@@ -384,8 +384,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		bo->exp.keep = 0.0;
 		obj = STV_NewObject(bo, TRANSIENT_STORAGE, l, nhttp);
 	}
-	bo->stats = NULL;
 	if (obj == NULL) {
+		bo->stats = NULL;
 		(void)VFP_Error(bo, "Could not get storage");
 		VDI_CloseFd(&bo->vbc);
 		return (F_STP_DONE);
@@ -458,6 +458,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 			V1F_fetch_body(bo);
 		break;
 	}
+
+	bo->stats = NULL;
 
 	bo->t_body = VTIM_mono();
 
