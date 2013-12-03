@@ -270,11 +270,13 @@ struct parspec mgt_parspec[] = {
 		"fragmentation.",
 		EXPERIMENTAL,
 		"256m", "bytes" },
+#ifdef HAVE_ACCEPT_FILTERS
 	{ "accept_filter", tweak_bool, &mgt_param.accept_filter,
 		NULL, NULL,
-		"Enable kernel accept-filters, if supported by the kernel.",
+		"Enable kernel accept-filters, (if available in the kernel).",
 		MUST_RESTART,
 		"on", "bool" },
+#endif
 	{ "listen_address", tweak_listen_address, NULL,
 		NULL, NULL,
 		"Whitespace separated list of network endpoints where "
