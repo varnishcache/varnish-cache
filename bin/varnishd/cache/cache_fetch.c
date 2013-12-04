@@ -130,7 +130,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	if (wrk->handling == VCL_RET_ABANDON) {
 		if (bo->req != NULL)
 			vbf_release_req(bo);
-		(void)VFP_Error(bo, "Abandonned in vcl_backend_fetch");
+		(void)VFP_Error(bo, "Abandoned in vcl_backend_fetch");
 		return (F_STP_DONE);
 	}
 	assert (wrk->handling == VCL_RET_FETCH);
