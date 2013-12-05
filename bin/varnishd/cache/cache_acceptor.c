@@ -41,6 +41,7 @@
 
 #include "config.h"
 
+#include <math.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -399,10 +400,14 @@ vca_acct(void *arg)
 			continue;
 		AZ(listen(ls->sock, cache_param->listen_depth));
 #ifdef HAVE_TCP_KEEP
+		u = (unsigned)round(cache_param->tcp_keepalive_time);
 		vca_tcp_keep_probe(ls->sock, TCP_KEEPIDLE, &u);
 		cache_param->tcp_keepalive_time = u;
+
 		vca_tcp_keep_probe(ls->sock,
 		    TCP_KEEPCNT, &cache_param->tcp_keepalive_probes);
+
+		u = (unsigned)round(cache_param->tcp_keepalive_intvl);
 		vca_tcp_keep_probe(ls->sock, TCP_KEEPINTVL, &u);
 		cache_param->tcp_keepalive_intvl = u;
 #endif
