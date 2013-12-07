@@ -9,7 +9,11 @@ server s1 {
 	txresp -body "foobar"
 } -start
 
-varnish v1 -arg "-p accept_filter=false" -vcl+backend {} -start
+varnish v1 -vcl+backend {}
+
+# NB: The accept_filter param may not exist.
+varnish v1 -cli "param.set accept_filter false"
+varnish v1 -start
 
 client c1 {
 	send "GET /foo HTTP/1.1\r\n\r\nGET "
