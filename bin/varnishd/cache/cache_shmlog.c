@@ -296,12 +296,11 @@ VSLbt(struct vsl_log *vsl, enum VSL_tag_e tag, txt t)
  */
 
 void
-VSLb(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, ...)
+VSLbv(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, va_list ap)
 {
 	char *p;
 	const char *u, *f;
 	unsigned n, mlen;
-	va_list ap;
 	txt t;
 
 	AN(fmt);
@@ -329,9 +328,7 @@ VSLb(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, ...)
 		VSL_Flush(vsl, 1);
 
 	p = VSL_DATA(vsl->wlp);
-	va_start(ap, fmt);
 	n = vsnprintf(p, mlen, fmt, ap);
-	va_end(ap);
 	if (n > mlen - 1)
 		n = mlen - 1;	/* we truncate long fields */
 	p[n++] = '\0';		/* NUL-terminated */
@@ -341,6 +338,16 @@ VSLb(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, ...)
 
 	if (DO_DEBUG(DBG_SYNCVSL))
 		VSL_Flush(vsl, 0);
+}
+
+void
+VSLb(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	VSLbv(vsl, tag, fmt, ap);
+	va_end(ap);
 }
 
 /*--------------------------------------------------------------------

@@ -39,8 +39,10 @@
 #define	VEC_S8	(0x60 + 8)
 #define	VEC_INCL	'I'
 
-typedef ssize_t vep_callback_t(struct busyobj *, ssize_t l, enum vgz_flag flg);
+typedef ssize_t vep_callback_t(struct busyobj *, void *priv, ssize_t l,
+    enum vgz_flag flg);
 
-void VEP_Init(struct busyobj *, vep_callback_t *cb);
-void VEP_Parse(const struct busyobj *, const char *p, size_t l);
-struct vsb *VEP_Finish(struct busyobj *);
+struct vep_state *VEP_Init(struct busyobj *, vep_callback_t *cb, void *cb_priv);
+void VEP_Parse(struct vep_state *, const struct busyobj *, const char *p,
+    size_t l);
+struct vsb *VEP_Finish(struct vep_state *, const struct busyobj *);

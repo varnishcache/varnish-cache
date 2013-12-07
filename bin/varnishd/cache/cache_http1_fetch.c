@@ -69,22 +69,35 @@ vbf_fetch_number(const char *nbr, int radix)
 
 /*--------------------------------------------------------------------*/
 
-static int
-vbf_fetch_straight(struct busyobj *bo, struct http_conn *htc, ssize_t cl)
+static enum vfp_status __match_proto__(vfp_pull_f)
+v1f_pull_straight(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 {
-	int i;
+	ssize_t l, lr;
 
-	assert(htc->body_status == BS_LENGTH);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	if (p == vfp_init)
+		return (VFP_OK);
+	if (p == vfp_fini)
+		return (VFP_ERROR);
+	AN(p);
+	AN(lp);
+	AN(priv);
 
-	if (cl < 0) {
-		return (VFP_Error(bo, "straight length field bogus"));
-	} else if (cl == 0)
-		return (0);
+	l = *lp;
+	*lp = 0;
 
-	i = bo->vfp->bytes(bo, htc, cl);
-	if (i <= 0)
+	if (!*priv)		// XXX: Optimize Content-Len: 0 out earlier
+		return (VFP_END);
+	if (*priv < l)
+		l = *priv;
+	lr = HTTP1_Read(&bo->htc, p, l);
+	if (lr <= 0)
 		return (VFP_Error(bo, "straight insufficient bytes"));
-	return (0);
+	*lp = lr;
+	*priv -= lr;
+	if (*priv == 0)
+		return (VFP_END);
+	return (VFP_OK);
 }
 
 /*--------------------------------------------------------------------
@@ -93,29 +106,38 @@ vbf_fetch_straight(struct busyobj *bo, struct http_conn *htc, ssize_t cl)
  * XXX: Reading one byte at a time is pretty pessimal.
  */
 
-static int
-vbf_fetch_chunked(struct busyobj *bo, struct http_conn *htc)
+static enum vfp_status __match_proto__(vfp_pull_f)
+v1f_pull_chunked(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 {
 	int i;
 	char buf[20];		/* XXX: 20 is arbitrary */
 	unsigned u;
-	ssize_t cl;
+	ssize_t cl, l, lr;
 
-	assert(htc->body_status == BS_CHUNKED);
-	do {
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	if (p == vfp_init)
+		return (VFP_OK);
+	if (p == vfp_fini)
+		return (VFP_ERROR);
+	AN(p);
+	AN(lp);
+	AN(priv);
+	l = *lp;
+	*lp = 0;
+	if (*priv == -1) {
 		/* Skip leading whitespace */
 		do {
-			if (HTTP1_Read(htc, buf, 1) <= 0)
+			if (HTTP1_Read(&bo->htc, buf, 1) <= 0)
 				return (VFP_Error(bo, "chunked read err"));
 		} while (vct_islws(buf[0]));
 
 		if (!vct_ishex(buf[0]))
-			return (VFP_Error(bo, "chunked header non-hex"));
+			 return (VFP_Error(bo, "chunked header non-hex"));
 
 		/* Collect hex digits, skipping leading zeros */
 		for (u = 1; u < sizeof buf; u++) {
 			do {
-				if (HTTP1_Read(htc, buf + u, 1) <= 0)
+				if (HTTP1_Read(&bo->htc, buf + u, 1) <= 0)
 					return (VFP_Error(bo,
 					    "chunked read err"));
 			} while (u == 1 && buf[0] == '0' && buf[u] == '0');
@@ -128,40 +150,98 @@ vbf_fetch_chunked(struct busyobj *bo, struct http_conn *htc)
 
 		/* Skip trailing white space */
 		while(vct_islws(buf[u]) && buf[u] != '\n')
-			if (HTTP1_Read(htc, buf + u, 1) <= 0)
+			if (HTTP1_Read(&bo->htc, buf + u, 1) <= 0)
 				return (VFP_Error(bo, "chunked read err"));
 
 		if (buf[u] != '\n')
 			return (VFP_Error(bo,"chunked header no NL"));
 
 		buf[u] = '\0';
+
 		cl = vbf_fetch_number(buf, 16);
 		if (cl < 0)
 			return (VFP_Error(bo,"chunked header number syntax"));
-
-		if (cl > 0 && bo->vfp->bytes(bo, htc, cl) <= 0)
-			return (VFP_Error(bo, "chunked read err"));
-
-		i = HTTP1_Read(htc, buf, 1);
-		if (i <= 0)
-			return (VFP_Error(bo, "chunked read err"));
-		if (buf[0] == '\r' && HTTP1_Read( htc, buf, 1) <= 0)
-			return (VFP_Error(bo, "chunked read err"));
-		if (buf[0] != '\n')
-			return (VFP_Error(bo,"chunked tail no NL"));
-	} while (cl > 0);
-	return (0);
+		*priv = cl;
+	}
+	if (*priv > 0) {
+		if (*priv < l)
+			l = *priv;
+		lr = HTTP1_Read(&bo->htc, p, l);
+		if (lr <= 0)
+			return (VFP_Error(bo, "straight insufficient bytes"));
+		*lp = lr;
+		*priv -= lr;
+		if (*priv == 0)
+			*priv = -1;
+		return (VFP_OK);
+	}
+	AZ(*priv);
+	i = HTTP1_Read(&bo->htc, buf, 1);
+	if (i <= 0)
+		return (VFP_Error(bo, "chunked read err"));
+	if (buf[0] == '\r' && HTTP1_Read(&bo->htc, buf, 1) <= 0)
+		return (VFP_Error(bo, "chunked read err"));
+	if (buf[0] != '\n')
+		return (VFP_Error(bo,"chunked tail no NL"));
+	return (VFP_END);
 }
 
 /*--------------------------------------------------------------------*/
 
-static void
-vbf_fetch_eof(struct busyobj *bo, struct http_conn *htc)
+static enum vfp_status __match_proto__(vfp_pull_f)
+v1f_pull_eof(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 {
+	ssize_t l, lr;
 
-	assert(htc->body_status == BS_EOF);
-	if (bo->vfp->bytes(bo, htc, SSIZE_MAX) < 0)
-		(void)VFP_Error(bo,"eof socket fail");
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	if (p == vfp_init)
+		return (VFP_OK);
+	if (p == vfp_fini)
+		return (VFP_ERROR);
+	AN(p);
+	AN(lp);
+	AN(priv);
+
+	l = *lp;
+	*lp = 0;
+	lr = HTTP1_Read(&bo->htc, p, l);
+	if (lr < 0)
+		return (VFP_Error(bo,"eof socket fail"));
+	if (lr == 0)
+		return (VFP_END);
+	*lp = lr;
+	return (VFP_OK);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+ssize_t
+V1F_Setup_Fetch(struct busyobj *bo)
+{
+	struct http_conn *htc;
+	ssize_t cl;
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	htc = &bo->htc;
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->vbc, VBC_MAGIC);
+
+	switch(htc->body_status) {
+	case BS_EOF:
+		VFP_Push(bo, v1f_pull_eof, 0);
+		return(-1);
+	case BS_LENGTH:
+		cl = vbf_fetch_number(bo->h_content_length, 10);
+		VFP_Push(bo, v1f_pull_straight, cl);
+		return (cl);
+	case BS_CHUNKED:
+		VFP_Push(bo, v1f_pull_chunked, -1);
+		return (-1);
+	default:
+		break;
+	}
+	return (-1);
 }
 
 /*--------------------------------------------------------------------
@@ -267,6 +347,8 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	HTTP1_Init(htc, bo->ws, vc->fd, vc->vsl,
 	    cache_param->http_resp_size,
 	    cache_param->http_resp_hdr_len);
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(&bo->htc, HTTP_CONN_MAGIC);
 
 	VTCP_set_read_timeout(vc->fd, vc->first_byte_timeout);
 
@@ -308,81 +390,3 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	return (0);
 }
 
-/*--------------------------------------------------------------------
- * This function is either called by the requesting thread OR by a
- * dedicated body-fetch work-thread.
- *
- * We get passed the busyobj in the priv arg, and we inherit a
- * refcount on it, which we must release, when done fetching.
- */
-
-void
-V1F_fetch_body(struct busyobj *bo)
-{
-	struct storage *st;
-	ssize_t cl;
-	struct http_conn *htc;
-	struct object *obj;
-
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	htc = &bo->htc;
-	CHECK_OBJ_ORNULL(bo->vbc, VBC_MAGIC);
-	obj = bo->fetch_obj;
-	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(obj->http, HTTP_MAGIC);
-	AN(bo->vbc);
-
-	assert(bo->state == BOS_FETCHING);
-
-	AN(bo->vfp);
-	AZ(bo->vgz_rx);
-	assert(VTAILQ_EMPTY(&obj->store));
-
-	/* XXX: pick up estimate from objdr ? */
-	cl = 0;
-	switch (htc->body_status) {
-	case BS_LENGTH:
-		cl = vbf_fetch_number(bo->h_content_length, 10);
-
-		bo->vfp->begin(bo, cl);
-		if (bo->state == BOS_FETCHING && cl > 0)
-			bo->should_close |= vbf_fetch_straight(bo, htc, cl);
-		if (bo->vfp->end(bo))
-			assert(bo->state == BOS_FAILED);
-		break;
-	case BS_CHUNKED:
-		bo->vfp->begin(bo, cl > 0 ? cl : 0);
-		if (bo->state == BOS_FETCHING)
-			bo->should_close |= vbf_fetch_chunked(bo, htc);
-		if (bo->vfp->end(bo))
-			assert(bo->state == BOS_FAILED);
-		break;
-	case BS_EOF:
-		bo->vfp->begin(bo, cl > 0 ? cl : 0);
-		if (bo->state == BOS_FETCHING)
-			vbf_fetch_eof(bo, htc);
-		bo->should_close = 1;
-		if (bo->vfp->end(bo))
-			assert(bo->state == BOS_FAILED);
-		break;
-	default:
-		WRONG("Wrong body_status");
-	}
-	AZ(bo->vgz_rx);
-
-	/*
-	 * Trim or delete the last segment, if any
-	 */
-
-	st = VTAILQ_LAST(&bo->fetch_obj->store, storagehead);
-	/* XXX: Temporary:  Only trim if we are not streaming */
-	if (st != NULL && !bo->do_stream) {
-		/* XXX: is any of this safe under streaming ? */
-		if (st->len == 0) {
-			VTAILQ_REMOVE(&bo->fetch_obj->store, st, list);
-			STV_free(st);
-		} else if (st->len < st->space) {
-			STV_trim(st, st->len, 1);
-		}
-	}
-}

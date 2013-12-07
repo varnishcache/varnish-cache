@@ -259,6 +259,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	struct vsb *vary = NULL;
 	int varyl = 0;
 	struct object *obj;
+	ssize_t est = -1;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -309,24 +310,27 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	/* But we can't do both at the same time */
 	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
 
-	/* ESI takes precedence and handles gzip/gunzip itself */
-	if (bo->do_esi) {
-		bo->vfp = &vfp_esi;
-		/*
-		 * The one case were we do not weaken Etag is where
-		 * incoming obj is not gzip'ed and we don't gzip either
-		 * If we ESI expand it on deliver, we weaken there.
-		 */
-		if (bo->is_gzip || bo->do_gzip | bo->do_gunzip)
-			RFC2616_Weaken_Etag(bo->beresp);
-	} else if (bo->do_gunzip) {
-		bo->vfp = &vfp_gunzip;
+	if (bo->vbc != NULL)
+		est = V1F_Setup_Fetch(bo);
+
+	if (bo->do_gunzip || (bo->is_gzip && bo->do_esi)) {
 		RFC2616_Weaken_Etag(bo->beresp);
+		VFP_Push(bo, vfp_gunzip_pull, 0);
+	}
+
+	if (bo->do_esi && bo->do_gzip) {
+		VFP_Push(bo, vfp_esi_gzip_pull, 0);
+		RFC2616_Weaken_Etag(bo->beresp);
+	} else if (bo->do_esi && bo->is_gzip && !bo->do_gunzip) {
+		VFP_Push(bo, vfp_esi_gzip_pull, 0);
+		RFC2616_Weaken_Etag(bo->beresp);
+	} else if (bo->do_esi) {
+		VFP_Push(bo, vfp_esi_pull, 0);
 	} else if (bo->do_gzip) {
-		bo->vfp = &vfp_gzip;
+		VFP_Push(bo, vfp_gzip_pull, 0);
 		RFC2616_Weaken_Etag(bo->beresp);
-	} else if (bo->is_gzip) {
-		bo->vfp = &vfp_testgzip;
+	} else if (bo->is_gzip && !bo->do_gunzip) {
+		VFP_Push(bo, vfp_testgunzip_pull, 0);
 	}
 
 	if (bo->fetch_objcore->flags & OC_F_PRIVATE)
@@ -437,9 +441,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->do_stream)
 		HSH_Unbusy(&wrk->stats, obj->objcore);
 
-	if (bo->vfp == NULL)
-		bo->vfp = &VFP_nop;
-
 	assert(bo->state == BOS_REQ_DONE);
 	VBO_setstate(bo, BOS_FETCHING);
 
@@ -455,8 +456,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		if (bo->vbc == NULL)
 			(void)VFP_Error(bo, "Backend connection gone");
 		else
-			V1F_fetch_body(bo);
-		break;
+			VFP_Fetch_Body(bo, est);
 	}
 
 	bo->stats = NULL;
@@ -471,13 +471,11 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		AZ(bo->vbc);
 	}
 
-	bo->vfp = NULL;
+	http_Teardown(bo->bereq);
+	http_Teardown(bo->beresp);
 
 	VSLb(bo->vsl, SLT_Fetch_Body, "%u(%s)",
 	    bo->htc.body_status, body_status_2str(bo->htc.body_status));
-
-	http_Teardown(bo->bereq);
-	http_Teardown(bo->beresp);
 
 	if (bo->state == BOS_FAILED) {
 		wrk->stats.fetch_failed++;

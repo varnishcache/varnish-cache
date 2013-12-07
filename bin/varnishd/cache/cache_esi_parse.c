@@ -63,6 +63,7 @@ struct vep_state {
 	struct busyobj		*bo;
 	int			dogzip;
 	vep_callback_t		*cb;
+	void			*cb_priv;
 
 	/* Internal Counter for default call-back function */
 	ssize_t			cb_x;
@@ -329,7 +330,7 @@ vep_mark_common(struct vep_state *vep, const char *p, enum vep_mark mark)
 	 */
 
 	if (vep->last_mark != mark && (vep->o_wait > 0 || vep->startup)) {
-		lcb = vep->cb(vep->bo, 0,
+		lcb = vep->cb(vep->bo, vep->cb_priv, 0,
 		    mark == VERBATIM ? VGZ_RESET : VGZ_ALIGN);
 		if (lcb - vep->o_last > 0)
 			vep_emit_common(vep, lcb - vep->o_last, vep->last_mark);
@@ -339,7 +340,8 @@ vep_mark_common(struct vep_state *vep, const char *p, enum vep_mark mark)
 
 	/* Transfer pending bytes CRC into active mode CRC */
 	if (vep->o_pending) {
-		(void)vep->cb(vep->bo, vep->o_pending, VGZ_NORMAL);
+		(void)vep->cb(vep->bo, vep->cb_priv, vep->o_pending,
+		     VGZ_NORMAL);
 		if (vep->o_crc == 0) {
 			vep->crc = vep->crcp;
 			vep->o_crc = vep->o_pending;
@@ -363,7 +365,7 @@ vep_mark_common(struct vep_state *vep, const char *p, enum vep_mark mark)
 
 	vep->o_wait += l;
 	vep->last_mark = mark;
-	(void)vep->cb(vep->bo, l, VGZ_NORMAL);
+	(void)vep->cb(vep->bo, vep->cb_priv, l, VGZ_NORMAL);
 }
 
 static void
@@ -565,15 +567,14 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
  */
 
 void
-VEP_Parse(const struct busyobj *bo, const char *p, size_t l)
+VEP_Parse(struct vep_state *vep, const struct busyobj *bo, const char *p,
+    size_t l)
 {
-	struct vep_state *vep;
 	const char *e;
 	struct vep_match *vm;
 	int i;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	vep = bo->vep;
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 	assert(l > 0);
 
@@ -1013,29 +1014,27 @@ VEP_Parse(const struct busyobj *bo, const char *p, size_t l)
  */
 
 static ssize_t __match_proto__()
-vep_default_cb(struct busyobj *bo, ssize_t l, enum vgz_flag flg)
+vep_default_cb(struct busyobj *bo, void *priv, ssize_t l, enum vgz_flag flg)
 {
-	struct vep_state *vep;
+	ssize_t *s;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	vep = bo->vep;
-	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
-	assert(vep->bo == bo);
+	AN(priv);
+	s = priv;
+	*s += l;
 	(void)flg;
-	vep->cb_x += l;
-	return (vep->cb_x);
+	return (*s);
 }
 
 /*---------------------------------------------------------------------
  */
 
-void
-VEP_Init(struct busyobj *bo, vep_callback_t *cb)
+struct vep_state *
+VEP_Init(struct busyobj *bo, vep_callback_t *cb, void *cb_priv)
 {
 	struct vep_state *vep;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	AZ(bo->vep);
 	vep = (void*)WS_Alloc(bo->ws, sizeof *vep);
 	AN(vep);
 
@@ -1044,15 +1043,16 @@ VEP_Init(struct busyobj *bo, vep_callback_t *cb)
 	vep->bo = bo;
 	vep->vsb = VSB_new_auto();
 	AN(vep->vsb);
-	bo->vep = vep;
 
 	if (cb != NULL) {
 		vep->dogzip = 1;
 		/* XXX */
 		VSB_printf(vep->vsb, "%c", VEC_GZ);
 		vep->cb = cb;
+		vep->cb_priv = cb_priv;
 	} else {
 		vep->cb = vep_default_cb;
+		vep->cb_priv = &vep->cb_x;
 	}
 
 	vep->state = VEP_START;
@@ -1069,31 +1069,29 @@ VEP_Init(struct busyobj *bo, vep_callback_t *cb)
 	vep->last_mark = SKIP;
 	vep_mark_common(vep, vep->ver_p, VERBATIM);
 	vep->startup = 0;
+	return (vep);
 }
 
 /*---------------------------------------------------------------------
  */
 
 struct vsb *
-VEP_Finish(struct busyobj *bo)
+VEP_Finish(struct vep_state *vep, const struct busyobj *bo)
 {
-	struct vep_state *vep;
 	ssize_t l, lcb;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	vep = bo->vep;
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 	assert(vep->bo == bo);
 
 	if (vep->o_pending)
 		vep_mark_common(vep, vep->ver_p, vep->last_mark);
 	if (vep->o_wait > 0) {
-		lcb = vep->cb(vep->bo, 0, VGZ_ALIGN);
+		lcb = vep->cb(vep->bo, vep->cb_priv, 0, VGZ_ALIGN);
 		vep_emit_common(vep, lcb - vep->o_last, vep->last_mark);
 	}
-	(void)vep->cb(vep->bo, 0, VGZ_FINISH);
+	(void)vep->cb(vep->bo, vep->cb_priv, 0, VGZ_FINISH);
 
-	bo->vep = NULL;
 	AZ(VSB_finish(vep->vsb));
 	l = VSB_len(vep->vsb);
 	if (vep->esi_found && l > 0)

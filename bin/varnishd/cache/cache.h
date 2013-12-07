@@ -123,7 +123,6 @@ struct req;
 struct sess;
 struct sesspool;
 struct vbc;
-struct vef_priv;
 struct vrt_backend;
 struct vsb;
 struct waitinglist;
@@ -265,20 +264,18 @@ struct dstat {
 
 /* Fetch processors --------------------------------------------------*/
 
-typedef void vfp_begin_f(struct busyobj *bo, size_t );
-typedef int vfp_bytes_f(struct busyobj *bo, struct http_conn *, ssize_t);
-typedef int vfp_end_f(struct busyobj *bo);
-
-struct vfp {
-	vfp_begin_f	*begin;
-	vfp_bytes_f	*bytes;
-	vfp_end_f	*end;
+enum vfp_status {
+	VFP_ERROR = -1,
+	VFP_OK = 0,
+	VFP_END = 1,
 };
+typedef enum vfp_status vfp_pull_f(struct busyobj *bo, void *p, ssize_t *len, intptr_t *priv);
 
-extern const struct vfp vfp_gunzip;
-extern const struct vfp vfp_gzip;
-extern const struct vfp vfp_testgzip;
-extern const struct vfp vfp_esi;
+extern vfp_pull_f vfp_gunzip_pull;
+extern vfp_pull_f vfp_gzip_pull;
+extern vfp_pull_f vfp_testgunzip_pull;
+extern vfp_pull_f vfp_esi_pull;
+extern vfp_pull_f vfp_esi_gzip_pull;
 
 /* Deliver processors ------------------------------------------------*/
 
@@ -545,10 +542,12 @@ struct busyobj {
 	unsigned		is_gzip;
 	unsigned		is_gunzip;
 
-	const struct vfp	*vfp;
-	struct vep_state	*vep;
+#define N_VFPS			5
+	vfp_pull_f		*vfps[N_VFPS];
+	intptr_t		vfps_priv[N_VFPS];
+	int			vfp_nxt;
+
 	enum busyobj_state_e	state;
-	struct vgz		*vgz_rx;
 
 	struct ws		ws[1];
 	struct vbc		*vbc;
@@ -563,8 +562,6 @@ struct busyobj {
 	struct http_conn	htc;
 
 	struct pool_task	fetch_task;
-
-	struct vef_priv		*vef_priv;
 
 	unsigned		should_close;
 	char			*h_content_length;
@@ -859,7 +856,7 @@ void VBO_waitstate(struct busyobj *bo, enum busyobj_state_e want);
 
 /* cache_http1_fetch.c [V1F] */
 int V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req);
-void V1F_fetch_body(struct busyobj *bo);
+ssize_t V1F_Setup_Fetch(struct busyobj *bo);
 
 /* cache_http1_fsm.c [HTTP1] */
 typedef int (req_body_iter_f)(struct req *, void *priv, void *ptr, size_t);
@@ -944,10 +941,14 @@ void VBF_Fetch(struct worker *wrk, struct req *req,
 
 /* cache_fetch_proc.c */
 struct storage *VFP_GetStorage(struct busyobj *, ssize_t sz);
-int VFP_Error2(struct busyobj *, const char *error, const char *more);
-int VFP_Error(struct busyobj *, const char *error);
+enum vfp_status VFP_Error(struct busyobj *, const char *fmt, ...)
+    __printflike(2, 3);
 void VFP_Init(void);
-extern const struct vfp VFP_nop;
+void VFP_Fetch_Body(struct busyobj *bo, ssize_t est);
+void VFP_Push(struct busyobj *, vfp_pull_f *func, intptr_t priv);
+enum vfp_status VFP_Suck(struct busyobj *, void *p, ssize_t *lp);
+extern char vfp_init[];
+extern char vfp_fini[];
 
 /* cache_gzip.c */
 struct vgz;
@@ -966,7 +967,6 @@ void VGZ_Ibuf(struct vgz *, const void *, ssize_t len);
 int VGZ_IbufEmpty(const struct vgz *vg);
 void VGZ_Obuf(struct vgz *, void *, ssize_t len);
 int VGZ_ObufFull(const struct vgz *vg);
-int VGZ_ObufStorage(struct busyobj *, struct vgz *vg);
 enum vgzret_e VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
 enum vgzret_e VGZ_Gunzip(struct vgz *, const void **, size_t *len);
 enum vgzret_e VGZ_Destroy(struct vgz **);
@@ -1141,6 +1141,7 @@ void VSM_Free(void *ptr);
 #ifdef VSL_ENDMARKER
 void VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
     __printflike(3, 4);
+void VSLbv(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, va_list va);
 void VSLb(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, ...)
     __printflike(3, 4);
 void VSLbt(struct vsl_log *, enum VSL_tag_e tag, txt t);

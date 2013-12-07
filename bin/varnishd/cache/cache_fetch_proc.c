@@ -43,6 +43,9 @@
 
 static unsigned fetchfrag;
 
+char vfp_init[] = "<init>";
+char vfp_fini[] = "<fini>";
+
 /*--------------------------------------------------------------------
  * We want to issue the first error we encounter on fetching and
  * supress the rest.  This function does that.
@@ -52,112 +55,22 @@ static unsigned fetchfrag;
  * For convenience, always return -1
  */
 
-int
-VFP_Error2(struct busyobj *bo, const char *error, const char *more)
+enum vfp_status
+VFP_Error(struct busyobj *bo, const char *fmt, ...)
 {
+	va_list ap;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	if (bo->state < BOS_FAILED) {
-		if (more == NULL)
-			VSLb(bo->vsl, SLT_FetchError, "%s", error);
-		else
-			VSLb(bo->vsl, SLT_FetchError, "%s: %s", error, more);
+		va_start(ap, fmt);
+		VSLbv(bo->vsl, SLT_FetchError, fmt, ap);
+		va_end(ap);
 		if (bo->fetch_objcore != NULL)
 			HSH_Fail(bo->fetch_objcore);
 		VBO_setstate(bo, BOS_FAILED);
 	}
-	return (-1);
+	return (VFP_ERROR);
 }
-
-int
-VFP_Error(struct busyobj *bo, const char *error)
-{
-	return(VFP_Error2(bo, error, NULL));
-}
-
-/*--------------------------------------------------------------------
- * VFP_NOP
- *
- * This fetch-processor does nothing but store the object.
- * It also documents the API
- */
-
-/*--------------------------------------------------------------------
- * VFP_BEGIN
- *
- * Called to set up stuff.
- *
- * 'estimate' is the estimate of the number of bytes we expect to receive,
- * as seen on the socket, or zero if unknown.
- */
-
-static void __match_proto__(vfp_begin_f)
-vfp_nop_begin(struct busyobj *bo, size_t estimate)
-{
-
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-
-	if (estimate > 0)
-		(void)VFP_GetStorage(bo, estimate);
-}
-
-/*--------------------------------------------------------------------
- * VFP_BYTES
- *
- * Process (up to) 'bytes' from the socket.
- *
- * Return -1 on error, issue VFP_Error()
- *	will not be called again, once error happens.
- * Return 0 on EOF on socket even if bytes not reached.
- * Return 1 when 'bytes' have been processed.
- */
-
-static int __match_proto__(vfp_bytes_f)
-vfp_nop_bytes(struct busyobj *bo, struct http_conn *htc, ssize_t bytes)
-{
-	ssize_t l, wl;
-	struct storage *st;
-
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-
-	while (bytes > 0) {
-		st = VFP_GetStorage(bo, 0);
-		if (st == NULL)
-			return(-1);
-		l = st->space - st->len;
-		if (l > bytes)
-			l = bytes;
-		wl = HTTP1_Read(htc, st->ptr + st->len, l);
-		if (wl <= 0)
-			return (wl);
-		VBO_extend(bo, wl);
-		bytes -= wl;
-	}
-	return (1);
-}
-
-/*--------------------------------------------------------------------
- * VFP_END
- *
- * Finish & cleanup
- *
- * Return -1 for error
- * Return 0 for OK
- */
-
-static int __match_proto__(vfp_end_f)
-vfp_nop_end(struct busyobj *bo)
-{
-
-	(void)bo;
-	return (0);
-}
-
-const struct vfp VFP_nop = {
-	.begin	=	vfp_nop_begin,
-	.bytes	=	vfp_nop_bytes,
-	.end	=	vfp_nop_end,
-};
 
 /*--------------------------------------------------------------------
  * Fetch Storage to put object into.
@@ -194,6 +107,160 @@ VFP_GetStorage(struct busyobj *bo, ssize_t sz)
 	VTAILQ_INSERT_TAIL(&obj->store, st, list);
 	Lck_Unlock(&bo->mtx);
 	return (st);
+}
+
+/**********************************************************************
+ */
+
+static enum vfp_status
+vfp_call(struct busyobj *bo, int nbr, void *p, ssize_t *lp)
+{
+	AN(bo->vfps[nbr]);
+	return (bo->vfps[nbr](bo, p, lp, &bo->vfps_priv[nbr]));
+}
+
+static void
+vfp_suck_fini(struct busyobj *bo)
+{
+	int i;
+
+	for (i = 0; i < bo->vfp_nxt; i++) {
+		if(bo->vfps[i] != NULL)
+			(void)vfp_call(bo, i, vfp_fini, NULL);
+	}
+}
+
+static enum vfp_status
+vfp_suck_init(struct busyobj *bo)
+{
+	enum vfp_status retval = VFP_ERROR;
+	int i;
+
+	for (i = 0; i < bo->vfp_nxt; i++) {
+		retval = vfp_call(bo, i, vfp_init, NULL);
+		if (retval != VFP_OK) {
+			vfp_suck_fini(bo);
+			break;
+		}
+	}
+	return (retval);
+}
+
+/**********************************************************************
+ * Suck data up from lower levels.
+ * Once a layer return non VFP_OK, clean it up and produce the same
+ * return value for any subsequent calls.
+ */
+
+enum vfp_status
+VFP_Suck(struct busyobj *bo, void *p, ssize_t *lp)
+{
+	enum vfp_status vp;
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AN(p);
+	AN(lp);
+	assert(bo->vfp_nxt > 0);
+	bo->vfp_nxt--;
+	if (bo->vfps[bo->vfp_nxt] == NULL) {
+		*lp = 0;
+		vp = (enum vfp_status)bo->vfps_priv[bo->vfp_nxt];
+	} else {
+		vp = vfp_call(bo, bo->vfp_nxt, p, lp);
+		if (vp != VFP_OK) {
+			(void)vfp_call(bo, bo->vfp_nxt, vfp_fini, NULL);
+			bo->vfps[bo->vfp_nxt] = NULL;
+			bo->vfps_priv[bo->vfp_nxt] = vp;
+		}
+	}
+	bo->vfp_nxt++;
+	return (vp);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+void
+VFP_Fetch_Body(struct busyobj *bo, ssize_t est)
+{
+	ssize_t l;
+	enum vfp_status vfps = VFP_ERROR;
+	struct storage *st = NULL;
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	AN(bo->vfp_nxt);
+
+	if (est < 0)
+		est = 0;
+
+	if (vfp_suck_init(bo) != VFP_OK) {
+		(void)VFP_Error(bo, "Fetch Pipeline failed to initialize");
+		bo->should_close = 1;
+		return;
+	}
+
+	do {
+		if (st == NULL) {
+			l = fetchfrag;
+			if (l == 0) {
+				l = est;
+				est = 0;
+			}
+			if (l == 0)
+				l = cache_param->fetch_chunksize;
+			st = STV_alloc(bo, l);
+			if (st == NULL) {
+				bo->should_close = 1;
+				/* XXX Close VFP stack */
+				(void)VFP_Error(bo, "Out of storage");
+				break;
+			}
+			AZ(st->len);
+			Lck_Lock(&bo->mtx);
+			VTAILQ_INSERT_TAIL(&bo->fetch_obj->store, st, list);
+			Lck_Unlock(&bo->mtx);
+		}
+		l = st->space - st->len;
+		vfps = VFP_Suck(bo, st->ptr + st->len, &l);
+		if (l > 0)
+			VBO_extend(bo, l);
+		if (st->len == st->space)
+			st = NULL;
+	} while (vfps == VFP_OK);
+
+	if (vfps == VFP_ERROR) {
+		(void)VFP_Error(bo, "Fetch Pipeline failed to process");
+		bo->should_close = 1;
+	}
+
+	vfp_suck_fini(bo);
+
+	/*
+	 * Trim or delete the last segment, if any
+	 */
+
+	st = VTAILQ_LAST(&bo->fetch_obj->store, storagehead);
+	/* XXX: Temporary:  Only trim if we are not streaming */
+	if (st != NULL && !bo->do_stream) {
+		/* None of this this is safe under streaming */
+		if (st->len == 0) {
+			VTAILQ_REMOVE(&bo->fetch_obj->store, st, list);
+			STV_free(st);
+		} else if (st->len < st->space) {
+			STV_trim(st, st->len, 1);
+		}
+	}
+}
+
+void
+VFP_Push(struct busyobj *bo, vfp_pull_f *func, intptr_t priv)
+{
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	bo->vfps_priv[bo->vfp_nxt] = priv;
+	bo->vfps[bo->vfp_nxt] = func;
+	bo->vfp_nxt++;
 }
 
 /*--------------------------------------------------------------------
