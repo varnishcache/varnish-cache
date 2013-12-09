@@ -1,5 +1,5 @@
 #-
-# Copyright (c) 2010-2011 Varnish Software AS
+# Copyright (c) 2010-2013 Varnish Software AS
 # All rights reserved.
 #
 # Author: Poul-Henning Kamp <phk@FreeBSD.org>
@@ -25,17 +25,141 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-Module std
-Function STRING toupper(STRING_LIST)
-Function STRING tolower(STRING_LIST)
-Function VOID set_ip_tos(INT)
-Function REAL random(REAL, REAL)
-Function VOID log(STRING_LIST)
-Function VOID syslog(INT, STRING_LIST)
-Function STRING fileread(PRIV_CALL, STRING)
-Function DURATION duration(STRING, DURATION)
-Function INT integer(STRING, INT)
-Function VOID collect(HEADER)
-Function IP ip(STRING, IP)
-Function BOOL healthy(BACKEND)
-Function INT port(IP)
+$Module std Varnish Standard Module
+
+DESCRIPTION
+===========
+
+Vmod_std contains basic functions which are part and parcel of Varnish,
+but which for reasons of architecture fit better in a VMOD.
+
+One particular class of functions in vmod_std is the conversions functions
+which all have the form::
+
+	TYPE type(STRING, TYPE)
+
+These functions attempt to convert STRING to the TYPE, and if that fails,
+they return the second argument, which must have the given TYPE.
+
+$Function STRING toupper(STRING_LIST)
+
+Description
+	Converts the string *s* to upper case.
+Example
+	set beresp.http.x-scream = std.toupper("yes!");
+
+$Function STRING tolower(STRING_LIST)
+
+Description
+	Converts the string *s* to lower case.
+Example
+	set beresp.http.x-nice = std.tolower("VerY");
+
+$Function VOID set_ip_tos(INT)
+
+Description
+	Sets the Type-of-Service flag for the current session. Please
+	note that the TOS flag is not removed by the end of the
+	request so probably want to set it on every request should you
+	utilize it.
+Example
+	| if (req.url ~ ^/slow/) {
+	|    std.set_ip_tos(0x0);
+	| }
+
+$Function REAL random(REAL, REAL)
+
+Description
+	Returns a random REAL number between *a* and *b*.
+Example
+	set beresp.http.x-random-number = std.random(1, 100);
+
+$Function VOID log(STRING_LIST)
+
+Description
+	Logs *string* to the shared memory log, using VSL tag *SLT_VCL_Log*.
+Example
+	std.log("Something fishy is going on with the vhost " + req.host);
+
+$Function VOID syslog(INT, STRING_LIST)
+
+Description
+	Logs *string* to syslog marked with *priority*.  See your
+	system's syslog.h file for the legal values of *priority*.
+Example
+	std.syslog(8 + 1, "Something is wrong");
+
+$Function STRING fileread(PRIV_CALL, STRING)
+
+Description
+	Reads a file and returns a string with the content. Please
+	note that it is not recommended to send variables to this
+	function the caching in the function doesn't take this into
+	account. Also, files are not re-read.
+Example
+	set beresp.http.x-served-by = std.fileread("/etc/hostname");
+
+$Function VOID collect(HEADER)
+
+Description
+	Collapses the header, joining the headers into one.
+Example
+	std.collect(req.http.cookie);
+	This will collapse several Cookie: headers into one, long
+	cookie header.
+
+$Function DURATION duration(STRING, DURATION)
+
+Description
+	Converts the string *s* to seconds. *s* can be quantified with
+	the usual s (seconds), m (minutes), h (hours), d (days) and w
+	(weeks) units. If *s* fails to parse, *fallback* will be returned.
+Example
+	set beresp.ttl = std.duration("1w", 3600s);
+
+$Function INT integer(STRING, INT)
+
+Description
+	Converts the string *s* to an integer.  If *s* fails to parse,
+	*fallback* will be returned.
+Example
+	if (std.integer(beresp.http.x-foo, 0) > 5) { ... }
+
+$Function IP ip(STRING, IP)
+
+Description
+	Converts string *s* to the first IP number returned by
+	the system library function getaddrinfo(3).  If conversion
+	fails, *fallback* will be returned.
+Example
+	if (std.ip(req.http.X-forwarded-for, "0.0.0.0") ~ my_acl) { ... }
+
+$Function BOOL healthy(BACKEND)
+
+Description
+	Returns true if the backend is healthy
+
+$Function INT port(IP)
+
+Description
+	Returns the port number of an IP address
+
+
+SEE ALSO
+========
+
+* vcl(7)
+* varnishd(1)
+
+HISTORY
+=======
+
+The Varnish standard module was released along with Varnish Cache 3.0.
+This manual page was written by Per Buer with help from Martin Blix
+Grydeland.
+
+COPYRIGHT
+=========
+
+This document is licensed under the same licence as Varnish
+itself. See LICENCE for details.

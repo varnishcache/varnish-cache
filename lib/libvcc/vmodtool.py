@@ -92,13 +92,16 @@ class token(object):
 #######################################################################
 
 class vmod(object):
-	def __init__(self, nam):
+	def __init__(self, nam, dnam):
 		if not is_c_name(nam):
 			raise Exception("Module name '%s' is illegal" % nam)
 		self.nam = nam
+		self.dnam = dnam
 		self.init = None
 		self.funcs = list()
 		self.objs = list()
+		self.doc_str = []
+		self.doc_order = []
 
 	def set_init(self, nam):
 		if self.init != None:
@@ -109,13 +112,15 @@ class vmod(object):
 
 	def add_func(self, fn):
 		self.funcs.append(fn)
+		self.doc_order.append(fn)
 
 	def add_obj(self, obj):
 		self.objs.append(obj)
-		obj.set_modnam(self.nam)
+		self.doc_order.append(obj)
 
 	def c_proto(self, fo):
 		for o in self.objs:
+			o.fixup(self.nam)
 			o.c_proto(fo)
 			fo.write("\n")
 		for f in self.funcs:
@@ -235,6 +240,37 @@ class vmod(object):
 		s += "};\n"
 		return s
 
+	def doc(self, l):
+		self.doc_str.append(l)
+
+	def doc_dump(self, fo, suf):
+		i = "vmod_" + self.nam + " -- " + self.dnam
+		fo.write("=" * len(i) + "\n")
+		fo.write(i + "\n")
+		fo.write("=" * len(i) + "\n")
+		fo.write("\n")
+		fo.write("SYNOPSIS\n")
+		fo.write("========\n")
+		fo.write("\n")
+		fo.write("import %s [from \"path\"] ;\n" % self.nam)
+		fo.write("\n")
+		for i in self.doc_str:
+			fo.write(i + "\n")
+		fo.write("CONTENTS\n")
+		fo.write("========\n")
+		fo.write("\n")
+		l = []
+		for i in self.funcs:
+			l.append(i.doc_idx(suf))
+		for i in self.objs:
+			l += i.doc_idx(suf)
+		l.sort()
+		for i in l:
+			fo.write("* " + i[1] + "\n")
+		fo.write("\n")
+		for i in self.doc_order:
+			i.doc_dump(fo)
+
 #######################################################################
 
 class func(object):
@@ -249,6 +285,7 @@ class func(object):
 		self.al = al
 		self.retval = retval
 		self.pfx = None
+		self.doc_str = []
 
 	def __repr__(self):
 		return "<FUNC %s %s>" % (self.retval, self.nam)
@@ -309,6 +346,43 @@ class func(object):
 			s += a.c_strspec()
 		return s
 
+	def doc(self, l):
+		self.doc_str.append(l)
+
+	def doc_proto(self):
+		s = self.retval + " " + self.nam + "("
+		d = ""
+		for i in self.al:
+			s += d + i.typ
+			d = ", "
+		s += ")"
+		return s
+
+	def doc_idx(self, suf):
+		if suf == "":
+			return (self.nam, ":ref:`func_" + self.nam + "`")
+		else:
+			return (self.nam, self.doc_proto())
+
+	def doc_dump(self, fo):
+		s = self.doc_proto()
+		fo.write(".. _func_" + self.nam + ":\n\n")
+		fo.write(s + "\n")
+		fo.write("-" * len(s) + "\n")
+		fo.write("\n")
+		fo.write("Prototype\n")
+		s = "\t" + self.retval + " " + self.nam + "("
+		d = ""
+		for i in self.al:
+			s += d + i.typ
+			if i.nam != None:
+				s += " " + i.nam
+			d = ", "
+		fo.write(s + ")\n")
+		for i in self.doc_str:
+			fo.write(i + "\n")
+		
+
 #######################################################################
 
 class obj(object):
@@ -317,8 +391,10 @@ class obj(object):
 		self.init = None
 		self.fini = None
 		self.methods = list()
+		self.doc_str = []
 
-	def set_modnam(self, modnam):
+	def fixup(self, modnam):
+		assert self.nam != None
 		self.st = "struct vmod_" + modnam + "_" + self.nam
 		self.init.set_pfx(self.st + " **, const char *")
 		self.fini.set_pfx(self.st + " **")
@@ -378,6 +454,32 @@ class obj(object):
 		s += '\t\t"\\0",\n'
 		return s
 
+	def doc(self, l):
+		self.doc_str.append(l)
+
+	def doc_idx(self, suf):
+		l = []
+		if suf == "":
+			l.append((self.nam, ":ref:`obj_" + self.nam + "`"))
+		else:
+			l.append((self.nam, "Object " + self.nam))
+		for i in self.methods:
+			l.append(i.doc_idx(suf))
+		return l
+
+	def doc_dump(self, fo):
+		fo.write(".. _obj_" + self.nam + ":\n\n")
+		s = "Object " + self.nam
+		fo.write(s + "\n")
+		fo.write("=" * len(s) + "\n")
+		fo.write("\n")
+
+		for i in self.doc_str:
+			fo.write(i + "\n")
+
+		for i in self.methods:
+			i.doc_dump(fo)
+
 #######################################################################
 
 class arg(object):
@@ -397,44 +499,42 @@ class arg(object):
 		return "??"
 
 #######################################################################
-
-f = open(specfile, "r")
-tl = list()
-lines = list()
-ln = 0
-for l in f:
-	ln += 1
-	lines.append(l)
-	if l == "":
-		continue
-	l = re.sub("[ \t]*#.*$", "", l)
-	l = re.sub("[ \t]*\n", "", l)
-	l = re.sub("([(){},])", r' \1 ', l)
-	if l == "":
-		continue
-	for j in l.split():
-		tl.append(token(ln, 0, j))
-f.close()
+#
+#
+def parse_enum2(tl):
+	t = tl.get_token()
+	if t.str != "{":
+		raise Exception("expected \"{\"")
+	s = "ENUM\\0"
+	t = None
+	while True:
+		if t == None:
+			t = tl.get_token()
+		if t.str == "}":
+			break
+		s += t.str + "\\0"
+		t = tl.get_token()
+		if t.str == ",":
+			t = None
+		elif t.str == "}":
+			break
+		else:
+			raise Exception(
+			    "Expected \"}\" or \",\" not \"%s\"" % t.str)
+	s += "\\0"
+	return arg("ENUM", det=s)
 
 #######################################################################
 #
 #
-def parse_enum2(tl):
-	t = tl.pop(0)
-	if t.str != "{":
-		raise Exception("expected \"{\"")
-	s = "ENUM\\0"
-	while True:
-		t = tl.pop(0)
-		if t.str == "}":
-			break
-		s += t.str + "\\0"
-		if tl[0].str == ",":
-			tl.pop(0)
-		elif tl[0].str != "}":
-			raise Exception("Expceted \"}\" or \",\"")
-	s += "\\0"
-	return arg("ENUM", det=s)
+
+def parse_module(tl):
+	nm = tl.get_token().str
+	s = ""
+	while len(tl.tl) > 0:
+		s += " " + tl.get_token().str
+	dnm = s[1:]
+	return vmod(nm, dnm)
 
 #######################################################################
 #
@@ -443,43 +543,52 @@ def parse_enum2(tl):
 def parse_func(tl, rt_type = None, obj=None):
 	al = list()
 	if rt_type == None:
-		t = tl.pop(0)
+		t = tl.get_token()
 		rt_type = t.str
 	if rt_type not in ctypes:
 		raise Exception(
 		    "Return type '%s' not a valid type" % rt_type)
 
-	t = tl.pop(0)
+	t = tl.get_token()
 	fname = t.str
 	if obj != None and fname[0] == "." and is_c_name(fname[1:]):
 		fname = obj + fname
 	elif not is_c_name(fname):
 		raise Exception("Function name '%s' is illegal" % fname)
 
-	t = tl.pop(0)
+	t = tl.get_token()
 	if t.str != "(":
 		raise Exception("Expected \"(\" got \"%s\"", t.str)
 
+	t = None
 	while True:
-		t = tl.pop(0)
-		if t.str == ")":
-			break
+		if t == None:
+			t = tl.get_token()
+		assert t != None
+
 		if t.str == "ENUM":
 			al.append(parse_enum2(tl))
 		elif t.str in ctypes:
 			al.append(arg(t.str))
+		elif t.str == ")":
+			break
 		else:
 			raise Exception("ARG? %s" % t.str)
-		if is_c_name(tl[0].str):
-			al[-1].nam = tl[0].str
-			t = tl.pop(0)
-		if tl[0].str == ",":
-			tl.pop(0)
-		elif tl[0].str != ")":
-			raise Exception("Expceted \")\" or \",\"")
+		t = tl.get_token()
+		if is_c_name(t.str):
+			al[-1].nam = t.str
+			t = None
+		elif t.str == ",":
+			t = None
+		elif t.str == ")":
+			break
+		else:
+			raise Exception(
+			    "Expceted \")\" or \",\" not \"%s\"" % t.str)
 	if t.str != ")":
 		raise Exception("End Of Input looking for ')'")
 	f = func(fname, rt_type, al)
+
 	return f
 
 #######################################################################
@@ -487,48 +596,166 @@ def parse_func(tl, rt_type = None, obj=None):
 #
 
 def parse_obj(tl):
-	o = obj(tl[0].str)
 	f = parse_func(tl, "VOID")
+	o = obj(f.nam)
 	o.set_init(f)
-	t = tl.pop(0)
-	assert t.str == "{"
-	while True:
-		t = tl.pop(0)
-		if t.str == "}":
-			break
-		assert t.str == "Method"
-		f = parse_func(tl, obj=o.nam)
-		o.add_method(f)
 	return o
 
-#######################################################################
-# The first thing in the file must be the Module declaration
-#
-
-t = tl.pop(0)
-if t.str != "Module":
-	raise Exception("\"Module\" must be first in file")
-t = tl.pop(0)
-vmod = vmod(t.str)
 
 #######################################################################
-# Parse the rest of the file
+# A section of the specfile, starting at a keyword
+
+class file_section(object):
+	def __init__(self):
+		self.l = []
+		self.tl = []
+
+	def add_line(self, ln, l):
+		self.l.append((ln, l))
+
+	def get_token(self):
+		while True:
+			if len(self.tl) > 0:
+				# print("T\t", self.tl[0])
+				return self.tl.pop(0)
+			if len(self.l) == 0:
+				break
+			self.more_tokens()
+		return None
+
+	def more_tokens(self):
+		ln,l = self.l.pop(0)
+		if l == "":
+			return
+		l = re.sub("[ \t]*#.*$", "", l)
+		l = re.sub("[ \t]*\n", "", l)
+		l = re.sub("([(){},])", r' \1 ', l)
+		if l == "":
+			return
+		for j in l.split():
+			self.tl.append(token(ln, 0, j))
+
+	def parse(self, vx):
+		t = self.get_token()
+		if t == None:
+			return
+		t0 = t.str
+		if t.str == "$Module":
+			o = parse_module(self)
+			vx.append(o)
+		elif t.str == "$Init":
+			x = self.get_token()
+			vx[0].set_init(x.str)
+			o = None
+		elif t.str == "$Function":
+			if len(vx) == 2:
+				vx.pop(-1)
+			o = parse_func(self)
+			vx[0].add_func(o)
+		elif t.str == "$Object":
+			if len(vx) == 2:
+				vx.pop(-1)
+			o = parse_obj(self)
+			vx[0].add_obj(o)
+			vx.append(o)
+		elif t.str == "$Method":
+			if len(vx) != 2:
+				raise Exception("$Method outside $Object")
+			o = parse_func(self, obj = vx[1].nam)
+			vx[1].add_method(o)
+		else:
+			raise Exception("Unknown keyword: " + t.str)
+		assert len(self.tl) == 0
+		if o == None:
+			print("NB:")
+			print("%s description is not included in .rst:" %t0)
+			for ln,i in self.l:
+				print("\t", i)
+		else:
+			for ln,i in self.l:
+				o.doc(i)
+
+#######################################################################
+# Polish the copyright message
 #
+def polish(l):
+	if len(l[0]) == 0:
+		l.pop(0)
+		return True
+	c = l[0][0]
+	for i in l:
+		if len(i) == 0:
+			continue
+		if i[0] != c:
+			c = None
+			break
+	if c != None:
+		for i in range(len(l)):
+			l[i] = l[i][1:]
+		return True
+	return False
 
-while len(tl) > 0:
-	t = tl.pop(0)
+#######################################################################
+# Read the file in
 
-	if t.str == "Init":
-		t = tl.pop(0)
-		vmod.set_init(t.str)
-	elif t.str == "Function":
-		f = parse_func(tl)
-		vmod.add_func(f)
-	elif t.str == "Object":
-		o = parse_obj(tl)
-		vmod.add_obj(o)
+f = open(specfile, "r")
+lines = []
+for i in f:
+	lines.append(i.rstrip())
+f.close()
+ln = 0
+
+#######################################################################
+# First collect the copyright:  All initial lines starting with '#'
+
+copyright = []
+while len(lines[0]) > 0 and lines[0][0] == "#":
+	ln += 1
+	copyright.append(lines.pop(0))
+
+if len(copyright) > 0:
+	if copyright[0] == "#-":
+		copyright = [ ]
 	else:
-		raise Exception("Expected \"Init\", \"Fini\" or \"Function\"")
+		while polish(copyright):
+			continue
+
+if False:
+	for i in copyright:
+		print("(C)\t", i)
+
+#######################################################################
+# Break into sections
+
+keywords = {
+	"$Module":	True,
+	"$Function":	True,
+	"$Object":	True,
+	"$Method":	True,
+	"$Init":	True,
+}
+
+sl = []
+sc = file_section()
+sl.append(sc)
+while len(lines) > 0:
+	ln += 1
+	l = lines.pop(0)
+	j = l.split()
+	if len(j) > 0 and j[0] in keywords:
+		sc = file_section()
+		sl.append(sc)
+	sc.add_line(ln,l)
+
+#######################################################################
+# Parse each section
+
+first = True
+
+vx = []
+for i in sl:
+	i.parse(vx)
+	assert len(i.tl) == 0
 
 #######################################################################
 # Parsing done, now process
@@ -545,7 +772,7 @@ fh.write('struct VCL_conf;\n')
 fh.write('struct vmod_priv;\n')
 fh.write("\n");
 
-vmod.c_proto(fh)
+vx[0].c_proto(fh)
 
 fc.write("""#include "config.h"
 
@@ -556,8 +783,23 @@ fc.write("""#include "config.h"
 
 """)
 
-vmod.c_typedefs(fc)
-vmod.c_vmod(fc)
+vx[0].c_typedefs(fc)
+vx[0].c_vmod(fc)
 
 fc.close()
 fh.close()
+
+for suf in ("", ".man"):
+	fr = open("vmod_" + vx[0].nam + suf + ".rst", "w")
+	vx[0].doc_dump(fr, suf)
+
+	if len(copyright) > 0:
+		fr.write("\n")
+		fr.write("COPYRIGHT\n")
+		fr.write("=========\n")
+		fr.write("\n::\n\n")
+		for i in copyright:
+			fr.write("  " + i + "\n")
+		fr.write("\n")
+
+	fr.close()

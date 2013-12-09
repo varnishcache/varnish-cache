@@ -1,4 +1,4 @@
-#-
+#
 # Copyright (c) 2010-2013 Varnish Software AS
 # All rights reserved.
 #
@@ -25,15 +25,49 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-Module debug
-Init init_function
-Function VOID panic(STRING_LIST)
-Function STRING author(ENUM { phk, des, kristian, mithrandir })
-Function VOID test_priv_call(PRIV_CALL)
-Function VOID test_priv_vcl(PRIV_VCL)
-Object obj(STRING) {
-	# NOTE: .enum before .foo as part of test r01332.vtc
-	Method VOID .enum(ENUM { phk, des, kristian, mithrandir, martin })
-	Method STRING .foo(STRING why)
-	Method TIME .date()
-}
+$Module debug Development, test and debug
+
+DESCRIPTION
+===========
+
+This vmod is used to develop, test and debug the various aspects
+of VMOD handling in Varnish.
+
+$Init init_function
+
+Call this whenever a VCL is loaded which imports this vmod.
+
+$Function VOID panic(STRING_LIST)
+
+Don't.
+
+$Function STRING author(ENUM { phk, des, kristian, mithrandir })
+
+Test function for ENUM arguments
+
+$Function VOID test_priv_call(PRIV_CALL)
+
+Test function for call private pointers
+
+$Function VOID test_priv_vcl(PRIV_VCL)
+
+Test function for VCL private pointers
+
+$Object obj(STRING) 
+
+Test object
+
+.. NOTE: .enum before .foo as part of test r01332.vtc
+$Method VOID .enum(ENUM { phk, des, kristian, mithrandir, martin })
+
+Testing that emums work as part of object and that the parser isn't
+(too) buggy.
+
+$Method STRING .foo(STRING why)
+
+Foo indeed.
+
+$Method TIME .date()
+
+You never know when you need a date.
+
