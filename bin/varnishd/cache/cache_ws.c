@@ -85,7 +85,7 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 static void
 WS_MarkOverflow(struct ws *ws)
 {
-	WS_Assert(ws);
+	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
 
 	ws->id[0] &= ~0x40;		// Cheasy toupper()
 }
@@ -220,7 +220,7 @@ WS_ReleaseP(struct ws *ws, char *ptr)
 int
 WS_Overflowed(const struct ws *ws)
 {
-	WS_Assert(ws);
+	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
 
 	if (ws->id[0] & 0x40)
 		return (0);
