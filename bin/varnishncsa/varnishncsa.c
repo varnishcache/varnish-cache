@@ -776,7 +776,7 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				    0, NULL);
 				break;
 			case SLT_ReqHeader:
-				if (isprefix(b, e, "Host:", &p))
+				if (isprefix(b, "Host:", e, &p))
 					frag_line(p, e, &CTX.frag[F_host]);
 				else if (isprefix(b, "Authorization:", e, &p) &&
 				    isprefix(p, "basic", e, &p))
