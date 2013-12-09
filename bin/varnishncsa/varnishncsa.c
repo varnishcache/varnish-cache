@@ -746,6 +746,8 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			tag = VSL_TAG(t->c->rec.ptr);
 			b = VSL_CDATA(t->c->rec.ptr);
 			e = b + VSL_LEN(t->c->rec.ptr);
+			while (e > b && e[-1] == '\0')
+				e--;
 
 			switch (tag) {
 			case SLT_ReqStart:
