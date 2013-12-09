@@ -29,4 +29,6 @@ vcc_if.c vcc_if.h: $(vmodtool) $(vmod_srcdir)/vmod.vcc
 
 EXTRA_DIST = vmod.vcc
 
-CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h
+CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h \
+	$(builddir)/vmod_debug.rst \
+	$(builddir)/vmod_debug.man.rst

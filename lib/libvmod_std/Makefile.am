@@ -33,7 +33,9 @@ vcc_if.c vcc_if.h: $(vmodtool) $(vmod_srcdir)/vmod.vcc
 
 EXTRA_DIST = vmod.vcc
 
-CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h
+CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h \
+	$(builddir)/vmod_std.rst \
+	$(builddir)/vmod_std.man.rst
 
 vmod_std.3: $(top_srcdir)/doc/sphinx/reference/vmod_std.rst
 if HAVE_RST2MAN
