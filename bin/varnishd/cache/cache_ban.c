@@ -41,7 +41,7 @@
  * Bans are compiled into bytestrings as follows:
  *	8 bytes	- double: timestamp		XXX: Byteorder ?
  *	4 bytes - be32: length
- *	1 byte - flags: 0x01: BAN_F_REQ
+ *	1 byte - flags: 0x01: BAN_F_{REQ|OBJ|GONE}
  *	N tests
  * A test have this form:
  *	1 byte - arg (see ban_vars.h col 3 "BANS_ARG_XXX")
@@ -77,16 +77,40 @@
 #include "vmb.h"
 #include "vtim.h"
 
+/*--------------------------------------------------------------------
+ * BAN string defines & magic markers
+ */
+
+#define BANS_TIMESTAMP		0
+#define BANS_LENGTH		8
+#define BANS_FLAGS		12
+#define BANS_HEAD_LEN		13
+
+#define BANS_FLAG_REQ		(1<<0)
+#define BANS_FLAG_OBJ		(1<<1)
+#define BANS_FLAG_GONE		(1<<2)
+#define BANS_FLAG_HTTP		(1<<3)
+#define BANS_FLAG_ERROR		(1<<4)
+
+#define BANS_OPER_EQ		0x10
+#define BANS_OPER_NEQ		0x11
+#define BANS_OPER_MATCH		0x12
+#define BANS_OPER_NMATCH	0x13
+
+#define BANS_ARG_URL		0x18
+#define BANS_ARG_REQHTTP	0x19
+#define BANS_ARG_OBJHTTP	0x1a
+#define BANS_ARG_OBJSTATUS	0x1b
+
+/*--------------------------------------------------------------------*/
+
 struct ban {
 	unsigned		magic;
 #define BAN_MAGIC		0x700b08ea
 	VTAILQ_ENTRY(ban)	list;
 	int			refcount;
-	unsigned		flags;
-#define BAN_F_GONE		(1 << 0)
-#define BAN_F_ERROR		(1 << 1)	/* sticky error marker */
-#define BAN_F_REQ		(1 << 2)
-#define BAN_F_OBJ		(1 << 3)
+	unsigned		flags;		/* BANS_FLAG_* */
+
 #define BAN_F_LURK		(3 << 6)	/* ban-lurker-color */
 	VTAILQ_HEAD(,objcore)	objcore;
 	struct vsb		*vsb;
@@ -113,29 +137,6 @@ static pthread_t ban_thread;
 static struct ban * volatile ban_start;
 static bgthread_t ban_lurker;
 static int ban_shutdown = 0;
-
-/*--------------------------------------------------------------------
- * BAN string defines & magic markers
- */
-
-#define BANS_TIMESTAMP		0
-#define BANS_LENGTH		8
-#define BANS_FLAGS		12
-#define BANS_HEAD_LEN		13
-
-#define BANS_FLAG_REQ		0x01
-#define BANS_FLAG_OBJ		0x02
-#define BANS_FLAG_GONE		0x04
-
-#define BANS_OPER_EQ		0x10
-#define BANS_OPER_NEQ		0x11
-#define BANS_OPER_MATCH		0x12
-#define BANS_OPER_NMATCH	0x13
-
-#define BANS_ARG_URL		0x18
-#define BANS_ARG_REQHTTP	0x19
-#define BANS_ARG_OBJHTTP	0x1a
-#define BANS_ARG_OBJSTATUS	0x1b
 
 /*--------------------------------------------------------------------
  * Variables we can purge on
@@ -274,9 +275,9 @@ ban_mark_gone(struct ban *b)
 
 	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
 	AN(b->spec);
-	AZ(b->flags & BAN_F_GONE);
+	AZ(b->flags & BANS_FLAG_GONE);
 	ln = ban_len(b->spec);
-	b->flags |= BAN_F_GONE;
+	b->flags |= BANS_FLAG_GONE;
 	b->spec[BANS_FLAGS] |= BANS_FLAG_GONE;
 	VWMB();
 	vbe32enc(b->spec + BANS_LENGTH, BANS_HEAD_LEN);
@@ -343,8 +344,8 @@ ban_error(struct ban *b, const char *fmt, ...)
 	AN(b->vsb);
 
 	/* First error is sticky */
-	if (!(b->flags & BAN_F_ERROR)) {
-		b->flags |= BAN_F_ERROR;
+	if (!(b->flags & BANS_FLAG_ERROR)) {
+		b->flags |= BANS_FLAG_ERROR;
 
 		/* Record the error message in the vsb */
 		VSB_clear(b->vsb);
@@ -410,7 +411,7 @@ BAN_AddTest(struct ban *b, const char *a1, const char *a2, const char *a3)
 	AN(a2);
 	AN(a3);
 
-	if (b->flags & BAN_F_ERROR)
+	if (b->flags & BANS_FLAG_ERROR)
 		return (-1);
 
 	for (pv = pvars; pv->name != NULL; pv++)
@@ -421,13 +422,10 @@ BAN_AddTest(struct ban *b, const char *a1, const char *a2, const char *a3)
 		return (ban_error(b,
 		    "Unknown or unsupported field \"%s\"", a1));
 
-	if (pv->flag & PVAR_REQ)
-		b->flags |= BAN_F_REQ;
-	if (pv->flag & PVAR_OBJ)
-		b->flags |= BAN_F_OBJ;
+	b->flags |= pv->flag;
 
 	VSB_putc(b->vsb, pv->tag);
-	if (pv->flag & PVAR_HTTP)
+	if (pv->flag & BANS_FLAG_HTTP)
 		ban_parse_http(b, a1 + strlen(pv->name));
 
 	ban_add_lump(b, a3, strlen(a3) + 1);
@@ -497,7 +495,7 @@ BAN_Insert(struct ban *b)
 	ln = VSB_len(b->vsb);
 	assert(ln >= 0);
 
-	if (b->flags & BAN_F_ERROR) {
+	if (b->flags & BANS_FLAG_ERROR) {
 		p = ban_ins_error(VSB_data(b->vsb));
 		BAN_Free(b);
 		return (p);
@@ -511,11 +509,7 @@ BAN_Insert(struct ban *b)
 
 	t0 = VTIM_real();
 	memcpy(b->spec + BANS_TIMESTAMP, &t0, sizeof t0);
-	b->spec[BANS_FLAGS] = 0;
-	if (b->flags & BAN_F_REQ)
-		b->spec[BANS_FLAGS] |= BANS_FLAG_REQ;
-	if (b->flags & BAN_F_OBJ)
-		b->spec[BANS_FLAGS] |= BANS_FLAG_OBJ;
+	b->spec[BANS_FLAGS] = b->flags & 0xff;
 	memcpy(b->spec + BANS_HEAD_LEN, VSB_data(b->vsb), ln);
 	ln += BANS_HEAD_LEN;
 	vbe32enc(b->spec + BANS_LENGTH, ln);
@@ -534,7 +528,7 @@ BAN_Insert(struct ban *b)
 	ban_start = b;
 	VSC_C_main->bans++;
 	VSC_C_main->bans_added++;
-	if (b->flags & BAN_F_REQ)
+	if (b->flags & BANS_FLAG_REQ)
 		VSC_C_main->bans_req++;
 
 	be = VTAILQ_LAST(&ban_head, banhead_s);
@@ -563,7 +557,7 @@ BAN_Insert(struct ban *b)
 	Lck_Lock(&ban_mtx);
 	while(!ban_shutdown && bi != be) {
 		bi = VTAILQ_NEXT(bi, list);
-		if (bi->flags & BAN_F_GONE)
+		if (bi->flags & BANS_FLAG_GONE)
 			continue;
 		if (!ban_equal(b->spec, bi->spec))
 			continue;
@@ -726,7 +720,7 @@ ban_reload(const uint8_t *ban, unsigned len)
 	memcpy(b2->spec, ban, len);
 	if (ban[BANS_FLAGS] & BANS_FLAG_REQ) {
 		VSC_C_main->bans_req++;
-		b2->flags |= BAN_F_REQ;
+		b2->flags |= BANS_FLAG_REQ;
 	}
 	if (duplicate)
 		VSC_C_main->bans_dups++;
@@ -740,7 +734,7 @@ ban_reload(const uint8_t *ban, unsigned len)
 
 	/* Hunt down older duplicates */
 	for (b = VTAILQ_NEXT(b2, list); b != NULL; b = VTAILQ_NEXT(b, list)) {
-		if (b->flags & BAN_F_GONE)
+		if (b->flags & BANS_FLAG_GONE)
 			continue;
 		if (ban_equal(b->spec, ban)) {
 			ban_mark_gone(b);
@@ -922,15 +916,15 @@ ban_check_object(struct object *o, struct vsl_log *vsl,
 	skipped = 0;
 	for (b = b0; b != oc->ban; b = VTAILQ_NEXT(b, list)) {
 		CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
-		if (b->flags & BAN_F_GONE)
+		if (b->flags & BANS_FLAG_GONE)
 			continue;
 		if ((b->flags & BAN_F_LURK) &&
 		    (b->flags & BAN_F_LURK) == (oc->flags & OC_F_LURK)) {
-			AZ(b->flags & BAN_F_REQ);
+			AZ(b->flags & BANS_FLAG_REQ);
 			/* Lurker already tested this */
 			continue;
 		}
-		if (req_http == NULL && (b->flags & BAN_F_REQ)) {
+		if (req_http == NULL && (b->flags & BANS_FLAG_REQ)) {
 			/*
 			 * We cannot test this one, but there might
 			 * be other bans that match, so we soldier on
@@ -991,9 +985,9 @@ ban_cleantail(void)
 		Lck_Lock(&ban_mtx);
 		b = VTAILQ_LAST(&ban_head, banhead_s);
 		if (b != VTAILQ_FIRST(&ban_head) && b->refcount == 0) {
-			if (b->flags & BAN_F_GONE)
+			if (b->flags & BANS_FLAG_GONE)
 				VSC_C_main->bans_gone--;
-			if (b->flags & BAN_F_REQ)
+			if (b->flags & BANS_FLAG_REQ)
 				VSC_C_main->bans_req--;
 			VSC_C_main->bans--;
 			VSC_C_main->bans_deleted++;
@@ -1034,9 +1028,9 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 	i = 0;
 	b0 = NULL;
 	VTAILQ_FOREACH(b, &ban_head, list) {
-		if (b->flags & BAN_F_GONE)
+		if (b->flags & BANS_FLAG_GONE)
 			continue;
-		if (b->flags & BAN_F_REQ)
+		if (b->flags & BANS_FLAG_REQ)
 			continue;
 		if (b == VTAILQ_LAST(&ban_head, banhead_s))
 			continue;
@@ -1134,8 +1128,8 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 			VTIM_sleep(cache_param->ban_lurker_sleep);
 		}
 		Lck_AssertHeld(&ban_mtx);
-		if (!(b->flags & BAN_F_REQ)) {
-			if (!(b->flags & BAN_F_GONE))
+		if (!(b->flags & BANS_FLAG_REQ)) {
+			if (!(b->flags & BANS_FLAG_GONE))
 				ban_mark_gone(b);
 			if (DO_DEBUG(DBG_LURKER))
 				VSLb(vsl, SLT_Debug, "lurker BAN %f now gone",
@@ -1294,7 +1288,7 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 	VTAILQ_FOREACH(b, &ban_head, list) {
 		VCLI_Out(cli, "%10.6f %5u%s\t", ban_time(b->spec),
 		    bl == b ? b->refcount - 1 : b->refcount,
-		    b->flags & BAN_F_GONE ? "G" : " ");
+		    b->flags & BANS_FLAG_GONE ? "G" : " ");
 		ban_render(cli, b->spec);
 		VCLI_Out(cli, "\n");
 		if (VCLI_Overflow(cli))
