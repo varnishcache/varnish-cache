@@ -11,6 +11,12 @@ server s1 {
 varnish v1 -vcl+backend {
 	sub vcl_recv {
 		if (req.method == "PURGE") {
+			ban("");
+			ban("req.url");
+			ban("req.url //");
+			ban("req.url // bar");
+			ban("req.url == bar //");
+			ban("foo == bar //");
 			ban("req.url ~ ^/$");
 			return (error(209,"foo"));
 		}
@@ -24,12 +30,24 @@ client c1 {
 	expect resp.http.X-Varnish == "1001"
 } -run
 
+logexpect l1 -v v1 -d 1 -g vxid {
+	expect * 1004	VCL_Error {ban[(][)]: No ban conditions found[.]}
+	expect * 1004	VCL_Error {ban[(][)]: Expected comparison operator[.]}
+	expect * 1004	VCL_Error {ban[(][)]: Expected second operand[.]}
+	expect * 1004	VCL_Error {ban[(][)]: expected conditional [(]~, !~, == or !=[)] got "//"}
+	expect * 1004	VCL_Error {ban[(][)]: Expected && between conditions, found .//.}
+	expect * 1004	VCL_Error {ban[(][)]: Unknown or unsupported field .foo.}
+
+} -start
+
 client c1 {
 	txreq -req "PURGE"
 	rxresp
 	expect resp.http.X-Varnish == "1004"
 	expect resp.status == 209
 } -run
+
+logexpect l1 -wait
 
 client c1 {
 	txreq

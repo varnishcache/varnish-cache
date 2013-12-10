@@ -406,46 +406,65 @@ VRT_synth_page(const struct vrt_ctx *ctx, unsigned flags, const char *str, ...)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_ban_string(const char *str)
+VRT_ban_string(const struct vrt_ctx *ctx, const char *str)
 {
 	char *a1, *a2, *a3;
 	char **av;
 	struct ban *b;
-	int good;
 	int i;
 
-	av = VAV_Parse(str, NULL, ARGV_NOESC);
-	if (av[0] != NULL) {
-		/* XXX: report error how ? */
-		VAV_Free(av);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(ctx->vsl);
+	AN(str);
+
+	b = BAN_New();
+	if (b == NULL) {
+		VSLb(ctx->vsl, SLT_VCL_Error, "ban(): Out of Memory");
 		return;
 	}
-	b = BAN_New();
-	good = 0;
-	for (i = 1; ;) {
-		a1 = av[i++];
-		if (a1 == NULL)
-			break;
-		good = 0;
-		a2 = av[i++];
-		if (a2 == NULL)
-			break;
-		a3 = av[i++];
-		if (a3 == NULL)
-			break;
-		if (BAN_AddTest(NULL, b, a1, a2, a3))
-			break;
-		good = 1;
-		if (av[i] == NULL)
-			break;
-		good = 0;
-		if (strcmp(av[i++], "&&"))
-			break;
+	av = VAV_Parse(str, NULL, ARGV_NOESC);
+	AN(av);
+	if (av[0] != NULL) {
+		VSLb(ctx->vsl, SLT_VCL_Error, "ban(): %s", av[0]);
+		VAV_Free(av);
+		BAN_Free(b);
+		return;
 	}
-	if (!good)
-		BAN_Free(b);		/* XXX: report error how ? */
-	else
-		(void)BAN_Insert(b);	/* XXX: report error how ? */
+	for (i = 0; ;) {
+		a1 = av[++i];
+		if (a1 == NULL) {
+			VSLb(ctx->vsl, SLT_VCL_Error,
+			    "ban(): No ban conditions found.");
+			break;
+		}
+		a2 = av[++i];
+		if (a2 == NULL) {
+			VSLb(ctx->vsl, SLT_VCL_Error,
+			    "ban(): Expected comparison operator.");
+			break;
+		}
+		a3 = av[++i];
+		if (a3 == NULL) {
+			VSLb(ctx->vsl, SLT_VCL_Error,
+			    "ban(): Expected second operand.");
+			break;
+		}
+		if (BAN_AddTest(b, a1, a2, a3) || av[++i] == NULL) {
+			a1 = BAN_Insert(b);
+			if (a1 != NULL) {
+				VSLb(ctx->vsl, SLT_VCL_Error,
+				    "ban(): %s", a1);
+				free(a1);
+			}
+			break;
+		}
+		if (strcmp(av[i], "&&")) {
+			VSLb(ctx->vsl, SLT_VCL_Error,
+			    "ban(): Expected && between conditions,"
+			    " found \"%s\"", av[i]);
+			break;
+		}
+	}
 	VAV_Free(av);
 }
 

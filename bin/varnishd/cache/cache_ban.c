@@ -64,6 +64,7 @@
 
 #include <math.h>
 #include <pcre.h>
+#include <stdarg.h>
 #include <stdio.h>
 
 #include "cache.h"
@@ -83,6 +84,7 @@ struct ban {
 	int			refcount;
 	unsigned		flags;
 #define BAN_F_GONE		(1 << 0)
+#define BAN_F_ERROR		(1 << 1)	/* sticky error marker */
 #define BAN_F_REQ		(1 << 2)
 #define BAN_F_LURK		(3 << 6)	/* ban-lurker-color */
 	VTAILQ_HEAD(,objcore)	objcore;
@@ -325,6 +327,30 @@ ban_iter(const uint8_t **bs, struct ban_test *bt)
 }
 
 /*--------------------------------------------------------------------
+ */
+
+static int
+ban_error(struct ban *b, const char *fmt, ...)
+{
+	va_list ap;
+
+	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
+	AN(b->vsb);
+
+	/* First error is sticky */
+	if (!(b->flags & BAN_F_ERROR)) {
+		b->flags |= BAN_F_ERROR;
+
+		/* Record the error message in the vsb */
+		VSB_clear(b->vsb);
+		va_start(ap, fmt);
+		(void)VSB_vprintf(b->vsb, fmt, ap);
+		va_end(ap);
+	}
+	return (-1);
+}
+
+/*--------------------------------------------------------------------
  * Parse and add a http argument specification
  * Output something which HTTP_GetHdr understands
  */
@@ -347,7 +373,7 @@ ban_parse_http(const struct ban *b, const char *a1)
  */
 
 static int
-ban_parse_regexp(struct cli *cli, const struct ban *b, const char *a3)
+ban_parse_regexp(struct ban *b, const char *a3)
 {
 	const char *error;
 	int erroroffset, rc;
@@ -355,12 +381,8 @@ ban_parse_regexp(struct cli *cli, const struct ban *b, const char *a3)
 	pcre *re;
 
 	re = pcre_compile(a3, 0, &error, &erroroffset, NULL);
-	if (re == NULL) {
-		VSL(SLT_Debug, 0, "REGEX: <%s>", error);
-		VCLI_Out(cli, "%s", error);
-		VCLI_SetResult(cli, CLIS_PARAM);
-		return (-1);
-	}
+	if (re == NULL)
+		return (ban_error(b, "Regex compile error: %s", error));
 	rc = pcre_fullinfo(re, NULL, PCRE_INFO_SIZE, &sz);
 	AZ(rc);
 	ban_add_lump(b, re, sz);
@@ -372,22 +394,27 @@ ban_parse_regexp(struct cli *cli, const struct ban *b, const char *a3)
  */
 
 int
-BAN_AddTest(struct cli *cli, struct ban *b, const char *a1, const char *a2,
-    const char *a3)
+BAN_AddTest(struct ban *b, const char *a1, const char *a2, const char *a3)
 {
 	const struct pvar *pv;
 	int i;
 
 	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
+	AN(b->vsb);
+	AN(a1);
+	AN(a2);
+	AN(a3);
+
+	if (b->flags & BAN_F_ERROR)
+		return (-1);
 
 	for (pv = pvars; pv->name != NULL; pv++)
 		if (!strncmp(a1, pv->name, strlen(pv->name)))
 			break;
-	if (pv->name == NULL) {
-		VCLI_Out(cli, "unknown or unsupported field \"%s\"", a1);
-		VCLI_SetResult(cli, CLIS_PARAM);
-		return (-1);
-	}
+
+	if (pv->name == NULL)
+		return (ban_error(b,
+		    "Unknown or unsupported field \"%s\"", a1));
 
 	if (pv->flag & PVAR_REQ)
 		b->flags |= BAN_F_REQ;
@@ -399,12 +426,12 @@ BAN_AddTest(struct cli *cli, struct ban *b, const char *a1, const char *a2,
 	ban_add_lump(b, a3, strlen(a3) + 1);
 	if (!strcmp(a2, "~")) {
 		VSB_putc(b->vsb, BANS_OPER_MATCH);
-		i = ban_parse_regexp(cli, b, a3);
+		i = ban_parse_regexp(b, a3);
 		if (i)
 			return (i);
 	} else if (!strcmp(a2, "!~")) {
 		VSB_putc(b->vsb, BANS_OPER_NMATCH);
-		i = ban_parse_regexp(cli, b, a3);
+		i = ban_parse_regexp(b, a3);
 		if (i)
 			return (i);
 	} else if (!strcmp(a2, "==")) {
@@ -412,10 +439,8 @@ BAN_AddTest(struct cli *cli, struct ban *b, const char *a1, const char *a2,
 	} else if (!strcmp(a2, "!=")) {
 		VSB_putc(b->vsb, BANS_OPER_NEQ);
 	} else {
-		VCLI_Out(cli,
-		    "expected conditional (~, !~, == or !=) got \"%s\"", a2);
-		VCLI_SetResult(cli, CLIS_PARAM);
-		return (-1);
+		return (ban_error(b,
+		    "expected conditional (~, !~, == or !=) got \"%s\"", a2));
 	}
 	return (0);
 }
@@ -432,26 +457,50 @@ BAN_AddTest(struct cli *cli, struct ban *b, const char *a1, const char *a2,
  *      deleted.
  */
 
-int
+static char *
+ban_ins_error(const char *p)
+{
+	char *r = NULL;
+	static char nomem[] = "Could not get memory";
+
+	if (p != NULL)
+		r = strdup(p);
+	if (r == NULL)
+		r = nomem;
+	return (r);
+}
+
+char *
 BAN_Insert(struct ban *b)
 {
 	struct ban  *bi, *be;
 	ssize_t ln;
 	double t0;
+	char *p;
 
 	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
+	AN(b->vsb);
 
 	if (ban_shutdown) {
 		BAN_Free(b);
-		return (-1);
+		return (ban_ins_error("Shutting down"));
 	}
 
 	AZ(VSB_finish(b->vsb));
 	ln = VSB_len(b->vsb);
 	assert(ln >= 0);
 
+	if (b->flags & BAN_F_ERROR) {
+		p = ban_ins_error(VSB_data(b->vsb));
+		BAN_Free(b);
+		return (p);
+	}
+
 	b->spec = malloc(ln + BANS_HEAD_LEN);
-	XXXAN(b->spec);
+	if (b->spec == NULL) {
+		BAN_Free(b);
+		return (ban_ins_error(NULL));
+	}
 
 	t0 = VTIM_real();
 	memcpy(b->spec + BANS_TIMESTAMP, &t0, sizeof t0);
@@ -468,7 +517,7 @@ BAN_Insert(struct ban *b)
 		/* Check again, we might have raced */
 		Lck_Unlock(&ban_mtx);
 		BAN_Free(b);
-		return (-1);
+		return (ban_ins_error("Shutting down"));
 	}
 	VTAILQ_INSERT_HEAD(&ban_head, b, list);
 	ban_start = b;
@@ -496,7 +545,7 @@ BAN_Insert(struct ban *b)
 	Lck_Unlock(&ban_mtx);
 
 	if (be == NULL)
-		return (0);
+		return (NULL);
 
 	/* Hunt down duplicates, and mark them as gone */
 	bi = b;
@@ -513,7 +562,7 @@ BAN_Insert(struct ban *b)
 	be->refcount--;
 	Lck_Unlock(&ban_mtx);
 
-	return (0);
+	return (NULL);
 }
 
 /*--------------------------------------------------------------------
@@ -1140,6 +1189,7 @@ ccf_ban(struct cli *cli, const char * const *av, void *priv)
 {
 	int narg, i;
 	struct ban *b;
+	char *p;
 
 	(void)priv;
 
@@ -1166,14 +1216,13 @@ ccf_ban(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 	for (i = 0; i < narg; i += 4)
-		if (BAN_AddTest(cli, b, av[i + 2], av[i + 3], av[i + 4])) {
-			BAN_Free(b);
-			return;
-		}
-	if (BAN_Insert(b) < 0) {
-		VCLI_Out(cli, "Shutdown in progress");
-		VCLI_SetResult(cli, CLIS_CANT);
-		return;
+		if (BAN_AddTest(b, av[i + 2], av[i + 3], av[i + 4]))
+			break;
+	p = BAN_Insert(b);
+	if (p != NULL) {
+		VCLI_Out(cli, "%s", p);
+		free(p);
+		VCLI_SetResult(cli, CLIS_PARAM);
 	}
 }
 
