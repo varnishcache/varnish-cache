@@ -29,10 +29,11 @@
  *
  */
 
-#define PVAR_HTTP	1
-#define PVAR_REQ	2
+#define PVAR_HTTP	(1<<0)
+#define PVAR_REQ	(1<<1)
+#define PVAR_OBJ	(1<<2)
 
 PVAR("req.url",		PVAR_REQ,		BANS_ARG_URL)
-PVAR("req.http.",	PVAR_REQ|PVAR_HTTP,	BANS_ARG_REQHTTP)
-PVAR("obj.http.",	PVAR_HTTP,		BANS_ARG_OBJHTTP)
-PVAR("obj.status",	0,			BANS_ARG_OBJSTATUS)
+PVAR("req.http.",	PVAR_REQ | PVAR_HTTP,	BANS_ARG_REQHTTP)
+PVAR("obj.status",	PVAR_OBJ,		BANS_ARG_OBJSTATUS)
+PVAR("obj.http.",	PVAR_OBJ | PVAR_HTTP,	BANS_ARG_OBJHTTP)

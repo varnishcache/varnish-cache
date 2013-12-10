@@ -86,11 +86,14 @@ struct ban {
 #define BAN_F_GONE		(1 << 0)
 #define BAN_F_ERROR		(1 << 1)	/* sticky error marker */
 #define BAN_F_REQ		(1 << 2)
+#define BAN_F_OBJ		(1 << 3)
 #define BAN_F_LURK		(3 << 6)	/* ban-lurker-color */
 	VTAILQ_HEAD(,objcore)	objcore;
 	struct vsb		*vsb;
 	uint8_t			*spec;
 };
+
+VTAILQ_HEAD(banhead_s,ban);
 
 #define LURK_SHIFT 6
 
@@ -103,7 +106,7 @@ struct ban_test {
 };
 
 static void ban_info(enum baninfo event, const uint8_t *ban, unsigned len);
-static VTAILQ_HEAD(banhead_s,ban) ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
+static struct banhead_s ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
 static struct lock ban_mtx;
 static struct ban *ban_magic;
 static pthread_t ban_thread;
@@ -119,8 +122,10 @@ static int ban_shutdown = 0;
 #define BANS_LENGTH		8
 #define BANS_FLAGS		12
 #define BANS_HEAD_LEN		13
+
 #define BANS_FLAG_REQ		0x01
-#define BANS_FLAG_GONE		0x02
+#define BANS_FLAG_OBJ		0x02
+#define BANS_FLAG_GONE		0x04
 
 #define BANS_OPER_EQ		0x10
 #define BANS_OPER_NEQ		0x11
@@ -418,6 +423,8 @@ BAN_AddTest(struct ban *b, const char *a1, const char *a2, const char *a3)
 
 	if (pv->flag & PVAR_REQ)
 		b->flags |= BAN_F_REQ;
+	if (pv->flag & PVAR_OBJ)
+		b->flags |= BAN_F_OBJ;
 
 	VSB_putc(b->vsb, pv->tag);
 	if (pv->flag & PVAR_HTTP)
@@ -504,7 +511,11 @@ BAN_Insert(struct ban *b)
 
 	t0 = VTIM_real();
 	memcpy(b->spec + BANS_TIMESTAMP, &t0, sizeof t0);
-	b->spec[BANS_FLAGS] = (b->flags & BAN_F_REQ) ? BANS_FLAG_REQ : 0;
+	b->spec[BANS_FLAGS] = 0;
+	if (b->flags & BAN_F_REQ)
+		b->spec[BANS_FLAGS] |= BANS_FLAG_REQ;
+	if (b->flags & BAN_F_OBJ)
+		b->spec[BANS_FLAGS] |= BANS_FLAG_OBJ;
 	memcpy(b->spec + BANS_HEAD_LEN, VSB_data(b->vsb), ln);
 	ln += BANS_HEAD_LEN;
 	vbe32enc(b->spec + BANS_LENGTH, ln);
