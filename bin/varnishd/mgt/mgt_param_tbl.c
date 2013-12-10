@@ -452,7 +452,11 @@ struct parspec mgt_parspec[] = {
 		WAITER_DEFAULT, NULL },
 	{ "ban_dups", tweak_bool, &mgt_param.ban_dups,
 		NULL, NULL,
-		"Detect and eliminate duplicate bans.",
+		"Elimited older identical bans when new bans are created."
+		"  This test is CPU intensive and scales with the number and"
+		" complexity of active (non-Gone) bans.  If identical bans"
+		" are frequent, the amount of CPU needed to actually test "
+		" the bans will be similarly reduced.",
 		0,
 		"on", "bool" },
 	{ "syslog_cli_traffic", tweak_bool, &mgt_param.syslog_cli_traffic,
@@ -463,9 +467,10 @@ struct parspec mgt_parspec[] = {
 	{ "ban_lurker_sleep", tweak_timeout,
 		&mgt_param.ban_lurker_sleep,
 		"0", NULL,
-		"How long time does the ban lurker thread sleeps between "
-		"successful attempts to push the last item up the ban "
-		" list.  It always sleeps a second when nothing can be done.\n"
+		"The ban lurker thread sleeps between work batches, in order"
+		" to not monopolize CPU power."
+		"  When nothing is done, it sleeps a fraction of a second"
+		" before looking for new work to do.\n"
 		"A value of zero disables the ban lurker.",
 		0,
 		"0.01", "s" },
