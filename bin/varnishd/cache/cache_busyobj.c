@@ -221,6 +221,7 @@ VBO_extend(struct busyobj *bo, ssize_t l)
 	assert(l > 0);
 	Lck_Lock(&bo->mtx);
 	st = VTAILQ_LAST(&bo->fetch_obj->store, storagehead);
+	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	st->len += l;
 	bo->fetch_obj->len += l;
 	AZ(pthread_cond_signal(&bo->cond));

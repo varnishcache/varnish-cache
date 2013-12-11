@@ -768,6 +768,7 @@ HSH_DerefObjCore(struct dstat *ds, struct objcore **ocp)
 	unsigned r;
 
 	AN(ocp);
+	AN(ds);
 	oc = *ocp;
 	*ocp = NULL;
 
