@@ -485,8 +485,8 @@ VSC_F(bans,			uint64_t, 0, 'g', info,
 	"Number of all bans in system, including bans superseded"
 	" by newer bans and bans already checked by the ban-lurker."
 )
-VSC_F(bans_gone,		uint64_t, 0, 'g', diag,
-    "Number of bans marked 'gone'",
+VSC_F(bans_completed,		uint64_t, 0, 'g', diag,
+    "Number of bans marked 'completed'",
 	"Number of bans which are no longer active, either because they"
 	" got checked by the ban-lurker or superseded by newer identical bans."
 )
@@ -556,7 +556,7 @@ VSC_F(bans_persisted_bytes,	uint64_t, 0, 'g', diag,
 VSC_F(bans_persisted_fragmentation,	uint64_t, 0, 'g', diag,
     "Extra bytes in persisted ban lists due to fragmentation",
         "Number of extra bytes accumulated through dropped and"
-	" gone bans in the persistent ban lists."
+	" completed bans in the persistent ban lists."
 )
 
 /*--------------------------------------------------------------------*/

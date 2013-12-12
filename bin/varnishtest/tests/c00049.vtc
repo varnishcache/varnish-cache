@@ -97,7 +97,7 @@ delay .1
 varnish v1 -cliok "ban.list"
 
 varnish v1 -expect bans == 6
-varnish v1 -expect bans_gone == 1
+varnish v1 -expect bans_completed == 1
 varnish v1 -expect bans_req == 1
 varnish v1 -expect bans_obj == 4
 varnish v1 -expect bans_added == 6
@@ -118,7 +118,7 @@ delay 2
 varnish v1 -cliok "ban.list"
 
 varnish v1 -expect bans == 5
-varnish v1 -expect bans_gone == 4
+varnish v1 -expect bans_completed == 4
 varnish v1 -expect bans_req == 1
 varnish v1 -expect bans_obj == 4
 varnish v1 -expect bans_added == 6
@@ -143,7 +143,7 @@ delay 1
 varnish v1 -cliok "ban.list"
 
 varnish v1 -expect bans == 4
-varnish v1 -expect bans_gone == 3
+varnish v1 -expect bans_completed == 3
 varnish v1 -expect bans_req == 1
 varnish v1 -expect bans_obj == 3
 varnish v1 -expect bans_added == 6
@@ -168,7 +168,7 @@ delay 1
 varnish v1 -cliok "ban.list"
 
 varnish v1 -expect bans == 1
-varnish v1 -expect bans_gone == 1
+varnish v1 -expect bans_completed == 1
 varnish v1 -expect bans_req == 0
 varnish v1 -expect bans_obj == 1
 varnish v1 -expect bans_added == 6

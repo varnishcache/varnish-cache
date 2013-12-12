@@ -1,4 +1,4 @@
-varnishtest "Check that reloaded bans with gone flag are really gone on restart"
+varnishtest "Check that reloaded bans with completed flag are really completed on restart"
 
 shell "rm -f ${tmpdir}/_.per[12]"
 
@@ -36,8 +36,8 @@ varnish v1 -expect bans == 3
 # Expect 1 of the 2 added to be marked dup
 varnish v1 -expect bans_dups == 1
 
-# Expect ban_magic plus our 1 dup to be marked gone
-varnish v1 -expect bans_gone == 2
+# Expect ban_magic plus our 1 dup to be marked completed
+varnish v1 -expect bans_completed == 2
 
 # Restart
 varnish v1 -stop
@@ -54,4 +54,4 @@ client c1 {
 # Expect our duplicate
 varnish v1 -expect bans_dups == 1
 # One more than before restart due to the new ban_magic
-varnish v1 -expect bans_gone == 3
+varnish v1 -expect bans_completed == 3

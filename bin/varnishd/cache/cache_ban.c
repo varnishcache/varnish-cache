@@ -41,7 +41,7 @@
  * Bans are compiled into bytestrings as follows:
  *	8 bytes	- double: timestamp		XXX: Byteorder ?
  *	4 bytes - be32: length
- *	1 byte - flags: 0x01: BAN_F_{REQ|OBJ|GONE}
+ *	1 byte - flags: 0x01: BAN_F_{REQ|OBJ|COMPLETED}
  *	N tests
  * A test have this form:
  *	1 byte - arg (see ban_vars.h col 3 "BANS_ARG_XXX")
@@ -88,7 +88,7 @@
 
 #define BANS_FLAG_REQ		(1<<0)
 #define BANS_FLAG_OBJ		(1<<1)
-#define BANS_FLAG_GONE		(1<<2)
+#define BANS_FLAG_COMPLETED	(1<<2)
 #define BANS_FLAG_HTTP		(1<<3)
 #define BANS_FLAG_ERROR		(1<<4)
 
@@ -268,7 +268,7 @@ ban_equal(const uint8_t *bs1, const uint8_t *bs2)
 }
 
 static void
-ban_mark_gone(struct ban *b)
+ban_mark_completed(struct ban *b)
 {
 	unsigned ln;
 
@@ -276,13 +276,13 @@ ban_mark_gone(struct ban *b)
 	Lck_AssertHeld(&ban_mtx);
 
 	AN(b->spec);
-	AZ(b->flags & BANS_FLAG_GONE);
+	AZ(b->flags & BANS_FLAG_COMPLETED);
 	ln = ban_len(b->spec);
-	b->flags |= BANS_FLAG_GONE;
-	b->spec[BANS_FLAGS] |= BANS_FLAG_GONE;
+	b->flags |= BANS_FLAG_COMPLETED;
+	b->spec[BANS_FLAGS] |= BANS_FLAG_COMPLETED;
 	VWMB();
 	vbe32enc(b->spec + BANS_LENGTH, BANS_HEAD_LEN);
-	VSC_C_main->bans_gone++;
+	VSC_C_main->bans_completed++;
 	VSC_C_main->bans_persisted_fragmentation += ln - ban_len(b->spec);
 }
 
@@ -555,16 +555,16 @@ BAN_Insert(struct ban *b)
 	if (be == NULL)
 		return (NULL);
 
-	/* Hunt down duplicates, and mark them as gone */
+	/* Hunt down duplicates, and mark them as completed */
 	bi = b;
 	Lck_Lock(&ban_mtx);
 	while(!ban_shutdown && bi != be) {
 		bi = VTAILQ_NEXT(bi, list);
-		if (bi->flags & BANS_FLAG_GONE)
+		if (bi->flags & BANS_FLAG_COMPLETED)
 			continue;
 		if (!ban_equal(b->spec, bi->spec))
 			continue;
-		ban_mark_gone(bi);
+		ban_mark_completed(bi);
 		VSC_C_main->bans_dups++;
 	}
 	be->refcount--;
@@ -671,7 +671,7 @@ ban_info(enum baninfo event, const uint8_t *ban, unsigned len)
 	if (STV_BanInfo(event, ban, len)) {
 		/* One or more stevedores reported failure. Export the
 		 * list instead. The exported list should take up less
-		 * space due to drops being purged and gones being
+		 * space due to drops being purged and completed being
 		 * truncated. */
 		/* XXX: Keep some measure of how much space can be
 		 * saved, and only export if it's worth it. Assert if
@@ -684,8 +684,8 @@ ban_info(enum baninfo event, const uint8_t *ban, unsigned len)
  * Put a skeleton ban in the list, unless there is an identical,
  * time & condition, ban already in place.
  *
- * If a newer ban has same condition, mark the new ban GONE.
- * mark any older bans, with the same condition, GONE as well.
+ * If a newer ban has same condition, mark the inserted ban COMPLETED,
+ * also mark any older bans, with the same condition COMPLETED.
  */
 
 static void
@@ -727,8 +727,8 @@ ban_reload(const uint8_t *ban, unsigned len)
 	}
 	if (duplicate)
 		VSC_C_main->bans_dups++;
-	if (duplicate || (ban[BANS_FLAGS] & BANS_FLAG_GONE))
-		ban_mark_gone(b2);
+	if (duplicate || (ban[BANS_FLAGS] & BANS_FLAG_COMPLETED))
+		ban_mark_completed(b2);
 	if (b == NULL)
 		VTAILQ_INSERT_TAIL(&ban_head, b2, list);
 	else
@@ -737,10 +737,10 @@ ban_reload(const uint8_t *ban, unsigned len)
 
 	/* Hunt down older duplicates */
 	for (b = VTAILQ_NEXT(b2, list); b != NULL; b = VTAILQ_NEXT(b, list)) {
-		if (b->flags & BANS_FLAG_GONE)
+		if (b->flags & BANS_FLAG_COMPLETED)
 			continue;
 		if (ban_equal(b->spec, ban)) {
-			ban_mark_gone(b);
+			ban_mark_completed(b);
 			VSC_C_main->bans_dups++;
 		}
 	}
@@ -927,7 +927,7 @@ ban_check_object(struct object *o, struct vsl_log *vsl,
 	tests = 0;
 	for (b = b0; b != oc->ban; b = VTAILQ_NEXT(b, list)) {
 		CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
-		if (b->flags & BANS_FLAG_GONE)
+		if (b->flags & BANS_FLAG_COMPLETED)
 			continue;
 		if (ban_evaluate(b->spec, o->http, req_http, &tests))
 			break;
@@ -975,8 +975,8 @@ ban_cleantail(void)
 		Lck_Lock(&ban_mtx);
 		b = VTAILQ_LAST(&ban_head, banhead_s);
 		if (b != VTAILQ_FIRST(&ban_head) && b->refcount == 0) {
-			if (b->flags & BANS_FLAG_GONE)
-				VSC_C_main->bans_gone--;
+			if (b->flags & BANS_FLAG_COMPLETED)
+				VSC_C_main->bans_completed--;
 			if (b->flags & BANS_FLAG_OBJ)
 				VSC_C_main->bans_obj--;
 			if (b->flags & BANS_FLAG_REQ)
@@ -1117,7 +1117,7 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 	Lck_Unlock(&ban_mtx);
 	i = 0;
 	while (b != NULL) {
-		if (b->flags & BANS_FLAG_GONE) {
+		if (b->flags & BANS_FLAG_COMPLETED) {
 			;
 		} else if (b->flags & BANS_FLAG_REQ) {
 			;
@@ -1138,9 +1138,10 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 	VTAILQ_FOREACH_REVERSE(bt, &ban_head, banhead_s, list) {
 		if (bt == VTAILQ_LAST(&obans, banhead_s)) {
 			if (DO_DEBUG(DBG_LURKER))
-				VSLb(vsl, SLT_Debug, "Lurk bt gone %p", bt);
+				VSLb(vsl, SLT_Debug,
+				    "Lurk bt completed %p", bt);
 			Lck_Lock(&ban_mtx);
-			ban_mark_gone(bt);
+			ban_mark_completed(bt);
 			Lck_Unlock(&ban_mtx);
 			VTAILQ_REMOVE(&obans, bt, l_list);
 			if (VTAILQ_EMPTY(&obans))
@@ -1283,9 +1284,9 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 
 	VCLI_Out(cli, "Present bans:\n");
 	VTAILQ_FOREACH(b, &ban_head, list) {
-		VCLI_Out(cli, "%10.6f %5u%s", ban_time(b->spec),
+		VCLI_Out(cli, "%10.6f %5u %s", ban_time(b->spec),
 		    bl == b ? b->refcount - 1 : b->refcount,
-		    b->flags & BANS_FLAG_GONE ? "G" : "-");
+		    b->flags & BANS_FLAG_COMPLETED ? "C" : " ");
 		if (DO_DEBUG(DBG_LURKER)) {
 			VCLI_Out(cli, "%s%s%s %p ",
 			    b->flags & BANS_FLAG_REQ ? "R" : "-",
@@ -1327,7 +1328,7 @@ BAN_Init(void)
 	AN(ban_magic);
 	AZ(BAN_Insert(ban_magic));
 	Lck_Lock(&ban_mtx);
-	ban_mark_gone(ban_magic);
+	ban_mark_completed(ban_magic);
 	Lck_Unlock(&ban_mtx);
 }
 
