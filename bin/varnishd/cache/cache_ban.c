@@ -108,18 +108,16 @@ struct ban {
 	unsigned		magic;
 #define BAN_MAGIC		0x700b08ea
 	VTAILQ_ENTRY(ban)	list;
+	VTAILQ_ENTRY(ban)	l_list;
 	int			refcount;
 	unsigned		flags;		/* BANS_FLAG_* */
 
-#define BAN_F_LURK		(3 << 6)	/* ban-lurker-color */
 	VTAILQ_HEAD(,objcore)	objcore;
 	struct vsb		*vsb;
 	uint8_t			*spec;
 };
 
 VTAILQ_HEAD(banhead_s,ban);
-
-#define LURK_SHIFT 6
 
 struct ban_test {
 	uint8_t			arg1;
@@ -135,6 +133,7 @@ static struct lock ban_mtx;
 static struct ban *ban_magic;
 static pthread_t ban_thread;
 static struct ban * volatile ban_start;
+static struct objcore oc_marker = { .magic = OBJCORE_MAGIC, };
 static bgthread_t ban_lurker;
 static int ban_shutdown = 0;
 
@@ -274,6 +273,8 @@ ban_mark_gone(struct ban *b)
 	unsigned ln;
 
 	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
+	Lck_AssertHeld(&ban_mtx);
+
 	AN(b->spec);
 	AZ(b->flags & BANS_FLAG_GONE);
 	ln = ban_len(b->spec);
@@ -528,6 +529,8 @@ BAN_Insert(struct ban *b)
 	ban_start = b;
 	VSC_C_main->bans++;
 	VSC_C_main->bans_added++;
+	if (b->flags & BANS_FLAG_OBJ)
+		VSC_C_main->bans_obj++;
 	if (b->flags & BANS_FLAG_REQ)
 		VSC_C_main->bans_req++;
 
@@ -901,8 +904,17 @@ ban_check_object(struct object *o, struct vsl_log *vsl,
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->ban, BAN_MAGIC);
 
+	/* First do an optimistic unlocked check */
 	b0 = ban_start;
 	CHECK_OBJ_NOTNULL(b0, BAN_MAGIC);
+
+	if (b0 == oc->ban)
+		return (0);
+
+	/* If that fails, make a safe check */
+	Lck_Lock(&ban_mtx);
+	b0 = ban_start;
+	Lck_Unlock(&ban_mtx);
 
 	if (b0 == oc->ban)
 		return (0);
@@ -918,12 +930,6 @@ ban_check_object(struct object *o, struct vsl_log *vsl,
 		CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
 		if (b->flags & BANS_FLAG_GONE)
 			continue;
-		if ((b->flags & BAN_F_LURK) &&
-		    (b->flags & BAN_F_LURK) == (oc->flags & OC_F_LURK)) {
-			AZ(b->flags & BANS_FLAG_REQ);
-			/* Lurker already tested this */
-			continue;
-		}
 		if (req_http == NULL && (b->flags & BANS_FLAG_REQ)) {
 			/*
 			 * We cannot test this one, but there might
@@ -951,10 +957,10 @@ ban_check_object(struct object *o, struct vsl_log *vsl,
 	oc->ban->refcount--;
 	VTAILQ_REMOVE(&oc->ban->objcore, oc, ban_list);
 	if (b == oc->ban) {	/* not banned */
-		b->flags &= ~BAN_F_LURK;
 		VTAILQ_INSERT_TAIL(&b0->objcore, oc, ban_list);
 		b0->refcount++;
 	}
+
 	Lck_Unlock(&ban_mtx);
 
 	if (b == oc->ban) {	/* not banned */
@@ -963,7 +969,8 @@ ban_check_object(struct object *o, struct vsl_log *vsl,
 		return (0);
 	} else {
 		oc->ban = NULL;
-		VSLb(vsl, SLT_ExpBan, "%u was banned", o->vxid);
+		VSLb(vsl, SLT_ExpBan, "%u banned lookup", o->vxid);
+		VSC_C_main->bans_obj_killed++;
 		EXP_Rearm(o, o->exp.t_origin, 0, 0, 0);	// XXX fake now
 		return (1);
 	}
@@ -987,6 +994,8 @@ ban_cleantail(void)
 		if (b != VTAILQ_FIRST(&ban_head) && b->refcount == 0) {
 			if (b->flags & BANS_FLAG_GONE)
 				VSC_C_main->bans_gone--;
+			if (b->flags & BANS_FLAG_OBJ)
+				VSC_C_main->bans_obj--;
 			if (b->flags & BANS_FLAG_REQ)
 				VSC_C_main->bans_req--;
 			VSC_C_main->bans--;
@@ -1005,147 +1014,155 @@ ban_cleantail(void)
 }
 
 /*--------------------------------------------------------------------
+ * Our task here is somewhat tricky:  The canonical locking order is
+ * objhead->mtx first, then ban_mtx, because that is the order which
+ * makes most sense in HSH_Lookup(), but we come the other way.
+ * We optimistically try to get them the other way, and get out of
+ * the way if that fails, and retry again later.
+ */
+
+static struct objcore *
+ban_lurker_getfirst(struct vsl_log *vsl, struct ban *bt)
+{
+	struct objhead *oh;
+	struct objcore *oc;
+
+	while (1) {
+		Lck_Lock(&ban_mtx);
+		oc = VTAILQ_FIRST(&bt->objcore);
+		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+		if (oc == &oc_marker) {
+			VTAILQ_REMOVE(&bt->objcore, oc, ban_list);
+			Lck_Unlock(&ban_mtx);
+			return (NULL);
+		}
+		oh = oc->objhead;
+		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+		if (!Lck_Trylock(&oh->mtx) && oc->refcnt > 0) {
+			/*
+			 * We got the lock, and the oc is not being
+			 * dismantled under our feet, run with it...
+			 */
+			oc->refcnt += 1;
+			VTAILQ_REMOVE(&bt->objcore, oc, ban_list);
+			VTAILQ_INSERT_TAIL(&bt->objcore, oc, ban_list);
+			Lck_Unlock(&oh->mtx);
+			Lck_Unlock(&ban_mtx);
+			break;
+		}
+
+		/* Try again, later */
+		Lck_Unlock(&ban_mtx);
+		VSC_C_main->bans_lurker_contention++;
+		VSL_Flush(vsl, 0);
+		VTIM_sleep(cache_param->ban_lurker_sleep);
+	}
+	return (oc);
+}
+
+static void
+ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
+    const struct banhead_s *obans)
+{
+	struct ban *bl;
+	struct objcore *oc;
+	struct object *o;
+	unsigned tests;
+	int i;
+
+	(void)wrk;
+	/*
+	 * First see if there is anything to do, and if so, insert marker
+	 */
+	Lck_Lock(&ban_mtx);
+	oc = VTAILQ_FIRST(&bt->objcore);
+	if (oc != NULL)
+		VTAILQ_INSERT_TAIL(&bt->objcore, &oc_marker, ban_list);
+	Lck_Unlock(&ban_mtx);
+	if (oc == NULL)
+		return;
+
+	while (1) {
+		oc = ban_lurker_getfirst(vsl, bt);
+		if (oc == NULL)
+			return;
+		o = oc_getobj(&wrk->stats, oc);
+		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+		i = 0;
+		VTAILQ_FOREACH_REVERSE(bl, obans, banhead_s, l_list) {
+			tests = 0;
+			i = ban_evaluate(bl->spec, o->http, NULL, &tests);
+			VSC_C_main->bans_lurker_tested++;
+			VSC_C_main->bans_lurker_tests_tested += tests;
+			if (i)
+				break;
+		}
+		if (i) {
+			VSLb(vsl, SLT_ExpBan, "%u banned by lurker", o->vxid);
+			EXP_Rearm(o, o->exp.t_origin, 0, 0, 0);	// XXX fake now
+			VSC_C_main->bans_lurker_obj_killed++;
+		}
+		(void)HSH_DerefObjCore(&wrk->stats, &oc);
+	}
+}
+
+/*--------------------------------------------------------------------
  * Ban lurker thread
  */
 
 static int
 ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 {
-	struct ban *b, *b0;
-	struct objhead *oh;
-	struct objcore *oc, *oc2;
-	struct object *o;
-	static unsigned pass = 1 << LURK_SHIFT;
+	struct ban *b, *bt;
+	//struct objhead *oh;
+	// struct objcore *oc, *oc2;
+	//struct object *o;
+	struct banhead_s obans;
 	int i;
 
-	AN(pass & BAN_F_LURK);
-	AZ(pass & ~BAN_F_LURK);
-
 	/*
-	 * Find out if we have any bans we can do something about
-	 * If we find any, tag them with our pass number.
+	 * Make a list of the bans we can do something about
 	 */
+
+	VTAILQ_INIT(&obans);
+	Lck_Lock(&ban_mtx);
+	b = ban_start;
+	Lck_Unlock(&ban_mtx);
 	i = 0;
-	b0 = NULL;
-	VTAILQ_FOREACH(b, &ban_head, list) {
-		if (b->flags & BANS_FLAG_GONE)
-			continue;
-		if (b->flags & BANS_FLAG_REQ)
-			continue;
-		if (b == VTAILQ_LAST(&ban_head, banhead_s))
-			continue;
-		if (b0 == NULL)
-			b0 = b;
-		i++;
-		b->flags &= ~BAN_F_LURK;
-		b->flags |= pass;
+	while (b != NULL) {
+		if (b->flags & BANS_FLAG_GONE) {
+			;
+		} else if (b->flags & BANS_FLAG_REQ) {
+			;
+		} else if (b == VTAILQ_LAST(&ban_head, banhead_s)) {
+			;
+		} else {
+			VTAILQ_INSERT_TAIL(&obans, b, l_list);
+			i++;
+		}
+		b = VTAILQ_NEXT(b, list);
 	}
 	if (DO_DEBUG(DBG_LURKER))
 		VSLb(vsl, SLT_Debug, "lurker: %d actionable bans", i);
 	if (i == 0)
 		return (0);
 
-	VTAILQ_FOREACH_REVERSE(b, &ban_head, banhead_s, list) {
-		if (DO_DEBUG(DBG_LURKER))
-			VSLb(vsl, SLT_Debug, "lurker doing %f %d",
-			    ban_time(b->spec), b->refcount);
-		while (1) {
+	/* Go though all the bans to test the objects */
+	VTAILQ_FOREACH_REVERSE(bt, &ban_head, banhead_s, list) {
+		if (bt == VTAILQ_LAST(&obans, banhead_s)) {
+			if (DO_DEBUG(DBG_LURKER))
+				VSLb(vsl, SLT_Debug, "Lurk bt gone %p", bt);
 			Lck_Lock(&ban_mtx);
-			if (ban_shutdown)
-				break;
-			oc = VTAILQ_FIRST(&b->objcore);
-			if (oc == NULL)
-				break;
-			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-			if (DO_DEBUG(DBG_LURKER))
-				VSLb(vsl, SLT_Debug, "test: %p %u %u",
-				    oc, oc->flags & OC_F_LURK, pass);
-			if ((oc->flags & OC_F_LURK) == pass)
-				break;
-			oh = oc->objhead;
-			CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-			if (Lck_Trylock(&oh->mtx)) {
-				Lck_Unlock(&ban_mtx);
-				VSL_Flush(vsl, 0);
-				VTIM_sleep(cache_param->ban_lurker_sleep);
-				continue;
-			}
-			/*
-			 * See if the objcore is still on the objhead since
-			 * we race against HSH_Deref() which comes in the
-			 * opposite locking order.
-			 */
-			VTAILQ_FOREACH(oc2, &oh->objcs, list)
-				if (oc == oc2)
-					break;
-			if (oc2 == NULL) {
-				Lck_Unlock(&oh->mtx);
-				Lck_Unlock(&ban_mtx);
-				VTIM_sleep(cache_param->ban_lurker_sleep);
-				continue;
-			}
-			/*
-			 * If the object is busy, we can't touch
-			 * it. Defer it to a later run.
-			 */
-			if (oc->flags & OC_F_BUSY) {
-				oc->flags |= pass;
-				VTAILQ_REMOVE(&b->objcore, oc, ban_list);
-				VTAILQ_INSERT_TAIL(&b->objcore, oc, ban_list);
-				Lck_Unlock(&oh->mtx);
-				Lck_Unlock(&ban_mtx);
-				continue;
-			}
-			/*
-			 * Grab a reference to the OC and we can let go of
-			 * the BAN mutex
-			 */
-			AN(oc->refcnt);
-			oc->refcnt++;
-			oc->flags &= ~OC_F_LURK;
+			ban_mark_gone(bt);
 			Lck_Unlock(&ban_mtx);
-			/*
-			 * Get the object and check it against all relevant bans
-			 */
-			o = oc_getobj(&wrk->stats, oc);
-			i = ban_check_object(o, vsl, NULL);
-			if (DO_DEBUG(DBG_LURKER))
-				VSLb(vsl, SLT_Debug, "lurker got: %p %d",
-				    oc, i);
-			if (i == -1) {
-				/* Not banned, not moved */
-				oc->flags |= pass;
-				Lck_Lock(&ban_mtx);
-				VTAILQ_REMOVE(&b->objcore, oc, ban_list);
-				VTAILQ_INSERT_TAIL(&b->objcore, oc, ban_list);
-				Lck_Unlock(&ban_mtx);
-			}
-			Lck_Unlock(&oh->mtx);
-			if (DO_DEBUG(DBG_LURKER))
-				VSLb(vsl, SLT_Debug, "lurker done: %p %u %u",
-				    oc, oc->flags & OC_F_LURK, pass);
-			(void)HSH_DerefObj(&wrk->stats, &o);
-			VTIM_sleep(cache_param->ban_lurker_sleep);
+			VTAILQ_REMOVE(&obans, bt, l_list);
+			if (VTAILQ_EMPTY(&obans))
+				break;
 		}
-		Lck_AssertHeld(&ban_mtx);
-		if (!(b->flags & BANS_FLAG_REQ)) {
-			if (!(b->flags & BANS_FLAG_GONE))
-				ban_mark_gone(b);
-			if (DO_DEBUG(DBG_LURKER))
-				VSLb(vsl, SLT_Debug, "lurker BAN %f now gone",
-				    ban_time(b->spec));
-		}
-		Lck_Unlock(&ban_mtx);
-		if (ban_shutdown)
-			break;
-		VTIM_sleep(cache_param->ban_lurker_sleep);
-		if (b == b0)
-			break;
+		if (DO_DEBUG(DBG_LURKER))
+			VSLb(vsl, SLT_Debug, "Lurk bt %p", bt);
+		ban_lurker_test_ban(wrk, vsl, bt, &obans);
 	}
-	pass += (1 << LURK_SHIFT);
-	pass &= BAN_F_LURK;
-	if (pass == 0)
-		pass += (1 << LURK_SHIFT);
 	return (1);
 }
 
@@ -1286,9 +1303,17 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 
 	VCLI_Out(cli, "Present bans:\n");
 	VTAILQ_FOREACH(b, &ban_head, list) {
-		VCLI_Out(cli, "%10.6f %5u%s\t", ban_time(b->spec),
+		VCLI_Out(cli, "%10.6f %5u%s", ban_time(b->spec),
 		    bl == b ? b->refcount - 1 : b->refcount,
-		    b->flags & BANS_FLAG_GONE ? "G" : " ");
+		    b->flags & BANS_FLAG_GONE ? "G" : "-");
+		if (DO_DEBUG(DBG_LURKER)) {
+			VCLI_Out(cli, "%s%s%s %p ",
+			    b->flags & BANS_FLAG_REQ ? "R" : "-",
+			    b->flags & BANS_FLAG_OBJ ? "O" : "-",
+			    b->flags & BANS_FLAG_ERROR ? "E" : "-",
+			    b);
+		}
+		VCLI_Out(cli, "  ");
 		ban_render(cli, b->spec);
 		VCLI_Out(cli, "\n");
 		if (VCLI_Overflow(cli))
@@ -1297,7 +1322,7 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 			Lck_Lock(&ban_mtx);
 			struct objcore *oc;
 			VTAILQ_FOREACH(oc, &b->objcore, ban_list)
-				VCLI_Out(cli, "     %p\n", oc);
+				VCLI_Out(cli, "  oc = %p\n", oc);
 			Lck_Unlock(&ban_mtx);
 		}
 	}
@@ -1317,14 +1342,13 @@ BAN_Init(void)
 
 	Lck_New(&ban_mtx, lck_ban);
 	CLI_AddFuncs(ban_cmds);
-	assert(BAN_F_LURK == OC_F_LURK);
-	AN((1 << LURK_SHIFT) & BAN_F_LURK);
-	AN((2 << LURK_SHIFT) & BAN_F_LURK);
 
 	ban_magic = BAN_New();
 	AN(ban_magic);
 	AZ(BAN_Insert(ban_magic));
+	Lck_Lock(&ban_mtx);
 	ban_mark_gone(ban_magic);
+	Lck_Unlock(&ban_mtx);
 }
 
 /*--------------------------------------------------------------------

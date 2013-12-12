@@ -490,6 +490,11 @@ VSC_F(bans_gone,		uint64_t, 0, 'g', diag,
 	"Number of bans which are no longer active, either because they"
 	" got checked by the ban-lurker or superseded by newer identical bans."
 )
+VSC_F(bans_obj,			uint64_t, 0, 'g', diag,
+    "Number of bans using obj.*",
+	"Number of bans which use obj.* variables.  These bans can possibly"
+	" be washed by the ban-lurker."
+)
 VSC_F(bans_req,			uint64_t, 0, 'g', diag,
     "Number of bans using req.*",
 	"Number of bans which use req.* variables.  These bans can not"
@@ -505,19 +510,44 @@ VSC_F(bans_deleted,		uint64_t, 0, 'c', diag,
 )
 
 VSC_F(bans_tested,		uint64_t, 0, 'c', diag,
-    "Bans tested against objects",
+    "Bans tested against objects (lookup)",
 	"Count of how many bans and objects have been tested against"
-	" each other."
+	" each other during hash lookup."
+)
+VSC_F(bans_obj_killed,	uint64_t, 0, 'c', diag,
+    "Objects killed by bans (lookup)",
+	"Number of objects killed by bans during object lookup."
+)
+VSC_F(bans_lurker_tested,	uint64_t, 0, 'c', diag,
+    "Bans tested against objects (lurker)",
+	"Count of how many bans and objects have been tested against"
+	" each other by the ban-lurker."
 )
 VSC_F(bans_tests_tested,	uint64_t, 0, 'c', diag,
-    "Ban tests tested against objects",
+    "Ban tests tested against objects (lookup)",
 	"Count of how many tests and objects have been tested against"
-	" each other.  'ban req.url == foo && req.http.host == bar'"
+	" each other during lookup."
+	"  'ban req.url == foo && req.http.host == bar'"
 	" counts as one in 'bans_tested' and as two in 'bans_tests_tested'"
+)
+VSC_F(bans_lurker_tests_tested,	uint64_t, 0, 'c', diag,
+    "Ban tests tested against objects (lurker)",
+	"Count of how many tests and objects have been tested against"
+	" each other by the ban-lurker."
+	"  'ban req.url == foo && req.http.host == bar'"
+	" counts as one in 'bans_tested' and as two in 'bans_tests_tested'"
+)
+VSC_F(bans_lurker_obj_killed,	uint64_t, 0, 'c', diag,
+    "Objects killed by bans (lurker)",
+	"Number of objects killed by ban-lurker."
 )
 VSC_F(bans_dups,		uint64_t, 0, 'c', diag,
     "Bans superseded by other bans",
 	"Count of bans replaced by later identical bans."
+)
+VSC_F(bans_lurker_contention,	uint64_t, 0, 'c', diag,
+    "Lurker gave way for lookup",
+	"Number of times the ban-lurker had to wait for lookups."
 )
 VSC_F(bans_persisted_bytes,	uint64_t, 0, 'g', diag,
     "Bytes used by the persisted ban lists",
