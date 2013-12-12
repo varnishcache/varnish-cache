@@ -25,6 +25,12 @@ DESCRIPTION
 The varnishncsa utility reads varnishd(1) shared memory logs and
 presents them in the Apache / NCSA "combined" log format.
 
+Each log line produced is based on a single Request type transaction
+gathered from the shared memory log. The Request transaction is then
+scanned for the relevant parts in order to output one log line. To
+filter the log lines produced, use the query language to select the
+applicable transactions. Non-request transactions are ignored.
+
 The following options are available:
 
 .. include:: ../../../bin/varnishncsa/varnishncsa_options.rst
