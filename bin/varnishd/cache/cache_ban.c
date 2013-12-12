@@ -1049,9 +1049,9 @@ ban_lurker_getfirst(struct vsl_log *vsl, struct ban *bt)
 
 static void
 ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
-    const struct banhead_s *obans)
+    struct banhead_s *obans)
 {
-	struct ban *bl;
+	struct ban *bl, *bln;
 	struct objcore *oc;
 	struct object *o;
 	unsigned tests;
@@ -1076,7 +1076,12 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 		o = oc_getobj(&wrk->stats, oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		i = 0;
-		VTAILQ_FOREACH_REVERSE(bl, obans, banhead_s, l_list) {
+		VTAILQ_FOREACH_REVERSE_SAFE(bl, obans, banhead_s, l_list, bln) {
+			if (bl->flags & BANS_FLAG_COMPLETED) {
+				/* Ban was overtaken by new (dup) ban */
+				VTAILQ_REMOVE(obans, bl, l_list);
+				continue;
+			}
 			tests = 0;
 			i = ban_evaluate(bl->spec, o->http, NULL, &tests);
 			VSC_C_main->bans_lurker_tested++;
@@ -1101,16 +1106,10 @@ static int
 ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 {
 	struct ban *b, *bt;
-	//struct objhead *oh;
-	// struct objcore *oc, *oc2;
-	//struct object *o;
 	struct banhead_s obans;
 	int i;
 
-	/*
-	 * Make a list of the bans we can do something about
-	 */
-
+	/* Make a list of the bans we can do something about */
 	VTAILQ_INIT(&obans);
 	Lck_Lock(&ban_mtx);
 	b = ban_start;
@@ -1141,7 +1140,9 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 				VSLb(vsl, SLT_Debug,
 				    "Lurk bt completed %p", bt);
 			Lck_Lock(&ban_mtx);
-			ban_mark_completed(bt);
+			/* We can be raced by a new ban */
+			if (!(bt->flags & BANS_FLAG_COMPLETED))
+				ban_mark_completed(bt);
 			Lck_Unlock(&ban_mtx);
 			VTAILQ_REMOVE(&obans, bt, l_list);
 			if (VTAILQ_EMPTY(&obans))
@@ -1150,6 +1151,8 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 		if (DO_DEBUG(DBG_LURKER))
 			VSLb(vsl, SLT_Debug, "Lurk bt %p", bt);
 		ban_lurker_test_ban(wrk, vsl, bt, &obans);
+		if (VTAILQ_EMPTY(&obans))
+			break;
 	}
 	return (1);
 }
