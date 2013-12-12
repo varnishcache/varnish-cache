@@ -896,10 +896,10 @@ ban_check_object(struct object *o, struct vsl_log *vsl,
 	struct ban *b;
 	struct objcore *oc;
 	struct ban * volatile b0;
-	unsigned tests, skipped;
+	unsigned tests;
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	CHECK_OBJ_ORNULL(req_http, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(req_http, HTTP_MAGIC);
 	oc = o->objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->ban, BAN_MAGIC);
@@ -925,34 +925,17 @@ ban_check_object(struct object *o, struct vsl_log *vsl,
 	 * inspect the list past that ban.
 	 */
 	tests = 0;
-	skipped = 0;
 	for (b = b0; b != oc->ban; b = VTAILQ_NEXT(b, list)) {
 		CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
 		if (b->flags & BANS_FLAG_GONE)
 			continue;
-		if (req_http == NULL && (b->flags & BANS_FLAG_REQ)) {
-			/*
-			 * We cannot test this one, but there might
-			 * be other bans that match, so we soldier on
-			 */
-			skipped++;
-		} else if (ban_evaluate(b->spec, o->http, req_http, &tests))
+		if (ban_evaluate(b->spec, o->http, req_http, &tests))
 			break;
 	}
 
 	Lck_Lock(&ban_mtx);
 	VSC_C_main->bans_tested++;
 	VSC_C_main->bans_tests_tested += tests;
-
-	if (b == oc->ban && skipped > 0) {
-		AZ(req_http);
-		Lck_Unlock(&ban_mtx);
-		/*
-		 * Not banned, but some tests were skipped, so we cannot know
-		 * for certain that it cannot be, so we just have to give up.
-		 */
-		return (-1);
-	}
 
 	oc->ban->refcount--;
 	VTAILQ_REMOVE(&oc->ban->objcore, oc, ban_list);
@@ -1038,17 +1021,21 @@ ban_lurker_getfirst(struct vsl_log *vsl, struct ban *bt)
 		}
 		oh = oc->objhead;
 		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-		if (!Lck_Trylock(&oh->mtx) && oc->refcnt > 0) {
-			/*
-			 * We got the lock, and the oc is not being
-			 * dismantled under our feet, run with it...
-			 */
-			oc->refcnt += 1;
-			VTAILQ_REMOVE(&bt->objcore, oc, ban_list);
-			VTAILQ_INSERT_TAIL(&bt->objcore, oc, ban_list);
-			Lck_Unlock(&oh->mtx);
-			Lck_Unlock(&ban_mtx);
-			break;
+		if (!Lck_Trylock(&oh->mtx)) {
+			if (oc->refcnt == 0) {
+				Lck_Unlock(&oh->mtx);
+			} else {
+				/*
+				 * We got the lock, and the oc is not being
+				 * dismantled under our feet, run with it...
+				 */
+				oc->refcnt += 1;
+				VTAILQ_REMOVE(&bt->objcore, oc, ban_list);
+				VTAILQ_INSERT_TAIL(&bt->objcore, oc, ban_list);
+				Lck_Unlock(&oh->mtx);
+				Lck_Unlock(&ban_mtx);
+				break;
+			}
 		}
 
 		/* Try again, later */
@@ -1171,30 +1158,23 @@ ban_lurker(struct worker *wrk, void *priv)
 {
 	struct vsl_log vsl;
 	volatile double d;
-	int i = 0, n = 0;
+	int i;
 
 	VSL_Setup(&vsl, NULL, 0);
 
 	(void)priv;
 	while (!ban_shutdown) {
+		i = 0;
 		d = cache_param->ban_lurker_sleep;
-		if (d > 0.0) {
+		if (d > 0.0)
 			i = ban_lurker_work(wrk, &vsl);
-			VSL_Flush(&vsl, 0);
-			WRK_SumStat(wrk);
-			if (i && !ban_shutdown) {
-				VTIM_sleep(d);
-				if (++n > 10) {
-					ban_cleantail();
-					n = 0;
-				}
-				continue;
-			}
-		}
 		ban_cleantail();
 		if (ban_shutdown)
 			break;
-		VTIM_sleep(0.609);	// Random, non-magic
+		if (i)
+			VTIM_sleep(d);
+		else
+			VTIM_sleep(0.609);	// Random, non-magic
 	}
 
 	pthread_exit(0);
