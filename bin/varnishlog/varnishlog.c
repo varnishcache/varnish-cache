@@ -94,7 +94,7 @@ rotateout(void)
 	AN(LOG.w_arg);
 	AN(LOG.fo);
 	fclose(LOG.fo);
-	openout(0);
+	openout(1);
 	AN(LOG.fo);
 	return (0);
 }
