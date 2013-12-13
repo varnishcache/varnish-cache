@@ -182,7 +182,7 @@ rotateout(void)
 	AN(CTX.w_arg);
 	AN(CTX.fo);
 	fclose(CTX.fo);
-	openout(0);
+	openout(1);
 	AN(CTX.fo);
 	return (0);
 }
