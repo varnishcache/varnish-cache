@@ -464,6 +464,16 @@ struct parspec mgt_parspec[] = {
 		"Log all CLI traffic to syslog(LOG_INFO).",
 		0,
 		"on", "bool" },
+	{ "ban_lurker_age", tweak_timeout,
+		&mgt_param.ban_lurker_age,
+		"0", NULL,
+		"The ban lurker does not process bans until they are this"
+		" old.  Right when a ban is added, the most frequently hit"
+		" objects will get tested against it as part of object"
+		" lookup.  This parameter prevents the ban-lurker from"
+		" kicking in, until the rush is over.",
+		0,
+		"60", "s" },
 	{ "ban_lurker_sleep", tweak_timeout,
 		&mgt_param.ban_lurker_sleep,
 		"0", NULL,
@@ -474,6 +484,14 @@ struct parspec mgt_parspec[] = {
 		"A value of zero disables the ban lurker.",
 		0,
 		"0.01", "s" },
+	{ "ban_lurker_batch", tweak_uint,
+		&mgt_param.ban_lurker_batch,
+		"1", NULL,
+		"How many objects the ban lurker examines before taking a"
+		" ban_lurker_sleep.  Use this to pace the ban lurker so it"
+		" does not eat too much CPU.",
+		0,
+		"1000", "" },
 	{ "http_range_support", tweak_bool, &mgt_param.http_range_support,
 		NULL, NULL,
 		"Enable support for HTTP Range headers.",

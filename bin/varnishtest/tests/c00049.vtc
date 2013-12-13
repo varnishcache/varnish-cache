@@ -37,6 +37,7 @@ server s1 {
 
 varnish v1 -vcl+backend {} -start
 
+varnish v1 -cliok "param.set ban_lurker_age 0"
 varnish v1 -cliok "param.set ban_lurker_sleep 0"
 varnish v1 -cliok "param.set debug +lurker"
 

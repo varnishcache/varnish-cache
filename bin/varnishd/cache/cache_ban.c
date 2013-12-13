@@ -135,6 +135,7 @@ static pthread_t ban_thread;
 static struct ban * volatile ban_start;
 static struct objcore oc_marker = { .magic = OBJCORE_MAGIC, };
 static bgthread_t ban_lurker;
+static unsigned ban_batch;
 static int ban_shutdown = 0;
 
 /*--------------------------------------------------------------------
@@ -1057,7 +1058,6 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 	unsigned tests;
 	int i;
 
-	(void)wrk;
 	/*
 	 * First see if there is anything to do, and if so, insert marker
 	 */
@@ -1070,6 +1070,10 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 		return;
 
 	while (1) {
+		if (++ban_batch > cache_param->ban_lurker_batch) {
+			VTIM_sleep(cache_param->ban_lurker_sleep);
+			ban_batch = 0;
+		}
 		oc = ban_lurker_getfirst(vsl, bt);
 		if (oc == NULL)
 			return;
@@ -1107,6 +1111,7 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 {
 	struct ban *b, *bt;
 	struct banhead_s obans;
+	double d;
 	int i;
 
 	/* Make a list of the bans we can do something about */
@@ -1115,12 +1120,15 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 	b = ban_start;
 	Lck_Unlock(&ban_mtx);
 	i = 0;
+	d = VTIM_real() - cache_param->ban_lurker_age;
 	while (b != NULL) {
 		if (b->flags & BANS_FLAG_COMPLETED) {
 			;
 		} else if (b->flags & BANS_FLAG_REQ) {
 			;
 		} else if (b == VTAILQ_LAST(&ban_head, banhead_s)) {
+			;
+		} else if (ban_time(b->spec) > d) {
 			;
 		} else {
 			VTAILQ_INSERT_TAIL(&obans, b, l_list);

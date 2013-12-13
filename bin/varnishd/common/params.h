@@ -177,8 +177,9 @@ struct params {
 	/* Get rid of duplicate bans */
 	unsigned		ban_dups;
 
-	/* How long time does the ban lurker sleep */
+	double			ban_lurker_age;
 	double			ban_lurker_sleep;
+	unsigned		ban_lurker_batch;
 
 	unsigned		syslog_cli_traffic;
 
