@@ -104,7 +104,7 @@ VUT_g_Arg(const char *arg)
 
 	VUT.g_arg = VSLQ_Name2Grouping(arg, -1);
 	if (VUT.g_arg == -2)
-		VUT_Error(1, "Ambigous grouping type: %s", arg);
+		VUT_Error(1, "Ambiguous grouping type: %s", arg);
 	else if (VUT.g_arg < 0)
 		VUT_Error(1, "Unknown grouping type: %s", arg);
 	return (1);
