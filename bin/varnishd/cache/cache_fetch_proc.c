@@ -100,12 +100,12 @@ VFP_GetStorage(struct busyobj *bo, ssize_t sz)
 	st = STV_alloc(bo, l);
 	if (st == NULL) {
 		(void)VFP_Error(bo, "Could not get storage");
-		return (NULL);
+	} else {
+		AZ(st->len);
+		Lck_Lock(&bo->mtx);
+		VTAILQ_INSERT_TAIL(&obj->store, st, list);
+		Lck_Unlock(&bo->mtx);
 	}
-	AZ(st->len);
-	Lck_Lock(&bo->mtx);
-	VTAILQ_INSERT_TAIL(&obj->store, st, list);
-	Lck_Unlock(&bo->mtx);
 	return (st);
 }
 
@@ -201,35 +201,32 @@ VFP_Fetch_Body(struct busyobj *bo, ssize_t est)
 	}
 
 	do {
+		assert(bo->state != BOS_FAILED);
 		if (st == NULL) {
-			l = fetchfrag;
-			if (l == 0) {
-				l = est;
-				est = 0;
-			}
-			if (l == 0)
-				l = cache_param->fetch_chunksize;
-			st = STV_alloc(bo, l);
-			if (st == NULL) {
-				bo->should_close = 1;
-				/* XXX Close VFP stack */
-				(void)VFP_Error(bo, "Out of storage");
-				break;
-			}
-			AZ(st->len);
-			Lck_Lock(&bo->mtx);
-			VTAILQ_INSERT_TAIL(&bo->fetch_obj->store, st, list);
-			Lck_Unlock(&bo->mtx);
+			st = VFP_GetStorage(bo, est);
+			est = 0;
 		}
+		if (st == NULL) {
+			bo->should_close = 1;
+			(void)VFP_Error(bo, "Out of storage");
+			break;
+		}
+
+		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+		assert(st == VTAILQ_LAST(&bo->fetch_obj->store, storagehead));
 		l = st->space - st->len;
+		assert(bo->state != BOS_FAILED);
 		vfps = VFP_Suck(bo, st->ptr + st->len, &l);
-		if (l > 0)
+		if (l > 0 && vfps != VFP_ERROR) {
+			assert(!VTAILQ_EMPTY(&bo->fetch_obj->store));
 			VBO_extend(bo, l);
+		}
 		if (st->len == st->space)
 			st = NULL;
 	} while (vfps == VFP_OK);
 
 	if (vfps == VFP_ERROR) {
+		assert(bo->state == BOS_FAILED);
 		(void)VFP_Error(bo, "Fetch Pipeline failed to process");
 		bo->should_close = 1;
 	}
