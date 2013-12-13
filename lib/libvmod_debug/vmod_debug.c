@@ -29,6 +29,7 @@
 #include "config.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "cache/cache.h"
 
@@ -94,3 +95,38 @@ vmod_test_priv_vcl(const struct vrt_ctx *ctx, struct vmod_priv *priv)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
         assert(!strcmp(priv->priv, "FOO"));
 }
+
+VCL_BLOB
+vmod_str2blob(const struct vrt_ctx *ctx, VCL_STRING s)
+{
+	struct vmod_priv *p;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	p = (void*)WS_Alloc(ctx->ws, sizeof *p);
+	AN(p);
+	memset(p, 0, sizeof *p);
+	p->len = strlen(s);
+	p->priv = WS_Copy(ctx->ws, s, -1);
+	return (p);
+}
+
+VCL_STRING
+vmod_blob2hex(const struct vrt_ctx *ctx, VCL_BLOB b)
+{
+	char *s, *p;
+	uint8_t *q;
+	int i;
+
+	s = WS_Alloc(ctx->ws, b->len * 2 + 2);
+	AN(s);
+	p = s;
+	q = b->priv;
+	for (i = 0; i < b->len; i++) {
+		sprintf(p, "%02x", *q);
+		p += 2;
+		q += 1;
+	}
+	vmod_priv_fini(b);
+	return (s);
+}
+

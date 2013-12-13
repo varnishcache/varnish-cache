@@ -60,6 +60,7 @@ ctypes = {
 	'STRING_LIST':	"const char *, ...",
 	'TIME':		"VCL_TIME",
 	'VOID':		"VCL_VOID",
+	'BLOB':		"VCL_BLOB",
 }
 
 #######################################################################
@@ -381,7 +382,7 @@ class func(object):
 		fo.write(s + ")\n")
 		for i in self.doc_str:
 			fo.write(i + "\n")
-		
+
 
 #######################################################################
 

@@ -61,6 +61,7 @@ typedef double				VCL_REAL;
 typedef const char *			VCL_STRING;
 typedef double				VCL_TIME;
 typedef void				VCL_VOID;
+typedef const struct vmod_priv *	VCL_BLOB;
 
 /***********************************************************************
  * This is the composite argument we pass to compiled VCL and VRT
@@ -238,6 +239,7 @@ struct vmod_priv;
 typedef void vmod_priv_free_f(void *);
 struct vmod_priv {
 	void			*priv;
+	int			len;
 	vmod_priv_free_f	*free;
 };
 

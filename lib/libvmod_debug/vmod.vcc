@@ -53,6 +53,14 @@ $Function VOID test_priv_vcl(PRIV_VCL)
 
 Test function for VCL private pointers
 
+$Function BLOB str2blob(STRING)
+
+Turn a string into a blob
+
+$Function STRING blob2hex(BLOB)
+
+Hexdump a blob
+
 $Object obj(STRING) 
 
 Test object

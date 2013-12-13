@@ -392,7 +392,7 @@ vcc_arg_type(const char **p)
  */
 
 static void
-vcc_expr_tostring(struct expr **e, enum var_type fmt)
+vcc_expr_tostring(struct vcc *tl, struct expr **e, enum var_type fmt)
 {
 	const char *p;
 	uint8_t	constant = EXPR_VAR;
@@ -423,6 +423,13 @@ vcc_expr_tostring(struct expr **e, enum var_type fmt)
 	case STRING:
 	case STRING_LIST:
 			break;
+	case BLOB:
+			VSB_printf(tl->sb,
+			    "Wrong use of BLOB value.\n"
+			    "BLOBs can only be used as arguments to VMOD"
+			    " functions.\n");
+			vcc_ErrWhere2(tl, (*e)->t1, tl->t);
+			return;
 	default:
 			INCOMPL();
 			break;
@@ -451,8 +458,10 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym)
 	vcc_expr0(tl, &e2, STRING);
 	if (e2 == NULL)
 		return;
-	if (e2->fmt != STRING)
-		vcc_expr_tostring(&e2, STRING);
+	if (e2->fmt != STRING) {
+		vcc_expr_tostring(tl, &e2, STRING);
+		ERRCHK(tl);
+	}
 
 	SkipToken(tl, ',');
 	ExpectErr(tl, CSTR);
@@ -466,8 +475,10 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym)
 	vcc_expr0(tl, &e2, STRING);
 	if (e2 == NULL)
 		return;
-	if (e2->fmt != STRING)
-		vcc_expr_tostring(&e2, STRING);
+	if (e2->fmt != STRING) {
+		vcc_expr_tostring(tl, &e2, STRING);
+		ERRCHK(tl);
+	}
 	*e = vcc_expr_edit(STRING, "\v1,\n\v2)\v-", *e, e2);
 	SkipToken(tl, ')');
 }
@@ -817,8 +828,10 @@ vcc_expr_string_add(struct vcc *tl, struct expr **e)
 		vcc_NextToken(tl);
 		vcc_expr_mul(tl, &e2, STRING);
 		ERRCHK(tl);
-		if (e2->fmt != STRING && e2->fmt != STRING_LIST)
-			vcc_expr_tostring(&e2, f2);
+		if (e2->fmt != STRING && e2->fmt != STRING_LIST) {
+			vcc_expr_tostring(tl, &e2, f2);
+			ERRCHK(tl);
+		}
 		ERRCHK(tl);
 		assert(e2->fmt == STRING || e2->fmt == STRING_LIST);
 
@@ -857,7 +870,8 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 
 	/* Unless we specifically ask for a HEADER, fold them to string here */
 	if (fmt != HEADER && f2 == HEADER) {
-		vcc_expr_tostring(e, STRING);
+		vcc_expr_tostring(tl, e, STRING);
+		ERRCHK(tl);
 		f2 = (*e)->fmt;
 		assert(f2 == STRING);
 	}
@@ -1184,8 +1198,11 @@ vcc_Expr(struct vcc *tl, enum var_type fmt)
 	t1 = tl->t;
 	vcc_expr0(tl, &e, fmt);
 	ERRCHK(tl);
-	if (fmt == STRING || fmt == STRING_LIST)
-		vcc_expr_tostring(&e, fmt);
+	e->t1 = t1;
+	if (fmt == STRING || fmt == STRING_LIST) {
+		vcc_expr_tostring(tl, &e, fmt);
+		ERRCHK(tl);
+	}
 	if (!tl->err && fmt != e->fmt)  {
 		VSB_printf(tl->sb, "Expression has type %s, expected %s\n",
 		    vcc_Type(e->fmt), vcc_Type(fmt));

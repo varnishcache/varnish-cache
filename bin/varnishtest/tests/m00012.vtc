@@ -1,0 +1,44 @@
+varnishtest "Test VMOD BLOBS"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import ${vmod_debug};
+
+	sub vcl_deliver {
+		set resp.http.foo = debug.blob2hex(debug.str2blob("gunk"));
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.foo == 67756e6b
+} -run
+
+delay .1
+
+varnish v1 -errvcl {BLOBs can only be used as arguments to VMOD functions.} {
+
+	backend b1 {.host = "127.0.0.1";}
+
+	import ${vmod_debug};
+
+	sub vcl_deliver {
+		set resp.http.foo = debug.str2blob("gunk");
+	}
+}
+
+varnish v1 -errvcl {Wrong argument type.  Expected BLOB.  Got STRING.} {
+
+	backend b1 {.host = "127.0.0.1";}
+
+	import ${vmod_debug};
+
+	sub vcl_deliver {
+		set resp.http.foo = debug.blob2hex("gunk");
+	}
+}
