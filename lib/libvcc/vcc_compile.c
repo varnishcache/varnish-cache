@@ -123,6 +123,23 @@ TlDupTok(struct vcc *tl, const struct token *tok)
 
 /*--------------------------------------------------------------------*/
 
+struct inifin *
+New_IniFin(struct vcc *tl)
+{
+	struct inifin *p;
+
+	p = TlAlloc(tl, sizeof *p);
+	AN(p);
+	p->magic = INIFIN_MAGIC;
+	p->ini = VSB_new_auto();
+	p->fin = VSB_new_auto();
+	p->n = ++tl->ninifin;
+	VTAILQ_INSERT_TAIL(&tl->inifin, p, list);
+	return (p);
+}
+
+/*--------------------------------------------------------------------*/
+
 int
 IsMethod(const struct token *t)
 {
@@ -178,43 +195,6 @@ Fc(const struct vcc *tl, int indent, const char *fmt, ...)
 		VSB_printf(tl->fc, "%*.*s", tl->indent, tl->indent, "");
 	va_start(ap, fmt);
 	VSB_vprintf(tl->fc, fmt, ap);
-	va_end(ap);
-}
-
-void
-Fi(const struct vcc *tl, int indent, const char *fmt, ...)
-{
-	va_list ap;
-
-	if (indent)
-		VSB_printf(tl->fi, "%*.*s", tl->iindent, tl->iindent, "");
-	va_start(ap, fmt);
-	VSB_vprintf(tl->fi, fmt, ap);
-	va_end(ap);
-}
-
-void
-Fd(const struct vcc *tl, int indent, const char *fmt, ...)
-{
-	va_list ap;
-
-	if (indent)
-		VSB_printf(tl->fd, "%*.*s", tl->findent, tl->findent, "");
-	va_start(ap, fmt);
-	VSB_vprintf(tl->fd, fmt, ap);
-	va_end(ap);
-}
-
-
-void
-Ff(const struct vcc *tl, int indent, const char *fmt, ...)
-{
-	va_list ap;
-
-	if (indent)
-		VSB_printf(tl->ff, "%*.*s", tl->findent, tl->findent, "");
-	va_start(ap, fmt);
-	VSB_vprintf(tl->ff, fmt, ap);
 	va_end(ap);
 }
 
@@ -318,10 +298,16 @@ LocTable(const struct vcc *tl)
 static void
 EmitInitFunc(const struct vcc *tl)
 {
+	struct inifin *p;
 
 	Fc(tl, 0, "\nstatic int\nVGC_Init(struct cli *cli)\n{\n\n");
-	AZ(VSB_finish(tl->fi));
-	VSB_cat(tl->fc, VSB_data(tl->fi));
+	VTAILQ_FOREACH(p, &tl->inifin, list) {
+		AZ(VSB_finish(p->ini));
+		if (VSB_len(p->ini))
+			Fc(tl, 0, "\t/* %u */\n%s\n", p->n, VSB_data(p->ini));
+		VSB_delete(p->ini);
+	}
+
 	Fc(tl, 0, "\treturn(0);\n");
 	Fc(tl, 0, "}\n");
 }
@@ -329,22 +315,17 @@ EmitInitFunc(const struct vcc *tl)
 static void
 EmitFiniFunc(const struct vcc *tl)
 {
-	unsigned u;
+	struct inifin *p;
 
 	Fc(tl, 0, "\nstatic void\nVGC_Fini(struct cli *cli)\n{\n\n");
 
-	AZ(VSB_finish(tl->fd));
-	VSB_cat(tl->fc, VSB_data(tl->fd));
+	VTAILQ_FOREACH_REVERSE(p, &tl->inifin, inifinhead, list) {
+		AZ(VSB_finish(p->fin));
+		if (VSB_len(p->fin))
+			Fc(tl, 0, "\t/* %u */\n%s\n", p->n, VSB_data(p->fin));
+		VSB_delete(p->fin);
+	}
 
-	/*
-	 * We do this here, so we are sure they happen before any
-	 * per-vcl vmod_privs get cleaned.
-	 */
-	for (u = 0; u < tl->nvmodpriv; u++)
-		Fc(tl, 0, "\tvmod_priv_fini(&vmod_priv_%u);\n", u);
-
-	AZ(VSB_finish(tl->ff));
-	VSB_cat(tl->fc, VSB_data(tl->ff));
 	Fc(tl, 0, "}\n");
 }
 
@@ -519,6 +500,7 @@ vcc_NewVcc(const struct vcc *tl0)
 		tl->err_unref = 1;
 	}
 	VTAILQ_INIT(&tl->symbols);
+	VTAILQ_INIT(&tl->inifin);
 	VTAILQ_INIT(&tl->membits);
 	VTAILQ_INIT(&tl->tokens);
 	VTAILQ_INIT(&tl->sources);
@@ -533,18 +515,6 @@ vcc_NewVcc(const struct vcc *tl0)
 	/* Forward decls (.h like) */
 	tl->fh = VSB_new_auto();
 	assert(tl->fh != NULL);
-
-	/* Init C code */
-	tl->fi = VSB_new_auto();
-	assert(tl->fi != NULL);
-
-	/* Destroy Objects */
-	tl->fd = VSB_new_auto();
-	assert(tl->fd != NULL);
-
-	/* Finish C code */
-	tl->ff = VSB_new_auto();
-	assert(tl->ff != NULL);
 
 	/* body code of methods */
 	for (i = 0; i < VCL_MET_MAX; i++) {
@@ -584,8 +554,6 @@ vcc_DestroyTokenList(struct vcc *tl, char *ret)
 
 	VSB_delete(tl->fh);
 	VSB_delete(tl->fc);
-	VSB_delete(tl->fi);
-	VSB_delete(tl->ff);
 	for (i = 0; i < VCL_MET_MAX; i++)
 		VSB_delete(tl->fm[i]);
 
@@ -603,6 +571,7 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	struct vcc *tl;
 	struct symbol *sym;
 	const struct var *v;
+	struct inifin *ifp;
 	char *of;
 	int i;
 
@@ -678,7 +647,9 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	}
 
 	/* Configure the default director */
-	Fi(tl, 0, "\tVCL_conf.director[0] = VCL_conf.director[%d];\n",
+	ifp = New_IniFin(tl);
+	VSB_printf(ifp->ini,
+	    "\tVCL_conf.director[0] = VCL_conf.director[%d];",
 	    tl->defaultdir);
 	vcc_AddRef(tl, tl->t_defaultdir, SYM_BACKEND);
 

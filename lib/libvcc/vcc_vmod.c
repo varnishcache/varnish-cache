@@ -43,6 +43,7 @@ vcc_ParseImport(struct vcc *tl)
 	char fn[1024];
 	char buf[256];
 	struct token *mod, *t1;
+	struct inifin *ifp;
 	const char *modname;
 	const char *proto;
 	const char *abi;
@@ -105,15 +106,23 @@ vcc_ParseImport(struct vcc *tl)
 
 	Fh(tl, 0, "static void *VGC_vmod_%.*s;\n", PF(mod));
 
-	Fi(tl, 0, "\tif (VRT_Vmod_Init(&VGC_vmod_%.*s,\n", PF(mod));
-	Fi(tl, 0, "\t    &Vmod_%.*s_Func,\n", PF(mod));
-	Fi(tl, 0, "\t    sizeof(Vmod_%.*s_Func),\n", PF(mod));
-	Fi(tl, 0, "\t    \"%.*s\",\n", PF(mod));
-	Fi(tl, 0, "\t    ");
-	EncString(tl->fi, fn, NULL, 0);
-	Fi(tl, 0, ",\n\t    ");
-	Fi(tl, 0, "cli))\n");
-	Fi(tl, 0, "\t\treturn(1);\n");
+	ifp = New_IniFin(tl);
+
+	VSB_printf(ifp->ini, "\tif (VRT_Vmod_Init(&VGC_vmod_%.*s,\n", PF(mod));
+	VSB_printf(ifp->ini, "\t    &Vmod_%.*s_Func,\n", PF(mod));
+	VSB_printf(ifp->ini, "\t    sizeof(Vmod_%.*s_Func),\n", PF(mod));
+	VSB_printf(ifp->ini, "\t    \"%.*s\",\n", PF(mod));
+	VSB_printf(ifp->ini, "\t    ");
+	EncString(ifp->ini, fn, NULL, 0);
+	VSB_printf(ifp->ini, ",\n\t    ");
+	VSB_printf(ifp->ini, "cli))\n");
+	VSB_printf(ifp->ini, "\t\treturn(1);");
+
+	/* XXX: zero the function pointer structure ?*/
+	VSB_printf(ifp->fin, "\tvmod_priv_fini(&vmod_priv_%.*s);", PF(mod));
+	VSB_printf(ifp->fin, "\n\tVRT_Vmod_Fini(&VGC_vmod_%.*s);", PF(mod));
+
+	ifp = NULL;
 
 	SkipToken(tl, ';');
 
@@ -178,7 +187,10 @@ vcc_ParseImport(struct vcc *tl)
 			sym->args = p;
 		} else if (!strcmp(p, "INIT")) {
 			p += strlen(p) + 1;
-			Fi(tl, 0, "\t%s(&vmod_priv_%.*s, &VCL_conf);\n",
+			if (ifp == NULL)
+				ifp = New_IniFin(tl);
+			VSB_printf(ifp->ini,
+			    "\t%s(&vmod_priv_%.*s, &VCL_conf);",
 			    p, PF(mod));
 		} else {
 			sym = VCC_AddSymbolStr(tl, p, SYM_FUNC);
@@ -196,8 +208,4 @@ vcc_ParseImport(struct vcc *tl)
 		}
 	}
 	Fh(tl, 0, "\n%s\n", proto);
-
-	/* XXX: zero the function pointer structure ?*/
-	Ff(tl, 0, "\tvmod_priv_fini(&vmod_priv_%.*s);\n", PF(mod));
-	Ff(tl, 0, "\tVRT_Vmod_Fini(&VGC_vmod_%.*s);\n", PF(mod));
 }

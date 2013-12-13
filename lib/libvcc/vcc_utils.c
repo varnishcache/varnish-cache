@@ -51,6 +51,7 @@ vcc_regexp(struct vcc *tl)
 	vre_t *t;
 	const char *error;
 	int erroroffset;
+	struct inifin *ifp;
 
 	Expect(tl, CSTR);
 	if (tl->err)
@@ -69,10 +70,11 @@ vcc_regexp(struct vcc *tl)
 	strcpy(p, buf);
 
 	Fh(tl, 0, "static void *%s;\n", buf);
-	Fi(tl, 0, "\tVRT_re_init(&%s, ",buf);
-	EncToken(tl->fi, tl->t);
-	Fi(tl, 0, ");\n");
-	Ff(tl, 0, "\tVRT_re_fini(%s);\n", buf);
+	ifp = New_IniFin(tl);
+	VSB_printf(ifp->ini, "\tVRT_re_init(&%s, ",buf);
+	EncToken(ifp->ini, tl->t);
+	VSB_printf(ifp->ini, ");");
+	VSB_printf(ifp->fin, "\tVRT_re_fini(%s);", buf);
 	return (p);
 }
 

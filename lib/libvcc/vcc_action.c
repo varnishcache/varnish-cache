@@ -165,6 +165,7 @@ static void
 parse_new(struct vcc *tl)
 {
 	struct symbol *sy1, *sy2, *sy3;
+	struct inifin *ifp;
 	const char *p, *s_obj, *s_init, *s_struct, *s_fini;
 	char buf1[128];
 	char buf2[128];
@@ -213,7 +214,8 @@ parse_new(struct vcc *tl)
 
 	bprintf(buf1, ", &%s, \"%s\"", sy1->name, sy1->name);
 	vcc_Eval_Func(tl, s_init, buf1, "ASDF", s_init + strlen(s_init) + 1);
-	Fd(tl, 0, "\t%s(&%s);\n", s_fini, sy1->name);
+	ifp = New_IniFin(tl);
+	VSB_printf(ifp->fin, "\t%s(&%s);", s_fini, sy1->name);
 	ExpectErr(tl, ';');
 
 	bprintf(buf1, ", %s", sy1->name);

@@ -275,6 +275,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be)
 	struct token *t_port = NULL;
 	struct token *t_hosthdr = NULL;
 	struct fld_spec *fs;
+	struct inifin *ifp;
 	struct vsb *vsb;
 	unsigned u;
 	double t;
@@ -420,9 +421,11 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be)
 	Fh(tl, 0, "%s", VSB_data(vsb));
 	VSB_delete(vsb);
 
-	Fi(tl, 0, "\tVRT_init_dir(cli, VCL_conf.director,\n"
-	    "\t    VGC_backend_%s, &vgc_dir_priv_%s);\n", vgcname, vgcname);
-	Ff(tl, 0, "\tVRT_fini_dir(cli, VGCDIR(%s));\n", vgcname);
+	ifp = New_IniFin(tl);
+	VSB_printf(ifp->ini,
+	    "\tVRT_init_dir(cli, VCL_conf.director,\n"
+	    "\t    VGC_backend_%s, &vgc_dir_priv_%s);", vgcname, vgcname);
+	VSB_printf(ifp->fin, "\tVRT_fini_dir(cli, VGCDIR(%s));", vgcname);
 	tl->ndirector++;
 }
 

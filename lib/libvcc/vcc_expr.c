@@ -536,6 +536,7 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
 {
 	const char *p, *r;
 	struct expr *e1, *e2;
+	struct inifin *ifp;
 	enum var_type fmt;
 	char buf[32];
 
@@ -557,8 +558,10 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
 			    (int) (r - name), name);
 			p += strlen(p) + 1;
 		} else if (fmt == VOID && !strcmp(p, "PRIV_CALL")) {
-			bprintf(buf, "vmod_priv_%u", tl->nvmodpriv++);
+			bprintf(buf, "vmod_priv_%u", tl->unique++);
+			ifp = New_IniFin(tl);
 			Fh(tl, 0, "static struct vmod_priv %s;\n", buf);
+			VSB_printf(ifp->fin, "\tvmod_priv_fini(&%s);", buf);
 			e2 = vcc_mk_expr(VOID, "&%s", buf);
 			p += strlen(p) + 1;
 		} else if (fmt == ENUM) {

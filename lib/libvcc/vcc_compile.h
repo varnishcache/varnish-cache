@@ -144,6 +144,17 @@ struct symbol {
 
 VTAILQ_HEAD(tokenhead, token);
 
+struct inifin {
+	unsigned		magic;
+#define INIFIN_MAGIC		0x583c274c
+	unsigned		n;
+	struct vsb		*ini;
+	struct vsb		*fin;
+	VTAILQ_ENTRY(inifin)	list;
+};
+
+VTAILQ_HEAD(inifinhead, inifin);
+
 struct vcc {
 	unsigned		magic;
 #define VCC_MAGIC		0x24ad719d
@@ -156,6 +167,9 @@ struct vcc {
 	const struct var	*vars;
 	VTAILQ_HEAD(, symbol)	symbols;
 
+	struct inifinhead	inifin;
+	unsigned		ninifin;
+
 	/* Instance section */
 	struct tokenhead	tokens;
 	VTAILQ_HEAD(, source)	sources;
@@ -165,15 +179,10 @@ struct vcc {
 	struct token		*t;
 	int			indent;
 	int			hindent;
-	int			iindent;
-	int			findent;
 	unsigned		cnt;
 
 	struct vsb		*fc;		/* C-code */
 	struct vsb		*fh;		/* H-code (before C-code) */
-	struct vsb		*fi;		/* Init func code */
-	struct vsb		*fd;		/* Object destructors */
-	struct vsb		*ff;		/* Finish func code */
 	struct vsb		*fb;		/* Body of current sub
 						 * NULL otherwise
 						 */
@@ -192,7 +201,6 @@ struct vcc {
 	struct token		*t_defaultdir;
 
 	unsigned		unique;
-	unsigned		nvmodpriv;
 
 	unsigned		err_unref;
 	unsigned		allow_inline_c;
@@ -237,6 +245,8 @@ void vcc_FieldsOk(struct vcc *tl, const struct fld_spec *fs);
 
 /* vcc_compile.c */
 extern struct method method_tab[];
+struct inifin *New_IniFin(struct vcc *tl);
+
 /*
  * H -> Header, before the C code
  * C -> C-code
@@ -249,12 +259,6 @@ void Fh(const struct vcc *tl, int indent, const char *fmt, ...)
 void Fc(const struct vcc *tl, int indent, const char *fmt, ...)
     __printflike(3, 4);
 void Fb(const struct vcc *tl, int indent, const char *fmt, ...)
-    __printflike(3, 4);
-void Fi(const struct vcc *tl, int indent, const char *fmt, ...)
-    __printflike(3, 4);
-void Ff(const struct vcc *tl, int indent, const char *fmt, ...)
-    __printflike(3, 4);
-void Fd(const struct vcc *tl, int indent, const char *fmt, ...)
     __printflike(3, 4);
 void EncToken(struct vsb *sb, const struct token *t);
 int IsMethod(const struct token *t);
