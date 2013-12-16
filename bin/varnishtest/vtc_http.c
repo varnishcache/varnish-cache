@@ -809,7 +809,6 @@ cmd_http_rxhdrs(CMD_ARGS)
 	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
-	ONLY_SERVER(hp, av);
 	assert(!strcmp(av[0], "rxhdrs"));
 	av++;
 
