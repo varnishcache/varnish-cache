@@ -201,6 +201,19 @@ VFP_Fetch_Body(struct busyobj *bo, ssize_t est)
 	}
 
 	do {
+		if (bo->abandon) {
+			/*
+			 * A pass object and delivery was terminted
+			 * We don't fail the fetch, in order for hit-for-pass
+			 * objects to be created.
+			 */
+			AN(bo->fetch_objcore->flags & OC_F_PASS);
+			VSLb(bo->vsl, SLT_FetchError,
+			    "Pass delivery abandonned");
+			vfps = VFP_END;
+			bo->should_close = 1;
+			break;
+		}
 		assert(bo->state != BOS_FAILED);
 		if (st == NULL) {
 			st = VFP_GetStorage(bo, est);

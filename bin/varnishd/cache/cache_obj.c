@@ -126,8 +126,11 @@ ObjIterEnd(struct objiter **oi)
 	AN(oi);
 	CHECK_OBJ_NOTNULL((*oi), OBJITER_MAGIC);
 	CHECK_OBJ_NOTNULL((*oi)->obj, OBJECT_MAGIC);
-	if ((*oi)->bo != NULL)
+	if ((*oi)->bo != NULL) {
+		if ((*oi)->obj->objcore->flags & OC_F_PASS)
+			(*oi)->bo->abandon = 1;
 		VBO_DerefBusyObj((*oi)->wrk, &(*oi)->bo);
+	}
 	FREE_OBJ((*oi));
 	*oi = NULL;
 }

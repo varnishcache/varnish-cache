@@ -170,11 +170,13 @@ v1d_WriteDirObj(struct req *req)
 
 	while (1) {
 		ois = ObjIter(oi, &ptr, &len);
-		if (ois == OIS_DATA && !VDP_bytes(req, VDP_NULL,  ptr, len))
-			continue;
-		if (ois == OIS_STREAM && !VDP_bytes(req, VDP_FLUSH,  ptr, len))
-			continue;
-		break;
+		if (ois == OIS_DONE) {
+			AZ(len);
+			break;
+		}
+		if (VDP_bytes(req,
+		     ois == OIS_DATA ? VDP_NULL : VDP_FLUSH,  ptr, len))
+			break;
 	}
 	(void)VDP_bytes(req, VDP_FINISH,  NULL, 0);
 	ObjIterEnd(&oi);

@@ -159,9 +159,16 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	V1D_Deliver(req);
 
-	/* No point in saving the body if it is hit-for-pass */
-	if (req->obj->objcore->flags & OC_F_PASS)
+	if (req->obj->objcore->flags & OC_F_PASS) {
+		/*
+		 * No point in saving the body if it is hit-for-pass,
+		 * but we can't yank it until the fetching thread has
+		 * finished/abandonned also.
+		 */
+		while (req->obj->objcore->busyobj != NULL)
+			(void)usleep(100000);
 		STV_Freestore(req->obj);
+	}
 
 	assert(WRW_IsReleased(wrk));
 VSLb(req->vsl, SLT_Debug, "XXX REF %d", req->obj->objcore->refcnt);

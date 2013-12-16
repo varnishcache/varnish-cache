@@ -573,6 +573,7 @@ struct busyobj {
 	/* do_pass is our intent, uncacheable is the result */
 	unsigned		do_pass;
 	unsigned		uncacheable;
+	unsigned		abandon;
 
 	/* Timeouts */
 	double			connect_timeout;
