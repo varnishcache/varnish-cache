@@ -521,7 +521,7 @@ smp_allocobj(struct stevedore *stv, struct busyobj *bo,
 	if (bo->fetch_objcore == NULL)
 		return (NULL);		/* from cnt_error */
 	CAST_OBJ_NOTNULL(sc, stv->priv, SMP_SC_MAGIC);
-	AN(bo->exp.ttl > 0.);
+	AN((bo->exp.ttl + bo->exp.grace + bo->exp.keep) > 0.);
 
 	ltot = IRNUP(sc, ltot);
 
