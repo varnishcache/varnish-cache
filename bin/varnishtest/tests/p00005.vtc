@@ -10,14 +10,21 @@ server s1 {
 varnish v1 \
 	-arg "-spersistent,${tmpdir}/_.per,10m" \
 	-arg "-pban_lurker_sleep=0" \
+	-arg "-pshortlived=0" \
 	-vcl+backend {
 		sub vcl_backend_response {
 			set beresp.ttl = 3s;
+			set beresp.keep = 0s;
+			set beresp.grace = 0s;
 		}
 	} -start
 
 varnish v1 -cliok "param.set debug +syncvsl"
 varnish v1 -cliok "param.set feature +wait_silo"
+
+logexpect l1 -v v1 -g vxid -q "Begin ~ bereq" {
+    expect * 1002 Storage         "persistent s0"
+} -start
 
 client c1 {
 	txreq -url "/foo"
@@ -27,6 +34,7 @@ client c1 {
 	expect resp.http.foo == "foo1"
 } -run
 
+logexpect l1 -wait
 varnish v1 -expect n_object == 1
 
 varnish v1 -stop
@@ -44,6 +52,10 @@ varnish v1 -vcl+backend {
 
 delay 5
 
+logexpect l1 -v v1 -g vxid -q "Begin ~ bereq" {
+    expect * 1002 Storage         "persistent s0"
+} -start
+
 client c1 {
 	txreq -url "/foo"
 	rxresp
@@ -52,4 +64,5 @@ client c1 {
 	expect resp.http.foo == "foo2"
 } -run
 
+logexpect l1 -wait
 varnish v1 -expect n_object == 1
