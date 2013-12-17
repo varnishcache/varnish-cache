@@ -370,7 +370,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->uncacheable)
 		bo->fetch_objcore->flags |= OC_F_PASS;
 
-	if (bo->exp.ttl < cache_param->shortlived || bo->uncacheable == 1)
+	if (bo->uncacheable ||
+	    bo->exp.ttl+bo->exp.grace+bo->exp.keep < cache_param->shortlived)
 		bo->storage_hint = TRANSIENT_STORAGE;
 
 	AZ(bo->stats);

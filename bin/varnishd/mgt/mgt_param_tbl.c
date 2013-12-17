@@ -537,8 +537,8 @@ struct parspec mgt_parspec[] = {
 	{ "shortlived", tweak_timeout,
 		&mgt_param.shortlived,
 		"0", NULL,
-		"Objects created with TTL shorter than this are always "
-		"put in transient storage.",
+		"Objects created with (ttl+grace+keep) shorter than this"
+		" are always put in transient storage.",
 		0,
 		"10.0", "s" },
 	{ "critbit_cooloff", tweak_timeout,
