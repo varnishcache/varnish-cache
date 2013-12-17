@@ -37,6 +37,7 @@ Contents:
    tutorial/index.rst
    users-guide/index.rst
    reference/index.rst
+   whats-new/index.rst
    phk/index.rst
    glossary/index.rst
 
