@@ -140,6 +140,22 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 /*--------------------------------------------------------------------
  */
 
+static void
+make_it_503(struct busyobj *bo)
+{
+
+	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, HTTP_Beresp);
+	bo->err_code = 503;
+	http_SetH(bo->beresp, HTTP_HDR_PROTO, "HTTP/1.1");
+	http_SetResp(bo->beresp,
+	    "HTTP/1.1", 503, "Backend fetch failed");
+	http_SetHeader(bo->beresp, "Content-Length: 0");
+	http_SetHeader(bo->beresp, "Connection: close");
+}
+
+/*--------------------------------------------------------------------
+ */
+
 static enum fetch_step
 vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 {
@@ -175,12 +191,7 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 
 	if (i) {
 		AZ(bo->vbc);
-		bo->err_code = 503;
-		http_SetH(bo->beresp, HTTP_HDR_PROTO, "HTTP/1.1");
-		http_SetResp(bo->beresp,
-		    "HTTP/1.1", 503, "Backend fetch failed");
-		http_SetHeader(bo->beresp, "Content-Length: 0");
-		http_SetHeader(bo->beresp, "Connection: close");
+		make_it_503(bo);
 	} else {
 		AN(bo->vbc);
 	}
