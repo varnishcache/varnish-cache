@@ -59,7 +59,7 @@ want to compile Varnish from source for other reasons, follow these
 steps:
 
 We recommend downloading a release tarball, which you can find on
-`repo.varnish-cache.org <http://repo.varnish-cache.org/source/>`_.
+`repo.varnish-cache.org/source <http://repo.varnish-cache.org/source/>`_.
 
 Alternatively, if you want to hack on Varnish, you should clone our
 git repository by doing.
