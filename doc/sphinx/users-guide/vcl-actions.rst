@@ -1,3 +1,5 @@
+.. _user-guide-vcl_actions:
+
 actions
 ~~~~~~~
 
