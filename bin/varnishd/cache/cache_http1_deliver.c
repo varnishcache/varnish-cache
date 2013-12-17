@@ -126,6 +126,8 @@ v1d_dorange(struct req *req, const char *r)
 		}
 		if (!has_low) {
 			low = req->obj->len - high;
+			if (low < 0)
+				low = 0;
 			high = req->obj->len - 1;
 		}
 	} else
