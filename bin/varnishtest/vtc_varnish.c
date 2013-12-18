@@ -31,6 +31,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
+#include <sys/resource.h>
 
 #include <fcntl.h>
 #include <inttypes.h>
@@ -571,6 +572,7 @@ varnish_wait(struct varnish *v)
 {
 	void *p;
 	int status, r;
+	struct rusage ru;
 
 	if (v->cli_fd < 0)
 		return;
@@ -585,9 +587,12 @@ varnish_wait(struct varnish *v)
 
 	AZ(pthread_join(v->tp, &p));
 	AZ(close(v->fds[0]));
-	r = wait4(v->pid, &status, 0, NULL);
+	r = wait4(v->pid, &status, 0, &ru);
 	v->pid = 0;
-	vtc_log(v->vl, 2, "R %d Status: %04x", r, status);
+	vtc_log(v->vl, 2, "R %d Status: %04x (u %.6f s %.6f)", r, status,
+	    ru.ru_utime.tv_sec + 1e-6 * ru.ru_utime.tv_usec,
+	    ru.ru_stime.tv_sec + 1e-6 * ru.ru_stime.tv_usec
+	);
 	AZ(pthread_join(v->tp_vsl, &p));
 	if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
 		return;
