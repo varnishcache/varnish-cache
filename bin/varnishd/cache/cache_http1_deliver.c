@@ -170,16 +170,24 @@ v1d_WriteDirObj(struct req *req)
 	oi = ObjIterBegin(req->wrk, req->obj);
 	XXXAN(oi);
 
-	while (1) {
+	do {
 		ois = ObjIter(oi, &ptr, &len);
-		if (ois == OIS_DONE) {
+		switch(ois) {
+		case OIS_DONE:
 			AZ(len);
 			break;
-		}
-		if (VDP_bytes(req,
-		     ois == OIS_DATA ? VDP_NULL : VDP_FLUSH,  ptr, len))
+		case OIS_ERROR:
 			break;
-	}
+		case OIS_DATA:
+		case OIS_STREAM:
+			if (VDP_bytes(req,
+			     ois == OIS_DATA ? VDP_NULL : VDP_FLUSH,  ptr, len))
+				ois = OIS_ERROR;
+			break;
+		default:
+			WRONG("Wrong OIS value");
+		}
+	} while (ois == OIS_DATA || ois == OIS_STREAM);
 	(void)VDP_bytes(req, VDP_FINISH,  NULL, 0);
 	ObjIterEnd(&oi);
 }
