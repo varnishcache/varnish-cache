@@ -45,11 +45,6 @@
 #include "vav.h"
 #include "vtim.h"
 
-
-#ifndef HAVE_SRANDOMDEV
-#include "compat/srandomdev.h"
-#endif
-
 #define		MAX_TOKENS		200
 
 static char		*vtc_desc;

@@ -71,10 +71,6 @@ DOT acceptor -> recv [style=bold,color=green]
 #include "vsha256.h"
 #include "vtim.h"
 
-#ifndef HAVE_SRANDOMDEV
-#include "compat/srandomdev.h"
-#endif
-
 /*--------------------------------------------------------------------
  * Deliver an already stored object
  *
