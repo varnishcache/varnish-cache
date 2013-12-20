@@ -31,9 +31,9 @@ LIB_VARNISHTOOLS = -L $(TOPDIR)/lib/libvarnishtools -lvarnishtools
 LIB_VCC = -L $(TOPDIR)/lib/libvcc -lvcc
 LIB_VGZ = -L $(TOPDIR)/lib/libvgz -lvgz
 LIB_PCRE = -L /usr/local/lib -lpcre
-LIB_EXECINFO = ${EXECINFO}
+LIB_EXECINFO = ${CFG_EXECINFO}
 LIB_CURSES = -lcurses
-LIB_READLINE = ${LINEDISC}
+LIB_READLINE = ${CFG_LINEDISC}
 
 #######################################################################
 ifdef USE_THREADS
@@ -43,6 +43,7 @@ endif
 
 ifdef USE_DLOPEN
 PROG_LDFLAGS += -Wl,-E
+PROG_LIBS += ${CFG_LIBDL}
 endif
 
 #######################################################################
@@ -111,7 +112,7 @@ include _.depprog
 endif
 
 $(PROGNAME):	$(PROG_OBJ)
-	$(CC) $(PROG_LDFLAGS) -o $(PROGNAME) $^ $(LD_ADD)
+	$(CC) $(PROG_LDFLAGS) -o $(PROGNAME) $^ $(PROG_LIBS) $(LD_ADD)
 
 .PHONY: prog_install
 prog_install:	$(PROGNAME)

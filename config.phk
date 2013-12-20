@@ -242,20 +242,27 @@ fi
 # Check for libedit
 
 if [ -f /usr/include/edit/readline/readline.h ] ; then
-	echo "LINEDISC=-ledit" >> _.cache
+	echo "CFG_LINEDISC=-ledit" >> _.cache
 elif [ -f /usr/include/editline/readline.h ] ; then
-	echo "LINEDISC=-ledit" >> _.cache
+	echo "CFG_LINEDISC=-ledit" >> _.cache
 elif [ -f /usr/include/readline/readline.h ] ; then
-	echo "LINEDISC=-lreadline" >> _.cache
+	echo "CFG_LINEDISC=-lreadline" >> _.cache
 else
-	echo "LINEDISC=" >> _.cache
+	echo "CFG_LINEDISC=" >> _.cache
 fi
 
 #######################################################################
-# Check for libexecinfo (FreeBSD::backtrace()
+# Check for libexecinfo for FreeBSD::backtrace()
 
 if [ -f /usr/lib/libexecinfo.so ] ; then
-	echo "EXECINFO=-lexecinfo" >> _.cache
+	echo "CFG_EXECINFO=-lexecinfo" >> _.cache
+fi
+
+#######################################################################
+# Check for libdl for Linux::dlopen()
+
+if [ `uname -s` = "Linux" ] ; then
+	echo "CFG_LIBDL=-ldl" >> _.cache
 fi
 
 #######################################################################
