@@ -1,0 +1,37 @@
+
+LIB_SRC += vsc.c
+LIB_SRC += vsl.c
+LIB_SRC += vsl2rst.c
+LIB_SRC += vsl_arg.c
+LIB_SRC += vsl_cursor.c
+LIB_SRC += vsl_dispatch.c
+LIB_SRC += vsl_query.c
+LIB_SRC += vsm.c
+LIB_SRC += vxp.c
+LIB_SRC += vxp_fixed_token.c
+LIB_SRC += vxp_lexer.c
+LIB_SRC += vxp_parse.c
+
+
+# We add more stuff to the SHLIB version to make it self-contained
+SHLIB_SRC = $(LIB_SRC)
+VPATH += ../libvarnish
+SHLIB_SRC += vre.c
+SHLIB_SRC += vsb.c
+SHLIB_SRC += vas.c
+SHLIB_SRC += vav.c
+SHLIB_SRC += vin.c
+SHLIB_SRC += vtim.c
+
+#LIB_SRC += vsl_glob_test.c
+#LIB_SRC += vxp_test.c
+
+MADE_FILES += vxp_fixed_token.c vxp_tokens.h
+
+TOPDIR= $(CURDIR)/../..
+include $(TOPDIR)/Makefile.inc.phk
+
+$(MADE_FILES):  generate.py
+	python generate.py
+
+

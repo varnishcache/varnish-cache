@@ -1,0 +1,12 @@
+PROG_SRC = varnishadm.c
+
+LD_ADD	+= ${LIB_VARNISHAPI}
+LD_ADD	+= ${LIB_VARNISH}
+LD_ADD	+= ${LIB_PCRE}
+LD_ADD	+= ${LIB_READLINE}
+LD_ADD	+= -lm 
+
+RST_MAN +=  $(TOPDIR)/doc/sphinx/reference/varnishadm.rst
+
+TOPDIR  = $(CURDIR)/../..
+include $(TOPDIR)/Makefile.inc.phk

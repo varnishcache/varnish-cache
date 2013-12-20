@@ -1,0 +1,243 @@
+
+.PHONY: default
+default:	all 
+
+WARNS	?=	1
+
+.PHONY: depend all clean install test
+depend all clean install test:
+	@$(MAKE) --no-print-directory -f Makefile.phk TGT=$@ real-$@ \
+	    $(shell env CC=$(CC) WARNS=$(WARNS) sh ${TOPDIR}/config.phk $(TOPDIR) $(CURDIR) )
+
+CFLAGS += $(CF_CFLAGS) $(CF_CWFLAGS)
+CFLAGS += -I$(CURDIR)
+CFLAGS += -I$(TOPDIR)
+CFLAGS += -I$(TOPDIR)/include
+CFLAGS += -I$(TOPDIR)/lib/libvgz
+CFLAGS += -I/usr/local/include
+
+SHLIB_LDFLAGS += -shared -Wl,-x -Wl,--fatal-warnings -Wl,--warn-shared-textrel
+VMOD_LDFLAGS += ${SHLIB_LDFLAGS}
+
+#######################################################################
+
+INSTALL_BASE ?=       $(TOPDIR)/_install
+
+#######################################################################
+
+LIB_VARNISH = -L $(TOPDIR)/lib/libvarnish -lvarnish
+LIB_VARNISHAPI = $(TOPDIR)/lib/libvarnishapi/libvarnishapi.a
+LIB_VARNISHTOOLS = -L $(TOPDIR)/lib/libvarnishtools -lvarnishtools
+LIB_VCC = -L $(TOPDIR)/lib/libvcc -lvcc
+LIB_VGZ = -L $(TOPDIR)/lib/libvgz -lvgz
+LIB_PCRE = -L /usr/local/lib -lpcre
+LIB_EXECINFO = -lexecinfo
+LIB_CURSES = -lcurses
+LIB_READLINE = -lreadline
+
+#######################################################################
+ifdef USE_THREADS
+CFLAGS	+= -pthread -D_THREAD_SAFE -g -O2
+PROG_LDFLAGS += -pthread -D_THREAD_SAFE -g -O2 
+endif
+
+ifdef USE_DLOPEN
+PROG_LDFLAGS += -Wl,-E
+endif
+
+#######################################################################
+ifdef SUBDIRS
+ifeq "$(findstring k,$(MAKEFLAGS))" ""
+	EOPT=set -e
+else
+	EOPT=set +e
+endif
+define run-subdirs
+	$(EOPT) ; for dir in $(SUBDIRS); do \
+		echo "->> $$dir $(@:real-%=%)" ; \
+		$(MAKE) -C $$dir -f Makefile.phk $(@:real-%=%) ; \
+	done
+endef
+else
+define run-subdirs
+endef
+endif
+
+#######################################################################
+ifdef NOWORK
+ifdef SUBDIRS
+
+.PHONY: subdirs $(SUBDIRS)
+
+subdirs: $(SUBDIRS)
+
+$(SUBDIRS):
+	$(MAKE) -C $@ -f Makefile.phk $(@:real-%=%)
+
+TODO += subdirs
+endif
+endif
+
+#######################################################################
+.SUFFIXES: .So
+.c.So:
+	${CC} $(CFLAGS) -fPIC -c $< -o $@
+
+
+#######################################################################
+
+TODO_DEPEND     +=      $(MADE_FILES)
+TODO_ALL        +=      $(MADE_FILES)
+CLEAN_FILES     +=      $(MADE_FILES)
+
+MADE_SRC	=	$(filter %.c, $(MADE_FILES))
+
+#######################################################################
+ifdef PROG_SRC
+PROGNAME = $(notdir $(CURDIR))
+MANNAME=$(PROGNAME).1
+TODO_DEPEND += _.depprog
+TODO_ALL += $(PROGNAME)
+TODO_INSTALL += prog_install
+PROG_SRC += $(MADE_SRC)
+PROG_OBJ = $(notdir $(PROG_SRC:.c=.o))
+CLEAN_FILES += $(PROGNAME) $(PROG_OBJ) _.depprog $(MANNAME)
+
+_.depprog:	${PROG_SRC} ${MADE_FILES}
+	$(CC) $(CFLAGS) -MM $^ > _.depprog
+
+ifeq ($(TGT), all)
+include _.depprog
+endif
+
+$(PROGNAME):	$(PROG_OBJ)
+	$(CC) $(PROG_LDFLAGS) -o $(PROGNAME) $^ $(LD_ADD)
+
+.PHONY: prog_install
+prog_install:	$(PROGNAME)
+	@cp $(PROGNAME) $(INSTALL_BASE)/bin/
+	@[ ! -f $(MANNAME) ] || cp $(MANNAME) $(INSTALL_BASE)/man/
+
+endif
+
+#######################################################################
+ifdef SHLIB_SRC
+SHLIBNAME = $(notdir $(CURDIR))
+TODO_ALL += $(SHLIBNAME).so
+TODO_DEPEND += _.depshlib
+TODO_INSTALL += shlib_install
+SHLIB_SRC += $(MADE_SRC)
+SHLIB_OBJ = $(notdir $(SHLIB_SRC:.c=.So))
+CLEAN_FILES += $(SHLIB_OBJ) $(SHLIBNAME).so _.depshlib
+
+_.depshlib:	${SHLIB_SRC} ${MADE_FILES}
+	$(CC) $(CFLAGS) -MM $^ |sed 's/o:/So:/' > _.depshlib
+
+ifeq ($(TGT), all)
+include _.depshlib
+endif
+
+$(SHLIBNAME).so:	$(SHLIB_OBJ)
+	$(CC) $(SHLIB_LDFLAGS) -o $(SHLIBNAME).so $^
+
+.PHONY: shlib_install
+shlib_install:	$(SHLIBNAME).so
+	@cp $(SHLIBNAME).so $(INSTALL_BASE)/lib/
+
+endif
+
+#######################################################################
+ifdef LIB_SRC
+LIBNAME = $(notdir $(CURDIR))
+TODO_ALL += $(LIBNAME).a
+TODO_DEPEND += _.deplib
+LIB_SRC += $(MADE_SRC)
+LIB_OBJ = $(notdir $(LIB_SRC:.c=.o))
+CLEAN_FILES += $(LIB_OBJ) $(LIBNAME).a _.deplib
+
+_.deplib:	${LIB_SRC} ${MADE_FILES}
+	$(CC) $(CFLAGS) -MM $^ > _.deplib
+
+ifeq ($(TGT), all)
+include _.deplib
+endif
+
+$(LIBNAME).a:	$(LIB_OBJ) 
+	$(AR) -rc $(LIBNAME).a $^
+	ranlib $(LIBNAME).a
+
+endif
+
+#######################################################################
+ifdef VMOD_SRC
+#VMODNAME = $(subst libvmod_,,$(notdir $(CURDIR)))
+VMODNAME = $(notdir $(CURDIR))
+TODO_ALL += vcc_if.h vcc_if.c $(VMODNAME).so
+TODO_DEPEND += _.depvmod
+TODO_INSTALL += vmod_install
+VMOD_SRC += $(MADE_SRC)
+VMOD_SRC += vcc_if.c
+VMOD_OBJ = $(notdir $(VMOD_SRC:.c=.So))
+CLEAN_FILES += $(VMOD_OBJ) vcc_if.c vcc_if.h $(VMODNAME).so _.depvmod
+
+CFLAGS += -I$(TOPDIR)/bin/varnishd
+
+_.depvmod:	${VMOD_SRC} ${MADE_FILES}
+	$(CC) $(CFLAGS) -MM $^ |sed 's/o:/So:/' > _.depvmod
+
+ifeq ($(TGT), all)
+include _.depvmod
+endif
+
+vcc_if.c vcc_if.h: vmod.vcc $(TOPDIR)/lib/libvcc/vmodtool.py
+	${PYTHON} $(TOPDIR)/lib/libvcc/vmodtool.py
+
+$(VMODNAME).so:	$(VMOD_OBJ)
+	$(CC) $(VMOD_LDFLAGS) -o $(VMODNAME).so $^
+
+.PHONY: vmod_install
+vmod_install:	$(VMODNAME).so
+	@cp $(VMODNAME).so $(INSTALL_BASE)/libexec/
+
+endif
+
+#######################################################################
+ifdef RST_MAN
+ifdef HAVE_RST2HTML
+TODO_ALL += ${MANNAME}
+
+${MANNAME}:	${RST_MAN}
+	 rst2man ${RST_MAN} $(MANNAME)
+
+endif
+endif
+
+#######################################################################
+
+.PHONY: real-depend
+real-depend: $(TODO) $(TODO_DEPEND)
+	@$(run-subdirs)
+	@true
+
+.PHONY: real-all
+real-all: $(TODO) $(TODO_ALL)
+	@$(run-subdirs)
+	@true
+
+.PHONY: real-clean
+real-clean: $(TODO) $(TODO_CLEAN)
+	@$(run-subdirs)
+	@[ "x$(CLEAN_FILES)" = "x" ] || rm -f $(CLEAN_FILES)
+
+.PHONY: real-install
+real-install: $(TODO_INSTALL)
+	@$(run-subdirs)
+	@true
+
+.PHONY: real-test
+real-test: $(TODO_TEST)
+	@$(run-subdirs)
+	@true
+
+#######################################################################
+

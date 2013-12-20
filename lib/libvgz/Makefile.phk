@@ -1,0 +1,17 @@
+LIB_SRC += adler32.c
+LIB_SRC += compress.c
+LIB_SRC += crc32.c
+LIB_SRC += deflate.c
+LIB_SRC += infback.c
+LIB_SRC += inffast.c
+LIB_SRC += inflate.c
+LIB_SRC += inftrees.c
+LIB_SRC += trees.c
+LIB_SRC += uncompr.c
+LIB_SRC += zutil.c
+
+CFLAGS += -DZLIB_CONST -D_LARGEFILE64_SOURCE=1
+
+TOPDIR= $(CURDIR)/../..
+include $(TOPDIR)/Makefile.inc.phk
+

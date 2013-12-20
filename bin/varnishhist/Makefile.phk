@@ -1,0 +1,7 @@
+PROG_SRC = varnishhist.c
+
+LD_ADD	+= ${LIB_VARNISH}
+LD_ADD	+= ${LIB_VARNISHAPI}
+
+TOPDIR  = $(CURDIR)/../..
+include $(TOPDIR)/Makefile.inc.phk

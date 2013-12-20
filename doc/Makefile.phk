@@ -1,0 +1,7 @@
+
+ifdef HAVE_RST2HTML
+SUBDIRS	+=	sphinx
+endif
+
+TOPDIR = ..
+include $(TOPDIR)/Makefile.inc.phk

@@ -1,0 +1,29 @@
+PROG_SRC += vtc.c
+PROG_SRC += vtc_client.c
+PROG_SRC += vtc_http.c
+PROG_SRC += vtc_log.c
+PROG_SRC += vtc_logexp.c
+PROG_SRC += vtc_main.c
+PROG_SRC += vtc_sema.c
+PROG_SRC += vtc_server.c
+PROG_SRC += vtc_varnish.c
+
+LD_ADD	+= ${LIB_VARNISHAPI}
+LD_ADD	+= ${LIB_VARNISH}
+LD_ADD	+= ${LIB_PCRE}
+LD_ADD	+= ${LIB_VGZ}
+LD_ADD	+= -lm
+
+USE_THREADS = yes
+
+RST_MAN += $(TOPDIR)/doc/sphinx/reference/varnishtest.rst
+
+TODO_TEST	+=	all_tests
+
+TOPDIR  = $(CURDIR)/../..
+include $(TOPDIR)/Makefile.inc.phk
+
+.PHONY:	all_tests
+
+all_tests:
+	./varnishtest -i -j 4 tests/*.vtc

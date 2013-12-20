@@ -1,0 +1,13 @@
+PROG_SRC += varnishstat.c
+PROG_SRC += varnishstat_curses.c
+
+LD_ADD	+= ${LIB_VARNISHAPI}
+LD_ADD	+= ${LIB_VARNISH}
+LD_ADD	+= ${LIB_PCRE}
+LD_ADD	+= ${LIB_CURSES}
+LD_ADD	+= -lm
+
+RST_MAN += $(TOPDIR)/doc/sphinx/reference/varnishstat.rst
+
+TOPDIR  = $(CURDIR)/../..
+include $(TOPDIR)/Makefile.inc.phk

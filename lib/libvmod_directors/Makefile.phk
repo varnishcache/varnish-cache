@@ -1,0 +1,10 @@
+
+VMOD_SRC += fall_back.c
+VMOD_SRC += hash.c
+VMOD_SRC += random.c
+VMOD_SRC += round_robin.c
+VMOD_SRC += vdir.c
+
+TOPDIR= $(CURDIR)/../..
+include $(TOPDIR)/Makefile.inc.phk
+

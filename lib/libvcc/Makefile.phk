@@ -1,0 +1,26 @@
+
+LIB_SRC += vcc_acl.c
+LIB_SRC += vcc_action.c
+LIB_SRC += vcc_backend.c
+LIB_SRC += vcc_backend_util.c
+LIB_SRC += vcc_compile.c
+LIB_SRC += vcc_expr.c
+LIB_SRC += vcc_parse.c
+LIB_SRC += vcc_storage.c
+LIB_SRC += vcc_symb.c
+LIB_SRC += vcc_token.c
+LIB_SRC += vcc_utils.c
+LIB_SRC += vcc_var.c
+LIB_SRC += vcc_vmod.c
+LIB_SRC += vcc_xref.c
+
+MADE_FILES += vcc_fixed_token.c vcc_obj.c vcc_token_defs.h
+
+CLEAN_FILES += $(MADE_FILES)
+
+TOPDIR= $(CURDIR)/../..
+include $(TOPDIR)/Makefile.inc.phk
+
+$(MADE_FILES):	generate.py
+	$(PYTHON) generate.py
+

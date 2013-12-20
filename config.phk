@@ -1,0 +1,249 @@
+#!/bin/sh
+
+set -e
+
+#######################################################################
+# Adminstrative settings
+
+ADM_PROJECT=varnish
+ADM_VERSION=trunk
+
+CONFIG_H=phk_hack/config.h
+
+#######################################################################
+# We always rebuild the config when make is run in the toplevel directory
+# Otherwise, we try to use a cached config, if we have one.
+#
+# We know we're in the toplevel directory, because we get passed
+# TOPDIR and CURDIR as arguments
+
+if [ "x$1" = "x" -o "x$2" = "x" ] ; then
+	echo "Missing arguments, assuming topdir" 1>&2
+	set `pwd` `pwd`
+fi
+
+if [ "x$1" = "x$2" ] ; then
+	rm -f _.cache
+elif [ "x$1" != "x" -a -d $1 ] ; then
+	cd $1
+fi
+
+#######################################################################
+# autocrap co-existence
+# We put our config.h somewhere else and delete autocraps.
+# Autocrap regenerates its own config.h and doesn't know about ours
+
+mkdir -p phk_hack
+rm -f config.h
+
+#######################################################################
+
+
+if [ -f _.cache -a -f ${CONFIG_H} ] ; then
+	cat _.cache
+	exit 0
+fi
+
+echo "Building Config" 1>&2
+
+#######################################################################
+# Look for #include files for HAVE_ etc.
+
+if true ; then
+	rm -f ${CONFIG_H}_
+	echo '' > ${CONFIG_H}_
+
+	for i in \
+		curses.h \
+		endian.h \
+		execinfo.h \
+		ncurses.h \
+		ncurses/curses.h \
+		ncursesw.h \
+		ncursesw/curses.h \
+		priv.h \
+		pthread_np.h \
+		readline/history.h \
+		readline/readline.h \
+		sys/endian.h \
+		sys/filio.h \
+		sys/mount.h \
+		sys/statvfs.h \
+		sys/vfs.h \
+		umem.h 
+	do
+		if [ -f /usr/include/$i ] ; then
+			n=`echo $i | tr '[a-z/.]' '[A-Z__]'`
+			echo "#define HAVE_$n 1" >> ${CONFIG_H}_
+		fi
+	done
+	echo "#define PACKAGE_TARNAME \"${ADM_PROJECT}\"" >> ${CONFIG_H}_
+	echo "#define PACKAGE_VERSION \"${ADM_VERSION}\"" >> ${CONFIG_H}_
+
+	echo '
+		#define VARNISH_STATE_DIR       "/tmp/phk/"
+	' >> ${CONFIG_H}_
+	if [ ! -f ${CONFIG_H} ] ; then
+		mv ${CONFIG_H}_ ${CONFIG_H}
+	elif ! cmp -s ${CONFIG_H} ${CONFIG_H}_ ; then
+		mv ${CONFIG_H}_ ${CONFIG_H}
+	else
+		rm -f ${CONFIG_H}_
+	fi
+fi
+
+#######################################################################
+# Create files depending on VCS (git) output
+
+VCSF=include/vcs_version.h
+VMAV=include/vmod_abi.h
+
+if [ -d ./.git ] ; then 
+	V=`git show -s --pretty=format:%h`
+else
+	V="NOGIT"
+fi
+(
+echo "/* $V */"
+echo "/*"
+echo " * NB:  This file is machine generated, DO NOT EDIT!"
+echo " *"
+echo " * make(1) updates this when necessary"
+echo " *"
+echo " */"
+echo "#define VCS_Version \"$V\""
+) > ${VCSF}_
+if [ ! -f ${VCSF} ] ; then
+	mv ${VCSF}_ ${VCSF}
+	rm -f ${VMAV}
+elif ! cmp -s ${VCSF}_ ${VCSF} ; then
+	mv ${VCSF}_ ${VCSF}
+	rm -f ${VMAV}
+else
+	rm ${VCSF}_
+fi
+
+if [ ! -f ${VMAV} ] ; then
+	echo "#define VMOD_ABI_Version \"Varnish trunk $V\"" > ${VMAV}
+fi
+
+#######################################################################
+# Ask the compiler about stuff
+
+ask_compiler() {
+	a=`echo "$2" |
+	    ${CC-cc} -E - -DWARNS=${WARNS-1} |
+	    sed -e '/^#/d' -e '/^$/d' -e 's/"//g' -e 's/~/"/g' ` 
+	echo "$1='" $a "'" >> _.cache
+}
+
+# Warning flags
+ask_compiler CF_CWFLAGS '
+	#if WARNS >= 1
+		"-Wall"
+		"-Werror"
+	#endif
+	#if WARNS >= 2
+		"-W"
+		"-fstack-protector"
+		"-Wno-format-y2k"
+		"-Wno-unused-parameter"
+		"-Wstrict-prototypes"
+		"-Wmissing-prototypes"
+		"-Wpointer-arith"
+		"-Wreturn-type"
+		"-Wcast-qual"
+		"-Wwrite-strings"
+		"-Wswitch"
+		"-Wshadow"
+		"-Wunused-parameter"
+		"-Wcast-align"
+		"-Wchar-subscripts"
+		"-Winline"
+		"-Wnested-externs"
+		"-Wno-pointer-sign"
+		"-Wno-empty-body"
+		"-Wextra"
+		"-Wno-missing-field-initializers"
+		"-Wno-sign-compare"
+		#if defined(__clang__)
+			"-Wmissing-variable-declarations"
+			"-Wno-string-plus-int"
+		#endif
+	#endif
+	'
+
+# Configuration options
+ask_compiler CF_CFLAGS '
+	#if defined(__SVR4) && defined(sun)
+		// Solaris and OmniOS
+		"-DHAVE_GETHRTIME"
+		"-DHAVE_PORT_CREATE"
+		"-DHAVE_SETPPRIV"
+	#endif
+
+	#if !defined(__APPLE__)
+		"-DHAVE_DAEMON"
+	#endif
+
+	// Where does this not work ?
+		"-DSO_SNDTIMEO_WORKS"
+		"-DSO_RCVTIMEO_WORKS"
+		"-DHAVE_TCP_KEEP"
+
+	"-DVCC_CC=~\~exec $(CC) -D_THREAD_SAFE -std=gnu99 -g -O2 -Wall -Werror -pthread -fpic -shared -Wl,-x -o %o %s\~~"
+
+	"-DVCC_WARNS=~\~$(CF_CWFLAGS)\~~"
+
+	"-I$(TOPDIR)/phk_hack"
+
+	'
+
+#######################################################################
+# Find a Python interpreter
+#
+
+for i in 3.2 2.7 "" 2.5 2.6 3.0 3.1
+do
+	if python$i < /dev/null > /dev/null 2>&1 ; then
+		echo PYTHON=python$i >> _.cache
+		break
+	fi
+done
+
+#######################################################################
+# Find a rst2* tools
+#
+
+if echo | rst2html > /dev/null 2>&1 ; then
+	echo "HAVE_RST2HTML=1" >> _.cache
+fi
+
+cat _.cache
+exit 0
+
+
+# HAVE_ACCEPT_FILTERS +
+# HAVE_BACKTRACE +
+# HAVE_CLOCK_GETTIME +
+# HAVE_DAEMON +
+# HAVE_DLADDR +
+# HAVE_KQUEUE +
+# HAVE_NANOSLEEP +
+# HAVE_PTHREAD_SET_NAME_NP +
+# HAVE_SETPROCTITLE +
+# HAVE_SRANDOMDEV +
+# HAVE_TCP_KEEP +
+# HAVE_TIMEGM +
+# PACKAGE_TARNAME +
+# PACKAGE_VERSION +
+# SO_RCVTIMEO_WORKS +
+# SO_SNDTIMEO_WORKS +
+# VCC_CC +
+# HAVE_EPOLL_CTL -
+# HAVE_LIBUMEM -
+# USE_PCRE_JIT -
+# _FILE_OFFSET_BITS -
+# 
+# #echo 'CF_CFLAGS="-Wall"'
+

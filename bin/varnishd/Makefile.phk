@@ -1,0 +1,121 @@
+VPATH += cache common mgt waiter storage hash
+
+PROG_SRC += cache/cache_acceptor.c
+PROG_SRC += cache/cache_backend.c
+PROG_SRC += cache/cache_backend_cfg.c
+PROG_SRC += cache/cache_backend_poll.c
+PROG_SRC += cache/cache_ban.c
+PROG_SRC += cache/cache_busyobj.c
+PROG_SRC += cache/cache_cli.c
+PROG_SRC += cache/cache_dir.c
+PROG_SRC += cache/cache_esi_deliver.c
+PROG_SRC += cache/cache_esi_fetch.c
+PROG_SRC += cache/cache_esi_parse.c
+PROG_SRC += cache/cache_expire.c
+PROG_SRC += cache/cache_fetch.c
+PROG_SRC += cache/cache_fetch_proc.c
+PROG_SRC += cache/cache_gzip.c
+PROG_SRC += cache/cache_hash.c
+PROG_SRC += cache/cache_http.c
+PROG_SRC += cache/cache_http1_deliver.c
+PROG_SRC += cache/cache_http1_fetch.c
+PROG_SRC += cache/cache_http1_fsm.c
+PROG_SRC += cache/cache_http1_proto.c
+PROG_SRC += cache/cache_lck.c
+PROG_SRC += cache/cache_main.c
+PROG_SRC += cache/cache_mempool.c
+PROG_SRC += cache/cache_obj.c
+PROG_SRC += cache/cache_panic.c
+PROG_SRC += cache/cache_pipe.c
+PROG_SRC += cache/cache_pool.c
+PROG_SRC += cache/cache_req_fsm.c
+PROG_SRC += cache/cache_rfc2616.c
+PROG_SRC += cache/cache_session.c
+PROG_SRC += cache/cache_shmlog.c
+PROG_SRC += cache/cache_vary.c
+PROG_SRC += cache/cache_vcl.c
+PROG_SRC += cache/cache_vrt.c
+PROG_SRC += cache/cache_vrt_re.c
+PROG_SRC += cache/cache_vrt_var.c
+PROG_SRC += cache/cache_vrt_vmod.c
+PROG_SRC += cache/cache_wrk.c
+PROG_SRC += cache/cache_wrw.c
+PROG_SRC += cache/cache_ws.c
+
+PROG_SRC += common/common_vsc.c
+PROG_SRC += common/common_vsm.c
+
+PROG_SRC += hash/hash_classic.c
+PROG_SRC += hash/hash_critbit.c
+PROG_SRC += hash/hash_mgt.c
+PROG_SRC += hash/hash_simple_list.c
+
+PROG_SRC += mgt/mgt_child.c
+PROG_SRC += mgt/mgt_cli.c
+PROG_SRC += mgt/mgt_main.c
+PROG_SRC += mgt/mgt_param.c
+PROG_SRC += mgt/mgt_param_bits.c
+PROG_SRC += mgt/mgt_param_tbl.c
+PROG_SRC += mgt/mgt_param_tweak.c
+PROG_SRC += mgt/mgt_pool.c
+PROG_SRC += mgt/mgt_sandbox.c
+PROG_SRC += mgt/mgt_sandbox_solaris.c
+PROG_SRC += mgt/mgt_shmem.c
+PROG_SRC += mgt/mgt_vcc.c
+
+PROG_SRC += storage/stevedore.c
+PROG_SRC += storage/stevedore_mgt.c
+PROG_SRC += storage/stevedore_utils.c
+PROG_SRC += storage/storage_file.c
+PROG_SRC += storage/storage_malloc.c
+PROG_SRC += storage/storage_persistent.c
+PROG_SRC += storage/storage_persistent_mgt.c
+PROG_SRC += storage/storage_persistent_silo.c
+PROG_SRC += storage/storage_persistent_subr.c
+PROG_SRC += storage/storage_synth.c
+PROG_SRC += storage/storage_umem.c
+
+PROG_SRC += waiter/cache_waiter.c
+PROG_SRC += waiter/cache_waiter_epoll.c
+PROG_SRC += waiter/cache_waiter_kqueue.c
+PROG_SRC += waiter/cache_waiter_poll.c
+PROG_SRC += waiter/cache_waiter_ports.c
+PROG_SRC += waiter/mgt_waiter.c
+
+USE_THREADS = YES
+USE_DLOPEN = YES
+
+LD_ADD	+= ${LIB_VARNISH}
+LD_ADD	+= ${LIB_VCC}
+LD_ADD	+= ${LIB_PCRE}
+LD_ADD	+= ${LIB_EXECINFO}
+LD_ADD	+= ${LIB_VGZ}
+LD_ADD	+= -lm
+
+RST_MAN += $(TOPDIR)/doc/sphinx/reference/varnishd.rst
+
+MADE_FILES += default_vcl.h
+
+TODO_INSTALL += install_etc
+
+TOPDIR  = $(CURDIR)/../..
+include $(TOPDIR)/Makefile.inc.phk
+
+#
+# Turn the default.vcl file into a C-string we can include in the program.
+#
+default_vcl.h:	default.vcl
+	echo '/*' > $@
+	echo ' * NB:  This file is machine generated, DO NOT EDIT!' >> $@
+	echo ' *' >> $@
+	echo ' * Edit default.vcl instead and run make' >> $@
+	echo ' *' >> $@
+	echo ' */' >> $@
+	echo '' >> $@
+	sed -e 's/"/\\"/g' \
+	    -e 's/$$/\\n"/' \
+	    -e 's/^/ "/' default.vcl >> $@
+
+.PHONY: install_etc
+install_etc: default_vcl.h
+	@cp default_vcl.h $(INSTALL_BASE)/etc/

@@ -1,0 +1,15 @@
+PROG_SRC = varnishlog.c
+PROG_SRC = varnishlog_options.c
+
+LD_ADD	+= ${LIB_VARNISHTOOLS}
+LD_ADD	+= ${LIB_VARNISHAPI}
+LD_ADD	+= ${LIB_VARNISH}
+LD_ADD	+= ${LIB_PCRE}
+LD_ADD	+= -lm
+
+TODO_ALL += build_man
+
+TOPDIR  = $(CURDIR)/../..
+include $(TOPDIR)/Makefile.inc.phk
+
+.PHONY: build_man

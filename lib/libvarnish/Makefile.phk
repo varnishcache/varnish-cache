@@ -1,0 +1,29 @@
+
+LIB_SRC += binary_heap.c
+LIB_SRC += cli_auth.c
+LIB_SRC += cli_common.c
+LIB_SRC += cli_serve.c
+LIB_SRC += flopen.c
+LIB_SRC += vas.c
+LIB_SRC += vav.c
+LIB_SRC += vct.c
+LIB_SRC += version.c
+LIB_SRC += vev.c
+LIB_SRC += vfil.c
+LIB_SRC += vin.c
+LIB_SRC += vlu.c
+LIB_SRC += vmb.c
+LIB_SRC += vnum.c
+LIB_SRC += vpf.c
+LIB_SRC += vre.c
+LIB_SRC += vsa.c
+LIB_SRC += vsb.c
+LIB_SRC += vsha256.c
+LIB_SRC += vss.c
+LIB_SRC += vsub.c
+LIB_SRC += vtcp.c
+LIB_SRC += vtim.c
+
+TOPDIR= $(CURDIR)/../..
+include $(TOPDIR)/Makefile.inc.phk
+
