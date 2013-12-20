@@ -31,7 +31,7 @@ LIB_VARNISHTOOLS = -L $(TOPDIR)/lib/libvarnishtools -lvarnishtools
 LIB_VCC = -L $(TOPDIR)/lib/libvcc -lvcc
 LIB_VGZ = -L $(TOPDIR)/lib/libvgz -lvgz
 LIB_PCRE = -L /usr/local/lib -lpcre
-LIB_EXECINFO = -lexecinfo
+LIB_EXECINFO = ${EXECINFO}
 LIB_CURSES = -lcurses
 LIB_READLINE = ${LINEDISC}
 

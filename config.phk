@@ -252,6 +252,13 @@ else
 fi
 
 #######################################################################
+# Check for libexecinfo (FreeBSD::backtrace()
+
+if [ -f /usr/lib/libexecinfo.so ] ; then
+	echo "EXECINFO=-lexecinfo" >> _.cache
+fi
+
+#######################################################################
 # Done...
 cat _.cache
 
