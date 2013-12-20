@@ -75,6 +75,13 @@ if true ; then
 		if [ -f /usr/include/$i ] ; then
 			n=`echo $i | tr '[a-z/.]' '[A-Z__]'`
 			echo "#define HAVE_$n 1" >> ${CONFIG_H}_
+		else
+			echo "#include <$i>" > _.c
+			if cc -E _.c > /dev/null 2>& 1 ; then
+				n=`echo $i | tr '[a-z/.]' '[A-Z__]'`
+				echo "#define HAVE_$n 1" >> ${CONFIG_H}_
+			fi
+			rm -f _.c
 		fi
 	done
 	echo "#define PACKAGE_TARNAME \"${ADM_PROJECT}\"" >> ${CONFIG_H}_
@@ -147,7 +154,6 @@ ask_compiler CF_CWFLAGS '
 		"-W"
 		"-fstack-protector"
 		"-Wno-format-y2k"
-		"-Wno-unused-parameter"
 		"-Wstrict-prototypes"
 		"-Wmissing-prototypes"
 		"-Wpointer-arith"
@@ -171,6 +177,15 @@ ask_compiler CF_CWFLAGS '
 			"-Wno-string-plus-int"
 		#endif
 	#endif
+	/*
+	 * Write is marked with this on some Linux, and while that is
+	 * well intentioned, they have implemented it so that the usual
+	 *	(void)bla;
+	 * marker of intent does not work.
+	 * I dont want to write bogo-code just to slip the best effort
+	 * 4xx responses in cache_http1_fetch.c past the compiler.
+	 */
+	"-Wno-unused-result"
 	'
 
 # Configuration options
@@ -190,6 +205,10 @@ ask_compiler CF_CFLAGS '
 		"-DSO_SNDTIMEO_WORKS"
 		"-DSO_RCVTIMEO_WORKS"
 		"-DHAVE_TCP_KEEP"
+
+	#if defined(__linux__)
+		"-D_GNU_SOURCE=1"
+	#endif
 
 	"-DVCC_CC=~\~exec $(CC) -D_THREAD_SAFE -std=gnu99 -g -O2 -Wall -Werror -pthread -fpic -shared -Wl,-x -o %o %s\~~"
 
@@ -219,7 +238,23 @@ if echo | rst2html > /dev/null 2>&1 ; then
 	echo "HAVE_RST2HTML=1" >> _.cache
 fi
 
+#######################################################################
+# Check for libedit
+
+if [ -f /usr/include/edit/readline/readline.h ] ; then
+	echo "LINEDISC=-ledit" >> _.cache
+elif [ -f /usr/include/editline/readline.h ] ; then
+	echo "LINEDISC=-ledit" >> _.cache
+elif [ -f /usr/include/readline/readline.h ] ; then
+	echo "LINEDISC=-lreadline" >> _.cache
+else
+	echo "LINEDISC=" >> _.cache
+fi
+
+#######################################################################
+# Done...
 cat _.cache
+
 exit 0
 
 

@@ -33,7 +33,7 @@ LIB_VGZ = -L $(TOPDIR)/lib/libvgz -lvgz
 LIB_PCRE = -L /usr/local/lib -lpcre
 LIB_EXECINFO = -lexecinfo
 LIB_CURSES = -lcurses
-LIB_READLINE = -lreadline
+LIB_READLINE = ${LINEDISC}
 
 #######################################################################
 ifdef USE_THREADS
