@@ -244,7 +244,7 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 		VSB_printf(sb, "Failed to create %s: %s", sf, strerror(errno));
 		return (NULL);
 	}
-	AZ(fchown(sfd, mgt_param.uid, mgt_param.gid));
+	(void)fchown(sfd, mgt_param.uid, mgt_param.gid);
 	AZ(close(sfd));
 
 
@@ -279,7 +279,7 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag)
 		(void)unlink(sf);
 		return (NULL);
 	}
-	AZ(fchown(i, mgt_param.uid, mgt_param.gid));
+	(void)fchown(i, mgt_param.uid, mgt_param.gid);
 	AZ(close(i));
 
 	/* Build the C-compiler command line */
