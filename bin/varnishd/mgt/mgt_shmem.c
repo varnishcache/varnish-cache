@@ -123,7 +123,8 @@ vsm_n_check(void)
 			 */
 			if (pread(fd, &vsmh, sizeof vsmh, 0) == sizeof vsmh) {
 				vsmh.alloc_seq = 0;
-				(void)pwrite(fd, &vsmh, sizeof vsmh, 0);
+				assert(sizeof vsmh ==
+				    pwrite(fd, &vsmh, sizeof vsmh, 0));
 			}
 			retval = 0;
 		} else {
