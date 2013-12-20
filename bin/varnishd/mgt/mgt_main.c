@@ -56,14 +56,11 @@
 #include "vfil.h"
 #include "vin.h"
 #include "vpf.h"
+#include "vrnd.h"
 #include "vsha256.h"
 #include "vtim.h"
 
 #include "compat/daemon.h"
-
-#ifndef HAVE_SRANDOMDEV
-#include "compat/srandomdev.h"
-#endif
 
 struct heritage		heritage;
 unsigned		d_flag = 0;
@@ -332,7 +329,7 @@ make_secret(const char *dirname)
 		    dirname, strerror(errno));
 		exit(1);
 	}
-	srandomdev();
+	VRND_Seed();
 	for (i = 0; i < sizeof buf; i++)
 		buf[i] = random() & 0xff;
 	assert(sizeof buf == write(fd, buf, sizeof buf));
@@ -413,7 +410,7 @@ main(int argc, char * const *argv)
 	for (o = getdtablesize(); o > STDERR_FILENO; o--)
 		(void)close(o);
 
-	srandomdev();
+	VRND_Seed();
 
 	mgt_got_fd(STDERR_FILENO);
 

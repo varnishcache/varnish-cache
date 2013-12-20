@@ -36,13 +36,11 @@
 #include "common/heritage.h"
 
 #include "vcli_priv.h"
+#include "vrnd.h"
 
 #include "waiter/waiter.h"
 #include "hash/hash_slinger.h"
 
-#ifndef HAVE_SRANDOMDEV
-#include "compat/srandomdev.h"
-#endif
 
 volatile struct params	*cache_param;
 
@@ -236,7 +234,7 @@ child_main(void)
 
 	BAN_Compile();
 
-	srandomdev();
+	VRND_Seed();
 	srand48(random());
 	CLI_AddFuncs(debug_cmds);
 

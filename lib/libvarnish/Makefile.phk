@@ -16,6 +16,7 @@ LIB_SRC += vmb.c
 LIB_SRC += vnum.c
 LIB_SRC += vpf.c
 LIB_SRC += vre.c
+LIB_SRC += vrnd.c
 LIB_SRC += vsa.c
 LIB_SRC += vsb.c
 LIB_SRC += vsha256.c

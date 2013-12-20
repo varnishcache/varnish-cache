@@ -44,11 +44,8 @@
 
 #include "vev.h"
 #include "vqueue.h"
+#include "vrnd.h"
 #include "vtim.h"
-
-#ifndef HAVE_SRANDOMDEV
-#include "compat/srandomdev.h"
-#endif
 
 #define		MAX_FILESIZE		(1024 * 1024)
 
@@ -270,7 +267,7 @@ start_test(void)
 	assert(jp->buf != MAP_FAILED);
 	memset(jp->buf, 0, jp->bufsiz);
 
-	srandomdev();
+	VRND_Seed();
 	bprintf(tmpdir, "%s/vtc.%d.%08x", tmppath, (int)getpid(),
 		(unsigned)random());
 	AZ(mkdir(tmpdir, 0711));

@@ -1,9 +1,8 @@
 /*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2009 Varnish Software AS
+ * Copyright (c) 2013 Varnish Software AS
  * All rights reserved.
  *
- * Author: Dag-Erling Smørgrav <des@des.no>
+ * Author: Poul-Henning Kamp <phk@FreeBSD.org>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,13 +25,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * Random functions
  */
 
-#ifndef COMPAT_SRANDOMDEV_H_INCLUDED
-#define COMPAT_SRANDOMDEV_H_INCLUDED
+void VRND_Seed(void);		/* Seed random(3) properly */
 
-#ifndef HAVE_SRANDOMDEV
-void srandomdev(void);
-#endif
-
-#endif

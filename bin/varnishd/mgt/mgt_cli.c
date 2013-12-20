@@ -52,14 +52,11 @@
 #include "vcli_serve.h"
 #include "vev.h"
 #include "vlu.h"
+#include "vrnd.h"
 #include "vss.h"
 #include "vtcp.h"
 
 #include "mgt_cli.h"
-
-#ifndef HAVE_SRANDOMDEV
-#include "compat/srandomdev.h"
-#endif
 
 static int		cli_i = -1, cli_o = -1;
 static struct VCLS	*cls;
@@ -259,7 +256,7 @@ mgt_cli_challenge(struct cli *cli)
 {
 	int i;
 
-	srandomdev();
+	VRND_Seed();
 	for (i = 0; i + 2L < sizeof cli->challenge; i++)
 		cli->challenge[i] = (random() % 26) + 'a';
 	cli->challenge[i++] = '\n';

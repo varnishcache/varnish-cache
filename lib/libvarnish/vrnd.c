@@ -29,45 +29,50 @@
 
 #include "config.h"
 
-#ifndef HAVE_SRANDOMDEV
-
-#include <sys/time.h>
-
+#include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
-#include <time.h>
+#include <string.h>
 #include <unistd.h>
 
-#include "compat/srandomdev.h"
+#include "vas.h"
+#include "vrnd.h"
+#include "vtim.h"
+#include "vsha256.h"
 
-static int
-trydev(const char *fn, unsigned long *seed)
+void
+VRND_Seed(void)
 {
+	unsigned long seed;
+	struct SHA256Context ctx;
+	double d;
+	pid_t p;
+	unsigned char b[SHA256_LEN];
 	int fd;
 	ssize_t sz;
 
-	fd = open(fn, O_RDONLY);
+	fd = open("/dev/urandom", O_RDONLY);
 	if (fd < 0)
-		return (-1);
-	sz = read(fd, seed, sizeof *seed);
-	(void)close(fd);
-	if (sz != sizeof *seed)
-		return (-1);
-	return (0);
-}
-
-void
-srandomdev(void)
-{
-	struct timeval tv;
-	unsigned long seed;
-
-	if (trydev("/dev/urandom", &seed)) {
-		if (trydev("/dev/random", &seed)) {
-			gettimeofday(&tv, NULL);
-			seed = (getpid() << 16) ^ tv.tv_sec ^ tv.tv_usec;
+		fd = open("/dev/random", O_RDONLY);
+	if (fd >= 0) {
+		sz = read(fd, &seed, sizeof seed);
+		AZ(close(fd));
+		if (sz == sizeof seed) {
+			srandom(seed);
+			return;
 		}
 	}
+
+	SHA256_Init(&ctx);
+	d = VTIM_mono();
+	SHA256_Update(&ctx, &d, sizeof d);
+	d = VTIM_real();
+	SHA256_Update(&ctx, &d, sizeof d);
+	p = getpid();
+	SHA256_Update(&ctx, &p, sizeof p);
+	p = getppid();
+	SHA256_Update(&ctx, &p, sizeof p);
+	SHA256_Final(b, &ctx);
+	memcpy(&seed, b, sizeof seed);
 	srandom(seed);
 }
-#endif

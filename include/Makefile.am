@@ -40,7 +40,6 @@ nobase_noinst_HEADERS = \
 	binary_heap.h \
 	compat/daemon.h \
 	compat/execinfo.h \
-	compat/srandomdev.h \
 	flopen.h \
 	libvcc.h \
 	persistent.h \
@@ -57,6 +56,7 @@ nobase_noinst_HEADERS = \
 	vmb.h \
 	vnum.h \
 	vpf.h \
+	vrnd.h \
 	vsub.h \
 	vss.h \
 	vtcp.h \
