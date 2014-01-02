@@ -515,7 +515,7 @@ http_SetResp(struct http *to, const char *proto, uint16_t status,
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	http_SetH(to, HTTP_HDR_PROTO, proto);
 	assert(status >= 100 && status <= 999);
-	to->status = status;
+	http_PutStatus(to, status);
 	http_SetH(to, HTTP_HDR_RESPONSE, response);
 }
 
@@ -714,9 +714,12 @@ http_PutProtocol(const struct http *to, const char *protocol)
 void
 http_PutStatus(struct http *to, uint16_t status)
 {
+	char buf[4];
 
 	assert(status >= 100 && status <= 999);
 	to->status = status;
+	bprintf(buf, "%03d", status % 1000);
+	http_SetH(to, HTTP_HDR_STATUS, WS_Copy(to->ws, buf, sizeof buf));
 }
 
 void

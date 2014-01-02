@@ -145,10 +145,8 @@ make_it_503(struct busyobj *bo)
 {
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, HTTP_Beresp);
-	bo->err_code = 503;
 	http_SetH(bo->beresp, HTTP_HDR_PROTO, "HTTP/1.1");
-	http_SetResp(bo->beresp,
-	    "HTTP/1.1", 503, "Backend fetch failed");
+	http_SetResp(bo->beresp, "HTTP/1.1", 503, "Backend fetch failed");
 	http_SetHeader(bo->beresp, "Content-Length: 0");
 	http_SetHeader(bo->beresp, "Connection: close");
 }
