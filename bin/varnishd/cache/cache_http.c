@@ -609,6 +609,7 @@ http_FilterResp(const struct http *fm, struct http *to, unsigned how)
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
 	to->status = fm->status;
+	http_linkh(to, fm, HTTP_HDR_STATUS);
 	http_linkh(to, fm, HTTP_HDR_RESPONSE);
 	http_filterfields(to, fm, how);
 }
