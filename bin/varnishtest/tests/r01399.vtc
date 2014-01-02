@@ -1,0 +1,49 @@
+varnishtest "1399 race issue with bg-fetches"
+
+server s1 {
+	rxreq
+	txresp -bodylen 1
+
+	sema r1 sync 2
+
+	# Delay here, to stall the bgfetch for a while, to give the req time to finish
+	# delivery and cleanup up struct req
+	delay 2
+
+	# Shut the connection to force the bgfetch to retry
+	close
+	accept
+
+	# And see if it has all its marbles still...
+	rxreq
+	expect req.url == "/"
+	txresp -bodylen 2
+
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.ttl = 2s;
+		set beresp.grace = 1800s;
+	}
+} -start
+
+client c1 {
+	txreq 
+	rxresp
+	expect resp.http.content-length == 1
+
+} -run
+
+# 3 is longer than the ttl, in order to kick off the bgfetch
+delay 3
+
+client c1 {
+	txreq 
+	rxresp
+	expect resp.http.content-length == 1
+	sema r1 sync 2
+} -run
+
+# Wait for the server to not explode
+server s1 -wait

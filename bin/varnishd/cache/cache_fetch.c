@@ -50,6 +50,7 @@ vbf_release_req(struct busyobj *bo)
 	assert(bo->state == BOS_INVALID);
 	AN(bo->req);
 	bo->req = NULL;
+	http_CopyHome(bo->bereq);
 	VBO_setstate(bo, BOS_REQ_DONE);
 }
 
