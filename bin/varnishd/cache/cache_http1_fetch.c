@@ -293,7 +293,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 
 	hp = bo->bereq;
 
-	bo->vbc = VDI_GetFd(NULL, bo);
+	bo->vbc = VDI_GetFd(bo);
 	if (bo->vbc == NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 		return (-1);

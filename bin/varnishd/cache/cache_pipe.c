@@ -73,7 +73,7 @@ PipeRequest(struct req *req, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	vc = VDI_GetFd(NULL, bo);
+	vc = VDI_GetFd(bo);
 	if (vc == NULL)
 		return;
 	bo->vbc = vc;		/* For panic dumping */

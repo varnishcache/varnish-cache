@@ -101,13 +101,13 @@ VDI_RecycleFd(struct vbc **vbp)
 /* Get a connection --------------------------------------------------*/
 
 struct vbc *
-VDI_GetFd(const struct director *d, struct busyobj *bo)
+VDI_GetFd(struct busyobj *bo)
 {
 	struct vbc *vc;
+	struct director *d;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	if (d == NULL)
-		d = bo->director;
+	d = bo->director;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	vc = d->getfd(d, bo);
 	if (vc != NULL)
