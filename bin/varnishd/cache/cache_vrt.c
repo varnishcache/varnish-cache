@@ -301,6 +301,8 @@ VRT_IP_string(const struct vrt_ctx *ctx, VCL_IP ip)
 	unsigned len;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (ip == NULL)
+		return (NULL);
 	len = WS_Reserve(ctx->ws, 0);
 	p = ctx->ws->f;
 	VTCP_name(ip, p, len, NULL, 0);

@@ -1,0 +1,20 @@
+varnishtest "ticket 1398"
+
+varnish v1 -vcl {
+	backend foo {
+		.host = "${bad_ip}"; .port = "9080";
+	}
+	sub vcl_backend_response {
+		set beresp.http.X-BE-Name = beresp.backend.name;
+		set beresp.http.X-BE-IP = beresp.backend.ip;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+	expect resp.http.X-BE-Name == foo
+	expect resp.http.X-BE-IP == ""
+} -run
+

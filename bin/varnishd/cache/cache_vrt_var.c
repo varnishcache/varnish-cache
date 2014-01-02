@@ -251,8 +251,14 @@ VRT_r_beresp_backend_name(const struct vrt_ctx *ctx)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->bo->vbc, VBC_MAGIC);
-	return(ctx->bo->vbc->backend->vcl_name);
+	if (ctx->bo->vbc != NULL) {
+		CHECK_OBJ_NOTNULL(ctx->bo->vbc, VBC_MAGIC);
+		return (ctx->bo->vbc->backend->vcl_name);
+	}
+	if (ctx->bo->director != NULL) {
+		return (ctx->bo->director->vcl_name);
+	}
+	return (NULL);
 }
 
 VCL_IP
@@ -261,8 +267,11 @@ VRT_r_beresp_backend_ip(const struct vrt_ctx *ctx)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->bo->vbc, VBC_MAGIC);
-	return(ctx->bo->vbc->addr);
+	if (ctx->bo->vbc != NULL) {
+		CHECK_OBJ_NOTNULL(ctx->bo->vbc, VBC_MAGIC);
+		return(ctx->bo->vbc->addr);
+	} else
+		return (NULL);
 }
 
 const char *
