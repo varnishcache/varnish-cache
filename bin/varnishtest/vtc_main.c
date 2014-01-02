@@ -345,7 +345,7 @@ i_mode(void)
 
 	vsb = VSB_new_auto();
 
-	q = p = read_file("Makefile_");
+	q = p = read_file("Makefile");
 	if (p == NULL) {
 		fprintf(stderr, "No Makefile to search for -i flag.\n");
 		VSB_printf(vsb, "%s/../..", cwd);
