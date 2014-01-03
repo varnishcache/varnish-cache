@@ -1,0 +1,17 @@
+varnishtest "Test vcl_error is called even if vcl_backend_fetch failed"
+
+varnish v1 -vcl {
+	backend default {
+		.host = "${bad_ip}"; .port = "9090";
+	}
+
+	sub vcl_error {
+		set obj.status = 200;
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 503
+} -run
