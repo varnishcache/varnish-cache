@@ -378,6 +378,9 @@ VGZ_WrwGunzip(const struct sess *sp, struct vgz *vg, const void *ibuf,
 			/* XXX: VSL ? */
 			return (-1);
 		}
+		else if (i == VGZ_END) {
+			break;
+		}
 		if (obufl == *obufp || i == VGZ_STUCK) {
 			sp->wrk->acct_tmp.bodybytes += *obufp;
 			(void)WRW_Write(sp->wrk, obuf, *obufp);

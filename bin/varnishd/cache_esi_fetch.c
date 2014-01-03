@@ -289,6 +289,8 @@ vfp_esi_bytes_gg(struct sess *sp, struct http_conn *htc, size_t bytes)
 				    vef->bufp, dl);
 				vef->npend += dl;
 			}
+			if (i == VGZ_END)
+				break;
 		} while (!VGZ_IbufEmpty(sp->wrk->vgz_rx));
 	}
 	return (1);
