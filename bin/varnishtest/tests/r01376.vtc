@@ -1,0 +1,46 @@
+varnishtest "#1376 - server.ip initialization and ESI child"
+
+server s1 {
+	rxreq
+	txresp -body {<esi:include src="/foo"/><esi:include src="/bar"/>}
+
+	rxreq
+	expect req.url == "/foo"
+	sema r1 sync 2
+	# Send large body to closed socket. This should cause a write error,
+	# closing the socket also in the varnishd end
+	txresp -bodylen 1048576
+
+	rxreq
+	expect req.url == "/bar"
+	txresp -body "[bar]"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/bar") {
+			# Test getting the server ip on a closed socket
+			set req.http.test = server.ip;
+		}
+	}
+	sub vcl_fetch {
+		if (req.url == "/") {
+			set beresp.do_esi = true;
+		}
+	}
+} -start
+
+client c1 {
+	txreq -hdr "Host: foo"
+	rxresp -no_obj
+	# Closes connection
+} -run
+
+sema r1 sync 2
+
+# Try again to make sure varnishd didn't die
+client c1 {
+       txreq -hdr "Host: foo"
+       rxresp
+       expect resp.status == 200
+} -run

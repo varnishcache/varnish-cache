@@ -39,7 +39,7 @@ it mostly on topic, and dont paste random links unless they are
 Mailing Lists
 =============
 
-Getting on or off our mailinglist happens through MailMan_.
+Getting on or off our mailinglist happens through Mailman_.
 
 If you are going to use Varnish, subscribing to our ``varnish-announce``
 mailing list is probably a very good idea.  The typical pattern is that

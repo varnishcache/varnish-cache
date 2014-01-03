@@ -1,0 +1,30 @@
+varnishtest "blank GET"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend { 
+	sub vcl_error {
+		return (restart);
+	}
+} -start
+
+client c1 {
+	send "GET    \nHost: example.com\n\n"
+	rxresp
+	expect resp.status == 400
+} -run
+
+client c1 {
+	txreq -hdr "Expect: Santa-Claus"
+	rxresp
+	expect resp.status == 417
+} -run
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run

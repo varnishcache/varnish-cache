@@ -601,7 +601,7 @@ http_splitline(struct worker *w, int fd, struct http *hp,
 	hp->hd[h2].e = p;
 
 	if (!Tlen(hp->hd[h2]))
-		return (413);
+		return (400);
 
 	/* Skip SP */
 	for (; vct_issp(*p); p++) {
