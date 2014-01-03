@@ -1,0 +1,76 @@
+varnishtest "#1086 junk after gzip from backend and streaming enabled"
+
+server s1 {
+	# This one will be streamed
+	rxreq
+	txresp -nolen \
+		-hdr "Content-Encoding: gzip" \
+		-hdr "Transfer-Encoding: Chunked" \
+		-hdr "Set-Cookie: FOO"
+	send "14\r\n"
+		# An empty gzip file:
+		sendhex "1f8b"
+		sendhex "08"
+		sendhex "00"
+		sendhex "00000000"
+		sendhex "00"
+		sendhex "03"
+		sendhex "0300"
+		sendhex "00000000"
+		sendhex "00000000"
+	send "\r\n"
+
+	chunked "FOOBAR"
+
+	chunkedlen 0
+
+	accept
+
+	# This one will not be streamed
+	rxreq
+	txresp -nolen \
+		-hdr "Content-Encoding: gzip" \
+		-hdr "Transfer-Encoding: Chunked" \
+		-hdr "Set-Cookie: BAR"
+	send "14\r\n"
+		# An empty gzip file:
+		sendhex "1f8b"
+		sendhex "08"
+		sendhex "00"
+		sendhex "00000000"
+		sendhex "00"
+		sendhex "03"
+		sendhex "0300"
+		sendhex "00000000"
+		sendhex "00000000"
+	send "\r\n"
+
+	chunked "FOOBAR"
+
+	chunkedlen 0
+
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		if (beresp.http.set-cookie == "BAR") {
+			set beresp.do_stream = false;
+		}
+	}
+} -start
+
+client c1 {
+	txreq -hdr "Cookie: FOO"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 0
+} -run
+
+delay .1
+
+client c1 {
+	txreq -hdr "Cookie: BAR"
+	rxresp
+	expect resp.status == 503
+} -run
+
