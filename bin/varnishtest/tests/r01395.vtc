@@ -6,12 +6,12 @@ varnish v1 -vcl {
 	}
 
 	sub vcl_error {
-		set obj.status = 200;
+		set obj.status = 299;
 	}
 } -start
 
 client c1 {
 	txreq -url "/"
 	rxresp
-	expect resp.status == 503
+	expect resp.status == 299
 } -run

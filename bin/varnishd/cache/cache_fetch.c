@@ -190,6 +190,7 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 
 	if (i) {
 		AZ(bo->vbc);
+		(void)VFP_Error(bo, "Failed to fetch object headers");
 		make_it_503(bo);
 	} else {
 		AN(bo->vbc);
@@ -452,8 +453,10 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->do_stream)
 		HSH_Unbusy(&wrk->stats, obj->objcore);
 
-	assert(bo->state == BOS_REQ_DONE);
-	VBO_setstate(bo, BOS_FETCHING);
+	if (bo->state == BOS_REQ_DONE)
+		VBO_setstate(bo, BOS_FETCHING);
+	else if (bo->state != BOS_FAILED)
+		WRONG("Wrong bo->state");
 
 	switch (bo->htc.body_status) {
 	case BS_NONE:

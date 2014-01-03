@@ -52,27 +52,43 @@ client c1 {
 	txreq -url /small
 	rxresp
 	expect resp.status == 503
+} -run
+client c1 {
 	txreq -url /low
 	rxresp
 	expect resp.status == 503
+} -run
+client c1 {
 	txreq -url /high
 	rxresp
 	expect resp.status == 503
+} -run
+client c1 {
 	txreq -url /X
 	rxresp
 	expect resp.status == 503
+} -run
+client c1 {
 	txreq -url /Y
 	rxresp
 	expect resp.status == 503
+} -run
+client c1 {
 	txreq -url /Z
 	rxresp
 	expect resp.status == 503
+} -run
+client c1 {
 	txreq -url /x
 	rxresp
 	expect resp.status == 503
+} -run
+client c1 {
 	txreq -url /y
 	rxresp
 	expect resp.status == 503
+} -run
+client c1 {
 	txreq -url /z
 	rxresp
 	expect resp.status == 503

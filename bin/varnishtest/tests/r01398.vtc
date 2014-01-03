@@ -14,7 +14,7 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.status == 503
-	expect resp.http.X-BE-Name == foo
-	expect resp.http.X-BE-IP == ""
+	expect resp.http.X-BE-Name == "<undef>"
+	expect resp.http.X-BE-IP == "<undef>"
 } -run
 
