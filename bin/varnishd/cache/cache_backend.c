@@ -49,7 +49,7 @@ static unsigned		vbcps = sizeof(struct vbc);
 
 /*--------------------------------------------------------------------
  * The "simple" director really isn't, since thats where all the actual
- * connections happen.  Nontheless, pretend it is simple by sequestering
+ * connections happen.  Nonetheless, pretend it is simple by sequestering
  * the directoricity of it under this line.
  */
 
