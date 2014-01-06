@@ -207,6 +207,10 @@ V1D_Deliver(struct req *req)
 		/* In ESI mode, we can't know the aggregate length */
 		req->res_mode &= ~RES_LEN;
 		req->res_mode |= RES_ESI;
+	} else if (req->resp->status == 304) {
+		req->res_mode &= ~RES_LEN;
+		http_Unset(req->resp, H_Content_Length);
+		req->wantbody = 0;
 	} else if (req->obj->objcore->busyobj == NULL) {
 		/* XXX: Not happy with this convoluted test */
 		req->res_mode |= RES_LEN;
@@ -283,9 +287,6 @@ V1D_Deliver(struct req *req)
 	 */
 	if (!(req->res_mode & RES_ESI_CHILD))
 		req->acct_req.hdrbytes += HTTP1_Write(req->wrk, req->resp, 1);
-
-	if (!req->wantbody)
-		req->res_mode &= ~RES_CHUNKED;
 
 	if (req->res_mode & RES_CHUNKED)
 		WRW_Chunked(req->wrk);

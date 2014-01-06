@@ -146,12 +146,10 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	assert(wrk->handling == VCL_RET_DELIVER);
 
 	if (!(req->obj->objcore->flags & OC_F_PASS)
+	    && req->esi_level == 0
 	    && req->obj->response == 200
-	    && req->http->conds && RFC2616_Do_Cond(req)) {
-		req->wantbody = 0;
+	    && req->http->conds && RFC2616_Do_Cond(req))
 		http_SetResp(req->resp, "HTTP/1.1", 304, "Not Modified");
-		// http_Unset(req->resp, H_Content_Length);
-	}
 
 	V1D_Deliver(req);
 
