@@ -633,10 +633,11 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	} while (ois == OIS_DATA || ois == OIS_STREAM);
 	ObjIterEnd(&oi);
 	bo->stats = NULL;
-	assert(al == bo->ims_obj->len);
-	assert(obj->len == al);
-	if (bo->state != BOS_FAILED)
+	if (bo->state != BOS_FAILED) {
+		assert(al == bo->ims_obj->len);
+		assert(obj->len == al);
 		VBO_setstate(bo, BOS_FINISHED);
+	}
 	HSH_Complete(obj->objcore);
 	return (F_STP_DONE);
 }
