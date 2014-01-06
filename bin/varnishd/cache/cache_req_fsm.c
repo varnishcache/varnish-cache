@@ -434,7 +434,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		else {
 			/*
 			 * We don't have a busy object, so treat this
-			 * lige a pass
+			 * like a pass
 			 */
 			VSLb(req->vsl, SLT_VCL_Error,
 			    "vcl_hit{} returns fetch without busy object."

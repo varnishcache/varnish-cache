@@ -749,6 +749,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	if (oldobj != NULL) {
 		if (http_GetHdr(oldobj->http, H_Last_Modified, NULL) ||
 		   http_GetHdr(oldobj->http, H_ETag, NULL)) {
+			assert(oldobj->objcore->refcnt > 0);
 			HSH_Ref(oldobj->objcore);
 			bo->ims_obj = oldobj;
 		}
