@@ -16,6 +16,9 @@ varnish v1 -vcl {
 	}
 } -start
 
+# Fragmenting storage tests for #1397
+varnish v1 -cliok "debug.fragfetch 4"
+
 client c1 {
 	txreq
 	rxresp

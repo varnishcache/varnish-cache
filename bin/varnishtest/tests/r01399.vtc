@@ -29,7 +29,7 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.http.content-length == 1
 
@@ -39,7 +39,7 @@ client c1 {
 delay 3
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.http.content-length == 1
 	sema r1 sync 2

@@ -626,11 +626,12 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 			al += tl;
 			sp = (char *)sp + tl;
 			sl -= tl;
-			VBO_extend(bo, al);
+			VBO_extend(bo, tl);
 			if (st->len == st->space)
 				st = NULL;
 		}
-	} while (ois == OIS_DATA || ois == OIS_STREAM);
+	} while (bo->state < BOS_FAILED &&
+	    (ois == OIS_DATA || ois == OIS_STREAM));
 	ObjIterEnd(&oi);
 	bo->stats = NULL;
 	if (bo->state != BOS_FAILED) {
