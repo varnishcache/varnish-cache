@@ -615,10 +615,10 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	do {
 		ois = ObjIter(oi, &sp, &sl);
 		while (sl > 0) {
-			if (st == NULL) {
+			if (st == NULL)
 				st = VFP_GetStorage(bo, bo->ims_obj->len - al);
-				XXXAN(st);
-			}
+			if (st == NULL)
+				break;
 			tl = sl;
 			if (tl > st->space - st->len)
 				tl = st->space - st->len;
