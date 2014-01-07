@@ -358,7 +358,7 @@ mcf_parspec_cmp(const void *a, const void *b)
 	return (strcmp((*pa)->name, (*pb)->name));
 }
 
-static void
+void
 MCF_AddParams(struct parspec *ps)
 {
 	struct parspec *pp;

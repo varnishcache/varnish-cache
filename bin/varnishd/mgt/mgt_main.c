@@ -348,6 +348,8 @@ init_params(struct cli *cli)
 
 	MCF_CollectParams();
 
+	MCF_TcpParams();
+
 	/* If we have nobody/nogroup, use them as defaults */
 	if (getpwnam("nobody") != NULL)
 		MCF_SetDefault("user", "nobody");

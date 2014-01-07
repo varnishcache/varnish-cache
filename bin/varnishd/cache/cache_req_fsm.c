@@ -648,7 +648,6 @@ cnt_restart(struct worker *wrk, struct req *req)
 		owid = req->vsl->wid & VSL_IDENTMASK;
 		req->vsl->wid = wid | VSL_CLIENTMARKER;
 		VSLb(req->vsl, SLT_Begin, "req %u restart", owid);
-		
 		req->err_code = 0;
 		req->req_step = R_STP_RECV;
 	}

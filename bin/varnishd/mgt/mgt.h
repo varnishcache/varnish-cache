@@ -33,6 +33,7 @@
 #include "common/common.h"
 
 struct cli;
+struct parspec;
 
 extern struct vev_base	*mgt_evb;
 extern unsigned		d_flag;
@@ -79,7 +80,11 @@ void MCF_SetMaximum(const char *param, const char *def);
 void MCF_ParamSet(struct cli *, const char *param, const char *val);
 void MCF_ParamProtect(struct cli *, const char *arg);
 void MCF_DumpRstParam(void);
+void MCF_AddParams(struct parspec *ps);
 extern struct params mgt_param;
+
+/* mgt_param_tcp.c */
+void MCF_TcpParams(void);
 
 /* mgt_sandbox.c */
 enum sandbox_e {

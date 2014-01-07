@@ -215,31 +215,6 @@ struct parspec mgt_parspec[] = {
 		"See setsockopt(2) under SO_SNDTIMEO for more information.",
 		DELAYED_EFFECT,
 		"60", "seconds" },
-#ifdef HAVE_TCP_KEEP
-	{ "tcp_keepalive_time", tweak_timeout, &mgt_param.tcp_keepalive_time,
-		"1", "7200",
-		"The number of seconds a connection needs to be idle before "
-		"TCP begins sending out keep-alive probes. Note that this "
-		"setting will only take effect when it is less than the "
-		"system default.",
-		EXPERIMENTAL,
-		"600", "seconds" },
-	{ "tcp_keepalive_probes", tweak_uint, &mgt_param.tcp_keepalive_probes,
-		"1", "100",
-		"The maximum number of TCP keep-alive probes to send before "
-		"giving up and killing the connection if no response is "
-		"obtained from the other end. Note that this setting will "
-		"only take effect when it is less than the system default.",
-		EXPERIMENTAL,
-		"5", "probes" },
-	{ "tcp_keepalive_intvl", tweak_timeout, &mgt_param.tcp_keepalive_intvl,
-		"1", "100",
-		"The number of seconds between TCP keep-alive probes. Note "
-		"that this setting will only take effect when it is less than"
-		"the system default.",
-		EXPERIMENTAL,
-		"5", "seconds" },
-#endif
 	{ "auto_restart", tweak_bool, &mgt_param.auto_restart,
 		NULL, NULL,
 		"Restart child process automatically if it dies.",
