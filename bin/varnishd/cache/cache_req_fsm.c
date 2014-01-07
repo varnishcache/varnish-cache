@@ -627,17 +627,28 @@ DOT err_restart [label="ERROR",shape=plaintext]
  */
 
 static enum req_fsm_nxt
-cnt_restart(const struct worker *wrk, struct req *req)
+cnt_restart(struct worker *wrk, struct req *req)
 {
+	unsigned wid, owid;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	req->director = NULL;
 	if (++req->restarts >= cache_param->max_restarts) {
+		VSLb(req->vsl, SLT_VCL_Error, "Too many restarts");
 		req->err_code = 503;
 		req->req_step = R_STP_ERROR;
 	} else {
+		wid = VXID_Get(&wrk->vxid_pool);
+		// XXX: ReqEnd + ReqAcct ?
+		VSLb(req->vsl, SLT_Link, "req %u", wid);
+		VSLb(req->vsl, SLT_End, "");
+		VSL_Flush(req->vsl, 0);
+		owid = req->vsl->wid & VSL_IDENTMASK;
+		req->vsl->wid = wid | VSL_CLIENTMARKER;
+		VSLb(req->vsl, SLT_Begin, "req %u", owid);
+		
 		req->err_code = 0;
 		req->req_step = R_STP_RECV;
 	}
