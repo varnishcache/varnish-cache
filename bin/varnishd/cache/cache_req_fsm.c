@@ -643,7 +643,7 @@ cnt_restart(struct worker *wrk, struct req *req)
 		wid = VXID_Get(&wrk->vxid_pool);
 		// XXX: ReqEnd + ReqAcct ?
 		VSLb(req->vsl, SLT_Link, "req %u restart", wid);
-		VSLb(req->vsl, SLT_End, "");
+		VSLb(req->vsl, SLT_End, "%s", "");
 		VSL_Flush(req->vsl, 0);
 		owid = req->vsl->wid & VSL_IDENTMASK;
 		req->vsl->wid = wid | VSL_CLIENTMARKER;
