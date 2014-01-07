@@ -56,6 +56,7 @@ PROG_SRC += mgt/mgt_main.c
 PROG_SRC += mgt/mgt_param.c
 PROG_SRC += mgt/mgt_param_bits.c
 PROG_SRC += mgt/mgt_param_tbl.c
+PROG_SRC += mgt/mgt_param_tcp.c
 PROG_SRC += mgt/mgt_param_tweak.c
 PROG_SRC += mgt/mgt_pool.c
 PROG_SRC += mgt/mgt_sandbox.c
