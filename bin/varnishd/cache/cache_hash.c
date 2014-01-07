@@ -792,9 +792,10 @@ HSH_DerefObjCore(struct dstat *ds, struct objcore **ocp)
 	BAN_DestroyObj(oc);
 	AZ(oc->ban);
 
-	if (oc->methods != NULL)
+	if (oc->methods != NULL) {
 		oc_freeobj(oc);
-	ds->n_object--;
+		ds->n_object--;
+	}
 	FREE_OBJ(oc);
 
 	ds->n_objectcore--;
