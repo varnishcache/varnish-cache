@@ -49,6 +49,8 @@
 
 #include "mgt/mgt_param.h"
 
+#ifdef HAVE_TCP_KEEP
+
 static struct parspec mgt_parspec_tcp_keep[] = {
 	{ "tcp_keepalive_time", tweak_timeout, &mgt_param.tcp_keepalive_time,
 		"1", "7200",
@@ -70,8 +72,6 @@ static struct parspec mgt_parspec_tcp_keep[] = {
 		"", "seconds" },
 	{ NULL, NULL, NULL }
 };
-
-#ifdef HAVE_TCP_KEEP
 
 static void
 tcp_probe(int sock, int nam, const char *param, unsigned def)
