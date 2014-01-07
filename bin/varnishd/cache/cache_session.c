@@ -197,7 +197,7 @@ ses_vsl_socket(struct sess *sp, const char *lsockname)
 	sp->client_port_str = WS_Copy(sp->ws, lport, -1);
 	VTCP_name(sess_local_addr(sp), laddr, sizeof laddr,
 	    lport, sizeof lport);
-	VSL(SLT_Begin, sp->vxid, "sess");
+	VSL(SLT_Begin, sp->vxid, "sess 0 HTTP/1");
 	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s %.6f %d",
 	    sp->client_addr_str, sp->client_port_str, lsockname, laddr, lport,
 	    sp->t_open, sp->fd);
@@ -389,8 +389,9 @@ SES_GetReq(struct worker *wrk, struct sess *sp)
 	sz = cache_param->vsl_buffer;
 	VSL_Setup(req->vsl, p, sz);
 	req->vsl->wid = VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER;
-	VSLb(req->vsl, SLT_Begin, "req %u", sp->vxid & VSL_IDENTMASK);
-	VSL(SLT_Link, req->sp->vxid, "req %u", req->vsl->wid & VSL_IDENTMASK);
+	VSLb(req->vsl, SLT_Begin, "req %u rxreq", sp->vxid & VSL_IDENTMASK);
+	VSL(SLT_Link, req->sp->vxid, "req %u rxreq",
+	    req->vsl->wid & VSL_IDENTMASK);
 	p += sz;
 	p = (void*)PRNDUP(p);
 

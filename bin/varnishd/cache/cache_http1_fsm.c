@@ -286,9 +286,9 @@ http1_dissect(struct worker *wrk, struct req *req)
 	 */
 	if (req->vsl->wid == 0) {
 		req->vsl->wid = VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER;
-		VSLb(req->vsl, SLT_Begin, "req %u",
+		VSLb(req->vsl, SLT_Begin, "req %u rxreq",
 		    req->sp->vxid & VSL_IDENTMASK);
-		VSL(SLT_Link, req->sp->vxid, "req %u",
+		VSL(SLT_Link, req->sp->vxid, "req %u rxreq",
 		    req->vsl->wid & VSL_IDENTMASK);
 	}
 

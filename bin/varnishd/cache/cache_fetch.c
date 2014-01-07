@@ -724,6 +724,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
     struct object *oldobj, enum vbf_fetch_mode_e mode)
 {
 	struct busyobj *bo;
+	const char *how;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -732,6 +733,19 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 
 	bo = VBO_GetBusyObj(wrk, req);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	switch(mode) {
+	case VBF_PASS:		how = "pass"; break;
+	case VBF_NORMAL:	how = "fetch"; break;
+	case VBF_BACKGROUND:	how = "bgfetch"; break;
+	default:		WRONG("Wrong fetch mode");
+	}
+
+	VSLb(bo->vsl, SLT_Begin, "bereq %u %s ",
+	    req->vsl->wid & VSL_IDENTMASK, how);
+	VSLb(req->vsl, SLT_Link, "bereq %u %s ",
+	    bo->vsl->wid & VSL_IDENTMASK, how);
+
 	bo->refcount = 2;
 
 	oc->busyobj = bo;

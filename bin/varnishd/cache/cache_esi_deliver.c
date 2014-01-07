@@ -61,8 +61,8 @@ ved_include(struct req *preq, const char *src, const char *host)
 
 	req = SES_GetReq(wrk, preq->sp);
 	req->req_body_status = REQ_BODY_NONE;
-	VSLb(req->vsl, SLT_Begin, "esireq %u", preq->vsl->wid & VSL_IDENTMASK);
-	VSLb(preq->vsl, SLT_Link, "esireq %u", req->vsl->wid & VSL_IDENTMASK);
+	VSLb(req->vsl, SLT_Begin, "req %u esi", preq->vsl->wid & VSL_IDENTMASK);
+	VSLb(preq->vsl, SLT_Link, "req %u esi", req->vsl->wid & VSL_IDENTMASK);
 	req->esi_level = preq->esi_level + 1;
 
 	HTTP_Copy(req->http0, preq->http0);
