@@ -20,6 +20,8 @@ server s1 {
 		sendhex "00000000"
 	send "\r\n"
 
+	delay .2
+
 	chunked "FOOBAR"
 
 	chunkedlen 0
@@ -44,6 +46,8 @@ server s1 {
 		sendhex "00000000"
 		sendhex "00000000"
 	send "\r\n"
+
+	delay .2
 
 	chunked "FOOBAR"
 
