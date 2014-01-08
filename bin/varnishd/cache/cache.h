@@ -177,18 +177,6 @@ struct ws {
 };
 
 /*--------------------------------------------------------------------
- * HTTP Request/Response/Header handling structure.
- */
-
-enum httpwhence {
-	HTTP_Method	= 1,
-	HTTP_Resp,
-	HTTP_Bereq,
-	HTTP_Beresp,
-	HTTP_Obj
-};
-
-/*--------------------------------------------------------------------
  * Ban info event types
  */
 
@@ -197,7 +185,7 @@ struct http {
 	unsigned		magic;
 #define HTTP_MAGIC		0x6428b5c9
 
-	enum httpwhence		logtag;
+	enum VSL_tag_e		logtag;		/* Must be SLT_*Method */
 	struct vsl_log		*vsl;
 
 	struct ws		*ws;
@@ -998,7 +986,7 @@ void http_PrintfHeader(struct http *to, const char *fmt, ...)
 void http_SetHeader(struct http *to, const char *hdr);
 void http_SetH(const struct http *to, unsigned n, const char *fm);
 void http_ForceGet(const struct http *to);
-void HTTP_Setup(struct http *, struct ws *, struct vsl_log *, enum httpwhence);
+void HTTP_Setup(struct http *, struct ws *, struct vsl_log *, enum VSL_tag_e);
 void http_Teardown(struct http *ht);
 int http_GetHdr(const struct http *hp, const char *hdr, char **ptr);
 int http_GetHdrData(const struct http *hp, const char *hdr,

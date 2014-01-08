@@ -69,7 +69,7 @@ ved_include(struct req *preq, const char *src, const char *host)
 
 	req->http0->conds = 0;
 
-	HTTP_Setup(req->http, req->ws, req->vsl, HTTP_Method);
+	HTTP_Setup(req->http, req->ws, req->vsl, SLT_ReqMethod);
 
 	http_SetH(req->http0, HTTP_HDR_URL, src);
 	if (host != NULL && *host != '\0')  {

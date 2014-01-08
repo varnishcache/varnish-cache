@@ -41,48 +41,45 @@
 #include "tbl/http_headers.h"
 #undef HTTPH
 
-/*--------------------------------------------------------------------*/
-
-static const enum VSL_tag_e foo[] = {
-	[HTTP_Method]	= SLT_ReqMethod,
-	[HTTP_Resp]	= SLT_RespMethod,
-	[HTTP_Bereq]	= SLT_BereqMethod,
-	[HTTP_Beresp]	= SLT_BerespMethod,
-	[HTTP_Obj]	= SLT_ObjMethod,
-};
-
-static enum VSL_tag_e
-http2shmlog(const struct http *hp, int t)
-{
-
-	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	if (t > HTTP_HDR_FIRST)
-		t = HTTP_HDR_FIRST;
-	assert(hp->logtag >= HTTP_Method && hp->logtag <= HTTP_Obj); /*lint !e685*/
-	assert(t >= HTTP_HDR_METHOD && t <= HTTP_HDR_FIRST);
-	return ((enum VSL_tag_e)(foo[hp->logtag] + t));
-}
+/*--------------------------------------------------------------------
+ * These two functions are in an incestous relationship with the
+ * order of macros in include/tbl/vsl_tags_http.h
+ *
+ * The http->logtag is the SLT_*Method enum, and we add to that, to
+ * get the SLT_ to use.
+ */
 
 static void
 http_VSLH(const struct http *hp, unsigned hdr)
 {
+	int i;
 
 	if (hp->vsl != NULL) {
 		AN(hp->vsl->wid & (VSL_CLIENTMARKER|VSL_BACKENDMARKER));
-		VSLbt(hp->vsl, http2shmlog(hp, hdr), hp->hd[hdr]);
+		i = hdr;
+		if (i > HTTP_HDR_FIRST)
+			i = HTTP_HDR_FIRST;
+		i += hp->logtag;
+		VSLbt(hp->vsl, (enum VSL_tag_e)i, hp->hd[hdr]);
 	}
 }
 
 static void
 http_VSLH_del(const struct http *hp, unsigned hdr)
 {
+	int i;
 
 	if (hp->vsl != NULL) {
+		/* We don't support unsetting stuff in the first line */
+		assert (hdr >= HTTP_HDR_FIRST);
 		AN(hp->vsl->wid & (VSL_CLIENTMARKER|VSL_BACKENDMARKER));
-		VSLbt(hp->vsl, ((enum VSL_tag_e)(http2shmlog(hp, hdr) + 1)),
-		    hp->hd[hdr]);
+		i = (HTTP_HDR_UNSET - HTTP_HDR_METHOD);
+		i += hp->logtag;
+		VSLbt(hp->vsl, (enum VSL_tag_e)i, hp->hd[hdr]);
 	}
 }
+
+/*--------------------------------------------------------------------*/
 
 void
 http_VSL_log(const struct http *hp)
@@ -145,7 +142,7 @@ HTTP_create(void *p, uint16_t nhttp)
 
 void
 HTTP_Setup(struct http *hp, struct ws *ws, struct vsl_log *vsl,
-    enum httpwhence  whence)
+    enum VSL_tag_e  whence)
 {
 	http_Teardown(hp);
 	hp->logtag = whence;

@@ -23,12 +23,12 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq -url "/bar" -hdr "Accept-Encoding: gzip"
+	txreq -url "/bar" -hdr "Accept-Encoding: gzip,foo"
 	rxresp
 	gunzip
 	expect resp.bodylen == 5
 
-	txreq -url "/foo" -hdr "Accept-Encoding: gzip"
+	txreq -url "/foo" -hdr "Accept-Encoding: gzip,foo"
 	rxresp
 	expect resp.bodylen == 21
 } -run

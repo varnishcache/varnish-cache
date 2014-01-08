@@ -27,8 +27,11 @@
  *
  * Define the VSL tags for HTTP protocol messages
  *
- * The order of this table is not random, do not resort.
- * In particular, the FIRST and LOST entries must be last, in that order.
+ * NB: The order of this table is not random, DO NOT RESORT.
+ *
+ * Specifically FIRST, UNSET and LOST entries must be last, in that order.
+ *
+ * See bin/varnishd/cache/cache_http.c::http_VSLH() for the other side.
  *
  * Arguments:
  *	Tag-Name
@@ -56,6 +59,15 @@ SLTH(Response,	HTTP_HDR_RESPONSE,	0, 1, "response",
 	"The HTTP response string received.\n\n"
 )
 SLTH(Header,	HTTP_HDR_FIRST,		1, 1, "header",
+	"HTTP header contents.\n\n"
+	"The format is::\n\n"
+	"\t%s: %s\n"
+	"\t|   |\n"
+	"\t|   +- Header value\n"
+	"\t+----- Header name\n"
+	"\n"
+)
+SLTH(Unset,	HTTP_HDR_UNSET,		0, 0, "unset header",
 	"HTTP header contents.\n\n"
 	"The format is::\n\n"
 	"\t%s: %s\n"

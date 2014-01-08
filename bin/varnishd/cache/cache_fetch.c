@@ -72,7 +72,7 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 	AZ(bo->should_close);
 	AZ(bo->storage_hint);
 
-	HTTP_Setup(bo->bereq0, bo->ws, bo->vsl, HTTP_Bereq);
+	HTTP_Setup(bo->bereq0, bo->ws, bo->vsl, SLT_BereqMethod);
 	http_FilterReq(bo->bereq0, bo->req->http,
 	    bo->do_pass ? HTTPH_R_PASS : HTTPH_R_FETCH);
 	if (!bo->do_pass) {
@@ -118,7 +118,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	AZ(bo->should_close);
 	AZ(bo->storage_hint);
 
-	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
+	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, SLT_BereqMethod);
 	HTTP_Copy(bo->bereq, bo->bereq0);
 
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
@@ -144,7 +144,7 @@ static void
 make_it_503(struct busyobj *bo)
 {
 
-	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, HTTP_Beresp);
+	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
 	http_SetH(bo->beresp, HTTP_HDR_PROTO, "HTTP/1.1");
 	http_SetResp(bo->beresp, "HTTP/1.1", 503, "Backend fetch failed");
 	http_SetHeader(bo->beresp, "Content-Length: 0");
@@ -164,7 +164,7 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 
 	xxxassert (wrk->handling == VCL_RET_FETCH);
 
-	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, HTTP_Beresp);
+	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
 
 	if (!bo->do_pass && bo->req != NULL)
 		vbf_release_req(bo); /* XXX: retry ?? */
@@ -433,7 +433,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	hp = bo->beresp;
 	hp2 = obj->http;
 
-	hp2->logtag = HTTP_Obj;
+	hp2->logtag = SLT_ObjMethod;
 	http_FilterResp(hp, hp2, bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS);
 	http_CopyHome(hp2);
 
@@ -594,7 +594,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 
 	obj->vxid = bo->vsl->wid;
 
-	obj->http->logtag = HTTP_Obj;
+	obj->http->logtag = SLT_ObjMethod;
 	/* XXX: we should have our own HTTP_A_CONDFETCH */
 	http_FilterResp(bo->ims_obj->http, obj->http, HTTPH_A_INS);
 	http_CopyHome(obj->http);

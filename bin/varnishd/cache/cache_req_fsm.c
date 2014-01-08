@@ -103,7 +103,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	if (!(req->obj->objcore->flags & OC_F_PRIVATE))
 		EXP_Touch(req->obj->objcore, req->t_resp);
 
-	HTTP_Setup(req->resp, req->ws, req->vsl, HTTP_Resp);
+	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
 
 	http_ClrHeader(req->resp);
 	http_FilterResp(req->obj->http, req->resp, 0);
@@ -594,7 +594,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 
 	req->acct_req.pipe++;
 	bo = VBO_GetBusyObj(wrk, req);
-	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, HTTP_Bereq);
+	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, SLT_BereqMethod);
 	http_FilterReq(bo->bereq, req->http, 0);	// XXX: 0 ?
 	http_PrintfHeader(bo->bereq,
 	    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
