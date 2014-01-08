@@ -279,7 +279,6 @@ htc_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
 			hp->hdf[hp->nhd] = 0;
 			hp->hd[hp->nhd].b = p;
 			hp->hd[hp->nhd].e = q;
-			http_VSLH(hp, hp->nhd);
 			hp->nhd++;
 		} else {
 			VSLb(hp->vsl, SLT_BogoHeader, "Too many headers: %.*s",
@@ -364,15 +363,10 @@ htc_splitline(struct http *hp, const struct http_conn *htc, int req)
 	p += vct_skipcrlf(p);
 
 	*hp->hd[h1].e = '\0';
-	http_VSLH(hp, h1);
-
 	*hp->hd[h2].e = '\0';
-	http_VSLH(hp, h2);
 
-	if (hp->hd[h3].e != NULL) {
+	if (hp->hd[h3].e != NULL)
 		*hp->hd[h3].e = '\0';
-		http_VSLH(hp, h3);
-	}
 
 	return (htc_dissect_hdrs(hp, p, htc));
 }
@@ -519,7 +513,6 @@ HTTP1_Write(const struct worker *w, const struct http *hp, int resp)
 
 	if (resp) {
 		l = WRW_WriteH(w, &hp->hd[HTTP_HDR_PROTO], " ");
-		http_VSLH(hp, HTTP_HDR_PROTO);
 
 		hp->hd[HTTP_HDR_STATUS].b = WS_Alloc(hp->ws, 4);
 		AN(hp->hd[HTTP_HDR_STATUS].b);
@@ -528,18 +521,13 @@ HTTP1_Write(const struct worker *w, const struct http *hp, int resp)
 		hp->hd[HTTP_HDR_STATUS].e = hp->hd[HTTP_HDR_STATUS].b + 3;
 
 		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_STATUS], " ");
-		http_VSLH(hp, HTTP_HDR_STATUS);
 
 		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_RESPONSE], "\r\n");
-		http_VSLH(hp, HTTP_HDR_RESPONSE);
 	} else {
 		AN(hp->hd[HTTP_HDR_URL].b);
 		l = WRW_WriteH(w, &hp->hd[HTTP_HDR_METHOD], " ");
-		http_VSLH(hp, HTTP_HDR_METHOD);
 		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_URL], " ");
-		http_VSLH(hp, HTTP_HDR_URL);
 		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_PROTO], "\r\n");
-		http_VSLH(hp, HTTP_HDR_PROTO);
 	}
 	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
 		if (hp->hd[u].b == NULL)
@@ -547,7 +535,6 @@ HTTP1_Write(const struct worker *w, const struct http *hp, int resp)
 		AN(hp->hd[u].b);
 		AN(hp->hd[u].e);
 		l += WRW_WriteH(w, &hp->hd[u], "\r\n");
-		http_VSLH(hp, u);
 	}
 	l += WRW_Write(w, "\r\n", -1);
 	return (l);

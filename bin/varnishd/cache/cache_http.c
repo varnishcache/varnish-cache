@@ -41,6 +41,8 @@
 #include "tbl/http_headers.h"
 #undef HTTPH
 
+/*--------------------------------------------------------------------*/
+
 static const enum VSL_tag_e foo[] = {
 	[HTTP_Method]	= SLT_ReqMethod,
 	[HTTP_Resp]	= SLT_RespMethod,
@@ -61,13 +63,35 @@ http2shmlog(const struct http *hp, int t)
 	return ((enum VSL_tag_e)(foo[hp->logtag] + t));
 }
 
-void
+static void
 http_VSLH(const struct http *hp, unsigned hdr)
 {
 
-	AN(hp->vsl);
-	AN(hp->vsl->wid & (VSL_CLIENTMARKER|VSL_BACKENDMARKER));
-	VSLbt(hp->vsl, http2shmlog(hp, hdr), hp->hd[hdr]);
+	if (hp->vsl != NULL) {
+		AN(hp->vsl->wid & (VSL_CLIENTMARKER|VSL_BACKENDMARKER));
+		VSLbt(hp->vsl, http2shmlog(hp, hdr), hp->hd[hdr]);
+	}
+}
+
+static void
+http_VSLH_del(const struct http *hp, unsigned hdr)
+{
+
+	if (hp->vsl != NULL) {
+		AN(hp->vsl->wid & (VSL_CLIENTMARKER|VSL_BACKENDMARKER));
+		VSLbt(hp->vsl, ((enum VSL_tag_e)(http2shmlog(hp, hdr) + 1)),
+		    hp->hd[hdr]);
+	}
+}
+
+void
+http_VSL_log(const struct http *hp)
+{
+	unsigned u;
+
+	for (u = 0; u < hp->nhd; u++)
+		if (hp->hd[u].b != NULL)
+			http_VSLH(hp, u);
 }
 
 /*--------------------------------------------------------------------*/
@@ -488,6 +512,7 @@ http_SetH(const struct http *to, unsigned n, const char *fm)
 	to->hd[n].b = TRUST_ME(fm);
 	to->hd[n].e = strchr(to->hd[n].b, '\0');
 	to->hdf[n] = 0;
+	http_VSLH(to, n);
 }
 
 static void
@@ -498,6 +523,7 @@ http_linkh(const struct http *to, const struct http *fm, unsigned n)
 	Tcheck(fm->hd[n]);
 	to->hd[n] = fm->hd[n];
 	to->hdf[n] = fm->hdf[n];
+	http_VSLH(to, n);
 }
 
 void
@@ -574,6 +600,7 @@ http_filterfields(struct http *to, const struct http *fm, unsigned how)
 		if (to->nhd < to->shd) {
 			to->hd[to->nhd] = fm->hd[u];
 			to->hdf[to->nhd] = 0;
+			http_VSLH(to, to->nhd);
 			to->nhd++;
 		} else  {
 			VSC_C_main->losthdr++;
@@ -629,13 +656,11 @@ http_CopyHome(const struct http *hp)
 		if (hp->hd[u].b == NULL)
 			continue;
 		if (hp->hd[u].b >= hp->ws->s && hp->hd[u].e <= hp->ws->e) {
-			http_VSLH(hp, u);
 			continue;
 		}
 		l = Tlen(hp->hd[u]);
 		p = WS_Copy(hp->ws, hp->hd[u].b, l + 1L);
 		if (p != NULL) {
-			http_VSLH(hp, u);
 			hp->hd[u].b = p;
 			hp->hd[u].e = p + l;
 		} else {
@@ -679,6 +704,19 @@ http_SetHeader(struct http *to, const char *hdr)
 
 /*--------------------------------------------------------------------*/
 
+void
+http_ForceHeader(struct http *to, const char *hdr, const char *val)
+{
+
+	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
+	if (http_HdrIs(to, hdr, val))
+		return;
+	http_Unset(to, hdr);
+	http_PrintfHeader(to, "%s %s", hdr + 1, val);
+}
+
+/*--------------------------------------------------------------------*/
+
 static void
 http_PutField(const struct http *to, int field, const char *string)
 {
@@ -698,6 +736,7 @@ http_PutField(const struct http *to, int field, const char *string)
 		to->hd[field].b = p;
 		to->hd[field].e = p + l;
 		to->hdf[field] = 0;
+		http_VSLH(to, field);
 	}
 }
 
@@ -719,7 +758,7 @@ http_PutStatus(struct http *to, uint16_t status)
 	assert(status >= 100 && status <= 999);
 	to->status = status;
 	bprintf(buf, "%03d", status % 1000);
-	http_SetH(to, HTTP_HDR_STATUS, WS_Copy(to->ws, buf, sizeof buf));
+	http_PutField(to, HTTP_HDR_STATUS, buf);
 }
 
 void
@@ -752,9 +791,11 @@ http_PrintfHeader(struct http *to, const char *fmt, ...)
 		to->hd[to->nhd].e = to->ws->f + n;
 		to->hdf[to->nhd] = 0;
 		WS_Release(to->ws, n + 1);
+		http_VSLH(to, to->nhd);
 		to->nhd++;
 	}
 }
+
 /*--------------------------------------------------------------------*/
 
 void
@@ -765,8 +806,10 @@ http_Unset(struct http *hp, const char *hdr)
 	for (v = u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
 		if (hp->hd[u].b == NULL)
 			continue;
-		if (http_IsHdr(&hp->hd[u], hdr))
+		if (http_IsHdr(&hp->hd[u], hdr)) {
+			http_VSLH_del(hp, u);
 			continue;
+		}
 		if (v != u) {
 			memcpy(&hp->hd[v], &hp->hd[u], sizeof *hp->hd);
 			memcpy(&hp->hdf[v], &hp->hdf[u], sizeof *hp->hdf);

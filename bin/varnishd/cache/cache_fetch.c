@@ -84,8 +84,7 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 			 * client doesn't grok it.  We will uncompress for
 			 * the minority of clients which don't.
 			 */
-			http_Unset(bo->bereq0, H_Accept_Encoding);
-			http_SetHeader(bo->bereq0, "Accept-Encoding: gzip");
+			http_ForceHeader(bo->bereq0, H_Accept_Encoding, "gzip");
 		}
 	}
 	if (bo->ims_obj != NULL) {
@@ -195,6 +194,8 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 	} else {
 		AN(bo->vbc);
 	}
+
+	http_VSL_log(bo->beresp);
 
 	/*
 	 * These two headers can be spread over multiple actual headers

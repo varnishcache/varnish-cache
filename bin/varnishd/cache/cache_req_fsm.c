@@ -690,6 +690,8 @@ cnt_recv(struct worker *wrk, struct req *req)
 	VSLb(req->vsl, SLT_ReqStart, "%s %s",
 	    req->sp->client_addr_str, req->sp->client_port_str);
 
+	http_VSL_log(req->http);
+
 	if (req->err_code) {
 		req->req_step = R_STP_ERROR;
 		return (REQ_FSM_MORE);
@@ -716,12 +718,12 @@ cnt_recv(struct worker *wrk, struct req *req)
 	}
 	recv_handling = wrk->handling;
 
+	/* We wash the A-E header here for the sake of VRY */
 	if (cache_param->http_gzip_support &&
 	     (recv_handling != VCL_RET_PIPE) &&
 	     (recv_handling != VCL_RET_PASS)) {
 		if (RFC2616_Req_Gzip(req->http)) {
-			http_Unset(req->http, H_Accept_Encoding);
-			http_SetHeader(req->http, "Accept-Encoding: gzip");
+			http_ForceHeader(req->http, H_Accept_Encoding, "gzip");
 		} else {
 			http_Unset(req->http, H_Accept_Encoding);
 		}

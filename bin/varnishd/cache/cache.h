@@ -991,6 +991,7 @@ void http_FilterReq(struct http *to, const struct http *fm, unsigned how);
 void http_FilterResp(const struct http *fm, struct http *to, unsigned how);
 void http_PutProtocol(const struct http *to, const char *protocol);
 void http_PutStatus(struct http *to, uint16_t status);
+void http_ForceHeader(struct http *to, const char *hdr, const char *val);
 void http_PutResponse(const struct http *to, const char *response);
 void http_PrintfHeader(struct http *to, const char *fmt, ...)
     __printflike(2, 3);
@@ -1013,7 +1014,7 @@ enum sess_close http_DoConnection(const struct http *);
 void http_CopyHome(const struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
 void http_CollectHdr(struct http *hp, const char *hdr);
-void http_VSLH(const struct http *hp, unsigned hdr);
+void http_VSL_log(const struct http *hp);
 
 /* cache_http1_proto.c */
 
