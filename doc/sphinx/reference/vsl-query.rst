@@ -35,8 +35,12 @@ When grouping transactions, there is a hierarchy structure showing
 which transaction initiated what. The level increases by one by an
 'initiated by' relation, so for example a backend transaction will
 have one higher level than the client transaction that initiated it on
-a cache miss. Levels start counting at 1, except when using raw where
-it will always be 0.
+a cache miss. Request restart transactions does not have it's level
+increased. This is to help predicting the level for a given
+transaction.
+
+Levels start counting at 1, except when using raw where it will always
+be 0.
 
 The grouping modes are:
 
