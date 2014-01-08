@@ -220,7 +220,6 @@ static const char * const VSL_transactions[VSL_t__MAX] = {
 	[VSL_t_unknown] = "<< Unknown  >>",
 	[VSL_t_sess]	= "<< Session  >>",
 	[VSL_t_req]	= "<< Request  >>",
-	[VSL_t_esireq]	= "<< ESI-req  >>",
 	[VSL_t_bereq]	= "<< BeReq    >>",
 	[VSL_t_raw]	= "<< Record   >>",
 };
@@ -339,7 +338,6 @@ VSL_PrintTransactions(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		if (vsl->c_opt || vsl->b_opt) {
 			switch (t->type) {
 			case VSL_t_req:
-			case VSL_t_esireq:
 				if (!vsl->c_opt)
 					continue;
 				break;

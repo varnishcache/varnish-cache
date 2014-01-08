@@ -52,9 +52,20 @@ static const char * const vsl_t_names[VSL_t__MAX] = {
 	[VSL_t_unknown]	= "unknown",
 	[VSL_t_sess]	= "sess",
 	[VSL_t_req]	= "req",
-	[VSL_t_esireq]	= "esireq",
 	[VSL_t_bereq]	= "bereq",
 	[VSL_t_raw]	= "raw",
+};
+
+/* The transaction reasons we care about */
+enum vsl_reason_e {
+	vsl_r_unknown,
+	vsl_r_restart,
+	vsl_r__MAX,
+};
+
+static const char * const vsl_r_names[vsl_r__MAX] = {
+	[vsl_r_unknown]	= "unknown",
+	[vsl_r_restart]	= "restart",
 };
 
 struct vtx;
@@ -140,6 +151,7 @@ struct vtx {
 				       complete */
 
 	enum VSL_transaction_e	type;
+	enum vsl_reason_e	reason;
 
 	struct vtx		*parent;
 	VTAILQ_HEAD(,vtx)	child;
@@ -488,6 +500,7 @@ vtx_new(struct VSLQ *vslq)
 	vtx->t_start = VTIM_mono();
 	vtx->flags = 0;
 	vtx->type = VSL_t_unknown;
+	vtx->reason = vsl_r_unknown;
 	vtx->parent = NULL;
 	vtx->n_child = 0;
 	vtx->n_childready = 0;
@@ -658,39 +671,41 @@ vtx_set_parent(struct vtx *parent, struct vtx *child)
 /* Parse a begin or link record. Returns the number of elements that was
    successfully parsed. */
 static int
-vtx_parse_beginlink(const char *str, enum VSL_transaction_e *ptype,
-    unsigned *pvxid)
+vtx_parse_link(const char *str, enum VSL_transaction_e *ptype,
+    unsigned *pvxid, enum vsl_reason_e *preason)
 {
-	char buf[8];
+	char type[16], reason[16];
 	unsigned vxid;
 	int i, j;
-	enum VSL_transaction_e type = VSL_t_unknown;
 
 	AN(str);
-	i = sscanf(str, "%7s %u", buf, &vxid);
+	AN(ptype);
+	AN(pvxid);
+	AN(preason);
+
+	i = sscanf(str, "%15s %u %15s", type, &vxid, reason);
 	if (i < 1)
-		return (-1);
+		return (0);
 	for (j = 0; j < VSL_t__MAX; j++)
-		if (!strcmp(buf, vsl_t_names[j]))
+		if (!strcmp(type, vsl_t_names[j]))
 			break;
-	switch (j) {
-	case VSL_t_sess:
-	case VSL_t_req:
-	case VSL_t_esireq:
-	case VSL_t_bereq:
-		/* Valid types */
-		type = j;
-		break;
-	default:
-		return (-1);
-	}
+	if (j < VSL_t__MAX)
+		*ptype = j;
+	else
+		*ptype = VSL_t_unknown;
 	if (i == 1)
-		vxid = 0;
-	if (ptype)
-		*ptype = type;
-	if (pvxid)
-		*pvxid = vxid;
-	return (i);
+		return (1);
+	*pvxid = vxid;
+	if (i == 2)
+		return (2);
+	for (j = 0; j < vsl_r__MAX; j++)
+		if (!strcmp(reason, vsl_r_names[j]))
+			break;
+	if (j < vsl_r__MAX)
+		*preason = j;
+	else
+		*preason = vsl_r_unknown;
+	return (3);
 }
 
 /* Parse and process a begin record */
@@ -699,6 +714,7 @@ vtx_scan_begin(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 {
 	int i;
 	enum VSL_transaction_e type;
+	enum vsl_reason_e reason;
 	unsigned p_vxid;
 	struct vtx *p_vtx;
 
@@ -706,20 +722,22 @@ vtx_scan_begin(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 
 	AZ(vtx->flags & VTX_F_READY);
 
-	i = vtx_parse_beginlink(VSL_CDATA(ptr), &type, &p_vxid);
-	if (i < 1)
+	i = vtx_parse_link(VSL_CDATA(ptr), &type, &p_vxid, &reason);
+	if (i != 3)
 		return (vtx_diag_tag(vtx, ptr, "parse error"));
+	if (type == VSL_t_unknown)
+		(void)vtx_diag_tag(vtx, ptr, "unknown vxid type");
 
 	/* Check/set vtx type */
-	assert(type != VSL_t_unknown);
-	if (vtx->type != VSL_t_unknown && vtx->type != type) {
+	if (vtx->type != VSL_t_unknown && vtx->type != type)
 		/* Type not matching the one previously set by a link
 		   record */
-		return (vtx_diag_tag(vtx, ptr, "type mismatch"));
-	}
+		(void)vtx_diag_tag(vtx, ptr, "type mismatch");
 	vtx->type = type;
+	vtx->reason = reason;
 
-	if (i == 1 || p_vxid == 0)
+	if (p_vxid == 0)
+		/* No parent */
 		return (0);
 
 	if (vslq->grouping == VSL_g_vxid)
@@ -739,16 +757,14 @@ vtx_scan_begin(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 
 	p_vtx = vtx_lookup(vslq, p_vxid);
 	if (p_vtx == NULL) {
-		/* Not seen parent yet. Insert it and create link. */
+		/* Not seen parent yet. Create it. */
 		p_vtx = vtx_add(vslq, p_vxid);
 		AN(p_vtx);
-		vtx_set_parent(p_vtx, vtx);
-		return (0);
+	} else {
+		CHECK_OBJ_NOTNULL(p_vtx, VTX_MAGIC);
+		if (p_vtx->flags & VTX_F_COMPLETE)
+			return (vtx_diag_tag(vtx, ptr, "link too late"));
 	}
-
-	CHECK_OBJ_NOTNULL(p_vtx, VTX_MAGIC);
-	if (p_vtx->flags & VTX_F_COMPLETE)
-		return (vtx_diag_tag(vtx, ptr, "link too late"));
 
 	/* Create link */
 	vtx_set_parent(p_vtx, vtx);
@@ -762,6 +778,7 @@ vtx_scan_link(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 {
 	int i;
 	enum VSL_transaction_e c_type;
+	enum vsl_reason_e c_reason;
 	unsigned c_vxid;
 	struct vtx *c_vtx;
 
@@ -769,11 +786,11 @@ vtx_scan_link(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 
 	AZ(vtx->flags & VTX_F_READY);
 
-	i = vtx_parse_beginlink(VSL_CDATA(ptr), &c_type, &c_vxid);
-	if (i < 2)
+	i = vtx_parse_link(VSL_CDATA(ptr), &c_type, &c_vxid, &c_reason);
+	if (i != 3)
 		return (vtx_diag_tag(vtx, ptr, "parse error"));
-	assert(i == 2);
-	assert(c_type != VSL_t_unknown);
+	if (c_type == VSL_t_unknown)
+		(void)vtx_diag_tag(vtx, ptr, "unknown vxid type");
 
 	if (vslq->grouping == VSL_g_vxid)
 		return (0);	/* No links */
@@ -786,7 +803,9 @@ vtx_scan_link(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 		/* Child not seen before. Insert it and create link */
 		c_vtx = vtx_add(vslq, c_vxid);
 		AN(c_vtx);
+		AZ(c_vtx->parent);
 		c_vtx->type = c_type;
+		c_vtx->reason = c_reason;
 		vtx_set_parent(vtx, c_vtx);
 		return (0);
 	}
@@ -800,9 +819,10 @@ vtx_scan_link(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 	if (c_vtx->flags & VTX_F_COMPLETE)
 		return (vtx_diag_tag(vtx, ptr, "link too late"));
 	if (c_vtx->type != VSL_t_unknown && c_vtx->type != c_type)
-		return (vtx_diag_tag(vtx, ptr, "type mismatch"));
+		(void)vtx_diag_tag(vtx, ptr, "type mismatch");
 
 	c_vtx->type = c_type;
+	c_vtx->reason = c_reason;
 	vtx_set_parent(vtx, c_vtx);
 	return (0);
 }
@@ -901,7 +921,11 @@ vslq_callback(const struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
 			assert(i < n);
 			(void)vslc_vtx_reset(&vtx->c.cursor);
 			vtxs[i] = vtx;
-			trans[i].level = trans[j].level + 1;
+			if (vtx->reason == vsl_r_restart)
+				/* Restarts stay at the same level as parent */
+				trans[i].level = trans[j].level;
+			else
+				trans[i].level = trans[j].level + 1;
 			trans[i].vxid = vtx->key.vxid;
 			trans[i].vxid_parent = trans[j].vxid;
 			trans[i].type = vtx->type;
@@ -950,7 +974,6 @@ vtx_synth_rec(struct vtx *vtx, unsigned tag, const char *fmt, ...)
 	synth->data[1] = vtx->key.vxid;
 	switch (vtx->type) {
 	case VSL_t_req:
-	case VSL_t_esireq:
 		synth->data[1] |= VSL_CLIENTMARKER;
 		break;
 	case VSL_t_bereq:
