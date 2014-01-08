@@ -16,6 +16,7 @@ logexpect l1 -v v1 -g session {
 	expect 0 =	End
 
 	expect 0 *	Begin		"req 1000"
+	expect 0 =	ReqStart
 	expect 0 =	ReqMethod	GET
 	expect 0 =	ReqURL		/
 	expect 0 =	ReqProtocol	HTTP/1.1
