@@ -16,10 +16,10 @@ logexpect l1 -v v1 -g session {
 	expect 0 =	End
 
 	expect 0 *	Begin		"req 1000"
-	expect 0 =	ReqMethod		GET
+	expect 0 =	ReqMethod	GET
 	expect 0 =	ReqURL		/
 	expect 0 =	ReqProtocol	HTTP/1.1
-	expect * =	ReqHeader		"Foo: bar"
+	expect * =	ReqHeader	"Foo: bar"
 	expect * =	Link		bereq
 	expect * =	ReqEnd
 	expect 0 =	End
@@ -29,7 +29,7 @@ logexpect l1 -v v1 -g session {
 } -start
 
 # Check with a query (this selects only the backend request)
-logexpect l2 -v v1 -g vxid -q "Begin eq 'bereq 1001'" {
+logexpect l2 -v v1 -g vxid -q "Begin ~ 'bereq 1001'" {
 	expect 0 1002	Begin
 	expect * =	End
 } -start

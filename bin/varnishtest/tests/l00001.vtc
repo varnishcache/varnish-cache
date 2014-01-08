@@ -20,7 +20,7 @@ client c1 {
 } -run
 
 # Test 'eq' operator
-logexpect l1 -d 1 -g vxid -q "Begin eq 'req 1000'" {
+logexpect l1 -d 1 -g vxid -q "Begin eq 'req 1000 rxreq'" {
 	expect 0 *	Begin	req
 	expect * =	ReqEnd
 	expect * =	End
