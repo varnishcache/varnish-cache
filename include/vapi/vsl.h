@@ -65,11 +65,24 @@ enum VSL_transaction_e {
 	VSL_t__MAX,
 };
 
+enum VSL_reason_e {
+	VSL_r_unknown,
+	VSL_r_http_1,
+	VSL_r_rxreq,
+	VSL_r_esi,
+	VSL_r_restart,
+	VSL_r_pass,
+	VSL_r_fetch,
+	VSL_r_bgfetch,
+	VSL_r__MAX,
+};
+
 struct VSL_transaction {
 	unsigned		level;
 	int32_t			vxid;
 	int32_t			vxid_parent;
 	enum VSL_transaction_e	type;
+	enum VSL_reason_e	reason;
 	struct VSL_cursor	*c;
 };
 

@@ -56,16 +56,15 @@ static const char * const vsl_t_names[VSL_t__MAX] = {
 	[VSL_t_raw]	= "raw",
 };
 
-/* The transaction reasons we care about */
-enum vsl_reason_e {
-	vsl_r_unknown,
-	vsl_r_restart,
-	vsl_r__MAX,
-};
-
-static const char * const vsl_r_names[vsl_r__MAX] = {
-	[vsl_r_unknown]	= "unknown",
-	[vsl_r_restart]	= "restart",
+static const char * const vsl_r_names[VSL_r__MAX] = {
+	[VSL_r_unknown]	= "unknown",
+	[VSL_r_http_1]	= "HTTP/1",
+	[VSL_r_rxreq]	= "rxreq",
+	[VSL_r_esi]	= "esi",
+	[VSL_r_restart]	= "restart",
+	[VSL_r_pass]	= "pass",
+	[VSL_r_fetch]	= "fetch",
+	[VSL_r_bgfetch]	= "bgfetch",
 };
 
 struct vtx;
@@ -151,7 +150,7 @@ struct vtx {
 				       complete */
 
 	enum VSL_transaction_e	type;
-	enum vsl_reason_e	reason;
+	enum VSL_reason_e	reason;
 
 	struct vtx		*parent;
 	VTAILQ_HEAD(,vtx)	child;
@@ -500,7 +499,7 @@ vtx_new(struct VSLQ *vslq)
 	vtx->t_start = VTIM_mono();
 	vtx->flags = 0;
 	vtx->type = VSL_t_unknown;
-	vtx->reason = vsl_r_unknown;
+	vtx->reason = VSL_r_unknown;
 	vtx->parent = NULL;
 	vtx->n_child = 0;
 	vtx->n_childready = 0;
@@ -672,7 +671,7 @@ vtx_set_parent(struct vtx *parent, struct vtx *child)
    successfully parsed. */
 static int
 vtx_parse_link(const char *str, enum VSL_transaction_e *ptype,
-    unsigned *pvxid, enum vsl_reason_e *preason)
+    unsigned *pvxid, enum VSL_reason_e *preason)
 {
 	char type[16], reason[16];
 	unsigned vxid;
@@ -698,13 +697,13 @@ vtx_parse_link(const char *str, enum VSL_transaction_e *ptype,
 	*pvxid = vxid;
 	if (i == 2)
 		return (2);
-	for (j = 0; j < vsl_r__MAX; j++)
+	for (j = 0; j < VSL_r__MAX; j++)
 		if (!strcmp(reason, vsl_r_names[j]))
 			break;
-	if (j < vsl_r__MAX)
+	if (j < VSL_r__MAX)
 		*preason = j;
 	else
-		*preason = vsl_r_unknown;
+		*preason = VSL_r_unknown;
 	return (3);
 }
 
@@ -714,7 +713,7 @@ vtx_scan_begin(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 {
 	int i;
 	enum VSL_transaction_e type;
-	enum vsl_reason_e reason;
+	enum VSL_reason_e reason;
 	unsigned p_vxid;
 	struct vtx *p_vtx;
 
@@ -778,7 +777,7 @@ vtx_scan_link(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 {
 	int i;
 	enum VSL_transaction_e c_type;
-	enum vsl_reason_e c_reason;
+	enum VSL_reason_e c_reason;
 	unsigned c_vxid;
 	struct vtx *c_vtx;
 
@@ -913,6 +912,7 @@ vslq_callback(const struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
 	trans[0].vxid = vtx->key.vxid;
 	trans[0].vxid_parent = 0;
 	trans[0].type = vtx->type;
+	trans[0].reason = vtx->reason;
 	trans[0].c = &vtx->c.cursor;
 	i = 1;
 	j = 0;
@@ -921,7 +921,7 @@ vslq_callback(const struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
 			assert(i < n);
 			(void)vslc_vtx_reset(&vtx->c.cursor);
 			vtxs[i] = vtx;
-			if (vtx->reason == vsl_r_restart)
+			if (vtx->reason == VSL_r_restart)
 				/* Restarts stay at the same level as parent */
 				trans[i].level = trans[j].level;
 			else
@@ -929,6 +929,7 @@ vslq_callback(const struct VSLQ *vslq, struct vtx *vtx, VSLQ_dispatch_f *func,
 			trans[i].vxid = vtx->key.vxid;
 			trans[i].vxid_parent = trans[j].vxid;
 			trans[i].type = vtx->type;
+			trans[i].reason = vtx->reason;
 			trans[i].c = &vtx->c.cursor;
 			i++;
 		}
@@ -1063,6 +1064,7 @@ VSLQ_New(struct VSL_data *vsl, struct VSL_cursor **cp,
 	vslq->raw.c.cursor.priv_data = &vslq->raw.c;
 	vslq->raw.trans.level = 0;
 	vslq->raw.trans.type = VSL_t_raw;
+	vslq->raw.trans.reason = VSL_r_unknown;
 	vslq->raw.trans.c = &vslq->raw.c.cursor;
 	vslq->raw.ptrans[0] = &vslq->raw.trans;
 	vslq->raw.ptrans[1] = NULL;
