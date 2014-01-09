@@ -731,7 +731,7 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	unsigned tag;
 	const char *b, *e, *p;
 	struct watch *w;
-	int i;
+	int i, skip;
 
 	(void)vsl;
 	(void)priv;
@@ -742,7 +742,8 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			continue;
 		CTX.hitmiss = "-";
 		CTX.handling = "-";
-		while ((1 == VSL_Next(t->c))) {
+		skip = 0;
+		while (skip == 0 && 1 == VSL_Next(t->c)) {
 			tag = VSL_TAG(t->c->rec.ptr);
 			b = VSL_CDATA(t->c->rec.ptr);
 			e = b + VSL_LEN(t->c->rec.ptr);
@@ -808,6 +809,10 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 					CTX.handling = "pipe";
 				}
 				break;
+			case SLT_VCL_return:
+				if (!strcasecmp(b, "restart"))
+					skip = 1;
+				break;
 			default:
 				break;
 			}
@@ -831,6 +836,8 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			if (tag == SLT_RespHeader)
 				process_hdr(&CTX.watch_resphdr, b, e);
 		}
+		if (skip)
+			continue;
 		i = print();
 		if (i)
 			return (i);
