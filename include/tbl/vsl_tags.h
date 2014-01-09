@@ -425,20 +425,22 @@ SLTM(Gzip, 0, "G(un)zip performed on object",
 SLTM(Link, 0, "Links to a child VXID",
 	"Links this VXID to any child VXID it initiates.\n\n"
 	"The format is::\n\n"
-	"\t%s %d\n"
-	"\t|  |\n"
-	"\t|  +- Child vxid\n"
-	"\t+---- Child type (\"req\", \"bereq\" or \"esireq\")\n"
+	"\t%s %d %s\n"
+	"\t|  |  |\n"
+	"\t|  |  +- Reason\n"
+	"\t|  +---- Child vxid\n"
+	"\t+------- Child type (\"req\" or \"bereq\")\n"
 	"\n"
 )
 
 SLTM(Begin, 0, "Marks the start of a VXID",
 	"The first record of a VXID transaction.\n\n"
 	"The format is::\n\n"
-	"\t%s %d\n"
-	"\t|  |\n"
-	"\t|  +- Parent vxid\n"
-	"\t+---- Type (\"sess\", \"req\", \"bereq\" or \"esireq\")\n"
+	"\t%s %d %s\n"
+	"\t|  |  |\n"
+	"\t|  |  +- Reason\n"
+	"\t|  +---- Parent vxid\n"
+	"\t+------- Type (\"sess\", \"req\" or \"bereq\")\n"
 	"\n"
 )
 
