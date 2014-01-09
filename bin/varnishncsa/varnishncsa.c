@@ -739,6 +739,10 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	for (t = pt[0]; t != NULL; t = *++pt) {
 		CTX.gen++;
 		if (t->type != VSL_t_req)
+			/* Only look at client requests */
+			continue;
+		if (t->reason == VSL_r_esi)
+			/* Skip ESI requests */
 			continue;
 		CTX.hitmiss = "-";
 		CTX.handling = "-";
