@@ -37,7 +37,8 @@
  * Structure definition
  */
 struct vsb {
-	unsigned	s_magic;
+	unsigned	magic;
+#define VSB_MAGIC	0x4a82dd8a
 	char		*s_buf;		/* storage buffer */
 	int		 s_error;	/* current error code */
 	ssize_t		 s_size;	/* size of storage buffer */

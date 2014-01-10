@@ -45,7 +45,6 @@ __FBSDID("$FreeBSD: head/sys/kern/subr_vsb.c 222004 2011-05-17 06:36:32Z phk $")
 
 #define	roundup2(x, y)	(((x)+((y)-1))&(~((y)-1))) /* if y is powers of two */
 
-#define VSB_MAGIC		0x4a82dd8a
 /*
  * Predicates
  */
@@ -84,8 +83,8 @@ _assert_VSB_integrity(const char *fun, const struct vsb *s)
 	(void)s;
 	KASSERT(s != NULL,
 	    ("%s called with a NULL vsb pointer", fun));
-	KASSERT(s->s_magic == VSB_MAGIC,
-	    ("%s called wih an unintialized vsb pointer", fun));
+	KASSERT(s->magic == VSB_MAGIC,
+	    ("%s called wih an bogus vsb pointer", fun));
 	KASSERT(s->s_buf != NULL,
 	    ("%s called with uninitialized or corrupt vsb", fun));
 	KASSERT(s->s_len < s->s_size,
@@ -167,7 +166,7 @@ VSB_newbuf(struct vsb *s, char *buf, int length, int flags)
 {
 
 	memset(s, 0, sizeof(*s));
-	s->s_magic = VSB_MAGIC;
+	s->magic = VSB_MAGIC;
 	s->s_flags = flags;
 	s->s_size = length;
 	s->s_buf = buf;
