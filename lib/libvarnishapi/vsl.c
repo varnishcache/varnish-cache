@@ -57,13 +57,13 @@
 
 /*--------------------------------------------------------------------*/
 
-const char *VSL_tags[SLT__MAX] = {
+const char * const VSL_tags[SLT__MAX] = {
 #  define SLTM(foo,flags,sdesc,ldesc)       [SLT_##foo] = #foo,
 #  include "tbl/vsl_tags.h"
 #  undef SLTM
 };
 
-unsigned VSL_tagflags[SLT__MAX] = {
+const unsigned VSL_tagflags[SLT__MAX] = {
 #  define SLTM(foo, flags, sdesc, ldesc)	[SLT_##foo] = flags,
 #  include "tbl/vsl_tags.h"
 #  undef SLTM

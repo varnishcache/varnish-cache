@@ -119,12 +119,12 @@ typedef void VSL_tagfind_f(int tag, void *priv);
 	 *   priv: The priv argument
 	 */
 
-extern const char *VSL_tags[SLT__MAX];
+extern const char * const VSL_tags[SLT__MAX];
 	/*
 	 * Tag to string array.  Contains NULL for invalid tags.
 	 */
 
-extern unsigned VSL_tagflags[SLT__MAX];
+extern const unsigned VSL_tagflags[SLT__MAX];
 	/*
 	 * Tag flags array.
 	 */
