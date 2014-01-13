@@ -1,0 +1,35 @@
+varnishtest "#1406 empty header"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -arg "-p vcc_allow_inline_c=true" -vcl+backend {
+	import ${vmod_std} ;
+
+	C{
+		static const struct gethdr_s VGC_HDR_REQ_foo =
+		    { HDR_REQ, "\020X-CUSTOM-HEADER:"};
+	}C
+
+	sub vcl_recv {
+		C{
+			VRT_SetHdr(ctx, &VGC_HDR_REQ_foo, 0, vrt_magic_string_end );
+		}C
+	}
+
+	sub vcl_deliver {
+		if (req.http.X-CUSTOM-HEADER) {
+			set resp.http.foo = "yes";
+		} else {
+			set resp.http.foo = "no";
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.foo == yes
+} -run
