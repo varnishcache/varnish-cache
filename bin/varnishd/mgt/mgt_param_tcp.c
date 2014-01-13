@@ -35,6 +35,7 @@
 #include "config.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -96,7 +97,7 @@ static void
 tcp_keep_probes(void)
 {
 	int i, s;
-	struct vss_addr **ta;
+	struct vss_addr **ta = NULL;
 
 	/* Probe a dummy socket for default values */
 
@@ -112,6 +113,7 @@ tcp_keep_probes(void)
 	tcp_probe(s, TCP_KEEPCNT, "tcp_keepalive_probes",	5);
 	tcp_probe(s, TCP_KEEPINTVL, "tcp_keepalive_intvl",	5);
 	AZ(close(s));
+	free(ta);
 }
 #endif
 
