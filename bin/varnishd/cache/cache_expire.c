@@ -134,7 +134,8 @@ EXP_Inject(struct objcore *oc, struct lru *lru, double when)
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	AZ(oc->flags & OC_F_OFFLRU);
+	AZ(oc->flags & (OC_F_OFFLRU | OC_F_INSERT | OC_F_MOVE));
+	AZ(oc->flags & OC_F_DYING);
 	AZ(oc->flags & OC_F_BUSY);
 
 	if (lru == NULL)
@@ -229,9 +230,8 @@ EXP_Rearm(struct object *o, double now, double ttl, double grace, double keep)
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	oc = o->objcore;
-	if (oc == NULL)
-		return;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	assert(oc->refcnt > 0);
 
 	if (!isnan(ttl))
 		o->exp.ttl = now + ttl - o->exp.t_origin;
@@ -280,18 +280,19 @@ EXP_Rearm(struct object *o, double now, double ttl, double grace, double keep)
 int
 EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 {
-	struct objcore *oc;
+	struct objcore *oc, *oc2;
 	struct objhead *oh;
 	struct object *o;
 
 	/* Find the first currently unused object on the LRU.  */
 	Lck_Lock(&lru->mtx);
-	VTAILQ_FOREACH(oc, &lru->lru_head, lru_list) {
+	VTAILQ_FOREACH_SAFE(oc, &lru->lru_head, lru_list, oc2) {
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 		VSLb(bo->vsl, SLT_ExpKill, "LRU_Cand p=%p f=0x%x r=%d",
 		    oc, oc->flags, oc->refcnt);
 
+		AZ(oc->flags & OC_F_OFFLRU);
 		AZ(oc->flags & OC_F_DYING);
 
 		/*
@@ -310,9 +311,11 @@ EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 			oc->refcnt++;
 			VSC_C_main->n_lru_nuked++; // XXX per lru ?
 			VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
+		} else {
+			oc = NULL;
 		}
 		Lck_Unlock(&oh->mtx);
-		if (oc->flags & OC_F_DYING)
+		if (oc != NULL)
 			break;
 	}
 	Lck_Unlock(&lru->mtx);
@@ -431,10 +434,12 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 	Lck_Lock(&lru->mtx);
 	flags = oc->flags;
 	AN(flags & OC_F_OFFLRU);
-	oc->flags &= ~(OC_F_INSERT | OC_F_MOVE | OC_F_OFFLRU);
+	oc->flags &= ~(OC_F_INSERT | OC_F_MOVE);
 	oc->last_lru = now;
-	if (!(flags & OC_F_DYING))
+	if (!(flags & OC_F_DYING)) {
 		VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
+		oc->flags &= ~OC_F_OFFLRU;
+	}
 	Lck_Unlock(&lru->mtx);
 
 	if (flags & OC_F_DYING) {
@@ -443,8 +448,8 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 		if (!(flags & OC_F_INSERT)) {
 			assert(oc->timer_idx != BINHEAP_NOIDX);
 			binheap_delete(ep->heap, oc->timer_idx);
-			assert(oc->timer_idx == BINHEAP_NOIDX);
 		}
+		assert(oc->timer_idx == BINHEAP_NOIDX);
 		(void)HSH_DerefObjCore(&ep->wrk->stats, &oc);
 		return;
 	}
