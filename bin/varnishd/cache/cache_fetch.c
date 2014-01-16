@@ -145,7 +145,6 @@ make_it_503(struct busyobj *bo)
 {
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
-	http_SetH(bo->beresp, HTTP_HDR_PROTO, "HTTP/1.1");
 	http_SetResp(bo->beresp, "HTTP/1.1", 503, "Backend fetch failed");
 	http_SetHeader(bo->beresp, "Content-Length: 0");
 	http_SetHeader(bo->beresp, "Connection: close");
@@ -193,9 +192,9 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 		make_it_503(bo);
 	} else {
 		AN(bo->vbc);
+		http_VSL_log(bo->beresp);
 	}
 
-	http_VSL_log(bo->beresp);
 
 	/*
 	 * These two headers can be spread over multiple actual headers
@@ -248,7 +247,7 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 	}
 
 	if (bo->state == BOS_REQ_DONE)
-		VBO_setstate(bo, BOS_COMMITTED);	
+		VBO_setstate(bo, BOS_COMMITTED);
 
 	if (bo->do_esi)
 		bo->do_stream = 0;
