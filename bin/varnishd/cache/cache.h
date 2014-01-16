@@ -527,8 +527,6 @@ struct busyobj {
 	struct req		*req;
 
 	uint8_t			*vary;
-	unsigned		is_gzip;
-	unsigned		is_gunzip;
 
 #define N_VFPS			5
 	vfp_pull_f		*vfps[N_VFPS];
@@ -551,18 +549,11 @@ struct busyobj {
 
 	struct pool_task	fetch_task;
 
-	unsigned		should_close;
 	char			*h_content_length;
 
-	unsigned		do_esi;
-	unsigned		do_gzip;
-	unsigned		do_gunzip;
-	unsigned		do_stream;
-
-	/* do_pass is our intent, uncacheable is the result */
-	unsigned		do_pass;
-	unsigned		uncacheable;
-	unsigned		abandon;
+#define BO_FLAG(l, r, w, d) unsigned	l:1;
+#include "tbl/bo_flags.h"
+#undef BO_FLAG
 
 	/* Timeouts */
 	double			connect_timeout;

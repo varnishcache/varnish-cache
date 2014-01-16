@@ -121,27 +121,31 @@ VRT_DO_STATUS(beresp)
 
 /*--------------------------------------------------------------------*/
 
-#define VBERESP(dir, type, onm, field)					\
+#define VBERESPW0(field)
+#define VBERESPW1(field)						\
 void									\
-VRT_l_##dir##_##onm(const struct vrt_ctx *ctx, type a)			\
+VRT_l_beresp_##field(const struct vrt_ctx *ctx, unsigned a)		\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);			\
-	ctx->bo->field = a;						\
-}									\
-									\
-type									\
-VRT_r_##dir##_##onm(const struct vrt_ctx *ctx)				\
+	ctx->bo->field = a ? 1 : 0;					\
+}
+
+#define VBERESPR0(field)
+#define VBERESPR1(field)						\
+unsigned								\
+VRT_r_beresp_##field(const struct vrt_ctx *ctx)				\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);			\
 	return (ctx->bo->field);					\
 }
 
-VBERESP(beresp, unsigned, do_esi,	do_esi)
-VBERESP(beresp, unsigned, do_gzip,	do_gzip)
-VBERESP(beresp, unsigned, do_gunzip,	do_gunzip)
-VBERESP(beresp, unsigned, do_stream,	do_stream)
+#define BO_FLAG(l, r, w, d) \
+	VBERESPR##r(l) \
+	VBERESPW##r(l)
+#include "tbl/bo_flags.h"
+#undef BO_FLAG
 
 /*--------------------------------------------------------------------*/
 

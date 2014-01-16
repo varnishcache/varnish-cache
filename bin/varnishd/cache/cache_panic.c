@@ -267,13 +267,10 @@ pan_busyobj(const struct busyobj *bo)
 
 	VSB_printf(pan_vsp, "  busyobj = %p {\n", bo);
 	pan_ws(bo->ws, 4);
-	if (bo->is_gzip)	VSB_printf(pan_vsp, "    is_gzip\n");
-	if (bo->is_gunzip)	VSB_printf(pan_vsp, "    is_gunzip\n");
-	if (bo->do_gzip)	VSB_printf(pan_vsp, "    do_gzip\n");
-	if (bo->do_gunzip)	VSB_printf(pan_vsp, "    do_gunzip\n");
-	if (bo->do_esi)		VSB_printf(pan_vsp, "    do_esi\n");
-	if (bo->do_stream)	VSB_printf(pan_vsp, "    do_stream\n");
-	if (bo->should_close)	VSB_printf(pan_vsp, "    should_close\n");
+#define BO_FLAG(l, r, w, d) if(bo->l) VSB_printf(pan_vsp, "    is_" #l "\n");
+#include "tbl/bo_flags.h"
+#undef BO_FLAG
+
 	VSB_printf(pan_vsp, "    bodystatus = %d (%s),\n",
 	    bo->htc.body_status, body_status_2str(bo->htc.body_status));
 	VSB_printf(pan_vsp, "    },\n");
