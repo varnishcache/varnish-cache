@@ -157,6 +157,7 @@ static enum fetch_step
 vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 {
 	int i, do_ims;
+	unsigned owid, wid;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -240,6 +241,14 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 	if (wrk->handling == VCL_RET_RETRY) {
 		bo->retries++;
 		if (bo->retries <= cache_param->max_retries) {
+			// XXX: BereqEnd + BereqAcct ?
+			wid = VXID_Get(&wrk->vxid_pool);
+			VSLb(bo->vsl, SLT_Link, "bereq %u retry", wid);
+			VSLb(bo->vsl, SLT_End, "%s", "");
+			VSL_Flush(bo->vsl, 0);
+			owid = bo->vsl->wid & VSL_IDENTMASK;
+			bo->vsl->wid = wid | VSL_BACKENDMARKER;
+			VSLb(bo->vsl, SLT_Begin, "bereq %u retry", owid);
 			VDI_CloseFd(&bo->vbc);
 			return (F_STP_STARTFETCH);
 		}
