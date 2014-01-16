@@ -238,24 +238,25 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, bo->beresp->ws);
 
-	if (bo->do_esi)
-		bo->do_stream = 0;
-	if (bo->do_pass)
-		bo->fetch_objcore->flags |= OC_F_PASS;
-
-	if (wrk->handling == VCL_RET_DELIVER)
-		return (do_ims ? F_STP_CONDFETCH : F_STP_FETCH);
 	if (wrk->handling == VCL_RET_RETRY) {
-		assert(bo->state == BOS_REQ_DONE);
 		bo->retries++;
 		if (bo->retries <= cache_param->max_retries) {
 			VDI_CloseFd(&bo->vbc);
 			return (F_STP_STARTFETCH);
 		}
-		// XXX: wrk->handling = VCL_RET_SYNTH;
+		INCOMPL();
 	}
 
-	INCOMPL();
+	if (bo->state == BOS_REQ_DONE)
+		VBO_setstate(bo, BOS_COMITTED);	
+
+	if (bo->do_esi)
+		bo->do_stream = 0;
+	if (bo->do_pass)
+		bo->fetch_objcore->flags |= OC_F_PASS;
+
+	assert(wrk->handling == VCL_RET_DELIVER);
+	return (do_ims ? F_STP_CONDFETCH : F_STP_FETCH);
 }
 
 /*--------------------------------------------------------------------
@@ -454,7 +455,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->do_stream)
 		HSH_Unbusy(&wrk->stats, obj->objcore);
 
-	if (bo->state == BOS_REQ_DONE)
+	if (bo->state == BOS_COMITTED)
 		VBO_setstate(bo, BOS_FETCHING);
 	else if (bo->state != BOS_FAILED)
 		WRONG("Wrong bo->state");
