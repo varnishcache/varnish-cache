@@ -482,7 +482,7 @@ AC_ARG_ENABLE(stack-protector,
        [],
        [enable_stack_protector=yes])
 
-if test "x$enable_developer_warnings" != "xno"; then
+if test "x$enable_stack_protector" != "xno"; then
        DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -fstack-protector"
 fi
 
