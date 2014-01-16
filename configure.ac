@@ -465,7 +465,7 @@ AX_CHECK_COMPILE_FLAG([-Werror=unused-result],
       OCFLAGS="${OCFLAGS} -Wno-unused-result"])])
 
 # This corresponds to FreeBSD's WARNS level 6
-DEVELOPER_CFLAGS="-fstack-protector -Werror -Wall -Wno-format-y2k -W -Wno-unused-parameter -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wunused-parameter -Wcast-align -Wchar-subscripts -Wnested-externs -Wno-pointer-sign -Wextra -Wno-missing-field-initializers -Wno-sign-compare"
+DEVELOPER_CFLAGS="-Werror -Wall -Wno-format-y2k -W -Wno-unused-parameter -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wunused-parameter -Wcast-align -Wchar-subscripts -Wnested-externs -Wno-pointer-sign -Wextra -Wno-missing-field-initializers -Wno-sign-compare"
 
 # These are not compliable yet
 DEVELOPER_GCC_CFLAGS="-Wold-style-definition -Wredundant-decls "
@@ -475,6 +475,16 @@ DEVELOPER_GCC_CFLAGS="-Wold-style-definition -Wredundant-decls "
 DEVELOPER_CLANG_CFLAGS="-Wmissing-variable-declarations -Wno-string-plus-int"
 # -Wno-empty-body
 #DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} ${DEVELOPER_CLANG_CFLAGS}"
+
+# --enable-stack-protector
+AC_ARG_ENABLE(stack-protector,
+       AS_HELP_STRING([--enable-stack-protector],[enable stack protector (default is YES)]),
+       [],
+       [enable_stack_protector=yes])
+
+if test "x$enable_developer_warnings" != "xno"; then
+       DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -fstack-protector"
+fi
 
 # --enable-developer-warnings
 AC_ARG_ENABLE(developer-warnings,
