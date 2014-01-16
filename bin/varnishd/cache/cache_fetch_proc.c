@@ -61,12 +61,12 @@ VFP_Error(struct busyobj *bo, const char *fmt, ...)
 	va_list ap;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	assert(bo->state >= BOS_COMMITTED);
 	if (bo->state < BOS_FAILED) {
 		va_start(ap, fmt);
 		VSLbv(bo->vsl, SLT_FetchError, fmt, ap);
 		va_end(ap);
-		if (bo->fetch_objcore != NULL)
-			HSH_Fail(bo->fetch_objcore);
+		HSH_Fail(bo->fetch_objcore);
 		VBO_setstate(bo, BOS_FAILED);
 	}
 	return (VFP_ERROR);

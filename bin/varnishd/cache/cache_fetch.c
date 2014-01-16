@@ -130,7 +130,8 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	if (wrk->handling == VCL_RET_ABANDON) {
 		if (bo->req != NULL)
 			vbf_release_req(bo);
-		(void)VFP_Error(bo, "Abandoned in vcl_backend_fetch");
+		HSH_Fail(bo->fetch_objcore);
+		VBO_setstate(bo, BOS_FAILED);
 		return (F_STP_DONE);
 	}
 	assert (wrk->handling == VCL_RET_FETCH);
@@ -148,6 +149,9 @@ make_it_503(struct busyobj *bo)
 	http_SetResp(bo->beresp, "HTTP/1.1", 503, "Backend fetch failed");
 	http_SetHeader(bo->beresp, "Content-Length: 0");
 	http_SetHeader(bo->beresp, "Connection: close");
+	bo->exp.ttl = 0;
+	bo->exp.grace = 0;
+	bo->exp.keep = 0;
 }
 
 /*--------------------------------------------------------------------
@@ -156,7 +160,7 @@ make_it_503(struct busyobj *bo)
 static enum fetch_step
 vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 {
-	int i, do_ims;
+	int i, do_ims, fail;
 	unsigned owid, wid;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -189,11 +193,12 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 
 	if (i) {
 		AZ(bo->vbc);
-		(void)VFP_Error(bo, "Failed to fetch object headers");
 		make_it_503(bo);
+		fail = 1;
 	} else {
 		AN(bo->vbc);
 		http_VSL_log(bo->beresp);
+		fail = 0;
 	}
 
 
@@ -255,8 +260,10 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 		INCOMPL();
 	}
 
-	if (bo->state == BOS_REQ_DONE)
-		VBO_setstate(bo, BOS_COMMITTED);
+	assert(bo->state == BOS_REQ_DONE);
+	VBO_setstate(bo, BOS_COMMITTED);
+	if (fail)
+		(void)VFP_Error(bo, "Fetch failed");
 
 	if (bo->do_esi)
 		bo->do_stream = 0;
