@@ -248,7 +248,7 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 	}
 
 	if (bo->state == BOS_REQ_DONE)
-		VBO_setstate(bo, BOS_COMITTED);	
+		VBO_setstate(bo, BOS_COMMITTED);	
 
 	if (bo->do_esi)
 		bo->do_stream = 0;
@@ -455,7 +455,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->do_stream)
 		HSH_Unbusy(&wrk->stats, obj->objcore);
 
-	if (bo->state == BOS_COMITTED)
+	if (bo->state == BOS_COMMITTED)
 		VBO_setstate(bo, BOS_FETCHING);
 	else if (bo->state != BOS_FAILED)
 		WRONG("Wrong bo->state");

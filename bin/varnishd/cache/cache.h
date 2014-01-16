@@ -502,7 +502,7 @@ oc_getlru(const struct objcore *oc)
 enum busyobj_state_e {
 	BOS_INVALID = 0,	/* don't touch (yet) */
 	BOS_REQ_DONE,		/* beresp.* can be examined */
-	BOS_COMITTED,		/* beresp.* can be examined */
+	BOS_COMMITTED,		/* beresp.* can be examined */
 	BOS_FETCHING,		/* beresp.* can be examined */
 	BOS_FINISHED,		/* object is complete */
 	BOS_FAILED,		/* something went wrong */
