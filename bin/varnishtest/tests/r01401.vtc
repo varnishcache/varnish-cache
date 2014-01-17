@@ -1,0 +1,61 @@
+varnishtest "too many retries"
+
+server s1 {
+	rxreq
+	expect req.url == /1
+	txresp -hdr "foo: bar" -bodylen 5
+
+	accept
+	rxreq
+	expect req.url == /1
+	txresp -hdr "foo: foof" -hdr "Connection: close" -bodylen 7
+
+	accept
+	rxreq
+	expect req.url == /2
+	txresp -hdr "foo: bar" -bodylen 10
+
+	accept
+	rxreq
+	expect req.url == /2
+	txresp -hdr "foo: bar" -bodylen 11
+
+	accept
+	rxreq
+	expect req.url == /2
+	txresp -hdr "foo: bar" -bodylen 12
+
+	accept
+	rxreq
+	expect req.url == /2
+	txresp -hdr "foo: bar" -bodylen 13
+
+	accept
+	rxreq
+	expect req.url == /2
+	txresp -hdr "foo: bar" -bodylen 4
+
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		if (beresp.http.foo == "bar") {
+			return (retry);
+		}
+	}
+} -start
+
+client c1 {
+	txreq -url /1
+	rxresp
+	expect resp.http.foo == foof
+	expect resp.bodylen == 7
+} -run
+
+delay .1
+
+client c1 {
+	txreq -url /2
+	rxresp
+	expect resp.status == 503
+} -run

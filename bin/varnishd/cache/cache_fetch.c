@@ -244,6 +244,8 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, bo->beresp->ws);
 
 	if (wrk->handling == VCL_RET_RETRY) {
+		if (bo->vbc)
+			VDI_CloseFd(&bo->vbc);
 		bo->retries++;
 		if (bo->retries <= cache_param->max_retries) {
 			// XXX: BereqEnd + BereqAcct ?
@@ -254,10 +256,12 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 			owid = bo->vsl->wid & VSL_IDENTMASK;
 			bo->vsl->wid = wid | VSL_BACKENDMARKER;
 			VSLb(bo->vsl, SLT_Begin, "bereq %u retry", owid);
-			VDI_CloseFd(&bo->vbc);
 			return (F_STP_STARTFETCH);
 		}
-		INCOMPL();
+		VSLb(bo->vsl, SLT_VCL_Error,
+		    "Too many retries, delivering 503");
+		make_it_503(bo);
+		wrk->handling = VCL_RET_DELIVER;
 	}
 
 	assert(bo->state == BOS_REQ_DONE);
