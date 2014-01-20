@@ -157,7 +157,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		/*
 		 * No point in saving the body if it is hit-for-pass,
 		 * but we can't yank it until the fetching thread has
-		 * finished/abandonned also.
+		 * finished/abandoned also.
 		 */
 		while (req->obj->objcore->busyobj != NULL)
 			(void)usleep(100000);

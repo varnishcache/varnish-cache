@@ -239,7 +239,7 @@ VRY_Prep(struct req *req)
 }
 
 /**********************************************************************
- * Finish predictive vary procssing
+ * Finish predictive vary processing
  */
 
 void
@@ -330,7 +330,7 @@ VRY_Match(struct req *req, const uint8_t *vary)
 			assert(i == 0 || i == 2);
 		}
 		if (i == 0) {
-			/* Same header, same contents*/
+			/* Same header, same contents */
 			vsp += VRY_Len(vsp);
 			vary += VRY_Len(vary);
 		} else if (i == 2) {

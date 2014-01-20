@@ -203,7 +203,7 @@ vbe_CheckFd(int fd)
 
 /*--------------------------------------------------------------------
  * Manage a pool of vbc structures.
- * XXX: as an experiment, make this caching controled by a parameter
+ * XXX: as an experiment, make this caching controlled by a parameter
  * XXX: so we can see if it has any effect.
  */
 

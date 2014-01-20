@@ -209,7 +209,7 @@ VFP_Fetch_Body(struct busyobj *bo, ssize_t est)
 			 */
 			AN(bo->fetch_objcore->flags & OC_F_PASS);
 			VSLb(bo->vsl, SLT_FetchError,
-			    "Pass delivery abandonned");
+			    "Pass delivery abandoned");
 			vfps = VFP_END;
 			bo->should_close = 1;
 			break;
