@@ -9,6 +9,8 @@ Makefile.in
 *.lo
 *.la
 *~
+*.sw[op]
+
 
 # Various auto-tools artifacts
 /aclocal.m4
@@ -35,8 +37,11 @@ Makefile.in
 /missing
 /stamp-h1
 /varnishapi.pc
+/build-aux
 TAGS
 cscope.*out
+#
+varnishapi-uninstalled.pc
 
 # Default vcl made from bin/varnishd/default.vcl
 /bin/varnishd/default_vcl.h
@@ -44,22 +49,37 @@ cscope.*out
 
 # Various auto-generated code snippets
 /include/vcl.h
-/include/tbl/vcl_returns.h
 /include/vrt_obj.h
+/include/vmod_abi.h
+/include/tbl/vcl_returns.h
 /include/tbl/vrt_stv_var.h
 /include/tbl/vcc_types.h
 /include/vcs_version.h
-/lib/libvcl/vcc_fixed_token.c
-/lib/libvcl/vcc_obj.c
-/lib/libvcl/vcc_token_defs.h
-/lib/libvmod_std/vcc_if.c
-/lib/libvmod_std/vcc_if.h
+/lib/libvcc/vcc_fixed_token.c
+/lib/libvcc/vcc_obj.c
+/lib/libvcc/vcc_token_defs.h
+/lib/libvarnish/vnum_c_test
+/lib/libvarnishapi/vxp_fixed_token.c
+/lib/libvarnishapi/vxp_tokens.h
+/lib/libvarnishapi/vsl2rst
+/lib/libvarnishapi/vsl-tags.rst
+
+
+# Misc. generated files for included vmods.
+/lib/libvmod_*/vcc_if.c
+/lib/libvmod_*/vcc_if.h
+/lib/libvmod_*/vmod_*.3
+/lib/libvmod_*/vmod_*.rst
+
 
 # Man-files and binaries
 /man/vsc2rst
 /man/vcl.7
+/man/vsl.7
+/man/vsl-query.7
 /man/varnish-cli.7
 /man/varnish-counters.7
+/bin/varnish*/varnish*_opt2rst
 /bin/varnishadm/varnishadm
 /bin/varnishadm/varnishadm.1
 /bin/varnishd/varnishd
@@ -68,8 +88,10 @@ cscope.*out
 /bin/varnishhist/varnishhist.1
 /bin/varnishlog/varnishlog
 /bin/varnishlog/varnishlog.1
+/bin/varnishlog/varnishlog_*.rst
 /bin/varnishncsa/varnishncsa
 /bin/varnishncsa/varnishncsa.1
+/bin/varnishncsa/varnishncsa_*.rst
 /bin/varnishreplay/varnishreplay
 /bin/varnishreplay/varnishreplay.1
 /bin/varnishstat/varnishstat
@@ -78,12 +100,12 @@ cscope.*out
 /bin/varnishtest/varnishtest.1
 /bin/varnishtop/varnishtop
 /bin/varnishtop/varnishtop.1
-/lib/libvmod_std/vmod_std.3
 
 # Doc-stuff generated from xml
 /doc/*.html
 /doc/sphinx/=build/
 /doc/sphinx/conf.py
+/doc/sphinx/reference/vcl_var.rst
 
 # NetBeans insists on this
 /nbproject/private/
