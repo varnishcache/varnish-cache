@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-
-# Copyright (c) 2010-2013 Varnish Software AS
+# Copyright (c) 2010-2014 Varnish Software AS
 # All rights reserved.
 #
 # Author: Poul-Henning Kamp <phk@phk.freebsd.dk>

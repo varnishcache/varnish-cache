@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2011-2013 Varnish Software AS
+ * Copyright (c) 2011-2014 Varnish Software AS
  * All rights reserved.
  *
  * Author: Martin Blix Grydeland <martin@varnish-software.com>
