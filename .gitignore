@@ -41,7 +41,7 @@ Makefile.in
 TAGS
 cscope.*out
 #
-varnishapi-uninstalled.pc
+/varnishapi-uninstalled.pc
 
 # Default vcl made from bin/varnishd/default.vcl
 /bin/varnishd/default_vcl.h
