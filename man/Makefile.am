@@ -32,11 +32,11 @@ else
 	@false
 endif
 
-
-varnish-counters.7: vsc2rst $(top_srcdir)/include/tbl/vsc_fields.h
 if HAVE_RST2MAN
+varnish-counters.7: vsc2rst
 	./vsc2rst | ${RST2MAN} - $@
 else
+varnish-counters.7: $(top_srcdir)/include/tbl/vsc_fields.h
 	@echo "========================================"
 	@echo "You need rst2man installed to make dist"
 	@echo "========================================"
