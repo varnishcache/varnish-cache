@@ -668,7 +668,7 @@ class file_section(object):
 			raise Exception("Unknown keyword: " + t.str)
 		assert len(self.tl) == 0
 		if o == None:
-			print("NB:")
+			print("Warning:")
 			print("%s description is not included in .rst:" %t0)
 			for ln,i in self.l:
 				print("\t", i)
