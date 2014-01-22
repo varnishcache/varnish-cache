@@ -59,6 +59,8 @@ cscope.*out
 /lib/libvcc/vcc_obj.c
 /lib/libvcc/vcc_token_defs.h
 /lib/libvarnish/vnum_c_test
+/lib/libvarnish/vnum_c_test.log
+/lib/libvarnish/test-suite.log
 /lib/libvarnishapi/vxp_fixed_token.c
 /lib/libvarnishapi/vxp_tokens.h
 /lib/libvarnishapi/vsl2rst
@@ -111,6 +113,6 @@ cscope.*out
 /nbproject/private/
 
 # Test droppings
-bin/varnishtest/tests/*.log
-bin/varnishtest/tests/*.log-t
-bin/varnishtest/test-suite.log
+/bin/varnishtest/tests/*.log
+/bin/varnishtest/tests/*.log-t
+/bin/varnishtest/test-suite.log
