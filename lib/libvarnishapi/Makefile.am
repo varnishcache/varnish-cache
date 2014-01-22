@@ -42,7 +42,7 @@ libvarnishapi_la_SOURCES = \
 libvarnishapi_la_CFLAGS = \
 	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"'
 
-libvarnishapi_la_LIBADD = @PCRE_LIBS@
+libvarnishapi_la_LIBADD = @PCRE_LIBS@ @RT_LIBS@
 
 if HAVE_LD_VERSION_SCRIPT
 libvarnishapi_la_LDFLAGS += -Wl,--version-script=$(srcdir)/libvarnishapi.map
