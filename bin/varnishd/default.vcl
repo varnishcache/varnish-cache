@@ -144,7 +144,7 @@ sub vcl_deliver {
      * Enable them only if you need them.
      *
      * set obj.hits = obj.hits + 1;
-     * set obj.lastuse = now;
+     * set obj.last_use = now;
      */
     return (deliver);
 }

@@ -824,7 +824,7 @@ obj.response
 obj.ttl
   The object's remaining time to live, in seconds. obj.ttl is writable.
 
-obj.lastuse
+obj.last_use
   The approximate time elapsed since the object was last requests, in
   seconds. This variable is also available in vcl_deliver.
 
