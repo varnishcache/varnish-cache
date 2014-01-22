@@ -1,3 +1,58 @@
+===================================
+Changes from 4.0.0 TP1 to 4.0.0 TP2
+===================================
+
+New since from 4.0.0 TP1
+------------------------
+
+- New VCL_BLOB type to pass binary data between VMODs.
+- New format for VMOD description files. (.vcc)
+
+Bugs fixed
+----------
+* 1404_ - Don't send Content-Length on 304 Not Modified responses.
+* 1401_ - Varnish would crash when retrying a backend fetch too many times.
+* 1399_ - Memory get freed while in use by another thread/object
+* 1398_ - Fix NULL deref related to a backend we don't know any more.
+* 1397_ - Crash on backend fetch while LRUing. (scoof: please add details if you have them)
+* 1395_ - End up in vcl_error also if fetch fails vcl_backend_response.
+* 1391_ - Client abort and retry during a streaming fetch would make Varnish assert.
+* 1390_ - Fix assert if the ban lurker is overtaken by new duplicate bans.
+* 1385_ - ban lurker doesn't remove (G)one bans
+* 1383_ - varnishncsa logs requests for localhost regardless of host header.
+* 1382_ - varnishncsa prints nulls as part of request string.
+* 1381_ - Ensure vmod_director is installed
+* 1323_ - Add a missing boundary check for Range requests
+* 1268_ - shortlived parameter now uses TTL+grace+keep instead of just TTL.
+
+* Fix build error on OpenBSD (TCP_KEEP)
+* n_object wasn't being decremented correctly on object expire.
+* Example default.vcl in distribution is now 4.0-ready.
+
+Open issues
+-----------
+
+* 1405_ - Ban lurker does not always evict all objects.
+
+
+.. _1405: https://www.varnish-cache.org/trac/ticket/1405
+.. _1404: https://www.varnish-cache.org/trac/ticket/1404
+.. _1401: https://www.varnish-cache.org/trac/ticket/1401
+.. _1399: https://www.varnish-cache.org/trac/ticket/1399
+.. _1398: https://www.varnish-cache.org/trac/ticket/1398
+.. _1397: https://www.varnish-cache.org/trac/ticket/1397
+.. _1395: https://www.varnish-cache.org/trac/ticket/1395
+.. _1391: https://www.varnish-cache.org/trac/ticket/1391
+.. _1390: https://www.varnish-cache.org/trac/ticket/1390
+.. _1385: https://www.varnish-cache.org/trac/ticket/1385
+.. _1383: https://www.varnish-cache.org/trac/ticket/1383
+.. _1382: https://www.varnish-cache.org/trac/ticket/1382
+.. _1381: https://www.varnish-cache.org/trac/ticket/1381
+.. _1323: https://www.varnish-cache.org/trac/ticket/1323
+.. _1268: https://www.varnish-cache.org/trac/ticket/1268
+.. _1268: https://www.varnish-cache.org/trac/ticket/1268
+
+
 ================================
 Changes from 3.0.5 rc 1 to 3.0.5
 ================================
