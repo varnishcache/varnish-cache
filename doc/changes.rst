@@ -14,7 +14,7 @@ Bugs fixed
 * 1401_ - Varnish would crash when retrying a backend fetch too many times.
 * 1399_ - Memory get freed while in use by another thread/object
 * 1398_ - Fix NULL deref related to a backend we don't know any more.
-* 1397_ - Crash on backend fetch while LRUing. (scoof: please add details if you have them)
+* 1397_ - Crash on backend fetch while LRUing.
 * 1395_ - End up in vcl_error also if fetch fails vcl_backend_response.
 * 1391_ - Client abort and retry during a streaming fetch would make Varnish assert.
 * 1390_ - Fix assert if the ban lurker is overtaken by new duplicate bans.
