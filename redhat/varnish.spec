@@ -87,7 +87,7 @@ Documentation files for %name
 #%setup -q -n varnish-trunk
 
 mkdir examples
-cp bin/varnishd/default.vcl etc/zope-plone.vcl examples
+cp bin/varnishd/default.vcl examples
 
 %build
 # No pkgconfig/libpcre.pc in rhel4

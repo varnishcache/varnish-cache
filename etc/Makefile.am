@@ -1,6 +1,5 @@
 #
 
-EXTRA_DIST = zope-plone.vcl
 DISTCLEANFILES = default.vcl
 
 dist_varnishconf_DATA = default.vcl
