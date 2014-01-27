@@ -22,7 +22,7 @@ sub vcl_recv {
     # See http://www.varnish-cache.org/docs/3.0/tutorial/vcl.html#vcl_recv
 }
 
-sub vcl_fetch {
+sub vcl_backend_response {
     # Happens after we have read the response headers from the backend.
     # See http://www.varnish-cache.org/docs/3.0/tutorial/vcl.html#vcl_fetch
 #
