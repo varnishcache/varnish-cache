@@ -8,12 +8,12 @@ In order for you to install Varnish you must have the following:
     - Linux
     - FreeBSD
     - Solaris (x86 only)
-  * root access to said system
+  * root access to said system.
 
 
 Varnish can be installed on other UNIX systems as well, but it is not
-tested particularly well on these plattforms. Varnish is, from time to
-time, said to work on: 
+tested particularly well on these platforms. Varnish is, from time to
+time, said to work on:
 
   * 32 bit versions of the before-mentioned systems.
   * OS X

@@ -18,7 +18,7 @@ is logging. Varnishlog gives you the raw logs, everything that is
 written to the logs. There are other clients as well, we'll show you
 these later.
 
-In the terminal window you started varnish now type *varnishlog* and
+In the terminal window you started Varnish now type *varnishlog* and
 press enter.
 
 You'll see lines like these scrolling slowly by.::
@@ -27,7 +27,7 @@ You'll see lines like these scrolling slowly by.::
     0 CLI          - Wr 200 PONG 1273698726 1.0
 
 These is the Varnish master process checking up on the caching process
-to see that everything is OK. 
+to see that everything is OK.
 
 Now go to the browser and reload the page displaying your web
 app. You'll see lines like these.::
@@ -55,10 +55,10 @@ Now, you can filter quite a bit with varnishlog. The basic option you
 want to know are:
 
 -b
- Only show log lines from traffic going between Varnish and the backend 
+ Only show log lines from traffic going between Varnish and the backend
  servers. This will be useful when we want to optimize cache hit rates.
 
--c 
+-c
  Same as -b but for client side traffic.
 
 -m tag:regex

@@ -109,7 +109,7 @@ An example::
         } -run
 
 When run, the above script will simulate a server (s1) that expects two
-different requests. It will start a varnish server (v1) and add the backend
+different requests. It will start a Varnish server (v1) and add the backend
 definition to the VCL specified (-vcl+backend). Finally it starts the
 c1-client, which is a single client sending two requests.
 

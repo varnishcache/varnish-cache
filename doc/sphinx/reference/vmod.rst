@@ -25,9 +25,9 @@ function shown above.  The full contents of the "std" module is
 documented in vmod_std(7).
 
 This part of the manual is about how you go about writing your own
-VMOD, how the language interface between C and VCC works, where you 
+VMOD, how the language interface between C and VCC works, where you
 can find contributed VMODs etc. This explanation will use the "std"
-VMOD as example, having a varnish source tree handy may be a good
+VMOD as example, having a Varnish source tree handy may be a good
 idea.
 
 VMOD Directory
@@ -35,7 +35,8 @@ VMOD Directory
 
 The VMOD directory is an up-to-date compilation of maintained
 extensions written for Varnish Cache:
-https://www.varnish-cache.org/vmods
+
+    https://www.varnish-cache.org/vmods
 
 The vmod.vcc file
 =================
@@ -47,11 +48,11 @@ data structures that does all the hard work.
 
 The std VMODs vmod.vcc file looks somewhat like this::
 
-	Module std
-	Init init_function
-	Function STRING toupper(PRIV_CALL, STRING_LIST)
-	Function STRING tolower(PRIV_VCL, STRING_LIST)
-	Function VOID set_ip_tos(INT)
+	$Module std
+	$Init init_function
+	$Function STRING toupper(PRIV_CALL, STRING_LIST)
+	$Function STRING tolower(PRIV_VCL, STRING_LIST)
+	$Function VOID set_ip_tos(INT)
 
 The first line gives the name of the module, nothing special there.
 

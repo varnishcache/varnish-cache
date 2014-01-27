@@ -23,20 +23,20 @@ vcl_recv
  been received and parsed.  Its purpose is to decide whether or not
  to serve the request, how to do it, and, if applicable, which backend
  to use.
-  
+
  The vcl_recv subroutine may terminate with calling ``return()`` on one of
  the following keywords:
 
   error code [reason]
     Return the specified error code to the client and abandon the request.
 
-  pass    
+  pass
     Switch to pass mode.  Control will eventually pass to vcl_pass.
 
-  pipe    
+  pipe
     Switch to pipe mode.  Control will eventually pass to vcl_pipe.
 
-  lookup  
+  lookup
     Look up the requested object in the cache.  Control will
     eventually pass to vcl_hit or vcl_miss, depending on whether the
     object is in the cache.  The ``bereq.method`` value will be set
@@ -50,7 +50,7 @@ vcl_pipe
  on to the backend, and any further data from either client or
  backend is passed on unaltered until either end closes the
  connection.
-  
+
  The vcl_pipe subroutine may terminate with calling return() with one of
  the following keywords:
 
@@ -67,10 +67,10 @@ vcl_pass
  on to the backend, and the backend's response is passed on to the
  client, but is not entered into the cache.  Subsequent requests
  submitted over the same client connection are handled normally.
-  
+
  The vcl_pass subroutine may terminate with calling return() with one
  of the following keywords:
-  
+
   error code [reason]
     Return the specified error code to the client and abandon the request.
 
@@ -78,8 +78,8 @@ vcl_pass
     Proceed with pass mode.
 
   restart
-    Restart the transaction. Increases the restart counter. If the number 
-    of restarts is higher than *max_restarts* varnish emits a guru meditation 
+    Restart the transaction. Increases the restart counter. If the number
+    of restarts is higher than *max_restarts* Varnish emits a guru meditation
     error.
 
 vcl_miss
@@ -88,7 +88,7 @@ vcl_miss
 Called after a cache lookup if the requested document was not found in
 the cache.  Its purpose is to decide whether or not to attempt to
 retrieve the document from the backend, and which backend to use.
-  
+
 The vcl_miss subroutine may terminate with calling return() with one
 of the following keywords:
 
@@ -106,7 +106,7 @@ vcl_fetch
 ~~~~~~~~~
 
 Called after a document has been successfully retrieved from the backend.
-  
+
 The vcl_fetch subroutine may terminate with calling return() with one
 of the following keywords:
 
@@ -117,7 +117,7 @@ of the following keywords:
   error code [reason]
     Return the specified error code to the client and abandon the request.
 
-  hit_for_pass 
+  hit_for_pass
     Pass in fetch. Passes the object without caching it. This will
     create a so-called hit_for_pass object which has the side effect
     that the decision not to cache will be cached. This is to allow
@@ -131,15 +131,15 @@ of the following keywords:
     object.
 
   restart
-    Restart the transaction. Increases the restart counter. If the number 
-    of restarts is higher than *max_restarts* varnish emits a guru meditation 
+    Restart the transaction. Increases the restart counter. If the number
+    of restarts is higher than *max_restarts* Varnish emits a guru meditation
     error.
 
 vcl_deliver
 ~~~~~~~~~~~
 
 Called before a cached object is delivered to the client.
-  
+
 The vcl_deliver subroutine may terminate with one of the following
 keywords:
 
@@ -147,25 +147,25 @@ keywords:
     Deliver the object to the client.
 
   restart
-    Restart the transaction. Increases the restart counter. If the number 
-    of restarts is higher than *max_restarts* varnish emits a guru meditation 
+    Restart the transaction. Increases the restart counter. If the number
+    of restarts is higher than *max_restarts* Varnish emits a guru meditation
     error.
 
 vcl_error
 ~~~~~~~~~
 
-Called when we hit an error, either explicitly or implicitly due to 
+Called when we hit an error, either explicitly or implicitly due to
 backend or internal errors.
 
 The vcl_error subroutine may terminate by calling return with one of
 the following keywords:
- 
+
   deliver
     Deliver the error object to the client.
 
   restart
-    Restart the transaction. Increases the restart counter. If the number 
-    of restarts is higher than *max_restarts* varnish emits a guru meditation 
+    Restart the transaction. Increases the restart counter. If the number
+    of restarts is higher than *max_restarts* Varnish emits a guru meditation
     error.
 
 vcl_fini

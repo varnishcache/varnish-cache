@@ -4,7 +4,7 @@
 Statistics
 ----------
 
-Now that your varnish is up and running let's have a look at how it is
+Now that your Varnish is up and running let's have a look at how it is
 doing. There are several tools that can help.
 
 varnishtop
@@ -48,10 +48,10 @@ varnishstat
 Varnish has lots of counters. We count misses, hits, information about
 the storage, threads created, deleted objects. Just about
 everything. varnishstat will dump these counters. This is useful when
-tuning varnish. 
+tuning Varnish.
 
 There are programs that can poll varnishstat regularly and make nice
 graphs of these counters. One such program is Munin. Munin can be
 found at http://munin-monitoring.org/ . There is a plugin for munin in
-the varnish source code.
+the Varnish source code.
 

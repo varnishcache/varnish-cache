@@ -5,7 +5,7 @@ Troubleshooting Varnish
 
 Sometimes Varnish misbehaves. In order for you to understand whats
 going on there are a couple of places you can check. varnishlog,
-/var/log/syslog, /var/log/messages are all places where varnish might
+/var/log/syslog, /var/log/messages are all places where Varnish might
 leave clues of whats going on. This section will guide you through
 basic troubleshooting in Varnish.
 
@@ -19,7 +19,7 @@ permissions on /dev/null to other processes blocking the ports.
 
 Starting Varnish in debug mode to see what is going on.
 
-Try to start varnish by::
+Try to start Varnish by::
 
     # varnishd -f /usr/local/etc/varnish/default.vcl -s malloc,1G -T 127.0.0.1: 2000  -a 0.0.0.0:8080 -d
 
@@ -31,7 +31,7 @@ listening on its port.::
     storage_malloc: max size 1024 MB.
     Using old SHMFILE
     Platform: Linux,2.6.32-21-generic,i686,-smalloc,-hcritbit
-    200 193     
+    200 193
     -----------------------------
     Varnish Cache CLI.
     -----------------------------
@@ -45,7 +45,7 @@ instruct the master process to start the cache by issuing "start".::
 
 	 start
 	 bind(): Address already in use
-	 300 22      
+	 300 22
 	 Could not open sockets
 
 And here we have our problem. Something else is bound to the HTTP port

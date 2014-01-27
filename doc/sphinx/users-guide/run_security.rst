@@ -79,9 +79,9 @@ only allow specific CLI commands.
 It is also possible to configure varnishd for "reverse mode", using
 the '-M' argument.  In that case varnishd will attempt to open a
 TCP connection to the specified address, and initiate a CLI connection
-to your central varnish management facility.
+to your central Varnish management facility.
 
-The connection is also in this case without secrecy, but 
+The connection is also in this case without secrecy, but
 the remote end must still satisfy -S/PSK authentication.
 
 Finally, if you run varnishd with the '-d' option, you get a CLI
@@ -217,4 +217,4 @@ If you have "administrative" HTTP requests, for instance PURGE
 requests, we strongly recommend that you restrict them to trusted
 IP numbers/nets using VCL's Access Control Lists.
 
-(XXX: missing ref to ACL)
+.. (XXX: missing ref to ACL)

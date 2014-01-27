@@ -1,6 +1,6 @@
-=======
-varnish
-=======
+===========
+Varnish CLI
+===========
 
 ------------------------------
 Varnish Command Line Interface
@@ -142,7 +142,7 @@ ping  [timestamp]
       Ping the Varnish cache process, keeping the connection alive.
 
 quit
-      Close the connection to the varnish admin port.
+      Close the connection to the Varnish admin port.
 
 start
       Start the Varnish cache process if it is not already running.
@@ -214,7 +214,7 @@ code and length field always is exactly 13 characters long, including
 the NL character.
 
 For your reference the sourcefile lib/libvarnish/cli_common.h contains
-the functions varnish code uses to read and write CLI response.
+the functions Varnish code uses to read and write CLI response.
 
 .. _ref_psk_auth:
 
@@ -318,9 +318,9 @@ SEE ALSO
 HISTORY
 =======
 
-The varnish manual page was written by Per Buer in 2011. Some of the
+The Varnish manual page was written by Per Buer in 2011. Some of the
 text was taken from the Varnish Cache wiki, the varnishd(7) man page
-or the varnish source code.
+or the Varnish source code.
 
 COPYRIGHT
 =========
@@ -328,4 +328,4 @@ COPYRIGHT
 This document is licensed under the same licence as Varnish
 itself. See LICENCE for details.
 
-* Copyright (c) 2011 Varnish Software AS
+* Copyright (c) 2011-2014 Varnish Software AS

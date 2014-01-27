@@ -31,9 +31,9 @@ Varnish is split over two processes, the manager and the child.  The child
 does all the work, and the manager hangs around to resurect it, if it
 crashes.
 
-Therefore, the first thing to do if you see a varnish crash, is to examine
+Therefore, the first thing to do if you see a Varnish crash, is to examine
 your syslogs, to see if it has happened before.  (One site is rumoured
-to have had varnish restarting every 10 minutes and *still* provide better
+to have had Varnish restarting every 10 minutes and *still* provide better
 service than their CMS system.)
 
 When it crashes, if at all possible, Varnish will spew out a crash dump
@@ -116,7 +116,7 @@ able to figure that out.
 
 If one or more threads are spinning, use ``strace`` or ``ktrace`` or ``truss``
 (or whatever else your OS provides) to get a trace of which system calls
-the varnish process issues.  Be aware that this may generate a lot
+the Varnish process issues.  Be aware that this may generate a lot
 of very repetitive data, usually one second worth is more than enough.
 
 Also, run ``varnishlog`` for a second, and collect the output

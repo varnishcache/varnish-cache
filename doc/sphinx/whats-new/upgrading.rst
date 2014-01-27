@@ -11,7 +11,7 @@ Much of the VCL syntax has changed in Varnish 4. We've tried to compile a list o
 
 Version statement
 ~~~~~~~~~~~~~~~~~
-To make sure that people have upgraded their VCL to the current version, varnish now requires the first line of VCL to indicate the VCL version number::
+To make sure that people have upgraded their VCL to the current version, Varnish now requires the first line of VCL to indicate the VCL version number::
 
 	vcl 4.0;
 
@@ -30,7 +30,7 @@ Since the client director was already a special case of the hash director, it ha
         	h.add_backend(b1, 1);
         	h.add_backend(b2, 1);
 	}
-	
+
 	sub vcl_recv {
 		set req.backend = h.backend(client.ip);
 	}

@@ -11,7 +11,7 @@ bad for business.
 
 The solution is to notify Varnish when there is fresh content
 available. This can be done through three mechanisms. HTTP purging,
-banning and forced cache misses. First, let me explain the HTTP purges. 
+banning and forced cache misses. First, let me explain the HTTP purges.
 
 
 HTTP Purges
@@ -31,7 +31,7 @@ following VCL in place::
 	  "localhost";
 	  "192.168.55.0"/24;
   }
-  
+
   sub vcl_recv {
       	  # allow PURGE from localhost and 192.168.55...
 
@@ -42,14 +42,14 @@ following VCL in place::
 		  return (lookup);
 	  }
   }
-  
+
   sub vcl_hit {
 	  if (req.method == "PURGE") {
 	          purge;
 		  error 200 "Purged.";
 	  }
   }
-  
+
   sub vcl_miss {
 	  if (req.method == "PURGE") {
 	          purge;
@@ -93,7 +93,7 @@ the following command::
 Quite powerful, really.
 
 Bans are checked when we hit an object in the cache, but before we
-deliver it. *An object is only checked against newer bans*. 
+deliver it. *An object is only checked against newer bans*.
 
 Bans that only match against obj.* are also processed by a background
 worker threads called the *ban lurker*. The ban lurker will walk the
@@ -168,7 +168,7 @@ Forcing a cache miss
 
 The final way to invalidate an object is a method that allows you to
 refresh an object by forcing a hash miss for a single request. If you set
-req.hash_always_miss to true, varnish will miss the current object in the
+req.hash_always_miss to true, Varnish will miss the current object in the
 cache, thus forcing a fetch from the backend. This can in turn add the
 freshly fetched object to the cache, thus overriding the current one. The
 old object will stay in the cache until ttl expires or it is evicted by

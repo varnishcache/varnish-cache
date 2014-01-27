@@ -153,8 +153,8 @@ Description
 	fails, *fallback* will be returned.
 Example
 	if (std.ip(req.http.X-forwarded-for, "0.0.0.0") ~ my_acl) { ... }
-	
-	
+
+
 SEE ALSO
 ========
 
@@ -174,4 +174,4 @@ COPYRIGHT
 This document is licensed under the same licence as Varnish
 itself. See LICENCE for details.
 
-* Copyright (c) 2011 Varnish Software
+* Copyright (c) 2011-2014 Varnish Software

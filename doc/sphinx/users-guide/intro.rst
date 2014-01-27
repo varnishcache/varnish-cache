@@ -33,7 +33,7 @@ Interface, which can be used manually, from scripts or programs.
 
 The CLI offers almost full control of what Varnish actually does
 to your HTTP traffic, and we have gone to great lengths to ensure
-that you should not need to restart the varnish processes, unless
+that you should not need to restart the Varnish processes, unless
 you need to change something very fundamental.
 
 The CLI can be safely accessed remotely, using a simple and flexible

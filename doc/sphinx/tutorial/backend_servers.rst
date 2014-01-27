@@ -7,7 +7,7 @@ Varnish has a concept of "backend" or "origin" servers. A backend
 server is the server providing the content Varnish will accelerate.
 
 Our first task is to tell Varnish where it can find its content. Start
-your favorite text editor and open the varnish default configuration
+your favorite text editor and open the Varnish default configuration
 file. If you installed from source this is
 /usr/local/etc/varnish/default.vcl, if you installed from a package it
 is probably /etc/varnish/default.vcl.
@@ -21,7 +21,7 @@ the configuration that looks like this:::
   }
 
 This means we set up a backend in Varnish that fetches content from
-the host www.varnish-cache.org on port 80. 
+the host www.varnish-cache.org on port 80.
 
 Since you probably don't want to be mirroring varnish-cache.org we
 need to get Varnish to fetch content from your own origin

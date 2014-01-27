@@ -3,7 +3,7 @@ varnishadm
 ==========
 
 ----------------------------------
-Control a running varnish instance
+Control a running Varnish instance
 ----------------------------------
 
 :Author: Cecilie Fritzvold
@@ -90,4 +90,4 @@ COPYRIGHT
 This document is licensed under the same licence as Varnish
 itself. See LICENCE for details.
 
-* Copyright (c) 2007-2011 Varnish Software AS
+* Copyright (c) 2007-2014 Varnish Software AS

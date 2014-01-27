@@ -29,7 +29,7 @@ connect to port 8080 on localhost (127.0.0.1).
 
 Varnish can have several backends defined and can you can even join
 several backends together into clusters of backends for load balancing
-purposes. 
+purposes.
 
 
 Multiple backends
@@ -72,7 +72,7 @@ It's quite simple, really. Lets stop and think about this for a
 moment. As you can see you can define how you choose backends based on
 really arbitrary data. You want to send mobile devices to a different
 backend? No problem. if (req.User-agent ~ /mobile/) .. should do the
-trick. 
+trick.
 
 
 Backends and virtual hosts in Varnish
@@ -104,7 +104,7 @@ more tight, maybe relying on the == operator in stead, like this:::
     if (req.http.host == "foo.com" or req.http.host == "www.foo.com") {
       set req.backend = foo;
     }
-  } 
+  }
 
 
 .. _users-guide-advanced_backend_servers-directors:
@@ -181,7 +181,7 @@ Whats new here is the probe. Varnish will check the health of each
 backend with a probe. The options are
 
 url
- What URL should varnish request.
+ What URL should Varnish request.
 
 interval
  How often should we poll
@@ -193,10 +193,10 @@ window
  Varnish will maintain a *sliding window* of the results. Here the
  window has five checks.
 
-threshold 
+threshold
  How many of the .window last polls must be good for the backend to be declared healthy.
 
-initial 
+initial
  How many of the of the probes a good when Varnish starts - defaults
  to the same amount as the threshold.
 
@@ -206,11 +206,11 @@ Now we define the director.::
         {
                 .backend = server1;
         }
-        # server2 
+        # server2
         {
                 .backend = server2;
         }
-	
+
         }
 
 You use this director just as you would use any other director or

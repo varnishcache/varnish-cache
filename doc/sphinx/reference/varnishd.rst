@@ -70,7 +70,7 @@ OPTIONS
             Specifies the hash algorithm.  See Hash Algorithms for a list of supported algorithms.
 
 -i identity
-            Specify the identity of the varnish server.  This can be accessed using server.identity
+            Specify the identity of the Varnish server.  This can be accessed using server.identity
             from VCL
 
 -l shmlogsize

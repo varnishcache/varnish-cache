@@ -19,7 +19,7 @@ task. A few things to consider:
 
 Be aware that every object that is stored also carries overhead that
 is kept outside the actually storage area. So, even if you specify -s
-malloc,16G varnish might actually use **double** that. Varnish has a
+malloc,16G Varnish might actually use **double** that. Varnish has a
 overhead of about 1k per object. So, if you have lots of small objects
 in your cache the overhead might be significant.
 

@@ -24,7 +24,7 @@ You will most likely want to set this to ":80" which is the Well
 Known Port for HTTP.
 
 You can specify multiple addresses separated by a comma, and you
-can use numeric or host/service names if you like, varnish will try
+can use numeric or host/service names if you like, Varnish will try
 to open and service as many of them as possible, but if none of them
 can be opened, varnishd will not start.
 
@@ -38,7 +38,7 @@ Here are some examples::
 
 If your webserver runs on the same computer, you will have to move
 it to another port number first.
- 
+
 -f *VCL-file* or -b *backend*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
