@@ -245,7 +245,7 @@ EXP_Rearm(struct object *o, double now, double ttl, double grace, double keep)
 	VSL(SLT_ExpKill, 0, "EXP_Rearm p=%p E=%.9f e=%.9f f=0x%x", oc,
 	    oc->timer_when, when, oc->flags);
 
-	if (oc->timer_when == when)
+	if (when > o->exp.t_origin && when > oc->timer_when)
 		return;
 
 	lru = oc_getlru(oc);

@@ -581,11 +581,6 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, double ttl, double grace)
 			 */
 			continue;
 		}
-		xxxassert(spc > sizeof *ocp);
-
-		(void)oc_getobj(&wrk->stats, oc);
-		    /* XXX: still needed ? */
-
 		xxxassert(spc >= sizeof *ocp);
 		oc->refcnt++;
 		spc -= sizeof *ocp;
