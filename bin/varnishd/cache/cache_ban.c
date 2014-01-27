@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2006-2014 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -1170,27 +1170,20 @@ ban_lurker(struct worker *wrk, void *priv)
 {
 	struct vsl_log vsl;
 	volatile double d;
-	int i;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	AZ(priv);
 
 	VSL_Setup(&vsl, NULL, 0);
 
-	(void)priv;
 	while (!ban_shutdown) {
-		i = 0;
 		d = cache_param->ban_lurker_sleep;
-		if (d > 0.0)
-			i = ban_lurker_work(wrk, &vsl);
+		if (d <= 0.0 || !ban_lurker_work(wrk, &vsl))
+			d = 0.609;	// Random, non-magic
 		ban_cleantail();
-		if (ban_shutdown)
-			break;
-		if (i)
-			VTIM_sleep(d);
-		else
-			VTIM_sleep(0.609);	// Random, non-magic
+		VTIM_sleep(d);
 	}
-
 	pthread_exit(0);
-
 	NEEDLESS_RETURN(NULL);
 }
 
