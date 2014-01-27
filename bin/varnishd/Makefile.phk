@@ -95,7 +95,7 @@ LD_ADD	+= -lm
 
 RST_MAN += $(TOPDIR)/doc/sphinx/reference/varnishd.rst
 
-MADE_FILES += default_vcl.h
+MADE_FILES += builtin_vcl.h
 
 TODO_INSTALL += install_etc
 
@@ -103,20 +103,20 @@ TOPDIR  = $(CURDIR)/../..
 include $(TOPDIR)/Makefile.inc.phk
 
 #
-# Turn the default.vcl file into a C-string we can include in the program.
+# Turn the builtin.vcl file into a C-string we can include in the program.
 #
-default_vcl.h:	default.vcl
+builtint_vcl.h:	builtin.vcl
 	echo '/*' > $@
 	echo ' * NB:  This file is machine generated, DO NOT EDIT!' >> $@
 	echo ' *' >> $@
-	echo ' * Edit default.vcl instead and run make' >> $@
+	echo ' * Edit builtin.vcl instead and run make' >> $@
 	echo ' *' >> $@
 	echo ' */' >> $@
 	echo '' >> $@
 	sed -e 's/"/\\"/g' \
 	    -e 's/$$/\\n"/' \
-	    -e 's/^/ "/' default.vcl >> $@
+	    -e 's/^/ "/' builtin.vcl >> $@
 
 .PHONY: install_etc
-install_etc: default_vcl.h
-	@cp default_vcl.h $(INSTALL_BASE)/etc/
+install_etc: builtin_vcl.h
+	@cp builtin_vcl.h $(INSTALL_BASE)/etc/

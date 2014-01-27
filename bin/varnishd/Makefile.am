@@ -93,7 +93,7 @@ noinst_HEADERS = \
 	cache/cache_backend.h \
 	cache/cache_esi.h \
 	common/heritage.h \
-	default_vcl.h \
+	builtin_vcl.h \
 	hash/hash_slinger.h \
 	mgt/mgt.h \
 	mgt/mgt_cli.h \
@@ -126,26 +126,26 @@ varnishd_LDADD = \
 	@PCRE_LIBS@ \
 	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${LIBM} ${LIBUMEM}
 
-EXTRA_DIST = default.vcl
-DISTCLEANFILES = default_vcl.h
+EXTRA_DIST = builtin.vcl
+DISTCLEANFILES = builtin_vcl.h
 
 #
-# Turn the default.vcl file into a C-string we can include in the program.
+# Turn the builtin.vcl file into a C-string we can include in the program.
 #
-default_vcl.h:	default.vcl
+builtin_vcl.h:	builtin.vcl
 	echo '/*' > $@
 	echo ' * NB:  This file is machine generated, DO NOT EDIT!' >> $@
 	echo ' *' >> $@
-	echo ' * Edit default.vcl instead and run make' >> $@
+	echo ' * Edit builtin.vcl instead and run make' >> $@
 	echo ' *' >> $@
 	echo ' */' >> $@
 	echo '' >> $@
 	sed -e 's/"/\\"/g' \
 	    -e 's/$$/\\n"/' \
-	    -e 's/^/ "/' $(srcdir)/default.vcl >> $@
+	    -e 's/^/ "/' $(srcdir)/builtin.vcl >> $@
 
 # Explicitly record dependency
-mgt/mgt_vcc.c:	default_vcl.h
+mgt/mgt_vcc.c:	builtin_vcl.h
 
 varnishd.1: $(top_srcdir)/doc/sphinx/reference/varnishd.rst
 if HAVE_RST2MAN

@@ -71,8 +71,8 @@ static struct vcc *vcc;
 
 /*--------------------------------------------------------------------*/
 
-static const char * const default_vcl =
-#include "default_vcl.h"
+static const char * const builtin_vcl =
+#include "builtin_vcl.h"
     ""	;
 
 /*--------------------------------------------------------------------
@@ -488,7 +488,7 @@ mgt_vcc_init(void)
 
 	vcc = VCC_New();
 	AN(vcc);
-	VCC_Default_VCL(vcc, default_vcl);
+	VCC_Default_VCL(vcc, builtin_vcl);
 	AZ(atexit(mgt_vcc_atexit));
 }
 

@@ -12,7 +12,7 @@ dist_man_MANS = vcl.7 varnish-cli.7 varnish-counters.7 vsl.7 vsl-query.7
 MAINTAINERCLEANFILES = $(dist_man_MANS)
 
 vcl.7: $(top_srcdir)/doc/sphinx/reference/vcl.rst \
-	$(top_srcdir)/bin/varnishd/default.vcl
+	$(top_srcdir)/bin/varnishd/builtin.vcl
 if HAVE_RST2MAN
 	${RST2MAN} $(top_srcdir)/doc/sphinx/reference/vcl.rst $@
 else

@@ -28,7 +28,7 @@
  *
 
  *
- * The default VCL code.
+ * The built-in (previously called default) VCL code.
  *
  * NB! You do NOT need to copy & paste all of these functions into your
  * own vcl code, if you do not provide a definition of one of these

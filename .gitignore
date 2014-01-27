@@ -44,8 +44,8 @@ cscope.*out
 /varnishapi-uninstalled.pc
 
 # Default vcl made from bin/varnishd/default.vcl
-/bin/varnishd/default_vcl.h
-/etc/default.vcl
+/bin/varnishd/builtin_vcl.h
+/etc/builtin.vcl
 
 # Various auto-generated code snippets
 /include/vcl.h
