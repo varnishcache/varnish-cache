@@ -718,20 +718,17 @@ static void
 http_PutField(const struct http *to, int field, const char *string)
 {
 	char *p;
-	unsigned l;
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	l = strlen(string);
-	p = WS_Alloc(to->ws, l + 1);
+	p = WS_Copy(to->ws, string, -1);
 	if (p == NULL) {
 		VSLb(to->vsl, SLT_LostHeader, "%s", string);
 		to->hd[field].b = NULL;
 		to->hd[field].e = NULL;
 		to->hdf[field] = 0;
 	} else {
-		memcpy(p, string, l + 1L);
 		to->hd[field].b = p;
-		to->hd[field].e = p + l;
+		to->hd[field].e = strchr(p, '\0');
 		to->hdf[field] = 0;
 		http_VSLH(to, field);
 	}

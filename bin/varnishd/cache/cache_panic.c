@@ -109,7 +109,10 @@ pan_ws(const struct ws *ws, int indent)
 {
 
 	VSB_printf(pan_vsp, "%*sws = %p {", indent, "", ws);
-	if (VALID_OBJ(ws, WS_MAGIC)) {
+	if (!VALID_OBJ(ws, WS_MAGIC)) {
+		if (ws != NULL)
+			VSB_printf(pan_vsp, " BAD_MAGIC(0x%08x) ", ws->magic);
+	} else {
 		if (WS_Overflowed(ws))
 			VSB_printf(pan_vsp, " OVERFLOW");
 		VSB_printf(pan_vsp,
@@ -128,8 +131,6 @@ pan_ws(const struct ws *ws, int indent)
 			VSB_printf(pan_vsp, ",+%ld", (long) (ws->e - ws->s));
 		else
 			VSB_printf(pan_vsp, ",%p", ws->e);
-	} else {
-		VSB_printf(pan_vsp, " BAD_MAGIC(0x%08x) ", ws->magic);
 	}
 	VSB_printf(pan_vsp, "},\n");
 	VSB_printf(pan_vsp, "%*s},\n", indent, "" );

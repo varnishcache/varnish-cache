@@ -313,27 +313,17 @@ VRT_IP_string(const struct vrt_ctx *ctx, VCL_IP ip)
 char *
 VRT_INT_string(const struct vrt_ctx *ctx, long num)
 {
-	char *p;
-	int size;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	size = snprintf(NULL, 0, "%ld", num) + 1;
-	AN(p = WS_Alloc(ctx->ws, size));
-	assert(snprintf(p, size, "%ld", num) < size);
-	return (p);
+	return (WS_Printf(ctx->ws, "%ld", num));
 }
 
 char *
 VRT_REAL_string(const struct vrt_ctx *ctx, double num)
 {
-	char *p;
-	int size;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	size = snprintf(NULL, 0, "%.3f", num) + 1;
-	AN(p = WS_Alloc(ctx->ws, size));
-	assert(snprintf(p, size, "%.3f", num) < size);
-	return (p);
+	return (WS_Printf(ctx->ws, "%.3f", num));
 }
 
 char *

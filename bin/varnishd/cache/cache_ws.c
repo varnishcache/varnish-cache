@@ -30,6 +30,9 @@
 
 #include "config.h"
 
+#include <stdio.h>
+#include <stdarg.h>
+
 #include "cache.h"
 
 void
@@ -157,6 +160,28 @@ WS_Copy(struct ws *ws, const void *str, int len)
 	DSL(DBG_WORKSPACE, 0, "WS_Copy(%p, %d) = %p", ws, len, r);
 	WS_Assert(ws);
 	return (r);
+}
+
+void *
+WS_Printf(struct ws *ws, const char *fmt, ...)
+{
+	unsigned u, v;
+	va_list ap;
+	char *p;
+
+	WS_Assert(ws);
+	assert(ws->r == NULL);
+	u = WS_Reserve(ws, 0);
+	p = ws->f;
+	va_start(ap, fmt);
+	v = vsnprintf(p, u, fmt, ap);
+	if (v > u) {
+		WS_Release(ws, 0);
+		p = NULL;
+	} else {
+		WS_Release(ws, v);
+	}
+	return (p);
 }
 
 char *

@@ -1197,6 +1197,7 @@ char *WS_Alloc(struct ws *ws, unsigned bytes);
 void *WS_Copy(struct ws *ws, const void *str, int len);
 char *WS_Snapshot(struct ws *ws);
 int WS_Overflowed(const struct ws *ws);
+void *WS_Printf(struct ws *ws, const char *fmt, ...) __printflike(2, 3);
 
 /* rfc2616.c */
 void RFC2616_Ttl(struct busyobj *);

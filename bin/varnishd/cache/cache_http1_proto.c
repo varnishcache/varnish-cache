@@ -517,6 +517,7 @@ HTTP1_Write(const struct worker *w, const struct http *hp, int resp)
 		hp->hd[HTTP_HDR_STATUS].b = WS_Alloc(hp->ws, 4);
 		AN(hp->hd[HTTP_HDR_STATUS].b);
 
+		assert(hp->status >= 100 && hp->status <= 999);
 		sprintf(hp->hd[HTTP_HDR_STATUS].b, "%3d", hp->status);
 		hp->hd[HTTP_HDR_STATUS].e = hp->hd[HTTP_HDR_STATUS].b + 3;
 

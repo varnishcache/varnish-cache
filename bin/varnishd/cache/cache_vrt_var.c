@@ -471,16 +471,12 @@ VRT_DO_EXP(beresp, ctx->bo->exp, keep, 0, ctx->bo->exp.t_origin,)
 const char *
 VRT_r_req_xid(const struct vrt_ctx *ctx)
 {
-	char *p;
-	int size;
+
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 
-	// XXX ?
-	size = snprintf(NULL, 0, "%u", ctx->req->vsl->wid & VSL_IDENTMASK) + 1;
-	AN(p = WS_Alloc(ctx->req->http->ws, size));
-	assert(snprintf(p, size, "%u", ctx->req->vsl->wid & VSL_IDENTMASK) < size);
-	return (p);
+	return (WS_Printf(ctx->req->http->ws, "%u",
+	    ctx->req->vsl->wid & VSL_IDENTMASK));
 }
 
 /*--------------------------------------------------------------------*/
