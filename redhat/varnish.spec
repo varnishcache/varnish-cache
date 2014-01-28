@@ -87,7 +87,6 @@ Documentation files for %name
 #%setup -q -n varnish-trunk
 
 mkdir examples
-cp etc/builtin.vcl etc/example.vcl examples
 
 %build
 # No pkgconfig/libpcre.pc in rhel4
@@ -193,7 +192,8 @@ rm -rf %{buildroot}
 %{_mandir}/man3/*.3*
 %{_mandir}/man7/*.7*
 %doc LICENSE README redhat/README.redhat ChangeLog
-%doc examples
+%doc examples/*
+%{_docdir}/varnish/
 %dir %{_sysconfdir}/varnish/
 %config(noreplace) %{_sysconfdir}/varnish/default.vcl
 %config(noreplace) %{_sysconfdir}/logrotate.d/varnish
