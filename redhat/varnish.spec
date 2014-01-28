@@ -87,7 +87,7 @@ Documentation files for %name
 #%setup -q -n varnish-trunk
 
 mkdir examples
-cp bin/varnishd/default.vcl examples
+cp etc/builtin.vcl etc/example.vcl examples
 
 %build
 # No pkgconfig/libpcre.pc in rhel4
@@ -112,17 +112,6 @@ export CFLAGS="$CFLAGS -Wp,-D_FORTIFY_SOURCE=0"
 #	s|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
 
 make %{?_smp_mflags} V=1
-
-head -6 etc/default.vcl > redhat/default.vcl
-
-cat << EOF >> redhat/default.vcl
-backend default {
-  .host = "127.0.0.1";
-  .port = "80";
-}
-EOF
-
-tail -n +11 etc/default.vcl >> redhat/default.vcl
 
 %if 0%{?fedora}%{?rhel} != 0 && 0%{?rhel} <= 4 && 0%{?fedora} <= 8
 	# Old style daemon function
@@ -169,7 +158,7 @@ mkdir -p %{buildroot}/var/lib/varnish
 mkdir -p %{buildroot}/var/log/varnish
 mkdir -p %{buildroot}/var/run/varnish
 mkdir -p %{buildroot}%{_sysconfdir}/ld.so.conf.d/
-install -D -m 0644 redhat/default.vcl %{buildroot}%{_sysconfdir}/varnish/default.vcl
+install -D -m 0644 etc/example.vcl %{buildroot}%{_sysconfdir}/varnish/default.vcl
 install -D -m 0644 redhat/varnish.logrotate %{buildroot}%{_sysconfdir}/logrotate.d/varnish
 
 # systemd support
