@@ -153,7 +153,7 @@ rm -rf doc/sphinx/\=build
 	%endif
 %endif
 
-make check LD_LIBRARY_PATH="../../lib/libvarnish/.libs:../../lib/libvarnishcompat/.libs:../../lib/libvarnishapi/.libs:../../lib/libvcc/.libs:../../lib/libvgz/.libs" TESTS_PARALLELISM=1 VERBOSE=1
+make check %{?_smp_mflags} LD_LIBRARY_PATH="../../lib/libvarnish/.libs:../../lib/libvarnishcompat/.libs:../../lib/libvarnishapi/.libs:../../lib/libvcc/.libs:../../lib/libvgz/.libs" VERBOSE=1
 
 %install
 rm -rf %{buildroot}
