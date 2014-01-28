@@ -78,19 +78,58 @@ tokens = {
 # Our methods and actions
 
 returns =(
-	('recv',		"C", ('error', 'pass', 'pipe', 'hash', 'purge',)),
-	('pipe',		"C", ('error', 'pipe',)),
-	('pass',		"C", ('error', 'restart', 'fetch',)),
-	('hash',		"C", ('lookup',)),
-	('purge',		"C", ('error', 'fetch',)),
-	('miss',		"C", ('error', 'restart', 'pass', 'fetch',)),
-	('hit',			"C", ('error', 'restart', 'pass', 'fetch', 'deliver',)),
-	('backend_fetch',	"B", ('fetch', 'abandon')),
-	('backend_response',	"B", ('deliver', 'retry', 'abandon')),
-	('deliver',		"C", ('restart', 'deliver',)),
-	('error',		"C", ('restart', 'deliver',)),
-	('init',		"", ('ok',)),
-	('fini',		"", ('ok',)),
+	('recv',
+		"C",
+		('error', 'pass', 'pipe', 'hash', 'purge',)
+	),
+	('pipe',
+		"C",
+		('error', 'pipe',)
+	),
+	('pass',
+		"C",
+		('error', 'restart', 'fetch',)
+	),
+	('hash',
+		"C",
+		('lookup',)
+	),
+	('purge',
+		"C",
+		('error', 'fetch',)
+	),
+	('miss',
+		"C",
+		('error', 'restart', 'pass', 'fetch',)
+	),
+	('hit',
+		"C",
+		('error', 'restart', 'pass', 'fetch', 'deliver',)
+	),
+	('backend_fetch',
+		"B",
+		('fetch', 'abandon')
+	),
+	('backend_response',
+		"B",
+		('deliver', 'retry', 'abandon')
+	),
+	('deliver',
+		"C",
+		('restart', 'deliver',)
+	),
+	('error',
+		"C",
+		('restart', 'deliver',)
+	),
+	('init',
+		"",
+		('ok',)
+	),
+	('fini',
+		"",
+		('ok',)
+	),
 )
 
 #######################################################################

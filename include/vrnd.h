@@ -29,4 +29,3 @@
  */
 
 void VRND_Seed(void);		/* Seed random(3) properly */
-

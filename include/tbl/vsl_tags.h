@@ -42,7 +42,8 @@
  *	Long Description (in RST "definition list" format)
  */
 
-#define NODEF_NOTICE "Note: This log record is masked by default and must be explicitly enabled\n\n"
+#define NODEF_NOTICE \
+    "NB: This log record is masked by default.\n\n"
 
 SLTM(Debug, SLT_F_BINARY, "Debug messages",
 	"Debug messages can normally be ignored, but are sometimes"
@@ -206,8 +207,8 @@ SLTM(FetchError, 0, "Error while fetching object",
 #undef SLTH
 
 #define SLTH(tag, ind, req, resp, sdesc, ldesc) \
-	SLTM(Beresp##tag, (resp ? 0 : SLT_F_UNUSED), "Backend response " sdesc, \
-	    ldesc)
+	SLTM(Beresp##tag, (resp ? 0 : SLT_F_UNUSED), "Backend response " \
+	    sdesc, ldesc)
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
 

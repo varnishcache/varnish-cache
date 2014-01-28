@@ -59,8 +59,10 @@ int VSC_Arg(struct VSM_data *vd, int arg, const char *opt);
 	 *	 1 Handled.
 	 */
 
-struct VSC_C_mgt *VSC_Mgt(const struct VSM_data *vd, struct VSM_fantom *fantom);
-struct VSC_C_main *VSC_Main(const struct VSM_data *vd, struct VSM_fantom *fantom);
+struct VSC_C_mgt *VSC_Mgt(const struct VSM_data *vd,
+    struct VSM_fantom *fantom);
+struct VSC_C_main *VSC_Main(const struct VSM_data *vd,
+    struct VSM_fantom *fantom);
 	/*
 	 * Looks up and returns the management stats and the child main
 	 * stats structure. If fantom is non-NULL, it can later be used
@@ -80,8 +82,8 @@ struct VSC_C_main *VSC_Main(const struct VSM_data *vd, struct VSM_fantom *fantom
 	 *  non-NULL: Success
 	 */
 
-void *VSC_Get(const struct VSM_data *vd, struct VSM_fantom *fantom, const char *type,
-    const char *ident);
+void *VSC_Get(const struct VSM_data *vd, struct VSM_fantom *fantom,
+    const char *type, const char *ident);
 	/*
 	 * Looks up the given VSC type and identifier. If fantom is
 	 * non-NULL, it can if successful later be used with

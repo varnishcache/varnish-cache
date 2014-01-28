@@ -7,7 +7,8 @@ WARNS	?=	1
 .PHONY: depend all clean install test
 depend all clean install test:
 	@$(MAKE) --no-print-directory -f Makefile.phk TGT=$@ real-$@ \
-	    $(shell env CC=$(CC) WARNS=$(WARNS) sh ${TOPDIR}/config.phk $(TOPDIR) $(CURDIR) )
+	    $(shell env CC=$(CC) WARNS=$(WARNS) \
+	    sh ${TOPDIR}/config.phk $(TOPDIR) $(CURDIR) )
 
 CFLAGS += $(CF_CFLAGS) $(CF_CWFLAGS)
 CFLAGS += -I$(CURDIR)
@@ -241,4 +242,3 @@ real-test: $(TODO_TEST)
 	@true
 
 #######################################################################
-

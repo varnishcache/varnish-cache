@@ -57,31 +57,38 @@ static const int tab0 = 3;
 /*--------------------------------------------------------------------*/
 
 static const char OBJ_STICKY_TEXT[] =
-	"\n\nNB: This parameter is evaluated only when objects are created."
+	"\n\n"
+	"NB: This parameter is evaluated only when objects are created."
 	"To change it for all objects, restart or ban everything.";
 
 static const char DELAYED_EFFECT_TEXT[] =
-	"\n\nNB: This parameter may take quite some time to take (full) effect.";
+	"\n\n"
+	"NB: This parameter may take quite some time to take (full) effect.";
 
 static const char MUST_RESTART_TEXT[] =
-	"\n\nNB: This parameter will not take any effect until the "
+	"\n\n"
+	"NB: This parameter will not take any effect until the "
 	"child process has been restarted.";
 
 static const char MUST_RELOAD_TEXT[] =
-	"\n\nNB: This parameter will not take any effect until the "
+	"\n\n"
+	"NB: This parameter will not take any effect until the "
 	"VCL programs have been reloaded.";
 
 static const char EXPERIMENTAL_TEXT[] =
-	"\n\nNB: We do not know yet if it is a good idea to change "
+	"\n\n"
+	"NB: We do not know yet if it is a good idea to change "
 	"this parameter, or if the default value is even sensible.  "
 	"Caution is advised, and feedback is most welcome.";
 
 static const char WIZARD_TEXT[] =
-	"\n\nNB: Do not change this parameter, unless a developer tell "
+	"\n\n"
+	"NB: Do not change this parameter, unless a developer tell "
 	"you to do so.";
 
 static const char PROTECTED_TEXT[] =
-	"\n\nNB: This parameter is protected and can not be changed.";
+	"\n\n"
+	"NB: This parameter is protected and can not be changed.";
 
 
 /*--------------------------------------------------------------------*/

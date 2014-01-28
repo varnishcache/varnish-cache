@@ -551,7 +551,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->state != BOS_FAILED)
 		VBO_setstate(bo, BOS_FINISHED);
 
-VSLb(bo->vsl, SLT_Debug, "YYY REF %d %d", bo->refcount, bo->fetch_obj->objcore->refcnt);
+VSLb(bo->vsl, SLT_Debug, "YYY REF %d %d",
+    bo->refcount, bo->fetch_obj->objcore->refcnt);
 	return (F_STP_DONE);
 }
 

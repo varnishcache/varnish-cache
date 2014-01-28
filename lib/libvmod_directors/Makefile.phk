@@ -7,4 +7,3 @@ VMOD_SRC += vdir.c
 
 TOPDIR= $(CURDIR)/../..
 include $(TOPDIR)/Makefile.inc.phk
-

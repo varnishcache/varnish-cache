@@ -388,7 +388,10 @@ mgt_sandbox_solaris_waive(enum sandbox_e who)
 		return;
 	}
 
-	/* simple scheme: (inheritable subset-of effective) subset-of permitted */
+	/*
+	 * simple scheme:
+	 *     (inheritable subset-of effective) subset-of permitted
+	 */
 
 	priv_emptyset(inheritable);
 	mgt_sandbox_solaris_add_inheritable(inheritable, who);

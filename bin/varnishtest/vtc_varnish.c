@@ -630,7 +630,8 @@ varnish_cli(struct varnish *v, const char *cli, unsigned exp)
  */
 
 static void
-varnish_vcl(struct varnish *v, const char *vcl, enum VCLI_status_e expect, char **resp)
+varnish_vcl(struct varnish *v, const char *vcl, enum VCLI_status_e expect,
+    char **resp)
 {
 	struct vsb *vsb;
 	enum VCLI_status_e u;

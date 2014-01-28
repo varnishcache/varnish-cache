@@ -27,4 +27,3 @@ LIB_SRC += vtim.c
 
 TOPDIR= $(CURDIR)/../..
 include $(TOPDIR)/Makefile.inc.phk
-

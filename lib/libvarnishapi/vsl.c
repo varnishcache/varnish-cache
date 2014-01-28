@@ -163,7 +163,8 @@ VSL_ResetError(struct VSL_data *vsl)
 }
 
 static int
-vsl_match_IX(struct VSL_data *vsl, const vslf_list *list, const struct VSL_cursor *c)
+vsl_match_IX(struct VSL_data *vsl, const vslf_list *list,
+    const struct VSL_cursor *c)
 {
 	enum VSL_tag_e tag;
 	const char *cdata;

@@ -131,8 +131,6 @@ class vmod(object):
 			fo.write("int " + self.init)
 			fo.write(
 			    "(struct vmod_priv *, const struct VCL_conf *);\n")
-		#fo.write("\n")
-		#fo.write("extern const void * const Vmod_" + self.nam + "_Id;\n")
 
 	def c_typedefs_(self):
 		l = list()

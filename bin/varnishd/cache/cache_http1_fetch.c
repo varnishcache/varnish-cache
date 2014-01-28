@@ -389,4 +389,3 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	}
 	return (0);
 }
-

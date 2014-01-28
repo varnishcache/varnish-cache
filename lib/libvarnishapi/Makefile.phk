@@ -33,5 +33,3 @@ include $(TOPDIR)/Makefile.inc.phk
 
 $(MADE_FILES):  generate.py
 	python generate.py
-
-

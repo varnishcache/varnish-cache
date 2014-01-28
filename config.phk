@@ -210,7 +210,8 @@ ask_compiler CF_CFLAGS '
 		"-D_GNU_SOURCE=1"
 	#endif
 
-	"-DVCC_CC=~\~exec $(CC) -D_THREAD_SAFE -std=gnu99 -g -O2 -Wall -Werror -pthread -fpic -shared -Wl,-x -o %o %s\~~"
+	"-DVCC_CC=~\~exec $(CC) -D_THREAD_SAFE -std=gnu99 -g " \
+	"-O2 -Wall -Werror -pthread -fpic -shared -Wl,-x -o %o %s\~~"
 
 	"-DVCC_WARNS=~\~$(CF_CWFLAGS)\~~"
 
@@ -295,4 +296,3 @@ exit 0
 # _FILE_OFFSET_BITS -
 # 
 # #echo 'CF_CFLAGS="-Wall"'
-

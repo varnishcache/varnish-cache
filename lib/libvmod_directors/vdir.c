@@ -204,4 +204,3 @@ vdir_pick_be(struct vdir *vd, double w, unsigned nloops)
 	vdir_unlock(vd);
 	return (be);
 }
-

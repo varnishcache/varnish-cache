@@ -4,4 +4,3 @@ VMOD_SRC += vmod_debug_obj.c
 
 TOPDIR= $(CURDIR)/../..
 include $(TOPDIR)/Makefile.inc.phk
-

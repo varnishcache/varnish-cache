@@ -129,4 +129,3 @@ vmod_blob2hex(const struct vrt_ctx *ctx, VCL_BLOB b)
 	vmod_priv_fini(b);
 	return (s);
 }
-

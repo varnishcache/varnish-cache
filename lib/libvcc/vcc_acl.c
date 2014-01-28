@@ -352,7 +352,8 @@ vcc_acl_emit(const struct vcc *tl, const char *acln, int anon)
 	struct token *t;
 
 	Fh(tl, 0, "\nstatic int\n");
-	Fh(tl, 0, "match_acl_%s_%s(const struct vrt_ctx *ctx, const VCL_IP p)\n",
+	Fh(tl, 0,
+	    "match_acl_%s_%s(const struct vrt_ctx *ctx, const VCL_IP p)\n",
 	    anon ? "anon" : "named", acln);
 	Fh(tl, 0, "{\n");
 	Fh(tl, 0, "\tconst unsigned char *a;\n");

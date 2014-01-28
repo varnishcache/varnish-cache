@@ -4,4 +4,3 @@ LIB_SRC += vut.c
 
 TOPDIR= $(CURDIR)/../..
 include $(TOPDIR)/Makefile.inc.phk
-

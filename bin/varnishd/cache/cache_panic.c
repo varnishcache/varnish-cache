@@ -112,8 +112,10 @@ pan_ws(const struct ws *ws, int indent)
 	if (VALID_OBJ(ws, WS_MAGIC)) {
 		if (WS_Overflowed(ws))
 			VSB_printf(pan_vsp, " OVERFLOW");
-		VSB_printf(pan_vsp, "\n%*sid = \"%s\",\n", indent + 2, "", ws->id);
-		VSB_printf(pan_vsp, "%*s{s,f,r,e} = {%p", indent + 2, "", ws->s);
+		VSB_printf(pan_vsp,
+		    "\n%*sid = \"%s\",\n", indent + 2, "", ws->id);
+		VSB_printf(pan_vsp,
+		    "%*s{s,f,r,e} = {%p", indent + 2, "", ws->s);
 		if (ws->f > ws->s)
 			VSB_printf(pan_vsp, ",+%ld", (long) (ws->f - ws->s));
 		else

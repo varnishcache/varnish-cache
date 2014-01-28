@@ -539,4 +539,3 @@ HTTP1_Write(const struct worker *w, const struct http *hp, int resp)
 	l += WRW_Write(w, "\r\n", -1);
 	return (l);
 }
-

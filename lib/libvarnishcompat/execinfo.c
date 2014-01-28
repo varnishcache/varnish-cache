@@ -140,7 +140,7 @@ getreturnaddr(int level)
 {
 
 	switch(level) {
-#define DO_P2_TIMES_0(x)	case (x): return __builtin_return_address((x) + 1)
+#define DO_P2_TIMES_0(x)  case (x): return __builtin_return_address((x) + 1)
 	DO_P2_TIMES_7(0);
 #undef DO_P2_TIMES_0
 	default: return NULL;
@@ -152,7 +152,7 @@ getframeaddr(int level)
 {
 
 	switch(level) {
-#define DO_P2_TIMES_0(x)	case (x): return __builtin_frame_address((x) + 1)
+#define DO_P2_TIMES_0(x)  case (x): return __builtin_frame_address((x) + 1)
 	DO_P2_TIMES_7(0);
 #undef DO_P2_TIMES_0
 	default: return NULL;

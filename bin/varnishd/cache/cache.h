@@ -257,7 +257,8 @@ enum vfp_status {
 	VFP_OK = 0,
 	VFP_END = 1,
 };
-typedef enum vfp_status vfp_pull_f(struct busyobj *bo, void *p, ssize_t *len, intptr_t *priv);
+typedef enum vfp_status
+    vfp_pull_f(struct busyobj *bo, void *p, ssize_t *len, intptr_t *priv);
 
 extern vfp_pull_f vfp_gunzip_pull;
 extern vfp_pull_f vfp_gzip_pull;
