@@ -18,7 +18,10 @@ rm -f configure
 # autoconf prior to 2.62 has issues with zsh 4.2 and newer
 export CONFIG_SHELL=/bin/sh
 
-env MAKE=gmake \
+if [ ! -x "/usr/bin/xmake" -a "x${MAKE}" == "x"]; then
+    export MAKE=gmake
+fi
+
 ./configure \
     --enable-developer-warnings \
     --enable-debugging-symbols \
