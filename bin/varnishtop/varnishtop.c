@@ -59,7 +59,7 @@
 #define AC(x) x
 #endif
 
-static const char progname[] = "varnishtop2";
+static const char progname[] = "varnishtop";
 static float period = 60; /* seconds */
 
 struct top {
