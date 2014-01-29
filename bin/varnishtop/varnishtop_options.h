@@ -45,7 +45,7 @@
 	)
 
 #define TOP_OPT_p							\
-	VOPT("p:", "-p period", "Sampling period",			\
+	VOPT("p:", "[-p period]", "Sampling period",			\
 	    "Specified the number of seconds to measure over, the"	\
 	    " default is 60 seconds. The first number in the list is"	\
 	    " the average number of requests seen over this time"	\
