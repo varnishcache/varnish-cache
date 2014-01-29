@@ -121,6 +121,8 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	const char *b, *e, *p;
 	unsigned len;
 
+	(void)vsl;
+	(void)priv;
 	struct VSL_transaction *tr;
 	for (tr = pt[0]; tr != NULL; tr = *++pt) {
 		while ((1 == VSL_Next(tr->c))) {
