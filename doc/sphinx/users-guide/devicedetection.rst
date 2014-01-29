@@ -21,8 +21,8 @@ that content is to be served to.
 
 Setting this header can be as simple as::
 
-   sub vcl_recv { 
-       if (req.http.User-Agent ~ "(?i)iphone" {
+   sub vcl_recv {
+       if (req.http.User-Agent ~ "(?i)iphone" {
            set req.http.X-UA-Device = "mobile-iphone";
        }
    }
