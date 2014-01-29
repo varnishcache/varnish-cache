@@ -82,7 +82,7 @@
 
 #define TIME_FMT "[%d/%b/%Y:%T %z]"
 #define FORMAT "%h %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-agent}i\""
-static const char progname[] = "varnishncsa2";
+static const char progname[] = "varnishncsa";
 
 struct format;
 struct fragment;
