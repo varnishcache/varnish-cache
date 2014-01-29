@@ -31,17 +31,41 @@
 #include "vapi/vapi_options.h"
 #include "vut_options.h"
 
+#define TOP_OPT_1							\
+	VOPT("1", "[-1]", "Run once",					\
+	    "Instead of a continously updated display, print the"	\
+	    " statistics once and exit. Implies ``-d``."		\
+	)
+
+#define TOP_OPT_f							\
+	VOPT("f", "[-f]", "First field only",				\
+	    "Sort and group only on the first field of each log entry."	\
+	    " This is useful when displaying e.g. stataddr entries,"	\
+	    " where the first field is the client IP address."		\
+	)
+
+#define TOP_OPT_p							\
+	VOPT("p:", "-p period", "Sampling period",			\
+	    "Specified the number of seconds to measure over, the"	\
+	    " default is 60 seconds. The first number in the list is"	\
+	    " the average number of requests seen over this time"	\
+	    " period."							\
+	)
+
+TOP_OPT_1
 VSL_OPT_b
 VSL_OPT_c
 VSL_OPT_C
 VUT_OPT_d
 VUT_OPT_D
+TOP_OPT_f
 VUT_OPT_h
 VSL_OPT_i
 VSL_OPT_I
 VSL_OPT_L
 VUT_OPT_n
 VUT_OPT_N
+TOP_OPT_p
 VUT_OPT_q
 VUT_OPT_r
 VSL_OPT_T
