@@ -291,8 +291,6 @@ STV_MkObject(struct stevedore *stv, struct busyobj *bo,
 	bo->stats->n_object++;
 
 	o->objcore = bo->fetch_objcore;
-	if (!(o->objcore->flags & OC_F_PRIVATE))
-		BAN_NewObjCore(o->objcore);
 
 	o->objcore->methods = &default_oc_methods;
 	o->objcore->priv = o;

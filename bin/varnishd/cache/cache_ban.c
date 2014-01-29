@@ -1030,6 +1030,7 @@ ban_lurker_getfirst(struct vsl_log *vsl, struct ban *bt)
 				 * We got the lock, and the oc is not being
 				 * dismantled under our feet, run with it...
 				 */
+				AZ(oc->flags & OC_F_BUSY);
 				oc->refcnt += 1;
 				VTAILQ_REMOVE(&bt->objcore, oc, ban_list);
 				VTAILQ_INSERT_TAIL(&bt->objcore, oc, ban_list);

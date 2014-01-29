@@ -667,10 +667,6 @@ HSH_Unbusy(struct dstat *ds, struct objcore *oc)
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
 
 	AN(oc->flags & OC_F_BUSY);
-	if (oc->flags & OC_F_PRIVATE)
-		AZ(oc->ban);
-	else
-		AN(oc->ban);
 	assert(oh->refcnt > 0);
 
 	/* XXX: pretouch neighbors on oh->objcs to prevent page-on under mtx */
@@ -683,6 +679,8 @@ HSH_Unbusy(struct dstat *ds, struct objcore *oc)
 	if (oh->waitinglist != NULL)
 		hsh_rush(ds, oh);
 	Lck_Unlock(&oh->mtx);
+	if (!(oc->flags & OC_F_PRIVATE))
+		BAN_NewObjCore(oc);
 }
 
 /*---------------------------------------------------------------------

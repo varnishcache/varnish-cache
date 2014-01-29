@@ -1,0 +1,43 @@
+varnishtest "Make sure banlurker skips busy objects"
+
+server s1 {
+	rxreq
+	send "HTTP/1.0 200 Ok\r\n"
+	sema r1 sync 2
+	send "Foobar: blaf\r\n"
+	send "Content-Length: 10\r\n"
+	send "\r\n\r\n"
+	send "abcde"
+	sema r2 sync 2
+	send "abcdefghij"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_stream = false;
+	}
+} -start
+
+varnish v1 -cliok {param.set debug +lurker}
+varnish v1 -cliok {param.set ban_lurker_age 1}
+varnish v1 -cliok {ban.list}
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foobar == blaf
+} -start
+
+sema r1 sync 2
+varnish v1 -cliok {ban.list}
+
+varnish v1 -cliok {ban obj.http.goo == bar}
+varnish v1 -cliok {ban.list}
+delay 2
+varnish v1 -cliok {ban.list}
+
+
+sema r2 sync 2
+
+client c1 -wait
