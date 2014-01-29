@@ -18,6 +18,8 @@ rm -f configure
 # autoconf prior to 2.62 has issues with zsh 4.2 and newer
 export CONFIG_SHELL=/bin/sh
 
+# NB: Workaround for make distcheck not working with
+# NB: FreeBSD's make on -current
 # env MAKE=gmake \
 ./configure \
     --enable-developer-warnings \
