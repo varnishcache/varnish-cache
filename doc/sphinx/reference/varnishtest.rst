@@ -128,10 +128,10 @@ HISTORY
 =======
 
 The varnishtest program was developed by Poul-Henning Kamp
-⟨phk@phk.freebsd.dk⟩ in cooperation with Varnish Software AS.
+<phk@phk.freebsd.dk> in cooperation with Varnish Software AS.
 This manual page was originally written by Stig Sandbeck Mathisen
-⟨ssm@linpro.no⟩ and updated by Kristian Lyngstøl
-(kristian@varnish-cache.org).
+<ssm@linpro.no> and updated by Kristian Lyngstøl
+<kristian@varnish-cache.org>.
 
 COPYRIGHT
 =========
@@ -139,4 +139,4 @@ COPYRIGHT
 This document is licensed under the same licence as Varnish
 itself. See LICENCE for details.
 
-* Copyright (c) 2007-2011 Varnish Software AS
+* Copyright (c) 2007-2014 Varnish Software AS

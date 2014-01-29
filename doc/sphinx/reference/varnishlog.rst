@@ -68,9 +68,9 @@ HISTORY
 =======
 
 The varnishlog utility was developed by Poul-Henning Kamp
-⟨phk@phk.freebsd.dk⟩ in cooperation with Verdens Gang AS, Varnish
-Software AS and Varnish Software.  This manual page was initially
-written by Dag-Erling Smørgrav.
+<phk@phk.freebsd.dk> in cooperation with Verdens Gang AS and
+Varnish Software AS. This manual page was initially written by Dag-Erling
+Smørgrav.
 
 
 COPYRIGHT

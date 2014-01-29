@@ -127,7 +127,7 @@ help [command]
 
 param.set param value
       Set the parameter specified by param to the specified value.
-      See Run-Time Parameters for a list of parame‐ ters.
+      See Run-Time Parameters for a list of parameters.
 
 param.show [-l] [param]
       Display a list if run-time parameters and their values.
@@ -179,7 +179,7 @@ vcl.show configname
 
 vcl.use configname
       Start using the configuration specified by configname for all
-      new requests.  Existing requests will con‐ tinue using whichever
+      new requests.  Existing requests will continue using whichever
       configuration was in use when they arrived.
 
 

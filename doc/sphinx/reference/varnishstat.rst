@@ -70,26 +70,26 @@ When using the -1 option, the columns in the output are, from left to right:
 
 When using the -x option, the output is::
 
-  <stat> 
-    <name>FIELD NAME</name> 
-    <value>FIELD VALUE</value> 
-    <description>FIELD DESCRIPTION</description> 
-  </stat> 
+  <stat>
+    <name>FIELD NAME</name>
+    <value>FIELD VALUE</value>
+    <description>FIELD DESCRIPTION</description>
+  </stat>
 
 With -j the output format is::
 
   {
     "timestamp": "YYYY-MM-DDTHH:mm:SS",
     "client_conn": {
-	"value": 0, "flag": "a", 
+	"value": 0, "flag": "a",
 	"description": "Client connections accepted"
     },
     "client_drop": {
-	"value": 0, "flag": "a", 
+	"value": 0, "flag": "a",
 	"description": "Connection dropped, no sess/wrk"
     },
     "LCK.backend.creat": {
-	"type": "LCK", "ident": "backend", "value": 1, 
+	"type": "LCK", "ident": "backend", "value": 1,
 	"flag": "a", "description": "Created locks"
     },
     [..]
@@ -114,9 +114,8 @@ HISTORY
 =======
 
 The varnishstat utility was originally developed by Poul-Henning Kamp
-⟨phk@phk.freebsd.dk⟩ in cooperation with Verdens Gang AS, Varnish Software AS
-and Varnish Software. Manual page written by Dag-Erling Smørgrav,
-and Per Buer. 
+<phk@phk.freebsd.dk> in cooperation with Verdens Gang AS and Varnish
+Software AS. Manual page written by Dag-Erling Smørgrav and Per Buer.
 
 COPYRIGHT
 =========

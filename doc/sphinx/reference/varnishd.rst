@@ -19,11 +19,11 @@ HTTP accelerator daemon
 SYNOPSIS
 ========
 
-varnishd [-a address[:port]] [-b host[:port]] [-d] [-F] [-f config] 
+varnishd [-a address[:port]] [-b host[:port]] [-d] [-F] [-f config]
 	 [-g group] [-h type[,options]] [-i identity]
-	 [-l shmlogsize] [-n name] [-P file] [-p param=value] 
+	 [-l shmlogsize] [-n name] [-P file] [-p param=value]
 	 [-s type[,options]] [-T address[:port]] [-t ttl]
-	 [-r param[,param...]] [-u user] [-V] 
+	 [-r param[,param...]] [-u user] [-V]
 
 DESCRIPTION
 ===========
@@ -41,14 +41,14 @@ OPTIONS
             name (“localhost”), an IPv4 dotted-quad (“127.0.0.1”), or an IPv6 address enclosed in
             square brackets (“[::1]”).  If address is not specified, varnishd will listen on all
             available IPv4 and IPv6 interfaces.  If port is not specified, the default HTTP port as
-            listed in /etc/services is used.  Multiple listening addresses and ports can be speci‐
-            fied as a whitespace- or comma-separated list.
+            listed in /etc/services is used.  Multiple listening addresses and ports can be
+            specified as a whitespace or comma -separated list.
 
 -b host[:port]
-            Use the specified host as backend server.  If port is not specified, 
+            Use the specified host as backend server.  If port is not specified,
 	    the default is 8080.
 
--C	    Print VCL code compiled to C language and exit. Specify the VCL file 
+-C	    Print VCL code compiled to C language and exit. Specify the VCL file
 	    to compile with the -f option.
 
 -d          Enables debugging mode: The parent process runs in the foreground with a CLI connection
@@ -85,8 +85,8 @@ OPTIONS
 -P file     Write the process's PID to the specified file.
 
 -p param=value
-            Set the parameter specified by param to the specified value.  See Run-Time 
-	    Parameters for a list of parameters. This option can be used multiple 
+            Set the parameter specified by param to the specified value.  See Run-Time
+	    Parameters for a list of parameters. This option can be used multiple
 	    times to specify multiple parameters.
 
 -S file     Path to a file containing a secret used for authorizing access to the management port.
@@ -108,11 +108,11 @@ OPTIONS
 
 -M address:port
             Connect to this port and offer the command line
-            interface. Think of it as a reverse shell. When running with 
+            interface. Think of it as a reverse shell. When running with
 	    -M and there is no backend defined the child process (the cache)
             will not start initially.
 
--t ttl      
+-t ttl
 	    Specifies a hard minimum time to live for cached
             documents.  This is a shortcut for specifying the
             default_ttl run-time parameter.
@@ -129,7 +129,7 @@ OPTIONS
             process should switch before it starts accepting
             connections.  This is a shortcut for specifying the user
             run- time parameter.
-	    
+
             If specifying both a user and a group, the user should be
             specified first.
 
@@ -250,7 +250,7 @@ The varnishd daemon was developed by Poul-Henning Kamp in cooperation
 with Verdens Gang AS, Varnish Software AS and Varnish Software.
 
 This manual page was written by Dag-Erling Smørgrav with updates by
-Stig Sandbeck Mathisen ⟨ssm@debian.org⟩
+Stig Sandbeck Mathisen <ssm@debian.org>
 
 
 COPYRIGHT
@@ -259,4 +259,4 @@ COPYRIGHT
 This document is licensed under the same licence as Varnish
 itself. See LICENCE for details.
 
-* Copyright (c) 2007-2011 Varnish Software AS
+* Copyright (c) 2007-2014 Varnish Software AS
