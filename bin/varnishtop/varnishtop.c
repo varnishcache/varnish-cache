@@ -120,12 +120,14 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	unsigned tag;
 	const char *b, *e, *p;
 	unsigned len;
-
-	(void)vsl;
-	(void)priv;
 	struct VSL_transaction *tr;
+
+	(void)priv;
+
 	for (tr = pt[0]; tr != NULL; tr = *++pt) {
 		while ((1 == VSL_Next(tr->c))) {
+			if (!VSL_Match(vsl, tr->c))
+				continue;
 			tag = VSL_TAG(tr->c->rec.ptr);
 			b = VSL_CDATA(tr->c->rec.ptr);
 			len = VSL_LEN(tr->c->rec.ptr);
