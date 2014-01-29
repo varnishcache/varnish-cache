@@ -131,13 +131,18 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				continue;
 			tag = VSL_TAG(tr->c->rec.ptr);
 			b = VSL_CDATA(tr->c->rec.ptr);
-			len = VSL_LEN(tr->c->rec.ptr);
-			assert(len > 0);
-			e = b + len;
+			e = b + VSL_LEN(tr->c->rec.ptr);
 			u = 0;
 			for (p = b; p <= e; p++) {
+				if (*p == '\0')
+					break;
+				if (f_flag && (*p == ':' || isspace(*p)))
+					break;
 				u += *p;
 			}
+			len = p - b;
+			if (len == 0)
+				continue;
 
 			t.hash = u;
 			t.tag = tag;
