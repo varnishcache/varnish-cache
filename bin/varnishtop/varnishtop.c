@@ -141,7 +141,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			rd = calloc(len+1, 1);
 			AN(rd);
 			memcpy(rd, VSL_CDATA(tr->c->rec.ptr), len);
-            rd[len] = '\0';
+			rd[len] = '\0';
 			t.rec_data = rd;
 
 			AZ(pthread_mutex_lock(&mtx));
@@ -151,7 +151,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				tp->count += 1.0;
 				/* Reinsert to rebalance */
 				VRB_INSERT(top_tree, &top_tree_head, tp);
-                free(rd);
+				free(rd);
 			} else {
 				ntop++;
 				tp = calloc(sizeof *tp, 1);
@@ -160,7 +160,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				tp->count = 1.0;
 				tp->clen = len;
 				tp->tag = tag;
-                tp->rec_data = rd;
+				tp->rec_data = rd;
 				VRB_INSERT(top_tree, &top_tree_head, tp);
 			}
 			AZ(pthread_mutex_unlock(&mtx));
