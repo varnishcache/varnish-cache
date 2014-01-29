@@ -45,8 +45,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "vapi/vsl.h"
 #include "vapi/vsm.h"
+#include "vapi/vsl.h"
+#include "vapi/voptget.h"
 #include "vas.h"
 #include "vcs.h"
 #include "vtree.h"
@@ -296,11 +297,15 @@ dump(void)
 }
 
 static void
-usage(void)
+usage(int status)
 {
-	fprintf(stderr,
-		"usage: varnishtop [-1fV] [-n varnish_name]\n");
-	exit(1);
+	const char **opt;
+
+	fprintf(stderr, "Usage: %s <options>\n\n", progname);
+	fprintf(stderr, "Options:\n");
+	for (opt = vopt_usage; *opt != NULL; opt +=2)
+		fprintf(stderr, " %-25s %s\n", *opt, *(opt + 1));
+	exit(status);
 }
 
 int
@@ -313,7 +318,7 @@ main(int argc, char **argv)
 	vd = VSM_New();
 	VUT_Init(progname);
 
-	while ((o = getopt(argc, argv, "1fVp:")) != -1) {
+	while ((o = getopt(argc, argv, vopt_optstring)) != -1) {
 		switch (o) {
 		case '1':
 			VUT_Arg('d', NULL);
@@ -322,6 +327,9 @@ main(int argc, char **argv)
 		case 'f':
 			f_flag = 1;
 			break;
+		case 'h':
+			/* Usage help */
+			usage(0);
 		case 'p':
 			errno = 0;
 			period = strtol(optarg, NULL, 0);
@@ -331,16 +339,9 @@ main(int argc, char **argv)
 				exit(1);
 			}
 			break;
-		case 'V':
-			VCS_Message("varnishtop");
-			exit(0);
-		case 'm':
-			fprintf(stderr, "-m is not supported\n");
-			exit(1);
 		default:
 			if (!VUT_Arg(o, optarg))
-				break;
-			usage();
+				usage(1);
 		}
 	}
 
