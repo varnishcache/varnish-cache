@@ -174,7 +174,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 }
 
 static void
-update(const struct VSM_data *vd, int period)
+update(const struct VSM_data *vd, int p)
 {
 	struct top *tp, *tp2;
 	int l, len;
@@ -189,7 +189,7 @@ update(const struct VSM_data *vd, int period)
 	last = now;
 
 	l = 1;
-	if (n < period)
+	if (n < p)
 		n++;
 	AC(erase());
 	AC(mvprintw(0, 0, "%*s", COLS - 1, VSM_Name(vd)));
