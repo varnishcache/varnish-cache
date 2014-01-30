@@ -93,7 +93,8 @@ void VSM_ResetError(struct VSM_data *vd);
 int VSM_n_Arg(struct VSM_data *vd, const char *n_arg);
 	/*
 	 * Configure which varnishd instance to access.
-	 * Can also be, and normally is done through VSC_Arg()/VSL_Arg().
+	 * Uses hostname if n_arg is NULL or "".
+	 *
 	 * Returns:
 	 *	 1 on success
 	 *	 <0 on failure, VSM_Error() returns diagnostic string
@@ -106,8 +107,6 @@ int VSM_N_Arg(struct VSM_data *vd, const char *N_arg);
 	 * Configure the library to use the specified VSM file name. This
 	 * bypasses abandonment checks and allows looking at stale VSM
 	 * files without a running Varnish instance.
-	 *
-	 * Can also be, and normally is done through VSC_Arg()/VSL_Arg().
 	 *
 	 * Returns:
 	 *	1 on success
