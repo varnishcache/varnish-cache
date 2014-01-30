@@ -220,7 +220,8 @@ update(int p)
 				len, len, tp->rec_data));
 			t = tp->count;
 		}
-		(void)t;
+		if (end_of_file)
+			continue;
 		tp->count += (1.0/3.0 - tp->count) / (double)n;
 		if (tp->count * 10 < t || l > LINES * 10) {
 			VRB_REMOVE(top_tree, &top_tree_head, tp);
