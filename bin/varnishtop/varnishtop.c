@@ -62,6 +62,7 @@
 
 static const char progname[] = "varnishtop";
 static float period = 60; /* seconds */
+static int end_of_file = 0;
 
 struct top {
 	uint8_t			tag;
@@ -200,7 +201,11 @@ update(int p)
 	if (n < p)
 		n++;
 	AC(erase());
-	AC(mvprintw(0, 0, "%*s", COLS - 1, VUT.name));
+	if (end_of_file)
+		AC(mvprintw(0, COLS - 1 - strlen(VUT.name) - 5, "%s (EOF)",
+			VUT.name));
+	else
+		AC(mvprintw(0, COLS - 1 - strlen(VUT.name), "%s", VUT.name));
 	AC(mvprintw(0, 0, "list length %u", ntop));
 	for (tp = VRB_MIN(top_tree, &top_tree_head); tp != NULL; tp = tp2) {
 		tp2 = VRB_NEXT(top_tree, &top_tree_head, tp);
@@ -358,6 +363,7 @@ main(int argc, char **argv)
 	VUT.dispatch_f = &accumulate;
 	VUT.dispatch_priv = NULL;
 	VUT_Main();
+	end_of_file = 1;
 	if (once)
 		dump();
 	else
