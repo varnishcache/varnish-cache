@@ -561,6 +561,18 @@ VSC_F(bans_persisted_fragmentation,	uint64_t, 0, 'g', diag,
 
 /*--------------------------------------------------------------------*/
 
+VSC_F(exp_mailed,			uint64_t, 0, 'c', diag,
+    "Number of objects mailed to expiry thread",
+	"Number of objects mailed to expiry thread for handling."
+)
+
+VSC_F(exp_received,			uint64_t, 0, 'c', diag,
+    "Number of objects received by expiry thread",
+	"Number of objects received by expiry thread for handling."
+)
+
+/*--------------------------------------------------------------------*/
+
 VSC_F(hcb_nolock,		uint64_t, 1, 'a', debug,
     "HCB Lookups without lock",
 	""

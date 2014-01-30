@@ -117,6 +117,7 @@ exp_mail_it(struct objcore *oc)
 		VTAILQ_INSERT_HEAD(&exphdl->inbox, oc, lru_list);
 	else
 		VTAILQ_INSERT_TAIL(&exphdl->inbox, oc, lru_list);
+	VSC_C_main->exp_mailed++;
 	AZ(pthread_cond_signal(&exphdl->condvar));
 	Lck_Unlock(&exphdl->mtx);
 }
@@ -583,6 +584,7 @@ exp_thread(struct worker *wrk, void *priv)
 		oc = VTAILQ_FIRST(&ep->inbox);
 		if (oc != NULL) {
 			VTAILQ_REMOVE(&ep->inbox, oc, lru_list);
+			VSC_C_main->exp_received++;
 			tnext = 0;
 		} else if (tnext > t) {
 			VSL_Flush(&ep->vsl, 0);
