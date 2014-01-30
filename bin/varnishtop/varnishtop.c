@@ -182,7 +182,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 }
 
 static void
-update(const struct VSM_data *vd, int p)
+update(int p)
 {
 	struct top *tp, *tp2;
 	int l, len;
@@ -200,7 +200,7 @@ update(const struct VSM_data *vd, int p)
 	if (n < p)
 		n++;
 	AC(erase());
-	AC(mvprintw(0, 0, "%*s", COLS - 1, VSM_Name(vd)));
+	AC(mvprintw(0, 0, "%*s", COLS - 1, VUT.name));
 	AC(mvprintw(0, 0, "list length %u", ntop));
 	for (tp = VRB_MIN(top_tree, &top_tree_head); tp != NULL; tp = tp2) {
 		tp2 = VRB_NEXT(top_tree, &top_tree_head, tp);
@@ -231,8 +231,8 @@ static void *
 do_curses(void *arg)
 {
 	int i;
-	struct VSM_data *vd = (struct VSM_data *)arg;
 
+	(void)arg;
 	for (i = 0; i < 256; i++) {
 		if (VSL_tags[i] == NULL)
 			continue;
@@ -249,7 +249,7 @@ do_curses(void *arg)
 	AC(erase());
 	for (;;) {
 		AZ(pthread_mutex_lock(&mtx));
-		update(vd, period);
+		update(period);
 		AZ(pthread_mutex_unlock(&mtx));
 
 		timeout(1000);
@@ -315,11 +315,9 @@ usage(int status)
 int
 main(int argc, char **argv)
 {
-	struct VSM_data *vd;
 	int o, once = 0;
 	pthread_t thr;
 
-	vd = VSM_New();
 	VUT_Init(progname);
 
 	while ((o = getopt(argc, argv, vopt_optstring)) != -1) {
@@ -349,20 +347,21 @@ main(int argc, char **argv)
 		}
 	}
 
-	VUT.dispatch_f = &accumulate;
-	VUT.dispatch_priv = NULL;
-	if (!once){
-		if (pthread_create(&thr, NULL, do_curses, vd) != 0) {
-			fprintf(stderr, "pthread_create(): %s\n", strerror(errno));
+	VUT_Setup();
+	if (!once) {
+		if (pthread_create(&thr, NULL, do_curses, NULL) != 0) {
+			fprintf(stderr, "pthread_create(): %s\n",
+			    strerror(errno));
 			exit(1);
 		}
 	}
-	VUT_Setup();
+	VUT.dispatch_f = &accumulate;
+	VUT.dispatch_priv = NULL;
 	VUT_Main();
-	VUT_Fini();
 	if (once)
 		dump();
 	else
 		pthread_join(thr, NULL);
+	VUT_Fini();
 	exit(0);
 }
