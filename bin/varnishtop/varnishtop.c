@@ -271,7 +271,6 @@ do_curses(void *arg)
 			AZ(raise(SIGTSTP));
 			break;
 		case '\003': /* Ctrl-C */
-			printf("got ctrl-C\r\n");
 		case '\021': /* Ctrl-Q */
 		case 'Q':
 		case 'q':
