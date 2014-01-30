@@ -26,7 +26,7 @@ nodist_libvmod_directors_la_SOURCES = \
 	vcc_if.h
 
 # BUILT_SOURCES is only a hack and dependency tracking does not help for the first build
-vdir.lo: vcc_if.h
+vdir.lo fall_back.lo hash.lo random.lo round_robin.lo: vcc_if.h
 
 vcc_if.c vcc_if.h: $(vmodtool) $(vmod_srcdir)/vmod.vcc
 	@PYTHON@ $(vmodtool) $(vmod_srcdir)/vmod.vcc
