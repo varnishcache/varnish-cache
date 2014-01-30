@@ -350,11 +350,6 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (VSM_Open(vd)) {
-		fprintf(stderr, "%s\n", VSM_Error(vd));
-		exit (1);
-	}
-
 	VUT.dispatch_f = &accumulate;
 	VUT.dispatch_priv = NULL;
 	if (!once){
