@@ -173,6 +173,7 @@ void
 VUT_Init(const char *progname)
 {
 	VUT.progname = progname;
+	REPLACE(VUT.name, "");
 	VUT.g_arg = VSL_g_vxid;
 	AZ(VUT.vsl);
 	VUT.vsl = VSL_New();
@@ -189,9 +190,10 @@ VUT_Setup(void)
 	/* Input */
 	if (VUT.r_arg && VUT.vsm)
 		VUT_Error(1, "Can't have both -n and -r options");
-	if (VUT.r_arg)
+	if (VUT.r_arg) {
+		REPLACE(VUT.name, VUT.r_arg);
 		c = VSL_CursorFile(VUT.vsl, VUT.r_arg, 0);
-	else {
+	} else {
 		if (VUT.vsm == NULL)
 			/* Default uses VSM with n=hostname */
 			VUT.vsm = VSM_New();
@@ -199,6 +201,7 @@ VUT_Setup(void)
 		if (VSM_Open(VUT.vsm))
 			VUT_Error(1, "Can't open VSM file (%s)",
 			    VSM_Error(VUT.vsm));
+		REPLACE(VUT.name, VSM_Name(VUT.vsm));
 		c = VSL_CursorVSM(VUT.vsl, VUT.vsm,
 		    (VUT.d_opt ? VSL_COPT_TAILSTOP : VSL_COPT_TAIL)
 		    | VSL_COPT_BATCH);
@@ -242,6 +245,7 @@ VUT_Fini(void)
 {
 	free(VUT.r_arg);
 	free(VUT.P_arg);
+	free(VUT.name);
 
 	vut_vpf_remove();
 	AZ(VUT.pfh);

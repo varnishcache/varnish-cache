@@ -35,6 +35,7 @@ typedef int VUT_cb_f(void);
 
 struct VUT {
 	const char	*progname;
+	char		*name;
 
 	/* Options */
 	int		d_opt;
