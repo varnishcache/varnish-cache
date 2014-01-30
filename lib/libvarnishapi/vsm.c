@@ -69,6 +69,7 @@ VSM_New(void)
 	if (vd == NULL)
 		return (vd);
 
+	REPLACE(vd->name, "");
 	vd->vsm_fd = -1;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -126,38 +127,45 @@ VSM_ResetError(struct VSM_data *vd)
 /*--------------------------------------------------------------------*/
 
 int
-VSM_n_Arg(struct VSM_data *vd, const char *opt)
+VSM_n_Arg(struct VSM_data *vd, const char *arg)
 {
+	char *name = NULL;
+	char *fname = NULL;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	AN(opt);
 
-	if (vd->fname) {
-		free(vd->fname);
-		vd->fname = NULL;
-	}
-	vd->N_opt = 0;
-	REPLACE(vd->n_opt, opt);
-	if (VIN_N_Arg(vd->n_opt, NULL, NULL, &vd->fname))
+	if (vd->head)
+		return (vsm_diag(vd, "VSM_n_Arg: Already open\n"));
+	if (VIN_N_Arg(arg, &name, NULL, &fname))
 		return (vsm_diag(vd, "Invalid instance name: %s\n",
-		    strerror(errno)));
+			strerror(errno)));
+	AN(name);
+	AN(fname);
+
+	if (vd->name)
+		free(vd->name);
+	vd->name = name;
+	if (vd->fname)
+		free(vd->fname);
+	vd->fname = fname;
+	vd->N_opt = 0;
+
 	return (1);
 }
 
 /*--------------------------------------------------------------------*/
 
 int
-VSM_N_Arg(struct VSM_data *vd, const char *opt)
+VSM_N_Arg(struct VSM_data *vd, const char *arg)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	AN(opt);
+	AN(arg);
 
-	if (vd->n_opt) {
-		free(vd->n_opt);
-		vd->n_opt = NULL;
-	}
-	REPLACE(vd->fname, opt);
+	if (vd->head)
+		return (vsm_diag(vd, "VSM_N_Arg: Already open\n"));
+	REPLACE(vd->name, arg);
+	REPLACE(vd->fname, arg);
 	vd->N_opt = 1;
 	return (1);
 }
@@ -170,7 +178,7 @@ VSM_Name(const struct VSM_data *vd)
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 
-	return (vd->n_opt);
+	return (vd->name);
 }
 
 /*--------------------------------------------------------------------*/
@@ -182,11 +190,11 @@ VSM_Delete(struct VSM_data *vd)
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 
 	VSM_Close(vd);
-	free(vd->n_opt);
-	free(vd->fname);
 	if (vd->vsc != NULL)
 		VSC_Delete(vd);
 	VSM_ResetError(vd);
+	free(vd->name);
+	free(vd->fname);
 	FREE_OBJ(vd);
 }
 
@@ -214,11 +222,13 @@ VSM_Open(struct VSM_data *vd)
 		/* Already open */
 		return (0);
 
-	if (!vd->n_opt && !vd->N_opt)
-		(void)VSM_n_Arg(vd, "");
-
-	AZ(vd->head);
-	AN(vd->fname);
+	if (vd->fname == NULL) {
+		/* Use default (hostname) */
+		i = VSM_n_Arg(vd, "");
+		if (i < 0)
+			return (i);
+		AN(vd->fname);
+	}
 
 	vd->vsm_fd = open(vd->fname, O_RDONLY);
 	if (vd->vsm_fd < 0)

@@ -39,7 +39,7 @@ struct VSM_data {
 
 	struct vsb		*diag;
 
-	char			*n_opt;
+	char			*name;
 	char			*fname;
 	int			N_opt;
 
