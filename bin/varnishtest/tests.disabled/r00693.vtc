@@ -41,7 +41,7 @@ varnish v1 -arg "-p workspace_client=3072" -vcl+backend {
 	}
 	sub vcl_hash {
 		hash_data(req.url);
-		return (hash);
+		return (lookup);
 	}
 } -start
 

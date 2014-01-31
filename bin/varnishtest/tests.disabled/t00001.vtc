@@ -23,10 +23,10 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
-		if (req.url == "/foo") {
+		if (bereq.url == "/foo") {
 			set beresp.do_gzip = true;
 		}
-		if (req.url == "/barf") {
+		if (bereq.url == "/barf") {
 			set beresp.do_gunzip = true;
 		}
 		set beresp.do_stream = true;
