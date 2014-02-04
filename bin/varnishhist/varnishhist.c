@@ -108,8 +108,7 @@ struct profile {
 	int field;
 	int hist_low;
 	int hist_high;
-} 
-
+}
 profiles[] = {
 	{
 		.name = "responsetime",
@@ -206,7 +205,8 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			tag = VSL_TAG(tr->c->rec.ptr);
 			assert(match_tag >= 0);
 			if (tag == (unsigned)match_tag) {
-				i = sscanf(VSL_CDATA(tr->c->rec.ptr), format, &value);
+				i = sscanf(VSL_CDATA(tr->c->rec.ptr), format,
+				    &value);
 				assert(i == 1);
 			} else if (tag == SLT_Hit)
 				hit = 1;
@@ -361,9 +361,11 @@ main(int argc, char **argv)
 				break;
 			}
 			/* else it's a definition, we hope */
-			if (sscanf(colon+1, "%d:%d:%d", 
-					&cli_p.field, &cli_p.hist_low, &cli_p.hist_high) != 3) {
-				fprintf(stderr, "%s is neither a profile name nor definition (SLT_Tag:field:min:max)\n", optarg);
+			if (sscanf(colon+1, "%d:%d:%d",	&cli_p.field,
+				&cli_p.hist_low, &cli_p.hist_high) != 3) {
+				fprintf(stderr, "%s is neither a profile name"
+				    "nor definition (SLT_Tag:field:min:max)\n",
+				    optarg);
 				exit(1);
 			}
 
