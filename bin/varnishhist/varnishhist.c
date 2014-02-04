@@ -132,11 +132,12 @@ static struct profile *active_profile;
 static void
 update(void)
 {
-	int w = COLS / hist_range;
-	int n = w * hist_range;
+	unsigned w = COLS / hist_range;
+	unsigned n = w * hist_range;
 	unsigned bm[n], bh[n];
 	unsigned max;
-	int i, j, scale;
+	unsigned i, j, scale;
+	int k, l;
 
 	erase();
 
@@ -145,9 +146,9 @@ update(void)
 	n = w * hist_range;
 	for (i = 0; i < n; ++i)
 		(void)mvaddch(LINES - 2, i, '-');
-	for (i = 0, j = hist_low; i < hist_range; ++i, ++j) {
-		(void)mvaddch(LINES - 2, w * i, '+');
-		mvprintw(LINES - 1, w * i, "|1e%d", j);
+	for (k = 0, l = hist_low; k < hist_range; ++k, ++l) {
+		(void)mvaddch(LINES - 2, w * k, '+');
+		mvprintw(LINES - 1, w * k, "|1e%d", l);
 	}
 
 	if (end_of_file)
@@ -158,16 +159,17 @@ update(void)
 	/* count our flock */
 	for (i = 0; i < n; ++i)
 		bm[i] = bh[i] = 0;
-	for (i = 0, max = 1; i < hist_buckets; ++i) {
-		j = i * n / hist_buckets;
-		bm[j] += bucket_miss[i];
-		bh[j] += bucket_hit[i];
-		if (bm[j] + bh[j] > max)
-			max = bm[j] + bh[j];
+	for (k = 0, max = 1; k < hist_buckets; ++k) {
+		l = k * n / hist_buckets;
+		bm[l] += bucket_miss[k];
+		bh[l] += bucket_hit[k];
+		if (bm[l] + bh[l] > max)
+			max = bm[l] + bh[l];
 	}
 
 	/* scale */
-	for (i = 0; max / scales[i] > LINES - 3; ++i)
+	assert(LINES - 3 >= 0);
+	for (i = 0; max / scales[i] > (unsigned)(LINES - 3); ++i)
 		/* nothing */ ;
 	scale = scales[i];
 
@@ -201,7 +203,8 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				continue;
 			/* get the value we want, and register if it's a hit*/
 			tag = VSL_TAG(tr->c->rec.ptr);
-			if (tag == match_tag) {
+			assert(match_tag >= 0);
+			if (tag == (unsigned)match_tag) {
 				i = sscanf(VSL_CDATA(tr->c->rec.ptr), format, &value);
 				assert(i == 1);
 			} else if (tag == SLT_Hit)
