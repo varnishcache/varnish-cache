@@ -192,6 +192,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	unsigned tag, hit;
 	double value;
 	struct VSL_transaction *tr;
+	(void)priv;
 	for (tr = pt[0]; tr != NULL; tr = *++pt) {
 		value = -1;
 		hit = 0;
@@ -254,6 +255,7 @@ static void *
 do_curses(void *arg)
 {
 	int ch;
+	(void)arg;
 
 	initscr();
 	raw();
