@@ -881,7 +881,7 @@ vtx_force(struct VSLQ *vslq, struct vtx *vtx, const char *reason)
 	vtx_scan(vslq, vtx);
 	if (!(vtx->flags & VTX_F_BEGIN))
 		vtx_synth_rec(vtx, SLT_Begin, "%s %u synth",
-		    vsl_t_names[vtx->type], vtx->key.vxid);
+		    vsl_t_names[vtx->type], 0);
 	vtx_diag(vtx, reason);
 	if (!(vtx->flags & VTX_F_END))
 		vtx_synth_rec(vtx, SLT_End, "synth");
