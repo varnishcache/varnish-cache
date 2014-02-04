@@ -656,6 +656,7 @@ vtx_set_parent(struct vtx *parent, struct vtx *child)
 
 	CHECK_OBJ_NOTNULL(parent, VTX_MAGIC);
 	CHECK_OBJ_NOTNULL(child, VTX_MAGIC);
+	assert(parent != child);
 	AZ(parent->flags & VTX_F_COMPLETE);
 	AZ(child->flags & VTX_F_COMPLETE);
 	AZ(child->parent);
@@ -736,8 +737,10 @@ vtx_scan_begin(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 	vtx->reason = reason;
 
 	if (p_vxid == 0)
-		/* No parent */
+		/* Zero means no parent */
 		return (0);
+	if (p_vxid == vtx->key.vxid)
+		return (vtx_diag_tag(vtx, ptr, "link to self"));
 
 	if (vslq->grouping == VSL_g_vxid)
 		return (0);	/* No links */
@@ -795,6 +798,11 @@ vtx_scan_link(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 		return (0);	/* No links */
 	if (vslq->grouping == VSL_g_request && vtx->type == VSL_t_sess)
 		return (0);	/* No links */
+
+	if (c_vxid == 0)
+		return (vtx_diag_tag(vtx, ptr, "illegal link vxid"));
+	if (c_vxid == vtx->key.vxid)
+		return (vtx_diag_tag(vtx, ptr, "link to self"));
 
 	/* Lookup and check child vtx */
 	c_vtx = vtx_lookup(vslq, c_vxid);
