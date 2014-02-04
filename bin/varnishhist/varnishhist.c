@@ -220,7 +220,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			/* phase out old data */
 			if (nhist == HIST_N) {
 				j = rr_hist[next_hist];
-				if (j < 0)  {
+				if (j < 0) {
 					assert(bucket_miss[-j] > 0);
 					bucket_miss[-j]--;
 				} else {
@@ -376,7 +376,7 @@ main(int argc, char **argv)
 	}
 	if (profile) {
 		for (active_profile = profiles; active_profile->name;
-		    active_profile++) {
+			active_profile++) {
 			if (strcmp(active_profile->name, profile) == 0) {
 				break;
 			}
