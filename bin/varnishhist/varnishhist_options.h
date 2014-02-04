@@ -40,7 +40,7 @@
 
 #define HIS_OPT_P							\
 	VOPT("P:", "[-P <size|responsetime|tag:field_num:min:max>]", "Profile definition",			\
-		"Either specify \"size\" or \"responstime\" profile or create a new one" \
+		"Either specify \"size\" or \"responstime\" profile or create a new one." \
 	    " Define the tag we'll look for, and the field number of the value"	\
 	    " we are interested in. min and max are the boundaries of the graph"	\
 	    " (these are power of tens)"	\
