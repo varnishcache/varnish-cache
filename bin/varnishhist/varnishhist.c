@@ -318,9 +318,12 @@ do_curses(void *arg)
 static void
 usage(int status)
 {
-	fprintf(stderr, "usage: varnishhist "
-	    "%s [-p profile] [-f field_num] "
-	    "[-R max] [-r min] [-V] [-w delay]\n", "varnishhist");
+	const char **opt;
+
+	fprintf(stderr, "Usage: %s <options>\n\n", progname);
+	fprintf(stderr, "Options:\n");
+	for (opt = vopt_usage; *opt != NULL; opt +=2)
+		fprintf(stderr, " %-25s %s\n", *opt, *(opt + 1));
 	exit(status);
 }
 
@@ -328,12 +331,12 @@ int
 main(int argc, char **argv)
 {
 	int i;
+	char *colon;
 	const char *profile = "responsetime";
 	pthread_t thr;
 	int fnum = -1;
-	hist_low = -1;
-	hist_high = -1;
-	match_tag = -1;
+	struct profile cli_p;
+	cli_p.name = 0;
 
 	VUT_Init(progname);
 	if (0)
@@ -341,30 +344,30 @@ main(int argc, char **argv)
 
 	while ((i = getopt(argc, argv, vopt_optstring)) != -1) {
 		switch (i) {
-		case 'V':
-			VCS_Message("varnishhist");
-			exit(0);
-		case 'i':
-			match_tag = VSL_Name2Tag(optarg, -1);
-			if (match_tag < 0) {
-				fprintf(stderr, "No such tag %s\n", optarg);
+		case 'P':
+			colon = strchr(optarg, ':');
+			/* no colon, take the profile as a name*/
+			if (colon == NULL) {
+				profile = optarg;
+				break;
+			}
+			/* else it's a definition, we hope */
+			if (sscanf(colon+1, "%d:%d:%d", 
+					&cli_p.field, &cli_p.hist_low, &cli_p.hist_high) != 3) {
+				fprintf(stderr, "%s is neither a profile name nor definition (SLT_Tag:field:min:max)\n", optarg);
 				exit(1);
 			}
-			break;
-		case 'w':
-			delay = atoi(optarg);
-			break;
-		case 'f':
-			fnum = atoi(optarg);
-			break;
-		case 'R':
-			hist_high = atoi(optarg);
-			break;
-		case 'r':
-			hist_low = atoi(optarg);
-			break;
-		case 'p':
-			profile = optarg;
+
+			match_tag = VSL_Name2Tag(optarg, colon - optarg);
+			if (match_tag < 0) {
+				fprintf(stderr, "No such tag in %s\n", optarg);
+				exit(1);
+			}
+			cli_p.name = "custom";
+			cli_p.tag = match_tag;
+			profile = NULL;
+			active_profile = &cli_p;
+
 			break;
 		default:
 			if (!VUT_Arg(i, optarg))
@@ -383,21 +386,10 @@ main(int argc, char **argv)
 		fprintf(stderr, "No such profile %s\n", profile);
 		exit(1);
 	}
-	if (match_tag < 0) {
-		match_tag = active_profile->tag;
-	}
-
-	if (fnum < 0) {
-		fnum = active_profile->field;
-	}
-
-	if (hist_low < 0) {
-		hist_low = active_profile->hist_low;
-	}
-
-	if (hist_high < 0) {
-		hist_high = active_profile->hist_high;
-	}
+	match_tag = active_profile->tag;
+	fnum = active_profile->field;
+	hist_low = active_profile->hist_low;
+	hist_high = active_profile->hist_high;
 
 	hist_range = hist_high - hist_low;
 	hist_buckets = hist_range * HIST_RES;
