@@ -48,11 +48,15 @@
 
 #include "vapi/vsl.h"
 #include "vapi/vsm.h"
+#include "vapi/voptget.h"
 #include "vas.h"
 #include "vcs.h"
+#include "vut.h"
 
 #define HIST_N 2000 /* how far back we remember */
 #define HIST_RES 100 /* bucket resolution */
+
+static const char progname[] = "varnishhist";
 
 static int hist_low;
 static int hist_high;
@@ -61,15 +65,13 @@ static int hist_buckets;
 
 static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 
+static int end_of_file = 0;
 static int delay = 1;
 static unsigned rr_hist[HIST_N];
 static unsigned nhist;
 static unsigned next_hist;
 static unsigned *bucket_miss;
 static unsigned *bucket_hit;
-static unsigned char hh[FD_SETSIZE];
-static uint64_t bitmap[FD_SETSIZE];
-static double  values[FD_SETSIZE];
 static char *format;
 static int match_tag;
 
@@ -105,7 +107,9 @@ struct profile {
 	int field;
 	int hist_low;
 	int hist_high;
-} profiles[] = {
+} 
+
+profiles[] = {
 	{
 		.name = "responsetime",
 		.tag = SLT_ReqEnd,
@@ -126,7 +130,7 @@ struct profile {
 static struct profile *active_profile;
 
 static void
-update(struct VSM_data *vd)
+update(void)
 {
 	int w = COLS / hist_range;
 	int n = w * hist_range;
@@ -146,7 +150,10 @@ update(struct VSM_data *vd)
 		mvprintw(LINES - 1, w * i, "|1e%d", j);
 	}
 
-	mvprintw(0, 0, "%*s", COLS - 1, VSM_Name(vd));
+	if (end_of_file)
+		mvprintw(0, 0, "%*s", COLS - 1, "EOF");
+	else
+		mvprintw(0, 0, "%*s", COLS - 1, VUT.name);
 
 	/* count our flock */
 	for (i = 0; i < n; ++i)
@@ -177,112 +184,76 @@ update(struct VSM_data *vd)
 	refresh();
 }
 
-static int
-h_hist(void *priv, enum VSL_tag_e tag, unsigned fd, unsigned len,
-    unsigned spec, const char *ptr, uint64_t bm)
+static int /*__match_proto__ (VSLQ_dispatch_f)*/
+accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
+	void *priv)
 {
 	int i, j;
-	struct VSM_data *vd = priv;
-	(void)spec;
+	unsigned tag, hit;
+	double value;
+	struct VSL_transaction *tr;
+	for (tr = pt[0]; tr != NULL; tr = *++pt) {
+		value = -1;
+		hit = 0;
+		while ((1 == VSL_Next(tr->c))) {
+			if (!VSL_Match(vsl, tr->c))
+				continue;
+			/* get the value we want, and register if it's a hit*/
+			tag = VSL_TAG(tr->c->rec.ptr);
+			if (tag == match_tag) {
+				i = sscanf(VSL_CDATA(tr->c->rec.ptr), format, &value);
+				assert(i == 1);
+			} else if (tag == SLT_Hit)
+				hit = 1;
 
-	if (fd >= FD_SETSIZE)
-		/* oops */
-		return (0);
+			/* select bucket */
+			i = HIST_RES * (log(value) / log_ten);
+			if (i < hist_low * HIST_RES)
+				i = hist_low * HIST_RES;
+			if (i >= hist_high * HIST_RES)
+				i = hist_high * HIST_RES - 1;
+			i -= hist_low * HIST_RES;
+			assert(i >= 0);
+			assert(i < hist_buckets);
+			pthread_mutex_lock(&mtx);
 
-	bitmap[fd] |= bm;
+			/* phase out old data */
+			if (nhist == HIST_N) {
+				j = rr_hist[next_hist];
+				if (j < 0)  {
+					assert(bucket_miss[-j] > 0);
+					bucket_miss[-j]--;
+				} else {
+					assert(bucket_hit[j] > 0);
+					bucket_hit[j]--;
+				}
+			} else {
+				++nhist;
+			}
 
-	if (tag == SLT_Hit) {
-		hh[fd] = 1;
-		return (0);
-	}
-	if (tag == match_tag) {
-		char buf[1024]; /* size? */
-		assert(len < sizeof(buf));
-		memcpy(buf, ptr, len);
-		buf[len] = '\0';
-		i = sscanf(buf, format, &values[fd]);
-		assert(i == 1);
-	}
+			/* phase in new data */
+			if (hit) {
+				bucket_hit[i]++;
+				rr_hist[next_hist] = i;
+			} else {
+				bucket_miss[i]++;
+				rr_hist[next_hist] = -i;
+			}
+			if (++next_hist == HIST_N) {
+				next_hist = 0;
+			}
+			pthread_mutex_unlock(&mtx);
 
-	if (tag != SLT_ReqEnd)
-		return (0);
 
-	if (!VSL_Matched(vd, bitmap[fd])) {
-		bitmap[fd] = 0;
-		hh[fd] = 0;
-		return (0);
-	}
-
-	/* select bucket */
-	i = HIST_RES * (log(values[fd]) / log_ten);
-	if (i < hist_low * HIST_RES)
-		i = hist_low * HIST_RES;
-	if (i >= hist_high * HIST_RES)
-		i = hist_high * HIST_RES - 1;
-	i -= hist_low * HIST_RES;
-	assert(i >= 0);
-	assert(i < hist_buckets);
-	pthread_mutex_lock(&mtx);
-
-	/* phase out old data */
-	if (nhist == HIST_N) {
-		j = rr_hist[next_hist];
-		if (j < 0)  {
-			assert(bucket_miss[-j] > 0);
-			bucket_miss[-j]--;
-		} else {
-			assert(bucket_hit[j] > 0);
-			bucket_hit[j]--;
 		}
-	} else {
-		++nhist;
 	}
-
-	/* phase in new data */
-	if (hh[fd] || i == 0) {
-		bucket_hit[i]++;
-		rr_hist[next_hist] = i;
-	} else {
-		bucket_miss[i]++;
-		rr_hist[next_hist] = -i;
-	}
-	if (++next_hist == HIST_N) {
-		next_hist = 0;
-	}
-	hh[fd] = 0;
-	bitmap[fd] = 0;
-
-	pthread_mutex_unlock(&mtx);
-
 	return (0);
 }
 
 static void *
-accumulate_thread(void *arg)
+do_curses(void *arg)
 {
-	struct VSM_data *vd = arg;
-	int i;
-
-	for (;;) {
-		i = VSL_Dispatch(vd, h_hist, vd);
-		if (i < 0)
-			break;
-		if (i == 0)
-			usleep(50000);
-	}
-	return (arg);
-}
-
-static void
-do_curses(struct VSM_data *vd)
-{
-	pthread_t thr;
 	int ch;
-
-	if (pthread_create(&thr, NULL, accumulate_thread, vd) != 0) {
-		fprintf(stderr, "pthread_create(): %s\n", strerror(errno));
-		exit(1);
-	}
 
 	initscr();
 	raw();
@@ -293,7 +264,7 @@ do_curses(struct VSM_data *vd)
 	erase();
 	for (;;) {
 		pthread_mutex_lock(&mtx);
-		update(vd);
+		update();
 		pthread_mutex_unlock(&mtx);
 
 		timeout(delay * 1000);
@@ -321,7 +292,7 @@ do_curses(struct VSM_data *vd)
 		case 'Q':
 		case 'q':
 			endwin();
-			return;
+			pthread_exit(NULL);
 		case '0':
 		case '1':
 		case '2':
@@ -339,34 +310,37 @@ do_curses(struct VSM_data *vd)
 			break;
 		}
 	}
+	pthread_exit(NULL);
 }
 
 /*--------------------------------------------------------------------*/
 
 static void
-usage(void)
+usage(int status)
 {
 	fprintf(stderr, "usage: varnishhist "
 	    "%s [-p profile] [-f field_num] "
-	    "[-R max] [-r min] [-V] [-w delay]\n", VSL_USAGE);
-	exit(1);
+	    "[-R max] [-r min] [-V] [-w delay]\n", "varnishhist");
+	exit(status);
 }
 
 int
 main(int argc, char **argv)
 {
-	int o, i;
-	struct VSM_data *vd;
+	int i;
 	const char *profile = "responsetime";
+	pthread_t thr;
 	int fnum = -1;
 	hist_low = -1;
 	hist_high = -1;
 	match_tag = -1;
 
-	vd = VSM_New();
+	VUT_Init(progname);
+	if (0)
+		(void)usage;
 
-	while ((o = getopt(argc, argv, VSL_ARGS "Vw:r:R:f:p:")) != -1) {
-		switch (o) {
+	while ((i = getopt(argc, argv, vopt_optstring)) != -1) {
+		switch (i) {
 		case 'V':
 			VCS_Message("varnishhist");
 			exit(0);
@@ -393,9 +367,8 @@ main(int argc, char **argv)
 			profile = optarg;
 			break;
 		default:
-			if (VSL_Arg(vd, o, optarg) > 0)
-				break;
-			usage();
+			if (!VUT_Arg(i, optarg))
+				usage(1);
 		}
 	}
 	if (profile) {
@@ -437,13 +410,19 @@ main(int argc, char **argv)
 	}
 	strcpy(format + 4*(fnum-1), "%lf");
 
-	if (VSM_Open(vd)) {
-		fprintf(stderr, "%s\n", VSM_Error(vd));
-		exit(1);
-	}
-
 	log_ten = log(10.0);
 
-	do_curses(vd);
+	VUT_Setup();
+	if (pthread_create(&thr, NULL, do_curses, NULL) != 0) {
+		fprintf(stderr, "pthread_create(): %s\n",
+				strerror(errno));
+		exit(1);
+	}
+	VUT.dispatch_f = &accumulate;
+	VUT.dispatch_priv = NULL;
+	VUT_Main();
+	end_of_file = 1;
+	pthread_join(thr, NULL);
+	VUT_Fini();
 	exit(0);
 }
