@@ -33,9 +33,9 @@
 
 #define HIS_OPT_p							\
 	VOPT("p:", "[-p period]", "Refresh period",			\
-	    "Specified the number of seconds between screen refreshes"	\
-	    " default is 1 second, and can be changed during the run"	\
-	    " by pressing the [1-9] keys"	\
+	    "Specified the number of seconds between screen refreshes."	\
+	    " Default is 1 second, and can be changed at runtime by"	\
+	    " pressing the [1-9] keys."					\
 	)
 
 #define HIS_OPT_P							\
