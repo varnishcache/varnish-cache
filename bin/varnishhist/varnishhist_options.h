@@ -25,7 +25,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Option definitions for varnishtop
+ * Option definitions for varnishhist
  */
 
 #include "vapi/vapi_options.h"
