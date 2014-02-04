@@ -175,11 +175,12 @@ WS_Printf(struct ws *ws, const char *fmt, ...)
 	p = ws->f;
 	va_start(ap, fmt);
 	v = vsnprintf(p, u, fmt, ap);
-	if (v > u) {
+	va_end(ap);
+	if (v >= u) {
 		WS_Release(ws, 0);
 		p = NULL;
 	} else {
-		WS_Release(ws, v);
+		WS_Release(ws, v + 1);
 	}
 	return (p);
 }
