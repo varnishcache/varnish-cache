@@ -16,7 +16,7 @@ varnish v1 \
 	}
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
-		set beresp.storage = "Transient";
+		set beresp.storage_hint = "Transient";
 	}
 } -start
 

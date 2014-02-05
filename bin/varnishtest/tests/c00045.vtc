@@ -16,7 +16,7 @@ varnish v1 \
 	-vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
-		set beresp.storage = "s0";
+		set beresp.storage_hint = "s0";
 	}
 } -start
 

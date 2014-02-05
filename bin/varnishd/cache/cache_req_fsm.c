@@ -208,7 +208,7 @@ cnt_error(struct worker *wrk, struct req *req)
 	bo->stats = NULL;
 	if (req->obj == NULL) {
 		req->doclose = SC_OVERLOAD;
-		req->director = NULL;
+		req->director_hint = NULL;
 		AZ(HSH_DerefObjCore(&wrk->stats, &bo->fetch_objcore));
 		bo->fetch_objcore = NULL;
 		http_Teardown(bo->beresp);
@@ -634,7 +634,7 @@ cnt_restart(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	req->director = NULL;
+	req->director_hint = NULL;
 	if (++req->restarts >= cache_param->max_restarts) {
 		VSLb(req->vsl, SLT_VCL_Error, "Too many restarts");
 		req->err_code = 503;
@@ -698,9 +698,9 @@ cnt_recv(struct worker *wrk, struct req *req)
 	}
 
 	/* By default we use the first backend */
-	AZ(req->director);
-	req->director = req->vcl->director[0];
-	AN(req->director);
+	AZ(req->director_hint);
+	req->director_hint = req->vcl->director[0];
+	AN(req->director_hint);
 
 	req->d_ttl = -1;
 	req->disable_esi = 0;

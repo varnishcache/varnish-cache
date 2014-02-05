@@ -357,7 +357,6 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 	wrk = req->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req->http, HTTP_MAGIC);
-	AN(req->director);
 	AN(hash);
 
 	hsh_prealloc(wrk);

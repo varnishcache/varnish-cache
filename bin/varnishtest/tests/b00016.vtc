@@ -1,74 +1,42 @@
 varnishtest "Check naming of backends"
 
-varnish v1 -vcl {
-	backend foo {
-		.host = "${bad_ip}"; .port = "9080";
-	}
+server s1 {
+	rxreq
+	txresp
+} -start
 
-	sub vcl_recv {
-	    return(error(200,"ok"));
-	}
+varnish v1 -vcl+backend {
 
-	sub vcl_error {
-	    set obj.http.X-Backend-Name = req.backend;
+	sub vcl_backend_response {
+	    set beresp.http.X-Backend-Name = bereq.backend;
 	}
 } -start
 
 client c1 {
 	txreq -url "/"
 	rxresp
-	expect resp.http.X-Backend-Name == "foo"
+	expect resp.http.X-Backend-Name == "s1"
 } -run
 
-varnish v1 -vcl {
+varnish v1 -vcl+backend {
 	import ${vmod_directors};
 
-	backend b1 {
-		.host = "${bad_ip}"; .port = "9080";
-	}
 	sub vcl_init {
 		new bar = directors.random();
-		bar.add_backend(b1, 1);
+		bar.add_backend(s1, 1);
 	}
 
 	sub vcl_recv {
-		set req.backend = bar.backend();
-		return(error(200,"ok"));
+		set req.backend_hint = bar.backend();
 	}
 
-	sub vcl_error {
-		set obj.http.X-Backend-Name = req.backend;
+	sub vcl_backend_response {
+		set beresp.http.X-Backend-Name = bereq.backend;
 	}
 }
 
 client c1 {
 	txreq -url "/"
 	rxresp
-	expect resp.http.X-Backend-Name == "bar"
-} -run
-
-varnish v1 -vcl {
-	import ${vmod_directors};
-	backend b1 {
-		.host = "${bad_ip}"; .port = "9080";
-	}
-	sub vcl_init {
-		new baz = directors.round_robin();
-		baz.add_backend(b1);
-	}
-
-	sub vcl_recv {
-	    set req.backend = baz.backend();
-	    return (error(200,"ok"));
-	}
-
-	sub vcl_error {
-	    set obj.http.X-Backend-Name = req.backend;
-	}
-}
-
-client c1 {
-	txreq -url "/"
-	rxresp
-	expect resp.http.X-Backend-Name == "baz"
+	expect resp.http.X-Backend-Name == "s1"
 } -run

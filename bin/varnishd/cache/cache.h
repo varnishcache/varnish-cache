@@ -664,7 +664,7 @@ struct req {
 	uint16_t		err_code;
 	const char		*err_reason;
 
-	struct director		*director;
+	struct director		*director_hint;
 	struct VCL_conf		*vcl;
 
 	char			*ws_req;	/* WS above request data */

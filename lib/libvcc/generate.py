@@ -253,11 +253,13 @@ The client's IP address.
 		Does the client accept the gzip transfer encoding.
 		"""
 	),
-	('req.backend',
+	('req.backend_hint',
 		'BACKEND',
-		( 'client',),
-		( 'client',), """
-		The backend to use to service the request.
+		( 'recv',),
+		( 'recv',), """
+		Set bereq.backend to this if we attemt to fetch.
+		This variable is a convenience so the overall
+		policy can be set up once and for all in vcl_recv{}.
 		"""
 	),
 	('req.hash_ignore_busy',
@@ -455,11 +457,11 @@ The client's IP address.
 		IP of the backend this response was fetched from.
 		"""
 	),
-	('beresp.storage',
+	('beresp.storage_hint',
 		'STRING',
 		( 'backend_response',),
 		( 'backend_response',), """
-		Set to force Varnish to save this object to a
+		Hint to Varnish that you want to save this object to a
 		particular storage backend.
 		"""
 	),

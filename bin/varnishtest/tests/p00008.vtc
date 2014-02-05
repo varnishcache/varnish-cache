@@ -20,9 +20,9 @@ varnish v1 \
 	-arg "-sper2=persistent,${tmpdir}/_.per2,10m" \
 	-vcl+backend {
 		sub vcl_backend_response {
-			set beresp.storage = "per1";
+			set beresp.storage_hint = "per1";
 			if (bereq.url ~ "silo2") {
-				set beresp.storage = "per2";
+				set beresp.storage_hint = "per2";
 			}
 		}
 	} -start

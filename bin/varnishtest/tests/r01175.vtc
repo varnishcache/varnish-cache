@@ -7,7 +7,7 @@ server s1 {
 
 varnish v1 -arg "-s test=malloc,1M" -vcl+backend {
 	sub vcl_backend_response {
-		set beresp.storage = "test";
+		set beresp.storage_hint = "test";
 		set beresp.do_stream = false;
 	}
 } -start

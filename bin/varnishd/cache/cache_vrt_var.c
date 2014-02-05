@@ -279,7 +279,7 @@ VRT_r_beresp_backend_ip(const struct vrt_ctx *ctx)
 }
 
 const char *
-VRT_r_beresp_storage(const struct vrt_ctx *ctx)
+VRT_r_beresp_storage_hint(const struct vrt_ctx *ctx)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
@@ -290,7 +290,7 @@ VRT_r_beresp_storage(const struct vrt_ctx *ctx)
 }
 
 void
-VRT_l_beresp_storage(const struct vrt_ctx *ctx, const char *str, ...)
+VRT_l_beresp_storage_hint(const struct vrt_ctx *ctx, const char *str, ...)
 {
 	va_list ap;
 	const char *b;
@@ -326,8 +326,8 @@ VRT_r_req_##nm(const struct vrt_ctx *ctx)				\
 	return(ctx->req->elem);						\
 }
 
-REQ_VAR_L(backend, director, struct director *,)
-REQ_VAR_R(backend, director, struct director *)
+REQ_VAR_L(backend_hint, director_hint, struct director *,)
+REQ_VAR_R(backend_hint, director_hint, struct director *)
 REQ_VAR_L(ttl, d_ttl, double, if (!(arg>0.0)) arg = 0;)
 REQ_VAR_R(ttl, d_ttl, double)
 
