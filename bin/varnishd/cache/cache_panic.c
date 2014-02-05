@@ -210,11 +210,11 @@ pan_http(const char *id, const struct http *h, int indent)
 /*--------------------------------------------------------------------*/
 
 static void
-pan_object(const struct object *o)
+pan_object(const char *typ, const struct object *o)
 {
 	const struct storage *st;
 
-	VSB_printf(pan_vsp, "  obj = %p {\n", o);
+	VSB_printf(pan_vsp, "  obj (%s) = %p {\n", typ, o);
 	VSB_printf(pan_vsp, "    vxid = %u,\n", o->vxid);
 	pan_http("obj", o->http, 4);
 	VSB_printf(pan_vsp, "    len = %jd,\n", (intmax_t)o->len);
@@ -284,6 +284,10 @@ pan_busyobj(const struct busyobj *bo)
 	if (bo->beresp->ws != NULL)
 		pan_http("beresp", bo->beresp, 4);
 	pan_ws(bo->ws_o, 4);
+	if (bo->fetch_obj)
+		pan_object("FETCH", bo->fetch_obj);
+	if (bo->ims_obj)
+		pan_object("IMS", bo->ims_obj);
 	VSB_printf(pan_vsp, "  }\n");
 }
 
@@ -337,7 +341,7 @@ pan_req(const struct req *req)
 	if (VALID_OBJ(req->obj, OBJECT_MAGIC)) {
 		if (req->obj->objcore->busyobj != NULL)
 			pan_busyobj(req->obj->objcore->busyobj);
-		pan_object(req->obj);
+		pan_object("REQ", req->obj);
 	}
 
 	VSB_printf(pan_vsp, "},\n");
