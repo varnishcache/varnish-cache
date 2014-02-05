@@ -780,9 +780,11 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	bo->vary = req->vary_b;
 	req->vary_b = NULL;
 
-	HSH_Ref(oc);
+	if (mode != VBF_BACKGROUND)
+		HSH_Ref(oc);
 	bo->fetch_objcore = oc;
 
+	AZ(bo->ims_obj);
 	if (oldobj != NULL) {
 		if (http_GetHdr(oldobj->http, H_Last_Modified, NULL) ||
 		   http_GetHdr(oldobj->http, H_ETag, NULL)) {
