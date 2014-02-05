@@ -257,7 +257,7 @@ The client's IP address.
 		'BACKEND',
 		( 'recv',),
 		( 'recv',), """
-		Set bereq.backend to this if we attemt to fetch.
+		Set bereq.backend to this if we attempt to fetch.
 		This variable is a convenience so the overall
 		policy can be set up once and for all in vcl_recv{}.
 		"""
@@ -1160,7 +1160,7 @@ for i in l:
 	fo.write("\n" + i[0] + "\n\n")
 	fo.write("\tType: " + i[1] + "\n\n")
 	rst_where(fo, "Readable from: ", i[2])
-	rst_where(fo, "Writeable frome: ", i[3])
+	rst_where(fo, "Writable from: ", i[3])
 	for j in i[4].split("\n"):
 		fo.write("\t" + j.strip() + "\n")
 
