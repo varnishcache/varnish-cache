@@ -8,68 +8,59 @@ vsc2rst_SOURCES = vsc2rst.c \
 
 AM_CPPFLAGS = -I$(top_srcdir)/include
 
-dist_man_MANS = vcl.7 varnish-cli.7 varnish-counters.7 vsl.7 vsl-query.7 varnishd.1
+dist_man_MANS = vcl.7 \
+	varnish-cli.7 \
+	varnish-counters.7 \
+	vsl.7 \
+	vsl-query.7 \
+	varnishadm.1 \
+	varnishd.1 \
+	varnishlog.1 \
+	varnishncsa.1 \
+	varnishreplay.1 \
+	varnishstat.1 \
+	varnishtest.1 \
+	varnishtop.1
+
 MAINTAINERCLEANFILES = $(dist_man_MANS)
 
 vcl.7: $(top_srcdir)/doc/sphinx/reference/vcl.rst \
 	$(top_srcdir)/bin/varnishd/builtin.vcl
-if HAVE_RST2MAN
 	${RST2MAN} $(top_srcdir)/doc/sphinx/reference/vcl.rst $@
-else
-	@echo "========================================"
-	@echo "You need rst2man installed to make dist"
-	@echo "========================================"
-	@false
-endif
 
 varnish-cli.7: $(top_srcdir)/doc/sphinx/reference/varnish-cli.rst
-if HAVE_RST2MAN
 	${RST2MAN} $(top_srcdir)/doc/sphinx/reference/varnish-cli.rst $@
-else
-	@echo "========================================"
-	@echo "You need rst2man installed to make dist"
-	@echo "========================================"
-	@false
-endif
 
-if HAVE_RST2MAN
 varnish-counters.7: vsc2rst
 	./vsc2rst | ${RST2MAN} - $@
-else
-varnish-counters.7: $(top_srcdir)/include/tbl/vsc_fields.h
-	@echo "========================================"
-	@echo "You need rst2man installed to make dist"
-	@echo "========================================"
-	@false
-endif
 
 vsl.7: $(top_srcdir)/doc/sphinx/reference/vsl.rst \
 	$(top_srcdir)/lib/libvarnishapi/vsl-tags.rst
-if HAVE_RST2MAN
 	${RST2MAN} $(top_srcdir)/doc/sphinx/reference/vsl.rst $@
-else
-	@echo "========================================"
-	@echo "You need rst2man installed to make dist"
-	@echo "========================================"
-	@false
-endif
 
 vsl-query.7: $(top_srcdir)/doc/sphinx/reference/vsl-query.rst
-if HAVE_RST2MAN
 	${RST2MAN} $(top_srcdir)/doc/sphinx/reference/vsl-query.rst $@
-else
-	@echo "========================================"
-	@echo "You need rst2man installed to make dist"
-	@echo "========================================"
-	@false
-endif
 
-varnishd.1: $(top_srcdir)/doc/sphinx/reference/varnishd.rst
-if HAVE_RST2MAN
-	${RST2MAN} $^ $@
-else
-	@echo "========================================"
-	@echo "You need rst2man installed to make dist"
-	@echo "========================================"
-	@false
-endif
+%.7: $(top_srcdir)/doc/sphinx/reference/%.rst
+	${RST2MAN} $(top_srcdir)/doc/sphinx/reference/vsl-query.rst $@
+
+%.1: $(top_srcdir)/doc/sphinx/reference/%.rst
+	${RST2MAN} $< $@
+
+varnishncsa.1: \
+	$(top_srcdir)/doc/sphinx/reference/varnishncsa.rst \
+	$(top_srcdir)/doc/sphinx/include/varnishncsa_options.rst \
+	$(top_srcdir)/doc/sphinx/include/varnishncsa_synopsis.rst
+	${RST2MAN} $(top_srcdir)/doc/sphinx/reference/varnishncsa.rst $@
+
+varnishlog.1: \
+	$(top_srcdir)/doc/sphinx/reference/varnishlog.rst \
+	$(top_srcdir)/doc/sphinx/include/varnishlog_options.rst \
+	$(top_srcdir)/doc/sphinx/include/varnishlog_synopsis.rst
+	${RST2MAN} $(top_srcdir)/doc/sphinx/reference/varnishlog.rst $@
+
+varnishtop.1: \
+	$(top_srcdir)/doc/sphinx/reference/varnishtop.rst \
+	$(top_srcdir)/doc/sphinx/include/varnishtop_options.rst \
+	$(top_srcdir)/doc/sphinx/include/varnishtop_synopsis.rst
+	${RST2MAN} $(top_srcdir)/doc/sphinx/reference/varnishtop.rst $@

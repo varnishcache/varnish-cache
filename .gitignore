@@ -76,32 +76,19 @@ cscope.*out
 
 # Man-files and binaries
 /man/vsc2rst
-/man/vcl.7
-/man/vsl.7
-/man/vsl-query.7
-/man/varnish-cli.7
-/man/varnish-counters.7
+/man/*.7
+/man/*.1
+/doc/sphinx/include
 /bin/varnish*/varnish*_opt2rst
 /bin/varnishadm/varnishadm
-/bin/varnishadm/varnishadm.1
 /bin/varnishd/varnishd
-/bin/varnishd/varnishd.1
 /bin/varnishhist/varnishhist
-/bin/varnishhist/varnishhist.1
 /bin/varnishlog/varnishlog
-/bin/varnishlog/varnishlog.1
-/bin/varnishlog/varnishlog_*.rst
 /bin/varnishncsa/varnishncsa
-/bin/varnishncsa/varnishncsa.1
-/bin/varnishncsa/varnishncsa_*.rst
 /bin/varnishreplay/varnishreplay
-/bin/varnishreplay/varnishreplay.1
 /bin/varnishstat/varnishstat
-/bin/varnishstat/varnishstat.1
 /bin/varnishtest/varnishtest
-/bin/varnishtest/varnishtest.1
 /bin/varnishtop/varnishtop
-/bin/varnishtop/varnishtop.1
 
 # Doc-stuff generated from xml
 /doc/*.html

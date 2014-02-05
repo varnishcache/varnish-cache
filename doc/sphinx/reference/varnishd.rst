@@ -230,7 +230,7 @@ workspace_client (=16k), thread_pool_workspace (=16k), http_resp_size
 thread_pool_stack (=64k) are reduced relative to the values listed
 here, in order to conserve VM space.
 
-.. include:: params.rst
+.. include:: ../include/params.rst
 
 SEE ALSO
 ========

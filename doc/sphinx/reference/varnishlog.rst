@@ -19,7 +19,7 @@ Display Varnish logs
 SYNOPSIS
 ========
 
-.. include:: ../../../bin/varnishlog/varnishlog_synopsis.rst
+.. include:: ../include/varnishlog_synopsis.rst
 varnishlog |synopsis| <query expression>
 
 OPTIONS
@@ -27,7 +27,7 @@ OPTIONS
 
 The following options are available:
 
-.. include:: ../../../bin/varnishlog/varnishlog_options.rst
+.. include:: ../include/varnishlog_options.rst
 
 -k num
 

@@ -16,7 +16,7 @@ Display Varnish logs in Apache / NCSA combined log format
 SYNOPSIS
 ========
 
-.. include:: ../../../bin/varnishncsa/varnishncsa_synopsis.rst
+.. include:: ../include/varnishncsa_synopsis.rst
 varnishncsa |synopsis|
 
 DESCRIPTION
@@ -33,7 +33,7 @@ applicable transactions. Non-request transactions are ignored.
 
 The following options are available:
 
-.. include:: ../../../bin/varnishncsa/varnishncsa_options.rst
+.. include:: ../include/varnishncsa_options.rst
 
 FORMAT
 ======

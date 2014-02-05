@@ -17,7 +17,7 @@ Varnish log entry ranking
 SYNOPSIS
 ========
 
-.. include:: ../../../bin/varnishtop/varnishtop_synopsis.rst
+.. include:: ../include/varnishtop_synopsis.rst
 varnishtop |synopsis|
 
 DESCRIPTION
@@ -32,7 +32,7 @@ recorded in the log.
 
 The following options are available:
 
-.. include:: ../../../bin/varnishtop/varnishtop_options.rst
+.. include:: ../include/varnishtop_options.rst
 
 EXAMPLES
 ========

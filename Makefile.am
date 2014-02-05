@@ -1,8 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = include lib bin etc doc man
-
-SUBDIRS += redhat
+SUBDIRS = include lib bin etc doc redhat
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = varnishapi.pc
@@ -21,6 +19,16 @@ DISTCHECK_CONFIGURE_FLAGS = \
 
 install-data-local:
 	$(install_sh) -d -m 0755 $(DESTDIR)$(localstatedir)/varnish
+
+if HAVE_RST2MAN
+SUBDIRS += man
+else
+dist-hook:
+	@echo "========================================"
+	@echo "You need rst2man installed to make dist"
+	@echo "========================================"
+	@false
+endif
 
 distcheck-hook:
 	V="@PACKAGE_VERSION@" ; \

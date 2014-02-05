@@ -19,8 +19,6 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/lib/libvgz
 
 bin_PROGRAMS =	varnishtest
 
-dist_man_MANS = varnishtest.1
-
 varnishtest_SOURCES = \
 		vtc.c \
 		vtc.h \
@@ -47,13 +45,3 @@ varnishtest_CFLAGS = \
 
 EXTRA_DIST = $(top_srcdir)/bin/varnishtest/tests/*.vtc \
 	$(top_srcdir)/bin/varnishtest/tests/README
-
-varnishtest.1: $(top_srcdir)/doc/sphinx/reference/varnishtest.rst
-if HAVE_RST2MAN
-	${RST2MAN} $? $@
-else
-	@echo "========================================"
-	@echo "You need rst2man installed to make dist"
-	@echo "========================================"
-	@false
-endif

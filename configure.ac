@@ -554,6 +554,9 @@ fi
 VTC_TESTS="$(cd $srcdir/bin/varnishtest && echo tests/*.vtc)"
 AC_SUBST(VTC_TESTS)
 
+# Make sure this include dir exists
+AC_CONFIG_COMMANDS([mkdir], [$MKDIR_P doc/sphinx/include])
+
 # Generate output
 AC_CONFIG_FILES([
     Makefile

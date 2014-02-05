@@ -30,7 +30,7 @@ help:
 clean:
 	-rm -rf $(BUILDDIR)/*
 
-html: reference/params.rst
+html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
@@ -112,7 +112,6 @@ EXTRA_DIST = \
 	phk/vcl_expr.rst \
 	phk/wanton_destruction.rst \
 	reference/index.rst \
-	reference/params.rst \
 	reference/varnishadm.rst \
 	reference/varnish-cli.rst \
 	reference/varnishd.rst \
@@ -168,7 +167,6 @@ EXTRA_DIST = \
 	users-guide/vcl-variables.rst \
 	users-guide/websockets.rst
 
-
 dist-hook:
 	$(MAKE) html
 	cp -r $(BUILDDIR) $(distdir)
@@ -176,8 +174,30 @@ dist-hook:
 distclean-local:
 	rm -rf $(BUILDDIR)
 
-reference/params.rst: $(top_builddir)/bin/varnishd/varnishd
-	mkdir -p reference
-	$(top_builddir)/bin/varnishd/varnishd -x dumprstparam > reference/params.rst
+include/params.rst: $(top_builddir)/bin/varnishd/varnishd
+	$(top_builddir)/bin/varnishd/varnishd -x dumprstparam > include/params.rst
+BUILT_SOURCES = include/params.rst
 
-BUILT_SOURCES = reference/params.rst
+include/varnishncsa_options.rst: $(top_builddir)/bin/varnishncsa/varnishncsa_opt2rst
+	$(top_builddir)/bin/varnishncsa/varnishncsa_opt2rst options > $@
+include/varnishncsa_synopsis.rst: $(top_builddir)/bin/varnishncsa/varnishncsa_opt2rst
+	$(top_builddir)/bin/varnishncsa/varnishncsa_opt2rst synopsis > $@
+BUILT_SOURCES += include/varnishncsa_options.rst \
+	include/varnishncsa_synopsis.rst
+
+include/varnishlog_options.rst: $(top_builddir)/bin/varnishlog/varnishlog_opt2rst
+	$(top_builddir)/bin/varnishlog/varnishlog_opt2rst options > $@
+include/varnishlog_synopsis.rst: $(top_builddir)/bin/varnishlog/varnishlog_opt2rst
+	$(top_builddir)/bin/varnishlog/varnishlog_opt2rst synopsis > $@
+BUILT_SOURCES += include/varnishlog_options.rst \
+	include/varnishlog_synopsis.rst
+
+include/varnishtop_options.rst: $(top_builddir)/bin/varnishtop/varnishtop_opt2rst
+	$(top_builddir)/bin/varnishtop/varnishtop_opt2rst options > $@
+include/varnishtop_synopsis.rst: $(top_builddir)/bin/varnishtop/varnishtop_opt2rst
+	$(top_builddir)/bin/varnishtop/varnishtop_opt2rst synopsis > $@
+BUILT_SOURCES += include/varnishtop_options.rst \
+	 include/varnishtop_synopsis.rst
+
+EXTRA_DIST += $(BUILT_SOURCES)
+MAINTAINERCLEANFILES = $(EXTRA_DIST)
