@@ -8,7 +8,7 @@ vsc2rst_SOURCES = vsc2rst.c \
 
 AM_CPPFLAGS = -I$(top_srcdir)/include
 
-dist_man_MANS = vcl.7 varnish-cli.7 varnish-counters.7 vsl.7 vsl-query.7
+dist_man_MANS = vcl.7 varnish-cli.7 varnish-counters.7 vsl.7 vsl-query.7 varnishd.1
 MAINTAINERCLEANFILES = $(dist_man_MANS)
 
 vcl.7: $(top_srcdir)/doc/sphinx/reference/vcl.rst \
@@ -57,6 +57,16 @@ endif
 vsl-query.7: $(top_srcdir)/doc/sphinx/reference/vsl-query.rst
 if HAVE_RST2MAN
 	${RST2MAN} $(top_srcdir)/doc/sphinx/reference/vsl-query.rst $@
+else
+	@echo "========================================"
+	@echo "You need rst2man installed to make dist"
+	@echo "========================================"
+	@false
+endif
+
+varnishd.1: $(top_srcdir)/doc/sphinx/reference/varnishd.rst
+if HAVE_RST2MAN
+	${RST2MAN} $^ $@
 else
 	@echo "========================================"
 	@echo "You need rst2man installed to make dist"

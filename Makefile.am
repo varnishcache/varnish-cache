@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = include lib bin man etc doc
+SUBDIRS = include lib bin etc doc man
 
 SUBDIRS += redhat
 

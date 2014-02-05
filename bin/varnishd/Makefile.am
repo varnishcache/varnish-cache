@@ -8,8 +8,6 @@ AM_CPPFLAGS = \
 
 sbin_PROGRAMS = varnishd
 
-dist_man_MANS = varnishd.1
-
 varnishd_SOURCES = \
 	cache/cache_acceptor.c \
 	cache/cache_backend.c \
@@ -146,13 +144,3 @@ builtin_vcl.h:	builtin.vcl
 
 # Explicitly record dependency
 mgt/mgt_vcc.c:	builtin_vcl.h
-
-varnishd.1: $(top_srcdir)/doc/sphinx/reference/varnishd.rst
-if HAVE_RST2MAN
-	${RST2MAN} $? $@
-else
-	@echo "========================================"
-	@echo "You need rst2man installed to make dist"
-	@echo "========================================"
-	@false
-endif
