@@ -380,7 +380,7 @@ sample_points(void)
 		pt->t_cur = VTIM_mono();
 
 		if (pt->t_last)
-			pt->chg = (pt->cur - (intmax_t)pt->last) /
+			pt->chg = ((intmax_t)pt->cur - (intmax_t)pt->last) /
 			    (pt->t_cur - pt->t_last);
 
 		if (pt->flag == 'g') {
