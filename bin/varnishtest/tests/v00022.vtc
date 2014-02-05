@@ -43,8 +43,10 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_recv {
-		set req.backend = foo.backend();
 		return(pass);
+	}
+	sub vcl_backend_fetch {
+		set bereq.backend = foo.backend();
 	}
 } -start
 

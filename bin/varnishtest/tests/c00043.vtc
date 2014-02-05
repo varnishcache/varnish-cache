@@ -16,9 +16,9 @@ server s2 {
 } -start
 
 varnish v1 -vcl+backend {
-	sub vcl_recv {
-		if (req.http.bar) {
-			set req.backend = s2;
+	sub vcl_backend_fetch {
+		if (bereq.http.bar) {
+			set bereq.backend = s2;
 		}
 	}
 } -start

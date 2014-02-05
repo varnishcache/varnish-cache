@@ -14,10 +14,13 @@ server s2 {
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
-		if (req.restarts == 0) {
-			set req.backend = s1;
+		set req.http.restarts = req.restarts;
+	}
+	sub vcl_backend_fetch {
+		if (bereq.http.restarts == "0") {
+			set bereq.backend = s1;
 		} else {
-			set req.backend = s2;
+			set bereq.backend = s2;
 		}
 	}
 

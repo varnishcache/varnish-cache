@@ -10,8 +10,8 @@ varnish v1 -errvcl {Symbol not found: 's-1' (expected type BACKEND)} {
 	sub s1 {
 	}
 	sub vcl_backend_response {
-	    if (req.backend == s-1){
-		set req.backend = s-1;
+	    if (bereq.backend == s-1){
+		set bereq.backend = s-1;
 	    }
 	}
 }

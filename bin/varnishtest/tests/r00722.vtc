@@ -22,8 +22,8 @@ varnish v1 -vcl+backend {
 		foo.add_backend(b2, 1);
 		foo.add_backend(b3, 1);
 	}
-	sub vcl_recv {
-		set req.backend = foo.backend();
+	sub vcl_backend_fetch {
+		set bereq.backend = foo.backend();
 	}
 } -start
 

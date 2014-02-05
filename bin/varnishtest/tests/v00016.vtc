@@ -84,8 +84,9 @@ varnish v1 -errvcl {Expression has type DURATION, expected BOOL} {
 }
 
 varnish v1 -errvcl {Operator > not possible on BACKEND} {
+	backend a { .host = "127.0.0.1"; }
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { if (req.backend > b) { } }
+	sub vcl_recv { if (a > b) { } }
 }
 
 varnish v1 -errvcl {Symbol not found: 'req.hash' (expected type BOOL):} {

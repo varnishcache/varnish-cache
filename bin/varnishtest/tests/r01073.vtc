@@ -19,11 +19,13 @@ varnish v1 -vcl+backend {
 		if (req.http.x-hash-always-miss == "1") {
 			set req.hash_always_miss = true;
 		}
-		if (req.http.x-client == "1") {
-			set req.backend = s1;
+	}
+	sub vcl_backend_fetch {
+		if (bereq.http.x-client == "1") {
+			set bereq.backend = s1;
 		}
-		if (req.http.x-client == "2") {
-			set req.backend = s2;
+		if (bereq.http.x-client == "2") {
+			set bereq.backend = s2;
 		}
 	}
 } -start

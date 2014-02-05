@@ -29,13 +29,16 @@ varnish v1 -vcl {
 
 	sub vcl_recv {
 		if (req.url  == "from_backend") {
-			set req.backend = b1;
 			return(pass);
 		}
-		set req.backend = b2;
 	}
 	sub vcl_backend_fetch {
 		set bereq.first_byte_timeout = 2s;
+		if (bereq.url  == "from_backend") {
+			set bereq.backend = b1;
+		} else {
+			set bereq.backend = b2;
+		}
 	}
 } -start
 varnish v1 -cliok "param.set first_byte_timeout 0.5"

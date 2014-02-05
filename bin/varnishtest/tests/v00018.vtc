@@ -29,7 +29,7 @@ varnish v1 -errvcl {Expected '=' got '>>'} {
 
 varnish v1 -errvcl {Expected '=' got '+='} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { set req.backend += b; }
+	sub vcl_backend_fetch { set bereq.backend += b; }
 }
 
 varnish v1 -errvcl {Expected '=' got '+='} {

@@ -10,7 +10,11 @@ server s1 {
 	    -body "012345\n"
 } -start
 
-varnish v1 -vcl+backend { sub vcl_recv {set req.backend = s1;} } -start
+varnish v1 -vcl+backend {
+	sub vcl_backend_fetch {
+		set bereq.backend = s1;
+	}
+} -start
 
 client c1 {
 	txreq -url "/"

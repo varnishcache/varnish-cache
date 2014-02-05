@@ -11,9 +11,9 @@ varnish v1 -vcl+backend {
 		.host = "127.0.0.1";
 		.port = "54321";
 	}
-	sub vcl_recv {
-		if (req.url == "never") {
-			set req.backend = fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210;
+	sub vcl_backend_fetch {
+		if (bereq.url == "never") {
+			set bereq.backend = fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210;
 		}
 	}
 } -start
@@ -30,9 +30,9 @@ varnish v1 -errvcl {Expected ID got '0'} {
 		.host = "127.0.0.1";
 		.port = "54321";
 	}
-	sub vcl_recv {
-		if (req.url == "never") {
-			set req.backend = fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210;
+	sub vcl_backend_fetch {
+		if (bereq.url == "never") {
+			set bereq.backend = fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210;
 		}
 	}
 }

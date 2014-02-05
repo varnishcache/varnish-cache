@@ -33,8 +33,8 @@ varnish v1 -vcl+backend {
 		batman.add_backend(s4);
 	}
 
-	sub vcl_recv {
-		set req.backend = batman.backend();
+	sub vcl_backend_fetch {
+		set bereq.backend = batman.backend();
 	}
 } -start
 

@@ -5,8 +5,8 @@ varnish v1 -vcl {
 		.host = "127.0.0.1";
 	}
 
-	sub vcl_recv {
-		set req.backend = storage_foo;
+	sub vcl_backend_fetch {
+		set bereq.backend = storage_foo;
 	}
 }
 
@@ -15,8 +15,8 @@ varnish v1 -vcl {
 		.host = "127.0.0.1";
 	}
 
-	sub vcl_recv {
-		set req.backend = storagefoo;
+	sub vcl_backend_fetch {
+		set bereq.backend = storagefoo;
 	}
 }
 

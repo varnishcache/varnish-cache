@@ -34,8 +34,8 @@ varnish v1 -vcl+backend {
 		rr.add_backend(s4);
 	}
 
-	sub vcl_recv {
-		set req.backend = rr.backend();
+	sub vcl_backend_fetch {
+		set bereq.backend = rr.backend();
 	}
 } -start
 

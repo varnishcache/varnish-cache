@@ -22,11 +22,11 @@ server s2 {
 } -start
 
 varnish v1 -vcl+backend {
-	sub vcl_recv {
-		if (req.http.host == "bozz") {
-			set req.backend = s2;
+	sub vcl_backend_fetch {
+		if (bereq.http.host == "bozz") {
+			set bereq.backend = s2;
 		} else {
-			set req.backend = s1;
+			set bereq.backend = s1;
 		}
 	}
 	sub vcl_backend_response {

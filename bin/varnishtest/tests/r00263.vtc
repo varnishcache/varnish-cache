@@ -16,8 +16,8 @@ varnish v1  -vcl {
 		cluster.add_backend(node3, 1);
 	}
 
-	sub vcl_recv {
-		set req.backend = cluster.backend();
+	sub vcl_backend_fetch {
+		set bereq.backend = cluster.backend();
 	}
 } -start
 

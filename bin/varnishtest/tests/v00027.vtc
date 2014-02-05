@@ -20,9 +20,9 @@ varnish v1 -vcl {
 		.port = "${s2_port}";
 	}
 
-	sub vcl_recv {
-		if (req.url != req.url) {
-			set req.backend = s1;
+	sub vcl_backend_fetch {
+		if (bereq.url != bereq.url) {
+			set bereq.backend = s1;
 		}
 	}
 } -start
