@@ -30,7 +30,7 @@ help:
 clean:
 	-rm -rf $(BUILDDIR)/*
 
-html:
+html: reference/params.rst
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
@@ -176,6 +176,5 @@ dist-hook:
 distclean-local:
 	rm -rf $(BUILDDIR)
 
-# XXX: doesn't work...
-#reference/params.rst: $(top_builddir)/bin/varnishd/varnishd
-#	$(top_builddir)/bin/varnishd/varnishd -x dumprstparam > reference/params.rst
+reference/params.rst:
+	$(top_builddir)/bin/varnishd/varnishd -x dumprstparam > reference/params.rst
