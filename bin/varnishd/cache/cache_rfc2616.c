@@ -117,6 +117,7 @@ RFC2616_Ttl(struct busyobj *bo)
 	case 300: /* Multiple Choices */
 	case 301: /* Moved Permanently */
 	case 302: /* Moved Temporarily */
+	case 304: /* Not Modified */
 	case 307: /* Temporary Redirect */
 	case 410: /* Gone */
 	case 404: /* Not Found */

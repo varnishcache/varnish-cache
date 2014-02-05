@@ -271,7 +271,7 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->do_esi)
 		bo->do_stream = 0;
-	if (bo->do_pass)
+	if (bo->do_pass || bo->uncacheable)
 		bo->fetch_objcore->flags |= OC_F_PASS;
 
 	assert(wrk->handling == VCL_RET_DELIVER);
