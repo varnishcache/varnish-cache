@@ -288,16 +288,15 @@ do_curses(void *arg)
 			redrawwin(stdscr);
 			refresh();
 			break;
-		case '\003': /* Ctrl-C */
-			raise(SIGINT);
-			break;
 		case '\032': /* Ctrl-Z */
 			endwin();
 			raise(SIGTSTP);
 			break;
+		case '\003': /* Ctrl-C */
 		case '\021': /* Ctrl-Q */
 		case 'Q':
 		case 'q':
+			raise(SIGINT);
 			endwin();
 			pthread_exit(NULL);
 		case '0':
