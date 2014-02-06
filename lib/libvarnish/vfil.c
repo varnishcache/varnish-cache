@@ -133,6 +133,6 @@ VFIL_nonblocking(int fd)
 	assert(i != -1);
 	i |= O_NONBLOCK;
 	i = fcntl(fd, F_SETFL, i);
-       assert(i != -1);
-       return (i);
+	assert(i != -1);
+	return (i);
 }
