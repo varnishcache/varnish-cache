@@ -209,6 +209,8 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				assert(i == 1);
 			} else if (tag == SLT_Hit)
 				hit = 1;
+			if (tag != SLT_ReqEnd && value == -1)
+				continue;
 
 			/* select bucket */
 			i = HIST_RES * (log(value) / log_ten);
