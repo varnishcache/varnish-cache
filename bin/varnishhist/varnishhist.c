@@ -381,6 +381,12 @@ main(int argc, char **argv)
 				usage(1);
 		}
 	}
+	/* Check for valid grouping mode */
+	assert(VUT.g_arg < VSL_g__MAX);
+	if (VUT.g_arg != VSL_g_vxid && VUT.g_arg != VSL_g_request)
+		VUT_Error(1, "Invalid grouping mode: %s (only vxid and request are supported)",
+				VSLQ_grouping[VUT.g_arg]);
+
 	if (profile) {
 		for (active_profile = profiles; active_profile->name;
 			active_profile++) {
