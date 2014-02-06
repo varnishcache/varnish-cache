@@ -31,13 +31,13 @@ line, in order to make them invulnerable to subsequent manipulation.
 
 The important decisions to make are:
 
-#. Who should have access to the Command Line Interface ?
+#. Who should have access to the Command Line Interface?
 
-#. Which parameters can they change ?
+#. Which parameters can they change?
 
-#. Will inline-C code be allowed ?
+#. Will inline-C code be allowed?
 
-#. If/how VMODs will be restricted ?
+#. If/how VMODs will be restricted?
 
 CLI interface access
 ^^^^^^^^^^^^^^^^^^^^
@@ -89,7 +89,7 @@ command on stdin/stdout, but since you started the process, it
 would be hard to prevent you getting CLI access, wouldn't it ?
 
 CLI interface authentication
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By default the CLI interface is protected with a simple,  yet
 strong "Pre Shared Key" authentication method, which do not provide
@@ -150,6 +150,9 @@ HTTP service, but a few can do more damage than that:
 :ref:`ref_param_cc_command`
 	Execute arbitrary programs
 
+:ref:`ref_param_vcc_allow_inline_c`
+        Allow inline C in VCL, which would any C code from VCL to be executed by Varnish.
+
 Furthermore you may want to look at and lock down:
 
 :ref:`ref_param_syslog_cli_traffic`
@@ -157,6 +160,11 @@ Furthermore you may want to look at and lock down:
 
 :ref:`ref_param_vcc_unsafe_path`
 	Retrict VCL/VMODS to :ref:`ref_param_vcl_dir` and :ref:`ref_param_vmod_dir`
+
+:ref:`ref_param_vmod_dir` 
+        The directory where Varnish will will look
+        for modules. This could potentially be used to load rouge
+        modules into Varnish.
 
 The CLI interface
 -----------------
