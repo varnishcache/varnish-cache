@@ -46,8 +46,6 @@
 	    " (these are power of tens)"	\
 	)
 
-VSL_OPT_b
-VSL_OPT_c
 VSL_OPT_C
 VUT_OPT_d
 VUT_OPT_D

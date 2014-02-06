@@ -347,6 +347,8 @@ main(int argc, char **argv)
 	if (0)
 		(void)usage;
 
+	/* only client requests */
+	assert(VUT_Arg('c', NULL));
 	while ((i = getopt(argc, argv, vopt_optstring)) != -1) {
 		switch (i) {
 		case 'P':
