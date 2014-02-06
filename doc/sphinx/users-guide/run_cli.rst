@@ -45,7 +45,7 @@ What can you do with the CLI
 The CLI gives you almost total control over varnishd:
 
 * load/use/discard VCL programs
-* ban cache content
+* ban (invalidate) cache content
 * change parameters
 * start/stop worker process
 
@@ -115,7 +115,7 @@ but they are banned from delivery.
 
 Instead of checking each and every cached object right away, we
 test each object against the regular expression only if and when
-some requests decides to deliver it.
+a HTTP request asks for it.
 
 Banning stuff is much cheaper than restarting Varnish to get rid
 of wronly cached content.
