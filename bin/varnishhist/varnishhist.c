@@ -198,6 +198,8 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	for (tr = pt[0]; tr != NULL; tr = *++pt) {
 		value = -1;
 		hit = 0;
+		if (tr->type != VSL_t_bereq && tr->type != VSL_t_req)
+			continue;
 		while ((1 == VSL_Next(tr->c))) {
 			/* get the value we want, and register if it's a hit*/
 			tag = VSL_TAG(tr->c->rec.ptr);
