@@ -65,4 +65,4 @@ want to know are:
  Only list transactions where the tag matches a regular expression. If
  it matches you will get the whole transaction.
 
-For more information on this topic please see ref:`ref-varnishlog`.
+For more information on this topic please see :ref:`ref-varnishlog`.
