@@ -1,31 +1,28 @@
 .. _tutorial-intro:
 
-What is Varnish?
-----------------
+The fundamentals of web proxy caching with Varnish
+--------------------------------------------------
 
-Varnish Cache is a web application accelerator. It can also be called
-a HTTP reverse proxy. It sits in front of a web server, accepts HTTP
-requests and tries to answer those by looking them up in it's
-cache. If it can't answer the request from cache it will hand the
-request over to a backend server.
+Varnish is a caching HTTP reverse proxy. It recieves requests from
+clients and tries to answer them from its cache. If it cannot answer
+the request from its cache it will forward the request to the backend,
+fetch the response, store it and deliver it to the client.
 
-You can say that Varnish Cache is a specialized key-value store that
-stores HTTP responses. These are looked up with HTTP requests. If a
-match is found the content is delivered.
+Varnish decides whether it can store the content or not based on the
+response it's gets back from the backend. The backend can instruct
+Varnish to cache the content with the HTTP response header
+Cache-Control.
 
-Varnish Cache will typically look up a response by inspecting the HTTP
-Host header together with the URL.  Varnish Cache maintains an index,
-a hash, with all the host+url combinations that are kept in the cache.
+Varnish will be very careful when it encounters cookies, either coming
+from the client or from the origin server. When Varnish sees a
+Set-Cookie header on a response it decides that the object is not
+cacheable. When there is a Cookie header in the request it will also
+refuse to serve a cached object and rather ask the backend for version
+of the object that is tailored to the request.
 
-Some times Varnish will refuse to store the content in it's
-cache. This might be because the HTTP reponse has metadata that
-disables cacheing or that there might be a cookie involved. Varnish,
-in the default configuration, will refuse to cache content when there
-are cookies involved because it has no idea if the content is derived
-from the cookie or not.
-
-All this behaviour can be changed using VCL. See the Users Guide for
-more information on how to do that.
+This behaviour and most other behaviour can be changed using policies
+written in the Varnish Configuration Language. See the Users Guide
+for more information on how to do that.
 
 
 Performance
