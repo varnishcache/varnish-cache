@@ -200,14 +200,3 @@ setting up redirects or by using the following VCL::
   }
 
 
-Ways of increasing your hitrate even more
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The following chapters should give your ways of further increasing
-your hitrate, especially the chapter on Cookies.
-
- * :ref:`users-guide-cookies`
- * :ref:`users-guide-vary`
- * :ref:`users-guide-purging`
- * :ref:`users-guide-esi`
-
