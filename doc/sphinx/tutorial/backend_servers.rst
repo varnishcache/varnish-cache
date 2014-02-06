@@ -15,6 +15,8 @@ is probably /etc/varnish/default.vcl.
 If you've been following the tutorial there is probably a section of
 the configuration that looks like this:::
 
+  vcl 4.0;
+  
   backend default {
       .host = "www.varnish-cache.org";
       .port = "80";
@@ -31,10 +33,12 @@ server so now we need to tie it to the origin.
 For this example, let's pretend the origin server is running on
 localhost, port 8080.::
 
-          backend default {
-                .host = "127.0.0.1";
-    		.port = "8080";
-	  }
+  vcl 4.0;
+
+  backend default {
+    .host = "127.0.0.1";
+    .port = "8080";
+  }
 
 
 Varnish can have several backends defined and can you can even join
