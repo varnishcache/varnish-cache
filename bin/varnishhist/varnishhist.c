@@ -199,8 +199,6 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		value = -1;
 		hit = 0;
 		while ((1 == VSL_Next(tr->c))) {
-			if (!VSL_Match(vsl, tr->c))
-				continue;
 			/* get the value we want, and register if it's a hit*/
 			tag = VSL_TAG(tr->c->rec.ptr);
 			assert(match_tag >= 0);
