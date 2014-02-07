@@ -660,6 +660,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		assert(al == bo->ims_obj->len);
 		assert(obj->len == al);
 		VBO_setstate(bo, BOS_FINISHED);
+		EXP_Rearm(bo->ims_obj, bo->ims_obj->exp.t_origin, 0, 0, 0);
 	}
 	HSH_Complete(obj->objcore);
 	return (F_STP_DONE);
