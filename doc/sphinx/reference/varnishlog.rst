@@ -32,14 +32,14 @@ The following options are available:
 -k num
 
 	Only show the first num log transactions (or log records
-	in --raw mode)
+	in -g raw mode)
 
 	XXX: Not yet implemented
 
 -s num
 
 	Skip the first num log transactions (or log records if
-	in --raw mode)
+	in -g raw mode)
 
 	XXX: Not yet implemented
 
