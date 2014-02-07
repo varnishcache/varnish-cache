@@ -86,7 +86,6 @@ ObjIter(struct objiter *oi, void **p, ssize_t *l)
 		ol = oi->len;
 		while (1) {
 			nl = VBO_waitlen(oi->bo, ol);
-			VSL(SLT_Debug, 0, "STREAM %zd -> %zd", ol, nl);
 			if (nl != ol)
 				break;
 			if (oi->bo->state == BOS_FINISHED)
