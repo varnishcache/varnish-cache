@@ -411,7 +411,8 @@ pool_herder(void *priv)
 
 		Lck_Lock(&pp->mtx);
 		if (!pp->dry) {
-			(void)Lck_CondWait(&pp->herder_cond, &pp->mtx, 0);
+			(void)Lck_CondWait(&pp->herder_cond, &pp->mtx,
+				VTIM_real() + 5);
 		} else {
 			/* XXX: unsafe counters */
 			VSC_C_main->threads_limited++;
