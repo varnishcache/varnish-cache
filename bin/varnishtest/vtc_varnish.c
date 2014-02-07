@@ -813,7 +813,7 @@ varnish_expect(const struct varnish *v, char * const *av) {
 		    av[0], sp.val, av[1], av[2]);
 	} else {
 		vtc_log(v->vl, 0, "Not true: %s (%ju) %s %s (%ju)",
-		    av[0], sp.val, av[1], av[2], ref);
+		    av[0], (uintmax_t)sp.val, av[1], av[2], (uintmax_t)ref);
 	}
 }
 
