@@ -143,7 +143,6 @@ EXTRA_DIST = \
 	users-guide/increasing-your-hitrate.rst \
 	users-guide/index.rst \
 	users-guide/intro.rst \
-	users-guide/operation-cli.rst \
 	users-guide/operation-logging.rst \
 	users-guide/operation.rst \
 	users-guide/operation-statistics.rst \
