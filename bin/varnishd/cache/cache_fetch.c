@@ -498,14 +498,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	bo->t_body = VTIM_mono();
 
-	if (bo->vbc != NULL) {
-		if (bo->should_close)
-			VDI_CloseFd(&bo->vbc);
-		else
-			VDI_RecycleFd(&bo->vbc);
-		AZ(bo->vbc);
-	}
-
 	http_Teardown(bo->bereq);
 	http_Teardown(bo->beresp);
 
@@ -720,6 +712,14 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 		    vbf_step_name(bo->step), vbf_step_name(stp));
 	}
 	assert(WRW_IsReleased(wrk));
+
+	if (bo->vbc != NULL) {
+		if (bo->should_close)
+			VDI_CloseFd(&bo->vbc);
+		else
+			VDI_RecycleFd(&bo->vbc);
+		AZ(bo->vbc);
+	}
 
 	if (bo->state == BOS_FAILED)
 		assert(bo->fetch_objcore->flags & OC_F_FAILED);
