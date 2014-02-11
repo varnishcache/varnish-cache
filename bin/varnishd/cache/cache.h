@@ -811,6 +811,7 @@ struct ban *BAN_New(void);
 int BAN_AddTest(struct ban *, const char *, const char *, const char *);
 void BAN_Free(struct ban *b);
 char *BAN_Insert(struct ban *b);
+void BAN_Free_Errormsg(char *);
 void BAN_Init(void);
 void BAN_Shutdown(void);
 void BAN_NewObjCore(struct objcore *oc);

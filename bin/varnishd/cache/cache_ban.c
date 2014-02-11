@@ -394,6 +394,7 @@ ban_parse_regexp(struct ban *b, const char *a3)
 	rc = pcre_fullinfo(re, NULL, PCRE_INFO_SIZE, &sz);
 	AZ(rc);
 	ban_add_lump(b, re, sz);
+	pcre_free(re);
 	return (0);
 }
 
@@ -464,17 +465,25 @@ BAN_AddTest(struct ban *b, const char *a1, const char *a2, const char *a3)
  *      deleted.
  */
 
+static char ban_error_nomem[] = "Could not get memory";
+
 static char *
 ban_ins_error(const char *p)
 {
 	char *r = NULL;
-	static char nomem[] = "Could not get memory";
 
 	if (p != NULL)
 		r = strdup(p);
 	if (r == NULL)
-		r = nomem;
+		r = ban_error_nomem;
 	return (r);
+}
+
+void
+BAN_Free_Errormsg(char *p)
+{
+	if (p != ban_error_nomem)
+		free(p);
 }
 
 char *
@@ -1229,7 +1238,7 @@ ccf_ban(struct cli *cli, const char * const *av, void *priv)
 	p = BAN_Insert(b);
 	if (p != NULL) {
 		VCLI_Out(cli, "%s", p);
-		free(p);
+		BAN_Free_Errormsg(p);
 		VCLI_SetResult(cli, CLIS_PARAM);
 	}
 }

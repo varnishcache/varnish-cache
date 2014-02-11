@@ -446,7 +446,7 @@ VRT_ban_string(const struct vrt_ctx *ctx, const char *str)
 			if (a1 != NULL) {
 				VSLb(ctx->vsl, SLT_VCL_Error,
 				    "ban(): %s", a1);
-				free(a1);
+				BAN_Free_Errormsg(a1);
 			}
 			break;
 		}
