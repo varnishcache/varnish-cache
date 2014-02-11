@@ -51,7 +51,7 @@ VTAILQ_HEAD(memhead_s, memitem);
 struct mempool {
 	unsigned			magic;
 #define MEMPOOL_MAGIC			0x37a75a8d
-	char				name[8];
+	char				name[12];
 	struct memhead_s		list;
 	struct memhead_s		surplus;
 	struct lock			mtx;
@@ -101,6 +101,7 @@ mpl_guard(void *priv)
 	double last = 0;
 
 	CAST_OBJ_NOTNULL(mpl, priv, MEMPOOL_MAGIC);
+	THR_SetName(mpl->name);
 	mpl_slp = 0.15;	// random
 	while (1) {
 		VTIM_sleep(mpl_slp);
@@ -229,7 +230,7 @@ MPL_New(const char *name,
 
 	ALLOC_OBJ(mpl, MEMPOOL_MAGIC);
 	AN(mpl);
-	bprintf(mpl->name, "%s", name);
+	bprintf(mpl->name, "MPL_%s", name);
 	mpl->param = pp;
 	mpl->cur_size = cur_size;
 	VTAILQ_INIT(&mpl->list);
@@ -237,7 +238,7 @@ MPL_New(const char *name,
 	Lck_New(&mpl->mtx, lck_mempool);
 	/* XXX: prealloc min_pool */
 	mpl->vsc = VSM_Alloc(sizeof *mpl->vsc,
-	    VSC_CLASS, VSC_type_mempool, mpl->name);
+	    VSC_CLASS, VSC_type_mempool, mpl->name + 4);
 	AN(mpl->vsc);
 	AZ(pthread_create(&mpl->thread, NULL, mpl_guard, mpl));
 	AZ(pthread_detach(mpl->thread));
