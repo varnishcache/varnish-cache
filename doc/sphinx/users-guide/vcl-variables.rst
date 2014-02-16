@@ -15,7 +15,7 @@ In VCL, there several important objects.
 
 *beresp*
  The backend respons object. It contains the headers of the object 
- comming from the backend. Most of the work you do in vcl_fetch you 
+ coming from the backend. Most of the work you do in vcl_fetch you 
  do on the beresp object.
 
 *resp*

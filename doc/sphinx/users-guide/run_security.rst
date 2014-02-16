@@ -9,7 +9,7 @@ this chapter:  We have protected Varnish as well as we can from
 anything which can come in through HTTP socket.
 
 If parts of your web infrastructure are outsourced or otherwise
-partitioned along adminitrative lines, you need to think about
+partitioned along administrative lines, you need to think about
 security.
 
 Varnish provides four levels of authority, roughly related to

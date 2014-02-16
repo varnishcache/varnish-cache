@@ -16,7 +16,7 @@ the request is being handled by altering the VCL code. You can direct
 certain requests to certains backends, you can alter the requests and
 the responses or have Varnish take various actions depending on
 arbitrary properties of the request or the response. This makes
-Varnish an extremly powerful HTTP processor, not just for caching.
+Varnish an extremely powerful HTTP processor, not just for caching.
 
 Varnish translates VCL into binary code which is then executed when
 requests arrive. The performance impact of VCL is negligible.

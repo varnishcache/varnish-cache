@@ -99,9 +99,9 @@ and facilities Varnish offers.
 Finally, Murphys Law must be contended with: Things will go wrong, and
 more likely than not, they will do so at zero-zero-dark O'clock. Most
 likely during a hurricane, when your phones battery is flat and your
-wife had prepared a intimate evening to celebrate your aniversary.
+wife had prepared a intimate evening to celebrate your anniversary.
 
-Yes, we've all been there, havn't we?
+Yes, we've all been there, haven't we?
 
 When things go wrong :ref:`users_trouble` will hopefully be of some help.
 

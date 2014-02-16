@@ -3,7 +3,7 @@ VCL Examples
 ------------
 
 These are a short collection of examples that showcase some of the
-capabilites of the VCL language.
+capabilities of the VCL language.
 
 .. toctree::
 

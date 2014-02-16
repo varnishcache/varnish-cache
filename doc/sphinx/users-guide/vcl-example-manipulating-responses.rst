@@ -3,7 +3,7 @@
 Altering the backend response
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Here we override the TTL of a object comming from the backend if it
+Here we override the TTL of a object coming from the backend if it
 matches certain criteria::
 
   sub vcl_fetch {

@@ -36,7 +36,7 @@ vcl_fetch by setting do_gzip to true, like this::
   }
 
 Please make sure that you don't try to compress content that is
-incompressable, like jpgs, gifs and mp3. You'll only waste CPU
+uncompressable, like jpgs, gifs and mp3. You'll only waste CPU
 cycles. You can also uncompress objects before storing it in memory by
 setting do_gunzip to *true* but I have no idea why anybody would want
 to do that.

@@ -5,7 +5,7 @@ Parameters
 
 Varnish Cache has a set of parameter that affect its behaviour and
 performance. Most of these parameters can be set on the Varnish
-command line (through varnishadm) useing the param.set keyword.
+command line (through varnishadm) using the param.set keyword.
 
 Some parameters can, for security purposes be read only using the "-r"
 command line switch to varnishd.

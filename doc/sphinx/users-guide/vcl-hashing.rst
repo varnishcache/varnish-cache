@@ -3,7 +3,7 @@ Hashing
 
 Internally, when Varnish stores content in it's store it uses a hash
 key to find the object again. In the default setup this key is
-calculated based on the content of the *Host* header or the IP adress
+calculated based on the content of the *Host* header or the IP address
 of the server and the URL.
 
 Behold the default vcl::
@@ -19,8 +19,8 @@ Behold the default vcl::
  }
 
 As you can see it first chucks in req.url then req.http.host if it
-exsists. It is worth pointing out that Varnish doesn't lowercase the
-hostname or the URL before hashing it so in thery having Varnish.org/
+exists. It is worth pointing out that Varnish doesn't lowercase the
+hostname or the URL before hashing it so in theory having Varnish.org/
 and varnish.org/ would result in different cache entries. Browers
 however, tend to lowercase hostnames.
 

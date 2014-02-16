@@ -28,7 +28,7 @@ Setting this header can be as simple as::
    }
 
 There are different commercial and free offerings in doing grouping and
-identifiying clients in further detail than this. For a basic and community
+identifying clients in further detail than this. For a basic and community
 based regular expression set, see
 https://github.com/varnish/varnish-devicedetect/ .
 
