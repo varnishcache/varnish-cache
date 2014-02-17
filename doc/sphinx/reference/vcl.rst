@@ -415,6 +415,15 @@ vcl_recv
   purge
     ?
 
+vcl_hash
+  You may call hash_data() on the data you would like to add to the hash.
+
+  The vcl_hash subroutine may terminate with calling return() with one of
+  the following keywords:
+
+  lookup
+    Proceed.
+
 vcl_pass
   Called upon entering pass mode.  In this mode, the request is passed
   on to the backend, and the backend's response is passed on to the
@@ -461,15 +470,6 @@ vcl_purge
 
 ..  fetch
 ..    Not implemented.
-
-vcl_hash
-  You may call hash_data() on the data you would like to add to the hash.
-
-  The vcl_hash subroutine may terminate with calling return() with one of
-  the following keywords:
-
-  lookup
-    Proceed.
 
 vcl_hit
   Called after a cache lookup if the requested document was found in the cache.
