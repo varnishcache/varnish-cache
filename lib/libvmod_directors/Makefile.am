@@ -6,12 +6,14 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/bin/varnishd \
 	-I$(top_builddir)/include
 
+dist_man_MANS = vmod_directors.3
+
 vmoddir = $(pkglibdir)/vmods
 vmod_srcdir = $(top_srcdir)/lib/libvmod_directors
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
 vmod_LTLIBRARIES = libvmod_directors.la
 
-libvmod_directors_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-version -shared -rpath /nowhere
+libvmod_directors_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-version -shared
 
 libvmod_directors_la_SOURCES = \
 	vdir.c \
@@ -36,3 +38,13 @@ EXTRA_DIST = vmod.vcc
 CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h \
 	$(builddir)/vmod_directors.rst \
 	$(builddir)/vmod_directors.man.rst
+
+vmod_directors.3: $(vmod_srcdir)/vmod_directors.man.rst
+if HAVE_RST2MAN
+	${RST2MAN} $? $@
+else
+	@echo "========================================"
+	@echo "You need rst2man installed to make dist"
+	@echo "========================================"
+	@false
+endif
