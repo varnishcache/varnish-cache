@@ -286,7 +286,7 @@ struct parspec mgt_parspec[] = {
 		"Timeout for the childs replies to CLI requests from "
 		"the mgt_param.",
 		0,
-		"10", "seconds" },
+		"60", "seconds" },
 	{ "ping_interval", tweak_uint, &mgt_param.ping_interval,
 		"0", NULL,
 		"Interval between pings from parent to child.\n"
