@@ -65,7 +65,7 @@ do_xml_cb(void *priv, const struct VSC_point * const pt)
 	if (strcmp(sec->fantom->ident, ""))
 		printf("\t\t<ident>%s</ident>\n", sec->fantom->ident);
 	printf("\t\t<name>%s</name>\n", pt->desc->name);
-	printf("\t\t<value>%ju</value>\n", val);
+	printf("\t\t<value>%ju</value>\n", (uintmax_t)val);
 	printf("\t\t<flag>%c</flag>\n", pt->desc->flag);
 	printf("\t\t<description>%s</description>\n", pt->desc->sdesc);
 	printf("\t</stat>\n");
@@ -119,7 +119,7 @@ do_json_cb(void *priv, const struct VSC_point * const pt)
 	if (strcmp(sec->fantom->ident, "")) printf("\"ident\": \"%s\", ",
 	    sec->fantom->ident);
 
-	printf("\"value\": %ju, ", val);
+	printf("\"value\": %ju, ", (uintmax_t)val);
 
 	printf("\"flag\": \"%c\", ", pt->desc->flag);
 	printf("\"description\": \"%s\"", pt->desc->sdesc);
@@ -180,9 +180,11 @@ do_once_cb(void *priv, const struct VSC_point * const pt)
 		op->pad = i + 1;
 	printf("%*.*s", op->pad - i, op->pad - i, "");
 	if (pt->desc->flag == 'a' || pt->desc->flag == 'c')
-		printf("%12ju %12.2f %s\n", val, val / op->up, pt->desc->sdesc);
+		printf("%12ju %12.2f %s\n",
+		    (uintmax_t)val, val / op->up, pt->desc->sdesc);
 	else
-		printf("%12ju %12s %s\n", val, ".  ", pt->desc->sdesc);
+		printf("%12ju %12s %s\n",
+		    (uintmax_t)val, ".  ", pt->desc->sdesc);
 	return (0);
 }
 
