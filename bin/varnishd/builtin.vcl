@@ -105,7 +105,7 @@ sub vcl_hit {
 	return (deliver);
     }
     if (obj.ttl + obj.grace > 0s) {
-	// Object is in grace, delive it
+	// Object is in grace, deliver it
 	// Automatically triggers a background fetch
 	return (deliver);
     }
@@ -132,7 +132,7 @@ sub vcl_backend_response {
 		/*
 		 * Mark as "Hit-For-Pass" for the next 2 minutes
 		 */
-		set beresp.ttl = 120 s;
+		set beresp.ttl = 120s;
 		set beresp.uncacheable = true;
     }
     return (deliver);
@@ -150,7 +150,7 @@ sub vcl_deliver {
 }
 
 /*
- * We can come here "invisibly" with the following errors:  413, 417 & 503
+ * We can come here "invisibly" with the following errors: 413, 417 & 503
  */
 sub vcl_error {
     set obj.http.Content-Type = "text/html; charset=utf-8";
@@ -161,11 +161,11 @@ sub vcl_error {
  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
   <head>
-    <title>"} + obj.status + " " + obj.response + {"</title>
+    <title>"} + obj.status + " " + obj.reason + {"</title>
   </head>
   <body>
-    <h1>Error "} + obj.status + " " + obj.response + {"</h1>
-    <p>"} + obj.response + {"</p>
+    <h1>Error "} + obj.status + " " + obj.reason + {"</h1>
+    <p>"} + obj.reason + {"</p>
     <h3>Guru Meditation:</h3>
     <p>XID: "} + req.xid + {"</p>
     <hr>
@@ -177,9 +177,9 @@ sub vcl_error {
 }
 
 sub vcl_init {
-	return (ok);
+    return (ok);
 }
 
 sub vcl_fini {
-	return (ok);
+    return (ok);
 }
