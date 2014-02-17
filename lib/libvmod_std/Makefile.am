@@ -37,7 +37,7 @@ CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h \
 	$(builddir)/vmod_std.rst \
 	$(builddir)/vmod_std.man.rst
 
-vmod_std.3: $(top_srcdir)/doc/sphinx/reference/vmod_std.rst
+vmod_std.3: $(vmod_srcdir)/vmod_std.man.rst
 if HAVE_RST2MAN
 	${RST2MAN} $? $@
 else
