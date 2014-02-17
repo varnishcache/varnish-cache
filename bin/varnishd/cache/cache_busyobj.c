@@ -222,7 +222,7 @@ VBO_extend(struct busyobj *bo, ssize_t l)
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	st->len += l;
 	bo->fetch_obj->len += l;
-	AZ(pthread_cond_signal(&bo->cond));
+	AZ(pthread_cond_broadcast(&bo->cond));
 	Lck_Unlock(&bo->mtx);
 }
 
@@ -248,7 +248,7 @@ VBO_setstate(struct busyobj *bo, enum busyobj_state_e next)
 	VSLb(bo->vsl, SLT_Debug, "XXX BOS: %d -> %d", bo->state, next);
 	assert(next > bo->state);
 	bo->state = next;
-	AZ(pthread_cond_signal(&bo->cond));
+	AZ(pthread_cond_broadcast(&bo->cond));
 	Lck_Unlock(&bo->mtx);
 }
 
