@@ -8,7 +8,7 @@ server s1 {
 varnish v1 -vcl+backend {
 	sub vcl_recv {
 		if (req.http.X-Banned == "check") {
-			remove req.http.X-Banned;
+			unset req.http.X-Banned;
 		} elseif (req.restarts == 0) {
 		        set req.http.X-Banned = "check";
 			if (req.http.x-pass) {

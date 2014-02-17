@@ -411,7 +411,6 @@ static struct action_table {
 	{ "hash_data",		parse_hash_data, VCL_MET_HASH },
 	{ "new",		parse_new, VCL_MET_INIT},
 	{ "purge",		parse_purge, VCL_MET_MISS | VCL_MET_HIT },
-	{ "remove",		parse_unset }, /* backward compatibility */
 	{ "return",		parse_return },
 	{ "rollback",		parse_rollback },
 	{ "set",		parse_set },

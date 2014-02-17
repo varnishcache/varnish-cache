@@ -18,8 +18,8 @@ server s1 {
 varnish v1 -vcl+backend {
 
 	sub vcl_recv {
-		remove req.http.hdr1;
-		remove req.http.hdr5;
+		unset req.http.hdr1;
+		unset req.http.hdr5;
 	}
 } -start
 

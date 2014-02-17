@@ -1,4 +1,4 @@
-varnishtest "VCL/VRT: url/request/proto/response/status"
+varnishtest "VCL/VRT: url/request/proto/reason/status"
 
 
 server s1 {
@@ -28,14 +28,14 @@ varnish v1 -vcl+backend {
 	}
 	sub vcl_backend_response {
 		set beresp.http.foobar =
-		    beresp.proto + beresp.response + beresp.status;
+		    beresp.proto + beresp.reason + beresp.status;
 		set beresp.proto = "HTTP/1.2";
-		set beresp.response = "For circular files";
+		set beresp.reason = "For circular files";
 		set beresp.status = 903;
 	}
 	sub vcl_deliver {
 		set resp.proto = "HTTP/1.2";
-		set resp.response = "Naah, lets fail it";
+		set resp.reason = "Naah, lets fail it";
 		set resp.status = 904;
 		# XXX should be moved to it's own test
 		set resp.http.x-served-by-hostname = server.hostname;

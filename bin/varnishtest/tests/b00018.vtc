@@ -9,7 +9,7 @@ varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 	    set beresp.http.Foo = "bar";
 	    set beresp.status = 523;
-	    set beresp.response = "not ok";
+	    set beresp.reason = "not ok";
 	    set beresp.uncacheable = true;
 	    set beresp.ttl = 0s;
 	    return (deliver);

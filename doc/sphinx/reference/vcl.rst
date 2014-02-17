@@ -662,9 +662,6 @@ server.identity
 req.method
   The request type (e.g. "GET", "HEAD").
 
-req.request
-  For backward compatibility. Same as req.method.
-
 req.url
   The requested URL.
 
@@ -714,9 +711,6 @@ request (either for a cache miss or for pass or pipe mode):
 bereq.method
   The request type (e.g. "GET", "HEAD").
 
-bereq.request
-  For backward compatibility. Same as bereq.method.
-
 bereq.url
   The requested URL.
 
@@ -758,9 +752,6 @@ beresp.status
 
 beresp.reason
   The HTTP status message returned by the server.
-
-beresp.response
-  For backward compatibility. Same as beresp.reason.
 
 beresp.http.header
   The corresponding HTTP header.
@@ -821,9 +812,6 @@ obj.status
 obj.reason
   The HTTP status message returned by the server.
 
-obj.response
-  For backward compatibility. Same as obj.reason.
-
 obj.http.header
   The corresponding HTTP header.
 
@@ -858,9 +846,6 @@ resp.status
 
 resp.reason
   The HTTP status message that will be returned.
-
-resp.response
-  For backward compatibility. Same as resp.reason.
 
 resp.http.header
   The corresponding HTTP header.

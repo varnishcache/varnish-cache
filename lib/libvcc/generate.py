@@ -578,11 +578,6 @@ The client's IP address.
 
 # Backwards compatibility:
 aliases = [
-	('req.request',		'req.method'),
-	('bereq.request',	'bereq.method'),
-	('beresp.response',	'beresp.reason'),
-	('resp.response',	'resp.reason'),
-	('obj.response',	'obj.reason'),
 ]
 
 stv_variables = (
