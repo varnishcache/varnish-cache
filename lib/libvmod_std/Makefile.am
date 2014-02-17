@@ -26,7 +26,7 @@ nodist_libvmod_std_la_SOURCES = \
 	vcc_if.h
 
 # BUILT_SOURCES is only a hack and dependency tracking does not help for the first build
-vmod_std.lo vmod_std_fileread.lo vmod_std_conversions.lo vmod_std.rst vmod_std.man.rst: vcc_if.h
+vmod_std.lo vmod_std_fileread.lo vmod_std_conversions.lo: vcc_if.h
 
 vcc_if.c vcc_if.h: $(vmodtool) $(vmod_srcdir)/vmod.vcc
 	@PYTHON@ $(vmodtool) $(vmod_srcdir)/vmod.vcc
@@ -37,7 +37,7 @@ CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h \
 	$(builddir)/vmod_std.rst \
 	$(builddir)/vmod_std.man.rst
 
-vmod_std.3: $(vmod_srcdir)/vmod_std.man.rst
+vmod_std.3: $(top_srcdir)/doc/sphinx/reference/vmod_std.rst
 if HAVE_RST2MAN
 	${RST2MAN} $? $@
 else
