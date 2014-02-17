@@ -93,11 +93,12 @@ class token(object):
 #######################################################################
 
 class vmod(object):
-	def __init__(self, nam, dnam):
+	def __init__(self, nam, dnam, sec):
 		if not is_c_name(nam):
 			raise Exception("Module name '%s' is illegal" % nam)
 		self.nam = nam
 		self.dnam = dnam
+		self.sec = sec
 		self.init = None
 		self.funcs = list()
 		self.objs = list()
@@ -243,10 +244,17 @@ class vmod(object):
 		self.doc_str.append(l)
 
 	def doc_dump(self, fo, suf):
-		i = "vmod_" + self.nam + " -- " + self.dnam
+		i = "vmod_" + self.nam
 		fo.write("=" * len(i) + "\n")
 		fo.write(i + "\n")
 		fo.write("=" * len(i) + "\n")
+		fo.write("\n")
+		i = self.dnam
+		fo.write("-" * len(i) + "\n")
+		fo.write(i + "\n")
+		fo.write("-" * len(i) + "\n")
+		fo.write("\n")
+		fo.write(":Manual section: %s\n" % self.sec)
 		fo.write("\n")
 		fo.write("SYNOPSIS\n")
 		fo.write("========\n")
@@ -529,11 +537,12 @@ def parse_enum2(tl):
 
 def parse_module(tl):
 	nm = tl.get_token().str
+	sec = tl.get_token().str
 	s = ""
 	while len(tl.tl) > 0:
 		s += " " + tl.get_token().str
 	dnm = s[1:]
-	return vmod(nm, dnm)
+	return vmod(nm, dnm, sec)
 
 #######################################################################
 #
