@@ -367,36 +367,36 @@ The client's IP address.
 	),
 	('beresp.proto',
 		'STRING',
-		( 'backend_response',),
-		( 'backend_response',), """
+		( 'backend_response', 'backend_error'),
+		( 'backend_response', 'backend_error'), """
 		The HTTP protocol version used the backend replied with.
 		"""
 	),
 	('beresp.status',
 		'INT',
-		( 'backend_response',),
-		( 'backend_response',), """
+		( 'backend_response', 'backend_error'),
+		( 'backend_response', 'backend_error'), """
 		The HTTP status code returned by the server.
 		"""
 	),
 	('beresp.reason',
 		'STRING',
-		( 'backend_response',),
-		( 'backend_response',), """
+		( 'backend_response', 'backend_error'),
+		( 'backend_response', 'backend_error'), """
 		The HTTP status message returned by the server.
 		"""
 	),
 	('beresp.http.',
 		'HEADER',
-		( 'backend_response',),
-		( 'backend_response',), """
+		( 'backend_response', 'backend_error'),
+		( 'backend_response', 'backend_error'), """
 		The corresponding HTTP header.
 		"""
 	),
 	('beresp.do_esi',
 		'BOOL',
-		( 'backend_response',),
-		( 'backend_response',), """
+		( 'backend_response', 'backend_error'),
+		( 'backend_response', 'backend_error'), """
 		Boolean. ESI-process the object after fetching it.
 		Defaults to false. Set it to true to parse the
 		object for ESI directives. Will only be honored if
@@ -405,8 +405,8 @@ The client's IP address.
 	),
 	('beresp.do_stream',
 		'BOOL',
-		( 'backend_response',),
-		( 'backend_response',), """
+		( 'backend_response', 'backend_error'),
+		( 'backend_response', 'backend_error'), """
 		Deliver the object to the client directly without
 		fetching the whole object into varnish. If this
 		request is pass'ed it will not be stored in memory.
@@ -416,8 +416,8 @@ The client's IP address.
 	),
 	('beresp.do_gzip',
 		'BOOL',
-		( 'backend_response',),
-		( 'backend_response',), """
+		( 'backend_response', 'backend_error'),
+		( 'backend_response', 'backend_error'), """
 		Boolean. Gzip the object before storing it. Defaults
 		to false. When http_gzip_support is on Varnish will
 		request already compressed content from the backend
@@ -426,57 +426,57 @@ The client's IP address.
 	),
 	('beresp.do_gunzip',
 		'BOOL',
-		( 'backend_response',),
-		( 'backend_response',), """
+		( 'backend_response', 'backend_error'),
+		( 'backend_response', 'backend_error'), """
 		Boolean. Unzip the object before storing it in the
 		cache.  Defaults to false.
 		"""
 	),
 	('beresp.uncacheable',
 		'BOOL',
-		( 'backend_response',),
-		( 'backend_response',), """
+		( 'backend_response', 'backend_error'),
+		( 'backend_response', 'backend_error'), """
 		"""
 	),
 	('beresp.ttl',
 		'DURATION',
-		( 'backend_response',),
-		( 'backend_response',), """
+		( 'backend_response', 'backend_error'),
+		( 'backend_response', 'backend_error'), """
 		The object's remaining time to live, in seconds.
 		beresp.ttl is writable.
 		"""
 	),
 	('beresp.grace',
 		'DURATION',
-		( 'backend_response',),
-		( 'backend_response',), """
+		( 'backend_response', 'backend_error'),
+		( 'backend_response', 'backend_error'), """
 		Set to a period to enable grace.
 		"""
 	),
 	('beresp.keep',
 		'DURATION',
-		( 'backend_response',),
-		( 'backend_response',), """
+		( 'backend_response', 'backend_error'),
+		( 'backend_response', 'backend_error'), """
 		"""
 	),
 	('beresp.backend.name',
 		'STRING',
-		( 'backend_response',),
+		( 'backend_response', 'backend_error'),
 		( ), """
 		Name of the backend this response was fetched from.
 		"""
 	),
 	('beresp.backend.ip',
 		'IP',
-		( 'backend_response',),
+		( 'backend_response', 'backend_error'),
 		( ), """
 		IP of the backend this response was fetched from.
 		"""
 	),
 	('beresp.storage_hint',
 		'STRING',
-		( 'backend_response',),
-		( 'backend_response',), """
+		( 'backend_response', 'backend_error'),
+		( 'backend_response', 'backend_error'), """
 		Hint to Varnish that you want to save this object to a
 		particular storage backend.
 		"""
