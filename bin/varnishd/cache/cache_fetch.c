@@ -71,6 +71,119 @@ vbf_release_req(struct busyobj *bo)
 }
 
 /*--------------------------------------------------------------------
+ */
+
+static int
+vbf_bereq2obj(struct worker *wrk, struct busyobj *bo)
+{
+	unsigned l;
+	char *b;
+	struct vsb *vary = NULL;
+	int varyl = 0;
+	uint16_t nhttp;
+	struct object *obj;
+	struct http *hp, *hp2;
+
+	l = 0;
+
+	/* Create Vary instructions */
+	if (!(bo->fetch_objcore->flags & OC_F_PRIVATE)) {
+		varyl = VRY_Create(bo, &vary);
+		if (varyl > 0) {
+			AN(vary);
+			assert(varyl == VSB_len(vary));
+			l += varyl;
+		} else if (varyl < 0) {
+			/*
+			 * Vary parse error
+			 * Complain about it, and make this a pass.
+			 */
+			VSLb(bo->vsl, SLT_Error,
+			    "Illegal 'Vary' header from backend, "
+			    "making this a pass.");
+			bo->uncacheable = 1;
+			AZ(vary);
+		} else
+			/* No vary */
+			AZ(vary);
+	}
+
+	l += http_EstimateWS(bo->beresp,
+	    bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
+
+	if (bo->uncacheable)
+		bo->fetch_objcore->flags |= OC_F_PASS;
+
+	if (bo->uncacheable ||
+	    bo->exp.ttl+bo->exp.grace+bo->exp.keep < cache_param->shortlived)
+		bo->storage_hint = TRANSIENT_STORAGE;
+
+	AZ(bo->stats);
+	bo->stats = &wrk->stats;
+	AN(bo->fetch_objcore);
+	obj = STV_NewObject(bo, bo->storage_hint, l, nhttp);
+#if 0
+	// XXX: we shouldn't retry if we're already on Transient
+	if (obj == NULL &&
+	    (bo->storage_hint == NULL ||
+	    strcmp(bo->storage_hint, TRANSIENT_STORAGE))) {
+#else
+	if (obj == NULL) {
+#endif
+		/*
+		 * Try to salvage the transaction by allocating a
+		 * shortlived object on Transient storage.
+		 */
+		if (bo->exp.ttl > cache_param->shortlived)
+			bo->exp.ttl = cache_param->shortlived;
+		bo->exp.grace = 0.0;
+		bo->exp.keep = 0.0;
+		obj = STV_NewObject(bo, TRANSIENT_STORAGE, l, nhttp);
+	}
+	if (obj == NULL)
+		return (-1);
+
+	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
+
+	bo->storage_hint = NULL;
+
+	AZ(bo->fetch_obj);
+	bo->fetch_obj = obj;
+
+	if (bo->do_gzip || (bo->is_gzip && !bo->do_gunzip))
+		obj->gziped = 1;
+
+	if (vary != NULL) {
+		obj->vary = (void *)WS_Copy(obj->http->ws,
+		    VSB_data(vary), varyl);
+		AN(obj->vary);
+		(void)VRY_Validate(obj->vary);
+		VSB_delete(vary);
+	}
+
+	obj->vxid = bo->vsl->wid;
+	obj->response = bo->err_code;
+	WS_Assert(bo->ws_o);
+
+	/* Filter into object */
+	hp = bo->beresp;
+	hp2 = obj->http;
+
+	hp2->logtag = SLT_ObjMethod;
+	http_FilterResp(hp, hp2, bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS);
+	http_CopyHome(hp2);
+
+	if (http_GetHdr(hp, H_Last_Modified, &b))
+		obj->last_modified = VTIM_parse(b);
+	else
+		obj->last_modified = floor(bo->exp.t_origin);
+
+	assert(WRW_IsReleased(wrk));
+
+	return (0);
+}
+
+/*--------------------------------------------------------------------
  * Copy req->bereq
  */
 
@@ -300,12 +413,6 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 static enum fetch_step
 vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 {
-	struct http *hp, *hp2;
-	char *b;
-	uint16_t nhttp;
-	unsigned l;
-	struct vsb *vary = NULL;
-	int varyl = 0;
 	struct object *obj;
 	ssize_t est = -1;
 
@@ -388,97 +495,14 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->htc.body_status == BS_NONE)
 		bo->do_stream = 0;
 
-	l = 0;
-
-	/* Create Vary instructions */
-	if (!(bo->fetch_objcore->flags & OC_F_PRIVATE)) {
-		varyl = VRY_Create(bo, &vary);
-		if (varyl > 0) {
-			AN(vary);
-			assert(varyl == VSB_len(vary));
-			l += varyl;
-		} else if (varyl < 0) {
-			/*
-			 * Vary parse error
-			 * Complain about it, and make this a pass.
-			 */
-			VSLb(bo->vsl, SLT_Error,
-			    "Illegal 'Vary' header from backend, "
-			    "making this a pass.");
-			bo->uncacheable = 1;
-			AZ(vary);
-		} else
-			/* No vary */
-			AZ(vary);
-	}
-
-	l += http_EstimateWS(bo->beresp,
-	    bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
-
-	if (bo->uncacheable)
-		bo->fetch_objcore->flags |= OC_F_PASS;
-
-	if (bo->uncacheable ||
-	    bo->exp.ttl+bo->exp.grace+bo->exp.keep < cache_param->shortlived)
-		bo->storage_hint = TRANSIENT_STORAGE;
-
-	AZ(bo->stats);
-	bo->stats = &wrk->stats;
-	AN(bo->fetch_objcore);
-	obj = STV_NewObject(bo, bo->storage_hint, l, nhttp);
-	if (obj == NULL) {
-		/*
-		 * Try to salvage the transaction by allocating a
-		 * shortlived object on Transient storage.
-		 */
-		if (bo->exp.ttl > cache_param->shortlived)
-			bo->exp.ttl = cache_param->shortlived;
-		bo->exp.grace = 0.0;
-		bo->exp.keep = 0.0;
-		obj = STV_NewObject(bo, TRANSIENT_STORAGE, l, nhttp);
-	}
-	if (obj == NULL) {
+	if (vbf_bereq2obj(wrk, bo)) {
 		bo->stats = NULL;
 		(void)VFP_Error(bo, "Could not get storage");
 		VDI_CloseFd(&bo->vbc);
 		return (F_STP_DONE);
 	}
-	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 
-	bo->storage_hint = NULL;
-
-	AZ(bo->fetch_obj);
-	bo->fetch_obj = obj;
-
-	if (bo->do_gzip || (bo->is_gzip && !bo->do_gunzip))
-		obj->gziped = 1;
-
-	if (vary != NULL) {
-		obj->vary = (void *)WS_Copy(obj->http->ws,
-		    VSB_data(vary), varyl);
-		AN(obj->vary);
-		(void)VRY_Validate(obj->vary);
-		VSB_delete(vary);
-	}
-
-	obj->vxid = bo->vsl->wid;
-	obj->response = bo->err_code;
-	WS_Assert(bo->ws_o);
-
-	/* Filter into object */
-	hp = bo->beresp;
-	hp2 = obj->http;
-
-	hp2->logtag = SLT_ObjMethod;
-	http_FilterResp(hp, hp2, bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS);
-	http_CopyHome(hp2);
-
-	if (http_GetHdr(hp, H_Last_Modified, &b))
-		obj->last_modified = VTIM_parse(b);
-	else
-		obj->last_modified = floor(bo->exp.t_origin);
-
-	assert(WRW_IsReleased(wrk));
+	obj = bo->fetch_obj;
 
 	/*
 	 * Ready to fetch the body
@@ -513,9 +537,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	bo->stats = NULL;
 
 	bo->t_body = VTIM_mono();
-
-	http_Teardown(bo->bereq);
-	http_Teardown(bo->beresp);
 
 	VSLb(bo->vsl, SLT_Fetch_Body, "%u(%s)",
 	    bo->htc.body_status, body_status_2str(bo->htc.body_status));
@@ -606,7 +627,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	obj->gzip_last = bo->ims_obj->gzip_last;
 	obj->gzip_stop = bo->ims_obj->gzip_stop;
 
-	/* XXX: ESI */
+	XXXAZ(bo->ims_obj->esidata);
 
 	if (bo->ims_obj->vary != NULL) {
 		obj->vary = (void *)WS_Copy(obj->http->ws,
@@ -676,6 +697,24 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 {
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	AN(bo->fetch_objcore->flags &= OC_F_BUSY);
+
+	// XXX: reset all beresp flags ?
+
+	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
+	http_SetResp(bo->beresp, "HTTP/1.1", 503, "Backend fetch failed");
+	http_SetHeader(bo->beresp, "Content-Length: 0");
+	http_SetHeader(bo->beresp, "Connection: close");
+
+	bo->exp.ttl = 0;
+	bo->exp.grace = 0;
+	bo->exp.keep = 0;
+
+	VCL_backend_error_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
+
+	xxxassert(wrk->handling == VCL_RET_DELIVER);
+
 	WRONG("");
 	return (F_STP_DONE);
 }
@@ -748,6 +787,9 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 			VDI_RecycleFd(&bo->vbc);
 		AZ(bo->vbc);
 	}
+
+	http_Teardown(bo->bereq);
+	http_Teardown(bo->beresp);
 
 	if (bo->state == BOS_FAILED)
 		assert(bo->fetch_objcore->flags & OC_F_FAILED);
