@@ -78,6 +78,10 @@ tokens = {
 # Our methods and actions
 
 returns =(
+
+	###############################################################
+	# Client side
+
 	('recv',
 		"C",
 		('error', 'pass', 'pipe', 'hash', 'purge',)
@@ -106,14 +110,6 @@ returns =(
 		"C",
 		('error', 'restart', 'pass', 'fetch', 'deliver',)
 	),
-	('backend_fetch',
-		"B",
-		('fetch', 'abandon')
-	),
-	('backend_response',
-		"B",
-		('deliver', 'retry', 'abandon')
-	),
 	('deliver',
 		"C",
 		('restart', 'deliver',)
@@ -122,6 +118,26 @@ returns =(
 		"C",
 		('restart', 'deliver',)
 	),
+
+	###############################################################
+	# Backend-fetch 
+
+	('backend_fetch',
+		"B",
+		('fetch', 'abandon')
+	),
+	('backend_response',
+		"B",
+		('deliver', 'retry', 'abandon')
+	),
+	('backend_error',
+		"B",
+		('deliver', 'retry')
+	),
+
+	###############################################################
+	# Housekeeping
+
 	('init',
 		"",
 		('ok',)

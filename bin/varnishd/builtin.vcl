@@ -41,6 +41,9 @@
 
 vcl 4.0;
 
+#######################################################################
+# Client side
+
 sub vcl_recv {
     if (req.restarts == 0) {
 	if (req.http.x-forwarded-for) {
@@ -117,27 +120,6 @@ sub vcl_miss {
     return (fetch);
 }
 
-
-sub vcl_backend_fetch {
-    return (fetch);
-}
-
-sub vcl_backend_response {
-    if (beresp.ttl <= 0s ||
-        beresp.http.Set-Cookie ||
-        beresp.http.Surrogate-control ~ "no-store" ||
-        (!beresp.http.Surrogate-Control &&
-          beresp.http.Cache-Control ~ "no-cache|no-store|private") ||
-        beresp.http.Vary == "*") {
-		/*
-		 * Mark as "Hit-For-Pass" for the next 2 minutes
-		 */
-		set beresp.ttl = 120s;
-		set beresp.uncacheable = true;
-    }
-    return (deliver);
-}
-
 sub vcl_deliver {
     /*
      * These two write to the stored object causing extra page faults
@@ -175,6 +157,36 @@ sub vcl_error {
 "};
     return (deliver);
 }
+
+#######################################################################
+# Backend Fetch
+
+sub vcl_backend_fetch {
+    return (fetch);
+}
+
+sub vcl_backend_response {
+    if (beresp.ttl <= 0s ||
+        beresp.http.Set-Cookie ||
+        beresp.http.Surrogate-control ~ "no-store" ||
+        (!beresp.http.Surrogate-Control &&
+          beresp.http.Cache-Control ~ "no-cache|no-store|private") ||
+        beresp.http.Vary == "*") {
+		/*
+		 * Mark as "Hit-For-Pass" for the next 2 minutes
+		 */
+		set beresp.ttl = 120s;
+		set beresp.uncacheable = true;
+    }
+    return (deliver);
+}
+
+sub vcl_backend_error {
+	return (deliver);
+}
+
+#######################################################################
+# Housekeeping
 
 sub vcl_init {
     return (ok);
