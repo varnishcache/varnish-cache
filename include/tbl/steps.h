@@ -50,10 +50,12 @@ REQ_STEP(error,		ERROR,		(wrk, req))
 
 #ifdef FETCH_STEP
 FETCH_STEP(mkbereq,	MKBEREQ,	(wrk, bo))
+FETCH_STEP(retry,	RETRY,		(wrk, bo))
 FETCH_STEP(startfetch,	STARTFETCH,	(wrk, bo))
 FETCH_STEP(fetchhdr,	FETCHHDR,	(wrk, bo))
 FETCH_STEP(condfetch,	CONDFETCH,	(wrk, bo))
 FETCH_STEP(fetch,	FETCH,		(wrk, bo))
+FETCH_STEP(error,	ERROR,		(wrk, bo))
 FETCH_STEP(done,	DONE,		())
 #endif
 

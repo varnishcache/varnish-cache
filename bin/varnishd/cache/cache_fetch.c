@@ -45,6 +45,22 @@
  */
 
 static void
+make_it_503(struct busyobj *bo)
+{
+
+	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
+	http_SetResp(bo->beresp, "HTTP/1.1", 503, "Backend fetch failed");
+	http_SetHeader(bo->beresp, "Content-Length: 0");
+	http_SetHeader(bo->beresp, "Connection: close");
+	bo->exp.ttl = 0;
+	bo->exp.grace = 0;
+	bo->exp.keep = 0;
+}
+
+/*--------------------------------------------------------------------
+ */
+
+static void
 vbf_release_req(struct busyobj *bo)
 {
 	assert(bo->state == BOS_INVALID);
@@ -103,7 +119,31 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 }
 
 /*--------------------------------------------------------------------
- * Copy run bereq by VCL::vcl_backend_fetch{}
+ * Start a new VSL transaction and try again
+ */
+
+static enum fetch_step
+vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
+{
+	unsigned owid, wid;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	// XXX: BereqEnd + BereqAcct ?
+	wid = VXID_Get(&wrk->vxid_pool);
+	VSLb(bo->vsl, SLT_Link, "bereq %u retry", wid);
+	VSLb(bo->vsl, SLT_End, "%s", "");
+	VSL_Flush(bo->vsl, 0);
+	owid = bo->vsl->wid & VSL_IDENTMASK;
+	bo->vsl->wid = wid | VSL_BACKENDMARKER;
+	VSLb(bo->vsl, SLT_Begin, "bereq %u retry", owid);
+
+	return (F_STP_STARTFETCH);
+}
+
+/*--------------------------------------------------------------------
+ * Setup bereq from bereq0, run vcl_backend_fetch
  */
 
 static enum fetch_step
@@ -138,21 +178,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	return (F_STP_FETCHHDR);
 }
 
-/*--------------------------------------------------------------------
- */
-
-static void
-make_it_503(struct busyobj *bo)
-{
-
-	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
-	http_SetResp(bo->beresp, "HTTP/1.1", 503, "Backend fetch failed");
-	http_SetHeader(bo->beresp, "Content-Length: 0");
-	http_SetHeader(bo->beresp, "Connection: close");
-	bo->exp.ttl = 0;
-	bo->exp.grace = 0;
-	bo->exp.keep = 0;
-}
 
 /*--------------------------------------------------------------------
  */
@@ -161,7 +186,6 @@ static enum fetch_step
 vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 {
 	int i, do_ims, fail;
-	unsigned owid, wid;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -247,17 +271,9 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 		if (bo->vbc)
 			VDI_CloseFd(&bo->vbc);
 		bo->retries++;
-		if (bo->retries <= cache_param->max_retries) {
-			// XXX: BereqEnd + BereqAcct ?
-			wid = VXID_Get(&wrk->vxid_pool);
-			VSLb(bo->vsl, SLT_Link, "bereq %u retry", wid);
-			VSLb(bo->vsl, SLT_End, "%s", "");
-			VSL_Flush(bo->vsl, 0);
-			owid = bo->vsl->wid & VSL_IDENTMASK;
-			bo->vsl->wid = wid | VSL_BACKENDMARKER;
-			VSLb(bo->vsl, SLT_Begin, "bereq %u retry", owid);
-			return (F_STP_STARTFETCH);
-		}
+		if (bo->retries <= cache_param->max_retries)
+			return (F_STP_RETRY);
+
 		VSLb(bo->vsl, SLT_VCL_Error,
 		    "Too many retries, delivering 503");
 		make_it_503(bo);
@@ -548,13 +564,6 @@ VSLb(bo->vsl, SLT_Debug, "YYY REF %d %d",
 	return (F_STP_DONE);
 }
 
-static enum fetch_step
-vbf_stp_done(void)
-{
-	WRONG("Just plain wrong");
-	return (F_STP_DONE);
-}
-
 /*--------------------------------------------------------------------
  */
 
@@ -659,7 +668,27 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 }
 
 /*--------------------------------------------------------------------
+ * Create synth object
  */
+
+static enum fetch_step
+vbf_stp_error(struct worker *wrk, struct busyobj *bo)
+{
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	WRONG("");
+	return (F_STP_DONE);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+static enum fetch_step
+vbf_stp_done(void)
+{
+	WRONG("Just plain wrong");
+	return (F_STP_DONE);
+}
 
 static const char *
 vbf_step_name(enum fetch_step stp)
@@ -674,7 +703,6 @@ vbf_step_name(enum fetch_step stp)
 		return ("F-step ?");
 	}
 }
-
 
 static void
 vbf_fetch_thread(struct worker *wrk, void *priv)
