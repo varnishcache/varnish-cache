@@ -21,7 +21,7 @@ client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 503
-	expect resp.http.X-varnish == "1005"
+	expect resp.http.X-varnish == "1004"
 } -run
 
 delay .1
@@ -46,7 +46,7 @@ client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 302
-	expect resp.http.X-varnish == "1009"
+	expect resp.http.X-varnish == "1007"
 } -run
 
 delay .1
@@ -55,7 +55,7 @@ client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 302
-	expect resp.http.X-varnish == "1012 1010"
+	expect resp.http.X-varnish == "1010 1008"
 } -run
 
 delay .1
@@ -79,7 +79,7 @@ client c1 {
 	txreq -url "/2"
 	rxresp
 	expect resp.status == 502
-	expect resp.http.X-varnish == "1014"
+	expect resp.http.X-varnish == "1012"
 } -run
 
 delay .1
@@ -88,7 +88,7 @@ client c1 {
 	txreq -url "/2"
 	rxresp
 	expect resp.status == 502
-	expect resp.http.X-varnish == "1017 1015"
+	expect resp.http.X-varnish == "1015 1013"
 } -run
 
 delay .1

@@ -5,8 +5,8 @@ varnish v1 -vcl {
 		.host = "${bad_ip}"; .port = "9090";
 	}
 
-	sub vcl_error {
-		set obj.status = 299;
+	sub vcl_backend_error {
+		set beresp.status = 299;
 	}
 } -start
 

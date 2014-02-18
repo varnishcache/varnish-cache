@@ -41,21 +41,6 @@
 #include "vcl.h"
 #include "vtim.h"
 
-/*--------------------------------------------------------------------
- */
-
-static void
-make_it_503(struct busyobj *bo)
-{
-
-	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
-	http_SetResp(bo->beresp, "HTTP/1.1", 503, "Backend fetch failed");
-	http_SetHeader(bo->beresp, "Content-Length: 0");
-	http_SetHeader(bo->beresp, "Connection: close");
-	bo->exp.ttl = 0;
-	bo->exp.grace = 0;
-	bo->exp.keep = 0;
-}
 
 /*--------------------------------------------------------------------
  */
@@ -298,7 +283,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 static enum fetch_step
 vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 {
-	int i, do_ims, fail;
+	int i, do_ims;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -330,14 +315,11 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 
 	if (i) {
 		AZ(bo->vbc);
-		make_it_503(bo);
-		fail = 1;
-	} else {
-		AN(bo->vbc);
-		http_VSL_log(bo->beresp);
-		fail = 0;
-	}
+		return (F_STP_ERROR);
+	} 
 
+	AN(bo->vbc);
+	http_VSL_log(bo->beresp);
 
 	/*
 	 * These two headers can be spread over multiple actual headers
@@ -353,8 +335,6 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 	 * NB: Also sets other wrk variables
 	 */
 	bo->htc.body_status = RFC2616_Body(bo, &wrk->stats);
-	if (i && bo->htc.body_status == BS_LENGTH)
-		bo->htc.body_status = BS_NONE;
 
 	bo->err_code = http_GetStatus(bo->beresp);
 
@@ -381,22 +361,18 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, bo->beresp->ws);
 
 	if (wrk->handling == VCL_RET_RETRY) {
-		if (bo->vbc)
-			VDI_CloseFd(&bo->vbc);
+		AN (bo->vbc);
+		VDI_CloseFd(&bo->vbc);
 		bo->retries++;
 		if (bo->retries <= cache_param->max_retries)
 			return (F_STP_RETRY);
-
 		VSLb(bo->vsl, SLT_VCL_Error,
 		    "Too many retries, delivering 503");
-		make_it_503(bo);
-		wrk->handling = VCL_RET_DELIVER;
+		return (F_STP_ERROR);
 	}
 
 	assert(bo->state == BOS_REQ_DONE);
 	VBO_setstate(bo, BOS_COMMITTED);
-	if (fail)
-		(void)VFP_Error(bo, "Fetch failed");
 
 	if (bo->do_esi)
 		bo->do_stream = 0;
@@ -414,7 +390,7 @@ static enum fetch_step
 vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 {
 	struct object *obj;
-	ssize_t est = -1;
+	ssize_t est;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -465,8 +441,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	/* But we can't do both at the same time */
 	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
 
-	if (bo->vbc != NULL)
-		est = V1F_Setup_Fetch(bo);
+	AN(bo->vbc);
+	est = V1F_Setup_Fetch(bo);
 
 	if (bo->do_gunzip || (bo->is_gzip && bo->do_esi)) {
 		RFC2616_Weaken_Etag(bo->beresp);
@@ -715,7 +691,21 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	xxxassert(wrk->handling == VCL_RET_DELIVER);
 
-	WRONG("");
+	http_PrintfHeader(bo->beresp, "Content-Length: %jd", (intmax_t)0);
+	http_PrintfHeader(bo->beresp, "X-XXXPHK: yes");
+
+	if (vbf_bereq2obj(wrk, bo)) {
+		INCOMPL();
+	}
+
+	HSH_Unbusy(&wrk->stats, bo->fetch_obj->objcore);
+
+	if (!(bo->fetch_obj->objcore->flags & OC_F_PRIVATE)) {
+		EXP_Insert(bo->fetch_obj->objcore);
+		AN(bo->fetch_obj->objcore->ban);
+	}
+	VBO_setstate(bo, BOS_FINISHED);
+	HSH_Complete(bo->fetch_obj->objcore);
 	return (F_STP_DONE);
 }
 
