@@ -159,7 +159,7 @@ VRT_l_bereq_uncacheable(const struct vrt_ctx *ctx, unsigned a)
 		VSLb(ctx->vsl, SLT_VCL_Error,
 		    "Ignoring attempt to reset bereq.uncacheable");
 	} else if (a) {
-		ctx->bo->do_pass = a;
+		ctx->bo->do_pass = 1;
 	}
 }
 
@@ -182,7 +182,7 @@ VRT_l_beresp_uncacheable(const struct vrt_ctx *ctx, unsigned a)
 		    "Ignoring attempt to reset beresp.uncacheable");
 	} else if (a) {
 		VSLb(ctx->vsl, SLT_Debug, "XXXX: UNCACHEABLE %u" , a);
-		ctx->bo->uncacheable = a;
+		ctx->bo->uncacheable = 1;
 	}
 }
 
