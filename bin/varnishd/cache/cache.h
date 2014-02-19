@@ -524,7 +524,6 @@ struct busyobj {
 	int			retries;
 	unsigned		refcount;
 	double			t_fetch;
-	uint16_t		err_code;
 	struct req		*req;
 
 	uint8_t			*vary;
@@ -591,7 +590,6 @@ struct object {
 	struct objcore		*objcore;
 
 	uint8_t			*vary;
-	uint16_t		response;
 
 	/* XXX: make bitmap */
 	uint8_t			gziped;

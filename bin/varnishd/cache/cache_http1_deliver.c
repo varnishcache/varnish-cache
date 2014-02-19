@@ -93,7 +93,7 @@ v1d_dorange(struct req *req, const char *r)
 	ssize_t low, high, has_low;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	assert(req->obj->response == 200);
+	assert(http_GetStatus(req->obj->http) == 200);
 	if (strncmp(r, "bytes=", 6))
 		return;
 	r += 6;
@@ -271,7 +271,7 @@ V1D_Deliver(struct req *req)
 	    req->wantbody &&
 	    !(req->res_mode & (RES_ESI|RES_ESI_CHILD)) &&
 	    cache_param->http_range_support &&
-	    req->obj->response == 200) {
+	    http_GetStatus(req->obj->http) == 200) {
 		http_SetHeader(req->resp, "Accept-Ranges: bytes");
 		if (http_GetHdr(req->http, H_Range, &r))
 			v1d_dorange(req, r);

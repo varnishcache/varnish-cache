@@ -142,7 +142,6 @@ vbf_bereq2obj(struct worker *wrk, struct busyobj *bo)
 	}
 
 	obj->vxid = bo->vsl->wid;
-	obj->response = bo->err_code;
 	WS_Assert(bo->ws_o);
 
 	/* Filter into object */
@@ -330,8 +329,6 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 	 * NB: Also sets other wrk variables
 	 */
 	bo->htc.body_status = RFC2616_Body(bo, &wrk->stats);
-
-	bo->err_code = http_GetStatus(bo->beresp);
 
 	/*
 	 * What does RFC2616 think about TTL ?

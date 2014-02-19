@@ -147,7 +147,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	if (!(req->obj->objcore->flags & OC_F_PASS)
 	    && req->esi_level == 0
-	    && req->obj->response == 200
+	    && http_GetStatus(req->obj->http) == 200
 	    && req->http->conds && RFC2616_Do_Cond(req))
 		http_SetResp(req->resp, "HTTP/1.1", 304, "Not Modified");
 
@@ -304,7 +304,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 
 	req->obj = oc_getobj(&wrk->stats, req->objcore);
 	req->objcore = NULL;
-	req->err_code = req->obj->response;
+	req->err_code = http_GetStatus(req->obj->http);
 	req->req_step = R_STP_DELIVER;
 	return (REQ_FSM_MORE);
 }
