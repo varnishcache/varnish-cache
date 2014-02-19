@@ -853,7 +853,7 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 int
 main(int argc, char * const *argv)
 {
-	char opt;
+	signed char opt;
 	char *format = NULL;
 
 	memset(&CTX, 0, sizeof CTX);
