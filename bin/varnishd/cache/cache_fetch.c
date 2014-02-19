@@ -107,14 +107,9 @@ vbf_bereq2obj(struct worker *wrk, struct busyobj *bo)
 	bo->stats = &wrk->stats;
 	AN(bo->fetch_objcore);
 	obj = STV_NewObject(bo, bo->storage_hint, l, nhttp);
-#if 0
-	// XXX: we shouldn't retry if we're already on Transient
 	if (obj == NULL &&
 	    (bo->storage_hint == NULL ||
 	    strcmp(bo->storage_hint, TRANSIENT_STORAGE))) {
-#else
-	if (obj == NULL) {
-#endif
 		/*
 		 * Try to salvage the transaction by allocating a
 		 * shortlived object on Transient storage.
@@ -316,7 +311,7 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 	if (i) {
 		AZ(bo->vbc);
 		return (F_STP_ERROR);
-	} 
+	}
 
 	AN(bo->vbc);
 	http_VSL_log(bo->beresp);
