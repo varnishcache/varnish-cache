@@ -8,22 +8,22 @@ clients and tries to answer them from its cache. If it cannot answer
 the request from its cache it will forward the request to the backend,
 fetch the response, store it and deliver it to the client.
 
+When Varnish has a cached response ready it is typically delivered in
+a matter of microseconds, several orders of magnitude faster than your
+typical application server, so you want to make sure to have it answer
+as many of the requests as possible.
+
 Varnish decides whether it can store the content or not based on the
 response it's gets back from the backend. The backend can instruct
 Varnish to cache the content with the HTTP response header
-Cache-Control.
-
-Varnish will be very careful when it encounters cookies, either coming
-from the client or from the origin server. When Varnish sees a
-Set-Cookie header on a response it decides that the object is not
-cacheable. When there is a Cookie header in the request it will also
-refuse to serve a cached object and rather ask the backend for version
-of the object that is tailored to the request.
+Cache-Control. There are a few other conditions where Varnish will not
+cache, the most common one being cookies. Since cookies is a good
+indication that a web object is personlised, Varnish will with it's
+default configuration, not cache it.
 
 This behaviour and most other behaviour can be changed using policies
 written in the Varnish Configuration Language. See the Users Guide
 for more information on how to do that.
-
 
 Performance
 ~~~~~~~~~~~
