@@ -25,6 +25,8 @@ including ", newline and other control characters except for the NUL
 (0x00) character. If you really want NUL characters in a string there
 is a VMOD that makes it possible to create such strings.
 
+.. _vcl_syntax_acl:
+
 Access control lists (ACLs)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
