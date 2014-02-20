@@ -105,4 +105,3 @@ Yes, we've all been there, haven't we?
 
 When things go wrong :ref:`users_trouble` will hopefully be of some help.
 
-And now, lets put som substance on this skeleton outline...
