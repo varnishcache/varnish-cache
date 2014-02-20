@@ -2,9 +2,8 @@
 Put Varnish on port 80
 ----------------------
 
-Until now we've been running with Varnish on a high port, for testing
-purposes. You probably don't want to do this in the long term so let's
-put Varnish on port 80.
+Until now we've been running with Varnish on a high port, which is
+great for testing purposes. Lets put Varnish on the default HTTP port.
 
 First we stop varnish::
 
@@ -16,7 +15,8 @@ Now we need to edit the configuration file that starts Varnish.
 Debian/Ubuntu
 ~~~~~~~~~~~~~
 
-On Debian/Ubuntu this is /etc/default/varnish. In the file you'll find some text that looks like this::
+On Debian/Ubuntu this is /etc/default/varnish. In the file you'll find
+some text that looks like this::
 
   DAEMON_OPTS="-a :6081 \
                -T localhost:6082 \
