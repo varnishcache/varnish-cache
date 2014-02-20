@@ -3,7 +3,7 @@
 Parameters
 ----------
 
-Varnish Cache has a set of parameter that affect its behaviour and
+Varnish Cache has a set of parameters that affect its behaviour and
 performance. Most of these parameters can be set on the Varnish
 command line (through varnishadm) using the param.set keyword.
 
