@@ -4,7 +4,6 @@
 The Varnish Users Guide
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-(The plan for ...)
 The Varnish documentation consists of three main documents:
 
 * :ref:`tutorial-index` explains the basics and gets you started with Varnish.
