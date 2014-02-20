@@ -34,7 +34,6 @@ code commented out in default.vcl that ships with Varnish Cache.
 .. toctree::
    :maxdepth: 1
 
-   vcl-intro
    vcl-syntax
    vcl-built-in-subs
    vcl-variables
