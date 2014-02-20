@@ -223,6 +223,5 @@ to various kinds of attacks and subversive activities.
 
 If you have "administrative" HTTP requests, for instance PURGE
 requests, we strongly recommend that you restrict them to trusted
-IP numbers/nets using VCL's Access Control Lists.
+IP numbers/nets using VCL's :ref:`vcl_syntax_acl`.
 
-.. (XXX: missing ref to ACL)
