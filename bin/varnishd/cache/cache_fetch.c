@@ -536,8 +536,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->state != BOS_FAILED)
 		VBO_setstate(bo, BOS_FINISHED);
 
-VSLb(bo->vsl, SLT_Debug, "YYY REF %d %d",
-    bo->refcount, bo->fetch_obj->objcore->refcnt);
 	return (F_STP_DONE);
 }
 
@@ -691,20 +689,6 @@ vbf_stp_done(void)
 	return (F_STP_DONE);
 }
 
-static const char *
-vbf_step_name(enum fetch_step stp)
-{
-	switch (stp) {
-#define FETCH_STEP(l, U, arg)						\
-		case F_STP_##U:						\
-			return (#U);
-#include "tbl/steps.h"
-#undef FETCH_STEP
-	default:
-		return ("F-step ?");
-	}
-}
-
 static void
 vbf_fetch_thread(struct worker *wrk, void *priv)
 {
@@ -739,8 +723,6 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 		default:
 			WRONG("Illegal fetch_step");
 		}
-		VSLb(bo->vsl, SLT_Debug, "%s -> %s",
-		    vbf_step_name(bo->step), vbf_step_name(stp));
 	}
 	assert(WRW_IsReleased(wrk));
 
