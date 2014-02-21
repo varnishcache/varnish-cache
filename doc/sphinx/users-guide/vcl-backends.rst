@@ -115,8 +115,14 @@ Directors
 
 You can also group several backend into a group of backends. These
 groups are called directors. This will give you increased performance
-and resilience. You can define several backends and group them
-together in a director.::
+and resilience. 
+
+You can define several backends and group them together in a
+director. This requires you to load a VMOD, a Varnish module, and then to 
+call certain actions in vcl_init.::
+
+
+         import directors;    # load the directors
 
 	 backend server1 {
 	     .host = "192.168.0.10";
@@ -125,24 +131,21 @@ together in a director.::
 	     .host = "192.168.0.10";
 	 }
 
-Now we create the director.::
-
-       	director example_director round-robin {
-        {
-                .backend = server1;
+         sub vcl_init {
+                new bar = directors.round_robin();
+                bar.add_backend(server1);
+                bar.add_backend(server2);
         }
-	# server2
-        {
-                .backend = server2;
-        }
-	# foo
+	
+        sub vcl_recv {
+                # send all traffic to the bar director:
+	        req.backend = bar.backend;
 	}
-
 
 This director is a round-robin director. This means the director will
 distribute the incoming requests on a round-robin basis. There is
 also a *random* director which distributes requests in a, you guessed
-it, random fashion.
+it, random fashion. 
 
 But what if one of your servers goes down? Can Varnish direct all the
 requests to the healthy server? Sure it can. This is where the Health
@@ -202,7 +205,9 @@ initial
 
 Now we define the director.::
 
-  director example_director round-robin {
+   import directors;
+
+   director example_director round-robin {
         {
                 .backend = server1;
         }
