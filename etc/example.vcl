@@ -5,7 +5,7 @@
 # The builtin VCL is called when there is no explicit explicit return
 # statement.
 #
-# See the VCL tutorial at https://www.varnish-cache.org/docs/trunk/tutorial/
+# See the VCL chapters in the Users Guide at https://www.varnish-cache.org/docs/
 # and http://varnish-cache.org/trac/wiki/VCLExamples for more examples.
 
 # Marker to tell the VCL compiler that this VCL has been adapted to the
@@ -20,16 +20,21 @@ backend default {
 
 sub vcl_recv {
     # Happens before we check if we have this in cache already.
-    # See http://www.varnish-cache.org/docs/3.0/tutorial/vcl.html#vcl_recv
+    # 
+    # Typically you clean up the request here, removing cookies you don't need,
+    # rewriting the request, etc.
 }
 
 sub vcl_backend_response {
     # Happens after we have read the response headers from the backend.
-    # See http://www.varnish-cache.org/docs/3.0/tutorial/vcl.html#vcl_fetch
+    # 
+    # Here you clean the response headers, removing silly Set-Cookie headers
+    # and other mistakes your backend does.
 }
 
 sub vcl_deliver {
     # Happens when we have all the pieces we need, and are about to send the
     # response to the client.
-    # See http://www.varnish-cache.org/docs/3.0/tutorial/vcl.html#vcl_fetch
+    # 
+    # You can do accounting or modifying the final object here.
 }
