@@ -23,6 +23,8 @@ is being asked the most. ``varnishtop -i RxHeader -I
 Accept-Encoding`` will show the most popular Accept-Encoding header
 the client are sending you.
 
+For more information please see :ref:`ref-varnishtop`.
+
 varnishhist
 ~~~~~~~~~~~
 
@@ -33,13 +35,7 @@ vertical scale are displayed in the top left corner.  The horizontal
 scale is logarithmic.  Hits are marked with a pipe character ("|"),
 and misses are marked with a hash character ("#").
 
-
-varnishsizes
-~~~~~~~~~~~~
-
-Varnishsizes does the same as varnishhist, except it shows the size of
-the objects and not the time take to complete the request. This gives
-you a good overview of how big the objects you are serving are.
+For more information please see :ref:`ref-varnishhist`.
 
 
 varnishstat
@@ -55,3 +51,4 @@ graphs of these counters. One such program is Munin. Munin can be
 found at http://munin-monitoring.org/ . There is a plugin for munin in
 the Varnish source code.
 
+For more information please see :ref:`ref-varnishstat`.
