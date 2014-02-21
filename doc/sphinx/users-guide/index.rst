@@ -45,7 +45,7 @@ Detailed Table of Contents:
    report
    performance
    troubleshooting
-   operation
+   orphans
 
 .. customizing (which is a non ideal title)
 
