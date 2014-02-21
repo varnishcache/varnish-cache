@@ -23,7 +23,7 @@ Tool: varnishtop
 ~~~~~~~~~~~~~~~~
 
 You can use varnishtop to identify what URLs are hitting the backend
-the most. ``varnishtop -i txurl`` is an essential command. You can see
+the most. ``varnishtop -b -i txurl`` is an essential command. You can see
 some other examples of varnishtop usage in :ref:`users-guide-statistics`.
 
 
