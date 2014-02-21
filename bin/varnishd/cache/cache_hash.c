@@ -678,8 +678,12 @@ HSH_Unbusy(struct dstat *ds, struct objcore *oc)
 	if (oh->waitinglist != NULL)
 		hsh_rush(ds, oh);
 	Lck_Unlock(&oh->mtx);
-	if (!(oc->flags & OC_F_PRIVATE))
+	if (!(oc->flags & OC_F_PRIVATE)) {
 		BAN_NewObjCore(oc);
+		EXP_Insert(oc);
+		AN(oc->flags & OC_F_EXP);
+		AN(oc->ban);
+	}
 }
 
 /*---------------------------------------------------------------------

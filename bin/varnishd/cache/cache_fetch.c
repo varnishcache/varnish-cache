@@ -56,10 +56,11 @@ vbf_release_req(struct busyobj *bo)
 }
 
 /*--------------------------------------------------------------------
+ * Turn the beresp into a obj
  */
 
 static int
-vbf_bereq2obj(struct worker *wrk, struct busyobj *bo)
+vbf_beresp2obj(struct worker *wrk, struct busyobj *bo)
 {
 	unsigned l;
 	char *b;
@@ -156,8 +157,6 @@ vbf_bereq2obj(struct worker *wrk, struct busyobj *bo)
 		obj->last_modified = VTIM_parse(b);
 	else
 		obj->last_modified = floor(bo->exp.t_origin);
-
-	assert(WRW_IsReleased(wrk));
 
 	return (0);
 }
@@ -302,15 +301,15 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 		i = V1F_fetch_hdr(wrk, bo, bo->req);
 	}
 
-	if (bo->do_pass && bo->req != NULL)
-		vbf_release_req(bo); /* XXX : retry ?? */
-
-	AZ(bo->req);
-
 	if (i) {
 		AZ(bo->vbc);
 		return (F_STP_ERROR);
 	}
+
+	if (bo->do_pass && bo->req != NULL)
+		vbf_release_req(bo); /* XXX : retry ?? */
+
+	AZ(bo->req);
 
 	AN(bo->vbc);
 	http_VSL_log(bo->beresp);
@@ -463,12 +462,14 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->htc.body_status == BS_NONE)
 		bo->do_stream = 0;
 
-	if (vbf_bereq2obj(wrk, bo)) {
+	if (vbf_beresp2obj(wrk, bo)) {
 		bo->stats = NULL;
 		(void)VFP_Error(bo, "Could not get storage");
 		VDI_CloseFd(&bo->vbc);
 		return (F_STP_DONE);
 	}
+
+	assert(WRW_IsReleased(wrk));
 
 	obj = bo->fetch_obj;
 
@@ -535,11 +536,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (!bo->do_stream && bo->state != BOS_FAILED)
 		HSH_Unbusy(&wrk->stats, obj->objcore);
-
-	if (bo->state != BOS_FAILED && !(obj->objcore->flags & OC_F_PRIVATE)) {
-		EXP_Insert(obj->objcore);
-		AN(obj->objcore->ban);
-	}
 
 	HSH_Complete(obj->objcore);
 
@@ -615,10 +611,6 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	VBO_setstate(bo, BOS_FETCHING);
 	HSH_Unbusy(&wrk->stats, obj->objcore);
 
-	if (!(obj->objcore->flags & OC_F_PRIVATE)) {
-		EXP_Insert(obj->objcore);
-		AN(obj->objcore->ban);
-	}
 
 	st = NULL;
 	al = 0;
@@ -683,19 +675,17 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	xxxassert(wrk->handling == VCL_RET_DELIVER);
 
+	if (bo->req != NULL)
+		vbf_release_req(bo);
+
 	http_PrintfHeader(bo->beresp, "Content-Length: %jd", (intmax_t)0);
 	http_PrintfHeader(bo->beresp, "X-XXXPHK: yes");
 
-	if (vbf_bereq2obj(wrk, bo)) {
+	if (vbf_beresp2obj(wrk, bo)) {
 		INCOMPL();
 	}
 
 	HSH_Unbusy(&wrk->stats, bo->fetch_obj->objcore);
-
-	if (!(bo->fetch_obj->objcore->flags & OC_F_PRIVATE)) {
-		EXP_Insert(bo->fetch_obj->objcore);
-		AN(bo->fetch_obj->objcore->ban);
-	}
 	VBO_setstate(bo, BOS_FINISHED);
 	HSH_Complete(bo->fetch_obj->objcore);
 	return (F_STP_DONE);

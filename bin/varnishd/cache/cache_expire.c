@@ -234,6 +234,8 @@ EXP_Rearm(struct object *o, double now, double ttl, double grace, double keep)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	assert(oc->refcnt > 0);
 
+	AN(oc->flags & OC_F_EXP);
+
 	if (!isnan(ttl))
 		o->exp.ttl = now + ttl - o->exp.t_origin;
 	if (!isnan(grace))
@@ -253,7 +255,6 @@ EXP_Rearm(struct object *o, double now, double ttl, double grace, double keep)
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
 	Lck_Lock(&lru->mtx);
-	AN(oc->flags & OC_F_EXP);
 
 	if (!isnan(now) && when <= now)
 		oc->flags |= OC_F_DYING;
