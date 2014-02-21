@@ -60,7 +60,7 @@ vbf_release_req(struct busyobj *bo)
  */
 
 static int
-vbf_beresp2obj(struct worker *wrk, struct busyobj *bo)
+vbf_beresp2obj(struct busyobj *bo)
 {
 	unsigned l;
 	char *b;
@@ -104,8 +104,6 @@ vbf_beresp2obj(struct worker *wrk, struct busyobj *bo)
 	    bo->exp.ttl+bo->exp.grace+bo->exp.keep < cache_param->shortlived)
 		bo->storage_hint = TRANSIENT_STORAGE;
 
-	AZ(bo->stats);
-	bo->stats = &wrk->stats;
 	AN(bo->fetch_objcore);
 	obj = STV_NewObject(bo, bo->storage_hint, l, nhttp);
 	if (obj == NULL &&
@@ -469,8 +467,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->htc.body_status == BS_NONE)
 		bo->do_stream = 0;
 
-	if (vbf_beresp2obj(wrk, bo)) {
-		bo->stats = NULL;
+	if (vbf_beresp2obj(bo)) {
 		(void)VFP_Error(bo, "Could not get storage");
 		VDI_CloseFd(&bo->vbc);
 		return (F_STP_DONE);
@@ -499,8 +496,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		assert(bo->htc.body_status  != BS_ERROR);
 		VFP_Fetch_Body(bo, est);
 	}
-
-	bo->stats = NULL;
 
 	bo->t_body = VTIM_mono();
 
@@ -572,7 +567,6 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		vl = 0;
 	l += http_EstimateWS(bo->ims_obj->http, 0, &nhttp);
 
-	bo->stats = &wrk->stats;
 	obj = STV_NewObject(bo, bo->storage_hint, l, nhttp);
 	if (obj == NULL) {
 		(void)VFP_Error(bo, "Could not get storage");
@@ -634,7 +628,6 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	} while (bo->state < BOS_FAILED &&
 	    (ois == OIS_DATA || ois == OIS_STREAM));
 	ObjIterEnd(&oi);
-	bo->stats = NULL;
 	if (bo->state != BOS_FAILED) {
 		assert(al == bo->ims_obj->len);
 		assert(obj->len == al);
@@ -678,7 +671,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	http_PrintfHeader(bo->beresp, "Content-Length: %jd", (intmax_t)0);
 	http_PrintfHeader(bo->beresp, "X-XXXPHK: yes");
 
-	if (vbf_beresp2obj(wrk, bo)) {
+	if (vbf_beresp2obj(bo)) {
 		INCOMPL();
 	}
 
@@ -731,6 +724,8 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	bo->t_hdr = NAN;
 	bo->t_body = NAN;
 
+	bo->stats = &wrk->stats;
+
 	while (stp != F_STP_DONE) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 		bo->step = stp;
@@ -748,6 +743,8 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 		    vbf_step_name(bo->step), vbf_step_name(stp));
 	}
 	assert(WRW_IsReleased(wrk));
+
+	bo->stats = NULL;
 
 	if (bo->vbc != NULL) {
 		if (bo->should_close)
