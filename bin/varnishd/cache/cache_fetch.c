@@ -329,6 +329,13 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 	 */
 	bo->htc.body_status = RFC2616_Body(bo, &wrk->stats);
 
+	if (bo->htc.body_status == BS_ERROR) {
+		AN (bo->vbc);
+		VDI_CloseFd(&bo->vbc);
+		VSLb(bo->vsl, SLT_VCL_Error, "Body cannot be fetched");
+		return (F_STP_ERROR);
+	}
+
 	/*
 	 * What does RFC2616 think about TTL ?
 	 */
@@ -488,19 +495,9 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	else if (bo->state != BOS_FAILED)
 		WRONG("Wrong bo->state");
 
-	switch (bo->htc.body_status) {
-	case BS_NONE:
-		break;
-	case BS_ERROR:
-		/* XXX: Why not earlier ? */
-		bo->should_close |=
-		    VFP_Error(bo, "error incompatible Transfer-Encoding");
-		break;
-	default:
-		if (bo->vbc == NULL)
-			(void)VFP_Error(bo, "Backend connection gone");
-		else
-			VFP_Fetch_Body(bo, est);
+	if (bo->htc.body_status != BS_NONE) {
+		assert(bo->htc.body_status  != BS_ERROR);
+		VFP_Fetch_Body(bo, est);
 	}
 
 	bo->stats = NULL;
