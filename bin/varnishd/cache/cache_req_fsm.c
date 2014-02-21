@@ -100,7 +100,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	assert(req->obj->objcore->refcnt > 0);
 
 	req->t_resp = W_TIM_real(wrk);
-	if (!(req->obj->objcore->flags & OC_F_PRIVATE))
+	if (req->obj->objcore->flags & OC_F_EXP)
 		EXP_Touch(req->obj->objcore, req->t_resp);
 
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
