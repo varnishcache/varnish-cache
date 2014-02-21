@@ -21,7 +21,7 @@ The most common actions to return are these:
 *lookup*
   When you return lookup from vcl_recv you tell Varnish to deliver content 
   from cache even if the request othervise indicates that the request 
-  should be passed. You can't return lookup from vcl_fetch.
+  should be passed. 
 
 *pipe*
   Pipe can be returned from vcl_recv as well. Pipe short circuits the
@@ -34,3 +34,12 @@ The most common actions to return are these:
 
 *deliver*
  Deliver the cached object to the client.  Usually returned from vcl_fetch. 
+
+*restart*
+ Restart processing of the request. You can restart the processing of
+ the whole transaction. Changes to the req object are retained.
+
+*retry*
+ Retry the request against the backend. This can be called from
+ vcl_backend_response or vcl_backend_error if you don't like the response 
+ that the backend delivered.
