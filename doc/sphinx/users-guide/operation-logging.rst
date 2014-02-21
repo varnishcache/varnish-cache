@@ -5,10 +5,12 @@ Logging in Varnish
 
 One of the really nice features in Varnish is how logging
 works. Instead of logging to normal log file Varnish logs to a shared
-memory segment. When the end of the segment is reached we start over,
-overwriting old data. This is much, much faster than logging to a file
-and it doesn't require disk space. Besides it gives you much, much
-more information when you need it.
+memory segment, called the VSL - the Varnish Shared Log. When the end
+of the segment is reached we start over, overwriting old data. 
+
+This is much, much faster than logging to a file and it doesn't
+require disk space. Besides it gives you much, much more information
+when you need it.
 
 The flip side is that if you forget to have a program actually write the
 logs to disk they will disappear.
@@ -40,12 +42,12 @@ app. You'll see lines like these.::
    11 RxHeader     c Host: localhost:8080
    11 RxHeader     c Connection: keep-alive
 
-The first column is an arbitrary number, it defines the request. Lines
-with the same number are part of the same HTTP transaction. The second
-column is the *tag* of the log message. All log entries are tagged
-with a tag indicating what sort of activity is being logged. Tags
-starting with Rx indicate Varnish is recieving data and Tx indicates
-sending data.
+The first column is an arbitrary number, it identifies the
+session. Lines with the same number are coming from the same session
+and are being handled by the same thread. The second column is the
+*tag* of the log message. All log entries are tagged with a tag
+indicating what sort of activity is being logged. Tags starting with
+Rx indicate Varnish is recieving data and Tx indicates sending data.
 
 The third column tell us whether this is is data coming or going to
 the client (c) or to/from the backend (b). The forth column is the
