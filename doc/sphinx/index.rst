@@ -1,8 +1,4 @@
-.. Varnish documentation master file, created by
-   sphinx-quickstart on Tue Apr 20 13:02:15 2010.
-
 .. We use the following header indicators
-
 .. For titles:
 
 .. H1

@@ -32,10 +32,6 @@ from transaction level to aggregate statistics.
 
 :ref:`users_trouble` is for locating and fixing trouble with Varnish.
 
-
-Detailed Table of Contents:
----------------------------
-
 .. toctree::
    :maxdepth: 2
 
