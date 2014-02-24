@@ -76,7 +76,13 @@ vmod_duration(const struct vrt_ctx *ctx, const char *p, VCL_DURATION d)
 	/* NB: Keep this list synchronized with VCC */
 	switch (*e++) {
 	case 's': break;
-	case 'm': r *= 60.; break;
+	case 'm':
+		if (*e == 's') {
+			r *= 1e-3;
+			e++;
+		} else
+			r *= 60.;
+		break;
 	case 'h': r *= 60.*60.; break;
 	case 'd': r *= 60.*60.*24.; break;
 	case 'w': r *= 60.*60.*24.*7.; break;
