@@ -23,7 +23,7 @@ DESCRIPTION
 Vmod_std contains basic functions which are part and parcel of Varnish,
 but which for reasons of architecture fit better in a VMOD.
 
-One specific class of functions in vmod_std is the conversions functions
+One particular class of functions in vmod_std is the conversions functions
 which all have the form::
 
 	TYPE type(STRING, TYPE)
@@ -127,9 +127,10 @@ duration
 Prototype
 	DURATION duration(STRING s, DURATION fallback)
 Description
-	Converts the string *s* to seconds. *s* can be quantified with
-	the usual s (seconds), m (minutes), h (hours), d (days) and w
-	(weeks) units. If *s* fails to parse, *fallback* will be returned.
+	Converts the string *s* to seconds. *s* must be quantified
+	with ms (milliseconds), s (seconds), m (minutes), h (hours),
+	d (days) or w (weeks) units. If *s* fails to parse,
+	*fallback* will be returned.
 Example
 	set beresp.ttl = std.duration("1w", 3600s);
 
@@ -153,6 +154,22 @@ Description
 	fails, *fallback* will be returned.
 Example
 	if (std.ip(req.http.X-forwarded-for, "0.0.0.0") ~ my_acl) { ... }
+
+healthy
+-------
+Prototype
+	BOOL healthy(BACKEND backend)
+ 
+Description
+	Returns true if the backend is healthy.
+
+port
+----
+Prototype
+	INT port(IP ip)
+
+Description
+	Returns the port number of an IP address.
 
 
 SEE ALSO
