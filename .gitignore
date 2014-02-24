@@ -95,7 +95,7 @@ cscope.*out
 
 # Doc-stuff generated from xml
 /doc/*.html
-/doc/sphinx/=build/
+/doc/sphinx/build/
 /doc/sphinx/conf.py
 /doc/sphinx/reference/vcl_var.rst
 
