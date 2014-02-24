@@ -10,14 +10,6 @@ The most common actions to return are these:
  and from the backend server. It won't be cached. pass can be returned from
  vcl_recv
 
-*hit_for_pass*
-  Similar to pass, but accessible from vcl_fetch. Unlike pass, hit_for_pass
-  will create a hitforpass object in the cache. This has the side-effect of
-  caching the decision not to cache. This is to allow would-be uncachable
-  requests to be passed to the backend at the same time. The same logic is
-  not necessary in vcl_recv because this happens before any potential
-  queueing for an object takes place.
-
 *lookup*
   When you return lookup from vcl_recv you tell Varnish to deliver content 
   from cache even if the request othervise indicates that the request 
@@ -33,7 +25,7 @@ The most common actions to return are these:
   header before actually returning pipe. 
 
 *deliver*
- Deliver the cached object to the client.  Usually returned from vcl_fetch. 
+ Deliver the object to the client.  Usually returned from vcl_backend_response. 
 
 *restart*
  Restart processing of the request. You can restart the processing of

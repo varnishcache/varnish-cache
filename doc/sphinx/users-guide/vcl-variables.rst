@@ -12,7 +12,7 @@ In VCL, there several important objects.
 
 *bereq*
  The backend request object. Varnish contructs this before sending it to the 
- backend.
+ backend. It is based on the req object.
 
 *beresp*
  The backend response object. It contains the headers of the object 
