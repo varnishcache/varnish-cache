@@ -422,20 +422,18 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->do_gunzip && !bo->is_gzip)
 		bo->do_gunzip = 0;
 
-	/* If we do gunzip, remove the C-E header */
-	if (bo->do_gunzip)
-		http_Unset(bo->beresp, H_Content_Encoding);
-
 	/* We wont gzip unless it is ungziped */
 	if (bo->do_gzip && !bo->is_gunzip)
 		bo->do_gzip = 0;
 
-	/* If we do gzip, add the C-E header */
-	if (bo->do_gzip)
-		http_SetHeader(bo->beresp, "Content-Encoding: gzip");
-
 	/* But we can't do both at the same time */
 	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
+
+	/* Fix Content-Encoding, as appropriate */
+	if (bo->do_gzip)
+		http_SetHeader(bo->beresp, "Content-Encoding: gzip");
+	else if (bo->do_gunzip)
+		http_Unset(bo->beresp, H_Content_Encoding);
 
 	AN(bo->vbc);
 	est = V1F_Setup_Fetch(bo);
