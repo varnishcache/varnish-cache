@@ -33,23 +33,24 @@ families and jobs to deal with also.
 
 You are more than welcome to just hang out, and while we don't mind
 the occational intrusion of the real world into the flow, keep
-it mostly on topic, and dont paste random links unless they are
+it mostly on topic, and don't paste random links unless they are
 *really* spectacular and intelligent.
 
 Mailing Lists
 =============
 
-Getting on or off our mailinglist happens through MailMan_.
+Getting on or off our mailing lists happens through MailMan_.
 
 If you are going to use Varnish, subscribing to our ``varnish-announce``
-mailing list is probably a very good idea.  The typical pattern is that
+mailing list is probably a very good idea. The typical pattern is that
 people spend some time getting Varnish running, and then more or less
-forget about it.   Therefore the announce list is a good way to be
+forget about it. Therefore the announce list is a good way to be
 reminded about new releases, bad bugs or security holes.
+
 
 The ``varnish-misc`` mailing list is for general banter, questions,
 suggestions, ideas and so on.  If you are new to Varnish it may pay
-off to subscribe to -misc, simply to have an ear to the telegraph-pole
+off to subscribe to it, simply to have an ear to the telegraph-pole
 and learn some smart tricks.  This is a good place to ask for help
 with more complex issues, that require quoting of files and long
 explanations.
@@ -58,6 +59,7 @@ Make sure to pick a good subject line, and if the subject of the
 thread changes, please change the subject to match, some of us deal
 with hundreds of emails per day, after spam-filters, and we need all
 the help we can get to pick the interesting ones.
+
 
 The ``varnish-dev`` mailing list is used by the developers and is
 usually quite focused on source-code and such.  Everybody on

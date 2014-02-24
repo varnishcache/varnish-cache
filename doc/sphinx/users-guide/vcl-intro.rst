@@ -21,7 +21,7 @@ Varnish will execute the built in VCL code. You will see this VCL
 code commented out in default.vcl.
 
 99% of all the changes you'll need to do will be done in two of these
-subroutines. *vcl_recv* and *vcl_fetch*.
+subroutines. *vcl_recv* and *vcl_backend_response*.
 
 .. _users-guide-vcl_fetch_actions:
 

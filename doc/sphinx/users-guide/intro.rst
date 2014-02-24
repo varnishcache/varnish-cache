@@ -48,10 +48,10 @@ each and every HTTP request which comes in.
 
 Because the VCL is compiled to C code, and the C code is compiled
 to machine instructions, even very complex VCL programs execute in
-a a few microseconds, without impacting performance at all.
+a few microseconds, without impacting performance at all.
 
 And don't fret if you are not really a programmer, VCL is very
-simple to do simpel things with::
+simple to do simple things with::
 
 	sub vcl_recv {
 		# Remove the cookie header to enable caching
@@ -73,7 +73,7 @@ Varnish uses a piece of shared memory to report its activity and
 status. For each HTTP request, a number of very detailed records will
 be appended to the log segment in this shared memory.  Other processes
 can subscribe to log-records, filter them, and format them, for
-instance as NCSA style log records.
+instance as Apache/NCSA style log records.
 
 Another segment in shared memory is used for statistics counters,
 this allows real-time, down to microsecond resolution monitoring

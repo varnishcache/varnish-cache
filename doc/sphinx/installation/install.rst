@@ -13,7 +13,7 @@ are most comfortable with.
 Source or packages?
 -------------------
 
-Installing Varnish on most relevant operating systems can usually 
+Installing Varnish on most relevant operating systems can usually
 be done with with the systems package manager, typical examples
 being:
 
@@ -36,8 +36,9 @@ on `repo.varnish-cache.org <http://repo.varnish-cache.org/>`_.  See the
 Varnish is included in the `EPEL
 <http://fedoraproject.org/wiki/EPEL>`_ repository, however due to
 incompatible syntax changes in newer versions of Varnish, only older
-versions are available. We recommend that you install the latest
-version from our repository.
+versions are available.
+
+We recommend that you install the latest version from our repository.
 
 Debian/Ubuntu
 -------------
@@ -69,7 +70,7 @@ git repository by doing.
 Please note that a git checkout will need some more build-dependencies
 than listed below, in particular the Python Docutils and Sphinx.
 
-Build dependencies on Debian / Ubuntu 
+Build dependencies on Debian / Ubuntu
 --------------------------------------
 
 In order to build Varnish from source you need a number of packages
@@ -77,7 +78,7 @@ installed. On a Debian or Ubuntu system these are:
 
 * autotools-dev
 * automake1.11
-* libtool 
+* libtool
 * autoconf
 * libncurses-dev
 * groff-base
@@ -89,7 +90,7 @@ installed. On a Debian or Ubuntu system these are:
 If you're building from git, you also need the following:
 
 * python-docutils
-* python-sphinx (optional, if you want the HTML docs built)
+* python-sphinx (optional, if you want to build the documentation)
 
 Build dependencies on Red Hat / CentOS
 --------------------------------------
@@ -97,8 +98,8 @@ Build dependencies on Red Hat / CentOS
 To build Varnish on a Red Hat or CentOS system you need the following
 packages installed:
 
-* automake 
-* autoconf 
+* automake
+* autoconf
 * libtool
 * ncurses-devel
 * groff
@@ -109,10 +110,10 @@ packages installed:
 If you're building from git, you also need the following:
 
 * docutils
-* python-sphinx (optional, if you want the HTML docs built)
+* python-sphinx (optional, if you want to build the documentation)
 
-Configuring and compiling
--------------------------
+Compiling Varnish
+-----------------
 
 Next, configuration: The configuration will need the dependencies
 above satisfied. Once that is taken care of::
@@ -133,7 +134,7 @@ tea while it runs, it takes some minutes::
 
 Don't worry if a single or two tests fail, some of the tests are a
 bit too timing sensitive (Please tell us which so we can fix it) but
-if a lot of them fails, and in particular if the ``b00000.vtc`` test 
+if a lot of them fails, and in particular if the ``b00000.vtc`` test
 fails, something is horribly wrong, and you will get nowhere without
 figuring out what.
 
@@ -146,6 +147,6 @@ And finally, the true test of a brave heart::
 
 Varnish will now be installed in /usr/local. The varnishd binary is in
 /usr/local/sbin/varnishd and its default configuration will be
-/usr/local/etc/varnish/default.vcl. 
+/usr/local/etc/varnish/default.vcl.
 
-You can now proceed to the :ref:`tutorial-index`. 
+You can now proceed to the :ref:`tutorial-index`.

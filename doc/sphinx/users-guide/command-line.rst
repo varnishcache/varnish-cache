@@ -62,7 +62,7 @@ If you go with -f, you can start with a VCL file containing just::
 
 which is exactly what -b does.
 
-In both cases the default VCL code is appended.
+In both cases the built-in VCL code is appended.
 
 Other options
 ^^^^^^^^^^^^^
@@ -74,9 +74,9 @@ By default Varnish will use 100 megabytes of malloc(3) storage
 for caching objects, if you want to cache more than that, you
 should look at the '-s' argument.
 
-If you run a really big site, you may want to tune the size of
-the tread-pools and other parameters with the '-p' argument,
-but we generally advice not to do that, unless you need to.
+If you run a really big site, you may want to tune the number of
+worker threads and other parameters with the '-p' argument,
+but we generally advice not to do that unless you need to.
 
 Before you go into production, you may also want to re-visit the
 chapter

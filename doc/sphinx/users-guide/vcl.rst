@@ -4,12 +4,11 @@ VCL - Varnish Configuration Language
 ------------------------------------
 
 This section is about getting Varnish to do what you want to
-your HTTP traffic, using the Varnish Configuration Language.
+your HTTP traffic, using the Varnish Configuration Language (VCL).
 
 Varnish has a great configuration system. Most other systems use
 configuration directives, where you basically turn on and off lots of
-switches. Varnish uses a domain specific language called Varnish
-Configuration Language, or VCL for short. 
+switches. Varnish uses a domain specific language called VCL for this.
 
 Every inbound request flows through Varnish and you can influence how
 the request is being handled by altering the VCL code. You can direct
@@ -26,8 +25,8 @@ are executed at different times. One is executed when we get the
 request, another when files are fetched from the backend server.
 
 If you don't call an action in your subroutine and it reaches the end
-Varnish will execute some built in VCL code. You will see this VCL
-code commented out in default.vcl that ships with Varnish Cache.
+Varnish will execute some built-in VCL code. You will see this VCL
+code commented out in builtin.vcl that ships with Varnish Cache.
 
 .. _users-guide-vcl_fetch_actions:
 
@@ -45,4 +44,4 @@ code commented out in default.vcl that ships with Varnish Cache.
    vcl-examples
    websockets
    devicedetection
-   
+

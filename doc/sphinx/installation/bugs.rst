@@ -28,7 +28,7 @@ Varnish crashes
 Plain and simple: **boom**
 
 Varnish is split over two processes, the manager and the child.  The child
-does all the work, and the manager hangs around to resurect it, if it
+does all the work, and the manager hangs around to resurect it if it
 crashes.
 
 Therefore, the first thing to do if you see a Varnish crash, is to examine
@@ -77,9 +77,10 @@ general forms:
 	(yet) written the padded-box error handling code for.
 
 	The most likely cause here, is that you need a larger workspace
-	for HTTP headers and Cookies. (XXX: which params to tweak)
+	for HTTP headers and Cookies.
 
 	Please try that before reporting a bug.
+..  (TODO: which params to tweak)
 
 "Assert error in ..."
 	This is something bad that should never happen, and a bug

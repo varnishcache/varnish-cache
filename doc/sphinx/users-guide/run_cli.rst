@@ -14,7 +14,7 @@ same machine as varnishd is running::
 If you want to run varnishadm from a remote system, you can do it
 two ways.
 
-You can ssh into the varnishd computer and run varnishadm::
+You can SSH into the varnishd computer and run varnishadm::
 
 	ssh $http_front_end varnishadm help
 
@@ -27,7 +27,7 @@ And then on the remote system run varnishadm::
 
 	varnishadm -T $http_front_end -S /etc/copy_of_varnish_secret help
 
-but as you can see, ssh is much more convenient.
+but as you can see, SSH is much more convenient.
 
 If you run varnishadm without arguments, it will read CLI commands from
 stdin, if you give it arguments, it will treat those as the single
@@ -36,7 +36,7 @@ CLI command to execute.
 The CLI always returns a status code to tell how it went:  '200'
 means OK, anything else means there were some kind of trouble.
 
-Varnishadm will exit with status 1 and print the status code on
+varnishadm will exit with status 1 and print the status code on
 standard error if it is not 200.
 
 What can you do with the CLI
@@ -86,9 +86,8 @@ to the previous VCL program again::
 	varnish> vcl.use old_name
 
 The switch is instantaneous, all new requests will start using the
-VCL you activated right away, but for consistency, the requests
-currently being processed, complete using whatever VCL they started
-with.
+VCL you activated right away. The requests currently being processed complete
+using whatever VCL they started with.
 
 It is good idea to design an emergency-VCL before you need it,
 and always have it loaded, so you can switch to it with a single
@@ -120,9 +119,10 @@ a HTTP request asks for it.
 Banning stuff is much cheaper than restarting Varnish to get rid
 of wronly cached content.
 
-In addition to handling such special occations, banning can be used
-in many creative ways to keep the cache up to date, more about
-that in: (XXX: xref)
+.. In addition to handling such special occations, banning can be used
+.. in many creative ways to keep the cache up to date, more about
+.. that in: (TODO: xref)
+
 
 Change parameters
 ^^^^^^^^^^^^^^^^^
@@ -136,7 +136,7 @@ but they can also be examined and changed on the fly from the CLI::
                             Default is off
                             Prefer IPv6 address when connecting to backends
                             which have both IPv4 and IPv6 addresses.
-	
+
 	varnish> param.set prefer_ipv6 true
 	200
 

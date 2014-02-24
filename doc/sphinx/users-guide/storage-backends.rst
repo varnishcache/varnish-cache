@@ -19,10 +19,11 @@ malloc
 syntax: malloc[,size]
 
 Malloc is a memory based backend. Each object will be allocated from
-memory. If your system runs low on memory swap will be used. Be aware
-that the size limitation only limits the actual storage and that
-approximately 1k of memory per object will be used for various
-internal structures.
+memory. If your system runs low on memory swap will be used.
+
+Be aware that the size limitation only limits the actual storage and that
+approximately 1k of memory per object will be used for various internal
+structures.
 
 The size parameter specifies the maximum amount of memory varnishd
 will allocate.  The size is assumed to be in bytes, unless followed by
@@ -36,19 +37,19 @@ one of the following suffixes:
 
       T, t    The size is expressed in tebibytes.
 
-The default size is unlimited. 
+The default size is unlimited.
 
-Mallocs performance is bound by memory speed so it is very fast. If
+malloc's performance is bound by memory speed so it is very fast. If
 the dataset is bigger than what can fit in memory performance will
-depend on the operating system and how well it doesn paging. 
+depend on the operating system and how well it does paging.
 
 file
 ~~~~
 
 syntax: file[,path[,size[,granularity]]]
 
-The file backend stores objects in memory backed by a file on disk
-with mmap. 
+The file backend stores objects in memory backed by an unlinked file on disk
+with mmap.
 
 The path parameter specifies either the path to the backing file or
 the path to a directory in which varnishd will create the backing
@@ -84,8 +85,8 @@ allocation.  All allocations are rounded up to this size.  The
 is assumed to be in bytes, unless followed by one of the
 suffixes described for size except for %.
 
-The default size is the VM page size.  The size should be reduced if
-you have many small objects.
+The default granularity is the VM page size.  The size should be reduced if you
+have many small objects.
 
 File performance is typically limited by the write speed of the
 device, and depending on use, the seek time.
@@ -127,10 +128,11 @@ and can make previously banned objects reappear.
 
 Transient Storage
 -----------------
-      
+
 If you name any of your storage backend "Transient" it will be
 used for transient (short lived) objects. By default Varnish
 would use an unlimited malloc backend for this.
 
 Varnish will consider an object short lived if the TTL is below the
 parameter "shortlived".
+

@@ -4,6 +4,7 @@ Prerequisites
 
 In order for you to install Varnish you must have the following:
 
+  * A recent, preferably server grade, computer.
   * A fairly modern and 64 bit version of either
     - Linux
     - FreeBSD
