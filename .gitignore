@@ -79,8 +79,6 @@ cscope.*out
 /man/vsc2rst
 /man/*.7
 /man/*.1
-/bin/*/*.1
-/bin/*/*.rst
 /doc/sphinx/include
 /bin/varnish*/varnish*_opt2rst
 /bin/varnishadm/varnishadm
