@@ -202,7 +202,7 @@ BUILT_SOURCES += include/varnishtop_options.rst \
 include/varnishhist_options.rst: $(top_builddir)/bin/varnishhist/varnishhist_opt2rst
 	$(top_builddir)/bin/varnishhist/varnishhist_opt2rst options > $@
 include/varnishhist_synopsis.rst: $(top_builddir)/bin/varnishhist/varnishhist_opt2rst
-	$(top_builddir)/bin/varinshhist/varnishhist_opt2rst synopsis > $@
+	$(top_builddir)/bin/varnishhist/varnishhist_opt2rst synopsis > $@
 BUILT_SOURCES += include/varnishhist_options.rst \
 	 include/varnishhist_synopsis.rst
 
