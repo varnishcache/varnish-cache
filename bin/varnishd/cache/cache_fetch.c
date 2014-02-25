@@ -56,6 +56,52 @@ vbf_release_req(struct busyobj *bo)
 }
 
 /*--------------------------------------------------------------------
+ * Allocate an object, with fall-back to Transient.
+ * XXX: This somewhat overlaps the stuff in stevedore.c
+ * XXX: Should this be merged over there ?
+ */
+
+static struct object *
+vbf_allocobj(struct busyobj *bo, unsigned l, uint16_t nhttp)
+{
+	struct object *obj;
+	const char *storage_hint;
+	double lifetime;
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
+
+	lifetime = bo->exp.ttl + bo->exp.grace + bo->exp.keep;
+
+	if (bo->uncacheable || lifetime < cache_param->shortlived)
+		storage_hint = TRANSIENT_STORAGE;
+	else
+		storage_hint = bo->storage_hint;
+
+	bo->storage_hint = NULL;
+
+	obj = STV_NewObject(bo, storage_hint, l, nhttp);
+
+	if (obj != NULL)
+		return (obj);
+
+	if (storage_hint != NULL && !strcmp(storage_hint, TRANSIENT_STORAGE))
+		return (NULL);
+
+	/*
+	 * Try to salvage the transaction by allocating a shortlived object
+	 * on Transient storage.
+	 */
+
+	if (bo->exp.ttl > cache_param->shortlived)
+		bo->exp.ttl = cache_param->shortlived;
+	bo->exp.grace = 0.0;
+	bo->exp.keep = 0.0;
+	obj = STV_NewObject(bo, TRANSIENT_STORAGE, l, nhttp);
+	return (obj);
+}
+
+/*--------------------------------------------------------------------
  * Turn the beresp into a obj
  */
 
@@ -100,31 +146,12 @@ vbf_beresp2obj(struct busyobj *bo)
 	if (bo->uncacheable)
 		bo->fetch_objcore->flags |= OC_F_PASS;
 
-	if (bo->uncacheable ||
-	    bo->exp.ttl+bo->exp.grace+bo->exp.keep < cache_param->shortlived)
-		bo->storage_hint = TRANSIENT_STORAGE;
+	obj = vbf_allocobj(bo, l, nhttp);
 
-	AN(bo->fetch_objcore);
-	obj = STV_NewObject(bo, bo->storage_hint, l, nhttp);
-	if (obj == NULL &&
-	    (bo->storage_hint == NULL ||
-	    strcmp(bo->storage_hint, TRANSIENT_STORAGE))) {
-		/*
-		 * Try to salvage the transaction by allocating a
-		 * shortlived object on Transient storage.
-		 */
-		if (bo->exp.ttl > cache_param->shortlived)
-			bo->exp.ttl = cache_param->shortlived;
-		bo->exp.grace = 0.0;
-		bo->exp.keep = 0.0;
-		obj = STV_NewObject(bo, TRANSIENT_STORAGE, l, nhttp);
-	}
 	if (obj == NULL)
 		return (-1);
 
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
-
-	bo->storage_hint = NULL;
 
 	AZ(bo->fetch_obj);
 	bo->fetch_obj = obj;
@@ -563,7 +590,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		vl = 0;
 	l += http_EstimateWS(bo->ims_obj->http, 0, &nhttp);
 
-	obj = STV_NewObject(bo, bo->storage_hint, l, nhttp);
+	obj = vbf_allocobj(bo, l, nhttp);
 	if (obj == NULL) {
 		(void)VFP_Error(bo, "Could not get storage");
 		VDI_CloseFd(&bo->vbc);
