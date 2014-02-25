@@ -11,17 +11,17 @@ your favorite text editor and open the relevant VCL file.
 
 Somewhere in the top there will be a section that looks a bit like this.::
 
-	  # backend default {
-	  #     .host = "127.0.0.1";
-	  #     .port = "8080";
-	  # }
+    # backend default {
+    #     .host = "127.0.0.1";
+    #     .port = "8080";
+    # }
 
 We comment in this bit of text making the text look like.::
 
-          backend default {
-                .host = "127.0.0.1";
-    		.port = "8080";
-	  }
+    backend default {
+        .host = "127.0.0.1";
+        .port = "8080";
+    }
 
 Now, this piece of configuration defines a backend in Varnish called
 *default*. When Varnish needs to get content from this backend it will
@@ -46,27 +46,27 @@ site. Lets say our Java application should handle URL beginning with
 We manage to get the thing up and running on port 8000. Now, lets have
 a look at the default.vcl.::
 
-  backend default {
-      .host = "127.0.0.1";
-      .port = "8080";
-  }
+    backend default {
+        .host = "127.0.0.1";
+        .port = "8080";
+    }
 
 We add a new backend.::
 
-  backend java {
-      .host = "127.0.0.1";
-      .port = "8000";
-  }
+    backend java {
+        .host = "127.0.0.1";
+        .port = "8000";
+    }
 
 Now we need tell where to send the difference URL. Lets look at vcl_recv.::
 
-  sub vcl_recv {
-      if (req.url ~ "^/java/") {
-          set req.backend = java;
-      } else {
-          set req.backend = default.
-      }
-  }
+    sub vcl_recv {
+        if (req.url ~ "^/java/") {
+            set req.backend = java;
+        } else {
+            set req.backend = default.
+        }
+    }
 
 It's quite simple, really. Lets stop and think about this for a
 moment. As you can see you can define how you choose backends based on
@@ -86,25 +86,24 @@ hosts you just need to inspect req.http.host.
 
 You can have something like this:::
 
-  sub vcl_recv {
-     if (req.http.host ~ "foo.com") {
-       set req.backend = foo;
-     } elsif (req.http.host ~ "bar.com") {
-       set req.backend = bar;
-     }
-  }
+    sub vcl_recv {
+        if (req.http.host ~ "foo.com") {
+            set req.backend = foo;
+        } elsif (req.http.host ~ "bar.com") {
+            set req.backend = bar;
+        }
+    }
 
 Note that the first regular expressions will match foo.com,
 www.foo.com, zoop.foo.com and any other host ending in foo.com. In
 this example this is intentional but you might want it to be a bit
 more tight, maybe relying on the == operator in stead, like this:::
 
-
-  sub vcl_recv {
-    if (req.http.host == "foo.com" or req.http.host == "www.foo.com") {
-      set req.backend = foo;
+    sub vcl_recv {
+        if (req.http.host == "foo.com" or req.http.host == "www.foo.com") {
+            set req.backend = foo;
+        }
     }
-  }
 
 
 .. _users-guide-advanced_backend_servers-directors:
@@ -115,37 +114,37 @@ Directors
 
 You can also group several backend into a group of backends. These
 groups are called directors. This will give you increased performance
-and resilience. 
+and resilience.
 
 You can define several backends and group them together in a
-director. This requires you to load a VMOD, a Varnish module, and then to 
+director. This requires you to load a VMOD, a Varnish module, and then to
 call certain actions in vcl_init.::
 
 
-         import directors;    # load the directors
+    import directors;    # load the directors
 
-	 backend server1 {
-	     .host = "192.168.0.10";
-	 }
-	 backend server2{
-	     .host = "192.168.0.10";
-	 }
-
-         sub vcl_init {
-                new bar = directors.round_robin();
-                bar.add_backend(server1);
-                bar.add_backend(server2);
-        }
-	
-        sub vcl_recv {
-                # send all traffic to the bar director:
-	        req.backend = bar.backend;
+    backend server1 {
+	    .host = "192.168.0.10";
 	}
+	backend server2{
+	    .host = "192.168.0.10";
+	}
+
+    sub vcl_init {
+        new bar = directors.round_robin();
+        bar.add_backend(server1);
+        bar.add_backend(server2);
+    }
+
+    sub vcl_recv {
+        # send all traffic to the bar director:
+	    req.backend = bar.backend();
+    }
 
 This director is a round-robin director. This means the director will
 distribute the incoming requests on a round-robin basis. There is
 also a *random* director which distributes requests in a, you guessed
-it, random fashion. 
+it, random fashion.
 
 But what if one of your servers goes down? Can Varnish direct all the
 requests to the healthy server? Sure it can. This is where the Health
@@ -159,64 +158,59 @@ Health checks
 Lets set up a director with two backends and health checks. First lets
 define the backends.::
 
-       backend server1 {
-         .host = "server1.example.com";
-	 .probe = {
-                .url = "/";
-                .interval = 5s;
-                .timeout = 1 s;
-                .window = 5;
-                .threshold = 3;
-	   }
-         }
-       backend server2 {
-  	  .host = "server2.example.com";
-  	  .probe = {
-                .url = "/";
-                .interval = 5s;
-                .timeout = 1 s;
-                .window = 5;
-                .threshold = 3;
-	  }
+    backend server1 {
+        .host = "server1.example.com";
+        .probe = {
+            .url = "/";
+            .interval = 5s;
+            .timeout = 1 s;
+            .window = 5;
+            .threshold = 3;
         }
+    }
+
+    backend server2 {
+  	    .host = "server2.example.com";
+  	    .probe = {
+            .url = "/";
+            .interval = 5s;
+            .timeout = 1 s;
+            .window = 5;
+            .threshold = 3;
+	    }
+    }
 
 Whats new here is the probe. Varnish will check the health of each
-backend with a probe. The options are
+backend with a probe. The options are:
 
 url
- What URL should Varnish request.
+    What URL should Varnish request.
 
 interval
- How often should we poll
+    How often should we poll
 
 timeout
- What is the timeout of the probe
+    What is the timeout of the probe
 
 window
- Varnish will maintain a *sliding window* of the results. Here the
- window has five checks.
+    Varnish will maintain a *sliding window* of the results. Here the
+    window has five checks.
 
 threshold
- How many of the .window last polls must be good for the backend to be declared healthy.
+    How many of the .window last polls must be good for the backend to be declared healthy.
 
 initial
- How many of the of the probes a good when Varnish starts - defaults
- to the same amount as the threshold.
+    How many of the of the probes a good when Varnish starts - defaults
+    to the same amount as the threshold.
 
 Now we define the director.::
 
-   import directors;
+    import directors;
 
-   director example_director round-robin {
-        {
-                .backend = server1;
-        }
-        # server2
-        {
-                .backend = server2;
-        }
-
-        }
+    director example_director round-robin {
+        { .backend = server1; }
+        { .backend = server2; }
+    }
 
 You use this director just as you would use any other director or
 backend. Varnish will not send traffic to hosts that are marked as
