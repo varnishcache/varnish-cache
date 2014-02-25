@@ -6,13 +6,6 @@ varnishtest
 Test program for Varnish
 ------------------------
 
-:Author: Stig Sandbeck Mathisen
-:Author: Kristian Lyngstøl
-:Date:   2011-11-15
-:Version: 1.1
-:Manual section: 1
-
-
 SYNOPSIS
 ========
 

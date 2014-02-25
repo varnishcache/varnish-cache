@@ -1,19 +1,12 @@
 .. _ref-varnishd:
 
-=========
- varnishd
-=========
+========
+varnishd
+========
 
 -----------------------
 HTTP accelerator daemon
 -----------------------
-
-:Author: Dag-Erling Smørgrav
-:Author: Stig Sandbeck Mathisen
-:Author: Per Buer
-:Date:   2010-05-31
-:Version: 1.0
-:Manual section: 1
 
 
 SYNOPSIS

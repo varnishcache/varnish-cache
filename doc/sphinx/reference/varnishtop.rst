@@ -6,13 +6,6 @@ varnishtop
 Varnish log entry ranking
 -------------------------
 
-:Author: Dag-Erling Smørgrav
-:Author: Martin Blix Grydeland
-:Date:   2010-05-31
-:Version: 1.0
-:Manual section: 1
-
-
 
 SYNOPSIS
 ========
@@ -62,7 +55,9 @@ HISTORY
 The varnishtop utility was originally developed by Poul-Henning Kamp
 in cooperation with Verdens Gang AS and Varnish Software AS, and later
 substantially rewritten by Dag-Erling Smørgrav.  This manual page was
-written by Dag-Erling Smørgrav.
+written by Dag-Erling Smørgrav, and later updated by Martin Blix
+Grydeland.
+
 
 COPYRIGHT
 =========

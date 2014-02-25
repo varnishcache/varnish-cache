@@ -6,11 +6,6 @@ Varnish CLI
 Varnish Command Line Interface
 ------------------------------
 
-:Author: Per Buer
-:Date:   2011-03-23
-:Version: 0.1
-:Manual section: 7
-
 DESCRIPTION
 ===========
 

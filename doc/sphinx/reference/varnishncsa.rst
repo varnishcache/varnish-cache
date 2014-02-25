@@ -6,13 +6,6 @@ varnishncsa
 Display Varnish logs in Apache / NCSA combined log format
 ---------------------------------------------------------
 
-:Author: Dag-Erling Smørgrav
-:Author: Martin Blix Grydeland
-:Date:   2010-05-31
-:Version: 1.0
-:Manual section: 1
-
-
 SYNOPSIS
 ========
 
@@ -139,8 +132,10 @@ HISTORY
 =======
 
 The varnishncsa utility was developed by Poul-Henning Kamp in
-cooperation with Verdens Gang AS and Varnish Software AS.  This manual page was
-written by Dag-Erling Smørgrav <des@des.no>.
+cooperation with Verdens Gang AS and Varnish Software AS. This manual page was
+initially written by Dag-Erling Smørgrav <des@des.no>, and later updated
+by Martin Blix Grydeland.
+
 
 COPYRIGHT
 =========

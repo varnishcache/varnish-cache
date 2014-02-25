@@ -8,14 +8,6 @@ varnishlog
 Display Varnish logs
 --------------------
 
-:Author: Dag-Erling Smørgrav
-:Author: Per Buer
-:Author: Martin Blix Grydeland
-:Date:   2013-05-15
-:Version: 0.3
-:Manual section: 1
-
-
 SYNOPSIS
 ========
 
@@ -70,7 +62,7 @@ HISTORY
 The varnishlog utility was developed by Poul-Henning Kamp
 <phk@phk.freebsd.dk> in cooperation with Verdens Gang AS and
 Varnish Software AS. This manual page was initially written by Dag-Erling
-Smørgrav.
+Smørgrav, and later updated by Per Buer and Martin Blix Grydeland.
 
 
 COPYRIGHT

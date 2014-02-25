@@ -6,13 +6,6 @@ varnishreplay
 HTTP traffic replay tool
 ------------------------
 
-:Author: Cecilie Fritzvold
-:Author: Per Buer
-:Date:   2010-05-31
-:Version: 1.0
-:Manual section: 1
-
-
 SYNOPSIS
 ========
 varnishreplay [-D] -a address:port -r file

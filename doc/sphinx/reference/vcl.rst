@@ -8,14 +8,6 @@ VCL
 Varnish Configuration Language
 ------------------------------
 
-:Author: Dag-Erling Smørgrav
-:Author: Poul-Henning Kamp
-:Author: Kristian Lyngstøl
-:Author: Per Buer
-:Date:   2010-06-02
-:Version: 1.0
-:Manual section: 7
-
 DESCRIPTION
 ===========
 
@@ -995,8 +987,9 @@ HISTORY
 
 VCL was developed by Poul-Henning Kamp in cooperation with Verdens
 Gang AS, Redpill Linpro and Varnish Software.  This manual page was
-written by Dag-Erling Smørgrav and later edited by Poul-Henning Kamp
-and Per Buer.
+written by Dag-Erling Smørgrav and later edited by Poul-Henning Kamp,
+Kristian Lyngstøl and Per Buer.
+
 
 COPYRIGHT
 =========

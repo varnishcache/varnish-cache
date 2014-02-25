@@ -8,14 +8,6 @@ varnishstat
 Varnish Cache statistics
 ---------------------------
 
-:Author: Dag-Erling Smørgrav
-:Author: Per Buer
-:Author: Lasse Karstensen
-:Date:   2011-11-07
-:Version: 1.1
-:Manual section: 1
-
-
 SYNOPSIS
 ========
 
@@ -115,7 +107,9 @@ HISTORY
 
 The varnishstat utility was originally developed by Poul-Henning Kamp
 <phk@phk.freebsd.dk> in cooperation with Verdens Gang AS and Varnish
-Software AS. Manual page written by Dag-Erling Smørgrav and Per Buer.
+Software AS. Manual page written by Dag-Erling Smørgrav, Per Buer
+and Lasse Karstensen.
+
 
 COPYRIGHT
 =========

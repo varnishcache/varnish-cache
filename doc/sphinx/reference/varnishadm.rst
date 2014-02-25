@@ -2,15 +2,8 @@
 varnishadm
 ==========
 
-----------------------------------
 Control a running Varnish instance
 ----------------------------------
-
-:Author: Cecilie Fritzvold
-:Author: Per Buer
-:Date:   2010-05-31
-:Version: 0.3
-:Manual section: 1
 
 SYNOPSIS
 ========

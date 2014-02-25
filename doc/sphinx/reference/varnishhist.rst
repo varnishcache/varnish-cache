@@ -6,12 +6,6 @@ varnishhist
 Varnish request histogram
 -------------------------
 
-:Author: Dag-Erling Smørgrav
-:Date:   2010-05-31
-:Version: 1.0
-:Manual section: 1
-
-
 SYNOPSIS
 ========
 
@@ -80,8 +74,9 @@ SEE ALSO
 
 HISTORY
 =======
-The varnishhist utility was developed by Poul-Henning Kamp in cooperation with Verdens Gang
-AS and Varnish Software AS.  This manual page was written by Dag-Erling Smørgrav.
+The varnishhist utility was developed by Poul-Henning Kamp in cooperation with
+Verdens Gang AS and Varnish Software AS. This manual page was written by
+Dag-Erling Smørgrav.
 
 COPYRIGHT
 =========

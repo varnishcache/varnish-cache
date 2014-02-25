@@ -6,13 +6,6 @@ varnishsizes
 Varnish object size request histogram
 -------------------------------------
 
-:Author: Dag Erling Smørgrav
-:Author: Kristian Lyngstøl
-:Author: Per Buer
-:Date:   2010-05-31
-:Version: 1.0
-:Manual section: 1
-
 
 SYNOPSIS
 ========
