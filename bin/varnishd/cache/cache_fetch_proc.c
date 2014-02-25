@@ -61,7 +61,7 @@ VFP_Error(struct busyobj *bo, const char *fmt, ...)
 	va_list ap;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	assert(bo->state >= BOS_COMMITTED);
+	assert(bo->state >= BOS_REQ_DONE);
 	if (bo->state < BOS_FAILED) {
 		va_start(ap, fmt);
 		VSLbv(bo->vsl, SLT_FetchError, fmt, ap);

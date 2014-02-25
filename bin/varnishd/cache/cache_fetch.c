@@ -395,7 +395,6 @@ vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
 	}
 
 	assert(bo->state == BOS_REQ_DONE);
-	VBO_setstate(bo, BOS_COMMITTED);
 
 	if (bo->do_esi)
 		bo->do_stream = 0;
@@ -509,13 +508,13 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	assert(bo->refcount >= 1);
 
 	AZ(WS_Overflowed(bo->ws_o));
-	if (bo->do_stream)
-		HSH_Unbusy(&wrk->stats, obj->objcore);
 
-	if (bo->state == BOS_COMMITTED)
-		VBO_setstate(bo, BOS_FETCHING);
-	else if (bo->state != BOS_FAILED)
-		WRONG("Wrong bo->state");
+	assert (bo->state == BOS_REQ_DONE);
+
+	if (bo->do_stream) {
+		HSH_Unbusy(&wrk->stats, obj->objcore);
+		VBO_setstate(bo, BOS_STREAM);
+	}
 
 	if (bo->htc.body_status != BS_NONE) {
 		assert(bo->htc.body_status  != BS_ERROR);
@@ -530,7 +529,10 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->state == BOS_FAILED) {
 		wrk->stats.fetch_failed++;
 	} else {
-		assert(bo->state == BOS_FETCHING);
+		if (bo->do_stream)
+			assert(bo->state == BOS_STREAM);
+		else
+			assert(bo->state == BOS_REQ_DONE);
 
 		VSLb(bo->vsl, SLT_Length, "%zd", obj->len);
 
@@ -622,7 +624,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 
 
 	AZ(WS_Overflowed(bo->ws_o));
-	VBO_setstate(bo, BOS_FETCHING);
+	VBO_setstate(bo, BOS_STREAM);
 	HSH_Unbusy(&wrk->stats, obj->objcore);
 
 
@@ -849,9 +851,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	if (mode == VBF_BACKGROUND) {
 		VBO_waitstate(bo, BOS_REQ_DONE);
 	} else {
-		VBO_waitstate(bo, BOS_FETCHING);
-		if (!bo->do_stream)
-			VBO_waitstate(bo, BOS_FINISHED);
+		VBO_waitstate(bo, BOS_STREAM);
 		assert(bo->state != BOS_FAILED || (oc->flags & OC_F_FAILED));
 	}
 	VBO_DerefBusyObj(wrk, &bo);
