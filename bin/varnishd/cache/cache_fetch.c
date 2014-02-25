@@ -494,7 +494,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (vbf_beresp2obj(bo)) {
 		(void)VFP_Error(bo, "Could not get storage");
 		VDI_CloseFd(&bo->vbc);
-		return (F_STP_DONE);
+		return (F_STP_ERROR);
 	}
 
 	assert(WRW_IsReleased(wrk));
@@ -526,7 +526,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	VSLb(bo->vsl, SLT_Fetch_Body, "%u(%s)",
 	    bo->htc.body_status, body_status_2str(bo->htc.body_status));
 
-	if (bo->state == BOS_FAILED) {
+	if (bo->failed) {
 		wrk->stats.fetch_failed++;
 	} else {
 		if (bo->do_stream)
@@ -553,15 +553,28 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		}
 	}
 
-	if (!bo->do_stream && bo->state != BOS_FAILED)
-		HSH_Unbusy(&wrk->stats, obj->objcore);
+	if (!bo->do_stream) {
+		if (bo->failed) {
+			if (bo->fetch_obj != NULL) {
+				oc_freeobj(bo->fetch_objcore);
+				bo->fetch_obj = NULL;
+				bo->stats->n_object--;
+			}
+			return (F_STP_ERROR);
+		} else {
+			HSH_Unbusy(&wrk->stats, obj->objcore);
+			VBO_setstate(bo, BOS_FINISHED);
+		}
+	} else if (bo->failed) {
+		HSH_Fail(bo->fetch_objcore);
+		VBO_setstate(bo, BOS_FAILED);
+	} else {
+		VBO_setstate(bo, BOS_FINISHED);
+	}
 
 	HSH_Complete(obj->objcore);
 
 	assert(bo->refcount >= 1);
-
-	if (bo->state != BOS_FAILED)
-		VBO_setstate(bo, BOS_FINISHED);
 
 	return (F_STP_DONE);
 }
@@ -650,14 +663,16 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 			if (st->len == st->space)
 				st = NULL;
 		}
-	} while (bo->state < BOS_FAILED &&
-	    (ois == OIS_DATA || ois == OIS_STREAM));
+	} while (!bo->failed && (ois == OIS_DATA || ois == OIS_STREAM));
 	ObjIterEnd(&oi);
-	if (bo->state != BOS_FAILED) {
+	if (!bo->failed) {
 		assert(al == bo->ims_obj->len);
 		assert(obj->len == al);
 		VBO_setstate(bo, BOS_FINISHED);
 		EXP_Rearm(bo->ims_obj, bo->ims_obj->exp.t_origin, 0, 0, 0);
+	} else {
+		HSH_Fail(bo->fetch_objcore);
+		VBO_setstate(bo, BOS_FAILED);
 	}
 	HSH_Complete(obj->objcore);
 	return (F_STP_DONE);
@@ -673,7 +688,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	AN(bo->fetch_objcore->flags &= OC_F_BUSY);
+	AN(bo->fetch_objcore->flags & OC_F_BUSY);
 
 	// XXX: reset all beresp flags ?
 
@@ -697,7 +712,9 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	http_PrintfHeader(bo->beresp, "X-XXXPHK: yes");
 
 	if (vbf_beresp2obj(bo)) {
-		INCOMPL();
+		VBO_setstate(bo, BOS_FAILED);
+		HSH_Fail(bo->fetch_objcore);
+		return (F_STP_DONE);
 	}
 
 	HSH_Unbusy(&wrk->stats, bo->fetch_obj->objcore);
@@ -739,7 +756,6 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	while (stp != F_STP_DONE) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-		bo->step = stp;
 		switch(stp) {
 #define FETCH_STEP(l, U, arg)						\
 		case F_STP_##U:						\

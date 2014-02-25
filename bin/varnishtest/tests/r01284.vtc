@@ -19,12 +19,18 @@ varnish v1 \
 	}
 } -start
 
+varnish v1 -cliok "param.set debug +syncvsl"
+
+delay .1
+
 client c1 {
 	# Fill transient
 	txreq -url "/obj1"
 	rxresp
 	expect resp.status == 200
 } -run
+
+delay .1
 
 varnish v1 -expect SMA.Transient.g_bytes > 1048000
 varnish v1 -expect SMA.Transient.g_space < 200
@@ -36,8 +42,8 @@ client c1 {
 	delay 1
 } -run
 
-# Two failures, one for obj2 and one for the attempts at sending error
-varnish v1 -expect SMA.Transient.c_fail == 2
+# Three failures, one for obj2, one for vcl_backend_error{} and for vcl_error{}
+varnish v1 -expect SMA.Transient.c_fail == 3
 
 client c1 {
 	# Check that Varnish is still alive

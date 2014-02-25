@@ -500,6 +500,9 @@ oc_getlru(const struct objcore *oc)
  * streaming delivery will make use of.
  */
 
+/*
+ * The macro-states we expose outside the fetch code
+ */
 enum busyobj_state_e {
 	BOS_INVALID = 0,	/* don't touch (yet) */
 	BOS_REQ_DONE,		/* beresp.* can be examined */
@@ -514,7 +517,6 @@ struct busyobj {
 	struct lock		mtx;
 	pthread_cond_t		cond;
 	char			*end;
-	enum fetch_step		step;
 
 	/*
 	 * All fields from refcount and down are zeroed when the busyobj
@@ -532,6 +534,7 @@ struct busyobj {
 	intptr_t		vfps_priv[N_VFPS];
 	int			vfp_nxt;
 
+	int			failed;
 	enum busyobj_state_e	state;
 
 	struct ws		ws[1];

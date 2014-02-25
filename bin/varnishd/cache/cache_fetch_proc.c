@@ -62,12 +62,11 @@ VFP_Error(struct busyobj *bo, const char *fmt, ...)
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	assert(bo->state >= BOS_REQ_DONE);
-	if (bo->state < BOS_FAILED) {
+	if (!bo->failed) {
 		va_start(ap, fmt);
 		VSLbv(bo->vsl, SLT_FetchError, fmt, ap);
 		va_end(ap);
-		HSH_Fail(bo->fetch_objcore);
-		VBO_setstate(bo, BOS_FAILED);
+		bo->failed = 1;
 	}
 	return (VFP_ERROR);
 }
@@ -214,7 +213,7 @@ VFP_Fetch_Body(struct busyobj *bo, ssize_t est)
 			bo->should_close = 1;
 			break;
 		}
-		assert(bo->state != BOS_FAILED);
+		AZ(bo->failed);
 		if (st == NULL) {
 			st = VFP_GetStorage(bo, est);
 			est = 0;
@@ -228,7 +227,7 @@ VFP_Fetch_Body(struct busyobj *bo, ssize_t est)
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 		assert(st == VTAILQ_LAST(&bo->fetch_obj->store, storagehead));
 		l = st->space - st->len;
-		assert(bo->state != BOS_FAILED);
+		AZ(bo->failed);
 		vfps = VFP_Suck(bo, st->ptr + st->len, &l);
 		if (l > 0 && vfps != VFP_ERROR) {
 			assert(!VTAILQ_EMPTY(&bo->fetch_obj->store));
@@ -239,7 +238,7 @@ VFP_Fetch_Body(struct busyobj *bo, ssize_t est)
 	} while (vfps == VFP_OK);
 
 	if (vfps == VFP_ERROR) {
-		assert(bo->state == BOS_FAILED);
+		AN(bo->failed);
 		(void)VFP_Error(bo, "Fetch Pipeline failed to process");
 		bo->should_close = 1;
 	}
