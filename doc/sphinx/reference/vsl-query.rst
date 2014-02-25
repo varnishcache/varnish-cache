@@ -4,11 +4,6 @@
 Varnish VSL Query Expressions
 =============================
 
-:Author: Martin Blix Grydeland
-:Date: 2013-09-26
-:Version: 0.1
-:Manual section: 7
-
 OVERVIEW
 ========
 
@@ -238,3 +233,9 @@ QUERY EXPRESSION EXAMPLES
   their ESI subrequests. (Assumes request grouping mode). ::
 
     BerespStatus >= 500 or {2+}ReqEnd[5] > 1.
+
+HISTORY
+=======
+
+This document was written by Martin Blix Grydeland.
+

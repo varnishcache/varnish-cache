@@ -29,22 +29,23 @@ OPTIONS
 =======
 
 -t timeout
-	Wait no longer than this many seconds for an operation to finish.
+    Wait no longer than this many seconds for an operation to finish.
 
 -S secret_file
-        Specify the authentication secret file. This should be the same -S 
-        argument as was given to varnishd. Only processes which can read 
-        the contents of this file, will be able to authenticate the CLI connection.
-
--T address:port   
-        Connect to the management interface at the specified address and port.
+    Specify the authentication secret file. This should be the same -S
+    argument as was given to varnishd. Only processes which can read
+    the contents of this file, will be able to authenticate the CLI connection.
 
 -n name
-	Connect to the instance of varnishd with this name.
+    Connect to the instance of varnishd with this name.
+
+-T address:port
+    Connect to the management interface at the specified address and port.
+
 
 The syntax and operation of the actual CLI interface is described in
 the varnish-cli(7) manual page. Parameteres are described in
-varnishd(1) manual page.  
+varnishd(1) manual page.
 
 Additionally, a summary of commands can be obtained by issuing the
 *help* command, and a summary of parameters can be obtained by issuing
@@ -61,9 +62,9 @@ EXAMPLES
 
 Some ways you can use varnishadm::
 
-           varnishadm -T localhost:999 -S /var/db/secret vcl.use foo
-           echo vcl.use foo | varnishadm -T localhost:999 -S /var/db/secret
-           echo vcl.use foo | ssh vhost varnishadm -T localhost:999 -S /var/db/secret
+   varnishadm -T localhost:999 -S /var/db/secret vcl.use foo
+   echo vcl.use foo | varnishadm -T localhost:999 -S /var/db/secret
+   echo vcl.use foo | ssh vhost varnishadm -T localhost:999 -S /var/db/secret
 
 SEE ALSO
 ========
@@ -74,7 +75,7 @@ HISTORY
 =======
 
 The varnishadm utility and this manual page were written by Cecilie
-Fritzvold. Converted to reStructured and updated in 2010 by Per
+Fritzvold. Converted to reStructuredText and updated in 2010 by Per
 Buer.
 
 COPYRIGHT

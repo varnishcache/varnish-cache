@@ -30,7 +30,7 @@ OPTIONS
 =======
 
 -a address[:port][,address[:port][...]
-	    Listen for client requests on the specified address and port.  The address can be a host
+            Listen for client requests on the specified address and port.  The address can be a host
             name (“localhost”), an IPv4 dotted-quad (“127.0.0.1”), or an IPv6 address enclosed in
             square brackets (“[::1]”).  If address is not specified, varnishd will listen on all
             available IPv4 and IPv6 interfaces.  If port is not specified, the default HTTP port as
@@ -39,10 +39,10 @@ OPTIONS
 
 -b host[:port]
             Use the specified host as backend server.  If port is not specified,
-	    the default is 8080.
+	        the default is 8080.
 
--C	    Print VCL code compiled to C language and exit. Specify the VCL file
-	    to compile with the -f option.
+-C	        Print VCL code compiled to C language and exit. Specify the VCL file
+	        to compile with the -f option.
 
 -d          Enables debugging mode: The parent process runs in the foreground with a CLI connection
             on stdin/stdout, and the child process must be started explicitly with a CLI command.
@@ -78,9 +78,9 @@ OPTIONS
 -P file     Write the process's PID to the specified file.
 
 -p param=value
-            Set the parameter specified by param to the specified value.  See Run-Time
-	    Parameters for a list of parameters. This option can be used multiple
-	    times to specify multiple parameters.
+            Set the parameter specified by param to the specified value.  See
+            Run-Time Parameters for a list of parameters. This option can be
+            used multiple times to specify multiple parameters.
 
 -S file     Path to a file containing a secret used for authorizing access to the management port.
 
@@ -100,15 +100,13 @@ OPTIONS
             Interface for a list of management commands.
 
 -M address:port
-            Connect to this port and offer the command line
-            interface. Think of it as a reverse shell. When running with
-	    -M and there is no backend defined the child process (the cache)
-            will not start initially.
+            Connect to this port and offer the command line interface.
+            Think of it as a reverse shell. When running with -M and there is
+            no backend defined the child process (the cache) will not start
+            initially.
 
--t ttl
-	    Specifies a hard minimum time to live for cached
-            documents.  This is a shortcut for specifying the
-            default_ttl run-time parameter.
+-t ttl      Specifies a hard minimum time to live for cached documents. This
+            is a shortcut for specifying the default_ttl run-time parameter.
 
 -r param[,param...]
             Make the listed parameters read only. This gives the
@@ -120,8 +118,8 @@ OPTIONS
 
 -u user     Specifies the name of an unprivileged user to which the child
             process should switch before it starts accepting
-            connections.  This is a shortcut for specifying the user
-            run- time parameter.
+            connections. This is a shortcut for specifying the user
+            runtime parameter.
 
             If specifying both a user and a group, the user should be
             specified first.
@@ -135,19 +133,19 @@ Hash Algorithms
 The following hash algorithms are available:
 
 simple_list
-  A simple doubly-linked list.  Not recommended for production use.
+    A simple doubly-linked list.  Not recommended for production use.
 
 classic[,buckets]
-  A standard hash table.  This is the default.  The hash key is the
-  CRC32 of the object's URL modulo the size of the hash table.  Each
-  table entry points to a list of elements which share the same hash
-  key. The buckets parameter specifies the number of entries in the
-  hash table.  The default is 16383.
+    A standard hash table.  This is the default.  The hash key is the
+    CRC32 of the object's URL modulo the size of the hash table.  Each
+    table entry points to a list of elements which share the same hash
+    key. The buckets parameter specifies the number of entries in the
+    hash table.  The default is 16383.
 
 critbit
-  A self-scaling tree structure. The default hash algorithm in 2.1. In
-  comparison to a more traditional B tree the critbit tree is almost
-  completely lockless.
+    A self-scaling tree structure. The default hash algorithm in 2.1. In
+    comparison to a more traditional B tree the critbit tree is almost
+    completely lockless.
 
 Storage Types
 -------------
@@ -243,7 +241,7 @@ The varnishd daemon was developed by Poul-Henning Kamp in cooperation
 with Verdens Gang AS, Varnish Software AS and Varnish Software.
 
 This manual page was written by Dag-Erling Smørgrav with updates by
-Stig Sandbeck Mathisen <ssm@debian.org>
+Stig Sandbeck Mathisen <ssm@debian.org>.
 
 
 COPYRIGHT

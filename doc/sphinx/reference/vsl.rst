@@ -8,12 +8,6 @@ VSL
 Shared Memory Logging
 ---------------------
 
-:Author: Poul-Henning Kamp
-:Author: Martin Blix Grydeland
-:Date: 2013-10-16
-:Version: 1.0
-:Manual section: 7
-
 OVERVIEW
 ========
 
@@ -25,6 +19,14 @@ VSL tags
 ~~~~~~~~
 
 .. include:: ../../../lib/libvarnishapi/vsl-tags.rst
+
+
+HISTORY
+=======
+
+This document was initially written by Poul-Henning Kamp, and later updated by
+Martin Blix Grydeland.
+
 
 SEE ALSO
 ========

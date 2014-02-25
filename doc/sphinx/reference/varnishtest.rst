@@ -126,6 +126,7 @@ This manual page was originally written by Stig Sandbeck Mathisen
 <ssm@linpro.no> and updated by Kristian Lyngstøl
 <kristian@varnish-cache.org>.
 
+
 COPYRIGHT
 =========
 

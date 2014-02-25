@@ -76,6 +76,7 @@ The varnishsizes utility was developed by Kristian Lyngstøl based on
 varnishhist.  This manual page was written by Kristian Lyngstøl,
 Dag-Erling Smørgrav and Per Buer.
 
+
 COPYRIGHT
 =========
 
