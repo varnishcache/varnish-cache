@@ -366,15 +366,16 @@ main(int argc, char **argv)
 			/* else it's a definition, we hope */
 			if (sscanf(colon+1, "%d:%d:%d",	&cli_p.field,
 				&cli_p.hist_low, &cli_p.hist_high) != 3) {
-				fprintf(stderr, "%s is neither a profile name"
-				    "nor definition (SLT_Tag:field:min:max)\n",
-				    optarg);
+				fprintf(stderr, "-P: '%s' is not a valid"
+				    " profile name or definition\n", optarg);
 				exit(1);
 			}
 
 			match_tag = VSL_Name2Tag(optarg, colon - optarg);
 			if (match_tag < 0) {
-				fprintf(stderr, "No such tag in %s\n", optarg);
+				fprintf(stderr,
+				    "-P: '%s' is not a valid tag name\n",
+				    optarg);
 				exit(1);
 			}
 			cli_p.name = "custom";
@@ -391,8 +392,9 @@ main(int argc, char **argv)
 	/* Check for valid grouping mode */
 	assert(VUT.g_arg < VSL_g__MAX);
 	if (VUT.g_arg != VSL_g_vxid && VUT.g_arg != VSL_g_request)
-		VUT_Error(1, "Invalid grouping mode: %s (only vxid and request are supported)",
-				VSLQ_grouping[VUT.g_arg]);
+		VUT_Error(1, "Invalid grouping mode: %s"
+		    " (only vxid and request are supported)",
+		    VSLQ_grouping[VUT.g_arg]);
 
 	if (profile) {
 		for (active_profile = profiles; active_profile->name;
@@ -403,7 +405,7 @@ main(int argc, char **argv)
 		}
 	}
 	if (! active_profile->name) {
-		fprintf(stderr, "No such profile %s\n", profile);
+		fprintf(stderr, "-P: No such profile '%s'\n", profile);
 		exit(1);
 	}
 	match_tag = active_profile->tag;
