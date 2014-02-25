@@ -210,7 +210,8 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			if (tag == (unsigned)match_tag) {
 				i = sscanf(VSL_CDATA(tr->c->rec.ptr), format,
 				    &value);
-				assert(i == 1);
+				if (i != 1)
+					continue;
 			} else if (tag == SLT_Hit)
 				hit = 1;
 			if (tag != SLT_ReqEnd && value == -1)
