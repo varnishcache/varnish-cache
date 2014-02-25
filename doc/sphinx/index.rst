@@ -12,19 +12,15 @@
 .. ~~~~~~~~~~~~~~~~~~~~~~
 .. ...................... 
 
-Welcome to Varnish's documentation!
-===================================
+Welcome to the Varnish documentation!
+=====================================
 
-Varnish is a state of the art web accelerator. Its mission is to sit
-in front of a web server and cache content. It makes your web site
-go faster.
+Varnish is a state of the art web accelerator. It has its mission in front of a
+web server and cache content. It makes your web site go faster.
 
 We suggest you start by reading the installation guide
 :ref:`install-index`. Once you have Varnish up and running go through
 our tutorial - :ref:`tutorial-index`.
-
-
-Contents:
 
 .. toctree::
    :maxdepth: 1
