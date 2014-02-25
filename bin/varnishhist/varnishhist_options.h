@@ -31,6 +31,12 @@
 #include "vapi/vapi_options.h"
 #include "vut_options.h"
 
+#define HIS_OPT_g							\
+	VOPT("g:", "[-g <request|vxid>]", "Grouping mode",		\
+	    "The grouping of the log records. The default is to group"	\
+	    " by vxid."							\
+	)
+
 #define HIS_OPT_p							\
 	VOPT("p:", "[-p period]", "Refresh period",			\
 	    "Specified the number of seconds between screen refreshes."	\
@@ -50,7 +56,7 @@
 
 VSL_OPT_C
 VUT_OPT_d
-VUT_OPT_g
+HIS_OPT_g
 VUT_OPT_h
 VSL_OPT_L
 VUT_OPT_n
