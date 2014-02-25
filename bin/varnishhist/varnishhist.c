@@ -190,8 +190,7 @@ static int /*__match_proto__ (VSLQ_dispatch_f)*/
 accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	void *priv)
 {
-	int i, j;
-	unsigned tag, hit;
+	int i, j, tag, skip, match, hit;
 	double value;
 	struct VSL_transaction *tr;
 
@@ -205,62 +204,75 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		if (tr->reason == VSL_r_esi)
 			/* Skip ESI requests */
 			continue;
-		value = -1;
+
 		hit = 0;
-		while ((1 == VSL_Next(tr->c))) {
+		skip = 0;
+		match = 0;
+		while (skip == 0 && 1 == VSL_Next(tr->c)) {
 			/* get the value we want, and register if it's a hit*/
 			tag = VSL_TAG(tr->c->rec.ptr);
-			assert(match_tag >= 0);
-			if (tag == (unsigned)match_tag) {
+
+			switch (tag) {
+			case SLT_Hit:
+				hit = 1;
+				break;
+			case SLT_VCL_return:
+				if (!strcasecmp(VSL_CDATA(tr->c->rec.ptr),
+					"restart"))
+					skip = 1;
+				break;
+			default:
+				if (tag != match_tag)
+					break;
 				i = sscanf(VSL_CDATA(tr->c->rec.ptr), format,
 				    &value);
 				if (i != 1)
-					continue;
-			} else if (tag == SLT_Hit)
-				hit = 1;
-			if (tag != SLT_ReqEnd && value == -1)
-				continue;
-
-			/* select bucket */
-			i = HIST_RES * (log(value) / log_ten);
-			if (i < hist_low * HIST_RES)
-				i = hist_low * HIST_RES;
-			if (i >= hist_high * HIST_RES)
-				i = hist_high * HIST_RES - 1;
-			i -= hist_low * HIST_RES;
-			assert(i >= 0);
-			assert(i < hist_buckets);
-			pthread_mutex_lock(&mtx);
-
-			/* phase out old data */
-			if (nhist == HIST_N) {
-				j = rr_hist[next_hist];
-				if (j < 0) {
-					assert(bucket_miss[-j] > 0);
-					bucket_miss[-j]--;
-				} else {
-					assert(bucket_hit[j] > 0);
-					bucket_hit[j]--;
-				}
-			} else {
-				++nhist;
+					break;
+				match = 1;
+				break;
 			}
-
-			/* phase in new data */
-			if (hit) {
-				bucket_hit[i]++;
-				rr_hist[next_hist] = i;
-			} else {
-				bucket_miss[i]++;
-				rr_hist[next_hist] = -i;
-			}
-			if (++next_hist == HIST_N) {
-				next_hist = 0;
-			}
-			pthread_mutex_unlock(&mtx);
-
-
 		}
+
+		if (skip || !match)
+			continue;
+
+		/* select bucket */
+		i = HIST_RES * (log(value) / log_ten);
+		if (i < hist_low * HIST_RES)
+			i = hist_low * HIST_RES;
+		if (i >= hist_high * HIST_RES)
+			i = hist_high * HIST_RES - 1;
+		i -= hist_low * HIST_RES;
+		assert(i >= 0);
+		assert(i < hist_buckets);
+		pthread_mutex_lock(&mtx);
+
+		/* phase out old data */
+		if (nhist == HIST_N) {
+			j = rr_hist[next_hist];
+			if (j < 0) {
+				assert(bucket_miss[-j] > 0);
+				bucket_miss[-j]--;
+			} else {
+				assert(bucket_hit[j] > 0);
+				bucket_hit[j]--;
+			}
+		} else {
+			++nhist;
+		}
+
+		/* phase in new data */
+		if (hit) {
+			bucket_hit[i]++;
+			rr_hist[next_hist] = i;
+		} else {
+			bucket_miss[i]++;
+			rr_hist[next_hist] = -i;
+		}
+		if (++next_hist == HIST_N) {
+			next_hist = 0;
+		}
+		pthread_mutex_unlock(&mtx);
 	}
 	return (0);
 }
