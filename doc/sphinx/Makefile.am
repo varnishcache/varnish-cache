@@ -123,6 +123,7 @@ EXTRA_DIST = \
 	reference/varnishstat.rst \
 	reference/varnishtest.rst \
 	reference/varnishtop.rst \
+	reference/varnishhist.rst \
 	reference/vcl.rst \
 	reference/vmod.rst \
 	reference/vmod_std.rst \
@@ -197,6 +198,13 @@ include/varnishtop_synopsis.rst: $(top_builddir)/bin/varnishtop/varnishtop_opt2r
 	$(top_builddir)/bin/varnishtop/varnishtop_opt2rst synopsis > $@
 BUILT_SOURCES += include/varnishtop_options.rst \
 	 include/varnishtop_synopsis.rst
+
+include/varnishhist_options.rst: $(top_builddir)/bin/varnishhist/varnishhist_opt2rst
+	$(top_builddir)/bin/varinshhist/varnishhist_opt2rst options > $@
+include/varnishhist_synopsis.rst: $(top_builddir)/bin/varnishhist/varnishhist_opt2rst
+	$(top_builddir)/bin/varinshhist/varnishhist_opt2rst synopsis > $@
+BUILT_SOURCES += include/varnishhist_options.rst \
+	 include/varnishhist_synopsis.rst
 
 EXTRA_DIST += $(BUILT_SOURCES)
 MAINTAINERCLEANFILES = $(EXTRA_DIST)

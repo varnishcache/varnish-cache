@@ -21,7 +21,8 @@ dist_man_MANS = \
 	varnishreplay.1 \
 	varnishstat.1 \
 	varnishtest.1 \
-	varnishtop.1
+	varnishtop.1 \
+	varnishhist.1
 
 MAINTAINERCLEANFILES = $(dist_man_MANS)
 
@@ -76,3 +77,9 @@ varnishtop.1: \
 	$(top_srcdir)/doc/sphinx/include/varnishtop_options.rst \
 	$(top_srcdir)/doc/sphinx/include/varnishtop_synopsis.rst
 	${RST2MAN} $(top_srcdir)/doc/sphinx/reference/varnishtop.rst $@
+
+varnishhist.1: \
+	$(top_srcdir)/doc/sphinx/reference/varnishhist.rst \
+	$(top_srcdir)/doc/sphinx/include/varnishhist_options.rst \
+	$(top_srcdir)/doc/sphinx/include/varnishhist_synopsis.rst
+	${RST2MAN} $(top_srcdir)/doc/sphinx/reference/varnishhist.rst $@
