@@ -124,11 +124,11 @@ call certain actions in vcl_init.::
     import directors;    # load the directors
 
     backend server1 {
-	    .host = "192.168.0.10";
-	}
-	backend server2{
-	    .host = "192.168.0.10";
-	}
+        .host = "192.168.0.10";
+    }
+    backend server2 {
+        .host = "192.168.0.10";
+    }
 
     sub vcl_init {
         new bar = directors.round_robin();
@@ -138,7 +138,7 @@ call certain actions in vcl_init.::
 
     sub vcl_recv {
         # send all traffic to the bar director:
-	    req.backend = bar.backend();
+        req.backend = bar.backend();
     }
 
 This director is a round-robin director. This means the director will
@@ -170,14 +170,14 @@ define the backends.::
     }
 
     backend server2 {
-  	    .host = "server2.example.com";
-  	    .probe = {
+        .host = "server2.example.com";
+        .probe = {
             .url = "/";
             .interval = 5s;
             .timeout = 1 s;
             .window = 5;
             .threshold = 3;
-	    }
+        }
     }
 
 Whats new here is the probe. Varnish will check the health of each
