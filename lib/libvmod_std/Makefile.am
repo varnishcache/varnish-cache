@@ -38,11 +38,4 @@ CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h \
 	$(builddir)/vmod_std.man.rst
 
 vmod_std.3: $(top_srcdir)/doc/sphinx/reference/vmod_std.rst
-if HAVE_RST2MAN
 	${RST2MAN} $? $@
-else
-	@echo "========================================"
-	@echo "You need rst2man installed to make dist"
-	@echo "========================================"
-	@false
-endif

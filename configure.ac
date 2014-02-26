@@ -50,15 +50,15 @@ CC="$PTHREAD_CC"
 
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
+
 AC_ARG_WITH([rst2man],
-               AS_HELP_STRING([--with-rst2man=PATH],
-                              [Location of rst2man (auto)]),
-               [RST2MAN="$withval"],
-               [AC_CHECK_PROGS(RST2MAN, [rst2man rst2man.py], "no")
-	        if test "x$RST2MAN" = "xno"; then
-		   AC_MSG_WARN([rst2man not found - not building man pages])
-		fi])
-AM_CONDITIONAL(HAVE_RST2MAN,[test "x$RST2MAN" != "xno"])
+  AS_HELP_STRING([--with-rst2man=PATH], [Location of rst2man (auto)]),
+  [RST2MAN="$withval"],
+  AC_CHECK_PROGS(RST2MAN, [rst2man rst2man.py], []))
+if test -z "$RST2MAN"; then
+  AC_MSG_ERROR(
+    [rst2man is needed to build Varnish, please install python-docutils.])
+fi
 
 AC_ARG_WITH([rst2html],
                AS_HELP_STRING([--with-rst2html=PATH],

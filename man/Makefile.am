@@ -1,8 +1,6 @@
 #
 
-if HAVE_RST2MAN
 noinst_PROGRAMS = vsc2rst
-endif
 vsc2rst_SOURCES = vsc2rst.c \
 	$(top_srcdir)/include/tbl/vsc_fields.h
 

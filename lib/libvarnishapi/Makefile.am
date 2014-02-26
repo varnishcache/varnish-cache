@@ -73,10 +73,8 @@ vsl2rst_SOURCES = \
 	$(top_srcdir)/include/tbl/vsl_tags.h \
 	$(top_srcdir)/include/tbl/vsl_tags_http.h
 
-if HAVE_RST2MAN
 vsl-tags.rst: vsl2rst
 	./vsl2rst > $@
-endif
 
 vxp_fixed_token.c vxp_tokens.h: \
 	$(srcdir)/generate.py
