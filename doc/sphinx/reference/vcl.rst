@@ -35,7 +35,7 @@ A backend declaration creates and initializes a named backend object::
 The backend object can later be used to select a backend at request time::
 
     if (req.http.host ~ "(?i)^(www.)?example.com$") {
-        set req.backend = www;
+        set req.backend_hint = www;
     }
 
 To avoid overloading backend servers, .max_connections can be set to

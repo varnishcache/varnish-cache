@@ -62,9 +62,9 @@ Now we need tell where to send the difference URL. Lets look at vcl_recv.::
 
     sub vcl_recv {
         if (req.url ~ "^/java/") {
-            set req.backend = java;
+            set req.backend_hint = java;
         } else {
-            set req.backend = default.
+            set req.backend_hint = default.
         }
     }
 
@@ -88,9 +88,9 @@ You can have something like this:::
 
     sub vcl_recv {
         if (req.http.host ~ "foo.com") {
-            set req.backend = foo;
+            set req.backend_hint = foo;
         } elsif (req.http.host ~ "bar.com") {
-            set req.backend = bar;
+            set req.backend_hint = bar;
         }
     }
 
@@ -101,7 +101,7 @@ more tight, maybe relying on the == operator in stead, like this:::
 
     sub vcl_recv {
         if (req.http.host == "foo.com" or req.http.host == "www.foo.com") {
-            set req.backend = foo;
+            set req.backend_hint = foo;
         }
     }
 
@@ -138,7 +138,7 @@ call certain actions in vcl_init.::
 
     sub vcl_recv {
         # send all traffic to the bar director:
-        req.backend = bar.backend();
+        req.backend_hint = bar.backend();
     }
 
 This director is a round-robin director. This means the director will

@@ -229,7 +229,7 @@ special needs in VCL, you can use the X-UA-Device header like this::
         # call some detection engine
 
         if (req.http.X-UA-Device ~ "^mobile" || req.http.X-UA-device ~ "^tablet") {
-            set req.backend = mobile;
+            set req.backend_hint = mobile;
         }
     }
     sub vcl_hash {

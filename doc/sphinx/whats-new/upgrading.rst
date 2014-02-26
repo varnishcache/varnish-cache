@@ -32,7 +32,7 @@ Since the client director was already a special case of the hash director, it ha
 	}
 
 	sub vcl_recv {
-		set req.backend = h.backend(client.ip);
+		set req.backend_hint = h.backend(client.ip);
 	}
 
 error() is now a return value
