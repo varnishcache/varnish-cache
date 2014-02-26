@@ -145,7 +145,6 @@ EXTRA_DIST = \
 	users-guide/index.rst \
 	users-guide/intro.rst \
 	users-guide/operation-logging.rst \
-	users-guide/operation.rst \
 	users-guide/operation-statistics.rst \
 	users-guide/params.rst \
 	users-guide/performance.rst \
