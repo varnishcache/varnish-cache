@@ -842,10 +842,8 @@ vtx_scan(struct VSLQ *vslq, struct vtx *vtx)
 	const uint32_t *ptr;
 	enum VSL_tag_e tag;
 
-	if (vtx->flags & VTX_F_END)
-		return;
-
-	while (vslc_vtx_next(&vtx->c.cursor) == 1) {
+	while (!(vtx->flags & VTX_F_COMPLETE) &&
+	    vslc_vtx_next(&vtx->c.cursor) == 1) {
 		ptr = vtx->c.cursor.rec.ptr;
 		if (VSL_ID(ptr) != vtx->key.vxid) {
 			(void)vtx_diag_tag(vtx, ptr, "vxid missmatch");
@@ -867,12 +865,14 @@ vtx_scan(struct VSLQ *vslq, struct vtx *vtx)
 
 		case SLT_End:
 			vtx->flags |= VTX_F_END;
-			vtx_mark_complete(vslq, vtx);
 			break;
 		default:
 			break;
 		}
 	}
+
+	if (vtx->flags & VTX_F_END && !(vtx->flags & VTX_F_COMPLETE))
+		vtx_mark_complete(vslq, vtx);
 }
 
 /* Force a vtx into complete status by synthing the necessary outstanding
