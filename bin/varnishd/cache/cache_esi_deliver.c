@@ -61,6 +61,7 @@ ved_include(struct req *preq, const char *src, const char *host)
 
 	req = SES_GetReq(wrk, preq->sp);
 	req->req_body_status = REQ_BODY_NONE;
+	AN(req->vsl->wid & VSL_CLIENTMARKER);
 	VSLb(req->vsl, SLT_Begin, "req %u esi", preq->vsl->wid & VSL_IDENTMASK);
 	VSLb(preq->vsl, SLT_Link, "req %u esi", req->vsl->wid & VSL_IDENTMASK);
 	req->esi_level = preq->esi_level + 1;
@@ -115,8 +116,8 @@ ved_include(struct req *preq, const char *src, const char *host)
 		(void)usleep(10000);
 	}
 
-	VSLb(req->vsl, SLT_End, "%s", "");
-	req->vsl->wid = 0;
+	/* Make sure the VSL id has been released */
+	AZ(req->vsl->wid);
 
 	/* Reset the workspace */
 	WS_Reset(wrk->aws, wrk_ws_wm);	/* XXX ? */

@@ -1,0 +1,40 @@
+varnishtest "Session grouping on ESI"
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -body "<esi:include src=\"/include\"/>"
+
+	rxreq
+	expect req.url == "/include"
+	txresp -body "included"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		if (bereq.url == "/") {
+			set beresp.do_esi = true;
+		}
+	}
+} -start
+
+logexpect l1 -v v1 -g session {
+	expect 0 1000	Begin sess 0 HTTP/1
+	expect * =	End
+	expect 0 1001	Begin req 1000 rxreq
+	expect * =	End
+	expect 0 1002	Begin bereq 1001 fetch
+	expect * =	End
+	expect 0 1003	Begin req 1001 esi
+	expect * =	End
+	expect 0 1004	Begin bereq 1003 fetch
+	expect * =	End
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+} -run
+
+logexpect l1 -wait
