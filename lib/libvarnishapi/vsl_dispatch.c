@@ -847,6 +847,11 @@ vtx_scan(struct VSLQ *vslq, struct vtx *vtx)
 
 	while (vslc_vtx_next(&vtx->c.cursor) == 1) {
 		ptr = vtx->c.cursor.rec.ptr;
+		if (VSL_ID(ptr) != vtx->key.vxid) {
+			(void)vtx_diag_tag(vtx, ptr, "vxid missmatch");
+			continue;
+		}
+
 		tag = VSL_TAG(ptr);
 		assert(tag != SLT__Batch);
 
@@ -1026,7 +1031,7 @@ static int
 vtx_diag_tag(struct vtx *vtx, const uint32_t *ptr, const char *reason)
 {
 
-	vtx_synth_rec(vtx, SLT_VSL, "%s (%s: %.*s)", reason,
+	vtx_synth_rec(vtx, SLT_VSL, "%s (%u:%s \"%.*s\")", reason, VSL_ID(ptr),
 	    VSL_tags[VSL_TAG(ptr)], (int)VSL_LEN(ptr), VSL_CDATA(ptr));
 	return (-1);
 }
