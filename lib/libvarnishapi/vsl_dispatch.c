@@ -744,7 +744,8 @@ vtx_scan_begin(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 
 	if (vslq->grouping == VSL_g_vxid)
 		return (0);	/* No links */
-	if (vslq->grouping == VSL_g_request && vtx->type == VSL_t_req)
+	if (vslq->grouping == VSL_g_request && vtx->type == VSL_t_req &&
+	    vtx->reason == VSL_r_rxreq)
 		return (0);	/* No links */
 
 	if (vtx->parent != NULL) {
