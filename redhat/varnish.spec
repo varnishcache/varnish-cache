@@ -98,9 +98,9 @@ export CFLAGS="$CFLAGS -Wp,-D_FORTIFY_SOURCE=0"
 # Remove "--disable static" if you want to build static libraries
 # jemalloc is not compatible with Red Hat's ppc64 RHEL kernel :-(
 %ifarch ppc64 ppc
-	%configure --disable-static --localstatedir=/var/lib --without-jemalloc  --without-rst2man --without-rst2html
+	%configure --disable-static --localstatedir=/var/lib --without-jemalloc --without-rst2html
 %else
-	%configure --disable-static --localstatedir=/var/lib --without-rst2man --without-rst2html
+	%configure --disable-static --localstatedir=/var/lib --without-rst2html
 %endif
 
 # We have to remove rpath - not allowed in Fedora
