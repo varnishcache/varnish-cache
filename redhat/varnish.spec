@@ -118,9 +118,9 @@ make %{?_smp_mflags} V=1
 	redhat/varnish.initrc redhat/varnishlog.initrc redhat/varnishncsa.initrc
 %endif
 
-rm -rf doc/sphinx/\=build/html/_sources
-mv doc/sphinx/\=build/html doc
-rm -rf doc/sphinx/\=build
+rm -rf doc/sphinx/build/html/_sources
+mv doc/sphinx/build/html doc
+rm -rf doc/sphinx/build
 
 %check
 # rhel5 on ppc64 is just too strange
