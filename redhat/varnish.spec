@@ -14,9 +14,9 @@ Source0: %{name}-%{version}%{?vd_rc}.tar.gz
 #Source0: %{name}-trunk.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # To build from git, start with a make dist, see redhat/README.redhat 
-# You will need at least automake autoconf libtool python-docutils
-#BuildRequires: automake autoconf libtool python-docutils
-BuildRequires: ncurses-devel groff pcre-devel pkgconfig libedit-devel
+# You will need at least automake autoconf libtool
+#BuildRequires: automake autoconf libtool
+BuildRequires: ncurses-devel groff pcre-devel pkgconfig python-docutils libedit-devel
 Requires: varnish-libs = %{version}-%{release}
 Requires: logrotate
 Requires: ncurses
