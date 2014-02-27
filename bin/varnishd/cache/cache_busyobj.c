@@ -244,9 +244,10 @@ VBO_waitlen(struct busyobj *bo, ssize_t l)
 void
 VBO_setstate(struct busyobj *bo, enum busyobj_state_e next)
 {
-	Lck_Lock(&bo->mtx);
-	VSLb(bo->vsl, SLT_Debug, "XXX BOS: %d -> %d", bo->state, next);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	assert(bo->do_stream || next != BOS_STREAM);
 	assert(next > bo->state);
+	Lck_Lock(&bo->mtx);
 	bo->state = next;
 	AZ(pthread_cond_broadcast(&bo->cond));
 	Lck_Unlock(&bo->mtx);

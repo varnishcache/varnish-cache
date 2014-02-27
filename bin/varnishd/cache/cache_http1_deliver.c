@@ -294,7 +294,6 @@ V1D_Deliver(struct req *req)
 	if (!req->wantbody) {
 		/* This was a HEAD or conditional request */
 	} else if (req->res_mode & RES_ESI) {
-		AZ(req->obj->objcore->busyobj);
 		ESI_Deliver(req);
 	} else if (req->res_mode & RES_ESI_CHILD && req->gzip_resp) {
 		while (req->obj->objcore->busyobj)
