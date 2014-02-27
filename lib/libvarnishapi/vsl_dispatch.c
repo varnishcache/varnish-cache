@@ -855,8 +855,12 @@ vtx_scan(struct VSLQ *vslq, struct vtx *vtx)
 
 		switch (tag) {
 		case SLT_Begin:
-			(void)vtx_scan_begin(vslq, vtx, ptr);
-			vtx->flags |= VTX_F_BEGIN;
+			if (vtx->flags & VTX_F_BEGIN)
+				(void)vtx_diag_tag(vtx, ptr, "duplicate begin");
+			else {
+				(void)vtx_scan_begin(vslq, vtx, ptr);
+				vtx->flags |= VTX_F_BEGIN;
+			}
 			break;
 
 		case SLT_Link:
@@ -864,15 +868,15 @@ vtx_scan(struct VSLQ *vslq, struct vtx *vtx)
 			break;
 
 		case SLT_End:
+			AZ(vtx->flags & VTX_F_END);
 			vtx->flags |= VTX_F_END;
+			vtx_mark_complete(vslq, vtx);
 			break;
+
 		default:
 			break;
 		}
 	}
-
-	if (vtx->flags & VTX_F_END && !(vtx->flags & VTX_F_COMPLETE))
-		vtx_mark_complete(vslq, vtx);
 }
 
 /* Force a vtx into complete status by synthing the necessary outstanding
