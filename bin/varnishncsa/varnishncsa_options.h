@@ -41,7 +41,7 @@
 	)
 
 #define NCSA_OPT_g							\
-	VOPT("g:", "[-g <request|vxid>]", "Grouping mode",		\
+	VOPT("g:", "[-g <request|vxid>]", "Grouping mode (default: vxid)",		\
 	    "The grouping of the log records. The default is to group"	\
 	    " by vxid."							\
 	)
