@@ -19,272 +19,231 @@ When a new configuration is loaded, the varnishd management process
 translates the VCL code to C and compiles it to a shared object which
 is then dynamically linked into the server process.
 
-For an overview of the VCL syntax please see the users guide.
+This document focuses on the syntax of the VCL language. Full a full
+description of syntax and semantics, with ample examples, please see
+the users guide at https://www.varnish-cache.org/doc/
 
+VCL consists of the following elements:
+ * Operators
+ * Conditionals
+ * Strings, booleans, time, duration, ints
+ * Regular expressions
 
-Backend declarations
---------------------
+In addition VCL has the following contructs:
+ * Include
+ * Backend definitions
+ * Probes
+ * Access control lists - ACLs
+ * Import statement
+ * Functions
+ * Subroutines
 
-A backend declaration creates and initializes a named backend object::
+Note that are no loops or iterators of any kind in VCL.
 
-    backend www {
-        .host = "www.example.com";
-        .port = "http";
-    }
-
-The backend object can later be used to select a backend at request time::
-
-    if (req.http.host ~ "(?i)^(www.)?example.com$") {
-        set req.backend_hint = www;
-    }
-
-To avoid overloading backend servers, .max_connections can be set to
-limit the maximum number of concurrent backend connections.
-
-The timeout parameters can be overridden in the backend declaration.
-The timeout parameters are .connect_timeout for the time to wait for a
-backend connection, .first_byte_timeout for the time to wait for the
-first byte from the backend and .between_bytes_timeout for time to
-wait between each received byte.
-
-These can be set in the declaration like this::
-
-    backend www {
-        .host = "www.example.com";
-        .port = "http";
-        .connect_timeout = 1s;
-        .first_byte_timeout = 5s;
-        .between_bytes_timeout = 2s;
-    }
-
-.. _ref-vcl-director:
-
-Directors
+Operators
 ---------
 
-A director is a logical group of backend servers clustered together
-for redundancy. The basic role of the director is to let Varnish
-choose a backend server amongst several so if one is down another can
-be used.
+The following operators are available in VCL:
 
-There are several types of directors. The different director types
-use different algorithms to choose which backend to use.
+  =
+    Assignment operator.
 
-Configuring a director may look like this::
+  ==
+    Comparison.
 
-    director b2 random {
-        .retries = 5;
-        {
-            # We can refer to named backends
-            .backend = b1;
-            .weight = 7;
-        }
-        {
-            # Or define them inline
-            .backend  = {
-                .host = "fs2";
-            }
-            .weight = 3;
-        }
+  ~
+    Match. Can either be used with regular expressions or ACLs.
+
+  !
+    Negation.
+
+  &&
+    Logical and
+
+  ||
+    Logical or
+
+
+Conditionals
+------------
+
+VCL has *if* statments.
+
+
+Strings, booleans, time, duration and ints
+------------------------------------------
+
+These are the data types in Varnish. You can *set* or *unset* these.
+
+Example::
+
+  set req.http.user-agent = "unknown";
+
+
+Strings
+~~~~~~~
+
+Basic strings are enclosed in " ... ", and may not contain
+newlines. Long strings are enclosed in {" ... "}. They may contain any
+character including ", newline and other control characters except for
+the NUL (0x00) character
+
+Booleans
+~~~~~~~~
+
+Booleans can be either true or false.
+
+Time
+----
+
+VCL has time. The function *now* returns a time. A duration can be
+added to a time to make another time. In string context they return a
+formatted string.
+
+Durations
+---------
+
+Durations are defined by a number and a designation. The number can be a real so 1.5w is allowed.
+
+  s
+    seconds
+
+  m
+    minutes
+
+  h
+    hours
+
+  d
+    days
+
+  w
+    weeks
+
+  y
+    years.
+
+
+Ints
+----
+
+Certain fields are integers, used as expected. In string context they
+return a string.
+
+
+Regular Expressions
+-------------------
+
+Varnish uses PCRE - Perl-compatible regular expressions. For a
+complete description of PCRE please see the pcre(3) man page.
+
+To send flags to the PCRE engine, such as to turn on *case insensitivity* 
+add the flag within parens following a question mark,
+like this::
+
+    # If host is NOT example dot com..
+    if (req.http.host !~ "(?i)example.com$") {
+        ...
     }
 
-The family of random directors
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There are three directors that share the same logic, called the random
-director, client director and hash director. They each distribute traffic
-among the backends assigned to it using a random distribution seeded with
-either the client identity, a random number or the cache hash (typically
-url). Beyond the initial seed, they act the same.
+Include statement
+-----------------
 
-Each backend requires a .weight option which sets the amount of traffic
-each backend will get compared to the others. Equal weight means equal
-traffic. A backend with lower weight than an other will get proportionally
-less traffic.
+To include a VCL file in another file use the include keyword::
 
-The director has an optional .retries option which defaults to the number
-of backends the director has. The director will attempt .retries times to
-find a healthy backend if the first attempt fails. Each attempt re-uses the
-previous seed in an iterative manner. For the random director this detail
-is of no importance as it will give different results each time. For the
-hash and client director, this means the same URL or the same client will
-fail to the same server consistently.
-
-The random director
-...................
-
-This uses a random number to seed the backend selection.
-
-The client director
-...................
-
-The client director picks a backend based on the clients
-*identity*. You can set the VCL variable *client.identity* to identify
-the client by picking up the value of a session cookie or similar.
-
-The hash director
-.................
-
-The hash director will pick a backend based on the URL hash
-value.
-
-This is useful is you are using Varnish to load balance in front of
-other Varnish caches or other web accelerators as objects won't be
-duplicated across caches.
-
-It will use the value of req.hash, just as the normal cache lookup methods.
+  include "foo.vcl";
 
 
-The round-robin director
-~~~~~~~~~~~~~~~~~~~~~~~~
+Backend definition
+------------------
 
-The round-robin director does not take any options.
+A backend declaration creates and initializes a named backend
+object. A declaration start with the keyword *backend* followed by the
+name of the backend. The actual declaration is in curly brackets, in a
+key/value fashion.::
 
-It will use the first backend for the first request, the second backend for
-the second request and so on, and start from the top again when it gets to
-the end.
-
-If a backend is unhealthy or Varnish fails to connect, it will be skipped.
-The round-robin director will try all the backends once before giving up.
-
-The DNS director
-~~~~~~~~~~~~~~~~
-
-The DNS director can use backends in two different ways. Either like the
-random or round-robin director or using .list::
-
-  director directorname dns {
-          .list = {
-                  .host_header = "www.example.com";
-                  .port = "80";
-                  .connect_timeout = 0.4s;
-                  "192.168.15.0"/24;
-                  "192.168.16.128"/25;
-          }
-          .ttl = 5m;
-          .suffix = "internal.example.net";
-  }
-
-This will specify 384 backends, all using port 80 and a connection timeout
-of 0.4s. Options must come before the list of IPs in the .list statement.
-The .list-method does not support IPv6. It is not a white-list, it is an
-actual list of backends that will be created internally in Varnish - the
-larger subnet the more overhead.
-
-The .ttl defines the cache duration of the DNS lookups.
-
-The above example will append "internal.example.net" to the incoming Host
-header supplied by the client, before looking it up. All settings are
-optional.
-
-Health checks are not thoroughly supported.
-
-DNS round robin balancing is supported. If a hostname resolves to multiple
-backends, the director will divide the traffic between all of them in a
-round-robin manner.
-
-The fallback director
-~~~~~~~~~~~~~~~~~~~~~
-
-The fallback director will pick the first backend that is healthy. It
-considers them in the order in which they are listed in its definition.
-
-The fallback director does not take any options.
-
-An example of a fallback director::
-
-    director b3 fallback {
-        { .backend = www1; }
-        { .backend = www2; } # will only be used if www1 is unhealthy.
-        { .backend = www3; } # will only be used if both www1 and www2
-                             # are unhealthy.
+    backend name {
+        .attribute = "value";
     }
 
-Backend probes
---------------
+The only mandatory attribute is host. The attributes will inherit
+their defaults from the global parameters. The following attributes
+are availble:
 
-Backends can be probed to see whether they should be considered
-healthy or not.  The return status can also be checked by using the
-healthy function from the std vmod.
+  host (mandatory)
+    The host to be used. IP address or a hostname that resolves to a
+    single IP address.
 
-Probes take the following parameters:
+  port
+    The port on the backend that Varnish should connect to.
 
-.url
-  Specify a URL to request from the backend.
-  Defaults to "/".
-.request
-  Specify a full HTTP request using multiple strings. .request will
-  have \\r\\n automatically inserted after every string.
-  If specified, .request will take precedence over .url.
-.window
-  How many of the latest polls we examine to determine backend health.
-  Defaults to 8.
-.threshold
-  How many of the polls in .window must have succeeded for us to
-  consider the backend healthy. If this is set to more than or equal
-  to the threshold, the backend starts as healthy. Defaults to the
-  value of threshold - 1. In this case, the backend starts as sick and
-  requires one poll to pass to become healthy.
-  Defaults to threshold - 1.
-.initial
-  How many of the polls in .window are considered good when Varnish
-  starts. Defaults to the value of threshold - 1. In this case, the
-  backend starts as sick and requires one single poll to be considered
-  healthy.
-.expected_response
-  The expected backend HTTP response code.
-  Defaults to 200.
-.interval
-  Defines how often the probe should check the backend.
-  Default is every 5 seconds.
-.timeout
-  How fast each probe times out.
-  Default is 2 seconds.
+  host_header
+    A host header to add.
 
-A backend with a probe can be defined like this, together with the
-backend or director::
+  connect_timeout
+    Timeout for connections.
 
-    backend www {
-        .host = "www.example.com";
-        .port = "http";
-        .probe = {
-            .url = "/test.jpg";
-            .timeout = 0.3s;
-            .window = 8;
-            .threshold = 3;
-            .initial = 3;
-        }
+  first_byte_timeout
+    Timeout for first byte.
+
+  between_bytes_timeout
+    Timeout between bytes.
+
+  probe
+    Attach a probe to the backend. See Probes.
+
+  max_connections
+    Maximum number of open connections towards this backend. If
+    Varnish reaches the maximum Varnish it will start failing
+    connections.
+
+Probes
+------
+
+Probes will query the backend for status on a regular basis and mark
+the backend as down it they fail. A probe is defined as this:::
+
+    probe name {
+         .attribute = "value";
     }
 
-Or it can be defined separately and then referenced::
+There are no mandatory options. These are the options you can set:
 
-    probe healthcheck {
-        .url = "/status.cgi";
-        .interval = 60s;
-        .timeout = 0.3s;
-        .window = 8;
-        .threshold = 3;
-        .initial = 3;
-        .expected_response = 200;
-    }
+  url
+    The URL to query. Defaults to "/".
 
-    backend www {
-        .host = "www.example.com";
-        .port = "http";
-        .probe = healthcheck;
-    }
+  request
+    Specify a full HTTP request using multiple strings. .request will
+    have \r\n automatically inserted after every string. If specified,
+    .request will take precedence over .url.
 
-If you have many backends this can simplify the config a lot.
+  expected_response
+    The expected HTTP response code. Defaults to 200.
+            
+  timeout
+    The timeout for the probe. Default it 2s.
 
-It is also possible to specify the raw HTTP request::
+  interval
+    How often the probe is run. Default is 5s.
 
-    probe rawprobe {
-        # NB: \r\n automatically inserted after each string!
-        .request =
-          "GET / HTTP/1.1"
-          "Host: www.foo.bar"
-          "Connection: close";
-    }
+  initial
+    How many of the polls in .window are considered good when Varnish
+    starts. Defaults to the value of threshold - 1. In this case, the
+    backend starts as sick and requires one single poll to be
+    conqsidered healthy.
+            
+  window
+    How many of the latest polls we examine to determine backend health. Defaults to 8.
+            
+  threshold
+    How many of the polls in .window must have succeeded for us to
+    consider the backend healthy. If this is set to more than or equal
+    to the threshold, the backend starts as healthy. Defaults to the
+    value of threshold - 1. In this case, the backend starts as sick
+    and requires one poll to pass to become healthy. Defaults to
+    threshold - 1.
+
 
 ACLs
 ----
@@ -310,20 +269,55 @@ To match an IP address against an ACL, simply use the match operator::
         return (pipe);
     }
 
-Regular Expressions
--------------------
 
-Varnish uses PCRE - Perl-compatible regular expressions. For a
-complete description of PCRE please see the pcre(3) man page.
+Subroutines
+-----------
 
-To send flags to the PCRE engine, such as to turn on *case
-insensitivity* add the flag within parens following a question mark,
-like this::
+A subroutine is used to group code for legibility or reusability::
 
-    # If host is NOT example dot com..
-    if (req.http.host !~ "(?i)example.com$") {
-        ...
+    sub pipe_if_local {
+        if (client.ip ~ local) {
+            return (pipe);
+        }
     }
+
+Subroutines in VCL do not take arguments, nor do they return
+values. The built in subroutines all have names beginning with vcl_,
+which is reserved.
+
+To call a subroutine, use the call keyword followed by the subroutine's name::
+
+    call pipe_if_local;
+
+Return statements
+~~~~~~~~~~~~~~~~~
+
+The subroutine executions ends when a return(*action*) statement is
+made. The *action* specifies how execution should proceed. The context
+defines which actions are availble. See the user guide for information
+on what actions are available where.
+
+Multiple subroutines
+~~~~~~~~~~~~~~~~~~~~
+
+If multiple subroutines with the name of one of the builtin
+ones are defined, they are concatenated in the order in which they
+appear in the source.
+
+The default versions distributed with Varnish will be implicitly
+concatenated.
+
+
+
+Variables
+---------
+
+In VCL you have access to certain variable objects. These contain
+requests and responses currently beeing worked on. What variables are
+availble depends on context.
+
+.. include:: vcl_var.rst
+
 
 Functions
 ---------
@@ -347,633 +341,11 @@ regsub(str, regex, sub)
 regsuball(str, regex, sub)
   As regsub() but this replaces all occurrences.
 
-Subroutines
-~~~~~~~~~~~
-
-A subroutine is used to group code for legibility or reusability::
-
-    sub pipe_if_local {
-        if (client.ip ~ local) {
-            return (pipe);
-        }
-    }
-
-Subroutines in VCL do not take arguments, nor do they return values.
-
-To call a subroutine, use the call keyword followed by the subroutine's name::
-
-    call pipe_if_local;
-
-There are a number of special subroutines which hook into the Varnish
-workflow.  These subroutines may inspect and manipulate HTTP headers
-and various other aspects of each request, and to a certain extent
-decide how the request should be handled.  Each subroutine terminates
-by calling one of a small number of keywords which indicates the
-desired outcome.
-
-vcl_init
-  Called when VCL is loaded, before any requests pass through it.
-  Typically used to initialize VMODs.
-
-  return() values:
-
-  ok
-    Normal return, VCL continues loading.
-
-vcl_recv
-  Called at the beginning of a request, after the complete request has
-  been received and parsed.  Its purpose is to decide whether or not
-  to serve the request, how to do it, and, if applicable, which backend
-  to use.
-
-  The vcl_recv subroutine may terminate with calling return() on one of
-  the following keywords:
-
-  error(code [, reason])
-    Return the specified error code to the client and abandon the request.
-
-  hash
-    Look up the requested object in the cache.  Control will
-    eventually pass to vcl_hit or vcl_miss, depending on whether the
-    object is in the cache.  The ``bereq.method`` value will be set
-    to ``GET`` regardless of the value of ``req.method``.
-
-  pass
-    Switch to pass mode.  Control will eventually pass to vcl_pass.
-
-  pipe
-    Switch to pipe mode.  Control will eventually pass to vcl_pipe.
-
-  purge
-    ?
-
-vcl_hash
-  You may call hash_data() on the data you would like to add to the hash.
-
-  The vcl_hash subroutine may terminate with calling return() with one of
-  the following keywords:
-
-  lookup
-    Proceed.
-
-vcl_pass
-  Called upon entering pass mode.  In this mode, the request is passed
-  on to the backend, and the backend's response is passed on to the
-  client, but is not entered into the cache.  Subsequent requests
-  submitted over the same client connection are handled normally.
-
-  The vcl_pass subroutine may terminate with calling return() with one of
-  the following keywords:
-
-  error(code [, reason])
-    Return the specified error code to the client and abandon the request.
-
-  fetch
-    Proceed with pass mode.
-
-  restart
-    Restart the transaction. Increases the restart counter. If the number
-    of restarts is higher than *max_restarts* Varnish emits a guru meditation
-    error.
-
-vcl_pipe
-  Called upon entering pipe mode.  In this mode, the request is passed
-  on to the backend, and any further data from either client or
-  backend is passed on unaltered until either end closes the
-  connection.
-
-  The vcl_pipe subroutine may terminate with calling return() with one of
-  the following keywords:
-
-  error(code [, reason])
-    Return the specified error code to the client and abandon the request.
-
-  pipe
-    Proceed with pipe mode.
-
-vcl_purge
-  ?
-
-  The vcl_purge subroutine may terminate with calling return() with one of
-  the following keywords:
-
-  error(code [, reason])
-    Return the specified error code to the client and abandon the request.
-
-..  fetch
-..    Not implemented.
-
-vcl_hit
-  Called after a cache lookup if the requested document was found in the cache.
-
-  The vcl_hit subroutine may terminate with calling return() with one of
-  the following keywords:
-
-  deliver
-    Deliver the cached object to the client.  Control will eventually
-    pass to vcl_deliver.
-
-  error(code [, reason])
-    Return the specified error code to the client and abandon the request.
-
-  fetch
-    ?
-
-  pass
-    Switch to pass mode.  Control will eventually pass to vcl_pass.
-
-  restart
-    Restart the transaction. Increases the restart counter. If the number
-    of restarts is higher than *max_restarts* Varnish emits a guru meditation
-    error.
-
-vcl_miss
-  Called after a cache lookup if the requested document was not found
-  in the cache.  Its purpose is to decide whether or not to attempt to
-  retrieve the document from the backend, and which backend to use.
-
-  The vcl_miss subroutine may terminate with calling return() with one of
-  the following keywords:
-
-  error(code [, reason])
-    Return the specified error code to the client and abandon the request.
-
-  fetch
-    Retrieve the requested object from the backend.  Control will
-    eventually pass to vcl_backend_fetch.
-
-  pass
-    Switch to pass mode.  Control will eventually pass to vcl_pass.
-
-  restart
-    ?
-
-vcl_backend_fetch
-  ?
-
-  The vcl_backend_fetch subroutine may terminate with calling return()
-  with one of the following keywords:
-
-  abandon
-    ?
-
-  fetch
-    Retrieve the requested object from the backend.  Control will
-    eventually pass to vcl_backend_response.
-
-vcl_backend_response
-  Called after a document has been successfully retrieved from the backend.
-
-  The vcl_backend_response subroutine may terminate with calling return()
-  with one of the following keywords:
-
-  abandon
-    ?
-
-  deliver
-    Possibly insert the object into the cache, then deliver it to the
-    client.  Control will eventually pass to vcl_deliver.
-
-  retry
-    ?
-
-vcl_deliver
-  Called before a cached object is delivered to the client.
-
-  The vcl_deliver subroutine may terminate with one of the following
-  keywords:
-
-  deliver
-    Deliver the object to the client.
-
-  restart
-    Restart the transaction. Increases the restart counter. If the number
-    of restarts is higher than *max_restarts* Varnish emits a guru meditation
-    error.
-
-vcl_error
-  Called when we hit an error, either explicitly or implicitly due to
-  backend or internal errors.
-
-  The vcl_error subroutine may terminate by calling return with one of
-  the following keywords:
-
-  deliver
-    Deliver the error object to the client.
-
-  restart
-    Restart the transaction. Increases the restart counter. If the number
-    of restarts is higher than *max_restarts* Varnish emits a guru meditation
-    error.
-
-vcl_fini
-  Called when VCL is discarded only after all requests have exited the VCL.
-  Typically used to clean up VMODs.
-
-  return() values:
-
-  ok
-    Normal return, VCL will be discarded.
-
-If one of these subroutines is left undefined or terminates without
-reaching a handling decision, control will be handed over to the
-builtin default.  See the EXAMPLES section for a listing of the
-default code.
-
-Multiple subroutines
-~~~~~~~~~~~~~~~~~~~~
-If multiple subroutines with the name of one of the builtin
-ones are defined, they are concatenated in the order in which they
-appear in the source.
-The default versions distributed with Varnish will be implicitly
-concatenated as a last resort at the end.
-
-Example::
-
-    # in file "main.vcl"
-    include "backends.vcl";
-    include "ban.vcl";
-
-    # in file "backends.vcl"
-    sub vcl_recv {
-        if (req.http.host ~ "(?i)example.com") {
-            set req.backend_hint = foo;
-	} elsif (req.http.host ~ "(?i)example.org") {
-	    set req.backend_hint = bar;
-	}
-    }
-
-    # in file "ban.vcl"
-    sub vcl_recv {
-        if (client.ip ~ admin_network) {
-	    if (req.http.Cache-Control ~ "no-cache") {
-                ban("req.url ~ " + req.url);
-            }
-        }
-    }
-
-Variables
-~~~~~~~~~
-
-Although subroutines take no arguments, the necessary information is
-made available to the handler subroutines through global variables.
-
-The following variables are always available:
-
-now
-  The current time, in seconds since the epoch. When used in string context
-  it returns a formatted string.
-
-The following variables are available in backend declarations:
-
-.host
-  Host name or IP address of a backend.
-
-.port
-  Service name or port number of a backend.
-
-The following variables are available while processing a request:
-
-client.ip
-  The client's IP address.
-
-client.identity
-  Identification of the client, used to load balance in the client director.
-
-server.ip
-  The IP address of the socket on which the client connection was received.
-
-server.hostname
-  The host name of the server.
-
-server.identity
-  The identity of the server, as set by the -i parameter.
-  If the -i parameter is not passed to varnishd, server.identity will be
-  set to the name of the instance, as specified by the -n parameter.
-
-req.method
-  The request type (e.g. "GET", "HEAD").
-
-req.url
-  The requested URL.
-
-req.proto
-  The HTTP protocol version used by the client.
-
-req.http.header
-  The corresponding HTTP header.
-
-req.backend_hint
-  Set bereq.backend to this if we attempt to fetch. This variable is
-  a convenience so the overall policy can be set up once and for all
-  in vcl_recv.
-
-req.can_gzip
-  Does the client accept the gzip transfer encoding.
-
-req.esi
-  Boolean. Set to false to disable ESI processing regardless of any
-  value in beresp.do_esi. Defaults to true. This variable is subject
-  to change in future versions, you should avoid using it.
-
-req.esi_level
-  A count of how many levels of ESI requests we're currently at.
-
-req.hash_always_miss
-  Force a cache miss for this request. If set to true Varnish will disregard
-  any existing objects and always (re)fetch from the backend.
-
-req.hash_ignore_busy
-  Ignore any busy object during cache lookup. You would want to do
-  this if you have two server looking up content from each other to
-  avoid potential deadlocks.
-
-req.restarts
-  A count of how many times this request has been restarted.
-
-req.ttl
-  ?
-
-req.xid
-  Unique ID of this request.
-
-The following variables are available while preparing a backend
-request (either for a cache miss or for pass or pipe mode):
-
-bereq.method
-  The request type (e.g. "GET", "HEAD").
-
-bereq.url
-  The requested URL.
-
-bereq.proto
-  The HTTP protocol version used to talk to the server.
-
-bereq.http.header
-  The corresponding HTTP header.
-
-bereq.backend
-  ?
-
-bereq.between_bytes_timeout
-  The time in seconds to wait between each received byte from the
-  backend. Not available in pipe mode.
-
-bereq.connect_timeout
-  The time in seconds to wait for a backend connection.
-
-bereq.first_byte_timeout
-  The time in seconds to wait for the first byte from the backend. Not
-  available in pipe mode.
-
-bereq.retries
-  ?
-
-bereq.uncacheable
-  ?
-
-The following variables are available after the requested object has
-been retrieved from the backend, before it is entered into the cache. In
-other words, they are available in vcl_backend_response:
-
-beresp.proto
-  The HTTP protocol version used the backend replied with.
-
-beresp.status
-  The HTTP status code returned by the server.
-
-beresp.reason
-  The HTTP status message returned by the server.
-
-beresp.http.header
-  The corresponding HTTP header.
-
-beresp.backend.ip
-  IP of the backend this response was fetched from.
-
-beresp.backend.name
-  Name of the backend this response was fetched from.
-
-beresp.do_esi
-  Boolean. ESI-process the object after fetching it. Defaults to
-  false. Set it to true to parse the object for ESI directives. Will
-  only be honored if req.esi is true.
-
-beresp.do_gunzip
-  Boolean. Unzip the object before storing it in the cache. Defaults to
-  false.
-
-beresp.do_gzip
-  Boolean. Gzip the object before storing it. Defaults to false. When
-  http_gzip_support is on Varnish will request already compressed
-  content from the backend and as such compression in Varnish is not needed.
-
-beresp.do_stream
-  Deliver the object to the client directly without fetching the whole
-  object into varnish. If this request is pass'ed it will not be
-  stored in memory. As of Varnish Cache 3.0 the object will marked as busy
-  as it is delivered so only client can access the object.
-
-beresp.grace
-  Set to a period to enable grace.
-
-beresp.keep
-  ?
-
-beresp.storage_hint
-  Hint to Varnish that you want to save this object to a particular storage
-  backend.
-
-beresp.ttl
-  The object's remaining time to live, in seconds. beresp.ttl is writable.
-
-beresp.uncacheable
-  ?
-
-After the object is entered into the cache, the following (mostly
-read-only) variables are available when the object has been located in
-cache, typically in vcl_hit, or when constructing a synthetic reply in
-vcl_error:
-
-obj.proto
-  The HTTP protocol version used when the object was retrieved.
-
-obj.status
-  The HTTP status code returned by the server.
-
-obj.reason
-  The HTTP status message returned by the server.
-
-obj.http.header
-  The corresponding HTTP header.
-
-obj.grace
-  The object's grace period in seconds. obj.grace is writable.
-
-obj.hits
-  The approximate number of times the object has been delivered. A value
-  of 0 indicates a cache miss. This variable is also available in
-  vcl_deliver.
-
-obj.keep
-  ?
-
-obj.last_use
-  The approximate time elapsed since the object was last requests, in
-  seconds. This variable is also available in vcl_deliver.
-
-obj.ttl
-  The object's remaining time to live, in seconds. obj.ttl is writable.
-
-obj.uncacheable
-  ?
-
-The following variables are available while preparing a response to the client:
-
-resp.proto
-  The HTTP protocol version to use for the response.
-
-resp.status
-  The HTTP status code that will be returned.
-
-resp.reason
-  The HTTP status message that will be returned.
-
-resp.http.header
-  The corresponding HTTP header.
-
-Values may be assigned to variables using the set keyword::
-
-    sub vcl_recv {
-        # Normalize the Host: header
-        if (req.http.host ~ "(?i)^(www.)?example.com$") {
-            set req.http.host = "www.example.com";
-        }
-    }
-
-HTTP headers can be removed entirely using the unset keyword::
-
-    sub vcl_backend_response {
-        # Don't cache cookies
-        unset beresp.http.Set-Cookie;
-    }
-
-Grace
------
-
-If the backend takes a long time to generate an object there is a risk
-of a thread pile up.  In order to prevent this you can enable *grace*.
-This allows Varnish to serve an expired version of the object while a
-fresh object is being generated by the backend.
-
-The following vcl code will make Varnish serve expired objects.  All
-object will be kept up to two minutes past their expiration time or a
-fresh object is generated.
-::
-
-    sub vcl_backend_response {
-        set beresp.grace = 2m;
-    }
 
 EXAMPLES
 ========
 
-The following code is the equivalent of the default configuration with
-the backend address set to "backend.example.com" and no backend port
-specified::
-
-    backend default {
-        .host = "backend.example.com";
-        .port = "http";
-    }
-
-.. include:: ../../../bin/varnishd/builtin.vcl
-  :literal:
-
-The following example shows how to support multiple sites running on
-separate backends in the same Varnish instance, by selecting backends
-based on the request URL::
-
-    backend www {
-        .host = "www.example.com";
-        .port = "80";
-    }
-
-    backend images {
-        .host = "images.example.com";
-        .port = "80";
-    }
-
-    sub vcl_recv {
-        if (req.http.host ~ "(?i)^(www.)?example.com$") {
-            set req.http.host = "www.example.com";
-            set req.backend_hint = www;
-        } elsif (req.http.host ~ "(?i)^images.example.com$") {
-            set req.backend_hint = images;
-        } else {
-            return (error(404, "Unknown virtual host"));
-        }
-    }
-
-The following snippet demonstrates how to force a minimum TTL for
-all documents.  Note that this is not the same as setting the
-default_ttl run-time parameter, as that only affects document for
-which the backend did not specify a TTL::
-
-    import std; # needed for std.log
-
-    sub vcl_backend_response {
-        if (beresp.ttl < 120s) {
-            std.log("Adjusting TTL");
-            set beresp.ttl = 120s;
-        }
-    }
-
-The following snippet demonstrates how to force Varnish to cache
-documents even when cookies are present::
-
-    sub vcl_recv {
-        if (req.method == "GET" && req.http.cookie) {
-            return (hash);
-        }
-    }
-
-    sub vcl_backend_response {
-        if (beresp.http.Set-Cookie) {
-            return (deliver);
-        }
-    }
-
-The following code implements the HTTP PURGE method as used by Squid
-for object invalidation::
-
-    acl purge {
-        "localhost";
-        "192.0.2.1"/24;
-    }
-
-    sub vcl_recv {
-        if (req.method == "PURGE") {
-            if (!client.ip ~ purge) {
-                return (error(405, "Not allowed."));
-            }
-            return (hash);
-        }
-    }
-
-    sub vcl_hit {
-        if (req.method == "PURGE") {
-            purge;
-            return (error(200, "Purged."));
-        }
-    }
-
-    sub vcl_miss {
-        if (req.method == "PURGE") {
-            purge;
-            return (error(200, "Purged."));
-        }
-    }
+For examples, please see the guide guide.
 
 SEE ALSO
 ========
@@ -986,10 +358,9 @@ HISTORY
 =======
 
 VCL was developed by Poul-Henning Kamp in cooperation with Verdens
-Gang AS, Redpill Linpro and Varnish Software.  This manual page was
-written by Dag-Erling Smørgrav and later edited by Poul-Henning Kamp,
-Kristian Lyngstøl and Per Buer.
-
+Gang AS, Redpill Linpro and Varnish Software.  This manual page is
+written by Per Buer, Poul-Henning Kamp, Martin Blix Grydeland,
+Kristian Lyngstøl and possibly others.
 
 COPYRIGHT
 =========
