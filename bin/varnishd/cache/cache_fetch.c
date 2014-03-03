@@ -35,25 +35,9 @@
 #include <stdlib.h>
 
 #include "cache.h"
-
 #include "hash/hash_slinger.h"
-
 #include "vcl.h"
 #include "vtim.h"
-
-
-/*--------------------------------------------------------------------
- */
-
-static void
-vbf_release_req(struct busyobj *bo)
-{
-	assert(bo->state == BOS_INVALID);
-	AN(bo->req);
-	bo->req = NULL;
-	http_CopyHome(bo->bereq);
-	VBO_setstate(bo, BOS_REQ_DONE);
-}
 
 /*--------------------------------------------------------------------
  * Allocate an object, with fall-back to Transient.
@@ -187,7 +171,7 @@ vbf_beresp2obj(struct busyobj *bo)
 }
 
 /*--------------------------------------------------------------------
- * Copy req->bereq
+ * Copy req->bereq and release req if not pass fetch
  */
 
 static enum fetch_step
@@ -199,6 +183,7 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->req, REQ_MAGIC);
 
+	assert(bo->state == BOS_INVALID);
 	AN(bo->director);
 	AZ(bo->vbc);
 	AZ(bo->should_close);
@@ -207,18 +192,16 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 	HTTP_Setup(bo->bereq0, bo->ws, bo->vsl, SLT_BereqMethod);
 	http_FilterReq(bo->bereq0, bo->req->http,
 	    bo->do_pass ? HTTPH_R_PASS : HTTPH_R_FETCH);
+
 	if (!bo->do_pass) {
-		// XXX: Forcing GET should happen in vcl_miss{} ?
 		http_ForceGet(bo->bereq0);
-		if (cache_param->http_gzip_support) {
-			/*
-			 * We always ask the backend for gzip, even if the
-			 * client doesn't grok it.  We will uncompress for
-			 * the minority of clients which don't.
-			 */
+		if (cache_param->http_gzip_support)
 			http_ForceHeader(bo->bereq0, H_Accept_Encoding, "gzip");
-		}
+		AN(bo->req);
+		bo->req = NULL;
+		http_CopyHome(bo->bereq0);
 	}
+
 	if (bo->ims_obj != NULL) {
 		if (http_GetHdr(bo->ims_obj->http, H_Last_Modified, &p)) {
 			http_PrintfHeader(bo->bereq0,
@@ -231,6 +214,7 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 		}
 	}
 
+	VBO_setstate(bo, BOS_REQ_DONE);
 	return (F_STP_STARTFETCH);
 }
 
@@ -275,6 +259,11 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	AZ(bo->should_close);
 	AZ(bo->storage_hint);
 
+	if (bo->do_pass)
+		AN(bo->req);
+	else
+		AZ(bo->req);
+
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, SLT_BereqMethod);
 	HTTP_Copy(bo->bereq, bo->bereq0);
 
@@ -285,8 +274,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	bo->uncacheable = bo->do_pass;
 	if (wrk->handling == VCL_RET_ABANDON) {
-		if (bo->req != NULL)
-			vbf_release_req(bo);
 		HSH_Fail(bo->fetch_objcore);
 		VBO_setstate(bo, BOS_FAILED);
 		return (F_STP_DONE);
@@ -294,9 +281,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	assert (wrk->handling == VCL_RET_FETCH);
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
-
-	if (!bo->do_pass && bo->req != NULL)
-		vbf_release_req(bo); /* XXX: retry ?? */
 
 	assert(bo->state <= BOS_REQ_DONE);
 
@@ -315,11 +299,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		AZ(bo->vbc);
 		return (F_STP_ERROR);
 	}
-
-	if (bo->do_pass && bo->req != NULL)
-		vbf_release_req(bo); /* XXX : retry ?? */
-
-	AZ(bo->req);
 
 	AN(bo->vbc);
 	http_VSL_log(bo->beresp);
@@ -689,9 +668,6 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	VCL_backend_error_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
 
 	xxxassert(wrk->handling == VCL_RET_DELIVER);
-
-	if (bo->req != NULL)
-		vbf_release_req(bo);
 
 	http_PrintfHeader(bo->beresp, "Content-Length: %jd", (intmax_t)0);
 	http_PrintfHeader(bo->beresp, "X-XXXPHK: yes");
