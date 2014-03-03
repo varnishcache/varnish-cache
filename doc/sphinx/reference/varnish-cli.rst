@@ -71,112 +71,74 @@ be entered with the \\xnn syntax.
 Commands
 --------
 
-backend.list
-      Lists the defined backends including health state.
-
-backend.set_health matcher state
-      Sets the health state on a specific backend, overriding the state
-      determined by a probe.  This is useful if you want to take a
-      certain backend out of circulation.
-
-      *state* can be 'auto', 'sick' or 'healthy'.
-
-ban   *field operator argument* [&& field operator argument [...]]
-      Immediately invalidate all documents matching the ban
-      expression.  See *Ban Expressions* for more documentation and
-      examples.
-
-ban.list
-      All requests for objects from the cache are matched against
-      items on the ban list.  If an object in the cache is older than
-      a matching ban list item, it is considered "banned", and will be
-      fetched from the backend instead.
-
-      When a ban expression is older than all the objects in the
-      cache, it is removed from the list.
-
-      ban.list displays the ban list. The output looks something like
-      this::
-
-        0x7fea4fcb0580 1303835108.618863   131G   req.url ~ /some/url
-
-      The first field is the address of the ban.
-
-      The second is the time of entry into the list, given
-      as a high precision timestamp.
-
-      The third field describes many objects point to this ban. When
-      an object is compared to a ban the object is marked with a
-      reference to the newest ban it was tested against. This isn't
-      really useful unless you're debugging.
-
-      A "G" marks that the ban is "Gone". Meaning it has been marked
-      as a duplicate or it is no longer valid. It stays in the list
-      for effiency reasons.
-
-      Then follows the actual ban it self.
-
 help [command]
-      Display a list of available commands.
-      If the command is specified, display help for this command.
+  Show command/protocol help
 
-param.set param value
-      Set the parameter specified by param to the specified value.
-      See Run-Time Parameters for a list of parameters.
+ping [timestamp]
+  Keep connection alive
 
-param.show [-l] [param]
-      Display a list if run-time parameters and their values.
-
-      If the -l option is specified, the list includes a brief
-      explanation of each parameter.
-
-      If a param is specified, display only the value and explanation
-      for this parameter.
-
-ping  [timestamp]
-      Ping the Varnish cache process, keeping the connection alive.
+auth response
+  Authenticate.
 
 quit
-      Close the connection to the Varnish admin port.
+  Close connection
 
-start
-      Start the Varnish cache process if it is not already running.
+banner
+  Print welcome banner.
 
 status
-      Check the status of the Varnish cache process.
+  Check status of Varnish cache process.
+
+start
+  Start the Varnish cache process.
 
 stop
-      Stop the Varnish cache process.
+  Stop the Varnish cache process
 
-storage.list
-      Lists the defined storage backends.
+vcl.load <configname> <filename>
+  Compile and load the VCL file under the name provided.
 
-vcl.discard configname
-      Discard the configuration specified by configname.  This will
-      have no effect if the specified configuration has a non-zero
-      reference count.
+vcl.inline <configname> <quoted_VCLstring>
+  Compile and load the VCL data under the name provided.
 
-vcl.inline configname vcl
-      Create a new configuration named configname with the VCL code
-      specified by vcl, which must be a quoted string.
+vcl.use <configname>
+  Switch to the named configuration immediately.
+
+vcl.discard <configname>
+  Unload the named configuration (when possible).
 
 vcl.list
-      List available configurations and their respective reference
-      counts.  The active configuration is indicated with an asterisk
-      ("*").
+  List all loaded configuration.
 
-vcl.load configname filename
-      Create a new configuration named configname with the contents of
-      the specified file.
+vcl.show <configname>
+  Display the source code for the specified configuration.
 
-vcl.show configname
-      Display the source code for the specified configuration.
+param.show [-l] [<param>]
+  Show parameters and their values.
 
-vcl.use configname
-      Start using the configuration specified by configname for all
-      new requests.  Existing requests will continue using whichever
-      configuration was in use when they arrived.
+param.set <param> <value>
+  Set parameter value.
 
+panic.show
+  Return the last panic, if any.
+
+panic.clear
+  Clear the last panic, if any.
+
+storage.list
+  List storage devices
+
+backend.list
+  List all backends
+
+backend.set_health matcher state
+  Set health status on a backend
+
+ban <field> <operator> <arg> [&& <field> <oper> <arg>]...
+  All objects where the all the conditions match will be marked obsolete.
+
+ban.list
+  List the active bans.
 
 
 Ban Expressions
