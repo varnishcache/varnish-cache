@@ -98,3 +98,9 @@ varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_hash { if (2 == 3) { } }
 }
+
+varnish v1 -errvcl {Object not found: 'foo.bar'} {
+	sub vcl_init {
+		new bar = foo.bar();
+	}
+}

@@ -190,6 +190,13 @@ parse_new(struct vcc *tl)
 
 	ExpectErr(tl, ID);
 	sy2 = VCC_FindSymbol(tl, tl->t, SYM_OBJECT);
+	if (sy2 == NULL) {
+		VSB_printf(tl->sb, "Object not found: ");
+		vcc_ErrToken(tl, tl->t);
+		VSB_printf(tl->sb, " at ");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
 	XXXAN(sy2);
 
 	/*lint -save -e448 */
