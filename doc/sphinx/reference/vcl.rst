@@ -105,6 +105,9 @@ Durations
 
 Durations are defined by a number and a designation. The number can be a real so 1.5w is allowed.
 
+  ms
+    milliseconds
+
   s
     seconds
 
@@ -129,6 +132,12 @@ Ints
 
 Certain fields are integers, used as expected. In string context they
 return a string.
+
+Reals
+-----
+
+VCL understands real numbers. As with integers, when used in a string
+context they will return a string.
 
 
 Regular Expressions
