@@ -265,6 +265,7 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 static enum fetch_step
 vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 {
+	int i, do_ims;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -277,12 +278,12 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, SLT_BereqMethod);
 	HTTP_Copy(bo->bereq, bo->bereq0);
 
+	http_PrintfHeader(bo->bereq,
+	    "X-Varnish: %u", bo->vsl->wid & VSL_IDENTMASK);
+
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
 
 	bo->uncacheable = bo->do_pass;
-
-	http_PrintfHeader(bo->bereq,
-	    "X-Varnish: %u", bo->vsl->wid & VSL_IDENTMASK);
 	if (wrk->handling == VCL_RET_ABANDON) {
 		if (bo->req != NULL)
 			vbf_release_req(bo);
@@ -291,22 +292,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		return (F_STP_DONE);
 	}
 	assert (wrk->handling == VCL_RET_FETCH);
-	return (F_STP_FETCHHDR);
-}
-
-
-/*--------------------------------------------------------------------
- */
-
-static enum fetch_step
-vbf_stp_fetchhdr(struct worker *wrk, struct busyobj *bo)
-{
-	int i, do_ims;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-
-	xxxassert (wrk->handling == VCL_RET_FETCH);
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
 
