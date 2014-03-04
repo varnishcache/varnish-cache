@@ -9,6 +9,9 @@ preferences.
 
 Note that VCL doesn't contain any loops or jump statements.
 
+This document gives an outline of the most important parts of the
+syntax. For a full documentation of VCL syntax please see
+:ref:`reference-vcl` in the reference.
 
 Strings
 ~~~~~~~
