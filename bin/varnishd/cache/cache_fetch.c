@@ -584,7 +584,14 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	obj->gzip_last = bo->ims_obj->gzip_last;
 	obj->gzip_stop = bo->ims_obj->gzip_stop;
 
-	XXXAZ(bo->ims_obj->esidata);
+	if (bo->ims_obj->esidata != NULL) {
+		obj->esidata = STV_alloc(bo, bo->ims_obj->esidata->len);
+		XXXAN(obj->esidata);
+		xxxassert(obj->esidata->space >= bo->ims_obj->esidata->len);
+		memcpy(obj->esidata->ptr, bo->ims_obj->esidata->ptr,
+		    bo->ims_obj->esidata->len);
+		obj->esidata->len = bo->ims_obj->esidata->len;
+	}
 
 	if (bo->ims_obj->vary != NULL) {
 		obj->vary = (void *)WS_Copy(obj->http->ws,
@@ -601,9 +608,9 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 
 
 	AZ(WS_Overflowed(bo->ws_o));
-	VBO_setstate(bo, BOS_STREAM);
+	if (bo->do_stream)
+		VBO_setstate(bo, BOS_STREAM);
 	HSH_Unbusy(&wrk->stats, obj->objcore);
-
 
 	st = NULL;
 	al = 0;

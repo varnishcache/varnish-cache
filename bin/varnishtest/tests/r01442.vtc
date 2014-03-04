@@ -1,0 +1,31 @@
+varnishtest "ESI + IMS"
+
+server s1 {
+	rxreq
+	txresp -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+		-body {<html><esi:remove>bla bla bla</esi:remove></html>}
+	rxreq
+	expect req.http.if-modified-since == "Thu, 26 Jun 2008 12:00:01 GMT"
+	txresp -status "304" -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" -nolen
+
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_esi = true;
+		set beresp.grace = 0s;
+		set beresp.keep = 60s;
+		set beresp.ttl = 1s;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 13
+	delay 3
+	txreq
+	rxresp
+	expect resp.bodylen == 13
+} -run
+
