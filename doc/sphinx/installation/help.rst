@@ -7,7 +7,7 @@ we try to help as much as time permits and have tried to streamline
 this process as much as possible.
 
 But before you grab hold of us, spend a moment composing your thoughts and
-formulate your question, there is nothing as pointless as simply telling
+formulate your question. There is nothing as pointless as simply telling
 us "Varnish does not work for me" with no further information to give
 any clue to why.
 
@@ -18,15 +18,15 @@ much faster that way.
 IRC Channel
 ===========
 
-The most immediate way to get hold of us, is to join our IRC channel:
+The most immediate way to get hold of us is to join our IRC channel:
 
 	``#varnish on server irc.linpro.no``
 
-The main timezone of the channel is Europe+America.
+The main timezone of the channel is Europe work hours.
 
 If you can explain your problem in a few clear sentences, without too
 much copy&paste, IRC is a good way to try to get help. If you do need
-to paste log files, VCL and so on, please use a pastebin_.
+to paste log files, VCL and so on, please use a pastebin_ service.
 
 If the channel is all quiet, try again some time later, we do have lives,
 families and jobs to deal with also.
@@ -39,7 +39,7 @@ it mostly on topic, and don't paste random links unless they are
 Mailing Lists
 =============
 
-Getting on or off our mailing lists happens through MailMan_.
+Getting on or off our mailing lists happens through Mailman_.
 
 If you are going to use Varnish, subscribing to our ``varnish-announce``
 mailing list is probably a very good idea. The typical pattern is that
@@ -66,6 +66,10 @@ usually quite focused on source-code and such.  Everybody on
 the -dev list is also on -misc, so cross-posting only serves to annoy
 those people.
 
+.. XXX: we should introduce the wiki (if we care about it) before
+.. we start referring to it (below). Make a wiki chapter?
+
+
 Trouble Tickets
 ===============
 
@@ -90,6 +94,6 @@ an email to phk@FreeBSD.org.
 	sales@varnish-software.com
 
 
-.. _Mailman: http://lists.varnish-cache.org/mailman/listinfo
+.. _mailman: http://lists.varnish-cache.org/mailman/listinfo
 .. _pastebin: http://gist.github.com/
 .. _"Shopping-List" wiki page: http://varnish-cache.org/wiki/PostTwoShoppingList

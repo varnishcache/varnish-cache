@@ -2,6 +2,10 @@
 Platform specific notes
 ------------------------
 
+On some platforms it is necessary to adjust the operating system before running
+Varnish on it. The systems and steps known to us are described in this section.
+
+
 Transparent hugepages on Redhat Enterprise Linux 6
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -12,7 +16,8 @@ It is recommended to disable transparent hugepages on affected systems::
 
     $ echo "never" > /sys/kernel/mm/redhat_transparent_hugepage/enabled
 
-On Debian/Ubuntu systems running 3.2 kernels the default value is "madvise" and does not need to changed.
+On Debian/Ubuntu systems running 3.2 kernels the default value is "madvise" and
+does not need to be changed.
 
 
 OpenVZ
@@ -38,12 +43,12 @@ in the Varnish startup script.
 TCP keep-alive configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-On some systems, Varnish is not able to set the TCP keep-alive values
-per socket, and therefor the tcp_keepalive_* Varnish runtime
-parameters are not available. On these platforms it can be benefitial
-to tune the system wide values for these in order to more reliably
-detect remote close for sessions spending long time on
-waitinglists. This will help free up resources faster.
+On some Solaris, FreeBSD and OS X systems, Varnish is not able to set the TCP
+keep-alive values per socket, and therefor the tcp_keepalive_* Varnish runtime
+parameters are not available. On these platforms it can be benefitial to tune
+the system wide values for these in order to more reliably detect remote close
+for sessions spending long time on waitinglists. This will help free up
+resources faster.
 
 Systems to not support TCP keep-alive values per socket include:
 

@@ -28,11 +28,11 @@ Varnish crashes
 Plain and simple: **boom**
 
 Varnish is split over two processes, the manager and the child.  The child
-does all the work, and the manager hangs around to resurect it if it
+does all the work, and the manager hangs around to resurrect it if it
 crashes.
 
 Therefore, the first thing to do if you see a Varnish crash, is to examine
-your syslogs, to see if it has happened before.  (One site is rumoured
+your syslogs to see if it has happened before.  (One site is rumoured
 to have had Varnish restarting every 10 minutes and *still* provide better
 service than their CMS system.)
 
@@ -138,11 +138,11 @@ transactions recorded with ``varnishlog`` and your explanation of
 what is wrong about what Varnish does.
 
 Be aware, that often Varnish does exactly what you asked it to, rather
-than what you intended it to do, so it sounds like a bug that would
+than what you intended it to do. If it sounds like a bug that would
 have tripped up everybody else, take a moment to read though your
 VCL and see if it really does what you think.
 
-You can also try setting the ``vcl_trace`` parameter, that will
-generate log records with like and char number for each statement
-executed in your VCL program.
+You can also try setting the ``vcl_trace`` parameter, that will generate log
+records with like and character number for each statement executed in your VCL
+program.
 
