@@ -388,7 +388,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	}
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AZ (oc->flags & OC_F_BUSY);
+	AZ(oc->flags & OC_F_BUSY);
 	AZ(req->objcore);
 
 	o = oc_getobj(&wrk->stats, oc);
@@ -427,11 +427,11 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_DELIVER;
 		return (REQ_FSM_MORE);
 	case VCL_RET_FETCH:
-		(void)HSH_DerefObj(&wrk->stats, &req->obj);
 		req->objcore = boc;
 		if (req->objcore != NULL)
 			req->req_step = R_STP_MISS;
 		else {
+			(void)HSH_DerefObj(&wrk->stats, &req->obj);
 			/*
 			 * We don't have a busy object, so treat this
 			 * like a pass
@@ -486,18 +486,21 @@ DOT
 static enum req_fsm_nxt
 cnt_miss(struct worker *wrk, struct req *req)
 {
+	struct object *o;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-	AZ(req->obj);
+
+	o = req->obj;
+	req->obj = NULL;
 
 	VCL_miss_method(req->vcl, wrk, req, NULL, req->http->ws);
 	switch (wrk->handling) {
 	case VCL_RET_FETCH:
 		wrk->stats.cache_miss++;
-		VBF_Fetch(wrk, req, req->objcore, NULL, VBF_NORMAL);
+		VBF_Fetch(wrk, req, req->objcore, o, VBF_NORMAL);
 		req->req_step = R_STP_FETCH;
 		return (REQ_FSM_MORE);
 	case VCL_RET_ERROR:
@@ -513,6 +516,8 @@ cnt_miss(struct worker *wrk, struct req *req)
 		WRONG("Illegal return from vcl_miss{}");
 	}
 	free(req->vary_b);
+	if (o != NULL)
+		(void)HSH_DerefObj(&wrk->stats, &o);
 	AZ(HSH_DerefObjCore(&wrk->stats, &req->objcore));
 	return (REQ_FSM_MORE);
 }
