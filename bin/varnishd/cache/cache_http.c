@@ -254,7 +254,6 @@ http_CollectHdr(struct http *hp, const char *hdr)
 	WS_ReleaseP(hp->ws, b + 1);
 }
 
-
 /*--------------------------------------------------------------------*/
 
 static unsigned
@@ -299,7 +298,6 @@ http_GetHdr(const struct http *hp, const char *hdr, char **ptr)
 	}
 	return (1);
 }
-
 
 /*--------------------------------------------------------------------
  * Find a given data element in a header according to RFC2616's #rule
@@ -636,6 +634,30 @@ http_FilterResp(const struct http *fm, struct http *to, unsigned how)
 	http_linkh(to, fm, HTTP_HDR_STATUS);
 	http_linkh(to, fm, HTTP_HDR_RESPONSE);
 	http_filterfields(to, fm, how);
+}
+
+/*--------------------------------------------------------------------
+ * Merge two HTTP headers the "wrong" way.
+ */
+
+void
+http_Merge(const struct http *fm, struct http *to)
+{
+	unsigned u, v;
+	const char *p;
+
+	for (u = HTTP_HDR_FIRST; u < fm->nhd; u++)
+		fm->hdf[u] |= HDF_MARKER;
+	for (v = HTTP_HDR_FIRST; v < to->nhd; v++) {
+		p = strchr(to->hd[v].b, ':');
+		AN(p);
+		u = http_findhdr(fm, p - to->hd[v].b, to->hd[v].b);
+		if (u)
+			fm->hdf[u] &= ~HDF_MARKER;
+	}
+	for (u = HTTP_HDR_FIRST; u < fm->nhd; u++)
+		if (fm->hdf[u] & HDF_MARKER)
+			http_SetHeader(to, fm->hd[u].b);
 }
 
 /*--------------------------------------------------------------------

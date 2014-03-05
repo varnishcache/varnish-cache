@@ -339,8 +339,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->ims_obj != NULL && bo->beresp->status == 304) {
 		bo->beresp->status = 200;
-		http_PrintfHeader(bo->beresp, "Content-Length: %jd",
-		    (intmax_t)bo->ims_obj->len);
+		http_Merge(bo->ims_obj->http, bo->beresp);
 		do_ims = 1;
 	} else
 		do_ims = 0;
@@ -567,7 +566,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		l += vl;
 	} else
 		vl = 0;
-	l += http_EstimateWS(bo->ims_obj->http, 0, &nhttp);
+	l += http_EstimateWS(bo->beresp, 0, &nhttp);
 
 	obj = vbf_allocobj(bo, l, nhttp);
 	if (obj == NULL) {
@@ -603,7 +602,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 
 	obj->http->logtag = SLT_ObjMethod;
 	/* XXX: we should have our own HTTP_A_CONDFETCH */
-	http_FilterResp(bo->ims_obj->http, obj->http, HTTPH_A_INS);
+	http_FilterResp(bo->beresp, obj->http, HTTPH_A_INS);
 	http_CopyHome(obj->http);
 
 

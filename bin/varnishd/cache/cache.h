@@ -192,6 +192,7 @@ struct http {
 	txt			*hd;
 	unsigned char		*hdf;
 #define HDF_FILTER		(1 << 0)	/* Filtered by Connection */
+#define HDF_MARKER		(1 << 1)	/* Marker bit */
 	uint16_t		shd;		/* Size of hd space */
 	uint16_t		nhd;		/* Next free hd */
 	uint16_t		status;
@@ -997,6 +998,7 @@ void http_CopyHome(const struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
 void http_CollectHdr(struct http *hp, const char *hdr);
 void http_VSL_log(const struct http *hp);
+void http_Merge(const struct http *fm, struct http *to);
 
 /* cache_http1_proto.c */
 
