@@ -24,7 +24,6 @@ The Varnish Reference Manual
 	vmod_std.rst
 	vsl.rst
 	vsl-query.rst
-	vcl_var.rst
 
 .. todo::
         The programs:
