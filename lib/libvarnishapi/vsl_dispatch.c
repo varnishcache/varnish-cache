@@ -847,7 +847,7 @@ vtx_scan(struct VSLQ *vslq, struct vtx *vtx)
 	    vslc_vtx_next(&vtx->c.cursor) == 1) {
 		ptr = vtx->c.cursor.rec.ptr;
 		if (VSL_ID(ptr) != vtx->key.vxid) {
-			(void)vtx_diag_tag(vtx, ptr, "vxid missmatch");
+			(void)vtx_diag_tag(vtx, ptr, "vxid mismatch");
 			continue;
 		}
 
