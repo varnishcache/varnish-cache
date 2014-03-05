@@ -439,7 +439,7 @@ vcc_resolve_includes(struct vcc *tl)
 	struct source *sp;
 
 	VTAILQ_FOREACH(t, &tl->tokens, list) {
-		if (t->tok != T_INCLUDE)
+		if (t->tok != ID || !vcc_IdIs(t, "include"))
 			continue;
 
 		t1 = VTAILQ_NEXT(t, list);

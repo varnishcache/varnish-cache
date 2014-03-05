@@ -97,3 +97,15 @@ varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_hash { if (2 == 3) { } }
 }
+
+varnish v1 -vcl {
+	backend if0 { .host = "127.0.0.1"; }
+}
+
+varnish v1 -vcl {
+	backend include0 { .host = "127.0.0.1"; }
+}
+
+varnish v1 -vcl {
+	backend else0 { .host = "127.0.0.1"; }
+}
