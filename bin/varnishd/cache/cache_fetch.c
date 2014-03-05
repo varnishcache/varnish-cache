@@ -140,9 +140,6 @@ vbf_beresp2obj(struct busyobj *bo)
 	AZ(bo->fetch_obj);
 	bo->fetch_obj = obj;
 
-	if (bo->do_gzip || (bo->is_gzip && !bo->do_gunzip))
-		obj->gziped = 1;
-
 	if (vary != NULL) {
 		obj->vary = (void *)WS_Copy(obj->http->ws,
 		    VSB_data(vary), varyl);
@@ -464,6 +461,9 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	obj = bo->fetch_obj;
 
+	if (bo->do_gzip || (bo->is_gzip && !bo->do_gunzip))
+		obj->gziped = 1;
+
 	/*
 	 * Ready to fetch the body
 	 */
@@ -548,40 +548,18 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 static enum fetch_step
 vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 {
-	unsigned l;
-	uint16_t nhttp;
 	struct object *obj;
 	struct objiter *oi;
 	void *sp;
-	ssize_t sl, al, tl, vl;
+	ssize_t sl, al, tl;
 	struct storage *st;
 	enum objiter_status ois;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	l = 0;
-	if (bo->ims_obj->vary != NULL) {
-		vl = VRY_Validate(bo->ims_obj->vary);
-		l += vl;
-	} else
-		vl = 0;
-	l += http_EstimateWS(bo->beresp, 0, &nhttp);
-
-	obj = vbf_allocobj(bo, l, nhttp);
-	if (obj == NULL) {
-		(void)VFP_Error(bo, "Could not get storage");
-		VDI_CloseFd(&bo->vbc);
-		return (F_STP_DONE);
-	}
-
-	AZ(bo->fetch_obj);
-	bo->fetch_obj = obj;
-
-	obj->gziped = bo->ims_obj->gziped;
-	obj->gzip_start = bo->ims_obj->gzip_start;
-	obj->gzip_last = bo->ims_obj->gzip_last;
-	obj->gzip_stop = bo->ims_obj->gzip_stop;
+	AZ(vbf_beresp2obj(bo));
+	obj = bo->fetch_obj;
 
 	if (bo->ims_obj->esidata != NULL) {
 		obj->esidata = STV_alloc(bo, bo->ims_obj->esidata->len);
@@ -592,19 +570,10 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		obj->esidata->len = bo->ims_obj->esidata->len;
 	}
 
-	if (bo->ims_obj->vary != NULL) {
-		obj->vary = (void *)WS_Copy(obj->http->ws,
-		    bo->ims_obj->vary, vl);
-		assert(vl == VRY_Validate(obj->vary));
-	}
-
-	obj->vxid = bo->vsl->wid;
-
-	obj->http->logtag = SLT_ObjMethod;
-	/* XXX: we should have our own HTTP_A_CONDFETCH */
-	http_FilterResp(bo->beresp, obj->http, HTTPH_A_INS);
-	http_CopyHome(obj->http);
-
+	obj->gziped = bo->ims_obj->gziped;
+	obj->gzip_start = bo->ims_obj->gzip_start;
+	obj->gzip_last = bo->ims_obj->gzip_last;
+	obj->gzip_stop = bo->ims_obj->gzip_stop;
 
 	AZ(WS_Overflowed(bo->ws_o));
 	if (bo->do_stream)
