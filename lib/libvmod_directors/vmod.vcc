@@ -27,18 +27,125 @@
 
 $Module directors 3 Backend traffic directors
 
+DESCRIPTION
+===========
+
+Vmod_direcors enables load balancing in Varnish. The module are serves
+as an example on how one could extend the load balancing capabilites
+of Varnish.
+
+To enable load balancing you must import this vmod (directors) in your
+VCL:::
+
+  import directors;
+
+Then you define your backends. Once you have the backends declared you
+can add them to a director. This happens in executed VCL code. If you
+want to emulate the previous behaviour of Varnish 3.0 you can just
+initialize the directors in vcl_init, like this:::
+
+    sub vcl_init {
+        new bar = directors.round_robin();
+        bar.add_backend(server1);
+        bar.add_backend(server2);
+    }
+
+As you can see there is nothing keeping you from manipulting the
+directors elsewhere in VCL. So, you could have VCL code that would
+add more backends to a director when a certin URL is called.
+
 $Object round_robin()
+
+Description
+       Create a round robin director. This director will pick backends
+       in a round robin fashion.
+Example
+       new bar = directors.round_robin();
+
 $Method VOID .add_backend(BACKEND)
+
+Description
+       Adds a backend to the director.
+Example
+       rrdir.add_backend(backend1);
+
 $Method BACKEND .backend()
+
+Description
+       Picks a backend from the director.
+Example
+       req.backend = rrdir.backend();
 
 $Object fallback()
+
+Description
+        Creates a fallback director. This director will asdasoidwqjwqdasdas
+Example
+        new foo = directors.fallback();
+
 $Method VOID .add_backend(BACKEND)
+
+Description
+       Adds a backend to the director.
+Example
+       bar.add_backend(backend1);
+
 $Method BACKEND .backend()
+
+Description
+       Picks a backend from the director.
+Example
+       req.backend = rrdir.backend();
 
 $Object random()
+
+Description
+       Adds a random director. This director chooses backend based on
+       a random number. As you add backends to the director each
+       backends gets a weight, which is used to when requests are
+       being distributed. So, a backend with a weight of 1 would get
+       more or less 1% of the traffic of a backend in the same
+       director with a weight of 100.
+Example
+       new rand_dir = director.random();
+
 $Method VOID .add_backend(BACKEND, REAL)
+
+Description
+       Adds a backend to the director with weight.
+Example
+       bar.add_backend(backend1, 3.14);
+
 $Method BACKEND .backend()
 
+Description
+       Picks a backend from the director.
+Example
+       req.backend = rrdir.backend();
+
 $Object hash()
+
+Description
+       Creates a hash director. The hash director chooses the backend
+       bashed on hashing an arbitrary string. If you provide it with a
+       session cookie, you'll have the client connecting to the same
+       backend every time.
+Example
+       new hdir = director.hash();
+
 $Method VOID .add_backend(BACKEND, REAL)
+
+Description
+       Adds a backend to the director.
+Example
+       hdir.add_backend(backend1);
+
 $Method BACKEND .backend(STRING_LIST)
+
+Description
+       Picks a backend from the director. Use the string or list of
+       strings provided to pick the backend.
+Example
+       # pick a backend based on the cookie header from the client
+       req.backend = hdir.backend(req.http.cookie);
+
