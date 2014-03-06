@@ -104,3 +104,17 @@ varnish v1 -errvcl {Object not found: 'foo.bar'} {
 		new bar = foo.bar();
 	}
 }
+
+varnish v1 -errvcl {'bereq.first_byte_timeout': cannot be set} {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_pipe {
+		set bereq.first_byte_timeout = 10s;
+	}
+}
+
+varnish v1 -errvcl {'bereq.between_bytes_timeout': cannot be set} {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_pipe {
+		set bereq.between_bytes_timeout = 10s;
+	}
+}

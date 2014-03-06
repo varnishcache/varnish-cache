@@ -351,16 +351,16 @@ The client's IP address.
 	),
 	('bereq.first_byte_timeout',
 		'DURATION',
-		( 'pipe', 'backend', ),
-		( 'pipe', 'backend', ), """
+		( 'backend', ),
+		( 'backend', ), """
 		The time in seconds to wait for the first byte from
 		the backend.  Not available in pipe mode.
 		"""
 	),
 	('bereq.between_bytes_timeout',
 		'DURATION',
-		( 'pipe', 'backend', ),
-		( 'pipe', 'backend', ), """
+		( 'backend', ),
+		( 'backend', ), """
 		The time in seconds to wait between each received byte from the
 		backend.  Not available in pipe mode.
 		"""
