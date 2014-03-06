@@ -114,6 +114,104 @@ your expectations.
 
 Let's take a look at the important headers you should be aware of:
 
+.. _users-guide-cookies:
+
+Cookies
+-------
+
+Varnish will, in the default configuration, not cache a object coming
+from the backend with a Set-Cookie header present. Also, if the client
+sends a Cookie header, Varnish will bypass the cache and go directly to
+the backend.
+
+This can be overly conservative. A lot of sites use Google Analytics
+(GA) to analyze their traffic. GA sets a cookie to track you. This
+cookie is used by the client side javascript and is therefore of no
+interest to the server. 
+
+Cookies from the client
+~~~~~~~~~~~~~~~~~~~~~~~
+
+For a lot of web application it makes sense to completely disregard the
+cookies unless you are accessing a special part of the web site. This
+VCL snippet in vcl_recv will disregard cookies unless you are
+accessing /admin/::
+
+  if ( !( req.url ~ ^/admin/) ) {
+    unset req.http.Cookie;
+  }
+
+Quite simple. If, however, you need to do something more complicated,
+like removing one out of several cookies, things get
+difficult. Unfortunately Varnish doesn't have good tools for
+manipulating the Cookies. We have to use regular expressions to do the
+work. If you are familiar with regular expressions you'll understand
+whats going on. If you don't I suggest you either pick up a book on
+the subject, read through the *pcrepattern* man page or read through
+one of many online guides.
+
+Let me show you what Varnish Software uses. We use some cookies for
+Google Analytics tracking and similar tools. The cookies are all set
+and used by Javascript. Varnish and Drupal doesn't need to see those
+cookies and since Varnish will cease caching of pages when the client
+sends cookies we will discard these unnecessary cookies in VCL. 
+
+In the following VCL we discard all cookies that start with a
+underscore::
+
+  // Remove has_js and Google Analytics __* cookies.
+  set req.http.Cookie = regsuball(req.http.Cookie, "(^|;\s*)(_[_a-z]+|has_js)=[^;]*", "");
+  // Remove a ";" prefix, if present.
+  set req.http.Cookie = regsub(req.http.Cookie, "^;\s*", "");
+
+Let me show you an example where we remove everything except the
+cookies named COOKIE1 and COOKIE2 and you can marvel at it::
+
+  sub vcl_recv {
+    if (req.http.Cookie) {
+      set req.http.Cookie = ";" + req.http.Cookie;
+      set req.http.Cookie = regsuball(req.http.Cookie, "; +", ";");
+      set req.http.Cookie = regsuball(req.http.Cookie, ";(COOKIE1|COOKIE2)=", "; \1=");
+      set req.http.Cookie = regsuball(req.http.Cookie, ";[^ ][^;]*", "");
+      set req.http.Cookie = regsuball(req.http.Cookie, "^[; ]+|[; ]+$", "");
+
+      if (req.http.Cookie == "") {
+          remove req.http.Cookie;
+      }
+    }
+  }
+
+A somewhat simpler example that can accomplish almost the same can be
+found below. Instead of filtering out the other cookies it picks out
+the one cookie that is needed, copies it to another header and then
+copies it back, deleting the original cookie header.::
+
+  sub vcl_recv {
+         # save the original cookie header so we can mangle it
+        set req.http.X-Varnish-PHP_SID = req.http.Cookie;
+        # using a capturing sub pattern, extract the continuous string of 
+        # alphanumerics that immediately follows "PHPSESSID="
+        set req.http.X-Varnish-PHP_SID = 
+           regsuball(req.http.X-Varnish-PHP_SID, ";? ?PHPSESSID=([a-zA-Z0-9]+)( |;| ;).*","\1");
+        set req.http.Cookie = req.X-Varnish-PHP_SID;
+        remove req.X-Varnish-PHP_SID;
+   }   
+
+There are other scary examples of what can be done in VCL in the
+Varnish Cache Wiki.
+
+
+Cookies coming from the backend
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If your backend server sets a cookie using the Set-Cookie header
+Varnish will not cache the page in the default configuration.  A
+hit-for-pass object (see :ref:`user-guide-vcl_actions`) is created.
+So, if the backend server acts silly and sets unwanted cookies just unset
+the Set-Cookie header and all should be fine. 
+
+
+
 Cache-Control
 ~~~~~~~~~~~~~
 
@@ -145,7 +243,7 @@ Pragma
 An HTTP 1.0 server might send "Pragma: nocache". Varnish ignores this
 header. You could easily add support for this header in VCL.
 
-In vcl_fetch::
+In vcl_backend_response::
 
   if (beresp.http.Pragma ~ "nocache") {
         set beresp.uncacheable = true;
@@ -168,7 +266,7 @@ somewhat cumbersome backend.
 You need VCL to identify the objects you want and then you set the
 beresp.ttl to whatever you want::
 
-  sub vcl_fetch {
+  sub vcl_backend_response {
       if (req.url ~ "^/legacy_broken_cms/") {
           set beresp.ttl = 5d;
       }
@@ -202,4 +300,81 @@ setting up redirects or by using the following VCL::
     set req.http.host = "varnish-software.com";
   }
 
+
+.. _users-guide-vary:
+
+HTTP Vary
+---------
+
+*HTTP Vary is not a trivial concept. It is by far the most
+misunderstood HTTP header.*
+
+A lot of the response headers tell the client something about the HTTP
+object being delivered. Clients can request different variants a an
+HTTP object, based on their preference. Their preferences might cover
+stuff like encoding or language. When a client prefers UK English this
+is indicated through "Accept-Language: en-uk". Caches need to keep
+these different variants apart and this is done through the HTTP
+response header "Vary".
+
+When a backend server issues a "Vary: Accept-Language" it tells
+Varnish that its needs to cache a separate version for every different
+Accept-Language that is coming from the clients.
+
+If two clients say they accept the languages "en-us, en-uk" and "da,
+de" respectively, Varnish will cache and serve two different versions
+of the page if the backend indicated that Varnish needs to vary on the
+Accept-Language header.
+
+Please note that the headers that Vary refer to need to match
+*exactly* for there to be a match. So Varnish will keep two copies of
+a page if one of them was created for "en-us, en-uk" and the other for
+"en-us,en-uk". Just the lack of space will force Varnish to cache
+another version.
+
+To achieve a high hitrate whilst using Vary is there therefor crucial
+to normalize the headers the backends varies on. Remember, just a
+difference in case can force different cache entries.
+
+The following VCL code will normalize the Accept-Language headers, to
+one of either "en","de" or "fr"::
+
+    if (req.http.Accept-Language) {
+        if (req.http.Accept-Language ~ "en") {
+            set req.http.Accept-Language = "en";
+        } elsif (req.http.Accept-Language ~ "de") {
+            set req.http.Accept-Language = "de";
+        } elsif (req.http.Accept-Language ~ "fr") {
+            set req.http.Accept-Language = "fr";
+        } else {
+            # unknown language. Remove the accept-language header and 
+	    # use the backend default.
+            remove req.http.Accept-Language
+        }
+    }
+
+The code sets the Accept-Encoding header from the client to either
+gzip, deflate with a preference for gzip.
+
+Vary parse errors
+~~~~~~~~~~~~~~~~~
+
+Varnish will return a 503 internal server error page when it fails to
+parse the Vary server header, or if any of the client headers listed
+in the Vary header exceeds the limit of 65k characters. An SLT_Error
+log entry is added in these cases.
+
+Pitfall - Vary: User-Agent
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Some applications or application servers send *Vary: User-Agent* along
+with their content. This instructs Varnish to cache a separate copy
+for every variation of User-Agent there is. There are plenty. Even a
+single patchlevel of the same browser will generate at least 10
+different User-Agent headers based just on what operating system they
+are running. 
+
+So if you *really* need to Vary based on User-Agent be sure to
+normalize the header or your hit rate will suffer badly. Use the above
+code as a template.
 
