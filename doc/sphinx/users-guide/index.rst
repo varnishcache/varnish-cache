@@ -40,6 +40,7 @@ from transaction level to aggregate statistics.
    vcl
    report
    performance
+   esi   
    troubleshooting
    orphans
 
