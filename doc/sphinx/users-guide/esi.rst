@@ -1,7 +1,7 @@
 .. _users-guide-esi:
 
-Edge Side Includes
-------------------
+Content composition with Edge Side Includes
+-------------------------------------------
 
 Varnish can cache create web pages by putting different pages
 together. These *fragments* can have individual cache policies. If you
