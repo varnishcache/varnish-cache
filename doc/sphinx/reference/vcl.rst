@@ -522,11 +522,6 @@ vcl_pass
   pass
     Proceed with pass mode.
 
-  restart
-    Restart the transaction. Increases the restart counter. If the number 
-    of restarts is higher than *max_restarts* varnish emits a guru meditation 
-    error.
-
 vcl_hash
   You may call hash_data() on the data you would like to add to the hash.
   

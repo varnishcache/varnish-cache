@@ -1186,8 +1186,6 @@ DOT		label="vcl_miss()|req.\nbereq."
 DOT	]
 DOT	miss -> vcl_miss [style=bold,color=blue]
 DOT }
-DOT vcl_miss -> rst_miss [label="restart",color=purple]
-DOT rst_miss [label="RESTART",shape=plaintext]
 DOT vcl_miss -> err_miss [label="error"]
 DOT err_miss [label="ERROR",shape=plaintext]
 DOT vcl_miss -> fetch [label="fetch",style=bold,color=blue]
@@ -1272,8 +1270,6 @@ DOT	pass2 -> vcl_pass [style=bold, color=red]
 DOT	vcl_pass -> pass_do [label="pass"] [style=bold, color=red]
 DOT }
 DOT pass_do -> fetch [style=bold, color=red]
-DOT vcl_pass -> rst_pass [label="restart",color=purple]
-DOT rst_pass [label="RESTART",shape=plaintext]
 DOT vcl_pass -> err_pass [label="error"]
 DOT err_pass [label="ERROR",shape=plaintext]
  */
