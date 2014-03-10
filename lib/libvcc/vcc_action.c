@@ -396,7 +396,7 @@ parse_synthetic(struct vcc *tl)
 {
 	vcc_NextToken(tl);
 
-	Fb(tl, 1, "VRT_synth_page(ctx, 0, ");
+	Fb(tl, 1, "VRT_synth_page(ctx, ");
 	vcc_Expr(tl, STRING_LIST);
 	ERRCHK(tl);
 	Fb(tl, 0, ");\n");

@@ -722,6 +722,9 @@ struct req {
 
 	/* Temporary accounting */
 	struct acct		acct_req;
+
+	/* Synth content in vcl_error */
+	struct vsb		*synth_body;
 };
 
 /*--------------------------------------------------------------------
@@ -1225,11 +1228,6 @@ void STV_Freestore(struct object *o);
 int STV_BanInfo(enum baninfo event, const uint8_t *ban, unsigned len);
 void STV_BanExport(const uint8_t *bans, unsigned len);
 struct storage *STV_alloc_transient(size_t size);
-
-/* storage_synth.c */
-struct vsb *SMS_Makesynth(struct object *obj);
-void SMS_Finish(struct object *obj);
-void SMS_Init(void);
 
 /* storage_persistent.c */
 void SMP_Init(void);

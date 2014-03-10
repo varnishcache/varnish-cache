@@ -7,12 +7,18 @@ varnish v1 -vcl {
 	sub vcl_recv {
 		return (error(888));
 	}
+
+	sub vcl_error {
+		synthetic "Custom vcl_error's synth output";
+		return (deliver);
+	}
 } -start
 
 client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 888
+	expect resp.bodylen == 31
 	expect resp.http.connection == close
 } -run
 

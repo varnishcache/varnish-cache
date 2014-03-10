@@ -222,7 +222,7 @@ void VRT_memmove(void *dst, const void *src, unsigned len);
 void VRT_Rollback(const struct vrt_ctx *);
 
 /* Synthetic pages */
-void VRT_synth_page(const struct vrt_ctx *, unsigned flags, const char *, ...);
+void VRT_synth_page(const struct vrt_ctx *, const char *, ...);
 
 /* Backend related */
 void VRT_init_dir(struct cli *, struct director **, int idx, const void *priv);

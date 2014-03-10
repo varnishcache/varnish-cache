@@ -226,7 +226,6 @@ child_main(void)
 
 	VCA_Init();
 
-	SMS_Init();
 	SMP_Init();
 	STV_open();
 

@@ -78,7 +78,6 @@ varnishd_SOURCES = \
 	storage/storage_persistent_mgt.c \
 	storage/storage_persistent_silo.c \
 	storage/storage_persistent_subr.c \
-	storage/storage_synth.c \
 	storage/storage_umem.c \
 	waiter/mgt_waiter.c \
 	waiter/cache_waiter.c \

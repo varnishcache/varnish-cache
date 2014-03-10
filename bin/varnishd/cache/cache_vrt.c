@@ -369,21 +369,19 @@ VRT_Rollback(const struct vrt_ctx *ctx)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_synth_page(const struct vrt_ctx *ctx, unsigned flags, const char *str, ...)
+VRT_synth_page(const struct vrt_ctx *ctx, const char *str, ...)
 {
 	va_list ap;
 	const char *p;
 	struct vsb *vsb;
 
-	(void)flags;
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (ctx->method == VCL_MET_BACKEND_ERROR) {
 		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 		vsb = ctx->bo->synth_body;
 	} else {
 		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-		CHECK_OBJ_NOTNULL(ctx->req->obj, OBJECT_MAGIC);
-		vsb = SMS_Makesynth(ctx->req->obj);
+		vsb = ctx->req->synth_body;
 	}
 	AN(vsb);
 
@@ -396,10 +394,6 @@ VRT_synth_page(const struct vrt_ctx *ctx, unsigned flags, const char *str, ...)
 		p = va_arg(ap, const char *);
 	}
 	va_end(ap);
-	if (ctx->method != VCL_MET_BACKEND_ERROR) {
-		SMS_Finish(ctx->req->obj);
-		http_Unset(ctx->req->obj->http, H_Content_Length);
-	}
 }
 
 /*--------------------------------------------------------------------*/

@@ -73,7 +73,6 @@ PROG_SRC += storage/storage_persistent.c
 PROG_SRC += storage/storage_persistent_mgt.c
 PROG_SRC += storage/storage_persistent_silo.c
 PROG_SRC += storage/storage_persistent_subr.c
-PROG_SRC += storage/storage_synth.c
 PROG_SRC += storage/storage_umem.c
 
 PROG_SRC += waiter/cache_waiter.c

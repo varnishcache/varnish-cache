@@ -190,6 +190,8 @@ cnt_error(struct worker *wrk, struct req *req)
 	struct http *h;
 	struct busyobj *bo;
 	char date[40];
+	ssize_t l;
+	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -205,7 +207,6 @@ cnt_error(struct worker *wrk, struct req *req)
 	    TRANSIENT_STORAGE, cache_param->http_resp_size,
 	    (uint16_t)cache_param->http_max_hdr);
 	req->obj = bo->fetch_obj;
-	bo->stats = NULL;
 	if (req->obj == NULL) {
 		req->doclose = SC_OVERLOAD;
 		req->director_hint = NULL;
@@ -213,6 +214,7 @@ cnt_error(struct worker *wrk, struct req *req)
 		bo->fetch_objcore = NULL;
 		http_Teardown(bo->beresp);
 		http_Teardown(bo->bereq);
+		bo->stats = NULL;
 		VBO_DerefBusyObj(wrk, &bo);
 		return (REQ_FSM_DONE);
 	}
@@ -239,13 +241,25 @@ cnt_error(struct worker *wrk, struct req *req)
 		http_PutResponse(h, req->err_reason);
 	else
 		http_PutResponse(h, http_StatusMessage(req->err_code));
+
+	AZ(req->synth_body);
+	req->synth_body = VSB_new_auto();
+	AN(req->synth_body);
+
 	VCL_error_method(req->vcl, wrk, req, NULL, req->http->ws);
+
+	http_Unset(req->obj->http, H_Content_Length);
+
+	AZ(VSB_finish(req->synth_body));
 
 	/* Stop the insanity before it turns "Hotel California" on us */
 	if (req->restarts >= cache_param->max_restarts)
 		wrk->handling = VCL_RET_DELIVER;
 
 	if (wrk->handling == VCL_RET_RESTART) {
+		VSB_delete(req->synth_body);
+		req->synth_body = NULL;
+		bo->stats = NULL;
 		VBO_DerefBusyObj(wrk, &bo);
 		HSH_Drop(wrk, &req->obj);
 		req->req_step = R_STP_RESTART;
@@ -258,10 +272,28 @@ cnt_error(struct worker *wrk, struct req *req)
 	req->wantbody = 1;
 
 	assert(wrk->handling == VCL_RET_DELIVER);
+
+	l = VSB_len(req->synth_body);
+	if (l > 0) {
+		st = STV_alloc(bo, l);
+		if (st != NULL) {
+			VTAILQ_INSERT_TAIL(&req->obj->store, st, list);
+			if (st->space >= l) {
+				memcpy(st->ptr, VSB_data(req->synth_body), l);
+				st->len = l;
+				req->obj->len = l;
+			}
+		}
+	}
+
+	VSB_delete(req->synth_body);
+	req->synth_body = NULL;
+
 	req->err_code = 0;
 	req->err_reason = NULL;
 	http_Teardown(bo->bereq);
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
+	bo->stats = NULL;
 	VBO_DerefBusyObj(wrk, &bo);
 	req->req_step = R_STP_DELIVER;
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
