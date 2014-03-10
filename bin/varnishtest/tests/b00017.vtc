@@ -9,7 +9,7 @@ varnish v1 -vcl {
 	}
 
 	sub vcl_error {
-		synthetic "Custom vcl_error's synth output";
+		synthetic("Custom vcl_error's synth output");
 		return (deliver);
 	}
 } -start

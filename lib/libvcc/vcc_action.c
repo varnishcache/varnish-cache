@@ -396,10 +396,18 @@ parse_synthetic(struct vcc *tl)
 {
 	vcc_NextToken(tl);
 
+	ExpectErr(tl, '(');
+	ERRCHK(tl);
+	vcc_NextToken(tl);
+
 	Fb(tl, 1, "VRT_synth_page(ctx, ");
 	vcc_Expr(tl, STRING_LIST);
 	ERRCHK(tl);
 	Fb(tl, 0, ");\n");
+
+	ExpectErr(tl, ')');
+	vcc_NextToken(tl);
+	ERRCHK(tl);
 }
 
 /*--------------------------------------------------------------------*/

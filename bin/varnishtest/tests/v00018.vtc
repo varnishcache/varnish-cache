@@ -100,7 +100,7 @@ varnish v1 -errvcl {Expected an action, 'if', '{' or '}'} {
 
 varnish v1 -errvcl {Unknown token '<<' when looking for STRING_LIST} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_error { synthetic << "foo"; }
+	sub vcl_error { synthetic( << "foo"; }
 }
 
 varnish v1 -errvcl {Syntax has changed, use:} {
