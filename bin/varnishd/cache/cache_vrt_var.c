@@ -466,7 +466,7 @@ VRT_DO_EXP(beresp, ctx->bo->exp, ttl, 0, ctx->bo->exp.t_origin,)
 VRT_DO_EXP(beresp, ctx->bo->exp, keep, 0, ctx->bo->exp.t_origin,)
 
 /*--------------------------------------------------------------------
- * req.xid
+ * [be]req.xid
  */
 
 const char *
@@ -478,6 +478,17 @@ VRT_r_req_xid(const struct vrt_ctx *ctx)
 
 	return (WS_Printf(ctx->req->http->ws, "%u",
 	    ctx->req->vsl->wid & VSL_IDENTMASK));
+}
+
+const char *
+VRT_r_bereq_xid(const struct vrt_ctx *ctx)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+
+	return (WS_Printf(ctx->bo->bereq->ws, "%u",
+	    ctx->bo->vsl->wid & VSL_IDENTMASK));
 }
 
 /*--------------------------------------------------------------------*/

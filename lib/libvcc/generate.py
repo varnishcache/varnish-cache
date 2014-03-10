@@ -296,6 +296,13 @@ The client's IP address.
 		always (re)fetch from the backend.
 		"""
 	),
+	('bereq.xid',
+		'STRING',
+		( 'backend',),
+		( ), """
+		Unique ID of this request.
+		"""
+	),
 	('bereq.retries',
 		'INT',
 		( 'backend',),

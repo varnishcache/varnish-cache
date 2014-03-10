@@ -377,9 +377,14 @@ VRT_synth_page(const struct vrt_ctx *ctx, unsigned flags, const char *str, ...)
 
 	(void)flags;
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->obj, OBJECT_MAGIC);
-	vsb = SMS_Makesynth(ctx->req->obj);
+	if (ctx->method == VCL_MET_BACKEND_ERROR) {
+		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+		vsb = ctx->bo->synth_body;
+	} else {
+		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+		CHECK_OBJ_NOTNULL(ctx->req->obj, OBJECT_MAGIC);
+		vsb = SMS_Makesynth(ctx->req->obj);
+	}
 	AN(vsb);
 
 	va_start(ap, str);
@@ -391,8 +396,10 @@ VRT_synth_page(const struct vrt_ctx *ctx, unsigned flags, const char *str, ...)
 		p = va_arg(ap, const char *);
 	}
 	va_end(ap);
-	SMS_Finish(ctx->req->obj);
-	http_Unset(ctx->req->obj->http, H_Content_Length);
+	if (ctx->method != VCL_MET_BACKEND_ERROR) {
+		SMS_Finish(ctx->req->obj);
+		http_Unset(ctx->req->obj->http, H_Content_Length);
+	}
 }
 
 /*--------------------------------------------------------------------*/

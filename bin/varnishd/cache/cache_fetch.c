@@ -640,28 +640,33 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 static enum fetch_step
 vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 {
+	struct storage *st;
+	ssize_t l;
+
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	AN(bo->fetch_objcore->flags & OC_F_BUSY);
 
+	AZ(bo->synth_body);
+	bo->synth_body = VSB_new_auto();
+	AN(bo->synth_body);
+
 	// XXX: reset all beresp flags ?
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
 	http_SetResp(bo->beresp, "HTTP/1.1", 503, "Backend fetch failed");
-	http_SetHeader(bo->beresp, "Content-Length: 0");
-	http_SetHeader(bo->beresp, "Connection: close");
 
+	bo->exp.t_origin = VTIM_real();
 	bo->exp.ttl = 0;
 	bo->exp.grace = 0;
 	bo->exp.keep = 0;
 
 	VCL_backend_error_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
 
-	xxxassert(wrk->handling == VCL_RET_DELIVER);
+	AZ(VSB_finish(bo->synth_body));
 
-	http_PrintfHeader(bo->beresp, "Content-Length: %jd", (intmax_t)0);
-	http_PrintfHeader(bo->beresp, "X-XXXPHK: yes");
+	xxxassert(wrk->handling == VCL_RET_DELIVER);
 
 	if (vbf_beresp2obj(bo)) {
 		VBO_setstate(bo, BOS_FAILED);
@@ -669,9 +674,29 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 		return (F_STP_DONE);
 	}
 
+	l = VSB_len(bo->synth_body);
+	if (l > 0) {
+		st = VFP_GetStorage(bo, l);
+		if (st != NULL) {
+			if (st->space < l) {
+				VSLb(bo->vsl, SLT_Error,
+				    "No space for %zd bytes of synth body", l);
+			} else {
+				memcpy(st->ptr, VSB_data(bo->synth_body), l);
+				st->len = l;
+				VBO_extend(bo, l);
+			}
+		}
+	}
+	VSB_delete(bo->synth_body);
+	bo->synth_body = NULL;
+
 	HSH_Unbusy(&wrk->stats, bo->fetch_obj->objcore);
+
 	VBO_setstate(bo, BOS_FINISHED);
+
 	HSH_Complete(bo->fetch_obj->objcore);
+
 	return (F_STP_DONE);
 }
 

@@ -421,7 +421,8 @@ static struct action_table {
 	{ "return",		parse_return },
 	{ "rollback",		parse_rollback },
 	{ "set",		parse_set },
-	{ "synthetic",		parse_synthetic, VCL_MET_ERROR },
+	{ "synthetic",		parse_synthetic,
+		VCL_MET_ERROR | VCL_MET_BACKEND_ERROR },
 	{ "unset",		parse_unset },
 	{ NULL,			NULL }
 };

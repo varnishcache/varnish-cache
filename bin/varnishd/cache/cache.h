@@ -579,6 +579,8 @@ struct busyobj {
 
 	/* Workspace for object only needed during fetch */
 	struct ws		ws_o[1];
+
+	struct vsb		*synth_body;
 };
 
 /* Object structure --------------------------------------------------*/
