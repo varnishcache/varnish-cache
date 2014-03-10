@@ -498,6 +498,16 @@ VRT_purge(const struct vrt_ctx *ctx, double ttl, double grace)
 }
 
 /*--------------------------------------------------------------------
+ */
+
+void
+VRT_priv_fini(const struct vmod_priv *p)
+{
+	if (p->priv != (void*)0 && p->free != (void*)0)
+		p->free(p->priv);
+}
+
+/*--------------------------------------------------------------------
  * Simple stuff
  */
 

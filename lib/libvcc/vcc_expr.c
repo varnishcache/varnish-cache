@@ -561,7 +561,7 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
 			bprintf(buf, "vmod_priv_%u", tl->unique++);
 			ifp = New_IniFin(tl);
 			Fh(tl, 0, "static struct vmod_priv %s;\n", buf);
-			VSB_printf(ifp->fin, "\tvmod_priv_fini(&%s);", buf);
+			VSB_printf(ifp->fin, "\tVRT_priv_fini(&%s);", buf);
 			e2 = vcc_mk_expr(VOID, "&%s", buf);
 			p += strlen(p) + 1;
 		} else if (fmt == ENUM) {
