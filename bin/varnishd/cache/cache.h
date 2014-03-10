@@ -594,8 +594,9 @@ struct object {
 
 	uint8_t			*vary;
 
-	/* XXX: make bitmap */
-	uint8_t			gziped;
+	unsigned		gziped:1;
+	unsigned		changed_gzip:1;
+
 	/* Bit positions in the gzip stream */
 	ssize_t			gzip_start;
 	ssize_t			gzip_last;
@@ -998,7 +999,7 @@ void http_CopyHome(const struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
 void http_CollectHdr(struct http *hp, const char *hdr);
 void http_VSL_log(const struct http *hp);
-void http_Merge(const struct http *fm, struct http *to);
+void http_Merge(const struct http *fm, struct http *to, int not_ce);
 
 /* cache_http1_proto.c */
 

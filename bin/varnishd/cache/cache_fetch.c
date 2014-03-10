@@ -336,7 +336,8 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->ims_obj != NULL && bo->beresp->status == 304) {
 		bo->beresp->status = 200;
-		http_Merge(bo->ims_obj->http, bo->beresp);
+		http_Merge(bo->ims_obj->http, bo->beresp,
+		    bo->ims_obj->changed_gzip);
 		do_ims = 1;
 	} else
 		do_ims = 0;
@@ -464,6 +465,9 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->do_gzip || (bo->is_gzip && !bo->do_gunzip))
 		obj->gziped = 1;
 
+	if (bo->do_gzip || bo->do_gunzip)
+		obj->changed_gzip = 1;
+
 	/*
 	 * Ready to fetch the body
 	 */
@@ -554,9 +558,21 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	ssize_t sl, al, tl;
 	struct storage *st;
 	enum objiter_status ois;
+	char *p;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	if (bo->ims_obj->changed_gzip) {
+		/*
+		 * If we modified the gzip status of the IMS object, that
+		 * must control the C-E header, if any.
+		 */
+		http_Unset(bo->beresp, H_Content_Encoding);
+		if (http_GetHdr(bo->ims_obj->http, H_Content_Encoding, &p))
+			http_PrintfHeader(bo->beresp,
+			    "Content-Encoding: %s", p);
+	}
 
 	AZ(vbf_beresp2obj(bo));
 	obj = bo->fetch_obj;

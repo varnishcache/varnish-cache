@@ -641,13 +641,19 @@ http_FilterResp(const struct http *fm, struct http *to, unsigned how)
  */
 
 void
-http_Merge(const struct http *fm, struct http *to)
+http_Merge(const struct http *fm, struct http *to, int not_ce)
 {
 	unsigned u, v;
 	const char *p;
 
 	for (u = HTTP_HDR_FIRST; u < fm->nhd; u++)
 		fm->hdf[u] |= HDF_MARKER;
+	if (not_ce) {
+		u = http_findhdr(fm,
+		    H_Content_Encoding[0] - 1, H_Content_Encoding + 1);
+		if (u > 0)
+			fm->hdf[u] &= ~HDF_MARKER;
+	}
 	for (v = HTTP_HDR_FIRST; v < to->nhd; v++) {
 		p = strchr(to->hd[v].b, ':');
 		AN(p);

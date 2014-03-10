@@ -1,0 +1,72 @@
+varnishtest "IMS'ing g[un]zip'ed objects"
+
+server s1 {
+	rxreq
+	expect req.url == /1
+	txresp -hdr  "Last-Modified: Wed, 11 Sep 2013 13:36:55 GMT" -bodylen 20
+
+	rxreq
+	expect req.url == /1
+	expect req.http.if-modified-since == "Wed, 11 Sep 2013 13:36:55 GMT"
+	txresp -status 304 -nolen
+
+	rxreq
+	expect req.url == /2
+	txresp -hdr  "Last-Modified: Wed, 11 Sep 2013 13:36:55 GMT" -gzipbody "012345678901234567"
+
+	rxreq
+	expect req.url == /2
+	expect req.http.if-modified-since == "Wed, 11 Sep 2013 13:36:55 GMT"
+	txresp -status 304 -hdr "Content-Encoding: gzip,rot13" -nolen
+
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.http.foobar = beresp.http.content-encoding;
+		if (bereq.url == "/1") {
+			set beresp.do_gzip = true;
+		} else {
+			set beresp.do_gunzip = true;
+		}
+		set beresp.ttl = 1s;
+		set beresp.grace = 0s;
+		set beresp.keep = 60s;
+	}
+} -start
+
+client c1 {
+	txreq -url /1 -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.http.content-encoding == "gzip"
+	expect resp.http.foobar == ""
+	gunzip
+	expect resp.bodylen == 20
+
+	delay 1
+
+	txreq -url /1 -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.http.content-encoding == "gzip"
+	expect resp.http.foobar == ""
+	gunzip
+	expect resp.bodylen == 20
+
+	delay .2
+
+	txreq -url /2
+	rxresp
+	expect resp.http.content-encoding == "<undef>"
+	expect resp.http.foobar == "gzip"
+	expect resp.bodylen == 18
+
+	delay 1
+
+	txreq -url /2
+	rxresp
+	expect resp.http.content-encoding == "<undef>"
+	# Here we see the C-E of the IMS OBJ
+	expect resp.http.foobar == "gzip,rot13"
+	expect resp.bodylen == 18
+
+} -run
