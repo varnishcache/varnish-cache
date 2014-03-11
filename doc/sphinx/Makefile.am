@@ -96,46 +96,48 @@ EXTRA_DIST = \
 	installation/help.rst \
 	installation/index.rst \
 	installation/install.rst \
-	installation/prerequisites.rst \
 	installation/platformnotes.rst \
+	installation/prerequisites.rst \
 	phk/autocrap.rst \
 	phk/backends.rst \
 	phk/barriers.rst \
 	phk/gzip.rst \
+	phk/http20.rst \
 	phk/index.rst \
 	phk/ipv6suckage.rst \
 	phk/platforms.rst \
+	phk/spdy.rst \
 	phk/sphinx.rst \
 	phk/ssl.rst \
+	phk/thetoolsweworkwith.rst \
 	phk/thoughts.rst \
 	phk/three-zero.rst \
+	phk/varnish_does_not_hash.rst \
 	phk/vcl_expr.rst \
 	phk/wanton_destruction.rst \
 	reference/index.rst \
-	reference/varnishadm.rst \
 	reference/varnish-cli.rst \
+	reference/varnishadm.rst \
 	reference/varnishd.rst \
 	reference/varnishhist.rst \
 	reference/varnishlog.rst \
 	reference/varnishncsa.rst \
-	reference/varnishreplay.rst \
-	reference/varnishsizes.rst \
 	reference/varnishstat.rst \
 	reference/varnishtest.rst \
 	reference/varnishtop.rst \
-	reference/varnishhist.rst \
 	reference/vcl.rst \
 	reference/vmod.rst \
 	reference/vmod_std.rst \
-	reference/vsm.rst \
 	reference/vsl-query.rst \
 	reference/vsl.rst \
+	reference/vsm.rst \
+	tutorial/backend_servers.rst \
 	tutorial/index.rst \
 	tutorial/introduction.rst \
-	tutorial/starting_varnish.rst \
-	tutorial/putting_varnish_on_port_80.rst \
-	tutorial/backend_servers.rst \
 	tutorial/now_what.rst \
+	tutorial/peculiarities.rst \
+	tutorial/putting_varnish_on_port_80.rst \
+	tutorial/starting_varnish.rst \
 	users-guide/command-line.rst \
 	users-guide/compression.rst \
 	users-guide/devicedetection.rst \
@@ -149,19 +151,27 @@ EXTRA_DIST = \
 	users-guide/performance.rst \
 	users-guide/purging.rst \
 	users-guide/report.rst \
+	users-guide/run_cli.rst \
+	users-guide/run_security.rst \
 	users-guide/running.rst \
 	users-guide/sizing-your-cache.rst \
 	users-guide/storage-backends.rst \
 	users-guide/troubleshooting.rst \
 	users-guide/vcl-actions.rst \
 	users-guide/vcl-backends.rst \
+	users-guide/vcl-built-in-subs.rst \
+	users-guide/vcl-example-acls.rst \
+	users-guide/vcl-example-manipulating-headers.rst \
+	users-guide/vcl-example-manipulating-responses.rst \
+	users-guide/vcl-example-websockets.rst \
 	users-guide/vcl-examples.rst \
 	users-guide/vcl-hashing.rst \
 	users-guide/vcl-inline-c.rst \
-	users-guide/vcl.rst \
+	users-guide/vcl-intro.rst \
 	users-guide/vcl-saint-and-grace.rst \
 	users-guide/vcl-syntax.rst \
-	users-guide/vcl-variables.rst
+	users-guide/vcl-variables.rst \
+	users-guide/vcl.rst
 
 dist-hook:
 	$(MAKE) html
