@@ -666,7 +666,20 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	AZ(VSB_finish(bo->synth_body));
 
-	xxxassert(wrk->handling == VCL_RET_DELIVER);
+	if (wrk->handling == VCL_RET_RETRY) {
+		VSB_delete(bo->synth_body);
+		bo->synth_body = NULL;
+	    	if (bo->retries++ < cache_param->max_retries) {
+			return (F_STP_RETRY);
+		}
+		bo->synth_body = NULL;
+		HSH_Fail(bo->fetch_objcore);
+		VBO_setstate(bo, BOS_FAILED);
+		HSH_Complete(bo->fetch_objcore);
+		return (F_STP_DONE);
+	}
+
+	assert(wrk->handling == VCL_RET_DELIVER);
 
 	if (vbf_beresp2obj(bo)) {
 		VBO_setstate(bo, BOS_FAILED);

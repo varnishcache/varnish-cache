@@ -1,0 +1,24 @@
+varnishtest "retry in vcl_backend_error"
+
+varnish v1 -vcl {
+
+	backend b1 { .host = "${bad_ip}"; }
+
+	sub vcl_backend_error {
+		return (retry);
+	}
+
+	sub vcl_error {
+		set obj.status = 504;
+	}
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl"
+varnish v1 -cliok "param.set connect_timeout 1"
+varnish v1 -cliok "param.set max_retries 2"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 504
+} -run
