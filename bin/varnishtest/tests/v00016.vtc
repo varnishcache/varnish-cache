@@ -99,7 +99,7 @@ varnish v1 -vcl {
 	sub vcl_hash { if (2 == 3) { } }
 }
 
-varnish v1 -errvcl {Object not found: 'foo.bar'} {
+varnish v1 -errvcl {Symbol not found: 'foo.bar'} {
 	sub vcl_init {
 		new bar = foo.bar();
 	}
