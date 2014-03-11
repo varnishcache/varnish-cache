@@ -695,7 +695,6 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 				    "No space for %zd bytes of synth body", l);
 			} else {
 				memcpy(st->ptr, VSB_data(bo->synth_body), l);
-				st->len = l;
 				VBO_extend(bo, l);
 			}
 		}
