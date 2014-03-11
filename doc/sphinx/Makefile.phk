@@ -163,7 +163,6 @@ EXTRA_DIST = \
 	users-guide/sizing-your-cache.rst \
 	users-guide/storage-backends.rst \
 	users-guide/troubleshooting.rst \
-	users-guide/vary.rst \
 	users-guide/vcl-actions.rst \
 	users-guide/vcl-backends.rst \
 	users-guide/vcl-examples.rst \
@@ -172,9 +171,7 @@ EXTRA_DIST = \
 	users-guide/vcl.rst \
 	users-guide/vcl-saint-and-grace.rst \
 	users-guide/vcl-syntax.rst \
-	users-guide/vcl-variables.rst \
-	users-guide/websockets.rst
-
+	users-guide/vcl-variables.rst
 
 dist-hook:
 	$(MAKE) html
