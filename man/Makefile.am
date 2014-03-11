@@ -14,13 +14,12 @@ dist_man_MANS = \
 	vsl-query.7 \
 	varnishadm.1 \
 	varnishd.1 \
+	varnishhist.1 \
 	varnishlog.1 \
 	varnishncsa.1 \
-	varnishreplay.1 \
 	varnishstat.1 \
 	varnishtest.1 \
-	varnishtop.1 \
-	varnishhist.1
+	varnishtop.1
 
 MAINTAINERCLEANFILES = $(dist_man_MANS)
 
