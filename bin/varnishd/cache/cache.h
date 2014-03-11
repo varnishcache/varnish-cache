@@ -855,6 +855,8 @@ int HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv);
 
 /* cache_http1_deliver.c */
 void V1D_Deliver(struct req *);
+void V1D_Deliver_Synth(struct req *req);
+
 
 static inline int
 VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
