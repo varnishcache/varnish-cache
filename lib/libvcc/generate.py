@@ -490,8 +490,8 @@ The client's IP address.
 	),
 	('obj.proto',
 		'STRING',
-		( 'hit', 'error',),
-		( 'hit', 'error',), """
+		( 'hit', ),
+		( 'hit', ), """
 		The HTTP protocol version used when the object was retrieved.
 		"""
 	),
@@ -520,30 +520,30 @@ The client's IP address.
 	),
 	('obj.http.',
 		'HEADER',
-		( 'hit', 'error',),
-		( 'error',), """
+		( 'hit', ),
+		( ), """
 		The corresponding HTTP header.
 		"""
 	),
 	('obj.ttl',
 		'DURATION',
-		( 'hit', 'error',),
-		( 'hit', 'error',), """
+		( 'hit', ),
+		( 'hit', ), """
 		The object's remaining time to live, in seconds.
 		obj.ttl is writable.
 		"""
 	),
 	('obj.grace',
 		'DURATION',
-		( 'hit', 'error',),
-		( 'hit', 'error',), """
+		( 'hit', ),
+		( 'hit', ), """
 		The object's grace period in seconds. obj.grace is writable.
 		"""
 	),
 	('obj.keep',
 		'DURATION',
-		( 'hit', 'error',),
-		( 'hit', 'error',), """
+		( 'hit', ),
+		( 'hit', ), """
 		"""
 	),
 	('obj.last_use',
@@ -557,35 +557,35 @@ The client's IP address.
 	),
 	('obj.uncacheable',
 		'BOOL',
-		( 'hit', 'deliver', 'error',),
+		( 'hit', ),
 		( ), """
 		"""
 	),
 	('resp.proto',
 		'STRING',
-		( 'deliver',),
-		( 'deliver',), """
+		( 'deliver', 'error', ),
+		( 'deliver', 'error', ), """
 		The HTTP protocol version to use for the response.
 		"""
 	),
 	('resp.status',
 		'INT',
-		( 'deliver',),
-		( 'deliver',), """
+		( 'deliver', 'error', ),
+		( 'deliver', 'error', ), """
 		The HTTP status code that will be returned.
 		"""
 	),
 	('resp.reason',
 		'STRING',
-		( 'deliver',),
-		( 'deliver',), """
+		( 'deliver', 'error', ),
+		( 'deliver', 'error', ), """
 		The HTTP status message that will be returned.
 		"""
 	),
 	('resp.http.',
 		'HEADER',
-		( 'deliver',),
-		( 'deliver',), """
+		( 'deliver', 'error', ),
+		( 'deliver', 'error', ), """
 		The corresponding HTTP header.
 		"""
 	),

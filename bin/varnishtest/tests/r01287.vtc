@@ -8,7 +8,7 @@ varnish v1 -vcl+backend {
 		return (error(200, "OK"));
 	}
 	sub vcl_error {
-		synthetic(obj.http.blank);
+		synthetic(resp.http.blank);
 		return (deliver);
 	}
 } -start

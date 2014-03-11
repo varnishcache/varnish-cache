@@ -13,7 +13,7 @@ varnish v1 -vcl+backend {
 		return (error(200,req.ttl));
 	}
 	sub vcl_error {
-		set obj.http.x-timestamp = now;
+		set resp.http.x-timestamp = now;
 	}
 } -start
 

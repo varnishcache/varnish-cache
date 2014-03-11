@@ -17,9 +17,9 @@ varnish v1 -vcl+backend {
 		return (deliver);
 	}
 	sub vcl_error {
-		if (obj.status == 700) {
-			set obj.status=404;
-			set obj.http.X-status = obj.status;
+		if (resp.status == 700) {
+			set resp.status=404;
+			set resp.http.X-status = resp.status;
 			return (deliver);
 		}
 	}

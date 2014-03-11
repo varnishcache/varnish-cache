@@ -187,56 +187,29 @@ DOT }
 static enum req_fsm_nxt
 cnt_error(struct worker *wrk, struct req *req)
 {
-	struct http *h;
-	struct busyobj *bo;
 	char date[40];
-	ssize_t l;
-	struct storage *st;
+	struct http *h;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	AZ(req->objcore);
-	AZ(req->obj);
 
 	req->acct_req.error++;
-	bo = VBO_GetBusyObj(wrk, req);
-	AZ(bo->stats);
-	bo->stats = &wrk->stats;
-	bo->fetch_objcore = HSH_Private(wrk);
-	bo->fetch_obj = STV_NewObject(bo,
-	    TRANSIENT_STORAGE, cache_param->http_resp_size,
-	    (uint16_t)cache_param->http_max_hdr);
-	req->obj = bo->fetch_obj;
-	if (req->obj == NULL) {
-		req->doclose = SC_OVERLOAD;
-		req->director_hint = NULL;
-		AZ(HSH_DerefObjCore(&wrk->stats, &bo->fetch_objcore));
-		bo->fetch_objcore = NULL;
-		http_Teardown(bo->beresp);
-		http_Teardown(bo->bereq);
-		bo->stats = NULL;
-		VBO_DerefBusyObj(wrk, &bo);
-		return (REQ_FSM_DONE);
-	}
-	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
-	AZ(req->objcore);
-	req->obj->vxid = bo->vsl->wid;
-	req->obj->exp.t_origin = req->t_req;
 
-	h = req->obj->http;
+	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
+	h = req->resp;
+	req->t_resp = VTIM_real();
 
 	if (req->err_code < 100 || req->err_code > 999)
 		req->err_code = 501;
 
+	http_ClrHeader(h);
 	http_PutProtocol(h, "HTTP/1.1");
 	http_PutStatus(h, req->err_code);
-	VTIM_format(W_TIM_real(wrk), date);
+	VTIM_format(req->t_resp, date);
 	http_PrintfHeader(h, "Date: %s", date);
 	http_SetHeader(h, "Server: Varnish");
-
-	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
-	HSH_Ref(req->obj->objcore);
-
+	http_PrintfHeader(req->resp,
+	    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
 	if (req->err_reason != NULL)
 		http_PutResponse(h, req->err_reason);
 	else
@@ -248,56 +221,27 @@ cnt_error(struct worker *wrk, struct req *req)
 
 	VCL_error_method(req->vcl, wrk, req, NULL, req->http->ws);
 
-	http_Unset(req->obj->http, H_Content_Length);
+	http_Unset(h, H_Content_Length);
 
 	AZ(VSB_finish(req->synth_body));
 
-	/* Stop the insanity before it turns "Hotel California" on us */
-	if (req->restarts >= cache_param->max_restarts)
-		wrk->handling = VCL_RET_DELIVER;
-
 	if (wrk->handling == VCL_RET_RESTART) {
+		http_ClrHeader(h);
 		VSB_delete(req->synth_body);
 		req->synth_body = NULL;
-		bo->stats = NULL;
-		VBO_DerefBusyObj(wrk, &bo);
-		HSH_Drop(wrk, &req->obj);
 		req->req_step = R_STP_RESTART;
 		return (REQ_FSM_MORE);
 	}
-	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
-
-	/* We always close when we take this path */
-	req->doclose = SC_TX_ERROR;
-	req->wantbody = 1;
-
 	assert(wrk->handling == VCL_RET_DELIVER);
 
-	l = VSB_len(req->synth_body);
-	if (l > 0) {
-		st = STV_alloc(bo, l);
-		if (st != NULL) {
-			VTAILQ_INSERT_TAIL(&req->obj->store, st, list);
-			if (st->space >= l) {
-				memcpy(st->ptr, VSB_data(req->synth_body), l);
-				st->len = l;
-				req->obj->len = l;
-			}
-		}
-	}
+	V1D_Deliver_Synth(req);
 
 	VSB_delete(req->synth_body);
 	req->synth_body = NULL;
 
 	req->err_code = 0;
 	req->err_reason = NULL;
-	http_Teardown(bo->bereq);
-	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
-	bo->stats = NULL;
-	VBO_DerefBusyObj(wrk, &bo);
-	req->req_step = R_STP_DELIVER;
-	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
-	return (REQ_FSM_MORE);
+	return (REQ_FSM_DONE);
 }
 
 /*--------------------------------------------------------------------

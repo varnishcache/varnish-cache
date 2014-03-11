@@ -669,9 +669,8 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	if (wrk->handling == VCL_RET_RETRY) {
 		VSB_delete(bo->synth_body);
 		bo->synth_body = NULL;
-	    	if (bo->retries++ < cache_param->max_retries) {
+		if (bo->retries++ < cache_param->max_retries)
 			return (F_STP_RETRY);
-		}
 		bo->synth_body = NULL;
 		HSH_Fail(bo->fetch_objcore);
 		VBO_setstate(bo, BOS_FAILED);

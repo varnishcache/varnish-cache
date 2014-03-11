@@ -1,4 +1,4 @@
-varnishtest "Check that we close one error"
+varnishtest "Check that we do not close one error"
 
 varnish v1 -vcl {
 	backend foo {
@@ -19,7 +19,7 @@ client c1 {
 	rxresp
 	expect resp.status == 888
 	expect resp.bodylen == 31
-	expect resp.http.connection == close
+	expect resp.http.connection != close
 } -run
 
 varnish v1 -expect s_error == 1

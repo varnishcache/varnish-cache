@@ -15,7 +15,7 @@ varnish v1 -vcl+backend {
 		if (req.restarts < 1) {
 			return (restart);
 		} else {
-			set obj.status = 201;
+			set resp.status = 201;
 		}
 	 }
  } -start

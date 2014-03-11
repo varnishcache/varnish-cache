@@ -52,6 +52,5 @@ logexpect l1 -wait
 client c1 {
 	txreq
 	rxresp
-	expect resp.http.X-Varnish == "1007"
-
+	expect resp.http.X-Varnish == "1006"
 } -run

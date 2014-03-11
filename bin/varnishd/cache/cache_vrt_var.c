@@ -62,7 +62,7 @@ vrt_do_string(const struct http *hp, int fld,
 	va_end(ap);
 }
 
-#define VRT_DO_HDR(obj, hdr, fld)					\
+#define VRT_HDR_L(obj, hdr, fld)					\
 void									\
 VRT_l_##obj##_##hdr(const struct vrt_ctx *ctx, const char *p, ...)	\
 {									\
@@ -72,8 +72,9 @@ VRT_l_##obj##_##hdr(const struct vrt_ctx *ctx, const char *p, ...)	\
 	va_start(ap, p);						\
 	vrt_do_string(ctx->http_##obj, fld, #obj "." #hdr, p, ap);	\
 	va_end(ap);							\
-}									\
-									\
+}
+
+#define VRT_HDR_R(obj, hdr, fld)					\
 const char *								\
 VRT_r_##obj##_##hdr(const struct vrt_ctx *ctx)				\
 {									\
@@ -82,7 +83,11 @@ VRT_r_##obj##_##hdr(const struct vrt_ctx *ctx)				\
 	return (ctx->http_##obj->hd[fld].b);				\
 }
 
-#define VRT_DO_STATUS(obj)						\
+#define VRT_HDR_LR(obj, hdr, fld)					\
+	VRT_HDR_L(obj, hdr, fld)					\
+	VRT_HDR_R(obj, hdr, fld)
+
+#define VRT_STATUS_L(obj)						\
 void									\
 VRT_l_##obj##_status(const struct vrt_ctx *ctx, long num)		\
 {									\
@@ -91,8 +96,9 @@ VRT_l_##obj##_status(const struct vrt_ctx *ctx, long num)		\
 	CHECK_OBJ_NOTNULL(ctx->http_##obj, HTTP_MAGIC);			\
 	assert(num >= 100 && num <= 999);				\
 	ctx->http_##obj->status = (uint16_t)num;			\
-}									\
-									\
+}
+
+#define VRT_STATUS_R(obj)						\
 long									\
 VRT_r_##obj##_status(const struct vrt_ctx *ctx)				\
 {									\
@@ -102,22 +108,26 @@ VRT_r_##obj##_status(const struct vrt_ctx *ctx)				\
 	return(ctx->http_##obj->status);				\
 }
 
-VRT_DO_HDR(req,    method,	HTTP_HDR_METHOD)
-VRT_DO_HDR(req,    url,		HTTP_HDR_URL)
-VRT_DO_HDR(req,    proto,	HTTP_HDR_PROTO)
-VRT_DO_HDR(obj,    proto,	HTTP_HDR_PROTO)
-VRT_DO_HDR(obj,    reason,	HTTP_HDR_RESPONSE)
-VRT_DO_STATUS(obj)
-VRT_DO_HDR(resp,   proto,	HTTP_HDR_PROTO)
-VRT_DO_HDR(resp,   reason,	HTTP_HDR_RESPONSE)
-VRT_DO_STATUS(resp)
+VRT_HDR_LR(req,    method,	HTTP_HDR_METHOD)
+VRT_HDR_LR(req,    url,		HTTP_HDR_URL)
+VRT_HDR_LR(req,    proto,	HTTP_HDR_PROTO)
 
-VRT_DO_HDR(bereq,  method,	HTTP_HDR_METHOD)
-VRT_DO_HDR(bereq,  url,		HTTP_HDR_URL)
-VRT_DO_HDR(bereq,  proto,	HTTP_HDR_PROTO)
-VRT_DO_HDR(beresp, proto,	HTTP_HDR_PROTO)
-VRT_DO_HDR(beresp, reason,	HTTP_HDR_RESPONSE)
-VRT_DO_STATUS(beresp)
+VRT_HDR_R(obj,    proto,	HTTP_HDR_PROTO)
+VRT_HDR_R(obj,    reason,	HTTP_HDR_RESPONSE)
+VRT_STATUS_R(obj)
+
+VRT_HDR_LR(resp,   proto,	HTTP_HDR_PROTO)
+VRT_HDR_LR(resp,   reason,	HTTP_HDR_RESPONSE)
+VRT_STATUS_L(resp)
+VRT_STATUS_R(resp)
+
+VRT_HDR_LR(bereq,  method,	HTTP_HDR_METHOD)
+VRT_HDR_LR(bereq,  url,		HTTP_HDR_URL)
+VRT_HDR_LR(bereq,  proto,	HTTP_HDR_PROTO)
+VRT_HDR_LR(beresp, proto,	HTTP_HDR_PROTO)
+VRT_HDR_LR(beresp, reason,	HTTP_HDR_RESPONSE)
+VRT_STATUS_L(beresp)
+VRT_STATUS_R(beresp)
 
 /*--------------------------------------------------------------------*/
 

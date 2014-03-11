@@ -28,7 +28,7 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_error {
-		if (obj.status == 988) { return (restart); }
+		if (resp.status == 988) { return (restart); }
 	}
 
 	sub vcl_miss {
