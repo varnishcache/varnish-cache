@@ -147,7 +147,6 @@ EXTRA_DIST = \
 	tutorial/now_what.rst \
 	users-guide/command-line.rst \
 	users-guide/compression.rst \
-	users-guide/cookies.rst \
 	users-guide/devicedetection.rst \
 	users-guide/esi.rst \
 	users-guide/increasing-your-hitrate.rst \
