@@ -255,13 +255,13 @@ SLTM(TTL, 0, "TTL set on object",
 )
 
 SLTM(Fetch_Body, 0, "Body fetched from backend",
-	"Finished fetching body from backend.\n\n"
+	"Ready to fetch body from backend.\n\n"
 	"The format is::\n\n"
-	"\t%d(%s) cls %d\n"
-	"\t|  |       |\n"
-	"\t|  |       +- 1 if the backend connection was closed\n"
-	"\t|  +--------- Text description of body status\n"
-	"\t+------------ Body status\n"
+	"\t%d (%s) %s\n"
+	"\t|   |    |\n"
+	"\t|   |    +---- 'stream' or '-'\n"
+	"\t|   +--------- Text description of body fetch mode\n"
+	"\t+------------- Body fetch mode\n"
 	"\n"
 )
 

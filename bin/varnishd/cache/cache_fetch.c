@@ -480,9 +480,12 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->do_stream) {
 		HSH_Unbusy(&wrk->stats, obj->objcore);
-		VSLb(bo->vsl, SLT_Debug, "Allow streaming");
 		VBO_setstate(bo, BOS_STREAM);
 	}
+
+	VSLb(bo->vsl, SLT_Fetch_Body, "%u %s %s",
+	    bo->htc.body_status, body_status_2str(bo->htc.body_status),
+	    bo->do_stream ? "stream" : "-");
 
 	if (bo->htc.body_status != BS_NONE) {
 		assert(bo->htc.body_status  != BS_ERROR);
@@ -490,9 +493,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	}
 
 	bo->t_body = VTIM_mono();
-
-	VSLb(bo->vsl, SLT_Fetch_Body, "%u(%s)",
-	    bo->htc.body_status, body_status_2str(bo->htc.body_status));
 
 	if (bo->failed) {
 		wrk->stats.fetch_failed++;
