@@ -30,7 +30,7 @@ $Module directors 3 Backend traffic directors
 DESCRIPTION
 ===========
 
-Vmod_direcors enables load balancing in Varnish. The module are serves
+Vmod_direcors enables load balancing in Varnish. The module serves
 as an example on how one could extend the load balancing capabilites
 of Varnish.
 
@@ -50,7 +50,7 @@ initialize the directors in vcl_init, like this:::
         bar.add_backend(server2);
     }
 
-As you can see there is nothing keeping you from manipulting the
+As you can see there is nothing keeping you from manipulating the
 directors elsewhere in VCL. So, you could have VCL code that would
 add more backends to a director when a certin URL is called.
 
@@ -127,7 +127,7 @@ $Object hash()
 
 Description
        Creates a hash director. The hash director chooses the backend
-       bashed on hashing an arbitrary string. If you provide it with a
+       based on hashing an arbitrary string. If you provide it with a
        session cookie, you'll have the client connecting to the same
        backend every time.
 Example
