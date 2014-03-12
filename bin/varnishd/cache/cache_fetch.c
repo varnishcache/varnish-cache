@@ -480,6 +480,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->do_stream) {
 		HSH_Unbusy(&wrk->stats, obj->objcore);
+		VSLb(bo->vsl, SLT_Debug, "Allow streaming");
 		VBO_setstate(bo, BOS_STREAM);
 	}
 
