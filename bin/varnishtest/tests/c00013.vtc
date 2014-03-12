@@ -4,13 +4,22 @@ server s1 {
 	rxreq
 	expect req.url == "/foo"
 	send "HTTP/1.1 200 Ok\r\nConnection: close\r\n\r\n"
+	delay .2
 	sema r1 sync 2
+	delay .2
 	send "line1\n"
+	delay .2
 	sema r1 sync 2
 	send "line2\n"
 } -start
 
-varnish v1 -vcl+backend { } -start
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_stream = false;
+	}
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl"
 
 client c1 {
 	txreq -url "/foo" -hdr "client: c1"
@@ -24,7 +33,7 @@ sema r1 sync 2
 
 client c2 {
 	txreq -url "/foo" -hdr "client: c2"
-	delay .1
+	delay .2
 	sema r1 sync 2
 	rxresp
 	expect resp.status == 200
