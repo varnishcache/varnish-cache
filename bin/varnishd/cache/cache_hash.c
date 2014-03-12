@@ -404,7 +404,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		if (oc->flags & (OC_F_FAILED | OC_F_DYING))
 			continue;
 
-		if (oc->flags & OC_F_BUSY || oc->busyobj != NULL) {
+		if (oc->flags & OC_F_BUSY) {
 			CHECK_OBJ_ORNULL(oc->busyobj, BUSYOBJ_MAGIC);
 			if (req->hash_ignore_busy)
 				continue;
