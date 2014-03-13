@@ -65,9 +65,9 @@ varnish v1 -vcl+backend {
 
 client c1 {
 	txreq -hdr "Cookie: FOO"
-	rxresp
+	rxresphdrs
 	expect resp.status == 200
-	expect resp.bodylen == 0
+	expect_close
 } -run
 
 delay .1

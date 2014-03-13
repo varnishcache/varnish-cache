@@ -157,7 +157,7 @@ v1d_dorange(struct req *req, const char *r)
 
 /*--------------------------------------------------------------------*/
 
-static void
+static enum objiter_status
 v1d_WriteDirObj(struct req *req)
 {
 	enum objiter_status ois;
@@ -190,12 +190,14 @@ v1d_WriteDirObj(struct req *req)
 	} while (ois == OIS_DATA || ois == OIS_STREAM);
 	(void)VDP_bytes(req, VDP_FINISH,  NULL, 0);
 	ObjIterEnd(&oi);
+	return (ois);
 }
 
 void
 V1D_Deliver(struct req *req)
 {
 	char *r;
+	enum objiter_status ois;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
@@ -291,6 +293,7 @@ V1D_Deliver(struct req *req)
 	if (req->res_mode & RES_CHUNKED)
 		WRW_Chunked(req->wrk);
 
+	ois = OIS_DONE;
 	if (!req->wantbody) {
 		/* This was a HEAD or conditional request */
 	} else if (req->res_mode & RES_ESI) {
@@ -305,17 +308,19 @@ V1D_Deliver(struct req *req)
 		VDP_push(req, VDP_gunzip);
 		req->vgz = VGZ_NewUngzip(req->vsl, "U D -");
 		AZ(VGZ_WrwInit(req->vgz));
-		v1d_WriteDirObj(req);
+		ois = v1d_WriteDirObj(req);
 		(void)VGZ_Destroy(&req->vgz);
 		VDP_pop(req, VDP_gunzip);
 	} else {
-		v1d_WriteDirObj(req);
+		ois = v1d_WriteDirObj(req);
 	}
 
-	if (req->res_mode & RES_CHUNKED && !(req->res_mode & RES_ESI_CHILD))
+	if (ois == OIS_DONE &&
+	    (req->res_mode & RES_CHUNKED) &&
+	    !(req->res_mode & RES_ESI_CHILD))
 		WRW_EndChunk(req->wrk);
 
-	if (WRW_FlushRelease(req->wrk) && req->sp->fd >= 0)
+	if ((WRW_FlushRelease(req->wrk) || ois != OIS_DONE) && req->sp->fd >= 0)
 		SES_Close(req->sp, SC_REM_CLOSE);
 }
 
