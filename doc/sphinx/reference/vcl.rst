@@ -123,9 +123,6 @@ Durations are defined by a number and a designation. The number can be a real so
   w
     weeks
 
-  y
-    years.
-
 
 Ints
 ----
