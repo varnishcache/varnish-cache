@@ -55,6 +55,7 @@ FETCH_STEP(startfetch,	STARTFETCH,	(wrk, bo))
 FETCH_STEP(condfetch,	CONDFETCH,	(wrk, bo))
 FETCH_STEP(fetch,	FETCH,		(wrk, bo))
 FETCH_STEP(error,	ERROR,		(wrk, bo))
+FETCH_STEP(fail,	FAIL,		(wrk, bo))
 FETCH_STEP(done,	DONE,		())
 #endif
 

@@ -270,11 +270,9 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
 
 	bo->uncacheable = bo->do_pass;
-	if (wrk->handling == VCL_RET_ABANDON) {
-		HSH_Fail(bo->fetch_objcore);
-		VBO_setstate(bo, BOS_FAILED);
-		return (F_STP_DONE);
-	}
+	if (wrk->handling == VCL_RET_ABANDON)
+		return (F_STP_FAIL);
+
 	assert (wrk->handling == VCL_RET_FETCH);
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
@@ -363,6 +361,9 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		bo->fetch_objcore->flags |= OC_F_PASS;
 
 	assert(wrk->handling == VCL_RET_DELIVER);
+
+	bo->t_body = VTIM_mono();
+
 	return (do_ims ? F_STP_CONDFETCH : F_STP_FETCH);
 }
 
@@ -492,58 +493,26 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		VFP_Fetch_Body(bo, est);
 	}
 
-	bo->t_body = VTIM_mono();
-
-	if (bo->failed) {
-		wrk->stats.fetch_failed++;
-	} else {
-		if (bo->do_stream)
-			assert(bo->state == BOS_STREAM);
-		else
-			assert(bo->state == BOS_REQ_DONE);
-
-		VSLb(bo->vsl, SLT_Length, "%zd", obj->len);
-
-		{
-		/* Sanity check fetch methods accounting */
-			ssize_t uu;
-			struct storage *st;
-
-			uu = 0;
-			VTAILQ_FOREACH(st, &obj->store, list)
-				uu += st->len;
-			if (bo->do_stream)
-				/* Streaming might have started freeing stuff */
-				assert(uu <= obj->len);
-
-			else
-				assert(uu == obj->len);
+	if (bo->failed && !bo->do_stream) {
+		assert(bo->state < BOS_STREAM);
+		if (bo->fetch_obj != NULL) {
+			oc_freeobj(bo->fetch_objcore);
+			bo->fetch_obj = NULL;
+			bo->stats->n_object--;
 		}
+		return (F_STP_ERROR);
 	}
 
-	if (!bo->do_stream) {
-		if (bo->failed) {
-			if (bo->fetch_obj != NULL) {
-				oc_freeobj(bo->fetch_objcore);
-				bo->fetch_obj = NULL;
-				bo->stats->n_object--;
-			}
-			return (F_STP_ERROR);
-		} else {
-			HSH_Unbusy(&wrk->stats, obj->objcore);
-			VBO_setstate(bo, BOS_FINISHED);
-		}
-	} else if (bo->failed) {
-		HSH_Fail(bo->fetch_objcore);
-		VBO_setstate(bo, BOS_FAILED);
-	} else {
-		VBO_setstate(bo, BOS_FINISHED);
+	if (bo->failed)
+		return (F_STP_FAIL);
+
+	if (bo->do_stream)
+		assert(bo->state == BOS_STREAM);
+	else {
+		assert(bo->state == BOS_REQ_DONE);
+		HSH_Unbusy(&wrk->stats, obj->objcore);
 	}
-
-	HSH_Complete(obj->objcore);
-
-	assert(bo->refcount >= 1);
-
+	VBO_setstate(bo, BOS_FINISHED);
 	return (F_STP_DONE);
 }
 
@@ -584,10 +553,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		if (obj->esidata == NULL || obj->esidata->space < sl) {
 			VSLb(bo->vsl, SLT_Error,
 			    "No space for %zd bytes of ESI data", sl);
-			HSH_Fail(bo->fetch_objcore);
-			VBO_setstate(bo, BOS_FAILED);
-			HSH_Complete(obj->objcore);
-			return (F_STP_DONE);
+			return (F_STP_FAIL);
 		}
 		memcpy(obj->esidata->ptr, bo->ims_obj->esidata->ptr, sl);
 		obj->esidata->len = sl;
@@ -627,16 +593,13 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		}
 	} while (!bo->failed && (ois == OIS_DATA || ois == OIS_STREAM));
 	ObjIterEnd(&oi);
-	if (!bo->failed) {
-		assert(al == bo->ims_obj->len);
-		assert(obj->len == al);
-		VBO_setstate(bo, BOS_FINISHED);
-		EXP_Rearm(bo->ims_obj, bo->ims_obj->exp.t_origin, 0, 0, 0);
-	} else {
-		HSH_Fail(bo->fetch_objcore);
-		VBO_setstate(bo, BOS_FAILED);
-	}
-	HSH_Complete(obj->objcore);
+	if (bo->failed)
+		return (F_STP_FAIL);
+
+	assert(al == bo->ims_obj->len);
+	assert(obj->len == al);
+	EXP_Rearm(bo->ims_obj, bo->ims_obj->exp.t_origin, 0, 0, 0);
+	VBO_setstate(bo, BOS_FINISHED);
 	return (F_STP_DONE);
 }
 
@@ -679,19 +642,13 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 		if (bo->retries++ < cache_param->max_retries)
 			return (F_STP_RETRY);
 		bo->synth_body = NULL;
-		HSH_Fail(bo->fetch_objcore);
-		VBO_setstate(bo, BOS_FAILED);
-		HSH_Complete(bo->fetch_objcore);
-		return (F_STP_DONE);
+		return (F_STP_FAIL);
 	}
 
 	assert(wrk->handling == VCL_RET_DELIVER);
 
-	if (vbf_beresp2obj(bo)) {
-		VBO_setstate(bo, BOS_FAILED);
-		HSH_Fail(bo->fetch_objcore);
-		return (F_STP_DONE);
-	}
+	if (vbf_beresp2obj(bo))
+		return (F_STP_FAIL);
 
 	l = VSB_len(bo->synth_body);
 	if (l > 0) {
@@ -709,12 +666,28 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	VSB_delete(bo->synth_body);
 	bo->synth_body = NULL;
 
-	HSH_Unbusy(&wrk->stats, bo->fetch_obj->objcore);
-
+	HSH_Unbusy(&wrk->stats, bo->fetch_objcore);
 	VBO_setstate(bo, BOS_FINISHED);
+	return (F_STP_DONE);
+}
 
-	HSH_Complete(bo->fetch_obj->objcore);
+/*--------------------------------------------------------------------
+ */
 
+static enum fetch_step
+vbf_stp_fail(struct worker *wrk, struct busyobj *bo)
+{
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
+
+	assert(bo->state < BOS_FINISHED);
+	bo->fetch_objcore->flags |= OC_F_PRIVATE;
+	if (bo->fetch_objcore->flags & OC_F_BUSY)
+		HSH_Unbusy(&wrk->stats, bo->fetch_objcore);
+	HSH_Fail(bo->fetch_objcore);
+	wrk->stats.fetch_failed++;
+	VBO_setstate(bo, BOS_FAILED);
 	return (F_STP_DONE);
 }
 
@@ -738,6 +711,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
 
 	THR_SetBusyobj(bo);
 	stp = F_STP_MKBEREQ;
@@ -751,6 +725,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	while (stp != F_STP_DONE) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+		assert(bo->refcount >= 1);
 		switch(stp) {
 #define FETCH_STEP(l, U, arg)						\
 		case F_STP_##U:						\
@@ -763,6 +738,9 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 		}
 	}
 	assert(WRW_IsReleased(wrk));
+
+	AZ(bo->fetch_objcore->flags & OC_F_BUSY);
+	HSH_Complete(bo->fetch_objcore);
 
 	bo->stats = NULL;
 
@@ -777,8 +755,25 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	http_Teardown(bo->bereq);
 	http_Teardown(bo->beresp);
 
-	if (bo->state == BOS_FAILED)
-		assert(bo->fetch_objcore->flags & OC_F_FAILED);
+	if (bo->state == BOS_FINISHED) {
+		assert(!(bo->fetch_objcore->flags & OC_F_FAILED));
+		VSLb(bo->vsl, SLT_Length, "%zd", bo->fetch_obj->len);
+		{
+		/* Sanity check fetch methods accounting */
+			ssize_t uu;
+			struct storage *st;
+
+			uu = 0;
+			VTAILQ_FOREACH(st, &bo->fetch_obj->store, list)
+				uu += st->len;
+			if (bo->do_stream)
+				/* Streaming might have started freeing stuff */
+				assert(uu <= bo->fetch_obj->len);
+
+			else
+				assert(uu == bo->fetch_obj->len);
+		}
+	}
 
 	if (bo->ims_obj != NULL)
 		(void)HSH_DerefObj(&wrk->stats, &bo->ims_obj);
