@@ -29,7 +29,7 @@ VCL consists of the following elements:
  * Strings, booleans, time, duration, ints
  * Regular expressions
 
-In addition VCL has the following contructs:
+In addition VCL has the following constructs:
  * Include
  * Backend definitions
  * Probes
@@ -67,7 +67,7 @@ The following operators are available in VCL:
 Conditionals
 ------------
 
-VCL has *if* statments.
+VCL has *if* statements.
 
 
 Strings, booleans, time, duration and ints
@@ -319,8 +319,8 @@ Variables
 ---------
 
 In VCL you have access to certain variable objects. These contain
-requests and responses currently beeing worked on. What variables are
-availble depends on context.
+requests and responses currently being worked on. What variables are
+available depends on context.
 
 .. include:: vcl_var.rst
 
