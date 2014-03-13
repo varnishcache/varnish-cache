@@ -1,7 +1,7 @@
 varnishtest "#1356, req.body failure"
 
 server s1 {
-	rxhdrs
+	rxreqhdrs
 	expect_close
 } -start
 

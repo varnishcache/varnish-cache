@@ -233,8 +233,12 @@ cmd_http_expect(CMD_ARGS)
 	AN(av[2]);
 	AZ(av[3]);
 	lhs = cmd_var_resolve(hp, av[0]);
+	if (lhs == NULL)
+		lhs = "<missing>";
 	cmp = av[1];
 	rhs = cmd_var_resolve(hp, av[2]);
+	if (rhs == NULL)
+		rhs = "<missing>";
 	if (!strcmp(cmp, "==")) {
 		retval = strcmp(lhs, rhs) == 0;
 	} else if (!strcmp(cmp, "<")) {
@@ -541,6 +545,25 @@ cmd_http_rxresp(CMD_ARGS)
 	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
 }
 
+static void
+cmd_http_rxresphdrs(CMD_ARGS)
+{
+	struct http *hp;
+
+	(void)cmd;
+	(void)vl;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	ONLY_CLIENT(hp, av);
+	assert(!strcmp(av[0], "rxresphdrs"));
+	av++;
+
+	for(; *av != NULL; av++)
+		vtc_log(hp->vl, 0, "Unknown http rxreq spec: %s\n", *av);
+	http_rxhdr(hp);
+	http_splitheader(hp, 0);
+}
+
+
 /**********************************************************************
  * Ungzip rx'ed body
  */
@@ -802,14 +825,14 @@ cmd_http_rxreq(CMD_ARGS)
 }
 
 static void
-cmd_http_rxhdrs(CMD_ARGS)
+cmd_http_rxreqhdrs(CMD_ARGS)
 {
 	struct http *hp;
 
 	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
-	assert(!strcmp(av[0], "rxhdrs"));
+	assert(!strcmp(av[0], "rxreqhdrs"));
 	av++;
 
 	for(; *av != NULL; av++)
@@ -1169,12 +1192,13 @@ static const struct cmds http_cmds[] = {
 	{ "txreq",		cmd_http_txreq },
 
 	{ "rxreq",		cmd_http_rxreq },
-	{ "rxhdrs",		cmd_http_rxhdrs },
+	{ "rxreqhdrs",		cmd_http_rxreqhdrs },
 	{ "rxchunk",		cmd_http_rxchunk },
 	{ "rxbody",		cmd_http_rxbody },
 
 	{ "txresp",		cmd_http_txresp },
 	{ "rxresp",		cmd_http_rxresp },
+	{ "rxresphdrs",		cmd_http_rxresphdrs },
 	{ "gunzip",		cmd_http_gunzip_body },
 	{ "expect",		cmd_http_expect },
 	{ "send",		cmd_http_send },
