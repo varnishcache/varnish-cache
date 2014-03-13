@@ -30,8 +30,8 @@ $Module directors 3 Backend traffic directors
 DESCRIPTION
 ===========
 
-Vmod_direcors enables load balancing in Varnish. The module serves
-as an example on how one could extend the load balancing capabilites
+Vmod_directors enables load balancing in Varnish. The module serves
+as an example on how one could extend the load balancing capabilities
 of Varnish.
 
 To enable load balancing you must import this vmod (directors) in your
@@ -41,7 +41,7 @@ VCL:::
 
 Then you define your backends. Once you have the backends declared you
 can add them to a director. This happens in executed VCL code. If you
-want to emulate the previous behaviour of Varnish 3.0 you can just
+want to emulate the previous behavior of Varnish 3.0 you can just
 initialize the directors in vcl_init, like this:::
 
     sub vcl_init {
@@ -52,7 +52,7 @@ initialize the directors in vcl_init, like this:::
 
 As you can see there is nothing keeping you from manipulating the
 directors elsewhere in VCL. So, you could have VCL code that would
-add more backends to a director when a certin URL is called.
+add more backends to a director when a certain URL is called.
 
 $Object round_robin()
 
@@ -79,7 +79,10 @@ Example
 $Object fallback()
 
 Description
-        Creates a fallback director. This director will asdasoidwqjwqdasdas
+        Creates a fallback director. This director will
+
+	XXX: Add description of fallback director.
+
 Example
         new foo = directors.fallback();
 
