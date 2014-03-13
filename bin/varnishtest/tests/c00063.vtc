@@ -1,0 +1,32 @@
+varnishtest "cache backend synth object"
+
+varnish v1 -vcl {
+
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_backend_error {
+		set beresp.ttl = 1s;
+		set beresp.grace = 3s;
+		set beresp.http.foobar = "BLA" + bereq.xid;
+		synthetic(beresp.http.foobar);
+		return (deliver);
+	}
+} -start
+
+varnish v1 -cliok "param.set connect_timeout 1.0"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.foobar == "BLA1002"
+
+	delay 2
+	txreq
+	rxresp
+	expect resp.http.foobar == "BLA1002"
+
+	delay 3
+	txreq
+	rxresp
+	expect resp.http.foobar == "BLA1004"
+} -run
