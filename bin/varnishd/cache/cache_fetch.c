@@ -579,12 +579,18 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	obj = bo->fetch_obj;
 
 	if (bo->ims_obj->esidata != NULL) {
-		obj->esidata = STV_alloc(bo, bo->ims_obj->esidata->len);
-		XXXAN(obj->esidata);
-		xxxassert(obj->esidata->space >= bo->ims_obj->esidata->len);
-		memcpy(obj->esidata->ptr, bo->ims_obj->esidata->ptr,
-		    bo->ims_obj->esidata->len);
-		obj->esidata->len = bo->ims_obj->esidata->len;
+		sl = bo->ims_obj->esidata->len;
+		obj->esidata = STV_alloc(bo, sl);
+		if (obj->esidata == NULL || obj->esidata->space < sl) {
+			VSLb(bo->vsl, SLT_Error,
+			    "No space for %zd bytes of ESI data", sl);
+			HSH_Fail(bo->fetch_objcore);
+			VBO_setstate(bo, BOS_FAILED);
+			HSH_Complete(obj->objcore);
+			return (F_STP_DONE);
+		}
+		memcpy(obj->esidata->ptr, bo->ims_obj->esidata->ptr, sl);
+		obj->esidata->len = sl;
 	}
 
 	obj->gziped = bo->ims_obj->gziped;
