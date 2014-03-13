@@ -19,7 +19,7 @@ When a new configuration is loaded, the varnishd management process
 translates the VCL code to C and compiles it to a shared object which
 is then dynamically linked into the server process.
 
-This document focuses on the syntax of the VCL language. Full a full
+This document focuses on the syntax of the VCL language. For a full
 description of syntax and semantics, with ample examples, please see
 the users guide at https://www.varnish-cache.org/doc/
 
@@ -175,7 +175,7 @@ key/value fashion.::
 
 The only mandatory attribute is host. The attributes will inherit
 their defaults from the global parameters. The following attributes
-are availble:
+are available:
 
   host (mandatory)
     The host to be used. IP address or a hostname that resolves to a
@@ -237,7 +237,7 @@ There are no mandatory options. These are the options you can set:
     How many of the polls in .window are considered good when Varnish
     starts. Defaults to the value of threshold - 1. In this case, the
     backend starts as sick and requires one single poll to be
-    conqsidered healthy.
+    considered healthy.
             
   window
     How many of the latest polls we examine to determine backend health. Defaults to 8.
@@ -300,7 +300,7 @@ Return statements
 
 The subroutine executions ends when a return(*action*) statement is
 made. The *action* specifies how execution should proceed. The context
-defines which actions are availble. See the user guide for information
+defines which actions are available. See the user guide for information
 on what actions are available where.
 
 Multiple subroutines
