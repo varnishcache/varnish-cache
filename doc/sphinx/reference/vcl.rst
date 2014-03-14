@@ -21,7 +21,7 @@ is then dynamically linked into the server process.
 
 This document focuses on the syntax of the VCL language. For a full
 description of syntax and semantics, with ample examples, please see
-the users guide at https://www.varnish-cache.org/doc/
+the users guide at https://www.varnish-cache.org/docs/
 
 VCL consists of the following elements:
  * Operators
