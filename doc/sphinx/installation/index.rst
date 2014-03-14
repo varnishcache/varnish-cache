@@ -4,11 +4,8 @@
 Varnish Installation
 %%%%%%%%%%%%%%%%%%%%
 
-This document explains how to get Varnish onto your system, where
-to get help, how report bugs and so on.
-
-In other words, it is a manual about pretty much everything else than
-actually using Varnish to move traffic.
+This section covers installation prerequisites, a step-by-step installation procedure, how and where
+to get help, and how to report bugs. It also contains a set of platform specific notes to aid you when installing Varnish on certain platforms.
 
 .. XXX: rewrite the last paragraph.
 

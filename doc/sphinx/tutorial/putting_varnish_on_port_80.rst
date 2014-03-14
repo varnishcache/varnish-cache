@@ -9,13 +9,15 @@ First we stop varnish::
 
      # service varnish stop
 
+.. XXX:This renders to a different font than other commands. it should be the double backtick format for the command. benc
+
 Now we need to edit the configuration file that starts Varnish. 
 
 
 Debian/Ubuntu
 ~~~~~~~~~~~~~
 
-On Debian/Ubuntu this is /etc/default/varnish. In the file you'll find
+On Debian/Ubuntu this is `/etc/default/varnish`. In the file you'll find
 some text that looks like this::
 
   DAEMON_OPTS="-a :6081 \
@@ -36,7 +38,7 @@ Red Hat EL / Centos
 ~~~~~~~~~~~~~~~~~~~
 
 On Red Hat EL / Centos
-On Red Hat/Centos it is /etc/sysconfig/varnish
+On Red Hat/Centos it is `/etc/sysconfig/varnish`
 
 
 Restarting Varnish

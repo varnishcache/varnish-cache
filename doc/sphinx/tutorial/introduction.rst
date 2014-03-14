@@ -3,25 +3,22 @@
 The fundamentals of web proxy caching with Varnish
 --------------------------------------------------
 
-Varnish is a caching HTTP reverse proxy. It receives requests from
-clients and tries to answer them from its cache. If it cannot answer
-the request from its cache it will forward the request to the backend,
-fetch the response, store it and deliver it to the client.
+Varnish is a caching HTTP reverse proxy. It recieves requests from
+clients and tries to answer them from the cache. If Varnish cannot answer
+the request from the cache it will forward the request to the backend,
+fetch the response, store it in the cache and deliver it to the client.
 
 When Varnish has a cached response ready it is typically delivered in
 a matter of microseconds, several orders of magnitude faster than your
-typical application server, so you want to make sure to have it answer
-as many of the requests as possible.
+typical backend server, so you want to make sure to have Varnish answer
+as many of the requests as possible directly from the cache.
 
 Varnish decides whether it can store the content or not based on the
 response it gets back from the backend. The backend can instruct
 Varnish to cache the content with the HTTP response header
-Cache-Control. There are a few other conditions where Varnish will not
-cache, the most common one being cookies. Since cookies is a good
-indication that a web object is personalised, Varnish will with its
-default configuration, not cache it.
-
-This behaviour and most other behaviour can be changed using policies
+`Cache-Control`. There are a few conditions where Varnish will not
+cache, the most common one being the use of cookies. Since cookies indicates a client-specific web object, Varnish will by default not cache it. 
+This behaviour as most of Varnish functionality can be changed using policies
 written in the Varnish Configuration Language. See the Users Guide
 for more information on how to do that.
 
@@ -33,6 +30,8 @@ mind.  It is usually bound by the speed of the network, effectively
 turning performance into a non-issue. You get to focus on how your web
 application work and you can allow yourself, to some degree, to care
 less about performance and scalability.
+
+.. XXX:Not totally sure what the last sentence above means. benc
 
 Flexibility
 ~~~~~~~~~~~
@@ -77,3 +76,5 @@ information and signup.  There is also a web forum on the same site.
 
 Now that you have a vague idea on what Varnish Cache is, let see if we
 can get it up and running.
+
+.. XXX:The above three paragraphs are repetetive this is already handled in previos chapters. The only new information is Governing Board which could be moved to the introduction and the paragraphs scrapped. benc

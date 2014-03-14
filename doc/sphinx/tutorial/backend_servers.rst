@@ -3,14 +3,14 @@
 Backend servers
 ---------------
 
-Varnish has a concept of "backend" or "origin" servers. A backend
-server is the server providing the content Varnish will accelerate.
+Varnish has a concept of `backend` or `origin` servers. A backend
+server is the server providing the content Varnish will accelerate via the cache.
 
 Our first task is to tell Varnish where it can find its content. Start
 your favorite text editor and open the Varnish default configuration
 file. If you installed from source this is
-/usr/local/etc/varnish/default.vcl, if you installed from a package it
-is probably /etc/varnish/default.vcl.
+`/usr/local/etc/varnish/default.vcl`, if you installed from a package it
+is probably `/etc/varnish/default.vcl`.
 
 If you've been following the tutorial there is probably a section of
 the configuration that looks like this:::
@@ -41,11 +41,16 @@ localhost, port 8080.::
   }
 
 
-Varnish can have several backends defined and can you can even join
+Varnish can have several backends defined and can even join
 several backends together into clusters of backends for load balancing
 purposes, having Varnish pick one backend based on different
 algorithms. 
 
 A lot of the power of Varnish Cache comes from it's design, which
-might not be what you are expecting. Next, let's have a look at some of
-them.
+might not be what you are expecting.
+
+.. XXX:What am I expecting? benc
+
+Next, let's have a look at some of what makes Varnish unique and what you can do with it.
+
+
