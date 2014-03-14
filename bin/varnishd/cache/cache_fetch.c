@@ -682,10 +682,9 @@ vbf_stp_fail(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
 
 	assert(bo->state < BOS_FINISHED);
-	bo->fetch_objcore->flags |= OC_F_PRIVATE;
+	HSH_Fail(bo->fetch_objcore);
 	if (bo->fetch_objcore->flags & OC_F_BUSY)
 		HSH_Unbusy(&wrk->stats, bo->fetch_objcore);
-	HSH_Fail(bo->fetch_objcore);
 	wrk->stats.fetch_failed++;
 	VBO_setstate(bo, BOS_FAILED);
 	return (F_STP_DONE);

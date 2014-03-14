@@ -629,6 +629,13 @@ HSH_Fail(struct objcore *oc)
 	oh = oc->objhead;
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
 
+	/*
+	 * We have to have either a busy bit, so that HSH_Lookup
+	 * will not consider this oc, or an object hung of the oc
+	 * so that it can consider it.
+	 */
+	assert((oc->flags & OC_F_BUSY) || (oc->methods != NULL));
+
 	Lck_Lock(&oh->mtx);
 	oc->flags |= OC_F_FAILED;
 	Lck_Unlock(&oh->mtx);
@@ -678,7 +685,7 @@ HSH_Unbusy(struct dstat *ds, struct objcore *oc)
 	if (oh->waitinglist != NULL)
 		hsh_rush(ds, oh);
 	Lck_Unlock(&oh->mtx);
-	if (!(oc->flags & OC_F_PRIVATE)) {
+	if (!(oc->flags & OC_F_PRIVATE) && oc->methods != NULL) {
 		BAN_NewObjCore(oc);
 		EXP_Insert(oc);
 		AN(oc->flags & OC_F_EXP);
