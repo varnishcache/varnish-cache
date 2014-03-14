@@ -3,7 +3,7 @@
 The fundamentals of web proxy caching with Varnish
 --------------------------------------------------
 
-Varnish is a caching HTTP reverse proxy. It recieves requests from
+Varnish is a caching HTTP reverse proxy. It receives requests from
 clients and tries to answer them from its cache. If it cannot answer
 the request from its cache it will forward the request to the backend,
 fetch the response, store it and deliver it to the client.
@@ -14,11 +14,11 @@ typical application server, so you want to make sure to have it answer
 as many of the requests as possible.
 
 Varnish decides whether it can store the content or not based on the
-response it's gets back from the backend. The backend can instruct
+response it gets back from the backend. The backend can instruct
 Varnish to cache the content with the HTTP response header
 Cache-Control. There are a few other conditions where Varnish will not
 cache, the most common one being cookies. Since cookies is a good
-indication that a web object is personlised, Varnish will with it's
+indication that a web object is personalised, Varnish will with its
 default configuration, not cache it.
 
 This behaviour and most other behaviour can be changed using policies
@@ -29,7 +29,7 @@ Performance
 ~~~~~~~~~~~
 
 Varnish has a modern architecture and is written with performance in
-mind.  It is usually bound by the speed of the network, effectivly
+mind.  It is usually bound by the speed of the network, effectively
 turning performance into a non-issue. You get to focus on how your web
 application work and you can allow yourself, to some degree, to care
 less about performance and scalability.
@@ -37,8 +37,8 @@ less about performance and scalability.
 Flexibility
 ~~~~~~~~~~~
 
-One of the key features of Varnish Cache, in addition to it's
-performance, is the flexibility of it's configuration language,
+One of the key features of Varnish Cache, in addition to its
+performance, is the flexibility of its configuration language,
 VCL. VCL enables you to write policies on how incoming requests should
 be handled. 
 
@@ -68,7 +68,7 @@ You can get in touch with us trough many channels. For real time chat
 you can reach us on IRC trough the server irc.linpro.net on the
 #varnish and #varnish-hacking channels.
 The are two mailing lists available. One for user questions and one
-for development discussions. See varnish-cache.org/mailinglist for
+for development discussions. See https://www.varnish-cache.org/mailinglist for
 information and signup.  There is also a web forum on the same site.
 
 Now that you have a vague idea on what Varnish Cache is, let see if we
