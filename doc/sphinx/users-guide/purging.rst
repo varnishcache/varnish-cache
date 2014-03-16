@@ -21,7 +21,7 @@ A *purge* is what happens when you pick out an object from the cache
 and discard it along with its variants. Usually a purge is invoked
 through HTTP with the method `PURGE`.
 
-An HTTP purge is similar to a HTTP GET request, except that the
+A HTTP purge is similar to a HTTP GET request, except that the
 *method* is `PURGE`. Actually you can call the method whatever you'd
 like, but most people refer to this as purging. Squid, for example, supports the
 same mechanism. In order to support purging in Varnish you need the
