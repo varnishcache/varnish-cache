@@ -4,7 +4,7 @@
 Manipulating request headers in VCL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Lets say we want to remove the cookie for all objects in the /images
+Lets say we want to remove the cookie for all objects in the `/images`
 directory of our web server::
 
   sub vcl_recv {

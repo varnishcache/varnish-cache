@@ -10,14 +10,13 @@ Use cases for this are for example to send size reduced files to mobile
 clients with small screens and on high latency networks, or to 
 provide a streaming video codec that the client understands.
 
-There are a couple of strategies on what to do with such clients:
-1) Redirect them to another URL.
-2) Use a different backend for the special clients.
-3) Change the backend requests so the usual backend sends tailored content.
+There are a couple of typical strategies to use for this type of scenario:
+1) Redirect to another URL.
+2) Use a different backend for the special client.
+3) Change the backend request so that the backend sends tailored content.
 
-To make the examples easier to understand, it is assumed in this text 
-that all the req.http.X-UA-Device header is present and unique per client class
-that content is to be served to. 
+To perhaps make the strategies easier to understand, we, in this context, assume
+that the `req.http.X-UA-Device` header is present and unique per client class. 
 
 Setting this header can be as simple as::
 
@@ -28,34 +27,34 @@ Setting this header can be as simple as::
    }
 
 There are different commercial and free offerings in doing grouping and
-identifying clients in further detail than this. For a basic and community
+identifying clients in further detail. For a basic and community
 based regular expression set, see
-https://github.com/varnish/varnish-devicedetect/ .
+https://github.com/varnish/varnish-devicedetect/.
 
 
 Serve the different content on the same URL
 -------------------------------------------
 
 The tricks involved are: 
-1. Detect the client (pretty simple, just include devicedetect.vcl and call
-it)
-2. Figure out how to signal the backend what client class this is. This
+1. Detect the client (pretty simple, just include `devicedetect.vcl` and call
+it).
+2. Figure out how to signal the backend the client class. This
 includes for example setting a header, changing a header or even changing the
 backend request URL.
-3. Modify any response from the backend to add missing Vary headers, so
+3. Modify any response from the backend to add missing 'Vary' headers, so
 Varnish' internal handling of this kicks in.
 4. Modify output sent to the client so any caches outside our control don't
 serve the wrong content.
 
-All this while still making sure that we only get 1 cached object per URL per
+All this needs to be done while still making sure that we only get one cached object per URL per
 device class.
 
 
 Example 1: Send HTTP header to backend
 ''''''''''''''''''''''''''''''''''''''
 
-The basic case is that Varnish adds the X-UA-Device HTTP header on the backend
-requests, and the backend mentions in the response Vary header that the content
+The basic case is that Varnish adds the 'X-UA-Device' HTTP header on the backend
+requests, and the backend mentions in the response 'Vary' header that the content
 is dependant on this header. 
 
 Everything works out of the box from Varnish' perspective.
@@ -103,13 +102,13 @@ Example 2: Normalize the User-Agent string
 ''''''''''''''''''''''''''''''''''''''''''
 
 Another way of signaling the device type is to override or normalize the
-User-Agent header sent to the backend.
+'User-Agent' header sent to the backend.
 
-For example
+For example::
 
     User-Agent: Mozilla/5.0 (Linux; U; Android 2.2; nb-no; HTC Desire Build/FRF91) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1
 
-becomes:
+becomes::
 
     User-Agent: mobile-android
 
@@ -218,7 +217,7 @@ Different backend for mobile clients
 ------------------------------------
 
 If you have a different backend that serves pages for mobile clients, or any
-special needs in VCL, you can use the X-UA-Device header like this::
+special needs in VCL, you can use the 'X-UA-Device' header like this::
 
     backend mobile {
         .host = "10.0.0.1";

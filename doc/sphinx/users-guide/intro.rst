@@ -3,7 +3,7 @@
 The Big Varnish Picture
 =======================
 
-In this section we will cover the questions:
+In this section we will cover answers to the questions:
 - What is in this package called "Varnish"?
 - what are all the different bits and pieces named? 
 - Will you need a hex-wrench for assembly?

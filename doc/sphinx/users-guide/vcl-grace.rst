@@ -7,13 +7,12 @@ A key feature of Varnish is its ability to shield you from misbehaving
 web- and application servers.
 
 
-
 Grace mode
 ~~~~~~~~~~
 
 When several clients are requesting the same page Varnish will send
 one request to the backend and place the others on hold while fetching
-one copy from the back end. In some products this is called request
+one copy from the backend. In some products this is called request
 coalescing and Varnish does this automatically.
 
 If you are serving thousands of hits per second the queue of waiting

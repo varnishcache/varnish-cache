@@ -6,7 +6,7 @@ Backend servers
 Varnish has a concept of "backend" or "origin" servers. A backend
 server is the server providing the content Varnish will accelerate.
 
-Our first task is to tell Varnish where it can find its content. Start
+Our first task is to tell Varnish where it can find its backends. Start
 your favorite text editor and open the relevant VCL file.
 
 Somewhere in the top there will be a section that looks a bit like this.::
@@ -16,7 +16,7 @@ Somewhere in the top there will be a section that looks a bit like this.::
     #     .port = "8080";
     # }
 
-We comment in this bit of text making the text look like.::
+We remove the comment markings in this text stanza making the it look like.::
 
     backend default {
         .host = "127.0.0.1";
@@ -27,7 +27,7 @@ Now, this piece of configuration defines a backend in Varnish called
 *default*. When Varnish needs to get content from this backend it will
 connect to port 8080 on localhost (127.0.0.1).
 
-Varnish can have several backends defined and can you can even join
+Varnish can have several backends defined you can even join
 several backends together into clusters of backends for load balancing
 purposes.
 
@@ -41,10 +41,10 @@ host or not. There are lot of options.
 
 Lets say we need to introduce a Java application into out PHP web
 site. Lets say our Java application should handle URL beginning with
-/java/.
+`/java/`.
 
 We manage to get the thing up and running on port 8000. Now, lets have
-a look at the default.vcl.::
+a look at the `default.vcl`.::
 
     backend default {
         .host = "127.0.0.1";
@@ -58,7 +58,7 @@ We add a new backend.::
         .port = "8000";
     }
 
-Now we need tell where to send the difference URL. Lets look at vcl_recv.::
+Now we need tell Varnish where to send the difference URL. Lets look at `vcl_recv`.::
 
     sub vcl_recv {
         if (req.url ~ "^/java/") {
@@ -71,18 +71,18 @@ Now we need tell where to send the difference URL. Lets look at vcl_recv.::
 It's quite simple, really. Lets stop and think about this for a
 moment. As you can see you can define how you choose backends based on
 really arbitrary data. You want to send mobile devices to a different
-backend? No problem. if (req.User-agent ~ /mobile/) .. should do the
+backend? No problem. ``if (req.User-agent ~ /mobile/) ..`` should do the
 trick.
 
 
 Backends and virtual hosts in Varnish
 -------------------------------------
 
-Varnish fully supports virtual hosts. They might work in a somewhat
+Varnish fully supports virtual hosts. They might however work in a somewhat
 counter intuitive fashion since they are never declared
 explicitly. You set up the routing of incoming HTTP requests in
-vcl_recv. If you want this routing to be done on the basis of virtual
-hosts you just need to inspect req.http.host.
+`vcl_recv`. If you want this routing to be done on the basis of virtual
+hosts you just need to inspect `req.http.host`.
 
 You can have something like this:::
 
@@ -94,10 +94,10 @@ You can have something like this:::
         }
     }
 
-Note that the first regular expressions will match foo.com,
-www.foo.com, zoop.foo.com and any other host ending in foo.com. In
+Note that the first regular expressions will match "foo.com",
+"www.foo.com", "zoop.foo.com" and any other host ending in "foo.com". In
 this example this is intentional but you might want it to be a bit
-more tight, maybe relying on the == operator in stead, like this:::
+more tight, maybe relying on the ``==`` operator in stead, like this:::
 
     sub vcl_recv {
         if (req.http.host == "foo.com" or req.http.host == "www.foo.com") {
@@ -118,7 +118,7 @@ and resilience.
 
 You can define several backends and group them together in a
 director. This requires you to load a VMOD, a Varnish module, and then to
-call certain actions in vcl_init.::
+call certain actions in `vcl_init`.::
 
 
     import directors;    # load the directors
@@ -180,11 +180,11 @@ define the backends.::
         }
     }
 
-Whats new here is the probe. Varnish will check the health of each
+Whats new here is the ``probe``. Varnish will check the health of each
 backend with a probe. The options are:
 
 url
-    What URL should Varnish request.
+    The URL Varnish will use to send a probe request.
 
 interval
     How often should we poll
@@ -197,13 +197,17 @@ window
     window has five checks.
 
 threshold
-    How many of the .window last polls must be good for the backend to be declared healthy.
+    How many of the '.window' last polls must be good for the backend to be declared healthy.
+
+.. XXX: .window probably means something but not to me :) benc
 
 initial
-    How many of the of the probes a good when Varnish starts - defaults
+    How many of the probes that needs to be succesful when Varnish starts - defaults
     to the same amount as the threshold.
 
-Now we define the director.::
+Now we define the 'director'.::
+
+.. XXX: Where and why? benc
 
     import directors;
 

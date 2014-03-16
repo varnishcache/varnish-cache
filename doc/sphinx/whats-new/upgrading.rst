@@ -37,7 +37,7 @@ Since the client director was already a special case of the hash director, it ha
 
 error() is now a return value
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-You must now explicitly return an error::
+You must explicitly return an error::
 
 	return(error(999, "Response));
 
@@ -76,11 +76,11 @@ vcl_recv should return(hash) instead of lookup now
 
 req.* not available in vcl_backend_response
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-req.* used to be available in vcl_fetch, but after the split of functionality, you only have bereq.* in vcl_backend_response.
+req.* used to be available in `vcl_fetch`, but after the split of functionality, you only have 'bereq.*' in `vcl_backend_response`.
 
 vcl_* reserved
 ~~~~~~~~~~~~~~
-Your own subs cannot be named vcl_* anymore. That is reserved for builtin subs.
+Any custom-made subs cannot be named 'vcl_*' anymore. This namespace is reserved for builtin subs.
 
 req.backend.healthy replaced by std.healthy(req.backend)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -9,7 +9,7 @@ preferences.
 
 Note that VCL doesn't contain any loops or jump statements.
 
-This document gives an outline of the most important parts of the
+This section provides an outline of the more important parts of the
 syntax. For a full documentation of VCL syntax please see
 :ref:`reference-vcl` in the reference.
 
@@ -18,7 +18,7 @@ Strings
 
 Basic strings are enclosed in " ... ", and may not contain newlines.
 
-Backslash is not special, so for instance in regsub() you do not need
+Backslash is not special, so for instance in `regsub()` you do not need
 to do the "count-the-backslashes" polka:::
 
   regsub("barf", "(b)(a)(r)(f)", "\4\3\2p") -> "frap"
@@ -43,9 +43,9 @@ which can later be used to match client addresses::
        }
 
 If an ACL entry specifies a host name which Varnish is unable to
-resolve, it will match any address it is compared to.  Consequently,
+resolve, it will match any address it is compared to. Consequently,
 if it is preceded by a negation mark, it will reject any address it is
-compared to, which may not be what you intended.  If the entry is
+compared to, which may not be what you intended. If the entry is
 enclosed in parentheses, however, it will simply be ignored.
 
 To match an IP address against an ACL, simply use the match operator::
@@ -93,10 +93,13 @@ A subroutine is used to group code for legibility or reusability:
 
 Subroutines in VCL do not take arguments, nor do they return values.
 
-To call a subroutine, use the call keyword followed by the subroutine's name:
+To call a subroutine, use the call keyword followed by the subroutine's name::
 
 call pipe_if_local;
 
 Varnish has quite a few built in subroutines that are called for each
 transaction as it flows through Varnish. These builtin subroutines are all named vcl_*. Your own subroutines cannot start their name with vcl_.
+
+.. XXX:looks as bit funky as red text? benc
+
 See :ref:`vcl-built-in-subs`.

@@ -18,3 +18,4 @@ VCL config to do so::
          }
     }
 
+.. XXX: Pipe it? maybe a bit more explanation here? benc
