@@ -228,6 +228,19 @@ pan_object(const char *typ, const struct object *o)
 /*--------------------------------------------------------------------*/
 
 static void
+pan_objcore(const char *typ, const struct objcore *oc)
+{
+
+	VSB_printf(pan_vsp, "  objcore (%s) = %p {\n", typ, oc);
+	VSB_printf(pan_vsp, "    refcnt = %d\n", oc->refcnt);
+	VSB_printf(pan_vsp, "    flags = 0x%x\n", oc->flags);
+	VSB_printf(pan_vsp, "    objhead = %p\n", oc->objhead);
+	VSB_printf(pan_vsp, "  }\n");
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 pan_vcl(const struct VCL_conf *vcl)
 {
 	int i;
@@ -284,6 +297,8 @@ pan_busyobj(const struct busyobj *bo)
 	if (bo->beresp->ws != NULL)
 		pan_http("beresp", bo->beresp, 4);
 	pan_ws(bo->ws_o, 4);
+	if (bo->fetch_objcore)
+		pan_objcore("FETCH", bo->fetch_objcore);
 	if (bo->fetch_obj)
 		pan_object("FETCH", bo->fetch_obj);
 	if (bo->ims_obj)
