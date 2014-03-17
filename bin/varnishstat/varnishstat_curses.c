@@ -821,7 +821,7 @@ handle_keypress(int ch)
 		current = n_ptarray - 1;
 		page_start = current - l_points + 1;
 		break;
-	case 'h':
+	case 'd':
 		hide_unseen = 1 - hide_unseen;
 		rebuild = 1;
 		break;
