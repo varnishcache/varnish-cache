@@ -41,6 +41,24 @@ You must now explicitly return an error::
 
 	return(error(999, "Response));
 
+
+Synthetic responses in vcl_error
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Setting headers on synthetic response bodies made in vcl_error are now done on
+resp.http instead of obj.http.
+
+The synthetic keyword is now a function::
+
+    if (resp.status == 799) {
+        set resp.status = 200;
+        set resp.http.Content-Type = "text/plain; charset=utf-8";
+        synthetic({"You are "} + client.ip);
+        return (deliver);
+    }
+
+
+
 hit_for_pass objects are created using beresp.uncacheable
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Example::
