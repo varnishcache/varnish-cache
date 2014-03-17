@@ -683,8 +683,6 @@ vbf_stp_fail(struct worker *wrk, struct busyobj *bo)
 
 	assert(bo->state < BOS_FINISHED);
 	HSH_Fail(bo->fetch_objcore);
-	if (bo->fetch_objcore->flags & OC_F_BUSY)
-		HSH_Unbusy(&wrk->stats, bo->fetch_objcore);
 	wrk->stats.fetch_failed++;
 	VBO_setstate(bo, BOS_FAILED);
 	return (F_STP_DONE);
@@ -738,9 +736,6 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	}
 	assert(WRW_IsReleased(wrk));
 
-	AZ(bo->fetch_objcore->flags & OC_F_BUSY);
-	HSH_Complete(bo->fetch_objcore);
-
 	bo->stats = NULL;
 
 	if (bo->vbc != NULL) {
@@ -756,6 +751,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	if (bo->state == BOS_FINISHED) {
 		assert(!(bo->fetch_objcore->flags & OC_F_FAILED));
+		HSH_Complete(bo->fetch_objcore);
 		VSLb(bo->vsl, SLT_Length, "%zd", bo->fetch_obj->len);
 		{
 		/* Sanity check fetch methods accounting */
