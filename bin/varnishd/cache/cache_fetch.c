@@ -565,9 +565,10 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	obj->gzip_stop = bo->ims_obj->gzip_stop;
 
 	AZ(WS_Overflowed(bo->ws_o));
-	if (bo->do_stream)
+	if (bo->do_stream) {
+		HSH_Unbusy(&wrk->stats, obj->objcore);
 		VBO_setstate(bo, BOS_STREAM);
-	HSH_Unbusy(&wrk->stats, obj->objcore);
+	}
 
 	st = NULL;
 	al = 0;
@@ -595,6 +596,9 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	ObjIterEnd(&oi);
 	if (bo->failed)
 		return (F_STP_FAIL);
+
+	if (!bo->do_stream)
+		HSH_Unbusy(&wrk->stats, obj->objcore);
 
 	assert(al == bo->ims_obj->len);
 	assert(obj->len == al);
@@ -802,6 +806,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 
 	bo = VBO_GetBusyObj(wrk, req);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	THR_SetBusyobj(bo);
 
 	switch(mode) {
 	case VBF_PASS:		how = "pass"; break;
@@ -853,7 +858,12 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 		VBO_waitstate(bo, BOS_REQ_DONE);
 	} else {
 		VBO_waitstate(bo, BOS_STREAM);
-		assert(bo->state != BOS_FAILED || (oc->flags & OC_F_FAILED));
+		if (bo->state == BOS_FAILED) {
+			AN((oc->flags & OC_F_FAILED));
+		} else {
+			AZ(bo->fetch_objcore->flags & OC_F_BUSY);
+		}
 	}
+	THR_SetBusyobj(NULL);
 	VBO_DerefBusyObj(wrk, &bo);
 }

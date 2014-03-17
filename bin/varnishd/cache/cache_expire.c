@@ -137,7 +137,7 @@ EXP_Inject(struct objcore *oc, struct lru *lru, double when)
 
 	AZ(oc->flags & (OC_F_OFFLRU | OC_F_INSERT | OC_F_MOVE));
 	AZ(oc->flags & OC_F_DYING);
-	AZ(oc->flags & OC_F_BUSY);
+	// AN(oc->flags & OC_F_BUSY);
 
 	if (lru == NULL)
 		lru = oc_getlru(oc);
