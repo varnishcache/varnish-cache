@@ -660,6 +660,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 {
 	unsigned recv_handling;
 	struct SHA256Context sha256ctx;
+	char *xff;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -688,6 +689,16 @@ cnt_recv(struct worker *wrk, struct req *req)
 	req->hash_always_miss = 0;
 	req->hash_ignore_busy = 0;
 	req->client_identity = NULL;
+	if (req->restarts == 0) {
+		if (http_GetHdr(req->http, H_X_Forwarded_For, &xff)) {
+			http_Unset(req->http, H_X_Forwarded_For);
+			http_PrintfHeader(req->http, "X-Forwarded-For: %s, %s", xff,
+					  req->sp->client_addr_str);
+		} else {
+			http_PrintfHeader(req->http, "X-Forwarded-For: %s",
+					  req->sp->client_addr_str);
+		}
+	}
 
 	http_CollectHdr(req->http, H_Cache_Control);
 

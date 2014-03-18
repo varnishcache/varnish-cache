@@ -94,5 +94,6 @@ HTTPH("Vary",			H_Vary,			0					  )	/* RFC2616 14.44 */
 HTTPH("Via",			H_Via,			0					  )	/* RFC2616 14.45 */
 HTTPH("Warning",		H_Warning,		0					  )	/* RFC2616 14.46 */
 HTTPH("WWW-Authenticate",	H_WWW_Authenticate,	0					  )	/* RFC2616 14.47 */
+HTTPH("X-Forwarded-For",	H_X_Forwarded_For,	0					  )	/* Not RFC */
 
 /*lint -restore */
