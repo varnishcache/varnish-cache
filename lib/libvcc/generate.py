@@ -161,8 +161,8 @@ sp_variables = [
 		'IP',
 		( 'both',),
 		( ), """
-The client's IP address.
-"""
+		The client's IP address.
+		"""
 	),
 	('client.identity',
 		'STRING',
