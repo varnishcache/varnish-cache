@@ -51,7 +51,8 @@ Supported platforms
 
 Varnish is written to run on modern versions of Linux and FreeBSD and
 the best experience is had on those platforms. Thanks to our
-contributors it also runs on NetBSD, OpenBSD and OS X.
+contributors it also runs on NetBSD, OpenBSD, OS X and various
+Solaris-descendants like Oracle Solaris, OmniOS and SmartOS.
 
 About the Varnish development process
 -------------------------------------
