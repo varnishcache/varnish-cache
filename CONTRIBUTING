@@ -1,6 +1,9 @@
 Contributing to Varnish Cache
 =============================
 
+To contribute to Varnish, read https://www.varnish-cache.org/trac/wiki/Contributing
+as a staring point and follow relevant parts linked there.
+
 Varnish Cache is developed with Git hosted on our own infrastructure.
 
 Official development tree is here:
