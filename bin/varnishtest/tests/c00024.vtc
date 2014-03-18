@@ -1,4 +1,4 @@
-varnishtest "Test restart in vcl_error"
+varnishtest "Test restart in vcl_synth"
 
 server s1 {
         rxreq
@@ -8,10 +8,10 @@ server s1 {
 varnish v1 -vcl+backend {
 	sub vcl_recv {
 		if (req.restarts == 0) {
-			return (error(701, "FOO"));
+			return (synth(701, "FOO"));
 		}
 	}
-	sub vcl_error {
+	sub vcl_synth {
 		if (req.restarts < 1) {
 			return (restart);
 		} else {

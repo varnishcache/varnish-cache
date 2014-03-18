@@ -6,7 +6,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	sub vcl_error {
+	sub vcl_synth {
 		return (restart);
 	}
 } -start

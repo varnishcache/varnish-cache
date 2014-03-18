@@ -1,4 +1,4 @@
-varnishtest "Test vcl_error is called even if vcl_backend_fetch failed"
+varnishtest "Test vcl_synth is called even if vcl_backend_fetch failed"
 
 varnish v1 -vcl {
 	backend default {

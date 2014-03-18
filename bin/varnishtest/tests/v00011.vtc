@@ -18,7 +18,7 @@ varnish v1 -vcl+backend {
 			ban("req.url == bar //");
 			ban("foo == bar //");
 			ban("req.url ~ ^/$");
-			return (error(209,"foo"));
+			return (synth(209,"foo"));
 		}
 	}
 

@@ -54,21 +54,6 @@ parse_call(struct vcc *tl)
 
 /*--------------------------------------------------------------------*/
 
-static void
-parse_error(struct vcc *tl)
-{
-
-	VSB_printf(tl->sb,
-	    "Syntax has changed, use:\n"
-	    "\treturn(error(999));\n"
-	    "or\n"
-	    "\treturn(error(999, \"Response text\"));\n");
-	vcc_ErrWhere(tl, tl->t);
-	return;
-}
-
-/*--------------------------------------------------------------------*/
-
 static const struct arith {
 	enum var_type		type;
 	unsigned		oper;
@@ -311,14 +296,14 @@ parse_return(struct vcc *tl)
 	ExpectErr(tl, ID);
 
 	/* 'error' gets special handling, to allow optional status/response */
-	if (vcc_IdIs(tl->t, "error")) {
+	if (vcc_IdIs(tl->t, "synth")) {
 		vcc_NextToken(tl);
 		if (tl->t->tok == ')') {
 			VSB_printf(tl->sb,
 			    "Syntax has changed, use:\n"
-			    "\treturn(error(999));\n"
+			    "\treturn(synth(999));\n"
 			    "or\n"
-			    "\treturn(error(999, \"Response text\"));\n");
+			    "\treturn(synth(999, \"Response text\"));\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
@@ -340,9 +325,9 @@ parse_return(struct vcc *tl)
 		ExpectErr(tl, ')');
 		vcc_NextToken(tl);
 		Fb(tl, 1, ");\n");
-		Fb(tl, 1, "VRT_handling(ctx, VCL_RET_ERROR);\n");
+		Fb(tl, 1, "VRT_handling(ctx, VCL_RET_SYNTH);\n");
 		Fb(tl, 1, "return (1);\n");
-		vcc_ProcAction(tl->curproc, VCL_RET_ERROR, tl->t);
+		vcc_ProcAction(tl->curproc, VCL_RET_SYNTH, tl->t);
 		ExpectErr(tl, ')');
 		vcc_NextToken(tl);
 		return;
@@ -422,7 +407,6 @@ static struct action_table {
 	/* Keep list sorted from here */
 	{ "ban",		parse_ban },
 	{ "call",		parse_call },
-	{ "error",		parse_error },
 	{ "hash_data",		parse_hash_data, VCL_MET_HASH },
 	{ "new",		parse_new, VCL_MET_INIT},
 	{ "purge",		parse_purge, VCL_MET_MISS | VCL_MET_HIT },
@@ -430,7 +414,7 @@ static struct action_table {
 	{ "rollback",		parse_rollback },
 	{ "set",		parse_set },
 	{ "synthetic",		parse_synthetic,
-		VCL_MET_ERROR | VCL_MET_BACKEND_ERROR },
+		VCL_MET_SYNTH | VCL_MET_BACKEND_ERROR },
 	{ "unset",		parse_unset },
 	{ NULL,			NULL }
 };

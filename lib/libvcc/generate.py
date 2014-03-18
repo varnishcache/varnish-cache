@@ -84,15 +84,15 @@ returns =(
 
 	('recv',
 		"C",
-		('error', 'pass', 'pipe', 'hash', 'purge',)
+		('synth', 'pass', 'pipe', 'hash', 'purge',)
 	),
 	('pipe',
 		"C",
-		('error', 'pipe',)
+		('synth', 'pipe',)
 	),
 	('pass',
 		"C",
-		('error', 'restart', 'fetch',)
+		('synth', 'restart', 'fetch',)
 	),
 	('hash',
 		"C",
@@ -100,21 +100,21 @@ returns =(
 	),
 	('purge',
 		"C",
-		('error', 'fetch',)
+		('synth', 'fetch',)
 	),
 	('miss',
 		"C",
-		('error', 'restart', 'pass', 'fetch',)
+		('synth', 'restart', 'pass', 'fetch',)
 	),
 	('hit',
 		"C",
-		('error', 'restart', 'pass', 'fetch', 'deliver',)
+		('synth', 'restart', 'pass', 'fetch', 'deliver',)
 	),
 	('deliver',
 		"C",
 		('restart', 'deliver',)
 	),
-	('error',
+	('synth',
 		"C",
 		('restart', 'deliver',)
 	),
@@ -254,8 +254,8 @@ sp_variables = [
 	),
 	('req.esi',
 		'BOOL',
-		( 'recv', 'backend_response', 'deliver', 'error',),
-		( 'recv', 'backend_response', 'deliver', 'error',), """
+		( 'recv', 'backend_response', 'deliver', 'synth',),
+		( 'recv', 'backend_response', 'deliver', 'synth',), """
 		Boolean. Set to false to disable ESI processing
 		regardless of any value in beresp.do_esi. Defaults
 		to true. This variable is subject to change in
@@ -497,15 +497,15 @@ sp_variables = [
 	),
 	('obj.status',
 		'INT',
-		( 'error',),
-		( 'error',), """
+		( 'synth',),
+		( 'synth',), """
 		The HTTP status code returned by the server.
 		"""
 	),
 	('obj.reason',
 		'STRING',
-		( 'error',),
-		( 'error',), """
+		( 'synth',),
+		( 'synth',), """
 		The HTTP status message returned by the server.
 		"""
 	),
@@ -563,29 +563,29 @@ sp_variables = [
 	),
 	('resp.proto',
 		'STRING',
-		( 'deliver', 'error', ),
-		( 'deliver', 'error', ), """
+		( 'deliver', 'synth', ),
+		( 'deliver', 'synth', ), """
 		The HTTP protocol version to use for the response.
 		"""
 	),
 	('resp.status',
 		'INT',
-		( 'deliver', 'error', ),
-		( 'deliver', 'error', ), """
+		( 'deliver', 'synth', ),
+		( 'deliver', 'synth', ), """
 		The HTTP status code that will be returned.
 		"""
 	),
 	('resp.reason',
 		'STRING',
-		( 'deliver', 'error', ),
-		( 'deliver', 'error', ), """
+		( 'deliver', 'synth', ),
+		( 'deliver', 'synth', ), """
 		The HTTP status message that will be returned.
 		"""
 	),
 	('resp.http.',
 		'HEADER',
-		( 'deliver', 'error', ),
-		( 'deliver', 'error', ), """
+		( 'deliver', 'synth', ),
+		( 'deliver', 'synth', ), """
 		The corresponding HTTP header.
 		"""
 	),
@@ -1011,6 +1011,7 @@ def one_var(nm, spec):
 		if nm == i[0]:
 			fh.write("VCL_" + typ +
 			    " VRT_r_%s(const struct vrt_ctx *);\n" % cnam )
+	print(spec)
 	restrict(fo, spec[2])
 
 	if len(spec[3]) == 0:

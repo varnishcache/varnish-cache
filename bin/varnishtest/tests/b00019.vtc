@@ -25,7 +25,7 @@ varnish v1 -vcl+backend {
 	       return (restart);
 	}
 
-	sub vcl_error {
+	sub vcl_synth {
 		if (req.restarts == 2) {
 			set resp.status = 200;
 			set resp.reason = "restart=2";

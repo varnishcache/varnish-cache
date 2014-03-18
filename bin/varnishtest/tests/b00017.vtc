@@ -5,11 +5,11 @@ varnish v1 -vcl {
 		.host = "${bad_ip}"; .port = "9080";
 	}
 	sub vcl_recv {
-		return (error(888));
+		return (synth(888));
 	}
 
-	sub vcl_error {
-		synthetic("Custom vcl_error's synth output");
+	sub vcl_synth {
+		synthetic("Custom vcl_synth's synth output");
 		return (deliver);
 	}
 } -start
@@ -22,4 +22,4 @@ client c1 {
 	expect resp.http.connection != close
 } -run
 
-varnish v1 -expect s_error == 1
+varnish v1 -expect s_synth == 1

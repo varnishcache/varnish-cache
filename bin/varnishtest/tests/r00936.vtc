@@ -10,7 +10,7 @@ varnish v1 -errvcl {'synthetic': not a valid action in method 'vcl_recv'} {
 
 	sub vcl_recv {
 		synthetic("HELLOO");
-		return (error(503));
+		return (synth(503));
 	}
 }
 

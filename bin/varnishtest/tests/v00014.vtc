@@ -28,9 +28,9 @@ varnish v1 -vcl {
 
 	sub vcl_recv {
 		if (std.healthy(default)) {
-			return(error(200,"Backend healthy"));
+			return(synth(200,"Backend healthy"));
 		} else {
-			return(error(500,"Backend sick"));
+			return(synth(500,"Backend sick"));
 		}
 	}
 } -start

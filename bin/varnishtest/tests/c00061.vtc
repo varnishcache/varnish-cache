@@ -8,7 +8,7 @@ varnish v1 -vcl {
 		return (retry);
 	}
 
-	sub vcl_error {
+	sub vcl_synth {
 		set resp.status = 504;
 	}
 } -start

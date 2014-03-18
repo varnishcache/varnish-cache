@@ -126,7 +126,7 @@ sub vcl_deliver {
 /*
  * We can come here "invisibly" with the following errors: 413, 417 & 503
  */
-sub vcl_error {
+sub vcl_synth {
     set resp.http.Content-Type = "text/html; charset=utf-8";
     set resp.http.Retry-After = "5";
     synthetic( {"

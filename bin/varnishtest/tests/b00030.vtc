@@ -10,9 +10,9 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
-		return (error(200,req.ttl));
+		return (synth(200,req.ttl));
 	}
-	sub vcl_error {
+	sub vcl_synth {
 		set resp.http.x-timestamp = now;
 	}
 } -start

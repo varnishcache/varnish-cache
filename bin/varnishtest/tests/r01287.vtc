@@ -5,9 +5,9 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
-		return (error(200, "OK"));
+		return (synth(200, "OK"));
 	}
-	sub vcl_error {
+	sub vcl_synth {
 		synthetic(resp.http.blank);
 		return (deliver);
 	}

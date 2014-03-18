@@ -1,9 +1,9 @@
 varnishtest "Test if you can error in vcl_deliver"
 
-varnish v1 -errvcl {Invalid return "error"} {
+varnish v1 -errvcl {Invalid return "synth"} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_deliver {
-		return (error(201,"ok"));
+		return (synth(201,"ok"));
 	}
 }
 

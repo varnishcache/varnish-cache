@@ -8,7 +8,7 @@ varnish v1 -vcl {
 	sub vcl_backend_fetch {
 	    set bereq.backend = bad;
 	}
-	sub vcl_error {
+	sub vcl_synth {
 	    return (restart);
 	}
  } -start

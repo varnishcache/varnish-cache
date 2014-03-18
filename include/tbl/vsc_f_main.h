@@ -380,8 +380,8 @@ VSC_F(s_fetch,			uint64_t, 1, 'a', info,
     "Total fetch",
 	""
 )
-VSC_F(s_error,			uint64_t, 1, 'a', info,
-    "Total error",
+VSC_F(s_synth,			uint64_t, 1, 'a', info,
+    "Total synth",
 	""
 )
 VSC_F(s_hdrbytes,		uint64_t, 1, 'a', info,

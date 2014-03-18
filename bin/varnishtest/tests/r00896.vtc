@@ -8,7 +8,7 @@ server s1 {
 varnish v1 -vcl+backend {
 	sub vcl_recv {
 	    if (req.http.host ~ "^(abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij|abcdefghij)") {
-		return (error(500,"not ok"));
+		return (synth(500,"not ok"));
 		}
 	}
 } -start

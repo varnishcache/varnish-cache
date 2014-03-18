@@ -27,19 +27,19 @@ varnish v1 -vcl+backend {
 		}
 	}
 
-	sub vcl_error {
+	sub vcl_synth {
 		if (resp.status == 988) { return (restart); }
 	}
 
 	sub vcl_miss {
 		if (req.http.X-Banned == "check") {
-			return (error(988,"restarting"));
+			return (synth(988,"restarting"));
 		}
 	}
 
 	sub vcl_pass {
 		if (req.http.X-Banned == "check") {
-			return (error(988,"restarting"));
+			return (synth(988,"restarting"));
 		}
 	}
 } -start

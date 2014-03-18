@@ -7,7 +7,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
-		return (error(501));
+		return (synth(501));
 	}
 } -start
 

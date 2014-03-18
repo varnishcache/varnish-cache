@@ -8,8 +8,8 @@ varnish v1 -vcl {
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_miss { return(error(100,req.url)); }
-	sub vcl_hit { return(error(100,"the butter please")); }
+	sub vcl_miss { return(synth(100,req.url)); }
+	sub vcl_hit { return(synth(100,"the butter please")); }
 }
 
 varnish v1 -errvcl {Variable 'now' is read only.} {
@@ -39,7 +39,7 @@ varnish v1 -errvcl {Expected '=' got '+='} {
 
 varnish v1 -errvcl {Expected ';' got 'if'} {
 	backend b { .host = "127.0.0.1"; }
-	/* XXX: This should not really be an error */
+	/* XXX: This should not really be an synth */
 	sub vcl_recv { set req.url = "foo" if "bar"; }
 }
 
@@ -100,15 +100,10 @@ varnish v1 -errvcl {Expected an action, 'if', '{' or '}'} {
 
 varnish v1 -errvcl {Unknown token '<<' when looking for STRING_LIST} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_error { synthetic( << "foo"; }
+	sub vcl_synth { synthetic( << "foo"; }
 }
 
 varnish v1 -errvcl {Syntax has changed, use:} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { error 200; }
-}
-
-varnish v1 -errvcl {Syntax has changed, use:} {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { return(error); }
+	sub vcl_recv { return(synth); }
 }

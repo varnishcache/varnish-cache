@@ -193,7 +193,7 @@ cnt_error(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	req->acct_req.error++;
+	req->acct_req.synth++;
 
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
 	h = req->resp;
@@ -219,7 +219,7 @@ cnt_error(struct worker *wrk, struct req *req)
 	req->synth_body = VSB_new_auto();
 	AN(req->synth_body);
 
-	VCL_error_method(req->vcl, wrk, req, NULL, req->http->ws);
+	VCL_synth_method(req->vcl, wrk, req, NULL, req->http->ws);
 
 	http_Unset(h, H_Content_Length);
 
@@ -421,7 +421,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	case VCL_RET_RESTART:
 		req->req_step = R_STP_RESTART;
 		break;
-	case VCL_RET_ERROR:
+	case VCL_RET_SYNTH:
 		req->req_step = R_STP_ERROR;
 		break;
 	case VCL_RET_PASS:
@@ -479,7 +479,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 		VBF_Fetch(wrk, req, req->objcore, o, VBF_NORMAL);
 		req->req_step = R_STP_FETCH;
 		return (REQ_FSM_MORE);
-	case VCL_RET_ERROR:
+	case VCL_RET_SYNTH:
 		req->req_step = R_STP_ERROR;
 		break;
 	case VCL_RET_RESTART:
@@ -527,7 +527,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 
 	VCL_pass_method(req->vcl, wrk, req, NULL, req->http->ws);
 	switch (wrk->handling) {
-	case VCL_RET_ERROR:
+	case VCL_RET_SYNTH:
 		req->req_step = R_STP_ERROR;
 		break;
 	case VCL_RET_RESTART:
@@ -583,7 +583,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 
 	VCL_pipe_method(req->vcl, wrk, req, bo, req->http->ws);
 
-	if (wrk->handling == VCL_RET_ERROR)
+	if (wrk->handling == VCL_RET_SYNTH)
 		INCOMPL();
 	assert(wrk->handling == VCL_RET_PIPE);
 
@@ -754,7 +754,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 	case VCL_RET_PASS:
 		req->req_step = R_STP_PASS;
 		return (REQ_FSM_MORE);
-	case VCL_RET_ERROR:
+	case VCL_RET_SYNTH:
 		req->req_step = R_STP_ERROR;
 		return (REQ_FSM_MORE);
 	default:
