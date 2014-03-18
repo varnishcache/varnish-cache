@@ -513,7 +513,7 @@ exp_expire(struct exp_priv *ep, double now)
 	lru = oc_getlru(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 	Lck_Lock(&lru->mtx);
-	AZ(oc->flags & OC_F_BUSY);
+	// AZ(oc->flags & OC_F_BUSY);
 	oc->flags |= OC_F_DYING;
 	if (oc->flags & OC_F_OFFLRU)
 		oc = NULL;

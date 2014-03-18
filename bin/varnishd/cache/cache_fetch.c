@@ -203,11 +203,10 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 		if (http_GetHdr(bo->ims_obj->http, H_Last_Modified, &p)) {
 			http_PrintfHeader(bo->bereq0,
 			    "If-Modified-Since: %s", p);
-		} else if (http_GetHdr(bo->ims_obj->http, H_ETag, &p)) {
+		}
+		if (http_GetHdr(bo->ims_obj->http, H_ETag, &p)) {
 			http_PrintfHeader(bo->bereq0,
 			    "If-None-Match: %s", p);
-		} else {
-			WRONG("Shouldn't have bo->ims_obj");
 		}
 	}
 
