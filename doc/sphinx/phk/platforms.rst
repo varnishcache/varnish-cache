@@ -64,12 +64,12 @@ Platform specific bug reports without patches will likely live a quiet life.
 
 *Mac OS/X*
 
-*Solaris*.
+*Solaris-decendants* (Oracle Solaris, OmniOS, Joyent SmartOS)
 
-Yes, we'd like to bump Solaris to tier-A but I have to say that the
-uncertainty about the future for OpenSolaris, and lack of time to
-care and feed the somewhat altmodishe socket-API on Solaris, does
-keep the enthusiasm bounded.
+Mac OS/X is regarded as a developer platform, not as a production
+platform.
+
+Solaris-decendants are regarded as a production platform.
 
 NetBSD, AIX and HP-UX are conceivably candidates for this level, but
 so far I have not heard much, if any, user interest.
@@ -108,3 +108,4 @@ are right about Oracles intentions, Solaris may get demoted.
 Until next time,
 
 Poul-Henning, 2010-08-03
+Edited Nils, 2014-03-18 with Poul-Hennings concent
