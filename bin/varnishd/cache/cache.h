@@ -456,7 +456,7 @@ oc_getobj(struct dstat *ds, struct objcore *oc)
 {
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AZ(oc->flags & OC_F_BUSY);
+	// AZ(oc->flags & OC_F_BUSY);
 	AN(oc->methods);
 	AN(oc->methods->getobj);
 	return (oc->methods->getobj(ds, oc));
