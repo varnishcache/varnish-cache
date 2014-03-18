@@ -88,6 +88,7 @@ static enum req_fsm_nxt
 cnt_deliver(struct worker *wrk, struct req *req)
 {
 	char time_str[30];
+	double now;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -99,9 +100,10 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	assert(req->obj->objcore->refcnt > 0);
 
-	req->t_resp = W_TIM_real(wrk);
+	now = W_TIM_real(wrk);
+	VSLb_ts_req(req, "Process", now);
 	if (req->obj->objcore->exp_flags & OC_EF_EXP)
-		EXP_Touch(req->obj->objcore, req->t_resp);
+		EXP_Touch(req->obj->objcore, now);
 
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
 
@@ -109,7 +111,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	http_FilterResp(req->obj->http, req->resp, 0);
 
 	http_Unset(req->resp, H_Date);
-	VTIM_format(req->t_resp, time_str);
+	VTIM_format(now, time_str);
 	http_PrintfHeader(req->resp, "Date: %s", time_str);
 
 	if (req->wrk->stats.cache_hit)
@@ -121,7 +123,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
 
 	http_PrintfHeader(req->resp, "Age: %.0f",
-	    req->t_resp - req->obj->exp.t_origin);
+	    now - req->obj->exp.t_origin);
 
 	http_SetHeader(req->resp, "Via: 1.1 varnish (v4)");
 
@@ -152,6 +154,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		http_SetResp(req->resp, "HTTP/1.1", 304, "Not Modified");
 
 	V1D_Deliver(req);
+	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
 	if (http_HdrIs(req->resp, H_Connection, "close"))
 		req->doclose = SC_RESP_CLOSE;
@@ -192,6 +195,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 {
 	char date[40];
 	struct http *h;
+	double now;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -200,7 +204,9 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
 	h = req->resp;
-	req->t_resp = VTIM_real();
+
+	now = W_TIM_real(wrk);
+	VSLb_ts_req(req, "Process", now);
 
 	if (req->err_code < 100 || req->err_code > 999)
 		req->err_code = 501;
@@ -208,7 +214,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 	http_ClrHeader(h);
 	http_PutProtocol(h, "HTTP/1.1");
 	http_PutStatus(h, req->err_code);
-	VTIM_format(req->t_resp, date);
+	VTIM_format(now, date);
 	http_PrintfHeader(h, "Date: %s", date);
 	http_SetHeader(h, "Server: Varnish");
 	http_PrintfHeader(req->resp,
@@ -241,6 +247,8 @@ cnt_synth(struct worker *wrk, struct req *req)
 		req->doclose = SC_RESP_CLOSE;
 
 	V1D_Deliver_Synth(req);
+
+	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
 	VSB_delete(req->synth_body);
 	req->synth_body = NULL;
@@ -326,6 +334,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	struct object *o;
 	struct objhead *oh;
 	enum lookup_e lr;
+	int had_objhead = 0;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -336,6 +345,8 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	VRY_Prep(req);
 
 	AZ(req->objcore);
+	if (req->hash_objhead)
+		had_objhead = 1;
 	lr = HSH_Lookup(req, &oc, &boc,
 	    req->esi_level == 0 ? 1 : 0,
 	    req->hash_always_miss ? 1 : 0
@@ -349,6 +360,8 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		 */
 		return (REQ_FSM_DISEMBARK);
 	}
+	if (had_objhead)
+		VSLb_ts_req(req, "Waitinglist", W_TIM_real(wrk));
 
 	if (boc == NULL) {
 		VRY_Finish(req, DISCARD);
@@ -631,12 +644,14 @@ cnt_restart(struct worker *wrk, struct req *req)
 	} else {
 		wid = VXID_Get(&wrk->vxid_pool);
 		// XXX: ReqEnd + ReqAcct ?
+		VSLb_ts_req(req, "Restart", W_TIM_real(wrk));
 		VSLb(req->vsl, SLT_Link, "req %u restart", wid);
 		VSLb(req->vsl, SLT_End, "%s", "");
 		VSL_Flush(req->vsl, 0);
 		owid = req->vsl->wid & VSL_IDENTMASK;
 		req->vsl->wid = wid | VSL_CLIENTMARKER;
 		VSLb(req->vsl, SLT_Begin, "req %u restart", owid);
+		VSLb_ts_req(req, "Start", req->t_prev);
 		req->err_code = 0;
 		req->req_step = R_STP_RECV;
 	}
@@ -676,6 +691,10 @@ cnt_recv(struct worker *wrk, struct req *req)
 	AZ(req->objcore);
 	AZ(req->obj);
 	AZ(req->objcore);
+
+	assert(!isnan(req->t_first));
+	assert(!isnan(req->t_prev));
+	assert(!isnan(req->t_req));
 
 	VSLb(req->vsl, SLT_ReqStart, "%s %s",
 	    req->sp->client_addr_str, req->sp->client_port_str);
@@ -882,12 +901,6 @@ CNT_Request(struct worker *wrk, struct req *req)
 			VSLb(req->vsl, SLT_Length, "%ju",
 			    (uintmax_t)req->resp_bodybytes);
 		}
-		VSLb(req->vsl, SLT_ReqEnd, "%.9f %.9f %.9f %.9f %.9f",
-		    req->t_req,
-		    req->sp->t_idle,
-		    req->sp->t_idle - req->t_resp,
-		    req->t_resp - req->t_req,
-		    req->sp->t_idle - req->t_resp);
 
 		while (!VTAILQ_EMPTY(&req->body)) {
 			st = VTAILQ_FIRST(&req->body);

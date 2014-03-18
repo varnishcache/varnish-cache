@@ -89,13 +89,13 @@ PipeRequest(struct req *req, struct busyobj *bo)
 
 	i = WRW_FlushRelease(wrk);
 
+	VSLb_ts_req(req, "Pipe", W_TIM_real(wrk));
+
 	if (i) {
 		SES_Close(req->sp, SC_TX_PIPE);
 		VDI_CloseFd(&vc);
 		return;
 	}
-
-	req->t_resp = VTIM_real();
 
 	memset(fds, 0, sizeof fds);
 
@@ -130,6 +130,7 @@ PipeRequest(struct req *req, struct busyobj *bo)
 			fds[1].fd = -1;
 		}
 	}
+	VSLb_ts_req(req, "PipeSess", W_TIM_real(wrk));
 	SES_Close(req->sp, SC_TX_PIPE);
 	VDI_CloseFd(&vc);
 	bo->vbc = NULL;

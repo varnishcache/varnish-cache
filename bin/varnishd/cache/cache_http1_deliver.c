@@ -282,7 +282,7 @@ V1D_Deliver(struct req *req)
 	if (req->res_mode & RES_ESI)
 		RFC2616_Weaken_Etag(req->resp);
 
-	WRW_Reserve(req->wrk, &req->sp->fd, req->vsl, req->t_resp);
+	WRW_Reserve(req->wrk, &req->sp->fd, req->vsl, req->t_prev);
 
 	/*
 	 * Send HTTP protocol header, unless interior ESI object
@@ -389,7 +389,7 @@ V1D_Deliver_Synth(struct req *req)
 			v1d_dorange(req, r);
 	}
 
-	WRW_Reserve(req->wrk, &req->sp->fd, req->vsl, req->t_resp);
+	WRW_Reserve(req->wrk, &req->sp->fd, req->vsl, req->t_prev);
 
 	/*
 	 * Send HTTP protocol header, unless interior ESI object

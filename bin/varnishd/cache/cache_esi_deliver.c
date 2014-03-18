@@ -35,6 +35,7 @@
 
 #include "cache.h"
 
+#include "vtim.h"
 #include "cache_esi.h"
 #include "vend.h"
 #include "vgz.h"
@@ -98,11 +99,15 @@ ved_include(struct req *preq, const char *src, const char *host)
 	 */
 	req->req_step = R_STP_RECV;
 	req->t_req = preq->t_req;
+	assert(isnan(req->t_first));
+	assert(isnan(req->t_prev));
 	req->gzip_resp = preq->gzip_resp;
 	req->crc = preq->crc;
 	req->l_crc = preq->l_crc;
 
 	THR_SetRequest(req);
+
+	VSLb_ts_req(req, "Start", W_TIM_real(wrk));
 
 	while (1) {
 		req->wrk = wrk;
@@ -122,7 +127,7 @@ ved_include(struct req *preq, const char *src, const char *host)
 	/* Reset the workspace */
 	WS_Reset(wrk->aws, wrk_ws_wm);	/* XXX ? */
 
-	WRW_Reserve(preq->wrk, &preq->sp->fd, preq->vsl, preq->t_resp);
+	WRW_Reserve(preq->wrk, &preq->sp->fd, preq->vsl, preq->t_prev);
 	if (preq->res_mode & RES_CHUNKED)
 		WRW_Chunked(preq->wrk);
 

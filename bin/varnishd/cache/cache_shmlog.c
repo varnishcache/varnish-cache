@@ -350,6 +350,17 @@ VSLb(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, ...)
 	va_end(ap);
 }
 
+void
+VSLb_ts(struct vsl_log *vsl, const char *event, double first, double *pprev,
+    double now)
+{
+
+	assert(!isnan(now) && now != 0.);
+	VSLb(vsl, SLT_Timestamp, "%s: %.9f %.9f %.9f",
+	    event, now, now - first, now - *pprev);
+	*pprev = now;
+}
+
 /*--------------------------------------------------------------------
  * Setup a VSL buffer, allocate space if none provided.
  */

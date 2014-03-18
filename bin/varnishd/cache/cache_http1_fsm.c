@@ -103,8 +103,10 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 	AZ(req->vcl);
 	AZ(req->obj);
 	AZ(req->esi_level);
+	assert(!isnan(sp->t_idle));
+	assert(isnan(req->t_first));
+	assert(isnan(req->t_prev));
 	assert(isnan(req->t_req));
-	assert(isnan(req->t_resp));
 
 	tmo = (int)(1e3 * cache_param->timeout_linger);
 	while (1) {
@@ -120,7 +122,10 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			hs = HTTP1_Complete(req->htc);
 		if (hs == HTTP1_COMPLETE) {
 			/* Got it, run with it */
-			req->t_req = now;
+			if (isnan(req->t_first))
+				VSLb_ts_req(req, "Start", now);
+			VSLb_ts_req(req, "Req", now);
+			req->t_req = req->t_prev;
 			return (REQ_FSM_MORE);
 		} else if (hs == HTTP1_ERROR_EOF) {
 			why = SC_REM_CLOSE;
@@ -138,7 +143,6 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			when = sp->t_idle + cache_param->timeout_linger;
 			tmo = (int)(1e3 * (when - now));
 			if (when < now || tmo == 0) {
-				req->t_req = NAN;
 				wrk->stats.sess_herd++;
 				SES_ReleaseReq(req);
 				WAIT_Enter(sp);
@@ -146,9 +150,10 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			}
 		} else {
 			/* Working on it */
-			if (isnan(req->t_req))
-				req->t_req = now;
-			when = req->t_req + cache_param->timeout_req;
+			if (isnan(req->t_first))
+				/* Timestamp Start on first byte received */
+				VSLb_ts_req(req, "Start", now);
+			when = sp->t_idle + cache_param->timeout_req;
 			tmo = (int)(1e3 * (when - now));
 			if (when < now || tmo == 0) {
 				why = SC_RX_TIMEOUT;
@@ -195,11 +200,15 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 		req->vcl = NULL;
 	}
 
-	sp->t_idle = W_TIM_real(wrk);
+	if (!isnan(req->t_prev) && req->t_prev > 0.)
+		sp->t_idle = req->t_prev;
+	else
+		sp->t_idle = W_TIM_real(wrk);
 	VSL_Flush(req->vsl, 0);
 
+	req->t_first = NAN;
+	req->t_prev = NAN;
 	req->t_req = NAN;
-	req->t_resp = NAN;
 	req->req_body_status = REQ_BODY_INIT;
 
 	// req->req_bodybytes = 0;
@@ -226,7 +235,9 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	WS_Reset(wrk->aws, NULL);
 
 	if (HTTP1_Reinit(req->htc) == HTTP1_COMPLETE) {
-		req->t_req = sp->t_idle;
+		VSLb_ts_req(req, "Start", sp->t_idle);
+		VSLb_ts_req(req, "Req", sp->t_idle);
+		req->t_req = req->t_prev;
 		wrk->stats.sess_pipeline++;
 		return (SESS_DONE_RET_START);
 	} else {
@@ -522,16 +533,19 @@ HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv)
 		l = http1_iter_req_body(req, buf, sizeof buf);
 		if (l < 0) {
 			req->doclose = SC_RX_BODY;
-			return (l);
+			break;
 		}
 		if (l > 0) {
 			i = func(req, priv, buf, l);
 			if (i) {
-				return (i);
+				l = i;
+				break;
 			}
 		}
 	} while (l > 0);
-	return(0);
+	VSLb_ts_req(req, "ReqBody", VTIM_real());
+
+	return (l);
 }
 
 /*----------------------------------------------------------------------
@@ -605,7 +619,8 @@ HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
 			    req->h1.bytes_yet : cache_param->fetch_chunksize);
 			if (st == NULL) {
 				req->req_body_status = REQ_BODY_FAIL;
-				return (-1);
+				l = -1;
+				break;
 			} else {
 				VTAILQ_INSERT_TAIL(&req->body, st, list);
 			}
@@ -615,11 +630,12 @@ HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
 		l = http1_iter_req_body(req, st->ptr + st->len, l);
 		if (l < 0) {
 			req->doclose = SC_RX_BODY;
-			return (l);
+			break;
 		}
 		if (req->req_bodybytes > maxsize) {
 			req->req_body_status = REQ_BODY_FAIL;
-			return (-1);
+			l = -1;
+			break;
 		}
 		if (l > 0) {
 			st->len += l;
@@ -627,6 +643,8 @@ HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
 				st = NULL;
 		}
 	} while (l > 0);
-	req->req_body_status = REQ_BODY_CACHED;
-	return(0);
+	if (l == 0)
+		req->req_body_status = REQ_BODY_CACHED;
+	VSLb_ts_req(req, "ReqBody", VTIM_real());
+	return (l);
 }

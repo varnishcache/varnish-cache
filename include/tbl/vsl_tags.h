@@ -462,4 +462,21 @@ SLTM(Storage, 0, "Where object is stored",
 	"\t+---- Type (\"malloc\", \"file\", \"persistent\" etc.)\n"
 	"\n"
 )
+
+SLTM(Timestamp, 0, "Timing information",
+	"Contains timing information for the Varnish worker threads.\n\n"
+	"Time stamps are issued by Varnish on certain events,"
+	" and show the absolute time of the event, the time spent since the"
+	" start of the work unit, and the time spent since the last timestamp"
+	" was logged.\n\n"
+	"The format is::\n\n"
+	"\t%s: %f %f %f\n"
+	"\t|   |  |  |\n"
+	"\t|   |  |  +- Time since last timestamp\n"
+	"\t|   |  +---- Time since start of work unit\n"
+	"\t|   +------- Absolute time of event\n"
+	"\t+----------- Event label\n"
+	"\n"
+)
+
 #undef NODEF_NOTICE

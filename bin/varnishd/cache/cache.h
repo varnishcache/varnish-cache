@@ -48,6 +48,7 @@
 #include <string.h>
 #include <limits.h>
 #include <unistd.h>
+#include <math.h>
 
 #if defined(HAVE_EPOLL_CTL)
 #include <sys/epoll.h>
@@ -674,8 +675,10 @@ struct req {
 
 	char			*ws_req;	/* WS above request data */
 
-	double			t_req;
-	double			t_resp;
+	/* Timestamps */
+	double			t_first;	/* First timestamp logged */
+	double			t_prev;		/* Previous timestamp logged */
+	double			t_req;		/* Headers complete */
 
 	struct http_conn	htc[1];
 	const char		*client_identity;
@@ -1138,6 +1141,17 @@ void VSLbv(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, va_list va);
 void VSLb(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, ...)
     __printflike(3, 4);
 void VSLbt(struct vsl_log *, enum VSL_tag_e tag, txt t);
+void VSLb_ts(struct vsl_log *, const char *event, double first, double *pprev,
+    double now);
+static inline void
+VSLb_ts_req(struct req *req, const char *event, double now)
+{
+
+	if (isnan(req->t_first) || req->t_first == 0.)
+		req->t_first = req->t_prev = now;
+	VSLb_ts(req->vsl, event, req->t_first, &req->t_prev, now);
+}
+
 
 void VSL_Flush(struct vsl_log *, int overflow);
 

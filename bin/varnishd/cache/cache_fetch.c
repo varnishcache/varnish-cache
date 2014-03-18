@@ -877,6 +877,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 			AZ(bo->fetch_objcore->flags & OC_F_BUSY);
 		}
 	}
+	VSLb_ts_req(req, "Fetch", W_TIM_real(wrk));
 	THR_SetBusyobj(NULL);
 	VBO_DerefBusyObj(wrk, &bo);
 }
