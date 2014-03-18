@@ -91,7 +91,7 @@ sub vcl_hash {
 }
 
 sub vcl_purge {
-    return (error(200, "Purged"));
+    return (synth(200, "Purged"));
 }
 
 sub vcl_hit {
