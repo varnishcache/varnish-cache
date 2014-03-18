@@ -5,7 +5,7 @@ SUBDIRS += varnishncsa
 # varnishreplay
 SUBDIRS += varnishtest 
 SUBDIRS += varnishstat
-# SUBDIRS += varnishhist 
+SUBDIRS += varnishhist 
 SUBDIRS += varnishtop
 
 TOPDIR = $(CURDIR)/..
