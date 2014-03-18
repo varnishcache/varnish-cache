@@ -61,6 +61,9 @@ the Varnish Governing Board which currently consist of Poul-Henning
 Kamp (Architect), Rogier Mulhuijzen (Fastly) and Kristian Lyngstøl
 (Varnish Software).
 
+Please see https://www.varnish-cache.org/trac/wiki/Contributing as
+a starting point if you would like to contribute to Varnish.
+
 Getting in touch
 ----------------
 
