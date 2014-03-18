@@ -610,7 +610,6 @@ struct object {
 
 	/* VCL only variables */
 	long			hits;
-	double			last_use;
 
 	double			last_modified;
 

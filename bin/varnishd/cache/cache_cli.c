@@ -200,7 +200,6 @@ cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
 	OFOF(struct object, http);
 	OFOF(struct object, store);
 	OFOF(struct object, esidata);
-	OFOF(struct object, last_use);
 #endif
 #undef OFOF
 #endif

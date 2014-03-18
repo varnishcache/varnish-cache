@@ -1,4 +1,4 @@
-varnishtest "Check obj.hits and obj.last_use"
+varnishtest "Check obj.hits"
 
 server s1 {
 	rxreq
@@ -13,9 +13,7 @@ varnish v1 -vcl+backend {
 
 	sub vcl_deliver {
 		set resp.http.foo = obj.hits;
-		set resp.http.bar = now - obj.last_use;
 		set obj.hits = obj.hits + 1;
-		set obj.last_use = now;
 	}
 } -start
 

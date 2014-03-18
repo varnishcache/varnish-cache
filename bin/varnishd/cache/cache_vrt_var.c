@@ -592,8 +592,6 @@ VRT_r_obj_##field(const struct vrt_ctx *ctx)				\
 
 VOBJ_L(long, hits)
 VOBJ_R(long, hits)
-VOBJ_L(double, last_use)
-VOBJ_R(double, last_use)
 
 unsigned
 VRT_r_obj_uncacheable(const struct vrt_ctx *ctx)

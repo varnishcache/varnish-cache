@@ -546,15 +546,6 @@ sp_variables = [
 		( 'hit', ), """
 		"""
 	),
-	('obj.last_use',
-		'TIME',
-		( 'hit', 'deliver',),
-		( 'hit', 'deliver',), """
-		The approximate time elapsed since the object was
-		last requests, in seconds. This variable is also
-		available in vcl_deliver.
-		"""
-	),
 	('obj.uncacheable',
 		'BOOL',
 		( 'hit', ),
