@@ -104,7 +104,7 @@ include $(TOPDIR)/Makefile.inc.phk
 #
 # Turn the builtin.vcl file into a C-string we can include in the program.
 #
-builtint_vcl.h:	builtin.vcl
+builtin_vcl.h:	builtin.vcl
 	echo '/*' > $@
 	echo ' * NB:  This file is machine generated, DO NOT EDIT!' >> $@
 	echo ' *' >> $@
