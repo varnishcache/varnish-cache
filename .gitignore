@@ -71,14 +71,14 @@ cscope.*out
 # Misc. generated files for included vmods.
 /lib/libvmod_*/vcc_if.c
 /lib/libvmod_*/vcc_if.h
-/lib/libvmod_*/vmod_*.3
 /lib/libvmod_*/vmod_*.rst
 
 
 # Man-files and binaries
 /man/vsc2rst
-/man/*.7
 /man/*.1
+/man/*.3
+/man/*.7
 /doc/sphinx/include
 /bin/varnish*/varnish*_opt2rst
 /bin/varnishadm/varnishadm
