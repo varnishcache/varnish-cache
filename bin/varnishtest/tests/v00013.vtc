@@ -13,7 +13,6 @@ varnish v1 -vcl+backend {
 
 	sub vcl_deliver {
 		set resp.http.foo = obj.hits;
-		set obj.hits = obj.hits + 1;
 	}
 } -start
 

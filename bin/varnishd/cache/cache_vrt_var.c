@@ -36,6 +36,7 @@
 
 #include "cache.h"
 #include "common/heritage.h"
+#include "hash/hash_slinger.h"
 
 #include "cache_backend.h"
 #include "vrt.h"
@@ -570,28 +571,16 @@ VRT_r_server_hostname(const struct vrt_ctx *ctx)
 
 /*--------------------------------------------------------------------*/
 
-#define VOBJ_L(type, field)						\
-void									\
-VRT_l_obj_##field(const struct vrt_ctx *ctx, type a)			\
-{									\
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);				\
-	CHECK_OBJ_NOTNULL(ctx->req->obj, OBJECT_MAGIC);			\
-	ctx->req->obj->field = a;					\
+long
+VRT_r_obj_hits(const struct vrt_ctx *ctx)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req->obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req->obj->objcore, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req->obj->objcore->objhead, OBJHEAD_MAGIC);
+	return (ctx->req->obj->objcore->objhead->hits);
 }
-
-#define VOBJ_R(type, field)						\
-type									\
-VRT_r_obj_##field(const struct vrt_ctx *ctx)				\
-{									\
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);				\
-	CHECK_OBJ_NOTNULL(ctx->req->obj, OBJECT_MAGIC);			\
-	return (ctx->req->obj->field);					\
-}
-
-VOBJ_L(long, hits)
-VOBJ_R(long, hits)
 
 unsigned
 VRT_r_obj_uncacheable(const struct vrt_ctx *ctx)

@@ -512,7 +512,7 @@ sp_variables = [
 	('obj.hits',
 		'INT',
 		( 'hit', 'deliver',),
-		( 'hit', 'deliver',), """
+		( ), """
 		The approximate number of times the object has been
 		delivered. A value of 0 indicates a cache miss.
 		This variable is also available in vcl_deliver.

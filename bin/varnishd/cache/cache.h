@@ -609,8 +609,6 @@ struct object {
 	struct exp		exp;
 
 	/* VCL only variables */
-	long			hits;
-
 	double			last_modified;
 
 	struct http		*http;
