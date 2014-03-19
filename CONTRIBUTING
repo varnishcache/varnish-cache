@@ -1,8 +1,9 @@
 Contributing to Varnish Cache
 =============================
 
-To contribute to Varnish, read https://www.varnish-cache.org/trac/wiki/Contributing
-as a staring point and follow relevant parts linked there.
+To contribute to Varnish, read
+https://www.varnish-cache.org/trac/wiki/Contributing as a starting
+point and follow relevant parts linked there.
 
 Varnish Cache is developed with Git hosted on our own infrastructure.
 
@@ -12,7 +13,7 @@ Official development tree is here:
 
 Patches can be sent to varnish-dev@varnish-cache.org.
 
-There is a READ-ONLY git-mirror on Github.  Please do not send contributions
-there, we need them by email to -dev@ for now.
+There is a READ-ONLY git-mirror on Github.  Please do not send
+contributions there, we need them by email to varnish-dev@ for now.
 
 
