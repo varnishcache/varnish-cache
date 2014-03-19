@@ -40,6 +40,10 @@ In addition VCL has the following constructs:
 
 Note that are no loops or iterators of any kind in VCL.
 
+Each VCL file must start by declaring its version. For Varnish 4.0 you
+must include a "vcl 4.0;" at the top of the file.
+
+
 Operators
 ---------
 
