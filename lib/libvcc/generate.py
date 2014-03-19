@@ -491,21 +491,21 @@ sp_variables = [
 	('obj.proto',
 		'STRING',
 		( 'hit', ),
-		( 'hit', ), """
+		( ), """
 		The HTTP protocol version used when the object was retrieved.
 		"""
 	),
 	('obj.status',
 		'INT',
-		( 'synth',),
-		( 'synth',), """
+		( 'hit',),
+		( ), """
 		The HTTP status code returned by the server.
 		"""
 	),
 	('obj.reason',
 		'STRING',
-		( 'synth',),
-		( 'synth',), """
+		( 'hit',),
+		( ), """
 		The HTTP status message returned by the server.
 		"""
 	),
