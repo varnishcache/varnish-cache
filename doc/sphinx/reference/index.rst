@@ -21,7 +21,8 @@ The Varnish Reference Manual
 	varnishtop.rst
 	vsm.rst
 	vmod.rst
-	vmod_std.rst
+	../include/vmod_std.rst
+	../include/vmod_directors.rst
 	vsl.rst
 	vsl-query.rst
 

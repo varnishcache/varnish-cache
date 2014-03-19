@@ -19,7 +19,9 @@ dist_man_MANS = \
 	varnishncsa.1 \
 	varnishstat.1 \
 	varnishtest.1 \
-	varnishtop.1
+	varnishtop.1 \
+	vmod_directors.3 \
+	vmod_std.3
 
 MAINTAINERCLEANFILES = $(dist_man_MANS)
 
@@ -80,3 +82,9 @@ varnishhist.1: \
 	$(top_srcdir)/doc/sphinx/include/varnishhist_options.rst \
 	$(top_srcdir)/doc/sphinx/include/varnishhist_synopsis.rst
 	${RST2MAN} $(top_srcdir)/doc/sphinx/reference/varnishhist.rst $@
+
+vmod_std.3: $(top_srcdir)/lib/libvmod_std/vmod_std.man.rst
+	${RST2MAN} $? $@
+
+vmod_directors.3: $(top_srcdir)/lib/libvmod_directors/vmod_directors.man.rst
+	${RST2MAN} $? $@

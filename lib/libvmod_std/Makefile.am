@@ -7,8 +7,6 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/bin/varnishd \
 	-I$(top_builddir)/include
 
-dist_man_MANS = vmod_std.3
-
 vmoddir = $(pkglibdir)/vmods
 vmod_srcdir = $(top_srcdir)/lib/libvmod_std
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
@@ -36,6 +34,3 @@ EXTRA_DIST = vmod.vcc
 CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h \
 	$(builddir)/vmod_std.rst \
 	$(builddir)/vmod_std.man.rst
-
-vmod_std.3: $(top_srcdir)/doc/sphinx/reference/vmod_std.rst
-	${RST2MAN} $? $@

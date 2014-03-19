@@ -127,7 +127,6 @@ EXTRA_DIST = \
 	reference/varnishtop.rst \
 	reference/vcl.rst \
 	reference/vmod.rst \
-	reference/vmod_std.rst \
 	reference/vsl-query.rst \
 	reference/vsl.rst \
 	reference/vsm.rst \
@@ -211,6 +210,14 @@ include/varnishhist_synopsis.rst: $(top_builddir)/bin/varnishhist/varnishhist_op
 	$(top_builddir)/bin/varnishhist/varnishhist_opt2rst synopsis > $@
 BUILT_SOURCES += include/varnishhist_options.rst \
 	 include/varnishhist_synopsis.rst
+
+include/vmod_std.rst: $(top_builddir)/lib/libvmod_std/vmod_std.rst
+	cp $? $@
+BUILT_SOURCES += include/vmod_std.rst
+
+include/vmod_directors.rst: $(top_builddir)/lib/libvmod_directors/vmod_directors.rst
+	cp $? $@
+BUILT_SOURCES += include/vmod_directors.rst
 
 EXTRA_DIST += $(BUILT_SOURCES)
 MAINTAINERCLEANFILES = $(EXTRA_DIST)
