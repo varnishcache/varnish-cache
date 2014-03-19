@@ -470,7 +470,6 @@ DEVELOPER_CFLAGS=" \
 	-Wall \
 	-Wno-format-y2k \
 	-W \
-	-Wno-unused-parameter \
 	-Wstrict-prototypes \
 	-Wmissing-prototypes \
 	-Wpointer-arith \
@@ -483,10 +482,9 @@ DEVELOPER_CFLAGS=" \
 	-Wcast-align \
 	-Wchar-subscripts \
 	-Wnested-externs \
-	-Wno-pointer-sign \
 	-Wextra \
-	-Wno-missing-field-initializers \
 	-Wno-sign-compare \
+	-Wno-address \
 "
 
 # These are not compliable yet
@@ -505,7 +503,10 @@ AC_ARG_ENABLE(stack-protector,
        [enable_stack_protector=yes])
 
 if test "x$enable_stack_protector" != "xno"; then
-       DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -fstack-protector"
+	AX_CHECK_COMPILE_FLAG([-fstack-protector],
+		AX_CHECK_LINK_FLAG([-fstack-protector],
+			[DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -fstack-protector"], [], []),
+		[], [])
 fi
 
 # --enable-developer-warnings
@@ -515,6 +516,16 @@ AC_ARG_ENABLE(developer-warnings,
 	[enable_developer_warnings=no])
 
 if test "x$enable_developer_warnings" != "xno"; then
+	# compiler flags not available on gcc3
+	AX_CHECK_COMPILE_FLAG([-Wno-pointer-sign],
+		[DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -Wno-pointer-sign"], [], [])
+	# no known way to specifically disabling missing-field-initializers warnings
+	# keeping the rest of Wextra
+	AX_CHECK_COMPILE_FLAG([-Wno-missing-field-initializers],
+		[DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -Wno-missing-field-initializers"],
+		[DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -Wno-extra"],
+		[])
+
 	CFLAGS="${CFLAGS} ${DEVELOPER_CFLAGS}"
 	OCFLAGS="${OCFLAGS} ${DEVELOPER_CFLAGS}"
 fi
