@@ -22,7 +22,7 @@ For instance::
 The "std" vmod is one you get with Varnish, it will always be there
 and we will put "boutique" functions in it, such as the "toupper"
 function shown above.  The full contents of the "std" module is
-documented in vmod_std(7).
+documented in vmod_std(3).
 
 This part of the manual is about how you go about writing your own
 VMOD, how the language interface between C and VCC works, where you
@@ -43,15 +43,15 @@ The vmod.vcc file
 
 The interface between your VMOD and the VCL compiler ("VCC") and the
 VCL runtime ("VRT") is defined in the vmod.vcc file which a python
-script called "vmod.py" turns into thaumaturgically challenged C
+script called "vmodtool.py" turns into thaumaturgically challenged C
 data structures that does all the hard work.
 
 The std VMODs vmod.vcc file looks somewhat like this::
 
-	$Module std
+	$Module std 3
 	$Init init_function
-	$Function STRING toupper(PRIV_CALL, STRING_LIST)
-	$Function STRING tolower(PRIV_VCL, STRING_LIST)
+	$Function STRING toupper(STRING_LIST)
+	$Function STRING tolower(STRING_LIST)
 	$Function VOID set_ip_tos(INT)
 
 The first line gives the name of the module, nothing special there.
@@ -75,7 +75,7 @@ primary action, something functions which return a value can not::
 		std.set_ip_tos(32);
 	}
 
-Running vmod.py on the vmod.vcc file, produces an "vcc_if.c" and
+Running vmodtool.py on the vmod.vcc file, produces an "vcc_if.c" and
 "vcc_if.h" files, which you must use to build your shared library
 file.
 
@@ -88,14 +88,18 @@ the functions you want to export to VCL.
 
 For the std VMOD, the compiled vcc_if.h file looks like this::
 
-	struct sess;
+	struct vrt_ctx;
 	struct VCL_conf;
-	const char * vmod_toupper(struct sess *, struct vmod_priv *, const char *, ...);
-	const char * vmod_tolower(struct sess *, struct vmod_priv *, const char *, ...);
-	int meta_function(void **, const struct VCL_conf *);
+	struct vmod_priv;
+
+	VCL_STRING vmod_toupper(const struct vrt_ctx *, const char *, ...);
+	VCL_STRING vmod_tolower(const struct vrt_ctx *, const char *, ...);
+	VCL_VOID vmod_set_ip_tos(const struct vrt_ctx *, VCL_INT);
+
+	int init_function(struct vmod_priv *, const struct VCL_conf *);
 
 Those are your C prototypes.  Notice the ``vmod_`` prefix on the function
-names and the C-types as return types and arguments.
+names and the C-types as arguments.
 
 VCL and C data types
 ====================
@@ -319,5 +323,5 @@ That means that the VMOD init, and any object init/fini functions
 are already serialized in sensible order, and won't need any locking,
 unless they access VMOD specific global state, shared with other VCLs.
 
-Trafic in other VCLs which also import this VMOD, will be happening
+Traffic in other VCLs which also import this VMOD, will be happening
 while housekeeping is going on.
