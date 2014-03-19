@@ -197,6 +197,9 @@ include/varnishlog_synopsis.rst: $(top_builddir)/bin/varnishlog/varnishlog_opt2r
 BUILT_SOURCES += include/varnishlog_options.rst \
 	include/varnishlog_synopsis.rst
 
+# tools which only get built when curses is available
+# XXX add varnishstat here when _opt2rst is ready
+if VARNISH_CURSES
 include/varnishtop_options.rst: $(top_builddir)/bin/varnishtop/varnishtop_opt2rst
 	$(top_builddir)/bin/varnishtop/varnishtop_opt2rst options > $@
 include/varnishtop_synopsis.rst: $(top_builddir)/bin/varnishtop/varnishtop_opt2rst
@@ -210,6 +213,8 @@ include/varnishhist_synopsis.rst: $(top_builddir)/bin/varnishhist/varnishhist_op
 	$(top_builddir)/bin/varnishhist/varnishhist_opt2rst synopsis > $@
 BUILT_SOURCES += include/varnishhist_options.rst \
 	 include/varnishhist_synopsis.rst
+endif
+
 
 include/vmod_std.rst: $(top_builddir)/lib/libvmod_std/vmod_std.rst
 	cp $? $@
