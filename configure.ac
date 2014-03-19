@@ -86,7 +86,9 @@ LIBS="${save_LIBS}"
 AC_SUBST(DL_LIBS)
 
 AX_WITH_CURSES
-AM_CONDITIONAL(VARNISH_CURSES, test x$ax_cv_curses = xyes)
+if test "x$ax_cv_curses" != xyes; then
+   AC_MSG_ERROR([requires an X/Open-compatible Curses library])
+fi
 
 save_LIBS="${LIBS}"
 LIBS=""

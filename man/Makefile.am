@@ -14,10 +14,12 @@ dist_man_MANS = \
 	vsl-query.7 \
 	varnishadm.1 \
 	varnishd.1 \
+	varnishhist.1 \
 	varnishlog.1 \
 	varnishncsa.1 \
 	varnishstat.1 \
 	varnishtest.1 \
+	varnishtop.1 \
 	vmod_directors.3 \
 	vmod_std.3
 
@@ -69,12 +71,6 @@ varnishstat.1: $(top_srcdir)/doc/sphinx/reference/varnishstat.rst
 varnishtest.1: $(top_srcdir)/doc/sphinx/reference/varnishtest.rst
 	${RST2MAN} $(top_srcdir)/doc/sphinx/reference/varnishtest.rst $@
 
-# tools which only get built when curses is available
-# XXX add varnishstat here when _opt2rst is ready
-if VARNISH_CURSES
-dist_man_MANS += varnishtop.1 \
-	varnishhist.1
-
 varnishtop.1: \
 	$(top_srcdir)/doc/sphinx/reference/varnishtop.rst \
 	$(top_srcdir)/doc/sphinx/include/varnishtop_options.rst \
@@ -86,8 +82,6 @@ varnishhist.1: \
 	$(top_srcdir)/doc/sphinx/include/varnishhist_options.rst \
 	$(top_srcdir)/doc/sphinx/include/varnishhist_synopsis.rst
 	${RST2MAN} $(top_srcdir)/doc/sphinx/reference/varnishhist.rst $@
-endif
-
 
 vmod_std.3: $(top_srcdir)/lib/libvmod_std/vmod_std.man.rst
 	${RST2MAN} $? $@
