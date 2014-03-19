@@ -465,7 +465,29 @@ AX_CHECK_COMPILE_FLAG([-Werror=unused-result],
       OCFLAGS="${OCFLAGS} -Wno-unused-result"])])
 
 # This corresponds to FreeBSD's WARNS level 6
-DEVELOPER_CFLAGS="-Werror -Wall -Wno-format-y2k -W -Wno-unused-parameter -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wshadow -Wunused-parameter -Wcast-align -Wchar-subscripts -Wnested-externs -Wno-pointer-sign -Wextra -Wno-missing-field-initializers -Wno-sign-compare"
+DEVELOPER_CFLAGS=" \
+	-Werror \
+	-Wall \
+	-Wno-format-y2k \
+	-W \
+	-Wno-unused-parameter \
+	-Wstrict-prototypes \
+	-Wmissing-prototypes \
+	-Wpointer-arith \
+	-Wreturn-type \
+	-Wcast-qual \
+	-Wwrite-strings \
+	-Wswitch \
+	-Wshadow \
+	-Wunused-parameter \
+	-Wcast-align \
+	-Wchar-subscripts \
+	-Wnested-externs \
+	-Wno-pointer-sign \
+	-Wextra \
+	-Wno-missing-field-initializers \
+	-Wno-sign-compare \
+"
 
 # These are not compliable yet
 DEVELOPER_GCC_CFLAGS="-Wold-style-definition -Wredundant-decls "
