@@ -3,11 +3,13 @@
 Installing Varnish
 ==================
 
-With open source software, you can choose to install binary packages
-or compile it yourself from source code. To install a package or compile
-from source is a matter of personal taste. If you don't know which
-method to choose, we recommend that you read this whole section and then choose the method you
-feel most comfortable with.
+.. no section heading here.
+
+With open source software, you can choose to install binary packages or compile
+it yourself from source code. To install a package or compile from source is a
+matter of personal taste. If you don't know which method to choose, we
+recommend that you read this whole section and then choose the method you feel
+most comfortable with.
 
 
 Source or packages?
@@ -60,15 +62,13 @@ want to compile Varnish from source for other reasons, follow these
 steps:
 
 Download the appropriate release tarball, which you can find on
-`repo.varnish-cache.org/source <http://repo.varnish-cache.org/source/>`_.
+http://repo.varnish-cache.org/source/ .
 
 Alternatively, if you want to hack on Varnish, you should clone our
 git repository by doing.
 
       ``git clone git://git.varnish-cache.org/varnish-cache``
 
-Please note that a git checkout will need some more build-dependencies
-than listed below, in particular the `Python Docutis` and `Sphinx`.
 
 Build dependencies on Debian / Ubuntu
 --------------------------------------
@@ -120,8 +120,9 @@ taken care of::
 	sh configure
 	make
 
-The `configure` script takes some arguments, but more likely than
-not you can forget about that for now, almost everything in Varnish can be tweaked with run time parameters.
+The `configure` script takes some arguments, but more likely than not you can
+forget about that for now, almost everything in Varnish can be tweaked with run
+time parameters.
 
 Before you install, you may want to run the test suite, make a cup of
 tea while it runs, it usually takes a couple of minutes::
@@ -139,9 +140,9 @@ Installing
 
 And finally, the true test of a brave heart::
 
-	sudo make install
+And finally, the true test of a brave heart: ``sudo make install``
 
-Varnish will now be installed in `/usr/local`. The ``varnishd`` binary is in
+Varnish will now be installed in `/usr/local`. The `varnishd` binary is in
 `/usr/local/sbin/varnishd` and its default configuration will be
 `/usr/local/etc/varnish/default.vcl`.
 
