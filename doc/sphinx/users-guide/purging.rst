@@ -40,31 +40,16 @@ following VCL in place::
 			  error 405 "Not allowed.";
 		  }
                   # jump to hit/miss
-		  return (lookup);
+		  return (purge);
 	  }
   }
 
-  sub vcl_hit {
-	  if (req.method == "PURGE") {
-	          purge;
-		  error 200 "Purged.";
-	  }
-  }
-
-  sub vcl_miss {
-	  if (req.method == "PURGE") {
-	          purge;
-		  error 200 "Purged.";
-	  }
-  }
-
-As you can see we have used two new VCL subroutines, vcl_hit and
-vcl_miss. When we call lookup Varnish will try to lookup the object in
-its cache. It will either hit an object or miss it and so the
-corresponding subroutine is called. In vcl_hit the object that is
-stored in cache is available and we can set the TTL. The purge in
-vcl_miss is necessary to purge all variants in the cases where you hit an
-object, but miss a particular variant.
+As you can see we have used a new action - return(purge). This ends
+execution of vcl_recv and jumps to vcl_hash. This is just like we
+handle a regular request. When vcl_hash calls return(lookup) varnish
+will purge the object and then call vcl_purge. Here you have the
+option of adding any particular actions you want Varnish to take once
+it has purge the object.
 
 So for example.com to invalidate their front page they would call out
 to Varnish like this::
@@ -121,7 +106,7 @@ You can also add bans to Varnish via HTTP. Doing so requires a bit of VCL::
 
 		  # Throw a synthetic page so the
                   # request won't go to the backend.
-		  error 200 "Ban added";
+		  return(synth(200m"Ban added"));
 	  }
   }
 
