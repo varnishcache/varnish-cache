@@ -95,7 +95,7 @@ the NUL (0x00) character
 Booleans
 ~~~~~~~~
 
-Booleans can be either true or false.
+Booleans can be either *true* or *false*.
 
 Time
 ----
