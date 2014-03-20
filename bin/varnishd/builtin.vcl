@@ -57,7 +57,7 @@ sub vcl_recv {
     }
 
     /* We don't support chunked uploads, except when piping. */
-    if ((req.request == "POST" || req.request == "PUT") &&
+    if ((req.method == "POST" || req.method == "PUT") &&
       req.http.transfer-encoding ~ "chunked") {
         return(pipe);
     }
