@@ -1,3 +1,5 @@
+.. _ref-varnishadm:
+
 ==========
 varnishadm
 ==========

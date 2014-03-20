@@ -1,3 +1,5 @@
+.. _ref-varnishtop:
+
 ==========
 varnishtop
 ==========

@@ -180,34 +180,32 @@ define the backends.::
         }
     }
 
-Whats new here is the ``probe``. Varnish will check the health of each
+What is new here is the ``probe``. Varnish will check the health of each
 backend with a probe. The options are:
 
 url
     The URL Varnish will use to send a probe request.
 
 interval
-    How often should we poll
+    How often should we poll.
 
 timeout
-    What is the timeout of the probe
+    What is the timeout of the probe.
 
 window
-    Varnish will maintain a *sliding window* of the results. Here the
-    window has five checks.
+    Varnish will retain up to this many probes when considering backend health.
 
 threshold
-    How many of the '.window' last polls must be good for the backend to be declared healthy.
-
-.. XXX: .window probably means something but not to me :) benc
+    How many of the `.window` last polls must be good for the backend to be
+    declared healthy.
 
 initial
-    How many of the probes that needs to be succesful when Varnish starts - defaults
-    to the same amount as the threshold.
+    How many of the probes that needs to be succesful when Varnish starts.
+    Defaults to the same amount as the threshold.
 
-Now we define the 'director'.::
 
 .. XXX: Where and why? benc
+Now we define the 'director'::
 
     import directors;
 
@@ -222,10 +220,10 @@ unhealthy. Varnish can also serve stale content if all the backends are
 down. See :ref:`users-guide-handling_misbehaving_servers` for more
 information on how to enable this.
 
-Please note that Varnish will keep probes active for all loaded
-VCLs. Varnish will coalesce probes that seem identical - so be careful
-not to change the probe config if you do a lot of VCL
-loading. Unloading the VCL will discard the probes.
+Please note that Varnish will keep probes active for all loaded VCLs. Varnish
+will coalesce probes that seem identical - so be careful not to change the
+probe config if you do a lot of VCL loading. Unloading the VCL will discard the
+probes.
 
 For more information on how to do this please see
 ref:`reference-vcl-director`.

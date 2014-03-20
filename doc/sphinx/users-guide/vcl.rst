@@ -42,8 +42,5 @@ code commented out in the file `builtin.vcl` that ships with Varnish Cache.
    vcl-grace
    vcl-inline-c
    vcl-examples
-   websockets
-.. XXX: websockets seems to be missing? does it refer to the last sample in the vcl index if so already included. benc
-
    devicedetection
 

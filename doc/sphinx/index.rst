@@ -14,7 +14,7 @@ architecture.
 To get started with Varnish-Cache we recommend that you read the installation
 guide :ref:`install-index`. Once you have Varnish up and running we recommend
 that you go through our tutorial - :ref:`tutorial-index`, and finally the
-:ref:`users_guide_index`.
+:ref:`users-guide-index`.
 
 If you need to find out how to use a specific Varnish tool, the
 :ref:`reference-index` contains detailed documentation over the tools. Changes

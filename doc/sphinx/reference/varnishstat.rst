@@ -1,4 +1,4 @@
-.. _reference-varnishstat:
+.. _ref-varnishstat:
 
 ===========
 varnishstat
@@ -12,6 +12,8 @@ SYNOPSIS
 ========
 
 varnishstat [-1] [-x] [-j] [-f field_list] [-l] [-n varnish_name] [-N filename] [-V] [-w delay]
+
+.. TODO: autogenerate this synopsis like the others.
 
 DESCRIPTION
 ===========
