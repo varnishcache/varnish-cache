@@ -205,6 +205,7 @@ initial
 
 
 .. XXX: Where and why? benc
+
 Now we define the 'director'::
 
     import directors;
@@ -213,6 +214,7 @@ Now we define the 'director'::
         { .backend = server1; }
         { .backend = server2; }
     }
+
 
 You use this director just as you would use any other director or
 backend. Varnish will not send traffic to hosts that are marked as
