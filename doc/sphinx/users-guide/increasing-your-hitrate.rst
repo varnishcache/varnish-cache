@@ -235,9 +235,7 @@ Age
 ~~~
 
 Varnish adds an 'Age' header to indicate how long the object has been
-kept inside Varnish. You can grep out 'Age' from `varnishlog` like this::
-
-  varnishlog -i TxHeader -I ^Age
+kept inside Varnish. You can grep out 'Age' from `varnishlog` with ``varnishlog -i TxHeader -I ^Age``.
 
 Pragma
 ~~~~~~
@@ -247,10 +245,10 @@ header. You could easily add support for this header in VCL.
 
 In `vcl_backend_response`::
 
-  if (beresp.http.Pragma ~ "nocache") {
+    if (beresp.http.Pragma ~ "nocache") {
         set beresp.uncacheable = true;
-	set beresp.ttl = 120s; // how long not to cache this url.
-  }
+        set beresp.ttl = 120s; // how long not to cache this url.
+    }
 
 Authorization
 ~~~~~~~~~~~~~
@@ -258,12 +256,12 @@ Authorization
 If Varnish sees an 'Authorization' header it will pass the request. If
 this is not what you want you can unset the header.
 
-Overriding the time-to-live (ttl)
+Overriding the time-to-live (TTL)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Sometimes your backend will misbehave. It might, depending on your
-setup, be easier to override the ttl in Varnish than to fix your
-somewhat cumbersome backend. 
+setup, be easier to override the TTL in Varnish then to fix your
+somewhat cumbersome backend.
 
 You need VCL to identify the objects you want and then you set the
 'beresp.ttl' to whatever you want::
@@ -274,7 +272,7 @@ You need VCL to identify the objects you want and then you set the
       }
   }
 
-This example will set the ttl to 5 days for the old legacy stuff on
+This example will set the TTL to 5 days for the old legacy stuff on
 your site.
 
 Forcing caching for certain requests and certain responses
