@@ -194,7 +194,7 @@ of the following keywords:
     Control will eventually pass to vcl_deliver. Caching is dependant
     on beresp.cacheable.
 
-  error [reason]
+  error(error code, reason)
     Return the specified error code to the client and abandon the request.
 
   retry
