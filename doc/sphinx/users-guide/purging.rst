@@ -99,14 +99,14 @@ You can also add bans to Varnish via HTTP. Doing so requires a bit of VCL::
 	  if (req.method == "BAN") {
                   # Same ACL check as above:
 		  if (!client.ip ~ purge) {
-			  error 405 "Not allowed.";
+			  return(synth(403, "Not allowed."));
 		  }
 		  ban("req.http.host == " + req.http.host +
 		        "&& req.url == " + req.url);
 
 		  # Throw a synthetic page so the
                   # request won't go to the backend.
-		  return(synth(200m"Ban added"));
+		  return(synth(200, "Ban added"));
 	  }
   }
 
@@ -130,7 +130,7 @@ You can use the following template to write ban lurker friendly bans::
   sub vcl_recv {
     if (req.method == "PURGE") {
       if (client.ip !~ purge) {
-        error 401 "Not allowed";
+        return(synth(403, "Not allowed"));
       }
       ban("obj.http.x-url ~ " + req.url); # Assumes req.url is a regex. This might be a bit too simple
     }

@@ -22,8 +22,9 @@ yourself doing frequently.
 The vcl_recv subroutine may terminate with calling ``return()`` on one
 of the following keywords:
 
-  error 
-    Return the specified error code to the client and abandon the request.
+  synth 
+    Return a synthetic object with the specified error code to the
+    client and abandon the request.
 
   pass
     Switch to pass mode.  Control will eventually pass to vcl_pass.
@@ -51,7 +52,7 @@ shuffling bytes back and forth.
 The vcl_pipe subroutine may terminate with calling return() with one
 of the following keywords:
 
-  error code [reason]
+  synth(error code, reason)
     Return the specified error code to the client and abandon the request.
 
   pipe
@@ -68,7 +69,7 @@ submitted over the same client connection are handled normally.
 The vcl_pass subroutine may terminate with calling return() with one
 of the following keywords:
 
-  error [reason]
+  synth(error code, reason)
     Return the specified error code to the client and abandon the request.
 
   pass
@@ -155,13 +156,6 @@ keywords:
     Restart the transaction. Increases the restart counter. If the number
     of restarts is higher than *max_restarts* Varnish emits a guru meditation
     error.
-
-
-.. XXX
-.. vcl_error
-.. ~~~~~~~~~
-
-.. Not sure if we're going to keep this around.
 
 
 vcl_backend_fetch

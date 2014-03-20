@@ -251,11 +251,11 @@ VCL::
         # call some detection engine
 
         if (req.http.X-UA-Device ~ "^mobile" || req.http.X-UA-device ~ "^tablet") {
-            error 750 "Moved Temporarily";
+            return(synth(750, "Moved Temporarily"));
         }
     }
      
-    sub vcl_error {
+    sub vcl_synth {
         if (obj.status == 750) {
             set obj.http.Location = "http://m.example.com" + req.url;
             set obj.status = 302;
