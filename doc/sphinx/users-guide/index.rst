@@ -1,8 +1,7 @@
 .. _users-guide-index:
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 The Varnish Users Guide
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+=======================
 
 The Varnish documentation consists of three main documents:
 

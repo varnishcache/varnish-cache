@@ -1,8 +1,7 @@
 .. _tutorial-index:
 
-%%%%%%%%%%%%%%%%%%%%
 The Varnish Tutorial
-%%%%%%%%%%%%%%%%%%%%
+====================
 
 This section covers the Varnish basics in a tutorial form. It will cover what Varnish is and how it
 works. It also covers how to get Varnish up and running. After this section you probably would want to
