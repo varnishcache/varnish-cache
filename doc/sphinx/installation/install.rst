@@ -25,12 +25,12 @@ Binary package:
 From source:
 		``cd /usr/ports/varnish && make install clean``
 
-CentOS/RedHat
--------------
+Red Hat / CentOS
+----------------
 
 We try to keep the latest version available as prebuilt RPMs (el5 and el6)
 on `repo.varnish-cache.org <http://repo.varnish-cache.org/>`_.  See the online
-`RedHat installation instructions
+`Red Hat installation instructions
 <http://www.varnish-cache.org/installation/redhat>`_ for more information.
 
 Varnish is included in the `EPEL
@@ -92,10 +92,10 @@ If you're building from git, you also need the following:
 * `python-docutils`
 * `python-sphinx` (optional, if you want to build the documentation)
 
-Build dependencies on RedHat / CentOS
+Build dependencies on Red Hat / CentOS
 --------------------------------------
 
-To build Varnish on a RedHat or CentOS system you need the following
+To build Varnish on a Red Hat or CentOS system you need the following
 packages installed:
 
 * `automake`
