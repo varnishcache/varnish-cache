@@ -25,15 +25,14 @@ Use the hash director as a client director
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Since the client director was already a special case of the hash director, it has been removed, and you should use the hash director directly::
 
-	sub vcl_init {
-        	new h = directors.hash();
-        	h.add_backend(b1, 1);
-        	h.add_backend(b2, 1);
-	}
-
-	sub vcl_recv {
-		set req.backend_hint = h.backend(client.ip);
-	}
+    sub vcl_init {
+        new h = directors.hash();
+        h.add_backend(b1, 1);
+        h.add_backend(b2, 1);
+    }
+    sub vcl_recv {
+        set req.backend_hint = h.backend(client.ip);
+    }
 
 error() is now a return value
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -84,6 +83,12 @@ Any custom-made subs cannot be named 'vcl_*' anymore. This namespace is reserved
 
 req.backend.healthy replaced by std.healthy(req.backend)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+obj is now read-only
+~~~~~~~~~~~~~~~~~~~~
+
+`obj` is now read-only. `obj.hits`, if enabled in VCL, now counts per objecthead,
+not per object. `obj.last_use` has been retired.
 
 Changes to parameters
 =====================
