@@ -93,7 +93,7 @@ Called is a cache lookup is successful.
   deliver
     Deliver the object. Control passes to vcl_deliver.
 
-  error [reason]
+  synth(error code, reason)
     Return the specified error code to the client and abandon the request.
 
 
@@ -107,7 +107,7 @@ retrieve the document from the backend, and which backend to use.
 The vcl_miss subroutine may terminate with calling return() with one
 of the following keywords:
 
-  error [reason]
+  synth(error code, reason)
     Return the specified error code to the client and abandon the request.
 
   pass
@@ -124,21 +124,19 @@ Called after vcl_recv to create a hash value for the request. This is
 used as a key to look up the object in Varnish.
 
   lookup
-    Look up the object in cache.
+    Look up the object in cache. Control passes to vcl_miss, vcl_hit
+    or vcl_purge.
+
+
 
 
 vcl_purge
 ~~~~~~~~~
 
-Purge the object and all it's variants. Variants created when the
-backend issues a Vary response.
+Called after the purge has been executed and all it's variant have been evited. 
 
-  fetch
-    Execute the purge.
-
-  error
-    Fail the purge request. Typically you would call error here it
-    request doesn't pass the ACLs.
+  synth
+    Produce a response.
 
 
 
