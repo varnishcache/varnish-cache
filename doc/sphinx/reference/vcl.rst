@@ -208,6 +208,9 @@ are available:
     Varnish reaches the maximum Varnish it will start failing
     connections.
 
+Backends can be used with *directors*. Please see the
+vmod_directors(3) man page for more information.
+
 Probes
 ------
 
