@@ -6,7 +6,7 @@ Security first
 If you are the only person involved in running Varnish, or if all
 the people involved are trusted to the same degree, you can skip
 this chapter. We have protected Varnish as well as we can from
-anything which can come in through a HTTP socket.
+anything which can come in through an HTTP socket.
 
 If parts of your web infrastructure are outsourced or otherwise
 partitioned along administrative lines, you need to think about

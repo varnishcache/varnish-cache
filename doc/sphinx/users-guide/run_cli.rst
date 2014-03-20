@@ -116,7 +116,7 @@ but they are banned from delivery.
 
 Instead of checking each and every cached object right away, we
 test each object against the regular expression only if and when
-a HTTP request asks for it.
+an HTTP request asks for it.
 
 Banning stuff is much cheaper than restarting Varnish to get rid
 of wronly cached content.

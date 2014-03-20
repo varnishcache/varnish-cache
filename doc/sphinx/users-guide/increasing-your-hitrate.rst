@@ -48,7 +48,7 @@ Tool: lwp-request
 ~~~~~~~~~~~~~~~~~
 
 `lwp-request` is tool that is a part of The World-Wide Web library for Perl. It's a
-couple of really basic programs that can execute a HTTP request and
+couple of really basic programs that can execute an HTTP request and
 show you the result. We mostly use the two programs, ``GET`` and ``HEAD``.
 
 vg.no was the first site to use Varnish and the people running Varnish

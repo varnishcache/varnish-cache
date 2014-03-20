@@ -34,11 +34,11 @@ Varnish Glossary
    backend
 	The HTTP server varnishd is caching for.  This can be
 	any sort of device that handles HTTP requests, including, but
-	not limited to: a webserver, a CMS, a load-balancer 
+	not limited to: a webserver, a CMS, a load-balancer
 	another varnishd, etc.
 
    client
-	The program which sends varnishd a HTTP request, typically
+	The program which sends varnishd an HTTP request, typically
 	a browser, but do not forget to think about spiders, robots
 	script-kiddies and criminals.
 
@@ -65,13 +65,13 @@ Varnish Glossary
    .. comment: "components of traffic ---------------------------------"
 
    header
-	A HTTP protocol header, like "Accept-Encoding:".
+	An HTTP protocol header, like "Accept-Encoding:".
 
    request
 	What the client sends to varnishd and varnishd sends to the backend.
 
    response
-	What the backend returns to varnishd and varnishd returns to 
+	What the backend returns to varnishd and varnishd returns to
 	the client.  When the response is stored in varnishd's cache,
 	we call it an object.
 
