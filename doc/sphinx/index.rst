@@ -1,15 +1,12 @@
-Welcome to the Varnish documentation!
-=====================================
 
-Introduction
-------------
+Varnish Administrator Documentation
+===================================
 
 Varnish Cache is a web application accelerator also known as a caching HTTP
 reverse proxy. You install it in front of any server that speaks HTTP and
 configure it to cache the contents. Varnish Cache is really, really fast. It
 typically speeds up delivery with a factor of 300 - 1000x, depending on your
 architecture.
-
 
 To get started with Varnish-Cache we recommend that you read the installation
 guide :ref:`install-index`. Once you have Varnish up and running we recommend
@@ -22,9 +19,6 @@ from previous versions are located in the :ref:`whats-new-index` chapter. In
 closing, we have :ref:`phk`, a collection of blog posts from Poul-Henning Kamp
 related to Varnish and HTTP.
 
-
-Conventions used
-----------------
 
 Conventions used in this manual include:
 
@@ -68,23 +62,21 @@ Longer listings like example command output and VCL will look like this::
 .. ......................
 
 
-Table of contents
------------------
-
-
 .. toctree::
-   :maxdepth: 1
+    :maxdepth: 1
 
-   installation/index.rst
-   tutorial/index.rst
-   users-guide/index.rst
-   reference/index.rst
-   whats-new/index.rst
-   phk/index.rst
-   glossary/index.rst
+    installation/index.rst
+    tutorial/index.rst
+    users-guide/index.rst
+    reference/index.rst
+    whats-new/index.rst
+    phk/index.rst
+    glossary/index.rst
+
+
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`search`
