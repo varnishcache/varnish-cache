@@ -109,7 +109,6 @@ VBO_GetBusyObj(struct worker *wrk, const struct req *req)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	AZ(bo->refcount);
 
-	bo->state = BOS_INVALID;
 	bo->refcount = 1;
 
 	p = (void*)(bo + 1);
