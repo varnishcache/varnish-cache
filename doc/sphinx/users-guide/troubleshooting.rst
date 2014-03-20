@@ -91,10 +91,8 @@ A core dumped is usually due to a bug in Varnish. However, in order to
 debug a segfault the developers need you to provide a fair bit of
 data.
 
- * Make sure you have Varnish installed with symbols
-.. XXX:Symbols? benc
- * Make sure core dumps are enabled (ulimit)
-.. XXX:ulimit? benc
+ * Make sure you have Varnish installed with debugging symbols.
+ * Make sure core dumps are allowed in the parent shell. (``ulimit -c unlimited``)
 
 Once you have the core you open it with `gdb` and issue the command ``bt``
 to get a stack trace of the thread that caused the segfault.

@@ -83,12 +83,13 @@ general forms:
 	for HTTP headers and Cookies.
 
 	Please try that before reporting a bug.
-..  (TODO: which params to tweak)
 
 "Assert error in ..."
 	This is something bad that should never happen, and a bug
 	report is almost certainly in order. As always, if in doubt
 	ask us on IRC before opening the ticket.
+
+..  (TODO: in the ws-size note above, mention which params to tweak)
 
 In your syslog it may all be joined into one single line, but if you
 can reproduce the crash, do so while running `varnishd` manually:

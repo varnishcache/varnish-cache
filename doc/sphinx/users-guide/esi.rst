@@ -82,7 +82,7 @@ For example::
   -->
 
 Doing ESI on JSON and other non-XML'ish content
-----------------------------------------------
+-----------------------------------------------
 
 Please note that Varnish will peek at the included content. If it
 doesn't start with a "<" Varnish assumes you didn't really mean to

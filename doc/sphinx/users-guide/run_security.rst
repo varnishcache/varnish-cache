@@ -168,8 +168,6 @@ Furthermore you may want to look at and lock down:
 
 :ref:`ref_param_syslog_cli_traffic`
 	Log all CLI commands to `syslog(8)`, so you know what goes on.
-.. XXX: syslog(8)? benc
-
 
 :ref:`ref_param_vcc_unsafe_path`
 	Restrict VCL/VMODS to :ref:`ref_param_vcl_dir` and :ref:`ref_param_vmod_dir`

@@ -40,9 +40,8 @@ from a transactional level to aggregating statistics.
    vcl
    report
    performance
-   esi   
+   esi
    troubleshooting
-   orphans
 
 .. customizing (which is a non ideal title)
 

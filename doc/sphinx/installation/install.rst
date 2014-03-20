@@ -141,7 +141,7 @@ And finally, the true test of a brave heart::
 
 	sudo make install
 
-Varnish will now be installed in `/usr/local`. The ``varnishd` binary is in
+Varnish will now be installed in `/usr/local`. The ``varnishd`` binary is in
 `/usr/local/sbin/varnishd` and its default configuration will be
 `/usr/local/etc/varnish/default.vcl`.
 

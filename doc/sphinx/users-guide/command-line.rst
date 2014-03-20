@@ -16,7 +16,7 @@ you will find the startup options here:
 
 
 '-a' *listen_address*
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^
 
 The '-a' argument defines what address Varnish should listen to, and service HTTP requests from.
 
@@ -42,7 +42,7 @@ If your webserver runs on the same machine, you will have to move
 it to another port number first.
 
 '-f' *VCL-file* or '-b' *backend*
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 Varnish needs to know where to find the HTTP server it is caching for.
