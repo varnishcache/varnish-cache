@@ -54,6 +54,8 @@ As you can see there is nothing keeping you from manipulating the
 directors elsewhere in VCL. So, you could have VCL code that would
 add more backends to a director when a certain URL is called.
 
+Note that directors can use other directors as backends.
+
 $Object round_robin()
 
 Description
