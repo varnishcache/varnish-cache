@@ -106,11 +106,8 @@ packages installed:
 * `pcre-devel`
 * `pkgconfig`
 * `libedit-devel`
-
-If you're building from git, you also need the following:
-
 * `docutils`
-* `python-sphinx` (optional, if you want to build the documentation)
+* `python-sphinx`
 
 Compiling Varnish
 -----------------
@@ -144,9 +141,9 @@ And finally, the true test of a brave heart::
 
 	sudo make install
 
-Varnish will now be installed in `/usr/loca``l. The ``varnishd` binary is in
+Varnish will now be installed in `/usr/local`. The ``varnishd` binary is in
 `/usr/local/sbin/varnishd` and its default configuration will be
 `/usr/local/etc/varnish/default.vcl`.
 
-After succesful installation you are ready to proceed to the :ref:`tutorial-index`.
+After successful installation you are ready to proceed to the :ref:`tutorial-index`.
 

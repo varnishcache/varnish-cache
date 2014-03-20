@@ -3,7 +3,7 @@
 Backend servers
 ---------------
 
-Varnish has a concept of `backend` or `origin` servers. A backend
+Varnish has a concept of `backend` or origin servers. A backend
 server is the server providing the content Varnish will accelerate via the cache.
 
 Our first task is to tell Varnish where it can find its content. Start
@@ -41,15 +41,9 @@ localhost, port 8080.::
   }
 
 
-Varnish can have several backends defined and can even join
-several backends together into clusters of backends for load balancing
-purposes, having Varnish pick one backend based on different
-algorithms. 
-
-A lot of the power of Varnish Cache comes from it's design, which
-might not be what you are expecting.
-
-.. XXX:What am I expecting? benc
+Varnish can have several backends defined and can even join several backends
+together into clusters of backends for load balancing purposes, having Varnish
+pick one backend based on different algorithms. 
 
 Next, let's have a look at some of what makes Varnish unique and what you can do with it.
 

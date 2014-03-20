@@ -38,7 +38,7 @@ it mostly on topic, and please don't paste random links unless they are
 Mailing Lists
 =============
 
-Subscribing or unsubscribing to our mailing lists is handled through our Mailman_.
+Subscribing or unsubscribing to our mailing lists is handled through mailman_.
 
 If you are going to use Varnish, subscribing to our `varnish-announce`
 mailing list is a very good idea. The typical pattern is that
