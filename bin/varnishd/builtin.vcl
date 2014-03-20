@@ -67,12 +67,11 @@ sub vcl_recv {
 }
 
 sub vcl_pipe {
-    # Note that only the first request to the backend will have
-    # X-Forwarded-For set.  If you use X-Forwarded-For and want to
-    # have it set for all requests, make sure to have:
-    # set bereq.http.connection = "close";
-    # here.  It is not set by default as it might break some broken web
-    # applications, like IIS with NTLM authentication.
+    # By default Connection: close is set on all piped requests, to stop
+    # connection reuse from sending future requests directly to the
+    # (potentially) wrong backend. If you do want this to happen, you can undo
+    # it here.
+    # unset bereq.http.connection;
     return (pipe);
 }
 
