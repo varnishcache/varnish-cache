@@ -9,18 +9,20 @@ the request from the cache it will forward the request to the backend,
 fetch the response, store it in the cache and deliver it to the client.
 
 When Varnish has a cached response ready it is typically delivered in
-a matter of microseconds, several orders of magnitude faster than your
+a matter of microseconds, two orders of magnitude faster than your
 typical backend server, so you want to make sure to have Varnish answer
 as many of the requests as possible directly from the cache.
 
-Varnish decides whether it can store the content or not based on the
-response it gets back from the backend. The backend can instruct
-Varnish to cache the content with the HTTP response header
-`Cache-Control`. There are a few conditions where Varnish will not
-cache, the most common one being the use of cookies. Since cookies indicates a client-specific web object, Varnish will by default not cache it. 
+Varnish decides whether it can store the content or not based on the response
+it gets back from the backend. The backend can instruct Varnish to cache the
+content with the HTTP response header `Cache-Control`. There are a few
+conditions where Varnish will not cache, the most common one being the use of
+cookies. Since cookies indicates a client-specific web object, Varnish will by
+default not cache it.
+
 This behaviour as most of Varnish functionality can be changed using policies
-written in the Varnish Configuration Language. See the Users Guide
-for more information on how to do that.
+written in the Varnish Configuration Language (VCL). See
+:ref:`users-guide-index` for more information on how to do that.
 
 Performance
 ~~~~~~~~~~~

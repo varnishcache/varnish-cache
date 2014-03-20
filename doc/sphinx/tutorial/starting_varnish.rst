@@ -13,8 +13,8 @@ to it. :-)
 Make sure you have Varnish successfully installed (following one of the
 procedures described in "Installing Varnish" above.
 
-When properly installed you start Varnish with ``service varnish start``.  This will start
-Varnish if it isn't already running.
+When properly installed you start Varnish with ``service varnish start``.  This
+will start Varnish if it isn't already running.
 
 .. XXX:What does it do if it is already running? benc
 
