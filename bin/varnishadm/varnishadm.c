@@ -128,6 +128,7 @@ cli_sock(const char *T_arg, const char *S_arg)
 	if (status != CLIS_OK) {
 		fprintf(stderr, "Rejected %u\n%s\n", status, answer);
 		AZ(close(sock));
+		free(answer);
 		return (-1);
 	}
 	free(answer);
@@ -137,7 +138,8 @@ cli_sock(const char *T_arg, const char *S_arg)
 	if (status != CLIS_OK || strstr(answer, "PONG") == NULL) {
 		fprintf(stderr, "No pong received from server\n");
 		AZ(close(sock));
-		return(-1);
+		free(answer);
+		return (-1);
 	}
 	free(answer);
 
