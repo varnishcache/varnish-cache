@@ -222,10 +222,7 @@ Cache-Control
 
 The 'Cache-Control' header instructs caches how to handle the content. Varnish
 cares about the *max-age* parameter and uses it to calculate the TTL
-for an object. 
-
-``Cache-Control: nocache`` is ignored but if you need this you can
-easily add support for it.
+for an object.
 
 So make sure you issue a 'Cache-Control' header with a max-age
 header. You can have a look at what Varnish Software's Drupal server
