@@ -37,7 +37,7 @@ following VCL in place::
 
 	  if (req.method == "PURGE") {
 		  if (!client.ip ~ purge) {
-			  error 405 "Not allowed.";
+			  return(synth(405,"Not allowed.");
 		  }
                   # jump to hit/miss
 		  return (purge);
