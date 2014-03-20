@@ -167,7 +167,7 @@ EXTRA_DIST = \
 	users-guide/vcl-hashing.rst \
 	users-guide/vcl-inline-c.rst \
 	users-guide/vcl-intro.rst \
-	users-guide/vcl-saint-and-grace.rst \
+	users-guide/vcl-grace.rst \
 	users-guide/vcl-syntax.rst \
 	users-guide/vcl-variables.rst \
 	users-guide/vcl.rst

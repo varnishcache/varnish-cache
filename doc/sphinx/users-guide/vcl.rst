@@ -39,7 +39,7 @@ code commented out in builtin.vcl that ships with Varnish Cache.
    vcl-actions
    vcl-backends
    vcl-hashing
-   vcl-saint-and-grace
+   vcl-grace
    vcl-inline-c
    vcl-examples
    websockets
