@@ -55,6 +55,13 @@ sub vcl_recv {
         /* Non-RFC2616 or CONNECT which is weird. */
         return (pipe);
     }
+
+    /* We don't support chunked uploads, except when piping. */
+    if ((req.request == "POST" || req.request == "PUT") &&
+      req.http.transfer-encoding ~ "chunked") {
+        return(pipe);
+    }
+
     if (req.method != "GET" && req.method != "HEAD") {
         /* We only deal with GET and HEAD by default */
         return (pass);
