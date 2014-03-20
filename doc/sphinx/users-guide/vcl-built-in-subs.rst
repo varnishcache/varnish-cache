@@ -36,8 +36,8 @@ of the following keywords:
     caching. Passes the control over to vcl_hash.
 
   purge
-    Calls vcl_purge where the object will be purged.
-
+    Purge the object and it's variants. Control passes through 
+    vcl_hash to vcl_purge.
 
 vcl_pipe
 ~~~~~~~~
