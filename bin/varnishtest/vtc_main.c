@@ -378,7 +378,7 @@ i_mode(void)
 	}
 	AN(topbuild);
 	extmacro_def("topbuild", "%s", topbuild);
-
+	free(topbuild);
 	/*
 	 * Build $PATH which can find all programs in the build tree
 	 */
