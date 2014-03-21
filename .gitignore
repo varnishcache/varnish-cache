@@ -95,7 +95,7 @@ cscope.*out
 /doc/*.html
 /doc/sphinx/build/
 /doc/sphinx/conf.py
-/doc/sphinx/reference/vcl_var.rst
+/doc/sphinx/include/vcl_var.rst
 
 # NetBeans insists on this
 /nbproject/private/

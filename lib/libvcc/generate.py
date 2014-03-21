@@ -1131,7 +1131,7 @@ fo.close
 
 #######################################################################
 
-fo = open(buildroot + "/doc/sphinx/reference/vcl_var.rst", "w")
+fp_vclvar = open(buildroot + "/doc/sphinx/include/vcl_var.rst", "w")
 
 l = list()
 for i in sp_variables:
@@ -1164,14 +1164,14 @@ hdr=""
 for i in l:
 	j = i[0].split(".")
 	if j[0] != hdr:
-		fo.write("\n" + j[0] + "\n")
-		fo.write("~" * len(j[0]) + "\n")
+		fp_vclvar.write("\n" + j[0] + "\n")
+		fp_vclvar.write("~" * len(j[0]) + "\n")
 		hdr = j[0]
-	fo.write("\n" + i[0] + "\n\n")
-	fo.write("\tType: " + i[1] + "\n\n")
-	rst_where(fo, "Readable from: ", i[2])
-	rst_where(fo, "Writable from: ", i[3])
+	fp_vclvar.write("\n" + i[0] + "\n\n")
+	fp_vclvar.write("\tType: " + i[1] + "\n\n")
+	rst_where(fp_vclvar, "Readable from: ", i[2])
+	rst_where(fp_vclvar, "Writable from: ", i[3])
 	for j in i[4].split("\n"):
-		fo.write("\t" + j.strip() + "\n")
+		fp_vclvar.write("\t%s\n" % j.strip())
 
-fo.close()
+fp_vclvar.close()
