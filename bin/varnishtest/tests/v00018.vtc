@@ -73,7 +73,7 @@ varnish v1 -errvcl {Symbol not found: 'mu' (expected type BOOL):} {
 	sub vcl_backend_response { set beresp.do_gzip = mu; }
 }
 
-varnish v1 -errvcl {Only http header variables can be unset.} {
+varnish v1 -errvcl {Only HTTP header variables can be unset.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_backend_response { unset beresp.do_gzip; }
 }
