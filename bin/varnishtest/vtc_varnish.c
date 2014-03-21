@@ -339,8 +339,10 @@ varnish_thread(void *priv)
 		i = poll(fds, 1, 1000);
 		if (i == 0)
 			continue;
-		if (fds->revents & (POLLERR|POLLHUP))
+		if (fds->revents & (POLLERR|POLLHUP)) {
+			vtc_log(v->vl, 4, "STDOUT poll 0x%x", fds->revents);
 			break;
+		}
 		i = read(v->fds[0], buf, sizeof buf - 1);
 		if (i <= 0)
 			break;
@@ -426,8 +428,8 @@ varnish_launch(struct varnish *v)
 	memset(fd, 0, sizeof fd);
 	fd[0].fd = v->cli_fd;
 	fd[0].events = POLLIN;
-	fd[1].fd = v->fds[0];
-	fd[1].events = 0; /* Only care about POLLHUP, which is output-only */
+	fd[1].fd = v->fds[1];
+	fd[1].events = POLLIN;
 	i = poll(fd, 2, 10000);
 	vtc_log(v->vl, 4, "CLIPOLL %d 0x%x 0x%x",
 	    i, fd[0].revents, fd[1].revents);
