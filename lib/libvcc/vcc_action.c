@@ -135,7 +135,7 @@ parse_unset(struct vcc *tl)
 	assert(vp != NULL);
 	if (vp->fmt != HEADER) {
 		VSB_printf(tl->sb,
-		    "Only http header variables can be unset.\n");
+		    "Only HTTP header variables can be unset.\n");
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
