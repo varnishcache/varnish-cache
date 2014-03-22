@@ -79,7 +79,8 @@ req.* used to be available in `vcl_fetch`, but after the split of functionality,
 
 vcl_* reserved
 ~~~~~~~~~~~~~~
-Any custom-made subs cannot be named 'vcl_*' anymore. This namespace is reserved for builtin subs.
+Any custom-made subs cannot be named 'vcl_*' anymore. This namespace is
+reserved for builtin subs.
 
 req.backend.healthy replaced by std.healthy(req.backend)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -87,8 +88,19 @@ req.backend.healthy replaced by std.healthy(req.backend)
 obj is now read-only
 ~~~~~~~~~~~~~~~~~~~~
 
-`obj` is now read-only. `obj.hits`, if enabled in VCL, now counts per objecthead,
-not per object. `obj.last_use` has been retired.
+`obj` is now read-only. `obj.hits`, if enabled in VCL, now counts per
+objecthead, not per object. `obj.last_use` has been retired.
+
+
+default/builtin VCL changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The VCL code that is appended to user-configured VCL automatically is now
+called the builtin VCL. (previously default.vcl)
+
+The builtin VCL now honors Cache-Control: no-cache (and friends) to indicate
+uncacheable content from the backend.
+
 
 Changes to parameters
 =====================
