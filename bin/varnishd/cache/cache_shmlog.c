@@ -356,7 +356,7 @@ VSLb_ts(struct vsl_log *vsl, const char *event, double first, double *pprev,
 {
 
 	assert(!isnan(now) && now != 0.);
-	VSLb(vsl, SLT_Timestamp, "%s: %.9f %.9f %.9f",
+	VSLb(vsl, SLT_Timestamp, "%s: %.6f %.6f %.6f",
 	    event, now, now - first, now - *pprev);
 	*pprev = now;
 }
