@@ -1,0 +1,35 @@
+varnishtest "Connection: close in vcl_synth{}"
+
+server s1 {
+	rxreq
+	txresp -status 400
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_miss {
+		if (req.url == "/333") {
+			return (synth(333, "FOO"));
+		} else {
+			return (synth(334, "BAR"));
+		}
+	}
+
+	sub vcl_synth {
+		if (resp.status == 333) {
+			set resp.http.connection = "close";
+		}
+	}
+} -start
+
+client c1 {
+	txreq -url /334
+	rxresp
+	expect resp.status == 334
+	txreq -url /334
+	rxresp
+	expect resp.status == 334
+	txreq -url /333
+	rxresp
+	expect resp.status == 333
+	expect_close
+} -run

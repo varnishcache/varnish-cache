@@ -1,0 +1,24 @@
+varnishtest "Connection: close in vcl_deliver{}"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_deliver {
+		set resp.http.Connection  = "close";
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect_close
+} -run
+
+client c1 {
+	txreq
+	rxresp
+	expect_close
+} -run
