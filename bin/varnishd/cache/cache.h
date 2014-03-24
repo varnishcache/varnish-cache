@@ -523,8 +523,8 @@ struct busyobj {
 	 * All fields from refcount and down are zeroed when the busyobj
 	 * is recycled.
 	 */
-	int			retries;
 	unsigned		refcount;
+	int			retries;
 	double			t_fetch;
 	struct req		*req;
 
