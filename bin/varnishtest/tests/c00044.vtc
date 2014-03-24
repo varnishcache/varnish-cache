@@ -40,7 +40,7 @@ varnish v1 -expect SMA.Transient.g_bytes == 0
 varnish v1 -expect SMA.s0.g_bytes == 0
 varnish v1 -expect SMA.s0.g_space > 1000000
 varnish v1 -expect SMA.s1.g_bytes > 1000000
-varnish v1 -expect SMA.s1.g_space < 170
+varnish v1 -expect SMA.s1.g_space < 180
 varnish v1 -expect SMA.s2.g_bytes == 0
 varnish v1 -expect SMA.s2.g_space > 1000000
 
@@ -55,9 +55,9 @@ varnish v1 -expect SMA.Transient.g_bytes == 0
 varnish v1 -expect SMA.s0.g_bytes == 0
 varnish v1 -expect SMA.s0.g_space > 1000000
 varnish v1 -expect SMA.s1.g_bytes > 1000000
-varnish v1 -expect SMA.s1.g_space < 170
+varnish v1 -expect SMA.s1.g_space < 180
 varnish v1 -expect SMA.s2.g_bytes > 1000000
-varnish v1 -expect SMA.s2.g_space < 170
+varnish v1 -expect SMA.s2.g_space < 180
 
 client c1 {
 	txreq -url /burp
@@ -68,11 +68,11 @@ client c1 {
 
 varnish v1 -expect SMA.Transient.g_bytes == 0
 varnish v1 -expect SMA.s0.g_bytes > 1000000
-varnish v1 -expect SMA.s0.g_space < 170
+varnish v1 -expect SMA.s0.g_space < 180
 varnish v1 -expect SMA.s1.g_bytes > 1000000
-varnish v1 -expect SMA.s1.g_space < 170
+varnish v1 -expect SMA.s1.g_space < 180
 varnish v1 -expect SMA.s2.g_bytes > 1000000
-varnish v1 -expect SMA.s2.g_space < 170
+varnish v1 -expect SMA.s2.g_space < 180
 
 client c1 {
 	txreq -url /foo1
