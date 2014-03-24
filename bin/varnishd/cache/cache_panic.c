@@ -283,6 +283,10 @@ pan_busyobj(const struct busyobj *bo)
 
 	VSB_printf(pan_vsp, "  busyobj = %p {\n", bo);
 	pan_ws(bo->ws, 4);
+	VSB_printf(pan_vsp, "  refcnt = %u\n", bo->refcount);
+	VSB_printf(pan_vsp, "  retries = %d\n", bo->retries);
+	VSB_printf(pan_vsp, "  failed = %d\n", bo->failed);
+	VSB_printf(pan_vsp, "  state = %d\n", (int)bo->state);
 #define BO_FLAG(l, r, w, d) if(bo->l) VSB_printf(pan_vsp, "    is_" #l "\n");
 #include "tbl/bo_flags.h"
 #undef BO_FLAG
