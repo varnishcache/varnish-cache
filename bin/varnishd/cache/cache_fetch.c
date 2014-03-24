@@ -341,6 +341,9 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, bo->beresp->ws);
 
+	if (wrk->handling == VCL_RET_ABANDON)
+		return (F_STP_FAIL);
+
 	if (wrk->handling == VCL_RET_RETRY) {
 		AN (bo->vbc);
 		VDI_CloseFd(&bo->vbc);
