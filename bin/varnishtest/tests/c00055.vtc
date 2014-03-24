@@ -31,10 +31,14 @@ client c1 {
 	expect resp.bodylen == 2
 } -run
 
+delay .1
+
 client c1 {
 	txreq -req POST -nolen -hdr "Content-Length: 52"
 	delay .3
 } -run
+
+delay .1
 
 server s1 {
 	rxreq
