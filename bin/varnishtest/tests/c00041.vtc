@@ -47,21 +47,26 @@ client c1 {
 	txreq -url "/1" -hdr "foo: foo1"
 	rxresp
 	expect resp.status == 200
+	expect resp.http.x-varnish == 1001
 	expect resp.bodylen == 1
 
 	txreq -url "/1" -hdr "Foo: foo2"
 	rxresp
 	expect resp.status == 200
+	expect resp.http.x-varnish == 1003
 	expect resp.bodylen == 2
+	delay .1
 
 	txreq -url "/1" -hdr "foo: foo1"
 	rxresp
 	expect resp.status == 200
+	expect resp.http.x-varnish == "1005 1002"
 	expect resp.bodylen == 1
 
 	txreq -url "/1" -hdr "Foo: foo2"
 	rxresp
 	expect resp.status == 200
+	expect resp.http.x-varnish == "1006 1004"
 	expect resp.bodylen == 2
 
 	# Purge on hit
