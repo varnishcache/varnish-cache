@@ -24,14 +24,10 @@ varnish v1 -vcl+backend {
 
 	sub vcl_hit {
 		if (obj.grace < 3m) {
-			set obj.grace = 1m;
-		} else {
-			set obj.grace = 2m;
+			return (deliver);
 		}
 		if (obj.ttl < 3m) {
-			set obj.ttl = 2m;
-		} else {
-			set obj.ttl = 3m;
+			return (deliver);
 		}
 	}
 

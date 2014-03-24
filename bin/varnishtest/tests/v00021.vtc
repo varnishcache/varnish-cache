@@ -1,11 +1,11 @@
 varnishtest "VCL compiler coverage test: vcc_xref.c"
 
-varnish v1 -errvcl {'obj.ttl': cannot be set in method 'vcl_recv'.} {
+varnish v1 -errvcl {Variable 'obj.ttl' is read only.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv { set obj.ttl = 1 w; }
 }
 
-varnish v1 -errvcl {'obj.ttl': cannot be set from method 'foo'.} {
+varnish v1 -errvcl {Variable 'obj.ttl' is read only.} {
 	backend b { .host = "127.0.0.1"; }
 
 	sub foo { set obj.ttl = 1 w; }

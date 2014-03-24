@@ -436,23 +436,21 @@ VRT_r_bereq_retries(const struct vrt_ctx *ctx)
  * keep are relative to ttl.
  */
 
-#define VRT_DO_EXP(which, sexp, fld, offset, now, extra)	\
+#define VRT_DO_EXP_L(which, sexp, fld)				\
 								\
 void								\
 VRT_l_##which##_##fld(const struct vrt_ctx *ctx, double a)	\
 {								\
-	double dt;						\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-	if (a > 0.0)						\
-		sexp.fld = a + offset;				\
-	else							\
-		sexp.fld = 0;					\
-	extra;							\
-	dt = now - sexp.t_origin;				\
-	VSLb(ctx->vsl, SLT_TTL, "VCL %.0f %.0f %.0f %.0f %.0f",	\
-	    sexp.ttl - dt, sexp.grace, sexp.keep, now, dt);	\
-}								\
+	if (a < 0.0)						\
+		a = 0.0;					\
+	sexp.fld = a;						\
+	VSLb(ctx->vsl, SLT_TTL, "VCL %.0f %.0f %.0f %.0f",	\
+	    sexp.ttl, sexp.grace, sexp.keep, sexp.t_origin);	\
+}
+
+#define VRT_DO_EXP_R(which, sexp, fld, offset)			\
 								\
 double								\
 VRT_r_##which##_##fld(const struct vrt_ctx *ctx)		\
@@ -464,17 +462,17 @@ VRT_r_##which##_##fld(const struct vrt_ctx *ctx)		\
 	return(0.0);						\
 }
 
-VRT_DO_EXP(obj, ctx->req->obj->exp, grace, 0, ctx->req->t_req,
-   EXP_Rearm(ctx->req->obj, ctx->req->t_req, NAN, NAN, NAN);)
-VRT_DO_EXP(obj, ctx->req->obj->exp, ttl,
-   (ctx->req->t_req - ctx->req->obj->exp.t_origin), ctx->req->t_req,
-   EXP_Rearm(ctx->req->obj, ctx->req->t_req, NAN, NAN, NAN);)
-VRT_DO_EXP(obj, ctx->req->obj->exp, keep, 0, ctx->req->t_req,
-   EXP_Rearm(ctx->req->obj, ctx->req->t_req, NAN, NAN, NAN);)
+VRT_DO_EXP_R(obj, ctx->req->obj->exp, ttl,
+   (ctx->req->t_req - ctx->req->obj->exp.t_origin))
+VRT_DO_EXP_R(obj, ctx->req->obj->exp, grace, 0)
+VRT_DO_EXP_R(obj, ctx->req->obj->exp, keep, 0)
 
-VRT_DO_EXP(beresp, ctx->bo->exp, grace, 0, ctx->bo->exp.t_origin,)
-VRT_DO_EXP(beresp, ctx->bo->exp, ttl, 0, ctx->bo->exp.t_origin,)
-VRT_DO_EXP(beresp, ctx->bo->exp, keep, 0, ctx->bo->exp.t_origin,)
+VRT_DO_EXP_L(beresp, ctx->bo->exp, ttl)
+VRT_DO_EXP_R(beresp, ctx->bo->exp, ttl, 0)
+VRT_DO_EXP_L(beresp, ctx->bo->exp, grace)
+VRT_DO_EXP_R(beresp, ctx->bo->exp, grace, 0)
+VRT_DO_EXP_L(beresp, ctx->bo->exp, keep)
+VRT_DO_EXP_R(beresp, ctx->bo->exp, keep, 0)
 
 /*--------------------------------------------------------------------
  * [be]req.xid

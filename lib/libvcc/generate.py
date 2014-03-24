@@ -528,7 +528,7 @@ sp_variables = [
 	('obj.ttl',
 		'DURATION',
 		( 'hit', ),
-		( 'hit', ), """
+		( ), """
 		The object's remaining time to live, in seconds.
 		obj.ttl is writable.
 		"""
@@ -536,14 +536,14 @@ sp_variables = [
 	('obj.grace',
 		'DURATION',
 		( 'hit', ),
-		( 'hit', ), """
+		( ), """
 		The object's grace period in seconds. obj.grace is writable.
 		"""
 	),
 	('obj.keep',
 		'DURATION',
 		( 'hit', ),
-		( 'hit', ), """
+		( ), """
 		"""
 	),
 	('obj.uncacheable',
