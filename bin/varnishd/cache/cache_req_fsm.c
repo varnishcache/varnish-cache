@@ -153,6 +153,9 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	V1D_Deliver(req);
 
+	if (http_HdrIs(req->resp, H_Connection, "close"))
+		req->doclose = SC_RESP_CLOSE;
+
 	if (req->obj->objcore->flags & OC_F_PASS) {
 		/*
 		 * No point in saving the body if it is hit-for-pass,
@@ -185,7 +188,7 @@ DOT }
  */
 
 static enum req_fsm_nxt
-cnt_error(struct worker *wrk, struct req *req)
+cnt_synth(struct worker *wrk, struct req *req)
 {
 	char date[40];
 	struct http *h;
@@ -234,6 +237,9 @@ cnt_error(struct worker *wrk, struct req *req)
 	}
 	assert(wrk->handling == VCL_RET_DELIVER);
 
+	if (http_HdrIs(req->resp, H_Connection, "close"))
+		req->doclose = SC_RESP_CLOSE;
+
 	V1D_Deliver_Synth(req);
 
 	VSB_delete(req->synth_body);
@@ -272,7 +278,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 
 	if (req->objcore->flags & OC_F_FAILED) {
 		req->err_code = 503;
-		req->req_step = R_STP_ERROR;
+		req->req_step = R_STP_SYNTH;
 		(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
 		req->objcore = NULL;
 		return (REQ_FSM_MORE);
@@ -422,7 +428,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_RESTART;
 		break;
 	case VCL_RET_SYNTH:
-		req->req_step = R_STP_ERROR;
+		req->req_step = R_STP_SYNTH;
 		break;
 	case VCL_RET_PASS:
 		wrk->stats.cache_hit++;
@@ -480,7 +486,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_FETCH;
 		return (REQ_FSM_MORE);
 	case VCL_RET_SYNTH:
-		req->req_step = R_STP_ERROR;
+		req->req_step = R_STP_SYNTH;
 		break;
 	case VCL_RET_RESTART:
 		req->req_step = R_STP_RESTART;
@@ -528,7 +534,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 	VCL_pass_method(req->vcl, wrk, req, NULL, req->http->ws);
 	switch (wrk->handling) {
 	case VCL_RET_SYNTH:
-		req->req_step = R_STP_ERROR;
+		req->req_step = R_STP_SYNTH;
 		break;
 	case VCL_RET_RESTART:
 		req->req_step = R_STP_RESTART;
@@ -620,7 +626,7 @@ cnt_restart(struct worker *wrk, struct req *req)
 	if (++req->restarts >= cache_param->max_restarts) {
 		VSLb(req->vsl, SLT_VCL_Error, "Too many restarts");
 		req->err_code = 503;
-		req->req_step = R_STP_ERROR;
+		req->req_step = R_STP_SYNTH;
 	} else {
 		wid = VXID_Get(&wrk->vxid_pool);
 		// XXX: ReqEnd + ReqAcct ?
@@ -676,7 +682,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 	http_VSL_log(req->http);
 
 	if (req->err_code) {
-		req->req_step = R_STP_ERROR;
+		req->req_step = R_STP_SYNTH;
 		return (REQ_FSM_MORE);
 	}
 
@@ -755,7 +761,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_PASS;
 		return (REQ_FSM_MORE);
 	case VCL_RET_SYNTH:
-		req->req_step = R_STP_ERROR;
+		req->req_step = R_STP_SYNTH;
 		return (REQ_FSM_MORE);
 	default:
 		WRONG("Illegal return from vcl_recv{}");
@@ -795,7 +801,7 @@ cnt_purge(struct worker *wrk, struct req *req)
 	AZ(HSH_DerefObjCore(&wrk->stats, &boc));
 
 	VCL_purge_method(req->vcl, wrk, req, NULL, req->http->ws);
-	req->req_step = R_STP_ERROR;
+	req->req_step = R_STP_SYNTH;
 	return (REQ_FSM_MORE);
 }
 

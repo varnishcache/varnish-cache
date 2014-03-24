@@ -39,6 +39,7 @@ SESS_CLOSE(RX_TIMEOUT,	"Receive timeout")
 SESS_CLOSE(TX_PIPE,	"Piped transaction")
 SESS_CLOSE(TX_ERROR,	"Error transaction")
 SESS_CLOSE(TX_EOF,	"EOF transmission")
+SESS_CLOSE(RESP_CLOSE,	"Backend/VCL requested close")
 SESS_CLOSE(OVERLOAD,	"Out of some resource")
 SESS_CLOSE(SESS_PIPE_OVERFLOW,	"Session pipe overflow")
 
