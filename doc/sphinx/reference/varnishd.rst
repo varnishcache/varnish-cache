@@ -255,7 +255,7 @@ HISTORY
 =======
 
 The varnishd daemon was developed by Poul-Henning Kamp in cooperation
-with Verdens Gang AS, Varnish Software AS and Varnish Software.
+with Verdens Gang AS and Varnish Software.
 
 This manual page was written by Dag-Erling Smørgrav with updates by
 Stig Sandbeck Mathisen <ssm@debian.org>.
