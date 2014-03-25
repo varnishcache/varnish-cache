@@ -188,7 +188,9 @@ syntax: persistent,path,size
 
 Persistent storage. Varnish will store objects in a file in a manner
 that will secure the survival of *most* of the objects in the event of
-a planned or unplanned shutdown of Varnish.
+a planned or unplanned shutdown of Varnish. The persistent storage
+backend has multiple issues with it and will likely be removed from a
+future version of Varnish.
 
 
 Management Interface
