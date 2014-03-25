@@ -22,175 +22,150 @@ client c1 {
 # Test 'eq' operator
 logexpect l1 -d 1 -g vxid -q "Begin eq 'req 1000 rxreq'" {
 	expect 0 *	Begin	req
-	expect * =	ReqEnd
 	expect * =	End
 } -run
 
 # Test 'ne' operator
 logexpect l1 -d 1 -g vxid -q "ReqProtocol ne 'HTTP/1.0'" {
 	expect 0 *	Begin	req
-	expect * =	ReqEnd
 	expect * =	End
 } -run
 
 # Test '==' operator on integers
 logexpect l1 -d 1 -g vxid -q "RespStatus == 200" {
 	expect 0 *	Begin	req
-	expect * =	ReqEnd
 	expect * =	End
 } -run
 
 # Test '==' operator on floats
 logexpect l1 -d 1 -g vxid -q "RespStatus == 200." {
 	expect 0 *	Begin	req
-	expect * =	ReqEnd
 	expect * =	End
 } -run
 
 # Test '!=' operator on integers
 logexpect l1 -d 1 -g vxid -q "RespStatus != 503" {
 	expect 0 *	Begin	req
-	expect * =	ReqEnd
 	expect * =	End
 } -run
 
 # Test '!=' operator on floats
 logexpect l1 -d 1 -g vxid -q "RespStatus != 503." {
 	expect 0 *	Begin	req
-	expect * =	ReqEnd
 	expect * =	End
 } -run
 
 # Test '<' operator on integers
 logexpect l1 -d 1 -g vxid -q "RespStatus < 201" {
 	expect 0 *	Begin	req
-	expect * =	ReqEnd
 	expect * =	End
 } -run
 
 # Test '<' operator on floats
 logexpect l1 -d 1 -g vxid -q "RespStatus < 201." {
 	expect 0 *	Begin	req
-	expect * =	ReqEnd
 	expect * =	End
 } -run
 
 # Test '>' operator on integers
 logexpect l1 -d 1 -g vxid -q "RespStatus > 199" {
 	expect 0 *	Begin	req
-	expect * =	ReqEnd
 	expect * =	End
 } -run
 
 # Test '>' operator on floats
 logexpect l1 -d 1 -g vxid -q "RespStatus > 199." {
 	expect 0 *	Begin	req
-	expect * =	ReqEnd
 	expect * =	End
 } -run
 
 # Test '<=' operator on integers
 logexpect l1 -d 1 -g vxid -q "RespStatus <= 200" {
 	expect 0 *	Begin	req
-	expect * =	ReqEnd
 	expect * =	End
 } -run
 
 # Test '<=' operator on floats
 logexpect l1 -d 1 -g vxid -q "RespStatus <= 200." {
 	expect 0 *	Begin	req
-	expect * =	ReqEnd
 	expect * =	End
 } -run
 
 # Test '>=' operator on integers
 logexpect l1 -d 1 -g vxid -q "RespStatus >= 200" {
 	expect 0 *	Begin	req
-	expect * =	ReqEnd
 	expect * =	End
 } -run
 
 # Test '>=' operator on floats
 logexpect l1 -d 1 -g vxid -q "RespStatus >= 200." {
 	expect 0 *	Begin	req
-	expect * =	ReqEnd
 	expect * =	End
 } -run
 
 # Test '~' operator
 logexpect l1 -d 1 -g vxid -q "RespStatus ~ '^200$'" {
 	expect 0 *	Begin	req
-	expect * =	ReqEnd
 	expect * =	End
 } -run
 
 # Test '!~' operator
 logexpect l1 -d 1 -g vxid -q "RespStatus !~ '^404$'" {
 	expect 0 *	Begin	req
-	expect * =	ReqEnd
 	expect * =	End
 } -run
 
 # Test boolean and
 logexpect l1 -d 1 -g vxid -q "RespStatus == 200 and RespStatus ~ '^200$'" {
 	expect 0 *	Begin	req
-	expect * =	ReqEnd
 	expect * =	End
 } -run
 
 # Test boolean or
 logexpect l1 -d 1 -g vxid -q "RespStatus == 404 or RespStatus ~ '^200$'" {
 	expect 0 *	Begin	req
-	expect * =	ReqEnd
 	expect * =	End
 } -run
 
 # Test boolean not
 logexpect l1 -d 1 -g vxid -q "RespStatus == 404 or not RespStatus ~ '^404$'" {
 	expect 0 *	Begin	req
-	expect * =	ReqEnd
 	expect * =	End
 } -run
 
 # Test grouping
 logexpect l1 -d 1 -g vxid -q "(RespStatus == 200 or RespStatus == 404) and RespStatus == 200" {
 	expect 0 *	Begin	req
-	expect * =	ReqEnd
 	expect * =	End
 } -run
 
 # Test and/or precedence
 logexpect l1 -d 1 -g vxid -q "RespStatus == 200 or RespStatus == 503 and RespStatus == 404" {
 	  expect 0 *	Begin	req
-	  expect * =	ReqEnd
 	  expect * =	End
 } -run
 
 # Test field
 logexpect l1 -d 1 -g vxid -q "RespHeader[2] == 123" {
 	  expect 0 *	Begin	req
-	  expect * =	ReqEnd
 	  expect * =	End
 } -run
 
 # Test taglists
 logexpect l1 -d 1 -g vxid -q "Debug,Resp* == 200" {
 	  expect 0 *	Begin	req
-	  expect * =	ReqEnd
 	  expect * =	End
 } -run
 
 # Test record prefix
 logexpect l1 -d 1 -g vxid -q "Resp*:x-test eq '123 321'" {
 	  expect 0 *	Begin	req
-	  expect * =	ReqEnd
 	  expect * =	End
 } -run
 
 # Test tag presence (no operator)
 logexpect l1 -d 1 -g vxid -q "RespStatus" {
 	  expect 0 *	Begin	req
-	  expect * =	ReqEnd
 	  expect * =	End
 } -run
 
