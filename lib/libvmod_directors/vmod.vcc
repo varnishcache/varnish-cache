@@ -141,9 +141,13 @@ Example
 $Method VOID .add_backend(BACKEND, REAL)
 
 Description
-       Adds a backend to the director.
+	Adds a backend to the director with a certain weight.
+
+	Weight is used as in the round_robin director. Recommended value is
+	1.0 unless you have special needs.
+
 Example
-       hdir.add_backend(backend1);
+       hdir.add_backend(backend1, 1.0);
 
 $Method BACKEND .backend(STRING_LIST)
 
