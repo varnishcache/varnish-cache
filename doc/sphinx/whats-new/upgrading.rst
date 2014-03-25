@@ -21,9 +21,26 @@ vcl_fetch is now vcl_backend_response
 Directors have been moved to the vmod_directors
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+To make directors (backend selection logic) easier to extend, the directors
+are now defined in loadable VMODs.
+
+Setting a backend for future fetches in `vcl_recv` is now done as follows::
+
+    sub vcl_init {
+        new cluster1 = directors.round_robin();
+        cluster1.add_backend(b1, 1.0);
+        cluster1.add_backend(b2, 1.0);
+    }
+    sub vcl_recv {
+        set req.backend_hint = cluster1.backend();
+    }
+
+Note the extra `.backend()` needed after the director name.
+
 Use the hash director as a client director
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Since the client director was already a special case of the hash director, it has been removed, and you should use the hash director directly::
+Since the client director was already a special case of the hash director, it
+has been removed, and you should use the hash director directly::
 
     sub vcl_init {
         new h = directors.hash();
@@ -101,6 +118,11 @@ called the builtin VCL. (previously default.vcl)
 The builtin VCL now honors Cache-Control: no-cache (and friends) to indicate
 uncacheable content from the backend.
 
+
+The `remove` keyword is gone
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Replaced by `unset`.
 
 Changes to parameters
 =====================
