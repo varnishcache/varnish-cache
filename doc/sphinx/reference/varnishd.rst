@@ -12,17 +12,19 @@ HTTP accelerator daemon
 SYNOPSIS
 ========
 
-varnishd [-a address[:port]] [-b host[:port]] [-d] [-F] [-f config]
-	 [-g group] [-h type[,options]] [-i identity]
-	 [-l shmlogsize] [-n name] [-P file] [-p param=value]
-	 [-s type[,options]] [-T address[:port]] [-t ttl]
-	 [-r param[,param...]] [-u user] [-V]
+varnishd [-a address[:port]] [-b host[:port]] [-C] [-d] [-f config]
+	 [-F] [-g group] [-h type[,options]] [-i identity]
+	 [-l shl[,free[,fill]]] [-M address:port] [-n name] 
+         [-P file] [-p param=value] [-r param[,param...]
+	 [-s [name=]kind[,options]] [-S secret-file] [-T address[:port]] 
+         [-t ttl] [-u user] [-V]
 
 DESCRIPTION
 ===========
 
-The varnishd daemon accepts HTTP requests from clients, passes them on to a backend server and caches the
-returned documents to better satisfy future requests for the same document.
+The varnishd daemon accepts HTTP requests from clients, passes them on
+to a backend server and caches the returned documents to better
+satisfy future requests for the same document.
 
 .. _ref-varnishd-options:
 
@@ -30,33 +32,39 @@ OPTIONS
 =======
 
 -a address[:port][,address[:port][...]
-            Listen for client requests on the specified address and port.  The address can be a host
-            name (“localhost”), an IPv4 dotted-quad (“127.0.0.1”), or an IPv6 address enclosed in
-            square brackets (“[::1]”).  If address is not specified, varnishd will listen on all
-            available IPv4 and IPv6 interfaces.  If port is not specified, the default HTTP port as
-            listed in /etc/services is used.  Multiple listening addresses and ports can be
-            specified as a whitespace or comma -separated list.
+            Listen for client requests on the specified address and
+            port.  The address can be a host name (“localhost”), an
+            IPv4 dotted-quad (“127.0.0.1”), or an IPv6 address
+            enclosed in square brackets (“[::1]”).  If address is not
+            specified, varnishd will listen on all available IPv4 and
+            IPv6 interfaces.  If port is not specified, the default
+            HTTP port as listed in /etc/services is used.  Multiple
+            listening addresses and ports can be specified as a
+            whitespace or comma -separated list.
 
 -b host[:port]
-            Use the specified host as backend server.  If port is not specified,
-	        the default is 8080.
+            Use the specified host as backend server.  If port is not
+	    specified, the default is 8080.
 
--C	        Print VCL code compiled to C language and exit. Specify the VCL file
-	        to compile with the -f option.
+-C	    Print VCL code compiled to C language and exit. Specify the VCL file
+	    to compile with the -f option.
 
--d          Enables debugging mode: The parent process runs in the foreground with a CLI connection
-            on stdin/stdout, and the child process must be started explicitly with a CLI command.
-            Terminating the parent process will also terminate the child.
-
--F          Run in the foreground.
+-d          Enables debugging mode: The parent process runs in the foreground
+            with a CLI connection on stdin/stdout, and the child
+            process must be started explicitly with a CLI command.
+            Terminating the parent process will also terminate the
+            child.
 
 -f config   Use the specified VCL configuration file instead of the
             builtin default.  See vcl(7) for details on VCL
             syntax. When no configuration is supplied varnishd will
             not start the cache process.
 
--g group    Specifies the name of an unprivileged group to which the child process should switch
-            before it starts accepting connections.  This is a shortcut for specifying the group
+-F          Run in the foreground.
+
+-g group    Specifies the name of an unprivileged group to which the
+            child process should switch before it starts accepting
+            connections.  This is a shortcut for specifying the group
             run-time parameter.
 
 -h type[,options]
@@ -66,14 +74,25 @@ OPTIONS
             Specify the identity of the Varnish server.  This can be accessed using server.identity
             from VCL
 
--l shmlogsize
-            Specify size of shmlog file.  Scaling suffixes like 'k', 'm' can be used up to
-            (e)tabytes.  Default is 80 Megabytes.  Specifying less than 8 Megabytes is unwise.
+-l shl[,free[,fill]]
+            Specifies size of shmlog file. shl is the store for the
+            shared memory log records [80m], free is the store for other
+            allocations [1m] and fill determines how the log is [+].
+            Scaling suffixes like 'k', 'm' can be used up to
+            (e)tabytes.  Default is 80 Megabytes.
 
--n name     Specify a name for this instance.  Amonst other things, this name is used to construct
-            the name of the directory in which varnishd keeps temporary files and persistent state.
-            If the specified name begins with a forward slash, it is interpreted as the absolute
-            path to the directory which should be used for this purpose.
+-M address:port
+            Connect to this port and offer the command line interface.
+            Think of it as a reverse shell. When running with -M and there is
+            no backend defined the child process (the cache) will not start
+            initially.
+
+-n name     Specify the name for this instance.  Amonst other things, this
+            name is used to construct the name of the directory in
+            which varnishd keeps temporary files and persistent state.
+            If the specified name begins with a forward slash, it is
+            interpreted as the absolute path to the directory which
+            should be used for this purpose.
 
 -P file     Write the process's PID to the specified file.
 
@@ -82,7 +101,13 @@ OPTIONS
             Run-Time Parameters for a list of parameters. This option can be
             used multiple times to specify multiple parameters.
 
--S file     Path to a file containing a secret used for authorizing access to the management port.
+-r param[,param...]
+            Make the listed parameters read only. This gives the
+            system administrator a way to limit what the Varnish CLI can do.
+            Consider making parameters such as *user*, *group*, *cc_command*,
+            *vcc_allow_inline_c* read only as these can potentially be used
+            to escalate privileges from the CLI.
+            Protecting *listen_address* may also be a good idea.
 
 -s [name=]type[,options]
             Use the specified storage backend. The storage backends can be one of the following:
@@ -95,26 +120,14 @@ OPTIONS
             multiple times to specify multiple storage files. Names
             are referenced in logs, vcl, statistics, etc.
 
+-S file     Path to a file containing a secret used for authorizing access to the management port.
+
 -T address[:port]
             Offer a management interface on the specified address and port.  See Management
             Interface for a list of management commands.
 
--M address:port
-            Connect to this port and offer the command line interface.
-            Think of it as a reverse shell. When running with -M and there is
-            no backend defined the child process (the cache) will not start
-            initially.
-
 -t ttl      Specifies a hard minimum time to live for cached documents. This
             is a shortcut for specifying the default_ttl run-time parameter.
-
--r param[,param...]
-            Make the listed parameters read only. This gives the
-            system administrator a way to limit what the Varnish CLI can do.
-            Consider making parameters such as *user*, *group*, *cc_command*,
-            *vcc_allow_inline_c* read only as these can potentially be used
-            to escalate privileges from the CLI.
-            Protecting *listen_address* may also be a good idea.
 
 -u user     Specifies the name of an unprivileged user to which the child
             process should switch before it starts accepting
