@@ -422,17 +422,21 @@ struct objcore {
 	struct objhead		*objhead;
 	struct busyobj		*busyobj;
 	double			timer_when;
-	unsigned		flags;
+
+	uint16_t		flags;
 #define OC_F_BUSY		(1<<1)
 #define OC_F_PASS		(1<<2)
-#define OC_F_OFFLRU		(1<<4)
 #define OC_F_PRIV		(1<<5)		/* Stevedore private flag */
-#define OC_F_DYING		(1<<7)
 #define OC_F_PRIVATE		(1<<8)
 #define OC_F_FAILED		(1<<9)
-#define OC_F_MOVE		(1<<10)
-#define OC_F_INSERT		(1<<11)
-#define OC_F_EXP		(1<<12)
+
+	uint16_t		exp_flags;
+#define OC_EF_OFFLRU		(1<<4)
+#define OC_EF_MOVE		(1<<10)
+#define OC_EF_INSERT		(1<<11)
+#define OC_EF_EXP		(1<<12)
+#define OC_EF_DYING		(1<<7)
+
 	unsigned		timer_idx;
 	VTAILQ_ENTRY(objcore)	list;
 	VTAILQ_ENTRY(objcore)	lru_list;

@@ -111,9 +111,9 @@ exp_mail_it(struct objcore *oc)
 {
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	AN(oc->flags & OC_F_OFFLRU);
+	AN(oc->exp_flags & OC_EF_OFFLRU);
 	Lck_Lock(&exphdl->mtx);
-	if (oc->flags & OC_F_DYING)
+	if (oc->exp_flags & OC_EF_DYING)
 		VTAILQ_INSERT_HEAD(&exphdl->inbox, oc, lru_list);
 	else
 		VTAILQ_INSERT_TAIL(&exphdl->inbox, oc, lru_list);
@@ -135,8 +135,8 @@ EXP_Inject(struct objcore *oc, struct lru *lru, double when)
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	AZ(oc->flags & (OC_F_OFFLRU | OC_F_INSERT | OC_F_MOVE));
-	AZ(oc->flags & OC_F_DYING);
+	AZ(oc->exp_flags & (OC_EF_OFFLRU | OC_EF_INSERT | OC_EF_MOVE));
+	AZ(oc->exp_flags & OC_EF_DYING);
 	// AN(oc->flags & OC_F_BUSY);
 
 	if (lru == NULL)
@@ -145,9 +145,9 @@ EXP_Inject(struct objcore *oc, struct lru *lru, double when)
 
 	Lck_Lock(&lru->mtx);
 	lru->n_objcore++;
-	oc->flags |= OC_F_OFFLRU | OC_F_INSERT | OC_F_EXP;
+	oc->exp_flags |= OC_EF_OFFLRU | OC_EF_INSERT | OC_EF_EXP;
 	if (when < 0)
-		oc->flags |= OC_F_MOVE;
+		oc->exp_flags |= OC_EF_MOVE;
 	else
 		oc->timer_when = when;
 	Lck_Unlock(&lru->mtx);
@@ -205,9 +205,9 @@ EXP_Touch(struct objcore *oc, double now)
 	if (Lck_Trylock(&lru->mtx))
 		return;
 
-	AN(oc->flags & OC_F_EXP);
+	AN(oc->exp_flags & OC_EF_EXP);
 
-	if (!(oc->flags & OC_F_OFFLRU)) {
+	if (!(oc->exp_flags & OC_EF_OFFLRU)) {
 		/* Can only touch it while it's actually on the LRU list */
 		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 		VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
@@ -234,7 +234,7 @@ EXP_Rearm(struct object *o, double now, double ttl, double grace, double keep)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	assert(oc->refcnt > 0);
 
-	AN(oc->flags & OC_F_EXP);
+	AN(oc->exp_flags & OC_EF_EXP);
 
 	if (!isnan(ttl))
 		o->exp.ttl = now + ttl - o->exp.t_origin;
@@ -257,14 +257,14 @@ EXP_Rearm(struct object *o, double now, double ttl, double grace, double keep)
 	Lck_Lock(&lru->mtx);
 
 	if (!isnan(now) && when <= now)
-		oc->flags |= OC_F_DYING;
+		oc->exp_flags |= OC_EF_DYING;
 	else
-		oc->flags |= OC_F_MOVE;
+		oc->exp_flags |= OC_EF_MOVE;
 
-	if (oc->flags & OC_F_OFFLRU) {
+	if (oc->exp_flags & OC_EF_OFFLRU) {
 		oc = NULL;
 	} else {
-		oc->flags |= OC_F_OFFLRU;
+		oc->exp_flags |= OC_EF_OFFLRU;
 		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 	}
 	Lck_Unlock(&lru->mtx);
@@ -294,8 +294,8 @@ EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 		VSLb(bo->vsl, SLT_ExpKill, "LRU_Cand p=%p f=0x%x r=%d",
 		    oc, oc->flags, oc->refcnt);
 
-		AZ(oc->flags & OC_F_OFFLRU);
-		AZ(oc->flags & OC_F_DYING);
+		AZ(oc->exp_flags & OC_EF_OFFLRU);
+		AZ(oc->exp_flags & OC_EF_DYING);
 
 		/*
 		 * It wont release any space if we cannot release the last
@@ -309,7 +309,7 @@ EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 		if (Lck_Trylock(&oh->mtx))
 			continue;
 		if (oc->refcnt == 1) {
-			oc->flags |= OC_F_DYING | OC_F_OFFLRU;
+			oc->exp_flags |= OC_EF_DYING | OC_EF_OFFLRU;
 			oc->refcnt++;
 			VSC_C_main->n_lru_nuked++; // XXX per lru ?
 			VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
@@ -434,20 +434,20 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 
 	/* Evacuate our action-flags, and put it back on the LRU list */
 	Lck_Lock(&lru->mtx);
-	flags = oc->flags;
-	AN(flags & OC_F_OFFLRU);
-	oc->flags &= ~(OC_F_INSERT | OC_F_MOVE);
+	flags = oc->exp_flags;
+	AN(flags & OC_EF_OFFLRU);
+	oc->exp_flags &= ~(OC_EF_INSERT | OC_EF_MOVE);
 	oc->last_lru = now;
-	if (!(flags & OC_F_DYING)) {
+	if (!(flags & OC_EF_DYING)) {
 		VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
-		oc->flags &= ~OC_F_OFFLRU;
+		oc->exp_flags &= ~OC_EF_OFFLRU;
 	}
 	Lck_Unlock(&lru->mtx);
 
-	if (flags & OC_F_DYING) {
+	if (flags & OC_EF_DYING) {
 		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Kill p=%p e=%.9f f=0x%x", oc,
 		    oc->timer_when, oc->flags);
-		if (!(flags & OC_F_INSERT)) {
+		if (!(flags & OC_EF_INSERT)) {
 			assert(oc->timer_idx != BINHEAP_NOIDX);
 			binheap_delete(ep->heap, oc->timer_idx);
 		}
@@ -456,7 +456,7 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 		return;
 	}
 
-	if (flags & OC_F_MOVE) {
+	if (flags & OC_EF_MOVE) {
 		o = oc_getobj(&ep->wrk->stats, oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		oc->timer_when = exp_when(o);
@@ -472,11 +472,11 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 	 * XXX: the next moment and rip them out again.
 	 */
 
-	if (flags & OC_F_INSERT) {
+	if (flags & OC_EF_INSERT) {
 		assert(oc->timer_idx == BINHEAP_NOIDX);
 		binheap_insert(exphdl->heap, oc);
 		assert(oc->timer_idx != BINHEAP_NOIDX);
-	} else if (flags & OC_F_MOVE) {
+	} else if (flags & OC_EF_MOVE) {
 		assert(oc->timer_idx != BINHEAP_NOIDX);
 		binheap_reorder(exphdl->heap, oc->timer_idx);
 		assert(oc->timer_idx != BINHEAP_NOIDX);
@@ -514,11 +514,11 @@ exp_expire(struct exp_priv *ep, double now)
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 	Lck_Lock(&lru->mtx);
 	// AZ(oc->flags & OC_F_BUSY);
-	oc->flags |= OC_F_DYING;
-	if (oc->flags & OC_F_OFFLRU)
+	oc->exp_flags |= OC_EF_DYING;
+	if (oc->exp_flags & OC_EF_OFFLRU)
 		oc = NULL;
 	else {
-		oc->flags |= OC_F_OFFLRU;
+		oc->exp_flags |= OC_EF_OFFLRU;
 		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 	}
 	Lck_Unlock(&lru->mtx);

@@ -100,7 +100,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	assert(req->obj->objcore->refcnt > 0);
 
 	req->t_resp = W_TIM_real(wrk);
-	if (req->obj->objcore->flags & OC_F_EXP)
+	if (req->obj->objcore->exp_flags & OC_EF_EXP)
 		EXP_Touch(req->obj->objcore, req->t_resp);
 
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
@@ -399,7 +399,8 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	switch (wrk->handling) {
 	case VCL_RET_DELIVER:
 		if (boc != NULL) {
-			AZ(oc->flags & (OC_F_FAILED|OC_F_DYING|OC_F_PASS));
+			AZ(oc->flags & (OC_F_FAILED|OC_F_PASS));
+			AZ(oc->exp_flags & OC_EF_DYING);
 			AZ(oc->busyobj);
 			VBF_Fetch(wrk, req, boc, o, VBF_BACKGROUND);
 		} else {
