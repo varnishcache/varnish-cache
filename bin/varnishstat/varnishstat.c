@@ -210,6 +210,10 @@ do_list_cb(void *priv, const struct VSC_point * const pt)
 	const struct VSC_section * sec;
 
 	(void)priv;
+
+	if (pt == NULL)
+		return (0);
+
 	sec = pt->section;
 	i = 0;
 	if (strcmp(sec->fantom->type, ""))
