@@ -416,6 +416,20 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->do_gzip && !bo->is_gunzip)
 		bo->do_gzip = 0;
 
+	AN(bo->vbc);
+	est = V1F_Setup_Fetch(bo);
+
+	if (est == 0) {
+		/*
+		 * If the length is known to be zero, it's not gziped.
+		 * A similar issue exists for chunked encoding but we
+		 * don't handle that.  See #1320.
+		 */
+		http_Unset(bo->beresp, H_Content_Encoding);
+		bo->is_gzip = 0;
+		bo->is_gunzip = 1;
+	}
+
 	/* But we can't do both at the same time */
 	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
 
@@ -424,9 +438,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		http_SetHeader(bo->beresp, "Content-Encoding: gzip");
 	else if (bo->do_gunzip)
 		http_Unset(bo->beresp, H_Content_Encoding);
-
-	AN(bo->vbc);
-	est = V1F_Setup_Fetch(bo);
 
 	if (bo->do_gunzip || (bo->is_gzip && bo->do_esi)) {
 		RFC2616_Weaken_Etag(bo->beresp);
