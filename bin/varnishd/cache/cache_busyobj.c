@@ -149,6 +149,8 @@ VBO_GetBusyObj(struct worker *wrk, const struct req *req)
 	VCL_Ref(bo->vcl);
 
 	bo->t_fetch = req->t_req;
+	assert(!isnan(bo->t_fetch) && bo->t_fetch != 0.);
+	bo->t_first = bo->t_prev = NAN;
 
 	return (bo);
 }

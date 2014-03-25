@@ -311,8 +311,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 		VDI_AddHostHeader(bo->bereq, vc);
 
 	(void)VTCP_blocking(vc->fd);	/* XXX: we should timeout instead */
-	WRW_Reserve(wrk, &vc->fd, bo->vsl, bo->t_fetch);
-	bo->t_send = VTIM_mono();
+	WRW_Reserve(wrk, &vc->fd, bo->vsl, bo->t_prev);
 	(void)HTTP1_Write(wrk, hp, 0);	/* XXX: stats ? */
 
 	/* Deal with any message-body the request might (still) have */
@@ -334,13 +333,14 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	if (WRW_FlushRelease(wrk) || i != 0) {
 		VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s)",
 		    errno, strerror(errno));
+		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
 		VDI_CloseFd(&bo->vbc);
 		/* XXX: other cleanup ? */
 		return (retry);
 	}
+	VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
 
 	VSC_C_main->backend_req++;
-	bo->t_sent = VTIM_mono();
 
 	/* Receive response */
 
@@ -377,7 +377,6 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 			    vc->between_bytes_timeout);
 		}
 	} while (hs != HTTP1_COMPLETE);
-	bo->t_hdr = VTIM_mono();
 
 	hp = bo->beresp;
 

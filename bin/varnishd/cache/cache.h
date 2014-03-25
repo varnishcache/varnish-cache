@@ -569,11 +569,8 @@ struct busyobj {
 	double			between_bytes_timeout;
 
 	/* Timers */
-	double			t_start;
-	double			t_send;
-	double			t_sent;
-	double			t_hdr;
-	double			t_body;
+	double			t_first;	/* First timestamp logged */
+	double			t_prev;		/* Previous timestamp logged */
 
 	const char		*storage_hint;
 	struct director		*director;
@@ -1143,6 +1140,7 @@ void VSLb(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, ...)
 void VSLbt(struct vsl_log *, enum VSL_tag_e tag, txt t);
 void VSLb_ts(struct vsl_log *, const char *event, double first, double *pprev,
     double now);
+
 static inline void
 VSLb_ts_req(struct req *req, const char *event, double now)
 {
@@ -1150,6 +1148,15 @@ VSLb_ts_req(struct req *req, const char *event, double now)
 	if (isnan(req->t_first) || req->t_first == 0.)
 		req->t_first = req->t_prev = now;
 	VSLb_ts(req->vsl, event, req->t_first, &req->t_prev, now);
+}
+
+static inline void
+VSLb_ts_busyobj(struct busyobj *bo, const char *event, double now)
+{
+
+	if (isnan(bo->t_first) || bo->t_first == 0.)
+		bo->t_first = bo->t_prev = now;
+	VSLb_ts(bo->vsl, event, bo->t_first, &bo->t_prev, now);
 }
 
 

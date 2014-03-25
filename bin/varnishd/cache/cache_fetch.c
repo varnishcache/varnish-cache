@@ -226,6 +226,8 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
+	VSLb_ts_busyobj(bo, "Retry", W_TIM_real(wrk));
+
 	// XXX: BereqEnd + BereqAcct ?
 	wid = VXID_Get(&wrk->vxid_pool);
 	VSLb(bo->vsl, SLT_Link, "bereq %u retry", wid);
@@ -234,6 +236,7 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	owid = bo->vsl->wid & VSL_IDENTMASK;
 	bo->vsl->wid = wid | VSL_BACKENDMARKER;
 	VSLb(bo->vsl, SLT_Begin, "bereq %u retry", owid);
+	VSLb_ts_busyobj(bo, "Start", bo->t_prev);
 
 	return (F_STP_STARTFETCH);
 }
@@ -285,9 +288,11 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	 * Do a single retry in that case.
 	 */
 	if (i == 1) {
+		VSLb_ts_busyobj(bo, "Beresp", W_TIM_real(wrk));
 		VSC_C_main->backend_retry++;
 		i = V1F_fetch_hdr(wrk, bo, bo->req);
 	}
+	VSLb_ts_busyobj(bo, "Beresp", W_TIM_real(wrk));
 
 	if (i) {
 		AZ(bo->vbc);
@@ -363,8 +368,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		bo->fetch_objcore->flags |= OC_F_PASS;
 
 	assert(wrk->handling == VCL_RET_DELIVER);
-
-	bo->t_body = VTIM_mono();
 
 	return (do_ims ? F_STP_CONDFETCH : F_STP_FETCH);
 }
@@ -525,6 +528,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		assert(bo->state == BOS_REQ_DONE);
 		HSH_Unbusy(&wrk->stats, obj->objcore);
 	}
+	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
 	VBO_setstate(bo, BOS_FINISHED);
 	return (F_STP_DONE);
 }
@@ -617,6 +621,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	assert(obj->len == al);
 	EXP_Rearm(bo->ims_obj, bo->ims_obj->exp.t_origin, 0, 0, 0);
 	VBO_setstate(bo, BOS_FINISHED);
+	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
 	return (F_STP_DONE);
 }
 
@@ -632,6 +637,8 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	VSLb_ts_busyobj(bo, "Error", W_TIM_real(wrk));
 
 	AN(bo->fetch_objcore->flags & OC_F_BUSY);
 
@@ -720,7 +727,6 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 {
 	struct busyobj *bo;
 	enum fetch_step stp;
-	double t_hdr, t_body;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
@@ -729,11 +735,9 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	THR_SetBusyobj(bo);
 	stp = F_STP_MKBEREQ;
-	bo->t_start = VTIM_real();
-	bo->t_send = NAN;
-	bo->t_sent = NAN;
-	bo->t_hdr = NAN;
-	bo->t_body = NAN;
+	assert(isnan(bo->t_first));
+	assert(isnan(bo->t_prev));
+	VSLb_ts_busyobj(bo, "Start", W_TIM_real(wrk));
 
 	bo->stats = &wrk->stats;
 
@@ -789,14 +793,6 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	if (bo->ims_obj != NULL)
 		(void)HSH_DerefObj(&wrk->stats, &bo->ims_obj);
-
-	t_hdr = bo->t_hdr - bo->t_sent;
-	t_body = bo->t_body - bo->t_hdr;
-	VSLb(bo->vsl, SLT_BereqEnd, "%.9f %.9f %.9f %.9f %.9f %.9f",
-	     bo->t_start,
-	     VTIM_real(),
-	     bo->t_sent - bo->t_send,
-	     t_hdr, t_body, t_hdr + t_body);
 
 	VBO_DerefBusyObj(wrk, &bo);
 	THR_SetBusyobj(NULL);
