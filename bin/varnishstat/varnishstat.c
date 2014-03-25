@@ -273,7 +273,7 @@ main(int argc, char * const *argv)
 {
 	int c;
 	struct VSM_data *vd;
-	int delay = 1, once = 0, xml = 0, json = 0, do_repeat = 0;
+	int delay = 1, once = 0, xml = 0, json = 0, do_repeat = 0, f_list = 0;
 
 	vd = VSM_New();
 
@@ -283,8 +283,8 @@ main(int argc, char * const *argv)
 			once = 1;
 			break;
 		case 'l':
-			list_fields(vd);
-			exit(0);
+			f_list = 1;
+			break;
 		case 'V':
 			VCS_Message("varnishstat");
 			exit(0);
@@ -310,7 +310,7 @@ main(int argc, char * const *argv)
 		fprintf(stderr, "%s\n", VSM_Error(vd));
 		exit(1);
 	}
-	if (!(xml || json || once)) {
+	if (!(xml || json || once || f_list)) {
 		do_curses(vd, delay);
 		exit(0);
 	}
@@ -322,6 +322,8 @@ main(int argc, char * const *argv)
 			do_json(vd);
 		else if (once)
 			do_once(vd, VSC_Main(vd, NULL));
+		else if (f_list)
+			list_fields(vd);
 		else {
 			assert(0);
 		}
