@@ -1002,7 +1002,6 @@ def one_var(nm, spec):
 		if nm == i[0]:
 			fh.write("VCL_" + typ +
 			    " VRT_r_%s(const struct vrt_ctx *);\n" % cnam )
-	print(spec)
 	restrict(fo, spec[2])
 
 	if len(spec[3]) == 0:
