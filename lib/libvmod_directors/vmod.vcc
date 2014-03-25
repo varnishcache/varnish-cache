@@ -81,9 +81,9 @@ Example
 $Object fallback()
 
 Description
-        Creates a fallback director. This director will
+        Creates a fallback director.
 
-	XXX: Add description of fallback director.
+#	XXX: Add description of fallback director.
 
 Example
         new foo = directors.fallback();
