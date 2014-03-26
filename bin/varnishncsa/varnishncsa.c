@@ -779,13 +779,16 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				break;
 			case SLT_Timestamp:
 				if (isprefix(b, "Start:", e, &p)) {
-					frag_fields(p, e, 1, &CTX.frag[F_tstart], 0, NULL);
+					frag_fields(p, e, 1,
+					    &CTX.frag[F_tstart], 0, NULL);
 
 				} else if (isprefix(b, "Resp:", e, &p)) {
-					frag_fields(p, e, 1, &CTX.frag[F_tend], 0, NULL);
+					frag_fields(p, e, 1,
+					    &CTX.frag[F_tend], 0, NULL);
 
 				} else if (isprefix(b, "Process:", e, &p)) {
-					frag_fields(p, e, 2, &CTX.frag[F_ttfb], 0, NULL);
+					frag_fields(p, e, 2,
+					    &CTX.frag[F_ttfb], 0, NULL);
 				}
 				break;
 			case SLT_ReqHeader:
