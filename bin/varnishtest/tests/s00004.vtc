@@ -1,0 +1,65 @@
+varnishtest "Timestamps"
+
+server s1 {
+	rxreq
+	expect req.url == "/1"
+	delay 1
+	txresp -nolen -hdr "Transfer-Encoding: chunked"
+	delay 1
+	chunkedlen 1000
+	chunkedlen 0
+
+	rxreq
+	expect req.url == "/2"
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_stream = false;
+	}
+	sub vcl_deliver {
+		if (req.url == "/1" && req.restarts == 0) {
+			return (restart);
+		}
+	}
+} -start
+
+logexpect l1 -v v1 -g request {
+	expect 0 1001	Begin		req
+	expect * =	Timestamp	{Start: \S+ 0\.000000 0\.000000}
+	expect * =	Timestamp	{Req: \S+ 0\.\d+ 0\.\d+}
+	expect * =	Timestamp	{Fetch: \S+ 2\.\d+ 2\.\d+}
+	expect * =	Timestamp	{Process: \S+ 2\.\d+ 0\.\d+}
+	expect * =	Timestamp	{Restart: \S+ 2\.\d+ 0\.\d+}
+	expect * =	End
+	expect 0 1002	Begin		bereq
+	expect * =	Timestamp	{Start: \S+ 0\.000000 0\.000000}
+	expect * =	Timestamp	{Bereq: \S+ 0\.\d+ 0\.\d+}
+	expect * =	Timestamp	{Beresp: \S+ 1\.\d+ 1\.\d+}
+	expect * =	Timestamp	{BerespBody: \S+ 2\.\d+ 1\.\d+}
+	expect * =	End
+	expect 0 1003	Begin		req 1001 restart
+	expect * =	Timestamp	{Start: \S+ 2\.\d+ 0\.\d+}
+	expect * =	Timestamp	{Process: \S+ 2\.\d+ 0\.\d+}
+	expect * =	Timestamp	{Resp: \S+ 2\.\d+ 0\.\d+}
+	expect * =	End
+
+	expect 0 1004	Begin		req
+	expect * =	Timestamp	{Start: \S+ 0\.000000 0\.000000}
+	expect * =	Timestamp	{Req: \S+ 0\.\d+ 0\.\d+}
+	expect * =	Timestamp	{ReqBody: \S+ 0\.\d+ 0\.\d+}
+	expect * =	Timestamp	{Fetch: \S+ 0\.\d+ 0\.\d+}
+	expect * =	Timestamp	{Resp: \S+ 0\.\d+ 0\.\d+}
+	expect * =	End
+} -start
+
+client c1 {
+	txreq -url "/1"
+	rxresp
+	delay 1
+	txreq -req "POST" -url "/2" -body "asdf"
+	rxresp
+} -run
+
+logexpect l1 -wait
