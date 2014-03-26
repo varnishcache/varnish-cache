@@ -64,7 +64,7 @@ struct parspec mgt_parspec[] = {
 		"The TTL assigned to objects if neither the backend nor "
 		"the VCL code assigns one.",
 		OBJ_STICKY,
-		"20", "seconds" },
+		"120", "seconds" },
 	{ "default_grace", tweak_timeout, &mgt_param.default_grace,
 		"0", NULL,
 		"Default grace period.  We will deliver an object "
