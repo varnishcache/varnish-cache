@@ -1,0 +1,44 @@
+varnishtest "Timestamps from std vmod"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import ${vmod_std};
+
+	sub vcl_init {
+		# Make sure that this doesn't cause ill effects
+		std.timestamp("bogus");
+	}
+
+	sub vcl_recv {
+		std.timestamp("vcl_recv");
+	}
+
+	sub vcl_backend_fetch {
+		std.timestamp("vcl_backend_fetch");
+	}
+} -start
+
+logexpect l1 -v v1 -g request {
+	expect 0 1001	Begin		req
+	expect * =	Timestamp	Start:
+	expect * =	Timestamp	{vcl_recv: \S+ 0\.\d+ 0\.\d+}
+	expect * =	Timestamp	Resp:
+	expect * =	End
+	expect 0 1002	Begin		bereq
+	expect * =	Timestamp	Start:
+	expect * =	Timestamp	{vcl_backend_fetch: \S+ 0\.\d+ 0\.\d+}
+	expect * =	Timestamp	BerespBody:
+	expect * =	End
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+logexpect l1 -wait

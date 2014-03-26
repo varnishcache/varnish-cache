@@ -145,6 +145,15 @@ $Function INT port(IP)
 Description
 	Returns the port number of an IP address.
 
+$Function VOID timestamp(STRING)
+
+Description
+	Introduces a timestamp in the log with the current time. Uses
+	the argument as the timespamp label. This is useful to time
+	the execution of lengthy VCL procedures, and makes the
+	timestamps inserted automatically by Varnish more accurate.
+Example
+	std.timestamp("curl-request");
 
 SEE ALSO
 ========

@@ -41,6 +41,7 @@
 #include "vrt.h"
 #include "vtcp.h"
 #include "vsa.h"
+#include "vtim.h"
 
 #include "cache/cache.h"
 #include "cache/cache_backend.h"
@@ -203,4 +204,24 @@ vmod_port(const struct vrt_ctx *ctx, VCL_IP ip)
 	if (ip == NULL)
 		return (0);
 	return (VSA_Port(ip));
+}
+
+VCL_VOID __match_proto__(td_std_timestamp)
+vmod_timestamp(const struct vrt_ctx *ctx, VCL_STRING label)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (label == NULL)
+		return;
+	if (*label == '\0')
+		return;
+	if (ctx->bo != NULL && ctx->req == NULL) {
+		/* Called from backend vcl methods */
+		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+		VSLb_ts_busyobj(ctx->bo, label, VTIM_real());
+	} else if (ctx->req != NULL) {
+		/* Called from request vcl methdos */
+		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+		VSLb_ts_req(ctx->req, label, VTIM_real());
+	}
 }
