@@ -105,6 +105,7 @@ static int scales[] = {
 struct profile {
 	const char *name;
 	enum VSL_tag_e tag;
+	const char *prefix;
 	int field;
 	int hist_low;
 	int hist_high;
@@ -112,13 +113,15 @@ struct profile {
 profiles[] = {
 	{
 		.name = "responsetime",
-		.tag = SLT_ReqEnd,
-		.field = 5,
+		.tag = SLT_Timestamp,
+		.prefix = "Process:",
+		.field = 3,
 		.hist_low = -6,
 		.hist_high = 3
 	}, {
 		.name = "size",
 		.tag = SLT_Length,
+		.prefix = NULL,
 		.field = 1,
 		.hist_low = 1,
 		.hist_high = 8
@@ -224,6 +227,13 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			default:
 				if (tag != match_tag)
 					break;
+
+				if (active_profile->prefix &&
+				    strncmp(VSL_CDATA(tr->c->rec.ptr),
+					active_profile->prefix,
+					strlen(active_profile->prefix)) != 0)
+					break;
+
 				i = sscanf(VSL_CDATA(tr->c->rec.ptr), format,
 				    &value);
 				if (i != 1)
@@ -362,7 +372,7 @@ main(int argc, char **argv)
 	const char *profile = "responsetime";
 	pthread_t thr;
 	int fnum = -1;
-	struct profile cli_p;
+	struct profile cli_p = {0};
 	cli_p.name = 0;
 
 	VUT_Init(progname);
