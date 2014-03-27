@@ -1,3 +1,63 @@
+
+=====================================
+Changes from 4.0.0 TP2 to 4.0.0 beta1
+=====================================
+
+New since TP2:
+
+- Previous always-appended code called default.vcl is now called builtin.vcl.
+  The new example.vcl is recommended as a starting point for new users.
+- vcl_error is now called vcl_synth, and does not any more mandate closing the
+  client connection.
+- New VCL function vcl_backend_error, where you can change the 503 prepared if
+  all your backends are failing. This can then be cached as a regular object.
+- Keyword "remove" in VCL is replaced by "unset".
+- new timestamp and accounting records in varnishlog.
+- std.timestamp() is introduced.
+- stored objects are now read only, meaning obj.hits now counts per objecthead
+  instead. obj.lastuse saw little use and has been removed.
+- builtin VCL now does return(pipe) for chunked POST and PUT requests.
+- python-docutils and rst2man are now build requirements.
+- cli_timeout is now 60 seconds to avoid slaughtering the child process in
+  times of high IO load/scheduling latency.
+- return(purge) from vcl_recv is now valid.
+- return(hash) is now the default return action from vcl_recv.
+- req.backend is now req.backend_hint. beresp.storage is beresp.storage_hint.
+
+
+Bugs fixed
+----------
+
+* 1460_ - tools now use the new timestamp format.
+* 1450_ - varnishstat -l segmentation fault.
+* 1320_ - Work around Content-Length: 0 and Content-Encoding: gzip gracefully.
+* 1458_ - Panic on busy object.
+* 1417_ - Handle return(abandon) in vcl_backend_response.
+* 1455_ - vcl_pipe now sets Connection: close by default on backend requests.
+* 1454_ - X-Forwarded-For is now done in C, before vcl_recv is run.
+* 1436_ - Better explanation when missing an import in VCL.
+* 1440_ - Serve ESI-includes from a different backend.
+* 1441_ - Incorrect grouping when logging ESI subrequests.
+* 1434_ - std.duration can now do ms/milliseconds.
+* 1419_ - Don't put objcores on the ban list until they go non-BUSY.
+* 1405_ - Ban lurker does not always evict all objects.
+
+.. _1460: https://www.varnish-cache.org/trac/ticket/1460
+.. _1450: https://www.varnish-cache.org/trac/ticket/1450
+.. _1320: https://www.varnish-cache.org/trac/ticket/1320
+.. _1458: https://www.varnish-cache.org/trac/ticket/1458
+.. _1417: https://www.varnish-cache.org/trac/ticket/1417
+.. _1455: https://www.varnish-cache.org/trac/ticket/1455
+.. _1454: https://www.varnish-cache.org/trac/ticket/1454
+.. _1436: https://www.varnish-cache.org/trac/ticket/1436
+.. _1440: https://www.varnish-cache.org/trac/ticket/1440
+.. _1441: https://www.varnish-cache.org/trac/ticket/1441
+.. _1434: https://www.varnish-cache.org/trac/ticket/1434
+.. _1419: https://www.varnish-cache.org/trac/ticket/1419
+.. _1405: https://www.varnish-cache.org/trac/ticket/1405
+
+
+
 ===================================
 Changes from 4.0.0 TP1 to 4.0.0 TP2
 ===================================

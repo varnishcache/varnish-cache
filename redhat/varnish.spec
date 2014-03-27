@@ -1,11 +1,11 @@
-%define v_rc tp2
+%define v_rc beta1
 %define vd_rc %{?v_rc:-%{?v_rc}}
 %define    _use_internal_dependency_generator 0
 %define __find_provides %{_builddir}/varnish-%{version}%{?v_rc:-%{?v_rc}}/redhat/find-provides
 Summary: High-performance HTTP accelerator
 Name: varnish
 Version: 4.0.0
-Release: 0.20131129%{?v_rc}%{?dist}
+Release: 0.20140328%{?v_rc}%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: http://www.varnish-cache.org/
