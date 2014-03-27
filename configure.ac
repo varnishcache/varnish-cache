@@ -483,7 +483,7 @@ DEVELOPER_CFLAGS=" \
 	-Wchar-subscripts \
 	-Wnested-externs \
 	-Wextra \
-	-Wno-sign-compare
+	-Wno-sign-compare \
 "
 
 # These are not compliable yet
