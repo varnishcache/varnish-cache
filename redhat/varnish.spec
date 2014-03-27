@@ -49,6 +49,7 @@ available on the following web site: http://www.varnish-cache.org/
 Summary: Libraries for %{name}
 Group: System Environment/Libraries
 BuildRequires: ncurses-devel
+Provides: libvarnishapi.so.1
 #Obsoletes: libvarnish1
 
 %description libs
