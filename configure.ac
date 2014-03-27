@@ -483,8 +483,7 @@ DEVELOPER_CFLAGS=" \
 	-Wchar-subscripts \
 	-Wnested-externs \
 	-Wextra \
-	-Wno-sign-compare \
-	-Wno-address \
+	-Wno-sign-compare
 "
 
 # These are not compliable yet
@@ -519,6 +518,10 @@ if test "x$enable_developer_warnings" != "xno"; then
 	# compiler flags not available on gcc3
 	AX_CHECK_COMPILE_FLAG([-Wno-pointer-sign],
 		[DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -Wno-pointer-sign"], [], [])
+	# Not available in gcc 4.1.2
+	AX_CHECK_COMPILE_FLAG([-Wno-address],
+		[DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -Wno-address"])
+
 	# no known way to specifically disabling missing-field-initializers warnings
 	# keeping the rest of Wextra
 	AX_CHECK_COMPILE_FLAG([-Wno-missing-field-initializers],
