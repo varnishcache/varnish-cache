@@ -76,20 +76,20 @@ Build dependencies on Debian / Ubuntu
 In order to build Varnish from source you need a number of packages
 installed. On a Debian or Ubuntu system these are:
 
-* `autotools-dev`
-* `automake1.1`
-* `libtool`
 * `autoconf`
-* `libncurses-dev`
+* `automake1.1`
+* `autotools-dev`
 * `groff-base`
-* `libpcre3-dev`
-* `pkg-config`
 * `make`
 * `libedit-dev`
+* `libncurses-dev`
+* `libpcre3-dev`
+* `libtool`
+* `pkg-config`
+* `python-docutils`
 
 If you're building from git, you also need the following:
 
-* `python-docutils`
 * `python-sphinx` (optional, if you want to build the documentation)
 
 Build dependencies on Red Hat / CentOS
@@ -100,14 +100,17 @@ packages installed:
 
 * `automake`
 * `autoconf`
+* `groff`
+* `libedit-devel`
 * `libtool`
 * `ncurses-devel`
-* `groff`
 * `pcre-devel`
 * `pkgconfig`
-* `libedit-devel`
-* `docutils`
-* `python-sphinx`
+* `python-docutils`
+
+If you're building from git, you also need the following:
+
+* `python-sphinx` (optional, if you want to build the documentation)
 
 Compiling Varnish
 -----------------
