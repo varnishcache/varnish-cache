@@ -16,11 +16,12 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # To build from git, start with a make dist, see redhat/README.redhat 
 # You will need at least automake autoconf libtool
 #BuildRequires: automake autoconf libtool
-BuildRequires: ncurses-devel groff pcre-devel pkgconfig python-docutils libedit-devel
+BuildRequires: ncurses-devel groff pcre-devel pkgconfig python-docutils libedit-devel jemalloc-devel
 Requires: varnish-libs = %{version}-%{release}
 Requires: logrotate
 Requires: ncurses
 Requires: pcre
+Requires: jemalloc
 Requires(pre): shadow-utils
 Requires(post): /sbin/chkconfig, /usr/bin/uuidgen
 Requires(preun): /sbin/chkconfig
