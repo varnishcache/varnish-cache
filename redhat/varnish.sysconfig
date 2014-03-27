@@ -81,15 +81,12 @@ VARNISH_MAX_THREADS=1000
 # # Idle timeout for worker threads
 VARNISH_THREAD_TIMEOUT=120
 #
-# # Cache file location
-VARNISH_STORAGE_FILE=/var/lib/varnish/varnish_storage.bin
-#
 # # Cache file size: in bytes, optionally using k / M / G / T suffix,
 # # or in percentage of available disk space using the % suffix.
-VARNISH_STORAGE_SIZE=1G
+VARNISH_STORAGE_SIZE=256M
 #
 # # Backend storage specification
-VARNISH_STORAGE="file,${VARNISH_STORAGE_FILE},${VARNISH_STORAGE_SIZE}"
+VARNISH_STORAGE="malloc,${VARNISH_STORAGE_SIZE}"
 #
 # # Default TTL used when the backend does not specify one
 VARNISH_TTL=120
