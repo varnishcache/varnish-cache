@@ -276,7 +276,7 @@ format_time(const struct format *format)
 
 	switch (format->time_type) {
 	case 'D':
-		AZ(VSB_printf(CTX.vsb, "%f", t_end - t_start));
+		AZ(VSB_printf(CTX.vsb, "%f", (t_end - t_start) * 1e6));
 		break;
 	case 't':
 		AN(format->time_fmt);
