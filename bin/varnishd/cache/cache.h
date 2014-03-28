@@ -234,12 +234,6 @@ struct acct {
 #undef ACCT
 };
 
-struct acct_bit {
-#define ACCT(foo)	unsigned int	foo : 1;
-#include "tbl/acct_fields.h"
-#undef ACCT
-};
-
 /*--------------------------------------------------------------------*/
 
 #define L0(t, n)
@@ -747,8 +741,6 @@ struct sess {
 	int			fd;
 	enum sess_close		reason;
 	uint32_t		vxid;
-
-	struct acct_bit		acct_bit;
 
 	/* Cross references ------------------------------------------*/
 

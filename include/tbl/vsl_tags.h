@@ -102,16 +102,10 @@ SLTM(SessOpen, 0, "Client connection opened",
 SLTM(SessClose, 0, "Client connection closed",
 	"SessionClose is the last record for any client connection.\n\n"
 	"The format is::\n\n"
-	"\t%s %f %u %u %u %u %u %u\n"
-	"\t|  |  |  |  |  |  |  |\n"
-	"\t|  |  |  |  |  |  |  +- Bool: Body bytes were sent\n"
-	"\t|  |  |  |  |  |  +---- Bool: Resp.Header bytes sent\n"
-	"\t|  |  |  |  |  +------- Bool: Backend fetches initiated\n"
-	"\t|  |  |  |  +---------- Bool: 'pass' used\n"
-	"\t|  |  |  +------------- Bool: 'pipe' used\n"
-	"\t|  |  +---------------- Bool: good requests completed\n"
-	"\t|  +------------------- How long the session was open\n"
-	"\t+---------------------- Why the connection closed\n"
+	"\t%s %f\n"
+	"\t|  |\n"
+	"\t|  +- How long the session was open\n"
+	"\t+---- Why the connection closed\n"
 	"\n"
 )
 
