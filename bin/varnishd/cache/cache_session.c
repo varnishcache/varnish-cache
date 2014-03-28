@@ -62,31 +62,6 @@ struct sesspool {
 };
 
 /*--------------------------------------------------------------------
- * Charge statistics from worker to request and session.
- */
-
-void
-SES_Charge(struct worker *wrk, struct req *req)
-{
-	struct sess *sp;
-	struct acct *a;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	sp = req->sp;
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-
-	a = &req->acct_req;
-	req->resp_bodybytes += a->bodybytes;
-
-#define ACCT(foo)				\
-	wrk->stats.s_##foo += a->foo;		\
-	a->foo = 0;
-#include "tbl/acct_fields.h"
-#undef ACCT
-}
-
-/*--------------------------------------------------------------------
  * Get a new session, preferably by recycling an already ready one
  *
  * Layout is:
@@ -395,6 +370,9 @@ SES_GetReq(struct worker *wrk, struct sess *sp)
 
 	WS_Init(req->ws, "req", p, e - p);
 
+	req->req_bodybytes = 0;
+	req->resp_hdrbytes = 0;
+
 	req->t_first = NAN;
 	req->t_prev = NAN;
 	req->t_req = NAN;
@@ -411,10 +389,14 @@ SES_ReleaseReq(struct req *req)
 	struct sesspool *pp;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	AZ(req->vcl);
-#define ACCT(foo)	AZ(req->acct_req.foo);
-#include "tbl/acct_fields.h"
+
+	/* Make sure the request counters have all been zeroed */
+#define ACCT(foo) \
+	AZ(req->acct.foo);
+#include "tbl/acct_fields_req.h"
 #undef ACCT
+
+	AZ(req->vcl);
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	pp = sp->sesspool;

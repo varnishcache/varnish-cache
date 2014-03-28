@@ -200,7 +200,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	req->acct_req.synth++;
+	wrk->stats.s_synth++;
 
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
 	h = req->resp;
@@ -281,7 +281,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	AZ(req->obj);
 
-	req->acct_req.fetch++;
+	wrk->stats.s_fetch++;
 	(void)HTTP1_DiscardReqBody(req);
 
 	if (req->objcore->flags & OC_F_FAILED) {
@@ -554,7 +554,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_RESTART;
 		break;
 	case VCL_RET_FETCH:
-		req->acct_req.pass++;
+		wrk->stats.s_pass++;
 		req->objcore = HSH_Private(wrk);
 		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 		VBF_Fetch(wrk, req, req->objcore, NULL, VBF_PASS);
@@ -593,7 +593,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 
-	req->acct_req.pipe++;
+	wrk->stats.s_pipe++;
 	bo = VBO_GetBusyObj(wrk, req);
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, SLT_BereqMethod);
 	http_FilterReq(bo->bereq, req->http, 0);	// XXX: 0 ?
@@ -897,31 +897,41 @@ CNT_Request(struct worker *wrk, struct req *req)
 	}
 	if (nxt == REQ_FSM_DONE) {
 		/* XXX: Workaround for pipe */
-		if (req->sp->fd >= 0) {
-			VSLb(req->vsl, SLT_Length, "%ju",
-			    (uintmax_t)req->resp_bodybytes);
-		}
 
 		while (!VTAILQ_EMPTY(&req->body)) {
 			st = VTAILQ_FIRST(&req->body);
 			VTAILQ_REMOVE(&req->body, st, list);
 			STV_free(st);
 		}
-
-		/* done == 2 was charged by cache_hash.c */
-		SES_Charge(wrk, req);
-
-		/*
-		 * Nuke the VXID, cache_http1_fsm.c::http1_dissect() will
-		 * allocate a new one when necessary.
-		 */
-		VSLb(req->vsl, SLT_End, "%s", "");
-		req->vsl->wid = 0;
-		req->wrk = NULL;
 	}
-
+	req->wrk = NULL;
 	assert(WRW_IsReleased(wrk));
 	return (nxt);
+}
+
+void
+CNT_AcctLogCharge(struct dstat *ds, struct req *req)
+{
+	struct acct_req *a;
+
+	AN(ds);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	a = &req->acct;
+
+	VSLb(req->vsl, SLT_ReqAcct, "%ju %ju %ju %ju %ju %ju",
+	    (uintmax_t)a->req_hdrbytes,
+	    (uintmax_t)a->req_bodybytes,
+	    (uintmax_t)(a->req_hdrbytes + a->req_bodybytes),
+	    (uintmax_t)a->resp_hdrbytes,
+	    (uintmax_t)a->resp_bodybytes,
+	    (uintmax_t)(a->resp_hdrbytes + a->resp_bodybytes));
+
+#define ACCT(foo)			\
+	ds->s_##foo += a->foo;		\
+	a->foo = 0;
+#include "tbl/acct_fields_req.h"
+#undef ACCT
 }
 
 /*

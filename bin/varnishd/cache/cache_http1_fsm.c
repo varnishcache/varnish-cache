@@ -126,6 +126,7 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 				VSLb_ts_req(req, "Start", now);
 			VSLb_ts_req(req, "Req", now);
 			req->t_req = req->t_prev;
+			req->acct.req_hdrbytes += Tlen(req->htc->rxbuf);
 			return (REQ_FSM_MORE);
 		} else if (hs == HTTP1_ERROR_EOF) {
 			why = SC_REM_CLOSE;
@@ -161,6 +162,8 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			}
 		}
 	}
+	req->acct.req_hdrbytes += Tlen(req->htc->rxbuf);
+	CNT_AcctLogCharge(&wrk->stats, req);
 	SES_ReleaseReq(req);
 	assert(why != SC_NULL);
 	SES_Delete(sp, why, now);
@@ -200,19 +203,27 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 		req->vcl = NULL;
 	}
 
+	/* Charge and log byte counters */
+	AN(req->vsl->wid);
+	CNT_AcctLogCharge(&wrk->stats, req);
+	req->req_bodybytes = 0;
+	req->resp_hdrbytes = 0;
+
+	/* Nuke the VXID. http1_dissect() will allocate a new one when
+	   necessary */
+	VSLb(req->vsl, SLT_End, "%s", "");
+	VSL_Flush(req->vsl, 0);
+	req->vsl->wid = 0;
+
 	if (!isnan(req->t_prev) && req->t_prev > 0.)
 		sp->t_idle = req->t_prev;
 	else
 		sp->t_idle = W_TIM_real(wrk);
-	VSL_Flush(req->vsl, 0);
 
 	req->t_first = NAN;
 	req->t_prev = NAN;
 	req->t_req = NAN;
 	req->req_body_status = REQ_BODY_INIT;
-
-	// req->req_bodybytes = 0;
-	req->resp_bodybytes = 0;
 
 	req->hash_always_miss = 0;
 	req->hash_ignore_busy = 0;
@@ -235,10 +246,17 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	WS_Reset(wrk->aws, NULL);
 
 	if (HTTP1_Reinit(req->htc) == HTTP1_COMPLETE) {
+		AZ(req->vsl->wid);
+		req->vsl->wid = VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER;
+		VSLb(req->vsl, SLT_Begin, "req %u rxreq",
+		    req->sp->vxid & VSL_IDENTMASK);
+		VSL(SLT_Link, req->sp->vxid, "req %u rxreq",
+		    req->vsl->wid & VSL_IDENTMASK);
 		VSLb_ts_req(req, "Start", sp->t_idle);
 		VSLb_ts_req(req, "Req", sp->t_idle);
 		req->t_req = req->t_prev;
 		wrk->stats.sess_pipeline++;
+		req->acct.req_hdrbytes += Tlen(req->htc->rxbuf);
 		return (SESS_DONE_RET_START);
 	} else {
 		if (Tlen(req->htc->rxbuf))
@@ -285,6 +303,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 	const char *r_411 = "HTTP/1.1 411 Length Required\r\n\r\n";
 	const char *r_417 = "HTTP/1.1 417 Expectation Failed\r\n\r\n";
 	char *p;
+	ssize_t r;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -314,7 +333,9 @@ http1_dissect(struct worker *wrk, struct req *req)
 	/* If we could not even parse the request, just close */
 	if (req->err_code != 0) {
 		wrk->stats.client_req_400++;
-		(void)write(req->sp->fd, r_400, strlen(r_400));
+		r = write(req->sp->fd, r_400, strlen(r_400));
+		if (r > 0)
+			req->acct.resp_hdrbytes += r;
 		SES_Close(req->sp, SC_RX_JUNK);
 		return (REQ_FSM_DONE);
 	}
@@ -326,7 +347,9 @@ http1_dissect(struct worker *wrk, struct req *req)
 
 	if (req->req_body_status == REQ_BODY_FAIL) {
 		wrk->stats.client_req_411++;
-		(void)write(req->sp->fd, r_411, strlen(r_411));
+		r = write(req->sp->fd, r_411, strlen(r_411));
+		if (r > 0)
+			req->acct.resp_hdrbytes += r;
 		SES_Close(req->sp, SC_RX_JUNK);
 		return (REQ_FSM_DONE);
 	}
@@ -335,21 +358,25 @@ http1_dissect(struct worker *wrk, struct req *req)
 		if (strcasecmp(p, "100-continue")) {
 			wrk->stats.client_req_417++;
 			req->err_code = 417;
-			(void)write(req->sp->fd, r_417, strlen(r_417));
+			r = write(req->sp->fd, r_417, strlen(r_417));
+			if (r > 0)
+				req->resp_hdrbytes += r;
 			SES_Close(req->sp, SC_RX_JUNK);
 			return (REQ_FSM_DONE);
 		}
-		if (strlen(r_100) != write(req->sp->fd, r_100, strlen(r_100))) {
-			// XXX: stats counter ?
+		r = write(req->sp->fd, r_100, strlen(r_100));
+		if (r > 0)
+			req->acct.resp_hdrbytes += r;
+		if (r != strlen(r_100)) {
 			SES_Close(req->sp, SC_REM_CLOSE);
 			return (REQ_FSM_DONE);
 		}
 	}
 
 	wrk->stats.client_req++;
+	wrk->stats.s_req++;
 
 	AZ(req->err_code);
-	req->acct_req.req++;
 	req->ws_req = WS_Snapshot(req->ws);
 	req->doclose = http_DoConnection(req->http);
 
@@ -475,6 +502,7 @@ http1_iter_req_body(struct req *req, void *buf, ssize_t len)
 	}
 	req->h1.bytes_done += len;
 	req->h1.bytes_yet = req->req_bodybytes - req->h1.bytes_done;
+	req->acct.req_bodybytes += len;
 	return (len);
 }
 

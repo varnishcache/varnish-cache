@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2008 Verdens Gang AS
- * Copyright (c) 2008-2009 Varnish Software AS
+ * Copyright (c) 2008-2014 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -26,15 +26,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * These are the stats we keep track of per session.
- * SES_Charge() sums them into wrk->stats
+ * These are the stats we keep track of per request.
  * NB: Remember to mark those in vsc_fields.h to be included in struct dstat.
  */
 
-ACCT(req)
-ACCT(pipe)
-ACCT(pass)
-ACCT(fetch)
-ACCT(synth)
-ACCT(hdrbytes)
-ACCT(bodybytes)
+ACCT(req_hdrbytes)
+ACCT(req_bodybytes)
+ACCT(resp_hdrbytes)
+ACCT(resp_bodybytes)

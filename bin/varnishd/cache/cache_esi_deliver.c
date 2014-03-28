@@ -55,7 +55,7 @@ ved_include(struct req *preq, const char *src, const char *host)
 	if (preq->esi_level >= cache_param->max_esi_depth)
 		return;
 
-	(void)WRW_FlushRelease(wrk);
+	(void)V1D_FlushReleaseAcct(preq);
 
 	/* Take a workspace snapshot */
 	wrk_ws_wm = WS_Snapshot(wrk->aws); /* XXX ? */
@@ -120,9 +120,17 @@ ved_include(struct req *preq, const char *src, const char *host)
 		AZ(req->wrk);
 		(void)usleep(10000);
 	}
+	AN(WRW_IsReleased(wrk));
 
-	/* Make sure the VSL id has been released */
-	AZ(req->vsl->wid);
+	/* Flush and release the log */
+	AN(req->vsl->wid);
+	VSLb(req->vsl, SLT_End, "%s", "");
+	VSL_Flush(req->vsl, 0);
+	req->vsl->wid = 0;
+
+	/* Charge the transmitted body byte counts to the parent request */
+	preq->acct.resp_bodybytes += req->acct.resp_bodybytes;
+	req->acct.resp_bodybytes = 0;
 
 	/* Reset the workspace */
 	WS_Reset(wrk->aws, wrk_ws_wm);	/* XXX ? */

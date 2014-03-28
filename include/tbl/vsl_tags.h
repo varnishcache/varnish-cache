@@ -474,4 +474,18 @@ SLTM(Timestamp, 0, "Timing information",
 	"\n"
 )
 
+SLTM(ReqAcct, 0, "Request handling byte counts",
+	"Contains byte counts for the request handling.\n\n"
+	"The format is::\n\n"
+	"\t%d %d %d %d %d %d\n"
+	"\t|  |  |  |  |  |\n"
+	"\t|  |  |  |  |  +- Total bytes transmitted\n"
+	"\t|  |  |  |  +---- Body bytes transmitted\n"
+	"\t|  |  |  +------- Header bytes transmitted\n"
+	"\t|  |  +---------- Total bytes received\n"
+	"\t|  +------------- Body bytes received\n"
+	"\t+---------------- Header bytes received\n"
+	"\n"
+)
+
 #undef NODEF_NOTICE

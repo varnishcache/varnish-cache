@@ -384,13 +384,21 @@ VSC_F(s_synth,			uint64_t, 1, 'a', info,
     "Total synth",
 	""
 )
-VSC_F(s_hdrbytes,		uint64_t, 1, 'a', info,
-    "Total header bytes",
-	""
+VSC_F(s_req_hdrbytes,		uint64_t, 1, 'a', info,
+    "Request header bytes",
+	"Total request header bytes received"
 )
-VSC_F(s_bodybytes,		uint64_t, 1, 'a', info,
-    "Total body bytes",
-	""
+VSC_F(s_req_bodybytes,		uint64_t, 1, 'a', info,
+    "Request body bytes",
+	"Total request body bytes received"
+)
+VSC_F(s_resp_hdrbytes,		uint64_t, 1, 'a', info,
+    "Response header bytes",
+	"Total response header bytes transmitted"
+)
+VSC_F(s_resp_bodybytes,		uint64_t, 1, 'a', info,
+    "Reponse body bytes",
+	"Total response body bytes transmitted"
 )
 
 VSC_F(sess_closed,		uint64_t, 1, 'a', info,

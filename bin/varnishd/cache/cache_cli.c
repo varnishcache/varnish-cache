@@ -126,7 +126,7 @@ cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
 	SZOF(struct ws);
 	SZOF(struct http);
 	SZOF(struct http_conn);
-	SZOF(struct acct);
+	SZOF(struct acct_req);
 	SZOF(struct worker);
 	SZOF(struct wrk_accept);
 	SZOF(struct storage);

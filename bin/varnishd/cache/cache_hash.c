@@ -501,7 +501,6 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 	}
 
 	wrk->stats.busy_sleep++;
-	SES_Charge(wrk, req);
 	/*
 	 * The objhead reference transfers to the sess, we get it
 	 * back when the sess comes off the waiting list and

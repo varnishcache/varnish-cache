@@ -330,7 +330,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 		}
 	}
 
-	if (WRW_FlushRelease(wrk) || i != 0) {
+	if (WRW_FlushRelease(wrk, NULL) || i != 0) {
 		VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s)",
 		    errno, strerror(errno));
 		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));

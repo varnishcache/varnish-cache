@@ -46,8 +46,6 @@ v1d_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 
 	if (len > 0)
 		wl = WRW_Write(req->wrk, ptr, len);
-	if (wl > 0)
-		req->acct_req.bodybytes += wl;
 	if (act > VDP_NULL && WRW_Flush(req->wrk))
 		return (-1);
 	if (len != wl)
@@ -193,6 +191,33 @@ v1d_WriteDirObj(struct req *req)
 	return (ois);
 }
 
+/*--------------------------------------------------------------------
+ * V1D_FlushReleaseAcct()
+ * Call WRW_FlushRelease on the worker and update the requests
+ * byte accounting with the number of bytes transmitted
+ *
+ * Returns the return value from WRW_FlushRelease()
+ */
+unsigned
+V1D_FlushReleaseAcct(struct req *req)
+{
+	unsigned u;
+	ssize_t txcnt = 0, hdrbytes;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->wrk, WORKER_MAGIC);
+	u = WRW_FlushRelease(req->wrk, &txcnt);
+	if (req->acct.resp_hdrbytes < req->resp_hdrbytes) {
+		hdrbytes = req->resp_hdrbytes - req->acct.resp_hdrbytes;
+		if (hdrbytes > txcnt)
+			hdrbytes = txcnt;
+	} else
+		hdrbytes = 0;
+	req->acct.resp_hdrbytes += hdrbytes;
+	req->acct.resp_bodybytes += txcnt - hdrbytes;
+	return (u);
+}
+
 void
 V1D_Deliver(struct req *req)
 {
@@ -288,7 +313,7 @@ V1D_Deliver(struct req *req)
 	 * Send HTTP protocol header, unless interior ESI object
 	 */
 	if (!(req->res_mode & RES_ESI_CHILD))
-		req->acct_req.hdrbytes += HTTP1_Write(req->wrk, req->resp, 1);
+		req->resp_hdrbytes += HTTP1_Write(req->wrk, req->resp, 1);
 
 	if (req->res_mode & RES_CHUNKED)
 		WRW_Chunked(req->wrk);
@@ -320,7 +345,7 @@ V1D_Deliver(struct req *req)
 	    !(req->res_mode & RES_ESI_CHILD))
 		WRW_EndChunk(req->wrk);
 
-	if ((WRW_FlushRelease(req->wrk) || ois != OIS_DONE) && req->sp->fd >= 0)
+	if ((V1D_FlushReleaseAcct(req) || ois != OIS_DONE) && req->sp->fd >= 0)
 		SES_Close(req->sp, SC_REM_CLOSE);
 }
 
@@ -395,7 +420,7 @@ V1D_Deliver_Synth(struct req *req)
 	 * Send HTTP protocol header, unless interior ESI object
 	 */
 	if (!(req->res_mode & RES_ESI_CHILD))
-		req->acct_req.hdrbytes += HTTP1_Write(req->wrk, req->resp, 1);
+		req->resp_hdrbytes += HTTP1_Write(req->wrk, req->resp, 1);
 
 	if (req->res_mode & RES_CHUNKED)
 		WRW_Chunked(req->wrk);
@@ -418,6 +443,6 @@ V1D_Deliver_Synth(struct req *req)
 	if (req->res_mode & RES_CHUNKED && !(req->res_mode & RES_ESI_CHILD))
 		WRW_EndChunk(req->wrk);
 
-	if (WRW_FlushRelease(req->wrk) && req->sp->fd >= 0)
+	if (V1D_FlushReleaseAcct(req) && req->sp->fd >= 0)
 		SES_Close(req->sp, SC_REM_CLOSE);
 }

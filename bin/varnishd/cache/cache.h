@@ -228,9 +228,9 @@ struct http_conn {
 
 /*--------------------------------------------------------------------*/
 
-struct acct {
+struct acct_req {
 #define ACCT(foo)	uint64_t	foo;
-#include "tbl/acct_fields.h"
+#include "tbl/acct_fields_req.h"
 #undef ACCT
 };
 
@@ -654,9 +654,9 @@ struct req {
 	double			d_ttl;
 
 	unsigned char		wantbody;
-	uint64_t		req_bodybytes;
+	uint64_t		req_bodybytes;	/* Parsed req bodybytes */
 
-	uint64_t		resp_bodybytes;
+	uint64_t		resp_hdrbytes;	/* Scheduled resp hdrbytes */
 
 	uint16_t		err_code;
 	const char		*err_reason;
@@ -716,7 +716,7 @@ struct req {
 	struct vsl_log		vsl[1];
 
 	/* Temporary accounting */
-	struct acct		acct_req;
+	struct acct_req		acct;
 
 	/* Synth content in vcl_error */
 	struct vsb		*synth_body;
@@ -847,6 +847,7 @@ int HTTP1_CacheReqBody(struct req *req, ssize_t maxsize);
 int HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv);
 
 /* cache_http1_deliver.c */
+unsigned V1D_FlushReleaseAcct(struct req *req);
 void V1D_Deliver(struct req *);
 void V1D_Deliver_Synth(struct req *req);
 
@@ -892,6 +893,7 @@ VDP_pop(struct req *req, vdp_bytes *func)
 
 /* cache_req_fsm.c [CNT] */
 enum req_fsm_nxt CNT_Request(struct worker *, struct req *);
+void CNT_AcctLogCharge(struct dstat *, struct req *);
 
 /* cache_cli.c [CLI] */
 void CLI_Init(void);
@@ -1099,14 +1101,13 @@ void WRW_Chunked(const struct worker *w);
 void WRW_EndChunk(const struct worker *w);
 void WRW_Reserve(struct worker *w, int *fd, struct vsl_log *, double t0);
 unsigned WRW_Flush(const struct worker *w);
-unsigned WRW_FlushRelease(struct worker *w);
+unsigned WRW_FlushRelease(struct worker *w, ssize_t *pacc);
 unsigned WRW_Write(const struct worker *w, const void *ptr, int len);
 unsigned WRW_WriteH(const struct worker *w, const txt *hh, const char *suf);
 
 /* cache_session.c [SES] */
 void SES_Close(struct sess *sp, enum sess_close reason);
 void SES_Delete(struct sess *sp, enum sess_close reason, double now);
-void SES_Charge(struct worker *, struct req *);
 struct sesspool *SES_NewPool(struct pool *pp, unsigned pool_no);
 void SES_DeletePool(struct sesspool *sp);
 int SES_ScheduleReq(struct req *);

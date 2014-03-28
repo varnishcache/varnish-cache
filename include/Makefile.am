@@ -2,7 +2,7 @@
 
 # API headers
 nobase_pkginclude_HEADERS = \
-	tbl/acct_fields.h \
+	tbl/acct_fields_req.h \
 	tbl/backend_poll.h \
 	tbl/ban_vars.h \
 	tbl/bo_flags.h \

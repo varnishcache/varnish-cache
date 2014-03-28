@@ -58,6 +58,7 @@ struct wrw {
 	unsigned		ciov;	/* Chunked header marker */
 	double			t0;
 	struct vsl_log		*vsl;
+	ssize_t			cnt;	/* Flushed byte count */
 };
 
 /*--------------------------------------------------------------------
@@ -101,7 +102,7 @@ WRW_Reserve(struct worker *wrk, int *fd, struct vsl_log *vsl, double t0)
 }
 
 static void
-WRW_Release(struct worker *wrk)
+wrw_release(struct worker *wrk, ssize_t *pacc)
 {
 	struct wrw *wrw;
 
@@ -109,6 +110,8 @@ WRW_Release(struct worker *wrk)
 	wrw = wrk->wrw;
 	wrk->wrw = NULL;
 	CHECK_OBJ_NOTNULL(wrw, WRW_MAGIC);
+	if (pacc != NULL)
+		*pacc += wrw->cnt;
 	WS_Release(wrk->aws, 0);
 	WS_Reset(wrk->aws, NULL);
 }
@@ -171,6 +174,8 @@ WRW_Flush(const struct worker *wrk)
 		}
 
 		i = writev(*wrw->wfd, wrw->iov, wrw->niov);
+		if (i > 0)
+			wrw->cnt += i;
 		while (i != wrw->liov && i > 0) {
 			/* Remove sent data from start of I/O vector,
 			 * then retry; we hit a timeout, but some data
@@ -195,6 +200,8 @@ WRW_Flush(const struct worker *wrk)
 
 			wrw_prune(wrw, i);
 			i = writev(*wrw->wfd, wrw->iov, wrw->niov);
+			if (i > 0)
+				wrw->cnt += i;
 		}
 		if (i <= 0) {
 			wrw->werr++;
@@ -212,14 +219,14 @@ WRW_Flush(const struct worker *wrk)
 }
 
 unsigned
-WRW_FlushRelease(struct worker *wrk)
+WRW_FlushRelease(struct worker *wrk, ssize_t *pacc)
 {
 	unsigned u;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(wrk->wrw->wfd);
 	u = WRW_Flush(wrk);
-	WRW_Release(wrk);
+	wrw_release(wrk, pacc);
 	return (u);
 }
 
