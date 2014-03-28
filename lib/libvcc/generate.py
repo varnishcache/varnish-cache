@@ -159,15 +159,15 @@ returns =(
 sp_variables = [
 	('client.ip',
 		'IP',
-		( 'both',),
+		( 'client',),
 		( ), """
 		The client's IP address.
 		"""
 	),
 	('client.identity',
 		'STRING',
-		( 'both',),
-		( 'both',), """
+		( 'client',),
+		( 'client',), """
 		Identification of the client, used to load balance
 		in the client director.
 		"""
