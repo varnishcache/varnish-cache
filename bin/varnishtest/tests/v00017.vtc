@@ -64,7 +64,7 @@ varnish v1 -vcl {
 	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
 }
 
-varnish v1 -vcl {
+varnish v1 -errvcl {'client.ip': Not available in method 'vcl_backend_response'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv { if (client.ip == "127.0.0.1") { return(pass); } }
 	sub vcl_backend_response { if (client.ip != "127.0.0.1") { return(retry); } }
