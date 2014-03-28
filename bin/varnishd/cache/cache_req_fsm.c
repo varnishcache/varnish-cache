@@ -414,7 +414,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		if (boc != NULL) {
 			AZ(oc->flags & (OC_F_FAILED|OC_F_PASS));
 			AZ(oc->exp_flags & OC_EF_DYING);
-			AZ(oc->busyobj);
+			AZ(boc->busyobj);
 			VBF_Fetch(wrk, req, boc, o, VBF_BACKGROUND);
 		} else {
 			(void)HTTP1_DiscardReqBody(req);// XXX: handle err
