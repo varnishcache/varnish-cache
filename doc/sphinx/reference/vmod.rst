@@ -158,7 +158,7 @@ STRING_LIST
 
 	A multi-component text-string.  We try very hard to avoid
 	doing text-processing in Varnish, and this is one way we
-	to avoid that, by not editing separate pieces of a sting
+	to avoid that, by not editing separate pieces of a string
 	together to one string, unless we have to.
 
 	Consider this contrived example::
