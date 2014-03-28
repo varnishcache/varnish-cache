@@ -160,7 +160,7 @@ struct vcc {
 #define VCC_MAGIC		0x24ad719d
 
 	/* Parameter/Template section */
-	char			*default_vcl;
+	char			*builtin_vcl;
 	char			*vcl_dir;
 	char			*vmod_dir;
 

@@ -488,7 +488,7 @@ mgt_vcc_init(void)
 
 	vcc = VCC_New();
 	AN(vcc);
-	VCC_Default_VCL(vcc, builtin_vcl);
+	VCC_Builtin_VCL(vcc, builtin_vcl);
 	AZ(atexit(mgt_vcc_atexit));
 }
 

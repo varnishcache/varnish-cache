@@ -489,7 +489,7 @@ vcc_NewVcc(const struct vcc *tl0)
 	ALLOC_OBJ(tl, VCC_MAGIC);
 	AN(tl);
 	if (tl0 != NULL) {
-		REPLACE(tl->default_vcl, tl0->default_vcl);
+		REPLACE(tl->builtin_vcl, tl0->builtin_vcl);
 		REPLACE(tl->vcl_dir, tl0->vcl_dir);
 		REPLACE(tl->vmod_dir, tl0->vmod_dir);
 		tl->vars = tl0->vars;
@@ -612,8 +612,8 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	if (tl->err)
 		return (vcc_DestroyTokenList(tl, NULL));
 
-	/* Register and lex the default VCL */
-	sp = vcc_new_source(tl->default_vcl, NULL, "Default");
+	/* Register and lex the builtin VCL */
+	sp = vcc_new_source(tl->builtin_vcl, NULL, "Builtin");
 	assert(sp != NULL);
 	VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
 	sp->idx = tl->nsources++;
@@ -736,15 +736,15 @@ VCC_New(void)
 }
 
 /*--------------------------------------------------------------------
- * Configure default VCL source code
+ * Configure builtin VCL source code
  */
 
 void
-VCC_Default_VCL(struct vcc *tl, const char *str)
+VCC_Builtin_VCL(struct vcc *tl, const char *str)
 {
 
 	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
-	REPLACE(tl->default_vcl, str);
+	REPLACE(tl->builtin_vcl, str);
 }
 
 /*--------------------------------------------------------------------
