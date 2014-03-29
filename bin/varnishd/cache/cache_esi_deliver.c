@@ -218,15 +218,17 @@ ved_pretend_gzip(struct req *req, const uint8_t *p, ssize_t l)
 	while (l > 0) {
 		if (l >= 65535) {
 			lx = 65535;
-			(void)WRW_Write(req->wrk, buf1, sizeof buf1);
+			req->resp_bodybytes +=
+			    WRW_Write(req->wrk, buf1, sizeof buf1);
 		} else {
 			lx = (uint16_t)l;
 			buf2[0] = 0;
 			vle16enc(buf2 + 1, lx);
 			vle16enc(buf2 + 3, ~lx);
-			(void)WRW_Write(req->wrk, buf2, sizeof buf2);
+			req->resp_bodybytes +=
+			    WRW_Write(req->wrk, buf2, sizeof buf2);
 		}
-		(void)WRW_Write(req->wrk, p, lx);
+		req->resp_bodybytes += WRW_Write(req->wrk, p, lx);
 		req->crc = crc32(req->crc, p, lx);
 		req->l_crc += lx;
 		l -= lx;
@@ -283,7 +285,8 @@ ESI_Deliver(struct req *req)
 		if (isgzip && !(req->res_mode & RES_GUNZIP)) {
 			assert(sizeof gzip_hdr == 10);
 			/* Send out the gzip header */
-			(void)WRW_Write(req->wrk, gzip_hdr, 10);
+			req->resp_bodybytes +=
+			    WRW_Write(req->wrk, gzip_hdr, 10);
 			req->l_crc = 0;
 			req->gzip_resp = 1;
 			req->crc = crc32(0L, Z_NULL, 0);
@@ -339,8 +342,9 @@ ESI_Deliver(struct req *req)
 					 * We have a gzip'ed VEC and delivers
 					 * a gzip'ed ESI response.
 					 */
-					(void)WRW_Write(req->wrk,
-					    st->ptr + off, l2);
+					req->resp_bodybytes +=
+					    WRW_Write(req->wrk,
+						st->ptr + off, l2);
 				} else if (req->gzip_resp) {
 					/*
 					 * A gzip'ed ESI response, but the VEC
@@ -367,8 +371,9 @@ ESI_Deliver(struct req *req)
 					/*
 					 * Ungzip'ed VEC, ungzip'ed ESI response
 					 */
-					(void)WRW_Write(req->wrk,
-					    st->ptr + off, l2);
+					req->resp_bodybytes +=
+					    WRW_Write(req->wrk,
+						st->ptr + off, l2);
 				}
 				off += l2;
 				if (off == st->len) {
@@ -441,7 +446,7 @@ ESI_Deliver(struct req *req)
 		/* MOD(2^32) length */
 		vle32enc(tailbuf + 9, req->l_crc);
 
-		(void)WRW_Write(req->wrk, tailbuf, 13);
+		req->resp_bodybytes += WRW_Write(req->wrk, tailbuf, 13);
 	}
 	(void)WRW_Flush(req->wrk);
 }
@@ -451,7 +456,7 @@ ESI_Deliver(struct req *req)
  */
 
 static uint8_t
-ved_deliver_byterange(const struct req *req, ssize_t low, ssize_t high)
+ved_deliver_byterange(struct req *req, ssize_t low, ssize_t high)
 {
 	struct storage *st;
 	ssize_t l, lx;
@@ -477,7 +482,7 @@ ved_deliver_byterange(const struct req *req, ssize_t low, ssize_t high)
 			l = high - lx;
 		assert(lx >= low && lx + l <= high);
 		if (l != 0)
-			(void)WRW_Write(req->wrk, p, l);
+			req->resp_bodybytes += WRW_Write(req->wrk, p, l);
 		if (p + l < st->ptr + st->len)
 			return(p[l]);
 		lx += l;
@@ -532,7 +537,7 @@ ESI_DeliverChild(struct req *req)
 	 */
 	*dbits = ved_deliver_byterange(req, start/8, last/8);
 	*dbits &= ~(1U << (last & 7));
-	(void)WRW_Write(req->wrk, dbits, 1);
+	req->resp_bodybytes += WRW_Write(req->wrk, dbits, 1);
 	cc = ved_deliver_byterange(req, 1 + last/8, stop/8);
 	switch((int)(stop & 7)) {
 	case 0: /* xxxxxxxx */
@@ -576,7 +581,7 @@ ESI_DeliverChild(struct req *req)
 		INCOMPL();
 	}
 	if (lpad > 0)
-		(void)WRW_Write(req->wrk, dbits + 1, lpad);
+		req->resp_bodybytes += WRW_Write(req->wrk, dbits + 1, lpad);
 
 	/* We need the entire tail, but it may not be in one storage segment */
 	st = VTAILQ_LAST(&req->obj->store, storagehead);

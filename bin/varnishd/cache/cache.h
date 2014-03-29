@@ -657,6 +657,7 @@ struct req {
 	uint64_t		req_bodybytes;	/* Parsed req bodybytes */
 
 	uint64_t		resp_hdrbytes;	/* Scheduled resp hdrbytes */
+	uint64_t		resp_bodybytes; /* Scheduled resp bodybytes */
 
 	uint16_t		err_code;
 	const char		*err_reason;

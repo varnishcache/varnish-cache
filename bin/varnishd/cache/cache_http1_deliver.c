@@ -46,6 +46,7 @@ v1d_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 
 	if (len > 0)
 		wl = WRW_Write(req->wrk, ptr, len);
+	req->resp_bodybytes += wl;
 	if (act > VDP_NULL && WRW_Flush(req->wrk))
 		return (-1);
 	if (len != wl)

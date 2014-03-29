@@ -208,6 +208,7 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	CNT_AcctLogCharge(&wrk->stats, req);
 	req->req_bodybytes = 0;
 	req->resp_hdrbytes = 0;
+	req->resp_bodybytes = 0;
 
 	/* Nuke the VXID. http1_dissect() will allocate a new one when
 	   necessary */

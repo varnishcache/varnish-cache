@@ -1,0 +1,84 @@
+varnishtest "Test request byte counters with ESI"
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -body {<esi:include src="/1"/>ghi}
+
+	rxreq
+	expect req.url == "/1"
+	txresp -body {<esi:include src="/2"/>abc<esi:include src="/2"/>def}
+
+	rxreq
+	expect req.url == "/2"
+	txresp -body {123}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_esi = true;
+	}
+	sub vcl_deliver {
+		unset resp.http.date;
+		unset resp.http.age;
+		unset resp.http.via;
+		unset resp.http.x-varnish;
+	}
+} -start
+
+# Request (1001):
+# GET / HTTP/1.1\r\n			16 bytes
+# \r\n					 2 bytes
+# Total:				18 bytes
+
+# Reponse:
+# HTTP/1.1 200 Ok\r\n			17 bytes
+# Transfer-Encoding: chunked\r\n	28 bytes
+# Connection: keep-alive\r\n		24 bytes
+# \r\n					 2 bytes
+# Total:				71 bytes
+
+# Response body:
+# 003\r\n				 5 bytes
+# 123\r\n				 5 bytes
+# 003\r\n				 5 bytes
+# abc\r\n				 5 bytes
+# 003\r\n				 5 bytes
+# 123\r\n				 5 bytes
+# 003\r\n				 5 bytes
+# def\r\n				 5 bytes
+# 003\r\n				 5 bytes
+# ghi\r\n				 5 bytes
+# 0\r\n					 3 bytes
+# \r\n					 2 bytes
+# Total:				55 bytes
+
+logexpect l1 -v v1 -g request {
+	expect 0 1001	Begin	"^req .* rxreq"
+	expect * =	ESI_BodyBytes	"^3"
+	expect * =	ReqAcct		"^18 0 18 71 55 126$"
+	expect 0 =	End
+	expect * 1003	Begin		"^req .* esi"
+	expect * =	ESI_BodyBytes	"^6$"
+	expect 0 =	End
+	expect * 1005	Begin		"^req .* esi"
+	expect * =	ESI_BodyBytes	"^3$"
+	expect 0 =	End
+	expect * 1007	Begin		"^req .* esi"
+	expect * =	ESI_BodyBytes	"^3$"
+	expect 0 =	End
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "123abc123defghi"
+} -run
+
+logexpect l1 -wait
+
+varnish v1 -expect s_req_hdrbytes == 18
+varnish v1 -expect s_req_bodybytes == 0
+varnish v1 -expect s_resp_hdrbytes == 71
+varnish v1 -expect s_resp_bodybytes == 55

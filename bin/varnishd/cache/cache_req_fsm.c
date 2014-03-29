@@ -897,6 +897,10 @@ CNT_Request(struct worker *wrk, struct req *req)
 	}
 	if (nxt == REQ_FSM_DONE) {
 		/* XXX: Workaround for pipe */
+		AN(req->vsl->wid);
+		if (req->res_mode & (RES_ESI|RES_ESI_CHILD))
+			VSLb(req->vsl, SLT_ESI_BodyBytes, "%ju",
+			    (uintmax_t)req->resp_bodybytes);
 
 		while (!VTAILQ_EMPTY(&req->body)) {
 			st = VTAILQ_FIRST(&req->body);
