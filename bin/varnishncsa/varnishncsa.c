@@ -774,8 +774,8 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			case SLT_RespStatus:
 				frag_line(b, e, &CTX.frag[F_s]);
 				break;
-			case SLT_Length:
-				frag_line(b, e, &CTX.frag[F_b]);
+			case SLT_ReqAcct:
+				frag_fields(b, e, 5, &CTX.frag[F_b], 0, NULL);
 				break;
 			case SLT_Timestamp:
 				if (isprefix(b, "Start:", e, &p)) {
