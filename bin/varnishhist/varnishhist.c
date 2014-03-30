@@ -120,9 +120,9 @@ profiles[] = {
 		.hist_high = 3
 	}, {
 		.name = "size",
-		.tag = SLT_Length,
+		.tag = SLT_ReqAcct,
 		.prefix = NULL,
-		.field = 1,
+		.field = 5,
 		.hist_low = 1,
 		.hist_high = 8
 	}, {
