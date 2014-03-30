@@ -70,7 +70,7 @@ rdf(int fd0, int fd1, ssize_t *pcnt)
 }
 
 static void
-pipecharge(struct req *req, const struct acct_pipe *a)
+pipecharge(struct req *req, const struct acct_pipe *a, struct VSC_C_vbe *b)
 {
 
 	VSLb(req->vsl, SLT_PipeAcct, "%ju %ju %ju %ju",
@@ -83,6 +83,11 @@ pipecharge(struct req *req, const struct acct_pipe *a)
 	VSC_C_main->s_pipe_hdrbytes += a->req;
 	VSC_C_main->s_pipe_in += a->in;
 	VSC_C_main->s_pipe_out += a->out;
+	if (b != NULL) {
+		b->pipe_hdrbytes += a->bereq;
+		b->pipe_out += a->in;
+		b->pipe_in += a->out;
+	}
 	Lck_Unlock(&pipestat_mtx);
 }
 
@@ -110,7 +115,7 @@ PipeRequest(struct req *req, struct busyobj *bo)
 
 	vc = VDI_GetFd(bo);
 	if (vc == NULL) {
-		pipecharge(req, &acct);
+		pipecharge(req, &acct, NULL);
 		SES_Close(req->sp, SC_OVERLOAD);
 		return;
 	}
@@ -133,9 +138,9 @@ PipeRequest(struct req *req, struct busyobj *bo)
 	VSLb_ts_req(req, "Pipe", W_TIM_real(wrk));
 
 	if (i) {
-		pipecharge(req, &acct);
+		pipecharge(req, &acct, vc->backend->vsc);
 		SES_Close(req->sp, SC_TX_PIPE);
-		VDI_CloseFd(&vc);
+		VDI_CloseFd(&vc, NULL);
 		return;
 	}
 
@@ -173,9 +178,9 @@ PipeRequest(struct req *req, struct busyobj *bo)
 		}
 	}
 	VSLb_ts_req(req, "PipeSess", W_TIM_real(wrk));
-	pipecharge(req, &acct);
+	pipecharge(req, &acct, vc->backend->vsc);
 	SES_Close(req->sp, SC_TX_PIPE);
-	VDI_CloseFd(&vc);
+	VDI_CloseFd(&vc, NULL);
 	bo->vbc = NULL;
 }
 

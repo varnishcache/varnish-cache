@@ -152,9 +152,9 @@ struct vbc {
 void VBE_ReleaseConn(struct vbc *vc);
 
 /* cache_backend_cfg.c */
-void VBE_DropRefConn(struct backend *);
+void VBE_DropRefConn(struct backend *, const struct acct_bereq *);
 void VBE_DropRefVcl(struct backend *);
-void VBE_DropRefLocked(struct backend *b);
+void VBE_DropRefLocked(struct backend *b, const struct acct_bereq *);
 unsigned VBE_Healthy(const struct backend *b, double *changed);
 
 /* cache_backend_poll.c */

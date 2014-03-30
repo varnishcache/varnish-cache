@@ -288,7 +288,7 @@ vbe_GetVbe(struct busyobj *bo, struct vdi_simple *vs)
 		VSL_Flush(bo->vsl, 0);
 
 		VTCP_close(&vc->fd);
-		VBE_DropRefConn(bp);
+		VBE_DropRefConn(bp, NULL);
 		vc->backend = NULL;
 		VBE_ReleaseConn(vc);
 	}

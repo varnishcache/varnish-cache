@@ -350,7 +350,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 		VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s)",
 		    errno, strerror(errno));
 		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
-		VDI_CloseFd(&bo->vbc);
+		VDI_CloseFd(&bo->vbc, &bo->acct);
 		/* XXX: other cleanup ? */
 		return (retry);
 	}
@@ -376,7 +376,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 			VSLb(bo->vsl, SLT_FetchError,
 			    "http %sread error: overflow",
 			    first ? "first " : "");
-			VDI_CloseFd(&bo->vbc);
+			VDI_CloseFd(&bo->vbc, &bo->acct);
 			/* XXX: other cleanup ? */
 			return (-1);
 		}
@@ -384,7 +384,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 			bo->acct.beresp_hdrbytes += Tlen(htc->rxbuf);
 			VSLb(bo->vsl, SLT_FetchError, "http %sread error: EOF",
 			    first ? "first " : "");
-			VDI_CloseFd(&bo->vbc);
+			VDI_CloseFd(&bo->vbc, &bo->acct);
 			/* XXX: other cleanup ? */
 			return (retry);
 		}
@@ -401,7 +401,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 
 	if (HTTP1_DissectResponse(hp, htc)) {
 		VSLb(bo->vsl, SLT_FetchError, "http format error");
-		VDI_CloseFd(&bo->vbc);
+		VDI_CloseFd(&bo->vbc, &bo->acct);
 		/* XXX: other cleanup ? */
 		return (-1);
 	}

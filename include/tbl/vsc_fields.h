@@ -184,6 +184,36 @@ VSC_F(happy,			uint64_t, 0, 'b', info,
     "Happy health probes",
 	""
 )
+VSC_F(bereq_hdrbytes,		uint64_t, 0, 'a', info,
+    "Request header bytes",
+	"Total backend request header bytes sent"
+)
+VSC_F(bereq_bodybytes,		uint64_t, 0, 'a', info,
+    "Request body bytes",
+	"Total backend request body bytes sent"
+)
+VSC_F(beresp_hdrbytes,		uint64_t, 0, 'a', info,
+    "Response header bytes",
+	"Total backend response header bytes received"
+)
+VSC_F(beresp_bodybytes,		uint64_t, 0, 'a', info,
+    "Response body bytes",
+	"Total backend response body bytes received"
+)
+VSC_F(pipe_hdrbytes,		uint64_t, 0, 'a', info,
+    "Pipe request header bytes",
+	"Total request bytes sent for piped sessions"
+)
+VSC_F(pipe_out,			uint64_t, 0, 'a', info,
+    "Piped bytes to backend",
+	"Total number of bytes forwarded to backend in"
+	" pipe sessions"
+)
+VSC_F(pipe_in,			uint64_t, 0, 'a', info,
+    "Piped bytes from backend",
+	"Total number of bytes forwarded from backend in"
+	" pipe sessions"
+)
 
 #endif
 

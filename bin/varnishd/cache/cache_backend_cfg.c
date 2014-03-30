@@ -97,13 +97,20 @@ VBE_Poll(void)
  */
 
 void
-VBE_DropRefLocked(struct backend *b)
+VBE_DropRefLocked(struct backend *b, const struct acct_bereq *acct)
 {
 	int i;
 	struct vbc *vbe, *vbe2;
 
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 	assert(b->refcount > 0);
+
+	if (acct != NULL) {
+#define ACCT(foo) \
+		b->vsc->foo += acct->foo;
+#include "tbl/acct_fields_bereq.h"
+#undef ACCT
+	}
 
 	i = --b->refcount;
 	Lck_Unlock(&b->mtx);
@@ -131,11 +138,11 @@ VBE_DropRefVcl(struct backend *b)
 
 	Lck_Lock(&b->mtx);
 	b->vsc->vcls--;
-	VBE_DropRefLocked(b);
+	VBE_DropRefLocked(b, NULL);
 }
 
 void
-VBE_DropRefConn(struct backend *b)
+VBE_DropRefConn(struct backend *b, const struct acct_bereq *acct)
 {
 
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
@@ -143,7 +150,7 @@ VBE_DropRefConn(struct backend *b)
 	Lck_Lock(&b->mtx);
 	assert(b->n_conn > 0);
 	b->n_conn--;
-	VBE_DropRefLocked(b);
+	VBE_DropRefLocked(b, acct);
 }
 
 /*--------------------------------------------------------------------

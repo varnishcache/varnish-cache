@@ -319,7 +319,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->htc.body_status == BS_ERROR) {
 		AN (bo->vbc);
-		VDI_CloseFd(&bo->vbc);
+		VDI_CloseFd(&bo->vbc, &bo->acct);
 		VSLb(bo->vsl, SLT_VCL_Error, "Body cannot be fetched");
 		return (F_STP_ERROR);
 	}
@@ -351,7 +351,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	if (wrk->handling == VCL_RET_RETRY) {
 		AN (bo->vbc);
-		VDI_CloseFd(&bo->vbc);
+		VDI_CloseFd(&bo->vbc, &bo->acct);
 		bo->retries++;
 		if (bo->retries <= cache_param->max_retries)
 			return (F_STP_RETRY);
@@ -471,7 +471,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (vbf_beresp2obj(bo)) {
 		(void)VFP_Error(bo, "Could not get storage");
-		VDI_CloseFd(&bo->vbc);
+		VDI_CloseFd(&bo->vbc, &bo->acct);
 		return (F_STP_ERROR);
 	}
 
@@ -761,9 +761,9 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	if (bo->vbc != NULL) {
 		if (bo->should_close)
-			VDI_CloseFd(&bo->vbc);
+			VDI_CloseFd(&bo->vbc, &bo->acct);
 		else
-			VDI_RecycleFd(&bo->vbc);
+			VDI_RecycleFd(&bo->vbc, &bo->acct);
 		AZ(bo->vbc);
 	}
 
