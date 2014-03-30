@@ -91,6 +91,7 @@ v1f_pull_straight(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 	if (*priv < l)
 		l = *priv;
 	lr = HTTP1_Read(&bo->htc, p, l);
+	bo->acct.beresp_bodybytes += lr;
 	if (lr <= 0)
 		return (VFP_Error(bo, "straight insufficient bytes"));
 	*lp = lr;
@@ -127,8 +128,10 @@ v1f_pull_chunked(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 	if (*priv == -1) {
 		/* Skip leading whitespace */
 		do {
-			if (HTTP1_Read(&bo->htc, buf, 1) <= 0)
+			lr = HTTP1_Read(&bo->htc, buf, 1);
+			if (lr <= 0)
 				return (VFP_Error(bo, "chunked read err"));
+			bo->acct.beresp_bodybytes += lr;
 		} while (vct_islws(buf[0]));
 
 		if (!vct_ishex(buf[0]))
@@ -137,9 +140,11 @@ v1f_pull_chunked(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 		/* Collect hex digits, skipping leading zeros */
 		for (u = 1; u < sizeof buf; u++) {
 			do {
-				if (HTTP1_Read(&bo->htc, buf + u, 1) <= 0)
+				lr = HTTP1_Read(&bo->htc, buf + u, 1);
+				if (lr <= 0)
 					return (VFP_Error(bo,
 					    "chunked read err"));
+				bo->acct.beresp_bodybytes += lr;
 			} while (u == 1 && buf[0] == '0' && buf[u] == '0');
 			if (!vct_ishex(buf[u]))
 				break;
@@ -149,9 +154,12 @@ v1f_pull_chunked(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 			return (VFP_Error(bo,"chunked header too long"));
 
 		/* Skip trailing white space */
-		while(vct_islws(buf[u]) && buf[u] != '\n')
-			if (HTTP1_Read(&bo->htc, buf + u, 1) <= 0)
+		while(vct_islws(buf[u]) && buf[u] != '\n') {
+			lr = HTTP1_Read(&bo->htc, buf + u, 1);
+			if (lr <= 0)
 				return (VFP_Error(bo, "chunked read err"));
+			bo->acct.beresp_bodybytes += lr;
+		}
 
 		if (buf[u] != '\n')
 			return (VFP_Error(bo,"chunked header no NL"));
@@ -169,6 +177,7 @@ v1f_pull_chunked(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 		lr = HTTP1_Read(&bo->htc, p, l);
 		if (lr <= 0)
 			return (VFP_Error(bo, "straight insufficient bytes"));
+		bo->acct.beresp_bodybytes += lr;
 		*lp = lr;
 		*priv -= lr;
 		if (*priv == 0)
@@ -179,6 +188,7 @@ v1f_pull_chunked(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 	i = HTTP1_Read(&bo->htc, buf, 1);
 	if (i <= 0)
 		return (VFP_Error(bo, "chunked read err"));
+	bo->acct.beresp_bodybytes += i;
 	if (buf[0] == '\r' && HTTP1_Read(&bo->htc, buf, 1) <= 0)
 		return (VFP_Error(bo, "chunked read err"));
 	if (buf[0] != '\n')
@@ -281,8 +291,9 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	struct http *hp;
 	enum htc_status_e hs;
 	int retry = -1;
-	int i, first;
+	int i, j, first;
 	struct http_conn *htc;
+	ssize_t hdrbytes;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_ORNULL(req, REQ_MAGIC);
@@ -312,7 +323,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 
 	(void)VTCP_blocking(vc->fd);	/* XXX: we should timeout instead */
 	WRW_Reserve(wrk, &vc->fd, bo->vsl, bo->t_prev);
-	(void)HTTP1_Write(wrk, hp, 0);	/* XXX: stats ? */
+	hdrbytes = HTTP1_Write(wrk, hp, 0);
 
 	/* Deal with any message-body the request might (still) have */
 	i = 0;
@@ -330,7 +341,12 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 		}
 	}
 
-	if (WRW_FlushRelease(wrk, NULL) || i != 0) {
+	j = WRW_FlushRelease(wrk, &bo->acct.bereq_hdrbytes);
+	if (bo->acct.bereq_hdrbytes > hdrbytes) {
+		bo->acct.bereq_bodybytes = bo->acct.bereq_hdrbytes - hdrbytes;
+		bo->acct.bereq_hdrbytes = hdrbytes;
+	}
+	if (j != 0 || i != 0) {
 		VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s)",
 		    errno, strerror(errno));
 		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
@@ -356,6 +372,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	do {
 		hs = HTTP1_Rx(htc);
 		if (hs == HTTP1_OVERFLOW) {
+			bo->acct.beresp_hdrbytes += Tlen(htc->rxbuf);
 			VSLb(bo->vsl, SLT_FetchError,
 			    "http %sread error: overflow",
 			    first ? "first " : "");
@@ -364,6 +381,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 			return (-1);
 		}
 		if (hs == HTTP1_ERROR_EOF) {
+			bo->acct.beresp_hdrbytes += Tlen(htc->rxbuf);
 			VSLb(bo->vsl, SLT_FetchError, "http %sread error: EOF",
 			    first ? "first " : "");
 			VDI_CloseFd(&bo->vbc);
@@ -377,6 +395,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 			    vc->between_bytes_timeout);
 		}
 	} while (hs != HTTP1_COMPLETE);
+	bo->acct.beresp_hdrbytes += Tlen(htc->rxbuf);
 
 	hp = bo->beresp;
 

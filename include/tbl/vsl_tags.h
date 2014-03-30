@@ -512,4 +512,18 @@ SLTM(PipeAcct, 0, "Pipe byte counts",
 	"\n"
 )
 
+SLTM(BereqAcct, 0, "Backend request accounting",
+	"Contains byte counters from backend request processing.\n\n"
+	"The format is::\n\n"
+	"\t%d %d %d %d %d %d\n"
+	"\t|  |  |  |  |  |\n"
+	"\t|  |  |  |  |  +- Total bytes received\n"
+	"\t|  |  |  |  +---- Body bytes received\n"
+	"\t|  |  |  +------- Header bytes received\n"
+	"\t|  |  +---------- Total bytes transmitted\n"
+	"\t|  +------------- Body bytes transmitted\n"
+	"\t+---------------- Header bytes transmitted\n"
+	"\n"
+)
+
 #undef NODEF_NOTICE

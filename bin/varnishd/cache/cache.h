@@ -236,6 +236,14 @@ struct acct_req {
 
 /*--------------------------------------------------------------------*/
 
+struct acct_bereq {
+#define ACCT(foo)	ssize_t		foo;
+#include "tbl/acct_fields_bereq.h"
+#undef ACCT
+};
+
+/*--------------------------------------------------------------------*/
+
 #define L0(t, n)
 #define L1(t, n)		t n;
 #define VSC_F(n,t,l,f,v,e,d)	L##l(t, n)
@@ -565,6 +573,9 @@ struct busyobj {
 	/* Timers */
 	double			t_first;	/* First timestamp logged */
 	double			t_prev;		/* Previous timestamp logged */
+
+	/* Acct */
+	struct acct_bereq	acct;
 
 	const char		*storage_hint;
 	struct director		*director;

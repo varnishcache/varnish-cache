@@ -187,6 +187,14 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 	if (r)
 		return;
 
+	VSLb(bo->vsl, SLT_BereqAcct, "%ju %ju %ju %ju %ju %ju",
+	    (uintmax_t)bo->acct.bereq_hdrbytes,
+	    (uintmax_t)bo->acct.bereq_bodybytes,
+	    (uintmax_t)(bo->acct.bereq_hdrbytes + bo->acct.bereq_bodybytes),
+	    (uintmax_t)bo->acct.beresp_hdrbytes,
+	    (uintmax_t)bo->acct.beresp_bodybytes,
+	    (uintmax_t)(bo->acct.beresp_hdrbytes + bo->acct.beresp_bodybytes));
+
 	VSLb(bo->vsl, SLT_End, "%s", "");
 	VSL_Flush(bo->vsl, 0);
 
