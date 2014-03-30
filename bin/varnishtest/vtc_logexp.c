@@ -196,7 +196,7 @@ logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			vxid = VSL_ID(t->c->rec.ptr);
 			tag = VSL_TAG(t->c->rec.ptr);
 			data = VSL_CDATA(t->c->rec.ptr);
-			len = VSL_LEN(t->c->rec.ptr);
+			len = VSL_LEN(t->c->rec.ptr) - 1;
 
 			if (tag == SLT__Batch)
 				continue;
