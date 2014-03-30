@@ -42,7 +42,7 @@
  * tag:  [tagname|*|=]		Tag to match against
  * regex:			regular expression to match against (optional)
  * *:				Match anything
- * =:				Match value of last examined log record
+ * =:				Match value of last successfully matched record
  */
 
 #include "config.h"
@@ -245,6 +245,8 @@ logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			    legend, vxid, VSL_tags[tag], type, len, data);
 
 			if (ok) {
+				le->vxid_last = vxid;
+				le->tag_last = tag;
 				le->skip_cnt = 0;
 				logexp_next(le);
 				if (le->test == NULL)
@@ -253,9 +255,6 @@ logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			}
 			if (skip)
 				le->skip_cnt++;
-
-			le->vxid_last = vxid;
-			le->tag_last = tag;
 		}
 	}
 
