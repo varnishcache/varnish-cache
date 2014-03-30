@@ -53,4 +53,5 @@ LOCK(nbusyobj)
 LOCK(busyobj)
 LOCK(mempool)
 LOCK(vxid)
+LOCK(pipestat)
 /*lint -restore */

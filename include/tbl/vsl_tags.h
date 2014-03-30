@@ -500,4 +500,16 @@ SLTM(ESI_BodyBytes, 0, "ESI body fragment byte counter",
 	"\n"
 )
 
+SLTM(PipeAcct, 0, "Pipe byte counts",
+	"Contains byte counters for pipe sessions.\n\n"
+	"The format is::\n\n"
+	"\t%d %d %d %d\n"
+	"\t|  |  |  |\n"
+	"\t|  |  |  +------- Piped bytes to client\n"
+	"\t|  |  +---------- Piped bytes from client\n"
+	"\t|  +------------- Backend request headers\n"
+	"\t+---------------- Client request headers\n"
+	"\n"
+)
+
 #undef NODEF_NOTICE

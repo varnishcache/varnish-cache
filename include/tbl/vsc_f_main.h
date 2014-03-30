@@ -400,6 +400,20 @@ VSC_F(s_resp_bodybytes,		uint64_t, 1, 'a', info,
     "Reponse body bytes",
 	"Total response body bytes transmitted"
 )
+VSC_F(s_pipe_hdrbytes,		uint64_t, 0, 'a', info,
+    "Pipe request header bytes",
+	"Total request bytes received for piped sessions"
+)
+VSC_F(s_pipe_in,		uint64_t, 0, 'a', info,
+    "Piped bytes from client",
+	"Total number of bytes forwarded from clients in"
+	" pipe sessions"
+)
+VSC_F(s_pipe_out,		uint64_t, 0, 'a', info,
+    "Piped bytes to client",
+	"Total number of bytes forwarded to clients in"
+	" pipe sessions"
+)
 
 VSC_F(sess_closed,		uint64_t, 1, 'a', info,
     "Session Closed",

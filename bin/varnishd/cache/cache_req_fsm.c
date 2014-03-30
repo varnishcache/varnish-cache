@@ -896,7 +896,6 @@ CNT_Request(struct worker *wrk, struct req *req)
 		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 	}
 	if (nxt == REQ_FSM_DONE) {
-		/* XXX: Workaround for pipe */
 		AN(req->vsl->wid);
 		if (req->res_mode & (RES_ESI|RES_ESI_CHILD))
 			VSLb(req->vsl, SLT_ESI_BodyBytes, "%ju",
@@ -923,13 +922,15 @@ CNT_AcctLogCharge(struct dstat *ds, struct req *req)
 
 	a = &req->acct;
 
-	VSLb(req->vsl, SLT_ReqAcct, "%ju %ju %ju %ju %ju %ju",
-	    (uintmax_t)a->req_hdrbytes,
-	    (uintmax_t)a->req_bodybytes,
-	    (uintmax_t)(a->req_hdrbytes + a->req_bodybytes),
-	    (uintmax_t)a->resp_hdrbytes,
-	    (uintmax_t)a->resp_bodybytes,
-	    (uintmax_t)(a->resp_hdrbytes + a->resp_bodybytes));
+	if (!(req->res_mode & RES_PIPE)) {
+		VSLb(req->vsl, SLT_ReqAcct, "%ju %ju %ju %ju %ju %ju",
+		    (uintmax_t)a->req_hdrbytes,
+		    (uintmax_t)a->req_bodybytes,
+		    (uintmax_t)(a->req_hdrbytes + a->req_bodybytes),
+		    (uintmax_t)a->resp_hdrbytes,
+		    (uintmax_t)a->resp_bodybytes,
+		    (uintmax_t)(a->resp_hdrbytes + a->resp_bodybytes));
+	}
 
 #define ACCT(foo)			\
 	ds->s_##foo += a->foo;		\

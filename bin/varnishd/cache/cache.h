@@ -699,6 +699,7 @@ struct req {
 #define RES_ESI			(1<<4)
 #define RES_ESI_CHILD		(1<<5)
 #define RES_GUNZIP		(1<<6)
+#define RES_PIPE		(1<<7)
 
 	/* Deliver pipeline */
 #define	N_VDPS			5
@@ -1088,6 +1089,7 @@ const char *reqbody_status_2str(enum req_body_state_e e);
 const char *sess_close_2str(enum sess_close sc, int want_desc);
 
 /* cache_pipe.c */
+void Pipe_Init(void);
 void PipeRequest(struct req *req, struct busyobj *bo);
 
 /* cache_pool.c */

@@ -40,8 +40,17 @@
 #include "vtcp.h"
 #include "vtim.h"
 
+static struct lock pipestat_mtx;
+
+struct acct_pipe {
+	ssize_t		req;
+	ssize_t		bereq;
+	ssize_t		in;
+	ssize_t		out;
+};
+
 static int
-rdf(int fd0, int fd1)
+rdf(int fd0, int fd1, ssize_t *pcnt)
 {
 	int i, j;
 	char buf[BUFSIZ], *p;
@@ -53,10 +62,28 @@ rdf(int fd0, int fd1)
 		j = write(fd1, p, i);
 		if (j <= 0)
 			return (1);
+		*pcnt += j;
 		if (i != j)
 			(void)usleep(100000);		/* XXX hack */
 	}
 	return (0);
+}
+
+static void
+pipecharge(struct req *req, const struct acct_pipe *a)
+{
+
+	VSLb(req->vsl, SLT_PipeAcct, "%ju %ju %ju %ju",
+	    (uintmax_t)a->req,
+	    (uintmax_t)a->bereq,
+	    (uintmax_t)a->in,
+	    (uintmax_t)a->out);
+
+	Lck_Lock(&pipestat_mtx);
+	VSC_C_main->s_pipe_hdrbytes += a->req;
+	VSC_C_main->s_pipe_in += a->in;
+	VSC_C_main->s_pipe_out += a->out;
+	Lck_Unlock(&pipestat_mtx);
 }
 
 void
@@ -66,7 +93,8 @@ PipeRequest(struct req *req, struct busyobj *bo)
 	struct worker *wrk;
 	struct pollfd fds[2];
 	int i;
-	ssize_t txcnt;
+	struct acct_pipe acct;
+	ssize_t hdrbytes;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
@@ -74,24 +102,38 @@ PipeRequest(struct req *req, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
+	req->res_mode = RES_PIPE;
+
+	memset(&acct, 0, sizeof acct);
+	acct.req = req->acct.req_hdrbytes;
+	req->acct.req_hdrbytes = 0;
+
 	vc = VDI_GetFd(bo);
-	if (vc == NULL)
+	if (vc == NULL) {
+		pipecharge(req, &acct);
+		SES_Close(req->sp, SC_OVERLOAD);
 		return;
+	}
 	bo->vbc = vc;		/* For panic dumping */
 	(void)VTCP_blocking(vc->fd);
 
 	WRW_Reserve(wrk, &vc->fd, bo->vsl, req->t_req);
-	(void)HTTP1_Write(wrk, bo->bereq, 0);
+	hdrbytes = HTTP1_Write(wrk, bo->bereq, 0);
 
 	if (req->htc->pipeline.b != NULL)
 		(void)WRW_Write(wrk, req->htc->pipeline.b,
 		    Tlen(req->htc->pipeline));
 
-	i = WRW_FlushRelease(wrk, &txcnt);
+	i = WRW_FlushRelease(wrk, &acct.bereq);
+	if (acct.bereq > hdrbytes) {
+		acct.in = acct.bereq - hdrbytes;
+		acct.bereq = hdrbytes;
+	}
 
 	VSLb_ts_req(req, "Pipe", W_TIM_real(wrk));
 
 	if (i) {
+		pipecharge(req, &acct);
 		SES_Close(req->sp, SC_TX_PIPE);
 		VDI_CloseFd(&vc);
 		return;
@@ -113,7 +155,7 @@ PipeRequest(struct req *req, struct busyobj *bo)
 		i = poll(fds, 2, (int)(cache_param->pipe_timeout * 1e3));
 		if (i < 1)
 			break;
-		if (fds[0].revents && rdf(vc->fd, req->sp->fd)) {
+		if (fds[0].revents && rdf(vc->fd, req->sp->fd, &acct.out)) {
 			if (fds[1].fd == -1)
 				break;
 			(void)shutdown(vc->fd, SHUT_RD);
@@ -121,7 +163,7 @@ PipeRequest(struct req *req, struct busyobj *bo)
 			fds[0].events = 0;
 			fds[0].fd = -1;
 		}
-		if (fds[1].revents && rdf(req->sp->fd, vc->fd)) {
+		if (fds[1].revents && rdf(req->sp->fd, vc->fd, &acct.in)) {
 			if (fds[0].fd == -1)
 				break;
 			(void)shutdown(req->sp->fd, SHUT_RD);
@@ -131,7 +173,17 @@ PipeRequest(struct req *req, struct busyobj *bo)
 		}
 	}
 	VSLb_ts_req(req, "PipeSess", W_TIM_real(wrk));
+	pipecharge(req, &acct);
 	SES_Close(req->sp, SC_TX_PIPE);
 	VDI_CloseFd(&vc);
 	bo->vbc = NULL;
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+Pipe_Init(void)
+{
+
+	Lck_New(&pipestat_mtx, lck_pipestat);
 }

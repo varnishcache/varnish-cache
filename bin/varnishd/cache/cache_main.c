@@ -219,6 +219,7 @@ child_main(void)
 	VBP_Init();
 	WRK_Init();
 	Pool_Init();
+	Pipe_Init();
 
 	EXP_Init();
 	HSH_Init(heritage.hash);

@@ -1,0 +1,63 @@
+varnishtest "Test request byte counters on pipe"
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	expect req.http.test == "yes"
+	txresp -body "fdsa"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (pipe);
+	}
+
+	sub vcl_pipe {
+		set bereq.http.test = "yes";
+		unset bereq.http.x-forwarded-for;
+		unset bereq.http.x-varnish;
+		unset bereq.http.connection;
+	}
+} -start
+
+# req:
+# POST / HTTP/1.1\r\n			17 bytes
+# Content-Length: 4\r\n			19 bytes
+# \r\n					 2 bytes
+# Total:				38 bytes
+
+# bereq:
+# POST / HTTP/1.1\r\n			17 bytes
+# Content-Length: 4\r\n			19 bytes
+# test: yes\r\n				11 bytes
+# \r\n					 2 bytes
+# Total:				49 bytes
+
+# reqbody
+# asdf					 4 bytes
+
+# resp:
+# HTTP/1.1 200 Ok\r\n			17 bytes
+# Content-Length: 4\r\n			19 bytes
+# \r\n					 2 bytes
+# fdsa					 4 bytes
+# Total:				42 bytes
+
+logexpect l1 -v v1 -g request {
+	expect 0 1001	Begin		"^req .* rxreq"
+	expect * =	PipeAcct	"^38 49 4 42$"
+	expect 0 =	End
+} -start
+
+client c1 {
+	txreq -req "POST" -url "/" -hdr "Content-Length: 4"
+	send "asdf"
+	rxresp
+	expect resp.status == 200
+} -run
+
+logexpect l1 -wait
+
+varnish v1 -expect s_pipe_hdrbytes == 38
+varnish v1 -expect s_pipe_in == 4
+varnish v1 -expect s_pipe_out == 42
