@@ -39,6 +39,13 @@
 #include "vapi/vsm.h"
 #include "vapi/vsl_int.h"
 
+/*
+ * enum VSL_tag_e enumerates the SHM log tags, where the identifiers are
+ * "SLT_" + XML tag, as defined in tbl/vsl_tags.h. Use the macro SLT__MAX
+ * for the highest possible value of the enum.
+ * (VSL_tag_e and SLT__MAX included from vsl_int.h)
+ */
+
 struct VSL_data;
 struct VSLQ;
 
@@ -46,6 +53,28 @@ struct VSLC_ptr {
 	const uint32_t		*ptr; /* Record pointer */
 	unsigned		priv;
 };
+	/*
+	 * Use these macros to access fields of a VSLC_ptr record
+	 * (included from vsl_int.h):
+	 *
+	 * VSL_TAG(ptr)
+	 *   SLT tag (enum VSL_tag_e)
+	 *
+	 * VSL_ID(ptr)
+	 *   VXID
+	 *
+	 * VSL_CDATA(ptr)
+	 *   Payload (as const char *)
+	 *
+	 * VSL_LEN(ptr)
+	 *   Length of the payload in bytes
+	 *
+	 * VSL_CLIENT(ptr)
+	 *   Non-zero if this is a client transaction
+	 *
+	 * VSL_BACKEND(ptr)
+	 *   Non-zero if this is a backend transaction
+	 */
 
 struct VSL_cursor {
 	/* The record this cursor points to */
@@ -127,6 +156,14 @@ extern const char * const VSL_tags[SLT__MAX];
 extern const unsigned VSL_tagflags[SLT__MAX];
 	/*
 	 * Tag flags array.
+	 * Use these macros with VSL_tagflags (included from vsl_int.h):
+	 *
+	 * VSL_tagflags[tag] & SLT_F_BINARY
+	 *   Non-zero if the payload with this tag may include
+	 *   non-printable characters
+	 *
+	 * VSL_tagflags[tag] & SLT_F_UNUSED
+	 *   Non-zero if this tag is reserved for future use
 	 */
 
 int VSL_Name2Tag(const char *name, int l);
