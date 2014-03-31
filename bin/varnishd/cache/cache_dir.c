@@ -40,7 +40,7 @@
 /* Close a connection ------------------------------------------------*/
 
 void
-VDI_CloseFd(struct vbc **vbp, const struct acct_bereq *acct)
+VDI_CloseFd(struct vbc **vbp, const struct acct_bereq *acct_bereq)
 {
 	struct backend *bp;
 	struct vbc *vc;
@@ -64,7 +64,7 @@ VDI_CloseFd(struct vbc **vbp, const struct acct_bereq *acct)
 	vc->vsl = NULL;
 
 	VTCP_close(&vc->fd);
-	VBE_DropRefConn(bp, acct);
+	VBE_DropRefConn(bp, acct_bereq);
 	vc->backend = NULL;
 	VBE_ReleaseConn(vc);
 }
@@ -72,7 +72,7 @@ VDI_CloseFd(struct vbc **vbp, const struct acct_bereq *acct)
 /* Recycle a connection ----------------------------------------------*/
 
 void
-VDI_RecycleFd(struct vbc **vbp, const struct acct_bereq *acct)
+VDI_RecycleFd(struct vbc **vbp, const struct acct_bereq *acct_bereq)
 {
 	struct backend *bp;
 	struct vbc *vc;
@@ -95,7 +95,7 @@ VDI_RecycleFd(struct vbc **vbp, const struct acct_bereq *acct)
 	Lck_Lock(&bp->mtx);
 	VSC_C_main->backend_recycle++;
 	VTAILQ_INSERT_HEAD(&bp->connlist, vc, list);
-	VBE_DropRefLocked(bp, acct);
+	VBE_DropRefLocked(bp, acct_bereq);
 }
 
 /* Get a connection --------------------------------------------------*/
