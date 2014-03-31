@@ -642,6 +642,7 @@ HSH_Fail(struct objcore *oc)
 
 	Lck_Lock(&oh->mtx);
 	oc->flags |= OC_F_FAILED;
+	oc->busyobj = NULL;
 	Lck_Unlock(&oh->mtx);
 }
 

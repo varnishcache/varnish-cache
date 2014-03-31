@@ -790,6 +790,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 				assert(uu == bo->fetch_obj->len);
 		}
 	}
+	AZ(bo->fetch_objcore->busyobj);
 
 	if (bo->ims_obj != NULL)
 		(void)HSH_DerefObj(&wrk->stats, &bo->ims_obj);
