@@ -16,6 +16,9 @@ varnish v1 -vcl+backend {
 		unset bereq.http.x-varnish;
 		set bereq.http.Host = "foo.bar";
 	}
+	sub vcl_backend_response {
+		set beresp.do_stream = false;
+	}
 } -start
 
 # Request (1002):

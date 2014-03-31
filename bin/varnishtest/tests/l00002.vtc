@@ -11,6 +11,9 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_stream = false;
+	}
 	sub vcl_deliver {
 		unset resp.http.date;
 		unset resp.http.age;
