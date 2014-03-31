@@ -29,7 +29,9 @@
  * These are the stats we keep track of per busyobj.
  */
 
+/*lint -save -e525 -e539 */
 ACCT(bereq_hdrbytes)
 ACCT(bereq_bodybytes)
 ACCT(beresp_hdrbytes)
 ACCT(beresp_bodybytes)
+/*lint -restore */
