@@ -59,19 +59,6 @@ SLTM(CLI, 0, "CLI communication",
 	"CLI communication between varnishd master and child process.\n\n"
 )
 
-SLTM(ReqEnd, 0, "Client request end",
-	"Marks the end of a client request.\n\n"
-	"The format is::\n\n"
-	"\t%f %f %f %f %f\n"
-	"\t|  |  |  |  |\n"
-	"\t|  |  |  |  +- Time to transmit response\n"
-	"\t|  |  |  +---- Time to process request\n"
-	"\t|  |  +------- Time to receive request\n"
-	"\t|  +---------- Timestamp (since epoch) when the request ended\n"
-	"\t+------------- Timestamp (since epoch) when the request started\n"
-	"\n"
-)
-
 /*---------------------------------------------------------------------*/
 
 SLTM(SessOpen, 0, "Client connection opened",
@@ -163,20 +150,6 @@ SLTM(Backend, 0, "Backend selected",
 
 SLTM(Length, 0, "Size of object body",
 	"Logs the size of a fetch object body.\n\n"
-)
-
-SLTM(BereqEnd, 0, "Backend request end",
-	"Marks the end of a backend request.\n\n"
-	"The format is::\n\n"
-	"\t%f %f %f %f %f %f\n"
-	"\t|  |  |  |  |  |\n"
-	"\t|  |  |  |  |  +- Time to receive response (hdr + body)\n"
-	"\t|  |  |  |  +---- Time to receive body\n"
-	"\t|  |  |  +------- Time to receive headers\n"
-	"\t|  |  +---------- Time to send request body\n"
-	"\t|  +------------- Timestamp (since epoch) when the request ended\n"
-	"\t+---------------- Timestamp (since epoch) when the request started\n"
-	"\n"
 )
 
 SLTM(FetchError, 0, "Error while fetching object",
