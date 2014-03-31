@@ -98,7 +98,7 @@ PipeRequest(struct req *req, struct busyobj *bo)
 	struct worker *wrk;
 	struct pollfd fds[2];
 	int i;
-	struct acct_pipe acct;
+	struct acct_pipe acct_pipe;
 	ssize_t hdrbytes;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -109,13 +109,13 @@ PipeRequest(struct req *req, struct busyobj *bo)
 
 	req->res_mode = RES_PIPE;
 
-	memset(&acct, 0, sizeof acct);
-	acct.req = req->acct.req_hdrbytes;
+	memset(&acct_pipe, 0, sizeof acct_pipe);
+	acct_pipe.req = req->acct.req_hdrbytes;
 	req->acct.req_hdrbytes = 0;
 
 	vc = VDI_GetFd(bo);
 	if (vc == NULL) {
-		pipecharge(req, &acct, NULL);
+		pipecharge(req, &acct_pipe, NULL);
 		SES_Close(req->sp, SC_OVERLOAD);
 		return;
 	}
@@ -129,16 +129,16 @@ PipeRequest(struct req *req, struct busyobj *bo)
 		(void)WRW_Write(wrk, req->htc->pipeline.b,
 		    Tlen(req->htc->pipeline));
 
-	i = WRW_FlushRelease(wrk, &acct.bereq);
-	if (acct.bereq > hdrbytes) {
-		acct.in = acct.bereq - hdrbytes;
-		acct.bereq = hdrbytes;
+	i = WRW_FlushRelease(wrk, &acct_pipe.bereq);
+	if (acct_pipe.bereq > hdrbytes) {
+		acct_pipe.in = acct_pipe.bereq - hdrbytes;
+		acct_pipe.bereq = hdrbytes;
 	}
 
 	VSLb_ts_req(req, "Pipe", W_TIM_real(wrk));
 
 	if (i) {
-		pipecharge(req, &acct, vc->backend->vsc);
+		pipecharge(req, &acct_pipe, vc->backend->vsc);
 		SES_Close(req->sp, SC_TX_PIPE);
 		VDI_CloseFd(&vc, NULL);
 		return;
@@ -160,7 +160,8 @@ PipeRequest(struct req *req, struct busyobj *bo)
 		i = poll(fds, 2, (int)(cache_param->pipe_timeout * 1e3));
 		if (i < 1)
 			break;
-		if (fds[0].revents && rdf(vc->fd, req->sp->fd, &acct.out)) {
+		if (fds[0].revents &&
+		    rdf(vc->fd, req->sp->fd, &acct_pipe.out)) {
 			if (fds[1].fd == -1)
 				break;
 			(void)shutdown(vc->fd, SHUT_RD);
@@ -168,7 +169,8 @@ PipeRequest(struct req *req, struct busyobj *bo)
 			fds[0].events = 0;
 			fds[0].fd = -1;
 		}
-		if (fds[1].revents && rdf(req->sp->fd, vc->fd, &acct.in)) {
+		if (fds[1].revents &&
+		    rdf(req->sp->fd, vc->fd, &acct_pipe.in)) {
 			if (fds[0].fd == -1)
 				break;
 			(void)shutdown(req->sp->fd, SHUT_RD);
@@ -178,7 +180,7 @@ PipeRequest(struct req *req, struct busyobj *bo)
 		}
 	}
 	VSLb_ts_req(req, "PipeSess", W_TIM_real(wrk));
-	pipecharge(req, &acct, vc->backend->vsc);
+	pipecharge(req, &acct_pipe, vc->backend->vsc);
 	SES_Close(req->sp, SC_TX_PIPE);
 	VDI_CloseFd(&vc, NULL);
 	bo->vbc = NULL;
