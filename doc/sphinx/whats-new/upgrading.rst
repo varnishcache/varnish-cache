@@ -140,3 +140,16 @@ linger
 
 sess_timeout
 ~~~~~~~~~~~~
+
+sess_workspace
+~~~~~~~~~~~~~~
+
+In 3.0 it was often necessary to increase `sess_workspace` if a
+lot of VMODs, complex header operations or ESI were in use.
+
+This memory segment has been split into two in 4.0;
+`workspace_backend` and `workspace_client`.
+
+In most cases where you increased `sess_workspace` before, you
+want to increase `workspace_client` now.
+
