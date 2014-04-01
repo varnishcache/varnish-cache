@@ -153,3 +153,8 @@ This memory segment has been split into two in 4.0;
 In most cases where you increased `sess_workspace` before, you
 want to increase `workspace_client` now.
 
+vcc_allow_inline_c
+~~~~~~~~~~~~~~~~~~
+
+This parameter is new since 3.0, and prohibits the use of inline
+C code in VCL by default.
