@@ -76,7 +76,7 @@ $Method BACKEND .backend()
 Description
        Picks a backend from the director.
 Example
-       req.backend_hint = rrdir.backend();
+       set req.backend_hint = rrdir.backend();
 
 $Object fallback()
 
@@ -100,7 +100,7 @@ $Method BACKEND .backend()
 Description
        Picks a backend from the director.
 Example
-       req.backend_hint = rrdir.backend();
+       set req.backend_hint = rrdir.backend();
 
 $Object random()
 
@@ -126,7 +126,7 @@ $Method BACKEND .backend()
 Description
        Picks a backend from the director.
 Example
-       req.backend_hint = rrdir.backend();
+       set req.backend_hint = rrdir.backend();
 
 $Object hash()
 
@@ -156,5 +156,5 @@ Description
        strings provided to pick the backend.
 Example
        # pick a backend based on the cookie header from the client
-       req.backend_hint = hdir.backend(req.http.cookie);
+       set req.backend_hint = hdir.backend(req.http.cookie);
 
