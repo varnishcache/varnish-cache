@@ -1,0 +1,53 @@
+varnishtest "#1468 - freeing failed obj"
+
+server s1 {
+	rxreq
+	expect req.url == "/1"
+	txresp -nolen -hdr "Transfer-Encoding: chunked"
+	chunked {<HTML>}
+	sema r1 sync 2
+	close
+
+	accept
+	rxreq
+	expect req.url == "/2"
+	txresp -nolen -hdr "Transfer-Encoding: chunked"
+	chunked {<HTML>}
+	sema r1 sync 2
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/2") {
+			return (pass);
+		}
+	}
+	sub vcl_backend_response {
+		set beresp.ttl = 5m;
+	}
+} -start
+
+# Test the regular cached content case
+client c1 {
+	txreq -url "/1"
+	rxresphdrs
+	expect resp.status == 200
+	rxchunk
+	sema r1 sync 2
+	expect_close
+} -run
+
+# Test the pass from vcl_recv case
+client c1 {
+	txreq -url "/2"
+	rxresphdrs
+	expect resp.status == 200
+	rxchunk
+	sema r1 sync 2
+	expect_close
+} -run
+
+# Delay to allow expiry thread to do it's job
+delay 1
+
+varnish v1 -expect n_object == 0

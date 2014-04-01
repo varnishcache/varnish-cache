@@ -707,6 +707,11 @@ vbf_stp_fail(struct worker *wrk, struct busyobj *bo)
 
 	assert(bo->state < BOS_FINISHED);
 	HSH_Fail(bo->fetch_objcore);
+	if (bo->fetch_objcore->exp_flags & OC_EF_EXP) {
+		/* Already unbusied - expire it */
+		AN(bo->fetch_obj);
+		EXP_Rearm(bo->fetch_obj, bo->fetch_obj->exp.t_origin, 0, 0, 0);
+	}
 	wrk->stats.fetch_failed++;
 	VBO_setstate(bo, BOS_FAILED);
 	return (F_STP_DONE);
