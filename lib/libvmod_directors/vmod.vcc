@@ -112,7 +112,7 @@ Description
        more or less 1% of the traffic of a backend in the same
        director with a weight of 100.
 Example
-       new rand_dir = director.random();
+       new rand_dir = directors.random();
 
 $Method VOID .add_backend(BACKEND, REAL)
 
@@ -136,7 +136,7 @@ Description
        session cookie, you'll have the client connecting to the same
        backend every time.
 Example
-       new hdir = director.hash();
+       new hdir = directors.hash();
 
 $Method VOID .add_backend(BACKEND, REAL)
 
