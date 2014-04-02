@@ -54,7 +54,7 @@ has been removed, and you should use the hash director directly::
     }
 
     sub vcl_recv {
-        set req.backend_hint = h.backend(client.ip);
+        set req.backend_hint = h.backend(client.identity);
     }
 
 error() is now synth()
