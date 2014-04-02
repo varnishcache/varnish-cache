@@ -340,11 +340,12 @@ make_secret(const char *dirname)
 /*--------------------------------------------------------------------*/
 
 static char stackmin[20];
+static char stackdef[20];
 
 static void
 init_params(struct cli *cli)
 {
-	ssize_t low;
+	ssize_t def, low;
 
 	MCF_CollectParams();
 
@@ -371,6 +372,12 @@ init_params(struct cli *cli)
 	low = sysconf(_SC_THREAD_STACK_MIN);
 	bprintf(stackmin, "%jd", (intmax_t)low);
 	MCF_SetMinimum("thread_pool_stack", stackmin);
+
+	def = 48 * 1024;
+	if (def < low)
+		def = low;
+	bprintf(stackdef, "%jd", (intmax_t)def);
+	MCF_SetDefault("thread_pool_stack", stackdef);
 
 	MCF_InitParams(cli);
 }

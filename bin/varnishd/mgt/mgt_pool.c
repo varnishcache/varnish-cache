@@ -214,6 +214,6 @@ struct parspec WRK_parspec[] = {
 		"This will likely be rounded up to a multiple of 4k"
 		" (or whatever the page_size might be) by the kernel.",
 		EXPERIMENTAL,
-		"48k", "bytes" },
+		NULL, "bytes" },	// default set in mgt_main.c
 	{ NULL, NULL, NULL }
 };
