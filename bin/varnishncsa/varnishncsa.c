@@ -682,9 +682,12 @@ frag_fields(const char *b, const char *e, ...)
 			q++;
 
 		if (field == n) {
-			frag->gen = CTX.gen;
-			frag->b = p;
-			frag->e = q;
+			if (frag->gen != CTX.gen) {
+				/* We only grab the same matching field once */
+				frag->gen = CTX.gen;
+				frag->b = p;
+				frag->e = q;
+			}
 			field = va_arg(ap, int);
 			if (field == 0)
 				break;
@@ -697,6 +700,10 @@ frag_fields(const char *b, const char *e, ...)
 static void
 frag_line(const char *b, const char *e, struct fragment *f)
 {
+
+	if (f->gen == CTX.gen)
+		/* We only grab the same matching record once */
+		return;
 
 	/* Skip leading space */
 	while (b < e && isspace(*b))
