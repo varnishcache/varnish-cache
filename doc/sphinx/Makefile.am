@@ -183,6 +183,8 @@ include/params.rst: $(top_builddir)/bin/varnishd/varnishd
 	$(top_builddir)/bin/varnishd/varnishd -x dumprstparam > include/params.rst
 BUILT_SOURCES = include/params.rst
 
+# XXX add varnishstat here when it's been _opt2rst'ed
+
 include/varnishncsa_options.rst: $(top_builddir)/bin/varnishncsa/varnishncsa_opt2rst
 	$(top_builddir)/bin/varnishncsa/varnishncsa_opt2rst options > $@
 include/varnishncsa_synopsis.rst: $(top_builddir)/bin/varnishncsa/varnishncsa_opt2rst
