@@ -219,6 +219,7 @@ smp_new_seg(struct smp_sc *sc)
 	sg->lru->flags |= LRU_F_DONTMOVE;
 
 	sg->p.offset = IRNUP(sc, sg->p.offset);
+	sg->p.length -= sg->p.offset - tmpsg.p.offset;
 	sg->p.length = IRNDN(sc, sg->p.length);
 	assert(sg->p.offset + sg->p.length <= tmpsg.p.offset + tmpsg.p.length);
 	sc->free_offset = sg->p.offset + sg->p.length;
