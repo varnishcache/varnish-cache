@@ -271,11 +271,9 @@ sp_variables = [
 	),
 	('req.backend_hint',
 		'BACKEND',
-		( 'recv',),
-		( 'recv',), """
+		( 'client', ),
+		( 'client',), """
 		Set bereq.backend to this if we attempt to fetch.
-		This variable is a convenience so the overall
-		policy can be set up once and for all in vcl_recv{}.
 		"""
 	),
 	('req.hash_ignore_busy',
