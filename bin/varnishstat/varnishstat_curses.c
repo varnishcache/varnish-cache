@@ -863,7 +863,7 @@ do_curses(struct VSM_data *vd, int delay)
 	struct VSM_fantom f_mgt = VSM_FANTOM_NULL;
 	struct VSM_fantom f_iter = VSM_FANTOM_NULL;
 
-	(void)delay;
+	interval = delay;
 
 	initscr();
 	raw();
