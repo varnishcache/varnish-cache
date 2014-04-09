@@ -26,7 +26,7 @@ OPTIONS
 The following options are available:
 
 -1
-	Instead of presenting of a continuously updated display, print
+	Instead of presenting a continuously updated display, print
 	the statistics to stdout.
 
 -f
