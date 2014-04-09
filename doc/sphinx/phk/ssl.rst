@@ -43,7 +43,7 @@ Varnish do with it ?
 
 We would terminate SSL sessions, and we would burn CPU cycles doing
 that.  You can kiss the highly optimized delivery path in Varnish
-goodby for SSL, we cannot simply tell the kernel to put the bytes
+goodbye for SSL, we cannot simply tell the kernel to put the bytes
 on the socket, rather, we have to corkscrew the data through
 the SSL library and then write it to the socket.
 
