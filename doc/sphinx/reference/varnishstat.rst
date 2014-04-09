@@ -20,47 +20,128 @@ DESCRIPTION
 
 The varnishstat utility displays statistics from a running varnishd(1) instance.
 
+OPTIONS
+=======
+
 The following options are available:
 
--1          Instead of presenting of a continuously updated display, print the statistics to stdout.
+-1
+	Instead of presenting of a continuously updated display, print
+	the statistics to stdout.
 
--f          Field inclusion glob. A field glob consists of three
-            parts, type, ident and name, where ident is optional. Each
-            part can contain a '*' character at the end to match a
-            prefix. Use backslash to escape characters. If the
-            argument starts with '^' it is used as an exclusion
-            glob. Multiple -f arguments may be given, and they will be
-            applied in order.
+-f
+	Field inclusion glob. A field glob consists of three parts,
+        type, ident and name, where ident is optional. Each part can
+        contain a '*' character at the end to match a prefix. Use
+        backslash to escape characters. If the argument starts with
+        '^' it is used as an exclusion glob. Multiple -f arguments may
+        be given, and they will be applied in order.
 
--l          Lists the available fields to use with the -f option.
+-l
+	Lists the available fields to use with the -f option.
 
--n          Specifies the name of the varnishd instance to get logs from.  If -n is not specified, the host name
-	    is used.
+-n
+	Specifies the name of the varnishd instance to get logs from.
+	If -n is not specified, the host name is used.
 
--N          Specify a the filename of a stale VSM instance. When using this
-            option the abandonment checking is disabled.
+-N
+	Specify a the filename of a stale VSM instance. When using
+        this option the abandonment checking is disabled.
 
--V          Display the version number and exit.
+-V
+	Display the version number and exit.
 
--w delay    Wait delay seconds between updates.  The default is 1. Can also be used with -1, -x or -j for repeated output.
+-w delay
+	Wait delay seconds between updates.  The default is 1. Can
+	also be used with -1, -x or -j for repeated output.
 
--x          Displays the result as XML.
+-x
+	Displays the result as XML.
 
--j          Displays the result as JSON.
+-j	
+	Displays the result as JSON.
 
-The columns in the main display are, from left to right:
+CURSES MODE
+===========
 
-1.   Value
-2.   Per-second average in the period since last update, or a period if the value can not be averaged
-3.   Per-second average over process lifetime, or a period if the value can not be averaged
-4.   Descriptive text
+When neither -1, -j or -x options are given, the application starts up
+in curses mode. This shows a continously updated view of the counter
+values, along with their description.
 
-When using the -1 option, the columns in the output are, from left to right:
+The top area shows process uptime information.
 
-1.   Symbolic entry name
-2.   Value
-3.   Per-second average over process lifetime, or a period if the value can not be averaged
-4.   Descriptive text
+The center area shows a list of counter values.
+
+The bottom area shows the description of the currently selected
+counter.
+
+Columns
+-------
+
+The following columns are displayed, from left to right:
+
+Name
+	The name of the counter
+
+Current
+	The current value of the counter.
+
+Change
+	The average per second change over the last update interval.
+
+Average
+	The average value of this counter over the runtime of the
+	Varnish daemon, or a period if the counter can't be averaged.
+
+Avg_10
+	The moving average over the last 10 update intervals.
+
+Avg_100
+	The moving average over the last 100 update intervals.
+
+Avg_1000
+	The moving average over the last 1000 update intervals.
+
+Key bindings
+------------
+
+The following keys control the interactive display:
+
+<UP>
+	Navigate the counter list one line up.
+
+<DOWN>
+	Navigate the counter list one line down.
+
+<PAGEUP> or <b>
+	Navigate the counter list one page up.
+
+<PAGEDOWN> or <SPACE>
+	Navigate the counter list one page down.
+
+<g>
+	Go to the top of the counter list.
+
+<G>
+	Go to the bottom of the counter list.
+
+<d>
+	Toggle between showing and hiding unseen counters. Unseen
+	counters are those that has been zero for the entire runtime
+	of varnishstat. Defaults to hide unseen counters.
+
+<v>
+	Cycle through the verbosity levels. Defaults to only showing
+	informational counters.
+
+<q>
+	Quit.
+
+<CTRL+T>
+	Sample now.
+
+XML Output
+==========
 
 When using the -x option, the output is::
 
@@ -69,6 +150,9 @@ When using the -x option, the output is::
     <value>FIELD VALUE</value>
     <description>FIELD DESCRIPTION</description>
   </stat>
+
+JSON OUTPUT
+===========
 
 With -j the output format is::
 
@@ -109,8 +193,8 @@ HISTORY
 
 The varnishstat utility was originally developed by Poul-Henning Kamp
 <phk@phk.freebsd.dk> in cooperation with Verdens Gang AS and Varnish
-Software AS. Manual page written by Dag-Erling Smørgrav, Per Buer
-and Lasse Karstensen.
+Software AS. Manual page written by Dag-Erling Smørgrav, Per Buer,
+Lasse Karstensen and Martin Blix Grydeland.
 
 
 COPYRIGHT
