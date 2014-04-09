@@ -115,6 +115,7 @@ PipeRequest(struct req *req, struct busyobj *bo)
 
 	vc = VDI_GetFd(bo);
 	if (vc == NULL) {
+		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 		pipecharge(req, &acct_pipe, NULL);
 		SES_Close(req->sp, SC_OVERLOAD);
 		return;
