@@ -1,3 +1,28 @@
+==============================================
+Changes from 4.0.0 beta1 to 4.0.0 (2014-04-10)
+==============================================
+
+New since 4.0.0-beta1:
+
+- improved varnishstat documentation.
+- In VCL, req.backend_hint is available in vcl_hit
+- ncurses is now a dependency.
+
+
+Bugs fixed
+----------
+
+* 1469_ - Fix build error on PPC
+* 1468_ - Set ttl=0 on failed objects
+* 1462_ - Handle duplicate ReqURL in varnishncsa.
+* 1467_ - Fix missing clearing of oc->busyobj on HSH_Fail.
+
+
+.. _1469: https://www.varnish-cache.org/trac/ticket/1469
+.. _1468: https://www.varnish-cache.org/trac/ticket/1468
+.. _1462: https://www.varnish-cache.org/trac/ticket/1462
+.. _1467: https://www.varnish-cache.org/trac/ticket/1467
+
 
 =====================================
 Changes from 4.0.0 TP2 to 4.0.0 beta1
