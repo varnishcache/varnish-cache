@@ -103,6 +103,7 @@ noinst_HEADERS = \
 pkgdataincludedir = $(pkgdatadir)/include
 nobase_pkgdatainclude_HEADERS = \
 	cache/cache.h \
+	cache/cache_backend.h \
 	common/common.h \
 	common/params.h
 
