@@ -132,14 +132,16 @@ The `remove` keyword is gone
 
 Replaced by `unset`.
 
-Changes to parameters
-=====================
+Changes to existing parameters
+==============================
 
-linger
-~~~~~~
+session_linger
+~~~~~~~~~~~~~~
+`session_linger` has been renamed to `timeout_linger`.
 
 sess_timeout
 ~~~~~~~~~~~~
+`sess_timeout` has been renamed to `timeout_idle`.
 
 sess_workspace
 ~~~~~~~~~~~~~~
@@ -153,8 +155,11 @@ This memory segment has been split into two in 4.0;
 In most cases where you increased `sess_workspace` before, you
 want to increase `workspace_client` now.
 
+New parameters since 3.0
+========================
+
 vcc_allow_inline_c
 ~~~~~~~~~~~~~~~~~~
 
-This parameter is new since 3.0, and prohibits the use of inline
-C code in VCL by default.
+You can now completely disable inline C in your VCL, and it is
+disabled by default.
