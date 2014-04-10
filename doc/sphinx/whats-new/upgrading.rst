@@ -7,7 +7,7 @@ Upgrading to Varnish 4
 Changes to VCL
 ==============
 
-Much of the VCL syntax has changed in Varnish 4. We've tried to
+The backend fetch parts of VCL have changed in Varnish 4. We've tried to
 compile a list of changes needed to upgrade here.
 
 Version statement
