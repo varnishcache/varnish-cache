@@ -110,6 +110,13 @@ is reserved for builtin subs.
 req.backend.healthy replaced by std.healthy(req.backend)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+client.port replaced by std.port(client.ip)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The `client.ip` is now a proper type, which renders as an IP address by
+default. You need to use the `std.port()` function to get the port
+number.
+
 obj is now read-only
 ~~~~~~~~~~~~~~~~~~~~
 
