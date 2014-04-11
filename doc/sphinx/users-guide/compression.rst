@@ -29,7 +29,7 @@ content it will be stored in memory in its compressed form. If the
 backend sends content in clear text it will be stored in clear text.
 
 You can make Varnish compress content before storing it in cache in
-`vcl_fetch` by setting 'do_gzip' to true, like this::
+`vcl_backend_response` by setting 'do_gzip' to true, like this::
 
    sub vcl_backend_response {
         if (beresp.http.content-type ~ "text") {

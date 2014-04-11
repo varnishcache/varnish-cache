@@ -78,7 +78,7 @@ Varnish Glossary
    backend response
         The response specifically served from a backend to
         varnishd. The backend response may be manipulated in
-        vcl_fetch.
+        vcl_backend_response.
 
    body
 	The bytes that make up the contents of the object, varnishd

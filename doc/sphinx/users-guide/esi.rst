@@ -50,11 +50,11 @@ Now, lets have an HTML file that has an ESI include statement::
 
 For ESI to work you need to activate ESI processing in VCL, like this::
 
-    sub vcl_fetch {
-    	if (req.url == "/test.html") {
+    sub vcl_backend_response {
+    	if (bereq.url == "/test.html") {
            set beresp.do_esi = true; // Do ESI processing
            set beresp.ttl = 24 h;    // Sets the TTL on the HTML above
-    	} elseif (req.url == "/cgi-bin/date.cgi") {
+    	} elseif (bereq.url == "/cgi-bin/date.cgi") {
            set beresp.ttl = 1m;      // Sets a one minute TTL on
 	       	       	 	     // the included object
         }

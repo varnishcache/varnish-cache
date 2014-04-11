@@ -119,7 +119,7 @@ of the following keywords:
 
   fetch
     Retrieve the requested object from the backend. Control will
-    eventually pass to `vcl_fetch`.
+    eventually pass to `vcl_backend_fetch`.
 
 vcl_hash
 ~~~~~~~~

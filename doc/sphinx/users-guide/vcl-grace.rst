@@ -27,7 +27,7 @@ So, in order to serve stale content we must first have some content to
 serve. So to make Varnish keep all objects for 30 minutes beyond their
 TTL use the following VCL::
 
-  sub vcl_fetch {
+  sub vcl_backend_response {
     set beresp.grace = 30m;
   }
 
@@ -45,7 +45,7 @@ minutes if we are unable to serve them? Well, if you have enabled
 backend is sick and if it is we can serve the stale content for a bit
 longer.::
 
-   if (! req.backend.healthy) {
+   if (!std.healthy(backend)) {
       set req.grace = 5m;
    } else {
       set req.grace = 15s;

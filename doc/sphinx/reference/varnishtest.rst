@@ -82,9 +82,9 @@ An example::
         } -start
 
         varnish v1 -vcl+backend {
-                sub vcl_fetch {
+                sub vcl_backend_response {
                         set beresp.do_esi = true;
-                        if (req.url == "/foo") {
+                        if (bereq.url == "/foo") {
                                 set beresp.ttl = 0s;
                         } else {
                                 set beresp.ttl = 10m;

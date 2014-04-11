@@ -75,8 +75,8 @@ VCL::
     # If the backend does not mention in Vary that it has crafted special
     # content based on the User-Agent (==X-UA-Device), add it. 
     # If your backend does set Vary: User-Agent, you may have to remove that here.
-    sub vcl_fetch {
-        if (req.http.X-UA-Device) {
+    sub vcl_backend_response {
+        if (bereq.http.X-UA-Device) {
             if (!beresp.http.Vary) { # no Vary at all
                 set beresp.http.Vary = "X-UA-Device"; 
             } elseif (beresp.http.Vary !~ "X-UA-Device") { # add to existing Vary
@@ -85,7 +85,7 @@ VCL::
         }
         # comment this out if you don't want the client to know your
         # classification
-        set beresp.http.X-UA-Device = req.http.X-UA-Device;
+        set beresp.http.X-UA-Device = bereq.http.X-UA-Device;
     }
 
     # to keep any caches in the wild from serving wrong content to client #2
@@ -131,15 +131,15 @@ VCL::
     sub vcl_pass { if (req.http.X-UA-Device) { set bereq.http.User-Agent = req.http.X-UA-Device; } }
 
     # standard Vary handling code from previous examples.
-    sub vcl_fetch {
-        if (req.http.X-UA-Device) {
+    sub vcl_backend_response {
+        if (bereq.http.X-UA-Device) {
             if (!beresp.http.Vary) { # no Vary at all
                 set beresp.http.Vary = "X-UA-Device";
             } elseif (beresp.http.Vary !~ "X-UA-Device") { # add to existing Vary
                 set beresp.http.Vary = beresp.http.Vary + ", X-UA-Device";
             }
         }
-        set beresp.http.X-UA-Device = req.http.X-UA-Device;
+        set beresp.http.X-UA-Device = bereq.http.X-UA-Device;
     }
     sub vcl_deliver {
         if ((req.http.X-UA-Device) && (resp.http.Vary)) {
@@ -186,8 +186,8 @@ VCL::
 
     # Handle redirects, otherwise standard Vary handling code from previous
     # examples.
-    sub vcl_fetch {
-        if (req.http.X-UA-Device) {
+    sub vcl_backend_response {
+        if (bereq.http.X-UA-Device) {
             if (!beresp.http.Vary) { # no Vary at all
                 set beresp.http.Vary = "X-UA-Device";
             } elseif (beresp.http.Vary !~ "X-UA-Device") { # add to existing Vary
@@ -203,7 +203,7 @@ VCL::
                 set beresp.http.location = regsub(beresp.http.location, "[?&]devicetype=.*$", "");
             }
         }
-        set beresp.http.X-UA-Device = req.http.X-UA-Device;
+        set beresp.http.X-UA-Device = bereq.http.X-UA-Device;
     }
     sub vcl_deliver {
         if ((req.http.X-UA-Device) && (resp.http.Vary)) {

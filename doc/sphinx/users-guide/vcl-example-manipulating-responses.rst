@@ -6,8 +6,8 @@ Altering the backend response
 Here we override the TTL of a object coming from the backend if it
 matches certain criteria::
 
-  sub vcl_fetch {
-     if (req.url ~ "\.(png|gif|jpg)$") {
+  sub vcl_backend_response {
+     if (bereq.url ~ "\.(png|gif|jpg)$") {
        unset beresp.http.set-cookie;
        set beresp.ttl = 1h;
     }
