@@ -222,7 +222,7 @@ agreements or even knowledge of this being the case.
 
 Another way is for software projects to set up foundations to
 collect money and hire developers.  This is a relatively complex
-thing to do, and it will only be availabel for larger projects.
+thing to do, and it will only be available for larger projects.
 
 The Apache Foundation "adopts" smaller projects inside their field
 of interest, and I belive that works OK, but I'm not sure if it
