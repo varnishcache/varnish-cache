@@ -129,7 +129,7 @@ around:
 Contact first, then send money, not the other way around, and also
 a focus on fewer larger sponsors, rather than people sending me
 EUR10 or USD15 or even, in one case, the EUR1 which happened to
-remain in his PayPal Account.
+linger in his PayPal Account.
 
 I ran even more open books this time, on the VML webpages you can
 see how many hours and a one-line description of what I did in them,
@@ -173,9 +173,11 @@ long and we take too long to close tickets.
 But I'm not going to complain, because the Heartbleed vulnerability
 revealed that even though OpenSSL is about three to five times
 larger in terms of code, the OpenSSL Foundation Inc. took in only
-about EUR700K last year, and most of that was for consulting and
-certification, not for "free-range" development and maintenance of
-the OpenSSL source code base.
+about EUR700K last year.
+
+And most of that EUR700K was for consulting and certification, not
+for "free-range" development and maintenance of the OpenSSL source
+code base so badly needs.
 
 I really hope that the Heartbleed vulnerability helps bring home
 the message to other communities, that Free and Open Source Software
@@ -247,7 +249,7 @@ Source Software.
 
 I hope to see that mutual benefit spread to other communities and
 projects, not just to OpenSSL and not just because they found a
-really bad bug the other way, but to any community around any piece
+really bad bug the other day, but to any community around any piece
 of software which does serious work for serious companies.
 
 Thanks in advance,
