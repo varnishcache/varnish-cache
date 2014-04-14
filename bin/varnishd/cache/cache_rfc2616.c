@@ -63,7 +63,7 @@
  */
 
 void
-RFC2616_Ttl(struct busyobj *bo)
+RFC2616_Ttl(struct busyobj *bo, double now)
 {
 	unsigned max_age, age;
 	double h_date, h_expires;
@@ -76,8 +76,8 @@ RFC2616_Ttl(struct busyobj *bo)
 
 	hp = bo->beresp;
 
-	assert(bo->t_fetch != 0.0 && !isnan(bo->t_fetch));
-	expp->t_origin = bo->t_fetch;
+	assert(now != 0.0 && !isnan(now));
+	expp->t_origin = now;
 
 	expp->ttl = cache_param->default_ttl;
 	expp->grace = cache_param->default_grace;
@@ -154,16 +154,16 @@ RFC2616_Ttl(struct busyobj *bo)
 		}
 
 		if (h_date == 0 ||
-		    fabs(h_date - bo->t_fetch) < cache_param->clock_skew) {
+		    fabs(h_date - now) < cache_param->clock_skew) {
 			/*
 			 * If we have no Date: header or if it is
 			 * sufficiently close to our clock we will
 			 * trust Expires: relative to our own clock.
 			 */
-			if (h_expires < bo->t_fetch)
+			if (h_expires < now)
 				expp->ttl = 0;
 			else
-				expp->ttl = h_expires - bo->t_fetch;
+				expp->ttl = h_expires - now;
 			break;
 		} else {
 			/*
@@ -179,7 +179,7 @@ RFC2616_Ttl(struct busyobj *bo)
 	/* calculated TTL, Our time, Date, Expires, max-age, age */
 	VSLb(bo->vsl, SLT_TTL,
 	    "RFC %.0f %.0f %.0f %.0f %.0f %.0f %.0f %u",
-	    expp->ttl, -1., -1., bo->t_fetch,
+	    expp->ttl, -1., -1., now,
 	    expp->t_origin, h_date, h_expires, max_age);
 }
 

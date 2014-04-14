@@ -532,7 +532,6 @@ struct busyobj {
 	 */
 	unsigned		refcount;
 	int			retries;
-	double			t_fetch;
 	struct req		*req;
 
 	uint8_t			*vary;
@@ -1240,7 +1239,7 @@ int WS_Overflowed(const struct ws *ws);
 void *WS_Printf(struct ws *ws, const char *fmt, ...) __printflike(2, 3);
 
 /* rfc2616.c */
-void RFC2616_Ttl(struct busyobj *);
+void RFC2616_Ttl(struct busyobj *, double now);
 enum body_status RFC2616_Body(struct busyobj *, struct dstat *);
 unsigned RFC2616_Req_Gzip(const struct http *);
 int RFC2616_Do_Cond(const struct req *sp);

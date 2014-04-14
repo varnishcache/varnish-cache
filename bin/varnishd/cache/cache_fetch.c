@@ -347,7 +347,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	 * What does RFC2616 think about TTL ?
 	 */
 	EXP_Clr(&bo->exp);
-	RFC2616_Ttl(bo);
+	RFC2616_Ttl(bo, now);
 
 	/* private objects have negative TTL */
 	if (bo->fetch_objcore->flags & OC_F_PRIVATE)
@@ -670,7 +670,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
 	http_SetResp(bo->beresp, "HTTP/1.1", 503, "Backend fetch failed");
 
-	bo->exp.t_origin = VTIM_real();
+	bo->exp.t_origin = bo->t_prev;
 	bo->exp.ttl = 0;
 	bo->exp.grace = 0;
 	bo->exp.keep = 0;
