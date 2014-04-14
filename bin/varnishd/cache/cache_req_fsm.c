@@ -87,7 +87,6 @@ DOT deliver:deliver:s -> DONE [style=bold,color=blue]
 static enum req_fsm_nxt
 cnt_deliver(struct worker *wrk, struct req *req)
 {
-	double now;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -99,10 +98,8 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	assert(req->obj->objcore->refcnt > 0);
 
-	now = W_TIM_real(wrk);
-	VSLb_ts_req(req, "Process", now);
 	if (req->obj->objcore->exp_flags & OC_EF_EXP)
-		EXP_Touch(req->obj->objcore, now);
+		EXP_Touch(req->obj->objcore, req->t_prev);
 
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
 
@@ -117,8 +114,13 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		http_PrintfHeader(req->resp,
 		    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
 
+	/* We base Age calculation upon the last timestamp taken during
+	   client request processing. This gives some inaccuracy, but
+	   since Age is only full second resolution that shouldn't
+	   matter. */
+	assert(req->t_prev > req->obj->exp.t_origin);
 	http_PrintfHeader(req->resp, "Age: %.0f",
-	    now - req->obj->exp.t_origin);
+	    req->t_prev - req->obj->exp.t_origin);
 
 	http_SetHeader(req->resp, "Via: 1.1 varnish (v4)");
 
@@ -127,6 +129,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		RFC2616_Weaken_Etag(req->resp);
 
 	VCL_deliver_method(req->vcl, wrk, req, NULL, req->http->ws);
+	VSLb_ts_req(req, "Process", W_TIM_real(wrk));
 
 	/* Stop the insanity before it turns "Hotel California" on us */
 	if (req->restarts >= cache_param->max_restarts)
