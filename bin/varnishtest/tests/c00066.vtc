@@ -1,0 +1,58 @@
+varnishtest "Check that we always deliver Date headers"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	backend bad { .host = "${bad_ip}"; }
+	sub vcl_recv {
+		if (req.url == "/synth") {
+			return (synth(200, "Synth test"));
+		}
+		if (req.url == "/error") {
+			set req.backend_hint = bad;
+		}
+	}
+	sub vcl_backend_response {
+		set beresp.do_stream = false;
+	}
+} -start
+
+varnish v1 -cliok "param.set connect_timeout 1"
+
+logexpect l1 -v v1 -g request {
+	expect	0 1001	Begin		"^req .* rxreq"
+	expect	* =	ReqURL		"/"
+	expect	* =	RespHeader	"^Date: "
+	expect	* =	End
+
+	expect	* 1003	Begin		"^req .* rxreq"
+	expect	* =	ReqURL		"/synth"
+	expect	* =	RespHeader	"^Date: "
+	expect	* =	End
+
+	expect	* 1004	Begin		"^req .* rxreq"
+	expect	* =	ReqURL		"/error"
+	expect	* =	RespHeader	"^Date: "
+	expect	* =	End
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.msg == "Ok"
+
+	txreq -url "/synth"
+	rxresp
+	expect resp.status == 200
+	expect resp.msg == "Synth test"
+
+	txreq -url "/error"
+	rxresp
+	expect resp.status == 503
+} -run
+
+logexpect l1 -wait
