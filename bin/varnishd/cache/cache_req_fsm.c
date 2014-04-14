@@ -87,7 +87,6 @@ DOT deliver:deliver:s -> DONE [style=bold,color=blue]
 static enum req_fsm_nxt
 cnt_deliver(struct worker *wrk, struct req *req)
 {
-	char time_str[30];
 	double now;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -109,10 +108,6 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	http_ClrHeader(req->resp);
 	http_FilterResp(req->obj->http, req->resp, 0);
-
-	http_Unset(req->resp, H_Date);
-	VTIM_format(now, time_str);
-	http_PrintfHeader(req->resp, "Date: %s", time_str);
 
 	if (req->wrk->stats.cache_hit)
 		http_PrintfHeader(req->resp,

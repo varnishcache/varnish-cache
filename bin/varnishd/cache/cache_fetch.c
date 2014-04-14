@@ -249,6 +249,8 @@ static enum fetch_step
 vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 {
 	int i, do_ims;
+	double now;
+	char time_str[VTIM_FORMAT_SIZE];
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -292,7 +294,8 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		VSC_C_main->backend_retry++;
 		i = V1F_fetch_hdr(wrk, bo, bo->req);
 	}
-	VSLb_ts_busyobj(bo, "Beresp", W_TIM_real(wrk));
+	now = W_TIM_real(wrk);
+	VSLb_ts_busyobj(bo, "Beresp", now);
 
 	if (i) {
 		AZ(bo->vbc);
@@ -301,6 +304,22 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	AN(bo->vbc);
 	http_VSL_log(bo->beresp);
+
+	if (!http_GetHdr(bo->beresp, H_Date, NULL)) {
+		/*
+		 * RFC 2616 14.18 Date: The Date general-header field
+		 * represents the date and time at which the message was
+		 * originated, having the same semantics as orig-date in
+		 * RFC 822. ... A received message that does not have a
+		 * Date header field MUST be assigned one by the recipient
+		 * if the message will be cached by that recipient or
+		 * gatewayed via a protocol which requires a Date.
+		 *
+		 * If we didn't get a Date header, we assign one here.
+		 */
+		VTIM_format(now, time_str);
+		http_PrintfHeader(bo->beresp, "Date: %s", time_str);
+	}
 
 	/*
 	 * These two headers can be spread over multiple actual headers
