@@ -653,11 +653,14 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 {
 	struct storage *st;
 	ssize_t l;
+	double now;
+	char time_str[VTIM_FORMAT_SIZE];
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	VSLb_ts_busyobj(bo, "Error", W_TIM_real(wrk));
+	now = W_TIM_real(wrk);
+	VSLb_ts_busyobj(bo, "Error", now);
 
 	AN(bo->fetch_objcore->flags & OC_F_BUSY);
 
@@ -669,6 +672,9 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
 	http_SetResp(bo->beresp, "HTTP/1.1", 503, "Backend fetch failed");
+	VTIM_format(now, time_str);
+	http_PrintfHeader(bo->beresp, "Date: %s", time_str);
+	http_SetHeader(bo->beresp, "Server: Varnish");
 
 	bo->exp.t_origin = bo->t_prev;
 	bo->exp.ttl = 0;
