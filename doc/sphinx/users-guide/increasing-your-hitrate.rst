@@ -273,7 +273,7 @@ You need VCL to identify the objects you want and then you set the
 'beresp.ttl' to whatever you want::
 
     sub vcl_backend_response {
-        if (req.url ~ "^/legacy_broken_cms/") {
+        if (bereq.url ~ "^/legacy_broken_cms/") {
             set beresp.ttl = 5d;
         }
     }
