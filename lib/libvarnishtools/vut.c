@@ -304,7 +304,7 @@ VUT_Main(void)
 			VUT.vslq = VSLQ_New(VUT.vsl, &c, VUT.g_arg, VUT.q_arg);
 			AN(VUT.vslq);
 			AZ(c);
-			VUT_Error(0, "Log reaquired");
+			VUT_Error(0, "Log reacquired");
 		}
 
 		i = VSLQ_Dispatch(VUT.vslq, VUT.dispatch_f, VUT.dispatch_priv);
