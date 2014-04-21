@@ -19,6 +19,12 @@ VCL version number::
 
     vcl 4.0;
 
+req.request is now req.method
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To align better with RFC naming, `req.request` has been renamed to
+`req.method`.
+
 vcl_fetch is now vcl_backend_response
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -57,6 +63,13 @@ has been removed, and you should use the hash director directly::
         set req.backend_hint = h.backend(client.identity);
     }
 
+vcl_error is now vcl_backend_error
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To make a distinction between internally generated errors and
+VCL synthetic responses, `vcl_backend_error` will be called when 
+varnish encounters an error when trying to fetch an object.
+
 error() is now synth()
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -79,6 +92,13 @@ The synthetic keyword is now a function::
         return (deliver);
     }
 
+obj in vcl_error replaced by beresp in vcl_backend_error
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To better represent a the context in which it is called, you
+should now use `beresp.*` vcl_backend_error, where you used to
+use `obj.*` in `vcl_error`.
+
 hit_for_pass objects are created using beresp.uncacheable
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -91,9 +111,6 @@ Example::
             return (deliver);
         }
     }
-
-vcl_recv should return(hash) instead of lookup now
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 req.* not available in vcl_backend_response
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -110,12 +127,12 @@ is reserved for builtin subs.
 req.backend.healthy replaced by std.healthy(req.backend)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-client.port replaced by std.port(client.ip)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+client.port, and server.port replaced by respectively std.port(client.ip) and std.port(server.ip)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The `client.ip` is now a proper type, which renders as an IP address by
-default. You need to use the `std.port()` function to get the port
-number.
+`client.ip` and `server.ip` are now proper datatypes, which renders
+as an IP address by default. You need to use the `std.port()`
+function to get the port number.
 
 obj is now read-only
 ~~~~~~~~~~~~~~~~~~~~
@@ -123,6 +140,15 @@ obj is now read-only
 `obj` is now read-only. `obj.hits`, if enabled in VCL, now counts per
 objecthead, not per object. `obj.last_use` has been retired.
 
+Some return values have been replaced
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Apart from the new `synth` return value described above, the
+following has changed:
+
+ - `vcl_recv` must now return `hash` instead of `lookup`
+ - `vcl_hash` must now return `lookup` instead of `hash`
+ - `vcl_pass` must now return `fetch` instead of `pass`
 
 default/builtin VCL changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -138,6 +164,8 @@ The `remove` keyword is gone
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Replaced by `unset`.
+
+
 
 Changes to existing parameters
 ==============================
@@ -170,3 +198,14 @@ vcc_allow_inline_c
 
 You can now completely disable inline C in your VCL, and it is
 disabled by default.
+
+Other changes
+=============
+
+New log filtering
+~~~~~~~~~~~~~~~~~
+
+The logging framework has a new filtering language, which means
+that the -m switch has been replaced with a new -q switch.
+See :ref:`ref-vsl-query` for more information about the new
+query language.
