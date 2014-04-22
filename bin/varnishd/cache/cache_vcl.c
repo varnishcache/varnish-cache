@@ -250,7 +250,7 @@ VCL_Nuke(struct vcls *vcl)
 	ASSERT_CLI();
 	assert(vcl != vcl_active);
 	assert(vcl->conf->discard);
-	assert(vcl->conf->busy == 0);
+	AZ(vcl->conf->busy);
 	VTAILQ_REMOVE(&vcl_head, vcl, list);
 	ctx.method = VCL_MET_FINI;
 	ctx.handling = &hand;
@@ -438,7 +438,7 @@ VCL_##func##_method(struct VCL_conf *vcl, struct worker *wrk,		\
 	vcl_call_method(wrk, req, bo, ws, VCL_MET_ ## upper,		\
 	    vcl->func##_func);						\
 	assert((1U << wrk->handling) & bitmap);				\
-	assert(!((1U << wrk->handling) & ~bitmap));			\
+	AZ((1U << wrk->handling) & ~bitmap);			\
 }
 
 #include "tbl/vcl_returns.h"

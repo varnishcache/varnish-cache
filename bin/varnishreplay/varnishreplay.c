@@ -246,7 +246,7 @@ static struct replay_thread *
 thread_get(int fd, void *(*thread_main)(void *))
 {
 
-	assert(fd != 0);
+	AN(fd);
 	if (fd >= nthreads) {
 		struct replay_thread **newthreads = threads;
 		size_t newnthreads = nthreads;

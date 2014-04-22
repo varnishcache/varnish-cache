@@ -90,7 +90,7 @@ VAV_BackSlash(const char *s, char *res)
 		break;
 	case 'x':
 		if (1 == sscanf(s + 1, "x%02x", &u)) {
-			assert(!(u & ~0xff));
+			AZ(u & ~0xff);
 			c = u;	/*lint !e734 loss of precision */
 			r = 4;
 		}

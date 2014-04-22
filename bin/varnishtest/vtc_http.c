@@ -225,7 +225,7 @@ cmd_http_expect(CMD_ARGS)
 	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
-	assert(!strcmp(av[0], "expect"));
+	AZ(strcmp(av[0], "expect"));
 	av++;
 
 	AN(av[0]);
@@ -298,13 +298,13 @@ http_splitheader(struct http *hp, int req)
 	hh[n++] = p;
 	while (!vct_islws(*p))
 		p++;
-	assert(!vct_iscrlf(p));
+	AZ(vct_iscrlf(p));
 	*p++ = '\0';
 
 	/* URL/STATUS */
 	while (vct_issp(*p))		/* XXX: H space only */
 		p++;
-	assert(!vct_iscrlf(p));
+	AZ(vct_iscrlf(p));
 	hh[n++] = p;
 	while (!vct_islws(*p))
 		p++;
@@ -524,7 +524,7 @@ cmd_http_rxresp(CMD_ARGS)
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_CLIENT(hp, av);
-	assert(!strcmp(av[0], "rxresp"));
+	AZ(strcmp(av[0], "rxresp"));
 	av++;
 
 	for(; *av != NULL; av++)
@@ -554,7 +554,7 @@ cmd_http_rxresphdrs(CMD_ARGS)
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_CLIENT(hp, av);
-	assert(!strcmp(av[0], "rxresphdrs"));
+	AZ(strcmp(av[0], "rxresphdrs"));
 	av++;
 
 	for(; *av != NULL; av++)
@@ -767,7 +767,7 @@ cmd_http_txresp(CMD_ARGS)
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_SERVER(hp, av);
-	assert(!strcmp(av[0], "txresp"));
+	AZ(strcmp(av[0], "txresp"));
 	av++;
 
 	VSB_clear(hp->vsb);
@@ -812,7 +812,7 @@ cmd_http_rxreq(CMD_ARGS)
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_SERVER(hp, av);
-	assert(!strcmp(av[0], "rxreq"));
+	AZ(strcmp(av[0], "rxreq"));
 	av++;
 
 	for(; *av != NULL; av++)
@@ -832,7 +832,7 @@ cmd_http_rxreqhdrs(CMD_ARGS)
 	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
-	assert(!strcmp(av[0], "rxreqhdrs"));
+	AZ(strcmp(av[0], "rxreqhdrs"));
 	av++;
 
 	for(; *av != NULL; av++)
@@ -850,7 +850,7 @@ cmd_http_rxbody(CMD_ARGS)
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_SERVER(hp, av);
-	assert(!strcmp(av[0], "rxbody"));
+	AZ(strcmp(av[0], "rxbody"));
 	av++;
 
 	for(; *av != NULL; av++)
@@ -895,7 +895,7 @@ cmd_http_txreq(CMD_ARGS)
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_CLIENT(hp, av);
-	assert(!strcmp(av[0], "txreq"));
+	AZ(strcmp(av[0], "txreq"));
 	av++;
 
 	VSB_clear(hp->vsb);

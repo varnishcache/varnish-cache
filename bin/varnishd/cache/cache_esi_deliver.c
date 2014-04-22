@@ -302,7 +302,7 @@ ESI_Deliver(struct req *req)
 		i = VGZ_Gunzip(vgz, &dp, &dl);
 		assert(i == VGZ_OK);
 		assert(VGZ_IbufEmpty(vgz));
-		assert(dl == 0);
+		AZ(dl);
 	}
 
 	st = VTAILQ_FIRST(&req->obj->store);

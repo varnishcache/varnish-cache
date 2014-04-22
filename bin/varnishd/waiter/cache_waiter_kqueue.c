@@ -70,7 +70,7 @@ vwk_kq_flush(struct vwk *vwk)
 	if (vwk->nki == 0)
 		return;
 	i = kevent(vwk->kq, vwk->ki, vwk->nki, NULL, 0, NULL);
-	assert(i == 0);
+	AZ(i);
 	vwk->nki = 0;
 }
 
@@ -108,7 +108,7 @@ vwk_pipe_ev(struct vwk *vwk, const struct kevent *kp)
 		j++;
 		i -= sizeof ss[0];
 	}
-	assert(i == 0);
+	AZ(i);
 }
 
 /*--------------------------------------------------------------------*/

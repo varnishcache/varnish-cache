@@ -87,7 +87,7 @@ VFIL_readfd(int fd, ssize_t *sz)
 	char *f;
 	int i;
 
-	assert(0 == fstat(fd, &st));
+	AZ(fstat(fd, &st));
 	if (!S_ISREG(st.st_mode))
 		return (NULL);
 	f = malloc(st.st_size + 1);

@@ -329,6 +329,6 @@ SHA256_Test(void)
 		SHA256_Init(&c);
 		SHA256_Update(&c, p->input, strlen(p->input));
 		SHA256_Final(o, &c);
-		assert(!memcmp(o, p->output, 32));
+		AZ(memcmp(o, p->output, 32));
 	}
 }

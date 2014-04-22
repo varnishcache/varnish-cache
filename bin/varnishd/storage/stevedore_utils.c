@@ -159,7 +159,7 @@ stv_fsspace(int fd, unsigned *bs)
 	/* We use units of the larger of filesystem blocksize and pagesize */
 	if (*bs < bsize)
 		*bs = bsize;
-	xxxassert(*bs % bsize == 0);
+	XXXAZ(*bs % bsize);
 	return (bsize * bavail);
 }
 
@@ -188,7 +188,7 @@ STV_FileSize(int fd, const char *size, unsigned *granularity, const char *ctx)
 
 	bs = *granularity;
 	fssize = stv_fsspace(fd, &bs);
-	xxxassert(bs % *granularity == 0);
+	XXXAZ(bs % *granularity);
 
 	if ((size == NULL || *size == '\0') && st.st_size != 0) {
 		/*

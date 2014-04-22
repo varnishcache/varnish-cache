@@ -73,7 +73,7 @@ hcb_build_bittbl(void)
 
 	/* Quick asserts for sanity check */
 	assert(hcb_bits(0x34, 0x34) == 8);
-	assert(hcb_bits(0xaa, 0x55) == 0);
+	AZ(hcb_bits(0xaa, 0x55));
 	assert(hcb_bits(0x01, 0x22) == 2);
 	assert(hcb_bits(0x10, 0x0b) == 3);
 }
@@ -132,7 +132,7 @@ static uintptr_t
 hcb_r_node(struct objhead *n)
 {
 
-	assert(!((uintptr_t)n & (HCB_BIT_NODE|HCB_BIT_Y)));
+	AZ((uintptr_t)n & (HCB_BIT_NODE | HCB_BIT_Y));
 	return (HCB_BIT_NODE | (uintptr_t)n);
 }
 
@@ -141,7 +141,7 @@ hcb_l_node(uintptr_t u)
 {
 
 	assert(u & HCB_BIT_NODE);
-	assert(!(u & HCB_BIT_Y));
+	AZ(u & HCB_BIT_Y);
 	return ((struct objhead *)(u & ~HCB_BIT_NODE));
 }
 
@@ -150,7 +150,7 @@ hcb_r_y(struct hcb_y *y)
 {
 
 	CHECK_OBJ_NOTNULL(y, HCB_Y_MAGIC);
-	assert(!((uintptr_t)y & (HCB_BIT_NODE|HCB_BIT_Y)));
+	AZ((uintptr_t)y & (HCB_BIT_NODE | HCB_BIT_Y));
 	return (HCB_BIT_Y | (uintptr_t)y);
 }
 
@@ -158,7 +158,7 @@ static struct hcb_y *
 hcb_l_y(uintptr_t u)
 {
 
-	assert(!(u & HCB_BIT_NODE));
+	AZ(u & HCB_BIT_NODE);
 	assert(u & HCB_BIT_Y);
 	return ((struct hcb_y *)(u & ~HCB_BIT_Y));
 }
@@ -252,7 +252,7 @@ hcb_insert(struct worker *wrk, struct hcb_root *root, const uint8_t *digest,
 	s2 = 1-s2;
 
 	p = &root->origo;
-	assert(*p != 0);
+	AN(*p);
 
 	while(hcb_is_y(*p)) {
 		y = hcb_l_y(*p);

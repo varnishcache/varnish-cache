@@ -137,7 +137,7 @@ wrw_prune(struct wrw *wrw, ssize_t bytes)
 		}
 		used += wrw->iov[j].iov_len;
 	}
-	assert(wrw->liov == 0);
+	AZ(wrw->liov);
 }
 
 unsigned

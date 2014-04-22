@@ -303,7 +303,7 @@ SES_Delete(struct sess *sp, enum sess_close reason, double now)
 
 	if (isnan(now))
 		now = VTIM_real();
-	assert(!isnan(sp->t_open));
+	AZ(isnan(sp->t_open));
 
 	VSL(SLT_SessClose, sp->vxid, "%s %.3f",
 	    sess_close_2str(sp->reason, 0), now - sp->t_open);

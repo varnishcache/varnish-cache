@@ -78,7 +78,7 @@ static inline uint32_t *
 vsl_hdr(enum VSL_tag_e tag, uint32_t *p, unsigned len, uint32_t vxid)
 {
 
-	assert(((uintptr_t)p & 0x3) == 0);
+	AZ((uintptr_t)p & 0x3);
 	assert(tag > SLT__Bogus);
 	assert(tag < SLT__Reserved);
 	AZ(len & ~VSL_LENMASK);
@@ -133,7 +133,7 @@ vsl_get(unsigned len, unsigned records, unsigned flushes)
 		AZ(err);
 	}
 	assert(vsl_ptr < vsl_end);
-	assert(((uintptr_t)vsl_ptr & 0x3) == 0);
+	AZ((uintptr_t)vsl_ptr & 0x3);
 
 	VSC_C_main->shm_writes++;
 	VSC_C_main->shm_flushes += flushes;
@@ -146,7 +146,7 @@ vsl_get(unsigned len, unsigned records, unsigned flushes)
 	p = vsl_ptr;
 	vsl_ptr = VSL_END(vsl_ptr, len);
 	assert(vsl_ptr < vsl_end);
-	assert(((uintptr_t)vsl_ptr & 0x3) == 0);
+	AZ((uintptr_t)vsl_ptr & 0x3);
 
 	*vsl_ptr = VSL_ENDMARKER;
 

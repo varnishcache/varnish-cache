@@ -116,7 +116,7 @@ mcf_panic(struct cli *cli, const char * const *av, void *priv)
 	(void)cli;
 	(void)av;
 	(void)priv;
-	assert(!strcmp("", "You asked for it"));
+	AZ(strcmp("", "You asked for it"));
 }
 
 static struct cli_proto cli_debug[] = {

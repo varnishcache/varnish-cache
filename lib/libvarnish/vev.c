@@ -257,7 +257,7 @@ vev_add(struct vev_base *evb, struct vev *e)
 		es = &vev_sigs[e->sig];
 		if (es->vev != NULL)
 			return (EBUSY);
-		assert(es->happened == 0);
+		AZ(es->happened);
 		es->vev = e;
 		es->vevb = evb;
 		es->sigact.sa_flags = e->sig_flags;
@@ -299,7 +299,7 @@ vev_add(struct vev_base *evb, struct vev *e)
 
 	if (e->sig > 0) {
 		assert(es != NULL);
-		assert(sigaction(e->sig, &es->sigact, NULL) == 0);
+		AZ(sigaction(e->sig, &es->sigact, NULL));
 	}
 
 	return (0);
@@ -320,7 +320,7 @@ vev_del(struct vev_base *evb, struct vev *e)
 
 	if (e->__binheap_idx != 0)
 		binheap_delete(evb->binheap, e->__binheap_idx);
-	assert(e->__binheap_idx == 0);
+	AZ(e->__binheap_idx);
 
 	if (e->fd >= 0) {
 		DBG(evb, "... pidx = %d\n", e->__poll_idx);
@@ -341,7 +341,7 @@ vev_del(struct vev_base *evb, struct vev *e)
 		es->vevb = NULL;
 		es->sigact.sa_flags = e->sig_flags;
 		es->sigact.sa_handler = SIG_DFL;
-		assert(sigaction(e->sig, &es->sigact, NULL) == 0);
+		AZ(sigaction(e->sig, &es->sigact, NULL));
 		es->happened = 0;
 	}
 
@@ -517,6 +517,6 @@ vev_schedule_one(struct vev_base *evb)
 			free(e);
 		}
 	}
-	assert(i == 0);
+	AZ(i);
 	return (1);
 }

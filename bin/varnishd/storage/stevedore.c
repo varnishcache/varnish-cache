@@ -183,8 +183,7 @@ stv_alloc(struct stevedore *stv, size_t size)
 
 		size >>= 1;
 	}
-	if (st != NULL)
-		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+	CHECK_OBJ_ORNULL(st, STORAGE_MAGIC);
 	return (st);
 }
 
@@ -226,8 +225,7 @@ stv_alloc_obj(struct busyobj *bo, size_t size)
 		    EXP_NukeOne(bo, stv->lru) == -1)
 			break;
 	}
-	if (st != NULL)
-		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+	CHECK_OBJ_ORNULL(st, STORAGE_MAGIC);
 	return (st);
 }
 

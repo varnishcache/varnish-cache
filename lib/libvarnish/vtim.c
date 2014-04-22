@@ -73,12 +73,12 @@ VTIM_mono(void)
 #elif  HAVE_CLOCK_GETTIME
 	struct timespec ts;
 
-	assert(clock_gettime(CLOCK_MONOTONIC, &ts) == 0);
+	AZ(clock_gettime(CLOCK_MONOTONIC, &ts));
 	return (ts.tv_sec + 1e-9 * ts.tv_nsec);
 #else
 	struct timeval tv;
 
-	assert(gettimeofday(&tv, NULL) == 0);
+	AZ(gettimeofday(&tv, NULL));
 	return (tv.tv_sec + 1e-6 * tv.tv_usec);
 #endif
 }
@@ -89,12 +89,12 @@ VTIM_real(void)
 #ifdef HAVE_CLOCK_GETTIME
 	struct timespec ts;
 
-	assert(clock_gettime(CLOCK_REALTIME, &ts) == 0);
+	AZ(clock_gettime(CLOCK_REALTIME, &ts));
 	return (ts.tv_sec + 1e-9 * ts.tv_nsec);
 #else
 	struct timeval tv;
 
-	assert(gettimeofday(&tv, NULL) == 0);
+	AZ(gettimeofday(&tv, NULL));
 	return (tv.tv_sec + 1e-6 * tv.tv_usec);
 #endif
 }
@@ -150,7 +150,7 @@ VTIM_parse(const char *p)
 			 * to set the timezone to UTC.  We check that.
 			 */
 			t = mktime(&tm);
-			assert(!strcmp(tzname[0], "UTC"));
+			AZ(strcmp(tzname[0], "UTC"));
 #endif
 			return (t);
 		}

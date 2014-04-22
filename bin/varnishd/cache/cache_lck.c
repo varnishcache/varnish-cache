@@ -134,8 +134,8 @@ Lck__Assert(const struct lock *lck, int held)
 		assert(ilck->held);
 		assert(pthread_equal(ilck->owner, pthread_self()));
 	} else {
-		assert(!ilck->held);
-		assert(!pthread_equal(ilck->owner, pthread_self()));
+		AZ(ilck->held);
+		AZ(pthread_equal(ilck->owner, pthread_self()));
 	}
 }
 

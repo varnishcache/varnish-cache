@@ -489,7 +489,7 @@ cmd_logexp(CMD_ARGS)
 		return;
 	}
 
-	assert(!strcmp(av[0], "logexpect"));
+	AZ(strcmp(av[0], "logexpect"));
 	av++;
 
 	VTAILQ_FOREACH(le, &logexps, list) {

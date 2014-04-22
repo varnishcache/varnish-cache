@@ -109,7 +109,7 @@ vcc_Stv_Wildcard(struct vcc *tl, const struct token *t,
 
 	(void)wcsym;
 	assert((t->e - t->b) > strlen(PFX));
-	assert(!memcmp(t->b, PFX, strlen(PFX)));
+	AZ(memcmp(t->b, PFX, strlen(PFX)));
 
 	p = t->b + strlen(PFX);
 	for (q = p; q < t->e && *q != '.'; q++)

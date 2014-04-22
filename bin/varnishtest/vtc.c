@@ -390,7 +390,7 @@ cmd_varnishtest(CMD_ARGS)
 
 	if (av == NULL)
 		return;
-	assert(!strcmp(av[0], "varnishtest"));
+	AZ(strcmp(av[0], "varnishtest"));
 
 	vtc_log(vl, 1, "TEST %s", av[1]);
 	AZ(av[2]);
@@ -414,7 +414,7 @@ cmd_shell(CMD_ARGS)
 	AZ(av[2]);
 	vtc_dump(vl, 4, "shell", av[1], -1);
 	r = system(av[1]);
-	assert(WEXITSTATUS(r) == 0);
+	AZ(WEXITSTATUS(r));
 }
 
 /**********************************************************************

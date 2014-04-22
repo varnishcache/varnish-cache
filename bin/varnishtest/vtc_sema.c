@@ -129,7 +129,7 @@ cmd_sema(CMD_ARGS)
 		return;
 	}
 
-	assert(!strcmp(av[0], "sema"));
+	AZ(strcmp(av[0], "sema"));
 	av++;
 
 	AZ(pthread_mutex_lock(&sema_mtx));

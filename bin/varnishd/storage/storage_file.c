@@ -168,7 +168,7 @@ insfree(struct smf_sc *sc, struct smf *sp)
 	struct smf *sp2;
 	size_t ns;
 
-	assert(sp->alloc == 0);
+	AZ(sp->alloc);
 	assert(sp->flist == NULL);
 	Lck_AssertHeld(&sc->mtx);
 	b = sp->size / sc->pagesize;
@@ -182,7 +182,7 @@ insfree(struct smf_sc *sc, struct smf *sp)
 	ns = b * sc->pagesize;
 	VTAILQ_FOREACH(sp2, sp->flist, status) {
 		assert(sp2->size >= ns);
-		assert(sp2->alloc == 0);
+		AZ(sp2->alloc);
 		assert(sp2->flist == sp->flist);
 		if (sp->offset < sp2->offset)
 			break;
@@ -198,7 +198,7 @@ remfree(const struct smf_sc *sc, struct smf *sp)
 {
 	size_t b;
 
-	assert(sp->alloc == 0);
+	AZ(sp->alloc);
 	assert(sp->flist != NULL);
 	Lck_AssertHeld(&sc->mtx);
 	b = sp->size / sc->pagesize;
@@ -223,7 +223,7 @@ alloc_smf(struct smf_sc *sc, size_t bytes)
 	struct smf *sp, *sp2;
 	size_t b;
 
-	assert(!(bytes % sc->pagesize));
+	AZ(bytes % sc->pagesize);
 	b = bytes / sc->pagesize;
 	if (b >= NBUCKET)
 		b = NBUCKET - 1;
@@ -280,9 +280,9 @@ free_smf(struct smf *sp)
 	struct smf_sc *sc = sp->sc;
 
 	CHECK_OBJ_NOTNULL(sp, SMF_MAGIC);
-	assert(sp->alloc != 0);
+	AN(sp->alloc);
 	assert(sp->size > 0);
-	assert(!(sp->size % sc->pagesize));
+	AZ(sp->size % sc->pagesize);
 	VTAILQ_REMOVE(&sc->used, sp, status);
 	sp->alloc = 0;
 
@@ -324,11 +324,11 @@ trim_smf(struct smf *sp, size_t bytes)
 	struct smf *sp2;
 	struct smf_sc *sc = sp->sc;
 
-	assert(sp->alloc != 0);
+	AN(sp->alloc);
 	assert(bytes > 0);
 	assert(bytes < sp->size);
-	assert(!(bytes % sc->pagesize));
-	assert(!(sp->size % sc->pagesize));
+	AZ(bytes % sc->pagesize);
+	AZ(sp->size % sc->pagesize);
 	CHECK_OBJ_NOTNULL(sp, SMF_MAGIC);
 	sp2 = malloc(sizeof *sp2);
 	XXXAN(sp2);
@@ -353,7 +353,7 @@ new_smf(struct smf_sc *sc, unsigned char *ptr, off_t off, size_t len)
 {
 	struct smf *sp, *sp2;
 
-	assert(!(len % sc->pagesize));
+	AZ(len % sc->pagesize);
 	sp = calloc(sizeof *sp, 1);
 	XXXAN(sp);
 	sp->magic = SMF_MAGIC;
@@ -395,8 +395,8 @@ smf_open_chunk(struct smf_sc *sc, off_t sz, off_t off, off_t *fail, off_t *sum)
 	void *p;
 	off_t h;
 
-	assert(sz != 0);
-	assert(!(sz % sc->pagesize));
+	AN(sz);
+	AZ(sz % sc->pagesize);
 
 	if (*fail < (uintmax_t)sc->pagesize * MINPAGES)
 		return;

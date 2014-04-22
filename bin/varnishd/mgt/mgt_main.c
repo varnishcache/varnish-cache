@@ -300,7 +300,7 @@ cli_stdin_close(void *priv)
 	(void)close(0);
 	(void)close(1);
 	(void)close(2);
-	assert(open("/dev/null", O_RDONLY) == 0);
+	AZ(open("/dev/null", O_RDONLY));
 	assert(open("/dev/null", O_WRONLY) == 1);
 	assert(open("/dev/null", O_WRONLY) == 2);
 

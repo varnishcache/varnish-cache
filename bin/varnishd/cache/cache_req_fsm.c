@@ -690,9 +690,9 @@ cnt_recv(struct worker *wrk, struct req *req)
 	AZ(req->obj);
 	AZ(req->objcore);
 
-	assert(!isnan(req->t_first));
-	assert(!isnan(req->t_prev));
-	assert(!isnan(req->t_req));
+	AZ(isnan(req->t_first));
+	AZ(isnan(req->t_prev));
+	AZ(isnan(req->t_req));
 
 	VSLb(req->vsl, SLT_ReqStart, "%s %s",
 	    req->sp->client_addr_str, req->sp->client_port_str);

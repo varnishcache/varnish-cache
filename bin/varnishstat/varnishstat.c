@@ -55,7 +55,7 @@ do_xml_cb(void *priv, const struct VSC_point * const pt)
 	(void)priv;
 	if (pt == NULL)
 		return (0);
-	assert(!strcmp(pt->desc->fmt, "uint64_t"));
+	AZ(strcmp(pt->desc->fmt, "uint64_t"));
 	val = *(const volatile uint64_t*)pt->ptr;
 	sec = pt->section;
 
@@ -100,7 +100,7 @@ do_json_cb(void *priv, const struct VSC_point * const pt)
 		return (0);
 
 	jp = priv;
-	assert(!strcmp(pt->desc->fmt, "uint64_t"));
+	AZ(strcmp(pt->desc->fmt, "uint64_t"));
 	val = *(const volatile uint64_t*)pt->ptr;
 	sec = pt->section;
 
@@ -167,7 +167,7 @@ do_once_cb(void *priv, const struct VSC_point * const pt)
 	if (pt == NULL)
 		return (0);
 	op = priv;
-	assert(!strcmp(pt->desc->fmt, "uint64_t"));
+	AZ(strcmp(pt->desc->fmt, "uint64_t"));
 	val = *(const volatile uint64_t*)pt->ptr;
 	sec = pt->section;
 	i = 0;

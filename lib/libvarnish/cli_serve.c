@@ -369,7 +369,7 @@ cls_vlu(void *priv, const char *p)
 		return (0);
 	} else {
 		AN(cfd->argv[cfd->last_idx]);
-		assert(!strcmp(cfd->argv[cfd->last_idx], "<<"));
+		AZ(strcmp(cfd->argv[cfd->last_idx], "<<"));
 		AN(cfd->argv[cfd->last_idx + 1]);
 		if (strcmp(p, cfd->argv[cfd->last_idx + 1])) {
 			VSB_cat(cfd->last_arg, p);

@@ -801,7 +801,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	http_Teardown(bo->beresp);
 
 	if (bo->state == BOS_FINISHED) {
-		assert(!(bo->fetch_objcore->flags & OC_F_FAILED));
+		AZ(bo->fetch_objcore->flags & OC_F_FAILED);
 		HSH_Complete(bo->fetch_objcore);
 		VSLb(bo->vsl, SLT_Length, "%zd", bo->fetch_obj->len);
 		{

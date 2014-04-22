@@ -98,7 +98,7 @@ exp_when(const struct object *o)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
 	when = o->exp.t_origin + o->exp.ttl + o->exp.grace + o->exp.keep;
-	assert(!isnan(when));
+	AZ(isnan(when));
 	return (when);
 }
 

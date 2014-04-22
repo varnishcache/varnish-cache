@@ -215,7 +215,7 @@ binheap_new(void *priv, binheap_cmp_t *cmp_f, binheap_update_t *update_f)
 
 	bh->page_size = (unsigned)getpagesize() / sizeof (void *);
 	bh->page_mask = bh->page_size - 1;
-	assert(!(bh->page_size & bh->page_mask));	/* power of two */
+	AZ(bh->page_size & bh->page_mask);	/* power of two */
 	for (u = 1; (1U << u) != bh->page_size; u++)
 		;
 	bh->page_shift = u;
@@ -350,7 +350,7 @@ chk(const struct binheap *bh)
 
 	for (u = 2; u < bh->next; u++) {
 		v = parent(bh, u);
-		assert(!bh->cmp(bh->priv, A(bh, u), A(bh, v)));
+		AZ(bh->cmp(bh->priv, A(bh, u), A(bh, v)));
 	}
 }
 #endif
@@ -603,7 +603,7 @@ main(int argc, char **argv)
 			v = random() % N;
 			if (ff[v] != NULL) {
 				CHECK_OBJ_NOTNULL(ff[v], FOO_MAGIC);
-				assert(ff[v]->idx != 0);
+				AN(ff[v]->idx);
 				if (ff[v]->key & 1) {
 					binheap_delete(bh, ff[v]->idx);
 					assert(ff[v]->idx == BINHEAP_NOIDX);
@@ -619,7 +619,7 @@ main(int argc, char **argv)
 				ff[v]->key = random() % R;
 				binheap_insert(bh, ff[v]);
 				CHECK_OBJ_NOTNULL(ff[v], FOO_MAGIC);
-				assert(ff[v]->idx != 0);
+				AN(ff[v]->idx);
 			}
 			if (0)
 				chk2(bh);

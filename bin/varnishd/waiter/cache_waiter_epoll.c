@@ -124,7 +124,7 @@ vwe_eev(struct vwe *vwe, const struct epoll_event *ep, double now)
 				j++;
 				i -= sizeof ss[0];
 			}
-			assert(i == 0);
+			AZ(i);
 		}
 	} else {
 		CAST_OBJ_NOTNULL(sp, ep->data.ptr, SESS_MAGIC);

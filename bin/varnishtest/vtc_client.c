@@ -217,7 +217,7 @@ cmd_client(CMD_ARGS)
 		return;
 	}
 
-	assert(!strcmp(av[0], "client"));
+	AZ(strcmp(av[0], "client"));
 	av++;
 
 	VTAILQ_FOREACH(c, &clients, list)

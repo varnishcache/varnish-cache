@@ -251,7 +251,7 @@ cmd_server(CMD_ARGS)
 		return;
 	}
 
-	assert(!strcmp(av[0], "server"));
+	AZ(strcmp(av[0], "server"));
 	av++;
 
 	VTAILQ_FOREACH(s, &servers, list)
@@ -278,7 +278,7 @@ cmd_server(CMD_ARGS)
 		if (s->run)
 			server_wait(s);
 
-		assert(s->run == 0);
+		AZ(s->run);
 		if (!strcmp(*av, "-repeat")) {
 			s->repeat = atoi(av[1]);
 			av++;

@@ -230,7 +230,7 @@ VFP_Fetch_Body(struct busyobj *bo, ssize_t est)
 		AZ(bo->failed);
 		vfps = VFP_Suck(bo, st->ptr + st->len, &l);
 		if (l > 0 && vfps != VFP_ERROR) {
-			assert(!VTAILQ_EMPTY(&bo->fetch_obj->store));
+			AZ(VTAILQ_EMPTY(&bo->fetch_obj->store));
 			VBO_extend(bo, l);
 		}
 		if (st->len == st->space)

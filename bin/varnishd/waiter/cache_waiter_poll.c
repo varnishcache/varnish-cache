@@ -94,8 +94,8 @@ vwp_poll(struct vwp *vwp, int fd)
 		vwp->hpoll = fd;
 
 	assert(vwp->pollfd[fd].fd == -1);
-	assert(vwp->pollfd[fd].events == 0);
-	assert(vwp->pollfd[fd].revents == 0);
+	AZ(vwp->pollfd[fd].events);
+	AZ(vwp->pollfd[fd].revents);
 
 	vwp->pollfd[fd].fd = fd;
 	vwp->pollfd[fd].events = POLLIN;
@@ -111,7 +111,7 @@ vwp_unpoll(struct vwp *vwp, int fd)
 
 	assert(vwp->pollfd[fd].fd == fd);
 	assert(vwp->pollfd[fd].events == POLLIN);
-	assert(vwp->pollfd[fd].revents == 0);
+	AZ(vwp->pollfd[fd].revents);
 
 	vwp->pollfd[fd].fd = -1;
 	vwp->pollfd[fd].events = 0;
@@ -177,7 +177,7 @@ vwp_main(void *priv)
 			v2--;
 			i = read(vwp->pipes[0], ss, sizeof ss);
 			assert(i >= 0);
-			assert(((unsigned)i % sizeof ss[0]) == 0);
+			AZ((unsigned)i % sizeof ss[0]);
 			for (j = 0; j * sizeof ss[0] < i; j++) {
 				CHECK_OBJ_NOTNULL(ss[j], SESS_MAGIC);
 				assert(ss[j]->fd >= 0);
@@ -185,7 +185,7 @@ vwp_main(void *priv)
 				vwp_poll(vwp, ss[j]->fd);
 			}
 		}
-		assert(v2 == 0);
+		AZ(v2);
 	}
 	NEEDLESS_RETURN(NULL);
 }

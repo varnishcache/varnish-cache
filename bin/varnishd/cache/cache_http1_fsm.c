@@ -103,7 +103,7 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 	AZ(req->vcl);
 	AZ(req->obj);
 	AZ(req->esi_level);
-	assert(!isnan(sp->t_idle));
+	AZ(isnan(sp->t_idle));
 	assert(isnan(req->t_first));
 	assert(isnan(req->t_prev));
 	assert(isnan(req->t_req));
