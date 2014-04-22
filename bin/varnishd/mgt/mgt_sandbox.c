@@ -48,6 +48,7 @@
 #include <sys/prctl.h>
 #endif
 
+#include <grp.h>
 #include <stdio.h>
 #include <syslog.h>
 #include <unistd.h>
@@ -64,6 +65,7 @@ mgt_sandbox_unix(enum sandbox_e who)
 	(void)who;
 	if (geteuid() == 0) {
 		XXXAZ(setgid(mgt_param.gid));
+		XXXAZ(initgroups(mgt_param.user, mgt_param.gid));
 		XXXAZ(setuid(mgt_param.uid));
 	} else {
 		REPORT0(LOG_INFO, "Not running as root, no priv-sep");
