@@ -760,7 +760,7 @@ cmd_http_txresp(CMD_ARGS)
 	struct http *hp;
 	const char *proto = "HTTP/1.1";
 	const char *status = "200";
-	const char *msg = "Ok";
+	const char *msg = "OK";
 	char* body = NULL;
 
 	(void)cmd;

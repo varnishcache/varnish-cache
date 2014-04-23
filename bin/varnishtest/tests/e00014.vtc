@@ -3,7 +3,7 @@ varnishtest "Check <esi: detector"
 server s1 {
         rxreq
         expect req.url == "/foo"
-	send "HTTP/1.1 200 Ok\n"
+	send "HTTP/1.1 200 OK\n"
         send "Connection: close\n"
 	send "\n"
         send {           <a>   <esi/>                          }

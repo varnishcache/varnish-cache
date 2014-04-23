@@ -2,7 +2,7 @@ varnishtest "Wrong calculation of last storage segment length"
 
 server s1 {
 	rxreq
-	send "HTTP/1.1 200 Ok\r\n"
+	send "HTTP/1.1 200 OK\r\n"
 	send "Transfer-encoding: chunked\r\n"
 	send "\r\n"
 	# This is chunksize (128k) + 2 to force to chunks to be allocated

@@ -6,7 +6,7 @@ server s1 {
 	rxreq
 	txresp -proto HTTP/1.0 -hdr "Connection: keep-alive"
 	rxreq
-	send "HTTP/1.1 200 Ok\n"
+	send "HTTP/1.1 200 OK\n"
 	send "Transfer-encoding: foobar\n"
 	send "\n"
 } -start

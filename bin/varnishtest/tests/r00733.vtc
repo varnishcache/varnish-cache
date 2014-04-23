@@ -2,7 +2,7 @@ varnishtest "HTTP/1.1 Backend sends no length hint"
 
 server s1 {
 	rxreq
-	send "HTTP/1.1 200 Ok\n"
+	send "HTTP/1.1 200 OK\n"
 	send "\n"
 	send "12345"
 } -start

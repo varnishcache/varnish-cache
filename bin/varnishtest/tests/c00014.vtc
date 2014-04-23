@@ -4,7 +4,7 @@ server s1 {
 	rxreq
 	expect req.url == "/foo"
 	sema r1 sync 2
-	send "HTTP/1.1 200 Ok\r\nContent-Length: 12\r\n\r\n"
+	send "HTTP/1.1 200 OK\r\nContent-Length: 12\r\n\r\n"
 	send "line1\n"
 	send "line2\n"
 

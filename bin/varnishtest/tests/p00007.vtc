@@ -3,7 +3,7 @@ varnishtest "test reload of object spanning incomplete segment"
 server s1 {
 	rxreq
 	expect req.url == "/1"
-	send "HTTP/1.1 200 Ok\n"
+	send "HTTP/1.1 200 OK\n"
 	send "Transfer-encoding: chunked\n"
 	send "\n"
 	chunkedlen 32

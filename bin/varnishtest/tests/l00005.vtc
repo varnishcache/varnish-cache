@@ -28,7 +28,7 @@ varnish v1 -vcl+backend {
 # \r\n				  2 bytes
 # Total:			 54 bytes
 # Response:
-# HTTP/1.1 200 Ok\r\n		 17 bytes
+# HTTP/1.1 200 OK\r\n		 17 bytes
 # Content-Length: 1000\r\n	 22 bytes
 # \r\n				  2 bytes
 # Total:			 41 bytes

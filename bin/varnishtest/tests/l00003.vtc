@@ -32,7 +32,7 @@ varnish v1 -vcl+backend {
 # Total:				18 bytes
 
 # Reponse:
-# HTTP/1.1 200 Ok\r\n			17 bytes
+# HTTP/1.1 200 OK\r\n			17 bytes
 # Transfer-Encoding: chunked\r\n	28 bytes
 # Connection: keep-alive\r\n		24 bytes
 # \r\n					 2 bytes

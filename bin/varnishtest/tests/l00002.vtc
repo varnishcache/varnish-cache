@@ -28,7 +28,7 @@ varnish v1 -vcl+backend {
 # \r\n				  2 bytes
 # Total:			 38 bytes
 # Response:
-# HTTP/1.1 200 Ok\r\n		 17 bytes
+# HTTP/1.1 200 OK\r\n		 17 bytes
 # Content-Length: 1000\r\n	 22 bytes
 # Connection: keep-alive\r\n	 24 bytes
 # Accept-Ranges: bytes\r\n	 22 bytes
@@ -40,7 +40,7 @@ varnish v1 -vcl+backend {
 # \r\n				  2 bytes
 # Total:			 19 bytes
 # Response:
-# HTTP/1.1 200 Ok\r\n		 17 bytes
+# HTTP/1.1 200 OK\r\n		 17 bytes
 # Content-Length: 2000\r\n	 22 bytes
 # Connection: keep-alive\r\n	 24 bytes
 # Accept-Ranges: bytes\r\n	 22 bytes
@@ -52,7 +52,7 @@ varnish v1 -vcl+backend {
 # \r\n				  2 bytes
 # Total:			 19 bytes
 # Response:
-# HTTP/1.1 200 Ok\r\n		 17 bytes
+# HTTP/1.1 200 OK\r\n		 17 bytes
 # Content-Length: 2000\r\n	 22 bytes
 # Connection: keep-alive\r\n	 24 bytes
 # Accept-Ranges: bytes\r\n	 22 bytes

@@ -2,7 +2,7 @@ varnishtest "Check HTTP/1.0 EOF transmission"
 
 server s1 {
 	rxreq
-	send "HTTP/1.1 200 Ok\n"
+	send "HTTP/1.1 200 OK\n"
 	send "Connection: close\n"
 	send "\n"
 	send "Body line 1\n"

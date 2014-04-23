@@ -2,7 +2,7 @@ varnishtest "Make sure banlurker skips busy objects"
 
 server s1 {
 	rxreq
-	send "HTTP/1.0 200 Ok\r\n"
+	send "HTTP/1.0 200 OK\r\n"
 	sema r1 sync 2
 	send "Foobar: blaf\r\n"
 	send "Content-Length: 10\r\n"

@@ -3,7 +3,7 @@ varnishtest "Test parking second request on backend delay"
 server s1 {
 	rxreq
 	expect req.url == "/foo"
-	send "HTTP/1.1 200 Ok\r\nConnection: close\r\n\r\n"
+	send "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"
 	delay .2
 	sema r1 sync 2
 	delay .2
