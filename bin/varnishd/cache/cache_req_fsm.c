@@ -117,10 +117,12 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	/* We base Age calculation upon the last timestamp taken during
 	   client request processing. This gives some inaccuracy, but
 	   since Age is only full second resolution that shouldn't
-	   matter. */
-	assert(req->t_prev > req->obj->exp.t_origin);
+	   matter. (Last request timestamp could be a Start timestamp
+	   taken before the object entered into cache leading to negative
+	   age. Truncate to zero in that case).
+	*/
 	http_PrintfHeader(req->resp, "Age: %.0f",
-	    req->t_prev - req->obj->exp.t_origin);
+	    fmax(0., req->t_prev - req->obj->exp.t_origin));
 
 	http_SetHeader(req->resp, "Via: 1.1 varnish (v4)");
 
