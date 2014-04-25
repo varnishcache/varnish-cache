@@ -199,7 +199,7 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 		http_CopyHome(bo->bereq0);
 	}
 
-	if (bo->ims_obj != NULL) {
+	if (bo->ims_obj != NULL && bo->ims_obj->http->status == 200) {
 		if (http_GetHdr(bo->ims_obj->http, H_Last_Modified, &p)) {
 			http_PrintfHeader(bo->bereq0,
 			    "If-Modified-Since: %s", p);
