@@ -356,9 +356,9 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	AZ(bo->do_esi);
 
 	if (bo->ims_obj != NULL && bo->beresp->status == 304) {
-		bo->beresp->status = 200;
 		http_Merge(bo->ims_obj->http, bo->beresp,
 		    bo->ims_obj->changed_gzip);
+		assert(bo->beresp->status == 200);
 		do_ims = 1;
 	} else
 		do_ims = 0;

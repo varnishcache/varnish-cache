@@ -1,0 +1,32 @@
+varnishtest "#1485: Wrong response reason phrase"
+
+server s1 {
+	rxreq
+	txresp -hdr "Etag: foo"
+
+	rxreq
+	expect req.http.If-None-Match == "foo"
+	txresp -status 304 -msg "Not Modified"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.ttl = 1ms;
+		set beresp.grace = 0s;
+		set beresp.keep = 1h;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.msg == "OK"
+
+	delay 0.1
+
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.msg == "OK"
+} -run

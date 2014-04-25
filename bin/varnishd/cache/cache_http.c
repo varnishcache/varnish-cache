@@ -637,7 +637,9 @@ http_FilterResp(const struct http *fm, struct http *to, unsigned how)
 }
 
 /*--------------------------------------------------------------------
- * Merge two HTTP headers the "wrong" way.
+ * Merge two HTTP headers the "wrong" way. Used by backend IMS to
+ * merge in the headers of the validated object with the headers of
+ * the 304 response.
  */
 
 void
@@ -645,6 +647,11 @@ http_Merge(const struct http *fm, struct http *to, int not_ce)
 {
 	unsigned u, v;
 	const char *p;
+
+	to->status = fm->status;
+	http_SetH(to, HTTP_HDR_PROTO, fm->hd[HTTP_HDR_PROTO].b);
+	http_SetH(to, HTTP_HDR_STATUS, fm->hd[HTTP_HDR_STATUS].b);
+	http_SetH(to, HTTP_HDR_RESPONSE, fm->hd[HTTP_HDR_RESPONSE].b);
 
 	for (u = HTTP_HDR_FIRST; u < fm->nhd; u++)
 		fm->hdf[u] |= HDF_MARKER;
