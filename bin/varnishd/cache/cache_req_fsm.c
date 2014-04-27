@@ -53,7 +53,7 @@ DOT	label="Request received"
 DOT ]
 DOT ESI_REQ [ shape=hexagon ]
 DOT ESI_REQ -> recv
-DOT ERROR [shape=plaintext]
+DOT SYNTH [shape=plaintext]
 DOT RESTART [shape=plaintext]
 DOT acceptor -> recv [style=bold,color=green]
  */
@@ -178,15 +178,15 @@ VSLb(req->vsl, SLT_Debug, "XXX REF %d", req->obj->objcore->refcnt);
 }
 
 /*--------------------------------------------------------------------
- * Emit an error
+ * Emit a synthetic response
  *
-DOT subgraph xcluster_error {
-DOT	vcl_error [
+DOT subgraph xcluster_synth {
+DOT	synth [
 DOT		shape=record
-DOT		label="{{vcl_error()|resp.}|{<del>deliver?|<restart>restart?}}"
+DOT		label="{cnt_synth:|{vcl_synth\{\}|resp.}|{<del>deliver?|<restart>restart?}}"
 DOT	]
-DOT	ERROR -> vcl_error
-DOT	vcl_error:del:s -> deliver [label=deliver]
+DOT	SYNTH -> synth
+DOT	synth:del:s -> deliver [label=deliver]
 DOT }
  */
 
@@ -313,7 +313,7 @@ DOT		label="{<top>cnt_lookup:|hash lookup|{<busy>busy?|<e>exp?|<eb>exp+busy?|<h>
 DOT	]
 DOT	lookup2 [
 DOT		shape=record
-DOT		label="{<top>cnt_lookup:|{vcl_hit\{\}|req.*, obj.*}|{<deliver>deliver?|error?|restart?|<fetch>fetch?|<pass>pass?}}"
+DOT		label="{<top>cnt_lookup:|{vcl_hit\{\}|req.*, obj.*}|{<deliver>deliver?|synth?|restart?|<fetch>fetch?|<pass>pass?}}"
 DOT	]
 DOT }
 DOT lookup:busy:w -> lookup:top:w [label="(waitinglist)"]
@@ -471,7 +471,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 DOT subgraph xcluster_miss {
 DOT	miss [
 DOT		shape=record
-DOT		label="{cnt_miss:|{vcl_miss\{\}|req.*}|{<fetch>fetch?|<err>error?|<rst>restart?|<pass>pass?}}"
+DOT		label="{cnt_miss:|{vcl_miss\{\}|req.*}|{<fetch>fetch?|<synth>synth?|<rst>restart?|<pass>pass?}}"
 DOT	]
 DOT }
 DOT miss:fetch:s -> fetch [label="fetch",style=bold,color=blue]
@@ -525,7 +525,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 DOT subgraph xcluster_pass {
 DOT	pass [
 DOT		shape=record
-DOT		label="{cnt_pass:|{vcl_pass\{\}|req.*}|{<fetch>fetch?|<err>error?|<rst>restart?}}"
+DOT		label="{cnt_pass:|{vcl_pass\{\}|req.*}|{<fetch>fetch?|<synth>synth?|<rst>restart?}}"
 DOT	]
 DOT }
 DOT pass:fetch:s -> fetch:n [style=bold, color=red]
@@ -573,7 +573,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 DOT subgraph xcluster_pipe {
 DOT	pipe [
 DOT		shape=record
-DOT		label="{cnt_pipe:|filter req.*-\>bereq.*|{vcl_pipe()|req.*, bereq\.*}|{<pipe>pipe?|<error>error?}}"
+DOT		label="{cnt_pipe:|filter req.*-\>bereq.*|{vcl_pipe()|req.*, bereq\.*}|{<pipe>pipe?|<synth>synth?}}"
 DOT	]
 DOT	pipe_do [
 DOT		shape=ellipse
@@ -625,7 +625,7 @@ DOT }
 DOT RESTART -> restart [color=purple]
 DOT restart -> recv [color=purple]
 DOT restart -> err_restart
-DOT err_restart [label="ERROR",shape=plaintext]
+DOT err_restart [label="SYNTH",shape=plaintext]
  */
 
 static enum req_fsm_nxt
@@ -667,7 +667,7 @@ cnt_restart(struct worker *wrk, struct req *req)
 DOT subgraph xcluster_recv {
 DOT	recv [
 DOT		shape=record
-DOT		label="{cnt_recv:|{vcl_recv\{\}|req.*}|{vcl_hash\{\}|req.*}|{<lookup>lookup?|<pass>pass?|<pipe>pipe?|<error>error?|<purge>purge?}}"
+DOT		label="{cnt_recv:|{vcl_recv\{\}|req.*}|{vcl_hash\{\}|req.*}|{<lookup>lookup?|<pass>pass?|<pipe>pipe?|<synth>synth?|<purge>purge?}}"
 DOT	]
 DOT }
 DOT recv:pipe -> pipe [style=bold,color=orange]
@@ -793,6 +793,13 @@ cnt_recv(struct worker *wrk, struct req *req)
  * Find the objhead, purge it and ask VCL if we should fetch or
  * just return.
  * XXX: fetching not implemented yet.
+ *
+DOT subgraph xcluster_purge {
+DOT	purge [
+DOT		shape=record
+DOT		label="{cnt_purge:|{vcl_purge\{\}|req.*}|{<synth>synth?}}"
+DOT	]
+DOT }
  */
 
 static enum req_fsm_nxt
