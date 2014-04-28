@@ -913,8 +913,8 @@ CNT_Request(struct worker *wrk, struct req *req)
 			VTAILQ_REMOVE(&req->body, st, list);
 			STV_free(st);
 		}
+		req->wrk = NULL;
 	}
-	req->wrk = NULL;
 	assert(WRW_IsReleased(wrk));
 	return (nxt);
 }
