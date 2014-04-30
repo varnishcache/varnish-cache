@@ -254,8 +254,8 @@ sp_variables = [
 	),
 	('req.esi',
 		'BOOL',
-		( 'recv', 'backend_response', 'deliver', 'synth',),
-		( 'recv', 'backend_response', 'deliver', 'synth',), """
+		( 'client',),
+		( 'client',), """
 		Boolean. Set to false to disable ESI processing
 		regardless of any value in beresp.do_esi. Defaults
 		to true. This variable is subject to change in
