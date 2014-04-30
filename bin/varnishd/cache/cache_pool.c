@@ -163,12 +163,12 @@ pool_accept(struct worker *wrk, void *arg)
 		}
 		VTAILQ_REMOVE(&pp->idle_queue, &wrk2->task, list);
 		AZ(wrk2->task.func);
-		Lck_Unlock(&pp->mtx);
 		assert(sizeof *wa2 == WS_Reserve(wrk2->aws, sizeof *wa2));
 		wa2 = (void*)wrk2->aws->f;
 		memcpy(wa2, wa, sizeof *wa);
 		wrk2->task.func = SES_pool_accept_task;
 		wrk2->task.priv = pp->sesspool;
+		Lck_Unlock(&pp->mtx);
 		AZ(pthread_cond_signal(&wrk2->cond));
 
 		/*
@@ -204,9 +204,9 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how)
 	if (wrk != NULL) {
 		VTAILQ_REMOVE(&pp->idle_queue, &wrk->task, list);
 		AZ(wrk->task.func);
-		Lck_Unlock(&pp->mtx);
 		wrk->task.func = task->func;
 		wrk->task.priv = task->priv;
+		Lck_Unlock(&pp->mtx);
 		AZ(pthread_cond_signal(&wrk->cond));
 		return (0);
 	}
@@ -234,6 +234,17 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how)
 	}
 	Lck_Unlock(&pp->mtx);
 	return (retval);
+}
+
+/*--------------------------------------------------------------------
+ * Empty function used as a pointer value for the thread exit condition.
+ */
+
+static void
+pool_kiss_of_death(struct worker *wrk, void *priv)
+{
+	(void)wrk;
+	(void)priv;
 }
 
 /*--------------------------------------------------------------------
@@ -274,7 +285,6 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 				wrk->lastused = VTIM_real();
 			wrk->task.func = NULL;
 			wrk->task.priv = wrk;
-			AZ(wrk->task.func);
 			VTAILQ_INSERT_HEAD(&pp->idle_queue, &wrk->task, list);
 			if (!stats_clean)
 				WRK_SumStat(wrk);
@@ -283,12 +293,12 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 				    wrk->vcl == NULL ?  0 : wrk->lastused+60.);
 				if (i == ETIMEDOUT)
 					VCL_Rel(&wrk->vcl);
-			} while (i);
+			} while (wrk->task.func == NULL);
 			tp = &wrk->task;
 		}
 		Lck_Unlock(&pp->mtx);
 
-		if (tp->func == NULL)
+		if (tp->func == pool_kiss_of_death)
 			break;
 
 		assert(wrk->pool == pp);
@@ -387,23 +397,23 @@ pool_herder(void *priv)
 				CAST_OBJ_NOTNULL(wrk, pt->priv, WORKER_MAGIC);
 
 				if (wrk->lastused < t_idle ||
-				    pp->nthr > cache_param->wthread_max)
+				    pp->nthr > cache_param->wthread_max) {
+					/* Give it a kiss on the cheek... */
 					VTAILQ_REMOVE(&pp->idle_queue,
 					    &wrk->task, list);
-				else
+					wrk->task.func = pool_kiss_of_death;
+					AZ(pthread_cond_signal(&wrk->cond));
+				} else
 					wrk = NULL;
 			}
 			Lck_Unlock(&pp->mtx);
 
-			/* And give it a kiss on the cheek... */
 			if (wrk != NULL) {
 				pp->nthr--;
 				Lck_Lock(&pool_mtx);
 				VSC_C_main->threads--;
 				VSC_C_main->threads_destroyed++;
 				Lck_Unlock(&pool_mtx);
-				wrk->task.func = NULL;
-				wrk->task.priv = NULL;
 				VTIM_sleep(cache_param->wthread_destroy_delay);
 				continue;
 			}

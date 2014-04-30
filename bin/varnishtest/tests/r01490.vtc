@@ -1,0 +1,38 @@
+varnishtest "#1490 - thread destruction"
+
+server s1 {
+} -start
+
+varnish v1 \
+	-arg "-p debug=+syncvsl" \
+	-arg "-p vsl_mask=+WorkThread" \
+	-arg "-p thread_pool_min=2" \
+	-arg "-p thread_pool_max=3" \
+	-arg "-p thread_pools=1" \
+	-vcl+backend {}
+varnish v1 -start
+
+varnish v1 -expect threads == 2
+
+logexpect l1 -v v1 -g raw {
+	expect * 0 WorkThread {^\S+ start$}
+	expect * 0 WorkThread {^\S+ end$}
+} -start
+
+varnish v1 -cliok "param.set thread_pool_min 3"
+
+# Herder thread sleeps 5 seconds. Have to wait longer than that.
+delay 6
+
+varnish v1 -expect threads == 3
+
+varnish v1 -cliok "param.set thread_pool_min 2"
+varnish v1 -cliok "param.set thread_pool_max 2"
+
+# Herder thread sleeps 5 seconds. Have to wait longer than that.
+delay 6
+
+varnish v1 -expect threads == 2
+
+# Use logexpect to see that the thread actually exited
+logexpect l1 -wait
