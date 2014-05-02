@@ -4,8 +4,10 @@
 
 set -x
 
-if [ -x /usr/lib/rpm/find-requires ]; then
-    /usr/lib/rpm/find-requires "$@"
+if [ -x /usr/lib/rpm/redhat/find-provides ]; then
+    /usr/lib/rpm/redhat/find-provides "$@"
+elif [ -x /usr/lib/rpm/find-provides ]; then
+    /usr/lib/rpm/find-provides "$@"
 fi
 
 cd $(dirname $0)/..

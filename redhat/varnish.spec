@@ -51,11 +51,6 @@ available on the following web site: http://www.varnish-cache.org/
 Summary: Libraries for %{name}
 Group: System Environment/Libraries
 BuildRequires: ncurses-devel
-Provides: libvarnishapi.so.1
-Provides: libvarnishapi.so.1(LIBVARNISHAPI_1.0)(64bit)
-Provides: libvarnishapi.so.1(LIBVARNISHAPI_1.1)(64bit)
-Provides: libvarnishapi.so.1(LIBVARNISHAPI_1.2)(64bit)
-Provides: libvarnishapi.so.1(LIBVARNISHAPI_1.3)(64bit)
 #Obsoletes: libvarnish1
 
 %description libs
