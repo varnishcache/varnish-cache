@@ -50,6 +50,7 @@ nobase_noinst_HEADERS = \
 	vcli_serve.h \
 	vcs_version.h \
 	vct.h \
+	vcurses.h \
 	vend.h \
 	vev.h \
 	vfil.h \
