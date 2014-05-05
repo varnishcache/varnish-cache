@@ -88,6 +88,7 @@ vdir_delete(struct vdir **vdp)
 	free(vd->backend);
 	free(vd->weight);
 	AZ(pthread_mutex_destroy(&vd->mtx));
+	free(vd->dir->vcl_name);
 	FREE_OBJ(vd->dir);
 	vbit_destroy(vd->vbm);
 	FREE_OBJ(vd);
