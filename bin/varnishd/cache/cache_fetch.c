@@ -548,6 +548,14 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		HSH_Unbusy(&wrk->stats, obj->objcore);
 	}
 	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
+
+	/* Recycle the backend connection before setting BOS_FINISHED to
+	   give predictable backend reuse behavior for varnishtest */
+	if (bo->vbc != NULL && !(bo->should_close)) {
+		VDI_RecycleFd(&bo->vbc, &bo->acct);
+		AZ(bo->vbc);
+	}
+
 	VBO_setstate(bo, BOS_FINISHED);
 	return (F_STP_DONE);
 }
@@ -639,6 +647,14 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	assert(al == bo->ims_obj->len);
 	assert(obj->len == al);
 	EXP_Rearm(bo->ims_obj, bo->ims_obj->exp.t_origin, 0, 0, 0);
+
+	/* Recycle the backend connection before setting BOS_FINISHED to
+	   give predictable backend reuse behavior for varnishtest */
+	if (bo->vbc != NULL && !(bo->should_close)) {
+		VDI_RecycleFd(&bo->vbc, &bo->acct);
+		AZ(bo->vbc);
+	}
+
 	VBO_setstate(bo, BOS_FINISHED);
 	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
 	return (F_STP_DONE);
