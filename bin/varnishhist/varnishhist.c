@@ -463,7 +463,7 @@ main(int argc, char **argv)
 	VUT.dispatch_priv = NULL;
 	VUT_Main();
 	end_of_file = 1;
-	pthread_join(thr, NULL);
+	AZ(pthread_join(thr, NULL));
 	VUT_Fini();
 	exit(0);
 }
