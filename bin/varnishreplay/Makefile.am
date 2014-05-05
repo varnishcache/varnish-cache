@@ -6,9 +6,9 @@ bin_PROGRAMS = varnishreplay
 
 varnishreplay_SOURCES = \
 	varnishreplay.c \
-	$(top_builddir)/lib/libvarnish/vas.c \
-	$(top_builddir)/lib/libvarnish/vtcp.c \
-	$(top_builddir)/lib/libvarnish/vss.c
+	$(top_srcdir)/lib/libvarnish/vas.c \
+	$(top_srcdir)/lib/libvarnish/vtcp.c \
+	$(top_srcdir)/lib/libvarnish/vss.c
 
 varnishreplay_LDADD = \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
