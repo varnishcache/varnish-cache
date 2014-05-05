@@ -442,8 +442,8 @@ main(int argc, char **argv)
 
 	hist_range = hist_high - hist_low;
 	hist_buckets = hist_range * HIST_RES;
-	bucket_hit = calloc(sizeof bucket_hit, hist_buckets);
-	bucket_miss = calloc(sizeof bucket_miss, hist_buckets);
+	bucket_hit = calloc(sizeof *bucket_hit, hist_buckets);
+	bucket_miss = calloc(sizeof *bucket_miss, hist_buckets);
 
 	format = malloc(4 * fnum);
 	for (i = 0; i < fnum-1; i++) {
