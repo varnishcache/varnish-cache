@@ -1,6 +1,9 @@
 #
 
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = \
+	-I$(top_srcdir)/include \
+	-I$(top_builddir)/include
+
 AM_LDFLAGS  = $(AM_LT_LDFLAGS)
 
 pkglib_LTLIBRARIES = libvarnishcompat.la

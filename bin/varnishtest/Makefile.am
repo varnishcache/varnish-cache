@@ -15,7 +15,10 @@ check-local:
 
 DISTCLEANFILES = _.ok
 
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/lib/libvgz
+AM_CPPFLAGS = \
+	-I$(top_srcdir)/include \
+	-I$(top_builddir)/include \
+	-I$(top_srcdir)/lib/libvgz
 
 bin_PROGRAMS =	varnishtest
 
