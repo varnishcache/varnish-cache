@@ -1,0 +1,58 @@
+varnishtest "obj.hits vs Vary"
+
+server s1 {
+	rxreq
+	txresp -hdr "Vary: bar" -body "foobar"
+	rxreq
+	txresp -hdr "Vary: bar" -body "barf"
+} -start
+
+varnish v1 \
+	-arg "-p ban_lurker_sleep=0.01" \
+	-arg "-p ban_lurker_age=0.01" \
+	-vcl+backend {
+		sub vcl_deliver {
+			set resp.http.hits = obj.hits;
+		}
+	} -start
+
+client c1 {
+	# This is a miss -> hits == 0
+	txreq -url "/" -hdr "Bar: 1"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 6
+	expect resp.http.hits == 0
+
+	# This is a hit -> hits == 1
+	txreq -url "/" -hdr "Bar: 1"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 6
+	expect resp.http.hits == 1
+
+	# This is a miss on different vary -> hits still == 1
+	txreq -url "/" -hdr "Bar: 2"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 4
+	expect resp.http.hits == 1
+
+	# This is a hit -> hits == 2
+	txreq -url "/" -hdr "Bar: 2"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 4
+	expect resp.http.hits == 2
+
+} -run
+
+# Ban everything on this hash-key
+varnish v1 -cliok "ban obj.http.vary ~ ."
+delay 1
+
+# And run the entire test again to see that obj.hits got reset.
+
+server s1 -start
+
+client c1 -run

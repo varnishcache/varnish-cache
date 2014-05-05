@@ -511,9 +511,12 @@ sp_variables = [
 		'INT',
 		( 'hit', 'deliver',),
 		( ), """
-		The approximate number of times the object has been
-		delivered. A value of 0 indicates a cache miss.
-		This variable is also available in vcl_deliver.
+		The count of cache-hits on this hash-key since it was
+		last instantiated.  This counts cache-hits across all
+		Vary:-ants on this hash-key.
+		The counter will only be reset to zero if/when all objects
+		with this hash-key have disappeared from cache.
+		NB: obj.hits == 0 does *not* indicate a cache miss.
 		"""
 	),
 	('obj.http.',
