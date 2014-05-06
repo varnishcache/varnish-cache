@@ -24,34 +24,47 @@ the objects in cache beyond their TTL and to serve the waiting
 requests somewhat stale content.
 
 So, in order to serve stale content we must first have some content to
-serve. So to make Varnish keep all objects for 30 minutes beyond their
+serve. So to make Varnish keep all objects for 2 minutes beyond their
 TTL use the following VCL::
 
   sub vcl_backend_response {
-    set beresp.grace = 30m;
+    set beresp.grace = 2m;
   }
 
-Varnish still won't serve the stale objects. In order to enable
-Varnish to actually serve the stale object we must enable this on the
-request. Lets us say that we accept serving 15s old object.::
+Now Varnish will be allowed to serve objects that are up to two
+minutes out of date. When it does it will also schedule a refresh of
+the object. This will happen asynchronously and the moment the new
+object is in it will replace the one we've already got.
 
-  sub vcl_recv {
-    set req.grace = 15s;
+You can influence how this logic works by adding code in vcl_hit. The
+default looks like this:::
+
+  sub vcl_hit {
+     if (obj.ttl >= 0s) {
+         // A pure unadultered hit, deliver it
+         return (deliver);
+     }
+     if (obj.ttl + obj.grace > 0s) {
+         // Object is in grace, deliver it
+         // Automatically triggers a background fetch
+         return (deliver);
+     }
+     // fetch & deliver once we get the result
+     return (fetch);
   }
 
-You might wonder why we should keep the objects in the cache for 30
-minutes if we are unable to serve them? Well, if you have enabled
-:ref:`users-guide-advanced_backend_servers-health` you can check if the
-backend is sick and if it is we can serve the stale content for a bit
-longer.::
+The grace logic is pretty obvious here. If you have enabled
+:ref:`users-guide-advanced_backend_servers-health` you can check if
+the backend is sick and only serve graced object then. Replace the
+second if-clause with something like this:::
 
-   if (!std.healthy(backend)) {
-      set req.grace = 5m;
+   if (!std.healthy(backend) && (obj.ttl + obj.grace > 0s) {
+         return (deliver);
    } else {
-      set req.grace = 15s;
+         return (fetch);
    }
 
 So, to sum up, grace mode solves two problems:
  * it serves stale content to avoid request pile-up.
- * it serves stale content if the backend is not healthy.
+ * it serves stale content if you allow it.
 
