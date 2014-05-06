@@ -53,7 +53,7 @@ start() {
 	# Open files (usually 1024, which is way too small for varnish)
 	ulimit -n ${NFILES:-131072}
 
-	# Varnish wants to lock shared memory log in memory. 
+	# Varnish wants to lock shared memory log in memory.
 	ulimit -l ${MEMLOCK:-82000}
 
 	# Maximum number of threads (default in CentOS is 1024, which
