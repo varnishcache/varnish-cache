@@ -1,6 +1,6 @@
 varnishtest "Dropping polling of a backend"
 
-server s1 -repeat 1 {
+server s1 -repeat 20 {
 	rxreq
 	txresp
 } -start
@@ -32,7 +32,7 @@ delay 1
 varnish v1 -cliok "vcl.list"
 varnish v1 -cliok "debug.health"
 
-server s1 {
+server s1 -break {
 	rxreq
 	expect req.url == /foo
 	txresp -bodylen 4
