@@ -60,6 +60,12 @@ start() {
 	# is often too small for varnish)
 	ulimit -u ${NPROCS:-unlimited}
 
+	# If defined, set maximum core size.
+	if [ -n "${DAEMON_COREFILE_LIMIT}" ]
+	then
+		ulimit -c ${DAEMON_COREFILE_LIMIT}
+	fi
+
         # $DAEMON_OPTS is set in /etc/sysconfig/varnish. At least, one
         # has to set up a backend, or /tmp will be used, which is a bad idea.
 	if [ "$DAEMON_OPTS" = "" ]; then
