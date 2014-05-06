@@ -583,6 +583,17 @@ VSC_F(bans_persisted_fragmentation,	uint64_t, 0, 'g', diag,
 
 /*--------------------------------------------------------------------*/
 
+VSC_F(n_purges,			uint64_t, 0, 'i', info,
+    "Number of purge operations",
+	""
+)
+VSC_F(n_obj_purged,		uint64_t, 0, 'i', info,
+    "number of purged objects",
+	""
+)
+
+/*--------------------------------------------------------------------*/
+
 VSC_F(exp_mailed,			uint64_t, 0, 'c', diag,
     "Number of objects mailed to expiry thread",
 	"Number of objects mailed to expiry thread for handling."

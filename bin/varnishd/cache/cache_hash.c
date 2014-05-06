@@ -602,6 +602,7 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, double ttl, double grace)
 		(void)HSH_DerefObj(&wrk->stats, &o);
 	}
 	WS_Release(wrk->aws, 0);
+	WRK_PurgeStat(nobj);
 }
 
 

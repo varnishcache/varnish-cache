@@ -77,6 +77,19 @@ WRK_TrySumStat(struct worker *w)
 }
 
 /*--------------------------------------------------------------------
+ * Helper function to update stats for purges under lock
+ */
+
+void
+WRK_PurgeStat(unsigned nobj)
+{
+	Lck_Lock(&wstat_mtx);
+	VSC_C_main->n_purges++;
+	VSC_C_main->n_obj_purged += nobj;
+	Lck_Unlock(&wstat_mtx);
+}
+
+/*--------------------------------------------------------------------
  * Create and starte a back-ground thread which as its own worker and
  * session data structures;
  */
