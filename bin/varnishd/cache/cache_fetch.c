@@ -547,7 +547,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		assert(bo->state == BOS_REQ_DONE);
 		HSH_Unbusy(&wrk->stats, obj->objcore);
 	}
-	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
 
 	/* Recycle the backend connection before setting BOS_FINISHED to
 	   give predictable backend reuse behavior for varnishtest */
@@ -557,6 +556,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	}
 
 	VBO_setstate(bo, BOS_FINISHED);
+	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
 	return (F_STP_DONE);
 }
 
