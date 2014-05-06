@@ -1,6 +1,6 @@
 varnishtest "Dropping polling of a backend"
 
-server s1 -repeat 20 {
+server s1 -repeat 40 {
 	rxreq
 	txresp
 } -start
