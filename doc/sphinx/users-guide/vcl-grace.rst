@@ -58,7 +58,7 @@ The grace logic is pretty obvious here. If you have enabled
 the backend is sick and only serve graced object then. Replace the
 second if-clause with something like this:::
 
-   if (!std.healthy(backend) && (obj.ttl + obj.grace > 0s) {
+   if (!std.healthy(req.backend_hint) && (obj.ttl + obj.grace > 0s)) {
          return (deliver);
    } else {
          return (fetch);
