@@ -498,6 +498,8 @@ cnt_miss(struct worker *wrk, struct req *req)
 		wrk->stats.cache_miss++;
 		VBF_Fetch(wrk, req, req->objcore, o, VBF_NORMAL);
 		req->req_step = R_STP_FETCH;
+		if (o != NULL)
+			(void)HSH_DerefObj(&wrk->stats, &o);
 		return (REQ_FSM_MORE);
 	case VCL_RET_SYNTH:
 		req->req_step = R_STP_SYNTH;
