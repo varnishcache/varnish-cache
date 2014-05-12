@@ -200,17 +200,17 @@ parse_new(struct vcc *tl)
 		p++;
 	p += 2;
 
-	Fh(tl, 0, "static %s *%s;\n\n", s_struct, sy1->name);
+	Fh(tl, 0, "static %s *vo_%s;\n\n", s_struct, sy1->name);
 
 	vcc_NextToken(tl);
 
-	bprintf(buf1, ", &%s, \"%s\"", sy1->name, sy1->name);
+	bprintf(buf1, ", &vo_%s, \"%s\"", sy1->name, sy1->name);
 	vcc_Eval_Func(tl, s_init, buf1, "ASDF", s_init + strlen(s_init) + 1);
 	ifp = New_IniFin(tl);
-	VSB_printf(ifp->fin, "\t%s(&%s);", s_fini, sy1->name);
+	VSB_printf(ifp->fin, "\t%s(&vo_%s);", s_fini, sy1->name);
 	ExpectErr(tl, ';');
 
-	bprintf(buf1, ", %s", sy1->name);
+	bprintf(buf1, ", vo_%s", sy1->name);
 	/* Split the methods from the args */
 	while (*p != '\0') {
 		p += strlen(s_obj);

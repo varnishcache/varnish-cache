@@ -1,0 +1,18 @@
+varnishtest "backend name VCC crash"
+
+varnish v1 -vcl {
+	vcl 4.0;
+	import ${vmod_directors};
+	backend s1 {
+	     .host = "127.0.0.1";
+	     .port = "80";
+	}
+	sub vcl_init {
+	    new static = directors.random();
+	    static.add_backend(s1, 100.0);
+	}
+
+	sub vcl_backend_fetch {
+		set bereq.backend = static.backend();
+	}
+}
