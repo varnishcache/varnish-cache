@@ -371,6 +371,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	if (wrk->handling == VCL_RET_RETRY) {
 		AN (bo->vbc);
 		VDI_CloseFd(&bo->vbc, &bo->acct);
+		bo->should_close = 0;
 		bo->retries++;
 		if (bo->retries <= cache_param->max_retries)
 			return (F_STP_RETRY);
