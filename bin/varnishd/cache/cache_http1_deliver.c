@@ -89,10 +89,18 @@ v1d_range_bytes(struct req *req, enum vdp_action act, const void *ptr,
 static void
 v1d_dorange(struct req *req, const char *r)
 {
-	ssize_t low, high, has_low;
+	ssize_t len, low, high, has_low;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 	assert(http_GetStatus(req->obj->http) == 200);
+
+	/* We must snapshot the length if we're streaming from the backend */
+	if (req->obj->objcore->busyobj != NULL)
+		len = VBO_waitlen(req->obj->objcore->busyobj, -1);
+	else
+		len = req->obj->len;
+
 	if (strncmp(r, "bytes=", 6))
 		return;
 	r += 6;
@@ -108,7 +116,7 @@ v1d_dorange(struct req *req, const char *r)
 		r++;
 	}
 
-	if (low >= req->obj->len)
+	if (low >= len)
 		return;
 
 	if (*r != '-')
@@ -124,24 +132,24 @@ v1d_dorange(struct req *req, const char *r)
 			r++;
 		}
 		if (!has_low) {
-			low = req->obj->len - high;
+			low = len - high;
 			if (low < 0)
 				low = 0;
-			high = req->obj->len - 1;
+			high = len - 1;
 		}
 	} else
-		high = req->obj->len - 1;
+		high = len - 1;
 	if (*r != '\0')
 		return;
 
-	if (high >= req->obj->len)
-		high = req->obj->len - 1;
+	if (high >= len)
+		high = len - 1;
 
 	if (low > high)
 		return;
 
 	http_PrintfHeader(req->resp, "Content-Range: bytes %jd-%jd/%jd",
-	    (intmax_t)low, (intmax_t)high, (intmax_t)req->obj->len);
+	    (intmax_t)low, (intmax_t)high, (intmax_t)len);
 	http_Unset(req->resp, H_Content_Length);
 	if (req->res_mode & RES_LEN)
 		http_PrintfHeader(req->resp, "Content-Length: %jd",
