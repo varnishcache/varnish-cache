@@ -192,11 +192,13 @@ sess_workspace
 In 3.0 it was often necessary to increase `sess_workspace` if a
 lot of VMODs, complex header operations or ESI were in use.
 
-This memory segment has been split into two in 4.0;
-`workspace_backend` and `workspace_client`.
+This is no longer necessary, because ESI scratch space happens
+elsewhere in 4.0.
 
-In most cases where you increased `sess_workspace` before, you
-want to increase `workspace_client` now.
+If you are using a lot of VMODs,  you may need to increase
+either `workspace_backend` and `workspace_client` based on where
+your VMOD is doing its work.
+
 
 New parameters since 3.0
 ========================
