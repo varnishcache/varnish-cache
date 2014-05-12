@@ -142,6 +142,12 @@ obj is now read-only
 `obj` is now read-only. `obj.hits`, if enabled in VCL, now counts per
 objecthead, not per object. `obj.last_use` has been retired.
 
+Note that obj.hits may not be reset in some cases where bans are in use. See
+bug 1492_ for details.
+
+.. _1492: https://www.varnish-cache.org/trac/ticket/1492
+
+
 Some return values have been replaced
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
