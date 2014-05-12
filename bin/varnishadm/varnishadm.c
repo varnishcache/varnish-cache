@@ -439,7 +439,15 @@ main(int argc, char * const *argv)
 	const char *n_arg = NULL;
 	int opt, sock;
 
-	while ((opt = getopt(argc, argv, "n:S:T:t:")) != -1) {
+	/*
+	 * By default linux::getopt(3) mangles the argv order, such that
+	 * 	varnishadm -n bla param.set foo -bar
+	 * gets interpreted as
+	 * 	varnishadm -n bla -bar param.set foo 
+	 * The '+' stops that from happening
+	 * See #1496
+	 */
+	while ((opt = getopt(argc, argv, "+n:S:T:t:")) != -1) {
 		switch (opt) {
 		case 'n':
 			n_arg = optarg;
