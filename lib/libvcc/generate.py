@@ -100,7 +100,7 @@ returns =(
 	),
 	('purge',
 		"C",
-		('synth', 'fetch',)
+		('synth', 'restart',)
 	),
 	('miss',
 		"C",

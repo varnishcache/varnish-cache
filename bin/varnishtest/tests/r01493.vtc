@@ -1,0 +1,24 @@
+varnishtest "restart in vcl_purge"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.method == "PURGE") {
+			return (purge);
+		}
+	}
+	sub vcl_purge {
+		set req.method = "GET";
+		return (restart);
+	}
+} -start
+
+client c1 {
+	txreq -req PURGE
+	rxresp
+	expect resp.status == 200
+} -run

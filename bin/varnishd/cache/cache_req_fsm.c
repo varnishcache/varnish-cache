@@ -830,7 +830,16 @@ cnt_purge(struct worker *wrk, struct req *req)
 	AZ(HSH_DerefObjCore(&wrk->stats, &boc));
 
 	VCL_purge_method(req->vcl, wrk, req, NULL, req->http->ws);
-	req->req_step = R_STP_SYNTH;
+	switch (wrk->handling) {
+	case VCL_RET_RESTART:
+		req->req_step = R_STP_RESTART;
+		break;
+	case VCL_RET_SYNTH:
+		req->req_step = R_STP_SYNTH;
+		break;
+	default:
+		WRONG("Illegal return from vcl_purge{}");
+	}
 	return (REQ_FSM_MORE);
 }
 
