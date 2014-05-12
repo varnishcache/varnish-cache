@@ -127,7 +127,7 @@ is reserved for builtin subs.
 req.backend.healthy replaced by std.healthy(req.backend)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Remeber to import the std module if you're not doing so already.
+Remember to import the std module if you're not doing so already.
 
 client.port, and server.port replaced by respectively std.port(client.ip) and std.port(server.ip)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
