@@ -39,6 +39,7 @@
 
 import sys
 import re
+from os.path import basename
 
 if len(sys.argv) == 2:
 	specfile = sys.argv[1]
@@ -69,10 +70,10 @@ def file_header(fo):
         fo.write("""/*
  * NB:  This file is machine generated, DO NOT EDIT!
  *
- * Edit vmod.vcc and run vmod.py instead
+ * Edit vmod.vcc and run %s instead
  */
 
-""")
+""" % basename(__file__))
 
 #######################################################################
 
