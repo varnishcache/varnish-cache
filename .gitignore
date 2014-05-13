@@ -80,6 +80,7 @@ cscope.*out
 /man/*.3
 /man/*.7
 /doc/sphinx/include
+/doc/sphinx/*/*generated.rst
 /bin/varnish*/varnish*_opt2rst
 /bin/varnishadm/varnishadm
 /bin/varnishd/varnishd
