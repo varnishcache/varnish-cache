@@ -30,9 +30,11 @@ $Module directors 3 Backend traffic directors
 DESCRIPTION
 ===========
 
-Vmod_directors enables load balancing in Varnish. The module serves
-as an example on how one could extend the load balancing capabilities
-of Varnish.
+`vmod_directors` enables backend load balancing in Varnish.
+
+The module implements a set of basic load balancing techniques, and
+also serves as an example on how one could extend the load balancing
+capabilities of Varnish.
 
 To enable load balancing you must import this vmod (directors) in your
 VCL:::
