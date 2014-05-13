@@ -26,7 +26,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-# Read the vmod.spec file and produce the vmod.h and vmod.c files.
+# Read the vmod.vcc file and produce the vmod.h and vmod.c files.
 #
 # vmod.h contains the prototypes for the published functions, the module
 # C-code should include this file to ensure type-consistency.
