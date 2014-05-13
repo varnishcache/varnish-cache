@@ -24,7 +24,7 @@ nodist_libvmod_debug_la_SOURCES = \
 # BUILT_SOURCES is only a hack and dependency tracking does not help for the first build
 vmod_debug.lo vmod_debug_obj.lo: vcc_if.h
 
-vcc_if.c vcc_if.h: $(vmodtool) $(vmod_srcdir)/vmod.vcc
+vcc_if.c vcc_if.h vmod_debug.rst vmod_debug.man.rst: $(vmodtool) $(vmod_srcdir)/vmod.vcc
 	@PYTHON@ $(vmodtool) $(vmod_srcdir)/vmod.vcc
 
 EXTRA_DIST = vmod.vcc
