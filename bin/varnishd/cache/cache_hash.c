@@ -458,10 +458,10 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		exp_oc->refcnt++;
 
 		if (!busy_found) {
-			AZ(req->hash_ignore_busy);
 			*bocp = hsh_insert_busyobj(wrk, oh);
 			retval = HSH_EXPBUSY;
 		} else {
+			AZ(req->hash_ignore_busy);
 			retval = HSH_EXP;
 		}
 		if (oh->hits < LONG_MAX)
