@@ -59,8 +59,9 @@ Note that directors can use other directors as backends.
 $Object round_robin()
 
 Description
-       Create a round robin director. This director will pick backends
-       in a round robin fashion.
+        Create a round robin director.
+
+	This director will pick backends in a round robin fashion.
 Example
        new bar = directors.round_robin();
 
@@ -78,30 +79,37 @@ Description
 Example
        set req.backend_hint = rrdir.backend();
 
+####################################################################
 $Object fallback()
 
 Description
-        Creates a fallback director.
+        Create a fallback director.
 
-#	XXX: Add description of fallback director.
+        A fallback director will try each of the added backends in turn,
+        and return the first one that is healthy.
 
 Example
-        new foo = directors.fallback();
+        new vdir = directors.fallback();
 
 $Method VOID .add_backend(BACKEND)
 
 Description
-       Adds a backend to the director.
+        Add a backend to the director.
+
+        Note that the order in which this is done matters in the for the
+        fallback director.
+
 Example
-       bar.add_backend(backend1);
+       vdir.add_backend(backend1);
 
 $Method BACKEND .backend()
 
 Description
-       Picks a backend from the director.
+       Pick a backend from the director.
 Example
-       set req.backend_hint = rrdir.backend();
+       set req.backend_hint = vdir.backend();
 
+####################################################################
 $Object random()
 
 Description
