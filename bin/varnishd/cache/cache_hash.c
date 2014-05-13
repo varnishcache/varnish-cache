@@ -555,7 +555,8 @@ hsh_rush(struct dstat *ds, struct objhead *oh)
  */
 
 void
-HSH_Purge(struct worker *wrk, struct objhead *oh, double ttl, double grace)
+HSH_Purge(struct worker *wrk, struct objhead *oh, double ttl, double grace,
+double keep)
 {
 	struct objcore *oc, **ocp;
 	unsigned spc, nobj, n;
@@ -598,7 +599,7 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, double ttl, double grace)
 		if (o == NULL)
 			continue;
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-		EXP_Rearm(o, now, ttl, grace, NAN);	// XXX: Keep ?
+		EXP_Rearm(o, now, ttl, grace, keep);
 		(void)HSH_DerefObj(&wrk->stats, &o);
 	}
 	WS_Release(wrk->aws, 0);

@@ -492,10 +492,10 @@ VRT_purge(const struct vrt_ctx *ctx, double ttl, double grace)
 	CHECK_OBJ_NOTNULL(ctx->req->wrk, WORKER_MAGIC);
 	if (ctx->method == VCL_MET_HIT)
 		HSH_Purge(ctx->req->wrk, ctx->req->obj->objcore->objhead,
-		    ttl, grace);
+		    ttl, grace, NAN);
 	else if (ctx->method == VCL_MET_MISS)
 		HSH_Purge(ctx->req->wrk, ctx->req->objcore->objhead,
-		    ttl, grace);
+		    ttl, grace, NAN);
 }
 
 /*--------------------------------------------------------------------
