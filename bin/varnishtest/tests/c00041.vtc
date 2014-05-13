@@ -39,8 +39,12 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	sub vcl_miss { if (req.http.purge == "yes") { purge; } }
-	sub vcl_hit { if (req.http.purge == "yes") { purge; return(restart);} }
+	sub vcl_recv { if (req.http.purge == "yes") { return(purge); } }
+	sub vcl_purge { if (req.http.restart == "yes") {
+		unset req.http.purge;
+		unset req.http.restart;
+		return(restart);} 
+	}
 } -start
 
 client c1 {
@@ -49,6 +53,7 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.x-varnish == 1001
 	expect resp.bodylen == 1
+	delay .1
 
 	txreq -url "/1" -hdr "Foo: foo2"
 	rxresp
@@ -62,42 +67,44 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.x-varnish == "1005 1002"
 	expect resp.bodylen == 1
+	delay .1
 
 	txreq -url "/1" -hdr "Foo: foo2"
 	rxresp
 	expect resp.status == 200
 	expect resp.http.x-varnish == "1006 1004"
 	expect resp.bodylen == 2
+	delay .1
 
 	# Purge on hit
-	txreq -url "/1" -hdr "Foo: foo2" -hdr "purge: yes"
+	txreq -url "/1" -hdr "Foo: foo2" -hdr "purge: yes" -hdr "restart: yes"
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 12
+	delay .1
 
 	txreq -url "/1" -hdr "foo: foo1"
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 11
+	delay .1
 
 	# Purge on miss
-	txreq -url "/1" -hdr "Foo: foo3" -hdr "purge: yes"
+	txreq -url "/1" -hdr "Foo: foo3" -hdr "purge: yes" -hdr "restart: yes"
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 23
+	delay .1
 
 	txreq -url "/1" -hdr "foo: foo1"
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 21
+	delay .1
 
 	txreq -url "/1" -hdr "Foo: foo2"
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 22
+	delay .1
 } -run
-
-varnish v1 -errvcl {'purge': not a valid action in method 'vcl_recv'.} {
-	backend s1 { .host = "${s1_addr}"; }
-	sub vcl_recv { if (req.http.purge == "yes") { purge; } }
-}

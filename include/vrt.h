@@ -201,7 +201,7 @@ const char *VRT_regsub(const struct vrt_ctx *, int all, const char *,
     void *, const char *);
 
 void VRT_ban_string(const struct vrt_ctx *, const char *);
-void VRT_purge(const struct vrt_ctx *, double ttl, double grace);
+void VRT_purge(const struct vrt_ctx *, double ttl, double grace, double keep);
 
 void VRT_count(const struct vrt_ctx *, unsigned);
 int VRT_rewrite(const char *, const char *);
