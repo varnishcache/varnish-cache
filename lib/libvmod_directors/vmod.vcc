@@ -81,7 +81,7 @@ Description
 Example
        set req.backend_hint = rrdir.backend();
 
-####################################################################
+
 $Object fallback()
 
 Description
@@ -111,7 +111,7 @@ Description
 Example
        set req.backend_hint = vdir.backend();
 
-####################################################################
+
 $Object random()
 
 Description
