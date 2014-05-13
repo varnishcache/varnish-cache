@@ -10,6 +10,7 @@ AM_CPPFLAGS = \
 vmoddir = $(pkglibdir)/vmods
 vmod_srcdir = $(top_srcdir)/lib/libvmod_std
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
+vmodtoolargs = --strict
 vmod_LTLIBRARIES = libvmod_std.la
 
 libvmod_std_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-version -shared
@@ -27,7 +28,8 @@ nodist_libvmod_std_la_SOURCES = \
 vmod_std.lo vmod_std_fileread.lo vmod_std_conversions.lo: vcc_if.h
 
 vcc_if.c vcc_if.h vmod_std.rst vmod_std.man.rst: $(vmodtool) $(vmod_srcdir)/vmod.vcc
-	@PYTHON@ $(vmodtool) $(vmod_srcdir)/vmod.vcc
+	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(vmod_srcdir)/vmod.vcc
+
 
 EXTRA_DIST = vmod.vcc
 
