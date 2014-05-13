@@ -121,7 +121,7 @@ mgt_panic_record(pid_t r)
 	char time_str[30];
 
 	AN(heritage.panic_str[0]);
-	REPORT(LOG_ERR, "Child (%jd) Panic message: %s",
+	REPORT(LOG_ERR, "Child (%jd) Panic message:\n%s",
 	    (intmax_t)r, heritage.panic_str);
 
 	if (child_panic != NULL)
