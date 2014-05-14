@@ -731,8 +731,9 @@ class SimpleTestCase(unittest.TestCase):
 		from tempfile import mktemp
 		from glob import glob
 		tmpfile = mktemp()
-		for inputfile in glob(dirname(realpath(__file__)) + "../libvmod_*/vmod.vcc"):
-			runmain(inputvcc, outputname=tmpfile)
+		bdir = dirname(realpath(__file__))
+		for inputfile in glob(bdir + "/../libvmod_*/vmod.vcc"):
+			runmain(inputfile, outputname=tmpfile)
 			for suffix in [".c", ".h"]:
 				unlink(tmpfile + suffix)
 
