@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 #-
 # Copyright (c) 2010-2014 Varnish Software AS
 # All rights reserved.
@@ -37,6 +37,9 @@
 # as a string, suitable for inclusion in the C-source of the compile VCL
 # program.
 
+# This script should work with both Python 2 and Python 3.
+from __future__ import print_function
+
 import sys
 import re
 import optparse
@@ -44,7 +47,6 @@ import unittest
 from os import unlink
 from os.path import dirname, basename, realpath, exists
 from pprint import pprint, pformat
-
 
 ctypes = {
 	'BACKEND':	"VCL_BACKEND",
@@ -89,7 +91,7 @@ class FormatError(Exception):
 	"""
 		Raised if the content of the (otherwise well-formed) input file
 		is invalid.
-  """
+	"""
 	def __init__(self, msg, details):
 		self.msg = msg
 		self.details = details
@@ -699,8 +701,8 @@ class file_section(object):
 			if opts.strict:
 				raise FormatError(m, details)
 			else:
-				print >>sys.stderr, "WARNING: %s:" % m
-				print >>sys.stderr, details
+				print("WARNING: %s:" % m, file=sys.stderr)
+				print(details, file=sys.stderr)
 		else:
 			for ln, i in self.l:
 				o.doc(i)
@@ -798,12 +800,12 @@ def runmain(inputvcc, outputname="vcc_if"):
 			i.parse(vx)
 			assert len(i.tl) == 0
 	except ParseError as e:
-		print "ERROR: Parse error reading \"%s\":" % inputvcc
+		print("ERROR: Parse error reading \"%s\":" % inputvcc)
 		pprint(str(e))
 		exit(-1)
 	except FormatError as e:
-		print "ERROR: Format error reading \"%s\": %s" % (inputvcc, pformat(e.msg))
-		print e.details
+		print("ERROR: Format error reading \"%s\": %s" % (inputvcc, pformat(e.msg)))
+		print(e.details)
 		exit(-2)
 
 	#######################################################################
@@ -879,7 +881,7 @@ if __name__ == "__main__":
 		if not inputvcc:
 		    inputvcc = "vmod.vcc"
 	else:
-		print >>sys.stderr, "ERROR: No vmod.vcc file supplied or found."
+		print("ERROR: No vmod.vcc file supplied or found.", file=sys.stderr)
 		oparser.print_help()
 		exit(-1)
 
