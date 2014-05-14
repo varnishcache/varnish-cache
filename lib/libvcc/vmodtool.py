@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 #-
 # Copyright (c) 2010-2014 Varnish Software AS
 # All rights reserved.
@@ -699,8 +699,8 @@ class file_section(object):
 			if opts.strict:
 				raise FormatError(m, details)
 			else:
-				print("WARNING: %s:" % m, file=sys.stderr)
-				print(details, file=sys.stderr)
+				print >>sys.stderr, "WARNING: %s:" % m
+				print >>sys.stderr, details
 		else:
 			for ln, i in self.l:
 				o.doc(i)
@@ -797,12 +797,12 @@ def runmain(inputvcc, outputname="vcc_if"):
 			i.parse(vx)
 			assert len(i.tl) == 0
 	except ParseError as e:
-		print("ERROR: Parse error reading \"%s\":" % inputvcc)
+		print "ERROR: Parse error reading \"%s\":" % inputvcc
 		pprint(str(e))
 		exit(-1)
 	except FormatError as e:
-		print("ERROR: Format error reading \"%s\": %s" % (inputvcc, pformat(e.msg)))
-		print(e.details)
+		print "ERROR: Format error reading \"%s\": %s" % (inputvcc, pformat(e.msg))
+		print e.details
 		exit(-2)
 
 	#######################################################################
@@ -878,7 +878,7 @@ if __name__ == "__main__":
 		if not inputvcc:
 		    inputvcc = "vmod.vcc"
 	else:
-		print("ERROR: No vmod.vcc file supplied or found.", file=sys.stderr)
+		print >>sys.stderr, "ERROR: No vmod.vcc file supplied or found."
 		oparser.print_help()
 		exit(-1)
 
