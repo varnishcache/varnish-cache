@@ -211,12 +211,12 @@ Now we define the 'director'::
 
     sub vcl_init {
         new vdir = directors.round_robin();
-        vdir.add_backend(backend1);
-        vdir.add_backend(backend2);
+        vdir.add_backend(server1);
+        vdir.add_backend(server2);
     }
 
 
-You use this director as a backend_hint for requests, just like you would
+You use this `vdir` director as a backend_hint for requests, just like you would
 with a simple backend. Varnish will not send traffic to hosts that are marked as
 unhealthy.
 
