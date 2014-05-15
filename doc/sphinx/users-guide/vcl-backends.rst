@@ -71,7 +71,7 @@ Now we need tell Varnish where to send the difference URL. Lets look at `vcl_rec
 It's quite simple, really. Lets stop and think about this for a
 moment. As you can see you can define how you choose backends based on
 really arbitrary data. You want to send mobile devices to a different
-backend? No problem. ``if (req.User-agent ~ /mobile/) ..`` should do the
+backend? No problem. ``if (req.http.User-agent ~ /mobile/) ..`` should do the
 trick.
 
 
@@ -79,7 +79,7 @@ Backends and virtual hosts in Varnish
 -------------------------------------
 
 Varnish fully supports virtual hosts. They might however work in a somewhat
-counter intuitive fashion since they are never declared
+counter-intuitive fashion since they are never declared
 explicitly. You set up the routing of incoming HTTP requests in
 `vcl_recv`. If you want this routing to be done on the basis of virtual
 hosts you just need to inspect `req.http.host`.
@@ -155,8 +155,8 @@ Checks come into play.
 Health checks
 -------------
 
-Lets set up a director with two backends and health checks. First lets
-define the backends.::
+Lets set up a director with two backends and health checks. First let
+us define the backends.::
 
     backend server1 {
         .host = "server1.example.com";
@@ -204,29 +204,28 @@ initial
     Defaults to the same amount as the threshold.
 
 
-.. XXX: Where and why? benc
-
 Now we define the 'director'::
+
 
     import directors;
 
-    director example_director round-robin {
-        { .backend = server1; }
-        { .backend = server2; }
+    sub vcl_init {
+        new vdir = directors.round_robin();
+        vdir.add_backend(backend1);
+        vdir.add_backend(backend2);
     }
 
 
-You use this director just as you would use any other director or
-backend. Varnish will not send traffic to hosts that are marked as
-unhealthy. Varnish can also serve stale content if all the backends are
+You use this director as a backend_hint for requests, just like you would
+with a simple backend. Varnish will not send traffic to hosts that are marked as
+unhealthy.
+
+Varnish can also serve stale content if all the backends are
 down. See :ref:`users-guide-handling_misbehaving_servers` for more
 information on how to enable this.
 
-Please note that Varnish will keep probes active for all loaded VCLs. Varnish
+Please note that Varnish will keep health probes running for all loaded VCLs. Varnish
 will coalesce probes that seem identical - so be careful not to change the
 probe config if you do a lot of VCL loading. Unloading the VCL will discard the
-probes.
-
-For more information on how to do this please see
-ref:`reference-vcl-director`.
+probes. For more information on how to do this please see ref:`reference-vcl-director`.
 
