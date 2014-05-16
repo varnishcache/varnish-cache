@@ -153,9 +153,10 @@ void VBE_DropRefVcl(struct backend *);
 void VBE_DropRefLocked(struct backend *b);
 
 /* cache_backend_poll.c */
-void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p, const char *hosthdr);
-void VBP_Remove(struct backend *b, struct vrt_backend_probe const *p);
-void VBP_Use(const struct backend *b, const struct vrt_backend_probe const *p);
+void VBP_Insert(struct backend *b, const struct vrt_backend_probe *p,
+    const char *hosthdr);
+void VBP_Remove(struct backend *b, const struct vrt_backend_probe *p);
+void VBP_Use(const struct backend *b, const struct vrt_backend_probe *p);
 void VBP_Summary(struct cli *cli, const struct vbp_target *vt);
 
 /* Init functions for directors */
