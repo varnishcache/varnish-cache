@@ -88,13 +88,13 @@ Known limitations on grace- and saint mode
 If your request fails while it is being fetched you're thrown into
 vcl_error. vcl_error has access to a rather limited set of data so you
 can't enable saint mode or grace mode here. This will be addressed in a
-future release but a work-around available.
+future release but a workaround available.
 
 * Declare a backend that is always sick.
 * Set a magic marker in vcl_error
 * Restart the transaction
 * Note the magic marker in vcl_recv and set the backend to the one mentioned
-* Varnish will now serve stale data is any is available
+* Varnish will now serve stale data if any is available
 
 
 God mode
