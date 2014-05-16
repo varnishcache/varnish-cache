@@ -350,8 +350,6 @@ cnt_done(struct sess *sp)
 		    sp->xid, sp->t_req, sp->t_end, dh, dp, da);
 	}
 	sp->xid = 0;
-	sp->t_open = sp->t_end;
-	sp->t_resp = NAN;
 	WSL_Flush(sp->wrk, 0);
 
 	/* If we did an ESI include, don't mess up our state */
@@ -360,7 +358,9 @@ cnt_done(struct sess *sp)
 
 	memset(&sp->acct_req, 0, sizeof sp->acct_req);
 
+	sp->t_open = sp->t_end;
 	sp->t_req = NAN;
+	sp->t_resp = NAN;
 	sp->hash_always_miss = 0;
 	sp->hash_ignore_busy = 0;
 
