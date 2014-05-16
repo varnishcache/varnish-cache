@@ -665,7 +665,7 @@ h_ncsa(void *priv, enum VSL_tag_e tag, unsigned fd,
 
 		case 'D':
 			/* %D */
-			VSB_printf(os, "%f", lp->df_D);
+			VSB_printf(os, "%d", (int)(lp->df_D * 1e6));
 			break;
 
 		case 'H':
