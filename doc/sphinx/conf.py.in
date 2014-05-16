@@ -64,7 +64,7 @@ release = '@VERSION@'
 
 # List of directories, relative to source directory, that shouldn't be searched
 # for source files.
-exclude_patterns = ['build','include/*.rst']
+exclude_patterns = ['build','include/*.rst','reference/vcl_var.rst']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
