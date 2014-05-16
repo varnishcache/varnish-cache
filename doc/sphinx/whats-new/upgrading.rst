@@ -124,8 +124,8 @@ vcl_* reserved
 Any custom-made subs cannot be named 'vcl_*' anymore. This namespace
 is reserved for builtin subs.
 
-req.backend.healthy replaced by std.healthy(req.backend)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+req.backend.healthy replaced by std.healthy(req.backend_hint)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Remember to import the std module if you're not doing so already.
 
