@@ -90,4 +90,4 @@ vmod_std.3: $(top_srcdir)/lib/libvmod_std/vmod_std.man.rst
 	${RST2MAN} $(RST2ANY_FLAGS) $? $@
 
 vmod_directors.3: $(top_srcdir)/lib/libvmod_directors/vmod_directors.man.rst
-	${RST2MAN} $(RST2ANY_FLAGS) $(RST2ANY_FLAGS) $? $@
+	${RST2MAN} $(RST2ANY_FLAGS) $? $@
