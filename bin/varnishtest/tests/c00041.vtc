@@ -40,10 +40,12 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_recv { if (req.http.purge == "yes") { return(purge); } }
-	sub vcl_purge { if (req.http.restart == "yes") {
-		unset req.http.purge;
-		unset req.http.restart;
-		return(restart);} 
+	sub vcl_purge {
+		if (req.http.restart == "yes") {
+			unset req.http.purge;
+			unset req.http.restart;
+			return(restart);
+		}
 	}
 } -start
 
