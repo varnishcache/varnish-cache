@@ -133,7 +133,7 @@ vmod_blob2hex(const struct vrt_ctx *ctx, VCL_BLOB b)
 VCL_BACKEND
 vmod_no_backend(const struct vrt_ctx *ctx)
 {
-	
+
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	return (NULL);
 }

@@ -441,9 +441,9 @@ main(int argc, char * const *argv)
 
 	/*
 	 * By default linux::getopt(3) mangles the argv order, such that
-	 * 	varnishadm -n bla param.set foo -bar
+	 *	varnishadm -n bla param.set foo -bar
 	 * gets interpreted as
-	 * 	varnishadm -n bla -bar param.set foo 
+	 *	varnishadm -n bla -bar param.set foo
 	 * The '+' stops that from happening
 	 * See #1496
 	 */
