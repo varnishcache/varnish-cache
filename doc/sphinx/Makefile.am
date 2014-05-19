@@ -105,7 +105,7 @@ dist-hook:
 	rm -rf $(BUILDDIR)/doctrees
 	cp -r $(BUILDDIR) $(distdir)
 # Remove any extra non-rst files we may have copied over.
-	find $(distdir) ! -type f -a -name \*.rst -ls
+	find $(distdir) -mindepth 2 -type f ! -name \*.rst | grep -v '/build/' | xargs rm -f
 
 distclean-local:
 	rm -rf $(BUILDDIR)
