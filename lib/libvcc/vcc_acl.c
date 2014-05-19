@@ -343,13 +343,14 @@ vcc_acl_entry(struct vcc *tl)
  */
 
 static void
-vcc_acl_emit(const struct vcc *tl, const char *acln, int anon)
+vcc_acl_emit(struct vcc *tl, const char *acln, int anon)
 {
 	struct acl_e *ae;
 	int depth, l, m, i;
 	unsigned at[VRT_ACL_MAXADDR + 1];
 	const char *oc;
 	struct token *t;
+	struct inifin *ifp;
 
 	Fh(tl, 0, "\nstatic int\n");
 	Fh(tl, 0,
@@ -364,6 +365,11 @@ vcc_acl_emit(const struct vcc *tl, const char *acln, int anon)
 	Fh(tl, 0, "\t\tVRT_acl_log(ctx, \"NO_FAM %s\");\n", acln);
 	Fh(tl, 0, "\t\treturn(0);\n");
 	Fh(tl, 0, "\t}\n\n");
+	if (!tl->err_unref && !anon ) {
+		ifp = New_IniFin(tl);
+		VSB_printf(ifp->ini,
+			"\tif (0) match_acl_named_%s(0, 0);\n", acln);
+	}
 	depth = -1;
 	oc = 0;
 	at[0] = 256;
