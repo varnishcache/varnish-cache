@@ -181,7 +181,6 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo->req, REQ_MAGIC);
 
 	assert(bo->state == BOS_INVALID);
-	AN(bo->director);
 	AZ(bo->vbc);
 	AZ(bo->should_close);
 	AZ(bo->storage_hint);
@@ -255,7 +254,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	AN(bo->director);
 	AZ(bo->vbc);
 	AZ(bo->should_close);
 	AZ(bo->storage_hint);

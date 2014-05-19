@@ -270,9 +270,8 @@ VRT_r_beresp_backend_name(const struct vrt_ctx *ctx)
 		CHECK_OBJ_NOTNULL(ctx->bo->vbc, VBC_MAGIC);
 		return (ctx->bo->vbc->backend->vcl_name);
 	}
-	if (ctx->bo->director != NULL) {
+	if (ctx->bo->director != NULL)
 		return (ctx->bo->director->vcl_name);
-	}
 	return (NULL);
 }
 
@@ -350,7 +349,6 @@ VRT_l_bereq_backend(const struct vrt_ctx *ctx, struct director *be)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	AN(ctx->bo->director);
 	ctx->bo->director = be;
 }
 
@@ -360,7 +358,6 @@ VRT_r_bereq_backend(const struct vrt_ctx *ctx)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	AN(ctx->bo->director);
 	return (ctx->bo->director);
 }
 

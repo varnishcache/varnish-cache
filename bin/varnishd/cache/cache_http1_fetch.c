@@ -300,6 +300,10 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	htc = &bo->htc;
 
+	if (bo->director == NULL) {
+		VSLb(bo->vsl, SLT_FetchError, "No backend");
+		return (-1);
+	}
 	AN(bo->director);
 
 	hp = bo->bereq;
