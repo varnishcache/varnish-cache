@@ -59,6 +59,10 @@ $Function STRING blob2hex(BLOB)
 
 Hexdump a blob
 
+$Function BACKEND no_backend()
+
+Fails at backend selection
+
 $Object obj(STRING) 
 
 Test object
