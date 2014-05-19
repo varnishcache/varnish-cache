@@ -212,11 +212,11 @@ include/varnishhist_synopsis.rst: $(top_builddir)/bin/varnishhist/varnishhist_op
 BUILT_SOURCES += include/varnishhist_options.rst \
 	 include/varnishhist_synopsis.rst
 
-reference/vmod_std.generated.rst: $(top_builddir)/lib/libvmod_std/vmod_std.rst
+reference/vmod_std.generated.rst: $(top_srcdir)/lib/libvmod_std/vmod_std.rst
 	cp $? $@
 BUILT_SOURCES += reference/vmod_std.generated.rst
 
-reference/vmod_directors.generated.rst: $(top_builddir)/lib/libvmod_directors/vmod_directors.rst
+reference/vmod_directors.generated.rst: $(top_srcdir)/lib/libvmod_directors/vmod_directors.rst
 	cp $? $@
 BUILT_SOURCES += reference/vmod_directors.generated.rst
 
