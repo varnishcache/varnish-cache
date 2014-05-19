@@ -1,0 +1,60 @@
+varnishtest "panic due to hash_ignore_busy"
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Transfer-Encoding: chunked"
+	chunkedlen 10
+	delay .5
+	sema r1 sync 2
+	delay .5
+	chunkedlen 10
+	delay .5
+	sema r2 sync 2
+	delay .5
+	chunkedlen 10
+	delay .5
+	sema r3 sync 2
+	delay .5
+	chunkedlen 10
+	delay .5
+	sema r4 sync 2
+	delay .5
+	chunkedlen 10
+	delay .5
+	chunkedlen 0
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		set req.hash_ignore_busy         = true;
+		return(hash);
+	}
+	sub vcl_backend_response {
+		# we assume streaming for all objects as default:
+		set beresp.do_stream             = true;
+		set beresp.ttl = 2s;
+	}
+} -start
+
+client c1 {
+	txreq -hdr "client: c1"
+	rxresp
+} -start
+
+sema r1 sync 2
+client c2 {
+	txreq -hdr "client: c2"
+	sema r2 sync 2
+	rxresp
+} -start
+
+sema r3 sync 2
+client c3 {
+	txreq -hdr "client: c3"
+	sema r4 sync 2
+	rxresp
+} -start
+
+client c1 -wait
+client c2 -wait
+client c3 -wait
