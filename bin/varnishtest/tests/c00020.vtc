@@ -3,7 +3,7 @@ varnishtest "Test -h critbit a bit"
 server s1 {
         rxreq
 	expect req.url == "/"
-        txresp -hdr "Connection: close" -body "012345\n"
+        txresp -hdr "ID: slash" -hdr "Connection: close" -body "012345\n"
 } -start
 
 varnish v1 -arg "-hcritbit" -vcl+backend { } -start
@@ -13,41 +13,55 @@ client c1 {
         rxresp
         expect resp.status == 200
         expect resp.http.X-Varnish == "1001"
+        expect resp.http.ID == "slash"
 } -run
+delay .1
 
 client c2 {
         txreq -url "/"
         rxresp
         expect resp.status == 200
         expect resp.http.X-Varnish == "1004 1002"
+        expect resp.http.ID == "slash"
 } -run
+delay .1
 
 server s1 {
         rxreq
 	expect req.url == "/foo"
-        txresp -body "012345\n"
+        txresp -hdr "ID: foo" -body "012345\n"
         rxreq
 	expect req.url == "/bar"
-        txresp -body "012345\n"
+        txresp -hdr "ID: bar" -body "012345\n"
 } -start
 
-client c2 {
+client c1 {
         txreq -url "/foo"
         rxresp
         expect resp.status == 200
         expect resp.http.X-Varnish == "1006"
+        expect resp.http.ID == "foo"
+	delay .1
+
         txreq -url "/"
         rxresp
         expect resp.status == 200
         expect resp.http.X-Varnish == "1008 1002"
+        expect resp.http.ID == "slash"
+	delay .1
+
         txreq -url "/bar"
         rxresp
         expect resp.status == 200
         expect resp.http.X-Varnish == "1009"
+        expect resp.http.ID == "bar"
+	delay .1
+
         txreq -url "/foo"
         rxresp
         expect resp.status == 200
         expect resp.http.X-Varnish == "1011 1007"
+        expect resp.http.ID == "foo"
 } -run
 
 varnish v1 -expect sess_conn == 3
