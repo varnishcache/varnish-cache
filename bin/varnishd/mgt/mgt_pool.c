@@ -183,8 +183,8 @@ struct parspec WRK_parspec[] = {
 		"0", NULL,
 		"Worker threads accumulate statistics, and dump these into "
 		"the global stats counters if the lock is free when they "
-		"finish a request.\n"
-		"This parameters defines the maximum number of requests "
+		"finish a job (request/fetch etc.)\n"
+		"This parameters defines the maximum number of jobs "
 		"a worker thread may handle, before it is forced to dump "
 		"its accumulated stats into the global counters.",
 		EXPERIMENTAL,

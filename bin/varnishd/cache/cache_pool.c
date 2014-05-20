@@ -255,13 +255,13 @@ void
 Pool_Work_Thread(void *priv, struct worker *wrk)
 {
 	struct pool *pp;
-	int stats_clean;
+	int stats_dirty;
 	struct pool_task *tp;
 	int i;
 
 	CAST_OBJ_NOTNULL(pp, priv, POOL_MAGIC);
 	wrk->pool = pp;
-	stats_clean = 1;
+	stats_dirty = 0;
 	while (1) {
 		Lck_Lock(&pp->mtx);
 
@@ -286,8 +286,10 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 			wrk->task.func = NULL;
 			wrk->task.priv = wrk;
 			VTAILQ_INSERT_HEAD(&pp->idle_queue, &wrk->task, list);
-			if (!stats_clean)
+			if (stats_dirty) {
 				WRK_SumStat(wrk);
+				stats_dirty = 0;
+			}
 			do {
 				i = Lck_CondWait(&wrk->cond, &pp->mtx,
 				    wrk->vcl == NULL ?  0 : wrk->lastused+60.);
@@ -303,7 +305,12 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 
 		assert(wrk->pool == pp);
 		tp->func(wrk, tp->priv);
-		stats_clean = WRK_TrySumStat(wrk);
+
+		if (++stats_dirty >= cache_param->wthread_stats_rate) {
+			WRK_SumStat(wrk);
+			stats_dirty = 0;
+		} else if (WRK_TrySumStat(wrk))
+			stats_dirty = 0;
 	}
 	wrk->pool = NULL;
 }

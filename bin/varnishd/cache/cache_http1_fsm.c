@@ -240,9 +240,6 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 		return (SESS_DONE_RET_GONE);
 	}
 
-	if (wrk->stats.client_req >= cache_param->wthread_stats_rate)
-		WRK_SumStat(wrk);
-
 	WS_Reset(req->ws, NULL);
 	WS_Reset(wrk->aws, NULL);
 

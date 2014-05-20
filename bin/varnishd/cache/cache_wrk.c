@@ -43,12 +43,12 @@ static struct lock		wstat_mtx;
 /*--------------------------------------------------------------------*/
 
 static void
-wrk_sumstat(struct worker *w)
+wrk_sumstat(const struct dstat *ds)
 {
 
 	Lck_AssertHeld(&wstat_mtx);
 #define L0(n)
-#define L1(n) (VSC_C_main->n += w->stats.n)
+#define L1(n) (VSC_C_main->n += ds->n)
 #define VSC_F(n, t, l, f, v, d, e) L##l(n);
 #include "tbl/vsc_f_main.h"
 #undef VSC_F
@@ -61,7 +61,7 @@ WRK_SumStat(struct worker *w)
 {
 
 	Lck_Lock(&wstat_mtx);
-	wrk_sumstat(w);
+	wrk_sumstat(&w->stats);
 	Lck_Unlock(&wstat_mtx);
 	memset(&w->stats, 0, sizeof w->stats);
 }
@@ -71,7 +71,7 @@ WRK_TrySumStat(struct worker *w)
 {
 	if (Lck_Trylock(&wstat_mtx))
 		return (0);
-	wrk_sumstat(w);
+	wrk_sumstat(&w->stats);
 	Lck_Unlock(&wstat_mtx);
 	memset(&w->stats, 0, sizeof w->stats);
 	return (1);
