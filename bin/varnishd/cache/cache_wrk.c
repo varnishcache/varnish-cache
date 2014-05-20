@@ -54,7 +54,6 @@ wrk_sumstat(struct worker *w)
 #undef VSC_F
 #undef L0
 #undef L1
-	memset(&w->stats, 0, sizeof w->stats);
 }
 
 void
@@ -64,6 +63,7 @@ WRK_SumStat(struct worker *w)
 	Lck_Lock(&wstat_mtx);
 	wrk_sumstat(w);
 	Lck_Unlock(&wstat_mtx);
+	memset(&w->stats, 0, sizeof w->stats);
 }
 
 int
@@ -73,6 +73,7 @@ WRK_TrySumStat(struct worker *w)
 		return (0);
 	wrk_sumstat(w);
 	Lck_Unlock(&wstat_mtx);
+	memset(&w->stats, 0, sizeof w->stats);
 	return (1);
 }
 
