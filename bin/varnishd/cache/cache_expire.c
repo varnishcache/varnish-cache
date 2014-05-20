@@ -404,7 +404,7 @@ EXP_NukeLRU(struct worker *wrk, struct vsl_log *vsl, struct lru *lru)
 	}
 	Lck_Unlock(&lru->mtx);
 
-	WRK_SumStat(wrk);
+	Pool_Sumstat(wrk);
 }
 
 #endif
@@ -589,7 +589,7 @@ exp_thread(struct worker *wrk, void *priv)
 			tnext = 0;
 		} else if (tnext > t) {
 			VSL_Flush(&ep->vsl, 0);
-			WRK_SumStat(wrk);
+			Pool_Sumstat(wrk);
 			(void)Lck_CondWait(&ep->condvar, &ep->mtx, tnext);
 		}
 		Lck_Unlock(&ep->mtx);

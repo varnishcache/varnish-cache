@@ -78,6 +78,59 @@ static struct lock		pool_mtx;
 static pthread_t		thr_pool_herder;
 static unsigned			pool_accepting = 0;
 
+static struct lock		wstat_mtx;
+
+/*--------------------------------------------------------------------*/
+
+static void
+wrk_sumstat(const struct dstat *ds)
+{
+
+	Lck_AssertHeld(&wstat_mtx);
+#define L0(n)
+#define L1(n) (VSC_C_main->n += ds->n)
+#define VSC_F(n, t, l, f, v, d, e) L##l(n);
+#include "tbl/vsc_f_main.h"
+#undef VSC_F
+#undef L0
+#undef L1
+}
+
+void
+Pool_Sumstat(struct worker *w)
+{
+
+	Lck_Lock(&wstat_mtx);
+	wrk_sumstat(&w->stats);
+	Lck_Unlock(&wstat_mtx);
+	memset(&w->stats, 0, sizeof w->stats);
+}
+
+static int
+Pool_TrySumstat(struct worker *w)
+{
+	if (Lck_Trylock(&wstat_mtx))
+		return (0);
+	wrk_sumstat(&w->stats);
+	Lck_Unlock(&wstat_mtx);
+	memset(&w->stats, 0, sizeof w->stats);
+	return (1);
+}
+
+/*--------------------------------------------------------------------
+ * Helper function to update stats for purges under lock
+ */
+
+void
+Pool_PurgeStat(unsigned nobj)
+{
+	Lck_Lock(&wstat_mtx);
+	VSC_C_main->n_purges++;
+	VSC_C_main->n_obj_purged += nobj;
+	Lck_Unlock(&wstat_mtx);
+}
+
+
 /*--------------------------------------------------------------------
  */
 
@@ -148,7 +201,7 @@ pool_accept(struct worker *wrk, void *arg)
 		if (VCA_Accept(ps->lsock, wa) < 0) {
 			wrk->stats.sess_fail++;
 			/* We're going to pace in vca anyway... */
-			(void)WRK_TrySumStat(wrk);
+			(void)Pool_TrySumstat(wrk);
 			continue;
 		}
 
@@ -287,7 +340,7 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 			wrk->task.priv = wrk;
 			VTAILQ_INSERT_HEAD(&pp->idle_queue, &wrk->task, list);
 			if (stats_dirty) {
-				WRK_SumStat(wrk);
+				Pool_Sumstat(wrk);
 				stats_dirty = 0;
 			}
 			do {
@@ -307,9 +360,9 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 		tp->func(wrk, tp->priv);
 
 		if (++stats_dirty >= cache_param->wthread_stats_rate) {
-			WRK_SumStat(wrk);
+			Pool_Sumstat(wrk);
 			stats_dirty = 0;
-		} else if (WRK_TrySumStat(wrk))
+		} else if (Pool_TrySumstat(wrk))
 			stats_dirty = 0;
 	}
 	wrk->pool = NULL;
@@ -531,6 +584,7 @@ void
 Pool_Init(void)
 {
 
+	Lck_New(&wstat_mtx, lck_wstat);
 	Lck_New(&pool_mtx, lck_wq);
 	AZ(pthread_create(&thr_pool_herder, NULL, pool_poolherder, NULL));
 }

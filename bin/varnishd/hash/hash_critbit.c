@@ -369,7 +369,7 @@ hcb_cleaner(struct worker *wrk, void *priv)
 		VSTAILQ_CONCAT(&dead_y, &cool_y);
 		VTAILQ_CONCAT(&dead_h, &cool_h, hoh_list);
 		Lck_Unlock(&hcb_mtx);
-		WRK_SumStat(wrk);
+		Pool_Sumstat(wrk);
 		VTIM_sleep(cache_param->critbit_cooloff);
 	}
 	NEEDLESS_RETURN(NULL);

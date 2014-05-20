@@ -1107,6 +1107,8 @@ void Pool_Init(void);
 void Pool_Accept(void);
 void Pool_Work_Thread(void *priv, struct worker *w);
 int Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how);
+void Pool_Sumstat(struct worker *w);
+void Pool_PurgeStat(unsigned nobj);
 
 #define WRW_IsReleased(w)	((w)->wrw == NULL)
 int WRW_Error(const struct worker *w);
@@ -1216,10 +1218,6 @@ void WAIT_Write_Session(struct sess *sp, int fd);
 
 /* cache_wrk.c */
 
-void WRK_Init(void);
-int WRK_TrySumStat(struct worker *w);
-void WRK_SumStat(struct worker *w);
-void WRK_PurgeStat(unsigned nobj);
 void *WRK_thread(void *priv);
 typedef void *bgthread_t(struct worker *, void *priv);
 void WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func,

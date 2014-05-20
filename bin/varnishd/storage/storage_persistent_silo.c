@@ -161,7 +161,7 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 		EXP_Inject(oc, sg->lru, so->ttl);
 		sg->nobj++;
 	}
-	WRK_SumStat(wrk);
+	Pool_Sumstat(wrk);
 	sg->flags |= SMP_SEG_LOADED;
 }
 

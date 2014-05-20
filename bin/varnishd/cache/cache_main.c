@@ -217,7 +217,6 @@ child_main(void)
 	VBO_Init();
 	VBE_InitCfg();
 	VBP_Init();
-	WRK_Init();
 	Pool_Init();
 	Pipe_Init();
 

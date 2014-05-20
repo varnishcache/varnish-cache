@@ -37,59 +37,6 @@
 #include "cache.h"
 
 #include "hash/hash_slinger.h"
-
-static struct lock		wstat_mtx;
-
-/*--------------------------------------------------------------------*/
-
-static void
-wrk_sumstat(const struct dstat *ds)
-{
-
-	Lck_AssertHeld(&wstat_mtx);
-#define L0(n)
-#define L1(n) (VSC_C_main->n += ds->n)
-#define VSC_F(n, t, l, f, v, d, e) L##l(n);
-#include "tbl/vsc_f_main.h"
-#undef VSC_F
-#undef L0
-#undef L1
-}
-
-void
-WRK_SumStat(struct worker *w)
-{
-
-	Lck_Lock(&wstat_mtx);
-	wrk_sumstat(&w->stats);
-	Lck_Unlock(&wstat_mtx);
-	memset(&w->stats, 0, sizeof w->stats);
-}
-
-int
-WRK_TrySumStat(struct worker *w)
-{
-	if (Lck_Trylock(&wstat_mtx))
-		return (0);
-	wrk_sumstat(&w->stats);
-	Lck_Unlock(&wstat_mtx);
-	memset(&w->stats, 0, sizeof w->stats);
-	return (1);
-}
-
-/*--------------------------------------------------------------------
- * Helper function to update stats for purges under lock
- */
-
-void
-WRK_PurgeStat(unsigned nobj)
-{
-	Lck_Lock(&wstat_mtx);
-	VSC_C_main->n_purges++;
-	VSC_C_main->n_obj_purged += nobj;
-	Lck_Unlock(&wstat_mtx);
-}
-
 /*--------------------------------------------------------------------
  * Create and starte a back-ground thread which as its own worker and
  * session data structures;
@@ -164,7 +111,7 @@ wrk_thread_real(void *priv, unsigned thread_workspace)
 	if (w->nbo != NULL)
 		VBO_Free(&w->nbo);
 	HSH_Cleanup(w);
-	WRK_SumStat(w);
+	Pool_Sumstat(w);
 	return (NULL);
 }
 
@@ -173,10 +120,4 @@ WRK_thread(void *priv)
 {
 
 	return (wrk_thread_real(priv, cache_param->workspace_thread));
-}
-
-void
-WRK_Init(void)
-{
-	Lck_New(&wstat_mtx, lck_wstat);
 }

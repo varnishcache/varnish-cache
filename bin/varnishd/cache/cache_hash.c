@@ -603,7 +603,7 @@ double keep)
 		(void)HSH_DerefObj(&wrk->stats, &o);
 	}
 	WS_Release(wrk->aws, 0);
-	WRK_PurgeStat(nobj);
+	Pool_PurgeStat(nobj);
 }
 
 
