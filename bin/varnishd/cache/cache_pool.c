@@ -72,6 +72,8 @@ struct pool {
 	uintmax_t			ndropped;
 	uintmax_t			nqueued;
 	struct sesspool			*sesspool;
+	struct dstat			*a_stat;
+	struct dstat			*b_stat;
 };
 
 static struct lock		pool_mtx;
@@ -80,15 +82,17 @@ static unsigned			pool_accepting = 0;
 
 static struct lock		wstat_mtx;
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Summing of stats into global stats counters
+ */
 
 static void
-wrk_sumstat(const struct dstat *ds)
+pool_sumstat(const struct dstat *src)
 {
 
 	Lck_AssertHeld(&wstat_mtx);
 #define L0(n)
-#define L1(n) (VSC_C_main->n += ds->n)
+#define L1(n) (VSC_C_main->n += src->n)
 #define VSC_F(n, t, l, f, v, d, e) L##l(n);
 #include "tbl/vsc_f_main.h"
 #undef VSC_F
@@ -101,7 +105,7 @@ Pool_Sumstat(struct worker *w)
 {
 
 	Lck_Lock(&wstat_mtx);
-	wrk_sumstat(&w->stats);
+	pool_sumstat(&w->stats);
 	Lck_Unlock(&wstat_mtx);
 	memset(&w->stats, 0, sizeof w->stats);
 }
@@ -111,10 +115,29 @@ Pool_TrySumstat(struct worker *w)
 {
 	if (Lck_Trylock(&wstat_mtx))
 		return (0);
-	wrk_sumstat(&w->stats);
+	pool_sumstat(&w->stats);
 	Lck_Unlock(&wstat_mtx);
 	memset(&w->stats, 0, sizeof w->stats);
 	return (1);
+}
+
+/*--------------------------------------------------------------------
+ * Summing of stats into pool counters
+ */
+
+static void
+pool_addstat(struct dstat *dst, struct dstat *src)
+{
+
+	dst->summs++;
+#define L0(n)
+#define L1(n) (dst->n += src->n)
+#define VSC_F(n, t, l, f, v, d, e) L##l(n);
+#include "tbl/vsc_f_main.h"
+#undef VSC_F
+#undef L0
+#undef L1
+	memset(src, 0, sizeof *src);
 }
 
 /*--------------------------------------------------------------------
@@ -301,6 +324,27 @@ pool_kiss_of_death(struct worker *wrk, void *priv)
 }
 
 /*--------------------------------------------------------------------
+ * Special function to summ stats
+ */
+
+static void __match_proto__(pool_func_t)
+pool_stat_summ(struct worker *wrk, void *priv)
+{
+	struct dstat *src;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk->pool, POOL_MAGIC);
+	VSL(SLT_Debug, 0, "STATSUMM");
+	AN(priv);
+	src = priv;
+	Lck_Lock(&wstat_mtx);
+	pool_sumstat(src);
+	Lck_Unlock(&wstat_mtx);
+	memset(src, 0, sizeof *src);
+	wrk->pool->b_stat = src;
+}
+
+/*--------------------------------------------------------------------
  * This is the work function for worker threads in the pool.
  */
 
@@ -308,13 +352,12 @@ void
 Pool_Work_Thread(void *priv, struct worker *wrk)
 {
 	struct pool *pp;
-	int stats_dirty;
 	struct pool_task *tp;
+	struct pool_task tps;
 	int i;
 
 	CAST_OBJ_NOTNULL(pp, priv, POOL_MAGIC);
 	wrk->pool = pp;
-	stats_dirty = 0;
 	while (1) {
 		Lck_Lock(&pp->mtx);
 
@@ -332,17 +375,26 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 				VTAILQ_REMOVE(&pp->back_queue, tp, list);
 		}
 
-		if (tp == NULL) {
+		if ((tp == NULL && wrk->stats.summs > 0) ||
+		    (wrk->stats.summs >= cache_param->wthread_stats_rate))
+			pool_addstat(pp->a_stat, &wrk->stats);
+
+		if (tp != NULL) {
+			wrk->stats.summs++;
+		} else if (pp->b_stat != NULL && pp->a_stat->summs) {
+			/* Nothing to do, push pool stats into global pool */
+			tps.func = pool_stat_summ;
+			tps.priv = pp->a_stat;
+			pp->a_stat = pp->b_stat;
+			pp->b_stat = NULL;
+			tp = &tps;
+		} else {
 			/* Nothing to do: To sleep, perchance to dream ... */
 			if (isnan(wrk->lastused))
 				wrk->lastused = VTIM_real();
 			wrk->task.func = NULL;
 			wrk->task.priv = wrk;
 			VTAILQ_INSERT_HEAD(&pp->idle_queue, &wrk->task, list);
-			if (stats_dirty) {
-				Pool_Sumstat(wrk);
-				stats_dirty = 0;
-			}
 			do {
 				i = Lck_CondWait(&wrk->cond, &pp->mtx,
 				    wrk->vcl == NULL ?  0 : wrk->lastused+60.);
@@ -350,6 +402,7 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 					VCL_Rel(&wrk->vcl);
 			} while (wrk->task.func == NULL);
 			tp = &wrk->task;
+			wrk->stats.summs++;
 		}
 		Lck_Unlock(&pp->mtx);
 
@@ -358,12 +411,6 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 
 		assert(wrk->pool == pp);
 		tp->func(wrk, tp->priv);
-
-		if (++stats_dirty >= cache_param->wthread_stats_rate) {
-			Pool_Sumstat(wrk);
-			stats_dirty = 0;
-		} else if (Pool_TrySumstat(wrk))
-			stats_dirty = 0;
 	}
 	wrk->pool = NULL;
 }
@@ -507,6 +554,10 @@ pool_mkpool(unsigned pool_no)
 	ALLOC_OBJ(pp, POOL_MAGIC);
 	if (pp == NULL)
 		return (NULL);
+	pp->a_stat = calloc(1, sizeof *pp->a_stat);
+	AN(pp->a_stat);
+	pp->b_stat = calloc(1, sizeof *pp->b_stat);
+	AN(pp->b_stat);
 	Lck_New(&pp->mtx, lck_wq);
 
 	VTAILQ_INIT(&pp->idle_queue);
