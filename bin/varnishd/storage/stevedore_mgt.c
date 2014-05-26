@@ -74,17 +74,44 @@ struct cli_proto cli_stv[] = {
 	    0, 0, "", stv_cli_list },
 	{ NULL}
 };
+
+/*--------------------------------------------------------------------
+ */
+
+static void
+smp_fake_init(struct stevedore *parent, int ac, char * const *av)
+{
+
+	(void)parent;
+	(void)ac;
+	(void)av;
+	ARGV_ERR(
+	    "-spersistent has been deprecated, please see:\n"
+	    "  https://www.varnish-cache.org/docs/trunk/phk/persistent.html\n"
+	    "for details.\n"
+	);
+}
+
+
+static const struct stevedore smp_fake_stevedore = {
+	.magic = STEVEDORE_MAGIC,
+	.name = "deprecated_persistent",
+	.init = smp_fake_init,
+};
+
+
 /*--------------------------------------------------------------------
  * Parse a stevedore argument on the form:
  *	[ name '=' ] strategy [ ',' arg ] *
  */
 
 static const struct choice STV_choice[] = {
-	{ "file",	&smf_stevedore },
-	{ "malloc",	&sma_stevedore },
-	{ "persistent",	&smp_stevedore },
+	{ "file",			&smf_stevedore },
+	{ "malloc",			&sma_stevedore },
+	{ "deprecated_persistent",	&smp_stevedore },
+	{ "persistent",			&smp_fake_stevedore },
 #ifdef HAVE_LIBUMEM
-	{ "umem",	&smu_stevedore },
+	{ "umem",			&smu_stevedore },
 #endif
 	{ NULL,		NULL }
 };
@@ -133,9 +160,6 @@ STV_Config(const char *spec)
 
 	*stv = *stv2;
 	AN(stv->name);
-	AN(stv->alloc);
-	if (stv->allocobj == NULL)
-		stv->allocobj = stv_default_allocobj;
 
 	if (p == NULL)
 		bprintf(stv->ident, "s%u", seq++);
@@ -157,6 +181,10 @@ STV_Config(const char *spec)
 		stv->init(stv, ac, av);
 	else if (ac != 0)
 		ARGV_ERR("(-s%s) too many arguments\n", stv->name);
+
+	AN(stv->alloc);
+	if (stv->allocobj == NULL)
+		stv->allocobj = stv_default_allocobj;
 
 	if (!strcmp(stv->ident, TRANSIENT_STORAGE)) {
 		stv->transient = 1;

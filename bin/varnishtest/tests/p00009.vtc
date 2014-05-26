@@ -14,8 +14,8 @@ server s1 {
 varnish v1 \
 	-arg "-pfeature=+wait_silo" \
 	-arg "-pban_lurker_sleep=0" \
-	-arg "-sper1=persistent,${tmpdir}/_.per1,10m" \
-	-arg "-sper2=persistent,${tmpdir}/_.per2,10m" \
+	-arg "-sper1=deprecated_persistent,${tmpdir}/_.per1,10m" \
+	-arg "-sper2=deprecated_persistent,${tmpdir}/_.per2,10m" \
 	-vcl+backend {
 	}
 varnish v1 -start

@@ -1,5 +1,6 @@
-varnishtest "Code coverage of VCL compiler and RSTdump"
+varnishtest "Code coverage of VCL compiler and RSTdump etc"
 
 shell "${varnishd} -b 127.0.0.1:80 -C -n ${tmpdir} > /dev/null 2>&1"
 shell "${varnishd} -x dumprstparam > /dev/null 2>&1"
 shell "${varnishd} -x dumprstvsl > /dev/null 2>&1"
+shell "! ${varnishd} -spersistent > /dev/null 2>&1"

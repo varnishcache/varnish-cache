@@ -588,7 +588,7 @@ smp_free(struct storage *st)
 
 const struct stevedore smp_stevedore = {
 	.magic	=	STEVEDORE_MAGIC,
-	.name	=	"persistent",
+	.name	=	"deprecated_persistent",
 	.init	=	smp_mgt_init,
 	.open	=	smp_open,
 	.close	=	smp_close,
