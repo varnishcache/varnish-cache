@@ -1,0 +1,19 @@
+varnishtest "Duplicate object names"
+
+varnish v1 -errvcl {Object name 'first' already used.} {
+	import ${vmod_debug};
+	sub vcl_init {
+		new first = debug.obj("FOO");
+		new first = debug.obj("BAH");
+	}
+} 
+
+varnish v1 -errvcl {Object name 'first' already used.} {
+	import ${vmod_debug};
+
+	backend first { .host = "${bad_ip}"; }
+
+	sub vcl_init {
+		new first = debug.obj("FOO");
+	}
+} 

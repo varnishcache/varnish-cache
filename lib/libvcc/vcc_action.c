@@ -164,10 +164,25 @@ parse_new(struct vcc *tl)
 		return;
 	}
 	sy1 = VCC_FindSymbol(tl, tl->t, SYM_NONE);
+	if (sy1 != NULL) {
+		VSB_printf(tl->sb, "Object name '%.*s' already used.\n",
+		    PF(tl->t));
+
+		VSB_printf(tl->sb, "First usage:\n");
+		AN(sy1->def_b);
+		if (sy1->def_e != NULL)
+			vcc_ErrWhere2(tl, sy1->def_b, sy1->def_e);
+		else
+			vcc_ErrWhere(tl, sy1->def_b);
+		VSB_printf(tl->sb, "Redefinition:\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
 	XXXAZ(sy1);
 
 	sy1 = VCC_AddSymbolTok(tl, tl->t, SYM_NONE);	// XXX: NONE ?
 	XXXAN(sy1);
+	sy1->def_b = tl->t;
 	vcc_NextToken(tl);
 
 	ExpectErr(tl, '=');
@@ -243,6 +258,7 @@ parse_new(struct vcc *tl)
 		}
 		p += 2;
 	}
+	sy1->def_e = tl->t;
 	/*lint -restore */
 }
 
