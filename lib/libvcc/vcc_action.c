@@ -178,7 +178,6 @@ parse_new(struct vcc *tl)
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
-	XXXAZ(sy1);
 
 	sy1 = VCC_AddSymbolTok(tl, tl->t, SYM_NONE);	// XXX: NONE ?
 	XXXAN(sy1);
