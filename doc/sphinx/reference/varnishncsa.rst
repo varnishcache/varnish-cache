@@ -57,6 +57,9 @@ Supported formatters are:
 %h
   Remote host. Defaults to '-' if not known.
 
+%I
+  Total bytes received from client.
+
 %{X}i
   The contents of request header X.
 
@@ -71,6 +74,9 @@ Supported formatters are:
 
 %{X}o
   The contents of response header X.
+
+%O
+  Total bytes sent to client.
 
 %r
   The first line of the request. Synthesized from other fields, so it
