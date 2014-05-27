@@ -83,6 +83,27 @@ def write_rst_file_warning(fo):
 
 #######################################################################
 
+def lwrap(s, w=72):
+	"""
+	Wrap a c-prototype like string into a number of lines
+	"""
+	l = []
+	p=""
+	while len(s) > w:
+		y = s[:w].rfind(',')
+		if y == -1:
+			y = s[:w].rfind('(')
+		if y == -1:
+			break
+		l.append(p + s[:y + 1])
+		s = s[y + 1:].lstrip()
+		p = "    "
+	if len(s) > 0:
+		l.append(p + s)
+	return l
+		
+#######################################################################
+
 def is_c_name(s):
 	return None != re.match("^[a-z][a-z0-9_]*$", s)
 
@@ -145,11 +166,15 @@ class vmod(object):
 
 	def c_proto(self, fo):
 		for o in self.objs:
+			fo.write("/* Object %s */\n" % o.nam)
 			o.fixup(self.nam)
 			o.c_proto(fo)
 			fo.write("\n")
+		if len(self.funcs) > 0:
+			fo.write("/* Functions */\n")
 		for f in self.funcs:
-			f.c_proto(fo)
+			for i in lwrap(f.c_proto()):
+				fo.write(i + "\n")
 		if self.init != None:
 			fo.write("\n")
 			fo.write("int " + self.init)
@@ -162,7 +187,8 @@ class vmod(object):
 			for t in o.c_typedefs(self.nam):
 				l.append(t)
 			l.append("")
-		l.append("/* Functions */")
+		if len(self.funcs) > 0:
+			l.append("/* Functions */")
 		for f in self.funcs:
 			l.append(f.c_typedef(self.nam))
 		l.append("")
@@ -170,7 +196,8 @@ class vmod(object):
 
 	def c_typedefs(self, fo):
 		for i in self.c_typedefs_():
-			fo.write(i + "\n")
+			for j in lwrap(i):
+				fo.write(j + "\n")
 
 	def c_vmod(self, fo):
 		fo.write('extern const char Vmod_' + self.nam + '_Name[];\n')
@@ -197,7 +224,8 @@ class vmod(object):
 		fo.write("extern const char Vmod_" + self.nam + "_Proto[];\n")
 		fo.write("const char Vmod_" + self.nam + "_Proto[] =\n")
 		for t in self.c_typedefs_():
-			fo.write('\t"' + t + '\\n"\n')
+			for i in lwrap(t, w=64):
+				fo.write('\t"' + i + '\\n"\n')
 		fo.write('\t"\\n"\n')
 		for i in (cs + ";").split("\n"):
 			fo.write('\n\t"' + i + '\\n"')
@@ -249,14 +277,15 @@ class vmod(object):
 		s = "extern " + s + ";\n" + s + " = {\n"
 
 		for o in self.objs:
-			s += o.c_strspec(self.nam)
+			s += o.c_strspec(self.nam) + ",\n\n"
 
-		s += "\n\t/* Functions */\n"
+		if len(self.funcs) > 0:
+			s += "\t/* Functions */\n"
 		for f in self.funcs:
-			s += '\t"' + f.c_strspec(self.nam) + '",\n'
+			s += f.c_strspec(self.nam) + ',\n\n'
 
-		s += "\n\t/* Init/Fini */\n"
 		if self.init != None:
+			s += "\t/* Init/Fini */\n"
 			s += '\t"INIT\\0Vmod_' + self.nam + '_Func._init",\n'
 
 		s += "\t0\n"
@@ -323,22 +352,22 @@ class func(object):
 	def set_pfx(self, s):
 		self.pfx = s
 
-	def c_proto(self, fo, fini=False):
-		fo.write(ctypes[self.retval])
-		fo.write(" vmod_" + self.cnam + "(")
+	def c_proto(self, fini=False):
+		s = ctypes[self.retval] + " vmod_" + self.cnam + "("
 		p = ""
 		if not fini:
-			fo.write("const struct vrt_ctx *")
+			s += "const struct vrt_ctx *"
 			p = ", "
 		if self.pfx != None:
-			fo.write(p + self.pfx)
+			s += p + self.pfx
 			p = ", "
 		for a in self.al:
-			fo.write(p + ctypes[a.typ])
+			s += p + ctypes[a.typ]
 			p = ", "
 			if a.nam != None:
-				fo.write(" " + a.nam)
-		fo.write(");\n")
+				s += " " + a.nam
+		s += ");"
+		return s
 
 	def c_typedef(self, modname, fini=False):
 		s = "typedef "
@@ -359,21 +388,25 @@ class func(object):
 
 	def c_struct(self, modname):
 		s = '\ttd_' + modname + "_" + self.cnam
-		while len(s.expandtabs()) < 40:
-			s += "\t"
+		if len(s.expandtabs()) >= 40:
+			s += "\n\t\t\t\t\t"
+		else:
+			while len(s.expandtabs()) < 40:
+				s += "\t"
 		s += "*" + self.cnam + ";\n"
 		return s
 
 	def c_initializer(self):
 		return "\tvmod_" + self.cnam + ",\n"
 
-	def c_strspec(self, modnam):
-		s = modnam + "." + self.nam
-		s += "\\0"
-		s += "Vmod_" + modnam + "_Func." + self.cnam + "\\0"
-		s += self.retval + "\\0"
+	def c_strspec(self, modnam, pfx = "\t"):
+		s = pfx + '"' + modnam + "." + self.nam + '\\0"\n'
+		s += pfx + '"'
+		s += "Vmod_" + modnam + "_Func." + self.cnam + '\\0"\n'
+		s += pfx + '    "' + self.retval + '\\0"\n'
 		for a in self.al:
-			s += a.c_strspec()
+			s += pfx + '\t"' + a.c_strspec() + '"\n'
+		s += pfx + '"\\0"'
 		return s
 
 	def doc(self, l):
@@ -453,10 +486,13 @@ class obj(object):
 
 	def c_proto(self, fo):
 		fo.write(self.st + ";\n")
-		self.init.c_proto(fo)
-		self.fini.c_proto(fo, fini=True)
+		l = []
+		l += lwrap(self.init.c_proto())
+		l += lwrap(self.fini.c_proto(fini=True))
 		for m in self.methods:
-			m.c_proto(fo)
+			l += lwrap(m.c_proto())
+		for i in l:
+			fo.write(i + "\n")
 
 	def c_struct(self, modnam):
 		s = "\t/* Object " + self.nam + " */\n"
@@ -477,12 +513,12 @@ class obj(object):
 	def c_strspec(self, modnam):
 		s = "\t/* Object " + self.nam + " */\n"
 		s += '\t"OBJ\\0"\n'
-		s += '\t\t"' + self.init.c_strspec(modnam) + '\\0"\n'
+		s += self.init.c_strspec(modnam, pfx="\t\t") + '\n'
 		s += '\t\t"' + self.st + '\\0"\n'
-		s += '\t\t"' + self.fini.c_strspec(modnam) + '\\0"\n'
+		s += self.fini.c_strspec(modnam, pfx="\t\t") + '\n'
 		for m in self.methods:
-			s += '\t\t"' + m.c_strspec(modnam) + '\\0"\n'
-		s += '\t\t"\\0",\n'
+			s += m.c_strspec(modnam, pfx="\t\t") + '\n'
+		s += '\t"\\0"'
 		return s
 
 	def doc(self, l):
