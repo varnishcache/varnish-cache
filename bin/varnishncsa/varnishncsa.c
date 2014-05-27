@@ -45,6 +45,8 @@
  *	%b		Length of reply body, or "-"
  *	%{Referer}i	Contents of "Referer" request header
  *	%{User-agent}i	Contents of "User-agent" request header
+ *  %I		Total bytes recieved from client
+ *  %O		Total bytes sent to client
  *
  * Actually, we cheat a little and replace "%r" with something close to
  * "%m http://%{Host}i%U%q %H", where the additional fields are:
@@ -95,6 +97,8 @@ enum e_frag {
 	F_h,			/* %h Host name / IP Address */
 	F_m,			/* %m Method */
 	F_s,			/* %s Status */
+	F_I,			/* %I Bytes recieved */
+	F_O,			/* %O Bytes sent */
 	F_tstart,		/* Time start */
 	F_tend,			/* Time end */
 	F_ttfb,			/* %{Varnish:time_firstbyte}x */
@@ -574,6 +578,12 @@ parse_format(const char *format)
 		case 'U':	/* URL */
 			addf_fragment(&CTX.frag[F_U], "-");
 			break;
+		case 'I':	/* Bytes recieved */
+			addf_fragment(&CTX.frag[F_I], "-");
+			break;
+		case 'O':	/* Bytes sent */
+			addf_fragment(&CTX.frag[F_O], "-");
+			break;
 		case '{':
 			p++;
 			q = p;
@@ -783,6 +793,8 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				break;
 			case SLT_ReqAcct:
 				frag_fields(b, e, 5, &CTX.frag[F_b], 0, NULL);
+				frag_fields(b, e, 3, &CTX.frag[F_I], 0, NULL);
+				frag_fields(b, e, 6, &CTX.frag[F_O], 0, NULL);
 				break;
 			case SLT_Timestamp:
 				if (isprefix(b, "Start:", e, &p)) {
