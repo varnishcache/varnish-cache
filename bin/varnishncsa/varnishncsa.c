@@ -30,32 +30,12 @@
  * SUCH DAMAGE.
  *
  * Obtain log data from the shared memory log, order it by session ID, and
- * display it in Apache / NCSA combined log format:
+ * display it in Apache / NCSA combined log format.
  *
- *	%h %l %u %t "%r" %s %b "%{Referer}i" "%{User-agent}i"
+ * See doc/sphinx/reference/varnishncsa.rst for the supported format
+ * specifiers.
  *
- * where the fields are defined as follows:
- *
- *	%h		Client host name or IP address (always the latter)
- *	%l		Client user ID as reported by identd (always "-")
- *	%u		User ID if using HTTP authentication, or "-"
- *	%t		Date and time of request
- *	%r		Request line
- *	%s		Status code
- *	%b		Length of reply body, or "-"
- *	%{Referer}i	Contents of "Referer" request header
- *	%{User-agent}i	Contents of "User-agent" request header
- *  %I		Total bytes recieved from client
- *  %O		Total bytes sent to client
- *
- * Actually, we cheat a little and replace "%r" with something close to
- * "%m http://%{Host}i%U%q %H", where the additional fields are:
- *
- *	%m		Request method
- *	%{Host}i	Contents of "Host" request header
- *	%U		URL path
- *	%q		Query string
- *	%H		Protocol version
+ * Note: %r is "%m http://%{Host}i%U%q %H"
  *
  */
 
@@ -551,11 +531,17 @@ parse_format(const char *format)
 		case 'H':	/* Protocol */
 			addf_fragment(&CTX.frag[F_H], "HTTP/1.0");
 			break;
+		case 'I':	/* Bytes recieved */
+			addf_fragment(&CTX.frag[F_I], "-");
+			break;
 		case 'l':	/* Client user ID (identd) always '-' */
 			AZ(VSB_putc(vsb, '-'));
 			break;
 		case 'm':	/* Method */
 			addf_fragment(&CTX.frag[F_m], "-");
+			break;
+		case 'O':	/* Bytes sent */
+			addf_fragment(&CTX.frag[F_O], "-");
 			break;
 		case 'q':	/* Query string */
 			addf_fragment(&CTX.frag[F_q], "");
@@ -572,17 +558,11 @@ parse_format(const char *format)
 		case 'T':	/* Int request time */
 			addf_time(*p, NULL, NULL);
 			break;
-		case 'u':
+		case 'u':	/* Remote user from auth */
 			addf_auth("-");
 			break;
 		case 'U':	/* URL */
 			addf_fragment(&CTX.frag[F_U], "-");
-			break;
-		case 'I':	/* Bytes recieved */
-			addf_fragment(&CTX.frag[F_I], "-");
-			break;
-		case 'O':	/* Bytes sent */
-			addf_fragment(&CTX.frag[F_O], "-");
 			break;
 		case '{':
 			p++;

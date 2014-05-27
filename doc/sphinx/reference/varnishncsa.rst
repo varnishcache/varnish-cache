@@ -69,14 +69,14 @@ Supported formatters are:
 %m
    Request method. Defaults to '-' if not known.
 
-%q
-  The query string, if no query string exists, an empty string.
-
 %{X}o
   The contents of response header X.
 
 %O
   Total bytes sent to client.
+
+%q
+  The query string, if no query string exists, an empty string.
 
 %r
   The first line of the request. Synthesized from other fields, so it
