@@ -726,7 +726,7 @@ def emit_file(fo, fd, bn):
 	x = 0
 	l = 0
 	fo.write("\n\t/* %s */\n\n" % fn)
-	fo.write('\tVSB_cat(sb, "/* ---===### %s ###===--- */\\n");\n' % bn)
+	fo.write('\tVSB_cat(sb, "/* ---===### %s ###===--- */\\n\\n");\n' % bn)
 	for c in fc:
 		if l == 0:
 			fo.write("\tVSB_cat(sb, \"")
@@ -764,9 +764,10 @@ def emit_file(fo, fd, bn):
 			fo.write("\"\n")
 			x = 0
 	if x != 0:
-		fo.write("\"")
+		fo.write("\"\n")
 	if l != 0:
 		fo.write("\t);\n")
+	fo.write('\tVSB_cat(sb, "\\n");\n')
 
 #######################################################################
 

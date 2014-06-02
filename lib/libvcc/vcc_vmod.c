@@ -104,8 +104,6 @@ vcc_ParseImport(struct vcc *tl)
 		bprintf(fn, "%s/libvmod_%.*s.so", tl->vmod_dir, PF(mod));
 	}
 
-	Fh(tl, 0, "static void *VGC_vmod_%.*s;\n", PF(mod));
-
 	ifp = New_IniFin(tl);
 
 	VSB_printf(ifp->ini, "\tif (VRT_Vmod_Init(&VGC_vmod_%.*s,\n", PF(mod));
@@ -177,7 +175,6 @@ vcc_ParseImport(struct vcc *tl)
 		vcc_ErrWhere(tl, mod);
 		return;
 	}
-	Fh(tl, 0, "static struct vmod_priv vmod_priv_%.*s;\n", PF(mod));
 	for (; *spec != NULL; spec++) {
 		p = *spec;
 		if (!strcmp(p, "OBJ")) {
@@ -207,5 +204,10 @@ vcc_ParseImport(struct vcc *tl)
 				sym->kind = SYM_PROC;
 		}
 	}
+
+	Fh(tl, 0, "\n/* --- BEGIN VMOD %.*s --- */\n\n", PF(mod));
+	Fh(tl, 0, "static void *VGC_vmod_%.*s;\n", PF(mod));
+	Fh(tl, 0, "static struct vmod_priv vmod_priv_%.*s;\n", PF(mod));
 	Fh(tl, 0, "\n%s\n", proto);
+	Fh(tl, 0, "\n/* --- END VMOD %.*s --- */\n\n", PF(mod));
 }
