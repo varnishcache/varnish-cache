@@ -33,15 +33,12 @@
 
 struct req;
 struct busyobj;
-struct worker;
 struct vsl_log;
 struct http;
 struct ws;
-struct vsb;
 struct cli;
 struct director;
 struct VCL_conf;
-struct sockaddr_storage;
 struct suckaddr;
 
 /***********************************************************************
