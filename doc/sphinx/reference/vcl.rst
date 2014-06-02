@@ -903,6 +903,21 @@ resp.response
 resp.http.header
   The corresponding HTTP header.
 
+The following read-only variables report on the state of a named
+storage stevedore. Not all stevedores implement all of the variables:
+
+storage.<name>.free_space
+  Free space in bytes on the named stevedore. Only the malloc
+  stevedore implements this.
+
+storage.<name>.used_space
+  Used space in bytes on the named stevedore. Only the malloc
+  stevedore implements this.
+
+storage.<name>.happy
+  Health status for the named stevedore. None of the stevedores
+  implements this.
+
 Values may be assigned to variables using the set keyword:
 ::
 
