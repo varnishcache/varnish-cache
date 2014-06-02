@@ -596,9 +596,18 @@ aliases = [
 ]
 
 stv_variables = (
-	('free_space',	'BYTES',	"0."),
-	('used_space',	'BYTES',	"0."),
-	('happy',	'BOOL',		"0"),
+	('free_space',	'BYTES',	"0.", 'storage.<name>.free_space', """
+        Free space available in the named stevedore. Only available for
+        the malloc stevedore.
+        """),
+	('used_space',	'BYTES',	"0.", 'storage.<name>.used_space', """
+        Used space in the named stevedore. Only available for the malloc
+        stevedore.
+        """),
+	('happy',	'BOOL',		"0", 'storage.<name>.happy', """
+        Health status for the named stevedore. Not available in any of the
+        current stevedores.
+        """),
 )
 
 #######################################################################
@@ -1174,5 +1183,16 @@ for i in l:
 	rst_where(fp_vclvar, "Writable from: ", i[3])
 	for j in i[4].split("\n"):
 		fp_vclvar.write("\t%s\n" % j.strip())
+
+hdr="storage"
+fp_vclvar.write("\n" + hdr + "\n");
+fp_vclvar.write("~" * len(hdr) + "\n");
+for i in stv_variables:
+        fp_vclvar.write("\n" + i[3] + "\n\n")
+        fp_vclvar.write("\tType: " + i[1] + "\n\n")
+        fp_vclvar.write("\tReadable from: client, backend\n\n")
+        for j in i[4].split("\n"):
+                fp_vclvar.write("\t%s\n" % j.strip())
+
 
 fp_vclvar.close()
