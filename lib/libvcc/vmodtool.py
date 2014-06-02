@@ -25,17 +25,13 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
-#
-# Read the vmod.vcc file (inputvcc) and produce the vmod.h and vmod.c files.
-#
-# vmod.h contains the prototypes for the published functions, the module
-# C-code should include this file to ensure type-consistency.
-#
-# vmod.c contains the symbols which VCC and varnishd will use to access
-# the module:  A structure of properly typed function pointers, the
-# size of this structure in bytes, and the definition of the structure
-# as a string, suitable for inclusion in the C-source of the compile VCL
-# program.
+
+"""
+Read the vmod.vcc file (inputvcc) and produce:
+	vmod_if.h -- Prototypes for the implementation
+	vmod_if.c -- Magic glue & datastructures to make things a VMOD.
+	vmod_${name}.rst -- Extracted documentation
+"""
 
 # This script should work with both Python 2 and Python 3.
 from __future__ import print_function
@@ -45,7 +41,7 @@ import re
 import optparse
 import unittest
 from os import unlink
-from os.path import dirname, basename, realpath, exists
+from os.path import dirname, realpath, exists
 from pprint import pprint, pformat
 
 ctypes = {
@@ -88,7 +84,7 @@ def lwrap(s, w=72):
 	Wrap a c-prototype like string into a number of lines
 	"""
 	l = []
-	p=""
+	p = ""
 	while len(s) > w:
 		y = s[:w].rfind(',')
 		if y == -1:
@@ -101,7 +97,7 @@ def lwrap(s, w=72):
 	if len(s) > 0:
 		l.append(p + s)
 	return l
-		
+
 #######################################################################
 
 def is_c_name(s):
@@ -125,7 +121,7 @@ class FormatError(Exception):
 
 #######################################################################
 
-class token(object):
+class Token(object):
 	def __init__(self, ln, ch, tokstr):
 		self.ln = ln
 		self.ch = ch
@@ -136,7 +132,7 @@ class token(object):
 
 #######################################################################
 
-class vmod(object):
+class Vmod(object):
 	def __init__(self, nam, dnam, sec):
 		if not is_c_name(nam):
 			raise ParseError("Module name '%s' is illegal", nam)
@@ -160,9 +156,9 @@ class vmod(object):
 		self.funcs.append(fn)
 		self.doc_order.append(fn)
 
-	def add_obj(self, obj):
-		self.objs.append(obj)
-		self.doc_order.append(obj)
+	def add_obj(self, o):
+		self.objs.append(o)
+		self.doc_order.append(o)
 
 	def c_proto(self, fo):
 		for o in self.objs:
@@ -332,7 +328,7 @@ class vmod(object):
 
 #######################################################################
 
-class func(object):
+class Func(object):
 	def __init__(self, nam, retval, al):
 		#if not is_c_name(nam):
 		#	raise Exception("Func name '%s' is illegal" % nam)
@@ -399,7 +395,7 @@ class func(object):
 	def c_initializer(self):
 		return "\tvmod_" + self.cnam + ",\n"
 
-	def c_strspec(self, modnam, pfx = "\t"):
+	def c_strspec(self, modnam, pfx="\t"):
 		s = pfx + '"' + modnam + "." + self.nam + '\\0"\n'
 		s += pfx + '"'
 		s += "Vmod_" + modnam + "_Func." + self.cnam + '\\0"\n'
@@ -448,7 +444,7 @@ class func(object):
 
 #######################################################################
 
-class obj(object):
+class Obj(object):
 	def __init__(self, nam):
 		self.nam = nam
 		self.init = None
@@ -467,7 +463,7 @@ class obj(object):
 
 	def set_init(self, f):
 		self.init = f
-		self.fini = func(f.nam, "VOID", [])
+		self.fini = Func(f.nam, "VOID", [])
 		self.init.cnam += "__init"
 		self.fini.cnam += "__fini"
 
@@ -549,7 +545,7 @@ class obj(object):
 
 #######################################################################
 
-class arg(object):
+class Arg(object):
 	def __init__(self, typ, nam=None, det=None):
 		self.nam = nam
 		self.typ = typ
@@ -589,7 +585,7 @@ def parse_enum2(tl):
 			raise ParseError(
 			    "Expected \"}\" or \",\" not \"%s\"" % t.str)
 	s += "\\0"
-	return arg("ENUM", det=s)
+	return Arg("ENUM", det=s)
 
 #######################################################################
 #
@@ -602,13 +598,13 @@ def parse_module(tl):
 	while len(tl.tl) > 0:
 		s += " " + tl.get_token().str
 	dnm = s[1:]
-	return vmod(nm, dnm, sec)
+	return Vmod(nm, dnm, sec)
 
 #######################################################################
 #
 #
 
-def parse_func(tl, rt_type=None, obj=None):
+def parse_func(tl, rt_type=None, pobj=None):
 	al = list()
 	if rt_type == None:
 		t = tl.get_token()
@@ -619,8 +615,8 @@ def parse_func(tl, rt_type=None, obj=None):
 
 	t = tl.get_token()
 	fname = t.str
-	if obj != None and fname[0] == "." and is_c_name(fname[1:]):
-		fname = obj + fname
+	if pobj != None and fname[0] == "." and is_c_name(fname[1:]):
+		fname = pobj + fname
 	elif not is_c_name(fname):
 		raise ParseError("Function name '%s' is illegal", fname)
 
@@ -637,7 +633,7 @@ def parse_func(tl, rt_type=None, obj=None):
 		if t.str == "ENUM":
 			al.append(parse_enum2(tl))
 		elif t.str in ctypes:
-			al.append(arg(t.str))
+			al.append(Arg(t.str))
 		elif t.str == ")":
 			break
 		else:
@@ -655,7 +651,7 @@ def parse_func(tl, rt_type=None, obj=None):
 			    "Expected \")\" or \",\" not \"%s\"" % t.str)
 	if t.str != ")":
 		raise ParseError("End Of Input looking for ')'")
-	f = func(fname, rt_type, al)
+	f = Func(fname, rt_type, al)
 
 	return f
 
@@ -665,7 +661,7 @@ def parse_func(tl, rt_type=None, obj=None):
 
 def parse_obj(tl):
 	f = parse_func(tl, "VOID")
-	o = obj(f.nam)
+	o = Obj(f.nam)
 	o.set_init(f)
 	return o
 
@@ -673,7 +669,7 @@ def parse_obj(tl):
 #######################################################################
 # A section of the inputvcc, starting at a keyword
 
-class file_section(object):
+class FileSection(object):
 	def __init__(self):
 		self.l = []
 		self.tl = []
@@ -701,7 +697,7 @@ class file_section(object):
 		if l == "":
 			return
 		for j in l.split():
-			self.tl.append(token(ln, 0, j))
+			self.tl.append(Token(ln, 0, j))
 
 	def parse(self, vx):
 		t = self.get_token()
@@ -729,7 +725,7 @@ class file_section(object):
 		elif t.str == "$Method":
 			if len(vx) != 2:
 				raise FormatError("$Method outside $Object", "")
-			o = parse_func(self, obj=vx[1].nam)
+			o = parse_func(self, pobj=vx[1].nam)
 			vx[1].add_method(o)
 		else:
 			raise FormatError("Unknown keyword: %s" % t.str, "")
@@ -792,20 +788,20 @@ def runmain(inputvcc, outputname="vcc_if"):
 	#######################################################################
 	# First collect the copyright:  All initial lines starting with '#'
 
-	copyright = []
+	copy_right = []
 	while len(lines[0]) > 0 and lines[0][0] == "#":
 		ln += 1
-		copyright.append(lines.pop(0))
+		copy_right.append(lines.pop(0))
 
-	if len(copyright) > 0:
-		if copyright[0] == "#-":
-			copyright = []
+	if len(copy_right) > 0:
+		if copy_right[0] == "#-":
+			copy_right = []
 		else:
-			while polish(copyright):
+			while polish(copy_right):
 				continue
 
 	if False:
-		for i in copyright:
+		for i in copy_right:
 			print("(C)\t", i)
 
 	#######################################################################
@@ -820,14 +816,14 @@ def runmain(inputvcc, outputname="vcc_if"):
 	}
 
 	sl = []
-	sc = file_section()
+	sc = FileSection()
 	sl.append(sc)
 	while len(lines) > 0:
 		ln += 1
 		l = lines.pop(0)
 		j = l.split()
 		if len(j) > 0 and j[0] in keywords:
-			sc = file_section()
+			sc = FileSection()
 			sl.append(sc)
 		sc.add_line(ln, l)
 
@@ -844,7 +840,8 @@ def runmain(inputvcc, outputname="vcc_if"):
 		pprint(str(e))
 		exit(-1)
 	except FormatError as e:
-		print("ERROR: Format error reading \"%s\": %s" % (inputvcc, pformat(e.msg)))
+		print("ERROR: Format error reading \"%s\": %s" %
+		    (inputvcc, pformat(e.msg)))
 		print(e.details)
 		exit(-2)
 
@@ -865,14 +862,11 @@ def runmain(inputvcc, outputname="vcc_if"):
 
 	vx[0].c_proto(fh)
 
-	fc.write("""#include "config.h"
-
-#include "vrt.h"
-#include "vcc_if.h"
-#include "vmod_abi.h"
-
-
-""")
+	fc.write('#include "config.h"\n')
+	fc.write('#include "vrt.h"\n')
+	fc.write('#include "vcc_if.h"\n')
+	fc.write('#include "vmod_abi.h"\n')
+	fc.write('\n')
 
 	vx[0].c_typedefs(fc)
 	vx[0].c_vmod(fc)
@@ -886,12 +880,12 @@ def runmain(inputvcc, outputname="vcc_if"):
 
 		vx[0].doc_dump(fp, suf)
 
-		if len(copyright) > 0:
+		if len(copy_right) > 0:
 			fp.write("\n")
 			fp.write("COPYRIGHT\n")
 			fp.write("=========\n")
 			fp.write("\n::\n\n")
-			for i in copyright:
+			for i in copy_right:
 				fp.write("  %s\n" % i)
 			fp.write("\n")
 
@@ -901,25 +895,27 @@ if __name__ == "__main__":
 	oparser = optparse.OptionParser(usage=usagetext)
 
 	oparser.add_option('-N', '--strict', action='store_true', default=False,
-			    help="Be strict when parsing input file. (vmod.vcc)")
+	    help="Be strict when parsing input file. (vmod.vcc)")
 	oparser.add_option('', '--runtests', action='store_true', default=False,
-			    dest="runtests", help=optparse.SUPPRESS_HELP)
+	    dest="runtests", help=optparse.SUPPRESS_HELP)
 	(opts, args) = oparser.parse_args()
 
 	if opts.runtests:
-		del sys.argv[1]  # Pop off --runtests, pass remaining to unittest.
+		# Pop off --runtests, pass remaining to unittest.
+		del sys.argv[1]
 		unittest.main()
 		exit()
 
-	inputvcc = None
+	i_vcc = None
 	if len(args) == 1 and exists(args[0]):
-		inputvcc = args[0]
+		i_vcc = args[0]
 	elif exists("vmod.vcc"):
-		if not inputvcc:
-		    inputvcc = "vmod.vcc"
+		if not i_vcc:
+			i_vcc = "vmod.vcc"
 	else:
-		print("ERROR: No vmod.vcc file supplied or found.", file=sys.stderr)
+		print("ERROR: No vmod.vcc file supplied or found.",
+		    file=sys.stderr)
 		oparser.print_help()
 		exit(-1)
 
-	runmain(inputvcc)
+	runmain(i_vcc)
