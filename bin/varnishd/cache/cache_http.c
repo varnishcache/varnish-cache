@@ -93,6 +93,15 @@ http_VSL_log(const struct http *hp)
 }
 
 /*--------------------------------------------------------------------*/
+
+static void
+http_fail(struct http *hp)
+{
+	VSLb(hp->vsl, SLT_Error, "out of workspace");
+	hp->failed = 1;
+}
+
+/*--------------------------------------------------------------------*/
 /* List of canonical HTTP response code names from RFC2616 */
 
 static struct http_msg {
@@ -146,12 +155,17 @@ HTTP_Setup(struct http *hp, struct ws *ws, struct vsl_log *vsl,
     enum VSL_tag_e  whence)
 {
 	http_Teardown(hp);
+	hp->nhd = HTTP_HDR_FIRST;
 	hp->logtag = whence;
 	hp->ws = ws;
 	hp->vsl = vsl;
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * http_Teardown() is a safety feature, we use it to zap all http
+ * structs once we're done with them, to minimize the risk that
+ * old stale pointers exist to no longer valid stuff.
+ */
 
 void
 http_Teardown(struct http *hp)
@@ -162,7 +176,6 @@ http_Teardown(struct http *hp)
 	memset(&hp->nhd, 0, sizeof *hp - offsetof(struct http, nhd));
 	memset(hp->hd, 0, sizeof *hp->hd * hp->shd);
 	memset(hp->hdf, 0, sizeof *hp->hdf * hp->shd);
-	hp->nhd = HTTP_HDR_FIRST;
 }
 
 /*--------------------------------------------------------------------*/
@@ -179,71 +192,6 @@ http_IsHdr(const txt *hh, const char *hdr)
 	assert(hdr[l] == ':');
 	hdr++;
 	return (!strncasecmp(hdr, hh->b, l));
-}
-
-/*--------------------------------------------------------------------
- * This function collapses multiple headerlines of the same name.
- * The lines are joined with a comma, according to [rfc2616, 4.2bot, p32]
- */
-
-void
-http_CollectHdr(struct http *hp, const char *hdr)
-{
-	unsigned u, v, ml, f = 0, x;
-	char *b = NULL, *e = NULL;
-
-	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
-		while (u < hp->nhd && http_IsHdr(&hp->hd[u], hdr)) {
-			Tcheck(hp->hd[u]);
-			if (f == 0) {
-				/* Found first header, just record the fact */
-				f = u;
-				break;
-			}
-			if (b == NULL) {
-				/* Found second header, start our collection */
-				ml = WS_Reserve(hp->ws, 0);
-				b = hp->ws->f;
-				e = b + ml;
-				x = Tlen(hp->hd[f]);
-				if (b + x < e) {
-					memcpy(b, hp->hd[f].b, x);
-					b += x;
-				} else
-					b = e;
-			}
-
-			AN(b);
-			AN(e);
-
-			/* Append the Nth header we found */
-			if (b < e)
-				*b++ = ',';
-			x = Tlen(hp->hd[u]) - *hdr;
-			if (b + x < e) {
-				memcpy(b, hp->hd[u].b + *hdr, x);
-				b += x;
-			} else
-				b = e;
-
-			/* Shift remaining headers up one slot */
-			for (v = u; v < hp->nhd - 1; v++)
-				hp->hd[v] = hp->hd[v + 1];
-			hp->nhd--;
-		}
-
-	}
-	if (b == NULL)
-		return;
-	AN(e);
-	if (b >= e) {
-		WS_Release(hp->ws, 0);
-		return;
-	}
-	*b = '\0';
-	hp->hd[f].b = hp->ws->f;
-	hp->hd[f].e = b;
-	WS_ReleaseP(hp->ws, b + 1);
 }
 
 /*--------------------------------------------------------------------*/
@@ -265,6 +213,76 @@ http_findhdr(const struct http *hp, unsigned l, const char *hdr)
 	}
 	return (0);
 }
+
+/*--------------------------------------------------------------------
+ * This function collapses multiple headerlines of the same name.
+ * The lines are joined with a comma, according to [rfc2616, 4.2bot, p32]
+ */
+
+void
+http_CollectHdr(struct http *hp, const char *hdr)
+{
+	unsigned u, l, ml, f, x, d;
+	char *b = NULL, *e = NULL;
+
+	if (hp->failed)
+		return;
+	l = hdr[0];
+	assert(l == strlen(hdr + 1));
+	assert(hdr[l] == ':');
+	f = http_findhdr(hp, l - 1, hdr + 1);
+	if (f == 0)
+		return;
+
+	for (d = u = f + 1; u < hp->nhd; u++) {
+		Tcheck(hp->hd[u]);
+		if (!http_IsHdr(&hp->hd[u], hdr)) {
+			if (d != u)
+				hp->hd[d] = hp->hd[u];
+			d++;
+			continue;
+		}
+		if (b == NULL) {
+			/* Found second header, start our collection */
+			ml = WS_Reserve(hp->ws, 0);
+			b = hp->ws->f;
+			e = b + ml;
+			x = Tlen(hp->hd[f]);
+			if (b + x >= e) {
+				http_fail(hp);
+				WS_Release(hp->ws, 0);
+				return;
+			}
+			memcpy(b, hp->hd[f].b, x);
+			b += x;
+		}
+
+		AN(b);
+		AN(e);
+
+		/* Append the Nth header we found */
+		if (b < e)
+			*b++ = ',';
+		x = Tlen(hp->hd[u]) - l;
+		if (b + x >= e) {
+			http_fail(hp);
+			WS_Release(hp->ws, 0);
+			return;
+		}
+		memcpy(b, hp->hd[u].b + *hdr, x);
+		b += x;
+	}
+	if (b == NULL)
+		return;
+	hp->nhd = (uint16_t)d;
+	AN(e);
+	*b = '\0';
+	hp->hd[f].b = hp->ws->f;
+	hp->hd[f].e = b;
+	WS_ReleaseP(hp->ws, b + 1);
+}
+
+/*--------------------------------------------------------------------*/
 
 int
 http_GetHdr(const struct http *hp, const char *hdr, char **ptr)

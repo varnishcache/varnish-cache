@@ -202,6 +202,7 @@ struct http {
 	uint16_t		status;
 	uint8_t			protover;
 	uint8_t			conds;		/* If-* headers present */
+	uint8_t			failed;		/* usually: ws-alloc failed */
 };
 
 /*--------------------------------------------------------------------
