@@ -102,8 +102,6 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		EXP_Touch(req->obj->objcore, req->t_prev);
 
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
-
-	http_ClrHeader(req->resp);
 	http_FilterResp(req->obj->http, req->resp, 0);
 
 	if (req->wrk->stats.cache_hit)
@@ -202,8 +200,6 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	wrk->stats.s_synth++;
 
-	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
-	h = req->resp;
 
 	now = W_TIM_real(wrk);
 	VSLb_ts_req(req, "Process", now);
@@ -211,7 +207,8 @@ cnt_synth(struct worker *wrk, struct req *req)
 	if (req->err_code < 100 || req->err_code > 999)
 		req->err_code = 501;
 
-	http_ClrHeader(h);
+	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
+	h = req->resp;
 	http_PutProtocol(h, "HTTP/1.1");
 	http_PutStatus(h, req->err_code);
 	VTIM_format(now, date);
@@ -235,7 +232,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 	AZ(VSB_finish(req->synth_body));
 
 	if (wrk->handling == VCL_RET_RESTART) {
-		http_ClrHeader(h);
+		HTTP_Setup(h, req->ws, req->vsl, SLT_RespMethod);
 		VSB_delete(req->synth_body);
 		req->synth_body = NULL;
 		req->req_step = R_STP_RESTART;

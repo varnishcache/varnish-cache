@@ -97,6 +97,8 @@ http_VSL_log(const struct http *hp)
 static void
 http_fail(struct http *hp)
 {
+
+	VSC_C_main->losthdr++;
 	VSLb(hp->vsl, SLT_Error, "out of workspace");
 	hp->failed = 1;
 }
@@ -180,6 +182,19 @@ http_Teardown(struct http *hp)
 
 /*--------------------------------------------------------------------*/
 
+void
+HTTP_Copy(struct http *to, const struct http * const fm)
+{
+
+	assert(fm->nhd <= to->shd);
+	memcpy(&to->nhd, &fm->nhd, sizeof *to - offsetof(struct http, nhd));
+	memcpy(to->hd, fm->hd, fm->nhd * sizeof *to->hd);
+	memcpy(to->hdf, fm->hdf, fm->nhd * sizeof *to->hdf);
+}
+
+
+/*--------------------------------------------------------------------*/
+
 int
 http_IsHdr(const txt *hh, const char *hdr)
 {
@@ -237,8 +252,10 @@ http_CollectHdr(struct http *hp, const char *hdr)
 	for (d = u = f + 1; u < hp->nhd; u++) {
 		Tcheck(hp->hd[u]);
 		if (!http_IsHdr(&hp->hd[u], hdr)) {
-			if (d != u)
+			if (d != u) {
 				hp->hd[d] = hp->hd[u];
+				hp->hdf[d] = hp->hdf[u];
+			}
 			d++;
 			continue;
 		}
@@ -250,6 +267,7 @@ http_CollectHdr(struct http *hp, const char *hdr)
 			x = Tlen(hp->hd[f]);
 			if (b + x >= e) {
 				http_fail(hp);
+				VSLb(hp->vsl, SLT_LostHeader, "%s", hdr + 1);
 				WS_Release(hp->ws, 0);
 				return;
 			}
@@ -266,6 +284,7 @@ http_CollectHdr(struct http *hp, const char *hdr)
 		x = Tlen(hp->hd[u]) - l;
 		if (b + x >= e) {
 			http_fail(hp);
+			VSLb(hp->vsl, SLT_LostHeader, "%s", hdr + 1);
 			WS_Release(hp->ws, 0);
 			return;
 		}
@@ -520,17 +539,6 @@ http_SetH(const struct http *to, unsigned n, const char *fm)
 	http_VSLH(to, n);
 }
 
-static void
-http_linkh(const struct http *to, const struct http *fm, unsigned n)
-{
-
-	assert(n < HTTP_HDR_FIRST);
-	Tcheck(fm->hd[n]);
-	to->hd[n] = fm->hd[n];
-	to->hdf[n] = fm->hdf[n];
-	http_VSLH(to, n);
-}
-
 void
 http_ForceGet(const struct http *to)
 {
@@ -596,22 +604,31 @@ http_filterfields(struct http *to, const struct http *fm, unsigned how)
 			continue;
 		if (fm->hdf[u] & HDF_FILTER)
 			continue;
+		Tcheck(fm->hd[u]);
 #define HTTPH(a, b, c) \
 		if (((c) & how) && http_IsHdr(&fm->hd[u], (b))) \
 			continue;
 #include "tbl/http_headers.h"
 #undef HTTPH
-		Tcheck(fm->hd[u]);
-		if (to->nhd < to->shd) {
-			to->hd[to->nhd] = fm->hd[u];
-			to->hdf[to->nhd] = 0;
-			http_VSLH(to, to->nhd);
-			to->nhd++;
-		} else  {
-			VSC_C_main->losthdr++;
-			VSLbt(to->vsl, SLT_LostHeader, fm->hd[u]);
-		}
+		assert (to->nhd < to->shd);
+		to->hd[to->nhd] = fm->hd[u];
+		to->hdf[to->nhd] = 0;
+		http_VSLH(to, to->nhd);
+		to->nhd++;
 	}
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+http_linkh(const struct http *to, const struct http *fm, unsigned n)
+{
+
+	assert(n < HTTP_HDR_FIRST);
+	Tcheck(fm->hd[n]);
+	to->hd[n] = fm->hd[n];
+	to->hdf[n] = fm->hdf[n];
+	http_VSLH(to, n);
 }
 
 /*--------------------------------------------------------------------*/
@@ -689,7 +706,7 @@ http_Merge(const struct http *fm, struct http *to, int not_ce)
  */
 
 void
-http_CopyHome(const struct http *hp)
+http_CopyHome(struct http *hp)
 {
 	unsigned u, l;
 	char *p;
@@ -697,36 +714,19 @@ http_CopyHome(const struct http *hp)
 	for (u = 0; u < hp->nhd; u++) {
 		if (hp->hd[u].b == NULL)
 			continue;
-		if (hp->hd[u].b >= hp->ws->s && hp->hd[u].e <= hp->ws->e) {
+		if (hp->hd[u].b >= hp->ws->s && hp->hd[u].e <= hp->ws->e)
 			continue;
-		}
+
 		l = Tlen(hp->hd[u]);
 		p = WS_Copy(hp->ws, hp->hd[u].b, l + 1L);
-		if (p != NULL) {
-			hp->hd[u].b = p;
-			hp->hd[u].e = p + l;
-		} else {
-			/* XXX This leaves a slot empty */
-			VSC_C_main->losthdr++;
-			VSLbt(hp->vsl, SLT_LostHeader, hp->hd[u]);
-			hp->hd[u].b = NULL;
-			hp->hd[u].e = NULL;
+		if (p == NULL) {
+			http_fail(hp);
+			VSLb(hp->vsl, SLT_LostHeader, "%s", hp->hd[u].b);
+			return;
 		}
+		hp->hd[u].b = p;
+		hp->hd[u].e = p + l;
 	}
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-http_ClrHeader(struct http *to)
-{
-
-	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	to->nhd = HTTP_HDR_FIRST;
-	to->status = 0;
-	to->protover = 0;
-	to->conds = 0;
-	memset(to->hd, 0, sizeof *to->hd * to->shd);
 }
 
 /*--------------------------------------------------------------------*/
@@ -737,8 +737,8 @@ http_SetHeader(struct http *to, const char *hdr)
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	if (to->nhd >= to->shd) {
-		VSC_C_main->losthdr++;
 		VSLb(to->vsl, SLT_LostHeader, "%s", hdr);
+		http_fail(to);
 		return;
 	}
 	http_SetH(to, to->nhd++, hdr);
@@ -760,32 +760,29 @@ http_ForceHeader(struct http *to, const char *hdr, const char *val)
 /*--------------------------------------------------------------------*/
 
 static void
-http_PutField(const struct http *to, int field, const char *string)
+http_PutField(struct http *to, int field, const char *string)
 {
 	char *p;
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	p = WS_Copy(to->ws, string, -1);
 	if (p == NULL) {
+		http_fail(to);
 		VSLb(to->vsl, SLT_LostHeader, "%s", string);
-		to->hd[field].b = NULL;
-		to->hd[field].e = NULL;
-		to->hdf[field] = 0;
-	} else {
-		to->hd[field].b = p;
-		to->hd[field].e = strchr(p, '\0');
-		to->hdf[field] = 0;
-		http_VSLH(to, field);
+		return;
 	}
+	to->hd[field].b = p;
+	to->hd[field].e = strchr(p, '\0');
+	to->hdf[field] = 0;
+	http_VSLH(to, field);
 }
 
 void
-http_PutProtocol(const struct http *to, const char *protocol)
+http_PutProtocol(struct http *to, const char *protocol)
 {
 
+	AN(protocol);
 	http_PutField(to, HTTP_HDR_PROTO, protocol);
-	if (to->hd[HTTP_HDR_PROTO].b == NULL)
-		http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
 	Tcheck(to->hd[HTTP_HDR_PROTO]);
 }
 
@@ -801,12 +798,11 @@ http_PutStatus(struct http *to, uint16_t status)
 }
 
 void
-http_PutResponse(const struct http *to, const char *response)
+http_PutResponse(struct http *to, const char *response)
 {
 
+	AN(response);
 	http_PutField(to, HTTP_HDR_RESPONSE, response);
-	if (to->hd[HTTP_HDR_RESPONSE].b == NULL)
-		http_SetH(to, HTTP_HDR_RESPONSE, "Lost Response");
 	Tcheck(to->hd[HTTP_HDR_RESPONSE]);
 }
 
@@ -822,17 +818,17 @@ http_PrintfHeader(struct http *to, const char *fmt, ...)
 	n = vsnprintf(to->ws->f, l, fmt, ap);
 	va_end(ap);
 	if (n + 1 >= l || to->nhd >= to->shd) {
-		VSC_C_main->losthdr++;
+		http_fail(to);
 		VSLb(to->vsl, SLT_LostHeader, "%s", to->ws->f);
 		WS_Release(to->ws, 0);
-	} else {
-		to->hd[to->nhd].b = to->ws->f;
-		to->hd[to->nhd].e = to->ws->f + n;
-		to->hdf[to->nhd] = 0;
-		WS_Release(to->ws, n + 1);
-		http_VSLH(to, to->nhd);
-		to->nhd++;
-	}
+		return;
+	} 
+	to->hd[to->nhd].b = to->ws->f;
+	to->hd[to->nhd].e = to->ws->f + n;
+	to->hdf[to->nhd] = 0;
+	WS_Release(to->ws, n + 1);
+	http_VSLH(to, to->nhd);
+	to->nhd++;
 }
 
 /*--------------------------------------------------------------------*/
@@ -856,22 +852,6 @@ http_Unset(struct http *hp, const char *hdr)
 		v++;
 	}
 	hp->nhd = v;
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-HTTP_Copy(struct http *to, const struct http * const fm)
-{
-
-	to->conds = fm->conds;
-	to->logtag = fm->logtag;
-	to->status = fm->status;
-	to->protover = fm->protover;
-	to->nhd = fm->nhd;
-	assert(fm->nhd <= to->shd);
-	memcpy(to->hd, fm->hd, fm->nhd * sizeof *to->hd);
-	memcpy(to->hdf, fm->hdf, fm->nhd * sizeof *to->hdf);
 }
 
 /*--------------------------------------------------------------------*/
