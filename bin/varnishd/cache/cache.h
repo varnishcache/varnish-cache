@@ -186,16 +186,19 @@ struct http {
 	unsigned		magic;
 #define HTTP_MAGIC		0x6428b5c9
 
-	enum VSL_tag_e		logtag;		/* Must be SLT_*Method */
-	struct vsl_log		*vsl;
-
-	struct ws		*ws;
+	uint16_t		shd;		/* Size of hd space */
 	txt			*hd;
 	unsigned char		*hdf;
 #define HDF_FILTER		(1 << 0)	/* Filtered by Connection */
 #define HDF_MARKER		(1 << 1)	/* Marker bit */
-	uint16_t		shd;		/* Size of hd space */
+
+	/* NB: ->nhd and below zeroed/initialized by http_Teardown */
 	uint16_t		nhd;		/* Next free hd */
+
+	enum VSL_tag_e		logtag;		/* Must be SLT_*Method */
+	struct vsl_log		*vsl;
+
+	struct ws		*ws;
 	uint16_t		status;
 	uint8_t			protover;
 	uint8_t			conds;		/* If-* headers present */
