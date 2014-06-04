@@ -45,7 +45,9 @@
 
 static char vrt_hostname[255] = "";
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * VRT variables relating to first line of HTTP/1.1 req/resp
+ */
 
 static void
 vrt_do_string(struct http *hp, int fld,
@@ -59,9 +61,9 @@ vrt_do_string(struct http *hp, int fld,
 	if (b == NULL || *b == '\0') {
 		VSLb(hp->vsl, SLT_LostHeader, "%s", err);
 		hp->failed = 1;
-	} else {
-		http_SetH(hp, fld, b);
+		return;
 	}
+	http_SetH(hp, fld, b);
 }
 
 #define VRT_HDR_L(obj, hdr, fld)					\
@@ -138,7 +140,9 @@ VRT_HDR_LR(beresp, reason,	HTTP_HDR_REASON)
 VRT_STATUS_L(beresp)
 VRT_STATUS_R(beresp)
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * bool-fields (.do_*)
+ */
 
 #define VBERESPW0(field)
 #define VBERESPW1(field)						\
@@ -235,9 +239,13 @@ VRT_l_client_identity(const struct vrt_ctx *ctx, const char *str, ...)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	va_start(ap, str);
-	// XXX ?
 	b = VRT_String(ctx->req->http->ws, NULL, str, ap);
 	va_end(ap);
+	if (b == NULL) {
+		VSLb(ctx->vsl, SLT_LostHeader, "client.identity");
+		ctx->req->http->failed = 1;
+		return;
+	}
 	ctx->req->client_identity = b;
 }
 
@@ -296,6 +304,8 @@ VRT_r_beresp_backend_ip(const struct vrt_ctx *ctx)
 		return (NULL);
 }
 
+/*--------------------------------------------------------------------*/
+
 const char *
 VRT_r_beresp_storage_hint(const struct vrt_ctx *ctx)
 {
@@ -318,6 +328,11 @@ VRT_l_beresp_storage_hint(const struct vrt_ctx *ctx, const char *str, ...)
 	va_start(ap, str);
 	b = VRT_String(ctx->bo->ws, NULL, str, ap);	// XXX: ctx->ws ?
 	va_end(ap);
+	if (b == NULL) {
+		VSLb(ctx->vsl, SLT_LostHeader, "storage.hint");
+		ctx->bo->beresp->failed = 1;
+		return;
+	}
 	ctx->bo->storage_hint = b;
 }
 
@@ -413,7 +428,6 @@ VRT_r_req_can_gzip(const struct vrt_ctx *ctx)
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	return (RFC2616_Req_Gzip(ctx->req->http));	// XXX ?
 }
-
 
 /*--------------------------------------------------------------------*/
 
