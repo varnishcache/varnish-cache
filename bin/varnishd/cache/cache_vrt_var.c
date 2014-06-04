@@ -48,19 +48,20 @@ static char vrt_hostname[255] = "";
 /*--------------------------------------------------------------------*/
 
 static void
-vrt_do_string(const struct http *hp, int fld,
+vrt_do_string(struct http *hp, int fld,
     const char *err, const char *p, va_list ap)
 {
 	const char *b;
 
-	AN(hp);
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+
 	b = VRT_String(hp->ws, NULL, p, ap);
 	if (b == NULL || *b == '\0') {
 		VSLb(hp->vsl, SLT_LostHeader, "%s", err);
+		hp->failed = 1;
 	} else {
 		http_SetH(hp, fld, b);
 	}
-	va_end(ap);
 }
 
 #define VRT_HDR_L(obj, hdr, fld)					\
@@ -95,8 +96,15 @@ VRT_l_##obj##_status(const struct vrt_ctx *ctx, long num)		\
 									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->http_##obj, HTTP_MAGIC);			\
-	assert(num >= 100 && num <= 999);				\
-	ctx->http_##obj->status = (uint16_t)num;			\
+	if (num > 65535) {						\
+		VSLb(ctx->vsl, SLT_VCL_Error, "%s.status > 65535", #obj); \
+		ctx->http_##obj->failed = 1;				\
+	} else if ((num % 1000) < 100) {				\
+		VSLb(ctx->vsl, SLT_VCL_Error, "illegal %s.status (..0##)", \
+		    #obj);						\
+		ctx->http_##obj->failed = 1;				\
+	} else								\
+		ctx->http_##obj->status = (uint16_t)num;		\
 }
 
 #define VRT_STATUS_R(obj)						\

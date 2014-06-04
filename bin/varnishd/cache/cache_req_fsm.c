@@ -149,7 +149,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	    && req->esi_level == 0
 	    && http_GetStatus(req->obj->http) == 200
 	    && req->http->conds && RFC2616_Do_Cond(req))
-		http_SetResp(req->resp, "HTTP/1.1", 304, "Not Modified");
+		http_PutResponse(req->resp, "HTTP/1.1", 304, NULL);
 
 	V1D_Deliver(req);
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
@@ -209,17 +209,12 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
 	h = req->resp;
-	http_PutProtocol(h, "HTTP/1.1");
-	http_PutStatus(h, req->err_code);
 	VTIM_format(now, date);
 	http_PrintfHeader(h, "Date: %s", date);
 	http_SetHeader(h, "Server: Varnish");
 	http_PrintfHeader(req->resp,
 	    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
-	if (req->err_reason != NULL)
-		http_PutResponse(h, req->err_reason);
-	else
-		http_PutResponse(h, http_StatusMessage(req->err_code));
+	http_PutResponse(h, "HTTP/1.1", req->err_code, req->err_reason);
 
 	AZ(req->synth_body);
 	req->synth_body = VSB_new_auto();

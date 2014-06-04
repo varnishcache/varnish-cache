@@ -120,11 +120,12 @@ http_StatusMessage(unsigned status)
 {
 	struct http_msg *mp;
 
-	assert(status >= 100 && status <= 999);
+	status %= 1000;
+	assert(status >= 100);
 	for (mp = http_msg; mp->nbr != 0 && mp->nbr <= status; mp++)
 		if (mp->nbr == status)
 			return (mp->txt);
-	return ("Unknown Error");
+	return ("Unknown HTTP Status");
 }
 
 /*--------------------------------------------------------------------*/
@@ -527,6 +528,25 @@ http_GetReq(const struct http *hp)
 
 /*--------------------------------------------------------------------*/
 
+static void
+http_PutField(struct http *to, int field, const char *string)
+{
+	char *p;
+
+	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
+	p = WS_Copy(to->ws, string, -1);
+	if (p == NULL) {
+		http_fail(to);
+		VSLb(to->vsl, SLT_LostHeader, "%s", string);
+		return;
+	}
+	to->hd[field].b = p;
+	to->hd[field].e = strchr(p, '\0');
+	to->hdf[field] = 0;
+	http_VSLH(to, field);
+}
+/*--------------------------------------------------------------------*/
+
 void
 http_SetH(const struct http *to, unsigned n, const char *fm)
 {
@@ -547,14 +567,24 @@ http_ForceGet(const struct http *to)
 }
 
 void
-http_SetResp(struct http *to, const char *proto, uint16_t status,
+http_PutResponse(struct http *to, const char *proto, uint16_t status,
     const char *response)
 {
+	char buf[4];
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	http_SetH(to, HTTP_HDR_PROTO, proto);
-	assert(status >= 100 && status <= 999);
-	http_PutStatus(to, status);
+	/*
+	 * We allow people to use top digits for internal VCL
+	 * signalling, strip them here.
+	 */
+	status %= 1000;
+	assert(status >= 100);
+	to->status = status;
+	bprintf(buf, "%03d", status % 1000);
+	http_PutField(to, HTTP_HDR_STATUS, buf);
+	if (response == NULL)
+		response = http_StatusMessage(status);
 	http_SetH(to, HTTP_HDR_RESPONSE, response);
 }
 
@@ -757,55 +787,6 @@ http_ForceHeader(struct http *to, const char *hdr, const char *val)
 	http_PrintfHeader(to, "%s %s", hdr + 1, val);
 }
 
-/*--------------------------------------------------------------------*/
-
-static void
-http_PutField(struct http *to, int field, const char *string)
-{
-	char *p;
-
-	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	p = WS_Copy(to->ws, string, -1);
-	if (p == NULL) {
-		http_fail(to);
-		VSLb(to->vsl, SLT_LostHeader, "%s", string);
-		return;
-	}
-	to->hd[field].b = p;
-	to->hd[field].e = strchr(p, '\0');
-	to->hdf[field] = 0;
-	http_VSLH(to, field);
-}
-
-void
-http_PutProtocol(struct http *to, const char *protocol)
-{
-
-	AN(protocol);
-	http_PutField(to, HTTP_HDR_PROTO, protocol);
-	Tcheck(to->hd[HTTP_HDR_PROTO]);
-}
-
-void
-http_PutStatus(struct http *to, uint16_t status)
-{
-	char buf[4];
-
-	assert(status >= 100 && status <= 999);
-	to->status = status;
-	bprintf(buf, "%03d", status % 1000);
-	http_PutField(to, HTTP_HDR_STATUS, buf);
-}
-
-void
-http_PutResponse(struct http *to, const char *response)
-{
-
-	AN(response);
-	http_PutField(to, HTTP_HDR_RESPONSE, response);
-	Tcheck(to->hd[HTTP_HDR_RESPONSE]);
-}
-
 void
 http_PrintfHeader(struct http *to, const char *fmt, ...)
 {
@@ -822,7 +803,7 @@ http_PrintfHeader(struct http *to, const char *fmt, ...)
 		VSLb(to->vsl, SLT_LostHeader, "%s", to->ws->f);
 		WS_Release(to->ws, 0);
 		return;
-	} 
+	}
 	to->hd[to->nhd].b = to->ws->f;
 	to->hd[to->nhd].e = to->ws->f + n;
 	to->hdf[to->nhd] = 0;

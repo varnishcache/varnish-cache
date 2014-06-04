@@ -154,7 +154,7 @@ v1d_dorange(struct req *req, const char *r)
 	if (req->res_mode & RES_LEN)
 		http_PrintfHeader(req->resp, "Content-Length: %jd",
 		    (intmax_t)(1 + high - low));
-	http_SetResp(req->resp, "HTTP/1.1", 206, "Partial Content");
+	http_PutResponse(req->resp, "HTTP/1.1", 206, NULL);
 
 	req->range_off = 0;
 	req->range_low = low;

@@ -686,7 +686,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	// XXX: reset all beresp flags ?
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
-	http_SetResp(bo->beresp, "HTTP/1.1", 503, "Backend fetch failed");
+	http_PutResponse(bo->beresp, "HTTP/1.1", 503, "Backend fetch failed");
 	VTIM_format(now, time_str);
 	http_PrintfHeader(bo->beresp, "Date: %s", time_str);
 	http_SetHeader(bo->beresp, "Server: Varnish");
