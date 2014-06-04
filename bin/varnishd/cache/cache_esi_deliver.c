@@ -79,8 +79,12 @@ ved_include(struct req *preq, const char *src, const char *host)
 		http_SetHeader(req->http0, host);
 	}
 
-	http_ForceGet(req->http0);
+	http_ForceField(req->http0, HTTP_HDR_METHOD, "GET");
+	http_ForceField(req->http0, HTTP_HDR_PROTO, "HTTP/1.1");
+
+	/* Don't allow Conditions, we can't use a 304 */
 	http_Unset(req->http0, H_If_Modified_Since);
+	http_Unset(req->http0, H_If_None_Match);
 
 	/* Client content already taken care of */
 	http_Unset(req->http0, H_Content_Length);

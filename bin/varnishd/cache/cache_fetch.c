@@ -190,7 +190,8 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 	    bo->do_pass ? HTTPH_R_PASS : HTTPH_R_FETCH);
 
 	if (!bo->do_pass) {
-		http_ForceGet(bo->bereq0);
+		http_ForceField(bo->bereq0, HTTP_HDR_METHOD, "GET");
+		http_ForceField(bo->bereq0, HTTP_HDR_PROTO, "HTTP/1.1");
 		if (cache_param->http_gzip_support)
 			http_ForceHeader(bo->bereq0, H_Accept_Encoding, "gzip");
 		AN(bo->req);

@@ -103,6 +103,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
 	http_FilterResp(req->obj->http, req->resp, 0);
+	http_ForceField(req->resp, HTTP_HDR_PROTO, "HTTP/1.1");
 
 	if (req->wrk->stats.cache_hit)
 		http_PrintfHeader(req->resp,

@@ -996,7 +996,7 @@ void http_PrintfHeader(struct http *to, const char *fmt, ...)
     __printflike(2, 3);
 void http_SetHeader(struct http *to, const char *hdr);
 void http_SetH(const struct http *to, unsigned n, const char *fm);
-void http_ForceGet(const struct http *to);
+void http_ForceField(const struct http *to, unsigned n, const char *t);
 void HTTP_Setup(struct http *, struct ws *, struct vsl_log *, enum VSL_tag_e);
 void http_Teardown(struct http *ht);
 int http_GetHdr(const struct http *hp, const char *hdr, char **ptr);

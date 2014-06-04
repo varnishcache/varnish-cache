@@ -545,6 +545,7 @@ http_PutField(struct http *to, int field, const char *string)
 	to->hdf[field] = 0;
 	http_VSLH(to, field);
 }
+
 /*--------------------------------------------------------------------*/
 
 void
@@ -559,12 +560,21 @@ http_SetH(const struct http *to, unsigned n, const char *fm)
 	http_VSLH(to, n);
 }
 
+/*--------------------------------------------------------------------
+ * Force a particular header field to a particular value
+ */
+
 void
-http_ForceGet(const struct http *to)
+http_ForceField(const struct http *to, unsigned n, const char *t)
 {
-	if (strcmp(http_GetReq(to), "GET"))
-		http_SetH(to, HTTP_HDR_METHOD, "GET");
+	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
+	assert(n < HTTP_HDR_FIRST);
+	AN(t);
+	if (to->hd[n].b == NULL || strcmp(to->hd[n].b, t))
+		http_SetH(to, n, t);
 }
+
+/*--------------------------------------------------------------------*/
 
 void
 http_PutResponse(struct http *to, const char *proto, uint16_t status,
@@ -671,10 +681,7 @@ http_FilterReq(struct http *to, const struct http *fm, unsigned how)
 
 	http_linkh(to, fm, HTTP_HDR_METHOD);
 	http_linkh(to, fm, HTTP_HDR_URL);
-	if (how == HTTPH_R_FETCH)
-		http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
-	else
-		http_linkh(to, fm, HTTP_HDR_PROTO);
+	http_linkh(to, fm, HTTP_HDR_PROTO);
 	http_filterfields(to, fm, how);
 }
 
@@ -686,8 +693,8 @@ http_FilterResp(const struct http *fm, struct http *to, unsigned how)
 
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
 	to->status = fm->status;
+	http_linkh(to, fm, HTTP_HDR_PROTO);
 	http_linkh(to, fm, HTTP_HDR_STATUS);
 	http_linkh(to, fm, HTTP_HDR_REASON);
 	http_filterfields(to, fm, how);
@@ -706,9 +713,9 @@ http_Merge(const struct http *fm, struct http *to, int not_ce)
 	const char *p;
 
 	to->status = fm->status;
-	http_SetH(to, HTTP_HDR_PROTO, fm->hd[HTTP_HDR_PROTO].b);
-	http_SetH(to, HTTP_HDR_STATUS, fm->hd[HTTP_HDR_STATUS].b);
-	http_SetH(to, HTTP_HDR_REASON, fm->hd[HTTP_HDR_REASON].b);
+	http_linkh(to, fm, HTTP_HDR_PROTO);
+	http_linkh(to, fm, HTTP_HDR_STATUS);
+	http_linkh(to, fm, HTTP_HDR_REASON);
 
 	for (u = HTTP_HDR_FIRST; u < fm->nhd; u++)
 		fm->hdf[u] |= HDF_MARKER;
