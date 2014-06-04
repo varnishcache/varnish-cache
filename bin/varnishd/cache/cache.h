@@ -984,7 +984,7 @@ void VGZ_WrwFlush(struct req *, struct vgz *vg);
 unsigned HTTP_estimate(unsigned nhttp);
 void HTTP_Copy(struct http *to, const struct http * const fm);
 struct http *HTTP_create(void *p, uint16_t nhttp);
-const char *http_StatusMessage(unsigned);
+const char *http_Status2Reason(unsigned);
 unsigned http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd);
 void HTTP_Init(void);
 void http_PutResponse(struct http *to, const char *proto, uint16_t status,

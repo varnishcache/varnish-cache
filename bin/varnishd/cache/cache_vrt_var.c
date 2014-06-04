@@ -122,11 +122,11 @@ VRT_HDR_LR(req,    url,		HTTP_HDR_URL)
 VRT_HDR_LR(req,    proto,	HTTP_HDR_PROTO)
 
 VRT_HDR_R(obj,    proto,	HTTP_HDR_PROTO)
-VRT_HDR_R(obj,    reason,	HTTP_HDR_RESPONSE)
+VRT_HDR_R(obj,    reason,	HTTP_HDR_REASON)
 VRT_STATUS_R(obj)
 
 VRT_HDR_LR(resp,   proto,	HTTP_HDR_PROTO)
-VRT_HDR_LR(resp,   reason,	HTTP_HDR_RESPONSE)
+VRT_HDR_LR(resp,   reason,	HTTP_HDR_REASON)
 VRT_STATUS_L(resp)
 VRT_STATUS_R(resp)
 
@@ -134,7 +134,7 @@ VRT_HDR_LR(bereq,  method,	HTTP_HDR_METHOD)
 VRT_HDR_LR(bereq,  url,		HTTP_HDR_URL)
 VRT_HDR_LR(bereq,  proto,	HTTP_HDR_PROTO)
 VRT_HDR_LR(beresp, proto,	HTTP_HDR_PROTO)
-VRT_HDR_LR(beresp, reason,	HTTP_HDR_RESPONSE)
+VRT_HDR_LR(beresp, reason,	HTTP_HDR_REASON)
 VRT_STATUS_L(beresp)
 VRT_STATUS_R(beresp)
 

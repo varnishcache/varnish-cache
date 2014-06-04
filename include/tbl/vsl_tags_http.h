@@ -55,7 +55,7 @@ SLTH(Protocol,	HTTP_HDR_PROTO,		1, 1, "protocol",
 SLTH(Status,	HTTP_HDR_STATUS,	0, 1, "status",
 	"The HTTP status code received.\n\n"
 )
-SLTH(Response,	HTTP_HDR_RESPONSE,	0, 1, "response",
+SLTH(Reason,	HTTP_HDR_REASON,	0, 1, "response",
 	"The HTTP response string received.\n\n"
 )
 SLTH(Header,	HTTP_HDR_FIRST,		1, 1, "header",

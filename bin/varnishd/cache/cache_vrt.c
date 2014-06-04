@@ -63,7 +63,7 @@ VRT_error(const struct vrt_ctx *ctx, unsigned code, const char *reason)
 		code = 503;
 	ctx->req->err_code = (uint16_t)code;
 	ctx->req->err_reason =
-	    reason ? reason : http_StatusMessage(ctx->req->err_code);
+	    reason ? reason : http_Status2Reason(ctx->req->err_code);
 }
 
 /*--------------------------------------------------------------------*/

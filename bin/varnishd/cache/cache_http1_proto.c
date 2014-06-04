@@ -310,7 +310,7 @@ htc_splitline(struct http *hp, const struct http_conn *htc, int req)
 	} else {
 		h1 = HTTP_HDR_PROTO;
 		h2 = HTTP_HDR_STATUS;
-		h3 = HTTP_HDR_RESPONSE;
+		h3 = HTTP_HDR_REASON;
 	}
 
 	/* Skip leading LWS */
@@ -493,13 +493,13 @@ HTTP1_DissectResponse(struct http *hp, const struct http_conn *htc)
 	} else
 		htc_proto_ver(hp);
 
-	if (hp->hd[HTTP_HDR_RESPONSE].b == NULL ||
-	    !Tlen(hp->hd[HTTP_HDR_RESPONSE])) {
+	if (hp->hd[HTTP_HDR_REASON].b == NULL ||
+	    !Tlen(hp->hd[HTTP_HDR_REASON])) {
 		/* Backend didn't send a response string, use the standard */
-		hp->hd[HTTP_HDR_RESPONSE].b =
-		    TRUST_ME(http_StatusMessage(hp->status));
-		hp->hd[HTTP_HDR_RESPONSE].e =
-		    strchr(hp->hd[HTTP_HDR_RESPONSE].b, '\0');
+		hp->hd[HTTP_HDR_REASON].b =
+		    TRUST_ME(http_Status2Reason(hp->status));
+		hp->hd[HTTP_HDR_REASON].e =
+		    strchr(hp->hd[HTTP_HDR_REASON].b, '\0');
 	}
 	return (retval);
 }
@@ -523,7 +523,7 @@ HTTP1_Write(const struct worker *w, const struct http *hp, int resp)
 
 		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_STATUS], " ");
 
-		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_RESPONSE], "\r\n");
+		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_REASON], "\r\n");
 	} else {
 		AN(hp->hd[HTTP_HDR_URL].b);
 		l = WRW_WriteH(w, &hp->hd[HTTP_HDR_METHOD], " ");

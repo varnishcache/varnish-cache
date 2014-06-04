@@ -116,7 +116,7 @@ static struct http_msg {
 };
 
 const char *
-http_StatusMessage(unsigned status)
+http_Status2Reason(unsigned status)
 {
 	struct http_msg *mp;
 
@@ -568,7 +568,7 @@ http_ForceGet(const struct http *to)
 
 void
 http_PutResponse(struct http *to, const char *proto, uint16_t status,
-    const char *response)
+    const char *reason)
 {
 	char buf[4];
 
@@ -583,9 +583,9 @@ http_PutResponse(struct http *to, const char *proto, uint16_t status,
 	to->status = status;
 	bprintf(buf, "%03d", status % 1000);
 	http_PutField(to, HTTP_HDR_STATUS, buf);
-	if (response == NULL)
-		response = http_StatusMessage(status);
-	http_SetH(to, HTTP_HDR_RESPONSE, response);
+	if (reason == NULL)
+		reason = http_Status2Reason(status);
+	http_SetH(to, HTTP_HDR_REASON, reason);
 }
 
 /*--------------------------------------------------------------------
@@ -689,7 +689,7 @@ http_FilterResp(const struct http *fm, struct http *to, unsigned how)
 	http_SetH(to, HTTP_HDR_PROTO, "HTTP/1.1");
 	to->status = fm->status;
 	http_linkh(to, fm, HTTP_HDR_STATUS);
-	http_linkh(to, fm, HTTP_HDR_RESPONSE);
+	http_linkh(to, fm, HTTP_HDR_REASON);
 	http_filterfields(to, fm, how);
 }
 
@@ -708,7 +708,7 @@ http_Merge(const struct http *fm, struct http *to, int not_ce)
 	to->status = fm->status;
 	http_SetH(to, HTTP_HDR_PROTO, fm->hd[HTTP_HDR_PROTO].b);
 	http_SetH(to, HTTP_HDR_STATUS, fm->hd[HTTP_HDR_STATUS].b);
-	http_SetH(to, HTTP_HDR_RESPONSE, fm->hd[HTTP_HDR_RESPONSE].b);
+	http_SetH(to, HTTP_HDR_REASON, fm->hd[HTTP_HDR_REASON].b);
 
 	for (u = HTTP_HDR_FIRST; u < fm->nhd; u++)
 		fm->hdf[u] |= HDF_MARKER;
