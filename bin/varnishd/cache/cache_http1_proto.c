@@ -468,8 +468,11 @@ HTTP1_DissectResponse(struct http *hp, const struct http_conn *htc)
 	if (htc_splitline(hp, htc, 0))
 		retval = 503;
 
-	if (retval == 0 && memcmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.", 7))
-		retval = 503;
+	if (retval == 0) {
+		htc_proto_ver(hp);
+		if (hp->protover != 10 && hp->protover != 11)
+			retval = 503;
+	}
 
 	if (retval == 0 && Tlen(hp->hd[HTTP_HDR_STATUS]) != 3)
 		retval = 503;
@@ -489,18 +492,15 @@ HTTP1_DissectResponse(struct http *hp, const struct http_conn *htc)
 	if (retval != 0) {
 		VSLbt(hp->vsl, SLT_HttpGarbage, htc->rxbuf);
 		assert(retval >= 100 && retval <= 999);
+		assert(retval == 503);
 		hp->status = retval;
-	} else
-		htc_proto_ver(hp);
+		http_SetH(hp, HTTP_HDR_STATUS, "503");
+	}
 
 	if (hp->hd[HTTP_HDR_REASON].b == NULL ||
-	    !Tlen(hp->hd[HTTP_HDR_REASON])) {
-		/* Backend didn't send a response string, use the standard */
-		hp->hd[HTTP_HDR_REASON].b =
-		    TRUST_ME(http_Status2Reason(hp->status));
-		hp->hd[HTTP_HDR_REASON].e =
-		    strchr(hp->hd[HTTP_HDR_REASON].b, '\0');
-	}
+	    !Tlen(hp->hd[HTTP_HDR_REASON]))
+		http_SetH(hp, HTTP_HDR_REASON, http_Status2Reason(hp->status));
+
 	return (retval);
 }
 
