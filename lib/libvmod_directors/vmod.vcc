@@ -47,9 +47,9 @@ want to emulate the previous behavior of Varnish 3.0 you can just
 initialize the directors in vcl_init, like this:::
 
     sub vcl_init {
-        new bar = directors.round_robin();
-        bar.add_backend(server1);
-        bar.add_backend(server2);
+        new vdir = directors.round_robin();
+        vdir.add_backend(backend1);
+        vdir.add_backend(backend2);
     }
 
 As you can see there is nothing keeping you from manipulating the
@@ -65,21 +65,22 @@ Description
 
 	This director will pick backends in a round robin fashion.
 Example
-       new bar = directors.round_robin();
+	new vdir = directors.round_robin();
 
 $Method VOID .add_backend(BACKEND)
 
 Description
        Adds a backend to the director.
 Example
-       rrdir.add_backend(backend1);
+       vdir.add_backend(backend1);
+       vdir.add_backend(backend2);
 
 $Method BACKEND .backend()
 
 Description
        Picks a backend from the director.
 Example
-       set req.backend_hint = rrdir.backend();
+       set req.backend_hint = vdir.backend();
 
 
 $Object fallback()
@@ -122,21 +123,24 @@ Description
        more or less 1% of the traffic of a backend in the same
        director with a weight of 100.
 Example
-       new rand_dir = directors.random();
+	new vdir = directors.random();
 
 $Method VOID .add_backend(BACKEND, REAL)
 
 Description
        Adds a backend to the director with weight.
 Example
-       bar.add_backend(backend1, 3.14);
+	# 2/3 to backend1, 1/3 to backend2.
+	vdir.add_backend(backend1, 10);
+	vdir.add_backend(backend2, 5);
+
 
 $Method BACKEND .backend()
 
 Description
        Picks a backend from the director.
 Example
-       set req.backend_hint = rrdir.backend();
+	set req.backend_hint = vdir.backend();
 
 $Object hash()
 
