@@ -105,8 +105,9 @@ VRT_l_##obj##_status(const struct vrt_ctx *ctx, long num)		\
 		VSLb(ctx->vsl, SLT_VCL_Error, "illegal %s.status (..0##)", \
 		    #obj);						\
 		ctx->http_##obj->failed = 1;				\
-	} else								\
-		ctx->http_##obj->status = (uint16_t)num;		\
+	} else {							\
+		http_SetStatus(ctx->http_##obj, (uint16_t)num);		\
+	}								\
 }
 
 #define VRT_STATUS_R(obj)						\

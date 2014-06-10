@@ -552,6 +552,27 @@ http_GetStatus(const struct http *hp)
 	return (hp->status);
 }
 
+/*--------------------------------------------------------------------*/
+
+void
+http_SetStatus(struct http *to, uint16_t status)
+{
+	char buf[4];
+
+	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
+	/*
+	 * We allow people to use top digits for internal VCL
+	 * signalling, but strip them from the ASCII version.
+	 */
+	to->status = status;
+	status %= 1000;
+	assert(status >= 100);
+	bprintf(buf, "%03d", status);
+	http_PutField(to, HTTP_HDR_STATUS, buf);
+}
+
+/*--------------------------------------------------------------------*/
+
 const char *
 http_GetReq(const struct http *hp)
 {
@@ -581,19 +602,11 @@ void
 http_PutResponse(struct http *to, const char *proto, uint16_t status,
     const char *reason)
 {
-	char buf[4];
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	http_SetH(to, HTTP_HDR_PROTO, proto);
-	/*
-	 * We allow people to use top digits for internal VCL
-	 * signalling, strip them here.
-	 */
-	status %= 1000;
-	assert(status >= 100);
-	to->status = status;
-	bprintf(buf, "%03d", status % 1000);
-	http_PutField(to, HTTP_HDR_STATUS, buf);
+	if (proto != NULL)
+		http_SetH(to, HTTP_HDR_PROTO, proto);
+	http_SetStatus(to, status);
 	if (reason == NULL)
 		reason = http_Status2Reason(status);
 	http_SetH(to, HTTP_HDR_REASON, reason);
