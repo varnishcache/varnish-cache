@@ -132,7 +132,7 @@ Description
 
 	Each backend backend will receive approximately
 	100 * (weight / (sum(all_added_weights))) per cent of the traffic sent
-	to this backend.
+	to this director.
 
 Example
 	vdir.add_backend(backend1, 10);
