@@ -857,6 +857,8 @@ void HTTP1_Session(struct worker *, struct req *);
 int HTTP1_DiscardReqBody(struct req *req);
 int HTTP1_CacheReqBody(struct req *req, ssize_t maxsize);
 int HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv);
+extern const int HTTP1_Req[3];
+extern const int HTTP1_Resp[3];
 
 /* cache_http1_deliver.c */
 unsigned V1D_FlushReleaseAcct(struct req *req);
@@ -1030,7 +1032,7 @@ ssize_t HTTP1_Read(struct http_conn *htc, void *d, size_t len);
 enum htc_status_e HTTP1_Complete(struct http_conn *htc);
 uint16_t HTTP1_DissectRequest(struct req *);
 uint16_t HTTP1_DissectResponse(struct http *sp, const struct http_conn *htc);
-unsigned HTTP1_Write(const struct worker *w, const struct http *hp, int resp);
+unsigned HTTP1_Write(const struct worker *w, const struct http *hp, const int*);
 
 #define HTTPH(a, b, c) extern char b[];
 #include "tbl/http_headers.h"

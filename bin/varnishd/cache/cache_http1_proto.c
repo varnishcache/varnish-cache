@@ -49,6 +49,14 @@
 
 #include "vct.h"
 
+const int HTTP1_Req[3] = {
+	HTTP_HDR_METHOD, HTTP_HDR_URL, HTTP_HDR_PROTO
+};
+
+const int HTTP1_Resp[3] = {
+	HTTP_HDR_PROTO, HTTP_HDR_STATUS, HTTP_HDR_REASON
+};
+
 /*--------------------------------------------------------------------*/
 
 void
@@ -294,55 +302,46 @@ htc_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
  */
 
 static uint16_t
-htc_splitline(struct http *hp, const struct http_conn *htc, int req)
+htc_splitline(struct http *hp, const struct http_conn *htc, const int *hf)
 {
 	char *p;
-	int h1, h2, h3;
 
+	assert(hf == HTTP1_Req || hf == HTTP1_Resp);
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	Tcheck(htc->rxbuf);
 
-	if (req) {
-		h1 = HTTP_HDR_METHOD;
-		h2 = HTTP_HDR_URL;
-		h3 = HTTP_HDR_PROTO;
-	} else {
-		h1 = HTTP_HDR_PROTO;
-		h2 = HTTP_HDR_STATUS;
-		h3 = HTTP_HDR_REASON;
-	}
-	AZ(hp->hd[h1].b);
-	AZ(hp->hd[h2].b);
-	AZ(hp->hd[h3].b);
+	AZ(hp->hd[hf[0]].b);
+	AZ(hp->hd[hf[1]].b);
+	AZ(hp->hd[hf[2]].b);
 
 	/* Skip leading LWS */
 	for (p = htc->rxbuf.b ; vct_islws(*p); p++)
 		continue;
-	hp->hd[h1].b = p;
+	hp->hd[hf[0]].b = p;
 
 	/* First field cannot contain SP or CTL */
 	for (; !vct_issp(*p); p++) {
 		if (vct_isctl(*p))
 			return (400);
 	}
-	hp->hd[h1].e = p;
-	assert(Tlen(hp->hd[h1]));
+	hp->hd[hf[0]].e = p;
+	assert(Tlen(hp->hd[hf[0]]));
 
 	/* Skip SP */
 	for (; vct_issp(*p); p++) {
 		if (vct_isctl(*p))
 			return (400);
 	}
-	hp->hd[h2].b = p;
+	hp->hd[hf[1]].b = p;
 
 	/* Second field cannot contain LWS or CTL */
 	for (; !vct_islws(*p); p++) {
 		if (vct_isctl(*p))
 			return (400);
 	}
-	hp->hd[h2].e = p;
-	if (!Tlen(hp->hd[h2]))
+	hp->hd[hf[1]].e = p;
+	if (!Tlen(hp->hd[hf[1]]))
 		return (400);
 
 	/* Skip SP */
@@ -350,23 +349,23 @@ htc_splitline(struct http *hp, const struct http_conn *htc, int req)
 		if (vct_isctl(*p))
 			return (400);
 	}
-	hp->hd[h3].b = p;
+	hp->hd[hf[2]].b = p;
 
 	/* Third field is optional and cannot contain CTL except TAB */
 	for (; !vct_iscrlf(p); p++) {
 		if (vct_isctl(*p) && !vct_issp(*p)) {
-			hp->hd[h3].b = NULL;
+			hp->hd[hf[2]].b = NULL;
 			return (400);
 		}
 	}
-	hp->hd[h3].e = p;
+	hp->hd[hf[2]].e = p;
 
 	/* Skip CRLF */
 	p += vct_skipcrlf(p);
 
-	*hp->hd[h1].e = '\0';
-	*hp->hd[h2].e = '\0';
-	*hp->hd[h3].e = '\0';
+	*hp->hd[hf[0]].e = '\0';
+	*hp->hd[hf[1]].e = '\0';
+	*hp->hd[hf[2]].e = '\0';
 
 	return (htc_dissect_hdrs(hp, p, htc));
 }
@@ -426,7 +425,7 @@ HTTP1_DissectRequest(struct req *req)
 	hp = req->http;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
-	retval = htc_splitline(hp, htc, 1);
+	retval = htc_splitline(hp, htc, HTTP1_Req);
 	if (retval != 0) {
 		VSLbt(req->vsl, SLT_HttpGarbage, htc->rxbuf);
 		return (retval);
@@ -465,7 +464,7 @@ HTTP1_DissectResponse(struct http *hp, const struct http_conn *htc)
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
-	if (htc_splitline(hp, htc, 0))
+	if (htc_splitline(hp, htc, HTTP1_Resp))
 		retval = 503;
 
 	if (retval == 0) {
@@ -495,6 +494,7 @@ HTTP1_DissectResponse(struct http *hp, const struct http_conn *htc)
 		assert(retval == 503);
 		hp->status = retval;
 		http_SetH(hp, HTTP_HDR_STATUS, "503");
+		http_SetH(hp, HTTP_HDR_REASON, http_Status2Reason(retval));
 	}
 
 	if (hp->hd[HTTP_HDR_REASON].b == NULL ||
@@ -507,36 +507,20 @@ HTTP1_DissectResponse(struct http *hp, const struct http_conn *htc)
 /*--------------------------------------------------------------------*/
 
 unsigned
-HTTP1_Write(const struct worker *w, const struct http *hp, int resp)
+HTTP1_Write(const struct worker *w, const struct http *hp, const int *hf)
 {
 	unsigned u, l;
 
-	if (resp) {
-		l = WRW_WriteH(w, &hp->hd[HTTP_HDR_PROTO], " ");
+	assert(hf == HTTP1_Req || hf == HTTP1_Resp);
+	AN(hp->hd[hf[0]].b);
+	AN(hp->hd[hf[1]].b);
+	AN(hp->hd[hf[2]].b);
+	l = WRW_WriteH(w, &hp->hd[hf[0]], " ");
+	l += WRW_WriteH(w, &hp->hd[hf[1]], " ");
+	l += WRW_WriteH(w, &hp->hd[hf[2]], "\r\n");
 
-		hp->hd[HTTP_HDR_STATUS].b = WS_Alloc(hp->ws, 4);
-		AN(hp->hd[HTTP_HDR_STATUS].b);
-
-		assert(hp->status >= 100 && hp->status <= 999);
-		sprintf(hp->hd[HTTP_HDR_STATUS].b, "%3d", hp->status);
-		hp->hd[HTTP_HDR_STATUS].e = hp->hd[HTTP_HDR_STATUS].b + 3;
-
-		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_STATUS], " ");
-
-		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_REASON], "\r\n");
-	} else {
-		AN(hp->hd[HTTP_HDR_URL].b);
-		l = WRW_WriteH(w, &hp->hd[HTTP_HDR_METHOD], " ");
-		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_URL], " ");
-		l += WRW_WriteH(w, &hp->hd[HTTP_HDR_PROTO], "\r\n");
-	}
-	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
-		if (hp->hd[u].b == NULL)
-			continue;
-		AN(hp->hd[u].b);
-		AN(hp->hd[u].e);
+	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++)
 		l += WRW_WriteH(w, &hp->hd[u], "\r\n");
-	}
 	l += WRW_Write(w, "\r\n", -1);
 	return (l);
 }

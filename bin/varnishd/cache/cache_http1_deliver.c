@@ -322,7 +322,8 @@ V1D_Deliver(struct req *req)
 	 * Send HTTP protocol header, unless interior ESI object
 	 */
 	if (!(req->res_mode & RES_ESI_CHILD))
-		req->resp_hdrbytes += HTTP1_Write(req->wrk, req->resp, 1);
+		req->resp_hdrbytes +=
+		    HTTP1_Write(req->wrk, req->resp, HTTP1_Resp);
 
 	if (req->res_mode & RES_CHUNKED)
 		WRW_Chunked(req->wrk);
@@ -429,7 +430,8 @@ V1D_Deliver_Synth(struct req *req)
 	 * Send HTTP protocol header, unless interior ESI object
 	 */
 	if (!(req->res_mode & RES_ESI_CHILD))
-		req->resp_hdrbytes += HTTP1_Write(req->wrk, req->resp, 1);
+		req->resp_hdrbytes +=
+		    HTTP1_Write(req->wrk, req->resp, HTTP1_Resp);
 
 	if (req->res_mode & RES_CHUNKED)
 		WRW_Chunked(req->wrk);

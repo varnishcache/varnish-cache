@@ -124,7 +124,7 @@ PipeRequest(struct req *req, struct busyobj *bo)
 	(void)VTCP_blocking(vc->fd);
 
 	WRW_Reserve(wrk, &vc->fd, bo->vsl, req->t_req);
-	hdrbytes = HTTP1_Write(wrk, bo->bereq, 0);
+	hdrbytes = HTTP1_Write(wrk, bo->bereq, HTTP1_Req);
 
 	if (req->htc->pipeline.b != NULL)
 		(void)WRW_Write(wrk, req->htc->pipeline.b,

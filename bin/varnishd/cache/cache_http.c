@@ -552,7 +552,9 @@ http_GetStatus(const struct http *hp)
 	return (hp->status);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Setting the status will also set the Reason appropriately
+ */
 
 void
 http_SetStatus(struct http *to, uint16_t status)
@@ -569,6 +571,7 @@ http_SetStatus(struct http *to, uint16_t status)
 	assert(status >= 100);
 	bprintf(buf, "%03d", status);
 	http_PutField(to, HTTP_HDR_STATUS, buf);
+	http_SetH(to, HTTP_HDR_REASON, http_Status2Reason(status));
 }
 
 /*--------------------------------------------------------------------*/
