@@ -153,7 +153,7 @@ $Method VOID .add_backend(BACKEND, REAL)
 Description
 	Adds a backend to the director with a certain weight.
 
-	Weight is used as in the round_robin director. Recommended value is
+	Weight is used as in the random director. Recommended value is
 	1.0 unless you have special needs.
 
 Example
