@@ -149,8 +149,10 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	if (!(req->obj->objcore->flags & OC_F_PASS)
 	    && req->esi_level == 0
 	    && http_GetStatus(req->obj->http) == 200
-	    && req->http->conds && RFC2616_Do_Cond(req))
+	    && req->http->conds && RFC2616_Do_Cond(req)) {
 		http_PutResponse(req->resp, "HTTP/1.1", 304, NULL);
+		req->wantbody = 0;
+	}
 
 	V1D_Deliver(req);
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
