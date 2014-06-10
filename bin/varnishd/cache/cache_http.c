@@ -193,6 +193,39 @@ HTTP_Copy(struct http *to, const struct http * const fm)
 	memcpy(to->hdf, fm->hdf, fm->nhd * sizeof *to->hdf);
 }
 
+/*--------------------------------------------------------------------*/
+
+void
+http_SetH(const struct http *to, unsigned n, const char *fm)
+{
+
+	assert(n < to->shd);
+	AN(fm);
+	to->hd[n].b = TRUST_ME(fm);
+	to->hd[n].e = strchr(to->hd[n].b, '\0');
+	to->hdf[n] = 0;
+	http_VSLH(to, n);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+http_PutField(struct http *to, int field, const char *string)
+{
+	char *p;
+
+	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
+	p = WS_Copy(to->ws, string, -1);
+	if (p == NULL) {
+		http_fail(to);
+		VSLb(to->vsl, SLT_LostHeader, "%s", string);
+		return;
+	}
+	to->hd[field].b = p;
+	to->hd[field].e = strchr(p, '\0');
+	to->hdf[field] = 0;
+	http_VSLH(to, field);
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -515,6 +548,7 @@ uint16_t
 http_GetStatus(const struct http *hp)
 {
 
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	return (hp->status);
 }
 
@@ -522,42 +556,9 @@ const char *
 http_GetReq(const struct http *hp)
 {
 
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	Tcheck(hp->hd[HTTP_HDR_METHOD]);
 	return (hp->hd[HTTP_HDR_METHOD].b);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-http_PutField(struct http *to, int field, const char *string)
-{
-	char *p;
-
-	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	p = WS_Copy(to->ws, string, -1);
-	if (p == NULL) {
-		http_fail(to);
-		VSLb(to->vsl, SLT_LostHeader, "%s", string);
-		return;
-	}
-	to->hd[field].b = p;
-	to->hd[field].e = strchr(p, '\0');
-	to->hdf[field] = 0;
-	http_VSLH(to, field);
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-http_SetH(const struct http *to, unsigned n, const char *fm)
-{
-
-	assert(n < to->shd);
-	AN(fm);
-	to->hd[n].b = TRUST_ME(fm);
-	to->hd[n].e = strchr(to->hd[n].b, '\0');
-	to->hdf[n] = 0;
-	http_VSLH(to, n);
 }
 
 /*--------------------------------------------------------------------

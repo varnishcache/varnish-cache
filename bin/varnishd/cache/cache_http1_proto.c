@@ -312,6 +312,9 @@ htc_splitline(struct http *hp, const struct http_conn *htc, int req)
 		h2 = HTTP_HDR_STATUS;
 		h3 = HTTP_HDR_REASON;
 	}
+	AZ(hp->hd[h1].b);
+	AZ(hp->hd[h2].b);
+	AZ(hp->hd[h3].b);
 
 	/* Skip leading LWS */
 	for (p = htc->rxbuf.b ; vct_islws(*p); p++)
@@ -339,7 +342,6 @@ htc_splitline(struct http *hp, const struct http_conn *htc, int req)
 			return (400);
 	}
 	hp->hd[h2].e = p;
-
 	if (!Tlen(hp->hd[h2]))
 		return (400);
 
@@ -364,9 +366,7 @@ htc_splitline(struct http *hp, const struct http_conn *htc, int req)
 
 	*hp->hd[h1].e = '\0';
 	*hp->hd[h2].e = '\0';
-
-	if (hp->hd[h3].e != NULL)
-		*hp->hd[h3].e = '\0';
+	*hp->hd[h3].e = '\0';
 
 	return (htc_dissect_hdrs(hp, p, htc));
 }

@@ -89,15 +89,10 @@ enum sess_close {
 #undef SESS_CLOSE
 };
 
-/*--------------------------------------------------------------------*/
-
-/*
- * NB: HDR_STATUS is only used in cache_http.c, everybody else uses the
- * http->status integer field.
+/*--------------------------------------------------------------------
+ * Indicies into http->hd[]
  */
-
 enum {
-	/* Fields from the first line of HTTP proto */
 #define SLTH(tag, ind, req, resp, sdesc, ldesc)	ind,
 #include "tbl/vsl_tags_http.h"
 #undef SLTH
