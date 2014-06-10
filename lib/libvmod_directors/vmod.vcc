@@ -98,8 +98,8 @@ $Method VOID .add_backend(BACKEND)
 Description
         Add a backend to the director.
 
-        Note that the order in which this is done matters in the for the
-        fallback director.
+	Note that the order in which this is done matters for the fallback
+	director.
 
 Example
        vdir.add_backend(backend1);
