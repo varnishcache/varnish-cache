@@ -70,7 +70,7 @@ Example
 $Method VOID .add_backend(BACKEND)
 
 Description
-       Adds a backend to the director.
+       Add a backend to the round-robin director.
 Example
        vdir.add_backend(backend1);
        vdir.add_backend(backend2);
@@ -78,7 +78,7 @@ Example
 $Method BACKEND .backend()
 
 Description
-       Picks a backend from the director.
+       Pick a backend from the director.
 Example
        set req.backend_hint = vdir.backend();
 
@@ -103,7 +103,8 @@ Description
 	director.
 
 Example
-       vdir.add_backend(backend1);
+	vdir.add_backend(backend1);
+	vdir.add_backend(backend2);
 
 $Method BACKEND .backend()
 
@@ -116,59 +117,69 @@ Example
 $Object random()
 
 Description
-       Adds a random director. This director chooses backend based on
-       a random number. As you add backends to the director each
-       backends gets a weight, which is used to when requests are
-       being distributed. So, a backend with a weight of 1 would get
-       more or less 1% of the traffic of a backend in the same
-       director with a weight of 100.
+	Create a random backend director.
+
+	The random director distributes load over the backends using
+	a weighted random probability distribution.
+
 Example
 	new vdir = directors.random();
 
 $Method VOID .add_backend(BACKEND, REAL)
 
 Description
-       Adds a backend to the director with weight.
+	Add a backend to the director with a given weight.
+
+	Each backend backend will receive approximately
+	100 * (weight / (sum(all_added_weights))) per cent of the traffic sent
+	to this backend.
+
 Example
-	# 2/3 to backend1, 1/3 to backend2.
 	vdir.add_backend(backend1, 10);
 	vdir.add_backend(backend2, 5);
+	# 2/3 to backend1, 1/3 to backend2.
 
 
 $Method BACKEND .backend()
 
 Description
-       Picks a backend from the director.
+	Pick a backend from the director.
 Example
 	set req.backend_hint = vdir.backend();
 
 $Object hash()
 
 Description
-       Creates a hash director. The hash director chooses the backend
-       based on hashing an arbitrary string. If you provide it with a
-       session cookie, you'll have the client connecting to the same
-       backend every time.
+	Create a hashing backend director.
+
+	The director chooses the backend server by computing a hash/digest of
+	the string given to .backend().
+
+	Commonly used with ``client.identity`` or a session cookie to get
+	sticky sessions.
+
 Example
-       new hdir = directors.hash();
+	new vdir = directors.hash();
 
 $Method VOID .add_backend(BACKEND, REAL)
 
 Description
-	Adds a backend to the director with a certain weight.
+	Add a backend to the director with a certain weight.
 
 	Weight is used as in the random director. Recommended value is
 	1.0 unless you have special needs.
 
 Example
-       hdir.add_backend(backend1, 1.0);
+	vdir.add_backend(backend1, 1.0);
+	vdir.add_backend(backend2, 1.0);
+
 
 $Method BACKEND .backend(STRING_LIST)
 
 Description
-       Picks a backend from the director. Use the string or list of
-       strings provided to pick the backend.
+	Pick a backend from the backend director.
+
+	Use the string or list of strings provided to pick the backend.
 Example
-       # pick a backend based on the cookie header from the client
-       set req.backend_hint = hdir.backend(req.http.cookie);
+	set req.backend_hint = vdir.backend(req.http.cookie);  # pick a backend based on the cookie header from the client
 
