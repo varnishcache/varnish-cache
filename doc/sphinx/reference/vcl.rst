@@ -115,6 +115,8 @@ so 1.5w is allowed.
   w
     weeks
 
+  y
+    years
 
 Integers
 --------

@@ -73,7 +73,7 @@ varnish v1 -vcl {
 
 }
 
-varnish v1 -errvcl {Unknown time unit 'k'.  Legal are 'ms', 's', 'm', 'h', 'd' and 'w'} {
+varnish v1 -errvcl {Unknown time unit 'k'.  Legal are 'ms', 's', 'm', 'h', 'd', 'w' and 'y'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_backend_response { set beresp.ttl = 1. k; }
 }
