@@ -97,6 +97,8 @@ an email to phk@FreeBSD.org.
 	Varnish Software
 	sales@varnish-software.com
 
+	UPLEX
+	info@uplex.de
 
 .. _mailman: http://lists.varnish-cache.org/mailman/listinfo
 .. _pastebin: http://gist.github.com/
