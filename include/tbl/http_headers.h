@@ -69,6 +69,7 @@ HTTPH("Expect",			H_Expect,		0					  )	/* RFC2616 14.20 */
 HTTPH("Expires",		H_Expires,		0					  )	/* RFC2616 14.21 */
 HTTPH("From",			H_From,			0					  )	/* RFC2616 14.22 */
 HTTPH("Host",			H_Host,			0					  )	/* RFC2616 14.23 */
+HTTPH("HTTP2-Settings",		H_HTTP2_Settings,	HTTPH_R_PASS | HTTPH_R_FETCH | HTTPH_A_INS)	/* draft-ietf-httpbis-http2-12.txt */
 HTTPH("If-Match",		H_If_Match,			       HTTPH_R_FETCH		  )	/* RFC2616 14.24 */
 HTTPH("If-Modified-Since",	H_If_Modified_Since,		       HTTPH_R_FETCH		  )	/* RFC2616 14.25 */
 HTTPH("If-None-Match",		H_If_None_Match,		       HTTPH_R_FETCH		  )	/* RFC2616 14.26 */
