@@ -58,18 +58,8 @@
 
 // Stuff in VMODs which is used through dl*(3) functions
 -esym(754, Vmod_*_Func::*)
--esym(765, Vmod_*_Func)
--esym(552, Vmod_*_Func)
--esym(765, Vmod_*_Len)
--esym(714, Vmod_*_Len)
--esym(765, Vmod_*_Name)
--esym(714, Vmod_*_Name)
--esym(765, Vmod_*_Proto)
--esym(714, Vmod_*_Proto)
--esym(765, Vmod_*_Spec)
--esym(714, Vmod_*_Spec)
--esym(765, Vmod_*_ABI)
--esym(714, Vmod_*_ABI)
+-esym(714, Vmod_*_Data)
+-esym(765, Vmod_*_Data)
 
 
 //-sem (pthread_mutex_lock, thread_lock)

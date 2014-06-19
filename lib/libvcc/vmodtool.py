@@ -40,6 +40,7 @@ import sys
 import re
 import optparse
 import unittest
+import random
 from os import unlink
 from os.path import dirname, realpath, exists
 from pprint import pprint, pformat
@@ -196,29 +197,17 @@ class Vmod(object):
 				fo.write(j + "\n")
 
 	def c_vmod(self, fo):
-		fo.write('extern const char Vmod_' + self.nam + '_Name[];\n')
-		fo.write('const char Vmod_' + self.nam + '_Name[] =')
-		fo.write(' \"' + self.nam + '";\n')
-		fo.write("\n")
 
 		cs = self.c_struct()
 		fo.write(cs + ';\n')
 
-		vfn = 'Vmod_' + self.nam + '_Func'
+		vfn = 'Vmod_%s_Func' % self.nam
 
-		fo.write("extern const struct " + vfn + " " + vfn + ';\n')
-		fo.write("const struct " + vfn + " " + vfn + ' =')
+		fo.write("\nstatic const struct %s Vmod_Func =" % vfn)
 		fo.write(self.c_initializer())
 		fo.write("\n")
 
-		fo.write("\n")
-		fo.write("extern const int Vmod_" + self.nam + '_Len;\n')
-		fo.write("const int Vmod_" + self.nam + '_Len =')
-		fo.write(" sizeof(Vmod_" + self.nam + "_Func);\n")
-		fo.write("\n")
-
-		fo.write("extern const char Vmod_" + self.nam + "_Proto[];\n")
-		fo.write("const char Vmod_" + self.nam + "_Proto[] =\n")
+		fo.write("\nstatic const char Vmod_Proto[] =\n")
 		for t in self.c_typedefs_():
 			for i in lwrap(t, w=64):
 				fo.write('\t"' + i + '\\n"\n')
@@ -230,12 +219,28 @@ class Vmod(object):
 		fo.write(self.c_strspec())
 
 		fo.write("\n")
-		fo.write('extern const char Vmod_' + self.nam + '_ABI[];\n')
-		fo.write('const char Vmod_' + self.nam + '_ABI[] =')
-		fo.write(' VMOD_ABI_Version;\n')
-		#fo.write("\n")
-		#fo.write('const void * const Vmod_' + self.nam + '_Id =')
-		#fo.write(' &Vmod_' + self.nam + '_Id;\n')
+
+		nm = "Vmod_" + self.nam + "_Data"
+		fo.write("extern const struct vmod_data " + nm + ";\n\n")
+		fo.write("const struct vmod_data " + nm + " = {\n")
+		fo.write("\t.vrt_major = VRT_MAJOR_VERSION,\n");
+		fo.write("\t.vrt_minor = VRT_MINOR_VERSION,\n");
+		fo.write("\t.name = \"%s\",\n" % self.nam)
+		fo.write("\t.func = &Vmod_Func,\n")
+		fo.write("\t.func_len = sizeof(Vmod_Func),\n")
+		fo.write("\t.proto = Vmod_Proto,\n")
+		fo.write("\t.spec = Vmod_Spec,\n")
+		fo.write("\t.abi = VMOD_ABI_Version,\n")
+
+		# NB: Sort of hackish:
+		# Fill file_id with random stuff, so we can tell if
+		# VCC and VRT_Vmod_Init() dlopens the same file
+		#
+		fo.write("\t.file_id = \"")
+		for i in range(32):
+			fo.write("%c" % random.randint(0x23,0x5b))
+		fo.write("\",\n")
+		fo.write("};\n")
 
 	def c_initializer(self):
 		s = '{\n'
@@ -269,8 +274,7 @@ class Vmod(object):
 		return s
 
 	def c_strspec(self):
-		s = "const char * const Vmod_" + self.nam + "_Spec[]"
-		s = "extern " + s + ";\n" + s + " = {\n"
+		s = "static const char * const Vmod_Spec[] = {\n"
 
 		for o in self.objs:
 			s += o.c_strspec(self.nam) + ",\n\n"

@@ -35,6 +35,7 @@
 #include "vcc_compile.h"
 
 #include "vmod_abi.h"
+#include "vrt.h"
 
 void
 vcc_ParseImport(struct vcc *tl)
@@ -44,14 +45,12 @@ vcc_ParseImport(struct vcc *tl)
 	char buf[256];
 	struct token *mod, *t1;
 	struct inifin *ifp;
-	const char *modname;
-	const char *proto;
-	const char *abi;
-	const char **spec;
+	const char * const *spec;
 	struct symbol *sym;
 	const struct symbol *osym;
 	const char *p;
 	// int *modlen;
+	const struct vmod_data *vmd;
 
 	t1 = tl->t;
 	SkipToken(tl, ID);		/* "import" */
@@ -62,7 +61,7 @@ vcc_ParseImport(struct vcc *tl)
 
 	osym = VCC_FindSymbol(tl, mod, SYM_NONE);
 	if (osym != NULL && osym->kind != SYM_VMOD) {
-		VSB_printf(tl->sb, "Module %.*s conflics with other symbol.\n",
+		VSB_printf(tl->sb, "Module %.*s conflicts with other symbol.\n",
 		    PF(mod));
 		vcc_ErrWhere2(tl, t1, tl->t);
 		return;
@@ -104,6 +103,66 @@ vcc_ParseImport(struct vcc *tl)
 		bprintf(fn, "%s/libvmod_%.*s.so", tl->vmod_dir, PF(mod));
 	}
 
+	SkipToken(tl, ';');
+
+	hdl = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
+	if (hdl == NULL) {
+		VSB_printf(tl->sb, "Could not load VMOD %.*s\n", PF(mod));
+		VSB_printf(tl->sb, "\tFile name: %s\n", fn);
+		VSB_printf(tl->sb, "\tdlerror:: %s\n", dlerror());
+		vcc_ErrWhere(tl, mod);
+		return;
+	}
+
+	bprintf(buf, "Vmod_%.*s_Data", PF(mod));
+	vmd = dlsym(hdl, buf);
+	if (vmd == NULL) {
+		VSB_printf(tl->sb, "Malformed VMOD %.*s\n", PF(mod));
+		VSB_printf(tl->sb, "\tFile name: %s\n", fn);
+		VSB_printf(tl->sb, "\t(no Vmod_Data symbol)\n");
+		vcc_ErrWhere(tl, mod);
+		return;
+	}
+	if (vmd->vrt_major != VRT_MAJOR_VERSION ||
+	    vmd->vrt_minor > VRT_MINOR_VERSION) {
+		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(mod));
+		VSB_printf(tl->sb, "\tFile name: %s\n", fn);
+		VSB_printf(tl->sb, "\tVMOD version %u.%u\n",
+		    vmd->vrt_major, vmd->vrt_minor);
+		VSB_printf(tl->sb, "\tvarnishd version %u.%u\n",
+		    VRT_MAJOR_VERSION, VRT_MINOR_VERSION);
+		vcc_ErrWhere(tl, mod);
+		return;
+	}
+	if (vmd->name == NULL ||
+	    vmd->func == NULL ||
+	    vmd->func_len <= 0 ||
+	    vmd->proto == NULL ||
+	    vmd->abi == NULL) {
+		VSB_printf(tl->sb, "Mangled VMOD %.*s\n", PF(mod));
+		VSB_printf(tl->sb, "\tFile name: %s\n", fn);
+		VSB_printf(tl->sb, "\tInconsistent metadata\n");
+		vcc_ErrWhere(tl, mod);
+		return;
+	}
+
+	if (!vcc_IdIs(mod, vmd->name)) {
+		VSB_printf(tl->sb, "Wrong VMOD file %.*s\n", PF(mod));
+		VSB_printf(tl->sb, "\tFile name: %s\n", fn);
+		VSB_printf(tl->sb, "\tContains vmod \"%s\"\n", vmd->name);
+		vcc_ErrWhere(tl, mod);
+		return;
+	}
+
+	if (strcmp(vmd->abi, VMOD_ABI_Version) != 0) {
+		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(mod));
+		VSB_printf(tl->sb, "\tFile name: %s\n", fn);
+		VSB_printf(tl->sb, "\tABI mismatch, expected <%s>, got <%s>\n",
+			   VMOD_ABI_Version, vmd->abi);
+		vcc_ErrWhere(tl, mod);
+		return;
+	}
+
 	ifp = New_IniFin(tl);
 
 	VSB_printf(ifp->ini, "\tif (VRT_Vmod_Init(&VGC_vmod_%.*s,\n", PF(mod));
@@ -112,8 +171,11 @@ vcc_ParseImport(struct vcc *tl)
 	VSB_printf(ifp->ini, "\t    \"%.*s\",\n", PF(mod));
 	VSB_printf(ifp->ini, "\t    ");
 	EncString(ifp->ini, fn, NULL, 0);
-	VSB_printf(ifp->ini, ",\n\t    ");
-	VSB_printf(ifp->ini, "cli))\n");
+	VSB_printf(ifp->ini, ",\n");
+	AN(vmd);
+	AN(vmd->file_id);
+	VSB_printf(ifp->ini, "\t    \"%s\",\n", vmd->file_id);
+	VSB_printf(ifp->ini, "\t    cli))\n");
 	VSB_printf(ifp->ini, "\t\treturn(1);");
 
 	/* XXX: zero the function pointer structure ?*/
@@ -122,59 +184,7 @@ vcc_ParseImport(struct vcc *tl)
 
 	ifp = NULL;
 
-	SkipToken(tl, ';');
-
-	hdl = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
-	if (hdl == NULL) {
-		VSB_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n",
-		    PF(mod), fn, dlerror());
-		vcc_ErrWhere(tl, mod);
-		return;
-	}
-
-	bprintf(buf, "Vmod_%.*s_Name", PF(mod));
-	modname = dlsym(hdl, buf);
-	if (modname == NULL) {
-		VSB_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n",
-		    PF(mod), fn, "Symbol Vmod_Name not found");
-		vcc_ErrWhere(tl, mod);
-		return;
-	}
-	if (!vcc_IdIs(mod, modname)) {
-		VSB_printf(tl->sb, "Could not load module %.*s\n\t%s\n",
-		    PF(mod), fn);
-		VSB_printf(tl->sb, "\tModule has wrong name: <%s>\n", modname);
-		vcc_ErrWhere(tl, mod);
-		return;
-	}
-
-	bprintf(buf, "Vmod_%.*s_ABI", PF(mod));
-	abi = dlsym(hdl, buf);
-	if (abi == NULL || strcmp(abi, VMOD_ABI_Version) != 0) {
-		VSB_printf(tl->sb, "Could not load module %.*s\n\t%s\n",
-		    PF(mod), fn);
-		VSB_printf(tl->sb, "\tABI mismatch, expected <%s>, got <%s>\n",
-			   VMOD_ABI_Version, abi);
-		vcc_ErrWhere(tl, mod);
-		return;
-	}
-
-	bprintf(buf, "Vmod_%.*s_Proto", PF(mod));
-	proto = dlsym(hdl, buf);
-	if (proto == NULL) {
-		VSB_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n",
-		    PF(mod), fn, "Symbol Vmod_Proto not found");
-		vcc_ErrWhere(tl, mod);
-		return;
-	}
-	bprintf(buf, "Vmod_%.*s_Spec", PF(mod));
-	spec = dlsym(hdl, buf);
-	if (spec == NULL) {
-		VSB_printf(tl->sb, "Could not load module %.*s\n\t%s\n\t%s\n",
-		    PF(mod), fn, "Symbol Vmod_Spec not found");
-		vcc_ErrWhere(tl, mod);
-		return;
-	}
+	spec = vmd->spec;
 	for (; *spec != NULL; spec++) {
 		p = *spec;
 		if (!strcmp(p, "OBJ")) {
@@ -208,6 +218,6 @@ vcc_ParseImport(struct vcc *tl)
 	Fh(tl, 0, "\n/* --- BEGIN VMOD %.*s --- */\n\n", PF(mod));
 	Fh(tl, 0, "static void *VGC_vmod_%.*s;\n", PF(mod));
 	Fh(tl, 0, "static struct vmod_priv vmod_priv_%.*s;\n", PF(mod));
-	Fh(tl, 0, "\n%s\n", proto);
+	Fh(tl, 0, "\n%s\n", vmd->proto);
 	Fh(tl, 0, "\n/* --- END VMOD %.*s --- */\n\n", PF(mod));
 }

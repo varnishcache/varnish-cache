@@ -26,10 +26,25 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Runtime support for compiled VCL programs.
+ * Runtime support for compiled VCL programs and VMODs.
  *
- * XXX: When this file is changed, lib/libvcc/generate.py *MUST* be rerun.
+ * NB: When this file is changed, lib/libvcc/generate.py *MUST* be rerun.
  */
+
+/***********************************************************************
+ * Major and minor VRT API versions.
+ *
+ * Whenever something is added, increment MINOR version
+ * Whenever something is deleted or changed in a way which is not
+ * binary/load-time compatible, increment MAJOR version
+ */
+
+#define VRT_MAJOR_VERSION	1U
+
+#define VRT_MINOR_VERSION	1U
+
+
+/***********************************************************************/
 
 struct req;
 struct busyobj;
@@ -85,6 +100,22 @@ struct vrt_ctx {
 	struct http			*http_bereq;
 	struct http			*http_beresp;
 
+};
+
+/***********************************************************************/
+
+struct vmod_data {
+	/* The version/id fields must be first, they protect the rest */
+	unsigned			vrt_major;
+	unsigned			vrt_minor;
+	const char			*file_id;
+
+	const char			*name;
+	const void			*func;
+	int				func_len;
+	const char			*proto;
+	const char			* const *spec;
+	const char			*abi;
 };
 
 /***********************************************************************/
@@ -230,7 +261,7 @@ int VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst);
 
 /* VMOD/Modules related */
 int VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
-    const char *path, struct cli *cli);
+    const char *path, const char *file_id, struct cli *cli);
 void VRT_Vmod_Fini(void **hdl);
 
 struct vmod_priv;

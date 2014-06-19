@@ -39,7 +39,6 @@
 
 #include "vcli_priv.h"
 #include "vrt.h"
-#include "vmod_abi.h"
 
 /*--------------------------------------------------------------------
  * Modules stuff
@@ -64,10 +63,10 @@ static VTAILQ_HEAD(,vmod)	vmods = VTAILQ_HEAD_INITIALIZER(vmods);
 
 int
 VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
-    const char *path, struct cli *cli)
+    const char *path, const char *file_id, struct cli *cli)
 {
 	struct vmod *v;
-	void *x, *y, *z, *w;
+	const struct vmod_data *d;
 	char buf[256];
 	void *dlhdl;
 
@@ -90,50 +89,37 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
 
 		v->hdl = dlhdl;
 
-		bprintf(buf, "Vmod_%s_Name", nm);
-		x = dlsym(v->hdl, buf);
-		bprintf(buf, "Vmod_%s_Len", nm);
-		y = dlsym(v->hdl, buf);
-		bprintf(buf, "Vmod_%s_Func", nm);
-		z = dlsym(v->hdl, buf);
-		bprintf(buf, "Vmod_%s_ABI", nm);
-		w = dlsym(v->hdl, buf);
-		if (x == NULL || y == NULL || z == NULL || w == NULL) {
+		bprintf(buf, "Vmod_%s_Data", nm);
+		d = dlsym(v->hdl, buf);
+		if (d == NULL ||
+		    d->file_id == NULL ||
+		    strcmp(d->file_id, file_id)) {
 			VCLI_Out(cli, "Loading VMOD %s from %s:\n", nm, path);
-			VCLI_Out(cli, "VMOD symbols not found\n");
-			VCLI_Out(cli, "Check relative pathnames.\n");
+			VCLI_Out(cli,
+			    "This is no longer the same file seen by"
+			    " the VCL-compiler.\n");
 			(void)dlclose(v->hdl);
 			FREE_OBJ(v);
 			return (1);
 		}
-		AN(x);
-		AN(y);
-		AN(z);
-		AN(w);
-		if (strcmp(x, nm)) {
+		if (d->vrt_major != VRT_MAJOR_VERSION ||
+		    d->vrt_minor > VRT_MINOR_VERSION ||
+		    d->name == NULL ||
+		    strcmp(d->name, nm) ||
+		    d->func == NULL ||
+		    d->func_len <= 0 ||
+		    d->proto == NULL ||
+		    d->spec == NULL ||
+		    d->abi == NULL) {
 			VCLI_Out(cli, "Loading VMOD %s from %s:\n", nm, path);
-			VCLI_Out(cli, "File contain wrong VMOD (\"%s\")\n",
-			    (char *) x);
-			VCLI_Out(cli, "Check relative pathnames ?.\n");
-			(void)dlclose(v->hdl);
-			FREE_OBJ(v);
-			return (1);
-		}
-
-		if (strcmp(w, VMOD_ABI_Version)) {
-			VCLI_Out(cli, "Loading VMOD %s from %s:\n", nm, path);
-			VCLI_Out(cli, "VMOD ABI (%s)", (char*)w);
-			VCLI_Out(cli, " incompatible with varnish ABI (%s)\n",
-			    VMOD_ABI_Version);
+			VCLI_Out(cli, "VMOD data is mangled.\n");
 			(void)dlclose(v->hdl);
 			FREE_OBJ(v);
 			return (1);
 		}
 
-		// XXX: Check w for ABI version compatibility
-
-		v->funclen = *(const int *)y;
-		v->funcs = z;
+		v->funclen = d->func_len;
+		v->funcs = d->func;
 
 		REPLACE(v->nm, nm);
 		REPLACE(v->path, path);
