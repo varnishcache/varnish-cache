@@ -6,7 +6,7 @@ varnish v1 -errvcl {Object name 'first' already used.} {
 		new first = debug.obj("FOO");
 		new first = debug.obj("BAH");
 	}
-} 
+}
 
 varnish v1 -errvcl {Object name 'first' already used.} {
 	import ${vmod_debug};
@@ -16,4 +16,4 @@ varnish v1 -errvcl {Object name 'first' already used.} {
 	sub vcl_init {
 		new first = debug.obj("FOO");
 	}
-} 
+}

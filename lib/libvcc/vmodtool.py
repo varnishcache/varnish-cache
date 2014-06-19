@@ -66,16 +66,16 @@ ctypes = {
 
 def write_file_warning(fo, a, b, c):
 	fo.write(a + "\n")
-	fo.write(b + "NB:  This file is machine generated, DO NOT EDIT!\n")
+	fo.write(b + " NB:  This file is machine generated, DO NOT EDIT!\n")
 	fo.write(b + "\n")
-	fo.write(b + "Edit vmod.vcc and run make instead\n")
+	fo.write(b + " Edit vmod.vcc and run make instead\n")
 	fo.write(c + "\n\n")
 
 def write_c_file_warning(fo):
-	write_file_warning(fo, "/*", " * ", " */")
+	write_file_warning(fo, "/*", " *", " */")
 
 def write_rst_file_warning(fo):
-	write_file_warning(fo, "..", ".. ", "..")
+	write_file_warning(fo, "..", "..", "..")
 
 #######################################################################
 
