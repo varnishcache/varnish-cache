@@ -5,6 +5,7 @@ Changes from 4.0.0 to 4.0.1-rc1 (2014-06-20)
 
 New since 4.0.0:
 
+- Varnish will no longer reply with "200 Not Modified".
 - Backend IMS is now only attempted when last status was 200.
 - Packaging now uses find-provides instead of find-requires. [redhat]
 - Two new counters: n_purges and n_obj_purged.
