@@ -17,7 +17,7 @@ New since 4.0.0:
   https://www.varnish-cache.org/docs/trunk/phk/persistent.html
 - Added format flags %I (total bytes received) and %O (total bytes sent) for
   varnishncsa.
-- python-docutils >= 0.7 is now required.
+- python-docutils >= 0.6 is now required.
 - Support year (y) as a duration in VCL.
 - VMOD ABI requirements are relaxed, a VMOD no longer have to be run on the
   same git revision as it was compiled for. Replaced by a major/minor ABI counter.

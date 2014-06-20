@@ -18,7 +18,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # You will need at least automake autoconf libtool
 #BuildRequires: automake autoconf libtool
 BuildRequires: ncurses-devel groff pcre-devel pkgconfig libedit-devel jemalloc-devel
-BuildRequires: python-docutils >= 0.7
+BuildRequires: python-docutils >= 0.6
 Requires: varnish-libs = %{version}-%{release}
 Requires: logrotate
 Requires: ncurses
