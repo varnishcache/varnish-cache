@@ -1,3 +1,84 @@
+
+============================================
+Changes from 4.0.0 to 4.0.1-rc1 (2014-06-20)
+============================================
+
+New since 4.0.0:
+
+- Backend IMS is now only attempted when last status was 200.
+- Packaging now uses find-provides instead of find-requires. [redhat]
+- Two new counters: n_purges and n_obj_purged.
+- Core size can now be set from /etc/sysconfig/varnish [redhat]
+- Via header set is now RFC compliant.
+- Removed "purge" keyword in VCL. Use return(purge) instead.
+- fallback director is now documented.
+- %D format flag in varnishncsa is now truncated to an integer value.
+- persistent storage backend is now deprecated.
+  https://www.varnish-cache.org/docs/trunk/phk/persistent.html
+- Added format flags %I (total bytes received) and %O (total bytes sent) for
+  varnishncsa.
+- python-docutils >= 0.7 is now required.
+- Support year (y) as a duration in VCL.
+- VMOD ABI requirements are relaxed, a VMOD no longer have to be run on the
+  same git revision as it was compiled for. Replaced by a major/minor ABI counter.
+
+
+Bugs fixed
+----------
+
+* 1475_ - time-to-first-byte in varnishncsa was potentially dishonest.
+* 1480_ - Porting guide for 4.0 is incomplete.
+* 1482_ - Inherit group memberships of -u specified user.
+* 1473_ - Fail correctly in configure when rst2man is not found.
+* 1486_ - Truncate negative Age values to zero.
+* 1488_ - Don't panic on high request rates.
+* 1489_ - req.esi should only be available in client threads.
+* 1490_ - Fix thread leak when reducing number of threads.
+* 1491_ - Reorder backend connection close procedure to help test cases.
+* 1498_ - Prefix translated VCL names to avoid name clashes.
+* 1499_ - Don't leak an objcore when HSH_Lookup returns expired object.
+* 1493_ - vcl_purge can return synth or restart.
+* 1476_ - Cope with systems having sys/endian.h and endian.h.
+* 1496_ - varnishadm should be consistent in argv ordering.
+* 1494_ - Don't panic on VCL-initiated retry after a backend 500 error.
+* 1139_ - Also reset keep (for IMS) time when purging.
+* 1478_ - Avoid panic when delivering an object that expires during delivery.
+* 1504_ - ACLs can be unreferenced with vcc_err_unref=off set.
+* 1501_ - Handle that a director couldn't pick a backend.
+* 1495_ - Reduce WRK_SumStat contention.
+* 1510_ - Complain on symbol reuse in VCL.
+* 1514_ - Document storage.NAME.free_space and .used_space [docs]
+* 1518_ - Suppress body on 304 response when using ESI.
+* 1519_ - Round-robin director does not support weight. [docs]
+
+
+.. _1475: https://www.varnish-cache.org/trac/ticket/1475
+.. _1480: https://www.varnish-cache.org/trac/ticket/1480
+.. _1482: https://www.varnish-cache.org/trac/ticket/1482
+.. _1473: https://www.varnish-cache.org/trac/ticket/1473
+.. _1486: https://www.varnish-cache.org/trac/ticket/1486
+.. _1488: https://www.varnish-cache.org/trac/ticket/1488
+.. _1489: https://www.varnish-cache.org/trac/ticket/1489
+.. _1490: https://www.varnish-cache.org/trac/ticket/1490
+.. _1491: https://www.varnish-cache.org/trac/ticket/1491
+.. _1498: https://www.varnish-cache.org/trac/ticket/1498
+.. _1499: https://www.varnish-cache.org/trac/ticket/1499
+.. _1493: https://www.varnish-cache.org/trac/ticket/1493
+.. _1476: https://www.varnish-cache.org/trac/ticket/1476
+.. _1496: https://www.varnish-cache.org/trac/ticket/1496
+.. _1494: https://www.varnish-cache.org/trac/ticket/1494
+.. _1139: https://www.varnish-cache.org/trac/ticket/1139
+.. _1478: https://www.varnish-cache.org/trac/ticket/1478
+.. _1504: https://www.varnish-cache.org/trac/ticket/1504
+.. _1501: https://www.varnish-cache.org/trac/ticket/1501
+.. _1495: https://www.varnish-cache.org/trac/ticket/1495
+.. _1510: https://www.varnish-cache.org/trac/ticket/1510
+.. _1514: https://www.varnish-cache.org/trac/ticket/1514
+.. _1518: https://www.varnish-cache.org/trac/ticket/1518
+.. _1519: https://www.varnish-cache.org/trac/ticket/1519
+
+
+
 ==============================================
 Changes from 4.0.0 beta1 to 4.0.0 (2014-04-10)
 ==============================================
