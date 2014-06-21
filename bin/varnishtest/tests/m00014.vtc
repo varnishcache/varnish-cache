@@ -1,0 +1,68 @@
+varnishtest "Test querysort in std vmod"
+
+server s1 {
+
+    rxreq
+    txresp
+
+    rxreq
+    txresp
+
+    rxreq
+    txresp
+
+    rxreq
+    txresp
+
+    rxreq
+    txresp
+
+    rxreq
+    txresp
+
+    rxreq
+    txresp
+
+    rxreq
+    txresp
+
+} -start
+
+varnish v1 -vcl+backend {
+
+    import ${vmod_std};
+    sub vcl_deliver {
+        set resp.http.naren = std.querysort(req.url);
+    }
+
+} -start
+
+client c1 {
+
+    txreq -url "/video/44505073?title=0&byline=0&portrait=0&color=51a516"
+    rxresp
+    expect resp.http.naren == "/video/44505073?byline=0&color=51a516&portrait=0&title=0"
+
+    txreq -url "/video/44505073?byline=0&&&&&"
+    rxresp
+    expect resp.http.naren == "/video/44505073?byline=0"
+
+    txreq -url "/video/2?&"
+    rxresp
+    expect resp.http.naren == "/video/2?"
+
+    txreq -url "/video/2"
+    rxresp
+    expect resp.http.naren == "/video/2"
+
+    txreq -url "/video/2?cod=cape&cape=cod"
+    rxresp
+    expect resp.http.naren == "/video/2?cape=cod&cod=cape"
+
+    txreq -url "/"
+    rxresp
+    expect resp.http.naren == "/"
+
+}
+
+client c1 -run

@@ -155,6 +155,16 @@ Description
 Example
 	std.timestamp("curl-request");
 
+$Function STRING querysort(STRING)
+
+Description
+        Sorts the querystring for cache normalization purposes.
+
+Example
+        set req.url = std.querysort(req.url);
+
+
+
 SEE ALSO
 ========
 
@@ -173,3 +183,4 @@ COPYRIGHT
 
 This document is licensed under the same licence as Varnish
 itself. See LICENCE for details.
+

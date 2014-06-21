@@ -225,3 +225,140 @@ vmod_timestamp(const struct vrt_ctx *ctx, VCL_STRING label)
 		VSLb_ts_req(ctx->req, label, VTIM_real());
 	}
 }
+
+
+/* Boltsort
+   Author: Naren Venkataraman of Vimeo Inc.
+
+   Included here with permission.
+*/
+
+
+#define QS_MAX_PARAM_COUNT 32
+#define QS_EQUALS(c, h) ((c == h) || (c == '\0' && h == '&') || (c == '&' && h == '\0'))
+#define QS_ENDS(s) (s == '&' || s == '\0') 
+
+static const char QS_TERMINATORS[2] = {'\0', '&'};
+
+//since we dont store param length, we have to evaluate everytime
+static inline int param_compare (char *s, char *t)
+{
+
+    for ( ;QS_EQUALS(*s, *t); s++, t++) {
+        if (QS_ENDS(*s)) {
+            return 0;
+        }
+    }
+    return *s - *t;
+
+}
+
+//end of param is either first occurance of & or '\0'
+static inline int param_copy(char *dst, char *src, char *last_param)
+{
+
+    int len = strchr(src, QS_TERMINATORS[(src != last_param)]) - src;
+    memcpy(dst, src, len);
+    return len;
+
+}
+
+//Varnish vmod requires this
+int init_function(struct vmod_priv *priv, const struct VCL_conf *conf)
+{
+    return 0;
+
+}
+
+//sort query string
+VCL_STRING vmod_querysort(const struct vrt_ctx * ctx, VCL_STRING url)
+{
+
+    if (url == NULL) {
+        return NULL;
+    }
+
+    int qs_index = 0;
+    int param_count = 0;
+
+    char *dst_url = NULL;
+    char *qs = NULL;
+
+    //To avoid 1 pass for count calculations, assuming MAX_PARAM_COUNT as max
+    char* params[QS_MAX_PARAM_COUNT];
+
+    int i, p;
+    char *param = NULL;
+
+    qs = strchr(url, '?');
+    if(!qs) {
+        return url;
+    }
+
+    //add first param and increment count
+    params[param_count++] = ++qs;
+    qs_index = qs - url;
+
+    //Continue to find query string
+    while((qs = strchr(qs, '&')) != NULL) {
+        param = ++qs;
+
+        for(p = 0; p < param_count; p++) {
+            //if incoming param is < param at position then place it at p and then move up rest
+            if(param[0] < params[p][0] || param_compare(param, params[p]) < 0) {
+                for(i = param_count; i > p; i--) {
+                    params[i] = params[i-1];
+                }
+                break;
+            }
+        }
+        params[p] = param;
+        param_count++;
+
+        //if it exceed max params return as is
+        if (param_count == QS_MAX_PARAM_COUNT) {
+            return url;
+        }
+    }
+
+    //there is nothing after & 
+    //eg: http://127.0.0.1/?me=1&
+    if (param_count == 1) {
+        return url;
+    }
+
+    //allocate space for sorted url
+    //    struct ws *ws = sp->wrk->ws; 
+    struct ws *ws = ctx->ws;
+    dst_url = WS_Alloc(ws, strchr(param, '\0') - url + 1);
+    WS_Assert(ws);
+
+    //if alloc fails return as is
+    if(dst_url == NULL) {
+        return url;
+    }
+
+    //copy data before query string
+    char* cp = memcpy(dst_url, url, qs_index) + qs_index;
+
+    //get rid of all empty params /test/?a&&&
+    for(p = 0; p < param_count - 1; p++) { 
+        if (params[p][0] != '\0' && params[p][0] != '&') {
+            break;
+        }
+    }
+
+    //copy sorted params
+    for(; p < param_count - 1; p++) {
+        //copy and increment
+        cp += param_copy(cp, params[p], param);
+        *cp++ = '&';
+    }
+
+    //copy the last param
+    cp += param_copy(cp, params[p], param);
+    *cp = '\0';
+
+    return dst_url;
+
+}
