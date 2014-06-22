@@ -135,6 +135,14 @@ Description
 Example
 	if (std.ip(req.http.X-forwarded-for, "0.0.0.0") ~ my_acl) { ... }
 
+$Function REAL real(STRING, REAL)
+
+Description
+	Converts the string *s* to a real.  If *s* fails to parse,
+	*fallback* will be returned.
+Example
+	set req.http.x-real = std.real(req.http.x-foo, 0.0);
+
 $Function BOOL healthy(BACKEND)
 
 Description

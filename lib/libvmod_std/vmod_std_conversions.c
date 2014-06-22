@@ -168,3 +168,33 @@ vmod_ip(const struct vrt_ctx *ctx, VCL_STRING s, VCL_IP d)
 		freeaddrinfo(res0);
 	return (r);
 }
+
+VCL_REAL __match_proto__()
+vmod_real(const struct vrt_ctx *ctx, VCL_STRING p, VCL_REAL d)
+{
+	char *e;
+	double r;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	if (p == NULL)
+		return (d);
+
+	while (isspace(*p))
+		p++;
+
+	if (*p != '+' && *p != '-' && !isdigit(*p))
+		return (d);
+
+	e = NULL;
+
+	r = strtod(p, &e);
+
+	if (!isfinite(r))
+		return (d);
+
+	if (e == NULL || *e != '\0')
+		return (d);
+
+	return (r);
+}

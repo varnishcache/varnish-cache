@@ -1,0 +1,23 @@
+varnishtest "Test vmod_std.real conversion"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import ${vmod_std};
+
+	sub vcl_deliver {
+		set resp.http.x-real = std.real(req.http.foo, 0.0);
+		set resp.http.x-fallback = std.real(req.http.bar, 0.0);
+	}
+} -start
+
+client c1 {
+	txreq -hdr "foo: 1.00"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.x-real == 1.000
+	expect resp.http.x-fallback == 0.000
+} -run
