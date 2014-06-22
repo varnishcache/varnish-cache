@@ -1,68 +1,36 @@
-varnishtest "Test querysort in std vmod"
+varnishtest "Test std.querysort"
 
-server s1 {
-
-    rxreq
-    txresp
-
-    rxreq
-    txresp
-
-    rxreq
-    txresp
-
-    rxreq
-    txresp
-
-    rxreq
-    txresp
-
-    rxreq
-    txresp
-
-    rxreq
-    txresp
-
-    rxreq
-    txresp
-
+server s1 -repeat 5 {
+	rxreq
+	txresp
 } -start
 
 varnish v1 -vcl+backend {
+	import ${vmod_std};
 
-    import ${vmod_std};
-    sub vcl_deliver {
-        set resp.http.naren = std.querysort(req.url);
-    }
-
+	sub vcl_deliver {
+		set resp.http.url = std.querysort(req.url);
+	}
 } -start
 
 client c1 {
+	txreq -url "/foo/bar?t=0&b=0&p=0&c=5"
+	rxresp
+	expect resp.http.url == "/foo/bar?b=0&c=5&p=0&t=0"
 
-    txreq -url "/video/44505073?title=0&byline=0&portrait=0&color=51a516"
-    rxresp
-    expect resp.http.naren == "/video/44505073?byline=0&color=51a516&portrait=0&title=0"
+	txreq -url "/foo/bar?coa=0&co=0"
+	rxresp
+	expect resp.http.url == "/foo/bar?co=0&coa=0"
 
-    txreq -url "/video/44505073?byline=0&&&&&"
-    rxresp
-    expect resp.http.naren == "/video/44505073?byline=0"
+	txreq -url "/foo/bar?a=0&&&&&"
+	rxresp
+	expect resp.http.url == "/foo/bar?a=0"
 
-    txreq -url "/video/2?&"
-    rxresp
-    expect resp.http.naren == "/video/2?"
+	txreq -url "/foo/bar?&"
+	rxresp
+	expect resp.http.url == "/foo/bar?"
 
-    txreq -url "/video/2"
-    rxresp
-    expect resp.http.naren == "/video/2"
-
-    txreq -url "/video/2?cod=cape&cape=cod"
-    rxresp
-    expect resp.http.naren == "/video/2?cape=cod&cod=cape"
-
-    txreq -url "/"
-    rxresp
-    expect resp.http.naren == "/"
-
-}
-
-client c1 -run
+	txreq -url "/foo/bar"
+	rxresp
+	expect resp.http.url == "/foo/bar"
+} -run
