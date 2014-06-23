@@ -143,6 +143,27 @@ Description
 Example
 	set req.http.x-real = std.real(req.http.x-foo, 0.0);
 
+$Function TIME real2time(REAL)
+
+Description
+	Converts the real *r* to a time.
+Example
+	set req.http.x-time = std.real2time(1140618699.00);
+
+$Function INT time2integer(TIME)
+
+Description
+	Converts the time *t* to a integer.
+Example
+	set req.http.x-int = std.time2integer(now);
+
+$Function REAL time2real(TIME)
+
+Description
+	Converts the time *t* to a real.
+Example
+	set req.http.x-real = std.time2real(now);
+
 $Function BOOL healthy(BACKEND)
 
 Description

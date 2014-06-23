@@ -1,0 +1,23 @@
+varnishtest "Test std.real2time, std.time2integer and std.time2real"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import ${vmod_std};
+
+	sub vcl_deliver {
+		set resp.http.x-foo = std.integer(req.http.foo, 0);
+		set resp.http.x-bar = std.time2integer(std.real2time(std.real(resp.http.x-foo, 0.0)));
+		set resp.http.x-baz = std.time2real(std.real2time(std.real(resp.http.x-foo, 0.0)));
+	}
+} -start
+
+client c1 {
+	txreq -hdr "foo: 1140618699"
+	rxresp
+	expect resp.http.x-foo == resp.http.x-bar
+	expect resp.http.x-baz == 1140618699.000
+} -run

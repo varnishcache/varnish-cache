@@ -195,3 +195,27 @@ vmod_real(const struct vrt_ctx *ctx, VCL_STRING p, VCL_REAL d)
 
 	return (r);
 }
+
+VCL_TIME __match_proto__(td_std_real2time)
+vmod_real2time(const struct vrt_ctx *ctx, VCL_REAL r)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	return (r);
+}
+
+VCL_INT __match_proto__(td_std_time2integer)
+vmod_time2integer(const struct vrt_ctx *ctx, VCL_TIME t)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	return (t);
+}
+
+VCL_REAL __match_proto__(td_std_time2real)
+vmod_time2real(const struct vrt_ctx *ctx, VCL_TIME t)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	return (t);
+}
