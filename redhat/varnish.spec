@@ -23,6 +23,7 @@ Requires: varnish-libs = %{version}-%{release}
 Requires: logrotate
 Requires: ncurses
 Requires: pcre
+Requires: libedit
 Requires: jemalloc
 Requires(pre): shadow-utils
 Requires(post): /sbin/chkconfig, /usr/bin/uuidgen
