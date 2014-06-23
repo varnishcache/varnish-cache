@@ -50,6 +50,7 @@
 #include <stdint.h>
 #include <ctype.h>
 #include <time.h>
+#include <math.h>
 
 #include "base64.h"
 #include "vapi/vsm.h"
@@ -243,20 +244,27 @@ format_time(const struct format *format)
 	struct tm tm;
 
 	CHECK_OBJ_NOTNULL(format, FORMAT_MAGIC);
-	if (CTX.frag[F_tstart].gen != CTX.gen ||
-	    CTX.frag[F_tend].gen != CTX.gen) {
+	if (CTX.frag[F_tstart].gen == CTX.gen) {
+		t_start = strtod(CTX.frag[F_tstart].b, &p);
+		if (p != CTX.frag[F_tstart].e)
+			t_start = NAN;
+	} else
+		t_start = NAN;
+	if (isnan(t_start)) {
+		/* Missing t_start is a no go */
 		if (format->string == NULL)
 			return (-1);
 		AZ(VSB_cat(CTX.vsb, format->string));
 		return (0);
 	}
 
-	t_start = strtod(CTX.frag[F_tstart].b, &p);
-	if (p != CTX.frag[F_tstart].e)
-		return (-1);
-	t_end = strtod(CTX.frag[F_tend].b, &p);
-	if (p != CTX.frag[F_tend].e)
-		return (-1);
+	/* Missing t_end defaults to t_start */
+	if (CTX.frag[F_tend].gen == CTX.gen) {
+		t_end = strtod(CTX.frag[F_tend].b, &p);
+		if (p != CTX.frag[F_tend].e)
+			t_end = t_start;
+	} else
+		t_end = t_start;
 
 	switch (format->time_type) {
 	case 'D':
