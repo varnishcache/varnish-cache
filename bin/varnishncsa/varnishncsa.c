@@ -74,7 +74,7 @@ enum e_frag {
 	F_H,			/* %H Proto */
 	F_U,			/* %U URL path */
 	F_q,			/* %q Query string */
-	F_b,			/* %b Bytes */
+	F_b,			/* %b Body bytes sent */
 	F_h,			/* %h Host name / IP Address */
 	F_m,			/* %m Method */
 	F_s,			/* %s Status */
@@ -527,7 +527,7 @@ parse_format(const char *format)
 
 		p++;
 		switch (*p) {
-		case 'b':	/* Bytes */
+		case 'b':	/* Body bytes sent */
 			addf_fragment(&CTX.frag[F_b], "-");
 			break;
 		case 'D':	/* Float request time */
@@ -760,6 +760,12 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				e--;
 
 			switch (tag) {
+			case SLT_PipeAcct:
+				frag_fields(b, e,
+				    3, &CTX.frag[F_I],
+				    4, &CTX.frag[F_O],
+				    0, NULL);
+				break;
 			case SLT_ReqStart:
 				frag_fields(b, e, 1, &CTX.frag[F_h], 0, NULL);
 				break;
