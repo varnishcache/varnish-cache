@@ -211,7 +211,7 @@ unsigned
 V1D_FlushReleaseAcct(struct req *req)
 {
 	unsigned u;
-	ssize_t txcnt = 0, hdrbytes;
+	uint64_t txcnt = 0, hdrbytes;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->wrk, WORKER_MAGIC);

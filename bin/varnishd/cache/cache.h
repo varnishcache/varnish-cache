@@ -236,7 +236,7 @@ struct acct_req {
 /*--------------------------------------------------------------------*/
 
 struct acct_bereq {
-#define ACCT(foo)	ssize_t		foo;
+#define ACCT(foo)	uint64_t	foo;
 #include "tbl/acct_fields_bereq.h"
 #undef ACCT
 };
@@ -665,6 +665,7 @@ struct req {
 
 	unsigned char		wantbody;
 	uint64_t		req_bodybytes;	/* Parsed req bodybytes */
+	intptr_t		chunk_ctr;	/* Parsed req bodybytes */
 
 	uint64_t		resp_hdrbytes;	/* Scheduled resp hdrbytes */
 	uint64_t		resp_bodybytes; /* Scheduled resp bodybytes */
@@ -866,7 +867,7 @@ enum http1_chunked_ret {
 };
 enum http1_chunked_ret
 HTTP1_Chunked(struct http_conn *htc, intptr_t *priv, const char **error,
-    int64_t *statp, void *ptr, ssize_t *lp);
+    uint64_t *statp, void *ptr, ssize_t *lp);
 
 /* cache_http1_deliver.c */
 unsigned V1D_FlushReleaseAcct(struct req *req);
@@ -1123,7 +1124,7 @@ void WRW_Chunked(const struct worker *w);
 void WRW_EndChunk(const struct worker *w);
 void WRW_Reserve(struct worker *w, int *fd, struct vsl_log *, double t0);
 unsigned WRW_Flush(const struct worker *w);
-unsigned WRW_FlushRelease(struct worker *w, ssize_t *pacc);
+unsigned WRW_FlushRelease(struct worker *w, uint64_t *pacc);
 unsigned WRW_Write(const struct worker *w, const void *ptr, int len);
 unsigned WRW_WriteH(const struct worker *w, const txt *hh, const char *suf);
 

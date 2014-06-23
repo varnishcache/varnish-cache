@@ -102,7 +102,7 @@ WRW_Reserve(struct worker *wrk, int *fd, struct vsl_log *vsl, double t0)
 }
 
 static void
-wrw_release(struct worker *wrk, ssize_t *pacc)
+wrw_release(struct worker *wrk, uint64_t *pacc)
 {
 	struct wrw *wrw;
 
@@ -219,7 +219,7 @@ WRW_Flush(const struct worker *wrk)
 }
 
 unsigned
-WRW_FlushRelease(struct worker *wrk, ssize_t *pacc)
+WRW_FlushRelease(struct worker *wrk, uint64_t *pacc)
 {
 	unsigned u;
 

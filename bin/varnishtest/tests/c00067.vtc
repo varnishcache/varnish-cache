@@ -1,0 +1,24 @@
+varnishtest "chunked req.body"
+
+server s1 {
+	rxreq
+	expect req.bodylen == 106
+	txresp -body "ABCD"
+} -start
+
+varnish v1 -vcl+backend {
+} -start
+
+client c1 {
+	txreq -req POST -nolen -hdr "Transfer-encoding: chunked"
+	chunked {BLA}
+	delay .2
+	chunkedlen 100
+	delay .2
+	chunked {FOO}
+	delay .2
+	chunkedlen 0
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 4
+} -run

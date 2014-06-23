@@ -535,7 +535,7 @@ HTTP1_Write(const struct worker *w, const struct http *hp, const int *hf)
 
 enum http1_chunked_ret
 HTTP1_Chunked(struct http_conn *htc, intptr_t *priv, const char **error,
-    int64_t *statp, void *ptr, ssize_t *lp)
+    uint64_t *statp, void *ptr, ssize_t *lp)
 {
 	int i;
 	char buf[20];		/* XXX: 20 is arbitrary */
