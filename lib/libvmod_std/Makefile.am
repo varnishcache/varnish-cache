@@ -17,19 +17,19 @@ libvmod_std_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-version -s
 
 libvmod_std_la_SOURCES = \
 	vmod_std.c \
+	vmod_std_conversions.c \
 	vmod_std_fileread.c \
-	vmod_std_conversions.c
+	vmod_std_querysort.c
 
 nodist_libvmod_std_la_SOURCES = \
 	vcc_if.c \
 	vcc_if.h
 
 # BUILT_SOURCES is only a hack and dependency tracking does not help for the first build
-vmod_std.lo vmod_std_fileread.lo vmod_std_conversions.lo: vcc_if.h
+$(libvmod_std_la_OBJECTS): vcc_if.h
 
 vcc_if.c vcc_if.h vmod_std.rst vmod_std.man.rst: $(vmodtool) $(vmod_srcdir)/vmod.vcc
 	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(vmod_srcdir)/vmod.vcc
-
 
 EXTRA_DIST = vmod.vcc
 
