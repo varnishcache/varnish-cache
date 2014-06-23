@@ -192,6 +192,31 @@ V1F_Setup_Fetch(struct busyobj *bo)
 }
 
 /*--------------------------------------------------------------------
+ * Pass the request body to the backend with chunks
+ */
+
+static int __match_proto__(req_body_iter_f)
+vbf_iter_req_body_chunked(struct req *req, void *priv, void *ptr, size_t l)
+{
+	struct worker *wrk;
+	char buf[20];
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CAST_OBJ_NOTNULL(wrk, priv, WORKER_MAGIC);
+
+	if (l > 0) {
+		bprintf(buf, "%jx\r\n", (uintmax_t)l);
+		VSLb(req->vsl, SLT_Debug, "WWWW: %s", buf);
+		(void)WRW_Write(wrk, buf, strlen(buf));
+		(void)WRW_Write(wrk, ptr, l);
+		(void)WRW_Write(wrk, "\r\n", 2);
+		if (WRW_Flush(wrk))
+			return (-1);
+	}
+	return (0);
+}
+
+/*--------------------------------------------------------------------
  * Pass the request body to the backend
  */
 
@@ -231,6 +256,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	int i, j, first;
 	struct http_conn *htc;
 	ssize_t hdrbytes;
+	int do_chunked = 0;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_ORNULL(req, REQ_MAGIC);
@@ -262,6 +288,11 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	if (!http_GetHdr(bo->bereq, H_Host, NULL))
 		VDI_AddHostHeader(bo->bereq, vc);
 
+	if (req != NULL && req->req_body_status == REQ_BODY_CHUNKED) {
+		http_PrintfHeader(hp, "Transfer-Encoding: chunked");
+		do_chunked = 1;
+	}
+
 	(void)VTCP_blocking(vc->fd);	/* XXX: we should timeout instead */
 	WRW_Reserve(wrk, &vc->fd, bo->vsl, bo->t_prev);
 	hdrbytes = HTTP1_Write(wrk, hp, HTTP1_Req);
@@ -270,10 +301,16 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	i = 0;
 
 	if (req != NULL) {
-		i = HTTP1_IterateReqBody(req, vbf_iter_req_body, wrk);
-		if (req->req_body_status == REQ_BODY_DONE)
+		if (do_chunked) {
+			i = HTTP1_IterateReqBody(req,
+			    vbf_iter_req_body_chunked, wrk);
+			(void)WRW_Write(wrk, "0\r\n\r\n", 5);
+		} else {
+			i = HTTP1_IterateReqBody(req, vbf_iter_req_body, wrk);
+		}
+		if (req->req_body_status == REQ_BODY_DONE) {
 			retry = -1;
-		if (req->req_body_status == REQ_BODY_FAIL) {
+		} else if (req->req_body_status == REQ_BODY_FAIL) {
 			VSLb(bo->vsl, SLT_FetchError,
 			    "req.body read error: %d (%s)",
 			    errno, strerror(errno));

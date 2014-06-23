@@ -285,8 +285,10 @@ http1_req_body_status(struct req *req)
 		req->h1.bytes_yet = req->req_bodybytes - req->h1.bytes_done;
 		return (REQ_BODY_PRESENT);
 	}
-	if (http_HdrIs(req->http, H_Transfer_Encoding, "chunked"))
+	if (http_HdrIs(req->http, H_Transfer_Encoding, "chunked")) {
+		req->chunk_ctr = -1;
 		return (REQ_BODY_CHUNKED);
+	}
 	if (http_GetHdr(req->http, H_Transfer_Encoding, NULL))
 		return (REQ_BODY_FAIL);
 	return (REQ_BODY_NONE);
@@ -512,6 +514,7 @@ http1_iter_req_body(struct req *req, enum req_body_state_e bs,
 		switch (HTTP1_Chunked(req->htc, &req->chunk_ctr, &err,
 		    &req->acct.req_bodybytes, buf, &len)) {
 		case H1CR_ERROR:
+			VSLb(req->vsl, SLT_Debug, "CHUNKERR: %s", err);
 			return (-1);
 		case H1CR_MORE:
 			return (len);
@@ -639,7 +642,7 @@ int
 HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
 {
 	struct storage *st;
-	ssize_t l;
+	ssize_t l, l2;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
@@ -661,6 +664,7 @@ HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
 		req->req_body_status = REQ_BODY_FAIL;
 		return (-1);
 	}
+	l2 = 0;
 
 	st = NULL;
 	do {
@@ -690,13 +694,28 @@ HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
 			break;
 		}
 		if (l > 0) {
+			l2 += l;
 			st->len += l;
 			if (st->space == st->len)
 				st = NULL;
 		}
 	} while (l > 0);
-	if (l == 0)
+	if (l == 0) {
+		req->req_bodybytes = l2;
+		/* We must update also the "pristine" req.* copy */
+
+		http_Unset(req->http0, H_Content_Length);
+		http_Unset(req->http0, H_Transfer_Encoding);
+		http_PrintfHeader(req->http0, "Content-Length: %ju",
+		    req->req_bodybytes);
+
+		http_Unset(req->http, H_Content_Length);
+		http_Unset(req->http, H_Transfer_Encoding);
+		http_PrintfHeader(req->http, "Content-Length: %ju",
+		    req->req_bodybytes);
+
 		req->req_body_status = REQ_BODY_CACHED;
+	}
 	VSLb_ts_req(req, "ReqBody", VTIM_real());
 	return (l);
 }

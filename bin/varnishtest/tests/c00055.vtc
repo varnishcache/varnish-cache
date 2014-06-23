@@ -25,7 +25,7 @@ varnish v1 -cliok "param.set vcc_allow_inline_c true" -vcl+backend {
 varnish v1 -cliok "param.set debug +syncvsl"
 
 client c1 {
-	txreq -body "FOO"
+	txreq -req "POST" -body "FOO"
 	rxresp
 	expect resp.http.Foo == "Foo"
 	expect resp.bodylen == 2

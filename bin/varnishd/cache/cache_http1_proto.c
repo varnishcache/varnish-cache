@@ -196,7 +196,7 @@ HTTP1_Read(struct http_conn *htc, void *d, size_t len)
 {
 	size_t l;
 	unsigned char *p;
-	ssize_t i;
+	ssize_t i = 0;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	l = 0;
@@ -212,12 +212,12 @@ HTTP1_Read(struct http_conn *htc, void *d, size_t len)
 		if (htc->pipeline.b == htc->pipeline.e)
 			htc->pipeline.b = htc->pipeline.e = NULL;
 	}
-	if (len == 0)
-		return (l);
-	i = read(htc->fd, p, len);
-	if (i < 0) {
-		VSLb(htc->vsl, SLT_FetchError, "%s", strerror(errno));
-		return (i);
+	if (len > 0) {
+		i = read(htc->fd, p, len);
+		if (i < 0) {
+			VSLb(htc->vsl, SLT_FetchError, "%s", strerror(errno));
+			return (i);
+		}
 	}
 	return (i + l);
 }

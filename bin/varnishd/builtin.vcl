@@ -60,12 +60,6 @@ sub vcl_recv {
         return (pipe);
     }
 
-    /* We don't support chunked uploads, except when piping. */
-    if ((req.method == "POST" || req.method == "PUT") &&
-      req.http.transfer-encoding ~ "chunked") {
-        return(pipe);
-    }
-
     if (req.method != "GET" && req.method != "HEAD") {
         /* We only deal with GET and HEAD by default */
         return (pass);
