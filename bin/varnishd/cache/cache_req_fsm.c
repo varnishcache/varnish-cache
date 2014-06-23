@@ -593,6 +593,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	wrk->stats.s_pipe++;
 	bo = VBO_GetBusyObj(wrk, req);
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, SLT_BereqMethod);
+	VSLb(bo->vsl, SLT_Begin, "bereq %u pipe", req->vsl->wid & VSL_IDENTMASK);
 	http_FilterReq(bo->bereq, req->http, 0);	// XXX: 0 ?
 	http_PrintfHeader(bo->bereq,
 	    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
@@ -604,6 +605,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 		INCOMPL();
 	assert(wrk->handling == VCL_RET_PIPE);
 
+	VSLb(req->vsl, SLT_Link, "bereq %u pipe", bo->vsl->wid & VSL_IDENTMASK);
 	PipeRequest(req, bo);
 	assert(WRW_IsReleased(wrk));
 	http_Teardown(bo->bereq);

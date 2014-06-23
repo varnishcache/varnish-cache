@@ -103,6 +103,7 @@ enum VSL_reason_e {
 	VSL_r_pass,
 	VSL_r_fetch,
 	VSL_r_bgfetch,
+	VSL_r_pipe,
 	VSL_r__MAX,
 };
 

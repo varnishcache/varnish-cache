@@ -65,6 +65,7 @@ static const char * const vsl_r_names[VSL_r__MAX] = {
 	[VSL_r_pass]	= "pass",
 	[VSL_r_fetch]	= "fetch",
 	[VSL_r_bgfetch]	= "bgfetch",
+	[VSL_r_pipe]	= "pipe",
 };
 
 struct vtx;
