@@ -558,7 +558,7 @@ parse_format(const char *format)
 			addf_requestline();
 			break;
 		case 's':	/* Status code */
-			addf_fragment(&CTX.frag[F_s], "");
+			addf_fragment(&CTX.frag[F_s], "-");
 			break;
 		case 't':	/* strftime */
 			addf_time(*p, TIME_FMT, NULL);
@@ -791,11 +791,13 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 					frag_fields(p, e, 1,
 					    &CTX.frag[F_tstart], 0, NULL);
 
-				} else if (isprefix(b, "Resp:", e, &p)) {
+				} else if (isprefix(b, "Resp:", e, &p) ||
+					isprefix(b, "PipeSess:", e, &p)) {
 					frag_fields(p, e, 1,
 					    &CTX.frag[F_tend], 0, NULL);
 
-				} else if (isprefix(b, "Process:", e, &p)) {
+				} else if (isprefix(b, "Process:", e, &p) ||
+					isprefix(b, "Pipe:", e, &p)) {
 					frag_fields(p, e, 2,
 					    &CTX.frag[F_ttfb], 0, NULL);
 				}
@@ -826,14 +828,15 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 					   wrong */
 					CTX.hitmiss = "miss";
 					CTX.handling = "error";
+				}
+				break;
+			case SLT_VCL_return:
+				if (!strcasecmp(b, "restart")) {
+					skip = 1;
 				} else if (!strcasecmp(b, "pipe")) {
 					CTX.hitmiss = "miss";
 					CTX.handling = "pipe";
 				}
-				break;
-			case SLT_VCL_return:
-				if (!strcasecmp(b, "restart"))
-					skip = 1;
 				break;
 			default:
 				break;
