@@ -557,6 +557,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	VBO_setstate(bo, BOS_FINISHED);
 	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
+	if (bo->ims_obj != NULL)
+		EXP_Rearm(bo->ims_obj, bo->ims_obj->exp.t_origin, 0, 0, 0);
 	return (F_STP_DONE);
 }
 
