@@ -237,17 +237,17 @@ vmod_timestamp(const struct vrt_ctx *ctx, VCL_STRING label)
     ((a) == (b) || ((a) == '\0' && (b) == '&') || ((a) == '&' && (b) == '\0'))
 
 static ssize_t
-param_compare(char *s, char *t)
+param_compare(const char *s, const char *t)
 {
 	for (; QS_EQUALS(*s, *t); s++, t++) {
-		if (*s == '&' || s == '\0')
+		if (*s == '&' || *s == '\0')
 			return (0);
 	}
 	return (*s - *t);
 }
 
 static size_t
-param_copy(char *dst, char *src)
+param_copy(char *dst, const char *src)
 {
 	size_t len;
 	len = strcspn(src, "&");
