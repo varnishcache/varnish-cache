@@ -40,7 +40,6 @@
 
 #include "cache_backend.h"
 #include "vcli_priv.h"
-#include "vct.h"
 #include "vtcp.h"
 #include "vtim.h"
 
@@ -110,10 +109,7 @@ v1f_pull_straight(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 static enum vfp_status __match_proto__(vfp_pull_f)
 v1f_pull_chunked(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 {
-	int i;
-	char buf[20];		/* XXX: 20 is arbitrary */
-	unsigned u;
-	ssize_t cl, l, lr;
+	const char *err;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	if (p == vfp_init)
@@ -123,77 +119,18 @@ v1f_pull_chunked(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 	AN(p);
 	AN(lp);
 	AN(priv);
-	l = *lp;
-	*lp = 0;
-	if (*priv == -1) {
-		/* Skip leading whitespace */
-		do {
-			lr = HTTP1_Read(&bo->htc, buf, 1);
-			if (lr <= 0)
-				return (VFP_Error(bo, "chunked read err"));
-			bo->acct.beresp_bodybytes += lr;
-		} while (vct_islws(buf[0]));
 
-		if (!vct_ishex(buf[0]))
-			 return (VFP_Error(bo, "chunked header non-hex"));
-
-		/* Collect hex digits, skipping leading zeros */
-		for (u = 1; u < sizeof buf; u++) {
-			do {
-				lr = HTTP1_Read(&bo->htc, buf + u, 1);
-				if (lr <= 0)
-					return (VFP_Error(bo,
-					    "chunked read err"));
-				bo->acct.beresp_bodybytes += lr;
-			} while (u == 1 && buf[0] == '0' && buf[u] == '0');
-			if (!vct_ishex(buf[u]))
-				break;
-		}
-
-		if (u >= sizeof buf)
-			return (VFP_Error(bo,"chunked header too long"));
-
-		/* Skip trailing white space */
-		while(vct_islws(buf[u]) && buf[u] != '\n') {
-			lr = HTTP1_Read(&bo->htc, buf + u, 1);
-			if (lr <= 0)
-				return (VFP_Error(bo, "chunked read err"));
-			bo->acct.beresp_bodybytes += lr;
-		}
-
-		if (buf[u] != '\n')
-			return (VFP_Error(bo,"chunked header no NL"));
-
-		buf[u] = '\0';
-
-		cl = vbf_fetch_number(buf, 16);
-		if (cl < 0)
-			return (VFP_Error(bo,"chunked header number syntax"));
-		*priv = cl;
-	}
-	if (*priv > 0) {
-		if (*priv < l)
-			l = *priv;
-		lr = HTTP1_Read(&bo->htc, p, l);
-		if (lr <= 0)
-			return (VFP_Error(bo, "straight insufficient bytes"));
-		bo->acct.beresp_bodybytes += lr;
-		*lp = lr;
-		*priv -= lr;
-		if (*priv == 0)
-			*priv = -1;
+	switch (HTTP1_Chunked(&bo->htc, priv, &err,
+	    &bo->acct.beresp_bodybytes, p, lp)) {
+	case H1CR_ERROR:
+		return (VFP_Error(bo, "%s", err));
+	case H1CR_MORE:
 		return (VFP_OK);
+	case H1CR_END:
+		return (VFP_END);
+	default:
+		WRONG("invalid HTTP1_Chunked return");
 	}
-	AZ(*priv);
-	i = HTTP1_Read(&bo->htc, buf, 1);
-	if (i <= 0)
-		return (VFP_Error(bo, "chunked read err"));
-	bo->acct.beresp_bodybytes += i;
-	if (buf[0] == '\r' && HTTP1_Read(&bo->htc, buf, 1) <= 0)
-		return (VFP_Error(bo, "chunked read err"));
-	if (buf[0] != '\n')
-		return (VFP_Error(bo,"chunked tail no NL"));
-	return (VFP_END);
 }
 
 /*--------------------------------------------------------------------*/

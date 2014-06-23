@@ -859,6 +859,14 @@ int HTTP1_CacheReqBody(struct req *req, ssize_t maxsize);
 int HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv);
 extern const int HTTP1_Req[3];
 extern const int HTTP1_Resp[3];
+enum http1_chunked_ret {
+	H1CR_ERROR,
+	H1CR_MORE,
+	H1CR_END,
+};
+enum http1_chunked_ret
+HTTP1_Chunked(struct http_conn *htc, intptr_t *priv, const char **error,
+    int64_t *statp, void *ptr, ssize_t *lp);
 
 /* cache_http1_deliver.c */
 unsigned V1D_FlushReleaseAcct(struct req *req);
