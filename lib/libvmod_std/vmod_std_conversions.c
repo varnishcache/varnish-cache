@@ -43,8 +43,8 @@
 #include "vsa.h"
 #include "vcc_if.h"
 
-VCL_DURATION __match_proto__()
-vmod_duration(const struct vrt_ctx *ctx, const char *p, VCL_DURATION d)
+VCL_DURATION __match_proto__(td_std_duration)
+vmod_duration(const struct vrt_ctx *ctx, VCL_STRING p, VCL_DURATION d)
 {
 	char *e;
 	double r;
@@ -100,8 +100,8 @@ vmod_duration(const struct vrt_ctx *ctx, const char *p, VCL_DURATION d)
 	return (r);
 }
 
-VCL_INT __match_proto__()
-vmod_integer(const struct vrt_ctx *ctx, const char *p, VCL_INT i)
+VCL_INT __match_proto__(td_std_integer)
+vmod_integer(const struct vrt_ctx *ctx, VCL_STRING p, VCL_INT i)
 {
 	char *e;
 	long r;
@@ -121,10 +121,7 @@ vmod_integer(const struct vrt_ctx *ctx, const char *p, VCL_INT i)
 
 	r = strtol(p, &e, 0);
 
-	if (e == NULL)
-		return (i);
-
-	if (*e != '\0')
+	if (e == NULL || *e != '\0')
 		return (i);
 
 	return (r);
@@ -169,7 +166,7 @@ vmod_ip(const struct vrt_ctx *ctx, VCL_STRING s, VCL_IP d)
 	return (r);
 }
 
-VCL_REAL __match_proto__()
+VCL_REAL __match_proto__(td_std_real)
 vmod_real(const struct vrt_ctx *ctx, VCL_STRING p, VCL_REAL d)
 {
 	char *e;
