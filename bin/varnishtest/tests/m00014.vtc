@@ -1,6 +1,6 @@
 varnishtest "Test std.querysort"
 
-server s1 -repeat 5 {
+server s1 -repeat 6 {
 	rxreq
 	txresp
 } -start
@@ -18,17 +18,29 @@ client c1 {
 	rxresp
 	expect resp.http.url == "/foo/bar?b=0&c=5&p=0&t=0"
 
+	delay .1
+
 	txreq -url "/foo/bar?coa=0&co=0"
 	rxresp
 	expect resp.http.url == "/foo/bar?co=0&coa=0"
+
+	delay .1
 
 	txreq -url "/foo/bar?a=0&&&&&"
 	rxresp
 	expect resp.http.url == "/foo/bar?a=0"
 
+	txreq -url "/foo/bar?&a=0&&&&&z&w&x&"
+	rxresp
+	expect resp.http.url == "/foo/bar?a=0&w&x&z"
+
+	delay .1
+
 	txreq -url "/foo/bar?&"
 	rxresp
 	expect resp.http.url == "/foo/bar?"
+
+	delay .1
 
 	txreq -url "/foo/bar"
 	rxresp
