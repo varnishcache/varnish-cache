@@ -28,97 +28,105 @@
 
 #include "config.h"
 
+#include <stdlib.h>
+
 #include "vrt.h"
 
 #include "cache/cache.h"
 
 #include "vcc_if.h"
 
-#define QS_MAX_PARAM_COUNT	32
-#define QS_EQUALS(a, b)	\
-    ((a) == (b) || ((a) == '\0' && (b) == '&') || ((a) == '&' && (b) == '\0'))
-
-static ssize_t
-param_compare(const char *s, const char *t)
+static int
+compa(const void *a, const void *b)
 {
-	for (; QS_EQUALS(*s, *t); s++, t++) {
-		if (*s == '&' || *s == '\0')
-			return (0);
-	}
-	return (*s - *t);
-}
+	const char * const *pa = a;
+	const char * const *pb = b;
+	const char *a1, *b1;
 
-static size_t
-param_copy(char *dst, const char *src)
-{
-	size_t len;
-	len = strcspn(src, "&");
-	memcpy(dst, src, len);
-	return (len);
+	for(a1 = pa[0], b1 = pb[0]; a1 < pa[1] && b1 < pb[1]; a1++, b1++)
+		if (*a1 != *b1)
+			return (*a1 - *b1);
+	return (0);
 }
 
 VCL_STRING __match_proto__(td_std_querysort)
 vmod_querysort(const struct vrt_ctx *ctx, VCL_STRING url)
 {
-	char *param, *params[QS_MAX_PARAM_COUNT];
+	const char *cq, *cu;
 	char *p, *r;
-	size_t len;
-	int param_count;
-	int i, n;
+	const char **pp;
+	const char **pe;
+	int np;
+	int i;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	if (url == NULL)
 		return (NULL);
 
-	p = strchr(url, '?');
-	if (p == NULL)
+	/* Split :query from :url */
+	cu = strchr(url, '?');
+	if (cu == NULL)
 		return (url);
 
-	param_count = 0;
-	params[param_count++] = ++p;
-	len = p - url;
-
-	while ((p = strchr(p, '&')) != NULL) {
-		param = ++p;
-
-		for (i = 0; i < param_count; i++) {
-			if (param[0] < params[i][0] ||
-			    param_compare(param, params[i]) < 0) {
-				for (n = param_count; n > i; n--)
-					params[n] = params[n - 1];
-				break;
-			}
-		}
-		params[i] = param;
-		param_count++;
-
-		if (param_count == QS_MAX_PARAM_COUNT)
-			return (url);
-	}
-
-	if (param_count == 1)
+	/* Spot single-param queries */
+	cq = strchr(cu, '&');
+	if (cq == NULL)
 		return (url);
 
-	r = WS_Alloc(ctx->ws, strchr(param, '\0') - url + 1);
+	r = WS_Copy(ctx->ws, url, -1);
 	if (r == NULL)
 		return (url);
 
-	p = memcpy(r, url, len);
-	p += len;
+	(void)WS_Reserve(ctx->ws, 0);
+	/* We trust cache_ws.c to align sensibly */
+	pp = (const char**)(void*)(ctx->ws->f);
+	pe = (const char**)(void*)(ctx->ws->e);
 
-	for (i = 0; i < param_count - 1; i++) {
-		if (params[i][0] != '\0' && params[i][0] != '&')
-			break;
+	if (pp + 4 > pe) {
+		WS_Release(ctx->ws, 0);
+		WS_MarkOverflow(ctx->ws);
+		return (url);
 	}
 
-	for (; i < param_count - 1; i++) {
-		p += param_copy(p, params[i]);
-		*p++ = '&';
+	/* Collect params as pointer pairs */
+	np = 0;
+	pp[np++] = 1 + cu;
+	for (cq = 1 + cu; *cq != '\0'; cq++) {
+		if (*cq == '&') {
+			if (pp + 3 > pe) {
+				WS_Release(ctx->ws, 0);
+				WS_MarkOverflow(ctx->ws);
+				return (url);
+			}
+			pp[np++] = cq;
+			/* Skip trivially empty params */
+			while(cq[1] == '&')
+				cq++;
+			pp[np++] = cq + 1;
+		}
 	}
+	pp[np++] = cq;
+	assert(!(np & 1));
 
-	p += param_copy(p, params[i]);
+	qsort(pp, np / 2, sizeof(*pp) * 2, compa);
+
+	/* Emit sorted params */
+	p = 1 + r + (cu - url);
+	cq = "";
+	for (i = 0; i < np; i += 2) {
+		/* Ignore any edge-case zero length params */
+		if (pp[i + 1] == pp[i])
+			continue;
+		assert(pp[i + 1] > pp[i]);
+		if (*cq)
+			*p++ = *cq;
+		memcpy(p, pp[i], pp[i + 1] - pp[i]);
+		p += pp[i + 1] - pp[i];
+		cq = "&";
+	}
 	*p = '\0';
 
+	WS_Release(ctx->ws, 0);
 	return (r);
 }
