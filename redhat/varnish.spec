@@ -2,11 +2,11 @@
 %define __find_provides %{_builddir}/varnish-%{version}%{?v_rc:-%{?v_rc}}/redhat/find-provides
 Summary: High-performance HTTP accelerator
 Name: varnish
-Version: 3.0.5
+Version: 3.0.6
 Release: 1%{?dist}
 License: BSD
 Group: System Environment/Daemons
-URL: http://www.varnish-cache.org/
+URL: https://www.varnish-cache.org/
 #Source0: http://repo.varnish-cache.org/source/%{name}-%{version}.tar.gz
 Source0: %{name}-%{version}%{?v_rc:-%{v_rc}}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
