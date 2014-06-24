@@ -2,7 +2,7 @@
 %define __find_provides %{_builddir}/varnish-%{version}%{?v_rc:-%{?v_rc}}/redhat/find-provides
 Summary: High-performance HTTP accelerator
 Name: varnish
-Version: 3.0.6
+Version: 3.0.6rc1
 Release: 1%{?dist}
 License: BSD
 Group: System Environment/Daemons
