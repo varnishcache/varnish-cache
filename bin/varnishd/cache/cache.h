@@ -1235,6 +1235,7 @@ void WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func,
 
 void WS_Init(struct ws *ws, const char *id, void *space, unsigned len);
 unsigned WS_Reserve(struct ws *ws, unsigned bytes);
+void WS_MarkOverflow(struct ws *ws);
 void WS_Release(struct ws *ws, unsigned bytes);
 void WS_ReleaseP(struct ws *ws, char *ptr);
 void WS_Assert(const struct ws *ws);

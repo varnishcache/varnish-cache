@@ -85,7 +85,7 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 }
 
 
-static void
+void
 WS_MarkOverflow(struct ws *ws)
 {
 	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
