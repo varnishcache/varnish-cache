@@ -92,8 +92,6 @@ The following companies offer commercial Varnish support, and are listed
 here for your convenience.  If you want your company listed here, drop
 an email to phk@FreeBSD.org.
 
-.. XXX: Should we perhaps enhance this to explain Varnish Plus? benc
-
 	Varnish Software
 	sales@varnish-software.com
 
