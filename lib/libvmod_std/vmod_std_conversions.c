@@ -209,7 +209,7 @@ vmod_time2integer(const struct vrt_ctx *ctx, VCL_TIME t)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
-	return (t);
+	return ((long)floor(t));
 }
 
 VCL_REAL __match_proto__(td_std_time2real)
