@@ -1,10 +1,13 @@
 
-============================================
-Changes from 4.0.0 to 4.0.1-rc1 (2014-06-20)
-============================================
+========================================
+Changes from 4.0.0 to 4.0.1 (2014-06-24)
+========================================
 
 New since 4.0.0:
 
+- New functions in vmod_std: real2time, time2integer, time2real, real.
+- Chunked requests are now supported. (pass)
+- Add std.querysort() that sorts GET query arguments. (from libvmod-boltsort)
 - Varnish will no longer reply with "200 Not Modified".
 - Backend IMS is now only attempted when last status was 200.
 - Packaging now uses find-provides instead of find-requires. [redhat]
@@ -27,6 +30,9 @@ New since 4.0.0:
 Bugs fixed
 ----------
 
+* 1269_ - Use correct byte counters in varnishncsa when piping a request.
+* 1524_ - Chunked requests should be pipe-able.
+* 1530_ - Expire old object on successful IMS fetch.
 * 1475_ - time-to-first-byte in varnishncsa was potentially dishonest.
 * 1480_ - Porting guide for 4.0 is incomplete.
 * 1482_ - Inherit group memberships of -u specified user.
@@ -53,6 +59,9 @@ Bugs fixed
 * 1519_ - Round-robin director does not support weight. [docs]
 
 
+.. _1269: https://www.varnish-cache.org/trac/ticket/1269
+.. _1524: https://www.varnish-cache.org/trac/ticket/1524
+.. _1530: https://www.varnish-cache.org/trac/ticket/1530
 .. _1475: https://www.varnish-cache.org/trac/ticket/1475
 .. _1480: https://www.varnish-cache.org/trac/ticket/1480
 .. _1482: https://www.varnish-cache.org/trac/ticket/1482

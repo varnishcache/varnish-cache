@@ -1,4 +1,4 @@
-%define v_rc rc1
+%define XXXv_rc rc1
 %define vd_rc %{?v_rc:-%{?v_rc}}
 %define    _use_internal_dependency_generator 0
 %define __find_provides %{_builddir}/varnish-%{version}%{?v_rc:-%{?v_rc}}/redhat/find-provides
@@ -14,7 +14,7 @@ URL: http://www.varnish-cache.org/
 Source0: %{name}-%{version}%{?vd_rc}.tar.gz
 #Source0: %{name}-trunk.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-# To build from git, start with a make dist, see redhat/README.redhat 
+# To build from git, start with a make dist, see redhat/README.redhat
 # You will need at least automake autoconf libtool
 #BuildRequires: automake autoconf libtool
 BuildRequires: ncurses-devel groff pcre-devel pkgconfig libedit-devel jemalloc-devel
