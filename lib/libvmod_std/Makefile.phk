@@ -2,6 +2,7 @@
 VMOD_SRC += vmod_std.c
 VMOD_SRC += vmod_std_conversions.c
 VMOD_SRC += vmod_std_fileread.c
+VMOD_SRC += vmod_std_querysort.c
 
 TOPDIR= $(CURDIR)/../..
 include $(TOPDIR)/Makefile.inc.phk
