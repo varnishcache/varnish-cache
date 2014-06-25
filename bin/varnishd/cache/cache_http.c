@@ -95,12 +95,12 @@ http_VSL_log(const struct http *hp)
 /*--------------------------------------------------------------------*/
 
 static void
-http_fail(struct http *hp)
+http_fail(const struct http *hp)
 {
 
 	VSC_C_main->losthdr++;
-	VSLb(hp->vsl, SLT_Error, "out of workspace");
-	hp->failed = 1;
+	VSLb(hp->vsl, SLT_Error, "out of workspace (%s)", hp->ws->id);
+	WS_MarkOverflow(hp->ws);
 }
 
 /*--------------------------------------------------------------------*/
@@ -210,7 +210,7 @@ http_SetH(const struct http *to, unsigned n, const char *fm)
 /*--------------------------------------------------------------------*/
 
 static void
-http_PutField(struct http *to, int field, const char *string)
+http_PutField(const struct http *to, int field, const char *string)
 {
 	char *p;
 
@@ -274,7 +274,8 @@ http_CollectHdr(struct http *hp, const char *hdr)
 	unsigned u, l, ml, f, x, d;
 	char *b = NULL, *e = NULL;
 
-	if (hp->failed)
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+	if (WS_Overflowed(hp->ws))
 		return;
 	l = hdr[0];
 	assert(l == strlen(hdr + 1));
@@ -760,7 +761,7 @@ http_Merge(const struct http *fm, struct http *to, int not_ce)
  */
 
 void
-http_CopyHome(struct http *hp)
+http_CopyHome(const struct http *hp)
 {
 	unsigned u, l;
 	char *p;

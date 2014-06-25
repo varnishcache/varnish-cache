@@ -197,7 +197,6 @@ struct http {
 	uint16_t		status;
 	uint8_t			protover;
 	uint8_t			conds;		/* If-* headers present */
-	uint8_t			failed;		/* usually: ws-alloc failed */
 };
 
 /*--------------------------------------------------------------------
@@ -1017,7 +1016,7 @@ const char *http_GetReq(const struct http *hp);
 int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
 int http_IsHdr(const txt *hh, const char *hdr);
 enum sess_close http_DoConnection(const struct http *);
-void http_CopyHome(struct http *hp);
+void http_CopyHome(const struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
 void http_CollectHdr(struct http *hp, const char *hdr);
 void http_VSL_log(const struct http *hp);

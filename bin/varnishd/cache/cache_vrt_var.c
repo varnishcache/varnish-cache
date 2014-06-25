@@ -50,7 +50,7 @@ static char vrt_hostname[255] = "";
  */
 
 static void
-vrt_do_string(struct http *hp, int fld,
+vrt_do_string(const struct http *hp, int fld,
     const char *err, const char *p, va_list ap)
 {
 	const char *b;
@@ -60,7 +60,7 @@ vrt_do_string(struct http *hp, int fld,
 	b = VRT_String(hp->ws, NULL, p, ap);
 	if (b == NULL || *b == '\0') {
 		VSLb(hp->vsl, SLT_LostHeader, "%s", err);
-		hp->failed = 1;
+		WS_MarkOverflow(hp->ws);
 		return;
 	}
 	http_SetH(hp, fld, b);
@@ -100,11 +100,11 @@ VRT_l_##obj##_status(const struct vrt_ctx *ctx, long num)		\
 	CHECK_OBJ_NOTNULL(ctx->http_##obj, HTTP_MAGIC);			\
 	if (num > 65535) {						\
 		VSLb(ctx->vsl, SLT_VCL_Error, "%s.status > 65535", #obj); \
-		ctx->http_##obj->failed = 1;				\
+		WS_MarkOverflow(ctx->http_##obj->ws);			\
 	} else if ((num % 1000) < 100) {				\
 		VSLb(ctx->vsl, SLT_VCL_Error, "illegal %s.status (..0##)", \
 		    #obj);						\
-		ctx->http_##obj->failed = 1;				\
+		WS_MarkOverflow(ctx->http_##obj->ws);			\
 	} else {							\
 		http_SetStatus(ctx->http_##obj, (uint16_t)num);		\
 	}								\
@@ -244,7 +244,7 @@ VRT_l_client_identity(const struct vrt_ctx *ctx, const char *str, ...)
 	va_end(ap);
 	if (b == NULL) {
 		VSLb(ctx->vsl, SLT_LostHeader, "client.identity");
-		ctx->req->http->failed = 1;
+		WS_MarkOverflow(ctx->req->http->ws);
 		return;
 	}
 	ctx->req->client_identity = b;
@@ -331,7 +331,7 @@ VRT_l_beresp_storage_hint(const struct vrt_ctx *ctx, const char *str, ...)
 	va_end(ap);
 	if (b == NULL) {
 		VSLb(ctx->vsl, SLT_LostHeader, "storage.hint");
-		ctx->bo->beresp->failed = 1;
+		WS_MarkOverflow(ctx->bo->beresp->ws);
 		return;
 	}
 	ctx->bo->storage_hint = b;
