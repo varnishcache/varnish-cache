@@ -3,7 +3,7 @@ Changes from 3.0.5 to 3.0.6-rc1 (2014-06-24)
 ============================================
 
 - Document storage.<name>.* VCL variables. Bug 1514_.
-- Round up http_max_hdr to a multiple of 4. Bug 1327_.
+- Fix memory alignment panic when http_max_hdr is not a multiple of 4. Bug 1327_.
 - Avoid negative ReqEnd timestamps with ESI. Bug 1297_.
 - %D format for varnishncsa is now an integer (as documented)
 - Fix compile errors with clang.
