@@ -391,11 +391,9 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	memset(&ctx, 0, sizeof ctx);
 	ctx.magic = VRT_CTX_MAGIC;
 	if (req != NULL) {
-		// AZ(bo);
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
 		vsl = req->vsl;
-		ctx.vsl = vsl;
 		ctx.vcl = req->vcl;
 		ctx.http_req = req->http;
 		ctx.http_resp = req->resp;
@@ -404,16 +402,15 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 			ctx.http_obj = req->obj->http;
 	}
 	if (bo != NULL) {
-		// AZ(req);
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 		vsl = bo->vsl;
-		ctx.vsl = vsl;
 		ctx.vcl = bo->vcl;
 		ctx.http_bereq = bo->bereq;
 		ctx.http_beresp = bo->beresp;
 		ctx.bo = bo;
 	}
 	ctx.ws = ws;
+	ctx.vsl = vsl;
 	ctx.method = method;
 	ctx.handling = &wrk->handling;
 	aws = WS_Snapshot(wrk->aws);
@@ -424,7 +421,12 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	(void)func(&ctx);
 	VSLb(vsl, SLT_VCL_return, "%s", VCL_Return_Name(wrk->handling));
 	wrk->cur_method = 0;
-	WS_Reset(wrk->aws, aws);
+
+	/*
+	 * VCL/Vmods are not allowed to make permanent allocations from
+	 * wrk->aws, but they can reserve and return from it.
+	 */
+	assert(aws == WS_Snapshot(wrk->aws));
 }
 
 #define VCL_MET_MAC(func, upper, bitmap)				\
@@ -437,8 +439,7 @@ VCL_##func##_method(struct VCL_conf *vcl, struct worker *wrk,		\
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);				\
 	vcl_call_method(wrk, req, bo, ws, VCL_MET_ ## upper,		\
 	    vcl->func##_func);						\
-	assert((1U << wrk->handling) & bitmap);				\
-	AZ((1U << wrk->handling) & ~bitmap);			\
+	AN((1U << wrk->handling) & bitmap);				\
 }
 
 #include "tbl/vcl_returns.h"
