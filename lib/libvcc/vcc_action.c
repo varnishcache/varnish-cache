@@ -291,10 +291,10 @@ parse_hash_data(struct vcc *tl)
 	vcc_NextToken(tl);
 	SkipToken(tl, '(');
 
-	Fb(tl, 1, "VRT_hashdata(ctx, ");
+	Fb(tl, 1, "VRT_hashdata(ctx,\n  ");
 	vcc_Expr(tl, STRING_LIST);
 	ERRCHK(tl);
-	Fb(tl, 0, ");\n");
+	Fb(tl, 1, ");\n");
 	SkipToken(tl, ')');
 }
 
