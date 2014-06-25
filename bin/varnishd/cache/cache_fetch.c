@@ -164,6 +164,9 @@ vbf_beresp2obj(struct busyobj *bo)
 	else
 		obj->last_modified = floor(bo->exp.t_origin);
 
+	/* Disassociate the obj from the bo's workspace */
+	hp2->ws = NULL;
+
 	return (0);
 }
 
