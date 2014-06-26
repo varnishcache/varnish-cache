@@ -148,7 +148,7 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 	/* Clear the bogus "hold" count */
 	sg->nobj = 0;
 	for (;no > 0; so++,no--) {
-		if (so->ttl == 0 || so->ttl < t_now)
+		if (EXP_When(&so->exp) < t_now)
 			continue;
 		ALLOC_OBJ(oc, OBJCORE_MAGIC);
 		AN(oc);
@@ -157,7 +157,7 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 		smp_init_oc(oc, sg, no);
 		oc->ban = BAN_RefBan(oc, so->ban, sc->tailban);
 		HSH_Insert(wrk, so->hash, oc);
-		EXP_Inject(oc, sg->lru, so->ttl);
+		EXP_Inject(oc, sg->lru, EXP_When(&so->exp));
 		sg->nobj++;
 	}
 	Pool_Sumstat(wrk);
@@ -463,7 +463,7 @@ smp_oc_getobj(struct dstat *ds, struct objcore *oc)
 
 		if(bad) {
 			o->exp.ttl = -1;
-			so->ttl = 0;
+			EXP_Clr(&so->exp);
 		}
 
 		sg->nfixed++;
@@ -495,11 +495,11 @@ smp_oc_updatemeta(struct objcore *oc)
 		/* Lock necessary, we might race close_seg */
 		Lck_Lock(&sg->sc->mtx);
 		so->ban = BAN_Time(oc->ban);
-		so->ttl = oc->timer_when;
+		so->exp = o->exp;;
 		Lck_Unlock(&sg->sc->mtx);
 	} else {
 		so->ban = BAN_Time(oc->ban);
-		so->ttl = oc->timer_when;
+		so->exp = o->exp;;
 	}
 }
 
@@ -515,7 +515,7 @@ smp_oc_freeobj(struct objcore *oc)
 	so = smp_find_so(sg, oc->priv2);
 
 	Lck_Lock(&sg->sc->mtx);
-	so->ttl = 0;
+	EXP_Clr(&so->exp);
 	so->ptr = 0;
 
 	assert(sg->nobj > 0);

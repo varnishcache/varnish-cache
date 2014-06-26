@@ -928,6 +928,7 @@ extern pthread_t cli_thread;
 void EXP_Clr(struct exp *e);
 
 double EXP_Ttl(const struct req *, const struct object*);
+double EXP_When(const struct exp *exp);
 void EXP_Insert(struct objcore *oc);
 void EXP_Inject(struct objcore *oc, struct lru *lru, double when);
 void EXP_Init(void);

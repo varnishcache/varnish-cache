@@ -87,17 +87,17 @@ EXP_Ttl(const struct req *req, const struct object *o)
 }
 
 /*--------------------------------------------------------------------
- * Calculate when we should wake up for this object
+ * Calculate when this object is no longer useful
  */
 
-static double
-exp_when(const struct object *o)
+double
+EXP_When(const struct exp *e)
 {
 	double when;
 
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-
-	when = o->exp.t_origin + o->exp.ttl + o->exp.grace + o->exp.keep;
+	if (e->t_origin == 0)
+		return (0.);
+	when = e->t_origin + e->ttl + e->grace + e->keep;
 	AZ(isnan(when));
 	return (when);
 }
@@ -243,7 +243,7 @@ EXP_Rearm(struct object *o, double now, double ttl, double grace, double keep)
 	if (!isnan(keep))
 		o->exp.keep = keep;
 
-	when = exp_when(o);
+	when = EXP_When(&o->exp);
 
 	VSL(SLT_ExpKill, 0, "EXP_Rearm p=%p E=%.9f e=%.9f f=0x%x", oc,
 	    oc->timer_when, when, oc->flags);
@@ -391,7 +391,7 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 	if (flags & OC_EF_MOVE) {
 		o = oc_getobj(&ep->wrk->stats, oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-		oc->timer_when = exp_when(o);
+		oc->timer_when = EXP_When(&o->exp);
 		oc_updatemeta(oc);
 	}
 
