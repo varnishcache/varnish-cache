@@ -39,7 +39,6 @@ following VCL in place::
 		  if (!client.ip ~ purge) {
 			  return(synth(405,"Not allowed."));
 		  }
-                  # jump to hit/miss
 		  return (purge);
 	  }
   }
