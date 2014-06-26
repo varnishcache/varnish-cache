@@ -900,7 +900,7 @@ ban_evaluate(const uint8_t *bs, const struct http *objhttp,
  */
 
 static int
-ban_check_object(struct object *o, struct vsl_log *vsl,
+ban_check_object(const struct object *o, struct vsl_log *vsl,
     const struct http *req_http)
 {
 	struct ban *b;
@@ -964,13 +964,13 @@ ban_check_object(struct object *o, struct vsl_log *vsl,
 		oc->ban = NULL;
 		VSLb(vsl, SLT_ExpBan, "%u banned lookup", o->vxid);
 		VSC_C_main->bans_obj_killed++;
-		EXP_Rearm(o, o->exp.t_origin, 0, 0, 0);	// XXX fake now
+		EXP_Rearm(oc, oc->exp.t_origin, 0, 0, 0);	// XXX fake now
 		return (1);
 	}
 }
 
 int
-BAN_CheckObject(struct object *o, struct req *req)
+BAN_CheckObject(const struct object *o, struct req *req)
 {
 
 	return (ban_check_object(o, req->vsl, req->http) > 0);
@@ -1105,7 +1105,7 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 		}
 		if (i) {
 			VSLb(vsl, SLT_ExpBan, "%u banned by lurker", o->vxid);
-			EXP_Rearm(o, o->exp.t_origin, 0, 0, 0);	// XXX fake now
+			EXP_Rearm(oc, oc->exp.t_origin, 0, 0, 0); // XXX fake now
 			VSC_C_main->bans_lurker_obj_killed++;
 		}
 		(void)HSH_DerefObjCore(&wrk->stats, &oc);

@@ -481,10 +481,10 @@ VRT_r_##which##_##fld(const struct vrt_ctx *ctx)		\
 	return(0.0);						\
 }
 
-VRT_DO_EXP_R(obj, ctx->req->obj->exp, ttl,
-   (ctx->req->t_req - ctx->req->obj->exp.t_origin))
-VRT_DO_EXP_R(obj, ctx->req->obj->exp, grace, 0)
-VRT_DO_EXP_R(obj, ctx->req->obj->exp, keep, 0)
+VRT_DO_EXP_R(obj, ctx->req->obj->objcore->exp, ttl,
+   (ctx->req->t_req - ctx->req->obj->objcore->exp.t_origin))
+VRT_DO_EXP_R(obj, ctx->req->obj->objcore->exp, grace, 0)
+VRT_DO_EXP_R(obj, ctx->req->obj->objcore->exp, keep, 0)
 
 VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore->exp, ttl)
 VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore->exp, ttl, 0)

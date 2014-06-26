@@ -121,7 +121,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	   age. Truncate to zero in that case).
 	*/
 	http_PrintfHeader(req->resp, "Age: %.0f",
-	    fmax(0., req->t_prev - req->obj->exp.t_origin));
+	    fmax(0., req->t_prev - req->obj->objcore->exp.t_origin));
 
 	http_SetHeader(req->resp, "Via: 1.1 varnish-v4");
 

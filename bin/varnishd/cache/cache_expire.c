@@ -130,7 +130,7 @@ exp_mail_it(struct objcore *oc)
  */
 
 void
-EXP_Inject(struct objcore *oc, struct lru *lru, double when)
+EXP_Inject(struct objcore *oc, struct lru *lru)
 {
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -143,7 +143,7 @@ EXP_Inject(struct objcore *oc, struct lru *lru, double when)
 	Lck_Lock(&lru->mtx);
 	lru->n_objcore++;
 	oc->exp_flags |= OC_EF_OFFLRU | OC_EF_INSERT | OC_EF_EXP;
-	oc->timer_when = when;
+	oc->timer_when = EXP_When(&oc->exp);
 	Lck_Unlock(&lru->mtx);
 
 	exp_mail_it(oc);
@@ -232,32 +232,29 @@ EXP_Touch(struct objcore *oc, double now)
  */
 
 void
-EXP_Rearm(struct object *o, double now, double ttl, double grace, double keep)
+EXP_Rearm(struct objcore *oc, double now, double ttl, double grace, double keep)
 {
-	struct objcore *oc;
 	struct lru *lru;
 	double when;
 
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	oc = o->objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	assert(oc->refcnt > 0);
 
 	AN(oc->exp_flags & OC_EF_EXP);
 
 	if (!isnan(ttl))
-		o->exp.ttl = now + ttl - o->exp.t_origin;
+		oc->exp.ttl = now + ttl - oc->exp.t_origin;
 	if (!isnan(grace))
-		o->exp.grace = grace;
+		oc->exp.grace = grace;
 	if (!isnan(keep))
-		o->exp.keep = keep;
+		oc->exp.keep = keep;
 
-	when = EXP_When(&o->exp);
+	when = EXP_When(&oc->exp);
 
 	VSL(SLT_ExpKill, 0, "EXP_Rearm p=%p E=%.9f e=%.9f f=0x%x", oc,
 	    oc->timer_when, when, oc->flags);
 
-	if (when > o->exp.t_origin && when > oc->timer_when)
+	if (when > oc->exp.t_origin && when > oc->timer_when)
 		return;
 
 	lru = oc_getlru(oc);
@@ -400,7 +397,7 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 	if (flags & OC_EF_MOVE) {
 		o = oc_getobj(&ep->wrk->stats, oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-		oc->timer_when = EXP_When(&o->exp);
+		oc->timer_when = EXP_When(&oc->exp);
 		oc_updatemeta(oc);
 	}
 
@@ -477,7 +474,7 @@ exp_expire(struct exp_priv *ep, double now)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired x=%u t=%.0f",
 	    oc_getxid(&ep->wrk->stats, oc) & VSL_IDENTMASK,
-	    EXP_Ttl(NULL, &o->exp) - now);
+	    EXP_Ttl(NULL, &oc->exp) - now);
 	(void)HSH_DerefObjCore(&ep->wrk->stats, &oc);
 	return (0);
 }

@@ -3,6 +3,9 @@ varnishtest "Test Basic persistence"
 server s1 {
 	rxreq
 	txresp
+	accept
+	rxreq
+	txresp -status 700
 } -start
 
 shell "rm -f ${tmpdir}/_.per"

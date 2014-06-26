@@ -562,7 +562,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	VBO_setstate(bo, BOS_FINISHED);
 	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
 	if (bo->ims_obj != NULL)
-		EXP_Rearm(bo->ims_obj, bo->ims_obj->exp.t_origin, 0, 0, 0);
+		EXP_Rearm(bo->ims_obj->objcore,
+		    bo->ims_obj->objcore->exp.t_origin, 0, 0, 0);
 	return (F_STP_DONE);
 }
 
@@ -652,7 +653,8 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 
 	assert(al == bo->ims_obj->len);
 	assert(obj->len == al);
-	EXP_Rearm(bo->ims_obj, bo->ims_obj->exp.t_origin, 0, 0, 0);
+	EXP_Rearm(bo->ims_obj->objcore,
+	    bo->ims_obj->objcore->exp.t_origin, 0, 0, 0);
 
 	/* Recycle the backend connection before setting BOS_FINISHED to
 	   give predictable backend reuse behavior for varnishtest */
@@ -757,7 +759,8 @@ vbf_stp_fail(struct worker *wrk, struct busyobj *bo)
 	if (bo->fetch_objcore->exp_flags & OC_EF_EXP) {
 		/* Already unbusied - expire it */
 		AN(bo->fetch_obj);
-		EXP_Rearm(bo->fetch_obj, bo->fetch_obj->exp.t_origin, 0, 0, 0);
+		EXP_Rearm(bo->fetch_objcore,
+		    bo->fetch_objcore->exp.t_origin, 0, 0, 0);
 	}
 	wrk->stats.fetch_failed++;
 	VBO_setstate(bo, BOS_FAILED);

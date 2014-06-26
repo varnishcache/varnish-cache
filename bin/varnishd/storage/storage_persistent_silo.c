@@ -157,7 +157,8 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 		smp_init_oc(oc, sg, no);
 		oc->ban = BAN_RefBan(oc, so->ban, sc->tailban);
 		HSH_Insert(wrk, so->hash, oc);
-		EXP_Inject(oc, sg->lru, EXP_When(&so->exp));
+		oc->exp = so->exp;
+		EXP_Inject(oc, sg->lru);
 		sg->nobj++;
 	}
 	Pool_Sumstat(wrk);
@@ -462,7 +463,7 @@ smp_oc_getobj(struct dstat *ds, struct objcore *oc)
 			bad |= 0x100;
 
 		if(bad) {
-			o->exp.ttl = -1;
+			EXP_Clr(&oc->exp);
 			EXP_Clr(&so->exp);
 		}
 
@@ -472,7 +473,7 @@ smp_oc_getobj(struct dstat *ds, struct objcore *oc)
 		oc->flags &= ~OC_F_NEEDFIXUP;
 	}
 	Lck_Unlock(&sg->sc->mtx);
-	EXP_Rearm(o, NAN, NAN, NAN, NAN);	// XXX: Shouldn't be needed
+	EXP_Rearm(oc, NAN, NAN, NAN, NAN);	// XXX: Shouldn't be needed
 	return (o);
 }
 
@@ -495,11 +496,11 @@ smp_oc_updatemeta(struct objcore *oc)
 		/* Lock necessary, we might race close_seg */
 		Lck_Lock(&sg->sc->mtx);
 		so->ban = BAN_Time(oc->ban);
-		so->exp = o->exp;;
+		so->exp = oc->exp;
 		Lck_Unlock(&sg->sc->mtx);
 	} else {
 		so->ban = BAN_Time(oc->ban);
-		so->exp = o->exp;;
+		so->exp = oc->exp;
 	}
 }
 

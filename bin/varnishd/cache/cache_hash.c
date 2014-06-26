@@ -420,17 +420,18 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			continue;
 		}
 
+		if (oc->exp.ttl <= 0.)
+			continue;
+
 		o = oc_getobj(&wrk->stats, oc);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
-		if (o->exp.ttl <= 0.)
-			continue;
 		if (BAN_CheckObject(o, req))
 			continue;
 		if (o->vary != NULL && !VRY_Match(req, o->vary))
 			continue;
 
-		if (EXP_Ttl(req, &o->exp) >= req->t_req) {
+		if (EXP_Ttl(req, &oc->exp) >= req->t_req) {
 			/* If still valid, use it */
 			assert(oh->refcnt > 1);
 			assert(oc->objhead == oh);
@@ -442,12 +443,12 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			*ocp = oc;
 			return (HSH_HIT);
 		}
-		if (o->exp.t_origin > exp_t_origin &&
+		if (oc->exp.t_origin > exp_t_origin &&
 		    !(oc->flags & OC_F_PASS)) {
 			/* record the newest object */
 			exp_oc = oc;
 			exp_o = o;
-			exp_t_origin = o->exp.t_origin;
+			exp_t_origin = oc->exp.t_origin;
 		}
 	}
 
@@ -560,7 +561,6 @@ double keep)
 {
 	struct objcore *oc, **ocp;
 	unsigned spc, nobj, n;
-	struct object *o;
 	double now;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -595,12 +595,8 @@ double keep)
 	for (n = 0; n < nobj; n++) {
 		oc = ocp[n];
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-		o = oc_getobj(&wrk->stats, oc);
-		if (o == NULL)
-			continue;
-		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-		EXP_Rearm(o, now, ttl, grace, keep);
-		(void)HSH_DerefObj(&wrk->stats, &o);
+		EXP_Rearm(oc, now, ttl, grace, keep);
+		(void)HSH_DerefObjCore(&wrk->stats, &oc);
 	}
 	WS_Release(wrk->aws, 0);
 	Pool_PurgeStat(nobj);
@@ -618,7 +614,7 @@ HSH_Drop(struct worker *wrk, struct object **oo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(oo);
 	CHECK_OBJ_NOTNULL(*oo, OBJECT_MAGIC);
-	(*oo)->exp.ttl = -1.;
+	(*oo)->objcore->exp.ttl = -1.;
 	AZ(HSH_DerefObj(&wrk->stats, oo));
 }
 

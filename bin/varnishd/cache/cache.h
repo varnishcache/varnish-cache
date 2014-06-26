@@ -613,8 +613,6 @@ struct object {
 
 	ssize_t			len;
 
-	struct exp		exp;
-
 	/* VCL only variables */
 	double			last_modified;
 
@@ -830,7 +828,7 @@ void BAN_Init(void);
 void BAN_Shutdown(void);
 void BAN_NewObjCore(struct objcore *oc);
 void BAN_DestroyObj(struct objcore *oc);
-int BAN_CheckObject(struct object *o, struct req *sp);
+int BAN_CheckObject(const struct object *o, struct req *sp);
 void BAN_Reload(const uint8_t *ban, unsigned len);
 struct ban *BAN_TailRef(void);
 void BAN_Compile(void);
@@ -932,9 +930,9 @@ void EXP_Clr(struct exp *e);
 double EXP_Ttl(const struct req *, const struct exp*);
 double EXP_When(const struct exp *exp);
 void EXP_Insert(struct objcore *oc);
-void EXP_Inject(struct objcore *oc, struct lru *lru, double when);
+void EXP_Inject(struct objcore *oc, struct lru *lru);
 void EXP_Init(void);
-void EXP_Rearm(struct object *o, double now, double ttl, double grace,
+void EXP_Rearm(struct objcore *, double now, double ttl, double grace,
     double keep);
 void EXP_Touch(struct objcore *oc, double now);
 int EXP_NukeOne(struct busyobj *, struct lru *lru);
