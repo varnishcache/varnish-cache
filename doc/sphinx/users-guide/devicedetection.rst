@@ -68,7 +68,7 @@ VCL::
     }
     # req.http.X-UA-Device is copied by Varnish into bereq.http.X-UA-Device
 
-    # so, this is a bit conterintuitive. The backend creates content based on
+    # so, this is a bit counterintuitive. The backend creates content based on
     # the normalized User-Agent, but we use Vary on X-UA-Device so Varnish will
     # use the same cached object for all U-As that map to the same X-UA-Device.
     #
@@ -101,7 +101,7 @@ VCL::
 Example 2: Normalize the User-Agent string
 ''''''''''''''''''''''''''''''''''''''''''
 
-Another way of signaling the device type is to override or normalize the
+Another way of signalling the device type is to override or normalize the
 'User-Agent' header sent to the backend.
 
 For example::

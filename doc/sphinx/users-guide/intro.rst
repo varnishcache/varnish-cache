@@ -65,7 +65,7 @@ simple to do simple things with::
 	}
 
 The CLI interface allows you to compile and load new VCL programs
-at any time, and you can switch betweem the loaded VCL programs
+at any time, and you can switch between the loaded VCL programs
 instantly, without restarting the child process and without missing
 a single HTTP request.
 

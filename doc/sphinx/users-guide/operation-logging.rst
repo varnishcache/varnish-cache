@@ -51,7 +51,7 @@ session. Lines with the same number are coming from the same session
 and are being handled by the same thread. The second column is the
 *tag* of the log message. All log entries are tagged with a tag
 indicating what sort of activity is being logged. Tags starting with
-'Rx' indicate Varnish is recieving data and 'Tx' indicates sending data.
+'Rx' indicate Varnish is receiving data and 'Tx' indicates sending data.
 
 The third column tell us whether this is is data coming or going to
 the client ('c') or to/from the backend ('b'). The forth column is the
