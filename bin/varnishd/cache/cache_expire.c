@@ -137,19 +137,13 @@ EXP_Inject(struct objcore *oc, struct lru *lru, double when)
 
 	AZ(oc->exp_flags & (OC_EF_OFFLRU | OC_EF_INSERT | OC_EF_MOVE));
 	AZ(oc->exp_flags & OC_EF_DYING);
-	// AN(oc->flags & OC_F_BUSY);
-
-	if (lru == NULL)
-		lru = oc_getlru(oc);
+	AZ(oc->flags & OC_F_BUSY);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
 	Lck_Lock(&lru->mtx);
 	lru->n_objcore++;
 	oc->exp_flags |= OC_EF_OFFLRU | OC_EF_INSERT | OC_EF_EXP;
-	if (when < 0)
-		oc->exp_flags |= OC_EF_MOVE;
-	else
-		oc->timer_when = when;
+	oc->timer_when = when;
 	Lck_Unlock(&lru->mtx);
 
 	exp_mail_it(oc);
@@ -165,10 +159,25 @@ EXP_Inject(struct objcore *oc, struct lru *lru, double when)
 void
 EXP_Insert(struct objcore *oc)
 {
+	struct lru *lru;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	HSH_Ref(oc);
-	EXP_Inject(oc, NULL, -1);
+
+	AZ(oc->exp_flags & (OC_EF_OFFLRU | OC_EF_INSERT | OC_EF_MOVE));
+	AZ(oc->exp_flags & OC_EF_DYING);
+	AN(oc->flags & OC_F_BUSY);
+
+	lru = oc_getlru(oc);
+	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
+
+	Lck_Lock(&lru->mtx);
+	lru->n_objcore++;
+	oc->exp_flags |= OC_EF_OFFLRU | OC_EF_INSERT | OC_EF_EXP;
+	oc->exp_flags |= OC_EF_MOVE;
+	Lck_Unlock(&lru->mtx);
+
+	exp_mail_it(oc);
 }
 
 /*--------------------------------------------------------------------
