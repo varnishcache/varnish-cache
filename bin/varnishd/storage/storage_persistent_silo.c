@@ -503,12 +503,13 @@ smp_oc_updatemeta(struct objcore *oc)
 	}
 }
 
-static void __match_proto__()
-smp_oc_freeobj(struct objcore *oc)
+static void __match_proto__(freeobj_f)
+smp_oc_freeobj(struct dstat *ds, struct objcore *oc)
 {
 	struct smp_seg *sg;
 	struct smp_object *so;
 
+	AN(ds);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	CAST_OBJ_NOTNULL(sg, oc->priv, SMP_SEG_MAGIC);
@@ -519,9 +520,14 @@ smp_oc_freeobj(struct objcore *oc)
 	so->ptr = 0;
 
 	assert(sg->nobj > 0);
-	assert(sg->nfixed > 0);
 	sg->nobj--;
-	sg->nfixed--;
+	if (oc->flags & OC_F_NEEDFIXUP) {
+		ds->n_vampireobject--;
+	} else {
+		assert(sg->nfixed > 0);
+		sg->nfixed--;
+		ds->n_object--;
+	}
 
 	Lck_Unlock(&sg->sc->mtx);
 }
@@ -530,7 +536,7 @@ smp_oc_freeobj(struct objcore *oc)
  * Find the per-segment lru list for this object
  */
 
-static struct lru *
+static struct lru * __match_proto__(getlru_f)
 smp_oc_getlru(const struct objcore *oc)
 {
 	struct smp_seg *sg;

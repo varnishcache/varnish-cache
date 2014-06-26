@@ -69,11 +69,12 @@ default_oc_getobj(struct dstat *ds, struct objcore *oc)
 	return (o);
 }
 
-static void
-default_oc_freeobj(struct objcore *oc)
+static void __match_proto__(freeobj_f)
+default_oc_freeobj(struct dstat *ds, struct objcore *oc)
 {
 	struct object *o;
 
+	AN(ds);
 	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
 	oc->priv = NULL;
 	oc->methods = NULL;
@@ -81,9 +82,11 @@ default_oc_freeobj(struct objcore *oc)
 
 	STV_Freestore(o);
 	STV_free(o->objstore);
+
+	ds->n_object--;
 }
 
-static struct lru *
+static struct lru * __match_proto__(getlru_f)
 default_oc_getlru(const struct objcore *oc)
 {
 	struct stevedore *stv;
@@ -285,7 +288,6 @@ STV_MkObject(struct stevedore *stv, struct busyobj *bo,
 	o->http->magic = HTTP_MAGIC;
 	o->exp = bo->exp;
 	VTAILQ_INIT(&o->store);
-	bo->stats->n_object++;
 
 	o->objcore = bo->fetch_objcore;
 
@@ -321,6 +323,7 @@ stv_default_allocobj(struct stevedore *stv, struct busyobj *bo,
 	o = STV_MkObject(stv, bo, st->ptr, ltot, soc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	o->objstore = st;
+	bo->stats->n_object++;
 	return (o);
 }
 

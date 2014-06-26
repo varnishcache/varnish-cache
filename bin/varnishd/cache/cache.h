@@ -403,7 +403,7 @@ struct storage {
 typedef struct object *getobj_f(struct dstat *ds, struct objcore *oc);
 typedef unsigned getxid_f(struct dstat *ds, struct objcore *oc);
 typedef void updatemeta_f(struct objcore *oc);
-typedef void freeobj_f(struct objcore *oc);
+typedef void freeobj_f(struct dstat *ds, struct objcore *oc);
 typedef struct lru *getlru_f(const struct objcore *oc);
 
 struct objcore_methods {
@@ -479,13 +479,14 @@ oc_updatemeta(struct objcore *oc)
 }
 
 static inline void
-oc_freeobj(struct objcore *oc)
+oc_freeobj(struct dstat *ds, struct objcore *oc)
 {
 
+	AN(ds);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(oc->methods);
 	AN(oc->methods->freeobj);
-	oc->methods->freeobj(oc);
+	oc->methods->freeobj(ds, oc);
 }
 
 static inline struct lru *
