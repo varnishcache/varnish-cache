@@ -364,10 +364,6 @@ hash_data(input)
 new()
   Instanciate a new VCL object. Available in vcl_init.
 
-purge()
-  Invalidate all variants of the current object using purge. Available in 
-  vcl_miss and vcl_hit.
-
 return()
   End execution of the current VCL subroutine, and continue to the next step
   in the request handling state machine.
