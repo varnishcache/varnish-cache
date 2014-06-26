@@ -76,14 +76,14 @@ EXP_Clr(struct exp *e)
  */
 
 double
-EXP_Ttl(const struct req *req, const struct object *o)
+EXP_Ttl(const struct req *req, const struct exp *e)
 {
 	double r;
 
-	r = o->exp.ttl;
+	r = e->ttl;
 	if (req != NULL && req->d_ttl > 0. && req->d_ttl < r)
 		r = req->d_ttl;
-	return (o->exp.t_origin + r);
+	return (e->t_origin + r);
 }
 
 /*--------------------------------------------------------------------
@@ -468,7 +468,7 @@ exp_expire(struct exp_priv *ep, double now)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired x=%u t=%.0f",
 	    oc_getxid(&ep->wrk->stats, oc) & VSL_IDENTMASK,
-	    EXP_Ttl(NULL, o) - now);
+	    EXP_Ttl(NULL, &o->exp) - now);
 	(void)HSH_DerefObjCore(&ep->wrk->stats, &oc);
 	return (0);
 }

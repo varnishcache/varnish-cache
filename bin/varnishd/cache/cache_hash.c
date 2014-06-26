@@ -430,7 +430,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		if (o->vary != NULL && !VRY_Match(req, o->vary))
 			continue;
 
-		if (EXP_Ttl(req, o) >= req->t_req) {
+		if (EXP_Ttl(req, &o->exp) >= req->t_req) {
 			/* If still valid, use it */
 			assert(oh->refcnt > 1);
 			assert(oc->objhead == oh);
