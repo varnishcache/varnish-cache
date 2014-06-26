@@ -486,12 +486,12 @@ VRT_DO_EXP_R(obj, ctx->req->obj->exp, ttl,
 VRT_DO_EXP_R(obj, ctx->req->obj->exp, grace, 0)
 VRT_DO_EXP_R(obj, ctx->req->obj->exp, keep, 0)
 
-VRT_DO_EXP_L(beresp, ctx->bo->exp, ttl)
-VRT_DO_EXP_R(beresp, ctx->bo->exp, ttl, 0)
-VRT_DO_EXP_L(beresp, ctx->bo->exp, grace)
-VRT_DO_EXP_R(beresp, ctx->bo->exp, grace, 0)
-VRT_DO_EXP_L(beresp, ctx->bo->exp, keep)
-VRT_DO_EXP_R(beresp, ctx->bo->exp, keep, 0)
+VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore->exp, ttl)
+VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore->exp, ttl, 0)
+VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore->exp, grace)
+VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore->exp, grace, 0)
+VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore->exp, keep)
+VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore->exp, keep, 0)
 
 /*--------------------------------------------------------------------
  * [be]req.xid

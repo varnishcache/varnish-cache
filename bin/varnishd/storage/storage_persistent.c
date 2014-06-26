@@ -517,10 +517,13 @@ smp_allocobj(struct stevedore *stv, struct busyobj *bo,
 	unsigned objidx;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	if (bo->fetch_objcore == NULL)
-		return (NULL);		/* from cnt_error */
 	CAST_OBJ_NOTNULL(sc, stv->priv, SMP_SC_MAGIC);
-	AN((bo->exp.ttl + bo->exp.grace + bo->exp.keep) > 0.);
+
+	/* Don't entertain already dead objects */
+	if ((bo->fetch_objcore->exp.ttl +
+	     bo->fetch_objcore->exp.grace +
+	     bo->fetch_objcore->exp.keep) <= 0.)
+		return (NULL);
 
 	ltot = IRNUP(sc, ltot);
 
@@ -546,7 +549,7 @@ smp_allocobj(struct stevedore *stv, struct busyobj *bo,
 	/* We have to do this somewhere, might as well be here... */
 	assert(sizeof so->hash == DIGEST_LEN);
 	memcpy(so->hash, oc->objhead->digest, DIGEST_LEN);
-	so->exp = bo->exp;
+	so->exp = bo->fetch_objcore->exp;
 	so->ptr = (uint8_t*)o - sc->base;
 	so->ban = BAN_Time(oc->ban);
 

@@ -425,6 +425,8 @@ struct objcore {
 	struct busyobj		*busyobj;
 	double			timer_when;
 
+	struct exp		exp;
+
 	uint16_t		flags;
 #define OC_F_BUSY		(1<<1)
 #define OC_F_PASS		(1<<2)
@@ -553,7 +555,6 @@ struct busyobj {
 	struct objcore		*fetch_objcore;
 	struct object		*fetch_obj;
 
-	struct exp		exp;
 	struct http_conn	htc;
 
 	struct pool_task	fetch_task;

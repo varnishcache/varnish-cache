@@ -286,7 +286,7 @@ STV_MkObject(struct stevedore *stv, struct busyobj *bo,
 
 	HTTP_Setup(o->http, bo->ws_o, bo->vsl, SLT_ObjMethod);
 	o->http->magic = HTTP_MAGIC;
-	o->exp = bo->exp;
+	o->exp = bo->fetch_objcore->exp;
 	VTAILQ_INIT(&o->store);
 
 	o->objcore = bo->fetch_objcore;
@@ -344,6 +344,7 @@ STV_NewObject(struct busyobj *bo, const char *hint,
 	int i;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
 	assert(wsl > 0);
 	wsl = PRNDUP(wsl);
 

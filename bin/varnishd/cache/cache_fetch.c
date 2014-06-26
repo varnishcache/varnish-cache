@@ -49,13 +49,15 @@ static struct object *
 vbf_allocobj(struct busyobj *bo, unsigned l, uint16_t nhttp)
 {
 	struct object *obj;
+	struct objcore *oc;
 	const char *storage_hint;
 	double lifetime;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
+	oc = bo->fetch_objcore;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	lifetime = bo->exp.ttl + bo->exp.grace + bo->exp.keep;
+	lifetime = oc->exp.ttl + oc->exp.grace + oc->exp.keep;
 
 	if (bo->uncacheable || lifetime < cache_param->shortlived)
 		storage_hint = TRANSIENT_STORAGE;
@@ -77,10 +79,10 @@ vbf_allocobj(struct busyobj *bo, unsigned l, uint16_t nhttp)
 	 * on Transient storage.
 	 */
 
-	if (bo->exp.ttl > cache_param->shortlived)
-		bo->exp.ttl = cache_param->shortlived;
-	bo->exp.grace = 0.0;
-	bo->exp.keep = 0.0;
+	if (oc->exp.ttl > cache_param->shortlived)
+		oc->exp.ttl = cache_param->shortlived;
+	oc->exp.grace = 0.0;
+	oc->exp.keep = 0.0;
 	obj = STV_NewObject(bo, TRANSIENT_STORAGE, l, nhttp);
 	return (obj);
 }
@@ -162,7 +164,7 @@ vbf_beresp2obj(struct busyobj *bo)
 	if (http_GetHdr(hp, H_Last_Modified, &b))
 		obj->last_modified = VTIM_parse(b);
 	else
-		obj->last_modified = floor(bo->exp.t_origin);
+		obj->last_modified = floor(bo->fetch_objcore->exp.t_origin);
 
 	/* Disassociate the obj from the bo's workspace */
 	hp2->ws = NULL;
@@ -348,12 +350,12 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	/*
 	 * What does RFC2616 think about TTL ?
 	 */
-	EXP_Clr(&bo->exp);
+	EXP_Clr(&bo->fetch_objcore->exp);
 	RFC2616_Ttl(bo, now);
 
 	/* private objects have negative TTL */
 	if (bo->fetch_objcore->flags & OC_F_PRIVATE)
-		bo->exp.ttl = -1.;
+		bo->fetch_objcore->exp.ttl = -1.;
 
 	AZ(bo->do_esi);
 
@@ -696,10 +698,10 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	http_PrintfHeader(bo->beresp, "Date: %s", time_str);
 	http_SetHeader(bo->beresp, "Server: Varnish");
 
-	bo->exp.t_origin = bo->t_prev;
-	bo->exp.ttl = 0;
-	bo->exp.grace = 0;
-	bo->exp.keep = 0;
+	bo->fetch_objcore->exp.t_origin = bo->t_prev;
+	bo->fetch_objcore->exp.ttl = 0;
+	bo->fetch_objcore->exp.grace = 0;
+	bo->fetch_objcore->exp.keep = 0;
 
 	VCL_backend_error_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
 

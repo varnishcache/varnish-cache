@@ -72,7 +72,7 @@ RFC2616_Ttl(struct busyobj *bo, double now)
 	struct exp *expp;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	expp = &bo->exp;
+	expp = &bo->fetch_objcore->exp;
 
 	hp = bo->beresp;
 
