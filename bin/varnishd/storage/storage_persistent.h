@@ -33,6 +33,122 @@
  * XXX: Do we ever free the LRU-lists ?
  */
 
+/*
+ *
+ * Overall layout:
+ *
+ *	struct smp_ident;		Identification and geometry
+ *	sha256[...]			checksum of same
+ *
+ *	struct smp_sign;
+ *	banspace_1;			First ban-space
+ *	sha256[...]			checksum of same
+ *
+ *	struct smp_sign;
+ *	banspace_2;			Second ban-space
+ *	sha256[...]			checksum of same
+ *
+ *	struct smp_sign;
+ *	struct smp_segment_1[N];	First Segment table
+ *	sha256[...]			checksum of same
+ *
+ *	struct smp_sign;
+ *	struct smp_segment_2[N];	Second Segment table
+ *	sha256[...]			checksum of same
+ *
+ *	N segments {
+ *		struct smp_sign;
+ *		struct smp_object[M]	Objects in segment
+ *		sha256[...]		checksum of same
+ *		objspace
+ *	}
+ *
+ */
+
+/*
+ * The identblock is located in the first sector of the storage space.
+ * This is written once and not subsequently modified in normal operation.
+ * It is immediately followed by a SHA256sum of the structure, as stored.
+ */
+
+struct smp_ident {
+	char			ident[32];	/* Human readable ident
+						 * so people and programs
+						 * can tell what the file
+						 * or device contains.
+						 */
+
+	uint32_t		byte_order;	/* 0x12345678 */
+
+	uint32_t		size;		/* sizeof(struct smp_ident) */
+
+	uint32_t		major_version;
+
+	uint32_t		unique;
+
+	uint32_t		align;		/* alignment in silo */
+
+	uint32_t		granularity;	/* smallest ... in bytes */
+
+	uint64_t		mediasize;	/* ... in bytes */
+
+	uint64_t		stuff[6];	/* pointers to stuff */
+#define	SMP_BAN1_STUFF		0
+#define	SMP_BAN2_STUFF		1
+#define	SMP_SEG1_STUFF		2
+#define	SMP_SEG2_STUFF		3
+#define	SMP_SPC_STUFF		4
+#define	SMP_END_STUFF		5
+};
+
+/*
+ * The size of smp_ident should be fixed and constant across all platforms.
+ * We enforce that with the following #define and an assert in smp_init()
+ */
+#define SMP_IDENT_SIZE		112
+
+#define SMP_IDENT_STRING	"Varnish Persistent Storage Silo"
+
+/*
+ * This is used to sign various bits on the disk.
+ */
+
+struct smp_sign {
+	char			ident[8];
+	uint32_t		unique;
+	uint64_t		mapped;
+	/* The length field is the length of the signed data only
+	 * (does not include struct smp_sign) */
+	uint64_t		length;		/* NB: Must be last */
+};
+
+#define SMP_SIGN_SPACE		(sizeof(struct smp_sign) + SHA256_LEN)
+
+/*
+ * A segment pointer.
+ */
+
+struct smp_segptr {
+	uint64_t		offset;		/* rel to silo */
+	uint64_t		length;		/* rel to offset */
+	uint64_t		objlist;	/* rel to silo */
+	uint32_t		lobjlist;	/* len of objlist */
+};
+
+/*
+ * An object descriptor
+ *
+ * A positive ttl is obj.ttl with obj.grace being NAN
+ * A negative ttl is - (obj.ttl + obj.grace)
+ */
+
+struct smp_object {
+	uint8_t			hash[32];	/* really: DIGEST_LEN */
+	double			ttl;
+	double			ban;
+	uint64_t		ptr;		/* rel to silo */
+};
+
 #define ASSERT_SILO_THREAD(sc) \
     do {assert(pthread_equal(pthread_self(), (sc)->thread));} while (0)
 

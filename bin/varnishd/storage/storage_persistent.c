@@ -52,7 +52,6 @@
 #include "vsha256.h"
 #include "vtim.h"
 
-#include "persistent.h"
 #include "storage/storage_persistent.h"
 
 /*--------------------------------------------------------------------*/

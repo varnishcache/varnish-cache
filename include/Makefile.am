@@ -44,7 +44,6 @@ nobase_noinst_HEADERS = \
 	compat/execinfo.h \
 	flopen.h \
 	libvcc.h \
-	persistent.h \
 	vcli_common.h \
 	vcli_priv.h \
 	vcli_serve.h \

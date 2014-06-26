@@ -46,7 +46,6 @@
 
 #include "vsha256.h"
 
-#include "persistent.h"
 #include "storage/storage_persistent.h"
 
 #ifndef MAP_NOCORE
@@ -145,7 +144,7 @@ smp_mgt_init(struct stevedore *parent, int ac, char * const *av)
 	SIZOF(struct smp_object);
 #undef SIZOF
 
-	/* See comments in persistent.h */
+	/* See comments in storage_persistent.h */
 	assert(sizeof(struct smp_ident) == SMP_IDENT_SIZE);
 
 	/* Allocate softc */
