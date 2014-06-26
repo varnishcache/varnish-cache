@@ -36,7 +36,7 @@ Here are some examples::
 	-a '[fe80::1]:80'
 	-a '0.0.0.0:8080,[::]:8081'
 
-.. XXX:brief explanation of some of the more comples examples perhaps? benc
+.. XXX:brief explanation of some of the more complex examples perhaps? benc
 
 If your webserver runs on the same machine, you will have to move
 it to another port number first.

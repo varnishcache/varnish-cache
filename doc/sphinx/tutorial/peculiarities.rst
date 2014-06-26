@@ -3,7 +3,7 @@ Peculiarities
 -------------
 
 There are a couple of things that are different with Varnish Cache, as
-opposed to other programs. One thing you've already seen - VCL. In this section we provide a very quick tour of other pecularities you need to know about to get the most out of Varnish.
+opposed to other programs. One thing you've already seen - VCL. In this section we provide a very quick tour of other peculiarities you need to know about to get the most out of Varnish.
 
 Configuration
 ~~~~~~~~~~~~~

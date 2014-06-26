@@ -9,7 +9,7 @@ encoding. *Before* 3.0, Varnish would never compress objects.
 In Varnish 4.0 compression defaults to "on", meaning that it tries to
 be smart and do the sensible thing.
 
-.. XXX:Heavy refactoring to VArnish 4 above. benc
+.. XXX:Heavy refactoring to Varnish 4 above. benc
 
 If you don't want Varnish tampering with the encoding you can disable
 compression all together by setting the parameter 'http_gzip_support' to
@@ -40,7 +40,7 @@ You can make Varnish compress content before storing it in cache in
 Please make sure that you don't try to compress content that is
 uncompressable, like jpgs, gifs and mp3. You'll only waste CPU
 cycles. You can also uncompress objects before storing it in memory by
-setting 'do_gunzip' to true but that will ususally not be the most sensible thing to do.
+setting 'do_gunzip' to true but that will usually not be the most sensible thing to do.
 Generally, Varnish doesn't use much CPU so it might make more sense to
 have Varnish spend CPU cycles compressing content than doing it in
 your web- or application servers, which are more likely to be
@@ -71,5 +71,5 @@ the page while delivering it.
 A random outburst
 ~~~~~~~~~~~~~~~~~
 
-Poul-Henning Kamp has written :ref:`phk_gzip` which talks abit more about how the
+Poul-Henning Kamp has written :ref:`phk_gzip` which talks a bit more about how the
 implementation works. 
