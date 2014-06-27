@@ -136,6 +136,7 @@ vfp_esi_end(struct busyobj *bo, struct vef_priv *vef, enum vfp_status retval)
 			    "ESI+Gzip Failed at the very end");
 	}
 	if (vef->ibuf != NULL)
+		free(vef->ibuf);
 	FREE_OBJ(vef);
 	return (retval);
 }
