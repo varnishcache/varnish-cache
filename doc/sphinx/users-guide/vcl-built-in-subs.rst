@@ -202,8 +202,7 @@ The `vcl_backend_response` subroutine may terminate with calling
 
   deliver
     Possibly insert the object into the cache, then deliver it to the
-    Control will eventually pass to `vcl_deliver`. Caching is dependant
-    on 'beresp.cacheable'.
+    Control will eventually pass to `vcl_deliver`.
 
   abandon
     Abandon the backend request and generates an error.
