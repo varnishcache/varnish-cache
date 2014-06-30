@@ -271,7 +271,7 @@ VSC_F(threads_created,		uint64_t, 0, 'c', info,
 )
 
 VSC_F(threads_destroyed,	uint64_t, 0, 'c', info,
-    "Threads destoryed",
+    "Threads destroyed",
 	"Total number of threads destroyed in all pools."
 )
 
