@@ -418,6 +418,7 @@ struct objcore {
 	unsigned		magic;
 #define OBJCORE_MAGIC		0x4d301302
 	int			refcnt;
+	struct stevedore	*stevedore;
 	struct objcore_methods	*methods;
 	void			*priv;
 	uintptr_t		priv2;

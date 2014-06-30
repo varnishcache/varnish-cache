@@ -290,6 +290,7 @@ STV_MkObject(struct stevedore *stv, struct busyobj *bo,
 
 	o->objcore = bo->fetch_objcore;
 
+	o->objcore->stevedore = stv;
 	o->objcore->methods = &default_oc_methods;
 	o->objcore->priv = o;
 	o->objcore->priv2 = (uintptr_t)stv;
@@ -382,6 +383,8 @@ STV_NewObject(struct busyobj *bo, const char *hint,
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(o->objstore, STORAGE_MAGIC);
+	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
+	assert(o->objcore->stevedore == stv);
 	return (o);
 }
 
