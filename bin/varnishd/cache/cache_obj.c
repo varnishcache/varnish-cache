@@ -135,6 +135,16 @@ ObjIterEnd(struct objiter **oi)
 	*oi = NULL;
 }
 
+static const struct objcore_methods *
+obj_getmethods(const struct objcore *oc)
+{
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->stevedore, STEVEDORE_MAGIC);
+	AN(oc->stevedore->methods);
+	return (oc->stevedore->methods);
+}
+
 void
 ObjTrimStore(struct objcore *oc, struct dstat *ds)
 {
@@ -143,6 +153,7 @@ ObjTrimStore(struct objcore *oc, struct dstat *ds)
 	struct object *o;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(ds);
 	stv = oc->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 	o = ObjGetObj(oc, ds);
@@ -161,51 +172,49 @@ ObjTrimStore(struct objcore *oc, struct dstat *ds)
 unsigned
 ObjGetXID(struct objcore *oc, struct dstat *ds)
 {
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	const struct objcore_methods *m = obj_getmethods(oc);
 
-	AN(oc->methods);
-	AN(oc->methods->getxid);
-	return (oc->methods->getxid(ds, oc));
+	AN(ds);
+	AN(m->getxid);
+	return (m->getxid(ds, oc));
 }
 
 struct object *
 ObjGetObj(struct objcore *oc, struct dstat *ds)
 {
+	const struct objcore_methods *m = obj_getmethods(oc);
 
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	// AZ(oc->flags & OC_F_BUSY);
-	AN(oc->methods);
-	AN(oc->methods->getobj);
-	return (oc->methods->getobj(ds, oc));
+	AN(ds);
+	AN(m->getobj);
+	return (m->getobj(ds, oc));
 }
 
 void
 ObjUpdateMeta(struct objcore *oc)
 {
+	const struct objcore_methods *m = obj_getmethods(oc);
 
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(oc->methods);
-	if (oc->methods->updatemeta != NULL)
-		oc->methods->updatemeta(oc);
+	if (m->updatemeta != NULL)
+		m->updatemeta(oc);
 }
 
 void
 ObjFreeObj(struct objcore *oc, struct dstat *ds)
 {
+	const struct objcore_methods *m = obj_getmethods(oc);
 
 	AN(ds);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(oc->methods);
-	AN(oc->methods->freeobj);
-	oc->methods->freeobj(ds, oc);
+	AN(m->freeobj);
+	m->freeobj(ds, oc);
 }
 
 struct lru *
 ObjGetLRU(const struct objcore *oc)
 {
+	const struct objcore_methods *m = obj_getmethods(oc);
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(oc->methods);
-	AN(oc->methods->getlru);
-	return (oc->methods->getlru(oc));
+	AN(m->getlru);
+	return (m->getlru(oc));
 }

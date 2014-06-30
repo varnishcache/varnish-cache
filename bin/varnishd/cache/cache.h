@@ -419,7 +419,6 @@ struct objcore {
 #define OBJCORE_MAGIC		0x4d301302
 	int			refcnt;
 	const struct stevedore	*stevedore;
-	const struct objcore_methods	*methods;
 	void			*priv;
 	uintptr_t		priv2;
 	struct objhead		*objhead;

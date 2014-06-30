@@ -77,7 +77,7 @@ default_oc_freeobj(struct dstat *ds, struct objcore *oc)
 	AN(ds);
 	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
 	oc->priv = NULL;
-	oc->methods = NULL;
+	oc->stevedore = NULL;
 	o->magic = 0;
 
 	STV_Freestore(o);
@@ -291,7 +291,6 @@ STV_MkObject(struct stevedore *stv, struct busyobj *bo,
 
 	o->objcore->stevedore = stv;
 	AN(stv->methods);
-	o->objcore->methods = stv->methods;
 	o->objcore->priv = o;
 	o->objcore->priv2 = (uintptr_t)stv;
 	VSLb(bo->vsl, SLT_Storage, "%s %s", stv->name, stv->ident);
@@ -386,7 +385,6 @@ STV_NewObject(struct busyobj *bo, const char *hint,
 	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
 	assert(o->objcore->stevedore == stv);
 	AN(stv->methods);
-	AN(o->objcore->methods);
 	return (o);
 }
 

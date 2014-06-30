@@ -155,7 +155,6 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 		oc->flags |= OC_F_NEEDFIXUP;
 		oc->flags &= ~OC_F_BUSY;
 		oc->stevedore = sc->parent;
-		oc->methods = sc->parent->methods;
 		smp_init_oc(oc, sg, no);
 		oc->ban = BAN_RefBan(oc, so->ban, sc->tailban);
 		HSH_Insert(wrk, so->hash, oc);
@@ -420,7 +419,7 @@ smp_oc_getobj(struct dstat *ds, struct objcore *oc)
 	int bad;
 
 	/* Some calls are direct, but they should match anyway */
-	assert(oc->methods->getobj == smp_oc_getobj);
+	assert(oc->stevedore->methods->getobj == smp_oc_getobj);
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	if (ds == NULL)

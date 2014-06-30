@@ -636,7 +636,7 @@ HSH_Fail(struct objcore *oc)
 	 * will not consider this oc, or an object hung of the oc
 	 * so that it can consider it.
 	 */
-	assert((oc->flags & OC_F_BUSY) || (oc->methods != NULL));
+	assert((oc->flags & OC_F_BUSY) || (oc->stevedore != NULL));
 
 	Lck_Lock(&oh->mtx);
 	oc->flags |= OC_F_FAILED;
@@ -675,7 +675,7 @@ HSH_Unbusy(struct dstat *ds, struct objcore *oc)
 	oh = oc->objhead;
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
 
-	AN(oc->methods);
+	AN(oc->stevedore);
 	AN(oc->flags & OC_F_BUSY);
 	assert(oh->refcnt > 0);
 
@@ -800,7 +800,7 @@ HSH_DerefObjCore(struct dstat *ds, struct objcore **ocp)
 	BAN_DestroyObj(oc);
 	AZ(oc->ban);
 
-	if (oc->methods != NULL)
+	if (oc->stevedore != NULL)
 		ObjFreeObj(oc, ds);
 	FREE_OBJ(oc);
 
