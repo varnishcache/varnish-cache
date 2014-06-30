@@ -1,0 +1,20 @@
+varnishtest "Incorrect representation when using reals - #1532"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import ${vmod_std};
+
+	sub vcl_deliver {
+		set resp.http.x-foo = std.real2time(1140618699.00);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.x-foo == "Wed, 22 Feb 2006 14:31:39 GMT"
+} -run

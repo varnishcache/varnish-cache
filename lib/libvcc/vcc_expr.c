@@ -749,7 +749,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 			e1 = vcc_mk_expr(BYTES, "%.1f", d);
 			ERRCHK(tl);
 		} else if (fmt == REAL) {
-			e1 = vcc_mk_expr(REAL, "%g", vcc_DoubleVal(tl));
+			e1 = vcc_mk_expr(REAL, "%f", vcc_DoubleVal(tl));
 			ERRCHK(tl);
 		} else {
 			e1 = vcc_mk_expr(INT, "%.*s", PF(tl->t));
