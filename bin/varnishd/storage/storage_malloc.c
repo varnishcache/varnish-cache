@@ -245,13 +245,14 @@ sma_open(const struct stevedore *st)
 }
 
 const struct stevedore sma_stevedore = {
-	.magic	=	STEVEDORE_MAGIC,
-	.name	=	"malloc",
-	.init	=	sma_init,
-	.open	=	sma_open,
-	.alloc	=	sma_alloc,
-	.free	=	sma_free,
-	.trim	=	sma_trim,
+	.magic		=	STEVEDORE_MAGIC,
+	.name		=	"malloc",
+	.init		=	sma_init,
+	.open		=	sma_open,
+	.alloc		=	sma_alloc,
+	.free		=	sma_free,
+	.trim		=	sma_trim,
+	.methods	=	&default_oc_methods,
 	.var_free_space =	sma_free_space,
 	.var_used_space =	sma_used_space,
 };

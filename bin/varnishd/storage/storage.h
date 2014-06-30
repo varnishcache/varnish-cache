@@ -60,6 +60,8 @@ typedef void storage_banexport_f(const struct stevedore *, const uint8_t *bans,
 
 extern storage_allocobj_f stv_default_allocobj;
 
+extern const struct objcore_methods default_oc_methods;
+
 /*--------------------------------------------------------------------*/
 
 struct stevedore {
@@ -77,6 +79,9 @@ struct stevedore {
 	storage_signal_close_f	*signal_close;	/* --//-- */
 	storage_baninfo_f	*baninfo;	/* --//-- */
 	storage_banexport_f	*banexport;	/* --//-- */
+
+	const struct objcore_methods
+				*methods;
 
 	struct lru		*lru;
 

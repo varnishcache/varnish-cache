@@ -154,13 +154,14 @@ smu_open(const struct stevedore *st)
 }
 
 const struct stevedore smu_stevedore = {
-	.magic	=	STEVEDORE_MAGIC,
-	.name	=	"umem",
-	.init	=	smu_init,
-	.open	=	smu_open,
-	.alloc	=	smu_alloc,
-	.free	=	smu_free,
-	.trim	=	smu_trim,
+	.magic		=	STEVEDORE_MAGIC,
+	.name		=	"umem",
+	.init		=	smu_init,
+	.open		=	smu_open,
+	.alloc		=	smu_alloc,
+	.free		=	smu_free,
+	.trim		=	smu_trim,
+	.methods	=	&default_oc_methods,
 };
 
 #endif /* HAVE_UMEM_H */

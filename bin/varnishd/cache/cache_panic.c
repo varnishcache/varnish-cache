@@ -42,7 +42,7 @@
 #include "common/heritage.h"
 
 #include "cache_backend.h"
-#include "waiter/waiter.h"
+#include "storage/storage.h"
 #include "vcl.h"
 
 /*
@@ -235,6 +235,14 @@ pan_objcore(const char *typ, const struct objcore *oc)
 	VSB_printf(pan_vsp, "    refcnt = %d\n", oc->refcnt);
 	VSB_printf(pan_vsp, "    flags = 0x%x\n", oc->flags);
 	VSB_printf(pan_vsp, "    objhead = %p\n", oc->objhead);
+	VSB_printf(pan_vsp, "    stevedore = %p", oc->stevedore);
+	if (oc->stevedore != NULL) {
+		VSB_printf(pan_vsp, " (%s", oc->stevedore->name);
+		if (strlen(oc->stevedore->ident))
+			VSB_printf(pan_vsp, " %s", oc->stevedore->ident);
+		VSB_printf(pan_vsp, ")");
+	}
+	VSB_printf(pan_vsp, "\n");
 	VSB_printf(pan_vsp, "  }\n");
 }
 

@@ -31,6 +31,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "storage/storage.h"
 #include "hash/hash_slinger.h"
 
 struct objiter {
@@ -132,4 +133,27 @@ ObjIterEnd(struct objiter **oi)
 	}
 	FREE_OBJ((*oi));
 	*oi = NULL;
+}
+
+void
+ObjTrimStore(struct objcore *oc, struct dstat *ds)
+{
+	const struct stevedore *stv;
+	struct storage *st;
+	struct object *o;
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	stv = oc->stevedore;
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+	o = oc_getobj(ds, oc);
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	st = VTAILQ_LAST(&o->store, storagehead);
+	if (st == NULL)
+		return;
+	if (st->len == 0) {
+		VTAILQ_REMOVE(&o->store, st, list);
+		STV_free(st);
+	} else if (st->len < st->space) {
+		STV_trim(st, st->len, 1);
+	}
 }

@@ -154,6 +154,8 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 		AN(oc);
 		oc->flags |= OC_F_NEEDFIXUP;
 		oc->flags &= ~OC_F_BUSY;
+		oc->stevedore = sc->parent;
+		oc->methods = sc->parent->methods;
 		smp_init_oc(oc, sg, no);
 		oc->ban = BAN_RefBan(oc, so->ban, sc->tailban);
 		HSH_Insert(wrk, so->hash, oc);
@@ -546,7 +548,7 @@ smp_oc_getlru(const struct objcore *oc)
 	return (sg->lru);
 }
 
-static struct objcore_methods smp_oc_methods = {
+const struct objcore_methods smp_oc_methods = {
 	.getxid =		smp_oc_getxid,
 	.getobj =		smp_oc_getobj,
 	.updatemeta =		smp_oc_updatemeta,
@@ -562,5 +564,4 @@ smp_init_oc(struct objcore *oc, struct smp_seg *sg, unsigned objidx)
 
 	oc->priv = sg;
 	oc->priv2 = objidx;
-	oc->methods = &smp_oc_methods;
 }

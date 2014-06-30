@@ -541,13 +541,14 @@ smf_free(struct storage *s)
 /*--------------------------------------------------------------------*/
 
 const struct stevedore smf_stevedore = {
-	.magic	=	STEVEDORE_MAGIC,
-	.name	=	"file",
-	.init	=	smf_init,
-	.open	=	smf_open,
-	.alloc	=	smf_alloc,
-	.trim	=	smf_trim,
-	.free	=	smf_free,
+	.magic		=	STEVEDORE_MAGIC,
+	.name		=	"file",
+	.init		=	smf_init,
+	.open		=	smf_open,
+	.alloc		=	smf_alloc,
+	.trim		=	smf_trim,
+	.free		=	smf_free,
+	.methods	=	&default_oc_methods,
 };
 
 #ifdef INCLUDE_TEST_DRIVER

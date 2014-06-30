@@ -418,8 +418,8 @@ struct objcore {
 	unsigned		magic;
 #define OBJCORE_MAGIC		0x4d301302
 	int			refcnt;
-	struct stevedore	*stevedore;
-	struct objcore_methods	*methods;
+	const struct stevedore	*stevedore;
+	const struct objcore_methods	*methods;
 	void			*priv;
 	uintptr_t		priv2;
 	struct objhead		*objhead;
@@ -1100,6 +1100,7 @@ enum objiter_status {
 struct objiter *ObjIterBegin(struct worker *, struct object *);
 enum objiter_status ObjIter(struct objiter *, void **, ssize_t *);
 void ObjIterEnd(struct objiter **);
+void ObjTrimStore(struct objcore *oc, struct dstat *ds);
 
 /* cache_panic.c */
 void PAN_Init(void);

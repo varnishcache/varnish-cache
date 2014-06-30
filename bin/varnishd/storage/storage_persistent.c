@@ -535,6 +535,8 @@ smp_allocobj(struct stevedore *stv, struct busyobj *bo,
 	ltot = st->len = st->space;
 
 	o = STV_MkObject(stv, bo, st->ptr, ltot, soc);
+	AN(bo->fetch_objcore->stevedore);
+	assert(bo->fetch_objcore->stevedore == stv);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	o->objstore = st;
 	bo->stats->n_object++;
@@ -601,6 +603,7 @@ const struct stevedore smp_stevedore = {
 	.signal_close = smp_signal_close,
 	.baninfo =	smp_baninfo,
 	.banexport =	smp_banexport,
+	.methods =	&smp_oc_methods,
 };
 
 /*--------------------------------------------------------------------

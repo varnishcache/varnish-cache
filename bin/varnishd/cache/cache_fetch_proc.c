@@ -245,21 +245,8 @@ VFP_Fetch_Body(struct busyobj *bo, ssize_t est)
 
 	vfp_suck_fini(bo);
 
-	/*
-	 * Trim or delete the last segment, if any
-	 */
-
-	st = VTAILQ_LAST(&bo->fetch_obj->store, storagehead);
-	/* XXX: Temporary:  Only trim if we are not streaming */
-	if (st != NULL && !bo->do_stream) {
-		/* None of this this is safe under streaming */
-		if (st->len == 0) {
-			VTAILQ_REMOVE(&bo->fetch_obj->store, st, list);
-			STV_free(st);
-		} else if (st->len < st->space) {
-			STV_trim(st, st->len, 1);
-		}
-	}
+	if (!bo->do_stream)
+		ObjTrimStore(bo->fetch_objcore, bo->stats);
 }
 
 void

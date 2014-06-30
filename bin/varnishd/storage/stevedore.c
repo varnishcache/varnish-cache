@@ -95,13 +95,12 @@ default_oc_getlru(const struct objcore *oc)
 	return (stv->lru);
 }
 
-static struct objcore_methods default_oc_methods = {
+const struct objcore_methods default_oc_methods = {
 	.getobj = default_oc_getobj,
 	.getxid = default_oc_getxid,
 	.freeobj = default_oc_freeobj,
 	.getlru = default_oc_getlru,
 };
-
 
 /*--------------------------------------------------------------------
  */
@@ -291,7 +290,8 @@ STV_MkObject(struct stevedore *stv, struct busyobj *bo,
 	o->objcore = bo->fetch_objcore;
 
 	o->objcore->stevedore = stv;
-	o->objcore->methods = &default_oc_methods;
+	AN(stv->methods);
+	o->objcore->methods = stv->methods;
 	o->objcore->priv = o;
 	o->objcore->priv2 = (uintptr_t)stv;
 	VSLb(bo->vsl, SLT_Storage, "%s %s", stv->name, stv->ident);
@@ -385,6 +385,8 @@ STV_NewObject(struct busyobj *bo, const char *hint,
 	CHECK_OBJ_NOTNULL(o->objstore, STORAGE_MAGIC);
 	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
 	assert(o->objcore->stevedore == stv);
+	AN(stv->methods);
+	AN(o->objcore->methods);
 	return (o);
 }
 
