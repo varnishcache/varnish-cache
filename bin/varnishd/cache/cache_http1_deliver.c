@@ -87,7 +87,7 @@ v1d_range_bytes(struct req *req, enum vdp_action act, const void *ptr,
 /*--------------------------------------------------------------------*/
 
 static void
-v1d_dorange(struct req *req, const char *r)
+v1d_dorange(struct req *req, struct busyobj *bo, const char *r)
 {
 	ssize_t len, low, high, has_low;
 
@@ -96,8 +96,8 @@ v1d_dorange(struct req *req, const char *r)
 	assert(http_GetStatus(req->obj->http) == 200);
 
 	/* We must snapshot the length if we're streaming from the backend */
-	if (req->obj->objcore->busyobj != NULL)
-		len = VBO_waitlen(req->obj->objcore->busyobj, -1);
+	if (bo != NULL)
+		len = VBO_waitlen(bo, -1);
 	else
 		len = req->obj->len;
 
@@ -228,10 +228,11 @@ V1D_FlushReleaseAcct(struct req *req)
 }
 
 void
-V1D_Deliver(struct req *req)
+V1D_Deliver(struct req *req, struct busyobj *bo)
 {
 	char *r;
 	enum objiter_status ois;
+	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
@@ -247,7 +248,7 @@ V1D_Deliver(struct req *req)
 		req->res_mode &= ~RES_LEN;
 		http_Unset(req->resp, H_Content_Length);
 		req->wantbody = 0;
-	} else if (req->obj->objcore->busyobj == NULL) {
+	} else if (bo == NULL) {
 		/* XXX: Not happy with this convoluted test */
 		req->res_mode |= RES_LEN;
 		if (!(req->obj->objcore->flags & OC_F_PASS) ||
@@ -310,7 +311,7 @@ V1D_Deliver(struct req *req)
 	    http_GetStatus(req->resp) == 200) {
 		http_SetHeader(req->resp, "Accept-Ranges: bytes");
 		if (http_GetHdr(req->http, H_Range, &r))
-			v1d_dorange(req, r);
+			v1d_dorange(req, bo, r);
 	}
 
 	if (req->res_mode & RES_ESI)
@@ -334,8 +335,11 @@ V1D_Deliver(struct req *req)
 	} else if (req->res_mode & RES_ESI) {
 		ESI_Deliver(req);
 	} else if (req->res_mode & RES_ESI_CHILD && req->gzip_resp) {
-		while (req->obj->objcore->busyobj)
-			(void)usleep(10000);
+		l = -1;
+		while (req->obj->objcore->busyobj) {
+			assert(bo != NULL);
+			l = VBO_waitlen(bo, l);
+		}
 		ESI_DeliverChild(req);
 	} else if (req->res_mode & RES_GUNZIP ||
 	    (req->res_mode & RES_ESI_CHILD &&
@@ -421,7 +425,7 @@ V1D_Deliver_Synth(struct req *req)
 	    http_GetStatus(req->resp) == 200) {
 		http_SetHeader(req->resp, "Accept-Ranges: bytes");
 		if (http_GetHdr(req->http, H_Range, &r))
-			v1d_dorange(req, r);
+			v1d_dorange(req, NULL, r);
 	}
 
 	WRW_Reserve(req->wrk, &req->sp->fd, req->vsl, req->t_prev);
@@ -441,8 +445,6 @@ V1D_Deliver_Synth(struct req *req)
 #if 0
 	XXX: Missing pretend GZIP for esi-children
 	} else if (req->res_mode & RES_ESI_CHILD && req->gzip_resp) {
-		while (req->obj->objcore->busyobj)
-			(void)usleep(10000);
 		ESI_DeliverChild(req);
 #endif
 	} else {

@@ -87,6 +87,7 @@ DOT deliver:deliver:s -> DONE [style=bold,color=blue]
 static enum req_fsm_nxt
 cnt_deliver(struct worker *wrk, struct req *req)
 {
+	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -154,7 +155,12 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		req->wantbody = 0;
 	}
 
-	V1D_Deliver(req);
+	/* Grab a ref to the bo if there is one, and hand it down */
+	bo = HSH_RefBusy(req->obj->objcore);
+	V1D_Deliver(req, bo);
+	if (bo != NULL)
+		VBO_DerefBusyObj(req->wrk, &bo);
+
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
 	if (http_HdrIs(req->resp, H_Connection, "close"))
