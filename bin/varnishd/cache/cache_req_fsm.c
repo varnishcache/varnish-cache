@@ -287,7 +287,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 		return (REQ_FSM_MORE);
 	}
 
-	req->obj = oc_getobj(&wrk->stats, req->objcore);
+	req->obj = ObjGetObj(req->objcore, &wrk->stats);
 	req->objcore = NULL;
 	req->err_code = http_GetStatus(req->obj->http);
 	req->req_step = R_STP_DELIVER;
@@ -381,7 +381,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	AZ(oc->flags & OC_F_BUSY);
 	AZ(req->objcore);
 
-	o = oc_getobj(&wrk->stats, oc);
+	o = ObjGetObj(oc, &wrk->stats);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	req->obj = o;
 

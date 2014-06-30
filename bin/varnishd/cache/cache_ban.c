@@ -958,7 +958,7 @@ ban_check_object(const struct object *o, struct vsl_log *vsl,
 
 	if (b == oc->ban) {	/* not banned */
 		oc->ban = b0;
-		oc_updatemeta(oc);
+		ObjUpdateMeta(oc);
 		return (0);
 	} else {
 		oc->ban = NULL;
@@ -1087,7 +1087,7 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 		oc = ban_lurker_getfirst(vsl, bt);
 		if (oc == NULL)
 			return;
-		o = oc_getobj(&wrk->stats, oc);
+		o = ObjGetObj(oc, &wrk->stats);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		i = 0;
 		VTAILQ_FOREACH_REVERSE_SAFE(bl, obans, banhead_s, l_list, bln) {

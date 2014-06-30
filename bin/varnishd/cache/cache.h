@@ -450,58 +450,6 @@ struct objcore {
 	struct ban		*ban;
 };
 
-static inline unsigned
-oc_getxid(struct dstat *ds, struct objcore *oc)
-{
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-
-	AN(oc->methods);
-	AN(oc->methods->getxid);
-	return (oc->methods->getxid(ds, oc));
-}
-
-static inline struct object *
-oc_getobj(struct dstat *ds, struct objcore *oc)
-{
-
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	// AZ(oc->flags & OC_F_BUSY);
-	AN(oc->methods);
-	AN(oc->methods->getobj);
-	return (oc->methods->getobj(ds, oc));
-}
-
-static inline void
-oc_updatemeta(struct objcore *oc)
-{
-
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(oc->methods);
-	if (oc->methods->updatemeta != NULL)
-		oc->methods->updatemeta(oc);
-}
-
-static inline void
-oc_freeobj(struct dstat *ds, struct objcore *oc)
-{
-
-	AN(ds);
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(oc->methods);
-	AN(oc->methods->freeobj);
-	oc->methods->freeobj(ds, oc);
-}
-
-static inline struct lru *
-oc_getlru(const struct objcore *oc)
-{
-
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(oc->methods);
-	AN(oc->methods->getlru);
-	return (oc->methods->getlru(oc));
-}
-
 /* Busy Object structure ---------------------------------------------
  *
  * The busyobj structure captures the aspects of an object related to,
@@ -1100,7 +1048,12 @@ enum objiter_status {
 struct objiter *ObjIterBegin(struct worker *, struct object *);
 enum objiter_status ObjIter(struct objiter *, void **, ssize_t *);
 void ObjIterEnd(struct objiter **);
-void ObjTrimStore(struct objcore *oc, struct dstat *ds);
+void ObjTrimStore(struct objcore *, struct dstat *);
+unsigned ObjGetXID(struct objcore *, struct dstat *);
+struct object *ObjGetObj(struct objcore *, struct dstat *);
+void ObjUpdateMeta(struct objcore *);
+void ObjFreeObj(struct objcore *, struct dstat *);
+struct lru *ObjGetLRU(const struct objcore *);
 
 /* cache_panic.c */
 void PAN_Init(void);

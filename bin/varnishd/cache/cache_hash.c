@@ -423,7 +423,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		if (oc->exp.ttl <= 0.)
 			continue;
 
-		o = oc_getobj(&wrk->stats, oc);
+		o = ObjGetObj(oc, &wrk->stats);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
 		if (BAN_CheckObject(o, req))
@@ -801,7 +801,7 @@ HSH_DerefObjCore(struct dstat *ds, struct objcore **ocp)
 	AZ(oc->ban);
 
 	if (oc->methods != NULL)
-		oc_freeobj(ds, oc);
+		ObjFreeObj(oc, ds);
 	FREE_OBJ(oc);
 
 	ds->n_objectcore--;

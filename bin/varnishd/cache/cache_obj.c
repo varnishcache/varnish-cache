@@ -145,7 +145,7 @@ ObjTrimStore(struct objcore *oc, struct dstat *ds)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	stv = oc->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
-	o = oc_getobj(ds, oc);
+	o = ObjGetObj(oc, ds);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st = VTAILQ_LAST(&o->store, storagehead);
 	if (st == NULL)
@@ -156,4 +156,56 @@ ObjTrimStore(struct objcore *oc, struct dstat *ds)
 	} else if (st->len < st->space) {
 		STV_trim(st, st->len, 1);
 	}
+}
+
+unsigned
+ObjGetXID(struct objcore *oc, struct dstat *ds)
+{
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	AN(oc->methods);
+	AN(oc->methods->getxid);
+	return (oc->methods->getxid(ds, oc));
+}
+
+struct object *
+ObjGetObj(struct objcore *oc, struct dstat *ds)
+{
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	// AZ(oc->flags & OC_F_BUSY);
+	AN(oc->methods);
+	AN(oc->methods->getobj);
+	return (oc->methods->getobj(ds, oc));
+}
+
+void
+ObjUpdateMeta(struct objcore *oc)
+{
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(oc->methods);
+	if (oc->methods->updatemeta != NULL)
+		oc->methods->updatemeta(oc);
+}
+
+void
+ObjFreeObj(struct objcore *oc, struct dstat *ds)
+{
+
+	AN(ds);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(oc->methods);
+	AN(oc->methods->freeobj);
+	oc->methods->freeobj(ds, oc);
+}
+
+struct lru *
+ObjGetLRU(const struct objcore *oc)
+{
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(oc->methods);
+	AN(oc->methods->getlru);
+	return (oc->methods->getlru(oc));
 }

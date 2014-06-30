@@ -168,7 +168,7 @@ EXP_Insert(struct objcore *oc)
 	AZ(oc->exp_flags & OC_EF_DYING);
 	AN(oc->flags & OC_F_BUSY);
 
-	lru = oc_getlru(oc);
+	lru = ObjGetLRU(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
 	Lck_Lock(&lru->mtx);
@@ -201,7 +201,7 @@ EXP_Touch(struct objcore *oc, double now)
 	if (now - oc->last_lru < cache_param->lru_interval)
 		return;
 
-	lru = oc_getlru(oc);
+	lru = ObjGetLRU(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
 	/*
@@ -257,7 +257,7 @@ EXP_Rearm(struct objcore *oc, double now, double ttl, double grace, double keep)
 	if (when > oc->exp.t_origin && when > oc->timer_when)
 		return;
 
-	lru = oc_getlru(oc);
+	lru = ObjGetLRU(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
 	Lck_Lock(&lru->mtx);
@@ -334,14 +334,14 @@ EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 	}
 
 	/* XXX: We could grab and return one storage segment to our caller */
-	o = oc_getobj(bo->stats, oc);
+	o = ObjGetObj(oc, bo->stats);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	STV_Freestore(o);
 
 	exp_mail_it(oc);
 
 	VSLb(bo->vsl, SLT_ExpKill, "LRU x=%u",
-	    oc_getxid(bo->stats, oc) & VSL_IDENTMASK);
+	    ObjGetXID(oc, bo->stats) & VSL_IDENTMASK);
 	AN(bo->stats);
 	AN(oc);
 	(void)HSH_DerefObjCore(bo->stats, &oc);
@@ -367,7 +367,7 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 
 	// AZ(oc->flags & OC_F_BUSY);
 
-	lru = oc_getlru(oc);
+	lru = ObjGetLRU(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
 	/* Evacuate our action-flags, and put it back on the LRU list */
@@ -395,10 +395,10 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 	}
 
 	if (flags & OC_EF_MOVE) {
-		o = oc_getobj(&ep->wrk->stats, oc);
+		o = ObjGetObj(oc, &ep->wrk->stats);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		oc->timer_when = EXP_When(&oc->exp);
-		oc_updatemeta(oc);
+		ObjUpdateMeta(oc);
 	}
 
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_When p=%p e=%.9f f=0x%x", oc,
@@ -448,7 +448,7 @@ exp_expire(struct exp_priv *ep, double now)
 
 	VSC_C_main->n_expired++;
 
-	lru = oc_getlru(oc);
+	lru = ObjGetLRU(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 	Lck_Lock(&lru->mtx);
 	// AZ(oc->flags & OC_F_BUSY);
@@ -470,10 +470,10 @@ exp_expire(struct exp_priv *ep, double now)
 	assert(oc->timer_idx == BINHEAP_NOIDX);
 
 	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
-	o = oc_getobj(&ep->wrk->stats, oc);
+	o = ObjGetObj(oc, &ep->wrk->stats);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired x=%u t=%.0f",
-	    oc_getxid(&ep->wrk->stats, oc) & VSL_IDENTMASK,
+	    ObjGetXID(oc, &ep->wrk->stats) & VSL_IDENTMASK,
 	    EXP_Ttl(NULL, &oc->exp) - now);
 	(void)HSH_DerefObjCore(&ep->wrk->stats, &oc);
 	return (0);

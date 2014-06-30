@@ -536,7 +536,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->failed && !bo->do_stream) {
 		assert(bo->state < BOS_STREAM);
 		if (bo->fetch_obj != NULL) {
-			oc_freeobj(bo->stats, bo->fetch_objcore);
+			ObjFreeObj(bo->fetch_objcore, bo->stats);
 			bo->fetch_obj = NULL;
 		}
 		return (F_STP_ERROR);

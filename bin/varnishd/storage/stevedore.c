@@ -53,7 +53,7 @@ default_oc_getxid(struct dstat *ds, struct objcore *oc)
 {
 	struct object *o;
 
-	o = oc_getobj(ds, oc);
+	o = ObjGetObj(oc, ds);
 	return (o->vxid);
 }
 
