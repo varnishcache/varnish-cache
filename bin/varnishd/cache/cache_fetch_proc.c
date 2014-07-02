@@ -114,8 +114,8 @@ VFP_GetStorage(struct busyobj *bo, ssize_t sz)
 static enum vfp_status
 vfp_call(struct busyobj *bo, int nbr, void *p, ssize_t *lp)
 {
-	AN(bo->vfps[nbr]);
-	return (bo->vfps[nbr](bo, p, lp, &bo->vfps_priv[nbr]));
+	AN(bo->vfps[nbr]->pull);
+	return (bo->vfps[nbr]->pull(bo, p, lp, &bo->vfps_priv[nbr]));
 }
 
 static void
@@ -250,12 +250,12 @@ VFP_Fetch_Body(struct busyobj *bo, ssize_t est)
 }
 
 void
-VFP_Push(struct busyobj *bo, vfp_pull_f *func, intptr_t priv)
+VFP_Push(struct busyobj *bo, const struct vfp *vfp, intptr_t priv)
 {
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	bo->vfps_priv[bo->vfp_nxt] = priv;
-	bo->vfps[bo->vfp_nxt] = func;
+	bo->vfps[bo->vfp_nxt] = vfp;
 	bo->vfp_nxt++;
 }
 

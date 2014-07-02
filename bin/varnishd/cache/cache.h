@@ -36,6 +36,7 @@
 
 #include "common/common.h"
 
+#include "cache/cache_filter.h"
 #include "vapi/vsl_int.h"
 
 #include <sys/socket.h>
@@ -253,32 +254,6 @@ struct dstat {
 #undef L0
 #undef L1
 
-/* Fetch processors --------------------------------------------------*/
-
-enum vfp_status {
-	VFP_ERROR = -1,
-	VFP_OK = 0,
-	VFP_END = 1,
-};
-typedef enum vfp_status
-    vfp_pull_f(struct busyobj *bo, void *p, ssize_t *len, intptr_t *priv);
-
-extern vfp_pull_f vfp_gunzip_pull;
-extern vfp_pull_f vfp_gzip_pull;
-extern vfp_pull_f vfp_testgunzip_pull;
-extern vfp_pull_f vfp_esi_pull;
-extern vfp_pull_f vfp_esi_gzip_pull;
-
-/* Deliver processors ------------------------------------------------*/
-
-enum vdp_action {
-	VDP_NULL,
-	VDP_FLUSH,
-	VDP_FINISH,
-};
-typedef int vdp_bytes(struct req *, enum vdp_action, const void *ptr,
-    ssize_t len);
-
 /*--------------------------------------------------------------------*/
 
 struct exp {
@@ -487,7 +462,7 @@ struct busyobj {
 	uint8_t			*vary;
 
 #define N_VFPS			5
-	vfp_pull_f		*vfps[N_VFPS];
+	const struct vfp	*vfps[N_VFPS];
 	intptr_t		vfps_priv[N_VFPS];
 	int			vfp_nxt;
 
@@ -901,7 +876,7 @@ enum vfp_status VFP_Error(struct busyobj *, const char *fmt, ...)
     __printflike(2, 3);
 void VFP_Init(void);
 void VFP_Fetch_Body(struct busyobj *bo, ssize_t est);
-void VFP_Push(struct busyobj *, vfp_pull_f *func, intptr_t priv);
+void VFP_Push(struct busyobj *, const struct vfp *, intptr_t priv);
 enum vfp_status VFP_Suck(struct busyobj *, void *p, ssize_t *lp);
 extern char vfp_init[];
 extern char vfp_fini[];

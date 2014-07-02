@@ -468,22 +468,22 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->do_gunzip || (bo->is_gzip && bo->do_esi)) {
 		RFC2616_Weaken_Etag(bo->beresp);
-		VFP_Push(bo, vfp_gunzip_pull, 0);
+		VFP_Push(bo, &vfp_gunzip, 0);
 	}
 
 	if (bo->do_esi && bo->do_gzip) {
-		VFP_Push(bo, vfp_esi_gzip_pull, 0);
+		VFP_Push(bo, &vfp_esi_gzip, 0);
 		RFC2616_Weaken_Etag(bo->beresp);
 	} else if (bo->do_esi && bo->is_gzip && !bo->do_gunzip) {
-		VFP_Push(bo, vfp_esi_gzip_pull, 0);
+		VFP_Push(bo, &vfp_esi_gzip, 0);
 		RFC2616_Weaken_Etag(bo->beresp);
 	} else if (bo->do_esi) {
-		VFP_Push(bo, vfp_esi_pull, 0);
+		VFP_Push(bo, &vfp_esi, 0);
 	} else if (bo->do_gzip) {
-		VFP_Push(bo, vfp_gzip_pull, 0);
+		VFP_Push(bo, &vfp_gzip, 0);
 		RFC2616_Weaken_Etag(bo->beresp);
 	} else if (bo->is_gzip && !bo->do_gunzip) {
-		VFP_Push(bo, vfp_testgunzip_pull, 0);
+		VFP_Push(bo, &vfp_testgunzip, 0);
 	}
 
 	if (bo->fetch_objcore->flags & OC_F_PRIVATE)

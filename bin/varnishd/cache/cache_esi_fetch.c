@@ -141,7 +141,7 @@ vfp_esi_end(struct busyobj *bo, struct vef_priv *vef, enum vfp_status retval)
 	return (retval);
 }
 
-enum vfp_status __match_proto__(vfp_pull_f)
+static enum vfp_status __match_proto__(vfp_pull_f)
 vfp_esi_gzip_pull(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 {
 	enum vfp_status vp;
@@ -202,7 +202,7 @@ vfp_esi_gzip_pull(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 	return (vp);
 }
 
-enum vfp_status __match_proto__(vfp_pull_f)
+static enum vfp_status __match_proto__(vfp_pull_f)
 vfp_esi_pull(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 {
 	enum vfp_status vp;
@@ -241,3 +241,11 @@ vfp_esi_pull(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 	}
 	return (vp);
 }
+
+const struct vfp vfp_esi = {
+	.pull = vfp_esi_pull,
+};
+
+const struct vfp vfp_esi_gzip = {
+	.pull = vfp_esi_gzip_pull,
+};

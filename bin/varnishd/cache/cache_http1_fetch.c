@@ -100,6 +100,10 @@ v1f_pull_straight(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 	return (VFP_OK);
 }
 
+static const struct vfp v1f_straight = {
+	.pull = v1f_pull_straight,
+};
+
 /*--------------------------------------------------------------------
  * Read a chunked HTTP object.
  *
@@ -133,6 +137,10 @@ v1f_pull_chunked(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 	}
 }
 
+static const struct vfp v1f_chunked = {
+	.pull = v1f_pull_chunked,
+};
+
 /*--------------------------------------------------------------------*/
 
 static enum vfp_status __match_proto__(vfp_pull_f)
@@ -160,6 +168,11 @@ v1f_pull_eof(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 	return (VFP_OK);
 }
 
+static const struct vfp v1f_eof = {
+	.pull = v1f_pull_eof,
+};
+
+
 /*--------------------------------------------------------------------
  */
 
@@ -176,14 +189,14 @@ V1F_Setup_Fetch(struct busyobj *bo)
 
 	switch(htc->body_status) {
 	case BS_EOF:
-		VFP_Push(bo, v1f_pull_eof, 0);
+		VFP_Push(bo, &v1f_eof, 0);
 		return(-1);
 	case BS_LENGTH:
 		cl = vbf_fetch_number(bo->h_content_length, 10);
-		VFP_Push(bo, v1f_pull_straight, cl);
+		VFP_Push(bo, &v1f_straight, cl);
 		return (cl);
 	case BS_CHUNKED:
-		VFP_Push(bo, v1f_pull_chunked, -1);
+		VFP_Push(bo, &v1f_chunked, -1);
 		return (-1);
 	default:
 		break;
