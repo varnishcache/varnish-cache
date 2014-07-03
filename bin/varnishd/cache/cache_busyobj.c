@@ -147,6 +147,7 @@ VBO_GetBusyObj(struct worker *wrk, const struct req *req)
 	bo->director = req->director_hint;
 	bo->vcl = req->vcl;
 	VCL_Ref(bo->vcl);
+	VTAILQ_INIT(&bo->vfp);
 
 	bo->t_first = bo->t_prev = NAN;
 

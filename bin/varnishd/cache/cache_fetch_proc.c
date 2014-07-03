@@ -112,20 +112,20 @@ VFP_GetStorage(struct busyobj *bo, ssize_t sz)
  */
 
 static enum vfp_status
-vfp_call(struct busyobj *bo, int nbr, void *p, ssize_t *lp)
+vfp_call(struct busyobj *bo, struct vfp_entry *vfe, void *p, ssize_t *lp)
 {
-	AN(bo->vfps[nbr]->pull);
-	return (bo->vfps[nbr]->pull(bo, p, lp, &bo->vfps_priv[nbr]));
+	AN(vfe->vfp->pull);
+	return (vfe->vfp->pull(bo, p, lp, &vfe->priv2));
 }
 
 static void
 vfp_suck_fini(struct busyobj *bo)
 {
-	int i;
+	struct vfp_entry *vfe;
 
-	for (i = 0; i < bo->vfp_nxt; i++) {
-		if(bo->vfps[i] != NULL)
-			(void)vfp_call(bo, i, vfp_fini, NULL);
+	VTAILQ_FOREACH(vfe, &bo->vfp, list) {
+		if(vfe->vfp != NULL)
+			(void)vfp_call(bo, vfe, vfp_fini, NULL);
 	}
 }
 
@@ -133,10 +133,10 @@ static enum vfp_status
 vfp_suck_init(struct busyobj *bo)
 {
 	enum vfp_status retval = VFP_ERROR;
-	int i;
+	struct vfp_entry *vfe;
 
-	for (i = 0; i < bo->vfp_nxt; i++) {
-		retval = vfp_call(bo, i, vfp_init, NULL);
+	VTAILQ_FOREACH(vfe, &bo->vfp, list) {
+		retval = vfp_call(bo, vfe, vfp_init, NULL);
 		if (retval != VFP_OK) {
 			vfp_suck_fini(bo);
 			break;
@@ -155,24 +155,29 @@ enum vfp_status
 VFP_Suck(struct busyobj *bo, void *p, ssize_t *lp)
 {
 	enum vfp_status vp;
+	struct vfp_entry *vfe;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	AN(p);
 	AN(lp);
-	assert(bo->vfp_nxt > 0);
-	bo->vfp_nxt--;
-	if (bo->vfps[bo->vfp_nxt] == NULL) {
+	vfe = bo->vfp_nxt;
+	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
+	bo->vfp_nxt = VTAILQ_NEXT(vfe, list);
+
+	if (vfe->vfp == NULL) {
 		*lp = 0;
-		vp = (enum vfp_status)bo->vfps_priv[bo->vfp_nxt];
+		vp = (enum vfp_status)vfe->priv2;
+		bo->vfp_nxt = vfe;
+		return (vp);
 	} else {
-		vp = vfp_call(bo, bo->vfp_nxt, p, lp);
+		vp = vfp_call(bo, vfe, p, lp);
 		if (vp != VFP_OK) {
-			(void)vfp_call(bo, bo->vfp_nxt, vfp_fini, NULL);
-			bo->vfps[bo->vfp_nxt] = NULL;
-			bo->vfps_priv[bo->vfp_nxt] = vp;
+			(void)vfp_call(bo, vfe, vfp_fini, NULL);
+			vfe->vfp = NULL;
+			vfe->priv2 = vp;
 		}
 	}
-	bo->vfp_nxt++;
+	bo->vfp_nxt = vfe;
 	return (vp);
 }
 
@@ -252,11 +257,16 @@ VFP_Fetch_Body(struct busyobj *bo, ssize_t est)
 void
 VFP_Push(struct busyobj *bo, const struct vfp *vfp, intptr_t priv)
 {
+	struct vfp_entry *vfe;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	bo->vfps_priv[bo->vfp_nxt] = priv;
-	bo->vfps[bo->vfp_nxt] = vfp;
-	bo->vfp_nxt++;
+	vfe = (void*)WS_Alloc(bo->ws, sizeof *vfe);
+	AN(vfe);
+	vfe->magic = VFP_ENTRY_MAGIC;
+	vfe->vfp = vfp;
+	vfe->priv2 = priv;
+	VTAILQ_INSERT_HEAD(&bo->vfp, vfe, list);
+	bo->vfp_nxt = vfe;
 }
 
 /*--------------------------------------------------------------------

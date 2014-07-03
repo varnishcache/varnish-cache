@@ -444,6 +444,15 @@ enum busyobj_state_e {
 	BOS_FAILED,		/* something went wrong */
 };
 
+struct vfp_entry {
+	unsigned		magic;
+#define VFP_ENTRY_MAGIC		0xbe32a027
+	const struct vfp	*vfp;
+	// void			*priv1;
+	intptr_t		priv2;
+	VTAILQ_ENTRY(vfp_entry)	list;
+};
+
 struct busyobj {
 	unsigned		magic;
 #define BUSYOBJ_MAGIC		0x23b95567
@@ -461,10 +470,8 @@ struct busyobj {
 
 	uint8_t			*vary;
 
-#define N_VFPS			5
-	const struct vfp	*vfps[N_VFPS];
-	intptr_t		vfps_priv[N_VFPS];
-	int			vfp_nxt;
+	VTAILQ_HEAD(,vfp_entry)	vfp;
+	struct vfp_entry	*vfp_nxt;
 
 	int			failed;
 	enum busyobj_state_e	state;
