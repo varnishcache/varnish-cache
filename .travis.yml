@@ -1,0 +1,6 @@
+---
+script: 'make -j3 check'
+before_install:
+  - sudo apt-get install python-docutils
+  - ./autogen.sh
+  - ./configure
