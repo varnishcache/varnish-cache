@@ -41,7 +41,7 @@ enum vfp_status {
 
 typedef enum vfp_status vfp_init_f(struct busyobj *, struct vfp_entry *);
 typedef enum vfp_status
-    vfp_pull_f(struct busyobj *, void *ptr, ssize_t *len, struct vfp_entry *);
+    vfp_pull_f(struct busyobj *, struct vfp_entry *, void *ptr, ssize_t *len);
 typedef void vfp_fini_f(struct busyobj *, struct vfp_entry *);
 
 struct vfp {

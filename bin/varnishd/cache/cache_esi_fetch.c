@@ -165,8 +165,8 @@ vfp_esi_gzip_init(struct busyobj *bo, struct vfp_entry *vfe)
 }
 
 static enum vfp_status __match_proto__(vfp_pull_f)
-vfp_esi_gzip_pull(struct busyobj *bo, void *p, ssize_t *lp,
-    struct vfp_entry *vfe)
+vfp_esi_gzip_pull(struct busyobj *bo, struct vfp_entry *vfe, void *p,
+   ssize_t *lp)
 {
 	enum vfp_status vp;
 	ssize_t d, l;
@@ -221,7 +221,7 @@ vfp_esi_init(struct busyobj *bo, struct vfp_entry *vfe)
 }
 
 static enum vfp_status __match_proto__(vfp_pull_f)
-vfp_esi_pull(struct busyobj *bo, void *p, ssize_t *lp, struct vfp_entry *vfe)
+vfp_esi_pull(struct busyobj *bo, struct vfp_entry *vfe, void *p, ssize_t *lp)
 {
 	enum vfp_status vp;
 	ssize_t d;

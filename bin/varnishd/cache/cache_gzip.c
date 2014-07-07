@@ -475,7 +475,8 @@ vfp_gzip_init(struct busyobj *bo, struct vfp_entry *vfe)
  */
 
 static enum vfp_status __match_proto__(vfp_pull_f)
-vfp_gunzip_pull(struct busyobj *bo, void *p, ssize_t *lp, struct vfp_entry *vfe)
+vfp_gunzip_pull(struct busyobj *bo, struct vfp_entry *vfe, void *p,
+    ssize_t *lp)
 {
         ssize_t l;
 	struct vgz *vg;
@@ -528,7 +529,8 @@ vfp_gunzip_pull(struct busyobj *bo, void *p, ssize_t *lp, struct vfp_entry *vfe)
  */
 
 static enum vfp_status __match_proto__(vfp_pull_f)
-vfp_gzip_pull(struct busyobj *bo, void *p, ssize_t *lp, struct vfp_entry *vfe)
+vfp_gzip_pull(struct busyobj *bo, struct vfp_entry *vfe, void *p,
+    ssize_t *lp)
 {
         ssize_t l;
 	struct vgz *vg;
@@ -582,8 +584,8 @@ vfp_gzip_pull(struct busyobj *bo, void *p, ssize_t *lp, struct vfp_entry *vfe)
  */
 
 static enum vfp_status __match_proto__(vfp_pull_f)
-vfp_testgunzip_pull(struct busyobj *bo, void *p, ssize_t *lp,
-    struct vfp_entry *vfe)
+vfp_testgunzip_pull(struct busyobj *bo, struct vfp_entry *vfe, void *p,
+    ssize_t *lp)
 {
 	struct vgz *vg;
 	enum vgzret_e vr = VGZ_ERROR;

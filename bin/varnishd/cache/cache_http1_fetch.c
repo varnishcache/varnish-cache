@@ -69,8 +69,8 @@ vbf_fetch_number(const char *nbr, int radix)
 /*--------------------------------------------------------------------*/
 
 static enum vfp_status __match_proto__(vfp_pull_f)
-v1f_pull_straight(struct busyobj *bo, void *p, ssize_t *lp,
-    struct vfp_entry *vfe)
+v1f_pull_straight(struct busyobj *bo, struct vfp_entry *vfe, void *p,
+    ssize_t *lp)
 {
 	ssize_t l, lr;
 
@@ -110,8 +110,8 @@ static const struct vfp v1f_straight = {
  */
 
 static enum vfp_status __match_proto__(vfp_pull_f)
-v1f_pull_chunked(struct busyobj *bo, void *p, ssize_t *lp,
-    struct vfp_entry *vfe)
+v1f_pull_chunked(struct busyobj *bo, struct vfp_entry *vfe, void *p,
+    ssize_t *lp)
 {
 	const char *err;
 
@@ -142,7 +142,8 @@ static const struct vfp v1f_chunked = {
 /*--------------------------------------------------------------------*/
 
 static enum vfp_status __match_proto__(vfp_pull_f)
-v1f_pull_eof(struct busyobj *bo, void *p, ssize_t *lp, struct vfp_entry *vfe)
+v1f_pull_eof(struct busyobj *bo, struct vfp_entry *vfe, void *p,
+    ssize_t *lp)
 {
 	ssize_t l, lr;
 

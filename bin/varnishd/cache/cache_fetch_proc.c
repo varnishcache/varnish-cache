@@ -165,7 +165,7 @@ VFP_Suck(struct busyobj *bo, void *p, ssize_t *lp)
 		bo->vfp_nxt = vfe;
 		return (vp);
 	} else {
-		vp = vfe->vfp->pull(bo, p, lp, vfe);
+		vp = vfe->vfp->pull(bo, vfe, p, lp);
 		if (vp == VFP_ERROR)
 			(void)VFP_Error(bo, "Fetch filter %s returned %d",
 			    vfe->vfp->name, vp);
