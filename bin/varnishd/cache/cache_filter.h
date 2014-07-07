@@ -38,11 +38,19 @@ enum vfp_status {
 	VFP_OK = 0,
 	VFP_END = 1,
 };
+
+typedef enum vfp_status vfp_init_f(struct busyobj *, struct vfp_entry *);
 typedef enum vfp_status
     vfp_pull_f(struct busyobj *, void *ptr, ssize_t *len, struct vfp_entry *);
+typedef void vfp_fini_f(struct busyobj *, struct vfp_entry *);
 
 struct vfp {
+	const char	*name;
+	vfp_init_f	*init;
 	vfp_pull_f	*pull;
+	vfp_fini_f	*fini;
+	const void	*priv1;
+	intptr_t	priv2;
 };
 
 extern const struct vfp vfp_gunzip;

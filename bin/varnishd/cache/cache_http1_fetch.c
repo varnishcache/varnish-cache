@@ -77,10 +77,6 @@ v1f_pull_straight(struct busyobj *bo, void *p, ssize_t *lp,
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 
-	if (p == vfp_init)
-		return (VFP_OK);
-	if (p == vfp_fini)
-		return (VFP_ERROR);
 	AN(p);
 	AN(lp);
 
@@ -103,6 +99,7 @@ v1f_pull_straight(struct busyobj *bo, void *p, ssize_t *lp,
 }
 
 static const struct vfp v1f_straight = {
+	.name = "V1F_STRAIGHT",
 	.pull = v1f_pull_straight,
 };
 
@@ -121,10 +118,6 @@ v1f_pull_chunked(struct busyobj *bo, void *p, ssize_t *lp,
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 
-	if (p == vfp_init)
-		return (VFP_OK);
-	if (p == vfp_fini)
-		return (VFP_ERROR);
 	AN(p);
 	AN(lp);
 
@@ -142,6 +135,7 @@ v1f_pull_chunked(struct busyobj *bo, void *p, ssize_t *lp,
 }
 
 static const struct vfp v1f_chunked = {
+	.name = "V1F_CHUNKED",
 	.pull = v1f_pull_chunked,
 };
 
@@ -154,10 +148,6 @@ v1f_pull_eof(struct busyobj *bo, void *p, ssize_t *lp, struct vfp_entry *vfe)
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
-	if (p == vfp_init)
-		return (VFP_OK);
-	if (p == vfp_fini)
-		return (VFP_ERROR);
 	AN(p);
 	AN(lp);
 
@@ -173,6 +163,7 @@ v1f_pull_eof(struct busyobj *bo, void *p, ssize_t *lp, struct vfp_entry *vfe)
 }
 
 static const struct vfp v1f_eof = {
+	.name = "V1F_EOF",
 	.pull = v1f_pull_eof,
 };
 

@@ -43,9 +43,6 @@
 
 static unsigned fetchfrag;
 
-char vfp_init[] = "<init>";
-char vfp_fini[] = "<fini>";
-
 /*--------------------------------------------------------------------
  * We want to issue the first error we encounter on fetching and
  * supress the rest.  This function does that.
@@ -111,35 +108,33 @@ VFP_GetStorage(struct busyobj *bo, ssize_t sz)
 /**********************************************************************
  */
 
-static enum vfp_status
-vfp_call(struct busyobj *bo, struct vfp_entry *vfe, void *p, ssize_t *lp)
-{
-	AN(vfe->vfp->pull);
-	return (vfe->vfp->pull(bo, p, lp, vfe));
-}
-
 static void
 vfp_suck_fini(struct busyobj *bo)
 {
 	struct vfp_entry *vfe;
 
 	VTAILQ_FOREACH(vfe, &bo->vfp, list) {
-		if(vfe->vfp != NULL)
-			(void)vfp_call(bo, vfe, vfp_fini, NULL);
+		if(vfe->vfp != NULL && vfe->vfp->fini != NULL)
+			vfe->vfp->fini(bo, vfe);
 	}
 }
 
 static enum vfp_status
 vfp_suck_init(struct busyobj *bo)
 {
-	enum vfp_status retval = VFP_ERROR;
+	enum vfp_status retval = VFP_OK;
 	struct vfp_entry *vfe;
 
 	VTAILQ_FOREACH(vfe, &bo->vfp, list) {
-		retval = vfp_call(bo, vfe, vfp_init, NULL);
+		if (vfe->vfp->init == NULL)
+			continue;
+		retval = vfe->vfp->init(bo, vfe);
 		if (retval != VFP_OK) {
+			(void)VFP_Error(bo,
+			    "Fetch filter %s failed to initialize",
+			    vfe->vfp->name);
 			vfp_suck_fini(bo);
-			break;
+			return (retval);
 		}
 	}
 	return (retval);
@@ -170,9 +165,13 @@ VFP_Suck(struct busyobj *bo, void *p, ssize_t *lp)
 		bo->vfp_nxt = vfe;
 		return (vp);
 	} else {
-		vp = vfp_call(bo, vfe, p, lp);
+		vp = vfe->vfp->pull(bo, p, lp, vfe);
+		if (vp == VFP_ERROR)
+			(void)VFP_Error(bo, "Fetch filter %s returned %d",
+			    vfe->vfp->name, vp);
 		if (vp != VFP_OK) {
-			(void)vfp_call(bo, vfe, vfp_fini, NULL);
+			if (vfe->vfp->fini != NULL)
+				vfe->vfp->fini(bo, vfe);
 			vfe->vfp = NULL;
 			vfe->priv2 = vp;
 		}

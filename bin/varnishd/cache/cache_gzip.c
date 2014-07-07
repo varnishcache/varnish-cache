@@ -444,6 +444,30 @@ VGZ_Destroy(struct vgz **vgp)
 	return (vr);
 }
 
+/*--------------------------------------------------------------------*/
+
+static enum vfp_status __match_proto__(vfp_init_f)
+vfp_gzip_init(struct busyobj *bo, struct vfp_entry *vfe)
+{
+	struct vgz *vg;
+
+        CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
+
+	if (vfe->vfp->priv2)
+		vg = VGZ_NewGzip(bo->vsl, vfe->vfp->priv1);
+	else
+		vg = VGZ_NewUngzip(bo->vsl, vfe->vfp->priv1);
+	if (vg == NULL)
+		return (VFP_ERROR);
+	if (vgz_getmbuf(vg))
+		return (VFP_ERROR);
+	vfe->priv1 = vg;
+	VGZ_Ibuf(vg, vg->m_buf, 0);
+	AZ(vg->m_len);
+	return (VFP_OK);
+}
+
 /*--------------------------------------------------------------------
  * VFP_GUNZIP
  *
@@ -462,26 +486,9 @@ vfp_gunzip_pull(struct busyobj *bo, void *p, ssize_t *lp, struct vfp_entry *vfe)
 
         CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
-	if (p == vfp_init) {
-		vg = VGZ_NewUngzip(bo->vsl, "U F -");
-		XXXAZ(vgz_getmbuf(vg));
-		vfe->priv1 = vg;
-		VGZ_Ibuf(vg, vg->m_buf, 0);
-		AZ(vg->m_len);
-		return (VFP_OK);
-	}
-	if (p == vfp_fini) {
-		if (vfe->priv1 != NULL) {
-			CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
-			vfe->priv1 = NULL;
-			(void)VGZ_Destroy(&vg);
-		}
-		vfe->priv1 = NULL;
-		return (VFP_ERROR);
-	}
+	CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
         AN(p);
         AN(lp);
-	CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
 	l = *lp;
 	*lp = 0;
 	VGZ_Obuf(vg, p, l);
@@ -513,10 +520,6 @@ vfp_gunzip_pull(struct busyobj *bo, void *p, ssize_t *lp, struct vfp_entry *vfe)
 	return (vp);
 }
 
-const struct vfp vfp_gunzip = {
-	.pull = vfp_gunzip_pull,
-};
-
 
 /*--------------------------------------------------------------------
  * VFP_GZIP
@@ -536,26 +539,9 @@ vfp_gzip_pull(struct busyobj *bo, void *p, ssize_t *lp, struct vfp_entry *vfe)
 
         CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
-	if (p == vfp_init) {
-		vg = VGZ_NewGzip(bo->vsl, "G F -");
-		XXXAZ(vgz_getmbuf(vg));
-		vfe->priv1 = vg;
-		VGZ_Ibuf(vg, vg->m_buf, 0);
-		AZ(vg->m_len);
-		vg->flag = VGZ_NORMAL;
-		return (VFP_OK);
-	}
-	if (p == vfp_fini) {
-		if (vfe->priv1 != NULL) {
-			CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
-			vfe->priv1 = NULL;
-			(void)VGZ_Destroy(&vg);
-		}
-		return (VFP_ERROR);
-	}
+	CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
         AN(p);
         AN(lp);
-	CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
 	l = *lp;
 	*lp = 0;
 	VGZ_Obuf(vg, p, l);
@@ -588,10 +574,6 @@ vfp_gzip_pull(struct busyobj *bo, void *p, ssize_t *lp, struct vfp_entry *vfe)
 	return (VFP_END);
 }
 
-const struct vfp vfp_gzip = {
-	.pull = vfp_gzip_pull,
-};
-
 /*--------------------------------------------------------------------
  * VFP_TESTGZIP
  *
@@ -611,21 +593,7 @@ vfp_testgunzip_pull(struct busyobj *bo, void *p, ssize_t *lp,
 
         CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
-	if (p == vfp_init) {
-		vg = VGZ_NewUngzip(bo->vsl, "u F -");
-		XXXAZ(vgz_getmbuf(vg));
-		vfe->priv1 = vg;
-		AZ(vg->m_len);
-		return (VFP_OK);
-	}
-	if (p == vfp_fini) {
-		if (vfe->priv1 != NULL) {
-			CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
-			vfe->priv1 = NULL;
-			(void)VGZ_Destroy(&vg);
-		}
-		return (VFP_ERROR);
-	}
+	CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
         AN(p);
         AN(lp);
 	CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
@@ -652,6 +620,46 @@ vfp_testgunzip_pull(struct busyobj *bo, void *p, ssize_t *lp,
 	return (vp);
 }
 
+/*--------------------------------------------------------------------*/
+
+static void __match_proto__(vfp_fini_f)
+vfp_gzip_fini(struct busyobj *bo, struct vfp_entry *vfe)
+{
+	struct vgz *vg;
+
+        CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
+
+	if (vfe->priv1 != NULL) {
+		CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
+		vfe->priv1 = NULL;
+		(void)VGZ_Destroy(&vg);
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
+const struct vfp vfp_gunzip = {
+	.name = "GUNZIP",
+	.init = vfp_gzip_init,
+	.pull = vfp_gunzip_pull,
+	.fini = vfp_gzip_fini,
+	.priv1 = "U F -",
+};
+
+const struct vfp vfp_gzip = {
+	.name = "GZIP",
+	.init = vfp_gzip_init,
+	.pull = vfp_gzip_pull,
+	.fini = vfp_gzip_fini,
+	.priv1 = "G F -",
+	.priv2 = 1,
+};
+
 const struct vfp vfp_testgunzip = {
+	.name = "TESTGUNZIP",
+	.init = vfp_gzip_init,
 	.pull = vfp_testgunzip_pull,
+	.fini = vfp_gzip_fini,
+	.priv1 = "u F -",
 };

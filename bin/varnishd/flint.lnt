@@ -113,6 +113,7 @@
 -sem(EXP_Inject, custodial(1))
 -sem(WS_Init, custodial(2))
 -sem(http_Setup, custodial(2))
+-sem(vfp_esi_end, custodial(2))
 
 -sem(vdi_dns_cache_list_add, custodial(3))
 
