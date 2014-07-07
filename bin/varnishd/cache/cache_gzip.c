@@ -451,7 +451,7 @@ VGZ_Destroy(struct vgz **vgp)
  */
 
 static enum vfp_status __match_proto__(vfp_pull_f)
-vfp_gunzip_pull(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
+vfp_gunzip_pull(struct busyobj *bo, void *p, ssize_t *lp, struct vfp_entry *vfe)
 {
         ssize_t l;
 	struct vgz *vg;
@@ -461,27 +461,27 @@ vfp_gunzip_pull(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 	enum vfp_status vp = VFP_OK;
 
         CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	if (p == vfp_init) {
 		vg = VGZ_NewUngzip(bo->vsl, "U F -");
 		XXXAZ(vgz_getmbuf(vg));
-		*priv = (uintptr_t)vg;
+		vfe->priv1 = vg;
 		VGZ_Ibuf(vg, vg->m_buf, 0);
 		AZ(vg->m_len);
 		return (VFP_OK);
 	}
 	if (p == vfp_fini) {
-		if (*priv != 0) {
-			CAST_OBJ_NOTNULL(vg, (void*)(*priv), VGZ_MAGIC);
-			*priv = 0;
+		if (vfe->priv1 != NULL) {
+			CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
+			vfe->priv1 = NULL;
 			(void)VGZ_Destroy(&vg);
 		}
-		*priv = 0;
+		vfe->priv1 = NULL;
 		return (VFP_ERROR);
 	}
         AN(p);
         AN(lp);
-        AN(priv);
-	CAST_OBJ_NOTNULL(vg, (void*)(*priv), VGZ_MAGIC);
+	CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
 	l = *lp;
 	*lp = 0;
 	VGZ_Obuf(vg, p, l);
@@ -525,7 +525,7 @@ const struct vfp vfp_gunzip = {
  */
 
 static enum vfp_status __match_proto__(vfp_pull_f)
-vfp_gzip_pull(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
+vfp_gzip_pull(struct busyobj *bo, void *p, ssize_t *lp, struct vfp_entry *vfe)
 {
         ssize_t l;
 	struct vgz *vg;
@@ -535,27 +535,27 @@ vfp_gzip_pull(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 	enum vfp_status vp = VFP_ERROR;
 
         CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	if (p == vfp_init) {
 		vg = VGZ_NewGzip(bo->vsl, "G F -");
 		XXXAZ(vgz_getmbuf(vg));
-		*priv = (uintptr_t)vg;
+		vfe->priv1 = vg;
 		VGZ_Ibuf(vg, vg->m_buf, 0);
 		AZ(vg->m_len);
 		vg->flag = VGZ_NORMAL;
 		return (VFP_OK);
 	}
 	if (p == vfp_fini) {
-		if (*priv != 0) {
-			CAST_OBJ_NOTNULL(vg, (void*)(*priv), VGZ_MAGIC);
-			*priv = 0;
+		if (vfe->priv1 != NULL) {
+			CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
+			vfe->priv1 = NULL;
 			(void)VGZ_Destroy(&vg);
 		}
 		return (VFP_ERROR);
 	}
         AN(p);
         AN(lp);
-        AN(priv);
-	CAST_OBJ_NOTNULL(vg, (void*)(*priv), VGZ_MAGIC);
+	CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
 	l = *lp;
 	*lp = 0;
 	VGZ_Obuf(vg, p, l);
@@ -600,7 +600,8 @@ const struct vfp vfp_gzip = {
  */
 
 static enum vfp_status __match_proto__(vfp_pull_f)
-vfp_testgunzip_pull(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
+vfp_testgunzip_pull(struct busyobj *bo, void *p, ssize_t *lp,
+    struct vfp_entry *vfe)
 {
 	struct vgz *vg;
 	enum vgzret_e vr = VGZ_ERROR;
@@ -609,25 +610,25 @@ vfp_testgunzip_pull(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 	enum vfp_status vp;
 
         CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	if (p == vfp_init) {
 		vg = VGZ_NewUngzip(bo->vsl, "u F -");
 		XXXAZ(vgz_getmbuf(vg));
-		*priv = (uintptr_t)vg;
+		vfe->priv1 = vg;
 		AZ(vg->m_len);
 		return (VFP_OK);
 	}
 	if (p == vfp_fini) {
-		if (*priv != 0) {
-			CAST_OBJ_NOTNULL(vg, (void*)(*priv), VGZ_MAGIC);
-			*priv = 0;
+		if (vfe->priv1 != NULL) {
+			CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
+			vfe->priv1 = NULL;
 			(void)VGZ_Destroy(&vg);
 		}
 		return (VFP_ERROR);
 	}
         AN(p);
         AN(lp);
-        AN(priv);
-	CAST_OBJ_NOTNULL(vg, (void*)(*priv), VGZ_MAGIC);
+	CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
 	vp = VFP_Suck(bo, p, lp);
 	if (vp == VFP_ERROR)
 		return (vp);

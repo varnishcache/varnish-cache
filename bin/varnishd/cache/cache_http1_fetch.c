@@ -69,33 +69,35 @@ vbf_fetch_number(const char *nbr, int radix)
 /*--------------------------------------------------------------------*/
 
 static enum vfp_status __match_proto__(vfp_pull_f)
-v1f_pull_straight(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
+v1f_pull_straight(struct busyobj *bo, void *p, ssize_t *lp,
+    struct vfp_entry *vfe)
 {
 	ssize_t l, lr;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
+
 	if (p == vfp_init)
 		return (VFP_OK);
 	if (p == vfp_fini)
 		return (VFP_ERROR);
 	AN(p);
 	AN(lp);
-	AN(priv);
 
 	l = *lp;
 	*lp = 0;
 
-	if (!*priv)		// XXX: Optimize Content-Len: 0 out earlier
+	if (vfe->priv2 == 0) // XXX: Optimize Content-Len: 0 out earlier
 		return (VFP_END);
-	if (*priv < l)
-		l = *priv;
+	if (vfe->priv2 < l)
+		l = vfe->priv2;
 	lr = HTTP1_Read(&bo->htc, p, l);
 	bo->acct.beresp_bodybytes += lr;
 	if (lr <= 0)
 		return (VFP_Error(bo, "straight insufficient bytes"));
 	*lp = lr;
-	*priv -= lr;
-	if (*priv == 0)
+	vfe->priv2 -= lr;
+	if (vfe->priv2 == 0)
 		return (VFP_END);
 	return (VFP_OK);
 }
@@ -111,20 +113,22 @@ static const struct vfp v1f_straight = {
  */
 
 static enum vfp_status __match_proto__(vfp_pull_f)
-v1f_pull_chunked(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
+v1f_pull_chunked(struct busyobj *bo, void *p, ssize_t *lp,
+    struct vfp_entry *vfe)
 {
 	const char *err;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
+
 	if (p == vfp_init)
 		return (VFP_OK);
 	if (p == vfp_fini)
 		return (VFP_ERROR);
 	AN(p);
 	AN(lp);
-	AN(priv);
 
-	switch (HTTP1_Chunked(&bo->htc, priv, &err,
+	switch (HTTP1_Chunked(&bo->htc, &vfe->priv2, &err,
 	    &bo->acct.beresp_bodybytes, p, lp)) {
 	case H1CR_ERROR:
 		return (VFP_Error(bo, "%s", err));
@@ -144,18 +148,18 @@ static const struct vfp v1f_chunked = {
 /*--------------------------------------------------------------------*/
 
 static enum vfp_status __match_proto__(vfp_pull_f)
-v1f_pull_eof(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
+v1f_pull_eof(struct busyobj *bo, void *p, ssize_t *lp, struct vfp_entry *vfe)
 {
 	ssize_t l, lr;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	if (p == vfp_init)
 		return (VFP_OK);
 	if (p == vfp_fini)
 		return (VFP_ERROR);
 	AN(p);
 	AN(lp);
-	AN(priv);
 
 	l = *lp;
 	*lp = 0;

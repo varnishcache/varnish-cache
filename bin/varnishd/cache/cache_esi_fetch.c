@@ -142,13 +142,15 @@ vfp_esi_end(struct busyobj *bo, struct vef_priv *vef, enum vfp_status retval)
 }
 
 static enum vfp_status __match_proto__(vfp_pull_f)
-vfp_esi_gzip_pull(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
+vfp_esi_gzip_pull(struct busyobj *bo, void *p, ssize_t *lp,
+    struct vfp_entry *vfe)
 {
 	enum vfp_status vp;
 	ssize_t d, l;
 	struct vef_priv *vef;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	if (p == vfp_init) {
 		ALLOC_OBJ(vef, VEF_MAGIC);
 		XXXAN(vef);
@@ -159,20 +161,19 @@ vfp_esi_gzip_pull(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 		XXXAN(vef->ibuf);
 		vef->ibuf_i = vef->ibuf;
 		vef->ibuf_o = vef->ibuf;
-		*priv = (uintptr_t)vef;
+		vfe->priv1 = vef;
 		return (VFP_OK);
 	}
 	if (p == vfp_fini) {
-		if (*priv)
-			(void)vfp_esi_end(bo, (void*)*priv, VFP_ERROR);
-		*priv = 0;
+		if (vfe->priv1 != NULL)
+			(void)vfp_esi_end(bo, vfe->priv1, VFP_ERROR);
+		vfe->priv1 = NULL;
 		return (VFP_ERROR);
 	}
 	AN(p);
 	AN(lp);
 	*lp = 0;
-	AN(priv);
-	CAST_OBJ_NOTNULL(vef, (void*)*priv, VEF_MAGIC);
+	CAST_OBJ_NOTNULL(vef, vfe->priv1, VEF_MAGIC);
 	l = vef->ibuf_sz - (vef->ibuf_i - vef->ibuf);
 	if (DO_DEBUG(DBG_ESI_CHOP)) {
 		d = (random() & 3) + 1;
@@ -197,36 +198,36 @@ vfp_esi_gzip_pull(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 	}
 	if (vp == VFP_END) {
 		vp = vfp_esi_end(bo, vef, vp);
-		*priv = 0;
+		vfe->priv1 = NULL;
 	}
 	return (vp);
 }
 
 static enum vfp_status __match_proto__(vfp_pull_f)
-vfp_esi_pull(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
+vfp_esi_pull(struct busyobj *bo, void *p, ssize_t *lp, struct vfp_entry *vfe)
 {
 	enum vfp_status vp;
 	ssize_t d;
 	struct vef_priv *vef;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	if (p == vfp_init) {
 		ALLOC_OBJ(vef, VEF_MAGIC);
 		XXXAN(vef);
 		vef->vep = VEP_Init(bo, NULL, NULL);
-		*priv = (uintptr_t)vef;
+		vfe->priv1 = vef;
 		return (VFP_OK);
 	}
 	if (p == vfp_fini) {
-		if (*priv)
-			(void)vfp_esi_end(bo, (void*)*priv, VFP_ERROR);
-		*priv = 0;
+		if (vfe->priv1 != NULL)
+			(void)vfp_esi_end(bo, vfe->priv1, VFP_ERROR);
+		vfe->priv1 = NULL;
 		return (VFP_ERROR);
 	}
 	AN(p);
 	AN(lp);
-	AN(priv);
-	CAST_OBJ_NOTNULL(vef, (void*)*priv, VEF_MAGIC);
+	CAST_OBJ_NOTNULL(vef, vfe->priv1, VEF_MAGIC);
 	if (DO_DEBUG(DBG_ESI_CHOP)) {
 		d = (random() & 3) + 1;
 		if (d < *lp)
@@ -237,7 +238,7 @@ vfp_esi_pull(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 		VEP_Parse(vef->vep, bo, p, *lp);
 	if (vp == VFP_END) {
 		vp = vfp_esi_end(bo, vef, vp);
-		*priv = 0;
+		vfe->priv1 = NULL;
 	}
 	return (vp);
 }

@@ -115,7 +115,7 @@ static enum vfp_status
 vfp_call(struct busyobj *bo, struct vfp_entry *vfe, void *p, ssize_t *lp)
 {
 	AN(vfe->vfp->pull);
-	return (vfe->vfp->pull(bo, p, lp, &vfe->priv2));
+	return (vfe->vfp->pull(bo, p, lp, vfe));
 }
 
 static void

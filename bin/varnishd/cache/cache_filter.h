@@ -29,6 +29,7 @@
 
 struct busyobj;
 struct req;
+struct vfp_entry;
 
 /* Fetch processors --------------------------------------------------*/
 
@@ -38,7 +39,7 @@ enum vfp_status {
 	VFP_END = 1,
 };
 typedef enum vfp_status
-    vfp_pull_f(struct busyobj *bo, void *p, ssize_t *len, intptr_t *priv);
+    vfp_pull_f(struct busyobj *, void *ptr, ssize_t *len, struct vfp_entry *);
 
 struct vfp {
 	vfp_pull_f	*pull;

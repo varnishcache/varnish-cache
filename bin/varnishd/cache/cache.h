@@ -448,7 +448,7 @@ struct vfp_entry {
 	unsigned		magic;
 #define VFP_ENTRY_MAGIC		0xbe32a027
 	const struct vfp	*vfp;
-	// void			*priv1;
+	void			*priv1;
 	intptr_t		priv2;
 	VTAILQ_ENTRY(vfp_entry)	list;
 };
