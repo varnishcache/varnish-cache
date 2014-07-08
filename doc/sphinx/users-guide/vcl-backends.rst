@@ -100,7 +100,7 @@ this example this is intentional but you might want it to be a bit
 more tight, maybe relying on the ``==`` operator in stead, like this:::
 
     sub vcl_recv {
-        if (req.http.host == "foo.com" or req.http.host == "www.foo.com") {
+        if (req.http.host == "foo.com" || req.http.host == "www.foo.com") {
             set req.backend_hint = foo;
         }
     }
