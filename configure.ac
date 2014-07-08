@@ -369,7 +369,10 @@ else
 fi
 
 AM_MISSING_HAS_RUN
-AC_CHECK_PROGS(PYTHON, [python3 python3.1 python3.2 python2.7 python2.6 python2.5 python2 python], [AC_MSG_ERROR([Python is needed to build Varnish, please install python.])])
+AC_CHECK_PROGS(PYTHON, [python3 python3.1 python3.2 python2.7 python2.6 python2.5 python2 python], "no")
+if test "x$PYTHON" = "xno"; then
+  AC_MSG_ERROR([Python is needed to build Varnish, please install python.])
+fi
 
 # Older Solaris versions define SO_{RCV,SND}TIMEO, but do not
 # implement them.
