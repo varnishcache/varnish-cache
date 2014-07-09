@@ -481,7 +481,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (vbf_beresp2obj(bo)) {
 		(void)VFP_Error(bo, "Could not get storage");
-		VDI_CloseFd(&bo->vbc, &bo->acct);
+		bo->should_close = 1;
 		return (F_STP_ERROR);
 	}
 
@@ -507,6 +507,12 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	AZ(WS_Overflowed(bo->ws_o));
 
 	assert (bo->state == BOS_REQ_DONE);
+
+	if (VFP_Open(bo)) {
+		(void)VFP_Error(bo, "Fetch Pipeline failed to open");
+		bo->should_close = 1;
+		return (F_STP_ERROR);
+	}
 
 	if (bo->do_stream) {
 		HSH_Unbusy(&wrk->stats, obj->objcore);

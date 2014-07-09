@@ -454,6 +454,8 @@ struct vfp_entry {
 	VTAILQ_ENTRY(vfp_entry)	list;
 };
 
+VTAILQ_HEAD(vfp_entry_s, vfp_entry);
+
 struct busyobj {
 	unsigned		magic;
 #define BUSYOBJ_MAGIC		0x23b95567
@@ -471,7 +473,7 @@ struct busyobj {
 
 	uint8_t			*vary;
 
-	VTAILQ_HEAD(,vfp_entry)	vfp;
+	struct vfp_entry_s	vfp;
 	struct vfp_entry	*vfp_nxt;
 
 	int			failed;

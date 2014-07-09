@@ -118,24 +118,24 @@ vfp_suck_fini(struct busyobj *bo)
 			vfe->vfp->fini(bo, vfe);
 }
 
-static enum vfp_status
-vfp_suck_init(struct busyobj *bo)
+int
+VFP_Open(struct busyobj *bo)
 {
 	struct vfp_entry *vfe;
 
-	VTAILQ_FOREACH(vfe, &bo->vfp, list) {
+	VTAILQ_FOREACH_REVERSE(vfe, &bo->vfp, vfp_entry_s, list) {
 		if (vfe->vfp->init == NULL)
 			continue;
 		vfe->closed = vfe->vfp->init(bo, vfe);
 		if (vfe->closed != VFP_OK && vfe->closed != VFP_NULL) {
 			(void)VFP_Error(bo,
-			    "Fetch filter %s failed to initialize",
+			    "Fetch filter %s failed to open",
 			    vfe->vfp->name);
 			vfp_suck_fini(bo);
-			return (vfe->closed);
+			return (-1);
 		}
 	}
-	return (VFP_OK);
+	return (0);
 }
 
 /**********************************************************************
@@ -195,12 +195,6 @@ VFP_Fetch_Body(struct busyobj *bo)
 	est = bo->content_length;
 	if (est < 0)
 		est = 0;
-
-	if (vfp_suck_init(bo) != VFP_OK) {
-		(void)VFP_Error(bo, "Fetch Pipeline failed to initialize");
-		bo->should_close = 1;
-		return;
-	}
 
 	do {
 		if (bo->abandon) {

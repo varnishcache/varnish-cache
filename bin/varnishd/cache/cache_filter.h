@@ -61,6 +61,7 @@ extern const struct vfp vfp_esi;
 extern const struct vfp vfp_esi_gzip;
 
 void VFP_Push(struct busyobj *, const struct vfp *, intptr_t priv, int top);
+int VFP_Open(struct busyobj *bo);
 
 
 /* Deliver processors ------------------------------------------------*/
