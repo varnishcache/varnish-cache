@@ -467,9 +467,9 @@ vfp_gzip_init(struct busyobj *bo, struct vfp_entry *vfe)
 		vg = VGZ_NewUngzip(bo->vsl, vfe->vfp->priv1);
 	if (vg == NULL)
 		return (VFP_ERROR);
+	vfe->priv1 = vg;
 	if (vgz_getmbuf(vg))
 		return (VFP_ERROR);
-	vfe->priv1 = vg;
 	VGZ_Ibuf(vg, vg->m_buf, 0);
 	AZ(vg->m_len);
 	return (VFP_OK);
