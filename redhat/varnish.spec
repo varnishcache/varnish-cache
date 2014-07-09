@@ -23,6 +23,7 @@ BuildRequires: ncurses-devel
 BuildRequires: pcre-devel
 BuildRequires: pkgconfig
 BuildRequires: python-docutils >= 0.6
+BuildRequires: python-sphinx
 Requires: jemalloc
 Requires: libedit
 Requires: logrotate
