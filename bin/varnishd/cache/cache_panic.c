@@ -288,6 +288,7 @@ pan_wrk(const struct worker *wrk)
 static void
 pan_busyobj(const struct busyobj *bo)
 {
+	struct vfp_entry *vfe;
 
 	VSB_printf(pan_vsp, "  busyobj = %p {\n", bo);
 	pan_ws(bo->ws, 4);
@@ -301,6 +302,13 @@ pan_busyobj(const struct busyobj *bo)
 
 	VSB_printf(pan_vsp, "    bodystatus = %d (%s),\n",
 	    bo->htc.body_status, body_status_2str(bo->htc.body_status));
+	if (!VTAILQ_EMPTY(&bo->vfp)) {
+		VSB_printf(pan_vsp, "    filters =");
+		VTAILQ_FOREACH(vfe, &bo->vfp, list)
+			VSB_printf(pan_vsp, " %s=%d",
+			    vfe->vfp->name, (int)vfe->closed);
+		VSB_printf(pan_vsp, "\n");
+	}
 	VSB_printf(pan_vsp, "    },\n");
 	if (VALID_OBJ(bo->vbc, BACKEND_MAGIC))
 		pan_vbc(bo->vbc);

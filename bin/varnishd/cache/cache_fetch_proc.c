@@ -114,7 +114,7 @@ vfp_suck_fini(struct busyobj *bo)
 	struct vfp_entry *vfe;
 
 	VTAILQ_FOREACH(vfe, &bo->vfp, list) {
-		if(vfe->vfp != NULL && vfe->vfp->fini != NULL)
+		if(vfe->closed == VFP_OK && vfe->vfp->fini != NULL)
 			vfe->vfp->fini(bo, vfe);
 	}
 }
@@ -134,6 +134,7 @@ vfp_suck_init(struct busyobj *bo)
 			    "Fetch filter %s failed to initialize",
 			    vfe->vfp->name);
 			vfp_suck_fini(bo);
+			vfe->closed = retval;
 			return (retval);
 		}
 	}
@@ -159,12 +160,7 @@ VFP_Suck(struct busyobj *bo, void *p, ssize_t *lp)
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	bo->vfp_nxt = VTAILQ_NEXT(vfe, list);
 
-	if (vfe->vfp == NULL) {
-		*lp = 0;
-		vp = (enum vfp_status)vfe->priv2;
-		bo->vfp_nxt = vfe;
-		return (vp);
-	} else {
+	if (vfe->closed == VFP_OK) {
 		vp = vfe->vfp->pull(bo, vfe, p, lp);
 		if (vp == VFP_ERROR)
 			(void)VFP_Error(bo, "Fetch filter %s returned %d",
@@ -172,9 +168,12 @@ VFP_Suck(struct busyobj *bo, void *p, ssize_t *lp)
 		if (vp != VFP_OK) {
 			if (vfe->vfp->fini != NULL)
 				vfe->vfp->fini(bo, vfe);
-			vfe->vfp = NULL;
-			vfe->priv2 = vp;
+			vfe->closed = vp;
 		}
+	} else {
+		/* Already closed filter */
+		*lp = 0;
+		vp = vfe->closed;
 	}
 	bo->vfp_nxt = vfe;
 	return (vp);
@@ -264,6 +263,7 @@ VFP_Push(struct busyobj *bo, const struct vfp *vfp, intptr_t priv)
 	vfe->magic = VFP_ENTRY_MAGIC;
 	vfe->vfp = vfp;
 	vfe->priv2 = priv;
+	vfe->closed = VFP_OK;
 	VTAILQ_INSERT_HEAD(&bo->vfp, vfe, list);
 	bo->vfp_nxt = vfe;
 }

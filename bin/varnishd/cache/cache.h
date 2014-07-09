@@ -450,6 +450,7 @@ struct vfp_entry {
 	const struct vfp	*vfp;
 	void			*priv1;
 	intptr_t		priv2;
+	enum vfp_status		closed;
 	VTAILQ_ENTRY(vfp_entry)	list;
 };
 
