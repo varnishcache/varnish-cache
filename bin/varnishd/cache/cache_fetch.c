@@ -479,6 +479,12 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->htc.body_status == BS_NONE)
 		bo->do_stream = 0;
 
+	if (VFP_Open(bo)) {
+		(void)VFP_Error(bo, "Fetch Pipeline failed to open");
+		bo->should_close = 1;
+		return (F_STP_ERROR);
+	}
+
 	if (vbf_beresp2obj(bo)) {
 		(void)VFP_Error(bo, "Could not get storage");
 		bo->should_close = 1;
@@ -507,12 +513,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	AZ(WS_Overflowed(bo->ws_o));
 
 	assert (bo->state == BOS_REQ_DONE);
-
-	if (VFP_Open(bo)) {
-		(void)VFP_Error(bo, "Fetch Pipeline failed to open");
-		bo->should_close = 1;
-		return (F_STP_ERROR);
-	}
 
 	if (bo->do_stream) {
 		HSH_Unbusy(&wrk->stats, obj->objcore);
