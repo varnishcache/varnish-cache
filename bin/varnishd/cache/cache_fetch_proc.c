@@ -255,7 +255,7 @@ VFP_Fetch_Body(struct busyobj *bo)
 }
 
 void
-VFP_Push(struct busyobj *bo, const struct vfp *vfp, intptr_t priv)
+VFP_Push(struct busyobj *bo, const struct vfp *vfp, intptr_t priv, int top)
 {
 	struct vfp_entry *vfe;
 
@@ -266,8 +266,12 @@ VFP_Push(struct busyobj *bo, const struct vfp *vfp, intptr_t priv)
 	vfe->vfp = vfp;
 	vfe->priv2 = priv;
 	vfe->closed = VFP_OK;
-	VTAILQ_INSERT_HEAD(&bo->vfp, vfe, list);
-	bo->vfp_nxt = vfe;
+	if (top)
+		VTAILQ_INSERT_HEAD(&bo->vfp, vfe, list);
+	else
+		VTAILQ_INSERT_TAIL(&bo->vfp, vfe, list);
+	if (VTAILQ_FIRST(&bo->vfp) == vfe)
+		bo->vfp_nxt = vfe;
 }
 
 /*--------------------------------------------------------------------

@@ -161,15 +161,15 @@ V1F_Setup_Fetch(struct busyobj *bo)
 	switch(htc->body_status) {
 	case BS_EOF:
 		assert(bo->content_length == -1);
-		VFP_Push(bo, &v1f_eof, 0);
+		VFP_Push(bo, &v1f_eof, 0, 0);
 		break;
 	case BS_LENGTH:
 		assert(bo->content_length > 0);
-		VFP_Push(bo, &v1f_straight, bo->content_length);
+		VFP_Push(bo, &v1f_straight, bo->content_length, 0);
 		break;
 	case BS_CHUNKED:
 		assert(bo->content_length == -1);
-		VFP_Push(bo, &v1f_chunked, -1);
+		VFP_Push(bo, &v1f_chunked, -1, 0);
 		break;
 	default:
 		WRONG("Wrong body_status");

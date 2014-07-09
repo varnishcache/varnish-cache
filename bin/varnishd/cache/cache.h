@@ -884,7 +884,6 @@ enum vfp_status VFP_Error(struct busyobj *, const char *fmt, ...)
     __printflike(2, 3);
 void VFP_Init(void);
 void VFP_Fetch_Body(struct busyobj *bo);
-void VFP_Push(struct busyobj *, const struct vfp *, intptr_t priv);
 enum vfp_status VFP_Suck(struct busyobj *, void *p, ssize_t *lp);
 
 /* cache_gzip.c */
