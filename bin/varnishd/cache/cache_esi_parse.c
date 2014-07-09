@@ -578,9 +578,20 @@ VEP_Parse(struct vep_state *vep, const struct busyobj *bo, const char *p,
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 	assert(l > 0);
 
-	/* XXX: Really need to fix this */
-	if (vep->hack_p == NULL)
+	if (vep->startup) {
+		/*
+		 * We must force the GZIP header out as a SKIP string,
+		 * otherwise an object starting with <esi:include would
+		 * have its GZIP header appear after the included object
+		 * (e000026.vtc)
+		 */
+		vep->ver_p = "";
+		vep->last_mark = SKIP;
+		vep_mark_common(vep, vep->ver_p, VERBATIM);
+		vep->startup = 0;
+		AZ(vep->hack_p);
 		vep->hack_p = p;
+	}
 
 	vep->ver_p = p;
 
@@ -1059,16 +1070,7 @@ VEP_Init(struct busyobj *bo, vep_callback_t *cb, void *cb_priv)
 	vep->crc = crc32(0L, Z_NULL, 0);
 	vep->crcp = crc32(0L, Z_NULL, 0);
 
-	/*
-	 * We must force the GZIP header out as a SKIP string, otherwise
-	 * an object starting with <esi:include would have its GZIP header
-	 * appear after the included object (e000026.vtc)
-	 */
 	vep->startup = 1;
-	vep->ver_p = "";
-	vep->last_mark = SKIP;
-	vep_mark_common(vep, vep->ver_p, VERBATIM);
-	vep->startup = 0;
 	return (vep);
 }
 
