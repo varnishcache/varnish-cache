@@ -114,7 +114,7 @@ vfp_suck_fini(struct busyobj *bo)
 	struct vfp_entry *vfe;
 
 	VTAILQ_FOREACH(vfe, &bo->vfp, list)
-		if(vfe->closed == VFP_OK && vfe->vfp->fini != NULL)
+		if(vfe->vfp->fini != NULL)
 			vfe->vfp->fini(bo, vfe);
 }
 
@@ -162,8 +162,6 @@ VFP_Suck(struct busyobj *bo, void *p, ssize_t *lp)
 	} else if (vfe->closed == VFP_OK) {
 		vp = vfe->vfp->pull(bo, vfe, p, lp);
 		if (vp == VFP_END || vp == VFP_ERROR) {
-			if (vfe->vfp->fini != NULL)
-				vfe->vfp->fini(bo, vfe);
 			vfe->closed = vp;
 		} else if (vp != VFP_OK)
 			(void)VFP_Error(bo, "Fetch filter %s returned %d",
