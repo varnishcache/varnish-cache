@@ -446,28 +446,17 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	/* But we can't do both at the same time */
 	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
 
-	/* Fix Content-Encoding, as appropriate */
-	if (bo->do_gzip)
-		http_SetHeader(bo->beresp, "Content-Encoding: gzip");
-	else if (bo->do_gunzip)
-		http_Unset(bo->beresp, H_Content_Encoding);
-
-	if (bo->do_gunzip || (bo->is_gzip && bo->do_esi)) {
-		RFC2616_Weaken_Etag(bo->beresp);
+	if (bo->do_gunzip || (bo->is_gzip && bo->do_esi))
 		VFP_Push(bo, &vfp_gunzip, 0, 1);
-	}
 
 	if (bo->do_esi && bo->do_gzip) {
 		VFP_Push(bo, &vfp_esi_gzip, 0, 1);
-		RFC2616_Weaken_Etag(bo->beresp);
 	} else if (bo->do_esi && bo->is_gzip && !bo->do_gunzip) {
 		VFP_Push(bo, &vfp_esi_gzip, 0, 1);
-		RFC2616_Weaken_Etag(bo->beresp);
 	} else if (bo->do_esi) {
 		VFP_Push(bo, &vfp_esi, 0, 1);
 	} else if (bo->do_gzip) {
 		VFP_Push(bo, &vfp_gzip, 0, 1);
-		RFC2616_Weaken_Etag(bo->beresp);
 	} else if (bo->is_gzip && !bo->do_gunzip) {
 		VFP_Push(bo, &vfp_testgunzip, 0, 1);
 	}

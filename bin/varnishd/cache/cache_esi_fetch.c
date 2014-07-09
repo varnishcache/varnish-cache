@@ -157,10 +157,15 @@ vfp_esi_gzip_init(struct busyobj *bo, struct vfp_entry *vfe)
 	vef->ibuf = calloc(1L, vef->ibuf_sz);
 	if (vef->ibuf == NULL)
 		return (vfp_esi_end(bo, vef, VFP_ERROR));
-	XXXAN(vef->ibuf);
 	vef->ibuf_i = vef->ibuf;
 	vef->ibuf_o = vef->ibuf;
 	vfe->priv1 = vef;
+
+	RFC2616_Weaken_Etag(bo->beresp);
+	http_Unset(bo->beresp, H_Content_Length);
+	http_Unset(bo->beresp, H_Content_Encoding);
+	http_SetHeader(bo->beresp, "Content-Encoding: gzip");
+
 	return (VFP_OK);
 }
 
