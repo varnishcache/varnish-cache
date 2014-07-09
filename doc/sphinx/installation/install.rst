@@ -84,7 +84,6 @@ installed. On a Debian or Ubuntu system these are:
 * `libjemalloc-dev`
 * `libncurses-dev`
 * `libpcre3-dev`
-* `libreadline-dev`
 * `libtool`
 * `pkg-config`
 * `python-docutils`
