@@ -446,6 +446,10 @@ VGZ_Destroy(struct vgz **vgp)
 
 /*--------------------------------------------------------------------*/
 
+#define VFP_GUNZIP	0
+#define VFP_GZIP	1
+#define VFP_TESTGUNZIP	2
+
 static enum vfp_status __match_proto__(vfp_init_f)
 vfp_gzip_init(struct busyobj *bo, struct vfp_entry *vfe)
 {
@@ -454,7 +458,7 @@ vfp_gzip_init(struct busyobj *bo, struct vfp_entry *vfe)
         CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 
-	if (vfe->vfp->priv2)
+	if (vfe->vfp->priv2 == VFP_GZIP)
 		vg = VGZ_NewGzip(bo->vsl, vfe->vfp->priv1);
 	else
 		vg = VGZ_NewUngzip(bo->vsl, vfe->vfp->priv1);
@@ -647,6 +651,7 @@ const struct vfp vfp_gunzip = {
 	.pull = vfp_gunzip_pull,
 	.fini = vfp_gzip_fini,
 	.priv1 = "U F -",
+	.priv2 = VFP_GUNZIP,
 };
 
 const struct vfp vfp_gzip = {
@@ -655,7 +660,7 @@ const struct vfp vfp_gzip = {
 	.pull = vfp_gzip_pull,
 	.fini = vfp_gzip_fini,
 	.priv1 = "G F -",
-	.priv2 = 1,
+	.priv2 = VFP_GZIP,
 };
 
 const struct vfp vfp_testgunzip = {
@@ -664,4 +669,5 @@ const struct vfp vfp_testgunzip = {
 	.pull = vfp_testgunzip_pull,
 	.fini = vfp_gzip_fini,
 	.priv1 = "u F -",
+	.priv2 = VFP_TESTGUNZIP,
 };
