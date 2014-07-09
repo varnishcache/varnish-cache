@@ -76,11 +76,10 @@ Build dependencies on Debian / Ubuntu
 In order to build Varnish from source you need a number of packages
 installed. On a Debian or Ubuntu system these are:
 
-..  grep-dctrl -n -sBuild-Depends -r ^ ../../../../varnish-cache-debian/control | tr -d '\n' | awk -F,\  '{ for (i = 0; ++i <= NF;) { sub (/ .*/, "", $i); print "* `" $i "`"; }}'
+..  grep-dctrl -n -sBuild-Depends -r ^ ../../../../varnish-cache-debian/control | tr -d '\n' | awk -F,\  '{ for (i = 0; ++i <= NF;) { sub (/ .*/, "", $i); print "* `" $i "`"; }}' | egrep -v '(debhelper)'
 
 * `automake`
 * `autotools-dev`
-* `debhelper`
 * `libedit-dev`
 * `libjemalloc-dev`
 * `libncurses-dev`
@@ -98,7 +97,7 @@ Build dependencies on Red Hat / CentOS
 To build Varnish on a Red Hat or CentOS system you need the following
 packages installed:
 
-.. gawk '/^BuildRequires/ {print "* `" $2 "`"}' ../../../redhat/varnish.spec | sort | uniq
+.. gawk '/^BuildRequires/ {print "* `" $2 "`"}' ../../../redhat/varnish.spec | sort | uniq | egrep -v '(systemd)'
 
 * `autoconf`
 * `automake`
@@ -109,7 +108,7 @@ packages installed:
 * `pcre-devel`
 * `pkgconfig`
 * `python-docutils`
-* `systemd-units`
+* `python-sphinx`
 
 
 Compiling Varnish
