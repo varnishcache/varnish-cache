@@ -443,17 +443,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	AN(bo->vbc);
 
-	if (bo->content_length == 0) {
-		/*
-		 * If the length is known to be zero, it's not gziped.
-		 * A similar issue exists for chunked encoding but we
-		 * don't handle that.  See #1320.
-		 */
-		http_Unset(bo->beresp, H_Content_Encoding);
-		bo->is_gzip = 0;
-		bo->is_gunzip = 1;
-	}
-
 	/* But we can't do both at the same time */
 	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
 

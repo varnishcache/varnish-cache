@@ -458,6 +458,9 @@ vfp_gzip_init(struct busyobj *bo, struct vfp_entry *vfe)
         CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 
+	if (bo->content_length == 0)
+		return (VFP_NULL);
+
 	if (vfe->vfp->priv2 == VFP_GZIP)
 		vg = VGZ_NewGzip(bo->vsl, vfe->vfp->priv1);
 	else
