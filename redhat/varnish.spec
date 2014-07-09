@@ -14,21 +14,21 @@ URL: http://www.varnish-cache.org/
 Source0: %{name}-%{version}%{?vd_rc}.tar.gz
 #Source0: %{name}-trunk.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-# To build from git, start with a make dist, see redhat/README.redhat
-# You will need at least automake autoconf libtool
-#BuildRequires: automake autoconf libtool
+BuildRequires: automake
+BuildRequires: autoconf
+BuildRequires: jemalloc-devel
+BuildRequires: libedit-devel
+BuildRequires: libtool
 BuildRequires: ncurses-devel
 BuildRequires: pcre-devel
 BuildRequires: pkgconfig
-BuildRequires: libedit-devel
-BuildRequires: jemalloc-devel
 BuildRequires: python-docutils >= 0.6
-Requires: varnish-libs = %{version}-%{release}
+Requires: jemalloc
+Requires: libedit
 Requires: logrotate
 Requires: ncurses
 Requires: pcre
-Requires: libedit
-Requires: jemalloc
+Requires: varnish-libs = %{version}-%{release}
 Requires(pre): shadow-utils
 Requires(post): /sbin/chkconfig, /usr/bin/uuidgen
 Requires(preun): /sbin/chkconfig
