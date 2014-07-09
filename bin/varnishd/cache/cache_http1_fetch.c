@@ -29,7 +29,6 @@
 
 #include "config.h"
 
-#include <inttypes.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,29 +41,6 @@
 #include "vcli_priv.h"
 #include "vtcp.h"
 #include "vtim.h"
-
-/*--------------------------------------------------------------------
- * Convert a string to a size_t safely
- */
-
-static ssize_t
-vbf_fetch_number(const char *nbr, int radix)
-{
-	uintmax_t cll;
-	ssize_t cl;
-	char *q;
-
-	if (*nbr == '\0')
-		return (-1);
-	cll = strtoumax(nbr, &q, radix);
-	if (q == NULL || *q != '\0')
-		return (-1);
-
-	cl = (ssize_t)cll;
-	if((uintmax_t)cl != cll) /* Protect against bogusly large values */
-		return (-1);
-	return (cl);
-}
 
 /*--------------------------------------------------------------------*/
 
@@ -172,11 +148,10 @@ static const struct vfp v1f_eof = {
 /*--------------------------------------------------------------------
  */
 
-ssize_t
+void
 V1F_Setup_Fetch(struct busyobj *bo)
 {
 	struct http_conn *htc;
-	ssize_t cl;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	htc = &bo->htc;
@@ -185,19 +160,22 @@ V1F_Setup_Fetch(struct busyobj *bo)
 
 	switch(htc->body_status) {
 	case BS_EOF:
+		assert(bo->content_length == -1);
 		VFP_Push(bo, &v1f_eof, 0);
-		return(-1);
+		break;
 	case BS_LENGTH:
-		cl = vbf_fetch_number(bo->h_content_length, 10);
-		VFP_Push(bo, &v1f_straight, cl);
-		return (cl);
+		assert(bo->content_length > 0);
+		VFP_Push(bo, &v1f_straight, bo->content_length);
+		break;
 	case BS_CHUNKED:
+		assert(bo->content_length == -1);
 		VFP_Push(bo, &v1f_chunked, -1);
-		return (-1);
+		break;
 	default:
+		WRONG("Wrong body_status");
 		break;
 	}
-	return (-1);
+	return;
 }
 
 /*--------------------------------------------------------------------

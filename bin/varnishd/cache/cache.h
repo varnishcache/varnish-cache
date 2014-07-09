@@ -490,7 +490,7 @@ struct busyobj {
 
 	struct pool_task	fetch_task;
 
-	char			*h_content_length;
+	ssize_t			content_length;
 
 #define BO_FLAG(l, r, w, d) unsigned	l:1;
 #include "tbl/bo_flags.h"
@@ -780,7 +780,7 @@ void VBO_waitstate(struct busyobj *bo, enum busyobj_state_e want);
 
 /* cache_http1_fetch.c [V1F] */
 int V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req);
-ssize_t V1F_Setup_Fetch(struct busyobj *bo);
+void V1F_Setup_Fetch(struct busyobj *bo);
 
 /* cache_http1_fsm.c [HTTP1] */
 typedef int (req_body_iter_f)(struct req *, void *priv, void *ptr, size_t);
@@ -883,7 +883,7 @@ struct storage *VFP_GetStorage(struct busyobj *, ssize_t sz);
 enum vfp_status VFP_Error(struct busyobj *, const char *fmt, ...)
     __printflike(2, 3);
 void VFP_Init(void);
-void VFP_Fetch_Body(struct busyobj *bo, ssize_t est);
+void VFP_Fetch_Body(struct busyobj *bo);
 void VFP_Push(struct busyobj *, const struct vfp *, intptr_t priv);
 enum vfp_status VFP_Suck(struct busyobj *, void *p, ssize_t *lp);
 

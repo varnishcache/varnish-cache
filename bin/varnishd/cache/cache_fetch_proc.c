@@ -183,16 +183,18 @@ VFP_Suck(struct busyobj *bo, void *p, ssize_t *lp)
  */
 
 void
-VFP_Fetch_Body(struct busyobj *bo, ssize_t est)
+VFP_Fetch_Body(struct busyobj *bo)
 {
 	ssize_t l;
 	enum vfp_status vfps = VFP_ERROR;
 	struct storage *st = NULL;
+	ssize_t est;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	AN(bo->vfp_nxt);
 
+	est = bo->content_length;
 	if (est < 0)
 		est = 0;
 

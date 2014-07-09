@@ -35,6 +35,7 @@
 #include "cache.h"
 
 #include "vtim.h"
+#include "vct.h"
 
 /*--------------------------------------------------------------------
  * TTL and Age calculation in Varnish
@@ -192,6 +193,7 @@ RFC2616_Body(struct busyobj *bo, struct dstat *stats)
 {
 	struct http *hp;
 	char *b;
+	ssize_t cll;
 
 	hp = bo->beresp;
 
@@ -245,13 +247,42 @@ RFC2616_Body(struct busyobj *bo, struct dstat *stats)
 	}
 
 	if (http_GetHdr(hp, H_Transfer_Encoding, &b)) {
+		VSLb(bo->vsl, SLT_Error, "Illegal Transfer-Encoding:");
 		stats->fetch_bad++;
 		return (BS_ERROR);
 	}
 
-	if (http_GetHdr(hp, H_Content_Length, &bo->h_content_length)) {
+	if (http_GetHdr(hp, H_Content_Length, &b)) {
+		bo->content_length = 0;
+		if (!vct_isdigit(*b)) {
+			VSLb(bo->vsl, SLT_Error, "Empty Content-Length:");
+			stats->fetch_bad++;
+			return (BS_ERROR);
+		}
+		for (;vct_isdigit(*b); b++) {
+			cll = bo->content_length;
+			bo->content_length *= 10;
+			bo->content_length += *b - '0';
+			if (cll > bo->content_length) {
+				VSLb(bo->vsl, SLT_Error,
+				    "Content-Length: too large");
+				stats->fetch_bad++;
+				return (BS_ERROR);
+			}
+		}
+		while (vct_islws(*b))
+			b++;
+		if (*b != '\0') {
+			VSLb(bo->vsl, SLT_Error,
+			    "Illegal Content-Length: (0x%02x)", *b);
+			stats->fetch_bad++;
+			return (BS_ERROR);
+		}
 		stats->fetch_length++;
-		return (BS_LENGTH);
+		if (bo->content_length == 0)
+			return (BS_NONE);
+		else
+			return (BS_LENGTH);
 	}
 
 	if (http_HdrIs(hp, H_Connection, "keep-alive")) {

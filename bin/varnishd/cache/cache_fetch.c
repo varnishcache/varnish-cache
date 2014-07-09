@@ -343,7 +343,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->htc.body_status == BS_ERROR) {
 		AN (bo->vbc);
 		VDI_CloseFd(&bo->vbc, &bo->acct);
-		VSLb(bo->vsl, SLT_VCL_Error, "Body cannot be fetched");
+		VSLb(bo->vsl, SLT_Error, "Body cannot be fetched");
 		return (F_STP_ERROR);
 	}
 
@@ -403,7 +403,6 @@ static enum fetch_step
 vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 {
 	struct object *obj;
-	ssize_t est;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -421,7 +420,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	 *	no Content-Encoding		--> object is not gzip'ed.
 	 *	anything else			--> do nothing wrt gzip
 	 *
-	 * XXX: BS_NONE/cl==0 should avoid gzip/gunzip
 	 */
 
 	/* We do nothing unless the param is set */
@@ -444,9 +442,10 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		bo->do_gzip = 0;
 
 	AN(bo->vbc);
-	est = V1F_Setup_Fetch(bo);
+	if (bo->htc.body_status != BS_NONE)
+		V1F_Setup_Fetch(bo);
 
-	if (est == 0) {
+	if (bo->content_length == 0) {
 		/*
 		 * If the length is known to be zero, it's not gziped.
 		 * A similar issue exists for chunked encoding but we
@@ -529,8 +528,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	    bo->do_stream ? "stream" : "-");
 
 	if (bo->htc.body_status != BS_NONE) {
-		assert(bo->htc.body_status  != BS_ERROR);
-		VFP_Fetch_Body(bo, est);
+		assert(bo->htc.body_status != BS_ERROR);
+		VFP_Fetch_Body(bo);
 	}
 
 	if (bo->failed && !bo->do_stream) {
