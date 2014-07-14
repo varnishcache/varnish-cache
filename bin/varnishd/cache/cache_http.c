@@ -264,6 +264,23 @@ http_findhdr(const struct http *hp, unsigned l, const char *hdr)
 }
 
 /*--------------------------------------------------------------------
+ */
+
+void
+http_MarkHeader(const struct http *hp, const char *hdr, unsigned hdrlen,
+    uint8_t flag)
+{
+	unsigned u;
+
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+
+	u = http_findhdr(hp, hdrlen, hdr);
+	if (u == 0)
+		return;
+	hp->hdf[u] |= flag;
+}
+
+/*--------------------------------------------------------------------
  * This function collapses multiple headerlines of the same name.
  * The lines are joined with a comma, according to [rfc2616, 4.2bot, p32]
  */
@@ -487,45 +504,6 @@ http_GetHdrField(const struct http *hp, const char *hdr,
 		}
 	}
 	return (i);
-}
-
-/*--------------------------------------------------------------------
- * XXX: redo with http_GetHdrField() ?
- */
-
-enum sess_close
-http_DoConnection(const struct http *hp)
-{
-	char *p, *q;
-	enum sess_close ret;
-	unsigned u;
-
-	if (!http_GetHdr(hp, H_Connection, &p)) {
-		if (hp->protover < 11)
-			return (SC_REQ_HTTP10);
-		return (SC_NULL);
-	}
-	ret = SC_NULL;
-	AN(p);
-	for (; *p; p++) {
-		if (vct_issp(*p))
-			continue;
-		if (*p == ',')
-			continue;
-		for (q = p + 1; *q; q++)
-			if (*q == ',' || vct_issp(*q))
-				break;
-		u = pdiff(p, q);
-		if (u == 5 && !strncasecmp(p, "close", u))
-			ret = SC_REQ_CLOSE;
-		u = http_findhdr(hp, u, p);
-		if (u != 0)
-			hp->hdf[u] |= HDF_FILTER;
-		if (!*q)
-			break;
-		p = q;
-	}
-	return (ret);
 }
 
 /*--------------------------------------------------------------------*/

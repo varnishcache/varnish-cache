@@ -380,7 +380,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 
 	AZ(req->err_code);
 	req->ws_req = WS_Snapshot(req->ws);
-	req->doclose = http_DoConnection(req->http);
+	req->doclose = HTTP1_DoConnection(req->http);
 
 	http_Unset(req->http, H_Expect);
 

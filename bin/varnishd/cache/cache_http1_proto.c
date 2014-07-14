@@ -411,8 +411,6 @@ htc_proto_ver(struct http *hp)
 
 /*--------------------------------------------------------------------*/
 
-#include <stdio.h>
-
 uint16_t
 HTTP1_DissectRequest(struct req *req)
 {
@@ -504,6 +502,42 @@ HTTP1_DissectResponse(struct http *hp, const struct http_conn *htc)
 		http_SetH(hp, HTTP_HDR_REASON, http_Status2Reason(hp->status));
 
 	return (retval);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+enum sess_close
+HTTP1_DoConnection(const struct http *hp)
+{
+	char *p, *q;
+	enum sess_close ret;
+	unsigned u;
+
+	if (!http_GetHdr(hp, H_Connection, &p)) {
+		if (hp->protover < 11)
+			return (SC_REQ_HTTP10);
+		return (SC_NULL);
+	}
+	ret = SC_NULL;
+	AN(p);
+	for (; *p; p++) {
+		if (vct_issp(*p))
+			continue;
+		if (*p == ',')
+			continue;
+		for (q = p + 1; *q; q++)
+			if (*q == ',' || vct_issp(*q))
+				break;
+		u = pdiff(p, q);
+		if (u == 5 && !strncasecmp(p, "close", u))
+			ret = SC_REQ_CLOSE;
+		http_MarkHeader(hp, p, u, HDF_FILTER);
+		if (!*q)
+			break;
+		p = q;
+	}
+	return (ret);
 }
 
 /*--------------------------------------------------------------------*/

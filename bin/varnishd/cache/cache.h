@@ -946,9 +946,10 @@ void http_SetStatus(struct http *to, uint16_t status);
 const char *http_GetReq(const struct http *hp);
 int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
 int http_IsHdr(const txt *hh, const char *hdr);
-enum sess_close http_DoConnection(const struct http *);
 void http_CopyHome(const struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
+void http_MarkHeader(const struct http *, const char *hdr, unsigned hdrlen,
+    uint8_t flag);
 void http_CollectHdr(struct http *hp, const char *hdr);
 void http_VSL_log(const struct http *hp);
 void http_Merge(const struct http *fm, struct http *to, int not_ce);
@@ -971,6 +972,7 @@ ssize_t HTTP1_Read(struct http_conn *htc, void *d, size_t len);
 enum htc_status_e HTTP1_Complete(struct http_conn *htc);
 uint16_t HTTP1_DissectRequest(struct req *);
 uint16_t HTTP1_DissectResponse(struct http *sp, const struct http_conn *htc);
+enum sess_close HTTP1_DoConnection(const struct http *);
 unsigned HTTP1_Write(const struct worker *w, const struct http *hp, const int*);
 
 #define HTTPH(a, b, c) extern char b[];
