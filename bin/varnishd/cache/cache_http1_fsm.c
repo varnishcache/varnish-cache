@@ -92,7 +92,7 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 	struct pollfd pfd[1];
 	double now, when;
 	enum sess_close why = SC_NULL;
-	enum htc_status_e hs;
+	enum http1_status_e hs;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -380,7 +380,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 
 	AZ(req->err_code);
 	req->ws_req = WS_Snapshot(req->ws);
-	req->doclose = HTTP1_DoConnection(req->http);
+	req->doclose = req->http->doclose;
 
 	http_Unset(req->http, H_Expect);
 

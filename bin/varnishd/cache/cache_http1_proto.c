@@ -88,7 +88,7 @@ HTTP1_Init(struct http_conn *htc, struct ws *ws, int fd, struct vsl_log *vsl,
  * the ws somewhere, because WS_Reset only fiddles pointers.
  */
 
-enum htc_status_e
+enum http1_status_e
 HTTP1_Reinit(struct http_conn *htc)
 {
 	unsigned l;
@@ -112,7 +112,7 @@ HTTP1_Reinit(struct http_conn *htc)
  * Check if we have a complete HTTP request or response yet
  */
 
-enum htc_status_e
+enum http1_status_e
 HTTP1_Complete(struct http_conn *htc)
 {
 	char *p;
@@ -159,7 +159,7 @@ HTTP1_Complete(struct http_conn *htc)
  * Receive more HTTP protocol bytes
  */
 
-enum htc_status_e
+enum http1_status_e
 HTTP1_Rx(struct http_conn *htc)
 {
 	int i;
@@ -228,7 +228,7 @@ HTTP1_Read(struct http_conn *htc, void *d, size_t len)
  */
 
 static uint16_t
-htc_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
+http1_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
 {
 	char *q, *r;
 	txt t = htc->rxbuf;
@@ -304,7 +304,7 @@ htc_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
  */
 
 static uint16_t
-htc_splitline(struct http *hp, const struct http_conn *htc, const int *hf)
+http1_splitline(struct http *hp, const struct http_conn *htc, const int *hf)
 {
 	char *p;
 
@@ -369,16 +369,17 @@ htc_splitline(struct http *hp, const struct http_conn *htc, const int *hf)
 	*hp->hd[hf[1]].e = '\0';
 	*hp->hd[hf[2]].e = '\0';
 
-	return (htc_dissect_hdrs(hp, p, htc));
+	return (http1_dissect_hdrs(hp, p, htc));
 }
 
 /*--------------------------------------------------------------------*/
 
 static uint16_t
-htc_request_check_host_hdr(const struct http *hp)
+http1_request_check_host_hdr(const struct http *hp)
 {
 	int u;
 	int seen_host = 0;
+
 	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
 		if (hp->hd[u].b == NULL)
 			continue;
@@ -399,7 +400,7 @@ htc_request_check_host_hdr(const struct http *hp)
 /*--------------------------------------------------------------------*/
 
 static void
-htc_proto_ver(struct http *hp)
+http1_proto_ver(struct http *hp)
 {
 	if (!strcasecmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.0"))
 		hp->protover = 10;
@@ -409,106 +410,11 @@ htc_proto_ver(struct http *hp)
 		hp->protover = 9;
 }
 
-/*--------------------------------------------------------------------*/
-
-uint16_t
-HTTP1_DissectRequest(struct req *req)
-{
-	struct http_conn *htc;
-	struct http *hp;
-	uint16_t retval;
-	char *b, *e;
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	htc = req->htc;
-	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	hp = req->http;
-	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-
-	retval = htc_splitline(hp, htc, HTTP1_Req);
-	if (retval != 0) {
-		VSLbt(req->vsl, SLT_HttpGarbage, htc->rxbuf);
-		return (retval);
-	}
-	htc_proto_ver(hp);
-
-	retval = htc_request_check_host_hdr(hp);
-	if (retval != 0) {
-		return (retval);
-	}
-
-	/* RFC2616, section 5.2, point 1 */
-	if (!strncasecmp(hp->hd[HTTP_HDR_URL].b, "http://", 7)) {
-		b = e = hp->hd[HTTP_HDR_URL].b + 7;
-		while (*e != '/' && *e != '\0')
-			e++;
-		if (*e == '/') {
-			http_Unset(hp, H_Host);
-			http_PrintfHeader(hp, "Host: %.*s", (int)(e - b), b);
-			hp->hd[HTTP_HDR_URL].b = e;
-		}
-	}
-
-	return (retval);
-}
-
-/*--------------------------------------------------------------------*/
-
-uint16_t
-HTTP1_DissectResponse(struct http *hp, const struct http_conn *htc)
-{
-	uint16_t retval = 0;
-	char *p;
-
-
-	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-
-	if (htc_splitline(hp, htc, HTTP1_Resp))
-		retval = 503;
-
-	if (retval == 0) {
-		htc_proto_ver(hp);
-		if (hp->protover != 10 && hp->protover != 11)
-			retval = 503;
-	}
-
-	if (retval == 0 && Tlen(hp->hd[HTTP_HDR_STATUS]) != 3)
-		retval = 503;
-
-	if (retval == 0) {
-		p = hp->hd[HTTP_HDR_STATUS].b;
-
-		if (p[0] >= '1' && p[0] <= '9' &&
-		    p[1] >= '0' && p[1] <= '9' &&
-		    p[2] >= '0' && p[2] <= '9')
-			hp->status =
-			    100 * (p[0] - '0') + 10 * (p[1] - '0') + p[2] - '0';
-		else
-			retval = 503;
-	}
-
-	if (retval != 0) {
-		VSLbt(hp->vsl, SLT_HttpGarbage, htc->rxbuf);
-		assert(retval >= 100 && retval <= 999);
-		assert(retval == 503);
-		hp->status = retval;
-		http_SetH(hp, HTTP_HDR_STATUS, "503");
-		http_SetH(hp, HTTP_HDR_REASON, http_Status2Reason(retval));
-	}
-
-	if (hp->hd[HTTP_HDR_REASON].b == NULL ||
-	    !Tlen(hp->hd[HTTP_HDR_REASON]))
-		http_SetH(hp, HTTP_HDR_REASON, http_Status2Reason(hp->status));
-
-	return (retval);
-}
-
 /*--------------------------------------------------------------------
  */
 
-enum sess_close
-HTTP1_DoConnection(struct http *hp)
+static enum sess_close
+http1_DoConnection(struct http *hp)
 {
 	char *p, *q;
 	enum sess_close retval;
@@ -541,6 +447,106 @@ HTTP1_DoConnection(struct http *hp)
 			break;
 		p = q;
 	}
+	return (retval);
+}
+
+
+/*--------------------------------------------------------------------*/
+
+uint16_t
+HTTP1_DissectRequest(struct req *req)
+{
+	struct http_conn *htc;
+	struct http *hp;
+	uint16_t retval;
+	char *b, *e;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	htc = req->htc;
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	hp = req->http;
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+
+	retval = http1_splitline(hp, htc, HTTP1_Req);
+	if (retval != 0) {
+		VSLbt(req->vsl, SLT_HttpGarbage, htc->rxbuf);
+		return (retval);
+	}
+	http1_proto_ver(hp);
+
+	retval = http1_request_check_host_hdr(hp);
+	if (retval != 0) {
+		return (retval);
+	}
+
+	/* RFC2616, section 5.2, point 1 */
+	if (!strncasecmp(hp->hd[HTTP_HDR_URL].b, "http://", 7)) {
+		b = e = hp->hd[HTTP_HDR_URL].b + 7;
+		while (*e != '/' && *e != '\0')
+			e++;
+		if (*e == '/') {
+			http_Unset(hp, H_Host);
+			http_PrintfHeader(hp, "Host: %.*s", (int)(e - b), b);
+			hp->hd[HTTP_HDR_URL].b = e;
+		}
+	}
+
+	hp->doclose = http1_DoConnection(hp);
+
+	return (retval);
+}
+
+/*--------------------------------------------------------------------*/
+
+uint16_t
+HTTP1_DissectResponse(struct http *hp, const struct http_conn *htc)
+{
+	uint16_t retval = 0;
+	char *p;
+
+
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+
+	if (http1_splitline(hp, htc, HTTP1_Resp))
+		retval = 503;
+
+	if (retval == 0) {
+		http1_proto_ver(hp);
+		if (hp->protover != 10 && hp->protover != 11)
+			retval = 503;
+	}
+
+	if (retval == 0 && Tlen(hp->hd[HTTP_HDR_STATUS]) != 3)
+		retval = 503;
+
+	if (retval == 0) {
+		p = hp->hd[HTTP_HDR_STATUS].b;
+
+		if (p[0] >= '1' && p[0] <= '9' &&
+		    p[1] >= '0' && p[1] <= '9' &&
+		    p[2] >= '0' && p[2] <= '9')
+			hp->status =
+			    100 * (p[0] - '0') + 10 * (p[1] - '0') + p[2] - '0';
+		else
+			retval = 503;
+	}
+
+	if (retval != 0) {
+		VSLbt(hp->vsl, SLT_HttpGarbage, htc->rxbuf);
+		assert(retval >= 100 && retval <= 999);
+		assert(retval == 503);
+		hp->status = retval;
+		http_SetH(hp, HTTP_HDR_STATUS, "503");
+		http_SetH(hp, HTTP_HDR_REASON, http_Status2Reason(retval));
+	}
+
+	if (hp->hd[HTTP_HDR_REASON].b == NULL ||
+	    !Tlen(hp->hd[HTTP_HDR_REASON]))
+		http_SetH(hp, HTTP_HDR_REASON, http_Status2Reason(hp->status));
+
+	hp->doclose = http1_DoConnection(hp);
+
 	return (retval);
 }
 

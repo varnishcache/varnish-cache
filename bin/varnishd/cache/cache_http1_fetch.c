@@ -238,7 +238,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 {
 	struct vbc *vc;
 	struct http *hp;
-	enum htc_status_e hs;
+	enum http1_status_e hs;
 	int retry = -1;
 	int i, j, first;
 	struct http_conn *htc;
@@ -371,6 +371,6 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 		return (-1);
 	}
 
-	bo->doclose = HTTP1_DoConnection(hp);
+	bo->doclose = hp->doclose;
 	return (0);
 }

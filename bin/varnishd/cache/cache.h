@@ -198,6 +198,7 @@ struct http {
 	uint16_t		status;
 	uint8_t			protover;
 	uint8_t			conds;		/* If-* headers present */
+	enum sess_close		doclose;
 };
 
 /*--------------------------------------------------------------------
@@ -958,7 +959,7 @@ void http_Merge(const struct http *fm, struct http *to, int not_ce);
 
 /* cache_http1_proto.c */
 
-enum htc_status_e {
+enum http1_status_e {
 	HTTP1_ALL_WHITESPACE =	-3,
 	HTTP1_OVERFLOW =	-2,
 	HTTP1_ERROR_EOF =	-1,
@@ -968,13 +969,12 @@ enum htc_status_e {
 
 void HTTP1_Init(struct http_conn *htc, struct ws *ws, int fd, struct vsl_log *,
     unsigned maxbytes, unsigned maxhdr);
-enum htc_status_e HTTP1_Reinit(struct http_conn *htc);
-enum htc_status_e HTTP1_Rx(struct http_conn *htc);
+enum http1_status_e HTTP1_Reinit(struct http_conn *htc);
+enum http1_status_e HTTP1_Rx(struct http_conn *htc);
 ssize_t HTTP1_Read(struct http_conn *htc, void *d, size_t len);
-enum htc_status_e HTTP1_Complete(struct http_conn *htc);
+enum http1_status_e HTTP1_Complete(struct http_conn *htc);
 uint16_t HTTP1_DissectRequest(struct req *);
 uint16_t HTTP1_DissectResponse(struct http *sp, const struct http_conn *htc);
-enum sess_close HTTP1_DoConnection(struct http *);
 unsigned HTTP1_Write(const struct worker *w, const struct http *hp, const int*);
 
 #define HTTPH(a, b, c) extern char b[];
