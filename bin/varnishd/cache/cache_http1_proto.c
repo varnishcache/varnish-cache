@@ -72,7 +72,6 @@ HTTP1_Init(struct http_conn *htc, struct ws *ws, int fd, struct vsl_log *vsl,
 	htc->vsl = vsl;
 	htc->maxbytes = maxbytes;
 	htc->maxhdr = maxhdr;
-	htc->read = HTTP1_Read;
 
 	(void)WS_Reserve(htc->ws, htc->maxbytes);
 	htc->rxbuf.b = ws->f;

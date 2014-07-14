@@ -108,7 +108,6 @@ struct busyobj;
 struct cli;
 struct cli_proto;
 struct director;
-struct http_conn;
 struct iovec;
 struct mempool;
 struct objcore;
@@ -174,7 +173,7 @@ struct ws {
 };
 
 /*--------------------------------------------------------------------
- * 
+ *
  */
 
 struct http {
@@ -208,12 +207,9 @@ struct http {
  *
  */
 
-typedef ssize_t htc_read(struct http_conn *, void *, size_t);
-
 struct http_conn {
 	unsigned		magic;
 #define HTTP_CONN_MAGIC		0x3e19edd1
-	htc_read		*read;
 
 	int			fd;
 	struct vsl_log		*vsl;
