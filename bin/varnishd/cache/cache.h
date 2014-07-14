@@ -174,10 +174,9 @@ struct ws {
 };
 
 /*--------------------------------------------------------------------
- * Ban info event types
+ * 
  */
 
-/* NB: remember to update http_Copy() if you add fields */
 struct http {
 	unsigned		magic;
 #define HTTP_MAGIC		0x6428b5c9
