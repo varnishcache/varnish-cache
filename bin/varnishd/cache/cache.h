@@ -972,7 +972,7 @@ ssize_t HTTP1_Read(struct http_conn *htc, void *d, size_t len);
 enum htc_status_e HTTP1_Complete(struct http_conn *htc);
 uint16_t HTTP1_DissectRequest(struct req *);
 uint16_t HTTP1_DissectResponse(struct http *sp, const struct http_conn *htc);
-enum sess_close HTTP1_DoConnection(const struct http *);
+enum sess_close HTTP1_DoConnection(struct http *);
 unsigned HTTP1_Write(const struct worker *w, const struct http *hp, const int*);
 
 #define HTTPH(a, b, c) extern char b[];

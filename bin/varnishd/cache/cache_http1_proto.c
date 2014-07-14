@@ -508,12 +508,13 @@ HTTP1_DissectResponse(struct http *hp, const struct http_conn *htc)
  */
 
 enum sess_close
-HTTP1_DoConnection(const struct http *hp)
+HTTP1_DoConnection(struct http *hp)
 {
 	char *p, *q;
 	enum sess_close ret;
 	unsigned u;
 
+	http_CollectHdr(hp, H_Connection);
 	if (!http_GetHdr(hp, H_Connection, &p)) {
 		if (hp->protover < 11)
 			return (SC_REQ_HTTP10);
