@@ -39,6 +39,5 @@ BO_FLAG(uncacheable,	0, 0, "")
 BO_FLAG(abandon,	0, 0, "")
 BO_FLAG(is_gzip,	0, 0, "")
 BO_FLAG(is_gunzip,	0, 0, "")
-BO_FLAG(should_close,	0, 0, "")
 
 /*lint -restore */

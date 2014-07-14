@@ -370,5 +370,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 		/* XXX: other cleanup ? */
 		return (-1);
 	}
+
+	bo->doclose = HTTP1_DoConnection(hp);
 	return (0);
 }

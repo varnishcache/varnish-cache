@@ -151,6 +151,7 @@ VBO_GetBusyObj(struct worker *wrk, const struct req *req)
 
 	bo->t_first = bo->t_prev = NAN;
 	bo->content_length = -1;
+	bo->doclose = SC_NULL;
 
 	return (bo);
 }

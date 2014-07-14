@@ -187,7 +187,7 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 
 	assert(bo->state == BOS_INVALID);
 	AZ(bo->vbc);
-	AZ(bo->should_close);
+	assert(bo->doclose == SC_NULL);
 	AZ(bo->storage_hint);
 
 	HTTP_Setup(bo->bereq0, bo->ws, bo->vsl, SLT_BereqMethod);
@@ -261,7 +261,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	AZ(bo->vbc);
-	AZ(bo->should_close);
+	assert(bo->doclose == SC_NULL);
 	AZ(bo->storage_hint);
 
 	if (bo->do_pass)
@@ -375,7 +375,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	if (wrk->handling == VCL_RET_RETRY) {
 		AN (bo->vbc);
 		VDI_CloseFd(&bo->vbc, &bo->acct);
-		bo->should_close = 0;
+		bo->doclose = SC_NULL;
 		bo->retries++;
 		if (bo->retries <= cache_param->max_retries)
 			return (F_STP_RETRY);
@@ -470,13 +470,13 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (VFP_Open(bo)) {
 		(void)VFP_Error(bo, "Fetch Pipeline failed to open");
-		bo->should_close = 1;
+		bo->doclose = SC_RX_BODY;
 		return (F_STP_ERROR);
 	}
 
 	if (vbf_beresp2obj(bo)) {
 		(void)VFP_Error(bo, "Could not get storage");
-		bo->should_close = 1;
+		bo->doclose = SC_RX_BODY;
 		return (F_STP_ERROR);
 	}
 
@@ -538,7 +538,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	/* Recycle the backend connection before setting BOS_FINISHED to
 	   give predictable backend reuse behavior for varnishtest */
-	if (bo->vbc != NULL && !(bo->should_close)) {
+	if (bo->vbc != NULL && bo->doclose == SC_NULL) {
 		VDI_RecycleFd(&bo->vbc, &bo->acct);
 		AZ(bo->vbc);
 	}
@@ -642,7 +642,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 
 	/* Recycle the backend connection before setting BOS_FINISHED to
 	   give predictable backend reuse behavior for varnishtest */
-	if (bo->vbc != NULL && !(bo->should_close)) {
+	if (bo->vbc != NULL && bo->doclose == SC_NULL) {
 		VDI_RecycleFd(&bo->vbc, &bo->acct);
 		AZ(bo->vbc);
 	}
@@ -774,6 +774,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	THR_SetBusyobj(bo);
 	stp = F_STP_MKBEREQ;
+	assert(bo->doclose == SC_NULL);
 	assert(isnan(bo->t_first));
 	assert(isnan(bo->t_prev));
 	VSLb_ts_busyobj(bo, "Start", W_TIM_real(wrk));
@@ -799,7 +800,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	bo->stats = NULL;
 
 	if (bo->vbc != NULL) {
-		if (bo->should_close)
+		if (bo->doclose != SC_NULL)
 			VDI_CloseFd(&bo->vbc, &bo->acct);
 		else
 			VDI_RecycleFd(&bo->vbc, &bo->acct);

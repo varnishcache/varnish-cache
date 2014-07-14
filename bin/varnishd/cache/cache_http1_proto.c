@@ -511,16 +511,17 @@ enum sess_close
 HTTP1_DoConnection(struct http *hp)
 {
 	char *p, *q;
-	enum sess_close ret;
+	enum sess_close retval;
 	unsigned u;
 
+	if (hp->protover < 11)
+		retval = SC_REQ_HTTP10;
+	else
+		retval = SC_NULL;;
+
 	http_CollectHdr(hp, H_Connection);
-	if (!http_GetHdr(hp, H_Connection, &p)) {
-		if (hp->protover < 11)
-			return (SC_REQ_HTTP10);
-		return (SC_NULL);
-	}
-	ret = SC_NULL;
+	if (!http_GetHdr(hp, H_Connection, &p))
+		return (retval);
 	AN(p);
 	for (; *p; p++) {
 		if (vct_issp(*p))
@@ -532,13 +533,15 @@ HTTP1_DoConnection(struct http *hp)
 				break;
 		u = pdiff(p, q);
 		if (u == 5 && !strncasecmp(p, "close", u))
-			ret = SC_REQ_CLOSE;
+			retval = SC_REQ_CLOSE;
+		if (u == 10 && !strncasecmp(p, "keep-alive", u))
+			retval = SC_NULL;
 		http_MarkHeader(hp, p, u, HDF_FILTER);
 		if (!*q)
 			break;
 		p = q;
 	}
-	return (ret);
+	return (retval);
 }
 
 /*--------------------------------------------------------------------*/

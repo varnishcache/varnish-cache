@@ -494,6 +494,8 @@ struct busyobj {
 
 	ssize_t			content_length;
 
+	enum sess_close		doclose;
+
 #define BO_FLAG(l, r, w, d) unsigned	l:1;
 #include "tbl/bo_flags.h"
 #undef BO_FLAG

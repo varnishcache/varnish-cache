@@ -205,7 +205,7 @@ VFP_Fetch_Body(struct busyobj *bo)
 			VSLb(bo->vsl, SLT_FetchError,
 			    "Pass delivery abandoned");
 			vfps = VFP_END;
-			bo->should_close = 1;
+			bo->doclose = SC_RX_BODY;
 			break;
 		}
 		AZ(bo->failed);
@@ -214,7 +214,7 @@ VFP_Fetch_Body(struct busyobj *bo)
 			est = 0;
 		}
 		if (st == NULL) {
-			bo->should_close = 1;
+			bo->doclose = SC_RX_BODY;
 			(void)VFP_Error(bo, "Out of storage");
 			break;
 		}
@@ -235,7 +235,7 @@ VFP_Fetch_Body(struct busyobj *bo)
 	if (vfps == VFP_ERROR) {
 		AN(bo->failed);
 		(void)VFP_Error(bo, "Fetch Pipeline failed to process");
-		bo->should_close = 1;
+		bo->doclose = SC_RX_BODY;
 	}
 
 	vfp_suck_fini(bo);

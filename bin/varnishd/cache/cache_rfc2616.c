@@ -197,13 +197,6 @@ RFC2616_Body(struct busyobj *bo, struct dstat *stats)
 
 	hp = bo->beresp;
 
-	if (hp->protover < 11 && !http_HdrIs(hp, H_Connection, "keep-alive"))
-		bo->should_close = 1;
-	else if (http_HdrIs(hp, H_Connection, "close"))
-		bo->should_close = 1;
-	else
-		bo->should_close = 0;
-
 	if (!strcasecmp(http_GetReq(bo->bereq), "head")) {
 		/*
 		 * A HEAD request can never have a body in the reply,
