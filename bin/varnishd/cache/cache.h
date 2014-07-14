@@ -582,6 +582,7 @@ struct req {
 	struct {
 		ssize_t			bytes_done;
 		ssize_t			bytes_yet;
+		intptr_t		chunk_ctr;
 	}				h1;	/* HTTP1 specific */
 
 	/* The busy objhead we sleep on */
@@ -599,7 +600,6 @@ struct req {
 
 	unsigned char		wantbody;
 	uint64_t		req_bodybytes;	/* Parsed req bodybytes */
-	intptr_t		chunk_ctr;	/* Parsed req bodybytes */
 
 	uint64_t		resp_hdrbytes;	/* Scheduled resp hdrbytes */
 	uint64_t		resp_bodybytes; /* Scheduled resp bodybytes */

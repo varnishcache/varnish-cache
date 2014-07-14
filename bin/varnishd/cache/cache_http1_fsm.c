@@ -286,7 +286,7 @@ http1_req_body_status(struct req *req)
 		return (REQ_BODY_PRESENT);
 	}
 	if (http_HdrIs(req->http, H_Transfer_Encoding, "chunked")) {
-		req->chunk_ctr = -1;
+		req->h1.chunk_ctr = -1;
 		return (REQ_BODY_CHUNKED);
 	}
 	if (http_GetHdr(req->http, H_Transfer_Encoding, NULL))
@@ -511,7 +511,7 @@ http1_iter_req_body(struct req *req, enum req_body_state_e bs,
 		req->acct.req_bodybytes += len;
 		return (len);
 	} else if (bs == REQ_BODY_CHUNKED) {
-		switch (HTTP1_Chunked(req->htc, &req->chunk_ctr, &err,
+		switch (HTTP1_Chunked(req->htc, &req->h1.chunk_ctr, &err,
 		    &req->acct.req_bodybytes, buf, &len)) {
 		case H1CR_ERROR:
 			VSLb(req->vsl, SLT_Debug, "CHUNKERR: %s", err);
