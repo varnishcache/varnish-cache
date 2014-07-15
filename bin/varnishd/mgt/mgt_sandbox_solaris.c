@@ -202,7 +202,7 @@ setppriv_check(int a) {
  *
  * > 0t_PID_::pid2proc | ::print proc_t p_flag | >a
  * > (<a & 0x10000000)=X
- *                 0
+ *		0
  *
  * (a value of 0x10000000 indicates that SNOCD is set)
  *
@@ -346,15 +346,15 @@ mgt_sandbox_solaris_privsep(enum sandbox_e who)
 	(void)who;
 
 	if (priv_ineffect(PRIV_PROC_SETID)) {
-                if (getgid() != mgt_param.gid)
-                        XXXAZ(setgid(mgt_param.gid));
-                if (getuid() != mgt_param.uid)
-                        XXXAZ(setuid(mgt_param.uid));
-        } else {
-                REPORT(LOG_INFO,
+		if (getgid() != mgt_param.gid)
+			XXXAZ(setgid(mgt_param.gid));
+		if (getuid() != mgt_param.uid)
+			XXXAZ(setuid(mgt_param.uid));
+	} else {
+		REPORT(LOG_INFO,
 		    "Privilege %s missing, will not change uid/gid",
 		    PRIV_PROC_SETID);
-        }
+	}
 }
 
 /*

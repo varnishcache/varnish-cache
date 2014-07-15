@@ -553,7 +553,7 @@ ESI_DeliverChild(struct req *req)
 	case 5: /* xxxxx000 00000000 00000000 11111111 11111111 */
 		dbits[1] = cc | 0x00;
 		dbits[2] = 0x00; dbits[3] = 0x00;
-	        dbits[4] = 0xff; dbits[5] = 0xff;
+		dbits[4] = 0xff; dbits[5] = 0xff;
 		lpad = 5;
 		break;
 	case 2: /* xx010000 00000100 00000001 00000000 */
@@ -578,7 +578,7 @@ ESI_DeliverChild(struct req *req)
 		dbits[1] = cc | 0x00;
 		dbits[2] = 0x00;
 		dbits[3] = 0x00; dbits[4] = 0x00;
-	        dbits[5] = 0xff; dbits[6] = 0xff;
+		dbits[5] = 0xff; dbits[6] = 0xff;
 		lpad = 6;
 		break;
 	default:

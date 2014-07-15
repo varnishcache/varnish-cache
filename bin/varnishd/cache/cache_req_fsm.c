@@ -907,7 +907,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 			if (DO_DEBUG(DBG_REQ_STATE)) \
 				cnt_diag(req, #u); \
 			nxt = cnt_##l arg; \
-		        break;
+			break;
 #include "tbl/steps.h"
 #undef REQ_STEP
 		default:

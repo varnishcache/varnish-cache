@@ -203,7 +203,7 @@ struct parspec mgt_parspec[] = {
 		"0", NULL,
 		"Send timeout for client connections. "
 		"If the HTTP response hasn't been transmitted in this many\n"
-                "seconds the session is closed.\n"
+		"seconds the session is closed.\n"
 		"See setsockopt(2) under SO_SNDTIMEO for more information.",
 		DELAYED_EFFECT,
 		"600", "seconds" },
@@ -211,7 +211,7 @@ struct parspec mgt_parspec[] = {
 		"0", NULL,
 		"Time to wait with no data sent. "
 		"If no data has been transmitted in this many\n"
-                "seconds the session is closed.\n"
+		"seconds the session is closed.\n"
 		"See setsockopt(2) under SO_SNDTIMEO for more information.",
 		DELAYED_EFFECT,
 		"60", "seconds" },
@@ -500,7 +500,7 @@ struct parspec mgt_parspec[] = {
 		"8", ""},
 	{ "gzip_buffer",
 		tweak_bytes_u, &mgt_param.gzip_buffer,
-	        "2048", NULL,
+		"2048", NULL,
 		"Size of malloc buffer used for gzip processing.\n"
 		"These buffers are used for in-transit data,"
 		" for instance gunzip'ed data being sent to a client."

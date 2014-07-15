@@ -455,7 +455,7 @@ vfp_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 {
 	struct vgz *vg;
 
-        CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 
 	if (http_HdrIs(vc->http, H_Content_Length, "0")) {
@@ -502,18 +502,18 @@ static enum vfp_status __match_proto__(vfp_pull_f)
 vfp_gunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
     ssize_t *lp)
 {
-        ssize_t l;
+	ssize_t l;
 	struct vgz *vg;
 	enum vgzret_e vr = VGZ_ERROR;
 	const void *dp;
 	size_t dl;
 	enum vfp_status vp = VFP_OK;
 
-        CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
-        AN(p);
-        AN(lp);
+	AN(p);
+	AN(lp);
 	l = *lp;
 	*lp = 0;
 	VGZ_Obuf(vg, p, l);
@@ -556,19 +556,19 @@ static enum vfp_status __match_proto__(vfp_pull_f)
 vfp_gzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
     ssize_t *lp)
 {
-        ssize_t l;
+	ssize_t l;
 	struct vgz *vg;
 	enum vgzret_e vr = VGZ_ERROR;
 	const void *dp;
 	size_t dl;
 	enum vfp_status vp = VFP_ERROR;
 
-        CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-        CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
-        AN(p);
-        AN(lp);
+	AN(p);
+	AN(lp);
 	l = *lp;
 	*lp = 0;
 	VGZ_Obuf(vg, p, l);
@@ -618,12 +618,12 @@ vfp_testgunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	size_t dl;
 	enum vfp_status vp;
 
-        CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-        CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
-        AN(p);
-        AN(lp);
+	AN(p);
+	AN(lp);
 	CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
 	vp = VFP_Suck(vc, p, lp);
 	if (vp == VFP_ERROR)
@@ -655,7 +655,7 @@ vfp_gzip_fini(struct vfp_ctx *vc, struct vfp_entry *vfe)
 {
 	struct vgz *vg;
 
-        CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 
 	if (vfe->priv1 != NULL) {
