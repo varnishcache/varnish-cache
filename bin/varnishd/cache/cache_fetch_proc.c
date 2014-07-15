@@ -244,8 +244,8 @@ VFP_Fetch_Body(struct busyobj *bo)
 		ObjTrimStore(bo->fetch_objcore, bo->stats);
 }
 
-void
-VFP_Push(struct busyobj *bo, const struct vfp *vfp, intptr_t priv, int top)
+struct vfp_entry *
+VFP_Push(struct busyobj *bo, const struct vfp *vfp, int top)
 {
 	struct vfp_entry *vfe;
 
@@ -254,7 +254,6 @@ VFP_Push(struct busyobj *bo, const struct vfp *vfp, intptr_t priv, int top)
 	AN(vfe);
 	vfe->magic = VFP_ENTRY_MAGIC;
 	vfe->vfp = vfp;
-	vfe->priv2 = priv;
 	vfe->closed = VFP_OK;
 	if (top)
 		VTAILQ_INSERT_HEAD(&bo->vfp, vfe, list);
@@ -262,6 +261,7 @@ VFP_Push(struct busyobj *bo, const struct vfp *vfp, intptr_t priv, int top)
 		VTAILQ_INSERT_TAIL(&bo->vfp, vfe, list);
 	if (VTAILQ_FIRST(&bo->vfp) == vfe)
 		bo->vfp_nxt = vfe;
+	return (vfe);
 }
 
 /*--------------------------------------------------------------------

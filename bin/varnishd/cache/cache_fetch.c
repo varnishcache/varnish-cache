@@ -447,18 +447,18 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
 
 	if (bo->do_gunzip || (bo->is_gzip && bo->do_esi))
-		VFP_Push(bo, &vfp_gunzip, 0, 1);
+		(void)VFP_Push(bo, &vfp_gunzip, 1);
 
 	if (bo->do_esi && bo->do_gzip) {
-		VFP_Push(bo, &vfp_esi_gzip, 0, 1);
+		(void)VFP_Push(bo, &vfp_esi_gzip, 1);
 	} else if (bo->do_esi && bo->is_gzip && !bo->do_gunzip) {
-		VFP_Push(bo, &vfp_esi_gzip, 0, 1);
+		(void)VFP_Push(bo, &vfp_esi_gzip, 1);
 	} else if (bo->do_esi) {
-		VFP_Push(bo, &vfp_esi, 0, 1);
+		(void)VFP_Push(bo, &vfp_esi, 1);
 	} else if (bo->do_gzip) {
-		VFP_Push(bo, &vfp_gzip, 0, 1);
+		(void)VFP_Push(bo, &vfp_gzip, 1);
 	} else if (bo->is_gzip && !bo->do_gunzip) {
-		VFP_Push(bo, &vfp_testgunzip, 0, 1);
+		(void)VFP_Push(bo, &vfp_testgunzip, 1);
 	}
 
 	if (bo->fetch_objcore->flags & OC_F_PRIVATE)
