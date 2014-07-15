@@ -62,7 +62,7 @@ VFP_Error(const struct vfp_ctx *vc, const char *fmt, ...)
 	assert(vc->bo->state >= BOS_REQ_DONE);
 	if (!vc->bo->failed) {
 		va_start(ap, fmt);
-		VSLbv(vc->bo->vsl, SLT_FetchError, fmt, ap);
+		VSLbv(vc->vsl, SLT_FetchError, fmt, ap);
 		va_end(ap);
 		vc->bo->failed = 1;
 	}
@@ -104,6 +104,17 @@ VFP_GetStorage(struct busyobj *bo, ssize_t sz)
 		Lck_Unlock(&bo->mtx);
 	}
 	return (st);
+}
+
+/**********************************************************************
+ */
+
+void
+VFP_Setup(struct vfp_ctx *vc)
+{
+	memset(vc, 0, sizeof *vc);
+	vc->magic = VFP_CTX_MAGIC;
+	VTAILQ_INIT(&vc->vfp);
 }
 
 /**********************************************************************

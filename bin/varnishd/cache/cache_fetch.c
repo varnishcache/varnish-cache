@@ -367,9 +367,10 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	} else
 		do_ims = 0;
 
-	bo->vfc.magic = VFP_CTX_MAGIC;
-	VTAILQ_INIT(&bo->vfc.vfp);
+	VFP_Setup(&bo->vfc);
 	bo->vfc.bo = bo;
+	bo->vfc.http = bo->beresp;
+	bo->vfc.vsl = bo->vsl;
 
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, bo->beresp->ws);
 
@@ -519,6 +520,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->htc.body_status != BS_NONE) {
 		assert(bo->htc.body_status != BS_ERROR);
 		VFP_Fetch_Body(bo);
+		bo->acct.beresp_bodybytes = bo->vfc.bodybytes;
 	}
 
 	if (bo->failed && !bo->do_stream) {

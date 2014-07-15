@@ -154,7 +154,7 @@ vfp_esi_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	ALLOC_OBJ(vef, VEF_MAGIC);
 	if (vef == NULL)
 		return (VFP_ERROR);
-	vef->vgz = VGZ_NewGzip(vc->bo->vsl, "G F E");
+	vef->vgz = VGZ_NewGzip(vc->vsl, "G F E");
 	vef->vep = VEP_Init(vc->bo, vfp_vep_callback, vef);
 	vef->ibuf_sz = cache_param->gzip_buffer;
 	vef->ibuf = calloc(1L, vef->ibuf_sz);
@@ -164,10 +164,10 @@ vfp_esi_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	vef->ibuf_o = vef->ibuf;
 	vfe->priv1 = vef;
 
-	RFC2616_Weaken_Etag(vc->bo->beresp);
-	http_Unset(vc->bo->beresp, H_Content_Length);
-	http_Unset(vc->bo->beresp, H_Content_Encoding);
-	http_SetHeader(vc->bo->beresp, "Content-Encoding: gzip");
+	RFC2616_Weaken_Etag(vc->http);
+	http_Unset(vc->http, H_Content_Length);
+	http_Unset(vc->http, H_Content_Encoding);
+	http_SetHeader(vc->http, "Content-Encoding: gzip");
 
 	return (VFP_OK);
 }

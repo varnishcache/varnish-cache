@@ -460,18 +460,18 @@ vfp_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 
 	if (vc->bo->content_length == 0) {
-		http_Unset(vc->bo->beresp, H_Content_Encoding);
+		http_Unset(vc->http, H_Content_Encoding);
 		return (VFP_NULL);
 	}
 
 	if (vfe->vfp->priv2 == VFP_GZIP) {
-		if (http_GetHdr(vc->bo->beresp, H_Content_Encoding, NULL))
+		if (http_GetHdr(vc->http, H_Content_Encoding, NULL))
 			return (VFP_NULL);
-		vg = VGZ_NewGzip(vc->bo->vsl, vfe->vfp->priv1);
+		vg = VGZ_NewGzip(vc->vsl, vfe->vfp->priv1);
 	} else {
-		if (!http_HdrIs(vc->bo->beresp, H_Content_Encoding, "gzip"))
+		if (!http_HdrIs(vc->http, H_Content_Encoding, "gzip"))
 			return (VFP_NULL);
-		vg = VGZ_NewUngzip(vc->bo->vsl, vfe->vfp->priv1);
+		vg = VGZ_NewUngzip(vc->vsl, vfe->vfp->priv1);
 	}
 	if (vg == NULL)
 		return (VFP_ERROR);
@@ -482,13 +482,13 @@ vfp_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	AZ(vg->m_len);
 
 	if (vfe->vfp->priv2 == VFP_GUNZIP || vfe->vfp->priv2 == VFP_GZIP) {
-		http_Unset(vc->bo->beresp, H_Content_Encoding);
-		http_Unset(vc->bo->beresp, H_Content_Length);
-		RFC2616_Weaken_Etag(vc->bo->beresp);
+		http_Unset(vc->http, H_Content_Encoding);
+		http_Unset(vc->http, H_Content_Length);
+		RFC2616_Weaken_Etag(vc->http);
 	}
 
 	if (vfe->vfp->priv2 == VFP_GZIP)
-		http_SetHeader(vc->bo->beresp, "Content-Encoding: gzip");
+		http_SetHeader(vc->http, "Content-Encoding: gzip");
 
 	return (VFP_OK);
 }

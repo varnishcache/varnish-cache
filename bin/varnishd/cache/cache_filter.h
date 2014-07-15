@@ -62,6 +62,7 @@ extern const struct vfp vfp_esi;
 extern const struct vfp vfp_esi_gzip;
 
 struct vfp_entry *VFP_Push(struct vfp_ctx *, const struct vfp *, int top);
+void VFP_Setup(struct vfp_ctx *vc);
 int VFP_Open(struct vfp_ctx *bo);
 enum vfp_status VFP_Suck(struct vfp_ctx *, void *p, ssize_t *lp);
 enum vfp_status VFP_Error(const struct vfp_ctx *, const char *fmt, ...)

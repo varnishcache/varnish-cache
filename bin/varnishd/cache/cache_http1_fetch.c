@@ -52,7 +52,6 @@ v1f_pull_straight(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	struct http_conn *htc;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	CAST_OBJ_NOTNULL(htc, vfe->priv1, HTTP_CONN_MAGIC);
 	AN(p);
@@ -66,7 +65,7 @@ v1f_pull_straight(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	if (vfe->priv2 < l)
 		l = vfe->priv2;
 	lr = HTTP1_Read(htc, p, l);
-	vc->bo->acct.beresp_bodybytes += lr;
+	vc->bodybytes += lr;
 	if (lr <= 0)
 		return (VFP_Error(vc, "straight insufficient bytes"));
 	*lp = lr;
@@ -95,14 +94,12 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	struct http_conn *htc;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	CAST_OBJ_NOTNULL(htc, vfe->priv1, HTTP_CONN_MAGIC);
 	AN(p);
 	AN(lp);
 
-	switch (HTTP1_Chunked(htc, &vfe->priv2, &err,
-	    &vc->bo->acct.beresp_bodybytes, p, lp)) {
+	switch (HTTP1_Chunked(htc, &vfe->priv2, &err, &vc->bodybytes, p, lp)) {
 	case H1CR_ERROR:
 		return (VFP_Error(vc, "%s", err));
 	case H1CR_MORE:
@@ -133,8 +130,6 @@ v1f_pull_eof(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	CAST_OBJ_NOTNULL(htc, vfe->priv1, HTTP_CONN_MAGIC);
 	AN(p);
 
-	// XXX: update vc->bo->acct.beresp_bodybytes ?
-
 	AN(lp);
 
 	l = *lp;
@@ -145,6 +140,7 @@ v1f_pull_eof(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	if (lr == 0)
 		return (VFP_END);
 	*lp = lr;
+	vc->bodybytes += lr;
 	return (VFP_OK);
 }
 
@@ -152,7 +148,6 @@ static const struct vfp v1f_eof = {
 	.name = "V1F_EOF",
 	.pull = v1f_pull_eof,
 };
-
 
 /*--------------------------------------------------------------------
  */

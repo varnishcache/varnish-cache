@@ -459,6 +459,10 @@ struct vfp_ctx {
 
 	struct vfp_entry_s	vfp;
 	struct vfp_entry	*vfp_nxt;
+
+	struct vsl_log		*vsl;
+	struct http		*http;
+	uint64_t		bodybytes;
 };
 
 struct busyobj {
