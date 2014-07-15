@@ -456,10 +456,9 @@ vfp_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	struct vgz *vg;
 
         CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-        CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 
-	if (vc->bo->content_length == 0) {
+	if (http_HdrIs(vc->http, H_Content_Length, "0")) {
 		http_Unset(vc->http, H_Content_Encoding);
 		return (VFP_NULL);
 	}
