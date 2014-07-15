@@ -548,7 +548,7 @@ HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv)
 
 	switch(req->req_body_status) {
 	case REQ_BODY_CACHED:
-		VTAILQ_FOREACH(st, &req->body, list) {
+		VTAILQ_FOREACH(st, &req->body->list, list) {
 			i = func(req, priv, st->ptr, st->len);
 			if (i)
 				return (i);
@@ -677,7 +677,7 @@ HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
 				l = -1;
 				break;
 			} else {
-				VTAILQ_INSERT_TAIL(&req->body, st, list);
+				VTAILQ_INSERT_TAIL(&req->body->list, st, list);
 			}
 		}
 

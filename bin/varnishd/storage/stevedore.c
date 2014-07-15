@@ -207,7 +207,7 @@ stv_alloc_obj(struct busyobj *bo, size_t size)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	obj = bo->fetch_obj;
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
-	stv = obj->objstore->stevedore;
+	stv = obj->body->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
 	if (size > cache_param->fetch_maxchunksize)
@@ -285,11 +285,12 @@ STV_MkObject(struct stevedore *stv, struct busyobj *bo,
 
 	HTTP_Setup(o->http, bo->ws_o, bo->vsl, SLT_ObjMethod);
 	o->http->magic = HTTP_MAGIC;
-	VTAILQ_INIT(&o->store);
+	VTAILQ_INIT(&o->body->list);
 
 	o->objcore = bo->fetch_objcore;
 
 	o->objcore->stevedore = stv;
+	o->body->stevedore = stv;
 	AN(stv->methods);
 	o->objcore->priv = o;
 	o->objcore->priv2 = (uintptr_t)stv;
@@ -399,9 +400,9 @@ STV_Freestore(struct object *o)
 		STV_free(o->esidata);
 		o->esidata = NULL;
 	}
-	VTAILQ_FOREACH_SAFE(st, &o->store, list, stn) {
+	VTAILQ_FOREACH_SAFE(st, &o->body->list, list, stn) {
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-		VTAILQ_REMOVE(&o->store, st, list);
+		VTAILQ_REMOVE(&o->body->list, st, list);
 		STV_free(st);
 	}
 }

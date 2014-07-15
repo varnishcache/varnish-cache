@@ -309,7 +309,7 @@ ESI_Deliver(struct req *req)
 		AZ(dl);
 	}
 
-	st = VTAILQ_FIRST(&req->obj->store);
+	st = VTAILQ_FIRST(&req->obj->body->list);
 	off = 0;
 
 	while (p < e) {
@@ -467,7 +467,7 @@ ved_deliver_byterange(struct req *req, ssize_t low, ssize_t high)
 	u_char *p;
 
 	lx = 0;
-	VTAILQ_FOREACH(st, &req->obj->store, list) {
+	VTAILQ_FOREACH(st, &req->obj->body->list, list) {
 		p = st->ptr;
 		l = st->len;
 		if (lx + l < low) {
@@ -509,7 +509,7 @@ ESI_DeliverChild(struct req *req)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	if (!req->obj->gziped) {
-		VTAILQ_FOREACH(st, &req->obj->store, list)
+		VTAILQ_FOREACH(st, &req->obj->body->list, list)
 			ved_pretend_gzip(req, st->ptr, st->len);
 		return;
 	}
@@ -588,7 +588,7 @@ ESI_DeliverChild(struct req *req)
 		req->resp_bodybytes += WRW_Write(req->wrk, dbits + 1, lpad);
 
 	/* We need the entire tail, but it may not be in one storage segment */
-	st = VTAILQ_LAST(&req->obj->store, storagehead);
+	st = VTAILQ_LAST(&req->obj->body->list, storagehead);
 	for (i = sizeof tailbuf; i > 0; i -= j) {
 		j = st->len;
 		if (j > i)

@@ -74,7 +74,7 @@ ObjIter(struct objiter *oi, void **p, ssize_t *l)
 
 	if (oi->bo == NULL) {
 		if (oi->st == NULL)
-			oi->st = VTAILQ_FIRST(&oi->obj->store);
+			oi->st = VTAILQ_FIRST(&oi->obj->body->list);
 		else
 			oi->st = VTAILQ_NEXT(oi->st, list);
 		if (oi->st != NULL) {
@@ -95,8 +95,8 @@ ObjIter(struct objiter *oi, void **p, ssize_t *l)
 				return (OIS_ERROR);
 		}
 		Lck_Lock(&oi->bo->mtx);
-		AZ(VTAILQ_EMPTY(&oi->obj->store));
-		VTAILQ_FOREACH(oi->st, &oi->obj->store, list) {
+		AZ(VTAILQ_EMPTY(&oi->obj->body->list));
+		VTAILQ_FOREACH(oi->st, &oi->obj->body->list, list) {
 			if (oi->st->len > ol) {
 				*p = oi->st->ptr + ol;
 				*l = oi->st->len - ol;
@@ -158,11 +158,11 @@ ObjTrimStore(struct objcore *oc, struct dstat *ds)
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 	o = ObjGetObj(oc, ds);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	st = VTAILQ_LAST(&o->store, storagehead);
+	st = VTAILQ_LAST(&o->body->list, storagehead);
 	if (st == NULL)
 		return;
 	if (st->len == 0) {
-		VTAILQ_REMOVE(&o->store, st, list);
+		VTAILQ_REMOVE(&o->body->list, st, list);
 		STV_free(st);
 	} else if (st->len < st->space) {
 		STV_trim(st, st->len, 1);

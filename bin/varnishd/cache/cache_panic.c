@@ -219,7 +219,7 @@ pan_object(const char *typ, const struct object *o)
 	pan_http("obj", o->http, 4);
 	VSB_printf(pan_vsp, "    len = %jd,\n", (intmax_t)o->len);
 	VSB_printf(pan_vsp, "    store = {\n");
-	VTAILQ_FOREACH(st, &o->store, list)
+	VTAILQ_FOREACH(st, &o->body->list, list)
 		pan_storage(st);
 	VSB_printf(pan_vsp, "    },\n");
 	VSB_printf(pan_vsp, "  },\n");

@@ -826,7 +826,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 			struct storage *st;
 
 			uu = 0;
-			VTAILQ_FOREACH(st, &bo->fetch_obj->store, list)
+			VTAILQ_FOREACH(st, &bo->fetch_obj->body->list, list)
 				uu += st->len;
 			if (bo->do_stream)
 				/* Streaming might have started freeing stuff */

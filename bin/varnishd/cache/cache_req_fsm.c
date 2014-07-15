@@ -922,9 +922,9 @@ CNT_Request(struct worker *wrk, struct req *req)
 			VSLb(req->vsl, SLT_ESI_BodyBytes, "%ju",
 			    (uintmax_t)req->resp_bodybytes);
 
-		while (!VTAILQ_EMPTY(&req->body)) {
-			st = VTAILQ_FIRST(&req->body);
-			VTAILQ_REMOVE(&req->body, st, list);
+		while (!VTAILQ_EMPTY(&req->body->list)) {
+			st = VTAILQ_FIRST(&req->body->list);
+			VTAILQ_REMOVE(&req->body->list, st, list);
 			STV_free(st);
 		}
 		req->wrk = NULL;

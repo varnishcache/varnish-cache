@@ -454,7 +454,7 @@ smp_oc_getobj(struct dstat *ds, struct objcore *oc)
 
 		bad = 0;
 		l = 0;
-		VTAILQ_FOREACH(st, &o->store, list) {
+		VTAILQ_FOREACH(st, &o->body->list, list) {
 			bad |= smp_loaded_st(sg->sc, sg, st);
 			if (bad)
 				break;

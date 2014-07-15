@@ -537,6 +537,11 @@ struct busyobj {
 
 VTAILQ_HEAD(storagehead, storage);
 
+struct body {
+	struct stevedore	*stevedore;
+	struct storagehead	list;
+};
+
 struct object {
 	unsigned		magic;
 #define OBJECT_MAGIC		0x32851d42
@@ -561,7 +566,7 @@ struct object {
 
 	struct http		*http;
 
-	struct storagehead	store;
+	struct body		body[1];
 
 	struct storage		*esidata;
 
@@ -585,7 +590,7 @@ struct req {
 	VTAILQ_ENTRY(req)	w_list;
 
 	volatile enum req_body_state_e	req_body_status;
-	struct storagehead	body;
+	struct body		body[1];
 
 	struct {
 		ssize_t			bytes_done;

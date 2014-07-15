@@ -84,7 +84,7 @@ VFP_GetStorage(struct busyobj *bo, ssize_t sz)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	obj = bo->fetch_obj;
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
-	st = VTAILQ_LAST(&obj->store, storagehead);
+	st = VTAILQ_LAST(&obj->body->list, storagehead);
 	if (st != NULL && st->len < st->space)
 		return (st);
 
@@ -100,7 +100,7 @@ VFP_GetStorage(struct busyobj *bo, ssize_t sz)
 	} else {
 		AZ(st->len);
 		Lck_Lock(&bo->mtx);
-		VTAILQ_INSERT_TAIL(&obj->store, st, list);
+		VTAILQ_INSERT_TAIL(&obj->body->list, st, list);
 		Lck_Unlock(&bo->mtx);
 	}
 	return (st);
@@ -233,12 +233,13 @@ VFP_Fetch_Body(struct busyobj *bo)
 		}
 
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-		assert(st == VTAILQ_LAST(&bo->fetch_obj->store, storagehead));
+		assert(st == VTAILQ_LAST(&bo->fetch_obj->body->list,
+		    storagehead));
 		l = st->space - st->len;
 		AZ(bo->failed);
 		vfps = VFP_Suck(&bo->vfc, st->ptr + st->len, &l);
 		if (l > 0 && vfps != VFP_ERROR) {
-			AZ(VTAILQ_EMPTY(&bo->fetch_obj->store));
+			AZ(VTAILQ_EMPTY(&bo->fetch_obj->body->list));
 			VBO_extend(bo, l);
 		}
 		if (st->len == st->space)
