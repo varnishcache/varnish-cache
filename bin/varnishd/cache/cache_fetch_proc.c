@@ -53,17 +53,18 @@ static unsigned fetchfrag;
  */
 
 enum vfp_status
-VFP_Error(struct busyobj *bo, const char *fmt, ...)
+VFP_Error(const struct vfp_ctx *vc, const char *fmt, ...)
 {
 	va_list ap;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	assert(bo->state >= BOS_REQ_DONE);
-	if (!bo->failed) {
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
+	assert(vc->bo->state >= BOS_REQ_DONE);
+	if (!vc->bo->failed) {
 		va_start(ap, fmt);
-		VSLbv(bo->vsl, SLT_FetchError, fmt, ap);
+		VSLbv(vc->bo->vsl, SLT_FetchError, fmt, ap);
 		va_end(ap);
-		bo->failed = 1;
+		vc->bo->failed = 1;
 	}
 	return (VFP_ERROR);
 }
@@ -95,7 +96,7 @@ VFP_GetStorage(struct busyobj *bo, ssize_t sz)
 		l = cache_param->fetch_chunksize;
 	st = STV_alloc(bo, l);
 	if (st == NULL) {
-		(void)VFP_Error(bo, "Could not get storage");
+		(void)VFP_Error(&bo->vfc, "Could not get storage");
 	} else {
 		AZ(st->len);
 		Lck_Lock(&bo->mtx);
@@ -109,29 +110,29 @@ VFP_GetStorage(struct busyobj *bo, ssize_t sz)
  */
 
 static void
-vfp_suck_fini(struct busyobj *bo)
+vfp_suck_fini(struct vfp_ctx *vc)
 {
 	struct vfp_entry *vfe;
 
-	VTAILQ_FOREACH(vfe, &bo->vfp, list)
+	VTAILQ_FOREACH(vfe, &vc->vfp, list)
 		if(vfe->vfp->fini != NULL)
-			vfe->vfp->fini(bo, vfe);
+			vfe->vfp->fini(vc, vfe);
 }
 
 int
-VFP_Open(struct busyobj *bo)
+VFP_Open(struct vfp_ctx *vc)
 {
 	struct vfp_entry *vfe;
 
-	VTAILQ_FOREACH_REVERSE(vfe, &bo->vfp, vfp_entry_s, list) {
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	VTAILQ_FOREACH_REVERSE(vfe, &vc->vfp, vfp_entry_s, list) {
 		if (vfe->vfp->init == NULL)
 			continue;
-		vfe->closed = vfe->vfp->init(bo, vfe);
+		vfe->closed = vfe->vfp->init(vc, vfe);
 		if (vfe->closed != VFP_OK && vfe->closed != VFP_NULL) {
-			(void)VFP_Error(bo,
-			    "Fetch filter %s failed to open",
+			(void)VFP_Error(vc, "Fetch filter %s failed to open",
 			    vfe->vfp->name);
-			vfp_suck_fini(bo);
+			vfp_suck_fini(vc);
 			return (-1);
 		}
 	}
@@ -145,33 +146,34 @@ VFP_Open(struct busyobj *bo)
  */
 
 enum vfp_status
-VFP_Suck(struct busyobj *bo, void *p, ssize_t *lp)
+VFP_Suck(struct vfp_ctx *vc, void *p, ssize_t *lp)
 {
 	enum vfp_status vp;
 	struct vfp_entry *vfe;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	AN(p);
 	AN(lp);
-	vfe = bo->vfp_nxt;
+	vfe = vc->vfp_nxt;
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
-	bo->vfp_nxt = VTAILQ_NEXT(vfe, list);
+	vc->vfp_nxt = VTAILQ_NEXT(vfe, list);
 
 	if (vfe->closed == VFP_NULL) {
-		vp = VFP_Suck(bo, p, lp);
+		vp = VFP_Suck(vc, p, lp);
 	} else if (vfe->closed == VFP_OK) {
-		vp = vfe->vfp->pull(bo, vfe, p, lp);
+		vp = vfe->vfp->pull(vc, vfe, p, lp);
 		if (vp == VFP_END || vp == VFP_ERROR) {
 			vfe->closed = vp;
 		} else if (vp != VFP_OK)
-			(void)VFP_Error(bo, "Fetch filter %s returned %d",
+			(void)VFP_Error(vc, "Fetch filter %s returned %d",
 			    vfe->vfp->name, vp);
 	} else {
 		/* Already closed filter */
 		*lp = 0;
 		vp = vfe->closed;
 	}
-	bo->vfp_nxt = vfe;
+	vc->vfp_nxt = vfe;
 	return (vp);
 }
 
@@ -188,7 +190,7 @@ VFP_Fetch_Body(struct busyobj *bo)
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	AN(bo->vfp_nxt);
+	AN(bo->vfc.vfp_nxt);
 
 	est = bo->content_length;
 	if (est < 0)
@@ -215,7 +217,7 @@ VFP_Fetch_Body(struct busyobj *bo)
 		}
 		if (st == NULL) {
 			bo->doclose = SC_RX_BODY;
-			(void)VFP_Error(bo, "Out of storage");
+			(void)VFP_Error(&bo->vfc, "Out of storage");
 			break;
 		}
 
@@ -223,7 +225,7 @@ VFP_Fetch_Body(struct busyobj *bo)
 		assert(st == VTAILQ_LAST(&bo->fetch_obj->store, storagehead));
 		l = st->space - st->len;
 		AZ(bo->failed);
-		vfps = VFP_Suck(bo, st->ptr + st->len, &l);
+		vfps = VFP_Suck(&bo->vfc, st->ptr + st->len, &l);
 		if (l > 0 && vfps != VFP_ERROR) {
 			AZ(VTAILQ_EMPTY(&bo->fetch_obj->store));
 			VBO_extend(bo, l);
@@ -234,33 +236,33 @@ VFP_Fetch_Body(struct busyobj *bo)
 
 	if (vfps == VFP_ERROR) {
 		AN(bo->failed);
-		(void)VFP_Error(bo, "Fetch Pipeline failed to process");
+		(void)VFP_Error(&bo->vfc, "Fetch Pipeline failed to process");
 		bo->doclose = SC_RX_BODY;
 	}
 
-	vfp_suck_fini(bo);
+	vfp_suck_fini(&bo->vfc);
 
 	if (!bo->do_stream)
 		ObjTrimStore(bo->fetch_objcore, bo->stats);
 }
 
 struct vfp_entry *
-VFP_Push(struct busyobj *bo, const struct vfp *vfp, int top)
+VFP_Push(struct vfp_ctx *vc, const struct vfp *vfp, int top)
 {
 	struct vfp_entry *vfe;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	vfe = (void*)WS_Alloc(bo->ws, sizeof *vfe);
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	vfe = (void*)WS_Alloc(vc->bo->ws, sizeof *vfe);
 	AN(vfe);
 	vfe->magic = VFP_ENTRY_MAGIC;
 	vfe->vfp = vfp;
 	vfe->closed = VFP_OK;
 	if (top)
-		VTAILQ_INSERT_HEAD(&bo->vfp, vfe, list);
+		VTAILQ_INSERT_HEAD(&vc->vfp, vfe, list);
 	else
-		VTAILQ_INSERT_TAIL(&bo->vfp, vfe, list);
-	if (VTAILQ_FIRST(&bo->vfp) == vfe)
-		bo->vfp_nxt = vfe;
+		VTAILQ_INSERT_TAIL(&vc->vfp, vfe, list);
+	if (VTAILQ_FIRST(&vc->vfp) == vfe)
+		vc->vfp_nxt = vfe;
 	return (vfe);
 }
 

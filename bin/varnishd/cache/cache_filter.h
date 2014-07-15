@@ -30,6 +30,7 @@
 struct busyobj;
 struct req;
 struct vfp_entry;
+struct vfp_ctx;
 
 /* Fetch processors --------------------------------------------------*/
 
@@ -40,10 +41,10 @@ enum vfp_status {
 	VFP_NULL = 2,
 };
 
-typedef enum vfp_status vfp_init_f(struct busyobj *, struct vfp_entry *);
+typedef enum vfp_status vfp_init_f(struct vfp_ctx *, struct vfp_entry *);
 typedef enum vfp_status
-    vfp_pull_f(struct busyobj *, struct vfp_entry *, void *ptr, ssize_t *len);
-typedef void vfp_fini_f(struct busyobj *, struct vfp_entry *);
+    vfp_pull_f(struct vfp_ctx *, struct vfp_entry *, void *ptr, ssize_t *len);
+typedef void vfp_fini_f(struct vfp_ctx *, struct vfp_entry *);
 
 struct vfp {
 	const char	*name;
@@ -60,9 +61,11 @@ extern const struct vfp vfp_testgunzip;
 extern const struct vfp vfp_esi;
 extern const struct vfp vfp_esi_gzip;
 
-struct vfp_entry *VFP_Push(struct busyobj *bo, const struct vfp *vfp, int top);
-int VFP_Open(struct busyobj *bo);
-
+struct vfp_entry *VFP_Push(struct vfp_ctx *, const struct vfp *, int top);
+int VFP_Open(struct vfp_ctx *bo);
+enum vfp_status VFP_Suck(struct vfp_ctx *, void *p, ssize_t *lp);
+enum vfp_status VFP_Error(const struct vfp_ctx *, const char *fmt, ...)
+    __printflike(2, 3);
 
 /* Deliver processors ------------------------------------------------*/
 

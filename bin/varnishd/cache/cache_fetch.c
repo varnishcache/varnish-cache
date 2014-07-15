@@ -367,6 +367,10 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	} else
 		do_ims = 0;
 
+	bo->vfc.magic = VFP_CTX_MAGIC;
+	VTAILQ_INIT(&bo->vfc.vfp);
+	bo->vfc.bo = bo;
+
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, bo->beresp->ws);
 
 	if (wrk->handling == VCL_RET_ABANDON)
@@ -447,18 +451,18 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
 
 	if (bo->do_gunzip || (bo->is_gzip && bo->do_esi))
-		(void)VFP_Push(bo, &vfp_gunzip, 1);
+		(void)VFP_Push(&bo->vfc, &vfp_gunzip, 1);
 
 	if (bo->do_esi && bo->do_gzip) {
-		(void)VFP_Push(bo, &vfp_esi_gzip, 1);
+		(void)VFP_Push(&bo->vfc, &vfp_esi_gzip, 1);
 	} else if (bo->do_esi && bo->is_gzip && !bo->do_gunzip) {
-		(void)VFP_Push(bo, &vfp_esi_gzip, 1);
+		(void)VFP_Push(&bo->vfc, &vfp_esi_gzip, 1);
 	} else if (bo->do_esi) {
-		(void)VFP_Push(bo, &vfp_esi, 1);
+		(void)VFP_Push(&bo->vfc, &vfp_esi, 1);
 	} else if (bo->do_gzip) {
-		(void)VFP_Push(bo, &vfp_gzip, 1);
+		(void)VFP_Push(&bo->vfc, &vfp_gzip, 1);
 	} else if (bo->is_gzip && !bo->do_gunzip) {
-		(void)VFP_Push(bo, &vfp_testgunzip, 1);
+		(void)VFP_Push(&bo->vfc, &vfp_testgunzip, 1);
 	}
 
 	if (bo->fetch_objcore->flags & OC_F_PRIVATE)
@@ -468,14 +472,14 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->htc.body_status == BS_NONE)
 		bo->do_stream = 0;
 
-	if (VFP_Open(bo)) {
-		(void)VFP_Error(bo, "Fetch Pipeline failed to open");
+	if (VFP_Open(&bo->vfc)) {
+		(void)VFP_Error(&bo->vfc, "Fetch Pipeline failed to open");
 		bo->doclose = SC_RX_BODY;
 		return (F_STP_ERROR);
 	}
 
 	if (vbf_beresp2obj(bo)) {
-		(void)VFP_Error(bo, "Could not get storage");
+		(void)VFP_Error(&bo->vfc, "Could not get storage");
 		bo->doclose = SC_RX_BODY;
 		return (F_STP_ERROR);
 	}

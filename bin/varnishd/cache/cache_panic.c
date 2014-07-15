@@ -302,9 +302,9 @@ pan_busyobj(const struct busyobj *bo)
 
 	VSB_printf(pan_vsp, "    bodystatus = %d (%s),\n",
 	    bo->htc.body_status, body_status_2str(bo->htc.body_status));
-	if (!VTAILQ_EMPTY(&bo->vfp)) {
+	if (!VTAILQ_EMPTY(&bo->vfc.vfp)) {
 		VSB_printf(pan_vsp, "    filters =");
-		VTAILQ_FOREACH(vfe, &bo->vfp, list)
+		VTAILQ_FOREACH(vfe, &bo->vfc.vfp, list)
 			VSB_printf(pan_vsp, " %s=%d",
 			    vfe->vfp->name, (int)vfe->closed);
 		VSB_printf(pan_vsp, "\n");

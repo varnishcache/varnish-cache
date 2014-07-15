@@ -45,13 +45,14 @@
 /*--------------------------------------------------------------------*/
 
 static enum vfp_status __match_proto__(vfp_pull_f)
-v1f_pull_straight(struct busyobj *bo, struct vfp_entry *vfe, void *p,
+v1f_pull_straight(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
     ssize_t *lp)
 {
 	ssize_t l, lr;
 	struct http_conn *htc;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	CAST_OBJ_NOTNULL(htc, vfe->priv1, HTTP_CONN_MAGIC);
 	AN(p);
@@ -65,9 +66,9 @@ v1f_pull_straight(struct busyobj *bo, struct vfp_entry *vfe, void *p,
 	if (vfe->priv2 < l)
 		l = vfe->priv2;
 	lr = HTTP1_Read(htc, p, l);
-	bo->acct.beresp_bodybytes += lr;
+	vc->bo->acct.beresp_bodybytes += lr;
 	if (lr <= 0)
-		return (VFP_Error(bo, "straight insufficient bytes"));
+		return (VFP_Error(vc, "straight insufficient bytes"));
 	*lp = lr;
 	vfe->priv2 -= lr;
 	if (vfe->priv2 == 0)
@@ -87,22 +88,23 @@ static const struct vfp v1f_straight = {
  */
 
 static enum vfp_status __match_proto__(vfp_pull_f)
-v1f_pull_chunked(struct busyobj *bo, struct vfp_entry *vfe, void *p,
+v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
     ssize_t *lp)
 {
 	const char *err;
 	struct http_conn *htc;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	CAST_OBJ_NOTNULL(htc, vfe->priv1, HTTP_CONN_MAGIC);
 	AN(p);
 	AN(lp);
 
 	switch (HTTP1_Chunked(htc, &vfe->priv2, &err,
-	    &bo->acct.beresp_bodybytes, p, lp)) {
+	    &vc->bo->acct.beresp_bodybytes, p, lp)) {
 	case H1CR_ERROR:
-		return (VFP_Error(bo, "%s", err));
+		return (VFP_Error(vc, "%s", err));
 	case H1CR_MORE:
 		return (VFP_OK);
 	case H1CR_END:
@@ -120,23 +122,26 @@ static const struct vfp v1f_chunked = {
 /*--------------------------------------------------------------------*/
 
 static enum vfp_status __match_proto__(vfp_pull_f)
-v1f_pull_eof(struct busyobj *bo, struct vfp_entry *vfe, void *p,
+v1f_pull_eof(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
     ssize_t *lp)
 {
 	ssize_t l, lr;
 	struct http_conn *htc;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	CAST_OBJ_NOTNULL(htc, vfe->priv1, HTTP_CONN_MAGIC);
 	AN(p);
+
+	// XXX: update vc->bo->acct.beresp_bodybytes ?
+
 	AN(lp);
 
 	l = *lp;
 	*lp = 0;
 	lr = HTTP1_Read(htc, p, l);
 	if (lr < 0)
-		return (VFP_Error(bo,"eof socket fail"));
+		return (VFP_Error(vc, "eof socket fail"));
 	if (lr == 0)
 		return (VFP_END);
 	*lp = lr;
@@ -166,19 +171,19 @@ V1F_Setup_Fetch(struct busyobj *bo)
 	switch(htc->body_status) {
 	case BS_EOF:
 		assert(bo->content_length == -1);
-		vfe = VFP_Push(bo, &v1f_eof, 0);
+		vfe = VFP_Push(&bo->vfc, &v1f_eof, 0);
 		vfe->priv1 = &bo->htc;
 		vfe->priv2 = 0;
 		break;
 	case BS_LENGTH:
 		assert(bo->content_length > 0);
-		vfe = VFP_Push(bo, &v1f_straight, 0);
+		vfe = VFP_Push(&bo->vfc, &v1f_straight, 0);
 		vfe->priv1 = &bo->htc;
 		vfe->priv2 = bo->content_length;
 		break;
 	case BS_CHUNKED:
 		assert(bo->content_length == -1);
-		vfe = VFP_Push(bo, &v1f_chunked, 0);
+		vfe = VFP_Push(&bo->vfc, &v1f_chunked, 0);
 		vfe->priv1 = &bo->htc;
 		vfe->priv2 = -1;
 		break;

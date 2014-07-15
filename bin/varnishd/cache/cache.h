@@ -452,6 +452,15 @@ struct vfp_entry {
 
 VTAILQ_HEAD(vfp_entry_s, vfp_entry);
 
+struct vfp_ctx {
+	unsigned		magic;
+#define VFP_CTX_MAGIC		0x61d9d3e5
+	struct busyobj		*bo;
+
+	struct vfp_entry_s	vfp;
+	struct vfp_entry	*vfp_nxt;
+};
+
 struct busyobj {
 	unsigned		magic;
 #define BUSYOBJ_MAGIC		0x23b95567
@@ -469,8 +478,7 @@ struct busyobj {
 
 	uint8_t			*vary;
 
-	struct vfp_entry_s	vfp;
-	struct vfp_entry	*vfp_nxt;
+	struct vfp_ctx		vfc;
 
 	int			failed;
 	enum busyobj_state_e	state;
@@ -880,11 +888,8 @@ void VBF_Fetch(struct worker *wrk, struct req *req,
 
 /* cache_fetch_proc.c */
 struct storage *VFP_GetStorage(struct busyobj *, ssize_t sz);
-enum vfp_status VFP_Error(struct busyobj *, const char *fmt, ...)
-    __printflike(2, 3);
 void VFP_Init(void);
 void VFP_Fetch_Body(struct busyobj *bo);
-enum vfp_status VFP_Suck(struct busyobj *, void *p, ssize_t *lp);
 
 /* cache_gzip.c */
 struct vgz;
