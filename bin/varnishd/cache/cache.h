@@ -776,7 +776,7 @@ void BAN_Init(void);
 void BAN_Shutdown(void);
 void BAN_NewObjCore(struct objcore *oc);
 void BAN_DestroyObj(struct objcore *oc);
-int BAN_CheckObject(const struct object *o, struct req *sp);
+int BAN_CheckObject(struct worker *, struct objcore *, struct req *);
 void BAN_Reload(const uint8_t *ban, unsigned len);
 struct ban *BAN_TailRef(void);
 void BAN_Compile(void);

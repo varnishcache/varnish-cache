@@ -899,19 +899,20 @@ ban_evaluate(const uint8_t *bs, const struct http *objhttp,
  *	1 Ban matched, object removed from ban list.
  */
 
-static int
-ban_check_object(const struct object *o, struct vsl_log *vsl,
-    const struct http *req_http)
+int
+BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 {
 	struct ban *b;
-	struct objcore *oc;
+	struct vsl_log *vsl;
+	struct object *o;
 	struct ban * volatile b0;
 	unsigned tests;
 
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(req_http, HTTP_MAGIC);
-	oc = o->objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	vsl = req->vsl;
+
 	CHECK_OBJ_NOTNULL(oc->ban, BAN_MAGIC);
 
 	/* First do an optimistic unlocked check */
@@ -929,6 +930,10 @@ ban_check_object(const struct object *o, struct vsl_log *vsl,
 	if (b0 == oc->ban)
 		return (0);
 
+	/* Now we need the object */
+	o = ObjGetObj(oc, &wrk->stats);
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+
 	/*
 	 * This loop is safe without locks, because we know we hold
 	 * a refcount on a ban somewhere in the list and we do not
@@ -939,7 +944,7 @@ ban_check_object(const struct object *o, struct vsl_log *vsl,
 		CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
 		if (b->flags & BANS_FLAG_COMPLETED)
 			continue;
-		if (ban_evaluate(b->spec, o->http, req_http, &tests))
+		if (ban_evaluate(b->spec, o->http, req->http, &tests))
 			break;
 	}
 
@@ -967,13 +972,6 @@ ban_check_object(const struct object *o, struct vsl_log *vsl,
 		EXP_Rearm(oc, oc->exp.t_origin, 0, 0, 0);	// XXX fake now
 		return (1);
 	}
-}
-
-int
-BAN_CheckObject(const struct object *o, struct req *req)
-{
-
-	return (ban_check_object(o, req->vsl, req->http) > 0);
 }
 
 static void

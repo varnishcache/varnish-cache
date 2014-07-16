@@ -423,11 +423,12 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		if (oc->exp.ttl <= 0.)
 			continue;
 
+		if (BAN_CheckObject(wrk, oc, req))
+			continue;
+
 		o = ObjGetObj(oc, &wrk->stats);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
-		if (BAN_CheckObject(o, req))
-			continue;
 		if (o->vary != NULL && !VRY_Match(req, o->vary))
 			continue;
 
