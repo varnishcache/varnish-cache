@@ -166,19 +166,19 @@ V1F_Setup_Fetch(struct busyobj *bo)
 	switch(htc->body_status) {
 	case BS_EOF:
 		assert(bo->content_length == -1);
-		vfe = VFP_Push(&bo->vfc, &v1f_eof, 0);
+		vfe = VFP_Push(bo->vfc, &v1f_eof, 0);
 		vfe->priv1 = &bo->htc;
 		vfe->priv2 = 0;
 		break;
 	case BS_LENGTH:
 		assert(bo->content_length > 0);
-		vfe = VFP_Push(&bo->vfc, &v1f_straight, 0);
+		vfe = VFP_Push(bo->vfc, &v1f_straight, 0);
 		vfe->priv1 = &bo->htc;
 		vfe->priv2 = bo->content_length;
 		break;
 	case BS_CHUNKED:
 		assert(bo->content_length == -1);
-		vfe = VFP_Push(&bo->vfc, &v1f_chunked, 0);
+		vfe = VFP_Push(bo->vfc, &v1f_chunked, 0);
 		vfe->priv1 = &bo->htc;
 		vfe->priv2 = -1;
 		break;

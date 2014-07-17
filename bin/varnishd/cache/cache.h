@@ -457,6 +457,8 @@ struct vfp_ctx {
 #define VFP_CTX_MAGIC		0x61d9d3e5
 	struct busyobj		*bo;
 
+	int			failed;
+
 	struct vfp_entry_s	vfp;
 	struct vfp_entry	*vfp_nxt;
 
@@ -482,9 +484,8 @@ struct busyobj {
 
 	uint8_t			*vary;
 
-	struct vfp_ctx		vfc;
+	struct vfp_ctx		vfc[1];
 
-	int			failed;
 	enum busyobj_state_e	state;
 
 	struct ws		ws[1];

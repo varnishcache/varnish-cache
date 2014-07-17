@@ -101,7 +101,7 @@ vfp_vep_callback(struct busyobj *bo, void *priv, ssize_t l, enum vgz_flag flg)
 }
 
 static enum vfp_status
-vfp_esi_end(const struct vfp_ctx *vc, struct vef_priv *vef,
+vfp_esi_end(struct vfp_ctx *vc, struct vef_priv *vef,
     enum vfp_status retval)
 {
 	struct vsb *vsb;

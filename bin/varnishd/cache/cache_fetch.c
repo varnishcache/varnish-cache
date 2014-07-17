@@ -367,10 +367,10 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	} else
 		do_ims = 0;
 
-	VFP_Setup(&bo->vfc);
-	bo->vfc.bo = bo;
-	bo->vfc.http = bo->beresp;
-	bo->vfc.vsl = bo->vsl;
+	VFP_Setup(bo->vfc);
+	bo->vfc->bo = bo;
+	bo->vfc->http = bo->beresp;
+	bo->vfc->vsl = bo->vsl;
 
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, bo->beresp->ws);
 
@@ -452,18 +452,18 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
 
 	if (bo->do_gunzip || (bo->is_gzip && bo->do_esi))
-		(void)VFP_Push(&bo->vfc, &vfp_gunzip, 1);
+		(void)VFP_Push(bo->vfc, &vfp_gunzip, 1);
 
 	if (bo->do_esi && bo->do_gzip) {
-		(void)VFP_Push(&bo->vfc, &vfp_esi_gzip, 1);
+		(void)VFP_Push(bo->vfc, &vfp_esi_gzip, 1);
 	} else if (bo->do_esi && bo->is_gzip && !bo->do_gunzip) {
-		(void)VFP_Push(&bo->vfc, &vfp_esi_gzip, 1);
+		(void)VFP_Push(bo->vfc, &vfp_esi_gzip, 1);
 	} else if (bo->do_esi) {
-		(void)VFP_Push(&bo->vfc, &vfp_esi, 1);
+		(void)VFP_Push(bo->vfc, &vfp_esi, 1);
 	} else if (bo->do_gzip) {
-		(void)VFP_Push(&bo->vfc, &vfp_gzip, 1);
+		(void)VFP_Push(bo->vfc, &vfp_gzip, 1);
 	} else if (bo->is_gzip && !bo->do_gunzip) {
-		(void)VFP_Push(&bo->vfc, &vfp_testgunzip, 1);
+		(void)VFP_Push(bo->vfc, &vfp_testgunzip, 1);
 	}
 
 	if (bo->fetch_objcore->flags & OC_F_PRIVATE)
@@ -473,14 +473,14 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->htc.body_status == BS_NONE)
 		bo->do_stream = 0;
 
-	if (VFP_Open(&bo->vfc)) {
-		(void)VFP_Error(&bo->vfc, "Fetch Pipeline failed to open");
+	if (VFP_Open(bo->vfc)) {
+		(void)VFP_Error(bo->vfc, "Fetch Pipeline failed to open");
 		bo->doclose = SC_RX_BODY;
 		return (F_STP_ERROR);
 	}
 
 	if (vbf_beresp2obj(bo)) {
-		(void)VFP_Error(&bo->vfc, "Could not get storage");
+		(void)VFP_Error(bo->vfc, "Could not get storage");
 		bo->doclose = SC_RX_BODY;
 		return (F_STP_ERROR);
 	}
@@ -520,10 +520,10 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->htc.body_status != BS_NONE) {
 		assert(bo->htc.body_status != BS_ERROR);
 		VFP_Fetch_Body(bo);
-		bo->acct.beresp_bodybytes = bo->vfc.bodybytes;
+		bo->acct.beresp_bodybytes = bo->vfc->bodybytes;
 	}
 
-	if (bo->failed && !bo->do_stream) {
+	if (bo->vfc->failed && !bo->do_stream) {
 		assert(bo->state < BOS_STREAM);
 		if (bo->fetch_obj != NULL) {
 			ObjFreeObj(bo->fetch_objcore, bo->stats);
@@ -532,7 +532,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		return (F_STP_ERROR);
 	}
 
-	if (bo->failed)
+	if (bo->vfc->failed)
 		return (F_STP_FAIL);
 
 	if (bo->do_stream)
@@ -633,9 +633,9 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 			if (st->len == st->space)
 				st = NULL;
 		}
-	} while (!bo->failed && (ois == OIS_DATA || ois == OIS_STREAM));
+	} while (!bo->vfc->failed && (ois == OIS_DATA || ois == OIS_STREAM));
 	ObjIterEnd(&oi);
-	if (bo->failed)
+	if (bo->vfc->failed)
 		return (F_STP_FAIL);
 
 	if (!bo->do_stream)

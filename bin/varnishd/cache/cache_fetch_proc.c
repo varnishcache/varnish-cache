@@ -53,18 +53,17 @@ static unsigned fetchfrag;
  */
 
 enum vfp_status
-VFP_Error(const struct vfp_ctx *vc, const char *fmt, ...)
+VFP_Error(struct vfp_ctx *vc, const char *fmt, ...)
 {
 	va_list ap;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	assert(vc->bo->state >= BOS_REQ_DONE);
-	if (!vc->bo->failed) {
+	if (!vc->failed) {
 		va_start(ap, fmt);
 		VSLbv(vc->vsl, SLT_FetchError, fmt, ap);
 		va_end(ap);
-		vc->bo->failed = 1;
+		vc->failed = 1;
 	}
 	return (VFP_ERROR);
 }
@@ -96,7 +95,7 @@ VFP_GetStorage(struct busyobj *bo, ssize_t sz)
 		l = cache_param->fetch_chunksize;
 	st = STV_alloc(bo, l);
 	if (st == NULL) {
-		(void)VFP_Error(&bo->vfc, "Could not get storage");
+		(void)VFP_Error(bo->vfc, "Could not get storage");
 	} else {
 		AZ(st->len);
 		Lck_Lock(&bo->mtx);
@@ -201,7 +200,7 @@ VFP_Fetch_Body(struct busyobj *bo)
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	AN(bo->vfc.vfp_nxt);
+	AN(bo->vfc->vfp_nxt);
 
 	est = bo->content_length;
 	if (est < 0)
@@ -221,14 +220,14 @@ VFP_Fetch_Body(struct busyobj *bo)
 			bo->doclose = SC_RX_BODY;
 			break;
 		}
-		AZ(bo->failed);
+		AZ(bo->vfc->failed);
 		if (st == NULL) {
 			st = VFP_GetStorage(bo, est);
 			est = 0;
 		}
 		if (st == NULL) {
 			bo->doclose = SC_RX_BODY;
-			(void)VFP_Error(&bo->vfc, "Out of storage");
+			(void)VFP_Error(bo->vfc, "Out of storage");
 			break;
 		}
 
@@ -236,8 +235,8 @@ VFP_Fetch_Body(struct busyobj *bo)
 		assert(st == VTAILQ_LAST(&bo->fetch_obj->body->list,
 		    storagehead));
 		l = st->space - st->len;
-		AZ(bo->failed);
-		vfps = VFP_Suck(&bo->vfc, st->ptr + st->len, &l);
+		AZ(bo->vfc->failed);
+		vfps = VFP_Suck(bo->vfc, st->ptr + st->len, &l);
 		if (l > 0 && vfps != VFP_ERROR) {
 			AZ(VTAILQ_EMPTY(&bo->fetch_obj->body->list));
 			VBO_extend(bo, l);
@@ -247,12 +246,12 @@ VFP_Fetch_Body(struct busyobj *bo)
 	} while (vfps == VFP_OK);
 
 	if (vfps == VFP_ERROR) {
-		AN(bo->failed);
-		(void)VFP_Error(&bo->vfc, "Fetch Pipeline failed to process");
+		AN(bo->vfc->failed);
+		(void)VFP_Error(bo->vfc, "Fetch Pipeline failed to process");
 		bo->doclose = SC_RX_BODY;
 	}
 
-	vfp_suck_fini(&bo->vfc);
+	vfp_suck_fini(bo->vfc);
 
 	if (!bo->do_stream)
 		ObjTrimStore(bo->fetch_objcore, bo->stats);
