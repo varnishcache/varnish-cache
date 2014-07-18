@@ -37,7 +37,7 @@ Requires(preun): /sbin/service
 %if %{undefined suse_version}
 Requires(preun): initscripts
 %endif
-%if 0%{?fedora} >= 17
+%if 0%{?fedora} >= 17 || 0%{?rhel} >= 7
 Requires(post): systemd-units
 Requires(post): systemd-sysv
 Requires(preun): systemd-units
@@ -168,7 +168,7 @@ install -D -m 0644 etc/example.vcl %{buildroot}%{_sysconfdir}/varnish/default.vc
 install -D -m 0644 redhat/varnish.logrotate %{buildroot}%{_sysconfdir}/logrotate.d/varnish
 
 # systemd support
-%if 0%{?fedora} >= 17
+%if 0%{?fedora} >= 17 || 0%{?rhel} >= 7
 mkdir -p %{buildroot}%{_unitdir}
 install -D -m 0644 redhat/varnish.service %{buildroot}%{_unitdir}/varnish.service
 install -D -m 0644 redhat/varnish.params %{buildroot}%{_sysconfdir}/varnish/varnish.params
@@ -204,8 +204,8 @@ rm -rf %{buildroot}
 %config(noreplace) %{_sysconfdir}/varnish/default.vcl
 %config(noreplace) %{_sysconfdir}/logrotate.d/varnish
 
-# systemd from fedora 17
-%if 0%{?fedora} >= 17
+# systemd from fedora 17 and rhel 7
+%if 0%{?fedora} >= 17 || 0%{?rhel} >= 7
 %{_unitdir}/varnish.service
 %{_unitdir}/varnishncsa.service
 %{_unitdir}/varnishlog.service
@@ -259,7 +259,7 @@ getent passwd varnish >/dev/null || \
 exit 0
 
 %post
-%if 0%{?fedora} >= 17
+%if 0%{?fedora} >= 17 || 0%{?rhel} >= 7
 /bin/systemctl daemon-reload >/dev/null 2>&1 || :
 %else
 /sbin/chkconfig --add varnish
@@ -284,7 +284,7 @@ test -f /etc/varnish/secret || (uuidgen > /etc/varnish/secret && chmod 0600 /etc
 %preun
 if [ $1 -lt 1 ]; then
   # Package removal, not upgrade
-  %if 0%{?fedora} >= 17
+  %if 0%{?fedora} >= 17 || 0%{?rhel} >= 7
   /bin/systemctl --no-reload disable varnish.service > /dev/null 2>&1 || :
   /bin/systemctl stop varnish.service > /dev/null 2>&1 || :
   %else
