@@ -852,9 +852,6 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_ORNULL(oldobj, OBJECT_MAGIC);
 
-	bo = VBO_GetBusyObj(wrk, req);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	THR_SetBusyobj(bo);
 
 	switch(mode) {
 	case VBF_PASS:		how = "pass"; break;
@@ -863,8 +860,12 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	default:		WRONG("Wrong fetch mode");
 	}
 
+	bo = VBO_GetBusyObj(wrk, req);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	VSLb(bo->vsl, SLT_Begin, "bereq %u %s ", VXID(req->vsl->wid), how);
 	VSLb(req->vsl, SLT_Link, "bereq %u %s ", VXID(bo->vsl->wid), how);
+
+	THR_SetBusyobj(bo);
 
 	bo->refcount = 2;
 

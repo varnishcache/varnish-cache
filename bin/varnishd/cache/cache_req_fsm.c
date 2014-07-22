@@ -597,11 +597,16 @@ cnt_pipe(struct worker *wrk, struct req *req)
 
 	wrk->stats.s_pipe++;
 	bo = VBO_GetBusyObj(wrk, req);
-	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, SLT_BereqMethod);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	VSLb(bo->vsl, SLT_Begin, "bereq %u pipe", VXID(req->vsl->wid));
+	VSLb(req->vsl, SLT_Link, "bereq %u pipe", VXID(bo->vsl->wid));
+	THR_SetBusyobj(bo);
+
+	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, SLT_BereqMethod);
 	http_FilterReq(bo->bereq, req->http, 0);	// XXX: 0 ?
 	http_PrintfHeader(bo->bereq, "X-Varnish: %u", VXID(req->vsl->wid));
 	http_SetHeader(bo->bereq, "Connection: close");
+	
 
 	VCL_pipe_method(req->vcl, wrk, req, bo, req->http->ws);
 
@@ -613,6 +618,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	PipeRequest(req, bo);
 	assert(WRW_IsReleased(wrk));
 	http_Teardown(bo->bereq);
+	THR_SetBusyobj(NULL);
 	VBO_DerefBusyObj(wrk, &bo);
 	return (REQ_FSM_DONE);
 }
