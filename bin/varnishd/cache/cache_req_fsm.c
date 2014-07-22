@@ -647,7 +647,7 @@ cnt_restart(struct worker *wrk, struct req *req)
 		// XXX: ReqEnd + ReqAcct ?
 		VSLb_ts_req(req, "Restart", W_TIM_real(wrk));
 		VSL_ChgId(req->vsl, "req", "restart",
-		    VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER);
+		    VXID_Get(wrk, VSL_CLIENTMARKER));
 		VSLb_ts_req(req, "Start", req->t_prev);
 		req->err_code = 0;
 		req->req_step = R_STP_RECV;

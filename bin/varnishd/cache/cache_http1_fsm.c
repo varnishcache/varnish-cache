@@ -241,7 +241,7 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 
 	if (HTTP1_Reinit(req->htc) == HTTP1_COMPLETE) {
 		AZ(req->vsl->wid);
-		req->vsl->wid = VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER;
+		req->vsl->wid = VXID_Get(wrk, VSL_CLIENTMARKER);
 		VSLb(req->vsl, SLT_Begin, "req %u rxreq", VXID(req->sp->vxid));
 		VSL(SLT_Link, req->sp->vxid, "req %u rxreq",
 		    VXID(req->vsl->wid));
@@ -312,7 +312,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 	 * Allocate a new one only now that we know will need it.
 	 */
 	if (req->vsl->wid == 0) {
-		req->vsl->wid = VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER;
+		req->vsl->wid = VXID_Get(wrk, VSL_CLIENTMARKER);
 		VSLb(req->vsl, SLT_Begin, "req %u rxreq", VXID(req->sp->vxid));
 		VSL(SLT_Link, req->sp->vxid, "req %u rxreq",
 		    VXID(req->vsl->wid));

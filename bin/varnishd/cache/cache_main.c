@@ -116,8 +116,13 @@ static uint32_t vxid_chunk = 32768;
 static struct lock vxid_lock;
 
 uint32_t
-VXID_Get(struct vxid_pool *v)
+VXID_Get(struct worker *wrk, uint32_t mask)
 {
+	struct vxid_pool *v;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	v = &wrk->vxid_pool;
+	AZ(VXID(mask));
 	do {
 		if (v->count == 0) {
 			Lck_Lock(&vxid_lock);
@@ -129,7 +134,7 @@ VXID_Get(struct vxid_pool *v)
 		v->count--;
 		v->next++;
 	} while (v->next == 0);
-	return (v->next);
+	return (v->next | mask);
 }
 
 /*--------------------------------------------------------------------

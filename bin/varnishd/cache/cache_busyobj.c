@@ -135,7 +135,7 @@ VBO_GetBusyObj(struct worker *wrk, const struct req *req)
 
 	sz = cache_param->vsl_buffer;
 	VSL_Setup(bo->vsl, p, sz);
-	bo->vsl->wid = VXID_Get(&wrk->vxid_pool) | VSL_BACKENDMARKER;
+	bo->vsl->wid = VXID_Get(wrk, VSL_BACKENDMARKER);
 	p += sz;
 	p = (void*)PRNDUP(p);
 	assert(p < bo->end);

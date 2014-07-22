@@ -233,8 +233,7 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	VSLb_ts_busyobj(bo, "Retry", W_TIM_real(wrk));
 
 	// XXX: BereqEnd + BereqAcct ?
-	VSL_ChgId(bo->vsl, "bereq", "retry",
-	    VXID_Get(&wrk->vxid_pool) | VSL_BACKENDMARKER);
+	VSL_ChgId(bo->vsl, "bereq", "retry", VXID_Get(wrk, VSL_BACKENDMARKER));
 	VSLb_ts_busyobj(bo, "Start", bo->t_prev);
 
 	return (F_STP_STARTFETCH);

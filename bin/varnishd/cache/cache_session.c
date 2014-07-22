@@ -207,7 +207,7 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 
 	sp->t_open = VTIM_real();
 	sp->t_idle = sp->t_open;
-	sp->vxid = VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER;
+	sp->vxid = VXID_Get(wrk, VSL_CLIENTMARKER);
 
 	lsockname = VCA_SetupSess(wrk, sp);
 	ses_vsl_socket(sp, lsockname);
@@ -362,7 +362,7 @@ SES_GetReq(struct worker *wrk, struct sess *sp)
 
 	sz = cache_param->vsl_buffer;
 	VSL_Setup(req->vsl, p, sz);
-	req->vsl->wid = VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER;
+	req->vsl->wid = VXID_Get(wrk, VSL_CLIENTMARKER);
 	p += sz;
 	p = (void*)PRNDUP(p);
 
