@@ -897,7 +897,7 @@ void VBF_Fetch(struct worker *wrk, struct req *req,
     struct objcore *oc, struct object *oldobj, enum vbf_fetch_mode_e);
 
 /* cache_fetch_proc.c */
-struct storage *VFP_GetStorage(struct busyobj *, ssize_t sz);
+struct storage *VFP_GetStorage(struct vfp_ctx *, ssize_t sz);
 void VFP_Init(void);
 void VFP_Fetch_Body(struct busyobj *bo);
 
@@ -1211,7 +1211,7 @@ void RFC2616_Weaken_Etag(struct http *hp);
 /* stevedore.c */
 struct object *STV_NewObject(struct busyobj *,
     const char *hint, unsigned len, uint16_t nhttp);
-struct storage *STV_alloc(struct busyobj *, size_t size);
+struct storage *STV_alloc(const struct vfp_ctx *, size_t size);
 void STV_trim(struct storage *st, size_t size, int move_ok);
 void STV_free(struct storage *st);
 void STV_open(void);

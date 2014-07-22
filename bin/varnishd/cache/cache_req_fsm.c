@@ -606,7 +606,6 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	http_FilterReq(bo->bereq, req->http, 0);	// XXX: 0 ?
 	http_PrintfHeader(bo->bereq, "X-Varnish: %u", VXID(req->vsl->wid));
 	http_SetHeader(bo->bereq, "Connection: close");
-	
 
 	VCL_pipe_method(req->vcl, wrk, req, bo, req->http->ws);
 

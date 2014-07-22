@@ -582,7 +582,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->ims_obj->esidata != NULL) {
 		sl = bo->ims_obj->esidata->len;
-		obj->esidata = STV_alloc(bo, sl);
+		obj->esidata = STV_alloc(bo->vfc, sl);
 		if (obj->esidata == NULL || obj->esidata->space < sl) {
 			VSLb(bo->vsl, SLT_Error,
 			    "No space for %zd bytes of ESI data", sl);
@@ -611,7 +611,8 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		ois = ObjIter(oi, &sp, &sl);
 		while (sl > 0) {
 			if (st == NULL)
-				st = VFP_GetStorage(bo, bo->ims_obj->len - al);
+				st = VFP_GetStorage(bo->vfc,
+				    bo->ims_obj->len - al);
 			if (st == NULL)
 				break;
 			tl = sl;
@@ -702,12 +703,17 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	assert(wrk->handling == VCL_RET_DELIVER);
 
+	VFP_Setup(bo->vfc);
+	bo->vfc->bo = bo;
+	bo->vfc->http = bo->beresp;
+	bo->vfc->vsl = bo->vsl;
+
 	if (vbf_beresp2obj(bo))
 		return (F_STP_FAIL);
 
 	l = VSB_len(bo->synth_body);
 	if (l > 0) {
-		st = VFP_GetStorage(bo, l);
+		st = VFP_GetStorage(bo->vfc, l);
 		if (st != NULL) {
 			if (st->space < l) {
 				VSLb(bo->vsl, SLT_Error,

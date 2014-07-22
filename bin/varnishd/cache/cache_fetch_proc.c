@@ -74,33 +74,34 @@ VFP_Error(struct vfp_ctx *vc, const char *fmt, ...)
  */
 
 struct storage *
-VFP_GetStorage(struct busyobj *bo, ssize_t sz)
+VFP_GetStorage(struct vfp_ctx *vc, ssize_t sz)
 {
 	ssize_t l;
 	struct storage *st;
 	struct object *obj;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	obj = bo->fetch_obj;
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
+	obj = vc->bo->fetch_obj;
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	st = VTAILQ_LAST(&obj->body->list, storagehead);
 	if (st != NULL && st->len < st->space)
 		return (st);
 
-	AN(bo->stats);
+	AN(vc->bo->stats);
 	l = fetchfrag;
 	if (l == 0)
 		l = sz;
 	if (l == 0)
 		l = cache_param->fetch_chunksize;
-	st = STV_alloc(bo, l);
+	st = STV_alloc(vc, l);
 	if (st == NULL) {
-		(void)VFP_Error(bo->vfc, "Could not get storage");
+		(void)VFP_Error(vc, "Could not get storage");
 	} else {
 		AZ(st->len);
-		Lck_Lock(&bo->mtx);
+		Lck_Lock(&vc->bo->mtx);
 		VTAILQ_INSERT_TAIL(&obj->body->list, st, list);
-		Lck_Unlock(&bo->mtx);
+		Lck_Unlock(&vc->bo->mtx);
 	}
 	return (st);
 }
@@ -222,7 +223,7 @@ VFP_Fetch_Body(struct busyobj *bo)
 		}
 		AZ(bo->vfc->failed);
 		if (st == NULL) {
-			st = VFP_GetStorage(bo, est);
+			st = VFP_GetStorage(bo->vfc, est);
 			est = 0;
 		}
 		if (st == NULL) {

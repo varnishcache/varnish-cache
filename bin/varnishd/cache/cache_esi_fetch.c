@@ -83,7 +83,7 @@ vfp_vep_callback(struct busyobj *bo, void *priv, ssize_t l, enum vgz_flag flg)
 
 	VGZ_Ibuf(vef->vgz, vef->ibuf_o, l);
 	do {
-		st = VFP_GetStorage(bo, 0);
+		st = VFP_GetStorage(bo->vfc, 0);
 		if (st == NULL) {
 			vef->error = ENOMEM;
 			vef->tot += l;
@@ -118,7 +118,7 @@ vfp_esi_end(struct vfp_ctx *vc, struct vef_priv *vef,
 			l = VSB_len(vsb);
 			assert(l > 0);
 			/* XXX: This is a huge waste of storage... */
-			vc->bo->fetch_obj->esidata = STV_alloc(vc->bo, l);
+			vc->bo->fetch_obj->esidata = STV_alloc(vc, l);
 			if (vc->bo->fetch_obj->esidata != NULL) {
 				memcpy(vc->bo->fetch_obj->esidata->ptr,
 				    VSB_data(vsb), l);

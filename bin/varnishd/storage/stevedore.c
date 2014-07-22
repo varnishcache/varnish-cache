@@ -192,7 +192,7 @@ stv_alloc(struct stevedore *stv, size_t size)
 /*-------------------------------------------------------------------*/
 
 static struct storage *
-stv_alloc_obj(struct busyobj *bo, size_t size)
+stv_alloc_obj(const struct vfp_ctx *vc, size_t size)
 {
 	struct storage *st = NULL;
 	struct stevedore *stv;
@@ -203,9 +203,10 @@ stv_alloc_obj(struct busyobj *bo, size_t size)
 	 * Always use the stevedore which allocated the object in order to
 	 * keep an object inside the same stevedore.
 	 */
-	AN(bo->stats);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	obj = bo->fetch_obj;
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
+	AN(vc->bo->stats);
+	obj = vc->bo->fetch_obj;
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	stv = obj->body->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
@@ -224,7 +225,7 @@ stv_alloc_obj(struct busyobj *bo, size_t size)
 
 		/* no luck; try to free some space and keep trying */
 		if (fail < cache_param->nuke_limit &&
-		    EXP_NukeOne(bo, stv->lru) == -1)
+		    EXP_NukeOne(vc->bo, stv->lru) == -1)
 			break;
 	}
 	CHECK_OBJ_ORNULL(st, STORAGE_MAGIC);
@@ -410,10 +411,10 @@ STV_Freestore(struct object *o)
 /*-------------------------------------------------------------------*/
 
 struct storage *
-STV_alloc(struct busyobj *bo, size_t size)
+STV_alloc(const struct vfp_ctx *vc, size_t size)
 {
 
-	return (stv_alloc_obj(bo, size));
+	return (stv_alloc_obj(vc, size));
 }
 
 struct storage *
