@@ -61,7 +61,7 @@ start() {
 	ulimit -u ${NPROCS:-unlimited}
 
 	# If defined, set maximum core size.
-	if [ -n "${DAEMON_COREFILE_LIMIT}" ]
+	if [ -n "${DAEMON_COREFILE_LIMIT}" ]
 	then
 		ulimit -c ${DAEMON_COREFILE_LIMIT}
 	fi
