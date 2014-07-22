@@ -164,6 +164,18 @@ following has changed:
  - `vcl_hash` must now return `lookup` instead of `hash`
  - `vcl_pass` must now return `fetch` instead of `pass`
 
+
+Backend restarts are now retry
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In 3.0 it was possible to do `return(restart)` after noticing that
+the backend response was wrong, to change to a different backend.
+
+This is now called `return(retry)`, and jumps back up to `vcl_backend_fetch`.
+
+This only influences the backend fetch thread, client-side handling is not affected.
+
+
 default/builtin VCL changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
