@@ -136,6 +136,12 @@ client.port, and server.port replaced by respectively std.port(client.ip) and st
 as an IP address by default. You need to use the `std.port()`
 function to get the port number.
 
+Invalidation with purge
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Cache invalidation with purges is now done via `return(purge)` from `vcl_recv`.
+The `purge;` keyword has been retired.
+
 obj is now read-only
 ~~~~~~~~~~~~~~~~~~~~
 
