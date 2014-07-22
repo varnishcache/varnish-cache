@@ -238,7 +238,7 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	VSLb(bo->vsl, SLT_Link, "bereq %u retry", wid);
 	VSLb(bo->vsl, SLT_End, "%s", "");
 	VSL_Flush(bo->vsl, 0);
-	owid = bo->vsl->wid & VSL_IDENTMASK;
+	owid = VXID(bo->vsl->wid);
 	bo->vsl->wid = wid | VSL_BACKENDMARKER;
 	VSLb(bo->vsl, SLT_Begin, "bereq %u retry", owid);
 	VSLb_ts_busyobj(bo, "Start", bo->t_prev);
@@ -272,8 +272,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, SLT_BereqMethod);
 	HTTP_Copy(bo->bereq, bo->bereq0);
 
-	http_PrintfHeader(bo->bereq,
-	    "X-Varnish: %u", bo->vsl->wid & VSL_IDENTMASK);
+	http_PrintfHeader(bo->bereq, "X-Varnish: %u", VXID(bo->vsl->wid));
 
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
 
@@ -871,10 +870,8 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	default:		WRONG("Wrong fetch mode");
 	}
 
-	VSLb(bo->vsl, SLT_Begin, "bereq %u %s ",
-	    req->vsl->wid & VSL_IDENTMASK, how);
-	VSLb(req->vsl, SLT_Link, "bereq %u %s ",
-	    bo->vsl->wid & VSL_IDENTMASK, how);
+	VSLb(bo->vsl, SLT_Begin, "bereq %u %s ", VXID(req->vsl->wid), how);
+	VSLb(req->vsl, SLT_Link, "bereq %u %s ", VXID(bo->vsl->wid), how);
 
 	bo->refcount = 2;
 

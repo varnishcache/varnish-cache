@@ -246,10 +246,9 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	if (HTTP1_Reinit(req->htc) == HTTP1_COMPLETE) {
 		AZ(req->vsl->wid);
 		req->vsl->wid = VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER;
-		VSLb(req->vsl, SLT_Begin, "req %u rxreq",
-		    req->sp->vxid & VSL_IDENTMASK);
+		VSLb(req->vsl, SLT_Begin, "req %u rxreq", VXID(req->sp->vxid));
 		VSL(SLT_Link, req->sp->vxid, "req %u rxreq",
-		    req->vsl->wid & VSL_IDENTMASK);
+		    VXID(req->vsl->wid));
 		VSLb_ts_req(req, "Start", sp->t_idle);
 		VSLb_ts_req(req, "Req", sp->t_idle);
 		req->t_req = req->t_prev;
@@ -318,10 +317,9 @@ http1_dissect(struct worker *wrk, struct req *req)
 	 */
 	if (req->vsl->wid == 0) {
 		req->vsl->wid = VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER;
-		VSLb(req->vsl, SLT_Begin, "req %u rxreq",
-		    req->sp->vxid & VSL_IDENTMASK);
+		VSLb(req->vsl, SLT_Begin, "req %u rxreq", VXID(req->sp->vxid));
 		VSL(SLT_Link, req->sp->vxid, "req %u rxreq",
-		    req->vsl->wid & VSL_IDENTMASK);
+		    VXID(req->vsl->wid));
 	}
 
 	/* Borrow VCL reference from worker thread */

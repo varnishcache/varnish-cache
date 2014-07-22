@@ -992,6 +992,7 @@ unsigned HTTP1_Write(const struct worker *w, const struct http *hp, const int*);
 #undef HTTPH
 
 /* cache_main.c */
+#define VXID(u) ((u) & VSL_IDENTMASK)
 uint32_t VXID_Get(struct vxid_pool *v);
 extern volatile struct params * cache_param;
 void THR_SetName(const char *name);
