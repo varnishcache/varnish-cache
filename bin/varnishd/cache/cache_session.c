@@ -398,6 +398,7 @@ SES_ReleaseReq(struct req *req)
 #undef ACCT
 
 	AZ(req->vcl);
+	AZ(req->vsl->wid);
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	pp = sp->sesspool;
@@ -405,9 +406,6 @@ SES_ReleaseReq(struct req *req)
 	AN(pp->pool);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	MPL_AssertSane(req);
-	if (req->vsl->wid != 0)
-		/* Non-released VXID - assume it was from a req */
-		VSLb(req->vsl, SLT_End, "%s", "");
 	VSL_Flush(req->vsl, 0);
 	req->sp = NULL;
 	MPL_Free(pp->mpl_req, req);

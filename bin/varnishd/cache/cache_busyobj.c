@@ -195,8 +195,7 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 	    (uintmax_t)bo->acct.beresp_bodybytes,
 	    (uintmax_t)(bo->acct.beresp_hdrbytes + bo->acct.beresp_bodybytes));
 
-	VSLb(bo->vsl, SLT_End, "%s", "");
-	VSL_Flush(bo->vsl, 0);
+	VSL_End(bo->vsl);
 
 	if (bo->fetch_objcore != NULL) {
 		AN(wrk);

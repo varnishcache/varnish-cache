@@ -649,9 +649,8 @@ cnt_restart(struct worker *wrk, struct req *req)
 		// XXX: ReqEnd + ReqAcct ?
 		VSLb_ts_req(req, "Restart", W_TIM_real(wrk));
 		VSLb(req->vsl, SLT_Link, "req %u restart", wid);
-		VSLb(req->vsl, SLT_End, "%s", "");
-		VSL_Flush(req->vsl, 0);
 		owid = req->vsl->wid & VSL_IDENTMASK;
+		VSL_End(req->vsl);
 		req->vsl->wid = wid | VSL_CLIENTMARKER;
 		VSLb(req->vsl, SLT_Begin, "req %u restart", owid);
 		VSLb_ts_req(req, "Start", req->t_prev);

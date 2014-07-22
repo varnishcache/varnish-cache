@@ -388,6 +388,22 @@ VSL_Setup(struct vsl_log *vsl, void *ptr, size_t len)
 
 /*--------------------------------------------------------------------*/
 
+void
+VSL_End(struct vsl_log *vsl)
+{
+	txt t;
+	char p[] = "";
+
+	AN(vsl->wid);
+	t.b = p;
+	t.e = p;
+	VSLbt(vsl, SLT_End, t);
+	VSL_Flush(vsl, 0);
+	vsl->wid = 0;
+}
+
+/*--------------------------------------------------------------------*/
+
 static void *
 vsm_cleaner(void *priv)
 {

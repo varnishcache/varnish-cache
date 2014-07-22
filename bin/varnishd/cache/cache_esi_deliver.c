@@ -126,11 +126,7 @@ ved_include(struct req *preq, const char *src, const char *host)
 	}
 	AN(WRW_IsReleased(wrk));
 
-	/* Flush and release the log */
-	AN(req->vsl->wid);
-	VSLb(req->vsl, SLT_End, "%s", "");
-	VSL_Flush(req->vsl, 0);
-	req->vsl->wid = 0;
+	VSL_End(req->vsl);
 
 	/* Charge the transmitted body byte counts to the parent request */
 	preq->acct.resp_bodybytes += req->acct.resp_bodybytes;

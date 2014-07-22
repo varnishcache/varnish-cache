@@ -210,11 +210,7 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	req->resp_hdrbytes = 0;
 	req->resp_bodybytes = 0;
 
-	/* Nuke the VXID. http1_dissect() will allocate a new one when
-	   necessary */
-	VSLb(req->vsl, SLT_End, "%s", "");
-	VSL_Flush(req->vsl, 0);
-	req->vsl->wid = 0;
+	VSL_End(req->vsl);
 
 	if (!isnan(req->t_prev) && req->t_prev > 0.)
 		sp->t_idle = req->t_prev;
