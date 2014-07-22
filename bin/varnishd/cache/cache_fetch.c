@@ -226,7 +226,6 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 static enum fetch_step
 vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 {
-	unsigned owid, wid;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -234,12 +233,8 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	VSLb_ts_busyobj(bo, "Retry", W_TIM_real(wrk));
 
 	// XXX: BereqEnd + BereqAcct ?
-	wid = VXID_Get(&wrk->vxid_pool);
-	VSLb(bo->vsl, SLT_Link, "bereq %u retry", wid);
-	owid = VXID(bo->vsl->wid);
-	VSL_End(bo->vsl);
-	bo->vsl->wid = wid | VSL_BACKENDMARKER;
-	VSLb(bo->vsl, SLT_Begin, "bereq %u retry", owid);
+	VSL_ChgId(bo->vsl, "bereq", "retry",
+	    VXID_Get(&wrk->vxid_pool) | VSL_BACKENDMARKER);
 	VSLb_ts_busyobj(bo, "Start", bo->t_prev);
 
 	return (F_STP_STARTFETCH);

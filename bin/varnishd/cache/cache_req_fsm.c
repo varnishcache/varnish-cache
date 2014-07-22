@@ -634,7 +634,6 @@ DOT err_restart [label="SYNTH",shape=plaintext]
 static enum req_fsm_nxt
 cnt_restart(struct worker *wrk, struct req *req)
 {
-	unsigned wid, owid;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -645,14 +644,10 @@ cnt_restart(struct worker *wrk, struct req *req)
 		req->err_code = 503;
 		req->req_step = R_STP_SYNTH;
 	} else {
-		wid = VXID_Get(&wrk->vxid_pool);
 		// XXX: ReqEnd + ReqAcct ?
 		VSLb_ts_req(req, "Restart", W_TIM_real(wrk));
-		VSLb(req->vsl, SLT_Link, "req %u restart", wid);
-		owid = req->vsl->wid & VSL_IDENTMASK;
-		VSL_End(req->vsl);
-		req->vsl->wid = wid | VSL_CLIENTMARKER;
-		VSLb(req->vsl, SLT_Begin, "req %u restart", owid);
+		VSL_ChgId(req->vsl, "req", "restart",
+		    VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER);
 		VSLb_ts_req(req, "Start", req->t_prev);
 		req->err_code = 0;
 		req->req_step = R_STP_RECV;

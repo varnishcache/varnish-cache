@@ -389,6 +389,20 @@ VSL_Setup(struct vsl_log *vsl, void *ptr, size_t len)
 /*--------------------------------------------------------------------*/
 
 void
+VSL_ChgId(struct vsl_log *vsl, const char *typ, const char *why, uint32_t vxid)
+{
+	uint32_t ovxid;
+
+	ovxid = vsl->wid;
+	VSLb(vsl, SLT_Link, "%s %u %s", typ, VXID(vxid), why);
+	VSL_End(vsl);
+	vsl->wid = vxid;
+	VSLb(vsl, SLT_Begin, "%s %u %s", typ, VXID(ovxid), why);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
 VSL_End(struct vsl_log *vsl)
 {
 	txt t;
