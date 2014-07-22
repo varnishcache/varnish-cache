@@ -108,11 +108,11 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	if (req->wrk->stats.cache_hit)
 		http_PrintfHeader(req->resp,
-		    "X-Varnish: %u %u", req->vsl->wid & VSL_IDENTMASK,
-		    req->obj->vxid & VSL_IDENTMASK);
+		    "X-Varnish: %u %u", VXID(req->vsl->wid),
+		    req->obj->vxid);
 	else
 		http_PrintfHeader(req->resp,
-		    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
+		    "X-Varnish: %u", VXID(req->vsl->wid));
 
 	/* We base Age calculation upon the last timestamp taken during
 	   client request processing. This gives some inaccuracy, but
@@ -231,8 +231,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 	VTIM_format(now, date);
 	http_PrintfHeader(h, "Date: %s", date);
 	http_SetHeader(h, "Server: Varnish");
-	http_PrintfHeader(req->resp,
-	    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
+	http_PrintfHeader(req->resp, "X-Varnish: %u", VXID(req->vsl->wid));
 	http_PutResponse(h, "HTTP/1.1", req->err_code, req->err_reason);
 
 	AZ(req->synth_body);
@@ -610,10 +609,9 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	wrk->stats.s_pipe++;
 	bo = VBO_GetBusyObj(wrk, req);
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, SLT_BereqMethod);
-	VSLb(bo->vsl, SLT_Begin, "bereq %u pipe", req->vsl->wid & VSL_IDENTMASK);
+	VSLb(bo->vsl, SLT_Begin, "bereq %u pipe", VXID(req->vsl->wid));
 	http_FilterReq(bo->bereq, req->http, 0);	// XXX: 0 ?
-	http_PrintfHeader(bo->bereq,
-	    "X-Varnish: %u", req->vsl->wid & VSL_IDENTMASK);
+	http_PrintfHeader(bo->bereq, "X-Varnish: %u", VXID(req->vsl->wid));
 	http_SetHeader(bo->bereq, "Connection: close");
 
 	VCL_pipe_method(req->vcl, wrk, req, bo, req->http->ws);
@@ -622,7 +620,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 		INCOMPL();
 	assert(wrk->handling == VCL_RET_PIPE);
 
-	VSLb(req->vsl, SLT_Link, "bereq %u pipe", bo->vsl->wid & VSL_IDENTMASK);
+	VSLb(req->vsl, SLT_Link, "bereq %u pipe", VXID(bo->vsl->wid));
 	PipeRequest(req, bo);
 	assert(WRW_IsReleased(wrk));
 	http_Teardown(bo->bereq);
@@ -662,10 +660,10 @@ cnt_restart(struct worker *wrk, struct req *req)
 		wid = VXID_Get(&wrk->vxid_pool);
 		// XXX: ReqEnd + ReqAcct ?
 		VSLb_ts_req(req, "Restart", W_TIM_real(wrk));
-		VSLb(req->vsl, SLT_Link, "req %u restart", wid);
+		VSLb(req->vsl, SLT_Link, "req %u restart", VXID(wid));
 		VSLb(req->vsl, SLT_End, "%s", "");
 		VSL_Flush(req->vsl, 0);
-		owid = req->vsl->wid & VSL_IDENTMASK;
+		owid = VXID(req->vsl->wid);
 		req->vsl->wid = wid | VSL_CLIENTMARKER;
 		VSLb(req->vsl, SLT_Begin, "req %u restart", owid);
 		VSLb_ts_req(req, "Start", req->t_prev);

@@ -64,8 +64,8 @@ ved_include(struct req *preq, const char *src, const char *host)
 	req->req_body_status = REQ_BODY_NONE;
 	AZ(req->vsl->wid);
 	req->vsl->wid = VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER;
-	VSLb(req->vsl, SLT_Begin, "req %u esi", preq->vsl->wid & VSL_IDENTMASK);
-	VSLb(preq->vsl, SLT_Link, "req %u esi", req->vsl->wid & VSL_IDENTMASK);
+	VSLb(req->vsl, SLT_Begin, "req %u esi", VXID(preq->vsl->wid));
+	VSLb(preq->vsl, SLT_Link, "req %u esi", VXID(req->vsl->wid));
 	req->esi_level = preq->esi_level + 1;
 
 	HTTP_Copy(req->http0, preq->http0);

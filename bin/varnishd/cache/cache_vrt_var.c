@@ -490,8 +490,7 @@ VRT_r_req_xid(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 
-	return (WS_Printf(ctx->req->http->ws, "%u",
-	    ctx->req->vsl->wid & VSL_IDENTMASK));
+	return (WS_Printf(ctx->req->http->ws, "%u", VXID(ctx->req->vsl->wid)));
 }
 
 const char *
@@ -501,8 +500,7 @@ VRT_r_bereq_xid(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 
-	return (WS_Printf(ctx->bo->bereq->ws, "%u",
-	    ctx->bo->vsl->wid & VSL_IDENTMASK));
+	return (WS_Printf(ctx->bo->bereq->ws, "%u", VXID(ctx->bo->vsl->wid)));
 }
 
 /*--------------------------------------------------------------------*/
