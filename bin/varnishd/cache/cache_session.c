@@ -398,7 +398,8 @@ SES_ReleaseReq(struct req *req)
 #undef ACCT
 
 	AZ(req->vcl);
-	AZ(req->vsl->wid);
+	if (req->vsl->wid)
+		VSL_End(req->vsl);
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	pp = sp->sesspool;
