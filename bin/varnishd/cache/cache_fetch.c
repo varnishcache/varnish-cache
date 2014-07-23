@@ -480,6 +480,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	assert(WRW_IsReleased(wrk));
 
 	obj = bo->fetch_obj;
+	bo->vfc->body = obj->body;
 
 	if (bo->do_gzip || (bo->is_gzip && !bo->do_gunzip))
 		obj->gziped = 1;
@@ -579,6 +580,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 
 	AZ(vbf_beresp2obj(bo));
 	obj = bo->fetch_obj;
+	bo->vfc->body = obj->body;
 
 	if (bo->ims_obj->esidata != NULL) {
 		sl = bo->ims_obj->esidata->len;
@@ -710,6 +712,8 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	if (vbf_beresp2obj(bo))
 		return (F_STP_FAIL);
+
+	bo->vfc->body = bo->fetch_obj->body;
 
 	l = VSB_len(bo->synth_body);
 	if (l > 0) {

@@ -78,13 +78,11 @@ VFP_GetStorage(struct vfp_ctx *vc, ssize_t sz)
 {
 	ssize_t l;
 	struct storage *st;
-	struct object *obj;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
-	obj = vc->bo->fetch_obj;
-	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
-	st = VTAILQ_LAST(&obj->body->list, storagehead);
+	AN(vc->body);
+	st = VTAILQ_LAST(&vc->body->list, storagehead);
 	if (st != NULL && st->len < st->space)
 		return (st);
 
@@ -100,7 +98,7 @@ VFP_GetStorage(struct vfp_ctx *vc, ssize_t sz)
 	} else {
 		AZ(st->len);
 		Lck_Lock(&vc->bo->mtx);
-		VTAILQ_INSERT_TAIL(&obj->body->list, st, list);
+		VTAILQ_INSERT_TAIL(&vc->body->list, st, list);
 		Lck_Unlock(&vc->bo->mtx);
 	}
 	return (st);

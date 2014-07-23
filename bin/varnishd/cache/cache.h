@@ -104,6 +104,7 @@ enum {
 struct SHA256Context;
 struct VSC_C_lck;
 struct ban;
+struct body;
 struct busyobj;
 struct cli;
 struct cli_proto;
@@ -113,6 +114,7 @@ struct mempool;
 struct objcore;
 struct object;
 struct objhead;
+struct objiter;
 struct pool;
 struct poolparam;
 struct req;
@@ -124,7 +126,6 @@ struct vsb;
 struct waitinglist;
 struct worker;
 struct wrw;
-struct objiter;
 
 #define DIGEST_LEN		32
 
@@ -464,6 +465,7 @@ struct vfp_ctx {
 
 	struct vsl_log		*vsl;
 	struct http		*http;
+	struct body		*body;
 	uint64_t		bodybytes;
 };
 
