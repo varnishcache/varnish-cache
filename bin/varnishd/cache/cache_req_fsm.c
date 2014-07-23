@@ -613,7 +613,6 @@ cnt_pipe(struct worker *wrk, struct req *req)
 		INCOMPL();
 	assert(wrk->handling == VCL_RET_PIPE);
 
-	VSLb(req->vsl, SLT_Link, "bereq %u pipe", VXID(bo->vsl->wid));
 	PipeRequest(req, bo);
 	assert(WRW_IsReleased(wrk));
 	http_Teardown(bo->bereq);
