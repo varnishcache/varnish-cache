@@ -27,11 +27,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)queue.h	8.5 (Berkeley) 8/20/94
- * $FreeBSD: src/sys/sys/queue.h,v 1.68 2006/10/24 11:20:29 ru Exp $
+ * $FreeBSD: head/sys/sys/queue.h 251887 2013-06-18 02:57:56Z lstewart $
  */
 
 #ifndef VARNISH_QUEUE_H
 #define	VARNISH_QUEUE_H
+
+#include <sys/cdefs.h>
 
 /*
  * This file defines four types of data structures: singly-linked lists,
@@ -63,7 +65,7 @@
  * so that an arbitrary element can be removed without a need to
  * traverse the list. New elements can be added to the list before
  * or after an existing element or at the head of the list. A list
- * may only be traversed in the forward direction.
+ * may be traversed in either direction.
  *
  * A tail queue is headed by a pair of pointers, one to the head of the
  * list and the other to the tail of the list. The elements are doubly
@@ -83,21 +85,30 @@
  * _EMPTY			+	+	+	+
  * _FIRST			+	+	+	+
  * _NEXT			+	+	+	+
- * _PREV			-	-	-	+
+ * _PREV			-	+	-	+
  * _LAST			-	-	+	+
  * _FOREACH			+	+	+	+
+ * _FOREACH_FROM		+	+	+	+
  * _FOREACH_SAFE		+	+	+	+
+ * _FOREACH_FROM_SAFE		+	+	+	+
  * _FOREACH_REVERSE		-	-	-	+
+ * _FOREACH_REVERSE_FROM	-	-	-	+
  * _FOREACH_REVERSE_SAFE	-	-	-	+
+ * _FOREACH_REVERSE_FROM_SAFE	-	-	-	+
  * _INSERT_HEAD			+	+	+	+
  * _INSERT_BEFORE		-	+	-	+
  * _INSERT_AFTER		+	+	+	+
  * _INSERT_TAIL			-	-	+	+
  * _CONCAT			-	-	+	+
+ * _REMOVE_AFTER		+	-	+	-
  * _REMOVE_HEAD			+	-	+	-
  * _REMOVE			+	+	+	+
+ * _SWAP			+	+	+	+
  *
  */
+#define	TRACEBUF
+#define	TRACEBUF_INITIALIZER
+#define	TRASHIT(x)
 
 /*
  * Singly-linked List declarations.
@@ -127,8 +138,18 @@ struct {								\
 	    (var);							\
 	    (var) = VSLIST_NEXT((var), field))
 
+#define	VSLIST_FOREACH_FROM(var, head, field)				\
+	for ((var) = ((var) ? (var) : VSLIST_FIRST((head)));		\
+	    (var);							\
+	    (var) = VSLIST_NEXT((var), field))
+
 #define	VSLIST_FOREACH_SAFE(var, head, field, tvar)			\
 	for ((var) = VSLIST_FIRST((head));				\
+	    (var) && ((tvar) = VSLIST_NEXT((var), field), 1);		\
+	    (var) = (tvar))
+
+#define	VSLIST_FOREACH_FROM_SAFE(var, head, field, tvar)			\
+	for ((var) = ((var) ? (var) : VSLIST_FIRST((head)));		\
 	    (var) && ((tvar) = VSLIST_NEXT((var), field), 1);		\
 	    (var) = (tvar))
 
@@ -161,13 +182,24 @@ struct {								\
 		struct type *curelm = VSLIST_FIRST((head));		\
 		while (VSLIST_NEXT(curelm, field) != (elm))		\
 			curelm = VSLIST_NEXT(curelm, field);		\
-		VSLIST_NEXT(curelm, field) =				\
-		    VSLIST_NEXT(VSLIST_NEXT(curelm, field), field);	\
+		VSLIST_REMOVE_AFTER(curelm, field);			\
 	}								\
+	TRASHIT(*oldnext);						\
+} while (0)
+
+#define VSLIST_REMOVE_AFTER(elm, field) do {				\
+	VSLIST_NEXT(elm, field) =					\
+	    VSLIST_NEXT(VSLIST_NEXT(elm, field), field);			\
 } while (0)
 
 #define	VSLIST_REMOVE_HEAD(head, field) do {				\
 	VSLIST_FIRST((head)) = VSLIST_NEXT(VSLIST_FIRST((head)), field);\
+} while (0)
+
+#define VSLIST_SWAP(head1, head2, type) do {				\
+	struct type *swap_first = VSLIST_FIRST(head1);			\
+	VSLIST_FIRST(head1) = VSLIST_FIRST(head2);			\
+	VSLIST_FIRST(head2) = swap_first;				\
 } while (0)
 
 /*
@@ -207,9 +239,18 @@ struct {								\
 	   (var);							\
 	   (var) = VSTAILQ_NEXT((var), field))
 
+#define	VSTAILQ_FOREACH_FROM(var, head, field)				\
+	for ((var) = ((var) ? (var) : VSTAILQ_FIRST((head)));		\
+	   (var);							\
+	   (var) = VSTAILQ_NEXT((var), field))
 
 #define	VSTAILQ_FOREACH_SAFE(var, head, field, tvar)			\
 	for ((var) = VSTAILQ_FIRST((head));				\
+	    (var) && ((tvar) = VSTAILQ_NEXT((var), field), 1);		\
+	    (var) = (tvar))
+
+#define	VSTAILQ_FOREACH_FROM_SAFE(var, head, field, tvar)		\
+	for ((var) = ((var) ? (var) : VSTAILQ_FIRST((head)));		\
 	    (var) && ((tvar) = VSTAILQ_NEXT((var), field), 1);		\
 	    (var) = (tvar))
 
@@ -219,8 +260,7 @@ struct {								\
 } while (0)
 
 #define	VSTAILQ_INSERT_AFTER(head, tqelm, elm, field) do {		\
-	if ((VSTAILQ_NEXT((elm), field) =				\
-	    VSTAILQ_NEXT((tqelm), field)) == NULL)			\
+	if ((VSTAILQ_NEXT((elm), field) = VSTAILQ_NEXT((tqelm), field)) == NULL)\
 		(head)->vstqh_last = &VSTAILQ_NEXT((elm), field);	\
 	VSTAILQ_NEXT((tqelm), field) = (elm);				\
 } while (0)
@@ -238,11 +278,8 @@ struct {								\
 } while (0)
 
 #define	VSTAILQ_LAST(head, type, field)					\
-	(VSTAILQ_EMPTY((head)) ?					\
-		NULL :							\
-		((struct type *)(void *)				\
-		((char *)((head)->vstqh_last) -				\
-		     __offsetof(struct type, field))))
+	(VSTAILQ_EMPTY((head)) ? NULL :					\
+	    __containerof((head)->vstqh_last, struct type, field.vstqe_next))
 
 #define	VSTAILQ_NEXT(elm, field)	((elm)->field.vstqe_next)
 
@@ -254,10 +291,15 @@ struct {								\
 		struct type *curelm = VSTAILQ_FIRST((head));		\
 		while (VSTAILQ_NEXT(curelm, field) != (elm))		\
 			curelm = VSTAILQ_NEXT(curelm, field);		\
-		if ((VSTAILQ_NEXT(curelm, field) =			\
-		     VSTAILQ_NEXT(VSTAILQ_NEXT(curelm, field), field)) == NULL)\
-			(head)->vstqh_last = &VSTAILQ_NEXT((curelm), field);\
+		VSTAILQ_REMOVE_AFTER(head, curelm, field);		\
 	}								\
+	TRASHIT(*oldnext);						\
+} while (0)
+
+#define VSTAILQ_REMOVE_AFTER(head, elm, field) do {			\
+	if ((VSTAILQ_NEXT(elm, field) =					\
+	     VSTAILQ_NEXT(VSTAILQ_NEXT(elm, field), field)) == NULL)	\
+		(head)->vstqh_last = &VSTAILQ_NEXT((elm), field);		\
 } while (0)
 
 #define	VSTAILQ_REMOVE_HEAD(head, field) do {				\
@@ -265,6 +307,20 @@ struct {								\
 	     VSTAILQ_NEXT(VSTAILQ_FIRST((head)), field)) == NULL)	\
 		(head)->vstqh_last = &VSTAILQ_FIRST((head));		\
 } while (0)
+
+#define VSTAILQ_SWAP(head1, head2, type) do {				\
+	struct type *swap_first = VSTAILQ_FIRST(head1);			\
+	struct type **swap_last = (head1)->vstqh_last;			\
+	VSTAILQ_FIRST(head1) = VSTAILQ_FIRST(head2);			\
+	(head1)->vstqh_last = (head2)->vstqh_last;			\
+	VSTAILQ_FIRST(head2) = swap_first;				\
+	(head2)->vstqh_last = swap_last;					\
+	if (VSTAILQ_EMPTY(head1))					\
+		(head1)->vstqh_last = &VSTAILQ_FIRST(head1);		\
+	if (VSTAILQ_EMPTY(head2))					\
+		(head2)->vstqh_last = &VSTAILQ_FIRST(head2);		\
+} while (0)
+
 
 /*
  * List declarations.
@@ -286,6 +342,8 @@ struct {								\
 /*
  * List functions.
  */
+
+
 #define	VLIST_EMPTY(head)	((head)->vlh_first == NULL)
 
 #define	VLIST_FIRST(head)	((head)->vlh_first)
@@ -295,8 +353,18 @@ struct {								\
 	    (var);							\
 	    (var) = VLIST_NEXT((var), field))
 
+#define	VLIST_FOREACH_FROM(var, head, field)				\
+	for ((var) = ((var) ? (var) : VLIST_FIRST((head)));		\
+	    (var);							\
+	    (var) = VLIST_NEXT((var), field))
+
 #define	VLIST_FOREACH_SAFE(var, head, field, tvar)			\
 	for ((var) = VLIST_FIRST((head));				\
+	    (var) && ((tvar) = VLIST_NEXT((var), field), 1);		\
+	    (var) = (tvar))
+
+#define	VLIST_FOREACH_FROM_SAFE(var, head, field, tvar)			\
+	for ((var) = ((var) ? (var) : VLIST_FIRST((head)));		\
 	    (var) && ((tvar) = VLIST_NEXT((var), field), 1);		\
 	    (var) = (tvar))
 
@@ -321,19 +389,34 @@ struct {								\
 
 #define	VLIST_INSERT_HEAD(head, elm, field) do {			\
 	if ((VLIST_NEXT((elm), field) = VLIST_FIRST((head))) != NULL)	\
-		VLIST_FIRST((head))->field.vle_prev =			\
-		    &VLIST_NEXT((elm), field);				\
+		VLIST_FIRST((head))->field.vle_prev = &VLIST_NEXT((elm), field);\
 	VLIST_FIRST((head)) = (elm);					\
 	(elm)->field.vle_prev = &VLIST_FIRST((head));			\
 } while (0)
 
 #define	VLIST_NEXT(elm, field)	((elm)->field.vle_next)
 
+#define	VLIST_PREV(elm, head, type, field)				\
+	((elm)->field.vle_prev == &VLIST_FIRST((head)) ? NULL :		\
+	    __containerof((elm)->field.vle_prev, struct type, field.vle_next))
+
 #define	VLIST_REMOVE(elm, field) do {					\
 	if (VLIST_NEXT((elm), field) != NULL)				\
 		VLIST_NEXT((elm), field)->field.vle_prev =		\
 		    (elm)->field.vle_prev;				\
 	*(elm)->field.vle_prev = VLIST_NEXT((elm), field);		\
+	TRASHIT(*oldnext);						\
+	TRASHIT(*oldprev);						\
+} while (0)
+
+#define VLIST_SWAP(head1, head2, type, field) do {			\
+	struct type *swap_tmp = VLIST_FIRST((head1));			\
+	VLIST_FIRST((head1)) = VLIST_FIRST((head2));			\
+	VLIST_FIRST((head2)) = swap_tmp;					\
+	if ((swap_tmp = VLIST_FIRST((head1))) != NULL)			\
+		swap_tmp->field.vle_prev = &VLIST_FIRST((head1));		\
+	if ((swap_tmp = VLIST_FIRST((head2))) != NULL)			\
+		swap_tmp->field.vle_prev = &VLIST_FIRST((head2));		\
 } while (0)
 
 /*
@@ -343,20 +426,23 @@ struct {								\
 struct name {								\
 	struct type *vtqh_first;	/* first element */		\
 	struct type **vtqh_last;	/* addr of last next element */	\
+	TRACEBUF							\
 }
 
 #define	VTAILQ_HEAD_INITIALIZER(head)					\
-	{ NULL, &(head).vtqh_first }
+	{ NULL, &(head).vtqh_first, TRACEBUF_INITIALIZER }
 
 #define	VTAILQ_ENTRY(type)						\
 struct {								\
 	struct type *vtqe_next;	/* next element */			\
 	struct type **vtqe_prev;	/* address of previous next element */\
+	TRACEBUF							\
 }
 
 /*
  * Tail queue functions.
  */
+
 #define	VTAILQ_CONCAT(head1, head2, field) do {				\
 	if (!VTAILQ_EMPTY(head2)) {					\
 		*(head1)->vtqh_last = (head2)->vtqh_first;		\
@@ -375,8 +461,18 @@ struct {								\
 	    (var);							\
 	    (var) = VTAILQ_NEXT((var), field))
 
+#define	VTAILQ_FOREACH_FROM(var, head, field)				\
+	for ((var) = ((var) ? (var) : VTAILQ_FIRST((head)));		\
+	    (var);							\
+	    (var) = VTAILQ_NEXT((var), field))
+
 #define	VTAILQ_FOREACH_SAFE(var, head, field, tvar)			\
 	for ((var) = VTAILQ_FIRST((head));				\
+	    (var) && ((tvar) = VTAILQ_NEXT((var), field), 1);		\
+	    (var) = (tvar))
+
+#define	VTAILQ_FOREACH_FROM_SAFE(var, head, field, tvar)			\
+	for ((var) = ((var) ? (var) : VTAILQ_FIRST((head)));		\
 	    (var) && ((tvar) = VTAILQ_NEXT((var), field), 1);		\
 	    (var) = (tvar))
 
@@ -385,8 +481,18 @@ struct {								\
 	    (var);							\
 	    (var) = VTAILQ_PREV((var), headname, field))
 
+#define	VTAILQ_FOREACH_REVERSE_FROM(var, head, headname, field)		\
+	for ((var) = ((var) ? (var) : VTAILQ_LAST((head), headname));	\
+	    (var);							\
+	    (var) = VTAILQ_PREV((var), headname, field))
+
 #define	VTAILQ_FOREACH_REVERSE_SAFE(var, head, headname, field, tvar)	\
 	for ((var) = VTAILQ_LAST((head), headname);			\
+	    (var) && ((tvar) = VTAILQ_PREV((var), headname, field), 1);	\
+	    (var) = (tvar))
+
+#define	VTAILQ_FOREACH_REVERSE_FROM_SAFE(var, head, headname, field, tvar) \
+	for ((var) = ((var) ? (var) : VTAILQ_LAST((head), headname));	\
 	    (var) && ((tvar) = VTAILQ_PREV((var), headname, field), 1);	\
 	    (var) = (tvar))
 
@@ -396,8 +502,7 @@ struct {								\
 } while (0)
 
 #define	VTAILQ_INSERT_AFTER(head, listelm, elm, field) do {		\
-	if ((VTAILQ_NEXT((elm), field) =				\
-	    VTAILQ_NEXT((listelm), field)) != NULL)			\
+	if ((VTAILQ_NEXT((elm), field) = VTAILQ_NEXT((listelm), field)) != NULL)\
 		VTAILQ_NEXT((elm), field)->field.vtqe_prev =		\
 		    &VTAILQ_NEXT((elm), field);				\
 	else {								\
@@ -447,52 +552,25 @@ struct {								\
 		(head)->vtqh_last = (elm)->field.vtqe_prev;		\
 	}								\
 	*(elm)->field.vtqe_prev = VTAILQ_NEXT((elm), field);		\
+	TRASHIT(*oldnext);						\
+	TRASHIT(*oldprev);						\
 } while (0)
 
-
-#ifdef _KERNEL
-
-/*
- * XXX insque() and remque() are an old way of handling certain queues.
- * They bogusly assumes that all queue heads look alike.
- */
-
-struct quehead {
-	struct quehead *qh_link;
-	struct quehead *qh_rlink;
-};
-
-#ifdef __CC_SUPPORTS___INLINE
-
-static __inline void
-insque(void *a, void *b)
-{
-	struct quehead *element = (struct quehead *)a,
-		 *head = (struct quehead *)b;
-
-	element->qh_link = head->qh_link;
-	element->qh_rlink = head;
-	head->qh_link = element;
-	element->qh_link->qh_rlink = element;
-}
-
-static __inline void
-remque(void *a)
-{
-	struct quehead *element = (struct quehead *)a;
-
-	element->qh_link->qh_rlink = element->qh_rlink;
-	element->qh_rlink->qh_link = element->qh_link;
-	element->qh_rlink = 0;
-}
-
-#else /* !__CC_SUPPORTS___INLINE */
-
-void	insque(void *a, void *b);
-void	remque(void *a);
-
-#endif /* __CC_SUPPORTS___INLINE */
-
-#endif /* _KERNEL */
+#define VTAILQ_SWAP(head1, head2, type, field) do {			\
+	struct type *swap_first = (head1)->vtqh_first;			\
+	struct type **swap_last = (head1)->vtqh_last;			\
+	(head1)->vtqh_first = (head2)->vtqh_first;			\
+	(head1)->vtqh_last = (head2)->vtqh_last;				\
+	(head2)->vtqh_first = swap_first;				\
+	(head2)->vtqh_last = swap_last;					\
+	if ((swap_first = (head1)->vtqh_first) != NULL)			\
+		swap_first->field.vtqe_prev = &(head1)->vtqh_first;	\
+	else								\
+		(head1)->vtqh_last = &(head1)->vtqh_first;		\
+	if ((swap_first = (head2)->vtqh_first) != NULL)			\
+		swap_first->field.vtqe_prev = &(head2)->vtqh_first;	\
+	else								\
+		(head2)->vtqh_last = &(head2)->vtqh_first;		\
+} while (0)
 
 #endif /* !VARNISH_QUEUE_H */
