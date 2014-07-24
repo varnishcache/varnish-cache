@@ -1,10 +1,10 @@
 varnishtest "Test req.hash_always_miss in vcl_recv"
 
 server s1 {
-        rxreq
-        txresp -hdr "Inc: 1"
-        rxreq
-        txresp -hdr "Inc: 2"
+	rxreq
+	txresp -hdr "Inc: 1"
+	rxreq
+	txresp -hdr "Inc: 2"
 } -start
 
 varnish v1 -vcl+backend {

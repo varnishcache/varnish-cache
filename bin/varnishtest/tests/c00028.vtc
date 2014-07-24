@@ -14,7 +14,7 @@ varnish v1 -vcl {
  } -start
 
 client c1 {
-        txreq -url "/"
-        rxresp
-        expect resp.status == 503
+	txreq -url "/"
+	rxresp
+	expect resp.status == 503
 } -run

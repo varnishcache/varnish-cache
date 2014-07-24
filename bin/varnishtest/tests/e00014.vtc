@@ -1,25 +1,25 @@
 varnishtest "Check <esi: detector"
 
 server s1 {
-        rxreq
-        expect req.url == "/foo"
+	rxreq
+	expect req.url == "/foo"
 	send "HTTP/1.1 200 OK\n"
-        send "Connection: close\n"
+	send "Connection: close\n"
 	send "\n"
-        send {           <a>   <esi/>                          }
+	send {           <a>   <esi/>                          }
 } -start
 
 varnish v1 -vcl+backend {
-        sub vcl_backend_response {
-                set beresp.do_esi = true;
-        }
+	sub vcl_backend_response {
+		set beresp.do_esi = true;
+	}
 } -start
 
 varnish v1 -cliok "debug.fragfetch 4"
 
 client c1 {
-        txreq -url /foo
-        rxresp
+	txreq -url /foo
+	rxresp
 	expect resp.bodylen == 49
 } -run
 

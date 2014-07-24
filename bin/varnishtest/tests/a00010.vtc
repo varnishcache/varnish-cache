@@ -1,7 +1,7 @@
 varnishtest "simply test that the framework support \0"
 
 server s1 {
-        rxreq
+	rxreq
 	expect req.url == "/"
 	txresp -body {a\0bc}
 }
