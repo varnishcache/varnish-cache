@@ -324,5 +324,5 @@ VTCP_check_hup(int sock)
 
 	if (poll(&pfd, 1, 0) == 1 && pfd.revents & POLLHUP)
 		return (1);
-        return (0);
+	return (0);
 }
