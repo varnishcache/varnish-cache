@@ -31,9 +31,9 @@ varnish v1 -vcl {
 
 varnish v1 -errvcl {include not followed by string constant.} {
 	/* token test */
-        error lookup hash pipe pass fetch deliver discard keep restart
-        include
-        if else elseif elsif
+	error lookup hash pipe pass fetch deliver discard keep restart
+	include
+	if else elseif elsif
 	++ -- && || <= == != >= >> << += -= *= /=
 	{ } ( ) * + - / % > < = ; ! & . | ~ ,
 }

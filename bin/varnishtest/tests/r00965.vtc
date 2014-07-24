@@ -10,7 +10,7 @@ varnish v1 -vcl+backend {
 		if (req.http.X-Banned == "check") {
 			unset req.http.X-Banned;
 		} elseif (req.restarts == 0) {
-		        set req.http.X-Banned = "check";
+			set req.http.X-Banned = "check";
 			if (req.http.x-pass) {
 				return (pass);
 			} else {

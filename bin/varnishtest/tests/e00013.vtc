@@ -1,23 +1,23 @@
 varnishtest "All white-space object, in multiple storage segments"
 
 server s1 {
-        rxreq
-        expect req.url == "/foo"
-        txresp -nolen -hdr "Connection: close"
-        send {<x>                                      }
+	rxreq
+	expect req.url == "/foo"
+	txresp -nolen -hdr "Connection: close"
+	send {<x>                                      }
 } -start
 
 varnish v1 -vcl+backend {
-        sub vcl_backend_response {
-                set beresp.do_esi = true;
-        }
+	sub vcl_backend_response {
+		set beresp.do_esi = true;
+	}
 } -start
 
 varnish v1 -cliok "debug.fragfetch 4"
 
 client c1 {
-        txreq -url /foo
-        rxresp
+	txreq -url /foo
+	rxresp
 } -run
 
 varnish v1 -expect esi_errors == 0
