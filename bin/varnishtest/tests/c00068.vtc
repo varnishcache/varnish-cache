@@ -1,0 +1,60 @@
+varnishtest "synth in deliver"
+
+server s1 {
+	rxreq
+	txresp -status 200
+	rxreq
+	txresp -status 200
+	rxreq
+	txresp -status 200
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_deliver {
+		if (req.url == "/332") {
+			return (synth(332, "FOO"));
+		} else if (req.url == "/333") {
+			return (synth(333, "FOO"));
+		} else {
+			return (synth(334, "BAR"));
+		}
+	}
+
+	sub vcl_synth {
+		if (resp.status == 333) {
+			set resp.http.connection = "close";
+		} else if (resp.status == 332) {
+			if (req.restarts == 0) {
+				return (restart);
+			} else {
+				set resp.http.restarts = req.restarts;
+				synthetic(req.restarts);
+			}
+		}
+		return (deliver);
+	}
+} -start
+
+client c1 {
+	txreq -url /334
+	rxresp
+	expect resp.status == 334
+
+	# cache hit
+	txreq -url /334
+	rxresp
+	expect resp.status == 334
+
+	txreq -url /333
+	rxresp
+	expect resp.status == 333
+	expect_close
+} -run
+
+client c2 {
+	txreq -url /332
+	rxresp
+	expect resp.status == 332
+	expect resp.http.restarts == 1
+	expect resp.bodylen == 1
+} -run

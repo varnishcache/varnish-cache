@@ -137,11 +137,22 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	if (req->restarts >= cache_param->max_restarts)
 		wrk->handling = VCL_RET_DELIVER;
 
-	if (wrk->handling == VCL_RET_RESTART) {
+	if (wrk->handling != VCL_RET_DELIVER) {
 		(void)HSH_DerefObj(&wrk->stats, &req->obj);
 		AZ(req->obj);
 		http_Teardown(req->resp);
-		req->req_step = R_STP_RESTART;
+
+		switch (wrk->handling) {
+		case VCL_RET_RESTART:
+			req->req_step = R_STP_RESTART;
+			break;
+		case VCL_RET_SYNTH:
+			req->req_step = R_STP_SYNTH;
+			break;
+		default:
+			INCOMPL();
+		}
+
 		return (REQ_FSM_MORE);
 	}
 

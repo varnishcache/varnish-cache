@@ -112,7 +112,7 @@ returns =(
 	),
 	('deliver',
 		"C",
-		('restart', 'deliver',)
+		('synth', 'restart', 'deliver',)
 	),
 	('synth',
 		"C",
