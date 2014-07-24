@@ -1025,7 +1025,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 	}
 	if ((*e)->fmt == STRING &&
 	    (tl->t->tok == '~' || tl->t->tok == T_NOMATCH)) {
-	        not = tl->t->tok == '~' ? "" : "!";
+		not = tl->t->tok == '~' ? "" : "!";
 		vcc_NextToken(tl);
 		ExpectErr(tl, CSTR);
 		re = vcc_regexp(tl);
@@ -1037,7 +1037,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 	}
 	if ((*e)->fmt == IP &&
 	    (tl->t->tok == '~' || tl->t->tok == T_NOMATCH)) {
-	        not = tl->t->tok == '~' ? "" : "!";
+		not = tl->t->tok == '~' ? "" : "!";
 		vcc_NextToken(tl);
 		ExpectErr(tl, ID);
 		vcc_AddRef(tl, tl->t, SYM_ACL);
