@@ -47,10 +47,12 @@ from pprint import pprint, pformat
 
 ctypes = {
 	'BACKEND':	"VCL_BACKEND",
+	'BLOB':		"VCL_BLOB",
 	'BOOL':		"VCL_BOOL",
 	'DURATION':	"VCL_DURATION",
 	'ENUM':		"VCL_ENUM",
 	'HEADER':	"VCL_HEADER",
+	'HTTP':		"VCL_HTTP",
 	'INT':		"VCL_INT",
 	'IP':		"VCL_IP",
 	'PRIV_CALL':	"struct vmod_priv *",
@@ -60,7 +62,6 @@ ctypes = {
 	'STRING_LIST':	"const char *, ...",
 	'TIME':		"VCL_TIME",
 	'VOID':		"VCL_VOID",
-	'BLOB':		"VCL_BLOB",
 }
 
 #######################################################################

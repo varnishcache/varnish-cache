@@ -2,12 +2,17 @@ varnishtest "Test std & debug vmod"
 
 server s1 {
 	rxreq
+	expect req.http.encrypted == "ROT52"
 	txresp -hdr "foo: bAr" -hdr "bar: fOo" -bodylen 4
 } -start
 
 varnish v1 -vcl+backend {
 	import ${vmod_std};
 	import ${vmod_debug};
+
+	sub vcl_recv {
+		debug.rot52(req);
+	}
 
 	sub vcl_deliver {
 		set resp.http.foo = std.toupper(resp.http.foo);
@@ -17,6 +22,7 @@ varnish v1 -vcl+backend {
 		debug.test_priv_vcl();
 		std.log("VCL initiated log");
 		std.syslog(8 + 7, "Somebody runs varnishtest");
+		debug.rot52(resp);
 	}
 } -start
 
@@ -27,6 +33,7 @@ client c1 {
 	expect resp.bodylen == "4"
 	expect resp.http.foo == "BAR"
 	expect resp.http.bar == "foo"
+	expect resp.http.encrypted == "ROT52"
 } -run
 
 varnish v1 -errvcl {Wrong enum value.  Expected one of:} {

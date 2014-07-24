@@ -197,6 +197,13 @@ sp_variables = [
 		specified by the -n parameter.
 		"""
 	),
+	('req',
+		'HTTP',
+		( 'client',),
+		( ), """
+		The entire request HTTP data structure
+		"""
+	),
 	('req.method',
 		'STRING',
 		( 'client',),
@@ -294,6 +301,13 @@ sp_variables = [
 		always (re)fetch from the backend.
 		"""
 	),
+	('bereq',
+		'HTTP',
+		( 'backend',),
+		( ), """
+		The entire backend request HTTP data structure
+		"""
+	),
 	('bereq.xid',
 		'STRING',
 		( 'backend',),
@@ -368,6 +382,13 @@ sp_variables = [
 		( 'backend', ), """
 		The time in seconds to wait between each received byte from the
 		backend.  Not available in pipe mode.
+		"""
+	),
+	('beresp',
+		'HTTP',
+		( 'backend_response', 'backend_error'),
+		( ), """
+		The entire backend response HTTP data structure
 		"""
 	),
 	('beresp.proto',
@@ -553,6 +574,13 @@ sp_variables = [
 		( ), """
 		"""
 	),
+	('resp',
+		'HTTP',
+		( 'deliver', 'synth'),
+		( ), """
+		The entire response HTTP data structure
+		"""
+	),
 	('resp.proto',
 		'STRING',
 		( 'deliver', 'synth', ),
@@ -597,17 +625,17 @@ aliases = [
 
 stv_variables = (
 	('free_space',	'BYTES',	"0.", 'storage.<name>.free_space', """
-        Free space available in the named stevedore. Only available for
-        the malloc stevedore.
-        """),
+	Free space available in the named stevedore. Only available for
+	the malloc stevedore.
+	"""),
 	('used_space',	'BYTES',	"0.", 'storage.<name>.used_space', """
-        Used space in the named stevedore. Only available for the malloc
-        stevedore.
-        """),
+	Used space in the named stevedore. Only available for the malloc
+	stevedore.
+	"""),
 	('happy',	'BOOL',		"0", 'storage.<name>.happy', """
-        Health status for the named stevedore. Not available in any of the
-        current stevedores.
-        """),
+	Health status for the named stevedore. Not available in any of the
+	current stevedores.
+	"""),
 )
 
 #######################################################################
@@ -1188,11 +1216,11 @@ hdr="storage"
 fp_vclvar.write("\n" + hdr + "\n");
 fp_vclvar.write("~" * len(hdr) + "\n");
 for i in stv_variables:
-        fp_vclvar.write("\n" + i[3] + "\n\n")
-        fp_vclvar.write("\tType: " + i[1] + "\n\n")
-        fp_vclvar.write("\tReadable from: client, backend\n\n")
-        for j in i[4].split("\n"):
-                fp_vclvar.write("\t%s\n" % j.strip())
+	fp_vclvar.write("\n" + i[3] + "\n\n")
+	fp_vclvar.write("\tType: " + i[1] + "\n\n")
+	fp_vclvar.write("\tReadable from: client, backend\n\n")
+	for j in i[4].split("\n"):
+		fp_vclvar.write("\t%s\n" % j.strip())
 
 
 fp_vclvar.close()

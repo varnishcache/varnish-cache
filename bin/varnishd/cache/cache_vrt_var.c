@@ -608,3 +608,19 @@ VRT_r_obj_uncacheable(const struct vrt_ctx *ctx)
 	CHECK_OBJ_NOTNULL(ctx->req->obj, OBJECT_MAGIC);
 	return (ctx->req->obj->objcore->flags & OC_F_PASS ? 1 : 0);
 }
+
+/*--------------------------------------------------------------------*/
+
+#define HTTP_VAR(x)						\
+struct http *							\
+VRT_r_##x(const struct vrt_ctx *ctx)				\
+{								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->http_##x, HTTP_MAGIC);		\
+	return (ctx->http_##x);					\
+}
+
+HTTP_VAR(req)
+HTTP_VAR(resp)
+HTTP_VAR(bereq)
+HTTP_VAR(beresp)

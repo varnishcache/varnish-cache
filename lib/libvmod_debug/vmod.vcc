@@ -80,3 +80,8 @@ Foo indeed.
 $Method TIME .date()
 
 You never know when you need a date.
+
+$Function VOID rot52(HTTP)
+
+Encrypt the HTTP header with quad-ROT13 encryption,
+(this is approx 33% better than triple-DES).
