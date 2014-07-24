@@ -150,7 +150,7 @@ static __inline struct type *						\
 name##_VSPLAY_MIN_MAX(struct name *head, int val)			\
 {									\
 	name##_VSPLAY_MINMAX(head, val);				\
-        return (VSPLAY_ROOT(head));					\
+	return (VSPLAY_ROOT(head));					\
 }
 
 /* Main splay operation.

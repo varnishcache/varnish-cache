@@ -573,11 +573,11 @@ VSC_F(bans_lurker_contention,	uint64_t, 0, 'c', diag,
 )
 VSC_F(bans_persisted_bytes,	uint64_t, 0, 'g', diag,
     "Bytes used by the persisted ban lists",
-        "Number of bytes used by the persisted ban lists."
+	"Number of bytes used by the persisted ban lists."
 )
 VSC_F(bans_persisted_fragmentation,	uint64_t, 0, 'g', diag,
     "Extra bytes in persisted ban lists due to fragmentation",
-        "Number of extra bytes accumulated through dropped and"
+	"Number of extra bytes accumulated through dropped and"
 	" completed bans in the persistent ban lists."
 )
 

@@ -240,7 +240,7 @@ struct {								\
 #define	VSTAILQ_LAST(head, type, field)					\
 	(VSTAILQ_EMPTY((head)) ?					\
 		NULL :							\
-	        ((struct type *)(void *)				\
+		((struct type *)(void *)				\
 		((char *)((head)->vstqh_last) -				\
 		     __offsetof(struct type, field))))
 

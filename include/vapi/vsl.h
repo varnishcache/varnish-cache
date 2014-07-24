@@ -268,8 +268,8 @@ void VSL_ResetError(struct VSL_data *vsl);
 struct VSL_cursor *VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm,
     unsigned options);
        /*
-        * Set the cursor pointed to by cursor up as a raw cursor in the
-        * log. Cursor points at the current log head.
+	* Set the cursor pointed to by cursor up as a raw cursor in the
+	* log. Cursor points at the current log head.
 	*
 	* Options:
 	*   VSL_COPT_TAIL	Start cursor at log tail
@@ -279,7 +279,7 @@ struct VSL_cursor *VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm,
 	* Return values:
 	* non-NULL: Pointer to cursor
 	*     NULL: Error, see VSL_Error
-        */
+	*/
 
 struct VSL_cursor *VSL_CursorFile(struct VSL_data *vsl, const char *name,
     unsigned options);
