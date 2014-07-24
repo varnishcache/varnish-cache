@@ -372,6 +372,40 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 		VBE_UseHealth(vcl->conf->director[i]);
 }
 
+static void
+ccf_config_show(struct cli *cli, const char * const *av, void *priv)
+{
+	struct vcls *vcl;
+	int verbose = 0;
+	int i;
+
+	(void)priv;
+	if (!strcmp(av[2], "-v")) {
+		verbose = 1;
+		vcl = vcl_find(av[3]);
+	} else if (av[3] != NULL) {
+		VCLI_Out(cli, "Unknown options '%s'", av[2]);
+		VCLI_SetResult(cli, CLIS_PARAM);
+		return;
+	} else
+		vcl = vcl_find(av[2]);
+
+	if (vcl == NULL) {
+		VCLI_Out(cli, "No VCL named '%s'", av[2]);
+		VCLI_SetResult(cli, CLIS_PARAM);
+		return;
+	}
+	if (verbose) {
+		for (i = 0; i < vcl->conf->nsrc; i++)
+			VCLI_Out(cli, "// VCL.SHOW %d %zd %s\n%s\n",
+			    i, strlen(vcl->conf->srcbody[i]),
+			    vcl->conf->srcname[i],
+			    vcl->conf->srcbody[i]);
+	} else {
+		VCLI_Out(cli, "%s", vcl->conf->srcbody[0]);
+	}
+}
+
 /*--------------------------------------------------------------------
  * Method functions to call into VCL programs.
  *
@@ -451,6 +485,7 @@ static struct cli_proto vcl_cmds[] = {
 	{ CLI_VCL_LIST,         "i", ccf_config_list },
 	{ CLI_VCL_DISCARD,      "i", ccf_config_discard },
 	{ CLI_VCL_USE,          "i", ccf_config_use },
+	{ CLI_VCL_SHOW,		"i", ccf_config_show },
 	{ NULL }
 };
 

@@ -50,5 +50,6 @@ client c3 {
 } -run
 
 varnish v1 -cli "vcl.show vcl2"
+varnish v1 -cli "vcl.show -v vcl2"
 varnish v1 -cli "vcl.discard vcl2"
 varnish v1 -cli "vcl.list"
