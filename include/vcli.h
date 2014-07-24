@@ -99,7 +99,7 @@
 	"vcl.show",							\
 	"vcl.show <configname>",					\
 	"\tDisplay the source code for the specified configuration.",	\
-	1, 1
+	1, 2
 
 #define CLI_VCL_USE							\
 	"vcl.use",							\
