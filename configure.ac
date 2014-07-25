@@ -142,7 +142,7 @@ AC_SUBST(PCRE_LIBS)
 PKG_CHECK_MODULES([LIBEDIT], [libedit], 
 	[AC_DEFINE([HAVE_LIBEDIT], [1], [Define we have libedit])],
 	[AX_LIB_READLINE])
-if test "x$ac_cv_have_readline" != xyes; then
+if test "$ac_cv_have_readline" = no; then
   AC_MSG_ERROR([libedit or readline not found])
 fi
 
