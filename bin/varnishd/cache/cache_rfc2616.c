@@ -240,7 +240,7 @@ RFC2616_Body(struct busyobj *bo, struct dstat *stats)
 	}
 
 	if (http_HdrIs(hp, H_Transfer_Encoding, "chunked")) {
-		 stats->fetch_chunked++;
+		stats->fetch_chunked++;
 		return (BS_CHUNKED);
 	}
 
