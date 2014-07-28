@@ -16,6 +16,8 @@ flexelint \
 	-I../.. \
 	-I/usr/local/include \
 	-DVARNISH_STATE_DIR=\"foo\" \
+	-DVARNISH_VMOD_DIR=\"foo\" \
+	-DVARNISH_VCL_DIR=\"foo\" \
 	cache/*.c \
 	common/*.c \
 	storage/*.c \
