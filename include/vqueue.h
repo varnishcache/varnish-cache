@@ -33,8 +33,6 @@
 #ifndef VARNISH_QUEUE_H
 #define	VARNISH_QUEUE_H
 
-#include <sys/cdefs.h>
-
 /*
  * This file defines four types of data structures: singly-linked lists,
  * singly-linked tail queues, lists and tail queues.
