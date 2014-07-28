@@ -179,7 +179,7 @@ vslr(enum VSL_tag_e tag, uint32_t vxid, const char *b, unsigned len)
 	uint32_t *p;
 	unsigned mlen;
 
-	mlen = cache_param->shm_reclen;
+	mlen = cache_param->vsl_reclen;
 
 	/* Truncate */
 	if (len > mlen)
@@ -209,7 +209,7 @@ void
 VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
 {
 	va_list ap;
-	unsigned n, mlen = cache_param->shm_reclen;
+	unsigned n, mlen = cache_param->vsl_reclen;
 	char buf[mlen];
 
 	AN(fmt);
@@ -267,7 +267,7 @@ VSLbt(struct vsl_log *vsl, enum VSL_tag_e tag, txt t)
 	Tcheck(t);
 	if (vsl_tag_is_masked(tag))
 		return;
-	mlen = cache_param->shm_reclen;
+	mlen = cache_param->vsl_reclen;
 
 	/* Truncate */
 	l = Tlen(t);
@@ -321,7 +321,7 @@ VSLbv(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, va_list ap)
 		return;
 	}
 
-	mlen = cache_param->shm_reclen;
+	mlen = cache_param->vsl_reclen;
 
 	/* Flush if we cannot fit a full size record */
 	if (VSL_END(vsl->wlp, mlen + 1) >= vsl->wle)

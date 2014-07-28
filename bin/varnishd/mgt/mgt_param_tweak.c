@@ -36,6 +36,7 @@
 #include <limits.h>
 #include <math.h>
 #include <pwd.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -326,6 +327,45 @@ tweak_bytes_u(struct vsb *vsb, const struct parspec *par, const char *arg)
 	if (tweak_generic_bytes(vsb, &dest, arg, par->min, par->max))
 		return (-1);
 	*d1 = dest;
+	return (0);
+}
+
+/*--------------------------------------------------------------------
+ * vsl_buffer and vsl_reclen have dependencies.
+ */
+
+int
+tweak_vsl_buffer(struct vsb *vsb, const struct parspec *par, const char *arg)
+{
+	volatile unsigned *d1;
+	volatile ssize_t dest;
+	char buf[20];
+
+	d1 = par->priv;
+	dest = *d1;
+	if (tweak_generic_bytes(vsb, &dest, arg, par->min, par->max))
+		return (-1);
+	*d1 = dest;
+	bprintf(buf, "%u", *d1 - 12);
+	MCF_SetMaximum("vsl_reclen", strdup(buf));
+	MCF_SetMaximum("shm_reclen", strdup(buf));
+	return (0);
+}
+
+int
+tweak_vsl_reclen(struct vsb *vsb, const struct parspec *par, const char *arg)
+{
+	volatile unsigned *d1;
+	volatile ssize_t dest;
+	char buf[20];
+
+	d1 = par->priv;
+	dest = *d1;
+	if (tweak_generic_bytes(vsb, &dest, arg, par->min, par->max))
+		return (-1);
+	*d1 = dest;
+	bprintf(buf, "%u", *d1 + 12);
+	MCF_SetMinimum("vsl_buffer", strdup(buf));
 	return (0);
 }
 
