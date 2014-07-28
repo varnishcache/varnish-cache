@@ -53,11 +53,19 @@
 struct parspec mgt_parspec[] = {
 	{ "user", tweak_user, NULL, NULL, NULL,
 		"The unprivileged user to run as.",
-		MUST_RESTART,
+		MUST_RESTART | ONLY_ROOT,
 		"" },
 	{ "group", tweak_group, NULL, NULL, NULL,
 		"The unprivileged group to run as.",
-		MUST_RESTART,
+		MUST_RESTART | ONLY_ROOT,
+		"" },
+	{ "group_cc", tweak_group_cc, NULL, NULL, NULL,
+		"On some systems the C-compiler is restricted so not"
+		" everybody can run it.  This parameter makes it possible"
+		" to add an extra group to the sandbox process which runs the"
+		" cc_command, in order to gain access to such a restricted"
+		" c-compiler.",
+		ONLY_ROOT,
 		"" },
 	{ "default_ttl", tweak_timeout, &mgt_param.default_ttl,
 		"0", NULL,

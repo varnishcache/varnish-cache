@@ -226,6 +226,15 @@ restart
 reload
       The VCL programs must be reloaded for this parameter to take effect.
 
+experimental
+      We're not really sure about this parameter, tell us what you find.
+
+wizard
+      Do not touch unless you *really* know what you're doing.
+
+only_root
+      Only works if varnishd is running as root.
+
 Here is a list of all parameters, current as of last time we
 remembered to update the manual page.  This text is produced from the
 same text you will find in the CLI if you use the param.show command,

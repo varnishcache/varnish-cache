@@ -1,0 +1,30 @@
+varnishtest "304 body handling with ESI"
+
+server s1 {
+	rxreq
+	txresp -hdr "Last-Modified: Wed, 04 Jun 2014 08:48:52 GMT" \
+		-body {<html><esi:include src="/bar"/>}
+
+	rxreq
+	expect req.url == "/bar"
+	txresp -body {<html>}
+
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_esi = true;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 12
+	expect resp.status == 200
+
+	txreq -hdr "If-Modified-Since: Wed, 04 Jun 2014 08:48:52 GMT"
+	rxresp
+	expect resp.status == 304
+	expect resp.bodylen == 0
+} -run

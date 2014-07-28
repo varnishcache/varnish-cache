@@ -51,6 +51,7 @@
 #include <grp.h>
 #include <stdio.h>
 #include <syslog.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "mgt/mgt.h"
@@ -62,14 +63,27 @@
 static void __match_proto__(mgt_sandbox_f)
 mgt_sandbox_unix(enum sandbox_e who)
 {
-	(void)who;
-	if (geteuid() == 0) {
-		XXXAZ(setgid(mgt_param.gid));
-		XXXAZ(initgroups(mgt_param.user, mgt_param.gid));
-		XXXAZ(setuid(mgt_param.uid));
-	} else {
+#define NGID 10
+	gid_t gid_list[NGID];
+	int i;
+
+	if (geteuid() != 0) {
 		REPORT0(LOG_INFO, "Not running as root, no priv-sep");
+		return;
 	}
+
+	XXXAZ(setgid(mgt_param.gid));
+	XXXAZ(initgroups(mgt_param.user, mgt_param.gid));
+
+	if (who == SANDBOX_CC && strlen(mgt_param.group_cc) > 0) {
+		/* Add the optional extra group for the C-compiler access */
+		i = getgroups(NGID, gid_list);
+		assert(i >= 0);
+		gid_list[i++] = mgt_param.gid_cc;
+		XXXAZ(setgroups(i, gid_list));
+	}
+
+	XXXAZ(setuid(mgt_param.uid));
 }
 #endif
 

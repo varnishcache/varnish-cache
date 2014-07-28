@@ -63,6 +63,10 @@ struct params {
 	char			*group;
 	gid_t			gid;
 
+	/* Extra group for compiler access */
+	char			*group_cc;
+	gid_t			gid_cc;
+
 	/* TTL used for lack of anything better */
 	double			default_ttl;
 
