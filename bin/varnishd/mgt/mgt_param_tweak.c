@@ -433,6 +433,38 @@ tweak_group(struct vsb *vsb, const struct parspec *par, const char *arg)
 	return (0);
 }
 
+/*--------------------------------------------------------------------
+ * XXX: see comment for tweak_user, same thing here.
+ */
+
+int
+tweak_group_cc(struct vsb *vsb, const struct parspec *par, const char *arg)
+{
+	struct group *gr;
+
+	(void)par;
+	if (arg != NULL) {
+		if (*arg != '\0') {
+			gr = getgrnam(arg);
+			if (gr == NULL) {
+				VSB_printf(vsb, "Unknown group");
+				return(-1);
+			}
+			REPLACE(mgt_param.group_cc, gr->gr_name);
+			mgt_param.gid_cc = gr->gr_gid;
+		} else {
+			REPLACE(mgt_param.group_cc, "");
+			mgt_param.gid_cc = 0;
+		}
+	} else if (strlen(mgt_param.group_cc) > 0) {
+		VSB_printf(vsb, "%s (%d)",
+		    mgt_param.group_cc, (int)mgt_param.gid_cc);
+	} else {
+		VSB_printf(vsb, "<not set>");
+	}
+	return (0);
+}
+
 /*--------------------------------------------------------------------*/
 
 static void

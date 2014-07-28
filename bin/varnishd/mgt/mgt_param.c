@@ -90,6 +90,10 @@ static const char PROTECTED_TEXT[] =
 	"\n\n"
 	"NB: This parameter is protected and can not be changed.";
 
+static const char ONLY_ROOT_TEXT[] =
+	"\n\n"
+	"NB: This parameter only works of varnishd is run as root.";
+
 
 /*--------------------------------------------------------------------*/
 
@@ -265,6 +269,8 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 				mcf_wrap(cli, WIZARD_TEXT);
 			if (pp->flags & PROTECTED)
 				mcf_wrap(cli, PROTECTED_TEXT);
+			if (pp->flags & ONLY_ROOT)
+				mcf_wrap(cli, ONLY_ROOT_TEXT);
 			VCLI_Out(cli, "\n\n");
 		}
 	}
@@ -554,6 +560,10 @@ MCF_DumpRstParam(void)
 			}
 			if (pp->flags & WIZARD) {
 				printf("%swizard", q);
+				q = ", ";
+			}
+			if (pp->flags & ONLY_ROOT) {
+				printf("%sonly_root", q);
 				q = ", ";
 			}
 			printf("\n");
