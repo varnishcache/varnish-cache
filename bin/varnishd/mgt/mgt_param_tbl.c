@@ -44,12 +44,6 @@
 	"\tmax_pool\tmaximum size of free pool.\n"			\
 	"\tmax_age\tmax age of free element."
 
-/*
- * Remember to update varnishd.1 whenever you add / remove a parameter or
- * change its default value.
- * XXX: we should generate the relevant section of varnishd.1 from here.
- */
-
 struct parspec mgt_parspec[] = {
 	{ "user", tweak_user, NULL, NULL, NULL,
 		"The unprivileged user to run as.",
@@ -64,7 +58,7 @@ struct parspec mgt_parspec[] = {
 		" everybody can run it.  This parameter makes it possible"
 		" to add an extra group to the sandbox process which runs the"
 		" cc_command, in order to gain access to such a restricted"
-		" c-compiler.",
+		" C-compiler.",
 		ONLY_ROOT,
 		"" },
 	{ "default_ttl", tweak_timeout, &mgt_param.default_ttl,
