@@ -92,7 +92,7 @@ static const char PROTECTED_TEXT[] =
 
 static const char ONLY_ROOT_TEXT[] =
 	"\n\n"
-	"NB: This parameter only works of varnishd is run as root.";
+	"NB: This parameter only works if varnishd is run as root.";
 
 
 /*--------------------------------------------------------------------*/
