@@ -136,6 +136,10 @@ smp_mgt_init(struct stevedore *parent, int ac, char * const *av)
 	ASSERT_MGT();
 
 	AZ(av[ac]);
+
+	/* Necessary alignment. See also smp_object::__filler__ */
+	assert(sizeof(struct smp_object) % 8 == 0);
+
 #define SIZOF(foo)       fprintf(stderr, \
     "sizeof(%s) = %zu = 0x%zx\n", #foo, sizeof(foo), sizeof(foo));
 	SIZOF(struct smp_ident);
