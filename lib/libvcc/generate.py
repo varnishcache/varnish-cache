@@ -436,8 +436,6 @@ sp_variables = [
 		Deliver the object to the client directly without
 		fetching the whole object into varnish. If this
 		request is pass'ed it will not be stored in memory.
-		As of Varnish Cache 3.0 the object will marked as busy
-		as it is delivered so only client can access the object.
 		"""
 	),
 	('beresp.do_gzip',
