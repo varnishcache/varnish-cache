@@ -37,121 +37,121 @@ import copy
 srcroot = "../.."
 buildroot = "../.."
 if len(sys.argv) == 3:
-        srcroot = sys.argv[1]
-        buildroot = sys.argv[2]
+	srcroot = sys.argv[1]
+	buildroot = sys.argv[2]
 
 #######################################################################
 # These are our tokens
 
 tokens = {
-        # Numerical comparisons
-        "T_EQ":         "==",
-        "T_NEQ":        "!=",
-        "T_LEQ":        "<=",
-        "T_GEQ":        ">=",
+	# Numerical comparisons
+	"T_EQ":         "==",
+	"T_NEQ":        "!=",
+	"T_LEQ":        "<=",
+	"T_GEQ":        ">=",
 
-        # String comparisons
-        "T_SEQ":        "eq",
-        "T_SNEQ":       "ne",
+	# String comparisons
+	"T_SEQ":        "eq",
+	"T_SNEQ":       "ne",
 
-        # Regular expression matching
-        "T_NOMATCH":    "!~",
+	# Regular expression matching
+	"T_NOMATCH":    "!~",
 
-        # Boolean operators
-        "T_AND":        "and",
-        "T_OR":         "or",
-        "T_NOT":        "not",
+	# Boolean operators
+	"T_AND":        "and",
+	"T_OR":         "or",
+	"T_NOT":        "not",
 
-        # Miscellaneous
-        None:           "<>~[]{}():,",
+	# Miscellaneous
+	None:           "<>~[]{}():,",
 
-        # These have handwritten recognizers
-        "VAL":          None,
-        "EOI":          None,
+	# These have handwritten recognizers
+	"VAL":          None,
+	"EOI":          None,
 
-        # Special
-        "T_TRUE":       None,
+	# Special
+	"T_TRUE":       None,
 }
 
 #######################################################################
 # Emit a function to recognize tokens in a string
 
 def emit_vxp_fixed_token(fo, tokens):
-        recog = list()
-        emit = dict()
-        for i in tokens:
-                j = tokens[i]
-                if (j != None):
-                        recog.append(j)
-                        emit[j] = i
+	recog = list()
+	emit = dict()
+	for i in tokens:
+		j = tokens[i]
+		if (j != None):
+			recog.append(j)
+			emit[j] = i
 
-        recog.sort()
-        rrecog = copy.copy(recog)
-        rrecog.sort(key = lambda x: -len(x))
+	recog.sort()
+	rrecog = copy.copy(recog)
+	rrecog.sort(key = lambda x: -len(x))
 
-        fo.write("""
+	fo.write("""
 unsigned
 vxp_fixed_token(const char *p, const char **q)
 {
 
 \tswitch (p[0]) {
 """)
-        last_initial = None
-        for i in recog:
-                if (i[0] == last_initial):
-                        continue
-                last_initial = i[0]
-                fo.write("\tcase '%s':\n" % last_initial)
-                for j in rrecog:
-                        if (j[0] != last_initial):
-                                continue
+	last_initial = None
+	for i in recog:
+		if (i[0] == last_initial):
+			continue
+		last_initial = i[0]
+		fo.write("\tcase '%s':\n" % last_initial)
+		for j in rrecog:
+			if (j[0] != last_initial):
+				continue
 
-                        fo.write("\t\tif (")
-                        k = 1
-                        l = len(j)
-                        while (k < l):
-                                fo.write("p[%d] == '%s'" % (k, j[k]))
-                                fo.write(" &&\n\t\t    ")
-                                k += 1
-                        fo.write("(isword(p[%d]) ? !isword(p[%d]) : 1)) {\n" %
-                                 (l - 1, l))
-                        fo.write("\t\t\t*q = p + %d;\n" % l)
-                        fo.write("\t\t\treturn (%s);\n" % emit[j])
-                        fo.write("\t\t}\n");
-                fo.write("\t\treturn (0);\n")
+			fo.write("\t\tif (")
+			k = 1
+			l = len(j)
+			while (k < l):
+				fo.write("p[%d] == '%s'" % (k, j[k]))
+				fo.write(" &&\n\t\t    ")
+				k += 1
+			fo.write("(isword(p[%d]) ? !isword(p[%d]) : 1)) {\n" %
+				(l - 1, l))
+			fo.write("\t\t\t*q = p + %d;\n" % l)
+			fo.write("\t\t\treturn (%s);\n" % emit[j])
+			fo.write("\t\t}\n");
+		fo.write("\t\treturn (0);\n")
 
-        fo.write("\tdefault:\n\t\treturn (0);\n\t}\n}\n")
+	fo.write("\tdefault:\n\t\treturn (0);\n\t}\n}\n")
 
 #######################################################################
 # Emit the vxp_tnames (token->string) conversion array
 
 def emit_vxp_tnames(fo, tokens):
-        fo.write("\nconst char * const vxp_tnames[256] = {\n")
-        l = list(tokens.keys())
-        l.sort()
-        for i in l:
-                j = tokens[i]
-                if j == None:
-                        j = i
-                if i[0] == "'":
-                        j = i
-                fo.write("\t[%s] = \"%s\",\n" % (i, j))
-        fo.write("};\n")
+	fo.write("\nconst char * const vxp_tnames[256] = {\n")
+	l = list(tokens.keys())
+	l.sort()
+	for i in l:
+		j = tokens[i]
+		if j == None:
+			j = i
+		if i[0] == "'":
+			j = i
+		fo.write("\t[%s] = \"%s\",\n" % (i, j))
+	fo.write("};\n")
 
 #######################################################################
 
 def polish_tokens(tokens):
-        # Expand single char tokens
-        st = tokens[None]
-        del tokens[None]
+	# Expand single char tokens
+	st = tokens[None]
+	del tokens[None]
 
-        for i in st:
-                tokens["'" + i + "'"] = i
+	for i in st:
+		tokens["'" + i + "'"] = i
 
 #######################################################################
 
 def file_header(fo):
-        fo.write("""/*
+	fo.write("""/*
  * NB:  This file is machine generated, DO NOT EDIT!
  *
  * Edit and run generate.py instead
@@ -170,11 +170,11 @@ j = 128
 l = list(tokens.keys())
 l.sort()
 for i in l:
-        if i[0] == "'":
-                continue
-        fo.write("#define\t%s %d\n" % (i, j))
-        j += 1
-        assert j < 256
+	if i[0] == "'":
+		continue
+	fo.write("#define\t%s %d\n" % (i, j))
+	j += 1
+	assert j < 256
 
 fo.close()
 
