@@ -160,23 +160,27 @@ struct parspec mgt_parspec[] = {
 		0,
 		"64", "header lines" },
 	{ "vsl_buffer",
-		tweak_bytes_u, &mgt_param.vsl_buffer,
+		tweak_vsl_buffer, &mgt_param.vsl_buffer,
 		"1024", NULL,
 		"Bytes of (req-/backend-)workspace dedicated to buffering"
 		" VSL records.\n"
-		"At a bare minimum, this must be longer than"
-		" the longest HTTP header to be logged.\n"
 		"Setting this too high costs memory, setting it too low"
 		" will cause more VSL flushes and likely increase"
-		" lock-contention on the VSL mutex.\n"
-		"Minimum is 1k bytes.",
+		" lock-contention on the VSL mutex.\n\n"
+		"The minimum tracks the vsl_reclen parameter + 12 bytes.",
 		0,
 		"4k", "bytes" },
-	{ "shm_reclen",
-		tweak_bytes_u, &mgt_param.shm_reclen,
+	{ "vsl_reclen",
+		tweak_vsl_reclen, &mgt_param.vsl_reclen,
 		"16", "65535",
-		"Maximum number of bytes in SHM log record.\n"
-		"Maximum is 65535 bytes.",
+		"Maximum number of bytes in SHM log record.\n\n"
+		"The maximum tracks the vsl_buffer parameter - 12 bytes.",
+		0,
+		"255", "bytes" },
+	{ "shm_reclen",
+		tweak_vsl_reclen, &mgt_param.vsl_reclen,
+		"16", "65535",
+		"Old name for vsl_reclen, use that instead.",
 		0,
 		"255", "bytes" },
 	{ "timeout_idle", tweak_timeout, &mgt_param.timeout_idle,

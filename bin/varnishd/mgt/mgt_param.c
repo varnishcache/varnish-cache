@@ -484,6 +484,7 @@ MCF_SetMinimum(const char *param, const char *new_min)
 {
 	struct parspec *pp;
 
+	AN(new_min);
 	pp = mcf_findpar(param);
 	AN(pp);
 	pp->min = new_min;
@@ -495,6 +496,7 @@ MCF_SetMaximum(const char *param, const char *new_max)
 {
 	struct parspec *pp;
 
+	AN(new_max);
 	pp = mcf_findpar(param);
 	AN(pp);
 	pp->max = new_max;

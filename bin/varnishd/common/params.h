@@ -103,7 +103,7 @@ struct params {
 	unsigned		http_resp_hdr_len;
 	unsigned		http_max_hdr;
 
-	unsigned		shm_reclen;
+	unsigned		vsl_reclen;
 
 	double			timeout_linger;
 	double			timeout_idle;

@@ -63,6 +63,8 @@ tweak_t tweak_timeout;
 tweak_t tweak_uint;
 tweak_t tweak_user;
 tweak_t tweak_waiter;
+tweak_t tweak_vsl_buffer;
+tweak_t tweak_vsl_reclen;
 
 int tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest,
     const char *arg, const char *min, const char *max);
