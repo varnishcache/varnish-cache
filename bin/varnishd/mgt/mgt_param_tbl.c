@@ -534,21 +534,13 @@ struct parspec mgt_parspec[] = {
 		"Directory from which relative VCL filenames (vcl.load and "
 		"include) are opened.",
 		0,
-#ifdef VARNISH_VCL_DIR
 		VARNISH_VCL_DIR,
-#else
-		".",
-#endif
 		NULL },
 	{ "vmod_dir", tweak_string, &mgt_vmod_dir,
 		NULL, NULL,
 		"Directory where VCL modules are to be found.",
 		0,
-#ifdef VARNISH_VMOD_DIR
 		VARNISH_VMOD_DIR,
-#else
-		".",
-#endif
 		NULL },
 
 	{ "vcc_err_unref", tweak_bool, &mgt_vcc_err_unref,
