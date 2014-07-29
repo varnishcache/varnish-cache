@@ -911,15 +911,19 @@ typedef void vcl_fini_f(struct cli *);
 typedef int vcl_func_f(const struct vrt_ctx *ctx);
 """)
 
+def tbl40(a, b):
+	while len(a.expandtabs()) < 40:
+		a += "\t"
+	return a + b
 
 fo.write("\n/* VCL Methods */\n")
-n = 0
+n = 1
 for i in returns:
-	fo.write("#define VCL_MET_%s\t\t(1U << %d)\n" % (i[0].upper(), n))
+	fo.write(tbl40("#define VCL_MET_%s" % i[0].upper(),  "(1U << %d)\n" % n))
 	n += 1
 
-fo.write("\n#define VCL_MET_MAX\t\t%d\n" % n)
-fo.write("\n#define VCL_MET_MASK\t\t0x%x\n" % ((1 << n) - 1))
+fo.write("\n" + tbl40("#define VCL_MET_MAX", "%d\n" % n))
+fo.write("\n" + tbl40("#define VCL_MET_MASK", "0x%x\n" % ((1 << n) - 1)))
 
 
 fo.write("\n/* VCL Returns */\n")
@@ -927,10 +931,10 @@ n = 0
 l = list(rets.keys())
 l.sort()
 for i in l:
-	fo.write("#define VCL_RET_%s\t\t%d\n" % (i.upper(), n))
+	fo.write(tbl40("#define VCL_RET_%s" % i.upper(), "%d\n" % n))
 	n += 1
 
-fo.write("\n#define VCL_RET_MAX\t\t%d\n" % n)
+fo.write("\n" + tbl40("#define VCL_RET_MAX", "%d\n" % n))
 
 
 fo.write("""
