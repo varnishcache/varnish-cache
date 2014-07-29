@@ -332,6 +332,7 @@ struct worker {
 	struct vxid_pool	vxid_pool;
 
 	unsigned		cur_method;
+	unsigned		seen_methods;
 	unsigned		handling;
 };
 

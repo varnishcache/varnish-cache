@@ -450,11 +450,12 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	aws = WS_Snapshot(wrk->aws);
 	wrk->handling = 0;
 	wrk->cur_method = method;
+	wrk->seen_methods |= method;
 	AN(vsl);
 	VSLb(vsl, SLT_VCL_call, "%s", VCL_Method_Name(method));
 	(void)func(&ctx);
 	VSLb(vsl, SLT_VCL_return, "%s", VCL_Return_Name(wrk->handling));
-	wrk->cur_method = 0;
+	wrk->cur_method |= 1;		// Magic marker
 
 	/*
 	 * VCL/Vmods are not allowed to make permanent allocations from

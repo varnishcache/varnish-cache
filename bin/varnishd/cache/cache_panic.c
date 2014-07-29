@@ -268,21 +268,42 @@ static void
 pan_wrk(const struct worker *wrk)
 {
 	const char *hand;
+	unsigned m, u;
+	const char *p;
 
 	VSB_printf(pan_vsp, "  worker = %p {\n", wrk);
 	pan_ws(wrk->aws, 4);
 
-	hand = VCL_Method_Name(wrk->cur_method);
+	m = wrk->cur_method;
+	VSB_printf(pan_vsp, "  VCL::method = ");
+	if (m == 0) {
+		VSB_printf(pan_vsp, "none,\n");
+		return;
+	}
+	if (!(m & 1))
+		VSB_printf(pan_vsp, "*");
+	m &= ~1;
+	hand = VCL_Method_Name(m);
 	if (hand != NULL)
-		VSB_printf(pan_vsp, "  VCL::method = %s,\n", hand);
+		VSB_printf(pan_vsp, "%s,\n", hand);
 	else
-		VSB_printf(pan_vsp, "  VCL::method = 0x%x,\n", wrk->cur_method);
+		VSB_printf(pan_vsp, "0x%x,\n", m);
 	hand = VCL_Return_Name(wrk->handling);
 	if (hand != NULL)
 		VSB_printf(pan_vsp, "  VCL::return = %s,\n", hand);
 	else
 		VSB_printf(pan_vsp, "  VCL::return = 0x%x,\n", wrk->handling);
-	VSB_printf(pan_vsp, "  },\n");
+	VSB_printf(pan_vsp, "  VCL::methods = {");
+	m = wrk->seen_methods;
+	p = "";
+	for (u = 1; m ; u <<= 1) {
+		if (m & u) {
+			VSB_printf(pan_vsp, "%s%s", p, VCL_Method_Name(u));
+			m &= ~u;
+			p = ", ";
+		}
+	}
+	VSB_printf(pan_vsp, "},\n  },\n");
 }
 
 static void
