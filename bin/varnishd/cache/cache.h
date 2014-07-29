@@ -1187,6 +1187,7 @@ int VRY_Create(struct busyobj *bo, struct vsb **psb);
 int VRY_Match(struct req *, const uint8_t *vary);
 unsigned VRY_Validate(const uint8_t *vary);
 void VRY_Prep(struct req *);
+void VRY_Clear(struct req *);
 enum vry_finish_flag { KEEP, DISCARD };
 void VRY_Finish(struct req *req, enum vry_finish_flag);
 
