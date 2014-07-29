@@ -469,8 +469,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	if (boc != NULL) {
 		(void)HSH_DerefObjCore(&wrk->stats, &boc);
-		free(req->vary_b);
-		req->vary_b = NULL;
+		VRY_Clear(req);
 	}
 
 	return (REQ_FSM_MORE);
@@ -524,7 +523,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 	default:
 		WRONG("Illegal return from vcl_miss{}");
 	}
-	free(req->vary_b);
+	VRY_Clear(req);
 	if (o != NULL)
 		(void)HSH_DerefObj(&wrk->stats, &o);
 	AZ(HSH_DerefObjCore(&wrk->stats, &req->objcore));

@@ -238,6 +238,18 @@ VRY_Prep(struct req *req)
 		req->vary_b[2] = '\0';
 }
 
+void
+VRY_Clear(struct req *req)
+{
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	if (req->vary_b != NULL)
+		free(req->vary_b);
+	req->vary_b = NULL;
+	AZ(req->vary_e);
+	AZ(req->vary_l);
+}
+
 /**********************************************************************
  * Finish predictive vary processing
  */
