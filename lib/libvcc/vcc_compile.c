@@ -65,6 +65,7 @@
 #include "vfil.h"
 
 struct method method_tab[] = {
+	{ "none", 0U, 0},
 #define VCL_MET_MAC(l,U,m)	{ "vcl_"#l, m, VCL_MET_##U },
 #include "tbl/vcl_returns.h"
 #undef VCL_MET_MAC
@@ -666,7 +667,7 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 		return (vcc_DestroyTokenList(tl, NULL));
 
 	/* Emit method functions */
-	for (i = 0; i < VCL_MET_MAX; i++) {
+	for (i = 1; i < VCL_MET_MAX; i++) {
 		Fh(tl, 1, "\nint __match_proto__(vcl_func_f)\n");
 		Fh(tl, 1,
 		    "VGC_function_%s(const struct vrt_ctx *ctx);\n",
