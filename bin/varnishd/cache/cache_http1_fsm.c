@@ -559,6 +559,10 @@ HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv)
 		VSLb(req->vsl, SLT_VCL_Error,
 		    "Uncached req.body can only be consumed once.");
 		return (-1);
+	case REQ_BODY_FAIL:
+		VSLb(req->vsl, SLT_FetchError,
+		    "Had failed reading req.body before.");
+		return (-1);
 	default:
 		WRONG("Wrong req_body_status in HTTP1_IterateReqBody()");
 	}

@@ -1,0 +1,49 @@
+varnishtest "retrying a short client body read should not panic varnish"
+
+server s1 {
+	non-fatal
+	rxreq
+	txresp -status 200 -hdr "Foo: BAR" -body "1234"
+} -start
+
+server s2 {
+	non-fatal
+	rxreq
+	txresp -status 200 -hdr "Foo: Foo" -body "56"
+} -start
+
+varnish v1 -cliok "param.set vcc_allow_inline_c true" -vcl+backend {
+	sub vcl_recv {
+		return (pass);
+	}
+	sub vcl_backend_fetch {
+		if (bereq.retries >= 1) {
+			set bereq.backend = s2;
+		} else {
+			set bereq.backend = s1;
+		}
+	}
+	sub vcl_backend_error {
+		return (retry);
+	}
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl"
+
+client c1 {
+	txreq -req "POST" -nolen -hdr "Content-Length: 10000" -bodylen 9999
+} -run
+
+delay .4
+
+server s1 {
+	rxreq
+	txresp -status 200 -bodylen 11
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 11
+} -run
