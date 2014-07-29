@@ -77,9 +77,12 @@ ObjIter(struct objiter *oi, void **p, ssize_t *l)
 			oi->st = VTAILQ_FIRST(&oi->obj->body->list);
 		else
 			oi->st = VTAILQ_NEXT(oi->st, list);
+		while(oi->st != NULL && oi->st->len == 0)
+			oi->st = VTAILQ_NEXT(oi->st, list);
 		if (oi->st != NULL) {
 			*p = oi->st->ptr;
 			*l = oi->st->len;
+			assert(*l > 0);
 			return (OIS_DATA);
 		}
 		return (OIS_DONE);
