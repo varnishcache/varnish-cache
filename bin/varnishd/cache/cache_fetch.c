@@ -852,16 +852,20 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 void
 VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
-    struct object *oldobj, enum vbf_fetch_mode_e mode)
+    struct objcore *oldoc, enum vbf_fetch_mode_e mode)
 {
 	struct busyobj *bo;
 	const char *how;
+	struct object *oldobj = NULL;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	CHECK_OBJ_ORNULL(oldobj, OBJECT_MAGIC);
+	CHECK_OBJ_ORNULL(oldoc, OBJCORE_MAGIC);
 
+
+	if (oldoc != NULL)
+		oldobj = ObjGetObj(oldoc, &wrk->stats);
 
 	switch(mode) {
 	case VBF_PASS:		how = "pass"; break;

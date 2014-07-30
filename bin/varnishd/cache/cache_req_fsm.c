@@ -426,7 +426,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 			AZ(oc->flags & (OC_F_FAILED|OC_F_PASS));
 			AZ(oc->exp_flags & OC_EF_DYING);
 			AZ(boc->busyobj);
-			VBF_Fetch(wrk, req, boc, o, VBF_BACKGROUND);
+			VBF_Fetch(wrk, req, boc, oc, VBF_BACKGROUND);
 		} else {
 			(void)HTTP1_DiscardReqBody(req);// XXX: handle err
 		}
@@ -506,7 +506,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 	switch (wrk->handling) {
 	case VCL_RET_FETCH:
 		wrk->stats.cache_miss++;
-		VBF_Fetch(wrk, req, req->objcore, o, VBF_NORMAL);
+		VBF_Fetch(wrk, req, req->objcore, o == NULL ? NULL : o->objcore, VBF_NORMAL);
 		req->req_step = R_STP_FETCH;
 		if (o != NULL)
 			(void)HSH_DerefObj(&wrk->stats, &o);
