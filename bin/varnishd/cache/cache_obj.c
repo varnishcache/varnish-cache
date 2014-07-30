@@ -172,15 +172,6 @@ ObjTrimStore(struct objcore *oc, struct dstat *ds)
 	}
 }
 
-unsigned
-ObjGetXID(struct objcore *oc, struct dstat *ds)
-{
-	const struct objcore_methods *m = obj_getmethods(oc);
-
-	AN(ds);
-	AN(m->getxid);
-	return (m->getxid(ds, oc));
-}
 
 struct object *
 ObjGetObj(struct objcore *oc, struct dstat *ds)
@@ -220,4 +211,33 @@ ObjGetLRU(const struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(m->getlru);
 	return (m->getlru(oc));
+}
+
+ssize_t
+ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
+    void *ptr, ssize_t len)
+{
+	struct object *o;
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	o = ObjGetObj(oc, ds);
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	switch (attr) {
+	case OA_VXID:
+		assert(len == sizeof o->vxid);
+		memcpy(ptr, &o->vxid, sizeof o->vxid);
+		return (sizeof o->vxid);
+	default:
+		break;
+	}
+	WRONG("Unsupported OBJ_ATTR");
+}
+
+unsigned
+ObjGetXID(struct objcore *oc, struct dstat *ds)
+{
+	uint32_t u;
+
+	assert(ObjGetattr(oc, ds, OA_VXID, &u, sizeof u) == sizeof u);
+	return (u);
 }

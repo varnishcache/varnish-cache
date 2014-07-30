@@ -374,14 +374,12 @@ struct storage {
  */
 
 typedef struct object *getobj_f(struct dstat *ds, struct objcore *oc);
-typedef unsigned getxid_f(struct dstat *ds, struct objcore *oc);
 typedef void updatemeta_f(struct objcore *oc);
 typedef void freeobj_f(struct dstat *ds, struct objcore *oc);
 typedef struct lru *getlru_f(const struct objcore *oc);
 
 struct objcore_methods {
 	getobj_f	*getobj;
-	getxid_f	*getxid;
 	updatemeta_f	*updatemeta;
 	freeobj_f	*freeobj;
 	getlru_f	*getlru;
@@ -545,6 +543,12 @@ VTAILQ_HEAD(storagehead, storage);
 struct body {
 	struct stevedore	*stevedore;
 	struct storagehead	list;
+};
+
+enum obj_attr {
+#define OBJ_ATTR(U, l)	OA_##U,
+#include "tbl/obj_attr.h"
+#undef OBJ_ATTR
 };
 
 struct object {
@@ -1055,6 +1059,8 @@ struct object *ObjGetObj(struct objcore *, struct dstat *);
 void ObjUpdateMeta(struct objcore *);
 void ObjFreeObj(struct objcore *, struct dstat *);
 struct lru *ObjGetLRU(const struct objcore *);
+ssize_t ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
+    void *ptr, ssize_t len);
 
 /* cache_panic.c */
 void PAN_Init(void);
