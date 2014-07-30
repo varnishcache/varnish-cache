@@ -564,9 +564,7 @@ struct object {
 	unsigned		changed_gzip:1;
 
 	/* Bit positions in the gzip stream */
-	ssize_t			gzip_start;
-	ssize_t			gzip_last;
-	ssize_t			gzip_stop;
+	ssize_t			gzip_bits[3];
 
 	ssize_t			len;
 

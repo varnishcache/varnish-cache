@@ -496,6 +496,8 @@ ESI_DeliverChild(struct req *req)
 	struct storage *st;
 	struct object *obj;
 	ssize_t start, last, stop, lpad;
+	void *vp;
+	ssize_t l, gzip_bits[3];
 	u_char cc;
 	uint32_t icrc;
 	uint32_t ilen;
@@ -519,9 +521,12 @@ ESI_DeliverChild(struct req *req)
 	AN(dbits);
 	obj = req->obj;
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
-	start = obj->gzip_start;
-	last = obj->gzip_last;
-	stop = obj->gzip_stop;
+	l = ObjGetattr(obj->objcore, &req->wrk->stats, OA_GZIPBITS, &vp);
+	assert(l == sizeof gzip_bits);
+	memcpy(gzip_bits, vp, l);
+	start = gzip_bits[0];
+	last = gzip_bits[1];
+	stop = gzip_bits[2];
 	assert(start > 0 && start < obj->len * 8);
 	assert(last > 0 && last < obj->len * 8);
 	assert(stop > 0 && stop < obj->len * 8);

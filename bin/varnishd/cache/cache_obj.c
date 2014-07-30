@@ -229,6 +229,9 @@ ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr, void **ptr)
 	case OA_VXID:
 		*ptr = &o->vxid;
 		return (sizeof o->vxid);
+	case OA_GZIPBITS:
+		*ptr = o->gzip_bits;
+		return (sizeof o->gzip_bits);
 	case OA_ESIDATA:
 		if (o->esidata == NULL)
 			return (-1);
