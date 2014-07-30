@@ -554,7 +554,7 @@ enum obj_attr {
 struct object {
 	unsigned		magic;
 #define OBJECT_MAGIC		0x32851d42
-	uint32_t		vxid;
+	char			oa_vxid[4];
 	struct storage		*objstore;
 	struct objcore		*objcore;
 
@@ -1059,6 +1059,8 @@ void ObjFreeObj(struct objcore *, struct dstat *);
 struct lru *ObjGetLRU(const struct objcore *);
 ssize_t ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
     void **ptr);
+void *ObjSetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
+    ssize_t len);
 
 /* cache_panic.c */
 void PAN_Init(void);

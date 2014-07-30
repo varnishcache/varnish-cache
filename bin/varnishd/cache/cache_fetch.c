@@ -35,6 +35,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "vend.h"
 #include "hash/hash_slinger.h"
 #include "vcl.h"
 #include "vtim.h"
@@ -101,6 +102,7 @@ vbf_beresp2obj(struct busyobj *bo)
 	uint16_t nhttp;
 	struct object *obj;
 	struct http *hp, *hp2;
+	void *vp;
 
 	l = 0;
 
@@ -150,7 +152,8 @@ vbf_beresp2obj(struct busyobj *bo)
 		VSB_delete(vary);
 	}
 
-	obj->vxid = bo->vsl->wid;
+	vp = ObjSetattr(bo->fetch_objcore, bo->stats, OA_VXID, 4);
+	vbe32enc(vp, bo->vsl->wid);
 	WS_Assert(bo->ws_o);
 
 	/* Filter into object */

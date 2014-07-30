@@ -31,6 +31,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "vend.h"
 #include "storage/storage.h"
 #include "hash/hash_slinger.h"
 
@@ -227,8 +228,8 @@ ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr, void **ptr)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	switch (attr) {
 	case OA_VXID:
-		*ptr = &o->vxid;
-		return (sizeof o->vxid);
+		*ptr = o->oa_vxid;
+		return (sizeof o->oa_vxid);
 	case OA_GZIPBITS:
 		*ptr = o->gzip_bits;
 		return (sizeof o->gzip_bits);
@@ -243,13 +244,31 @@ ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr, void **ptr)
 	WRONG("Unsupported OBJ_ATTR");
 }
 
+void *
+ObjSetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
+    ssize_t len)
+{
+	struct object *o;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(ds);
+	o = ObjGetObj(oc, ds);
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	switch (attr) {
+	case OA_VXID:
+		assert(len == sizeof o->oa_vxid);
+		return (o->oa_vxid);
+	default:
+		break;
+	}
+	WRONG("Unsupported OBJ_ATTR");
+}
+
+
 unsigned
 ObjGetXID(struct objcore *oc, struct dstat *ds)
 {
 	void *p;
-	uint32_t u;
 
-	assert(ObjGetattr(oc, ds, OA_VXID, &p) == sizeof u);
-	memcpy(&u, p, sizeof u);
-	return (u);
+	assert(ObjGetattr(oc, ds, OA_VXID, &p) == 4);
+	return (vbe32dec(p));
 }

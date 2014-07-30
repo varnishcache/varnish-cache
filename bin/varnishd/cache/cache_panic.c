@@ -39,6 +39,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "vend.h"
 #include "common/heritage.h"
 
 #include "cache_backend.h"
@@ -215,7 +216,7 @@ pan_object(const char *typ, const struct object *o)
 	const struct storage *st;
 
 	VSB_printf(pan_vsp, "  obj (%s) = %p {\n", typ, o);
-	VSB_printf(pan_vsp, "    vxid = %u,\n", VXID(o->vxid));
+	VSB_printf(pan_vsp, "    vxid = %u,\n", VXID(vbe32dec(o->oa_vxid)));
 	pan_http("obj", o->http, 4);
 	VSB_printf(pan_vsp, "    len = %jd,\n", (intmax_t)o->len);
 	VSB_printf(pan_vsp, "    store = {\n");
