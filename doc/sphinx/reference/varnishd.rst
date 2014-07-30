@@ -76,10 +76,10 @@ OPTIONS
 
 -l shl[,free[,fill]]
             Specifies size of shmlog file. shl is the store for the
-            shared memory log records [80m], free is the store for other
-            allocations [1m] and fill determines how the log is [+].
-            Scaling suffixes like 'k', 'm' can be used up to
-            (e)tabytes.  Default is 80 Megabytes.
+            shared memory log records [80M], free is the store for other
+            allocations [1M] and fill determines how the log is [+].
+            Scaling suffixes like 'k', 'M' can be used up to
+            (E)xabytes.  Default is 80 Megabytes.
 
 -M address:port
             Connect to this port and offer the command line interface.
