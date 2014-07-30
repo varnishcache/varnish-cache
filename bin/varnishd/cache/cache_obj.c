@@ -229,6 +229,9 @@ ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
 	case OA_VXID:
 		*len = sizeof o->oa_vxid;
 		return (o->oa_vxid);
+	case OA_LASTMODIFIED:
+		*len = sizeof o->oa_lastmodified;
+		return (o->oa_lastmodified);
 	case OA_GZIPBITS:
 		*len = sizeof o->oa_gzipbits;
 		return (o->oa_gzipbits);
@@ -259,6 +262,9 @@ ObjSetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
 	case OA_GZIPBITS:
 		assert(len == sizeof o->oa_gzipbits);
 		return (o->oa_gzipbits);
+	case OA_LASTMODIFIED:
+		assert(len == sizeof o->oa_lastmodified);
+		return (o->oa_lastmodified);
 	default:
 		break;
 	}
@@ -293,4 +299,39 @@ ObjGetXID(struct objcore *oc, struct dstat *ds)
 	AN(p);
 	assert(l == 4);
 	return (vbe32dec(p));
+}
+
+/*--------------------------------------------------------------------
+ * NB: Copying double <--> uint64_t for endian encoding is unverified
+ */
+
+int
+ObjSetLastModified(struct objcore *oc, struct dstat *ds, double t)
+{
+	void *vp;
+	uint64_t u;
+
+	assert(sizeof t == sizeof u);
+	memcpy(&u, &t, sizeof u);
+	vp = ObjSetattr(oc, ds, OA_LASTMODIFIED, sizeof u);
+	if (vp == NULL)
+		return (-1);
+	vbe64enc(vp, u);
+	return (0);
+}
+
+double
+ObjGetLastModified(struct objcore *oc, struct dstat *ds)
+{
+	void *vp;
+	uint64_t u;
+	double d;
+	ssize_t l;
+
+	vp = ObjGetattr(oc, ds, OA_LASTMODIFIED, &l);
+	AN(vp);
+	assert(l == sizeof u);
+	u = vbe64dec(vp);
+	memcpy(&d, &u, sizeof d);
+	return (d);
 }

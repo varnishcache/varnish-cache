@@ -345,19 +345,18 @@ int
 RFC2616_Do_Cond(const struct req *req)
 {
 	char *p, *e;
-	double ims;
+	double ims, lm;
 	int do_cond = 0;
 
 	/* RFC 2616 13.3.4 states we need to match both ETag
 	   and If-Modified-Since if present*/
 
 	if (http_GetHdr(req->http, H_If_Modified_Since, &p) ) {
-		if (!req->obj->last_modified)
-			return (0);
 		ims = VTIM_parse(p);
 		if (ims > req->t_req)	/* [RFC2616 14.25] */
 			return (0);
-		if (req->obj->last_modified > ims)
+		lm = ObjGetLastModified(req->obj->objcore, &req->wrk->stats);
+		if (lm > ims)
 			return (0);
 		do_cond = 1;
 	}

@@ -34,9 +34,9 @@ OBJ_ATTR(VXID,		vxid)
 OBJ_ATTR(EXP,		exp)
 OBJ_ATTR(VARY,		vary)
 OBJ_ATTR(HEADERS,	headers)
-OBJ_ATTR(GZIPED,	gziped)
-OBJ_ATTR(CHGGZIPED,	chggziped)
+OBJ_ATTR(GZIPFLAGS,	gzipflags)
 OBJ_ATTR(GZIPBITS,	gzipbits)
 OBJ_ATTR(ESIDATA,	esidata)
+OBJ_ATTR(LASTMODIFIED,	lastmodified)
 
 /*lint -restore */

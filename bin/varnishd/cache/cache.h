@@ -569,7 +569,7 @@ struct object {
 	ssize_t			len;
 
 	/* VCL only variables */
-	double			last_modified;
+	char			oa_lastmodified[8];
 
 	struct http		*http;
 
@@ -1063,6 +1063,8 @@ void *ObjSetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
     ssize_t len);
 int ObjCopyAttr(struct objcore *ocd, struct objcore *ocs, struct dstat *ds,
     enum obj_attr attr);
+int ObjSetLastModified(struct objcore *oc, struct dstat *ds, double t);
+double ObjGetLastModified(struct objcore *oc, struct dstat *ds);
 
 /* cache_panic.c */
 void PAN_Init(void);

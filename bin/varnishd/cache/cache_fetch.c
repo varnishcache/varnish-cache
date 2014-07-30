@@ -165,9 +165,11 @@ vbf_beresp2obj(struct busyobj *bo)
 	http_CopyHome(hp2);
 
 	if (http_GetHdr(hp, H_Last_Modified, &b))
-		obj->last_modified = VTIM_parse(b);
+		AZ(ObjSetLastModified(bo->fetch_objcore, bo->stats,
+		    VTIM_parse(b)));
 	else
-		obj->last_modified = floor(bo->fetch_objcore->exp.t_origin);
+		AZ(ObjSetLastModified(bo->fetch_objcore, bo->stats,
+		    floor(bo->fetch_objcore->exp.t_origin)));
 
 	/* Disassociate the obj from the bo's workspace */
 	hp2->ws = NULL;
