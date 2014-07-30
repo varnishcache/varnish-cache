@@ -497,6 +497,7 @@ struct busyobj {
 	struct http		*bereq;
 	struct http		*beresp;
 	struct object		*ims_obj;
+	struct objcore		*ims_oc;
 	struct objcore		*fetch_objcore;
 	struct object		*fetch_obj;
 

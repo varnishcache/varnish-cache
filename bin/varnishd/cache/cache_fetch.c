@@ -545,8 +545,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	VBO_setstate(bo, BOS_FINISHED);
 	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
 	if (bo->ims_obj != NULL)
-		EXP_Rearm(bo->ims_obj->objcore,
-		    bo->ims_obj->objcore->exp.t_origin, 0, 0, 0);
+		EXP_Rearm(bo->ims_oc, bo->ims_oc->exp.t_origin, 0, 0, 0);
 	return (F_STP_DONE);
 }
 
@@ -638,8 +637,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 
 	assert(al == bo->ims_obj->len);
 	assert(obj->len == al);
-	EXP_Rearm(bo->ims_obj->objcore,
-	    bo->ims_obj->objcore->exp.t_origin, 0, 0, 0);
+	EXP_Rearm(bo->ims_oc, bo->ims_oc->exp.t_origin, 0, 0, 0);
 
 	/* Recycle the backend connection before setting BOS_FINISHED to
 	   give predictable backend reuse behavior for varnishtest */
@@ -840,8 +838,10 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	}
 	AZ(bo->fetch_objcore->busyobj);
 
-	if (bo->ims_obj != NULL)
-		(void)HSH_DerefObj(&wrk->stats, &bo->ims_obj);
+	if (bo->ims_oc != NULL) {
+		(void)HSH_DerefObjCore(&wrk->stats, &bo->ims_oc);
+		bo->ims_obj = NULL;
+	}
 
 	VBO_DerefBusyObj(wrk, &bo);
 	THR_SetBusyobj(NULL);
@@ -863,9 +863,6 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_ORNULL(oldoc, OBJCORE_MAGIC);
 
-
-	if (oldoc != NULL)
-		oldobj = ObjGetObj(oldoc, &wrk->stats);
 
 	switch(mode) {
 	case VBF_PASS:		how = "pass"; break;
@@ -898,12 +895,17 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	bo->fetch_objcore = oc;
 
 	AZ(bo->ims_obj);
-	if (oldobj != NULL) {
+	AZ(bo->ims_oc);
+	if (oldoc != NULL) {
+		oldobj = ObjGetObj(oldoc, &wrk->stats);
+		CHECK_OBJ_NOTNULL(oldobj, OBJECT_MAGIC);
+
 		if (http_GetHdr(oldobj->http, H_Last_Modified, NULL) ||
 		   http_GetHdr(oldobj->http, H_ETag, NULL)) {
-			assert(oldobj->objcore->refcnt > 0);
-			HSH_Ref(oldobj->objcore);
+			assert(oldoc->refcnt > 0);
+			HSH_Ref(oldoc);
 			bo->ims_obj = oldobj;
+			bo->ims_oc = oldoc;
 		}
 	}
 
