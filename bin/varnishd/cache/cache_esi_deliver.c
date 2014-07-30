@@ -252,6 +252,7 @@ void
 ESI_Deliver(struct req *req)
 {
 	struct storage *st;
+	void *vp;
 	uint8_t *p, *e, *q, *r;
 	unsigned off;
 	ssize_t l, l2, l_icrc = 0;
@@ -264,11 +265,10 @@ ESI_Deliver(struct req *req)
 	int i;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	st = req->obj->esidata;
-	AN(st);
-
-	p = st->ptr;
-	e = st->ptr + st->len;
+	l = ObjGetattr(req->obj->objcore, &req->wrk->stats, OA_ESIDATA, &vp);
+	assert(l > 0);
+	p = vp;
+	e = p + l;
 
 	if (*p == VEC_GZ) {
 		isgzip = 1;

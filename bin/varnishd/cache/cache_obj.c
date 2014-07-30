@@ -214,19 +214,26 @@ ObjGetLRU(const struct objcore *oc)
 }
 
 ssize_t
-ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
-    void *ptr, ssize_t len)
+ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr, void **ptr)
 {
 	struct object *o;
+	void *dummy;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(ds);
+	if (ptr == NULL)
+		ptr = &dummy;
 	o = ObjGetObj(oc, ds);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	switch (attr) {
 	case OA_VXID:
-		assert(len == sizeof o->vxid);
-		memcpy(ptr, &o->vxid, sizeof o->vxid);
+		*ptr = &o->vxid;
 		return (sizeof o->vxid);
+	case OA_ESIDATA:
+		if (o->esidata == NULL)
+			return (-1);
+		*ptr = o->esidata->ptr;
+		return (o->esidata->len);
 	default:
 		break;
 	}
@@ -236,8 +243,10 @@ ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
 unsigned
 ObjGetXID(struct objcore *oc, struct dstat *ds)
 {
+	void *p;
 	uint32_t u;
 
-	assert(ObjGetattr(oc, ds, OA_VXID, &u, sizeof u) == sizeof u);
+	assert(ObjGetattr(oc, ds, OA_VXID, &p) == sizeof u);
+	memcpy(&u, p, sizeof u);
 	return (u);
 }

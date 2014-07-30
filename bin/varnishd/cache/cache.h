@@ -1060,7 +1060,7 @@ void ObjUpdateMeta(struct objcore *);
 void ObjFreeObj(struct objcore *, struct dstat *);
 struct lru *ObjGetLRU(const struct objcore *);
 ssize_t ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
-    void *ptr, ssize_t len);
+    void **ptr);
 
 /* cache_panic.c */
 void PAN_Init(void);
