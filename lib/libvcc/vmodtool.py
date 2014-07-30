@@ -239,7 +239,7 @@ class Vmod(object):
 		#
 		fo.write("\t.file_id = \"")
 		for i in range(32):
-			fo.write("%c" % random.randint(0x23,0x5b))
+			fo.write("%c" % random.randint(0x40,0x5a))
 		fo.write("\",\n")
 		fo.write("};\n")
 
