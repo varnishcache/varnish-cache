@@ -564,7 +564,7 @@ struct object {
 	unsigned		changed_gzip:1;
 
 	/* Bit positions in the gzip stream */
-	ssize_t			gzip_bits[3];
+	char			oa_gzipbits[24];
 
 	ssize_t			len;
 
@@ -928,7 +928,7 @@ int VGZ_ObufFull(const struct vgz *vg);
 enum vgzret_e VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
 enum vgzret_e VGZ_Gunzip(struct vgz *, const void **, size_t *len);
 enum vgzret_e VGZ_Destroy(struct vgz **);
-void VGZ_UpdateObj(const struct vgz*, struct object *);
+void VGZ_UpdateObj(struct dstat *ds, const struct vgz*, struct objcore *);
 vdp_bytes VDP_gunzip;
 
 int VGZ_WrwInit(struct vgz *vg);
@@ -1057,10 +1057,12 @@ struct object *ObjGetObj(struct objcore *, struct dstat *);
 void ObjUpdateMeta(struct objcore *);
 void ObjFreeObj(struct objcore *, struct dstat *);
 struct lru *ObjGetLRU(const struct objcore *);
-ssize_t ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
-    void **ptr);
+void *ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
+    ssize_t *len);
 void *ObjSetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
     ssize_t len);
+int ObjCopyAttr(struct objcore *ocd, struct objcore *ocs, struct dstat *ds,
+    enum obj_attr attr);
 
 /* cache_panic.c */
 void PAN_Init(void);

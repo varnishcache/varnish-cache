@@ -252,7 +252,6 @@ void
 ESI_Deliver(struct req *req)
 {
 	struct storage *st;
-	void *vp;
 	uint8_t *p, *e, *q, *r;
 	unsigned off;
 	ssize_t l, l2, l_icrc = 0;
@@ -265,9 +264,9 @@ ESI_Deliver(struct req *req)
 	int i;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	l = ObjGetattr(req->obj->objcore, &req->wrk->stats, OA_ESIDATA, &vp);
+	p = ObjGetattr(req->obj->objcore, &req->wrk->stats, OA_ESIDATA, &l);
+	AN(p);
 	assert(l > 0);
-	p = vp;
 	e = p + l;
 
 	if (*p == VEC_GZ) {
@@ -496,8 +495,8 @@ ESI_DeliverChild(struct req *req)
 	struct storage *st;
 	struct object *obj;
 	ssize_t start, last, stop, lpad;
-	void *vp;
-	ssize_t l, gzip_bits[3];
+	ssize_t l;
+	char *p;
 	u_char cc;
 	uint32_t icrc;
 	uint32_t ilen;
@@ -521,12 +520,12 @@ ESI_DeliverChild(struct req *req)
 	AN(dbits);
 	obj = req->obj;
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
-	l = ObjGetattr(obj->objcore, &req->wrk->stats, OA_GZIPBITS, &vp);
-	assert(l == sizeof gzip_bits);
-	memcpy(gzip_bits, vp, l);
-	start = gzip_bits[0];
-	last = gzip_bits[1];
-	stop = gzip_bits[2];
+	p = ObjGetattr(obj->objcore, &req->wrk->stats, OA_GZIPBITS, &l);
+	AN(p);
+	assert(l == 24);
+	start = vbe64dec(p);
+	last = vbe64dec(p + 8);
+	stop = vbe64dec(p + 16);
 	assert(start > 0 && start < obj->len * 8);
 	assert(last > 0 && last < obj->len * 8);
 	assert(stop > 0 && stop < obj->len * 8);

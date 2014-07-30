@@ -214,30 +214,29 @@ ObjGetLRU(const struct objcore *oc)
 	return (m->getlru(oc));
 }
 
-ssize_t
-ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr, void **ptr)
+void *
+ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
+   ssize_t *len)
 {
 	struct object *o;
-	void *dummy;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(ds);
-	if (ptr == NULL)
-		ptr = &dummy;
+	AN(len);
 	o = ObjGetObj(oc, ds);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	switch (attr) {
 	case OA_VXID:
-		*ptr = o->oa_vxid;
-		return (sizeof o->oa_vxid);
+		*len = sizeof o->oa_vxid;
+		return (o->oa_vxid);
 	case OA_GZIPBITS:
-		*ptr = o->gzip_bits;
-		return (sizeof o->gzip_bits);
+		*len = sizeof o->oa_gzipbits;
+		return (o->oa_gzipbits);
 	case OA_ESIDATA:
 		if (o->esidata == NULL)
-			return (-1);
-		*ptr = o->esidata->ptr;
-		return (o->esidata->len);
+			return (NULL);
+		*len = o->esidata->len;
+		return (o->esidata->ptr);
 	default:
 		break;
 	}
@@ -257,18 +256,41 @@ ObjSetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
 	case OA_VXID:
 		assert(len == sizeof o->oa_vxid);
 		return (o->oa_vxid);
+	case OA_GZIPBITS:
+		assert(len == sizeof o->oa_gzipbits);
+		return (o->oa_gzipbits);
 	default:
 		break;
 	}
 	WRONG("Unsupported OBJ_ATTR");
 }
 
+int
+ObjCopyAttr(struct objcore *ocd, struct objcore *ocs, struct dstat *ds,
+    enum obj_attr attr)
+{
+	void *vps, *vpd;
+	ssize_t l;
+
+	vps = ObjGetattr(ocs, ds, attr, &l);
+	// XXX: later we want to have zero-length OA's too
+	if (vps == NULL || l <= 0)
+		return (-1);
+	vpd = ObjSetattr(ocd, ds, attr, l);
+	if (vpd == NULL)
+		return (-1);
+	memcpy(vpd, vps, l);
+	return (0);
+}
 
 unsigned
 ObjGetXID(struct objcore *oc, struct dstat *ds)
 {
+	ssize_t l;
 	void *p;
 
-	assert(ObjGetattr(oc, ds, OA_VXID, &p) == 4);
+	p = ObjGetattr(oc, ds, OA_VXID, &l);
+	AN(p);
+	assert(l == 4);
 	return (vbe32dec(p));
 }

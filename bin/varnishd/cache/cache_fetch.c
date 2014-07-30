@@ -597,7 +597,8 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	}
 
 	obj->gziped = bo->ims_obj->gziped;
-	memcpy(obj->gzip_bits, bo->ims_obj->gzip_bits, sizeof obj->gzip_bits);
+
+	AZ(ObjCopyAttr(bo->fetch_objcore, bo->ims_oc,  bo->stats, OA_GZIPBITS));
 
 	AZ(WS_Overflowed(bo->ws_o));
 	if (bo->do_stream) {
