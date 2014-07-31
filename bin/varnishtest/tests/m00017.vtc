@@ -1,0 +1,69 @@
+varnishtest "Test std.rollback"
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	expect req.http.foobar == "bar"
+	txresp -status 400
+	accept
+	rxreq
+	expect req.url == "/bar"
+	expect req.http.foobar == "foo"
+	txresp
+	accept
+	rxreq
+	expect req.url == "/baz"
+	expect req.http.foobar == "qux"
+	txresp -status 400
+	accept
+	rxreq
+	expect req.url == "/qux"
+	expect req.http.foobar == "baz"
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import ${vmod_std};
+
+	sub vcl_recv {
+		if (req.url == "/foo") {
+			set req.http.foobar = "bar";
+		}
+	}
+
+	sub vcl_deliver {
+		if (resp.status == 400) {
+			std.rollback(req);
+			set req.url = "/bar";
+			return (restart);
+		}
+	}
+} -start
+
+client c1 {
+	txreq -url "/foo" -hdr "foobar: foo"
+	rxresp
+} -run
+
+varnish v1 -vcl+backend {
+	import ${vmod_std};
+
+	sub vcl_backend_fetch {
+		if (bereq.url == "/baz") {
+			set bereq.http.foobar = "qux";
+		}
+	}
+
+	sub vcl_backend_response {
+		if (beresp.status == 400) {
+			std.rollback(bereq);
+			set bereq.url = "/qux";
+			return (retry);
+		}
+	}
+}
+
+client c1 {
+	txreq -url "/baz" -hdr "foobar: baz"
+	rxresp
+} -run

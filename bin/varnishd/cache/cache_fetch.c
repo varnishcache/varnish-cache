@@ -220,6 +220,10 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 		}
 	}
 
+	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, SLT_BereqMethod);
+	bo->ws_bo = WS_Snapshot(bo->ws);
+	HTTP_Copy(bo->bereq, bo->bereq0);
+
 	VBO_setstate(bo, BOS_REQ_DONE);
 	return (F_STP_STARTFETCH);
 }
@@ -266,9 +270,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		AN(bo->req);
 	else
 		AZ(bo->req);
-
-	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, SLT_BereqMethod);
-	HTTP_Copy(bo->bereq, bo->bereq0);
 
 	http_PrintfHeader(bo->bereq, "X-Varnish: %u", VXID(bo->vsl->wid));
 

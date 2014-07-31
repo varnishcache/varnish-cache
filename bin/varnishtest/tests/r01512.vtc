@@ -1,0 +1,56 @@
+varnishtest "Regression test for #1512"
+
+# First test bereq changes across v_b_r and v_b_f
+
+server s1 {
+	rxreq
+	txresp -status 700
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_fetch {
+		if (bereq.http.x-abandon == "1") {
+			return (abandon);
+		}
+	}
+	sub vcl_backend_response {
+		if (beresp.status == 700) {
+			set bereq.http.x-abandon = "1";
+			return (retry);
+		}
+	}
+	sub vcl_synth {
+		set resp.status = 701;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 701
+} -run
+
+# Then across v_b_e and v_b_f
+
+varnish v1 -vcl {
+	backend bad { .host = "${bad_ip}"; }
+	sub vcl_backend_fetch {
+		set bereq.backend = bad;
+		if (bereq.http.x-abandon == "2") {
+			return (abandon);
+		}
+	}
+	sub vcl_backend_error {
+		set bereq.http.x-abandon = "2";
+		return (retry);
+	}
+	sub vcl_synth {
+		set resp.status = 702;
+	}
+}
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 702
+} -run

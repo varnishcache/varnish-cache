@@ -249,7 +249,7 @@ void VRT_hashdata(const struct vrt_ctx *, const char *str, ...);
 int VRT_strcmp(const char *s1, const char *s2);
 void VRT_memmove(void *dst, const void *src, unsigned len);
 
-void VRT_Rollback(const struct vrt_ctx *);
+void VRT_Rollback(const struct vrt_ctx *, const struct http *);
 
 /* Synthetic pages */
 void VRT_synth_page(const struct vrt_ctx *, const char *, ...);

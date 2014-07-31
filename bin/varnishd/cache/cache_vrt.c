@@ -357,13 +357,22 @@ VRT_BOOL_string(unsigned val)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_Rollback(const struct vrt_ctx *ctx)
+VRT_Rollback(const struct vrt_ctx *ctx, const struct http *hp)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	HTTP_Copy(ctx->req->http, ctx->req->http0);
-	WS_Reset(ctx->req->ws, ctx->req->ws_req);
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+	if (hp == ctx->http_req) {
+		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+		HTTP_Copy(ctx->req->http, ctx->req->http0);
+		WS_Reset(ctx->req->ws, ctx->req->ws_req);
+	} else if (hp == ctx->http_bereq) {
+		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+		HTTP_Copy(ctx->bo->bereq, ctx->bo->bereq0);
+		WS_Reset(ctx->bo->bereq->ws, ctx->bo->ws_bo);
+		WS_Reset(ctx->bo->ws, ctx->bo->ws_bo);
+	} else
+		WRONG("VRT_Rollback 'hp' invalid");
 }
 
 /*--------------------------------------------------------------------*/

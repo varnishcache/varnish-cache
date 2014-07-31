@@ -490,6 +490,7 @@ struct busyobj {
 	enum busyobj_state_e	state;
 
 	struct ws		ws[1];
+	char 			*ws_bo;
 	struct vbc		*vbc;
 	struct http		*bereq0;
 	struct http		*bereq;
