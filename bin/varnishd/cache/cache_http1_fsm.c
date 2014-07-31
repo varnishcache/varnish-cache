@@ -705,12 +705,12 @@ HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
 		http_Unset(req->http0, H_Content_Length);
 		http_Unset(req->http0, H_Transfer_Encoding);
 		http_PrintfHeader(req->http0, "Content-Length: %ju",
-		    req->req_bodybytes);
+		    (uintmax_t)req->req_bodybytes);
 
 		http_Unset(req->http, H_Content_Length);
 		http_Unset(req->http, H_Transfer_Encoding);
 		http_PrintfHeader(req->http, "Content-Length: %ju",
-		    req->req_bodybytes);
+		    (uintmax_t)req->req_bodybytes);
 
 		req->req_body_status = REQ_BODY_CACHED;
 	}
