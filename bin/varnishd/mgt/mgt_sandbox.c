@@ -63,9 +63,9 @@
 static void __match_proto__(mgt_sandbox_f)
 mgt_sandbox_unix(enum sandbox_e who)
 {
-#define NGID 10
-	gid_t gid_list[NGID];
+#define NGID 2000
 	int i;
+	gid_t gid_list[NGID];
 
 	if (geteuid() != 0) {
 		REPORT0(LOG_INFO, "Not running as root, no priv-sep");
