@@ -5,16 +5,29 @@ server s1 {
 	txresp
 } -start
 
-varnish v1 -vcl+backend {
+varnish v1 -arg "-i J.F.Nobody" -vcl+backend {
 
 	import ${vmod_std};
 
+	sub vcl_recv {
+		set client.identity = "Samuel B. Nobody";
+	}
+
 	sub vcl_deliver {
 		set resp.http.server_port = std.port(server.ip);
+		set resp.http.id = server.identity;
+		set resp.http.esi = req.esi;
+		set resp.http.be = req.backend_hint;
+		set resp.http.c_id = client.identity;
 	}
 
 	sub vcl_backend_response {
 		set beresp.http.backend = bereq.backend;
+		set beresp.http.keep = beresp.keep;
+		set beresp.http.hint = beresp.storage_hint;
+		set beresp.http.be_ip = beresp.backend.ip;
+		set beresp.http.be_nm = beresp.backend.name;
+		set beresp.http.unc = bereq.uncacheable;
 		if (beresp.ttl > 3 s) {
 			set beresp.http.ttl = "long";
 		} else {
@@ -23,6 +36,10 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_hit {
+		if (obj.proto) { }
+		if (obj.reason) { }
+		if (obj.uncacheable) { }
+		if (obj.keep > 1m) { }
 		if (obj.grace < 3m) {
 			return (deliver);
 		}
@@ -32,6 +49,7 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_backend_fetch {
+		set bereq.uncacheable = false;
 		if (bereq.between_bytes_timeout < 10s) {
 			set bereq.http.quick = "please";
 		}
