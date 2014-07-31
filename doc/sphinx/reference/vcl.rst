@@ -369,7 +369,8 @@ return()
   in the request handling state machine.
 
 rollback()
-  Restore request HTTP headers to their original state.
+  Restore *req* HTTP headers to their original state. This function is
+  deprecated.  Use std.rollback() instead.
 
 synthetic(STRING)
   Prepare a synthetic response body containing the STRING. Available in

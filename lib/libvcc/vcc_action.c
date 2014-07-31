@@ -376,7 +376,7 @@ parse_rollback(struct vcc *tl)
 {
 
 	vcc_NextToken(tl);
-	Fb(tl, 1, "VRT_Rollback(ctx);\n");
+	Fb(tl, 1, "VRT_Rollback(ctx, VRT_r_req(ctx));\n");
 }
 
 /*--------------------------------------------------------------------*/

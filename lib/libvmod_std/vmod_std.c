@@ -205,6 +205,12 @@ vmod_port(const struct vrt_ctx *ctx, VCL_IP ip)
 	return (VSA_Port(ip));
 }
 
+VCL_VOID __match_proto__(td_std_rollback)
+vmod_rollback(const struct vrt_ctx *ctx, VCL_HTTP hp)
+{
+	VRT_Rollback(ctx, hp);
+}
+
 VCL_VOID __match_proto__(td_std_timestamp)
 vmod_timestamp(const struct vrt_ctx *ctx, VCL_STRING label)
 {
