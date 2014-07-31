@@ -52,6 +52,7 @@ volatile sig_atomic_t	vtc_error;	/* Error encountered */
 int			vtc_stop;	/* Stops current test without error */
 pthread_t		vtc_thread;
 static struct vtclog	*vltop;
+unsigned		vtc_maxdur;	/* Max duration of any test */
 
 /**********************************************************************
  * Macro facility
