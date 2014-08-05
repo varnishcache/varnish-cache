@@ -649,6 +649,7 @@ struct req {
 	struct ws		ws[1];
 	struct object		*obj;
 	struct objcore		*objcore;
+	struct objcore		*ims_oc;
 	/* Lookup stuff */
 	struct SHA256Context	*sha256ctx;
 

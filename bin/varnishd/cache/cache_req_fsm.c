@@ -91,13 +91,13 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(req->obj->objcore, OBJCORE_MAGIC);
-	assert(req->obj->objcore == req->objcore);
 	CHECK_OBJ_NOTNULL(req->objcore->objhead, OBJHEAD_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 	assert(WRW_IsReleased(wrk));
+
+	req->obj = ObjGetObj(req->objcore, &wrk->stats);
+	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 
 	assert(req->objcore->refcnt > 0);
 
@@ -308,8 +308,6 @@ cnt_fetch(struct worker *wrk, struct req *req)
 		return (REQ_FSM_MORE);
 	}
 
-	req->obj = ObjGetObj(req->objcore, &wrk->stats);
-	req->err_code = http_GetStatus(req->obj->http);
 	req->req_step = R_STP_DELIVER;
 	return (REQ_FSM_MORE);
 }
@@ -346,8 +344,6 @@ static enum req_fsm_nxt
 cnt_lookup(struct worker *wrk, struct req *req)
 {
 	struct objcore *oc, *boc;
-	struct object *o;
-	struct objhead *oh;
 	enum lookup_e lr;
 	int had_objhead = 0;
 
@@ -390,6 +386,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		/* Found nothing */
 		VSLb(req->vsl, SLT_Debug, "XXXX MISS");
 		AZ(oc);
+		AZ(req->obj);
 		AN(boc);
 		AN(boc->flags & OC_F_BUSY);
 		req->objcore = boc;
@@ -401,26 +398,18 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	AZ(oc->flags & OC_F_BUSY);
 	req->objcore = oc;
 
-	o = ObjGetObj(oc, &wrk->stats);
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	req->obj = o;
-
 	if (oc->flags & OC_F_PASS) {
 		/* Found a hit-for-pass */
 		VSLb(req->vsl, SLT_Debug, "XXXX HIT-FOR-PASS");
 		VSLb(req->vsl, SLT_HitPass, "%u",
 		    VXID(ObjGetXID(req->objcore, &wrk->stats)));
 		AZ(boc);
-		assert(req->obj->objcore == req->objcore);
+		AZ(req->obj);
 		(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
-		req->obj = NULL;
 		wrk->stats.cache_hitpass++;
 		req->req_step = R_STP_PASS;
 		return (REQ_FSM_MORE);
 	}
-
-	oh = oc->objhead;
-	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
 	VSLb(req->vsl, SLT_Hit, "%u",
 	    VXID(ObjGetXID(req->objcore, &wrk->stats)));
@@ -441,13 +430,13 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_DELIVER;
 		return (REQ_FSM_MORE);
 	case VCL_RET_FETCH:
+		AZ(req->obj);
 		if (boc != NULL) {
 			req->objcore = boc;
+			req->ims_oc = oc;
 			req->req_step = R_STP_MISS;
 		} else {
-			assert(req->obj->objcore == req->objcore);
 			(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
-			req->obj = NULL;
 			/*
 			 * We don't have a busy object, so treat this
 			 * like a pass
@@ -473,9 +462,8 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	}
 
 	/* Drop our object, we won't need it */
-	assert(req->obj->objcore == req->objcore);
+	AZ(req->obj);
 	(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
-	req->obj = NULL;
 
 	if (boc != NULL) {
 		(void)HSH_DerefObjCore(&wrk->stats, &boc);
@@ -502,25 +490,20 @@ DOT
 static enum req_fsm_nxt
 cnt_miss(struct worker *wrk, struct req *req)
 {
-	struct object *o;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
-	o = req->obj;
-	req->obj = NULL;
-
 	VCL_miss_method(req->vcl, wrk, req, NULL, req->http->ws);
 	switch (wrk->handling) {
 	case VCL_RET_FETCH:
 		wrk->stats.cache_miss++;
-		VBF_Fetch(wrk, req, req->objcore,
-		    o == NULL ? NULL : o->objcore, VBF_NORMAL);
+		VBF_Fetch(wrk, req, req->objcore, req->ims_oc, VBF_NORMAL);
 		req->req_step = R_STP_FETCH;
-		if (o != NULL)
-			(void)HSH_DerefObj(&wrk->stats, &o);
+		if (req->ims_oc != NULL)
+			(void)HSH_DerefObjCore(&wrk->stats, &req->ims_oc);
 		return (REQ_FSM_MORE);
 	case VCL_RET_SYNTH:
 		req->req_step = R_STP_SYNTH;
@@ -535,8 +518,8 @@ cnt_miss(struct worker *wrk, struct req *req)
 		WRONG("Illegal return from vcl_miss{}");
 	}
 	VRY_Clear(req);
-	if (o != NULL)
-		(void)HSH_DerefObj(&wrk->stats, &o);
+	if (req->ims_oc != NULL)
+		(void)HSH_DerefObjCore(&wrk->stats, &req->ims_oc);
 	AZ(HSH_DerefObjCore(&wrk->stats, &req->objcore));
 	return (REQ_FSM_MORE);
 }
