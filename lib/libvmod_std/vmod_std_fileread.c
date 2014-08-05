@@ -37,6 +37,7 @@
  * XXX: underlying file has been updated.
  */
 
+#include "config.h"
 #include <stdlib.h>
 #include "vrt.h"
 #include "../../bin/varnishd/cache.h"
