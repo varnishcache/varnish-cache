@@ -235,7 +235,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->obj->objcore, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
 	req->res_mode = 0;
 
@@ -251,7 +251,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	} else if (bo == NULL) {
 		/* XXX: Not happy with this convoluted test */
 		req->res_mode |= RES_LEN;
-		if (!(req->obj->objcore->flags & OC_F_PASS) ||
+		if (!(req->objcore->flags & OC_F_PASS) ||
 		    req->obj->len != 0) {
 			http_Unset(req->resp, H_Content_Length);
 			http_PrintfHeader(req->resp,
@@ -336,7 +336,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		ESI_Deliver(req);
 	} else if (req->res_mode & RES_ESI_CHILD && req->gzip_resp) {
 		l = -1;
-		while (req->obj->objcore->busyobj) {
+		while (req->objcore->busyobj) {
 			assert(bo != NULL);
 			l = VBO_waitlen(bo, l);
 		}

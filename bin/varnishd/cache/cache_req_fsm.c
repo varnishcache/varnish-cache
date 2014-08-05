@@ -95,14 +95,14 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(req->obj->objcore, OBJCORE_MAGIC);
 	assert(req->obj->objcore == req->objcore);
-	CHECK_OBJ_NOTNULL(req->obj->objcore->objhead, OBJHEAD_MAGIC);
+	CHECK_OBJ_NOTNULL(req->objcore->objhead, OBJHEAD_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 	assert(WRW_IsReleased(wrk));
 
-	assert(req->obj->objcore->refcnt > 0);
+	assert(req->objcore->refcnt > 0);
 
-	if (req->obj->objcore->exp_flags & OC_EF_EXP)
-		EXP_Touch(req->obj->objcore, req->t_prev);
+	if (req->objcore->exp_flags & OC_EF_EXP)
+		EXP_Touch(req->objcore, req->t_prev);
 
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
 	http_FilterResp(req->obj->http, req->resp, 0);
@@ -111,7 +111,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	if (req->wrk->stats.cache_hit)
 		http_PrintfHeader(req->resp,
 		    "X-Varnish: %u %u", VXID(req->vsl->wid),
-		    VXID(ObjGetXID(req->obj->objcore, &wrk->stats)));
+		    VXID(ObjGetXID(req->objcore, &wrk->stats)));
 	else
 		http_PrintfHeader(req->resp,
 		    "X-Varnish: %u", VXID(req->vsl->wid));
@@ -124,7 +124,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	   age. Truncate to zero in that case).
 	*/
 	http_PrintfHeader(req->resp, "Age: %.0f",
-	    fmax(0., req->t_prev - req->obj->objcore->exp.t_origin));
+	    fmax(0., req->t_prev - req->objcore->exp.t_origin));
 
 	http_SetHeader(req->resp, "Via: 1.1 varnish-v4");
 
@@ -140,7 +140,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		wrk->handling = VCL_RET_DELIVER;
 
 	if (wrk->handling != VCL_RET_DELIVER) {
-		assert(req->obj->objcore == req->objcore);
+		assert(req->objcore == req->objcore);
 		(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
 		req->obj = NULL;
 		http_Teardown(req->resp);
@@ -161,7 +161,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	assert(wrk->handling == VCL_RET_DELIVER);
 
-	if (!(req->obj->objcore->flags & OC_F_PASS)
+	if (!(req->objcore->flags & OC_F_PASS)
 	    && req->esi_level == 0
 	    && http_GetStatus(req->obj->http) == 200
 	    && req->http->conds && RFC2616_Do_Cond(req)) {
@@ -170,7 +170,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	}
 
 	/* Grab a ref to the bo if there is one, and hand it down */
-	bo = HSH_RefBusy(req->obj->objcore);
+	bo = HSH_RefBusy(req->objcore);
 	V1D_Deliver(req, bo);
 	if (bo != NULL)
 		VBO_DerefBusyObj(req->wrk, &bo);
@@ -180,19 +180,19 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	if (http_HdrIs(req->resp, H_Connection, "close"))
 		req->doclose = SC_RESP_CLOSE;
 
-	if (req->obj->objcore->flags & OC_F_PASS) {
+	if (req->objcore->flags & OC_F_PASS) {
 		/*
 		 * No point in saving the body if it is hit-for-pass,
 		 * but we can't yank it until the fetching thread has
 		 * finished/abandoned also.
 		 */
-		while (req->obj->objcore->busyobj != NULL)
+		while (req->objcore->busyobj != NULL)
 			(void)usleep(100000);
 		STV_Freestore(req->obj);
 	}
 
 	assert(WRW_IsReleased(wrk));
-VSLb(req->vsl, SLT_Debug, "XXX REF %d", req->obj->objcore->refcnt);
+VSLb(req->vsl, SLT_Debug, "XXX REF %d", req->objcore->refcnt);
 	assert(req->obj->objcore == req->objcore);
 	(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
 	req->obj = NULL;
@@ -409,7 +409,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		/* Found a hit-for-pass */
 		VSLb(req->vsl, SLT_Debug, "XXXX HIT-FOR-PASS");
 		VSLb(req->vsl, SLT_HitPass, "%u",
-		    VXID(ObjGetXID(req->obj->objcore, &wrk->stats)));
+		    VXID(ObjGetXID(req->objcore, &wrk->stats)));
 		AZ(boc);
 		assert(req->obj->objcore == req->objcore);
 		(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
@@ -423,7 +423,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
 	VSLb(req->vsl, SLT_Hit, "%u",
-	    VXID(ObjGetXID(req->obj->objcore, &wrk->stats)));
+	    VXID(ObjGetXID(req->objcore, &wrk->stats)));
 
 	VCL_hit_method(req->vcl, wrk, req, NULL, req->http->ws);
 

@@ -500,7 +500,7 @@ VRT_purge(const struct vrt_ctx *ctx, double ttl, double grace, double keep)
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req->wrk, WORKER_MAGIC);
 	if (ctx->method == VCL_MET_HIT)
-		HSH_Purge(ctx->req->wrk, ctx->req->obj->objcore->objhead,
+		HSH_Purge(ctx->req->wrk, ctx->req->objcore->objhead,
 		    ttl, grace, keep);
 	else if (ctx->method == VCL_MET_MISS)
 		HSH_Purge(ctx->req->wrk, ctx->req->objcore->objhead,

@@ -397,8 +397,8 @@ pan_req(const struct req *req)
 		pan_vcl(req->vcl);
 
 	if (VALID_OBJ(req->obj, OBJECT_MAGIC)) {
-		if (req->obj->objcore->busyobj != NULL)
-			pan_busyobj(req->obj->objcore->busyobj);
+		if (req->objcore->busyobj != NULL)
+			pan_busyobj(req->objcore->busyobj);
 		pan_object("REQ", req->obj);
 	}
 
