@@ -235,12 +235,12 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(req->obj->objcore, OBJCORE_MAGIC);
 
 	req->res_mode = 0;
 
-	if (!req->disable_esi && req->obj->esidata != NULL) {
+	if (!req->disable_esi && ObjGetattr(req->objcore, &req->wrk->stats,
+	    OA_ESIDATA, NULL) != NULL) {
 		/* In ESI mode, we can't know the aggregate length */
 		req->res_mode &= ~RES_LEN;
 		req->res_mode |= RES_ESI;

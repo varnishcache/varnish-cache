@@ -264,7 +264,7 @@ ESI_Deliver(struct req *req)
 	int i;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	p = ObjGetattr(req->obj->objcore, &req->wrk->stats, OA_ESIDATA, &l);
+	p = ObjGetattr(req->objcore, &req->wrk->stats, OA_ESIDATA, &l);
 	AN(p);
 	assert(l > 0);
 	e = p + l;
