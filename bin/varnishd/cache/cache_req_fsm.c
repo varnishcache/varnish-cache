@@ -92,7 +92,9 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(req->obj->objcore, OBJCORE_MAGIC);
+	assert(req->obj->objcore == req->objcore);
 	CHECK_OBJ_NOTNULL(req->obj->objcore->objhead, OBJHEAD_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 	assert(WRW_IsReleased(wrk));
@@ -138,9 +140,9 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		wrk->handling = VCL_RET_DELIVER;
 
 	if (wrk->handling != VCL_RET_DELIVER) {
-		(void)HSH_DerefObj(&wrk->stats, &req->obj);
-		AZ(req->obj);
-		req->objcore = NULL;
+		assert(req->obj->objcore == req->objcore);
+		(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
+		req->obj = NULL;
 		http_Teardown(req->resp);
 
 		switch (wrk->handling) {
@@ -191,8 +193,9 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	assert(WRW_IsReleased(wrk));
 VSLb(req->vsl, SLT_Debug, "XXX REF %d", req->obj->objcore->refcnt);
-	(void)HSH_DerefObj(&wrk->stats, &req->obj);
-	req->objcore = NULL;
+	assert(req->obj->objcore == req->objcore);
+	(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
+	req->obj = NULL;
 	http_Teardown(req->resp);
 	return (REQ_FSM_DONE);
 }
@@ -396,7 +399,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ(oc->flags & OC_F_BUSY);
-	AZ(req->objcore);
+	req->objcore = oc;
 
 	o = ObjGetObj(oc, &wrk->stats);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
@@ -408,8 +411,9 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		VSLb(req->vsl, SLT_HitPass, "%u",
 		    VXID(ObjGetXID(req->obj->objcore, &wrk->stats)));
 		AZ(boc);
-		(void)HSH_DerefObj(&wrk->stats, &req->obj);
-		req->objcore = NULL;
+		assert(req->obj->objcore == req->objcore);
+		(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
+		req->obj = NULL;
 		wrk->stats.cache_hitpass++;
 		req->req_step = R_STP_PASS;
 		return (REQ_FSM_MORE);
@@ -437,12 +441,13 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_DELIVER;
 		return (REQ_FSM_MORE);
 	case VCL_RET_FETCH:
-		req->objcore = boc;
-		if (req->objcore != NULL)
+		if (boc != NULL) {
+			req->objcore = boc;
 			req->req_step = R_STP_MISS;
-		else {
-			(void)HSH_DerefObj(&wrk->stats, &req->obj);
-			req->objcore = NULL;
+		} else {
+			assert(req->obj->objcore == req->objcore);
+			(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
+			req->obj = NULL;
 			/*
 			 * We don't have a busy object, so treat this
 			 * like a pass
@@ -468,8 +473,9 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	}
 
 	/* Drop our object, we won't need it */
-	(void)HSH_DerefObj(&wrk->stats, &req->obj);
-	req->objcore = NULL;
+	assert(req->obj->objcore == req->objcore);
+	(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
+	req->obj = NULL;
 
 	if (boc != NULL) {
 		(void)HSH_DerefObjCore(&wrk->stats, &boc);
