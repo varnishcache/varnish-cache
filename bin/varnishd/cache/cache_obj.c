@@ -219,27 +219,32 @@ ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
    ssize_t *len)
 {
 	struct object *o;
+	ssize_t dummy;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(ds);
-	AN(len);
+	if (len == NULL)
+		len = &dummy;
 	o = ObjGetObj(oc, ds);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	switch (attr) {
-	case OA_VXID:
-		*len = sizeof o->oa_vxid;
-		return (o->oa_vxid);
-	case OA_LASTMODIFIED:
-		*len = sizeof o->oa_lastmodified;
-		return (o->oa_lastmodified);
-	case OA_GZIPBITS:
-		*len = sizeof o->oa_gzipbits;
-		return (o->oa_gzipbits);
 	case OA_ESIDATA:
 		if (o->esidata == NULL)
 			return (NULL);
 		*len = o->esidata->len;
 		return (o->esidata->ptr);
+	case OA_GZIPBITS:
+		*len = sizeof o->oa_gzipbits;
+		return (o->oa_gzipbits);
+	case OA_LASTMODIFIED:
+		*len = sizeof o->oa_lastmodified;
+		return (o->oa_lastmodified);
+	case OA_VARY:
+		*len = 4;			// XXX: hack
+		return (o->vary);
+	case OA_VXID:
+		*len = sizeof o->oa_vxid;
+		return (o->oa_vxid);
 	default:
 		break;
 	}
@@ -256,15 +261,15 @@ ObjSetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
 	o = ObjGetObj(oc, ds);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	switch (attr) {
-	case OA_VXID:
-		assert(len == sizeof o->oa_vxid);
-		return (o->oa_vxid);
 	case OA_GZIPBITS:
 		assert(len == sizeof o->oa_gzipbits);
 		return (o->oa_gzipbits);
 	case OA_LASTMODIFIED:
 		assert(len == sizeof o->oa_lastmodified);
 		return (o->oa_lastmodified);
+	case OA_VXID:
+		assert(len == sizeof o->oa_vxid);
+		return (o->oa_vxid);
 	default:
 		break;
 	}

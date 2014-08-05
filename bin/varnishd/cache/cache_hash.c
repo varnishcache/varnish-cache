@@ -343,10 +343,10 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 	struct objhead *oh;
 	struct objcore *oc;
 	struct objcore *exp_oc;
-	struct object *o, *exp_o;
 	double exp_t_origin;
 	int busy_found;
 	enum lookup_e retval;
+	uint8_t *vary;
 
 	AN(ocp);
 	*ocp = NULL;
@@ -391,10 +391,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 
 	assert(oh->refcnt > 0);
 	busy_found = 0;
-	exp_o = NULL;
 	exp_oc = NULL;
 	exp_t_origin = 0.0;
-	o = NULL;
 	VTAILQ_FOREACH(oc, &oh->objcs, list) {
 		/* Must be at least our own ref + the objcore we examine */
 		assert(oh->refcnt > 1);
@@ -426,10 +424,9 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		if (BAN_CheckObject(wrk, oc, req))
 			continue;
 
-		o = ObjGetObj(oc, &wrk->stats);
-		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+		vary = ObjGetattr(oc, &wrk->stats, OA_VARY, NULL);
 
-		if (o->vary != NULL && !VRY_Match(req, o->vary))
+		if (vary != NULL && !VRY_Match(req, vary))
 			continue;
 
 		if (EXP_Ttl(req, &oc->exp) >= req->t_req) {
@@ -448,13 +445,11 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		    !(oc->flags & OC_F_PASS)) {
 			/* record the newest object */
 			exp_oc = oc;
-			exp_o = o;
 			exp_t_origin = oc->exp.t_origin;
 		}
 	}
 
 	if (exp_oc != NULL) {
-		AN(exp_o);
 		assert(oh->refcnt > 1);
 		assert(exp_oc->objhead == oh);
 		exp_oc->refcnt++;
