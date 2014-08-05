@@ -481,10 +481,10 @@ VRT_r_##which##_##fld(const struct vrt_ctx *ctx)		\
 	return(0.0);						\
 }
 
-VRT_DO_EXP_R(obj, ctx->req->obj->objcore->exp, ttl,
-   (ctx->req->t_req - ctx->req->obj->objcore->exp.t_origin))
-VRT_DO_EXP_R(obj, ctx->req->obj->objcore->exp, grace, 0)
-VRT_DO_EXP_R(obj, ctx->req->obj->objcore->exp, keep, 0)
+VRT_DO_EXP_R(obj, ctx->req->objcore->exp, ttl,
+   (ctx->req->t_req - ctx->req->objcore->exp.t_origin))
+VRT_DO_EXP_R(obj, ctx->req->objcore->exp, grace, 0)
+VRT_DO_EXP_R(obj, ctx->req->objcore->exp, keep, 0)
 
 VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore->exp, ttl)
 VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore->exp, ttl, 0)
@@ -591,10 +591,9 @@ VRT_r_obj_hits(const struct vrt_ctx *ctx)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->obj, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->obj->objcore, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->obj->objcore->objhead, OBJHEAD_MAGIC);
-	return (ctx->req->obj->objcore->objhead->hits);
+	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req->objcore->objhead, OBJHEAD_MAGIC);
+	return (ctx->req->objcore->objhead->hits);
 }
 
 unsigned
@@ -603,8 +602,8 @@ VRT_r_obj_uncacheable(const struct vrt_ctx *ctx)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->obj, OBJECT_MAGIC);
-	return (ctx->req->obj->objcore->flags & OC_F_PASS ? 1 : 0);
+	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
+	return (ctx->req->objcore->flags & OC_F_PASS ? 1 : 0);
 }
 
 /*--------------------------------------------------------------------*/
