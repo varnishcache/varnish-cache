@@ -140,6 +140,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	if (wrk->handling != VCL_RET_DELIVER) {
 		(void)HSH_DerefObj(&wrk->stats, &req->obj);
 		AZ(req->obj);
+		req->objcore = NULL;
 		http_Teardown(req->resp);
 
 		switch (wrk->handling) {
@@ -191,6 +192,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	assert(WRW_IsReleased(wrk));
 VSLb(req->vsl, SLT_Debug, "XXX REF %d", req->obj->objcore->refcnt);
 	(void)HSH_DerefObj(&wrk->stats, &req->obj);
+	req->objcore = NULL;
 	http_Teardown(req->resp);
 	return (REQ_FSM_DONE);
 }
@@ -299,12 +301,11 @@ cnt_fetch(struct worker *wrk, struct req *req)
 		req->err_code = 503;
 		req->req_step = R_STP_SYNTH;
 		(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
-		req->objcore = NULL;
+		AZ(req->objcore);
 		return (REQ_FSM_MORE);
 	}
 
 	req->obj = ObjGetObj(req->objcore, &wrk->stats);
-	req->objcore = NULL;
 	req->err_code = http_GetStatus(req->obj->http);
 	req->req_step = R_STP_DELIVER;
 	return (REQ_FSM_MORE);
@@ -441,6 +442,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 			req->req_step = R_STP_MISS;
 		else {
 			(void)HSH_DerefObj(&wrk->stats, &req->obj);
+			req->objcore = NULL;
 			/*
 			 * We don't have a busy object, so treat this
 			 * like a pass
@@ -508,7 +510,8 @@ cnt_miss(struct worker *wrk, struct req *req)
 	switch (wrk->handling) {
 	case VCL_RET_FETCH:
 		wrk->stats.cache_miss++;
-		VBF_Fetch(wrk, req, req->objcore, o == NULL ? NULL : o->objcore, VBF_NORMAL);
+		VBF_Fetch(wrk, req, req->objcore,
+		    o == NULL ? NULL : o->objcore, VBF_NORMAL);
 		req->req_step = R_STP_FETCH;
 		if (o != NULL)
 			(void)HSH_DerefObj(&wrk->stats, &o);
@@ -703,7 +706,6 @@ cnt_recv(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 	AZ(req->objcore);
 	AZ(req->obj);
-	AZ(req->objcore);
 
 	AZ(isnan(req->t_first));
 	AZ(isnan(req->t_prev));
