@@ -1068,6 +1068,10 @@ int ObjCopyAttr(struct objcore *ocd, struct objcore *ocs, struct dstat *ds,
 
 int ObjSetDouble(struct objcore *, struct dstat *, enum obj_attr, double);
 int ObjGetDouble(struct objcore *, struct dstat *, enum obj_attr, double *);
+int ObjSetU32(struct objcore *, struct dstat *, enum obj_attr, uint32_t);
+int ObjGetU32(struct objcore *, struct dstat *, enum obj_attr, uint32_t *);
+int ObjSetU64(struct objcore *, struct dstat *, enum obj_attr, uint64_t);
+int ObjGetU64(struct objcore *, struct dstat *, enum obj_attr, uint64_t *);
 
 /* cache_panic.c */
 void PAN_Init(void);

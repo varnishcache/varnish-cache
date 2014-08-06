@@ -297,13 +297,10 @@ ObjCopyAttr(struct objcore *ocd, struct objcore *ocs, struct dstat *ds,
 unsigned
 ObjGetXID(struct objcore *oc, struct dstat *ds)
 {
-	ssize_t l;
-	void *p;
+	uint32_t u;
 
-	p = ObjGetattr(oc, ds, OA_VXID, &l);
-	AN(p);
-	assert(l == 4);
-	return (vbe32dec(p));
+	AZ(ObjGetU32(oc, ds, OA_VXID, &u));
+	return (u);
 }
 
 /*--------------------------------------------------------------------
@@ -345,5 +342,60 @@ ObjGetDouble(struct objcore *oc, struct dstat *ds, enum obj_attr a, double *d)
 		u = vbe64dec(vp);
 		memcpy(d, &u, sizeof *d);
 	}
+	return (0);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+int
+ObjSetU64(struct objcore *oc, struct dstat *ds, enum obj_attr a, uint64_t t)
+{
+	void *vp;
+
+	vp = ObjSetattr(oc, ds, a, sizeof t);
+	if (vp == NULL)
+		return (-1);
+	vbe64enc(vp, t);
+	return (0);
+}
+
+int
+ObjGetU64(struct objcore *oc, struct dstat *ds, enum obj_attr a, uint64_t *d)
+{
+	void *vp;
+	ssize_t l;
+
+	vp = ObjGetattr(oc, ds, a, &l);
+	if (vp == NULL || l != sizeof *d)
+		return (-1);
+	if (d != NULL)
+		*d = vbe64dec(vp);
+	return (0);
+}
+
+int
+ObjSetU32(struct objcore *oc, struct dstat *ds, enum obj_attr a, uint32_t t)
+{
+	void *vp;
+
+	vp = ObjSetattr(oc, ds, a, sizeof t);
+	if (vp == NULL)
+		return (-1);
+	vbe32enc(vp, t);
+	return (0);
+}
+
+int
+ObjGetU32(struct objcore *oc, struct dstat *ds, enum obj_attr a, uint32_t *d)
+{
+	void *vp;
+	ssize_t l;
+
+	vp = ObjGetattr(oc, ds, a, &l);
+	if (vp == NULL || l != sizeof *d)
+		return (-1);
+	if (d != NULL)
+		*d = vbe32dec(vp);
 	return (0);
 }

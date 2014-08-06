@@ -102,7 +102,6 @@ vbf_beresp2obj(struct busyobj *bo)
 	uint16_t nhttp;
 	struct object *obj;
 	struct http *hp, *hp2;
-	void *vp;
 
 	l = 0;
 
@@ -152,8 +151,7 @@ vbf_beresp2obj(struct busyobj *bo)
 		VSB_delete(vary);
 	}
 
-	vp = ObjSetattr(bo->fetch_objcore, bo->stats, OA_VXID, 4);
-	vbe32enc(vp, bo->vsl->wid);
+	AZ(ObjSetU32(bo->fetch_objcore, bo->stats, OA_VXID, bo->vsl->wid));
 	WS_Assert(bo->ws_o);
 
 	/* Filter into object */
