@@ -355,7 +355,8 @@ RFC2616_Do_Cond(const struct req *req)
 		ims = VTIM_parse(p);
 		if (ims > req->t_req)	/* [RFC2616 14.25] */
 			return (0);
-		lm = ObjGetLastModified(req->objcore, &req->wrk->stats);
+		AZ(ObjGetDouble(req->objcore,  &req->wrk->stats,
+		    OA_LASTMODIFIED, &lm));
 		if (lm > ims)
 			return (0);
 		do_cond = 1;

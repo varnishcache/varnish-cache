@@ -307,36 +307,43 @@ ObjGetXID(struct objcore *oc, struct dstat *ds)
 }
 
 /*--------------------------------------------------------------------
- * NB: Copying double <--> uint64_t for endian encoding is unverified
+ * There is no well-defined byteorder for IEEE-754 double and the
+ * correct solution (frexp(3) and manual encoding) is more work
+ * than our (weak) goal of being endian-agnostic requires at this point.
+ * We give it a shot by memcpy'ing doubles over a uint64_t and then
+ * BE encode that.
  */
 
 int
-ObjSetLastModified(struct objcore *oc, struct dstat *ds, double t)
+ObjSetDouble(struct objcore *oc, struct dstat *ds, enum obj_attr a, double t)
 {
 	void *vp;
 	uint64_t u;
 
 	assert(sizeof t == sizeof u);
 	memcpy(&u, &t, sizeof u);
-	vp = ObjSetattr(oc, ds, OA_LASTMODIFIED, sizeof u);
+	vp = ObjSetattr(oc, ds, a, sizeof u);
 	if (vp == NULL)
 		return (-1);
 	vbe64enc(vp, u);
 	return (0);
 }
 
-double
-ObjGetLastModified(struct objcore *oc, struct dstat *ds)
+int
+ObjGetDouble(struct objcore *oc, struct dstat *ds, enum obj_attr a, double *d)
 {
 	void *vp;
 	uint64_t u;
-	double d;
 	ssize_t l;
 
-	vp = ObjGetattr(oc, ds, OA_LASTMODIFIED, &l);
-	AN(vp);
-	assert(l == sizeof u);
-	u = vbe64dec(vp);
-	memcpy(&d, &u, sizeof d);
-	return (d);
+	assert(sizeof *d == sizeof u);
+	vp = ObjGetattr(oc, ds, a, &l);
+	if (vp == NULL)
+		return (-1);
+	if (d != NULL) {
+		assert(l == sizeof u);
+		u = vbe64dec(vp);
+		memcpy(d, &u, sizeof *d);
+	}
+	return (0);
 }

@@ -1065,8 +1065,9 @@ void *ObjSetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
     ssize_t len);
 int ObjCopyAttr(struct objcore *ocd, struct objcore *ocs, struct dstat *ds,
     enum obj_attr attr);
-int ObjSetLastModified(struct objcore *oc, struct dstat *ds, double t);
-double ObjGetLastModified(struct objcore *oc, struct dstat *ds);
+
+int ObjSetDouble(struct objcore *, struct dstat *, enum obj_attr, double);
+int ObjGetDouble(struct objcore *, struct dstat *, enum obj_attr, double *);
 
 /* cache_panic.c */
 void PAN_Init(void);
