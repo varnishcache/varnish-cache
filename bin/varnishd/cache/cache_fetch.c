@@ -151,7 +151,8 @@ vbf_beresp2obj(struct busyobj *bo)
 		VSB_delete(vary);
 	}
 
-	AZ(ObjSetU32(bo->fetch_objcore, bo->stats, OA_VXID, bo->vsl->wid));
+	AZ(ObjSetU32(bo->fetch_objcore, bo->stats, OA_VXID,
+	    VXID(bo->vsl->wid)));
 	WS_Assert(bo->ws_o);
 
 	/* Filter into object */
