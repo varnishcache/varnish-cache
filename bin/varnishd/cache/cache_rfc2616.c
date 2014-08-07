@@ -363,7 +363,7 @@ RFC2616_Do_Cond(const struct req *req)
 	}
 
 	if (http_GetHdr(req->http, H_If_None_Match, &p) &&
-	    http_GetHdr(req->obj->http, H_ETag, &e)) {
+	    http_GetHdr(req->resp, H_ETag, &e)) {
 		if (strcmp(p,e) != 0)
 			return (0);
 		do_cond = 1;
