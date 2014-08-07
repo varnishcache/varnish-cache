@@ -93,7 +93,7 @@ v1d_dorange(struct req *req, struct busyobj *bo, const char *r)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
-	assert(http_GetStatus(req->resp) == 200);
+	assert(http_IsStatus(req->resp, 200));
 
 	/* We must snapshot the length if we're streaming from the backend */
 	if (bo != NULL)
@@ -244,7 +244,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		/* In ESI mode, we can't know the aggregate length */
 		req->res_mode &= ~RES_LEN;
 		req->res_mode |= RES_ESI;
-	} else if (req->resp->status == 304) {
+	} else if (http_IsStatus(req->resp, 304)) {
 		req->res_mode &= ~RES_LEN;
 		http_Unset(req->resp, H_Content_Length);
 		req->wantbody = 0;
@@ -308,7 +308,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	    req->wantbody &&
 	    !(req->res_mode & (RES_ESI|RES_ESI_CHILD)) &&
 	    cache_param->http_range_support &&
-	    http_GetStatus(req->resp) == 200) {
+	    http_IsStatus(req->resp, 200)) {
 		http_SetHeader(req->resp, "Accept-Ranges: bytes");
 		if (http_GetHdr(req->http, H_Range, &r))
 			v1d_dorange(req, bo, r);
@@ -373,7 +373,7 @@ V1D_Deliver_Synth(struct req *req)
 	AN(req->synth_body);
 
 	req->res_mode = 0;
-	if (req->resp->status == 304) {
+	if (http_IsStatus(req->resp, 304)) {
 		req->res_mode &= ~RES_LEN;
 		http_Unset(req->resp, H_Content_Length);
 		req->wantbody = 0;
@@ -422,7 +422,7 @@ V1D_Deliver_Synth(struct req *req)
 	    req->wantbody &&
 	    !(req->res_mode & RES_ESI_CHILD) &&
 	    cache_param->http_range_support &&
-	    http_GetStatus(req->resp) == 200) {
+	    http_IsStatus(req->resp, 200)) {
 		http_SetHeader(req->resp, "Accept-Ranges: bytes");
 		if (http_GetHdr(req->http, H_Range, &r))
 			v1d_dorange(req, NULL, r);

@@ -207,16 +207,17 @@ RFC2616_Body(struct busyobj *bo, struct dstat *stats)
 		return (BS_NONE);
 	}
 
-	if (hp->status <= 199) {
+	if (http_GetStatus(hp) <= 199) {
 		/*
 		 * 1xx responses never have a body.
 		 * [RFC2616 4.3 p33]
+		 * ... but we should never see them.
 		 */
 		stats->fetch_1xx++;
-		return (BS_NONE);
+		return (BS_ERROR);
 	}
 
-	if (hp->status == 204) {
+	if (http_IsStatus(hp, 204)) {
 		/*
 		 * 204 is "No Content", obviously don't expect a body.
 		 * [RFC2616 10.2.5 p60]
@@ -225,7 +226,7 @@ RFC2616_Body(struct busyobj *bo, struct dstat *stats)
 		return (BS_NONE);
 	}
 
-	if (hp->status == 304) {
+	if (http_IsStatus(hp, 304)) {
 		/*
 		 * 304 is "Not Modified" it has no body.
 		 * [RFC2616 10.3.5 p63]

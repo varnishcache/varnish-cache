@@ -203,7 +203,7 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 		http_CopyHome(bo->bereq0);
 	}
 
-	if (bo->ims_obj != NULL && bo->ims_obj->http->status == 200) {
+	if (bo->ims_obj != NULL && http_IsStatus(bo->ims_obj->http, 200)) {
 		if (http_GetHdr(bo->ims_obj->http, H_Last_Modified, &p)) {
 			http_PrintfHeader(bo->bereq0,
 			    "If-Modified-Since: %s", p);
@@ -351,10 +351,10 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	AZ(bo->do_esi);
 
-	if (bo->ims_obj != NULL && bo->beresp->status == 304) {
+	if (bo->ims_obj != NULL && http_IsStatus(bo->beresp, 304)) {
 		http_Merge(bo->ims_obj->http, bo->beresp,
 		    bo->ims_obj->changed_gzip);
-		assert(bo->beresp->status == 200);
+		assert(http_IsStatus(bo->beresp, 200));
 		do_ims = 1;
 	} else
 		do_ims = 0;
