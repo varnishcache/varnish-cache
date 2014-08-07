@@ -704,7 +704,7 @@ HTTP_Decode(struct http *to, uint8_t *fm)
 		if (*fm == '\0')
 			return (0);
 		to->hd[to->nhd].b = (void*)fm;
-		fm = strchr((void*)fm, '\0');
+		fm = (void*)strchr((void*)fm, '\0');
 		to->hd[to->nhd].e = (void*)fm;
 		fm++;
 		if (to->vsl != NULL)
