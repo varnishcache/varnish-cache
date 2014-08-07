@@ -101,7 +101,6 @@ vbf_beresp2obj(struct busyobj *bo)
 	int varyl = 0;
 	uint16_t nhttp;
 	struct object *obj;
-	struct http *hp, *hp2;
 
 	l = 0;
 
@@ -156,22 +155,18 @@ vbf_beresp2obj(struct busyobj *bo)
 	WS_Assert(bo->ws_o);
 
 	/* Filter into object */
-	hp = bo->beresp;
-	hp2 = obj->http;
+	obj->http->logtag = SLT_ObjMethod;
+	obj->oa_http = HTTP_Encode(bo->beresp, bo->ws_o,
+	    bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS);
+	AN(obj->oa_http);
+	AZ(HTTP_Decode(obj->http, obj->oa_http));
 
-	hp2->logtag = SLT_ObjMethod;
-	http_FilterResp(hp, hp2, bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS);
-	http_CopyHome(hp2);
-
-	if (http_GetHdr(hp, H_Last_Modified, &b))
+	if (http_GetHdr(bo->beresp, H_Last_Modified, &b))
 		AZ(ObjSetDouble(bo->fetch_objcore, bo->stats, OA_LASTMODIFIED,
 		    VTIM_parse(b)));
 	else
 		AZ(ObjSetDouble(bo->fetch_objcore, bo->stats, OA_LASTMODIFIED,
 		    floor(bo->fetch_objcore->exp.t_origin)));
-
-	/* Disassociate the obj from the bo's workspace */
-	hp2->ws = NULL;
 
 	return (0);
 }

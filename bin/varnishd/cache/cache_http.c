@@ -136,7 +136,7 @@ HTTP_estimate(unsigned nhttp)
 {
 
 	/* XXX: We trust the structs to size-aligned as necessary */
-	return (sizeof (struct http) + (sizeof (txt) + 1) * nhttp);
+	return (PRNDUP(sizeof (struct http) + sizeof(txt) * nhttp + nhttp));
 }
 
 struct http *
@@ -605,12 +605,14 @@ http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd)
 {
 	unsigned u, l;
 
-	l = 0;
-	*nhd = HTTP_HDR_FIRST;
+	l = 4;
+	*nhd = 1 + HTTP_HDR_FIRST - 3;
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 	for (u = 0; u < fm->nhd; u++) {
-		if (fm->hd[u].b == NULL)
+		if (u == HTTP_HDR_METHOD || u == HTTP_HDR_URL)
 			continue;
+		AN(fm->hd[u].b);
+		AN(fm->hd[u].e);
 		if (fm->hdf[u] & HDF_FILTER)
 			continue;
 #define HTTPH(a, b, c) \
@@ -618,11 +620,10 @@ http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd)
 			continue;
 #include "tbl/http_headers.h"
 #undef HTTPH
-		l += PRNDUP(Tlen(fm->hd[u]) + 1L);
+		l += Tlen(fm->hd[u]) + 1L;
 		(*nhd)++;
-		// fm->hdf[u] |= HDF_COPY;
 	}
-	return (l);
+	return (PRNDUP(l + 1L));
 }
 
 /*--------------------------------------------------------------------
@@ -673,6 +674,7 @@ HTTP_Encode(const struct http *fm, struct ws *ws, unsigned how)
 	assert(p <= e);
 	e = (uint8_t*)ws->f;
 	vbe16enc(e, n + 1);
+	VSLb(fm->vsl, SLT_Debug, "HTTPENC %zd",  p - (uint8_t*)ws->f);
 	WS_ReleaseP(ws, (void*)p);
 	return (e);
 }
@@ -710,7 +712,6 @@ HTTP_Decode(struct http *to, uint8_t *fm)
 	}
 	return (-1);
 }
-
 
 /*--------------------------------------------------------------------*/
 
@@ -766,21 +767,6 @@ http_FilterReq(struct http *to, const struct http *fm, unsigned how)
 	http_linkh(to, fm, HTTP_HDR_METHOD);
 	http_linkh(to, fm, HTTP_HDR_URL);
 	http_linkh(to, fm, HTTP_HDR_PROTO);
-	http_filterfields(to, fm, how);
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-http_FilterResp(const struct http *fm, struct http *to, unsigned how)
-{
-
-	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
-	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	to->status = fm->status;
-	http_linkh(to, fm, HTTP_HDR_PROTO);
-	http_linkh(to, fm, HTTP_HDR_STATUS);
-	http_linkh(to, fm, HTTP_HDR_REASON);
 	http_filterfields(to, fm, how);
 }
 

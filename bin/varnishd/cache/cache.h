@@ -561,6 +561,8 @@ struct object {
 
 	uint8_t			*vary;
 
+	uint8_t			*oa_http;
+
 	unsigned		gziped:1;
 	unsigned		changed_gzip:1;
 
@@ -948,7 +950,6 @@ void HTTP_Init(void);
 void http_PutResponse(struct http *to, const char *proto, uint16_t status,
     const char *response);
 void http_FilterReq(struct http *to, const struct http *fm, unsigned how);
-void http_FilterResp(const struct http *fm, struct http *to, unsigned how);
 uint8_t *HTTP_Encode(const struct http *fm, struct ws *ws, unsigned how);
 int HTTP_Decode(struct http *to, uint8_t *fm);
 void http_ForceHeader(struct http *to, const char *hdr, const char *val);
