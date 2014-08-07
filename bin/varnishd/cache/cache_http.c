@@ -36,6 +36,7 @@
 
 #include "cache.h"
 
+#include "vend.h"
 #include "vct.h"
 
 #define HTTPH(a, b, c) char b[] = "*" a ":";
@@ -623,6 +624,93 @@ http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd)
 	}
 	return (l);
 }
+
+/*--------------------------------------------------------------------
+ * Encode http struct as byte string.
+ */
+
+uint8_t *
+HTTP_Encode(const struct http *fm, struct ws *ws, unsigned how)
+{
+	unsigned u, w;
+	uint16_t n;
+	uint8_t *p, *e;
+
+	u = WS_Reserve(ws, 0);
+	p = (uint8_t*)ws->f;
+	e = (uint8_t*)ws->f + u;
+	if (p + 5 > e) {
+		WS_Release(ws, 0);
+		return (NULL);
+	}
+	assert(fm->nhd < fm->shd);
+	n = HTTP_HDR_FIRST - 3;
+	vbe16enc(p + 2, fm->status);
+	p += 4;
+	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
+	for (u = 0; u < fm->nhd; u++) {
+		if (u == HTTP_HDR_METHOD || u == HTTP_HDR_URL)
+			continue;
+		AN(fm->hd[u].b);
+		AN(fm->hd[u].e);
+		if (fm->hdf[u] & HDF_FILTER)
+			continue;
+#define HTTPH(a, b, c) \
+		if (((c) & how) && http_IsHdr(&fm->hd[u], (b))) \
+			continue;
+#include "tbl/http_headers.h"
+#undef HTTPH
+		w = Tlen(fm->hd[u]) + 1L;
+		if (p + w + 1 > e) {
+			WS_Release(ws, 0);
+			return (NULL);
+		}
+		memcpy(p, fm->hd[u].b, w);
+		p += w;
+		n++;
+	}
+	*p++ = '\0';
+	assert(p <= e);
+	e = (uint8_t*)ws->f;
+	vbe16enc(e, n + 1);
+	WS_ReleaseP(ws, (void*)p);
+	return (e);
+}
+
+/*--------------------------------------------------------------------
+ * Decode byte string into http struct
+ *
+ * XXX: cannot make fm const because to->hd isn't.
+ */
+
+int
+HTTP_Decode(struct http *to, uint8_t *fm)
+{
+
+	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
+	AN(fm);
+	if (vbe16dec(fm) > to->shd)
+		return(-1);
+	to->status = vbe16dec(fm + 2);
+	fm += 4;
+	for (to->nhd = 0; to->nhd < to->shd; to->nhd++) {
+		if (to->nhd == HTTP_HDR_METHOD || to->nhd == HTTP_HDR_URL) {
+			to->hd[to->nhd].b = NULL;
+			to->hd[to->nhd].e = NULL;
+			continue;
+		}
+		if (*fm == '\0')
+			return (0);
+		to->hd[to->nhd].b = (void*)fm;
+		fm = strchr((void*)fm, '\0');
+		to->hd[to->nhd].e = (void*)fm;
+		fm++;
+		if (to->vsl != NULL)
+			http_VSLH(to, to->nhd);
+	}
+	return (-1);
+}
+
 
 /*--------------------------------------------------------------------*/
 
