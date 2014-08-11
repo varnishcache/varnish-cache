@@ -168,7 +168,6 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 	*pbo = NULL;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_ORNULL(bo->fetch_objcore, OBJCORE_MAGIC);
-	CHECK_OBJ_ORNULL(bo->fetch_obj, OBJECT_MAGIC);
 	if (bo->fetch_objcore != NULL) {
 		oc = bo->fetch_objcore;
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -222,15 +221,15 @@ VBO_extend(struct busyobj *bo, ssize_t l)
 	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->fetch_obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->vfc, VFP_CTX_MAGIC);
 	if (l == 0)
 		return;
 	assert(l > 0);
 	Lck_Lock(&bo->mtx);
-	st = VTAILQ_LAST(&bo->fetch_obj->body->list, storagehead);
+	st = VTAILQ_LAST(&bo->vfc->body->list, storagehead);
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	st->len += l;
-	bo->fetch_obj->len += l;
+	bo->vfc->body->len += l;
 	AZ(pthread_cond_broadcast(&bo->cond));
 	Lck_Unlock(&bo->mtx);
 }
@@ -239,13 +238,13 @@ ssize_t
 VBO_waitlen(struct busyobj *bo, ssize_t l)
 {
 	Lck_Lock(&bo->mtx);
-	assert(l <= bo->fetch_obj->len || bo->state == BOS_FAILED);
 	while (1) {
-		if (bo->fetch_obj->len > l || bo->state >= BOS_FINISHED)
+		assert(l <= bo->vfc->body->len || bo->state == BOS_FAILED);
+		if (bo->vfc->body->len > l || bo->state >= BOS_FINISHED)
 			break;
 		(void)Lck_CondWait(&bo->cond, &bo->mtx, 0);
 	}
-	l = bo->fetch_obj->len;
+	l = bo->vfc->body->len;
 	Lck_Unlock(&bo->mtx);
 	return (l);
 }

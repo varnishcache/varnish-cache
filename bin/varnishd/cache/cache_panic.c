@@ -218,7 +218,7 @@ pan_object(const char *typ, const struct object *o)
 	VSB_printf(pan_vsp, "  obj (%s) = %p {\n", typ, o);
 	VSB_printf(pan_vsp, "    vxid = %u,\n", VXID(vbe32dec(o->oa_vxid)));
 	pan_http("obj", o->http, 4);
-	VSB_printf(pan_vsp, "    len = %jd,\n", (intmax_t)o->len);
+	VSB_printf(pan_vsp, "    len = %jd,\n", (intmax_t)o->body->len);
 	VSB_printf(pan_vsp, "    store = {\n");
 	VTAILQ_FOREACH(st, &o->body->list, list)
 		pan_storage(st);

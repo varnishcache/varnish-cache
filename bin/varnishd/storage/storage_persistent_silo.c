@@ -431,7 +431,7 @@ smp_oc_getobj(struct dstat *ds, struct objcore *oc)
 				break;
 			l += st->len;
 		}
-		if (l != o->len)
+		if (l != o->body->len)
 			bad |= 0x100;
 
 		if(bad) {

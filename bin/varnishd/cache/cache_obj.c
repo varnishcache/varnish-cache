@@ -173,7 +173,6 @@ ObjTrimStore(struct objcore *oc, struct dstat *ds)
 	}
 }
 
-
 struct object *
 ObjGetObj(struct objcore *oc, struct dstat *ds)
 {
@@ -255,16 +254,23 @@ ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
 }
 
 void *
-ObjSetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
+ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr,
     ssize_t len)
 {
 	struct object *o;
 
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(ds);
-	o = ObjGetObj(oc, ds);
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->bo->fetch_objcore, OBJCORE_MAGIC);
+	o = ObjGetObj(vc->bo->fetch_objcore, vc->bo->stats);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	switch (attr) {
+	case OA_ESIDATA:
+		o->esidata = STV_alloc(vc, len);
+		if (o->esidata == NULL)
+			return (NULL);
+		o->esidata->len = len;
+		return (o->esidata->ptr);
 	case OA_GZIPBITS:
 		assert(len == sizeof o->oa_gzipbits);
 		return (o->oa_gzipbits);
@@ -281,17 +287,18 @@ ObjSetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
 }
 
 int
-ObjCopyAttr(struct objcore *ocd, struct objcore *ocs, struct dstat *ds,
-    enum obj_attr attr)
+ObjCopyAttr(const struct vfp_ctx *vc, struct objcore *ocs, enum obj_attr attr)
 {
 	void *vps, *vpd;
 	ssize_t l;
 
-	vps = ObjGetattr(ocs, ds, attr, &l);
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+
+	vps = ObjGetattr(ocs, vc->bo->stats, attr, &l);
 	// XXX: later we want to have zero-length OA's too
 	if (vps == NULL || l <= 0)
 		return (-1);
-	vpd = ObjSetattr(ocd, ds, attr, l);
+	vpd = ObjSetattr(vc, attr, l);
 	if (vpd == NULL)
 		return (-1);
 	memcpy(vpd, vps, l);
@@ -314,7 +321,7 @@ ObjGetLen(struct objcore *oc, struct dstat *ds)
 
 	o = ObjGetObj(oc, ds);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	return (o->len);
+	return (o->body->len);
 }
 
 /*--------------------------------------------------------------------
@@ -326,14 +333,14 @@ ObjGetLen(struct objcore *oc, struct dstat *ds)
  */
 
 int
-ObjSetDouble(struct objcore *oc, struct dstat *ds, enum obj_attr a, double t)
+ObjSetDouble(const struct vfp_ctx *vc, enum obj_attr a, double t)
 {
 	void *vp;
 	uint64_t u;
 
 	assert(sizeof t == sizeof u);
 	memcpy(&u, &t, sizeof u);
-	vp = ObjSetattr(oc, ds, a, sizeof u);
+	vp = ObjSetattr(vc, a, sizeof u);
 	if (vp == NULL)
 		return (-1);
 	vbe64enc(vp, u);
@@ -363,11 +370,11 @@ ObjGetDouble(struct objcore *oc, struct dstat *ds, enum obj_attr a, double *d)
  */
 
 int
-ObjSetU64(struct objcore *oc, struct dstat *ds, enum obj_attr a, uint64_t t)
+ObjSetU64(const struct vfp_ctx *vc, enum obj_attr a, uint64_t t)
 {
 	void *vp;
 
-	vp = ObjSetattr(oc, ds, a, sizeof t);
+	vp = ObjSetattr(vc, a, sizeof t);
 	if (vp == NULL)
 		return (-1);
 	vbe64enc(vp, t);
@@ -389,11 +396,11 @@ ObjGetU64(struct objcore *oc, struct dstat *ds, enum obj_attr a, uint64_t *d)
 }
 
 int
-ObjSetU32(struct objcore *oc, struct dstat *ds, enum obj_attr a, uint32_t t)
+ObjSetU32(const struct vfp_ctx *vc, enum obj_attr a, uint32_t t)
 {
 	void *vp;
 
-	vp = ObjSetattr(oc, ds, a, sizeof t);
+	vp = ObjSetattr(vc, a, sizeof t);
 	if (vp == NULL)
 		return (-1);
 	vbe32enc(vp, t);

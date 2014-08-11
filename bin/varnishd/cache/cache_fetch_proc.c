@@ -231,13 +231,13 @@ VFP_Fetch_Body(struct busyobj *bo)
 		}
 
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-		assert(st == VTAILQ_LAST(&bo->fetch_obj->body->list,
+		assert(st == VTAILQ_LAST(&bo->vfc->body->list,
 		    storagehead));
 		l = st->space - st->len;
 		AZ(bo->vfc->failed);
 		vfps = VFP_Suck(bo->vfc, st->ptr + st->len, &l);
 		if (l > 0 && vfps != VFP_ERROR) {
-			AZ(VTAILQ_EMPTY(&bo->fetch_obj->body->list));
+			AZ(VTAILQ_EMPTY(&bo->vfc->body->list));
 			VBO_extend(bo, l);
 		}
 		if (st->len == st->space)

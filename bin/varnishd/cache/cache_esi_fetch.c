@@ -106,6 +106,7 @@ vfp_esi_end(struct vfp_ctx *vc, struct vef_priv *vef,
 {
 	struct vsb *vsb;
 	ssize_t l;
+	void *p;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
@@ -117,22 +118,19 @@ vfp_esi_end(struct vfp_ctx *vc, struct vef_priv *vef,
 		if (retval == VFP_END) {
 			l = VSB_len(vsb);
 			assert(l > 0);
-			/* XXX: This is a huge waste of storage... */
-			vc->bo->fetch_obj->esidata = STV_alloc(vc, l);
-			if (vc->bo->fetch_obj->esidata != NULL) {
-				memcpy(vc->bo->fetch_obj->esidata->ptr,
-				    VSB_data(vsb), l);
-				vc->bo->fetch_obj->esidata->len = l;
-			} else {
+			p = ObjSetattr(vc, OA_ESIDATA, l);
+			if (p == NULL) {
 				retval = VFP_Error(vc,
 				    "Could not allocate storage for esidata");
+			} else {
+				memcpy(p, VSB_data(vsb), l);
 			}
 		}
 		VSB_delete(vsb);
 	}
 
 	if (vef->vgz != NULL) {
-		VGZ_UpdateObj(vc->bo->stats, vef->vgz, vc->bo->fetch_objcore);
+		VGZ_UpdateObj(vc, vef->vgz);
 		if (VGZ_Destroy(&vef->vgz) != VGZ_END)
 			retval = VFP_Error(vc,
 			    "ESI+Gzip Failed at the very end");

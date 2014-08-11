@@ -391,13 +391,12 @@ VGZ_WrwFlush(struct req *req, struct vgz *vg)
 /*--------------------------------------------------------------------*/
 
 void
-VGZ_UpdateObj(struct dstat *ds, const struct vgz *vg, struct objcore *oc)
+VGZ_UpdateObj(const struct vfp_ctx *vc, const struct vgz *vg)
 {
 	char *p;
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	p = ObjSetattr(oc, ds, OA_GZIPBITS, 24);
+	p = ObjSetattr(vc, OA_GZIPBITS, 24);
 	AN(p);
 	vbe64enc(p, vg->vz.start_bit);
 	vbe64enc(p + 8, vg->vz.last_bit);
@@ -601,7 +600,7 @@ vfp_gzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 
 	if (vr != VGZ_END)
 		return (VFP_Error(vc, "Gzip failed"));
-	VGZ_UpdateObj(vc->bo->stats, vg, vc->bo->fetch_objcore);
+	VGZ_UpdateObj(vc, vg);
 	return (VFP_END);
 }
 
@@ -647,7 +646,7 @@ vfp_testgunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	if (vp == VFP_END) {
 		if (vr != VGZ_END)
 			return (VFP_Error(vc, "tGunzip failed"));
-		VGZ_UpdateObj(vc->bo->stats, vg, vc->bo->fetch_objcore);
+		VGZ_UpdateObj(vc, vg);
 	}
 	return (vp);
 }

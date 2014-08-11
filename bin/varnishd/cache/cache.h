@@ -544,6 +544,7 @@ VTAILQ_HEAD(storagehead, storage);
 struct body {
 	struct stevedore	*stevedore;
 	struct storagehead	list;
+	ssize_t			len;
 };
 
 enum obj_attr {
@@ -569,7 +570,6 @@ struct object {
 	/* Bit positions in the gzip stream */
 	char			oa_gzipbits[24];
 
-	ssize_t			len;
 
 	/* VCL only variables */
 	char			oa_lastmodified[8];
@@ -932,7 +932,7 @@ int VGZ_ObufFull(const struct vgz *vg);
 enum vgzret_e VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
 enum vgzret_e VGZ_Gunzip(struct vgz *, const void **, size_t *len);
 enum vgzret_e VGZ_Destroy(struct vgz **);
-void VGZ_UpdateObj(struct dstat *ds, const struct vgz*, struct objcore *);
+void VGZ_UpdateObj(const struct vfp_ctx *, const struct vgz*);
 vdp_bytes VDP_gunzip;
 
 int VGZ_WrwInit(struct vgz *vg);
@@ -1066,16 +1066,15 @@ void ObjFreeObj(struct objcore *, struct dstat *);
 struct lru *ObjGetLRU(const struct objcore *);
 void *ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
     ssize_t *len);
-void *ObjSetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
-    ssize_t len);
-int ObjCopyAttr(struct objcore *ocd, struct objcore *ocs, struct dstat *ds,
-    enum obj_attr attr);
+void *ObjSetattr(const struct vfp_ctx *, enum obj_attr attr, ssize_t len);
+int ObjCopyAttr(const struct vfp_ctx *, struct objcore *, enum obj_attr attr);
 
-int ObjSetDouble(struct objcore *, struct dstat *, enum obj_attr, double);
+int ObjSetDouble(const struct vfp_ctx*, enum obj_attr, double);
+int ObjSetU32(const struct vfp_ctx *, enum obj_attr, uint32_t);
+int ObjSetU64(const struct vfp_ctx *, enum obj_attr, uint64_t);
+
 int ObjGetDouble(struct objcore *, struct dstat *, enum obj_attr, double *);
-int ObjSetU32(struct objcore *, struct dstat *, enum obj_attr, uint32_t);
 int ObjGetU32(struct objcore *, struct dstat *, enum obj_attr, uint32_t *);
-int ObjSetU64(struct objcore *, struct dstat *, enum obj_attr, uint64_t);
 int ObjGetU64(struct objcore *, struct dstat *, enum obj_attr, uint64_t *);
 
 /* cache_panic.c */

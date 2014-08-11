@@ -150,8 +150,7 @@ vbf_beresp2obj(struct busyobj *bo)
 		VSB_delete(vary);
 	}
 
-	AZ(ObjSetU32(bo->fetch_objcore, bo->stats, OA_VXID,
-	    VXID(bo->vsl->wid)));
+	AZ(ObjSetU32(bo->vfc, OA_VXID, VXID(bo->vsl->wid)));
 	WS_Assert(bo->ws_o);
 
 	/* Filter into object */
@@ -163,10 +162,9 @@ vbf_beresp2obj(struct busyobj *bo)
 	    ObjGetattr(bo->fetch_objcore, bo->stats, OA_HEADERS, NULL)));
 
 	if (http_GetHdr(bo->beresp, H_Last_Modified, &b))
-		AZ(ObjSetDouble(bo->fetch_objcore, bo->stats, OA_LASTMODIFIED,
-		    VTIM_parse(b)));
+		AZ(ObjSetDouble(bo->vfc, OA_LASTMODIFIED, VTIM_parse(b)));
 	else
-		AZ(ObjSetDouble(bo->fetch_objcore, bo->stats, OA_LASTMODIFIED,
+		AZ(ObjSetDouble(bo->vfc, OA_LASTMODIFIED,
 		    floor(bo->fetch_objcore->exp.t_origin)));
 
 	return (0);
@@ -519,7 +517,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->vfc->failed && !bo->do_stream) {
 		assert(bo->state < BOS_STREAM);
-		if (bo->fetch_obj != NULL) {
+		if (bo->fetch_objcore != NULL) {
 			ObjFreeObj(bo->fetch_objcore, bo->stats);
 			bo->fetch_obj = NULL;
 		}
@@ -583,21 +581,12 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	obj = bo->fetch_obj;
 	bo->vfc->body = obj->body;
 
-	if (bo->ims_obj->esidata != NULL) {
-		sl = bo->ims_obj->esidata->len;
-		obj->esidata = STV_alloc(bo->vfc, sl);
-		if (obj->esidata == NULL || obj->esidata->space < sl) {
-			VSLb(bo->vsl, SLT_Error,
-			    "No space for %zd bytes of ESI data", sl);
-			return (F_STP_FAIL);
-		}
-		memcpy(obj->esidata->ptr, bo->ims_obj->esidata->ptr, sl);
-		obj->esidata->len = sl;
-	}
+	if (ObjGetattr(bo->ims_oc, bo->stats, OA_ESIDATA, NULL) != NULL)
+		AZ(ObjCopyAttr(bo->vfc, bo->ims_oc, OA_ESIDATA));
 
 	obj->gziped = bo->ims_obj->gziped;
 
-	AZ(ObjCopyAttr(bo->fetch_objcore, bo->ims_oc,  bo->stats, OA_GZIPBITS));
+	AZ(ObjCopyAttr(bo->vfc, bo->ims_oc, OA_GZIPBITS));
 
 	AZ(WS_Overflowed(bo->ws_o));
 	if (bo->do_stream) {
@@ -749,7 +738,7 @@ vbf_stp_fail(struct worker *wrk, struct busyobj *bo)
 	HSH_Fail(bo->fetch_objcore);
 	if (bo->fetch_objcore->exp_flags & OC_EF_EXP) {
 		/* Already unbusied - expire it */
-		AN(bo->fetch_obj);
+		AN(bo->fetch_objcore);
 		EXP_Rearm(bo->fetch_objcore,
 		    bo->fetch_objcore->exp.t_origin, 0, 0, 0);
 	}
