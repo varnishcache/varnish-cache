@@ -498,7 +498,6 @@ struct busyobj {
 	struct object		*ims_obj;
 	struct objcore		*ims_oc;
 	struct objcore		*fetch_objcore;
-	struct object		*fetch_obj;
 
 	struct http_conn	htc;
 

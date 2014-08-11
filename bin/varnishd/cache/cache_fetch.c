@@ -139,9 +139,6 @@ vbf_beresp2obj(struct busyobj *bo)
 
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 
-	AZ(bo->fetch_obj);
-	bo->fetch_obj = obj;
-
 	if (vary != NULL) {
 		obj->vary = (void *)WS_Copy(obj->http->ws,
 		    VSB_data(vary), varyl);
@@ -166,6 +163,8 @@ vbf_beresp2obj(struct busyobj *bo)
 	else
 		AZ(ObjSetDouble(bo->vfc, OA_LASTMODIFIED,
 		    floor(bo->fetch_objcore->exp.t_origin)));
+
+	bo->vfc->body = obj->body;
 
 	return (0);
 }
@@ -398,7 +397,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 static enum fetch_step
 vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 {
-	struct object *obj;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -478,8 +476,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	assert(WRW_IsReleased(wrk));
 
-	obj = bo->fetch_obj;
-	bo->vfc->body = obj->body;
 
 	if (bo->do_gzip || (bo->is_gzip && !bo->do_gunzip))
 		ObjSetFlag(bo->vfc, OF_GZIPED, 1);
@@ -501,7 +497,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	assert (bo->state == BOS_REQ_DONE);
 
 	if (bo->do_stream) {
-		HSH_Unbusy(&wrk->stats, obj->objcore);
+		HSH_Unbusy(&wrk->stats, bo->fetch_objcore);
 		VBO_setstate(bo, BOS_STREAM);
 	}
 
@@ -517,10 +513,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->vfc->failed && !bo->do_stream) {
 		assert(bo->state < BOS_STREAM);
-		if (bo->fetch_objcore != NULL) {
+		if (bo->fetch_objcore != NULL)
 			ObjFreeObj(bo->fetch_objcore, bo->stats);
-			bo->fetch_obj = NULL;
-		}
 		return (F_STP_ERROR);
 	}
 
@@ -531,7 +525,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		assert(bo->state == BOS_STREAM);
 	else {
 		assert(bo->state == BOS_REQ_DONE);
-		HSH_Unbusy(&wrk->stats, obj->objcore);
+		HSH_Unbusy(&wrk->stats, bo->fetch_objcore);
 	}
 
 	/* Recycle the backend connection before setting BOS_FINISHED to
@@ -554,7 +548,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 static enum fetch_step
 vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 {
-	struct object *obj;
 	struct objiter *oi;
 	void *sp;
 	ssize_t sl, al, tl;
@@ -578,8 +571,6 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	}
 
 	AZ(vbf_beresp2obj(bo));
-	obj = bo->fetch_obj;
-	bo->vfc->body = obj->body;
 
 	if (ObjGetattr(bo->ims_oc, bo->stats, OA_ESIDATA, NULL) != NULL)
 		AZ(ObjCopyAttr(bo->vfc, bo->ims_oc, OA_ESIDATA));
@@ -589,7 +580,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 
 	AZ(WS_Overflowed(bo->ws_o));
 	if (bo->do_stream) {
-		HSH_Unbusy(&wrk->stats, obj->objcore);
+		HSH_Unbusy(&wrk->stats, bo->fetch_objcore);
 		VBO_setstate(bo, BOS_STREAM);
 	}
 
@@ -622,7 +613,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		return (F_STP_FAIL);
 
 	if (!bo->do_stream)
-		HSH_Unbusy(&wrk->stats, obj->objcore);
+		HSH_Unbusy(&wrk->stats, bo->fetch_objcore);
 
 	assert(al == ol);
 	assert(ObjGetLen(bo->fetch_objcore, bo->stats) == al);
@@ -700,7 +691,6 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	if (vbf_beresp2obj(bo))
 		return (F_STP_FAIL);
 
-	bo->vfc->body = bo->fetch_obj->body;
 
 	l = VSB_len(bo->synth_body);
 	if (l > 0) {
