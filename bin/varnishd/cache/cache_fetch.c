@@ -808,7 +808,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 		AZ(bo->fetch_objcore->flags & OC_F_FAILED);
 		HSH_Complete(bo->fetch_objcore);
 		VSLb(bo->vsl, SLT_Length, "%zd",
-		    ObjGetLen(bo->fetch_objcore, bo->stats));
+		    (uintmax_t)ObjGetLen(bo->fetch_objcore, bo->stats));
 	}
 	AZ(bo->fetch_objcore->busyobj);
 
