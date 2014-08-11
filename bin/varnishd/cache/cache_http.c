@@ -683,7 +683,6 @@ HTTP_Encode(const struct http *fm, struct ws *ws, unsigned how)
 	assert(p <= e);
 	e = (uint8_t*)ws->f;
 	vbe16enc(e, n + 1);
-	VSLb(fm->vsl, SLT_Debug, "HTTPENC %zd",  p - (uint8_t*)ws->f);
 	WS_ReleaseP(ws, (void*)p);
 	return (e);
 }
