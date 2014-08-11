@@ -236,6 +236,9 @@ ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
 	case OA_GZIPBITS:
 		*len = sizeof o->oa_gzipbits;
 		return (o->oa_gzipbits);
+	case OA_HEADERS:
+		*len = 0;			// XXX: hack
+		return (o->oa_http);
 	case OA_LASTMODIFIED:
 		*len = sizeof o->oa_lastmodified;
 		return (o->oa_lastmodified);
@@ -256,6 +259,7 @@ ObjSetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
     ssize_t len)
 {
 	struct object *o;
+
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(ds);
 	o = ObjGetObj(oc, ds);

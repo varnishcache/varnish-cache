@@ -187,7 +187,6 @@ stv_alloc_obj(const struct vfp_ctx *vc, size_t size)
 	struct storage *st = NULL;
 	struct stevedore *stv;
 	unsigned fail;
-	struct object *obj;
 
 	/*
 	 * Always use the stevedore which allocated the object in order to
@@ -196,9 +195,7 @@ stv_alloc_obj(const struct vfp_ctx *vc, size_t size)
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	AN(vc->bo->stats);
-	obj = vc->bo->fetch_obj;
-	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
-	stv = obj->body->stevedore;
+	stv = vc->body->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
 	if (size > cache_param->fetch_maxchunksize)

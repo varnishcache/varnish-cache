@@ -92,7 +92,7 @@ v1d_dorange(struct req *req, struct busyobj *bo, const char *r)
 	ssize_t len, low, high, has_low;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	assert(http_IsStatus(req->resp, 200));
 
 	/* We must snapshot the length if we're streaming from the backend */
