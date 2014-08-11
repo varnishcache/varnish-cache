@@ -126,13 +126,13 @@ vca_tcp_opt_init(void)
 {
 	int n;
 	int one = 1;
-	// int zero = 0;
 	struct tcp_opt *to;
 	struct timeval tv;
 	int chg = 0;
-#ifdef HAVE_TCP_KEEP
 	int x;
-#endif
+
+	(void)tv;
+	(void)x;
 
 	for (n = 0; n < n_tcp_opts; n++) {
 		to = &tcp_opts[n];
