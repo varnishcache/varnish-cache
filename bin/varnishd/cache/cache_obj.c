@@ -303,6 +303,16 @@ ObjGetXID(struct objcore *oc, struct dstat *ds)
 	return (u);
 }
 
+uint64_t
+ObjGetLen(struct objcore *oc, struct dstat *ds)
+{
+	struct object *o;
+
+	o = ObjGetObj(oc, ds);
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	return (o->len);
+}
+
 /*--------------------------------------------------------------------
  * There is no well-defined byteorder for IEEE-754 double and the
  * correct solution (frexp(3) and manual encoding) is more work

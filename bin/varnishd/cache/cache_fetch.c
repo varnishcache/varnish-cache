@@ -559,6 +559,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	struct objiter *oi;
 	void *sp;
 	ssize_t sl, al, tl;
+	uint64_t ol;
 	struct storage *st;
 	enum objiter_status ois;
 	char *p;
@@ -606,13 +607,13 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	st = NULL;
 	al = 0;
 
+	ol = ObjGetLen(bo->ims_oc, bo->stats);
 	oi = ObjIterBegin(wrk, bo->ims_obj);
 	do {
 		ois = ObjIter(oi, &sp, &sl);
 		while (sl > 0) {
 			if (st == NULL)
-				st = VFP_GetStorage(bo->vfc,
-				    bo->ims_obj->len - al);
+				st = VFP_GetStorage(bo->vfc, ol - al);
 			if (st == NULL)
 				break;
 			tl = sl;
@@ -634,8 +635,8 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	if (!bo->do_stream)
 		HSH_Unbusy(&wrk->stats, obj->objcore);
 
-	assert(al == bo->ims_obj->len);
-	assert(obj->len == al);
+	assert(al == ol);
+	assert(ObjGetLen(bo->fetch_objcore, bo->stats) == al);
 	EXP_Rearm(bo->ims_oc, bo->ims_oc->exp.t_origin, 0, 0, 0);
 
 	/* Recycle the backend connection before setting BOS_FINISHED to
@@ -802,8 +803,6 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	}
 	assert(WRW_IsReleased(wrk));
 
-	bo->stats = NULL;
-
 	if (bo->vbc != NULL) {
 		if (bo->doclose != SC_NULL)
 			VDI_CloseFd(&bo->vbc, &bo->acct);
@@ -818,22 +817,8 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	if (bo->state == BOS_FINISHED) {
 		AZ(bo->fetch_objcore->flags & OC_F_FAILED);
 		HSH_Complete(bo->fetch_objcore);
-		VSLb(bo->vsl, SLT_Length, "%zd", bo->fetch_obj->len);
-		{
-		/* Sanity check fetch methods accounting */
-			ssize_t uu;
-			struct storage *st;
-
-			uu = 0;
-			VTAILQ_FOREACH(st, &bo->fetch_obj->body->list, list)
-				uu += st->len;
-			if (bo->do_stream)
-				/* Streaming might have started freeing stuff */
-				assert(uu <= bo->fetch_obj->len);
-
-			else
-				assert(uu == bo->fetch_obj->len);
-		}
+		VSLb(bo->vsl, SLT_Length, "%zd",
+		    ObjGetLen(bo->fetch_objcore, bo->stats));
 	}
 	AZ(bo->fetch_objcore->busyobj);
 
@@ -841,6 +826,8 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 		(void)HSH_DerefObjCore(&wrk->stats, &bo->ims_oc);
 		bo->ims_obj = NULL;
 	}
+
+	bo->stats = NULL;
 
 	VBO_DerefBusyObj(wrk, &bo);
 	THR_SetBusyobj(NULL);

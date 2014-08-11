@@ -1059,6 +1059,7 @@ enum objiter_status ObjIter(struct objiter *, void **, ssize_t *);
 void ObjIterEnd(struct objiter **);
 void ObjTrimStore(struct objcore *, struct dstat *);
 unsigned ObjGetXID(struct objcore *, struct dstat *);
+uint64_t ObjGetLen(struct objcore *oc, struct dstat *ds);
 struct object *ObjGetObj(struct objcore *, struct dstat *);
 void ObjUpdateMeta(struct objcore *);
 void ObjFreeObj(struct objcore *, struct dstat *);

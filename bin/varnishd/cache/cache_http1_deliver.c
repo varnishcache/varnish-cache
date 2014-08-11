@@ -99,7 +99,7 @@ v1d_dorange(struct req *req, struct busyobj *bo, const char *r)
 	if (bo != NULL)
 		len = VBO_waitlen(bo, -1);
 	else
-		len = req->obj->len;
+		len = ObjGetLen(req->objcore, &req->wrk->stats);
 
 	if (strncmp(r, "bytes=", 6))
 		return;
@@ -252,10 +252,11 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		/* XXX: Not happy with this convoluted test */
 		req->res_mode |= RES_LEN;
 		if (!(req->objcore->flags & OC_F_PASS) ||
-		    req->obj->len != 0) {
+		    ObjGetLen(req->objcore, &req->wrk->stats) != 0) {
 			http_Unset(req->resp, H_Content_Length);
 			http_PrintfHeader(req->resp,
-			    "Content-Length: %zd", req->obj->len);
+			    "Content-Length: %ju", (uintmax_t)ObjGetLen(
+			    req->objcore, &req->wrk->stats));
 		}
 	}
 

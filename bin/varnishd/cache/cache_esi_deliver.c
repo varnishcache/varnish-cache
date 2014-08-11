@@ -505,6 +505,7 @@ ESI_DeliverChild(struct req *req)
 	u_char cc;
 	uint32_t icrc;
 	uint32_t ilen;
+	uint64_t olen;
 	uint8_t *dbits;
 	int i, j;
 	uint8_t tailbuf[8];
@@ -534,9 +535,10 @@ ESI_DeliverChild(struct req *req)
 	start = vbe64dec(p);
 	last = vbe64dec(p + 8);
 	stop = vbe64dec(p + 16);
-	assert(start > 0 && start < obj->len * 8);
-	assert(last > 0 && last < obj->len * 8);
-	assert(stop > 0 && stop < obj->len * 8);
+	olen = ObjGetLen(obj->objcore, &req->wrk->stats);
+	assert(start > 0 && start < olen * 8);
+	assert(last > 0 && last < olen * 8);
+	assert(stop > 0 && stop < olen * 8);
 	assert(last >= start);
 	assert(last < stop);
 
