@@ -516,7 +516,7 @@ ESI_DeliverChild(struct req *req)
 	obj = ObjGetObj(req->objcore, &req->wrk->stats);
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 
-	if (!obj->gziped) {
+	if (!ObjCheckFlag(req->objcore, &req->wrk->stats, OF_GZIPED)) {
 		VTAILQ_FOREACH(st, &obj->body->list, list)
 			ved_pretend_gzip(req, st->ptr, st->len);
 		return;

@@ -232,6 +232,9 @@ ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
 			return (NULL);
 		*len = o->esidata->len;
 		return (o->esidata->ptr);
+	case OA_FLAGS:
+		*len = sizeof o->oa_flags;
+		return (o->oa_flags);
 	case OA_GZIPBITS:
 		*len = sizeof o->oa_gzipbits;
 		return (o->oa_gzipbits);
@@ -271,6 +274,9 @@ ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr,
 			return (NULL);
 		o->esidata->len = len;
 		return (o->esidata->ptr);
+	case OA_FLAGS:
+		assert(len == sizeof o->oa_flags);
+		return (o->oa_flags);
 	case OA_GZIPBITS:
 		assert(len == sizeof o->oa_gzipbits);
 		return (o->oa_gzipbits);
@@ -419,4 +425,30 @@ ObjGetU32(struct objcore *oc, struct dstat *ds, enum obj_attr a, uint32_t *d)
 	if (d != NULL)
 		*d = vbe32dec(vp);
 	return (0);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+int
+ObjCheckFlag(struct objcore *oc, struct dstat *ds, enum obj_flags of)
+{
+	uint8_t *fp;
+
+	fp = ObjGetattr(oc, ds, OA_FLAGS, NULL);
+	AN(fp);
+	return ((*fp) & of);
+}
+
+void
+ObjSetFlag(const struct vfp_ctx *vc, enum obj_flags of, int val)
+{
+	uint8_t *fp;
+
+	fp = ObjSetattr(vc, OA_FLAGS, 1);
+	AN(fp);
+	if (val)
+		(*fp) |= of;
+	else
+		(*fp) &= ~of;
 }

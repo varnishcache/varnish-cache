@@ -30,13 +30,21 @@
 /*lint -save -e525 -e539 */
 
 /* upper, lower */
+#ifdef OBJ_ATTR
 OBJ_ATTR(VXID,		vxid)
 OBJ_ATTR(EXP,		exp)
 OBJ_ATTR(VARY,		vary)
 OBJ_ATTR(HEADERS,	headers)
-OBJ_ATTR(GZIPFLAGS,	gzipflags)
+OBJ_ATTR(FLAGS,		flags)
 OBJ_ATTR(GZIPBITS,	gzipbits)
 OBJ_ATTR(ESIDATA,	esidata)
 OBJ_ATTR(LASTMODIFIED,	lastmodified)
+#endif
+
+#ifdef OBJ_FLAG
+/* upper, lower, val */
+OBJ_FLAG(GZIPED,	gziped,		(1<<1))
+OBJ_FLAG(CHGGZIP,	chggzip,	(1<<2))
+#endif
 
 /*lint -restore */

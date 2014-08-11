@@ -128,7 +128,8 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	http_SetHeader(req->resp, "Via: 1.1 varnish-v4");
 
-	if (cache_param->http_gzip_support && req->obj->gziped &&
+	if (cache_param->http_gzip_support &&
+	    ObjCheckFlag(req->objcore, &req->wrk->stats, OF_GZIPED) &&
 	    !RFC2616_Req_Gzip(req->http))
 		RFC2616_Weaken_Etag(req->resp);
 

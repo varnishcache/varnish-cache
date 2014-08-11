@@ -352,7 +352,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->ims_obj != NULL && http_IsStatus(bo->beresp, 304)) {
 		http_Merge(bo->ims_obj->http, bo->beresp,
-		    bo->ims_obj->changed_gzip);
+		    ObjCheckFlag(bo->ims_oc, bo->stats, OF_CHGGZIP));
 		assert(http_IsStatus(bo->beresp, 200));
 		do_ims = 1;
 	} else
@@ -482,10 +482,10 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	bo->vfc->body = obj->body;
 
 	if (bo->do_gzip || (bo->is_gzip && !bo->do_gunzip))
-		obj->gziped = 1;
+		ObjSetFlag(bo->vfc, OF_GZIPED, 1);
 
 	if (bo->do_gzip || bo->do_gunzip)
-		obj->changed_gzip = 1;
+		ObjSetFlag(bo->vfc, OF_CHGGZIP, 1);
 
 	if (bo->htc.body_status != BS_NONE)
 		V1F_Setup_Fetch(bo);
@@ -566,7 +566,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	if (bo->ims_obj->changed_gzip) {
+	if (ObjCheckFlag(bo->ims_oc, bo->stats, OF_CHGGZIP)) {
 		/*
 		 * If we modified the gzip status of the IMS object, that
 		 * must control the C-E header, if any.
@@ -584,8 +584,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	if (ObjGetattr(bo->ims_oc, bo->stats, OA_ESIDATA, NULL) != NULL)
 		AZ(ObjCopyAttr(bo->vfc, bo->ims_oc, OA_ESIDATA));
 
-	obj->gziped = bo->ims_obj->gziped;
-
+	AZ(ObjCopyAttr(bo->vfc, bo->ims_oc, OA_FLAGS));
 	AZ(ObjCopyAttr(bo->vfc, bo->ims_oc, OA_GZIPBITS));
 
 	AZ(WS_Overflowed(bo->ws_o));

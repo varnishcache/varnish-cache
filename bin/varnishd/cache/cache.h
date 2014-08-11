@@ -553,6 +553,12 @@ enum obj_attr {
 #undef OBJ_ATTR
 };
 
+enum obj_flags {
+#define OBJ_FLAG(U, l, v)	OF_##U = v,
+#include "tbl/obj_attr.h"
+#undef OBJ_FLAG
+};
+
 struct object {
 	unsigned		magic;
 #define OBJECT_MAGIC		0x32851d42
@@ -564,12 +570,11 @@ struct object {
 
 	uint8_t			*oa_http;
 
-	unsigned		gziped:1;
-	unsigned		changed_gzip:1;
+
+	uint8_t			oa_flags[1];
 
 	/* Bit positions in the gzip stream */
 	char			oa_gzipbits[24];
-
 
 	/* VCL only variables */
 	char			oa_lastmodified[8];
@@ -1076,6 +1081,9 @@ int ObjSetU64(const struct vfp_ctx *, enum obj_attr, uint64_t);
 int ObjGetDouble(struct objcore *, struct dstat *, enum obj_attr, double *);
 int ObjGetU32(struct objcore *, struct dstat *, enum obj_attr, uint32_t *);
 int ObjGetU64(struct objcore *, struct dstat *, enum obj_attr, uint64_t *);
+
+int ObjCheckFlag(struct objcore *oc, struct dstat *ds, enum obj_flags of);
+void ObjSetFlag(const struct vfp_ctx *vc, enum obj_flags of, int val);
 
 /* cache_panic.c */
 void PAN_Init(void);
