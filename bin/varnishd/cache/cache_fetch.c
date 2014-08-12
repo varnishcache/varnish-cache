@@ -176,7 +176,7 @@ vbf_beresp2obj(struct busyobj *bo)
 static enum fetch_step
 vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 {
-	char *p;
+	const char *q;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -202,14 +202,14 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 	}
 
 	if (bo->ims_oc != NULL) {
-		if (http_GetHdr(bo->ims_obj->http, H_Last_Modified, &p)) {
+		q = HTTP_GetHdrPack(bo->ims_oc, bo->stats, H_Last_Modified);
+		if (q != NULL)
 			http_PrintfHeader(bo->bereq0,
-			    "If-Modified-Since: %s", p);
-		}
-		if (http_GetHdr(bo->ims_obj->http, H_ETag, &p)) {
+			    "If-Modified-Since: %s", q);
+		q = HTTP_GetHdrPack(bo->ims_oc, bo->stats, H_ETag);
+		if (q != NULL)
 			http_PrintfHeader(bo->bereq0,
-			    "If-None-Match: %s", p);
-		}
+			    "If-None-Match: %s", q);
 	}
 
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, SLT_BereqMethod);
@@ -568,21 +568,9 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	uint64_t ol;
 	struct storage *st;
 	enum objiter_status ois;
-	char *p;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-
-	if (ObjCheckFlag(bo->ims_oc, bo->stats, OF_CHGGZIP)) {
-		/*
-		 * If we modified the gzip status of the IMS object, that
-		 * must control the C-E header, if any.
-		 */
-		http_Unset(bo->beresp, H_Content_Encoding);
-		if (http_GetHdr(bo->ims_obj->http, H_Content_Encoding, &p))
-			http_PrintfHeader(bo->beresp,
-			    "Content-Encoding: %s", p);
-	}
 
 	AZ(vbf_beresp2obj(bo));
 

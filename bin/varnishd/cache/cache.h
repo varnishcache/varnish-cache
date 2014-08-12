@@ -983,6 +983,8 @@ void http_MarkHeader(const struct http *, const char *hdr, unsigned hdrlen,
 void http_CollectHdr(struct http *hp, const char *hdr);
 void http_VSL_log(const struct http *hp);
 void http_Merge(const struct http *fm, struct http *to);
+const char *HTTP_GetHdrPack(struct objcore *, struct dstat *,
+    const char *hdr);
 
 /* cache_http1_proto.c */
 

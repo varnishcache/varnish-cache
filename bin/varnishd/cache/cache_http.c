@@ -723,6 +723,54 @@ HTTP_Decode(struct http *to, uint8_t *fm)
 
 /*--------------------------------------------------------------------*/
 
+const char *
+HTTP_GetHdrPack(struct objcore *oc, struct dstat *ds, const char *hdr)
+{
+	char *ptr;
+	unsigned l;
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(ds);
+	AN(hdr);
+
+	l = hdr[0];
+	assert(l == strlen(hdr + 1));
+	assert(hdr[l] == ':');
+	hdr++;
+	ptr = ObjGetattr(oc, ds, OA_HEADERS, NULL);
+	AN(ptr);
+
+	/* Skip nhd and status */
+	ptr += 4;
+	VSL(SLT_Debug, 0, "%d %s", __LINE__, ptr);
+
+	/* Skip PROTO, STATUS and REASON */
+	ptr = strchr(ptr, '\0') + 1;
+	VSL(SLT_Debug, 0, "%d %s", __LINE__, ptr);
+	ptr = strchr(ptr, '\0') + 1;
+	VSL(SLT_Debug, 0, "%d %s", __LINE__, ptr);
+	ptr = strchr(ptr, '\0') + 1;
+	VSL(SLT_Debug, 0, "%d %s", __LINE__, ptr);
+
+	while (*ptr != '\0') {
+		VSL(SLT_Debug, 0, "%d <%s> %u <%s>", __LINE__, ptr, l, hdr);
+		if (!strncasecmp(ptr, hdr, l)) {
+			ptr += l;
+			assert (vct_issp(*ptr));
+			ptr++;
+			assert (!vct_issp(*ptr));
+			return (ptr);
+		}
+		ptr = strchr(ptr, '\0') + 1;
+		VSL(SLT_Debug, 0, "%d %s", __LINE__, ptr);
+	}
+	return (NULL);
+}
+
+
+
+/*--------------------------------------------------------------------*/
+
 static void
 http_filterfields(struct http *to, const struct http *fm, unsigned how)
 {
