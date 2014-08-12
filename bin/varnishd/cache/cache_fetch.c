@@ -397,6 +397,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 static enum fetch_step
 vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 {
+	char *p;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -482,6 +483,11 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->do_gzip || bo->do_gunzip)
 		ObjSetFlag(bo->vfc, OF_CHGGZIP, 1);
+
+	if (http_IsStatus(bo->beresp, 200) && (
+	    http_GetHdr(bo->beresp, H_Last_Modified, &p) ||
+	    http_GetHdr(bo->beresp, H_ETag, &p)))
+		ObjSetFlag(bo->vfc, OF_IMSCAND, 1);
 
 	if (bo->htc.body_status != BS_NONE)
 		V1F_Setup_Fetch(bo);
@@ -865,8 +871,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 		oldobj = ObjGetObj(oldoc, &wrk->stats);
 		CHECK_OBJ_NOTNULL(oldobj, OBJECT_MAGIC);
 
-		if (http_GetHdr(oldobj->http, H_Last_Modified, NULL) ||
-		   http_GetHdr(oldobj->http, H_ETag, NULL)) {
+		if (ObjCheckFlag(oldoc, &req->wrk->stats, OF_IMSCAND)) {
 			assert(oldoc->refcnt > 0);
 			HSH_Ref(oldoc);
 			bo->ims_obj = oldobj;
