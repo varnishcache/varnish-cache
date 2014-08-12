@@ -726,7 +726,7 @@ HTTP_Decode(struct http *to, uint8_t *fm)
 const char *
 HTTP_GetHdrPack(struct objcore *oc, struct dstat *ds, const char *hdr)
 {
-	char *ptr;
+	const char *ptr;
 	unsigned l;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -746,14 +746,10 @@ HTTP_GetHdrPack(struct objcore *oc, struct dstat *ds, const char *hdr)
 
 	/* Skip PROTO, STATUS and REASON */
 	ptr = strchr(ptr, '\0') + 1;
-	VSL(SLT_Debug, 0, "%d %s", __LINE__, ptr);
 	ptr = strchr(ptr, '\0') + 1;
-	VSL(SLT_Debug, 0, "%d %s", __LINE__, ptr);
 	ptr = strchr(ptr, '\0') + 1;
-	VSL(SLT_Debug, 0, "%d %s", __LINE__, ptr);
 
 	while (*ptr != '\0') {
-		VSL(SLT_Debug, 0, "%d <%s> %u <%s>", __LINE__, ptr, l, hdr);
 		if (!strncasecmp(ptr, hdr, l)) {
 			ptr += l;
 			assert (vct_issp(*ptr));
@@ -762,12 +758,46 @@ HTTP_GetHdrPack(struct objcore *oc, struct dstat *ds, const char *hdr)
 			return (ptr);
 		}
 		ptr = strchr(ptr, '\0') + 1;
-		VSL(SLT_Debug, 0, "%d %s", __LINE__, ptr);
 	}
 	return (NULL);
 }
 
+/*--------------------------------------------------------------------
+ * Merge any headers in the oc->OA_HEADER into the struct http if they
+ * are not there already.
+ */
 
+void
+HTTP_Merge(struct objcore *oc, struct dstat *ds, struct http *to)
+{
+	const char *ptr;
+	unsigned u;
+	const char *p;
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
+	AN(ds);
+
+	ptr = ObjGetattr(oc, ds, OA_HEADERS, NULL);
+	AN(ptr);
+
+	to->status = vbe16dec(ptr + 2);
+	ptr += 4;
+
+	for (u = 0; u < HTTP_HDR_FIRST; u++) {
+		if (u == HTTP_HDR_METHOD || u == HTTP_HDR_URL)
+			continue;
+		http_SetH(to, u, ptr);
+		ptr = strchr(ptr, '\0') + 1;
+	}
+	while (*ptr != '\0') {
+		p = strchr(ptr, ':');
+		AN(p);
+		if (!http_findhdr(to, p - ptr, ptr))
+			http_SetHeader(to, ptr);
+		ptr = strchr(ptr, '\0') + 1;
+	}
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -824,37 +854,6 @@ http_FilterReq(struct http *to, const struct http *fm, unsigned how)
 	http_linkh(to, fm, HTTP_HDR_URL);
 	http_linkh(to, fm, HTTP_HDR_PROTO);
 	http_filterfields(to, fm, how);
-}
-
-/*--------------------------------------------------------------------
- * Merge two HTTP headers the "wrong" way. Used by backend IMS to
- * merge in the headers of the validated object with the headers of
- * the 304 response.
- */
-
-void
-http_Merge(const struct http *fm, struct http *to)
-{
-	unsigned u, v;
-	const char *p;
-
-	to->status = fm->status;
-	http_linkh(to, fm, HTTP_HDR_PROTO);
-	http_linkh(to, fm, HTTP_HDR_STATUS);
-	http_linkh(to, fm, HTTP_HDR_REASON);
-
-	for (u = HTTP_HDR_FIRST; u < fm->nhd; u++)
-		fm->hdf[u] |= HDF_MARKER;
-	for (v = HTTP_HDR_FIRST; v < to->nhd; v++) {
-		p = strchr(to->hd[v].b, ':');
-		AN(p);
-		u = http_findhdr(fm, p - to->hd[v].b, to->hd[v].b);
-		if (u)
-			fm->hdf[u] &= ~HDF_MARKER;
-	}
-	for (u = HTTP_HDR_FIRST; u < fm->nhd; u++)
-		if (fm->hdf[u] & HDF_MARKER)
-			http_SetHeader(to, fm->hd[u].b);
 }
 
 /*--------------------------------------------------------------------

@@ -185,7 +185,6 @@ struct http {
 	txt			*hd;
 	unsigned char		*hdf;
 #define HDF_FILTER		(1 << 0)	/* Filtered by Connection */
-#define HDF_MARKER		(1 << 1)	/* Marker bit */
 
 	/* NB: ->nhd and below zeroed/initialized by http_Teardown */
 	uint16_t		nhd;		/* Next free hd */
@@ -982,7 +981,7 @@ void http_MarkHeader(const struct http *, const char *hdr, unsigned hdrlen,
     uint8_t flag);
 void http_CollectHdr(struct http *hp, const char *hdr);
 void http_VSL_log(const struct http *hp);
-void http_Merge(const struct http *fm, struct http *to);
+void HTTP_Merge(struct objcore *, struct dstat *, struct http *to);
 const char *HTTP_GetHdrPack(struct objcore *, struct dstat *,
     const char *hdr);
 

@@ -359,7 +359,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 			http_Unset(bo->beresp, H_Content_Encoding);
 			RFC2616_Weaken_Etag(bo->beresp);
 		}
-		http_Merge(bo->ims_obj->http, bo->beresp);
+		HTTP_Merge(bo->ims_oc, bo->stats, bo->beresp);
 		assert(http_IsStatus(bo->beresp, 200));
 		do_ims = 1;
 	} else
