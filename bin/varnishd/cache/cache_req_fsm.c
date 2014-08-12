@@ -105,7 +105,8 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		EXP_Touch(req->objcore, req->t_prev);
 
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
-	AZ(HTTP_Decode(req->resp, req->obj->oa_http));
+	AZ(HTTP_Decode(req->resp, 
+	    ObjGetattr(req->objcore, &req->wrk->stats, OA_HEADERS, NULL)));
 	http_ForceField(req->resp, HTTP_HDR_PROTO, "HTTP/1.1");
 
 	if (req->wrk->stats.cache_hit)
