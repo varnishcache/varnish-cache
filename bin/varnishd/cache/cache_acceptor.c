@@ -131,8 +131,8 @@ vca_tcp_opt_init(void)
 	int chg = 0;
 	int x;
 
-	(void)tv;
-	(void)x;
+	memset(&tv, 0, sizeof tv);
+	memset(&x, 0, sizeof x);
 
 	for (n = 0; n < n_tcp_opts; n++) {
 		to = &tcp_opts[n];
