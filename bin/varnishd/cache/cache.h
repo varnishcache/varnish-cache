@@ -982,7 +982,7 @@ void http_MarkHeader(const struct http *, const char *hdr, unsigned hdrlen,
     uint8_t flag);
 void http_CollectHdr(struct http *hp, const char *hdr);
 void http_VSL_log(const struct http *hp);
-void http_Merge(const struct http *fm, struct http *to, int not_ce);
+void http_Merge(const struct http *fm, struct http *to);
 
 /* cache_http1_proto.c */
 

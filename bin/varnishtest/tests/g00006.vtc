@@ -3,21 +3,29 @@ varnishtest "IMS'ing g[un]zip'ed objects"
 server s1 {
 	rxreq
 	expect req.url == /1
-	txresp -hdr  "Last-Modified: Wed, 11 Sep 2013 13:36:55 GMT" -bodylen 20
+	txresp -hdr  "Last-Modified: Wed, 11 Sep 2013 13:36:55 GMT" \
+		-hdr "ETag: foozle" \
+		-bodylen 20
 
 	rxreq
 	expect req.url == /1
 	expect req.http.if-modified-since == "Wed, 11 Sep 2013 13:36:55 GMT"
-	txresp -status 304 -nolen
+	txresp -status 304 \
+		-hdr "ETag: fizle" \
+		-nolen
 
 	rxreq
 	expect req.url == /2
-	txresp -hdr  "Last-Modified: Wed, 11 Sep 2013 13:36:55 GMT" -gzipbody "012345678901234567"
+	txresp -hdr "Last-Modified: Wed, 11 Sep 2013 13:36:55 GMT" \
+		-hdr "ETag: foobar" \
+		-gzipbody "012345678901234567"
 
 	rxreq
 	expect req.url == /2
 	expect req.http.if-modified-since == "Wed, 11 Sep 2013 13:36:55 GMT"
-	txresp -status 304 -hdr "Content-Encoding: gzip,rot13" -nolen
+	txresp -status 304 -hdr "Content-Encoding: gzip,rot13" \
+		-hdr "ETag: snafu" \
+		-nolen
 
 } -start
 
@@ -40,6 +48,7 @@ client c1 {
 	rxresp
 	expect resp.http.content-encoding == "gzip"
 	expect resp.http.foobar == ""
+	expect resp.http.etag == "W/foozle"
 	gunzip
 	expect resp.bodylen == 20
 
@@ -48,7 +57,8 @@ client c1 {
 	txreq -url /1 -hdr "Accept-Encoding: gzip"
 	rxresp
 	expect resp.http.content-encoding == "gzip"
-	expect resp.http.foobar == ""
+	expect resp.http.foobar == "gzip"
+	expect resp.http.etag == "W/fizle"
 	gunzip
 	expect resp.bodylen == 20
 
@@ -59,6 +69,7 @@ client c1 {
 	expect resp.http.content-encoding == "<undef>"
 	expect resp.http.foobar == "gzip"
 	expect resp.bodylen == 18
+	expect resp.http.etag == "W/foobar"
 
 	delay 1
 
@@ -66,7 +77,8 @@ client c1 {
 	rxresp
 	expect resp.http.content-encoding == "<undef>"
 	# Here we see the C-E of the IMS OBJ
-	expect resp.http.foobar == "gzip,rot13"
+	expect resp.http.foobar == ""
+	expect resp.http.etag == "W/snafu"
 	expect resp.bodylen == 18
 
 } -run

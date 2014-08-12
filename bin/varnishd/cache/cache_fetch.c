@@ -350,8 +350,16 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	AZ(bo->do_esi);
 
 	if (bo->ims_oc != NULL && http_IsStatus(bo->beresp, 304)) {
-		http_Merge(bo->ims_obj->http, bo->beresp,
-		    ObjCheckFlag(bo->ims_oc, bo->stats, OF_CHGGZIP));
+		if (ObjCheckFlag(bo->ims_oc, bo->stats, OF_CHGGZIP)) {
+			/*
+			 * If we changed the gzip status of the object
+			 * the stored Content_Encoding controls and we
+			 * must weaken any new ETag we get.
+			 */
+			http_Unset(bo->beresp, H_Content_Encoding);
+			RFC2616_Weaken_Etag(bo->beresp);
+		}
+		http_Merge(bo->ims_obj->http, bo->beresp);
 		assert(http_IsStatus(bo->beresp, 200));
 		do_ims = 1;
 	} else
