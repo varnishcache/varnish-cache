@@ -201,7 +201,7 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 		http_CopyHome(bo->bereq0);
 	}
 
-	if (bo->ims_obj != NULL && http_IsStatus(bo->ims_obj->http, 200)) {
+	if (bo->ims_oc != NULL) {
 		if (http_GetHdr(bo->ims_obj->http, H_Last_Modified, &p)) {
 			http_PrintfHeader(bo->bereq0,
 			    "If-Modified-Since: %s", p);
@@ -349,7 +349,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	AZ(bo->do_esi);
 
-	if (bo->ims_obj != NULL && http_IsStatus(bo->beresp, 304)) {
+	if (bo->ims_oc != NULL && http_IsStatus(bo->beresp, 304)) {
 		http_Merge(bo->ims_obj->http, bo->beresp,
 		    ObjCheckFlag(bo->ims_oc, bo->stats, OF_CHGGZIP));
 		assert(http_IsStatus(bo->beresp, 200));
@@ -867,16 +867,15 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 
 	AZ(bo->ims_obj);
 	AZ(bo->ims_oc);
-	if (oldoc != NULL) {
+	if (oldoc != NULL &&
+	    ObjCheckFlag(oldoc, &req->wrk->stats, OF_IMSCAND)) {
+		assert(oldoc->refcnt > 0);
+		HSH_Ref(oldoc);
+		bo->ims_oc = oldoc;
+
 		oldobj = ObjGetObj(oldoc, &wrk->stats);
 		CHECK_OBJ_NOTNULL(oldobj, OBJECT_MAGIC);
-
-		if (ObjCheckFlag(oldoc, &req->wrk->stats, OF_IMSCAND)) {
-			assert(oldoc->refcnt > 0);
-			HSH_Ref(oldoc);
-			bo->ims_obj = oldobj;
-			bo->ims_oc = oldoc;
-		}
+		bo->ims_obj = oldobj;
 	}
 
 	AZ(bo->req);
