@@ -19,7 +19,7 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 1
-	txreq -url "/foo" -hdr "etag: foo" -hdr "if-none-match: foo"
+	txreq -url "/foo" -hdr {etag: "foo"} -hdr {if-none-match: "foo"}
 	rxresp
 	expect resp.status == 400
 } -run

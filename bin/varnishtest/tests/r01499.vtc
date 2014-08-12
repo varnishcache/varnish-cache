@@ -2,9 +2,9 @@ varnishtest "#1499 - objcore ref leak on IMS update"
 
 server s1 {
 	rxreq
-	txresp -hdr "Etag: foo"
+	txresp -hdr {Etag: "foo"}
 	rxreq
-	expect req.http.if-none-match == "foo"
+	expect req.http.if-none-match == {"foo"}
 	txresp -hdr "X-Resp: 2"
 } -start
 

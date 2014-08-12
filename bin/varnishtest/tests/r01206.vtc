@@ -5,7 +5,7 @@ server s1 {
 	txresp -bodylen 6
 
 	rxreq
-	txresp -hdr "ETag: 123456789" \
+	txresp -hdr {ETag: "123456789"} \
 	    -bodylen 7
 
 	rxreq
@@ -25,7 +25,7 @@ client c1 {
 	expect resp.status == 200
 	expect resp.bodylen == 6
 
-	txreq -hdr "If-None-Match: 123456789"
+	txreq -hdr {If-None-Match: "123456789"}
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 7

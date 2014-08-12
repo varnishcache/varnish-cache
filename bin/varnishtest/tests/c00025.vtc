@@ -3,7 +3,7 @@ varnishtest "Test If-None-Match"
 server s1 {
 	rxreq
 	expect req.url == "/foo"
-	txresp -hdr "ETag: 123456789" \
+	txresp -hdr {ETag: "123456789"} \
 	    -body "11111\n"
 } -start
 
@@ -16,12 +16,12 @@ client c1 {
 	expect resp.bodylen == 6
 
 	txreq -url "/foo" \
-	    -hdr "If-None-Match: 12345678"
+	    -hdr {If-None-Match: "12345678"}
 	rxresp
 	expect resp.status == 200
 
 	txreq -url "/foo" \
-	    -hdr "If-None-Match: 123456789"
+	    -hdr {If-None-Match: "123456789"}
 	rxresp -no_obj
 	expect resp.status == 304
 }

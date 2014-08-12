@@ -3,7 +3,7 @@ varnishtest "Ticket #907 200/304 handling with Etags + Last-Modified"
 server s1 {
 	rxreq
 	txresp \
-		-hdr "ETag: saengei1Ohshicich4iteesu" \
+		-hdr {ETag: "saengei1Ohshicich4iteesu"} \
 		-hdr "Last-Modified: Tue, 20 Sep 2011 18:55:00 GMT"
 } -start
 
@@ -14,16 +14,16 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq -hdr "If-None-Match: saengei1Ohshicich4iteesu"
+	txreq -hdr {If-None-Match: "saengei1Ohshicich4iteesu"}
 	rxresp -no_obj
 	expect resp.status == 304
 
-	txreq -hdr "If-None-Match: saengei1Ohshicich4iteesu" \
+	txreq -hdr {If-None-Match: "saengei1Ohshicich4iteesu"} \
 	      -hdr "If-Modified-Since: Tue, 20 Sep 2011 18:54:59 GMT"
 	rxresp -no_obj
 	expect resp.status == 200
 
-	txreq -hdr "If-None-Match: saengei1Ohshicich4iteesu" \
+	txreq -hdr {If-None-Match: "saengei1Ohshicich4iteesu"} \
 	      -hdr "If-Modified-Since: Tue, 20 Sep 2011 18:55:00 GMT"
 	rxresp -no_obj
 	expect resp.status == 304

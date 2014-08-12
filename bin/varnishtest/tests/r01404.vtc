@@ -2,7 +2,7 @@ varnishtest "Test that 304 does not send Content-Length"
 
 server s1 {
 	rxreq
-	txresp -hdr "ETag: foo" -body "11111\n"
+	txresp -hdr {ETag: "foo"} -body "11111\n"
 } -start
 
 varnish v1 -vcl+backend {
@@ -12,7 +12,7 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq -hdr "If-None-Match: foo"
+	txreq -hdr {If-None-Match: "foo"}
 	rxresp -no_obj
 	expect resp.status == 304
 	expect resp.http.Content-Length == <undef>

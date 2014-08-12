@@ -2,10 +2,10 @@ varnishtest "#1485: Wrong response reason phrase"
 
 server s1 {
 	rxreq
-	txresp -hdr "Etag: foo"
+	txresp -hdr {Etag: "foo"}
 
 	rxreq
-	expect req.http.If-None-Match == "foo"
+	expect req.http.If-None-Match == {"foo"}
 	txresp -status 304 -msg "Not Modified"
 } -start
 
