@@ -373,7 +373,7 @@ struct storage {
  */
 
 typedef struct object *getobj_f(struct dstat *ds, struct objcore *oc);
-typedef void updatemeta_f(struct objcore *oc);
+typedef void updatemeta_f(struct objcore *oc, struct dstat *);
 typedef void freeobj_f(struct dstat *ds, struct objcore *oc);
 typedef struct lru *getlru_f(const struct objcore *oc);
 
@@ -1066,7 +1066,7 @@ void ObjTrimStore(struct objcore *, struct dstat *);
 unsigned ObjGetXID(struct objcore *, struct dstat *);
 uint64_t ObjGetLen(struct objcore *oc, struct dstat *ds);
 struct object *ObjGetObj(struct objcore *, struct dstat *);
-void ObjUpdateMeta(struct objcore *);
+void ObjUpdateMeta(struct objcore *, struct dstat *);
 void ObjFreeObj(struct objcore *, struct dstat *);
 struct lru *ObjGetLRU(const struct objcore *);
 void *ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,

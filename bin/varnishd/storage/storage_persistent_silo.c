@@ -450,14 +450,14 @@ smp_oc_getobj(struct dstat *ds, struct objcore *oc)
 }
 
 static void
-smp_oc_updatemeta(struct objcore *oc)
+smp_oc_updatemeta(struct objcore *oc, struct dstat *ds)
 {
 	struct object *o;
 	struct smp_seg *sg;
 	struct smp_object *so;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	o = smp_oc_getobj(NULL, oc);
+	o = smp_oc_getobj(ds, oc);
 	AN(o);
 
 	CAST_OBJ_NOTNULL(sg, oc->priv, SMP_SEG_MAGIC);

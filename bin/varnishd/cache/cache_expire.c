@@ -397,7 +397,7 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 		o = ObjGetObj(oc, &ep->wrk->stats);
 		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		oc->timer_when = EXP_When(&oc->exp);
-		ObjUpdateMeta(oc);
+		ObjUpdateMeta(oc, &ep->wrk->stats);
 	}
 
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_When p=%p e=%.9f f=0x%x", oc,

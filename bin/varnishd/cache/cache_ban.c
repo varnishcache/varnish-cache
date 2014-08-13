@@ -963,7 +963,7 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 
 	if (b == oc->ban) {	/* not banned */
 		oc->ban = b0;
-		ObjUpdateMeta(oc);
+		ObjUpdateMeta(oc, &wrk->stats);
 		return (0);
 	} else {
 		oc->ban = NULL;

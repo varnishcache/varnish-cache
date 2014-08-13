@@ -184,12 +184,12 @@ ObjGetObj(struct objcore *oc, struct dstat *ds)
 }
 
 void
-ObjUpdateMeta(struct objcore *oc)
+ObjUpdateMeta(struct objcore *oc, struct dstat *ds)
 {
 	const struct objcore_methods *m = obj_getmethods(oc);
 
 	if (m->updatemeta != NULL)
-		m->updatemeta(oc);
+		m->updatemeta(oc, ds);
 }
 
 void
