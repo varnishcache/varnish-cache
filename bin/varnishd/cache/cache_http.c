@@ -733,10 +733,6 @@ HTTP_GetHdrPack(struct objcore *oc, struct dstat *ds, const char *hdr)
 	AN(ds);
 	AN(hdr);
 
-	l = hdr[0];
-	assert(l == strlen(hdr + 1));
-	assert(hdr[l] == ':');
-	hdr++;
 	ptr = ObjGetattr(oc, ds, OA_HEADERS, NULL);
 	AN(ptr);
 
@@ -746,8 +742,15 @@ HTTP_GetHdrPack(struct objcore *oc, struct dstat *ds, const char *hdr)
 
 	/* Skip PROTO, STATUS and REASON */
 	ptr = strchr(ptr, '\0') + 1;
+	if (!strcmp(hdr, ":status"))
+		return (ptr);
 	ptr = strchr(ptr, '\0') + 1;
 	ptr = strchr(ptr, '\0') + 1;
+
+	l = hdr[0];
+	assert(l == strlen(hdr + 1));
+	assert(hdr[l] == ':');
+	hdr++;
 
 	while (*ptr != '\0') {
 		if (!strncasecmp(ptr, hdr, l)) {

@@ -827,13 +827,13 @@ BAN_Compile(void)
  */
 
 static int
-ban_evaluate(const uint8_t *bs, const struct http *objhttp,
+ban_evaluate(const uint8_t *bs, struct objcore *oc, struct dstat *ds,
     const struct http *reqhttp, unsigned *tests)
 {
 	struct ban_test bt;
 	const uint8_t *be;
-	char *arg1;
-	char buf[10];
+	char *p;
+	const char *arg1;
 
 	be = bs + ban_len(bs);
 	bs += 13;
@@ -848,14 +848,14 @@ ban_evaluate(const uint8_t *bs, const struct http *objhttp,
 			break;
 		case BANS_ARG_REQHTTP:
 			AN(reqhttp);
-			(void)http_GetHdr(reqhttp, bt.arg1_spec, &arg1);
+			(void)http_GetHdr(reqhttp, bt.arg1_spec, &p);
+			arg1 = p;
 			break;
 		case BANS_ARG_OBJHTTP:
-			(void)http_GetHdr(objhttp, bt.arg1_spec, &arg1);
+			arg1 = HTTP_GetHdrPack(oc, ds, bt.arg1_spec);
 			break;
 		case BANS_ARG_OBJSTATUS:
-			arg1 = buf;
-			sprintf(buf, "%d", objhttp->status);
+			arg1 = HTTP_GetHdrPack(oc, ds, ":status");
 			break;
 		default:
 			WRONG("Wrong BAN_ARG code");
@@ -904,7 +904,6 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 {
 	struct ban *b;
 	struct vsl_log *vsl;
-	struct object *o;
 	struct ban * volatile b0;
 	unsigned tests;
 
@@ -930,10 +929,6 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 	if (b0 == oc->ban)
 		return (0);
 
-	/* Now we need the object */
-	o = ObjGetObj(oc, &wrk->stats);
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-
 	/*
 	 * This loop is safe without locks, because we know we hold
 	 * a refcount on a ban somewhere in the list and we do not
@@ -944,7 +939,7 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 		CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
 		if (b->flags & BANS_FLAG_COMPLETED)
 			continue;
-		if (ban_evaluate(b->spec, o->http, req->http, &tests))
+		if (ban_evaluate(b->spec, oc, &wrk->stats, req->http, &tests))
 			break;
 	}
 
@@ -1096,7 +1091,7 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 				continue;
 			}
 			tests = 0;
-			i = ban_evaluate(bl->spec, o->http, NULL, &tests);
+			i = ban_evaluate(bl->spec, oc, &wrk->stats, NULL, &tests);
 			VSC_C_main->bans_lurker_tested++;
 			VSC_C_main->bans_lurker_tests_tested += tests;
 			if (i)
