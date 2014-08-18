@@ -609,22 +609,6 @@ double keep)
 	Pool_PurgeStat(nobj);
 }
 
-
-/*---------------------------------------------------------------------
- * Kill a busy object we don't need and can't use.
- */
-
-void
-HSH_Drop(struct worker *wrk, struct object **oo)
-{
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	AN(oo);
-	CHECK_OBJ_NOTNULL(*oo, OBJECT_MAGIC);
-	(*oo)->objcore->exp.ttl = -1.;
-	AZ(HSH_DerefObj(&wrk->stats, oo));
-}
-
 /*---------------------------------------------------------------------
  * Fail an objcore
  */
@@ -747,33 +731,10 @@ HSH_RefBusy(const struct objcore *oc)
 }
 
 /*--------------------------------------------------------------------
- * Dereference objcore and or object
- *
- * Can deal with:
- *	bare objcore (incomplete fetch)
- *	bare object (pass)
- *	object with objcore
- *	XXX later:  objcore with object (?)
- *
- * But you can only supply one of the two arguments at a time.
+ * Dereference objcore
  *
  * Returns zero if target was destroyed.
  */
-
-int
-HSH_DerefObj(struct dstat *ds, struct object **oo)
-{
-	struct object *o;
-	struct objcore *oc;
-
-	AN(oo);
-	o = *oo;
-	*oo = NULL;
-
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	oc = o->objcore;
-	return (HSH_DerefObjCore(ds, &oc));
-}
 
 int
 HSH_DerefObjCore(struct dstat *ds, struct objcore **ocp)

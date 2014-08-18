@@ -66,7 +66,6 @@ void HSH_Cleanup(struct worker *w);
 enum lookup_e HSH_Lookup(struct req *, struct objcore **, struct objcore **,
     int wait_for_busy, int always_insert);
 void HSH_Ref(struct objcore *o);
-void HSH_Drop(struct worker *, struct object **);
 void HSH_Init(const struct hash_slinger *slinger);
 void HSH_AddString(const struct req *, const char *str);
 void HSH_Insert(struct worker *, const void *hash, struct objcore *);
@@ -117,7 +116,6 @@ void HSH_Complete(struct objcore *oc);
 void HSH_DeleteObjHead(struct dstat *, struct objhead *oh);
 int HSH_DerefObjHead(struct dstat *, struct objhead **poh);
 int HSH_DerefObjCore(struct dstat *, struct objcore **ocp);
-int HSH_DerefObj(struct dstat *, struct object **o);
 #endif /* VARNISH_CACHE_CHILD */
 
 extern const struct hash_slinger hsl_slinger;

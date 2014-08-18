@@ -178,29 +178,6 @@ cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
 	OFOF(struct storage, len);
 	OFOF(struct storage, space);
 #endif
-#if 0
-	OFOF(struct object, magic);
-	OFOF(struct object, xid);
-	OFOF(struct object, objstore);
-	OFOF(struct object, objcore);
-	OFOF(struct object, ws_o);
-	OFOF(struct object, vary);
-	OFOF(struct object, hits);
-	OFOF(struct object, response);
-	OFOF(struct object, gziped);
-	OFOF(struct object, gzip_start);
-	OFOF(struct object, gzip_last);
-	OFOF(struct object, gzip_stop);
-	OFOF(struct object, len);
-	OFOF(struct object, age);
-	OFOF(struct object, entered);
-	OFOF(struct object, exp);
-	OFOF(struct object, last_modified);
-	OFOF(struct object, last_lru);
-	OFOF(struct object, http);
-	OFOF(struct object, store);
-	OFOF(struct object, esidata);
-#endif
 #undef OFOF
 #endif
 }

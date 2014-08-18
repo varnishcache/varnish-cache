@@ -353,7 +353,6 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 {
 	unsigned flags;
 	struct lru *lru;
-	struct object *o;
 
 	CHECK_OBJ_NOTNULL(ep, EXP_PRIV_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -391,8 +390,6 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 	}
 
 	if (flags & OC_EF_MOVE) {
-		o = ObjGetObj(oc, &ep->wrk->stats);
-		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		oc->timer_when = EXP_When(&oc->exp);
 		ObjUpdateMeta(oc, &ep->wrk->stats);
 	}
@@ -428,7 +425,6 @@ exp_expire(struct exp_priv *ep, double now)
 {
 	struct lru *lru;
 	struct objcore *oc;
-	struct object *o;
 
 	CHECK_OBJ_NOTNULL(ep, EXP_PRIV_MAGIC);
 
@@ -466,8 +462,6 @@ exp_expire(struct exp_priv *ep, double now)
 	assert(oc->timer_idx == BINHEAP_NOIDX);
 
 	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
-	o = ObjGetObj(oc, &ep->wrk->stats);
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired x=%u t=%.0f",
 	    ObjGetXID(oc, &ep->wrk->stats),
 	    EXP_Ttl(NULL, &oc->exp) - now);

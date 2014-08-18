@@ -1058,7 +1058,6 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 {
 	struct ban *bl, *bln;
 	struct objcore *oc;
-	struct object *o;
 	unsigned tests;
 	int i;
 
@@ -1081,8 +1080,6 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 		oc = ban_lurker_getfirst(vsl, bt);
 		if (oc == NULL)
 			return;
-		o = ObjGetObj(oc, &wrk->stats);
-		CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 		i = 0;
 		VTAILQ_FOREACH_REVERSE_SAFE(bl, obans, banhead_s, l_list, bln) {
 			if (bl->flags & BANS_FLAG_COMPLETED) {
