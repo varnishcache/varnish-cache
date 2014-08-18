@@ -651,7 +651,6 @@ struct req {
 	struct http		*resp;
 
 	struct ws		ws[1];
-	struct object		*obj;
 	struct objcore		*objcore;
 	struct objcore		*ims_oc;
 	/* Lookup stuff */

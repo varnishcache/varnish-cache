@@ -96,9 +96,6 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 	assert(WRW_IsReleased(wrk));
 
-	req->obj = ObjGetObj(req->objcore, &wrk->stats);
-	CHECK_OBJ_NOTNULL(req->obj, OBJECT_MAGIC);
-
 	assert(req->objcore->refcnt > 0);
 
 	if (req->objcore->exp_flags & OC_EF_EXP)
@@ -144,7 +141,6 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	if (wrk->handling != VCL_RET_DELIVER) {
 		assert(req->objcore == req->objcore);
 		(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
-		req->obj = NULL;
 		http_Teardown(req->resp);
 
 		switch (wrk->handling) {
@@ -194,10 +190,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	}
 
 	assert(WRW_IsReleased(wrk));
-VSLb(req->vsl, SLT_Debug, "XXX REF %d", req->objcore->refcnt);
-	assert(req->obj->objcore == req->objcore);
 	(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
-	req->obj = NULL;
 	http_Teardown(req->resp);
 	return (REQ_FSM_DONE);
 }
@@ -297,7 +290,6 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-	AZ(req->obj);
 
 	wrk->stats.s_fetch++;
 	(void)HTTP1_DiscardReqBody(req);
@@ -388,7 +380,6 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		/* Found nothing */
 		VSLb(req->vsl, SLT_Debug, "XXXX MISS");
 		AZ(oc);
-		AZ(req->obj);
 		AN(boc);
 		AN(boc->flags & OC_F_BUSY);
 		req->objcore = boc;
@@ -406,7 +397,6 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		VSLb(req->vsl, SLT_HitPass, "%u",
 		    ObjGetXID(req->objcore, &wrk->stats));
 		AZ(boc);
-		AZ(req->obj);
 		(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
 		wrk->stats.cache_hitpass++;
 		req->req_step = R_STP_PASS;
@@ -432,7 +422,6 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_DELIVER;
 		return (REQ_FSM_MORE);
 	case VCL_RET_FETCH:
-		AZ(req->obj);
 		if (boc != NULL) {
 			req->objcore = boc;
 			req->ims_oc = oc;
@@ -464,7 +453,6 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	}
 
 	/* Drop our object, we won't need it */
-	AZ(req->obj);
 	(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
 
 	if (boc != NULL) {
@@ -551,7 +539,6 @@ cnt_pass(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 	AZ(req->objcore);
-	AZ(req->obj);
 
 	VCL_pass_method(req->vcl, wrk, req, NULL, req->http->ws);
 	switch (wrk->handling) {
@@ -696,7 +683,6 @@ cnt_recv(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 	AZ(req->objcore);
-	AZ(req->obj);
 
 	AZ(isnan(req->t_first));
 	AZ(isnan(req->t_prev));
@@ -860,8 +846,8 @@ cnt_diag(struct req *req, const char *state)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	VSLb(req->vsl,  SLT_Debug, "vxid %u STP_%s sp %p obj %p vcl %p",
-	    req->vsl->wid, state, req->sp, req->obj, req->vcl);
+	VSLb(req->vsl,  SLT_Debug, "vxid %u STP_%s sp %p vcl %p",
+	    req->vsl->wid, state, req->sp, req->vcl);
 	VSL_Flush(req->vsl, 0);
 }
 

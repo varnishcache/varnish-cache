@@ -154,6 +154,7 @@ pan_vbc(const struct vbc *vbc)
 
 /*--------------------------------------------------------------------*/
 
+#if 0
 static void
 pan_storage(const struct storage *st)
 {
@@ -186,6 +187,7 @@ pan_storage(const struct storage *st)
 #undef show
 #undef MAX_BYTES
 }
+#endif
 
 /*--------------------------------------------------------------------*/
 
@@ -210,6 +212,7 @@ pan_http(const char *id, const struct http *h, int indent)
 
 /*--------------------------------------------------------------------*/
 
+#if 0
 static void
 pan_object(const char *typ, const struct object *o)
 {
@@ -225,6 +228,7 @@ pan_object(const char *typ, const struct object *o)
 	VSB_printf(pan_vsp, "    },\n");
 	VSB_printf(pan_vsp, "  },\n");
 }
+#endif
 
 /*--------------------------------------------------------------------*/
 
@@ -394,10 +398,10 @@ pan_req(const struct req *req)
 	if (VALID_OBJ(req->vcl, VCL_CONF_MAGIC))
 		pan_vcl(req->vcl);
 
-	if (VALID_OBJ(req->obj, OBJECT_MAGIC)) {
+	if (req->objcore != NULL) {
+		pan_objcore("REQ", req->objcore);
 		if (req->objcore->busyobj != NULL)
 			pan_busyobj(req->objcore->busyobj);
-		pan_object("REQ", req->obj);
 	}
 
 	VSB_printf(pan_vsp, "},\n");

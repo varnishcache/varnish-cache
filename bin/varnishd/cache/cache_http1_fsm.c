@@ -101,7 +101,6 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 	assert(req->sp == sp);
 
 	AZ(req->vcl);
-	AZ(req->obj);
 	AZ(req->esi_level);
 	AZ(isnan(sp->t_idle));
 	assert(isnan(req->t_first));
@@ -190,7 +189,6 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_ORNULL(req->vcl, VCL_CONF_MAGIC);
 
-	AZ(req->obj);
 	req->director_hint = NULL;
 	req->restarts = 0;
 

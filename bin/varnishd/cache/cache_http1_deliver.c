@@ -372,7 +372,6 @@ V1D_Deliver_Synth(struct req *req)
 	char *r;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	AZ(req->obj);
 	AN(req->synth_body);
 
 	req->res_mode = 0;
