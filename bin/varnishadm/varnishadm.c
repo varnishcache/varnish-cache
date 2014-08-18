@@ -34,15 +34,17 @@
 
 #include <stdio.h>
 
-#ifdef HAVE_EDIT_READLINE_READLINE_H
-#  include <edit/readline/readline.h>
+#ifdef HAVE_LIBEDIT
+#  include <editline/readline.h>
 #elif HAVE_READLINE_READLINE_H
 #  include <readline/readline.h>
 #  ifdef HAVE_READLINE_HISTORY_H
 #    include <readline/history.h>
+#  else
+#    error missing history.h - this should have got caught in configure
 #  endif
 #else
-#  include <editline/readline.h>
+#  error missing readline.h - this should have got caught in configure
 #endif
 
 #include <errno.h>

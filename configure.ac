@@ -140,11 +140,25 @@ AC_SUBST(PCRE_CFLAGS)
 AC_SUBST(PCRE_LIBS)
 
 PKG_CHECK_MODULES([LIBEDIT], [libedit], 
-	[AC_DEFINE([HAVE_LIBEDIT], [1], [Define we have libedit])],
-	[AX_LIB_READLINE])
-if test "$ac_cv_have_readline" = no; then
-  AC_MSG_ERROR([libedit or readline not found])
-fi
+	# having the module does not imply having the header
+	[AC_CHECK_HEADERS([editline/readline.h],
+			  [AC_DEFINE([HAVE_LIBEDIT], [1], [Define if we have libedit])],
+			  [AC_MSG_ERROR([Found libedit, but header file is missing. Hint: Install dev package?])])],
+	[
+	 # AX_LIB_READLINE overwrites LIBS which leads to every binary getting
+	 # linked against libreadline uselessly. So we re-use LIBEDIT_LIBS which
+	 # we have for libedit to add the lib specifically where needed
+	 save_LIBS="${LIBS}"
+	 AX_LIB_READLINE
+	 LIBS="${save_LIBS}"
+	 if test "$ax_cv_lib_readline" = "no"; then
+		AC_MSG_ERROR([neither libedit nor another readline compatible library found])
+	 fi
+	 if test "x$ax_cv_lib_readline_history" != "xyes"; then
+		AC_MSG_ERROR([need readline history support])
+	 fi
+	 LIBEDIT_LIBS="$ax_cv_lib_readline"
+	])
 
 # Checks for header files.
 AC_HEADER_STDC
