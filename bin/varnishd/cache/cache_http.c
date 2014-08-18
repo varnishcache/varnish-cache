@@ -670,6 +670,7 @@ HTTP_Encode(const struct http *fm, struct ws *ws, unsigned how)
 			continue;
 #include "tbl/http_headers.h"
 #undef HTTPH
+		http_VSLH(fm, u);
 		w = Tlen(fm->hd[u]) + 1L;
 		if (p + w + 1 > e) {
 			WS_Release(ws, 0);

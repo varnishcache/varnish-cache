@@ -149,13 +149,13 @@ vbf_beresp2obj(struct busyobj *bo)
 	AZ(ObjSetU32(bo->vfc, OA_VXID, VXID(bo->vsl->wid)));
 	WS_Assert(bo->ws_o);
 
+	/* for HTTP_Encode() VSLH call */
+	bo->beresp->logtag = SLT_ObjMethod;
+
 	/* Filter into object */
-	obj->http->logtag = SLT_ObjMethod;
 	obj->oa_http = HTTP_Encode(bo->beresp, bo->ws_o,
 	    bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS);
 	AN(obj->oa_http);
-	AZ(HTTP_Decode(obj->http,
-	    ObjGetattr(bo->fetch_objcore, bo->stats, OA_HEADERS, NULL)));
 
 	if (http_GetHdr(bo->beresp, H_Last_Modified, &b))
 		AZ(ObjSetDouble(bo->vfc, OA_LASTMODIFIED, VTIM_parse(b)));
