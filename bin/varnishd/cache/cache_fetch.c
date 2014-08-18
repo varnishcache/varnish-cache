@@ -352,7 +352,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		if (ObjCheckFlag(bo->ims_oc, bo->stats, OF_CHGGZIP)) {
 			/*
 			 * If we changed the gzip status of the object
-			 * the stored Content_Encoding controls and we
+			 * the stored Content_Encoding controls we
 			 * must weaken any new ETag we get.
 			 */
 			http_Unset(bo->beresp, H_Content_Encoding);
