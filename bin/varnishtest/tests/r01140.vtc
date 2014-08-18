@@ -4,7 +4,7 @@ server s1 {
 	# This response should almost completely fill the storage
 	rxreq
 	expect req.url == /url1
-	txresp -bodylen 1048308
+	txresp -bodylen 1048408
 
 	# The next one should not fit in the storage, ending up in transient
 	# with zero ttl (=shortlived)
@@ -31,7 +31,7 @@ client c1 {
 	txreq -url /url1
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 1048308
+	expect resp.bodylen == 1048408
 } -run
 
 delay .1
