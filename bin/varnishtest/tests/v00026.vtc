@@ -12,6 +12,10 @@ server s2 {
 	txresp -hdr "Foo: 2" -body "2"
 	rxreq
 	txresp -hdr "Foo: 4" -body "4"
+	rxreq
+	txresp -hdr "Foo: 6" -body "6"
+	rxreq
+	txresp -hdr "Foo: 8" -body "8"
 } -start
 
 
@@ -28,7 +32,15 @@ varnish v1 -vcl+backend {
 		return(pass);
 	}
 	sub vcl_backend_fetch {
-		set bereq.backend = h1.backend(bereq.url);
+		if (bereq.url == "/nohdr") {
+		   	set bereq.backend = h1.backend(bereq.http.Void);
+		} else if (bereq.url == "/emptystring") {
+			set bereq.backend = h1.backend("");
+		} else if (bereq.url == "/13") {
+			set bereq.backend = h1.backend(bereq.http.Void + "" + bereq.url);
+		} else {
+			set bereq.backend = h1.backend(bereq.url);
+		}
 	}
 
 } -start
@@ -50,6 +62,14 @@ client c1 {
 	txreq -url /8
 	rxresp
 	expect resp.http.foo == "4"
+
+	txreq -url /emptystring
+	rxresp
+	expect resp.http.foo == "6"
+
+	txreq -url /nohdr
+	rxresp
+	expect resp.http.foo == "8"
 
 
 } -run
