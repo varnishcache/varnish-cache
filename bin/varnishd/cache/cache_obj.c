@@ -317,7 +317,7 @@ ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr,
 		assert(len == sizeof o->oa_lastmodified);
 		return (o->oa_lastmodified);
 	case OA_VARY:
-		o->oa_vary = (void*)WS_Alloc(o->http->ws, len);
+		o->oa_vary = (void*)WS_Alloc(vc->bo->ws_o, len);
 		AN(o->oa_vary);
 		return (o->oa_vary);
 	case OA_VXID:

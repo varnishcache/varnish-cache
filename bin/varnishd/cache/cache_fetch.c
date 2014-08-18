@@ -47,7 +47,7 @@
  */
 
 static struct object *
-vbf_allocobj(struct busyobj *bo, unsigned l, uint16_t nhttp)
+vbf_allocobj(struct busyobj *bo, unsigned l)
 {
 	struct object *obj;
 	struct objcore *oc;
@@ -67,7 +67,7 @@ vbf_allocobj(struct busyobj *bo, unsigned l, uint16_t nhttp)
 
 	bo->storage_hint = NULL;
 
-	obj = STV_NewObject(bo, storage_hint, l, nhttp);
+	obj = STV_NewObject(bo, storage_hint, l);
 
 	if (obj != NULL)
 		return (obj);
@@ -84,7 +84,7 @@ vbf_allocobj(struct busyobj *bo, unsigned l, uint16_t nhttp)
 		oc->exp.ttl = cache_param->shortlived;
 	oc->exp.grace = 0.0;
 	oc->exp.keep = 0.0;
-	obj = STV_NewObject(bo, TRANSIENT_STORAGE, l, nhttp);
+	obj = STV_NewObject(bo, TRANSIENT_STORAGE, l);
 	return (obj);
 }
 
@@ -99,7 +99,6 @@ vbf_beresp2obj(struct busyobj *bo)
 	char *b;
 	struct vsb *vary = NULL;
 	int varyl = 0;
-	uint16_t nhttp;
 	struct object *obj;
 
 	l = 0;
@@ -127,12 +126,12 @@ vbf_beresp2obj(struct busyobj *bo)
 	}
 
 	l += http_EstimateWS(bo->beresp,
-	    bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS, &nhttp);
+	    bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS);
 
 	if (bo->uncacheable)
 		bo->fetch_objcore->flags |= OC_F_PASS;
 
-	obj = vbf_allocobj(bo, l, nhttp);
+	obj = vbf_allocobj(bo, l);
 
 	if (obj == NULL)
 		return (-1);

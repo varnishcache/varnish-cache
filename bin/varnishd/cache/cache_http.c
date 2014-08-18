@@ -610,12 +610,11 @@ http_PutResponse(struct http *to, const char *proto, uint16_t status,
  */
 
 unsigned
-http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd)
+http_EstimateWS(const struct http *fm, unsigned how)
 {
 	unsigned u, l;
 
 	l = 4;
-	*nhd = 1 + HTTP_HDR_FIRST - 3;
 	CHECK_OBJ_NOTNULL(fm, HTTP_MAGIC);
 	for (u = 0; u < fm->nhd; u++) {
 		if (u == HTTP_HDR_METHOD || u == HTTP_HDR_URL)
@@ -630,7 +629,6 @@ http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd)
 #include "tbl/http_headers.h"
 #undef HTTPH
 		l += Tlen(fm->hd[u]) + 1L;
-		(*nhd)++;
 	}
 	return (PRNDUP(l + 1L));
 }

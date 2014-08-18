@@ -229,8 +229,6 @@ stv_alloc_obj(const struct vfp_ctx *vc, size_t size)
 struct stv_objsecrets {
 	unsigned	magic;
 #define STV_OBJ_SECRETES_MAGIC	0x78c87247
-	uint16_t	nhttp;
-	unsigned	lhttp;
 	unsigned	wsl;
 };
 
@@ -256,24 +254,20 @@ STV_MkObject(struct stevedore *stv, struct busyobj *bo,
 
 	assert(PAOK(ptr));
 	assert(PAOK(soc->wsl));
-	assert(PAOK(soc->lhttp));
 
-	assert(ltot >= sizeof *o + soc->lhttp + soc->wsl);
+	assert(ltot >= sizeof *o + soc->wsl);
 
 	o = ptr;
 	memset(o, 0, sizeof *o);
 	o->magic = OBJECT_MAGIC;
 
-	l = PRNDDN(ltot - (sizeof *o + soc->lhttp));
+	l = PRNDDN(ltot - sizeof *o);
 	assert(l >= soc->wsl);
 
-	o->http = HTTP_create(o + 1, soc->nhttp);
-	WS_Init(bo->ws_o, "obj", (char *)(o + 1) + soc->lhttp, soc->wsl);
+	WS_Init(bo->ws_o, "obj", o + 1, l);
 	WS_Assert(bo->ws_o);
 	assert(bo->ws_o->e <= (char*)ptr + ltot);
 
-	HTTP_Setup(o->http, bo->ws_o, bo->vsl, SLT_ObjMethod);
-	o->http->magic = HTTP_MAGIC;
 	VTAILQ_INIT(&o->body->list);
 
 	o->objcore = bo->fetch_objcore;
@@ -323,12 +317,11 @@ stv_default_allocobj(struct stevedore *stv, struct busyobj *bo,
  */
 
 struct object *
-STV_NewObject(struct busyobj *bo, const char *hint,
-    unsigned wsl, uint16_t nhttp)
+STV_NewObject(struct busyobj *bo, const char *hint, unsigned wsl)
 {
 	struct object *o;
 	struct stevedore *stv, *stv0;
-	unsigned lhttp, ltot;
+	unsigned ltot;
 	struct stv_objsecrets soc;
 	int i;
 
@@ -337,16 +330,11 @@ STV_NewObject(struct busyobj *bo, const char *hint,
 	assert(wsl > 0);
 	wsl = PRNDUP(wsl);
 
-	lhttp = HTTP_estimate(nhttp);
-	lhttp = PRNDUP(lhttp);
-
 	memset(&soc, 0, sizeof soc);
 	soc.magic = STV_OBJ_SECRETES_MAGIC;
-	soc.nhttp = nhttp;
-	soc.lhttp = lhttp;
 	soc.wsl = wsl;
 
-	ltot = sizeof *o + wsl + lhttp;
+	ltot = sizeof *o + wsl;
 
 	stv = stv0 = stv_pick_stevedore(bo->vsl, &hint);
 	AN(stv->allocobj);

@@ -576,8 +576,6 @@ struct object {
 	/* VCL only variables */
 	char			oa_lastmodified[8];
 
-	struct http		*http;
-
 	struct body		body[1];
 
 	struct storage		*esidata;
@@ -945,7 +943,7 @@ unsigned HTTP_estimate(unsigned nhttp);
 void HTTP_Copy(struct http *to, const struct http * const fm);
 struct http *HTTP_create(void *p, uint16_t nhttp);
 const char *http_Status2Reason(unsigned);
-unsigned http_EstimateWS(const struct http *fm, unsigned how, uint16_t *nhd);
+unsigned http_EstimateWS(const struct http *fm, unsigned how);
 void HTTP_Init(void);
 void http_PutResponse(struct http *to, const char *proto, uint16_t status,
     const char *response);
@@ -1241,8 +1239,7 @@ void RFC2616_Weaken_Etag(struct http *hp);
 
 
 /* stevedore.c */
-struct object *STV_NewObject(struct busyobj *,
-    const char *hint, unsigned len, uint16_t nhttp);
+struct object *STV_NewObject(struct busyobj *, const char *hint, unsigned len);
 struct storage *STV_alloc(const struct vfp_ctx *, size_t size);
 void STV_trim(struct storage *st, size_t size, int move_ok);
 void STV_free(struct storage *st);

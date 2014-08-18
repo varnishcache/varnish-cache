@@ -2,19 +2,19 @@ varnishtest	"Object/LRU/Stevedores"
 
 server s1 {
 	rxreq
-	txresp -bodylen 1048190
+	txresp -bodylen 1048290
 
 	rxreq
-	txresp -bodylen 1048191
+	txresp -bodylen 1048291
 
 	rxreq
-	txresp -bodylen 1048192
+	txresp -bodylen 1048292
 
 	rxreq
-	txresp -bodylen 1047193
+	txresp -bodylen 1047293
 
 	rxreq
-	txresp -bodylen 1047194
+	txresp -bodylen 1047294
 } -start
 
 varnish v1 \
@@ -35,7 +35,7 @@ client c1 {
 	txreq -url /foo
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 1048190
+	expect resp.bodylen == 1048290
 } -run
 
 varnish v1 -expect SMA.Transient.g_bytes == 0
@@ -50,7 +50,7 @@ client c1 {
 	txreq -url /bar
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 1048191
+	expect resp.bodylen == 1048291
 } -run
 
 varnish v1 -expect SMA.Transient.g_bytes == 0
@@ -65,7 +65,7 @@ client c1 {
 	txreq -url /burp
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 1048192
+	expect resp.bodylen == 1048292
 } -run
 
 varnish v1 -expect SMA.Transient.g_bytes == 0
@@ -80,7 +80,7 @@ client c1 {
 	txreq -url /foo1
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 1047193
+	expect resp.bodylen == 1047293
 } -run
 
 varnish v1 -expect n_lru_nuked == 1
@@ -89,7 +89,7 @@ client c1 {
 	txreq -url /foo
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 1047194
+	expect resp.bodylen == 1047294
 } -run
 
 varnish v1 -expect n_lru_nuked == 2
