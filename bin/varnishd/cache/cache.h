@@ -899,7 +899,6 @@ void EXP_Rearm(struct objcore *, double now, double ttl, double grace,
     double keep);
 void EXP_Touch(struct objcore *oc, double now);
 int EXP_NukeOne(struct busyobj *, struct lru *lru);
-void EXP_NukeLRU(struct worker *wrk, struct vsl_log *vsl, struct lru *lru);
 
 /* cache_fetch.c */
 enum vbf_fetch_mode_e {
@@ -1088,7 +1087,6 @@ void ObjSetFlag(const struct vfp_ctx *vc, enum obj_flags of, int val);
 /* cache_panic.c */
 void PAN_Init(void);
 const char *body_status_2str(enum body_status e);
-const char *reqbody_status_2str(enum req_body_state_e e);
 const char *sess_close_2str(enum sess_close sc, int want_desc);
 
 /* cache_pipe.c */

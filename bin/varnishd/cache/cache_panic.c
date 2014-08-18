@@ -76,7 +76,7 @@ body_status_2str(enum body_status e)
 
 /*--------------------------------------------------------------------*/
 
-const char *
+static const char *
 reqbody_status_2str(enum req_body_state_e e)
 {
 	switch (e) {
