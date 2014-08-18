@@ -33,7 +33,7 @@ varnish v1 -vcl+backend {
 	}
 	sub vcl_backend_fetch {
 		if (bereq.url == "/nohdr") {
-		   	set bereq.backend = h1.backend(bereq.http.Void);
+			set bereq.backend = h1.backend(bereq.http.Void);
 		} else if (bereq.url == "/emptystring") {
 			set bereq.backend = h1.backend("");
 		} else if (bereq.url == "/13") {
