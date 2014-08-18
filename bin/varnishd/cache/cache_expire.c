@@ -290,7 +290,6 @@ EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 {
 	struct objcore *oc, *oc2;
 	struct objhead *oh;
-	struct object *o;
 
 	/* Find the first currently unused object on the LRU.  */
 	Lck_Lock(&lru->mtx);
@@ -334,9 +333,7 @@ EXP_NukeOne(struct busyobj *bo, struct lru *lru)
 	}
 
 	/* XXX: We could grab and return one storage segment to our caller */
-	o = ObjGetObj(oc, bo->stats);
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	STV_Freestore(o);
+	ObjSlim(oc, bo->stats);
 
 	exp_mail_it(oc);
 

@@ -1066,6 +1066,7 @@ uint64_t ObjGetLen(struct objcore *oc, struct dstat *ds);
 struct object *ObjGetObj(struct objcore *, struct dstat *);
 void ObjUpdateMeta(struct objcore *, struct dstat *);
 void ObjFreeObj(struct objcore *, struct dstat *);
+void ObjSlim(struct objcore *oc, struct dstat *ds);
 struct lru *ObjGetLRU(const struct objcore *);
 void *ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
     ssize_t *len);
@@ -1248,7 +1249,6 @@ void STV_trim(struct storage *st, size_t size, int move_ok);
 void STV_free(struct storage *st);
 void STV_open(void);
 void STV_close(void);
-void STV_Freestore(struct object *o);
 int STV_BanInfo(enum baninfo event, const uint8_t *ban, unsigned len);
 void STV_BanExport(const uint8_t *bans, unsigned len);
 struct storage *STV_alloc_transient(size_t size);

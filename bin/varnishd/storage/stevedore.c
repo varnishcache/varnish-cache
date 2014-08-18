@@ -65,13 +65,14 @@ default_oc_freeobj(struct dstat *ds, struct objcore *oc)
 {
 	struct object *o;
 
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(ds);
+	ObjSlim(oc, ds);
 	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
 	oc->priv = NULL;
 	oc->stevedore = NULL;
 	o->magic = 0;
 
-	STV_Freestore(o);
 	STV_free(o->objstore);
 
 	ds->n_object--;
@@ -375,24 +376,6 @@ STV_NewObject(struct busyobj *bo, const char *hint,
 	assert(o->objcore->stevedore == stv);
 	AN(stv->methods);
 	return (o);
-}
-
-/*-------------------------------------------------------------------*/
-
-void
-STV_Freestore(struct object *o)
-{
-	struct storage *st, *stn;
-
-	if (o->esidata != NULL) {
-		STV_free(o->esidata);
-		o->esidata = NULL;
-	}
-	VTAILQ_FOREACH_SAFE(st, &o->body->list, list, stn) {
-		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-		VTAILQ_REMOVE(&o->body->list, st, list);
-		STV_free(st);
-	}
 }
 
 /*-------------------------------------------------------------------*/

@@ -175,7 +175,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	bo = HSH_RefBusy(req->objcore);
 	V1D_Deliver(req, bo);
 	if (bo != NULL)
-		VBO_DerefBusyObj(req->wrk, &bo);
+		VBO_DerefBusyObj(wrk, &bo);
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
@@ -190,7 +190,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		 */
 		while (req->objcore->busyobj != NULL)
 			(void)usleep(100000);
-		STV_Freestore(req->obj);
+		ObjSlim(req->objcore, &wrk->stats);
 	}
 
 	assert(WRW_IsReleased(wrk));

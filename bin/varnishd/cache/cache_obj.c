@@ -176,6 +176,32 @@ ObjTrimStore(struct objcore *oc, struct dstat *ds)
 	}
 }
 
+/*--------------------------------------------------------------------
+ * Early disposal of storage from soon to be killed object.
+ */
+
+void
+ObjSlim(struct objcore *oc, struct dstat *ds)
+{
+	struct object *o;
+	struct storage *st, *stn;
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(ds);
+	o = ObjGetObj(oc, ds);
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+
+	if (o->esidata != NULL) {
+		STV_free(o->esidata);
+		o->esidata = NULL;
+	}
+	VTAILQ_FOREACH_SAFE(st, &o->body->list, list, stn) {
+		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+		VTAILQ_REMOVE(&o->body->list, st, list);
+		STV_free(st);
+	}
+}
+
 struct object *
 ObjGetObj(struct objcore *oc, struct dstat *ds)
 {
