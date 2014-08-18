@@ -563,7 +563,7 @@ struct object {
 	struct storage		*objstore;
 	struct objcore		*objcore;
 
-	uint8_t			*vary;
+	uint8_t			*oa_vary;
 
 	uint8_t			*oa_http;
 

@@ -275,7 +275,7 @@ ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
 		return (o->oa_lastmodified);
 	case OA_VARY:
 		*len = 4;			// XXX: hack
-		return (o->vary);
+		return (o->oa_vary);
 	case OA_VXID:
 		*len = sizeof o->oa_vxid;
 		return (o->oa_vxid);
@@ -312,6 +312,10 @@ ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr,
 	case OA_LASTMODIFIED:
 		assert(len == sizeof o->oa_lastmodified);
 		return (o->oa_lastmodified);
+	case OA_VARY:
+		o->oa_vary = (void*)WS_Alloc(o->http->ws, len);
+		AN(o->oa_vary);
+		return (o->oa_vary);
 	case OA_VXID:
 		assert(len == sizeof o->oa_vxid);
 		return (o->oa_vxid);

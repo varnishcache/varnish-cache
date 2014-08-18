@@ -140,10 +140,9 @@ vbf_beresp2obj(struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 
 	if (vary != NULL) {
-		obj->vary = (void *)WS_Copy(obj->http->ws,
-		    VSB_data(vary), varyl);
-		AN(obj->vary);
-		(void)VRY_Validate(obj->vary);
+		b = ObjSetattr(bo->vfc, OA_VARY, varyl);
+		memcpy(b, VSB_data(vary), varyl);
+		(void)VRY_Validate(obj->oa_vary);
 		VSB_delete(vary);
 	}
 
