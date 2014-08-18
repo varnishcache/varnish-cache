@@ -109,9 +109,6 @@ vrt_selecthttp(const struct vrt_ctx *ctx, enum gethdr_e where)
 	case HDR_RESP:
 		hp = ctx->http_resp;
 		break;
-	case HDR_OBJ:
-		hp = ctx->http_obj;
-		break;
 	default:
 		WRONG("vrt_selecthttp 'where' invalid");
 	}
@@ -120,13 +117,19 @@ vrt_selecthttp(const struct vrt_ctx *ctx, enum gethdr_e where)
 
 /*--------------------------------------------------------------------*/
 
-char *
+const char *
 VRT_GetHdr(const struct vrt_ctx *ctx, const struct gethdr_s *hs)
 {
 	char *p;
 	struct http *hp;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (hs->where == HDR_OBJ) {
+		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+		CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
+		return(HTTP_GetHdrPack(ctx->req->objcore,
+		    &ctx->req->wrk->stats, hs->what));
+	}
 	hp = vrt_selecthttp(ctx, hs->where);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	if (!http_GetHdr(hp, hs->what, &p))

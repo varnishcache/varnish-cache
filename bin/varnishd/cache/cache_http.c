@@ -723,6 +723,18 @@ HTTP_Decode(struct http *to, uint8_t *fm)
 
 /*--------------------------------------------------------------------*/
 
+uint16_t
+HTTP_GetStatusPack(struct objcore *oc, struct dstat *ds)
+{
+	const char *ptr;
+	ptr = ObjGetattr(oc, ds, OA_HEADERS, NULL);
+	AN(ptr);
+
+	return(vbe16dec(ptr + 2));
+}
+
+/*--------------------------------------------------------------------*/
+
 const char *
 HTTP_GetHdrPack(struct objcore *oc, struct dstat *ds, const char *hdr)
 {
@@ -741,10 +753,14 @@ HTTP_GetHdrPack(struct objcore *oc, struct dstat *ds, const char *hdr)
 	VSL(SLT_Debug, 0, "%d %s", __LINE__, ptr);
 
 	/* Skip PROTO, STATUS and REASON */
+	if (!strcmp(hdr, ":proto"))
+		return (ptr);
 	ptr = strchr(ptr, '\0') + 1;
 	if (!strcmp(hdr, ":status"))
 		return (ptr);
 	ptr = strchr(ptr, '\0') + 1;
+	if (!strcmp(hdr, ":reason"))
+		return (ptr);
 	ptr = strchr(ptr, '\0') + 1;
 
 	l = hdr[0];

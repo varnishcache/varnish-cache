@@ -124,10 +124,6 @@ VRT_HDR_LR(req,    method,	HTTP_HDR_METHOD)
 VRT_HDR_LR(req,    url,		HTTP_HDR_URL)
 VRT_HDR_LR(req,    proto,	HTTP_HDR_PROTO)
 
-VRT_HDR_R(obj,    proto,	HTTP_HDR_PROTO)
-VRT_HDR_R(obj,    reason,	HTTP_HDR_REASON)
-VRT_STATUS_R(obj)
-
 VRT_HDR_LR(resp,   proto,	HTTP_HDR_PROTO)
 VRT_HDR_LR(resp,   reason,	HTTP_HDR_REASON)
 VRT_STATUS_L(resp)
@@ -140,6 +136,42 @@ VRT_HDR_LR(beresp, proto,	HTTP_HDR_PROTO)
 VRT_HDR_LR(beresp, reason,	HTTP_HDR_REASON)
 VRT_STATUS_L(beresp)
 VRT_STATUS_R(beresp)
+
+/*--------------------------------------------------------------------
+ * Pulling things out of the packed object->http
+ */
+
+long
+VRT_r_obj_status(const struct vrt_ctx *ctx)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
+
+	return (HTTP_GetStatusPack(ctx->req->objcore, &ctx->req->wrk->stats));
+}
+
+const char *
+VRT_r_obj_proto(const struct vrt_ctx *ctx)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
+
+	return (HTTP_GetHdrPack(ctx->req->objcore,
+	    &ctx->req->wrk->stats, ":proto"));
+}
+
+const char *
+VRT_r_obj_reason(const struct vrt_ctx *ctx)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
+
+	return (HTTP_GetHdrPack(ctx->req->objcore,
+	    &ctx->req->wrk->stats, ":reason"));
+}
 
 /*--------------------------------------------------------------------
  * bool-fields (.do_*)

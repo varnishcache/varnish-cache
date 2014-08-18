@@ -35,6 +35,30 @@
 #include "storage/storage.h"
 #include "hash/hash_slinger.h"
 
+
+static const struct objcore_methods *
+obj_getmethods(const struct objcore *oc)
+{
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->stevedore, STEVEDORE_MAGIC);
+	AN(oc->stevedore->methods);
+	return (oc->stevedore->methods);
+}
+
+static struct object *
+obj_getobj(struct objcore *oc, struct dstat *ds)
+{
+	const struct objcore_methods *m = obj_getmethods(oc);
+
+	AN(ds);
+	AN(m->getobj);
+	return (m->getobj(ds, oc));
+}
+
+/*--------------------------------------------------------------------
+ */
+
 struct objiter {
 	unsigned			magic;
 #define OBJITER_MAGIC			0x745fb151
@@ -52,7 +76,7 @@ ObjIterBegin(struct worker *wrk, struct objcore *oc)
 	struct object *obj;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	obj = ObjGetObj(oc, &wrk->stats);
+	obj = obj_getobj(oc, &wrk->stats);
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	ALLOC_OBJ(oi, OBJITER_MAGIC);
 	if (oi == NULL)
@@ -142,16 +166,6 @@ ObjIterEnd(struct objiter **oi)
 	*oi = NULL;
 }
 
-static const struct objcore_methods *
-obj_getmethods(const struct objcore *oc)
-{
-
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(oc->stevedore, STEVEDORE_MAGIC);
-	AN(oc->stevedore->methods);
-	return (oc->stevedore->methods);
-}
-
 void
 ObjTrimStore(struct objcore *oc, struct dstat *ds)
 {
@@ -163,7 +177,7 @@ ObjTrimStore(struct objcore *oc, struct dstat *ds)
 	AN(ds);
 	stv = oc->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
-	o = ObjGetObj(oc, ds);
+	o = obj_getobj(oc, ds);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st = VTAILQ_LAST(&o->body->list, storagehead);
 	if (st == NULL)
@@ -188,7 +202,7 @@ ObjSlim(struct objcore *oc, struct dstat *ds)
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(ds);
-	o = ObjGetObj(oc, ds);
+	o = obj_getobj(oc, ds);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
 	if (o->esidata != NULL) {
@@ -200,16 +214,6 @@ ObjSlim(struct objcore *oc, struct dstat *ds)
 		VTAILQ_REMOVE(&o->body->list, st, list);
 		STV_free(st);
 	}
-}
-
-struct object *
-ObjGetObj(struct objcore *oc, struct dstat *ds)
-{
-	const struct objcore_methods *m = obj_getmethods(oc);
-
-	AN(ds);
-	AN(m->getobj);
-	return (m->getobj(ds, oc));
 }
 
 void
@@ -253,7 +257,7 @@ ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
 	AN(ds);
 	if (len == NULL)
 		len = &dummy;
-	o = ObjGetObj(oc, ds);
+	o = obj_getobj(oc, ds);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	switch (attr) {
 	case OA_ESIDATA:
@@ -294,7 +298,7 @@ ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr,
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->bo->fetch_objcore, OBJCORE_MAGIC);
-	o = ObjGetObj(vc->bo->fetch_objcore, vc->bo->stats);
+	o = obj_getobj(vc->bo->fetch_objcore, vc->bo->stats);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	switch (attr) {
 	case OA_ESIDATA:
@@ -358,7 +362,7 @@ ObjGetLen(struct objcore *oc, struct dstat *ds)
 {
 	struct object *o;
 
-	o = ObjGetObj(oc, ds);
+	o = obj_getobj(oc, ds);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	return (o->body->len);
 }

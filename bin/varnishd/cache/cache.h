@@ -979,6 +979,7 @@ void http_MarkHeader(const struct http *, const char *hdr, unsigned hdrlen,
 void http_CollectHdr(struct http *hp, const char *hdr);
 void http_VSL_log(const struct http *hp);
 void HTTP_Merge(struct objcore *, struct dstat *, struct http *to);
+uint16_t HTTP_GetStatusPack(struct objcore *oc, struct dstat *ds);
 const char *HTTP_GetHdrPack(struct objcore *, struct dstat *,
     const char *hdr);
 
@@ -1062,7 +1063,6 @@ void ObjIterEnd(struct objiter **);
 void ObjTrimStore(struct objcore *, struct dstat *);
 unsigned ObjGetXID(struct objcore *, struct dstat *);
 uint64_t ObjGetLen(struct objcore *oc, struct dstat *ds);
-struct object *ObjGetObj(struct objcore *, struct dstat *);
 void ObjUpdateMeta(struct objcore *, struct dstat *);
 void ObjFreeObj(struct objcore *, struct dstat *);
 void ObjSlim(struct objcore *oc, struct dstat *ds);

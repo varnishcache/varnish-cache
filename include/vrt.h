@@ -39,9 +39,9 @@
  * binary/load-time compatible, increment MAJOR version
  */
 
-#define VRT_MAJOR_VERSION	1U
+#define VRT_MAJOR_VERSION	2U
 
-#define VRT_MINOR_VERSION	2U
+#define VRT_MINOR_VERSION	0U
 
 
 /***********************************************************************/
@@ -95,7 +95,6 @@ struct vrt_ctx {
 
 	struct req			*req;
 	struct http			*http_req;
-	struct http			*http_obj;
 	struct http			*http_resp;
 
 	struct busyobj			*bo;
@@ -238,7 +237,7 @@ int VRT_rewrite(const char *, const char *);
 void VRT_error(const struct vrt_ctx *, unsigned, const char *);
 int VRT_switch_config(const char *);
 
-char *VRT_GetHdr(const struct vrt_ctx *, const struct gethdr_s *);
+const char *VRT_GetHdr(const struct vrt_ctx *, const struct gethdr_s *);
 void VRT_SetHdr(const struct vrt_ctx *, const struct gethdr_s *,
     const char *, ...);
 void VRT_handling(const struct vrt_ctx *, unsigned hand);

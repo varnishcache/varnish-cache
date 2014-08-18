@@ -432,9 +432,6 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		ctx.http_req = req->http;
 		ctx.http_resp = req->resp;
 		ctx.req = req;
-		if (method == VCL_MET_HIT)
-			ctx.http_obj =
-			    ObjGetObj(req->objcore, &wrk->stats)->http;
 	}
 	if (bo != NULL) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
