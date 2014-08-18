@@ -251,9 +251,7 @@ static const uint8_t gzip_hdr[] = {
 void
 ESI_Deliver(struct req *req)
 {
-	struct storage *st;
 	uint8_t *p, *e, *q, *r;
-	unsigned off;
 	ssize_t l, l2, l_icrc = 0;
 	uint32_t icrc = 0;
 	uint8_t tailbuf[8 + 5];
@@ -262,13 +260,15 @@ ESI_Deliver(struct req *req)
 	size_t dl;
 	const void *dp;
 	int i;
-	struct object *obj;
+	struct objiter *oi;
+	enum objiter_status ois;
+	void *sp;
+	uint8_t *pp;
+	ssize_t sl;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	p = ObjGetattr(req->objcore, &req->wrk->stats, OA_ESIDATA, &l);
-	obj = ObjGetObj(req->objcore, &req->wrk->stats);
-	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	AN(p);
 	assert(l > 0);
 	e = p + l;
@@ -308,8 +308,10 @@ ESI_Deliver(struct req *req)
 		AZ(dl);
 	}
 
-	st = VTAILQ_FIRST(&obj->body->list);
-	off = 0;
+	oi = ObjIterBegin(req->wrk, req->objcore);
+	ois = ObjIter(oi, &sp, &sl);
+	assert(ois != OIS_ERROR);
+	pp = sp;
 
 	while (p < e) {
 		switch (*p) {
@@ -336,8 +338,9 @@ ESI_Deliver(struct req *req)
 			 */
 			while (l > 0) {
 				l2 = l;
-				if (l2 > st->len - off)
-					l2 = st->len - off;
+				if (l2 > sl)
+					l2 = sl;
+				sl -= l2;
 				l -= l2;
 
 				if (req->gzip_resp && isgzip) {
@@ -346,23 +349,20 @@ ESI_Deliver(struct req *req)
 					 * a gzip'ed ESI response.
 					 */
 					req->resp_bodybytes +=
-					    WRW_Write(req->wrk,
-						st->ptr + off, l2);
+					    WRW_Write(req->wrk, pp, l2);
 				} else if (req->gzip_resp) {
 					/*
 					 * A gzip'ed ESI response, but the VEC
 					 * was not gzip'ed.
 					 */
-					ved_pretend_gzip(req,
-					    st->ptr + off, l2);
+					ved_pretend_gzip(req, pp, l2);
 				} else if (isgzip) {
 					/*
 					 * A gzip'ed VEC, but ungzip'ed ESI
 					 * response
 					 */
 					AN(vgz);
-					i = VGZ_WrwGunzip(req, vgz,
-						st->ptr + off, l2);
+					i = VGZ_WrwGunzip(req, vgz, pp, l2);
 					if (WRW_Error(req->wrk)) {
 						SES_Close(req->sp,
 						    SC_REM_CLOSE);
@@ -375,13 +375,13 @@ ESI_Deliver(struct req *req)
 					 * Ungzip'ed VEC, ungzip'ed ESI response
 					 */
 					req->resp_bodybytes +=
-					    WRW_Write(req->wrk,
-						st->ptr + off, l2);
+					    WRW_Write(req->wrk, pp, l2);
 				}
-				off += l2;
-				if (off == st->len) {
-					st = VTAILQ_NEXT(st, list);
-					off = 0;
+				pp += l2;
+				if (sl == 0) {
+					ois = ObjIter(oi, &sp, &sl);
+					assert(ois != OIS_ERROR);
+					pp = sp;
 				}
 			}
 			break;
@@ -397,13 +397,15 @@ ESI_Deliver(struct req *req)
 			 */
 			while (l > 0) {
 				l2 = l;
-				if (l2 > st->len - off)
-					l2 = st->len - off;
+				if (l2 > sl)
+					l2 = sl;
+				sl -= l2;
 				l -= l2;
-				off += l2;
-				if (off == st->len) {
-					st = VTAILQ_NEXT(st, list);
-					off = 0;
+				pp += l2;
+				if (sl == 0) {
+					ois = ObjIter(oi, &sp, &sl);
+					assert(ois != OIS_ERROR);
+					pp = sp;
 				}
 			}
 			break;
@@ -452,6 +454,7 @@ ESI_Deliver(struct req *req)
 		req->resp_bodybytes += WRW_Write(req->wrk, tailbuf, 13);
 	}
 	(void)WRW_Flush(req->wrk);
+	ObjIterEnd(&oi);
 }
 
 /*---------------------------------------------------------------------
