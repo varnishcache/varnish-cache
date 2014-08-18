@@ -458,67 +458,34 @@ ESI_Deliver(struct req *req)
  * Include an object in a gzip'ed ESI object delivery
  */
 
-static uint8_t
-ved_deliver_byterange(struct req *req, const struct object *obj, ssize_t low,
-    ssize_t high)
-{
-	struct storage *st;
-	ssize_t l, lx;
-	u_char *p;
-
-	lx = 0;
-	VTAILQ_FOREACH(st, &obj->body->list, list) {
-		p = st->ptr;
-		l = st->len;
-		if (lx + l < low) {
-			lx += l;
-			continue;
-		}
-		if (lx == high)
-			return (p[0]);
-		assert(lx < high);
-		if (lx < low) {
-			p += (low - lx);
-			l -= (low - lx);
-			lx = low;
-		}
-		if (lx + l >= high)
-			l = high - lx;
-		assert(lx >= low && lx + l <= high);
-		if (l != 0)
-			req->resp_bodybytes += WRW_Write(req->wrk, p, l);
-		if (p + l < st->ptr + st->len)
-			return(p[l]);
-		lx += l;
-	}
-	INCOMPL();
-}
-
 void
 ESI_DeliverChild(struct req *req)
 {
-	struct storage *st;
-	struct object *obj;
 	ssize_t start, last, stop, lpad;
 	ssize_t l;
 	char *p;
-	u_char cc;
 	uint32_t icrc;
 	uint32_t ilen;
 	uint64_t olen;
 	uint8_t *dbits;
-	int i, j;
+	uint8_t *pp;
 	uint8_t tailbuf[8];
+	enum objiter_status ois;
+	struct objiter *oi;
+	void *sp;
+	ssize_t sl, ll, dl;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
-	obj = ObjGetObj(req->objcore, &req->wrk->stats);
-	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
-
 	if (!ObjCheckFlag(req->objcore, &req->wrk->stats, OF_GZIPED)) {
-		VTAILQ_FOREACH(st, &obj->body->list, list)
-			ved_pretend_gzip(req, st->ptr, st->len);
+		oi = ObjIterBegin(req->wrk, req->objcore);
+		do {
+			ois = ObjIter(oi, &sp, &sl);
+			if (sl > 0)
+				ved_pretend_gzip(req, sp, sl);
+		} while (ois == OIS_DATA || ois == OIS_STREAM);
+		ObjIterEnd(&oi);
 		return;
 	}
 	/*
@@ -527,15 +494,13 @@ ESI_DeliverChild(struct req *req)
 	 * padding it, as necessary, to a byte boundary.
 	 */
 
-	dbits = (void*)WS_Alloc(req->ws, 8);
-	AN(dbits);
-	p = ObjGetattr(obj->objcore, &req->wrk->stats, OA_GZIPBITS, &l);
+	p = ObjGetattr(req->objcore, &req->wrk->stats, OA_GZIPBITS, &l);
 	AN(p);
 	assert(l == 24);
 	start = vbe64dec(p);
 	last = vbe64dec(p + 8);
 	stop = vbe64dec(p + 16);
-	olen = ObjGetLen(obj->objcore, &req->wrk->stats);
+	olen = ObjGetLen(req->objcore, &req->wrk->stats);
 	assert(start > 0 && start < olen * 8);
 	assert(last > 0 && last < olen * 8);
 	assert(stop > 0 && stop < olen * 8);
@@ -549,64 +514,140 @@ ESI_DeliverChild(struct req *req)
 	 * XXX: optimize for the case where the 'last'
 	 * XXX: bit is in a empty copy block
 	 */
-	*dbits = ved_deliver_byterange(req, obj, start/8, last/8);
-	*dbits &= ~(1U << (last & 7));
-	req->resp_bodybytes += WRW_Write(req->wrk, dbits, 1);
-	cc = ved_deliver_byterange(req, obj, 1 + last/8, stop/8);
-	switch((int)(stop & 7)) {
-	case 0: /* xxxxxxxx */
-		/* I think we have an off by one here, but that's OK */
-		lpad = 0;
-		break;
-	case 1: /* x000.... 00000000 00000000 11111111 11111111 */
-	case 3: /* xxx000.. 00000000 00000000 11111111 11111111 */
-	case 5: /* xxxxx000 00000000 00000000 11111111 11111111 */
-		dbits[1] = cc | 0x00;
-		dbits[2] = 0x00; dbits[3] = 0x00;
-		dbits[4] = 0xff; dbits[5] = 0xff;
-		lpad = 5;
-		break;
-	case 2: /* xx010000 00000100 00000001 00000000 */
-		dbits[1] = cc | 0x08;
-		dbits[2] = 0x20;
-		dbits[3] = 0x80;
-		dbits[4] = 0x00;
-		lpad = 4;
-		break;
-	case 4: /* xxxx0100 00000001 00000000 */
-		dbits[1] = cc | 0x20;
-		dbits[2] = 0x80;
-		dbits[3] = 0x00;
-		lpad = 3;
-		break;
-	case 6: /* xxxxxx01 00000000 */
-		dbits[1] = cc | 0x80;
-		dbits[2] = 0x00;
-		lpad = 2;
-		break;
-	case 7:	/* xxxxxxx0 00...... 00000000 00000000 11111111 11111111 */
-		dbits[1] = cc | 0x00;
-		dbits[2] = 0x00;
-		dbits[3] = 0x00; dbits[4] = 0x00;
-		dbits[5] = 0xff; dbits[6] = 0xff;
-		lpad = 6;
-		break;
-	default:
-		INCOMPL();
-	}
-	if (lpad > 0)
-		req->resp_bodybytes += WRW_Write(req->wrk, dbits + 1, lpad);
 
-	/* We need the entire tail, but it may not be in one storage segment */
-	st = VTAILQ_LAST(&obj->body->list, storagehead);
-	for (i = sizeof tailbuf; i > 0; i -= j) {
-		j = st->len;
-		if (j > i)
-			j = i;
-		memcpy(tailbuf + i - j, st->ptr + st->len - j, j);
-		st = VTAILQ_PREV(st, storagehead, list);
-		assert(i == j || st != NULL);
-	}
+	memset(tailbuf, 0xdd, sizeof tailbuf);
+	dbits = (void*)WS_Alloc(req->ws, 8);
+	AN(dbits);
+	ll = 0;
+	oi = ObjIterBegin(req->wrk, req->objcore);
+	do {
+		ois = ObjIter(oi, &sp, &sl);
+		pp = sp;
+		if (sl > 0) {
+			/* Skip over the GZIP header */
+			dl = start / 8 - ll;
+			if (dl > 0) {
+				/* Before start, skip */
+				if (dl > sl)
+					dl = sl;
+				ll += dl;
+				sl -= dl;
+				pp += dl;
+			}
+		}
+		if (sl > 0) {
+			/* The main body of the object */
+			dl = last / 8 - ll;
+			if (dl > 0) {
+				if (dl > sl)
+					dl = sl;
+				req->resp_bodybytes +=
+				    WRW_Write(req->wrk, pp, dl);
+				ll += dl;
+				sl -= dl;
+				pp += dl;
+			}
+		}
+		if (sl > 0 && ll == last / 8) {
+			/* Remove the "LAST" bit */
+			dbits[0] = *pp;
+			dbits[0] &= ~(1U << (last & 7));
+			req->resp_bodybytes += WRW_Write(req->wrk, dbits, 1);
+			ll++;
+			sl--;
+			pp++;
+		}
+		if (sl > 0) {
+			/* Last block */
+			dl = stop / 8 - ll;
+			if (dl > 0) {
+				if (dl > sl)
+					dl = sl;
+				req->resp_bodybytes +=
+				    WRW_Write(req->wrk, pp, dl);
+				ll += dl;
+				sl -= dl;
+				pp += dl;
+			}
+		}
+		if (sl > 0 && (stop & 7) && ll == stop / 8) {
+			/* Add alignment to byte boundary */
+			dbits[1] = *pp;
+			ll++;
+			sl--;
+			pp++;
+			switch((int)(stop & 7)) {
+			case 1: /*
+				 * x000....
+				 * 00000000 00000000 11111111 11111111
+				 */
+			case 3: /*
+				 * xxx000..
+				 * 00000000 00000000 11111111 11111111
+				 */
+			case 5: /*
+				 * xxxxx000
+				 * 00000000 00000000 11111111 11111111
+				 */
+				dbits[2] = 0x00; dbits[3] = 0x00;
+				dbits[4] = 0xff; dbits[5] = 0xff;
+				lpad = 5;
+				break;
+			case 2: /* xx010000 00000100 00000001 00000000 */
+				dbits[1] |= 0x08;
+				dbits[2] = 0x20;
+				dbits[3] = 0x80;
+				dbits[4] = 0x00;
+				lpad = 4;
+				break;
+			case 4: /* xxxx0100 00000001 00000000 */
+				dbits[1] |= 0x20;
+				dbits[2] = 0x80;
+				dbits[3] = 0x00;
+				lpad = 3;
+				break;
+			case 6: /* xxxxxx01 00000000 */
+				dbits[1] |= 0x80;
+				dbits[2] = 0x00;
+				lpad = 2;
+				break;
+			case 7:	/*
+				 * xxxxxxx0
+				 * 00......
+				 * 00000000 00000000 11111111 11111111
+				 */
+				dbits[2] = 0x00;
+				dbits[3] = 0x00; dbits[4] = 0x00;
+				dbits[5] = 0xff; dbits[6] = 0xff;
+				lpad = 6;
+				break;
+			case 0: /* xxxxxxxx */
+			default:
+				WRONG("compiler must be broken");
+			}
+			req->resp_bodybytes +=
+			    WRW_Write(req->wrk, dbits + 1, lpad);
+		}
+		if (sl > 0) {
+			/* Recover GZIP tail */
+			dl = olen - ll;
+			assert(dl >= 0);
+			if (dl > sl)
+				dl = sl;
+			if (dl > 0) {
+				assert(dl <= 8);
+				l = ll - (olen - 8);
+				assert(l >= 0);
+				assert(l <= 8);
+				assert(l + dl <= 8);
+				memcpy(tailbuf + l, pp, dl);
+				ll += dl;
+				sl -= dl;
+				pp += dl;
+			}
+		}
+	} while (ois == OIS_DATA || ois == OIS_STREAM);
+	ObjIterEnd(&oi);
 
 	icrc = vle32dec(tailbuf);
 	ilen = vle32dec(tailbuf + 4);
