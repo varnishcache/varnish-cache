@@ -110,7 +110,8 @@ vmod_hash_backend(const struct vrt_ctx *ctx, struct vmod_directors_hash *rr,
 	va_start(ap, arg);
 	p = arg;
 	while (p != vrt_magic_string_end) {
-		SHA256_Update(&sha_ctx, arg, strlen(arg));
+		if (p != NULL && *p != '\0')
+			SHA256_Update(&sha_ctx, p, strlen(p));
 		p = va_arg(ap, const char *);
 	}
 	va_end(ap);
