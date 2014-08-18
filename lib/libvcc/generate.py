@@ -319,6 +319,7 @@ sp_variables = [
 		'INT',
 		( 'backend',),
 		( ), """
+		A count of how many times this request has been retried.
 		"""
 	),
 	('bereq.backend',
