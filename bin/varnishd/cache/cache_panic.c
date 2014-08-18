@@ -341,8 +341,8 @@ pan_busyobj(const struct busyobj *bo)
 	pan_ws(bo->ws_o, 4);
 	if (bo->fetch_objcore)
 		pan_objcore("FETCH", bo->fetch_objcore);
-	if (bo->ims_obj)
-		pan_object("IMS", bo->ims_obj);
+	if (bo->ims_oc)
+		pan_objcore("IMS", bo->ims_oc);
 	VSB_printf(pan_vsp, "  }\n");
 }
 

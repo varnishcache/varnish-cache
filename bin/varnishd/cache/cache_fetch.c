@@ -590,7 +590,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	al = 0;
 
 	ol = ObjGetLen(bo->ims_oc, bo->stats);
-	oi = ObjIterBegin(wrk, bo->ims_obj);
+	oi = ObjIterBegin(wrk, bo->ims_oc);
 	do {
 		ois = ObjIter(oi, &sp, &sl);
 		while (sl > 0) {
@@ -803,10 +803,8 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	}
 	AZ(bo->fetch_objcore->busyobj);
 
-	if (bo->ims_oc != NULL) {
+	if (bo->ims_oc != NULL)
 		(void)HSH_DerefObjCore(&wrk->stats, &bo->ims_oc);
-		bo->ims_obj = NULL;
-	}
 
 	bo->stats = NULL;
 
@@ -823,7 +821,6 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 {
 	struct busyobj *bo;
 	const char *how;
-	struct object *oldobj = NULL;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -861,17 +858,12 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 		HSH_Ref(oc);
 	bo->fetch_objcore = oc;
 
-	AZ(bo->ims_obj);
 	AZ(bo->ims_oc);
 	if (oldoc != NULL &&
 	    ObjCheckFlag(oldoc, &req->wrk->stats, OF_IMSCAND)) {
 		assert(oldoc->refcnt > 0);
 		HSH_Ref(oldoc);
 		bo->ims_oc = oldoc;
-
-		oldobj = ObjGetObj(oldoc, &wrk->stats);
-		CHECK_OBJ_NOTNULL(oldobj, OBJECT_MAGIC);
-		bo->ims_obj = oldobj;
 	}
 
 	AZ(bo->req);

@@ -46,10 +46,13 @@ struct objiter {
 };
 
 struct objiter *
-ObjIterBegin(struct worker *wrk, struct object *obj)
+ObjIterBegin(struct worker *wrk, struct objcore *oc)
 {
 	struct objiter *oi;
+	struct object *obj;
 
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	obj = ObjGetObj(oc, &wrk->stats);
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	ALLOC_OBJ(oi, OBJITER_MAGIC);
 	if (oi == NULL)

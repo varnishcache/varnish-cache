@@ -494,7 +494,6 @@ struct busyobj {
 	struct http		*bereq0;
 	struct http		*bereq;
 	struct http		*beresp;
-	struct object		*ims_obj;
 	struct objcore		*ims_oc;
 	struct objcore		*fetch_objcore;
 
@@ -1058,7 +1057,7 @@ enum objiter_status {
 	OIS_STREAM,
 	OIS_ERROR,
 };
-struct objiter *ObjIterBegin(struct worker *, struct object *);
+struct objiter *ObjIterBegin(struct worker *, struct objcore *);
 enum objiter_status ObjIter(struct objiter *, void **, ssize_t *);
 void ObjIterEnd(struct objiter **);
 void ObjTrimStore(struct objcore *, struct dstat *);
