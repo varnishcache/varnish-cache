@@ -567,7 +567,6 @@ vfp_gzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	enum vfp_status vp = VFP_ERROR;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
 	AN(p);
@@ -622,7 +621,6 @@ vfp_testgunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	enum vfp_status vp;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	CAST_OBJ_NOTNULL(vg, vfe->priv1, VGZ_MAGIC);
 	AN(p);

@@ -161,7 +161,6 @@ VFP_Suck(struct vfp_ctx *vc, void *p, ssize_t *lp)
 	struct vfp_entry *vfe;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	AN(p);
 	AN(lp);
 	vfe = vc->vfp_nxt;
@@ -262,7 +261,7 @@ VFP_Push(struct vfp_ctx *vc, const struct vfp *vfp, int top)
 	struct vfp_entry *vfe;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	vfe = (void*)WS_Alloc(vc->bo->ws, sizeof *vfe);
+	vfe = (void*)WS_Alloc(vc->http->ws, sizeof *vfe);
 	AN(vfe);
 	vfe->magic = VFP_ENTRY_MAGIC;
 	vfe->vfp = vfp;

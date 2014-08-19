@@ -465,6 +465,7 @@ struct vfp_ctx {
 
 	struct vsl_log		*vsl;
 	struct http		*http;
+	struct http		*esi_req;
 	struct body		*body;
 	uint64_t		bodybytes;
 };

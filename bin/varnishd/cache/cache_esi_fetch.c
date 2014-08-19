@@ -110,7 +110,6 @@ vfp_esi_end(struct vfp_ctx *vc, struct vef_priv *vef,
 	void *p;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 
 	vsb = VEP_Finish(vef->vep);
@@ -146,13 +145,13 @@ vfp_esi_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	struct vef_priv *vef;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->esi_req, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	ALLOC_OBJ(vef, VEF_MAGIC);
 	if (vef == NULL)
 		return (VFP_ERROR);
 	vef->vgz = VGZ_NewGzip(vc->vsl, "G F E");
-	vef->vep = VEP_Init(vc, vc->bo->bereq, vfp_vep_callback, vef);
+	vef->vep = VEP_Init(vc, vc->esi_req, vfp_vep_callback, vef);
 	vef->ibuf_sz = cache_param->gzip_buffer;
 	vef->ibuf = calloc(1L, vef->ibuf_sz);
 	if (vef->ibuf == NULL)
@@ -178,7 +177,6 @@ vfp_esi_gzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	struct vef_priv *vef;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	CAST_OBJ_NOTNULL(vef, vfe->priv1, VEF_MAGIC);
 	AN(p);
@@ -219,11 +217,11 @@ vfp_esi_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	struct vef_priv *vef;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->esi_req, HTTP_MAGIC);
 	ALLOC_OBJ(vef, VEF_MAGIC);
 	if (vef == NULL)
 		return (VFP_ERROR);
-	vef->vep = VEP_Init(vc, vc->bo->bereq, NULL, NULL);
+	vef->vep = VEP_Init(vc, vc->esi_req, NULL, NULL);
 	vfe->priv1 = vef;
 	return (VFP_OK);
 }
@@ -236,7 +234,6 @@ vfp_esi_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p, ssize_t *lp)
 	struct vef_priv *vef;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	CAST_OBJ_NOTNULL(vef, vfe->priv1, VEF_MAGIC);
 	AN(p);

@@ -194,7 +194,6 @@ stv_alloc_obj(const struct vfp_ctx *vc, size_t size)
 	 * keep an object inside the same stevedore.
 	 */
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	stv = vc->body->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 

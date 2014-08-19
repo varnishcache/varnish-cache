@@ -367,6 +367,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	bo->vfc->oc = bo->fetch_objcore;
 	bo->vfc->stats = bo->stats;
 	bo->vfc->http = bo->beresp;
+	bo->vfc->esi_req = bo->bereq;
 	bo->vfc->vsl = bo->vsl;
 
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, bo->beresp->ws);
@@ -689,6 +690,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	bo->vfc->oc = bo->fetch_objcore;
 	bo->vfc->stats = bo->stats;
 	bo->vfc->http = bo->beresp;
+	bo->vfc->esi_req = bo->bereq;
 	bo->vfc->vsl = bo->vsl;
 
 	if (vbf_beresp2obj(bo))
