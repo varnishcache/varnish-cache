@@ -290,10 +290,11 @@ ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
 }
 
 void *
-ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr,
-    ssize_t len)
+ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr, ssize_t len,
+    const void *ptr)
 {
 	struct object *o;
+	void *retval = NULL;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
@@ -306,27 +307,36 @@ ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr,
 		if (o->esidata == NULL)
 			return (NULL);
 		o->esidata->len = len;
-		return (o->esidata->ptr);
+		retval  = o->esidata->ptr;
+		break;
 	case OA_FLAGS:
 		assert(len == sizeof o->oa_flags);
-		return (o->oa_flags);
+		retval = o->oa_flags;
+		break;
 	case OA_GZIPBITS:
 		assert(len == sizeof o->oa_gzipbits);
-		return (o->oa_gzipbits);
+		retval = o->oa_gzipbits;
+		break;
 	case OA_LASTMODIFIED:
 		assert(len == sizeof o->oa_lastmodified);
-		return (o->oa_lastmodified);
+		retval = o->oa_lastmodified;
+		break;
 	case OA_VARY:
 		o->oa_vary = (void*)WS_Alloc(vc->bo->ws_o, len);
 		AN(o->oa_vary);
-		return (o->oa_vary);
+		retval = o->oa_vary;
+		break;
 	case OA_VXID:
 		assert(len == sizeof o->oa_vxid);
-		return (o->oa_vxid);
+		retval = o->oa_vxid;
+		break;
 	default:
+		WRONG("Unsupported OBJ_ATTR");
 		break;
 	}
-	WRONG("Unsupported OBJ_ATTR");
+	if (ptr != NULL)
+		memcpy(retval, ptr, len);
+	return (retval);
 }
 
 int
@@ -341,10 +351,9 @@ ObjCopyAttr(const struct vfp_ctx *vc, struct objcore *ocs, enum obj_attr attr)
 	// XXX: later we want to have zero-length OA's too
 	if (vps == NULL || l <= 0)
 		return (-1);
-	vpd = ObjSetattr(vc, attr, l);
+	vpd = ObjSetattr(vc, attr, l, vps);
 	if (vpd == NULL)
 		return (-1);
-	memcpy(vpd, vps, l);
 	return (0);
 }
 
@@ -383,7 +392,7 @@ ObjSetDouble(const struct vfp_ctx *vc, enum obj_attr a, double t)
 
 	assert(sizeof t == sizeof u);
 	memcpy(&u, &t, sizeof u);
-	vp = ObjSetattr(vc, a, sizeof u);
+	vp = ObjSetattr(vc, a, sizeof u, NULL);
 	if (vp == NULL)
 		return (-1);
 	vbe64enc(vp, u);
@@ -417,7 +426,7 @@ ObjSetU64(const struct vfp_ctx *vc, enum obj_attr a, uint64_t t)
 {
 	void *vp;
 
-	vp = ObjSetattr(vc, a, sizeof t);
+	vp = ObjSetattr(vc, a, sizeof t, NULL);
 	if (vp == NULL)
 		return (-1);
 	vbe64enc(vp, t);
@@ -443,7 +452,7 @@ ObjSetU32(const struct vfp_ctx *vc, enum obj_attr a, uint32_t t)
 {
 	void *vp;
 
-	vp = ObjSetattr(vc, a, sizeof t);
+	vp = ObjSetattr(vc, a, sizeof t, NULL);
 	if (vp == NULL)
 		return (-1);
 	vbe32enc(vp, t);
@@ -482,7 +491,7 @@ ObjSetFlag(const struct vfp_ctx *vc, enum obj_flags of, int val)
 {
 	uint8_t *fp;
 
-	fp = ObjSetattr(vc, OA_FLAGS, 1);
+	fp = ObjSetattr(vc, OA_FLAGS, 1, NULL);
 	AN(fp);
 	if (val)
 		(*fp) |= of;

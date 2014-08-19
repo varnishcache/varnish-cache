@@ -139,8 +139,7 @@ vbf_beresp2obj(struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 
 	if (vary != NULL) {
-		b = ObjSetattr(bo->vfc, OA_VARY, varyl);
-		memcpy(b, VSB_data(vary), varyl);
+		b = ObjSetattr(bo->vfc, OA_VARY, varyl, VSB_data(vary));
 		(void)VRY_Validate(obj->oa_vary);
 		VSB_delete(vary);
 	}

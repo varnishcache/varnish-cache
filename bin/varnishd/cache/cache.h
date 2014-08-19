@@ -1067,7 +1067,8 @@ void ObjSlim(struct objcore *oc, struct dstat *ds);
 struct lru *ObjGetLRU(const struct objcore *);
 void *ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
     ssize_t *len);
-void *ObjSetattr(const struct vfp_ctx *, enum obj_attr attr, ssize_t len);
+void *ObjSetattr(const struct vfp_ctx *, enum obj_attr attr, ssize_t len,
+    const void *);
 int ObjCopyAttr(const struct vfp_ctx *, struct objcore *, enum obj_attr attr);
 
 int ObjSetDouble(const struct vfp_ctx*, enum obj_attr, double);
