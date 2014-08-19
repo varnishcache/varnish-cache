@@ -46,10 +46,9 @@
  * XXX: Should this be merged over there ?
  */
 
-static struct object *
+static int
 vbf_allocobj(struct busyobj *bo, unsigned l)
 {
-	struct object *obj;
 	struct objcore *oc;
 	const char *storage_hint;
 	double lifetime;
@@ -67,13 +66,11 @@ vbf_allocobj(struct busyobj *bo, unsigned l)
 
 	bo->storage_hint = NULL;
 
-	obj = STV_NewObject(bo, storage_hint, l);
-
-	if (obj != NULL)
-		return (obj);
+	if (STV_NewObject(bo, storage_hint, l))
+		return (1);
 
 	if (storage_hint != NULL && !strcmp(storage_hint, TRANSIENT_STORAGE))
-		return (NULL);
+		return (0);
 
 	/*
 	 * Try to salvage the transaction by allocating a shortlived object
@@ -84,8 +81,7 @@ vbf_allocobj(struct busyobj *bo, unsigned l)
 		oc->exp.ttl = cache_param->shortlived;
 	oc->exp.grace = 0.0;
 	oc->exp.keep = 0.0;
-	obj = STV_NewObject(bo, TRANSIENT_STORAGE, l);
-	return (obj);
+	return (STV_NewObject(bo, TRANSIENT_STORAGE, l));
 }
 
 /*--------------------------------------------------------------------
@@ -95,11 +91,11 @@ vbf_allocobj(struct busyobj *bo, unsigned l)
 static int
 vbf_beresp2obj(struct busyobj *bo)
 {
-	unsigned l;
+	unsigned l, l2;
 	char *b;
+	uint8_t *bp;
 	struct vsb *vary = NULL;
 	int varyl = 0;
-	struct object *obj;
 
 	l = 0;
 
@@ -125,22 +121,18 @@ vbf_beresp2obj(struct busyobj *bo)
 			AZ(vary);
 	}
 
-	l += http_EstimateWS(bo->beresp,
+	l2 = http_EstimateWS(bo->beresp,
 	    bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS);
+	l += l2;
 
 	if (bo->uncacheable)
 		bo->fetch_objcore->flags |= OC_F_PASS;
 
-	obj = vbf_allocobj(bo, l);
-
-	if (obj == NULL)
+	if (!vbf_allocobj(bo, l))
 		return (-1);
-
-	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 
 	if (vary != NULL) {
 		b = ObjSetattr(bo->vfc, OA_VARY, varyl, VSB_data(vary));
-		(void)VRY_Validate(obj->oa_vary);
 		VSB_delete(vary);
 	}
 
@@ -151,9 +143,10 @@ vbf_beresp2obj(struct busyobj *bo)
 	bo->beresp->logtag = SLT_ObjMethod;
 
 	/* Filter into object */
-	obj->oa_http = HTTP_Encode(bo->beresp, bo->ws_o,
+	bp = ObjSetattr(bo->vfc, OA_HEADERS, l2, NULL);
+	AN(bp);
+	HTTP_Encode(bo->beresp, bp, l2,
 	    bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS);
-	AN(obj->oa_http);
 
 	if (http_GetHdr(bo->beresp, H_Last_Modified, &b))
 		AZ(ObjSetDouble(bo->vfc, OA_LASTMODIFIED, VTIM_parse(b)));

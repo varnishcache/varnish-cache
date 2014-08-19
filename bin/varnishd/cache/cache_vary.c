@@ -63,6 +63,8 @@
 #include "vct.h"
 #include "vend.h"
 
+static unsigned VRY_Validate(const uint8_t *vary);
+
 /**********************************************************************
  * Create a Vary matching string from a Vary header
  *
@@ -368,7 +370,7 @@ VRY_Match(struct req *req, const uint8_t *vary)
  * Check the validity of a Vary string and return its total length
  */
 
-unsigned
+static unsigned
 VRY_Validate(const uint8_t *vary)
 {
 	unsigned retval = 0;

@@ -637,20 +637,18 @@ http_EstimateWS(const struct http *fm, unsigned how)
  * Encode http struct as byte string.
  */
 
-uint8_t *
-HTTP_Encode(const struct http *fm, struct ws *ws, unsigned how)
+void
+HTTP_Encode(const struct http *fm, uint8_t *p0, unsigned l, unsigned how)
 {
 	unsigned u, w;
 	uint16_t n;
 	uint8_t *p, *e;
 
-	u = WS_Reserve(ws, 0);
-	p = (uint8_t*)ws->f;
-	e = (uint8_t*)ws->f + u;
-	if (p + 5 > e) {
-		WS_Release(ws, 0);
-		return (NULL);
-	}
+	AN(p0);
+	AN(l);
+	p = p0;
+	e = p + l;
+	assert(p + 5 <= e);
 	assert(fm->nhd < fm->shd);
 	n = HTTP_HDR_FIRST - 3;
 	vbe16enc(p + 2, fm->status);
@@ -670,20 +668,14 @@ HTTP_Encode(const struct http *fm, struct ws *ws, unsigned how)
 #undef HTTPH
 		http_VSLH(fm, u);
 		w = Tlen(fm->hd[u]) + 1L;
-		if (p + w + 1 > e) {
-			WS_Release(ws, 0);
-			return (NULL);
-		}
+		assert(p + w + 1 <= e);
 		memcpy(p, fm->hd[u].b, w);
 		p += w;
 		n++;
 	}
 	*p++ = '\0';
 	assert(p <= e);
-	e = (uint8_t*)ws->f;
-	vbe16enc(e, n + 1);
-	WS_ReleaseP(ws, (void*)p);
-	return (e);
+	vbe16enc(p0, n + 1);
 }
 
 /*--------------------------------------------------------------------

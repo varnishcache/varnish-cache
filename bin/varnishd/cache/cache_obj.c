@@ -405,6 +405,11 @@ ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr, ssize_t len,
 		assert(len == sizeof o->oa_gzipbits);
 		retval = o->oa_gzipbits;
 		break;
+	case OA_HEADERS:
+		o->oa_http = (void*)WS_Alloc(vc->bo->ws_o, len);
+		AN(o->oa_http);
+		retval = o->oa_http;
+		break;
 	case OA_LASTMODIFIED:
 		assert(len == sizeof o->oa_lastmodified);
 		retval = o->oa_lastmodified;

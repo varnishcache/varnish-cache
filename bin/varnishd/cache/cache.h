@@ -950,7 +950,7 @@ void HTTP_Init(void);
 void http_PutResponse(struct http *to, const char *proto, uint16_t status,
     const char *response);
 void http_FilterReq(struct http *to, const struct http *fm, unsigned how);
-uint8_t *HTTP_Encode(const struct http *fm, struct ws *ws, unsigned how);
+void HTTP_Encode(const struct http *fm, uint8_t *, unsigned len, unsigned how);
 int HTTP_Decode(struct http *to, uint8_t *fm);
 void http_ForceHeader(struct http *to, const char *hdr, const char *val);
 void http_PrintfHeader(struct http *to, const char *fmt, ...)
@@ -1172,7 +1172,6 @@ void VSL_Flush(struct vsl_log *, int overflow);
 /* cache_vary.c */
 int VRY_Create(struct busyobj *bo, struct vsb **psb);
 int VRY_Match(struct req *, const uint8_t *vary);
-unsigned VRY_Validate(const uint8_t *vary);
 void VRY_Prep(struct req *);
 void VRY_Clear(struct req *);
 enum vry_finish_flag { KEEP, DISCARD };
@@ -1245,7 +1244,7 @@ void RFC2616_Weaken_Etag(struct http *hp);
 
 
 /* stevedore.c */
-struct object *STV_NewObject(struct busyobj *, const char *hint, unsigned len);
+int STV_NewObject(struct busyobj *, const char *hint, unsigned len);
 struct storage *STV_alloc(struct stevedore *, size_t size);
 void STV_trim(struct storage *st, size_t size, int move_ok);
 void STV_free(struct storage *st);

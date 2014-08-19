@@ -275,7 +275,7 @@ stv_default_allocobj(struct stevedore *stv, struct busyobj *bo,
  * XXX: for the body in the same allocation while we are at it.
  */
 
-struct object *
+int
 STV_NewObject(struct busyobj *bo, const char *hint, unsigned wsl)
 {
 	struct object *o;
@@ -315,14 +315,14 @@ STV_NewObject(struct busyobj *bo, const char *hint, unsigned wsl)
 	}
 
 	if (o == NULL)
-		return (NULL);
+		return (0);
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(o->objstore, STORAGE_MAGIC);
 	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
 	assert(o->objcore->stevedore == stv);
 	AN(stv->methods);
-	return (o);
+	return (1);
 }
 
 /*-------------------------------------------------------------------*/
