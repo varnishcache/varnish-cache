@@ -152,8 +152,8 @@ stv_pick_stevedore(struct vsl_log *vsl, const char **hint)
 
 /*-------------------------------------------------------------------*/
 
-static struct storage *
-stv_alloc(struct stevedore *stv, size_t size)
+struct storage *
+STV_alloc(struct stevedore *stv, size_t size)
 {
 	struct storage *st;
 
@@ -179,45 +179,6 @@ stv_alloc(struct stevedore *stv, size_t size)
 	CHECK_OBJ_ORNULL(st, STORAGE_MAGIC);
 	return (st);
 }
-
-/*-------------------------------------------------------------------*/
-
-static struct storage *
-stv_alloc_obj(const struct vfp_ctx *vc, size_t size)
-{
-	struct storage *st = NULL;
-	struct stevedore *stv;
-	unsigned fail;
-
-	/*
-	 * Always use the stevedore which allocated the object in order to
-	 * keep an object inside the same stevedore.
-	 */
-	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	stv = vc->body->stevedore;
-	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
-
-	if (size > cache_param->fetch_maxchunksize)
-		size = cache_param->fetch_maxchunksize;
-
-	assert(size <= UINT_MAX);	/* field limit in struct storage */
-
-	for (fail = 0; fail <= cache_param->nuke_limit; fail++) {
-		/* try to allocate from it */
-		AN(stv->alloc);
-		st = stv_alloc(stv, size);
-		if (st != NULL)
-			break;
-
-		/* no luck; try to free some space and keep trying */
-		if (fail < cache_param->nuke_limit &&
-		    EXP_NukeOne(vc->vsl, vc->stats, stv->lru) == -1)
-			break;
-	}
-	CHECK_OBJ_ORNULL(st, STORAGE_MAGIC);
-	return (st);
-}
-
 
 /*-------------------------------------------------------------------*
  * Structure used to transport internal knowledge from STV_NewObject()
@@ -367,17 +328,10 @@ STV_NewObject(struct busyobj *bo, const char *hint, unsigned wsl)
 /*-------------------------------------------------------------------*/
 
 struct storage *
-STV_alloc(const struct vfp_ctx *vc, size_t size)
-{
-
-	return (stv_alloc_obj(vc, size));
-}
-
-struct storage *
 STV_alloc_transient(size_t size)
 {
 
-	return (stv_alloc(stv_transient, size));
+	return (STV_alloc(stv_transient, size));
 }
 
 void

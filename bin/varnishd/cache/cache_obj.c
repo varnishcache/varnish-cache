@@ -35,7 +35,6 @@
 #include "storage/storage.h"
 #include "hash/hash_slinger.h"
 
-
 static const struct objcore_methods *
 obj_getmethods(const struct objcore *oc)
 {
@@ -169,6 +168,73 @@ ObjIterEnd(struct objiter **oi)
 /*--------------------------------------------------------------------
  */
 
+static struct storage *
+objallocwithnuke(struct stevedore *stv, struct vsl_log *vsl, struct dstat *ds,
+    size_t size)
+{
+	struct storage *st = NULL;
+	unsigned fail;
+
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+
+	if (size > cache_param->fetch_maxchunksize)
+		size = cache_param->fetch_maxchunksize;
+
+	assert(size <= UINT_MAX);	/* field limit in struct storage */
+
+	for (fail = 0; fail <= cache_param->nuke_limit; fail++) {
+		/* try to allocate from it */
+		AN(stv->alloc);
+		st = STV_alloc(stv, size);
+		if (st != NULL)
+			break;
+
+		/* no luck; try to free some space and keep trying */
+		if (fail < cache_param->nuke_limit &&
+		    EXP_NukeOne(vsl, ds, stv->lru) == -1)
+			break;
+	}
+	CHECK_OBJ_ORNULL(st, STORAGE_MAGIC);
+	return (st);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+struct storage *
+ObjGetSpace(struct objcore *oc, struct vsl_log *vsl, struct dstat *ds,
+    ssize_t sz)
+{
+	struct object *o;
+	struct storage *st;
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(ds);
+	o = obj_getobj(oc, ds);
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+
+	st = VTAILQ_LAST(&o->body->list, storagehead);
+	if (st != NULL && st->len < st->space)
+		return (st);
+
+	st = objallocwithnuke(o->body->stevedore, vsl, ds, sz);
+	if (st == NULL)
+		return (st);
+
+	if (oc->busyobj != NULL) {
+		CHECK_OBJ_NOTNULL(oc->busyobj, BUSYOBJ_MAGIC);
+		Lck_Lock(&oc->busyobj->mtx);
+		VTAILQ_INSERT_TAIL(&o->body->list, st, list);
+		Lck_Unlock(&oc->busyobj->mtx);
+	} else {
+		VTAILQ_INSERT_TAIL(&o->body->list, st, list);
+	}
+	return (st);
+}
+
+/*--------------------------------------------------------------------
+ */
+
 void
 ObjExtend(struct objcore *oc, struct dstat *ds, ssize_t l)
 {
@@ -176,7 +242,6 @@ ObjExtend(struct objcore *oc, struct dstat *ds, ssize_t l)
 	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-
 	o = obj_getobj(oc, ds);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st = VTAILQ_LAST(&o->body->list, storagehead);
@@ -325,7 +390,8 @@ ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr, ssize_t len,
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	switch (attr) {
 	case OA_ESIDATA:
-		o->esidata = STV_alloc(vc, len);
+		o->esidata = objallocwithnuke(o->body->stevedore, vc->vsl,
+		    vc->stats, len);
 		if (o->esidata == NULL)
 			return (NULL);
 		o->esidata->len = len;

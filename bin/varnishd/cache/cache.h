@@ -1061,6 +1061,8 @@ enum objiter_status {
 struct objiter *ObjIterBegin(struct worker *, struct objcore *);
 enum objiter_status ObjIter(struct objiter *, void **, ssize_t *);
 void ObjIterEnd(struct objiter **);
+struct storage *ObjGetSpace(struct objcore *, struct vsl_log *vsl,
+    struct dstat *, ssize_t sz);
 void ObjExtend(struct objcore *, struct dstat *, ssize_t l);
 void ObjTrimStore(struct objcore *, struct dstat *);
 unsigned ObjGetXID(struct objcore *, struct dstat *);
@@ -1245,7 +1247,7 @@ void RFC2616_Weaken_Etag(struct http *hp);
 
 /* stevedore.c */
 struct object *STV_NewObject(struct busyobj *, const char *hint, unsigned len);
-struct storage *STV_alloc(const struct vfp_ctx *, size_t size);
+struct storage *STV_alloc(struct stevedore *, size_t size);
 void STV_trim(struct storage *st, size_t size, int move_ok);
 void STV_free(struct storage *st);
 void STV_open(void);

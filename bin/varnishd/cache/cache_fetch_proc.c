@@ -92,15 +92,9 @@ VFP_GetStorage(struct vfp_ctx *vc, ssize_t sz)
 		l = sz;
 	if (l == 0)
 		l = cache_param->fetch_chunksize;
-	st = STV_alloc(vc, l);
-	if (st == NULL) {
+	st = ObjGetSpace(vc->oc, vc->vsl, vc->stats, l);
+	if (st == NULL)
 		(void)VFP_Error(vc, "Could not get storage");
-	} else {
-		AZ(st->len);
-		Lck_Lock(&vc->bo->mtx);
-		VTAILQ_INSERT_TAIL(&vc->body->list, st, list);
-		Lck_Unlock(&vc->bo->mtx);
-	}
 	return (st);
 }
 
