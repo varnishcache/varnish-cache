@@ -364,6 +364,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	VFP_Setup(bo->vfc);
 	bo->vfc->bo = bo;
+	bo->vfc->oc = bo->fetch_objcore;
 	bo->vfc->stats = bo->stats;
 	bo->vfc->http = bo->beresp;
 	bo->vfc->vsl = bo->vsl;
@@ -685,6 +686,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	VFP_Setup(bo->vfc);
 	bo->vfc->bo = bo;
+	bo->vfc->oc = bo->fetch_objcore;
 	bo->vfc->stats = bo->stats;
 	bo->vfc->http = bo->beresp;
 	bo->vfc->vsl = bo->vsl;

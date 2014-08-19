@@ -455,6 +455,7 @@ struct vfp_ctx {
 	unsigned		magic;
 #define VFP_CTX_MAGIC		0x61d9d3e5
 	struct busyobj		*bo;
+	struct objcore		*oc;
 	struct dstat		*stats;
 
 	int			failed;
