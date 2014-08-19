@@ -60,7 +60,8 @@ struct vep_state {
 #define VEP_MAGIC		0x55cb9b82
 	struct vsb		*vsb;
 
-	struct busyobj		*bo;
+	const char		*url;
+	struct vfp_ctx		*vc;
 	int			dogzip;
 	vep_callback_t		*cb;
 	void			*cb_priv;
@@ -195,7 +196,7 @@ vep_error(const struct vep_state *vep, const char *p)
 
 	VSC_C_main->esi_errors++;
 	l = (intmax_t)(vep->ver_p - vep->hack_p);
-	VSLb(vep->bo->vsl, SLT_ESI_xmlerror, "ERR at %jd %s", l, p);
+	VSLb(vep->vc->vsl, SLT_ESI_xmlerror, "ERR at %jd %s", l, p);
 
 }
 
@@ -210,7 +211,7 @@ vep_warn(const struct vep_state *vep, const char *p)
 
 	VSC_C_main->esi_warnings++;
 	l = (intmax_t)(vep->ver_p - vep->hack_p);
-	VSLb(vep->bo->vsl, SLT_ESI_xmlerror, "WARN at %jd %s", l, p);
+	VSLb(vep->vc->vsl, SLT_ESI_xmlerror, "WARN at %jd %s", l, p);
 
 }
 
@@ -330,7 +331,7 @@ vep_mark_common(struct vep_state *vep, const char *p, enum vep_mark mark)
 	 */
 
 	if (vep->last_mark != mark && (vep->o_wait > 0 || vep->startup)) {
-		lcb = vep->cb(vep->bo, vep->cb_priv, 0,
+		lcb = vep->cb(vep->vc, vep->cb_priv, 0,
 		    mark == VERBATIM ? VGZ_RESET : VGZ_ALIGN);
 		if (lcb - vep->o_last > 0)
 			vep_emit_common(vep, lcb - vep->o_last, vep->last_mark);
@@ -340,7 +341,7 @@ vep_mark_common(struct vep_state *vep, const char *p, enum vep_mark mark)
 
 	/* Transfer pending bytes CRC into active mode CRC */
 	if (vep->o_pending) {
-		(void)vep->cb(vep->bo, vep->cb_priv, vep->o_pending,
+		(void)vep->cb(vep->vc, vep->cb_priv, vep->o_pending,
 		     VGZ_NORMAL);
 		if (vep->o_crc == 0) {
 			vep->crc = vep->crcp;
@@ -365,7 +366,7 @@ vep_mark_common(struct vep_state *vep, const char *p, enum vep_mark mark)
 
 	vep->o_wait += l;
 	vep->last_mark = mark;
-	(void)vep->cb(vep->bo, vep->cb_priv, l, VGZ_NORMAL);
+	(void)vep->cb(vep->vc, vep->cb_priv, l, VGZ_NORMAL);
 }
 
 static void
@@ -442,9 +443,8 @@ vep_do_remove(struct vep_state *vep, enum dowhat what)
 static void __match_proto__()
 vep_do_include(struct vep_state *vep, enum dowhat what)
 {
-	char *p, *q, *h;
+	const char *p, *q, *h;
 	ssize_t l;
-	txt url;
 
 	Debug("DO_INCLUDE(%d)\n", what);
 	if (what == DO_ATTR) {
@@ -518,18 +518,17 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 	} else {
 		VSB_printf(vep->vsb, "%c", VEC_INCL);
 		VSB_printf(vep->vsb, "%c", 0);
-		url = vep->bo->bereq->hd[HTTP_HDR_URL];
 		/* Look for the last / before a '?' */
 		h = NULL;
-		for (q = url.b; q < url.e && *q != '?'; q++)
+		for (q = vep->url; *q && *q != '?'; q++)
 			if (*q == '/')
 				h = q;
 		if (h == NULL)
 			h = q + 1;
 
 		Debug("INCL:: [%.*s]/[%s]\n",
-		    (int)(h - url.b), url.b, p);
-		VSB_printf(vep->vsb, "%.*s/", (int)(h - url.b), url.b);
+		    (int)(h - vep->url), vep->url, p);
+		VSB_printf(vep->vsb, "%.*s/", (int)(h - vep->url), vep->url);
 	}
 	l -= (p - VSB_data(vep->include_src));
 	for (q = p; *q != '\0'; ) {
@@ -637,14 +636,14 @@ VEP_Parse(struct vep_state *vep, const struct busyobj *bo, const char *p,
 				p++;
 				vep->state = VEP_STARTTAG;
 			} else if (p < e && *p == '\xeb') {
-				VSLb(vep->bo->vsl, SLT_ESI_xmlerror,
+				VSLb(vep->vc->vsl, SLT_ESI_xmlerror,
 				    "No ESI processing, "
 				    "first char not '<' but BOM."
 				    " (See feature esi_remove_bom)"
 				);
 				vep->state = VEP_NOTXML;
 			} else if (p < e) {
-				VSLb(vep->bo->vsl, SLT_ESI_xmlerror,
+				VSLb(vep->vc->vsl, SLT_ESI_xmlerror,
 				    "No ESI processing, "
 				    "first char not '<'."
 				    " (See feature esi_disable_xml_check)"
@@ -1025,11 +1024,11 @@ VEP_Parse(struct vep_state *vep, const struct busyobj *bo, const char *p,
  */
 
 static ssize_t __match_proto__()
-vep_default_cb(struct busyobj *bo, void *priv, ssize_t l, enum vgz_flag flg)
+vep_default_cb(struct vfp_ctx *vc, void *priv, ssize_t l, enum vgz_flag flg)
 {
 	ssize_t *s;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	AN(priv);
 	s = priv;
 	*s += l;
@@ -1041,17 +1040,20 @@ vep_default_cb(struct busyobj *bo, void *priv, ssize_t l, enum vgz_flag flg)
  */
 
 struct vep_state *
-VEP_Init(struct busyobj *bo, vep_callback_t *cb, void *cb_priv)
+VEP_Init(struct vfp_ctx *vc, const struct http *req, vep_callback_t *cb,
+    void *cb_priv)
 {
 	struct vep_state *vep;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	vep = (void*)WS_Alloc(bo->ws, sizeof *vep);
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(req, HTTP_MAGIC);
+	vep = (void*)WS_Alloc(vc->http->ws, sizeof *vep);
 	AN(vep);
 
 	memset(vep, 0, sizeof *vep);
 	vep->magic = VEP_MAGIC;
-	vep->bo = bo;
+	vep->url = req->hd[HTTP_HDR_URL].b;
+	vep->vc = vc;
 	vep->vsb = VSB_new_auto();
 	AN(vep->vsb);
 
@@ -1084,15 +1086,14 @@ VEP_Finish(struct vep_state *vep, const struct busyobj *bo)
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
-	assert(vep->bo == bo);
 
 	if (vep->o_pending)
 		vep_mark_common(vep, vep->ver_p, vep->last_mark);
 	if (vep->o_wait > 0) {
-		lcb = vep->cb(vep->bo, vep->cb_priv, 0, VGZ_ALIGN);
+		lcb = vep->cb(vep->vc, vep->cb_priv, 0, VGZ_ALIGN);
 		vep_emit_common(vep, lcb - vep->o_last, vep->last_mark);
 	}
-	(void)vep->cb(vep->bo, vep->cb_priv, 0, VGZ_FINISH);
+	(void)vep->cb(vep->vc, vep->cb_priv, 0, VGZ_FINISH);
 
 	AZ(VSB_finish(vep->vsb));
 	l = VSB_len(vep->vsb);

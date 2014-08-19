@@ -39,10 +39,11 @@
 #define	VEC_S8	(0x60 + 8)
 #define	VEC_INCL	'I'
 
-typedef ssize_t vep_callback_t(struct busyobj *, void *priv, ssize_t l,
+typedef ssize_t vep_callback_t(struct vfp_ctx *, void *priv, ssize_t l,
     enum vgz_flag flg);
 
-struct vep_state *VEP_Init(struct busyobj *, vep_callback_t *cb, void *cb_priv);
+struct vep_state *VEP_Init(struct vfp_ctx *vc, const struct http *req,
+    vep_callback_t *cb, void *cb_priv);
 void VEP_Parse(struct vep_state *, const struct busyobj *, const char *p,
     size_t l);
 struct vsb *VEP_Finish(struct vep_state *, const struct busyobj *);

@@ -56,7 +56,7 @@ struct vef_priv {
 };
 
 static ssize_t
-vfp_vep_callback(struct busyobj *bo, void *priv, ssize_t l, enum vgz_flag flg)
+vfp_vep_callback(struct vfp_ctx *vc, void *priv, ssize_t l, enum vgz_flag flg)
 {
 	struct vef_priv *vef;
 	size_t dl;
@@ -64,7 +64,8 @@ vfp_vep_callback(struct busyobj *bo, void *priv, ssize_t l, enum vgz_flag flg)
 	struct storage *st;
 	int i;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	CAST_OBJ_NOTNULL(vef, priv, VEF_MAGIC);
 	assert(l >= 0);
 
@@ -83,7 +84,7 @@ vfp_vep_callback(struct busyobj *bo, void *priv, ssize_t l, enum vgz_flag flg)
 
 	VGZ_Ibuf(vef->vgz, vef->ibuf_o, l);
 	do {
-		st = VFP_GetStorage(bo->vfc, 0);
+		st = VFP_GetStorage(vc, 0);
 		if (st == NULL) {
 			vef->error = ENOMEM;
 			vef->tot += l;
@@ -92,7 +93,7 @@ vfp_vep_callback(struct busyobj *bo, void *priv, ssize_t l, enum vgz_flag flg)
 		VGZ_Obuf(vef->vgz, st->ptr + st->len, st->space - st->len);
 		i = VGZ_Gzip(vef->vgz, &dp, &dl, flg);
 		vef->tot += dl;
-		VBO_extend(bo, dl);
+		VBO_extend(vc->bo, dl);
 	} while (i != VGZ_ERROR &&
 	    (!VGZ_IbufEmpty(vef->vgz) || VGZ_ObufFull(vef->vgz)));
 	assert(i == VGZ_ERROR || VGZ_IbufEmpty(vef->vgz));
@@ -151,7 +152,7 @@ vfp_esi_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	if (vef == NULL)
 		return (VFP_ERROR);
 	vef->vgz = VGZ_NewGzip(vc->vsl, "G F E");
-	vef->vep = VEP_Init(vc->bo, vfp_vep_callback, vef);
+	vef->vep = VEP_Init(vc, vc->bo->bereq, vfp_vep_callback, vef);
 	vef->ibuf_sz = cache_param->gzip_buffer;
 	vef->ibuf = calloc(1L, vef->ibuf_sz);
 	if (vef->ibuf == NULL)
@@ -222,7 +223,7 @@ vfp_esi_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	ALLOC_OBJ(vef, VEF_MAGIC);
 	if (vef == NULL)
 		return (VFP_ERROR);
-	vef->vep = VEP_Init(vc->bo, NULL, NULL);
+	vef->vep = VEP_Init(vc, vc->bo->bereq, NULL, NULL);
 	vfe->priv1 = vef;
 	return (VFP_OK);
 }
