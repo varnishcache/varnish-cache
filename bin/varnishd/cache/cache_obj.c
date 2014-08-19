@@ -117,7 +117,7 @@ ObjIter(struct objiter *oi, void **p, ssize_t *l)
 	} else {
 		ol = oi->len;
 		while (1) {
-			nl = VBO_waitlen(oi->bo, ol);
+			nl = VBO_waitlen(oi->bo, &oi->wrk->stats, ol);
 			if (nl != ol)
 				break;
 			if (oi->bo->state == BOS_FINISHED)
@@ -165,6 +165,29 @@ ObjIterEnd(struct objiter **oi)
 	FREE_OBJ((*oi));
 	*oi = NULL;
 }
+
+/*--------------------------------------------------------------------
+ */
+
+void
+ObjExtend(struct objcore *oc, struct dstat *ds, ssize_t l)
+{
+	struct object *o;
+	struct storage *st;
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	o = obj_getobj(oc, ds);
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	st = VTAILQ_LAST(&o->body->list, storagehead);
+	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+	assert(st->len + l <= st->space);
+	st->len += l;
+	o->body->len += l;
+}
+
+/*--------------------------------------------------------------------
+ */
 
 void
 ObjTrimStore(struct objcore *oc, struct dstat *ds)

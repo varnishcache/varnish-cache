@@ -97,7 +97,7 @@ v1d_dorange(struct req *req, struct busyobj *bo, const char *r)
 
 	/* We must snapshot the length if we're streaming from the backend */
 	if (bo != NULL)
-		len = VBO_waitlen(bo, -1);
+		len = VBO_waitlen(bo, &req->wrk->stats, -1);
 	else
 		len = ObjGetLen(req->objcore, &req->wrk->stats);
 
@@ -340,7 +340,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		l = -1;
 		while (req->objcore->busyobj) {
 			assert(bo != NULL);
-			l = VBO_waitlen(bo, l);
+			l = VBO_waitlen(bo, &req->wrk->stats, l);
 		}
 		ESI_DeliverChild(req);
 	} else if (req->res_mode & RES_GUNZIP ||

@@ -803,7 +803,7 @@ struct busyobj *VBO_GetBusyObj(struct worker *, const struct req *);
 void VBO_DerefBusyObj(struct worker *wrk, struct busyobj **busyobj);
 void VBO_Free(struct busyobj **vbo);
 void VBO_extend(struct busyobj *, ssize_t);
-ssize_t VBO_waitlen(struct busyobj *bo, ssize_t l);
+ssize_t VBO_waitlen(struct busyobj *, struct dstat *, ssize_t l);
 void VBO_setstate(struct busyobj *bo, enum busyobj_state_e next);
 void VBO_waitstate(struct busyobj *bo, enum busyobj_state_e want);
 
@@ -1061,6 +1061,7 @@ enum objiter_status {
 struct objiter *ObjIterBegin(struct worker *, struct objcore *);
 enum objiter_status ObjIter(struct objiter *, void **, ssize_t *);
 void ObjIterEnd(struct objiter **);
+void ObjExtend(struct objcore *, struct dstat *, ssize_t l);
 void ObjTrimStore(struct objcore *, struct dstat *);
 unsigned ObjGetXID(struct objcore *, struct dstat *);
 uint64_t ObjGetLen(struct objcore *oc, struct dstat *ds);
