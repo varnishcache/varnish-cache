@@ -81,10 +81,6 @@ VFP_GetStorage(struct vfp_ctx *vc, ssize_t sz)
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
-	AN(vc->body);
-	st = VTAILQ_LAST(&vc->body->list, storagehead);
-	if (st != NULL && st->len < st->space)
-		return (st);
 
 	AN(vc->stats);
 	l = fetchfrag;
@@ -224,13 +220,10 @@ VFP_Fetch_Body(struct busyobj *bo)
 		}
 
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-		assert(st == VTAILQ_LAST(&bo->vfc->body->list,
-		    storagehead));
 		l = st->space - st->len;
 		AZ(bo->vfc->failed);
 		vfps = VFP_Suck(bo->vfc, st->ptr + st->len, &l);
 		if (l > 0 && vfps != VFP_ERROR) {
-			AZ(VTAILQ_EMPTY(&bo->vfc->body->list));
 			VBO_extend(bo, l);
 		}
 		if (st->len == st->space)

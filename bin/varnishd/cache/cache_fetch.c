@@ -161,8 +161,6 @@ vbf_beresp2obj(struct busyobj *bo)
 		AZ(ObjSetDouble(bo->vfc, OA_LASTMODIFIED,
 		    floor(bo->fetch_objcore->exp.t_origin)));
 
-	bo->vfc->body = obj->body;
-
 	return (0);
 }
 
