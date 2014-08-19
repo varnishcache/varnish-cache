@@ -299,7 +299,7 @@ ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr, ssize_t len,
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->bo->fetch_objcore, OBJCORE_MAGIC);
-	o = obj_getobj(vc->bo->fetch_objcore, vc->bo->stats);
+	o = obj_getobj(vc->bo->fetch_objcore, vc->stats);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	switch (attr) {
 	case OA_ESIDATA:
@@ -347,7 +347,7 @@ ObjCopyAttr(const struct vfp_ctx *vc, struct objcore *ocs, enum obj_attr attr)
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 
-	vps = ObjGetattr(ocs, vc->bo->stats, attr, &l);
+	vps = ObjGetattr(ocs, vc->stats, attr, &l);
 	// XXX: later we want to have zero-length OA's too
 	if (vps == NULL || l <= 0)
 		return (-1);

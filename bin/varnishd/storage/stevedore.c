@@ -195,7 +195,6 @@ stv_alloc_obj(const struct vfp_ctx *vc, size_t size)
 	 */
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
-	AN(vc->bo->stats);
 	stv = vc->body->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
@@ -213,7 +212,7 @@ stv_alloc_obj(const struct vfp_ctx *vc, size_t size)
 
 		/* no luck; try to free some space and keep trying */
 		if (fail < cache_param->nuke_limit &&
-		    EXP_NukeOne(vc->bo, stv->lru) == -1)
+		    EXP_NukeOne(vc->vsl, vc->stats, stv->lru) == -1)
 			break;
 	}
 	CHECK_OBJ_ORNULL(st, STORAGE_MAGIC);
@@ -349,7 +348,7 @@ STV_NewObject(struct busyobj *bo, const char *hint, unsigned wsl)
 	if (o == NULL) {
 		/* no luck; try to free some space and keep trying */
 		for (i = 0; o == NULL && i < cache_param->nuke_limit; i++) {
-			if (EXP_NukeOne(bo, stv->lru) == -1)
+			if (EXP_NukeOne(bo->vsl, bo->stats, stv->lru) == -1)
 				break;
 			o = stv->allocobj(stv, bo, ltot, &soc);
 		}

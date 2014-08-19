@@ -455,6 +455,7 @@ struct vfp_ctx {
 	unsigned		magic;
 #define VFP_CTX_MAGIC		0x61d9d3e5
 	struct busyobj		*bo;
+	struct dstat		*stats;
 
 	int			failed;
 
@@ -894,7 +895,7 @@ void EXP_Init(void);
 void EXP_Rearm(struct objcore *, double now, double ttl, double grace,
     double keep);
 void EXP_Touch(struct objcore *oc, double now);
-int EXP_NukeOne(struct busyobj *, struct lru *lru);
+int EXP_NukeOne(struct vsl_log *vsl, struct dstat *ds, struct lru *lru);
 
 /* cache_fetch.c */
 enum vbf_fetch_mode_e {
