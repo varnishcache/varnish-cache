@@ -566,14 +566,12 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
  */
 
 void
-VEP_Parse(struct vep_state *vep, const struct busyobj *bo, const char *p,
-    size_t l)
+VEP_Parse(struct vep_state *vep, const char *p, size_t l)
 {
 	const char *e;
 	struct vep_match *vm;
 	int i;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 	assert(l > 0);
 
@@ -1080,11 +1078,10 @@ VEP_Init(struct vfp_ctx *vc, const struct http *req, vep_callback_t *cb,
  */
 
 struct vsb *
-VEP_Finish(struct vep_state *vep, const struct busyobj *bo)
+VEP_Finish(struct vep_state *vep)
 {
 	ssize_t l, lcb;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 
 	if (vep->o_pending)

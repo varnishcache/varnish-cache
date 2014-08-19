@@ -113,7 +113,7 @@ vfp_esi_end(struct vfp_ctx *vc, struct vef_priv *vef,
 	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vef, VEF_MAGIC);
 
-	vsb = VEP_Finish(vef->vep, vc->bo);
+	vsb = VEP_Finish(vef->vep);
 
 	if (vsb != NULL) {
 		if (retval == VFP_END) {
@@ -193,7 +193,7 @@ vfp_esi_gzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	vp = VFP_Suck(vc, vef->ibuf_i, &l);
 
 	if (l > 0) {
-		VEP_Parse(vef->vep, vc->bo, vef->ibuf_i, l);
+		VEP_Parse(vef->vep, vef->ibuf_i, l);
 		vef->ibuf_i += l;
 		assert(vef->ibuf_o >= vef->ibuf && vef->ibuf_o <= vef->ibuf_i);
 		if (vef->error) {
@@ -248,7 +248,7 @@ vfp_esi_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p, ssize_t *lp)
 	}
 	vp = VFP_Suck(vc, p, lp);
 	if (vp != VFP_ERROR && *lp > 0)
-		VEP_Parse(vef->vep, vc->bo, p, *lp);
+		VEP_Parse(vef->vep, p, *lp);
 	if (vp == VFP_END) {
 		vp = vfp_esi_end(vc, vef, vp);
 		vfe->priv1 = NULL;
