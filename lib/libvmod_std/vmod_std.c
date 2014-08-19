@@ -156,18 +156,18 @@ vmod_log(const struct vrt_ctx *ctx, const char *fmt, ...)
 VCL_VOID __match_proto__(td_std_syslog)
 vmod_syslog(const struct vrt_ctx *ctx, VCL_INT fac, const char *fmt, ...)
 {
-	char *p;
 	unsigned u;
 	va_list ap;
+	txt t;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	u = WS_Reserve(ctx->ws, 0);
-	p = ctx->ws->f;
+	t.b = ctx->ws->f;
 	va_start(ap, fmt);
-	p = VRT_StringList(p, u, fmt, ap);
+	t.e = VRT_StringList(t.b, u, fmt, ap);
 	va_end(ap);
-	if (p != NULL)
-		syslog((int)fac, "%s", p);
+	if (t.e != NULL)
+		syslog((int)fac, "%s", t.b);
 	WS_Release(ctx->ws, 0);
 }
 
