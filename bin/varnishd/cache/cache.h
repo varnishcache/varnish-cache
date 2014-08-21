@@ -400,7 +400,6 @@ struct objcore {
 	uint16_t		flags;
 #define OC_F_BUSY		(1<<1)
 #define OC_F_PASS		(1<<2)
-#define OC_F_PRIV		(1<<5)		/* Stevedore private flag */
 #define OC_F_PRIVATE		(1<<8)
 #define OC_F_FAILED		(1<<9)
 

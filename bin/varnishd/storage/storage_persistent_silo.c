@@ -47,6 +47,13 @@
 
 #include "storage/storage_persistent.h"
 
+/*
+ * We use the low bit to mark objects still needing fixup
+ * In theory this may need to be platform dependent
+ */
+
+#define NEED_FIXUP	(1U << 31)
+
 /*--------------------------------------------------------------------
  * Write the segmentlist back to the silo.
  *
@@ -152,10 +159,10 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 			continue;
 		ALLOC_OBJ(oc, OBJCORE_MAGIC);
 		AN(oc);
-		oc->flags |= OC_F_NEEDFIXUP;
 		oc->flags &= ~OC_F_BUSY;
 		oc->stevedore = sc->parent;
 		smp_init_oc(oc, sg, no);
+		oc->priv2 |= NEED_FIXUP;
 		oc->ban = BAN_RefBan(oc, so->ban, sc->tailban);
 		HSH_Insert(wrk, so->hash, oc);
 		oc->exp = so->exp;
@@ -321,6 +328,7 @@ smp_find_so(const struct smp_seg *sg, unsigned priv2)
 {
 	struct smp_object *so;
 
+	priv2 &= ~NEED_FIXUP;
 	assert(priv2 > 0);
 	assert(priv2 <= sg->p.lobjlist);
 	so = &sg->objs[sg->p.lobjlist - priv2];
@@ -394,7 +402,7 @@ smp_oc_getobj(struct dstat *ds, struct objcore *oc)
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	if (ds == NULL)
-		AZ(oc->flags & OC_F_NEEDFIXUP);
+		AZ(oc->priv2 & NEED_FIXUP);
 
 	CAST_OBJ_NOTNULL(sg, oc->priv, SMP_SEG_MAGIC);
 	so = smp_find_so(sg, oc->priv2);
@@ -413,13 +421,13 @@ smp_oc_getobj(struct dstat *ds, struct objcore *oc)
 	 * If this flag is not set, it will not be, and the lock is not
 	 * needed to test it.
 	 */
-	if (!(oc->flags & OC_F_NEEDFIXUP))
+	if (!(oc->priv2 & NEED_FIXUP))
 		return (o);
 
 	AN(ds);
 	Lck_Lock(&sg->sc->mtx);
 	/* Check again, we might have raced. */
-	if (oc->flags & OC_F_NEEDFIXUP) {
+	if (oc->priv2 & NEED_FIXUP) {
 		/* We trust caller to have a refcnt for us */
 		o->objcore = oc;
 
@@ -442,7 +450,7 @@ smp_oc_getobj(struct dstat *ds, struct objcore *oc)
 		sg->nfixed++;
 		ds->n_object++;
 		ds->n_vampireobject--;
-		oc->flags &= ~OC_F_NEEDFIXUP;
+		oc->priv2 &= ~NEED_FIXUP;
 	}
 	Lck_Unlock(&sg->sc->mtx);
 	EXP_Rearm(oc, NAN, NAN, NAN, NAN);	// XXX: Shouldn't be needed
@@ -494,7 +502,7 @@ smp_oc_freeobj(struct dstat *ds, struct objcore *oc)
 
 	assert(sg->nobj > 0);
 	sg->nobj--;
-	if (oc->flags & OC_F_NEEDFIXUP) {
+	if (oc->priv2 & NEED_FIXUP) {
 		ds->n_vampireobject--;
 	} else {
 		assert(sg->nfixed > 0);
@@ -531,6 +539,7 @@ void
 smp_init_oc(struct objcore *oc, struct smp_seg *sg, unsigned objidx)
 {
 
+	AZ(objidx & NEED_FIXUP);
 	oc->priv = sg;
 	oc->priv2 = objidx;
 }
