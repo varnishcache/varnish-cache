@@ -73,25 +73,34 @@ VFP_Error(struct vfp_ctx *vc, const char *fmt, ...)
  *
  */
 
-struct storage *
-VFP_GetStorage(struct vfp_ctx *vc, ssize_t sz)
+enum vfp_status
+VFP_GetStorage(struct vfp_ctx *vc, ssize_t *sz, uint8_t **ptr)
 {
 	ssize_t l;
 	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
+	AN(sz);
+	AN(ptr);
 
 	AN(vc->stats);
 	l = fetchfrag;
 	if (l == 0)
-		l = sz;
+		l = *sz;
 	if (l == 0)
 		l = cache_param->fetch_chunksize;
 	st = ObjGetSpace(vc->oc, vc->vsl, vc->stats, l);
-	if (st == NULL)
-		(void)VFP_Error(vc, "Could not get storage");
-	return (st);
+	if (st == NULL) {
+		*sz = 0;
+		*ptr = NULL;
+		return (VFP_Error(vc, "Could not get storage"));
+	}
+	*sz = st->space - st->len;
+	assert(*sz > 0);
+	*ptr = st->ptr + st->len;
+	AN(*ptr);
+	return (VFP_OK);
 }
 
 /**********************************************************************
@@ -182,8 +191,8 @@ void
 VFP_Fetch_Body(struct busyobj *bo)
 {
 	ssize_t l;
+	uint8_t *ptr;
 	enum vfp_status vfps = VFP_ERROR;
-	struct storage *st = NULL;
 	ssize_t est;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -209,25 +218,19 @@ VFP_Fetch_Body(struct busyobj *bo)
 			break;
 		}
 		AZ(bo->vfc->failed);
-		if (st == NULL) {
-			st = VFP_GetStorage(bo->vfc, est);
-			est = 0;
-		}
-		if (st == NULL) {
+		l = est;
+		if (VFP_GetStorage(bo->vfc, &l, &ptr) != VFP_OK) {
 			bo->doclose = SC_RX_BODY;
-			(void)VFP_Error(bo->vfc, "Out of storage");
 			break;
 		}
 
-		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-		l = st->space - st->len;
 		AZ(bo->vfc->failed);
-		vfps = VFP_Suck(bo->vfc, st->ptr + st->len, &l);
+		vfps = VFP_Suck(bo->vfc, ptr, &l);
 		if (l > 0 && vfps != VFP_ERROR) {
 			VBO_extend(bo, l);
+			if (est > 0)
+				est -= l;
 		}
-		if (st->len == st->space)
-			st = NULL;
 	} while (vfps == VFP_OK);
 
 	if (vfps == VFP_ERROR) {

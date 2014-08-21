@@ -59,9 +59,9 @@ static ssize_t
 vfp_vep_callback(struct vfp_ctx *vc, void *priv, ssize_t l, enum vgz_flag flg)
 {
 	struct vef_priv *vef;
-	size_t dl;
+	ssize_t dl;
 	const void *dp;
-	struct storage *st;
+	uint8_t *ptr;
 	int i;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
@@ -84,13 +84,13 @@ vfp_vep_callback(struct vfp_ctx *vc, void *priv, ssize_t l, enum vgz_flag flg)
 
 	VGZ_Ibuf(vef->vgz, vef->ibuf_o, l);
 	do {
-		st = VFP_GetStorage(vc, 0);
-		if (st == NULL) {
+		dl = 0;
+		if (VFP_GetStorage(vc, &dl, &ptr) != VFP_OK) {
 			vef->error = ENOMEM;
 			vef->tot += l;
 			return (vef->tot);
 		}
-		VGZ_Obuf(vef->vgz, st->ptr + st->len, st->space - st->len);
+		VGZ_Obuf(vef->vgz, ptr, dl);
 		i = VGZ_Gzip(vef->vgz, &dp, &dl, flg);
 		vef->tot += dl;
 		VBO_extend(vc->bo, dl);

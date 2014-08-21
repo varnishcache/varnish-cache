@@ -908,7 +908,7 @@ void VBF_Fetch(struct worker *wrk, struct req *req,
     struct objcore *oc, struct objcore *oldoc, enum vbf_fetch_mode_e);
 
 /* cache_fetch_proc.c */
-struct storage *VFP_GetStorage(struct vfp_ctx *, ssize_t sz);
+enum vfp_status VFP_GetStorage(struct vfp_ctx *, ssize_t *sz, uint8_t **ptr);
 void VFP_Init(void);
 void VFP_Fetch_Body(struct busyobj *bo);
 

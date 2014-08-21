@@ -555,9 +555,9 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 {
 	struct objiter *oi;
 	void *sp;
-	ssize_t sl, al, tl;
+	ssize_t sl, al, l;
+	uint8_t *ptr;
 	uint64_t ol;
-	struct storage *st;
 	enum objiter_status ois;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -577,28 +577,22 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		VBO_setstate(bo, BOS_STREAM);
 	}
 
-	st = NULL;
 	al = 0;
-
 	ol = ObjGetLen(bo->ims_oc, bo->stats);
 	oi = ObjIterBegin(wrk, bo->ims_oc);
 	do {
 		ois = ObjIter(oi, &sp, &sl);
 		while (sl > 0) {
-			if (st == NULL)
-				st = VFP_GetStorage(bo->vfc, ol - al);
-			if (st == NULL)
+			l = ol - al;
+			if (VFP_GetStorage(bo->vfc, &l, &ptr) != VFP_OK)
 				break;
-			tl = sl;
-			if (tl > st->space - st->len)
-				tl = st->space - st->len;
-			memcpy(st->ptr + st->len, sp, tl);
-			al += tl;
-			sp = (char *)sp + tl;
-			sl -= tl;
-			VBO_extend(bo, tl);
-			if (st->len == st->space)
-				st = NULL;
+			if (sl < l)
+				l = sl;
+			memcpy(ptr, sp, l);
+			VBO_extend(bo, l);
+			al += l;
+			sp = (char *)sp + l;
+			sl -= l;
 		}
 	} while (!bo->vfc->failed && (ois == OIS_DATA || ois == OIS_STREAM));
 	ObjIterEnd(&oi);
@@ -631,9 +625,9 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 static enum fetch_step
 vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 {
-	struct storage *st;
-	ssize_t l;
+	ssize_t l, ll, o;
 	double now;
+	uint8_t *ptr;
 	char time_str[VTIM_FORMAT_SIZE];
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -687,19 +681,16 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	if (vbf_beresp2obj(bo))
 		return (F_STP_FAIL);
 
-
-	l = VSB_len(bo->synth_body);
-	if (l > 0) {
-		st = VFP_GetStorage(bo->vfc, l);
-		if (st != NULL) {
-			if (st->space < l) {
-				VSLb(bo->vsl, SLT_Error,
-				    "No space for %zd bytes of synth body", l);
-			} else {
-				memcpy(st->ptr, VSB_data(bo->synth_body), l);
-				VBO_extend(bo, l);
-			}
-		}
+	ll = VSB_len(bo->synth_body);
+	o = 0;
+	while (ll > 0) {
+		l = ll;
+		if (VFP_GetStorage(bo->vfc, &l, &ptr) != VFP_OK)
+			break;
+		memcpy(ptr, VSB_data(bo->synth_body) + o, l);
+		VBO_extend(bo, l);
+		ll -= l;
+		o += l;
 	}
 	VSB_delete(bo->synth_body);
 	bo->synth_body = NULL;

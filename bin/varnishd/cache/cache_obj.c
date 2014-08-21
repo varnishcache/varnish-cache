@@ -26,16 +26,16 @@
  * SUCH DAMAGE.
  *
  * Primary API:
- * 	ObjNew		Associate stevedore with oc
- * 	ObjGetSpace	Add space
- * 	ObjExtend	Commit space
- * 	ObjDone		Object completed
- * 	ObjGetLen	Len of committed space
- * 	ObjIter		Iterate over committed space
- * 	ObjReserveAttr	Attr will be set later
- * 	ObjSetAttr	Set attr now
- * 	ObjGetAttr	Get attr no
- * 	ObjRelease	Done with attr ptr
+ *	ObjNew		Associate stevedore with oc
+ *	ObjGetSpace	Add space
+ *	ObjExtend	Commit space
+ *	ObjDone		Object completed
+ *	ObjGetLen	Len of committed space
+ *	ObjIter		Iterate over committed space
+ *	ObjReserveAttr	Attr will be set later
+ *	ObjSetAttr	Set attr now
+ *	ObjGetAttr	Get attr no
+ *	ObjRelease	Done with attr ptr
  */
 
 #include "config.h"
