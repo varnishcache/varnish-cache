@@ -1061,8 +1061,8 @@ enum objiter_status {
 struct objiter *ObjIterBegin(struct worker *, struct objcore *);
 enum objiter_status ObjIter(struct objiter *, void **, ssize_t *);
 void ObjIterEnd(struct objiter **);
-struct storage *ObjGetSpace(struct objcore *, struct vsl_log *vsl,
-    struct dstat *, ssize_t sz);
+int ObjGetSpace(struct objcore *, struct vsl_log *vsl,
+    struct dstat *, ssize_t *sz, uint8_t **ptr);
 void ObjExtend(struct objcore *, struct dstat *, ssize_t l);
 void ObjTrimStore(struct objcore *, struct dstat *);
 unsigned ObjGetXID(struct objcore *, struct dstat *);

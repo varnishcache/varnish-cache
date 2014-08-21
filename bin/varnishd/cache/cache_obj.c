@@ -213,25 +213,32 @@ objallocwithnuke(struct stevedore *stv, struct vsl_log *vsl, struct dstat *ds,
 /*--------------------------------------------------------------------
  */
 
-struct storage *
+int
 ObjGetSpace(struct objcore *oc, struct vsl_log *vsl, struct dstat *ds,
-    ssize_t sz)
+    ssize_t *sz, uint8_t **ptr)
 {
 	struct object *o;
 	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(ds);
+	AN(sz);
+	AN(ptr);
+	assert(*sz > 0);
 	o = obj_getobj(oc, ds);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
 	st = VTAILQ_LAST(&o->body->list, storagehead);
-	if (st != NULL && st->len < st->space)
-		return (st);
+	if (st != NULL && st->len < st->space) {
+		*sz = st->space - st->len;
+		*ptr = st->ptr + st->len;
+		assert (*sz > 0);
+		return (1);
+	}
 
-	st = objallocwithnuke(o->body->stevedore, vsl, ds, sz);
+	st = objallocwithnuke(o->body->stevedore, vsl, ds, *sz);
 	if (st == NULL)
-		return (st);
+		return (0);
 
 	if (oc->busyobj != NULL) {
 		CHECK_OBJ_NOTNULL(oc->busyobj, BUSYOBJ_MAGIC);
@@ -241,7 +248,10 @@ ObjGetSpace(struct objcore *oc, struct vsl_log *vsl, struct dstat *ds,
 	} else {
 		VTAILQ_INSERT_TAIL(&o->body->list, st, list);
 	}
-	return (st);
+	*sz = st->space - st->len;
+	assert (*sz > 0);
+	*ptr = st->ptr + st->len;
+	return (1);
 }
 
 /*--------------------------------------------------------------------

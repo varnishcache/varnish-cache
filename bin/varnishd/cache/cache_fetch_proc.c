@@ -77,11 +77,11 @@ enum vfp_status
 VFP_GetStorage(struct vfp_ctx *vc, ssize_t *sz, uint8_t **ptr)
 {
 	ssize_t l;
-	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	AN(sz);
+	assert(*sz >= 0);
 	AN(ptr);
 
 	AN(vc->stats);
@@ -90,15 +90,13 @@ VFP_GetStorage(struct vfp_ctx *vc, ssize_t *sz, uint8_t **ptr)
 		l = *sz;
 	if (l == 0)
 		l = cache_param->fetch_chunksize;
-	st = ObjGetSpace(vc->oc, vc->vsl, vc->stats, l);
-	if (st == NULL) {
+	*sz = l;
+	if (!ObjGetSpace(vc->oc, vc->vsl, vc->stats, sz, ptr)) {
 		*sz = 0;
 		*ptr = NULL;
 		return (VFP_Error(vc, "Could not get storage"));
 	}
-	*sz = st->space - st->len;
 	assert(*sz > 0);
-	*ptr = st->ptr + st->len;
 	AN(*ptr);
 	return (VFP_OK);
 }
@@ -219,6 +217,7 @@ VFP_Fetch_Body(struct busyobj *bo)
 		}
 		AZ(bo->vfc->failed);
 		l = est;
+		assert(l >= 0);
 		if (VFP_GetStorage(bo->vfc, &l, &ptr) != VFP_OK) {
 			bo->doclose = SC_RX_BODY;
 			break;
@@ -228,8 +227,10 @@ VFP_Fetch_Body(struct busyobj *bo)
 		vfps = VFP_Suck(bo->vfc, ptr, &l);
 		if (l > 0 && vfps != VFP_ERROR) {
 			VBO_extend(bo, l);
-			if (est > 0)
+			if (est >= l)
 				est -= l;
+			else
+				est = 0;
 		}
 	} while (vfps == VFP_OK);
 
