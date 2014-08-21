@@ -429,7 +429,6 @@ smp_oc_getobj(struct dstat *ds, struct objcore *oc)
 	/* Check again, we might have raced. */
 	if (oc->stobj->priv2 & NEED_FIXUP) {
 		/* We trust caller to have a refcnt for us */
-		o->objcore = oc;
 
 		bad = 0;
 		l = 0;

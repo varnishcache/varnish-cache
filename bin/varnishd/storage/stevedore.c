@@ -229,13 +229,12 @@ STV_MkObject(struct stevedore *stv, struct busyobj *bo,
 
 	VTAILQ_INIT(&o->body->list);
 
-	o->objcore = bo->fetch_objcore;
-
-	o->objcore->stobj->stevedore = stv;
+	bo->fetch_objcore->stobj->magic = STOREOBJ_MAGIC;
+	bo->fetch_objcore->stobj->stevedore = stv;
 	o->body->stevedore = stv;
 	AN(stv->methods);
-	o->objcore->stobj->priv = o;
-	o->objcore->stobj->priv2 = (uintptr_t)stv;
+	bo->fetch_objcore->stobj->priv = o;
+	bo->fetch_objcore->stobj->priv2 = (uintptr_t)stv;
 	VSLb(bo->vsl, SLT_Storage, "%s %s", stv->name, stv->ident);
 	return (o);
 }
@@ -319,8 +318,6 @@ STV_NewObject(struct busyobj *bo, const char *hint, unsigned wsl)
 
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(o->objstore, STORAGE_MAGIC);
-	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
-	assert(o->objcore->stobj->stevedore == stv);
 	AN(stv->methods);
 	return (1);
 }

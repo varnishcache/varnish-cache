@@ -74,6 +74,7 @@ struct objiter {
 	unsigned			magic;
 #define OBJITER_MAGIC			0x745fb151
 	struct busyobj			*bo;
+	struct objcore			*oc;
 	struct object			*obj;
 	struct storage			*st;
 	struct worker			*wrk;
@@ -92,9 +93,10 @@ ObjIterBegin(struct worker *wrk, struct objcore *oc)
 	ALLOC_OBJ(oi, OBJITER_MAGIC);
 	if (oi == NULL)
 		return (oi);
+	oi->oc = oc;
 	oi->obj = obj;
 	oi->wrk = wrk;
-	oi->bo = HSH_RefBusy(obj->objcore);
+	oi->bo = HSH_RefBusy(oc);
 	return (oi);
 }
 
@@ -169,7 +171,7 @@ ObjIterEnd(struct objiter **oi)
 	CHECK_OBJ_NOTNULL((*oi), OBJITER_MAGIC);
 	CHECK_OBJ_NOTNULL((*oi)->obj, OBJECT_MAGIC);
 	if ((*oi)->bo != NULL) {
-		if ((*oi)->obj->objcore->flags & OC_F_PASS)
+		if ((*oi)->oc->flags & OC_F_PASS)
 			(*oi)->bo->abandon = 1;
 		VBO_DerefBusyObj((*oi)->wrk, &(*oi)->bo);
 	}

@@ -570,27 +570,18 @@ enum obj_flags {
 struct object {
 	unsigned		magic;
 #define OBJECT_MAGIC		0x32851d42
-	char			oa_vxid[4];
 	struct storage		*objstore;
-	struct objcore		*objcore;
 
+	char			oa_vxid[4];
 	uint8_t			*oa_vary;
-
 	uint8_t			*oa_http;
-
-
 	uint8_t			oa_flags[1];
-
-	/* Bit positions in the gzip stream */
 	char			oa_gzipbits[24];
-
-	/* VCL only variables */
 	char			oa_lastmodified[8];
 
 	struct body		body[1];
 
 	struct storage		*esidata;
-
 };
 
 /*--------------------------------------------------------------------*/
