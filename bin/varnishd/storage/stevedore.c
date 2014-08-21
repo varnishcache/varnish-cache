@@ -54,9 +54,9 @@ default_oc_getobj(struct dstat *ds, struct objcore *oc)
 	struct object *o;
 
 	(void)ds;
-	if (oc->priv == NULL)
+	if (oc->stobj->priv == NULL)
 		return (NULL);
-	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
+	CAST_OBJ_NOTNULL(o, oc->stobj->priv, OBJECT_MAGIC);
 	return (o);
 }
 
@@ -68,9 +68,9 @@ default_oc_freeobj(struct dstat *ds, struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(ds);
 	ObjSlim(oc, ds);
-	CAST_OBJ_NOTNULL(o, oc->priv, OBJECT_MAGIC);
-	oc->priv = NULL;
-	oc->stevedore = NULL;
+	CAST_OBJ_NOTNULL(o, oc->stobj->priv, OBJECT_MAGIC);
+	oc->stobj->priv = NULL;
+	oc->stobj->stevedore = NULL;
 	o->magic = 0;
 
 	STV_free(o->objstore);
@@ -83,11 +83,11 @@ default_oc_getlru(const struct objcore *oc)
 {
 	struct stevedore *stv;
 
-	CAST_OBJ_NOTNULL(stv, (void *)oc->priv2, STEVEDORE_MAGIC);
+	CAST_OBJ_NOTNULL(stv, (void *)oc->stobj->priv2, STEVEDORE_MAGIC);
 	return (stv->lru);
 }
 
-const struct objcore_methods default_oc_methods = {
+const struct storeobj_methods default_oc_methods = {
 	.getobj = default_oc_getobj,
 	.freeobj = default_oc_freeobj,
 	.getlru = default_oc_getlru,
@@ -231,11 +231,11 @@ STV_MkObject(struct stevedore *stv, struct busyobj *bo,
 
 	o->objcore = bo->fetch_objcore;
 
-	o->objcore->stevedore = stv;
+	o->objcore->stobj->stevedore = stv;
 	o->body->stevedore = stv;
 	AN(stv->methods);
-	o->objcore->priv = o;
-	o->objcore->priv2 = (uintptr_t)stv;
+	o->objcore->stobj->priv = o;
+	o->objcore->stobj->priv2 = (uintptr_t)stv;
 	VSLb(bo->vsl, SLT_Storage, "%s %s", stv->name, stv->ident);
 	return (o);
 }
@@ -320,7 +320,7 @@ STV_NewObject(struct busyobj *bo, const char *hint, unsigned wsl)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(o->objstore, STORAGE_MAGIC);
 	CHECK_OBJ_NOTNULL(o->objcore, OBJCORE_MAGIC);
-	assert(o->objcore->stevedore == stv);
+	assert(o->objcore->stobj->stevedore == stv);
 	AN(stv->methods);
 	return (1);
 }

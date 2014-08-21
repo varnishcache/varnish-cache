@@ -535,8 +535,8 @@ smp_allocobj(struct stevedore *stv, struct busyobj *bo,
 	ltot = st->len = st->space;
 
 	o = STV_MkObject(stv, bo, st->ptr, ltot, soc);
-	AN(bo->fetch_objcore->stevedore);
-	assert(bo->fetch_objcore->stevedore == stv);
+	AN(bo->fetch_objcore->stobj->stevedore);
+	assert(bo->fetch_objcore->stobj->stevedore == stv);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	o->objstore = st;
 	bo->stats->n_object++;

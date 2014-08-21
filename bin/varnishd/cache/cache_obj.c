@@ -47,20 +47,20 @@
 #include "storage/storage.h"
 #include "hash/hash_slinger.h"
 
-static const struct objcore_methods *
+static const struct storeobj_methods *
 obj_getmethods(const struct objcore *oc)
 {
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(oc->stevedore, STEVEDORE_MAGIC);
-	AN(oc->stevedore->methods);
-	return (oc->stevedore->methods);
+	CHECK_OBJ_NOTNULL(oc->stobj->stevedore, STEVEDORE_MAGIC);
+	AN(oc->stobj->stevedore->methods);
+	return (oc->stobj->stevedore->methods);
 }
 
 static struct object *
 obj_getobj(struct objcore *oc, struct dstat *ds)
 {
-	const struct objcore_methods *m = obj_getmethods(oc);
+	const struct storeobj_methods *m = obj_getmethods(oc);
 
 	AN(ds);
 	AN(m->getobj);
@@ -285,7 +285,7 @@ ObjTrimStore(struct objcore *oc, struct dstat *ds)
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(ds);
-	stv = oc->stevedore;
+	stv = oc->stobj->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 	o = obj_getobj(oc, ds);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
@@ -329,7 +329,7 @@ ObjSlim(struct objcore *oc, struct dstat *ds)
 void
 ObjUpdateMeta(struct objcore *oc, struct dstat *ds)
 {
-	const struct objcore_methods *m = obj_getmethods(oc);
+	const struct storeobj_methods *m = obj_getmethods(oc);
 
 	if (m->updatemeta != NULL)
 		m->updatemeta(oc, ds);
@@ -338,7 +338,7 @@ ObjUpdateMeta(struct objcore *oc, struct dstat *ds)
 void
 ObjFreeObj(struct objcore *oc, struct dstat *ds)
 {
-	const struct objcore_methods *m = obj_getmethods(oc);
+	const struct storeobj_methods *m = obj_getmethods(oc);
 
 	AN(ds);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -349,7 +349,7 @@ ObjFreeObj(struct objcore *oc, struct dstat *ds)
 struct lru *
 ObjGetLRU(const struct objcore *oc)
 {
-	const struct objcore_methods *m = obj_getmethods(oc);
+	const struct storeobj_methods *m = obj_getmethods(oc);
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(m->getlru);

@@ -364,6 +364,30 @@ struct storage {
 	unsigned		space;
 };
 
+/* Stored object -----------------------------------------------------
+ * Pointer to a stored object, and the methods it supports
+ */
+
+struct storeobj {
+	unsigned		magic;
+#define STOREOBJ_MAGIC		0x6faed850
+	const struct stevedore	*stevedore;
+	void			*priv;
+	uintptr_t		priv2;
+};
+
+typedef struct object *getobj_f(struct dstat *ds, struct objcore *oc);
+typedef void updatemeta_f(struct objcore *oc, struct dstat *);
+typedef void freeobj_f(struct dstat *ds, struct objcore *oc);
+typedef struct lru *getlru_f(const struct objcore *oc);
+
+struct storeobj_methods {
+	getobj_f	*getobj;
+	updatemeta_f	*updatemeta;
+	freeobj_f	*freeobj;
+	getlru_f	*getlru;
+};
+
 /* Object core structure ---------------------------------------------
  * Objects have sideways references in the binary heap and the LRU list
  * and we want to avoid paging in a lot of objects just to move them up
@@ -372,25 +396,11 @@ struct storage {
  * housekeeping fields parts of an object.
  */
 
-typedef struct object *getobj_f(struct dstat *ds, struct objcore *oc);
-typedef void updatemeta_f(struct objcore *oc, struct dstat *);
-typedef void freeobj_f(struct dstat *ds, struct objcore *oc);
-typedef struct lru *getlru_f(const struct objcore *oc);
-
-struct objcore_methods {
-	getobj_f	*getobj;
-	updatemeta_f	*updatemeta;
-	freeobj_f	*freeobj;
-	getlru_f	*getlru;
-};
-
 struct objcore {
 	unsigned		magic;
 #define OBJCORE_MAGIC		0x4d301302
 	int			refcnt;
-	const struct stevedore	*stevedore;
-	void			*priv;
-	uintptr_t		priv2;
+	struct storeobj		stobj[1];
 	struct objhead		*objhead;
 	struct busyobj		*busyobj;
 	double			timer_when;
