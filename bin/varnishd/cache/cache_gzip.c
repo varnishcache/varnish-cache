@@ -193,7 +193,7 @@ VGZ_ObufFull(const struct vgz *vg)
 /*--------------------------------------------------------------------*/
 
 enum vgzret_e
-VGZ_Gunzip(struct vgz *vg, const void **pptr, size_t *plen)
+VGZ_Gunzip(struct vgz *vg, const void **pptr, ssize_t *plen)
 {
 	int i;
 	ssize_t l;
@@ -226,7 +226,7 @@ VGZ_Gunzip(struct vgz *vg, const void **pptr, size_t *plen)
 /*--------------------------------------------------------------------*/
 
 enum vgzret_e
-VGZ_Gzip(struct vgz *vg, const void **pptr, size_t *plen, enum vgz_flag flags)
+VGZ_Gzip(struct vgz *vg, const void **pptr, ssize_t *plen, enum vgz_flag flags)
 {
 	int i;
 	int zflg;
@@ -288,7 +288,7 @@ int __match_proto__(vdp_bytes)
 VDP_gunzip(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 {
 	enum vgzret_e vr;
-	size_t dl;
+	ssize_t dl;
 	const void *dp;
 	struct worker *wrk;
 	struct vgz *vg;
@@ -336,7 +336,7 @@ VGZ_WrwGunzip(struct req *req, struct vgz *vg, const void *ibuf,
     ssize_t ibufl)
 {
 	enum vgzret_e vr;
-	size_t dl;
+	ssize_t dl;
 	const void *dp;
 	struct worker *wrk;
 
@@ -509,7 +509,7 @@ vfp_gunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	struct vgz *vg;
 	enum vgzret_e vr = VGZ_ERROR;
 	const void *dp;
-	size_t dl;
+	ssize_t dl;
 	enum vfp_status vp = VFP_OK;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
@@ -563,7 +563,7 @@ vfp_gzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	struct vgz *vg;
 	enum vgzret_e vr = VGZ_ERROR;
 	const void *dp;
-	size_t dl;
+	ssize_t dl;
 	enum vfp_status vp = VFP_ERROR;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
@@ -617,7 +617,7 @@ vfp_testgunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	struct vgz *vg;
 	enum vgzret_e vr = VGZ_ERROR;
 	const void *dp;
-	size_t dl;
+	ssize_t dl;
 	enum vfp_status vp;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);

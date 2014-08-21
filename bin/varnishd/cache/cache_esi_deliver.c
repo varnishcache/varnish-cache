@@ -257,7 +257,7 @@ ESI_Deliver(struct req *req)
 	uint8_t tailbuf[8 + 5];
 	int isgzip;
 	struct vgz *vgz = NULL;
-	size_t dl;
+	ssize_t dl;
 	const void *dp;
 	int i;
 	struct objiter *oi;
