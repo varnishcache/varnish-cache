@@ -1,0 +1,37 @@
+varnishtest "#1577: reqbody and synth from recv"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/1") {
+			return (synth(200, "OK"));
+		}
+	}
+	sub vcl_synth {
+		set resp.http.x-url = req.url;
+	}
+	sub vcl_deliver {
+		set resp.http.x-url = req.url;
+	}
+} -start
+
+client c1 {
+	# Send a body that happens to be a valid HTTP request
+	# This one is answered by synth()
+	txreq -url "/1" -body "GET /foo HTTP/1.1\r\n\r\n"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.x-url == "/1"
+
+	# Make sure that a second request on the same connection goes through
+	# and that the body of the previous one isn't interpreted as the
+	# next request
+	txreq -url "/2"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.x-url == "/2"
+} -run
