@@ -1,0 +1,41 @@
+varnishtest "max-age and age"
+
+server s1 {
+	rxreq
+	txresp -hdr "Cache-Control: max-age=23" -hdr "Age: 4" -bodylen 40
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+	    	set beresp.http.x-ttl = beresp.ttl;
+	}
+	sub vcl_hit {
+		set req.http.x-remaining-ttl = obj.ttl;
+	}
+	sub vcl_deliver {
+		set resp.http.x-remaining-ttl = req.http.x-remaining-ttl;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 40
+	expect resp.http.x-ttl == 23.000
+	expect resp.http.Age == 4
+
+
+	delay 2
+	txreq
+	rxresp
+	expect resp.bodylen == 40
+	expect resp.http.x-ttl == 23.000
+	expect resp.http.x-remaining-ttl ~ ^17\.0|^16\.9
+
+	delay 2
+	txreq
+	rxresp
+	expect resp.bodylen == 40
+	expect resp.http.x-ttl == 23.000
+	expect resp.http.x-remaining-ttl ~ ^15\.0|^14\.9
+} -run
