@@ -135,10 +135,7 @@ RFC2616_Ttl(struct busyobj *bo, double now)
 			else
 				max_age = strtoul(p, NULL, 0);
 
-			if (age > max_age)
-				expp->ttl = 0;
-			else
-				expp->ttl = max_age - age;
+			expp->ttl = max_age;
 			break;
 		}
 
