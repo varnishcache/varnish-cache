@@ -184,7 +184,7 @@ varnishlog_thread(void *priv)
 	uint32_t vxid;
 	unsigned len;
 	const char *tagname, *data;
-	int type, i;
+	int type, i, opt;
 
 	CAST_OBJ_NOTNULL(v, priv, VARNISH_MAGIC);
 
@@ -195,6 +195,7 @@ varnishlog_thread(void *priv)
 	(void)VSM_n_Arg(vsm, v->workdir);
 
 	c = NULL;
+	opt = 0;
 	while (v->pid) {
 		if (c == NULL) {
 			VTIM_sleep(0.1);
@@ -202,13 +203,15 @@ varnishlog_thread(void *priv)
 				VSM_ResetError(vsm);
 				continue;
 			}
-			c = VSL_CursorVSM(vsl, vsm, 1);
+			c = VSL_CursorVSM(vsl, vsm, opt);
 			if (c == NULL) {
 				VSL_ResetError(vsl);
 				continue;
 			}
 		}
 		AN(c);
+
+		opt = VSL_COPT_TAIL;
 
 		i = VSL_Next(c);
 		if (i == 0) {
