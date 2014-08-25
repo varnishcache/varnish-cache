@@ -31,13 +31,9 @@
 
 #include "config.h"
 
-#include <fcntl.h>
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <sys/types.h>
-#include <sys/stat.h>
 
 #include "cache.h"
 
@@ -58,8 +54,6 @@ struct vmod {
 
 	char			*nm;
 	char			*path;
-	intmax_t		st_dev;
-	intmax_t		st_ino;
 	void			*hdl;
 	const void		*funcs;
 	int			funclen;
@@ -75,41 +69,28 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
 	const struct vmod_data *d;
 	char buf[256];
 	void *dlhdl;
-	int fd;
-	struct stat st;
 
 	ASSERT_CLI();
 
-	fd = open(path, O_RDONLY, 0);
-	if (fd < 0) {
+	dlhdl = dlopen(path, RTLD_NOW | RTLD_LOCAL);
+	if (dlhdl == NULL) {
 		VCLI_Out(cli, "Loading VMOD %s from %s:\n", nm, path);
-		VCLI_Out(cli, "open() failed: %s\n", strerror(errno));
+		VCLI_Out(cli, "dlopen() failed: %s\n", dlerror());
 		VCLI_Out(cli, "Check child process permissions.\n");
 		return (1);
 	}
 
-	AZ(fstat(fd, &st));
 	VTAILQ_FOREACH(v, &vmods, list)
-		if (st.st_dev == v->st_dev && st.st_ino == v->st_ino)
+		if (v->hdl == dlhdl)
 			break;
+	if (v == NULL) {
+		ALLOC_OBJ(v, VMOD_MAGIC);
+		AN(v);
 
-	if (v != NULL) {
-		AZ(close(fd));
-	} else {
-		dlhdl = fdlopen(fd, RTLD_NOW | RTLD_LOCAL);
-
-		AZ(close(fd));
-
-		if (dlhdl == NULL) {
-			VCLI_Out(cli, "Loading VMOD %s from %s:\n", nm, path);
-			VCLI_Out(cli, "fdlopen() failed: %s\n", dlerror());
-			VCLI_Out(cli, "Check child process permissions.\n");
-			return (1);
-		}
+		v->hdl = dlhdl;
 
 		bprintf(buf, "Vmod_%s_Data", nm);
-
-		d = dlsym(dlhdl, buf);
+		d = dlsym(v->hdl, buf);
 		if (d == NULL ||
 		    d->file_id == NULL ||
 		    strcmp(d->file_id, file_id)) {
@@ -117,10 +98,10 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
 			VCLI_Out(cli,
 			    "This is no longer the same file seen by"
 			    " the VCL-compiler.\n");
-			(void)dlclose(dlhdl);
+			(void)dlclose(v->hdl);
+			FREE_OBJ(v);
 			return (1);
 		}
-
 		if (d->vrt_major != VRT_MAJOR_VERSION ||
 		    d->vrt_minor > VRT_MINOR_VERSION ||
 		    d->name == NULL ||
@@ -132,16 +113,10 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
 		    d->abi == NULL) {
 			VCLI_Out(cli, "Loading VMOD %s from %s:\n", nm, path);
 			VCLI_Out(cli, "VMOD data is mangled.\n");
-			(void)dlclose(dlhdl);
+			(void)dlclose(v->hdl);
+			FREE_OBJ(v);
 			return (1);
 		}
-
-		ALLOC_OBJ(v, VMOD_MAGIC);
-		AN(v);
-
-		v->st_dev = st.st_dev;
-		v->st_ino = st.st_ino;
-		v->hdl = dlhdl;
 
 		v->funclen = d->func_len;
 		v->funcs = d->func;
@@ -168,13 +143,9 @@ VRT_Vmod_Fini(void **hdl)
 
 	ASSERT_CLI();
 
-
 	AN(*hdl);
 	CAST_OBJ_NOTNULL(v, *hdl, VMOD_MAGIC);
 	*hdl = NULL;
-
-	if (--v->ref != 0)
-		return;
 
 #ifndef DONT_DLCLOSE_VMODS
 	/*
@@ -184,6 +155,8 @@ VRT_Vmod_Fini(void **hdl)
 	 */
 	AZ(dlclose(v->hdl));
 #endif
+	if (--v->ref != 0)
+		return;
 	free(v->nm);
 	free(v->path);
 	VTAILQ_REMOVE(&vmods, v, list);
