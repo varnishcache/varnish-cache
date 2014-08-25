@@ -90,9 +90,7 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
 
 	AZ(fstat(fd, &st));
 	VTAILQ_FOREACH(v, &vmods, list)
-		if (st.st_dev == v->st_dev &&
-		    st.st_ino == v->st_ino &&
-		    !strcmp(v->nm, nm))
+		if (st.st_dev == v->st_dev && st.st_ino == v->st_ino)
 			break;
 
 	if (v != NULL) {
