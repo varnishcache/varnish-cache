@@ -259,12 +259,19 @@ following codes
 * `1` Configuration / parameter error
 * `2` Some other error which could be system-dependend and/or transient
 
-In addition to these, when coredumps are disabled, `varnishd` will
-exit with status code `4` in a panic situation.
+In addition to these, the `varnishd` child process will exit with
+status code `4`
 
-The `varnishd` master process may also OR its exit code with `0x40`
-when the `varnishd` child process was terminated by a signal and with
-`0x80` when a core was dumped.
+* in a panic situation when coredumps are disabled and
+* in panic-like situations when triggering an actual panic is not
+  possible.
+
+The `varnishd` master process may also OR its exit code
+
+* with `0x20` when the `varnishd` child process died,
+* with `0x40` when the `varnishd` child process was terminated by a
+  signal and
+* with `0x80` when a core was dumped.
 
 SEE ALSO
 ========
