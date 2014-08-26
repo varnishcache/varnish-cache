@@ -249,6 +249,23 @@ here, in order to conserve VM space.
 
 .. include:: ../include/params.rst
 
+EXIT CODES
+==========
+
+Varnish and bundled tools will, in most cases, exit with one of the
+following codes
+
+* `0` OK
+* `1` Configuration / parameter error
+* `2` Some other error which could be system-dependend and/or transient
+
+In addition to these, when coredumps are disabled, `varnishd` will
+exit with status code `4` in a panic situation.
+
+The `varnishd` master process may also OR its exit code with `0x40`
+when the `varnishd` child process was terminated by a signal and with
+`0x80` when a core was dumped.
+
 SEE ALSO
 ========
 
