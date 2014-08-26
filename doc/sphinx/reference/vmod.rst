@@ -325,3 +325,33 @@ unless they access VMOD specific global state, shared with other VCLs.
 
 Traffic in other VCLs which also import this VMOD, will be happening
 while housekeeping is going on.
+
+Updating VMODs
+==============
+
+A compiled VMOD is a shared library file which Varnish dlopen(3)'s
+using flags RTLD_NOW | RTLD_LOCAL.
+
+As a general rule, once a file is opened with dlopen(3) you should
+never modify it, but it is safe to rename it and put a new file
+under the name it had, which is how most tools installs and updates
+shared libraries.
+
+However, when you call dlopen(3) with the same filename multiple
+times it will give you the same single copy of the shared library
+file, without checking if it was updated in the meantime.
+
+This is obviously an oversight in the design of the dlopen(3) library
+function, but back in the late 1980ies nobody could imagine why a
+program would ever want to have multiple different versions of the
+same shared library mapped at the same time.
+
+Varnish does that, and therefore you must restart the worker process
+before Varnish will discover an updated VMOD.
+
+If you want to test a new version of a VMOD, while being able to
+instantly switch back to the old version, you will have to install
+each version with a distinct filename or in a distinct subdirectory
+and use ``import foo from "...";`` to reference it in your VCL.
+
+We're not happy about this, but have found no sensible workarounds.
