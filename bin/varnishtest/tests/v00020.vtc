@@ -74,7 +74,7 @@ varnish v1 -errvcl {Operator * not possible on type STRING.} {
 
 varnish v1 -errvcl {DURATION + INT not possible.} {
 	sub vcl_backend_response {
-		set req.http.foo = req.ttl + beresp.status;
+		set req.ttl = req.ttl + beresp.status;
 	}
 }
 
@@ -85,7 +85,7 @@ varnish v1 -errvcl {'!' must be followed by BOOL, found DURATION.} {
 	}
 }
 
-varnish v1 -errvcl {Operator + not possible on type BOOL.} {
+varnish v1 -errvcl {BOOL + BOOL not possible.} {
 	sub vcl_backend_response {
 		if (beresp.do_gzip + beresp.do_gunzip) {
 		}
@@ -111,7 +111,7 @@ varnish v1 -vcl {
 }
 
 # XXX: not the most clear error message
-varnish v1 -errvcl {Expected ';' got '-'} {
+varnish v1 -errvcl {STRING - STRING not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = "foo" - "bar";
@@ -121,14 +121,14 @@ varnish v1 -errvcl {Expected ';' got '-'} {
 varnish v1 -errvcl {TIME + STRING not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
-		set req.http.foo = now + "foo";
+		set req.ttl = now + "foo";
 	}
 }
 
 varnish v1 -errvcl {TIME + TIME not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
-		set req.http.foo = now + now;
+		set req.ttl = now + now;
 	}
 }
 
@@ -142,15 +142,15 @@ varnish v1 -errvcl {Expected ID got ';'} {
 
 varnish v1 -errvcl {INT + STRING not possible.} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv {
-		set req.http.foo = 1 + "foo";
+	sub vcl_backend_response {
+		set beresp.status = 1 + "foo";
 	}
 }
 
 varnish v1 -errvcl {INT + TIME not possible.} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv {
-		set req.http.foo = 1 + now;
+	sub vcl_backend_response {
+		set beresp.status = 1 + now;
 	}
 }
 
