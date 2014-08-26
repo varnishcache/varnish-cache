@@ -30,12 +30,12 @@ client c1 {
 	rxresp
 	expect resp.bodylen == 40
 	expect resp.http.x-ttl == 23.000
-	expect resp.http.x-remaining-ttl ~ ^17\.0|^16\.9
+	expect resp.http.x-remaining-ttl ~ ^17\.0|^16\.[89]
 
 	delay 2
 	txreq
 	rxresp
 	expect resp.bodylen == 40
 	expect resp.http.x-ttl == 23.000
-	expect resp.http.x-remaining-ttl ~ ^15\.0|^14\.9
+	expect resp.http.x-remaining-ttl ~ ^15\.0|^14\.[89]
 } -run
