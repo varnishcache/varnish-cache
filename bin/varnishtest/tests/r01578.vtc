@@ -7,7 +7,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
-	    	set beresp.http.x-ttl = beresp.ttl;
+		set beresp.http.x-ttl = beresp.ttl;
 	}
 	sub vcl_hit {
 		set req.http.x-remaining-ttl = obj.ttl;
