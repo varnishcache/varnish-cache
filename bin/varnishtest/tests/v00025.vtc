@@ -15,6 +15,9 @@ varnish v1 -arg "-i J.F.Nobody" -vcl+backend {
 
 	sub vcl_deliver {
 		set resp.http.server_port = std.port(server.ip);
+		set resp.http.server_port_foo = std.port(server.ip) + "_foo";
+		set resp.http.ttl1 = (req.ttl + 10s);
+		set resp.http.ttl2 = req.ttl + 10s;
 		set resp.http.id = server.identity;
 		set resp.http.esi = req.esi;
 		set resp.http.be = req.backend_hint;

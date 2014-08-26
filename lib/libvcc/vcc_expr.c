@@ -660,6 +660,7 @@ vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, const struct symbol *sym)
  * SYNTAX:
  *    Expr4:
  *	'(' Expr0 ')'
+ *	symbol
  *	CNUM
  *	CSTR
  */
@@ -704,6 +705,11 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 			AN(sym->eval);
 			AZ(*e);
 			sym->eval(tl, e, sym);
+			/* Unless asked for a HEADER, fold to string here */
+			if (*e && fmt != HEADER && (*e)->fmt == HEADER) {
+				vcc_expr_tostring(tl, e, STRING);
+				ERRCHK(tl);
+			}
 			return;
 		default:
 			break;
@@ -822,16 +828,21 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, enum var_type fmt)
  */
 
 static void
-vcc_expr_string_add(struct vcc *tl, struct expr **e)
+vcc_expr_string_add(struct vcc *tl, struct expr **e, struct expr *e2)
 {
-	struct expr  *e2;
 	enum var_type f2;
 
+	AN(e);
+	AN(*e);
+	AN(e2);
 	f2 = (*e)->fmt;
+	assert (f2 == STRING || f2 == STRING_LIST);
 
-	while (tl->t->tok == '+') {
-		vcc_NextToken(tl);
-		vcc_expr_mul(tl, &e2, STRING);
+	while (e2 != NULL || tl->t->tok == '+') {
+		if (e2 == NULL) {
+			vcc_NextToken(tl);
+			vcc_expr_mul(tl, &e2, STRING);
+		}
 		ERRCHK(tl);
 		if (e2->fmt != STRING && e2->fmt != STRING_LIST) {
 			vcc_expr_tostring(tl, &e2, f2);
@@ -858,6 +869,7 @@ vcc_expr_string_add(struct vcc *tl, struct expr **e)
 			*e = vcc_expr_edit(STRING_LIST, "\v1,\n\v2", *e, e2);
 			(*e)->constant = EXPR_VAR;
 		}
+		e2 = NULL;
 	}
 }
 
@@ -873,49 +885,36 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 	ERRCHK(tl);
 	f2 = (*e)->fmt;
 
-	/* Unless we specifically ask for a HEADER, fold them to string here */
-	if (fmt != HEADER && f2 == HEADER) {
-		vcc_expr_tostring(tl, e, STRING);
-		ERRCHK(tl);
-		f2 = (*e)->fmt;
-		assert(f2 == STRING);
-	}
-
-	if (tl->t->tok != '+' && tl->t->tok != '-')
-		return;
-
-	switch(f2) {
-	case STRING:
-	case STRING_LIST:
-		vcc_expr_string_add(tl, e);
-		return;
-	case INT:		break;
-	case TIME:		break;
-	case DURATION:		break;
-	case BYTES:		break;
-	default:
-		VSB_printf(tl->sb, "Operator %.*s not possible on type %s.\n",
-		    PF(tl->t), vcc_Type(f2));
-		vcc_ErrWhere(tl, tl->t);
-		return;
-	}
-
 	while (tl->t->tok == '+' || tl->t->tok == '-') {
-		if (f2 == TIME)
-			f2 = DURATION;
 		tk = tl->t;
 		vcc_NextToken(tl);
-		vcc_expr_mul(tl, &e2, f2);
+		if (f2 == TIME)
+			vcc_expr_mul(tl, &e2, DURATION);
+		else
+			vcc_expr_mul(tl, &e2, f2);
 		ERRCHK(tl);
 		if (tk->tok == '-' && (*e)->fmt == TIME && e2->fmt == TIME) {
 			/* OK */
 		} else if ((*e)->fmt == TIME && e2->fmt == DURATION) {
 			f2 = TIME;
 			/* OK */
-		} else if (tk->tok == '-' &&
-		    (*e)->fmt == BYTES && e2->fmt == BYTES) {
+		} else if ((*e)->fmt == BYTES && e2->fmt == BYTES) {
 			/* OK */
-		} else if (e2->fmt != f2) {
+		} else if ((*e)->fmt == INT && e2->fmt == INT) {
+			/* OK */
+		} else if ((*e)->fmt == DURATION && e2->fmt == DURATION) {
+			/* OK */
+		} else if (tk->tok == '+' &&
+		    (*e)->fmt == STRING && e2->fmt == STRING) {
+			vcc_expr_string_add(tl, e, e2);
+			return;
+		} else if (tk->tok == '+' &&
+		    (fmt == STRING || fmt == STRING_LIST)) {
+			/* Time to fold and add as string */
+			vcc_expr_tostring(tl, e, STRING);
+			vcc_expr_string_add(tl, e, e2);
+			return;
+		} else {
 			VSB_printf(tl->sb, "%s %.*s %s not possible.\n",
 			    vcc_Type((*e)->fmt), PF(tk), vcc_Type(e2->fmt));
 			vcc_ErrWhere2(tl, tk, tl->t);
