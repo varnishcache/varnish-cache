@@ -33,7 +33,6 @@
 
 #include <stdio.h>
 #include <stddef.h>
-#include <strings.h>
 
 #include "cache.h"
 
