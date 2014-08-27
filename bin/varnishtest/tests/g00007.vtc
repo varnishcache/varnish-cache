@@ -2,20 +2,35 @@ varnishtest "Test Vary with gzip/gunzip"
 
 server s1 {
 	rxreq
+	expect req.url == "/foo"
 	txresp -body "foo"
+
 	rxreq
+	expect req.url == "/bar"
 	txresp -gzipbody "bar"
+
 	rxreq
+	expect req.url == "/baz"
 	txresp -body "baz"
+
 	rxreq
+	expect req.url == "/qux"
 	txresp -hdr "Vary: qux" -gzipbody "qux"
+
 	rxreq
+	expect req.url == "/fubar"
 	txresp -hdr "Vary: fubar, Accept-Encoding" -gzipbody "fubar"
+
 	rxreq
+	expect req.url == "/foobar"
 	txresp -gzipbody "foobar"
+
 	rxreq
+	expect req.url == "/foobaz"
 	txresp -hdr "Vary: foobaz" -gzipbody "foobaz"
+
 	rxreq
+	expect req.url == "/fooqux"
 	txresp -hdr "Vary: fooqux, Accept-Encoding" -gzipbody "fooqux"
 } -start
 
@@ -30,46 +45,62 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
+	# /foo
 	txreq -url /foo
 	rxresp
 	expect resp.body == "foo"
 	expect resp.http.Vary == <undef>
+
 	txreq -url /foo -hdr "Accept-Encoding: gzip"
 	rxresp
 	expect resp.body == "foo"
 	expect resp.http.Vary == <undef>
+
+	# /bar
 	txreq -url /bar
 	rxresp
 	expect resp.body == "bar"
 	expect resp.http.Vary == "Accept-Encoding"
+
 	txreq -url /bar -hdr "Accept-Encoding: gzip"
 	rxresp
 	expect resp.bodylen == 26
 	expect resp.http.Vary == "Accept-Encoding"
+
+	# /baz
 	txreq -url /baz
 	rxresp
 	expect resp.body == "baz"
 	expect resp.http.Vary == "Accept-Encoding"
+
 	txreq -url /baz -hdr "Accept-Encoding: gzip"
 	rxresp
 	expect resp.bodylen == 23
 	expect resp.http.Vary == "Accept-Encoding"
+
+	# /qux
 	txreq -url /qux
 	rxresp
 	expect resp.body == "qux"
 	expect resp.http.Vary == "qux, Accept-Encoding"
+
 	txreq -url /qux -hdr "Accept-Encoding: gzip"
 	rxresp
 	expect resp.bodylen == 26
 	expect resp.http.Vary == "qux, Accept-Encoding"
+
+	# /fubar
 	txreq -url /fubar
 	rxresp
 	expect resp.body == "fubar"
 	expect resp.http.Vary == "fubar, Accept-Encoding"
+
 	txreq -url /fubar -hdr "Accept-Encoding: gzip"
 	rxresp
 	expect resp.bodylen == 28
 	expect resp.http.Vary == "fubar, Accept-Encoding"
+
+	# /foobar
 	txreq -url /foobar
 	rxresp
 	expect resp.body == "foobar"
@@ -78,18 +109,24 @@ client c1 {
 	rxresp
 	expect resp.body == "foobar"
 	expect resp.http.Vary == <undef>
+
+	# /foobaz
 	txreq -url /foobaz
 	rxresp
 	expect resp.body == "foobaz"
 	expect resp.http.Vary == "foobaz"
+
 	txreq -url /foobaz -hdr "Accept-Encoding: gzip"
 	rxresp
 	expect resp.body == "foobaz"
 	expect resp.http.Vary == "foobaz"
+
+	# /fooqux
 	txreq -url /fooqux
 	rxresp
 	expect resp.body == "fooqux"
 	expect resp.http.Vary == "fooqux, Accept-Encoding"
+
 	txreq -url /fooqux -hdr "Accept-Encoding: gzip"
 	rxresp
 	expect resp.body == "fooqux"
