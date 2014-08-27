@@ -1,0 +1,9 @@
+varnishtest "escape issue in regexp"
+
+varnish v1 -vcl {
+	backend b1 { .host = "127.0.0.1"; }
+
+	sub vcl_recv {
+		set req.url = regsuball(req.url, "\??(p|pi)=.*?(&|$)", "");
+	} 
+}

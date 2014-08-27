@@ -211,6 +211,7 @@ EncString(struct vsb *sb, const char *b, const char *e, int mode)
 	VSB_cat(sb, "\"");
 	for (; b < e; b++) {
 		switch (*b) {
+		case '?':	// Trigraphs
 		case '\\':
 		case '"':
 			VSB_printf(sb, "\\%c", *b);
