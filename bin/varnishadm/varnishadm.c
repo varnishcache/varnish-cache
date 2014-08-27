@@ -34,9 +34,11 @@
 
 #include <stdio.h>
 
-#ifdef HAVE_LIBEDIT
+#if defined(HAVE_EDIT_READLINE_READLINE_H)
+#  include <edit/readline/readline.h>
+#elif defined(HAVE_LIBEDIT)
 #  include <editline/readline.h>
-#elif HAVE_READLINE_READLINE_H
+#elif defined (HAVE_READLINE_READLINE_H)
 #  include <readline/readline.h>
 #  ifdef HAVE_READLINE_HISTORY_H
 #    include <readline/history.h>
