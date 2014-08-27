@@ -164,6 +164,7 @@ PKG_CHECK_MODULES([LIBEDIT], [libedit],
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
+AC_CHECK_HEADERS([edit/readline/readline.h])
 AC_CHECK_HEADERS([sys/param.h])
 AC_CHECK_HEADERS([sys/types.h])
 AC_CHECK_HEADERS([sys/endian.h])
