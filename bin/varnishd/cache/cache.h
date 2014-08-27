@@ -962,8 +962,8 @@ void http_ForceField(const struct http *to, unsigned n, const char *t);
 void HTTP_Setup(struct http *, struct ws *, struct vsl_log *, enum VSL_tag_e);
 void http_Teardown(struct http *ht);
 int http_GetHdr(const struct http *hp, const char *hdr, char **ptr);
-int http_GetHdrData(const struct http *hp, const char *hdr,
-    const char *field, char **ptr);
+int http_GetHdrToken(const struct http *hp, const char *hdr,
+    const char *token, char **ptr);
 int http_GetHdrField(const struct http *hp, const char *hdr,
     const char *field, char **ptr);
 double http_GetHdrQ(const struct http *hp, const char *hdr, const char *field);

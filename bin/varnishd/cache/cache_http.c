@@ -33,6 +33,7 @@
 
 #include <stdio.h>
 #include <stddef.h>
+#include <strings.h>
 
 #include "cache.h"
 
@@ -381,17 +382,30 @@ http_GetHdr(const struct http *hp, const char *hdr, char **ptr)
 	return (1);
 }
 
-/*--------------------------------------------------------------------
- * Find a given data element in a header according to RFC2616's #rule
+/*-----------------------------------------------------------------------------
+ * Find a given data element (token) in a header according to RFC2616's #rule
  * (section 2.1, p15)
+ *
+ * On case sensitivity:
+ *
+ * Section 4.2 (Messages Headers) defines field (header) name as case
+ * insensitive, but the field (header) value/content may be case-sensitive.
+ *
+ * http_GetHdrToken looks up a token in a header value and the rfc does not say
+ * explicitly if tokens are to be compared with or without respect to case.
+ *
+ * But all examples and specific statements regarding tokens follow the rule
+ * that unquoted tokens are to be matched case-insensitively and quoted tokens
+ * case-sensitively.
  */
 
 int
-http_GetHdrData(const struct http *hp, const char *hdr,
-    const char *field, char **ptr)
+http_GetHdrToken(const struct http *hp, const char *hdr,
+    const char *token, char **ptr)
 {
 	char *h, *e;
 	unsigned fl;
+	int quoted;
 
 	if (ptr != NULL)
 		*ptr = NULL;
@@ -399,7 +413,9 @@ http_GetHdrData(const struct http *hp, const char *hdr,
 		return (0);
 	AN(h);
 	e = strchr(h, '\0');
-	fl = strlen(field);
+	fl = strlen(token);
+	quoted = token[0] == '"' && token[fl] == '"';
+
 	while (h + fl <= e) {
 		/* Skip leading whitespace and commas */
 		if (vct_islws(*h) || *h == ',') {
@@ -408,7 +424,8 @@ http_GetHdrData(const struct http *hp, const char *hdr,
 		}
 		/* Check for substrings before memcmp() */
 		if ((h + fl == e || vct_issepctl(h[fl])) &&
-		    !memcmp(h, field, fl)) {
+		    ((quoted && !memcmp(h, token, fl)) ||
+		     !strncasecmp(h, token, fl))) {
 			if (ptr != NULL) {
 				h += fl;
 				while (vct_islws(*h))
@@ -436,7 +453,7 @@ http_GetHdrQ(const struct http *hp, const char *hdr, const char *field)
 	double a, b;
 
 	h = NULL;
-	i = http_GetHdrData(hp, hdr, field, &h);
+	i = http_GetHdrToken(hp, hdr, field, &h);
 	if (!i)
 		return (0.);
 
@@ -489,7 +506,7 @@ http_GetHdrField(const struct http *hp, const char *hdr,
 		*ptr = NULL;
 
 	h = NULL;
-	i = http_GetHdrData(hp, hdr, field, &h);
+	i = http_GetHdrToken(hp, hdr, field, &h);
 	if (!i)
 		return (i);
 

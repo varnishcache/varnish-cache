@@ -322,7 +322,7 @@ RFC2616_Req_Gzip(const struct http *hp)
 	 * p104 says to not do q values for x-gzip, so we just test
 	 * for its existence.
 	 */
-	if (http_GetHdrData(hp, H_Accept_Encoding, "x-gzip", NULL))
+	if (http_GetHdrToken(hp, H_Accept_Encoding, "x-gzip", NULL))
 		return (1);
 
 	/*
@@ -395,7 +395,7 @@ RFC2616_Vary_AE(struct http *hp)
 {
 	char *vary;
 
-	if (http_GetHdrData(hp, H_Vary, "Accept-Encoding", NULL))
+	if (http_GetHdrToken(hp, H_Vary, "Accept-Encoding", NULL))
 		return;
 	if (http_GetHdr(hp, H_Vary, &vary)) {
 		http_Unset(hp, H_Vary);
