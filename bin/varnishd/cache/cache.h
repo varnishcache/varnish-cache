@@ -926,7 +926,7 @@ void CLI_AddFuncs(struct cli_proto *p);
 extern pthread_t cli_thread;
 #define ASSERT_CLI() do {assert(pthread_self() == cli_thread);} while (0)
 
-/* cache_expiry.c */
+/* cache_expire.c */
 void EXP_Clr(struct exp *e);
 
 double EXP_Ttl(const struct req *, const struct object*);
@@ -1247,7 +1247,7 @@ char *WS_Snapshot(struct ws *ws);
 int WS_Overflowed(const struct ws *ws);
 void *WS_Printf(struct ws *ws, const char *fmt, ...) __printflike(2, 3);
 
-/* rfc2616.c */
+/* cache_rfc2616.c */
 void RFC2616_Ttl(struct busyobj *, double now);
 enum body_status RFC2616_Body(struct busyobj *, struct dstat *);
 unsigned RFC2616_Req_Gzip(const struct http *);
