@@ -204,8 +204,7 @@ WS_Reserve(struct ws *ws, unsigned bytes)
 	assert(ws->r == NULL);
 
 	b2 = PRNDDN(ws->e - ws->f);
-	if ((bytes != 0) &&
-	    (bytes < b2))
+	if (bytes != 0 && bytes < b2)
 		b2 = PRNDUP(bytes);
 
 	xxxassert(ws->f + b2 <= ws->e);
