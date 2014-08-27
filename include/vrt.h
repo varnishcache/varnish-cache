@@ -41,7 +41,7 @@
 
 #define VRT_MAJOR_VERSION	2U
 
-#define VRT_MINOR_VERSION	0U
+#define VRT_MINOR_VERSION	1U
 
 
 /***********************************************************************/
@@ -101,6 +101,7 @@ struct vrt_ctx {
 	struct http			*http_bereq;
 	struct http			*http_beresp;
 
+	double				now;
 };
 
 /***********************************************************************/

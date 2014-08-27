@@ -42,6 +42,7 @@
 #include "vrt.h"
 #include "vcli.h"
 #include "vcli_priv.h"
+#include "vtim.h"
 
 struct vcls {
 	unsigned		magic;
@@ -432,6 +433,7 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		ctx.http_req = req->http;
 		ctx.http_resp = req->resp;
 		ctx.req = req;
+		ctx.now = req->t_prev;
 	}
 	if (bo != NULL) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -440,7 +442,10 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		ctx.http_bereq = bo->bereq;
 		ctx.http_beresp = bo->beresp;
 		ctx.bo = bo;
+		ctx.now = bo->t_prev;
 	}
+	if (ctx.now == 0)
+		ctx.now = VTIM_real();
 	ctx.ws = ws;
 	ctx.vsl = vsl;
 	ctx.method = method;
