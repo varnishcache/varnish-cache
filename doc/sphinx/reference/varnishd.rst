@@ -256,15 +256,9 @@ Varnish and bundled tools will, in most cases, exit with one of the
 following codes
 
 * `0` OK
-* `1` Configuration / parameter error
-* `2` Some other error which could be system-dependend and/or transient
-
-In addition to these, the `varnishd` child process will exit with
-status code `4`
-
-* in a panic situation when coredumps are disabled and
-* in panic-like situations when triggering an actual panic is not
-  possible.
+* `1` Some error which could be system-dependend and/or transient
+* `2` Serious configuration / parameter error - retrying with the same
+  configuration / parameters is most likely useless
 
 The `varnishd` master process may also OR its exit code
 
