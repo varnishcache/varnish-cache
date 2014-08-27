@@ -202,13 +202,12 @@ WS_Reserve(struct ws *ws, unsigned bytes)
 
 	WS_Assert(ws);
 	assert(ws->r == NULL);
-	if (bytes == 0)
-		b2 = ws->e - ws->f;
-	else if (bytes > ws->e - ws->f)
-		b2 = ws->e - ws->f;
-	else
-		b2 = bytes;
-	b2 = PRNDDN(b2);
+
+	b2 = PRNDDN(ws->e - ws->f);
+	if ((bytes != 0) &&
+	    (bytes < b2))
+		b2 = PRNDUP(bytes);
+
 	xxxassert(ws->f + b2 <= ws->e);
 	ws->r = ws->f + b2;
 	DSL(DBG_WORKSPACE, 0, "WS_Reserve(%p, %u/%u) = %u",
