@@ -492,6 +492,9 @@ vfp_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	if (vfe->vfp->priv2 == VFP_GZIP)
 		http_SetHeader(vc->http, "Content-Encoding: gzip");
 
+	if (vfe->vfp->priv2 == VFP_GZIP || vfe->vfp->priv2 == VFP_TESTGUNZIP)
+		RFC2616_Vary_AE(vc->http);
+
 	return (VFP_OK);
 }
 

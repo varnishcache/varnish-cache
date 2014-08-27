@@ -1242,7 +1242,7 @@ enum body_status RFC2616_Body(struct busyobj *, struct dstat *);
 unsigned RFC2616_Req_Gzip(const struct http *);
 int RFC2616_Do_Cond(const struct req *sp);
 void RFC2616_Weaken_Etag(struct http *hp);
-
+void RFC2616_Vary_AE(struct http *hp);
 
 /* stevedore.c */
 int STV_NewObject(struct busyobj *, const char *hint, unsigned len);

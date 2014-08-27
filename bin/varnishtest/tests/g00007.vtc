@@ -1,0 +1,97 @@
+varnishtest "Test Vary with gzip/gunzip"
+
+server s1 {
+	rxreq
+	txresp -body "foo"
+	rxreq
+	txresp -gzipbody "bar"
+	rxreq
+	txresp -body "baz"
+	rxreq
+	txresp -hdr "Vary: qux" -gzipbody "qux"
+	rxreq
+	txresp -hdr "Vary: fubar, Accept-Encoding" -gzipbody "fubar"
+	rxreq
+	txresp -gzipbody "foobar"
+	rxreq
+	txresp -hdr "Vary: foobaz" -gzipbody "foobaz"
+	rxreq
+	txresp -hdr "Vary: fooqux, Accept-Encoding" -gzipbody "fooqux"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		if (bereq.url ~ "/baz") {
+			set beresp.do_gzip = true;
+		} elif (bereq.url ~ "/foo(bar|baz|qux)") {
+			set beresp.do_gunzip = true;
+		}
+	}
+} -start
+
+client c1 {
+	txreq -url /foo
+	rxresp
+	expect resp.body == "foo"
+	expect resp.http.Vary == <undef>
+	txreq -url /foo -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.body == "foo"
+	expect resp.http.Vary == <undef>
+	txreq -url /bar
+	rxresp
+	expect resp.body == "bar"
+	expect resp.http.Vary == "Accept-Encoding"
+	txreq -url /bar -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.bodylen == 26
+	expect resp.http.Vary == "Accept-Encoding"
+	txreq -url /baz
+	rxresp
+	expect resp.body == "baz"
+	expect resp.http.Vary == "Accept-Encoding"
+	txreq -url /baz -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.bodylen == 23
+	expect resp.http.Vary == "Accept-Encoding"
+	txreq -url /qux
+	rxresp
+	expect resp.body == "qux"
+	expect resp.http.Vary == "qux, Accept-Encoding"
+	txreq -url /qux -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.bodylen == 26
+	expect resp.http.Vary == "qux, Accept-Encoding"
+	txreq -url /fubar
+	rxresp
+	expect resp.body == "fubar"
+	expect resp.http.Vary == "fubar, Accept-Encoding"
+	txreq -url /fubar -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.bodylen == 28
+	expect resp.http.Vary == "fubar, Accept-Encoding"
+	txreq -url /foobar
+	rxresp
+	expect resp.body == "foobar"
+	expect resp.http.Vary == <undef>
+	txreq -url /foobar -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.body == "foobar"
+	expect resp.http.Vary == <undef>
+	txreq -url /foobaz
+	rxresp
+	expect resp.body == "foobaz"
+	expect resp.http.Vary == "foobaz"
+	txreq -url /foobaz -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.body == "foobaz"
+	expect resp.http.Vary == "foobaz"
+	txreq -url /fooqux
+	rxresp
+	expect resp.body == "fooqux"
+	expect resp.http.Vary == "fooqux, Accept-Encoding"
+	txreq -url /fooqux -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.body == "fooqux"
+	expect resp.http.Vary == "fooqux, Accept-Encoding"
+} -run

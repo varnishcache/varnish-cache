@@ -165,6 +165,8 @@ vfp_esi_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	http_Unset(vc->http, H_Content_Encoding);
 	http_SetHeader(vc->http, "Content-Encoding: gzip");
 
+	RFC2616_Vary_AE(vc->http);
+
 	return (VFP_OK);
 }
 

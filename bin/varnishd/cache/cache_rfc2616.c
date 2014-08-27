@@ -387,3 +387,20 @@ RFC2616_Weaken_Etag(struct http *hp)
 	http_Unset(hp, H_ETag);
 	http_PrintfHeader(hp, "ETag: W/%s", p);
 }
+
+/*--------------------------------------------------------------------*/
+
+void
+RFC2616_Vary_AE(struct http *hp)
+{
+	char *vary;
+
+	if (http_GetHdrData(hp, H_Vary, "Accept-Encoding", NULL))
+		return;
+	if (http_GetHdr(hp, H_Vary, &vary)) {
+		http_Unset(hp, H_Vary);
+		http_PrintfHeader(hp, "Vary: %s, Accept-Encoding", vary);
+	} else {
+		http_SetHeader(hp, "Vary: Accept-Encoding");
+	}
+}
