@@ -56,13 +56,7 @@ VDI_CloseFd(struct vbc **vbp, const struct acct_bereq *acct_bereq)
 
 	VSLb(vc->vsl, SLT_BackendClose, "%d %s", vc->fd, bp->display_name);
 
-	/*
-	 * Checkpoint log to flush all info related to this connection
-	 * before the OS reuses the FD
-	 */
-	VSL_Flush(vc->vsl, 0);
 	vc->vsl = NULL;
-
 	VTCP_close(&vc->fd);
 	VBE_DropRefConn(bp, acct_bereq);
 	vc->backend = NULL;
@@ -88,8 +82,6 @@ VDI_RecycleFd(struct vbc **vbp, const struct acct_bereq *acct_bereq)
 
 	VSLb(vc->vsl, SLT_BackendReuse, "%d %s", vc->fd, bp->display_name);
 
-	/* XXX: revisit this hack */
-	VSL_Flush(vc->vsl, 0);
 	vc->vsl = NULL;
 
 	Lck_Lock(&bp->mtx);

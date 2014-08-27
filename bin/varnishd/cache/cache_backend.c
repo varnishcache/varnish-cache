@@ -283,10 +283,6 @@ vbe_GetVbe(struct busyobj *bo, struct vdi_simple *vs)
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s toolate",
 		    vc->fd, bp->display_name);
 
-		/* Checkpoint log to flush all info related to this connection
-		   before the OS reuses the FD */
-		VSL_Flush(bo->vsl, 0);
-
 		VTCP_close(&vc->fd);
 		VBE_DropRefConn(bp, NULL);
 		vc->backend = NULL;
