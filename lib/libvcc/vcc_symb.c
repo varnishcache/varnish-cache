@@ -50,7 +50,6 @@ VCC_SymKind(struct vcc *tl, const struct symbol *s)
 	}
 }
 
-
 static struct symbol *
 vcc_AddSymbol(struct vcc *tl, const char *nb, int l, enum symkind kind)
 {

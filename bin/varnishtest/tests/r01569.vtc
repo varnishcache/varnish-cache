@@ -1,0 +1,19 @@
+varnishtest "symbol lookup order issue"
+
+varnish v1 -vcl {
+	vcl 4.0;
+	import ${vmod_debug};
+
+	backend debug {
+		.host = "127.0.0.1";
+		.port = "80";
+	}
+
+	sub debug {
+		set req.backend_hint = debug;
+	}
+
+	sub vcl_recv {
+		call debug;
+	}
+}
