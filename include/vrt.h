@@ -102,6 +102,7 @@ struct vrt_ctx {
 	struct http			*http_bereq;
 	struct http			*http_beresp;
 
+	double				now;
 };
 
 /***********************************************************************/
