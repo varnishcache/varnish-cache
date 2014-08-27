@@ -5,5 +5,5 @@ varnish v1 -vcl {
 
 	sub vcl_recv {
 		set req.url = regsuball(req.url, "\??(p|pi)=.*?(&|$)", "");
-	} 
+	}
 }
