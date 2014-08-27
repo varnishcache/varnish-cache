@@ -688,7 +688,15 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		 * XXX: what if var and func/proc had same name ?
 		 * XXX: look for SYM_VAR first for consistency ?
 		 */
-		sym = VCC_FindSymbol(tl, tl->t, SYM_NONE);
+		sym = NULL;
+		if (fmt == BACKEND)
+			sym = VCC_FindSymbol(tl, tl->t, SYM_BACKEND);
+		if (sym == NULL)
+			sym = VCC_FindSymbol(tl, tl->t, SYM_VAR);
+		if (sym == NULL)
+			sym = VCC_FindSymbol(tl, tl->t, SYM_FUNC);
+		if (sym == NULL)
+			sym = VCC_FindSymbol(tl, tl->t, SYM_NONE);
 		if (sym == NULL || sym->eval == NULL) {
 			VSB_printf(tl->sb, "Symbol not found: ");
 			vcc_ErrToken(tl, tl->t);
