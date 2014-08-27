@@ -6,6 +6,10 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+
+	sub vcl_backend_response {
+		set beresp.do_stream = false;
+	}
 } -start
 varnish v1 -cliok "param.set http_range_support off"
 
@@ -18,6 +22,7 @@ client c1 {
 
 varnish v1 -cliok "param.set http_range_support on"
 
+varnish v1 -expect s_resp_bodybytes == 100
 
 client c1 {
 	txreq -hdr "Range: bytes =0-9"
@@ -39,6 +44,12 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 100
+
+} -run
+
+varnish v1 -expect s_resp_bodybytes == 500
+
+client c1 {
 
 	txreq -hdr "Range: bytes=0-9"
 	rxresp
