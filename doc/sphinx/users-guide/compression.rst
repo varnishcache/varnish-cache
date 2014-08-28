@@ -43,18 +43,11 @@ gets removed and any `Etag` gets weakened (by prepending "W/").
 
 For Vary Lookups, `Accept-Encoding` is ignored.
 
-Turning off gzip support
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-When the `http_gzip_support` parameter is set to "off", Varnish does
-not do any of the header alterations documented above and handles
-`Vary: Accept-Encoding` like it would for any other `Vary` value.
-
 Compressing content if backends don't
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can make Varnish compress content before storing it in cache in
-`vcl_backend_response` by setting 'do_gzip' to true, like this::
+`vcl_backend_response` by setting `beresp.do_gzip` to true, like this::
 
    sub vcl_backend_response {
         if (beresp.http.content-type ~ "text") {
@@ -62,9 +55,9 @@ You can make Varnish compress content before storing it in cache in
         }
   }
 
-With `do_gzip` Varnish will make the following alterations to the
-headers of the resulting object which cannot be modified in a backend
-VCL (but in `vcl_deliver`):
+With `beresp.do_gzip` set to "true", Varnish will make the following
+alterations to the headers of the resulting object which cannot be
+modified in a backend VCL (but in `vcl_deliver`):
 
 * set `obj.http.Content-Encoding` to "gzip"
 * add "Accept-Encoding" to `obj.http.Content-Encoding`, unless already
@@ -83,16 +76,16 @@ Uncompressing content before entering the cache
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can also uncompress objects before storing it in memory by setting
-`do_gunzip` to true. One use case for this feature is to work around
-badly configured backends uselessly compressing already compressed
-content like JPG images (but fixing the misbehaving backend is always
-the better option).
+`beresp.do_gunzip` to true. One use case for this feature is to work
+around badly configured backends uselessly compressing already
+compressed content like JPG images (but fixing the misbehaving backend
+is always the better option).
 
-With `do_gzip` Varnish will make the following alterations to the
-headers of the resulting object which cannot be modified in a backend
-VCL (but in `vcl_deliver`):
+With `beresp.do_gunzip` Varnish will make the following alterations to
+the headers of the resulting object which cannot be modified in a
+backend VCL (but in `vcl_deliver`):
 
-* remove `obj.http.Content-Encoding` to "gzip"
+* remove `obj.http.Content-Encoding`
 * remove any "Accept-Encoding" from `obj.http.Content-Encoding`
   (XXX review when closing #940)
 * weaken any `Etag` (by prepending "W/")
@@ -103,7 +96,15 @@ GZIP and ESI
 If you are using Edge Side Includes (ESIs) you'll be happy to note that ESI
 and GZIP work together really well. Varnish will magically decompress
 the content to do the ESI-processing, then recompress it for efficient
-storage and delivery. 
+storage and delivery.
+
+Turning off gzip support
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+When the `http_gzip_support` parameter is set to "off", Varnish does
+not do any of the header alterations documented above, handles `Vary:
+Accept-Encoding` like it would for any other `Vary` value and ignores
+`beresp.do_gzip` and `beresp.do_gunzip`.
 
 A random outburst
 ~~~~~~~~~~~~~~~~~
