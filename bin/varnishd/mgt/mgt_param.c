@@ -175,7 +175,7 @@ mcf_wrap(struct cli *cli, const char *text)
 			if (r == NULL) {
 				fprintf(stderr,
 				    "LINE with just one TAB: <%s>\n", text);
-				exit(2);
+				exit(4);
 			}
 			if (r - q > tw)
 				tw = r - q;
@@ -385,11 +385,11 @@ MCF_AddParams(struct parspec *ps)
 		if (isspace(s[-1])) {
 			fprintf(stderr,
 			    "Param->descr has trailing space: %s\n", pp->name);
-			exit(2);
+			exit(4);
 		}
 		if (mcf_findpar(pp->name) != NULL) {
 			fprintf(stderr, "Duplicate param: %s\n", pp->name);
-			exit(2);
+			exit(4);
 		}
 		if (strlen(pp->name) + 1 > margin2)
 			margin2 = strlen(pp->name) + 1;

@@ -236,7 +236,7 @@ mgt_sandbox_solaris_add_inheritable(priv_set_t *pset, enum sandbox_e who)
 		break;
 	default:
 		REPORT(LOG_ERR, "INCOMPLETE AT: %s(%d)\n", __func__, __LINE__);
-		exit(1);
+		exit(4);
 	}
 }
 
@@ -263,7 +263,7 @@ mgt_sandbox_solaris_add_effective(priv_set_t *pset, enum sandbox_e who)
 		break;
 	default:
 		REPORT(LOG_ERR, "INCOMPLETE AT: %s(%d)\n", __func__, __LINE__);
-		exit(1);
+		exit(4);
 	}
 }
 
@@ -286,7 +286,7 @@ mgt_sandbox_solaris_add_permitted(priv_set_t *pset, enum sandbox_e who)
 		break;
 	default:
 		REPORT(LOG_ERR, "INCOMPLETE AT: %s(%d)\n", __func__, __LINE__);
-		exit(1);
+		exit(4);
 	}
 }
 

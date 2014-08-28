@@ -64,7 +64,8 @@ vsub_vlu(void *priv, const char *str)
 	return (0);
 }
 
-int
+/* returns an exit code */
+unsigned
 VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
     int maxlines)
 {
@@ -81,7 +82,7 @@ VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
 	if (pipe(p) < 0) {
 		VSB_printf(sb, "Starting %s: pipe() failed: %s",
 		    name, strerror(errno));
-		return (-1);
+		return (1);
 	}
 	assert(p[0] > STDERR_FILENO);
 	assert(p[1] > STDERR_FILENO);
@@ -90,7 +91,7 @@ VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
 		    name, strerror(errno));
 		AZ(close(p[0]));
 		AZ(close(p[1]));
-		return (-1);
+		return (1);
 	}
 	if (pid == 0) {
 		AZ(close(STDIN_FILENO));
@@ -101,7 +102,12 @@ VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
 		for (sfd = STDERR_FILENO + 1; sfd < 100; sfd++)
 			(void)close(sfd);
 		func(priv);
-		_exit(1);
+		/*
+		 * func should either exec or exit, so getting here should be
+		 * treated like an assertion failure - except that we don't know
+		 * if it's save to trigger an acutal assertion
+		 */
+		_exit(4);
 	}
 	AZ(close(p[1]));
 	vlu = VLU_New(&sp, vsub_vlu, 0);
@@ -117,19 +123,19 @@ VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
 		if (rv < 0 && errno != EINTR) {
 			VSB_printf(sb, "Running %s: waitpid() failed: %s\n",
 			    name, strerror(errno));
-			return (-1);
+			return (1);
 		}
 	} while (rv < 0);
 	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
 		VSB_printf(sb, "Running %s failed", name);
 		if (WIFEXITED(status))
-			VSB_printf(sb, ", exit %d", WEXITSTATUS(status));
+			VSB_printf(sb, ", exited with %d", WEXITSTATUS(status));
 		if (WIFSIGNALED(status))
 			VSB_printf(sb, ", signal %d", WTERMSIG(status));
 		if (WCOREDUMP(status))
 			VSB_printf(sb, ", core dumped");
 		VSB_printf(sb, "\n");
-		return (-1);
+		return (WEXITSTATUS(status));
 	}
 	return (0);
 }

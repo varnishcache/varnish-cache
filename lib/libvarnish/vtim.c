@@ -224,7 +224,7 @@ tst(const char *s, time_t good)
 	if (t != good) {
 		printf("Parse error! Got: %jd should have %jd diff %jd\n",
 		    (intmax_t)t, (intmax_t)good, (intmax_t)(t - good));
-		exit (2);
+		exit(4);
 	}
 }
 
@@ -267,7 +267,7 @@ tst_delta()
 
 	if (err) {
 		printf("%d time delta test errrors\n", err);
-		exit (2);
+		exit(4);
 	}
 }
 

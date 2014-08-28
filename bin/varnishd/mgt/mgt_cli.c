@@ -499,17 +499,17 @@ mgt_cli_secret(const char *S_arg)
 	fd = open(S_arg, O_RDONLY);
 	if (fd < 0) {
 		fprintf(stderr, "Can not open secret-file \"%s\"\n", S_arg);
-		exit (2);
+		exit(2);
 	}
 	mgt_got_fd(fd);
 	i = read(fd, buf, sizeof buf);
 	if (i == 0) {
 		fprintf(stderr, "Empty secret-file \"%s\"\n", S_arg);
-		exit (2);
+		exit(2);
 	}
 	if (i < 0) {
 		fprintf(stderr, "Can not read secret-file \"%s\"\n", S_arg);
-		exit (2);
+		exit(2);
 	}
 	AZ(close(fd));
 	secret_file = S_arg;
@@ -644,7 +644,7 @@ mgt_cli_master(const char *M_arg)
 	M_nta = VSS_resolve(M_arg, NULL, &M_ta);
 	if (M_nta <= 0) {
 		fprintf(stderr, "Could resolve -M argument to address\n");
-		exit (1);
+		exit(2);
 	}
 	M_nxt = 0;
 	AZ(M_poker);

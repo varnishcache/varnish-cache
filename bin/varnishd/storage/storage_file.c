@@ -443,7 +443,7 @@ smf_open(const struct stevedore *st)
 
 	/* XXX */
 	if (sum < MINPAGES * (off_t)getpagesize())
-		exit (2);
+		exit(4);
 
 	sc->stats->g_space += sc->filesize;
 }
