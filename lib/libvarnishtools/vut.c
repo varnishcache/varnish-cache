@@ -159,7 +159,7 @@ VUT_Arg(int opt, const char *arg)
 	case 'V':
 		/* Print version number and exit */
 		VCS_Message(VUT.progname);
-		exit(1);
+		exit(0);
 	default:
 		AN(VUT.vsl);
 		i = VSL_Arg(VUT.vsl, opt, arg);

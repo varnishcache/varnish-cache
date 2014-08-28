@@ -82,7 +82,7 @@ openout(int append)
 	else
 		LOG.fo = fopen(LOG.w_arg, append ? "a" : "w");
 	if (LOG.fo == NULL)
-		VUT_Error(1, "Can't open output file (%s)",
+		VUT_Error(2, "Can't open output file (%s)",
 		    LOG.B_opt ? VSL_Error(VUT.vsl) : strerror(errno));
 	VUT.dispatch_priv = LOG.fo;
 }
