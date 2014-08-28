@@ -11,6 +11,7 @@ server s1 {
 	txresp -status "304" \
 		-hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
 		-hdr "Snafu: 2" \
+		-hdr "Grifle: 3" \
 		-nolen
 
 } -start
@@ -40,6 +41,7 @@ client c1 {
 	rxresp
 	expect resp.bodylen == 13
 	expect resp.http.foobar == foo0
+	expect resp.http.grifle == 3
 	expect resp.http.snafu == 2a
 } -run
 

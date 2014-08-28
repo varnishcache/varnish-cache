@@ -7,6 +7,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
+		set beresp.http.fooA = beresp.ttl;
 		set beresp.ttl = 10s;
 		set beresp.http.fooB = beresp.ttl;
 	}
@@ -22,21 +23,22 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.bodylen == 40
+	expect resp.http.fooA == 19.000
 	expect resp.http.fooB == 10.000
 
 	delay 2
 	txreq
 	rxresp
 	expect resp.bodylen == 40
-	# XXX: should be: < 8
+	expect resp.http.fooA == 19.000
 	expect resp.http.fooB == 10.000
-	expect resp.http.foo != 10.000
-	expect resp.http.foo != 9.000
+	expect resp.http.foo <= 8.000
 
 	delay 2
 	txreq
 	rxresp
 	expect resp.bodylen == 40
+	expect resp.http.fooA == 19.000
 	expect resp.http.fooB == 10.000
-	expect resp.http.foo <= 5.000
+	expect resp.http.foo <= 6.000
 } -run

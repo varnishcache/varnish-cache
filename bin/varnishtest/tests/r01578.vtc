@@ -21,7 +21,7 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.bodylen == 40
-	expect resp.http.x-ttl == 23.000
+	expect resp.http.x-ttl == 19.000
 	expect resp.http.Age == 4
 
 
@@ -29,13 +29,13 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.bodylen == 40
-	expect resp.http.x-ttl == 23.000
-	expect resp.http.x-remaining-ttl ~ ^17\.0|^16\.[89]
+	expect resp.http.x-ttl == 19.000
+	expect resp.http.x-remaining-ttl <= 17.000
 
 	delay 2
 	txreq
 	rxresp
 	expect resp.bodylen == 40
-	expect resp.http.x-ttl == 23.000
-	expect resp.http.x-remaining-ttl ~ ^15\.0|^14\.[89]
+	expect resp.http.x-ttl == 19.000
+	expect resp.http.x-remaining-ttl <= 15.000
 } -run

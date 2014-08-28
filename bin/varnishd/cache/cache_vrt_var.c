@@ -483,17 +483,23 @@ VRT_r_bereq_retries(const struct vrt_ctx *ctx)
 }
 
 /*--------------------------------------------------------------------
- * NB: TTL is relative to when object was created, whereas grace and
- * keep are relative to ttl.
+ * In exp.*:
+ *	t_origin is absolute
+ *	ttl is relative to t_origin
+ *	grace&keep are relative to ttl
+ * In VCL:
+ *	ttl is relative to now
+ *	grace&keep are relative to ttl
  */
 
-#define VRT_DO_EXP_L(which, sexp, fld)				\
+#define VRT_DO_EXP_L(which, sexp, fld, offset)			\
 								\
 void								\
 VRT_l_##which##_##fld(const struct vrt_ctx *ctx, double a)	\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	a += (offset);						\
 	if (a < 0.0)						\
 		a = 0.0;					\
 	sexp.fld = a;						\
@@ -506,23 +512,28 @@ VRT_l_##which##_##fld(const struct vrt_ctx *ctx, double a)	\
 double								\
 VRT_r_##which##_##fld(const struct vrt_ctx *ctx)		\
 {								\
+	double d;						\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-	if (sexp.fld > 0.0)					\
-		return(sexp.fld - offset);			\
-	return(0.0);						\
+	d = sexp.fld;						\
+	if (d <= 0.0)						\
+		d = 0.0;					\
+	d -= (offset);						\
+	return(d);						\
 }
 
 VRT_DO_EXP_R(obj, ctx->req->objcore->exp, ttl,
-   (ctx->req->t_req - ctx->req->objcore->exp.t_origin))
+    ctx->now - ctx->req->objcore->exp.t_origin)
 VRT_DO_EXP_R(obj, ctx->req->objcore->exp, grace, 0)
 VRT_DO_EXP_R(obj, ctx->req->objcore->exp, keep, 0)
 
-VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore->exp, ttl)
-VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore->exp, ttl, 0)
-VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore->exp, grace)
+VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore->exp, ttl,
+    ctx->now - ctx->bo->fetch_objcore->exp.t_origin)
+VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore->exp, ttl,
+    ctx->now - ctx->bo->fetch_objcore->exp.t_origin)
+VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore->exp, grace, 0)
 VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore->exp, grace, 0)
-VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore->exp, keep)
+VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore->exp, keep, 0)
 VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore->exp, keep, 0)
 
 /*--------------------------------------------------------------------
