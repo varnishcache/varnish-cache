@@ -21,10 +21,12 @@ The default behaviour is active when the `http_gzip_support` parameter
 is set to "on" and neither `beresp.do_gzip` nor `beresp.do_gunzip` are
 used in VCL.
 
-Unless returning from `vcl_recv` with `pipe` or `pass`, varnish sets
-`req.http.Accept-Encoding` to "gzip". It removes the header otherwise.
+Unless returning from `vcl_recv` with `pipe` or `pass`, varnish
+modifies `req.http.Accept-Encoding`: If the client supports gzip,
+`req.http.Accept-Encoding` is set to "gzip". Otherwise, the header is
+removed.
 
-Unless the request is a `pass`, Varnish will set
+Unless the request is a `pass`, Varnish sets
 `bereq.http.Accept-Encoding` to "gzip" before `vcl_backend_fetch`
 runs, so the header can be changed in VCL.
 
