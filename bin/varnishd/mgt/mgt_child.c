@@ -425,7 +425,7 @@ mgt_launch_child(struct cli *cli)
 
 		child_main();
 
-		exit(1);
+		exit(0);
 	}
 	assert(pid > 1);
 	REPORT(LOG_NOTICE, "child (%jd) Started", (intmax_t)pid);
@@ -683,7 +683,7 @@ mgt_sigint(const struct vev *e, int what)
 	(void)fflush(stdout);
 	if (child_pid >= 0)
 		mgt_stop_child();
-	exit (2);
+	exit(0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -753,6 +753,7 @@ MGT_Run(void)
 	else if (!d_flag) {
 		mgt_launch_child(NULL);
 		if (child_state == CH_STOPPED) {
+			// XXX correct? or 0?
 			exit_status = 2;
 			return;
 		}

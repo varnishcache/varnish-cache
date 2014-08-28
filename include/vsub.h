@@ -31,5 +31,5 @@
 /* from libvarnish/subproc.c */
 typedef void vsub_func_f(void*);
 
-int VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
+unsigned VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
     int maxlines);
