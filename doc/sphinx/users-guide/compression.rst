@@ -60,8 +60,7 @@ alterations to the headers of the resulting object which cannot be
 modified in a backend VCL (but in `vcl_deliver`):
 
 * set `obj.http.Content-Encoding` to "gzip"
-* add "Accept-Encoding" to `obj.http.Content-Encoding`, unless already
-  present
+* add "Accept-Encoding" to `obj.http.Vary`, unless already present
 * weaken any `Etag` (by prepending "W/")
 
 Generally, Varnish doesn't use much CPU so it might make more sense to
@@ -86,7 +85,7 @@ the headers of the resulting object which cannot be modified in a
 backend VCL (but in `vcl_deliver`):
 
 * remove `obj.http.Content-Encoding`
-* remove any "Accept-Encoding" from `obj.http.Content-Encoding`
+* remove any "Accept-Encoding" from `obj.http.Vary`
   (XXX review when closing #940)
 * weaken any `Etag` (by prepending "W/")
 
