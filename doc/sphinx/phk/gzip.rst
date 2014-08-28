@@ -55,9 +55,9 @@ Varnish will not gzip any content on its own (but see below), we trust
 the backend to know what content can be sensibly gzip'ed (html) and what
 can not (jpeg)
 
-If in vcl_fetch{} we find out that we are trying to deliver a gzip'ed object
-to a client that has not indicated willingness to receive gzip, we will
-ungzip the object during deliver.
+If in vcl_backend_response{} we find out that we are trying to deliver a
+gzip'ed object to a client that has not indicated willingness to receive
+gzip, we will ungzip the object during deliver.
 
 Tuning, tweaking and frobbing
 -----------------------------
@@ -74,8 +74,8 @@ gunzip the object before delivering to the client.
 In vcl_miss{} you can remove the "Accept-Encoding: gzip" header, if you
 do not want the backend to gzip this object.
 
-In vcl_fetch{} two new variables allow you to modify the gzip-ness of
-objects during fetch:
+In vcl_backend_response{} two new variables allow you to modify the
+gzip-ness of objects during fetch:
 
 	set beresp.do_gunzip = true;
 
@@ -91,8 +91,8 @@ Remember that a lot of content types cannot sensibly be gziped, most
 notably compressed image formats like jpeg, png and similar, so a
 typical use would be::
 
-	sub vcl_fetch {
-		if (req.url ~ "html$") {
+	sub vcl_backend_response {
+		if (bereq.url ~ "html$") {
 			set beresp.do_gzip = true;
 		}
 	}
@@ -102,7 +102,7 @@ GZIP and ESI
 
 First, note the new syntax for activating ESI::
 
-	sub vcl_fetch {
+	sub vcl_backend_response {
 		set beresp.do_esi = true;
 	}
 
@@ -155,7 +155,7 @@ compression efficiency, you should::
 		}
 	}
 
-	sub vcl_fetch {
+	sub vcl_backend_response {
 		if (object needs ESI processing) {
 			set beresp.do_esi = true;
 			set beresp.do_gzip = true;
