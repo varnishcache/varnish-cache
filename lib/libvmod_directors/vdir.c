@@ -186,7 +186,7 @@ vdir_pick_be(struct vdir *vd, double w, unsigned nloops)
 	nbe = vd->n_backend;
 	assert(w >= 0.0 && w < 1.0);
 	vdir_lock(vd);
-	for (l = 0; nbe > 0 && tw > 0.0 && l <nloops; l++) {
+	for (l = 0; nbe > 0 && tw > 0.0 && l < nloops; l++) {
 		u = vdir_pick_by_weight(vd, w * tw, vbm);
 		be = vd->backend[u];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
