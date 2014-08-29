@@ -661,6 +661,12 @@ main(int argc, char * const *argv)
 		if (MGT_open_sockets())
 			ARGV_ERR("Failed to open (any) accept sockets.\n");
 		MGT_close_sockets();
+
+		if (b_arg == NULL && f_arg == NULL) {
+			fprintf(stderr,
+			    "Warning: Neither -b nor -f given, won't start a worker child.\n"
+			    "         Master process started, use varnishadm to control it.\n");
+		}
 	}
 
 	/* If no -s argument specified, process default -s argument */
