@@ -49,7 +49,7 @@ VAS_Fail_default(const char *func, const char *file, int line,
 		    func, file, line, cond);
 	} else if (kind == VAS_INCOMPLETE) {
 		fprintf(stderr,
-		    "Incompelte code in %s(), %s line %d:\n",
+		    "Incomplete code in %s(), %s line %d:\n",
 		    func, file, line);
 	} else if (kind == VAS_WRONG) {
 		fprintf(stderr,
