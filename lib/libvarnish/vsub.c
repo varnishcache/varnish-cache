@@ -127,15 +127,21 @@ VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
 		}
 	} while (rv < 0);
 	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+		rv = -1;
 		VSB_printf(sb, "Running %s failed", name);
-		if (WIFEXITED(status))
-			VSB_printf(sb, ", exited with %d", WEXITSTATUS(status));
-		if (WIFSIGNALED(status))
+		if (WIFEXITED(status)) {
+			rv = WEXITSTATUS(status);
+			VSB_printf(sb, ", exited with %d", rv);
+		}
+		if (WIFSIGNALED(status)) {
+			rv = 2;
 			VSB_printf(sb, ", signal %d", WTERMSIG(status));
+		}
 		if (WCOREDUMP(status))
 			VSB_printf(sb, ", core dumped");
 		VSB_printf(sb, "\n");
-		return (WEXITSTATUS(status));
+		assert(rv != -1);
+		return (rv);
 	}
 	return (0);
 }
