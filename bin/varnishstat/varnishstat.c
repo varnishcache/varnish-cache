@@ -333,7 +333,7 @@ main(int argc, char * const *argv)
 		// end of output block marker.
 		printf("\n");
 
-		usleep(delay * 1e6);
+		(void)usleep(delay * 1e6);
 	}
 	exit(0);
 }
