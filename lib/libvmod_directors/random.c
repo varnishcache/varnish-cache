@@ -45,7 +45,7 @@ struct vmod_directors_random {
 	unsigned				magic;
 #define VMOD_DIRECTORS_RANDOM_MAGIC		0x4732d092
 	struct vdir				*vd;
-	unsigned				nloops;
+	unsigned				n_backend;
 	struct vbitmap				*vbm;
 };
 
@@ -68,7 +68,7 @@ vmod_rr_getfd(const struct director *dir, struct busyobj *bo)
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_RANDOM_MAGIC);
 	r = scalbn(random(), -31);
 	assert(r >= 0 && r < 1.0);
-	be = vdir_pick_be(rr->vd, r, rr->nloops);
+	be = vdir_pick_be(rr->vd, r, rr->n_backend);
 	if (be == NULL)
 		return (NULL);
 	return (be->getfd(be, bo));
@@ -87,7 +87,6 @@ vmod_random__init(const struct vrt_ctx *ctx, struct vmod_directors_random **rrp,
 	AN(rr);
 	rr->vbm = vbit_init(8);
 	AN(rr->vbm);
-	rr->nloops = 3; //
 	*rrp = rr;
 	vdir_new(&rr->vd, vcl_name, vmod_rr_healthy, vmod_rr_getfd, rr);
 }
@@ -113,6 +112,7 @@ vmod_random_add_backend(const struct vrt_ctx *ctx,
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_RANDOM_MAGIC);
 	(void)vdir_add_backend(rr->vd, be, w);
+	rr->n_backend++;
 }
 
 VCL_BACKEND __match_proto__()

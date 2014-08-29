@@ -1,0 +1,56 @@
+varnishtest "#1575 - random director exhaust backend list"
+
+# Add 5 backends to a random director, with the 5th having very low weight.
+# Mark the first 4 sick, and make sure that the 5th will be selected.
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+server s2 {
+	rxreq
+	txresp
+} -start
+
+server s3 {
+	rxreq
+	txresp
+} -start
+
+server s4 {
+	rxreq
+	txresp
+} -start
+
+server s5 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import ${vmod_directors};
+	sub vcl_init {
+		new rd = directors.random();
+		rd.add_backend(s1, 10000);
+		rd.add_backend(s2, 10000);
+		rd.add_backend(s3, 10000);
+		rd.add_backend(s4, 10000);
+		rd.add_backend(s5, 1);
+	}
+
+	sub vcl_backend_fetch {
+		set bereq.backend = rd.backend();
+	}
+} -start
+
+varnish v1 -cliok "backend.set_health s1 sick"
+varnish v1 -cliok "backend.set_health s2 sick"
+varnish v1 -cliok "backend.set_health s3 sick"
+varnish v1 -cliok "backend.set_health s4 sick"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
