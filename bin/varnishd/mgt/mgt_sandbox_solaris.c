@@ -235,8 +235,7 @@ mgt_sandbox_solaris_add_inheritable(priv_set_t *pset, enum sandbox_e who)
 	case SANDBOX_WORKER:
 		break;
 	default:
-		REPORT(LOG_ERR, "INCOMPLETE AT: %s(%d)\n", __func__, __LINE__);
-		exit(4);
+		INCOMPL();
 	}
 }
 
@@ -262,8 +261,7 @@ mgt_sandbox_solaris_add_effective(priv_set_t *pset, enum sandbox_e who)
 		priv_setop_assert(priv_addset(pset, "file_write"));
 		break;
 	default:
-		REPORT(LOG_ERR, "INCOMPLETE AT: %s(%d)\n", __func__, __LINE__);
-		exit(4);
+		INCOMPL();
 	}
 }
 
@@ -285,8 +283,7 @@ mgt_sandbox_solaris_add_permitted(priv_set_t *pset, enum sandbox_e who)
 		AZ(priv_addset(pset, PRIV_SYS_RESOURCE));
 		break;
 	default:
-		REPORT(LOG_ERR, "INCOMPLETE AT: %s(%d)\n", __func__, __LINE__);
-		exit(4);
+		INCOMPL();
 	}
 }
 
