@@ -908,7 +908,7 @@ handle_keypress(int ch)
 }
 
 void
-do_curses(struct VSM_data *vd, int delay)
+do_curses(struct VSM_data *vd, double delay)
 {
 	struct pollfd pollfd;
 	long t;

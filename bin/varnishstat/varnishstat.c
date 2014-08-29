@@ -273,7 +273,8 @@ main(int argc, char * const *argv)
 {
 	int c;
 	struct VSM_data *vd;
-	int delay = 1, once = 0, xml = 0, json = 0, do_repeat = 0, f_list = 0;
+	double delay = 1.0;
+	int   once = 0, xml = 0, json = 0, do_repeat = 0, f_list = 0;
 
 	vd = VSM_New();
 
@@ -290,7 +291,7 @@ main(int argc, char * const *argv)
 			exit(0);
 		case 'w':
 			do_repeat = 1;
-			delay = atoi(optarg);
+			delay = atof(optarg);
 			break;
 		case 'x':
 			xml = 1;
@@ -332,7 +333,7 @@ main(int argc, char * const *argv)
 		// end of output block marker.
 		printf("\n");
 
-		sleep(delay);
+		usleep(delay * 1e6);
 	}
 	exit(0);
 }
