@@ -4,6 +4,8 @@ varnishtest "Test std.ip"
 server s1 {
 	rxreq
 	txresp -body "1"
+	rxreq
+	txresp -body "22"
 } -start
 
 
@@ -21,8 +23,12 @@ varnish v1 -vcl+backend {
 client c1 {
 	txreq -url "/foo1"
 	rxresp
+	expect resp.bodylen == 1
 	expect resp.http.foo0 == "127.0.0.1"
 	expect resp.http.foo1 == "127.0.0.1"
 	expect resp.http.foo2 == "127.0.0.2"
 	expect resp.http.foo3 == "1.2.3.5"
+	txreq -url "/foo2"
+	rxresp
+	expect resp.bodylen == 2
 } -run
