@@ -2,6 +2,7 @@ varnishtest "client abandoning hit-for-pass"
 
 
 server s1 {
+	non-fatal
 	rxreq
 	txresp -nolen -hdr "Transfer-Encoding: chunked" -hdr "Set-Cookie: foo=bar"
 	chunked "foo"
@@ -20,7 +21,7 @@ varnish v1 -vcl+backend {
 
 client c1 {
 	txreq
-	rxhdrs
+	rxresphdrs
 	rxchunk
 	sema r1 sync 2
 } -run
