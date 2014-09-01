@@ -956,7 +956,7 @@ CNT_AcctLogCharge(struct dstat *ds, struct req *req)
 
 	a = &req->acct;
 
-	if (!(req->res_mode & RES_PIPE)) {
+	if (req->vsl->wid && !(req->res_mode & RES_PIPE)) {
 		VSLb(req->vsl, SLT_ReqAcct, "%ju %ju %ju %ju %ju %ju",
 		    (uintmax_t)a->req_hdrbytes,
 		    (uintmax_t)a->req_bodybytes,
