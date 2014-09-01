@@ -537,6 +537,22 @@ VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore->exp, keep, 0)
 VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore->exp, keep, 0)
 
 /*--------------------------------------------------------------------
+ */
+
+#define VRT_DO_AGE_R(which, sexp)				\
+								\
+double								\
+VRT_r_##which##_##age(const struct vrt_ctx *ctx)		\
+{								\
+								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	return(ctx->now - sexp.t_origin);			\
+}
+
+VRT_DO_AGE_R(obj, ctx->req->objcore->exp)
+VRT_DO_AGE_R(beresp, ctx->bo->fetch_objcore->exp)
+
+/*--------------------------------------------------------------------
  * [be]req.xid
  */
 

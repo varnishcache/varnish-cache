@@ -468,7 +468,13 @@ sp_variables = [
 		( 'backend_response', 'backend_error'),
 		( 'backend_response', 'backend_error'), """
 		The object's remaining time to live, in seconds.
-		beresp.ttl is writable.
+		"""
+	),
+	('beresp.age',
+		'DURATION',
+		( 'backend_response', 'backend_error'),
+		( ), """
+		The age of the object.
 		"""
 	),
 	('beresp.grace',
@@ -551,6 +557,13 @@ sp_variables = [
 		( 'hit', ),
 		( ), """
 		The object's remaining time to live, in seconds.
+		"""
+	),
+	('obj.age',
+		'DURATION',
+		( 'hit', ),
+		( ), """
+		The age of the object.
 		"""
 	),
 	('obj.grace',

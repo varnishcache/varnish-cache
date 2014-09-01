@@ -10,12 +10,15 @@ varnish v1 -vcl+backend {
 		set beresp.http.fooA = beresp.ttl;
 		set beresp.ttl = 10s;
 		set beresp.http.fooB = beresp.ttl;
+		set beresp.http.ageA = beresp.age;
 	}
 	sub vcl_hit {
 		set req.http.foo = obj.ttl;
+		set req.http.ageB = obj.age;
 	}
 	sub vcl_deliver {
 		set resp.http.foo = req.http.foo;
+		set resp.http.ageB = req.http.ageB;
 	}
 } -start
 
@@ -25,6 +28,7 @@ client c1 {
 	expect resp.bodylen == 40
 	expect resp.http.fooA == 19.000
 	expect resp.http.fooB == 10.000
+	expect resp.http.ageA == 4.000
 
 	delay 2
 	txreq
@@ -33,6 +37,8 @@ client c1 {
 	expect resp.http.fooA == 19.000
 	expect resp.http.fooB == 10.000
 	expect resp.http.foo <= 8.000
+	expect resp.http.ageA == 4.000
+	expect resp.http.ageB >= 6.000
 
 	delay 2
 	txreq
@@ -41,4 +47,6 @@ client c1 {
 	expect resp.http.fooA == 19.000
 	expect resp.http.fooB == 10.000
 	expect resp.http.foo <= 6.000
+	expect resp.http.ageA == 4.000
+	expect resp.http.ageB >= 8.000
 } -run
