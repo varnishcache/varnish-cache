@@ -1,0 +1,23 @@
+varnishtest "Duplcate SLT_Begin"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+} -start
+
+logexpect l1 -v v1 -g request {
+	  expect 0 1001 Begin
+	  expect * =	ReqStart
+	  expect * = 	End
+} -start
+
+client c1 {
+	delay 0.1
+	send "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"
+	rxresp
+} -run
+
+logexpect l1 -wait

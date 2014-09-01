@@ -121,9 +121,9 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 		if (hs == HTTP1_COMPLETE) {
 			/* Got it, run with it */
 			if (isnan(req->t_first))
-				VSLb_ts_req(req, "Start", now);
-			VSLb_ts_req(req, "Req", now);
-			req->t_req = req->t_prev;
+				req->t_first = now;
+			if (isnan(req->t_req))
+				req->t_req = now;
 			req->acct.req_hdrbytes += Tlen(req->htc->rxbuf);
 			return (REQ_FSM_MORE);
 		} else if (hs == HTTP1_ERROR_EOF) {
@@ -150,8 +150,8 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 		} else {
 			/* Working on it */
 			if (isnan(req->t_first))
-				/* Timestamp Start on first byte received */
-				VSLb_ts_req(req, "Start", now);
+				/* Record first byte received time stamp */
+				req->t_first = now;
 			when = sp->t_idle + cache_param->timeout_req;
 			tmo = (int)(1e3 * (when - now));
 			if (when < now || tmo == 0) {
@@ -238,13 +238,7 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 
 	if (HTTP1_Reinit(req->htc) == HTTP1_COMPLETE) {
 		AZ(req->vsl->wid);
-		req->vsl->wid = VXID_Get(wrk, VSL_CLIENTMARKER);
-		VSLb(req->vsl, SLT_Begin, "req %u rxreq", VXID(req->sp->vxid));
-		VSL(SLT_Link, req->sp->vxid, "req %u rxreq",
-		    VXID(req->vsl->wid));
-		VSLb_ts_req(req, "Start", sp->t_idle);
-		VSLb_ts_req(req, "Req", sp->t_idle);
-		req->t_req = req->t_prev;
+		req->t_first = req->t_req = sp->t_idle;
 		wrk->stats.sess_pipeline++;
 		req->acct.req_hdrbytes += Tlen(req->htc->rxbuf);
 		return (SESS_DONE_RET_START);
@@ -270,16 +264,17 @@ http1_dissect(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	/*
-	 * Cache_req_fsm zeros the vxid once a requests is processed.
-	 * Allocate a new one only now that we know will need it.
-	 */
-	if (req->vsl->wid == 0) {
-		req->vsl->wid = VXID_Get(wrk, VSL_CLIENTMARKER);
-		VSLb(req->vsl, SLT_Begin, "req %u rxreq", VXID(req->sp->vxid));
-		VSL(SLT_Link, req->sp->vxid, "req %u rxreq",
-		    VXID(req->vsl->wid));
-	}
+	/* Allocate a new vxid now that we know we'll need it. */
+	AZ(req->vsl->wid);
+	req->vsl->wid = VXID_Get(wrk, VSL_CLIENTMARKER);
+
+	VSLb(req->vsl, SLT_Begin, "req %u rxreq", VXID(req->sp->vxid));
+	VSL(SLT_Link, req->sp->vxid, "req %u rxreq", VXID(req->vsl->wid));
+	AZ(isnan(req->t_first)); /* First byte timestamp set by http1_wait */
+	AZ(isnan(req->t_req));	 /* Complete req rcvd set by http1_wait */
+	req->t_prev = req->t_first;
+	VSLb_ts_req(req, "Start", req->t_first);
+	VSLb_ts_req(req, "Req", req->t_req);
 
 	/* Borrow VCL reference from worker thread */
 	VCL_Refresh(&wrk->vcl);

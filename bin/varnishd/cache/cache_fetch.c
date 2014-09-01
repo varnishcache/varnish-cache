@@ -889,8 +889,8 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 
 	bo = VBO_GetBusyObj(wrk, req);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	VSLb(bo->vsl, SLT_Begin, "bereq %u %s ", VXID(req->vsl->wid), how);
-	VSLb(req->vsl, SLT_Link, "bereq %u %s ", VXID(bo->vsl->wid), how);
+	VSLb(bo->vsl, SLT_Begin, "bereq %u %s", VXID(req->vsl->wid), how);
+	VSLb(req->vsl, SLT_Link, "bereq %u %s", VXID(bo->vsl->wid), how);
 
 	THR_SetBusyobj(bo);
 
