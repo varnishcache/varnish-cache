@@ -534,9 +534,9 @@ hsh_rush(struct dstat *ds, struct objhead *oh)
 		DSL(DBG_WAITINGLIST, req->vsl->wid, "off waiting list");
 		if (SES_ScheduleReq(req)) {
 			/*
-			 * We could not schedule the session, leave the
-			 * rest on the busy list.
+			 * We could not schedule the session, put it back.
 			 */
+			VTAILQ_INSERT_HEAD(&wl->list, req, w_list);
 			break;
 		}
 	}
