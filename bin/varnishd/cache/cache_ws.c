@@ -75,8 +75,8 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 	ws->magic = WS_MAGIC;
 	ws->s = space;
 	assert(PAOK(space));
+	len = PRNDDN(len);
 	ws->e = ws->s + len;
-	assert(PAOK(len));
 	ws->f = ws->s;
 	assert(id[0] & 0x40);
 	assert(strlen(id) < sizeof ws->id);
