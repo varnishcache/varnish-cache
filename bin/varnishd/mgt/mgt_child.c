@@ -570,6 +570,7 @@ mgt_reap_child(void)
 		mgt_SHM_Destroy(0);
 	}
 	mgt_SHM_Create();
+	mgt_SHM_Commit();
 
 	if (child_state == CH_RUNNING)
 		child_state = CH_DIED;
@@ -752,12 +753,14 @@ MGT_Run(void)
 		REPORT0(LOG_ERR, "No VCL loaded yet");
 	else if (!d_flag) {
 		mgt_launch_child(NULL);
-		if (child_state == CH_STOPPED) {
+		if (child_state != CH_RUNNING) {
 			// XXX correct? or 0?
 			exit_status = 2;
 			return;
 		}
 	}
+
+	mgt_SHM_Commit();
 
 	i = vev_schedule(mgt_evb);
 	if (i != 0)

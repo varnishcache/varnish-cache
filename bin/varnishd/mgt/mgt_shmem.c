@@ -246,17 +246,28 @@ mgt_SHM_Create(void)
 	AN(VSC_C_mgt);
 	*VSC_C_mgt = static_VSC_C_mgt;
 
+#ifdef __OpenBSD__
+	/* Commit changes, for OS's without coherent VM/buf */
+	AZ(msync(p, getpagesize(), MS_SYNC));
+#endif
+}
+
+/*--------------------------------------------------------------------
+ * Commit the VSM
+ */
+
+void
+mgt_SHM_Commit(void)
+{
+	char fnbuf[64];
+
+	bprintf(fnbuf, "%s.%jd", VSM_FILENAME, (intmax_t)getpid());
 	if (rename(fnbuf, VSM_FILENAME)) {
 		fprintf(stderr, "Rename failed %s -> %s: %s\n",
 		    fnbuf, VSM_FILENAME, strerror(errno));
 		(void)unlink(fnbuf);
 		exit(1);
 	}
-
-#ifdef __OpenBSD__
-	/* Commit changes, for OS's without coherent VM/buf */
-	AZ(msync(p, getpagesize(), MS_SYNC));
-#endif
 }
 
 /*--------------------------------------------------------------------
