@@ -330,7 +330,7 @@ logexp_start(struct logexp *le)
 	}
 	le->vsl = VSL_New();
 	AN(le->vsl);
-	c = VSL_CursorVSM(le->vsl, le->vsm, !le->d_arg);
+	c = VSL_CursorVSM(le->vsl, le->vsm, le->d_arg ? 0 : VSL_COPT_TAIL);
 	if (c == NULL) {
 		vtc_log(le->vl, 0, "VSL_CursorVSM: %s", VSL_Error(le->vsl));
 		logexp_close(le);
