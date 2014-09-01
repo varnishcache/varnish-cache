@@ -133,9 +133,6 @@ ses_sess_pool_task(struct worker *wrk, void *arg)
 
 	req = SES_GetReq(wrk, sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	AN(req->vsl->wid & VSL_CLIENTMARKER);
-	VSLb(req->vsl, SLT_Begin, "req %u rxreq", sp->vxid & VSL_IDENTMASK);
-	VSL(SLT_Link, sp->vxid, "req %u rxreq", req->vsl->wid & VSL_IDENTMASK);
 
 	sp->sess_step = S_STP_NEWREQ;
 	ses_req_pool_task(wrk, req);
@@ -362,7 +359,6 @@ SES_GetReq(struct worker *wrk, struct sess *sp)
 
 	sz = cache_param->vsl_buffer;
 	VSL_Setup(req->vsl, p, sz);
-	req->vsl->wid = VXID_Get(&wrk->vxid_pool) | VSL_CLIENTMARKER;
 	p += sz;
 	p = (void*)PRNDUP(p);
 

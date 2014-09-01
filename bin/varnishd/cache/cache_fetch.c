@@ -873,9 +873,9 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	default:		WRONG("Wrong fetch mode");
 	}
 
-	VSLb(bo->vsl, SLT_Begin, "bereq %u %s ",
+	VSLb(bo->vsl, SLT_Begin, "bereq %u %s",
 	    req->vsl->wid & VSL_IDENTMASK, how);
-	VSLb(req->vsl, SLT_Link, "bereq %u %s ",
+	VSLb(req->vsl, SLT_Link, "bereq %u %s",
 	    bo->vsl->wid & VSL_IDENTMASK, how);
 
 	bo->refcount = 2;
