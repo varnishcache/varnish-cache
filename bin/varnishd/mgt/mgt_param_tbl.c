@@ -92,7 +92,7 @@ struct parspec mgt_parspec[] = {
 		"384", "bytes" },
 	{ "workspace_client",
 		tweak_bytes_u, &mgt_param.workspace_client,
-		"3072", NULL,
+		"9k", NULL,
 		"Bytes of HTTP protocol workspace for clients HTTP req/resp."
 		"  If larger than 4k, use a multiple of 4k for VM efficiency.",
 		DELAYED_EFFECT,
