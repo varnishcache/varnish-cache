@@ -760,6 +760,9 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				e--;
 
 			switch (tag) {
+			case SLT_HttpGarbage:
+				skip = 1;
+				break;
 			case SLT_PipeAcct:
 				frag_fields(b, e,
 				    3, &CTX.frag[F_I],
