@@ -334,7 +334,6 @@ pool_stat_summ(struct worker *wrk, void *priv)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk->pool, POOL_MAGIC);
-	VSL(SLT_Debug, 0, "STATSUMM");
 	AN(priv);
 	src = priv;
 	Lck_Lock(&wstat_mtx);
