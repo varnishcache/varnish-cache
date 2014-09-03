@@ -910,7 +910,6 @@ void VBF_Fetch(struct worker *wrk, struct req *req,
 /* cache_fetch_proc.c */
 enum vfp_status VFP_GetStorage(struct vfp_ctx *, ssize_t *sz, uint8_t **ptr);
 void VFP_Init(void);
-void VFP_Fetch_Body(struct busyobj *bo);
 
 /* cache_gzip.c */
 struct vgz;

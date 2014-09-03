@@ -393,6 +393,73 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 /*--------------------------------------------------------------------
  */
 
+static void
+vbf_fetch_body_helper(struct busyobj *bo)
+{
+	ssize_t l;
+	uint8_t *ptr;
+	enum vfp_status vfps = VFP_ERROR;
+	ssize_t est;
+	struct vfp_ctx *vfc;
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	vfc = bo->vfc;
+	CHECK_OBJ_NOTNULL(vfc, VFP_CTX_MAGIC);
+
+	AN(vfc->vfp_nxt);
+
+	est = bo->content_length;
+	if (est < 0)
+		est = 0;
+
+	do {
+		if (bo->abandon) {
+			/*
+			 * A pass object and delivery was terminted
+			 * We don't fail the fetch, in order for hit-for-pass
+			 * objects to be created.
+			 */
+			AN(vfc->oc->flags & OC_F_PASS);
+			VSLb(vfc->vsl, SLT_FetchError,
+			    "Pass delivery abandoned");
+			vfps = VFP_END;
+			bo->doclose = SC_RX_BODY;
+			break;
+		}
+		AZ(vfc->failed);
+		l = est;
+		assert(l >= 0);
+		if (VFP_GetStorage(vfc, &l, &ptr) != VFP_OK) {
+			bo->doclose = SC_RX_BODY;
+			break;
+		}
+
+		AZ(vfc->failed);
+		vfps = VFP_Suck(vfc, ptr, &l);
+		if (l > 0 && vfps != VFP_ERROR) {
+			VBO_extend(bo, l);
+			if (est >= l)
+				est -= l;
+			else
+				est = 0;
+		}
+	} while (vfps == VFP_OK);
+
+	if (vfps == VFP_ERROR) {
+		AN(vfc->failed);
+		(void)VFP_Error(vfc, "Fetch Pipeline failed to process");
+		bo->doclose = SC_RX_BODY;
+	}
+
+	VFP_Close(vfc);
+
+	if (!bo->do_stream)
+		ObjTrimStore(vfc->oc, bo->stats);
+}
+
+/*--------------------------------------------------------------------
+ */
+
 static enum fetch_step
 vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 {
@@ -512,7 +579,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->htc.body_status != BS_NONE) {
 		assert(bo->htc.body_status != BS_ERROR);
-		VFP_Fetch_Body(bo);
+		vbf_fetch_body_helper(bo);
 		bo->acct.beresp_bodybytes = bo->vfc->bodybytes;
 	}
 

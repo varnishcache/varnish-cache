@@ -113,8 +113,8 @@ VFP_Setup(struct vfp_ctx *vc)
 /**********************************************************************
  */
 
-static void
-vfp_suck_fini(struct vfp_ctx *vc)
+void
+VFP_Close(struct vfp_ctx *vc)
 {
 	struct vfp_entry *vfe;
 
@@ -136,7 +136,7 @@ VFP_Open(struct vfp_ctx *vc)
 		if (vfe->closed != VFP_OK && vfe->closed != VFP_NULL) {
 			(void)VFP_Error(vc, "Fetch filter %s failed to open",
 			    vfe->vfp->name);
-			vfp_suck_fini(vc);
+			VFP_Close(vc);
 			return (-1);
 		}
 	}
@@ -182,71 +182,6 @@ VFP_Suck(struct vfp_ctx *vc, void *p, ssize_t *lp)
 
 /*--------------------------------------------------------------------
  */
-
-void
-VFP_Fetch_Body(struct busyobj *bo)
-{
-	ssize_t l;
-	uint8_t *ptr;
-	enum vfp_status vfps = VFP_ERROR;
-	ssize_t est;
-	struct vfp_ctx *vfc;
-
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	vfc = bo->vfc;
-	CHECK_OBJ_NOTNULL(vfc, VFP_CTX_MAGIC);
-
-	AN(vfc->vfp_nxt);
-
-	est = bo->content_length;
-	if (est < 0)
-		est = 0;
-
-	do {
-		if (bo->abandon) {
-			/*
-			 * A pass object and delivery was terminted
-			 * We don't fail the fetch, in order for hit-for-pass
-			 * objects to be created.
-			 */
-			AN(vfc->oc->flags & OC_F_PASS);
-			VSLb(vfc->vsl, SLT_FetchError,
-			    "Pass delivery abandoned");
-			vfps = VFP_END;
-			bo->doclose = SC_RX_BODY;
-			break;
-		}
-		AZ(vfc->failed);
-		l = est;
-		assert(l >= 0);
-		if (VFP_GetStorage(vfc, &l, &ptr) != VFP_OK) {
-			bo->doclose = SC_RX_BODY;
-			break;
-		}
-
-		AZ(vfc->failed);
-		vfps = VFP_Suck(vfc, ptr, &l);
-		if (l > 0 && vfps != VFP_ERROR) {
-			VBO_extend(bo, l);
-			if (est >= l)
-				est -= l;
-			else
-				est = 0;
-		}
-	} while (vfps == VFP_OK);
-
-	if (vfps == VFP_ERROR) {
-		AN(vfc->failed);
-		(void)VFP_Error(vfc, "Fetch Pipeline failed to process");
-		bo->doclose = SC_RX_BODY;
-	}
-
-	vfp_suck_fini(vfc);
-
-	if (!bo->do_stream)
-		ObjTrimStore(vfc->oc, bo->stats);
-}
-
 struct vfp_entry *
 VFP_Push(struct vfp_ctx *vc, const struct vfp *vfp, int top)
 {
