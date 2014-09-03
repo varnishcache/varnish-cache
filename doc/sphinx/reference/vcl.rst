@@ -213,6 +213,8 @@ are available:
 Backends can be used with *directors*. Please see the
 vmod_directors(3) man page for more information.
 
+.. _reference-vcl_probes:
+
 Probes
 ------
 

@@ -156,14 +156,14 @@ Health checks
 -------------
 
 Lets set up a director with two backends and health checks. First let
-us define the backends.::
+us define the backends::
 
     backend server1 {
         .host = "server1.example.com";
         .probe = {
             .url = "/";
+            .timeout = 1s;
             .interval = 5s;
-            .timeout = 1 s;
             .window = 5;
             .threshold = 3;
         }
@@ -173,39 +173,22 @@ us define the backends.::
         .host = "server2.example.com";
         .probe = {
             .url = "/";
+            .timeout = 1s;
             .interval = 5s;
-            .timeout = 1 s;
             .window = 5;
             .threshold = 3;
         }
     }
 
-What is new here is the ``probe``. Varnish will check the health of each
-backend with a probe. The options are:
+What is new here is the ``probe``.  In this example Varnish will check the
+health of each backend every 5 seconds, timing out after 1 second. Each
+poll will send a GET request to /. If 3 out of the last 5 polls succeeded
+the backend is considered healthy, otherwise it will be marked as sick.
 
-url
-    The URL Varnish will use to send a probe request.
-
-interval
-    How often should we poll.
-
-timeout
-    What is the timeout of the probe.
-
-window
-    Varnish will retain up to this many probes when considering backend health.
-
-threshold
-    How many of the `.window` last polls must be good for the backend to be
-    declared healthy.
-
-initial
-    How many of the probes that needs to be succesful when Varnish starts.
-    Defaults to the same amount as the threshold.
-
+Refer to the :ref:`reference-vcl_probes` section in the
+:ref:`reference-vcl` documentation for more information.
 
 Now we define the 'director'::
-
 
     import directors;
 
@@ -215,17 +198,16 @@ Now we define the 'director'::
         vdir.add_backend(server2);
     }
 
+You use this `vdir` director as a backend_hint for requests, just like
+you would with a simple backend. Varnish will not send traffic to hosts
+that are marked as unhealthy.
 
-You use this `vdir` director as a backend_hint for requests, just like you would
-with a simple backend. Varnish will not send traffic to hosts that are marked as
-unhealthy.
+Varnish can also serve stale content if all the backends are down. See
+:ref:`users-guide-handling_misbehaving_servers` for more information on
+how to enable this.
 
-Varnish can also serve stale content if all the backends are
-down. See :ref:`users-guide-handling_misbehaving_servers` for more
-information on how to enable this.
-
-Please note that Varnish will keep health probes running for all loaded VCLs. Varnish
-will coalesce probes that seem identical - so be careful not to change the
-probe config if you do a lot of VCL loading. Unloading the VCL will discard the
-probes. For more information on how to do this please see ref:`reference-vcl-director`.
-
+Please note that Varnish will keep health probes running for all loaded
+VCLs. Varnish will coalesce probes that seem identical - so be careful
+not to change the probe config if you do a lot of VCL loading. Unloading
+the VCL will discard the probes. For more information on how to do this
+please see ref:`reference-vcl-director`.
