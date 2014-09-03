@@ -809,7 +809,7 @@ void VBO_waitstate(struct busyobj *bo, enum busyobj_state_e want);
 
 /* cache_http1_fetch.c [V1F] */
 int V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req);
-void V1F_Setup_Fetch(struct busyobj *bo);
+void V1F_Setup_Fetch(struct vfp_ctx *vfc, ssize_t cl, struct http_conn *htc);
 
 /* cache_http1_fsm.c [HTTP1] */
 typedef int (req_body_iter_f)(struct req *, void *priv, void *ptr, size_t);
