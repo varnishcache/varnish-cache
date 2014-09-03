@@ -58,7 +58,6 @@ VFP_Error(struct vfp_ctx *vc, const char *fmt, ...)
 	va_list ap;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	assert(vc->bo->state >= BOS_REQ_DONE);
 	if (!vc->failed) {
 		va_start(ap, fmt);
 		VSLbv(vc->vsl, SLT_FetchError, fmt, ap);
@@ -79,7 +78,6 @@ VFP_GetStorage(struct vfp_ctx *vc, ssize_t *sz, uint8_t **ptr)
 	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	AN(sz);
 	assert(*sz >= 0);
 	AN(ptr);
