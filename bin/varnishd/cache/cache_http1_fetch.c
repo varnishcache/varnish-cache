@@ -153,39 +153,34 @@ static const struct vfp v1f_eof = {
  */
 
 void
-V1F_Setup_Fetch(struct busyobj *bo)
+V1F_Setup_Fetch(struct vfp_ctx *vfc, ssize_t cl, struct http_conn *htc)
 {
-	struct http_conn *htc;
 	struct vfp_entry *vfe;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	htc = &bo->htc;
+	CHECK_OBJ_NOTNULL(vfc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->vbc, VBC_MAGIC);
 
 	switch(htc->body_status) {
 	case BS_EOF:
-		assert(bo->content_length == -1);
-		vfe = VFP_Push(bo->vfc, &v1f_eof, 0);
-		vfe->priv1 = &bo->htc;
+		assert(cl == -1);
+		vfe = VFP_Push(vfc, &v1f_eof, 0);
 		vfe->priv2 = 0;
 		break;
 	case BS_LENGTH:
-		assert(bo->content_length > 0);
-		vfe = VFP_Push(bo->vfc, &v1f_straight, 0);
-		vfe->priv1 = &bo->htc;
-		vfe->priv2 = bo->content_length;
+		assert(cl > 0);
+		vfe = VFP_Push(vfc, &v1f_straight, 0);
+		vfe->priv2 = cl;
 		break;
 	case BS_CHUNKED:
-		assert(bo->content_length == -1);
-		vfe = VFP_Push(bo->vfc, &v1f_chunked, 0);
-		vfe->priv1 = &bo->htc;
+		assert(cl == -1);
+		vfe = VFP_Push(vfc, &v1f_chunked, 0);
 		vfe->priv2 = -1;
 		break;
 	default:
 		WRONG("Wrong body_status");
 		break;
 	}
+	vfe->priv1 = htc;
 	return;
 }
 

@@ -58,7 +58,6 @@ VFP_Error(struct vfp_ctx *vc, const char *fmt, ...)
 	va_list ap;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	assert(vc->bo->state >= BOS_REQ_DONE);
 	if (!vc->failed) {
 		va_start(ap, fmt);
 		VSLbv(vc->vsl, SLT_FetchError, fmt, ap);
@@ -79,7 +78,6 @@ VFP_GetStorage(struct vfp_ctx *vc, ssize_t *sz, uint8_t **ptr)
 	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	AN(sz);
 	assert(*sz >= 0);
 	AN(ptr);
@@ -115,8 +113,8 @@ VFP_Setup(struct vfp_ctx *vc)
 /**********************************************************************
  */
 
-static void
-vfp_suck_fini(struct vfp_ctx *vc)
+void
+VFP_Close(struct vfp_ctx *vc)
 {
 	struct vfp_entry *vfe;
 
@@ -138,7 +136,7 @@ VFP_Open(struct vfp_ctx *vc)
 		if (vfe->closed != VFP_OK && vfe->closed != VFP_NULL) {
 			(void)VFP_Error(vc, "Fetch filter %s failed to open",
 			    vfe->vfp->name);
-			vfp_suck_fini(vc);
+			VFP_Close(vc);
 			return (-1);
 		}
 	}
@@ -184,68 +182,6 @@ VFP_Suck(struct vfp_ctx *vc, void *p, ssize_t *lp)
 
 /*--------------------------------------------------------------------
  */
-
-void
-VFP_Fetch_Body(struct busyobj *bo)
-{
-	ssize_t l;
-	uint8_t *ptr;
-	enum vfp_status vfps = VFP_ERROR;
-	ssize_t est;
-
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-
-	AN(bo->vfc->vfp_nxt);
-
-	est = bo->content_length;
-	if (est < 0)
-		est = 0;
-
-	do {
-		if (bo->abandon) {
-			/*
-			 * A pass object and delivery was terminted
-			 * We don't fail the fetch, in order for hit-for-pass
-			 * objects to be created.
-			 */
-			AN(bo->fetch_objcore->flags & OC_F_PASS);
-			VSLb(bo->vsl, SLT_FetchError,
-			    "Pass delivery abandoned");
-			vfps = VFP_END;
-			bo->doclose = SC_RX_BODY;
-			break;
-		}
-		AZ(bo->vfc->failed);
-		l = est;
-		assert(l >= 0);
-		if (VFP_GetStorage(bo->vfc, &l, &ptr) != VFP_OK) {
-			bo->doclose = SC_RX_BODY;
-			break;
-		}
-
-		AZ(bo->vfc->failed);
-		vfps = VFP_Suck(bo->vfc, ptr, &l);
-		if (l > 0 && vfps != VFP_ERROR) {
-			VBO_extend(bo, l);
-			if (est >= l)
-				est -= l;
-			else
-				est = 0;
-		}
-	} while (vfps == VFP_OK);
-
-	if (vfps == VFP_ERROR) {
-		AN(bo->vfc->failed);
-		(void)VFP_Error(bo->vfc, "Fetch Pipeline failed to process");
-		bo->doclose = SC_RX_BODY;
-	}
-
-	vfp_suck_fini(bo->vfc);
-
-	if (!bo->do_stream)
-		ObjTrimStore(bo->fetch_objcore, bo->stats);
-}
-
 struct vfp_entry *
 VFP_Push(struct vfp_ctx *vc, const struct vfp *vfp, int top)
 {

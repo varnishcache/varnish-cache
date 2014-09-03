@@ -409,6 +409,7 @@ ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr, ssize_t len,
 	void *retval = NULL;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->oc, OBJCORE_MAGIC);
 	o = obj_getobj(vc->oc, vc->stats);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);

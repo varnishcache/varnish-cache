@@ -65,7 +65,6 @@ vfp_vep_callback(struct vfp_ctx *vc, void *priv, ssize_t l, enum vgz_flag flg)
 	int i;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	CAST_OBJ_NOTNULL(vef, priv, VEF_MAGIC);
 	assert(l >= 0);
 
@@ -82,6 +81,7 @@ vfp_vep_callback(struct vfp_ctx *vc, void *priv, ssize_t l, enum vgz_flag flg)
 	if (l == 0 && flg == VGZ_NORMAL)
 		return (vef->tot);
 
+	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	VGZ_Ibuf(vef->vgz, vef->ibuf_o, l);
 	do {
 		dl = 0;
