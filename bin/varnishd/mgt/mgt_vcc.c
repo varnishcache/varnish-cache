@@ -248,7 +248,10 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag, unsigned *status)
 		*status = 2;
 		return (NULL);
 	}
-	(void)fchown(sfd, mgt_param.uid, mgt_param.gid);
+	if (fchown(sfd, mgt_param.uid, mgt_param.gid) != 0)
+		if (geteuid() == 0)
+			VSB_printf(sb, "Failed to change owner on %s: %s\n",
+			    sf, strerror(errno));
 	AZ(close(sfd));
 
 
@@ -286,7 +289,10 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag, unsigned *status)
 		*status = 2;
 		return (NULL);
 	}
-	(void)fchown(i, mgt_param.uid, mgt_param.gid);
+	if (fchown(i, mgt_param.uid, mgt_param.gid) != 0)
+		if (geteuid() == 0)
+			VSB_printf(sb, "Failed to change owner on %s: %s\n",
+			    of, strerror(errno));
 	AZ(close(i));
 
 	/* Build the C-compiler command line */
