@@ -96,7 +96,6 @@ vlu_dotelnet(struct vlu *l, char *p)
 	char *e;
 	char tno[3];
 	int i;
-	ssize_t r = 0;
 
 	e = l->buf + l->bufp;
 	assert(p >= l->buf && p < e);
@@ -121,8 +120,7 @@ vlu_dotelnet(struct vlu *l, char *p)
 		/* Return WONT for these */
 		memcpy(tno, p, 3);
 		tno[1] = (char)252;
-		r = write(l->telnet, tno, 3);
-		if (r != 3)
+		if (write(l->telnet, tno, 3) != 3)
 			return (1);
 		i = 3;
 		break;
