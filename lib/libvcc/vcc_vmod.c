@@ -34,6 +34,8 @@
 
 #include "vcc_compile.h"
 
+#include "vcs_version.h"
+
 #include "vmod_abi.h"
 #include "vrt.h"
 
@@ -123,6 +125,15 @@ vcc_ParseImport(struct vcc *tl)
 		vcc_ErrWhere(tl, mod);
 		return;
 	}
+	if (strcmp(VCS_Branch, "master") == 0 &&
+	    strcmp(vmd->abi, VMOD_ABI_Version) != 0) {
+		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(mod));
+		VSB_printf(tl->sb, "\tFile name: %s\n", fn);
+		VSB_printf(tl->sb, "\tABI mismatch, expected <%s>, got <%s>\n",
+			   VMOD_ABI_Version, vmd->abi);
+		vcc_ErrWhere(tl, mod);
+		return;
+	}
 	if (vmd->vrt_major != VRT_MAJOR_VERSION ||
 	    vmd->vrt_minor > VRT_MINOR_VERSION) {
 		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(mod));
@@ -150,15 +161,6 @@ vcc_ParseImport(struct vcc *tl)
 		VSB_printf(tl->sb, "Wrong VMOD file %.*s\n", PF(mod));
 		VSB_printf(tl->sb, "\tFile name: %s\n", fn);
 		VSB_printf(tl->sb, "\tContains vmod \"%s\"\n", vmd->name);
-		vcc_ErrWhere(tl, mod);
-		return;
-	}
-
-	if (strcmp(vmd->abi, VMOD_ABI_Version) != 0) {
-		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fn);
-		VSB_printf(tl->sb, "\tABI mismatch, expected <%s>, got <%s>\n",
-			   VMOD_ABI_Version, vmd->abi);
 		vcc_ErrWhere(tl, mod);
 		return;
 	}
