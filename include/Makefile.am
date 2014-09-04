@@ -96,6 +96,7 @@ MAINTAINERCLEANFILES = vcs_version.h
 vcs_version.h: FORCE
 	@if [ -d "$(top_srcdir)/.git" ]; then \
 		V="$$(git show -s --pretty=format:%h)" \
+		B="$$(git rev-parse --abbrev-ref HEAD)" \
 		H="$$(head -n 1 vcs_version.h 2>/dev/null || true)"; \
 		if [ "/* $$V */" != "$$H" ]; then \
 		( \
@@ -108,7 +109,8 @@ vcs_version.h: FORCE
 		  echo ' */' ;\
 		  echo "/* $$V */" ;\
 		  echo '' ;\
-		  echo "#define VCS_Version \"$$V\"" \
+		  echo "#define VCS_Version \"$$V\"" ; \
+		  echo "#define VCS_Branch \"$$B\"" \
 		) > vcs_version.h ; \
 		fi \
 	else \
@@ -116,7 +118,8 @@ vcs_version.h: FORCE
 		( \
 		  echo "/* NOGIT */" ; \
 		  echo '/* No git commit ID available, see include/Makefile.am for explanation */' ; \
-		  echo '#define VCS_Version "NOGIT"' \
+		  echo '#define VCS_Version "NOGIT"' ; \
+		  echo '#define VCS_Branch "NOGIT"' \
 		) >  vcs_version.h ; \
 		fi \
 	fi
