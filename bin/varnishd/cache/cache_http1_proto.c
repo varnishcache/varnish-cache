@@ -373,6 +373,61 @@ http1_splitline(struct http *hp, const struct http_conn *htc, const int *hf)
 
 /*--------------------------------------------------------------------*/
 
+static enum body_status
+http1_body_status(const struct http *hp, struct http_conn *htc)
+{
+	ssize_t cl;
+	char *b;
+
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+
+	htc->content_length = -1;
+
+	if (http_HdrIs(hp, H_Transfer_Encoding, "chunked"))
+		return (BS_CHUNKED);
+
+	if (http_GetHdr(hp, H_Transfer_Encoding, &b))
+		return (BS_ERROR);
+
+	cl = http_GetContentLength(hp);
+	if (cl == -2)
+		return (BS_ERROR);
+	if (cl >= 0) {
+		htc->content_length = cl;
+		return (cl == 0 ? BS_NONE : BS_LENGTH);
+	}
+
+	if (http_HdrIs(hp, H_Connection, "keep-alive")) {
+		/*
+		 * Keep alive with neither TE=Chunked or C-Len is impossible.
+		 * We assume a zero length body.
+		 */
+		return (BS_NONE);
+	}
+
+	if (http_HdrIs(hp, H_Connection, "close")) {
+		/*
+		 * In this case, it is safe to just read what comes.
+		 */
+		return (BS_EOF);
+	}
+
+	if (hp->protover < 11) {
+		/*
+		 * With no Connection header, assume EOF.
+		 */
+		return (BS_EOF);
+	}
+
+	/*
+	 * Fall back to EOF transfer.
+	 */
+	return (BS_EOF);
+}
+
+/*--------------------------------------------------------------------*/
+
 static uint16_t
 http1_request_check_host_hdr(const struct http *hp)
 {
@@ -453,24 +508,17 @@ http1_DoConnection(struct http *hp)
 /*--------------------------------------------------------------------*/
 
 uint16_t
-HTTP1_DissectRequest(struct req *req)
+HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 {
-	struct http_conn *htc;
-	struct http *hp;
 	uint16_t retval;
 	char *b, *e;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	htc = req->htc;
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	hp = req->http;
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
 	retval = http1_splitline(hp, htc, HTTP1_Req);
-	if (retval != 0) {
-		VSLbt(req->vsl, SLT_HttpGarbage, htc->rxbuf);
+	if (retval != 0)
 		return (retval);
-	}
 	http1_proto_ver(hp);
 
 	retval = http1_request_check_host_hdr(hp);
@@ -490,6 +538,8 @@ HTTP1_DissectRequest(struct req *req)
 		}
 	}
 
+	htc->body_status = http1_body_status(hp, htc);
+
 	hp->doclose = http1_DoConnection(hp);
 
 	return (retval);
@@ -498,7 +548,7 @@ HTTP1_DissectRequest(struct req *req)
 /*--------------------------------------------------------------------*/
 
 uint16_t
-HTTP1_DissectResponse(struct http *hp, const struct http_conn *htc)
+HTTP1_DissectResponse(struct http *hp, struct http_conn *htc)
 {
 	uint16_t retval = 0;
 	char *p;
@@ -543,6 +593,8 @@ HTTP1_DissectResponse(struct http *hp, const struct http_conn *htc)
 	if (hp->hd[HTTP_HDR_REASON].b == NULL ||
 	    !Tlen(hp->hd[HTTP_HDR_REASON]))
 		http_SetH(hp, HTTP_HDR_REASON, http_Status2Reason(hp->status));
+
+	htc->body_status = http1_body_status(hp, htc);
 
 	hp->doclose = http1_DoConnection(hp);
 

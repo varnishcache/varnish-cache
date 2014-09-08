@@ -322,10 +322,11 @@ http1_dissect(struct worker *wrk, struct req *req)
 	wrk->vcl = NULL;
 
 	HTTP_Setup(req->http, req->ws, req->vsl, SLT_ReqMethod);
-	req->err_code = HTTP1_DissectRequest(req);
+	req->err_code = HTTP1_DissectRequest(req->htc, req->http);
 
 	/* If we could not even parse the request, just close */
 	if (req->err_code != 0) {
+		VSLbt(req->vsl, SLT_HttpGarbage, req->htc->rxbuf);
 		wrk->stats.client_req_400++;
 		r = write(req->sp->fd, r_400, strlen(r_400));
 		if (r > 0)

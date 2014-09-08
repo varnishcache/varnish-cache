@@ -218,6 +218,7 @@ struct http_conn {
 	struct ws		*ws;
 	txt			rxbuf;
 	txt			pipeline;
+	ssize_t			content_length;
 	enum body_status	body_status;
 };
 
@@ -1000,8 +1001,8 @@ enum http1_status_e HTTP1_Reinit(struct http_conn *htc);
 enum http1_status_e HTTP1_Rx(struct http_conn *htc);
 ssize_t HTTP1_Read(struct http_conn *htc, void *d, size_t len);
 enum http1_status_e HTTP1_Complete(struct http_conn *htc);
-uint16_t HTTP1_DissectRequest(struct req *);
-uint16_t HTTP1_DissectResponse(struct http *sp, const struct http_conn *htc);
+uint16_t HTTP1_DissectRequest(struct http_conn *htc, struct http *hp);
+uint16_t HTTP1_DissectResponse(struct http *sp, struct http_conn *htc);
 unsigned HTTP1_Write(const struct worker *w, const struct http *hp, const int*);
 
 #define HTTPH(a, b, c) extern char b[];
