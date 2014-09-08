@@ -474,7 +474,6 @@ HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv)
 	case REQ_BODY_PRESENT:
 	case REQ_BODY_CHUNKED:
 		break;
-	case REQ_BODY_DONE:
 	case REQ_BODY_TAKEN:
 		VSLb(req->vsl, SLT_VCL_Error,
 		    "Uncached req.body can only be consumed once.");
@@ -553,8 +552,6 @@ int
 HTTP1_DiscardReqBody(struct req *req)
 {
 
-	if (req->req_body_status == REQ_BODY_DONE)
-		return(0);
 	if (req->req_body_status == REQ_BODY_FAIL)
 		return(0);
 	if (req->req_body_status == REQ_BODY_TAKEN)

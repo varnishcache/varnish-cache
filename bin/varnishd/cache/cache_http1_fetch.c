@@ -300,7 +300,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 		} else {
 			i = HTTP1_IterateReqBody(req, vbf_iter_req_body, wrk);
 		}
-		if (req->req_body_status == REQ_BODY_DONE) {
+		if (req->req_body_status == REQ_BODY_TAKEN) {
 			retry = -1;
 		} else if (req->req_body_status == REQ_BODY_FAIL) {
 			VSLb(bo->vsl, SLT_FetchError,
