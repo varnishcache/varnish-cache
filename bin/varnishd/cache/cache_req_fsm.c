@@ -697,6 +697,21 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	http_VSL_log(req->http);
 
+	if (req->restarts == 0) {
+		/*
+		 * This really should be done earlier, but we want to capture
+		 * it in the VSL log.
+		 */
+		if (http_GetHdr(req->http, H_X_Forwarded_For, &xff)) {
+			http_Unset(req->http, H_X_Forwarded_For);
+			http_PrintfHeader(req->http, "X-Forwarded-For: %s, %s",
+			    xff, req->sp->client_addr_str);
+		} else {
+			http_PrintfHeader(req->http, "X-Forwarded-For: %s",
+			    req->sp->client_addr_str);
+		}
+	}
+
 	if (req->err_code) {
 		req->req_step = R_STP_SYNTH;
 		return (REQ_FSM_MORE);
@@ -712,25 +727,15 @@ cnt_recv(struct worker *wrk, struct req *req)
 	req->hash_always_miss = 0;
 	req->hash_ignore_busy = 0;
 	req->client_identity = NULL;
-	if (req->restarts == 0) {
-		if (http_GetHdr(req->http, H_X_Forwarded_For, &xff)) {
-			http_Unset(req->http, H_X_Forwarded_For);
-			http_PrintfHeader(req->http, "X-Forwarded-For: %s, %s", xff,
-					  req->sp->client_addr_str);
-		} else {
-			http_PrintfHeader(req->http, "X-Forwarded-For: %s",
-					  req->sp->client_addr_str);
-		}
-	}
 
 	http_CollectHdr(req->http, H_Cache_Control);
 
 	VCL_recv_method(req->vcl, wrk, req, NULL, req->http->ws);
 
 	/* Attempts to cache req.body may fail */
-	if (req->req_body_status == REQ_BODY_FAIL) {
+	if (req->req_body_status == REQ_BODY_FAIL)
 		return (REQ_FSM_DONE);
-	}
+
 	recv_handling = wrk->handling;
 
 	/* We wash the A-E header here for the sake of VRY */
