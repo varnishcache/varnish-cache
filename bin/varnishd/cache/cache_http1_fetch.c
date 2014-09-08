@@ -153,7 +153,7 @@ static const struct vfp v1f_eof = {
  */
 
 void
-V1F_Setup_Fetch(struct vfp_ctx *vfc, ssize_t cl, struct http_conn *htc)
+V1F_Setup_Fetch(struct vfp_ctx *vfc, struct http_conn *htc)
 {
 	struct vfp_entry *vfe;
 
@@ -162,17 +162,17 @@ V1F_Setup_Fetch(struct vfp_ctx *vfc, ssize_t cl, struct http_conn *htc)
 
 	switch(htc->body_status) {
 	case BS_EOF:
-		assert(cl == -1);
+		assert(htc->content_length == -1);
 		vfe = VFP_Push(vfc, &v1f_eof, 0);
 		vfe->priv2 = 0;
 		break;
 	case BS_LENGTH:
-		assert(cl > 0);
+		assert(htc->content_length > 0);
 		vfe = VFP_Push(vfc, &v1f_straight, 0);
-		vfe->priv2 = cl;
+		vfe->priv2 = htc->content_length;
 		break;
 	case BS_CHUNKED:
-		assert(cl == -1);
+		assert(htc->content_length == -1);
 		vfe = VFP_Push(vfc, &v1f_chunked, 0);
 		vfe->priv2 = -1;
 		break;
@@ -181,7 +181,6 @@ V1F_Setup_Fetch(struct vfp_ctx *vfc, ssize_t cl, struct http_conn *htc)
 		break;
 	}
 	vfe->priv1 = htc;
-	return;
 }
 
 /*--------------------------------------------------------------------

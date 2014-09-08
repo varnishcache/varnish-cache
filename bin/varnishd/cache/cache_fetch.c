@@ -556,7 +556,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		ObjSetFlag(bo->vfc, OF_IMSCAND, 1);
 
 	if (bo->htc->body_status != BS_NONE)
-		V1F_Setup_Fetch(bo->vfc, bo->content_length, bo->htc);
+		V1F_Setup_Fetch(bo->vfc, bo->htc);
 
 	/*
 	 * Ready to fetch the body

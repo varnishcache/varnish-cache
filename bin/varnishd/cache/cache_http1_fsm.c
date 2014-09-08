@@ -270,8 +270,6 @@ http1_dissect(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	memset(&req->h1, 0, sizeof req->h1);
-
 	/*
 	 * Cache_req_fsm zeros the vxid once a requests is processed.
 	 * Allocate a new one only now that we know will need it.
@@ -305,11 +303,8 @@ http1_dissect(struct worker *wrk, struct req *req)
 	if (req->req_body_status != REQ_BODY_INIT) {
 		assert(req->req_body_status == REQ_BODY_NONE);	// ESI
 	} else if (req->htc->body_status == BS_CHUNKED) {
-		req->h1.chunk_ctr = -1;
 		req->req_body_status = REQ_BODY_CHUNKED;
 	} else if (req->htc->body_status == BS_LENGTH) {
-		req->req_bodybytes = req->htc->content_length;
-		req->h1.bytes_yet = req->req_bodybytes - req->h1.bytes_done;
 		req->req_body_status = REQ_BODY_PRESENT;
 	} else if (req->htc->body_status == BS_NONE) {
 		req->req_body_status = REQ_BODY_NONE;
@@ -446,50 +441,6 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 	}
 }
 
-static ssize_t
-http1_iter_req_body(struct req *req, enum req_body_state_e bs,
-    void *buf, ssize_t len)
-{
-	const char *err;
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-
-	AN(len);
-	AN(buf);
-	if (bs == REQ_BODY_PRESENT) {
-		AN(req->req_bodybytes);
-		if (len > req->req_bodybytes - req->h1.bytes_done)
-			len = req->req_bodybytes - req->h1.bytes_done;
-		if (len == 0) {
-			req->req_body_status = REQ_BODY_DONE;
-			return (0);
-		}
-		len = HTTP1_Read(req->htc, buf, len);
-		if (len <= 0) {
-			req->req_body_status = REQ_BODY_FAIL;
-			return (-1);
-		}
-		req->h1.bytes_done += len;
-		req->h1.bytes_yet = req->req_bodybytes - req->h1.bytes_done;
-		req->acct.req_bodybytes += len;
-		return (len);
-	} else if (bs == REQ_BODY_CHUNKED) {
-		switch (HTTP1_Chunked(req->htc, &req->h1.chunk_ctr, &err,
-		    &req->acct.req_bodybytes, buf, &len)) {
-		case H1CR_ERROR:
-			VSLb(req->vsl, SLT_Debug, "CHUNKERR: %s", err);
-			return (-1);
-		case H1CR_MORE:
-			return (len);
-		case H1CR_END:
-			return (0);
-		default:
-			WRONG("invalid HTTP1_Chunked return");
-		}
-	} else
-		WRONG("Illegal req_bodystatus");
-}
-
 /*----------------------------------------------------------------------
  * Iterate over the req.body.
  *
@@ -502,9 +453,10 @@ HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv)
 {
 	char buf[8192];
 	struct storage *st;
-	enum req_body_state_e bs;
 	ssize_t l;
 	int i;
+	struct vfp_ctx vfc;
+	enum vfp_status vfps = VFP_ERROR;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(func);
@@ -535,7 +487,6 @@ HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv)
 		WRONG("Wrong req_body_status in HTTP1_IterateReqBody()");
 	}
 	Lck_Lock(&req->sp->mtx);
-	bs = req->req_body_status;
 	if (req->req_body_status == REQ_BODY_PRESENT ||
 	    req->req_body_status == REQ_BODY_CHUNKED) {
 		req->req_body_status = REQ_BODY_TAKEN;
@@ -549,20 +500,33 @@ HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv)
 		return (i);
 	}
 
+	VFP_Setup(&vfc);
+	vfc.http = req->http;
+	vfc.vsl = req->vsl;
+	V1F_Setup_Fetch(&vfc, req->htc);
+	if (VFP_Open(&vfc) < 0) {
+		VSLb(req->vsl, SLT_FetchError, "Could not open Fetch Pipeline");
+		return (-1);
+	}
+
 	do {
-		l = http1_iter_req_body(req, bs, buf, sizeof buf);
-		if (l < 0) {
-			req->doclose = SC_RX_BODY;
+		l = sizeof buf;
+		vfps = VFP_Suck(&vfc, buf, &l);
+		if (vfps == VFP_ERROR) {
+			req->req_body_status = REQ_BODY_FAIL;
+			l = -1;
 			break;
-		}
-		if (l > 0) {
-			i = func(req, priv, buf, l);
-			if (i) {
-				l = i;
+		} else if (l > 0) {
+			req->req_bodybytes += l;
+			req->acct.req_bodybytes += l;
+			l = func(req, priv, buf, l);
+			if (l) {
+				req->req_body_status = REQ_BODY_FAIL;
 				break;
 			}
 		}
-	} while (l > 0);
+	} while (vfps == VFP_OK);
+	VFP_Close(&vfc);
 	VSLb_ts_req(req, "ReqBody", VTIM_real());
 
 	return (l);
@@ -609,7 +573,9 @@ int
 HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
 {
 	struct storage *st;
-	ssize_t l, l2;
+	ssize_t l, yet;
+	struct vfp_ctx vfc;
+	enum vfp_status vfps = VFP_ERROR;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
@@ -627,18 +593,30 @@ HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
 		WRONG("Wrong req_body_status in HTTP1_CacheReqBody()");
 	}
 
-	if (req->req_bodybytes > maxsize) {
+	if (req->htc->content_length > maxsize) {
 		req->req_body_status = REQ_BODY_FAIL;
 		return (-1);
 	}
-	l2 = 0;
 
+	VFP_Setup(&vfc);
+	vfc.http = req->http;
+	vfc.vsl = req->vsl;
+	V1F_Setup_Fetch(&vfc, req->htc);
+
+	if (VFP_Open(&vfc) < 0) {
+		req->req_body_status = REQ_BODY_FAIL;
+		return (-1);
+	}
+
+
+	yet = req->htc->content_length;
+	if (yet < 0)
+		yet = 0;
 	st = NULL;
 	do {
 		if (st == NULL) {
 			st = STV_alloc_transient(
-			    req->h1.bytes_yet ?
-			    req->h1.bytes_yet : cache_param->fetch_chunksize);
+			    yet ?  yet : cache_param->fetch_chunksize);
 			if (st == NULL) {
 				req->req_body_status = REQ_BODY_FAIL;
 				l = -1;
@@ -647,39 +625,46 @@ HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
 				VTAILQ_INSERT_TAIL(&req->body->list, st, list);
 			}
 		}
-
 		l = st->space - st->len;
-		l = http1_iter_req_body(req, req->req_body_status,
-		    st->ptr + st->len, l);
-		if (l < 0) {
-			req->doclose = SC_RX_BODY;
+		vfps = VFP_Suck(&vfc, st->ptr + st->len, &l);
+		if (vfps == VFP_ERROR) {
+			req->req_body_status = REQ_BODY_FAIL;
+			l = -1;
 			break;
+		}
+		if (l > 0) {
+			req->req_bodybytes += l;
+			req->acct.req_bodybytes += l;
+			if (yet > 0)
+				yet -= l;
+			st->len += l;
+			if (st->space == st->len)
+				st = NULL;
+			l = 0;
 		}
 		if (req->req_bodybytes > maxsize) {
 			req->req_body_status = REQ_BODY_FAIL;
 			l = -1;
 			break;
 		}
-		if (l > 0) {
-			l2 += l;
-			st->len += l;
-			if (st->space == st->len)
-				st = NULL;
-		}
-	} while (l > 0);
+	} while (vfps == VFP_OK);
+	VFP_Close(&vfc);
+
+
 	if (l == 0) {
-		req->req_bodybytes = l2;
-		/* We must update also the "pristine" req.* copy */
 
-		http_Unset(req->http0, H_Content_Length);
-		http_Unset(req->http0, H_Transfer_Encoding);
-		http_PrintfHeader(req->http0, "Content-Length: %ju",
-		    (uintmax_t)req->req_bodybytes);
+		if (req->req_bodybytes != req->htc->content_length) {
+			/* We must update also the "pristine" req.* copy */
+			http_Unset(req->http0, H_Content_Length);
+			http_Unset(req->http0, H_Transfer_Encoding);
+			http_PrintfHeader(req->http0, "Content-Length: %ju",
+			    (uintmax_t)req->req_bodybytes);
 
-		http_Unset(req->http, H_Content_Length);
-		http_Unset(req->http, H_Transfer_Encoding);
-		http_PrintfHeader(req->http, "Content-Length: %ju",
-		    (uintmax_t)req->req_bodybytes);
+			http_Unset(req->http, H_Content_Length);
+			http_Unset(req->http, H_Transfer_Encoding);
+			http_PrintfHeader(req->http, "Content-Length: %ju",
+			    (uintmax_t)req->req_bodybytes);
+		}
 
 		req->req_body_status = REQ_BODY_CACHED;
 	}
