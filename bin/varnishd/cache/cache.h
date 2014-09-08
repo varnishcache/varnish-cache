@@ -966,6 +966,7 @@ int http_GetHdrToken(const struct http *hp, const char *hdr,
 int http_GetHdrField(const struct http *hp, const char *hdr,
     const char *field, char **ptr);
 double http_GetHdrQ(const struct http *hp, const char *hdr, const char *field);
+ssize_t http_GetContentLength(const struct http *hp);
 uint16_t http_GetStatus(const struct http *hp);
 int http_IsStatus(const struct http *hp, int);
 void http_SetStatus(struct http *to, uint16_t status);

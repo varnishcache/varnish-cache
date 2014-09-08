@@ -525,6 +525,35 @@ http_GetHdrField(const struct http *hp, const char *hdr,
 
 /*--------------------------------------------------------------------*/
 
+ssize_t
+http_GetContentLength(const struct http *hp)
+{
+	ssize_t cl, cll;
+	char *b;
+
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+
+	if (!http_GetHdr(hp, H_Content_Length, &b))
+		return (-1);
+	cl = 0;
+	if (!vct_isdigit(*b))
+		return (-2);
+	for (;vct_isdigit(*b); b++) {
+		cll = cl;
+		cl *= 10;
+		cl += *b - '0';
+		if (cll != cl / 10)
+			return (-2);
+	}
+	while (vct_islws(*b))
+		b++;
+	if (*b != '\0')
+		return (-2);
+	return (cl);
+}
+
+/*--------------------------------------------------------------------*/
+
 int
 http_HdrIs(const struct http *hp, const char *hdr, const char *val)
 {
