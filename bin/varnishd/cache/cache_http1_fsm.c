@@ -300,9 +300,9 @@ http1_dissect(struct worker *wrk, struct req *req)
 		return (REQ_FSM_DONE);
 	}
 
-	if (req->req_body_status != REQ_BODY_INIT) {
-		assert(req->req_body_status == REQ_BODY_NONE);	// ESI
-	} else if (req->htc->body_status == BS_CHUNKED) {
+	assert (req->req_body_status == REQ_BODY_INIT);
+
+	if (req->htc->body_status == BS_CHUNKED) {
 		req->req_body_status = REQ_BODY_CHUNKED;
 	} else if (req->htc->body_status == BS_LENGTH) {
 		req->req_body_status = REQ_BODY_PRESENT;
@@ -366,10 +366,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 
 	/*
 	 * Whenever we come in from the acceptor or waiter, we need to set
-	 * blocking mode, but there is no point in setting it when we come from
-	 * ESI or when a parked sessions returns.
-	 * It would be simpler to do this in the acceptor or waiter, but we'd
-	 * rather do the syscall in the worker thread.
+	 * blocking mode.  It would be simpler to do this in the acceptor
+	 * or waiter, but we'd rather do the syscall in the worker thread.
 	 * On systems which return errors for ioctl, we close early
 	 */
 	if (sp->sess_step == S_STP_NEWREQ && VTCP_blocking(sp->fd)) {
