@@ -327,7 +327,7 @@ pan_busyobj(const struct busyobj *bo)
 #undef BO_FLAG
 
 	VSB_printf(pan_vsp, "    bodystatus = %d (%s),\n",
-	    bo->htc.body_status, body_status_2str(bo->htc.body_status));
+	    bo->htc->body_status, body_status_2str(bo->htc->body_status));
 	if (!VTAILQ_EMPTY(&bo->vfc->vfp)) {
 		VSB_printf(pan_vsp, "    filters =");
 		VTAILQ_FOREACH(vfe, &bo->vfc->vfp, list)

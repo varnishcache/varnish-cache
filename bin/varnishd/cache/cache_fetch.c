@@ -316,9 +316,9 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	 * headers are adultered by VCL
 	 * NB: Also sets other wrk variables
 	 */
-	bo->htc.body_status = RFC2616_Body(bo, &wrk->stats);
+	bo->htc->body_status = RFC2616_Body(bo, &wrk->stats);
 
-	if (bo->htc.body_status == BS_ERROR) {
+	if (bo->htc->body_status == BS_ERROR) {
 		AN (bo->vbc);
 		VDI_CloseFd(&bo->vbc, &bo->acct);
 		VSLb(bo->vsl, SLT_Error, "Body cannot be fetched");
@@ -526,7 +526,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		AN(bo->uncacheable);
 
 	/* No reason to try streaming a non-existing body */
-	if (bo->htc.body_status == BS_NONE)
+	if (bo->htc->body_status == BS_NONE)
 		bo->do_stream = 0;
 
 	if (VFP_Open(bo->vfc)) {
@@ -555,8 +555,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	    http_GetHdr(bo->beresp, H_ETag, &p)))
 		ObjSetFlag(bo->vfc, OF_IMSCAND, 1);
 
-	if (bo->htc.body_status != BS_NONE)
-		V1F_Setup_Fetch(bo->vfc, bo->content_length, &bo->htc);
+	if (bo->htc->body_status != BS_NONE)
+		V1F_Setup_Fetch(bo->vfc, bo->content_length, bo->htc);
 
 	/*
 	 * Ready to fetch the body
@@ -574,11 +574,11 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	}
 
 	VSLb(bo->vsl, SLT_Fetch_Body, "%u %s %s",
-	    bo->htc.body_status, body_status_2str(bo->htc.body_status),
+	    bo->htc->body_status, body_status_2str(bo->htc->body_status),
 	    bo->do_stream ? "stream" : "-");
 
-	if (bo->htc.body_status != BS_NONE) {
-		assert(bo->htc.body_status != BS_ERROR);
+	if (bo->htc->body_status != BS_NONE) {
+		assert(bo->htc->body_status != BS_ERROR);
 		vbf_fetch_body_helper(bo);
 		bo->acct.beresp_bodybytes = bo->vfc->bodybytes;
 	}

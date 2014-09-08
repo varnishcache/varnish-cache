@@ -254,7 +254,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_ORNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	htc = &bo->htc;
+	htc = bo->htc;
 
 	if (bo->director == NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "No backend");
@@ -335,7 +335,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	    cache_param->http_resp_size,
 	    cache_param->http_resp_hdr_len);
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	CHECK_OBJ_NOTNULL(&bo->htc, HTTP_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
 
 	VTCP_set_read_timeout(vc->fd, vc->first_byte_timeout);
 

@@ -509,7 +509,7 @@ struct busyobj {
 	struct objcore		*ims_oc;
 	struct objcore		*fetch_objcore;
 
-	struct http_conn	htc;
+	struct http_conn	htc[1];
 
 	struct pool_task	fetch_task;
 
