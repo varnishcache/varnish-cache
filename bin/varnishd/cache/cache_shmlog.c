@@ -303,6 +303,7 @@ VSLbv(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, va_list ap)
 	unsigned n, mlen;
 	txt t;
 
+	AN(vsl);
 	AN(fmt);
 	if (vsl_tag_is_masked(tag))
 		return;

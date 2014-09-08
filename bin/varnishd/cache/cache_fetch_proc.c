@@ -129,6 +129,8 @@ VFP_Open(struct vfp_ctx *vc)
 	struct vfp_entry *vfe;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->http, HTTP_MAGIC);
+	AN(vc->vsl);
 	VTAILQ_FOREACH_REVERSE(vfe, &vc->vfp, vfp_entry_s, list) {
 		if (vfe->vfp->init == NULL)
 			continue;
@@ -188,6 +190,7 @@ VFP_Push(struct vfp_ctx *vc, const struct vfp *vfp, int top)
 	struct vfp_entry *vfe;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->http, HTTP_MAGIC);
 	vfe = (void*)WS_Alloc(vc->http->ws, sizeof *vfe);
 	AN(vfe);
 	vfe->magic = VFP_ENTRY_MAGIC;
