@@ -77,7 +77,6 @@
 #include "hash/hash_slinger.h"
 
 #include "vcl.h"
-#include "vct.h"
 #include "vtcp.h"
 #include "vtim.h"
 
@@ -259,43 +258,11 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 /*----------------------------------------------------------------------
  */
 
-static enum req_body_state_e
-http1_req_body_status(struct req *req)
-{
-	char *ptr, *endp;
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-
-	if (http_GetHdr(req->http, H_Content_Length, &ptr)) {
-		AN(ptr);
-		if (*ptr == '\0')
-			return (REQ_BODY_FAIL);
-		req->req_bodybytes = strtoul(ptr, &endp, 10);
-		if (*endp != '\0' && !vct_islws(*endp))
-			return (REQ_BODY_FAIL);
-		if (req->req_bodybytes == 0)
-			return (REQ_BODY_NONE);
-		req->h1.bytes_yet = req->req_bodybytes - req->h1.bytes_done;
-		return (REQ_BODY_PRESENT);
-	}
-	if (http_HdrIs(req->http, H_Transfer_Encoding, "chunked")) {
-		req->h1.chunk_ctr = -1;
-		return (REQ_BODY_CHUNKED);
-	}
-	if (http_GetHdr(req->http, H_Transfer_Encoding, NULL))
-		return (REQ_BODY_FAIL);
-	return (REQ_BODY_NONE);
-}
-
-/*----------------------------------------------------------------------
- */
-
 static enum req_fsm_nxt
 http1_dissect(struct worker *wrk, struct req *req)
 {
 	const char *r_100 = "HTTP/1.1 100 Continue\r\n\r\n";
 	const char *r_400 = "HTTP/1.1 400 Bad Request\r\n\r\n";
-	const char *r_411 = "HTTP/1.1 411 Length Required\r\n\r\n";
 	const char *r_417 = "HTTP/1.1 417 Expectation Failed\r\n\r\n";
 	char *p;
 	ssize_t r;
@@ -335,18 +302,22 @@ http1_dissect(struct worker *wrk, struct req *req)
 		return (REQ_FSM_DONE);
 	}
 
-	if (req->req_body_status == REQ_BODY_INIT)
-		req->req_body_status = http1_req_body_status(req);
-	else
+	if (req->req_body_status != REQ_BODY_INIT) {
 		assert(req->req_body_status == REQ_BODY_NONE);	// ESI
-
-	if (req->req_body_status == REQ_BODY_FAIL) {
-		wrk->stats.client_req_411++;
-		r = write(req->sp->fd, r_411, strlen(r_411));
-		if (r > 0)
-			req->acct.resp_hdrbytes += r;
-		SES_Close(req->sp, SC_RX_JUNK);
-		return (REQ_FSM_DONE);
+	} else if (req->htc->body_status == BS_CHUNKED) {
+		req->h1.chunk_ctr = -1;
+		req->req_body_status = REQ_BODY_CHUNKED;
+	} else if (req->htc->body_status == BS_LENGTH) {
+		req->req_bodybytes = req->htc->content_length;
+		req->h1.bytes_yet = req->req_bodybytes - req->h1.bytes_done;
+		req->req_body_status = REQ_BODY_PRESENT;
+	} else if (req->htc->body_status == BS_NONE) {
+		req->req_body_status = REQ_BODY_NONE;
+	} else if (req->htc->body_status == BS_EOF) {
+		/* XXX: We don't support EOF bodies in requests */
+		req->req_body_status = REQ_BODY_NONE;
+	} else {
+		WRONG("Unknown req.body_length situation");
 	}
 
 	if (http_GetHdr(req->http, H_Expect, &p)) {
@@ -366,6 +337,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 			SES_Close(req->sp, SC_REM_CLOSE);
 			return (REQ_FSM_DONE);
 		}
+		http_Unset(req->http, H_Expect);
 	}
 
 	wrk->stats.client_req++;
@@ -374,8 +346,6 @@ http1_dissect(struct worker *wrk, struct req *req)
 	AZ(req->err_code);
 	req->ws_req = WS_Snapshot(req->ws);
 	req->doclose = req->http->doclose;
-
-	http_Unset(req->http, H_Expect);
 
 	assert(req->req_body_status != REQ_BODY_INIT);
 

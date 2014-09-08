@@ -522,9 +522,8 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 	http1_proto_ver(hp);
 
 	retval = http1_request_check_host_hdr(hp);
-	if (retval != 0) {
+	if (retval != 0)
 		return (retval);
-	}
 
 	/* RFC2616, section 5.2, point 1 */
 	if (!strncasecmp(hp->hd[HTTP_HDR_URL].b, "http://", 7)) {
@@ -539,6 +538,9 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 	}
 
 	htc->body_status = http1_body_status(hp, htc);
+
+	if (htc->body_status == BS_ERROR)
+		return (400);
 
 	hp->doclose = http1_DoConnection(hp);
 

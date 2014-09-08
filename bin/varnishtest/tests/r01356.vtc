@@ -10,13 +10,13 @@ varnish v1 -vcl+backend { } -start
 client c1 {
 	txreq -req POST -nolen -hdr "Transfer-Encoding: carrier-pigeon"
 	rxresp
-	expect resp.status == 411
+	expect resp.status == 400
 } -run
 
 client c1 {
 	txreq -req POST -nolen -hdr "Content-Length: carrier-pigeon"
 	rxresp
-	expect resp.status == 411
+	expect resp.status == 400
 } -run
 
 client c1 {
