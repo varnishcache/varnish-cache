@@ -426,31 +426,6 @@ http1_body_status(const struct http *hp, struct http_conn *htc)
 
 /*--------------------------------------------------------------------*/
 
-static uint16_t
-http1_request_check_host_hdr(const struct http *hp)
-{
-	int u;
-	int seen_host = 0;
-
-	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
-		if (hp->hd[u].b == NULL)
-			continue;
-		AN(hp->hd[u].b);
-		AN(hp->hd[u].e);
-		if (http_IsHdr(&hp->hd[u], H_Host)) {
-			if (seen_host) {
-				VSLb(hp->vsl, SLT_Error,
-				    "Duplicated Host header");
-				return (400);
-			}
-			seen_host = 1;
-		}
-	}
-	return (0);
-}
-
-/*--------------------------------------------------------------------*/
-
 static void
 http1_proto_ver(struct http *hp)
 {
@@ -519,9 +494,11 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 		return (retval);
 	http1_proto_ver(hp);
 
-	retval = http1_request_check_host_hdr(hp);
-	if (retval != 0)
-		return (retval);
+	if (http_CountHdr(hp, H_Host) > 1)
+		return (400);
+
+	if (http_CountHdr(hp, H_Content_Length) > 1)
+		return (400);
 
 	/* RFC2616, section 5.2, point 1 */
 	if (!strncasecmp(hp->hd[HTTP_HDR_URL].b, "http://", 7)) {

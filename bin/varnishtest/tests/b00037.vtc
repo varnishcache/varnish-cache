@@ -10,6 +10,16 @@ varnish v1 -vcl+backend {
 
 client c1 {
 	txreq -hdr "Host: foo" -hdr "Host: bar"
+	rxresp
+	expect resp.status == 400
 } -run
 
 varnish v1 -expect client_req_400 == 1
+
+client c1 {
+	txreq -hdr "Content-Length: 12" -bodylen 12
+	rxresp
+	expect resp.status == 400
+} -run
+
+varnish v1 -expect client_req_400 == 2

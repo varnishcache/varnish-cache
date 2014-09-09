@@ -230,7 +230,7 @@ http_PutField(const struct http *to, int field, const char *string)
 
 /*--------------------------------------------------------------------*/
 
-int
+static int
 http_IsHdr(const txt *hh, const char *hdr)
 {
 	unsigned l;
@@ -279,6 +279,26 @@ http_MarkHeader(const struct http *hp, const char *hdr, unsigned hdrlen,
 	if (u == 0)
 		return;
 	hp->hdf[u] |= flag;
+}
+
+/*--------------------------------------------------------------------
+ * Count how many instances we have of this header
+ */
+
+unsigned
+http_CountHdr(const struct http *hp, const char *hdr)
+{
+	unsigned retval = 0;
+	unsigned u;
+
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+
+	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
+		Tcheck(hp->hd[u]);
+		if (http_IsHdr(&hp->hd[u], hdr))
+			retval++;
+	}
+	return (retval);
 }
 
 /*--------------------------------------------------------------------
