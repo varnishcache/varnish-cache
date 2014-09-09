@@ -193,7 +193,7 @@ RFC2616_Body(struct busyobj *bo, struct dstat *stats)
 
 	hp = bo->beresp;
 
-	if (!strcasecmp(http_GetReq(bo->bereq), "head")) {
+	if (!strcasecmp(http_GetMethod(bo->bereq), "head")) {
 		/*
 		 * A HEAD request can never have a body in the reply,
 		 * no matter what the headers might say.

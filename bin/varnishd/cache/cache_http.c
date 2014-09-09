@@ -671,7 +671,7 @@ http_SetStatus(struct http *to, uint16_t status)
 /*--------------------------------------------------------------------*/
 
 const char *
-http_GetReq(const struct http *hp)
+http_GetMethod(const struct http *hp)
 {
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
