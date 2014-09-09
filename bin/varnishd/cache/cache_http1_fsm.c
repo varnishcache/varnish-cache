@@ -309,8 +309,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 	} else if (req->htc->body_status == BS_NONE) {
 		req->req_body_status = REQ_BODY_NONE;
 	} else if (req->htc->body_status == BS_EOF) {
-		/* XXX: We don't support EOF bodies in requests */
-		req->req_body_status = REQ_BODY_NONE;
+		req->req_body_status = REQ_BODY_PRESENT;
 	} else {
 		WRONG("Unknown req.body_length situation");
 	}

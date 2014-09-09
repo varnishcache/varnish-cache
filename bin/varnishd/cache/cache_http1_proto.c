@@ -443,6 +443,7 @@ uint16_t
 HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 {
 	uint16_t retval;
+	const char *p;
 	char *b, *e;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
@@ -472,8 +473,19 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 	}
 
 	htc->body_status = http1_body_status(hp, htc);
-
 	if (htc->body_status == BS_ERROR)
+		return (400);
+
+	p = http_GetMethod(hp);
+	AN(p);
+
+	/* We handle EOF bodies only for PUT and POST */
+	if (htc->body_status == BS_EOF &&
+	    strcasecmp(p, "put") && strcasecmp(p, "post"))
+		htc->body_status = BS_NONE;
+
+	/* HEAD with a body is a hard error */
+	if (htc->body_status != BS_NONE && !strcasecmp(p, "head"))
 		return (400);
 
 	return (retval);
