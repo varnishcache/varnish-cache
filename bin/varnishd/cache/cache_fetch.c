@@ -731,7 +731,6 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 		bo->synth_body = NULL;
 		if (bo->retries++ < cache_param->max_retries)
 			return (F_STP_RETRY);
-		bo->synth_body = NULL;
 		return (F_STP_FAIL);
 	}
 
