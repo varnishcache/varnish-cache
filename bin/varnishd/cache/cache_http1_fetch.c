@@ -235,6 +235,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 		return (-1);
 	}
 
-	bo->doclose = hp->doclose;
+	bo->doclose = http_DoConnection(hp);
+
 	return (0);
 }

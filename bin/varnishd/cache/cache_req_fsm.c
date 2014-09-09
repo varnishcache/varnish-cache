@@ -717,6 +717,8 @@ cnt_recv(struct worker *wrk, struct req *req)
 		return (REQ_FSM_MORE);
 	}
 
+	req->doclose = http_DoConnection(req->http);
+
 	/* By default we use the first backend */
 	AZ(req->director_hint);
 	req->director_hint = req->vcl->director[0];

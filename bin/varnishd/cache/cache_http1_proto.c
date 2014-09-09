@@ -437,47 +437,6 @@ http1_proto_ver(struct http *hp)
 		hp->protover = 9;
 }
 
-/*--------------------------------------------------------------------
- */
-
-static enum sess_close
-http1_DoConnection(struct http *hp)
-{
-	char *p, *q;
-	enum sess_close retval;
-	unsigned u;
-
-	if (hp->protover < 11)
-		retval = SC_REQ_HTTP10;
-	else
-		retval = SC_NULL;;
-
-	http_CollectHdr(hp, H_Connection);
-	if (!http_GetHdr(hp, H_Connection, &p))
-		return (retval);
-	AN(p);
-	for (; *p; p++) {
-		if (vct_issp(*p))
-			continue;
-		if (*p == ',')
-			continue;
-		for (q = p + 1; *q; q++)
-			if (*q == ',' || vct_issp(*q))
-				break;
-		u = pdiff(p, q);
-		if (u == 5 && !strncasecmp(p, "close", u))
-			retval = SC_REQ_CLOSE;
-		if (u == 10 && !strncasecmp(p, "keep-alive", u))
-			retval = SC_NULL;
-		http_MarkHeader(hp, p, u, HDF_FILTER);
-		if (!*q)
-			break;
-		p = q;
-	}
-	return (retval);
-}
-
-
 /*--------------------------------------------------------------------*/
 
 uint16_t
@@ -516,8 +475,6 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 
 	if (htc->body_status == BS_ERROR)
 		return (400);
-
-	hp->doclose = http1_DoConnection(hp);
 
 	return (retval);
 }
@@ -572,8 +529,6 @@ HTTP1_DissectResponse(struct http *hp, struct http_conn *htc)
 		http_SetH(hp, HTTP_HDR_REASON, http_Status2Reason(hp->status));
 
 	htc->body_status = http1_body_status(hp, htc);
-
-	hp->doclose = http1_DoConnection(hp);
 
 	return (retval);
 }

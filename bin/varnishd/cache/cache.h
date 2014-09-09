@@ -196,7 +196,6 @@ struct http {
 	uint16_t		status;
 	uint8_t			protover;
 	uint8_t			conds;		/* If-* headers present */
-	enum sess_close		doclose;
 };
 
 /*--------------------------------------------------------------------
@@ -961,8 +960,6 @@ const char *http_GetReq(const struct http *hp);
 int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
 void http_CopyHome(const struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
-void http_MarkHeader(const struct http *, const char *hdr, unsigned hdrlen,
-    uint8_t flag);
 unsigned http_CountHdr(const struct http *hp, const char *hdr);
 void http_CollectHdr(struct http *hp, const char *hdr);
 void http_VSL_log(const struct http *hp);
@@ -970,6 +967,7 @@ void HTTP_Merge(struct objcore *, struct dstat *, struct http *to);
 uint16_t HTTP_GetStatusPack(struct objcore *oc, struct dstat *ds);
 const char *HTTP_GetHdrPack(struct objcore *, struct dstat *,
     const char *hdr);
+enum sess_close http_DoConnection(struct http *hp);
 
 /* cache_http1_proto.c */
 

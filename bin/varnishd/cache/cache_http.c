@@ -267,7 +267,7 @@ http_findhdr(const struct http *hp, unsigned l, const char *hdr)
 /*--------------------------------------------------------------------
  */
 
-void
+static void
 http_MarkHeader(const struct http *hp, const char *hdr, unsigned hdrlen,
     uint8_t flag)
 {
@@ -570,6 +570,46 @@ http_GetContentLength(const struct http *hp)
 	if (*b != '\0')
 		return (-2);
 	return (cl);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+enum sess_close
+http_DoConnection(struct http *hp)
+{
+	char *p, *q;
+	enum sess_close retval;
+	unsigned u;
+
+	if (hp->protover < 11)
+		retval = SC_REQ_HTTP10;
+	else
+		retval = SC_NULL;
+
+	http_CollectHdr(hp, H_Connection);
+	if (!http_GetHdr(hp, H_Connection, &p))
+		return (retval);
+	AN(p);
+	for (; *p; p++) {
+		if (vct_issp(*p))
+			continue;
+		if (*p == ',')
+			continue;
+		for (q = p + 1; *q; q++)
+			if (*q == ',' || vct_issp(*q))
+				break;
+		u = pdiff(p, q);
+		if (u == 5 && !strncasecmp(p, "close", u))
+			retval = SC_REQ_CLOSE;
+		if (u == 10 && !strncasecmp(p, "keep-alive", u))
+			retval = SC_NULL;
+		http_MarkHeader(hp, p, u, HDF_FILTER);
+		if (!*q)
+			break;
+		p = q;
+	}
+	return (retval);
 }
 
 /*--------------------------------------------------------------------*/
