@@ -309,7 +309,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 	} else if (req->htc->body_status == BS_NONE) {
 		req->req_body_status = REQ_BODY_NONE;
 	} else if (req->htc->body_status == BS_EOF) {
-		req->req_body_status = REQ_BODY_PRESENT;
+		req->req_body_status = REQ_BODY_CHUNKED;
 	} else {
 		WRONG("Unknown req.body_length situation");
 	}
@@ -451,7 +451,7 @@ HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv)
 	struct storage *st;
 	ssize_t l;
 	int i;
-	struct vfp_ctx vfc;
+	struct vfp_ctx *vfc;
 	enum vfp_status vfps = VFP_ERROR;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -495,18 +495,20 @@ HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv)
 		return (i);
 	}
 
-	VFP_Setup(&vfc);
-	vfc.http = req->http;
-	vfc.vsl = req->vsl;
-	V1F_Setup_Fetch(&vfc, req->htc);
-	if (VFP_Open(&vfc) < 0) {
+	CHECK_OBJ_NOTNULL(req->htc, HTTP_CONN_MAGIC);
+	vfc = req->htc->vfc;
+	VFP_Setup(vfc);
+	vfc->http = req->http;
+	vfc->vsl = req->vsl;
+	V1F_Setup_Fetch(vfc, req->htc);
+	if (VFP_Open(vfc) < 0) {
 		VSLb(req->vsl, SLT_FetchError, "Could not open Fetch Pipeline");
 		return (-1);
 	}
 
 	do {
 		l = sizeof buf;
-		vfps = VFP_Suck(&vfc, buf, &l);
+		vfps = VFP_Suck(vfc, buf, &l);
 		if (vfps == VFP_ERROR) {
 			req->req_body_status = REQ_BODY_FAIL;
 			l = -1;
@@ -521,7 +523,7 @@ HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv)
 			}
 		}
 	} while (vfps == VFP_OK);
-	VFP_Close(&vfc);
+	VFP_Close(vfc);
 	VSLb_ts_req(req, "ReqBody", VTIM_real());
 
 	return (l);
@@ -548,11 +550,10 @@ int
 HTTP1_DiscardReqBody(struct req *req)
 {
 
-	if (req->req_body_status == REQ_BODY_FAIL)
-		return(0);
-	if (req->req_body_status == REQ_BODY_TAKEN)
-		return(0);
-	return(HTTP1_IterateReqBody(req, httpq_req_body_discard, NULL));
+	if (req->req_body_status == REQ_BODY_PRESENT ||
+	    req->req_body_status == REQ_BODY_CHUNKED)
+		(void)HTTP1_IterateReqBody(req, httpq_req_body_discard, NULL);
+	return(0);
 }
 
 /*----------------------------------------------------------------------
@@ -567,7 +568,7 @@ HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
 {
 	struct storage *st;
 	ssize_t l, yet;
-	struct vfp_ctx vfc;
+	struct vfp_ctx *vfc;
 	enum vfp_status vfps = VFP_ERROR;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -586,17 +587,20 @@ HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
 		WRONG("Wrong req_body_status in HTTP1_CacheReqBody()");
 	}
 
+	CHECK_OBJ_NOTNULL(req->htc, HTTP_CONN_MAGIC);
+	vfc = req->htc->vfc;
+
 	if (req->htc->content_length > maxsize) {
 		req->req_body_status = REQ_BODY_FAIL;
 		return (-1);
 	}
 
-	VFP_Setup(&vfc);
-	vfc.http = req->http;
-	vfc.vsl = req->vsl;
-	V1F_Setup_Fetch(&vfc, req->htc);
+	VFP_Setup(vfc);
+	vfc->http = req->http;
+	vfc->vsl = req->vsl;
+	V1F_Setup_Fetch(vfc, req->htc);
 
-	if (VFP_Open(&vfc) < 0) {
+	if (VFP_Open(vfc) < 0) {
 		req->req_body_status = REQ_BODY_FAIL;
 		return (-1);
 	}
@@ -619,7 +623,7 @@ HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
 			}
 		}
 		l = st->space - st->len;
-		vfps = VFP_Suck(&vfc, st->ptr + st->len, &l);
+		vfps = VFP_Suck(vfc, st->ptr + st->len, &l);
 		if (vfps == VFP_ERROR) {
 			req->req_body_status = REQ_BODY_FAIL;
 			l = -1;
@@ -641,7 +645,7 @@ HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
 			break;
 		}
 	} while (vfps == VFP_OK);
-	VFP_Close(&vfc);
+	VFP_Close(vfc);
 
 
 	if (l == 0) {

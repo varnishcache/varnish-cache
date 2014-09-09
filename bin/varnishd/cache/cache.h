@@ -199,6 +199,40 @@ struct http {
 };
 
 /*--------------------------------------------------------------------
+ * VFP filter state
+ */
+
+struct vfp_entry {
+	unsigned		magic;
+#define VFP_ENTRY_MAGIC		0xbe32a027
+	const struct vfp	*vfp;
+	void			*priv1;
+	intptr_t		priv2;
+	enum vfp_status		closed;
+	VTAILQ_ENTRY(vfp_entry)	list;
+};
+
+VTAILQ_HEAD(vfp_entry_s, vfp_entry);
+
+struct vfp_ctx {
+	unsigned		magic;
+#define VFP_CTX_MAGIC		0x61d9d3e5
+	struct busyobj		*bo;
+	struct objcore		*oc;
+	struct dstat		*stats;
+
+	int			failed;
+
+	struct vfp_entry_s	vfp;
+	struct vfp_entry	*vfp_nxt;
+
+	struct vsl_log		*vsl;
+	struct http		*http;
+	struct http		*esi_req;
+	uint64_t		bodybytes;
+};
+
+/*--------------------------------------------------------------------
  * HTTP Protocol connection structure
  *
  * This is the protocol independent object for a HTTP connection, used
@@ -219,6 +253,7 @@ struct http_conn {
 	txt			pipeline;
 	ssize_t			content_length;
 	enum body_status	body_status;
+	struct vfp_ctx		vfc[1];
 };
 
 /*--------------------------------------------------------------------*/
@@ -446,36 +481,6 @@ enum busyobj_state_e {
 	BOS_STREAM,		/* beresp.* can be examined */
 	BOS_FINISHED,		/* object is complete */
 	BOS_FAILED,		/* something went wrong */
-};
-
-struct vfp_entry {
-	unsigned		magic;
-#define VFP_ENTRY_MAGIC		0xbe32a027
-	const struct vfp	*vfp;
-	void			*priv1;
-	intptr_t		priv2;
-	enum vfp_status		closed;
-	VTAILQ_ENTRY(vfp_entry)	list;
-};
-
-VTAILQ_HEAD(vfp_entry_s, vfp_entry);
-
-struct vfp_ctx {
-	unsigned		magic;
-#define VFP_CTX_MAGIC		0x61d9d3e5
-	struct busyobj		*bo;
-	struct objcore		*oc;
-	struct dstat		*stats;
-
-	int			failed;
-
-	struct vfp_entry_s	vfp;
-	struct vfp_entry	*vfp_nxt;
-
-	struct vsl_log		*vsl;
-	struct http		*http;
-	struct http		*esi_req;
-	uint64_t		bodybytes;
 };
 
 struct busyobj {
