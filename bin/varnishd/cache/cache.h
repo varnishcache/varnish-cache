@@ -732,7 +732,7 @@ struct req {
 	/* Temporary accounting */
 	struct acct_req		acct;
 
-	/* Synth content in vcl_error */
+	/* Synth content in vcl_synth */
 	struct vsb		*synth_body;
 };
 

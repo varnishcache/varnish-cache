@@ -95,7 +95,7 @@ Retry
 	Backend request is being retried.
 
 Error
-	Backend request failed to vcl_error.
+	Backend request failed to vcl_backend_error.
 
 
 HISTORY
