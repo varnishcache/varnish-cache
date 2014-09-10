@@ -571,6 +571,7 @@ HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
 	assert (req->req_step == R_STP_RECV);
 	switch(req->req_body_status) {
 	case REQ_BODY_CACHED:
+		return (0);
 	case REQ_BODY_FAIL:
 		return (-1);
 	case REQ_BODY_NONE:
@@ -587,6 +588,7 @@ HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
 
 	if (req->htc->content_length > maxsize) {
 		req->req_body_status = REQ_BODY_FAIL;
+		(void)VFP_Error(vfc, "Request body too big to cache");
 		return (-1);
 	}
 
@@ -599,7 +601,6 @@ HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
 		req->req_body_status = REQ_BODY_FAIL;
 		return (-1);
 	}
-
 
 	yet = req->htc->content_length;
 	if (yet < 0)
@@ -641,7 +642,6 @@ HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
 		}
 	} while (vfps == VFP_OK);
 	VFP_Close(vfc);
-
 
 	if (l == 0) {
 
