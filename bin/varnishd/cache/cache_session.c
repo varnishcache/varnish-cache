@@ -315,7 +315,7 @@ SES_Delete(struct sess *sp, enum sess_close reason, double now)
  */
 
 struct req *
-SES_GetReq(struct worker *wrk, struct sess *sp)
+SES_GetReq(const struct worker *wrk, struct sess *sp)
 {
 	struct sesspool *pp;
 	struct req *req;

@@ -139,7 +139,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	if (!http_GetHdr(bo->bereq, H_Host, NULL))
 		VDI_AddHostHeader(bo->bereq, vc);
 
-	if (req != NULL && req->req_body_status == REQ_BODY_CHUNKED) {
+	if (req != NULL && req->req_body_status == REQ_BODY_WITHOUT_LEN) {
 		http_PrintfHeader(hp, "Transfer-Encoding: chunked");
 		do_chunked = 1;
 	}

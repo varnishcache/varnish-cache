@@ -298,13 +298,13 @@ http1_dissect(struct worker *wrk, struct req *req)
 	assert (req->req_body_status == REQ_BODY_INIT);
 
 	if (req->htc->body_status == BS_CHUNKED) {
-		req->req_body_status = REQ_BODY_CHUNKED;
+		req->req_body_status = REQ_BODY_WITHOUT_LEN;
 	} else if (req->htc->body_status == BS_LENGTH) {
-		req->req_body_status = REQ_BODY_PRESENT;
+		req->req_body_status = REQ_BODY_WITH_LEN;
 	} else if (req->htc->body_status == BS_NONE) {
 		req->req_body_status = REQ_BODY_NONE;
 	} else if (req->htc->body_status == BS_EOF) {
-		req->req_body_status = REQ_BODY_CHUNKED;
+		req->req_body_status = REQ_BODY_WITHOUT_LEN;
 	} else {
 		WRONG("Unknown req.body_length situation");
 	}
@@ -462,8 +462,8 @@ HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv)
 		return (0);
 	case REQ_BODY_NONE:
 		return (0);
-	case REQ_BODY_PRESENT:
-	case REQ_BODY_CHUNKED:
+	case REQ_BODY_WITH_LEN:
+	case REQ_BODY_WITHOUT_LEN:
 		break;
 	case REQ_BODY_TAKEN:
 		VSLb(req->vsl, SLT_VCL_Error,
@@ -477,8 +477,8 @@ HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv)
 		WRONG("Wrong req_body_status in HTTP1_IterateReqBody()");
 	}
 	Lck_Lock(&req->sp->mtx);
-	if (req->req_body_status == REQ_BODY_PRESENT ||
-	    req->req_body_status == REQ_BODY_CHUNKED) {
+	if (req->req_body_status == REQ_BODY_WITH_LEN ||
+	    req->req_body_status == REQ_BODY_WITHOUT_LEN) {
 		req->req_body_status = REQ_BODY_TAKEN;
 		i = 0;
 	} else
@@ -545,8 +545,8 @@ int
 HTTP1_DiscardReqBody(struct req *req)
 {
 
-	if (req->req_body_status == REQ_BODY_PRESENT ||
-	    req->req_body_status == REQ_BODY_CHUNKED)
+	if (req->req_body_status == REQ_BODY_WITH_LEN ||
+	    req->req_body_status == REQ_BODY_WITHOUT_LEN)
 		(void)HTTP1_IterateReqBody(req, httpq_req_body_discard, NULL);
 	return(0);
 }
@@ -575,8 +575,8 @@ HTTP1_CacheReqBody(struct req *req, ssize_t maxsize)
 		return (-1);
 	case REQ_BODY_NONE:
 		return (0);
-	case REQ_BODY_CHUNKED:
-	case REQ_BODY_PRESENT:
+	case REQ_BODY_WITHOUT_LEN:
+	case REQ_BODY_WITH_LEN:
 		break;
 	default:
 		WRONG("Wrong req_body_status in HTTP1_CacheReqBody()");

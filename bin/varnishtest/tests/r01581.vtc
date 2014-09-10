@@ -11,7 +11,7 @@ varnish v1 -vcl+backend {
 logexpect l1 -v v1 -g request {
 	  expect 0 1001 Begin
 	  expect * =	ReqStart
-	  expect * = 	End
+	  expect * =	End
 } -start
 
 client c1 {
