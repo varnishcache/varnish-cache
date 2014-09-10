@@ -43,31 +43,6 @@
 #include "vtim.h"
 
 /*--------------------------------------------------------------------
- * Pass the request body to the backend with chunks
- */
-
-static int __match_proto__(req_body_iter_f)
-vbf_iter_req_body_chunked(struct req *req, void *priv, void *ptr, size_t l)
-{
-	struct worker *wrk;
-	char buf[20];
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CAST_OBJ_NOTNULL(wrk, priv, WORKER_MAGIC);
-
-	if (l > 0) {
-		bprintf(buf, "%jx\r\n", (uintmax_t)l);
-		VSLb(req->vsl, SLT_Debug, "WWWW: %s", buf);
-		(void)WRW_Write(wrk, buf, strlen(buf));
-		(void)WRW_Write(wrk, ptr, l);
-		(void)WRW_Write(wrk, "\r\n", 2);
-		if (WRW_Flush(wrk))
-			return (-1);
-	}
-	return (0);
-}
-
-/*--------------------------------------------------------------------
  * Pass the request body to the backend
  */
 
@@ -152,13 +127,10 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	i = 0;
 
 	if (req != NULL) {
-		if (do_chunked) {
-			i = HTTP1_IterateReqBody(req,
-			    vbf_iter_req_body_chunked, wrk);
-			(void)WRW_Write(wrk, "0\r\n\r\n", 5);
-		} else {
-			i = HTTP1_IterateReqBody(req, vbf_iter_req_body, wrk);
-		}
+		if (do_chunked)
+			WRW_Chunked(wrk);
+		i = HTTP1_IterateReqBody(req, vbf_iter_req_body, wrk);
+
 		if (req->req_body_status == REQ_BODY_TAKEN) {
 			retry = -1;
 		} else if (req->req_body_status == REQ_BODY_FAIL) {
@@ -168,6 +140,8 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 			req->doclose = SC_RX_BODY;
 			retry = -1;
 		}
+		if (do_chunked)
+			WRW_EndChunk(wrk);
 	}
 
 	j = WRW_FlushRelease(wrk, &bo->acct.bereq_hdrbytes);
