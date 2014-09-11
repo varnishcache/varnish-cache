@@ -314,9 +314,52 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	/*
 	 * Figure out how the fetch is supposed to happen, before the
 	 * headers are adultered by VCL
-	 * NB: Also sets other wrk variables
 	 */
-	bo->htc->body_status = RFC2616_Body(bo, &wrk->stats);
+	if (!strcasecmp(http_GetMethod(bo->bereq), "head")) {
+		/*
+		 * A HEAD request can never have a body in the reply,
+		 * no matter what the headers might say.
+		 * [RFC2516 4.3 p33]
+		 */
+		wrk->stats.fetch_head++;
+		bo->htc->body_status = BS_NONE;
+	} else if (http_GetStatus(bo->beresp) <= 199) {
+		/*
+		 * 1xx responses never have a body.
+		 * [RFC2616 4.3 p33]
+		 * ... but we should never see them.
+		 */
+		wrk->stats.fetch_1xx++;
+		bo->htc->body_status = BS_ERROR;
+	} else if (http_IsStatus(bo->beresp, 204)) {
+		/*
+		 * 204 is "No Content", obviously don't expect a body.
+		 * [RFC2616 10.2.5 p60]
+		 */
+		wrk->stats.fetch_204++;
+		bo->htc->body_status = BS_NONE;
+	} else if (http_IsStatus(bo->beresp, 304)) {
+		/*
+		 * 304 is "Not Modified" it has no body.
+		 * [RFC2616 10.3.5 p63]
+		 */
+		wrk->stats.fetch_304++;
+		bo->htc->body_status = BS_NONE;
+	} else if (bo->htc->body_status == BS_CHUNKED) {
+		wrk->stats.fetch_chunked++;
+	} else if (bo->htc->body_status == BS_LENGTH) {
+		assert(bo->htc->content_length > 0);
+		bo->content_length = bo->htc->content_length;
+		wrk->stats.fetch_length++;
+	} else if (bo->htc->body_status == BS_EOF) {
+		wrk->stats.fetch_eof++;
+	} else if (bo->htc->body_status == BS_ERROR) {
+		wrk->stats.fetch_bad++;
+	} else if (bo->htc->body_status == BS_NONE) {
+		wrk->stats.fetch_none++;
+	} else {
+		WRONG("wrong bodystatus");
+	}
 
 	if (bo->htc->body_status == BS_ERROR) {
 		AN (bo->vbc);

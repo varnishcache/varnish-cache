@@ -197,31 +197,23 @@ VSC_F(fetch_head,		uint64_t, 1, 'c', info,
 )
 VSC_F(fetch_length,		uint64_t, 1, 'c', info,
     "Fetch with Length",
-	"beresp with Content-Length."
+	"beresp.body with Content-Length."
 )
 VSC_F(fetch_chunked,		uint64_t, 1, 'c', info,
     "Fetch chunked",
-	"beresp with Chunked."
+	"beresp.body with Chunked."
 )
 VSC_F(fetch_eof,		uint64_t, 1, 'c', info,
     "Fetch EOF",
-	"beresp with EOF from lack of other info."
+	"beresp.body with EOF."
 )
 VSC_F(fetch_bad,		uint64_t, 1, 'c', info,
     "Fetch bad T-E",
-	"beresp failed due to unknown Transfer-Encoding."
+	"beresp.body length/fetch could not be determined."
 )
-VSC_F(fetch_close,		uint64_t, 1, 'c', info,
-    "Fetch wanted close",
-	"beresp with EOF due to Connection: Close."
-)
-VSC_F(fetch_oldhttp,		uint64_t, 1, 'c', info,
-    "Fetch pre HTTP/1.1 closed",
-	"beresp with EOF due to HTTP < 1.1"
-)
-VSC_F(fetch_zero,		uint64_t, 1, 'c', info,
-    "Fetch zero len body",
-	"beresp with EOF due to keep-live but neither Chunked or Len."
+VSC_F(fetch_none,		uint64_t, 1, 'c', info,
+    "Fetch no body",
+	"beresp.body empty"
 )
 VSC_F(fetch_1xx,		uint64_t, 1, 'c', info,
     "Fetch no body (1xx)",
