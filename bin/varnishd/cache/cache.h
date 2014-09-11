@@ -517,8 +517,6 @@ struct busyobj {
 
 	struct pool_task	fetch_task;
 
-	ssize_t			content_length;
-
 	enum sess_close		doclose;
 
 #define BO_FLAG(l, r, w, d) unsigned	l:1;

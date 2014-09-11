@@ -349,7 +349,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		wrk->stats.fetch_chunked++;
 	} else if (bo->htc->body_status == BS_LENGTH) {
 		assert(bo->htc->content_length > 0);
-		bo->content_length = bo->htc->content_length;
 		wrk->stats.fetch_length++;
 	} else if (bo->htc->body_status == BS_EOF) {
 		wrk->stats.fetch_eof++;
@@ -451,7 +450,7 @@ vbf_fetch_body_helper(struct busyobj *bo)
 
 	AN(vfc->vfp_nxt);
 
-	est = bo->content_length;
+	est = bo->htc->content_length;
 	if (est < 0)
 		est = 0;
 
