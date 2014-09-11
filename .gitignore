@@ -40,6 +40,7 @@ Makefile.in
 /varnishapi.pc
 /build-aux
 TAGS
+tags
 cscope.*out
 #
 /varnishapi-uninstalled.pc
