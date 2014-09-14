@@ -43,11 +43,12 @@ of the following keywords:
 vcl_pipe
 ~~~~~~~~
 
-Called upon entering pipe mode. In this mode, the request is passed
-on to the backend, and any further data from either client or backend
+Called upon entering pipe mode. In this mode, the request is passed on
+to the backend, and any further data from both the client and backend
 is passed on unaltered until either end closes the
 connection. Basically, Varnish will degrade into a simple TCP proxy,
-shuffling bytes back and forth.
+shuffling bytes back and forth. For a connection in pipe mode, no
+other VCL subroutine will ever get called after `vcl_pipe`.
 
 The `vcl_pipe` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
