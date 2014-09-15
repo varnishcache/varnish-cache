@@ -661,7 +661,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 static enum fetch_step
 vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 {
-	struct objiter *oi;
+	void *oi;
 	void *sp;
 	ssize_t sl, al, l;
 	uint8_t *ptr;
@@ -686,9 +686,9 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 
 	al = 0;
 	ol = ObjGetLen(bo->ims_oc, bo->stats);
-	oi = ObjIterBegin(wrk, bo->ims_oc);
+	oi = ObjIterBegin(bo->ims_oc, wrk);
 	do {
-		ois = ObjIter(oi, &sp, &sl);
+		ois = ObjIter(bo->ims_oc, oi, &sp, &sl);
 		while (sl > 0) {
 			l = ol - al;
 			if (VFP_GetStorage(bo->vfc, &l, &ptr) != VFP_OK)
@@ -702,7 +702,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 			sl -= l;
 		}
 	} while (!bo->vfc->failed && (ois == OIS_DATA || ois == OIS_STREAM));
-	ObjIterEnd(&oi);
+	ObjIterEnd(bo->ims_oc, &oi);
 	if (bo->vfc->failed)
 		return (F_STP_FAIL);
 

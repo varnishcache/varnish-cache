@@ -54,7 +54,7 @@ VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv)
 	int i;
 	struct vfp_ctx *vfc;
 	enum vfp_status vfps = VFP_ERROR;
-	struct objiter *oi;
+	void *oi;
 	enum objiter_status ois;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -62,14 +62,14 @@ VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv)
 
 	switch(req->req_body_status) {
 	case REQ_BODY_CACHED:
-		oi = ObjIterBegin(req->wrk, req->body_oc);
+		oi = ObjIterBegin(req->body_oc, req->wrk);
 		AN(oi);
 		do {
-			ois = ObjIter(oi, &p, &l);
+			ois = ObjIter(req->body_oc, oi, &p, &l);
 			if (l > 0 && func(req, priv, p, l))
 				break;
 		} while (ois == OIS_DATA);
-		ObjIterEnd(&oi);
+		ObjIterEnd(req->body_oc, &oi);
 		return (ois == OIS_DONE ? 0 : -1);
 	case REQ_BODY_NONE:
 		return (0);

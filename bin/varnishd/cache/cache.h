@@ -113,7 +113,6 @@ struct mempool;
 struct objcore;
 struct object;
 struct objhead;
-struct objiter;
 struct pool;
 struct poolparam;
 struct req;
@@ -991,9 +990,9 @@ enum objiter_status {
 	OIS_STREAM,
 	OIS_ERROR,
 };
-struct objiter *ObjIterBegin(struct worker *, struct objcore *);
-enum objiter_status ObjIter(struct objiter *, void **, ssize_t *);
-void ObjIterEnd(struct objiter **);
+void *ObjIterBegin(struct objcore *, struct worker *);
+enum objiter_status ObjIter(struct objcore *, void *, void **, ssize_t *);
+void ObjIterEnd(struct objcore *, void **);
 int ObjGetSpace(struct objcore *, struct vsl_log *vsl,
     struct dstat *, ssize_t *sz, uint8_t **ptr);
 void ObjExtend(struct objcore *, struct dstat *, ssize_t l);

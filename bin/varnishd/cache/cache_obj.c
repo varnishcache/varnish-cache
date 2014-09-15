@@ -67,7 +67,19 @@ obj_getobj(struct objcore *oc, struct dstat *ds)
 	return (m->getobj(oc, ds));
 }
 
-/*--------------------------------------------------------------------
+/*====================================================================
+ * ObjIterBegin()
+ * ObjIter()
+ * ObjIterEnd()
+ *
+ * These three allow iteration over the body of an object.
+ * The ObjIterBegin() returns a magic cookie which must be passed to
+ * ObjIter() and which ObjIterEnd() will obliterate again.
+ *
+ * These functions get slightly complicated due to unbusy but not
+ * yet completed objects (ie: when streaming).  Exactly how they
+ * interact with ObjExtend(), especially with respect to locking,
+ * is entirely up to the implementation.
  */
 
 struct objiter {
@@ -81,11 +93,15 @@ struct objiter {
 	ssize_t				len;
 };
 
-struct objiter *
-ObjIterBegin(struct worker *wrk, struct objcore *oc)
+void *
+ObjIterBegin(struct objcore *oc, struct worker *wrk)
 {
 	struct objiter *oi;
 	struct object *obj;
+	const struct storeobj_methods *om = obj_getmethods(oc);
+
+	if (om->objiterbegin != NULL)
+		return (om->objiterbegin(oc, wrk));
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	obj = obj_getobj(oc, &wrk->stats);
@@ -102,12 +118,17 @@ ObjIterBegin(struct worker *wrk, struct objcore *oc)
 }
 
 enum objiter_status
-ObjIter(struct objiter *oi, void **p, ssize_t *l)
+ObjIter(struct objcore *oc, void *oix, void **p, ssize_t *l)
 {
+	struct objiter *oi;
 	ssize_t ol;
 	ssize_t nl;
+	const struct storeobj_methods *om = obj_getmethods(oc);
 
-	CHECK_OBJ_NOTNULL(oi, OBJITER_MAGIC);
+	if (om->objiter != NULL)
+		return (om->objiter(oc, oix, p, l));
+
+	CAST_OBJ_NOTNULL(oi, oix, OBJITER_MAGIC);
 	CHECK_OBJ_NOTNULL(oi->obj, OBJECT_MAGIC);
 	AN(p);
 	AN(l);
@@ -165,19 +186,27 @@ ObjIter(struct objiter *oi, void **p, ssize_t *l)
 }
 
 void
-ObjIterEnd(struct objiter **oi)
+ObjIterEnd(struct objcore *oc, void **oix)
 {
+	struct objiter *oi;
+	const struct storeobj_methods *om = obj_getmethods(oc);
 
-	AN(oi);
-	CHECK_OBJ_NOTNULL((*oi), OBJITER_MAGIC);
-	CHECK_OBJ_NOTNULL((*oi)->obj, OBJECT_MAGIC);
-	if ((*oi)->bo != NULL) {
-		if ((*oi)->oc->flags & OC_F_PASS)
-			(*oi)->bo->abandon = 1;
-		VBO_DerefBusyObj((*oi)->wrk, &(*oi)->bo);
+	if (om->objiterend != NULL) {
+		om->objiterend(oc, oix);
+		return;
 	}
-	FREE_OBJ((*oi));
-	*oi = NULL;
+
+	AN(oc);
+	AN(oix);
+	CAST_OBJ_NOTNULL(oi, (*oix), OBJITER_MAGIC);
+	*oix = NULL;
+	CHECK_OBJ_NOTNULL(oi->obj, OBJECT_MAGIC);
+	if (oi->bo != NULL) {
+		if (oi->oc->flags & OC_F_PASS)
+			oi->bo->abandon = 1;
+		VBO_DerefBusyObj(oi->wrk, &oi->bo);
+	}
+	FREE_OBJ(oi);
 }
 
 /*--------------------------------------------------------------------

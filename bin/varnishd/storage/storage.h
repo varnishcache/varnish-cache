@@ -78,18 +78,44 @@ struct object {
 	struct storage		*esidata;
 };
 
-/* -------------------------------------------------------------------*/
+/* Methods on objcore ------------------------------------------------*/
 
-typedef struct object *getobj_f(struct objcore *oc, struct dstat *);
 typedef void updatemeta_f(struct objcore *oc, struct dstat *);
 typedef void freeobj_f(struct objcore *oc, struct dstat *);
 typedef struct lru *getlru_f(const struct objcore *oc);
 
+/*
+ * Stevedores can either be simple, and provide just this method:
+ */
+
+typedef struct object *getobj_f(struct objcore *oc, struct dstat *);
+
+/*
+ * Or the can be "complex" and provide all of these methods:
+ * (Described in comments in cache_obj.c)
+ */
+typedef void *objiterbegin_f(struct objcore *oc, struct worker *wrk);
+typedef enum objiter_status objiter_f(struct objcore *oc, void *oix,
+    void **p, ssize_t *l);
+typedef void objiterend_f(struct objcore *oc, void **oix);
+/* objgetspace */
+/* objtrimstore */
+/* objslim */
+/* objgetattr */
+/* objsetattr */
+/* objextend */
+/* objgetlen */
+
 struct storeobj_methods {
-	getobj_f	*getobj;
-	updatemeta_f	*updatemeta;
 	freeobj_f	*freeobj;
 	getlru_f	*getlru;
+	updatemeta_f	*updatemeta;
+
+	getobj_f	*getobj;
+
+	objiterbegin_f	*objiterbegin;
+	objiter_f	*objiter;
+	objiterend_f	*objiterend;
 };
 
 /* Prototypes --------------------------------------------------------*/

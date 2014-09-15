@@ -169,16 +169,16 @@ v1d_WriteDirObj(struct req *req)
 {
 	enum objiter_status ois;
 	ssize_t len;
-	struct objiter *oi;
+	void *oi;
 	void *ptr;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	oi = ObjIterBegin(req->wrk, req->objcore);
+	oi = ObjIterBegin(req->objcore, req->wrk);
 	XXXAN(oi);
 
 	do {
-		ois = ObjIter(oi, &ptr, &len);
+		ois = ObjIter(req->objcore, oi, &ptr, &len);
 		switch(ois) {
 		case OIS_DONE:
 			AZ(len);
@@ -196,7 +196,7 @@ v1d_WriteDirObj(struct req *req)
 		}
 	} while (ois == OIS_DATA || ois == OIS_STREAM);
 	(void)VDP_bytes(req, VDP_FINISH,  NULL, 0);
-	ObjIterEnd(&oi);
+	ObjIterEnd(req->objcore, &oi);
 	return (ois);
 }
 

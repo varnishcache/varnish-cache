@@ -261,7 +261,7 @@ ESI_Deliver(struct req *req)
 	ssize_t dl;
 	const void *dp;
 	int i;
-	struct objiter *oi;
+	void *oi;
 	enum objiter_status ois;
 	void *sp;
 	uint8_t *pp;
@@ -309,8 +309,8 @@ ESI_Deliver(struct req *req)
 		AZ(dl);
 	}
 
-	oi = ObjIterBegin(req->wrk, req->objcore);
-	ois = ObjIter(oi, &sp, &sl);
+	oi = ObjIterBegin(req->objcore, req->wrk);
+	ois = ObjIter(req->objcore, oi, &sp, &sl);
 	assert(ois != OIS_ERROR);
 	pp = sp;
 
@@ -380,7 +380,8 @@ ESI_Deliver(struct req *req)
 				}
 				pp += l2;
 				if (sl == 0) {
-					ois = ObjIter(oi, &sp, &sl);
+					ois = ObjIter(req->objcore, oi,
+					    &sp, &sl);
 					assert(ois != OIS_ERROR);
 					pp = sp;
 				}
@@ -404,7 +405,8 @@ ESI_Deliver(struct req *req)
 				l -= l2;
 				pp += l2;
 				if (sl == 0) {
-					ois = ObjIter(oi, &sp, &sl);
+					ois = ObjIter(req->objcore, oi,
+					    &sp, &sl);
 					assert(ois != OIS_ERROR);
 					pp = sp;
 				}
@@ -455,7 +457,7 @@ ESI_Deliver(struct req *req)
 		req->resp_bodybytes += WRW_Write(req->wrk, tailbuf, 13);
 	}
 	(void)WRW_Flush(req->wrk);
-	ObjIterEnd(&oi);
+	ObjIterEnd(req->objcore, &oi);
 }
 
 /*---------------------------------------------------------------------
@@ -475,7 +477,7 @@ ESI_DeliverChild(struct req *req)
 	uint8_t *pp;
 	uint8_t tailbuf[8];
 	enum objiter_status ois;
-	struct objiter *oi;
+	void *oi;
 	void *sp;
 	ssize_t sl, ll, dl;
 
@@ -483,13 +485,13 @@ ESI_DeliverChild(struct req *req)
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
 	if (!ObjCheckFlag(req->objcore, &req->wrk->stats, OF_GZIPED)) {
-		oi = ObjIterBegin(req->wrk, req->objcore);
+		oi = ObjIterBegin(req->objcore, req->wrk);
 		do {
-			ois = ObjIter(oi, &sp, &sl);
+			ois = ObjIter(req->objcore, oi, &sp, &sl);
 			if (sl > 0)
 				ved_pretend_gzip(req, sp, sl);
 		} while (ois == OIS_DATA || ois == OIS_STREAM);
-		ObjIterEnd(&oi);
+		ObjIterEnd(req->objcore, &oi);
 		return;
 	}
 	/*
@@ -523,9 +525,9 @@ ESI_DeliverChild(struct req *req)
 	dbits = (void*)WS_Alloc(req->ws, 8);
 	AN(dbits);
 	ll = 0;
-	oi = ObjIterBegin(req->wrk, req->objcore);
+	oi = ObjIterBegin(req->objcore, req->wrk);
 	do {
-		ois = ObjIter(oi, &sp, &sl);
+		ois = ObjIter(req->objcore, oi, &sp, &sl);
 		pp = sp;
 		if (sl > 0) {
 			/* Skip over the GZIP header */
@@ -651,7 +653,7 @@ ESI_DeliverChild(struct req *req)
 			}
 		}
 	} while (ois == OIS_DATA || ois == OIS_STREAM);
-	ObjIterEnd(&oi);
+	ObjIterEnd(req->objcore, &oi);
 
 	icrc = vle32dec(tailbuf);
 	ilen = vle32dec(tailbuf + 4);
