@@ -165,19 +165,23 @@ VFP_Suck(struct vfp_ctx *vc, void *p, ssize_t *lp)
 	vc->vfp_nxt = VTAILQ_NEXT(vfe, list);
 
 	if (vfe->closed == VFP_NULL) {
+		/* Layer asked to be bypassed when opened */
 		vp = VFP_Suck(vc, p, lp);
 	} else if (vfe->closed == VFP_OK) {
 		vp = vfe->vfp->pull(vc, vfe, p, lp);
-		if (vp == VFP_END || vp == VFP_ERROR) {
-			vfe->closed = vp;
-		} else if (vp != VFP_OK)
+		if (vp != VFP_OK && vp != VFP_END && vp != VFP_ERROR) {
 			(void)VFP_Error(vc, "Fetch filter %s returned %d",
 			    vfe->vfp->name, vp);
+			vp = VFP_ERROR;
+		}
+		vfe->closed = vp;
 	} else {
 		/* Already closed filter */
 		*lp = 0;
 		vp = vfe->closed;
 	}
+	vfe->calls++;
+	vfe->bytes_out = *lp;
 	vc->vfp_nxt = vfe;
 	return (vp);
 }

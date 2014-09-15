@@ -210,6 +210,8 @@ struct vfp_entry {
 	intptr_t		priv2;
 	enum vfp_status		closed;
 	VTAILQ_ENTRY(vfp_entry)	list;
+	uint64_t		calls;
+	uint64_t		bytes_out;
 };
 
 VTAILQ_HEAD(vfp_entry_s, vfp_entry);
@@ -229,7 +231,6 @@ struct vfp_ctx {
 	struct vsl_log		*vsl;
 	struct http		*http;
 	struct http		*esi_req;
-	uint64_t		bodybytes;
 };
 
 /*--------------------------------------------------------------------
