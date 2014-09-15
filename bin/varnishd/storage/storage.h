@@ -39,6 +39,23 @@ struct objcore;
 struct worker;
 struct lru;
 
+/* Storage -----------------------------------------------------------*/
+
+struct storage {
+	unsigned		magic;
+#define STORAGE_MAGIC		0x1a4e51c0
+
+
+	VTAILQ_ENTRY(storage)	list;
+	struct stevedore	*stevedore;
+	void			*priv;
+
+	unsigned char		*ptr;
+	unsigned		len;
+	unsigned		space;
+};
+
+
 typedef void storage_init_f(struct stevedore *, int ac, char * const *av);
 typedef void storage_open_f(const struct stevedore *);
 typedef struct storage *storage_alloc_f(struct stevedore *, size_t size);

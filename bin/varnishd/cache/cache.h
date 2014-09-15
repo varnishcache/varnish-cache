@@ -384,22 +384,6 @@ struct lru {
 	unsigned		n_objcore;
 };
 
-/* Storage -----------------------------------------------------------*/
-
-struct storage {
-	unsigned		magic;
-#define STORAGE_MAGIC		0x1a4e51c0
-
-
-	VTAILQ_ENTRY(storage)	list;
-	struct stevedore	*stevedore;
-	void			*priv;
-
-	unsigned char		*ptr;
-	unsigned		len;
-	unsigned		space;
-};
-
 /* Stored object -----------------------------------------------------
  * Pointer to a stored object, and the methods it supports
  */

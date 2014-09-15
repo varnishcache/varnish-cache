@@ -35,6 +35,7 @@
 
 #include "cache.h"
 #include "vtim.h"
+#include "storage/storage.h"
 
 /*----------------------------------------------------------------------
  * Iterate over the req.body.

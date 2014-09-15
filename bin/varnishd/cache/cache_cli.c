@@ -48,6 +48,7 @@
 #include "vcli_common.h"
 #include "vcli_priv.h"
 #include "vcli_serve.h"
+#include "storage/storage.h"		// struct storage
 
 pthread_t		cli_thread;
 static struct lock	cli_mtx;
