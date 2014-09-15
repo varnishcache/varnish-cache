@@ -395,18 +395,6 @@ struct storeobj {
 	uintptr_t		priv2;
 };
 
-typedef struct object *getobj_f(struct dstat *ds, struct objcore *oc);
-typedef void updatemeta_f(struct objcore *oc, struct dstat *);
-typedef void freeobj_f(struct dstat *ds, struct objcore *oc);
-typedef struct lru *getlru_f(const struct objcore *oc);
-
-struct storeobj_methods {
-	getobj_f	*getobj;
-	updatemeta_f	*updatemeta;
-	freeobj_f	*freeobj;
-	getlru_f	*getlru;
-};
-
 /* Object core structure ---------------------------------------------
  * Objects have sideways references in the binary heap and the LRU list
  * and we want to avoid paging in a lot of objects just to move them up
@@ -531,8 +519,6 @@ struct busyobj {
 
 /* Object structure --------------------------------------------------*/
 
-VTAILQ_HEAD(storagehead, storage);
-
 enum obj_attr {
 #define OBJ_ATTR(U, l)	OA_##U,
 #include "tbl/obj_attr.h"
@@ -543,25 +529,6 @@ enum obj_flags {
 #define OBJ_FLAG(U, l, v)	OF_##U = v,
 #include "tbl/obj_attr.h"
 #undef OBJ_FLAG
-};
-
-struct object {
-	unsigned		magic;
-#define OBJECT_MAGIC		0x32851d42
-	struct storage		*objstore;
-
-	char			oa_vxid[4];
-	uint8_t			*oa_vary;
-	uint8_t			*oa_http;
-	uint8_t			oa_flags[1];
-	char			oa_gzipbits[24];
-	char			oa_lastmodified[8];
-
-	// struct stevedore	*stevedore;
-	struct storagehead	list;
-	ssize_t			len;
-
-	struct storage		*esidata;
 };
 
 /*--------------------------------------------------------------------*/

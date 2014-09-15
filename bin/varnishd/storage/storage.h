@@ -34,6 +34,7 @@
 struct stv_objsecrets;
 struct stevedore;
 struct sess;
+struct dstat;
 struct busyobj;
 struct objcore;
 struct worker;
@@ -55,6 +56,43 @@ struct storage {
 	unsigned		space;
 };
 
+/* Object ------------------------------------------------------------*/
+
+VTAILQ_HEAD(storagehead, storage);
+
+struct object {
+	unsigned		magic;
+#define OBJECT_MAGIC		0x32851d42
+	struct storage		*objstore;
+
+	char			oa_vxid[4];
+	uint8_t			*oa_vary;
+	uint8_t			*oa_http;
+	uint8_t			oa_flags[1];
+	char			oa_gzipbits[24];
+	char			oa_lastmodified[8];
+
+	struct storagehead	list;
+	ssize_t			len;
+
+	struct storage		*esidata;
+};
+
+/* -------------------------------------------------------------------*/
+
+typedef struct object *getobj_f(struct dstat *ds, struct objcore *oc);
+typedef void updatemeta_f(struct objcore *oc, struct dstat *);
+typedef void freeobj_f(struct dstat *ds, struct objcore *oc);
+typedef struct lru *getlru_f(const struct objcore *oc);
+
+struct storeobj_methods {
+	getobj_f	*getobj;
+	updatemeta_f	*updatemeta;
+	freeobj_f	*freeobj;
+	getlru_f	*getlru;
+};
+
+/* Prototypes --------------------------------------------------------*/
 
 typedef void storage_init_f(struct stevedore *, int ac, char * const *av);
 typedef void storage_open_f(const struct stevedore *);
