@@ -403,6 +403,18 @@ struct storeobj {
  * housekeeping fields parts of an object.
  */
 
+enum obj_attr {
+#define OBJ_ATTR(U, l)	OA_##U,
+#include "tbl/obj_attr.h"
+#undef OBJ_ATTR
+};
+
+enum obj_flags {
+#define OBJ_FLAG(U, l, v)	OF_##U = v,
+#include "tbl/obj_attr.h"
+#undef OBJ_FLAG
+};
+
 struct objcore {
 	unsigned		magic;
 #define OBJCORE_MAGIC		0x4d301302
@@ -517,19 +529,6 @@ struct busyobj {
 	struct vsb		*synth_body;
 };
 
-/* Object structure --------------------------------------------------*/
-
-enum obj_attr {
-#define OBJ_ATTR(U, l)	OA_##U,
-#include "tbl/obj_attr.h"
-#undef OBJ_ATTR
-};
-
-enum obj_flags {
-#define OBJ_FLAG(U, l, v)	OF_##U = v,
-#include "tbl/obj_attr.h"
-#undef OBJ_FLAG
-};
 
 /*--------------------------------------------------------------------*/
 

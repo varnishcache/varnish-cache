@@ -388,7 +388,7 @@ smp_loaded_st(const struct smp_sc *sc, const struct smp_seg *sg,
  */
 
 static struct object *
-smp_oc_getobj(struct dstat *ds, struct objcore *oc)
+smp_oc_getobj(struct objcore *oc, struct dstat *ds)
 {
 	struct object *o;
 	struct smp_seg *sg;
@@ -464,7 +464,7 @@ smp_oc_updatemeta(struct objcore *oc, struct dstat *ds)
 	struct smp_object *so;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	o = smp_oc_getobj(ds, oc);
+	o = smp_oc_getobj(oc, ds);
 	AN(o);
 
 	CAST_OBJ_NOTNULL(sg, oc->stobj->priv, SMP_SEG_MAGIC);
@@ -484,7 +484,7 @@ smp_oc_updatemeta(struct objcore *oc, struct dstat *ds)
 }
 
 static void __match_proto__(freeobj_f)
-smp_oc_freeobj(struct dstat *ds, struct objcore *oc)
+smp_oc_freeobj(struct objcore *oc, struct dstat *ds)
 {
 	struct smp_seg *sg;
 	struct smp_object *so;

@@ -49,7 +49,7 @@ static const struct stevedore * volatile stv_next;
  */
 
 static struct object * __match_proto__(getobj_f)
-default_oc_getobj(struct dstat *ds, struct objcore *oc)
+default_oc_getobj(struct objcore *oc, struct dstat *ds)
 {
 	struct object *o;
 
@@ -61,7 +61,7 @@ default_oc_getobj(struct dstat *ds, struct objcore *oc)
 }
 
 static void __match_proto__(freeobj_f)
-default_oc_freeobj(struct dstat *ds, struct objcore *oc)
+default_oc_freeobj(struct objcore *oc, struct dstat *ds)
 {
 	struct object *o;
 

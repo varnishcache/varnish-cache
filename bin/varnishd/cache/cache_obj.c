@@ -64,7 +64,7 @@ obj_getobj(struct objcore *oc, struct dstat *ds)
 
 	AN(ds);
 	AN(m->getobj);
-	return (m->getobj(ds, oc));
+	return (m->getobj(oc, ds));
 }
 
 /*--------------------------------------------------------------------
@@ -346,7 +346,7 @@ ObjFreeObj(struct objcore *oc, struct dstat *ds)
 	AN(ds);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(m->freeobj);
-	m->freeobj(ds, oc);
+	m->freeobj(oc, ds);
 }
 
 struct lru *

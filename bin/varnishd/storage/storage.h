@@ -80,9 +80,9 @@ struct object {
 
 /* -------------------------------------------------------------------*/
 
-typedef struct object *getobj_f(struct dstat *ds, struct objcore *oc);
+typedef struct object *getobj_f(struct objcore *oc, struct dstat *);
 typedef void updatemeta_f(struct objcore *oc, struct dstat *);
-typedef void freeobj_f(struct dstat *ds, struct objcore *oc);
+typedef void freeobj_f(struct objcore *oc, struct dstat *);
 typedef struct lru *getlru_f(const struct objcore *oc);
 
 struct storeobj_methods {
