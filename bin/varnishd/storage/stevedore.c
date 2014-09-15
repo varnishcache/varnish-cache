@@ -189,13 +189,12 @@ STV_alloc(struct stevedore *stv, size_t size)
  */
 
 struct object *
-STV_MkObject(struct stevedore *stv, struct busyobj *bo, void *ptr)
+STV_MkObject(struct stevedore *stv, struct objcore *oc, void *ptr)
 {
 	struct object *o;
 
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	assert(PAOK(ptr));
 
@@ -205,13 +204,12 @@ STV_MkObject(struct stevedore *stv, struct busyobj *bo, void *ptr)
 
 	VTAILQ_INIT(&o->body->list);
 
-	bo->fetch_objcore->stobj->magic = STOREOBJ_MAGIC;
-	bo->fetch_objcore->stobj->stevedore = stv;
+	oc->stobj->magic = STOREOBJ_MAGIC;
+	oc->stobj->stevedore = stv;
 	o->body->stevedore = stv;
 	AN(stv->methods);
-	bo->fetch_objcore->stobj->priv = o;
-	bo->fetch_objcore->stobj->priv2 = (uintptr_t)stv;
-	VSLb(bo->vsl, SLT_Storage, "%s %s", stv->name, stv->ident);
+	oc->stobj->priv = o;
+	oc->stobj->priv2 = (uintptr_t)stv;
 	return (o);
 }
 
@@ -221,12 +219,12 @@ STV_MkObject(struct stevedore *stv, struct busyobj *bo, void *ptr)
  */
 
 struct object *
-stv_default_allocobj(struct stevedore *stv, struct busyobj *bo, unsigned ltot)
+stv_default_allocobj(struct stevedore *stv, struct objcore *oc, unsigned ltot)
 {
 	struct object *o;
 	struct storage *st;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	st = stv->alloc(stv, ltot);
 	if (st == NULL)
 		return (NULL);
@@ -234,11 +232,10 @@ stv_default_allocobj(struct stevedore *stv, struct busyobj *bo, unsigned ltot)
 		stv->free(st);
 		return (NULL);
 	}
-	o = STV_MkObject(stv, bo, st->ptr);
+	o = STV_MkObject(stv, oc, st->ptr);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st->len = sizeof(*o);
 	o->objstore = st;
-	bo->stats->n_object++;
 	return (o);
 }
 
@@ -252,12 +249,14 @@ int
 STV_NewObject(struct busyobj *bo, const char *hint, unsigned wsl)
 {
 	struct object *o;
+	struct objcore *oc;
 	struct stevedore *stv, *stv0;
 	unsigned ltot;
 	int i;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
+	oc = bo->fetch_objcore;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	assert(wsl > 0);
 	wsl = PRNDUP(wsl);
 
@@ -265,12 +264,12 @@ STV_NewObject(struct busyobj *bo, const char *hint, unsigned wsl)
 
 	stv = stv0 = stv_pick_stevedore(bo->vsl, &hint);
 	AN(stv->allocobj);
-	o = stv->allocobj(stv, bo, ltot);
+	o = stv->allocobj(stv, oc, ltot);
 	if (o == NULL && hint == NULL) {
 		do {
 			stv = stv_pick_stevedore(bo->vsl, &hint);
 			AN(stv->allocobj);
-			o = stv->allocobj(stv, bo, ltot);
+			o = stv->allocobj(stv, oc, ltot);
 		} while (o == NULL && stv != stv0);
 	}
 	if (o == NULL) {
@@ -278,13 +277,16 @@ STV_NewObject(struct busyobj *bo, const char *hint, unsigned wsl)
 		for (i = 0; o == NULL && i < cache_param->nuke_limit; i++) {
 			if (EXP_NukeOne(bo->vsl, bo->stats, stv->lru) == -1)
 				break;
-			o = stv->allocobj(stv, bo, ltot);
+			o = stv->allocobj(stv, oc, ltot);
 		}
 	}
 
 	if (o == NULL)
 		return (0);
 
+	bo->stats->n_object++;
+	VSLb(bo->vsl, SLT_Storage, "%s %s",
+	    oc->stobj->stevedore->name, oc->stobj->stevedore->ident);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(o->objstore, STORAGE_MAGIC);
 	AN(stv->methods);

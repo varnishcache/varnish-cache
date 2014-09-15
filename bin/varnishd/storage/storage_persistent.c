@@ -505,23 +505,20 @@ smp_allocx(struct stevedore *st, size_t min_size, size_t max_size,
  */
 
 static struct object *
-smp_allocobj(struct stevedore *stv, struct busyobj *bo, unsigned ltot)
+smp_allocobj(struct stevedore *stv, struct objcore *oc, unsigned ltot)
 {
 	struct object *o;
 	struct storage *st;
 	struct smp_sc	*sc;
 	struct smp_seg *sg;
 	struct smp_object *so;
-	struct objcore *oc;
 	unsigned objidx;
 
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CAST_OBJ_NOTNULL(sc, stv->priv, SMP_SC_MAGIC);
 
 	/* Don't entertain already dead objects */
-	if ((bo->fetch_objcore->exp.ttl +
-	     bo->fetch_objcore->exp.grace +
-	     bo->fetch_objcore->exp.keep) <= 0.)
+	if ((oc->exp.ttl + oc->exp.grace + oc->exp.keep) <= 0.)
 		return (NULL);
 
 	ltot = IRNUP(sc, ltot);
@@ -532,16 +529,12 @@ smp_allocobj(struct stevedore *stv, struct busyobj *bo, unsigned ltot)
 
 	assert(st->space >= ltot);
 
-	o = STV_MkObject(stv, bo, st->ptr);
-	AN(bo->fetch_objcore->stobj->stevedore);
-	assert(bo->fetch_objcore->stobj->stevedore == stv);
+	o = STV_MkObject(stv, oc, st->ptr);
+	AN(oc->stobj->stevedore);
+	assert(oc->stobj->stevedore == stv);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	o->objstore = st;
 	st->len = sizeof(*o);
-	bo->stats->n_object++;
-
-	oc = bo->fetch_objcore;
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	Lck_Lock(&sc->mtx);
 	sg->nfixed++;
@@ -550,7 +543,7 @@ smp_allocobj(struct stevedore *stv, struct busyobj *bo, unsigned ltot)
 	/* We have to do this somewhere, might as well be here... */
 	assert(sizeof so->hash == DIGEST_LEN);
 	memcpy(so->hash, oc->objhead->digest, DIGEST_LEN);
-	so->exp = bo->fetch_objcore->exp;
+	so->exp = oc->exp;
 	so->ptr = (uint8_t*)o - sc->base;
 	so->ban = BAN_Time(oc->ban);
 
