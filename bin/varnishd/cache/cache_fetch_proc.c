@@ -118,9 +118,12 @@ VFP_Close(struct vfp_ctx *vc)
 {
 	struct vfp_entry *vfe;
 
-	VTAILQ_FOREACH(vfe, &vc->vfp, list)
+	VTAILQ_FOREACH(vfe, &vc->vfp, list) {
 		if(vfe->vfp->fini != NULL)
 			vfe->vfp->fini(vc, vfe);
+		VSLb(vc->vsl, SLT_VfpAcct, "%s %ju %ju",
+			vfe->vfp->name, vfe->calls, vfe->bytes_out);
+	}
 }
 
 int
@@ -131,6 +134,7 @@ VFP_Open(struct vfp_ctx *vc)
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->http, HTTP_MAGIC);
 	AN(vc->vsl);
+
 	VTAILQ_FOREACH_REVERSE(vfe, &vc->vfp, vfp_entry_s, list) {
 		if (vfe->vfp->init == NULL)
 			continue;
@@ -142,6 +146,7 @@ VFP_Open(struct vfp_ctx *vc)
 			return (-1);
 		}
 	}
+
 	return (0);
 }
 
@@ -175,13 +180,13 @@ VFP_Suck(struct vfp_ctx *vc, void *p, ssize_t *lp)
 			vp = VFP_ERROR;
 		}
 		vfe->closed = vp;
+		vfe->calls++;
+		vfe->bytes_out += *lp;
 	} else {
 		/* Already closed filter */
 		*lp = 0;
 		vp = vfe->closed;
 	}
-	vfe->calls++;
-	vfe->bytes_out = *lp;
 	vc->vfp_nxt = vfe;
 	return (vp);
 }

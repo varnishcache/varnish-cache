@@ -499,4 +499,16 @@ SLTM(BereqAcct, 0, "Backend request accounting",
 	"\n"
 )
 
+SLTM(VfpAcct, 0, "Fetch filter accounting",
+	"Contains name of VFP and statistics.\n\n"
+	"The format is::\n\n"
+	"\t%s %d %d\n"
+	"\t|  |  |\n"
+	"\t|  |  +- Total bytes produced\n"
+	"\t|  +---- Number of calls made\n"
+	"\t+------- Name of filter\n"
+	"\n"
+	NODEF_NOTICE
+)
+
 #undef NODEF_NOTICE

@@ -23,6 +23,7 @@ varnish v1 \
 } -start
 
 varnish v1 -cliok "param.set fetch_chunksize 4k"
+varnish v1 -cliok "param.set vsl_mask +VfpAcct"
 
 client c1 {
 	txreq -url /foo -hdr "Accept-Encoding: gzip"
