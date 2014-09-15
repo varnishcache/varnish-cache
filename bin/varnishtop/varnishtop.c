@@ -69,19 +69,37 @@ struct top {
 	char			*rec_data;
 	int			clen;
 	unsigned		hash;
-	VRB_ENTRY(top)		entry;
+	VRB_ENTRY(top)		e_order;
+	VRB_ENTRY(top)		e_key;
 	double			count;
 };
 
-static int
-top_cmp(const struct top *tp, const struct top *tp2);
+static VRB_HEAD(t_order, top) h_order = VRB_INITIALIZER(&h_order);
+static VRB_HEAD(t_key, top) h_key = VRB_INITIALIZER(&h_key);
 
-static VRB_HEAD(top_tree, top) top_tree_head = VRB_INITIALIZER(&top_tree_head);
-VRB_PROTOTYPE(top_tree, top, entry, top_cmp);
+static inline int
+cmp_key(const struct top *a, const struct top *b)
+{
+	if (a->hash != b->hash)
+		return (a->hash - b->hash);
+	if (a->tag != b->tag)
+		return (a->tag - b->tag);
+	if (a->clen != b->clen)
+		return (a->clen - b->clen);
+	return (memcmp(a->rec_data, b->rec_data, a->clen));
+}
+
+static inline int
+cmp_order(const struct top *a, const struct top *b)
+{
+	if (a->count > b->count)
+		return (-1);
+	else if (a->count < b->count)
+		return (1);
+	return (cmp_key(a, b));
+}
 
 static unsigned ntop;
-
-/*--------------------------------------------------------------------*/
 
 static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 
@@ -89,28 +107,10 @@ static int f_flag = 0;
 
 static unsigned maxfieldlen = 0;
 
-VRB_GENERATE(top_tree, top, entry, top_cmp);
-
-static int
-top_cmp(const struct top *tp, const struct top *tp2)
-{
-	if (tp->count == tp2->count || tp->count == 0.0) {
-		if (tp->hash != tp2->hash)
-			return (tp->hash - tp2->hash);
-		if (tp->tag != tp2->tag)
-			return (tp->tag - tp2->tag);
-		if (tp->clen != tp2->clen)
-			return (tp->clen - tp2->clen);
-		else
-			return (memcmp(tp->rec_data, tp2->rec_data, tp->clen));
-	} else {
-		if (tp->count > tp2->count)
-			return -1;
-		else
-			return 1;
-	}
-}
-
+VRB_PROTOTYPE(t_order, top, e_order, cmp_order);
+VRB_GENERATE(t_order, top, e_order, cmp_order);
+VRB_PROTOTYPE(t_key, top, e_key, cmp_key);
+VRB_GENERATE(t_key, top, e_key, cmp_key);
 
 static int __match_proto__(VSLQ_dispatch_f)
 accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
@@ -150,12 +150,12 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			t.rec_data = (char *)VSL_CDATA(tr->c->rec.ptr);
 
 			AZ(pthread_mutex_lock(&mtx));
-			tp = VRB_FIND(top_tree, &top_tree_head, &t);
+			tp = VRB_FIND(t_key, &h_key, &t);
 			if (tp) {
-				VRB_REMOVE(top_tree, &top_tree_head, tp);
+				VRB_REMOVE(t_order, &h_order, tp);
 				tp->count += 1.0;
 				/* Reinsert to rebalance */
-				VRB_INSERT(top_tree, &top_tree_head, tp);
+				VRB_INSERT(t_order, &h_order, tp);
 			} else {
 				ntop++;
 				tp = calloc(sizeof *tp, 1);
@@ -166,7 +166,8 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				tp->tag = tag;
 				tp->rec_data = strdup(t.rec_data);
 				AN(tp->rec_data);
-				VRB_INSERT(top_tree, &top_tree_head, tp);
+				VRB_INSERT(t_key, &h_key, tp);
+				VRB_INSERT(t_order, &h_order, tp);
 			}
 			AZ(pthread_mutex_unlock(&mtx));
 
@@ -201,8 +202,8 @@ update(int p)
 	else
 		AC(mvprintw(0, COLS - 1 - strlen(VUT.name), "%s", VUT.name));
 	AC(mvprintw(0, 0, "list length %u", ntop));
-	for (tp = VRB_MIN(top_tree, &top_tree_head); tp != NULL; tp = tp2) {
-		tp2 = VRB_NEXT(top_tree, &top_tree_head, tp);
+	for (tp = VRB_MIN(t_order, &h_order); tp != NULL; tp = tp2) {
+		tp2 = VRB_NEXT(t_order, &h_order, tp);
 
 		if (++l < LINES) {
 			len = tp->clen;
@@ -218,7 +219,8 @@ update(int p)
 			continue;
 		tp->count += (1.0/3.0 - tp->count) / (double)n;
 		if (tp->count * 10 < t || l > LINES * 10) {
-			VRB_REMOVE(top_tree, &top_tree_head, tp);
+			VRB_REMOVE(t_key, &h_key, tp);
+			VRB_REMOVE(t_order, &h_order, tp);
 			free(tp->rec_data);
 			free(tp);
 			ntop--;
@@ -290,8 +292,8 @@ static void
 dump(void)
 {
 	struct top *tp, *tp2;
-	for (tp = VRB_MIN(top_tree, &top_tree_head); tp != NULL; tp = tp2) {
-		tp2 = VRB_NEXT(top_tree, &top_tree_head, tp);
+	for (tp = VRB_MIN(t_order, &h_order); tp != NULL; tp = tp2) {
+		tp2 = VRB_NEXT(t_order, &h_order, tp);
 		if (tp->count <= 1.0)
 			break;
 		printf("%9.2f %s %*.*s\n",
