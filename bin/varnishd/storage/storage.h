@@ -39,6 +39,7 @@ struct busyobj;
 struct objcore;
 struct worker;
 struct lru;
+struct vsl_log;
 
 /* Storage -----------------------------------------------------------*/
 
@@ -98,7 +99,10 @@ typedef void *objiterbegin_f(struct objcore *oc, struct worker *wrk);
 typedef enum objiter_status objiter_f(struct objcore *oc, void *oix,
     void **p, ssize_t *l);
 typedef void objiterend_f(struct objcore *oc, void **oix);
-/* objgetspace */
+typedef int objgetspace_f(struct objcore *oc, struct vsl_log *vsl,
+    struct dstat *ds, ssize_t *sz, uint8_t **ptr);
+typedef void objextend_f(struct objcore *oc, struct dstat *ds, ssize_t l);
+
 /* objtrimstore */
 /* objslim */
 /* objgetattr */
@@ -116,6 +120,8 @@ struct storeobj_methods {
 	objiterbegin_f	*objiterbegin;
 	objiter_f	*objiter;
 	objiterend_f	*objiterend;
+	objgetspace_f	*objgetspace;
+	objextend_f	*objextend;
 };
 
 /* Prototypes --------------------------------------------------------*/

@@ -242,7 +242,13 @@ objallocwithnuke(struct stevedore *stv, struct vsl_log *vsl, struct dstat *ds,
 	return (st);
 }
 
-/*--------------------------------------------------------------------
+/*====================================================================
+ * ObjGetSpace()
+ *
+ * This function returns a pointer and length of free space.  If there
+ * is no free space, some will be added first.
+ *
+ * The "sz" argument is an input hint of how much space is desired.
  */
 
 int
@@ -251,6 +257,10 @@ ObjGetSpace(struct objcore *oc, struct vsl_log *vsl, struct dstat *ds,
 {
 	struct object *o;
 	struct storage *st;
+	const struct storeobj_methods *om = obj_getmethods(oc);
+
+	if (om->objgetspace != NULL)
+		return (om->objgetspace(oc, vsl, ds, sz, ptr));
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(ds);
@@ -286,7 +296,11 @@ ObjGetSpace(struct objcore *oc, struct vsl_log *vsl, struct dstat *ds,
 	return (1);
 }
 
-/*--------------------------------------------------------------------
+/*====================================================================
+ * ObjExtend()
+ *
+ * This function extends the used part of the object a number of bytes
+ * into the last space returned by ObjGetSpace()
  */
 
 void
@@ -294,6 +308,12 @@ ObjExtend(struct objcore *oc, struct dstat *ds, ssize_t l)
 {
 	struct object *o;
 	struct storage *st;
+	const struct storeobj_methods *om = obj_getmethods(oc);
+
+	if (om->objextend != NULL) {
+		om->objextend(oc, ds, l);
+		return;
+	}
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	o = obj_getobj(oc, ds);
