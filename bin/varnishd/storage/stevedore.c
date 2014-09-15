@@ -180,17 +180,6 @@ STV_alloc(struct stevedore *stv, size_t size)
 	return (st);
 }
 
-/*-------------------------------------------------------------------*
- * Structure used to transport internal knowledge from STV_NewObject()
- * to STV_MkObject().  Nobody else should mess with this struct.
- */
-
-struct stv_objsecrets {
-	unsigned	magic;
-#define STV_OBJ_SECRETES_MAGIC	0x78c87247
-	unsigned	wsl;
-};
-
 /*--------------------------------------------------------------------
  * This function is called by stevedores ->allocobj() method, which
  * very often will be stv_default_allocobj() below, to convert a slab
@@ -200,28 +189,19 @@ struct stv_objsecrets {
  */
 
 struct object *
-STV_MkObject(struct stevedore *stv, struct busyobj *bo,
-    void *ptr, unsigned ltot, const struct stv_objsecrets *soc)
+STV_MkObject(struct stevedore *stv, struct busyobj *bo, void *ptr)
 {
 	struct object *o;
-	unsigned l;
 
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(soc, STV_OBJ_SECRETES_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
 
 	assert(PAOK(ptr));
-	assert(PAOK(soc->wsl));
-
-	assert(ltot >= sizeof *o + soc->wsl);
 
 	o = ptr;
 	memset(o, 0, sizeof *o);
 	o->magic = OBJECT_MAGIC;
-
-	l = PRNDDN(ltot - sizeof *o);
-	assert(l >= soc->wsl);
 
 	VTAILQ_INIT(&o->body->list);
 
@@ -241,13 +221,11 @@ STV_MkObject(struct stevedore *stv, struct busyobj *bo,
  */
 
 struct object *
-stv_default_allocobj(struct stevedore *stv, struct busyobj *bo,
-    unsigned ltot, const struct stv_objsecrets *soc)
+stv_default_allocobj(struct stevedore *stv, struct busyobj *bo, unsigned ltot)
 {
 	struct object *o;
 	struct storage *st;
 
-	CHECK_OBJ_NOTNULL(soc, STV_OBJ_SECRETES_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	st = stv->alloc(stv, ltot);
 	if (st == NULL)
@@ -256,8 +234,7 @@ stv_default_allocobj(struct stevedore *stv, struct busyobj *bo,
 		stv->free(st);
 		return (NULL);
 	}
-	ltot = st->space;
-	o = STV_MkObject(stv, bo, st->ptr, ltot, soc);
+	o = STV_MkObject(stv, bo, st->ptr);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st->len = sizeof(*o);
 	o->objstore = st;
@@ -277,7 +254,6 @@ STV_NewObject(struct busyobj *bo, const char *hint, unsigned wsl)
 	struct object *o;
 	struct stevedore *stv, *stv0;
 	unsigned ltot;
-	struct stv_objsecrets soc;
 	int i;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -285,20 +261,16 @@ STV_NewObject(struct busyobj *bo, const char *hint, unsigned wsl)
 	assert(wsl > 0);
 	wsl = PRNDUP(wsl);
 
-	memset(&soc, 0, sizeof soc);
-	soc.magic = STV_OBJ_SECRETES_MAGIC;
-	soc.wsl = wsl;
-
 	ltot = sizeof *o + wsl;
 
 	stv = stv0 = stv_pick_stevedore(bo->vsl, &hint);
 	AN(stv->allocobj);
-	o = stv->allocobj(stv, bo, ltot, &soc);
+	o = stv->allocobj(stv, bo, ltot);
 	if (o == NULL && hint == NULL) {
 		do {
 			stv = stv_pick_stevedore(bo->vsl, &hint);
 			AN(stv->allocobj);
-			o = stv->allocobj(stv, bo, ltot, &soc);
+			o = stv->allocobj(stv, bo, ltot);
 		} while (o == NULL && stv != stv0);
 	}
 	if (o == NULL) {
@@ -306,7 +278,7 @@ STV_NewObject(struct busyobj *bo, const char *hint, unsigned wsl)
 		for (i = 0; o == NULL && i < cache_param->nuke_limit; i++) {
 			if (EXP_NukeOne(bo->vsl, bo->stats, stv->lru) == -1)
 				break;
-			o = stv->allocobj(stv, bo, ltot, &soc);
+			o = stv->allocobj(stv, bo, ltot);
 		}
 	}
 

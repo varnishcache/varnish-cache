@@ -505,8 +505,7 @@ smp_allocx(struct stevedore *st, size_t min_size, size_t max_size,
  */
 
 static struct object *
-smp_allocobj(struct stevedore *stv, struct busyobj *bo,
-    unsigned ltot, const struct stv_objsecrets *soc)
+smp_allocobj(struct stevedore *stv, struct busyobj *bo, unsigned ltot)
 {
 	struct object *o;
 	struct storage *st;
@@ -532,9 +531,8 @@ smp_allocobj(struct stevedore *stv, struct busyobj *bo,
 		return (NULL);
 
 	assert(st->space >= ltot);
-	ltot = st->space;
 
-	o = STV_MkObject(stv, bo, st->ptr, ltot, soc);
+	o = STV_MkObject(stv, bo, st->ptr);
 	AN(bo->fetch_objcore->stobj->stevedore);
 	assert(bo->fetch_objcore->stobj->stevedore == stv);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
