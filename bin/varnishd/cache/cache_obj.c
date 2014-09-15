@@ -325,7 +325,32 @@ ObjExtend(struct objcore *oc, struct dstat *ds, ssize_t l)
 	o->len += l;
 }
 
-/*--------------------------------------------------------------------
+/*====================================================================
+ * ObjGetlen()
+ *
+ * This is a separate function because it may need locking
+ */
+
+uint64_t
+ObjGetLen(struct objcore *oc, struct dstat *ds)
+{
+	struct object *o;
+	const struct storeobj_methods *om = obj_getmethods(oc);
+
+	if (om->objgetlen != NULL)
+		return (om->objgetlen(oc, ds));
+
+	o = obj_getobj(oc, ds);
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	return (o->len);
+}
+
+
+/*====================================================================
+ * ObjTrimStore()
+ *
+ * Release any surplus space allocated, we promise not to call ObjExtend()
+ * any more.
  */
 
 void
@@ -334,6 +359,12 @@ ObjTrimStore(struct objcore *oc, struct dstat *ds)
 	const struct stevedore *stv;
 	struct storage *st;
 	struct object *o;
+	const struct storeobj_methods *om = obj_getmethods(oc);
+
+	if (om->objtrimstore != NULL) {
+		om->objtrimstore(oc, ds);
+		return;
+	}
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(ds);
@@ -352,8 +383,11 @@ ObjTrimStore(struct objcore *oc, struct dstat *ds)
 	}
 }
 
-/*--------------------------------------------------------------------
- * Early disposal of storage from soon to be killed object.
+/*====================================================================
+ * ObjSlim()
+ *
+ * Free the whatever storage can be freed, without freeing the actual
+ * object yet.
  */
 
 void
@@ -361,6 +395,12 @@ ObjSlim(struct objcore *oc, struct dstat *ds)
 {
 	struct object *o;
 	struct storage *st, *stn;
+	const struct storeobj_methods *om = obj_getmethods(oc);
+
+	if (om->objslim != NULL) {
+		om->objslim(oc, ds);
+		return;
+	}
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(ds);
@@ -378,6 +418,8 @@ ObjSlim(struct objcore *oc, struct dstat *ds)
 	}
 }
 
+/*====================================================================
+ */
 void
 ObjUpdateMeta(struct objcore *oc, struct dstat *ds)
 {
@@ -387,6 +429,8 @@ ObjUpdateMeta(struct objcore *oc, struct dstat *ds)
 		m->updatemeta(oc, ds);
 }
 
+/*====================================================================
+ */
 void
 ObjFreeObj(struct objcore *oc, struct dstat *ds)
 {
@@ -398,6 +442,8 @@ ObjFreeObj(struct objcore *oc, struct dstat *ds)
 	m->freeobj(oc, ds);
 }
 
+/*====================================================================
+ */
 struct lru *
 ObjGetLRU(const struct objcore *oc)
 {
@@ -408,12 +454,22 @@ ObjGetLRU(const struct objcore *oc)
 	return (m->getlru(oc));
 }
 
+/*====================================================================
+ * ObjGetattr()
+ *
+ * Get an attribute of the object.
+ */
+
 void *
 ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
    ssize_t *len)
 {
 	struct object *o;
 	ssize_t dummy;
+	const struct storeobj_methods *om = obj_getmethods(oc);
+
+	if (om->objgetattr != NULL)
+		return (om->objgetattr(oc, ds, attr, len));
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(ds);
@@ -451,6 +507,13 @@ ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
 	WRONG("Unsupported OBJ_ATTR");
 }
 
+/*====================================================================
+ * ObjSetattr()
+ *
+ * If ptr is Non-NULL, it points to the new content which is copied into
+ * the attribute.  Otherwise the caller will have to do the copying.
+ */
+
 void *
 ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr, ssize_t len,
     const void *ptr)
@@ -458,6 +521,10 @@ ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr, ssize_t len,
 	struct object *o;
 	void *retval = NULL;
 	struct storage *st;
+	const struct storeobj_methods *om = obj_getmethods(vc->oc);
+
+	if (om->objsetattr != NULL)
+		return (om->objsetattr(vc, attr, len, ptr));
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
@@ -513,6 +580,10 @@ ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr, ssize_t len,
 	return (retval);
 }
 
+/*====================================================================
+ * Utility functions which work on top of the previous ones
+ */
+
 int
 ObjCopyAttr(const struct vfp_ctx *vc, struct objcore *ocs, enum obj_attr attr)
 {
@@ -538,16 +609,6 @@ ObjGetXID(struct objcore *oc, struct dstat *ds)
 
 	AZ(ObjGetU32(oc, ds, OA_VXID, &u));
 	return (u);
-}
-
-uint64_t
-ObjGetLen(struct objcore *oc, struct dstat *ds)
-{
-	struct object *o;
-
-	o = obj_getobj(oc, ds);
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	return (o->len);
 }
 
 /*--------------------------------------------------------------------

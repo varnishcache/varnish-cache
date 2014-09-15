@@ -51,6 +51,18 @@ enum baninfo {
 	BI_DROP
 };
 
+enum obj_attr {
+#define OBJ_ATTR(U, l)	OA_##U,
+#include "tbl/obj_attr.h"
+#undef OBJ_ATTR
+};
+
+enum obj_flags {
+#define OBJ_FLAG(U, l, v)	OF_##U = v,
+#include "tbl/obj_attr.h"
+#undef OBJ_FLAG
+};
+
 struct cli;
 
 /**********************************************************************

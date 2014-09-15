@@ -31,7 +31,6 @@
  *
  */
 
-struct stv_objsecrets;
 struct stevedore;
 struct sess;
 struct dstat;
@@ -40,6 +39,7 @@ struct objcore;
 struct worker;
 struct lru;
 struct vsl_log;
+struct vfp_ctx;
 
 /* Storage -----------------------------------------------------------*/
 
@@ -102,13 +102,13 @@ typedef void objiterend_f(struct objcore *oc, void **oix);
 typedef int objgetspace_f(struct objcore *oc, struct vsl_log *vsl,
     struct dstat *ds, ssize_t *sz, uint8_t **ptr);
 typedef void objextend_f(struct objcore *oc, struct dstat *ds, ssize_t l);
-
-/* objtrimstore */
-/* objslim */
-/* objgetattr */
-/* objsetattr */
-/* objextend */
-/* objgetlen */
+typedef void objtrimstore_f(struct objcore *oc, struct dstat *ds);
+typedef void objslim_f(struct objcore *oc, struct dstat *ds);
+typedef void *objgetattr_f(struct objcore *oc, struct dstat *ds,
+    enum obj_attr attr, ssize_t *len);
+typedef void *objsetattr_f(const struct vfp_ctx *vc, enum obj_attr attr,
+    ssize_t len, const void *ptr);
+typedef uint64_t objgetlen_f(struct objcore *oc, struct dstat *ds);
 
 struct storeobj_methods {
 	freeobj_f	*freeobj;
@@ -122,6 +122,11 @@ struct storeobj_methods {
 	objiterend_f	*objiterend;
 	objgetspace_f	*objgetspace;
 	objextend_f	*objextend;
+	objgetlen_f	*objgetlen;
+	objtrimstore_f	*objtrimstore;
+	objslim_f	*objslim;
+	objgetattr_f	*objgetattr;
+	objsetattr_f	*objsetattr;
 };
 
 /* Prototypes --------------------------------------------------------*/
