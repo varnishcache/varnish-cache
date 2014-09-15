@@ -479,6 +479,7 @@ vbf_fetch_body_helper(struct busyobj *bo)
 		AZ(vfc->failed);
 		vfps = VFP_Suck(vfc, ptr, &l);
 		if (l > 0 && vfps != VFP_ERROR) {
+			bo->acct.beresp_bodybytes += l;
 			VBO_extend(bo, l);
 			if (est >= l)
 				est -= l;
@@ -622,7 +623,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->htc->body_status != BS_NONE) {
 		assert(bo->htc->body_status != BS_ERROR);
 		vbf_fetch_body_helper(bo);
-		bo->acct.beresp_bodybytes = bo->vfc->bodybytes;
 	}
 
 	if (bo->vfc->failed && !bo->do_stream) {

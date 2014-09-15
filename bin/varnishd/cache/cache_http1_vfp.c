@@ -75,7 +75,6 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 			lr = HTTP1_Read(htc, buf, 1);
 			if (lr <= 0)
 				return (VFP_Error(vc, "chunked read err"));
-			vc->bodybytes += lr;
 		} while (vct_islws(buf[0]));
 
 		if (!vct_ishex(buf[0]))
@@ -88,7 +87,6 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 				if (lr <= 0)
 					return (VFP_Error(vc,
 					    "chunked read err"));
-				vc->bodybytes += lr;
 			} while (u == 1 && buf[0] == '0' && buf[u] == '0');
 			if (!vct_ishex(buf[u]))
 				break;
@@ -102,7 +100,6 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 			lr = HTTP1_Read(htc, buf + u, 1);
 			if (lr <= 0)
 				return (VFP_Error(vc, "chunked read err"));
-			vc->bodybytes += lr;
 		}
 
 		if (buf[u] != '\n')
@@ -125,7 +122,6 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 		lr = HTTP1_Read(htc, ptr, l);
 		if (lr <= 0)
 			return (VFP_Error(vc, "straight insufficient bytes"));
-		vc->bodybytes += lr;
 		*lp = lr;
 		vfe->priv2 -= lr;
 		if (vfe->priv2 == 0)
@@ -136,7 +132,6 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 	i = HTTP1_Read(htc, buf, 1);
 	if (i <= 0)
 		return (VFP_Error(vc, "chunked read err"));
-	vc->bodybytes += i;
 	if (buf[0] == '\r' && HTTP1_Read(htc, buf, 1) <= 0)
 		return (VFP_Error(vc, "chunked read err"));
 	if (buf[0] != '\n')
@@ -173,7 +168,6 @@ v1f_pull_straight(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	if (vfe->priv2 < l)
 		l = vfe->priv2;
 	lr = HTTP1_Read(htc, p, l);
-	vc->bodybytes += lr;
 	if (lr <= 0)
 		return (VFP_Error(vc, "straight insufficient bytes"));
 	*lp = lr;
@@ -212,7 +206,6 @@ v1f_pull_eof(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	if (lr == 0)
 		return (VFP_END);
 	*lp = lr;
-	vc->bodybytes += lr;
 	return (VFP_OK);
 }
 
