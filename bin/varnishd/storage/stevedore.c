@@ -291,13 +291,6 @@ STV_NewObject(struct objcore *oc, struct vsl_log *vsl, struct dstat *stats,
 
 /*-------------------------------------------------------------------*/
 
-struct storage *
-STV_alloc_transient(size_t size)
-{
-
-	return (STV_alloc(stv_transient, size));
-}
-
 void
 STV_trim(struct storage *st, size_t size, int move_ok)
 {

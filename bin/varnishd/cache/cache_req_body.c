@@ -36,6 +36,7 @@
 #include "cache.h"
 #include "vtim.h"
 #include "storage/storage.h"
+#include "hash/hash_slinger.h"
 
 /*----------------------------------------------------------------------
  * Iterate over the req.body.
@@ -48,23 +49,28 @@ int
 VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv)
 {
 	char buf[8192];
-	struct storage *st;
 	ssize_t l;
+	void *p;
 	int i;
 	struct vfp_ctx *vfc;
 	enum vfp_status vfps = VFP_ERROR;
+	struct objiter *oi;
+	enum objiter_status ois;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(func);
 
 	switch(req->req_body_status) {
 	case REQ_BODY_CACHED:
-		VTAILQ_FOREACH(st, &req->body->list, list) {
-			i = func(req, priv, st->ptr, st->len);
-			if (i)
-				return (i);
-		}
-		return (0);
+		oi = ObjIterBegin(req->wrk, req->body_oc);
+		AN(oi);
+		do {
+			ois = ObjIter(oi, &p, &l);
+			if (l > 0 && func(req, priv, p, l))
+				break;
+		} while (ois == OIS_DATA);
+		ObjIterEnd(&oi);
+		return (ois == OIS_DONE ? 0 : -1);
 	case REQ_BODY_NONE:
 		return (0);
 	case REQ_BODY_WITH_LEN:
@@ -164,14 +170,13 @@ VRB_Ignore(struct req *req)
 void
 VRB_Free(struct req *req)
 {
-	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	while (!VTAILQ_EMPTY(&req->body->list)) {
-		st = VTAILQ_FIRST(&req->body->list);
-		VTAILQ_REMOVE(&req->body->list, st, list);
-		STV_free(st);
+	if (req->body_oc != NULL) {
+		ObjFreeObj(req->body_oc, &req->wrk->stats);
+		FREE_OBJ(req->body_oc);
+		req->body_oc = NULL;
 	}
 }
 
@@ -185,9 +190,9 @@ VRB_Free(struct req *req)
 int
 VRB_Cache(struct req *req, ssize_t maxsize)
 {
-	struct storage *st;
 	ssize_t l, yet;
 	struct vfp_ctx *vfc;
+	uint8_t *ptr;
 	enum vfp_status vfps = VFP_ERROR;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -216,9 +221,15 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 		return (-1);
 	}
 
+	req->body_oc = HSH_NewObjCore(req->wrk);
+	XXXAN(STV_NewObject(req->body_oc, req->vsl, &req->wrk->stats,
+	    TRANSIENT_STORAGE, 8));
+
 	VFP_Setup(vfc);
 	vfc->http = req->http;
 	vfc->vsl = req->vsl;
+	vfc->oc = req->body_oc;
+	vfc->stats = &req->wrk->stats;
 	V1F_Setup_Fetch(vfc, req->htc);
 
 	if (VFP_Open(vfc) < 0) {
@@ -229,45 +240,27 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 	yet = req->htc->content_length;
 	if (yet < 0)
 		yet = 0;
-	st = NULL;
 	do {
-		if (st == NULL) {
-			st = STV_alloc_transient(
-			    yet ?  yet : cache_param->fetch_chunksize);
-			if (st == NULL) {
-				req->req_body_status = REQ_BODY_FAIL;
-				l = -1;
-				break;
-			} else {
-				VTAILQ_INSERT_TAIL(&req->body->list, st, list);
-			}
-		}
-		l = st->space - st->len;
-		vfps = VFP_Suck(vfc, st->ptr + st->len, &l);
-		if (vfps == VFP_ERROR) {
-			req->req_body_status = REQ_BODY_FAIL;
-			l = -1;
+		AZ(vfc->failed);
+		l = yet;
+		if (VFP_GetStorage(vfc, &l, &ptr) != VFP_OK)
 			break;
-		}
-		if (l > 0) {
+		AZ(vfc->failed);
+		AN(ptr);
+		AN(l);
+		vfps = VFP_Suck(vfc, ptr, &l);
+		if (l > 0 && vfps != VFP_ERROR) {
 			req->req_bodybytes += l;
 			req->acct.req_bodybytes += l;
-			if (yet > 0)
+			if (yet >= l)
 				yet -= l;
-			st->len += l;
-			if (st->space == st->len)
-				st = NULL;
-			l = 0;
+			ObjExtend(req->body_oc, &req->wrk->stats, l);
 		}
-		if (req->req_bodybytes > maxsize) {
-			req->req_body_status = REQ_BODY_FAIL;
-			l = -1;
-			break;
-		}
+
 	} while (vfps == VFP_OK);
 	VFP_Close(vfc);
 
-	if (l == 0) {
+	if (vfps == VFP_END) {
 
 		if (req->req_bodybytes != req->htc->content_length) {
 			/* We must update also the "pristine" req.* copy */
@@ -283,7 +276,9 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 		}
 
 		req->req_body_status = REQ_BODY_CACHED;
+	} else {
+		req->req_body_status = REQ_BODY_FAIL;
 	}
 	VSLb_ts_req(req, "ReqBody", VTIM_real());
-	return (l);
+	return (vfps == VFP_END ? req->req_bodybytes : 0);
 }

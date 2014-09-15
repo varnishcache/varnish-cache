@@ -587,7 +587,7 @@ struct req {
 	VTAILQ_ENTRY(req)	w_list;
 
 	volatile enum req_body_state_e	req_body_status;
-	struct body		body[1];
+	struct objcore		*body_oc;
 
 	/* The busy objhead we sleep on */
 	struct objhead		*hash_objhead;
@@ -1225,7 +1225,6 @@ void STV_open(void);
 void STV_close(void);
 int STV_BanInfo(enum baninfo event, const uint8_t *ban, unsigned len);
 void STV_BanExport(const uint8_t *bans, unsigned len);
-struct storage *STV_alloc_transient(size_t size);
 
 /* storage_persistent.c */
 void SMP_Init(void);

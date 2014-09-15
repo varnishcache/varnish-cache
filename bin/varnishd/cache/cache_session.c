@@ -374,8 +374,6 @@ SES_GetReq(const struct worker *wrk, struct sess *sp)
 	req->t_prev = NAN;
 	req->t_req = NAN;
 
-	VTAILQ_INIT(&req->body->list);
-
 	return (req);
 }
 
