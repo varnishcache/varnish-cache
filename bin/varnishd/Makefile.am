@@ -37,6 +37,7 @@ varnishd_SOURCES = \
 	cache/cache_panic.c \
 	cache/cache_pipe.c \
 	cache/cache_pool.c \
+	cache/cache_req_body.c \
 	cache/cache_req_fsm.c \
 	cache/cache_http1_deliver.c \
 	cache/cache_rfc2616.c \

@@ -488,7 +488,7 @@ VRT_CacheReqBody(const struct vrt_ctx *ctx, long long maxsize)
 		    "req.body can only be cached in vcl_recv{}");
 		return (0);
 	}
-	return (HTTP1_CacheReqBody(ctx->req, maxsize));
+	return (VRB_Cache(ctx->req, maxsize));
 }
 
 /*--------------------------------------------------------------------

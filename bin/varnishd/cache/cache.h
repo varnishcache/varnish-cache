@@ -812,9 +812,6 @@ void V1F_Setup_Fetch(struct vfp_ctx *vfc, struct http_conn *htc);
 /* cache_http1_fsm.c [HTTP1] */
 typedef int (req_body_iter_f)(struct req *, void *priv, void *ptr, size_t);
 void HTTP1_Session(struct worker *, struct req *);
-int HTTP1_DiscardReqBody(struct req *req);
-int HTTP1_CacheReqBody(struct req *req, ssize_t maxsize);
-int HTTP1_IterateReqBody(struct req *req, req_body_iter_f *func, void *priv);
 extern const int HTTP1_Req[3];
 extern const int HTTP1_Resp[3];
 
@@ -823,6 +820,11 @@ unsigned V1D_FlushReleaseAcct(struct req *req);
 void V1D_Deliver(struct req *, struct busyobj *);
 void V1D_Deliver_Synth(struct req *req);
 
+/* cache_req_body.c */
+int VRB_Ignore(struct req *req);
+int VRB_Cache(struct req *req, ssize_t maxsize);
+int VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv);
+void VRB_Free(struct req *req);
 
 static inline int
 VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)

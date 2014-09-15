@@ -129,7 +129,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	if (req != NULL) {
 		if (do_chunked)
 			WRW_Chunked(wrk);
-		i = HTTP1_IterateReqBody(req, vbf_iter_req_body, wrk);
+		i = VRB_Iterate(req, vbf_iter_req_body, wrk);
 
 		if (req->req_body_status == REQ_BODY_TAKEN) {
 			retry = -1;

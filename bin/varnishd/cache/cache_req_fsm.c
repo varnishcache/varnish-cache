@@ -259,7 +259,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 		req->doclose = SC_RESP_CLOSE;
 
 	/* Discard any lingering request body before delivery */
-	(void)HTTP1_DiscardReqBody(req);
+	(void)VRB_Ignore(req);
 
 	V1D_Deliver_Synth(req);
 
@@ -296,7 +296,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
 	wrk->stats.s_fetch++;
-	(void)HTTP1_DiscardReqBody(req);
+	(void)VRB_Ignore(req);
 
 	if (req->objcore->flags & OC_F_FAILED) {
 		req->err_code = 503;
@@ -420,7 +420,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 			AZ(boc->busyobj);
 			VBF_Fetch(wrk, req, boc, oc, VBF_BACKGROUND);
 		} else {
-			(void)HTTP1_DiscardReqBody(req);// XXX: handle err
+			(void)VRB_Ignore(req);// XXX: handle err
 		}
 		wrk->stats.cache_hit++;
 		req->req_step = R_STP_DELIVER;
@@ -866,7 +866,6 @@ enum req_fsm_nxt
 CNT_Request(struct worker *wrk, struct req *req)
 {
 	enum req_fsm_nxt nxt;
-	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -920,11 +919,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 			VSLb(req->vsl, SLT_ESI_BodyBytes, "%ju",
 			    (uintmax_t)req->resp_bodybytes);
 
-		while (!VTAILQ_EMPTY(&req->body->list)) {
-			st = VTAILQ_FIRST(&req->body->list);
-			VTAILQ_REMOVE(&req->body->list, st, list);
-			STV_free(st);
-		}
+		VRB_Free(req);
 		req->wrk = NULL;
 	}
 	assert(WRW_IsReleased(wrk));
