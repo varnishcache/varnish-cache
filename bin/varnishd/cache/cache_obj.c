@@ -407,12 +407,14 @@ ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr, ssize_t len,
 {
 	struct object *o;
 	void *retval = NULL;
+	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->oc, OBJCORE_MAGIC);
 	o = obj_getobj(vc->oc, vc->stats);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	st = o->objstore;
 	switch (attr) {
 	case OA_ESIDATA:
 		o->esidata = objallocwithnuke(o->body->stevedore, vc->vsl,
@@ -431,8 +433,10 @@ ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr, ssize_t len,
 		retval = o->oa_gzipbits;
 		break;
 	case OA_HEADERS:
-		o->oa_http = (void*)WS_Alloc(vc->bo->ws_o, len);
-		AN(o->oa_http);
+		len = PRNDUP(len);
+		assert(st->len + len <= st->space);
+		o->oa_http = (void*)(st->ptr + st->len);
+		st->len += len;
 		retval = o->oa_http;
 		break;
 	case OA_LASTMODIFIED:
@@ -440,8 +444,10 @@ ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr, ssize_t len,
 		retval = o->oa_lastmodified;
 		break;
 	case OA_VARY:
-		o->oa_vary = (void*)WS_Alloc(vc->bo->ws_o, len);
-		AN(o->oa_vary);
+		len = PRNDUP(len);
+		assert(st->len + len <= st->space);
+		o->oa_vary = (void*)(st->ptr + st->len);
+		st->len += len;
 		retval = o->oa_vary;
 		break;
 	case OA_VXID:

@@ -137,7 +137,6 @@ vbf_beresp2obj(struct busyobj *bo)
 	}
 
 	AZ(ObjSetU32(bo->vfc, OA_VXID, VXID(bo->vsl->wid)));
-	WS_Assert(bo->ws_o);
 
 	/* for HTTP_Encode() VSLH call */
 	bo->beresp->logtag = SLT_ObjMethod;
@@ -607,8 +606,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	assert(bo->refcount >= 1);
 
-	AZ(WS_Overflowed(bo->ws_o));
-
 	assert (bo->state == BOS_REQ_DONE);
 
 	if (bo->do_stream) {
@@ -680,7 +677,6 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	AZ(ObjCopyAttr(bo->vfc, bo->ims_oc, OA_FLAGS));
 	AZ(ObjCopyAttr(bo->vfc, bo->ims_oc, OA_GZIPBITS));
 
-	AZ(WS_Overflowed(bo->ws_o));
 	if (bo->do_stream) {
 		HSH_Unbusy(&wrk->stats, bo->fetch_objcore);
 		VBO_setstate(bo, BOS_STREAM);

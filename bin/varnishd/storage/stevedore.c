@@ -223,10 +223,6 @@ STV_MkObject(struct stevedore *stv, struct busyobj *bo,
 	l = PRNDDN(ltot - sizeof *o);
 	assert(l >= soc->wsl);
 
-	WS_Init(bo->ws_o, "obj", o + 1, l);
-	WS_Assert(bo->ws_o);
-	assert(bo->ws_o->e <= (char*)ptr + ltot);
-
 	VTAILQ_INIT(&o->body->list);
 
 	bo->fetch_objcore->stobj->magic = STOREOBJ_MAGIC;
@@ -260,9 +256,10 @@ stv_default_allocobj(struct stevedore *stv, struct busyobj *bo,
 		stv->free(st);
 		return (NULL);
 	}
-	ltot = st->len = st->space;
+	ltot = st->space;
 	o = STV_MkObject(stv, bo, st->ptr, ltot, soc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	st->len = sizeof(*o);
 	o->objstore = st;
 	bo->stats->n_object++;
 	return (o);

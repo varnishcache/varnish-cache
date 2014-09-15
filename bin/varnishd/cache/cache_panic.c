@@ -342,7 +342,6 @@ pan_busyobj(const struct busyobj *bo)
 		pan_http("bereq", bo->bereq, 4);
 	if (bo->beresp->ws != NULL)
 		pan_http("beresp", bo->beresp, 4);
-	pan_ws(bo->ws_o, 4);
 	if (bo->fetch_objcore)
 		pan_objcore("FETCH", bo->fetch_objcore);
 	if (bo->ims_oc)
