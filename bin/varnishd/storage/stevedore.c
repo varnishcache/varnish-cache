@@ -218,7 +218,7 @@ STV_MkObject(struct stevedore *stv, struct objcore *oc, void *ptr)
  * implement persistent storage can rely on.
  */
 
-struct object *
+int
 stv_default_allocobj(struct stevedore *stv, struct objcore *oc, unsigned ltot)
 {
 	struct object *o;
@@ -227,16 +227,16 @@ stv_default_allocobj(struct stevedore *stv, struct objcore *oc, unsigned ltot)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	st = stv->alloc(stv, ltot);
 	if (st == NULL)
-		return (NULL);
+		return (0);
 	if (st->space < ltot) {
 		stv->free(st);
-		return (NULL);
+		return (0);
 	}
 	o = STV_MkObject(stv, oc, st->ptr);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st->len = sizeof(*o);
 	o->objstore = st;
-	return (o);
+	return (1);
 }
 
 /*-------------------------------------------------------------------
@@ -248,11 +248,10 @@ stv_default_allocobj(struct stevedore *stv, struct objcore *oc, unsigned ltot)
 int
 STV_NewObject(struct busyobj *bo, const char *hint, unsigned wsl)
 {
-	struct object *o;
 	struct objcore *oc;
 	struct stevedore *stv, *stv0;
 	unsigned ltot;
-	int i;
+	int i, j;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	oc = bo->fetch_objcore;
@@ -260,36 +259,33 @@ STV_NewObject(struct busyobj *bo, const char *hint, unsigned wsl)
 	assert(wsl > 0);
 	wsl = PRNDUP(wsl);
 
-	ltot = sizeof *o + wsl;
+	ltot = sizeof(struct object) + wsl;
 
 	stv = stv0 = stv_pick_stevedore(bo->vsl, &hint);
 	AN(stv->allocobj);
-	o = stv->allocobj(stv, oc, ltot);
-	if (o == NULL && hint == NULL) {
+	j = stv->allocobj(stv, oc, ltot);
+	if (j == 0 && hint == NULL) {
 		do {
 			stv = stv_pick_stevedore(bo->vsl, &hint);
 			AN(stv->allocobj);
-			o = stv->allocobj(stv, oc, ltot);
-		} while (o == NULL && stv != stv0);
+			j = stv->allocobj(stv, oc, ltot);
+		} while (j == 0 && stv != stv0);
 	}
-	if (o == NULL) {
+	if (j == 0) {
 		/* no luck; try to free some space and keep trying */
-		for (i = 0; o == NULL && i < cache_param->nuke_limit; i++) {
+		for (i = 0; j == 0 && i < cache_param->nuke_limit; i++) {
 			if (EXP_NukeOne(bo->vsl, bo->stats, stv->lru) == -1)
 				break;
-			o = stv->allocobj(stv, oc, ltot);
+			j = stv->allocobj(stv, oc, ltot);
 		}
 	}
 
-	if (o == NULL)
+	if (j == 0)
 		return (0);
 
 	bo->stats->n_object++;
 	VSLb(bo->vsl, SLT_Storage, "%s %s",
 	    oc->stobj->stevedore->name, oc->stobj->stevedore->ident);
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	CHECK_OBJ_NOTNULL(o->objstore, STORAGE_MAGIC);
-	AN(stv->methods);
 	return (1);
 }
 

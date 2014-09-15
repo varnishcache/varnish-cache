@@ -61,7 +61,7 @@ typedef void storage_open_f(const struct stevedore *);
 typedef struct storage *storage_alloc_f(struct stevedore *, size_t size);
 typedef void storage_trim_f(struct storage *, size_t size, int move_ok);
 typedef void storage_free_f(struct storage *);
-typedef struct object *storage_allocobj_f(struct stevedore *, struct objcore *,
+typedef int storage_allocobj_f(struct stevedore *, struct objcore *,
     unsigned ltot);
 typedef void storage_close_f(const struct stevedore *);
 typedef void storage_signal_close_f(const struct stevedore *);

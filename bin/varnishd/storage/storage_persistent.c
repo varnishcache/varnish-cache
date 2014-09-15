@@ -504,7 +504,7 @@ smp_allocx(struct stevedore *st, size_t min_size, size_t max_size,
  * Allocate an object
  */
 
-static struct object *
+static int
 smp_allocobj(struct stevedore *stv, struct objcore *oc, unsigned ltot)
 {
 	struct object *o;
@@ -519,13 +519,13 @@ smp_allocobj(struct stevedore *stv, struct objcore *oc, unsigned ltot)
 
 	/* Don't entertain already dead objects */
 	if ((oc->exp.ttl + oc->exp.grace + oc->exp.keep) <= 0.)
-		return (NULL);
+		return (0);
 
 	ltot = IRNUP(sc, ltot);
 
 	st = smp_allocx(stv, ltot, ltot, &so, &objidx, &sg);
 	if (st == NULL)
-		return (NULL);
+		return (0);
 
 	assert(st->space >= ltot);
 
@@ -550,7 +550,7 @@ smp_allocobj(struct stevedore *stv, struct objcore *oc, unsigned ltot)
 	smp_init_oc(oc, sg, objidx);
 
 	Lck_Unlock(&sc->mtx);
-	return (o);
+	return (1);
 }
 
 /*--------------------------------------------------------------------
