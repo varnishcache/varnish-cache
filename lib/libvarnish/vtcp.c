@@ -61,6 +61,8 @@ vtcp_sa_to_ascii(const void *sa, socklen_t l, char *abuf, unsigned alen,
 {
 	int i;
 
+	assert(abuf == NULL || alen > 0);
+	assert(pbuf == NULL || plen > 0);
 	i = getnameinfo(sa, l, abuf, alen, pbuf, plen,
 	   NI_NUMERICHOST | NI_NUMERICSERV);
 	if (i) {
@@ -69,12 +71,14 @@ vtcp_sa_to_ascii(const void *sa, socklen_t l, char *abuf, unsigned alen,
 		 * for the gai_strerror in the bufffer :-(
 		 */
 		printf("getnameinfo = %d %s\n", i, gai_strerror(i));
-		(void)snprintf(abuf, alen, "Conversion");
-		(void)snprintf(pbuf, plen, "Failed");
+		if (abuf != NULL)
+			(void)snprintf(abuf, alen, "Conversion");
+		if (pbuf != NULL)
+			(void)snprintf(pbuf, plen, "Failed");
 		return;
 	}
 	/* XXX dirty hack for v4-to-v6 mapped addresses */
-	if (strncmp(abuf, "::ffff:", 7) == 0) {
+	if (abuf != NULL && strncmp(abuf, "::ffff:", 7) == 0) {
 		for (i = 0; abuf[i + 7]; ++i)
 			abuf[i] = abuf[i + 7];
 		abuf[i] = '\0';
