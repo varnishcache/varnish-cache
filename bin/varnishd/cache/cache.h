@@ -1216,7 +1216,8 @@ void RFC2616_Weaken_Etag(struct http *hp);
 void RFC2616_Vary_AE(struct http *hp);
 
 /* stevedore.c */
-int STV_NewObject(struct busyobj *, const char *hint, unsigned len);
+int STV_NewObject(struct objcore *, struct vsl_log *, struct dstat *,
+    const char *hint, unsigned len);
 struct storage *STV_alloc(struct stevedore *, size_t size);
 void STV_trim(struct storage *st, size_t size, int move_ok);
 void STV_free(struct storage *st);

@@ -66,7 +66,8 @@ vbf_allocobj(struct busyobj *bo, unsigned l)
 
 	bo->storage_hint = NULL;
 
-	if (STV_NewObject(bo, storage_hint, l))
+	if (STV_NewObject(bo->fetch_objcore, bo->vsl, bo->stats,
+	    storage_hint, l))
 		return (1);
 
 	if (storage_hint != NULL && !strcmp(storage_hint, TRANSIENT_STORAGE))
@@ -81,7 +82,8 @@ vbf_allocobj(struct busyobj *bo, unsigned l)
 		oc->exp.ttl = cache_param->shortlived;
 	oc->exp.grace = 0.0;
 	oc->exp.keep = 0.0;
-	return (STV_NewObject(bo, TRANSIENT_STORAGE, l));
+	return (STV_NewObject(bo->fetch_objcore, bo->vsl, bo->stats,
+	    TRANSIENT_STORAGE, l));
 }
 
 /*--------------------------------------------------------------------
