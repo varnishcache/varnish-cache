@@ -304,6 +304,10 @@ VRT_IP_string(const struct vrt_ctx *ctx, VCL_IP ip)
 	if (ip == NULL)
 		return (NULL);
 	len = WS_Reserve(ctx->ws, 0);
+	if (len == 0) {
+		WS_Release(ctx->ws, 0);
+		return (NULL);
+	}
 	p = ctx->ws->f;
 	VTCP_name(ip, p, len, NULL, 0);
 	WS_Release(ctx->ws, strlen(p) + 1);
