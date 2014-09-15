@@ -104,7 +104,6 @@ enum {
 struct SHA256Context;
 struct VSC_C_lck;
 struct ban;
-struct body;
 struct busyobj;
 struct cli;
 struct cli_proto;
@@ -391,7 +390,7 @@ struct lru {
 struct storeobj {
 	unsigned		magic;
 #define STOREOBJ_MAGIC		0x6faed850
-	const struct stevedore	*stevedore;
+	struct stevedore	*stevedore;
 	void			*priv;
 	uintptr_t		priv2;
 };
@@ -534,12 +533,6 @@ struct busyobj {
 
 VTAILQ_HEAD(storagehead, storage);
 
-struct body {
-	struct stevedore	*stevedore;
-	struct storagehead	list;
-	ssize_t			len;
-};
-
 enum obj_attr {
 #define OBJ_ATTR(U, l)	OA_##U,
 #include "tbl/obj_attr.h"
@@ -564,7 +557,9 @@ struct object {
 	char			oa_gzipbits[24];
 	char			oa_lastmodified[8];
 
-	struct body		body[1];
+	// struct stevedore	*stevedore;
+	struct storagehead	list;
+	ssize_t			len;
 
 	struct storage		*esidata;
 };

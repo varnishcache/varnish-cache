@@ -116,7 +116,7 @@ ObjIter(struct objiter *oi, void **p, ssize_t *l)
 
 	if (oi->bo == NULL) {
 		if (oi->st == NULL)
-			oi->st = VTAILQ_FIRST(&oi->obj->body->list);
+			oi->st = VTAILQ_FIRST(&oi->obj->list);
 		else
 			oi->st = VTAILQ_NEXT(oi->st, list);
 		while(oi->st != NULL && oi->st->len == 0)
@@ -140,8 +140,8 @@ ObjIter(struct objiter *oi, void **p, ssize_t *l)
 				return (OIS_ERROR);
 		}
 		Lck_Lock(&oi->bo->mtx);
-		AZ(VTAILQ_EMPTY(&oi->obj->body->list));
-		VTAILQ_FOREACH(oi->st, &oi->obj->body->list, list) {
+		AZ(VTAILQ_EMPTY(&oi->obj->list));
+		VTAILQ_FOREACH(oi->st, &oi->obj->list, list) {
 			if (oi->st->len > ol) {
 				*p = oi->st->ptr + ol;
 				*l = oi->st->len - ol;
@@ -231,7 +231,7 @@ ObjGetSpace(struct objcore *oc, struct vsl_log *vsl, struct dstat *ds,
 	o = obj_getobj(oc, ds);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
-	st = VTAILQ_LAST(&o->body->list, storagehead);
+	st = VTAILQ_LAST(&o->list, storagehead);
 	if (st != NULL && st->len < st->space) {
 		*sz = st->space - st->len;
 		*ptr = st->ptr + st->len;
@@ -239,17 +239,17 @@ ObjGetSpace(struct objcore *oc, struct vsl_log *vsl, struct dstat *ds,
 		return (1);
 	}
 
-	st = objallocwithnuke(o->body->stevedore, vsl, ds, *sz);
+	st = objallocwithnuke(oc->stobj->stevedore, vsl, ds, *sz);
 	if (st == NULL)
 		return (0);
 
 	if (oc->busyobj != NULL) {
 		CHECK_OBJ_NOTNULL(oc->busyobj, BUSYOBJ_MAGIC);
 		Lck_Lock(&oc->busyobj->mtx);
-		VTAILQ_INSERT_TAIL(&o->body->list, st, list);
+		VTAILQ_INSERT_TAIL(&o->list, st, list);
 		Lck_Unlock(&oc->busyobj->mtx);
 	} else {
-		VTAILQ_INSERT_TAIL(&o->body->list, st, list);
+		VTAILQ_INSERT_TAIL(&o->list, st, list);
 	}
 	*sz = st->space - st->len;
 	assert (*sz > 0);
@@ -269,11 +269,11 @@ ObjExtend(struct objcore *oc, struct dstat *ds, ssize_t l)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	o = obj_getobj(oc, ds);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	st = VTAILQ_LAST(&o->body->list, storagehead);
+	st = VTAILQ_LAST(&o->list, storagehead);
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	assert(st->len + l <= st->space);
 	st->len += l;
-	o->body->len += l;
+	o->len += l;
 }
 
 /*--------------------------------------------------------------------
@@ -292,11 +292,11 @@ ObjTrimStore(struct objcore *oc, struct dstat *ds)
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 	o = obj_getobj(oc, ds);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	st = VTAILQ_LAST(&o->body->list, storagehead);
+	st = VTAILQ_LAST(&o->list, storagehead);
 	if (st == NULL)
 		return;
 	if (st->len == 0) {
-		VTAILQ_REMOVE(&o->body->list, st, list);
+		VTAILQ_REMOVE(&o->list, st, list);
 		STV_free(st);
 	} else if (st->len < st->space) {
 		STV_trim(st, st->len, 1);
@@ -322,9 +322,9 @@ ObjSlim(struct objcore *oc, struct dstat *ds)
 		STV_free(o->esidata);
 		o->esidata = NULL;
 	}
-	VTAILQ_FOREACH_SAFE(st, &o->body->list, list, stn) {
+	VTAILQ_FOREACH_SAFE(st, &o->list, list, stn) {
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-		VTAILQ_REMOVE(&o->body->list, st, list);
+		VTAILQ_REMOVE(&o->list, st, list);
 		STV_free(st);
 	}
 }
@@ -418,7 +418,7 @@ ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr, ssize_t len,
 	st = o->objstore;
 	switch (attr) {
 	case OA_ESIDATA:
-		o->esidata = objallocwithnuke(o->body->stevedore, vc->vsl,
+		o->esidata = objallocwithnuke(vc->oc->stobj->stevedore, vc->vsl,
 		    vc->stats, len);
 		if (o->esidata == NULL)
 			return (NULL);
@@ -498,7 +498,7 @@ ObjGetLen(struct objcore *oc, struct dstat *ds)
 
 	o = obj_getobj(oc, ds);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	return (o->body->len);
+	return (o->len);
 }
 
 /*--------------------------------------------------------------------

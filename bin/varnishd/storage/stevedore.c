@@ -202,11 +202,10 @@ STV_MkObject(struct stevedore *stv, struct objcore *oc, void *ptr)
 	memset(o, 0, sizeof *o);
 	o->magic = OBJECT_MAGIC;
 
-	VTAILQ_INIT(&o->body->list);
+	VTAILQ_INIT(&o->list);
 
 	oc->stobj->magic = STOREOBJ_MAGIC;
 	oc->stobj->stevedore = stv;
-	o->body->stevedore = stv;
 	AN(stv->methods);
 	oc->stobj->priv = o;
 	oc->stobj->priv2 = (uintptr_t)stv;
