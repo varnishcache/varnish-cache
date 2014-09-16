@@ -1100,7 +1100,7 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 			EXP_Rearm(oc, oc->exp.t_origin, 0, 0, 0); // XXX fake now
 			VSC_C_main->bans_lurker_obj_killed++;
 		}
-		(void)HSH_DerefObjCore(wrk->stats, &oc);
+		(void)HSH_DerefObjCore(wrk, &oc);
 	}
 }
 

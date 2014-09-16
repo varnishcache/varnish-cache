@@ -340,7 +340,7 @@ EXP_NukeOne(struct worker *wrk, struct lru *lru)
 	exp_mail_it(oc);
 
 	VSLb(wrk->vsl, SLT_ExpKill, "LRU x=%u", ObjGetXID(oc, wrk->stats));
-	(void)HSH_DerefObjCore(wrk->stats, &oc);
+	(void)HSH_DerefObjCore(wrk, &oc);
 	return (1);
 }
 
@@ -385,7 +385,7 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 			binheap_delete(ep->heap, oc->timer_idx);
 		}
 		assert(oc->timer_idx == BINHEAP_NOIDX);
-		(void)HSH_DerefObjCore(ep->wrk->stats, &oc);
+		(void)HSH_DerefObjCore(ep->wrk, &oc);
 		return;
 	}
 
@@ -465,7 +465,7 @@ exp_expire(struct exp_priv *ep, double now)
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired x=%u t=%.0f",
 	    ObjGetXID(oc, ep->wrk->stats),
 	    EXP_Ttl(NULL, &oc->exp) - now);
-	(void)HSH_DerefObjCore(ep->wrk->stats, &oc);
+	(void)HSH_DerefObjCore(ep->wrk, &oc);
 	return (0);
 }
 

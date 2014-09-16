@@ -177,13 +177,13 @@ HSH_Cleanup(struct worker *wrk)
 }
 
 void
-HSH_DeleteObjHead(struct dstat *ds, struct objhead *oh)
+HSH_DeleteObjHead(struct worker *wrk, struct objhead *oh)
 {
 
 	AZ(oh->refcnt);
 	assert(VTAILQ_EMPTY(&oh->objcs));
 	Lck_Delete(&oh->mtx);
-	ds->n_objecthead--;
+	wrk->stats->n_objecthead--;
 	FREE_OBJ(oh);
 }
 
@@ -437,7 +437,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			if (oh->hits < LONG_MAX)
 				oh->hits++;
 			Lck_Unlock(&oh->mtx);
-			assert(HSH_DerefObjHead(wrk->stats, &oh));
+			assert(HSH_DerefObjHead(wrk, &oh));
 			*ocp = oc;
 			return (HSH_HIT);
 		}
@@ -465,7 +465,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			oh->hits++;
 		Lck_Unlock(&oh->mtx);
 		if (retval == HSH_EXP)
-			assert(HSH_DerefObjHead(wrk->stats, &oh));
+			assert(HSH_DerefObjHead(wrk, &oh));
 		*ocp = exp_oc;
 		return (retval);
 	}
@@ -513,12 +513,13 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
  */
 
 static void
-hsh_rush(struct dstat *ds, struct objhead *oh)
+hsh_rush(struct worker *wrk, struct objhead *oh)
 {
 	unsigned u;
 	struct req *req;
 	struct waitinglist *wl;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_AssertHeld(&oh->mtx);
 	wl = oh->waitinglist;
@@ -528,7 +529,7 @@ hsh_rush(struct dstat *ds, struct objhead *oh)
 		if (req == NULL)
 			break;
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-		ds->busy_wakeup++;
+		wrk->stats->busy_wakeup++;
 		AZ(req->wrk);
 		VTAILQ_REMOVE(&wl->list, req, w_list);
 		DSL(DBG_WAITINGLIST, req->vsl->wid, "off waiting list");
@@ -543,7 +544,7 @@ hsh_rush(struct dstat *ds, struct objhead *oh)
 	if (VTAILQ_EMPTY(&wl->list)) {
 		oh->waitinglist = NULL;
 		FREE_OBJ(wl);
-		ds->n_waitinglist--;
+		wrk->stats->n_waitinglist--;
 	}
 }
 
@@ -602,7 +603,7 @@ double keep)
 			oc = ocp[n];
 			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 			EXP_Rearm(oc, now, ttl, grace, keep);
-			(void)HSH_DerefObjCore(wrk->stats, &oc);
+			(void)HSH_DerefObjCore(wrk, &oc);
 		}
 	} while (more);
 	WS_Release(wrk->aws, 0);
@@ -658,10 +659,11 @@ HSH_Complete(struct objcore *oc)
  */
 
 void
-HSH_Unbusy(struct dstat *ds, struct objcore *oc)
+HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 {
 	struct objhead *oh;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	oh = oc->objhead;
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
@@ -685,7 +687,7 @@ HSH_Unbusy(struct dstat *ds, struct objcore *oc)
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, list);
 	oc->flags &= ~OC_F_BUSY;
 	if (oh->waitinglist != NULL)
-		hsh_rush(ds, oh);
+		hsh_rush(wrk, oh);
 	Lck_Unlock(&oh->mtx);
 }
 
@@ -737,17 +739,17 @@ HSH_RefBusy(const struct objcore *oc)
  */
 
 int
-HSH_DerefObjCore(struct dstat *ds, struct objcore **ocp)
+HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
 {
 	struct objcore *oc;
 	struct objhead *oh;
 	unsigned r;
 
 	AN(ocp);
-	AN(ds);
 	oc = *ocp;
 	*ocp = NULL;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	assert(oc->refcnt > 0);
 
@@ -760,7 +762,7 @@ HSH_DerefObjCore(struct dstat *ds, struct objcore **ocp)
 	if (!r)
 		VTAILQ_REMOVE(&oh->objcs, oc, list);
 	if (oh->waitinglist != NULL)
-		hsh_rush(ds, oh);
+		hsh_rush(wrk, oh);
 	Lck_Unlock(&oh->mtx);
 	if (r != 0)
 		return (r);
@@ -769,23 +771,23 @@ HSH_DerefObjCore(struct dstat *ds, struct objcore **ocp)
 	AZ(oc->ban);
 
 	if (oc->stobj->stevedore != NULL)
-		ObjFreeObj(oc, ds);
+		ObjFreeObj(oc, wrk->stats);
 	FREE_OBJ(oc);
 
-	ds->n_objectcore--;
+	wrk->stats->n_objectcore--;
 	/* Drop our ref on the objhead */
 	assert(oh->refcnt > 0);
-	(void)HSH_DerefObjHead(ds, &oh);
+	(void)HSH_DerefObjHead(wrk, &oh);
 	return (0);
 }
 
 int
-HSH_DerefObjHead(struct dstat *ds, struct objhead **poh)
+HSH_DerefObjHead(struct worker *wrk, struct objhead **poh)
 {
 	struct objhead *oh;
 	int r;
 
-	AN(ds);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(poh);
 	oh = *poh;
 	*poh = NULL;
@@ -802,7 +804,7 @@ HSH_DerefObjHead(struct dstat *ds, struct objhead **poh)
 	assert(oh->refcnt > 0);
 	r = hash->deref(oh);
 	if (!r)
-		HSH_DeleteObjHead(ds, oh);
+		HSH_DeleteObjHead(wrk, oh);
 	return (r);
 }
 

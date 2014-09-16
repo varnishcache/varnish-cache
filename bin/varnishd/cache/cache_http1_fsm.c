@@ -378,7 +378,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 	 */
 	if (req->req_step == R_STP_LOOKUP && VTCP_check_hup(sp->fd)) {
 		AN(req->hash_objhead);
-		(void)HSH_DerefObjHead(wrk->stats, &req->hash_objhead);
+		(void)HSH_DerefObjHead(wrk, &req->hash_objhead);
 		AZ(req->hash_objhead);
 		SES_Close(sp, SC_REM_CLOSE);
 		sdr = http1_cleanup(sp, wrk, req);

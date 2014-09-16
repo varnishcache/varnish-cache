@@ -610,7 +610,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	assert (bo->state == BOS_REQ_DONE);
 
 	if (bo->do_stream) {
-		HSH_Unbusy(wrk->stats, bo->fetch_objcore);
+		HSH_Unbusy(wrk, bo->fetch_objcore);
 		VBO_setstate(bo, BOS_STREAM);
 	}
 
@@ -637,7 +637,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		assert(bo->state == BOS_STREAM);
 	else {
 		assert(bo->state == BOS_REQ_DONE);
-		HSH_Unbusy(wrk->stats, bo->fetch_objcore);
+		HSH_Unbusy(wrk, bo->fetch_objcore);
 	}
 
 	/* Recycle the backend connection before setting BOS_FINISHED to
@@ -679,7 +679,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	AZ(ObjCopyAttr(bo->vfc, bo->ims_oc, OA_GZIPBITS));
 
 	if (bo->do_stream) {
-		HSH_Unbusy(wrk->stats, bo->fetch_objcore);
+		HSH_Unbusy(wrk, bo->fetch_objcore);
 		VBO_setstate(bo, BOS_STREAM);
 	}
 
@@ -706,7 +706,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		return (F_STP_FAIL);
 
 	if (!bo->do_stream)
-		HSH_Unbusy(wrk->stats, bo->fetch_objcore);
+		HSH_Unbusy(wrk, bo->fetch_objcore);
 
 	assert(al == ol);
 	assert(ObjGetLen(bo->fetch_objcore, bo->wrk->stats) == al);
@@ -799,7 +799,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	VSB_delete(bo->synth_body);
 	bo->synth_body = NULL;
 
-	HSH_Unbusy(wrk->stats, bo->fetch_objcore);
+	HSH_Unbusy(wrk, bo->fetch_objcore);
 	VBO_setstate(bo, BOS_FINISHED);
 	return (F_STP_DONE);
 }
@@ -894,7 +894,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	AZ(bo->fetch_objcore->busyobj);
 
 	if (bo->ims_oc != NULL)
-		(void)HSH_DerefObjCore(wrk->stats, &bo->ims_oc);
+		(void)HSH_DerefObjCore(wrk, &bo->ims_oc);
 
 
 	wrk->vsl = NULL;

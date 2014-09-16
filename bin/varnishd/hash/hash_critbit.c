@@ -363,7 +363,7 @@ hcb_cleaner(struct worker *wrk, void *priv)
 		}
 		VTAILQ_FOREACH_SAFE(oh, &dead_h, hoh_list, oh2) {
 			VTAILQ_REMOVE(&dead_h, oh, hoh_list);
-			HSH_DeleteObjHead(wrk->stats, oh);
+			HSH_DeleteObjHead(wrk, oh);
 		}
 		Lck_Lock(&hcb_mtx);
 		VSTAILQ_CONCAT(&dead_y, &cool_y);
