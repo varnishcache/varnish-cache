@@ -66,7 +66,8 @@ static int end_of_file = 0;
 
 struct top {
 	uint8_t			tag;
-	char			*rec_data;
+	const char		*rec_data;
+	char			*rec_buf;
 	int			clen;
 	unsigned		hash;
 	VRB_ENTRY(top)		e_order;
@@ -147,7 +148,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			t.hash = u;
 			t.tag = tag;
 			t.clen = len;
-			t.rec_data = (char *)VSL_CDATA(tr->c->rec.ptr);
+			t.rec_data = VSL_CDATA(tr->c->rec.ptr);
 
 			AZ(pthread_mutex_lock(&mtx));
 			tp = VRB_FIND(t_key, &h_key, &t);
@@ -164,7 +165,8 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				tp->count = 1.0;
 				tp->clen = len;
 				tp->tag = tag;
-				tp->rec_data = strdup(t.rec_data);
+				tp->rec_buf = strdup(t.rec_data);
+				tp->rec_data = tp->rec_buf;
 				AN(tp->rec_data);
 				VRB_INSERT(t_key, &h_key, tp);
 				VRB_INSERT(t_order, &h_order, tp);
@@ -221,7 +223,7 @@ update(int p)
 		if (tp->count * 10 < t || l > LINES * 10) {
 			VRB_REMOVE(t_key, &h_key, tp);
 			VRB_REMOVE(t_order, &h_order, tp);
-			free(tp->rec_data);
+			free(tp->rec_buf);
 			free(tp);
 			ntop--;
 		}
