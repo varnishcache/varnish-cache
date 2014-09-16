@@ -729,7 +729,7 @@ struct busyobj *VBO_GetBusyObj(struct worker *, const struct req *);
 void VBO_DerefBusyObj(struct worker *wrk, struct busyobj **busyobj);
 void VBO_Free(struct busyobj **vbo);
 void VBO_extend(struct busyobj *, ssize_t);
-ssize_t VBO_waitlen(struct busyobj *, struct dstat *, ssize_t l);
+ssize_t VBO_waitlen(struct worker *, struct busyobj *, ssize_t l);
 void VBO_setstate(struct busyobj *bo, enum busyobj_state_e next);
 void VBO_waitstate(struct busyobj *bo, enum busyobj_state_e want);
 
@@ -978,14 +978,14 @@ enum objiter_status {
 	OIS_STREAM,
 	OIS_ERROR,
 };
-void *ObjIterBegin(struct objcore *, struct worker *);
+void *ObjIterBegin(struct worker *, struct objcore *);
 enum objiter_status ObjIter(struct objcore *, void *, void **, ssize_t *);
 void ObjIterEnd(struct objcore *, void **);
-int ObjGetSpace(struct objcore *, struct worker *, ssize_t *sz, uint8_t **ptr);
+int ObjGetSpace(struct worker *, struct objcore *, ssize_t *sz, uint8_t **ptr);
 void ObjExtend(struct objcore *, struct dstat *, ssize_t l);
-void ObjTrimStore(struct objcore *, struct dstat *);
-unsigned ObjGetXID(struct objcore *, struct dstat *);
-uint64_t ObjGetLen(struct objcore *oc, struct dstat *ds);
+void ObjTrimStore(struct worker *, struct objcore *);
+unsigned ObjGetXID(struct worker *, struct objcore *);
+uint64_t ObjGetLen(struct worker *, struct objcore *oc);
 void ObjUpdateMeta(struct objcore *, struct dstat *);
 void ObjFreeObj(struct objcore *, struct dstat *);
 void ObjSlim(struct objcore *oc, struct dstat *ds);

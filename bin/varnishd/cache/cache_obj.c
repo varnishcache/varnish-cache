@@ -94,14 +94,14 @@ struct objiter {
 };
 
 void *
-ObjIterBegin(struct objcore *oc, struct worker *wrk)
+ObjIterBegin(struct worker *wrk, struct objcore *oc)
 {
 	struct objiter *oi;
 	struct object *obj;
 	const struct storeobj_methods *om = obj_getmethods(oc);
 
 	if (om->objiterbegin != NULL)
-		return (om->objiterbegin(oc, wrk));
+		return (om->objiterbegin(wrk, oc));
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	obj = obj_getobj(oc, wrk->stats);
@@ -152,7 +152,7 @@ ObjIter(struct objcore *oc, void *oix, void **p, ssize_t *l)
 	} else {
 		ol = oi->len;
 		while (1) {
-			nl = VBO_waitlen(oi->bo, oi->wrk->stats, ol);
+			nl = VBO_waitlen(oi->wrk, oi->bo, ol);
 			if (nl != ol)
 				break;
 			if (oi->bo->state == BOS_FINISHED)
@@ -251,14 +251,14 @@ objallocwithnuke(struct stevedore *stv, struct worker *wrk, size_t size)
  */
 
 int
-ObjGetSpace(struct objcore *oc, struct worker *wrk, ssize_t *sz, uint8_t **ptr)
+ObjGetSpace(struct worker *wrk, struct objcore *oc, ssize_t *sz, uint8_t **ptr)
 {
 	struct object *o;
 	struct storage *st;
 	const struct storeobj_methods *om = obj_getmethods(oc);
 
 	if (om->objgetspace != NULL)
-		return (om->objgetspace(oc, wrk, sz, ptr));
+		return (om->objgetspace(wrk, oc, sz, ptr));
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -330,15 +330,15 @@ ObjExtend(struct objcore *oc, struct dstat *ds, ssize_t l)
  */
 
 uint64_t
-ObjGetLen(struct objcore *oc, struct dstat *ds)
+ObjGetLen(struct worker *wrk, struct objcore *oc)
 {
 	struct object *o;
 	const struct storeobj_methods *om = obj_getmethods(oc);
 
 	if (om->objgetlen != NULL)
-		return (om->objgetlen(oc, ds));
+		return (om->objgetlen(wrk, oc));
 
-	o = obj_getobj(oc, ds);
+	o = obj_getobj(oc, wrk->stats);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	return (o->len);
 }
@@ -352,7 +352,7 @@ ObjGetLen(struct objcore *oc, struct dstat *ds)
  */
 
 void
-ObjTrimStore(struct objcore *oc, struct dstat *ds)
+ObjTrimStore(struct worker *wrk, struct objcore *oc)
 {
 	const struct stevedore *stv;
 	struct storage *st;
@@ -360,15 +360,15 @@ ObjTrimStore(struct objcore *oc, struct dstat *ds)
 	const struct storeobj_methods *om = obj_getmethods(oc);
 
 	if (om->objtrimstore != NULL) {
-		om->objtrimstore(oc, ds);
+		om->objtrimstore(wrk, oc);
 		return;
 	}
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(ds);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	stv = oc->stobj->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
-	o = obj_getobj(oc, ds);
+	o = obj_getobj(oc, wrk->stats);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st = VTAILQ_LAST(&o->list, storagehead);
 	if (st == NULL)
@@ -601,11 +601,11 @@ ObjCopyAttr(const struct vfp_ctx *vc, struct objcore *ocs, enum obj_attr attr)
 }
 
 unsigned
-ObjGetXID(struct objcore *oc, struct dstat *ds)
+ObjGetXID(struct worker *wrk, struct objcore *oc)
 {
 	uint32_t u;
 
-	AZ(ObjGetU32(oc, ds, OA_VXID, &u));
+	AZ(ObjGetU32(oc, wrk->stats, OA_VXID, &u));
 	return (u);
 }
 

@@ -97,9 +97,9 @@ v1d_dorange(struct req *req, struct busyobj *bo, const char *r)
 
 	/* We must snapshot the length if we're streaming from the backend */
 	if (bo != NULL)
-		len = VBO_waitlen(bo, req->wrk->stats, -1);
+		len = VBO_waitlen(req->wrk, bo, -1);
 	else
-		len = ObjGetLen(req->objcore, req->wrk->stats);
+		len = ObjGetLen(req->wrk, req->objcore);
 
 	if (strncmp(r, "bytes=", 6))
 		return;
@@ -174,7 +174,7 @@ v1d_WriteDirObj(struct req *req)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	oi = ObjIterBegin(req->objcore, req->wrk);
+	oi = ObjIterBegin(req->wrk, req->objcore);
 	XXXAN(oi);
 
 	do {
@@ -252,11 +252,11 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		/* XXX: Not happy with this convoluted test */
 		req->res_mode |= RES_LEN;
 		if (!(req->objcore->flags & OC_F_PASS) ||
-		    ObjGetLen(req->objcore, req->wrk->stats) != 0) {
+		    ObjGetLen(req->wrk, req->objcore) != 0) {
 			http_Unset(req->resp, H_Content_Length);
 			http_PrintfHeader(req->resp,
 			    "Content-Length: %ju", (uintmax_t)ObjGetLen(
-			    req->objcore, req->wrk->stats));
+			    req->wrk, req->objcore));
 		}
 	}
 
@@ -340,7 +340,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		l = -1;
 		while (req->objcore->busyobj) {
 			assert(bo != NULL);
-			l = VBO_waitlen(bo, req->wrk->stats, l);
+			l = VBO_waitlen(req->wrk, bo, l);
 		}
 		ESI_DeliverChild(req);
 	} else if (req->res_mode & RES_GUNZIP ||

@@ -497,7 +497,7 @@ vbf_fetch_body_helper(struct busyobj *bo)
 	VFP_Close(vfc);
 
 	if (!bo->do_stream)
-		ObjTrimStore(vfc->oc, bo->wrk->stats);
+		ObjTrimStore(bo->wrk, vfc->oc);
 }
 
 /*--------------------------------------------------------------------
@@ -684,8 +684,8 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	}
 
 	al = 0;
-	ol = ObjGetLen(bo->ims_oc, bo->wrk->stats);
-	oi = ObjIterBegin(bo->ims_oc, wrk);
+	ol = ObjGetLen(bo->wrk, bo->ims_oc);
+	oi = ObjIterBegin(wrk, bo->ims_oc);
 	do {
 		ois = ObjIter(bo->ims_oc, oi, &sp, &sl);
 		while (sl > 0) {
@@ -709,7 +709,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		HSH_Unbusy(wrk, bo->fetch_objcore);
 
 	assert(al == ol);
-	assert(ObjGetLen(bo->fetch_objcore, bo->wrk->stats) == al);
+	assert(ObjGetLen(bo->wrk, bo->fetch_objcore) == al);
 	EXP_Rearm(bo->ims_oc, bo->ims_oc->exp.t_origin, 0, 0, 0);
 
 	/* Recycle the backend connection before setting BOS_FINISHED to
@@ -889,7 +889,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 		AZ(bo->fetch_objcore->flags & OC_F_FAILED);
 		HSH_Complete(bo->fetch_objcore);
 		VSLb(bo->vsl, SLT_Length, "%ju",
-		    (uintmax_t)ObjGetLen(bo->fetch_objcore, bo->wrk->stats));
+		    (uintmax_t)ObjGetLen(bo->wrk, bo->fetch_objcore));
 	}
 	AZ(bo->fetch_objcore->busyobj);
 

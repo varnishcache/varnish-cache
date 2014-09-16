@@ -62,7 +62,7 @@ VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv)
 
 	switch(req->req_body_status) {
 	case REQ_BODY_CACHED:
-		oi = ObjIterBegin(req->body_oc, req->wrk);
+		oi = ObjIterBegin(req->wrk, req->body_oc);
 		AN(oi);
 		do {
 			ois = ObjIter(req->body_oc, oi, &p, &l);

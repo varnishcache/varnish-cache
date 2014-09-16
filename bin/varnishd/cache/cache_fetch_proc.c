@@ -89,7 +89,7 @@ VFP_GetStorage(struct vfp_ctx *vc, ssize_t *sz, uint8_t **ptr)
 	if (l == 0)
 		l = cache_param->fetch_chunksize;
 	*sz = l;
-	if (!ObjGetSpace(vc->oc, vc->wrk, sz, ptr)) {
+	if (!ObjGetSpace(vc->wrk, vc->oc, sz, ptr)) {
 		*sz = 0;
 		*ptr = NULL;
 		return (VFP_Error(vc, "Could not get storage"));

@@ -309,7 +309,7 @@ ESI_Deliver(struct req *req)
 		AZ(dl);
 	}
 
-	oi = ObjIterBegin(req->objcore, req->wrk);
+	oi = ObjIterBegin(req->wrk, req->objcore);
 	ois = ObjIter(req->objcore, oi, &sp, &sl);
 	assert(ois != OIS_ERROR);
 	pp = sp;
@@ -485,7 +485,7 @@ ESI_DeliverChild(struct req *req)
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
 	if (!ObjCheckFlag(req->objcore, req->wrk->stats, OF_GZIPED)) {
-		oi = ObjIterBegin(req->objcore, req->wrk);
+		oi = ObjIterBegin(req->wrk, req->objcore);
 		do {
 			ois = ObjIter(req->objcore, oi, &sp, &sl);
 			if (sl > 0)
@@ -506,7 +506,7 @@ ESI_DeliverChild(struct req *req)
 	start = vbe64dec(p);
 	last = vbe64dec(p + 8);
 	stop = vbe64dec(p + 16);
-	olen = ObjGetLen(req->objcore, req->wrk->stats);
+	olen = ObjGetLen(req->wrk, req->objcore);
 	assert(start > 0 && start < olen * 8);
 	assert(last > 0 && last < olen * 8);
 	assert(stop > 0 && stop < olen * 8);
@@ -525,7 +525,7 @@ ESI_DeliverChild(struct req *req)
 	dbits = (void*)WS_Alloc(req->ws, 8);
 	AN(dbits);
 	ll = 0;
-	oi = ObjIterBegin(req->objcore, req->wrk);
+	oi = ObjIterBegin(req->wrk, req->objcore);
 	do {
 		ois = ObjIter(req->objcore, oi, &sp, &sl);
 		pp = sp;

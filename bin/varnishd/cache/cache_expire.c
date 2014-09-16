@@ -339,7 +339,7 @@ EXP_NukeOne(struct worker *wrk, struct lru *lru)
 
 	exp_mail_it(oc);
 
-	VSLb(wrk->vsl, SLT_ExpKill, "LRU x=%u", ObjGetXID(oc, wrk->stats));
+	VSLb(wrk->vsl, SLT_ExpKill, "LRU x=%u", ObjGetXID(wrk, oc));
 	(void)HSH_DerefObjCore(wrk, &oc);
 	return (1);
 }
@@ -463,8 +463,7 @@ exp_expire(struct exp_priv *ep, double now)
 
 	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired x=%u t=%.0f",
-	    ObjGetXID(oc, ep->wrk->stats),
-	    EXP_Ttl(NULL, &oc->exp) - now);
+	    ObjGetXID(ep->wrk, oc), EXP_Ttl(NULL, &oc->exp) - now);
 	(void)HSH_DerefObjCore(ep->wrk, &oc);
 	return (0);
 }

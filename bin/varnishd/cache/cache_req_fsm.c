@@ -109,7 +109,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	if (req->wrk->stats->cache_hit)
 		http_PrintfHeader(req->resp,
 		    "X-Varnish: %u %u", VXID(req->vsl->wid),
-		    ObjGetXID(req->objcore, wrk->stats));
+		    ObjGetXID(wrk, req->objcore));
 	else
 		http_PrintfHeader(req->resp,
 		    "X-Varnish: %u", VXID(req->vsl->wid));
@@ -399,7 +399,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		/* Found a hit-for-pass */
 		VSLb(req->vsl, SLT_Debug, "XXXX HIT-FOR-PASS");
 		VSLb(req->vsl, SLT_HitPass, "%u",
-		    ObjGetXID(req->objcore, wrk->stats));
+		    ObjGetXID(wrk, req->objcore));
 		AZ(boc);
 		(void)HSH_DerefObjCore(wrk, &req->objcore);
 		wrk->stats->cache_hitpass++;
@@ -407,8 +407,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		return (REQ_FSM_MORE);
 	}
 
-	VSLb(req->vsl, SLT_Hit, "%u",
-	    ObjGetXID(req->objcore, wrk->stats));
+	VSLb(req->vsl, SLT_Hit, "%u", ObjGetXID(wrk, req->objcore));
 
 	VCL_hit_method(req->vcl, wrk, req, NULL, req->http->ws);
 

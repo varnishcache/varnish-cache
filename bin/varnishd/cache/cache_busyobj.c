@@ -230,20 +230,20 @@ VBO_extend(struct busyobj *bo, ssize_t l)
 }
 
 ssize_t
-VBO_waitlen(struct busyobj *bo, struct dstat *ds, ssize_t l)
+VBO_waitlen(struct worker *wrk, struct busyobj *bo, ssize_t l)
 {
 	ssize_t rv;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	AN(ds);
 	Lck_Lock(&bo->mtx);
-	rv = ObjGetLen(bo->fetch_objcore, ds);
+	rv = ObjGetLen(wrk, bo->fetch_objcore);
 	while (1) {
 		assert(l <= rv || bo->state == BOS_FAILED);
 		if (rv > l || bo->state >= BOS_FINISHED)
 			break;
 		(void)Lck_CondWait(&bo->cond, &bo->mtx, 0);
-		rv = ObjGetLen(bo->fetch_objcore, ds);
+		rv = ObjGetLen(wrk, bo->fetch_objcore);
 	}
 	Lck_Unlock(&bo->mtx);
 	return (rv);
