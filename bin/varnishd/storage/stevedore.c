@@ -49,11 +49,12 @@ static const struct stevedore * volatile stv_next;
  */
 
 static struct object * __match_proto__(getobj_f)
-default_oc_getobj(struct objcore *oc, struct dstat *ds)
+default_oc_getobj(struct worker *wrk, struct objcore *oc)
 {
 	struct object *o;
 
-	(void)ds;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	if (oc->stobj->priv == NULL)
 		return (NULL);
 	CAST_OBJ_NOTNULL(o, oc->stobj->priv, OBJECT_MAGIC);
@@ -61,13 +62,13 @@ default_oc_getobj(struct objcore *oc, struct dstat *ds)
 }
 
 static void __match_proto__(freeobj_f)
-default_oc_freeobj(struct objcore *oc, struct dstat *ds)
+default_oc_freeobj(struct worker *wrk, struct objcore *oc)
 {
 	struct object *o;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(ds);
-	ObjSlim(oc, ds);
+	ObjSlim(wrk, oc);
 	CAST_OBJ_NOTNULL(o, oc->stobj->priv, OBJECT_MAGIC);
 	oc->stobj->priv = NULL;
 	oc->stobj->stevedore = NULL;
@@ -75,7 +76,7 @@ default_oc_freeobj(struct objcore *oc, struct dstat *ds)
 
 	STV_free(o->objstore);
 
-	ds->n_object--;
+	wrk->stats->n_object--;
 }
 
 static struct lru * __match_proto__(getlru_f)

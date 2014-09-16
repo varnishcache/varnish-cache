@@ -820,10 +820,10 @@ HTTP_Decode(struct http *to, uint8_t *fm)
 /*--------------------------------------------------------------------*/
 
 uint16_t
-HTTP_GetStatusPack(struct objcore *oc, struct dstat *ds)
+HTTP_GetStatusPack(struct worker *wrk, struct objcore *oc)
 {
 	const char *ptr;
-	ptr = ObjGetattr(oc, ds, OA_HEADERS, NULL);
+	ptr = ObjGetattr(wrk, oc, OA_HEADERS, NULL);
 	AN(ptr);
 
 	return(vbe16dec(ptr + 2));
@@ -832,16 +832,16 @@ HTTP_GetStatusPack(struct objcore *oc, struct dstat *ds)
 /*--------------------------------------------------------------------*/
 
 const char *
-HTTP_GetHdrPack(struct objcore *oc, struct dstat *ds, const char *hdr)
+HTTP_GetHdrPack(struct worker *wrk, struct objcore *oc, const char *hdr)
 {
 	const char *ptr;
 	unsigned l;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(ds);
 	AN(hdr);
 
-	ptr = ObjGetattr(oc, ds, OA_HEADERS, NULL);
+	ptr = ObjGetattr(wrk, oc, OA_HEADERS, NULL);
 	AN(ptr);
 
 	/* Skip nhd and status */
@@ -883,17 +883,17 @@ HTTP_GetHdrPack(struct objcore *oc, struct dstat *ds, const char *hdr)
  */
 
 void
-HTTP_Merge(struct objcore *oc, struct dstat *ds, struct http *to)
+HTTP_Merge(struct worker *wrk, struct objcore *oc, struct http *to)
 {
 	const char *ptr;
 	unsigned u;
 	const char *p;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
-	AN(ds);
 
-	ptr = ObjGetattr(oc, ds, OA_HEADERS, NULL);
+	ptr = ObjGetattr(wrk, oc, OA_HEADERS, NULL);
 	AN(ptr);
 
 	to->status = vbe16dec(ptr + 2);

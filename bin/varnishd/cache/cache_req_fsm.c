@@ -103,7 +103,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
 	AZ(HTTP_Decode(req->resp,
-	    ObjGetattr(req->objcore, req->wrk->stats, OA_HEADERS, NULL)));
+	    ObjGetattr(req->wrk, req->objcore, OA_HEADERS, NULL)));
 	http_ForceField(req->resp, HTTP_HDR_PROTO, "HTTP/1.1");
 
 	if (req->wrk->stats->cache_hit)
@@ -127,7 +127,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	http_SetHeader(req->resp, "Via: 1.1 varnish-v4");
 
 	if (cache_param->http_gzip_support &&
-	    ObjCheckFlag(req->objcore, req->wrk->stats, OF_GZIPED) &&
+	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
 	    !RFC2616_Req_Gzip(req->http))
 		RFC2616_Weaken_Etag(req->resp);
 
@@ -188,7 +188,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		 */
 		while (req->objcore->busyobj != NULL)
 			(void)usleep(100000);
-		ObjSlim(req->objcore, wrk->stats);
+		ObjSlim(wrk, req->objcore);
 	}
 
 	assert(WRW_IsReleased(wrk));

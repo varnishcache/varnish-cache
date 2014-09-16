@@ -898,9 +898,9 @@ void http_Unset(struct http *hp, const char *hdr);
 unsigned http_CountHdr(const struct http *hp, const char *hdr);
 void http_CollectHdr(struct http *hp, const char *hdr);
 void http_VSL_log(const struct http *hp);
-void HTTP_Merge(struct objcore *, struct dstat *, struct http *to);
-uint16_t HTTP_GetStatusPack(struct objcore *oc, struct dstat *ds);
-const char *HTTP_GetHdrPack(struct objcore *, struct dstat *,
+void HTTP_Merge(struct worker *, struct objcore *, struct http *to);
+uint16_t HTTP_GetStatusPack(struct worker *, struct objcore *oc);
+const char *HTTP_GetHdrPack(struct worker *, struct objcore *,
     const char *hdr);
 enum sess_close http_DoConnection(struct http *hp);
 
@@ -982,15 +982,15 @@ void *ObjIterBegin(struct worker *, struct objcore *);
 enum objiter_status ObjIter(struct objcore *, void *, void **, ssize_t *);
 void ObjIterEnd(struct objcore *, void **);
 int ObjGetSpace(struct worker *, struct objcore *, ssize_t *sz, uint8_t **ptr);
-void ObjExtend(struct objcore *, struct dstat *, ssize_t l);
+void ObjExtend(struct worker *, struct objcore *, ssize_t l);
 void ObjTrimStore(struct worker *, struct objcore *);
 unsigned ObjGetXID(struct worker *, struct objcore *);
 uint64_t ObjGetLen(struct worker *, struct objcore *oc);
-void ObjUpdateMeta(struct objcore *, struct dstat *);
-void ObjFreeObj(struct objcore *, struct dstat *);
-void ObjSlim(struct objcore *oc, struct dstat *ds);
+void ObjUpdateMeta(struct worker *, struct objcore *);
+void ObjFreeObj(struct worker *, struct objcore *);
+void ObjSlim(struct worker *, struct objcore *oc);
 struct lru *ObjGetLRU(const struct objcore *);
-void *ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
+void *ObjGetattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
     ssize_t *len);
 void *ObjSetattr(const struct vfp_ctx *, enum obj_attr attr, ssize_t len,
     const void *);
@@ -1000,11 +1000,11 @@ int ObjSetDouble(const struct vfp_ctx*, enum obj_attr, double);
 int ObjSetU32(const struct vfp_ctx *, enum obj_attr, uint32_t);
 int ObjSetU64(const struct vfp_ctx *, enum obj_attr, uint64_t);
 
-int ObjGetDouble(struct objcore *, struct dstat *, enum obj_attr, double *);
-int ObjGetU32(struct objcore *, struct dstat *, enum obj_attr, uint32_t *);
-int ObjGetU64(struct objcore *, struct dstat *, enum obj_attr, uint64_t *);
+int ObjGetDouble(struct worker *, struct objcore *, enum obj_attr, double *);
+int ObjGetU32(struct worker *, struct objcore *, enum obj_attr, uint32_t *);
+int ObjGetU64(struct worker *, struct objcore *, enum obj_attr, uint64_t *);
 
-int ObjCheckFlag(struct objcore *oc, struct dstat *ds, enum obj_flags of);
+int ObjCheckFlag(struct worker *, struct objcore *oc, enum obj_flags of);
 void ObjSetFlag(const struct vfp_ctx *vc, enum obj_flags of, int val);
 
 /* cache_panic.c */

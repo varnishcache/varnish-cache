@@ -174,7 +174,7 @@ VRB_Free(struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	if (req->body_oc != NULL) {
-		ObjFreeObj(req->body_oc, req->wrk->stats);
+		ObjFreeObj(req->wrk,req->body_oc);
 		FREE_OBJ(req->body_oc);
 		req->body_oc = NULL;
 	}
@@ -254,7 +254,7 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 			req->acct.req_bodybytes += l;
 			if (yet >= l)
 				yet -= l;
-			ObjExtend(req->body_oc, req->wrk->stats, l);
+			ObjExtend(req->wrk, req->body_oc, l);
 		}
 
 	} while (vfps == VFP_OK);

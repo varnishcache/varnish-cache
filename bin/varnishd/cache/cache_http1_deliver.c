@@ -239,7 +239,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 
 	req->res_mode = 0;
 
-	if (!req->disable_esi && ObjGetattr(req->objcore, req->wrk->stats,
+	if (!req->disable_esi && ObjGetattr(req->wrk, req->objcore,
 	    OA_ESIDATA, NULL) != NULL) {
 		/* In ESI mode, we can't know the aggregate length */
 		req->res_mode &= ~RES_LEN;
@@ -267,7 +267,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	}
 
 	if (cache_param->http_gzip_support &&
-	    ObjCheckFlag(req->objcore, req->wrk->stats, OF_GZIPED) &&
+	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
 	    !RFC2616_Req_Gzip(req->http)) {
 		/*
 		 * We don't know what it uncompresses to
@@ -346,7 +346,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	} else if (req->res_mode & RES_GUNZIP ||
 	    (req->res_mode & RES_ESI_CHILD &&
 	    !req->gzip_resp &&
-	    ObjCheckFlag(req->objcore, req->wrk->stats, OF_GZIPED))) {
+	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED))) {
 		VDP_push(req, VDP_gunzip);
 		req->vgz = VGZ_NewUngzip(req->vsl, "U D -");
 		AZ(VGZ_WrwInit(req->vgz));

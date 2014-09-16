@@ -424,7 +424,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		if (BAN_CheckObject(wrk, oc, req))
 			continue;
 
-		vary = ObjGetattr(oc, wrk->stats, OA_VARY, NULL);
+		vary = ObjGetattr(wrk, oc, OA_VARY, NULL);
 
 		if (vary != NULL && !VRY_Match(req, vary))
 			continue;
@@ -771,7 +771,7 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
 	AZ(oc->ban);
 
 	if (oc->stobj->stevedore != NULL)
-		ObjFreeObj(oc, wrk->stats);
+		ObjFreeObj(wrk, oc);
 	FREE_OBJ(oc);
 
 	wrk->stats->n_objectcore--;

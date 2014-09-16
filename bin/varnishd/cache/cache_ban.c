@@ -827,7 +827,7 @@ BAN_Compile(void)
  */
 
 static int
-ban_evaluate(const uint8_t *bs, struct objcore *oc, struct dstat *ds,
+ban_evaluate(struct worker *wrk, const uint8_t *bs, struct objcore *oc,
     const struct http *reqhttp, unsigned *tests)
 {
 	struct ban_test bt;
@@ -852,10 +852,10 @@ ban_evaluate(const uint8_t *bs, struct objcore *oc, struct dstat *ds,
 			arg1 = p;
 			break;
 		case BANS_ARG_OBJHTTP:
-			arg1 = HTTP_GetHdrPack(oc, ds, bt.arg1_spec);
+			arg1 = HTTP_GetHdrPack(wrk, oc, bt.arg1_spec);
 			break;
 		case BANS_ARG_OBJSTATUS:
-			arg1 = HTTP_GetHdrPack(oc, ds, ":status");
+			arg1 = HTTP_GetHdrPack(wrk, oc, ":status");
 			break;
 		default:
 			WRONG("Wrong BAN_ARG code");
@@ -939,7 +939,7 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 		CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
 		if (b->flags & BANS_FLAG_COMPLETED)
 			continue;
-		if (ban_evaluate(b->spec, oc, wrk->stats, req->http, &tests))
+		if (ban_evaluate(wrk, b->spec, oc, req->http, &tests))
 			break;
 	}
 
@@ -958,7 +958,7 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 
 	if (b == oc->ban) {	/* not banned */
 		oc->ban = b0;
-		ObjUpdateMeta(oc, wrk->stats);
+		ObjUpdateMeta(wrk, oc);
 		return (0);
 	} else {
 		oc->ban = NULL;
@@ -1087,7 +1087,7 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 				continue;
 			}
 			tests = 0;
-			i = ban_evaluate(bl->spec, oc, wrk->stats, NULL, &tests);
+			i = ban_evaluate(wrk, bl->spec, oc, NULL, &tests);
 			VSC_C_main->bans_lurker_tested++;
 			VSC_C_main->bans_lurker_tests_tested += tests;
 			if (i)

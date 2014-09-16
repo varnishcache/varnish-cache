@@ -81,15 +81,15 @@ struct object {
 
 /* Methods on objcore ------------------------------------------------*/
 
-typedef void updatemeta_f(struct objcore *oc, struct dstat *);
-typedef void freeobj_f(struct objcore *oc, struct dstat *);
+typedef void updatemeta_f(struct worker *, struct objcore *oc);
+typedef void freeobj_f(struct worker *, struct objcore *oc);
 typedef struct lru *getlru_f(const struct objcore *oc);
 
 /*
  * Stevedores can either be simple, and provide just this method:
  */
 
-typedef struct object *getobj_f(struct objcore *oc, struct dstat *);
+typedef struct object *getobj_f(struct worker *, struct objcore *oc);
 
 /*
  * Or the can be "complex" and provide all of these methods:
@@ -101,10 +101,10 @@ typedef enum objiter_status objiter_f(struct objcore *oc, void *oix,
 typedef void objiterend_f(struct objcore *, void **oix);
 typedef int objgetspace_f(struct worker *, struct objcore *,
      ssize_t *sz, uint8_t **ptr);
-typedef void objextend_f(struct objcore *, struct dstat *ds, ssize_t l);
+typedef void objextend_f(struct worker *, struct objcore *, ssize_t l);
 typedef void objtrimstore_f(struct worker *, struct objcore *);
-typedef void objslim_f(struct objcore *, struct dstat *ds);
-typedef void *objgetattr_f(struct objcore *, struct dstat *ds,
+typedef void objslim_f(struct worker *, struct objcore *);
+typedef void *objgetattr_f(struct worker *, struct objcore *,
     enum obj_attr attr, ssize_t *len);
 typedef void *objsetattr_f(const struct vfp_ctx *, enum obj_attr attr,
     ssize_t len, const void *ptr);

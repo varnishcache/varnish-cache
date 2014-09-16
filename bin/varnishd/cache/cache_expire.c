@@ -335,7 +335,7 @@ EXP_NukeOne(struct worker *wrk, struct lru *lru)
 	}
 
 	/* XXX: We could grab and return one storage segment to our caller */
-	ObjSlim(oc, wrk->stats);
+	ObjSlim(wrk, oc);
 
 	exp_mail_it(oc);
 
@@ -391,7 +391,7 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 
 	if (flags & OC_EF_MOVE) {
 		oc->timer_when = EXP_When(&oc->exp);
-		ObjUpdateMeta(oc, ep->wrk->stats);
+		ObjUpdateMeta(ep->wrk, oc);
 	}
 
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_When p=%p e=%.9f f=0x%x", oc,

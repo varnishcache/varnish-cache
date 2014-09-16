@@ -148,7 +148,7 @@ VRT_r_obj_status(const struct vrt_ctx *ctx)
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
 
-	return (HTTP_GetStatusPack(ctx->req->objcore, ctx->req->wrk->stats));
+	return (HTTP_GetStatusPack(ctx->req->wrk, ctx->req->objcore));
 }
 
 const char *
@@ -158,8 +158,7 @@ VRT_r_obj_proto(const struct vrt_ctx *ctx)
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
 
-	return (HTTP_GetHdrPack(ctx->req->objcore,
-	    ctx->req->wrk->stats, ":proto"));
+	return (HTTP_GetHdrPack(ctx->req->wrk, ctx->req->objcore, ":proto"));
 }
 
 const char *
@@ -169,8 +168,7 @@ VRT_r_obj_reason(const struct vrt_ctx *ctx)
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
 
-	return (HTTP_GetHdrPack(ctx->req->objcore,
-	    ctx->req->wrk->stats, ":reason"));
+	return (HTTP_GetHdrPack(ctx->req->wrk, ctx->req->objcore, ":reason"));
 }
 
 /*--------------------------------------------------------------------

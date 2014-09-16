@@ -388,7 +388,7 @@ smp_loaded_st(const struct smp_sc *sc, const struct smp_seg *sg,
  */
 
 static struct object *
-smp_oc_getobj(struct objcore *oc, struct dstat *ds)
+smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 {
 	struct object *o;
 	struct smp_seg *sg;
@@ -400,9 +400,8 @@ smp_oc_getobj(struct objcore *oc, struct dstat *ds)
 	/* Some calls are direct, but they should match anyway */
 	assert(oc->stobj->stevedore->methods->getobj == smp_oc_getobj);
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	if (ds == NULL)
-		AZ(oc->stobj->priv2 & NEED_FIXUP);
 
 	CAST_OBJ_NOTNULL(sg, oc->stobj->priv, SMP_SEG_MAGIC);
 	so = smp_find_so(sg, oc->stobj->priv2);
@@ -424,7 +423,6 @@ smp_oc_getobj(struct objcore *oc, struct dstat *ds)
 	if (!(oc->stobj->priv2 & NEED_FIXUP))
 		return (o);
 
-	AN(ds);
 	Lck_Lock(&sg->sc->mtx);
 	/* Check again, we might have raced. */
 	if (oc->stobj->priv2 & NEED_FIXUP) {
@@ -447,8 +445,8 @@ smp_oc_getobj(struct objcore *oc, struct dstat *ds)
 		}
 
 		sg->nfixed++;
-		ds->n_object++;
-		ds->n_vampireobject--;
+		wrk->stats->n_object++;
+		wrk->stats->n_vampireobject--;
 		oc->stobj->priv2 &= ~NEED_FIXUP;
 	}
 	Lck_Unlock(&sg->sc->mtx);
@@ -457,14 +455,15 @@ smp_oc_getobj(struct objcore *oc, struct dstat *ds)
 }
 
 static void
-smp_oc_updatemeta(struct objcore *oc, struct dstat *ds)
+smp_oc_updatemeta(struct worker *wrk, struct objcore *oc)
 {
 	struct object *o;
 	struct smp_seg *sg;
 	struct smp_object *so;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	o = smp_oc_getobj(oc, ds);
+	o = smp_oc_getobj(wrk, oc);
 	AN(o);
 
 	CAST_OBJ_NOTNULL(sg, oc->stobj->priv, SMP_SEG_MAGIC);
@@ -484,12 +483,12 @@ smp_oc_updatemeta(struct objcore *oc, struct dstat *ds)
 }
 
 static void __match_proto__(freeobj_f)
-smp_oc_freeobj(struct objcore *oc, struct dstat *ds)
+smp_oc_freeobj(struct worker *wrk, struct objcore *oc)
 {
 	struct smp_seg *sg;
 	struct smp_object *so;
 
-	AN(ds);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	CAST_OBJ_NOTNULL(sg, oc->stobj->priv, SMP_SEG_MAGIC);
@@ -502,11 +501,11 @@ smp_oc_freeobj(struct objcore *oc, struct dstat *ds)
 	assert(sg->nobj > 0);
 	sg->nobj--;
 	if (oc->stobj->priv2 & NEED_FIXUP) {
-		ds->n_vampireobject--;
+		wrk->stats->n_vampireobject--;
 	} else {
 		assert(sg->nfixed > 0);
 		sg->nfixed--;
-		ds->n_object--;
+		wrk->stats->n_object--;
 	}
 
 	Lck_Unlock(&sg->sc->mtx);

@@ -58,13 +58,14 @@ obj_getmethods(const struct objcore *oc)
 }
 
 static struct object *
-obj_getobj(struct objcore *oc, struct dstat *ds)
+obj_getobj(struct worker *wrk, struct objcore *oc)
 {
 	const struct storeobj_methods *m = obj_getmethods(oc);
 
-	AN(ds);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(m->getobj);
-	return (m->getobj(oc, ds));
+	return (m->getobj(wrk, oc));
 }
 
 /*====================================================================
@@ -104,7 +105,7 @@ ObjIterBegin(struct worker *wrk, struct objcore *oc)
 		return (om->objiterbegin(wrk, oc));
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	obj = obj_getobj(oc, wrk->stats);
+	obj = obj_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	ALLOC_OBJ(oi, OBJITER_MAGIC);
 	if (oi == NULL)
@@ -265,7 +266,7 @@ ObjGetSpace(struct worker *wrk, struct objcore *oc, ssize_t *sz, uint8_t **ptr)
 	AN(sz);
 	AN(ptr);
 	assert(*sz > 0);
-	o = obj_getobj(oc, wrk->stats);
+	o = obj_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
 	st = VTAILQ_LAST(&o->list, storagehead);
@@ -302,19 +303,20 @@ ObjGetSpace(struct worker *wrk, struct objcore *oc, ssize_t *sz, uint8_t **ptr)
  */
 
 void
-ObjExtend(struct objcore *oc, struct dstat *ds, ssize_t l)
+ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l)
 {
 	struct object *o;
 	struct storage *st;
 	const struct storeobj_methods *om = obj_getmethods(oc);
 
 	if (om->objextend != NULL) {
-		om->objextend(oc, ds, l);
+		om->objextend(wrk, oc, l);
 		return;
 	}
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	o = obj_getobj(oc, ds);
+	o = obj_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st = VTAILQ_LAST(&o->list, storagehead);
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
@@ -338,7 +340,7 @@ ObjGetLen(struct worker *wrk, struct objcore *oc)
 	if (om->objgetlen != NULL)
 		return (om->objgetlen(wrk, oc));
 
-	o = obj_getobj(oc, wrk->stats);
+	o = obj_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	return (o->len);
 }
@@ -368,7 +370,7 @@ ObjTrimStore(struct worker *wrk, struct objcore *oc)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	stv = oc->stobj->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
-	o = obj_getobj(oc, wrk->stats);
+	o = obj_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st = VTAILQ_LAST(&o->list, storagehead);
 	if (st == NULL)
@@ -389,20 +391,20 @@ ObjTrimStore(struct worker *wrk, struct objcore *oc)
  */
 
 void
-ObjSlim(struct objcore *oc, struct dstat *ds)
+ObjSlim(struct worker *wrk, struct objcore *oc)
 {
 	struct object *o;
 	struct storage *st, *stn;
 	const struct storeobj_methods *om = obj_getmethods(oc);
 
 	if (om->objslim != NULL) {
-		om->objslim(oc, ds);
+		om->objslim(wrk, oc);
 		return;
 	}
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(ds);
-	o = obj_getobj(oc, ds);
+	o = obj_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
 	if (o->esidata != NULL) {
@@ -419,25 +421,25 @@ ObjSlim(struct objcore *oc, struct dstat *ds)
 /*====================================================================
  */
 void
-ObjUpdateMeta(struct objcore *oc, struct dstat *ds)
+ObjUpdateMeta(struct worker *wrk, struct objcore *oc)
 {
 	const struct storeobj_methods *m = obj_getmethods(oc);
 
 	if (m->updatemeta != NULL)
-		m->updatemeta(oc, ds);
+		m->updatemeta(wrk, oc);
 }
 
 /*====================================================================
  */
 void
-ObjFreeObj(struct objcore *oc, struct dstat *ds)
+ObjFreeObj(struct worker *wrk, struct objcore *oc)
 {
 	const struct storeobj_methods *m = obj_getmethods(oc);
 
-	AN(ds);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(m->freeobj);
-	m->freeobj(oc, ds);
+	m->freeobj(wrk, oc);
 }
 
 /*====================================================================
@@ -459,7 +461,7 @@ ObjGetLRU(const struct objcore *oc)
  */
 
 void *
-ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
+ObjGetattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
    ssize_t *len)
 {
 	struct object *o;
@@ -467,13 +469,13 @@ ObjGetattr(struct objcore *oc, struct dstat *ds, enum obj_attr attr,
 	const struct storeobj_methods *om = obj_getmethods(oc);
 
 	if (om->objgetattr != NULL)
-		return (om->objgetattr(oc, ds, attr, len));
+		return (om->objgetattr(wrk, oc, attr, len));
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(ds);
 	if (len == NULL)
 		len = &dummy;
-	o = obj_getobj(oc, ds);
+	o = obj_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	switch (attr) {
 	case OA_ESIDATA:
@@ -527,7 +529,7 @@ ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr, ssize_t len,
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->oc, OBJCORE_MAGIC);
-	o = obj_getobj(vc->oc, vc->wrk->stats);
+	o = obj_getobj(vc->wrk, vc->oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st = o->objstore;
 	switch (attr) {
@@ -590,7 +592,7 @@ ObjCopyAttr(const struct vfp_ctx *vc, struct objcore *ocs, enum obj_attr attr)
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 
-	vps = ObjGetattr(ocs, vc->wrk->stats, attr, &l);
+	vps = ObjGetattr(vc->wrk, ocs, attr, &l);
 	// XXX: later we want to have zero-length OA's too
 	if (vps == NULL || l <= 0)
 		return (-1);
@@ -605,7 +607,7 @@ ObjGetXID(struct worker *wrk, struct objcore *oc)
 {
 	uint32_t u;
 
-	AZ(ObjGetU32(oc, wrk->stats, OA_VXID, &u));
+	AZ(ObjGetU32(wrk, oc, OA_VXID, &u));
 	return (u);
 }
 
@@ -633,14 +635,14 @@ ObjSetDouble(const struct vfp_ctx *vc, enum obj_attr a, double t)
 }
 
 int
-ObjGetDouble(struct objcore *oc, struct dstat *ds, enum obj_attr a, double *d)
+ObjGetDouble(struct worker *wrk, struct objcore *oc, enum obj_attr a, double *d)
 {
 	void *vp;
 	uint64_t u;
 	ssize_t l;
 
 	assert(sizeof *d == sizeof u);
-	vp = ObjGetattr(oc, ds, a, &l);
+	vp = ObjGetattr(wrk, oc, a, &l);
 	if (vp == NULL)
 		return (-1);
 	if (d != NULL) {
@@ -667,12 +669,12 @@ ObjSetU64(const struct vfp_ctx *vc, enum obj_attr a, uint64_t t)
 }
 
 int
-ObjGetU64(struct objcore *oc, struct dstat *ds, enum obj_attr a, uint64_t *d)
+ObjGetU64(struct worker *wrk, struct objcore *oc, enum obj_attr a, uint64_t *d)
 {
 	void *vp;
 	ssize_t l;
 
-	vp = ObjGetattr(oc, ds, a, &l);
+	vp = ObjGetattr(wrk, oc, a, &l);
 	if (vp == NULL || l != sizeof *d)
 		return (-1);
 	if (d != NULL)
@@ -693,12 +695,12 @@ ObjSetU32(const struct vfp_ctx *vc, enum obj_attr a, uint32_t t)
 }
 
 int
-ObjGetU32(struct objcore *oc, struct dstat *ds, enum obj_attr a, uint32_t *d)
+ObjGetU32(struct worker *wrk, struct objcore *oc, enum obj_attr a, uint32_t *d)
 {
 	void *vp;
 	ssize_t l;
 
-	vp = ObjGetattr(oc, ds, a, &l);
+	vp = ObjGetattr(wrk, oc, a, &l);
 	if (vp == NULL || l != sizeof *d)
 		return (-1);
 	if (d != NULL)
@@ -710,11 +712,11 @@ ObjGetU32(struct objcore *oc, struct dstat *ds, enum obj_attr a, uint32_t *d)
  */
 
 int
-ObjCheckFlag(struct objcore *oc, struct dstat *ds, enum obj_flags of)
+ObjCheckFlag(struct worker *wrk, struct objcore *oc, enum obj_flags of)
 {
 	uint8_t *fp;
 
-	fp = ObjGetattr(oc, ds, OA_FLAGS, NULL);
+	fp = ObjGetattr(wrk, oc, OA_FLAGS, NULL);
 	AN(fp);
 	return ((*fp) & of);
 }

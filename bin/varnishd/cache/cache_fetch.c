@@ -190,12 +190,11 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 	}
 
 	if (bo->ims_oc != NULL) {
-		q = HTTP_GetHdrPack(bo->ims_oc, bo->wrk->stats,
-		    H_Last_Modified);
+		q = HTTP_GetHdrPack(bo->wrk, bo->ims_oc, H_Last_Modified);
 		if (q != NULL)
 			http_PrintfHeader(bo->bereq0,
 			    "If-Modified-Since: %s", q);
-		q = HTTP_GetHdrPack(bo->ims_oc, bo->wrk->stats, H_ETag);
+		q = HTTP_GetHdrPack(bo->wrk, bo->ims_oc, H_ETag);
 		if (q != NULL)
 			http_PrintfHeader(bo->bereq0,
 			    "If-None-Match: %s", q);
@@ -381,7 +380,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	AZ(bo->do_esi);
 
 	if (bo->ims_oc != NULL && http_IsStatus(bo->beresp, 304)) {
-		if (ObjCheckFlag(bo->ims_oc, bo->wrk->stats, OF_CHGGZIP)) {
+		if (ObjCheckFlag(bo->wrk, bo->ims_oc, OF_CHGGZIP)) {
 			/*
 			 * If we changed the gzip status of the object
 			 * the stored Content_Encoding controls we
@@ -390,7 +389,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 			http_Unset(bo->beresp, H_Content_Encoding);
 			RFC2616_Weaken_Etag(bo->beresp);
 		}
-		HTTP_Merge(bo->ims_oc, bo->wrk->stats, bo->beresp);
+		HTTP_Merge(bo->wrk, bo->ims_oc, bo->beresp);
 		assert(http_IsStatus(bo->beresp, 200));
 		do_ims = 1;
 	} else
@@ -626,7 +625,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->vfc->failed && !bo->do_stream) {
 		assert(bo->state < BOS_STREAM);
 		if (bo->fetch_objcore != NULL)
-			ObjFreeObj(bo->fetch_objcore, bo->wrk->stats);
+			ObjFreeObj(bo->wrk, bo->fetch_objcore);
 		return (F_STP_ERROR);
 	}
 
@@ -672,7 +671,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 
 	AZ(vbf_beresp2obj(bo));
 
-	if (ObjGetattr(bo->ims_oc, bo->wrk->stats, OA_ESIDATA, NULL) != NULL)
+	if (ObjGetattr(bo->wrk, bo->ims_oc, OA_ESIDATA, NULL) != NULL)
 		AZ(ObjCopyAttr(bo->vfc, bo->ims_oc, OA_ESIDATA));
 
 	AZ(ObjCopyAttr(bo->vfc, bo->ims_oc, OA_FLAGS));
@@ -949,8 +948,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	bo->fetch_objcore = oc;
 
 	AZ(bo->ims_oc);
-	if (oldoc != NULL &&
-	    ObjCheckFlag(oldoc, req->wrk->stats, OF_IMSCAND)) {
+	if (oldoc != NULL && ObjCheckFlag(req->wrk, oldoc, OF_IMSCAND)) {
 		assert(oldoc->refcnt > 0);
 		HSH_Ref(oldoc);
 		bo->ims_oc = oldoc;
