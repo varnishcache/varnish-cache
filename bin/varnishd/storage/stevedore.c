@@ -245,7 +245,7 @@ stv_default_allocobj(struct stevedore *stv, struct objcore *oc, unsigned ltot)
  */
 
 int
-STV_NewObject(struct objcore *oc, struct vsl_log *vsl, struct dstat *stats,
+STV_NewObject(struct objcore *oc, struct worker *wrk,
     const char *hint, unsigned wsl)
 {
 	struct stevedore *stv, *stv0;
@@ -253,19 +253,18 @@ STV_NewObject(struct objcore *oc, struct vsl_log *vsl, struct dstat *stats,
 	int i, j;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(vsl);
-	AN(stats);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	assert(wsl > 0);
 	wsl = PRNDUP(wsl);
 
 	ltot = sizeof(struct object) + wsl;
 
-	stv = stv0 = stv_pick_stevedore(vsl, &hint);
+	stv = stv0 = stv_pick_stevedore(wrk->vsl, &hint);
 	AN(stv->allocobj);
 	j = stv->allocobj(stv, oc, ltot);
 	if (j == 0 && hint == NULL) {
 		do {
-			stv = stv_pick_stevedore(vsl, &hint);
+			stv = stv_pick_stevedore(wrk->vsl, &hint);
 			AN(stv->allocobj);
 			j = stv->allocobj(stv, oc, ltot);
 		} while (j == 0 && stv != stv0);
@@ -273,7 +272,7 @@ STV_NewObject(struct objcore *oc, struct vsl_log *vsl, struct dstat *stats,
 	if (j == 0) {
 		/* no luck; try to free some space and keep trying */
 		for (i = 0; j == 0 && i < cache_param->nuke_limit; i++) {
-			if (EXP_NukeOne(vsl, stats, stv->lru) == -1)
+			if (EXP_NukeOne(wrk, stv->lru) == -1)
 				break;
 			j = stv->allocobj(stv, oc, ltot);
 		}
@@ -282,8 +281,8 @@ STV_NewObject(struct objcore *oc, struct vsl_log *vsl, struct dstat *stats,
 	if (j == 0)
 		return (0);
 
-	stats->n_object++;
-	VSLb(vsl, SLT_Storage, "%s %s",
+	wrk->stats->n_object++;
+	VSLb(wrk->vsl, SLT_Storage, "%s %s",
 	    oc->stobj->stevedore->name, oc->stobj->stevedore->ident);
 	return (1);
 }

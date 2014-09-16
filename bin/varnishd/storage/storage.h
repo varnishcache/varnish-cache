@@ -99,8 +99,8 @@ typedef void *objiterbegin_f(struct objcore *oc, struct worker *wrk);
 typedef enum objiter_status objiter_f(struct objcore *oc, void *oix,
     void **p, ssize_t *l);
 typedef void objiterend_f(struct objcore *oc, void **oix);
-typedef int objgetspace_f(struct objcore *oc, struct vsl_log *vsl,
-    struct dstat *ds, ssize_t *sz, uint8_t **ptr);
+typedef int objgetspace_f(struct objcore *oc, struct worker *,
+     ssize_t *sz, uint8_t **ptr);
 typedef void objextend_f(struct objcore *oc, struct dstat *ds, ssize_t l);
 typedef void objtrimstore_f(struct objcore *oc, struct dstat *ds);
 typedef void objslim_f(struct objcore *oc, struct dstat *ds);

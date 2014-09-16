@@ -213,8 +213,7 @@ ObjIterEnd(struct objcore *oc, void **oix)
  */
 
 static struct storage *
-objallocwithnuke(struct stevedore *stv, struct vsl_log *vsl, struct dstat *ds,
-    size_t size)
+objallocwithnuke(struct stevedore *stv, struct worker *wrk, size_t size)
 {
 	struct storage *st = NULL;
 	unsigned fail;
@@ -235,7 +234,7 @@ objallocwithnuke(struct stevedore *stv, struct vsl_log *vsl, struct dstat *ds,
 
 		/* no luck; try to free some space and keep trying */
 		if (fail < cache_param->nuke_limit &&
-		    EXP_NukeOne(vsl, ds, stv->lru) == -1)
+		    EXP_NukeOne(wrk, stv->lru) == -1)
 			break;
 	}
 	CHECK_OBJ_ORNULL(st, STORAGE_MAGIC);
@@ -252,22 +251,21 @@ objallocwithnuke(struct stevedore *stv, struct vsl_log *vsl, struct dstat *ds,
  */
 
 int
-ObjGetSpace(struct objcore *oc, struct vsl_log *vsl, struct dstat *ds,
-    ssize_t *sz, uint8_t **ptr)
+ObjGetSpace(struct objcore *oc, struct worker *wrk, ssize_t *sz, uint8_t **ptr)
 {
 	struct object *o;
 	struct storage *st;
 	const struct storeobj_methods *om = obj_getmethods(oc);
 
 	if (om->objgetspace != NULL)
-		return (om->objgetspace(oc, vsl, ds, sz, ptr));
+		return (om->objgetspace(oc, wrk, sz, ptr));
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AN(ds);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(sz);
 	AN(ptr);
 	assert(*sz > 0);
-	o = obj_getobj(oc, ds);
+	o = obj_getobj(oc, wrk->stats);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
 	st = VTAILQ_LAST(&o->list, storagehead);
@@ -278,7 +276,7 @@ ObjGetSpace(struct objcore *oc, struct vsl_log *vsl, struct dstat *ds,
 		return (1);
 	}
 
-	st = objallocwithnuke(oc->stobj->stevedore, vsl, ds, *sz);
+	st = objallocwithnuke(oc->stobj->stevedore, wrk, *sz);
 	if (st == NULL)
 		return (0);
 
@@ -529,13 +527,13 @@ ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr, ssize_t len,
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->oc, OBJCORE_MAGIC);
-	o = obj_getobj(vc->oc, vc->stats);
+	o = obj_getobj(vc->oc, vc->wrk->stats);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st = o->objstore;
 	switch (attr) {
 	case OA_ESIDATA:
-		o->esidata = objallocwithnuke(vc->oc->stobj->stevedore, vc->vsl,
-		    vc->stats, len);
+		o->esidata = objallocwithnuke(vc->oc->stobj->stevedore,
+		    vc->wrk, len);
 		if (o->esidata == NULL)
 			return (NULL);
 		o->esidata->len = len;
@@ -592,7 +590,7 @@ ObjCopyAttr(const struct vfp_ctx *vc, struct objcore *ocs, enum obj_attr attr)
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 
-	vps = ObjGetattr(ocs, vc->stats, attr, &l);
+	vps = ObjGetattr(ocs, vc->wrk->stats, attr, &l);
 	// XXX: later we want to have zero-length OA's too
 	if (vps == NULL || l <= 0)
 		return (-1);

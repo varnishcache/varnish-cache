@@ -60,7 +60,7 @@ VFP_Error(struct vfp_ctx *vc, const char *fmt, ...)
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	if (!vc->failed) {
 		va_start(ap, fmt);
-		VSLbv(vc->vsl, SLT_FetchError, fmt, ap);
+		VSLbv(vc->wrk->vsl, SLT_FetchError, fmt, ap);
 		va_end(ap);
 		vc->failed = 1;
 	}
@@ -77,19 +77,19 @@ VFP_GetStorage(struct vfp_ctx *vc, ssize_t *sz, uint8_t **ptr)
 {
 	ssize_t l;
 
+
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	AN(sz);
 	assert(*sz >= 0);
 	AN(ptr);
 
-	AN(vc->stats);
 	l = fetchfrag;
 	if (l == 0)
 		l = *sz;
 	if (l == 0)
 		l = cache_param->fetch_chunksize;
 	*sz = l;
-	if (!ObjGetSpace(vc->oc, vc->vsl, vc->stats, sz, ptr)) {
+	if (!ObjGetSpace(vc->oc, vc->wrk, sz, ptr)) {
 		*sz = 0;
 		*ptr = NULL;
 		return (VFP_Error(vc, "Could not get storage"));
@@ -121,7 +121,7 @@ VFP_Close(struct vfp_ctx *vc)
 	VTAILQ_FOREACH(vfe, &vc->vfp, list) {
 		if(vfe->vfp->fini != NULL)
 			vfe->vfp->fini(vc, vfe);
-		VSLb(vc->vsl, SLT_VfpAcct, "%s %ju %ju",
+		VSLb(vc->wrk->vsl, SLT_VfpAcct, "%s %ju %ju",
 			vfe->vfp->name, vfe->calls, vfe->bytes_out);
 	}
 }
@@ -133,7 +133,8 @@ VFP_Open(struct vfp_ctx *vc)
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->http, HTTP_MAGIC);
-	AN(vc->vsl);
+	CHECK_OBJ_NOTNULL(vc->wrk, WORKER_MAGIC);
+	AN(vc->wrk->vsl);
 
 	VTAILQ_FOREACH_REVERSE(vfe, &vc->vfp, vfp_entry_s, list) {
 		if (vfe->vfp->init == NULL)

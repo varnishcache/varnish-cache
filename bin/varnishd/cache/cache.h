@@ -218,15 +218,14 @@ struct vfp_ctx {
 	unsigned		magic;
 #define VFP_CTX_MAGIC		0x61d9d3e5
 	struct busyobj		*bo;
+	struct worker		*wrk;
 	struct objcore		*oc;
-	struct dstat		*stats;
 
 	int			failed;
 
 	struct vfp_entry_s	vfp;
 	struct vfp_entry	*vfp_nxt;
 
-	struct vsl_log		*vsl;
 	struct http		*http;
 	struct http		*esi_req;
 };
@@ -513,7 +512,6 @@ struct busyobj {
 	struct VCL_conf		*vcl;
 
 	struct vsl_log		vsl[1];
-	struct dstat		*stats;
 
 	struct vsb		*synth_body;
 };
@@ -819,7 +817,7 @@ void EXP_Init(void);
 void EXP_Rearm(struct objcore *, double now, double ttl, double grace,
     double keep);
 void EXP_Touch(struct objcore *oc, double now);
-int EXP_NukeOne(struct vsl_log *vsl, struct dstat *ds, struct lru *lru);
+int EXP_NukeOne(struct worker *wrk, struct lru *lru);
 
 /* cache_fetch.c */
 enum vbf_fetch_mode_e {
@@ -983,8 +981,7 @@ enum objiter_status {
 void *ObjIterBegin(struct objcore *, struct worker *);
 enum objiter_status ObjIter(struct objcore *, void *, void **, ssize_t *);
 void ObjIterEnd(struct objcore *, void **);
-int ObjGetSpace(struct objcore *, struct vsl_log *vsl,
-    struct dstat *, ssize_t *sz, uint8_t **ptr);
+int ObjGetSpace(struct objcore *, struct worker *, ssize_t *sz, uint8_t **ptr);
 void ObjExtend(struct objcore *, struct dstat *, ssize_t l);
 void ObjTrimStore(struct objcore *, struct dstat *);
 unsigned ObjGetXID(struct objcore *, struct dstat *);
@@ -1166,7 +1163,7 @@ void RFC2616_Weaken_Etag(struct http *hp);
 void RFC2616_Vary_AE(struct http *hp);
 
 /* stevedore.c */
-int STV_NewObject(struct objcore *, struct vsl_log *, struct dstat *,
+int STV_NewObject(struct objcore *, struct worker *,
     const char *hint, unsigned len);
 struct storage *STV_alloc(struct stevedore *, size_t size);
 void STV_trim(struct storage *st, size_t size, int move_ok);

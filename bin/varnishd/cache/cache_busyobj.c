@@ -224,7 +224,7 @@ VBO_extend(struct busyobj *bo, ssize_t l)
 		return;
 	assert(l > 0);
 	Lck_Lock(&bo->mtx);
-	ObjExtend(bo->vfc->oc, bo->stats, l);
+	ObjExtend(bo->vfc->oc, bo->wrk->stats, l);
 	AZ(pthread_cond_broadcast(&bo->cond));
 	Lck_Unlock(&bo->mtx);
 }

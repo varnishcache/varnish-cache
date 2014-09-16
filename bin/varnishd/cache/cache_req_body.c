@@ -105,7 +105,7 @@ VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv)
 	vfc = req->htc->vfc;
 	VFP_Setup(vfc);
 	vfc->http = req->http;
-	vfc->vsl = req->vsl;
+	vfc->wrk = req->wrk;
 	V1F_Setup_Fetch(vfc, req->htc);
 	if (VFP_Open(vfc) < 0) {
 		VSLb(req->vsl, SLT_FetchError, "Could not open Fetch Pipeline");
@@ -222,14 +222,13 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 	}
 
 	req->body_oc = HSH_NewObjCore(req->wrk);
-	XXXAN(STV_NewObject(req->body_oc, req->vsl, req->wrk->stats,
-	    TRANSIENT_STORAGE, 8));
+	AN(req->body_oc);
+	XXXAN(STV_NewObject(req->body_oc, req->wrk, TRANSIENT_STORAGE, 8));
 
 	VFP_Setup(vfc);
 	vfc->http = req->http;
-	vfc->vsl = req->vsl;
+	vfc->wrk = req->wrk;
 	vfc->oc = req->body_oc;
-	vfc->stats = req->wrk->stats;
 	V1F_Setup_Fetch(vfc, req->htc);
 
 	if (VFP_Open(vfc) < 0) {
@@ -237,6 +236,7 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 		return (-1);
 	}
 
+	AN(req->htc);
 	yet = req->htc->content_length;
 	if (yet < 0)
 		yet = 0;

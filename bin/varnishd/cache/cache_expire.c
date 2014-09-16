@@ -286,20 +286,19 @@ EXP_Rearm(struct objcore *oc, double now, double ttl, double grace, double keep)
  */
 
 int
-EXP_NukeOne(struct vsl_log *vsl, struct dstat *ds, struct lru *lru)
+EXP_NukeOne(struct worker *wrk, struct lru *lru)
 {
 	struct objcore *oc, *oc2;
 	struct objhead *oh;
 
-	AN(vsl);
-	AN(ds);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 	/* Find the first currently unused object on the LRU.  */
 	Lck_Lock(&lru->mtx);
 	VTAILQ_FOREACH_SAFE(oc, &lru->lru_head, lru_list, oc2) {
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-		VSLb(vsl, SLT_ExpKill, "LRU_Cand p=%p f=0x%x r=%d",
+		VSLb(wrk->vsl, SLT_ExpKill, "LRU_Cand p=%p f=0x%x r=%d",
 		    oc, oc->flags, oc->refcnt);
 
 		AZ(oc->exp_flags & OC_EF_OFFLRU);
@@ -331,17 +330,17 @@ EXP_NukeOne(struct vsl_log *vsl, struct dstat *ds, struct lru *lru)
 	Lck_Unlock(&lru->mtx);
 
 	if (oc == NULL) {
-		VSLb(vsl, SLT_ExpKill, "LRU_Fail");
+		VSLb(wrk->vsl, SLT_ExpKill, "LRU_Fail");
 		return (-1);
 	}
 
 	/* XXX: We could grab and return one storage segment to our caller */
-	ObjSlim(oc, ds);
+	ObjSlim(oc, wrk->stats);
 
 	exp_mail_it(oc);
 
-	VSLb(vsl, SLT_ExpKill, "LRU x=%u", ObjGetXID(oc, ds));
-	(void)HSH_DerefObjCore(ds, &oc);
+	VSLb(wrk->vsl, SLT_ExpKill, "LRU x=%u", ObjGetXID(oc, wrk->stats));
+	(void)HSH_DerefObjCore(wrk->stats, &oc);
 	return (1);
 }
 

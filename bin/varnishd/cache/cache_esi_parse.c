@@ -196,7 +196,7 @@ vep_error(const struct vep_state *vep, const char *p)
 
 	VSC_C_main->esi_errors++;
 	l = (intmax_t)(vep->ver_p - vep->hack_p);
-	VSLb(vep->vc->vsl, SLT_ESI_xmlerror, "ERR at %jd %s", l, p);
+	VSLb(vep->vc->wrk->vsl, SLT_ESI_xmlerror, "ERR at %jd %s", l, p);
 
 }
 
@@ -211,7 +211,7 @@ vep_warn(const struct vep_state *vep, const char *p)
 
 	VSC_C_main->esi_warnings++;
 	l = (intmax_t)(vep->ver_p - vep->hack_p);
-	VSLb(vep->vc->vsl, SLT_ESI_xmlerror, "WARN at %jd %s", l, p);
+	VSLb(vep->vc->wrk->vsl, SLT_ESI_xmlerror, "WARN at %jd %s", l, p);
 
 }
 
@@ -634,14 +634,14 @@ VEP_Parse(struct vep_state *vep, const char *p, size_t l)
 				p++;
 				vep->state = VEP_STARTTAG;
 			} else if (p < e && *p == '\xeb') {
-				VSLb(vep->vc->vsl, SLT_ESI_xmlerror,
+				VSLb(vep->vc->wrk->vsl, SLT_ESI_xmlerror,
 				    "No ESI processing, "
 				    "first char not '<' but BOM."
 				    " (See feature esi_remove_bom)"
 				);
 				vep->state = VEP_NOTXML;
 			} else if (p < e) {
-				VSLb(vep->vc->vsl, SLT_ESI_xmlerror,
+				VSLb(vep->vc->wrk->vsl, SLT_ESI_xmlerror,
 				    "No ESI processing, "
 				    "first char not '<'."
 				    " (See feature esi_disable_xml_check)"
