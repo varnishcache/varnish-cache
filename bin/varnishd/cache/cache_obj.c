@@ -515,27 +515,25 @@ ObjGetattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
  */
 
 void *
-ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr, ssize_t len,
-    const void *ptr)
+ObjSetattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
+    ssize_t len, const void *ptr)
 {
 	struct object *o;
 	void *retval = NULL;
 	struct storage *st;
-	const struct storeobj_methods *om = obj_getmethods(vc->oc);
+	const struct storeobj_methods *om = obj_getmethods(oc);
 
 	if (om->objsetattr != NULL)
-		return (om->objsetattr(vc, attr, len, ptr));
+		return (om->objsetattr(wrk, oc, attr, len, ptr));
 
-	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->oc, OBJCORE_MAGIC);
-	o = obj_getobj(vc->wrk, vc->oc);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	o = obj_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st = o->objstore;
 	switch (attr) {
 	case OA_ESIDATA:
-		o->esidata = objallocwithnuke(vc->oc->stobj->stevedore,
-		    vc->wrk, len);
+		o->esidata = objallocwithnuke(oc->stobj->stevedore, wrk, len);
 		if (o->esidata == NULL)
 			return (NULL);
 		o->esidata->len = len;
@@ -585,18 +583,20 @@ ObjSetattr(const struct vfp_ctx *vc, enum obj_attr attr, ssize_t len,
  */
 
 int
-ObjCopyAttr(const struct vfp_ctx *vc, struct objcore *ocs, enum obj_attr attr)
+ObjCopyAttr(struct worker *wrk, struct objcore *oc, struct objcore *ocs,
+    enum obj_attr attr)
 {
 	void *vps, *vpd;
 	ssize_t l;
 
-	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	vps = ObjGetattr(vc->wrk, ocs, attr, &l);
+	vps = ObjGetattr(wrk, ocs, attr, &l);
 	// XXX: later we want to have zero-length OA's too
 	if (vps == NULL || l <= 0)
 		return (-1);
-	vpd = ObjSetattr(vc, attr, l, vps);
+	vpd = ObjSetattr(wrk, oc, attr, l, vps);
 	if (vpd == NULL)
 		return (-1);
 	return (0);
@@ -620,14 +620,14 @@ ObjGetXID(struct worker *wrk, struct objcore *oc)
  */
 
 int
-ObjSetDouble(const struct vfp_ctx *vc, enum obj_attr a, double t)
+ObjSetDouble(struct worker *wrk, struct objcore *oc, enum obj_attr a, double t)
 {
 	void *vp;
 	uint64_t u;
 
 	assert(sizeof t == sizeof u);
 	memcpy(&u, &t, sizeof u);
-	vp = ObjSetattr(vc, a, sizeof u, NULL);
+	vp = ObjSetattr(wrk, oc, a, sizeof u, NULL);
 	if (vp == NULL)
 		return (-1);
 	vbe64enc(vp, u);
@@ -657,11 +657,11 @@ ObjGetDouble(struct worker *wrk, struct objcore *oc, enum obj_attr a, double *d)
  */
 
 int
-ObjSetU64(const struct vfp_ctx *vc, enum obj_attr a, uint64_t t)
+ObjSetU64(struct worker *wrk, struct objcore *oc, enum obj_attr a, uint64_t t)
 {
 	void *vp;
 
-	vp = ObjSetattr(vc, a, sizeof t, NULL);
+	vp = ObjSetattr(wrk, oc, a, sizeof t, NULL);
 	if (vp == NULL)
 		return (-1);
 	vbe64enc(vp, t);
@@ -683,11 +683,11 @@ ObjGetU64(struct worker *wrk, struct objcore *oc, enum obj_attr a, uint64_t *d)
 }
 
 int
-ObjSetU32(const struct vfp_ctx *vc, enum obj_attr a, uint32_t t)
+ObjSetU32(struct worker *wrk, struct objcore *oc, enum obj_attr a, uint32_t t)
 {
 	void *vp;
 
-	vp = ObjSetattr(vc, a, sizeof t, NULL);
+	vp = ObjSetattr(wrk, oc, a, sizeof t, NULL);
 	if (vp == NULL)
 		return (-1);
 	vbe32enc(vp, t);
@@ -722,11 +722,11 @@ ObjCheckFlag(struct worker *wrk, struct objcore *oc, enum obj_flags of)
 }
 
 void
-ObjSetFlag(const struct vfp_ctx *vc, enum obj_flags of, int val)
+ObjSetFlag(struct worker *wrk, struct objcore *oc, enum obj_flags of, int val)
 {
 	uint8_t *fp;
 
-	fp = ObjSetattr(vc, OA_FLAGS, 1, NULL);
+	fp = ObjSetattr(wrk, oc, OA_FLAGS, 1, NULL);
 	AN(fp);
 	if (val)
 		(*fp) |= of;

@@ -118,7 +118,8 @@ vfp_esi_end(struct vfp_ctx *vc, struct vef_priv *vef,
 		if (retval == VFP_END) {
 			l = VSB_len(vsb);
 			assert(l > 0);
-			p = ObjSetattr(vc, OA_ESIDATA, l, VSB_data(vsb));
+			p = ObjSetattr(vc->wrk, vc->oc,
+			    OA_ESIDATA, l, VSB_data(vsb));
 			if (p == NULL) {
 				retval = VFP_Error(vc,
 				    "Could not allocate storage for esidata");

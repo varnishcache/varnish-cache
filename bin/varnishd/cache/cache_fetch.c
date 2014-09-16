@@ -133,25 +133,25 @@ vbf_beresp2obj(struct busyobj *bo)
 		return (-1);
 
 	if (vary != NULL) {
-		b = ObjSetattr(bo->vfc, OA_VARY, varyl, VSB_data(vary));
+		b = ObjSetattr(bo->wrk, bo->fetch_objcore, OA_VARY, varyl, VSB_data(vary));
 		VSB_delete(vary);
 	}
 
-	AZ(ObjSetU32(bo->vfc, OA_VXID, VXID(bo->vsl->wid)));
+	AZ(ObjSetU32(bo->wrk, bo->fetch_objcore, OA_VXID, VXID(bo->vsl->wid)));
 
 	/* for HTTP_Encode() VSLH call */
 	bo->beresp->logtag = SLT_ObjMethod;
 
 	/* Filter into object */
-	bp = ObjSetattr(bo->vfc, OA_HEADERS, l2, NULL);
+	bp = ObjSetattr(bo->wrk, bo->fetch_objcore, OA_HEADERS, l2, NULL);
 	AN(bp);
 	HTTP_Encode(bo->beresp, bp, l2,
 	    bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS);
 
 	if (http_GetHdr(bo->beresp, H_Last_Modified, &b))
-		AZ(ObjSetDouble(bo->vfc, OA_LASTMODIFIED, VTIM_parse(b)));
+		AZ(ObjSetDouble(bo->wrk, bo->fetch_objcore, OA_LASTMODIFIED, VTIM_parse(b)));
 	else
-		AZ(ObjSetDouble(bo->vfc, OA_LASTMODIFIED,
+		AZ(ObjSetDouble(bo->wrk, bo->fetch_objcore, OA_LASTMODIFIED,
 		    floor(bo->fetch_objcore->exp.t_origin)));
 
 	return (0);
@@ -587,15 +587,15 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 
 	if (bo->do_gzip || (bo->is_gzip && !bo->do_gunzip))
-		ObjSetFlag(bo->vfc, OF_GZIPED, 1);
+		ObjSetFlag(bo->wrk, bo->fetch_objcore, OF_GZIPED, 1);
 
 	if (bo->do_gzip || bo->do_gunzip)
-		ObjSetFlag(bo->vfc, OF_CHGGZIP, 1);
+		ObjSetFlag(bo->wrk, bo->fetch_objcore, OF_CHGGZIP, 1);
 
 	if (http_IsStatus(bo->beresp, 200) && (
 	    http_GetHdr(bo->beresp, H_Last_Modified, &p) ||
 	    http_GetHdr(bo->beresp, H_ETag, &p)))
-		ObjSetFlag(bo->vfc, OF_IMSCAND, 1);
+		ObjSetFlag(bo->wrk, bo->fetch_objcore, OF_IMSCAND, 1);
 
 	if (bo->htc->body_status != BS_NONE)
 		V1F_Setup_Fetch(bo->vfc, bo->htc);
@@ -672,10 +672,11 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	AZ(vbf_beresp2obj(bo));
 
 	if (ObjGetattr(bo->wrk, bo->ims_oc, OA_ESIDATA, NULL) != NULL)
-		AZ(ObjCopyAttr(bo->vfc, bo->ims_oc, OA_ESIDATA));
+		AZ(ObjCopyAttr(bo->wrk, bo->fetch_objcore, bo->ims_oc,
+		    OA_ESIDATA));
 
-	AZ(ObjCopyAttr(bo->vfc, bo->ims_oc, OA_FLAGS));
-	AZ(ObjCopyAttr(bo->vfc, bo->ims_oc, OA_GZIPBITS));
+	AZ(ObjCopyAttr(bo->wrk, bo->fetch_objcore, bo->ims_oc, OA_FLAGS));
+	AZ(ObjCopyAttr(bo->wrk, bo->fetch_objcore, bo->ims_oc, OA_GZIPBITS));
 
 	if (bo->do_stream) {
 		HSH_Unbusy(wrk, bo->fetch_objcore);

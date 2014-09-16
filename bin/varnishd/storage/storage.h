@@ -33,7 +33,6 @@
 
 struct stevedore;
 struct sess;
-struct dstat;
 struct busyobj;
 struct objcore;
 struct worker;
@@ -106,8 +105,8 @@ typedef void objtrimstore_f(struct worker *, struct objcore *);
 typedef void objslim_f(struct worker *, struct objcore *);
 typedef void *objgetattr_f(struct worker *, struct objcore *,
     enum obj_attr attr, ssize_t *len);
-typedef void *objsetattr_f(const struct vfp_ctx *, enum obj_attr attr,
-    ssize_t len, const void *ptr);
+typedef void *objsetattr_f(struct worker *, struct objcore *,
+    enum obj_attr attr, ssize_t len, const void *ptr);
 typedef uint64_t objgetlen_f(struct worker *, struct objcore *);
 
 struct storeobj_methods {

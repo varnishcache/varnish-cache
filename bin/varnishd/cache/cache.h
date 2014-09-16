@@ -992,20 +992,21 @@ void ObjSlim(struct worker *, struct objcore *oc);
 struct lru *ObjGetLRU(const struct objcore *);
 void *ObjGetattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
     ssize_t *len);
-void *ObjSetattr(const struct vfp_ctx *, enum obj_attr attr, ssize_t len,
-    const void *);
-int ObjCopyAttr(const struct vfp_ctx *, struct objcore *, enum obj_attr attr);
+void *ObjSetattr(struct worker *, struct objcore *, enum obj_attr attr,
+    ssize_t len, const void *);
+int ObjCopyAttr(struct worker *, struct objcore *, struct objcore *,
+    enum obj_attr attr);
 
-int ObjSetDouble(const struct vfp_ctx*, enum obj_attr, double);
-int ObjSetU32(const struct vfp_ctx *, enum obj_attr, uint32_t);
-int ObjSetU64(const struct vfp_ctx *, enum obj_attr, uint64_t);
+int ObjSetDouble(struct worker *, struct objcore *, enum obj_attr, double);
+int ObjSetU32(struct worker *, struct objcore *, enum obj_attr, uint32_t);
+int ObjSetU64(struct worker *, struct objcore *, enum obj_attr, uint64_t);
 
 int ObjGetDouble(struct worker *, struct objcore *, enum obj_attr, double *);
 int ObjGetU32(struct worker *, struct objcore *, enum obj_attr, uint32_t *);
 int ObjGetU64(struct worker *, struct objcore *, enum obj_attr, uint64_t *);
 
 int ObjCheckFlag(struct worker *, struct objcore *oc, enum obj_flags of);
-void ObjSetFlag(const struct vfp_ctx *vc, enum obj_flags of, int val);
+void ObjSetFlag(struct worker *, struct objcore *, enum obj_flags of, int val);
 
 /* cache_panic.c */
 void PAN_Init(void);
