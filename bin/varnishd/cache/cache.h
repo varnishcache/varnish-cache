@@ -349,6 +349,7 @@ struct worker {
 	struct busyobj		*nbo;
 	void			*nhashpriv;
 	struct dstat		stats[1];
+	struct vsl_log		*vsl;		// borrowed from req/bo
 
 	struct pool_task	task;
 
@@ -468,6 +469,7 @@ struct busyobj {
 	unsigned		refcount;
 	int			retries;
 	struct req		*req;
+	struct worker		*wrk;
 
 	uint8_t			*vary;
 

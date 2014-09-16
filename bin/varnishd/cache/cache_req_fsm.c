@@ -880,6 +880,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 	AN(req->vsl->wid & VSL_CLIENTMARKER);
 
 	req->wrk = wrk;
+	wrk->vsl = req->vsl;
 
 	for (nxt = REQ_FSM_MORE; nxt == REQ_FSM_MORE; ) {
 		/*
@@ -913,6 +914,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 		WS_Assert(wrk->aws);
 		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 	}
+	wrk->vsl = NULL;
 	if (nxt == REQ_FSM_DONE) {
 		AN(req->vsl->wid);
 		if (req->res_mode & (RES_ESI|RES_ESI_CHILD))

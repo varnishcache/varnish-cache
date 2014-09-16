@@ -363,6 +363,7 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 		CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 		WS_Reset(wrk->aws, NULL);
+		AZ(wrk->vsl);
 
 		tp = VTAILQ_FIRST(&pp->front_queue);
 		if (tp != NULL) {

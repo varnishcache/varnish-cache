@@ -858,6 +858,8 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	VSLb_ts_busyobj(bo, "Start", W_TIM_real(wrk));
 
 	bo->stats = wrk->stats;
+	bo->wrk = wrk;
+	wrk->vsl = bo->vsl;
 
 	while (stp != F_STP_DONE) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -899,6 +901,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	bo->stats = NULL;
 
+	wrk->vsl = NULL;
 	VBO_DerefBusyObj(wrk, &bo);
 	THR_SetBusyobj(NULL);
 }
