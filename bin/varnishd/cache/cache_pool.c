@@ -101,23 +101,23 @@ pool_sumstat(const struct dstat *src)
 }
 
 void
-Pool_Sumstat(struct worker *w)
+Pool_Sumstat(struct worker *wrk)
 {
 
 	Lck_Lock(&wstat_mtx);
-	pool_sumstat(&w->stats);
+	pool_sumstat(wrk->stats);
 	Lck_Unlock(&wstat_mtx);
-	memset(&w->stats, 0, sizeof w->stats);
+	memset(wrk->stats, 0, sizeof *wrk->stats);
 }
 
 static int
-Pool_TrySumstat(struct worker *w)
+Pool_TrySumstat(struct worker *wrk)
 {
 	if (Lck_Trylock(&wstat_mtx))
 		return (0);
-	pool_sumstat(&w->stats);
+	pool_sumstat(wrk->stats);
 	Lck_Unlock(&wstat_mtx);
-	memset(&w->stats, 0, sizeof w->stats);
+	memset(wrk->stats, 0, sizeof *wrk->stats);
 	return (1);
 }
 
@@ -222,7 +222,7 @@ pool_accept(struct worker *wrk, void *arg)
 			return;
 		}
 		if (VCA_Accept(ps->lsock, wa) < 0) {
-			wrk->stats.sess_fail++;
+			wrk->stats->sess_fail++;
 			/* We're going to pace in vca anyway... */
 			(void)Pool_TrySumstat(wrk);
 			continue;
@@ -374,12 +374,12 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 				VTAILQ_REMOVE(&pp->back_queue, tp, list);
 		}
 
-		if ((tp == NULL && wrk->stats.summs > 0) ||
-		    (wrk->stats.summs >= cache_param->wthread_stats_rate))
-			pool_addstat(pp->a_stat, &wrk->stats);
+		if ((tp == NULL && wrk->stats->summs > 0) ||
+		    (wrk->stats->summs >= cache_param->wthread_stats_rate))
+			pool_addstat(pp->a_stat, wrk->stats);
 
 		if (tp != NULL) {
-			wrk->stats.summs++;
+			wrk->stats->summs++;
 		} else if (pp->b_stat != NULL && pp->a_stat->summs) {
 			/* Nothing to do, push pool stats into global pool */
 			tps.func = pool_stat_summ;
@@ -401,7 +401,7 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 					VCL_Rel(&wrk->vcl);
 			} while (wrk->task.func == NULL);
 			tp = &wrk->task;
-			wrk->stats.summs++;
+			wrk->stats->summs++;
 		}
 		Lck_Unlock(&pp->mtx);
 

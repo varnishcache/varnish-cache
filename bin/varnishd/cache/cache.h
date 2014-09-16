@@ -348,7 +348,7 @@ struct worker {
 	struct waitinglist	*nwaitinglist;
 	struct busyobj		*nbo;
 	void			*nhashpriv;
-	struct dstat		stats;
+	struct dstat		stats[1];
 
 	struct pool_task	task;
 

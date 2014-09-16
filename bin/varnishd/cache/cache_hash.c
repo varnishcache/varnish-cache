@@ -75,7 +75,7 @@ HSH_NewObjCore(struct worker *wrk)
 
 	ALLOC_OBJ(oc, OBJCORE_MAGIC);
 	XXXAN(oc);
-	wrk->stats.n_objectcore++;
+	wrk->stats->n_objectcore++;
 	oc->flags |= OC_F_BUSY;
 	return (oc);
 }
@@ -110,7 +110,7 @@ hsh_prealloc(struct worker *wrk)
 
 	if (wrk->nobjhead == NULL) {
 		wrk->nobjhead = hsh_newobjhead();
-		wrk->stats.n_objecthead++;
+		wrk->stats->n_objecthead++;
 	}
 	CHECK_OBJ_NOTNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 
@@ -119,7 +119,7 @@ hsh_prealloc(struct worker *wrk)
 		XXXAN(wl);
 		VTAILQ_INIT(&wl->list);
 		wrk->nwaitinglist = wl;
-		wrk->stats.n_waitinglist++;
+		wrk->stats->n_waitinglist++;
 	}
 	CHECK_OBJ_NOTNULL(wrk->nwaitinglist, WAITINGLIST_MAGIC);
 
@@ -155,19 +155,19 @@ HSH_Cleanup(struct worker *wrk)
 
 	if (wrk->nobjcore != NULL) {
 		FREE_OBJ(wrk->nobjcore);
-		wrk->stats.n_objectcore--;
+		wrk->stats->n_objectcore--;
 		wrk->nobjcore = NULL;
 	}
 	if (wrk->nobjhead != NULL) {
 		Lck_Delete(&wrk->nobjhead->mtx);
 		FREE_OBJ(wrk->nobjhead);
 		wrk->nobjhead = NULL;
-		wrk->stats.n_objecthead--;
+		wrk->stats->n_objecthead--;
 	}
 	if (wrk->nwaitinglist != NULL) {
 		FREE_OBJ(wrk->nwaitinglist);
 		wrk->nwaitinglist = NULL;
-		wrk->stats.n_waitinglist--;
+		wrk->stats->n_waitinglist--;
 	}
 	if (wrk->nhashpriv != NULL) {
 		/* XXX: If needed, add slinger method for this */
@@ -306,8 +306,8 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc)
 	/* NB: do not deref objhead the new object inherits our reference */
 	oc->objhead = oh;
 	Lck_Unlock(&oh->mtx);
-	wrk->stats.n_objectcore++;
-	wrk->stats.n_vampireobject++;
+	wrk->stats->n_objectcore++;
+	wrk->stats->n_vampireobject++;
 }
 
 /*---------------------------------------------------------------------
@@ -424,7 +424,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		if (BAN_CheckObject(wrk, oc, req))
 			continue;
 
-		vary = ObjGetattr(oc, &wrk->stats, OA_VARY, NULL);
+		vary = ObjGetattr(oc, wrk->stats, OA_VARY, NULL);
 
 		if (vary != NULL && !VRY_Match(req, vary))
 			continue;
@@ -437,7 +437,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			if (oh->hits < LONG_MAX)
 				oh->hits++;
 			Lck_Unlock(&oh->mtx);
-			assert(HSH_DerefObjHead(&wrk->stats, &oh));
+			assert(HSH_DerefObjHead(wrk->stats, &oh));
 			*ocp = oc;
 			return (HSH_HIT);
 		}
@@ -465,7 +465,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			oh->hits++;
 		Lck_Unlock(&oh->mtx);
 		if (retval == HSH_EXP)
-			assert(HSH_DerefObjHead(&wrk->stats, &oh));
+			assert(HSH_DerefObjHead(wrk->stats, &oh));
 		*ocp = exp_oc;
 		return (retval);
 	}
@@ -497,7 +497,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			VSLb(req->vsl, SLT_Debug, "hit busy obj <%p>", oh);
 	}
 
-	wrk->stats.busy_sleep++;
+	wrk->stats->busy_sleep++;
 	/*
 	 * The objhead reference transfers to the sess, we get it
 	 * back when the sess comes off the waiting list and
@@ -602,7 +602,7 @@ double keep)
 			oc = ocp[n];
 			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 			EXP_Rearm(oc, now, ttl, grace, keep);
-			(void)HSH_DerefObjCore(&wrk->stats, &oc);
+			(void)HSH_DerefObjCore(wrk->stats, &oc);
 		}
 	} while (more);
 	WS_Release(wrk->aws, 0);

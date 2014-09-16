@@ -128,7 +128,7 @@ VRT_GetHdr(const struct vrt_ctx *ctx, const struct gethdr_s *hs)
 		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 		CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
 		return(HTTP_GetHdrPack(ctx->req->objcore,
-		    &ctx->req->wrk->stats, hs->what));
+		    ctx->req->wrk->stats, hs->what));
 	}
 	hp = vrt_selecthttp(ctx, hs->where);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);

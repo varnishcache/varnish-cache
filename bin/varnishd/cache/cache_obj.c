@@ -104,7 +104,7 @@ ObjIterBegin(struct objcore *oc, struct worker *wrk)
 		return (om->objiterbegin(oc, wrk));
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	obj = obj_getobj(oc, &wrk->stats);
+	obj = obj_getobj(oc, wrk->stats);
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 	ALLOC_OBJ(oi, OBJITER_MAGIC);
 	if (oi == NULL)
@@ -152,7 +152,7 @@ ObjIter(struct objcore *oc, void *oix, void **p, ssize_t *l)
 	} else {
 		ol = oi->len;
 		while (1) {
-			nl = VBO_waitlen(oi->bo, &oi->wrk->stats, ol);
+			nl = VBO_waitlen(oi->bo, oi->wrk->stats, ol);
 			if (nl != ol)
 				break;
 			if (oi->bo->state == BOS_FINISHED)

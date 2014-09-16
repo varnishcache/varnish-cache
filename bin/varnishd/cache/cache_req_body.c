@@ -174,7 +174,7 @@ VRB_Free(struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	if (req->body_oc != NULL) {
-		ObjFreeObj(req->body_oc, &req->wrk->stats);
+		ObjFreeObj(req->body_oc, req->wrk->stats);
 		FREE_OBJ(req->body_oc);
 		req->body_oc = NULL;
 	}
@@ -222,14 +222,14 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 	}
 
 	req->body_oc = HSH_NewObjCore(req->wrk);
-	XXXAN(STV_NewObject(req->body_oc, req->vsl, &req->wrk->stats,
+	XXXAN(STV_NewObject(req->body_oc, req->vsl, req->wrk->stats,
 	    TRANSIENT_STORAGE, 8));
 
 	VFP_Setup(vfc);
 	vfc->http = req->http;
 	vfc->vsl = req->vsl;
 	vfc->oc = req->body_oc;
-	vfc->stats = &req->wrk->stats;
+	vfc->stats = req->wrk->stats;
 	V1F_Setup_Fetch(vfc, req->htc);
 
 	if (VFP_Open(vfc) < 0) {
@@ -254,7 +254,7 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 			req->acct.req_bodybytes += l;
 			if (yet >= l)
 				yet -= l;
-			ObjExtend(req->body_oc, &req->wrk->stats, l);
+			ObjExtend(req->body_oc, req->wrk->stats, l);
 		}
 
 	} while (vfps == VFP_OK);

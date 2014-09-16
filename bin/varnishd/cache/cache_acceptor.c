@@ -331,7 +331,7 @@ VCA_FailSess(struct worker *wrk)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(wa, (void*)wrk->aws->f, WRK_ACCEPT_MAGIC);
 	AZ(close(wa->acceptsock));
-	wrk->stats.sess_drop++;
+	wrk->stats->sess_drop++;
 	vca_pace_bad();
 	WS_Release(wrk->aws, 0);
 }
@@ -355,7 +355,7 @@ VCA_SetupSess(struct worker *wrk, struct sess *sp)
 	assert(wa->acceptaddrlen <= vsa_suckaddr_len);
 	AN(VSA_Build(sess_remote_addr(sp), &wa->acceptaddr, wa->acceptaddrlen));
 	vca_pace_good();
-	wrk->stats.sess_conn++;
+	wrk->stats->sess_conn++;
 	WS_Release(wrk->aws, 0);
 
 	if (need_test) {

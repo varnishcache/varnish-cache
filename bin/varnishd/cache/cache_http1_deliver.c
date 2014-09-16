@@ -97,9 +97,9 @@ v1d_dorange(struct req *req, struct busyobj *bo, const char *r)
 
 	/* We must snapshot the length if we're streaming from the backend */
 	if (bo != NULL)
-		len = VBO_waitlen(bo, &req->wrk->stats, -1);
+		len = VBO_waitlen(bo, req->wrk->stats, -1);
 	else
-		len = ObjGetLen(req->objcore, &req->wrk->stats);
+		len = ObjGetLen(req->objcore, req->wrk->stats);
 
 	if (strncmp(r, "bytes=", 6))
 		return;
@@ -239,7 +239,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 
 	req->res_mode = 0;
 
-	if (!req->disable_esi && ObjGetattr(req->objcore, &req->wrk->stats,
+	if (!req->disable_esi && ObjGetattr(req->objcore, req->wrk->stats,
 	    OA_ESIDATA, NULL) != NULL) {
 		/* In ESI mode, we can't know the aggregate length */
 		req->res_mode &= ~RES_LEN;
@@ -252,11 +252,11 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		/* XXX: Not happy with this convoluted test */
 		req->res_mode |= RES_LEN;
 		if (!(req->objcore->flags & OC_F_PASS) ||
-		    ObjGetLen(req->objcore, &req->wrk->stats) != 0) {
+		    ObjGetLen(req->objcore, req->wrk->stats) != 0) {
 			http_Unset(req->resp, H_Content_Length);
 			http_PrintfHeader(req->resp,
 			    "Content-Length: %ju", (uintmax_t)ObjGetLen(
-			    req->objcore, &req->wrk->stats));
+			    req->objcore, req->wrk->stats));
 		}
 	}
 
@@ -267,7 +267,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	}
 
 	if (cache_param->http_gzip_support &&
-	    ObjCheckFlag(req->objcore, &req->wrk->stats, OF_GZIPED) &&
+	    ObjCheckFlag(req->objcore, req->wrk->stats, OF_GZIPED) &&
 	    !RFC2616_Req_Gzip(req->http)) {
 		/*
 		 * We don't know what it uncompresses to
@@ -340,13 +340,13 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		l = -1;
 		while (req->objcore->busyobj) {
 			assert(bo != NULL);
-			l = VBO_waitlen(bo, &req->wrk->stats, l);
+			l = VBO_waitlen(bo, req->wrk->stats, l);
 		}
 		ESI_DeliverChild(req);
 	} else if (req->res_mode & RES_GUNZIP ||
 	    (req->res_mode & RES_ESI_CHILD &&
 	    !req->gzip_resp &&
-	    ObjCheckFlag(req->objcore, &req->wrk->stats, OF_GZIPED))) {
+	    ObjCheckFlag(req->objcore, req->wrk->stats, OF_GZIPED))) {
 		VDP_push(req, VDP_gunzip);
 		req->vgz = VGZ_NewUngzip(req->vsl, "U D -");
 		AZ(VGZ_WrwInit(req->vgz));

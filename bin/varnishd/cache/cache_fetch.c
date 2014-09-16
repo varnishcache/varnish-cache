@@ -322,7 +322,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		 * no matter what the headers might say.
 		 * [RFC2516 4.3 p33]
 		 */
-		wrk->stats.fetch_head++;
+		wrk->stats->fetch_head++;
 		bo->htc->body_status = BS_NONE;
 	} else if (http_GetStatus(bo->beresp) <= 199) {
 		/*
@@ -330,33 +330,33 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		 * [RFC2616 4.3 p33]
 		 * ... but we should never see them.
 		 */
-		wrk->stats.fetch_1xx++;
+		wrk->stats->fetch_1xx++;
 		bo->htc->body_status = BS_ERROR;
 	} else if (http_IsStatus(bo->beresp, 204)) {
 		/*
 		 * 204 is "No Content", obviously don't expect a body.
 		 * [RFC2616 10.2.5 p60]
 		 */
-		wrk->stats.fetch_204++;
+		wrk->stats->fetch_204++;
 		bo->htc->body_status = BS_NONE;
 	} else if (http_IsStatus(bo->beresp, 304)) {
 		/*
 		 * 304 is "Not Modified" it has no body.
 		 * [RFC2616 10.3.5 p63]
 		 */
-		wrk->stats.fetch_304++;
+		wrk->stats->fetch_304++;
 		bo->htc->body_status = BS_NONE;
 	} else if (bo->htc->body_status == BS_CHUNKED) {
-		wrk->stats.fetch_chunked++;
+		wrk->stats->fetch_chunked++;
 	} else if (bo->htc->body_status == BS_LENGTH) {
 		assert(bo->htc->content_length > 0);
-		wrk->stats.fetch_length++;
+		wrk->stats->fetch_length++;
 	} else if (bo->htc->body_status == BS_EOF) {
-		wrk->stats.fetch_eof++;
+		wrk->stats->fetch_eof++;
 	} else if (bo->htc->body_status == BS_ERROR) {
-		wrk->stats.fetch_bad++;
+		wrk->stats->fetch_bad++;
 	} else if (bo->htc->body_status == BS_NONE) {
-		wrk->stats.fetch_none++;
+		wrk->stats->fetch_none++;
 	} else {
 		WRONG("wrong bodystatus");
 	}
@@ -611,7 +611,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	assert (bo->state == BOS_REQ_DONE);
 
 	if (bo->do_stream) {
-		HSH_Unbusy(&wrk->stats, bo->fetch_objcore);
+		HSH_Unbusy(wrk->stats, bo->fetch_objcore);
 		VBO_setstate(bo, BOS_STREAM);
 	}
 
@@ -638,7 +638,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		assert(bo->state == BOS_STREAM);
 	else {
 		assert(bo->state == BOS_REQ_DONE);
-		HSH_Unbusy(&wrk->stats, bo->fetch_objcore);
+		HSH_Unbusy(wrk->stats, bo->fetch_objcore);
 	}
 
 	/* Recycle the backend connection before setting BOS_FINISHED to
@@ -680,7 +680,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	AZ(ObjCopyAttr(bo->vfc, bo->ims_oc, OA_GZIPBITS));
 
 	if (bo->do_stream) {
-		HSH_Unbusy(&wrk->stats, bo->fetch_objcore);
+		HSH_Unbusy(wrk->stats, bo->fetch_objcore);
 		VBO_setstate(bo, BOS_STREAM);
 	}
 
@@ -707,7 +707,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		return (F_STP_FAIL);
 
 	if (!bo->do_stream)
-		HSH_Unbusy(&wrk->stats, bo->fetch_objcore);
+		HSH_Unbusy(wrk->stats, bo->fetch_objcore);
 
 	assert(al == ol);
 	assert(ObjGetLen(bo->fetch_objcore, bo->stats) == al);
@@ -801,7 +801,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	VSB_delete(bo->synth_body);
 	bo->synth_body = NULL;
 
-	HSH_Unbusy(&wrk->stats, bo->fetch_objcore);
+	HSH_Unbusy(wrk->stats, bo->fetch_objcore);
 	VBO_setstate(bo, BOS_FINISHED);
 	return (F_STP_DONE);
 }
@@ -824,7 +824,7 @@ vbf_stp_fail(struct worker *wrk, struct busyobj *bo)
 		EXP_Rearm(bo->fetch_objcore,
 		    bo->fetch_objcore->exp.t_origin, 0, 0, 0);
 	}
-	wrk->stats.fetch_failed++;
+	wrk->stats->fetch_failed++;
 	VBO_setstate(bo, BOS_FAILED);
 	return (F_STP_DONE);
 }
@@ -857,7 +857,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	assert(isnan(bo->t_prev));
 	VSLb_ts_busyobj(bo, "Start", W_TIM_real(wrk));
 
-	bo->stats = &wrk->stats;
+	bo->stats = wrk->stats;
 
 	while (stp != F_STP_DONE) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -895,7 +895,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	AZ(bo->fetch_objcore->busyobj);
 
 	if (bo->ims_oc != NULL)
-		(void)HSH_DerefObjCore(&wrk->stats, &bo->ims_oc);
+		(void)HSH_DerefObjCore(wrk->stats, &bo->ims_oc);
 
 	bo->stats = NULL;
 
@@ -951,7 +951,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 
 	AZ(bo->ims_oc);
 	if (oldoc != NULL &&
-	    ObjCheckFlag(oldoc, &req->wrk->stats, OF_IMSCAND)) {
+	    ObjCheckFlag(oldoc, req->wrk->stats, OF_IMSCAND)) {
 		assert(oldoc->refcnt > 0);
 		HSH_Ref(oldoc);
 		bo->ims_oc = oldoc;

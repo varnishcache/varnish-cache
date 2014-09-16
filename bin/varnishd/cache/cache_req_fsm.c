@@ -103,13 +103,13 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
 	AZ(HTTP_Decode(req->resp,
-	    ObjGetattr(req->objcore, &req->wrk->stats, OA_HEADERS, NULL)));
+	    ObjGetattr(req->objcore, req->wrk->stats, OA_HEADERS, NULL)));
 	http_ForceField(req->resp, HTTP_HDR_PROTO, "HTTP/1.1");
 
-	if (req->wrk->stats.cache_hit)
+	if (req->wrk->stats->cache_hit)
 		http_PrintfHeader(req->resp,
 		    "X-Varnish: %u %u", VXID(req->vsl->wid),
-		    ObjGetXID(req->objcore, &wrk->stats));
+		    ObjGetXID(req->objcore, wrk->stats));
 	else
 		http_PrintfHeader(req->resp,
 		    "X-Varnish: %u", VXID(req->vsl->wid));
@@ -127,7 +127,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	http_SetHeader(req->resp, "Via: 1.1 varnish-v4");
 
 	if (cache_param->http_gzip_support &&
-	    ObjCheckFlag(req->objcore, &req->wrk->stats, OF_GZIPED) &&
+	    ObjCheckFlag(req->objcore, req->wrk->stats, OF_GZIPED) &&
 	    !RFC2616_Req_Gzip(req->http))
 		RFC2616_Weaken_Etag(req->resp);
 
@@ -140,7 +140,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	if (wrk->handling != VCL_RET_DELIVER) {
 		assert(req->objcore == req->objcore);
-		(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
+		(void)HSH_DerefObjCore(wrk->stats, &req->objcore);
 		http_Teardown(req->resp);
 
 		switch (wrk->handling) {
@@ -188,11 +188,11 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		 */
 		while (req->objcore->busyobj != NULL)
 			(void)usleep(100000);
-		ObjSlim(req->objcore, &wrk->stats);
+		ObjSlim(req->objcore, wrk->stats);
 	}
 
 	assert(WRW_IsReleased(wrk));
-	(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
+	(void)HSH_DerefObjCore(wrk->stats, &req->objcore);
 	http_Teardown(req->resp);
 	return (REQ_FSM_DONE);
 }
@@ -220,7 +220,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	wrk->stats.s_synth++;
+	wrk->stats->s_synth++;
 
 	now = W_TIM_real(wrk);
 	VSLb_ts_req(req, "Process", now);
@@ -295,13 +295,13 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
-	wrk->stats.s_fetch++;
+	wrk->stats->s_fetch++;
 	(void)VRB_Ignore(req);
 
 	if (req->objcore->flags & OC_F_FAILED) {
 		req->err_code = 503;
 		req->req_step = R_STP_SYNTH;
-		(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
+		(void)HSH_DerefObjCore(wrk->stats, &req->objcore);
 		AZ(req->objcore);
 		return (REQ_FSM_MORE);
 	}
@@ -399,16 +399,16 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		/* Found a hit-for-pass */
 		VSLb(req->vsl, SLT_Debug, "XXXX HIT-FOR-PASS");
 		VSLb(req->vsl, SLT_HitPass, "%u",
-		    ObjGetXID(req->objcore, &wrk->stats));
+		    ObjGetXID(req->objcore, wrk->stats));
 		AZ(boc);
-		(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
-		wrk->stats.cache_hitpass++;
+		(void)HSH_DerefObjCore(wrk->stats, &req->objcore);
+		wrk->stats->cache_hitpass++;
 		req->req_step = R_STP_PASS;
 		return (REQ_FSM_MORE);
 	}
 
 	VSLb(req->vsl, SLT_Hit, "%u",
-	    ObjGetXID(req->objcore, &wrk->stats));
+	    ObjGetXID(req->objcore, wrk->stats));
 
 	VCL_hit_method(req->vcl, wrk, req, NULL, req->http->ws);
 
@@ -422,7 +422,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		} else {
 			(void)VRB_Ignore(req);// XXX: handle err
 		}
-		wrk->stats.cache_hit++;
+		wrk->stats->cache_hit++;
 		req->req_step = R_STP_DELIVER;
 		return (REQ_FSM_MORE);
 	case VCL_RET_FETCH:
@@ -431,7 +431,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 			req->ims_oc = oc;
 			req->req_step = R_STP_MISS;
 		} else {
-			(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
+			(void)HSH_DerefObjCore(wrk->stats, &req->objcore);
 			/*
 			 * We don't have a busy object, so treat this
 			 * like a pass
@@ -449,7 +449,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_SYNTH;
 		break;
 	case VCL_RET_PASS:
-		wrk->stats.cache_hit++;
+		wrk->stats->cache_hit++;
 		req->req_step = R_STP_PASS;
 		break;
 	default:
@@ -457,10 +457,10 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	}
 
 	/* Drop our object, we won't need it */
-	(void)HSH_DerefObjCore(&wrk->stats, &req->objcore);
+	(void)HSH_DerefObjCore(wrk->stats, &req->objcore);
 
 	if (boc != NULL) {
-		(void)HSH_DerefObjCore(&wrk->stats, &boc);
+		(void)HSH_DerefObjCore(wrk->stats, &boc);
 		VRY_Clear(req);
 	}
 
@@ -493,11 +493,11 @@ cnt_miss(struct worker *wrk, struct req *req)
 	VCL_miss_method(req->vcl, wrk, req, NULL, req->http->ws);
 	switch (wrk->handling) {
 	case VCL_RET_FETCH:
-		wrk->stats.cache_miss++;
+		wrk->stats->cache_miss++;
 		VBF_Fetch(wrk, req, req->objcore, req->ims_oc, VBF_NORMAL);
 		req->req_step = R_STP_FETCH;
 		if (req->ims_oc != NULL)
-			(void)HSH_DerefObjCore(&wrk->stats, &req->ims_oc);
+			(void)HSH_DerefObjCore(wrk->stats, &req->ims_oc);
 		return (REQ_FSM_MORE);
 	case VCL_RET_SYNTH:
 		req->req_step = R_STP_SYNTH;
@@ -513,8 +513,8 @@ cnt_miss(struct worker *wrk, struct req *req)
 	}
 	VRY_Clear(req);
 	if (req->ims_oc != NULL)
-		(void)HSH_DerefObjCore(&wrk->stats, &req->ims_oc);
-	AZ(HSH_DerefObjCore(&wrk->stats, &req->objcore));
+		(void)HSH_DerefObjCore(wrk->stats, &req->ims_oc);
+	AZ(HSH_DerefObjCore(wrk->stats, &req->objcore));
 	return (REQ_FSM_MORE);
 }
 
@@ -553,7 +553,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_RESTART;
 		break;
 	case VCL_RET_FETCH:
-		wrk->stats.s_pass++;
+		wrk->stats->s_pass++;
 		req->objcore = HSH_Private(wrk);
 		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 		VBF_Fetch(wrk, req, req->objcore, NULL, VBF_PASS);
@@ -592,7 +592,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 
-	wrk->stats.s_pipe++;
+	wrk->stats->s_pipe++;
 	bo = VBO_GetBusyObj(wrk, req);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	VSLb(bo->vsl, SLT_Begin, "bereq %u pipe", VXID(req->vsl->wid));
@@ -828,7 +828,7 @@ cnt_purge(struct worker *wrk, struct req *req)
 
 	HSH_Purge(wrk, boc->objhead, 0, 0, 0);
 
-	AZ(HSH_DerefObjCore(&wrk->stats, &boc));
+	AZ(HSH_DerefObjCore(wrk->stats, &boc));
 
 	VCL_purge_method(req->vcl, wrk, req, NULL, req->http->ws);
 	switch (wrk->handling) {

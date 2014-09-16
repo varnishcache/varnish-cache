@@ -386,13 +386,13 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 			binheap_delete(ep->heap, oc->timer_idx);
 		}
 		assert(oc->timer_idx == BINHEAP_NOIDX);
-		(void)HSH_DerefObjCore(&ep->wrk->stats, &oc);
+		(void)HSH_DerefObjCore(ep->wrk->stats, &oc);
 		return;
 	}
 
 	if (flags & OC_EF_MOVE) {
 		oc->timer_when = EXP_When(&oc->exp);
-		ObjUpdateMeta(oc, &ep->wrk->stats);
+		ObjUpdateMeta(oc, ep->wrk->stats);
 	}
 
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_When p=%p e=%.9f f=0x%x", oc,
@@ -464,9 +464,9 @@ exp_expire(struct exp_priv *ep, double now)
 
 	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired x=%u t=%.0f",
-	    ObjGetXID(oc, &ep->wrk->stats),
+	    ObjGetXID(oc, ep->wrk->stats),
 	    EXP_Ttl(NULL, &oc->exp) - now);
-	(void)HSH_DerefObjCore(&ep->wrk->stats, &oc);
+	(void)HSH_DerefObjCore(ep->wrk->stats, &oc);
 	return (0);
 }
 

@@ -363,7 +363,7 @@ hcb_cleaner(struct worker *wrk, void *priv)
 		}
 		VTAILQ_FOREACH_SAFE(oh, &dead_h, hoh_list, oh2) {
 			VTAILQ_REMOVE(&dead_h, oh, hoh_list);
-			HSH_DeleteObjHead(&wrk->stats, oh);
+			HSH_DeleteObjHead(wrk->stats, oh);
 		}
 		Lck_Lock(&hcb_mtx);
 		VSTAILQ_CONCAT(&dead_y, &cool_y);
@@ -432,7 +432,7 @@ hcb_lookup(struct worker *wrk, const void *digest, struct objhead **noh)
 
 	/* First try in read-only mode without holding a lock */
 
-	wrk->stats.hcb_nolock++;
+	wrk->stats->hcb_nolock++;
 	oh = hcb_insert(wrk, &hcb_root, digest, NULL);
 	if (oh != NULL) {
 		Lck_Lock(&oh->mtx);

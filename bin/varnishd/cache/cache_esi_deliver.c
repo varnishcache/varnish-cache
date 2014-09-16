@@ -269,7 +269,7 @@ ESI_Deliver(struct req *req)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-	p = ObjGetattr(req->objcore, &req->wrk->stats, OA_ESIDATA, &l);
+	p = ObjGetattr(req->objcore, req->wrk->stats, OA_ESIDATA, &l);
 	AN(p);
 	assert(l > 0);
 	e = p + l;
@@ -484,7 +484,7 @@ ESI_DeliverChild(struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
-	if (!ObjCheckFlag(req->objcore, &req->wrk->stats, OF_GZIPED)) {
+	if (!ObjCheckFlag(req->objcore, req->wrk->stats, OF_GZIPED)) {
 		oi = ObjIterBegin(req->objcore, req->wrk);
 		do {
 			ois = ObjIter(req->objcore, oi, &sp, &sl);
@@ -500,13 +500,13 @@ ESI_DeliverChild(struct req *req)
 	 * padding it, as necessary, to a byte boundary.
 	 */
 
-	p = ObjGetattr(req->objcore, &req->wrk->stats, OA_GZIPBITS, &l);
+	p = ObjGetattr(req->objcore, req->wrk->stats, OA_GZIPBITS, &l);
 	AN(p);
 	assert(l == 24);
 	start = vbe64dec(p);
 	last = vbe64dec(p + 8);
 	stop = vbe64dec(p + 16);
-	olen = ObjGetLen(req->objcore, &req->wrk->stats);
+	olen = ObjGetLen(req->objcore, req->wrk->stats);
 	assert(start > 0 && start < olen * 8);
 	assert(last > 0 && last < olen * 8);
 	assert(stop > 0 && stop < olen * 8);

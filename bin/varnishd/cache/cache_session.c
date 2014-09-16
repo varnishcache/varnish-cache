@@ -200,7 +200,7 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 		VCA_FailSess(wrk);
 		return;
 	}
-	wrk->stats.s_sess++;
+	wrk->stats->s_sess++;
 
 	sp->t_open = VTIM_real();
 	sp->t_idle = sp->t_open;
