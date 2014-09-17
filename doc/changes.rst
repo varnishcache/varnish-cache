@@ -149,6 +149,9 @@ Other
 Changes from 3.0.2 to 3.0.3
 ===========================
 
+Note: In between 3.0.2 and 3.0.3 the VCL truth value for empty strings changed.
+Please see `Bug #1406`_ for the details.
+
 Varnishd
 --------
 
@@ -225,6 +228,7 @@ Varnishd
 .. _bug #1125: http://varnish-cache.org/trac/ticket/1125
 .. _bug #1126: http://varnish-cache.org/trac/ticket/1126
 .. _bug #1140: http://varnish-cache.org/trac/ticket/1140
+.. _bug #1406: http://varnish-cache.org/trac/ticket/1406
 
 varnishncsa
 -----------
