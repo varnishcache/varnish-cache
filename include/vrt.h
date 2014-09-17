@@ -170,38 +170,6 @@ struct vrt_backend {
 };
 
 /*
- * A director with an unpredictable reply
- */
-
-struct vrt_dir_random_entry {
-	int					host;
-	double					weight;
-};
-
-struct vrt_dir_random {
-	const char				*name;
-	unsigned				retries;
-	unsigned				nmember;
-	const struct vrt_dir_random_entry	*members;
-};
-
-/*
- * A director with dns-based selection
- */
-
-struct vrt_dir_dns_entry {
-	int					host;
-};
-
-struct vrt_dir_dns {
-	const char				*name;
-	const char				*suffix;
-	const double				ttl;
-	unsigned				nmember;
-	const struct vrt_dir_dns_entry		*members;
-};
-
-/*
  * other stuff.
  * XXX: document when bored
  */
