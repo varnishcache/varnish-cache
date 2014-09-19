@@ -199,6 +199,14 @@ Description
 Example
         set req.url = std.querysort(req.url);
 
+$Function VOID cache_req_body(BYTES)
+
+Description
+       Cache the req.body if it is smaller than the given size
+Example
+       std.cache_req_body(1KB);
+
+       This will cache the req.body if its size is smaller than 1KB.
 
 
 SEE ALSO

@@ -31,8 +31,10 @@ client c1 {
 delay .2
 
 varnish v1 -cliok "param.set vcc_allow_inline_c true" -vcl+backend {
+	import ${vmod_std};
+
 	sub vcl_recv {
-		C{ VRT_CacheReqBody(ctx, 1000); }C
+		std.cache_req_body(1000B);
 	}
 }
 

@@ -230,3 +230,12 @@ vmod_timestamp(const struct vrt_ctx *ctx, VCL_STRING label)
 		VSLb_ts_req(ctx->req, label, VTIM_real());
 	}
 }
+
+VCL_VOID __match_proto__(td_std_cache_req_body)
+vmod_cache_req_body(const struct vrt_ctx *ctx, VCL_BYTES size)
+{
+	int result;
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	result = VRT_CacheReqBody(ctx, size);
+	VSLb(ctx->vsl, SLT_Debug,"VRT_CacheReqBody[size: %zu] result: %d", (size_t)size, result);
+}
