@@ -32,7 +32,7 @@ client c1 {
 
 varnish v1 -expect SMA.Transient.g_bytes == 0
 varnish v1 -expect SMA.s0.g_bytes > 1000000
-varnish v1 -expect SMA.s0.g_space < 190
+varnish v1 -expect SMA.s0.g_space < 193
 varnish v1 -expect SMA.s1.g_bytes == 0
 varnish v1 -expect SMA.s1.g_space > 1000000
 varnish v1 -expect SMA.s2.g_bytes == 0
@@ -48,7 +48,7 @@ client c1 {
 varnish v1 -expect n_lru_nuked == 1
 varnish v1 -expect SMA.Transient.g_bytes == 0
 varnish v1 -expect SMA.s0.g_bytes > 1000000
-varnish v1 -expect SMA.s0.g_space < 1190
+varnish v1 -expect SMA.s0.g_space < 1192
 varnish v1 -expect SMA.s1.g_bytes == 0
 varnish v1 -expect SMA.s1.g_space > 1000000
 varnish v1 -expect SMA.s2.g_bytes == 0
@@ -64,7 +64,7 @@ client c1 {
 varnish v1 -expect n_lru_nuked == 2
 varnish v1 -expect SMA.Transient.g_bytes == 0
 varnish v1 -expect SMA.s0.g_bytes > 1000000
-varnish v1 -expect SMA.s0.g_space < 1192
+varnish v1 -expect SMA.s0.g_space < 1194
 varnish v1 -expect SMA.s1.g_bytes == 0
 varnish v1 -expect SMA.s1.g_space > 1000000
 varnish v1 -expect SMA.s2.g_bytes == 0
