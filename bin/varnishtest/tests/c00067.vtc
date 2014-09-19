@@ -30,7 +30,7 @@ client c1 {
 
 delay .2
 
-varnish v1 -cliok "param.set vcc_allow_inline_c true" -vcl+backend {
+varnish v1 -vcl+backend {
 	import ${vmod_std};
 
 	sub vcl_recv {
