@@ -14,6 +14,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # You will need at least automake autoconf libtool python-docutils
 #BuildRequires: automake autoconf libtool python-docutils
 BuildRequires: ncurses-devel libxslt groff pcre-devel pkgconfig libedit-devel
+BuildRequires: python
 Requires: varnish-libs = %{version}-%{release}
 Requires: logrotate
 Requires: ncurses
