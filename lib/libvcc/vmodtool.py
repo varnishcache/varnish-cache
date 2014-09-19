@@ -49,6 +49,7 @@ ctypes = {
 	'BACKEND':	"VCL_BACKEND",
 	'BLOB':		"VCL_BLOB",
 	'BOOL':		"VCL_BOOL",
+	'BYTES':	"VCL_BYTES",
 	'DURATION':	"VCL_DURATION",
 	'ENUM':		"VCL_ENUM",
 	'HEADER':	"VCL_HEADER",
