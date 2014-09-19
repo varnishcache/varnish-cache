@@ -32,8 +32,6 @@ varnish v1 -vcl+backend {
 		set beresp.proto = "HTTP/1.2";
 		set beresp.reason = "For circular files";
 		set beresp.status = 903;
-		set beresp.http.y-served-by-hostname = server.hostname;
-		set beresp.http.y-served-by-identity = server.identity;
 	}
 	sub vcl_deliver {
 		set resp.proto = "HTTP/1.2";
