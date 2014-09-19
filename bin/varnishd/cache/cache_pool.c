@@ -471,14 +471,13 @@ pool_herder(void *priv)
 	AZ(pthread_attr_init(&tp_attr));
 
 	while (1) {
+		AZ(pthread_attr_destroy(&tp_attr));
+		AZ(pthread_attr_init(&tp_attr));
+
 		/* Set the stacksize for worker threads we create */
 		if (cache_param->wthread_stacksize != UINT_MAX)
 			AZ(pthread_attr_setstacksize(&tp_attr,
 			    cache_param->wthread_stacksize));
-		else {
-			AZ(pthread_attr_destroy(&tp_attr));
-			AZ(pthread_attr_init(&tp_attr));
-		}
 
 		/* Make more threads if needed and allowed */
 		if (pp->nthr < cache_param->wthread_min ||
