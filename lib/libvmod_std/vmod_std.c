@@ -231,7 +231,6 @@ vmod_timestamp(const struct vrt_ctx *ctx, VCL_STRING label)
 	}
 }
 
-
 VCL_STRING __match_proto__(td_std_strstr)
 vmod_strstr(const struct vrt_ctx *ctx, VCL_STRING mstr, VCL_STRING msubstr)
 {
@@ -241,4 +240,13 @@ vmod_strstr(const struct vrt_ctx *ctx, VCL_STRING mstr, VCL_STRING msubstr)
 		return (NULL);
 	else
 		return(strstr(mstr, msubstr));
+}
+
+VCL_VOID __match_proto__(td_std_cache_req_body)
+vmod_cache_req_body(const struct vrt_ctx *ctx, VCL_BYTES size)
+{
+	int result;
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	result = VRT_CacheReqBody(ctx, size);
+	VSLb(ctx->vsl, SLT_Debug,"VRT_CacheReqBody[size: %zu] result: %d", (size_t)size, result);
 }
