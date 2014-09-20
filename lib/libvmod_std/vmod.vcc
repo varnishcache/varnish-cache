@@ -195,9 +195,19 @@ $Function STRING querysort(STRING)
 
 Description
         Sorts the querystring for cache normalization purposes.
-
 Example
         set req.url = std.querysort(req.url);
+
+
+$Function STRING strstr(STRING, STRING)
+
+Description
+	Returns true if the second string is a substring of the first
+	string. Note that the comparison is case sensitive. You can
+	use the tolower function on both strings if you want case
+	insensitivity.
+Example
+	if (std.strstr(req.url, req.http.x-restrict)) 
 
 
 
