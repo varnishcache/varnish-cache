@@ -239,3 +239,14 @@ vmod_cache_req_body(const struct vrt_ctx *ctx, VCL_BYTES size)
 	result = VRT_CacheReqBody(ctx, size);
 	VSLb(ctx->vsl, SLT_Debug,"VRT_CacheReqBody(%zu): %d", (size_t)size, result);
 }
+
+VCL_STRING __match_proto__(td_std_strstr)
+vmod_strstr(const struct vrt_ctx *ctx, VCL_STRING mstr, VCL_STRING msubstr)
+{
+        
+        CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+        char *match =  strstr(mstr, msubstr);
+
+	return(match);
+}
+
