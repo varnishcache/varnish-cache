@@ -509,6 +509,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
 
 	assert(wrk->handling == VCL_RET_DELIVER);
 
@@ -624,8 +625,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->vfc->failed && !bo->do_stream) {
 		assert(bo->state < BOS_STREAM);
-		if (bo->fetch_objcore != NULL)
-			ObjFreeObj(bo->wrk, bo->fetch_objcore);
+		ObjFreeObj(bo->wrk, bo->fetch_objcore);
 		return (F_STP_ERROR);
 	}
 
