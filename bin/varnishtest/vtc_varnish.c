@@ -328,7 +328,7 @@ static void *
 varnish_thread(void *priv)
 {
 	struct varnish *v;
-	char buf[BUFSIZ];
+	char buf[65536];
 	struct pollfd *fds, fd;
 	int i;
 
