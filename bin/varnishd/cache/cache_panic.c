@@ -277,6 +277,8 @@ pan_wrk(const struct worker *wrk)
 	const char *p;
 
 	VSB_printf(pan_vsp, "  worker = %p {\n", wrk);
+	VSB_printf(pan_vsp, "    stack = {0x%jx -> 0x%jx}\n",
+	    wrk->stack_start, wrk->stack_end);
 	pan_ws(wrk->aws, 4);
 
 	m = wrk->cur_method;

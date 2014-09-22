@@ -348,14 +348,13 @@ pool_stat_summ(struct worker *wrk, void *priv)
  */
 
 void
-Pool_Work_Thread(void *priv, struct worker *wrk)
+Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 {
-	struct pool *pp;
 	struct pool_task *tp;
 	struct pool_task tps;
 	int i;
 
-	CAST_OBJ_NOTNULL(pp, priv, POOL_MAGIC);
+	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	wrk->pool = pp;
 	while (1) {
 		Lck_Lock(&pp->mtx);
@@ -416,15 +415,48 @@ Pool_Work_Thread(void *priv, struct worker *wrk)
 }
 
 /*--------------------------------------------------------------------
- * Create another thread.
+ * Create another worker thread.
  */
 
+struct pool_info {
+	unsigned		magic;
+#define POOL_INFO_MAGIC		0x4e4442d3
+	size_t			stacksize;
+	struct pool		*qp;
+};
+
+static void *
+pool_thread(void *priv)
+{
+	struct pool_info *pi;
+
+	CAST_OBJ_NOTNULL(pi, priv, POOL_INFO_MAGIC);
+	WRK_Thread(pi->qp, pi->stacksize, cache_param->workspace_thread);
+	FREE_OBJ(pi);
+	return (NULL);
+}
+
 static void
-pool_breed(struct pool *qp, const pthread_attr_t *tp_attr)
+pool_breed(struct pool *qp)
 {
 	pthread_t tp;
+	pthread_attr_t tp_attr;
+	struct pool_info *pi;
 
-	if (pthread_create(&tp, tp_attr, WRK_thread, qp)) {
+	AZ(pthread_attr_init(&tp_attr));
+	AZ(pthread_attr_setdetachstate(&tp_attr, PTHREAD_CREATE_DETACHED));
+
+	/* Set the stacksize for worker threads we create */
+	if (cache_param->wthread_stacksize != UINT_MAX)
+		AZ(pthread_attr_setstacksize(&tp_attr,
+		    cache_param->wthread_stacksize));
+
+	ALLOC_OBJ(pi, POOL_INFO_MAGIC);
+	AN(pi);
+	AZ(pthread_attr_getstacksize(&tp_attr, &pi->stacksize));
+	pi->qp = qp;
+
+	if (pthread_create(&tp, &tp_attr, pool_thread, pi)) {
 		VSL(SLT_Debug, 0, "Create worker thread failed %d %s",
 		    errno, strerror(errno));
 		Lck_Lock(&pool_mtx);
@@ -432,7 +464,6 @@ pool_breed(struct pool *qp, const pthread_attr_t *tp_attr)
 		Lck_Unlock(&pool_mtx);
 		VTIM_sleep(cache_param->wthread_fail_delay);
 	} else {
-		AZ(pthread_detach(tp));
 		qp->dry = 0;
 		qp->nthr++;
 		Lck_Lock(&pool_mtx);
@@ -441,6 +472,8 @@ pool_breed(struct pool *qp, const pthread_attr_t *tp_attr)
 		Lck_Unlock(&pool_mtx);
 		VTIM_sleep(cache_param->wthread_add_delay);
 	}
+
+	AZ(pthread_attr_destroy(&tp_attr));
 }
 
 /*--------------------------------------------------------------------
@@ -463,27 +496,16 @@ pool_herder(void *priv)
 {
 	struct pool *pp;
 	struct pool_task *pt;
-	pthread_attr_t tp_attr;
 	double t_idle;
 	struct worker *wrk;
 
 	CAST_OBJ_NOTNULL(pp, priv, POOL_MAGIC);
-	AZ(pthread_attr_init(&tp_attr));
 
 	while (1) {
-		/* Set the stacksize for worker threads we create */
-		if (cache_param->wthread_stacksize != UINT_MAX)
-			AZ(pthread_attr_setstacksize(&tp_attr,
-			    cache_param->wthread_stacksize));
-		else {
-			AZ(pthread_attr_destroy(&tp_attr));
-			AZ(pthread_attr_init(&tp_attr));
-		}
-
 		/* Make more threads if needed and allowed */
 		if (pp->nthr < cache_param->wthread_min ||
 		    (pp->dry && pp->nthr < cache_param->wthread_max)) {
-			pool_breed(pp, &tp_attr);
+			pool_breed(pp);
 			continue;
 		}
 

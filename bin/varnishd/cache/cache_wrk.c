@@ -32,6 +32,7 @@
 #include "config.h"
 
 #include <math.h>
+#include <unistd.h>
 #include <stdlib.h>
 
 #include "cache.h"
@@ -84,11 +85,16 @@ WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func, void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static void *
-wrk_thread_real(void *priv, unsigned thread_workspace)
+void
+WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 {
 	struct worker *w, ww;
 	unsigned char ws[thread_workspace];
+	uintptr_t u;
+
+	AN(qp);
+	AN(stacksize);
+	AN(thread_workspace);
 
 	THR_SetName("cache-worker");
 	w = &ww;
@@ -99,9 +105,17 @@ wrk_thread_real(void *priv, unsigned thread_workspace)
 
 	WS_Init(w->aws, "wrk", ws, thread_workspace);
 
+	u = getpagesize();
+	AN(u);
+	u -= 1U;
+	w->stack_start = (((uintptr_t)&qp) + u) & ~u;
+
+	/* XXX: assuming stack grows down. */
+	w->stack_end = w->stack_start - stacksize;
+
 	VSL(SLT_WorkThread, 0, "%p start", w);
 
-	Pool_Work_Thread(priv, w);
+	Pool_Work_Thread(qp, w);
 	AZ(w->pool);
 
 	VSL(SLT_WorkThread, 0, "%p end", w);
@@ -112,12 +126,4 @@ wrk_thread_real(void *priv, unsigned thread_workspace)
 		VBO_Free(&w->nbo);
 	HSH_Cleanup(w);
 	Pool_Sumstat(w);
-	return (NULL);
-}
-
-void *
-WRK_thread(void *priv)
-{
-
-	return (wrk_thread_real(priv, cache_param->workspace_thread));
 }

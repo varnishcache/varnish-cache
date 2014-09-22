@@ -367,6 +367,9 @@ struct worker {
 	unsigned		cur_method;
 	unsigned		seen_methods;
 	unsigned		handling;
+
+	uintptr_t		stack_start;
+	uintptr_t		stack_end;
 };
 
 /* LRU ---------------------------------------------------------------*/
@@ -1020,7 +1023,7 @@ void PipeRequest(struct req *req, struct busyobj *bo);
 /* cache_pool.c */
 void Pool_Init(void);
 void Pool_Accept(void);
-void Pool_Work_Thread(void *priv, struct worker *w);
+void Pool_Work_Thread(struct pool *, struct worker *w);
 int Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how);
 void Pool_Sumstat(struct worker *w);
 void Pool_PurgeStat(unsigned nobj);
@@ -1136,7 +1139,7 @@ void WAIT_Write_Session(struct sess *sp, int fd);
 
 /* cache_wrk.c */
 
-void *WRK_thread(void *priv);
+void WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace);
 typedef void *bgthread_t(struct worker *, void *priv);
 void WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func,
     void *priv);
