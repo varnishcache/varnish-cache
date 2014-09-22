@@ -106,7 +106,7 @@ vbf_beresp2obj(struct busyobj *bo)
 		if (varyl > 0) {
 			AN(vary);
 			assert(varyl == VSB_len(vary));
-			l += varyl;
+			l += PRNDUP(varyl);
 		} else if (varyl < 0) {
 			/*
 			 * Vary parse error
