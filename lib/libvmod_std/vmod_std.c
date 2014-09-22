@@ -242,11 +242,12 @@ vmod_cache_req_body(const struct vrt_ctx *ctx, VCL_BYTES size)
 
 VCL_STRING __match_proto__(td_std_strstr)
 vmod_strstr(const struct vrt_ctx *ctx, VCL_STRING mstr, VCL_STRING msubstr)
-{
-        
+{ 
         CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-        char *match =  strstr(mstr, msubstr);
 
-	return(match);
+        if ((mstr == NULL) || (msubstr == NULL))
+		return (NULL);
+	else
+		return(strstr(mstr, msubstr));
 }
 
