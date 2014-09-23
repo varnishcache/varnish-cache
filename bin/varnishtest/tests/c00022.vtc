@@ -76,7 +76,7 @@ client c1 {
 
 # Ban: everything else
 client c1 {
-	txreq -req PURGESTR -hdr "ban=req.url != /foo"
+	txreq -req PURGESTR -hdr "ban: req.url != /foo"
 	rxresp
 	expect resp.status == 410
 } -run
