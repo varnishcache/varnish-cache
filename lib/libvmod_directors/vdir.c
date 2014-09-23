@@ -52,7 +52,7 @@ vdir_expand(struct vdir *vd, unsigned n)
 
 void
 vdir_new(struct vdir **vdp, const char *vcl_name, vdi_healthy_f *healthy,
-    vdi_getfd_f *getfd, void *priv)
+    vdi_resolve_f *resolve, void *priv)
 {
 	struct vdir *vd;
 
@@ -69,7 +69,7 @@ vdir_new(struct vdir **vdp, const char *vcl_name, vdi_healthy_f *healthy,
 	REPLACE(vd->dir->vcl_name, vcl_name);
 	vd->dir->priv = priv;
 	vd->dir->healthy = healthy;
-	vd->dir->getfd = getfd;
+	vd->dir->resolve = resolve;
 	vd->vbm = vbit_init(8);
 	AN(vd->vbm);
 }

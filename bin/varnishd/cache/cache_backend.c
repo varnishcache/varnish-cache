@@ -441,11 +441,16 @@ VDI_GetHdr(struct worker *wrk, struct busyobj *bo)
 	}
 
 	CHECK_OBJ_NOTNULL(bo->director, DIRECTOR_MAGIC);
+	while (bo->director != NULL && bo->director->resolve != NULL)
+		bo->director = bo->director->resolve(bo->director, wrk, bo);
 
-	if (bo->director->gethdrs != NULL)
-		return (bo->director->gethdrs(bo->director, wrk, bo));
-	else
-		return (vdi_simple_gethdrs(bo->director, wrk, bo));
+	if (bo->director == NULL) {
+		VSLb(bo->vsl, SLT_FetchError, "Backend selection failed");
+		return (-1);
+	}
+
+	AN(bo->director->gethdrs);
+	return (bo->director->gethdrs(bo->director, wrk, bo));
 }
 
 /*--------------------------------------------------------------------*/

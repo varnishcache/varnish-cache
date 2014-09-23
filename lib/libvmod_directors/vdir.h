@@ -42,7 +42,7 @@ struct vdir {
 };
 
 void vdir_new(struct vdir **vdp, const char *vcl_name, vdi_healthy_f *healthy,
-    vdi_getfd_f *getfd, void *priv);
+    vdi_resolve_f *resolve, void *priv);
 void vdir_delete(struct vdir **vdp);
 void vdir_lock(struct vdir *vd);
 void vdir_unlock(struct vdir *vd);
