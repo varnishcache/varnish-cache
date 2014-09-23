@@ -47,9 +47,9 @@ want to emulate the previous behavior of Varnish 3.0 you can just
 initialize the directors in vcl_init, like this:::
 
     sub vcl_init {
-        new vdir = directors.round_robin();
-        vdir.add_backend(backend1);
-        vdir.add_backend(backend2);
+	new vdir = directors.round_robin();
+	vdir.add_backend(backend1);
+	vdir.add_backend(backend2);
     }
 
 As you can see there is nothing keeping you from manipulating the
@@ -61,7 +61,7 @@ Note that directors can use other directors as backends.
 $Object round_robin()
 
 Description
-        Create a round robin director.
+	Create a round robin director.
 
 	This director will pick backends in a round robin fashion.
 Example
@@ -86,18 +86,18 @@ Example
 $Object fallback()
 
 Description
-        Create a fallback director.
+	Create a fallback director.
 
-        A fallback director will try each of the added backends in turn,
-        and return the first one that is healthy.
+	A fallback director will try each of the added backends in turn,
+	and return the first one that is healthy.
 
 Example
-        new vdir = directors.fallback();
+	new vdir = directors.fallback();
 
 $Method VOID .add_backend(BACKEND)
 
 Description
-        Add a backend to the director.
+	Add a backend to the director.
 
 	Note that the order in which this is done matters for the fallback
 	director.

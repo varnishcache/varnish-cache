@@ -194,9 +194,9 @@ Example
 $Function STRING querysort(STRING)
 
 Description
-        Sorts the querystring for cache normalization purposes.
+	Sorts the querystring for cache normalization purposes.
 Example
-        set req.url = std.querysort(req.url);
+	set req.url = std.querysort(req.url);
 
 $Function VOID cache_req_body(BYTES)
 
@@ -214,12 +214,12 @@ Description
 	string. Note that the comparison is case sensitive. You can
 	use the tolower function on both strings if you want case
 	insensitivity.
-	
-        If there is no match a NULL pointer is returned which would
-        evaluate to false in an if-test.
+
+	If there is no match a NULL pointer is returned which would
+	evaluate to false in an if-test.
 
 Example
-	if (std.strstr(req.url, req.http.x-restrict)) 
+	if (std.strstr(req.url, req.http.x-restrict))
 
 
 
