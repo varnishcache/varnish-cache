@@ -517,6 +517,8 @@ struct busyobj {
 	struct vsl_log		vsl[1];
 
 	struct vsb		*synth_body;
+
+	uint8_t			digest[DIGEST_LEN];
 };
 
 
