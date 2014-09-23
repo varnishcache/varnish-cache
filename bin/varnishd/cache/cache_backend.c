@@ -42,7 +42,6 @@
 #include "cache_backend.h"
 #include "vrt.h"
 #include "vtcp.h"
-#include "vtim.h"
 
 static struct mempool	*vbcpool;
 
@@ -357,35 +356,6 @@ VBE_DiscardHealth(const struct director *vdi)
 }
 
 /*--------------------------------------------------------------------
- */
-
-int
-VDI_GetHdr(struct worker *wrk, struct busyobj *bo)
-{
-	int i;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-
-	if (bo->director == NULL) {
-		VSLb(bo->vsl, SLT_FetchError, "No backend");
-		return (-1);
-	}
-
-	i = V1F_fetch_hdr(wrk, bo);
-	/*
-	 * If we recycle a backend connection, there is a finite chance
-	 * that the backend closed it before we get a request to it.
-	 * Do a single retry in that case.
-	 */
-	if (i == 1) {
-		VSC_C_main->backend_retry++;
-		i = VDI_GetHdr(wrk, bo);
-	}
-	return (i);
-}
-
-/*--------------------------------------------------------------------
  *
  */
 
@@ -425,11 +395,57 @@ static int __match_proto__(vdi_gethdrs_f)
 vdi_simple_gethdrs(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
 {
+	int i;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	return (-1);
+
+	bo->vbc = VDI_GetFd(bo);
+	if (bo->vbc == NULL) {
+		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
+		return (-1);
+	}
+
+	i = V1F_fetch_hdr(wrk, bo);
+	/*
+	 * If we recycle a backend connection, there is a finite chance
+	 * that the backend closed it before we get a request to it.
+	 * Do a single retry in that case.
+	 */
+	if (i == 1) {
+		VSC_C_main->backend_retry++;
+		bo->vbc = VDI_GetFd(bo);
+		if (bo->vbc == NULL) {
+			VSLb(bo->vsl, SLT_FetchError, "no backend connection");
+			return (-1);
+		}
+		i = V1F_fetch_hdr(wrk, bo);
+	}
+	return (i);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+int
+VDI_GetHdr(struct worker *wrk, struct busyobj *bo)
+{
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	if (bo->director == NULL) {
+		VSLb(bo->vsl, SLT_FetchError, "No backend");
+		return (-1);
+	}
+
+	CHECK_OBJ_NOTNULL(bo->director, DIRECTOR_MAGIC);
+
+	if (bo->director->gethdrs != NULL)
+		return (bo->director->gethdrs(bo->director, wrk, bo));
+	else
+		return (vdi_simple_gethdrs(bo->director, wrk, bo));
 }
 
 /*--------------------------------------------------------------------*/
