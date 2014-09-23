@@ -282,6 +282,12 @@ http1_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
 			q--;
 		*q = '\0';
 
+		if (strchr(p, ':') == NULL) {
+			VSLb(hp->vsl, SLT_BogoHeader, "Header without ':' %.*s",
+			    (int)(q - p > 20 ? 20 : q - p), p);
+			return (400);
+		}
+
 		if (hp->nhd < hp->shd) {
 			hp->hdf[hp->nhd] = 0;
 			hp->hd[hp->nhd].b = p;

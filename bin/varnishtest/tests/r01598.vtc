@@ -1,0 +1,34 @@
+varnishtest "#1598 - Missing ':' in server response headers"
+
+server s1 {
+	rxreq
+	txresp -hdr "ETag: \"tag\"" -hdr "foo"
+	accept
+
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.ttl = 1s;
+		set beresp.grace = 0s;
+		set beresp.keep = 60s;
+	}
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
+delay .1
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
