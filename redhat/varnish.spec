@@ -1,10 +1,10 @@
-%define XXXv_rc rc1
+%define v_rc rc1
 %define vd_rc %{?v_rc:-%{?v_rc}}
 %define    _use_internal_dependency_generator 0
 %define __find_provides %{_builddir}/varnish-%{version}%{?v_rc:-%{?v_rc}}/redhat/find-provides
 Summary: High-performance HTTP accelerator
 Name: varnish
-Version: 4.0.1
+Version: 4.0.2
 #Release: 0.20140328%{?v_rc}%{?dist}
 Release: 1%{?v_rc}%{?dist}
 License: BSD
