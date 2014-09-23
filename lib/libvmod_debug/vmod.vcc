@@ -39,7 +39,7 @@ $Function VOID panic(STRING_LIST)
 
 Don't.
 
-$Function STRING author(ENUM { phk, des, kristian, mithrandir })
+$Function STRING author(ENUM { phk, des, kristian, mithrandir } person)
 
 Test function for ENUM arguments
 
@@ -51,11 +51,11 @@ $Function VOID test_priv_vcl(PRIV_VCL)
 
 Test function for VCL private pointers
 
-$Function BLOB str2blob(STRING)
+$Function BLOB str2blob(STRING src)
 
 Turn a string into a blob
 
-$Function STRING blob2hex(BLOB)
+$Function STRING blob2hex(BLOB src)
 
 Hexdump a blob
 
@@ -63,7 +63,7 @@ $Function BACKEND no_backend()
 
 Fails at backend selection
 
-$Object obj(STRING) 
+$Object obj(STRING)
 
 Test object
 
