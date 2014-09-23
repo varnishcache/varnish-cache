@@ -51,7 +51,7 @@ vdir_expand(struct vdir *vd, unsigned n)
 }
 
 void
-vdir_new(struct vdir **vdp, const char *vcl_name, vdi_healthy *healthy,
+vdir_new(struct vdir **vdp, const char *vcl_name, vdi_healthy_f *healthy,
     vdi_getfd_f *getfd, void *priv)
 {
 	struct vdir *vd;

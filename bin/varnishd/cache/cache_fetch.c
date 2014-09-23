@@ -265,17 +265,8 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	assert(bo->state <= BOS_REQ_DONE);
 
-	i = V1F_fetch_hdr(wrk, bo);
-	/*
-	 * If we recycle a backend connection, there is a finite chance
-	 * that the backend closed it before we get a request to it.
-	 * Do a single retry in that case.
-	 */
-	if (i == 1) {
-		VSLb_ts_busyobj(bo, "Beresp", W_TIM_real(wrk));
-		VSC_C_main->backend_retry++;
-		i = V1F_fetch_hdr(wrk, bo);
-	}
+	i = VDI_GetHdr(wrk, bo);
+
 	now = W_TIM_real(wrk);
 	VSLb_ts_busyobj(bo, "Beresp", now);
 

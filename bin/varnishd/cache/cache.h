@@ -695,6 +695,7 @@ void VBE_UseHealth(const struct director *vdi);
 void VBE_DiscardHealth(const struct director *vdi);
 
 
+int VDI_GetHdr(struct worker *wrk, struct busyobj *bo);
 struct vbc *VDI_GetFd(struct busyobj *);
 int VDI_Healthy(const struct director *);
 void VDI_CloseFd(struct vbc **vbp, const struct acct_bereq *);

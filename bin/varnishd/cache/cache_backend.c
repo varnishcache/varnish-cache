@@ -42,6 +42,7 @@
 #include "cache_backend.h"
 #include "vrt.h"
 #include "vtcp.h"
+#include "vtim.h"
 
 static struct mempool	*vbcpool;
 
@@ -356,6 +357,35 @@ VBE_DiscardHealth(const struct director *vdi)
 }
 
 /*--------------------------------------------------------------------
+ */
+
+int
+VDI_GetHdr(struct worker *wrk, struct busyobj *bo)
+{
+	int i;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	if (bo->director == NULL) {
+		VSLb(bo->vsl, SLT_FetchError, "No backend");
+		return (-1);
+	}
+
+	i = V1F_fetch_hdr(wrk, bo);
+	/*
+	 * If we recycle a backend connection, there is a finite chance
+	 * that the backend closed it before we get a request to it.
+	 * Do a single retry in that case.
+	 */
+	if (i == 1) {
+		VSC_C_main->backend_retry++;
+		i = VDI_GetHdr(wrk, bo);
+	}
+	return (i);
+}
+
+/*--------------------------------------------------------------------
  *
  */
 
@@ -378,7 +408,7 @@ vdi_simple_getfd(const struct director *d, struct busyobj *bo)
 	return (vc);
 }
 
-static unsigned
+static unsigned __match_proto__(vdi_healthy_f)
 vdi_simple_healthy(const struct director *d, double *changed)
 {
 	struct vdi_simple *vs;
@@ -389,6 +419,17 @@ vdi_simple_healthy(const struct director *d, double *changed)
 	be = vs->backend;
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
 	return (VBE_Healthy(be, changed));
+}
+
+static int __match_proto__(vdi_gethdrs_f)
+vdi_simple_gethdrs(const struct director *d, struct worker *wrk,
+    struct busyobj *bo)
+{
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	return (-1);
 }
 
 /*--------------------------------------------------------------------*/
@@ -428,6 +469,7 @@ VRT_init_dir(struct cli *cli, struct director **bp, int idx, const void *priv)
 	REPLACE(vs->dir.vcl_name, t->vcl_name);
 	vs->dir.getfd = vdi_simple_getfd;
 	vs->dir.healthy = vdi_simple_healthy;
+	vs->dir.gethdrs = vdi_simple_gethdrs;
 
 	vs->vrt = t;
 

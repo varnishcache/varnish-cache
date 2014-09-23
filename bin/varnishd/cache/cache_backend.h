@@ -76,7 +76,9 @@ struct vrt_backend_probe;
  */
 
 typedef struct vbc *vdi_getfd_f(const struct director *, struct busyobj *);
-typedef unsigned vdi_healthy(const struct director *, double *changed);
+typedef unsigned vdi_healthy_f(const struct director *, double *changed);
+typedef int vdi_gethdrs_f(const struct director *, struct worker *,
+    struct busyobj *);
 
 struct director {
 	unsigned		magic;
@@ -84,7 +86,8 @@ struct director {
 	const char		*name;
 	char			*vcl_name;
 	vdi_getfd_f		*getfd;
-	vdi_healthy		*healthy;
+	vdi_healthy_f		*healthy;
+	vdi_gethdrs_f		*gethdrs;
 	void			*priv;
 };
 
