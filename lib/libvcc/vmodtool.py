@@ -647,8 +647,8 @@ def parse_func(tl, rt_type=None, pobj=None):
 		t = tl.get_token()
 		if is_c_name(t.str):
 			al[-1].nam = t.str
-			t = None
-		elif t.str == ",":
+			t = tl.get_token()
+		if t.str == ",":
 			t = None
 		elif t.str == ")":
 			break
