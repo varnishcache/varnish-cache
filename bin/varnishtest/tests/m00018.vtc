@@ -13,11 +13,11 @@ varnish v1 -vcl+backend {
 
 	sub vcl_deliver {
 	    if (std.strstr(req.url, "foo")) {
-		set resp.http.sub = "found";	
+		set resp.http.sub = "found";
 	    } else {
-		set resp.http.sub = "not found";	
+		set resp.http.sub = "not found";
 	    }
-		
+
 	}
 } -start
 
