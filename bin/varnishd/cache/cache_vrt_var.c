@@ -313,12 +313,12 @@ VRT_r_beresp_backend_name(const struct vrt_ctx *ctx)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	if (ctx->bo->director_resp != NULL)
+		return (ctx->bo->director_resp->vcl_name);
 	if (ctx->bo->vbc != NULL) {
 		CHECK_OBJ_NOTNULL(ctx->bo->vbc, VBC_MAGIC);
 		return (ctx->bo->vbc->backend->vcl_name);
 	}
-	if (ctx->bo->director != NULL)
-		return (ctx->bo->director->vcl_name);
 	return (NULL);
 }
 
@@ -390,29 +390,38 @@ VRT_r_req_##nm(const struct vrt_ctx *ctx)				\
 	return(ctx->req->elem);						\
 }
 
-REQ_VAR_L(backend_hint, director_hint, struct director *,)
-REQ_VAR_R(backend_hint, director_hint, struct director *)
+REQ_VAR_L(backend_hint, director_hint, const struct director *,)
+REQ_VAR_R(backend_hint, director_hint, const struct director *)
 REQ_VAR_L(ttl, d_ttl, double, if (!(arg>0.0)) arg = 0;)
 REQ_VAR_R(ttl, d_ttl, double)
 
 /*--------------------------------------------------------------------*/
 
 void
-VRT_l_bereq_backend(const struct vrt_ctx *ctx, struct director *be)
+VRT_l_bereq_backend(const struct vrt_ctx *ctx, const struct director *be)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	ctx->bo->director = be;
+	ctx->bo->director_req = be;
 }
 
-struct director *
+const struct director *
 VRT_r_bereq_backend(const struct vrt_ctx *ctx)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	return (ctx->bo->director);
+	return (ctx->bo->director_req);
+}
+
+const struct director *
+VRT_r_beresp_backend(const struct vrt_ctx *ctx)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	return (ctx->bo->director_resp);
 }
 
 /*--------------------------------------------------------------------*/

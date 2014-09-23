@@ -144,7 +144,7 @@ VBO_GetBusyObj(struct worker *wrk, const struct req *req)
 
 	bo->do_stream = 1;
 
-	bo->director = req->director_hint;
+	bo->director_req = req->director_hint;
 	bo->vcl = req->vcl;
 	VCL_Ref(bo->vcl);
 

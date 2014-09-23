@@ -511,7 +511,8 @@ struct busyobj {
 	struct acct_bereq	acct;
 
 	const char		*storage_hint;
-	struct director		*director;
+	const struct director	*director_req;
+	const struct director	*director_resp;
 	struct VCL_conf		*vcl;
 
 	struct vsl_log		vsl[1];
@@ -564,7 +565,7 @@ struct req {
 	uint16_t		err_code;
 	const char		*err_reason;
 
-	struct director		*director_hint;
+	const struct director	*director_hint;
 	struct VCL_conf		*vcl;
 
 	char			*ws_req;	/* WS above request data */
@@ -696,7 +697,8 @@ void VBE_DiscardHealth(const struct director *vdi);
 
 
 int VDI_GetHdr(struct worker *wrk, struct busyobj *bo);
-struct vbc *VDI_GetFd(struct busyobj *);
+struct vbc *VDI_GetFd(const struct director *d, struct worker *wrk,
+    struct busyobj *);
 int VDI_Healthy(const struct director *);
 void VDI_CloseFd(struct vbc **vbp, const struct acct_bereq *);
 void VDI_RecycleFd(struct vbc **vbp, const struct acct_bereq *);

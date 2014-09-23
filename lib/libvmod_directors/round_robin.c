@@ -54,7 +54,7 @@ vmod_rr_healthy(const struct director *dir, double *changed)
 	return (vdir_any_healthy(rr->vd, changed));
 }
 
-static struct director * __match_proto__(vdi_resolve_f)
+static const struct director * __match_proto__(vdi_resolve_f)
 vmod_rr_resolve(const struct director *dir, struct worker *wrk,
     struct busyobj *bo)
 {

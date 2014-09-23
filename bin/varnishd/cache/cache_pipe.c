@@ -113,7 +113,7 @@ PipeRequest(struct req *req, struct busyobj *bo)
 	acct_pipe.req = req->acct.req_hdrbytes;
 	req->acct.req_hdrbytes = 0;
 
-	vc = VDI_GetFd(bo);
+	vc = VDI_GetFd(bo->director_req, wrk, bo);
 	if (vc == NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 		pipecharge(req, &acct_pipe, NULL);

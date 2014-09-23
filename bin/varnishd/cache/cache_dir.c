@@ -90,17 +90,63 @@ VDI_RecycleFd(struct vbc **vbp, const struct acct_bereq *acct_bereq)
 	VBE_DropRefLocked(bp, acct_bereq);
 }
 
+/* Resolve director --------------------------------------------------*/
+
+static const struct director *
+vdi_resolve(struct worker *wrk, struct busyobj *bo, const struct director *d)
+{
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	if (d == NULL) {
+		VSLb(bo->vsl, SLT_FetchError, "No backend");
+		return (NULL);
+	}
+
+	while (d != NULL && d->resolve != NULL) {
+		CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+		d = d->resolve(d, wrk, bo);
+	}
+	CHECK_OBJ_ORNULL(d, DIRECTOR_MAGIC);
+	if (d == NULL)
+		VSLb(bo->vsl, SLT_FetchError, "Backend selection failed");
+	bo->director_resp = d;
+	return (d);
+}
+
+/* Get a set of response headers -------------------------------------*/
+
+int
+VDI_GetHdr(struct worker *wrk, struct busyobj *bo)
+{
+
+	const struct director *d;
+
+	d = vdi_resolve(wrk, bo, bo->director_req);
+	if (d == NULL)
+		return (-1);
+
+	AN(d->gethdrs);
+	return (d->gethdrs(d, wrk, bo));
+}
+
 /* Get a connection --------------------------------------------------*/
 
 struct vbc *
-VDI_GetFd(struct busyobj *bo)
+VDI_GetFd(const struct director *d, struct worker *wrk, struct busyobj *bo)
 {
 	struct vbc *vc;
-	struct director *d;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	d = bo->director;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+
+	d = vdi_resolve(wrk, bo, d);
+	if (d == NULL)
+		return (NULL);
+
+	AN(d->getfd);
 	vc = d->getfd(d, bo);
 	if (vc != NULL)
 		vc->vsl = bo->vsl;

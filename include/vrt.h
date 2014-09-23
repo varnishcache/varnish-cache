@@ -62,7 +62,7 @@ struct suckaddr;
  * (alphabetic order)
  */
 
-typedef struct director *		VCL_BACKEND;
+typedef const struct director *		VCL_BACKEND;
 typedef const struct vmod_priv *	VCL_BLOB;
 typedef unsigned			VCL_BOOL;
 typedef double				VCL_BYTES;

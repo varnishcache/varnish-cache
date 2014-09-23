@@ -77,7 +77,7 @@ struct vrt_backend_probe;
 
 typedef struct vbc *vdi_getfd_f(const struct director *, struct busyobj *);
 typedef unsigned vdi_healthy_f(const struct director *, double *changed);
-typedef struct director *vdi_resolve_f(const struct director *,
+typedef const struct director *vdi_resolve_f(const struct director *,
     struct worker *, struct busyobj *);
 typedef int vdi_gethdrs_f(const struct director *, struct worker *,
     struct busyobj *);

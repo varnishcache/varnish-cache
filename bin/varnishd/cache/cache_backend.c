@@ -273,7 +273,7 @@ vbe_GetVbe(struct busyobj *bo, struct vdi_simple *vs)
 			/* XXX locking of stats */
 			VSC_C_main->backend_reuse += 1;
 			VSLb(bo->vsl, SLT_Backend, "%d %s %s",
-			    vc->fd, bo->director->vcl_name,
+			    vc->fd, bo->director_resp->vcl_name,
 			    bp->display_name);
 			vc->vdis = vs;
 			vc->recycled = 1;
@@ -312,7 +312,7 @@ vbe_GetVbe(struct busyobj *bo, struct vdi_simple *vs)
 	vc->backend = bp;
 	VSC_C_main->backend_conn++;
 	VSLb(bo->vsl, SLT_Backend, "%d %s %s",
-	    vc->fd, bo->director->vcl_name, bp->display_name);
+	    vc->fd, bo->director_resp->vcl_name, bp->display_name);
 	vc->vdis = vs;
 	return (vc);
 }
@@ -401,7 +401,7 @@ vdi_simple_gethdrs(const struct director *d, struct worker *wrk,
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	bo->vbc = VDI_GetFd(bo);
+	bo->vbc = VDI_GetFd(d, wrk, bo);
 	if (bo->vbc == NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 		return (-1);
@@ -415,7 +415,7 @@ vdi_simple_gethdrs(const struct director *d, struct worker *wrk,
 	 */
 	if (i == 1) {
 		VSC_C_main->backend_retry++;
-		bo->vbc = VDI_GetFd(bo);
+		bo->vbc = VDI_GetFd(d, wrk, bo);
 		if (bo->vbc == NULL) {
 			VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 			return (-1);
@@ -423,34 +423,6 @@ vdi_simple_gethdrs(const struct director *d, struct worker *wrk,
 		i = V1F_fetch_hdr(wrk, bo);
 	}
 	return (i);
-}
-
-/*--------------------------------------------------------------------
- */
-
-int
-VDI_GetHdr(struct worker *wrk, struct busyobj *bo)
-{
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-
-	if (bo->director == NULL) {
-		VSLb(bo->vsl, SLT_FetchError, "No backend");
-		return (-1);
-	}
-
-	CHECK_OBJ_NOTNULL(bo->director, DIRECTOR_MAGIC);
-	while (bo->director != NULL && bo->director->resolve != NULL)
-		bo->director = bo->director->resolve(bo->director, wrk, bo);
-
-	if (bo->director == NULL) {
-		VSLb(bo->vsl, SLT_FetchError, "Backend selection failed");
-		return (-1);
-	}
-
-	AN(bo->director->gethdrs);
-	return (bo->director->gethdrs(bo->director, wrk, bo));
 }
 
 /*--------------------------------------------------------------------*/

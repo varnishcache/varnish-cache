@@ -86,7 +86,6 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->director, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->vbc, VBC_MAGIC);
 	CHECK_OBJ_ORNULL(bo->req, REQ_MAGIC);
 

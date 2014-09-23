@@ -326,6 +326,7 @@ sp_variables = [
 		'BACKEND',
 		( 'pipe', 'backend', ),
 		( 'pipe', 'backend', ), """
+		This is the backend or director we attempt to fetch from.
 		"""
 	),
 	('bereq.method',
@@ -488,6 +489,15 @@ sp_variables = [
 		'DURATION',
 		( 'backend_response', 'backend_error'),
 		( 'backend_response', 'backend_error'), """
+		"""
+	),
+	('beresp.backend',
+		'BACKEND',
+		( 'backend_response', 'backend_error'),
+		( ), """
+		This is the backend we fetched from.  If bereq.backend
+		was set to a director, this will be the backend selected
+		by the director.
 		"""
 	),
 	('beresp.backend.name',
