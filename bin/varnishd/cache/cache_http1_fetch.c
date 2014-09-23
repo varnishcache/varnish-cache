@@ -73,7 +73,7 @@ vbf_iter_req_body(struct req *req, void *priv, void *ptr, size_t l)
  */
 
 int
-V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
+V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo)
 {
 	struct vbc *vc;
 	struct http *hp;
@@ -85,8 +85,8 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	int do_chunked = 0;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_ORNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_ORNULL(bo->req, REQ_MAGIC);
 	htc = bo->htc;
 
 	if (bo->director == NULL) {
@@ -114,7 +114,8 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	if (!http_GetHdr(bo->bereq, H_Host, NULL))
 		VDI_AddHostHeader(bo->bereq, vc);
 
-	if (req != NULL && req->req_body_status == REQ_BODY_WITHOUT_LEN) {
+	if (bo->req != NULL &&
+	    bo->req->req_body_status == REQ_BODY_WITHOUT_LEN) {
 		http_PrintfHeader(hp, "Transfer-Encoding: chunked");
 		do_chunked = 1;
 	}
@@ -126,18 +127,18 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, struct req *req)
 	/* Deal with any message-body the request might (still) have */
 	i = 0;
 
-	if (req != NULL) {
+	if (bo->req != NULL) {
 		if (do_chunked)
 			WRW_Chunked(wrk);
-		i = VRB_Iterate(req, vbf_iter_req_body, wrk);
+		i = VRB_Iterate(bo->req, vbf_iter_req_body, wrk);
 
-		if (req->req_body_status == REQ_BODY_TAKEN) {
+		if (bo->req->req_body_status == REQ_BODY_TAKEN) {
 			retry = -1;
-		} else if (req->req_body_status == REQ_BODY_FAIL) {
+		} else if (bo->req->req_body_status == REQ_BODY_FAIL) {
 			VSLb(bo->vsl, SLT_FetchError,
 			    "req.body read error: %d (%s)",
 			    errno, strerror(errno));
-			req->doclose = SC_RX_BODY;
+			bo->req->doclose = SC_RX_BODY;
 			retry = -1;
 		}
 		if (do_chunked)
