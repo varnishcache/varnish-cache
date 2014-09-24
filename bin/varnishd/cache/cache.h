@@ -691,28 +691,6 @@ int VCA_Accept(struct listen_sock *ls, struct wrk_accept *wa);
 const char *VCA_SetupSess(struct worker *w, struct sess *sp);
 void VCA_FailSess(struct worker *w);
 
-/* cache_backend.c */
-void VBE_UseHealth(const struct director *vdi);
-void VBE_DiscardHealth(const struct director *vdi);
-
-/* cache_dir.c */
-int VDI_GetHdr(struct worker *wrk, struct busyobj *bo);
-struct vbc *VDI_GetFd(const struct director *d, struct worker *wrk,
-    struct busyobj *);
-int VDI_Healthy(const struct director *);
-void VDI_CloseFd(struct vbc **vbp, const struct acct_bereq *);
-void VDI_RecycleFd(struct vbc **vbp, const struct acct_bereq *);
-void VDI_AddHostHeader(struct http *to, const struct vbc *vbc);
-void VBE_Poll(void);
-void VDI_Init(void);
-
-/* cache_backend_cfg.c */
-void VBE_InitCfg(void);
-struct backend *VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb);
-
-/* cache_backend_poll.c */
-void VBP_Init(void);
-
 /* cache_ban.c */
 struct ban *BAN_New(void);
 int BAN_AddTest(struct ban *, const char *, const char *, const char *);

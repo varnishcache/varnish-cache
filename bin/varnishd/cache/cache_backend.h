@@ -134,12 +134,16 @@ struct vbc {
 
 /* cache_backend.c */
 void VBE_ReleaseConn(struct vbc *vc);
+void VBE_UseHealth(const struct director *vdi);
+void VBE_DiscardHealth(const struct director *vdi);
 
 /* cache_backend_cfg.c */
 void VBE_DropRefConn(struct backend *, const struct acct_bereq *);
 void VBE_DropRefVcl(struct backend *);
 void VBE_DropRefLocked(struct backend *b, const struct acct_bereq *);
 unsigned VBE_Healthy(const struct backend *b, double *changed);
+void VBE_InitCfg(void);
+struct backend *VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb);
 
 /* cache_backend_poll.c */
 void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,
@@ -147,3 +151,18 @@ void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,
 void VBP_Remove(struct backend *b, struct vrt_backend_probe const *p);
 void VBP_Use(const struct backend *b, const struct vrt_backend_probe *p);
 void VBP_Summary(struct cli *cli, const struct vbp_target *vt);
+
+/* cache_dir.c */
+int VDI_GetHdr(struct worker *wrk, struct busyobj *bo);
+struct vbc *VDI_GetFd(const struct director *d, struct worker *wrk,
+    struct busyobj *);
+int VDI_Healthy(const struct director *);
+void VDI_CloseFd(struct vbc **vbp, const struct acct_bereq *);
+void VDI_RecycleFd(struct vbc **vbp, const struct acct_bereq *);
+void VDI_AddHostHeader(struct http *to, const struct vbc *vbc);
+void VBE_Poll(void);
+void VDI_Init(void);
+
+/* cache_backend_poll.c */
+void VBP_Init(void);
+
