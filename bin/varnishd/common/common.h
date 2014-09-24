@@ -128,8 +128,8 @@ void VSM_common_ageupdate(struct vsm_sc *sc);
  */
 
 #define PWR2(x)     ((((x)-1)&(x))==0)		/* Is a power of two */
-#define RDN2(x, y)  ((x)&(~((y)-1)))		/* if y is powers of two */
-#define RUP2(x, y)  (((x)+((y)-1))&(~((y)-1)))	/* if y is powers of two */
+#define RDN2(x, y)  ((x)&(~((uintmax_t)(y)-1)))	/* PWR2(y) true */
+#define RUP2(x, y)  (((x)+((y)-1))&(~((uintmax_t)(y)-1))) /* PWR2(y) true */
 
 /*--------------------------------------------------------------------
  * Pointer aligment magic
