@@ -107,7 +107,7 @@ vbf_beresp2obj(struct busyobj *bo)
 		if (varyl > 0) {
 			AN(vary);
 			assert(varyl == VSB_len(vary));
-			l += PRNDUP(varyl);
+			l += PRNDUP((intptr_t)varyl);
 		} else if (varyl < 0) {
 			/*
 			 * Vary parse error
@@ -593,7 +593,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		ObjSetFlag(bo->wrk, bo->fetch_objcore, OF_IMSCAND, 1);
 
 	if (bo->htc->body_status != BS_NONE)
-		V1F_Setup_Fetch(bo->vfc, bo->htc);
+		AZ(VDI_GetBody(bo->director_resp, bo->wrk, bo));
 
 	/*
 	 * Ready to fetch the body

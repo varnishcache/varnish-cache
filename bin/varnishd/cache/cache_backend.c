@@ -425,6 +425,19 @@ vdi_simple_gethdrs(const struct director *d, struct worker *wrk,
 	return (i);
 }
 
+static int __match_proto__(vdi_getbody_f)
+vdi_simple_getbody(const struct director *d, struct worker *wrk,
+    struct busyobj *bo)
+{
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	V1F_Setup_Fetch(bo->vfc, bo->htc);
+	return (0);
+}
+
 /*--------------------------------------------------------------------*/
 
 void
@@ -463,6 +476,7 @@ VRT_init_dir(struct cli *cli, struct director **bp, int idx, const void *priv)
 	vs->dir.getfd = vdi_simple_getfd;
 	vs->dir.healthy = vdi_simple_healthy;
 	vs->dir.gethdrs = vdi_simple_gethdrs;
+	vs->dir.getbody = vdi_simple_getbody;
 
 	vs->vrt = t;
 

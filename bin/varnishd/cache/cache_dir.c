@@ -131,6 +131,22 @@ VDI_GetHdr(struct worker *wrk, struct busyobj *bo)
 	return (d->gethdrs(d, wrk, bo));
 }
 
+/* Setup body fetch --------------------------------------------------*/
+
+int
+VDI_GetBody(const struct director *d, struct worker *wrk, struct busyobj *bo)
+{
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+
+	AZ(d->resolve);
+	AN(d->getbody);
+
+	return (d->getbody(d, wrk, bo));
+}
+
 /* Get a connection --------------------------------------------------*/
 
 struct vbc *
