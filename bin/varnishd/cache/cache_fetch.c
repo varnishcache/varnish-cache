@@ -174,7 +174,6 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo->req, REQ_MAGIC);
 
 	assert(bo->state == BOS_INVALID);
-	AZ(bo->vbc);
 	assert(bo->doclose == SC_NULL);
 	AZ(bo->storage_hint);
 
@@ -245,7 +244,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	AZ(bo->vbc);
 	assert(bo->doclose == SC_NULL);
 	AZ(bo->storage_hint);
 
@@ -274,11 +272,10 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	VSLb_ts_busyobj(bo, "Beresp", now);
 
 	if (i) {
-		AZ(bo->vbc);
+		assert(bo->director_state == DIR_S_NULL);
 		return (F_STP_ERROR);
 	}
 
-	AN(bo->vbc);
 	http_VSL_log(bo->beresp);
 
 	if (!http_GetHdr(bo->beresp, H_Date, NULL)) {
@@ -355,9 +352,10 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	}
 
 	if (bo->htc->body_status == BS_ERROR) {
-		AN (bo->vbc);
-		VDI_CloseFd(&bo->vbc, &bo->acct);
+		bo->doclose = SC_RX_BODY;
+		VDI_Finish(bo->director_resp, bo->wrk, bo);
 		VSLb(bo->vsl, SLT_Error, "Body cannot be fetched");
+		assert(bo->director_state == DIR_S_NULL);
 		return (F_STP_ERROR);
 	}
 
@@ -398,18 +396,22 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, bo->beresp->ws);
 
-	if (wrk->handling == VCL_RET_ABANDON)
+	if (wrk->handling == VCL_RET_ABANDON) {
+		bo->doclose = SC_RESP_CLOSE;
+		VDI_Finish(bo->director_resp, bo->wrk, bo);
 		return (F_STP_FAIL);
+	}
 
 	if (wrk->handling == VCL_RET_RETRY) {
-		AN (bo->vbc);
-		VDI_CloseFd(&bo->vbc, &bo->acct);
+		bo->doclose = SC_RESP_CLOSE;
+		VDI_Finish(bo->director_resp, bo->wrk, bo);
 		bo->doclose = SC_NULL;
 		bo->retries++;
 		if (bo->retries <= cache_param->max_retries)
 			return (F_STP_RETRY);
 		VSLb(bo->vsl, SLT_VCL_Error,
 		    "Too many retries, delivering 503");
+		assert(bo->director_state == DIR_S_NULL);
 		return (F_STP_ERROR);
 	}
 
@@ -481,13 +483,13 @@ vbf_fetch_body_helper(struct busyobj *bo)
 		}
 	} while (vfps == VFP_OK);
 
+	VFP_Close(vfc);
+
 	if (vfps == VFP_ERROR) {
 		AN(vfc->failed);
 		(void)VFP_Error(vfc, "Fetch Pipeline failed to process");
 		bo->doclose = SC_RX_BODY;
 	}
-
-	VFP_Close(vfc);
 
 	if (!bo->do_stream)
 		ObjTrimStore(bo->wrk, vfc->oc);
@@ -539,8 +541,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->do_gzip && !bo->is_gunzip)
 		bo->do_gzip = 0;
 
-	AN(bo->vbc);
-
 	/* But we can't do both at the same time */
 	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
 
@@ -569,12 +569,14 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (VFP_Open(bo->vfc)) {
 		(void)VFP_Error(bo->vfc, "Fetch Pipeline failed to open");
 		bo->doclose = SC_RX_BODY;
+		VDI_Finish(bo->director_resp, bo->wrk, bo);
 		return (F_STP_ERROR);
 	}
 
 	if (vbf_beresp2obj(bo)) {
 		(void)VFP_Error(bo->vfc, "Could not get storage");
 		bo->doclose = SC_RX_BODY;
+		VDI_Finish(bo->director_resp, bo->wrk, bo);
 		return (F_STP_ERROR);
 	}
 
@@ -620,11 +622,15 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->vfc->failed && !bo->do_stream) {
 		assert(bo->state < BOS_STREAM);
 		ObjFreeObj(bo->wrk, bo->fetch_objcore);
+		// XXX: doclose = ?
+		VDI_Finish(bo->director_resp, bo->wrk, bo);
 		return (F_STP_ERROR);
 	}
 
-	if (bo->vfc->failed)
+	if (bo->vfc->failed) {
+		VDI_Finish(bo->director_resp, bo->wrk, bo);
 		return (F_STP_FAIL);
+	}
 
 	if (bo->do_stream)
 		assert(bo->state == BOS_STREAM);
@@ -635,10 +641,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	/* Recycle the backend connection before setting BOS_FINISHED to
 	   give predictable backend reuse behavior for varnishtest */
-	if (bo->vbc != NULL && bo->doclose == SC_NULL) {
-		VDI_RecycleFd(&bo->vbc, &bo->acct);
-		AZ(bo->vbc);
-	}
+	VDI_Finish(bo->director_resp, bo->wrk, bo);
 
 	VBO_setstate(bo, BOS_FINISHED);
 	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
@@ -708,10 +711,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 
 	/* Recycle the backend connection before setting BOS_FINISHED to
 	   give predictable backend reuse behavior for varnishtest */
-	if (bo->vbc != NULL && bo->doclose == SC_NULL) {
-		VDI_RecycleFd(&bo->vbc, &bo->acct);
-		AZ(bo->vbc);
-	}
+	VDI_Finish(bo->director_resp, bo->wrk, bo);
 
 	VBO_setstate(bo, BOS_FINISHED);
 	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
@@ -732,6 +732,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	assert(bo->director_state == DIR_S_NULL);
 
 	now = W_TIM_real(wrk);
 	VSLb_ts_busyobj(bo, "Error", now);
@@ -868,13 +869,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	}
 	assert(WRW_IsReleased(wrk));
 
-	if (bo->vbc != NULL) {
-		if (bo->doclose != SC_NULL)
-			VDI_CloseFd(&bo->vbc, &bo->acct);
-		else
-			VDI_RecycleFd(&bo->vbc, &bo->acct);
-		AZ(bo->vbc);
-	}
+	assert(bo->director_state == DIR_S_NULL);
 
 	http_Teardown(bo->bereq);
 	http_Teardown(bo->beresp);

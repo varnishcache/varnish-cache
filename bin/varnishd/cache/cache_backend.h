@@ -61,6 +61,8 @@ typedef int vdi_gethdrs_f(const struct director *, struct worker *,
     struct busyobj *);
 typedef int vdi_getbody_f(const struct director *, struct worker *,
     struct busyobj *);
+typedef void vdi_finish_f(const struct director *, struct worker *,
+    struct busyobj *);
 
 struct director {
 	unsigned		magic;
@@ -72,6 +74,7 @@ struct director {
 	vdi_resolve_f		*resolve;
 	vdi_gethdrs_f		*gethdrs;
 	vdi_getbody_f		*getbody;
+	vdi_finish_f		*finish;
 	void			*priv;
 };
 
@@ -158,6 +161,8 @@ void VBP_Summary(struct cli *cli, const struct vbp_target *vt);
 /* cache_dir.c */
 int VDI_GetHdr(struct worker *wrk, struct busyobj *bo);
 int VDI_GetBody(const struct director *d, struct worker *wrk,
+    struct busyobj *bo);
+void VDI_Finish(const struct director *d, struct worker *wrk,
     struct busyobj *bo);
 struct vbc *VDI_GetFd(const struct director *d, struct worker *wrk,
     struct busyobj *);

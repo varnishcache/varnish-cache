@@ -120,15 +120,21 @@ vdi_resolve(struct worker *wrk, struct busyobj *bo, const struct director *d)
 int
 VDI_GetHdr(struct worker *wrk, struct busyobj *bo)
 {
-
 	const struct director *d;
+	int i = -1;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	d = vdi_resolve(wrk, bo, bo->director_req);
-	if (d == NULL)
-		return (-1);
-
-	AN(d->gethdrs);
-	return (d->gethdrs(d, wrk, bo));
+	if (d != NULL) {
+		AN(d->gethdrs);
+		bo->director_state = DIR_S_HDRS;
+		i = d->gethdrs(d, wrk, bo);
+	}
+	if (i)
+		bo->director_state = DIR_S_NULL;
+	return (i);
 }
 
 /* Setup body fetch --------------------------------------------------*/
@@ -137,14 +143,34 @@ int
 VDI_GetBody(const struct director *d, struct worker *wrk, struct busyobj *bo)
 {
 
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 
 	AZ(d->resolve);
 	AN(d->getbody);
 
+	bo->director_state = DIR_S_BODY;
 	return (d->getbody(d, wrk, bo));
+}
+
+/* Finish fetch ------------------------------------------------------*/
+
+void
+VDI_Finish(const struct director *d, struct worker *wrk, struct busyobj *bo)
+{
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	AZ(d->resolve);
+	AN(d->finish);
+
+	assert(bo->director_state != DIR_S_NULL);
+	bo->director_state = DIR_S_NULL;
+
+	d->finish(d, wrk, bo);
 }
 
 /* Get a connection --------------------------------------------------*/

@@ -457,6 +457,12 @@ enum busyobj_state_e {
 	BOS_FAILED,		/* something went wrong */
 };
 
+enum director_state_e {
+	DIR_S_NULL = 0,
+	DIR_S_HDRS = 1,
+	DIR_S_BODY = 2,
+};
+
 struct busyobj {
 	unsigned		magic;
 #define BUSYOBJ_MAGIC		0x23b95567
@@ -513,6 +519,7 @@ struct busyobj {
 	const char		*storage_hint;
 	const struct director	*director_req;
 	const struct director	*director_resp;
+	enum director_state_e	director_state;
 	struct VCL_conf		*vcl;
 
 	struct vsl_log		vsl[1];

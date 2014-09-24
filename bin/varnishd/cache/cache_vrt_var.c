@@ -315,10 +315,6 @@ VRT_r_beresp_backend_name(const struct vrt_ctx *ctx)
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 	if (ctx->bo->director_resp != NULL)
 		return (ctx->bo->director_resp->vcl_name);
-	if (ctx->bo->vbc != NULL) {
-		CHECK_OBJ_NOTNULL(ctx->bo->vbc, VBC_MAGIC);
-		return (ctx->bo->vbc->backend->vcl_name);
-	}
 	return (NULL);
 }
 

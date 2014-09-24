@@ -414,6 +414,7 @@ vdi_simple_gethdrs(const struct director *d, struct worker *wrk,
 	 * Do a single retry in that case.
 	 */
 	if (i == 1) {
+		AZ(bo->vbc);
 		VSC_C_main->backend_retry++;
 		bo->vbc = VDI_GetFd(d, wrk, bo);
 		if (bo->vbc == NULL) {
@@ -422,6 +423,10 @@ vdi_simple_gethdrs(const struct director *d, struct worker *wrk,
 		}
 		i = V1F_fetch_hdr(wrk, bo);
 	}
+	if (i != 0)
+		AZ(bo->vbc);
+	else
+		AN(bo->vbc);
 	return (i);
 }
 
@@ -437,6 +442,23 @@ vdi_simple_getbody(const struct director *d, struct worker *wrk,
 	V1F_Setup_Fetch(bo->vfc, bo->htc);
 	return (0);
 }
+
+static void __match_proto__(vdi_finish_f)
+vdi_simple_finish(const struct director *d, struct worker *wrk,
+    struct busyobj *bo)
+{
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	if (bo->vbc != NULL) {
+		if (bo->doclose != SC_NULL)
+			VDI_CloseFd(&bo->vbc, &bo->acct);
+		else
+			VDI_RecycleFd(&bo->vbc, &bo->acct);
+	}
+}
+
 
 /*--------------------------------------------------------------------*/
 
@@ -477,6 +499,7 @@ VRT_init_dir(struct cli *cli, struct director **bp, int idx, const void *priv)
 	vs->dir.healthy = vdi_simple_healthy;
 	vs->dir.gethdrs = vdi_simple_gethdrs;
 	vs->dir.getbody = vdi_simple_getbody;
+	vs->dir.finish = vdi_simple_finish;
 
 	vs->vrt = t;
 
