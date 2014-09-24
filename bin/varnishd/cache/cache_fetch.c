@@ -133,7 +133,8 @@ vbf_beresp2obj(struct busyobj *bo)
 		return (-1);
 
 	if (vary != NULL) {
-		b = ObjSetattr(bo->wrk, bo->fetch_objcore, OA_VARY, varyl, VSB_data(vary));
+		b = ObjSetattr(bo->wrk, bo->fetch_objcore, OA_VARY, varyl,
+		    VSB_data(vary));
 		VSB_delete(vary);
 	}
 
@@ -149,7 +150,8 @@ vbf_beresp2obj(struct busyobj *bo)
 	    bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS);
 
 	if (http_GetHdr(bo->beresp, H_Last_Modified, &b))
-		AZ(ObjSetDouble(bo->wrk, bo->fetch_objcore, OA_LASTMODIFIED, VTIM_parse(b)));
+		AZ(ObjSetDouble(bo->wrk, bo->fetch_objcore, OA_LASTMODIFIED,
+		    VTIM_parse(b)));
 	else
 		AZ(ObjSetDouble(bo->wrk, bo->fetch_objcore, OA_LASTMODIFIED,
 		    floor(bo->fetch_objcore->exp.t_origin)));

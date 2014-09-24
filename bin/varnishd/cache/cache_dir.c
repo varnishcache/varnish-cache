@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Handle backend connections and backend request structures.
+ * Abstract backend API
  *
  */
 
@@ -161,5 +161,6 @@ VDI_Healthy(const struct director *d)
 {
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	AN(d->healthy);
 	return (d->healthy(d, NULL));
 }

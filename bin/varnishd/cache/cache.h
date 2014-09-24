@@ -695,7 +695,7 @@ void VCA_FailSess(struct worker *w);
 void VBE_UseHealth(const struct director *vdi);
 void VBE_DiscardHealth(const struct director *vdi);
 
-
+/* cache_dir.c */
 int VDI_GetHdr(struct worker *wrk, struct busyobj *bo);
 struct vbc *VDI_GetFd(const struct director *d, struct worker *wrk,
     struct busyobj *);

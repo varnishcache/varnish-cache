@@ -26,43 +26,21 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * This is the central switch-board for backend connections and it is
- * slightly complicated by a number of optimizations.
+ * Backend and Director APIs
  *
- * The data structures:
+ * A director ("VDI") is an abstract entity which can either satisfy a
+ * backend fetch request or select another director for the job.
  *
- *    A vrt_backend is a definition of a backend in a VCL program.
+ * In theory a director does not have to talk HTTP over TCP, it can satisfy
+ * the backend request using any means it wants, although this is presently
+ * not implemented.
  *
- *    A backend is a TCP destination, possibly multi-homed and it has a
- *    number of associated properties and statistics.
+ * A backend ("VBE") is a director which talks HTTP over TCP.
  *
- *    A vbc is an open TCP connection to a backend.
- *
- *    A bereq is a memory carrier for handling a HTTP transaction with
- *    a backend over a vbc.
- *
- *    A director is a piece of code that selects which backend to use,
- *    by whatever method or metric it chooses.
- *
- * The relationships:
- *
- *    Backends and directors get instantiated when VCL's are loaded,
- *    and this always happen in the CLI thread.
- *
- *    When a VCL tries to instantiate a backend, any existing backend
- *    with the same identity (== definition in VCL) will be used instead
- *    so that vbc's can be reused across VCL changes.
- *
- *    Directors disapper with the VCL that created them.
- *
- *    Backends disappear when their reference count drop to zero.
- *
- *    Backends have their host/port name looked up to addrinfo structures
- *    when they are instantiated, and we just cache that result and cycle
- *    through the entries (for multihomed backends) on failure only.
- *    XXX: add cli command to redo lookup.
- *
- *    bereq is sort of a step-child here, we just manage the pool of them.
+ * As you'll notice the terminology is a bit muddled here, but we try to
+ * keep it clean on the user-facing side, where a "director" is always
+ * a "pick a backend/director" functionality, and a "backend" is whatever
+ * satisfies the actual request in the end.
  *
  */
 
