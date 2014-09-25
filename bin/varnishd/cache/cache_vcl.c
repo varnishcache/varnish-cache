@@ -180,9 +180,6 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 
 	ASSERT_CLI();
 
-	memset(&ctx, 0, sizeof ctx);
-	ctx.magic = VRT_CTX_MAGIC;
-
 	vcl = vcl_find(name);
 	if (vcl != NULL) {
 		VCLI_Out(cli, "Config '%s' already loaded", name);
@@ -214,17 +211,26 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 		FREE_OBJ(vcl);
 		return (1);
 	}
-	if (vcl->conf->init_vcl(cli)) {
+
+	memset(&ctx, 0, sizeof ctx);
+	ctx.magic = VRT_CTX_MAGIC;
+	ctx.method = VCL_MET_INIT;
+	ctx.handling = &hand;
+	ctx.cli = cli;
+
+	if (vcl->conf->init_vcl(&ctx)) {
 		VCLI_Out(cli, "VCL \"%s\" Failed to initialize", name);
+		vcl->conf->fini_vcl(&ctx);
 		(void)dlclose(vcl->dlh);
 		FREE_OBJ(vcl);
 		return (1);
 	}
-	ctx.method = VCL_MET_INIT;
-	ctx.handling = &hand;
 	(void)vcl->conf->init_func(&ctx);
 	if (hand == VCL_RET_FAIL) {
 		VCLI_Out(cli, "VCL \"%s\" vcl_init{} failed", name);
+		ctx.method = VCL_MET_FINI;
+		(void)vcl->conf->fini_func(&ctx);
+		vcl->conf->fini_vcl(&ctx);
 		(void)dlclose(vcl->dlh);
 		FREE_OBJ(vcl);
 		return (1);
@@ -264,7 +270,7 @@ VCL_Nuke(struct vcls *vcl)
 	ctx.handling = &hand;
 	(void)vcl->conf->fini_func(&ctx);
 	assert(hand == VCL_RET_OK);
-	vcl->conf->fini_vcl(NULL);
+	vcl->conf->fini_vcl(&ctx);
 	free(vcl->name);
 	(void)dlclose(vcl->dlh);
 	FREE_OBJ(vcl);

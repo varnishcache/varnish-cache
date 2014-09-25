@@ -302,7 +302,7 @@ EmitInitFunc(const struct vcc *tl)
 {
 	struct inifin *p;
 
-	Fc(tl, 0, "\nstatic int\nVGC_Init(struct cli *cli)\n{\n\n");
+	Fc(tl, 0, "\nstatic int\nVGC_Init(const struct vrt_ctx *ctx)\n{\n\n");
 	VTAILQ_FOREACH(p, &tl->inifin, list) {
 		AZ(VSB_finish(p->ini));
 		if (VSB_len(p->ini))
@@ -319,7 +319,7 @@ EmitFiniFunc(const struct vcc *tl)
 {
 	struct inifin *p;
 
-	Fc(tl, 0, "\nstatic void\nVGC_Fini(struct cli *cli)\n{\n\n");
+	Fc(tl, 0, "\nstatic void\nVGC_Fini(const struct vrt_ctx *ctx)\n{\n\n");
 
 	VTAILQ_FOREACH_REVERSE(p, &tl->inifin, inifinhead, list) {
 		AZ(VSB_finish(p->fin));

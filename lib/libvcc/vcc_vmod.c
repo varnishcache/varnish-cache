@@ -177,7 +177,7 @@ vcc_ParseImport(struct vcc *tl)
 	AN(vmd);
 	AN(vmd->file_id);
 	VSB_printf(ifp->ini, "\t    \"%s\",\n", vmd->file_id);
-	VSB_printf(ifp->ini, "\t    cli))\n");
+	VSB_printf(ifp->ini, "\t    ctx))\n");
 	VSB_printf(ifp->ini, "\t\treturn(1);");
 
 	/* XXX: zero the function pointer structure ?*/

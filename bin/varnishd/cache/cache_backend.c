@@ -517,12 +517,12 @@ vdi_simple_finish(const struct director *d, struct worker *wrk,
 /*--------------------------------------------------------------------*/
 
 void
-VRT_fini_dir(struct cli *cli, struct director *d)
+VRT_fini_dir(const struct vrt_ctx *ctx, struct director *d)
 {
 	struct vdi_simple *vs;
 
-	(void)cli;
 	ASSERT_CLI();
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
 
@@ -534,13 +534,14 @@ VRT_fini_dir(struct cli *cli, struct director *d)
 }
 
 void
-VRT_init_dir(struct cli *cli, struct director **bp, int idx, const void *priv)
+VRT_init_dir(const struct vrt_ctx *ctx, struct director **bp, int idx,
+    const void *priv)
 {
 	const struct vrt_backend *t;
 	struct vdi_simple *vs;
 
 	ASSERT_CLI();
-	(void)cli;
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	t = priv;
 
 	ALLOC_OBJ(vs, VDI_SIMPLE_MAGIC);
@@ -557,7 +558,7 @@ VRT_init_dir(struct cli *cli, struct director **bp, int idx, const void *priv)
 
 	vs->vrt = t;
 
-	vs->backend = VBE_AddBackend(cli, t);
+	vs->backend = VBE_AddBackend(NULL, t);
 	if (vs->vrt->probe != NULL)
 		VBP_Insert(vs->backend, vs->vrt->probe, vs->vrt->hosthdr);
 

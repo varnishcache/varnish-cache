@@ -89,6 +89,7 @@ struct vrt_ctx {
 	unsigned			method;
 	unsigned			*handling;
 
+	struct cli			*cli;	// Only in ...init()
 	struct vsl_log			*vsl;
 	struct VCL_conf			*vcl;
 	struct ws			*ws;
@@ -223,15 +224,16 @@ void VRT_Rollback(const struct vrt_ctx *, const struct http *);
 void VRT_synth_page(const struct vrt_ctx *, const char *, ...);
 
 /* Backend related */
-void VRT_init_dir(struct cli *, struct director **, int idx, const void *priv);
-void VRT_fini_dir(struct cli *, struct director *);
+void VRT_init_dir(const struct vrt_ctx*, struct director **, int idx,
+    const void *priv);
+void VRT_fini_dir(const struct vrt_ctx*, struct director *);
 
 /* Suckaddr related */
 int VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst);
 
 /* VMOD/Modules related */
 int VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
-    const char *path, const char *file_id, struct cli *cli);
+    const char *path, const char *file_id, const struct vrt_ctx *ctx);
 void VRT_Vmod_Fini(void **hdl);
 
 struct vmod_priv;
