@@ -142,6 +142,7 @@ struct vbc {
 void VBE_ReleaseConn(struct vbc *vc);
 void VBE_UseHealth(const struct director *vdi);
 void VBE_DiscardHealth(const struct director *vdi);
+void VBE_CloseFd(struct vbc **vbp, const struct acct_bereq *);
 
 /* cache_backend_cfg.c */
 void VBE_DropRefConn(struct backend *, const struct acct_bereq *);
@@ -167,8 +168,6 @@ void VDI_Finish(const struct director *d, struct worker *wrk,
 struct vbc *VDI_GetFd(const struct director *d, struct worker *wrk,
     struct busyobj *);
 int VDI_Healthy(const struct director *);
-void VDI_CloseFd(struct vbc **vbp, const struct acct_bereq *);
-void VDI_RecycleFd(struct vbc **vbp, const struct acct_bereq *);
 void VDI_AddHostHeader(struct http *to, const struct vbc *vbc);
 void VBE_Poll(void);
 void VDI_Init(void);

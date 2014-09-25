@@ -355,6 +355,60 @@ VBE_DiscardHealth(const struct director *vdi)
 	VBP_Remove(vs->backend, vs->vrt->probe);
 }
 
+/* Close a connection ------------------------------------------------*/
+
+void
+VBE_CloseFd(struct vbc **vbp, const struct acct_bereq *acct_bereq)
+{
+	struct backend *bp;
+	struct vbc *vc;
+
+	AN(vbp);
+	vc = *vbp;
+	*vbp = NULL;
+	CHECK_OBJ_NOTNULL(vc, VBC_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
+	assert(vc->fd >= 0);
+
+	bp = vc->backend;
+
+	VSLb(vc->vsl, SLT_BackendClose, "%d %s", vc->fd, bp->display_name);
+
+	vc->vsl = NULL;
+	VTCP_close(&vc->fd);
+	VBE_DropRefConn(bp, acct_bereq);
+	vc->backend = NULL;
+	VBE_ReleaseConn(vc);
+}
+
+/* Recycle a connection ----------------------------------------------*/
+
+static void
+vbe_RecycleFd(struct vbc **vbp, const struct acct_bereq *acct_bereq)
+{
+	struct backend *bp;
+	struct vbc *vc;
+
+	AN(vbp);
+	vc = *vbp;
+	*vbp = NULL;
+	CHECK_OBJ_NOTNULL(vc, VBC_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
+	assert(vc->fd >= 0);
+
+	bp = vc->backend;
+
+	VSLb(vc->vsl, SLT_BackendReuse, "%d %s", vc->fd, bp->display_name);
+
+	vc->vsl = NULL;
+
+	Lck_Lock(&bp->mtx);
+	VSC_C_main->backend_recycle++;
+	VTAILQ_INSERT_HEAD(&bp->connlist, vc, list);
+	VBE_DropRefLocked(bp, acct_bereq);
+}
+
+
 /*--------------------------------------------------------------------
  *
  */
@@ -453,9 +507,9 @@ vdi_simple_finish(const struct director *d, struct worker *wrk,
 
 	if (bo->vbc != NULL) {
 		if (bo->doclose != SC_NULL)
-			VDI_CloseFd(&bo->vbc, &bo->acct);
+			VBE_CloseFd(&bo->vbc, &bo->acct);
 		else
-			VDI_RecycleFd(&bo->vbc, &bo->acct);
+			vbe_RecycleFd(&bo->vbc, &bo->acct);
 	}
 }
 

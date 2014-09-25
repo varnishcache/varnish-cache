@@ -141,7 +141,7 @@ PipeRequest(struct req *req, struct busyobj *bo)
 	if (i) {
 		pipecharge(req, &acct_pipe, vc->backend->vsc);
 		SES_Close(req->sp, SC_TX_PIPE);
-		VDI_CloseFd(&vc, NULL);
+		VBE_CloseFd(&vc, NULL);
 		return;
 	}
 
@@ -183,7 +183,7 @@ PipeRequest(struct req *req, struct busyobj *bo)
 	VSLb_ts_req(req, "PipeSess", W_TIM_real(wrk));
 	pipecharge(req, &acct_pipe, vc->backend->vsc);
 	SES_Close(req->sp, SC_TX_PIPE);
-	VDI_CloseFd(&vc, NULL);
+	VBE_CloseFd(&vc, NULL);
 	bo->vbc = NULL;
 }
 

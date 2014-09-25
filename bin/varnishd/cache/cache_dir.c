@@ -26,7 +26,10 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Abstract backend API
+ * Abstract director API
+ *
+ * The abstract director API does not know how we talk to the backend or
+ * if there even is one in the usual meaning of the word.
  *
  */
 
@@ -35,60 +38,6 @@
 #include "cache.h"
 
 #include "cache_backend.h"
-#include "vtcp.h"
-
-/* Close a connection ------------------------------------------------*/
-
-void
-VDI_CloseFd(struct vbc **vbp, const struct acct_bereq *acct_bereq)
-{
-	struct backend *bp;
-	struct vbc *vc;
-
-	AN(vbp);
-	vc = *vbp;
-	*vbp = NULL;
-	CHECK_OBJ_NOTNULL(vc, VBC_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
-	assert(vc->fd >= 0);
-
-	bp = vc->backend;
-
-	VSLb(vc->vsl, SLT_BackendClose, "%d %s", vc->fd, bp->display_name);
-
-	vc->vsl = NULL;
-	VTCP_close(&vc->fd);
-	VBE_DropRefConn(bp, acct_bereq);
-	vc->backend = NULL;
-	VBE_ReleaseConn(vc);
-}
-
-/* Recycle a connection ----------------------------------------------*/
-
-void
-VDI_RecycleFd(struct vbc **vbp, const struct acct_bereq *acct_bereq)
-{
-	struct backend *bp;
-	struct vbc *vc;
-
-	AN(vbp);
-	vc = *vbp;
-	*vbp = NULL;
-	CHECK_OBJ_NOTNULL(vc, VBC_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
-	assert(vc->fd >= 0);
-
-	bp = vc->backend;
-
-	VSLb(vc->vsl, SLT_BackendReuse, "%d %s", vc->fd, bp->display_name);
-
-	vc->vsl = NULL;
-
-	Lck_Lock(&bp->mtx);
-	VSC_C_main->backend_recycle++;
-	VTAILQ_INSERT_HEAD(&bp->connlist, vc, list);
-	VBE_DropRefLocked(bp, acct_bereq);
-}
 
 /* Resolve director --------------------------------------------------*/
 
