@@ -1,0 +1,23 @@
+varnishtest "test failing in vcl_init{}"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -errvcl {VCL "vcl2" vcl_init{} failed} {
+	sub vcl_init {
+		return (fail);
+	}
+
+	backend b1 { .host = "${s1_addr}"; }
+}
+
+varnish v1 -cliok vcl.list
