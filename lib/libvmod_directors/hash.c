@@ -52,7 +52,7 @@ struct vmod_directors_hash {
 };
 
 VCL_VOID __match_proto__()
-vmod_hash__init(const struct vrt_ctx *ctx, struct vmod_directors_hash **rrp,
+vmod_hash__init(VRT_CTX, struct vmod_directors_hash **rrp,
     const char *vcl_name)
 {
 	struct vmod_directors_hash *rr;
@@ -82,7 +82,7 @@ vmod_hash__fini(struct vmod_directors_hash **rrp)
 }
 
 VCL_VOID __match_proto__()
-vmod_hash_add_backend(const struct vrt_ctx *ctx,
+vmod_hash_add_backend(VRT_CTX,
     struct vmod_directors_hash *rr, VCL_BACKEND be, double w)
 {
 
@@ -93,7 +93,7 @@ vmod_hash_add_backend(const struct vrt_ctx *ctx,
 }
 
 VCL_BACKEND __match_proto__()
-vmod_hash_backend(const struct vrt_ctx *ctx, struct vmod_directors_hash *rr,
+vmod_hash_backend(VRT_CTX, struct vmod_directors_hash *rr,
     const char *arg, ...)
 {
 	struct SHA256Context sha_ctx;

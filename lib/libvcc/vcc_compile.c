@@ -302,7 +302,7 @@ EmitInitFunc(const struct vcc *tl)
 {
 	struct inifin *p;
 
-	Fc(tl, 0, "\nstatic int\nVGC_Init(const struct vrt_ctx *ctx)\n{\n\n");
+	Fc(tl, 0, "\nstatic int\nVGC_Init(VRT_CTX)\n{\n\n");
 	VTAILQ_FOREACH(p, &tl->inifin, list) {
 		AZ(VSB_finish(p->ini));
 		if (VSB_len(p->ini))
@@ -319,7 +319,7 @@ EmitFiniFunc(const struct vcc *tl)
 {
 	struct inifin *p;
 
-	Fc(tl, 0, "\nstatic void\nVGC_Fini(const struct vrt_ctx *ctx)\n{\n\n");
+	Fc(tl, 0, "\nstatic void\nVGC_Fini(VRT_CTX)\n{\n\n");
 
 	VTAILQ_FOREACH_REVERSE(p, &tl->inifin, inifinhead, list) {
 		AZ(VSB_finish(p->fin));
@@ -671,11 +671,11 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	for (i = 1; i < VCL_MET_MAX; i++) {
 		Fh(tl, 1, "\nint __match_proto__(vcl_func_f)\n");
 		Fh(tl, 1,
-		    "VGC_function_%s(const struct vrt_ctx *ctx);\n",
+		    "VGC_function_%s(VRT_CTX);\n",
 		    method_tab[i].name);
 		Fc(tl, 1, "\nint __match_proto__(vcl_func_f)\n");
 		Fc(tl, 1,
-		    "VGC_function_%s(const struct vrt_ctx *ctx)\n",
+		    "VGC_function_%s(VRT_CTX)\n",
 		    method_tab[i].name);
 		AZ(VSB_finish(tl->fm[i]));
 		Fc(tl, 1, "{\n");

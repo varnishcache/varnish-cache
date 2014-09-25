@@ -358,7 +358,7 @@ class Func(object):
 		s = ctypes[self.retval] + " vmod_" + self.cnam + "("
 		p = ""
 		if not fini:
-			s += "const struct vrt_ctx *"
+			s += "VRT_CTX"
 			p = ", "
 		if self.pfx != None:
 			s += p + self.pfx
@@ -377,7 +377,7 @@ class Func(object):
 		s += " td_" + modname + "_" + self.cnam + "("
 		p = ""
 		if not fini:
-			s += "const struct vrt_ctx *"
+			s += "VRT_CTX"
 			p = ", "
 		if self.pfx != None:
 			s += p + self.pfx
@@ -861,7 +861,6 @@ def runmain(inputvcc, outputname="vcc_if"):
 	write_c_file_warning(fc)
 	write_c_file_warning(fh)
 
-	fh.write('struct vrt_ctx;\n')
 	fh.write('struct VCL_conf;\n')
 	fh.write('struct vmod_priv;\n')
 	fh.write("\n")

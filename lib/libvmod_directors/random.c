@@ -77,7 +77,7 @@ vmod_random_resolve(const struct director *dir, struct worker *wrk,
 }
 
 VCL_VOID __match_proto__()
-vmod_random__init(const struct vrt_ctx *ctx, struct vmod_directors_random **rrp,
+vmod_random__init(VRT_CTX, struct vmod_directors_random **rrp,
     const char *vcl_name)
 {
 	struct vmod_directors_random *rr;
@@ -108,7 +108,7 @@ vmod_random__fini(struct vmod_directors_random **rrp)
 }
 
 VCL_VOID __match_proto__()
-vmod_random_add_backend(const struct vrt_ctx *ctx,
+vmod_random_add_backend(VRT_CTX,
     struct vmod_directors_random *rr, VCL_BACKEND be, double w)
 {
 
@@ -119,7 +119,7 @@ vmod_random_add_backend(const struct vrt_ctx *ctx,
 }
 
 VCL_BACKEND __match_proto__()
-vmod_random_backend(const struct vrt_ctx *ctx, struct vmod_directors_random *rr)
+vmod_random_backend(VRT_CTX, struct vmod_directors_random *rr)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_RANDOM_MAGIC);

@@ -50,7 +50,7 @@ compa(const void *a, const void *b)
 }
 
 VCL_STRING __match_proto__(td_std_querysort)
-vmod_querysort(const struct vrt_ctx *ctx, VCL_STRING url)
+vmod_querysort(VRT_CTX, VCL_STRING url)
 {
 	const char *cq, *cu;
 	char *p, *r;

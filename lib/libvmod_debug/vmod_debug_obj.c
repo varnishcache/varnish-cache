@@ -42,7 +42,7 @@ struct vmod_debug_obj {
 };
 
 VCL_VOID
-vmod_obj__init(const struct vrt_ctx *ctx, struct vmod_debug_obj **op,
+vmod_obj__init(VRT_CTX, struct vmod_debug_obj **op,
     const char *vcl_name, VCL_STRING s)
 {
 	struct vmod_debug_obj *o;
@@ -70,7 +70,7 @@ vmod_obj__fini(struct vmod_debug_obj **op)
 }
 
 VCL_VOID __match_proto__()
-vmod_obj_enum(const struct vrt_ctx *ctx, struct vmod_debug_obj *o, VCL_ENUM e)
+vmod_obj_enum(VRT_CTX, struct vmod_debug_obj *o, VCL_ENUM e)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -79,7 +79,7 @@ vmod_obj_enum(const struct vrt_ctx *ctx, struct vmod_debug_obj *o, VCL_ENUM e)
 }
 
 VCL_STRING __match_proto__()
-vmod_obj_foo(const struct vrt_ctx *ctx, struct vmod_debug_obj *o, VCL_STRING s)
+vmod_obj_foo(VRT_CTX, struct vmod_debug_obj *o, VCL_STRING s)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -90,7 +90,7 @@ vmod_obj_foo(const struct vrt_ctx *ctx, struct vmod_debug_obj *o, VCL_STRING s)
 }
 
 VCL_TIME __match_proto__()
-vmod_obj_date(const struct vrt_ctx *ctx, struct vmod_debug_obj *o)
+vmod_obj_date(VRT_CTX, struct vmod_debug_obj *o)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);

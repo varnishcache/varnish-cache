@@ -517,7 +517,7 @@ vdi_simple_finish(const struct director *d, struct worker *wrk,
 /*--------------------------------------------------------------------*/
 
 void
-VRT_fini_dir(const struct vrt_ctx *ctx, struct director *d)
+VRT_fini_dir(VRT_CTX, struct director *d)
 {
 	struct vdi_simple *vs;
 
@@ -534,7 +534,7 @@ VRT_fini_dir(const struct vrt_ctx *ctx, struct director *d)
 }
 
 void
-VRT_init_dir(const struct vrt_ctx *ctx, struct director **bp, int idx,
+VRT_init_dir(VRT_CTX, struct director **bp, int idx,
     const void *priv)
 {
 	const struct vrt_backend *t;

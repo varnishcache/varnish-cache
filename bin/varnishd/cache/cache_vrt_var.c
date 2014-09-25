@@ -68,7 +68,7 @@ vrt_do_string(const struct http *hp, int fld,
 
 #define VRT_HDR_L(obj, hdr, fld)					\
 void									\
-VRT_l_##obj##_##hdr(const struct vrt_ctx *ctx, const char *p, ...)	\
+VRT_l_##obj##_##hdr(VRT_CTX, const char *p, ...)	\
 {									\
 	va_list ap;							\
 									\
@@ -80,7 +80,7 @@ VRT_l_##obj##_##hdr(const struct vrt_ctx *ctx, const char *p, ...)	\
 
 #define VRT_HDR_R(obj, hdr, fld)					\
 const char *								\
-VRT_r_##obj##_##hdr(const struct vrt_ctx *ctx)				\
+VRT_r_##obj##_##hdr(VRT_CTX)				\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->http_##obj, HTTP_MAGIC);			\
@@ -93,7 +93,7 @@ VRT_r_##obj##_##hdr(const struct vrt_ctx *ctx)				\
 
 #define VRT_STATUS_L(obj)						\
 void									\
-VRT_l_##obj##_status(const struct vrt_ctx *ctx, long num)		\
+VRT_l_##obj##_status(VRT_CTX, long num)		\
 {									\
 									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
@@ -112,7 +112,7 @@ VRT_l_##obj##_status(const struct vrt_ctx *ctx, long num)		\
 
 #define VRT_STATUS_R(obj)						\
 long									\
-VRT_r_##obj##_status(const struct vrt_ctx *ctx)				\
+VRT_r_##obj##_status(VRT_CTX)				\
 {									\
 									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
@@ -142,7 +142,7 @@ VRT_STATUS_R(beresp)
  */
 
 long
-VRT_r_obj_status(const struct vrt_ctx *ctx)
+VRT_r_obj_status(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
@@ -152,7 +152,7 @@ VRT_r_obj_status(const struct vrt_ctx *ctx)
 }
 
 const char *
-VRT_r_obj_proto(const struct vrt_ctx *ctx)
+VRT_r_obj_proto(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
@@ -162,7 +162,7 @@ VRT_r_obj_proto(const struct vrt_ctx *ctx)
 }
 
 const char *
-VRT_r_obj_reason(const struct vrt_ctx *ctx)
+VRT_r_obj_reason(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
@@ -178,7 +178,7 @@ VRT_r_obj_reason(const struct vrt_ctx *ctx)
 #define VBERESPW0(field)
 #define VBERESPW1(field)						\
 void									\
-VRT_l_beresp_##field(const struct vrt_ctx *ctx, unsigned a)		\
+VRT_l_beresp_##field(VRT_CTX, unsigned a)		\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);			\
@@ -188,7 +188,7 @@ VRT_l_beresp_##field(const struct vrt_ctx *ctx, unsigned a)		\
 #define VBERESPR0(field)
 #define VBERESPR1(field)						\
 unsigned								\
-VRT_r_beresp_##field(const struct vrt_ctx *ctx)				\
+VRT_r_beresp_##field(VRT_CTX)				\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);			\
@@ -204,7 +204,7 @@ VRT_r_beresp_##field(const struct vrt_ctx *ctx)				\
 /*--------------------------------------------------------------------*/
 
 void
-VRT_l_bereq_uncacheable(const struct vrt_ctx *ctx, unsigned a)
+VRT_l_bereq_uncacheable(VRT_CTX, unsigned a)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
@@ -218,7 +218,7 @@ VRT_l_bereq_uncacheable(const struct vrt_ctx *ctx, unsigned a)
 }
 
 unsigned
-VRT_r_bereq_uncacheable(const struct vrt_ctx *ctx)
+VRT_r_bereq_uncacheable(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
@@ -226,7 +226,7 @@ VRT_r_bereq_uncacheable(const struct vrt_ctx *ctx)
 }
 
 void
-VRT_l_beresp_uncacheable(const struct vrt_ctx *ctx, unsigned a)
+VRT_l_beresp_uncacheable(VRT_CTX, unsigned a)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
@@ -240,7 +240,7 @@ VRT_l_beresp_uncacheable(const struct vrt_ctx *ctx, unsigned a)
 }
 
 unsigned
-VRT_r_beresp_uncacheable(const struct vrt_ctx *ctx)
+VRT_r_beresp_uncacheable(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
@@ -250,7 +250,7 @@ VRT_r_beresp_uncacheable(const struct vrt_ctx *ctx)
 /*--------------------------------------------------------------------*/
 
 const char *
-VRT_r_client_identity(const struct vrt_ctx *ctx)
+VRT_r_client_identity(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -262,7 +262,7 @@ VRT_r_client_identity(const struct vrt_ctx *ctx)
 }
 
 void
-VRT_l_client_identity(const struct vrt_ctx *ctx, const char *str, ...)
+VRT_l_client_identity(VRT_CTX, const char *str, ...)
 {
 	va_list ap;
 	const char *b;
@@ -284,7 +284,7 @@ VRT_l_client_identity(const struct vrt_ctx *ctx, const char *str, ...)
 
 #define BEREQ_TIMEOUT(which)					\
 void								\
-VRT_l_bereq_##which(const struct vrt_ctx *ctx, double num)	\
+VRT_l_bereq_##which(VRT_CTX, double num)	\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
@@ -293,7 +293,7 @@ VRT_l_bereq_##which(const struct vrt_ctx *ctx, double num)	\
 }								\
 								\
 double								\
-VRT_r_bereq_##which(const struct vrt_ctx *ctx)			\
+VRT_r_bereq_##which(VRT_CTX)			\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
@@ -308,7 +308,7 @@ BEREQ_TIMEOUT(between_bytes_timeout)
 /*--------------------------------------------------------------------*/
 
 const char *
-VRT_r_beresp_backend_name(const struct vrt_ctx *ctx)
+VRT_r_beresp_backend_name(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -319,7 +319,7 @@ VRT_r_beresp_backend_name(const struct vrt_ctx *ctx)
 }
 
 VCL_IP
-VRT_r_beresp_backend_ip(const struct vrt_ctx *ctx)
+VRT_r_beresp_backend_ip(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -334,7 +334,7 @@ VRT_r_beresp_backend_ip(const struct vrt_ctx *ctx)
 /*--------------------------------------------------------------------*/
 
 const char *
-VRT_r_beresp_storage_hint(const struct vrt_ctx *ctx)
+VRT_r_beresp_storage_hint(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
@@ -345,7 +345,7 @@ VRT_r_beresp_storage_hint(const struct vrt_ctx *ctx)
 }
 
 void
-VRT_l_beresp_storage_hint(const struct vrt_ctx *ctx, const char *str, ...)
+VRT_l_beresp_storage_hint(VRT_CTX, const char *str, ...)
 {
 	va_list ap;
 	const char *b;
@@ -368,7 +368,7 @@ VRT_l_beresp_storage_hint(const struct vrt_ctx *ctx, const char *str, ...)
 #define REQ_VAR_L(nm, elem, type,extra)					\
 									\
 void									\
-VRT_l_req_##nm(const struct vrt_ctx *ctx, type arg)			\
+VRT_l_req_##nm(VRT_CTX, type arg)			\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);				\
@@ -379,7 +379,7 @@ VRT_l_req_##nm(const struct vrt_ctx *ctx, type arg)			\
 #define REQ_VAR_R(nm, elem, type)					\
 									\
 type									\
-VRT_r_req_##nm(const struct vrt_ctx *ctx)				\
+VRT_r_req_##nm(VRT_CTX)				\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);				\
@@ -394,7 +394,7 @@ REQ_VAR_R(ttl, d_ttl, double)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_l_bereq_backend(const struct vrt_ctx *ctx, const struct director *be)
+VRT_l_bereq_backend(VRT_CTX, const struct director *be)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -403,7 +403,7 @@ VRT_l_bereq_backend(const struct vrt_ctx *ctx, const struct director *be)
 }
 
 const struct director *
-VRT_r_bereq_backend(const struct vrt_ctx *ctx)
+VRT_r_bereq_backend(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -412,7 +412,7 @@ VRT_r_bereq_backend(const struct vrt_ctx *ctx)
 }
 
 const struct director *
-VRT_r_beresp_backend(const struct vrt_ctx *ctx)
+VRT_r_beresp_backend(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -423,7 +423,7 @@ VRT_r_beresp_backend(const struct vrt_ctx *ctx)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_l_req_esi(const struct vrt_ctx *ctx, unsigned process_esi)
+VRT_l_req_esi(VRT_CTX, unsigned process_esi)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -437,7 +437,7 @@ VRT_l_req_esi(const struct vrt_ctx *ctx, unsigned process_esi)
 }
 
 unsigned
-VRT_r_req_esi(const struct vrt_ctx *ctx)
+VRT_r_req_esi(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -446,7 +446,7 @@ VRT_r_req_esi(const struct vrt_ctx *ctx)
 }
 
 long
-VRT_r_req_esi_level(const struct vrt_ctx *ctx)
+VRT_r_req_esi_level(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -457,7 +457,7 @@ VRT_r_req_esi_level(const struct vrt_ctx *ctx)
 /*--------------------------------------------------------------------*/
 
 unsigned
-VRT_r_req_can_gzip(const struct vrt_ctx *ctx)
+VRT_r_req_can_gzip(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -468,7 +468,7 @@ VRT_r_req_can_gzip(const struct vrt_ctx *ctx)
 /*--------------------------------------------------------------------*/
 
 long
-VRT_r_req_restarts(const struct vrt_ctx *ctx)
+VRT_r_req_restarts(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -477,7 +477,7 @@ VRT_r_req_restarts(const struct vrt_ctx *ctx)
 }
 
 long
-VRT_r_bereq_retries(const struct vrt_ctx *ctx)
+VRT_r_bereq_retries(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -498,7 +498,7 @@ VRT_r_bereq_retries(const struct vrt_ctx *ctx)
 #define VRT_DO_EXP_L(which, sexp, fld, offset)			\
 								\
 void								\
-VRT_l_##which##_##fld(const struct vrt_ctx *ctx, double a)	\
+VRT_l_##which##_##fld(VRT_CTX, double a)	\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
@@ -513,7 +513,7 @@ VRT_l_##which##_##fld(const struct vrt_ctx *ctx, double a)	\
 #define VRT_DO_EXP_R(which, sexp, fld, offset)			\
 								\
 double								\
-VRT_r_##which##_##fld(const struct vrt_ctx *ctx)		\
+VRT_r_##which##_##fld(VRT_CTX)		\
 {								\
 	double d;						\
 								\
@@ -545,7 +545,7 @@ VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore->exp, keep, 0)
 #define VRT_DO_AGE_R(which, sexp)				\
 								\
 double								\
-VRT_r_##which##_##age(const struct vrt_ctx *ctx)		\
+VRT_r_##which##_##age(VRT_CTX)		\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
@@ -560,7 +560,7 @@ VRT_DO_AGE_R(beresp, ctx->bo->fetch_objcore->exp)
  */
 
 const char *
-VRT_r_req_xid(const struct vrt_ctx *ctx)
+VRT_r_req_xid(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -570,7 +570,7 @@ VRT_r_req_xid(const struct vrt_ctx *ctx)
 }
 
 const char *
-VRT_r_bereq_xid(const struct vrt_ctx *ctx)
+VRT_r_bereq_xid(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -583,7 +583,7 @@ VRT_r_bereq_xid(const struct vrt_ctx *ctx)
 
 #define REQ_BOOL(hash_var)					\
 void								\
-VRT_l_req_##hash_var(const struct vrt_ctx *ctx, unsigned val)	\
+VRT_l_req_##hash_var(VRT_CTX, unsigned val)	\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
@@ -592,7 +592,7 @@ VRT_l_req_##hash_var(const struct vrt_ctx *ctx, unsigned val)	\
 }								\
 								\
 unsigned							\
-VRT_r_req_##hash_var(const struct vrt_ctx *ctx)			\
+VRT_r_req_##hash_var(VRT_CTX)			\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
@@ -606,7 +606,7 @@ REQ_BOOL(hash_always_miss)
 /*--------------------------------------------------------------------*/
 
 VCL_IP
-VRT_r_client_ip(const struct vrt_ctx *ctx)
+VRT_r_client_ip(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -616,7 +616,7 @@ VRT_r_client_ip(const struct vrt_ctx *ctx)
 }
 
 VCL_IP
-VRT_r_server_ip(const struct vrt_ctx *ctx)
+VRT_r_server_ip(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -626,7 +626,7 @@ VRT_r_server_ip(const struct vrt_ctx *ctx)
 }
 
 const char*
-VRT_r_server_identity(const struct vrt_ctx *ctx)
+VRT_r_server_identity(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -637,7 +637,7 @@ VRT_r_server_identity(const struct vrt_ctx *ctx)
 }
 
 const char*
-VRT_r_server_hostname(const struct vrt_ctx *ctx)
+VRT_r_server_hostname(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -649,7 +649,7 @@ VRT_r_server_hostname(const struct vrt_ctx *ctx)
 /*--------------------------------------------------------------------*/
 
 long
-VRT_r_obj_hits(const struct vrt_ctx *ctx)
+VRT_r_obj_hits(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
@@ -659,7 +659,7 @@ VRT_r_obj_hits(const struct vrt_ctx *ctx)
 }
 
 unsigned
-VRT_r_obj_uncacheable(const struct vrt_ctx *ctx)
+VRT_r_obj_uncacheable(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -672,7 +672,7 @@ VRT_r_obj_uncacheable(const struct vrt_ctx *ctx)
 
 #define HTTP_VAR(x)						\
 struct http *							\
-VRT_r_##x(const struct vrt_ctx *ctx)				\
+VRT_r_##x(VRT_CTX)				\
 {								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
 	CHECK_OBJ_NOTNULL(ctx->http_##x, HTTP_MAGIC);		\

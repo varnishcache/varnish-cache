@@ -105,6 +105,8 @@ struct vrt_ctx {
 	double				now;
 };
 
+#define VRT_CTX		const struct vrt_ctx *ctx
+
 /***********************************************************************/
 
 struct vmod_data {
@@ -186,54 +188,51 @@ struct vrt_ref {
 /* ACL related */
 #define VRT_ACL_MAXADDR		16	/* max(IPv4, IPv6) */
 
-void VRT_acl_log(const struct vrt_ctx *, const char *msg);
+void VRT_acl_log(VRT_CTX, const char *msg);
 
 /* req related */
 
-int VRT_CacheReqBody(const struct vrt_ctx *, long long maxsize);
+int VRT_CacheReqBody(VRT_CTX, long long maxsize);
 
 /* Regexp related */
 void VRT_re_init(void **, const char *);
 void VRT_re_fini(void *);
-int VRT_re_match(const struct vrt_ctx *, const char *, void *re);
-const char *VRT_regsub(const struct vrt_ctx *, int all, const char *,
-    void *, const char *);
+int VRT_re_match(VRT_CTX, const char *, void *re);
+const char *VRT_regsub(VRT_CTX, int all, const char *, void *, const char *);
 
-void VRT_ban_string(const struct vrt_ctx *, const char *);
-void VRT_purge(const struct vrt_ctx *, double ttl, double grace, double keep);
+void VRT_ban_string(VRT_CTX, const char *);
+void VRT_purge(VRT_CTX, double ttl, double grace, double keep);
 
-void VRT_count(const struct vrt_ctx *, unsigned);
+void VRT_count(VRT_CTX, unsigned);
 int VRT_rewrite(const char *, const char *);
-void VRT_error(const struct vrt_ctx *, unsigned, const char *);
+void VRT_error(VRT_CTX, unsigned, const char *);
 int VRT_switch_config(const char *);
 
-const char *VRT_GetHdr(const struct vrt_ctx *, const struct gethdr_s *);
-void VRT_SetHdr(const struct vrt_ctx *, const struct gethdr_s *,
-    const char *, ...);
-void VRT_handling(const struct vrt_ctx *, unsigned hand);
+const char *VRT_GetHdr(VRT_CTX, const struct gethdr_s *);
+void VRT_SetHdr(VRT_CTX, const struct gethdr_s *, const char *, ...);
+void VRT_handling(VRT_CTX, unsigned hand);
 
-void VRT_hashdata(const struct vrt_ctx *, const char *str, ...);
+void VRT_hashdata(VRT_CTX, const char *str, ...);
 
 /* Simple stuff */
 int VRT_strcmp(const char *s1, const char *s2);
 void VRT_memmove(void *dst, const void *src, unsigned len);
 
-void VRT_Rollback(const struct vrt_ctx *, const struct http *);
+void VRT_Rollback(VRT_CTX, const struct http *);
 
 /* Synthetic pages */
-void VRT_synth_page(const struct vrt_ctx *, const char *, ...);
+void VRT_synth_page(VRT_CTX, const char *, ...);
 
 /* Backend related */
-void VRT_init_dir(const struct vrt_ctx*, struct director **, int idx,
-    const void *priv);
-void VRT_fini_dir(const struct vrt_ctx*, struct director *);
+void VRT_init_dir(VRT_CTX, struct director **, int idx, const void *priv);
+void VRT_fini_dir(VRT_CTX, struct director *);
 
 /* Suckaddr related */
 int VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst);
 
 /* VMOD/Modules related */
 int VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
-    const char *path, const char *file_id, const struct vrt_ctx *ctx);
+    const char *path, const char *file_id, VRT_CTX);
 void VRT_Vmod_Fini(void **hdl);
 
 struct vmod_priv;
@@ -253,10 +252,10 @@ int VRT_Stv(const char *nm);
 
 /* Convert things to string */
 
-char *VRT_IP_string(const struct vrt_ctx *, VCL_IP);
-char *VRT_INT_string(const struct vrt_ctx *, VCL_INT);
-char *VRT_REAL_string(const struct vrt_ctx *, VCL_REAL);
-char *VRT_TIME_string(const struct vrt_ctx *, VCL_TIME);
+char *VRT_IP_string(VRT_CTX, VCL_IP);
+char *VRT_INT_string(VRT_CTX, VCL_INT);
+char *VRT_REAL_string(VRT_CTX, VCL_REAL);
+char *VRT_TIME_string(VRT_CTX, VCL_TIME);
 const char *VRT_BOOL_string(VCL_BOOL);
 const char *VRT_BACKEND_string(VCL_BACKEND);
-const char *VRT_CollectString(const struct vrt_ctx *, const char *p, ...);
+const char *VRT_CollectString(VRT_CTX, const char *p, ...);

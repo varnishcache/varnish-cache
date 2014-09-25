@@ -62,7 +62,7 @@ VRT_re_fini(void *rep)
 }
 
 int
-VRT_re_match(const struct vrt_ctx *ctx, const char *s, void *re)
+VRT_re_match(VRT_CTX, const char *s, void *re)
 {
 	vre_t *t;
 	int i;
@@ -81,7 +81,7 @@ VRT_re_match(const struct vrt_ctx *ctx, const char *s, void *re)
 }
 
 const char *
-VRT_regsub(const struct vrt_ctx *ctx, int all, const char *str, void *re,
+VRT_regsub(VRT_CTX, int all, const char *str, void *re,
     const char *sub)
 {
 	int ovector[30];

@@ -52,7 +52,7 @@ const void * const vrt_magic_string_unset = &vrt_magic_string_unset;
 /*--------------------------------------------------------------------*/
 
 void
-VRT_error(const struct vrt_ctx *ctx, unsigned code, const char *reason)
+VRT_error(VRT_CTX, unsigned code, const char *reason)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -69,7 +69,7 @@ VRT_error(const struct vrt_ctx *ctx, unsigned code, const char *reason)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_count(const struct vrt_ctx *ctx, unsigned u)
+VRT_count(VRT_CTX, unsigned u)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -81,7 +81,7 @@ VRT_count(const struct vrt_ctx *ctx, unsigned u)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_acl_log(const struct vrt_ctx *ctx, const char *msg)
+VRT_acl_log(VRT_CTX, const char *msg)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -91,7 +91,7 @@ VRT_acl_log(const struct vrt_ctx *ctx, const char *msg)
 /*--------------------------------------------------------------------*/
 
 static struct http *
-vrt_selecthttp(const struct vrt_ctx *ctx, enum gethdr_e where)
+vrt_selecthttp(VRT_CTX, enum gethdr_e where)
 {
 	struct http *hp;
 
@@ -118,7 +118,7 @@ vrt_selecthttp(const struct vrt_ctx *ctx, enum gethdr_e where)
 /*--------------------------------------------------------------------*/
 
 const char *
-VRT_GetHdr(const struct vrt_ctx *ctx, const struct gethdr_s *hs)
+VRT_GetHdr(VRT_CTX, const struct gethdr_s *hs)
 {
 	char *p;
 	struct http *hp;
@@ -202,7 +202,7 @@ VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
  */
 
 const char *
-VRT_CollectString(const struct vrt_ctx *ctx, const char *p, ...)
+VRT_CollectString(VRT_CTX, const char *p, ...)
 {
 	va_list ap;
 	const char *b;
@@ -218,7 +218,7 @@ VRT_CollectString(const struct vrt_ctx *ctx, const char *p, ...)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_SetHdr(const struct vrt_ctx *ctx , const struct gethdr_s *hs,
+VRT_SetHdr(VRT_CTX , const struct gethdr_s *hs,
     const char *p, ...)
 {
 	struct http *hp;
@@ -248,7 +248,7 @@ VRT_SetHdr(const struct vrt_ctx *ctx , const struct gethdr_s *hs,
 /*--------------------------------------------------------------------*/
 
 void
-VRT_handling(const struct vrt_ctx *ctx, unsigned hand)
+VRT_handling(VRT_CTX, unsigned hand)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -261,7 +261,7 @@ VRT_handling(const struct vrt_ctx *ctx, unsigned hand)
  */
 
 void
-VRT_hashdata(const struct vrt_ctx *ctx, const char *str, ...)
+VRT_hashdata(VRT_CTX, const char *str, ...)
 {
 	va_list ap;
 	const char *p;
@@ -288,7 +288,7 @@ VRT_hashdata(const struct vrt_ctx *ctx, const char *str, ...)
 /*--------------------------------------------------------------------*/
 
 double
-VRT_r_now(const struct vrt_ctx *ctx)
+VRT_r_now(VRT_CTX)
 {
 
 	(void)ctx;
@@ -298,7 +298,7 @@ VRT_r_now(const struct vrt_ctx *ctx)
 /*--------------------------------------------------------------------*/
 
 char *
-VRT_IP_string(const struct vrt_ctx *ctx, VCL_IP ip)
+VRT_IP_string(VRT_CTX, VCL_IP ip)
 {
 	char *p;
 	unsigned len;
@@ -318,7 +318,7 @@ VRT_IP_string(const struct vrt_ctx *ctx, VCL_IP ip)
 }
 
 char *
-VRT_INT_string(const struct vrt_ctx *ctx, long num)
+VRT_INT_string(VRT_CTX, long num)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -326,7 +326,7 @@ VRT_INT_string(const struct vrt_ctx *ctx, long num)
 }
 
 char *
-VRT_REAL_string(const struct vrt_ctx *ctx, double num)
+VRT_REAL_string(VRT_CTX, double num)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -334,7 +334,7 @@ VRT_REAL_string(const struct vrt_ctx *ctx, double num)
 }
 
 char *
-VRT_TIME_string(const struct vrt_ctx *ctx, double t)
+VRT_TIME_string(VRT_CTX, double t)
 {
 	char *p;
 
@@ -364,7 +364,7 @@ VRT_BOOL_string(unsigned val)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_Rollback(const struct vrt_ctx *ctx, const struct http *hp)
+VRT_Rollback(VRT_CTX, const struct http *hp)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -385,7 +385,7 @@ VRT_Rollback(const struct vrt_ctx *ctx, const struct http *hp)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_synth_page(const struct vrt_ctx *ctx, const char *str, ...)
+VRT_synth_page(VRT_CTX, const char *str, ...)
 {
 	va_list ap;
 	const char *p;
@@ -415,7 +415,7 @@ VRT_synth_page(const struct vrt_ctx *ctx, const char *str, ...)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_ban_string(const struct vrt_ctx *ctx, const char *str)
+VRT_ban_string(VRT_CTX, const char *str)
 {
 	char *a1, *a2, *a3;
 	char **av;
@@ -482,7 +482,7 @@ VRT_ban_string(const struct vrt_ctx *ctx, const char *str)
  */
 
 int
-VRT_CacheReqBody(const struct vrt_ctx *ctx, long long maxsize)
+VRT_CacheReqBody(VRT_CTX, long long maxsize)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -500,7 +500,7 @@ VRT_CacheReqBody(const struct vrt_ctx *ctx, long long maxsize)
  */
 
 void
-VRT_purge(const struct vrt_ctx *ctx, double ttl, double grace, double keep)
+VRT_purge(VRT_CTX, double ttl, double grace, double keep)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);

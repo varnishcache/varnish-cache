@@ -49,7 +49,7 @@
 #include "vcc_if.h"
 
 VCL_VOID __match_proto__(td_std_set_ip_tos)
-vmod_set_ip_tos(const struct vrt_ctx *ctx, VCL_INT tos)
+vmod_set_ip_tos(VRT_CTX, VCL_INT tos)
 {
 	int itos = tos;
 
@@ -59,7 +59,7 @@ vmod_set_ip_tos(const struct vrt_ctx *ctx, VCL_INT tos)
 }
 
 static const char *
-vmod_updown(const struct vrt_ctx *ctx, int up, const char *s, va_list ap)
+vmod_updown(VRT_CTX, int up, const char *s, va_list ap)
 {
 	unsigned u;
 	char *b, *e;
@@ -95,7 +95,7 @@ vmod_updown(const struct vrt_ctx *ctx, int up, const char *s, va_list ap)
 }
 
 VCL_STRING __match_proto__(td_std_toupper)
-vmod_toupper(const struct vrt_ctx *ctx, const char *s, ...)
+vmod_toupper(VRT_CTX, const char *s, ...)
 {
 	const char *p;
 	va_list ap;
@@ -108,7 +108,7 @@ vmod_toupper(const struct vrt_ctx *ctx, const char *s, ...)
 }
 
 VCL_STRING __match_proto__(td_std_tolower)
-vmod_tolower(const struct vrt_ctx *ctx, const char *s, ...)
+vmod_tolower(VRT_CTX, const char *s, ...)
 {
 	const char *p;
 	va_list ap;
@@ -121,7 +121,7 @@ vmod_tolower(const struct vrt_ctx *ctx, const char *s, ...)
 }
 
 VCL_REAL __match_proto__(td_std_random)
-vmod_random(const struct vrt_ctx *ctx, VCL_REAL lo, VCL_REAL hi)
+vmod_random(VRT_CTX, VCL_REAL lo, VCL_REAL hi)
 {
 	double a;
 
@@ -133,7 +133,7 @@ vmod_random(const struct vrt_ctx *ctx, VCL_REAL lo, VCL_REAL hi)
 }
 
 VCL_VOID __match_proto__(td_std_log)
-vmod_log(const struct vrt_ctx *ctx, const char *fmt, ...)
+vmod_log(VRT_CTX, const char *fmt, ...)
 {
 	unsigned u;
 	va_list ap;
@@ -154,7 +154,7 @@ vmod_log(const struct vrt_ctx *ctx, const char *fmt, ...)
 }
 
 VCL_VOID __match_proto__(td_std_syslog)
-vmod_syslog(const struct vrt_ctx *ctx, VCL_INT fac, const char *fmt, ...)
+vmod_syslog(VRT_CTX, VCL_INT fac, const char *fmt, ...)
 {
 	unsigned u;
 	va_list ap;
@@ -172,7 +172,7 @@ vmod_syslog(const struct vrt_ctx *ctx, VCL_INT fac, const char *fmt, ...)
 }
 
 VCL_VOID __match_proto__(td_std_collect)
-vmod_collect(const struct vrt_ctx *ctx, VCL_HEADER hdr)
+vmod_collect(VRT_CTX, VCL_HEADER hdr)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -187,7 +187,7 @@ vmod_collect(const struct vrt_ctx *ctx, VCL_HEADER hdr)
 }
 
 VCL_BOOL __match_proto__(td_std_healthy)
-vmod_healthy(const struct vrt_ctx *ctx, VCL_BACKEND be)
+vmod_healthy(VRT_CTX, VCL_BACKEND be)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (be == NULL)
@@ -197,7 +197,7 @@ vmod_healthy(const struct vrt_ctx *ctx, VCL_BACKEND be)
 }
 
 VCL_INT __match_proto__(td_std_port)
-vmod_port(const struct vrt_ctx *ctx, VCL_IP ip)
+vmod_port(VRT_CTX, VCL_IP ip)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (ip == NULL)
@@ -206,13 +206,13 @@ vmod_port(const struct vrt_ctx *ctx, VCL_IP ip)
 }
 
 VCL_VOID __match_proto__(td_std_rollback)
-vmod_rollback(const struct vrt_ctx *ctx, VCL_HTTP hp)
+vmod_rollback(VRT_CTX, VCL_HTTP hp)
 {
 	VRT_Rollback(ctx, hp);
 }
 
 VCL_VOID __match_proto__(td_std_timestamp)
-vmod_timestamp(const struct vrt_ctx *ctx, VCL_STRING label)
+vmod_timestamp(VRT_CTX, VCL_STRING label)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -232,7 +232,7 @@ vmod_timestamp(const struct vrt_ctx *ctx, VCL_STRING label)
 }
 
 VCL_VOID __match_proto__(td_std_cache_req_body)
-vmod_cache_req_body(const struct vrt_ctx *ctx, VCL_BYTES size)
+vmod_cache_req_body(VRT_CTX, VCL_BYTES size)
 {
 	int result;
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -241,7 +241,7 @@ vmod_cache_req_body(const struct vrt_ctx *ctx, VCL_BYTES size)
 }
 
 VCL_STRING __match_proto__(td_std_strstr)
-vmod_strstr(const struct vrt_ctx *ctx, VCL_STRING mstr, VCL_STRING msubstr)
+vmod_strstr(VRT_CTX, VCL_STRING mstr, VCL_STRING msubstr)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 

@@ -63,7 +63,7 @@ static VTAILQ_HEAD(,vmod)	vmods = VTAILQ_HEAD_INITIALIZER(vmods);
 
 int
 VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
-    const char *path, const char *file_id, const struct vrt_ctx *ctx)
+    const char *path, const char *file_id, VRT_CTX)
 {
 	struct vmod *v;
 	const struct vmod_data *d;
