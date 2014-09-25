@@ -220,13 +220,19 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 		FREE_OBJ(vcl);
 		return (1);
 	}
-	REPLACE(vcl->name, name);
-	VCLI_Out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
-	VTAILQ_INSERT_TAIL(&vcl_head, vcl, list);
 	ctx.method = VCL_MET_INIT;
 	ctx.handling = &hand;
 	(void)vcl->conf->init_func(&ctx);
+	if (hand == VCL_RET_FAIL) {
+		VCLI_Out(cli, "VCL \"%s\" vcl_init{} failed", name);
+		(void)dlclose(vcl->dlh);
+		FREE_OBJ(vcl);
+		return (1);
+	}
 	assert(hand == VCL_RET_OK);
+	REPLACE(vcl->name, name);
+	VCLI_Out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
+	VTAILQ_INSERT_TAIL(&vcl_head, vcl, list);
 	Lck_Lock(&vcl_mtx);
 	if (vcl_active == NULL)
 		vcl_active = vcl;

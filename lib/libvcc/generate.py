@@ -140,7 +140,7 @@ returns =(
 
 	('init',
 		"",
-		('ok',)
+		('ok', 'fail')
 	),
 	('fini',
 		"",

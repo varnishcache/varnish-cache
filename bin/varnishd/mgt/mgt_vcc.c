@@ -538,7 +538,7 @@ mcf_config_inline(struct cli *cli, const char * const *av, void *priv)
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
-	VCLI_Out(cli, "VCL compiled.");
+	VCLI_Out(cli, "VCL compiled.\n");
 	if (child_pid >= 0 &&
 	    mgt_cli_askchild(&status, &p, "vcl.load %s %s\n", av[2], vf)) {
 		VCLI_SetResult(cli, status);
