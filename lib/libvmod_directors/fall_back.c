@@ -75,7 +75,7 @@ vmod_rr_getfd(const struct director *dir, struct busyobj *bo)
 }
 
 VCL_VOID __match_proto__()
-vmod_fallback__init(const struct vrt_ctx *ctx,
+vmod_fallback__init(VRT_CTX,
     struct vmod_directors_fallback **rrp, const char *vcl_name)
 {
 	struct vmod_directors_fallback *rr;
@@ -102,7 +102,7 @@ vmod_fallback__fini(struct vmod_directors_fallback **rrp)
 }
 
 VCL_VOID __match_proto__()
-vmod_fallback_add_backend(const struct vrt_ctx *ctx,
+vmod_fallback_add_backend(VRT_CTX,
     struct vmod_directors_fallback *rr, VCL_BACKEND be)
 {
 
@@ -112,7 +112,7 @@ vmod_fallback_add_backend(const struct vrt_ctx *ctx,
 }
 
 VCL_BACKEND __match_proto__()
-vmod_fallback_backend(const struct vrt_ctx *ctx,
+vmod_fallback_backend(VRT_CTX,
     struct vmod_directors_fallback *rr)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);

@@ -915,6 +915,7 @@ file_header(fo)
 
 fo.write("""
 struct vrt_ctx;
+#define VRT_CTX const struct vrt_ctx *ctx
 struct req;
 struct busyobj;
 struct ws;
@@ -923,7 +924,7 @@ struct worker;
 
 typedef int vcl_init_f(struct cli *);
 typedef void vcl_fini_f(struct cli *);
-typedef int vcl_func_f(const struct vrt_ctx *ctx);
+typedef int vcl_func_f(VRT_CTX);
 """)
 
 def tbl40(a, b):
@@ -1057,7 +1058,7 @@ def one_var(nm, spec):
 		fo.write('\t    "VRT_r_%s(ctx)",\n' % cnam)
 		if nm == i[0]:
 			fh.write("VCL_" + typ +
-			    " VRT_r_%s(const struct vrt_ctx *);\n" % cnam )
+			    " VRT_r_%s(VRT_CTX);\n" % cnam )
 	restrict(fo, spec[2])
 
 	if len(spec[3]) == 0:
@@ -1070,7 +1071,7 @@ def one_var(nm, spec):
 		fo.write('\t    "VRT_l_%s(ctx, ",\n' % cnam)
 		if nm == i[0]:
 			fh.write(
-			    "void VRT_l_%s(const struct vrt_ctx *, " % cnam)
+			    "void VRT_l_%s(VRT_CTX, " % cnam)
 			if typ != "STRING":
 				fh.write("VCL_" + typ + ");\n")
 			else:

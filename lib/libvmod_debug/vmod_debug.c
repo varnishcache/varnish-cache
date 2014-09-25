@@ -37,7 +37,7 @@
 #include "vcc_if.h"
 
 VCL_VOID __match_proto__(td_debug_panic)
-vmod_panic(const struct vrt_ctx *ctx, const char *str, ...)
+vmod_panic(VRT_CTX, const char *str, ...)
 {
 	va_list ap;
 	const char *b;
@@ -50,7 +50,7 @@ vmod_panic(const struct vrt_ctx *ctx, const char *str, ...)
 }
 
 VCL_STRING __match_proto__(td_debug_author)
-vmod_author(const struct vrt_ctx *ctx, VCL_ENUM id)
+vmod_author(VRT_CTX, VCL_ENUM id)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -76,7 +76,7 @@ init_function(struct vmod_priv *priv, const struct VCL_conf *cfg)
 }
 
 VCL_VOID __match_proto__(td_debug_test_priv_call)
-vmod_test_priv_call(const struct vrt_ctx *ctx, struct vmod_priv *priv)
+vmod_test_priv_call(VRT_CTX, struct vmod_priv *priv)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -89,7 +89,7 @@ vmod_test_priv_call(const struct vrt_ctx *ctx, struct vmod_priv *priv)
 }
 
 VCL_VOID __match_proto__(td_debug_test_priv_vcl)
-vmod_test_priv_vcl(const struct vrt_ctx *ctx, struct vmod_priv *priv)
+vmod_test_priv_vcl(VRT_CTX, struct vmod_priv *priv)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -97,7 +97,7 @@ vmod_test_priv_vcl(const struct vrt_ctx *ctx, struct vmod_priv *priv)
 }
 
 VCL_BLOB
-vmod_str2blob(const struct vrt_ctx *ctx, VCL_STRING s)
+vmod_str2blob(VRT_CTX, VCL_STRING s)
 {
 	struct vmod_priv *p;
 
@@ -111,7 +111,7 @@ vmod_str2blob(const struct vrt_ctx *ctx, VCL_STRING s)
 }
 
 VCL_STRING
-vmod_blob2hex(const struct vrt_ctx *ctx, VCL_BLOB b)
+vmod_blob2hex(VRT_CTX, VCL_BLOB b)
 {
 	char *s, *p;
 	uint8_t *q;
@@ -131,7 +131,7 @@ vmod_blob2hex(const struct vrt_ctx *ctx, VCL_BLOB b)
 }
 
 VCL_BACKEND
-vmod_no_backend(const struct vrt_ctx *ctx)
+vmod_no_backend(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -139,7 +139,7 @@ vmod_no_backend(const struct vrt_ctx *ctx)
 }
 
 VCL_VOID __match_proto__(td_debug_rot52)
-vmod_rot52(const struct vrt_ctx *ctx, VCL_HTTP hp)
+vmod_rot52(VRT_CTX, VCL_HTTP hp)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);

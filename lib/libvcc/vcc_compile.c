@@ -670,11 +670,11 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	for (i = 1; i < VCL_MET_MAX; i++) {
 		Fh(tl, 1, "\nint __match_proto__(vcl_func_f)\n");
 		Fh(tl, 1,
-		    "VGC_function_%s(const struct vrt_ctx *ctx);\n",
+		    "VGC_function_%s(VRT_CTX);\n",
 		    method_tab[i].name);
 		Fc(tl, 1, "\nint __match_proto__(vcl_func_f)\n");
 		Fc(tl, 1,
-		    "VGC_function_%s(const struct vrt_ctx *ctx)\n",
+		    "VGC_function_%s(VRT_CTX)\n",
 		    method_tab[i].name);
 		AZ(VSB_finish(tl->fm[i]));
 		Fc(tl, 1, "{\n");

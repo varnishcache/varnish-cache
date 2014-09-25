@@ -78,7 +78,7 @@ vmod_rr_getfd(const struct director *dir, struct busyobj *bo)
 }
 
 VCL_VOID __match_proto__()
-vmod_round_robin__init(const struct vrt_ctx *ctx,
+vmod_round_robin__init(VRT_CTX,
     struct vmod_directors_round_robin **rrp, const char *vcl_name)
 {
 	struct vmod_directors_round_robin *rr;
@@ -105,7 +105,7 @@ vmod_round_robin__fini(struct vmod_directors_round_robin **rrp)
 }
 
 VCL_VOID __match_proto__()
-vmod_round_robin_add_backend(const struct vrt_ctx *ctx,
+vmod_round_robin_add_backend(VRT_CTX,
     struct vmod_directors_round_robin *rr, VCL_BACKEND be)
 {
 
@@ -115,7 +115,7 @@ vmod_round_robin_add_backend(const struct vrt_ctx *ctx,
 }
 
 VCL_BACKEND __match_proto__()
-vmod_round_robin_backend(const struct vrt_ctx *ctx,
+vmod_round_robin_backend(VRT_CTX,
     struct vmod_directors_round_robin *rr)
 {
 
