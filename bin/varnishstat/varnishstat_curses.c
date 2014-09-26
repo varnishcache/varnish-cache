@@ -414,7 +414,7 @@ sample_hitrate(void)
 	double hr, mr, ratio;
 	uint64_t hit, miss;
 
-	if (VSC_C_mgt == NULL)
+	if (VSC_C_main == NULL)
 		return;
 
 	tv = VTIM_mono();
@@ -548,17 +548,8 @@ draw_status(void)
 
 	werase(w_status);
 
-	if (VSC_C_mgt != NULL) {
+	if (VSC_C_mgt != NULL)
 		up_mgt = VSC_C_mgt->uptime;
-		if( COLS  > 70) {
-			mvwprintw(w_status, 0, (getmaxx (w_status) - 37),
-				"Hitrate n: %8u %8u %8u", hitrate.hr_10.n, hitrate.hr_100.n,
-				hitrate.hr_1000.n);
-			mvwprintw(w_status, 1, (getmaxx (w_status) - 37),
-				"   avg(n): %8.4f %8.4f %8.4f", hitrate.hr_10.acc,
-				hitrate.hr_100.acc, hitrate.hr_1000.acc);
-		}
-	}
 	if (VSC_C_main != NULL)
 		up_chld = VSC_C_main->uptime;
 
@@ -571,6 +562,14 @@ draw_status(void)
 
 	if (VSC_C_mgt == NULL)
 		mvwprintw(w_status, 0, COLS - strlen(discon), discon);
+	else if (COLS > 70) {
+		mvwprintw(w_status, 0, getmaxx(w_status) - 37,
+		    "Hitrate n: %8u %8u %8u", hitrate.hr_10.n, hitrate.hr_100.n,
+		    hitrate.hr_1000.n);
+		mvwprintw(w_status, 1, getmaxx(w_status) - 37,
+		    "   avg(n): %8.4f %8.4f %8.4f", hitrate.hr_10.acc,
+		    hitrate.hr_100.acc, hitrate.hr_1000.acc);
+	}
 
 	wnoutrefresh(w_status);
 }
