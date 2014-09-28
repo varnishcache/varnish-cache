@@ -806,9 +806,9 @@ HTTP_Decode(struct http *to, const uint8_t *fm)
 		}
 		if (*fm == '\0')
 			return (0);
-		to->hd[to->nhd].b = fm;
-		fm = strchr(fm, '\0');
-		to->hd[to->nhd].e = fm;
+		to->hd[to->nhd].b = (const void*)fm;
+		fm = (const void*)strchr((const void*)fm, '\0');
+		to->hd[to->nhd].e = (const void*)fm;
 		fm++;
 		if (to->vsl != NULL)
 			http_VSLH(to, to->nhd);
