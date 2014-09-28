@@ -75,8 +75,8 @@ HTTP1_Init(struct http_conn *htc, struct ws *ws, int fd, struct vsl_log *vsl,
 	htc->rxbuf.b = ws->f;
 	htc->rxbuf.e = ws->f;
 	*htc->rxbuf.e = '\0';
-	htc->pipeline.b = NULL;
-	htc->pipeline.e = NULL;
+	htc->pipeline_b = NULL;
+	htc->pipeline_e = NULL;
 }
 
 /*--------------------------------------------------------------------
@@ -88,18 +88,19 @@ HTTP1_Init(struct http_conn *htc, struct ws *ws, int fd, struct vsl_log *vsl,
 enum http1_status_e
 HTTP1_Reinit(struct http_conn *htc)
 {
-	unsigned l;
+	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	(void)WS_Reserve(htc->ws, htc->maxbytes);
 	htc->rxbuf.b = htc->ws->f;
 	htc->rxbuf.e = htc->ws->f;
-	if (htc->pipeline.b != NULL) {
-		l = Tlen(htc->pipeline);
-		memmove(htc->rxbuf.b, htc->pipeline.b, l);
+	if (htc->pipeline_b != NULL) {
+		l = htc->pipeline_e - htc->pipeline_b;
+		assert(l > 0);
+		memmove(htc->rxbuf.b, htc->pipeline_b, l);
 		htc->rxbuf.e += l;
-		htc->pipeline.b = NULL;
-		htc->pipeline.e = NULL;
+		htc->pipeline_b = NULL;
+		htc->pipeline_e = NULL;
 	}
 	*htc->rxbuf.e = '\0';
 	return (HTTP1_Complete(htc));
@@ -116,8 +117,8 @@ HTTP1_Complete(struct http_conn *htc)
 	txt *t;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	AZ(htc->pipeline.b);
-	AZ(htc->pipeline.e);
+	AZ(htc->pipeline_b);
+	AZ(htc->pipeline_e);
 
 	t = &htc->rxbuf;
 	Tcheck(*t);
@@ -145,8 +146,8 @@ HTTP1_Complete(struct http_conn *htc)
 	p++;
 	WS_ReleaseP(htc->ws, t->e);
 	if (p < t->e) {
-		htc->pipeline.b = p;
-		htc->pipeline.e = t->e;
+		htc->pipeline_b = p;
+		htc->pipeline_e = t->e;
 		t->e = p;
 	}
 	return (HTTP1_COMPLETE);
@@ -163,8 +164,8 @@ HTTP1_Rx(struct http_conn *htc)
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	AN(htc->ws->r);
-	AZ(htc->pipeline.b);
-	AZ(htc->pipeline.e);
+	AZ(htc->pipeline_b);
+	AZ(htc->pipeline_e);
 	i = (htc->ws->r - htc->rxbuf.e) - 1;	/* space for NUL */
 	if (i <= 0) {
 		WS_ReleaseP(htc->ws, htc->rxbuf.b);
@@ -191,23 +192,24 @@ HTTP1_Rx(struct http_conn *htc)
 ssize_t
 HTTP1_Read(struct http_conn *htc, void *d, size_t len)
 {
-	size_t l;
+	ssize_t l;
 	unsigned char *p;
 	ssize_t i = 0;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	l = 0;
 	p = d;
-	if (htc->pipeline.b) {
-		l = Tlen(htc->pipeline);
+	if (htc->pipeline_b) {
+		l = htc->pipeline_e - htc->pipeline_b;
+		assert(l > 0);
 		if (l > len)
 			l = len;
-		memcpy(p, htc->pipeline.b, l);
+		memcpy(p, htc->pipeline_b, l);
 		p += l;
 		len -= l;
-		htc->pipeline.b += l;
-		if (htc->pipeline.b == htc->pipeline.e)
-			htc->pipeline.b = htc->pipeline.e = NULL;
+		htc->pipeline_b += l;
+		if (htc->pipeline_b == htc->pipeline_e)
+			htc->pipeline_b = htc->pipeline_e = NULL;
 	}
 	if (len > 0) {
 		i = read(htc->fd, p, len);

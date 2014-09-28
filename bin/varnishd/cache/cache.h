@@ -248,7 +248,8 @@ struct http_conn {
 	unsigned		maxhdr;
 	struct ws		*ws;
 	txt			rxbuf;
-	txt			pipeline;
+	char			*pipeline_b;
+	char			*pipeline_e;
 	ssize_t			content_length;
 	enum body_status	body_status;
 	struct vfp_ctx		vfc[1];
