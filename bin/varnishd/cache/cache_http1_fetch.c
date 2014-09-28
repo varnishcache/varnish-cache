@@ -165,7 +165,8 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo)
 	do {
 		hs = HTTP1_Rx(htc);
 		if (hs == HTTP1_OVERFLOW) {
-			bo->acct.beresp_hdrbytes += Tlen(htc->rxbuf);
+			bo->acct.beresp_hdrbytes +=
+			    htc->rxbuf_e - htc->rxbuf_b;
 			VSLb(bo->vsl, SLT_FetchError,
 			    "http %sread error: overflow",
 			    first ? "first " : "");
@@ -174,7 +175,8 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo)
 			return (-1);
 		}
 		if (hs == HTTP1_ERROR_EOF) {
-			bo->acct.beresp_hdrbytes += Tlen(htc->rxbuf);
+			bo->acct.beresp_hdrbytes +=
+			    htc->rxbuf_e - htc->rxbuf_b;
 			VSLb(bo->vsl, SLT_FetchError, "http %sread error: EOF",
 			    first ? "first " : "");
 			VBE_CloseFd(&bo->vbc, &bo->acct);
@@ -188,7 +190,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo)
 			    vc->between_bytes_timeout);
 		}
 	} while (hs != HTTP1_COMPLETE);
-	bo->acct.beresp_hdrbytes += Tlen(htc->rxbuf);
+	bo->acct.beresp_hdrbytes += htc->rxbuf_e - htc->rxbuf_b;
 
 	hp = bo->beresp;
 

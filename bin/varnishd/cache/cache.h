@@ -247,7 +247,8 @@ struct http_conn {
 	unsigned		maxbytes;
 	unsigned		maxhdr;
 	struct ws		*ws;
-	txt			rxbuf;
+	char			*rxbuf_b;
+	char			*rxbuf_e;
 	char			*pipeline_b;
 	char			*pipeline_e;
 	ssize_t			content_length;

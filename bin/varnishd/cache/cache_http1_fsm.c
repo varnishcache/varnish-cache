@@ -124,7 +124,8 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 				req->t_first = now;
 			if (isnan(req->t_req))
 				req->t_req = now;
-			req->acct.req_hdrbytes += Tlen(req->htc->rxbuf);
+			req->acct.req_hdrbytes +=
+			    req->htc->rxbuf_e - req->htc->rxbuf_b;
 			return (REQ_FSM_MORE);
 		} else if (hs == HTTP1_ERROR_EOF) {
 			why = SC_REM_CLOSE;
@@ -160,7 +161,7 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			}
 		}
 	}
-	req->acct.req_hdrbytes += Tlen(req->htc->rxbuf);
+	req->acct.req_hdrbytes += req->htc->rxbuf_e - req->htc->rxbuf_b;
 	CNT_AcctLogCharge(wrk->stats, req);
 	SES_ReleaseReq(req);
 	assert(why != SC_NULL);
@@ -240,10 +241,11 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 		AZ(req->vsl->wid);
 		req->t_first = req->t_req = sp->t_idle;
 		wrk->stats->sess_pipeline++;
-		req->acct.req_hdrbytes += Tlen(req->htc->rxbuf);
+		req->acct.req_hdrbytes +=
+		    req->htc->rxbuf_e - req->htc->rxbuf_b;
 		return (SESS_DONE_RET_START);
 	} else {
-		if (Tlen(req->htc->rxbuf))
+		if (req->htc->rxbuf_e != req->htc->rxbuf_b)
 			wrk->stats->sess_readahead++;
 		return (SESS_DONE_RET_WAIT);
 	}
@@ -286,7 +288,9 @@ http1_dissect(struct worker *wrk, struct req *req)
 
 	/* If we could not even parse the request, just close */
 	if (req->err_code != 0) {
-		VSLbt(req->vsl, SLT_HttpGarbage, req->htc->rxbuf);
+		VSLb(req->vsl, SLT_HttpGarbage, "%.*s",
+		    (int)(req->htc->rxbuf_e - req->htc->rxbuf_b),
+		    req->htc->rxbuf_b);
 		wrk->stats->client_req_400++;
 		r = write(req->sp->fd, r_400, strlen(r_400));
 		if (r > 0)

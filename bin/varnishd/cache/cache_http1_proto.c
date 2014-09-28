@@ -72,9 +72,9 @@ HTTP1_Init(struct http_conn *htc, struct ws *ws, int fd, struct vsl_log *vsl,
 	htc->maxhdr = maxhdr;
 
 	(void)WS_Reserve(htc->ws, htc->maxbytes);
-	htc->rxbuf.b = ws->f;
-	htc->rxbuf.e = ws->f;
-	*htc->rxbuf.e = '\0';
+	htc->rxbuf_b = ws->f;
+	htc->rxbuf_e = ws->f;
+	*htc->rxbuf_e = '\0';
 	htc->pipeline_b = NULL;
 	htc->pipeline_e = NULL;
 }
@@ -92,17 +92,17 @@ HTTP1_Reinit(struct http_conn *htc)
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	(void)WS_Reserve(htc->ws, htc->maxbytes);
-	htc->rxbuf.b = htc->ws->f;
-	htc->rxbuf.e = htc->ws->f;
+	htc->rxbuf_b = htc->ws->f;
+	htc->rxbuf_e = htc->ws->f;
 	if (htc->pipeline_b != NULL) {
 		l = htc->pipeline_e - htc->pipeline_b;
 		assert(l > 0);
-		memmove(htc->rxbuf.b, htc->pipeline_b, l);
-		htc->rxbuf.e += l;
+		memmove(htc->rxbuf_b, htc->pipeline_b, l);
+		htc->rxbuf_e += l;
 		htc->pipeline_b = NULL;
 		htc->pipeline_e = NULL;
 	}
-	*htc->rxbuf.e = '\0';
+	*htc->rxbuf_e = '\0';
 	return (HTTP1_Complete(htc));
 }
 
@@ -114,23 +114,21 @@ enum http1_status_e
 HTTP1_Complete(struct http_conn *htc)
 {
 	char *p;
-	txt *t;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	AZ(htc->pipeline_b);
 	AZ(htc->pipeline_e);
 
-	t = &htc->rxbuf;
-	Tcheck(*t);
-	assert(*t->e == '\0');
+	assert(htc->rxbuf_e >= htc->rxbuf_b);
+	assert(*htc->rxbuf_e == '\0');
 
 	/* Skip any leading white space */
-	for (p = t->b ; vct_islws(*p); p++)
+	for (p = htc->rxbuf_b ; vct_islws(*p); p++)
 		continue;
-	if (p == t->e) {
+	if (p == htc->rxbuf_e) {
 		/* All white space */
-		t->e = t->b;
-		*t->e = '\0';
+		htc->rxbuf_e = htc->rxbuf_b;
+		*htc->rxbuf_e = '\0';
 		return (HTTP1_ALL_WHITESPACE);
 	}
 	while (1) {
@@ -144,11 +142,11 @@ HTTP1_Complete(struct http_conn *htc)
 			break;
 	}
 	p++;
-	WS_ReleaseP(htc->ws, t->e);
-	if (p < t->e) {
+	WS_ReleaseP(htc->ws, htc->rxbuf_e);
+	if (p < htc->rxbuf_e) {
 		htc->pipeline_b = p;
-		htc->pipeline_e = t->e;
-		t->e = p;
+		htc->pipeline_e = htc->rxbuf_e;
+		htc->rxbuf_e = p;
 	}
 	return (HTTP1_COMPLETE);
 }
@@ -166,22 +164,22 @@ HTTP1_Rx(struct http_conn *htc)
 	AN(htc->ws->r);
 	AZ(htc->pipeline_b);
 	AZ(htc->pipeline_e);
-	i = (htc->ws->r - htc->rxbuf.e) - 1;	/* space for NUL */
+	i = (htc->ws->r - htc->rxbuf_e) - 1;	/* space for NUL */
 	if (i <= 0) {
-		WS_ReleaseP(htc->ws, htc->rxbuf.b);
+		WS_ReleaseP(htc->ws, htc->rxbuf_b);
 		return (HTTP1_OVERFLOW);
 	}
-	i = read(htc->fd, htc->rxbuf.e, i);
+	i = read(htc->fd, htc->rxbuf_e, i);
 	if (i <= 0) {
 		/*
 		 * We wouldn't come here if we had a complete HTTP header
 		 * so consequently an EOF can not be OK
 		 */
-		WS_ReleaseP(htc->ws, htc->rxbuf.b);
+		WS_ReleaseP(htc->ws, htc->rxbuf_b);
 		return (HTTP1_ERROR_EOF);
 	}
-	htc->rxbuf.e += i;
-	*htc->rxbuf.e = '\0';
+	htc->rxbuf_e += i;
+	*htc->rxbuf_e = '\0';
 	return (HTTP1_Complete(htc));
 }
 
@@ -230,24 +228,25 @@ static uint16_t
 http1_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
 {
 	char *q, *r;
-	txt t = htc->rxbuf;
 
+	assert(p > htc->rxbuf_b);
+	assert(p < htc->rxbuf_e);
 	hp->nhd = HTTP_HDR_FIRST;
 	hp->conds = 0;
 	r = NULL;		/* For FlexeLint */
-	for (; p < t.e; p = r) {
+	for (; p < htc->rxbuf_e; p = r) {
 
 		/* Find end of next header */
 		q = r = p;
-		while (r < t.e) {
+		while (r < htc->rxbuf_e) {
 			if (!vct_iscrlf(r)) {
 				r++;
 				continue;
 			}
 			q = r;
-			assert(r < t.e);
+			assert(r < htc->rxbuf_e);
 			r += vct_skipcrlf(r);
-			if (r >= t.e)
+			if (r >= htc->rxbuf_e)
 				break;
 			/* If line does not continue: got it. */
 			if (!vct_issp(*r))
@@ -316,14 +315,14 @@ http1_splitline(struct http *hp, const struct http_conn *htc, const int *hf)
 	assert(hf == HTTP1_Req || hf == HTTP1_Resp);
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	Tcheck(htc->rxbuf);
+	assert(htc->rxbuf_e >= htc->rxbuf_b);
 
 	AZ(hp->hd[hf[0]].b);
 	AZ(hp->hd[hf[1]].b);
 	AZ(hp->hd[hf[2]].b);
 
 	/* Skip leading LWS */
-	for (p = htc->rxbuf.b ; vct_islws(*p); p++)
+	for (p = htc->rxbuf_b ; vct_islws(*p); p++)
 		continue;
 	hp->hd[hf[0]].b = p;
 
@@ -536,7 +535,8 @@ HTTP1_DissectResponse(struct http *hp, struct http_conn *htc)
 	}
 
 	if (retval != 0) {
-		VSLbt(hp->vsl, SLT_HttpGarbage, htc->rxbuf);
+		VSLb(hp->vsl, SLT_HttpGarbage, "%.*s",
+		    (int)(htc->rxbuf_e - htc->rxbuf_b), htc->rxbuf_b);
 		assert(retval >= 100 && retval <= 999);
 		assert(retval == 503);
 		hp->status = retval;
