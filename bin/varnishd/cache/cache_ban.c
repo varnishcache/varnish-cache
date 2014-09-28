@@ -832,7 +832,7 @@ ban_evaluate(struct worker *wrk, const uint8_t *bs, struct objcore *oc,
 {
 	struct ban_test bt;
 	const uint8_t *be;
-	char *p;
+	const char *p;
 	const char *arg1;
 
 	be = bs + ban_len(bs);

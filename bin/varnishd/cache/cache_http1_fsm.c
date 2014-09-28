@@ -260,7 +260,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 	const char *r_100 = "HTTP/1.1 100 Continue\r\n\r\n";
 	const char *r_400 = "HTTP/1.1 400 Bad Request\r\n\r\n";
 	const char *r_417 = "HTTP/1.1 417 Expectation Failed\r\n\r\n";
-	char *p;
+	const char *p;
 	ssize_t r;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);

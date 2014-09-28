@@ -377,7 +377,7 @@ http_CollectHdr(struct http *hp, const char *hdr)
 /*--------------------------------------------------------------------*/
 
 int
-http_GetHdr(const struct http *hp, const char *hdr, char **ptr)
+http_GetHdr(const struct http *hp, const char *hdr, const char **ptr)
 {
 	unsigned u, l;
 	char *p;
@@ -420,9 +420,9 @@ http_GetHdr(const struct http *hp, const char *hdr, char **ptr)
 
 int
 http_GetHdrToken(const struct http *hp, const char *hdr,
-    const char *token, char **ptr)
+    const char *token, const char **ptr)
 {
-	char *h, *e;
+	const char *h, *e;
 	unsigned fl;
 	int quoted;
 
@@ -468,7 +468,7 @@ http_GetHdrToken(const struct http *hp, const char *hdr,
 double
 http_GetHdrQ(const struct http *hp, const char *hdr, const char *field)
 {
-	char *h;
+	const char *h;
 	int i;
 	double a, b;
 
@@ -517,9 +517,9 @@ http_GetHdrQ(const struct http *hp, const char *hdr, const char *field)
 
 int
 http_GetHdrField(const struct http *hp, const char *hdr,
-    const char *field, char **ptr)
+    const char *field, const char **ptr)
 {
-	char *h;
+	const char *h;
 	int i;
 
 	if (ptr != NULL)
@@ -550,7 +550,7 @@ ssize_t
 http_GetContentLength(const struct http *hp)
 {
 	ssize_t cl, cll;
-	char *b;
+	const char *b;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
@@ -579,7 +579,7 @@ http_GetContentLength(const struct http *hp)
 enum sess_close
 http_DoConnection(struct http *hp)
 {
-	char *p, *q;
+	const char *p, *q;
 	enum sess_close retval;
 	unsigned u;
 
@@ -618,7 +618,7 @@ http_DoConnection(struct http *hp)
 int
 http_HdrIs(const struct http *hp, const char *hdr, const char *val)
 {
-	char *p;
+	const char *p;
 
 	if (!http_GetHdr(hp, hdr, &p))
 		return (0);

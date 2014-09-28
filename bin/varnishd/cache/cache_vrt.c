@@ -120,7 +120,7 @@ vrt_selecthttp(VRT_CTX, enum gethdr_e where)
 const char *
 VRT_GetHdr(VRT_CTX, const struct gethdr_s *hs)
 {
-	char *p;
+	const char *p;
 	struct http *hp;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);

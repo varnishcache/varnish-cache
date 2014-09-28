@@ -382,7 +382,7 @@ static enum body_status
 http1_body_status(const struct http *hp, struct http_conn *htc)
 {
 	ssize_t cl;
-	char *b;
+	const char *b;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);

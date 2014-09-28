@@ -67,7 +67,7 @@ RFC2616_Ttl(struct busyobj *bo, double now)
 {
 	unsigned max_age, age;
 	double h_date, h_expires;
-	char *p;
+	const char *p;
 	const struct http *hp;
 	struct exp *expp;
 
@@ -214,7 +214,7 @@ RFC2616_Req_Gzip(const struct http *hp)
 int
 RFC2616_Do_Cond(const struct req *req)
 {
-	char *p, *e;
+	const char *p, *e;
 	double ims, lm;
 	int do_cond = 0;
 
@@ -246,7 +246,7 @@ RFC2616_Do_Cond(const struct req *req)
 void
 RFC2616_Weaken_Etag(struct http *hp)
 {
-	char *p;
+	const char *p;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
@@ -264,7 +264,7 @@ RFC2616_Weaken_Etag(struct http *hp)
 void
 RFC2616_Vary_AE(struct http *hp)
 {
-	char *vary;
+	const char *vary;
 
 	if (http_GetHdrToken(hp, H_Vary, "Accept-Encoding", NULL))
 		return;

@@ -680,7 +680,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 {
 	unsigned recv_handling;
 	struct SHA256Context sha256ctx;
-	char *xff;
+	const char *xff;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);

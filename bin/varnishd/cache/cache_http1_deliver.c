@@ -230,7 +230,7 @@ V1D_FlushReleaseAcct(struct req *req)
 void
 V1D_Deliver(struct req *req, struct busyobj *bo)
 {
-	char *r;
+	const char *r;
 	enum objiter_status ois;
 	ssize_t l;
 
@@ -369,7 +369,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 void
 V1D_Deliver_Synth(struct req *req)
 {
-	char *r;
+	const char *r;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(req->synth_body);

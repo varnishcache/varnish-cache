@@ -94,7 +94,7 @@ static int
 vbf_beresp2obj(struct busyobj *bo)
 {
 	unsigned l, l2;
-	char *b;
+	const char *b;
 	uint8_t *bp;
 	struct vsb *vary = NULL;
 	int varyl = 0;
@@ -501,7 +501,7 @@ vbf_fetch_body_helper(struct busyobj *bo)
 static enum fetch_step
 vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 {
-	char *p;
+	const char *p;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
