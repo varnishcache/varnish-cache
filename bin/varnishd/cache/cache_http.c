@@ -443,8 +443,9 @@ http_GetHdrToken(const struct http *hp, const char *hdr,
 		}
 		/* Check for substrings before memcmp() */
 		if ((h + fl == e || vct_issepctl(h[fl])) &&
-		    ((quoted && !memcmp(h, token, fl)) ||
-		     !strncasecmp(h, token, fl))) {
+		    (quoted
+		    ? !memcmp(h, token, fl)
+		    : !strncasecmp(h, token, fl))) {
 			if (ptr != NULL) {
 				h += fl;
 				while (vct_islws(*h))
