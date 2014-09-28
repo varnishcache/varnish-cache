@@ -230,7 +230,7 @@ http1_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
 	char *q, *r;
 
 	assert(p > htc->rxbuf_b);
-	assert(p < htc->rxbuf_e);
+	assert(p <= htc->rxbuf_e);
 	hp->nhd = HTTP_HDR_FIRST;
 	hp->conds = 0;
 	r = NULL;		/* For FlexeLint */
@@ -311,6 +311,7 @@ static uint16_t
 http1_splitline(struct http *hp, const struct http_conn *htc, const int *hf)
 {
 	char *p;
+	int i;
 
 	assert(hf == HTTP1_Req || hf == HTTP1_Resp);
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
@@ -333,6 +334,7 @@ http1_splitline(struct http *hp, const struct http_conn *htc, const int *hf)
 	}
 	hp->hd[hf[0]].e = p;
 	assert(Tlen(hp->hd[hf[0]]));
+	*p++ = '\0';
 
 	/* Skip SP */
 	for (; vct_issp(*p); p++) {
@@ -349,6 +351,7 @@ http1_splitline(struct http *hp, const struct http_conn *htc, const int *hf)
 	hp->hd[hf[1]].e = p;
 	if (!Tlen(hp->hd[hf[1]]))
 		return (400);
+	*p++ = '\0';
 
 	/* Skip SP */
 	for (; vct_issp(*p); p++) {
@@ -367,11 +370,9 @@ http1_splitline(struct http *hp, const struct http_conn *htc, const int *hf)
 	hp->hd[hf[2]].e = p;
 
 	/* Skip CRLF */
-	p += vct_skipcrlf(p);
-
-	*hp->hd[hf[0]].e = '\0';
-	*hp->hd[hf[1]].e = '\0';
-	*hp->hd[hf[2]].e = '\0';
+	i = vct_skipcrlf(p);
+	*p = '\0';
+	p += i;
 
 	return (http1_dissect_hdrs(hp, p, htc));
 }
@@ -451,7 +452,7 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 {
 	uint16_t retval;
 	const char *p;
-	char *b, *e;
+	const char *b, *e;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
@@ -504,7 +505,7 @@ uint16_t
 HTTP1_DissectResponse(struct http *hp, struct http_conn *htc)
 {
 	uint16_t retval = 0;
-	char *p;
+	const char *p;
 
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);

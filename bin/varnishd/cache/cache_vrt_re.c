@@ -39,16 +39,16 @@
 #include "vrt.h"
 
 static void
-Tadd(txt *t, const char *p, int l)
+Tadd(char **b, char *e, const char *p, int l)
 {
-	Tcheck(*t);
+	assert((*b) <= e);
 
 	if (l <= 0) {
-	} if (t->b + l < t->e) {
-		memcpy(t->b, p, l);
-		t->b += l;
+	} if ((*b) + l < e) {
+		memcpy((*b), p, l);
+		(*b) += l;
 	} else {
-		t->b = t->e;
+		(*b) = e;
 	}
 }
 
@@ -101,7 +101,8 @@ VRT_regsub(VRT_CTX, int all, const char *str, void *re,
 	int ovector[30];
 	vre_t *t;
 	int i, l;
-	txt res;
+	char *res_b;
+	char *res_e;
 	char *b0;
 	const char *s;
 	unsigned u, x;
@@ -129,27 +130,27 @@ VRT_regsub(VRT_CTX, int all, const char *str, void *re,
 	}
 
 	u = WS_Reserve(ctx->ws, 0);
-	res.e = res.b = b0 = ctx->ws->f;
-	res.e += u;
+	res_e = res_b = b0 = ctx->ws->f;
+	res_e += u;
 
 	do {
 		/* Copy prefix to match */
-		Tadd(&res, str, ovector[0]);
+		Tadd(&res_b, res_e, str, ovector[0]);
 		for (s = sub ; *s != '\0'; s++ ) {
 			if (*s != '\\' || s[1] == '\0') {
-				if (res.b < res.e)
-					*res.b++ = *s;
+				if (res_b < res_e)
+					*res_b++ = *s;
 				continue;
 			}
 			s++;
 			if (isdigit(*s)) {
 				x = *s - '0';
 				l = ovector[2*x+1] - ovector[2*x];
-				Tadd(&res, str + ovector[2*x], l);
+				Tadd(&res_b, res_e, str + ovector[2*x], l);
 				continue;
 			} else {
-				if (res.b < res.e)
-					*res.b++ = *s;
+				if (res_b < res_e)
+					*res_b++ = *s;
 			}
 		}
 		str += ovector[1];
@@ -169,12 +170,12 @@ VRT_regsub(VRT_CTX, int all, const char *str, void *re,
 	} while (i != VRE_ERROR_NOMATCH);
 
 	/* Copy suffix to match */
-	Tadd(&res, str, len+1);
-	if (res.b >= res.e) {
+	Tadd(&res_b, res_e, str, len+1);
+	if (res_b >= res_e) {
 		WS_Release(ctx->ws, 0);
 		return (str);
 	}
-	Tcheck(res);
-	WS_ReleaseP(ctx->ws, res.b);
+	assert(res_b <= res_e);
+	WS_ReleaseP(ctx->ws, res_b);
 	return (b0);
 }

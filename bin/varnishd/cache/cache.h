@@ -130,8 +130,8 @@ struct wrw;
 /*--------------------------------------------------------------------*/
 
 typedef struct {
-	char			*b;
-	char			*e;
+	const char		*b;
+	const char		*e;
 } txt;
 
 /*--------------------------------------------------------------------*/
@@ -867,7 +867,7 @@ void http_PutResponse(struct http *to, const char *proto, uint16_t status,
     const char *response);
 void http_FilterReq(struct http *to, const struct http *fm, unsigned how);
 void HTTP_Encode(const struct http *fm, uint8_t *, unsigned len, unsigned how);
-int HTTP_Decode(struct http *to, uint8_t *fm);
+int HTTP_Decode(struct http *to, const uint8_t *fm);
 void http_ForceHeader(struct http *to, const char *hdr, const char *val);
 void http_PrintfHeader(struct http *to, const char *fmt, ...)
     __printflike(2, 3);

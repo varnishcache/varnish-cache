@@ -143,7 +143,7 @@ vmod_log(VRT_CTX, const char *fmt, ...)
 	u = WS_Reserve(ctx->ws, 0);
 	t.b = ctx->ws->f;
 	va_start(ap, fmt);
-	t.e = VRT_StringList(t.b, u, fmt, ap);
+	t.e = VRT_StringList(ctx->ws->f, u, fmt, ap);
 	va_end(ap);
 	if (t.e != NULL) {
 		assert(t.e > t.b);
@@ -164,7 +164,7 @@ vmod_syslog(VRT_CTX, VCL_INT fac, const char *fmt, ...)
 	u = WS_Reserve(ctx->ws, 0);
 	t.b = ctx->ws->f;
 	va_start(ap, fmt);
-	t.e = VRT_StringList(t.b, u, fmt, ap);
+	t.e = VRT_StringList(ctx->ws->f, u, fmt, ap);
 	va_end(ap);
 	if (t.e != NULL)
 		syslog((int)fac, "%s", t.b);

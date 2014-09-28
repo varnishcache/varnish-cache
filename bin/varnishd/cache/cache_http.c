@@ -380,7 +380,7 @@ int
 http_GetHdr(const struct http *hp, const char *hdr, const char **ptr)
 {
 	unsigned u, l;
-	char *p;
+	const char *p;
 
 	l = hdr[0];
 	assert(l == strlen(hdr + 1));
@@ -791,7 +791,7 @@ HTTP_Encode(const struct http *fm, uint8_t *p0, unsigned l, unsigned how)
  */
 
 int
-HTTP_Decode(struct http *to, uint8_t *fm)
+HTTP_Decode(struct http *to, const uint8_t *fm)
 {
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
