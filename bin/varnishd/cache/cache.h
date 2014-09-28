@@ -1206,20 +1206,6 @@ Tlen(const txt t)
 	return ((unsigned)(t.e - t.b));
 }
 
-static inline void
-Tadd(txt *t, const char *p, int l)
-{
-	Tcheck(*t);
-
-	if (l <= 0) {
-	} if (t->b + l < t->e) {
-		memcpy(t->b, p, l);
-		t->b += l;
-	} else {
-		t->b = t->e;
-	}
-}
-
 /*
  * We want to cache the most recent timestamp in wrk->lastused to avoid
  * extra timestamps in cache_pool.c.  Hide this detail with a macro

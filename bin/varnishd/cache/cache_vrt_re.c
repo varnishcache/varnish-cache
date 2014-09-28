@@ -38,6 +38,20 @@
 #include "vre.h"
 #include "vrt.h"
 
+static void
+Tadd(txt *t, const char *p, int l)
+{
+	Tcheck(*t);
+
+	if (l <= 0) {
+	} if (t->b + l < t->e) {
+		memcpy(t->b, p, l);
+		t->b += l;
+	} else {
+		t->b = t->e;
+	}
+}
+
 void
 VRT_re_init(void **rep, const char *re)
 {
