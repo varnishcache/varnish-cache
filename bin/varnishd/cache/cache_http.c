@@ -786,8 +786,6 @@ HTTP_Encode(const struct http *fm, uint8_t *p0, unsigned l, unsigned how)
 
 /*--------------------------------------------------------------------
  * Decode byte string into http struct
- *
- * XXX: cannot make fm const because to->hd isn't.
  */
 
 int
@@ -808,9 +806,9 @@ HTTP_Decode(struct http *to, const uint8_t *fm)
 		}
 		if (*fm == '\0')
 			return (0);
-		to->hd[to->nhd].b = (void*)fm;
-		fm = (void*)strchr((void*)fm, '\0');
-		to->hd[to->nhd].e = (void*)fm;
+		to->hd[to->nhd].b = fm;
+		fm = strchr(fm, '\0');
+		to->hd[to->nhd].e = fm;
 		fm++;
 		if (to->vsl != NULL)
 			http_VSLH(to, to->nhd);
