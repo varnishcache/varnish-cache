@@ -40,6 +40,7 @@
 #define VCT_HEX			(1<<6)
 #define VCT_XMLNAMESTART	(1<<7)
 #define VCT_XMLNAME		(1<<8)
+#define VCT_TCHAR		(1<<9)
 
 extern const uint16_t vct_typtab[256];
 
@@ -61,6 +62,7 @@ vct_is(int x, uint16_t y)
 #define vct_issepctl(x) vct_is(x, VCT_SEPARATOR | VCT_CTL)
 #define vct_isxmlnamestart(x) vct_is(x, VCT_XMLNAMESTART)
 #define vct_isxmlname(x) vct_is(x, VCT_XMLNAMESTART | VCT_XMLNAME)
+#define vct_istchar(x) vct_is(x, VCT_ALPHA | VCT_DIGIT | VCT_TCHAR)
 
 #define vct_iscrlf(p) (((p)[0] == '\r' && (p)[1] == '\n') || (p)[0] == '\n')
 
