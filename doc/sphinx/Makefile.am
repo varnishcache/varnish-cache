@@ -10,7 +10,7 @@ BUILDDIR      = build
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
 PAPEROPT_letter = -D latex_paper_size=letter
-ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) $(srcdir)
+ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) $(distdir)
 
 .PHONY: help clean html dirhtml pickle json htmlhelp qthelp latex changes linkcheck doctest
 
@@ -95,7 +95,6 @@ EXTRA_DIST = \
 	glossary \
 	installation \
 	phk \
-	reference \
 	tutorial \
 	users-guide \
 	whats-new
@@ -144,11 +143,16 @@ include/varnishhist_synopsis.rst: $(top_builddir)/bin/varnishhist/varnishhist_op
 BUILT_SOURCES += include/varnishhist_options.rst \
 	 include/varnishhist_synopsis.rst
 
-reference/vmod_std.generated.rst: $(top_srcdir)/lib/libvmod_std/vmod_std.rst
+.PHONY: reference
+reference:
+	test -d $@ || mkdir $@
+BUILT_SOURCES += reference
+
+reference/vmod_std.generated.rst: $(top_builddir)/lib/libvmod_std/vmod_std.rst
 	cp $? $@
 BUILT_SOURCES += reference/vmod_std.generated.rst
 
-reference/vmod_directors.generated.rst: $(top_srcdir)/lib/libvmod_directors/vmod_directors.rst
+reference/vmod_directors.generated.rst: $(top_builddir)/lib/libvmod_directors/vmod_directors.rst
 	cp $? $@
 BUILT_SOURCES += reference/vmod_directors.generated.rst
 
