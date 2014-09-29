@@ -515,16 +515,6 @@ VRT_purge(VRT_CTX, double ttl, double grace, double keep)
 }
 
 /*--------------------------------------------------------------------
- */
-
-void
-VRT_priv_fini(const struct vmod_priv *p)
-{
-	if (p->priv != (void*)0 && p->free != (void*)0)
-		p->free(p->priv);
-}
-
-/*--------------------------------------------------------------------
  * Simple stuff
  */
 
