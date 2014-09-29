@@ -86,8 +86,8 @@ varnishhist.1: \
 	$(top_srcdir)/doc/sphinx/include/varnishhist_synopsis.rst
 	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/varnishhist.rst $@
 
-vmod_std.3: $(top_srcdir)/lib/libvmod_std/vmod_std.man.rst
+vmod_std.3: $(top_builddir)/lib/libvmod_std/vmod_std.man.rst
 	${RST2MAN} $(RST2ANY_FLAGS) $? $@
 
-vmod_directors.3: $(top_srcdir)/lib/libvmod_directors/vmod_directors.man.rst
+vmod_directors.3: $(top_builddir)/lib/libvmod_directors/vmod_directors.man.rst
 	${RST2MAN} $(RST2ANY_FLAGS) $? $@
