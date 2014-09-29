@@ -127,9 +127,9 @@ void VSM_common_ageupdate(struct vsm_sc *sc);
  * Generic power-2 rounding macros
  */
 
-#define PWR2(x)     ((((x)-1)&(x))==0)		/* Is a power of two */
-#define RDN2(x, y)  ((x)&(~((uintmax_t)(y)-1)))	/* PWR2(y) true */
-#define RUP2(x, y)  (((x)+((y)-1))&(~((uintmax_t)(y)-1))) /* PWR2(y) true */
+#define PWR2(x)     ((((x)-1UL)&(x))==0)		/* Is a power of two */
+#define RDN2(x, y)  ((x)&(~((uintptr_t)(y)-1UL)))	/* PWR2(y) true */
+#define RUP2(x, y)  (((x)+((y)-1))&(~((uintptr_t)(y)-1UL))) /* PWR2(y) true */
 
 /*--------------------------------------------------------------------
  * Pointer aligment magic
