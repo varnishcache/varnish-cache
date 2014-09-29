@@ -402,6 +402,54 @@ http_GetHdr(const struct http *hp, const char *hdr, const char **ptr)
 }
 
 /*-----------------------------------------------------------------------------
+ * Split source string at any of the separators, return pointer to first
+ * and last+1 char of substrings, with whitespace trimed at both ends.
+ * If sep being an empty string is shorthand for VCT::SP
+ * If stop is NULL, src is NUL terminated.
+ */
+
+static int
+http_split(const char **src, const char *stop, const char *sep,
+    const char **b, const char **e)
+{
+	const char *p, *q;
+
+	AN(src);
+	AN(*src);
+	AN(sep);
+	AN(b);
+	AN(e);
+
+	if (stop == NULL)
+		stop = strchr(*src, '\0');
+
+	for (p = *src; p < stop && (vct_issp(*p) || strchr(sep, *p)); p++)
+		continue;
+
+	if (p >= stop) {
+		*b = NULL;
+		*e = NULL;
+		return (0);
+	}
+
+	*b = p;
+	if (*sep == '\0') {
+		for (q = p + 1; q < stop && !vct_issp(*q); q++)
+			continue;
+		*e = q;
+		*src = q;
+		return (1);
+	}
+	for (q = p + 1; q < stop && !strchr(sep, *q); q++)
+		continue;
+	*src = q;
+	while (q > p && vct_issp(q[-1]))
+		q--;
+	*e = q;
+	return (1);
+}
+
+/*-----------------------------------------------------------------------------
  * Find a given data element (token) in a header according to RFC2616's #rule
  * (section 2.1, p15)
  *
@@ -416,49 +464,47 @@ http_GetHdr(const struct http *hp, const char *hdr, const char **ptr)
  * But all examples and specific statements regarding tokens follow the rule
  * that unquoted tokens are to be matched case-insensitively and quoted tokens
  * case-sensitively.
+ *
+ * The optional pb and pe arguments will point to the token content start and
+ * end+1, white space trimmed on both sides.
  */
 
 int
 http_GetHdrToken(const struct http *hp, const char *hdr,
-    const char *token, const char **ptr)
+    const char *token, const char **pb, const char **pe)
 {
-	const char *h, *e;
+	const char *h, *b, *e;
 	unsigned fl;
-	int quoted;
 
-	if (ptr != NULL)
-		*ptr = NULL;
+	if (pb != NULL)
+		*pb = NULL;
+	if (pe != NULL)
+		*pe = NULL;
 	if (!http_GetHdr(hp, hdr, &h))
 		return (0);
 	AN(h);
-	e = strchr(h, '\0');
 	fl = strlen(token);
-	quoted = token[0] == '"' && token[fl] == '"';
 
-	while (h + fl <= e) {
-		/* Skip leading whitespace and commas */
-		if (vct_islws(*h) || *h == ',') {
-			h++;
-			continue;
-		}
-		/* Check for substrings before memcmp() */
-		if ((h + fl == e || vct_issepctl(h[fl])) &&
-		    (quoted
-		    ? !memcmp(h, token, fl)
-		    : !strncasecmp(h, token, fl))) {
-			if (ptr != NULL) {
-				h += fl;
-				while (vct_islws(*h))
-					h++;
-				*ptr = h;
-			}
-			return (1);
-		}
-		/* Skip until end of header or comma */
-		while (*h && *h != ',')
-			h++;
+	while(http_split(&h, NULL, ",", &b, &e)) {
+		if (*b == '"' && !memcmp(b + 1, token, fl) && b[fl + 1] == '"')
+			break;
+		if (!strncasecmp(b, token, fl) && !vct_istchar(b[fl]))
+			break;
 	}
-	return (0);
+	if (b == NULL)
+		return (0);
+	if (pb != NULL) {
+		for (b += fl; vct_islws(*b); b++)
+			continue;
+		if (b == e) {
+			b = NULL;
+			e = NULL;
+		}
+		*pb = b;
+		if (pe != NULL)
+			*pe = e;
+	}
+	return (1);
 }
 
 /*--------------------------------------------------------------------
@@ -468,45 +514,44 @@ http_GetHdrToken(const struct http *hp, const char *hdr,
 double
 http_GetHdrQ(const struct http *hp, const char *hdr, const char *field)
 {
-	const char *h;
+	const char *hb, *he, *b, *e;
 	int i;
-	double a, b;
+	double a, f;
 
-	h = NULL;
-	i = http_GetHdrToken(hp, hdr, field, &h);
+	i = http_GetHdrToken(hp, hdr, field, &hb, &he);
 	if (!i)
 		return (0.);
 
-	if (h == NULL)
+	if (hb == NULL)
 		return (1.);
-	/* Skip whitespace, looking for '=' */
-	while (*h && vct_issp(*h))
-		h++;
-	if (*h++ != ';')
-		return (1.);
-	while (*h && vct_issp(*h))
-		h++;
-	if (*h++ != 'q')
-		return (1.);
-	while (*h && vct_issp(*h))
-		h++;
-	if (*h++ != '=')
-		return (1.);
-	while (*h && vct_issp(*h))
-		h++;
-	a = 0.;
-	while (vct_isdigit(*h)) {
-		a *= 10.;
-		a += *h - '0';
-		h++;
+	while(http_split(&hb, he, ";", &b, &e)) {
+		if (*b != 'q')
+			continue;
+		for (b++; b < e && vct_issp(*b); b++)
+			continue;
+		if (b == e || *b != '=')
+			continue;
+		break;
 	}
-	if (*h++ != '.')
+	if (b == NULL)
+		return (1.);
+	for (b++; b < e && vct_issp(*b); b++)
+		continue;
+	if (b == e || (*b != '.' && !vct_isdigit(*b)))
+		return (0.);
+	a = 0;
+	while (b < e && vct_isdigit(*b)) {
+		a *= 10.;
+		a += *b - '0';
+		b++;
+	}
+	if (b == e || *b++ != '.')
 		return (a);
-	b = .1;
-	while (vct_isdigit(*h)) {
-		a += b * (*h - '0');
-		b *= .1;
-		h++;
+	f = .1;
+	while (b < e && vct_isdigit(*b)) {
+		a += f * (*b - '0');
+		f *= .1;
+		b++;
 	}
 	return (a);
 }
@@ -526,7 +571,7 @@ http_GetHdrField(const struct http *hp, const char *hdr,
 		*ptr = NULL;
 
 	h = NULL;
-	i = http_GetHdrToken(hp, hdr, field, &h);
+	i = http_GetHdrToken(hp, hdr, field, &h, NULL);
 	if (!i)
 		return (i);
 
@@ -579,7 +624,7 @@ http_GetContentLength(const struct http *hp)
 enum sess_close
 http_DoConnection(struct http *hp)
 {
-	const char *p, *q;
+	const char *h, *b, *e;
 	enum sess_close retval;
 	unsigned u;
 
@@ -589,26 +634,16 @@ http_DoConnection(struct http *hp)
 		retval = SC_NULL;
 
 	http_CollectHdr(hp, H_Connection);
-	if (!http_GetHdr(hp, H_Connection, &p))
+	if (!http_GetHdr(hp, H_Connection, &h))
 		return (retval);
-	AN(p);
-	for (; *p; p++) {
-		if (vct_issp(*p))
-			continue;
-		if (*p == ',')
-			continue;
-		for (q = p + 1; *q; q++)
-			if (*q == ',' || vct_issp(*q))
-				break;
-		u = pdiff(p, q);
-		if (u == 5 && !strncasecmp(p, "close", u))
+	AN(h);
+	while (http_split(&h, NULL, ",", &b, &e)) {
+		u = pdiff(b, e);
+		if (u == 5 && !strncasecmp(b, "close", u))
 			retval = SC_REQ_CLOSE;
-		if (u == 10 && !strncasecmp(p, "keep-alive", u))
+		if (u == 10 && !strncasecmp(b, "keep-alive", u))
 			retval = SC_NULL;
-		http_MarkHeader(hp, p, u, HDF_FILTER);
-		if (!*q)
-			break;
-		p = q;
+		http_MarkHeader(hp, b, u, HDF_FILTER);
 	}
 	return (retval);
 }

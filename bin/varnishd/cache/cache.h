@@ -880,7 +880,7 @@ void HTTP_Setup(struct http *, struct ws *, struct vsl_log *, enum VSL_tag_e);
 void http_Teardown(struct http *ht);
 int http_GetHdr(const struct http *hp, const char *hdr, const char **ptr);
 int http_GetHdrToken(const struct http *hp, const char *hdr,
-    const char *token, const char **ptr);
+    const char *token, const char **pb, const char **pe);
 int http_GetHdrField(const struct http *hp, const char *hdr,
     const char *field, const char **ptr);
 double http_GetHdrQ(const struct http *hp, const char *hdr, const char *field);
