@@ -44,5 +44,5 @@ VCS_Message(const char *progname)
 {
 	fprintf(stderr, "%s (%s)\n", progname, VCS_version);
 	fprintf(stderr, "Copyright (c) 2006 Verdens Gang AS\n");
-	fprintf(stderr, "Copyright (c) 2006-2011 Varnish Software AS\n");
+	fprintf(stderr, "Copyright (c) 2006-2014 Varnish Software AS\n");
 }
