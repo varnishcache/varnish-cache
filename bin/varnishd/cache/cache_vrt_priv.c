@@ -37,20 +37,78 @@
 
 #include "cache.h"
 
-#include "cache_backend.h"
-#include "hash/hash_slinger.h"
-#include "vav.h"
 #include "vcl.h"
 #include "vrt.h"
-#include "vrt_obj.h"
-#include "vtcp.h"
-#include "vtim.h"
+
+struct vrt_privs {
+	unsigned			magic;
+#define VRT_PRIVS_MAGIC			0x24157a52
+	VTAILQ_ENTRY(vrt_privs)		list;
+	struct vmod_priv		priv[1];
+	const struct VCL_conf		*vcl;
+	uintptr_t			id;
+};
+
+/*--------------------------------------------------------------------
+ */
+
+static struct vmod_priv *
+VRT_priv_dynamic(VRT_CTX, uintptr_t id)
+{
+	struct vrt_privs *vps;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	VTAILQ_FOREACH(vps, &ctx->req->sp->privs, list) {
+		CHECK_OBJ_NOTNULL(vps, VRT_PRIVS_MAGIC);
+		if (vps->vcl == ctx->vcl && vps->id == id)
+			return (vps->priv);
+	}
+	ALLOC_OBJ(vps, VRT_PRIVS_MAGIC);
+	AN(vps);
+	vps->vcl = ctx->vcl;
+	vps->id = id;
+	VTAILQ_INSERT_TAIL(&ctx->req->sp->privs, vps, list);
+	return (vps->priv);
+}
+
+void
+VRTPRIV_dynamic_kill(struct sess *sp, uintptr_t id)
+{
+	struct vrt_privs *vps, *vps1;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+
+	VTAILQ_FOREACH_SAFE(vps, &sp->privs, list, vps1) {
+		CHECK_OBJ_NOTNULL(vps, VRT_PRIVS_MAGIC);
+		if (id == vps->id) {
+			VTAILQ_REMOVE(&sp->privs, vps, list);
+			VRT_priv_fini(vps->priv);
+			FREE_OBJ(vps);
+		}
+	}
+	if (id == 0)
+		assert(VTAILQ_EMPTY(&sp->privs));
+}
+
+struct vmod_priv *
+VRT_priv_req(VRT_CTX)
+{
+	return (VRT_priv_dynamic(ctx, (uintptr_t)ctx->req));
+}
+
+struct vmod_priv *
+VRT_priv_sess(VRT_CTX)
+{
+	return (VRT_priv_dynamic(ctx, (uintptr_t)NULL));
+}
+
 /*--------------------------------------------------------------------
  */
 
 void
 VRT_priv_fini(const struct vmod_priv *p)
 {
+
 	if (p->priv != (void*)0 && p->free != (void*)0)
 		p->free(p->priv);
 }

@@ -90,6 +90,7 @@ ses_new(struct sesspool *pp)
 
 	sp->t_open = NAN;
 	sp->t_idle = NAN;
+	VTAILQ_INIT(&sp->privs);
 	Lck_New(&sp->mtx, lck_sess);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	return (sp);
@@ -302,6 +303,7 @@ SES_Delete(struct sess *sp, enum sess_close reason, double now)
 		now = VTIM_real();
 	AZ(isnan(sp->t_open));
 
+	VRTPRIV_dynamic_kill(sp, 0);
 	VSL(SLT_SessClose, sp->vxid, "%s %.3f",
 	    sess_close_2str(sp->reason, 0), now - sp->t_open);
 	VSL(SLT_End, sp->vxid, "%s", "");

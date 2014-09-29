@@ -120,6 +120,7 @@ struct sess;
 struct sesspool;
 struct vbc;
 struct vrt_backend;
+struct vrt_privs;
 struct vsb;
 struct waitinglist;
 struct worker;
@@ -681,10 +682,11 @@ struct sess {
 	char			*client_addr_str;
 	char			*client_port_str;
 
-
 	/* Timestamps, all on TIM_real() timescale */
 	double			t_open;		/* fd accepted */
 	double			t_idle;		/* fd accepted or resp sent */
+
+	VTAILQ_HEAD(,vrt_privs)	privs;
 
 #if defined(HAVE_EPOLL_CTL)
 	struct epoll_event ev;
@@ -1116,6 +1118,7 @@ const char *VCL_Method_Name(unsigned);
  */
 const char *VRT_String(struct ws *ws, const char *h, const char *p, va_list ap);
 char *VRT_StringList(char *d, unsigned dl, const char *p, va_list ap);
+void VRTPRIV_dynamic_kill(struct sess *sp, uintptr_t id);
 
 void ESI_Deliver(struct req *);
 void ESI_DeliverChild(struct req *);

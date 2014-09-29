@@ -566,6 +566,12 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
 			VSB_printf(ifp->fin, "\tVRT_priv_fini(&%s);", buf);
 			e2 = vcc_mk_expr(VOID, "&%s", buf);
 			p += strlen(p) + 1;
+		} else if (fmt == VOID && !strcmp(p, "PRIV_REQ")) {
+			e2 = vcc_mk_expr(VOID, "VRT_priv_req(ctx)");
+			p += strlen(p) + 1;
+		} else if (fmt == VOID && !strcmp(p, "PRIV_SESS")) {
+			e2 = vcc_mk_expr(VOID, "VRT_priv_sess(ctx)");
+			p += strlen(p) + 1;
 		} else if (fmt == ENUM) {
 			ExpectErr(tl, ID);
 			ERRCHK(tl);

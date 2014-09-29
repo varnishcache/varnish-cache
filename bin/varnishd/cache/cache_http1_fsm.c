@@ -201,6 +201,7 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 		req->vcl = NULL;
 	}
 
+	VRTPRIV_dynamic_kill(sp, (uintptr_t)req);
 	/* Charge and log byte counters */
 	AN(req->vsl->wid);
 	CNT_AcctLogCharge(wrk->stats, req);
