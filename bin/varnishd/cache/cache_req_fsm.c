@@ -34,28 +34,6 @@
  * A special complication is the fact that we can suspend processing of
  * a request when hash-lookup finds a busy objhdr.
  *
- * Since the states are rather nasty in detail, I have decided to embedd
- * a dot(1) graph in the source code comments.  So to see the big picture,
- * extract the DOT lines and run though dot(1), for instance with the
- * command:
- *	sed -n '/^DOT/s///p' cache/cache_req_fsm.c | dot -Tps > /tmp/_.ps
- */
-
-/*
-DOT digraph vcl_center {
-xDOT	page="8.2,11.5"
-DOT	size="7.2,10.5"
-DOT	margin="0.5"
-DOT	center="1"
-DOT acceptor [
-DOT	shape=hexagon
-DOT	label="Request received"
-DOT ]
-DOT ESI_REQ [ shape=hexagon ]
-DOT ESI_REQ -> recv
-DOT SYNTH [shape=plaintext]
-DOT RESTART [shape=plaintext]
-DOT acceptor -> recv [style=bold,color=green]
  */
 
 #include "config.h"
@@ -72,16 +50,7 @@ DOT acceptor -> recv [style=bold,color=green]
 #include "vtim.h"
 
 /*--------------------------------------------------------------------
- * Deliver an already stored object
- *
-DOT	deliver [
-DOT		shape=record
-DOT		label="{cnt_deliver:|Filter obj.-\>resp.|{vcl_deliver\{\}|{req.|resp.}}|{restart?|<deliver>deliver?}}"
-DOT	]
-DOT deliver:deliver:s -> DONE [style=bold,color=green]
-DOT deliver:deliver:s -> DONE [style=bold,color=red]
-DOT deliver:deliver:s -> DONE [style=bold,color=blue]
- *
+ * Deliver an object to client
  */
 
 static enum req_fsm_nxt
@@ -199,15 +168,6 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 /*--------------------------------------------------------------------
  * Emit a synthetic response
- *
-DOT subgraph xcluster_synth {
-DOT	synth [
-DOT		shape=record
-DOT		label="{cnt_synth:|{vcl_synth\{\}|resp.}|{<del>deliver?|<restart>restart?}}"
-DOT	]
-DOT	SYNTH -> synth
-DOT	synth:del:s -> deliver [label=deliver]
-DOT }
  */
 
 static enum req_fsm_nxt
@@ -275,16 +235,6 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 /*--------------------------------------------------------------------
  * Initiated a fetch (pass/miss) which we intend to deliver
- *
-DOT subgraph xcluster_body {
-DOT	fetch [
-DOT		shape=record
-DOT		label="{cnt_fetch:|wait for fetch|{<ok>OK|<err>Failed}}"
-DOT	]
-DOT }
-DOT fetch:ok:s -> deliver [style=bold,color=red]
-DOT fetch:ok:s -> deliver [style=bold,color=blue]
-DOT fetch:err:s -> vcl_error
  */
 
 static enum req_fsm_nxt
@@ -311,31 +261,8 @@ cnt_fetch(struct worker *wrk, struct req *req)
 }
 
 /*--------------------------------------------------------------------
- * LOOKUP
- * Hash things together and look object up in hash-table.
- *
- * LOOKUP consists of two substates so that we can reenter if we
- * encounter a busy object.
- *
-DOT subgraph xcluster_lookup {
-DOT	lookup [
-DOT		shape=record
-DOT		label="{<top>cnt_lookup:|hash lookup|{<busy>busy?|<e>exp?|<eb>exp+busy?|<h>hit?|<miss>miss?|<hfp>hit-for-pass?}}"
-DOT	]
-DOT	lookup2 [
-DOT		shape=record
-DOT		label="{<top>cnt_lookup:|{vcl_hit\{\}|req.*, obj.*}|{<deliver>deliver?|synth?|restart?|<fetch>fetch?|<pass>pass?}}"
-DOT	]
-DOT }
-DOT lookup:busy:w -> lookup:top:w [label="(waitinglist)"]
-DOT lookup:miss:s -> miss [style=bold,color=blue]
-DOT lookup:hfp:s -> pass [style=bold,color=red]
-DOT lookup:e:s -> lookup2 [style=bold,color=green]
-DOT lookup:eb:s -> lookup2 [style=bold,color=green]
-DOT lookup:h:s -> lookup2 [style=bold,color=green]
-DOT lookup2:pass:s -> pass [style=bold,color=red]
-DOT lookup2:fetch:s -> miss [style=bold,color=blue]
-DOT lookup2:deliver:s -> deliver:n [style=bold,color=green]
+ * Attempt to lookup objhdr from hash.  We disembark and reenter
+ * this state if we get suspended on a busy objhdr.
  */
 
 static enum req_fsm_nxt
@@ -467,17 +394,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 }
 
 /*--------------------------------------------------------------------
- * We had a miss, ask VCL, proceed as instructed
- *
-DOT subgraph xcluster_miss {
-DOT	miss [
-DOT		shape=record
-DOT		label="{cnt_miss:|{vcl_miss\{\}|req.*}|{<fetch>fetch?|<synth>synth?|<rst>restart?|<pass>pass?}}"
-DOT	]
-DOT }
-DOT miss:fetch:s -> fetch [label="fetch",style=bold,color=blue]
-DOT miss:pass:s -> pass [label="pass",style=bold,color=red]
-DOT
+ * Cache miss.
  */
 
 static enum req_fsm_nxt
@@ -518,20 +435,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 }
 
 /*--------------------------------------------------------------------
- * Start pass processing by getting headers from backend, then
- * continue in passbody.
- *
-DOT subgraph xcluster_pass {
-DOT	pass [
-DOT		shape=record
-DOT		label="{cnt_pass:|{vcl_pass\{\}|req.*}|{<fetch>fetch?|<synth>synth?|<rst>restart?}}"
-DOT	]
-DOT }
-DOT pass:fetch:s -> fetch:n [style=bold, color=red]
-XDOT pass:rst -> rst_pass [label="restart",color=purple]
-XDOT rst_pass [label="RESTART",shape=plaintext]
-XDOT pass:err -> err_pass [label="error"]
-XDOT err_pass [label="ERROR",shape=plaintext]
+ * Pass processing
  */
 
 static enum req_fsm_nxt
@@ -565,21 +469,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 }
 
 /*--------------------------------------------------------------------
- * Ship the request header to the backend unchanged, then pipe
- * until one of the ends close the connection.
- *
-DOT subgraph xcluster_pipe {
-DOT	pipe [
-DOT		shape=record
-DOT		label="{cnt_pipe:|filter req.*-\>bereq.*|{vcl_pipe()|req.*, bereq\.*}|{<pipe>pipe?|<synth>synth?}}"
-DOT	]
-DOT	pipe_do [
-DOT		shape=ellipse
-DOT		label="send bereq.\npipe until close"
-DOT	]
-DOT	pipe:pipe -> pipe_do [label="pipe",style=bold,color=orange]
-DOT }
-DOT pipe_do -> DONE [style=bold,color=orange]
+ * Pipe mode
  */
 
 static enum req_fsm_nxt
@@ -618,17 +508,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 }
 
 /*--------------------------------------------------------------------
- *
-DOT subgraph xcluster_restart {
-DOT	restart [
-DOT		shape=record
-DOT		label="{cnt_restart}"
-DOT	]
-DOT }
-DOT RESTART -> restart [color=purple]
-DOT restart -> recv [color=purple]
-DOT restart -> err_restart
-DOT err_restart [label="SYNTH",shape=plaintext]
+ * Handle restart events
  */
 
 static enum req_fsm_nxt
@@ -656,23 +536,9 @@ cnt_restart(struct worker *wrk, struct req *req)
 }
 
 /*--------------------------------------------------------------------
- * RECV
  * We have a complete request, set everything up and start it.
  * We can come here both with a request from the client and with
  * a interior request during ESI delivery.
- *
-DOT subgraph xcluster_recv {
-DOT	recv [
-DOT		shape=record
-DOT		label="{cnt_recv:|{vcl_recv\{\}|req.*}|{vcl_hash\{\}|req.*}|{<lookup>lookup?|<pass>pass?|<pipe>pipe?|<synth>synth?|<purge>purge?}}"
-DOT	]
-DOT }
-DOT recv:pipe -> pipe [style=bold,color=orange]
-DOT recv:pass -> pass [style=bold,color=red]
-DOT recv:lookup:s -> lookup [style=bold,color=green]
-DOT recv:purge:s -> purge [style=bold,color=purple]
-#DOT recv:error -> err_recv
-#DOT err_recv [label="ERROR",shape=plaintext]
  */
 
 static enum req_fsm_nxt
@@ -791,17 +657,9 @@ cnt_recv(struct worker *wrk, struct req *req)
 }
 
 /*--------------------------------------------------------------------
- * PURGE
- * Find the objhead, purge it and ask VCL if we should fetch or
- * just return.
- * XXX: fetching not implemented yet.
+ * Find the objhead, purge it.
  *
-DOT subgraph xcluster_purge {
-DOT	purge [
-DOT		shape=record
-DOT		label="{cnt_purge:|{vcl_purge\{\}|req.*}|{<synth>synth?}}"
-DOT	]
-DOT }
+ * XXX: We should ask VCL if we should fetch a new copy of the object.
  */
 
 static enum req_fsm_nxt
@@ -953,7 +811,3 @@ CNT_AcctLogCharge(struct dstat *ds, struct req *req)
 #include "tbl/acct_fields_req.h"
 #undef ACCT
 }
-
-/*
-DOT }
-*/

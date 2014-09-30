@@ -29,41 +29,6 @@
  * This file contains the two central state machine for pushing HTTP1
  * sessions through their states.
  *
- * The following dot-graph shows the big picture, and the two major
- * complicating features:
- *
- * - The blue path is where a request disembarks its worker thread while
- *   waiting for a busy object to become available:
- *
- * - The green path is where we time out waiting for the next request to
- *   arrive, release the worker thread and hand the session to the waiter.
- *
- * Render the graph with:
- *	sed -n '/^..DOT/s///p' % | dot -Tps > /tmp/_.ps
- *
- *DOT	digraph vcl_center {
- *DOT		size="7.2,10.5"
- *DOT		margin="0.5"
- *DOT		center="1"
- *DOT
- *DOT	acceptor -> http1_wait [label=S_STP_NEWREQ, align=center]
- *DOT	hash -> CNT_Request [label="Busy object\nS_STP_WORKING\nR_STP_LOOKUP"
- *DOT		color=blue]
- *DOT	disembark -> hash [style=dotted, color=blue]
- *DOT	http1_wait -> CNT_Request [label="S_STP_WORKING\nR_STP_RECV"]
- *DOT	http1_wait -> disembark [label="Session close"]
- *DOT	http1_wait -> disembark [label="Timeout" color=green]
- *DOT	disembark -> waiter [style=dotted, color=green]
- *DOT	waiter -> http1_wait [color=green]
- *DOT	CNT_Request -> disembark
- *DOT		[label="Busy object\nS_STP_WORKING\nR_STP_LOOKUP" color=blue]
- *DOT	CNT_Request -> http1_cleanup
- *DOT	http1_cleanup -> disembark [label="Session close"]
- *DOT	http1_cleanup -> CNT_Request [label="S_STP_WORKING\nR_STP_RECV"]
- *DOT	http1_cleanup -> http1_wait [label="S_STP_NEWREQ"]
- *DOT
- *DOT	}
- *
  */
 
 #include "config.h"
