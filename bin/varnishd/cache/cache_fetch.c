@@ -547,16 +547,18 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->do_gunzip || (bo->is_gzip && bo->do_esi))
 		(void)VFP_Push(bo->vfc, &vfp_gunzip, 1);
 
-	if (bo->do_esi && bo->do_gzip) {
-		(void)VFP_Push(bo->vfc, &vfp_esi_gzip, 1);
-	} else if (bo->do_esi && bo->is_gzip && !bo->do_gunzip) {
-		(void)VFP_Push(bo->vfc, &vfp_esi_gzip, 1);
-	} else if (bo->do_esi) {
-		(void)VFP_Push(bo->vfc, &vfp_esi, 1);
-	} else if (bo->do_gzip) {
-		(void)VFP_Push(bo->vfc, &vfp_gzip, 1);
-	} else if (bo->is_gzip && !bo->do_gunzip) {
-		(void)VFP_Push(bo->vfc, &vfp_testgunzip, 1);
+	if (bo->htc->content_length != 0) {
+		if (bo->do_esi && bo->do_gzip) {
+			(void)VFP_Push(bo->vfc, &vfp_esi_gzip, 1);
+		} else if (bo->do_esi && bo->is_gzip && !bo->do_gunzip) {
+			(void)VFP_Push(bo->vfc, &vfp_esi_gzip, 1);
+		} else if (bo->do_esi) {
+			(void)VFP_Push(bo->vfc, &vfp_esi, 1);
+		} else if (bo->do_gzip) {
+			(void)VFP_Push(bo->vfc, &vfp_gzip, 1);
+		} else if (bo->is_gzip && !bo->do_gunzip) {
+			(void)VFP_Push(bo->vfc, &vfp_testgunzip, 1);
+		}
 	}
 
 	if (bo->fetch_objcore->flags & OC_F_PRIVATE)
