@@ -450,6 +450,40 @@ http_split(const char **src, const char *stop, const char *sep,
 }
 
 /*-----------------------------------------------------------------------------
+ * Comparison rule for tokens:
+ *	if target string starts with '"', we use memcmp() and expect closing
+ *	double quote as well
+ *	otherwise we use strncascmp()
+ *
+ * On match we increment *bp past the token name.
+ */
+
+static int
+http_istoken(const char **bp, const char *e, const char *token)
+{
+	int fl = strlen(token);
+	const char *b;
+
+	AN(bp);
+	AN(e);
+	AN(token);
+
+	b = *bp;
+
+	if (b + fl + 2 <= e && *b == '"' &&
+	    !memcmp(b + 1, token, fl) && b[fl + 1] == '"') {
+		*bp += fl + 2;
+		return (1);
+	}
+	if (b + fl <= e && !strncasecmp(b, token, fl) &&
+	    (b + fl == e || !vct_istchar(b[fl]))) {
+		*bp += fl;
+		return (1);
+	}
+	return (0);
+}
+
+/*-----------------------------------------------------------------------------
  * Find a given data element (token) in a header according to RFC2616's #rule
  * (section 2.1, p15)
  *
@@ -474,7 +508,6 @@ http_GetHdrToken(const struct http *hp, const char *hdr,
     const char *token, const char **pb, const char **pe)
 {
 	const char *h, *b, *e;
-	unsigned fl;
 
 	if (pb != NULL)
 		*pb = NULL;
@@ -483,18 +516,14 @@ http_GetHdrToken(const struct http *hp, const char *hdr,
 	if (!http_GetHdr(hp, hdr, &h))
 		return (0);
 	AN(h);
-	fl = strlen(token);
 
-	while(http_split(&h, NULL, ",", &b, &e)) {
-		if (*b == '"' && !memcmp(b + 1, token, fl) && b[fl + 1] == '"')
+	while(http_split(&h, NULL, ",", &b, &e))
+		if (http_istoken(&b, e, token))
 			break;
-		if (!strncasecmp(b, token, fl) && !vct_istchar(b[fl]))
-			break;
-	}
 	if (b == NULL)
 		return (0);
 	if (pb != NULL) {
-		for (b += fl; vct_islws(*b); b++)
+		for (; vct_islws(*b); b++)
 			continue;
 		if (b == e) {
 			b = NULL;
