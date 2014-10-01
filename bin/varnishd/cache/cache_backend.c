@@ -429,6 +429,10 @@ vdi_simple_getfd(const struct director *d, struct busyobj *bo)
 		FIND_TMO(between_bytes_timeout,
 		    vc->between_bytes_timeout, bo, vs->vrt);
 	}
+	if (vc != NULL)
+		vc->vsl = bo->vsl;
+	else
+		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 	return (vc);
 }
 
@@ -455,7 +459,7 @@ vdi_simple_gethdrs(const struct director *d, struct worker *wrk,
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	bo->vbc = VDI_GetFd(d, wrk, bo);
+	bo->vbc = vdi_simple_getfd(d, bo);
 	if (bo->vbc == NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 		return (-1);

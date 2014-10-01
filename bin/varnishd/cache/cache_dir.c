@@ -127,7 +127,6 @@ VDI_Finish(const struct director *d, struct worker *wrk, struct busyobj *bo)
 struct vbc *
 VDI_GetFd(const struct director *d, struct worker *wrk, struct busyobj *bo)
 {
-	struct vbc *vc;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -138,10 +137,7 @@ VDI_GetFd(const struct director *d, struct worker *wrk, struct busyobj *bo)
 		return (NULL);
 
 	AN(d->getfd);
-	vc = d->getfd(d, bo);
-	if (vc != NULL)
-		vc->vsl = bo->vsl;
-	return (vc);
+	return (d->getfd(d, bo));
 }
 
 /* Check health ------------------------------------------------------
