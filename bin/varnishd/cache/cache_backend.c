@@ -54,7 +54,7 @@ static unsigned		vbcps = sizeof(struct vbc);
  * the directoricity of it under this line.
  */
 
-struct vdi_simple {
+struct vbe_dir {
 	unsigned		magic;
 #define VDI_SIMPLE_MAGIC	0x476d25b7
 	struct director		dir;
@@ -109,7 +109,7 @@ VBE_ReleaseConn(struct vbc *vc)
 
 static int
 vbe_TryConnect(const struct busyobj *bo, int pf,
-    const struct suckaddr *sa, const struct vdi_simple *vs)
+    const struct suckaddr *sa, const struct vbe_dir *vs)
 {
 	int s, i, tmo;
 	double tmod;
@@ -138,7 +138,7 @@ vbe_TryConnect(const struct busyobj *bo, int pf,
 /*--------------------------------------------------------------------*/
 
 static void
-bes_conn_try(struct busyobj *bo, struct vbc *vc, const struct vdi_simple *vs)
+bes_conn_try(struct busyobj *bo, struct vbc *vc, const struct vbe_dir *vs)
 {
 	int s;
 	struct backend *bp = vs->backend;
@@ -246,7 +246,7 @@ VBE_Healthy(const struct backend *backend, double *changed)
  */
 
 static struct vbc *
-vbe_GetVbe(struct busyobj *bo, struct vdi_simple *vs)
+vbe_GetVbe(struct busyobj *bo, struct vbe_dir *vs)
 {
 	struct vbc *vc;
 	struct backend *bp;
@@ -325,7 +325,7 @@ vbe_GetVbe(struct busyobj *bo, struct vdi_simple *vs)
 void
 VBE_UseHealth(const struct director *vdi)
 {
-	struct vdi_simple *vs;
+	struct vbe_dir *vs;
 
 	ASSERT_CLI();
 
@@ -344,7 +344,7 @@ VBE_UseHealth(const struct director *vdi)
 void
 VBE_DiscardHealth(const struct director *vdi)
 {
-	struct vdi_simple *vs;
+	struct vbe_dir *vs;
 
 	ASSERT_CLI();
 
@@ -415,9 +415,9 @@ vbe_RecycleFd(struct vbc **vbp, const struct acct_bereq *acct_bereq)
  */
 
 static struct vbc * __match_proto__(vdi_getfd_f)
-vdi_simple_getfd(const struct director *d, struct busyobj *bo)
+vbe_dir_getfd(const struct director *d, struct busyobj *bo)
 {
-	struct vdi_simple *vs;
+	struct vbe_dir *vs;
 	struct vbc *vc;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -438,9 +438,9 @@ vdi_simple_getfd(const struct director *d, struct busyobj *bo)
 }
 
 static unsigned __match_proto__(vdi_healthy_f)
-vdi_simple_healthy(const struct director *d, double *changed)
+vbe_dir_healthy(const struct director *d, double *changed)
 {
-	struct vdi_simple *vs;
+	struct vbe_dir *vs;
 	struct backend *be;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
@@ -451,7 +451,7 @@ vdi_simple_healthy(const struct director *d, double *changed)
 }
 
 static int __match_proto__(vdi_gethdrs_f)
-vdi_simple_gethdrs(const struct director *d, struct worker *wrk,
+vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
 {
 	int i;
@@ -460,7 +460,7 @@ vdi_simple_gethdrs(const struct director *d, struct worker *wrk,
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	bo->vbc = vdi_simple_getfd(d, bo);
+	bo->vbc = vbe_dir_getfd(d, bo);
 	if (bo->vbc == NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 		return (-1);
@@ -490,7 +490,7 @@ vdi_simple_gethdrs(const struct director *d, struct worker *wrk,
 }
 
 static int __match_proto__(vdi_getbody_f)
-vdi_simple_getbody(const struct director *d, struct worker *wrk,
+vbe_dir_getbody(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
 {
 
@@ -503,7 +503,7 @@ vdi_simple_getbody(const struct director *d, struct worker *wrk,
 }
 
 static void __match_proto__(vdi_finish_f)
-vdi_simple_finish(const struct director *d, struct worker *wrk,
+vbe_dir_finish(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
 {
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
@@ -519,7 +519,7 @@ vdi_simple_finish(const struct director *d, struct worker *wrk,
 }
 
 static struct suckaddr * __match_proto__(vdi_suckaddr_f)
-vdi_simple_suckaddr(const struct director *d, struct worker *wrk,
+vbe_dir_suckaddr(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
 {
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
@@ -534,9 +534,9 @@ vdi_simple_suckaddr(const struct director *d, struct worker *wrk,
 /*--------------------------------------------------------------------*/
 
 void
-VRT_fini_dir(VRT_CTX, struct director *d)
+VRT_fini_vbe(VRT_CTX, struct director *d)
 {
-	struct vdi_simple *vs;
+	struct vbe_dir *vs;
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -551,11 +551,11 @@ VRT_fini_dir(VRT_CTX, struct director *d)
 }
 
 void
-VRT_init_dir(VRT_CTX, struct director **bp, int idx,
+VRT_init_vbe(VRT_CTX, struct director **bp, int idx,
     const void *priv)
 {
 	const struct vrt_backend *t;
-	struct vdi_simple *vs;
+	struct vbe_dir *vs;
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -567,12 +567,12 @@ VRT_init_dir(VRT_CTX, struct director **bp, int idx,
 	vs->dir.priv = vs;
 	vs->dir.name = "simple";
 	REPLACE(vs->dir.vcl_name, t->vcl_name);
-	vs->dir.getfd = vdi_simple_getfd;
-	vs->dir.healthy = vdi_simple_healthy;
-	vs->dir.gethdrs = vdi_simple_gethdrs;
-	vs->dir.getbody = vdi_simple_getbody;
-	vs->dir.finish = vdi_simple_finish;
-	vs->dir.suckaddr = vdi_simple_suckaddr;
+	vs->dir.getfd = vbe_dir_getfd;
+	vs->dir.healthy = vbe_dir_healthy;
+	vs->dir.gethdrs = vbe_dir_gethdrs;
+	vs->dir.getbody = vbe_dir_getbody;
+	vs->dir.finish = vbe_dir_finish;
+	vs->dir.suckaddr = vbe_dir_suckaddr;
 
 	vs->vrt = t;
 
@@ -584,7 +584,7 @@ VRT_init_dir(VRT_CTX, struct director **bp, int idx,
 }
 
 void
-VDI_Init(void)
+VBE_Init(void)
 {
 
 	vbcpool = MPL_New("vbc", &cache_param->vbc_pool, &vbcps);

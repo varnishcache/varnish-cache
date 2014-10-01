@@ -220,7 +220,7 @@ child_main(void)
 
 	HTTP_Init();
 
-	VDI_Init();
+	VBE_Init();
 	VBO_Init();
 	VBE_InitCfg();
 	VBP_Init();

@@ -82,5 +82,5 @@ int VDI_Healthy(const struct director *);
 struct suckaddr *VDI_Suckaddr(const struct director *d, struct worker *wrk,
     struct busyobj *bo);
 void VDI_AddHostHeader(struct http *to, const struct vbc *vbc);
-void VDI_Init(void);
+void VBE_Init(void);
 
