@@ -324,11 +324,7 @@ VRT_r_beresp_backend_ip(VRT_CTX)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	if (ctx->bo->vbc != NULL) {
-		CHECK_OBJ_NOTNULL(ctx->bo->vbc, VBC_MAGIC);
-		return(ctx->bo->vbc->addr);
-	} else
-		return (NULL);
+	return (VDI_Suckaddr(ctx->bo->director_resp, ctx->bo->wrk, ctx->bo));
 }
 
 /*--------------------------------------------------------------------*/

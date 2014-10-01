@@ -513,6 +513,18 @@ vdi_simple_finish(const struct director *d, struct worker *wrk,
 	}
 }
 
+static struct suckaddr * __match_proto__(vdi_suckaddr_f)
+vdi_simple_suckaddr(const struct director *d, struct worker *wrk,
+    struct busyobj *bo)
+{
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	if (bo->vbc != NULL)
+		return(bo->vbc->addr);
+	return (NULL);
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -555,6 +567,7 @@ VRT_init_dir(VRT_CTX, struct director **bp, int idx,
 	vs->dir.gethdrs = vdi_simple_gethdrs;
 	vs->dir.getbody = vdi_simple_getbody;
 	vs->dir.finish = vdi_simple_finish;
+	vs->dir.suckaddr = vdi_simple_suckaddr;
 
 	vs->vrt = t;
 

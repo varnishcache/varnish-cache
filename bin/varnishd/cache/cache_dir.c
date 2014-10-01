@@ -155,3 +155,16 @@ VDI_Healthy(const struct director *d)
 	AN(d->healthy);
 	return (d->healthy(d, NULL));
 }
+
+/* Get suckaddr ------------------------------------------------------*/
+
+struct suckaddr *
+VDI_Suckaddr(const struct director *d, struct worker *wrk, struct busyobj *bo)
+{
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+
+	AN(d->suckaddr);
+	return (d->suckaddr(d, wrk, bo));
+}
