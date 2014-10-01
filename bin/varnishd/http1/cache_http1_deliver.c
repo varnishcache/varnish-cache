@@ -29,7 +29,7 @@
 
 #include "config.h"
 
-#include "cache.h"
+#include "cache/cache.h"
 
 #include "vct.h"
 

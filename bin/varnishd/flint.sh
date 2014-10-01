@@ -23,6 +23,7 @@ flexelint \
 	storage/*.c \
 	waiter/*.c \
 	hash/*.c \
+	http1/*.c \
 	mgt/*.c \
 	../../lib/libvarnish/*.c \
 	../../lib/libvarnishcompat/execinfo.c \

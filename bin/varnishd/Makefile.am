@@ -26,11 +26,6 @@ varnishd_SOURCES = \
 	cache/cache_gzip.c \
 	cache/cache_hash.c \
 	cache/cache_http.c \
-	cache/cache_http1_fetch.c \
-	cache/cache_http1_fsm.c \
-	cache/cache_http1_pipe.c \
-	cache/cache_http1_proto.c \
-	cache/cache_http1_vfp.c \
 	cache/cache_lck.c \
 	cache/cache_main.c \
 	cache/cache_mempool.c \
@@ -39,7 +34,6 @@ varnishd_SOURCES = \
 	cache/cache_pool.c \
 	cache/cache_req_body.c \
 	cache/cache_req_fsm.c \
-	cache/cache_http1_deliver.c \
 	cache/cache_rfc2616.c \
 	cache/cache_session.c \
 	cache/cache_shmlog.c \
@@ -59,6 +53,12 @@ varnishd_SOURCES = \
 	hash/hash_critbit.c \
 	hash/hash_mgt.c \
 	hash/hash_simple_list.c \
+	http1/cache_http1_deliver.c \
+	http1/cache_http1_fetch.c \
+	http1/cache_http1_fsm.c \
+	http1/cache_http1_pipe.c \
+	http1/cache_http1_proto.c \
+	http1/cache_http1_vfp.c \
 	mgt/mgt_child.c \
 	mgt/mgt_cli.c \
 	mgt/mgt_main.c \
