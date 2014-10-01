@@ -38,6 +38,7 @@
 #include "hash/hash_slinger.h"
 
 #include "cache_backend.h"
+#include "cache_director.h"
 #include "vcli_priv.h"
 #include "vtcp.h"
 #include "vtim.h"

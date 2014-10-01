@@ -39,6 +39,7 @@
 #include "hash/hash_slinger.h"
 
 #include "cache_backend.h"
+#include "cache_director.h"
 #include "vrt.h"
 #include "vrt_obj.h"
 #include "vsa.h"

@@ -37,7 +37,7 @@
 
 #include "cache.h"
 
-#include "cache_backend.h"
+#include "cache_director.h"
 #include "hash/hash_slinger.h"
 #include "vav.h"
 #include "vcl.h"

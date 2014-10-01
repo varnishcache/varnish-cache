@@ -35,7 +35,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
-#include "cache_backend.h"
+#include "cache_director.h"
 #include "vend.h"
 #include "hash/hash_slinger.h"
 #include "vcl.h"

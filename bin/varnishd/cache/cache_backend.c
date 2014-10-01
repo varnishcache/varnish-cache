@@ -40,6 +40,7 @@
 #include "cache.h"
 
 #include "cache_backend.h"
+#include "cache_director.h"
 #include "vrt.h"
 #include "vtcp.h"
 
