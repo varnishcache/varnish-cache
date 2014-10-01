@@ -499,7 +499,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 		INCOMPL();
 	assert(wrk->handling == VCL_RET_PIPE);
 
-	PipeRequest(req, bo);
+	V1P_Process(req, bo);
 	assert(WRW_IsReleased(wrk));
 	http_Teardown(bo->bereq);
 	THR_SetBusyobj(NULL);

@@ -225,7 +225,7 @@ child_main(void)
 	VBE_InitCfg();
 	VBP_Init();
 	Pool_Init();
-	Pipe_Init();
+	V1P_Init();
 
 	EXP_Init();
 	HSH_Init(heritage.hash);

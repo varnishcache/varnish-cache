@@ -746,6 +746,10 @@ unsigned V1D_FlushReleaseAcct(struct req *req);
 void V1D_Deliver(struct req *, struct busyobj *);
 void V1D_Deliver_Synth(struct req *req);
 
+/* cache_http1_pipe.c */
+void V1P_Init(void);
+void V1P_Process(struct req *req, struct busyobj *bo);
+
 /* cache_req_body.c */
 int VRB_Ignore(struct req *req);
 int VRB_Cache(struct req *req, ssize_t maxsize);
@@ -1009,10 +1013,6 @@ void ObjSetFlag(struct worker *, struct objcore *, enum obj_flags of, int val);
 void PAN_Init(void);
 const char *body_status_2str(enum body_status e);
 const char *sess_close_2str(enum sess_close sc, int want_desc);
-
-/* cache_pipe.c */
-void Pipe_Init(void);
-void PipeRequest(struct req *req, struct busyobj *bo);
 
 /* cache_pool.c */
 void Pool_Init(void);

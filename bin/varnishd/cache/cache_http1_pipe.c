@@ -93,7 +93,7 @@ pipecharge(struct req *req, const struct acct_pipe *a, struct VSC_C_vbe *b)
 }
 
 void
-PipeRequest(struct req *req, struct busyobj *bo)
+V1P_Process(struct req *req, struct busyobj *bo)
 {
 	struct vbc *vc;
 	struct worker *wrk;
@@ -190,7 +190,7 @@ PipeRequest(struct req *req, struct busyobj *bo)
 /*--------------------------------------------------------------------*/
 
 void
-Pipe_Init(void)
+V1P_Init(void)
 {
 
 	Lck_New(&pipestat_mtx, lck_pipestat);
