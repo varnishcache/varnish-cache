@@ -47,26 +47,29 @@ struct vrt_privs {
 	struct vmod_priv		priv[1];
 	const struct VCL_conf		*vcl;
 	uintptr_t			id;
+	uintptr_t			vmod_id;
 };
 
 /*--------------------------------------------------------------------
  */
 
 static struct vmod_priv *
-VRT_priv_dynamic(VRT_CTX, uintptr_t id)
+VRT_priv_dynamic(VRT_CTX, uintptr_t id, uintptr_t vmod_id)
 {
 	struct vrt_privs *vps;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	VTAILQ_FOREACH(vps, &ctx->req->sp->privs, list) {
 		CHECK_OBJ_NOTNULL(vps, VRT_PRIVS_MAGIC);
-		if (vps->vcl == ctx->vcl && vps->id == id)
+		if (vps->vcl == ctx->vcl && vps->id == id
+		    && vps->vmod_id == vmod_id)
 			return (vps->priv);
 	}
 	ALLOC_OBJ(vps, VRT_PRIVS_MAGIC);
 	AN(vps);
 	vps->vcl = ctx->vcl;
 	vps->id = id;
+	vps->vmod_id = vmod_id;
 	VTAILQ_INSERT_TAIL(&ctx->req->sp->privs, vps, list);
 	return (vps->priv);
 }
@@ -91,15 +94,15 @@ VRTPRIV_dynamic_kill(struct sess *sp, uintptr_t id)
 }
 
 struct vmod_priv *
-VRT_priv_req(VRT_CTX)
+VRT_priv_req(VRT_CTX, void *vmod_id)
 {
-	return (VRT_priv_dynamic(ctx, (uintptr_t)ctx->req));
+	return (VRT_priv_dynamic(ctx, (uintptr_t)ctx->req, (uintptr_t)vmod_id));
 }
 
 struct vmod_priv *
-VRT_priv_sess(VRT_CTX)
+VRT_priv_sess(VRT_CTX, void *vmod_id)
 {
-	return (VRT_priv_dynamic(ctx, (uintptr_t)NULL));
+	return (VRT_priv_dynamic(ctx, (uintptr_t)NULL, (uintptr_t)vmod_id));
 }
 
 /*--------------------------------------------------------------------
