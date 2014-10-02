@@ -503,7 +503,7 @@ static struct cli_proto vcl_cmds[] = {
 	{ CLI_VCL_LIST,         "i", ccf_config_list },
 	{ CLI_VCL_DISCARD,      "i", ccf_config_discard },
 	{ CLI_VCL_USE,          "i", ccf_config_use },
-	{ CLI_VCL_SHOW,		"i", ccf_config_show },
+	{ CLI_VCL_SHOW,		"", ccf_config_show },
 	{ NULL }
 };
 
