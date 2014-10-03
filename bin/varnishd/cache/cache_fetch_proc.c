@@ -121,8 +121,8 @@ VFP_Close(struct vfp_ctx *vc)
 	VTAILQ_FOREACH(vfe, &vc->vfp, list) {
 		if(vfe->vfp->fini != NULL)
 			vfe->vfp->fini(vc, vfe);
-		VSLb(vc->wrk->vsl, SLT_VfpAcct, "%s %ju %ju",
-			vfe->vfp->name, vfe->calls, vfe->bytes_out);
+		VSLb(vc->wrk->vsl, SLT_VfpAcct, "%s %ju %ju", vfe->vfp->name,
+		    (uintmax_t)vfe->calls, (uintmax_t)vfe->bytes_out);
 	}
 }
 
