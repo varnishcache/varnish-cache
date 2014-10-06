@@ -244,7 +244,6 @@ struct http_conn {
 #define HTTP_CONN_MAGIC		0x3e19edd1
 
 	int			fd;
-	struct vsl_log		*vsl;
 	unsigned		maxbytes;
 	unsigned		maxhdr;
 	struct ws		*ws;
@@ -915,7 +914,7 @@ enum http1_status_e {
 	HTTP1_COMPLETE =	 1
 };
 
-void HTTP1_Init(struct http_conn *htc, struct ws *ws, int fd, struct vsl_log *,
+void HTTP1_Init(struct http_conn *htc, struct ws *ws, int fd,
     unsigned maxbytes, unsigned maxhdr);
 enum http1_status_e HTTP1_Reinit(struct http_conn *htc);
 enum http1_status_e HTTP1_Rx(struct http_conn *htc);

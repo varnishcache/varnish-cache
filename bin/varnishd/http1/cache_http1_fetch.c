@@ -155,8 +155,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo)
 
 	/* Receive response */
 
-	HTTP1_Init(htc, bo->ws, vc->fd, bo->vsl,
-	    cache_param->http_resp_size,
+	HTTP1_Init(htc, bo->ws, vc->fd, cache_param->http_resp_size,
 	    cache_param->http_resp_hdr_len);
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
