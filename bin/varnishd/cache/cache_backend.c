@@ -339,53 +339,6 @@ VBE_DiscardHealth(const struct director *vdi)
 	VBP_Remove(vs->backend, vs->vrt->probe);
 }
 
-/* Close a connection ------------------------------------------------*/
-
-static void
-vbe_CloseFd(struct vbc **vbp, const struct acct_bereq *acct_bereq)
-{
-	struct backend *bp;
-	struct vbc *vc;
-
-	AN(vbp);
-	vc = *vbp;
-	*vbp = NULL;
-	CHECK_OBJ_NOTNULL(vc, VBC_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
-	assert(vc->fd >= 0);
-
-	bp = vc->backend;
-
-	VTCP_close(&vc->fd);
-	VBE_DropRefConn(bp, acct_bereq);
-	vc->backend = NULL;
-	VBE_ReleaseConn(vc);
-}
-
-/* Recycle a connection ----------------------------------------------*/
-
-static void
-vbe_RecycleFd(struct vbc **vbp, const struct acct_bereq *acct_bereq)
-{
-	struct backend *bp;
-	struct vbc *vc;
-
-	AN(vbp);
-	vc = *vbp;
-	*vbp = NULL;
-	CHECK_OBJ_NOTNULL(vc, VBC_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->backend, BACKEND_MAGIC);
-	assert(vc->fd >= 0);
-
-	bp = vc->backend;
-
-	Lck_Lock(&bp->mtx);
-	VSC_C_main->backend_recycle++;
-	VTAILQ_INSERT_HEAD(&bp->connlist, vc, list);
-	VBE_DropRefLocked(bp, acct_bereq);
-}
-
-
 /*--------------------------------------------------------------------
  *
  */
@@ -483,25 +436,31 @@ static void __match_proto__(vdi_finish_f)
 vbe_dir_finish(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
 {
+	struct backend *bp;
+
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	if (bo->vbc != NULL) {
-		if (bo->doclose != SC_NULL) {
-			VSLb(bo->vsl, SLT_BackendClose,
-			    "%d %s", bo->vbc->fd,
-			    bo->vbc->backend->display_name);
-			vbe_CloseFd(&bo->vbc, &bo->acct);
-		} else {
-			VSLb(bo->vsl, SLT_BackendReuse,
-			    "%d %s", bo->vbc->fd,
-			    bo->vbc->backend->display_name);
-			vbe_RecycleFd(&bo->vbc, &bo->acct);
-		}
-
+	if (bo->vbc == NULL)
+		return;
+	bp = bo->vbc->backend;
+	if (bo->doclose != SC_NULL) {
+		VSLb(bo->vsl, SLT_BackendClose, "%d %s", bo->vbc->fd,
+		    bp->display_name);
+		VTCP_close(&bo->vbc->fd);
+		VBE_DropRefConn(bp, &bo->acct);
+		bo->vbc->backend = NULL;
+		VBE_ReleaseConn(bo->vbc);
+	} else {
+		VSLb(bo->vsl, SLT_BackendReuse, "%d %s", bo->vbc->fd,
+		    bp->display_name);
+		Lck_Lock(&bp->mtx);
+		VSC_C_main->backend_recycle++;
+		VTAILQ_INSERT_HEAD(&bp->connlist, bo->vbc, list);
+		VBE_DropRefLocked(bp, &bo->acct);
 	}
-	AZ(bo->vbc);
+	bo->vbc = NULL;
 }
 
 static struct suckaddr * __match_proto__(vdi_suckaddr_f)
