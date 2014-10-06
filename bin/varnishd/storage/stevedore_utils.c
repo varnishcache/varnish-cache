@@ -223,11 +223,6 @@ STV_FileSize(int fd, const char *size, unsigned *granularity, const char *ctx)
 	if (i)
 		fprintf(stderr, "WARNING: (%s) file size reduced"
 		    " to %ju due to system \"off_t\" limitations\n", ctx, l);
-	else if (l - st.st_size > fssize) {
-		l = fssize * 80 / 100;
-		fprintf(stderr, "WARNING: (%s) file size reduced"
-		    " to %ju (80%% of available disk space)\n", ctx, l);
-	}
 
 	if (sizeof(void *) == 4 && l > INT32_MAX) { /*lint !e506 !e774 !e845 */
 		fprintf(stderr,
