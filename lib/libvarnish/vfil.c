@@ -39,6 +39,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <string.h>
 #include <sys/types.h>
 #ifdef HAVE_SYS_MOUNT_H
 #  include <sys/param.h>
@@ -185,5 +186,57 @@ VFIL_fsinfo(int fd, unsigned *pbs, uintmax_t *psize, uintmax_t *pspace)
 		*psize = size;
 	if (pspace)
 		*pspace = space;
+	return (0);
+}
+
+/* Make sure that the file system can accomodate the file of the given
+ * size. Will use fallocate if available. If fallocate is not available
+ * and insist is true, it will write size zero bytes.
+ *
+ * Returns 0 on success, -1 on failure with errno set.
+ */
+int
+VFIL_allocate(int fd, off_t size, int insist)
+{
+	struct stat st;
+	uintmax_t fsspace;
+	size_t l;
+	ssize_t l2;
+	char buf[64 * 1024];
+
+	if (ftruncate(fd, size))
+		return (-1);
+	if (fstat(fd, &st))
+		return (-1);
+	if (VFIL_fsinfo(fd, NULL, NULL, &fsspace))
+		return (-1);
+	if ((st.st_blocks * 512) + fsspace < size) {
+		/* Sum of currently allocated blocks and available space
+		   is less than requested size */
+		errno = ENOSPC;
+		return (-1);
+	}
+#ifdef HAVE_FALLOCATE
+	if (!fallocate(fd, 0, 0, size))
+		return (0);
+	if (errno == ENOSPC)
+		return (-1);
+#endif
+	if (!insist)
+		return (0);
+
+	/* Write size zero bytes to make sure the entire file is allocated
+	   in the file system */
+	memset(buf, 0, sizeof buf);
+	assert(lseek(fd, 0, SEEK_SET) == 0);
+	for (l = 0; l < size; l += l2) {
+		l2 = sizeof buf;
+		if (l + l2 > size)
+			l2 = size - l;
+		l2 = write(fd, buf, l2);
+		if (l2 < 0)
+			return (-1);
+	}
+	assert(lseek(fd, 0, SEEK_SET) == 0);
 	return (0);
 }

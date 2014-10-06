@@ -35,3 +35,4 @@ char *VFIL_readfile(const char *pfx, const char *fn, ssize_t *sz);
 char *VFIL_readfd(int fd, ssize_t *sz);
 int VFIL_nonblocking(int fd);
 int VFIL_fsinfo(int fd, unsigned *pbs, uintmax_t *size, uintmax_t *space);
+int VFIL_allocate(int fd, off_t size, int insist);
