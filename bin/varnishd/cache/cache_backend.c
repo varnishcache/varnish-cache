@@ -341,8 +341,8 @@ VBE_DiscardHealth(const struct director *vdi)
 
 /* Close a connection ------------------------------------------------*/
 
-void
-VBE_CloseFd(struct vbc **vbp, const struct acct_bereq *acct_bereq)
+static void
+vbe_CloseFd(struct vbc **vbp, const struct acct_bereq *acct_bereq)
 {
 	struct backend *bp;
 	struct vbc *vc;
@@ -355,8 +355,6 @@ VBE_CloseFd(struct vbc **vbp, const struct acct_bereq *acct_bereq)
 	assert(vc->fd >= 0);
 
 	bp = vc->backend;
-
-	VSLb(vc->vsl, SLT_BackendClose, "%d %s", vc->fd, bp->display_name);
 
 	vc->vsl = NULL;
 	VTCP_close(&vc->fd);
@@ -381,8 +379,6 @@ vbe_RecycleFd(struct vbc **vbp, const struct acct_bereq *acct_bereq)
 	assert(vc->fd >= 0);
 
 	bp = vc->backend;
-
-	VSLb(vc->vsl, SLT_BackendReuse, "%d %s", vc->fd, bp->display_name);
 
 	vc->vsl = NULL;
 
@@ -458,17 +454,20 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 	if (i == 1) {
 		AZ(bo->vbc);
 		VSC_C_main->backend_retry++;
-		bo->vbc = VDI_GetFd(d, wrk, bo);
+		bo->doclose = SC_NULL;
+		bo->vbc = vbe_dir_getfd(d, bo);
 		if (bo->vbc == NULL) {
 			VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 			return (-1);
 		}
 		i = V1F_fetch_hdr(wrk, bo);
 	}
-	if (i != 0)
+	if (i != 0) {
+		bo->doclose = SC_NULL;
 		AZ(bo->vbc);
-	else
+	} else {
 		AN(bo->vbc);
+	}
 	return (i);
 }
 
@@ -494,11 +493,20 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	if (bo->vbc != NULL) {
-		if (bo->doclose != SC_NULL)
-			VBE_CloseFd(&bo->vbc, &bo->acct);
-		else
+		if (bo->doclose != SC_NULL) {
+			VSLb(bo->vsl, SLT_BackendClose,
+			    "%d %s", bo->vbc->fd,
+			    bo->vbc->backend->display_name);
+			vbe_CloseFd(&bo->vbc, &bo->acct);
+		} else {
+			VSLb(bo->vsl, SLT_BackendReuse,
+			    "%d %s", bo->vbc->fd,
+			    bo->vbc->backend->display_name);
 			vbe_RecycleFd(&bo->vbc, &bo->acct);
+		}
+
 	}
+	AZ(bo->vbc);
 }
 
 static struct suckaddr * __match_proto__(vdi_suckaddr_f)
