@@ -21,20 +21,6 @@ The following options are available:
 
 .. include:: ../include/varnishlog_options.rst
 
--k num
-
-	Only show the first num log transactions (or log records
-	in -g raw mode)
-
-	XXX: Not yet implemented
-
--s num
-
-	Skip the first num log transactions (or log records if
-	in -g raw mode)
-
-	XXX: Not yet implemented
-
 SIGNALS
 =======
 
