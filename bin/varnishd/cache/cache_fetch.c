@@ -536,12 +536,12 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	/* It can't be both */
 	assert(bo->is_gzip == 0 || bo->is_gunzip == 0);
 
-	/* We won't gunzip unless it is gzip'ed */
-	if (bo->do_gunzip && !bo->is_gzip)
+	/* We won't gunzip unless it is non-empty and gzip'ed */
+	if (bo->htc->content_length == 0 || (bo->do_gunzip && !bo->is_gzip))
 		bo->do_gunzip = 0;
 
-	/* We wont gzip unless it is ungziped */
-	if (bo->do_gzip && !bo->is_gunzip)
+	/* We wont gzip unless it is non-empty and ungziped */
+	if (bo->htc->content_length == 0 || (bo->do_gzip && !bo->is_gunzip))
 		bo->do_gzip = 0;
 
 	/* But we can't do both at the same time */
