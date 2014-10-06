@@ -356,7 +356,6 @@ vbe_CloseFd(struct vbc **vbp, const struct acct_bereq *acct_bereq)
 
 	bp = vc->backend;
 
-	vc->vsl = NULL;
 	VTCP_close(&vc->fd);
 	VBE_DropRefConn(bp, acct_bereq);
 	vc->backend = NULL;
@@ -379,8 +378,6 @@ vbe_RecycleFd(struct vbc **vbp, const struct acct_bereq *acct_bereq)
 	assert(vc->fd >= 0);
 
 	bp = vc->backend;
-
-	vc->vsl = NULL;
 
 	Lck_Lock(&bp->mtx);
 	VSC_C_main->backend_recycle++;
@@ -409,9 +406,7 @@ vbe_dir_getfd(const struct director *d, struct busyobj *bo)
 		FIND_TMO(between_bytes_timeout,
 		    vc->between_bytes_timeout, bo, vs->vrt);
 	}
-	if (vc != NULL)
-		vc->vsl = bo->vsl;
-	else
+	if (vc == NULL)
 		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 	return (vc);
 }

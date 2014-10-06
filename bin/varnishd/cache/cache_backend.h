@@ -89,7 +89,6 @@ struct vbc {
 	VTAILQ_ENTRY(vbc)	list;
 	struct backend		*backend;
 	struct vbe_dir	*vdis;
-	struct vsl_log		*vsl;
 	int			fd;
 
 	struct suckaddr		*addr;
