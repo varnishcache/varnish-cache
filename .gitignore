@@ -98,6 +98,8 @@ cscope.*out
 /doc/sphinx/build/
 /doc/sphinx/conf.py
 /doc/sphinx/include/vcl_var.rst
+# graphviz-generated
+/doc/graphviz/*.pdf
 
 # NetBeans insists on this
 /nbproject/private/

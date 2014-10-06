@@ -14,4 +14,4 @@ else
 	@false
 endif
 
-SUBDIRS = sphinx
+SUBDIRS = sphinx graphviz

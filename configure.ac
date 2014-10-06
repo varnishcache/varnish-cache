@@ -648,6 +648,7 @@ AC_CONFIG_FILES([
     bin/varnishtest/Makefile
     bin/varnishncsa/Makefile
     doc/Makefile
+    doc/graphviz/Makefile
     doc/sphinx/Makefile
     doc/sphinx/conf.py
     etc/Makefile
