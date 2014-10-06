@@ -1,0 +1,22 @@
+	digraph vcl_center {
+		size="7.2,10.5"
+		margin="0.5"
+		center="1"
+
+	acceptor -> http1_wait [label=S_STP_NEWREQ, align=center]
+	hash -> CNT_Request [label="Busy object\nS_STP_WORKING\nR_STP_LOOKUP"
+		color=blue]
+	disembark -> hash [style=dotted, color=blue]
+	http1_wait -> CNT_Request [label="S_STP_WORKING\nR_STP_RECV"]
+	http1_wait -> disembark [label="Session close"]
+	http1_wait -> disembark [label="Timeout" color=green]
+	disembark -> waiter [style=dotted, color=green]
+	waiter -> http1_wait [color=green]
+	CNT_Request -> disembark
+		[label="Busy object\nS_STP_WORKING\nR_STP_LOOKUP" color=blue]
+	CNT_Request -> http1_cleanup
+	http1_cleanup -> disembark [label="Session close"]
+	http1_cleanup -> CNT_Request [label="S_STP_WORKING\nR_STP_RECV"]
+	http1_cleanup -> http1_wait [label="S_STP_NEWREQ"]
+
+	}

@@ -1,0 +1,111 @@
+ digraph vcl_center {
+	size="7.2,10.5"
+	margin="0.5"
+	center="1"
+ acceptor [
+	shape=hexagon
+	label="Request received"
+ ]
+ ESI_REQ [ shape=hexagon ]
+ ESI_REQ -> recv
+ SYNTH [shape=plaintext]
+ RESTART [shape=plaintext]
+ acceptor -> recv [style=bold,color=green]
+	deliver [
+		shape=record
+		label="{cnt_deliver:|Filter obj.-\>resp.|{vcl_deliver\{\}|{req.|resp.}}|{restart?|<deliver>deliver?}}"
+	]
+ deliver:deliver:s -> DONE [style=bold,color=green]
+ deliver:deliver:s -> DONE [style=bold,color=red]
+ deliver:deliver:s -> DONE [style=bold,color=blue]
+ subgraph xcluster_synth {
+	synth [
+		shape=record
+		label="{cnt_synth:|{vcl_synth\{\}|resp.}|{<del>deliver?|<restart>restart?}}"
+	]
+	SYNTH -> synth
+	synth:del:s -> deliver [label=deliver]
+ }
+ subgraph xcluster_body {
+	fetch [
+		shape=record
+		label="{cnt_fetch:|wait for fetch|{<ok>OK|<err>Failed}}"
+	]
+ }
+ fetch:ok:s -> deliver [style=bold,color=red]
+ fetch:ok:s -> deliver [style=bold,color=blue]
+ fetch:err:s -> vcl_error
+ subgraph xcluster_lookup {
+	lookup [
+		shape=record
+		label="{<top>cnt_lookup:|hash lookup|{<busy>busy?|<e>exp?|<eb>exp+busy?|<h>hit?|<miss>miss?|<hfp>hit-for-pass?}}"
+	]
+	lookup2 [
+		shape=record
+		label="{<top>cnt_lookup:|{vcl_hit\{\}|req.*, obj.*}|{<deliver>deliver?|synth?|restart?|<fetch>fetch?|<pass>pass?}}"
+	]
+ }
+ lookup:busy:w -> lookup:top:w [label="(waitinglist)"]
+ lookup:miss:s -> miss [style=bold,color=blue]
+ lookup:hfp:s -> pass [style=bold,color=red]
+ lookup:e:s -> lookup2 [style=bold,color=green]
+ lookup:eb:s -> lookup2 [style=bold,color=green]
+ lookup:h:s -> lookup2 [style=bold,color=green]
+ lookup2:pass:s -> pass [style=bold,color=red]
+ lookup2:fetch:s -> miss [style=bold,color=blue]
+ lookup2:deliver:s -> deliver:n [style=bold,color=green]
+ subgraph xcluster_miss {
+	miss [
+		shape=record
+		label="{cnt_miss:|{vcl_miss\{\}|req.*}|{<fetch>fetch?|<synth>synth?|<rst>restart?|<pass>pass?}}"
+	]
+ }
+ miss:fetch:s -> fetch [label="fetch",style=bold,color=blue]
+ miss:pass:s -> pass [label="pass",style=bold,color=red]
+
+ subgraph xcluster_pass {
+	pass [
+		shape=record
+		label="{cnt_pass:|{vcl_pass\{\}|req.*}|{<fetch>fetch?|<synth>synth?|<rst>restart?}}"
+	]
+ }
+ pass:fetch:s -> fetch:n [style=bold, color=red]
+ subgraph xcluster_pipe {
+	pipe [
+		shape=record
+		label="{cnt_pipe:|filter req.*-\>bereq.*|{vcl_pipe()|req.*, bereq\.*}|{<pipe>pipe?|<synth>synth?}}"
+	]
+	pipe_do [
+		shape=ellipse
+		label="send bereq.\npipe until close"
+	]
+	pipe:pipe -> pipe_do [label="pipe",style=bold,color=orange]
+ }
+ pipe_do -> DONE [style=bold,color=orange]
+ subgraph xcluster_restart {
+	restart [
+		shape=record
+		label="{cnt_restart}"
+	]
+ }
+ RESTART -> restart [color=purple]
+ restart -> recv [color=purple]
+ restart -> err_restart
+ err_restart [label="SYNTH",shape=plaintext]
+ subgraph xcluster_recv {
+	recv [
+		shape=record
+		label="{cnt_recv:|{vcl_recv\{\}|req.*}|{vcl_hash\{\}|req.*}|{<lookup>lookup?|<pass>pass?|<pipe>pipe?|<synth>synth?|<purge>purge?}}"
+	]
+ }
+ recv:pipe -> pipe [style=bold,color=orange]
+ recv:pass -> pass [style=bold,color=red]
+ recv:lookup:s -> lookup [style=bold,color=green]
+ recv:purge:s -> purge [style=bold,color=purple]
+ subgraph xcluster_purge {
+	purge [
+		shape=record
+		label="{cnt_purge:|{vcl_purge\{\}|req.*}|{<synth>synth?}}"
+	]
+ }
+ }
