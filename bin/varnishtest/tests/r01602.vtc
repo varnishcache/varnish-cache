@@ -1,0 +1,22 @@
+varnishtest "Test case for #1602"
+
+server s1 {
+	rxreq
+	expect req.url == "/bar"
+	txresp -gzipbody {<esi:include src="/foo"/>}
+	rxreq
+	expect req.url == "/foo"
+	txresp -hdr "Content-Encoding: gzip"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_esi = true;
+	}
+} -start
+
+client c1 {
+	txreq -url /bar -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.status == 200
+} -run
