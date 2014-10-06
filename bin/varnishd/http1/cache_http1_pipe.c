@@ -121,6 +121,8 @@ V1P_Process(struct req *req, struct busyobj *bo)
 		return;
 	}
 	bo->vbc = vc;		/* For panic dumping */
+	bo->wrk = req->wrk;
+	bo->director_state = DIR_S_BODY;
 	(void)VTCP_blocking(vc->fd);
 
 	WRW_Reserve(wrk, &vc->fd, bo->vsl, req->t_req);
@@ -138,53 +140,45 @@ V1P_Process(struct req *req, struct busyobj *bo)
 
 	VSLb_ts_req(req, "Pipe", W_TIM_real(wrk));
 
-	if (i) {
-		pipecharge(req, &acct_pipe, vc->backend->vsc);
-		SES_Close(req->sp, SC_TX_PIPE);
-		VBE_CloseFd(&vc, NULL);
-		return;
-	}
+	if (i == 0) {
+		memset(fds, 0, sizeof fds);
+		fds[0].fd = vc->fd;
+		fds[0].events = POLLIN | POLLERR;
+		fds[1].fd = req->sp->fd;
+		fds[1].events = POLLIN | POLLERR;
 
-	memset(fds, 0, sizeof fds);
-
-	// XXX: not yet (void)VTCP_linger(vc->fd, 0);
-	fds[0].fd = vc->fd;
-	fds[0].events = POLLIN | POLLERR;
-
-	// XXX: not yet (void)VTCP_linger(req->sp->fd, 0);
-	fds[1].fd = req->sp->fd;
-	fds[1].events = POLLIN | POLLERR;
-
-	while (fds[0].fd > -1 || fds[1].fd > -1) {
-		fds[0].revents = 0;
-		fds[1].revents = 0;
-		i = poll(fds, 2, (int)(cache_param->pipe_timeout * 1e3));
-		if (i < 1)
-			break;
-		if (fds[0].revents &&
-		    rdf(vc->fd, req->sp->fd, &acct_pipe.out)) {
-			if (fds[1].fd == -1)
+		while (fds[0].fd > -1 || fds[1].fd > -1) {
+			fds[0].revents = 0;
+			fds[1].revents = 0;
+			i = poll(fds, 2,
+			    (int)(cache_param->pipe_timeout * 1e3));
+			if (i < 1)
 				break;
-			(void)shutdown(vc->fd, SHUT_RD);
-			(void)shutdown(req->sp->fd, SHUT_WR);
-			fds[0].events = 0;
-			fds[0].fd = -1;
-		}
-		if (fds[1].revents &&
-		    rdf(req->sp->fd, vc->fd, &acct_pipe.in)) {
-			if (fds[0].fd == -1)
-				break;
-			(void)shutdown(req->sp->fd, SHUT_RD);
-			(void)shutdown(vc->fd, SHUT_WR);
-			fds[1].events = 0;
-			fds[1].fd = -1;
+			if (fds[0].revents &&
+			    rdf(vc->fd, req->sp->fd, &acct_pipe.out)) {
+				if (fds[1].fd == -1)
+					break;
+				(void)shutdown(vc->fd, SHUT_RD);
+				(void)shutdown(req->sp->fd, SHUT_WR);
+				fds[0].events = 0;
+				fds[0].fd = -1;
+			}
+			if (fds[1].revents &&
+			    rdf(req->sp->fd, vc->fd, &acct_pipe.in)) {
+				if (fds[0].fd == -1)
+					break;
+				(void)shutdown(req->sp->fd, SHUT_RD);
+				(void)shutdown(vc->fd, SHUT_WR);
+				fds[1].events = 0;
+				fds[1].fd = -1;
+			}
 		}
 	}
 	VSLb_ts_req(req, "PipeSess", W_TIM_real(wrk));
 	pipecharge(req, &acct_pipe, vc->backend->vsc);
 	SES_Close(req->sp, SC_TX_PIPE);
-	VBE_CloseFd(&vc, NULL);
-	bo->vbc = NULL;
+	bo->doclose = SC_TX_PIPE;
+	VDI_Finish(bo->director_resp, bo->wrk, bo);
 }
 
 /*--------------------------------------------------------------------*/
