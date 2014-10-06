@@ -203,24 +203,6 @@ vbe_CheckFd(int fd)
 }
 
 /*--------------------------------------------------------------------
- * Manage a pool of vbc structures.
- * XXX: as an experiment, make this caching controlled by a parameter
- * XXX: so we can see if it has any effect.
- */
-
-static struct vbc *
-vbe_NewConn(void)
-{
-	struct vbc *vc;
-
-	vc = MPL_Get(vbcpool, NULL);
-	XXXAN(vc);
-	vc->magic = VBC_MAGIC;
-	vc->fd = -1;
-	return (vc);
-}
-
-/*--------------------------------------------------------------------
  * Test if backend is healthy and report when it last changed
  */
 
@@ -301,9 +283,10 @@ vbe_GetVbe(struct busyobj *bo, struct vbe_dir *vs)
 		return (NULL);
 	}
 
-	vc = vbe_NewConn();
-	assert(vc->fd == -1);
-	AZ(vc->backend);
+	vc = MPL_Get(vbcpool, NULL);
+	XXXAN(vc);
+	vc->magic = VBC_MAGIC;
+	vc->fd = -1;
 	bes_conn_try(bo, vc, vs);
 	if (vc->fd < 0) {
 		VBE_ReleaseConn(vc);
