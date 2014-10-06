@@ -526,6 +526,9 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (!cache_param->http_gzip_support)
 		bo->do_gzip = bo->do_gunzip = 0;
 
+	if (bo->htc->content_length == 0)
+		http_Unset(bo->beresp, H_Content_Encoding);
+
 	bo->is_gzip = http_HdrIs(bo->beresp, H_Content_Encoding, "gzip");
 
 	bo->is_gunzip = !http_GetHdr(bo->beresp, H_Content_Encoding, NULL);
