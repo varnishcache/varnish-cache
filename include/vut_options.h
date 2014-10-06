@@ -51,6 +51,12 @@
 	    "Print program usage and exit"				\
 	)
 
+#define VUT_OPT_k							\
+	VOPT("k:", "[-k num]", "Limit transactions",			\
+	    "Process this number of matching log transactions before"	\
+	    " exiting."							\
+	)
+
 #define VUT_OPT_n							\
 	VOPT("n:", "[-n name]", "Varnish instance name",		\
 	    "Specify the name of the varnishd instance to get logs"	\

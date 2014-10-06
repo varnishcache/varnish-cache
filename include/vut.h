@@ -41,6 +41,7 @@ struct VUT {
 	int		d_opt;
 	int		D_opt;
 	int		g_arg;
+	int		k_arg;
 	char		*P_arg;
 	char		*q_arg;
 	char		*r_arg;
