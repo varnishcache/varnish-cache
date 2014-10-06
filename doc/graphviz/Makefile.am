@@ -10,7 +10,8 @@ if HAVE_PS2PDF
 
 PDFS = \
 	cache_http1_fsm.pdf \
-	cache_req_fsm.pdf
+	cache_req_fsm.pdf \
+	cache_fetch.pdf
 
 pdf: $(PDFS)
 
