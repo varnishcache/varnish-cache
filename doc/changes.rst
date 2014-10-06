@@ -8,7 +8,6 @@ New since 4.0.1:
 - [libvmod-std] New function strstr() for matching substrings.
 - server.(hostname|identity) is now available in all VCL functions.
 - VCL variable type BYTES was added.
-- X-Forwarded-For is now set on return(synth) from vcl_recv.
 - `workspace_client` default is now 9k.
 - [varnishstat] Update interval can now be subsecond.
 - Document that reloading VCL does not reload a VMOD.
