@@ -42,6 +42,44 @@
 #include "vct.h"
 
 /*--------------------------------------------------------------------
+ * Read up to len bytes, returning pipelined data first.
+ */
+
+static ssize_t
+v1f_read(struct http_conn *htc, void *d, size_t len)
+{
+	ssize_t l;
+	unsigned char *p;
+	ssize_t i = 0;
+
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	l = 0;
+	p = d;
+	if (htc->pipeline_b) {
+		l = htc->pipeline_e - htc->pipeline_b;
+		assert(l > 0);
+		if (l > len)
+			l = len;
+		memcpy(p, htc->pipeline_b, l);
+		p += l;
+		len -= l;
+		htc->pipeline_b += l;
+		if (htc->pipeline_b == htc->pipeline_e)
+			htc->pipeline_b = htc->pipeline_e = NULL;
+	}
+	if (len > 0) {
+		i = read(htc->fd, p, len);
+		if (i < 0) {
+			// XXX: VTCP_Assert(i); // but also: EAGAIN
+			VSLb(htc->vsl, SLT_FetchError, "%s", strerror(errno));
+			return (i);
+		}
+	}
+	return (i + l);
+}
+
+
+/*--------------------------------------------------------------------
  * Read a chunked HTTP object.
  *
  * XXX: Reading one byte at a time is pretty pessimal.
@@ -72,7 +110,7 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 	if (vfe->priv2 == -1) {
 		/* Skip leading whitespace */
 		do {
-			lr = HTTP1_Read(htc, buf, 1);
+			lr = v1f_read(htc, buf, 1);
 			if (lr <= 0)
 				return (VFP_Error(vc, "chunked read err"));
 		} while (vct_islws(buf[0]));
@@ -83,7 +121,7 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 		/* Collect hex digits, skipping leading zeros */
 		for (u = 1; u < sizeof buf; u++) {
 			do {
-				lr = HTTP1_Read(htc, buf + u, 1);
+				lr = v1f_read(htc, buf + u, 1);
 				if (lr <= 0)
 					return (VFP_Error(vc,
 					    "chunked read err"));
@@ -97,7 +135,7 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 
 		/* Skip trailing white space */
 		while(vct_islws(buf[u]) && buf[u] != '\n') {
-			lr = HTTP1_Read(htc, buf + u, 1);
+			lr = v1f_read(htc, buf + u, 1);
 			if (lr <= 0)
 				return (VFP_Error(vc, "chunked read err"));
 		}
@@ -119,7 +157,7 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 	if (vfe->priv2 > 0) {
 		if (vfe->priv2 < l)
 			l = vfe->priv2;
-		lr = HTTP1_Read(htc, ptr, l);
+		lr = v1f_read(htc, ptr, l);
 		if (lr <= 0)
 			return (VFP_Error(vc, "straight insufficient bytes"));
 		*lp = lr;
@@ -129,10 +167,10 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 		return (VFP_OK);
 	}
 	AZ(vfe->priv2);
-	i = HTTP1_Read(htc, buf, 1);
+	i = v1f_read(htc, buf, 1);
 	if (i <= 0)
 		return (VFP_Error(vc, "chunked read err"));
-	if (buf[0] == '\r' && HTTP1_Read(htc, buf, 1) <= 0)
+	if (buf[0] == '\r' && v1f_read(htc, buf, 1) <= 0)
 		return (VFP_Error(vc, "chunked read err"));
 	if (buf[0] != '\n')
 		return (VFP_Error(vc, "chunked tail no NL"));
@@ -167,7 +205,7 @@ v1f_pull_straight(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 		return (VFP_END);
 	if (vfe->priv2 < l)
 		l = vfe->priv2;
-	lr = HTTP1_Read(htc, p, l);
+	lr = v1f_read(htc, p, l);
 	if (lr <= 0)
 		return (VFP_Error(vc, "straight insufficient bytes"));
 	*lp = lr;
@@ -185,8 +223,7 @@ static const struct vfp v1f_straight = {
 /*--------------------------------------------------------------------*/
 
 static enum vfp_status __match_proto__(vfp_pull_f)
-v1f_pull_eof(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
-    ssize_t *lp)
+v1f_pull_eof(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p, ssize_t *lp)
 {
 	ssize_t l, lr;
 	struct http_conn *htc;
@@ -200,7 +237,7 @@ v1f_pull_eof(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 
 	l = *lp;
 	*lp = 0;
-	lr = HTTP1_Read(htc, p, l);
+	lr = v1f_read(htc, p, l);
 	if (lr < 0)
 		return (VFP_Error(vc, "eof socket fail"));
 	if (lr == 0)
