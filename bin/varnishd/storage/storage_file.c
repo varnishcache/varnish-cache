@@ -108,7 +108,6 @@ smf_initfile(struct smf_sc *sc, const char *size)
 	/* XXX: force block allocation here or in open ? */
 }
 
-static const char default_size[] = "100M";
 static const char default_filename[] = ".";
 
 static void
@@ -122,7 +121,7 @@ smf_init(struct stevedore *parent, int ac, char * const *av)
 	AZ(av[ac]);
 
 	fn = default_filename;
-	size = default_size;
+	size = NULL;
 	page_size = getpagesize();
 
 	if (ac > 3)
@@ -139,7 +138,6 @@ smf_init(struct stevedore *parent, int ac, char * const *av)
 	}
 
 	AN(fn);
-	AN(size);
 
 	ALLOC_OBJ(sc, SMF_SC_MAGIC);
 	XXXAN(sc);
