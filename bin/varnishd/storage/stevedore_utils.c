@@ -196,6 +196,9 @@ STV_FileSize(int fd, const char *size, unsigned *granularity, const char *ctx)
 		 * use its existing size.
 		 */
 		l = st.st_size;
+	} else if (size == NULL || *size == '\0') {
+		ARGV_ERR("(%s) no size specified\n",
+		    ctx);
 	} else {
 		AN(size);
 		q = VNUM_2bytes(size, &l, fssize);
