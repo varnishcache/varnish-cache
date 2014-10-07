@@ -42,12 +42,12 @@ digraph cache_fetch {
 				    {{retry|{<max>max?|<retry>ok?}}|
 				    abandon|
 				    {deliver|{<fetch_304>304?|
-					    <fetch_body>body?}}}}"
+					    <non_304>other?}}}}"
 		]
 		v_b_r:retry -> v_b_r_retry [color=purple]
 		v_b_r:max -> v_b_e
 		v_b_r:fetch_304:s -> vbf_stp_condfetch
-		v_b_r:fetch_body:s -> vbf_stp_fetch
+		v_b_r:non_304:s -> vbf_stp_fetch
 
 		v_b_r_retry [label="RETRY",shape=plaintext]
 
@@ -75,6 +75,9 @@ digraph cache_fetch {
 
 		]
 		vbf_stp_condfetch:ok:s -> FETCH_DONE
+
+		error [shape=plaintext]
+		error -> FETCH_FAIL
 
 		/* vbf_stp_error */
 		v_b_e [
