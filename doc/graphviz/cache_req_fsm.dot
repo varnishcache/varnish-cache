@@ -183,7 +183,7 @@ digraph cache_req_fsm {
 		]
 		pipe_do [
 			 shape=ellipse
-			 label="send bereq.\ncopy bytes until close"
+			 label="send bereq,\ncopy bytes until close"
 		]
 		pipe:pipe -> pipe_do [style=bold,color=orange]
 	}
