@@ -179,7 +179,19 @@ file
 
 syntax: file,path[,size[,granularity]]
 
-The file backend stores data in a file on disk. The file will be accessed using mmap.
+The file backend stores data in a file on disk. The file will be
+accessed using mmap.
+
+The path is mandatory. If path points to a directory, a temporary file
+will be created in that directory and immediately unlinked. If path
+points to a non-existing file, the file will be created.
+
+If size is omitted, and path points to an existing file with a size
+greater than zero, the size of that file will be used. If not, an
+error is reported.
+
+Granularity sets the allocation block size. Defaults to the system
+page size or the filesystem block size, whichever is larger.
 
 persistent (experimental)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
