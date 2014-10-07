@@ -171,7 +171,6 @@ usage(void)
 #ifdef HAVE_LIBUMEM
 	fprintf(stderr, FMT, "", "  -s umem");
 #endif
-	fprintf(stderr, FMT, "", "  -s file  [default: use /tmp]");
 	fprintf(stderr, FMT, "", "  -s file,<dir_or_file>");
 	fprintf(stderr, FMT, "", "  -s file,<dir_or_file>,<size>");
 	fprintf(stderr, FMT, "",

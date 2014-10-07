@@ -112,7 +112,7 @@ OPTIONS
 -s [name=]type[,options]
             Use the specified storage backend. The storage backends can be one of the following:
                * malloc[,size]
-               * file[,path[,size[,granularity]]]
+               * file,path[,size[,granularity]]
                * persistent,path,size
 
             See Storage Types in the Users Guide for more information
@@ -177,7 +177,7 @@ malloc is a memory based backend.
 file
 ~~~~
 
-syntax: file[,path[,size[,granularity]]]
+syntax: file,path[,size[,granularity]]
 
 The file backend stores data in a file on disk. The file will be accessed using mmap.
 

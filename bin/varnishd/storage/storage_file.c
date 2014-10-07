@@ -108,8 +108,6 @@ smf_initfile(struct smf_sc *sc, const char *size)
 	/* XXX: force block allocation here or in open ? */
 }
 
-static const char default_filename[] = ".";
-
 static void
 smf_init(struct stevedore *parent, int ac, char * const *av)
 {
@@ -120,14 +118,15 @@ smf_init(struct stevedore *parent, int ac, char * const *av)
 
 	AZ(av[ac]);
 
-	fn = default_filename;
+	fn = NULL;
 	size = NULL;
 	page_size = getpagesize();
 
 	if (ac > 3)
 		ARGV_ERR("(-sfile) too many arguments\n");
-	if (ac > 0 && *av[0] != '\0')
-		fn = av[0];
+	if (ac < 1 || *av[0] == '\0')
+		ARGV_ERR("(-sfile) path is mandatory\n");
+	fn = av[0];
 	if (ac > 1 && *av[1] != '\0')
 		size = av[1];
 	if (ac > 2 && *av[2] != '\0') {
