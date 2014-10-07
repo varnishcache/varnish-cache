@@ -1,0 +1,41 @@
+varnishtest "Test stale-while-revalidate"
+
+server s1 {
+	rxreq
+	txresp -hdr "Cache-Control: max-age=30, stale-while-revalidate=30"
+	rxreq
+	txresp -hdr "Cache-Control: max-age=0, stale-while-revalidate=30"
+	rxreq
+	txresp -hdr "Cache-Control: max-age=30, stale-while-revalidate=30" -hdr "Age: 40"
+	rxreq
+	txresp -status 500 -hdr "Cache-Control: max-age=30, stale-while-revalidate=30"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.http.grace = beresp.grace;
+		set beresp.http.ttl = beresp.ttl;
+	}
+} -start
+
+client c1 {
+	txreq -url /1
+	rxresp
+	expect resp.http.grace == 30.000
+	expect resp.http.ttl == 30.000
+
+	txreq -url /2
+	rxresp
+	expect resp.http.grace == 30.000
+	expect resp.http.ttl == 0.000
+
+	txreq -url /3
+	rxresp
+	expect resp.http.grace == 30.000
+	expect resp.http.ttl == -10.000
+
+	txreq -url /4
+	rxresp
+	expect resp.http.grace == 10.000
+	expect resp.http.ttl == 0.000
+} -run

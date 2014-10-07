@@ -275,3 +275,35 @@ RFC2616_Vary_AE(struct http *hp)
 		http_SetHeader(hp, "Vary: Accept-Encoding");
 	}
 }
+
+/*
+ * RFC5861 outlines a way to control the use of stale responses.
+ * We use this to initialize the grace period.
+ */
+
+void
+RFC5861_Stale(const struct busyobj *bo)
+{
+	const char *p;
+	const struct http *hp;
+	struct exp *expp;
+
+	expp = &bo->fetch_objcore->exp;
+
+	/*
+	 * If we are not meant to cache this ignore any potential
+	 * stale-while-revalidate values.
+	 */
+	if (expp->ttl < 0.)
+		return;
+
+	hp = bo->beresp;
+
+	if (http_GetHdrField(hp, H_Cache_Control,
+	    "stale-while-revalidate", &p) && p != NULL) {
+		if (*p == '-')
+			expp->grace = 0;
+		else
+			expp->grace = strtoul(p, NULL, 0);
+	}
+}
