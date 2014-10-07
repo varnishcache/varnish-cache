@@ -40,6 +40,7 @@
 #include "storage/storage.h"
 
 #include "vnum.h"
+#include "vfil.h"
 
 #ifndef MAP_NOCORE
 #define MAP_NOCORE 0 /* XXX Linux */
@@ -99,16 +100,6 @@ struct smf_sc {
 /*--------------------------------------------------------------------*/
 
 static void
-smf_initfile(struct smf_sc *sc, const char *size)
-{
-	sc->filesize = STV_FileSize(sc->fd, size, &sc->pagesize, "-sfile");
-
-	AZ(ftruncate(sc->fd, (off_t)sc->filesize));
-
-	/* XXX: force block allocation here or in open ? */
-}
-
-static void
 smf_init(struct stevedore *parent, int ac, char * const *av)
 {
 	const char *size, *fn, *r;
@@ -149,9 +140,10 @@ smf_init(struct stevedore *parent, int ac, char * const *av)
 	parent->priv = sc;
 
 	(void)STV_GetFile(fn, &sc->fd, &sc->filename, "-sfile");
-
 	mgt_child_inherit(sc->fd, "storage_file");
-	smf_initfile(sc, size);
+	sc->filesize = STV_FileSize(sc->fd, size, &sc->pagesize, "-sfile");
+	if (VFIL_allocate(sc->fd, (off_t)sc->filesize, 0))
+		ARGV_ERR("(-sfile) allocation error: %s\n", strerror(errno));
 }
 
 /*--------------------------------------------------------------------
