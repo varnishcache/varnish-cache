@@ -176,7 +176,7 @@ usage(void)
 	fprintf(stderr, FMT, "", "  -s file,<dir_or_file>,<size>");
 	fprintf(stderr, FMT, "",
 	    "  -s file,<dir_or_file>,<size>,<granularity>");
-	fprintf(stderr, FMT, "", "  -s persist{experimenta}");
+	fprintf(stderr, FMT, "", "  -s persist{experimental}");
 	fprintf(stderr, FMT, "-S secret-file",
 	    "Secret file for CLI authentication");
 	fprintf(stderr, FMT, "-T address:port",
