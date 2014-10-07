@@ -47,6 +47,7 @@
 #include "flopen.h"
 #include "vapi/vsm_int.h"
 #include "vmb.h"
+#include "vfil.h"
 
 #ifndef MAP_HASSEMAPHORE
 #define MAP_HASSEMAPHORE 0 /* XXX Linux */
@@ -147,8 +148,6 @@ static int
 vsm_zerofile(const char *fn, ssize_t size)
 {
 	int fd;
-	ssize_t i, u;
-	char buf[64*1024];
 	int flags;
 
 	fd = flopen(fn, O_RDWR | O_CREAT | O_EXCL | O_NONBLOCK, 0644);
@@ -161,18 +160,11 @@ vsm_zerofile(const char *fn, ssize_t size)
 	assert(flags != -1);
 	flags &= ~O_NONBLOCK;
 	AZ(fcntl(fd, F_SETFL, flags));
-
-	memset(buf, 0, sizeof buf);
-	for (u = 0; u < size; ) {
-		i = write(fd, buf, sizeof buf);
-		if (i <= 0) {
-			fprintf(stderr, "Write error %s: %s\n",
-			    fn, strerror(errno));
-			return (-1);
-		}
-		u += i;
+	if (VFIL_allocate(fd, (off_t)size, 1)) {
+		fprintf(stderr, "File allocation error %s: %s\n",
+		    fn, strerror(errno));
+		return (-1);
 	}
-	AZ(ftruncate(fd, (off_t)size));
 	return (fd);
 }
 
