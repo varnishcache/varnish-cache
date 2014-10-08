@@ -97,7 +97,7 @@
 
 #define CLI_VCL_SHOW							\
 	"vcl.show",							\
-	"vcl.show <configname>",					\
+	"vcl.show [-v] <configname>",					\
 	"\tDisplay the source code for the specified configuration.",	\
 	1, 2
 
