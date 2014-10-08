@@ -166,6 +166,21 @@ Example::
         std.log("foo");
     }
 
+Comments
+--------
+
+Single lines of VCL can be commented out using // or #. Multi-line blocks can
+be commented out with \/\* block \/\*.
+
+Example::
+
+    sub vcl_recv {
+        // Single line of out-commented VCL.
+        # Another way of commenting out a single line.
+        /*
+            Multi-line block of commented-out VCL.
+        */
+    }
 
 
 Backend definition
