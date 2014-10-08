@@ -1,3 +1,11 @@
+============================================
+Changes from 4.0.2-rc1 to 4.0.2 (2014-10-08)
+============================================
+
+New since 4.0.2-rc1:
+
+- [varnishlog] -k argument is back. (exit after n records)
+- [varnishadm] vcl.show is now listed in help.
 
 ============================================
 Changes from 4.0.1 to 4.0.2-rc1 (2014-09-23)
