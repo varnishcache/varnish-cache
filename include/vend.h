@@ -30,6 +30,7 @@
  */
 
 #ifndef VEND_H_INCLUDED
+#define VEND_H_INCLUDED
 
 /* Alignment-agnostic encode/decode bytestream to/from little/big endian. */
 
