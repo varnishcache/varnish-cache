@@ -1,3 +1,106 @@
+============================================
+Changes from 4.0.2-rc1 to 4.0.2 (2014-10-08)
+============================================
+
+New since 4.0.2-rc1:
+
+- [varnishlog] -k argument is back. (exit after n records)
+- [varnishadm] vcl.show is now listed in help.
+
+============================================
+Changes from 4.0.1 to 4.0.2-rc1 (2014-09-23)
+============================================
+
+New since 4.0.1:
+
+- [libvmod-std] New function strstr() for matching substrings.
+- server.(hostname|identity) is now available in all VCL functions.
+- VCL variable type BYTES was added.
+- `workspace_client` default is now 9k.
+- [varnishstat] Update interval can now be subsecond.
+- Document that reloading VCL does not reload a VMOD.
+- Guru meditation page is now valid HTML5.
+- [varnishstat] hitrate calculation is back.
+- New parameter `group_cc` adds a GID to the grouplist of
+  VCL compiler sandbox.
+- Parameter shm_reclen is now an alias for vsl_reclen.
+- Workspace overflows are now handled with a 500 client response.
+- VCL variable type added: HTTP, representing a HTTP header set.
+- It is now possible to return(synth) from vcl_deliver.
+- [varnishadm] vcl.show now has a -v option that output the
+  complete set of VCL and included VCL files.
+- RHEL7 packaging (systemd) was added.
+- [libvmod-std] querysort() fixed parameter limit has been lifted.
+- Fix small memory leak in ESI parser.
+- Fix unreported race/assert in V1D_Deliver().
+
+Bugs fixed
+----------
+
+* 1553_ - Fully reset workspace (incl. Vary state) before reusing it.
+* 1551_ - Handle workspace exhaustion during purge.
+* 1591_ - Group entries correctly in varnishtop.
+* 1592_ - Bail out on workspace exhaustion in VRT_IP_string.
+* 1538_ - Relax VMOD ABI check for release branches.
+* 1584_ - Don't log garbage/non-HTTP requests. [varnishncsa]
+* 1407_ - Don't rename VSM file until child has started.
+* 1466_ - Don't leak request structs on restart after waitinglist.
+* 1580_ - Output warning if started without -b and -f. [varnishd]
+* 1583_ - Abort on fatal sandbox errors on Solaris. (Related: 1572_)
+* 1585_ - Handle fatal sandbox errors.
+* 1572_ - Exit codes have been cleaned up.
+* 1569_ - Order of symbols should not influence compilation result.
+* 1579_ - Clean up type inference in VCL.
+* 1578_ - Don't count Age twice when computing new object TTL.
+* 1574_ - std.syslog() logged empty strings.
+* 1555_ - autoconf editline/readline build issue.
+* 1568_ - Skip NULL arguments when hashing.
+* 1567_ - Compile on systems without SO_SNDTIMEO/SO_RCVTIMEO.
+* 1512_ - Changes to bereq are lost between v_b_r and v_b_f.
+* 1563_ - Increase varnishtest read timeout.
+* 1562_ - Fail correctly when rereading a failed client request body.
+* 1521_ - VCL compilation fails on OSX x86_64.
+* 1547_ - Panic when increasing shm_reclen.
+* 1503_ - Document return(retry).
+* 1581_ - Don't log duplicate Begin records to shmlog.
+* 1588_ - Correct timestamps on pipelined requests.
+* 1575_ - Use all director backends when looking for a healthy one.
+* 1577_ - Read the full request body if shunted to synth.
+* 1532_ - Use correct VCL representation of reals.
+* 1531_ - Work around libedit bug in varnishadm.
+
+.. _1553: https://www.varnish-cache.org/trac/ticket/1553
+.. _1551: https://www.varnish-cache.org/trac/ticket/1551
+.. _1591: https://www.varnish-cache.org/trac/ticket/1591
+.. _1592: https://www.varnish-cache.org/trac/ticket/1592
+.. _1538: https://www.varnish-cache.org/trac/ticket/1538
+.. _1584: https://www.varnish-cache.org/trac/ticket/1584
+.. _1407: https://www.varnish-cache.org/trac/ticket/1407
+.. _1466: https://www.varnish-cache.org/trac/ticket/1466
+.. _1580: https://www.varnish-cache.org/trac/ticket/1580
+.. _1583: https://www.varnish-cache.org/trac/ticket/1583
+.. _1585: https://www.varnish-cache.org/trac/ticket/1585
+.. _1572: https://www.varnish-cache.org/trac/ticket/1572
+.. _1569: https://www.varnish-cache.org/trac/ticket/1569
+.. _1579: https://www.varnish-cache.org/trac/ticket/1579
+.. _1578: https://www.varnish-cache.org/trac/ticket/1578
+.. _1574: https://www.varnish-cache.org/trac/ticket/1574
+.. _1555: https://www.varnish-cache.org/trac/ticket/1555
+.. _1568: https://www.varnish-cache.org/trac/ticket/1568
+.. _1567: https://www.varnish-cache.org/trac/ticket/1567
+.. _1512: https://www.varnish-cache.org/trac/ticket/1512
+.. _1563: https://www.varnish-cache.org/trac/ticket/1563
+.. _1562: https://www.varnish-cache.org/trac/ticket/1562
+.. _1521: https://www.varnish-cache.org/trac/ticket/1521
+.. _1547: https://www.varnish-cache.org/trac/ticket/1547
+.. _1503: https://www.varnish-cache.org/trac/ticket/1503
+.. _1581: https://www.varnish-cache.org/trac/ticket/1581
+.. _1588: https://www.varnish-cache.org/trac/ticket/1588
+.. _1575: https://www.varnish-cache.org/trac/ticket/1575
+.. _1577: https://www.varnish-cache.org/trac/ticket/1577
+.. _1532: https://www.varnish-cache.org/trac/ticket/1532
+.. _1531: https://www.varnish-cache.org/trac/ticket/1531
+
 
 ========================================
 Changes from 4.0.0 to 4.0.1 (2014-06-24)
