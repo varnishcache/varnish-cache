@@ -604,19 +604,21 @@ sp_variables = [
 		'DURATION',
 		( 'hit', ),
 		( ), """
-		The object's grace period in seconds.
+		The object's remaining grace period in seconds.
 		"""
 	),
 	('obj.keep',
 		'DURATION',
 		( 'hit', ),
 		( ), """
+		The object's remaining keep period in seconds.
 		"""
 	),
 	('obj.uncacheable',
 		'BOOL',
 		( 'hit', ),
 		( ), """
+		Whether the object is uncacheable (aka hit-for-pass)
 		"""
 	),
 	('resp',
