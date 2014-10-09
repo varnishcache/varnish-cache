@@ -73,7 +73,7 @@ of the following keywords:
   synth(status code, reason)
     Return the specified status code to the client and abandon the request.
 
-  pass
+  fetch
     Proceed with pass mode.
 
   restart
