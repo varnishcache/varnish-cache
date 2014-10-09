@@ -468,6 +468,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	if (q != NULL)
 		VSB_printf(pan_vsp, "thread = (%s)\n", q);
 
+	VSB_printf(pan_vsp, "version = %s\n", VCS_version);
 	VSB_printf(pan_vsp, "ident = %s,%s\n",
 	    VSB_data(vident) + 1, WAIT_GetName());
 
