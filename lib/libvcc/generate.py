@@ -360,6 +360,16 @@ sp_variables = [
 		'BOOL',
 		( 'backend', ),
 		( 'backend', ), """
+		Indicates whether the object requested from the backend is
+		going to be uncacheable - either because the request was an
+		explicit pass from the client side or a hit on an uncacheable
+		("hit for pass") object.
+
+		Setting this variable in vcl_backend_fetch makes the object
+		uncacheable.
+
+		Clearing the variable has no effect and will log the warning
+		"Ignoring attempt to reset bereq.uncacheable".
 		"""
 	),
 	('bereq.connect_timeout',
@@ -461,6 +471,13 @@ sp_variables = [
 		'BOOL',
 		( 'backend_response', 'backend_error'),
 		( 'backend_response', 'backend_error'), """
+		Inherited from bereq.uncacheable, see there.
+
+		Setting this variable makes the object uncacheable, which may
+		get stored as a hit-for-pass object in the cache.
+
+		Clearing the variable has no effect and will log the warning
+		"Ignoring attempt to reset beresp.uncacheable".
 		"""
 	),
 	('beresp.ttl',
