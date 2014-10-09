@@ -58,6 +58,7 @@ Bugs fixed
 * 1567_ - Compile on systems without SO_SNDTIMEO/SO_RCVTIMEO.
 * 1512_ - Changes to bereq are lost between v_b_r and v_b_f.
 * 1563_ - Increase varnishtest read timeout.
+* 1561_ - Never call a VDP with zero length unless done.
 * 1562_ - Fail correctly when rereading a failed client request body.
 * 1521_ - VCL compilation fails on OSX x86_64.
 * 1547_ - Panic when increasing shm_reclen.
@@ -90,6 +91,7 @@ Bugs fixed
 .. _1567: https://www.varnish-cache.org/trac/ticket/1567
 .. _1512: https://www.varnish-cache.org/trac/ticket/1512
 .. _1563: https://www.varnish-cache.org/trac/ticket/1563
+.. _1561: https://www.varnish-cache.org/trac/ticket/1561
 .. _1562: https://www.varnish-cache.org/trac/ticket/1562
 .. _1521: https://www.varnish-cache.org/trac/ticket/1521
 .. _1547: https://www.varnish-cache.org/trac/ticket/1547
