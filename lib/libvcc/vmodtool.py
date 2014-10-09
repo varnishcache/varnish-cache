@@ -366,8 +366,6 @@ class Func(object):
 		for a in self.al:
 			s += p + ctypes[a.typ]
 			p = ", "
-			if a.nam != None:
-				s += " " + a.nam
 		s += ");"
 		return s
 
