@@ -38,7 +38,7 @@
  *				'c' - Counter, never decreases.
  *				'g' - Gauge, goes up and down
  *				'i' - Integer (deprecated, use 'g')
- *    e - Explantion:	Short explanation of field (for screen use)
+ *    e - Explanation:	Short explanation of field (for screen use)
  *    d - Description:	Long explanation of field (for doc use)
  *
  * Please describe Gauge variables as "Number of..." to indicate that
@@ -73,7 +73,7 @@ VSC_F(uptime,			uint64_t, 0, 'a', info,
 
 VSC_F(sess_conn,		uint64_t, 1, 'c', info,
     "Sessions accepted",
-	"Count of sessions succesfully accepted"
+	"Count of sessions successfully accepted"
 )
 
 VSC_F(sess_drop,		uint64_t, 1, 'c', info,
@@ -85,7 +85,7 @@ VSC_F(sess_fail,		uint64_t, 1, 'c', info,
     "Session accept failures",
 	"Count of failures to accept TCP connection."
 	"  Either the client changed its mind, or the kernel ran out of"
-	" some resource like filedescriptors."
+	" some resource like file descriptors."
 )
 
 VSC_F(sess_pipe_overflow,	uint64_t, 1, 'c', info,
@@ -108,7 +108,7 @@ VSC_F(client_req_411,		uint64_t, 1, 'a', info,
 
 VSC_F(client_req_413,		uint64_t, 1, 'a', info,
     "Client requests received, subject to 413 errors",
-	"413 means that HTTP headers execeeded length or count limits."
+	"413 means that HTTP headers exceeded length or count limits."
 )
 
 VSC_F(client_req_417,		uint64_t, 1, 'a', info,
@@ -389,7 +389,7 @@ VSC_F(s_resp_hdrbytes,		uint64_t, 1, 'a', info,
 	"Total response header bytes transmitted"
 )
 VSC_F(s_resp_bodybytes,		uint64_t, 1, 'a', info,
-    "Reponse body bytes",
+    "Response body bytes",
 	"Total response body bytes transmitted"
 )
 VSC_F(s_pipe_hdrbytes,		uint64_t, 0, 'a', info,
