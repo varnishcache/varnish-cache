@@ -6,7 +6,6 @@
 SIZE	      = 8.4,11.7
 
 if HAVE_DOT
-if HAVE_PS2PDF
 
 PDFS = \
 	cache_http1_fsm.pdf \
@@ -16,10 +15,6 @@ PDFS = \
 pdf: $(PDFS)
 
 endif
-endif
 
-%.ps: %.dot
-	@DOT@ -Tps -Gsize=$(SIZE) $< >$@
-
-%.pdf: %.ps
-	@PS2PDF@ $<
+%.pdf: %.dot
+	@DOT@ -Tpdf -Gsize=$(SIZE) $< >$@

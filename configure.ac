@@ -81,17 +81,6 @@ AC_ARG_WITH([dot],
    fi])
 AM_CONDITIONAL(HAVE_DOT,[test "x$DOT" != "xno"])
 
-AC_ARG_WITH([ps2pdf],
-  AS_HELP_STRING([--with-ps2pdf=PATH],
-		 [Location of the ps2pdf tool from ghostscript (auto)]),
-  [PS2PDF="$withval"],
-  [AC_CHECK_PROGS(PS2PDF, [ps2pdf], [no])
-   if test "x$PS2PDF" = "xno"; then
-     AC_MSG_WARN(
-       [ps2pdf not found - can't generate graphviz output for documentation.])
-   fi])
-AM_CONDITIONAL(HAVE_PS2PDF,[test "x$PS2PDF" != "xno"])
-
 # Checks for libraries.
 save_LIBS="${LIBS}"
 LIBS=""
