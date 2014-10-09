@@ -360,7 +360,7 @@ sp_variables = [
 	('bereq.uncacheable',
 		'BOOL',
 		( 'backend', ),
-		( 'backend', ), """
+		( 'backend_fetch', ), """
 		Indicates whether the object requested from the backend is
 		going to be uncacheable - either because the request was an
 		explicit pass from the client side or a hit on an uncacheable
