@@ -499,6 +499,13 @@ sp_variables = [
 		'DURATION',
 		( 'backend_response', 'backend_error'),
 		( 'backend_response', 'backend_error'), """
+		Set to a period to enable conditional backend requests.
+
+		The keep time is cache lifetime in addition to the ttl.
+
+		Objects with ttl expired but with keep time left may be used
+		to issue conditional (If-Modified-Since / If-None-Match)
+		requests to the backend to refresh them.
 		"""
 	),
 	('beresp.backend.name',
