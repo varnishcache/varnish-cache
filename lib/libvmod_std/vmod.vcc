@@ -41,25 +41,25 @@ which all have the form::
 These functions attempt to convert STRING to the TYPE, and if that fails,
 they return the second argument, which must have the given TYPE.
 
-$Function STRING toupper(STRING_LIST)
+$Function STRING toupper(STRING_LIST s)
 
 Description
-	Converts the string *s* to upper case.
+	Converts the string *s* to uppercase.
 Example
 	set beresp.http.x-scream = std.toupper("yes!");
 
-$Function STRING tolower(STRING_LIST)
+$Function STRING tolower(STRING_LIST s)
 
 Description
-	Converts the string *s* to lower case.
+	Converts the string *s* to lowercase.
 Example
 	set beresp.http.x-nice = std.tolower("VerY");
 
-$Function VOID set_ip_tos(INT)
+$Function VOID set_ip_tos(INT tos)
 
 Description
-	Sets the Type-of-Service flag for the current session. Please
-	note that the TOS flag is not removed by the end of the
+	Sets the IP type-of-service (TOS) field for the current session to *tos*.
+	Please note that the TOS field is not removed by the end of the
 	request so probably want to set it on every request should you
 	utilize it.
 Example
@@ -67,24 +67,24 @@ Example
 	|    std.set_ip_tos(0x0);
 	| }
 
-$Function REAL random(REAL, REAL)
+$Function REAL random(REAL lo, REAL hi)
 
 Description
-	Returns a random REAL number between *a* and *b*.
+	Returns a random real number between *lo* and *hi*.
 Example
 	set beresp.http.x-random-number = std.random(1, 100);
 
-$Function VOID log(STRING_LIST)
+$Function VOID log(STRING_LIST s)
 
 Description
-	Logs *string* to the shared memory log, using VSL tag *SLT_VCL_Log*.
+	Logs the string *s* to the shared memory log, using VSL tag *SLT_VCL_Log*.
 Example
 	std.log("Something fishy is going on with the vhost " + req.host);
 
-$Function VOID syslog(INT, STRING_LIST)
+$Function VOID syslog(INT priority, STRING_LIST s)
 
 Description
-	Logs *string* to syslog marked with *priority*.  See your
+	Logs the string *s* to syslog marked with *priority*.  See your
 	system's syslog.h file for the legal values of *priority*.
 Example
 	std.syslog(8 + 1, "Something is wrong");
@@ -99,132 +99,133 @@ Description
 Example
 	set beresp.http.x-served-by = std.fileread("/etc/hostname");
 
-$Function VOID collect(HEADER)
+$Function VOID collect(HEADER hdr)
 
 Description
-	Collapses the header, joining the headers into one.
+	Collapses the header *hdr*, joining them into one.
 Example
 	std.collect(req.http.cookie);
+
 	This will collapse several Cookie: headers into one, long
 	cookie header.
 
-$Function DURATION duration(STRING, DURATION)
+$Function DURATION duration(STRING s, DURATION fallback)
 
 Description
 	Converts the string *s* to seconds. *s* must be quantified
 	with ms (milliseconds), s (seconds), m (minutes), h (hours),
-	d (days), w (weeks) or y (years) units. If *s* fails to parse,
+	d (days), w (weeks) or y (years) units. If conversion fails,
 	*fallback* will be returned.
 Example
 	set beresp.ttl = std.duration("1w", 3600s);
 
-$Function INT integer(STRING, INT)
+$Function INT integer(STRING s, INT fallback)
 
 Description
-	Converts the string *s* to an integer.  If *s* fails to parse,
+	Converts the string *s* to an integer.	If conversion fails,
 	*fallback* will be returned.
 Example
-	if (std.integer(beresp.http.x-foo, 0) > 5) { ... }
+	| if (std.integer(beresp.http.x-foo, 0) > 5) {
+	| 	...
+	| }
 
-$Function IP ip(STRING, IP)
+$Function IP ip(STRING s, IP fallback)
 
 Description
-	Converts string *s* to the first IP number returned by
+	Converts the string *s* to the first IP number returned by
 	the system library function getaddrinfo(3).  If conversion
 	fails, *fallback* will be returned.
 Example
-	if (std.ip(req.http.X-forwarded-for, "0.0.0.0") ~ my_acl) { ... }
+	| if (std.ip(req.http.X-forwarded-for, "0.0.0.0") ~ my_acl) {
+	| 	...
+	| }
 
-$Function REAL real(STRING, REAL)
+$Function REAL real(STRING s, REAL fallback)
 
 Description
-	Converts the string *s* to a real.  If *s* fails to parse,
+	Converts the string *s* to a real.  If conversion fails,
 	*fallback* will be returned.
 Example
 	set req.http.x-real = std.real(req.http.x-foo, 0.0);
 
-$Function TIME real2time(REAL)
+$Function TIME real2time(REAL r)
 
 Description
 	Converts the real *r* to a time.
 Example
 	set req.http.x-time = std.real2time(1140618699.00);
 
-$Function INT time2integer(TIME)
+$Function INT time2integer(TIME t)
 
 Description
 	Converts the time *t* to a integer.
 Example
 	set req.http.x-int = std.time2integer(now);
 
-$Function REAL time2real(TIME)
+$Function REAL time2real(TIME t)
 
 Description
 	Converts the time *t* to a real.
 Example
 	set req.http.x-real = std.time2real(now);
 
-$Function BOOL healthy(BACKEND)
+$Function BOOL healthy(BACKEND be)
 
 Description
-	Returns true if the backend is healthy.
+	Returns `true` if the backend *be* is healthy.
 
-$Function INT port(IP)
-
-Description
-	Returns the port number of an IP address.
-
-$Function VOID rollback(HTTP)
+$Function INT port(IP ip)
 
 Description
-	Restore *h* HTTP headers to their original state.
+	Returns the port number of the IP address *ip*.
+
+$Function VOID rollback(HTTP h)
+
+Description
+	Restores the *h* HTTP headers to their original state.
 Example
 	std.rollback(bereq);
 
-$Function VOID timestamp(STRING)
+$Function VOID timestamp(STRING s)
 
 Description
-	Introduces a timestamp in the log with the current time. Uses
-	the argument as the timespamp label. This is useful to time
-	the execution of lengthy VCL procedures, and makes the
-	timestamps inserted automatically by Varnish more accurate.
+	Introduces a timestamp in the log with the current time, using
+	the string *s* as the label. This is useful to time the execution
+	of lengthy VCL procedures, and makes the timestamps inserted
+	automatically by Varnish more accurate.
 Example
 	std.timestamp("curl-request");
 
 $Function STRING querysort(STRING)
 
 Description
-        Sorts the querystring for cache normalization purposes.
+	Sorts the query string for cache normalization purposes.
 Example
         set req.url = std.querysort(req.url);
 
-$Function VOID cache_req_body(BYTES)
+$Function VOID cache_req_body(BYTES size)
 
 Description
-	Cache the req.body if it is smaller than the given size
+	Cache the req.body if it is smaller than *size*.
+
+	Caching the req.body makes it possible to retry pass
+	operations (POST, PUT).
 Example
 	std.cache_req_body(1KB);
 
 	This will cache the req.body if its size is smaller than 1KB.
 
-	Caching the req.body makes it possible to retry pass
-	operations (POST, PUT).
-	
-
-$Function STRING strstr(STRING, STRING)
+$Function STRING strstr(STRING s1, STRING s2)
 
 Description
-	Returns the substring if the second string is a substring of the first
-	string. Note that the comparison is case sensitive. You can
-	use the tolower function on both strings if you want case
-	insensitivity.
-	
-        If there is no match a NULL pointer is returned which would
-        evaluate to false in an if-test.
+	Returns the first occurrence of the string *s2* in the string
+	*s1*, or an empty string if not found.
 
+	Note that the comparison is case sensitive.
 Example
-	if (std.strstr(req.url, req.http.x-restrict)) 
-
+	| if (std.strstr(req.url, req.http.x-restrict)) {
+	| 	...
+	| }
 
 
 SEE ALSO
