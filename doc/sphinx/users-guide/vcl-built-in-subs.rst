@@ -229,6 +229,23 @@ with one of the following keywords:
     the number of retries is higher than *max_retries* Varnish emits a
     guru meditation error.
 
+vcl_synth
+~~~~~~~~~
+
+Called to deliver a synthetic object. A synthetic object is generated
+in VCL, not fetched from the backend. It is typically contructed using
+the synthetic() function.
+
+
+The subroutine may terminate with calling ``return()`` with one of the
+following keywords:
+
+  deliver 
+    Deliver the object. If the object has a positive TTL then the
+    object is also stored in cache.
+
+  restart
+    Restart processing the object.
 
 vcl_init
 ~~~~~~~~
