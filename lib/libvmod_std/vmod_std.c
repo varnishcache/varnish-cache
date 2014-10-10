@@ -235,18 +235,19 @@ VCL_VOID __match_proto__(td_std_cache_req_body)
 vmod_cache_req_body(VRT_CTX, VCL_BYTES size)
 {
 	int result;
+
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	result = VRT_CacheReqBody(ctx, size);
-	VSLb(ctx->vsl, SLT_Debug,"VRT_CacheReqBody(%zu): %d", (size_t)size, result);
+	VSLb(ctx->vsl, SLT_Debug,"VRT_CacheReqBody(%zu): %d",
+	    (size_t)size, result);
 }
 
 VCL_STRING __match_proto__(td_std_strstr)
-vmod_strstr(VRT_CTX, VCL_STRING mstr, VCL_STRING msubstr)
+vmod_strstr(VRT_CTX, VCL_STRING s1, VCL_STRING s2)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-
-	if ((mstr == NULL) || (msubstr == NULL))
+	if (s1 == NULL || s2 == NULL)
 		return (NULL);
-	return(strstr(mstr, msubstr));
+	return (strstr(s1, s2));
 }
 
