@@ -1,4 +1,3 @@
-
 .. _vcl-built-in-subs:
 
 .. XXX:This document needs substantional review.
@@ -17,7 +16,7 @@ serve the request, how to do it, and, if applicable, which backend to
 use.
 
 It is also used to modify the request, something you'll probably find
-yourself doing frequently. 
+yourself doing frequently.
 
 The `vcl_recv` subroutine may terminate with calling ``return()`` on one
 of the following keywords:
@@ -37,7 +36,7 @@ of the following keywords:
     caching. Passes the control over to vcl_hash.
 
   purge
-    Purge the object and it's variants. Control passes through 
+    Purge the object and it's variants. Control passes through
     vcl_hash to vcl_purge.
 
 vcl_pipe
@@ -85,9 +84,10 @@ of the following keywords:
 vcl_hit
 ~~~~~~~
 
-Called when a cache lookup is successful. 
+Called when a cache lookup is successful.
 
-The `vcl_hit` subroutine may terminate with calling ``return()`` with one of the following keywords:
+The `vcl_hit` subroutine may terminate with calling ``return()``
+with one of the following keywords:
 
 
   restart
@@ -216,7 +216,7 @@ The `vcl_backend_response` subroutine may terminate with calling
 vcl_backend_error
 ~~~~~~~~~~~~~~~~~
 
-This subroutine is called if we fail the backend fetch. 
+This subroutine is called if we fail the backend fetch.
 
 The `vcl_backend_error` subroutine may terminate with calling ``return()``
 with one of the following keywords:
@@ -240,7 +240,7 @@ the synthetic() function.
 The subroutine may terminate with calling ``return()`` with one of the
 following keywords:
 
-  deliver 
+  deliver
     Deliver the object. If the object has a positive TTL then the
     object is also stored in cache.
 
