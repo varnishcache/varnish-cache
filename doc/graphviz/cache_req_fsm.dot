@@ -44,11 +44,11 @@ digraph cache_req_fsm {
 		/* cnt_deliver() */
 		deliver [
 			 shape=record
-			 label="
-			 {cnt_deliver:|
-				 Filter obj.-\>resp.|
-				 {vcl_deliver\{\}|
-				 {req.*|resp.*}}|
+			 label="\
+			 {cnt_deliver:|\
+				 Filter obj.-\>resp.|\
+				 {vcl_deliver\{\}|\
+				 {req.*|resp.*}}|\
 				 {restart|<deliver>deliver|<synth>synth}}"
 		]
 
@@ -66,9 +66,9 @@ digraph cache_req_fsm {
 	subgraph xcluster_synth {
 		synth [
 		       shape=record
-		       label="
-		       {cnt_synth:|
-			       {vcl_synth\{\}|{req.*|resp.*}}|
+		       label="\
+		       {cnt_synth:|\
+			       {vcl_synth\{\}|{req.*|resp.*}}|\
 			       {<del>deliver|<restart>restart}}"
 		]
 
@@ -108,23 +108,23 @@ digraph cache_req_fsm {
 			shape=record
 			color=grey
 			fontcolor=grey
-			label="
-			{<top>cnt_lookup:|
-				hash lookup|
-				{<h>hit?|
-					<miss>miss?|
-					<hfp>hit-for-pass?|
+			label="\
+			{<top>cnt_lookup:|\
+				hash lookup|\
+				{<h>hit?|\
+					<miss>miss?|\
+					<hfp>hit-for-pass?|\
 					<busy>busy?}}"
 		]
 		lookup2 [
 			 shape=record
-			 label="
-			 {<top>cnt_lookup:|
-				 {vcl_hit\{\}|{req.*|obj.*}}|
-				 {<deliver>deliver|
-					 <fetch>fetch|
-					 restart|
-					 synth|
+			 label="\
+			 {<top>cnt_lookup:|\
+				 {vcl_hit\{\}|{req.*|obj.*}}|\
+				 {<deliver>deliver|\
+					 <fetch>fetch|\
+					 restart|\
+					 synth|\
 					 <pass>pass}}"
 		]
 	}
@@ -145,12 +145,12 @@ digraph cache_req_fsm {
 	subgraph xcluster_miss {
 		miss [
 		      shape=record
-		      label="
-		      {cnt_miss:|
-			      {vcl_miss\{\}|req.*}|
-			      {<fetch>fetch|
-				      <synth>synth|
-				      <rst>restart|
+		      label="\
+		      {cnt_miss:|\
+			      {vcl_miss\{\}|req.*}|\
+			      {<fetch>fetch|\
+				      <synth>synth|\
+				      <rst>restart|\
 				      <pass>pass}}"
 		]
 	}
@@ -161,10 +161,10 @@ digraph cache_req_fsm {
 	subgraph xcluster_pass {
 		pass [
 		      shape=record
-		      label="{cnt_pass:|
-			      {vcl_pass\{\}|req.*}|
-			      {<fetch>fetch|
-				      <synth>synth|
+		      label="{cnt_pass:|\
+			      {vcl_pass\{\}|req.*}|\
+			      {<fetch>fetch|\
+				      <synth>synth|\
 				      <rst>restart}}"
 		]
 	}
@@ -174,11 +174,11 @@ digraph cache_req_fsm {
 	subgraph xcluster_pipe {
 		pipe [
 		      shape=record
-		      label="
-		      {cnt_pipe:|
-			      filter req.*-\>bereq.*|
-			      {vcl_pipe\{\}|{req.*|bereq.*}}|
-			      {<pipe>pipe|
+		      label="\
+		      {cnt_pipe:|\
+			      filter req.*-\>bereq.*|\
+			      {vcl_pipe\{\}|{req.*|bereq.*}}|\
+			      {<pipe>pipe|\
 				      <synth>synth}}"
 		]
 		pipe_do [
@@ -195,9 +195,9 @@ digraph cache_req_fsm {
 			shape=record
 			color=grey
 			fontcolor=grey
-			label="
-			 {cnt_restart:|
-				 {<ok>ok?|
+			label="\
+			 {cnt_restart:|\
+				 {<ok>ok?|\
 					 <max>max_restarts?}}"
 		]
 	}
@@ -210,21 +210,21 @@ digraph cache_req_fsm {
 	subgraph xcluster_recv {
 		recv [
 		      shape=record
-		      label="
-		      {cnt_recv:|
-			      {vcl_recv\{\}|req.*}|
-			      {<hash>hash|
-				      <purge>purge|
-				      <pass>pass|
-				      <pipe>pipe|
+		      label="\
+		      {cnt_recv:|\
+			      {vcl_recv\{\}|req.*}|\
+			      {<hash>hash|\
+				      <purge>purge|\
+				      <pass>pass|\
+				      <pipe>pipe|\
 				      <synth>synth}}"
 				      ]
 		recv:hash -> hash [style=bold,color=green]
 		hash [
 		      shape=record
-		      label="
-		      {cnt_recv:|
-			      {vcl_hash\{\}|req.*}|
+		      label="\
+		      {cnt_recv:|\
+			      {vcl_hash\{\}|req.*}|\
 			      {<lookup>lookup}}"]
 	}
 	recv:pipe -> pipe [style=bold,color=orange]
@@ -237,10 +237,10 @@ digraph cache_req_fsm {
 	subgraph xcluster_purge {
 		purge [
 		       shape=record
-		       label="
-		       {<top>cnt_purge:|
-			       {vcl_purge\{\}|req.*}|
-			       {<synth>synth|
+		       label="\
+		       {<top>cnt_purge:|\
+			       {vcl_purge\{\}|req.*}|\
+			       {<synth>synth|\
 				       <restart>restart}}"
 		]
 	}
