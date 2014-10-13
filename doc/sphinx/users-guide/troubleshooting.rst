@@ -106,16 +106,17 @@ give you a clue. Since `varnishlog` logs a lot of data it might be hard
 to track the entries down. You can set `varnishlog` to log all your 503
 errors by issuing the following command::
 
-   $ varnishlog -c -m TxStatus:503
+   $ varnishlog -q 'RespStatus == 503' -g request
 
 If the error happened just a short time ago the transaction might still
 be in the shared memory log segment. To get `varnishlog` to process the
 whole shared memory log just add the '-d' parameter::
 
-   $ varnishlog -d -c -m TxStatus:503
+   $ varnishlog -d -q 'RespStatus == 503' -g request
 
-Please see the `varnishlog` man page for elaborations on further
-filtering capabilities and explanation of the various options.
+Please see the `vsl-query` and `varnishlog` man pages for elaborations
+on further filtering capabilities and explanation of the various
+options.
 
 
 Varnish doesn't cache
