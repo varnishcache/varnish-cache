@@ -117,7 +117,7 @@ VSC_F(client_req_417,		uint64_t, 1, 'a', info,
 )
 
 VSC_F(client_req,		uint64_t, 1, 'a', info,
-    "Good Client requests received",
+    "Good client requests received",
 	""
 )
 
@@ -580,7 +580,7 @@ VSC_F(n_purges,			uint64_t, 0, 'i', info,
 	""
 )
 VSC_F(n_obj_purged,		uint64_t, 0, 'i', info,
-    "number of purged objects",
+    "Number of purged objects",
 	""
 )
 
