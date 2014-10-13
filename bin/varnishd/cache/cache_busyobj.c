@@ -82,6 +82,7 @@ VBO_Free(struct busyobj **bop)
 	bo = *bop;
 	*bop = NULL;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AZ(bo->htc);
 	AZ(bo->refcount);
 	AZ(pthread_cond_destroy(&bo->cond));
 	Lck_Delete(&bo->mtx);
@@ -186,6 +187,8 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 
 	if (r)
 		return;
+
+	AZ(bo->htc);
 
 	VSLb(bo->vsl, SLT_BereqAcct, "%ju %ju %ju %ju %ju %ju",
 	    (uintmax_t)bo->acct.bereq_hdrbytes,

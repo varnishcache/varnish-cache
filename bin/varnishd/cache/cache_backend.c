@@ -352,6 +352,12 @@ vbe_dir_getfd(const struct director *d, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
+
+	AZ(bo->htc);
+	bo->htc = WS_Alloc(bo->ws, sizeof *bo->htc);
+	memset(bo->htc, 0, sizeof *bo->htc);
+	bo->htc->magic = HTTP_CONN_MAGIC;
+
 	vc = vbe_GetVbe(bo, vs);
 	if (vc != NULL) {
 		FIND_TMO(first_byte_timeout,
@@ -390,6 +396,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 	bo->vbc = vbe_dir_getfd(d, bo);
 	if (bo->vbc == NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
+		bo->htc = NULL;
 		return (-1);
 	}
 
@@ -406,6 +413,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		bo->vbc = vbe_dir_getfd(d, bo);
 		if (bo->vbc == NULL) {
 			VSLb(bo->vsl, SLT_FetchError, "no backend connection");
+			bo->htc = NULL;
 			return (-1);
 		}
 		i = V1F_fetch_hdr(wrk, bo);
@@ -442,6 +450,8 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
+	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
+	bo->htc = NULL;
 	if (bo->vbc == NULL)
 		return;
 	bp = bo->vbc->backend;
