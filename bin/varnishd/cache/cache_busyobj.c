@@ -200,7 +200,7 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 
 	VSL_End(bo->vsl);
 
-	AZ(bo->vbc);
+	AZ(bo->htc);
 
 	if (bo->fetch_objcore != NULL) {
 		AN(wrk);

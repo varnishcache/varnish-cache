@@ -88,12 +88,12 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->vbc, VBC_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->htc->vbc, VBC_MAGIC);
 	CHECK_OBJ_ORNULL(bo->req, REQ_MAGIC);
 
 	htc = bo->htc;
 	hp = bo->bereq;
-	vc = bo->vbc;
+	vc = htc->vbc;
 	if (vc->recycled)
 		retry = 1;
 

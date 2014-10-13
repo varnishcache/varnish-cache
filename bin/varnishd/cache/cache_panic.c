@@ -338,8 +338,8 @@ pan_busyobj(const struct busyobj *bo)
 		VSB_printf(pan_vsp, "\n");
 	}
 	VSB_printf(pan_vsp, "    },\n");
-	if (VALID_OBJ(bo->vbc, BACKEND_MAGIC))
-		pan_vbc(bo->vbc);
+	if (VALID_OBJ(bo->htc->vbc, BACKEND_MAGIC))
+		pan_vbc(bo->htc->vbc);
 	if (bo->bereq->ws != NULL)
 		pan_http("bereq", bo->bereq, 4);
 	if (bo->beresp->ws != NULL)

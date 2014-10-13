@@ -120,12 +120,13 @@ V1P_Process(struct req *req, struct busyobj *bo)
 		SES_Close(req->sp, SC_OVERLOAD);
 		return;
 	}
-	bo->vbc = vc;		/* For panic dumping */
+	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
+	assert(bo->htc->fd >= 0);
 	bo->wrk = req->wrk;
 	bo->director_state = DIR_S_BODY;
-	(void)VTCP_blocking(vc->fd);
+	(void)VTCP_blocking(bo->htc->fd);
 
-	WRW_Reserve(wrk, &vc->fd, bo->vsl, req->t_req);
+	WRW_Reserve(wrk, &bo->htc->fd, bo->vsl, req->t_req);
 	hdrbytes = HTTP1_Write(wrk, bo->bereq, HTTP1_Req);
 
 	if (req->htc->pipeline_b != NULL)
@@ -142,7 +143,7 @@ V1P_Process(struct req *req, struct busyobj *bo)
 
 	if (i == 0) {
 		memset(fds, 0, sizeof fds);
-		fds[0].fd = vc->fd;
+		fds[0].fd = bo->htc->fd;
 		fds[0].events = POLLIN | POLLERR;
 		fds[1].fd = req->sp->fd;
 		fds[1].events = POLLIN | POLLERR;
@@ -155,20 +156,20 @@ V1P_Process(struct req *req, struct busyobj *bo)
 			if (i < 1)
 				break;
 			if (fds[0].revents &&
-			    rdf(vc->fd, req->sp->fd, &acct_pipe.out)) {
+			    rdf(bo->htc->fd, req->sp->fd, &acct_pipe.out)) {
 				if (fds[1].fd == -1)
 					break;
-				(void)shutdown(vc->fd, SHUT_RD);
+				(void)shutdown(bo->htc->fd, SHUT_RD);
 				(void)shutdown(req->sp->fd, SHUT_WR);
 				fds[0].events = 0;
 				fds[0].fd = -1;
 			}
 			if (fds[1].revents &&
-			    rdf(req->sp->fd, vc->fd, &acct_pipe.in)) {
+			    rdf(req->sp->fd, bo->htc->fd, &acct_pipe.in)) {
 				if (fds[0].fd == -1)
 					break;
 				(void)shutdown(req->sp->fd, SHUT_RD);
-				(void)shutdown(vc->fd, SHUT_WR);
+				(void)shutdown(bo->htc->fd, SHUT_WR);
 				fds[1].events = 0;
 				fds[1].fd = -1;
 			}

@@ -254,6 +254,7 @@ struct http_conn {
 	ssize_t			content_length;
 	enum body_status	body_status;
 	struct vfp_ctx		vfc[1];
+	struct vbc		*vbc;
 };
 
 /*--------------------------------------------------------------------*/
@@ -489,7 +490,6 @@ struct busyobj {
 
 	struct ws		ws[1];
 	char			*ws_bo;
-	struct vbc		*vbc;
 	struct http		*bereq0;
 	struct http		*bereq;
 	struct http		*beresp;
