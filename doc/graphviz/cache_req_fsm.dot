@@ -1,5 +1,5 @@
 /*
- * we should format labels in a reable form like
+ * we should format labels in a readable form like
  *			 label="\
  *			 {cnt_deliver:|\
  *				 Filter obj.-\>resp.|\
