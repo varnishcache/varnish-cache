@@ -1,7 +1,7 @@
-.. _vcl-built-in-subs:
 
 .. XXX:This document needs substantional review.
 
+.. _vcl-built-in-subs:
 
 Built in subroutines
 --------------------
