@@ -1,3 +1,20 @@
+/*
+ * we should format labels in a readable form like
+ *			    label="
+ *			    {vbf_stp_startfetch:|
+ *				    {vcl_backend_fetch\{\}|bereq.*}|
+ *				    {abandon|
+ *					    <fetch>fetch}}"
+ *
+ * <rant>
+ * ... but some servers in the v-c.o build farm use old graphviz 2.26.3
+ * which cannot handle labels with additional whitespace properly, so
+ * for the time being we need to fall back into dark middle ages and
+ * use illegibly long lines
+ * </rant>
+ * -- slink 20141013
+ */
+
 digraph cache_fetch {
 	margin="0.5"
 	center="1"
@@ -22,11 +39,7 @@ digraph cache_fetch {
 		/* vbf_stp_startfetch() */
 		v_b_f [
 			    shape=record
-			    label="
-			    {vbf_stp_startfetch:|
-				    {vcl_backend_fetch\{\}|bereq.*}|
-				    {abandon|
-					    <fetch>fetch}}"
+			    label="{vbf_stp_startfetch:|{vcl_backend_fetch\{\}|bereq.*}|{abandon|<fetch>fetch}}"
 		]
 		v_b_f:fetch:s -> v_b_hdrs [style=bold]
 		v_b_hdrs [ label="send bereq,\nread beresp (headers)"]
@@ -34,14 +47,7 @@ digraph cache_fetch {
 		v_b_hdrs -> v_b_e
 		v_b_r [
 			    shape=record
-			    label="
-			    {vbf_stp_startfetch:|
-				    {vcl_backend_response\{\}|{
-					    bereq.*|beresp.*}}|
-				    {{retry|{<max>max?|<retry>ok?}}|
-				    abandon|
-				    {deliver|{<fetch_304>304?|
-					    <non_304>other?}}}}"
+			    label="{vbf_stp_startfetch:|{vcl_backend_response\{\}|{bereq.*|beresp.*}}|{{retry|{<max>max?|<retry>ok?}}|abandon|{deliver|{<fetch_304>304?|<non_304>other?}}}}"
 		]
 		v_b_r:retry -> v_b_r_retry [color=purple]
 		v_b_r:max -> v_b_e
@@ -54,23 +60,15 @@ digraph cache_fetch {
 			       shape=record
 			       fontcolor=grey
 			       color=grey
-			       label="
-			       {vbf_stp_fetch:|
-				       setup VFPs|
-				       <fetch>fetch|
-				       {fetch_fail?|error?|<ok>ok?}}"
-				       ]
+			       label="{vbf_stp_fetch:|setup VFPs|<fetch>fetch|{fetch_fail?|error?|<ok>ok?}}"
+			       ]
 		vbf_stp_fetch:ok:s -> FETCH_DONE
 
 		vbf_stp_condfetch [
 			       shape=record
 			       fontcolor=grey
 			       color=grey
-			       label="
-			       {vbf_stp_condfetch:|
-				       copy obj attr|
-				       steal body|
-				       {fetch_fail?|<ok>ok?}}"
+			       label="{vbf_stp_condfetch:|copy obj attr|steal body|{fetch_fail?|<ok>ok?}}"
 
 		]
 		vbf_stp_condfetch:ok:s -> FETCH_DONE
@@ -81,13 +79,8 @@ digraph cache_fetch {
 		/* vbf_stp_error */
 		v_b_e [
 			    shape=record
-			    label="
-			    {vbf_stp_error:|
-				    {vcl_backend_error\{\}|{
-					    bereq.*|beresp.*}}|
-				    {{retry|{<max>max?|<retry>ok?}}|
-				    <deliver>deliver}}}"
-				    ]
+			    label="{vbf_stp_error:|{vcl_backend_error\{\}|{bereq.*|beresp.*}}|{{retry|{<max>max?|<retry>ok?}}|<deliver>deliver}}}"
+			    ]
 		// v_b_e:deliver aka "backend synth" - goes into cache
 		v_b_e:deliver -> FETCH_DONE [label="\"backend synth\""]
 		v_b_e:retry -> v_b_e_retry [color=purple]
