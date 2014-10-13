@@ -1,5 +1,20 @@
 # Makefile for graphviz outputs
-#
+
+# for an out-of-tree build, sphinx needs the output in builddir
+# XXX is there a better way to do this?
+
+.PHONY: link_srcdir
+
+link_srcdir:
+	if test "x$(srcdir)" != "x$(builddir)" && \
+	   test ! -f cache_http1_fsm.svg ; then \
+		d=`pwd`/$(builddir) ; \
+		cd $(srcdir) && find . -name \*.svg -type f | \
+		cpio -ldmp $${d} ; \
+	fi
+
+dist-hook:
+	$(MAKE) html
 
 # You can set these variables from the command line.
 # this is a4, letter is 8.5,11
@@ -19,7 +34,7 @@ SVGS = \
 
 pdf: $(PDFS)
 
-html: $(SVGS)
+html: $(SVGS) link_srcdir
 
 endif
 
