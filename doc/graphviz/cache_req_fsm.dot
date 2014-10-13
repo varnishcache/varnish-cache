@@ -194,8 +194,8 @@ digraph cache_req_fsm {
 		recv:hash -> hash [style=bold,color=green]
 		hash [
 		      shape=record
-		      label="\
-		      {cnt_recv:|{vcl_hash\{\}|req.*}|{<lookup>lookup}}"]
+		      label="{cnt_recv:|{vcl_hash\{\}|req.*}|{<lookup>lookup}}"
+		      ]
 	}
 	recv:pipe -> pipe [style=bold,color=orange]
 	recv:pass -> pass [style=bold,color=red]
