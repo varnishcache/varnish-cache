@@ -1,43 +1,54 @@
-
-.. XXX:This document needs substantional review.
-
 .. _vcl-built-in-subs:
 
+====================
 Built in subroutines
---------------------
+====================
 
+Various built-in subroutines are called during processing of client-
+and backend requests as well as upon ``vcl.load`` and ``vcl.discard``.
+
+See :ref:`reference-states` for a defailed graphical overview of the
+states and how they relate to core code functions and VCL subroutines.
+
+-----------
+client side
+-----------
+
+.. _vcl_recv:
 
 vcl_recv
 ~~~~~~~~
 
 Called at the beginning of a request, after the complete request has
-been received and parsed. Its purpose is to decide whether or not to
-serve the request, how to do it, and, if applicable, which backend to
-use.
+been received and parsed, after a `restart` or as the result of an ESI
+include.
 
-It is also used to modify the request, something you'll probably find
-yourself doing frequently.
+Its purpose is to decide whether or not to serve the request, possibly
+modify it and decide on how to process it further. A backend hint may
+be set as a default for the backend processing side.
 
 The `vcl_recv` subroutine may terminate with calling ``return()`` on one
 of the following keywords:
 
-  synth(status code, reason)
-    Return a synthetic object with the specified status code to the
-    client and abandon the request.
-
-  pass
-    Switch to pass mode. Control will eventually pass to vcl_pass.
-
-  pipe
-    Switch to pipe mode. Control will eventually pass to vcl_pipe.
-
-  hash
+  ``hash``
     Continue processing the object as a potential candidate for
-    caching. Passes the control over to vcl_hash.
+    caching. Passes the control over to :ref:`vcl_hash`.
 
-  purge
+  ``pass``
+    Switch to pass mode. Control will eventually pass to :ref:`vcl_pass`.
+
+  ``pipe``
+    Switch to pipe mode. Control will eventually pass to :ref:`vcl_pipe`.
+
+  ``synth(status code, reason)``
+    Transition to :ref:`vcl_synth` with ``resp.status`` and
+    ``resp.reason`` being preset to the arguments of ``synth()``.
+
+  ``purge``
     Purge the object and it's variants. Control passes through
     vcl_hash to vcl_purge.
+
+.. _vcl_pipe:
 
 vcl_pipe
 ~~~~~~~~
@@ -52,11 +63,14 @@ other VCL subroutine will ever get called after `vcl_pipe`.
 The `vcl_pipe` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
-  synth(status code, reason)
-    Return the specified status code to the client and abandon the request.
-
-  pipe
+  ``pipe``
     Proceed with pipe mode.
+
+  ``synth(status code, reason)``
+    Transition to :ref:`vcl_synth` with ``resp.status`` and
+    ``resp.reason`` being preset to the arguments of ``synth()``.
+
+.. _vcl_pass:
 
 vcl_pass
 ~~~~~~~~
@@ -69,64 +83,86 @@ submitted over the same client connection are handled normally.
 The `vcl_pass` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
-  synth(status code, reason)
-    Return the specified status code to the client and abandon the request.
+  ``fetch``
+    Proceed with pass mode - initiate a backend request.
 
-  fetch
-    Proceed with pass mode.
-
-  restart
+  ``restart``
     Restart the transaction. Increases the restart counter. If the number
     of restarts is higher than *max_restarts* Varnish emits a guru meditation
     error.
 
+  ``synth(status code, reason)``
+    Transition to :ref:`vcl_synth` with ``resp.status`` and
+    ``resp.reason`` being preset to the arguments of ``synth()``.
+
+.. _vcl_hit:
 
 vcl_hit
 ~~~~~~~
 
-Called when a cache lookup is successful.
+Called when a cache lookup is successful. The object being hit may be
+stale: It can have a zero or negative `ttl` with only `grace` or
+`keep` time left.
 
 The `vcl_hit` subroutine may terminate with calling ``return()``
 with one of the following keywords:
 
+  ``deliver``
+    Deliver the object. If it is stale, a background fetch to refresh
+    it is triggered.
 
-  restart
+  ``fetch``
+    Synchronously refresh the object from the backend despite the
+    cache hit. Control will eventually pass to :ref:`vcl_miss`.
+
+  ``pass``
+    Switch to pass mode. Control will eventually pass to :ref:`vcl_pass`.
+
+  ``restart``
     Restart the transaction. Increases the restart counter. If the number
     of restarts is higher than *max_restarts* Varnish emits a guru meditation
     error.
 
-  deliver
-    Deliver the object. Control passes to `vcl_deliver`.
+  ``synth(status code, reason)``
+    Transition to :ref:`vcl_synth` with ``resp.status`` and
+    ``resp.reason`` being preset to the arguments of ``synth()``.
 
-  synth(status code, reason)
-    Return the specified status code to the client and abandon the request.
+.. XXX: #1603 hit should not go to miss
 
+.. _vcl_miss:
 
 vcl_miss
 ~~~~~~~~
 
 Called after a cache lookup if the requested document was not found in
-the cache. Its purpose is to decide whether or not to attempt to
-retrieve the document from the backend, and which backend to use.
+the cache or if :ref:`vcl_hit` returned ``fetch``.
+
+Its purpose is to decide whether or not to attempt to retrieve the
+document from the backend. A backend hint may be set as a default for
+the backend processing side.
 
 The `vcl_miss` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
-  synth(status code, reason)
-    Return the specified status code to the client and abandon the request.
-
-  pass
-    Switch to pass mode. Control will eventually pass to `vcl_pass`.
-
-  fetch
+  ``fetch``
     Retrieve the requested object from the backend. Control will
     eventually pass to `vcl_backend_fetch`.
 
-  restart
+  ``pass``
+    Switch to pass mode. Control will eventually pass to :ref:`vcl_pass`.
+
+  ``restart``
     Restart the transaction. Increases the restart counter. If the number
     of restarts is higher than *max_restarts* Varnish emits a guru meditation
     error.
 
+  ``synth(status code, reason)``
+    Transition to :ref:`vcl_synth` with ``resp.status`` and
+    ``resp.reason`` being preset to the arguments of ``synth()``.
+
+.. XXX: #1603 hit should not go to miss
+
+.. _vcl_hash:
 
 vcl_hash
 ~~~~~~~~
@@ -134,13 +170,18 @@ vcl_hash
 Called after `vcl_recv` to create a hash value for the request. This is
 used as a key to look up the object in Varnish.
 
-The `vcl_hash` subroutine may terminate with calling ``return()`` with one
-of the following keywords:
+The `vcl_hash` subroutine may only terminate with calling ``return(lookup)``:
 
-  lookup
-    Look up the object in cache. Control passes to vcl_miss, vcl_hit
-    or vcl_purge.
+  ``lookup``
+    Look up the object in cache.
+    Control passes to :ref:`vcl_purge` when coming from a ``purge``
+    return in `vcl_recv`.
+    Otherwise control passes to :ref:`vcl_hit`, :ref:`vcl_miss` or
+    :ref:`vcl_pass` if the cache lookup result was a hit, a miss or hit
+    on a hit-for-pass object (object with ``obj.uncacheable ==
+    true``), respectively.
 
+.. _vcl_purge:
 
 vcl_purge
 ~~~~~~~~~
@@ -150,31 +191,66 @@ Called after the purge has been executed and all its variants have been evited.
 The `vcl_purge` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
-  synth
-    Produce a response.
-
-  restart
+  ``restart``
     Restart the transaction. Increases the restart counter. If the number
     of restarts is higher than *max_restarts* Varnish emits a guru meditation
     error.
 
+  ``synth(status code, reason)``
+    Transition to :ref:`vcl_synth` with ``resp.status`` and
+    ``resp.reason`` being preset to the arguments of ``synth()``.
+
+.. _vcl_deliver:
 
 vcl_deliver
 ~~~~~~~~~~~
 
-Called before a cached object is delivered to the client.
+Called before any object except a `vcl_synth` result is delivered to the client.
 
 The `vcl_deliver` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
-  deliver
+  ``deliver``
     Deliver the object to the client.
 
-  restart
+  ``restart``
     Restart the transaction. Increases the restart counter. If the number
     of restarts is higher than *max_restarts* Varnish emits a guru meditation
     error.
 
+  ``synth(status code, reason)``
+    Transition to :ref:`vcl_synth` with ``resp.status`` and
+    ``resp.reason`` being preset to the arguments of ``synth()``.
+
+.. _vcl_synth:
+
+vcl_synth
+~~~~~~~~~
+
+Called to deliver a synthetic object. A synthetic object is generated
+in VCL, not fetched from the backend. Its body may be contructed using
+the ``synthetic()`` function.
+
+A `vcl_synth` defined object never enters the cache, contrary to a
+:ref:`vcl_backend_error` defined object, which may end up in cache.
+
+The subroutine may terminate with calling ``return()`` with one of the
+following keywords:
+
+  ``deliver``
+    Directly deliver the object defined by `vcl_synth` to the
+    client without calling `vcl_deliver`.
+
+  ``restart``
+    Restart the transaction. Increases the restart counter. If the number
+    of restarts is higher than *max_restarts* Varnish emits a guru meditation
+    error.
+
+------------
+Backend Side
+------------
+
+.. _vcl_backend_fetch:
 
 vcl_backend_fetch
 ~~~~~~~~~~~~~~~~~
@@ -185,67 +261,71 @@ typically alter the request before it gets to the backend.
 The `vcl_backend_fetch` subroutine may terminate with calling
 ``return()`` with one of the following keywords:
 
-  fetch
+  ``fetch``
     Fetch the object from the backend.
 
-  abandon
-    Abandon the backend request and generates an error.
+  ``abandon``
+    Abandon the backend request. Unless the backend request was a
+    background fetch, control is passed to :ref:`vcl_synth` on the
+    client side with ``resp.status`` preset to 503.
 
+.. _vcl_backend_response:
 
 vcl_backend_response
 ~~~~~~~~~~~~~~~~~~~~
 
-Called after the response headers has been successfully retrieved from
+Called after the response headers have been successfully retrieved from
 the backend.
 
 The `vcl_backend_response` subroutine may terminate with calling
 ``return()`` with one of the following keywords:
 
-  deliver
-    Possibly insert the object into the cache, then deliver it to the
-    Control will eventually pass to `vcl_deliver`.
+  ``deliver``
+    For a 304 response, create an updated cache object.
+    Otherwise, fetch the object body from the backend and initiate
+    delivery to any waiting client requests, possibly in parallel
+    (streaming).
 
-  abandon
-    Abandon the backend request and generates an error.
+  ``abandon``
+    Abandon the backend request. Unless the backend request was a
+    background fetch, control is passed to :ref:`vcl_synth` on the
+    client side with ``resp.status`` preset to 503.
 
-  retry
+  ``retry``
     Retry the backend transaction. Increases the `retries` counter.
-    If the number of retries is higher than *max_retries* Varnish
-    emits a guru meditation error.
+    If the number of retries is higher than *max_retries*,
+    control will be passed to :ref:`vcl_backend_error`.
+
+.. _vcl_backend_error:
 
 vcl_backend_error
 ~~~~~~~~~~~~~~~~~
 
-This subroutine is called if we fail the backend fetch.
+This subroutine is called if we fail the backend fetch or if
+*max_retries* has been exceeded.
+
+A synthetic object is generated in VCL, whose body may be contructed
+using the ``synthetic()`` function.
 
 The `vcl_backend_error` subroutine may terminate with calling ``return()``
 with one of the following keywords:
 
-  deliver
-    Deliver the error.
+  ``deliver``
+    Deliver and possibly cache the object defined in
+    `vcl_backend_error` **as if it was fetched from the backend**, also
+    referred to as a "backend synth".
 
-  retry
-    Retry the backend transaction. Increases the `retries` counter. If
-    the number of retries is higher than *max_retries* Varnish emits a
-    guru meditation error.
+  ``retry``
+    Retry the backend transaction. Increases the `retries` counter.
+    If the number of retries is higher than *max_retries*,
+    :ref:`vcl_synth` on the client side is called with ``resp.status``
+    preset to 503.
 
-vcl_synth
-~~~~~~~~~
+----------------------
+vcl.load / vcl.discard
+----------------------
 
-Called to deliver a synthetic object. A synthetic object is generated
-in VCL, not fetched from the backend. It is typically contructed using
-the synthetic() function.
-
-
-The subroutine may terminate with calling ``return()`` with one of the
-following keywords:
-
-  deliver
-    Deliver the object. If the object has a positive TTL then the
-    object is also stored in cache.
-
-  restart
-    Restart processing the object.
+.. _vcl_init:
 
 vcl_init
 ~~~~~~~~
@@ -256,9 +336,13 @@ Typically used to initialize VMODs.
 The `vcl_init` subroutine may terminate with calling ``return()``
 with one of the following keywords:
 
-  ok
+  ``ok``
     Normal return, VCL continues loading.
 
+  ``fail``
+    Abort loading of this VCL.
+
+.. _vcl_fini:
 
 vcl_fini
 ~~~~~~~~
@@ -269,5 +353,5 @@ Typically used to clean up VMODs.
 The `vcl_fini` subroutine may terminate with calling ``return()``
 with one of the following keywords:
 
-  ok
+  ``ok``
     Normal return, VCL will be discarded.
