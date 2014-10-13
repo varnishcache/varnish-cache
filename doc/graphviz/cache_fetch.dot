@@ -1,7 +1,6 @@
 digraph cache_fetch {
 	margin="0.5"
 	center="1"
-	rotate=90
 
 	/*** cache_fetch.c ***/
 	subgraph cluster_backend {
