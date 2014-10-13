@@ -38,7 +38,12 @@ link_srcdir:
 		cd $(srcdir) && find . -name \*.rst -type f | cpio -ldmp $${d} ; \
 	fi
 
-sphinx_prereq: link_srcdir conf.py
+# work around for make html called within doc/sphinx
+.PHONY: graphviz
+graphviz:
+	cd ../graphviz && $(MAKE) html
+
+sphinx_prereq: link_srcdir graphviz conf.py
 
 html: sphinx_prereq
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
