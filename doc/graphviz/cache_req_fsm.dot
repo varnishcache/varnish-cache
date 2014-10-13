@@ -111,10 +111,10 @@ digraph cache_req_fsm {
 			label="
 			{<top>cnt_lookup:|
 				hash lookup|
-				{<busy>busy?|
-					<h>hit?|
+				{<h>hit?|
 					<miss>miss?|
-					<hfp>hit-for-pass?}}"
+					<hfp>hit-for-pass?|
+					<busy>busy?}}"
 		]
 		lookup2 [
 			 shape=record
@@ -128,7 +128,7 @@ digraph cache_req_fsm {
 					 <pass>pass}}"
 		]
 	}
-	lookup:busy:w -> lookup:top:w [label="(waitinglist)",
+	lookup:busy:e -> lookup:top:e [label="(waitinglist)",
 				       color=grey,
 				       fontcolor=grey]
 	lookup:miss:s -> miss [style=bold,color=blue]
@@ -214,10 +214,10 @@ digraph cache_req_fsm {
 		      {cnt_recv:|
 			      {vcl_recv\{\}|req.*}|
 			      {<hash>hash|
+				      <purge>purge|
 				      <pass>pass|
 				      <pipe>pipe|
-				      <synth>synth|
-				      <purge>purge}}"
+				      <synth>synth}}"
 				      ]
 		recv:hash -> hash [style=bold,color=green]
 		hash [
@@ -229,15 +229,16 @@ digraph cache_req_fsm {
 	}
 	recv:pipe -> pipe [style=bold,color=orange]
 	recv:pass -> pass [style=bold,color=red]
-	hash:lookup:s -> lookup [style=bold,color=green]
-	recv:purge:s -> purge [style=bold,color=purple]
+	hash:lookup:w -> lookup [style=bold,color=green]
+	hash:lookup:s -> purge:top:n [style=bold,color=purple]
+	recv:purge:s -> hash [style=bold,color=purple]
 
 	/* cnt_purge */
 	subgraph xcluster_purge {
 		purge [
 		       shape=record
 		       label="
-		       {cnt_purge:|
+		       {<top>cnt_purge:|
 			       {vcl_purge\{\}|req.*}|
 			       {<synth>synth|
 				       <restart>restart}}"
