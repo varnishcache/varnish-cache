@@ -42,7 +42,7 @@ But in 2004 crowd-funding was not yet "in", and I had to figure
 out how to do it myself.
 
 My parents brought me up to think that finances is a private matter
-but I concluded that the only way you could ask strangers to trow
+but I concluded that the only way you could ask strangers to throw
 money at you, would be to run an open book, where they could see
 what happened to them, so I did open books.
 
