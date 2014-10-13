@@ -317,41 +317,41 @@ VSC_F(sess_dropped,		uint64_t, 0, 'c', info,
 /*---------------------------------------------------------------------*/
 
 VSC_F(n_object,			uint64_t, 1, 'i', info,
-    "N struct object",
+    "Number of object structs made",
 	""
 )
 VSC_F(n_vampireobject,		uint64_t, 1, 'i', diag,
-    "N unresurrected objects",
+    "Number of unresurrected objects",
 	""
 )
 VSC_F(n_objectcore,		uint64_t, 1, 'i', info,
-    "N struct objectcore",
+    "Number of objectcore structs made",
 	""
 )
 VSC_F(n_objecthead,		uint64_t, 1, 'i', info,
-    "N struct objecthead",
+    "Number of objecthead structs made",
 	""
 )
 VSC_F(n_waitinglist,		uint64_t, 1, 'i', debug,
-    "N struct waitinglist",
+    "Number of waitinglist structs made",
 	""
 )
 
 VSC_F(n_backend,		uint64_t, 0, 'i', info,
-    "N backends",
+    "Number of backends",
 	""
 )
 
 VSC_F(n_expired,		uint64_t, 0, 'i', info,
-    "N expired objects",
+    "Number of expired objects",
 	""
 )
 VSC_F(n_lru_nuked,		uint64_t, 0, 'i', info,
-    "N LRU nuked objects",
+    "Number of LRU nuked objects",
 	""
 )
 VSC_F(n_lru_moved,		uint64_t, 0, 'i', diag,
-    "N LRU moved objects",
+    "Number of LRU moved objects",
 	""
 )
 
@@ -361,27 +361,27 @@ VSC_F(losthdr,			uint64_t, 0, 'a', info,
 )
 
 VSC_F(s_sess,			uint64_t, 1, 'a', info,
-    "Total Sessions",
+    "Total sessions seen",
 	""
 )
 VSC_F(s_req,			uint64_t, 1, 'a', info,
-    "Total Requests",
+    "Total requests seen",
 	""
 )
 VSC_F(s_pipe,			uint64_t, 1, 'a', info,
-    "Total pipe",
+    "Total pipe sessions seen",
 	""
 )
 VSC_F(s_pass,			uint64_t, 1, 'a', info,
-    "Total pass",
+    "Total pass-ed requests seen",
 	""
 )
 VSC_F(s_fetch,			uint64_t, 1, 'a', info,
-    "Total fetch",
+    "Total backend fetches initiated",
 	""
 )
 VSC_F(s_synth,			uint64_t, 1, 'a', info,
-    "Total synth",
+    "Total synthethic responses made",
 	""
 )
 VSC_F(s_req_hdrbytes,		uint64_t, 1, 'a', info,
@@ -488,15 +488,15 @@ VSC_F(backend_req,		uint64_t, 0, 'a', info,
 /*--------------------------------------------------------------------*/
 
 VSC_F(n_vcl,			uint64_t, 0, 'a', info,
-    "N vcl total",
+    "Number of loaded VCLs in total",
 	""
 )
 VSC_F(n_vcl_avail,		uint64_t, 0, 'a', diag,
-    "N vcl available",
+    "Number of VCLs available",
 	""
 )
 VSC_F(n_vcl_discard,		uint64_t, 0, 'a', diag,
-    "N vcl discarded",
+    "Number of discarded VCLs",
 	""
 )
 
@@ -584,7 +584,7 @@ VSC_F(bans_persisted_fragmentation,	uint64_t, 0, 'g', diag,
 /*--------------------------------------------------------------------*/
 
 VSC_F(n_purges,			uint64_t, 0, 'i', info,
-    "Number of purge operations",
+    "Number of purge operations executed",
 	""
 )
 VSC_F(n_obj_purged,		uint64_t, 0, 'i', info,
