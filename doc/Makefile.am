@@ -14,4 +14,5 @@ else
 	@false
 endif
 
-SUBDIRS = sphinx graphviz
+# build graphviz before sphinx, so sphinx docs can use svg output
+SUBDIRS = graphviz sphinx
