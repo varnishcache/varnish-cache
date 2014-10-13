@@ -522,7 +522,7 @@ ESI_DeliverChild(struct req *req)
 	 */
 
 	memset(tailbuf, 0xdd, sizeof tailbuf);
-	dbits = (void*)WS_Alloc(req->ws, 8);
+	dbits = WS_Alloc(req->ws, 8);
 	AN(dbits);
 	ll = 0;
 	oi = ObjIterBegin(req->wrk, req->objcore);

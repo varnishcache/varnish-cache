@@ -114,7 +114,7 @@ WS_Reset(struct ws *ws, char *p)
 	WS_Assert(ws);
 }
 
-char *
+void *
 WS_Alloc(struct ws *ws, unsigned bytes)
 {
 	char *r;

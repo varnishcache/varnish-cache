@@ -79,7 +79,7 @@ WRW_Reserve(struct worker *wrk, int *fd, struct vsl_log *vsl, double t0)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AZ(wrk->wrw);
-	wrw = (void*)WS_Alloc(wrk->aws, sizeof *wrw);
+	wrw = WS_Alloc(wrk->aws, sizeof *wrw);
 	AN(wrw);
 	memset(wrw, 0, sizeof *wrw);
 	wrw->magic = WRW_MAGIC;

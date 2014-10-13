@@ -1146,7 +1146,7 @@ void WS_Release(struct ws *ws, unsigned bytes);
 void WS_ReleaseP(struct ws *ws, char *ptr);
 void WS_Assert(const struct ws *ws);
 void WS_Reset(struct ws *ws, char *p);
-char *WS_Alloc(struct ws *ws, unsigned bytes);
+void *WS_Alloc(struct ws *ws, unsigned bytes);
 void *WS_Copy(struct ws *ws, const void *str, int len);
 char *WS_Snapshot(struct ws *ws);
 int WS_Overflowed(const struct ws *ws);

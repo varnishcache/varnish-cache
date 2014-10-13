@@ -86,7 +86,7 @@ ses_new(struct sesspool *pp)
 	p = (void*)PRNDUP(p);
 	assert(p < e);
 	WS_Init(sp->ws, "ses", p, e - p);
-	sp->addrs = (void*)WS_Alloc(sp->ws, vsa_suckaddr_len * 2);
+	sp->addrs = WS_Alloc(sp->ws, vsa_suckaddr_len * 2);
 
 	sp->t_open = NAN;
 	sp->t_idle = NAN;

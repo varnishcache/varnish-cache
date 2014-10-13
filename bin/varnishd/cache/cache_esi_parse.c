@@ -1045,7 +1045,7 @@ VEP_Init(struct vfp_ctx *vc, const struct http *req, vep_callback_t *cb,
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(req, HTTP_MAGIC);
-	vep = (void*)WS_Alloc(vc->http->ws, sizeof *vep);
+	vep = WS_Alloc(vc->http->ws, sizeof *vep);
 	AN(vep);
 
 	memset(vep, 0, sizeof *vep);
