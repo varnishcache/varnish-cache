@@ -7,7 +7,7 @@
 
 link_srcdir:
 	if test "x$(srcdir)" != "x$(builddir)" && \
-	   test ! -f cache_http1_fsm.svg ; then \
+	   test ! -f $(builddir)/cache_http1_fsm.svg ; then \
 		d=`pwd`/$(builddir) ; \
 		cd $(srcdir) && find . -name \*.svg -type f | \
 		cpio -ldmp $${d} ; \
