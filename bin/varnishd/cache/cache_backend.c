@@ -399,6 +399,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 		return (-1);
 	}
+	AN(bo->htc);
 
 	i = V1F_fetch_hdr(wrk, bo);
 	/*
@@ -410,12 +411,13 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		AZ(bo->htc);
 		VSC_C_main->backend_retry++;
 		bo->doclose = SC_NULL;
-		bo->htc->vbc = vbe_dir_getfd(d, bo);
-		if (bo->htc->vbc == NULL) {
+		vbc = vbe_dir_getfd(d, bo);
+		if (vbc == NULL) {
 			VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 			bo->htc = NULL;
 			return (-1);
 		}
+		AN(bo->htc);
 		i = V1F_fetch_hdr(wrk, bo);
 	}
 	if (i != 0) {
