@@ -1,0 +1,19 @@
+varnishtest "Test case for #1557"
+
+server s1 {
+	rxreq
+	expect req.url == "/?foobar=2"
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		set req.url = regsuball(req.url,
+		    "(?<=[&\?])(foo|bar)=[^&]+(?:&|$)", "");
+	}
+} -start
+
+client c1 {
+	txreq -url "/?foo=0&bar=1&foobar=2"
+	rxresp
+} -run
