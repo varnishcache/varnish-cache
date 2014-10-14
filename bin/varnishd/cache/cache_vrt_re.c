@@ -92,6 +92,7 @@ VRT_regsub(const struct vrt_ctx *ctx, int all, const char *str, void *re,
 	const char *s;
 	unsigned u, x;
 	int options = 0;
+	int offset = 0;
 	size_t len;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -120,7 +121,7 @@ VRT_regsub(const struct vrt_ctx *ctx, int all, const char *str, void *re,
 
 	do {
 		/* Copy prefix to match */
-		Tadd(&res, str, ovector[0]);
+		Tadd(&res, str + offset, ovector[0] - offset);
 		for (s = sub ; *s != '\0'; s++ ) {
 			if (*s != '\\' || s[1] == '\0') {
 				if (res.b < res.e)
@@ -138,13 +139,12 @@ VRT_regsub(const struct vrt_ctx *ctx, int all, const char *str, void *re,
 					*res.b++ = *s;
 			}
 		}
-		str += ovector[1];
-		len -= ovector[1];
+		offset = ovector[1];
 		if (!all)
 			break;
 		memset(&ovector, 0, sizeof(ovector));
 		options |= VRE_NOTEMPTY;
-		i = VRE_exec(t, str, len, 0, options, ovector, 30,
+		i = VRE_exec(t, str, len, offset, options, ovector, 30,
 		    &cache_param->vre_limits);
 		if (i < VRE_ERROR_NOMATCH ) {
 			WS_Release(ctx->ws, 0);
@@ -155,7 +155,7 @@ VRT_regsub(const struct vrt_ctx *ctx, int all, const char *str, void *re,
 	} while (i != VRE_ERROR_NOMATCH);
 
 	/* Copy suffix to match */
-	Tadd(&res, str, len+1);
+	Tadd(&res, str + offset, len - offset + 1);
 	if (res.b >= res.e) {
 		WS_Release(ctx->ws, 0);
 		return (str);
