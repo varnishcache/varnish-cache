@@ -109,6 +109,7 @@ nobase_pkgdatainclude_HEADERS = \
 	cache/cache.h \
 	cache/cache_filter.h \
 	cache/cache_backend.h \
+	cache/cache_director.h \
 	common/common.h \
 	common/params.h
 
