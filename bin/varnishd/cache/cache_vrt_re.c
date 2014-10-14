@@ -157,7 +157,7 @@ VRT_regsub(VRT_CTX, int all, const char *str, void *re,
 		offset = ovector[1];
 		if (!all)
 			break;
-		memset(&ovector, 0, sizeof(ovector));
+		memset(ovector, 0, sizeof(ovector));
 		options |= VRE_NOTEMPTY;
 		i = VRE_exec(t, str, len, offset, options, ovector, 30,
 		    &cache_param->vre_limits);
@@ -170,7 +170,7 @@ VRT_regsub(VRT_CTX, int all, const char *str, void *re,
 	} while (i != VRE_ERROR_NOMATCH);
 
 	/* Copy suffix to match */
-	Tadd(&res_b, res_e, str + offset, len - offset + 1);
+	Tadd(&res_b, res_e, str + offset, 1 + len - offset);
 	if (res_b >= res_e) {
 		WS_Release(ctx->ws, 0);
 		return (str);
