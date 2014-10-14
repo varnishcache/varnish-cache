@@ -42,7 +42,7 @@
  * backends to use.
  */
 
-typedef struct vbc *vdi_getfd_f(const struct director *, struct busyobj *);
+typedef int vdi_getfd_f(const struct director *, struct busyobj *);
 typedef unsigned vdi_healthy_f(const struct director *, double *changed);
 typedef const struct director *vdi_resolve_f(const struct director *,
     struct worker *, struct busyobj *);
@@ -76,8 +76,7 @@ int VDI_GetBody(const struct director *d, struct worker *wrk,
     struct busyobj *bo);
 void VDI_Finish(const struct director *d, struct worker *wrk,
     struct busyobj *bo);
-struct vbc *VDI_GetFd(const struct director *d, struct worker *wrk,
-    struct busyobj *);
+int VDI_GetFd(const struct director *d, struct worker *wrk, struct busyobj *);
 int VDI_Healthy(const struct director *);
 struct suckaddr *VDI_Suckaddr(const struct director *d, struct worker *wrk,
     struct busyobj *bo);

@@ -95,10 +95,9 @@ pipecharge(struct req *req, const struct acct_pipe *a, struct VSC_C_vbe *b)
 void
 V1P_Process(struct req *req, struct busyobj *bo)
 {
-	struct vbc *vc;
 	struct worker *wrk;
 	struct pollfd fds[2];
-	int i;
+	int i, fd;
 	struct acct_pipe acct_pipe;
 	ssize_t hdrbytes;
 
@@ -114,19 +113,18 @@ V1P_Process(struct req *req, struct busyobj *bo)
 	acct_pipe.req = req->acct.req_hdrbytes;
 	req->acct.req_hdrbytes = 0;
 
-	vc = VDI_GetFd(bo->director_req, wrk, bo);
-	if (vc == NULL) {
+	fd = VDI_GetFd(bo->director_req, wrk, bo);
+	if (fd < 0) {
 		pipecharge(req, &acct_pipe, NULL);
 		SES_Close(req->sp, SC_OVERLOAD);
 		return;
 	}
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
-	assert(bo->htc->fd >= 0);
 	bo->wrk = req->wrk;
 	bo->director_state = DIR_S_BODY;
-	(void)VTCP_blocking(bo->htc->fd);
+	(void)VTCP_blocking(fd);
 
-	WRW_Reserve(wrk, &bo->htc->fd, bo->vsl, req->t_req);
+	WRW_Reserve(wrk, &fd, bo->vsl, req->t_req);
 	hdrbytes = HTTP1_Write(wrk, bo->bereq, HTTP1_Req);
 
 	if (req->htc->pipeline_b != NULL)
@@ -143,7 +141,7 @@ V1P_Process(struct req *req, struct busyobj *bo)
 
 	if (i == 0) {
 		memset(fds, 0, sizeof fds);
-		fds[0].fd = bo->htc->fd;
+		fds[0].fd = fd;
 		fds[0].events = POLLIN | POLLERR;
 		fds[1].fd = req->sp->fd;
 		fds[1].events = POLLIN | POLLERR;
@@ -156,27 +154,27 @@ V1P_Process(struct req *req, struct busyobj *bo)
 			if (i < 1)
 				break;
 			if (fds[0].revents &&
-			    rdf(bo->htc->fd, req->sp->fd, &acct_pipe.out)) {
+			    rdf(fd, req->sp->fd, &acct_pipe.out)) {
 				if (fds[1].fd == -1)
 					break;
-				(void)shutdown(bo->htc->fd, SHUT_RD);
+				(void)shutdown(fd, SHUT_RD);
 				(void)shutdown(req->sp->fd, SHUT_WR);
 				fds[0].events = 0;
 				fds[0].fd = -1;
 			}
 			if (fds[1].revents &&
-			    rdf(req->sp->fd, bo->htc->fd, &acct_pipe.in)) {
+			    rdf(req->sp->fd, fd, &acct_pipe.in)) {
 				if (fds[0].fd == -1)
 					break;
 				(void)shutdown(req->sp->fd, SHUT_RD);
-				(void)shutdown(bo->htc->fd, SHUT_WR);
+				(void)shutdown(fd, SHUT_WR);
 				fds[1].events = 0;
 				fds[1].fd = -1;
 			}
 		}
 	}
 	VSLb_ts_req(req, "PipeSess", W_TIM_real(wrk));
-	pipecharge(req, &acct_pipe, vc->backend->vsc);
+	pipecharge(req, &acct_pipe, bo->htc->vbc->backend->vsc);
 	SES_Close(req->sp, SC_TX_PIPE);
 	bo->doclose = SC_TX_PIPE;
 	VDI_Finish(bo->director_resp, bo->wrk, bo);

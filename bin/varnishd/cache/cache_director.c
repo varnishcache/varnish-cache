@@ -125,7 +125,7 @@ VDI_Finish(const struct director *d, struct worker *wrk, struct busyobj *bo)
 
 /* Get a connection --------------------------------------------------*/
 
-struct vbc *
+int
 VDI_GetFd(const struct director *d, struct worker *wrk, struct busyobj *bo)
 {
 
@@ -135,7 +135,7 @@ VDI_GetFd(const struct director *d, struct worker *wrk, struct busyobj *bo)
 
 	d = vdi_resolve(wrk, bo, d);
 	if (d == NULL)
-		return (NULL);
+		return (-1);
 
 	AN(d->getfd);
 	return (d->getfd(d, bo));

@@ -343,7 +343,7 @@ VBE_DiscardHealth(const struct director *vdi)
  *
  */
 
-static struct vbc * __match_proto__(vdi_getfd_f)
+static int __match_proto__(vdi_getfd_f)
 vbe_dir_getfd(const struct director *d, struct busyobj *bo)
 {
 	struct vbe_dir *vs;
@@ -356,7 +356,7 @@ vbe_dir_getfd(const struct director *d, struct busyobj *bo)
 	vc = vbe_GetVbe(bo, vs);
 	if (vc == NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
-		return (NULL);
+		return (-1);
 	}
 
 	if (bo->htc == NULL)
@@ -364,10 +364,9 @@ vbe_dir_getfd(const struct director *d, struct busyobj *bo)
 	memset(bo->htc, 0, sizeof *bo->htc);
 	bo->htc->magic = HTTP_CONN_MAGIC;
 	bo->htc->vbc = vc;
-	bo->htc->fd = vc->fd;
 	FIND_TMO(first_byte_timeout, vc->first_byte_timeout, bo, vs->vrt);
 	FIND_TMO(between_bytes_timeout, vc->between_bytes_timeout, bo, vs->vrt);
-	return (vc);
+	return (vc->fd);
 }
 
 static unsigned __match_proto__(vdi_healthy_f)
@@ -388,14 +387,13 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
 {
 	int i;
-	struct vbc *vbc;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	vbc = vbe_dir_getfd(d, bo);
-	if (vbc == NULL) {
+	i = vbe_dir_getfd(d, bo);
+	if (i < 0) {
 		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 		return (-1);
 	}
@@ -411,8 +409,8 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		AZ(bo->htc);
 		VSC_C_main->backend_retry++;
 		bo->doclose = SC_NULL;
-		vbc = vbe_dir_getfd(d, bo);
-		if (vbc == NULL) {
+		i = vbe_dir_getfd(d, bo);
+		if (i < 0) {
 			VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 			bo->htc = NULL;
 			return (-1);
