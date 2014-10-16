@@ -97,6 +97,10 @@ installed. On a Debian or Ubuntu system these are:
 * libpcre3-dev
 * pkg-config
 
+recommended:
+
+* libjemalloc-dev
+
 Build dependencies on Red Hat / CentOS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -111,6 +115,10 @@ packages installed:
 * groff
 * pcre-devel
 * pkgconfig
+
+recommended:
+
+* jemalloc-devel
 
 Configuring and compiling
 ~~~~~~~~~~~~~~~~~~~~~~~~~
