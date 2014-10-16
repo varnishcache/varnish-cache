@@ -57,6 +57,7 @@ WS_Assert(const struct ws *ws)
 		assert(ws->r <= ws->e);
 		assert(PAOK(ws->r));
 	}
+	assert(*ws->e == 0x15);
 }
 
 /*
@@ -75,8 +76,9 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 	ws->magic = WS_MAGIC;
 	ws->s = space;
 	assert(PAOK(space));
-	len = PRNDDN(len);
+	len = PRNDDN(len - 1);
 	ws->e = ws->s + len;
+	*ws->e = 0x15;
 	ws->f = ws->s;
 	assert(id[0] & 0x40);
 	assert(strlen(id) < sizeof ws->id);
