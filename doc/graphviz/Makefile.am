@@ -20,6 +20,8 @@ dist-hook:
 # this is a4, letter is 8.5,11
 SIZE	      = 8.4,11.7
 
+EXTRA_DIST = $(srcdir)/*.dot
+
 if HAVE_DOT
 PDFS = \
 	cache_http1_fsm.pdf \
@@ -30,6 +32,10 @@ SVGS = \
 	cache_http1_fsm.svg \
 	cache_req_fsm.svg \
 	cache_fetch.svg
+
+CLEANFILES = \
+	$(PDFS)	\
+	$(SVGS)
 endif
 
 pdf: $(PDFS)
