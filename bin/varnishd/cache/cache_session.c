@@ -87,6 +87,7 @@ ses_new(struct sesspool *pp)
 	assert(p < e);
 	WS_Init(sp->ws, "ses", p, e - p);
 	sp->addrs = WS_Alloc(sp->ws, vsa_suckaddr_len * 2);
+	AN(sp->addrs);
 
 	sp->t_open = NAN;
 	sp->t_idle = NAN;
@@ -169,7 +170,9 @@ ses_vsl_socket(struct sess *sp, const char *lsockname)
 	VTCP_name(sess_remote_addr(sp), laddr, sizeof laddr,
 	    lport, sizeof lport);
 	sp->client_addr_str = WS_Copy(sp->ws, laddr, -1);
+	AN(sp->client_addr_str);
 	sp->client_port_str = WS_Copy(sp->ws, lport, -1);
+	AN(sp->client_port_str);
 	VTCP_name(sess_local_addr(sp), laddr, sizeof laddr,
 	    lport, sizeof lport);
 	VSL(SLT_Begin, sp->vxid, "sess 0 HTTP/1");
