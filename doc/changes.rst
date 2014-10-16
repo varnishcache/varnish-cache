@@ -17,7 +17,7 @@ Changes from 3.0.5 to 3.0.6rc1 (2014-06-24)
 - Avoid negative ReqEnd timestamps with ESI. Bug 1297_.
 - %D format for varnishncsa is now an integer (as documented)
 - Fix compile errors with clang.
-- Clear objectcore flags earlier in ban lurker. Bug 1470_.
+- Clear objectcore flags earlier in ban lurker to avoid spinning thread. Bug 1470_.
 - Patch embedded jemalloc to avoid segfault. Bug 1448_.
 - Allow backend names to start with if, include or else. Bug 1439_.
 - Stop handling gzip after gzip body end. Bug 1086_.
