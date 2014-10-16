@@ -102,7 +102,9 @@ Documentation files for %name
 	export PCRE_LIBS="`pcre-config --libs`"
 %endif
 
-export CFLAGS="$CFLAGS -Wp,-D_FORTIFY_SOURCE=0"
+%if 0%{?rhel} == 6
+export CFLAGS="$CFLAGS -O2 -g -Wp,-D_FORTIFY_SOURCE=0"
+%endif
 
 # Remove "--disable static" if you want to build static libraries
 # jemalloc is not compatible with Red Hat's ppc64 RHEL kernel :-(
