@@ -211,12 +211,8 @@ SLTM(TTL, 0, "TTL set on object",
 	"\n"
 	"The last four fields are only present in \"RFC\" headers.\n\n"
 	"Examples::\n\n"
-	"\tRFC 19 -1 -1 1312966109 4 0 0 23\n"
-	"\tVCL 10 -1 -1 1312966109 4\n"
-	"\tVCL 7 -1 -1 1312966111 6\n"
-	"\tVCL 7 120 -1 1312966111 6\n"
-	"\tVCL 7 120 3600 1312966111 6\n"
-	"\tVCL 12 120 3600 1312966113 8\n"
+	"\tRFC 60 -1 -1 1312966109 1312966109 1312966109 0 60\n"
+	"\tVCL 120 10 0 1312966111\n"
 	"\n"
 )
 
