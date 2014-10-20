@@ -338,10 +338,8 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		ESI_Deliver(req);
 	} else if (req->res_mode & RES_ESI_CHILD && req->gzip_resp) {
 		l = -1;
-		while (req->objcore->busyobj) {
-			assert(bo != NULL);
-			l = VBO_waitlen(req->wrk, bo, l);
-		}
+		if (bo != NULL)
+			VBO_waitstate(bo, BOS_FINISHED);
 		ESI_DeliverChild(req);
 	} else if (req->res_mode & RES_GUNZIP ||
 	    (req->res_mode & RES_ESI_CHILD &&
