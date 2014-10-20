@@ -237,6 +237,7 @@ SES_ScheduleReq(struct req *req)
 	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT)) {
 		AN (req->vcl);
 		VCL_Rel(&req->vcl);
+		SES_ReleaseReq(req);
 		SES_Delete(sp, SC_OVERLOAD, NAN);
 		return (1);
 	}
