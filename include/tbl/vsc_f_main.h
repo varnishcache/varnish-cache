@@ -449,29 +449,6 @@ VSC_F(shm_cycles,		uint64_t, 0, 'a', diag,
 
 /*--------------------------------------------------------------------*/
 
-VSC_F(sms_nreq,			uint64_t, 0, 'a', diag,
-    "SMS allocator requests",
-	""
-)
-VSC_F(sms_nobj,			uint64_t, 0, 'i', diag,
-    "SMS outstanding allocations",
-	""
-)
-VSC_F(sms_nbytes,		uint64_t, 0, 'i', diag,
-    "SMS outstanding bytes",
-	""
-)
-VSC_F(sms_balloc,		uint64_t, 0, 'i', diag,
-    "SMS bytes allocated",
-	""
-)
-VSC_F(sms_bfree,		uint64_t, 0, 'i', diag,
-    "SMS bytes freed",
-	""
-)
-
-/*--------------------------------------------------------------------*/
-
 VSC_F(backend_req,		uint64_t, 0, 'a', info,
     "Backend requests made",
 	""
