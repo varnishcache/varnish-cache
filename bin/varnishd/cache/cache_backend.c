@@ -361,6 +361,7 @@ vbe_dir_getfd(const struct director *d, struct busyobj *bo)
 
 	if (bo->htc == NULL)
 		bo->htc = WS_Alloc(bo->ws, sizeof *bo->htc);
+	AN(bo->htc);
 	memset(bo->htc, 0, sizeof *bo->htc);
 	bo->htc->magic = HTTP_CONN_MAGIC;
 	bo->htc->vbc = vc;
