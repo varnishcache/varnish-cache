@@ -232,7 +232,6 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 {
 	const char *r;
 	enum objiter_status ois;
-	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
@@ -337,7 +336,6 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	} else if (req->res_mode & RES_ESI) {
 		ESI_Deliver(req);
 	} else if (req->res_mode & RES_ESI_CHILD && req->gzip_resp) {
-		l = -1;
 		if (bo != NULL)
 			VBO_waitstate(bo, BOS_FINISHED);
 		ESI_DeliverChild(req);
