@@ -293,6 +293,12 @@ VSC_F(busy_wakeup,		uint64_t, 1, 'c', info,
 	" and rescheduled."
 )
 
+VSC_F(busy_killed,		uint64_t, 1, 'c', info,
+    "Number of requests killed after sleep on busy objhdr",
+	"Number of requests killed from the busy object sleep list"
+	" due to lack of resources."
+)
+
 VSC_F(sess_queued,		uint64_t, 0, 'c', info,
     "Sessions queued for thread",
 	"Number of times session was queued waiting for a thread."

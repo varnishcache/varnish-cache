@@ -539,7 +539,9 @@ hsh_rush(struct worker *wrk, struct objhead *oh)
 			 * In case of overloads, we ditch the entire
 			 * waiting list.
 			 */
+			wrk->stats->busy_wakeup--;
 			while (1) {
+				wrk->stats->busy_killed++;
 				AN (req->vcl);
 				VCL_Rel(&req->vcl);
 				sp = req->sp;
