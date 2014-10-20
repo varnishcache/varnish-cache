@@ -533,13 +533,8 @@ hsh_rush(struct worker *wrk, struct objhead *oh)
 		AZ(req->wrk);
 		VTAILQ_REMOVE(&wl->list, req, w_list);
 		DSL(DBG_WAITINGLIST, req->vsl->wid, "off waiting list");
-		if (SES_ScheduleReq(req)) {
-			/*
-			 * We could not schedule the session, put it back.
-			 */
-			VTAILQ_INSERT_HEAD(&wl->list, req, w_list);
+		if (SES_ScheduleReq(req))
 			break;
-		}
 	}
 	if (VTAILQ_EMPTY(&wl->list)) {
 		oh->waitinglist = NULL;
