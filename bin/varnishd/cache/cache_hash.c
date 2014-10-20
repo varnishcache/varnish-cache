@@ -517,6 +517,7 @@ hsh_rush(struct worker *wrk, struct objhead *oh)
 {
 	unsigned u;
 	struct req *req;
+	struct sess *sp;
 	struct waitinglist *wl;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -533,8 +534,29 @@ hsh_rush(struct worker *wrk, struct objhead *oh)
 		AZ(req->wrk);
 		VTAILQ_REMOVE(&wl->list, req, w_list);
 		DSL(DBG_WAITINGLIST, req->vsl->wid, "off waiting list");
-		if (SES_ScheduleReq(req))
+		if (SES_ScheduleReq(req)) {
+			/*
+			 * In case of overloads, we ditch the entire
+			 * waiting list.
+			 */
+			while (1) {
+				AN (req->vcl);
+				VCL_Rel(&req->vcl);
+				sp = req->sp;
+				CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+				CNT_AcctLogCharge(wrk->stats, req);
+				SES_ReleaseReq(req);
+				SES_Delete(sp, SC_OVERLOAD, NAN);
+				req = VTAILQ_FIRST(&wl->list);
+				if (req == NULL)
+					break;
+				CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+				VTAILQ_REMOVE(&wl->list, req, w_list);
+				DSL(DBG_WAITINGLIST, req->vsl->wid,
+				    "kill from waiting list");
+			}
 			break;
+		}
 	}
 	if (VTAILQ_EMPTY(&wl->list)) {
 		oh->waitinglist = NULL;
