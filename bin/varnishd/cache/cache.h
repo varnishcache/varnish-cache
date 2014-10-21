@@ -1119,6 +1119,7 @@ void VRTPRIV_dynamic_kill(struct sess *sp, uintptr_t id);
 
 void ESI_Deliver(struct req *);
 void ESI_DeliverChild(struct req *);
+vdp_bytes VED_pretend_gzip;
 
 /* cache_vrt_vmod.c */
 void VMOD_Init(void);

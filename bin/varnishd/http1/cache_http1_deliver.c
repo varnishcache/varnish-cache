@@ -340,6 +340,11 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		/* This was a HEAD or conditional request */
 	} else if (req->res_mode & RES_ESI) {
 		ESI_Deliver(req);
+	} else if (req->res_mode & RES_ESI_CHILD && req->gzip_resp &&
+	    !ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED)) {
+		VDP_push(req, VED_pretend_gzip);
+		ois = v1d_WriteDirObj(req);
+		VDP_pop(req, VED_pretend_gzip);
 	} else if (req->res_mode & RES_ESI_CHILD && req->gzip_resp) {
 		if (bo != NULL)
 			VBO_waitstate(bo, BOS_FINISHED);

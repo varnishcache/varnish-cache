@@ -205,11 +205,17 @@ ved_decode_len(uint8_t **pp)
  * the stream with a bit more overhead.
  */
 
-static int
-ved_pretend_gzip(struct req *req, const uint8_t *p, ssize_t l)
+int __match_proto__(vdp_bytes)
+VED_pretend_gzip(struct req *req, enum vdp_action act, const void *pv,
+    ssize_t l)
 {
 	uint8_t buf1[5], buf2[5];
+	const uint8_t *p;
 	uint16_t lx;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	(void)act;
+	p = pv;
 
 	lx = 65535;
 	buf1[0] = 0;
@@ -355,7 +361,8 @@ ESI_Deliver(struct req *req)
 					 * A gzip'ed ESI response, but the VEC
 					 * was not gzip'ed.
 					 */
-					(void)ved_pretend_gzip(req, pp, l2);
+					(void)VED_pretend_gzip(req, VDP_NULL,
+					    pp, l2);
 				} else if (isgzip) {
 					/*
 					 * A gzip'ed VEC, but ungzip'ed ESI
@@ -482,16 +489,8 @@ ESI_DeliverChild(struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
-	if (!ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED)) {
-		oi = ObjIterBegin(req->wrk, req->objcore);
-		do {
-			ois = ObjIter(req->objcore, oi, &sp, &sl);
-			if (sl > 0 && ved_pretend_gzip(req, sp, sl))
-				break;
-		} while (ois == OIS_DATA || ois == OIS_STREAM);
-		ObjIterEnd(req->objcore, &oi);
-		return;
-	}
+	AN(ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED));
+
 	/*
 	 * This is the interesting case: Deliver all the deflate
 	 * blocks, stripping the "LAST" bit of the last one and
