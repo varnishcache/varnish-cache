@@ -55,6 +55,19 @@ struct vfp {
 	intptr_t	priv2;
 };
 
+struct vfp_entry {
+	unsigned		magic;
+#define VFP_ENTRY_MAGIC		0xbe32a027
+	const struct vfp	*vfp;
+	void			*priv1;
+	intptr_t		priv2;
+	enum vfp_status		closed;
+	VTAILQ_ENTRY(vfp_entry)	list;
+	uint64_t		calls;
+	uint64_t		bytes_out;
+};
+
+
 extern const struct vfp vfp_gunzip;
 extern const struct vfp vfp_gzip;
 extern const struct vfp vfp_testgunzip;
@@ -78,8 +91,17 @@ enum vdp_action {
 	VDP_FINISH,
 	VDP_FINI,
 };
+
 typedef int vdp_bytes(struct req *, enum vdp_action, void **priv,
     const void *ptr, ssize_t len);
+
+struct vdp_entry {
+	unsigned		magic;
+#define VDP_ENTRY_MAGIC		0x353eb781
+	vdp_bytes		*func;
+	void			*priv;
+	VTAILQ_ENTRY(vdp_entry)	list;
+};
 
 int VDP_bytes(struct req *, enum vdp_action act, const void *ptr, ssize_t len);
 void VDP_push(struct req *, vdp_bytes *func, void *priv);

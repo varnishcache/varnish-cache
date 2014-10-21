@@ -46,7 +46,7 @@ v1d_bytes(struct req *req, enum vdp_action act, void **priv,
 	if (act == VDP_INIT || act == VDP_FINI)
 		return (0);
 
-	assert(req->vdp_nxt == -1);	/* always at the bottom of the pile */
+	AZ(req->vdp_nxt);		/* always at the bottom of the pile */
 
 	if (len > 0)
 		wl = WRW_Write(req->wrk, ptr, len);
@@ -336,8 +336,9 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	http_SetHeader(req->resp,
 	    req->doclose ? "Connection: close" : "Connection: keep-alive");
 
-	req->vdps[0] = v1d_bytes;
 	req->vdp_nxt = 0;
+	VTAILQ_INIT(&req->vdp);
+	VDP_push(req, v1d_bytes, NULL);
 
 	if (
 	    req->wantbody &&

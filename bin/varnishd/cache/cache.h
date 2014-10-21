@@ -201,18 +201,6 @@ struct http {
  * VFP filter state
  */
 
-struct vfp_entry {
-	unsigned		magic;
-#define VFP_ENTRY_MAGIC		0xbe32a027
-	const struct vfp	*vfp;
-	void			*priv1;
-	intptr_t		priv2;
-	enum vfp_status		closed;
-	VTAILQ_ENTRY(vfp_entry)	list;
-	uint64_t		calls;
-	uint64_t		bytes_out;
-};
-
 VTAILQ_HEAD(vfp_entry_s, vfp_entry);
 
 struct vfp_ctx {
@@ -534,6 +522,8 @@ struct busyobj {
 
 /*--------------------------------------------------------------------*/
 
+VTAILQ_HEAD(vdp_entry_s, vdp_entry);
+
 struct req {
 	unsigned		magic;
 #define REQ_MAGIC		0x2751aaa1
@@ -614,10 +604,8 @@ struct req {
 #define RES_PIPE		(1<<7)
 
 	/* Deliver pipeline */
-#define	N_VDPS			5
-	vdp_bytes		*vdps[N_VDPS];
-	void			*vdpp[N_VDPS];
-	int			vdp_nxt;
+	struct vdp_entry_s	vdp;
+	struct vdp_entry	*vdp_nxt;
 
 	/* Transaction VSL buffer */
 	struct vsl_log		vsl[1];

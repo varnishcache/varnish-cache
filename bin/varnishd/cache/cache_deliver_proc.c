@@ -35,46 +35,52 @@
 int
 VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 {
-	int i, retval;
+	int retval;
+	struct vdp_entry *vdp;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	vdp = req->vdp_nxt;
+	CHECK_OBJ_NOTNULL(vdp, VDP_ENTRY_MAGIC);
+	req->vdp_nxt = VTAILQ_NEXT(vdp, list);
 
 	assert(act > VDP_NULL || len > 0);
 	/* Call the present layer, while pointing to the next layer down */
-	i = req->vdp_nxt--;
-	assert(i >= 0 && i < N_VDPS);
-	retval = req->vdps[i](req, act, &req->vdpp[i], ptr, len);
-	req->vdp_nxt++;
+	retval = vdp->func(req, act, &vdp->priv, ptr, len);
+	req->vdp_nxt = vdp;
 	return (retval);
 }
 
 void
 VDP_push(struct req *req, vdp_bytes *func, void *priv)
 {
+	struct vdp_entry *vdp;
+
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(func);
 
-	/* Push another layer */
-	assert(req->vdp_nxt >= 0);
-	assert(req->vdp_nxt + 1 < N_VDPS);
-	req->vdps[++req->vdp_nxt] = func;
-	req->vdpp[req->vdp_nxt] = priv;
-	AZ(req->vdps[req->vdp_nxt](req, VDP_INIT,
-	   &req->vdpp[req->vdp_nxt], NULL, 0));
+	vdp = WS_Alloc(req->ws, sizeof *vdp);
+	AN(vdp);
+	memset(vdp, 0, sizeof *vdp);
+	vdp->magic = VDP_ENTRY_MAGIC;
+	vdp->func = func;
+	vdp->priv = priv;
+	VTAILQ_INSERT_HEAD(&req->vdp, vdp, list);
+	req->vdp_nxt = vdp;
+
+	AZ(func(req, VDP_INIT, &vdp->priv, NULL, 0));
 }
 
 void
 VDP_pop(struct req *req, vdp_bytes *func)
 {
+	struct vdp_entry *vdp;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	/* Pop top layer */
-	assert(req->vdp_nxt >= 1);
-	assert(req->vdp_nxt < N_VDPS);
-	assert(req->vdps[req->vdp_nxt] == func);
-	AZ(req->vdps[req->vdp_nxt](req, VDP_FINI,
-	   &req->vdpp[req->vdp_nxt], NULL, 0));
-	AZ(req->vdpp[req->vdp_nxt]);
-	req->vdps[req->vdp_nxt] = NULL;
-	req->vdp_nxt--;
+	vdp = VTAILQ_FIRST(&req->vdp);
+	CHECK_OBJ_NOTNULL(vdp, VDP_ENTRY_MAGIC);
+	assert(vdp->func == func);
+	VTAILQ_REMOVE(&req->vdp, vdp, list);
+	AZ(vdp->func(req, VDP_FINI, &vdp->priv, NULL, 0));
+	AZ(vdp->priv);
+	req->vdp_nxt = VTAILQ_FIRST(&req->vdp);
 }
