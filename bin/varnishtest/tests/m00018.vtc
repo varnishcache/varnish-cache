@@ -1,34 +1,24 @@
-varnishtest "Test substring matching in std"
+varnishtest "Test std.substr"
 
-server s1 {
-       rxreq
-       txresp
-
-       rxreq
-       txresp
+server s1 -repeat 2 {
+	rxreq
+	txresp
 } -start
 
 varnish v1 -vcl+backend {
 	import ${vmod_std};
 
 	sub vcl_deliver {
-	    if (std.strstr(req.url, "foo")) {
-		set resp.http.sub = "found";	
-	    } else {
-		set resp.http.sub = "not found";	
-	    }
-		
+		set resp.http.sub = std.strstr(req.url, "b");
 	}
 } -start
 
 client c1 {
 	txreq -url "/foobar"
 	rxresp
-	expect resp.http.sub == "found"
-
+	expect resp.http.sub == "bar"
 
 	txreq -url "/quux"
 	rxresp
-	expect resp.http.sub == "not found"
+	expect resp.http.sub == ""
 } -run
-
