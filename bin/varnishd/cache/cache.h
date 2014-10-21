@@ -36,7 +36,6 @@
 
 #include "common/common.h"
 
-#include "cache/cache_filter.h"
 #include "vapi/vsl_int.h"
 
 #include <sys/socket.h>
@@ -769,7 +768,6 @@ void VBF_Fetch(struct worker *wrk, struct req *req,
     struct objcore *oc, struct objcore *oldoc, enum vbf_fetch_mode_e);
 
 /* cache_fetch_proc.c */
-enum vfp_status VFP_GetStorage(struct vfp_ctx *, ssize_t *sz, uint8_t **ptr);
 void VFP_Init(void);
 
 /* cache_gzip.c */
@@ -794,7 +792,6 @@ enum vgzret_e VGZ_Gzip(struct vgz *, const void **, ssize_t *len,
 enum vgzret_e VGZ_Gunzip(struct vgz *, const void **, ssize_t *len);
 enum vgzret_e VGZ_Destroy(struct vgz **);
 void VGZ_UpdateObj(const struct vfp_ctx *, const struct vgz*);
-vdp_bytes VDP_gunzip;
 
 int VGZ_WrwInit(struct vgz *vg);
 enum vgzret_e VGZ_WrwGunzip(struct req *, struct vgz *, const void *ibuf,
@@ -1060,7 +1057,6 @@ void VRTPRIV_dynamic_kill(struct sess *sp, uintptr_t id);
 
 void ESI_Deliver(struct req *);
 void ESI_DeliverChild(struct req *);
-vdp_bytes VED_pretend_gzip;
 
 /* cache_vrt_vmod.c */
 void VMOD_Init(void);

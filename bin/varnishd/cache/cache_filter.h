@@ -82,6 +82,9 @@ enum vfp_status VFP_Suck(struct vfp_ctx *, void *p, ssize_t *lp);
 enum vfp_status VFP_Error(struct vfp_ctx *, const char *fmt, ...)
     __printflike(2, 3);
 
+/* cache_fetch_proc.c */
+enum vfp_status VFP_GetStorage(struct vfp_ctx *, ssize_t *sz, uint8_t **ptr);
+
 /* Deliver processors ------------------------------------------------*/
 
 enum vdp_action {
@@ -106,3 +109,7 @@ struct vdp_entry {
 int VDP_bytes(struct req *, enum vdp_action act, const void *ptr, ssize_t len);
 void VDP_push(struct req *, vdp_bytes *func, void *priv);
 void VDP_pop(struct req *, vdp_bytes *func);
+
+vdp_bytes VDP_gunzip;
+vdp_bytes VED_pretend_gzip;
+

@@ -42,6 +42,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "cache_filter.h"
 #include "vend.h"
 
 #include "vgz.h"

@@ -30,6 +30,7 @@
 #include "config.h"
 
 #include "cache/cache.h"
+#include "cache/cache_filter.h"
 
 #include "vct.h"
 

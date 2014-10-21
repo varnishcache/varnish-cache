@@ -30,7 +30,7 @@
 #include "config.h"
 
 #include "cache.h"
-//#include "cache_filter.h"
+#include "cache_filter.h"
 
 int
 VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)

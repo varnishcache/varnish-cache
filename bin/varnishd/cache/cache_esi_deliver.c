@@ -34,6 +34,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "cache_filter.h"
 
 #include "vtim.h"
 #include "cache_esi.h"
