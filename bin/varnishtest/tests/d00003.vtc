@@ -1,4 +1,4 @@
-varnishtest "Hash director"
+varnishtest "Test hash director"
 
 server s1 {
 	rxreq
@@ -18,7 +18,6 @@ server s2 {
 	txresp -hdr "Foo: 8" -body "8"
 } -start
 
-
 varnish v1 -vcl+backend {
 	import ${vmod_directors};
 
@@ -31,6 +30,7 @@ varnish v1 -vcl+backend {
 	sub vcl_recv {
 		return(pass);
 	}
+
 	sub vcl_backend_fetch {
 		if (bereq.url == "/nohdr") {
 			set bereq.backend = h1.backend(bereq.http.Void);
@@ -42,6 +42,7 @@ varnish v1 -vcl+backend {
 			set bereq.backend = h1.backend(bereq.url);
 		}
 	}
+
 	sub vcl_backend_response {
 		set beresp.http.where = bereq.backend + "-->" + beresp.backend;
 	}
@@ -73,6 +74,4 @@ client c1 {
 	txreq -url /nohdr
 	rxresp
 	expect resp.http.foo == "8"
-
-
 } -run

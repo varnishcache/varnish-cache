@@ -1,0 +1,90 @@
+varnishtest "Test round robin stacked within fallback"
+
+server s1 -repeat 2 {
+	rxreq
+	txresp -body "1"
+} -start
+
+server s2 -repeat 4 {
+	rxreq
+	txresp -body "22"
+} -start
+
+server s3 -repeat 2 {
+	rxreq
+	txresp -body "333"
+} -start
+
+server s4 -repeat 2 {
+	rxreq
+	txresp -body "4444"
+} -start
+
+varnish v1 -vcl+backend {
+	import ${vmod_directors};
+
+	sub vcl_init {
+		new rr1 = directors.round_robin();
+		rr1.add_backend(s1);
+		rr1.add_backend(s2);
+
+		new rr2 = directors.round_robin();
+		rr2.add_backend(s3);
+		rr2.add_backend(s4);
+
+		new fb = directors.fallback();
+		fb.add_backend(rr1.backend());
+		fb.add_backend(rr2.backend());
+	}
+
+	sub vcl_recv {
+		return (pass);
+	}
+
+	sub vcl_backend_fetch {
+		set bereq.backend = fb.backend();
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.body == "1"
+	txreq
+	rxresp
+	expect resp.body == "22"
+	txreq
+	rxresp
+	expect resp.body == "1"
+	txreq
+	rxresp
+	expect resp.body == "22"
+} -run
+
+varnish v1 -cliok "backend.set_health s1 sick"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.body == "22"
+	txreq
+	rxresp
+	expect resp.body == "22"
+} -run
+
+varnish v1 -cliok "backend.set_health s2 sick"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.body == "333"
+	txreq
+	rxresp
+	expect resp.body == "4444"
+	txreq
+	rxresp
+	expect resp.body == "333"
+	txreq
+	rxresp
+	expect resp.body == "4444"
+} -run

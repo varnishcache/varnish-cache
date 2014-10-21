@@ -19,6 +19,7 @@ varnish v1 -vcl+backend {
 	sub vcl_backend_fetch {
 		set bereq.backend = foo.backend();
 	}
+
 	sub vcl_backend_response {
 		set beresp.http.where = bereq.backend + "-->" + beresp.backend;
 	}

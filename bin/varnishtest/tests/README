@@ -16,10 +16,11 @@ Naming scheme
 	id ~ [a] --> varnishtest(1) tests
 	id ~ [b] --> Basic functionality tests
 	id ~ [c] --> Complex functionality tests
+	id ~ [d] --> Director VMOD tests
 	id ~ [e] --> ESI tests
 	id ~ [g] --> GZIP tests
 	id ~ [l] --> VSL tests
-	id ~ [m] --> VMOD tests
+	id ~ [m] --> VMOD tests excluding director
 	id ~ [p] --> Persistent tests
 	id ~ [r] --> Regression tests, same number as ticket
 	id ~ [s] --> Slow tests, expiry, grace etc.
