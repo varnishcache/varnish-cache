@@ -205,7 +205,7 @@ ved_decode_len(uint8_t **pp)
  * the stream with a bit more overhead.
  */
 
-static void
+static int
 ved_pretend_gzip(struct req *req, const uint8_t *p, ssize_t l)
 {
 	uint8_t buf1[5], buf2[5];
@@ -219,24 +219,25 @@ ved_pretend_gzip(struct req *req, const uint8_t *p, ssize_t l)
 	while (l > 0) {
 		if (l >= 65535) {
 			lx = 65535;
-			req->resp_bodybytes +=
-			    WRW_Write(req->wrk, buf1, sizeof buf1);
+			if (VDP_bytes(req, VDP_NULL, buf1, sizeof buf1))
+				return (-1);
 		} else {
 			lx = (uint16_t)l;
 			buf2[0] = 0;
 			vle16enc(buf2 + 1, lx);
 			vle16enc(buf2 + 3, ~lx);
-			req->resp_bodybytes +=
-			    WRW_Write(req->wrk, buf2, sizeof buf2);
+			if (VDP_bytes(req, VDP_NULL, buf2, sizeof buf2))
+				return (-1);
 		}
-		req->resp_bodybytes += WRW_Write(req->wrk, p, lx);
+		if (VDP_bytes(req, VDP_NULL, p, lx))
+			return (-1);
 		req->crc = crc32(req->crc, p, lx);
 		req->l_crc += lx;
 		l -= lx;
 		p += lx;
 	}
 	/* buf2 is local, have to flush */
-	(void)WRW_Flush(req->wrk);
+	return (VDP_bytes(req, VDP_FLUSH, NULL, 0));
 }
 
 /*---------------------------------------------------------------------
@@ -289,8 +290,7 @@ ESI_Deliver(struct req *req)
 		if (isgzip && !(req->res_mode & RES_GUNZIP)) {
 			assert(sizeof gzip_hdr == 10);
 			/* Send out the gzip header */
-			req->resp_bodybytes +=
-			    WRW_Write(req->wrk, gzip_hdr, 10);
+			(void)VDP_bytes(req, VDP_NULL, gzip_hdr, 10);
 			req->l_crc = 0;
 			req->gzip_resp = 1;
 			req->crc = crc32(0L, Z_NULL, 0);
@@ -349,14 +349,13 @@ ESI_Deliver(struct req *req)
 					 * We have a gzip'ed VEC and delivers
 					 * a gzip'ed ESI response.
 					 */
-					req->resp_bodybytes +=
-					    WRW_Write(req->wrk, pp, l2);
+					(void)VDP_bytes(req, VDP_NULL, pp, l2);
 				} else if (req->gzip_resp) {
 					/*
 					 * A gzip'ed ESI response, but the VEC
 					 * was not gzip'ed.
 					 */
-					ved_pretend_gzip(req, pp, l2);
+					(void)ved_pretend_gzip(req, pp, l2);
 				} else if (isgzip) {
 					/*
 					 * A gzip'ed VEC, but ungzip'ed ESI
@@ -375,8 +374,7 @@ ESI_Deliver(struct req *req)
 					/*
 					 * Ungzip'ed VEC, ungzip'ed ESI response
 					 */
-					req->resp_bodybytes +=
-					    WRW_Write(req->wrk, pp, l2);
+					(void)VDP_bytes(req, VDP_NULL, pp, l2);
 				}
 				pp += l2;
 				if (sl == 0) {
@@ -421,7 +419,7 @@ ESI_Deliver(struct req *req)
 			AN(r);
 			if (vgz != NULL)
 				VGZ_WrwFlush(req, vgz);
-			if (WRW_Flush(req->wrk)) {
+			if (VDP_bytes(req, VDP_FLUSH, NULL, 0)) {
 				SES_Close(req->sp, SC_REM_CLOSE);
 				p = e;
 				break;
@@ -454,9 +452,9 @@ ESI_Deliver(struct req *req)
 		/* MOD(2^32) length */
 		vle32enc(tailbuf + 9, req->l_crc);
 
-		req->resp_bodybytes += WRW_Write(req->wrk, tailbuf, 13);
+		(void)VDP_bytes(req, VDP_NULL, tailbuf, 13);
 	}
-	(void)WRW_Flush(req->wrk);
+	(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
 	ObjIterEnd(req->objcore, &oi);
 }
 
@@ -488,8 +486,8 @@ ESI_DeliverChild(struct req *req)
 		oi = ObjIterBegin(req->wrk, req->objcore);
 		do {
 			ois = ObjIter(req->objcore, oi, &sp, &sl);
-			if (sl > 0)
-				ved_pretend_gzip(req, sp, sl);
+			if (sl > 0 && ved_pretend_gzip(req, sp, sl))
+				break;
 		} while (ois == OIS_DATA || ois == OIS_STREAM);
 		ObjIterEnd(req->objcore, &oi);
 		return;
@@ -547,8 +545,8 @@ ESI_DeliverChild(struct req *req)
 			if (dl > 0) {
 				if (dl > sl)
 					dl = sl;
-				req->resp_bodybytes +=
-				    WRW_Write(req->wrk, pp, dl);
+				if (VDP_bytes(req, VDP_NULL, pp, dl))
+					break;
 				ll += dl;
 				sl -= dl;
 				pp += dl;
@@ -558,7 +556,8 @@ ESI_DeliverChild(struct req *req)
 			/* Remove the "LAST" bit */
 			dbits[0] = *pp;
 			dbits[0] &= ~(1U << (last & 7));
-			req->resp_bodybytes += WRW_Write(req->wrk, dbits, 1);
+			if (VDP_bytes(req, VDP_NULL, dbits, 1))
+				break;
 			ll++;
 			sl--;
 			pp++;
@@ -569,8 +568,8 @@ ESI_DeliverChild(struct req *req)
 			if (dl > 0) {
 				if (dl > sl)
 					dl = sl;
-				req->resp_bodybytes +=
-				    WRW_Write(req->wrk, pp, dl);
+				if (VDP_bytes(req, VDP_NULL, pp, dl))
+					break;
 				ll += dl;
 				sl -= dl;
 				pp += dl;
@@ -631,8 +630,8 @@ ESI_DeliverChild(struct req *req)
 			default:
 				WRONG("compiler must be broken");
 			}
-			req->resp_bodybytes +=
-			    WRW_Write(req->wrk, dbits + 1, lpad);
+			if (VDP_bytes(req, VDP_NULL, dbits + 1, lpad))
+				break;
 		}
 		if (sl > 0) {
 			/* Recover GZIP tail */
