@@ -31,7 +31,6 @@ varnish v1 -vcl+backend {
 	sub vcl_backend_fetch {
 		set bereq.backend = fb1.backend();
 	}
-
 } -start
 
 varnish v1 -cliok "backend.set_health s1 sick"

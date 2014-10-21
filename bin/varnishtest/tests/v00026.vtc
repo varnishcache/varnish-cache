@@ -42,9 +42,7 @@ varnish v1 -vcl+backend {
 			set bereq.backend = h1.backend(bereq.url);
 		}
 	}
-
 } -start
-
 
 client c1 {
 	txreq -url /1
@@ -70,6 +68,4 @@ client c1 {
 	txreq -url /nohdr
 	rxresp
 	expect resp.http.foo == "8"
-
-
 } -run
