@@ -72,9 +72,11 @@ enum vfp_status VFP_Error(struct vfp_ctx *, const char *fmt, ...)
 /* Deliver processors ------------------------------------------------*/
 
 enum vdp_action {
+	VDP_INIT,
 	VDP_NULL,
 	VDP_FLUSH,
 	VDP_FINISH,
+	VDP_FINI,
 };
-typedef int vdp_bytes(struct req *, enum vdp_action, const void *ptr,
-    ssize_t len);
+typedef int vdp_bytes(struct req *, enum vdp_action, void *priv,
+    const void *ptr, ssize_t len);

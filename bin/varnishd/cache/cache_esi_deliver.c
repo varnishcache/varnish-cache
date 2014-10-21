@@ -206,15 +206,17 @@ ved_decode_len(uint8_t **pp)
  */
 
 int __match_proto__(vdp_bytes)
-VED_pretend_gzip(struct req *req, enum vdp_action act, const void *pv,
-    ssize_t l)
+VED_pretend_gzip(struct req *req, enum vdp_action act, void *priv,
+    const void *pv, ssize_t l)
 {
 	uint8_t buf1[5], buf2[5];
 	const uint8_t *p;
 	uint16_t lx;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	(void)act;
+	(void)priv;
+	if (act == VDP_INIT || act == VDP_FINI)
+		return (0);
 	p = pv;
 
 	lx = 65535;
@@ -362,7 +364,7 @@ ESI_Deliver(struct req *req)
 					 * was not gzip'ed.
 					 */
 					(void)VED_pretend_gzip(req, VDP_NULL,
-					    pp, l2);
+					    NULL, pp, l2);
 				} else if (isgzip) {
 					/*
 					 * A gzip'ed VEC, but ungzip'ed ESI

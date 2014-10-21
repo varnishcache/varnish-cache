@@ -285,7 +285,8 @@ VGZ_WrwInit(struct vgz *vg)
  */
 
 int __match_proto__(vdp_bytes)
-VDP_gunzip(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
+VDP_gunzip(struct req *req, enum vdp_action act, void *priv,
+    const void *ptr, ssize_t len)
 {
 	enum vgzret_e vr;
 	ssize_t dl;
@@ -296,6 +297,9 @@ VDP_gunzip(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	wrk = req->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	(void)priv;
+	if (act == VDP_INIT || act == VDP_FINI)
+		return (0);
 	vg = req->vgz;
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	AN(vg->m_buf);

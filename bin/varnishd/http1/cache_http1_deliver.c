@@ -36,11 +36,15 @@
 /*--------------------------------------------------------------------*/
 
 static int __match_proto__(vdp_bytes)
-v1d_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
+v1d_bytes(struct req *req, enum vdp_action act, void *priv,
+    const void *ptr, ssize_t len)
 {
 	ssize_t wl = 0;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	(void)priv;
+	if (act == VDP_INIT || act == VDP_FINI)
+		return (0);
 
 	assert(req->vdp_nxt == -1);	/* always at the bottom of the pile */
 
@@ -57,14 +61,17 @@ v1d_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 /*--------------------------------------------------------------------*/
 
 static int __match_proto__(vdp_bytes)
-v1d_range_bytes(struct req *req, enum vdp_action act, const void *ptr,
-    ssize_t len)
+v1d_range_bytes(struct req *req, enum vdp_action act, void *priv,
+    const void *ptr, ssize_t len)
 {
 	int retval = 0;
 	ssize_t l;
 	const char *p = ptr;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	(void)priv;
+	if (act == VDP_INIT || act == VDP_FINI)
+		return (0);
 	l = req->range_low - req->range_off;
 	if (l > 0) {
 		if (l > len)
