@@ -109,7 +109,6 @@ smf_init(struct stevedore *parent, int ac, char * const *av)
 
 	AZ(av[ac]);
 
-	fn = NULL;
 	size = NULL;
 	page_size = getpagesize();
 
