@@ -83,9 +83,7 @@ digraph cache_req_fsm {
 		]
 
 		SYNTH -> synth [color=purple]
-		synth:del:s -> V1D_Deliver_Synth [color=purple]
-
-		V1D_Deliver_Synth -> DONE
+		synth:del:s -> V1D_Deliver [color=purple]
 	}
 
 	subgraph cluster_backend {
