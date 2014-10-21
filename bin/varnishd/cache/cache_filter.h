@@ -78,5 +78,5 @@ enum vdp_action {
 	VDP_FINISH,
 	VDP_FINI,
 };
-typedef int vdp_bytes(struct req *, enum vdp_action, void *priv,
+typedef int vdp_bytes(struct req *, enum vdp_action, void **priv,
     const void *ptr, ssize_t len);

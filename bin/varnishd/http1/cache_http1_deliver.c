@@ -36,7 +36,7 @@
 /*--------------------------------------------------------------------*/
 
 static int __match_proto__(vdp_bytes)
-v1d_bytes(struct req *req, enum vdp_action act, void *priv,
+v1d_bytes(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	ssize_t wl = 0;
@@ -60,43 +60,58 @@ v1d_bytes(struct req *req, enum vdp_action act, void *priv,
 
 /*--------------------------------------------------------------------*/
 
+struct v1rp {
+	unsigned		magic;
+#define V1RP_MAGIC		0xb886e711
+	ssize_t			range_low;
+	ssize_t			range_high;
+	ssize_t			range_off;
+};
+
 static int __match_proto__(vdp_bytes)
-v1d_range_bytes(struct req *req, enum vdp_action act, void *priv,
+v1d_range_bytes(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	int retval = 0;
 	ssize_t l;
 	const char *p = ptr;
+	struct v1rp *v1rp;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	(void)priv;
-	if (act == VDP_INIT || act == VDP_FINI)
+	if (act == VDP_INIT)
 		return (0);
-	l = req->range_low - req->range_off;
+	if (act == VDP_FINI) {
+		*priv = NULL;
+		return (0);
+	}
+	CAST_OBJ_NOTNULL(v1rp, *priv, V1RP_MAGIC);
+	l = v1rp->range_low - v1rp->range_off;
 	if (l > 0) {
 		if (l > len)
 			l = len;
-		req->range_off += l;
+		v1rp->range_off += l;
 		p += l;
 		len -= l;
 	}
-	l = req->range_high - req->range_off;
+	l = v1rp->range_high - v1rp->range_off;
 	if (l > len)
 		l = len;
 	if (l > 0)
 		retval = VDP_bytes(req, act, p, l);
 	else if (act > VDP_NULL)
 		retval = VDP_bytes(req, act, p, 0);
-	req->range_off += len;
+	v1rp->range_off += len;
 	return (retval);
 }
 
 /*--------------------------------------------------------------------*/
 
+
 static void
 v1d_dorange(struct req *req, struct busyobj *bo, const char *r)
 {
 	ssize_t len, low, high, has_low;
+	struct v1rp *v1rp;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
@@ -163,10 +178,14 @@ v1d_dorange(struct req *req, struct busyobj *bo, const char *r)
 		    (intmax_t)(1 + high - low));
 	http_PutResponse(req->resp, "HTTP/1.1", 206, NULL);
 
-	req->range_off = 0;
-	req->range_low = low;
-	req->range_high = high + 1;
-	VDP_push(req, v1d_range_bytes);
+	v1rp = WS_Alloc(req->ws, sizeof *v1rp);
+	XXXAN(v1rp);
+	memset(v1rp, 0, sizeof *v1rp);
+	v1rp->magic = V1RP_MAGIC;
+	v1rp->range_off = 0;
+	v1rp->range_low = low;
+	v1rp->range_high = high + 1;
+	VDP_push(req, v1d_range_bytes, v1rp);
 }
 
 /*--------------------------------------------------------------------*/
@@ -349,7 +368,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		ESI_Deliver(req);
 	} else if (req->res_mode & RES_ESI_CHILD && req->gzip_resp &&
 	    !ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED)) {
-		VDP_push(req, VED_pretend_gzip);
+		VDP_push(req, VED_pretend_gzip, NULL);
 		ois = v1d_WriteDirObj(req);
 		VDP_pop(req, VED_pretend_gzip);
 	} else if (req->res_mode & RES_ESI_CHILD && req->gzip_resp) {
@@ -360,11 +379,8 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	    (req->res_mode & RES_ESI_CHILD &&
 	    !req->gzip_resp &&
 	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED))) {
-		VDP_push(req, VDP_gunzip);
-		req->vgz = VGZ_NewUngzip(req->vsl, "U D -");
-		AZ(VGZ_WrwInit(req->vgz));
+		VDP_push(req, VDP_gunzip, NULL);
 		ois = v1d_WriteDirObj(req);
-		(void)VGZ_Destroy(&req->vgz);
 		VDP_pop(req, VDP_gunzip);
 	} else {
 		ois = v1d_WriteDirObj(req);

@@ -619,14 +619,6 @@ struct req {
 	void			*vdpp[N_VDPS];
 	int			vdp_nxt;
 
-	/* Range */
-	ssize_t			range_low;
-	ssize_t			range_high;
-	ssize_t			range_off;
-
-	/* Gunzip */
-	struct vgz		*vgz;
-
 	/* Transaction VSL buffer */
 	struct vsl_log		vsl[1];
 
@@ -766,13 +758,13 @@ VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 	/* Call the present layer, while pointing to the next layer down */
 	i = req->vdp_nxt--;
 	assert(i >= 0 && i < N_VDPS);
-	retval = req->vdps[i](req, act, req->vdpp[i], ptr, len);
+	retval = req->vdps[i](req, act, &req->vdpp[i], ptr, len);
 	req->vdp_nxt++;
 	return (retval);
 }
 
 static inline void
-VDP_push(struct req *req, vdp_bytes *func)
+VDP_push(struct req *req, vdp_bytes *func, void *priv)
 {
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(func);
@@ -781,7 +773,7 @@ VDP_push(struct req *req, vdp_bytes *func)
 	assert(req->vdp_nxt >= 0);
 	assert(req->vdp_nxt + 1 < N_VDPS);
 	req->vdps[++req->vdp_nxt] = func;
-	req->vdpp[req->vdp_nxt] = NULL;
+	req->vdpp[req->vdp_nxt] = priv;
 	AZ(req->vdps[req->vdp_nxt](req, VDP_INIT,
 	   &req->vdpp[req->vdp_nxt], NULL, 0));
 }

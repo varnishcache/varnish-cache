@@ -206,7 +206,7 @@ ved_decode_len(uint8_t **pp)
  */
 
 int __match_proto__(vdp_bytes)
-VED_pretend_gzip(struct req *req, enum vdp_action act, void *priv,
+VED_pretend_gzip(struct req *req, enum vdp_action act, void **priv,
     const void *pv, ssize_t l)
 {
 	uint8_t buf1[5], buf2[5];
