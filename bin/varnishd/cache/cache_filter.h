@@ -80,3 +80,7 @@ enum vdp_action {
 };
 typedef int vdp_bytes(struct req *, enum vdp_action, void **priv,
     const void *ptr, ssize_t len);
+
+int VDP_bytes(struct req *, enum vdp_action act, const void *ptr, ssize_t len);
+void VDP_push(struct req *, vdp_bytes *func, void *priv);
+void VDP_pop(struct req *, vdp_bytes *func);

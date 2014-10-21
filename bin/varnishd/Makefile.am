@@ -16,6 +16,7 @@ varnishd_SOURCES = \
 	cache/cache_ban.c \
 	cache/cache_busyobj.c \
 	cache/cache_cli.c \
+	cache/cache_deliver_proc.c \
 	cache/cache_director.c \
 	cache/cache_esi_deliver.c \
 	cache/cache_esi_fetch.c \
