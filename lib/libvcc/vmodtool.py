@@ -104,7 +104,7 @@ def lwrap(s, w=72):
 #######################################################################
 
 def is_c_name(s):
-	return None != re.match("^[a-z][a-z0-9_]*$", s)
+	return None != re.match("^[a-zA-Z][a-zA-Z0-9_]*$", s)
 
 
 class ParseError(Exception):
