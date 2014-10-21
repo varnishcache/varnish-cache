@@ -219,7 +219,7 @@ parse_new(struct vcc *tl)
 	vcc_NextToken(tl);
 
 	bprintf(buf1, ", &vo_%s, \"%s\"", sy1->name, sy1->name);
-	vcc_Eval_Func(tl, s_init, buf1, "ASDF", s_init + strlen(s_init) + 1);
+	vcc_Eval_Func(tl, s_init, buf1, sy2->name, s_init + strlen(s_init) + 1);
 	ifp = New_IniFin(tl);
 	VSB_printf(ifp->fin, "\t%s(&vo_%s);", s_fini, sy1->name);
 	ExpectErr(tl, ';');
