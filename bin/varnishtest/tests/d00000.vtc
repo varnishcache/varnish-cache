@@ -10,7 +10,6 @@ server s2 {
 	txresp -body "22"
 } -start
 
-
 server s3 {
 	rxreq
 	txresp -body "333"
@@ -34,10 +33,6 @@ varnish v1 -vcl+backend {
 
 	sub vcl_backend_fetch {
 		set bereq.backend = rr.backend();
-	}
-
-	sub vcl_backend_response {
-		set beresp.http.where = bereq.backend + "-->" + beresp.backend;
 	}
 } -start
 

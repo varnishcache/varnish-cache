@@ -42,13 +42,7 @@ varnish v1 -vcl+backend {
 			set bereq.backend = h1.backend(bereq.url);
 		}
 	}
-
-	sub vcl_backend_response {
-		set beresp.http.where = bereq.backend + "-->" + beresp.backend;
-	}
-
 } -start
-
 
 client c1 {
 	txreq -url /1
