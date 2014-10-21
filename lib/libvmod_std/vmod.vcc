@@ -218,8 +218,8 @@ Example
 $Function STRING strstr(STRING s1, STRING s2)
 
 Description
-	Returns the first occurrence of the string *s2* in the string
-	*s1*, or an empty string if not found.
+	Returns a string beginning at the first occurrence of the string
+	*s2* in the string *s1*, or an empty string if *s2* is not found.
 
 	Note that the comparison is case sensitive.
 Example
