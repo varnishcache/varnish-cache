@@ -44,8 +44,8 @@ client c1 {
 	delay 1
 } -run
 
-# Three failures, one for obj2, one for vcl_backend_error{}
-varnish v1 -expect SMA.Transient.c_fail == 2
+# Three failures, one for obj2, one for vcl_backend_error{}, one for synth objcore
+varnish v1 -expect SMA.Transient.c_fail == 3
 
 client c1 {
 	# Check that Varnish is still alive

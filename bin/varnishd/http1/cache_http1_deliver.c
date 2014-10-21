@@ -176,6 +176,7 @@ v1d_WriteDirObj(struct req *req)
 
 	oi = ObjIterBegin(req->wrk, req->objcore);
 	XXXAN(oi);
+	AZ(req->synth_body);
 
 	do {
 		ois = ObjIter(req->objcore, oi, &ptr, &len);
@@ -363,101 +364,5 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		WRW_EndChunk(req->wrk);
 
 	if ((V1D_FlushReleaseAcct(req) || ois != OIS_DONE) && req->sp->fd >= 0)
-		SES_Close(req->sp, SC_REM_CLOSE);
-}
-
-void
-V1D_Deliver_Synth(struct req *req)
-{
-	const char *r;
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	AN(req->synth_body);
-
-	req->res_mode = 0;
-	if (http_IsStatus(req->resp, 304)) {
-		req->res_mode &= ~RES_LEN;
-		http_Unset(req->resp, H_Content_Length);
-		req->wantbody = 0;
-	} else {
-		req->res_mode |= RES_LEN;
-		http_Unset(req->resp, H_Content_Length);
-		http_PrintfHeader(req->resp, "Content-Length: %zd",
-		    VSB_len(req->synth_body));
-	}
-
-	if (req->esi_level > 0) {
-		/* Included ESI object, always CHUNKED or EOF */
-		req->res_mode &= ~RES_LEN;
-		req->res_mode |= RES_ESI_CHILD;
-	}
-
-	if (!(req->res_mode & (RES_LEN|RES_CHUNKED|RES_EOF))) {
-		/* We havn't chosen yet, do so */
-		if (!req->wantbody) {
-			/* Nothing */
-		} else if (req->http->protover >= 11) {
-			req->res_mode |= RES_CHUNKED;
-		} else {
-			req->res_mode |= RES_EOF;
-			req->doclose = SC_TX_EOF;
-		}
-	}
-	VSLb(req->vsl, SLT_Debug, "RES_MODE %x", req->res_mode);
-
-	if (!(req->res_mode & RES_LEN))
-		http_Unset(req->resp, H_Content_Length);
-
-	if (req->res_mode & RES_GUNZIP)
-		http_Unset(req->resp, H_Content_Encoding);
-
-	if (req->res_mode & RES_CHUNKED)
-		http_SetHeader(req->resp, "Transfer-Encoding: chunked");
-
-	http_SetHeader(req->resp,
-	    req->doclose ? "Connection: close" : "Connection: keep-alive");
-
-	req->vdps[0] = v1d_bytes;
-	req->vdp_nxt = 0;
-
-	if (
-	    req->wantbody &&
-	    !(req->res_mode & RES_ESI_CHILD) &&
-	    cache_param->http_range_support &&
-	    http_IsStatus(req->resp, 200)) {
-		http_SetHeader(req->resp, "Accept-Ranges: bytes");
-		if (http_GetHdr(req->http, H_Range, &r))
-			v1d_dorange(req, NULL, r);
-	}
-
-	WRW_Reserve(req->wrk, &req->sp->fd, req->vsl, req->t_prev);
-
-	/*
-	 * Send HTTP protocol header, unless interior ESI object
-	 */
-	if (!(req->res_mode & RES_ESI_CHILD))
-		req->resp_hdrbytes +=
-		    HTTP1_Write(req->wrk, req->resp, HTTP1_Resp);
-
-	if (req->res_mode & RES_CHUNKED)
-		WRW_Chunked(req->wrk);
-
-	if (!req->wantbody) {
-		/* This was a HEAD or conditional request */
-#if 0
-	XXX: Missing pretend GZIP for esi-children
-	} else if (req->res_mode & RES_ESI_CHILD && req->gzip_resp) {
-		ESI_DeliverChild(req);
-#endif
-	} else {
-		(void)VDP_bytes(req, VDP_FLUSH, VSB_data(req->synth_body),
-		    VSB_len(req->synth_body));
-		(void)VDP_bytes(req, VDP_FINISH,  NULL, 0);
-	}
-
-	if (req->res_mode & RES_CHUNKED && !(req->res_mode & RES_ESI_CHILD))
-		WRW_EndChunk(req->wrk);
-
-	if (V1D_FlushReleaseAcct(req) && req->sp->fd >= 0)
 		SES_Close(req->sp, SC_REM_CLOSE);
 }

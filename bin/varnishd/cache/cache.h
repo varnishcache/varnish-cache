@@ -743,7 +743,6 @@ extern const int HTTP1_Resp[3];
 /* cache_http1_deliver.c */
 unsigned V1D_FlushReleaseAcct(struct req *req);
 void V1D_Deliver(struct req *, struct busyobj *);
-void V1D_Deliver_Synth(struct req *req);
 
 /* cache_http1_pipe.c */
 void V1P_Init(void);

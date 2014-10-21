@@ -108,7 +108,6 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		wrk->handling = VCL_RET_DELIVER;
 
 	if (wrk->handling != VCL_RET_DELIVER) {
-		assert(req->objcore == req->objcore);
 		(void)HSH_DerefObjCore(wrk, &req->objcore);
 		http_Teardown(req->resp);
 
@@ -155,14 +154,8 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	if (http_HdrIs(req->resp, H_Connection, "close"))
 		req->doclose = SC_RESP_CLOSE;
 
-	if (req->objcore->flags & OC_F_PASS) {
-		/*
-		 * No point in saving the body if it is hit-for-pass,
-		 * but we can't yank it until the fetching thread has
-		 * finished/abandoned also.
-		 */
-		while (req->objcore->busyobj != NULL)
-			(void)usleep(100000);
+	if ((req->objcore->flags & OC_F_PASS) && bo != NULL) {
+		VBO_waitstate(bo, BOS_FINISHED);
 		ObjSlim(wrk, req->objcore);
 	}
 
@@ -194,6 +187,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 	if (req->err_code < 100 || req->err_code > 999)
 		req->err_code = 501;
 
+
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
 	h = req->resp;
 	VTIM_format(now, date);
@@ -212,6 +206,9 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	AZ(VSB_finish(req->synth_body));
 
+	/* Discard any lingering request body before delivery */
+	(void)VRB_Ignore(req);
+
 	if (wrk->handling == VCL_RET_RESTART) {
 		HTTP_Setup(h, req->ws, req->vsl, SLT_RespMethod);
 		VSB_delete(req->synth_body);
@@ -224,15 +221,29 @@ cnt_synth(struct worker *wrk, struct req *req)
 	if (http_HdrIs(req->resp, H_Connection, "close"))
 		req->doclose = SC_RESP_CLOSE;
 
-	/* Discard any lingering request body before delivery */
-	(void)VRB_Ignore(req);
+	req->objcore = HSH_Private(wrk);
+	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+	if (STV_NewObject(req->objcore, wrk, TRANSIENT_STORAGE, 1024)) {
+		ssize_t sz, szl;
+		uint8_t *ptr;
 
-	V1D_Deliver_Synth(req);
+		szl = VSB_len(req->synth_body);
+		assert(szl >= 0);
+		if (szl > 0) {
+			sz = szl;
+			AN(ObjGetSpace(wrk, req->objcore, &sz, &ptr));
+			assert(sz >= szl);
+			memcpy(ptr, VSB_data(req->synth_body), szl);
+			ObjExtend(wrk, req->objcore, szl);
+		}
+		VSB_delete(req->synth_body);
+		req->synth_body = NULL;
+
+		V1D_Deliver(req, NULL);
+		(void)HSH_DerefObjCore(wrk, &req->objcore);
+	}
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
-
-	VSB_delete(req->synth_body);
-	req->synth_body = NULL;
 
 	req->err_code = 0;
 	req->err_reason = NULL;
