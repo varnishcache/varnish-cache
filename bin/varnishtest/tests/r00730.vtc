@@ -4,7 +4,7 @@ server s1 {
 	rxreq
 	txresp -bodylen 5
 	rxreq
-	txresp -bodylen 6
+	txresp -nolen -hdr "Content-Length: 6"
 } -start
 
 varnish v1 -vcl+backend {

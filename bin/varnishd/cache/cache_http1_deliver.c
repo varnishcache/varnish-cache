@@ -240,29 +240,36 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 
 	req->res_mode = 0;
 
+	if (req->esi_level > 0)
+		req->res_mode |= RES_ESI_CHILD;
+
 	if (!req->disable_esi && req->obj->esidata != NULL) {
 		/* In ESI mode, we can't know the aggregate length */
-		req->res_mode &= ~RES_LEN;
 		req->res_mode |= RES_ESI;
+		RFC2616_Weaken_Etag(req->resp);
+	}
+
+	if (req->res_mode & (RES_ESI_CHILD|RES_ESI)) {
+		/* nothing */
 	} else if (req->resp->status == 304) {
 		req->res_mode &= ~RES_LEN;
 		http_Unset(req->resp, H_Content_Length);
 		req->wantbody = 0;
-	} else if (bo == NULL) {
-		/* XXX: Not happy with this convoluted test */
+	} else if (bo != NULL) {
+		/* Streaming, decide CHUNKED/EOF later */
+	} else if ((req->obj->objcore->flags & OC_F_PASS) && !req->wantbody) {
+		/*
+		 * if we pass a HEAD the C-L header may already be in the
+		 * object and it will not match the actual storage length
+		 * which is zero.
+		 * Hand that C-L header back to client.
+		 */
 		req->res_mode |= RES_LEN;
-		if (!(req->obj->objcore->flags & OC_F_PASS) ||
-		    req->obj->len != 0) {
-			http_Unset(req->resp, H_Content_Length);
-			http_PrintfHeader(req->resp,
-			    "Content-Length: %zd", req->obj->len);
-		}
-	}
-
-	if (req->esi_level > 0) {
-		/* Included ESI object, always CHUNKED or EOF */
-		req->res_mode &= ~RES_LEN;
-		req->res_mode |= RES_ESI_CHILD;
+	} else {
+		req->res_mode |= RES_LEN;
+		http_Unset(req->resp, H_Content_Length);
+		http_PrintfHeader(req->resp,
+		    "Content-Length: %zd", req->obj->len);
 	}
 
 	if (cache_param->http_gzip_support && req->obj->gziped &&
@@ -313,9 +320,6 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		if (http_GetHdr(req->http, H_Range, &r))
 			v1d_dorange(req, bo, r);
 	}
-
-	if (req->res_mode & RES_ESI)
-		RFC2616_Weaken_Etag(req->resp);
 
 	WRW_Reserve(req->wrk, &req->sp->fd, req->vsl, req->t_prev);
 

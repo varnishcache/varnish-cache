@@ -1,0 +1,52 @@
+varnishtest "Missing Content-Length/T-E on passed empty chunked responses."
+
+server s1 {
+	# Empty c-l response is OK.
+	rxreq
+	expect req.url == "/0"
+	txresp
+
+	# Nonzero chunked response is OK.
+	rxreq
+	expect req.url == "/1"
+	send "HTTP/1.1 200 OK\n"
+	send "Transfer-encoding: chunked\n"
+	send "\n"
+	chunkedlen 20
+	chunkedlen 0
+
+	# Empty chunked response is not.
+	rxreq
+	expect req.url == "/2"
+	send "HTTP/1.1 200 OK\n"
+	send "Transfer-encoding: chunked\n"
+	send "\n"
+	chunkedlen 0
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (pass);
+	}
+	sub vcl_backend_response {
+		set beresp.do_stream = false;
+	}
+} -start
+
+
+client c1 {
+	txreq -url "/0"
+	rxresp
+	expect resp.bodylen == 0
+	expect resp.http.Content-Length == "0"
+
+	txreq -url "/1"
+	rxresp
+	expect resp.bodylen == 20
+	expect resp.http.Content-Length == "20"
+
+	txreq -url "/2"
+	rxresp
+	expect resp.bodylen == 0
+	expect resp.http.Content-Length == "0"
+} -run
