@@ -99,7 +99,6 @@ V1P_Process(struct req *req, struct busyobj *bo)
 	struct pollfd fds[2];
 	int i, fd;
 	struct acct_pipe acct_pipe;
-	ssize_t hdrbytes;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
@@ -125,17 +124,13 @@ V1P_Process(struct req *req, struct busyobj *bo)
 	(void)VTCP_blocking(fd);
 
 	V1L_Reserve(wrk, &fd, bo->vsl, req->t_req);
-	hdrbytes = HTTP1_Write(wrk, bo->bereq, HTTP1_Req);
+	acct_pipe.bereq += HTTP1_Write(wrk, bo->bereq, HTTP1_Req);
 
 	if (req->htc->pipeline_b != NULL)
-		(void)V1L_Write(wrk, req->htc->pipeline_b,
+		acct_pipe.in += V1L_Write(wrk, req->htc->pipeline_b,
 		    req->htc->pipeline_e - req->htc->pipeline_b);
 
-	i = V1L_FlushRelease(wrk, &acct_pipe.bereq);
-	if (acct_pipe.bereq > hdrbytes) {
-		acct_pipe.in = acct_pipe.bereq - hdrbytes;
-		acct_pipe.bereq = hdrbytes;
-	}
+	i = V1L_FlushRelease(wrk);
 
 	VSLb_ts_req(req, "Pipe", W_TIM_real(wrk));
 

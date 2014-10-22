@@ -953,7 +953,7 @@ void V1L_Chunked(const struct worker *w);
 void V1L_EndChunk(const struct worker *w);
 void V1L_Reserve(struct worker *w, int *fd, struct vsl_log *, double t0);
 unsigned V1L_Flush(const struct worker *w);
-unsigned V1L_FlushRelease(struct worker *w, uint64_t *pacc);
+unsigned V1L_FlushRelease(struct worker *w);
 unsigned V1L_Write(const struct worker *w, const void *ptr, int len);
 
 /* cache_session.c [SES] */

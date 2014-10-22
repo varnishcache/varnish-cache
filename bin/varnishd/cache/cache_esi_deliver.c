@@ -56,7 +56,7 @@ ved_include(struct req *preq, const char *src, const char *host)
 	if (preq->esi_level >= cache_param->max_esi_depth)
 		return;
 
-	(void)V1L_FlushRelease(preq->wrk, NULL);
+	(void)V1L_FlushRelease(preq->wrk);
 
 	/* Take a workspace snapshot */
 	wrk_ws_wm = WS_Snapshot(wrk->aws); /* XXX ? */

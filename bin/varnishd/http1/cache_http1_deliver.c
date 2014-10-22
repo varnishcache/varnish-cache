@@ -381,7 +381,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	    !(req->res_mode & RES_ESI_CHILD))
 		V1L_EndChunk(req->wrk);
 
-	if ((V1L_FlushRelease(req->wrk, NULL) || ois != OIS_DONE) &&
+	if ((V1L_FlushRelease(req->wrk) || ois != OIS_DONE) &&
 	    req->sp->fd >= 0)
 		SES_Close(req->sp, SC_REM_CLOSE);
 }

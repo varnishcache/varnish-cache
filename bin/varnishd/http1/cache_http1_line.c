@@ -93,19 +93,20 @@ V1L_Reserve(struct worker *wrk, int *fd, struct vsl_log *vsl, double t0)
 	wrk->v1l = v1l;
 }
 
-static void
-v1l_release(struct worker *wrk, uint64_t *pacc)
+unsigned 
+V1L_FlushRelease(struct worker *wrk)
 {
 	struct v1l *v1l;
+	unsigned u;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	u = V1L_Flush(wrk);
 	v1l = wrk->v1l;
 	wrk->v1l = NULL;
 	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
-	if (pacc != NULL)
-		*pacc += v1l->cnt;
 	WS_Release(wrk->aws, 0);
 	WS_Reset(wrk->aws, NULL);
+	return (u);
 }
 
 static void
@@ -208,18 +209,6 @@ V1L_Flush(const struct worker *wrk)
 	if (v1l->ciov < v1l->siov)
 		v1l->ciov = v1l->niov++;
 	return (v1l->werr);
-}
-
-unsigned
-V1L_FlushRelease(struct worker *wrk, uint64_t *pacc)
-{
-	unsigned u;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	AN(wrk->v1l->wfd);
-	u = V1L_Flush(wrk);
-	v1l_release(wrk, pacc);
-	return (u);
 }
 
 unsigned
