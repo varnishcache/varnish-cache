@@ -56,7 +56,7 @@ ved_include(struct req *preq, const char *src, const char *host)
 	if (preq->esi_level >= cache_param->max_esi_depth)
 		return;
 
-	(void)WRW_FlushRelease(preq->wrk, NULL);
+	(void)V1L_FlushRelease(preq->wrk, NULL);
 
 	/* Take a workspace snapshot */
 	wrk_ws_wm = WS_Snapshot(wrk->aws); /* XXX ? */
@@ -130,7 +130,7 @@ ved_include(struct req *preq, const char *src, const char *host)
 		AZ(req->wrk);
 		(void)usleep(10000);
 	}
-	AN(WRW_IsReleased(wrk));
+	AN(V1L_IsReleased(wrk));
 
 	/* Charge the transmitted body byte counts also to the parent request */
 	preq->acct.resp_bodybytes += req->acct.resp_bodybytes;
@@ -141,9 +141,9 @@ ved_include(struct req *preq, const char *src, const char *host)
 	/* Reset the workspace */
 	WS_Reset(wrk->aws, wrk_ws_wm);	/* XXX ? */
 
-	WRW_Reserve(preq->wrk, &preq->sp->fd, preq->vsl, preq->t_prev);
+	V1L_Reserve(preq->wrk, &preq->sp->fd, preq->vsl, preq->t_prev);
 	if (preq->res_mode & RES_CHUNKED)
-		WRW_Chunked(preq->wrk);
+		V1L_Chunked(preq->wrk);
 
 	preq->vcl = req->vcl;
 	req->vcl = NULL;

@@ -123,7 +123,7 @@ struct vrt_privs;
 struct vsb;
 struct waitinglist;
 struct worker;
-struct wrw;
+struct v1l;
 
 #define DIGEST_LEN		32
 
@@ -344,7 +344,7 @@ struct worker {
 
 	double			lastused;
 
-	struct wrw		*wrw;
+	struct v1l		*v1l;
 
 	pthread_cond_t		cond;
 
@@ -948,13 +948,13 @@ int Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how);
 void Pool_Sumstat(struct worker *w);
 void Pool_PurgeStat(unsigned nobj);
 
-#define WRW_IsReleased(w)	((w)->wrw == NULL)
-void WRW_Chunked(const struct worker *w);
-void WRW_EndChunk(const struct worker *w);
-void WRW_Reserve(struct worker *w, int *fd, struct vsl_log *, double t0);
-unsigned WRW_Flush(const struct worker *w);
-unsigned WRW_FlushRelease(struct worker *w, uint64_t *pacc);
-unsigned WRW_Write(const struct worker *w, const void *ptr, int len);
+#define V1L_IsReleased(w)	((w)->v1l == NULL)
+void V1L_Chunked(const struct worker *w);
+void V1L_EndChunk(const struct worker *w);
+void V1L_Reserve(struct worker *w, int *fd, struct vsl_log *, double t0);
+unsigned V1L_Flush(const struct worker *w);
+unsigned V1L_FlushRelease(struct worker *w, uint64_t *pacc);
+unsigned V1L_Write(const struct worker *w, const void *ptr, int len);
 
 /* cache_session.c [SES] */
 void SES_Close(struct sess *sp, enum sess_close reason);

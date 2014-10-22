@@ -40,16 +40,16 @@
 #include <limits.h>
 #include <stdio.h>
 
-#include "cache.h"
+#include "cache/cache.h"
 #include "vtim.h"
 
 /*--------------------------------------------------------------------*/
 
-struct wrw {
+struct v1l {
 	unsigned		magic;
-#define WRW_MAGIC		0x2f2142e5
+#define V1L_MAGIC		0x2f2142e5
 	int			*wfd;
-	unsigned		werr;	/* valid after WRW_Flush() */
+	unsigned		werr;	/* valid after V1L_Flush() */
 	struct iovec		*iov;
 	unsigned		siov;
 	unsigned		niov;
@@ -65,110 +65,110 @@ struct wrw {
  */
 
 void
-WRW_Reserve(struct worker *wrk, int *fd, struct vsl_log *vsl, double t0)
+V1L_Reserve(struct worker *wrk, int *fd, struct vsl_log *vsl, double t0)
 {
-	struct wrw *wrw;
+	struct v1l *v1l;
 	unsigned u;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	AZ(wrk->wrw);
-	wrw = WS_Alloc(wrk->aws, sizeof *wrw);
-	AN(wrw);
-	INIT_OBJ(wrw, WRW_MAGIC);
+	AZ(wrk->v1l);
+	v1l = WS_Alloc(wrk->aws, sizeof *v1l);
+	AN(v1l);
+	INIT_OBJ(v1l, V1L_MAGIC);
 	u = WS_Reserve(wrk->aws, 0);
 	u = PRNDDN(u);
 	u /= sizeof(struct iovec);
 	if (u > IOV_MAX)
 		u = IOV_MAX;
 	AN(u);
-	wrw->iov = (void*)PRNDUP(wrk->aws->f);
-	wrw->siov = u;
-	wrw->ciov = u;
-	wrw->werr = 0;
-	wrw->liov = 0;
-	wrw->niov = 0;
-	wrw->wfd = fd;
-	wrw->t0 = t0;
-	wrw->vsl = vsl;
-	wrk->wrw = wrw;
+	v1l->iov = (void*)PRNDUP(wrk->aws->f);
+	v1l->siov = u;
+	v1l->ciov = u;
+	v1l->werr = 0;
+	v1l->liov = 0;
+	v1l->niov = 0;
+	v1l->wfd = fd;
+	v1l->t0 = t0;
+	v1l->vsl = vsl;
+	wrk->v1l = v1l;
 }
 
 static void
-wrw_release(struct worker *wrk, uint64_t *pacc)
+v1l_release(struct worker *wrk, uint64_t *pacc)
 {
-	struct wrw *wrw;
+	struct v1l *v1l;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	wrw = wrk->wrw;
-	wrk->wrw = NULL;
-	CHECK_OBJ_NOTNULL(wrw, WRW_MAGIC);
+	v1l = wrk->v1l;
+	wrk->v1l = NULL;
+	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
 	if (pacc != NULL)
-		*pacc += wrw->cnt;
+		*pacc += v1l->cnt;
 	WS_Release(wrk->aws, 0);
 	WS_Reset(wrk->aws, NULL);
 }
 
 static void
-wrw_prune(struct wrw *wrw, ssize_t bytes)
+v1l_prune(struct v1l *v1l, ssize_t bytes)
 {
 	ssize_t used = 0;
 	ssize_t j, used_here;
 
-	for (j = 0; j < wrw->niov; j++) {
-		if (used + wrw->iov[j].iov_len > bytes) {
+	for (j = 0; j < v1l->niov; j++) {
+		if (used + v1l->iov[j].iov_len > bytes) {
 			/* Cutoff is in this iov */
 			used_here = bytes - used;
-			wrw->iov[j].iov_len -= used_here;
-			wrw->iov[j].iov_base =
-			    (char*)wrw->iov[j].iov_base + used_here;
-			memmove(wrw->iov, &wrw->iov[j],
-			    (wrw->niov - j) * sizeof(struct iovec));
-			wrw->niov -= j;
-			wrw->liov -= bytes;
+			v1l->iov[j].iov_len -= used_here;
+			v1l->iov[j].iov_base =
+			    (char*)v1l->iov[j].iov_base + used_here;
+			memmove(v1l->iov, &v1l->iov[j],
+			    (v1l->niov - j) * sizeof(struct iovec));
+			v1l->niov -= j;
+			v1l->liov -= bytes;
 			return;
 		}
-		used += wrw->iov[j].iov_len;
+		used += v1l->iov[j].iov_len;
 	}
-	AZ(wrw->liov);
+	AZ(v1l->liov);
 }
 
 unsigned
-WRW_Flush(const struct worker *wrk)
+V1L_Flush(const struct worker *wrk)
 {
 	ssize_t i;
-	struct wrw *wrw;
+	struct v1l *v1l;
 	char cbuf[32];
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	wrw = wrk->wrw;
-	CHECK_OBJ_NOTNULL(wrw, WRW_MAGIC);
-	AN(wrw->wfd);
+	v1l = wrk->v1l;
+	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
+	AN(v1l->wfd);
 
 	/* For chunked, there must be one slot reserved for the chunked tail */
-	if (wrw->ciov < wrw->siov)
-		assert(wrw->niov < wrw->siov);
+	if (v1l->ciov < v1l->siov)
+		assert(v1l->niov < v1l->siov);
 
-	if (*wrw->wfd >= 0 && wrw->liov > 0 && wrw->werr == 0) {
-		if (wrw->ciov < wrw->siov && wrw->cliov > 0) {
+	if (*v1l->wfd >= 0 && v1l->liov > 0 && v1l->werr == 0) {
+		if (v1l->ciov < v1l->siov && v1l->cliov > 0) {
 			/* Add chunk head & tail */
-			bprintf(cbuf, "00%zx\r\n", wrw->cliov);
+			bprintf(cbuf, "00%zx\r\n", v1l->cliov);
 			i = strlen(cbuf);
-			wrw->iov[wrw->ciov].iov_base = cbuf;
-			wrw->iov[wrw->ciov].iov_len = i;
-			wrw->liov += i;
+			v1l->iov[v1l->ciov].iov_base = cbuf;
+			v1l->iov[v1l->ciov].iov_len = i;
+			v1l->liov += i;
 
-			wrw->iov[wrw->niov].iov_base = cbuf + i - 2;
-			wrw->iov[wrw->niov++].iov_len = 2;
-			wrw->liov += 2;
-		} else if (wrw->ciov < wrw->siov) {
-			wrw->iov[wrw->ciov].iov_base = cbuf;
-			wrw->iov[wrw->ciov].iov_len = 0;
+			v1l->iov[v1l->niov].iov_base = cbuf + i - 2;
+			v1l->iov[v1l->niov++].iov_len = 2;
+			v1l->liov += 2;
+		} else if (v1l->ciov < v1l->siov) {
+			v1l->iov[v1l->ciov].iov_base = cbuf;
+			v1l->iov[v1l->ciov].iov_len = 0;
 		}
 
-		i = writev(*wrw->wfd, wrw->iov, wrw->niov);
+		i = writev(*v1l->wfd, v1l->iov, v1l->niov);
 		if (i > 0)
-			wrw->cnt += i;
-		while (i != wrw->liov && i > 0) {
+			v1l->cnt += i;
+		while (i != v1l->liov && i > 0) {
 			/* Remove sent data from start of I/O vector,
 			 * then retry; we hit a timeout, but some data
 			 * was sent.
@@ -177,119 +177,119 @@ WRW_Flush(const struct worker *wrk)
 			 * counter to prevent slowlaris attacks
 			*/
 
-			if (VTIM_real() - wrw->t0 > cache_param->send_timeout) {
-				VSLb(wrw->vsl, SLT_Debug,
+			if (VTIM_real() - v1l->t0 > cache_param->send_timeout) {
+				VSLb(v1l->vsl, SLT_Debug,
 				    "Hit total send timeout, "
 				    "wrote = %zd/%zd; not retrying",
-				    i, wrw->liov);
+				    i, v1l->liov);
 				i = -1;
 				break;
 			}
 
-			VSLb(wrw->vsl, SLT_Debug,
+			VSLb(v1l->vsl, SLT_Debug,
 			    "Hit idle send timeout, wrote = %zd/%zd; retrying",
-			    i, wrw->liov);
+			    i, v1l->liov);
 
-			wrw_prune(wrw, i);
-			i = writev(*wrw->wfd, wrw->iov, wrw->niov);
+			v1l_prune(v1l, i);
+			i = writev(*v1l->wfd, v1l->iov, v1l->niov);
 			if (i > 0)
-				wrw->cnt += i;
+				v1l->cnt += i;
 		}
 		if (i <= 0) {
-			wrw->werr++;
-			VSLb(wrw->vsl, SLT_Debug,
+			v1l->werr++;
+			VSLb(v1l->vsl, SLT_Debug,
 			    "Write error, retval = %zd, len = %zd, errno = %s",
-			    i, wrw->liov, strerror(errno));
+			    i, v1l->liov, strerror(errno));
 		}
 	}
-	wrw->liov = 0;
-	wrw->cliov = 0;
-	wrw->niov = 0;
-	if (wrw->ciov < wrw->siov)
-		wrw->ciov = wrw->niov++;
-	return (wrw->werr);
+	v1l->liov = 0;
+	v1l->cliov = 0;
+	v1l->niov = 0;
+	if (v1l->ciov < v1l->siov)
+		v1l->ciov = v1l->niov++;
+	return (v1l->werr);
 }
 
 unsigned
-WRW_FlushRelease(struct worker *wrk, uint64_t *pacc)
+V1L_FlushRelease(struct worker *wrk, uint64_t *pacc)
 {
 	unsigned u;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	AN(wrk->wrw->wfd);
-	u = WRW_Flush(wrk);
-	wrw_release(wrk, pacc);
+	AN(wrk->v1l->wfd);
+	u = V1L_Flush(wrk);
+	v1l_release(wrk, pacc);
 	return (u);
 }
 
 unsigned
-WRW_Write(const struct worker *wrk, const void *ptr, int len)
+V1L_Write(const struct worker *wrk, const void *ptr, int len)
 {
-	struct wrw *wrw;
+	struct v1l *v1l;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	wrw = wrk->wrw;
-	CHECK_OBJ_NOTNULL(wrw, WRW_MAGIC);
-	AN(wrw->wfd);
-	if (len == 0 || *wrw->wfd < 0)
+	v1l = wrk->v1l;
+	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
+	AN(v1l->wfd);
+	if (len == 0 || *v1l->wfd < 0)
 		return (0);
 	if (len == -1)
 		len = strlen(ptr);
-	if (wrw->niov >= wrw->siov - (wrw->ciov < wrw->siov ? 1 : 0))
-		(void)WRW_Flush(wrk);
-	wrw->iov[wrw->niov].iov_base = TRUST_ME(ptr);
-	wrw->iov[wrw->niov].iov_len = len;
-	wrw->liov += len;
-	wrw->niov++;
-	if (wrw->ciov < wrw->siov) {
-		assert(wrw->niov < wrw->siov);
-		wrw->cliov += len;
+	if (v1l->niov >= v1l->siov - (v1l->ciov < v1l->siov ? 1 : 0))
+		(void)V1L_Flush(wrk);
+	v1l->iov[v1l->niov].iov_base = TRUST_ME(ptr);
+	v1l->iov[v1l->niov].iov_len = len;
+	v1l->liov += len;
+	v1l->niov++;
+	if (v1l->ciov < v1l->siov) {
+		assert(v1l->niov < v1l->siov);
+		v1l->cliov += len;
 	}
 	return (len);
 }
 
 void
-WRW_Chunked(const struct worker *wrk)
+V1L_Chunked(const struct worker *wrk)
 {
-	struct wrw *wrw;
+	struct v1l *v1l;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	wrw = wrk->wrw;
-	CHECK_OBJ_NOTNULL(wrw, WRW_MAGIC);
+	v1l = wrk->v1l;
+	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
 
-	assert(wrw->ciov == wrw->siov);
+	assert(v1l->ciov == v1l->siov);
 	/*
 	 * If there are not space for chunked header, a chunk of data and
 	 * a chunk tail, we might as well flush right away.
 	 */
-	if (wrw->niov + 3 >= wrw->siov)
-		(void)WRW_Flush(wrk);
-	wrw->ciov = wrw->niov++;
-	wrw->cliov = 0;
-	assert(wrw->ciov < wrw->siov);
-	assert(wrw->niov < wrw->siov);
+	if (v1l->niov + 3 >= v1l->siov)
+		(void)V1L_Flush(wrk);
+	v1l->ciov = v1l->niov++;
+	v1l->cliov = 0;
+	assert(v1l->ciov < v1l->siov);
+	assert(v1l->niov < v1l->siov);
 }
 
 /*
  * XXX: It is not worth the complexity to attempt to get the
- * XXX: end of chunk into the WRW_Flush(), because most of the time
+ * XXX: end of chunk into the V1L_Flush(), because most of the time
  * XXX: if not always, that is a no-op anyway, because the calling
- * XXX: code already called WRW_Flush() to release local storage.
+ * XXX: code already called V1L_Flush() to release local storage.
  */
 
 void
-WRW_EndChunk(const struct worker *wrk)
+V1L_EndChunk(const struct worker *wrk)
 {
-	struct wrw *wrw;
+	struct v1l *v1l;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	wrw = wrk->wrw;
-	CHECK_OBJ_NOTNULL(wrw, WRW_MAGIC);
+	v1l = wrk->v1l;
+	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
 
-	assert(wrw->ciov < wrw->siov);
-	(void)WRW_Flush(wrk);
-	wrw->ciov = wrw->siov;
-	wrw->niov = 0;
-	wrw->cliov = 0;
-	(void)WRW_Write(wrk, "0\r\n\r\n", -1);
+	assert(v1l->ciov < v1l->siov);
+	(void)V1L_Flush(wrk);
+	v1l->ciov = v1l->siov;
+	v1l->niov = 0;
+	v1l->cliov = 0;
+	(void)V1L_Write(wrk, "0\r\n\r\n", -1);
 }

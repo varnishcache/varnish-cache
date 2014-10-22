@@ -56,8 +56,8 @@ vbf_iter_req_body(struct req *req, void *priv, void *ptr, size_t l)
 	CAST_OBJ_NOTNULL(wrk, priv, WORKER_MAGIC);
 
 	if (l > 0) {
-		(void)WRW_Write(wrk, ptr, l);
-		if (WRW_Flush(wrk))
+		(void)V1L_Write(wrk, ptr, l);
+		if (V1L_Flush(wrk))
 			return (-1);
 	}
 	return (0);
@@ -112,7 +112,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo)
 	}
 
 	(void)VTCP_blocking(vc->fd);	/* XXX: we should timeout instead */
-	WRW_Reserve(wrk, &vc->fd, bo->vsl, bo->t_prev);
+	V1L_Reserve(wrk, &vc->fd, bo->vsl, bo->t_prev);
 	hdrbytes = HTTP1_Write(wrk, hp, HTTP1_Req);
 
 	/* Deal with any message-body the request might (still) have */
@@ -120,7 +120,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->req != NULL) {
 		if (do_chunked)
-			WRW_Chunked(wrk);
+			V1L_Chunked(wrk);
 		i = VRB_Iterate(bo->req, vbf_iter_req_body, wrk);
 
 		if (bo->req->req_body_status == REQ_BODY_TAKEN) {
@@ -133,10 +133,10 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo)
 			retry = -1;
 		}
 		if (do_chunked)
-			WRW_EndChunk(wrk);
+			V1L_EndChunk(wrk);
 	}
 
-	j = WRW_FlushRelease(wrk, &bo->acct.bereq_hdrbytes);
+	j = V1L_FlushRelease(wrk, &bo->acct.bereq_hdrbytes);
 	if (bo->acct.bereq_hdrbytes > hdrbytes) {
 		bo->acct.bereq_bodybytes = bo->acct.bereq_hdrbytes - hdrbytes;
 		bo->acct.bereq_hdrbytes = hdrbytes;

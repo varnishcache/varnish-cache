@@ -63,7 +63,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore->objhead, OBJHEAD_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
-	assert(WRW_IsReleased(wrk));
+	assert(V1L_IsReleased(wrk));
 
 	assert(req->objcore->refcnt > 0);
 
@@ -159,7 +159,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		ObjSlim(wrk, req->objcore);
 	}
 
-	assert(WRW_IsReleased(wrk));
+	assert(V1L_IsReleased(wrk));
 	(void)HSH_DerefObjCore(wrk, &req->objcore);
 	http_Teardown(req->resp);
 	return (REQ_FSM_DONE);
@@ -517,7 +517,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	assert(wrk->handling == VCL_RET_PIPE);
 
 	V1P_Process(req, bo);
-	assert(WRW_IsReleased(wrk));
+	assert(V1L_IsReleased(wrk));
 	http_Teardown(bo->bereq);
 	THR_SetBusyobj(NULL);
 	VBO_DerefBusyObj(wrk, &bo);
@@ -794,7 +794,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 		VRB_Free(req);
 		req->wrk = NULL;
 	}
-	assert(WRW_IsReleased(wrk));
+	assert(V1L_IsReleased(wrk));
 	return (nxt);
 }
 

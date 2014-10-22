@@ -124,14 +124,14 @@ V1P_Process(struct req *req, struct busyobj *bo)
 	bo->director_state = DIR_S_BODY;
 	(void)VTCP_blocking(fd);
 
-	WRW_Reserve(wrk, &fd, bo->vsl, req->t_req);
+	V1L_Reserve(wrk, &fd, bo->vsl, req->t_req);
 	hdrbytes = HTTP1_Write(wrk, bo->bereq, HTTP1_Req);
 
 	if (req->htc->pipeline_b != NULL)
-		(void)WRW_Write(wrk, req->htc->pipeline_b,
+		(void)V1L_Write(wrk, req->htc->pipeline_b,
 		    req->htc->pipeline_e - req->htc->pipeline_b);
 
-	i = WRW_FlushRelease(wrk, &acct_pipe.bereq);
+	i = V1L_FlushRelease(wrk, &acct_pipe.bereq);
 	if (acct_pipe.bereq > hdrbytes) {
 		acct_pipe.in = acct_pipe.bereq - hdrbytes;
 		acct_pipe.bereq = hdrbytes;

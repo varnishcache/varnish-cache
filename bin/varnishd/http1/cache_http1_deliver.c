@@ -50,9 +50,9 @@ v1d_bytes(struct req *req, enum vdp_action act, void **priv,
 	AZ(req->vdp_nxt);		/* always at the bottom of the pile */
 
 	if (len > 0)
-		wl = WRW_Write(req->wrk, ptr, len);
+		wl = V1L_Write(req->wrk, ptr, len);
 	req->acct.resp_bodybytes += len;
-	if (act > VDP_NULL && WRW_Flush(req->wrk))
+	if (act > VDP_NULL && V1L_Flush(req->wrk))
 		return (-1);
 	if (len != wl)
 		return (-1);
@@ -327,7 +327,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 			v1d_dorange(req, bo, r);
 	}
 
-	WRW_Reserve(req->wrk, &req->sp->fd, req->vsl, req->t_prev);
+	V1L_Reserve(req->wrk, &req->sp->fd, req->vsl, req->t_prev);
 
 	/*
 	 * Send HTTP protocol header, unless interior ESI object
@@ -337,7 +337,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		    HTTP1_Write(req->wrk, req->resp, HTTP1_Resp);
 
 	if (req->res_mode & RES_CHUNKED)
-		WRW_Chunked(req->wrk);
+		V1L_Chunked(req->wrk);
 
 	ois = OIS_DONE;
 	if (!req->wantbody) {
@@ -379,9 +379,9 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	if (ois == OIS_DONE &&
 	    (req->res_mode & RES_CHUNKED) &&
 	    !(req->res_mode & RES_ESI_CHILD))
-		WRW_EndChunk(req->wrk);
+		V1L_EndChunk(req->wrk);
 
-	if ((WRW_FlushRelease(req->wrk, NULL) || ois != OIS_DONE) &&
+	if ((V1L_FlushRelease(req->wrk, NULL) || ois != OIS_DONE) &&
 	    req->sp->fd >= 0)
 		SES_Close(req->sp, SC_REM_CLOSE);
 }

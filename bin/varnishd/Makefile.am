@@ -46,7 +46,6 @@ varnishd_SOURCES = \
 	cache/cache_vrt_var.c \
 	cache/cache_vrt_vmod.c \
 	cache/cache_wrk.c \
-	cache/cache_wrw.c \
 	cache/cache_ws.c \
 	common/common_vsm.c \
 	common/common_vsc.c \
@@ -57,6 +56,7 @@ varnishd_SOURCES = \
 	http1/cache_http1_deliver.c \
 	http1/cache_http1_fetch.c \
 	http1/cache_http1_fsm.c \
+	http1/cache_http1_line.c \
 	http1/cache_http1_pipe.c \
 	http1/cache_http1_proto.c \
 	http1/cache_http1_vfp.c \

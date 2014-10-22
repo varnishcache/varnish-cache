@@ -371,7 +371,7 @@ VSLb_ts(struct vsl_log *vsl, const char *event, double first, double *pprev,
 
 	/* XXX: Make an option to turn off some unnecessary timestamp
 	   logging. This must be done carefully because some functions
-	   (e.g. WRW_Reserve) takes the last timestamp as it's inital
+	   (e.g. V1L_Reserve) takes the last timestamp as it's inital
 	   value for timeout calculation. */
 	vsl_sanity(vsl);
 	assert(!isnan(now) && now != 0.);

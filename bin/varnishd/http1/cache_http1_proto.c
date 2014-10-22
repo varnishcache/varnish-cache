@@ -529,9 +529,9 @@ http1_WrTxt(const struct worker *wrk, const txt *hh, const char *suf)
 	AN(hh);
 	AN(hh->b);
 	AN(hh->e);
-	u = WRW_Write(wrk, hh->b, hh->e - hh->b);
+	u = V1L_Write(wrk, hh->b, hh->e - hh->b);
 	if (suf != NULL)
-		u += WRW_Write(wrk, suf, -1);
+		u += V1L_Write(wrk, suf, -1);
 	return (u);
 }
 
@@ -550,6 +550,6 @@ HTTP1_Write(const struct worker *w, const struct http *hp, const int *hf)
 
 	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++)
 		l += http1_WrTxt(w, &hp->hd[u], "\r\n");
-	l += WRW_Write(w, "\r\n", -1);
+	l += V1L_Write(w, "\r\n", -1);
 	return (l);
 }

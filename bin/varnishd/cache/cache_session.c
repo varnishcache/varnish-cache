@@ -114,7 +114,7 @@ ses_req_pool_task(struct worker *wrk, void *arg)
 	wrk->lastused = NAN;
 	HTTP1_Session(wrk, req);
 	WS_Assert(wrk->aws);
-	AZ(wrk->wrw);
+	AZ(wrk->v1l);
 	if (DO_DEBUG(DBG_VCLREL) && wrk->vcl != NULL)
 		VCL_Rel(&wrk->vcl);
 	THR_SetRequest(NULL);
