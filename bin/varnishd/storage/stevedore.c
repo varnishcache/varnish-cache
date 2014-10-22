@@ -200,8 +200,7 @@ STV_MkObject(struct stevedore *stv, struct objcore *oc, void *ptr)
 	assert(PAOK(ptr));
 
 	o = ptr;
-	memset(o, 0, sizeof *o);
-	o->magic = OBJECT_MAGIC;
+	INIT_OBJ(o, OBJECT_MAGIC);
 
 	VTAILQ_INIT(&o->list);
 

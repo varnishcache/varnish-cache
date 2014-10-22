@@ -181,8 +181,7 @@ v1d_dorange(struct req *req, struct busyobj *bo, const char *r)
 
 	v1rp = WS_Alloc(req->ws, sizeof *v1rp);
 	XXXAN(v1rp);
-	memset(v1rp, 0, sizeof *v1rp);
-	v1rp->magic = V1RP_MAGIC;
+	INIT_OBJ(v1rp, V1RP_MAGIC);
 	v1rp->range_off = 0;
 	v1rp->range_low = low;
 	v1rp->range_high = high + 1;

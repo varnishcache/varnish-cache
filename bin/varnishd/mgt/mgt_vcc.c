@@ -256,8 +256,7 @@ mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag, unsigned *status)
 
 
 	/* Run the VCC compiler in a sub-process */
-	memset(&vp, 0, sizeof vp);
-	vp.magic = VCC_PRIV_MAGIC;
+	INIT_OBJ(&vp, VCC_PRIV_MAGIC);
 	vp.sf = sf;
 	vp.vcl = vcl;
 	subs = VSUB_run(sb, run_vcc, &vp, "VCC-compiler", -1);

@@ -74,8 +74,7 @@ WRW_Reserve(struct worker *wrk, int *fd, struct vsl_log *vsl, double t0)
 	AZ(wrk->wrw);
 	wrw = WS_Alloc(wrk->aws, sizeof *wrw);
 	AN(wrw);
-	memset(wrw, 0, sizeof *wrw);
-	wrw->magic = WRW_MAGIC;
+	INIT_OBJ(wrw, WRW_MAGIC);
 	u = WS_Reserve(wrk->aws, 0);
 	u = PRNDDN(u);
 	u /= sizeof(struct iovec);

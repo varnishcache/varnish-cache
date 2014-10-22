@@ -60,8 +60,7 @@ VDP_push(struct req *req, vdp_bytes *func, void *priv)
 
 	vdp = WS_Alloc(req->ws, sizeof *vdp);
 	AN(vdp);
-	memset(vdp, 0, sizeof *vdp);
-	vdp->magic = VDP_ENTRY_MAGIC;
+	INIT_OBJ(vdp, VDP_ENTRY_MAGIC);
 	vdp->func = func;
 	vdp->priv = priv;
 	VTAILQ_INSERT_HEAD(&req->vdp, vdp, list);

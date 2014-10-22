@@ -342,9 +342,8 @@ new_smf(struct smf_sc *sc, unsigned char *ptr, off_t off, size_t len)
 	struct smf *sp, *sp2;
 
 	AZ(len % sc->pagesize);
-	sp = calloc(sizeof *sp, 1);
+	ALLOC_OBJ(sp, SMF_MAGIC);
 	XXXAN(sp);
-	sp->magic = SMF_MAGIC;
 	sp->s.magic = STORAGE_MAGIC;
 	sc->stats->g_smf++;
 

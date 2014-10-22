@@ -489,8 +489,7 @@ smp_allocx(struct stevedore *st, size_t min_size, size_t max_size,
 	assert(max_size >= min_size);
 
 	/* Fill the storage structure */
-	memset(ss, 0, sizeof *ss);
-	ss->magic = STORAGE_MAGIC;
+	INIT_OBJ(ss, STORAGE_MAGIC);
 	ss->ptr = PRNUP(sc, ss + 1);
 	ss->space = max_size;
 	ss->priv = sc;

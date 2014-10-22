@@ -212,8 +212,7 @@ pool_accept(struct worker *wrk, void *arg)
 		VTIM_sleep(.1);
 
 	while (1) {
-		memset(wa, 0, sizeof *wa);
-		wa->magic = WRK_ACCEPT_MAGIC;
+		INIT_OBJ(wa, WRK_ACCEPT_MAGIC);
 
 		if (ps->lsock->sock < 0) {
 			/* Socket Shutdown */

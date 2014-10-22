@@ -106,8 +106,8 @@ VFP_GetStorage(struct vfp_ctx *vc, ssize_t *sz, uint8_t **ptr)
 void
 VFP_Setup(struct vfp_ctx *vc)
 {
-	memset(vc, 0, sizeof *vc);
-	vc->magic = VFP_CTX_MAGIC;
+
+	INIT_OBJ(vc, VFP_CTX_MAGIC);
 	VTAILQ_INIT(&vc->vfp);
 }
 
@@ -204,7 +204,7 @@ VFP_Push(struct vfp_ctx *vc, const struct vfp *vfp, int top)
 	CHECK_OBJ_NOTNULL(vc->http, HTTP_MAGIC);
 	vfe = WS_Alloc(vc->http->ws, sizeof *vfe);
 	AN(vfe);
-	vfe->magic = VFP_ENTRY_MAGIC;
+	INIT_OBJ(vfe, VFP_ENTRY_MAGIC);
 	vfe->vfp = vfp;
 	vfe->closed = VFP_OK;
 	if (top)

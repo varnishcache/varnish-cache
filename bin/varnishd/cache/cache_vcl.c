@@ -212,8 +212,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 		return (1);
 	}
 
-	memset(&ctx, 0, sizeof ctx);
-	ctx.magic = VRT_CTX_MAGIC;
+	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
 	ctx.method = VCL_MET_INIT;
 	ctx.handling = &hand;
 	ctx.cli = cli;
@@ -259,8 +258,7 @@ VCL_Nuke(struct vcls *vcl)
 	struct vrt_ctx ctx;
 	unsigned hand = 0;
 
-	memset(&ctx, 0, sizeof ctx);
-	ctx.magic = VRT_CTX_MAGIC;
+	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
 	ASSERT_CLI();
 	assert(vcl != vcl_active);
 	assert(vcl->conf->discard);
@@ -436,8 +434,7 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	struct vrt_ctx ctx;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	memset(&ctx, 0, sizeof ctx);
-	ctx.magic = VRT_CTX_MAGIC;
+	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
 	if (req != NULL) {
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);

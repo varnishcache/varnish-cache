@@ -1048,8 +1048,7 @@ VEP_Init(struct vfp_ctx *vc, const struct http *req, vep_callback_t *cb,
 	vep = WS_Alloc(vc->http->ws, sizeof *vep);
 	AN(vep);
 
-	memset(vep, 0, sizeof *vep);
-	vep->magic = VEP_MAGIC;
+	INIT_OBJ(vep, VEP_MAGIC);
 	vep->url = req->hd[HTTP_HDR_URL].b;
 	vep->vc = vc;
 	vep->vsb = VSB_new_auto();

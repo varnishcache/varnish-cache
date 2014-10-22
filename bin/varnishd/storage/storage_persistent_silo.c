@@ -188,8 +188,7 @@ smp_new_seg(struct smp_sc *sc)
 
 	/* XXX: find where it goes in silo */
 
-	memset(&tmpsg, 0, sizeof tmpsg);
-	tmpsg.magic = SMP_SEG_MAGIC;
+	INIT_OBJ(&tmpsg, SMP_SEG_MAGIC);
 	tmpsg.sc = sc;
 	tmpsg.p.offset = sc->free_offset;
 	/* XXX: align */

@@ -362,8 +362,7 @@ vbe_dir_getfd(const struct director *d, struct busyobj *bo)
 	if (bo->htc == NULL)
 		bo->htc = WS_Alloc(bo->ws, sizeof *bo->htc);
 	AN(bo->htc);
-	memset(bo->htc, 0, sizeof *bo->htc);
-	bo->htc->magic = HTTP_CONN_MAGIC;
+	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
 	bo->htc->vbc = vc;
 	FIND_TMO(first_byte_timeout, vc->first_byte_timeout, bo, vs->vrt);
 	FIND_TMO(between_bytes_timeout, vc->between_bytes_timeout, bo, vs->vrt);

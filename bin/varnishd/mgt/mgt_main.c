@@ -450,8 +450,7 @@ main(int argc, char * const *argv)
 	 */
 	SHA256_Test();
 
-	memset(cli, 0, sizeof cli);
-	cli[0].magic = CLI_MAGIC;
+	INIT_OBJ(cli, CLI_MAGIC);
 	cli[0].sb = VSB_new_auto();
 	XXXAN(cli[0].sb);
 	cli[0].result = CLIS_OK;

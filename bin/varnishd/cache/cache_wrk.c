@@ -59,8 +59,7 @@ wrk_bgthread(void *arg)
 
 	CAST_OBJ_NOTNULL(bt, arg, BGTHREAD_MAGIC);
 	THR_SetName(bt->name);
-	memset(&wrk, 0, sizeof wrk);
-	wrk.magic = WORKER_MAGIC;
+	INIT_OBJ(&wrk, WORKER_MAGIC);
 
 	(void)bt->func(&wrk, bt->priv);
 
@@ -98,8 +97,7 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 
 	THR_SetName("cache-worker");
 	w = &ww;
-	memset(w, 0, sizeof *w);
-	w->magic = WORKER_MAGIC;
+	INIT_OBJ(w, WORKER_MAGIC);
 	w->lastused = NAN;
 	AZ(pthread_cond_init(&w->cond, NULL));
 
