@@ -959,7 +959,6 @@ void WRW_Reserve(struct worker *w, int *fd, struct vsl_log *, double t0);
 unsigned WRW_Flush(const struct worker *w);
 unsigned WRW_FlushRelease(struct worker *w, uint64_t *pacc);
 unsigned WRW_Write(const struct worker *w, const void *ptr, int len);
-unsigned WRW_WriteH(const struct worker *w, const txt *hh, const char *suf);
 
 /* cache_session.c [SES] */
 void SES_Close(struct sess *sp, enum sess_close reason);

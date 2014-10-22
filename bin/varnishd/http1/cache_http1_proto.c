@@ -519,6 +519,22 @@ HTTP1_DissectResponse(struct http *hp, struct http_conn *htc)
 
 /*--------------------------------------------------------------------*/
 
+static unsigned
+http1_WrTxt(const struct worker *wrk, const txt *hh, const char *suf)
+{
+	unsigned u;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	AN(wrk);
+	AN(hh);
+	AN(hh->b);
+	AN(hh->e);
+	u = WRW_Write(wrk, hh->b, hh->e - hh->b);
+	if (suf != NULL)
+		u += WRW_Write(wrk, suf, -1);
+	return (u);
+}
+
 unsigned
 HTTP1_Write(const struct worker *w, const struct http *hp, const int *hf)
 {
@@ -528,12 +544,12 @@ HTTP1_Write(const struct worker *w, const struct http *hp, const int *hf)
 	AN(hp->hd[hf[0]].b);
 	AN(hp->hd[hf[1]].b);
 	AN(hp->hd[hf[2]].b);
-	l = WRW_WriteH(w, &hp->hd[hf[0]], " ");
-	l += WRW_WriteH(w, &hp->hd[hf[1]], " ");
-	l += WRW_WriteH(w, &hp->hd[hf[2]], "\r\n");
+	l = http1_WrTxt(w, &hp->hd[hf[0]], " ");
+	l += http1_WrTxt(w, &hp->hd[hf[1]], " ");
+	l += http1_WrTxt(w, &hp->hd[hf[2]], "\r\n");
 
 	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++)
-		l += WRW_WriteH(w, &hp->hd[u], "\r\n");
+		l += http1_WrTxt(w, &hp->hd[u], "\r\n");
 	l += WRW_Write(w, "\r\n", -1);
 	return (l);
 }
