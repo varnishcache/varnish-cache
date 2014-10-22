@@ -507,6 +507,7 @@ http_rxhdr(struct http *hp)
 			break;
 	}
 	vtc_dump(hp->vl, 4, "rxhdr", hp->rxbuf, -1);
+	vtc_log(hp->vl, 4, "rxhdrlen = %zd", strlen(hp->rxbuf));
 }
 
 
