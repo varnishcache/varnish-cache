@@ -67,7 +67,7 @@ VDP_push(struct req *req, vdp_bytes *func, void *priv)
 	VTAILQ_INSERT_HEAD(&req->vdp, vdp, list);
 	req->vdp_nxt = vdp;
 
-	AZ(func(req, VDP_INIT, &vdp->priv, NULL, 0));
+	AZ(vdp->func(req, VDP_INIT, &vdp->priv, NULL, 0));
 }
 
 void

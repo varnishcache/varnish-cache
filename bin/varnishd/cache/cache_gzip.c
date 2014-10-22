@@ -56,7 +56,6 @@ struct vgz {
 	int			last_i;
 	enum vgz_flag		flag;
 
-	/* Wrw stuff */
 	char			*m_buf;
 	ssize_t			m_sz;
 	ssize_t			m_len;
@@ -80,7 +79,7 @@ vgz_alloc_vgz(struct vsl_log *vsl, const char *id)
 	return (vg);
 }
 
-struct vgz *
+static struct vgz *
 VGZ_NewUngzip(struct vsl_log *vsl, const char *id)
 {
 	struct vgz *vg;
@@ -193,7 +192,7 @@ VGZ_ObufFull(const struct vgz *vg)
 
 /*--------------------------------------------------------------------*/
 
-enum vgzret_e
+static enum vgzret_e
 VGZ_Gunzip(struct vgz *vg, const void **pptr, ssize_t *plen)
 {
 	int i;
@@ -266,22 +265,6 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, ssize_t *plen, enum vgz_flag flags)
 }
 
 /*--------------------------------------------------------------------
- */
-
-int
-VGZ_WrwInit(struct vgz *vg)
-{
-
-	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-
-	if (vgz_getmbuf(vg))
-		return (-1);
-
-	VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
-	return (0);
-}
-
-/*--------------------------------------------------------------------
  * VDP for gunzip'ing
  */
 
@@ -294,6 +277,7 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 	const void *dp;
 	struct worker *wrk;
 	struct vgz *vg;
+	int retval;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	wrk = req->wrk;
@@ -301,7 +285,9 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 	if (act == VDP_INIT) {
 		vg = VGZ_NewUngzip(req->vsl, "U D -");
 		AN(vg);
-		AZ(VGZ_WrwInit(vg));
+		if (vgz_getmbuf(vg))
+			return (-1);
+		VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 		*priv = vg;
 		return (0);
 	}
@@ -315,7 +301,10 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 
 	if (len == 0) {
 		AN(act > VDP_NULL);
-		return (VDP_bytes(req, act, vg->m_buf, vg->m_len));
+		retval = VDP_bytes(req, act, vg->m_buf, vg->m_len);
+		vg->m_len = 0;
+		VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
+		return (retval);
 	}
 
 	VGZ_Ibuf(vg, ptr, len);
@@ -337,68 +326,6 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 	} while (!VGZ_IbufEmpty(vg));
 	assert(vr == VGZ_STUCK || vr == VGZ_OK || vr == VGZ_END);
 	return (0);
-}
-
-/*--------------------------------------------------------------------
- * Gunzip ibuf into outb, if it runs full, emit it with WRW.
- * Leave flushing to caller, more data may be coming.
- */
-
-enum vgzret_e
-VGZ_WrwGunzip(struct req *req, struct vgz *vg, const void *ibuf,
-    ssize_t ibufl)
-{
-	enum vgzret_e vr;
-	ssize_t dl;
-	const void *dp;
-	struct worker *wrk;
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	wrk = req->wrk;
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-	AN(vg->m_buf);
-	VGZ_Ibuf(vg, ibuf, ibufl);
-	if (ibufl == 0)
-		return (VGZ_OK);
-	do {
-		if (vg->m_len == vg->m_sz)
-			vr = VGZ_STUCK;
-		else {
-			vr = VGZ_Gunzip(vg, &dp, &dl);
-			vg->m_len += dl;
-		}
-		if (vr < VGZ_OK)
-			return (vr);
-		if (vg->m_len == vg->m_sz || vr == VGZ_STUCK) {
-			(void)VDP_bytes(req, VDP_FLUSH, vg->m_buf, vg->m_len);
-			vg->m_len = 0;
-			VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
-		}
-	} while (!VGZ_IbufEmpty(vg));
-	if (vr == VGZ_STUCK)
-		vr = VGZ_OK;
-	return (vr);
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-VGZ_WrwFlush(struct req *req, struct vgz *vg)
-{
-	struct worker *wrk;
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	wrk = req->wrk;
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-
-	if (vg->m_len ==  0)
-		return;
-
-	(void)VDP_bytes(req, VDP_FLUSH, vg->m_buf, vg->m_len);
-	vg->m_len = 0;
-	VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 }
 
 /*--------------------------------------------------------------------*/

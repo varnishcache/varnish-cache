@@ -781,7 +781,7 @@ enum vgzret_e {
 };
 
 enum vgz_flag { VGZ_NORMAL, VGZ_ALIGN, VGZ_RESET, VGZ_FINISH };
-struct vgz *VGZ_NewUngzip(struct vsl_log *vsl, const char *id);
+// struct vgz *VGZ_NewUngzip(struct vsl_log *vsl, const char *id);
 struct vgz *VGZ_NewGzip(struct vsl_log *vsl, const char *id);
 void VGZ_Ibuf(struct vgz *, const void *, ssize_t len);
 int VGZ_IbufEmpty(const struct vgz *vg);
@@ -789,14 +789,9 @@ void VGZ_Obuf(struct vgz *, void *, ssize_t len);
 int VGZ_ObufFull(const struct vgz *vg);
 enum vgzret_e VGZ_Gzip(struct vgz *, const void **, ssize_t *len,
     enum vgz_flag);
-enum vgzret_e VGZ_Gunzip(struct vgz *, const void **, ssize_t *len);
+// enum vgzret_e VGZ_Gunzip(struct vgz *, const void **, ssize_t *len);
 enum vgzret_e VGZ_Destroy(struct vgz **);
 void VGZ_UpdateObj(const struct vfp_ctx *, const struct vgz*);
-
-int VGZ_WrwInit(struct vgz *vg);
-enum vgzret_e VGZ_WrwGunzip(struct req *, struct vgz *, const void *ibuf,
-    ssize_t ibufl);
-void VGZ_WrwFlush(struct req *, struct vgz *vg);
 
 /* cache_http.c */
 unsigned HTTP_estimate(unsigned nhttp);
@@ -958,7 +953,6 @@ void Pool_Sumstat(struct worker *w);
 void Pool_PurgeStat(unsigned nobj);
 
 #define WRW_IsReleased(w)	((w)->wrw == NULL)
-int WRW_Error(const struct worker *w);
 void WRW_Chunked(const struct worker *w);
 void WRW_EndChunk(const struct worker *w);
 void WRW_Reserve(struct worker *w, int *fd, struct vsl_log *, double t0);

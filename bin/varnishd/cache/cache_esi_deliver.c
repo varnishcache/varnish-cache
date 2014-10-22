@@ -111,6 +111,10 @@ ved_include(struct req *preq, const char *src, const char *host)
 	req->crc = preq->crc;
 	req->l_crc = preq->l_crc;
 
+
+	req->vdp = preq->vdp;
+	req->vdp_nxt = preq->vdp_nxt;
+
 	THR_SetRequest(req);
 
 	VSLb_ts_req(req, "Start", W_TIM_real(wrk));
@@ -267,10 +271,6 @@ ESI_Deliver(struct req *req)
 	uint32_t icrc = 0;
 	uint8_t tailbuf[8 + 5];
 	int isgzip;
-	struct vgz *vgz = NULL;
-	ssize_t dl;
-	const void *dp;
-	int i;
 	void *oi;
 	enum objiter_status ois;
 	void *sp;
@@ -296,7 +296,7 @@ ESI_Deliver(struct req *req)
 		 * Only the top level document gets to decide this.
 		 */
 		req->gzip_resp = 0;
-		if (isgzip && !(req->res_mode & RES_GUNZIP)) {
+		if (isgzip) {
 			assert(sizeof gzip_hdr == 10);
 			/* Send out the gzip header */
 			(void)VDP_bytes(req, VDP_NULL, gzip_hdr, 10);
@@ -304,18 +304,6 @@ ESI_Deliver(struct req *req)
 			req->gzip_resp = 1;
 			req->crc = crc32(0L, Z_NULL, 0);
 		}
-	}
-
-	if (isgzip && !req->gzip_resp) {
-		vgz = VGZ_NewUngzip(req->vsl, "U D E");
-		AZ(VGZ_WrwInit(vgz));
-
-		/* Feed a gzip header to gunzip to make it happy */
-		VGZ_Ibuf(vgz, gzip_hdr, sizeof gzip_hdr);
-		i = VGZ_Gunzip(vgz, &dp, &dl);
-		assert(i == VGZ_OK);
-		assert(VGZ_IbufEmpty(vgz));
-		AZ(dl);
 	}
 
 	oi = ObjIterBegin(req->wrk, req->objcore);
@@ -366,24 +354,7 @@ ESI_Deliver(struct req *req)
 					 */
 					(void)VED_pretend_gzip(req, VDP_NULL,
 					    NULL, pp, l2);
-				} else if (isgzip) {
-					/*
-					 * A gzip'ed VEC, but ungzip'ed ESI
-					 * response
-					 */
-					AN(vgz);
-					i = VGZ_WrwGunzip(req, vgz, pp, l2);
-					if (WRW_Error(req->wrk)) {
-						SES_Close(req->sp,
-						    SC_REM_CLOSE);
-						p = e;
-						break;
-					}
-					assert(i == VGZ_OK || i == VGZ_END);
 				} else {
-					/*
-					 * Ungzip'ed VEC, ungzip'ed ESI response
-					 */
 					(void)VDP_bytes(req, VDP_NULL, pp, l2);
 				}
 				pp += l2;
@@ -427,8 +398,6 @@ ESI_Deliver(struct req *req)
 			q++;
 			r = (void*)strchr((const char*)q, '\0');
 			AN(r);
-			if (vgz != NULL)
-				VGZ_WrwFlush(req, vgz);
 			if (VDP_bytes(req, VDP_FLUSH, NULL, 0)) {
 				SES_Close(req->sp, SC_REM_CLOSE);
 				p = e;
@@ -443,10 +412,6 @@ ESI_Deliver(struct req *req)
 			printf("XXXX 0x%02x [%s]\n", *p, p);
 			INCOMPL();
 		}
-	}
-	if (vgz != NULL) {
-		VGZ_WrwFlush(req, vgz);
-		(void)VGZ_Destroy(&vgz);
 	}
 	if (req->gzip_resp && req->esi_level == 0) {
 		/* Emit a gzip literal block with finish bit set */

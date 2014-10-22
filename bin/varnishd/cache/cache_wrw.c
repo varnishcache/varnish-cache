@@ -64,13 +64,6 @@ struct wrw {
 /*--------------------------------------------------------------------
  */
 
-int
-WRW_Error(const struct worker *wrk)
-{
-
-	return (wrk->wrw->werr);
-}
-
 void
 WRW_Reserve(struct worker *wrk, int *fd, struct vsl_log *vsl, double t0)
 {
