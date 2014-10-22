@@ -26,3 +26,5 @@ varnish v1 -expect client_req == 1
 varnish v1 -expect cache_miss == 1
 varnish v1 -expect s_sess == 1
 varnish v1 -expect s_req == 1
+varnish v1 -expect s_resp_bodybytes == 7
+varnish v1 -expect s_resp_hdrbytes == 167
