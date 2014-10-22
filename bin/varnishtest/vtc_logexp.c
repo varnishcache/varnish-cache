@@ -233,7 +233,7 @@ logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				legend = "ok";
 			} else if (skip) {
 				lvl = 4;
-				legend = "skp";
+				legend = NULL;
 			} else {
 				lvl = 0;
 				legend = "err";
@@ -241,8 +241,9 @@ logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			type = VSL_CLIENT(t->c->rec.ptr) ? 'c' :
 			    VSL_BACKEND(t->c->rec.ptr) ? 'b' : '-';
 
-			vtc_log(le->vl, lvl, "%3s| %10u %-15s %c %.*s",
-			    legend, vxid, VSL_tags[tag], type, len, data);
+			if (legend != NULL)
+				vtc_log(le->vl, lvl, "%3s| %10u %-15s %c %.*s",
+				    legend, vxid, VSL_tags[tag], type, len, data);
 
 			if (ok) {
 				le->vxid_last = vxid;
