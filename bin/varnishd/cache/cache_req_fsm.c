@@ -791,10 +791,6 @@ CNT_Request(struct worker *wrk, struct req *req)
 	wrk->vsl = NULL;
 	if (nxt == REQ_FSM_DONE) {
 		AN(req->vsl->wid);
-		if (req->res_mode & (RES_ESI|RES_ESI_CHILD))
-			VSLb(req->vsl, SLT_ESI_BodyBytes, "%ju",
-			    (uintmax_t)req->resp_bodybytes);
-
 		VRB_Free(req);
 		req->wrk = NULL;
 	}

@@ -444,9 +444,10 @@ SLTM(Timestamp, 0, "Timing information",
 )
 
 SLTM(ReqAcct, 0, "Request handling byte counts",
-	"Contains byte counts for the request handling. This record is not"
-	" logged for ESI sub-requests, but the sub-requests' response"
-	" body count is added to the main request.\n\n"
+	"Contains byte counts for the request handling.\n"
+	"ESI sub-request counts are also added to their parent request.\n"
+	"The body bytes count does not include transmission "
+	"(ie: chunked encoding) overhead.\n"
 	"The format is::\n\n"
 	"\t%d %d %d %d %d %d\n"
 	"\t|  |  |  |  |  |\n"
@@ -456,16 +457,6 @@ SLTM(ReqAcct, 0, "Request handling byte counts",
 	"\t|  |  +---------- Total bytes received\n"
 	"\t|  +------------- Body bytes received\n"
 	"\t+---------------- Header bytes received\n"
-	"\n"
-)
-
-SLTM(ESI_BodyBytes, 0, "ESI body fragment byte counter",
-	"Contains the body byte count for this ESI body fragment."
-	" This number does not include any transfer encoding overhead.\n\n"
-	"The format is::\n\n"
-	"\t%d\n"
-	"\t|\n"
-	"\t+- Body bytes\n"
 	"\n"
 )
 

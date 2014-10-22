@@ -557,9 +557,6 @@ struct req {
 	unsigned char		wantbody;
 	uint64_t		req_bodybytes;	/* Parsed req bodybytes */
 
-	uint64_t		resp_hdrbytes;	/* Scheduled resp hdrbytes */
-	uint64_t		resp_bodybytes; /* Scheduled resp bodybytes */
-
 	uint16_t		err_code;
 	const char		*err_reason;
 
@@ -721,7 +718,6 @@ extern const int HTTP1_Req[3];
 extern const int HTTP1_Resp[3];
 
 /* cache_http1_deliver.c */
-unsigned V1D_FlushReleaseAcct(struct req *req);
 void V1D_Deliver(struct req *, struct busyobj *);
 
 /* cache_http1_pipe.c */

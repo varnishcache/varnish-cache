@@ -366,8 +366,6 @@ SES_GetReq(const struct worker *wrk, struct sess *sp)
 	WS_Init(req->ws, "req", p, e - p);
 
 	req->req_bodybytes = 0;
-	req->resp_hdrbytes = 0;
-	req->resp_bodybytes = 0;
 
 	req->t_first = NAN;
 	req->t_prev = NAN;

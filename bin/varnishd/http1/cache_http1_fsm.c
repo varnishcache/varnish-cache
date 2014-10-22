@@ -171,8 +171,6 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	AN(req->vsl->wid);
 	CNT_AcctLogCharge(wrk->stats, req);
 	req->req_bodybytes = 0;
-	req->resp_hdrbytes = 0;
-	req->resp_bodybytes = 0;
 
 	VSL_End(req->vsl);
 
@@ -285,7 +283,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 			req->err_code = 417;
 			r = write(req->sp->fd, r_417, strlen(r_417));
 			if (r > 0)
-				req->resp_hdrbytes += r;
+				req->acct.resp_hdrbytes += r;
 			SES_Close(req->sp, SC_RX_JUNK);
 			return (REQ_FSM_DONE);
 		}

@@ -8,6 +8,7 @@ server s1 {
 		Before include
 		<esi:include src="/body" sr="foo"/>
 		After include
+		</html>
 	}
 	rxreq
 	expect req.url == "/body1"
@@ -27,17 +28,41 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
+logexpect l1 -v v1 -g request {
+	expect 0 1001   Begin   "^req .* rxreq"
+	expect * =	ReqAcct	"^18 0 18 154 75 229$"
+	expect 0 =      End
+
+	expect 0 1002   Begin   "^bereq "
+	expect * =      End
+
+	expect 0 1003   Begin   "^req .* esi"
+	expect * = 	ReqAcct	"^0 0 0 0 18 18$"
+	expect 0 =      End
+
+	expect 0 1004   Begin   "^bereq "
+	expect * =      End
+
+	expect 0 1005   Begin   "^req .* rxreq"
+	expect * =	ReqAcct	"^18 0 18 159 75 234$"
+	expect 0 =      End
+} -start
+
 client c1 {
 	txreq
 	rxresp
-	expect resp.bodylen == 65
+	expect resp.bodylen == 75
 	expect resp.status == 200
+
+	delay .1
 	# test that there is no difference on miss/hit
 	txreq
 	rxresp
-	expect resp.bodylen == 65
+	expect resp.bodylen == 75
 	expect resp.status == 200
 }
 
 client c1 -run
 varnish v1 -expect esi_errors == 0
+
+logexpect l1 -wait
