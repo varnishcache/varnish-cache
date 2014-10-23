@@ -384,4 +384,6 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	if ((V1L_FlushRelease(req->wrk) || ois != OIS_DONE) &&
 	    req->sp->fd >= 0)
 		SES_Close(req->sp, SC_REM_CLOSE);
+	if (req->esi_level == 0)
+		VDP_close(req);
 }

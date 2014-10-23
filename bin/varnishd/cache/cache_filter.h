@@ -89,10 +89,10 @@ enum vfp_status VFP_GetStorage(struct vfp_ctx *, ssize_t *sz, uint8_t **ptr);
 
 enum vdp_action {
 	VDP_INIT,
+	VDP_FINI,
 	VDP_NULL,
 	VDP_FLUSH,
 	VDP_FINISH,
-	VDP_FINI,
 };
 
 typedef int vdp_bytes(struct req *, enum vdp_action, void **priv,
@@ -109,6 +109,7 @@ struct vdp_entry {
 int VDP_bytes(struct req *, enum vdp_action act, const void *ptr, ssize_t len);
 void VDP_push(struct req *, vdp_bytes *func, void *priv);
 void VDP_pop(struct req *, vdp_bytes *func);
+void VDP_close(struct req *req);
 
 vdp_bytes VDP_gunzip;
 vdp_bytes VED_pretend_gzip;

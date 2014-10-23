@@ -93,7 +93,7 @@ V1L_Reserve(struct worker *wrk, int *fd, struct vsl_log *vsl, double t0)
 	wrk->v1l = v1l;
 }
 
-unsigned 
+unsigned
 V1L_FlushRelease(struct worker *wrk)
 {
 	struct v1l *v1l;

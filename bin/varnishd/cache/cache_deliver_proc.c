@@ -83,3 +83,12 @@ VDP_pop(struct req *req, vdp_bytes *func)
 	AZ(vdp->priv);
 	req->vdp_nxt = VTAILQ_FIRST(&req->vdp);
 }
+
+void
+VDP_close(struct req *req)
+{
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	while (!VTAILQ_EMPTY(&req->vdp))
+		VDP_pop(req, VTAILQ_FIRST(&req->vdp)->func);
+}

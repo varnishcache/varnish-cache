@@ -43,6 +43,27 @@
 
 /*--------------------------------------------------------------------*/
 
+static int __match_proto__(vdp_bytes)
+ved_vdp_bytes(struct req *req, enum vdp_action act, void **priv,
+    const void *ptr, ssize_t len)
+{
+	struct req *preq;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	if (act == VDP_INIT)
+		return (0);
+	if (act == VDP_FINI) {
+		*priv = NULL;
+		return (0);
+	}
+	CAST_OBJ_NOTNULL(preq, *priv, REQ_MAGIC);
+	req->acct.resp_bodybytes += len;
+	return (VDP_bytes(preq, act, ptr, len));
+}
+
+
+/*--------------------------------------------------------------------*/
+
 static void
 ved_include(struct req *preq, const char *src, const char *host)
 {
@@ -112,12 +133,15 @@ ved_include(struct req *preq, const char *src, const char *host)
 	req->l_crc = preq->l_crc;
 
 
-	req->vdp = preq->vdp;
-	req->vdp_nxt = preq->vdp_nxt;
+	req->vdp_nxt = 0;
+	VTAILQ_INIT(&req->vdp);
+	VDP_push(req, ved_vdp_bytes, preq);
 
 	THR_SetRequest(req);
 
 	VSLb_ts_req(req, "Start", W_TIM_real(wrk));
+
+	req->ws_req = WS_Snapshot(req->ws);
 
 	while (1) {
 		req->wrk = wrk;
@@ -132,8 +156,7 @@ ved_include(struct req *preq, const char *src, const char *host)
 	}
 	AN(V1L_IsReleased(wrk));
 
-	/* Charge the transmitted body byte counts also to the parent request */
-	preq->acct.resp_bodybytes += req->acct.resp_bodybytes;
+	VDP_close(req);
 
 	CNT_AcctLogCharge(wrk->stats, req);
 	VSL_End(req->vsl);
