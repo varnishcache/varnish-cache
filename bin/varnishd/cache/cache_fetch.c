@@ -455,7 +455,7 @@ vbf_fetch_body_helper(struct busyobj *bo)
 	do {
 		if (bo->abandon) {
 			/*
-			 * A pass object and delivery was terminted
+			 * A pass object and delivery was terminated
 			 * We don't fail the fetch, in order for hit-for-pass
 			 * objects to be created.
 			 */
@@ -490,7 +490,7 @@ vbf_fetch_body_helper(struct busyobj *bo)
 
 	if (vfps == VFP_ERROR) {
 		AN(vfc->failed);
-		(void)VFP_Error(vfc, "Fetch Pipeline failed to process");
+		(void)VFP_Error(vfc, "Fetch pipeline failed to process");
 		bo->doclose = SC_RX_BODY;
 	}
 
@@ -575,7 +575,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		bo->do_stream = 0;
 
 	if (VFP_Open(bo->vfc)) {
-		(void)VFP_Error(bo->vfc, "Fetch Pipeline failed to open");
+		(void)VFP_Error(bo->vfc, "Fetch pipeline failed to open");
 		bo->doclose = SC_RX_BODY;
 		VDI_Finish(bo->director_resp, bo->wrk, bo);
 		return (F_STP_ERROR);
