@@ -277,11 +277,11 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 	const void *dp;
 	struct worker *wrk;
 	struct vgz *vg;
-	int retval;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	wrk = req->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
 	if (act == VDP_INIT) {
 		vg = VGZ_NewUngzip(req->vsl, "U D -");
 		AN(vg);
@@ -291,33 +291,28 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 		*priv = vg;
 		return (0);
 	}
+
 	CAST_OBJ_NOTNULL(vg, *priv, VGZ_MAGIC);
+	AN(vg->m_buf);
+
 	if (act == VDP_FINI) {
+		AZ(len);
+		AZ(vg->m_len);
 		(void)VGZ_Destroy(&vg);
 		*priv = NULL;
 		return (0);
 	}
-	AN(vg->m_buf);
 
-	if (len == 0) {
-		AN(act > VDP_NULL);
-		retval = VDP_bytes(req, act, vg->m_buf, vg->m_len);
-		vg->m_len = 0;
-		VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
-		return (retval);
-	}
+	if (len == 0)
+		return (0);
 
 	VGZ_Ibuf(vg, ptr, len);
 	do {
-		if (vg->m_len == vg->m_sz)
-			vr = VGZ_STUCK;
-		else {
-			vr = VGZ_Gunzip(vg, &dp, &dl);
-			vg->m_len += dl;
-		}
+		vr = VGZ_Gunzip(vg, &dp, &dl);
+		vg->m_len += dl;
 		if (vr < VGZ_OK)
 			return (-1);
-		if (vg->m_len == vg->m_sz || vr == VGZ_STUCK) {
+		if (vg->m_len == vg->m_sz || vr != VGZ_OK) {
 			if (VDP_bytes(req, VDP_FLUSH, vg->m_buf, vg->m_len))
 				return (-1);
 			vg->m_len = 0;

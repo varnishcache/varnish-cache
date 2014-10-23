@@ -222,7 +222,6 @@ v1d_WriteDirObj(struct req *req)
 			WRONG("Wrong OIS value");
 		}
 	} while (ois == OIS_DATA || ois == OIS_STREAM);
-	(void)VDP_bytes(req, VDP_FINISH,  NULL, 0);
 	ObjIterEnd(req->objcore, &oi);
 	return (ois);
 }

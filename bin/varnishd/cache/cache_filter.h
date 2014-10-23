@@ -88,11 +88,10 @@ enum vfp_status VFP_GetStorage(struct vfp_ctx *, ssize_t *sz, uint8_t **ptr);
 /* Deliver processors ------------------------------------------------*/
 
 enum vdp_action {
-	VDP_INIT,
-	VDP_FINI,
-	VDP_NULL,
-	VDP_FLUSH,
-	VDP_FINISH,
+	VDP_INIT,		/* Happens on VDP_push() */
+	VDP_FINI,		/* Happens on VDP_pop() */
+	VDP_NULL,		/* Input buffer valid after call */
+	VDP_FLUSH,		/* Input buffer will be invalidated */
 };
 
 typedef int vdp_bytes(struct req *, enum vdp_action, void **priv,

@@ -39,6 +39,7 @@ VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 	struct vdp_entry *vdp;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	assert(act == VDP_NULL || act == VDP_FLUSH);
 	vdp = req->vdp_nxt;
 	CHECK_OBJ_NOTNULL(vdp, VDP_ENTRY_MAGIC);
 	req->vdp_nxt = VTAILQ_NEXT(vdp, list);
