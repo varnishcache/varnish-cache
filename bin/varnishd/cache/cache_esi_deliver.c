@@ -362,22 +362,7 @@ ESI_Deliver(struct req *req)
 				sl -= l2;
 				l -= l2;
 
-				if (req->gzip_resp && isgzip) {
-					/*
-					 * We have a gzip'ed VEC and delivers
-					 * a gzip'ed ESI response.
-					 */
-					(void)VDP_bytes(req, VDP_NULL, pp, l2);
-				} else if (req->gzip_resp) {
-					/*
-					 * A gzip'ed ESI response, but the VEC
-					 * was not gzip'ed.
-					 */
-					(void)VED_pretend_gzip(req, VDP_NULL,
-					    NULL, pp, l2);
-				} else {
-					(void)VDP_bytes(req, VDP_NULL, pp, l2);
-				}
+				(void)VDP_bytes(req, VDP_NULL, pp, l2);
 				pp += l2;
 				if (sl == 0) {
 					ois = ObjIter(req->objcore, oi,

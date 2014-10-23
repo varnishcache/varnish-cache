@@ -341,31 +341,32 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	ois = OIS_DONE;
 	if (!req->wantbody) {
 		/* This was a HEAD or conditional request */
-	} else if (req->res_mode & RES_ESI) {
-		if (req->esi_level == 0 && req->res_mode & RES_GUNZIP)
-			VDP_push(req, VDP_gunzip, NULL);
-		ESI_Deliver(req);
-	} else if (req->res_mode & RES_ESI_CHILD) {
+	} else if (req->esi_level > 0) {
 		if (req->gzip_resp &&
-		    !ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED)) {
-			VDP_push(req, VED_pretend_gzip, NULL);
-			ois = v1d_WriteDirObj(req);
-		} else if (req->gzip_resp) {
+		    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED)) {
 			if (bo != NULL)
 				VBO_waitstate(bo, BOS_FINISHED);
 			ESI_DeliverChild(req);
-		} else if (!req->gzip_resp &&
-		    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED)) {
-			VDP_push(req, VDP_gunzip, NULL);
-			ois = v1d_WriteDirObj(req);
 		} else {
-			/* The toplevel will gunzip if needed */
-			ois = v1d_WriteDirObj(req);
+			if (req->gzip_resp &&
+			    !ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED))
+				VDP_push(req, VED_pretend_gzip, NULL);
+			else if (!req->gzip_resp &&
+			    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED))
+				VDP_push(req, VDP_gunzip, NULL);
+		
+			if (req->res_mode & RES_ESI)
+				ESI_Deliver(req);
+			else
+				ois = v1d_WriteDirObj(req);
 		}
 	} else {
 		if (req->res_mode & RES_GUNZIP)
 			VDP_push(req, VDP_gunzip, NULL);
-		ois = v1d_WriteDirObj(req);
+		if (req->res_mode & RES_ESI)
+			ESI_Deliver(req);
+		else
+			ois = v1d_WriteDirObj(req);
 	}
 	(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
 
