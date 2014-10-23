@@ -156,8 +156,6 @@ ved_include(struct req *preq, const char *src, const char *host)
 	}
 	AN(V1L_IsReleased(wrk));
 
-	VDP_close(req);
-
 	CNT_AcctLogCharge(wrk->stats, req);
 	VSL_End(req->vsl);
 
