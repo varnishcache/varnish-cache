@@ -24,9 +24,11 @@ server s1 {
 
 	chunked "FOOBAR"
 
+	non-fatal
 	chunkedlen 0
 
 	accept
+	fatal
 
 	# This one will not be streamed
 	rxreq

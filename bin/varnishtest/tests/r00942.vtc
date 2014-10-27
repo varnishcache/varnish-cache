@@ -21,9 +21,10 @@ server s1 -repeat 2 {
 
 	chunked "FOOBAR"
 
+	non-fatal
 	chunkedlen 0
-	expect_close
 	accept
+	fatal
 } -start
 
 varnish v1 \
